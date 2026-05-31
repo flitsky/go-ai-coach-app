@@ -88,3 +88,5 @@
 - 확인 결과 이전 uninstall/reinstall로 app files의 `files/katago/model.bin.gz`, `gtp_learning.cfg`가 삭제되어 stub fallback이 발생했다. seed 후 앱 재시작으로 화면이 `White: KataGo` 상태로 복구됨을 확인했다.
 - 앱에 engine diagnostic 표시를 추가하고, `Makefile`에 `install-dev-engine`, `reinstall-dev-engine`, `seed-engine`, `launch` 명령을 추가해 설치/seed/재시작 순서를 명확히 했다.
 - 검증 성공: `:shared:check :app-android:assembleDebug :app-android:testDebugUnitTest`, `make reinstall-dev-engine`. 화면에서 `KataGo assets found. Using local process engine.` 진단 문구를 확인했다.
+- 사용자가 도메인/관심사/인터페이스 리팩토링, 한수 무르기, KaTrain식 최적수/그린스팟 표시, AI 설정 문서화를 순차적으로 수행하고 단계별 커밋/푸시 및 최종 요약을 요청했다.
+- `docs/SEQUENTIAL_WORK_PLAN_2026-05-31.md`를 추가해 단계별 작업 계획과 설계 메모를 기록했다.
