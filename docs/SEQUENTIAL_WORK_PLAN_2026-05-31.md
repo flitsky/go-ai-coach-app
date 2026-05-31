@@ -80,7 +80,7 @@
 - `Analyze` 성공 시 `AnalysisResult.candidates`를 보드에 반영한다.
 - 사람이 착수하거나 AI 응수가 완료되거나 새 판/undo를 수행하면 stale 후보수를 지운다.
 - `docs/GREEN_SPOT_HINT_DECISION.md`에 KaTrain식 후보수 표시 방향과 현재 한계를 정리했다.
-- 현재 KataGo process adapter는 `kata-analyze` 미구현이므로, 실제 KataGo 후보수 spot은 후속 parser 작업이 필요하다.
+- 후속 작업에서 KataGo process adapter에 `kata-search_analyze` 기반 후보수 parser를 추가해 실제 KataGo 모드에서도 spot이 표시되도록 확장했다.
 - 검증 명령: `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :shared:check :app-android:assembleDebug :app-android:testDebugUnitTest`
 - 검증 결과: 성공.
 

@@ -31,9 +31,11 @@ class KataGoProcessEngineAdapter(
 ) : EngineAdapter {
     private var profile: EngineProfile = EngineProfile(mode = EngineMode.LocalProcess)
     private var boardSize: BoardSize = BoardSize.Nine
+    private var nextPlayer: StoneColor = StoneColor.Black
     private var process: Process? = null
     private var input: BufferedWriter? = null
     private var output: BufferedReader? = null
+    private val playedMoves = mutableListOf<Move>()
 
     override suspend fun initialize(profile: EngineProfile): EngineStatus {
         this.profile = profile.copy(mode = EngineMode.LocalProcess)
@@ -56,6 +58,8 @@ class KataGoProcessEngineAdapter(
     override suspend fun newGame(boardSize: BoardSize, ruleset: Ruleset): EngineStatus {
         ensureProcessStarted()
         this.boardSize = boardSize
+        nextPlayer = StoneColor.Black
+        playedMoves.clear()
         sendCommand("boardsize ${boardSize.value}")
         sendCommand("komi 6.5")
         sendCommand("clear_board")
@@ -65,6 +69,10 @@ class KataGoProcessEngineAdapter(
     override suspend fun playMove(move: Move): EngineStatus {
         ensureProcessStarted()
         sendCommand(move.toGtpCommand(boardSize))
+        playedMoves += move
+        if (move is Move.Play || move is Move.Pass) {
+            nextPlayer = move.player.opponent
+        }
         return EngineStatus.ready("KataGo accepted ${move.describe(boardSize)}")
     }
 
@@ -72,6 +80,10 @@ class KataGoProcessEngineAdapter(
         ensureProcessStarted()
         val response = sendCommand("genmove ${player.toGtpColor()}")
         val move = response.toMove(player, boardSize)
+        playedMoves += move
+        if (move is Move.Play || move is Move.Pass) {
+            nextPlayer = move.player.opponent
+        }
         return MoveResult(
             status = EngineStatus.ready("KataGo generated ${move.describe(boardSize)}"),
             move = move,
@@ -82,14 +94,30 @@ class KataGoProcessEngineAdapter(
     override suspend fun undoMove(): EngineStatus {
         ensureProcessStarted()
         sendCommand("undo")
+        val removed = playedMoves.removeLastOrNull()
+        if (removed != null) {
+            nextPlayer = removed.player
+        }
         return EngineStatus.ready("KataGo undid one move")
     }
 
     override suspend fun analyze(limit: AnalysisLimit): AnalysisResult {
+        ensureProcessStarted()
+        sendCommand("kata-set-param maxVisits ${limit.visits}")
+        limit.timeMillis?.let { timeMillis ->
+            val seconds = (timeMillis / 1_000.0).coerceAtLeast(0.001)
+            sendCommand("kata-set-param maxTime $seconds")
+        }
+        val response = sendCommand("kata-search_analyze ${nextPlayer.toGtpColor()}")
+        val candidates = KataGoAnalysisParser.parseCandidates(
+            response = response,
+            player = nextPlayer,
+            boardSize = boardSize,
+        )
         return AnalysisResult(
-            status = EngineStatus.error("KataGo process analysis is not implemented in this spike adapter"),
-            candidates = emptyList(),
-            summary = "The process spike currently supports configure/newGame/playMove/genMove/stop. Analysis streaming needs a separate parser and cancellation path.",
+            status = EngineStatus.ready("KataGo analysis complete for ${nextPlayer.label}: ${candidates.size} candidate(s)"),
+            candidates = candidates,
+            summary = "KataGo search analysis with ${limit.visits} visits. Top candidates are shown as green spots.",
         )
     }
 

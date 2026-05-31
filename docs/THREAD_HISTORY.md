@@ -107,3 +107,11 @@
 - 에뮬레이터 `emulator-5554`와 debug engine artifact를 확인한 뒤 `make reinstall-dev-engine`를 실행했다. debug APK 설치, KataGo model/config seed, 앱 cold launch가 모두 성공했다.
 - UI dump에서 `Go AI Coach POC`, `KataGo assets found. Using local process engine.`, `Beginner`, `Visits 16`이 표시되는 것을 확인했다.
 - 순차 작업 커밋: `6198e5a` 리팩토링, `8ad26c5` undo, `571dd52` 후보수 그린스팟, `98e6f54` AI 설정 문서화.
+- 사용자가 그린스팟 확인 방법과 남은 작업을 질문했다.
+- 확인 결과 이전 구현은 UI overlay와 stub 후보수 연결은 되어 있었지만, 실제 KataGo process adapter의 `analyze()`가 후보수를 반환하지 않아 KataGo 모드에서는 보이지 않는 상태였다.
+- KataGo GTP smoke test 결과 `kata-search_analyze <color>`가 보드를 변경하지 않고 `info move ...` 후보수 목록을 반환하는 것을 확인했다.
+- `KataGoAnalysisParser`를 추가하고, `KataGoProcessEngineAdapter.analyze()`가 `kata-search_analyze` 결과를 `CandidateMove`로 변환하도록 구현했다.
+- UI의 `Analyze` 버튼명은 좁은 모바일 폭에서 줄바꿈되는 문제가 있어 `Hint`로 변경했다.
+- 검증 성공: `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :shared:check :engine-android:testDebugUnitTest :app-android:assembleDebug :app-android:testDebugUnitTest`.
+- 앱 설치 검증 성공: `make reinstall-dev-engine`.
+- 에뮬레이터에서 `Hint`를 탭한 뒤 보드 중앙에 초록 spot이 표시되고, 응답 영역에 `KataGo analysis complete for Black: 1 candidate(s)`와 `Black E5` 후보수가 표시되는 것을 확인했다.

@@ -25,7 +25,7 @@ doctor:
 	@echo "Environment check passed."
 
 test: doctor
-	$(GRADLEW) :shared:check :app-android:assembleDebug :app-android:testDebugUnitTest
+	$(GRADLEW) :shared:check :engine-android:testDebugUnitTest :app-android:assembleDebug :app-android:testDebugUnitTest
 
 dev: doctor ensure-debug-engine
 	$(GRADLEW) :app-android:assembleDebug

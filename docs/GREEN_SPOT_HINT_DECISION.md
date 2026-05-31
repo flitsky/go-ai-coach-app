@@ -6,7 +6,7 @@
 
 착수 전 최적수/그린스팟 표시는 앱 UI가 엔진 구현을 직접 호출하는 방식이 아니라, `EngineAdapter.analyze()`가 반환하는 `AnalysisResult.candidates`를 보드 오버레이로 그리는 방식으로 적용한다.
 
-현재 단계에서는 stub adapter가 반환하는 후보수를 보드 위 초록 원으로 표시한다. 실제 KataGo 후보수는 process adapter에 `kata-analyze` streaming parser와 취소 경로를 구현한 뒤 같은 UI 계약으로 연결한다.
+현재 단계에서는 `EngineAdapter.analyze()`가 반환하는 후보수를 보드 위 초록 원으로 표시한다. Stub adapter와 KataGo process adapter 모두 같은 `CandidateMove` 계약으로 UI에 연결한다.
 
 ## KaTrain 참고 방향
 
@@ -24,11 +24,11 @@ KaTrain류 UI는 대체로 엔진 분석 결과의 후보수 리스트를 보드
 - `GoBoard`는 `candidateMoves`를 받아 비어 있는 교차점에 초록색 spot을 표시한다.
 - 첫 번째 후보수는 더 진하고 크게 표시해 “best move”로 구분한다.
 - 사람이 착수하거나, AI 응수가 완료되거나, 새 판/undo가 실행되면 이전 후보수 표시는 지운다.
-- 현재 process adapter는 분석 미구현 상태이므로 KataGo 모드에서 `Analyze`는 한계 메시지를 보여주며 후보 spot은 표시하지 않는다.
+- KataGo process adapter는 `kata-search_analyze` 응답의 `info move ...` 블록을 파싱해 후보 spot을 표시한다.
+- UI 버튼명은 좁은 모바일 폭에서 줄바꿈을 피하기 위해 `Hint`로 표시한다.
 
 ## 후속 작업
 
-1. `kata-analyze` 요청/응답 parser 추가
-2. 분석 취소/타임아웃 처리
-3. 후보수별 win rate, score lead, visits를 보드 위 compact label로 표시
-4. 대국 중 자동 low-cost background analysis 여부 결정
+1. 분석 취소/타임아웃 처리
+2. 후보수별 win rate, score lead, visits를 보드 위 compact label로 표시
+3. 대국 중 자동 low-cost background analysis 여부 결정

@@ -401,7 +401,7 @@ private fun GoCoachScreen(
                 enabled = matchMode == MatchMode.HumanVsAi && isEngineReady && !isEngineBusy,
                 modifier = Modifier.weight(1f),
             ) {
-                Text("Analyze")
+                Text("Hint")
             }
 
             OutlinedButton(
