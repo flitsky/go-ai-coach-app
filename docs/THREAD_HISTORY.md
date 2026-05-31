@@ -65,3 +65,8 @@
 - 판단: KaTrain의 `BaseGame` 구조와 테스트 관점은 적극 참고하되, 코드를 직접 복사하지 않고 `shared`에 Kotlin 규칙 projection을 독립 구현하는 것이 가장 빠르고 유지보수 가능한 방향이다.
 - 구현 범위는 1차로 liberties/group 탐색, capture, suicide 금지, simple ko, prisoner count, undo/replay 기반 검증까지로 잡는 것이 적절하다.
 - 사용자가 현재 상태를 원격 `git@github.com:flitsky/go-ai-coach-app.git`로 커밋/푸시해달라고 요청했다.
+- 사용자가 도메인 분리와 엔진 빌드 분리/캡슐화를 더 엄격히 유지하고 싶다고 밝혔다.
+- 결정: 앱 repo는 `shared` 도메인, `EngineAdapter` 계약, Android UI, 엔진 산출물 참조 wiring에 집중하고, KataGo source/build pipeline은 별도 artifact 생성 흐름으로 분리한다.
+- `docs/ENGINE_BOUNDARY_DECISION.md`를 추가하고 `docs/ANDROID_KATAGO_SPIKE_RUNBOOK.md`에 spike 빌드 절차가 제품 앱 개발 루프가 아니라 검증 재현용임을 명시했다.
+- 사용자가 첫 마켓 릴리즈 이후 repo 운영 관점에서 새 환경 셋업/인수인계, `make prebuild`, `make dev/release` guard, 도메인 분리와 과도한 모듈화 방지, 추상화 레이어/주입 구조를 논의하자고 했다.
+- Android/Gradle 공식 가이드를 확인했고, `docs/REPOSITORY_OPERATIONS_DECISION.md`에 artifact-first + pinned prebuild fallback, domain split trigger, periodic module consolidation 기준을 의사결정 초안으로 정리했다.

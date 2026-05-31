@@ -12,6 +12,20 @@
 - `app-android`는 `nativeLibraryDir/libkatago.so`가 있고 `files/katago/model.bin.gz`, `files/katago/gtp_learning.cfg`가 있을 때 `KataGoProcessEngineAdapter`를 선택한다.
 - `libkatago.so`를 `app-android/src/debug/jniLibs/arm64-v8a/`에 임시 포함하고 model/config를 app files에 seed한 뒤, Android 앱 UI에서 실제 KataGo 대국 루프를 확인했다.
 
+## 분리 원칙
+
+이 문서의 빌드 절차는 제품 앱 개발 루프가 아니라 spike 재현 절차다.
+
+장기적으로 앱 repo는 KataGo source tree와 native build cache를 소유하지 않는다. 엔진 빌드는 별도 artifact pipeline에서 수행하고, 앱은 확정된 binary/model/config 산출물을 Gradle task나 release artifact fetch 단계로 참조한다.
+
+앱 코드의 의존 방향은 다음으로 고정한다.
+
+- `shared`: 바둑 규칙, move history, engine DTO/interface
+- `engine-android`: `EngineAdapter` 구현체와 Android 실행 방식 캡슐화
+- `app-android`: UI와 lifecycle, engine 구현 세부사항 비의존
+
+따라서 `scripts/build-katago-android-spike.sh`는 초기 검증용이며, 엔진 결정이 안정화되면 별도 repo/CI/artifact 생성 절차로 이동하는 것이 바람직하다.
+
 ## 빌드 명령
 
 ```sh
