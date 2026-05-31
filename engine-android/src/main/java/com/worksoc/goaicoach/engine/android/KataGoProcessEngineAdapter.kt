@@ -79,6 +79,12 @@ class KataGoProcessEngineAdapter(
         )
     }
 
+    override suspend fun undoMove(): EngineStatus {
+        ensureProcessStarted()
+        sendCommand("undo")
+        return EngineStatus.ready("KataGo undid one move")
+    }
+
     override suspend fun analyze(limit: AnalysisLimit): AnalysisResult {
         return AnalysisResult(
             status = EngineStatus.error("KataGo process analysis is not implemented in this spike adapter"),

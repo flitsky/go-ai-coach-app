@@ -158,6 +158,52 @@ class GameStateTest {
         }
     }
 
+    @Test
+    fun replayWithoutLastMoveRestoresCapturedStone() {
+        val beforeCapture = GameState.empty()
+            .play(play(StoneColor.Black, "D5"))
+            .play(play(StoneColor.White, "E5"))
+            .play(play(StoneColor.Black, "E4"))
+            .play(play(StoneColor.White, "A9"))
+            .play(play(StoneColor.Black, "F5"))
+            .play(play(StoneColor.White, "A8"))
+        val afterCapture = beforeCapture.play(play(StoneColor.Black, "E6"))
+
+        val undone = afterCapture.replayWithoutLastMoves(1)
+
+        assertEquals(beforeCapture, undone)
+        assertEquals(StoneColor.White, undone.stoneAt(point("E5")))
+        assertEquals(0, undone.capturedBy(StoneColor.Black))
+        assertEquals(StoneColor.Black, undone.nextPlayer)
+    }
+
+    @Test
+    fun replayWithoutLastTwoMovesRestoresPreviousTurnPair() {
+        val state = GameState.empty()
+            .play(play(StoneColor.Black, "E5"))
+            .play(play(StoneColor.White, "C5"))
+            .play(play(StoneColor.Black, "D5"))
+            .play(play(StoneColor.White, "C6"))
+
+        val undone = state.replayWithoutLastMoves(2)
+
+        assertEquals(2, undone.moves.size)
+        assertEquals(StoneColor.Black, undone.stoneAt(point("E5")))
+        assertEquals(StoneColor.White, undone.stoneAt(point("C5")))
+        assertEquals(StoneColor.Black, undone.nextPlayer)
+    }
+
+    @Test
+    fun replayWithoutMoreMovesThanHistoryResetsBoard() {
+        val state = GameState.empty()
+            .play(play(StoneColor.Black, "E5"))
+            .play(play(StoneColor.White, "C5"))
+
+        val undone = state.replayWithoutLastMoves(99)
+
+        assertEquals(GameState.empty(), undone)
+    }
+
     private fun play(
         player: StoneColor,
         label: String,

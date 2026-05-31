@@ -43,6 +43,7 @@ import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.StoneColor
 import com.worksoc.goaicoach.shared.describe
+import com.worksoc.goaicoach.shared.replayWithoutLastMoves
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -236,6 +237,52 @@ private fun GoCoachScreen(
         }
     }
 
+    fun undoLastTurn() {
+        if (gameState.moves.isEmpty()) {
+            engineMessage = "No move to undo."
+            return
+        }
+
+        if (matchMode == MatchMode.LocalTwoPlayer) {
+            val nextState = gameState.replayWithoutLastMoves(1)
+            gameState = nextState
+            lastMoveText = nextState.moves.lastOrNull()?.describe(nextState.boardSize) ?: "None"
+            candidateText = "Captured: Black ${nextState.capturedBy(StoneColor.Black)} / White ${nextState.capturedBy(StoneColor.White)}"
+            engineMessage = "Local undo completed."
+            return
+        }
+
+        if (!isEngineReady) {
+            engineMessage = "Engine is not ready."
+            return
+        }
+        if (isEngineBusy) {
+            engineMessage = "AI is busy. Undo after the current response."
+            return
+        }
+
+        val undoCount = minOf(2, gameState.moves.size)
+        scope.launch {
+            isEngineBusy = true
+            runCatching {
+                withContext(Dispatchers.IO) {
+                    repeat(undoCount) {
+                        engineAdapter.undoMove()
+                    }
+                }
+            }.onSuccess {
+                val nextState = gameState.replayWithoutLastMoves(undoCount)
+                gameState = nextState
+                lastMoveText = nextState.moves.lastOrNull()?.describe(nextState.boardSize) ?: "None"
+                candidateText = "Undo cleared current analysis hints."
+                engineMessage = "Undid $undoCount move(s) in local state and engine state."
+            }.onFailure { error ->
+                engineMessage = error.message ?: "Undo failed."
+            }
+            isEngineBusy = false
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -310,6 +357,17 @@ private fun GoCoachScreen(
                 modifier = Modifier.weight(1f),
             ) {
                 Text("Pass")
+            }
+
+            OutlinedButton(
+                onClick = ::undoLastTurn,
+                enabled = when (matchMode) {
+                    MatchMode.HumanVsAi -> isEngineReady && !isEngineBusy && gameState.moves.isNotEmpty()
+                    MatchMode.LocalTwoPlayer -> !isEngineBusy && gameState.moves.isNotEmpty()
+                },
+                modifier = Modifier.weight(1f),
+            ) {
+                Text("Undo")
             }
 
             OutlinedButton(

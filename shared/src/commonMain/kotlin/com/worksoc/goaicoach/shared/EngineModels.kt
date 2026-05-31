@@ -6,6 +6,7 @@ interface EngineAdapter {
     suspend fun newGame(boardSize: BoardSize, ruleset: Ruleset): EngineStatus
     suspend fun playMove(move: Move): EngineStatus
     suspend fun genMove(player: StoneColor): MoveResult
+    suspend fun undoMove(): EngineStatus
     suspend fun analyze(limit: AnalysisLimit): AnalysisResult
     suspend fun stop(): EngineStatus
 }

@@ -93,3 +93,7 @@
 - 1단계 리팩토링을 수행했다. `MainActivity`를 Compose 진입점으로 축소하고, engine bootstrap, 대국 정책, UI 패널, 보드 렌더링, analysis 포맷을 각각 별도 파일/패키지로 분리했다.
 - `shared`의 `GameState.play()` 내부 규칙 구현을 `BoardRules`로 분리해 도메인 모델과 규칙 실행 책임을 나눴다.
 - 1단계 검증 성공: `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :shared:check :app-android:assembleDebug :app-android:testDebugUnitTest`.
+- 2단계 한수 무르기를 구현했다. `EngineAdapter.undoMove()`를 추가하고, Stub은 자체 move history를 되돌리며, KataGo process adapter는 GTP `undo`를 호출한다.
+- `shared`에 `GameStateReplayer`와 `GameState.replayWithoutLastMoves()`를 추가해 UI 보드를 move history에서 재계산하도록 했다.
+- Android UI에는 `Undo` 버튼을 추가했다. 2P 모드는 마지막 1수, AI 대국 모드는 마지막 AI 응수와 직전 사람 착수 2수를 되돌린다.
+- 2단계 검증 성공: `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :shared:check :app-android:assembleDebug :app-android:testDebugUnitTest`.

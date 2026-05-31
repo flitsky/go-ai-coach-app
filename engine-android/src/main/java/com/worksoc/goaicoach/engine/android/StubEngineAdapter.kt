@@ -20,6 +20,7 @@ class StubEngineAdapter : EngineAdapter {
     private var nextPlayer: StoneColor = StoneColor.Black
     private var profile: EngineProfile = EngineProfile()
     private val occupied = linkedSetOf<BoardCoordinate>()
+    private val playedMoves = mutableListOf<Move>()
 
     override suspend fun initialize(profile: EngineProfile): EngineStatus {
         initialized = true
@@ -40,6 +41,7 @@ class StubEngineAdapter : EngineAdapter {
         this.boardSize = boardSize
         nextPlayer = StoneColor.Black
         occupied.clear()
+        playedMoves.clear()
         return EngineStatus.ready("New ${boardSize.value}x${boardSize.value} $ruleset game")
     }
 
@@ -48,6 +50,7 @@ class StubEngineAdapter : EngineAdapter {
         if (move is Move.Play) {
             occupied += move.coordinate
         }
+        playedMoves += move
         if (move is Move.Play || move is Move.Pass) {
             nextPlayer = move.player.opponent
         }
@@ -60,12 +63,22 @@ class StubEngineAdapter : EngineAdapter {
         val coordinate = chooseCoordinate()
         occupied += coordinate
         val move = Move.Play(player, coordinate)
+        playedMoves += move
         nextPlayer = player.opponent
         return MoveResult(
             status = EngineStatus.ready("Generated ${move.describe(boardSize)}"),
             move = move,
             summary = "Deterministic stub move using ${profile.difficulty.label}; no KataGo analysis has run yet.",
         )
+    }
+
+    override suspend fun undoMove(): EngineStatus {
+        ensureInitialized()
+        val removed = playedMoves.removeLastOrNull()
+            ?: return EngineStatus.ready("Stub engine has no move to undo.")
+        rebuildOccupiedFromHistory()
+        nextPlayer = removed.player
+        return EngineStatus.ready("Stub engine undid ${removed.describe(boardSize)}")
     }
 
     override suspend fun analyze(limit: AnalysisLimit): AnalysisResult {
@@ -106,6 +119,7 @@ class StubEngineAdapter : EngineAdapter {
     override suspend fun stop(): EngineStatus {
         initialized = false
         occupied.clear()
+        playedMoves.clear()
         return EngineStatus.stopped("Stub engine stopped")
     }
 
@@ -120,6 +134,15 @@ class StubEngineAdapter : EngineAdapter {
 
     private fun firstOpenCoordinateAfter(anchor: BoardCoordinate): BoardCoordinate? {
         return priorityCoordinates().firstOrNull { it !in occupied && it != anchor }
+    }
+
+    private fun rebuildOccupiedFromHistory() {
+        occupied.clear()
+        for (move in playedMoves) {
+            if (move is Move.Play) {
+                occupied += move.coordinate
+            }
+        }
     }
 
     private fun priorityCoordinates(): List<BoardCoordinate> {

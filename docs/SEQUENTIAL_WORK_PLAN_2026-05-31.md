@@ -25,7 +25,7 @@
 | --- | --- | --- |
 | 0 | 완료 | 이 작업 계획 문서화 및 커밋 |
 | 1 | 완료 | `MainActivity` 비대화 해소, engine bootstrap/UI/board 컴포넌트 분리, shared 규칙 코드 분리 |
-| 2 | 예정 | undo API와 UI 추가, local 2P/AI 모드 undo 정책 정리 |
+| 2 | 완료 | undo API와 UI 추가, local 2P/AI 모드 undo 정책 정리 |
 | 3 | 예정 | analysis candidate를 착수 전 힌트로 보드에 표시, stub/KataGo process 한계 정리 |
 | 4 | 예정 | AI difficulty/profile 설정값과 최저 설정 여부 문서화 |
 | 5 | 예정 | 최종 검증 및 요약 보고 |
@@ -55,6 +55,17 @@
 - local 2P는 마지막 1수를 되돌린다.
 - AI 대국은 기본적으로 마지막 AI 응수와 직전 사람 착수까지 2수를 되돌린다.
 - engine sync를 위해 `EngineAdapter.undoMove()`를 추가하고, KataGo process는 GTP `undo`를 사용한다.
+
+진행 결과:
+
+- `EngineAdapter.undoMove()`를 추가했고, stub/process adapter가 각각 구현한다.
+- `KataGoProcessEngineAdapter`는 GTP `undo` 명령으로 엔진 내부 히스토리를 되돌린다.
+- `shared`에 `GameStateReplayer`와 `GameState.replayWithoutLastMoves()`를 추가해 로컬 보드 상태를 move history에서 재계산한다.
+- Android UI에 `Undo` 버튼을 추가했다.
+- 2P 테스트 모드는 마지막 1수를 되돌리고, AI 대국 모드는 기본적으로 마지막 AI 응수와 직전 사람 착수 2수를 함께 되돌린다.
+- capture가 포함된 상태에서 undo가 잡힌 돌과 prisoner count를 복원하는 테스트를 추가했다.
+- 검증 명령: `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :shared:check :app-android:assembleDebug :app-android:testDebugUnitTest`
+- 검증 결과: 성공.
 
 ### 3단계 힌트/그린스팟
 
