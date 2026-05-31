@@ -103,3 +103,7 @@
 - 3단계 검증 성공: `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :shared:check :app-android:assembleDebug :app-android:testDebugUnitTest`.
 - 4단계 AI 설정 문서화를 수행했다. 현재 앱 UI와 코드 기준 최저 설정은 `Beginner / 16 visits / 250ms`이며, KataGo process에는 `maxVisits=16`, `maxTime=0.25`, `numSearchThreads=1`로 전달된다.
 - `docs/AI_ENGINE_SETTINGS.md`를 추가하고 `README.md` 주요 문서 목록에 연결했다. 절대적인 KataGo 최저 성능은 아니므로, 첫 릴리즈 전 `VeryEasy` profile이나 별도 응수 선택 정책을 검토할 수 있다고 정리했다.
+- 최종 검증으로 `make test`를 실행했고 성공했다.
+- 에뮬레이터 `emulator-5554`와 debug engine artifact를 확인한 뒤 `make reinstall-dev-engine`를 실행했다. debug APK 설치, KataGo model/config seed, 앱 cold launch가 모두 성공했다.
+- UI dump에서 `Go AI Coach POC`, `KataGo assets found. Using local process engine.`, `Beginner`, `Visits 16`이 표시되는 것을 확인했다.
+- 순차 작업 커밋: `6198e5a` 리팩토링, `8ad26c5` undo, `571dd52` 후보수 그린스팟, `98e6f54` AI 설정 문서화.

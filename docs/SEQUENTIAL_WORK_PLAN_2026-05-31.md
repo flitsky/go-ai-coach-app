@@ -28,7 +28,7 @@
 | 2 | 완료 | undo API와 UI 추가, local 2P/AI 모드 undo 정책 정리 |
 | 3 | 완료 | analysis candidate를 착수 전 힌트로 보드에 표시, stub/KataGo process 한계 정리 |
 | 4 | 완료 | AI difficulty/profile 설정값과 최저 설정 여부 문서화 |
-| 5 | 예정 | 최종 검증 및 요약 보고 |
+| 5 | 완료 | 최종 검증 및 요약 보고 |
 
 ## 세부 설계 메모
 
@@ -96,3 +96,13 @@
 - 단, KataGo 자체의 절대 최저 성능 설정은 아니며 필요하면 `VeryEasy`나 응수 선택 정책을 추가해야 한다고 정리했다.
 - `KataGoProcessEngineAdapter`의 `maxVisits`, `maxTime`, `numSearchThreads=1` 매핑을 문서화했다.
 - `README.md`의 주요 문서 목록에 AI 설정 문서를 연결했다.
+
+### 5단계 최종 검증
+
+- 검증 명령: `make test`
+- 검증 결과: 성공.
+- 에뮬레이터: `emulator-5554` 연결 확인.
+- debug engine artifact: `app-android/src/debug/jniLibs/arm64-v8a/libkatago.so` 존재 확인.
+- 실행 검증: `make reinstall-dev-engine` 성공.
+- 설치/seed/launch 결과: debug APK 설치, KataGo model/config seed, `com.worksoc.goaicoach/.MainActivity` cold launch 성공.
+- UI dump 확인: `Go AI Coach POC`, `KataGo assets found. Using local process engine.`, `Beginner`, `Visits 16` 표시 확인.
