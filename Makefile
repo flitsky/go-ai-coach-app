@@ -11,7 +11,7 @@ RELEASE_ENGINE_BINARY := app-android/src/main/jniLibs/$(ENGINE_ABI)/libkatago.so
 export ANDROID_HOME
 export JAVA_HOME
 
-.PHONY: doctor test dev dev-stub release ensure-debug-engine ensure-release-engine prebuild-engine clean
+.PHONY: doctor test dev dev-stub install-dev install-dev-engine reinstall-dev-engine seed-engine launch release ensure-debug-engine ensure-release-engine prebuild-engine clean
 
 doctor:
 	@echo "Checking local Android development environment..."
@@ -32,6 +32,24 @@ dev: doctor ensure-debug-engine
 
 dev-stub: doctor
 	$(GRADLEW) :app-android:assembleDebug
+
+install-dev: dev
+	$(GRADLEW) :app-android:installDebug
+
+install-dev-engine: install-dev seed-engine launch
+
+reinstall-dev-engine: doctor ensure-debug-engine
+	-$(ANDROID_HOME)/platform-tools/adb uninstall com.worksoc.goaicoach
+	$(GRADLEW) :app-android:installDebug
+	$(MAKE) seed-engine
+	$(MAKE) launch
+
+seed-engine: doctor
+	ANDROID_HOME="$(ANDROID_HOME)" ./scripts/seed-katago-model-to-app.sh
+
+launch: doctor
+	$(ANDROID_HOME)/platform-tools/adb shell am force-stop com.worksoc.goaicoach
+	$(ANDROID_HOME)/platform-tools/adb shell am start -W -n com.worksoc.goaicoach/.MainActivity
 
 release: doctor ensure-release-engine
 	$(GRADLEW) :app-android:assembleRelease

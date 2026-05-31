@@ -147,3 +147,40 @@ JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/A
 ```
 
 성공. 첫 설치 재시도는 `/data` 여유 공간 부족으로 실패했으나, 기존 앱 제거 후 설치/실행이 완료됐다.
+
+## 4차 계획: KataGo/stub fallback 혼선 방지
+
+목표는 앱이 stub으로 전환된 이유를 화면에서 바로 확인하고, 개발 명령으로 설치/seed/재시작 순서를 실수 없이 수행하게 하는 것이다.
+
+| 단계 | 상태 | 내용 |
+| --- | --- | --- |
+| 1 | 완료 | 현재 에뮬레이터의 app files 확인: `files/katago` 누락으로 stub fallback 발생 확인 |
+| 2 | 완료 | `scripts/seed-katago-model-to-app.sh` 재실행 후 앱 재시작으로 KataGo 복구 확인 |
+| 3 | 완료 | 앱 Mode panel에 engine diagnostic 표시 추가 |
+| 4 | 완료 | `make install-dev-engine`, `make reinstall-dev-engine`, `make seed-engine`, `make launch` 추가 |
+| 5 | 완료 | 빌드/설치 명령 검증 |
+
+## 4차 진행 메모
+
+- 앱은 시작 시점에 `nativeLibraryDir/libkatago.so`, `files/katago/model.bin.gz`, `files/katago/gtp_learning.cfg`를 검사한다.
+- app uninstall 또는 app data clear 후에는 model/config가 삭제되므로, debug native binary가 있어도 stub으로 fallback한다.
+- 이미 stub으로 시작한 앱은 실행 중 model/config를 넣어도 자동으로 KataGo adapter로 바뀌지 않는다. seed 후 앱 재시작이 필요하다.
+- `make install-dev-engine`은 debug APK 설치, model/config seed, 앱 재시작을 한 번에 수행한다.
+- `make reinstall-dev-engine`은 저장 공간 부족 등으로 설치가 실패할 때 기존 앱을 제거한 뒤 설치/seed/재시작한다.
+- 현재 에뮬레이터는 `/data` 여유 공간 부족 때문에 일반 `make install-dev-engine`이 실패했다.
+- `make reinstall-dev-engine`은 기존 앱 제거 후 설치, seed, launch까지 성공했다.
+- 앱 화면에서 `White: KataGo`와 `KataGo assets found. Using local process engine.` 진단 문구를 확인했다.
+
+## 4차 검증 결과
+
+```sh
+JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :shared:check :app-android:assembleDebug :app-android:testDebugUnitTest
+```
+
+성공.
+
+```sh
+make reinstall-dev-engine
+```
+
+성공. 기존 앱 제거, debug APK 설치, model/config seed, 앱 재시작까지 완료했다.

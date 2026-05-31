@@ -84,3 +84,7 @@
 - 검증 성공: `:shared:check :app-android:assembleDebug :app-android:testDebugUnitTest`. 설치 검증은 연결된 디바이스가 없어 `No connected devices!`로 실패했고, `Pixel_7_API_35` 에뮬레이터 시작도 broken pipe 로그와 함께 실패했다.
 - 사용자가 에뮬레이터가 종료된 경우에도 내가 실행 후 설치 테스트를 이어갈 수 있는지 질문했다.
 - `Pixel_7_API_35`를 verbose/headless 옵션으로 다시 실행하니 부팅에 성공했다. 기존 앱 제거로 `/data` 공간을 확보한 뒤 최신 debug APK 설치와 앱 실행을 확인했다.
+- 사용자가 엔진 모드 설정 중 어느 순간 mock/stub으로 동작하고 다시 엔진 연동이 안 되는 이슈를 보고했다.
+- 확인 결과 이전 uninstall/reinstall로 app files의 `files/katago/model.bin.gz`, `gtp_learning.cfg`가 삭제되어 stub fallback이 발생했다. seed 후 앱 재시작으로 화면이 `White: KataGo` 상태로 복구됨을 확인했다.
+- 앱에 engine diagnostic 표시를 추가하고, `Makefile`에 `install-dev-engine`, `reinstall-dev-engine`, `seed-engine`, `launch` 명령을 추가해 설치/seed/재시작 순서를 명확히 했다.
+- 검증 성공: `:shared:check :app-android:assembleDebug :app-android:testDebugUnitTest`, `make reinstall-dev-engine`. 화면에서 `KataGo assets found. Using local process engine.` 진단 문구를 확인했다.

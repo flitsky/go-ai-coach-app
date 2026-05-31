@@ -75,49 +75,78 @@ private enum class MatchMode(val label: String) {
     LocalTwoPlayer("2P 테스트"),
 }
 
+private data class EngineBootstrap(
+    val adapter: EngineAdapter,
+    val diagnostic: String,
+)
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val engineAdapter = createEngineAdapter()
+        val engineBootstrap = createEngineBootstrap()
         setContent {
-            GoCoachApp(engineAdapter = engineAdapter)
+            GoCoachApp(
+                engineAdapter = engineBootstrap.adapter,
+                engineDiagnostic = engineBootstrap.diagnostic,
+            )
         }
     }
 
-    private fun createEngineAdapter(): EngineAdapter {
+    private fun createEngineBootstrap(): EngineBootstrap {
         val katagoDir = File(filesDir, "katago")
         val executable = File(applicationInfo.nativeLibraryDir, "libkatago.so")
         val model = File(katagoDir, "model.bin.gz")
         val config = File(katagoDir, "gtp_learning.cfg")
 
-        if (!executable.canExecute() || !model.isFile || !config.isFile) {
-            return StubEngineAdapter()
+        val missing = buildList {
+            if (!executable.canExecute()) {
+                add("native lib")
+            }
+            if (!model.isFile) {
+                add("model.bin.gz")
+            }
+            if (!config.isFile) {
+                add("gtp_learning.cfg")
+            }
+        }
+
+        if (missing.isNotEmpty()) {
+            return EngineBootstrap(
+                adapter = StubEngineAdapter(),
+                diagnostic = "Stub fallback: missing ${missing.joinToString()}. Run make install-dev-engine or make seed-engine, then restart the app.",
+            )
         }
 
         val logsDir = File(katagoDir, "logs").apply { mkdirs() }
         val homeDir = File(katagoDir, "home").apply { mkdirs() }
-        return KataGoProcessEngineAdapter(
-            KataGoProcessConfig(
-                executablePath = executable.absolutePath,
-                modelPath = model.absolutePath,
-                configPath = config.absolutePath,
-                startupOverrides = mapOf(
-                    "numSearchThreads" to "1",
-                    "logDir" to logsDir.absolutePath,
-                    "homeDataDir" to homeDir.absolutePath,
-                    "logToStderr" to "false",
-                    "logAllGTPCommunication" to "false",
-                    "logSearchInfo" to "false",
-                    "allowResignation" to "false",
-                    "startupPrintMessageToStderr" to "false",
+        return EngineBootstrap(
+            adapter = KataGoProcessEngineAdapter(
+                KataGoProcessConfig(
+                    executablePath = executable.absolutePath,
+                    modelPath = model.absolutePath,
+                    configPath = config.absolutePath,
+                    startupOverrides = mapOf(
+                        "numSearchThreads" to "1",
+                        "logDir" to logsDir.absolutePath,
+                        "homeDataDir" to homeDir.absolutePath,
+                        "logToStderr" to "false",
+                        "logAllGTPCommunication" to "false",
+                        "logSearchInfo" to "false",
+                        "allowResignation" to "false",
+                        "startupPrintMessageToStderr" to "false",
+                    ),
                 ),
             ),
+            diagnostic = "KataGo assets found. Using local process engine.",
         )
     }
 }
 
 @Composable
-fun GoCoachApp(engineAdapter: EngineAdapter) {
+fun GoCoachApp(
+    engineAdapter: EngineAdapter,
+    engineDiagnostic: String,
+) {
     MaterialTheme(
         colorScheme = lightColorScheme(
             primary = Color(0xFF2F6B4F),
@@ -127,17 +156,23 @@ fun GoCoachApp(engineAdapter: EngineAdapter) {
         ),
     ) {
         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-            GoCoachScreen(engineAdapter = engineAdapter)
+            GoCoachScreen(
+                engineAdapter = engineAdapter,
+                engineDiagnostic = engineDiagnostic,
+            )
         }
     }
 }
 
 @Composable
-private fun GoCoachScreen(engineAdapter: EngineAdapter) {
+private fun GoCoachScreen(
+    engineAdapter: EngineAdapter,
+    engineDiagnostic: String,
+) {
     val scope = rememberCoroutineScope()
     var gameState by remember { mutableStateOf(GameState.empty(BoardSize.Nine, Ruleset.Chinese)) }
     var engineMessage by remember { mutableStateOf("Engine not initialized.") }
-    var candidateText by remember { mutableStateOf("No analysis yet.") }
+    var candidateText by remember { mutableStateOf(engineDiagnostic) }
     var lastMoveText by remember { mutableStateOf("None") }
     var isEngineBusy by remember { mutableStateOf(false) }
     var isEngineReady by remember { mutableStateOf(false) }
@@ -159,7 +194,7 @@ private fun GoCoachScreen(engineAdapter: EngineAdapter) {
         }.onFailure { error ->
             isEngineReady = false
             engineMessage = "Engine initialization failed.\n${error.message ?: "Unknown error"}"
-            candidateText = "2P test mode is still available. Check engine packaging or remove local KataGo seed files to use stub mode."
+            candidateText = "2P test mode is still available.\n$engineDiagnostic"
         }
         isEngineBusy = false
     }
@@ -318,6 +353,7 @@ private fun GoCoachScreen(engineAdapter: EngineAdapter) {
         ModePanel(
             mode = matchMode,
             engineName = engineName,
+            engineDiagnostic = engineDiagnostic,
             canStartAi = isEngineReady && !isEngineBusy,
             canStartLocal = !isEngineBusy || !isEngineReady,
             onAiMode = ::startAiGame,
@@ -424,6 +460,7 @@ private fun GoCoachScreen(engineAdapter: EngineAdapter) {
 private fun ModePanel(
     mode: MatchMode,
     engineName: String,
+    engineDiagnostic: String,
     canStartAi: Boolean,
     canStartLocal: Boolean,
     onAiMode: () -> Unit,
@@ -466,6 +503,12 @@ private fun ModePanel(
                 },
                 color = MaterialTheme.colorScheme.secondary,
                 style = MaterialTheme.typography.bodySmall,
+            )
+            Text(
+                text = engineDiagnostic,
+                color = MaterialTheme.colorScheme.secondary,
+                style = MaterialTheme.typography.bodySmall,
+                fontFamily = FontFamily.Monospace,
             )
         }
     }
