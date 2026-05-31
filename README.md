@@ -46,6 +46,20 @@ Keep Flutter as the strongest candidate for the final cross-platform product if 
 
 This repository includes a Gradle wrapper. On this machine the verified command uses JDK 17 and the installed Android SDK at `/Users/ryan9kim/Library/Android/sdk`:
 
+Recommended developer shortcuts:
+
+```sh
+make doctor
+make test
+make dev
+```
+
+`make dev` requires a debug engine artifact at `app-android/src/debug/jniLibs/arm64-v8a/libkatago.so`. If the artifact is missing, run `make prebuild-engine` or use `make dev-stub` for stub-only UI work.
+
+`make release` requires a prepared release engine artifact at `app-android/src/main/jniLibs/arm64-v8a/libkatago.so` and fails early if it is missing.
+
+Raw Gradle command:
+
 ```sh
 JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :shared:check :app-android:assembleDebug
 ```

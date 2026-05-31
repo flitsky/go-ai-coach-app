@@ -75,3 +75,6 @@
 - `GameState.play()`에 그룹/liberty 기반 capture, suicide 금지, simple ko, captured count를 구현했다.
 - `GameStateTest`에 단일 사석 제거, 여러 돌 그룹 제거, suicide rejection, capture-as-non-suicide, immediate ko recapture rejection 테스트를 추가했다.
 - 검증 성공: `:shared:testDebugUnitTest`, `:app-android:assembleDebug :app-android:testDebugUnitTest`, clean 상태의 `:shared:check :app-android:assembleDebug :app-android:testDebugUnitTest`.
+- repo 운영 결정에 맞춰 `Makefile`을 추가했다. `make doctor`, `make test`, `make dev`, `make dev-stub`, `make prebuild-engine`, `make release` 진입점을 제공한다.
+- `make dev`는 debug engine artifact가 없으면 `make prebuild-engine` 또는 `make dev-stub`를 안내하고, `make release`는 release engine artifact가 없으면 release artifact 준비를 안내하며 실패한다.
+- 검증 성공: `make doctor`, `make test`, `make dev`. `make release`는 현재 release artifact가 없어서 의도된 guard 메시지와 함께 실패했다.

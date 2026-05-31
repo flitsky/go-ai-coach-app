@@ -18,6 +18,9 @@ captures/
 *.aab
 
 # Native / engine artifacts
+artifacts/engine/
+app-android/src/debug/jniLibs/
+app-android/src/main/jniLibs/
 *.so
 *.dylib
 *.dll
@@ -31,4 +34,3 @@ captures/
 logs/
 tmp/
 *.log
-
