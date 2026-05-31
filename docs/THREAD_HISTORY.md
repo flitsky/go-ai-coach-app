@@ -1,0 +1,67 @@
+# 스레드 히스토리
+
+이 파일은 프로젝트 대화와 결정사항을 짧게 누적 기록하기 위한 문서입니다.
+앞으로 주요 커뮤니케이션 문서는 한글로 작성합니다.
+
+## 2026-05-31
+
+- 작업 위치는 `/Users/ryan9kim/worksoc/go-ai-coach`.
+- 프로젝트 방향은 Android-first local AI Go coaching app.
+- 기존 문서 `README.md`, `PRD.md`, `docs/STACK_DECISION.md`를 검토했다.
+- 현재 결정은 Android 엔진 POC를 위해 Kotlin Multiplatform을 먼저 사용하고, Flutter는 향후 크로스플랫폼 UI 재사용성이 더 중요해질 때 재검토하는 것이다.
+- 사용자는 KMP Android POC skeleton, 실제 KataGo 빌드 전 stub `EngineAdapter`, 최소 board/engine shared 모델, 단순 9x9 Android board UI, 엔진 응답 영역, 빌드/테스트 문서화를 요청했다.
+- 중요한 제약은 엔진 통신 세부사항을 반드시 `EngineAdapter` 뒤에 숨겨서, 나중에 stub/process/JNI/native/remote server로 바꿔도 UI와 도메인 코드를 크게 다시 쓰지 않도록 하는 것이다.
+- `shared`, `engine-android`, `app-android` 모듈을 생성했다.
+- `shared`에는 `BoardSize`, `BoardCoordinate`, `StoneColor`, `Ruleset`, `Move`, `GameState`, engine profile/status/result DTO, `EngineAdapter`를 정의했다.
+- `engine-android`에는 기본 점유 좌표 및 다음 차례 추적을 하는 deterministic `StubEngineAdapter`를 추가했다.
+- `app-android`는 Compose 기반 9x9 바둑판, 착수 입력, stub 엔진 호출, generated move / analysis 응답 표시를 제공한다.
+- Gradle wrapper를 추가했고, JDK 17 및 Android SDK `/Users/ryan9kim/Library/Android/sdk` 기준으로 빌드 명령을 검증했다.
+- 검증 성공: `:shared:check :app-android:assembleDebug`, `:app-android:testDebugUnitTest`.
+- 빌드 참고: 최신 AndroidX는 compile SDK 36을 요구했지만 현재 로컬 SDK는 API 35까지 설치되어 있다. 그래서 Compose BOM `2025.04.01`, Activity Compose `1.10.1`을 사용한다.
+- 검토 의견: KataGo를 skeleton 전에 바로 빌드하지 않는 결정은 합리적이다. 다음 단계는 `EngineAdapter` 뒤에 process 기반 KataGo adapter를 붙이는 것이다. JNI/native packaging은 process command/response와 model asset 위치, timeout/lifecycle 처리를 확인한 뒤 진행하는 것이 좋다.
+- 추가 caveat: Android process 실행과 native asset packaging은 실제 기기에서 조기 spike가 필요하다. desktop 방식의 실행 파일 구동이 Play 배포 구조에 그대로 맞지 않을 수 있다.
+- 사용자가 앞으로 주요 커뮤니케이션 문서를 한글로 작성해달라고 요청했다. README나 최상위 공개용 문서는 향후 글로벌 공개 목적상 영어를 유지할 수 있지만, 현재 작업 계획/진행 문서는 한글로 운영한다.
+- 원격 Codex 채널에서 작업 진척도를 확인할 수 있도록 `docs/WORK_PLAN_2026-05-31.md`를 만들고 단계별 상태를 갱신하기로 했다.
+- `docs/WORK_PLAN_2026-05-31.md`에 현재 상태, 1시간 작업 목표, 단계별 상태표, 진행 메모를 기록했다.
+- 앱 흐름을 사람 Black vs stub AI White 자동 대국 형태로 변경했다. 사람 착수는 즉시 보드에 반영되고, 이후 `EngineAdapter.playMove()`와 `EngineAdapter.genMove(White)`를 통해 AI 응수가 자동 적용된다.
+- AI 처리 중 보드 입력과 버튼을 잠그고, 마지막 착수 및 엔진 메시지를 표시하도록 UI 상태를 개선했다.
+- Android 15 에뮬레이터에서 상태바가 제목과 겹치는 문제를 발견해 `statusBarsPadding()`과 `navigationBarsPadding()`을 추가했다.
+- `Pixel_7_API_35` 에뮬레이터에 debug APK 설치 및 실행을 확인했다.
+- 에뮬레이터에서 중앙 착수를 입력해 Black E5 이후 AI가 White C7로 자동 응수하는 것을 확인했다.
+- `docs/KATAGO_ENGINE_SPIKE_PLAN.md`를 추가해 실제 KataGo process adapter 검증 계획과 Android packaging 리스크를 정리했다.
+- 사용자가 엔진 성능 조절 기능이 포함되어 있는지 질문했다. 기존에는 모델만 있고 UI/adapter 재설정 기능은 없었다.
+- `EngineAdapter.configure(profile)`을 추가해 대국 중 엔진 성능 profile을 갱신할 수 있는 공통 경계를 만들었다.
+- `DifficultyProfile`에 기본 visits/time 값을 추가했다.
+- Android 화면에 `Engine` 조정 패널을 추가해 난이도 profile과 visits를 `-` / `+` 버튼으로 실시간 변경할 수 있게 했다.
+- `Analyze`는 현재 profile의 `analysisLimit`을 사용한다.
+- `StubEngineAdapter`는 설정된 profile을 메시지에 표시하고, profile별 deterministic 착수 우선순위를 일부 다르게 사용한다.
+- Gradle 빌드/테스트와 에뮬레이터 설치/실행을 확인했고, `Beginner -> Casual`, `Visits 16 -> 160` 변경이 화면에 반영되는 것을 확인했다.
+- 사용자가 앱 실행과 다음 스파이크 작업 진행을 요청했다.
+- 최신 앱을 `Pixel_7_API_35` 에뮬레이터에 설치/실행하고 화면 캡처로 확인했다.
+- `docs/NEXT_WORK_SCHEDULE_2026-05-31.md`를 추가해 KataGo process adapter spike 작업 스케줄을 별도 관리하기 시작했다.
+- 로컬 KataGo 조사 결과 Homebrew `/opt/homebrew/bin/katago` v1.16.4와 Homebrew model을 확인했다.
+- desktop GTP smoke test에서 9x9, `Black E5`, `genmove W` 흐름이 성공했고 응답은 `C5`였다.
+- `KataGoProcessEngineAdapter` skeleton을 추가했다. 기본 앱은 계속 stub adapter를 사용한다.
+- Android에서 실제 process adapter를 켜려면 Android용 `arm64-v8a` KataGo artifact와 model/config packaging 전략이 필요하다고 판단했다.
+- Android NDK `27.1.12297006`과 CMake `3.22.1`로 KataGo v1.16.4 Eigen(CPU) backend `arm64-v8a` 빌드를 성공시켰다.
+- 첫 Android 빌드는 `sha2.cpp`의 `BYTE_ORDER` 정의 누락으로 실패했고, Android arm64 little-endian define을 CMake CXX flags에 추가해 해결했다.
+- 빌드된 Android KataGo 실행 파일은 strip 후 약 4.6MB이며, 에뮬레이터 shell에서 `KataGo v1.16.4 / Eigen(CPU)` 실행을 확인했다.
+- Android 에뮬레이터에서 model/config를 함께 올려 GTP `Black E5 -> White C5` smoke test를 성공시켰다.
+- app private files에 둔 executable은 실제 앱 프로세스에서 SELinux `execute_no_trans`로 차단됨을 확인했다.
+- `app-android`에 native library 추출 설정을 추가하고, `nativeLibraryDir/libkatago.so`가 있을 때 `KataGoProcessEngineAdapter`를 선택하도록 연결했다.
+- debug `jniLibs/arm64-v8a/libkatago.so` 임시 packaging과 app files model/config seed를 통해 Android 앱 UI에서 실제 KataGo 대국 루프를 확인했다.
+- `pointerInput(gameState, inputEnabled)` 때문에 한 번의 tap이 여러 착수로 증폭될 수 있는 문제를 발견했고, gesture key를 `gameState.boardSize, inputEnabled`로 줄여 수정했다.
+- 재현 스크립트 `scripts/build-katago-android-spike.sh`, `scripts/seed-katago-model-to-app.sh`와 절차 문서 `docs/ANDROID_KATAGO_SPIKE_RUNBOOK.md`를 추가했다.
+- 사용자가 포위로 돌을 잡을 수 있는 상황에서 테스트앱이 사석을 제거하지 않는 문제를 제기했다.
+- 확인 결과 현재 `shared/GameState.play()`는 착수 좌표 점유 여부만 검사하고 새 돌을 추가할 뿐, liberties 계산/상대 그룹 제거/자살수/패 처리를 하지 않는다.
+- KataGo GTP `showboard` smoke test에서는 `White E5`를 `Black E4/D5/E6/F5`로 둘러싼 뒤 `W stones captured: 1`로 표시되어 엔진 내부 보드는 사석 제거를 수행함을 확인했다.
+- 다만 GTP `genmove` 응답은 착수 좌표만 반환하고 잡힌 돌 목록을 앱에 주지 않으므로, 앱 UI 보드 상태를 정확히 유지하려면 `shared`에 로컬 바둑 규칙 엔진을 구현해야 한다고 판단했다.
+- 사용자가 “엔진 상태를 일관된 source of truth로 관리하는 것이 현실적이지 않은지”를 제기했다.
+- KataGo GTP `list_commands`를 확인했고 `showboard`, `printsgf`, `set_position`, `undo`, `final_status_list` 등은 있으나 현재 stones를 안정적인 JSON 구조로 반환하는 명령은 확인하지 못했다.
+- KaTrain 1.17.1 로컬 설치본과 GitHub/PyPI 정보를 분석했다. KaTrain은 `BaseGame`에서 capture rules를 직접 구현하고, 엔진에는 `initialStones`와 `moves`를 JSON query로 넘기는 구조다.
+- 결론은 “엔진 단독 source of truth”보다 “move history/rules를 canonical source로 두고, shared rules projection으로 board를 계산하며, KataGo는 validator/evaluator로 사용하는 hybrid”가 더 적절하다는 쪽으로 정리했다.
+- 상세 검토 문서 `docs/BOARD_STATE_SOURCE_REVIEW.md`를 추가했다.
+- 사용자가 사석 처리 등 주요 로직을 KaTrain 코드 참고로 구현하는 것이 빠르고 안정적인지 질문했다.
+- 판단: KaTrain의 `BaseGame` 구조와 테스트 관점은 적극 참고하되, 코드를 직접 복사하지 않고 `shared`에 Kotlin 규칙 projection을 독립 구현하는 것이 가장 빠르고 유지보수 가능한 방향이다.
+- 구현 범위는 1차로 liberties/group 탐색, capture, suicide 금지, simple ko, prisoner count, undo/replay 기반 검증까지로 잡는 것이 적절하다.
+- 사용자가 현재 상태를 원격 `git@github.com:flitsky/go-ai-coach-app.git`로 커밋/푸시해달라고 요청했다.

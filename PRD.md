@@ -85,6 +85,7 @@ Minimum API:
 ```kotlin
 interface EngineAdapter {
     suspend fun initialize(profile: EngineProfile): EngineStatus
+    suspend fun configure(profile: EngineProfile): EngineStatus
     suspend fun newGame(boardSize: BoardSize, rules: Ruleset): EngineStatus
     suspend fun playMove(move: Move): EngineStatus
     suspend fun genMove(player: StoneColor): MoveResult
@@ -127,13 +128,25 @@ Expose user-facing profiles:
 
 Each profile can map internally to visits, time limit, model, and server/local mode.
 
-## 9. Roadmap
+## 9. Current Implementation
+
+As of 2026-05-31, Phase 1 baseline exists:
+
+- Gradle/KMP project skeleton
+- `shared` module with board state, moves, ruleset, engine DTOs, and `EngineAdapter`
+- `engine-android` module with `StubEngineAdapter`
+- `app-android` module with a simple 9x9 Compose board, engine response area, and live engine profile / visits controls
+- verified `:shared:check`, `:app-android:assembleDebug`, and `:app-android:testDebugUnitTest` commands
+
+The current board state intentionally does not implement full Go rules yet. It validates turn order, board bounds, and occupied points only. Captures, ko, suicide, scoring, SGF, and territory logic belong after the engine communication boundary is proven.
+
+## 10. Roadmap
 
 Phase 0: Repository and documents.
 
-Phase 1: Android KMP skeleton with stub engine.
+Phase 1: Android KMP skeleton with stub engine. Complete baseline created on 2026-05-31.
 
-Phase 2: Local engine bridge POC.
+Phase 2: Local engine bridge POC. In progress. Android `arm64-v8a` KataGo Eigen(CPU) build and emulator process-adapter smoke test succeeded on 2026-05-31.
 
 Phase 3: 9x9 playable loop.
 
@@ -143,7 +156,7 @@ Phase 5: KaTrain-inspired review UX.
 
 Phase 6: Optional server fallback.
 
-## 10. Open Risks
+## 11. Open Risks
 
 - mobile engine packaging size
 - thermal throttling and battery drain
@@ -151,9 +164,12 @@ Phase 6: Optional server fallback.
 - model distribution and update path
 - app store policy for large engine assets
 - keeping UX simple while exposing enough learning value
+- process lifecycle and timeout handling once KataGo is launched from Android
 
-## 11. Next Thread Handoff
+## 12. Next Thread Handoff
 
-Recommended next task:
+Recommended next task after the current skeleton:
 
-Create the initial KMP Android project skeleton in this repository, with a stubbed `EngineAdapter` and a simple 9x9 board screen.
+Build or reuse a local KataGo artifact, then add a process-based `EngineAdapter` behind the same shared interface. Prefer proving process stdio/GTP-style command flow first before moving to JNI/native packaging.
+
+Current local finding: app private data cannot be used as the executable location for the actual app process on the tested Android 15 emulator. The debug spike works when the executable is packaged/extracted through the native library path as `libkatago.so`, with model/config seeded into app files.
