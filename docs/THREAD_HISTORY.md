@@ -97,3 +97,7 @@
 - `shared`에 `GameStateReplayer`와 `GameState.replayWithoutLastMoves()`를 추가해 UI 보드를 move history에서 재계산하도록 했다.
 - Android UI에는 `Undo` 버튼을 추가했다. 2P 모드는 마지막 1수, AI 대국 모드는 마지막 AI 응수와 직전 사람 착수 2수를 되돌린다.
 - 2단계 검증 성공: `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :shared:check :app-android:assembleDebug :app-android:testDebugUnitTest`.
+- 3단계 후보수/그린스팟 표시를 구현했다. `Analyze` 결과의 `AnalysisResult.candidates`를 `GoBoard`에 전달해 비어 있는 교차점 위에 초록 spot을 그린다.
+- 첫 후보수는 더 크고 진한 초록 spot으로 표시하며, 새 착수/AI 응수/새 판/undo 시 stale 후보수는 삭제한다.
+- `docs/GREEN_SPOT_HINT_DECISION.md`를 추가해 KaTrain식 후보수 표시 방향과 현재 KataGo process adapter의 `kata-analyze` 미구현 한계를 정리했다.
+- 3단계 검증 성공: `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :shared:check :app-android:assembleDebug :app-android:testDebugUnitTest`.

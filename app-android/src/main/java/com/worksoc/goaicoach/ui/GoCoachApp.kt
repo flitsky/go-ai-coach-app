@@ -35,6 +35,7 @@ import com.worksoc.goaicoach.match.applyAiResponseAfterHumanTurn
 import com.worksoc.goaicoach.match.boardInputEnabled
 import com.worksoc.goaicoach.match.modeSummary
 import com.worksoc.goaicoach.shared.BoardSize
+import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.DifficultyProfile
 import com.worksoc.goaicoach.shared.EngineAdapter
 import com.worksoc.goaicoach.shared.EngineProfile
@@ -82,6 +83,7 @@ private fun GoCoachScreen(
     var gameState by remember { mutableStateOf(GameState.empty(BoardSize.Nine, Ruleset.Chinese)) }
     var engineMessage by remember { mutableStateOf("Engine not initialized.") }
     var candidateText by remember { mutableStateOf(engineDiagnostic) }
+    var candidateMoves by remember { mutableStateOf(emptyList<CandidateMove>()) }
     var lastMoveText by remember { mutableStateOf("None") }
     var isEngineBusy by remember { mutableStateOf(false) }
     var isEngineReady by remember { mutableStateOf(false) }
@@ -110,6 +112,7 @@ private fun GoCoachScreen(
     fun resetLocalGame(message: String) {
         gameState = GameState.empty(BoardSize.Nine, Ruleset.Chinese)
         candidateText = "No analysis yet."
+        candidateMoves = emptyList()
         lastMoveText = "None"
         engineMessage = message
     }
@@ -180,6 +183,7 @@ private fun GoCoachScreen(
                 ?: return
 
             gameState = afterMove
+            candidateMoves = emptyList()
             lastMoveText = move.describe(beforeMove.boardSize)
             candidateText = "Captured: Black ${afterMove.capturedBy(StoneColor.Black)} / White ${afterMove.capturedBy(StoneColor.White)}"
             engineMessage = "Local move accepted: ${move.describe(beforeMove.boardSize)}."
@@ -208,6 +212,7 @@ private fun GoCoachScreen(
             ?: return
 
         gameState = afterHuman
+        candidateMoves = emptyList()
         lastMoveText = move.describe(beforeMove.boardSize)
         candidateText = "AI is thinking..."
         engineMessage = "Submitted ${move.describe(beforeMove.boardSize)}."
@@ -224,6 +229,7 @@ private fun GoCoachScreen(
                 }
             }.onSuccess { outcome ->
                 gameState = outcome.gameState
+                candidateMoves = emptyList()
                 engineMessage = outcome.engineMessage
                 candidateText = outcome.candidateText
                 lastMoveText = outcome.lastMoveText
@@ -246,6 +252,7 @@ private fun GoCoachScreen(
         if (matchMode == MatchMode.LocalTwoPlayer) {
             val nextState = gameState.replayWithoutLastMoves(1)
             gameState = nextState
+            candidateMoves = emptyList()
             lastMoveText = nextState.moves.lastOrNull()?.describe(nextState.boardSize) ?: "None"
             candidateText = "Captured: Black ${nextState.capturedBy(StoneColor.Black)} / White ${nextState.capturedBy(StoneColor.White)}"
             engineMessage = "Local undo completed."
@@ -273,6 +280,7 @@ private fun GoCoachScreen(
             }.onSuccess {
                 val nextState = gameState.replayWithoutLastMoves(undoCount)
                 gameState = nextState
+                candidateMoves = emptyList()
                 lastMoveText = nextState.moves.lastOrNull()?.describe(nextState.boardSize) ?: "None"
                 candidateText = "Undo cleared current analysis hints."
                 engineMessage = "Undid $undoCount move(s) in local state and engine state."
@@ -336,6 +344,7 @@ private fun GoCoachScreen(
 
         GoBoard(
             gameState = gameState,
+            candidateMoves = candidateMoves,
             inputEnabled = boardInputEnabled(matchMode, isEngineReady, isEngineBusy, gameState.nextPlayer),
             modifier = Modifier
                 .fillMaxWidth()
@@ -381,8 +390,10 @@ private fun GoCoachScreen(
                         }.onSuccess { result ->
                             engineMessage = result.status.message
                             candidateText = result.toCandidateText(gameState.boardSize)
+                            candidateMoves = result.candidates
                         }.onFailure { error ->
                             engineMessage = error.message ?: "Analysis failed."
+                            candidateMoves = emptyList()
                         }
                         isEngineBusy = false
                     }

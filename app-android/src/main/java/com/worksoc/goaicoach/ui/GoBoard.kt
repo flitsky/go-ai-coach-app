@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
+import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.StoneColor
@@ -35,6 +36,7 @@ import kotlin.math.roundToInt
 @Composable
 internal fun GoBoard(
     gameState: GameState,
+    candidateMoves: List<CandidateMove>,
     inputEnabled: Boolean,
     modifier: Modifier = Modifier,
     onCoordinateTap: (BoardCoordinate) -> Unit,
@@ -64,6 +66,7 @@ internal fun GoBoard(
         ) {
             val geometry = BoardGeometry.from(size, gameState.boardSize)
             drawBoardGrid(geometry, gameState.boardSize)
+            drawCandidateMoves(geometry, gameState, candidateMoves)
 
             for ((coordinate, stone) in gameState.stones) {
                 drawStone(geometry.pointFor(coordinate), geometry.spacing * 0.42f, stone)
@@ -78,6 +81,34 @@ internal fun GoBoard(
                 )
             }
         }
+    }
+}
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawCandidateMoves(
+    geometry: BoardGeometry,
+    gameState: GameState,
+    candidateMoves: List<CandidateMove>,
+) {
+    candidateMoves.forEachIndexed { index, candidate ->
+        val play = candidate.move as? Move.Play ?: return@forEachIndexed
+        if (!play.coordinate.isInside(gameState.boardSize) || gameState.stoneAt(play.coordinate) != null) {
+            return@forEachIndexed
+        }
+
+        val center = geometry.pointFor(play.coordinate)
+        val radius = geometry.spacing * if (index == 0) 0.24f else 0.18f
+        val fillAlpha = if (index == 0) 0.72f else 0.38f
+        drawCircle(
+            color = Color(0xFF2E7D32).copy(alpha = fillAlpha),
+            radius = radius,
+            center = center,
+        )
+        drawCircle(
+            color = Color(0xFF0B4F24).copy(alpha = 0.9f),
+            radius = radius,
+            center = center,
+            style = Stroke(width = if (index == 0) 4f else 2f),
+        )
     }
 }
 

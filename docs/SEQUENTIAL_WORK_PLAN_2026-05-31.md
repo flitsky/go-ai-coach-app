@@ -26,7 +26,7 @@
 | 0 | 완료 | 이 작업 계획 문서화 및 커밋 |
 | 1 | 완료 | `MainActivity` 비대화 해소, engine bootstrap/UI/board 컴포넌트 분리, shared 규칙 코드 분리 |
 | 2 | 완료 | undo API와 UI 추가, local 2P/AI 모드 undo 정책 정리 |
-| 3 | 예정 | analysis candidate를 착수 전 힌트로 보드에 표시, stub/KataGo process 한계 정리 |
+| 3 | 완료 | analysis candidate를 착수 전 힌트로 보드에 표시, stub/KataGo process 한계 정리 |
 | 4 | 예정 | AI difficulty/profile 설정값과 최저 설정 여부 문서화 |
 | 5 | 예정 | 최종 검증 및 요약 보고 |
 
@@ -72,6 +72,17 @@
 - 우선 `AnalysisResult.candidates`를 보드 overlay로 표시한다.
 - 현재 KataGo process adapter의 `analyze`는 미구현이므로, 1차는 stub analysis와 UI 표시를 연결한다.
 - KataGo 실제 후보수 표시에는 `kata-analyze` streaming parser가 필요하다.
+
+진행 결과:
+
+- `GoBoard`가 `candidateMoves`를 받아 비어 있는 교차점에 초록 spot overlay를 표시하도록 확장했다.
+- 첫 번째 후보수는 더 크고 진하게 표시해 best move로 구분한다.
+- `Analyze` 성공 시 `AnalysisResult.candidates`를 보드에 반영한다.
+- 사람이 착수하거나 AI 응수가 완료되거나 새 판/undo를 수행하면 stale 후보수를 지운다.
+- `docs/GREEN_SPOT_HINT_DECISION.md`에 KaTrain식 후보수 표시 방향과 현재 한계를 정리했다.
+- 현재 KataGo process adapter는 `kata-analyze` 미구현이므로, 실제 KataGo 후보수 spot은 후속 parser 작업이 필요하다.
+- 검증 명령: `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :shared:check :app-android:assembleDebug :app-android:testDebugUnitTest`
+- 검증 결과: 성공.
 
 ### 4단계 설정 문서
 
