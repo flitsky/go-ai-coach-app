@@ -101,3 +101,5 @@
 - 첫 후보수는 더 크고 진한 초록 spot으로 표시하며, 새 착수/AI 응수/새 판/undo 시 stale 후보수는 삭제한다.
 - `docs/GREEN_SPOT_HINT_DECISION.md`를 추가해 KaTrain식 후보수 표시 방향과 현재 KataGo process adapter의 `kata-analyze` 미구현 한계를 정리했다.
 - 3단계 검증 성공: `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :shared:check :app-android:assembleDebug :app-android:testDebugUnitTest`.
+- 4단계 AI 설정 문서화를 수행했다. 현재 앱 UI와 코드 기준 최저 설정은 `Beginner / 16 visits / 250ms`이며, KataGo process에는 `maxVisits=16`, `maxTime=0.25`, `numSearchThreads=1`로 전달된다.
+- `docs/AI_ENGINE_SETTINGS.md`를 추가하고 `README.md` 주요 문서 목록에 연결했다. 절대적인 KataGo 최저 성능은 아니므로, 첫 릴리즈 전 `VeryEasy` profile이나 별도 응수 선택 정책을 검토할 수 있다고 정리했다.

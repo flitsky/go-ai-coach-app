@@ -27,7 +27,7 @@
 | 1 | 완료 | `MainActivity` 비대화 해소, engine bootstrap/UI/board 컴포넌트 분리, shared 규칙 코드 분리 |
 | 2 | 완료 | undo API와 UI 추가, local 2P/AI 모드 undo 정책 정리 |
 | 3 | 완료 | analysis candidate를 착수 전 힌트로 보드에 표시, stub/KataGo process 한계 정리 |
-| 4 | 예정 | AI difficulty/profile 설정값과 최저 설정 여부 문서화 |
+| 4 | 완료 | AI difficulty/profile 설정값과 최저 설정 여부 문서화 |
 | 5 | 예정 | 최종 검증 및 요약 보고 |
 
 ## 세부 설계 메모
@@ -88,3 +88,11 @@
 
 - 현재 기본값은 `DifficultyProfile.Beginner`, visits 16, time 250ms다.
 - 이것이 현재 정의된 profile 중 가장 낮은 설정인지 확인하고, engine profile 조절 기준을 문서화한다.
+
+진행 결과:
+
+- `docs/AI_ENGINE_SETTINGS.md`를 추가했다.
+- 현재 앱에 정의되고 UI로 조정 가능한 설정 중 최저값은 `Beginner / 16 visits / 250ms`임을 명시했다.
+- 단, KataGo 자체의 절대 최저 성능 설정은 아니며 필요하면 `VeryEasy`나 응수 선택 정책을 추가해야 한다고 정리했다.
+- `KataGoProcessEngineAdapter`의 `maxVisits`, `maxTime`, `numSearchThreads=1` 매핑을 문서화했다.
+- `README.md`의 주요 문서 목록에 AI 설정 문서를 연결했다.

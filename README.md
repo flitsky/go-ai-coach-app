@@ -28,6 +28,7 @@ Next goal:
 - [PRD.md](./PRD.md): app product requirements and roadmap
 - [docs/STACK_DECISION.md](./docs/STACK_DECISION.md): KMP vs Flutter final opinion
 - [docs/ANDROID_KATAGO_SPIKE_RUNBOOK.md](./docs/ANDROID_KATAGO_SPIKE_RUNBOOK.md): Android KataGo build and emulator smoke-test notes
+- [docs/AI_ENGINE_SETTINGS.md](./docs/AI_ENGINE_SETTINGS.md): current AI difficulty and engine tuning settings
 
 ## Working Decision
 
