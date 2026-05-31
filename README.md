@@ -1,6 +1,6 @@
-# katago-app
+# go-ai-coach
 
-Android-first local AI baduk app project.
+Android-first local AI Go coaching app.
 
 This repository is separate from `/Users/ryan9kim/worksoc/katago`, which remains the local study workspace for KataGo + KaTrain.
 
@@ -26,4 +26,3 @@ Immediate goal:
 Use Kotlin Multiplatform first for the Android engine POC.
 
 Keep Flutter as the strongest candidate for the final cross-platform product if the product family expands beyond one Android-first engine app.
-

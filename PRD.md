@@ -1,10 +1,10 @@
-# KataGo App PRD
+# Go AI Coach PRD
 
 Last updated: 2026-05-31
 
 ## 1. Goal
 
-Build an Android-first baduk app that can run local AI analysis and eventually provide a KaTrain-like learning experience.
+Build an Android-first Go learning app that can run local AI analysis and eventually provide a KaTrain-like coaching experience.
 
 The first milestone is not a full app. It is a technical POC:
 
@@ -157,4 +157,3 @@ Phase 6: Optional server fallback.
 Recommended next task:
 
 Create the initial KMP Android project skeleton in this repository, with a stubbed `EngineAdapter` and a simple 9x9 board screen.
-
