@@ -70,6 +70,11 @@ import kotlin.math.roundToInt
 private val HumanPlayer = StoneColor.Black
 private val AiPlayer = StoneColor.White
 
+private enum class MatchMode(val label: String) {
+    HumanVsAi("AI 대국"),
+    LocalTwoPlayer("2P 테스트"),
+}
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -137,6 +142,7 @@ private fun GoCoachScreen(engineAdapter: EngineAdapter) {
     var isEngineBusy by remember { mutableStateOf(false) }
     var isEngineReady by remember { mutableStateOf(false) }
     var engineProfile by remember { mutableStateOf(EngineProfile()) }
+    var matchMode by remember { mutableStateOf(MatchMode.HumanVsAi) }
     val engineName = remember(engineAdapter) { engineAdapter.displayName() }
 
     LaunchedEffect(engineAdapter) {
@@ -153,9 +159,47 @@ private fun GoCoachScreen(engineAdapter: EngineAdapter) {
         }.onFailure { error ->
             isEngineReady = false
             engineMessage = "Engine initialization failed.\n${error.message ?: "Unknown error"}"
-            candidateText = "Check engine packaging or remove the local KataGo seed files to use stub mode."
+            candidateText = "2P test mode is still available. Check engine packaging or remove local KataGo seed files to use stub mode."
         }
         isEngineBusy = false
+    }
+
+    fun resetLocalGame(message: String) {
+        gameState = GameState.empty(BoardSize.Nine, Ruleset.Chinese)
+        candidateText = "No analysis yet."
+        lastMoveText = "None"
+        engineMessage = message
+    }
+
+    fun startAiGame() {
+        matchMode = MatchMode.HumanVsAi
+        if (!isEngineReady) {
+            resetLocalGame("AI mode selected, but engine is not ready.")
+            return
+        }
+        if (isEngineBusy) {
+            engineMessage = "AI is busy. Change mode after the current response."
+            return
+        }
+
+        scope.launch {
+            isEngineBusy = true
+            runCatching {
+                withContext(Dispatchers.IO) {
+                    engineAdapter.newGame(BoardSize.Nine, Ruleset.Chinese)
+                }
+            }.onSuccess { status ->
+                resetLocalGame(status.message)
+            }.onFailure { error ->
+                resetLocalGame(error.message ?: "New AI game failed.")
+            }
+            isEngineBusy = false
+        }
+    }
+
+    fun startLocalTwoPlayerGame() {
+        matchMode = MatchMode.LocalTwoPlayer
+        resetLocalGame("2P test mode. Local shared rules handle captures, suicide, and simple ko.")
     }
 
     fun configureEngine(nextProfile: EngineProfile) {
@@ -183,6 +227,22 @@ private fun GoCoachScreen(engineAdapter: EngineAdapter) {
     }
 
     fun submitHumanMove(move: Move) {
+        if (matchMode == MatchMode.LocalTwoPlayer) {
+            val beforeMove = gameState
+            val afterMove = runCatching { beforeMove.play(move) }
+                .onFailure { error ->
+                    engineMessage = error.message ?: "Illegal move."
+                }
+                .getOrNull()
+                ?: return
+
+            gameState = afterMove
+            lastMoveText = move.describe(beforeMove.boardSize)
+            candidateText = "Captured: Black ${afterMove.capturedBy(StoneColor.Black)} / White ${afterMove.capturedBy(StoneColor.White)}"
+            engineMessage = "Local move accepted: ${move.describe(beforeMove.boardSize)}."
+            return
+        }
+
         if (!isEngineReady) {
             engineMessage = "Engine is not ready."
             return
@@ -250,14 +310,23 @@ private fun GoCoachScreen(engineAdapter: EngineAdapter) {
         )
 
         Text(
-            text = "9x9 match: human Black vs $engineName White",
+            text = modeSummary(matchMode, engineName),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.secondary,
         )
 
+        ModePanel(
+            mode = matchMode,
+            engineName = engineName,
+            canStartAi = isEngineReady && !isEngineBusy,
+            canStartLocal = !isEngineBusy || !isEngineReady,
+            onAiMode = ::startAiGame,
+            onLocalTwoPlayerMode = ::startLocalTwoPlayerGame,
+        )
+
         EngineTuningPanel(
             profile = engineProfile,
-            enabled = isEngineReady && !isEngineBusy,
+            enabled = matchMode == MatchMode.HumanVsAi && isEngineReady && !isEngineBusy,
             onDifficultyChange = { difficulty ->
                 configureEngine(
                     engineProfile.copy(
@@ -277,12 +346,12 @@ private fun GoCoachScreen(engineAdapter: EngineAdapter) {
 
         GoBoard(
             gameState = gameState,
-            inputEnabled = isEngineReady && !isEngineBusy && gameState.nextPlayer == HumanPlayer,
+            inputEnabled = boardInputEnabled(matchMode, isEngineReady, isEngineBusy, gameState.nextPlayer),
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(1f),
             onCoordinateTap = { coordinate ->
-                submitHumanMove(Move.Play(HumanPlayer, coordinate))
+                submitHumanMove(Move.Play(activePlayer(matchMode, gameState), coordinate))
             },
         )
 
@@ -292,9 +361,9 @@ private fun GoCoachScreen(engineAdapter: EngineAdapter) {
         ) {
             Button(
                 onClick = {
-                    submitHumanMove(Move.Pass(HumanPlayer))
+                    submitHumanMove(Move.Pass(activePlayer(matchMode, gameState)))
                 },
-                enabled = isEngineReady && !isEngineBusy && gameState.nextPlayer == HumanPlayer,
+                enabled = boardInputEnabled(matchMode, isEngineReady, isEngineBusy, gameState.nextPlayer),
                 modifier = Modifier.weight(1f),
             ) {
                 Text("Pass")
@@ -317,7 +386,7 @@ private fun GoCoachScreen(engineAdapter: EngineAdapter) {
                         isEngineBusy = false
                     }
                 },
-                enabled = isEngineReady && !isEngineBusy,
+                enabled = matchMode == MatchMode.HumanVsAi && isEngineReady && !isEngineBusy,
                 modifier = Modifier.weight(1f),
             ) {
                 Text("Analyze")
@@ -325,24 +394,12 @@ private fun GoCoachScreen(engineAdapter: EngineAdapter) {
 
             OutlinedButton(
                 onClick = {
-                    scope.launch {
-                        isEngineBusy = true
-                        runCatching {
-                            withContext(Dispatchers.IO) {
-                                engineAdapter.newGame(BoardSize.Nine, Ruleset.Chinese)
-                            }
-                        }.onSuccess { status ->
-                            gameState = GameState.empty(BoardSize.Nine, Ruleset.Chinese)
-                            candidateText = "No analysis yet."
-                            lastMoveText = "None"
-                            engineMessage = status.message
-                        }.onFailure { error ->
-                            engineMessage = error.message ?: "New game failed."
-                        }
-                        isEngineBusy = false
+                    when (matchMode) {
+                        MatchMode.HumanVsAi -> startAiGame()
+                        MatchMode.LocalTwoPlayer -> startLocalTwoPlayerGame()
                     }
                 },
-                enabled = isEngineReady && !isEngineBusy,
+                enabled = matchMode == MatchMode.LocalTwoPlayer || (isEngineReady && !isEngineBusy),
                 modifier = Modifier.weight(1f),
             ) {
                 Text("New")
@@ -352,11 +409,65 @@ private fun GoCoachScreen(engineAdapter: EngineAdapter) {
         EngineResponsePanel(
             nextPlayer = gameState.nextPlayer,
             moveCount = gameState.moves.size,
+            capturedByBlack = gameState.capturedBy(StoneColor.Black),
+            capturedByWhite = gameState.capturedBy(StoneColor.White),
             lastMoveText = lastMoveText,
-            isEngineBusy = isEngineBusy,
+            isEngineBusy = matchMode == MatchMode.HumanVsAi && isEngineBusy,
+            mode = matchMode,
             engineMessage = engineMessage,
             candidateText = candidateText,
         )
+    }
+}
+
+@Composable
+private fun ModePanel(
+    mode: MatchMode,
+    engineName: String,
+    canStartAi: Boolean,
+    canStartLocal: Boolean,
+    onAiMode: () -> Unit,
+    onLocalTwoPlayerMode: () -> Unit,
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(8.dp),
+        tonalElevation = 1.dp,
+        shadowElevation = 0.dp,
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text("Mode", fontWeight = FontWeight.SemiBold)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Button(
+                    onClick = onAiMode,
+                    enabled = mode != MatchMode.HumanVsAi && canStartAi,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text("AI")
+                }
+                OutlinedButton(
+                    onClick = onLocalTwoPlayerMode,
+                    enabled = mode != MatchMode.LocalTwoPlayer && canStartLocal,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text("2P")
+                }
+            }
+            Text(
+                text = when (mode) {
+                    MatchMode.HumanVsAi -> "Black: human / White: $engineName"
+                    MatchMode.LocalTwoPlayer -> "Black and White are both local players"
+                },
+                color = MaterialTheme.colorScheme.secondary,
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
     }
 }
 
@@ -449,8 +560,11 @@ private fun EngineTuningPanel(
 private fun EngineResponsePanel(
     nextPlayer: StoneColor,
     moveCount: Int,
+    capturedByBlack: Int,
+    capturedByWhite: Int,
     lastMoveText: String,
     isEngineBusy: Boolean,
+    mode: MatchMode,
     engineMessage: String,
     candidateText: String,
 ) {
@@ -469,12 +583,18 @@ private fun EngineResponsePanel(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(turnStatus(nextPlayer, isEngineBusy), fontWeight = FontWeight.SemiBold)
+                Text(turnStatus(nextPlayer, isEngineBusy, mode), fontWeight = FontWeight.SemiBold)
                 Text("Moves: $moveCount", color = MaterialTheme.colorScheme.secondary)
             }
 
             Text(
                 text = "Last: $lastMoveText",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.secondary,
+            )
+
+            Text(
+                text = "Captured by Black: $capturedByBlack / White: $capturedByWhite",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.secondary,
             )
@@ -593,11 +713,45 @@ private fun EngineAdapter.displayName(): String =
         else -> "stub AI"
     }
 
-private fun turnStatus(nextPlayer: StoneColor, isEngineBusy: Boolean): String =
+private fun turnStatus(
+    nextPlayer: StoneColor,
+    isEngineBusy: Boolean,
+    mode: MatchMode,
+): String =
     when {
         isEngineBusy -> "AI thinking"
+        mode == MatchMode.LocalTwoPlayer -> "Local turn: ${nextPlayer.label}"
         nextPlayer == HumanPlayer -> "Your turn: ${HumanPlayer.label}"
         else -> "Waiting: ${nextPlayer.label}"
+    }
+
+private fun modeSummary(
+    mode: MatchMode,
+    engineName: String,
+): String =
+    when (mode) {
+        MatchMode.HumanVsAi -> "9x9 match: human Black vs $engineName White"
+        MatchMode.LocalTwoPlayer -> "9x9 local two-player rules test"
+    }
+
+private fun activePlayer(
+    mode: MatchMode,
+    gameState: GameState,
+): StoneColor =
+    when (mode) {
+        MatchMode.HumanVsAi -> HumanPlayer
+        MatchMode.LocalTwoPlayer -> gameState.nextPlayer
+    }
+
+private fun boardInputEnabled(
+    mode: MatchMode,
+    isEngineReady: Boolean,
+    isEngineBusy: Boolean,
+    nextPlayer: StoneColor,
+): Boolean =
+    when (mode) {
+        MatchMode.HumanVsAi -> isEngineReady && !isEngineBusy && nextPlayer == HumanPlayer
+        MatchMode.LocalTwoPlayer -> true
     }
 
 private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawBoardGrid(

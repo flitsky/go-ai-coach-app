@@ -78,3 +78,7 @@
 - repo 운영 결정에 맞춰 `Makefile`을 추가했다. `make doctor`, `make test`, `make dev`, `make dev-stub`, `make prebuild-engine`, `make release` 진입점을 제공한다.
 - `make dev`는 debug engine artifact가 없으면 `make prebuild-engine` 또는 `make dev-stub`를 안내하고, `make release`는 release engine artifact가 없으면 release artifact 준비를 안내하며 실패한다.
 - 검증 성공: `make doctor`, `make test`, `make dev`. `make release`는 현재 release artifact가 없어서 의도된 guard 메시지와 함께 실패했다.
+- 사용자가 사석 제거 테스트 보강 여부를 묻고, 현재 실행 중이던 앱에서 대국 중 사석 제거 관련 오류가 발생한다고 보고했다.
+- 앱에 `AI 대국` / `2P 테스트` 모드를 추가했다. `2P 테스트`에서는 엔진 없이 흑백을 번갈아 둘 수 있어 포획 상황을 직접 만들고 `shared` 규칙 projection을 화면에서 검증할 수 있다.
+- 화면 상태 영역에 잡은 돌 수를 표시하고, AI 응답 중 모드 전환으로 상태가 덮이는 race를 피하도록 조정했다.
+- 검증 성공: `:shared:check :app-android:assembleDebug :app-android:testDebugUnitTest`. 설치 검증은 연결된 디바이스가 없어 `No connected devices!`로 실패했고, `Pixel_7_API_35` 에뮬레이터 시작도 broken pipe 로그와 함께 실패했다.

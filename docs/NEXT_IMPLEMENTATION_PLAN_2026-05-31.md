@@ -99,3 +99,38 @@ make release
 ```
 
 `make doctor`, `make test`, `make dev`는 성공했다. `make release`는 release engine artifact가 없는 현재 상태에서 의도대로 안내 메시지를 출력하고 실패했다.
+
+## 3차 계획: 사석 제거 수동 검증 모드
+
+목표는 사용자가 앱 화면에서 일부러 포획 상황을 만들고 사석 제거 동작을 직접 확인할 수 있게 하는 것이다.
+
+| 단계 | 상태 | 내용 |
+| --- | --- | --- |
+| 1 | 완료 | 앱에 `AI 대국` / `2P 테스트` 모드 추가 |
+| 2 | 완료 | 2P 모드에서 엔진 준비 상태와 무관하게 흑백 번갈아 착수 가능하도록 변경 |
+| 3 | 완료 | 잡은 돌 수 표시 추가 |
+| 4 | 완료 | AI thinking 중 모드 전환 race 방지 |
+| 5 | 완료 | Gradle 빌드/테스트 확인 |
+| 6 | 차단 | 에뮬레이터 설치/실행 확인: 연결된 디바이스 없음, AVD 시작 실패 |
+
+## 3차 진행 메모
+
+- `2P 테스트` 모드는 `GameState.play()`만 사용하므로 엔진 상태와 무관하게 사석 제거, suicide, simple ko를 화면에서 확인할 수 있다.
+- `AI 대국` 모드는 기존처럼 사람 Black, 엔진 White 흐름을 유지한다.
+- Engine tuning과 Analyze는 AI 대국 모드에서만 활성화한다.
+- 화면 상태 영역에 `Captured by Black / White`를 표시한다.
+- 현재 실행 검증 중 `installDebug`는 연결된 디바이스가 없어 실패했다. `Pixel_7_API_35` 에뮬레이터 시작도 broken pipe 로그와 함께 실패해, 이 환경에서는 설치 확인을 완료하지 못했다.
+
+## 3차 검증 결과
+
+```sh
+JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :shared:check :app-android:assembleDebug :app-android:testDebugUnitTest
+```
+
+성공.
+
+```sh
+JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:installDebug
+```
+
+실패. 원인은 `No connected devices!`이며, 빌드 문제가 아니다.
