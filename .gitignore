@@ -1,0 +1,34 @@
+.DS_Store
+
+# Local build output
+build/
+.gradle/
+.kotlin/
+out/
+dist/
+
+# IDE
+.idea/
+*.iml
+
+# Android
+local.properties
+captures/
+*.apk
+*.aab
+
+# Native / engine artifacts
+*.so
+*.dylib
+*.dll
+*.a
+*.o
+*.bin
+*.bin.gz
+*.onnx
+
+# Logs and local data
+logs/
+tmp/
+*.log
+
