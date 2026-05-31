@@ -101,10 +101,20 @@ data class GameState(
     val nextPlayer: StoneColor,
     val stones: Map<BoardCoordinate, StoneColor>,
     val moves: List<Move>,
+    val capturedByBlack: Int = 0,
+    val capturedByWhite: Int = 0,
+    val koPoint: BoardCoordinate? = null,
+    val koForbiddenFor: StoneColor? = null,
 ) {
     fun stoneAt(coordinate: BoardCoordinate): StoneColor? = stones[coordinate]
 
     fun isBoardFull(): Boolean = stones.size >= boardSize.value * boardSize.value
+
+    fun capturedBy(player: StoneColor): Int =
+        when (player) {
+            StoneColor.Black -> capturedByBlack
+            StoneColor.White -> capturedByWhite
+        }
 
     fun play(move: Move): GameState =
         when (move) {
@@ -118,10 +128,37 @@ data class GameState(
                 require(stoneAt(move.coordinate) == null) {
                     "${move.coordinate.label(boardSize)} is already occupied"
                 }
+                require(move.coordinate != koPoint || move.player != koForbiddenFor) {
+                    "Illegal ko recapture at ${move.coordinate.label(boardSize)}"
+                }
+
+                var nextStones = stones + (move.coordinate to move.player)
+                val capturedStones = mutableSetOf<BoardCoordinate>()
+                for (neighbor in move.coordinate.neighbors(boardSize)) {
+                    if (nextStones[neighbor] == move.player.opponent) {
+                        val group = nextStones.groupAt(neighbor, boardSize)
+                        if (group.liberties.isEmpty()) {
+                            capturedStones += group.stones
+                        }
+                    }
+                }
+                nextStones = nextStones - capturedStones
+
+                val ownGroup = nextStones.groupAt(move.coordinate, boardSize)
+                require(ownGroup.liberties.isNotEmpty()) {
+                    "Suicide move is not allowed at ${move.coordinate.label(boardSize)}"
+                }
+
+                val nextKoPoint = nextKoPoint(capturedStones, ownGroup)
+
                 copy(
                     nextPlayer = nextPlayer.opponent,
-                    stones = stones + (move.coordinate to move.player),
+                    stones = nextStones,
                     moves = moves + move,
+                    capturedByBlack = capturedByBlack + if (move.player == StoneColor.Black) capturedStones.size else 0,
+                    capturedByWhite = capturedByWhite + if (move.player == StoneColor.White) capturedStones.size else 0,
+                    koPoint = nextKoPoint,
+                    koForbiddenFor = nextKoPoint?.let { move.player.opponent },
                 )
             }
 
@@ -129,14 +166,19 @@ data class GameState(
                 require(move.player == nextPlayer) {
                     "Expected ${nextPlayer.label}, got ${move.player.label}"
                 }
-                copy(nextPlayer = nextPlayer.opponent, moves = moves + move)
+                copy(
+                    nextPlayer = nextPlayer.opponent,
+                    moves = moves + move,
+                    koPoint = null,
+                    koForbiddenFor = null,
+                )
             }
 
             is Move.Resign -> {
                 require(move.player == nextPlayer) {
                     "Expected ${nextPlayer.label}, got ${move.player.label}"
                 }
-                copy(moves = moves + move)
+                copy(moves = moves + move, koPoint = null, koForbiddenFor = null)
             }
         }
 
@@ -162,3 +204,61 @@ fun Move.describe(boardSize: BoardSize): String =
         is Move.Pass -> "${player.label} pass"
         is Move.Resign -> "${player.label} resign"
     }
+
+private data class BoardGroup(
+    val stones: Set<BoardCoordinate>,
+    val liberties: Set<BoardCoordinate>,
+)
+
+private fun Map<BoardCoordinate, StoneColor>.groupAt(
+    start: BoardCoordinate,
+    boardSize: BoardSize,
+): BoardGroup {
+    val color = requireNotNull(this[start]) {
+        "Cannot collect a group from an empty point: ${start.label(boardSize)}"
+    }
+    val groupStones = mutableSetOf<BoardCoordinate>()
+    val liberties = mutableSetOf<BoardCoordinate>()
+    val pending = mutableListOf(start)
+    var index = 0
+
+    while (index < pending.size) {
+        val current = pending[index++]
+        if (!groupStones.add(current)) {
+            continue
+        }
+
+        for (neighbor in current.neighbors(boardSize)) {
+            when (this[neighbor]) {
+                null -> liberties += neighbor
+                color -> pending += neighbor
+                else -> Unit
+            }
+        }
+    }
+
+    return BoardGroup(stones = groupStones, liberties = liberties)
+}
+
+private fun BoardCoordinate.neighbors(boardSize: BoardSize): List<BoardCoordinate> =
+    buildList {
+        if (row > 0) {
+            add(copy(row = row - 1))
+        }
+        if (row < boardSize.value - 1) {
+            add(copy(row = row + 1))
+        }
+        if (column > 0) {
+            add(copy(column = column - 1))
+        }
+        if (column < boardSize.value - 1) {
+            add(copy(column = column + 1))
+        }
+    }
+
+private fun nextKoPoint(
+    capturedStones: Set<BoardCoordinate>,
+    ownGroup: BoardGroup,
+): BoardCoordinate? =
+    capturedStones.singleOrNull()
+        ?.takeIf { ownGroup.stones.size == 1 && ownGroup.liberties.size == 1 }

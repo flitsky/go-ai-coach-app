@@ -1,0 +1,75 @@
+# 다음 구현 세부 플랜
+
+작성일: 2026-05-31
+
+## 목표
+
+Android 앱에서 9x9 바둑 대국이 실제 바둑 규칙에 맞게 진행되도록 `shared` 도메인 규칙 projection을 먼저 안정화한다.
+
+이번 작업의 핵심은 엔진 구현이 아니라 앱의 canonical game state다. KataGo는 AI 응수와 분석을 담당하고, 사석 제거/자살수/패 같은 보드 상태 계산은 `shared`가 담당한다.
+
+## 진행 상태
+
+| 단계 | 상태 | 내용 |
+| --- | --- | --- |
+| 1 | 완료 | 기존 `GameState.play()`와 테스트 범위 확인 |
+| 2 | 완료 | `shared`에 liberties/group/capture/suicide/simple ko 구현 |
+| 3 | 완료 | capture, multi-capture, suicide, ko unit test 추가 |
+| 4 | 완료 | Android debug build로 UI 컴파일 영향 확인 |
+| 5 | 완료 | 문서와 히스토리에 구현 결과/제약 반영 |
+| 6 | 완료 | Gradle 검증 후 커밋/푸시 |
+
+## 구현 원칙
+
+- `app-android`는 바둑 규칙을 직접 계산하지 않는다.
+- `engine-android`는 AI/엔진 통신만 담당한다.
+- `shared`의 `GameState`가 move history와 board projection의 기준이다.
+- KaTrain은 설계 참고만 하고 코드는 직접 복사하지 않는다.
+- 처음부터 완전한 모든 룰을 만들기보다 앱 대국에 필요한 최소 규칙을 테스트로 고정한다.
+
+## 1차 규칙 범위
+
+- 상대 그룹 liberty가 0이면 capture
+- 여러 돌 그룹 capture 지원
+- suicide 금지
+- capture로 인해 liberty가 생기는 착수는 suicide로 보지 않음
+- immediate recapture를 막는 simple ko
+- captured count 기록
+
+## 후속 후보
+
+- ruleset별 suicide/ko 정책 분리
+- SGF import/export와 move replay
+- debug build에서 KataGo `showboard`와 local projection 샘플 비교
+- `GameState.play()` 결과에 captured coordinates를 포함하는 `MoveApplication` DTO 추가
+
+## 진행 메모
+
+- `GameState.play()`가 착수 후 상대 인접 그룹의 liberties를 계산하고, liberty가 없는 그룹을 `stones`에서 제거하도록 변경했다.
+- suicide move는 금지한다. 단 capture로 liberty가 생기는 착수는 합법으로 처리한다.
+- immediate recapture를 막는 simple ko 상태를 `koPoint`, `koForbiddenFor`로 저장한다.
+- 잡은 돌 수는 `capturedByBlack`, `capturedByWhite`로 기록한다.
+- Android UI는 `GameState.stones`를 직접 그리므로, capture 후 제거된 돌은 별도 UI 로직 없이 board에 반영된다.
+- 현재 사람-vs-AI 흐름에서는 특정 capture 수순을 화면에서 재현하기 어렵기 때문에, 1차 검증은 shared unit test와 Android compile check를 기준으로 했다.
+
+## 검증 결과
+
+```sh
+JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :shared:testDebugUnitTest
+```
+
+성공.
+
+```sh
+JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:assembleDebug :app-android:testDebugUnitTest
+```
+
+성공.
+
+최종 clean 검증:
+
+```sh
+JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew clean :shared:check :app-android:assembleDebug :app-android:testDebugUnitTest
+```
+
+성공. 증분 컴파일 캐시 경고 없이 clean build가 통과했다.

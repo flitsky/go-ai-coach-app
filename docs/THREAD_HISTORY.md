@@ -70,3 +70,8 @@
 - `docs/ENGINE_BOUNDARY_DECISION.md`를 추가하고 `docs/ANDROID_KATAGO_SPIKE_RUNBOOK.md`에 spike 빌드 절차가 제품 앱 개발 루프가 아니라 검증 재현용임을 명시했다.
 - 사용자가 첫 마켓 릴리즈 이후 repo 운영 관점에서 새 환경 셋업/인수인계, `make prebuild`, `make dev/release` guard, 도메인 분리와 과도한 모듈화 방지, 추상화 레이어/주입 구조를 논의하자고 했다.
 - Android/Gradle 공식 가이드를 확인했고, `docs/REPOSITORY_OPERATIONS_DECISION.md`에 artifact-first + pinned prebuild fallback, domain split trigger, periodic module consolidation 기준을 의사결정 초안으로 정리했다.
+- 사용자가 현재 문서 변경 커밋/푸시 후 다음 작업 세부 플랜을 파일에 명문화하고 단계별로 착수해달라고 요청했다.
+- `docs/NEXT_IMPLEMENTATION_PLAN_2026-05-31.md`를 추가하고, 다음 작업을 `shared` 바둑 규칙 projection 구현으로 정했다.
+- `GameState.play()`에 그룹/liberty 기반 capture, suicide 금지, simple ko, captured count를 구현했다.
+- `GameStateTest`에 단일 사석 제거, 여러 돌 그룹 제거, suicide rejection, capture-as-non-suicide, immediate ko recapture rejection 테스트를 추가했다.
+- 검증 성공: `:shared:testDebugUnitTest`, `:app-android:assembleDebug :app-android:testDebugUnitTest`, clean 상태의 `:shared:check :app-android:assembleDebug :app-android:testDebugUnitTest`.
