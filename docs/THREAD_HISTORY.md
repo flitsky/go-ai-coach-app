@@ -90,3 +90,6 @@
 - 검증 성공: `:shared:check :app-android:assembleDebug :app-android:testDebugUnitTest`, `make reinstall-dev-engine`. 화면에서 `KataGo assets found. Using local process engine.` 진단 문구를 확인했다.
 - 사용자가 도메인/관심사/인터페이스 리팩토링, 한수 무르기, KaTrain식 최적수/그린스팟 표시, AI 설정 문서화를 순차적으로 수행하고 단계별 커밋/푸시 및 최종 요약을 요청했다.
 - `docs/SEQUENTIAL_WORK_PLAN_2026-05-31.md`를 추가해 단계별 작업 계획과 설계 메모를 기록했다.
+- 1단계 리팩토링을 수행했다. `MainActivity`를 Compose 진입점으로 축소하고, engine bootstrap, 대국 정책, UI 패널, 보드 렌더링, analysis 포맷을 각각 별도 파일/패키지로 분리했다.
+- `shared`의 `GameState.play()` 내부 규칙 구현을 `BoardRules`로 분리해 도메인 모델과 규칙 실행 책임을 나눴다.
+- 1단계 검증 성공: `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :shared:check :app-android:assembleDebug :app-android:testDebugUnitTest`.

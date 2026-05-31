@@ -24,7 +24,7 @@
 | 단계 | 상태 | 목표 |
 | --- | --- | --- |
 | 0 | 완료 | 이 작업 계획 문서화 및 커밋 |
-| 1 | 예정 | `MainActivity` 비대화 해소, engine bootstrap/UI/board 컴포넌트 분리, shared 규칙 코드 분리 |
+| 1 | 완료 | `MainActivity` 비대화 해소, engine bootstrap/UI/board 컴포넌트 분리, shared 규칙 코드 분리 |
 | 2 | 예정 | undo API와 UI 추가, local 2P/AI 모드 undo 정책 정리 |
 | 3 | 예정 | analysis candidate를 착수 전 힌트로 보드에 표시, stub/KataGo process 한계 정리 |
 | 4 | 예정 | AI difficulty/profile 설정값과 최저 설정 여부 문서화 |
@@ -38,6 +38,16 @@
 - `EngineBootstrap`은 `engine-android` 구현 선택과 diagnostic 생성을 담당한다.
 - 화면 컴포넌트는 `app-android/ui` 하위로 나눈다.
 - `shared`의 `BoardModels.kt`에서 private rules helpers를 분리해 `BoardRules.kt`로 이동한다.
+
+진행 결과:
+
+- `MainActivity`는 `createEngineBootstrap()` 호출과 `GoCoachApp()` 진입점만 유지하도록 축소했다.
+- 실제 KataGo/Stub 선택과 diagnostic 문구 생성은 `app-android/engine/EngineBootstrap.kt`로 이동했다.
+- 대국 정책(`HumanPlayer`, `AiPlayer`, 모드별 입력 가능 여부, AI 응수 적용)은 `app-android/match/MatchPolicy.kt`로 분리했다.
+- Compose 화면, 보드 렌더링, 엔진 패널, analysis 텍스트 포맷을 `app-android/ui` 하위로 분리했다.
+- `shared`의 바둑 규칙 projection은 `BoardRules`로 분리해 도메인 모델과 규칙 실행 책임을 나눴다.
+- 검증 명령: `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :shared:check :app-android:assembleDebug :app-android:testDebugUnitTest`
+- 검증 결과: 성공.
 
 ### 2단계 undo
 
