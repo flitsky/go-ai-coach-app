@@ -111,7 +111,7 @@ make release
 | 3 | 완료 | 잡은 돌 수 표시 추가 |
 | 4 | 완료 | AI thinking 중 모드 전환 race 방지 |
 | 5 | 완료 | Gradle 빌드/테스트 확인 |
-| 6 | 차단 | 에뮬레이터 설치/실행 확인: 연결된 디바이스 없음, AVD 시작 실패 |
+| 6 | 완료 | 에뮬레이터 설치/실행 확인 |
 
 ## 3차 진행 메모
 
@@ -119,7 +119,9 @@ make release
 - `AI 대국` 모드는 기존처럼 사람 Black, 엔진 White 흐름을 유지한다.
 - Engine tuning과 Analyze는 AI 대국 모드에서만 활성화한다.
 - 화면 상태 영역에 `Captured by Black / White`를 표시한다.
-- 현재 실행 검증 중 `installDebug`는 연결된 디바이스가 없어 실패했다. `Pixel_7_API_35` 에뮬레이터 시작도 broken pipe 로그와 함께 실패해, 이 환경에서는 설치 확인을 완료하지 못했다.
+- 첫 설치 시도는 연결된 디바이스가 없어 실패했다.
+- `Pixel_7_API_35`를 verbose/headless 옵션으로 실행하니 정상 부팅했다.
+- 이후 기존 앱을 제거해 `/data` 여유 공간을 확보했고, 최신 APK 설치와 앱 실행을 확인했다.
 
 ## 3차 검증 결과
 
@@ -134,3 +136,14 @@ JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/A
 ```
 
 실패. 원인은 `No connected devices!`이며, 빌드 문제가 아니다.
+
+후속 재시도:
+
+```sh
+/Users/ryan9kim/Library/Android/sdk/emulator/emulator -avd Pixel_7_API_35 -verbose -no-window -no-audio -gpu swiftshader_indirect -no-snapshot-load -log-nofilter
+/Users/ryan9kim/Library/Android/sdk/platform-tools/adb uninstall com.worksoc.goaicoach
+/Users/ryan9kim/Library/Android/sdk/platform-tools/adb install -r app-android/build/outputs/apk/debug/app-android-debug.apk
+/Users/ryan9kim/Library/Android/sdk/platform-tools/adb shell am start -W -n com.worksoc.goaicoach/.MainActivity
+```
+
+성공. 첫 설치 재시도는 `/data` 여유 공간 부족으로 실패했으나, 기존 앱 제거 후 설치/실행이 완료됐다.
