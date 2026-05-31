@@ -115,3 +115,7 @@
 - 검증 성공: `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :shared:check :engine-android:testDebugUnitTest :app-android:assembleDebug :app-android:testDebugUnitTest`.
 - 앱 설치 검증 성공: `make reinstall-dev-engine`.
 - 에뮬레이터에서 `Hint`를 탭한 뒤 보드 중앙에 초록 spot이 표시되고, 응답 영역에 `KataGo analysis complete for Black: 1 candidate(s)`와 `Black E5` 후보수가 표시되는 것을 확인했다.
+- 사용자가 Android 실기기에 직접 설치해보고 싶다고 요청했다.
+- `adb devices -l`로 실기기 `SM_S908N`이 USB 디버깅 상태로 연결된 것을 확인했다.
+- `make install-dev-engine`를 실행해 debug APK를 실기기에 설치하고, KataGo model/config를 app files에 seed한 뒤 앱을 cold launch했다.
+- 실기기 UI dump에서 `Go AI Coach POC`, `human Black vs KataGo White`, `KataGo assets found. Using local process engine.`, `Beginner`, `Visits 16` 표시를 확인했다.
