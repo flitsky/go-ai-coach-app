@@ -126,3 +126,8 @@
 - 후보수 개수 UI는 1-5 범위로 제한했다. 실제 표시 개수는 요청한 N과 KataGo 응답 후보수 중 더 작은 값이다.
 - 검증 성공: `make test`.
 - 실기기 재설치를 시도했으나 작업 중 USB 디버깅 디바이스가 연결 해제되어 `installDebug` 단계에서 `No connected devices!`가 발생했다. 재연결 후 `make install-dev-engine`로 재검증하면 된다.
+- 사용자가 실기기를 다시 연결한 뒤 폰 설치 재시도를 요청했다.
+- `adb devices -l`에서 실기기 `SM_S908N` / `R5CT22WTVXP`가 USB 디버깅 상태로 연결된 것을 확인했다.
+- `make install-dev-engine`를 실행해 debug APK 설치, KataGo model/config seed, 앱 cold launch를 모두 성공시켰다.
+- 실기기 UI dump에서 `Go AI Coach POC`, `KataGo assets found. Using local process engine.`, `Beginner`, `Visits 16`, `Hints`, `N 1` 표시를 확인했다.
+- 결론: 현재 실기기에서는 앱 설치와 엔진 asset seed가 완료되어 로컬 KataGo process engine 모드로 실행 중이며, 자동 힌트 토글과 후보수 개수 조절 UI가 노출되어 있다.
