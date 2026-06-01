@@ -168,3 +168,5 @@
 - `Copy Log` 버튼을 추가해 현재 `GameState`, 보드 텍스트 덤프, 전체 수순, 포획 수, 양패스/보드풀 여부, 엔진 프로필, 표시 중인 score/engine/candidate 텍스트, 마지막 endgame log, 클릭 시점의 로컬 `BoardAreaScorer` 결과를 클립보드에 복사하도록 구현했다.
 - 사용자가 에뮬레이터에서 확인할 수 있도록 앱 실행을 요청했다. `emulator-5554`가 이미 실행 중인 것을 확인했고, 최초 `make install-dev-engine`은 에뮬레이터 내부 저장공간 부족으로 실패했다. 기존 `com.worksoc.goaicoach` 앱을 제거한 뒤 `make reinstall-dev-engine`으로 APK 설치, KataGo 모델/config seed, 앱 launch를 완료했다.
 - 실행 확인 스크린샷에서 앱이 `Go AI Coach POC` 화면으로 올라왔고 `KataGo assets found. Using local process engine.` 메시지가 표시되어 로컬 KataGo 엔진 경로로 초기화된 것을 확인했다.
+- 사용자가 `Copy Log`로 수집한 종료 로그를 공유했고, 직접 화면 기반으로는 흑 13.5집 승처럼 보이는데 앱/KataGo는 `B+9.5`로 표시된 이유를 질문했다.
+- 로그의 보드를 재계산한 결과 현재 앱의 중국식 area scoring 기준은 흑 돌 31 + 흑 영역 17 = 48, 백 돌 23 + 백 영역 9 + 덤 6.5 = 38.5로 `B+9.5`가 맞다. 사용자의 계산은 집 + 사석을 더하는 일본식 territory scoring에 가까워 현재 `ruleset=Chinese` 및 KataGo `final_score` 기준과 다르다.
