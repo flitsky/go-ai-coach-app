@@ -86,6 +86,7 @@ private fun GoCoachScreen(
     var engineMessage by remember { mutableStateOf("Engine not initialized.") }
     var candidateText by remember { mutableStateOf(engineDiagnostic) }
     var candidateMoves by remember { mutableStateOf(emptyList<CandidateMove>()) }
+    var reviewCandidateMoves by remember { mutableStateOf(emptyList<CandidateMove>()) }
     var scoreText by remember { mutableStateOf("No score estimate yet.") }
     var moveReviewText by remember { mutableStateOf("No move review yet.") }
     var moveReviews by remember { mutableStateOf(emptyList<MoveReviewMarker>()) }
@@ -96,7 +97,7 @@ private fun GoCoachScreen(
     var matchMode by remember { mutableStateOf(MatchMode.HumanVsAi) }
     var hintEnabled by remember { mutableStateOf(false) }
     var hintCount by remember { mutableStateOf(1) }
-    var lastHintKey by remember { mutableStateOf<String?>(null) }
+    var lastAnalysisKey by remember { mutableStateOf<String?>(null) }
     var isGameEnded by remember { mutableStateOf(false) }
 
     LaunchedEffect(engineAdapter) {
@@ -118,7 +119,7 @@ private fun GoCoachScreen(
         isEngineBusy = false
     }
 
-    fun hintKeyFor(
+    fun analysisKeyFor(
         state: GameState,
         count: Int,
     ): String =
@@ -139,14 +140,14 @@ private fun GoCoachScreen(
 
     fun clearHints(message: String? = null) {
         candidateMoves = emptyList()
-        lastHintKey = null
         if (message != null) {
             candidateText = message
         }
     }
 
-    fun requestHintsForState(
+    fun requestPreMoveAnalysisForState(
         targetState: GameState,
+        showHints: Boolean,
         automatic: Boolean,
     ) {
         if (
@@ -159,40 +160,59 @@ private fun GoCoachScreen(
             return
         }
 
-        val hintKey = hintKeyFor(targetState, hintCount)
-        if (automatic && hintKey == lastHintKey) {
+        val candidateCount = maxOf(BackgroundReviewCandidateCount, if (showHints) hintCount else 0)
+        val analysisKey = analysisKeyFor(targetState, candidateCount)
+        if (automatic && analysisKey == lastAnalysisKey) {
+            if (showHints && candidateMoves.isEmpty() && reviewCandidateMoves.isNotEmpty()) {
+                candidateMoves = reviewCandidateMoves.take(hintCount)
+            }
             return
         }
 
-        lastHintKey = hintKey
+        lastAnalysisKey = analysisKey
         scope.launch {
             isEngineBusy = true
             runCatching {
                 withContext(Dispatchers.IO) {
                     engineAdapter.analyze(
-                        engineProfile.analysisLimit.copy(candidateCount = hintCount),
+                        engineProfile.analysisLimit.copy(candidateCount = candidateCount),
                     )
                 }
             }.onSuccess { result ->
-                engineMessage = result.status.message
-                candidateText = result.toCandidateText(targetState.boardSize)
-                candidateMoves = result.candidates.take(hintCount)
+                reviewCandidateMoves = result.candidates.take(candidateCount)
+                if (showHints) {
+                    engineMessage = result.status.message
+                    candidateText = result.toCandidateText(targetState.boardSize)
+                    candidateMoves = result.candidates.take(hintCount)
+                } else {
+                    engineMessage = "Move review analysis ready for ${targetState.nextPlayer.label}."
+                }
             }.onFailure { error ->
                 engineMessage = error.message ?: "Hint analysis failed."
-                clearHints("Hint analysis failed.")
+                reviewCandidateMoves = emptyList()
+                lastAnalysisKey = null
+                if (showHints) {
+                    clearHints("Hint analysis failed.")
+                }
             }
             isEngineBusy = false
         }
     }
 
     fun requestHintsForCurrentState(automatic: Boolean) {
-        requestHintsForState(gameState, automatic)
+        requestPreMoveAnalysisForState(
+            targetState = gameState,
+            showHints = true,
+            automatic = automatic,
+        )
     }
 
     fun resetLocalGame(message: String) {
         gameState = GameState.empty(BoardSize.Nine, Ruleset.Chinese)
         isGameEnded = false
         clearHints("No analysis yet.")
+        reviewCandidateMoves = emptyList()
+        lastAnalysisKey = null
         scoreText = "No score estimate yet."
         moveReviewText = "No move review yet."
         moveReviews = emptyList()
@@ -259,9 +279,11 @@ private fun GoCoachScreen(
                 resetLocalGame(error.message ?: "New AI game failed.")
             }
             isEngineBusy = false
-            if (hintEnabled) {
-                requestHintsForState(nextHintState ?: gameState, automatic = true)
-            }
+            requestPreMoveAnalysisForState(
+                targetState = nextHintState ?: gameState,
+                showHints = hintEnabled,
+                automatic = true,
+            )
         }
     }
 
@@ -281,6 +303,8 @@ private fun GoCoachScreen(
         }
 
         engineProfile = nextProfile
+        reviewCandidateMoves = emptyList()
+        lastAnalysisKey = null
         scope.launch {
             isEngineBusy = true
             runCatching {
@@ -291,6 +315,11 @@ private fun GoCoachScreen(
                 engineMessage = error.message ?: "Engine configuration failed."
             }
             isEngineBusy = false
+            requestPreMoveAnalysisForState(
+                targetState = gameState,
+                showHints = hintEnabled,
+                automatic = true,
+            )
         }
     }
 
@@ -337,6 +366,8 @@ private fun GoCoachScreen(
         }
 
         val beforeMove = gameState
+        val previousReviewCandidates = reviewCandidateMoves
+        val previousAnalysisKey = lastAnalysisKey
         val afterHuman = runCatching { beforeMove.play(move) }
             .onFailure { error ->
                 engineMessage = error.message ?: "Illegal move."
@@ -348,12 +379,14 @@ private fun GoCoachScreen(
         val previousMoveReviews = moveReviews
         val moveReview = buildMoveReview(
             move = move,
-            candidates = candidateMoves,
+            candidates = reviewCandidateMoves,
             boardSize = beforeMove.boardSize,
             moveNumber = afterHuman.moves.size,
         )
         moveReviewText = moveReview.text
         moveReviews = previousMoveReviews.withReviewMarker(moveReview.marker)
+        reviewCandidateMoves = emptyList()
+        lastAnalysisKey = null
         clearHints()
         scoreText = "Score estimate not current."
         lastMoveText = move.describe(beforeMove.boardSize)
@@ -394,14 +427,20 @@ private fun GoCoachScreen(
             }.onFailure { error ->
                 gameState = beforeMove
                 moveReviews = previousMoveReviews
+                reviewCandidateMoves = previousReviewCandidates
+                lastAnalysisKey = previousAnalysisKey
                 moveReviewText = "Move review cleared after rollback."
                 engineMessage = error.message ?: "Move failed."
                 candidateText = "Move was rolled back after engine failure."
                 lastMoveText = "None"
             }
             isEngineBusy = false
-            if (hintEnabled) {
-                nextHintState?.let { requestHintsForState(it, automatic = true) }
+            nextHintState?.let { state ->
+                requestPreMoveAnalysisForState(
+                    targetState = state,
+                    showHints = hintEnabled,
+                    automatic = true,
+                )
             }
         }
     }
@@ -461,10 +500,30 @@ private fun GoCoachScreen(
                 engineMessage = error.message ?: "Undo failed."
             }
             isEngineBusy = false
-            if (hintEnabled) {
-                nextHintState?.let { requestHintsForState(it, automatic = true) }
+            nextHintState?.let { state ->
+                requestPreMoveAnalysisForState(
+                    targetState = state,
+                    showHints = hintEnabled,
+                    automatic = true,
+                )
             }
         }
+    }
+
+    LaunchedEffect(
+        isEngineReady,
+        matchMode,
+        isGameEnded,
+        gameState.nextPlayer,
+        gameState.moves.size,
+        hintEnabled,
+        hintCount,
+    ) {
+        requestPreMoveAnalysisForState(
+            targetState = gameState,
+            showHints = hintEnabled,
+            automatic = true,
+        )
     }
 
     Column(
@@ -525,7 +584,7 @@ private fun GoCoachScreen(
             onHintEnabledChange = { enabled ->
                 hintEnabled = enabled
                 if (enabled) {
-                    requestHintsForCurrentState(automatic = true)
+                    requestHintsForCurrentState(automatic = false)
                 } else {
                     clearHints("Hints disabled.")
                 }
@@ -534,7 +593,7 @@ private fun GoCoachScreen(
                 hintCount = count
                 clearHints("Hint count set to $count.")
                 if (hintEnabled) {
-                    requestHintsForCurrentState(automatic = true)
+                    requestHintsForCurrentState(automatic = false)
                 }
             },
         )
@@ -716,3 +775,5 @@ private fun Double.toSignedOneDecimal(): String {
 
 private fun Double.formatOneDecimal(): String =
     ((this * 10).roundToInt() / 10.0).toString()
+
+private const val BackgroundReviewCandidateCount = 12

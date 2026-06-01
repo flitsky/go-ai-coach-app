@@ -161,3 +161,6 @@
 - 사용자가 KaTrain의 바둑알 질감을 참고해 바둑알이 3D처럼 보이도록 요청했다. 로컬 KaTrain의 `B_stone.png`, `W_stone.png`를 확인하고, 앱 Canvas 바둑알을 중앙은 밝고 외곽은 어두운 radial gradient와 얇은 rim/shadow로 렌더링하도록 변경했다.
 - 사용자가 점수 숫자를 제거하면서 착수 후 색상 dot도 사라진 것 같다고 보고했다. 단일 `lastMoveReview` 대신 `moveReviews` 목록을 유지하도록 바꾸고, 각 marker에 `moveNumber`를 넣어 착수 당시 평가 dot이 해당 돌 위에 계속 남도록 했다.
 - `GoBoard`는 현재 board history에서 해당 좌표의 최신 착수 번호가 marker의 `moveNumber`와 일치할 때만 dot을 그린다. 이로써 잡힌 돌, undo된 돌, 같은 좌표 재착수에 오래된 marker가 잘못 표시되는 문제를 피한다.
+- 사용자가 `Hints`가 켜져 있을 때만 평가 색상 원이 남는다고 확인했고, 착수평가를 위해 백그라운드 분석이 항상 필요하다고 지적했다.
+- `Hints` 토글을 표시 전용으로 바꾸고, AI 대국에서 사람 차례가 되면 `Hints` 표시 여부와 관계없이 `BackgroundReviewCandidateCount=12` 후보를 백그라운드 분석해 `reviewCandidateMoves`에 저장하도록 변경했다. 착수 후 평가는 이제 화면 표시용 `candidateMoves`가 아니라 백그라운드 cache인 `reviewCandidateMoves`를 사용한다.
+- 엔진 설정 변경 시 기존 분석 cache를 비우고 새 설정 적용 후 현재 사람 차례에 대한 백그라운드 분석을 다시 요청하도록 보강했다.
