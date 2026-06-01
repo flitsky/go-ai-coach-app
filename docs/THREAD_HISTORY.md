@@ -166,3 +166,5 @@
 - 엔진 설정 변경 시 기존 분석 cache를 비우고 새 설정 적용 후 현재 사람 차례에 대한 백그라운드 분석을 다시 요청하도록 보강했다.
 - 사용자가 양 진영 연속 pass 후 최종 계가가 가끔 이상하게 백 승리로 나오는 경우가 있다고 보고했고, 종료 오류 분석을 위해 버튼 클릭 한 번으로 보드판 정보와 종료 처리 로그를 수집할 수 있게 요청했다.
 - `Copy Log` 버튼을 추가해 현재 `GameState`, 보드 텍스트 덤프, 전체 수순, 포획 수, 양패스/보드풀 여부, 엔진 프로필, 표시 중인 score/engine/candidate 텍스트, 마지막 endgame log, 클릭 시점의 로컬 `BoardAreaScorer` 결과를 클립보드에 복사하도록 구현했다.
+- 사용자가 에뮬레이터에서 확인할 수 있도록 앱 실행을 요청했다. `emulator-5554`가 이미 실행 중인 것을 확인했고, 최초 `make install-dev-engine`은 에뮬레이터 내부 저장공간 부족으로 실패했다. 기존 `com.worksoc.goaicoach` 앱을 제거한 뒤 `make reinstall-dev-engine`으로 APK 설치, KataGo 모델/config seed, 앱 launch를 완료했다.
+- 실행 확인 스크린샷에서 앱이 `Go AI Coach POC` 화면으로 올라왔고 `KataGo assets found. Using local process engine.` 메시지가 표시되어 로컬 KataGo 엔진 경로로 초기화된 것을 확인했다.
