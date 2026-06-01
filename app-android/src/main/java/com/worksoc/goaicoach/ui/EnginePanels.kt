@@ -238,6 +238,7 @@ internal fun EngineResponsePanel(
     mode: MatchMode,
     engineMessage: String,
     candidateText: String,
+    scoreText: String,
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -273,6 +274,13 @@ internal fun EngineResponsePanel(
             Text(
                 text = engineMessage,
                 style = MaterialTheme.typography.bodyMedium,
+                fontFamily = FontFamily.Monospace,
+            )
+
+            Text(
+                text = scoreText,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.secondary,
                 fontFamily = FontFamily.Monospace,
             )
 

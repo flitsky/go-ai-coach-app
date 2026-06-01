@@ -100,4 +100,39 @@ class KataGoAnalysisParserTest {
         assertEquals("F5", (candidates[1].move as Move.Play).coordinate.label(BoardSize.Nine))
         assertEquals(0.20, candidates[1].policyPrior)
     }
+
+    @Test
+    fun parsesRawScoreEstimate() {
+        val response = """
+            whiteWin 0.62
+            whiteLead 3.5
+            whiteOwnership
+            -0.20 -0.20 -0.20 -0.20 -0.20 -0.20 -0.20 -0.20 -0.20
+            -0.05 -0.05 -0.05 -0.05 -0.05 -0.05 -0.05 -0.05 -0.05
+            0.25 0.25 0.25 0.25 0.25 0.25 0.25 0.25 0.25
+            0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00
+            0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00
+            0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00
+            0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00
+            0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00
+            0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00
+        """.trimIndent()
+
+        val estimate = KataGoAnalysisParser.parseScoreEstimate(response, BoardSize.Nine)
+
+        assertEquals(0.62, estimate.whiteWinRate)
+        assertEquals(3.5, estimate.whiteScoreLead)
+        assertEquals(9, estimate.ownership?.blackLikelyPoints)
+        assertEquals(9, estimate.ownership?.whiteLikelyPoints)
+        assertEquals(63, estimate.ownership?.neutralOrUnclearPoints)
+    }
+
+    @Test
+    fun parsesFinalScore() {
+        val finalScore = KataGoAnalysisParser.parseFinalScore("W+6.5")
+
+        assertEquals(StoneColor.White, finalScore.winner)
+        assertEquals(6.5, finalScore.margin)
+        assertEquals("W+6.5", finalScore.rawScore)
+    }
 }

@@ -138,3 +138,14 @@
 - 후보수 텍스트에는 검색 후보의 visits/winrate/score와 policy fallback 후보의 prior가 구분되어 표시된다.
 - 검증 성공: `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :shared:check :engine-android:testDebugUnitTest :app-android:assembleDebug :app-android:testDebugUnitTest`.
 - 실기기 재설치를 시도하기 전에 `adb devices -l`을 확인했지만 현재 연결된 디바이스가 없어 폰 반영은 수행하지 못했다.
+- 사용자가 진행 중 집/우세 지표를 얻을 수 있는지와 양쪽 모두 pass 시 계가 모드가 있는지 검토하고 기능 동작을 요청했다.
+- KataGo GTP에서 `kata-raw-nn 0`이 `whiteWin`, `whiteLead`, `whiteOwnership`을 제공하고, `final_score`가 `B+74.5` 같은 최종 계가 문자열을 반환함을 확인했다.
+- `final_status_list`는 KataGo 1.16.4 GTP 기준 `alive`, `seki`, `dead` 인자만 허용되어 territory list 직접 조회 용도로는 쓰지 않기로 했다.
+- `EngineAdapter`에 `estimateScore()`와 `scoreFinal()`을 추가하고, 공통 DTO `ScoreEstimate`, `OwnershipEstimate`, `FinalScoreResult`를 정의했다.
+- Android UI에는 `Eval` 버튼을 추가했다. AI 대국에서는 KataGo raw NN 기반 win rate/score lead/ownership 지표를 표시하고, 2P 테스트에서는 로컬 area estimate를 표시한다.
+- `GameState.hasConsecutivePasses()`와 `BoardAreaScorer`를 추가했다. 양쪽이 연속 pass하면 AI 대국은 KataGo `final_score`, 2P 테스트는 로컬 area scoring으로 최종 결과를 표시하고 입력을 잠근다.
+- `docs/SCORE_AND_ENDGAME_DECISION.md`를 추가해 중간 형세 지표와 계가 기능 결정을 문서화했다.
+- 검증 성공: `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :shared:check :engine-android:testDebugUnitTest :app-android:assembleDebug :app-android:testDebugUnitTest`.
+- 실기기 `SM_S908N`에 `make install-dev-engine`로 최신 debug APK 설치, KataGo model/config seed, cold launch를 성공시켰다.
+- 실기기에서 `Eval` 버튼을 눌러 `KataGo raw NN score estimate complete`, White/Black win rate, score lead, influence count가 표시되는 것을 확인했다.
+- 실기기 2P 모드에서 Black pass, White pass를 연속 입력해 `Local game ended after two passes`, `Final: W+6.5` 로컬 계가 표시를 확인했다.

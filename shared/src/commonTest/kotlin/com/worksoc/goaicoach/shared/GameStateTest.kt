@@ -40,6 +40,17 @@ class GameStateTest {
     }
 
     @Test
+    fun consecutivePassesEndGame() {
+        val onePass = GameState.empty()
+            .play(Move.Pass(StoneColor.Black))
+        val twoPasses = onePass
+            .play(Move.Pass(StoneColor.White))
+
+        assertFalse(onePass.hasConsecutivePasses())
+        assertTrue(twoPasses.hasConsecutivePasses())
+    }
+
+    @Test
     fun fullBoardIsDetected() {
         val boardSize = BoardSize.Nine
         val stones = buildMap {
@@ -202,6 +213,30 @@ class GameStateTest {
         val undone = state.replayWithoutLastMoves(99)
 
         assertEquals(GameState.empty(), undone)
+    }
+
+    @Test
+    fun localAreaScorerCountsSingleColorRegion() {
+        val stones = buildMap {
+            for (row in 0 until BoardSize.Nine.value) {
+                for (column in 0 until BoardSize.Nine.value) {
+                    put(BoardCoordinate(row, column), StoneColor.White)
+                }
+            }
+            remove(point("B8"))
+            put(point("A8"), StoneColor.Black)
+            put(point("B9"), StoneColor.Black)
+            put(point("C8"), StoneColor.Black)
+            put(point("B7"), StoneColor.Black)
+        }
+        val state = GameState.empty(boardSize = BoardSize.Nine).copy(stones = stones)
+
+        val score = BoardAreaScorer.score(state)
+
+        assertEquals(5.0, score.blackArea)
+        assertEquals(82.5, score.whiteAreaWithKomi)
+        assertEquals(StoneColor.White, score.winner)
+        assertEquals(77.5, score.margin)
     }
 
     private fun play(

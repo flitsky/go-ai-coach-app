@@ -8,6 +8,8 @@ interface EngineAdapter {
     suspend fun genMove(player: StoneColor): MoveResult
     suspend fun undoMove(): EngineStatus
     suspend fun analyze(limit: AnalysisLimit): AnalysisResult
+    suspend fun estimateScore(limit: AnalysisLimit): ScoreEstimate
+    suspend fun scoreFinal(): FinalScoreResult
     suspend fun stop(): EngineStatus
 }
 
@@ -99,6 +101,32 @@ data class CandidateMove(
 data class AnalysisResult(
     val status: EngineStatus,
     val candidates: List<CandidateMove>,
+    val summary: String,
+)
+
+data class OwnershipEstimate(
+    val blackLikelyPoints: Int,
+    val whiteLikelyPoints: Int,
+    val neutralOrUnclearPoints: Int,
+    val threshold: Double,
+)
+
+data class ScoreEstimate(
+    val status: EngineStatus,
+    val whiteWinRate: Double? = null,
+    val whiteScoreLead: Double? = null,
+    val ownership: OwnershipEstimate? = null,
+    val summary: String,
+)
+
+data class FinalScoreResult(
+    val status: EngineStatus,
+    val rawScore: String,
+    val winner: StoneColor? = null,
+    val margin: Double? = null,
+    val blackArea: Double? = null,
+    val whiteAreaWithKomi: Double? = null,
+    val komi: Double? = null,
     val summary: String,
 )
 

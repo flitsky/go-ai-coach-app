@@ -9,10 +9,12 @@ import com.worksoc.goaicoach.shared.EngineAdapter
 import com.worksoc.goaicoach.shared.EngineMode
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.EngineStatus
+import com.worksoc.goaicoach.shared.FinalScoreResult
 import com.worksoc.goaicoach.shared.GameStateReplayer
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.MoveResult
 import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.StoneColor
 import com.worksoc.goaicoach.shared.describe
 import java.io.BufferedReader
@@ -180,6 +182,18 @@ class KataGoProcessEngineAdapter(
         } else {
             "KataGo search analysis with ${limit.visits} visits. Showing $shownCount/${limit.candidateCount} green spot(s)."
         }
+
+    override suspend fun estimateScore(limit: AnalysisLimit): ScoreEstimate {
+        ensureProcessStarted()
+        val response = sendCommand("kata-raw-nn 0")
+        return KataGoAnalysisParser.parseScoreEstimate(response, boardSize)
+    }
+
+    override suspend fun scoreFinal(): FinalScoreResult {
+        ensureProcessStarted()
+        val response = sendCommand("final_score")
+        return KataGoAnalysisParser.parseFinalScore(response)
+    }
 
     override suspend fun stop(): EngineStatus {
         runCatching {

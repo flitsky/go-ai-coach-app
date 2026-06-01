@@ -1,5 +1,7 @@
 package com.worksoc.goaicoach.shared
 
+const val DefaultKomi = 6.5
+
 data class BoardSize(val value: Int) {
     init {
         require(value in SUPPORTED_SIZES) { "Unsupported board size: $value" }
@@ -109,6 +111,11 @@ data class GameState(
     fun stoneAt(coordinate: BoardCoordinate): StoneColor? = stones[coordinate]
 
     fun isBoardFull(): Boolean = stones.size >= boardSize.value * boardSize.value
+
+    fun hasConsecutivePasses(): Boolean =
+        moves.takeLast(2).let { lastMoves ->
+            lastMoves.size == 2 && lastMoves.all { it is Move.Pass }
+        }
 
     fun capturedBy(player: StoneColor): Int =
         when (player) {

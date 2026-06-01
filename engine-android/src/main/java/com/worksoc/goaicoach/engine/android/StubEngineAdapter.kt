@@ -2,20 +2,26 @@ package com.worksoc.goaicoach.engine.android
 
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.AnalysisResult
+import com.worksoc.goaicoach.shared.BoardAreaScorer
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.EngineAdapter
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.EngineStatus
+import com.worksoc.goaicoach.shared.FinalScoreResult
+import com.worksoc.goaicoach.shared.GameStateReplayer
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.MoveResult
+import com.worksoc.goaicoach.shared.OwnershipEstimate
 import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.StoneColor
 import com.worksoc.goaicoach.shared.describe
 
 class StubEngineAdapter : EngineAdapter {
     private var boardSize: BoardSize = BoardSize.Nine
+    private var ruleset: Ruleset = Ruleset.Chinese
     private var initialized: Boolean = false
     private var nextPlayer: StoneColor = StoneColor.Black
     private var profile: EngineProfile = EngineProfile()
@@ -39,6 +45,7 @@ class StubEngineAdapter : EngineAdapter {
     override suspend fun newGame(boardSize: BoardSize, ruleset: Ruleset): EngineStatus {
         ensureInitialized()
         this.boardSize = boardSize
+        this.ruleset = ruleset
         nextPlayer = StoneColor.Black
         occupied.clear()
         playedMoves.clear()
@@ -105,6 +112,33 @@ class StubEngineAdapter : EngineAdapter {
         )
     }
 
+    override suspend fun estimateScore(limit: AnalysisLimit): ScoreEstimate {
+        ensureInitialized()
+        val score = localScore()
+        val blackArea = score.blackArea ?: 0.0
+        val whiteArea = (score.whiteAreaWithKomi ?: 0.0) - (score.komi ?: 0.0)
+        val whiteLead = (score.whiteAreaWithKomi ?: 0.0) - blackArea
+        val boardPoints = boardSize.value * boardSize.value
+        val unclear = (boardPoints - blackArea.toInt() - whiteArea.toInt()).coerceAtLeast(0)
+        return ScoreEstimate(
+            status = EngineStatus.ready("Stub local score estimate complete."),
+            whiteWinRate = if (whiteLead >= 0.0) 0.55 else 0.45,
+            whiteScoreLead = whiteLead,
+            ownership = OwnershipEstimate(
+                blackLikelyPoints = blackArea.toInt(),
+                whiteLikelyPoints = whiteArea.toInt(),
+                neutralOrUnclearPoints = unclear,
+                threshold = 1.0,
+            ),
+            summary = "Stub estimate uses local area projection; it is not engine analysis.",
+        )
+    }
+
+    override suspend fun scoreFinal(): FinalScoreResult {
+        ensureInitialized()
+        return localScore()
+    }
+
     override suspend fun stop(): EngineStatus {
         initialized = false
         occupied.clear()
@@ -129,6 +163,15 @@ class StubEngineAdapter : EngineAdapter {
             }
         }
     }
+
+    private fun localScore(): FinalScoreResult =
+        BoardAreaScorer.score(
+            GameStateReplayer.replay(
+                boardSize = boardSize,
+                ruleset = ruleset,
+                moves = playedMoves,
+            ),
+        )
 
     private fun priorityCoordinates(): List<BoardCoordinate> {
         val last = boardSize.value - 1

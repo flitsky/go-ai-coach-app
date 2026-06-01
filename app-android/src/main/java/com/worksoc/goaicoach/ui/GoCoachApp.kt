@@ -34,6 +34,7 @@ import com.worksoc.goaicoach.match.activePlayer
 import com.worksoc.goaicoach.match.applyAiResponseAfterHumanTurn
 import com.worksoc.goaicoach.match.boardInputEnabled
 import com.worksoc.goaicoach.match.modeSummary
+import com.worksoc.goaicoach.shared.BoardAreaScorer
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.DifficultyProfile
@@ -84,6 +85,7 @@ private fun GoCoachScreen(
     var engineMessage by remember { mutableStateOf("Engine not initialized.") }
     var candidateText by remember { mutableStateOf(engineDiagnostic) }
     var candidateMoves by remember { mutableStateOf(emptyList<CandidateMove>()) }
+    var scoreText by remember { mutableStateOf("No score estimate yet.") }
     var lastMoveText by remember { mutableStateOf("None") }
     var isEngineBusy by remember { mutableStateOf(false) }
     var isEngineReady by remember { mutableStateOf(false) }
@@ -92,6 +94,7 @@ private fun GoCoachScreen(
     var hintEnabled by remember { mutableStateOf(false) }
     var hintCount by remember { mutableStateOf(1) }
     var lastHintKey by remember { mutableStateOf<String?>(null) }
+    var isGameEnded by remember { mutableStateOf(false) }
 
     LaunchedEffect(engineAdapter) {
         isEngineBusy = true
@@ -143,7 +146,13 @@ private fun GoCoachScreen(
         targetState: GameState,
         automatic: Boolean,
     ) {
-        if (!isEngineReady || isEngineBusy || matchMode != MatchMode.HumanVsAi || targetState.nextPlayer != HumanPlayer) {
+        if (
+            isGameEnded ||
+            !isEngineReady ||
+            isEngineBusy ||
+            matchMode != MatchMode.HumanVsAi ||
+            targetState.nextPlayer != HumanPlayer
+        ) {
             return
         }
 
@@ -179,9 +188,45 @@ private fun GoCoachScreen(
 
     fun resetLocalGame(message: String) {
         gameState = GameState.empty(BoardSize.Nine, Ruleset.Chinese)
+        isGameEnded = false
         clearHints("No analysis yet.")
+        scoreText = "No score estimate yet."
         lastMoveText = "None"
         engineMessage = message
+    }
+
+    fun requestScoreEstimate() {
+        if (isEngineBusy) {
+            engineMessage = "Engine is busy. Estimate after the current response."
+            return
+        }
+
+        if (matchMode == MatchMode.LocalTwoPlayer) {
+            val score = BoardAreaScorer.score(gameState)
+            scoreText = score.toDisplayText()
+            engineMessage = "Local area estimate refreshed."
+            return
+        }
+
+        if (!isEngineReady) {
+            engineMessage = "Engine is not ready."
+            return
+        }
+
+        scope.launch {
+            isEngineBusy = true
+            runCatching {
+                withContext(Dispatchers.IO) {
+                    engineAdapter.estimateScore(engineProfile.analysisLimit)
+                }
+            }.onSuccess { estimate ->
+                engineMessage = estimate.status.message
+                scoreText = estimate.toDisplayText()
+            }.onFailure { error ->
+                engineMessage = error.message ?: "Score estimate failed."
+            }
+            isEngineBusy = false
+        }
     }
 
     fun startAiGame() {
@@ -257,8 +302,17 @@ private fun GoCoachScreen(
             gameState = afterMove
             clearHints()
             lastMoveText = move.describe(beforeMove.boardSize)
-            candidateText = "Captured: Black ${afterMove.capturedBy(StoneColor.Black)} / White ${afterMove.capturedBy(StoneColor.White)}"
-            engineMessage = "Local move accepted: ${move.describe(beforeMove.boardSize)}."
+            scoreText = "Score estimate not current."
+            if (afterMove.hasConsecutivePasses()) {
+                val finalScore = BoardAreaScorer.score(afterMove)
+                isGameEnded = true
+                scoreText = finalScore.toDisplayText()
+                candidateText = "Game ended after two passes."
+                engineMessage = "Local game ended after two passes. ${finalScore.status.message}"
+            } else {
+                candidateText = "Captured: Black ${afterMove.capturedBy(StoneColor.Black)} / White ${afterMove.capturedBy(StoneColor.White)}"
+                engineMessage = "Local move accepted: ${move.describe(beforeMove.boardSize)}."
+            }
             return
         }
 
@@ -285,6 +339,7 @@ private fun GoCoachScreen(
 
         gameState = afterHuman
         clearHints()
+        scoreText = "Score estimate not current."
         lastMoveText = move.describe(beforeMove.boardSize)
         candidateText = "AI is thinking..."
         engineMessage = "Submitted ${move.describe(beforeMove.boardSize)}."
@@ -307,6 +362,19 @@ private fun GoCoachScreen(
                 candidateText = outcome.candidateText
                 lastMoveText = outcome.lastMoveText
                 nextHintState = outcome.gameState
+                if (outcome.gameState.hasConsecutivePasses() || outcome.gameState.isBoardFull()) {
+                    isGameEnded = true
+                    runCatching {
+                        withContext(Dispatchers.IO) { engineAdapter.scoreFinal() }
+                    }.onSuccess { finalScore ->
+                        scoreText = finalScore.toDisplayText()
+                        engineMessage = "${outcome.engineMessage}\n${finalScore.status.message}"
+                        candidateText = "Game ended. Final score is available below."
+                    }.onFailure { error ->
+                        engineMessage = "${outcome.engineMessage}\nFinal score failed: ${error.message ?: "Unknown error"}"
+                        candidateText = "Game ended after two passes, but final score failed."
+                    }
+                }
             }.onFailure { error ->
                 gameState = beforeMove
                 engineMessage = error.message ?: "Move failed."
@@ -329,9 +397,11 @@ private fun GoCoachScreen(
         if (matchMode == MatchMode.LocalTwoPlayer) {
             val nextState = gameState.replayWithoutLastMoves(1)
             gameState = nextState
+            isGameEnded = false
             clearHints()
             lastMoveText = nextState.moves.lastOrNull()?.describe(nextState.boardSize) ?: "None"
             candidateText = "Captured: Black ${nextState.capturedBy(StoneColor.Black)} / White ${nextState.capturedBy(StoneColor.White)}"
+            scoreText = "Score estimate not current."
             engineMessage = "Local undo completed."
             return
         }
@@ -358,9 +428,11 @@ private fun GoCoachScreen(
             }.onSuccess {
                 val nextState = gameState.replayWithoutLastMoves(undoCount)
                 gameState = nextState
+                isGameEnded = false
                 clearHints()
                 lastMoveText = nextState.moves.lastOrNull()?.describe(nextState.boardSize) ?: "None"
                 candidateText = "Undo cleared current analysis hints."
+                scoreText = "Score estimate not current."
                 engineMessage = "Undid $undoCount move(s) in local state and engine state."
                 nextHintState = nextState
             }.onFailure { error ->
@@ -448,7 +520,7 @@ private fun GoCoachScreen(
         GoBoard(
             gameState = gameState,
             candidateMoves = candidateMoves,
-            inputEnabled = boardInputEnabled(matchMode, isEngineReady, isEngineBusy, gameState.nextPlayer),
+            inputEnabled = !isGameEnded && boardInputEnabled(matchMode, isEngineReady, isEngineBusy, gameState.nextPlayer),
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(1f),
@@ -465,7 +537,7 @@ private fun GoCoachScreen(
                 onClick = {
                     submitHumanMove(Move.Pass(activePlayer(matchMode, gameState)))
                 },
-                enabled = boardInputEnabled(matchMode, isEngineReady, isEngineBusy, gameState.nextPlayer),
+                enabled = !isGameEnded && boardInputEnabled(matchMode, isEngineReady, isEngineBusy, gameState.nextPlayer),
                 modifier = Modifier.weight(1f),
             ) {
                 Text("Pass")
@@ -484,10 +556,26 @@ private fun GoCoachScreen(
 
             OutlinedButton(
                 onClick = { requestHintsForCurrentState(automatic = false) },
-                enabled = matchMode == MatchMode.HumanVsAi && isEngineReady && !isEngineBusy,
+                enabled = !isGameEnded && matchMode == MatchMode.HumanVsAi && isEngineReady && !isEngineBusy,
                 modifier = Modifier.weight(1f),
             ) {
                 Text("Hint")
+            }
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            OutlinedButton(
+                onClick = ::requestScoreEstimate,
+                enabled = when (matchMode) {
+                    MatchMode.HumanVsAi -> isEngineReady && !isEngineBusy
+                    MatchMode.LocalTwoPlayer -> !isEngineBusy
+                },
+                modifier = Modifier.weight(1f),
+            ) {
+                Text("Eval")
             }
 
             OutlinedButton(
@@ -514,6 +602,7 @@ private fun GoCoachScreen(
             mode = matchMode,
             engineMessage = engineMessage,
             candidateText = candidateText,
+            scoreText = scoreText,
         )
     }
 }
