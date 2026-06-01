@@ -52,6 +52,20 @@ KataGo GTP에서 확인한 관련 명령은 다음이다.
   - 로컬 `BoardAreaScorer`로 중국식 area estimate를 계산한다.
   - dead-stone marking은 아직 없다.
 
+## 종료 오류 수집
+
+최종 계가가 실제 체감 판세와 다르게 보일 때 비교를 위해 앱에 `Copy Log` 버튼을 둔다.
+
+- 버튼은 새 엔진 명령을 실행하지 않고, 클릭 시점의 앱 상태를 클립보드에 복사한다.
+- 포함 항목:
+  - 실행 모드, 엔진 이름/프로필/분석 제한, 힌트 설정
+  - 현재 `GameState`: board size, ruleset, next player, move count, capture count, ko 상태, 양패스 여부
+  - 9x9 보드 텍스트 덤프 (`X` Black, `O` White, `.` empty)
+  - 전체 수순 목록과 현재 돌 목록
+  - 마지막 종료 처리 로그와 화면에 표시된 engine/score/candidate/move review 텍스트
+  - 클릭 시점의 로컬 `BoardAreaScorer` 재계산 결과
+- AI 모드의 엔진 `final_score` 결과와 로컬 area score를 함께 비교할 수 있게 하기 위한 진단용 기능이다.
+
 ## 현재 한계
 
 - 로컬 2P 계가는 “사석 지정 없는 area estimate”다.

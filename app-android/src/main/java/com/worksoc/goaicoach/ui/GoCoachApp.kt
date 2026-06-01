@@ -1,5 +1,8 @@
 package com.worksoc.goaicoach.ui
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -26,6 +29,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.match.HumanPlayer
@@ -35,6 +39,7 @@ import com.worksoc.goaicoach.match.applyAiResponseAfterHumanTurn
 import com.worksoc.goaicoach.match.boardInputEnabled
 import com.worksoc.goaicoach.match.modeSummary
 import com.worksoc.goaicoach.shared.BoardAreaScorer
+import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.DifficultyProfile
@@ -82,6 +87,7 @@ private fun GoCoachScreen(
     engineDiagnostic: String,
 ) {
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
     var gameState by remember { mutableStateOf(GameState.empty(BoardSize.Nine, Ruleset.Chinese)) }
     var engineMessage by remember { mutableStateOf("Engine not initialized.") }
     var candidateText by remember { mutableStateOf(engineDiagnostic) }
@@ -99,6 +105,7 @@ private fun GoCoachScreen(
     var hintCount by remember { mutableStateOf(1) }
     var lastAnalysisKey by remember { mutableStateOf<String?>(null) }
     var isGameEnded by remember { mutableStateOf(false) }
+    var endgameLog by remember { mutableStateOf("No endgame result recorded.") }
 
     LaunchedEffect(engineAdapter) {
         isEngineBusy = true
@@ -217,6 +224,7 @@ private fun GoCoachScreen(
         moveReviewText = "No move review yet."
         moveReviews = emptyList()
         lastMoveText = "None"
+        endgameLog = "No endgame result recorded."
         engineMessage = message
     }
 
@@ -341,9 +349,16 @@ private fun GoCoachScreen(
             scoreText = "Score estimate not current."
             if (afterMove.hasConsecutivePasses()) {
                 val finalScore = BoardAreaScorer.score(afterMove)
+                val finalScoreText = finalScore.toDisplayText()
                 isGameEnded = true
-                scoreText = finalScore.toDisplayText()
+                scoreText = finalScoreText
                 candidateText = "Game ended after two passes."
+                endgameLog = buildEndgameLog(
+                    source = "local-two-player-consecutive-pass",
+                    state = afterMove,
+                    finalScoreText = finalScoreText,
+                    detail = "triggerMove=${move.describe(beforeMove.boardSize)}",
+                )
                 engineMessage = "Local game ended after two passes. ${finalScore.status.message}"
             } else {
                 candidateText = "Captured: Black ${afterMove.capturedBy(StoneColor.Black)} / White ${afterMove.capturedBy(StoneColor.White)}"
@@ -416,10 +431,24 @@ private fun GoCoachScreen(
                     runCatching {
                         withContext(Dispatchers.IO) { engineAdapter.scoreFinal() }
                     }.onSuccess { finalScore ->
-                        scoreText = finalScore.toDisplayText()
+                        val finalScoreText = finalScore.toDisplayText()
+                        scoreText = finalScoreText
+                        endgameLog = buildEndgameLog(
+                            source = "ai-engine-final-score",
+                            state = outcome.gameState,
+                            finalScoreText = finalScoreText,
+                            detail = "lastMove=${outcome.gameState.moves.lastOrNull()?.describe(outcome.gameState.boardSize) ?: "None"}",
+                        )
                         engineMessage = "${outcome.engineMessage}\n${finalScore.status.message}"
                         candidateText = "Game ended. Final score is available below."
                     }.onFailure { error ->
+                        val finalScoreText = "Final score failed: ${error.message ?: "Unknown error"}"
+                        endgameLog = buildEndgameLog(
+                            source = "ai-engine-final-score-failed",
+                            state = outcome.gameState,
+                            finalScoreText = finalScoreText,
+                            detail = "lastMove=${outcome.gameState.moves.lastOrNull()?.describe(outcome.gameState.boardSize) ?: "None"}",
+                        )
                         engineMessage = "${outcome.engineMessage}\nFinal score failed: ${error.message ?: "Unknown error"}"
                         candidateText = "Game ended after two passes, but final score failed."
                     }
@@ -461,6 +490,7 @@ private fun GoCoachScreen(
             lastMoveText = nextState.moves.lastOrNull()?.describe(nextState.boardSize) ?: "None"
             candidateText = "Captured: Black ${nextState.capturedBy(StoneColor.Black)} / White ${nextState.capturedBy(StoneColor.White)}"
             scoreText = "Score estimate not current."
+            endgameLog = "Endgame log cleared by undo."
             engineMessage = "Local undo completed."
             return
         }
@@ -494,6 +524,7 @@ private fun GoCoachScreen(
                 lastMoveText = nextState.moves.lastOrNull()?.describe(nextState.boardSize) ?: "None"
                 candidateText = "Undo cleared current analysis hints."
                 scoreText = "Score estimate not current."
+                endgameLog = "Endgame log cleared by undo."
                 engineMessage = "Undid $undoCount move(s) in local state and engine state."
                 nextHintState = nextState
             }.onFailure { error ->
@@ -508,6 +539,30 @@ private fun GoCoachScreen(
                 )
             }
         }
+    }
+
+    fun copyDebugReport() {
+        val report = buildDebugReport(
+            mode = matchMode,
+            engineName = engineName,
+            engineDiagnostic = engineDiagnostic,
+            engineProfile = engineProfile,
+            isEngineReady = isEngineReady,
+            isEngineBusy = isEngineBusy,
+            isGameEnded = isGameEnded,
+            hintEnabled = hintEnabled,
+            hintCount = hintCount,
+            gameState = gameState,
+            engineMessage = engineMessage,
+            candidateText = candidateText,
+            scoreText = scoreText,
+            moveReviewText = moveReviewText,
+            lastMoveText = lastMoveText,
+            endgameLog = endgameLog,
+        )
+        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        clipboard.setPrimaryClip(ClipData.newPlainText("Go AI Coach debug report", report))
+        engineMessage = "Debug report copied to clipboard. Paste it into chat for review."
     }
 
     LaunchedEffect(
@@ -672,6 +727,13 @@ private fun GoCoachScreen(
             ) {
                 Text("New")
             }
+
+            OutlinedButton(
+                onClick = ::copyDebugReport,
+                modifier = Modifier.weight(1f),
+            ) {
+                Text("Copy Log")
+            }
         }
 
         EngineResponsePanel(
@@ -688,6 +750,158 @@ private fun GoCoachScreen(
             moveReviewText = moveReviewText,
         )
     }
+}
+
+private fun buildDebugReport(
+    mode: MatchMode,
+    engineName: String,
+    engineDiagnostic: String,
+    engineProfile: EngineProfile,
+    isEngineReady: Boolean,
+    isEngineBusy: Boolean,
+    isGameEnded: Boolean,
+    hintEnabled: Boolean,
+    hintCount: Int,
+    gameState: GameState,
+    engineMessage: String,
+    candidateText: String,
+    scoreText: String,
+    moveReviewText: String,
+    lastMoveText: String,
+    endgameLog: String,
+): String {
+    val localScoreText = BoardAreaScorer.score(gameState).toDisplayText()
+
+    return buildString {
+        appendLine("Go AI Coach debug report")
+        appendLine("createdAtMillis=${System.currentTimeMillis()}")
+        appendLine()
+        appendLine("[Runtime]")
+        appendLine("mode=$mode")
+        appendLine("engineName=$engineName")
+        appendLine("engineReady=$isEngineReady")
+        appendLine("engineBusy=$isEngineBusy")
+        appendLine("gameEnded=$isGameEnded")
+        appendLine("engineProfile=${engineProfile.name}/${engineProfile.mode}/${engineProfile.difficulty.label}")
+        appendLine("analysisLimit=visits:${engineProfile.analysisLimit.visits}, timeMillis:${engineProfile.analysisLimit.timeMillis}, candidates:${engineProfile.analysisLimit.candidateCount}")
+        appendLine("hintEnabled=$hintEnabled")
+        appendLine("hintCount=$hintCount")
+        appendLine()
+        appendLine("[GameState]")
+        appendLine("boardSize=${gameState.boardSize.value}")
+        appendLine("ruleset=${gameState.ruleset}")
+        appendLine("nextPlayer=${gameState.nextPlayer.label}")
+        appendLine("moves=${gameState.moves.size}")
+        appendLine("capturedByBlack=${gameState.capturedBy(StoneColor.Black)}")
+        appendLine("capturedByWhite=${gameState.capturedBy(StoneColor.White)}")
+        appendLine("consecutivePasses=${gameState.hasConsecutivePasses()}")
+        appendLine("boardFull=${gameState.isBoardFull()}")
+        appendLine("koPoint=${gameState.koPoint?.label(gameState.boardSize) ?: "none"}")
+        appendLine("koForbiddenFor=${gameState.koForbiddenFor?.label ?: "none"}")
+        appendLine()
+        appendLine("[Board]")
+        appendLine(gameState.toBoardText())
+        appendLine()
+        appendLine("[Stones]")
+        appendLine(gameState.toStonesText())
+        appendLine()
+        appendLine("[Moves]")
+        appendLine(gameState.toMovesText())
+        appendLine()
+        appendLine("[EndgameLog]")
+        appendLine(endgameLog)
+        appendLine()
+        appendLine("[LocalAreaScoreNow]")
+        appendLine(localScoreText)
+        appendLine()
+        appendLine("[DisplayedTexts]")
+        appendLine("lastMove=$lastMoveText")
+        appendLine("engineMessage:")
+        appendLine(engineMessage)
+        appendLine("scoreText:")
+        appendLine(scoreText)
+        appendLine("moveReviewText:")
+        appendLine(moveReviewText)
+        appendLine("candidateText:")
+        appendLine(candidateText)
+        appendLine()
+        appendLine("[EngineDiagnostic]")
+        appendLine(engineDiagnostic)
+    }.trim()
+}
+
+private fun buildEndgameLog(
+    source: String,
+    state: GameState,
+    finalScoreText: String,
+    detail: String,
+): String =
+    buildString {
+        appendLine("source=$source")
+        appendLine("recordedAtMillis=${System.currentTimeMillis()}")
+        appendLine("detail=$detail")
+        appendLine("moveCount=${state.moves.size}")
+        appendLine("lastTwoMoves=${state.moves.takeLast(2).joinToString { it.describe(state.boardSize) }}")
+        appendLine("consecutivePasses=${state.hasConsecutivePasses()}")
+        appendLine("boardFull=${state.isBoardFull()}")
+        appendLine("capturedByBlack=${state.capturedBy(StoneColor.Black)}")
+        appendLine("capturedByWhite=${state.capturedBy(StoneColor.White)}")
+        appendLine("finalScoreText:")
+        appendLine(finalScoreText)
+    }.trim()
+
+private fun GameState.toBoardText(): String =
+    buildString {
+        val columns = boardColumnLabels(boardSize)
+        append("   ")
+        columns.forEach { column -> append(column).append(' ') }
+        appendLine()
+
+        for (row in 0 until boardSize.value) {
+            val rowLabel = boardSize.value - row
+            append(rowLabel.toString().padStart(2, ' ')).append(' ')
+            for (column in 0 until boardSize.value) {
+                val coordinate = BoardCoordinate(row, column)
+                val marker = when (stoneAt(coordinate)) {
+                    StoneColor.Black -> "X"
+                    StoneColor.White -> "O"
+                    null -> "."
+                }
+                append(marker).append(' ')
+            }
+            append(rowLabel)
+            appendLine()
+        }
+
+        append("   ")
+        columns.forEach { column -> append(column).append(' ') }
+    }
+
+private fun GameState.toStonesText(): String {
+    if (stones.isEmpty()) {
+        return "(none)"
+    }
+
+    return stones.entries
+        .sortedWith(compareBy({ it.key.row }, { it.key.column }))
+        .joinToString(separator = "\n") { (coordinate, color) ->
+            "${coordinate.label(boardSize)}=${color.label}"
+        }
+}
+
+private fun GameState.toMovesText(): String {
+    if (moves.isEmpty()) {
+        return "(none)"
+    }
+
+    return moves
+        .mapIndexed { index, move -> "${index + 1}. ${move.describe(boardSize)}" }
+        .joinToString(separator = "\n")
+}
+
+private fun boardColumnLabels(boardSize: BoardSize): List<Char> {
+    val columns = "ABCDEFGHJKLMNOPQRSTUVWXYZ"
+    return columns.take(boardSize.value).toList()
 }
 
 private data class MoveReviewResult(
@@ -710,7 +924,7 @@ private fun buildMoveReview(
     if (candidates.isEmpty()) {
         return MoveReviewResult(
             marker = null,
-            text = "Move review: no pre-move hint cache. Turn hints on before playing to review the move.",
+            text = "Move review: no pre-move analysis cache was ready.",
         )
     }
 
