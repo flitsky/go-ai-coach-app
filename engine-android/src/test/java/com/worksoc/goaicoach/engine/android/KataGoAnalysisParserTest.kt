@@ -2,6 +2,7 @@ package com.worksoc.goaicoach.engine.android
 
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.BoardCoordinate
+import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.StoneColor
 import kotlin.test.Test
@@ -66,6 +67,26 @@ class KataGoAnalysisParserTest {
         )
 
         assertEquals(2, candidates.size)
+    }
+
+    @Test
+    fun attachesPointLossFromTopCandidateForPlayerPerspective() {
+        val blackCandidates = listOf(
+            CandidateMove(move = Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("F6", BoardSize.Nine)), scoreLead = -2.0),
+            CandidateMove(move = Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)), scoreLead = -0.5),
+        )
+        val whiteCandidates = listOf(
+            CandidateMove(move = Move.Play(StoneColor.White, BoardCoordinate.fromLabel("D5", BoardSize.Nine)), scoreLead = 12.0),
+            CandidateMove(move = Move.Play(StoneColor.White, BoardCoordinate.fromLabel("E5", BoardSize.Nine)), scoreLead = 9.5),
+        )
+
+        val blackWithLoss = KataGoAnalysisParser.attachPointLoss(blackCandidates, StoneColor.Black)
+        val whiteWithLoss = KataGoAnalysisParser.attachPointLoss(whiteCandidates, StoneColor.White)
+
+        assertEquals(0.0, blackWithLoss[0].pointLoss)
+        assertEquals(1.5, blackWithLoss[1].pointLoss)
+        assertEquals(0.0, whiteWithLoss[0].pointLoss)
+        assertEquals(2.5, whiteWithLoss[1].pointLoss)
     }
 
     @Test

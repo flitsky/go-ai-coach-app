@@ -1,5 +1,7 @@
 package com.worksoc.goaicoach.ui
 
+import android.graphics.Paint
+import android.graphics.Typeface
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -18,7 +20,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
@@ -37,6 +41,7 @@ import kotlin.math.roundToInt
 internal fun GoBoard(
     gameState: GameState,
     candidateMoves: List<CandidateMove>,
+    lastMoveReview: MoveReviewMarker?,
     inputEnabled: Boolean,
     modifier: Modifier = Modifier,
     onCoordinateTap: (BoardCoordinate) -> Unit,
@@ -80,6 +85,8 @@ internal fun GoBoard(
                     center = geometry.pointFor(lastMove.coordinate),
                 )
             }
+
+            drawMoveReview(geometry, lastMoveReview)
         }
     }
 }
@@ -97,19 +104,96 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawCandidateMoves(
 
         val center = geometry.pointFor(play.coordinate)
         val radius = geometry.spacing * if (index == 0) 0.24f else 0.18f
-        val fillAlpha = if (index == 0) 0.72f else 0.38f
+        val fillAlpha = if (index == 0) 0.76f else 0.48f
+        val color = candidateToneColor(moveReviewToneFor(candidate.pointLoss))
         drawCircle(
-            color = Color(0xFF2E7D32).copy(alpha = fillAlpha),
+            color = color.copy(alpha = fillAlpha),
             radius = radius,
             center = center,
         )
         drawCircle(
-            color = Color(0xFF0B4F24).copy(alpha = 0.9f),
+            color = color.darken().copy(alpha = 0.9f),
             radius = radius,
             center = center,
             style = Stroke(width = if (index == 0) 4f else 2f),
         )
+        candidate.scoreLead
+            ?.toPlayerPerspective(play.player)
+            ?.let { drawSpotLabel(center, it.toSignedOneDecimal(), geometry.spacing * 0.28f) }
     }
+}
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawMoveReview(
+    geometry: BoardGeometry,
+    marker: MoveReviewMarker?,
+) {
+    marker ?: return
+    val center = geometry.pointFor(marker.coordinate)
+    val radius = geometry.spacing * 0.18f
+    val color = candidateToneColor(marker.tone)
+    drawCircle(
+        color = color.copy(alpha = 0.9f),
+        radius = radius,
+        center = center,
+    )
+    drawCircle(
+        color = color.darken(),
+        radius = radius,
+        center = center,
+        style = Stroke(width = 2.5f),
+    )
+    if (marker.label.isNotBlank()) {
+        drawSpotLabel(center, marker.label, geometry.spacing * 0.22f)
+    }
+}
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawSpotLabel(
+    center: Offset,
+    label: String,
+    textSize: Float,
+) {
+    drawIntoCanvas { canvas ->
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = android.graphics.Color.BLACK
+            textAlign = Paint.Align.CENTER
+            this.textSize = textSize
+            typeface = Typeface.DEFAULT_BOLD
+        }
+        canvas.nativeCanvas.drawText(
+            label,
+            center.x,
+            center.y - (paint.descent() + paint.ascent()) / 2f,
+            paint,
+        )
+    }
+}
+
+private fun candidateToneColor(tone: MoveReviewTone): Color =
+    when (tone) {
+        MoveReviewTone.Good -> Color(0xFF2E7D32)
+        MoveReviewTone.Inaccuracy -> Color(0xFFF9A825)
+        MoveReviewTone.Mistake -> Color(0xFFC62828)
+        MoveReviewTone.Unknown -> Color(0xFF607D8B)
+    }
+
+private fun Color.darken(): Color =
+    Color(
+        red = red * 0.62f,
+        green = green * 0.62f,
+        blue = blue * 0.62f,
+        alpha = alpha,
+    )
+
+private fun Double.toPlayerPerspective(player: StoneColor): Double =
+    when (player) {
+        StoneColor.Black -> -this
+        StoneColor.White -> this
+    }
+
+private fun Double.toSignedOneDecimal(): String {
+    val rounded = (this * 10).roundToInt() / 10.0
+    val normalized = if (abs(rounded) < 0.05) 0.0 else rounded
+    return if (normalized > 0.0) "+$normalized" else normalized.toString()
 }
 
 private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawBoardGrid(

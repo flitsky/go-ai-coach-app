@@ -239,6 +239,7 @@ internal fun EngineResponsePanel(
     engineMessage: String,
     candidateText: String,
     scoreText: String,
+    moveReviewText: String,
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -285,6 +286,13 @@ internal fun EngineResponsePanel(
             )
 
             Text(
+                text = moveReviewText,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.secondary,
+                fontFamily = FontFamily.Monospace,
+            )
+
+            Text(
                 text = candidateText,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.secondary,
@@ -295,7 +303,7 @@ internal fun EngineResponsePanel(
 }
 
 private val VisitOptions = listOf(16, 64, 160, 400, 1_000)
-private val HintCountOptions = listOf(1, 2, 3, 4, 5)
+private val HintCountOptions = (1..12).toList()
 
 private fun previousVisits(current: Int): Int =
     VisitOptions.lastOrNull { it < current } ?: VisitOptions.first()

@@ -52,11 +52,7 @@ class KataGoProcessEngineAdapter(
     override suspend fun configure(profile: EngineProfile): EngineStatus {
         this.profile = profile.copy(mode = EngineMode.LocalProcess)
         ensureProcessStarted()
-        sendCommand("kata-set-param maxVisits ${this.profile.analysisLimit.visits}")
-        this.profile.analysisLimit.timeMillis?.let { timeMillis ->
-            val seconds = (timeMillis / 1_000.0).coerceAtLeast(0.001)
-            sendCommand("kata-set-param maxTime $seconds")
-        }
+        applySearchLimit(this.profile.analysisLimit)
         return EngineStatus.ready("KataGo process configured: ${this.profile.describe()}")
     }
 
@@ -109,23 +105,27 @@ class KataGoProcessEngineAdapter(
 
     override suspend fun analyze(limit: AnalysisLimit): AnalysisResult {
         ensureProcessStarted()
-        sendCommand("kata-set-param maxVisits ${limit.visits}")
-        limit.timeMillis?.let { timeMillis ->
-            val seconds = (timeMillis / 1_000.0).coerceAtLeast(0.001)
-            sendCommand("kata-set-param maxTime $seconds")
+        val effectiveLimit = limit.effectiveHintLimit()
+        val candidates = try {
+            applySearchLimit(effectiveLimit)
+            val response = sendCommand("kata-search_analyze ${nextPlayer.toGtpColor()}")
+            KataGoAnalysisParser.attachPointLoss(
+                candidates = KataGoAnalysisParser.parseCandidates(
+                    response = response,
+                    player = nextPlayer,
+                    boardSize = boardSize,
+                    maxCandidates = limit.candidateCount,
+                ),
+                player = nextPlayer,
+            ).fillFromPolicyIfNeeded(limit)
+        } finally {
+            applySearchLimit(profile.analysisLimit)
         }
-        val response = sendCommand("kata-search_analyze ${nextPlayer.toGtpColor()}")
-        val candidates = KataGoAnalysisParser.parseCandidates(
-            response = response,
-            player = nextPlayer,
-            boardSize = boardSize,
-            maxCandidates = limit.candidateCount,
-        ).fillFromPolicyIfNeeded(limit)
         val fallbackCount = candidates.count { it.visits == null }
         return AnalysisResult(
             status = EngineStatus.ready("KataGo analysis complete for ${nextPlayer.label}: ${candidates.size}/${limit.candidateCount} candidate(s)"),
             candidates = candidates,
-            summary = buildAnalysisSummary(limit, candidates.size, fallbackCount),
+            summary = buildAnalysisSummary(limit, effectiveLimit, candidates.size, fallbackCount),
         )
     }
 
@@ -173,15 +173,25 @@ class KataGoProcessEngineAdapter(
         }
 
     private fun buildAnalysisSummary(
-        limit: AnalysisLimit,
+        requestedLimit: AnalysisLimit,
+        effectiveLimit: AnalysisLimit,
         shownCount: Int,
         fallbackCount: Int,
-    ): String =
-        if (fallbackCount > 0) {
-            "KataGo search analysis with ${limit.visits} visits returned ${shownCount - fallbackCount} searched candidate(s); filled $fallbackCount spot(s) from raw NN policy."
+    ): String {
+        val searchText = if (
+            effectiveLimit.visits != requestedLimit.visits ||
+            effectiveLimit.timeMillis != requestedLimit.timeMillis
+        ) {
+            "KataGo search analysis raised hint search to ${effectiveLimit.visits} visits / ${effectiveLimit.timeMillis ?: 0}ms for ${requestedLimit.candidateCount} candidate(s)."
         } else {
-            "KataGo search analysis with ${limit.visits} visits. Showing $shownCount/${limit.candidateCount} green spot(s)."
+            "KataGo search analysis with ${effectiveLimit.visits} visits / ${effectiveLimit.timeMillis ?: 0}ms."
         }
+        return if (fallbackCount > 0) {
+            "$searchText Returned ${shownCount - fallbackCount} searched candidate(s); filled $fallbackCount spot(s) from raw NN policy without score loss."
+        } else {
+            "$searchText Showing $shownCount/${requestedLimit.candidateCount} scored spot(s)."
+        }
+    }
 
     override suspend fun estimateScore(limit: AnalysisLimit): ScoreEstimate {
         ensureProcessStarted()
@@ -280,6 +290,25 @@ class KataGoProcessEngineAdapter(
             .trim()
     }
 
+    private fun applySearchLimit(limit: AnalysisLimit) {
+        sendCommand("kata-set-param maxVisits ${limit.visits}")
+        limit.timeMillis?.let { timeMillis ->
+            val seconds = (timeMillis / 1_000.0).coerceAtLeast(0.001)
+            sendCommand("kata-set-param maxTime $seconds")
+        }
+    }
+
+    private fun AnalysisLimit.effectiveHintLimit(): AnalysisLimit {
+        val minimumVisits = (candidateCount * VisitsPerHintCandidate).coerceAtLeast(visits)
+        val minimumTimeMillis = timeMillis
+            ?.coerceAtLeast(MinHintSearchTimeMillis)
+            ?: MinHintSearchTimeMillis
+        return copy(
+            visits = minimumVisits,
+            timeMillis = minimumTimeMillis,
+        )
+    }
+
     private fun Move.toGtpCommand(boardSize: BoardSize): String =
         when (this) {
             is Move.Play -> "play ${player.toGtpColor()} ${coordinate.label(boardSize)}"
@@ -305,4 +334,9 @@ class KataGoProcessEngineAdapter(
 
     private fun EngineProfile.describe(): String =
         "${difficulty.label}, visits=${analysisLimit.visits}, time=${analysisLimit.timeMillis ?: "none"}ms"
+
+    private companion object {
+        private const val VisitsPerHintCandidate = 10
+        private const val MinHintSearchTimeMillis = 1_000L
+    }
 }

@@ -49,6 +49,7 @@ import com.worksoc.goaicoach.shared.replayWithoutLastMoves
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.math.roundToInt
 
 @Composable
 fun GoCoachApp(
@@ -86,6 +87,8 @@ private fun GoCoachScreen(
     var candidateText by remember { mutableStateOf(engineDiagnostic) }
     var candidateMoves by remember { mutableStateOf(emptyList<CandidateMove>()) }
     var scoreText by remember { mutableStateOf("No score estimate yet.") }
+    var moveReviewText by remember { mutableStateOf("No move review yet.") }
+    var lastMoveReview by remember { mutableStateOf<MoveReviewMarker?>(null) }
     var lastMoveText by remember { mutableStateOf("None") }
     var isEngineBusy by remember { mutableStateOf(false) }
     var isEngineReady by remember { mutableStateOf(false) }
@@ -191,6 +194,8 @@ private fun GoCoachScreen(
         isGameEnded = false
         clearHints("No analysis yet.")
         scoreText = "No score estimate yet."
+        moveReviewText = "No move review yet."
+        lastMoveReview = null
         lastMoveText = "None"
         engineMessage = message
     }
@@ -301,6 +306,8 @@ private fun GoCoachScreen(
 
             gameState = afterMove
             clearHints()
+            moveReviewText = "Move review is available in AI hint mode."
+            lastMoveReview = null
             lastMoveText = move.describe(beforeMove.boardSize)
             scoreText = "Score estimate not current."
             if (afterMove.hasConsecutivePasses()) {
@@ -338,6 +345,9 @@ private fun GoCoachScreen(
             ?: return
 
         gameState = afterHuman
+        val moveReview = buildMoveReview(move, candidateMoves, beforeMove.boardSize)
+        moveReviewText = moveReview.text
+        lastMoveReview = moveReview.marker
         clearHints()
         scoreText = "Score estimate not current."
         lastMoveText = move.describe(beforeMove.boardSize)
@@ -377,6 +387,8 @@ private fun GoCoachScreen(
                 }
             }.onFailure { error ->
                 gameState = beforeMove
+                lastMoveReview = null
+                moveReviewText = "Move review cleared after rollback."
                 engineMessage = error.message ?: "Move failed."
                 candidateText = "Move was rolled back after engine failure."
                 lastMoveText = "None"
@@ -399,6 +411,8 @@ private fun GoCoachScreen(
             gameState = nextState
             isGameEnded = false
             clearHints()
+            lastMoveReview = null
+            moveReviewText = "Move review cleared by undo."
             lastMoveText = nextState.moves.lastOrNull()?.describe(nextState.boardSize) ?: "None"
             candidateText = "Captured: Black ${nextState.capturedBy(StoneColor.Black)} / White ${nextState.capturedBy(StoneColor.White)}"
             scoreText = "Score estimate not current."
@@ -430,6 +444,8 @@ private fun GoCoachScreen(
                 gameState = nextState
                 isGameEnded = false
                 clearHints()
+                lastMoveReview = null
+                moveReviewText = "Move review cleared by undo."
                 lastMoveText = nextState.moves.lastOrNull()?.describe(nextState.boardSize) ?: "None"
                 candidateText = "Undo cleared current analysis hints."
                 scoreText = "Score estimate not current."
@@ -520,6 +536,7 @@ private fun GoCoachScreen(
         GoBoard(
             gameState = gameState,
             candidateMoves = candidateMoves,
+            lastMoveReview = lastMoveReview,
             inputEnabled = !isGameEnded && boardInputEnabled(matchMode, isEngineReady, isEngineBusy, gameState.nextPlayer),
             modifier = Modifier
                 .fillMaxWidth()
@@ -603,6 +620,84 @@ private fun GoCoachScreen(
             engineMessage = engineMessage,
             candidateText = candidateText,
             scoreText = scoreText,
+            moveReviewText = moveReviewText,
         )
     }
 }
+
+private data class MoveReviewResult(
+    val marker: MoveReviewMarker?,
+    val text: String,
+)
+
+private fun buildMoveReview(
+    move: Move,
+    candidates: List<CandidateMove>,
+    boardSize: BoardSize,
+): MoveReviewResult {
+    val play = move as? Move.Play
+        ?: return MoveReviewResult(
+            marker = null,
+            text = "Move review: pass/resign has no board spot evaluation.",
+        )
+
+    if (candidates.isEmpty()) {
+        return MoveReviewResult(
+            marker = null,
+            text = "Move review: no pre-move hint cache. Turn hints on before playing to review the move.",
+        )
+    }
+
+    val matchedCandidate = candidates.firstOrNull { candidate ->
+        (candidate.move as? Move.Play)?.coordinate == play.coordinate
+    }
+    if (matchedCandidate == null) {
+        return MoveReviewResult(
+            marker = MoveReviewMarker(
+                coordinate = play.coordinate,
+                tone = MoveReviewTone.Mistake,
+                label = "?",
+            ),
+            text = "Move review: ${play.coordinate.label(boardSize)} was outside the analyzed top ${candidates.size} candidate(s).",
+        )
+    }
+
+    val pointLoss = matchedCandidate.pointLoss
+    val tone = moveReviewToneFor(pointLoss)
+    val label = pointLoss?.let { (-it).toSignedOneDecimal() }.orEmpty()
+    val scoreText = matchedCandidate.scoreLead
+        ?.toPlayerPerspective(play.player)
+        ?.toSignedOneDecimal()
+        ?.let { ", score lead $it" }
+        .orEmpty()
+    val lossText = pointLoss
+        ?.let { "loss ${it.formatOneDecimal()} point(s) vs best" }
+        ?: "score loss unavailable"
+    val priorText = matchedCandidate.policyPrior
+        ?.let { ", policy ${(it * 100).toInt()}%" }
+        .orEmpty()
+
+    return MoveReviewResult(
+        marker = MoveReviewMarker(
+            coordinate = play.coordinate,
+            tone = tone,
+            label = label,
+        ),
+        text = "Move review: ${play.coordinate.label(boardSize)} ${moveReviewTextFor(pointLoss)} ($lossText$scoreText$priorText).",
+    )
+}
+
+private fun Double.toPlayerPerspective(player: StoneColor): Double =
+    when (player) {
+        StoneColor.Black -> -this
+        StoneColor.White -> this
+    }
+
+private fun Double.toSignedOneDecimal(): String {
+    val rounded = (this * 10).roundToInt() / 10.0
+    val normalized = if (kotlin.math.abs(rounded) < 0.05) 0.0 else rounded
+    return if (normalized > 0.0) "+$normalized" else normalized.toString()
+}
+
+private fun Double.formatOneDecimal(): String =
+    ((this * 10).roundToInt() / 10.0).toString()

@@ -149,3 +149,11 @@
 - 실기기 `SM_S908N`에 `make install-dev-engine`로 최신 debug APK 설치, KataGo model/config seed, cold launch를 성공시켰다.
 - 실기기에서 `Eval` 버튼을 눌러 `KataGo raw NN score estimate complete`, White/Black win rate, score lead, influence count가 표시되는 것을 확인했다.
 - 실기기 2P 모드에서 Black pass, White pass를 연속 입력해 `Local game ended after two passes`, `Final: W+6.5` 로컬 계가 표시를 확인했다.
+- 사용자가 KaTrain처럼 10개 이상의 후보 자리, 각 자리별 점수 이득/손실, 착수 후 green/yellow/red 평가 marker를 요청했다.
+- 공식 KataGo analysis 문서와 로컬 KaTrain 코드를 확인했다. KataGo 분석 결과는 후보별 `move`, `order`, `prior`, `visits`, `winrate`, `scoreLead`를 제공하며, KaTrain은 부모 노드의 후보수 분석에서 `pointsLost`를 계산해 spot 색상과 label에 사용한다.
+- 앱은 별도 “착수 후 한 수 평가” 엔진 명령을 만들지 않고, 착수 직전 후보수 cache를 실제 착수 좌표와 매칭해 리뷰하는 방향으로 정했다.
+- `CandidateMove`에 `pointLoss`를 추가하고, KataGo process adapter가 현재 착수자 관점에서 최선 후보 대비 손실을 계산하도록 구현했다.
+- 힌트 N 범위를 1-12로 늘리고, N이 커질 때 힌트 분석만 최소 `N * 10 visits`, `1000ms`로 일시 상향한 뒤 기존 AI 대국 설정으로 복구하도록 했다.
+- 보드 후보 spot은 green/yellow/red/unknown 색상과 현재 착수자 관점 score lead label을 표시한다. 착수 후에는 직전 후보수 cache 기준으로 방금 둔 돌 중앙에 평가 marker를 표시한다.
+- 검증 성공: `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :shared:check :engine-android:testDebugUnitTest :app-android:assembleDebug :app-android:testDebugUnitTest`.
+- 실기기 `SM_S908N`에 `make install-dev-engine`로 debug APK 설치, KataGo model/config seed, cold launch를 성공시켰다. 다만 검증 시점에 기기가 잠금/알림창 상태라 UI dump로 새 화면 텍스트를 읽는 자동 검증은 수행하지 못했다.

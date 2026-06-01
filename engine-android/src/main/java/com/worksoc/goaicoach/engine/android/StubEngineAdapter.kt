@@ -99,6 +99,7 @@ class StubEngineAdapter : EngineAdapter {
                     move = Move.Play(nextPlayer, coordinate),
                     winRate = 0.51 - index * 0.02,
                     scoreLead = 0.8 - index * 0.3,
+                    pointLoss = index * 0.3,
                     visits = (limit.visits / (index + 1)).coerceAtLeast(1),
                     note = if (index == 0) "Stub best candidate" else "Stub candidate ${index + 1}",
                 )

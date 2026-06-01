@@ -2,7 +2,9 @@ package com.worksoc.goaicoach.ui
 
 import com.worksoc.goaicoach.shared.AnalysisResult
 import com.worksoc.goaicoach.shared.BoardSize
+import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.FinalScoreResult
+import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.StoneColor
 import com.worksoc.goaicoach.shared.describe
@@ -19,7 +21,8 @@ internal fun AnalysisResult.toCandidateText(boardSize: BoardSize): String {
             append(". ")
             append(candidate.move.describe(boardSize))
             candidate.winRate?.let { append(" WR=${(it * 100).roundToInt()}%") }
-            candidate.scoreLead?.let { append(" score=${it}") }
+            candidate.playerPerspectiveScoreLead()?.let { append(" lead=${it.formatSignedOneDecimal()}") }
+            candidate.pointLoss?.let { append(" loss=${it.formatOneDecimal()}") }
             candidate.visits?.let { append(" visits=${it}") }
             candidate.policyPrior?.let { append(" prior=${(it * 100).roundToInt()}%") }
             candidate.note?.let { append(" - ${it}") }
@@ -67,3 +70,23 @@ private fun Double.formatOneDecimal(): String =
 
 private fun Double.formatTwoDecimals(): String =
     ((this * 100).roundToInt() / 100.0).toString()
+
+private fun Double.formatSignedOneDecimal(): String {
+    val rounded = (this * 10).roundToInt() / 10.0
+    val normalized = if (kotlin.math.abs(rounded) < 0.05) 0.0 else rounded
+    return if (normalized > 0.0) "+$normalized" else normalized.toString()
+}
+
+private fun CandidateMove.playerPerspectiveScoreLead(): Double? {
+    val player = when (val candidateMove = move) {
+        is Move.Play -> candidateMove.player
+        is Move.Pass -> candidateMove.player
+        is Move.Resign -> candidateMove.player
+    }
+    return scoreLead?.let { scoreLead ->
+        when (player) {
+            StoneColor.Black -> -scoreLead
+            StoneColor.White -> scoreLead
+        }
+    }
+}
