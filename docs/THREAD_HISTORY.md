@@ -131,3 +131,10 @@
 - `make install-dev-engine`를 실행해 debug APK 설치, KataGo model/config seed, 앱 cold launch를 모두 성공시켰다.
 - 실기기 UI dump에서 `Go AI Coach POC`, `KataGo assets found. Using local process engine.`, `Beginner`, `Visits 16`, `Hints`, `N 1` 표시를 확인했다.
 - 결론: 현재 실기기에서는 앱 설치와 엔진 asset seed가 완료되어 로컬 KataGo process engine 모드로 실행 중이며, 자동 힌트 토글과 후보수 개수 조절 UI가 노출되어 있다.
+- 사용자가 `N=5`로 설정해도 후보수가 2개만 나오는 경우가 있다고 보고했다.
+- 재현 확인 결과 `Beginner`의 `16 visits / 250ms`에서는 `kata-search_analyze`가 실제로 방문한 후보를 1-2개만 반환할 수 있음을 확인했다.
+- 해결 방향은 AI 대국 강도와 힌트 표시 개수를 강하게 묶지 않고, 검색 후보가 부족할 때 `kata-raw-nn 0`의 policy 상위 후보로 spot을 보강하는 것으로 정했다.
+- `CandidateMove`에 `policyPrior`를 추가했고, KataGo process adapter가 검색 후보 부족분을 raw NN policy fallback으로 채우도록 구현했다. fallback 후보는 `shared` 규칙 projection으로 점유점/자살수/패 금지 좌표를 제외한다.
+- 후보수 텍스트에는 검색 후보의 visits/winrate/score와 policy fallback 후보의 prior가 구분되어 표시된다.
+- 검증 성공: `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :shared:check :engine-android:testDebugUnitTest :app-android:assembleDebug :app-android:testDebugUnitTest`.
+- 실기기 재설치를 시도하기 전에 `adb devices -l`을 확인했지만 현재 연결된 디바이스가 없어 폰 반영은 수행하지 못했다.

@@ -4,10 +4,12 @@ import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.AnalysisResult
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
+import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.EngineAdapter
 import com.worksoc.goaicoach.shared.EngineMode
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.EngineStatus
+import com.worksoc.goaicoach.shared.GameStateReplayer
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.MoveResult
 import com.worksoc.goaicoach.shared.Ruleset
@@ -31,6 +33,7 @@ class KataGoProcessEngineAdapter(
 ) : EngineAdapter {
     private var profile: EngineProfile = EngineProfile(mode = EngineMode.LocalProcess)
     private var boardSize: BoardSize = BoardSize.Nine
+    private var ruleset: Ruleset = Ruleset.Chinese
     private var nextPlayer: StoneColor = StoneColor.Black
     private var process: Process? = null
     private var input: BufferedWriter? = null
@@ -58,6 +61,7 @@ class KataGoProcessEngineAdapter(
     override suspend fun newGame(boardSize: BoardSize, ruleset: Ruleset): EngineStatus {
         ensureProcessStarted()
         this.boardSize = boardSize
+        this.ruleset = ruleset
         nextPlayer = StoneColor.Black
         playedMoves.clear()
         sendCommand("boardsize ${boardSize.value}")
@@ -114,13 +118,68 @@ class KataGoProcessEngineAdapter(
             player = nextPlayer,
             boardSize = boardSize,
             maxCandidates = limit.candidateCount,
-        )
+        ).fillFromPolicyIfNeeded(limit)
+        val fallbackCount = candidates.count { it.visits == null }
         return AnalysisResult(
-            status = EngineStatus.ready("KataGo analysis complete for ${nextPlayer.label}: ${candidates.size} candidate(s)"),
+            status = EngineStatus.ready("KataGo analysis complete for ${nextPlayer.label}: ${candidates.size}/${limit.candidateCount} candidate(s)"),
             candidates = candidates,
-            summary = "KataGo search analysis with ${limit.visits} visits. Showing up to ${limit.candidateCount} green spot(s).",
+            summary = buildAnalysisSummary(limit, candidates.size, fallbackCount),
         )
     }
+
+    private fun List<CandidateMove>.fillFromPolicyIfNeeded(
+        limit: AnalysisLimit,
+    ): List<CandidateMove> {
+        val remaining = limit.candidateCount - size
+        if (remaining <= 0) {
+            return take(limit.candidateCount)
+        }
+
+        val currentState = GameStateReplayer
+            .replay(boardSize = boardSize, ruleset = ruleset, moves = playedMoves)
+        val legalCoordinates = allCoordinates()
+            .filter { coordinate ->
+                runCatching { currentState.play(Move.Play(nextPlayer, coordinate)) }.isSuccess
+            }
+            .toSet()
+        val illegalCoordinates = allCoordinates().toSet() - legalCoordinates
+        val occupiedCoordinates = currentState
+            .stones
+            .keys
+        val searchCoordinates = mapNotNull { candidate ->
+            (candidate.move as? Move.Play)?.coordinate
+        }
+        val policyResponse = sendCommand("kata-raw-nn 0")
+        val policyCandidates = KataGoAnalysisParser.parsePolicyCandidates(
+            response = policyResponse,
+            player = nextPlayer,
+            boardSize = boardSize,
+            maxCandidates = remaining,
+            excludedCoordinates = occupiedCoordinates + illegalCoordinates + searchCoordinates,
+        )
+
+        return (this + policyCandidates).take(limit.candidateCount)
+    }
+
+    private fun allCoordinates(): Sequence<BoardCoordinate> =
+        sequence {
+            for (row in 0 until boardSize.value) {
+                for (column in 0 until boardSize.value) {
+                    yield(BoardCoordinate(row, column))
+                }
+            }
+        }
+
+    private fun buildAnalysisSummary(
+        limit: AnalysisLimit,
+        shownCount: Int,
+        fallbackCount: Int,
+    ): String =
+        if (fallbackCount > 0) {
+            "KataGo search analysis with ${limit.visits} visits returned ${shownCount - fallbackCount} searched candidate(s); filled $fallbackCount spot(s) from raw NN policy."
+        } else {
+            "KataGo search analysis with ${limit.visits} visits. Showing $shownCount/${limit.candidateCount} green spot(s)."
+        }
 
     override suspend fun stop(): EngineStatus {
         runCatching {

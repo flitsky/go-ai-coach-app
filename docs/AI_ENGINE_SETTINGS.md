@@ -51,6 +51,9 @@
   - 한 번에 표시할 후보수 개수다.
   - 현재 UI 범위는 `1-5`다.
   - `AnalysisLimit.candidateCount`로 엔진 adapter에 전달된다.
+  - `Beginner`처럼 낮은 visits/time 설정에서는 KataGo 검색이 실제로 방문한 후보수가 N보다 적을 수 있다.
+  - 이 경우 앱은 부족한 spot을 `kata-raw-nn` 정책 우선순위 후보로 보강한다.
+  - 검색 후보는 `WR`, `score`, `visits`를 가질 수 있고, 정책 보강 후보는 `prior` 중심으로 표시된다.
 
 ## KataGo process adapter 매핑
 
@@ -69,6 +72,8 @@ maxTime=0.25
 numSearchThreads=1
 candidateCount=1
 ```
+
+주의: `candidateCount`는 “검색 방문수”가 아니라 “표시 목표 개수”다. 낮은 visits/time에서는 검색 후보가 적게 나올 수 있으므로, 앱은 표시 개수를 맞추기 위해 raw NN policy fallback을 사용한다.
 
 ## Stub adapter 주의점
 

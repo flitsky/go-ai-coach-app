@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.engine.android
 
 import com.worksoc.goaicoach.shared.BoardSize
+import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.StoneColor
 import kotlin.test.Test
@@ -11,7 +12,7 @@ class KataGoAnalysisParserTest {
     @Test
     fun parsesKataGoInfoMoves() {
         val response = """
-            info move C5 visits 2 winrate 0.182844 scoreLead 0.00741314 order 0 pv C5 G4 info move G5 visits 1 winrate 0.48 scoreLead -0.4 order 1 pv G5
+            info move C5 visits 2 winrate 0.182844 scoreLead 0.00741314 prior 0.2244 order 0 pv C5 G4 info move G5 visits 1 winrate 0.48 scoreLead -0.4 order 1 pv G5
             play C5
         """.trimIndent()
 
@@ -25,6 +26,7 @@ class KataGoAnalysisParserTest {
         assertEquals(2, candidates[0].visits)
         assertEquals(0.182844, candidates[0].winRate)
         assertEquals(0.00741314, candidates[0].scoreLead)
+        assertEquals(0.2244, candidates[0].policyPrior)
         assertEquals("KataGo order 0", candidates[0].note)
 
         val firstMove = assertIs<Move.Play>(candidates[0].move)
@@ -64,5 +66,38 @@ class KataGoAnalysisParserTest {
         )
 
         assertEquals(2, candidates.size)
+    }
+
+    @Test
+    fun parsesRawPolicyCandidates() {
+        val response = """
+            symmetry 0
+            whiteWin 0.213804
+            policy
+            0.01 0.01 0.01 0.01 0.01 0.01 0.01 0.01 0.01
+            0.01 0.01 0.01 0.01 0.01 0.01 0.01 0.01 0.01
+            0.01 0.01 0.01 0.01 0.01 0.01 0.01 0.01 0.01
+            0.01 0.01 0.01 0.01 0.01 0.30 0.01 0.01 0.01
+            0.01 0.01 0.01 0.01 0.50 0.20 0.01 0.01 0.01
+            0.01 0.01 0.01 0.01 0.01 0.01 0.01 0.01 0.01
+            0.01 0.01 0.01 0.01 0.01 0.01 0.01 0.01 0.01
+            0.01 0.01 0.01 0.01 0.01 0.01 0.01 0.01 0.01
+            0.01 0.01 0.01 0.01 0.01 0.01 0.01 0.01 0.01
+            policyPass 0.000024
+        """.trimIndent()
+
+        val candidates = KataGoAnalysisParser.parsePolicyCandidates(
+            response = response,
+            player = StoneColor.Black,
+            boardSize = BoardSize.Nine,
+            maxCandidates = 2,
+            excludedCoordinates = setOf(BoardCoordinate.fromLabel("E5", BoardSize.Nine)),
+        )
+
+        assertEquals(2, candidates.size)
+        assertEquals("F6", (candidates[0].move as Move.Play).coordinate.label(BoardSize.Nine))
+        assertEquals(0.30, candidates[0].policyPrior)
+        assertEquals("F5", (candidates[1].move as Move.Play).coordinate.label(BoardSize.Nine))
+        assertEquals(0.20, candidates[1].policyPrior)
     }
 }

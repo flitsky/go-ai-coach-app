@@ -18,6 +18,7 @@ internal fun AnalysisResult.toCandidateText(boardSize: BoardSize): String {
             candidate.winRate?.let { append(" WR=${(it * 100).roundToInt()}%") }
             candidate.scoreLead?.let { append(" score=${it}") }
             candidate.visits?.let { append(" visits=${it}") }
+            candidate.policyPrior?.let { append(" prior=${(it * 100).roundToInt()}%") }
             candidate.note?.let { append(" - ${it}") }
             if (index != candidates.lastIndex) {
                 appendLine()

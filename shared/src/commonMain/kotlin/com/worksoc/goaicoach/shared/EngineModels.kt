@@ -92,6 +92,7 @@ data class CandidateMove(
     val winRate: Double? = null,
     val scoreLead: Double? = null,
     val visits: Int? = null,
+    val policyPrior: Double? = null,
     val note: String? = null,
 )
 
