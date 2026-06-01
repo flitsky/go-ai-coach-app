@@ -113,11 +113,12 @@ class KataGoProcessEngineAdapter(
             response = response,
             player = nextPlayer,
             boardSize = boardSize,
+            maxCandidates = limit.candidateCount,
         )
         return AnalysisResult(
             status = EngineStatus.ready("KataGo analysis complete for ${nextPlayer.label}: ${candidates.size} candidate(s)"),
             candidates = candidates,
-            summary = "KataGo search analysis with ${limit.visits} visits. Top candidates are shown as green spots.",
+            summary = "KataGo search analysis with ${limit.visits} visits. Showing up to ${limit.candidateCount} green spot(s).",
         )
     }
 

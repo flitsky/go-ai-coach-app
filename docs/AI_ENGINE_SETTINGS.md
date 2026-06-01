@@ -9,6 +9,7 @@
 - 기본 difficulty: `DifficultyProfile.Beginner`
 - 기본 visits: `16`
 - 기본 time limit: `250ms`
+- 기본 hint count: `1`
 - UI visits 최저값: `16`
 - process adapter startup thread: `numSearchThreads=1`
 
@@ -41,6 +42,16 @@
 
 설정 변경은 엔진이 준비되어 있고 AI가 생각 중이 아닐 때만 허용한다.
 
+`Hints` 패널은 후보수 표시를 조정한다.
+
+- `Hints` 토글
+  - 켜져 있으면 사람 차례가 돌아온 시점에 자동으로 후보수를 분석한다.
+  - 꺼져 있어도 `Hint` 버튼을 누르면 수동으로 현재 후보수를 볼 수 있다.
+- `N`
+  - 한 번에 표시할 후보수 개수다.
+  - 현재 UI 범위는 `1-5`다.
+  - `AnalysisLimit.candidateCount`로 엔진 adapter에 전달된다.
+
 ## KataGo process adapter 매핑
 
 `KataGoProcessEngineAdapter`는 설정을 다음 방식으로 엔진에 전달한다.
@@ -56,6 +67,7 @@
 maxVisits=16
 maxTime=0.25
 numSearchThreads=1
+candidateCount=1
 ```
 
 ## Stub adapter 주의점

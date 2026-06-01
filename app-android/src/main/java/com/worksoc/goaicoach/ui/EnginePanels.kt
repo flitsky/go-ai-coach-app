@@ -10,6 +10,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -167,6 +168,66 @@ internal fun EngineTuningPanel(
 }
 
 @Composable
+internal fun HintControlsPanel(
+    hintEnabled: Boolean,
+    hintCount: Int,
+    enabled: Boolean,
+    onHintEnabledChange: (Boolean) -> Unit,
+    onHintCountChange: (Int) -> Unit,
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(8.dp),
+        tonalElevation = 1.dp,
+        shadowElevation = 0.dp,
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text("Hints", fontWeight = FontWeight.SemiBold)
+                Switch(
+                    checked = hintEnabled,
+                    enabled = enabled,
+                    onCheckedChange = onHintEnabledChange,
+                )
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                OutlinedButton(
+                    onClick = { onHintCountChange(previousHintCount(hintCount)) },
+                    enabled = enabled && hintCount > HintCountOptions.first(),
+                    modifier = Modifier.weight(0.7f),
+                ) {
+                    Text("-")
+                }
+                Text(
+                    text = "N $hintCount",
+                    modifier = Modifier.weight(2f),
+                    fontWeight = FontWeight.SemiBold,
+                )
+                OutlinedButton(
+                    onClick = { onHintCountChange(nextHintCount(hintCount)) },
+                    enabled = enabled && hintCount < HintCountOptions.last(),
+                    modifier = Modifier.weight(0.7f),
+                ) {
+                    Text("+")
+                }
+            }
+        }
+    }
+}
+
+@Composable
 internal fun EngineResponsePanel(
     nextPlayer: StoneColor,
     moveCount: Int,
@@ -226,9 +287,16 @@ internal fun EngineResponsePanel(
 }
 
 private val VisitOptions = listOf(16, 64, 160, 400, 1_000)
+private val HintCountOptions = listOf(1, 2, 3, 4, 5)
 
 private fun previousVisits(current: Int): Int =
     VisitOptions.lastOrNull { it < current } ?: VisitOptions.first()
 
 private fun nextVisits(current: Int): Int =
     VisitOptions.firstOrNull { it > current } ?: VisitOptions.last()
+
+private fun previousHintCount(current: Int): Int =
+    HintCountOptions.lastOrNull { it < current } ?: HintCountOptions.first()
+
+private fun nextHintCount(current: Int): Int =
+    HintCountOptions.firstOrNull { it > current } ?: HintCountOptions.last()

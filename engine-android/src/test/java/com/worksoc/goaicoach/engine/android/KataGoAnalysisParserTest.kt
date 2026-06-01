@@ -47,4 +47,22 @@ class KataGoAnalysisParserTest {
 
         assertEquals(0.5234, candidates.single().winRate)
     }
+
+    @Test
+    fun respectsMaxCandidateCount() {
+        val response = """
+            info move C5 visits 2 winrate 0.5 scoreLead 0 order 0 pv C5
+            info move D5 visits 2 winrate 0.4 scoreLead 0 order 1 pv D5
+            info move E5 visits 2 winrate 0.3 scoreLead 0 order 2 pv E5
+        """.trimIndent()
+
+        val candidates = KataGoAnalysisParser.parseCandidates(
+            response = response,
+            player = StoneColor.Black,
+            boardSize = BoardSize.Nine,
+            maxCandidates = 2,
+        )
+
+        assertEquals(2, candidates.size)
+    }
 }

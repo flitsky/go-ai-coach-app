@@ -83,36 +83,25 @@ class StubEngineAdapter : EngineAdapter {
 
     override suspend fun analyze(limit: AnalysisLimit): AnalysisResult {
         ensureInitialized()
-        val candidates = buildList {
-            val first = chooseCoordinate()
-            add(
+        val candidates = priorityCoordinates()
+            .asSequence()
+            .filter { it !in occupied }
+            .take(limit.candidateCount)
+            .mapIndexed { index, coordinate ->
                 CandidateMove(
-                    move = Move.Play(nextPlayer, first),
-                    winRate = 0.51,
-                    scoreLead = 0.8,
-                    visits = limit.visits,
-                    note = "Stub candidate near the center",
-                ),
-            )
-
-            val second = firstOpenCoordinateAfter(first)
-            if (second != null) {
-                add(
-                    CandidateMove(
-                        move = Move.Play(nextPlayer, second),
-                        winRate = 0.48,
-                        scoreLead = -0.4,
-                        visits = limit.visits / 2,
-                        note = "Secondary stub candidate",
-                    ),
+                    move = Move.Play(nextPlayer, coordinate),
+                    winRate = 0.51 - index * 0.02,
+                    scoreLead = 0.8 - index * 0.3,
+                    visits = (limit.visits / (index + 1)).coerceAtLeast(1),
+                    note = if (index == 0) "Stub best candidate" else "Stub candidate ${index + 1}",
                 )
             }
-        }
+            .toList()
 
         return AnalysisResult(
             status = EngineStatus.ready("Analysis stub complete with ${limit.visits} visits"),
             candidates = candidates,
-            summary = "Stub analysis response shaped like a future KataGo result. Profile=${profile.difficulty.label}.",
+            summary = "Stub analysis response shaped like a future KataGo result. Profile=${profile.difficulty.label}, candidates=${candidates.size}.",
         )
     }
 
@@ -130,10 +119,6 @@ class StubEngineAdapter : EngineAdapter {
     private fun chooseCoordinate(): BoardCoordinate {
         return priorityCoordinates().firstOrNull { it !in occupied }
             ?: error("No open coordinates remain on ${boardSize.value}x${boardSize.value}")
-    }
-
-    private fun firstOpenCoordinateAfter(anchor: BoardCoordinate): BoardCoordinate? {
-        return priorityCoordinates().firstOrNull { it !in occupied && it != anchor }
     }
 
     private fun rebuildOccupiedFromHistory() {

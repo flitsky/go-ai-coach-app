@@ -89,6 +89,9 @@ private fun GoCoachScreen(
     var isEngineReady by remember { mutableStateOf(false) }
     var engineProfile by remember { mutableStateOf(EngineProfile()) }
     var matchMode by remember { mutableStateOf(MatchMode.HumanVsAi) }
+    var hintEnabled by remember { mutableStateOf(false) }
+    var hintCount by remember { mutableStateOf(1) }
+    var lastHintKey by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(engineAdapter) {
         isEngineBusy = true
@@ -109,10 +112,74 @@ private fun GoCoachScreen(
         isEngineBusy = false
     }
 
+    fun hintKeyFor(
+        state: GameState,
+        count: Int,
+    ): String =
+        buildString {
+            append(state.nextPlayer.name)
+            append("|")
+            append(count)
+            append("|")
+            append(engineProfile.analysisLimit.visits)
+            append("|")
+            append(engineProfile.analysisLimit.timeMillis ?: "none")
+            append("|")
+            state.moves.forEach { move ->
+                append(move.describe(state.boardSize))
+                append(";")
+            }
+        }
+
+    fun clearHints(message: String? = null) {
+        candidateMoves = emptyList()
+        lastHintKey = null
+        if (message != null) {
+            candidateText = message
+        }
+    }
+
+    fun requestHintsForState(
+        targetState: GameState,
+        automatic: Boolean,
+    ) {
+        if (!isEngineReady || isEngineBusy || matchMode != MatchMode.HumanVsAi || targetState.nextPlayer != HumanPlayer) {
+            return
+        }
+
+        val hintKey = hintKeyFor(targetState, hintCount)
+        if (automatic && hintKey == lastHintKey) {
+            return
+        }
+
+        lastHintKey = hintKey
+        scope.launch {
+            isEngineBusy = true
+            runCatching {
+                withContext(Dispatchers.IO) {
+                    engineAdapter.analyze(
+                        engineProfile.analysisLimit.copy(candidateCount = hintCount),
+                    )
+                }
+            }.onSuccess { result ->
+                engineMessage = result.status.message
+                candidateText = result.toCandidateText(targetState.boardSize)
+                candidateMoves = result.candidates.take(hintCount)
+            }.onFailure { error ->
+                engineMessage = error.message ?: "Hint analysis failed."
+                clearHints("Hint analysis failed.")
+            }
+            isEngineBusy = false
+        }
+    }
+
+    fun requestHintsForCurrentState(automatic: Boolean) {
+        requestHintsForState(gameState, automatic)
+    }
+
     fun resetLocalGame(message: String) {
         gameState = GameState.empty(BoardSize.Nine, Ruleset.Chinese)
-        candidateText = "No analysis yet."
-        candidateMoves = emptyList()
+        clearHints("No analysis yet.")
         lastMoveText = "None"
         engineMessage = message
     }
@@ -130,16 +197,21 @@ private fun GoCoachScreen(
 
         scope.launch {
             isEngineBusy = true
+            var nextHintState: GameState? = null
             runCatching {
                 withContext(Dispatchers.IO) {
                     engineAdapter.newGame(BoardSize.Nine, Ruleset.Chinese)
                 }
             }.onSuccess { status ->
                 resetLocalGame(status.message)
+                nextHintState = gameState
             }.onFailure { error ->
                 resetLocalGame(error.message ?: "New AI game failed.")
             }
             isEngineBusy = false
+            if (hintEnabled) {
+                requestHintsForState(nextHintState ?: gameState, automatic = true)
+            }
         }
     }
 
@@ -183,7 +255,7 @@ private fun GoCoachScreen(
                 ?: return
 
             gameState = afterMove
-            candidateMoves = emptyList()
+            clearHints()
             lastMoveText = move.describe(beforeMove.boardSize)
             candidateText = "Captured: Black ${afterMove.capturedBy(StoneColor.Black)} / White ${afterMove.capturedBy(StoneColor.White)}"
             engineMessage = "Local move accepted: ${move.describe(beforeMove.boardSize)}."
@@ -212,13 +284,14 @@ private fun GoCoachScreen(
             ?: return
 
         gameState = afterHuman
-        candidateMoves = emptyList()
+        clearHints()
         lastMoveText = move.describe(beforeMove.boardSize)
         candidateText = "AI is thinking..."
         engineMessage = "Submitted ${move.describe(beforeMove.boardSize)}."
         isEngineBusy = true
 
         scope.launch {
+            var nextHintState: GameState? = null
             runCatching {
                 withContext(Dispatchers.IO) {
                     applyAiResponseAfterHumanTurn(
@@ -229,10 +302,11 @@ private fun GoCoachScreen(
                 }
             }.onSuccess { outcome ->
                 gameState = outcome.gameState
-                candidateMoves = emptyList()
+                clearHints()
                 engineMessage = outcome.engineMessage
                 candidateText = outcome.candidateText
                 lastMoveText = outcome.lastMoveText
+                nextHintState = outcome.gameState
             }.onFailure { error ->
                 gameState = beforeMove
                 engineMessage = error.message ?: "Move failed."
@@ -240,6 +314,9 @@ private fun GoCoachScreen(
                 lastMoveText = "None"
             }
             isEngineBusy = false
+            if (hintEnabled) {
+                nextHintState?.let { requestHintsForState(it, automatic = true) }
+            }
         }
     }
 
@@ -252,7 +329,7 @@ private fun GoCoachScreen(
         if (matchMode == MatchMode.LocalTwoPlayer) {
             val nextState = gameState.replayWithoutLastMoves(1)
             gameState = nextState
-            candidateMoves = emptyList()
+            clearHints()
             lastMoveText = nextState.moves.lastOrNull()?.describe(nextState.boardSize) ?: "None"
             candidateText = "Captured: Black ${nextState.capturedBy(StoneColor.Black)} / White ${nextState.capturedBy(StoneColor.White)}"
             engineMessage = "Local undo completed."
@@ -271,6 +348,7 @@ private fun GoCoachScreen(
         val undoCount = minOf(2, gameState.moves.size)
         scope.launch {
             isEngineBusy = true
+            var nextHintState: GameState? = null
             runCatching {
                 withContext(Dispatchers.IO) {
                     repeat(undoCount) {
@@ -280,14 +358,18 @@ private fun GoCoachScreen(
             }.onSuccess {
                 val nextState = gameState.replayWithoutLastMoves(undoCount)
                 gameState = nextState
-                candidateMoves = emptyList()
+                clearHints()
                 lastMoveText = nextState.moves.lastOrNull()?.describe(nextState.boardSize) ?: "None"
                 candidateText = "Undo cleared current analysis hints."
                 engineMessage = "Undid $undoCount move(s) in local state and engine state."
+                nextHintState = nextState
             }.onFailure { error ->
                 engineMessage = error.message ?: "Undo failed."
             }
             isEngineBusy = false
+            if (hintEnabled) {
+                nextHintState?.let { requestHintsForState(it, automatic = true) }
+            }
         }
     }
 
@@ -342,6 +424,27 @@ private fun GoCoachScreen(
             },
         )
 
+        HintControlsPanel(
+            hintEnabled = hintEnabled,
+            hintCount = hintCount,
+            enabled = matchMode == MatchMode.HumanVsAi && isEngineReady && !isEngineBusy,
+            onHintEnabledChange = { enabled ->
+                hintEnabled = enabled
+                if (enabled) {
+                    requestHintsForCurrentState(automatic = true)
+                } else {
+                    clearHints("Hints disabled.")
+                }
+            },
+            onHintCountChange = { count ->
+                hintCount = count
+                clearHints("Hint count set to $count.")
+                if (hintEnabled) {
+                    requestHintsForCurrentState(automatic = true)
+                }
+            },
+        )
+
         GoBoard(
             gameState = gameState,
             candidateMoves = candidateMoves,
@@ -380,24 +483,7 @@ private fun GoCoachScreen(
             }
 
             OutlinedButton(
-                onClick = {
-                    scope.launch {
-                        isEngineBusy = true
-                        runCatching {
-                            withContext(Dispatchers.IO) {
-                                engineAdapter.analyze(engineProfile.analysisLimit)
-                            }
-                        }.onSuccess { result ->
-                            engineMessage = result.status.message
-                            candidateText = result.toCandidateText(gameState.boardSize)
-                            candidateMoves = result.candidates
-                        }.onFailure { error ->
-                            engineMessage = error.message ?: "Analysis failed."
-                            candidateMoves = emptyList()
-                        }
-                        isEngineBusy = false
-                    }
-                },
+                onClick = { requestHintsForCurrentState(automatic = false) },
                 enabled = matchMode == MatchMode.HumanVsAi && isEngineReady && !isEngineBusy,
                 modifier = Modifier.weight(1f),
             ) {

@@ -119,3 +119,10 @@
 - `adb devices -l`로 실기기 `SM_S908N`이 USB 디버깅 상태로 연결된 것을 확인했다.
 - `make install-dev-engine`를 실행해 debug APK를 실기기에 설치하고, KataGo model/config를 app files에 seed한 뒤 앱을 cold launch했다.
 - 실기기 UI dump에서 `Go AI Coach POC`, `human Black vs KataGo White`, `KataGo assets found. Using local process engine.`, `Beginner`, `Visits 16` 표시를 확인했다.
+- 사용자가 힌트 후보수를 여러 개 받아와 한 번에 표현할 수 있는지 검토를 요청했다.
+- 검토 결과 KataGo `kata-search_analyze`는 여러 `info move ...` 블록을 반환할 수 있고, 빈 9x9 판에서도 desktop smoke test 기준 5개 후보를 받을 수 있음을 확인했다.
+- `AnalysisLimit`에 `candidateCount`를 추가하고, Stub/KataGo process adapter가 요청 후보수만큼 후보를 반환하도록 확장했다.
+- Android UI에 `Hints` 토글과 `N` 후보수 개수 조절 UI를 추가했다. `Hints`가 켜져 있으면 사람 차례가 돌아왔을 때 자동으로 현재 판을 분석하며, 수동 `Hint` 버튼도 유지한다.
+- 후보수 개수 UI는 1-5 범위로 제한했다. 실제 표시 개수는 요청한 N과 KataGo 응답 후보수 중 더 작은 값이다.
+- 검증 성공: `make test`.
+- 실기기 재설치를 시도했으나 작업 중 USB 디버깅 디바이스가 연결 해제되어 `installDebug` 단계에서 `No connected devices!`가 발생했다. 재연결 후 `make install-dev-engine`로 재검증하면 된다.

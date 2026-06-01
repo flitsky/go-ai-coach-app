@@ -78,10 +78,12 @@ enum class EngineState {
 data class AnalysisLimit(
     val visits: Int = 64,
     val timeMillis: Long? = null,
+    val candidateCount: Int = 5,
 ) {
     init {
         require(visits > 0) { "visits must be positive" }
         require(timeMillis == null || timeMillis > 0) { "timeMillis must be positive when set" }
+        require(candidateCount > 0) { "candidateCount must be positive" }
     }
 }
 

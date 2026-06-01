@@ -26,9 +26,13 @@ KaTrain류 UI는 대체로 엔진 분석 결과의 후보수 리스트를 보드
 - 사람이 착수하거나, AI 응수가 완료되거나, 새 판/undo가 실행되면 이전 후보수 표시는 지운다.
 - KataGo process adapter는 `kata-search_analyze` 응답의 `info move ...` 블록을 파싱해 후보 spot을 표시한다.
 - UI 버튼명은 좁은 모바일 폭에서 줄바꿈을 피하기 위해 `Hint`로 표시한다.
+- `Hints` 토글을 켜면 사람 차례가 돌아온 시점에 자동으로 현재 판을 분석한다.
+- `N` 설정으로 한 번에 표시할 후보수 개수를 1-5개 범위에서 조절한다.
+- 수동 `Hint` 버튼은 토글 상태와 관계없이 현재 차례에 한 번 분석을 실행한다.
+- 실제 표시 개수는 요청한 `N`과 KataGo가 해당 판에서 반환한 후보수 중 더 작은 값이다.
 
 ## 후속 작업
 
 1. 분석 취소/타임아웃 처리
 2. 후보수별 win rate, score lead, visits를 보드 위 compact label로 표시
-3. 대국 중 자동 low-cost background analysis 여부 결정
+3. 자동 분석이 너무 잦아질 경우 debounce/cooldown 정책 추가
