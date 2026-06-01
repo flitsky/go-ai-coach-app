@@ -42,7 +42,7 @@ import kotlin.math.roundToInt
 internal fun GoBoard(
     gameState: GameState,
     candidateMoves: List<CandidateMove>,
-    lastMoveReview: MoveReviewMarker?,
+    moveReviews: List<MoveReviewMarker>,
     inputEnabled: Boolean,
     modifier: Modifier = Modifier,
     onCoordinateTap: (BoardCoordinate) -> Unit,
@@ -87,7 +87,7 @@ internal fun GoBoard(
                 )
             }
 
-            drawMoveReview(geometry, lastMoveReview)
+            drawMoveReviews(geometry, gameState, moveReviews)
         }
     }
 }
@@ -124,25 +124,29 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawCandidateMoves(
     }
 }
 
-private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawMoveReview(
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawMoveReviews(
     geometry: BoardGeometry,
-    marker: MoveReviewMarker?,
+    gameState: GameState,
+    markers: List<MoveReviewMarker>,
 ) {
-    marker ?: return
-    val center = geometry.pointFor(marker.coordinate)
-    val radius = geometry.spacing * 0.12f
-    val color = candidateToneColor(marker.tone)
-    drawCircle(
-        color = color.copy(alpha = 0.9f),
-        radius = radius,
-        center = center,
-    )
-    drawCircle(
-        color = color.darken(),
-        radius = radius,
-        center = center,
-        style = Stroke(width = 2.5f),
-    )
+    markers
+        .filter { marker -> gameState.hasCurrentStoneFor(marker) }
+        .forEach { marker ->
+            val center = geometry.pointFor(marker.coordinate)
+            val radius = geometry.spacing * 0.12f
+            val color = candidateToneColor(marker.tone)
+            drawCircle(
+                color = color.copy(alpha = 0.92f),
+                radius = radius,
+                center = center,
+            )
+            drawCircle(
+                color = color.darken(),
+                radius = radius,
+                center = center,
+                style = Stroke(width = 2.5f),
+            )
+        }
 }
 
 private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawSpotLabel(
@@ -192,6 +196,16 @@ private fun Double.toSignedOneDecimal(): String {
     val rounded = (this * 10).roundToInt() / 10.0
     val normalized = if (abs(rounded) < 0.05) 0.0 else rounded
     return if (normalized > 0.0) "+$normalized" else normalized.toString()
+}
+
+private fun GameState.hasCurrentStoneFor(marker: MoveReviewMarker): Boolean {
+    if (stoneAt(marker.coordinate) == null) {
+        return false
+    }
+    val latestMoveIndex = moves.indexOfLast { move ->
+        move is Move.Play && move.coordinate == marker.coordinate
+    }
+    return latestMoveIndex >= 0 && latestMoveIndex + 1 == marker.moveNumber
 }
 
 private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawBoardGrid(

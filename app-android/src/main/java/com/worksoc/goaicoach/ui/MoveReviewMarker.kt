@@ -4,8 +4,8 @@ import com.worksoc.goaicoach.shared.BoardCoordinate
 
 internal data class MoveReviewMarker(
     val coordinate: BoardCoordinate,
+    val moveNumber: Int,
     val tone: MoveReviewTone,
-    val label: String,
 )
 
 internal enum class MoveReviewTone {

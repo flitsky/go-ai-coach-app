@@ -159,3 +159,5 @@
 - 실기기 `SM_S908N`에 `make install-dev-engine`로 debug APK 설치, KataGo model/config seed, cold launch를 성공시켰다. 다만 검증 시점에 기기가 잠금/알림창 상태라 UI dump로 새 화면 텍스트를 읽는 자동 검증은 수행하지 못했다.
 - 사용자가 착수한 바둑알 위에는 점수 숫자를 표시하지 말고 작은 색상 원만 표시해달라고 요청했다. `GoBoard`의 착수 후 평가 marker를 마지막 수 표시와 같은 크기의 작은 원으로 조정하고 label 렌더링을 제거했다.
 - 사용자가 KaTrain의 바둑알 질감을 참고해 바둑알이 3D처럼 보이도록 요청했다. 로컬 KaTrain의 `B_stone.png`, `W_stone.png`를 확인하고, 앱 Canvas 바둑알을 중앙은 밝고 외곽은 어두운 radial gradient와 얇은 rim/shadow로 렌더링하도록 변경했다.
+- 사용자가 점수 숫자를 제거하면서 착수 후 색상 dot도 사라진 것 같다고 보고했다. 단일 `lastMoveReview` 대신 `moveReviews` 목록을 유지하도록 바꾸고, 각 marker에 `moveNumber`를 넣어 착수 당시 평가 dot이 해당 돌 위에 계속 남도록 했다.
+- `GoBoard`는 현재 board history에서 해당 좌표의 최신 착수 번호가 marker의 `moveNumber`와 일치할 때만 dot을 그린다. 이로써 잡힌 돌, undo된 돌, 같은 좌표 재착수에 오래된 marker가 잘못 표시되는 문제를 피한다.

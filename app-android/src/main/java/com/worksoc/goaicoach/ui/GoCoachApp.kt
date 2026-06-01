@@ -88,7 +88,7 @@ private fun GoCoachScreen(
     var candidateMoves by remember { mutableStateOf(emptyList<CandidateMove>()) }
     var scoreText by remember { mutableStateOf("No score estimate yet.") }
     var moveReviewText by remember { mutableStateOf("No move review yet.") }
-    var lastMoveReview by remember { mutableStateOf<MoveReviewMarker?>(null) }
+    var moveReviews by remember { mutableStateOf(emptyList<MoveReviewMarker>()) }
     var lastMoveText by remember { mutableStateOf("None") }
     var isEngineBusy by remember { mutableStateOf(false) }
     var isEngineReady by remember { mutableStateOf(false) }
@@ -195,7 +195,7 @@ private fun GoCoachScreen(
         clearHints("No analysis yet.")
         scoreText = "No score estimate yet."
         moveReviewText = "No move review yet."
-        lastMoveReview = null
+        moveReviews = emptyList()
         lastMoveText = "None"
         engineMessage = message
     }
@@ -307,7 +307,7 @@ private fun GoCoachScreen(
             gameState = afterMove
             clearHints()
             moveReviewText = "Move review is available in AI hint mode."
-            lastMoveReview = null
+            moveReviews = emptyList()
             lastMoveText = move.describe(beforeMove.boardSize)
             scoreText = "Score estimate not current."
             if (afterMove.hasConsecutivePasses()) {
@@ -345,9 +345,15 @@ private fun GoCoachScreen(
             ?: return
 
         gameState = afterHuman
-        val moveReview = buildMoveReview(move, candidateMoves, beforeMove.boardSize)
+        val previousMoveReviews = moveReviews
+        val moveReview = buildMoveReview(
+            move = move,
+            candidates = candidateMoves,
+            boardSize = beforeMove.boardSize,
+            moveNumber = afterHuman.moves.size,
+        )
         moveReviewText = moveReview.text
-        lastMoveReview = moveReview.marker
+        moveReviews = previousMoveReviews.withReviewMarker(moveReview.marker)
         clearHints()
         scoreText = "Score estimate not current."
         lastMoveText = move.describe(beforeMove.boardSize)
@@ -387,7 +393,7 @@ private fun GoCoachScreen(
                 }
             }.onFailure { error ->
                 gameState = beforeMove
-                lastMoveReview = null
+                moveReviews = previousMoveReviews
                 moveReviewText = "Move review cleared after rollback."
                 engineMessage = error.message ?: "Move failed."
                 candidateText = "Move was rolled back after engine failure."
@@ -411,7 +417,7 @@ private fun GoCoachScreen(
             gameState = nextState
             isGameEnded = false
             clearHints()
-            lastMoveReview = null
+            moveReviews = emptyList()
             moveReviewText = "Move review cleared by undo."
             lastMoveText = nextState.moves.lastOrNull()?.describe(nextState.boardSize) ?: "None"
             candidateText = "Captured: Black ${nextState.capturedBy(StoneColor.Black)} / White ${nextState.capturedBy(StoneColor.White)}"
@@ -444,7 +450,7 @@ private fun GoCoachScreen(
                 gameState = nextState
                 isGameEnded = false
                 clearHints()
-                lastMoveReview = null
+                moveReviews = moveReviews.filter { marker -> marker.moveNumber <= nextState.moves.size }
                 moveReviewText = "Move review cleared by undo."
                 lastMoveText = nextState.moves.lastOrNull()?.describe(nextState.boardSize) ?: "None"
                 candidateText = "Undo cleared current analysis hints."
@@ -536,7 +542,7 @@ private fun GoCoachScreen(
         GoBoard(
             gameState = gameState,
             candidateMoves = candidateMoves,
-            lastMoveReview = lastMoveReview,
+            moveReviews = moveReviews,
             inputEnabled = !isGameEnded && boardInputEnabled(matchMode, isEngineReady, isEngineBusy, gameState.nextPlayer),
             modifier = Modifier
                 .fillMaxWidth()
@@ -634,6 +640,7 @@ private fun buildMoveReview(
     move: Move,
     candidates: List<CandidateMove>,
     boardSize: BoardSize,
+    moveNumber: Int,
 ): MoveReviewResult {
     val play = move as? Move.Play
         ?: return MoveReviewResult(
@@ -655,8 +662,8 @@ private fun buildMoveReview(
         return MoveReviewResult(
             marker = MoveReviewMarker(
                 coordinate = play.coordinate,
+                moveNumber = moveNumber,
                 tone = MoveReviewTone.Mistake,
-                label = "",
             ),
             text = "Move review: ${play.coordinate.label(boardSize)} was outside the analyzed top ${candidates.size} candidate(s).",
         )
@@ -679,12 +686,21 @@ private fun buildMoveReview(
     return MoveReviewResult(
         marker = MoveReviewMarker(
             coordinate = play.coordinate,
+            moveNumber = moveNumber,
             tone = tone,
-            label = "",
         ),
         text = "Move review: ${play.coordinate.label(boardSize)} ${moveReviewTextFor(pointLoss)} ($lossText$scoreText$priorText).",
     )
 }
+
+private fun List<MoveReviewMarker>.withReviewMarker(
+    marker: MoveReviewMarker?,
+): List<MoveReviewMarker> =
+    if (marker == null) {
+        this
+    } else {
+        filterNot { existing -> existing.moveNumber == marker.moveNumber } + marker
+    }
 
 private fun Double.toPlayerPerspective(player: StoneColor): Double =
     when (player) {

@@ -50,9 +50,11 @@ KaTrain류 UI는 대체로 엔진 분석 결과의 후보수 리스트를 보드
 
 - 실제 착수 좌표가 직전 후보 목록에 있으면 해당 후보의 `pointLoss`로 green/yellow/red marker를 돌 중앙에 표시한다.
 - 착수 후 marker는 바둑알 위에 작은 색상 원만 표시하고, 점수 숫자는 보드 위에 겹쳐 쓰지 않는다.
+- 착수 후 marker는 단일 last marker가 아니라 `moveNumber`가 포함된 목록으로 유지한다. 따라서 AI 응수나 다음 힌트 갱신 후에도 착수 당시 평가 dot이 해당 돌 위에 남는다.
 - 직전 후보 목록에는 있으나 policy fallback 후보라서 점수 손실이 없으면 unknown으로 처리한다.
 - 직전 후보 목록 밖에 둔 경우 red marker와 `outside the analyzed top N` 메시지를 표시한다.
 - 사용자가 힌트를 켜지 않았거나 착수 직전 분석 cache가 없으면 착수 후 평가는 표시하지 않는다.
+- 잡힌 돌, undo된 돌, 같은 좌표에 나중에 다시 둔 돌에는 오래된 marker가 재사용되지 않도록 현재 board history의 최신 착수 번호와 marker의 `moveNumber`가 일치할 때만 그린다.
 
 이 방식은 KaTrain의 `GameNode.candidate_moves`가 부모 노드 분석에서 `pointsLost`를 계산하고, 자식 노드/리뷰 UI에서 그 정보를 참조하는 흐름과 같은 방향이다.
 
