@@ -656,7 +656,7 @@ private fun buildMoveReview(
             marker = MoveReviewMarker(
                 coordinate = play.coordinate,
                 tone = MoveReviewTone.Mistake,
-                label = "?",
+                label = "",
             ),
             text = "Move review: ${play.coordinate.label(boardSize)} was outside the analyzed top ${candidates.size} candidate(s).",
         )
@@ -664,7 +664,6 @@ private fun buildMoveReview(
 
     val pointLoss = matchedCandidate.pointLoss
     val tone = moveReviewToneFor(pointLoss)
-    val label = pointLoss?.let { (-it).toSignedOneDecimal() }.orEmpty()
     val scoreText = matchedCandidate.scoreLead
         ?.toPlayerPerspective(play.player)
         ?.toSignedOneDecimal()
@@ -681,7 +680,7 @@ private fun buildMoveReview(
         marker = MoveReviewMarker(
             coordinate = play.coordinate,
             tone = tone,
-            label = label,
+            label = "",
         ),
         text = "Move review: ${play.coordinate.label(boardSize)} ${moveReviewTextFor(pointLoss)} ($lossText$scoreText$priorText).",
     )

@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -129,7 +130,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawMoveReview(
 ) {
     marker ?: return
     val center = geometry.pointFor(marker.coordinate)
-    val radius = geometry.spacing * 0.18f
+    val radius = geometry.spacing * 0.12f
     val color = candidateToneColor(marker.tone)
     drawCircle(
         color = color.copy(alpha = 0.9f),
@@ -142,9 +143,6 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawMoveReview(
         center = center,
         style = Stroke(width = 2.5f),
     )
-    if (marker.label.isNotBlank()) {
-        drawSpotLabel(center, marker.label, geometry.spacing * 0.22f)
-    }
 }
 
 private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawSpotLabel(
@@ -225,13 +223,56 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawStone(
     radius: Float,
     stone: StoneColor,
 ) {
-    val fillColor = when (stone) {
-        StoneColor.Black -> Color(0xFF1B1B1B)
-        StoneColor.White -> Color(0xFFF8F8F2)
-    }
-    drawCircle(fillColor, radius, center)
-    drawCircle(Color(0xFF1B1B1B), radius, center, style = Stroke(width = 2f))
+    drawCircle(
+        color = Color(0x33000000),
+        radius = radius * 1.03f,
+        center = Offset(center.x + radius * 0.05f, center.y + radius * 0.07f),
+    )
+    drawCircle(
+        brush = stoneBrush(stone, center, radius),
+        radius = radius,
+        center = center,
+    )
+    drawCircle(
+        color = stoneEdgeColor(stone),
+        radius = radius,
+        center = center,
+        style = Stroke(width = 2.2f),
+    )
 }
+
+private fun stoneBrush(
+    stone: StoneColor,
+    center: Offset,
+    radius: Float,
+): Brush {
+    val colors = when (stone) {
+        StoneColor.Black -> listOf(
+            Color(0xFF646464),
+            Color(0xFF303030),
+            Color(0xFF101010),
+            Color(0xFF030303),
+        )
+
+        StoneColor.White -> listOf(
+            Color(0xFFFFFFFF),
+            Color(0xFFF3F1EA),
+            Color(0xFFE0DDD3),
+            Color(0xFFC7C2B6),
+        )
+    }
+    return Brush.radialGradient(
+        colors = colors,
+        center = center,
+        radius = radius,
+    )
+}
+
+private fun stoneEdgeColor(stone: StoneColor): Color =
+    when (stone) {
+        StoneColor.Black -> Color(0xFF5E5E5E)
+        StoneColor.White -> Color(0xFF8F8A7C)
+    }
 
 private data class BoardGeometry(
     val origin: Offset,

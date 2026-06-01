@@ -157,3 +157,5 @@
 - 보드 후보 spot은 green/yellow/red/unknown 색상과 현재 착수자 관점 score lead label을 표시한다. 착수 후에는 직전 후보수 cache 기준으로 방금 둔 돌 중앙에 평가 marker를 표시한다.
 - 검증 성공: `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :shared:check :engine-android:testDebugUnitTest :app-android:assembleDebug :app-android:testDebugUnitTest`.
 - 실기기 `SM_S908N`에 `make install-dev-engine`로 debug APK 설치, KataGo model/config seed, cold launch를 성공시켰다. 다만 검증 시점에 기기가 잠금/알림창 상태라 UI dump로 새 화면 텍스트를 읽는 자동 검증은 수행하지 못했다.
+- 사용자가 착수한 바둑알 위에는 점수 숫자를 표시하지 말고 작은 색상 원만 표시해달라고 요청했다. `GoBoard`의 착수 후 평가 marker를 마지막 수 표시와 같은 크기의 작은 원으로 조정하고 label 렌더링을 제거했다.
+- 사용자가 KaTrain의 바둑알 질감을 참고해 바둑알이 3D처럼 보이도록 요청했다. 로컬 KaTrain의 `B_stone.png`, `W_stone.png`를 확인하고, 앱 Canvas 바둑알을 중앙은 밝고 외곽은 어두운 radial gradient와 얇은 rim/shadow로 렌더링하도록 변경했다.
