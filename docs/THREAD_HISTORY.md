@@ -174,3 +174,5 @@
 - 단순 APK 설치만으로 앱 실행은 가능하지만, 현재 개발 구조에서 KataGo model/config는 `make install-dev-engine` 또는 `make seed-engine` 흐름으로 앱 내부 files에 별도 seed해야 실제 KataGo 엔진 모드가 동작한다는 점을 안내할 필요가 있다.
 - 사용자가 APK가 12.5MB인 것이 맞는지, 이 APK만으로 엔진도 동작하는지 질문했다. 확인 결과 APK 내부에는 `lib/arm64-v8a/libkatago.so` 약 4.6MB가 포함되어 있지만, 약 93MB의 KataGo model(`kata1-b18c384nbt...bin.gz`)과 `gtp_learning.cfg`는 APK에 포함되지 않고 seed script로 app files에 복사된다.
 - 따라서 APK 단독 설치 시 model/config가 없으면 `EngineBootstrap`이 stub fallback으로 전환된다. 실제 KataGo 엔진 동작에는 APK 설치 후 `make seed-engine` 또는 `make install-dev-engine` 흐름이 필요하다.
+- 사용자가 마켓 릴리즈라면 결국 엔진까지 번들링된 APK/AAB가 만들어져야 하는 것 아니냐고 질문했다. 결론은 맞다. debug seed 방식은 개발용이며, 제품 릴리즈는 사용자가 별도 ADB seed를 하지 않아도 실행 산출물이 포함되거나 공식 다운로드 UX로 가져올 수 있어야 한다.
+- `docs/ENGINE_BOUNDARY_DECISION.md`에 릴리즈 패키징 결정을 추가했다. `libkatago.so`는 base/native library 경로에 두고, model/config는 base assets 또는 Play Asset Delivery asset pack으로 포함하는 방향을 명시했다. 엔진 빌드 source/process 분리는 유지하되, release artifact에는 runtime engine artifacts가 포함되어야 한다.

@@ -77,6 +77,35 @@ external engine artifact pipeline
 - CI artifact 생성 스크립트로 이동
 - 앱 repo에서는 artifact download/copy task만 유지
 
+## 릴리즈 패키징 결정
+
+마켓 릴리즈 빌드는 debug seed 방식에 의존하지 않는다.
+
+현재 `make install-dev-engine`의 model/config seed는 개발/검증용 편의 흐름이다. 제품 릴리즈에서는 사용자가 ADB seed를 수행할 수 없으므로, 최종 배포 artifact 안에 엔진 실행에 필요한 산출물이 포함되거나 앱이 공식 다운로드 UX로 가져올 수 있어야 한다.
+
+권장 릴리즈 구조:
+
+```text
+Google Play AAB
+  base module
+    lib/arm64-v8a/libkatago.so      # executable native library
+    app code / EngineAdapter wiring
+  engine asset pack or base assets
+    model.bin.gz                    # neural net model
+    gtp.cfg                         # pinned config
+```
+
+원칙:
+
+- `libkatago.so`는 executable code이므로 Play Asset Delivery asset pack이 아니라 Android native library 경로에 둔다.
+- model/config는 data asset이므로 base assets 또는 Play Asset Delivery asset pack에 둘 수 있다.
+- 첫 마켓 릴리즈에서는 모델 1개가 약 93MB이므로 install-time delivery가 현실적인 기본 후보이다.
+- 모델이 커지거나 복수 모델을 제공하면 fast-follow/on-demand asset pack 또는 앱 내 모델 다운로드/검증 UX를 검토한다.
+- debug APK만 설치했을 때 stub fallback이 되는 현재 구조는 개발용으로 유지할 수 있지만, release flavor에서는 model/config 누락 시 빌드가 실패해야 한다.
+- release build는 `engine-artifacts.lock` 같은 metadata로 binary/model/config checksum과 버전을 검증해야 한다.
+
+따라서 "엔진 빌드는 앱 개발 루프에서 분리"한다는 결정은 유지하되, "릴리즈 artifact에는 엔진 실행 산출물이 포함"되어야 한다. 분리 대상은 빌드 과정/source tree이지, 사용자에게 전달되는 runtime 산출물이 아니다.
+
 ## 다음 작업에 주는 영향
 
 사석 처리 같은 핵심 바둑 규칙은 엔진 구현체가 아니라 `shared` 도메인 로직에 둔다.
