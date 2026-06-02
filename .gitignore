@@ -19,6 +19,7 @@ captures/
 
 # Native / engine artifacts
 artifacts/engine/
+app-android/src/debug/assets/katago/
 app-android/src/debug/jniLibs/
 app-android/src/main/jniLibs/
 *.so

@@ -1,10 +1,12 @@
 package com.worksoc.goaicoach.engine
 
+import android.content.Context
 import com.worksoc.goaicoach.engine.android.KataGoProcessConfig
 import com.worksoc.goaicoach.engine.android.KataGoProcessEngineAdapter
 import com.worksoc.goaicoach.engine.android.StubEngineAdapter
 import com.worksoc.goaicoach.shared.EngineAdapter
 import java.io.File
+import java.io.IOException
 
 data class EngineBootstrap(
     val adapter: EngineAdapter,
@@ -13,13 +15,22 @@ data class EngineBootstrap(
 )
 
 fun createEngineBootstrap(
-    filesDir: File,
+    context: Context,
     nativeLibraryDir: String,
 ): EngineBootstrap {
+    val filesDir = context.filesDir
     val katagoDir = File(filesDir, "katago")
     val executable = File(nativeLibraryDir, "libkatago.so")
-    val model = File(katagoDir, "model.bin.gz")
+    val compressedModel = File(katagoDir, "model.bin.gz")
+    val bundledModel = File(katagoDir, "model.bin")
     val config = File(katagoDir, "gtp_learning.cfg")
+    val bundleSeedMessages = seedBundledKataGoAssetsIfNeeded(
+        context = context,
+        katagoDir = katagoDir,
+        bundledModel = bundledModel,
+        config = config,
+    )
+    val model = compressedModel.takeIf { it.isFile && it.length() > 0L } ?: bundledModel
 
     val missing = buildList {
         if (!executable.canExecute()) {
@@ -37,7 +48,14 @@ fun createEngineBootstrap(
         return EngineBootstrap(
             adapter = StubEngineAdapter(),
             displayName = "stub AI",
-            diagnostic = "Stub fallback: missing ${missing.joinToString()}. Run make install-dev-engine or make seed-engine, then restart the app.",
+            diagnostic = buildString {
+                append("Stub fallback: missing ${missing.joinToString()}. ")
+                append("Use an engine-bundled APK, or run make install-dev-engine / make seed-engine, then restart the app.")
+                if (bundleSeedMessages.isNotEmpty()) {
+                    append("\n")
+                    append(bundleSeedMessages.joinToString("\n"))
+                }
+            },
         )
     }
 
@@ -62,6 +80,63 @@ fun createEngineBootstrap(
             ),
         ),
         displayName = "KataGo",
-        diagnostic = "KataGo assets found. Using local process engine.",
+        diagnostic = buildString {
+            append("KataGo assets found. Using local process engine.")
+            if (bundleSeedMessages.isNotEmpty()) {
+                append("\n")
+                append(bundleSeedMessages.joinToString("\n"))
+            }
+        },
     )
+}
+
+private fun seedBundledKataGoAssetsIfNeeded(
+    context: Context,
+    katagoDir: File,
+    bundledModel: File,
+    config: File,
+): List<String> {
+    katagoDir.mkdirs()
+    val messages = mutableListOf<String>()
+
+    seedAssetIfMissing(
+        context = context,
+        assetPath = "katago/model.bin",
+        destination = bundledModel,
+    )?.let { messages += it }
+
+    seedAssetIfMissing(
+        context = context,
+        assetPath = "katago/gtp_learning.cfg",
+        destination = config,
+    )?.let { messages += it }
+
+    return messages
+}
+
+private fun seedAssetIfMissing(
+    context: Context,
+    assetPath: String,
+    destination: File,
+): String? {
+    if (destination.isFile && destination.length() > 0L) {
+        return null
+    }
+
+    return try {
+        destination.parentFile?.mkdirs()
+        val temp = File(destination.parentFile, "${destination.name}.tmp")
+        context.assets.open(assetPath).use { input ->
+            temp.outputStream().use { output ->
+                input.copyTo(output)
+            }
+        }
+        if (!temp.renameTo(destination)) {
+            temp.copyTo(destination, overwrite = true)
+            temp.delete()
+        }
+        "Seeded bundled asset $assetPath."
+    } catch (_: IOException) {
+        null
+    }
 }

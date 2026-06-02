@@ -176,3 +176,6 @@
 - 따라서 APK 단독 설치 시 model/config가 없으면 `EngineBootstrap`이 stub fallback으로 전환된다. 실제 KataGo 엔진 동작에는 APK 설치 후 `make seed-engine` 또는 `make install-dev-engine` 흐름이 필요하다.
 - 사용자가 마켓 릴리즈라면 결국 엔진까지 번들링된 APK/AAB가 만들어져야 하는 것 아니냐고 질문했다. 결론은 맞다. debug seed 방식은 개발용이며, 제품 릴리즈는 사용자가 별도 ADB seed를 하지 않아도 실행 산출물이 포함되거나 공식 다운로드 UX로 가져올 수 있어야 한다.
 - `docs/ENGINE_BOUNDARY_DECISION.md`에 릴리즈 패키징 결정을 추가했다. `libkatago.so`는 base/native library 경로에 두고, model/config는 base assets 또는 Play Asset Delivery asset pack으로 포함하는 방향을 명시했다. 엔진 빌드 source/process 분리는 유지하되, release artifact에는 runtime engine artifacts가 포함되어야 한다.
+- 사용자가 친구에게 전달할 엔진 포함 APK 생성을 요청했다. debug assets에 KataGo model/config를 로컬로 복사해 APK에 포함시키고, 첫 실행 시 bundled assets를 `files/katago`로 복사하는 bootstrap을 추가했다.
+- 친구 전달용 APK 산출물은 `/Users/ryan9kim/worksoc/go-ai-coach/dist/go-ai-coach-katago-debug.apk`이고 크기는 약 106MB, SHA-256은 `280eec92ec11aba6a27e76b02bb79c6de0a61b87cd98e7e025b3c5398113fc88`이다. APK 내부에는 `lib/arm64-v8a/libkatago.so`, `assets/katago/model.bin`, `assets/katago/gtp_learning.cfg`가 포함된다.
+- `MainActivity`는 엔진 bootstrap을 IO 스레드에서 실행하고, 첫 실행 모델 복사 동안 준비 화면을 보여주도록 변경했다. 로컬 에뮬레이터는 boot 직후 ADB transport가 사라져 APK-only 설치 검증은 완료하지 못했지만, `:shared:testDebugUnitTest :app-android:assembleDebug`와 APK 내부 파일 검사는 성공했다.
