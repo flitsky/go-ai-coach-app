@@ -170,3 +170,5 @@
 - 실행 확인 스크린샷에서 앱이 `Go AI Coach POC` 화면으로 올라왔고 `KataGo assets found. Using local process engine.` 메시지가 표시되어 로컬 KataGo 엔진 경로로 초기화된 것을 확인했다.
 - 사용자가 `Copy Log`로 수집한 종료 로그를 공유했고, 직접 화면 기반으로는 흑 13.5집 승처럼 보이는데 앱/KataGo는 `B+9.5`로 표시된 이유를 질문했다.
 - 로그의 보드를 재계산한 결과 현재 앱의 중국식 area scoring 기준은 흑 돌 31 + 흑 영역 17 = 48, 백 돌 23 + 백 영역 9 + 덤 6.5 = 38.5로 `B+9.5`가 맞다. 사용자의 계산은 집 + 사석을 더하는 일본식 territory scoring에 가까워 현재 `ruleset=Chinese` 및 KataGo `final_score` 기준과 다르다.
+- 사용자가 다른 사람의 Android 폰에 설치할 APK 위치를 문의했다. 현재 debug APK는 `/Users/ryan9kim/worksoc/go-ai-coach/app-android/build/outputs/apk/debug/app-android-debug.apk`에 있으며, 파일 크기는 약 12MB다.
+- 단순 APK 설치만으로 앱 실행은 가능하지만, 현재 개발 구조에서 KataGo model/config는 `make install-dev-engine` 또는 `make seed-engine` 흐름으로 앱 내부 files에 별도 seed해야 실제 KataGo 엔진 모드가 동작한다는 점을 안내할 필요가 있다.
