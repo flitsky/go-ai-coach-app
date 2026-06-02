@@ -172,3 +172,5 @@
 - 로그의 보드를 재계산한 결과 현재 앱의 중국식 area scoring 기준은 흑 돌 31 + 흑 영역 17 = 48, 백 돌 23 + 백 영역 9 + 덤 6.5 = 38.5로 `B+9.5`가 맞다. 사용자의 계산은 집 + 사석을 더하는 일본식 territory scoring에 가까워 현재 `ruleset=Chinese` 및 KataGo `final_score` 기준과 다르다.
 - 사용자가 다른 사람의 Android 폰에 설치할 APK 위치를 문의했다. 현재 debug APK는 `/Users/ryan9kim/worksoc/go-ai-coach/app-android/build/outputs/apk/debug/app-android-debug.apk`에 있으며, 파일 크기는 약 12MB다.
 - 단순 APK 설치만으로 앱 실행은 가능하지만, 현재 개발 구조에서 KataGo model/config는 `make install-dev-engine` 또는 `make seed-engine` 흐름으로 앱 내부 files에 별도 seed해야 실제 KataGo 엔진 모드가 동작한다는 점을 안내할 필요가 있다.
+- 사용자가 APK가 12.5MB인 것이 맞는지, 이 APK만으로 엔진도 동작하는지 질문했다. 확인 결과 APK 내부에는 `lib/arm64-v8a/libkatago.so` 약 4.6MB가 포함되어 있지만, 약 93MB의 KataGo model(`kata1-b18c384nbt...bin.gz`)과 `gtp_learning.cfg`는 APK에 포함되지 않고 seed script로 app files에 복사된다.
+- 따라서 APK 단독 설치 시 model/config가 없으면 `EngineBootstrap`이 stub fallback으로 전환된다. 실제 KataGo 엔진 동작에는 APK 설치 후 `make seed-engine` 또는 `make install-dev-engine` 흐름이 필요하다.
