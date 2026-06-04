@@ -182,3 +182,6 @@
 - 사용자가 엔진 포함 변경 때문에 평소 dev 빌드가 느려질 수 있다고 우려했고, 외부 배포가 필요할 때만 오래 걸리는 make 명령으로 합치도록 요청했다.
 - `friend` build type을 추가해 `src/friend/assets`만 모델/config를 포함하도록 분리했다. `make dev` / `assembleDebug`는 모델 없이 약 12MB debug APK를 만들고, `make friend-apk`만 로컬 model/config를 `src/friend/assets/katago`로 준비한 뒤 `assembleFriend`를 실행해 `dist/go-ai-coach-katago-friend.apk`를 생성한다.
 - 검증 결과 일반 debug APK는 약 12MB이며 APK 내부에 model/config가 없고, friend APK는 약 105MB이며 `lib/arm64-v8a/libkatago.so`, `assets/katago/model.bin`, `assets/katago/gtp_learning.cfg`를 포함한다. friend APK SHA-256은 `c005bb35c5d726a2762b0b33a5e13008ea933934558243913839091089e7bdc9`이다.
+- 사용자가 개발모드로 실기기 최신 앱 설치와 시간 측정을 요청했다. `SM_S908N`이 ADB에 연결된 것을 확인하고 `make install-dev-engine`을 실행했다.
+- 설치 결과: `assembleDebug`는 up-to-date 중심으로 약 0.9초, `installDebug` 포함 Gradle 설치 단계는 18초, model push는 97,898,094 bytes를 2.617초에 전송, 앱 cold launch는 673ms였다. 전체 `make install-dev-engine` 측정 시간은 23초였다.
+- 설치 검증: 앱 PID `11464`, 포커스 `com.worksoc.goaicoach/.MainActivity`, app files에는 `files/katago/model.bin.gz` 약 93MB와 `gtp_learning.cfg` 약 32KB가 존재했다.
