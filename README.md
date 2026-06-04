@@ -55,11 +55,14 @@ make doctor
 make test
 make dev
 make install-dev-engine
+make friend-apk
 ```
 
 `make dev` requires a debug engine artifact at `app-android/src/debug/jniLibs/arm64-v8a/libkatago.so`. If the artifact is missing, run `make prebuild-engine` or use `make dev-stub` for stub-only UI work.
 
 `make install-dev-engine` installs the debug APK, seeds the KataGo model/config into app files, and restarts the app. Use `make reinstall-dev-engine` when the emulator reports low storage or when a clean reinstall is needed. Reinstalling removes app files, so the seed step must run again before KataGo mode can work.
+
+`make friend-apk` creates a separate engine-bundled sideload APK at `dist/go-ai-coach-katago-friend.apk`. This target copies the model/config into the `friend` build type only, so normal `make dev` / `assembleDebug` remains fast and model-free.
 
 `make release` requires a prepared release engine artifact at `app-android/src/main/jniLibs/arm64-v8a/libkatago.so` and fails early if it is missing.
 
@@ -79,6 +82,12 @@ The debug APK is produced at:
 
 ```text
 app-android/build/outputs/apk/debug/app-android-debug.apk
+```
+
+The friend sideload APK with bundled KataGo assets is produced by `make friend-apk` at:
+
+```text
+dist/go-ai-coach-katago-friend.apk
 ```
 
 ## KataGo Android Spike

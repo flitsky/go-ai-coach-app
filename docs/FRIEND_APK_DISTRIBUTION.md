@@ -11,20 +11,36 @@
 ## 현재 산출물
 
 ```text
-/Users/ryan9kim/worksoc/go-ai-coach/dist/go-ai-coach-katago-debug.apk
+/Users/ryan9kim/worksoc/go-ai-coach/dist/go-ai-coach-katago-friend.apk
 ```
 
 현재 빌드 크기:
 
 ```text
-106MB
+105MB
 ```
 
 현재 SHA-256:
 
 ```text
-280eec92ec11aba6a27e76b02bb79c6de0a61b87cd98e7e025b3c5398113fc88
+c005bb35c5d726a2762b0b33a5e13008ea933934558243913839091089e7bdc9
 ```
+
+## 빌드 명령
+
+일반 개발 빌드는 모델을 포함하지 않는다.
+
+```sh
+make dev
+```
+
+외부 전달용 APK가 필요할 때만 다음 명령을 사용한다.
+
+```sh
+make friend-apk
+```
+
+`make friend-apk`는 로컬 model/config를 `app-android/src/friend/assets/katago/`로 복사한 뒤 `:app-android:assembleFriend`를 실행한다. 따라서 평소 `assembleDebug` / `make dev`는 100MB 모델 asset을 처리하지 않는다.
 
 ## APK에 포함된 엔진 산출물
 
@@ -54,7 +70,7 @@ assets/katago/gtp_learning.cfg
 폰에서 USB debugging이 켜져 있고 ADB에 잡힌 상태:
 
 ```sh
-adb install -r /Users/ryan9kim/worksoc/go-ai-coach/dist/go-ai-coach-katago-debug.apk
+adb install -r /Users/ryan9kim/worksoc/go-ai-coach/dist/go-ai-coach-katago-friend.apk
 adb shell am start -W -n com.worksoc.goaicoach/.MainActivity
 ```
 
@@ -62,7 +78,7 @@ adb shell am start -W -n com.worksoc.goaicoach/.MainActivity
 
 ```sh
 adb uninstall com.worksoc.goaicoach
-adb install -r /Users/ryan9kim/worksoc/go-ai-coach/dist/go-ai-coach-katago-debug.apk
+adb install -r /Users/ryan9kim/worksoc/go-ai-coach/dist/go-ai-coach-katago-friend.apk
 adb shell am start -W -n com.worksoc.goaicoach/.MainActivity
 ```
 
@@ -83,4 +99,4 @@ Seeded bundled asset katago/gtp_learning.cfg.
 - debug signing APK이므로 Play Store 배포용이 아니다.
 - 현재 APK는 `arm64-v8a` 엔진만 포함한다. 일반적인 최신 Android 폰은 대부분 동작하지만, 32-bit only 기기에서는 동작하지 않는다.
 - APK 내부 asset과 앱 내부 copied model이 동시에 존재하므로 설치 후 기기 저장공간을 추가로 사용한다.
-- 최소 여유 공간은 APK 106MB, 모델 복사본 약 101MB, 설치 임시공간을 고려해 넉넉히 300MB 이상을 권장한다.
+- 최소 여유 공간은 APK 105MB, 모델 복사본 약 101MB, 설치 임시공간을 고려해 넉넉히 300MB 이상을 권장한다.

@@ -179,3 +179,6 @@
 - 사용자가 친구에게 전달할 엔진 포함 APK 생성을 요청했다. debug assets에 KataGo model/config를 로컬로 복사해 APK에 포함시키고, 첫 실행 시 bundled assets를 `files/katago`로 복사하는 bootstrap을 추가했다.
 - 친구 전달용 APK 산출물은 `/Users/ryan9kim/worksoc/go-ai-coach/dist/go-ai-coach-katago-debug.apk`이고 크기는 약 106MB, SHA-256은 `280eec92ec11aba6a27e76b02bb79c6de0a61b87cd98e7e025b3c5398113fc88`이다. APK 내부에는 `lib/arm64-v8a/libkatago.so`, `assets/katago/model.bin`, `assets/katago/gtp_learning.cfg`가 포함된다.
 - `MainActivity`는 엔진 bootstrap을 IO 스레드에서 실행하고, 첫 실행 모델 복사 동안 준비 화면을 보여주도록 변경했다. 로컬 에뮬레이터는 boot 직후 ADB transport가 사라져 APK-only 설치 검증은 완료하지 못했지만, `:shared:testDebugUnitTest :app-android:assembleDebug`와 APK 내부 파일 검사는 성공했다.
+- 사용자가 엔진 포함 변경 때문에 평소 dev 빌드가 느려질 수 있다고 우려했고, 외부 배포가 필요할 때만 오래 걸리는 make 명령으로 합치도록 요청했다.
+- `friend` build type을 추가해 `src/friend/assets`만 모델/config를 포함하도록 분리했다. `make dev` / `assembleDebug`는 모델 없이 약 12MB debug APK를 만들고, `make friend-apk`만 로컬 model/config를 `src/friend/assets/katago`로 준비한 뒤 `assembleFriend`를 실행해 `dist/go-ai-coach-katago-friend.apk`를 생성한다.
+- 검증 결과 일반 debug APK는 약 12MB이며 APK 내부에 model/config가 없고, friend APK는 약 105MB이며 `lib/arm64-v8a/libkatago.so`, `assets/katago/model.bin`, `assets/katago/gtp_learning.cfg`를 포함한다. friend APK SHA-256은 `c005bb35c5d726a2762b0b33a5e13008ea933934558243913839091089e7bdc9`이다.

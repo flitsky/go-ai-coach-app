@@ -27,6 +27,21 @@ android {
         compose = true
     }
 
+    buildTypes {
+        create("friend") {
+            initWith(getByName("debug"))
+            matchingFallbacks += listOf("debug")
+            signingConfig = signingConfigs.getByName("debug")
+        }
+    }
+
+    sourceSets {
+        getByName("friend") {
+            assets.srcDirs("src/friend/assets")
+            jniLibs.srcDirs("src/debug/jniLibs")
+        }
+    }
+
     packaging {
         jniLibs {
             useLegacyPackaging = true

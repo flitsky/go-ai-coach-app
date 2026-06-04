@@ -7,11 +7,15 @@ GRADLEW := ./gradlew
 ENGINE_ABI ?= arm64-v8a
 DEBUG_ENGINE_BINARY := app-android/src/debug/jniLibs/$(ENGINE_ABI)/libkatago.so
 RELEASE_ENGINE_BINARY := app-android/src/main/jniLibs/$(ENGINE_ABI)/libkatago.so
+FRIEND_ASSET_DIR := app-android/src/friend/assets/katago
+FRIEND_APK := dist/go-ai-coach-katago-friend.apk
+FRIEND_MODEL_PATH ?= /opt/homebrew/Cellar/katago/1.16.4/share/katago/kata1-b18c384nbt-s9996604416-d4316597426.bin.gz
+FRIEND_CONFIG_PATH ?= /Users/ryan9kim/worksoc/katago/config/katago/gtp_learning.cfg
 
 export ANDROID_HOME
 export JAVA_HOME
 
-.PHONY: doctor test dev dev-stub install-dev install-dev-engine reinstall-dev-engine seed-engine launch release ensure-debug-engine ensure-release-engine prebuild-engine clean
+.PHONY: doctor test dev dev-stub install-dev install-dev-engine reinstall-dev-engine seed-engine launch friend-apk prepare-friend-assets release ensure-debug-engine ensure-release-engine prebuild-engine clean
 
 doctor:
 	@echo "Checking local Android development environment..."
@@ -50,6 +54,22 @@ seed-engine: doctor
 launch: doctor
 	$(ANDROID_HOME)/platform-tools/adb shell am force-stop com.worksoc.goaicoach
 	$(ANDROID_HOME)/platform-tools/adb shell am start -W -n com.worksoc.goaicoach/.MainActivity
+
+friend-apk: doctor ensure-debug-engine prepare-friend-assets
+	$(GRADLEW) :app-android:assembleFriend
+	@mkdir -p dist
+	@cp app-android/build/outputs/apk/friend/app-android-friend.apk "$(FRIEND_APK)"
+	@ls -lh "$(FRIEND_APK)"
+	@shasum -a 256 "$(FRIEND_APK)"
+
+prepare-friend-assets:
+	@test -f "$(FRIEND_MODEL_PATH)" || (echo "Friend APK model not found: $(FRIEND_MODEL_PATH)" && exit 1)
+	@test -f "$(FRIEND_CONFIG_PATH)" || (echo "Friend APK config not found: $(FRIEND_CONFIG_PATH)" && exit 1)
+	@rm -rf "$(FRIEND_ASSET_DIR)"
+	@mkdir -p "$(FRIEND_ASSET_DIR)"
+	@cp "$(FRIEND_MODEL_PATH)" "$(FRIEND_ASSET_DIR)/model.bin.gz"
+	@cp "$(FRIEND_CONFIG_PATH)" "$(FRIEND_ASSET_DIR)/gtp_learning.cfg"
+	@echo "Prepared friend APK assets in $(FRIEND_ASSET_DIR)"
 
 release: doctor ensure-release-engine
 	$(GRADLEW) :app-android:assembleRelease
