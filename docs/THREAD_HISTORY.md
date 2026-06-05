@@ -185,3 +185,7 @@
 - 사용자가 개발모드로 실기기 최신 앱 설치와 시간 측정을 요청했다. `SM_S908N`이 ADB에 연결된 것을 확인하고 `make install-dev-engine`을 실행했다.
 - 설치 결과: `assembleDebug`는 up-to-date 중심으로 약 0.9초, `installDebug` 포함 Gradle 설치 단계는 18초, model push는 97,898,094 bytes를 2.617초에 전송, 앱 cold launch는 673ms였다. 전체 `make install-dev-engine` 측정 시간은 23초였다.
 - 설치 검증: 앱 PID `11464`, 포커스 `com.worksoc.goaicoach/.MainActivity`, app files에는 `files/katago/model.bin.gz` 약 93MB와 `gtp_learning.cfg` 약 32KB가 존재했다.
+- 사용자가 KaTrain UX에서 가져올 만한 항목을 “간단하면서 임팩트 있는 항목”부터 “가져오기 어렵고 임팩트 낮은 항목”까지 파일로 리스트업해달라고 요청했다.
+- 로컬 KaTrain 설치본의 `core/game_node.py`, `gui/badukpan.py`, `gui/widgets/graph.py`, `gui/widgets/movetree.py`, `config.json`을 다시 참고했다.
+- `docs/KATRAIN_UX_BACKLOG.md`를 추가해 후보수/ownership/score graph/PV/move tree/SGF/dead stone marking 등 UX 후보를 효과와 난이도 기준으로 정리했다.
+- 다음 구현 후보는 보드 좌표/마지막 수 표시, 후보수 compact list, 색상 범례, 엔진 상태 badge, ownership overlay 순서가 적절하다고 정리했다.
