@@ -189,3 +189,9 @@
 - 로컬 KaTrain 설치본의 `core/game_node.py`, `gui/badukpan.py`, `gui/widgets/graph.py`, `gui/widgets/movetree.py`, `config.json`을 다시 참고했다.
 - `docs/KATRAIN_UX_BACKLOG.md`를 추가해 후보수/ownership/score graph/PV/move tree/SGF/dead stone marking 등 UX 후보를 효과와 난이도 기준으로 정리했다.
 - 다음 구현 후보는 보드 좌표/마지막 수 표시, 후보수 compact list, 색상 범례, 엔진 상태 badge, ownership overlay 순서가 적절하다고 정리했다.
+- 사용자가 KaTrain UX 임팩트 큰 항목을 사용자 확인 없이 적극 개발하되, 옵션을 모두 끄면 현재 플레이 상태와 크게 다르지 않게 하고, 도메인 분리를 유지해달라고 요청했다.
+- 1순위 UX 항목을 UI-only 옵션으로 구현했다. `KaTrainUxOptions`와 전용 패널을 추가하고, 기본값은 모두 비활성화했다.
+- `GoBoard`에는 옵션 기반 좌표 표시, 수순 번호 표시, 마지막 수 ring을 추가했다. 기존 마지막 수 red dot은 옵션이 꺼져 있을 때 유지된다.
+- 후보수 compact list, spot 색상 범례, 엔진 ready/busy/down badge, 차례/포획/마지막 수 status strip을 별도 composable로 분리했다.
+- `Copy Log`는 기존 clipboard 복사에 더해 toast로 복사 완료를 사용자에게 알리도록 했다.
+- 1순위 검증 성공: `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :shared:check :engine-android:testDebugUnitTest :app-android:assembleDebug :app-android:testDebugUnitTest`.

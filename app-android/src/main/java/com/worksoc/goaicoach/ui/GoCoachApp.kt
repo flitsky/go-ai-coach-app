@@ -3,6 +3,7 @@ package com.worksoc.goaicoach.ui
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -103,6 +104,7 @@ private fun GoCoachScreen(
     var matchMode by remember { mutableStateOf(MatchMode.HumanVsAi) }
     var hintEnabled by remember { mutableStateOf(false) }
     var hintCount by remember { mutableStateOf(1) }
+    var uxOptions by remember { mutableStateOf(KaTrainUxOptions()) }
     var lastAnalysisKey by remember { mutableStateOf<String?>(null) }
     var isGameEnded by remember { mutableStateOf(false) }
     var endgameLog by remember { mutableStateOf("No endgame result recorded.") }
@@ -563,6 +565,7 @@ private fun GoCoachScreen(
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         clipboard.setPrimaryClip(ClipData.newPlainText("Go AI Coach debug report", report))
         engineMessage = "Debug report copied to clipboard. Paste it into chat for review."
+        Toast.makeText(context, "Debug report copied", Toast.LENGTH_SHORT).show()
     }
 
     LaunchedEffect(
@@ -612,6 +615,15 @@ private fun GoCoachScreen(
             onLocalTwoPlayerMode = ::startLocalTwoPlayerGame,
         )
 
+        if (uxOptions.showEngineStatusBadge) {
+            EngineStatusBadge(
+                engineName = engineName,
+                isEngineReady = isEngineReady,
+                isEngineBusy = matchMode == MatchMode.HumanVsAi && isEngineBusy,
+                engineDiagnostic = engineDiagnostic,
+            )
+        }
+
         EngineTuningPanel(
             profile = engineProfile,
             enabled = matchMode == MatchMode.HumanVsAi && isEngineReady && !isEngineBusy,
@@ -653,10 +665,30 @@ private fun GoCoachScreen(
             },
         )
 
+        KaTrainUxOptionsPanel(
+            options = uxOptions,
+            onOptionsChange = { nextOptions -> uxOptions = nextOptions },
+        )
+
+        if (uxOptions.showHintLegend) {
+            HintLegendPanel()
+        }
+
+        if (uxOptions.showGameStatusStrip) {
+            GameStatusStrip(
+                nextPlayer = gameState.nextPlayer,
+                moveCount = gameState.moves.size,
+                capturedByBlack = gameState.capturedBy(StoneColor.Black),
+                capturedByWhite = gameState.capturedBy(StoneColor.White),
+                lastMoveText = lastMoveText,
+            )
+        }
+
         GoBoard(
             gameState = gameState,
             candidateMoves = candidateMoves,
             moveReviews = moveReviews,
+            uxOptions = uxOptions,
             inputEnabled = !isGameEnded && boardInputEnabled(matchMode, isEngineReady, isEngineBusy, gameState.nextPlayer),
             modifier = Modifier
                 .fillMaxWidth()
@@ -665,6 +697,13 @@ private fun GoCoachScreen(
                 submitHumanMove(Move.Play(activePlayer(matchMode, gameState), coordinate))
             },
         )
+
+        if (uxOptions.showCandidateList) {
+            CandidateMovesPanel(
+                candidates = candidateMoves,
+                boardSize = gameState.boardSize,
+            )
+        }
 
         Row(
             modifier = Modifier.fillMaxWidth(),

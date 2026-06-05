@@ -43,6 +43,7 @@ internal fun GoBoard(
     gameState: GameState,
     candidateMoves: List<CandidateMove>,
     moveReviews: List<MoveReviewMarker>,
+    uxOptions: KaTrainUxOptions,
     inputEnabled: Boolean,
     modifier: Modifier = Modifier,
     onCoordinateTap: (BoardCoordinate) -> Unit,
@@ -72,6 +73,9 @@ internal fun GoBoard(
         ) {
             val geometry = BoardGeometry.from(size, gameState.boardSize)
             drawBoardGrid(geometry, gameState.boardSize)
+            if (uxOptions.showCoordinates) {
+                drawBoardCoordinates(geometry, gameState.boardSize)
+            }
             drawCandidateMoves(geometry, gameState, candidateMoves)
 
             for ((coordinate, stone) in gameState.stones) {
@@ -79,7 +83,15 @@ internal fun GoBoard(
             }
 
             val lastMove = gameState.moves.lastOrNull() as? Move.Play
-            if (lastMove != null) {
+            if (lastMove != null && uxOptions.showLastMoveRing) {
+                drawCircle(
+                    color = Color(0xFFE53935),
+                    radius = geometry.spacing * 0.48f,
+                    center = geometry.pointFor(lastMove.coordinate),
+                    style = Stroke(width = 3.5f),
+                )
+            }
+            if (lastMove != null && !uxOptions.showMoveNumbers) {
                 drawCircle(
                     color = Color(0xFFE53935),
                     radius = geometry.spacing * 0.12f,
@@ -88,7 +100,61 @@ internal fun GoBoard(
             }
 
             drawMoveReviews(geometry, gameState, moveReviews)
+            if (uxOptions.showMoveNumbers) {
+                drawMoveNumbers(geometry, gameState)
+            }
         }
+    }
+}
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawBoardCoordinates(
+    geometry: BoardGeometry,
+    boardSize: BoardSize,
+) {
+    val textSize = geometry.spacing * 0.24f
+    val columnLabels = boardColumnLabels(boardSize)
+    for (index in 0 until boardSize.value) {
+        val topPoint = geometry.pointFor(BoardCoordinate(0, index))
+        val bottomPoint = geometry.pointFor(BoardCoordinate(boardSize.value - 1, index))
+        drawBoardLabel(
+            label = columnLabels[index].toString(),
+            center = Offset(topPoint.x, geometry.origin.y - geometry.spacing * 0.43f),
+            textSize = textSize,
+        )
+        drawBoardLabel(
+            label = columnLabels[index].toString(),
+            center = Offset(bottomPoint.x, bottomPoint.y + geometry.spacing * 0.43f),
+            textSize = textSize,
+        )
+
+        val rowLabel = (boardSize.value - index).toString()
+        val leftPoint = geometry.pointFor(BoardCoordinate(index, 0))
+        val rightPoint = geometry.pointFor(BoardCoordinate(index, boardSize.value - 1))
+        drawBoardLabel(
+            label = rowLabel,
+            center = Offset(geometry.origin.x - geometry.spacing * 0.43f, leftPoint.y),
+            textSize = textSize,
+        )
+        drawBoardLabel(
+            label = rowLabel,
+            center = Offset(rightPoint.x + geometry.spacing * 0.43f, rightPoint.y),
+            textSize = textSize,
+        )
+    }
+}
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawMoveNumbers(
+    geometry: BoardGeometry,
+    gameState: GameState,
+) {
+    gameState.stones.forEach { (coordinate, stone) ->
+        val moveNumber = gameState.currentMoveNumberAt(coordinate) ?: return@forEach
+        drawMoveNumberLabel(
+            center = geometry.pointFor(coordinate),
+            label = moveNumber.toString(),
+            stone = stone,
+            textSize = geometry.spacing * if (moveNumber < 100) 0.28f else 0.23f,
+        )
     }
 }
 
@@ -170,6 +236,57 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawSpotLabel(
     }
 }
 
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawBoardLabel(
+    center: Offset,
+    label: String,
+    textSize: Float,
+) {
+    drawIntoCanvas { canvas ->
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = android.graphics.Color.rgb(74, 47, 23)
+            textAlign = Paint.Align.CENTER
+            this.textSize = textSize
+            typeface = Typeface.DEFAULT_BOLD
+        }
+        canvas.nativeCanvas.drawText(
+            label,
+            center.x,
+            center.y - (paint.descent() + paint.ascent()) / 2f,
+            paint,
+        )
+    }
+}
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawMoveNumberLabel(
+    center: Offset,
+    label: String,
+    stone: StoneColor,
+    textSize: Float,
+) {
+    drawIntoCanvas { canvas ->
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = when (stone) {
+                StoneColor.Black -> android.graphics.Color.WHITE
+                StoneColor.White -> android.graphics.Color.rgb(24, 24, 24)
+            }
+            textAlign = Paint.Align.CENTER
+            this.textSize = textSize
+            typeface = Typeface.DEFAULT_BOLD
+        }
+        val outline = Paint(paint).apply {
+            style = Paint.Style.STROKE
+            strokeWidth = textSize * 0.11f
+            color = when (stone) {
+                StoneColor.Black -> android.graphics.Color.rgb(18, 18, 18)
+                StoneColor.White -> android.graphics.Color.WHITE
+            }
+        }
+        val baseline = center.y - (paint.descent() + paint.ascent()) / 2f
+        canvas.nativeCanvas.drawText(label, center.x, baseline, outline)
+        canvas.nativeCanvas.drawText(label, center.x, baseline, paint)
+    }
+}
+
 private fun candidateToneColor(tone: MoveReviewTone): Color =
     when (tone) {
         MoveReviewTone.Good -> Color(0xFF2E7D32)
@@ -206,6 +323,21 @@ private fun GameState.hasCurrentStoneFor(marker: MoveReviewMarker): Boolean {
         move is Move.Play && move.coordinate == marker.coordinate
     }
     return latestMoveIndex >= 0 && latestMoveIndex + 1 == marker.moveNumber
+}
+
+private fun GameState.currentMoveNumberAt(coordinate: BoardCoordinate): Int? {
+    if (stoneAt(coordinate) == null) {
+        return null
+    }
+    val latestMoveIndex = moves.indexOfLast { move ->
+        move is Move.Play && move.coordinate == coordinate
+    }
+    return if (latestMoveIndex >= 0) latestMoveIndex + 1 else null
+}
+
+private fun boardColumnLabels(boardSize: BoardSize): List<Char> {
+    val columns = "ABCDEFGHJKLMNOPQRSTUVWXYZ"
+    return columns.take(boardSize.value).toList()
 }
 
 private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawBoardGrid(

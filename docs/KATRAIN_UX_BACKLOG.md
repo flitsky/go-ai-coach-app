@@ -29,6 +29,15 @@ KaTrain의 UX 중 Go AI Coach에 가져올 만한 항목을 효과와 구현 난
 - `Copy Log` 기반 디버그 리포트 수집
 - 한수 무르기
 - 2P 테스트 모드
+- KaTrain UX 옵션 패널
+- 옵션 기반 보드 좌표 표시
+- 옵션 기반 수순 번호 표시
+- 옵션 기반 마지막 수 ring 표시
+- 옵션 기반 후보수 compact list
+- 옵션 기반 spot 색상 범례
+- 옵션 기반 엔진 상태 badge
+- 옵션 기반 차례/포획/마지막 수 status strip
+- `Copy Log` 실행 시 clipboard toast 표시
 
 ## 1순위: 간단하면서 임팩트 큰 항목
 
@@ -80,16 +89,16 @@ KaTrain의 UX 중 Go AI Coach에 가져올 만한 항목을 효과와 구현 난
 ## 권장 적용 순서
 
 1. **보드 가독성 정리**
-   - 좌표 표시 토글
-   - 마지막 수 표시
-   - 수순 번호 표시 토글
-   - 잡은 돌/차례 표시 강화
+   - 좌표 표시 토글: 구현됨
+   - 마지막 수 표시: 기존 red dot 유지, 옵션 ring 구현됨
+   - 수순 번호 표시 토글: 구현됨
+   - 잡은 돌/차례 표시 강화: 옵션 status strip 구현됨
 
 2. **힌트 UX 완성**
-   - 후보수 리스트 패널
-   - 색상 범례
-   - 후보 label 표시 모드
-   - 엔진 busy/ready/fallback badge
+   - 후보수 리스트 패널: 구현됨
+   - 색상 범례: 구현됨
+   - 후보 label 표시 모드: 미구현
+   - 엔진 busy/ready/fallback badge: 구현됨
 
 3. **형세 이해 보강**
    - ownership overlay
@@ -111,11 +120,11 @@ KaTrain의 UX 중 Go AI Coach에 가져올 만한 항목을 효과와 구현 난
 
 지금 앱 상태에서 가장 빠르게 체감 효과를 만들 수 있는 순서는 다음이 적절하다.
 
-1. `GoBoard` 좌표 표시 토글과 마지막 수 ring 추가
-2. 후보수 compact list 패널 추가
-3. green/yellow/red/unknown 색상 범례 추가
-4. 엔진 상태 badge를 상단 상태 영역에 고정 표시
-5. ownership overlay를 `Eval` 결과와 연결해 보드 위에 시각화
+1. `GoBoard` 좌표 표시 토글과 마지막 수 ring 추가: 완료
+2. 후보수 compact list 패널 추가: 완료
+3. green/yellow/red/unknown 색상 범례 추가: 완료
+4. 엔진 상태 badge를 상단 상태 영역에 고정 표시: 완료
+5. ownership overlay를 `Eval` 결과와 연결해 보드 위에 시각화: 다음 단계
 
 ## 구현 원칙
 
