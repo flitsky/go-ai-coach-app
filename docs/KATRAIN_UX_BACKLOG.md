@@ -37,6 +37,7 @@ KaTrain의 UX 중 Go AI Coach에 가져올 만한 항목을 효과와 구현 난
 - 옵션 기반 spot 색상 범례
 - 옵션 기반 엔진 상태 badge
 - 옵션 기반 차례/포획/마지막 수 status strip
+- 옵션 기반 ownership heatmap overlay
 - `Copy Log` 실행 시 clipboard toast 표시
 
 ## 1순위: 간단하면서 임팩트 큰 항목
@@ -101,7 +102,7 @@ KaTrain의 UX 중 Go AI Coach에 가져올 만한 항목을 효과와 구현 난
    - 엔진 busy/ready/fallback badge: 구현됨
 
 3. **형세 이해 보강**
-   - ownership overlay
+   - ownership overlay: 구현됨. `Eval` 실행 후 `Ownership` 옵션을 켜면 KataGo `whiteOwnership` 값을 보드 heatmap으로 표시한다.
    - 점수/승률 미니 그래프
    - 착수 리뷰 문장 개선
 
@@ -124,7 +125,7 @@ KaTrain의 UX 중 Go AI Coach에 가져올 만한 항목을 효과와 구현 난
 2. 후보수 compact list 패널 추가: 완료
 3. green/yellow/red/unknown 색상 범례 추가: 완료
 4. 엔진 상태 badge를 상단 상태 영역에 고정 표시: 완료
-5. ownership overlay를 `Eval` 결과와 연결해 보드 위에 시각화: 다음 단계
+5. ownership overlay를 `Eval` 결과와 연결해 보드 위에 시각화: 완료
 
 ## 구현 원칙
 

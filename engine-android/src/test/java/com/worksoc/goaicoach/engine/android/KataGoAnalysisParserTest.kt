@@ -146,6 +146,9 @@ class KataGoAnalysisParserTest {
         assertEquals(9, estimate.ownership?.blackLikelyPoints)
         assertEquals(9, estimate.ownership?.whiteLikelyPoints)
         assertEquals(63, estimate.ownership?.neutralOrUnclearPoints)
+        assertEquals(81, estimate.ownership?.points?.size)
+        assertEquals(-0.20, estimate.ownership?.points?.first()?.value)
+        assertEquals("A9", estimate.ownership?.points?.first()?.coordinate?.label(BoardSize.Nine))
     }
 
     @Test

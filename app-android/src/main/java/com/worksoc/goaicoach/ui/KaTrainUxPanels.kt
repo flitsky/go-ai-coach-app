@@ -64,6 +64,9 @@ internal fun KaTrainUxOptionsPanel(
             OptionSwitchRow("Game strip", options.showGameStatusStrip) {
                 onOptionsChange(options.copy(showGameStatusStrip = it))
             }
+            OptionSwitchRow("Ownership", options.showOwnershipOverlay) {
+                onOptionsChange(options.copy(showOwnershipOverlay = it))
+            }
         }
     }
 }

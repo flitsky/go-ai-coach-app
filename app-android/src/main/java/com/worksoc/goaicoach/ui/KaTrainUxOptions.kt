@@ -8,4 +8,5 @@ internal data class KaTrainUxOptions(
     val showHintLegend: Boolean = false,
     val showEngineStatusBadge: Boolean = false,
     val showGameStatusStrip: Boolean = false,
+    val showOwnershipOverlay: Boolean = false,
 )

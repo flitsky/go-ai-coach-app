@@ -195,3 +195,8 @@
 - 후보수 compact list, spot 색상 범례, 엔진 ready/busy/down badge, 차례/포획/마지막 수 status strip을 별도 composable로 분리했다.
 - `Copy Log`는 기존 clipboard 복사에 더해 toast로 복사 완료를 사용자에게 알리도록 했다.
 - 1순위 검증 성공: `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :shared:check :engine-android:testDebugUnitTest :app-android:assembleDebug :app-android:testDebugUnitTest`.
+- 1순위 저장 정책을 수행해 커밋 `21d82a4 Add optional KaTrain UX controls`를 원격 `main`에 푸시했다.
+- 2순위 항목 중 현재 엔진 DTO와 가장 잘 맞는 ownership overlay를 우선 구현했다.
+- `OwnershipEstimate`에 좌표별 `OwnershipPoint` 목록을 추가하고, KataGo `whiteOwnership` 파서가 각 좌표의 값을 보존하도록 확장했다.
+- Android 보드는 `Eval` 결과의 ownership 값을 옵션 기반 heatmap overlay로 그린다. `Ownership` 옵션이 꺼져 있거나 `Eval` 결과가 없으면 기존 보드와 동일하게 동작한다.
+- 2순위 검증 성공: `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :shared:check :engine-android:testDebugUnitTest :app-android:assembleDebug :app-android:testDebugUnitTest`.

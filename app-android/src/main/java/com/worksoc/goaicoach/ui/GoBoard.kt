@@ -33,6 +33,7 @@ import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
+import com.worksoc.goaicoach.shared.OwnershipEstimate
 import com.worksoc.goaicoach.shared.StoneColor
 import kotlin.math.abs
 import kotlin.math.min
@@ -43,6 +44,7 @@ internal fun GoBoard(
     gameState: GameState,
     candidateMoves: List<CandidateMove>,
     moveReviews: List<MoveReviewMarker>,
+    ownershipEstimate: OwnershipEstimate?,
     uxOptions: KaTrainUxOptions,
     inputEnabled: Boolean,
     modifier: Modifier = Modifier,
@@ -76,6 +78,9 @@ internal fun GoBoard(
             if (uxOptions.showCoordinates) {
                 drawBoardCoordinates(geometry, gameState.boardSize)
             }
+            if (uxOptions.showOwnershipOverlay && ownershipEstimate != null) {
+                drawOwnershipOverlay(geometry, gameState, ownershipEstimate)
+            }
             drawCandidateMoves(geometry, gameState, candidateMoves)
 
             for ((coordinate, stone) in gameState.stones) {
@@ -104,6 +109,34 @@ internal fun GoBoard(
                 drawMoveNumbers(geometry, gameState)
             }
         }
+    }
+}
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawOwnershipOverlay(
+    geometry: BoardGeometry,
+    gameState: GameState,
+    ownershipEstimate: OwnershipEstimate,
+) {
+    val markerSize = geometry.spacing * 0.64f
+    ownershipEstimate.points.forEach { point ->
+        if (!point.coordinate.isInside(gameState.boardSize)) {
+            return@forEach
+        }
+        val strength = abs(point.value).toFloat().coerceIn(0.0f, 1.0f)
+        if (strength < ownershipEstimate.threshold.toFloat()) {
+            return@forEach
+        }
+        val center = geometry.pointFor(point.coordinate)
+        val color = if (point.value < 0.0) {
+            Color(0xFF263238).copy(alpha = 0.10f + strength * 0.28f)
+        } else {
+            Color(0xFFFFFFFF).copy(alpha = 0.14f + strength * 0.30f)
+        }
+        drawRect(
+            color = color,
+            topLeft = Offset(center.x - markerSize / 2f, center.y - markerSize / 2f),
+            size = Size(markerSize, markerSize),
+        )
     }
 }
 

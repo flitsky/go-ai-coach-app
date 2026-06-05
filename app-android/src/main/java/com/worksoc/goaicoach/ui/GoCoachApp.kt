@@ -49,6 +49,7 @@ import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.StoneColor
 import com.worksoc.goaicoach.shared.describe
 import com.worksoc.goaicoach.shared.replayWithoutLastMoves
@@ -95,6 +96,7 @@ private fun GoCoachScreen(
     var candidateMoves by remember { mutableStateOf(emptyList<CandidateMove>()) }
     var reviewCandidateMoves by remember { mutableStateOf(emptyList<CandidateMove>()) }
     var scoreText by remember { mutableStateOf("No score estimate yet.") }
+    var scoreEstimate by remember { mutableStateOf<ScoreEstimate?>(null) }
     var moveReviewText by remember { mutableStateOf("No move review yet.") }
     var moveReviews by remember { mutableStateOf(emptyList<MoveReviewMarker>()) }
     var lastMoveText by remember { mutableStateOf("None") }
@@ -223,6 +225,7 @@ private fun GoCoachScreen(
         reviewCandidateMoves = emptyList()
         lastAnalysisKey = null
         scoreText = "No score estimate yet."
+        scoreEstimate = null
         moveReviewText = "No move review yet."
         moveReviews = emptyList()
         lastMoveText = "None"
@@ -239,6 +242,7 @@ private fun GoCoachScreen(
         if (matchMode == MatchMode.LocalTwoPlayer) {
             val score = BoardAreaScorer.score(gameState)
             scoreText = score.toDisplayText()
+            scoreEstimate = null
             engineMessage = "Local area estimate refreshed."
             return
         }
@@ -257,8 +261,10 @@ private fun GoCoachScreen(
             }.onSuccess { estimate ->
                 engineMessage = estimate.status.message
                 scoreText = estimate.toDisplayText()
+                scoreEstimate = estimate
             }.onFailure { error ->
                 engineMessage = error.message ?: "Score estimate failed."
+                scoreEstimate = null
             }
             isEngineBusy = false
         }
@@ -349,11 +355,13 @@ private fun GoCoachScreen(
             moveReviews = emptyList()
             lastMoveText = move.describe(beforeMove.boardSize)
             scoreText = "Score estimate not current."
+            scoreEstimate = null
             if (afterMove.hasConsecutivePasses()) {
                 val finalScore = BoardAreaScorer.score(afterMove)
                 val finalScoreText = finalScore.toDisplayText()
                 isGameEnded = true
                 scoreText = finalScoreText
+                scoreEstimate = null
                 candidateText = "Game ended after two passes."
                 endgameLog = buildEndgameLog(
                     source = "local-two-player-consecutive-pass",
@@ -406,6 +414,7 @@ private fun GoCoachScreen(
         lastAnalysisKey = null
         clearHints()
         scoreText = "Score estimate not current."
+        scoreEstimate = null
         lastMoveText = move.describe(beforeMove.boardSize)
         candidateText = "AI is thinking..."
         engineMessage = "Submitted ${move.describe(beforeMove.boardSize)}."
@@ -435,6 +444,7 @@ private fun GoCoachScreen(
                     }.onSuccess { finalScore ->
                         val finalScoreText = finalScore.toDisplayText()
                         scoreText = finalScoreText
+                        scoreEstimate = null
                         endgameLog = buildEndgameLog(
                             source = "ai-engine-final-score",
                             state = outcome.gameState,
@@ -492,6 +502,7 @@ private fun GoCoachScreen(
             lastMoveText = nextState.moves.lastOrNull()?.describe(nextState.boardSize) ?: "None"
             candidateText = "Captured: Black ${nextState.capturedBy(StoneColor.Black)} / White ${nextState.capturedBy(StoneColor.White)}"
             scoreText = "Score estimate not current."
+            scoreEstimate = null
             endgameLog = "Endgame log cleared by undo."
             engineMessage = "Local undo completed."
             return
@@ -526,6 +537,7 @@ private fun GoCoachScreen(
                 lastMoveText = nextState.moves.lastOrNull()?.describe(nextState.boardSize) ?: "None"
                 candidateText = "Undo cleared current analysis hints."
                 scoreText = "Score estimate not current."
+                scoreEstimate = null
                 endgameLog = "Endgame log cleared by undo."
                 engineMessage = "Undid $undoCount move(s) in local state and engine state."
                 nextHintState = nextState
@@ -688,6 +700,7 @@ private fun GoCoachScreen(
             gameState = gameState,
             candidateMoves = candidateMoves,
             moveReviews = moveReviews,
+            ownershipEstimate = scoreEstimate?.ownership,
             uxOptions = uxOptions,
             inputEnabled = !isGameEnded && boardInputEnabled(matchMode, isEngineReady, isEngineBusy, gameState.nextPlayer),
             modifier = Modifier

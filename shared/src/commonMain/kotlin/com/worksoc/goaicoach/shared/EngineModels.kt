@@ -110,6 +110,12 @@ data class OwnershipEstimate(
     val whiteLikelyPoints: Int,
     val neutralOrUnclearPoints: Int,
     val threshold: Double,
+    val points: List<OwnershipPoint> = emptyList(),
+)
+
+data class OwnershipPoint(
+    val coordinate: BoardCoordinate,
+    val value: Double,
 )
 
 data class ScoreEstimate(

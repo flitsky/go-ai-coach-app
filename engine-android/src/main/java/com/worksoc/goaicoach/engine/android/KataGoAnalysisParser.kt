@@ -7,6 +7,7 @@ import com.worksoc.goaicoach.shared.EngineStatus
 import com.worksoc.goaicoach.shared.FinalScoreResult
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.OwnershipEstimate
+import com.worksoc.goaicoach.shared.OwnershipPoint
 import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.StoneColor
 import kotlin.math.abs
@@ -205,12 +206,19 @@ internal object KataGoAnalysisParser {
         var blackLikely = 0
         var whiteLikely = 0
         var unclear = 0
+        val points = mutableListOf<OwnershipPoint>()
         val absoluteThreshold = abs(threshold)
-        for (value in rows.flatten()) {
-            when {
-                value <= -absoluteThreshold -> blackLikely += 1
-                value >= absoluteThreshold -> whiteLikely += 1
-                else -> unclear += 1
+        rows.forEachIndexed { row, values ->
+            values.forEachIndexed { column, value ->
+                when {
+                    value <= -absoluteThreshold -> blackLikely += 1
+                    value >= absoluteThreshold -> whiteLikely += 1
+                    else -> unclear += 1
+                }
+                points += OwnershipPoint(
+                    coordinate = BoardCoordinate(row, column),
+                    value = value,
+                )
             }
         }
 
@@ -219,6 +227,7 @@ internal object KataGoAnalysisParser {
             whiteLikelyPoints = whiteLikely,
             neutralOrUnclearPoints = unclear,
             threshold = absoluteThreshold,
+            points = points,
         )
     }
 
