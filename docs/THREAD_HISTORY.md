@@ -275,3 +275,5 @@
 - 앱 AI 종료 처리에서 KataGo `final_status_list dead` 좌표와 `DeadStoneDetector.capturableDeadStones()` 좌표를 합쳐 `DeadStoneCleaner`에 넘기도록 했다. endgame log에는 `locallyInferredDeadStones`도 남긴다.
 - `EndgameRegressionTest`를 추가했다. 사용자 로그 보드 fixture에서 `G2/H2` 감지 여부와, `G2/H2`를 사석 제거한 점수가 흑 `G1` 실제 포획 후 점수와 같다는 불변식을 검증한다.
 - 검증으로 `EndgameRegressionTest` 단독 실행과 전체 Gradle 명령 `:shared:check :engine-android:testDebugUnitTest :app-android:assembleDebug :app-android:testDebugUnitTest`가 통과했다.
+- 사용자가 테스트 케이스 통과와 에뮬레이터 반영 여부를 확인했다. 답변 기준으로 코어 테스트는 통과했지만 직전 턴에서 에뮬레이터 재설치는 하지 않았음을 확인했다.
+- 최신 커밋 `91c86ce` 상태에서 `make reinstall-dev-engine`를 실행해 에뮬레이터 `emulator-5554`에 앱을 재설치하고 KataGo 모델/config seed 및 cold launch를 완료했다. 앱 launch `TotalTime=583ms`였다.
