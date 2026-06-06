@@ -313,3 +313,6 @@
 - KataGo local process adapter와 Stub adapter 기본 ruleset을 `Japanese`로 변경했다. KataGo 새 대국 시작 시 `kata-set-rules chinese/japanese`를 명시 호출해 앱 ruleset과 엔진 ruleset을 동기화한다.
 - Android 메뉴 `Game` 섹션에 `Scoring rule: Area | Territory` 토글을 추가했다. 선택 변경 시 엔진이 준비되어 있으면 현재 수순을 새 ruleset으로 재동기화하고 score estimate/top moves cache를 갱신한다.
 - `docs/RULESET_SCORING_DECISION.md`, `docs/USER_OPTION_MANUAL.md`, `docs/SCORE_AND_ENDGAME_DECISION.md`를 Territory 기본값과 Area/Territory 토글 기준으로 갱신했다. 제품 단계에서 사석 확인/수정 UX가 여전히 필수라는 한계도 함께 남겼다.
+- 사용자가 사석 확인/수정 UX 도입에 동의하고, 이를 얼마나 간결하게 넣을 수 있는지와 KaTrain 처리 방식을 질문했다.
+- KaTrain 소스 기준으로는 양패스 후 단순 엔진 `final_score`만 쓰지 않고, 일본식 규칙에서는 현재 노드와 이전 노드의 ownership을 평균해 `manual_score`를 계산한다. 불확실하면 `?`가 붙은 추정 점수 또는 `board-game-end` 상태로 남긴다.
+- Go AI Coach에는 양패스 후 자동으로 `Endgame Review` 상태로 전환하고, `Eval` ownership overlay + 엔진/로컬 사석 후보를 보드에 표시한 뒤 사용자가 돌을 탭해 dead/alive를 수정하고 `Accept score`로 확정하는 간결한 UX가 적절하다고 판단했다.
