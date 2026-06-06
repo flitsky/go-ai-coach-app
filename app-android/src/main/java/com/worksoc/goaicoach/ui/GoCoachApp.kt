@@ -629,56 +629,6 @@ private fun GoCoachScreen(
             onLocalTwoPlayerMode = ::startLocalTwoPlayerGame,
         )
 
-        if (uxOptions.showEngineStatusBadge) {
-            EngineStatusBadge(
-                engineName = engineName,
-                isEngineReady = isEngineReady,
-                isEngineBusy = matchMode == MatchMode.HumanVsAi && isEngineBusy,
-                engineDiagnostic = engineDiagnostic,
-            )
-        }
-
-        EngineTuningPanel(
-            profile = engineProfile,
-            enabled = matchMode == MatchMode.HumanVsAi && isEngineReady && !isEngineBusy,
-            onDifficultyChange = { difficulty: DifficultyProfile ->
-                configureEngine(
-                    engineProfile.copy(
-                        difficulty = difficulty,
-                        analysisLimit = difficulty.defaultAnalysisLimit(),
-                    ),
-                )
-            },
-            onVisitsChange = { visits ->
-                configureEngine(
-                    engineProfile.copy(
-                        analysisLimit = engineProfile.analysisLimit.copy(visits = visits),
-                    ),
-                )
-            },
-        )
-
-        HintControlsPanel(
-            hintEnabled = hintEnabled,
-            hintCount = hintCount,
-            enabled = matchMode == MatchMode.HumanVsAi && isEngineReady && !isEngineBusy,
-            onHintEnabledChange = { enabled ->
-                hintEnabled = enabled
-                if (enabled) {
-                    requestHintsForCurrentState(automatic = false)
-                } else {
-                    clearHints("Hints disabled.")
-                }
-            },
-            onHintCountChange = { count ->
-                hintCount = count
-                clearHints("Hint count set to $count.")
-                if (hintEnabled) {
-                    requestHintsForCurrentState(automatic = false)
-                }
-            },
-        )
-
         KaTrainUxQuickOptionsPanel(
             options = uxOptions,
             onOptionsChange = { nextOptions -> uxOptions = nextOptions },
@@ -691,6 +641,49 @@ private fun GoCoachScreen(
             onOptionsChange = { nextOptions -> uxOptions = nextOptions },
         )
 
+        if (isDisplayMenuExpanded) {
+            EngineTuningPanel(
+                profile = engineProfile,
+                enabled = matchMode == MatchMode.HumanVsAi && isEngineReady && !isEngineBusy,
+                onDifficultyChange = { difficulty: DifficultyProfile ->
+                    configureEngine(
+                        engineProfile.copy(
+                            difficulty = difficulty,
+                            analysisLimit = difficulty.defaultAnalysisLimit(),
+                        ),
+                    )
+                },
+                onVisitsChange = { visits ->
+                    configureEngine(
+                        engineProfile.copy(
+                            analysisLimit = engineProfile.analysisLimit.copy(visits = visits),
+                        ),
+                    )
+                },
+            )
+
+            HintControlsPanel(
+                hintEnabled = hintEnabled,
+                hintCount = hintCount,
+                enabled = matchMode == MatchMode.HumanVsAi && isEngineReady && !isEngineBusy,
+                onHintEnabledChange = { enabled ->
+                    hintEnabled = enabled
+                    if (enabled) {
+                        requestHintsForCurrentState(automatic = false)
+                    } else {
+                        clearHints("Hints disabled.")
+                    }
+                },
+                onHintCountChange = { count ->
+                    hintCount = count
+                    clearHints("Hint count set to $count.")
+                    if (hintEnabled) {
+                        requestHintsForCurrentState(automatic = false)
+                    }
+                },
+            )
+        }
+
         if (uxOptions.showHintLegend) {
             HintLegendPanel()
         }
@@ -702,6 +695,15 @@ private fun GoCoachScreen(
                 capturedByBlack = gameState.capturedBy(StoneColor.Black),
                 capturedByWhite = gameState.capturedBy(StoneColor.White),
                 lastMoveText = lastMoveText,
+            )
+        }
+
+        if (uxOptions.showEngineStatusBadge) {
+            EngineStatusBadge(
+                engineName = engineName,
+                isEngineReady = isEngineReady,
+                isEngineBusy = matchMode == MatchMode.HumanVsAi && isEngineBusy,
+                engineDiagnostic = engineDiagnostic,
             )
         }
 

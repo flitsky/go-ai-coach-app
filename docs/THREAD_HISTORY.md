@@ -214,3 +214,6 @@
 - 사용자가 옵션 버튼 정리를 요청했다. 먼저 옵션 설명 문서를 만들고, `Coords`, `Move nums`, `Last ring`, `Spot legend`, `Engine badge`, `Ownership`은 신규 `Menu` 버튼 아래로 이동하도록 요청했다.
 - `docs/USER_OPTION_MANUAL.md`를 추가해 플레이 화면 즉시 컨트롤, quick display, menu 안의 표시 옵션, 현재 제한사항을 한글 사용자 매뉴얼 초안으로 정리했다.
 - 앱 UI에서 `Candidate list`, `Game strip`은 플레이 화면의 `Quick display` 2열 옵션으로 유지하고, 나머지 보조 표시 옵션은 접을 수 있는 `Menu` 아래로 분리했다.
+- 사용자가 `Coords`, `Last ring`, `Engine badge`를 기본 활성화 상태로 바꾸고, 엔진 배지를 `Game strip` 아래쪽에 배치하며, `Engine` 설정과 `Hints` 설정도 `Menu` 아래로 옮겨달라고 요청했다.
+- `KaTrainUxOptions` 기본값을 조정해 좌표, 마지막 수 ring, 엔진 배지가 기본으로 켜지도록 했다.
+- `Engine`/`Hints` 패널은 메뉴가 펼쳐졌을 때만 보이도록 이동했고, 엔진 배지는 `Game strip` 다음, 보드 바로 위 영역에 표시되도록 재배치했다.
