@@ -200,3 +200,9 @@
 - `OwnershipEstimate`에 좌표별 `OwnershipPoint` 목록을 추가하고, KataGo `whiteOwnership` 파서가 각 좌표의 값을 보존하도록 확장했다.
 - Android 보드는 `Eval` 결과의 ownership 값을 옵션 기반 heatmap overlay로 그린다. `Ownership` 옵션이 꺼져 있거나 `Eval` 결과가 없으면 기존 보드와 동일하게 동작한다.
 - 2순위 검증 성공: `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :shared:check :engine-android:testDebugUnitTest :app-android:assembleDebug :app-android:testDebugUnitTest`.
+- 사용자가 에뮬레이터 실행 오류 확인을 요청했다.
+- 확인 결과 기본 shell PATH에는 `adb`가 없어 직접 `adb` 명령은 `command not found`가 날 수 있지만, Makefile은 `ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk` 절대 경로를 사용하므로 `make` 경로는 정상이다.
+- `emulator-5554`는 ADB `device` 상태였고, 실제 실패 지점은 `:app-android:installDebug` 설치 단계였다. 원인은 `Requested internal only, but not enough space`로 AVD `/data` 저장공간 부족이었다.
+- AVD `/data/local/tmp`에 남아 있던 이전 debug APK와 LLDB 임시 파일을 정리해 여유 공간을 약 301MB에서 350MB로 늘렸다.
+- 이후 `make reinstall-dev-engine`가 성공했다. debug APK 설치, KataGo model/config seed, 앱 cold launch가 완료되었고 `TotalTime=662ms`였다.
+- UI dump에서 `Go AI Coach POC`, `human Black vs KataGo White`, `KataGo assets found. Using local process engine.`, `Beginner`, `Visits 16`, `KaTrain UX` 옵션 패널 표시를 확인했다.
