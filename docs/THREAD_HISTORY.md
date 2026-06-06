@@ -299,3 +299,5 @@
 - 후보 spot 색상은 엔진이 직접 주는 green/yellow/red가 아니라, 최선 후보 대비 점수 손실을 앱이 해석해 표시하는 방식임을 확인했다.
 - 우리 앱의 후보/착수 평가 색상도 KaTrain 기본 임계값을 참고해 진한 초록, 연한 초록, 노랑, 주황, 빨강 5단계로 세분화했다.
 - `docs/KATRAIN_TOP_MOVES_ANALYSIS.md`를 추가해 GTP 기반 현재 adapter의 한계, JSON analysis adapter 전환 후보, KaTrain식 sweep/equalize/deep analysis 도입 방향을 문서화했다.
+- 검증으로 `make test`가 통과했고, `make reinstall-dev-engine`로 에뮬레이터 `emulator-5554`에 재설치했다. 전체 재설치/seed/launch는 약 4초, cold launch `TotalTime=593ms`였다.
+- UI dump에서 첫 화면의 `Score`, `Win Rate`, `Pass`, `Undo`, `Top Moves`, `Eval`과 `Top Moves analysis ready for Black: 81/81 spot(s).` 메시지를 확인했다.
