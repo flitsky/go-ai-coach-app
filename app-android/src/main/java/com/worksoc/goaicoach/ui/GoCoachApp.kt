@@ -39,6 +39,7 @@ import com.worksoc.goaicoach.match.activePlayer
 import com.worksoc.goaicoach.match.applyAiResponseAfterHumanTurn
 import com.worksoc.goaicoach.match.boardInputEnabled
 import com.worksoc.goaicoach.match.modeSummary
+import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.BoardAreaScorer
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
@@ -132,16 +133,16 @@ private fun GoCoachScreen(
 
     fun analysisKeyFor(
         state: GameState,
-        count: Int,
+        limit: AnalysisLimit,
     ): String =
         buildString {
             append(state.nextPlayer.name)
             append("|")
-            append(count)
+            append(limit.candidateCount)
             append("|")
-            append(engineProfile.analysisLimit.visits)
+            append(limit.visits)
             append("|")
-            append(engineProfile.analysisLimit.timeMillis ?: "none")
+            append(limit.timeMillis ?: "none")
             append("|")
             state.moves.forEach { move ->
                 append(move.describe(state.boardSize))
@@ -172,7 +173,8 @@ private fun GoCoachScreen(
         }
 
         val candidateCount = maxOf(BackgroundReviewCandidateCount, if (showHints) hintCount else 0)
-        val analysisKey = analysisKeyFor(targetState, candidateCount)
+        val analysisLimit = hintAnalysisLimitFor(engineProfile, candidateCount)
+        val analysisKey = analysisKeyFor(targetState, analysisLimit)
         if (automatic && analysisKey == lastAnalysisKey) {
             if (showHints && candidateMoves.isEmpty() && reviewCandidateMoves.isNotEmpty()) {
                 candidateMoves = reviewCandidateMoves.take(hintCount)
@@ -185,15 +187,14 @@ private fun GoCoachScreen(
             isEngineBusy = true
             runCatching {
                 withContext(Dispatchers.IO) {
-                    engineAdapter.analyze(
-                        engineProfile.analysisLimit.copy(candidateCount = candidateCount),
-                    )
+                    engineAdapter.analyze(analysisLimit)
                 }
             }.onSuccess { result ->
                 reviewCandidateMoves = result.candidates.take(candidateCount)
                 if (showHints) {
                     engineMessage = result.status.message
                     candidateText = result.toCandidateText(targetState.boardSize)
+                        .withHintStrengthHeader(engineProfile, analysisLimit)
                     candidateMoves = result.candidates.take(hintCount)
                 } else {
                     engineMessage = "Move review analysis ready for ${targetState.nextPlayer.label}."
@@ -1041,5 +1042,38 @@ private fun Double.toSignedOneDecimal(): String {
 
 private fun Double.formatOneDecimal(): String =
     ((this * 10).roundToInt() / 10.0).toString()
+
+private fun hintAnalysisLimitFor(
+    profile: EngineProfile,
+    candidateCount: Int,
+): AnalysisLimit {
+    val promoted = profile.difficulty.next().defaultAnalysisLimit()
+    val promotedTimeMillis = promoted.timeMillis
+        ?: profile.analysisLimit.timeMillis
+        ?: 1_000L
+    return profile.analysisLimit.copy(
+        visits = maxOf(profile.analysisLimit.visits, promoted.visits),
+        timeMillis = strongerHintTimeMillis(profile.analysisLimit.timeMillis, promotedTimeMillis),
+        candidateCount = candidateCount,
+    )
+}
+
+private fun strongerHintTimeMillis(
+    current: Long?,
+    promoted: Long,
+): Long = current?.coerceAtLeast(promoted) ?: promoted
+
+private fun String.withHintStrengthHeader(
+    profile: EngineProfile,
+    limit: AnalysisLimit,
+): String {
+    val hintDifficulty = profile.difficulty.next()
+    val suffix = if (hintDifficulty == profile.difficulty) {
+        "same as max profile"
+    } else {
+        "one grade above ${profile.difficulty.label}"
+    }
+    return "Hint strength: ${hintDifficulty.label} ($suffix), ${limit.visits} visits / ${limit.timeMillis ?: 0}ms\n$this"
+}
 
 private const val BackgroundReviewCandidateCount = 12

@@ -42,6 +42,9 @@ KaTrain류 UI는 대체로 엔진 분석 결과의 후보수 리스트를 보드
 - `N` 설정으로 한 번에 표시할 후보수 개수를 1-12개 범위에서 조절한다.
 - 수동 `Hint` 버튼은 토글 상태와 관계없이 현재 차례에 한 번 분석을 실행한다.
 - 실제 표시 개수는 요청한 `N`과 현재 판의 합법 후보 가능 수 중 더 작은 값이다.
+- 힌트와 착수 리뷰용 pre-move analysis는 대국 AI 응수 설정보다 한 단계 높은 difficulty의 visits/time을 사용한다.
+  - 예: 대국 AI가 `Beginner`이면 힌트 분석은 최소 `Casual` 기본값을 사용한다.
+  - 사용자가 visits/time을 이미 더 높게 조정한 경우에는 현재 값과 한 단계 위 기본값 중 더 큰 값을 사용해 힌트가 약해지지 않게 한다.
 - `KataGoProcessEngineAdapter.analyze()`는 후보수 N이 커질 때 최소 `N * 10 visits`, `1000ms`로 힌트 검색을 일시 상향한다.
 - 힌트 검색 후에는 기존 AI 대국용 `EngineProfile.analysisLimit`로 `maxVisits/maxTime`을 되돌린다. 따라서 힌트 품질 보강이 AI 응수 강도 설정을 영구적으로 바꾸지 않는다.
 

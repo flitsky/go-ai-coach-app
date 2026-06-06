@@ -206,3 +206,8 @@
 - AVD `/data/local/tmp`에 남아 있던 이전 debug APK와 LLDB 임시 파일을 정리해 여유 공간을 약 301MB에서 350MB로 늘렸다.
 - 이후 `make reinstall-dev-engine`가 성공했다. debug APK 설치, KataGo model/config seed, 앱 cold launch가 완료되었고 `TotalTime=662ms`였다.
 - UI dump에서 `Go AI Coach POC`, `human Black vs KataGo White`, `KataGo assets found. Using local process engine.`, `Beginner`, `Visits 16`, `KaTrain UX` 옵션 패널 표시를 확인했다.
+- 사용자가 좌표가 4개 면에 모두 표시되는 문제를 지적하고, 좌측과 하단에만 표시되도록 수정 요청했다.
+- `GoBoard` 좌표 표시를 좌측 row label과 하단 column label만 그리도록 수정했다.
+- 사용자가 힌트 엔진 강도도 확인 요청했다. 확인 결과 현재 힌트는 대국 AI와 같은 KataGo process를 쓰되 `analyze()` 호출 시 visits/time을 임시 적용하고, 분석 후 기존 AI 응수 limit으로 되돌리는 구조다.
+- 힌트와 착수 리뷰용 pre-move analysis가 현재 대국 difficulty보다 한 단계 높은 difficulty의 visits/time을 사용하도록 변경했다. 예를 들어 대국 AI가 `Beginner`이면 힌트는 최소 `Casual` 기본값을 사용한다.
+- 사용자가 수동으로 visits/time을 더 높게 올린 경우 힌트가 약해지지 않도록 현재 값과 한 단계 위 기본값 중 큰 값을 사용한다.

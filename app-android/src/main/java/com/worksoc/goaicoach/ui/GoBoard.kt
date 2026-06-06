@@ -147,13 +147,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawBoardCoordinate
     val textSize = geometry.spacing * 0.24f
     val columnLabels = boardColumnLabels(boardSize)
     for (index in 0 until boardSize.value) {
-        val topPoint = geometry.pointFor(BoardCoordinate(0, index))
         val bottomPoint = geometry.pointFor(BoardCoordinate(boardSize.value - 1, index))
-        drawBoardLabel(
-            label = columnLabels[index].toString(),
-            center = Offset(topPoint.x, geometry.origin.y - geometry.spacing * 0.43f),
-            textSize = textSize,
-        )
         drawBoardLabel(
             label = columnLabels[index].toString(),
             center = Offset(bottomPoint.x, bottomPoint.y + geometry.spacing * 0.43f),
@@ -162,15 +156,9 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawBoardCoordinate
 
         val rowLabel = (boardSize.value - index).toString()
         val leftPoint = geometry.pointFor(BoardCoordinate(index, 0))
-        val rightPoint = geometry.pointFor(BoardCoordinate(index, boardSize.value - 1))
         drawBoardLabel(
             label = rowLabel,
             center = Offset(geometry.origin.x - geometry.spacing * 0.43f, leftPoint.y),
-            textSize = textSize,
-        )
-        drawBoardLabel(
-            label = rowLabel,
-            center = Offset(rightPoint.x + geometry.spacing * 0.43f, rightPoint.y),
             textSize = textSize,
         )
     }

@@ -49,11 +49,20 @@
   - 꺼져 있어도 `Hint` 버튼을 누르면 수동으로 현재 후보수를 볼 수 있다.
 - `N`
   - 한 번에 표시할 후보수 개수다.
-  - 현재 UI 범위는 `1-5`다.
+  - 현재 UI 범위는 `1-12`다.
   - `AnalysisLimit.candidateCount`로 엔진 adapter에 전달된다.
   - `Beginner`처럼 낮은 visits/time 설정에서는 KataGo 검색이 실제로 방문한 후보수가 N보다 적을 수 있다.
   - 이 경우 앱은 부족한 spot을 `kata-raw-nn` 정책 우선순위 후보로 보강한다.
   - 검색 후보는 `WR`, `score`, `visits`를 가질 수 있고, 정책 보강 후보는 `prior` 중심으로 표시된다.
+
+힌트 분석은 대국 AI 응수 설정과 분리한다.
+
+- AI 응수는 현재 `EngineProfile.analysisLimit`를 사용한다.
+- 힌트와 착수 리뷰용 pre-move analysis는 현재 difficulty보다 한 단계 높은 difficulty의 기본 visits/time을 사용한다.
+  - 예: 대국 AI가 `Beginner`이면 힌트는 최소 `Casual` 기본값인 `64 visits / 500ms`를 사용한다.
+  - 수동으로 visits/time을 이미 더 높게 올려둔 경우에는 힌트가 약해지지 않도록 현재 값과 한 단계 위 기본값 중 큰 값을 사용한다.
+- KataGo process adapter는 후보수 N이 커질 때 여기에 추가로 최소 `N * 10 visits`, `1000ms`까지 힌트 검색을 일시 상향할 수 있다.
+- 힌트 검색 후에는 기존 AI 대국용 `EngineProfile.analysisLimit`로 `maxVisits/maxTime`을 되돌린다. 따라서 힌트를 강하게 해도 AI 응수 강도가 영구적으로 올라가지 않는다.
 
 ## KataGo process adapter 매핑
 
