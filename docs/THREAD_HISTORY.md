@@ -289,3 +289,7 @@
 - 사용자가 UX 밀도를 높이기 위해 `KataGo Ready` 영역을 제거하고, 엔진 busy 상태일 때만 보드판 상단 보더 중앙에 `Thinking` 애니메이션을 표시해달라고 요청했다.
 - 별도 `EngineStatusBadge` 줄과 메뉴의 `Engine badge` 옵션을 제거했다. `GoBoard`가 `engineBusy`를 입력받고, busy 동안 `Thinking`, `Thinking .`, `Thinking ..`, `Thinking ...`, 빈 상태를 0.2초 간격으로 반복 표시하도록 변경했다.
 - `docs/USER_OPTION_MANUAL.md`에서 `Engine badge` 설명을 제거하고, 엔진 진행 상태는 보드 상단 `Thinking` 애니메이션과 `Copy Log` 진단으로 확인하는 구조로 문서화했다.
+- 사용자가 UX 밀도와 분석 기능 강화를 위해 5개 작업을 요청했다. 1차로 Score graph 색상을 반대로 적용해 `Score=파랑`, `Win Rate=초록`으로 바꿨다.
+- 2P 모드에서도 엔진이 준비된 경우 현재 수순을 `EngineAdapter`에 재동기화하고, `Top Moves`, `Eval`, Score/Win Rate graph를 사용할 수 있게 했다. 엔진이 없으면 기존 로컬 룰 테스트로 fallback한다.
+- Top Moves의 점수 손실이 없는 policy/legal fallback 후보는 보드 위 회색 스팟으로 그리지 않고, 상세 텍스트와 `Copy Log`에만 남기도록 바꿨다.
+- `Ownership` 메뉴 옵션을 제거하고, `Eval` 결과에 ownership 값이 있으면 별도 토글 없이 보드 overlay로 표시되도록 통합했다.

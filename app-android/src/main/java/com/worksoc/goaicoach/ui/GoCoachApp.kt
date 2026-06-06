@@ -55,6 +55,7 @@ import com.worksoc.goaicoach.shared.DeadStonesResult
 import com.worksoc.goaicoach.shared.DifficultyProfile
 import com.worksoc.goaicoach.shared.EngineAdapter
 import com.worksoc.goaicoach.shared.EngineProfile
+import com.worksoc.goaicoach.shared.EngineStatus
 import com.worksoc.goaicoach.shared.EndgameScoreSelector
 import com.worksoc.goaicoach.shared.EndgameScoreSource
 import com.worksoc.goaicoach.shared.FinalScoreResult
@@ -199,10 +200,11 @@ private fun GoCoachScreen(
         if (
             isGameEnded ||
             !isEngineReady ||
-            isEngineBusy ||
-            matchMode != MatchMode.HumanVsAi ||
-            targetState.nextPlayer != HumanPlayer
+            isEngineBusy
         ) {
+            return
+        }
+        if (matchMode == MatchMode.HumanVsAi && targetState.nextPlayer != HumanPlayer) {
             return
         }
 
@@ -291,7 +293,7 @@ private fun GoCoachScreen(
             return
         }
 
-        if (matchMode == MatchMode.LocalTwoPlayer) {
+        if (matchMode == MatchMode.LocalTwoPlayer && !isEngineReady) {
             val score = BoardAreaScorer.score(gameState)
             scoreText = score.toDisplayText()
             scoreEstimate = null
@@ -305,10 +307,14 @@ private fun GoCoachScreen(
             return
         }
 
+        val estimateState = gameState
         scope.launch {
             isEngineBusy = true
             runCatching {
                 withContext(Dispatchers.IO) {
+                    if (matchMode == MatchMode.LocalTwoPlayer) {
+                        engineAdapter.syncToGameState(estimateState)
+                    }
                     engineAdapter.estimateScore(engineProfile.analysisLimit)
                 }
             }.onSuccess { estimate ->
@@ -370,6 +376,37 @@ private fun GoCoachScreen(
     fun startLocalTwoPlayerGame() {
         matchMode = MatchMode.LocalTwoPlayer
         resetLocalGame("2P test mode. Local shared rules handle captures, suicide, and simple ko.")
+        if (!isEngineReady) {
+            engineMessage = "2P test mode without engine analysis. Local rules are active."
+            return
+        }
+        if (isEngineBusy) {
+            engineMessage = "Engine is busy. Change mode after the current response."
+            return
+        }
+
+        val nextState = gameState
+        scope.launch {
+            isEngineBusy = true
+            runCatching {
+                withContext(Dispatchers.IO) {
+                    engineAdapter.syncToGameState(nextState)
+                    engineAdapter.estimateScore(scoreGraphAnalysisLimit(engineProfile))
+                }
+            }.onSuccess { estimate ->
+                scoreText = estimate.toDisplayText()
+                scoreEstimate = estimate
+                scoreSnapshots = listOf(ScoreTimeline.fromEstimate(0, estimate))
+                engineMessage = "2P test mode connected to engine analysis."
+            }.onFailure { error ->
+                engineMessage = error.message ?: "2P engine sync failed."
+            }
+            isEngineBusy = false
+            requestTopMoveAnalysisForState(
+                targetState = gameState,
+                automatic = true,
+            )
+        }
     }
 
     fun configureEngine(nextProfile: EngineProfile) {
@@ -404,7 +441,13 @@ private fun GoCoachScreen(
 
     fun submitHumanMove(move: Move) {
         if (matchMode == MatchMode.LocalTwoPlayer) {
+            if (isEngineBusy) {
+                engineMessage = "Engine is busy. Wait for the current analysis."
+                return
+            }
             val beforeMove = gameState
+            val previousReviewCandidates = reviewCandidateMoves
+            val previousMoveReviews = moveReviews
             val afterMove = runCatching { beforeMove.play(move) }
                 .onFailure { error ->
                     engineMessage = error.message ?: "Illegal move."
@@ -413,38 +456,125 @@ private fun GoCoachScreen(
                 ?: return
 
             gameState = afterMove
+            val moveReview = buildMoveReview(
+                move = move,
+                candidates = reviewCandidateMoves,
+                boardSize = beforeMove.boardSize,
+                moveNumber = afterMove.moves.size,
+            )
             clearTopMoveSpots()
-            moveReviewText = "Move review is available in AI Top Moves mode."
-            moveReviews = emptyList()
+            moveReviewText = moveReview.text
+            moveReviews = previousMoveReviews.withReviewMarker(moveReview.marker)
+            reviewCandidateMoves = emptyList()
+            lastAnalysisKey = null
             lastMoveText = move.describe(beforeMove.boardSize)
             scoreText = "Score estimate not current."
             scoreEstimate = null
-            scoreSnapshots = ScoreTimeline.record(scoreSnapshots, localScoreSnapshot(afterMove))
-            if (afterMove.hasConsecutivePasses()) {
-                val finalScore = BoardAreaScorer.score(afterMove)
-                val finalScoreText = finalScore.toDisplayText()
-                isGameEnded = true
-                scoreText = finalScoreText
-                scoreEstimate = null
-                scoreSnapshots = ScoreTimeline.record(
-                    scoreSnapshots,
-                    ScoreTimeline.fromFinalScore(
-                        moveNumber = afterMove.moves.size,
-                        finalScore = finalScore,
-                        source = ScoreSnapshotSource.FinalScore,
-                    ),
-                )
-                candidateText = "Game ended after two passes."
-                endgameLog = buildEndgameLog(
-                    source = "local-two-player-consecutive-pass",
-                    state = afterMove,
-                    finalScoreText = finalScoreText,
-                    detail = "triggerMove=${move.describe(beforeMove.boardSize)}",
-                )
-                engineMessage = "Local game ended after two passes. ${finalScore.status.message}"
-            } else {
-                candidateText = "Captured: Black ${afterMove.capturedBy(StoneColor.Black)} / White ${afterMove.capturedBy(StoneColor.White)}"
-                engineMessage = "Local move accepted: ${move.describe(beforeMove.boardSize)}."
+
+            if (!isEngineReady) {
+                scoreSnapshots = ScoreTimeline.record(scoreSnapshots, localScoreSnapshot(afterMove))
+                if (afterMove.hasConsecutivePasses()) {
+                    val finalScore = BoardAreaScorer.score(afterMove)
+                    val finalScoreText = finalScore.toDisplayText()
+                    isGameEnded = true
+                    scoreText = finalScoreText
+                    scoreEstimate = null
+                    scoreSnapshots = ScoreTimeline.record(
+                        scoreSnapshots,
+                        ScoreTimeline.fromFinalScore(
+                            moveNumber = afterMove.moves.size,
+                            finalScore = finalScore,
+                            source = ScoreSnapshotSource.FinalScore,
+                        ),
+                    )
+                    candidateText = "Game ended after two passes."
+                    endgameLog = buildEndgameLog(
+                        source = "local-two-player-consecutive-pass",
+                        state = afterMove,
+                        finalScoreText = finalScoreText,
+                        detail = "triggerMove=${move.describe(beforeMove.boardSize)}",
+                    )
+                    engineMessage = "Local game ended after two passes. ${finalScore.status.message}"
+                } else {
+                    candidateText = "Captured: Black ${afterMove.capturedBy(StoneColor.Black)} / White ${afterMove.capturedBy(StoneColor.White)}"
+                    engineMessage = "Local move accepted without engine sync: ${move.describe(beforeMove.boardSize)}."
+                }
+                return
+            }
+
+            isEngineBusy = true
+            scope.launch {
+                var nextAnalysisState: GameState? = null
+                runCatching {
+                    withContext(Dispatchers.IO) {
+                        engineAdapter.syncToGameState(afterMove)
+                        if (afterMove.hasConsecutivePasses() || afterMove.isBoardFull()) {
+                            LocalEngineMoveResult(
+                                endgame = resolveAiEndgame(
+                                    engineAdapter = engineAdapter,
+                                    originalState = afterMove,
+                                    estimateLimit = scoreGraphAnalysisLimit(engineProfile),
+                                    prePassCandidates = if (move is Move.Pass) {
+                                        previousReviewCandidates
+                                    } else {
+                                        emptyList()
+                                    },
+                                ),
+                            )
+                        } else {
+                            LocalEngineMoveResult(
+                                estimate = engineAdapter.estimateScore(scoreGraphAnalysisLimit(engineProfile)),
+                            )
+                        }
+                    }
+                }.onSuccess { result ->
+                    val endgame = result.endgame
+                    val estimate = result.estimate
+                    if (endgame != null) {
+                        isGameEnded = true
+                        gameState = endgame.cleanup.state
+                        val finalScoreText = endgame.finalScore.toDisplayText()
+                        scoreText = finalScoreText
+                        scoreEstimate = null
+                        scoreSnapshots = ScoreTimeline.record(
+                            scoreSnapshots,
+                            ScoreTimeline.fromFinalScore(
+                                moveNumber = endgame.cleanup.state.moves.size,
+                                finalScore = endgame.finalScore,
+                                source = ScoreSnapshotSource.FinalScore,
+                            ),
+                        )
+                        endgameLog = buildEndgameLog(
+                            source = "local-two-player-engine-dead-stone-cleanup",
+                            state = endgame.cleanup.state,
+                            finalScoreText = finalScoreText,
+                            detail = endgame.toLogDetail(afterMove),
+                        )
+                        engineMessage = "2P game ended after two passes.\n${endgame.toEngineMessage()}"
+                        candidateText = endgame.toCandidateText()
+                    } else if (estimate != null) {
+                        scoreText = estimate.toDisplayText()
+                        scoreEstimate = estimate
+                        scoreSnapshots = ScoreTimeline.record(
+                            scoreSnapshots,
+                            ScoreTimeline.fromEstimate(afterMove.moves.size, estimate),
+                        )
+                        candidateText = "Captured: Black ${afterMove.capturedBy(StoneColor.Black)} / White ${afterMove.capturedBy(StoneColor.White)}"
+                        engineMessage = "Local move accepted and engine analysis synced: ${move.describe(beforeMove.boardSize)}."
+                        nextAnalysisState = afterMove
+                    }
+                }.onFailure { error ->
+                    scoreSnapshots = ScoreTimeline.record(scoreSnapshots, localScoreSnapshot(afterMove))
+                    candidateText = "Captured: Black ${afterMove.capturedBy(StoneColor.Black)} / White ${afterMove.capturedBy(StoneColor.White)}"
+                    engineMessage = error.message ?: "2P engine sync failed."
+                }
+                isEngineBusy = false
+                nextAnalysisState?.let { state ->
+                    requestTopMoveAnalysisForState(
+                        targetState = state,
+                        automatic = true,
+                    )
+                }
             }
             return
         }
@@ -612,6 +742,10 @@ private fun GoCoachScreen(
         }
 
         if (matchMode == MatchMode.LocalTwoPlayer) {
+            if (isEngineBusy) {
+                engineMessage = "Engine is busy. Undo after the current analysis."
+                return
+            }
             val nextState = gameState.replayWithoutLastMoves(1)
             gameState = nextState
             isGameEnded = false
@@ -627,7 +761,34 @@ private fun GoCoachScreen(
                 localScoreSnapshot(nextState),
             )
             endgameLog = "Endgame log cleared by undo."
-            engineMessage = "Local undo completed."
+            if (!isEngineReady) {
+                engineMessage = "Local undo completed without engine sync."
+                return
+            }
+            isEngineBusy = true
+            scope.launch {
+                runCatching {
+                    withContext(Dispatchers.IO) {
+                        engineAdapter.syncToGameState(nextState)
+                        engineAdapter.estimateScore(scoreGraphAnalysisLimit(engineProfile))
+                    }
+                }.onSuccess { estimate ->
+                    scoreText = estimate.toDisplayText()
+                    scoreEstimate = estimate
+                    scoreSnapshots = ScoreTimeline.record(
+                        scoreSnapshots,
+                        ScoreTimeline.fromEstimate(nextState.moves.size, estimate),
+                    )
+                    engineMessage = "Local undo completed and engine analysis synced."
+                }.onFailure { error ->
+                    engineMessage = error.message ?: "Local undo engine sync failed."
+                }
+                isEngineBusy = false
+                requestTopMoveAnalysisForState(
+                    targetState = nextState,
+                    automatic = true,
+                )
+            }
             return
         }
 
@@ -764,7 +925,7 @@ private fun GoCoachScreen(
 
             GameMenuActionsPanel(
                 mode = matchMode,
-                canStartNew = matchMode == MatchMode.LocalTwoPlayer || (isEngineReady && !isEngineBusy),
+                canStartNew = !isEngineBusy && (matchMode == MatchMode.LocalTwoPlayer || isEngineReady),
                 onNewGame = {
                     when (matchMode) {
                         MatchMode.HumanVsAi -> startAiGame()
@@ -781,7 +942,7 @@ private fun GoCoachScreen(
 
             EngineTuningPanel(
                 profile = engineProfile,
-                enabled = matchMode == MatchMode.HumanVsAi && isEngineReady && !isEngineBusy,
+                enabled = isEngineReady && !isEngineBusy,
                 onDifficultyChange = { difficulty: DifficultyProfile ->
                     configureEngine(
                         engineProfile.copy(
@@ -852,7 +1013,6 @@ private fun GoCoachScreen(
             }
 
             val topMovesButtonEnabled = !isGameEnded &&
-                matchMode == MatchMode.HumanVsAi &&
                 isEngineReady &&
                 (!isEngineBusy || topMovesEnabled)
             if (topMovesEnabled) {
@@ -924,6 +1084,11 @@ private data class EngineStartupResult(
 private data class ScoredTurnOutcome(
     val turnOutcome: TurnOutcome,
     val scoreSnapshots: List<ScoreSnapshot>,
+)
+
+private data class LocalEngineMoveResult(
+    val estimate: ScoreEstimate? = null,
+    val endgame: AiEndgameResolution? = null,
 )
 
 private data class AiEndgameResolution(
@@ -1046,6 +1211,14 @@ private suspend fun resolveAiEndgame(
         engineFinalScoreError = engineFinalScoreError,
         prePassCandidates = prePassCandidates,
     )
+}
+
+private suspend fun EngineAdapter.syncToGameState(state: GameState): EngineStatus {
+    val status = newGame(state.boardSize, state.ruleset)
+    state.moves.forEach { move ->
+        playMove(move)
+    }
+    return status
 }
 
 private fun scoreGraphAnalysisLimit(profile: EngineProfile): AnalysisLimit =

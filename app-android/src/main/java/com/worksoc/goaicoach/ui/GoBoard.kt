@@ -92,7 +92,7 @@ internal fun GoBoard(
             if (uxOptions.showCoordinates) {
                 drawBoardCoordinates(geometry, gameState.boardSize)
             }
-            if (uxOptions.showOwnershipOverlay && ownershipEstimate != null) {
+            if (ownershipEstimate != null) {
                 drawOwnershipOverlay(geometry, gameState, ownershipEstimate)
             }
             drawCandidateMoves(geometry, gameState, candidateMoves)
@@ -222,6 +222,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawCandidateMoves(
 ) {
     candidateMoves.forEachIndexed { index, candidate ->
         val play = candidate.move as? Move.Play ?: return@forEachIndexed
+        val pointLoss = candidate.pointLoss ?: return@forEachIndexed
         if (!play.coordinate.isInside(gameState.boardSize) || gameState.stoneAt(play.coordinate) != null) {
             return@forEachIndexed
         }
@@ -229,7 +230,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawCandidateMoves(
         val center = geometry.pointFor(play.coordinate)
         val radius = geometry.spacing * if (index == 0) 0.24f else 0.18f
         val fillAlpha = if (index == 0) 0.76f else 0.48f
-        val color = candidateToneColor(moveReviewToneFor(candidate.pointLoss))
+        val color = candidateToneColor(moveReviewToneFor(pointLoss))
         drawCircle(
             color = color.copy(alpha = fillAlpha),
             radius = radius,

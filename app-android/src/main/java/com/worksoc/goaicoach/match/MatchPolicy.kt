@@ -68,7 +68,7 @@ internal fun boardInputEnabled(
 ): Boolean =
     when (mode) {
         MatchMode.HumanVsAi -> isEngineReady && !isEngineBusy && nextPlayer == HumanPlayer
-        MatchMode.LocalTwoPlayer -> true
+        MatchMode.LocalTwoPlayer -> !isEngineBusy
     }
 
 internal fun turnStatus(

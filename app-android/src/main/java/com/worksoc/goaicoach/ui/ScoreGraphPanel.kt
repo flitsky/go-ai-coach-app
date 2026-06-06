@@ -262,7 +262,7 @@ private val ScoreSnapshotSource.label: String
     }
 
 private const val MinimumGraphSlots = 15
-private val ScoreLineColor = Color(0xFF2E7D32)
-private val WinRateLineColor = Color(0xFF1565C0)
+private val ScoreLineColor = Color(0xFF1565C0)
+private val WinRateLineColor = Color(0xFF2E7D32)
 private val AxisColor = Color(0xFF8D8A80)
 private val GridColor = Color(0x338D8A80)
