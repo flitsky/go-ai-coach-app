@@ -231,3 +231,11 @@
 - Top Moves 후보 수가 많을 때 엔진 어댑터가 후보 수 기준으로 최소 visits/time을 상향할 수 있으므로, 화면 summary에서 과거 `hint search` 용어를 제거하고 일반 `search analysis` 표현으로 바꿨다.
 - 에뮬레이터에서 상단 햄버거 버튼, `Game strip` 기본 ON, 메뉴 내 `Display menu`/`Engine`만 노출되는 상태, `Top Moves` 버튼, 81/81 후보 준비 및 버튼 클릭 후 `Showing 81 Top Moves from cached pre-move analysis.` 메시지를 확인했다.
 - 보드 스크린샷으로 모든 합법 교차점에 Top Moves spot이 표시되고, search score가 있는 상위 후보는 점수 label이 표시되며 나머지는 policy fallback spot으로 표시되는 것을 확인했다.
+- 사용자가 score graph 방향을 확인하며 상단은 흑, 하단은 백 진영으로 표현하고, 오른쪽 축의 첫 번째 흐린 선 끝에 `B`, 세 번째 흐린 선 끝에 `W`를 표시해달라고 요청했다.
+- 내부 `ScoreSnapshot`은 White 기준 값을 유지하되, Android `ScoreGraphPanel` 렌더링에서만 부호를 뒤집어 흑 우세가 위쪽, 백 우세가 아래쪽에 오도록 변경했다. 그래프 오른쪽에는 `B`/`W` 축 라벨을 추가했다.
+- 사용자가 `Top Moves` 버튼을 토글로 동작하게 하고, 눌린 상태면 매 사용자 턴마다 Top Moves를 표시해달라고 요청했다.
+- `Top Moves` 상태를 `topMovesEnabled` 토글로 분리했다. 수가 진행될 때 후보 spot은 일시적으로 지우되 토글 상태는 유지하고, 다음 사용자 턴의 pre-move analysis가 완료되면 후보 spot을 자동으로 다시 표시한다. 토글이 꺼져 있어도 착수 평가용 pre-move analysis cache는 계속 준비한다.
+- 에뮬레이터에서 Top Moves 토글을 켠 뒤 실제 착수와 AI 응수까지 진행해 다음 사용자 턴에도 자동 분석이 다시 실행되는 것을 확인했다. 이 과정에서 일부 판면은 KataGo search/raw NN policy가 전체 합법점을 채우지 못해 79개 중 2개만 표시되는 상태를 확인했다.
+- `KataGoProcessEngineAdapter`의 Top Moves 후보 보강 로직에 `Legal fallback`을 추가했다. search 후보와 raw NN policy 후보가 부족하면 남은 합법 착점도 후보 목록에 포함해, 토글이 켜진 상태에서 매 사용자 턴마다 가능한 착점 표시가 안정적으로 유지되게 했다.
+- 수정 후 앱을 에뮬레이터에 재설치하고 같은 흐름을 재검증했다. 초기에는 81/81 후보가 표시되고, `E5` 착수 후 AI가 `C5`에 둔 다음 사용자 턴에는 79/79 후보가 표시되는 것을 확인했다.
+- `docs/USER_OPTION_MANUAL.md`와 `docs/SCORE_AND_ENDGAME_DECISION.md`에 score graph 표시 방향과 `Top Moves` 토글 동작을 반영했다.

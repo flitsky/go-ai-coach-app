@@ -1,5 +1,7 @@
 package com.worksoc.goaicoach.ui
 
+import android.graphics.Paint
+import android.graphics.Typeface
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -21,6 +23,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.shared.ScoreSnapshot
@@ -74,7 +78,7 @@ internal fun ScoreGraphPanel(
                     GraphLegendDot(ScoreLineColor, "score lead")
                     GraphLegendDot(WinRateLineColor, "win rate")
                     Text(
-                        text = "top favors White, center is even",
+                        text = "top favors Black, center is even",
                         color = MaterialTheme.colorScheme.secondary,
                         style = MaterialTheme.typography.bodySmall,
                     )
@@ -94,7 +98,7 @@ private fun ScoreGraphCanvas(
             .height(112.dp),
     ) {
         val chartLeft = 10.dp.toPx()
-        val chartRight = size.width - 10.dp.toPx()
+        val chartRight = size.width - 24.dp.toPx()
         val chartTop = 8.dp.toPx()
         val chartBottom = size.height - 8.dp.toPx()
         val chartHeight = chartBottom - chartTop
@@ -119,24 +123,28 @@ private fun ScoreGraphCanvas(
             end = Offset(chartRight, chartBottom),
             strokeWidth = 1.dp.toPx(),
         )
+        val axisLabelX = chartRight + 10.dp.toPx()
+        drawAxisLabel(label = "B", center = Offset(axisLabelX, chartTop))
+        drawAxisLabel(label = "W", center = Offset(axisLabelX, chartBottom))
 
         val denominator = maxOf(snapshots.size - 1, MinimumGraphSlots)
         val xForIndex = { index: Int ->
             chartLeft + chartWidth * (index.toFloat() / denominator.toFloat())
         }
         val scoreScale = snapshots
-            .mapNotNull { it.whiteScoreLead }
+            .mapNotNull { it.whiteScoreLead?.let { lead -> -lead } }
             .scaleFor(granularity = 5.0)
         val winRateScale = snapshots
-            .mapNotNull { it.whiteWinRate?.let { winRate -> (winRate - 0.5) * 100.0 } }
+            .mapNotNull { it.whiteWinRate?.let { winRate -> (0.5 - winRate) * 100.0 } }
             .scaleFor(granularity = 10.0)
 
         drawSeries(
             snapshots = snapshots,
             color = ScoreLineColor,
             yValue = { snapshot ->
-                snapshot.whiteScoreLead?.let { lead ->
-                    centerY - (lead.toFloat() / scoreScale.toFloat()) * (chartHeight / 2f)
+                snapshot.whiteScoreLead?.let { whiteLead ->
+                    val blackLead = -whiteLead
+                    centerY - (blackLead.toFloat() / scoreScale.toFloat()) * (chartHeight / 2f)
                 }
             },
             xForIndex = xForIndex,
@@ -146,12 +154,28 @@ private fun ScoreGraphCanvas(
             color = WinRateLineColor,
             yValue = { snapshot ->
                 snapshot.whiteWinRate?.let { winRate ->
-                    val whiteDelta = ((winRate - 0.5) * 100.0).toFloat()
-                    centerY - (whiteDelta / winRateScale.toFloat()) * (chartHeight / 2f)
+                    val blackDelta = ((0.5 - winRate) * 100.0).toFloat()
+                    centerY - (blackDelta / winRateScale.toFloat()) * (chartHeight / 2f)
                 }
             },
             xForIndex = xForIndex,
         )
+    }
+}
+
+private fun DrawScope.drawAxisLabel(
+    label: String,
+    center: Offset,
+) {
+    drawIntoCanvas { canvas ->
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = android.graphics.Color.rgb(93, 89, 79)
+            textAlign = Paint.Align.CENTER
+            textSize = 11.dp.toPx()
+            typeface = Typeface.DEFAULT_BOLD
+        }
+        val baseline = center.y - (paint.ascent() + paint.descent()) / 2f
+        canvas.nativeCanvas.drawText(label, center.x, baseline, paint)
     }
 }
 

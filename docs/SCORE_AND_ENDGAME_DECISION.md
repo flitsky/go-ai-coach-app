@@ -58,6 +58,8 @@ KaTrain의 `ScoreGraph`는 착수 노드마다 분석 결과의 `scoreLead`와 `
 
 Android UI는 `ScoreSnapshot` 목록을 받아 그래프를 그리기만 한다. 엔진 분석 방식, 로컬 2P 추정 방식, 최종 계가 방식은 UI와 직접 결합하지 않는다.
 
+표시 방향은 UI에서만 변환한다. `ScoreSnapshot`은 계속 White 기준 값을 보관하되, Android score graph는 흑 우세가 위쪽, 백 우세가 아래쪽에 오도록 부호를 뒤집어 렌더링한다. 오른쪽 축 라벨 `B`/`W`는 이 화면 표시 방향을 안내한다.
+
 ## 양패스 후 계가
 
 `GameState.hasConsecutivePasses()`가 true가 되면 게임을 종료 상태로 전환한다.

@@ -121,11 +121,18 @@ class KataGoProcessEngineAdapter(
         } finally {
             applySearchLimit(profile.analysisLimit)
         }
-        val fallbackCount = candidates.count { it.visits == null }
+        val policyFallbackCount = candidates.count { it.visits == null && it.policyPrior != null }
+        val legalFallbackCount = candidates.count { it.visits == null && it.policyPrior == null }
         return AnalysisResult(
             status = EngineStatus.ready("KataGo analysis complete for ${nextPlayer.label}: ${candidates.size}/${limit.candidateCount} candidate(s)"),
             candidates = candidates,
-            summary = buildAnalysisSummary(limit, effectiveLimit, candidates.size, fallbackCount),
+            summary = buildAnalysisSummary(
+                requestedLimit = limit,
+                effectiveLimit = effectiveLimit,
+                shownCount = candidates.size,
+                policyFallbackCount = policyFallbackCount,
+                legalFallbackCount = legalFallbackCount,
+            ),
         )
     }
 
@@ -159,8 +166,20 @@ class KataGoProcessEngineAdapter(
             maxCandidates = remaining,
             excludedCoordinates = occupiedCoordinates + illegalCoordinates + searchCoordinates,
         )
+        val usedCoordinates = occupiedCoordinates + illegalCoordinates + searchCoordinates +
+            policyCandidates.mapNotNull { candidate -> (candidate.move as? Move.Play)?.coordinate }
+        val legalFallbackCandidates = allCoordinates()
+            .filter { coordinate -> coordinate in legalCoordinates && coordinate !in usedCoordinates }
+            .take(remaining - policyCandidates.size)
+            .mapIndexed { index, coordinate ->
+                CandidateMove(
+                    move = Move.Play(nextPlayer, coordinate),
+                    note = "Legal fallback ${index + 1}",
+                )
+            }
+            .toList()
 
-        return (this + policyCandidates).take(limit.candidateCount)
+        return (this + policyCandidates + legalFallbackCandidates).take(limit.candidateCount)
     }
 
     private fun allCoordinates(): Sequence<BoardCoordinate> =
@@ -176,7 +195,8 @@ class KataGoProcessEngineAdapter(
         requestedLimit: AnalysisLimit,
         effectiveLimit: AnalysisLimit,
         shownCount: Int,
-        fallbackCount: Int,
+        policyFallbackCount: Int,
+        legalFallbackCount: Int,
     ): String {
         val searchText = if (
             effectiveLimit.visits != requestedLimit.visits ||
@@ -186,8 +206,19 @@ class KataGoProcessEngineAdapter(
         } else {
             "KataGo search analysis with ${effectiveLimit.visits} visits / ${effectiveLimit.timeMillis ?: 0}ms."
         }
-        return if (fallbackCount > 0) {
-            "$searchText Returned ${shownCount - fallbackCount} searched candidate(s); filled $fallbackCount spot(s) from raw NN policy without score loss."
+        val searchedCount = shownCount - policyFallbackCount - legalFallbackCount
+        return if (policyFallbackCount > 0 || legalFallbackCount > 0) {
+            buildString {
+                append(searchText)
+                append(" Returned $searchedCount searched candidate(s)")
+                if (policyFallbackCount > 0) {
+                    append("; filled $policyFallbackCount spot(s) from raw NN policy without score loss")
+                }
+                if (legalFallbackCount > 0) {
+                    append("; filled $legalFallbackCount legal spot(s) without engine score/policy")
+                }
+                append(".")
+            }
         } else {
             "$searchText Showing $shownCount/${requestedLimit.candidateCount} scored spot(s)."
         }
