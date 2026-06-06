@@ -18,9 +18,19 @@ data class BoardSize(val value: Int) {
     }
 }
 
-enum class Ruleset {
-    Chinese,
-    Japanese,
+enum class Ruleset(
+    val scoringLabel: String,
+    val katagoName: String,
+) {
+    Chinese(scoringLabel = "Area", katagoName = "chinese"),
+    Japanese(scoringLabel = "Territory", katagoName = "japanese"),
+    ;
+
+    fun toggled(): Ruleset =
+        when (this) {
+            Chinese -> Japanese
+            Japanese -> Chinese
+        }
 }
 
 enum class StoneColor(val label: String) {
@@ -128,7 +138,7 @@ data class GameState(
     companion object {
         fun empty(
             boardSize: BoardSize = BoardSize.Nine,
-            ruleset: Ruleset = Ruleset.Chinese,
+            ruleset: Ruleset = Ruleset.Japanese,
             nextPlayer: StoneColor = StoneColor.Black,
         ): GameState =
             GameState(

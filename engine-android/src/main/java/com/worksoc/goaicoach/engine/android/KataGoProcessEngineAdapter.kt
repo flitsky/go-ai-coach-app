@@ -36,7 +36,7 @@ class KataGoProcessEngineAdapter(
 ) : EngineAdapter {
     private var profile: EngineProfile = EngineProfile(mode = EngineMode.LocalProcess)
     private var boardSize: BoardSize = BoardSize.Nine
-    private var ruleset: Ruleset = Ruleset.Chinese
+    private var ruleset: Ruleset = Ruleset.Japanese
     private var nextPlayer: StoneColor = StoneColor.Black
     private var process: Process? = null
     private var input: BufferedWriter? = null
@@ -65,8 +65,9 @@ class KataGoProcessEngineAdapter(
         playedMoves.clear()
         sendCommand("boardsize ${boardSize.value}")
         sendCommand("komi 6.5")
+        sendCommand("kata-set-rules ${ruleset.katagoName}")
         sendCommand("clear_board")
-        return EngineStatus.ready("KataGo new ${boardSize.value}x${boardSize.value} $ruleset game")
+        return EngineStatus.ready("KataGo new ${boardSize.value}x${boardSize.value} ${ruleset.scoringLabel} game")
     }
 
     override suspend fun playMove(move: Move): EngineStatus {

@@ -94,10 +94,12 @@ class EndgameRegressionTest {
             deadStoneCoordinates = listOf(point("H9"), point("G8"), point("J6")),
         )
         val cleanedScore = BoardAreaScorer.score(cleaned.state)
+        val cleanedTerritoryScore = BoardScorer.score(cleaned.state.copy(ruleset = Ruleset.Japanese))
 
         assertTrue(finalState.hasConsecutivePasses())
         assertEquals("W+1.5", rawLocalScore.rawScore)
         assertEquals("B+10.5", cleanedScore.rawScore)
+        assertEquals("B+9.5", cleanedTerritoryScore.rawScore)
         assertEquals(12, cleaned.state.capturedBy(StoneColor.Black))
         assertEquals(null, cleaned.state.stoneAt(point("H9")))
         assertEquals(null, cleaned.state.stoneAt(point("G8")))

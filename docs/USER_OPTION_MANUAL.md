@@ -20,7 +20,7 @@
 - 오른쪽 축의 `B`는 흑 우세 방향, `W`는 백 우세 방향을 뜻한다.
 - 펼친 상태의 하단에는 `Captures B 0 / W 0` 형식으로 양측 포획 수를 표시한다.
 - AI 대국에서는 KataGo score estimate를 기록한다.
-- 2P 모드도 엔진이 준비된 경우 KataGo score estimate를 기록하고, 엔진이 준비되지 않은 경우 로컬 area estimate로 fallback한다.
+- 2P 모드도 엔진이 준비된 경우 KataGo score estimate를 기록하고, 엔진이 준비되지 않은 경우 현재 계가 방식의 로컬 estimate로 fallback한다.
 
 ### 대국 액션 버튼
 
@@ -37,7 +37,7 @@
   - 점수 손실이 없는 policy/legal fallback 후보는 보드 위 스팟으로 그리지 않는다. 상세 텍스트와 `Copy Log`에서만 확인한다.
 - `Eval`: 현재 판의 점수 추정과 ownership 정보를 요청한다.
   - 엔진이 준비된 AI/2P 모드에서는 KataGo estimate를 사용한다.
-  - 2P 모드에서 엔진이 준비되지 않은 경우에는 기존처럼 로컬 area estimate로 fallback한다.
+  - 2P 모드에서 엔진이 준비되지 않은 경우에는 현재 선택된 계가 방식의 로컬 estimate로 fallback한다.
   - ownership 값이 포함된 estimate를 받으면 별도 메뉴 없이 보드 위에 영향권 overlay를 바로 표시한다.
   - ownership overlay는 교차점별 값을 사각형으로 칠하지 않고, 흑/백 영향권이 자연스럽게 퍼지는 반투명 gradient로 표현한다.
   - KaTrain의 `analysis:territory`에 해당하는 기능은 별도 `Ownership` 메뉴 없이 `Eval`의 기본 표현으로 통합한다.
@@ -72,6 +72,11 @@
 
 - `New`: 현재 모드로 새 대국을 시작한다.
 - `Copy Log`: 현재 런타임 상태, 보드, 수순, 종료 로그, 화면 표시 텍스트, 엔진 진단 정보를 clipboard에 복사한다.
+- `Scoring rule: Area | Territory`: 계가 방식을 전환한다.
+  - `Territory`가 기본값이다. 한국/일본식처럼 집 + 상대 포로를 기준으로 계산한다.
+  - `Area`는 중국식처럼 현재 보드의 돌 + 집을 기준으로 계산한다.
+  - 엔진이 준비된 상태에서는 선택한 규칙을 KataGo에 동기화하고 현재 수순을 다시 반영한다.
+  - 엔진이 준비되지 않은 2P 모드에서는 로컬 `BoardScorer`가 현재 선택된 규칙으로 점수를 계산한다.
 
 ### Engine
 
@@ -105,11 +110,11 @@
 ## 현재 제한사항
 
 - 이 문서는 POC 기준이며, 최종 앱 사용자 매뉴얼은 화면 구조와 용어가 안정된 뒤 다시 정리한다.
-- 현재 대국 기본 계가는 중국식 area scoring 중심이다. 한국/일본식 territory scoring 옵션은 아직 UI/엔진/로컬 계가 흐름에 연결되어 있지 않다.
+- 현재 대국 기본 계가는 한국/일본식 Territory scoring이다. 메뉴에서 중국식 Area scoring으로 전환할 수 있다.
 - 계가 방식 옵션화 결정과 필요한 작업은 `docs/RULESET_SCORING_DECISION.md`에 기록한다.
 - ownership overlay는 엔진 분석 결과에 의존하므로, stub 모드나 분석 실패 상태에서는 의미 있는 값이 없을 수 있다.
 - AI 대국에서 양쪽이 연속 pass하면 KataGo `final_status_list dead` 결과로 사석을 정리한 뒤 최종 점수를 표시한다.
 - 엔진 사석 목록 외에도, 한 활로짜리로 즉시 따이는 그룹은 로컬 fallback으로 사석 후보에 포함한다.
 - KataGo가 죽은 돌 목록을 비워서 반환했지만 NN 형세 추정과 로컬 area final이 크게 다르면, 점수 뒤에 `?`가 붙은 불확정 엔진 추정 점수를 표시한다.
 - 엔진이 준비된 2P 테스트 모드는 엔진 상태를 현재 수순에 동기화한다. 엔진이 없을 때는 로컬 상태만 사용한다.
-- 사용자가 사석 판정을 확인하거나 수정하는 계가 UX는 아직 없다.
+- Territory 계가는 죽은 돌이 이미 제거되었다는 전제에서 안정적으로 계산된다. 사용자가 사석 판정을 확인하거나 수정하는 계가 UX는 아직 없다.

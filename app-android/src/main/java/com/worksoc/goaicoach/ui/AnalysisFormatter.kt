@@ -61,7 +61,7 @@ internal fun FinalScoreResult.toDisplayText(): String =
         val whiteAreaWithKomiValue = whiteAreaWithKomi
         val komiValue = komi
         if (blackAreaValue != null && whiteAreaWithKomiValue != null && komiValue != null) {
-            appendLine("Area: Black ${blackAreaValue.formatOneDecimal()} / White+komi ${whiteAreaWithKomiValue.formatOneDecimal()} (komi ${komiValue.formatOneDecimal()})")
+            appendLine("Score: Black ${blackAreaValue.formatOneDecimal()} / White+komi ${whiteAreaWithKomiValue.formatOneDecimal()} (komi ${komiValue.formatOneDecimal()})")
         }
     }.trim()
 

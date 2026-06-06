@@ -240,6 +240,33 @@ class GameStateTest {
     }
 
     @Test
+    fun territoryScorerCountsTerritoryAndPrisoners() {
+        val stones = buildMap {
+            for (row in 0 until BoardSize.Nine.value) {
+                for (column in 0 until BoardSize.Nine.value) {
+                    put(BoardCoordinate(row, column), StoneColor.White)
+                }
+            }
+            remove(point("B8"))
+            put(point("A8"), StoneColor.Black)
+            put(point("B9"), StoneColor.Black)
+            put(point("C8"), StoneColor.Black)
+            put(point("B7"), StoneColor.Black)
+        }
+        val state = GameState.empty(boardSize = BoardSize.Nine, ruleset = Ruleset.Japanese).copy(
+            stones = stones,
+            capturedByBlack = 2,
+            capturedByWhite = 1,
+        )
+
+        val score = BoardScorer.score(state)
+
+        assertEquals("W+4.5", score.rawScore)
+        assertEquals(3.0, score.blackArea)
+        assertEquals(7.5, score.whiteAreaWithKomi)
+    }
+
+    @Test
     fun deadStoneCleanerRemovesEngineMarkedStonesAndUpdatesPrisoners() {
         val state = GameState.empty().copy(
             stones = mapOf(

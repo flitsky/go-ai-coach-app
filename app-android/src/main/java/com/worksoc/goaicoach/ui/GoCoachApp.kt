@@ -43,8 +43,8 @@ import com.worksoc.goaicoach.match.applyAiResponseAfterHumanTurn
 import com.worksoc.goaicoach.match.boardInputEnabled
 import com.worksoc.goaicoach.match.modeSummary
 import com.worksoc.goaicoach.shared.AnalysisLimit
-import com.worksoc.goaicoach.shared.BoardAreaScorer
 import com.worksoc.goaicoach.shared.BoardCoordinate
+import com.worksoc.goaicoach.shared.BoardScorer
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.DeadStoneCleaner
@@ -107,7 +107,7 @@ private fun GoCoachScreen(
 ) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
-    var gameState by remember { mutableStateOf(GameState.empty(BoardSize.Nine, Ruleset.Chinese)) }
+    var gameState by remember { mutableStateOf(GameState.empty(BoardSize.Nine, Ruleset.Japanese)) }
     var engineMessage by remember { mutableStateOf("Engine not initialized.") }
     var candidateText by remember { mutableStateOf(engineDiagnostic) }
     var candidateMoves by remember { mutableStateOf(emptyList<CandidateMove>()) }
@@ -115,7 +115,7 @@ private fun GoCoachScreen(
     var scoreText by remember { mutableStateOf("No score estimate yet.") }
     var scoreEstimate by remember { mutableStateOf<ScoreEstimate?>(null) }
     var scoreSnapshots by remember {
-        mutableStateOf(listOf(localScoreSnapshot(GameState.empty(BoardSize.Nine, Ruleset.Chinese))))
+        mutableStateOf(listOf(localScoreSnapshot(GameState.empty(BoardSize.Nine, Ruleset.Japanese))))
     }
     var moveReviewText by remember { mutableStateOf("No move review yet.") }
     var moveReviews by remember { mutableStateOf(emptyList<MoveReviewMarker>()) }
@@ -271,8 +271,68 @@ private fun GoCoachScreen(
         engineMessage = "Top Moves hidden. Pre-move analysis cache still runs for move review."
     }
 
-    fun resetLocalGame(message: String) {
-        gameState = GameState.empty(BoardSize.Nine, Ruleset.Chinese)
+    fun changeScoringRule(nextRuleset: Ruleset) {
+        if (nextRuleset == gameState.ruleset) {
+            return
+        }
+        if (isEngineBusy) {
+            engineMessage = "Engine is busy. Change scoring rule after the current response."
+            return
+        }
+
+        val nextState = gameState.copy(ruleset = nextRuleset)
+        gameState = nextState
+        clearTopMoveSpots("Scoring rule changed.")
+        reviewCandidateMoves = emptyList()
+        lastAnalysisKey = null
+        scoreEstimate = null
+        scoreText = if (isGameEnded || (matchMode == MatchMode.LocalTwoPlayer && !isEngineReady)) {
+            BoardScorer.score(nextState).toDisplayText()
+        } else {
+            "Score estimate not current."
+        }
+        scoreSnapshots = ScoreTimeline.record(
+            ScoreTimeline.trimAfter(scoreSnapshots, nextState.moves.size),
+            localScoreSnapshot(nextState),
+        )
+        endgameLog = "Scoring rule changed to ${nextRuleset.scoringLabel}. No endgame result recorded for the new scoring rule yet."
+
+        if (!isEngineReady) {
+            engineMessage = "Scoring rule changed to ${nextRuleset.scoringLabel}. Local scoring is active."
+            return
+        }
+
+        scope.launch {
+            isEngineBusy = true
+            runCatching {
+                withContext(Dispatchers.IO) {
+                    engineAdapter.syncToGameState(nextState)
+                    engineAdapter.estimateScore(scoreGraphAnalysisLimit(engineProfile))
+                }
+            }.onSuccess { estimate ->
+                scoreText = estimate.toDisplayText()
+                scoreEstimate = estimate
+                scoreSnapshots = ScoreTimeline.record(
+                    ScoreTimeline.trimAfter(scoreSnapshots, nextState.moves.size),
+                    ScoreTimeline.fromEstimate(nextState.moves.size, estimate),
+                )
+                engineMessage = "Scoring rule changed to ${nextRuleset.scoringLabel}; engine rules synchronized."
+            }.onFailure { error ->
+                engineMessage = error.message ?: "Scoring rule changed, but engine rule sync failed."
+            }
+            isEngineBusy = false
+            requestTopMoveAnalysisForState(
+                targetState = gameState,
+                automatic = true,
+            )
+        }
+    }
+
+    fun resetLocalGame(
+        message: String,
+        ruleset: Ruleset = gameState.ruleset,
+    ) {
+        gameState = GameState.empty(BoardSize.Nine, ruleset)
         isGameEnded = false
         clearTopMoveSpots("No analysis yet.")
         reviewCandidateMoves = emptyList()
@@ -294,11 +354,11 @@ private fun GoCoachScreen(
         }
 
         if (matchMode == MatchMode.LocalTwoPlayer && !isEngineReady) {
-            val score = BoardAreaScorer.score(gameState)
+            val score = BoardScorer.score(gameState)
             scoreText = score.toDisplayText()
             scoreEstimate = null
             scoreSnapshots = ScoreTimeline.record(scoreSnapshots, localScoreSnapshot(gameState))
-            engineMessage = "Local area estimate refreshed."
+            engineMessage = "Local ${gameState.ruleset.scoringLabel} estimate refreshed."
             return
         }
 
@@ -334,9 +394,10 @@ private fun GoCoachScreen(
     }
 
     fun startAiGame() {
+        val targetRuleset = gameState.ruleset
         matchMode = MatchMode.HumanVsAi
         if (!isEngineReady) {
-            resetLocalGame("AI mode selected, but engine is not ready.")
+            resetLocalGame("AI mode selected, but engine is not ready.", targetRuleset)
             return
         }
         if (isEngineBusy) {
@@ -349,7 +410,7 @@ private fun GoCoachScreen(
             var nextAnalysisState: GameState? = null
             runCatching {
                 withContext(Dispatchers.IO) {
-                    val status = engineAdapter.newGame(BoardSize.Nine, Ruleset.Chinese)
+                    val status = engineAdapter.newGame(BoardSize.Nine, targetRuleset)
                     val estimate = runCatching {
                         engineAdapter.estimateScore(scoreGraphAnalysisLimit(engineProfile))
                     }.getOrNull()
@@ -359,11 +420,11 @@ private fun GoCoachScreen(
                     )
                 }
             }.onSuccess { result ->
-                resetLocalGame(result.message)
+                resetLocalGame(result.message, targetRuleset)
                 scoreSnapshots = listOf(result.scoreSnapshot ?: localScoreSnapshot(gameState))
                 nextAnalysisState = gameState
             }.onFailure { error ->
-                resetLocalGame(error.message ?: "New AI game failed.")
+                resetLocalGame(error.message ?: "New AI game failed.", targetRuleset)
             }
             isEngineBusy = false
             requestTopMoveAnalysisForState(
@@ -374,8 +435,9 @@ private fun GoCoachScreen(
     }
 
     fun startLocalTwoPlayerGame() {
+        val targetRuleset = gameState.ruleset
         matchMode = MatchMode.LocalTwoPlayer
-        resetLocalGame("2P test mode. Local shared rules handle captures, suicide, and simple ko.")
+        resetLocalGame("2P test mode. Local shared rules handle captures, suicide, and simple ko.", targetRuleset)
         if (!isEngineReady) {
             engineMessage = "2P test mode without engine analysis. Local rules are active."
             return
@@ -474,7 +536,7 @@ private fun GoCoachScreen(
             if (!isEngineReady) {
                 scoreSnapshots = ScoreTimeline.record(scoreSnapshots, localScoreSnapshot(afterMove))
                 if (afterMove.hasConsecutivePasses()) {
-                    val finalScore = BoardAreaScorer.score(afterMove)
+                    val finalScore = BoardScorer.score(afterMove)
                     val finalScoreText = finalScore.toDisplayText()
                     isGameEnded = true
                     scoreText = finalScoreText
@@ -925,7 +987,9 @@ private fun GoCoachScreen(
 
             GameMenuActionsPanel(
                 mode = matchMode,
+                ruleset = gameState.ruleset,
                 canStartNew = !isEngineBusy && (matchMode == MatchMode.LocalTwoPlayer || isEngineReady),
+                canChangeRuleset = !isEngineBusy,
                 onNewGame = {
                     when (matchMode) {
                         MatchMode.HumanVsAi -> startAiGame()
@@ -933,6 +997,7 @@ private fun GoCoachScreen(
                     }
                 },
                 onCopyLog = ::copyDebugReport,
+                onRulesetChange = ::changeScoringRule,
             )
 
             KaTrainUxMenuPanel(
@@ -1177,7 +1242,7 @@ private suspend fun resolveAiEndgame(
         state = originalState,
         deadStoneCoordinates = deadStonesResult?.coordinates.orEmpty() + locallyInferredDeadStones,
     )
-    val localFinalScore = BoardAreaScorer.score(cleanup.state)
+    val localFinalScore = BoardScorer.score(cleanup.state)
 
     var engineScoreEstimate: ScoreEstimate? = null
     var engineScoreEstimateError: String? = null
@@ -1227,7 +1292,7 @@ private fun scoreGraphAnalysisLimit(profile: EngineProfile): AnalysisLimit =
 private fun localScoreSnapshot(state: GameState): ScoreSnapshot =
     ScoreTimeline.fromFinalScore(
         moveNumber = state.moves.size,
-        finalScore = BoardAreaScorer.score(state),
+        finalScore = BoardScorer.score(state),
         source = ScoreSnapshotSource.LocalAreaEstimate,
     )
 
@@ -1250,7 +1315,7 @@ private fun buildDebugReport(
     lastMoveText: String,
     endgameLog: String,
 ): String {
-    val localScoreText = BoardAreaScorer.score(gameState).toDisplayText()
+    val localScoreText = BoardScorer.score(gameState).toDisplayText()
 
     return buildString {
         appendLine("Go AI Coach debug report")
@@ -1291,7 +1356,7 @@ private fun buildDebugReport(
         appendLine("[EndgameLog]")
         appendLine(endgameLog)
         appendLine()
-        appendLine("[LocalAreaScoreNow]")
+        appendLine("[LocalRulesetScoreNow]")
         appendLine(localScoreText)
         appendLine()
         appendLine("[ScoreTimeline]")

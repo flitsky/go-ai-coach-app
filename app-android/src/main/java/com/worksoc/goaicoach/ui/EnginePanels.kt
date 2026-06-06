@@ -24,6 +24,7 @@ import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.turnStatus
 import com.worksoc.goaicoach.shared.DifficultyProfile
 import com.worksoc.goaicoach.shared.EngineProfile
+import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.StoneColor
 
 @Composable
@@ -87,9 +88,12 @@ internal fun ModePanel(
 @Composable
 internal fun GameMenuActionsPanel(
     mode: MatchMode,
+    ruleset: Ruleset,
     canStartNew: Boolean,
+    canChangeRuleset: Boolean,
     onNewGame: () -> Unit,
     onCopyLog: () -> Unit,
+    onRulesetChange: (Ruleset) -> Unit,
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -122,6 +126,51 @@ internal fun GameMenuActionsPanel(
             }
             Text(
                 text = "Current mode: ${mode.label}",
+                color = MaterialTheme.colorScheme.secondary,
+                style = MaterialTheme.typography.bodySmall,
+            )
+            Text("Scoring rule: Area | Territory", fontWeight = FontWeight.SemiBold)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                if (ruleset == Ruleset.Chinese) {
+                    Button(
+                        onClick = { onRulesetChange(Ruleset.Chinese) },
+                        enabled = canChangeRuleset,
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text("Area")
+                    }
+                } else {
+                    OutlinedButton(
+                        onClick = { onRulesetChange(Ruleset.Chinese) },
+                        enabled = canChangeRuleset,
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text("Area")
+                    }
+                }
+                if (ruleset == Ruleset.Japanese) {
+                    Button(
+                        onClick = { onRulesetChange(Ruleset.Japanese) },
+                        enabled = canChangeRuleset,
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text("Territory")
+                    }
+                } else {
+                    OutlinedButton(
+                        onClick = { onRulesetChange(Ruleset.Japanese) },
+                        enabled = canChangeRuleset,
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text("Territory")
+                    }
+                }
+            }
+            Text(
+                text = "Scoring rule: ${ruleset.scoringLabel}",
                 color = MaterialTheme.colorScheme.secondary,
                 style = MaterialTheme.typography.bodySmall,
             )

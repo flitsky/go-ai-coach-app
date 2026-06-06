@@ -2,7 +2,7 @@ package com.worksoc.goaicoach.engine.android
 
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.AnalysisResult
-import com.worksoc.goaicoach.shared.BoardAreaScorer
+import com.worksoc.goaicoach.shared.BoardScorer
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.CandidateMove
@@ -22,7 +22,7 @@ import com.worksoc.goaicoach.shared.describe
 
 class StubEngineAdapter : EngineAdapter {
     private var boardSize: BoardSize = BoardSize.Nine
-    private var ruleset: Ruleset = Ruleset.Chinese
+    private var ruleset: Ruleset = Ruleset.Japanese
     private var initialized: Boolean = false
     private var nextPlayer: StoneColor = StoneColor.Black
     private var profile: EngineProfile = EngineProfile()
@@ -50,7 +50,7 @@ class StubEngineAdapter : EngineAdapter {
         nextPlayer = StoneColor.Black
         occupied.clear()
         playedMoves.clear()
-        return EngineStatus.ready("New ${boardSize.value}x${boardSize.value} $ruleset game")
+        return EngineStatus.ready("New ${boardSize.value}x${boardSize.value} ${ruleset.scoringLabel} game")
     }
 
     override suspend fun playMove(move: Move): EngineStatus {
@@ -176,7 +176,7 @@ class StubEngineAdapter : EngineAdapter {
     }
 
     private fun localScore(): FinalScoreResult =
-        BoardAreaScorer.score(
+        BoardScorer.score(
             GameStateReplayer.replay(
                 boardSize = boardSize,
                 ruleset = ruleset,

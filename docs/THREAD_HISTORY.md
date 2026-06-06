@@ -306,3 +306,10 @@
 - 첨부 로그 `/Users/ryan9kim/.codex/attachments/4ea72ab8-1a9e-4cfa-b609-2e40fba2b748/pasted-text.txt`를 분석했다. 로그 상태는 `White pass` 직후, `nextPlayer=Black`, `gameEnded=false`이며 Score graph는 `whiteScoreLead=-11.419`로 흑 우세 약 11.4집을 표시하지만 local area는 사석 제거 없이 `W+1.5`를 계산한다.
 - 같은 수순을 로컬 KataGo 1.16.4에 재생했다. Black pass 후 `final_status_list dead`는 `H9 G8 J6`, `final_score`는 `B+10.5`를 반환했다.
 - `docs/error-cases/pass-after-white-pass-score-flip-20260607.md`를 추가하고, `EndgameRegressionTest`에 dead list 적용 시 `B+10.5`가 되는 테스트와 dead list 누락 시 pass 직전 Top Moves로 `B+10.3?`를 선택하는 테스트를 추가했다.
+- 사용자가 PoC에도 한/일 방식의 Territory scoring을 추가하고 기본값으로 설정하며, 메뉴에서 `Scoring rule: Area | Territory` 토글을 제공해달라고 요청했다.
+- `Ruleset`에 UI 표시명과 KataGo rules 이름을 부여했다. `GameState.empty()` 기본값은 `Ruleset.Japanese`로 변경했고, `Ruleset.Chinese`는 `Area`, `Ruleset.Japanese`는 `Territory`로 표시한다.
+- `shared`에 `BoardScorer`와 `BoardTerritoryScorer`를 추가했다. 앱 호출부는 `BoardScorer`만 사용하고, 내부에서 현재 `GameState.ruleset`에 따라 중국식 area 또는 한국/일본식 territory 계가로 분기한다.
+- Territory local scorer는 집 + 포로 + 덤을 계산한다. 현재 구현은 죽은 돌이 이미 보드에서 제거되었다는 전제를 둔다.
+- KataGo local process adapter와 Stub adapter 기본 ruleset을 `Japanese`로 변경했다. KataGo 새 대국 시작 시 `kata-set-rules chinese/japanese`를 명시 호출해 앱 ruleset과 엔진 ruleset을 동기화한다.
+- Android 메뉴 `Game` 섹션에 `Scoring rule: Area | Territory` 토글을 추가했다. 선택 변경 시 엔진이 준비되어 있으면 현재 수순을 새 ruleset으로 재동기화하고 score estimate/top moves cache를 갱신한다.
+- `docs/RULESET_SCORING_DECISION.md`, `docs/USER_OPTION_MANUAL.md`, `docs/SCORE_AND_ENDGAME_DECISION.md`를 Territory 기본값과 Area/Territory 토글 기준으로 갱신했다. 제품 단계에서 사석 확인/수정 UX가 여전히 필수라는 한계도 함께 남겼다.
