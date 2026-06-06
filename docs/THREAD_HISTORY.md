@@ -301,3 +301,8 @@
 - `docs/KATRAIN_TOP_MOVES_ANALYSIS.md`를 추가해 GTP 기반 현재 adapter의 한계, JSON analysis adapter 전환 후보, KaTrain식 sweep/equalize/deep analysis 도입 방향을 문서화했다.
 - 검증으로 `make test`가 통과했고, `make reinstall-dev-engine`로 에뮬레이터 `emulator-5554`에 재설치했다. 전체 재설치/seed/launch는 약 4초, cold launch `TotalTime=593ms`였다.
 - UI dump에서 첫 화면의 `Score`, `Win Rate`, `Pass`, `Undo`, `Top Moves`, `Eval`과 `Top Moves analysis ready for Black: 81/81 spot(s).` 메시지를 확인했다.
+- 사용자가 중국식 계가가 본인 계산 방식과 맞지 않는지, 국제 표준인지, 한/일 방식 계가 옵션 제공이 가능한지 질문했고, 새 debug report를 제공했다.
+- `docs/RULESET_SCORING_DECISION.md`를 추가해 현재 중국식 area scoring은 POC 구현 안정성 때문에 기본값으로 둔 것이며, 제품 단계에서는 한국/일본식 territory scoring 옵션과 사석 확인 UX가 필요하다고 정리했다.
+- 첨부 로그 `/Users/ryan9kim/.codex/attachments/4ea72ab8-1a9e-4cfa-b609-2e40fba2b748/pasted-text.txt`를 분석했다. 로그 상태는 `White pass` 직후, `nextPlayer=Black`, `gameEnded=false`이며 Score graph는 `whiteScoreLead=-11.419`로 흑 우세 약 11.4집을 표시하지만 local area는 사석 제거 없이 `W+1.5`를 계산한다.
+- 같은 수순을 로컬 KataGo 1.16.4에 재생했다. Black pass 후 `final_status_list dead`는 `H9 G8 J6`, `final_score`는 `B+10.5`를 반환했다.
+- `docs/error-cases/pass-after-white-pass-score-flip-20260607.md`를 추가하고, `EndgameRegressionTest`에 dead list 적용 시 `B+10.5`가 되는 테스트와 dead list 누락 시 pass 직전 Top Moves로 `B+10.3?`를 선택하는 테스트를 추가했다.

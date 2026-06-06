@@ -122,3 +122,7 @@ Android UI는 `ScoreSnapshot` 목록을 받아 그래프를 그리기만 한다.
 - `docs/error-cases/pass-before-cleanup-top-move-flip.md`
   - 사용자 debug report에서 pass 직전 Top Moves는 흑의 정리/continuation을 강하게 추천하지만, 흑이 바로 pass하면 raw final이 백 승리로 뒤집히는 문제를 기록했다.
   - 해당 케이스는 `EndgameRegressionTest`와 `EndgameScoreSelectorTest`로 고정했다.
+- `docs/error-cases/pass-after-white-pass-score-flip-20260607.md`
+  - White pass 직후 Score graph는 `B+11.4` 형세를 보이지만, 사석 제거 없이 local area를 계산하면 `W+1.5`가 되는 문제를 기록했다.
+  - 로컬 KataGo 1.16.4 재현에서는 Black pass 후 `final_status_list dead`가 `H9 G8 J6`, `final_score`가 `B+10.5`를 반환했다.
+  - 해당 케이스는 `EndgameRegressionTest.passAfterWhitePassNeedsEngineDeadListBeforeAreaScoring`과 `EndgameRegressionTest.passAfterWhitePassUsesPrePassTopMovesIfDeadListIsMissing`로 고정했다.

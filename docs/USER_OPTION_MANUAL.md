@@ -105,6 +105,8 @@
 ## 현재 제한사항
 
 - 이 문서는 POC 기준이며, 최종 앱 사용자 매뉴얼은 화면 구조와 용어가 안정된 뒤 다시 정리한다.
+- 현재 대국 기본 계가는 중국식 area scoring 중심이다. 한국/일본식 territory scoring 옵션은 아직 UI/엔진/로컬 계가 흐름에 연결되어 있지 않다.
+- 계가 방식 옵션화 결정과 필요한 작업은 `docs/RULESET_SCORING_DECISION.md`에 기록한다.
 - ownership overlay는 엔진 분석 결과에 의존하므로, stub 모드나 분석 실패 상태에서는 의미 있는 값이 없을 수 있다.
 - AI 대국에서 양쪽이 연속 pass하면 KataGo `final_status_list dead` 결과로 사석을 정리한 뒤 최종 점수를 표시한다.
 - 엔진 사석 목록 외에도, 한 활로짜리로 즉시 따이는 그룹은 로컬 fallback으로 사석 후보에 포함한다.

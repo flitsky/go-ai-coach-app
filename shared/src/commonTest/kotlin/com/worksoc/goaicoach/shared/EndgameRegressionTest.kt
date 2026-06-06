@@ -84,6 +84,63 @@ class EndgameRegressionTest {
         assertEquals("B+6.9?", selection.displayScore.rawScore)
     }
 
+    @Test
+    fun passAfterWhitePassNeedsEngineDeadListBeforeAreaScoring() {
+        val state = whitePassAfterBlackLeadDebugState()
+        val finalState = state.play(Move.Pass(StoneColor.Black))
+        val rawLocalScore = BoardAreaScorer.score(finalState)
+        val cleaned = DeadStoneCleaner.apply(
+            state = finalState,
+            deadStoneCoordinates = listOf(point("H9"), point("G8"), point("J6")),
+        )
+        val cleanedScore = BoardAreaScorer.score(cleaned.state)
+
+        assertTrue(finalState.hasConsecutivePasses())
+        assertEquals("W+1.5", rawLocalScore.rawScore)
+        assertEquals("B+10.5", cleanedScore.rawScore)
+        assertEquals(12, cleaned.state.capturedBy(StoneColor.Black))
+        assertEquals(null, cleaned.state.stoneAt(point("H9")))
+        assertEquals(null, cleaned.state.stoneAt(point("G8")))
+        assertEquals(null, cleaned.state.stoneAt(point("J6")))
+    }
+
+    @Test
+    fun passAfterWhitePassUsesPrePassTopMovesIfDeadListIsMissing() {
+        val finalState = whitePassAfterBlackLeadDebugState()
+            .play(Move.Pass(StoneColor.Black))
+        val localScore = BoardAreaScorer.score(finalState)
+        val selection = EndgameScoreSelector.selectDisplayScore(
+            cleanup = DeadStoneCleanupResult(
+                state = finalState,
+                removedStones = emptyList(),
+            ),
+            localScore = localScore,
+            engineEstimate = ScoreEstimate(
+                status = EngineStatus.ready("Post-pass estimate"),
+                whiteScoreLead = -2.0,
+                summary = "Post-pass estimate",
+            ),
+            prePassCandidates = listOf(
+                CandidateMove(
+                    move = Move.Play(StoneColor.Black, point("G9")),
+                    scoreLead = 10.3,
+                ),
+                CandidateMove(
+                    move = Move.Play(StoneColor.Black, point("J5")),
+                    scoreLead = 10.1,
+                ),
+                CandidateMove(
+                    move = Move.Pass(StoneColor.Black),
+                    scoreLead = 1.9,
+                ),
+            ),
+        )
+
+        assertEquals("W+1.5", localScore.rawScore)
+        assertEquals(EndgameScoreSource.UnsettledPrePassTopMoveEstimate, selection.source)
+        assertEquals("B+10.3?", selection.displayScore.rawScore)
+    }
+
     private fun passDeadStonesDebugState(): GameState =
         GameState.empty(boardSize = BoardSize.Nine, ruleset = Ruleset.Chinese).copy(
             nextPlayer = StoneColor.Black,
@@ -225,6 +282,66 @@ class EndgameRegressionTest {
             moves = listOf(Move.Pass(StoneColor.White)),
             capturedByBlack = 5,
             capturedByWhite = 6,
+        )
+
+    private fun whitePassAfterBlackLeadDebugState(): GameState =
+        GameState.empty(boardSize = BoardSize.Nine, ruleset = Ruleset.Chinese).copy(
+            nextPlayer = StoneColor.Black,
+            stones = mapOf(
+                point("A9") to StoneColor.Black,
+                point("C9") to StoneColor.Black,
+                point("D9") to StoneColor.Black,
+                point("E9") to StoneColor.Black,
+                point("F9") to StoneColor.Black,
+                point("H9") to StoneColor.White,
+                point("B8") to StoneColor.Black,
+                point("C8") to StoneColor.Black,
+                point("F8") to StoneColor.Black,
+                point("G8") to StoneColor.White,
+                point("H8") to StoneColor.Black,
+                point("A7") to StoneColor.Black,
+                point("G7") to StoneColor.Black,
+                point("H7") to StoneColor.Black,
+                point("A6") to StoneColor.Black,
+                point("B6") to StoneColor.Black,
+                point("C6") to StoneColor.Black,
+                point("D6") to StoneColor.Black,
+                point("E6") to StoneColor.Black,
+                point("G6") to StoneColor.Black,
+                point("H6") to StoneColor.Black,
+                point("J6") to StoneColor.White,
+                point("A5") to StoneColor.White,
+                point("B5") to StoneColor.White,
+                point("C5") to StoneColor.White,
+                point("D5") to StoneColor.Black,
+                point("E5") to StoneColor.Black,
+                point("F5") to StoneColor.Black,
+                point("G5") to StoneColor.White,
+                point("H5") to StoneColor.Black,
+                point("C4") to StoneColor.White,
+                point("D4") to StoneColor.White,
+                point("E4") to StoneColor.Black,
+                point("F4") to StoneColor.White,
+                point("G4") to StoneColor.White,
+                point("H4") to StoneColor.Black,
+                point("D3") to StoneColor.White,
+                point("E3") to StoneColor.Black,
+                point("F3") to StoneColor.White,
+                point("G3") to StoneColor.White,
+                point("H3") to StoneColor.Black,
+                point("J3") to StoneColor.Black,
+                point("D2") to StoneColor.White,
+                point("E2") to StoneColor.White,
+                point("F2") to StoneColor.White,
+                point("G2") to StoneColor.White,
+                point("H2") to StoneColor.White,
+                point("J2") to StoneColor.Black,
+                point("H1") to StoneColor.White,
+                point("J1") to StoneColor.Black,
+            ),
+            moves = listOf(Move.Pass(StoneColor.White)),
+            capturedByBlack = 9,
+            capturedByWhite = 0,
         )
 
     private fun point(label: String): BoardCoordinate =
