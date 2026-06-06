@@ -267,3 +267,11 @@
 - 검증으로 전체 Gradle 명령 `:shared:check :engine-android:testDebugUnitTest :app-android:assembleDebug :app-android:testDebugUnitTest`가 통과했다.
 - 에뮬레이터에 `make reinstall-dev-engine`로 재설치했고, UI dump에서 `Score`, `Win Rate`, `Pass`, `Undo`, `Top Moves`, `Eval`이 첫 화면에 보이며 `Quick display`/`Game strip`은 사라진 것을 확인했다.
 - Score/Win Rate 패널 터치 후 `Captures B 0 / W 0`가 펼쳐지는 것을 확인했고, 메뉴를 열어 `Mode`, `AI`, `2P`, `Game`, `New`, `Copy Log`, `Display menu`, `Engine`이 메뉴 하위에 있는 것을 확인했다.
+- 사용자가 새 debug report를 제공하며 우하단 `G2`, `H2` 백 2점이 사석인데, 실제로 따내고 종료할 때와 사석인 채로 pass 종료할 때 종료 평가가 달라지는 오류를 보고했다.
+- 로그 분석 결과 해당 시점은 `gameEnded=false`, `consecutivePasses=false`, `nextPlayer=Black`, 마지막 수 `White C6`이며, `G2/H2` 백 그룹은 `G1` 한 점만 활로로 가진 상태였다.
+- 원본 수순을 KataGo GTP로 재생한 뒤 `Black pass`, `White pass`, `final_status_list dead`를 호출하면 KataGo 1.16.4가 `G2 H2`를 반환함을 확인했다. 따라서 사용자 로그만으로 엔진 재현이 가능하다.
+- `docs/error-cases/pass-pass-dead-stones-g2-h2.md`를 추가해 원본 로그 위치, 증상, GTP 기대값, 테스트 불변식을 따로 기록했다.
+- `shared`에 `DeadStoneDetector`를 추가했다. 엔진 dead list가 비거나 엔진 조건 변경으로 흔들려도, pass-pass 종료 상태에서 한 활로짜리 그룹이 상대 착수 한 번으로 즉시 따이는 경우 로컬 사석 fallback으로 감지한다.
+- 앱 AI 종료 처리에서 KataGo `final_status_list dead` 좌표와 `DeadStoneDetector.capturableDeadStones()` 좌표를 합쳐 `DeadStoneCleaner`에 넘기도록 했다. endgame log에는 `locallyInferredDeadStones`도 남긴다.
+- `EndgameRegressionTest`를 추가했다. 사용자 로그 보드 fixture에서 `G2/H2` 감지 여부와, `G2/H2`를 사석 제거한 점수가 흑 `G1` 실제 포획 후 점수와 같다는 불변식을 검증한다.
+- 검증으로 `EndgameRegressionTest` 단독 실행과 전체 Gradle 명령 `:shared:check :engine-android:testDebugUnitTest :app-android:assembleDebug :app-android:testDebugUnitTest`가 통과했다.

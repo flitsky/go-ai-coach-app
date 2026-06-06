@@ -81,6 +81,7 @@ Android UI는 `ScoreSnapshot` 목록을 받아 그래프를 그리기만 한다.
 - AI 대국 모드
   - 사람과 AI가 연속으로 pass하면 `KataGoProcessEngineAdapter.deadStones()`가 GTP `final_status_list dead`를 호출한다.
   - `DeadStoneCleaner`가 엔진이 죽은 돌로 표시한 좌표를 앱 `GameState`에서 제거한다.
+  - 엔진 dead list가 비어 있거나 엔진 조건 변경으로 흔들릴 수 있으므로, `DeadStoneDetector`가 한 활로짜리 즉시 포획 가능 그룹을 로컬 사석 fallback으로 추가 감지한다.
   - 제거된 상대 돌은 포획 수에도 반영한다.
   - 화면 최종 점수는 정리된 `GameState`를 `BoardAreaScorer`로 계산한 결과를 표시한다.
   - 사석 제거가 없고 로컬 area final과 엔진 NN estimate의 White lead 차이가 10집 이상이면 `EndgameScoreSelector`가 불확정 엔진 추정 점수를 선택한다.
@@ -110,3 +111,9 @@ Android UI는 `ScoreSnapshot` 목록을 받아 그래프를 그리기만 한다.
 - 실제 제품 수준 계가에는 엔진 자동 사석 판정 결과를 사용자가 확인/수정하는 dead-stone marking UI가 필요하다.
 - `kata-raw-nn` ownership은 최종 집 판정이 아니라 중간 형세 지표다.
 - `final_status_list dead`는 AI 모드 종료 정리에 사용하지만, 사용자가 사석을 직접 확정하는 협상형 계가 UI는 후속 작업으로 분리한다.
+
+## 오류 케이스 회귀 테스트
+
+- `docs/error-cases/pass-pass-dead-stones-g2-h2.md`
+  - 사용자 debug report에서 우하단 `G2`, `H2` 백 2점이 사석인데, 실제로 따내고 종료한 경우와 사석인 채로 pass 종료한 경우의 평가가 달라지는 문제를 기록했다.
+  - 해당 케이스는 `EndgameRegressionTest`로 고정했다.

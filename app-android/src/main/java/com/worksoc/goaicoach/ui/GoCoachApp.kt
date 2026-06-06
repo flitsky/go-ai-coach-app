@@ -49,6 +49,7 @@ import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.DeadStoneCleaner
 import com.worksoc.goaicoach.shared.DeadStoneCleanupResult
+import com.worksoc.goaicoach.shared.DeadStoneDetector
 import com.worksoc.goaicoach.shared.DeadStoneRemoval
 import com.worksoc.goaicoach.shared.DeadStonesResult
 import com.worksoc.goaicoach.shared.DifficultyProfile
@@ -935,6 +936,7 @@ private data class AiEndgameResolution(
     val localFinalScore: FinalScoreResult,
     val deadStonesResult: DeadStonesResult?,
     val deadStonesError: String?,
+    val locallyInferredDeadStones: List<BoardCoordinate>,
     val engineScoreEstimate: ScoreEstimate?,
     val engineScoreEstimateError: String?,
     val engineFinalScore: FinalScoreResult?,
@@ -976,6 +978,7 @@ private data class AiEndgameResolution(
             appendLine("cleanedStoneCount=${cleanup.state.stones.size}")
             appendLine("deadStoneStatus=${deadStonesResult?.summary ?: "failed"}")
             appendLine("deadStoneError=${deadStonesError ?: "none"}")
+            appendLine("locallyInferredDeadStones=${locallyInferredDeadStones.toCoordinateLogText(originalState.boardSize)}")
             appendLine("removedStones=${cleanup.removedStones.toLogText(originalState.boardSize)}")
             appendLine("displayScoreSource=$scoreSource")
             appendLine("localAreaAfterCleanup=${localFinalScore.rawScore}")
@@ -998,9 +1001,10 @@ private suspend fun resolveAiEndgame(
         .onSuccess { deadStonesResult = it }
         .onFailure { deadStonesError = it.message ?: "Unknown error" }
 
+    val locallyInferredDeadStones = DeadStoneDetector.capturableDeadStones(originalState)
     val cleanup = DeadStoneCleaner.apply(
         state = originalState,
-        deadStoneCoordinates = deadStonesResult?.coordinates.orEmpty(),
+        deadStoneCoordinates = deadStonesResult?.coordinates.orEmpty() + locallyInferredDeadStones,
     )
     val localFinalScore = BoardAreaScorer.score(cleanup.state)
 
@@ -1028,6 +1032,7 @@ private suspend fun resolveAiEndgame(
         localFinalScore = localFinalScore,
         deadStonesResult = deadStonesResult,
         deadStonesError = deadStonesError,
+        locallyInferredDeadStones = locallyInferredDeadStones,
         engineScoreEstimate = engineScoreEstimate,
         engineScoreEstimateError = engineScoreEstimateError,
         engineFinalScore = engineFinalScore,
@@ -1162,6 +1167,13 @@ private fun List<DeadStoneRemoval>.toLogText(boardSize: BoardSize): String =
         joinToString { removal ->
             "${removal.coordinate.label(boardSize)}=${removal.color.label}"
         }
+    }
+
+private fun List<BoardCoordinate>.toCoordinateLogText(boardSize: BoardSize): String =
+    if (isEmpty()) {
+        "none"
+    } else {
+        distinct().joinToString { it.label(boardSize) }
     }
 
 private fun GameState.toBoardText(): String =
