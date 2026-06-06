@@ -1,0 +1,85 @@
+# KaTrain Top Moves 분석 메모
+
+작성일: 2026-06-06
+
+## 목적
+
+Top Moves, 착수 평가 색상, ownership overlay를 KaTrain처럼 고도화하기 위해 KaTrain의 실제 데이터 흐름을 확인하고, Go AI Coach에 적용할 순서를 정리한다.
+
+## 확인한 KaTrain 코드
+
+- `/tmp/katrain-src/katrain/core/engine.py`
+  - KataGo analysis JSON 프로토콜로 `rootInfo`, `moveInfos`, `ownership`, `policy`를 받는다.
+  - 요청에는 `maxVisits`, `includeOwnership`, `includeMovesOwnership`, `includePolicy`, `moves`, `initialStones`, `rules`, `komi`가 포함된다.
+- `/tmp/katrain-src/katrain/core/game_node.py`
+  - `set_analysis()`가 `moveInfos`, `rootInfo`, `ownership`, `policy`를 노드 분석 상태로 저장한다.
+  - `candidate_moves`가 후보별 `pointsLost`, `relativePointsLost`, `winrateLost`를 계산한다.
+- `/tmp/katrain-src/katrain/gui/badukpan.py`
+  - 후보 spot 색상은 `pointsLost`를 `eval_color()`에 넣어 결정한다.
+  - Top move label은 기본적으로 `top_move_delta_score`와 `top_move_visits`를 표시한다.
+  - ownership은 board-size 텍스처를 만든 뒤 전체 보드에 부드럽게 블렌딩한다.
+- `/tmp/katrain-src/katrain/core/game.py`
+  - `extra`, `equalize`, `sweep`, `alternative` 분석 모드가 있다.
+  - `sweep`은 모든 합법 후보를 빠른 visits로 한 번씩 refine 분석한다.
+  - `equalize`는 이미 후보로 잡힌 수들의 visits가 비슷해지도록 추가 refine 분석한다.
+
+## 핵심 결론
+
+KaTrain의 초록/노랑/빨강 spot은 엔진이 직접 분류해서 주는 값이 아니다. 엔진은 후보별 `scoreLead`, `winrate`, `visits`, `prior`를 주고, KaTrain이 최선 후보 대비 손실을 계산해 색상으로 바꾼다.
+
+따라서 우리 앱도 다음 구조가 맞다.
+
+- `EngineAdapter`는 후보별 정량값만 DTO로 반환한다.
+- UI는 `CandidateMove.pointLoss`가 있는 후보만 보드에 표시한다.
+- 색상은 앱 공통 규칙으로 계산한다.
+- 점수 없는 policy/legal fallback 후보는 debug text와 로그에는 남길 수 있지만, 보드 spot으로는 그리지 않는다.
+
+## 현재 반영 상태
+
+- `Top Moves`는 점수 손실이 있는 후보만 보드에 그린다.
+- 점수 손실이 없는 fallback 후보의 회색 spot은 제거했다.
+- 착수 후 돌 중앙의 평가 dot도 같은 `pointLoss` 분류를 사용한다.
+- 색상 단계는 KaTrain 기본 임계값을 모바일 UX에 맞춰 5단계로 단순화했다.
+  - `0.5`집 이하: 진한 초록
+  - `1.5`집 이하: 연한 초록
+  - `3.0`집 이하: 노랑
+  - `6.0`집 이하: 주황
+  - 그 이상: 빨강
+- ownership은 `Eval` 결과가 있으면 별도 메뉴 없이 보드에 표시한다.
+- ownership 렌더링은 기존 사각형 heatmap 대신 교차점 주변 radial gradient로 표현한다.
+
+## 현재 구조의 한계
+
+현재 Android local process adapter는 GTP 계열 `kata-search_analyze`와 `kata-raw-nn` 파싱을 중심으로 동작한다. 이 방식은 빠르게 붙이기 좋지만, KaTrain식 풍부한 후보 분석에는 한계가 있다.
+
+- 낮은 visits에서는 실제 score가 있는 후보가 적게 나올 수 있다.
+- 모든 합법 착점에 대해 `pointLoss`를 안정적으로 얻으려면 후보별 refine 분석이 필요하다.
+- `kata-raw-nn` policy는 prior 정보에는 좋지만, 후보별 실전 점수 손실을 대신할 수 없다.
+- ownership, policy, rootInfo, moveInfos를 한 번에 일관되게 관리하려면 KataGo analysis JSON 프로토콜이 더 적합하다.
+
+## 권장 적용 순서
+
+1. 현재 GTP adapter 유지
+   - 빠른 개발/실기기 검증을 유지한다.
+   - `Top Moves`는 score가 있는 후보만 표시하고 fallback spot은 숨긴다.
+
+2. Deep Top Moves 추가
+   - 사용자가 현재 국면을 더 깊게 보고 싶을 때 visits/time을 임시 상향한다.
+   - 평소 AI 난이도와 분석 강도를 분리한다.
+   - 9x9에서는 우선 상위 12-20개 후보를 안정적으로 scoring하는 방향이 적절하다.
+
+3. KataGo analysis JSON adapter 추가 검토
+   - `EngineAdapter` 뒤에 새 구현으로 추가한다.
+   - 앱 UI와 shared 도메인 모델은 바꾸지 않고 adapter 내부만 교체한다.
+   - `rootInfo`, `moveInfos`, `ownership`, `policy`, partial result를 일관된 모델로 받을 수 있다.
+
+4. Sweep/Equalize 분석 도입 검토
+   - KaTrain처럼 모든 합법 후보를 빠르게 훑는 sweep 분석을 추가하면 더 많은 색상 spot을 만들 수 있다.
+   - 이미 후보가 된 수들의 visits를 맞추는 equalize 분석은 상위 후보 비교 품질을 높인다.
+   - 모바일에서는 전체 합법점 sweep을 기본 자동 실행하기보다 수동 고급 분석으로 두는 편이 안전하다.
+
+## 의사결정
+
+당장 앱의 기본 대국 UX에서는 빠른 Top Moves와 부드러운 Eval overlay를 유지한다. KaTrain식 전체 후보 색상 품질은 엔진 호출 구조를 JSON analysis protocol로 확장하는 별도 작업으로 둔다.
+
+이 결정은 도메인 분리 원칙과 맞다. UI는 계속 `CandidateMove`, `ScoreEstimate`, `OwnershipEstimate`만 사용하고, GTP/process/JNI/remote/JSON analysis 차이는 `EngineAdapter` 구현 내부로 숨긴다.

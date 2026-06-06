@@ -1,7 +1,7 @@
 # 착수 전 후보수/점수 스팟 표시 결정
 
 작성일: 2026-05-31
-갱신일: 2026-06-01
+갱신일: 2026-06-06
 
 ## 결론
 
@@ -20,29 +20,30 @@ KaTrain류 UI는 대체로 엔진 분석 결과의 후보수 리스트를 보드
 - 보드 상태 canonical source는 `shared`의 `GameState`와 move history다.
 - 엔진은 평가자/추천자이며, 후보수는 `CandidateMove` DTO로만 앱에 노출한다.
 - UI는 `CandidateMove` 목록만 보고 오버레이를 그린다.
-- KataGo process adapter의 `analyze()`는 `kata-search_analyze` 검색 후보를 우선 사용하고, 부족분은 raw NN policy 후보로 보강한다.
+- KataGo process adapter의 `analyze()`는 `kata-search_analyze` 검색 후보를 우선 사용하고, 부족분은 raw NN policy/legal 후보로 보강한다.
+- 단, 보드 위 Top Moves spot은 후보별 점수 손실이 있는 후보만 그린다. policy/legal fallback처럼 점수 손실이 없는 후보는 debug text와 `Copy Log`에는 남기되 회색 spot으로 표시하지 않는다.
 
 ## 현재 구현
 
 - `GoBoard`는 `candidateMoves`를 받아 비어 있는 교차점에 후보 spot을 표시한다.
 - 검색 후보는 현재 착수자 관점의 예상 score lead를 보드 위 label로 표시한다.
 - 후보 색상은 최선 후보 대비 `pointLoss` 기준으로 표시한다.
-  - `0.5`집 이하 손실: green
-  - `3.0`집 이하 손실: yellow
-  - 그 이상 손실: red
-  - policy fallback처럼 점수 손실이 없는 후보: gray-blue
+  - `0.5`집 이하 손실: 진한 초록
+  - `1.5`집 이하 손실: 연한 초록
+  - `3.0`집 이하 손실: 노랑
+  - `6.0`집 이하 손실: 주황
+  - 그 이상 손실: 빨강
+  - policy/legal fallback처럼 점수 손실이 없는 후보: 보드 spot 없음
 - 첫 번째 후보수는 더 진하고 크게 표시해 “best move”로 구분한다.
 - 사람이 착수하거나, AI 응수가 완료되거나, 새 판/undo가 실행되면 이전 후보수 표시는 지운다.
 - KataGo process adapter는 `kata-search_analyze` 응답의 `info move ...` 블록을 파싱해 후보 spot을 표시한다.
-- 낮은 visits/time에서 검색 후보가 요청 개수보다 적으면 `kata-raw-nn 0`의 policy 상위 후보로 부족한 spot을 채운다.
+- 낮은 visits/time에서 검색 후보가 요청 개수보다 적으면 `kata-raw-nn 0`의 policy 상위 후보와 합법 착점으로 부족한 후보 목록을 채운다.
 - 검색 후보는 visits/winrate/score를 가질 수 있고, policy fallback 후보는 `prior` 중심으로 표시된다.
-- UI 버튼명은 좁은 모바일 폭에서 줄바꿈을 피하기 위해 `Hint`로 표시한다.
-- `Hints` 토글은 후보 spot을 보드에 표시할지 여부만 제어한다.
-- 착수 후 평가 dot을 안정적으로 남기기 위해, AI 대국에서 사람 차례가 되면 `Hints` 표시 여부와 관계없이 백그라운드 pre-move analysis를 수행한다.
-- `N` 설정으로 한 번에 표시할 후보수 개수를 1-12개 범위에서 조절한다.
-- 수동 `Hint` 버튼은 토글 상태와 관계없이 현재 차례에 한 번 분석을 실행한다.
-- 실제 표시 개수는 요청한 `N`과 현재 판의 합법 후보 가능 수 중 더 작은 값이다.
-- 힌트와 착수 리뷰용 pre-move analysis는 대국 AI 응수 설정보다 한 단계 높은 difficulty의 visits/time을 사용한다.
+- UI 버튼명은 `Top Moves`로 표시한다.
+- `Top Moves` 버튼은 토글이다. 켜져 있으면 매 사용자 차례에 준비된 후보 spot을 자동 표시한다.
+- 착수 후 평가 dot을 안정적으로 남기기 위해, 사람 차례가 되면 `Top Moves` 표시 여부와 관계없이 백그라운드 pre-move analysis를 수행한다.
+- 실제 표시 후보는 현재 합법 착점 수를 기준으로 요청하되, 보드에는 score가 있는 후보만 표시한다.
+- Top Moves와 착수 리뷰용 pre-move analysis는 대국 AI 응수 설정보다 한 단계 높은 difficulty의 visits/time을 사용한다.
   - 예: 대국 AI가 `Beginner`이면 힌트 분석은 최소 `Casual` 기본값을 사용한다.
   - 사용자가 visits/time을 이미 더 높게 조정한 경우에는 현재 값과 한 단계 위 기본값 중 더 큰 값을 사용해 힌트가 약해지지 않게 한다.
 - `KataGoProcessEngineAdapter.analyze()`는 후보수 N이 커질 때 최소 `N * 10 visits`, `1000ms`로 힌트 검색을 일시 상향한다.
@@ -74,4 +75,6 @@ KaTrain류 UI는 대체로 엔진 분석 결과의 후보수 리스트를 보드
 
 1. 분석 취소/타임아웃 처리
 2. 자동 분석이 너무 잦아질 경우 debounce/cooldown 정책 추가
-3. 별도 `katago analysis` JSON 프로토콜 전환 검토: `rootInfo`와 `moveInfos`를 함께 받으면 KaTrain식 `root_score - move_score` 기반 delta score를 더 정확하게 표시할 수 있다.
+3. 별도 `katago analysis` JSON 프로토콜 전환 검토: `rootInfo`, `moveInfos`, `ownership`, `policy`를 함께 받으면 KaTrain식 `pointsLost`, sweep/equalize 분석, partial result를 더 안정적으로 구현할 수 있다.
+
+자세한 KaTrain 분석 근거는 `docs/KATRAIN_TOP_MOVES_ANALYSIS.md`에 기록한다.

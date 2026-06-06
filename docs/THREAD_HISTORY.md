@@ -294,3 +294,8 @@
 - Top Moves의 점수 손실이 없는 policy/legal fallback 후보는 보드 위 회색 스팟으로 그리지 않고, 상세 텍스트와 `Copy Log`에만 남기도록 바꿨다.
 - `Ownership` 메뉴 옵션을 제거하고, `Eval` 결과에 ownership 값이 있으면 별도 토글 없이 보드 overlay로 표시되도록 통합했다.
 - 2차로 ownership overlay 표현을 사각형 heatmap에서 부드러운 radial gradient overlay로 바꿨다. 흑/백 영향권이 교차점 주변으로 퍼져 보이도록 중심 alpha와 radius를 ownership strength에 따라 조절한다.
+- 3차로 KaTrain 최신 소스를 `/tmp/katrain-src`에 shallow clone해 Top Moves/ownership 처리 흐름을 확인했다.
+- KaTrain은 KataGo analysis JSON 프로토콜에서 `rootInfo`, `moveInfos`, `ownership`, `policy`를 받고, `candidate_moves`에서 후보별 `pointsLost`, `relativePointsLost`, `winrateLost`를 계산한 뒤 UI 색상을 매긴다.
+- 후보 spot 색상은 엔진이 직접 주는 green/yellow/red가 아니라, 최선 후보 대비 점수 손실을 앱이 해석해 표시하는 방식임을 확인했다.
+- 우리 앱의 후보/착수 평가 색상도 KaTrain 기본 임계값을 참고해 진한 초록, 연한 초록, 노랑, 주황, 빨강 5단계로 세분화했다.
+- `docs/KATRAIN_TOP_MOVES_ANALYSIS.md`를 추가해 GTP 기반 현재 adapter의 한계, JSON analysis adapter 전환 후보, KaTrain식 sweep/equalize/deep analysis 도입 방향을 문서화했다.
