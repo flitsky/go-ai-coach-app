@@ -211,3 +211,6 @@
 - 사용자가 힌트 엔진 강도도 확인 요청했다. 확인 결과 현재 힌트는 대국 AI와 같은 KataGo process를 쓰되 `analyze()` 호출 시 visits/time을 임시 적용하고, 분석 후 기존 AI 응수 limit으로 되돌리는 구조다.
 - 힌트와 착수 리뷰용 pre-move analysis가 현재 대국 difficulty보다 한 단계 높은 difficulty의 visits/time을 사용하도록 변경했다. 예를 들어 대국 AI가 `Beginner`이면 힌트는 최소 `Casual` 기본값을 사용한다.
 - 사용자가 수동으로 visits/time을 더 높게 올린 경우 힌트가 약해지지 않도록 현재 값과 한 단계 위 기본값 중 큰 값을 사용한다.
+- 사용자가 옵션 버튼 정리를 요청했다. 먼저 옵션 설명 문서를 만들고, `Coords`, `Move nums`, `Last ring`, `Spot legend`, `Engine badge`, `Ownership`은 신규 `Menu` 버튼 아래로 이동하도록 요청했다.
+- `docs/USER_OPTION_MANUAL.md`를 추가해 플레이 화면 즉시 컨트롤, quick display, menu 안의 표시 옵션, 현재 제한사항을 한글 사용자 매뉴얼 초안으로 정리했다.
+- 앱 UI에서 `Candidate list`, `Game strip`은 플레이 화면의 `Quick display` 2열 옵션으로 유지하고, 나머지 보조 표시 옵션은 접을 수 있는 `Menu` 아래로 분리했다.

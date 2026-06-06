@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -28,7 +29,34 @@ import kotlin.math.abs
 import kotlin.math.roundToInt
 
 @Composable
-internal fun KaTrainUxOptionsPanel(
+internal fun KaTrainUxMenuControls(
+    options: KaTrainUxOptions,
+    menuExpanded: Boolean,
+    onMenuExpandedChange: (Boolean) -> Unit,
+    onOptionsChange: (KaTrainUxOptions) -> Unit,
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        OutlinedButton(
+            onClick = { onMenuExpandedChange(!menuExpanded) },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(if (menuExpanded) "Close menu" else "Menu")
+        }
+
+        if (menuExpanded) {
+            KaTrainUxMenuPanel(
+                options = options,
+                onOptionsChange = onOptionsChange,
+            )
+        }
+    }
+}
+
+@Composable
+private fun KaTrainUxMenuPanel(
     options: KaTrainUxOptions,
     onOptionsChange: (KaTrainUxOptions) -> Unit,
 ) {
@@ -42,7 +70,7 @@ internal fun KaTrainUxOptionsPanel(
             modifier = Modifier.padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Text("KaTrain UX", fontWeight = FontWeight.SemiBold)
+            Text("Display menu", fontWeight = FontWeight.SemiBold)
             OptionSwitchRow("Coords", options.showCoordinates) {
                 onOptionsChange(options.copy(showCoordinates = it))
             }
@@ -52,20 +80,55 @@ internal fun KaTrainUxOptionsPanel(
             OptionSwitchRow("Last ring", options.showLastMoveRing) {
                 onOptionsChange(options.copy(showLastMoveRing = it))
             }
-            OptionSwitchRow("Candidate list", options.showCandidateList) {
-                onOptionsChange(options.copy(showCandidateList = it))
-            }
             OptionSwitchRow("Spot legend", options.showHintLegend) {
                 onOptionsChange(options.copy(showHintLegend = it))
             }
             OptionSwitchRow("Engine badge", options.showEngineStatusBadge) {
                 onOptionsChange(options.copy(showEngineStatusBadge = it))
             }
-            OptionSwitchRow("Game strip", options.showGameStatusStrip) {
-                onOptionsChange(options.copy(showGameStatusStrip = it))
-            }
             OptionSwitchRow("Ownership", options.showOwnershipOverlay) {
                 onOptionsChange(options.copy(showOwnershipOverlay = it))
+            }
+        }
+    }
+}
+
+@Composable
+internal fun KaTrainUxQuickOptionsPanel(
+    options: KaTrainUxOptions,
+    onOptionsChange: (KaTrainUxOptions) -> Unit,
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(8.dp),
+        tonalElevation = 1.dp,
+        shadowElevation = 0.dp,
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text("Quick display", fontWeight = FontWeight.SemiBold)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                OptionSwitchTile(
+                    label = "Candidate list",
+                    checked = options.showCandidateList,
+                    onCheckedChange = {
+                        onOptionsChange(options.copy(showCandidateList = it))
+                    },
+                    modifier = Modifier.weight(1f),
+                )
+                OptionSwitchTile(
+                    label = "Game strip",
+                    checked = options.showGameStatusStrip,
+                    onCheckedChange = {
+                        onOptionsChange(options.copy(showGameStatusStrip = it))
+                    },
+                    modifier = Modifier.weight(1f),
+                )
             }
         }
     }
@@ -83,6 +146,27 @@ private fun OptionSwitchRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(label, style = MaterialTheme.typography.bodyMedium)
+        Switch(checked = checked, onCheckedChange = onCheckedChange)
+    }
+}
+
+@Composable
+private fun OptionSwitchTile(
+    label: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier.padding(vertical = 2.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            label,
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.bodyMedium,
+        )
         Switch(checked = checked, onCheckedChange = onCheckedChange)
     }
 }

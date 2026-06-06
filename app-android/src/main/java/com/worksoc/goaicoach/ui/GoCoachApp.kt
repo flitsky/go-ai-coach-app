@@ -108,6 +108,7 @@ private fun GoCoachScreen(
     var hintEnabled by remember { mutableStateOf(false) }
     var hintCount by remember { mutableStateOf(1) }
     var uxOptions by remember { mutableStateOf(KaTrainUxOptions()) }
+    var isDisplayMenuExpanded by remember { mutableStateOf(false) }
     var lastAnalysisKey by remember { mutableStateOf<String?>(null) }
     var isGameEnded by remember { mutableStateOf(false) }
     var endgameLog by remember { mutableStateOf("No endgame result recorded.") }
@@ -678,8 +679,15 @@ private fun GoCoachScreen(
             },
         )
 
-        KaTrainUxOptionsPanel(
+        KaTrainUxQuickOptionsPanel(
             options = uxOptions,
+            onOptionsChange = { nextOptions -> uxOptions = nextOptions },
+        )
+
+        KaTrainUxMenuControls(
+            options = uxOptions,
+            menuExpanded = isDisplayMenuExpanded,
+            onMenuExpandedChange = { expanded -> isDisplayMenuExpanded = expanded },
             onOptionsChange = { nextOptions -> uxOptions = nextOptions },
         )
 
