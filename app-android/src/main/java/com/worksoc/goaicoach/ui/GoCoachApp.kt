@@ -770,10 +770,6 @@ private fun GoCoachScreen(
             )
         }
 
-        if (uxOptions.showSpotLegend) {
-            SpotLegendPanel()
-        }
-
         if (uxOptions.showGameStatusStrip) {
             GameStatusStrip(
                 nextPlayer = gameState.nextPlayer,

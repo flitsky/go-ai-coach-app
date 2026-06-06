@@ -61,9 +61,6 @@ internal fun KaTrainUxMenuPanel(
             OptionSwitchRow("Last ring", options.showLastMoveRing) {
                 onOptionsChange(options.copy(showLastMoveRing = it))
             }
-            OptionSwitchRow("Spot legend", options.showSpotLegend) {
-                onOptionsChange(options.copy(showSpotLegend = it))
-            }
             OptionSwitchRow("Engine badge", options.showEngineStatusBadge) {
                 onOptionsChange(options.copy(showEngineStatusBadge = it))
             }
@@ -238,45 +235,6 @@ internal fun GameStatusStrip(
                 Text("Last $lastMoveText", color = MaterialTheme.colorScheme.secondary)
             }
         }
-    }
-}
-
-@Composable
-internal fun SpotLegendPanel() {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
-        tonalElevation = 1.dp,
-        shadowElevation = 0.dp,
-    ) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            LegendDot(Color(0xFF2E7D32), "good")
-            LegendDot(Color(0xFFF9A825), "ok")
-            LegendDot(Color(0xFFC62828), "bad")
-            LegendDot(Color(0xFF607D8B), "policy")
-        }
-    }
-}
-
-@Composable
-private fun LegendDot(
-    color: Color,
-    label: String,
-) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(
-            modifier = Modifier
-                .size(10.dp)
-                .background(color, CircleShape),
-        )
-        Text(label, style = MaterialTheme.typography.bodySmall)
     }
 }
 

@@ -34,7 +34,6 @@ KaTrain의 UX 중 Go AI Coach에 가져올 만한 항목을 효과와 구현 난
 - 옵션 기반 보드 좌표 표시
 - 옵션 기반 수순 번호 표시
 - 옵션 기반 마지막 수 ring 표시
-- 옵션 기반 spot 색상 범례
 - 옵션 기반 엔진 상태 badge
 - 옵션 기반 차례/포획/마지막 수 status strip
 - 옵션 기반 ownership heatmap overlay
@@ -48,7 +47,7 @@ KaTrain의 UX 중 Go AI Coach에 가져올 만한 항목을 효과와 구현 난
 | 보드 좌표 표시 토글 | KaTrain의 좌표/수순 표시 토글처럼 A-J, 1-9 좌표를 켜고 끄기 | `GoBoard` Canvas에 좌표 label 옵션 추가 | 사용자가 로그와 화면을 대조하기 쉬움. 현재 디버그 리포트의 `A1` 좌표와 실제 화면 연결성이 좋아짐 | 낮음 |
 | 마지막 수/수순 번호 표시 토글 | 마지막 수 강조와 move number 표시 | 현재 착수 평가 dot과 충돌하지 않도록 작은 수순 번호 또는 마지막 수 ring 추가 | 실기기 테스트 중 “방금 어디에 뒀는지” 확인이 쉬워짐 | 낮음 |
 | 후보수 디버그 텍스트 | 보드 spot과 별도로 후보수 목록을 `좌표 / 손실 / visits / prior`로 출력 | 하단 engine response/debug 영역과 `Copy Log`에 `candidateText`로 출력 | 보드 중심 화면을 유지하면서 필요 시 숫자 정보를 확인 가능 | 완료 |
-| 색상 범례 | green/yellow/red/gray-blue 의미를 한 줄로 표시 | `Spot legend` 메뉴 옵션으로 작은 legend 추가 | 사용자와 테스트 참여자가 점 색상을 바로 이해함 | 낮음 |
+| 색상 범례 | green/yellow/red/gray-blue 의미 안내 | 앱 화면에서는 제거하고 사용자 매뉴얼/도움말 문서에서 설명 | 단순 기능이라 대국 화면 공간을 쓰지 않는 편이 낫다 | 제거 |
 | 엔진 상태 badge | KaTrain의 engine ready/busy/down dot처럼 명확한 상태 표시 | `engineReady`, `engineBusy`, fallback 상태를 별도 badge로 표시 | “목업으로 바뀐 것 같다” 같은 혼란을 줄임 | 낮음 |
 | 분석 중 표시와 취소 버튼 | 분석이 길어질 때 spinner/progress와 cancel 제공 | `EngineAdapter`에 취소까지 바로 넣기 어렵다면 우선 UI busy/cooldown 표시부터 적용 | 느린 Top Moves 분석 시 앱이 멈춘 것처럼 보이는 문제 완화 | 낮음-중간 |
 | 잡은 돌/차례 표시 강화 | KaTrain의 prisoner/active player UI처럼 흑백 캡처와 다음 차례를 더 눈에 띄게 표시 | 현재 텍스트 표시를 compact score strip으로 변경 | 계가 논의와 테스트에서 포획 수 확인이 쉬워짐 | 낮음 |
@@ -99,7 +98,7 @@ KaTrain의 UX 중 Go AI Coach에 가져올 만한 항목을 효과와 구현 난
 2. **Top Moves UX 완성**
    - 후보수 compact list 패널: 화면 집중을 위해 제거됨. 상세 후보 정보는 debug text와 `Copy Log`로 확인한다.
    - Top Moves 버튼: 구현됨. 사람 차례마다 현재 합법 착점 수 기준으로 pre-move analysis를 수행하고, 버튼 클릭 시 cache를 보드에 표시한다.
-   - 색상 범례: 구현됨
+   - 색상 범례: 제거됨. 색상 의미는 사용자 매뉴얼/도움말 문서로 안내한다.
    - 후보 label 표시 모드: 미구현
    - 엔진 busy/ready/fallback badge: 구현됨
 
@@ -125,7 +124,7 @@ KaTrain의 UX 중 Go AI Coach에 가져올 만한 항목을 효과와 구현 난
 
 1. `GoBoard` 좌표 표시 토글과 마지막 수 ring 추가: 완료
 2. 후보수 compact list 패널: 제거됨. 상세 후보 정보는 debug text와 `Copy Log`로 확인
-3. green/yellow/red/unknown 색상 범례 추가: 완료
+3. green/yellow/red/unknown 색상 범례 추가: 제거됨. 문서 안내로 대체
 4. 엔진 상태 badge를 상단 상태 영역에 고정 표시: 완료
 5. ownership overlay를 `Eval` 결과와 연결해 보드 위에 시각화: 완료
 

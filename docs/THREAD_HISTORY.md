@@ -239,3 +239,6 @@
 - `KataGoProcessEngineAdapter`의 Top Moves 후보 보강 로직에 `Legal fallback`을 추가했다. search 후보와 raw NN policy 후보가 부족하면 남은 합법 착점도 후보 목록에 포함해, 토글이 켜진 상태에서 매 사용자 턴마다 가능한 착점 표시가 안정적으로 유지되게 했다.
 - 수정 후 앱을 에뮬레이터에 재설치하고 같은 흐름을 재검증했다. 초기에는 81/81 후보가 표시되고, `E5` 착수 후 AI가 `C5`에 둔 다음 사용자 턴에는 79/79 후보가 표시되는 것을 확인했다.
 - `docs/USER_OPTION_MANUAL.md`와 `docs/SCORE_AND_ENDGAME_DECISION.md`에 score graph 표시 방향과 `Top Moves` 토글 동작을 반영했다.
+- 사용자가 `Spot legend` 기능은 대국 화면에서 필요성이 낮고, 색상 의미는 사용자 매뉴얼/도움말에서 설명하면 충분하다고 판단해 제거를 요청했다.
+- `KaTrainUxOptions.showSpotLegend`, 메뉴의 `Spot legend` 토글, `SpotLegendPanel` UI, 화면 호출부를 제거했다.
+- `docs/USER_OPTION_MANUAL.md`에는 별도 화면 패널 대신 후보/착수 평가 색상 의미를 짧은 문서 섹션으로 남겼고, `docs/KATRAIN_UX_BACKLOG.md`에는 색상 범례를 제거/문서 대체 결정으로 갱신했다.
