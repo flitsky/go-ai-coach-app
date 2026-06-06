@@ -35,6 +35,12 @@
   - 엔진 search나 raw NN policy가 모든 합법점을 채우지 못하면, 나머지 합법점은 `Legal fallback`으로 표시한다. 이 후보에는 점수 손실이나 policy prior가 없을 수 있다.
 - `Eval`: 현재 판의 점수 추정과 ownership 정보를 요청한다.
 
+### 엔진 진행 상태
+
+- 별도의 `KataGo Ready` badge 영역은 제거했다.
+- 엔진이 분석하거나 AI 응수를 생성하는 busy 상태일 때만 보드 상단 보더 중앙에 `Thinking`, `Thinking .`, `Thinking ..`, `Thinking ...`, 빈 상태가 0.2초 간격으로 반복 표시된다.
+- 준비 완료 상태는 화면 공간을 차지하지 않으며, 엔진 진단 상세는 `Copy Log`로 확인한다.
+
 ### 후보/착수 평가 색상
 
 - 초록은 좋은 수, 노랑은 약간 아쉬운 수, 빨강은 손실이 큰 수를 뜻한다.
@@ -65,7 +71,7 @@
 
 ## Menu 안의 표시 옵션
 
-`Display menu` 영역의 옵션들은 보조 표시 성격이 강한 설정이다.
+`Display menu` 영역의 옵션들은 보조 표시 성격이 강한 설정이다. 현재 항목은 `Coords`, `Move nums`, `Last ring`, `Ownership`이다.
 
 ### Coords
 
@@ -84,14 +90,6 @@
 - 마지막 착수 위치를 ring으로 강조한다.
 - 꺼져 있을 때도 기존 최소 표시 dot은 유지되어 마지막 수를 완전히 잃지 않도록 한다.
 - 기본값은 켜짐이다.
-
-### Engine badge
-
-- 엔진 상태를 작은 badge로 보여준다.
-- `Ready`, `Busy`, `Down` 상태를 색상과 텍스트로 구분한다.
-- KataGo local process인지 stub fallback인지 빠르게 확인하는 용도다.
-- 기본값은 켜짐이다.
-- 화면에서는 보드 위쪽에 표시된다.
 
 ### Ownership
 

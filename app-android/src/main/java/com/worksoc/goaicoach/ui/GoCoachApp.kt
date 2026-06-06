@@ -800,15 +800,6 @@ private fun GoCoachScreen(
             )
         }
 
-        if (uxOptions.showEngineStatusBadge) {
-            EngineStatusBadge(
-                engineName = engineName,
-                isEngineReady = isEngineReady,
-                isEngineBusy = matchMode == MatchMode.HumanVsAi && isEngineBusy,
-                engineDiagnostic = engineDiagnostic,
-            )
-        }
-
         ScoreGraphPanel(
             snapshots = scoreSnapshots,
             capturedByBlack = gameState.capturedBy(StoneColor.Black),
@@ -824,6 +815,7 @@ private fun GoCoachScreen(
             ownershipEstimate = scoreEstimate?.ownership,
             uxOptions = uxOptions,
             inputEnabled = !isGameEnded && boardInputEnabled(matchMode, isEngineReady, isEngineBusy, gameState.nextPlayer),
+            engineBusy = matchMode == MatchMode.HumanVsAi && isEngineBusy,
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(1f),

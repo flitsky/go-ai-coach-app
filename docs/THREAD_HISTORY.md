@@ -286,3 +286,6 @@
 - `docs/error-cases/pass-before-cleanup-top-move-flip.md`를 추가하고, `docs/SCORE_AND_ENDGAME_DECISION.md`에 pre-pass Top Moves 기반 불확정 계가 정책을 반영했다.
 - 회귀 테스트로 `EndgameRegressionTest`와 `EndgameScoreSelectorTest`에 이번 pass-before-cleanup 케이스를 추가했고, `KataGoAnalysisParserTest`에 흑 pass 손실 계산 케이스를 추가했다.
 - 검증으로 JDK 17과 Android SDK를 명시해 `:shared:testDebugUnitTest --tests EndgameScoreSelectorTest --tests EndgameRegressionTest`, `:engine-android:testDebugUnitTest --tests KataGoAnalysisParserTest`가 통과했다. 직접 Gradle 실행 시 기본 Java가 25라 Kotlin DSL이 실패하므로, 검증 명령에는 `JAVA_HOME=$(/usr/libexec/java_home -v 17)` 지정이 필요함을 확인했다.
+- 사용자가 UX 밀도를 높이기 위해 `KataGo Ready` 영역을 제거하고, 엔진 busy 상태일 때만 보드판 상단 보더 중앙에 `Thinking` 애니메이션을 표시해달라고 요청했다.
+- 별도 `EngineStatusBadge` 줄과 메뉴의 `Engine badge` 옵션을 제거했다. `GoBoard`가 `engineBusy`를 입력받고, busy 동안 `Thinking`, `Thinking .`, `Thinking ..`, `Thinking ...`, 빈 상태를 0.2초 간격으로 반복 표시하도록 변경했다.
+- `docs/USER_OPTION_MANUAL.md`에서 `Engine badge` 설명을 제거하고, 엔진 진행 상태는 보드 상단 `Thinking` 애니메이션과 `Copy Log` 진단으로 확인하는 구조로 문서화했다.

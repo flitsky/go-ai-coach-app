@@ -10,7 +10,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,6 +38,7 @@ import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.OwnershipEstimate
 import com.worksoc.goaicoach.shared.StoneColor
+import kotlinx.coroutines.delay
 import kotlin.math.abs
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -47,10 +51,20 @@ internal fun GoBoard(
     ownershipEstimate: OwnershipEstimate?,
     uxOptions: KaTrainUxOptions,
     inputEnabled: Boolean,
+    engineBusy: Boolean,
     modifier: Modifier = Modifier,
     onCoordinateTap: (BoardCoordinate) -> Unit,
 ) {
     var canvasSize by remember { mutableStateOf(IntSize.Zero) }
+    var thinkingFrame by remember { mutableStateOf(0) }
+
+    LaunchedEffect(engineBusy) {
+        thinkingFrame = 0
+        while (engineBusy) {
+            delay(200)
+            thinkingFrame = (thinkingFrame + 1) % ThinkingFrames.size
+        }
+    }
 
     Box(
         modifier = modifier
@@ -109,8 +123,30 @@ internal fun GoBoard(
                 drawMoveNumbers(geometry, gameState)
             }
         }
+
+        if (engineBusy) {
+            val thinkingText = ThinkingFrames[thinkingFrame]
+            if (thinkingText.isNotEmpty()) {
+                Text(
+                    text = thinkingText,
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(top = 2.dp),
+                    color = Color(0xFF3F2612),
+                    style = MaterialTheme.typography.labelMedium,
+                )
+            }
+        }
     }
 }
+
+private val ThinkingFrames = listOf(
+    "Thinking",
+    "Thinking .",
+    "Thinking ..",
+    "Thinking ...",
+    "",
+)
 
 private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawOwnershipOverlay(
     geometry: BoardGeometry,
