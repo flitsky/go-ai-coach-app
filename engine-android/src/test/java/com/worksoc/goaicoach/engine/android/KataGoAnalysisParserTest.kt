@@ -72,19 +72,21 @@ class KataGoAnalysisParserTest {
     @Test
     fun attachesPointLossFromTopCandidateForPlayerPerspective() {
         val blackCandidates = listOf(
-            CandidateMove(move = Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("F6", BoardSize.Nine)), scoreLead = -2.0),
-            CandidateMove(move = Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)), scoreLead = -0.5),
+            CandidateMove(move = Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("F6", BoardSize.Nine)), scoreLead = 2.0),
+            CandidateMove(move = Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)), scoreLead = 0.5),
+            CandidateMove(move = Move.Pass(StoneColor.Black), scoreLead = -9.0),
         )
         val whiteCandidates = listOf(
             CandidateMove(move = Move.Play(StoneColor.White, BoardCoordinate.fromLabel("D5", BoardSize.Nine)), scoreLead = 12.0),
             CandidateMove(move = Move.Play(StoneColor.White, BoardCoordinate.fromLabel("E5", BoardSize.Nine)), scoreLead = 9.5),
         )
 
-        val blackWithLoss = KataGoAnalysisParser.attachPointLoss(blackCandidates, StoneColor.Black)
-        val whiteWithLoss = KataGoAnalysisParser.attachPointLoss(whiteCandidates, StoneColor.White)
+        val blackWithLoss = KataGoAnalysisParser.attachPointLoss(blackCandidates)
+        val whiteWithLoss = KataGoAnalysisParser.attachPointLoss(whiteCandidates)
 
         assertEquals(0.0, blackWithLoss[0].pointLoss)
         assertEquals(1.5, blackWithLoss[1].pointLoss)
+        assertEquals(11.0, blackWithLoss[2].pointLoss)
         assertEquals(0.0, whiteWithLoss[0].pointLoss)
         assertEquals(2.5, whiteWithLoss[1].pointLoss)
     }

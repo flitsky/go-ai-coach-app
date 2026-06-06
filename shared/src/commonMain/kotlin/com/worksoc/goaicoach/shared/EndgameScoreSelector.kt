@@ -6,6 +6,7 @@ import kotlin.math.roundToInt
 enum class EndgameScoreSource {
     CleanedLocalArea,
     UnsettledEngineEstimate,
+    UnsettledPrePassTopMoveEstimate,
 }
 
 data class EndgameScoreSelection(
@@ -18,13 +19,35 @@ object EndgameScoreSelector {
         cleanup: DeadStoneCleanupResult,
         localScore: FinalScoreResult,
         engineEstimate: ScoreEstimate?,
+        prePassCandidates: List<CandidateMove> = emptyList(),
         disagreementThreshold: Double = DefaultDisagreementThreshold,
     ): EndgameScoreSelection {
         val localLead = localScore.whiteScoreLead()
+        val prePassLead = prePassCandidates.bestScoredPlayableLead()
+        val prePassScore = prePassLead?.toUnsettledFinalScore(
+            localScore = localScore,
+            statusMessage = "Pre-pass Top Moves estimate complete.",
+            summaryPrefix = "KataGo pre-pass Top Moves estimate",
+        )
         val engineLead = engineEstimate?.whiteScoreLead
-        val engineScore = engineEstimate?.toUnsettledFinalScore(localScore)
+        val engineScore = engineLead?.toUnsettledFinalScore(
+            localScore = localScore,
+            statusMessage = "KataGo NN endgame estimate complete.",
+            summaryPrefix = "KataGo NN estimate after pass/pass",
+        )
 
         return if (
+            localLead != null &&
+            prePassLead != null &&
+            prePassScore != null &&
+            prePassCandidates.hasScoredPassCandidate() &&
+            abs(prePassLead - localLead) >= disagreementThreshold
+        ) {
+            EndgameScoreSelection(
+                displayScore = prePassScore,
+                source = EndgameScoreSource.UnsettledPrePassTopMoveEstimate,
+            )
+        } else if (
             cleanup.removedCount == 0 &&
             localLead != null &&
             engineLead != null &&
@@ -43,8 +66,30 @@ object EndgameScoreSelector {
         }
     }
 
-    private fun ScoreEstimate.toUnsettledFinalScore(localScore: FinalScoreResult): FinalScoreResult? {
-        val lead = whiteScoreLead ?: return null
+    private fun List<CandidateMove>.bestScoredPlayableLead(): Double? =
+        firstOrNull { candidate ->
+            candidate.scoreLead != null && candidate.move is Move.Play
+        }?.whitePerspectiveScoreLead()
+
+    private fun List<CandidateMove>.hasScoredPassCandidate(): Boolean =
+        any { candidate ->
+            candidate.scoreLead != null && candidate.move is Move.Pass
+        }
+
+    private fun CandidateMove.whitePerspectiveScoreLead(): Double? {
+        val lead = scoreLead ?: return null
+        return when (move.player) {
+            StoneColor.Black -> -lead
+            StoneColor.White -> lead
+        }
+    }
+
+    private fun Double.toUnsettledFinalScore(
+        localScore: FinalScoreResult,
+        statusMessage: String,
+        summaryPrefix: String,
+    ): FinalScoreResult {
+        val lead = this
         val winner = if (lead >= 0.0) StoneColor.White else StoneColor.Black
         val margin = abs(lead)
         val prefix = when (winner) {
@@ -53,11 +98,11 @@ object EndgameScoreSelector {
         }
 
         return FinalScoreResult(
-            status = EngineStatus.ready("KataGo NN endgame estimate complete."),
+            status = EngineStatus.ready(statusMessage),
             rawScore = "$prefix+${margin.formatOneDecimal()}?",
             winner = winner,
             margin = margin,
-            summary = "KataGo NN estimate after pass/pass. Local area final on the current board is ${localScore.rawScore}; the position may still require cleanup or playout.",
+            summary = "$summaryPrefix. Local area final on the current board is ${localScore.rawScore}; the position may still require cleanup or playout.",
         )
     }
 

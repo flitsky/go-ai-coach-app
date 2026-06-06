@@ -34,19 +34,14 @@ internal object KataGoAnalysisParser {
 
     fun attachPointLoss(
         candidates: List<CandidateMove>,
-        player: StoneColor,
     ): List<CandidateMove> {
         val topScoreLead = candidates.firstOrNull { it.scoreLead != null }?.scoreLead
             ?: return candidates
-        val playerSign = when (player) {
-            StoneColor.Black -> -1.0
-            StoneColor.White -> 1.0
-        }
 
         return candidates.map { candidate ->
             val scoreLead = candidate.scoreLead ?: return@map candidate
-            val rawPointLoss = playerSign * (topScoreLead - scoreLead)
-            val pointLoss = if (abs(rawPointLoss) < 0.000001) {
+            val rawPointLoss = topScoreLead - scoreLead
+            val pointLoss = if (kotlin.math.abs(rawPointLoss) < 0.000001) {
                 0.0
             } else {
                 rawPointLoss.coerceAtLeast(0.0)

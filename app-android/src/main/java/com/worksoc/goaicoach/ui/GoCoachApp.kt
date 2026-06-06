@@ -543,6 +543,11 @@ private fun GoCoachScreen(
                                 engineAdapter = engineAdapter,
                                 originalState = outcome.gameState,
                                 estimateLimit = scoreGraphAnalysisLimit(engineProfile),
+                                prePassCandidates = if (move is Move.Pass) {
+                                    previousReviewCandidates
+                                } else {
+                                    emptyList()
+                                },
                             )
                         }
                     }.onSuccess { endgame ->
@@ -941,6 +946,7 @@ private data class AiEndgameResolution(
     val engineScoreEstimateError: String?,
     val engineFinalScore: FinalScoreResult?,
     val engineFinalScoreError: String?,
+    val prePassCandidates: List<CandidateMove>,
 ) {
     fun toEngineMessage(): String =
         buildString {
@@ -952,6 +958,9 @@ private data class AiEndgameResolution(
             append(finalScore.status.message)
             if (scoreSource == EndgameScoreSource.UnsettledEngineEstimate) {
                 append("\nShowing uncertain KataGo estimate because local area final disagrees with engine evaluation.")
+            }
+            if (scoreSource == EndgameScoreSource.UnsettledPrePassTopMoveEstimate) {
+                append("\nShowing uncertain pre-pass Top Moves estimate because pass/pass final disagrees with the best pre-pass continuation.")
             }
             engineFinalScore?.let { append("\nDiagnostic KataGo final_score: ${it.rawScore}") }
             deadStonesError?.let { append("\nDead-stone status failed: $it") }
@@ -966,6 +975,9 @@ private data class AiEndgameResolution(
 
             scoreSource == EndgameScoreSource.UnsettledEngineEstimate ->
                 "Game ended after pass/pass, but the board looks unsettled. Showing KataGo estimate instead of raw local area."
+
+            scoreSource == EndgameScoreSource.UnsettledPrePassTopMoveEstimate ->
+                "Game ended after pass/pass, but pre-pass Top Moves indicated a better cleanup/continuation. Showing uncertain pre-pass estimate."
 
             else ->
                 "Game ended after pass/pass. KataGo did not mark dead stones for removal."
@@ -982,6 +994,7 @@ private data class AiEndgameResolution(
             appendLine("removedStones=${cleanup.removedStones.toLogText(originalState.boardSize)}")
             appendLine("displayScoreSource=$scoreSource")
             appendLine("localAreaAfterCleanup=${localFinalScore.rawScore}")
+            appendLine("prePassTopMoves=${prePassCandidates.take(8).toCandidateLogText(originalState.boardSize)}")
             appendLine("engineEstimateWhiteLead=${engineScoreEstimate?.whiteScoreLead ?: "none"}")
             appendLine("engineEstimateWhiteWinRate=${engineScoreEstimate?.whiteWinRate ?: "none"}")
             appendLine("engineEstimateError=${engineScoreEstimateError ?: "none"}")
@@ -994,6 +1007,7 @@ private suspend fun resolveAiEndgame(
     engineAdapter: EngineAdapter,
     originalState: GameState,
     estimateLimit: AnalysisLimit,
+    prePassCandidates: List<CandidateMove> = emptyList(),
 ): AiEndgameResolution {
     var deadStonesResult: DeadStonesResult? = null
     var deadStonesError: String? = null
@@ -1017,6 +1031,7 @@ private suspend fun resolveAiEndgame(
         cleanup = cleanup,
         localScore = localFinalScore,
         engineEstimate = engineScoreEstimate,
+        prePassCandidates = prePassCandidates,
     )
 
     var engineFinalScore: FinalScoreResult? = null
@@ -1037,6 +1052,7 @@ private suspend fun resolveAiEndgame(
         engineScoreEstimateError = engineScoreEstimateError,
         engineFinalScore = engineFinalScore,
         engineFinalScoreError = engineFinalScoreError,
+        prePassCandidates = prePassCandidates,
     )
 }
 
@@ -1174,6 +1190,20 @@ private fun List<BoardCoordinate>.toCoordinateLogText(boardSize: BoardSize): Str
         "none"
     } else {
         distinct().joinToString { it.label(boardSize) }
+    }
+
+private fun List<CandidateMove>.toCandidateLogText(boardSize: BoardSize): String =
+    if (isEmpty()) {
+        "none"
+    } else {
+        joinToString(separator = " | ") { candidate ->
+            buildString {
+                append(candidate.move.describe(boardSize))
+                candidate.scoreLead?.let { append(" scoreLead=$it") }
+                candidate.pointLoss?.let { append(" pointLoss=$it") }
+                candidate.winRate?.let { append(" winRate=$it") }
+            }
+        }
     }
 
 private fun GameState.toBoardText(): String =

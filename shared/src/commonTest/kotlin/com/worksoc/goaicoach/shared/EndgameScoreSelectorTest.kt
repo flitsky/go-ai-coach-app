@@ -69,4 +69,52 @@ class EndgameScoreSelectorTest {
         assertEquals(EndgameScoreSource.CleanedLocalArea, selection.source)
         assertEquals(localScore, selection.displayScore)
     }
+
+    @Test
+    fun selectsUnsettledPrePassTopMoveEstimateWhenPassFinalConflictsWithBestContinuation() {
+        val localScore = FinalScoreResult(
+            status = EngineStatus.ready("Local score"),
+            rawScore = "W+4.5",
+            winner = StoneColor.White,
+            margin = 4.5,
+            blackArea = 38.0,
+            whiteAreaWithKomi = 42.5,
+            komi = 6.5,
+            summary = "Local area",
+        )
+        val cleanup = DeadStoneCleanupResult(
+            state = GameState.empty(),
+            removedStones = listOf(
+                DeadStoneRemoval(
+                    coordinate = BoardCoordinate.fromLabel("B1", BoardSize.Nine),
+                    color = StoneColor.White,
+                ),
+            ),
+        )
+        val prePassCandidates = listOf(
+            CandidateMove(
+                move = Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("J5", BoardSize.Nine)),
+                scoreLead = 6.9,
+            ),
+            CandidateMove(
+                move = Move.Pass(StoneColor.Black),
+                scoreLead = -4.1,
+            ),
+        )
+
+        val selection = EndgameScoreSelector.selectDisplayScore(
+            cleanup = cleanup,
+            localScore = localScore,
+            engineEstimate = ScoreEstimate(
+                status = EngineStatus.ready("Estimate"),
+                whiteScoreLead = 3.0,
+                summary = "Post-pass estimate",
+            ),
+            prePassCandidates = prePassCandidates,
+        )
+
+        assertEquals(EndgameScoreSource.UnsettledPrePassTopMoveEstimate, selection.source)
+        assertEquals(StoneColor.Black, selection.displayScore.winner)
+        assertEquals("B+6.9?", selection.displayScore.rawScore)
+    }
 }

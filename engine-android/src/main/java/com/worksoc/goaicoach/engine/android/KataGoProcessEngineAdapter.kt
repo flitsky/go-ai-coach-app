@@ -117,7 +117,6 @@ class KataGoProcessEngineAdapter(
                     boardSize = boardSize,
                     maxCandidates = limit.candidateCount,
                 ),
-                player = nextPlayer,
             ).fillFromPolicyIfNeeded(limit)
         } finally {
             applySearchLimit(profile.analysisLimit)

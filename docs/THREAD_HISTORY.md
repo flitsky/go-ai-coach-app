@@ -277,3 +277,12 @@
 - 검증으로 `EndgameRegressionTest` 단독 실행과 전체 Gradle 명령 `:shared:check :engine-android:testDebugUnitTest :app-android:assembleDebug :app-android:testDebugUnitTest`가 통과했다.
 - 사용자가 테스트 케이스 통과와 에뮬레이터 반영 여부를 확인했다. 답변 기준으로 코어 테스트는 통과했지만 직전 턴에서 에뮬레이터 재설치는 하지 않았음을 확인했다.
 - 최신 커밋 `91c86ce` 상태에서 `make reinstall-dev-engine`를 실행해 에뮬레이터 `emulator-5554`에 앱을 재설치하고 KataGo 모델/config seed 및 cold launch를 완료했다. 앱 launch `TotalTime=583ms`였다.
+- 사용자가 새 debug report를 제공하며, 흑이 승리하는 상황처럼 보이지만 사석을 실제로 따내기 전 pass하면 백 승리로 평가되고, 흑이 한 수 더 둬 사석을 따낸 뒤 pass하면 흑 승리로 평가되는 케이스를 보고했다.
+- 첨부 로그 `/Users/ryan9kim/.codex/attachments/9e97d1b9-2ada-44f5-bb2b-a9d91ab4574e/pasted-text.txt`를 확인했다. 로그 시점은 `gameEnded=false`, `nextPlayer=Black`, 마지막 수 `White pass`였고, Top Moves는 `Black J5/G7/J7/G2` 등을 `WR=100%`, 흑 우세 약 6.8~7.0집으로 제시했다. 반면 `Black pass`는 `WR=11%`, 백 우세 약 4.1집으로 표시되어 pass 자체가 큰 손해 수임을 확인했다.
+- 같은 수순을 로컬 KataGo GTP로 재생하고 `Black pass`를 추가했다. KataGo 1.16.4는 `final_status_list dead` 빈 목록, `final_score W+4.5`, `kata-raw-nn 0 whiteLead 3.046`을 반환했다. 즉 pass 이후에는 엔진도 백 우세 final에 가까운 상태로 본다.
+- `EndgameScoreSelector`에 `UnsettledPrePassTopMoveEstimate` 출처를 추가했다. 사용자가 pass로 양패스를 만들기 직전의 Top Moves 후보와 로컬 final의 White lead가 10집 이상 충돌하면, `B+6.9?`처럼 `?`가 붙은 pre-pass Top Moves 추정 점수를 표시한다.
+- Android 종료 처리에서 pass 직전 `reviewCandidateMoves`를 `resolveAiEndgame()`에 전달하고, Copy Log endgame detail에 `prePassTopMoves`를 남기도록 했다.
+- `KataGoAnalysisParser.attachPointLoss()`도 수정했다. `kata-search_analyze` 후보별 `scoreLead`는 현재 착수자 관점이므로, 색상과 무관하게 최선 후보 `scoreLead - 후보 scoreLead`로 손실을 계산해야 한다. 기존 부호 처리 때문에 흑의 나쁜 pass가 `loss=0.0`으로 표시될 수 있었다.
+- `docs/error-cases/pass-before-cleanup-top-move-flip.md`를 추가하고, `docs/SCORE_AND_ENDGAME_DECISION.md`에 pre-pass Top Moves 기반 불확정 계가 정책을 반영했다.
+- 회귀 테스트로 `EndgameRegressionTest`와 `EndgameScoreSelectorTest`에 이번 pass-before-cleanup 케이스를 추가했고, `KataGoAnalysisParserTest`에 흑 pass 손실 계산 케이스를 추가했다.
+- 검증으로 JDK 17과 Android SDK를 명시해 `:shared:testDebugUnitTest --tests EndgameScoreSelectorTest --tests EndgameRegressionTest`, `:engine-android:testDebugUnitTest --tests KataGoAnalysisParserTest`가 통과했다. 직접 Gradle 실행 시 기본 Java가 25라 Kotlin DSL이 실패하므로, 검증 명령에는 `JAVA_HOME=$(/usr/libexec/java_home -v 17)` 지정이 필요함을 확인했다.

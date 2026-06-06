@@ -10,7 +10,7 @@
 - 수순별 형세 추이는 `shared`의 `ScoreTimeline`에 `ScoreSnapshot`으로 기록한다.
 - 양쪽이 연속으로 `pass`하면 `EngineAdapter.deadStones()`로 엔진이 판단한 사석을 먼저 받아 앱 `GameState`에서 제거한다.
 - 화면 최종 계가는 사석 정리 후 `shared`의 로컬 중국식 area scoring으로 계산한다.
-- 단, 엔진 dead list가 비어 있고 로컬 area final과 KataGo NN 형세 추정이 크게 충돌하면, KaTrain처럼 `?`가 붙은 불확정 엔진 추정 점수를 우선 표시한다.
+- 단, 엔진 dead list가 비어 있거나 사석 정리가 불완전해 로컬 area final과 엔진/Top Moves 형세 추정이 크게 충돌하면, KaTrain처럼 `?`가 붙은 불확정 추정 점수를 우선 표시한다.
 - `EngineAdapter.scoreFinal()`의 원문 결과는 진단 로그에 함께 남긴다.
 - 엔진이 없는 `2P 테스트` 모드는 `shared`의 로컬 area scoring projection을 사용한다.
 
@@ -29,7 +29,7 @@ KataGo GTP에서 확인한 관련 명령은 다음이다.
   - KataGo 1.16.4 GTP 기준 인자는 `alive`, `seki`, `dead`만 허용된다.
   - `black_territory`, `white_territory` 같은 territory list 인자는 현재 GTP에서는 거부된다.
 
-따라서 중간 형세는 `kata-raw-nn 0` 기반의 빠른 지표로 표시하고, 양패스 후에는 `final_status_list dead`로 사석을 정리한 앱 상태를 기준으로 최종 계가를 표시한다. 다만 실제 첨부 로그처럼 `final_status_list dead`가 빈 목록인데 NN score lead가 로컬 area final과 크게 충돌하는 경우가 있다. 이때는 판이 아직 정리되지 않은 상태로 보고 `B+28.5?` 같은 불확정 엔진 추정 점수를 표시한다. `final_score`는 앱 표시 결과와 비교하기 위한 진단값으로 유지한다.
+따라서 중간 형세는 `kata-raw-nn 0` 기반의 빠른 지표로 표시하고, 양패스 후에는 `final_status_list dead`로 사석을 정리한 앱 상태를 기준으로 최종 계가를 표시한다. 다만 실제 첨부 로그처럼 `final_status_list dead`가 빈 목록인데 NN score lead가 로컬 area final과 크게 충돌하거나, pass 직전 Top Moves 최선 continuation과 pass 이후 final이 크게 충돌하는 경우가 있다. 이때는 판이 아직 정리되지 않은 상태로 보고 `B+28.5?`, `B+6.9?` 같은 불확정 추정 점수를 표시한다. `final_score`는 앱 표시 결과와 비교하기 위한 진단값으로 유지한다.
 
 ## KaTrain 참고 결과
 
@@ -85,6 +85,7 @@ Android UI는 `ScoreSnapshot` 목록을 받아 그래프를 그리기만 한다.
   - 제거된 상대 돌은 포획 수에도 반영한다.
   - 화면 최종 점수는 정리된 `GameState`를 `BoardAreaScorer`로 계산한 결과를 표시한다.
   - 사석 제거가 없고 로컬 area final과 엔진 NN estimate의 White lead 차이가 10집 이상이면 `EndgameScoreSelector`가 불확정 엔진 추정 점수를 선택한다.
+  - 사용자가 pass로 양패스를 만들기 직전 Top Moves 후보가 있고, 최선 continuation과 로컬 final의 White lead 차이가 10집 이상이면 `EndgameScoreSelector`가 불확정 pre-pass Top Moves 추정 점수를 선택한다.
   - KataGo `final_score` 원문은 endgame debug log에 `diagnosticKataGoFinalScore`로 남긴다.
 - 2P 테스트 모드
   - 로컬 `BoardAreaScorer`로 중국식 area estimate를 계산한다.
@@ -103,7 +104,8 @@ Android UI는 `ScoreSnapshot` 목록을 받아 그래프를 그리기만 한다.
   - 마지막 종료 처리 로그와 화면에 표시된 engine/score/candidate/move review 텍스트
   - 클릭 시점의 로컬 `BoardAreaScorer` 재계산 결과
 - AI 모드의 엔진 `final_score` 결과와 로컬 area score를 함께 비교할 수 있게 하기 위한 진단용 기능이다.
-- AI 모드 양패스 종료 후에는 정리 전/후 stone count, 제거된 사석 좌표, 표시 점수 출처, 로컬 area score, 엔진 estimate, KataGo 원문 final score가 함께 기록된다.
+  - AI 모드 양패스 종료 후에는 정리 전/후 stone count, 제거된 사석 좌표, 표시 점수 출처, 로컬 area score, 엔진 estimate, KataGo 원문 final score가 함께 기록된다.
+  - pass 직전 Top Moves 후보가 계가 선택에 영향을 준 경우를 추적하기 위해 `prePassTopMoves`도 함께 기록한다.
 
 ## 현재 한계
 
@@ -117,3 +119,6 @@ Android UI는 `ScoreSnapshot` 목록을 받아 그래프를 그리기만 한다.
 - `docs/error-cases/pass-pass-dead-stones-g2-h2.md`
   - 사용자 debug report에서 우하단 `G2`, `H2` 백 2점이 사석인데, 실제로 따내고 종료한 경우와 사석인 채로 pass 종료한 경우의 평가가 달라지는 문제를 기록했다.
   - 해당 케이스는 `EndgameRegressionTest`로 고정했다.
+- `docs/error-cases/pass-before-cleanup-top-move-flip.md`
+  - 사용자 debug report에서 pass 직전 Top Moves는 흑의 정리/continuation을 강하게 추천하지만, 흑이 바로 pass하면 raw final이 백 승리로 뒤집히는 문제를 기록했다.
+  - 해당 케이스는 `EndgameRegressionTest`와 `EndgameScoreSelectorTest`로 고정했다.
