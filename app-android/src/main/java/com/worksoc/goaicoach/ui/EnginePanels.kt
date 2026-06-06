@@ -85,6 +85,51 @@ internal fun ModePanel(
 }
 
 @Composable
+internal fun GameMenuActionsPanel(
+    mode: MatchMode,
+    canStartNew: Boolean,
+    onNewGame: () -> Unit,
+    onCopyLog: () -> Unit,
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(8.dp),
+        tonalElevation = 1.dp,
+        shadowElevation = 0.dp,
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text("Game", fontWeight = FontWeight.SemiBold)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                OutlinedButton(
+                    onClick = onNewGame,
+                    enabled = canStartNew,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text("New")
+                }
+                OutlinedButton(
+                    onClick = onCopyLog,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text("Copy Log")
+                }
+            }
+            Text(
+                text = "Current mode: ${mode.label}",
+                color = MaterialTheme.colorScheme.secondary,
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+    }
+}
+
+@Composable
 internal fun EngineTuningPanel(
     profile: EngineProfile,
     enabled: Boolean,

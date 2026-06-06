@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -72,55 +71,6 @@ internal fun KaTrainUxMenuPanel(
 }
 
 @Composable
-internal fun KaTrainUxQuickOptionsPanel(
-    options: KaTrainUxOptions,
-    onOptionsChange: (KaTrainUxOptions) -> Unit,
-) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
-        tonalElevation = 1.dp,
-        shadowElevation = 0.dp,
-    ) {
-        Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Text("Quick display", fontWeight = FontWeight.SemiBold)
-            QuickOptionRow {
-                OptionSwitchTile(
-                    label = "Score graph",
-                    checked = options.showScoreGraph,
-                    onCheckedChange = {
-                        onOptionsChange(options.copy(showScoreGraph = it))
-                    },
-                    modifier = Modifier.weight(1f),
-                )
-                OptionSwitchTile(
-                    label = "Game strip",
-                    checked = options.showGameStatusStrip,
-                    onCheckedChange = {
-                        onOptionsChange(options.copy(showGameStatusStrip = it))
-                    },
-                    modifier = Modifier.weight(1f),
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun QuickOptionRow(
-    content: @Composable RowScope.() -> Unit,
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        content = content,
-    )
-}
-
-@Composable
 private fun OptionSwitchRow(
     label: String,
     checked: Boolean,
@@ -132,27 +82,6 @@ private fun OptionSwitchRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(label, style = MaterialTheme.typography.bodyMedium)
-        Switch(checked = checked, onCheckedChange = onCheckedChange)
-    }
-}
-
-@Composable
-private fun OptionSwitchTile(
-    label: String,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier.padding(vertical = 2.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            label,
-            modifier = Modifier.weight(1f),
-            style = MaterialTheme.typography.bodyMedium,
-        )
         Switch(checked = checked, onCheckedChange = onCheckedChange)
     }
 }

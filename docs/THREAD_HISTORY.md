@@ -258,3 +258,12 @@
 - endgame log에는 `displayScoreSource`, `localAreaAfterCleanup`, `engineEstimateWhiteLead`, `engineEstimateWhiteWinRate`, `diagnosticKataGoFinalScore`를 함께 남겨 이후 오류 보고에서 원인을 분리할 수 있게 했다.
 - 검증으로 `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :shared:check :engine-android:testDebugUnitTest :app-android:assembleDebug :app-android:testDebugUnitTest`가 통과했다.
 - 에뮬레이터 `emulator-5554`에 `make reinstall-dev-engine`로 최신 debug 앱을 재설치하고 KataGo 모델/config seed 및 cold launch를 확인했다. 전체 명령은 약 4.8초, 앱 launch `TotalTime=606ms`였다.
+- 사용자가 한 화면에 더 효율적으로 UX를 배치하기 위해 `Mode`, `New`, `Copy Log`를 메뉴 하위로 옮기고, 보드 아래 버튼을 4개 한 줄로 늘리며, `Quick display`를 제거하고 Score/Win Rate 통합 접힘 패널로 바꿔달라고 요청했다.
+- `KaTrainUxOptions`에서 `showScoreGraph`, `showGameStatusStrip` 토글을 제거하고, `KaTrainUxQuickOptionsPanel`을 삭제했다.
+- 메뉴 확장 영역에 `ModePanel`과 `GameMenuActionsPanel`을 배치했다. `New`와 `Copy Log`는 이제 플레이 화면 본문이 아니라 메뉴 하위 `Game` 섹션에서 실행한다.
+- 보드 아래 대국 액션 버튼은 `Pass`, `Undo`, `Top Moves`, `Eval` 4개가 한 줄에 표시되도록 정리했다.
+- `ScoreGraphPanel`은 항상 보이되 기본 접힘 상태다. 접힌 상태에서는 `Score` 초록점, `Win Rate` 파란점, 최신 score/win-rate headline만 보이고, 터치하면 그래프와 `Captures B / W` 하단 텍스트가 펼쳐진다.
+- `docs/USER_OPTION_MANUAL.md`에 메뉴 하위 Mode/Game 구성, 접히는 Score/Win Rate 패널, 4개 대국 액션 버튼 구조를 반영했다.
+- 검증으로 전체 Gradle 명령 `:shared:check :engine-android:testDebugUnitTest :app-android:assembleDebug :app-android:testDebugUnitTest`가 통과했다.
+- 에뮬레이터에 `make reinstall-dev-engine`로 재설치했고, UI dump에서 `Score`, `Win Rate`, `Pass`, `Undo`, `Top Moves`, `Eval`이 첫 화면에 보이며 `Quick display`/`Game strip`은 사라진 것을 확인했다.
+- Score/Win Rate 패널 터치 후 `Captures B 0 / W 0`가 펼쳐지는 것을 확인했고, 메뉴를 열어 `Mode`, `AI`, `2P`, `Game`, `New`, `Copy Log`, `Display menu`, `Engine`이 메뉴 하위에 있는 것을 확인했다.

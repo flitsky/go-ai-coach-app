@@ -6,6 +6,7 @@ import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -124,6 +125,7 @@ private fun GoCoachScreen(
     var topMovesEnabled by remember { mutableStateOf(false) }
     var uxOptions by remember { mutableStateOf(KaTrainUxOptions()) }
     var isDisplayMenuExpanded by remember { mutableStateOf(false) }
+    var isScoreGraphExpanded by remember { mutableStateOf(false) }
     var lastAnalysisKey by remember { mutableStateOf<String?>(null) }
     var isGameEnded by remember { mutableStateOf(false) }
     var endgameLog by remember { mutableStateOf("No endgame result recorded.") }
@@ -743,22 +745,29 @@ private fun GoCoachScreen(
             )
         }
 
-        ModePanel(
-            mode = matchMode,
-            engineName = engineName,
-            engineDiagnostic = engineDiagnostic,
-            canStartAi = isEngineReady && !isEngineBusy,
-            canStartLocal = !isEngineBusy || !isEngineReady,
-            onAiMode = ::startAiGame,
-            onLocalTwoPlayerMode = ::startLocalTwoPlayerGame,
-        )
-
-        KaTrainUxQuickOptionsPanel(
-            options = uxOptions,
-            onOptionsChange = { nextOptions -> uxOptions = nextOptions },
-        )
-
         if (isDisplayMenuExpanded) {
+            ModePanel(
+                mode = matchMode,
+                engineName = engineName,
+                engineDiagnostic = engineDiagnostic,
+                canStartAi = isEngineReady && !isEngineBusy,
+                canStartLocal = !isEngineBusy || !isEngineReady,
+                onAiMode = ::startAiGame,
+                onLocalTwoPlayerMode = ::startLocalTwoPlayerGame,
+            )
+
+            GameMenuActionsPanel(
+                mode = matchMode,
+                canStartNew = matchMode == MatchMode.LocalTwoPlayer || (isEngineReady && !isEngineBusy),
+                onNewGame = {
+                    when (matchMode) {
+                        MatchMode.HumanVsAi -> startAiGame()
+                        MatchMode.LocalTwoPlayer -> startLocalTwoPlayerGame()
+                    }
+                },
+                onCopyLog = ::copyDebugReport,
+            )
+
             KaTrainUxMenuPanel(
                 options = uxOptions,
                 onOptionsChange = { nextOptions -> uxOptions = nextOptions },
@@ -785,16 +794,6 @@ private fun GoCoachScreen(
             )
         }
 
-        if (uxOptions.showGameStatusStrip) {
-            GameStatusStrip(
-                nextPlayer = gameState.nextPlayer,
-                moveCount = gameState.moves.size,
-                capturedByBlack = gameState.capturedBy(StoneColor.Black),
-                capturedByWhite = gameState.capturedBy(StoneColor.White),
-                lastMoveText = lastMoveText,
-            )
-        }
-
         if (uxOptions.showEngineStatusBadge) {
             EngineStatusBadge(
                 engineName = engineName,
@@ -804,9 +803,13 @@ private fun GoCoachScreen(
             )
         }
 
-        if (uxOptions.showScoreGraph) {
-            ScoreGraphPanel(scoreSnapshots)
-        }
+        ScoreGraphPanel(
+            snapshots = scoreSnapshots,
+            capturedByBlack = gameState.capturedBy(StoneColor.Black),
+            capturedByWhite = gameState.capturedBy(StoneColor.White),
+            isExpanded = isScoreGraphExpanded,
+            onExpandedChange = { expanded -> isScoreGraphExpanded = expanded },
+        )
 
         GoBoard(
             gameState = gameState,
@@ -833,8 +836,9 @@ private fun GoCoachScreen(
                 },
                 enabled = !isGameEnded && boardInputEnabled(matchMode, isEngineReady, isEngineBusy, gameState.nextPlayer),
                 modifier = Modifier.weight(1f),
+                contentPadding = ActionButtonContentPadding,
             ) {
-                Text("Pass")
+                ActionButtonText("Pass")
             }
 
             OutlinedButton(
@@ -844,8 +848,9 @@ private fun GoCoachScreen(
                     MatchMode.LocalTwoPlayer -> !isEngineBusy && gameState.moves.isNotEmpty()
                 },
                 modifier = Modifier.weight(1f),
+                contentPadding = ActionButtonContentPadding,
             ) {
-                Text("Undo")
+                ActionButtonText("Undo")
             }
 
             val topMovesButtonEnabled = !isGameEnded &&
@@ -857,24 +862,21 @@ private fun GoCoachScreen(
                     onClick = ::hideTopMoves,
                     enabled = topMovesButtonEnabled,
                     modifier = Modifier.weight(1f),
+                    contentPadding = ActionButtonContentPadding,
                 ) {
-                    Text("Top Moves")
+                    ActionButtonText("Top Moves")
                 }
             } else {
                 OutlinedButton(
                     onClick = ::showTopMovesForCurrentState,
                     enabled = topMovesButtonEnabled,
                     modifier = Modifier.weight(1f),
+                    contentPadding = ActionButtonContentPadding,
                 ) {
-                    Text("Top Moves")
+                    ActionButtonText("Top Moves")
                 }
             }
-        }
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
             OutlinedButton(
                 onClick = ::requestScoreEstimate,
                 enabled = when (matchMode) {
@@ -882,28 +884,9 @@ private fun GoCoachScreen(
                     MatchMode.LocalTwoPlayer -> !isEngineBusy
                 },
                 modifier = Modifier.weight(1f),
+                contentPadding = ActionButtonContentPadding,
             ) {
-                Text("Eval")
-            }
-
-            OutlinedButton(
-                onClick = {
-                    when (matchMode) {
-                        MatchMode.HumanVsAi -> startAiGame()
-                        MatchMode.LocalTwoPlayer -> startLocalTwoPlayerGame()
-                    }
-                },
-                enabled = matchMode == MatchMode.LocalTwoPlayer || (isEngineReady && !isEngineBusy),
-                modifier = Modifier.weight(1f),
-            ) {
-                Text("New")
-            }
-
-            OutlinedButton(
-                onClick = ::copyDebugReport,
-                modifier = Modifier.weight(1f),
-            ) {
-                Text("Copy Log")
+                ActionButtonText("Eval")
             }
         }
 
@@ -922,6 +905,18 @@ private fun GoCoachScreen(
         )
     }
 }
+
+@Composable
+private fun ActionButtonText(label: String) {
+    Text(
+        text = label,
+        maxLines = 1,
+        softWrap = false,
+        style = MaterialTheme.typography.labelSmall,
+    )
+}
+
+private val ActionButtonContentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp)
 
 private data class EngineStartupResult(
     val message: String,

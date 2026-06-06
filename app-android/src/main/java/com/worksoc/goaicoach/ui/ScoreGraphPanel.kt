@@ -4,6 +4,7 @@ import android.graphics.Paint
 import android.graphics.Typeface
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,11 +37,17 @@ import kotlin.math.roundToInt
 @Composable
 internal fun ScoreGraphPanel(
     snapshots: List<ScoreSnapshot>,
+    capturedByBlack: Int,
+    capturedByWhite: Int,
+    isExpanded: Boolean,
+    onExpandedChange: (Boolean) -> Unit,
 ) {
     val graphSnapshots = snapshots.filter { it.hasScoreData }
     val latest = graphSnapshots.lastOrNull()
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onExpandedChange(!isExpanded) },
         shape = RoundedCornerShape(8.dp),
         tonalElevation = 1.dp,
         shadowElevation = 0.dp,
@@ -54,35 +61,36 @@ internal fun ScoreGraphPanel(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("Score graph", fontWeight = FontWeight.SemiBold)
+                Row(
+                    modifier = Modifier.weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    GraphLegendDot(ScoreLineColor, "Score")
+                    GraphLegendDot(WinRateLineColor, "Win Rate")
+                }
                 Text(
-                    text = latest?.toHeadline() ?: "No estimates yet",
+                    text = latest?.toHeadline() ?: "M? waiting",
                     color = MaterialTheme.colorScheme.secondary,
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
 
-            if (graphSnapshots.isEmpty()) {
-                Text(
-                    text = "Score snapshots will appear after the first estimate.",
-                    color = MaterialTheme.colorScheme.secondary,
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            } else {
-                ScoreGraphCanvas(graphSnapshots)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    GraphLegendDot(ScoreLineColor, "score lead")
-                    GraphLegendDot(WinRateLineColor, "win rate")
+            if (isExpanded) {
+                if (graphSnapshots.isEmpty()) {
                     Text(
-                        text = "top favors Black, center is even",
+                        text = "Score snapshots will appear after the first estimate.",
                         color = MaterialTheme.colorScheme.secondary,
                         style = MaterialTheme.typography.bodySmall,
                     )
+                } else {
+                    ScoreGraphCanvas(graphSnapshots)
                 }
+                Text(
+                    text = "Captures B $capturedByBlack / W $capturedByWhite",
+                    color = MaterialTheme.colorScheme.secondary,
+                    style = MaterialTheme.typography.bodySmall,
+                )
             }
         }
     }
