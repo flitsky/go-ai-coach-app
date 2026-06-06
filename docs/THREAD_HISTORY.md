@@ -245,3 +245,16 @@
 - 사용자가 화면 아래쪽 `KataGo analysis` 상세 텍스트 때문에 전체 대국 화면이 길어지지 않도록, 해당 영역을 약 10줄만 보이는 스크롤 박스로 바꿔달라고 요청했다.
 - `EngineResponsePanel`의 긴 `candidateText` 영역을 최대 `180dp` 높이의 내부 스크롤 박스로 감싸고, 상태 요약/점수/착수 평가는 기존처럼 바로 보이게 유지했다.
 - `docs/USER_OPTION_MANUAL.md`에 Top Moves 상세 텍스트가 하단 약 10줄 스크롤 박스와 `Copy Log`로 확인된다는 설명을 반영했다.
+- 사용자가 흑 완승처럼 보이는 상태에서도 사석을 정리하지 않고 양쪽 pass를 하면 흑 점수가 급락하거나 패배 처리되는 오류를 보고했다.
+- 첨부 로그를 확인한 결과 pass 직전 분석상 Black이 크게 앞서는 후보들이 남아 있었고, 미정리 사석/미완료 끝내기 상태에서 바로 종료 점수를 보는 문제가 재현 가능한 흐름으로 판단했다.
+- 공식 KaTrain 소스를 확인했다. KaTrain은 포획 규칙과 prisoners를 자체 상태에서 관리하고, 양패스 종료 표시에서는 단순 `final_score`만 쓰지 않고 분석 ownership 기반 `manual_score`를 병행한다.
+- `EngineAdapter`에 `deadStones()`를 추가하고, KataGo local process 어댑터가 GTP `final_status_list dead`를 호출해 죽은 돌 좌표를 반환하도록 했다. Stub 엔진은 빈 목록을 반환한다.
+- `shared`에 `DeadStoneCleaner`를 추가했다. 엔진이 죽은 돌로 표시한 좌표를 앱 `GameState`에서 제거하고, 제거된 상대 돌을 포획 수에도 반영한다.
+- AI 대국 양패스 종료 시에는 `deadStones()` -> `DeadStoneCleaner` -> 정리된 보드의 `BoardAreaScorer` 순서로 최종 표시 점수를 계산하도록 변경했다. KataGo `final_score` 원문은 `diagnosticKataGoFinalScore`로 endgame log에 남긴다.
+- `Copy Log` endgame detail에는 정리 전/후 stone count, 제거된 사석 좌표, 표시 점수 출처, KataGo 원문 final score를 함께 기록한다.
+- `docs/SCORE_AND_ENDGAME_DECISION.md`와 `docs/USER_OPTION_MANUAL.md`에 AI 모드 양패스 사석 정리 정책과 2P 모드 제한사항을 반영했다.
+- 첨부 로그 수순을 로컬 KataGo GTP로 재생했다. Black이 추가 pass해도 `final_status_list dead`는 빈 목록이고 `final_score`는 `W+3.5`를 반환했지만, 같은 상태의 `kata-raw-nn 0`은 `whiteLead=-28.527`로 Black 대우세를 가리켰다.
+- 이에 따라 `shared`에 `EndgameScoreSelector`를 추가했다. 사석 제거가 없고 로컬 area final과 엔진 NN estimate가 10집 이상 충돌하면 `B+28.5?` 같은 불확정 엔진 추정 점수를 표시한다.
+- endgame log에는 `displayScoreSource`, `localAreaAfterCleanup`, `engineEstimateWhiteLead`, `engineEstimateWhiteWinRate`, `diagnosticKataGoFinalScore`를 함께 남겨 이후 오류 보고에서 원인을 분리할 수 있게 했다.
+- 검증으로 `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :shared:check :engine-android:testDebugUnitTest :app-android:assembleDebug :app-android:testDebugUnitTest`가 통과했다.
+- 에뮬레이터 `emulator-5554`에 `make reinstall-dev-engine`로 최신 debug 앱을 재설치하고 KataGo 모델/config seed 및 cold launch를 확인했다. 전체 명령은 약 4.8초, 앱 launch `TotalTime=606ms`였다.

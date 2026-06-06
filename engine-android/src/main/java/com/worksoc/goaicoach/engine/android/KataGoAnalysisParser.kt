@@ -181,6 +181,22 @@ internal object KataGoAnalysisParser {
         )
     }
 
+    fun parseFinalStatusList(
+        response: String,
+        boardSize: BoardSize,
+    ): List<BoardCoordinate> =
+        response
+            .replace(",", " ")
+            .lineSequence()
+            .flatMap { line -> line.trim().split(whitespace) }
+            .map { token -> token.trim() }
+            .filter { token -> token.isNotBlank() && token != "=" }
+            .mapNotNull { token ->
+                runCatching { BoardCoordinate.fromLabel(token, boardSize) }.getOrNull()
+            }
+            .distinct()
+            .toList()
+
     private fun parseOwnershipEstimate(
         response: String,
         boardSize: BoardSize,

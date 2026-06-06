@@ -9,6 +9,7 @@ interface EngineAdapter {
     suspend fun undoMove(): EngineStatus
     suspend fun analyze(limit: AnalysisLimit): AnalysisResult
     suspend fun estimateScore(limit: AnalysisLimit): ScoreEstimate
+    suspend fun deadStones(): DeadStonesResult
     suspend fun scoreFinal(): FinalScoreResult
     suspend fun stop(): EngineStatus
 }
@@ -134,6 +135,12 @@ data class FinalScoreResult(
     val blackArea: Double? = null,
     val whiteAreaWithKomi: Double? = null,
     val komi: Double? = null,
+    val summary: String,
+)
+
+data class DeadStonesResult(
+    val status: EngineStatus,
+    val coordinates: List<BoardCoordinate>,
     val summary: String,
 )
 

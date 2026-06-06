@@ -8,7 +8,10 @@
 
 - 중간 형세 평가는 `EngineAdapter.estimateScore()`로 요청한다.
 - 수순별 형세 추이는 `shared`의 `ScoreTimeline`에 `ScoreSnapshot`으로 기록한다.
-- 양쪽이 연속으로 `pass`하면 `EngineAdapter.scoreFinal()`로 최종 계가를 요청한다.
+- 양쪽이 연속으로 `pass`하면 `EngineAdapter.deadStones()`로 엔진이 판단한 사석을 먼저 받아 앱 `GameState`에서 제거한다.
+- 화면 최종 계가는 사석 정리 후 `shared`의 로컬 중국식 area scoring으로 계산한다.
+- 단, 엔진 dead list가 비어 있고 로컬 area final과 KataGo NN 형세 추정이 크게 충돌하면, KaTrain처럼 `?`가 붙은 불확정 엔진 추정 점수를 우선 표시한다.
+- `EngineAdapter.scoreFinal()`의 원문 결과는 진단 로그에 함께 남긴다.
 - 엔진이 없는 `2P 테스트` 모드는 `shared`의 로컬 area scoring projection을 사용한다.
 
 ## KataGo에서 얻을 수 있는 데이터
@@ -26,7 +29,18 @@ KataGo GTP에서 확인한 관련 명령은 다음이다.
   - KataGo 1.16.4 GTP 기준 인자는 `alive`, `seki`, `dead`만 허용된다.
   - `black_territory`, `white_territory` 같은 territory list 인자는 현재 GTP에서는 거부된다.
 
-따라서 중간 형세는 `kata-raw-nn 0` 기반의 빠른 지표로 표시하고, 최종 계가는 `final_score`를 우선 사용한다.
+따라서 중간 형세는 `kata-raw-nn 0` 기반의 빠른 지표로 표시하고, 양패스 후에는 `final_status_list dead`로 사석을 정리한 앱 상태를 기준으로 최종 계가를 표시한다. 다만 실제 첨부 로그처럼 `final_status_list dead`가 빈 목록인데 NN score lead가 로컬 area final과 크게 충돌하는 경우가 있다. 이때는 판이 아직 정리되지 않은 상태로 보고 `B+28.5?` 같은 불확정 엔진 추정 점수를 표시한다. `final_score`는 앱 표시 결과와 비교하기 위한 진단값으로 유지한다.
+
+## KaTrain 참고 결과
+
+KaTrain은 착수 중 포획 규칙과 prisoners를 자체 게임 상태에서 관리한다. 또한 양쪽 pass 상태의 최종 표시에서 단순히 엔진 `final_score`만 쓰지 않고, 분석 노드의 ownership을 이용한 `manual_score`를 병행한다.
+
+참고한 공식 소스:
+
+- https://github.com/sanderland/katrain/blob/master/katrain/core/game.py: `end_result`, `manual_score`
+- https://github.com/sanderland/katrain/blob/master/katrain/core/game_node.py: 분석 결과 ownership 저장
+
+이 결정에서 가져온 핵심은 “엔진 분석값을 UI에 바로 붙이지 않고, 앱의 종료 상태 모델을 먼저 정리한 뒤 표시한다”는 경계다.
 
 ## 중간 형세 지표
 
@@ -65,11 +79,15 @@ Android UI는 `ScoreSnapshot` 목록을 받아 그래프를 그리기만 한다.
 `GameState.hasConsecutivePasses()`가 true가 되면 게임을 종료 상태로 전환한다.
 
 - AI 대국 모드
-  - 사람과 AI가 연속으로 pass하면 `KataGoProcessEngineAdapter.scoreFinal()`이 GTP `final_score`를 호출한다.
-  - 결과는 `FinalScoreResult`로 변환해 화면에 표시한다.
+  - 사람과 AI가 연속으로 pass하면 `KataGoProcessEngineAdapter.deadStones()`가 GTP `final_status_list dead`를 호출한다.
+  - `DeadStoneCleaner`가 엔진이 죽은 돌로 표시한 좌표를 앱 `GameState`에서 제거한다.
+  - 제거된 상대 돌은 포획 수에도 반영한다.
+  - 화면 최종 점수는 정리된 `GameState`를 `BoardAreaScorer`로 계산한 결과를 표시한다.
+  - 사석 제거가 없고 로컬 area final과 엔진 NN estimate의 White lead 차이가 10집 이상이면 `EndgameScoreSelector`가 불확정 엔진 추정 점수를 선택한다.
+  - KataGo `final_score` 원문은 endgame debug log에 `diagnosticKataGoFinalScore`로 남긴다.
 - 2P 테스트 모드
   - 로컬 `BoardAreaScorer`로 중국식 area estimate를 계산한다.
-  - dead-stone marking은 아직 없다.
+  - 엔진 상태와 동기화되지 않으므로 자동 사석 제거는 아직 적용하지 않는다.
 
 ## 종료 오류 수집
 
@@ -77,17 +95,18 @@ Android UI는 `ScoreSnapshot` 목록을 받아 그래프를 그리기만 한다.
 
 - 버튼은 새 엔진 명령을 실행하지 않고, 클릭 시점의 앱 상태를 클립보드에 복사한다.
 - 포함 항목:
-  - 실행 모드, 엔진 이름/프로필/분석 제한, 힌트 설정
+  - 실행 모드, 엔진 이름/프로필/분석 제한, Top Moves 설정
   - 현재 `GameState`: board size, ruleset, next player, move count, capture count, ko 상태, 양패스 여부
   - 9x9 보드 텍스트 덤프 (`X` Black, `O` White, `.` empty)
   - 전체 수순 목록과 현재 돌 목록
   - 마지막 종료 처리 로그와 화면에 표시된 engine/score/candidate/move review 텍스트
   - 클릭 시점의 로컬 `BoardAreaScorer` 재계산 결과
 - AI 모드의 엔진 `final_score` 결과와 로컬 area score를 함께 비교할 수 있게 하기 위한 진단용 기능이다.
+- AI 모드 양패스 종료 후에는 정리 전/후 stone count, 제거된 사석 좌표, 표시 점수 출처, 로컬 area score, 엔진 estimate, KataGo 원문 final score가 함께 기록된다.
 
 ## 현재 한계
 
 - 로컬 2P 계가는 “사석 지정 없는 area estimate”다.
-- 실제 제품 수준 계가에는 dead-stone marking UI가 필요하다.
+- 실제 제품 수준 계가에는 엔진 자동 사석 판정 결과를 사용자가 확인/수정하는 dead-stone marking UI가 필요하다.
 - `kata-raw-nn` ownership은 최종 집 판정이 아니라 중간 형세 지표다.
-- `final_status_list dead`를 이용한 사석 후보 표시와 사용자의 사석 확정 UI는 후속 작업으로 분리한다.
+- `final_status_list dead`는 AI 모드 종료 정리에 사용하지만, 사용자가 사석을 직접 확정하는 협상형 계가 UI는 후속 작업으로 분리한다.

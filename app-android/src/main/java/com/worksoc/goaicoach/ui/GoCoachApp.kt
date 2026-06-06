@@ -46,9 +46,16 @@ import com.worksoc.goaicoach.shared.BoardAreaScorer
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.CandidateMove
+import com.worksoc.goaicoach.shared.DeadStoneCleaner
+import com.worksoc.goaicoach.shared.DeadStoneCleanupResult
+import com.worksoc.goaicoach.shared.DeadStoneRemoval
+import com.worksoc.goaicoach.shared.DeadStonesResult
 import com.worksoc.goaicoach.shared.DifficultyProfile
 import com.worksoc.goaicoach.shared.EngineAdapter
 import com.worksoc.goaicoach.shared.EngineProfile
+import com.worksoc.goaicoach.shared.EndgameScoreSelector
+import com.worksoc.goaicoach.shared.EndgameScoreSource
+import com.worksoc.goaicoach.shared.FinalScoreResult
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.LegalMoveGenerator
 import com.worksoc.goaicoach.shared.Move
@@ -528,27 +535,35 @@ private fun GoCoachScreen(
                 if (outcome.gameState.hasConsecutivePasses() || outcome.gameState.isBoardFull()) {
                     isGameEnded = true
                     runCatching {
-                        withContext(Dispatchers.IO) { engineAdapter.scoreFinal() }
-                    }.onSuccess { finalScore ->
-                        val finalScoreText = finalScore.toDisplayText()
+                        withContext(Dispatchers.IO) {
+                            resolveAiEndgame(
+                                engineAdapter = engineAdapter,
+                                originalState = outcome.gameState,
+                                estimateLimit = scoreGraphAnalysisLimit(engineProfile),
+                            )
+                        }
+                    }.onSuccess { endgame ->
+                        gameState = endgame.cleanup.state
+                        nextAnalysisState = null
+                        val finalScoreText = endgame.finalScore.toDisplayText()
                         scoreText = finalScoreText
                         scoreEstimate = null
                         scoreSnapshots = ScoreTimeline.record(
                             scoreSnapshots,
                             ScoreTimeline.fromFinalScore(
-                                moveNumber = outcome.gameState.moves.size,
-                                finalScore = finalScore,
+                                moveNumber = endgame.cleanup.state.moves.size,
+                                finalScore = endgame.finalScore,
                                 source = ScoreSnapshotSource.FinalScore,
                             ),
                         )
                         endgameLog = buildEndgameLog(
-                            source = "ai-engine-final-score",
-                            state = outcome.gameState,
+                            source = "ai-engine-dead-stone-cleanup",
+                            state = endgame.cleanup.state,
                             finalScoreText = finalScoreText,
-                            detail = "lastMove=${outcome.gameState.moves.lastOrNull()?.describe(outcome.gameState.boardSize) ?: "None"}",
+                            detail = endgame.toLogDetail(outcome.gameState),
                         )
-                        engineMessage = "${outcome.engineMessage}\n${finalScore.status.message}"
-                        candidateText = "Game ended. Final score is available below."
+                        engineMessage = "${outcome.engineMessage}\n${endgame.toEngineMessage()}"
+                        candidateText = endgame.toCandidateText()
                     }.onFailure { error ->
                         val finalScoreText = "Final score failed: ${error.message ?: "Unknown error"}"
                         endgameLog = buildEndgameLog(
@@ -918,6 +933,113 @@ private data class ScoredTurnOutcome(
     val scoreSnapshots: List<ScoreSnapshot>,
 )
 
+private data class AiEndgameResolution(
+    val cleanup: DeadStoneCleanupResult,
+    val finalScore: FinalScoreResult,
+    val scoreSource: EndgameScoreSource,
+    val localFinalScore: FinalScoreResult,
+    val deadStonesResult: DeadStonesResult?,
+    val deadStonesError: String?,
+    val engineScoreEstimate: ScoreEstimate?,
+    val engineScoreEstimateError: String?,
+    val engineFinalScore: FinalScoreResult?,
+    val engineFinalScoreError: String?,
+) {
+    fun toEngineMessage(): String =
+        buildString {
+            if (cleanup.removedCount > 0) {
+                append("Dead-stone cleanup removed ${cleanup.removedCount} stone(s). ")
+            } else {
+                append("Dead-stone cleanup found no stones to remove. ")
+            }
+            append(finalScore.status.message)
+            if (scoreSource == EndgameScoreSource.UnsettledEngineEstimate) {
+                append("\nShowing uncertain KataGo estimate because local area final disagrees with engine evaluation.")
+            }
+            engineFinalScore?.let { append("\nDiagnostic KataGo final_score: ${it.rawScore}") }
+            deadStonesError?.let { append("\nDead-stone status failed: $it") }
+            engineScoreEstimateError?.let { append("\nEndgame estimate failed: $it") }
+            engineFinalScoreError?.let { append("\nDiagnostic final_score failed: $it") }
+        }
+
+    fun toCandidateText(): String =
+        when {
+            cleanup.removedCount > 0 ->
+                "Game ended after pass/pass. Removed ${cleanup.removedCount} engine-marked dead stone(s)."
+
+            scoreSource == EndgameScoreSource.UnsettledEngineEstimate ->
+                "Game ended after pass/pass, but the board looks unsettled. Showing KataGo estimate instead of raw local area."
+
+            else ->
+                "Game ended after pass/pass. KataGo did not mark dead stones for removal."
+        }
+
+    fun toLogDetail(originalState: GameState): String =
+        buildString {
+            appendLine("lastMove=${originalState.moves.lastOrNull()?.describe(originalState.boardSize) ?: "None"}")
+            appendLine("originalStoneCount=${originalState.stones.size}")
+            appendLine("cleanedStoneCount=${cleanup.state.stones.size}")
+            appendLine("deadStoneStatus=${deadStonesResult?.summary ?: "failed"}")
+            appendLine("deadStoneError=${deadStonesError ?: "none"}")
+            appendLine("removedStones=${cleanup.removedStones.toLogText(originalState.boardSize)}")
+            appendLine("displayScoreSource=$scoreSource")
+            appendLine("localAreaAfterCleanup=${localFinalScore.rawScore}")
+            appendLine("engineEstimateWhiteLead=${engineScoreEstimate?.whiteScoreLead ?: "none"}")
+            appendLine("engineEstimateWhiteWinRate=${engineScoreEstimate?.whiteWinRate ?: "none"}")
+            appendLine("engineEstimateError=${engineScoreEstimateError ?: "none"}")
+            appendLine("diagnosticKataGoFinalScore=${engineFinalScore?.rawScore ?: "none"}")
+            appendLine("diagnosticKataGoFinalScoreError=${engineFinalScoreError ?: "none"}")
+        }.trim()
+}
+
+private suspend fun resolveAiEndgame(
+    engineAdapter: EngineAdapter,
+    originalState: GameState,
+    estimateLimit: AnalysisLimit,
+): AiEndgameResolution {
+    var deadStonesResult: DeadStonesResult? = null
+    var deadStonesError: String? = null
+    runCatching { engineAdapter.deadStones() }
+        .onSuccess { deadStonesResult = it }
+        .onFailure { deadStonesError = it.message ?: "Unknown error" }
+
+    val cleanup = DeadStoneCleaner.apply(
+        state = originalState,
+        deadStoneCoordinates = deadStonesResult?.coordinates.orEmpty(),
+    )
+    val localFinalScore = BoardAreaScorer.score(cleanup.state)
+
+    var engineScoreEstimate: ScoreEstimate? = null
+    var engineScoreEstimateError: String? = null
+    runCatching { engineAdapter.estimateScore(estimateLimit) }
+        .onSuccess { engineScoreEstimate = it }
+        .onFailure { engineScoreEstimateError = it.message ?: "Unknown error" }
+    val scoreSelection = EndgameScoreSelector.selectDisplayScore(
+        cleanup = cleanup,
+        localScore = localFinalScore,
+        engineEstimate = engineScoreEstimate,
+    )
+
+    var engineFinalScore: FinalScoreResult? = null
+    var engineFinalScoreError: String? = null
+    runCatching { engineAdapter.scoreFinal() }
+        .onSuccess { engineFinalScore = it }
+        .onFailure { engineFinalScoreError = it.message ?: "Unknown error" }
+
+    return AiEndgameResolution(
+        cleanup = cleanup,
+        finalScore = scoreSelection.displayScore,
+        scoreSource = scoreSelection.source,
+        localFinalScore = localFinalScore,
+        deadStonesResult = deadStonesResult,
+        deadStonesError = deadStonesError,
+        engineScoreEstimate = engineScoreEstimate,
+        engineScoreEstimateError = engineScoreEstimateError,
+        engineFinalScore = engineFinalScore,
+        engineFinalScoreError = engineFinalScoreError,
+    )
+}
+
 private fun scoreGraphAnalysisLimit(profile: EngineProfile): AnalysisLimit =
     profile.analysisLimit.copy(candidateCount = 1)
 
@@ -1037,6 +1159,15 @@ private fun buildEndgameLog(
         appendLine("finalScoreText:")
         appendLine(finalScoreText)
     }.trim()
+
+private fun List<DeadStoneRemoval>.toLogText(boardSize: BoardSize): String =
+    if (isEmpty()) {
+        "none"
+    } else {
+        joinToString { removal ->
+            "${removal.coordinate.label(boardSize)}=${removal.color.label}"
+        }
+    }
 
 private fun GameState.toBoardText(): String =
     buildString {

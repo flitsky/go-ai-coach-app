@@ -30,7 +30,7 @@ object BoardAreaScorer {
             blackArea = blackArea.toDouble(),
             whiteAreaWithKomi = whiteAreaWithKomi,
             komi = komi,
-            summary = "Local Chinese area estimate: Black area $blackArea, White area $whiteArea + komi $komi. Dead-stone marking is not implemented yet.",
+            summary = "Local Chinese area estimate: Black area $blackArea, White area $whiteArea + komi $komi. This scorer assumes dead stones have already been removed.",
         )
     }
 

@@ -6,6 +6,7 @@ import com.worksoc.goaicoach.shared.BoardAreaScorer
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.CandidateMove
+import com.worksoc.goaicoach.shared.DeadStonesResult
 import com.worksoc.goaicoach.shared.EngineAdapter
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.EngineStatus
@@ -138,6 +139,15 @@ class StubEngineAdapter : EngineAdapter {
     override suspend fun scoreFinal(): FinalScoreResult {
         ensureInitialized()
         return localScore()
+    }
+
+    override suspend fun deadStones(): DeadStonesResult {
+        ensureInitialized()
+        return DeadStonesResult(
+            status = EngineStatus.ready("Stub engine has no dead-stone status."),
+            coordinates = emptyList(),
+            summary = "Stub engine does not infer dead stones.",
+        )
     }
 
     override suspend fun stop(): EngineStatus {

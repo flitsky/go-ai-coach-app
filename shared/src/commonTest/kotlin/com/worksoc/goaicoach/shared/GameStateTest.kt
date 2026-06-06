@@ -239,6 +239,35 @@ class GameStateTest {
         assertEquals(77.5, score.margin)
     }
 
+    @Test
+    fun deadStoneCleanerRemovesEngineMarkedStonesAndUpdatesPrisoners() {
+        val state = GameState.empty().copy(
+            stones = mapOf(
+                point("D5") to StoneColor.Black,
+                point("E5") to StoneColor.White,
+                point("F5") to StoneColor.White,
+            ),
+            capturedByBlack = 2,
+            capturedByWhite = 1,
+            koPoint = point("A1"),
+            koForbiddenFor = StoneColor.White,
+        )
+
+        val cleanup = DeadStoneCleaner.apply(
+            state = state,
+            deadStoneCoordinates = listOf(point("E5"), point("E5"), point("A9")),
+        )
+
+        assertEquals(1, cleanup.removedCount)
+        assertEquals(null, cleanup.state.stoneAt(point("E5")))
+        assertEquals(StoneColor.White, cleanup.state.stoneAt(point("F5")))
+        assertEquals(StoneColor.Black, cleanup.state.stoneAt(point("D5")))
+        assertEquals(3, cleanup.state.capturedBy(StoneColor.Black))
+        assertEquals(1, cleanup.state.capturedBy(StoneColor.White))
+        assertEquals(null, cleanup.state.koPoint)
+        assertEquals(null, cleanup.state.koForbiddenFor)
+    }
+
     private fun play(
         player: StoneColor,
         label: String,

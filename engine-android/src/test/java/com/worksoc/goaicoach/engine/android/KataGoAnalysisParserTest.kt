@@ -159,4 +159,17 @@ class KataGoAnalysisParserTest {
         assertEquals(6.5, finalScore.margin)
         assertEquals("W+6.5", finalScore.rawScore)
     }
+
+    @Test
+    fun parsesFinalStatusDeadStoneList() {
+        val deadStones = KataGoAnalysisParser.parseFinalStatusList(
+            response = "A1 C5\nJ9, pass\nnot-a-point",
+            boardSize = BoardSize.Nine,
+        )
+
+        assertEquals(
+            listOf("A1", "C5", "J9"),
+            deadStones.map { it.label(BoardSize.Nine) },
+        )
+    }
 }

@@ -5,6 +5,7 @@ import com.worksoc.goaicoach.shared.AnalysisResult
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.CandidateMove
+import com.worksoc.goaicoach.shared.DeadStonesResult
 import com.worksoc.goaicoach.shared.EngineAdapter
 import com.worksoc.goaicoach.shared.EngineMode
 import com.worksoc.goaicoach.shared.EngineProfile
@@ -234,6 +235,21 @@ class KataGoProcessEngineAdapter(
         ensureProcessStarted()
         val response = sendCommand("final_score")
         return KataGoAnalysisParser.parseFinalScore(response)
+    }
+
+    override suspend fun deadStones(): DeadStonesResult {
+        ensureProcessStarted()
+        val response = sendCommand("final_status_list dead")
+        val coordinates = KataGoAnalysisParser.parseFinalStatusList(response, boardSize)
+        return DeadStonesResult(
+            status = EngineStatus.ready("KataGo dead-stone status complete: ${coordinates.size} stone(s)."),
+            coordinates = coordinates,
+            summary = if (coordinates.isEmpty()) {
+                "KataGo final_status_list dead returned no dead stones."
+            } else {
+                "KataGo final_status_list dead returned ${coordinates.size} dead stone(s)."
+            },
+        )
     }
 
     override suspend fun stop(): EngineStatus {
