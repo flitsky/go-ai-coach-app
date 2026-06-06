@@ -22,42 +22,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.worksoc.goaicoach.shared.BoardSize
-import com.worksoc.goaicoach.shared.CandidateMove
-import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.StoneColor
-import kotlin.math.abs
-import kotlin.math.roundToInt
 
 @Composable
-internal fun KaTrainUxMenuControls(
-    options: KaTrainUxOptions,
+internal fun KaTrainUxMenuButton(
     menuExpanded: Boolean,
     onMenuExpandedChange: (Boolean) -> Unit,
-    onOptionsChange: (KaTrainUxOptions) -> Unit,
 ) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+    OutlinedButton(
+        onClick = { onMenuExpandedChange(!menuExpanded) },
     ) {
-        OutlinedButton(
-            onClick = { onMenuExpandedChange(!menuExpanded) },
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(if (menuExpanded) "Close menu" else "Menu")
-        }
-
-        if (menuExpanded) {
-            KaTrainUxMenuPanel(
-                options = options,
-                onOptionsChange = onOptionsChange,
-            )
-        }
+        Text(if (menuExpanded) "Close" else "\u2630")
     }
 }
 
 @Composable
-private fun KaTrainUxMenuPanel(
+internal fun KaTrainUxMenuPanel(
     options: KaTrainUxOptions,
     onOptionsChange: (KaTrainUxOptions) -> Unit,
 ) {
@@ -81,8 +61,8 @@ private fun KaTrainUxMenuPanel(
             OptionSwitchRow("Last ring", options.showLastMoveRing) {
                 onOptionsChange(options.copy(showLastMoveRing = it))
             }
-            OptionSwitchRow("Spot legend", options.showHintLegend) {
-                onOptionsChange(options.copy(showHintLegend = it))
+            OptionSwitchRow("Spot legend", options.showSpotLegend) {
+                onOptionsChange(options.copy(showSpotLegend = it))
             }
             OptionSwitchRow("Engine badge", options.showEngineStatusBadge) {
                 onOptionsChange(options.copy(showEngineStatusBadge = it))
@@ -120,16 +100,6 @@ internal fun KaTrainUxQuickOptionsPanel(
                     modifier = Modifier.weight(1f),
                 )
                 OptionSwitchTile(
-                    label = "Candidate list",
-                    checked = options.showCandidateList,
-                    onCheckedChange = {
-                        onOptionsChange(options.copy(showCandidateList = it))
-                    },
-                    modifier = Modifier.weight(1f),
-                )
-            }
-            QuickOptionRow {
-                OptionSwitchTile(
                     label = "Game strip",
                     checked = options.showGameStatusStrip,
                     onCheckedChange = {
@@ -137,7 +107,6 @@ internal fun KaTrainUxQuickOptionsPanel(
                     },
                     modifier = Modifier.weight(1f),
                 )
-                Box(modifier = Modifier.weight(1f))
             }
         }
     }
@@ -273,7 +242,7 @@ internal fun GameStatusStrip(
 }
 
 @Composable
-internal fun HintLegendPanel() {
+internal fun SpotLegendPanel() {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
@@ -311,111 +280,7 @@ private fun LegendDot(
     }
 }
 
-@Composable
-internal fun CandidateMovesPanel(
-    candidates: List<CandidateMove>,
-    boardSize: BoardSize,
-) {
-    if (candidates.isEmpty()) {
-        return
-    }
-
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
-        tonalElevation = 1.dp,
-        shadowElevation = 0.dp,
-    ) {
-        Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            Text("Candidates", fontWeight = FontWeight.SemiBold)
-            candidates.forEachIndexed { index, candidate ->
-                CandidateMoveRow(index + 1, candidate, boardSize)
-            }
-        }
-    }
-}
-
-@Composable
-private fun CandidateMoveRow(
-    rank: Int,
-    candidate: CandidateMove,
-    boardSize: BoardSize,
-) {
-    val tone = candidateToneFor(candidate.pointLoss)
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(
-            modifier = Modifier
-                .size(10.dp)
-                .background(tone, CircleShape),
-        )
-        Text(
-            text = "$rank. ${candidate.move.describeCompact(boardSize)}",
-            modifier = Modifier.weight(1.1f),
-            fontWeight = if (rank == 1) FontWeight.SemiBold else FontWeight.Normal,
-        )
-        Text(
-            text = candidate.toCompactStats(),
-            modifier = Modifier.weight(2f),
-            color = MaterialTheme.colorScheme.secondary,
-            style = MaterialTheme.typography.bodySmall,
-        )
-    }
-}
-
 private data class StatusTone(
     val label: String,
     val color: Color,
 )
-
-private fun candidateToneFor(pointLoss: Double?): Color =
-    when (moveReviewToneFor(pointLoss)) {
-        MoveReviewTone.Good -> Color(0xFF2E7D32)
-        MoveReviewTone.Inaccuracy -> Color(0xFFF9A825)
-        MoveReviewTone.Mistake -> Color(0xFFC62828)
-        MoveReviewTone.Unknown -> Color(0xFF607D8B)
-    }
-
-private fun CandidateMove.toCompactStats(): String =
-    buildList {
-        pointLoss?.let { add("loss ${it.formatOneDecimal()}") }
-        playerPerspectiveScoreLead()?.let { add("lead ${it.formatSignedOneDecimal()}") }
-        visits?.let { add("v $it") }
-        policyPrior?.let { add("p ${(it * 100).roundToInt()}%") }
-    }.joinToString(" / ").ifEmpty { note ?: "no stats" }
-
-private fun CandidateMove.playerPerspectiveScoreLead(): Double? {
-    val player = when (val candidateMove = move) {
-        is Move.Play -> candidateMove.player
-        is Move.Pass -> candidateMove.player
-        is Move.Resign -> candidateMove.player
-    }
-    return scoreLead?.let { scoreLead ->
-        when (player) {
-            StoneColor.Black -> -scoreLead
-            StoneColor.White -> scoreLead
-        }
-    }
-}
-
-private fun Move.describeCompact(boardSize: BoardSize): String =
-    when (this) {
-        is Move.Play -> coordinate.label(boardSize)
-        is Move.Pass -> "pass"
-        is Move.Resign -> "resign"
-    }
-
-private fun Double.formatOneDecimal(): String =
-    ((this * 10).roundToInt() / 10.0).toString()
-
-private fun Double.formatSignedOneDecimal(): String {
-    val rounded = (this * 10).roundToInt() / 10.0
-    val normalized = if (abs(rounded) < 0.05) 0.0 else rounded
-    return if (normalized > 0.0) "+$normalized" else normalized.toString()
-}

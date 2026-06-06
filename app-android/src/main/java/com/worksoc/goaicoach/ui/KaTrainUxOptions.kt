@@ -5,9 +5,8 @@ internal data class KaTrainUxOptions(
     val showMoveNumbers: Boolean = false,
     val showLastMoveRing: Boolean = true,
     val showScoreGraph: Boolean = true,
-    val showCandidateList: Boolean = false,
-    val showHintLegend: Boolean = false,
+    val showSpotLegend: Boolean = false,
     val showEngineStatusBadge: Boolean = true,
-    val showGameStatusStrip: Boolean = false,
+    val showGameStatusStrip: Boolean = true,
     val showOwnershipOverlay: Boolean = false,
 )

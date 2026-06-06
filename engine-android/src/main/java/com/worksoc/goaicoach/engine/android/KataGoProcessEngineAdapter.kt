@@ -105,7 +105,7 @@ class KataGoProcessEngineAdapter(
 
     override suspend fun analyze(limit: AnalysisLimit): AnalysisResult {
         ensureProcessStarted()
-        val effectiveLimit = limit.effectiveHintLimit()
+        val effectiveLimit = limit.effectiveAnalysisLimit()
         val candidates = try {
             applySearchLimit(effectiveLimit)
             val response = sendCommand("kata-search_analyze ${nextPlayer.toGtpColor()}")
@@ -182,7 +182,7 @@ class KataGoProcessEngineAdapter(
             effectiveLimit.visits != requestedLimit.visits ||
             effectiveLimit.timeMillis != requestedLimit.timeMillis
         ) {
-            "KataGo search analysis raised hint search to ${effectiveLimit.visits} visits / ${effectiveLimit.timeMillis ?: 0}ms for ${requestedLimit.candidateCount} candidate(s)."
+            "KataGo search analysis raised search to ${effectiveLimit.visits} visits / ${effectiveLimit.timeMillis ?: 0}ms for ${requestedLimit.candidateCount} candidate(s)."
         } else {
             "KataGo search analysis with ${effectiveLimit.visits} visits / ${effectiveLimit.timeMillis ?: 0}ms."
         }
@@ -298,11 +298,11 @@ class KataGoProcessEngineAdapter(
         }
     }
 
-    private fun AnalysisLimit.effectiveHintLimit(): AnalysisLimit {
-        val minimumVisits = (candidateCount * VisitsPerHintCandidate).coerceAtLeast(visits)
+    private fun AnalysisLimit.effectiveAnalysisLimit(): AnalysisLimit {
+        val minimumVisits = (candidateCount * VisitsPerCandidate).coerceAtLeast(visits)
         val minimumTimeMillis = timeMillis
-            ?.coerceAtLeast(MinHintSearchTimeMillis)
-            ?: MinHintSearchTimeMillis
+            ?.coerceAtLeast(MinAnalysisTimeMillis)
+            ?: MinAnalysisTimeMillis
         return copy(
             visits = minimumVisits,
             timeMillis = minimumTimeMillis,
@@ -336,7 +336,7 @@ class KataGoProcessEngineAdapter(
         "${difficulty.label}, visits=${analysisLimit.visits}, time=${analysisLimit.timeMillis ?: "none"}ms"
 
     private companion object {
-        private const val VisitsPerHintCandidate = 10
-        private const val MinHintSearchTimeMillis = 1_000L
+        private const val VisitsPerCandidate = 10
+        private const val MinAnalysisTimeMillis = 1_000L
     }
 }

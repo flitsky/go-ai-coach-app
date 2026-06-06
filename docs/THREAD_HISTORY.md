@@ -224,3 +224,10 @@
 - `Copy Log` debug report에 `[ScoreTimeline]` 섹션을 추가해 score graph 데이터도 오류 보고에 포함되도록 했다.
 - `docs/SCORE_AND_ENDGAME_DECISION.md`에 score graph용 timeline 결정을 추가해 분석값 생산/저장과 UI 시각화 경계를 문서화했다.
 - Gradle `:shared:check :engine-android:testDebugUnitTest :app-android:assembleDebug :app-android:testDebugUnitTest`가 통과했고, 에뮬레이터 재설치 후 초기 `M0` 및 착수 후 `M2` score graph 헤드라인 갱신을 확인했다.
+- 사용자가 대국 화면 집중도를 높이기 위해 `Candidate list` 옵션 제거, `Game strip` 기본 ON, 상단 햄버거 메뉴, 메뉴 안 `Hints` 제거, 하단 `Hint` 버튼을 `Top Moves`로 변경하고 모든 합법 착점 후보 데이터를 pre-move analysis로 확보하는 방향을 요청했다.
+- `shared`에 `LegalMoveGenerator`를 추가해 현재 `GameState` 기준 합법 착점 수를 계산하도록 했고, Android `Top Moves` 분석 개수는 이 값을 사용하도록 변경했다.
+- `Hints` 설정 상태와 후보수 N 설정을 제거하고, 사람 차례가 오면 항상 백그라운드 Top Moves 분석 cache를 준비한 뒤 `Top Moves` 버튼이 해당 cache를 보드에 표시하도록 정리했다.
+- 후보수 compact list 패널은 대국 화면 옵션에서 제거했고, 후보 상세 텍스트는 하단 engine response/debug 영역 및 `Copy Log`에 남기도록 유지했다.
+- Top Moves 후보 수가 많을 때 엔진 어댑터가 후보 수 기준으로 최소 visits/time을 상향할 수 있으므로, 화면 summary에서 과거 `hint search` 용어를 제거하고 일반 `search analysis` 표현으로 바꿨다.
+- 에뮬레이터에서 상단 햄버거 버튼, `Game strip` 기본 ON, 메뉴 내 `Display menu`/`Engine`만 노출되는 상태, `Top Moves` 버튼, 81/81 후보 준비 및 버튼 클릭 후 `Showing 81 Top Moves from cached pre-move analysis.` 메시지를 확인했다.
+- 보드 스크린샷으로 모든 합법 교차점에 Top Moves spot이 표시되고, search score가 있는 상위 후보는 점수 label이 표시되며 나머지는 policy fallback spot으로 표시되는 것을 확인했다.

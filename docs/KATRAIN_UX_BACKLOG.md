@@ -19,11 +19,12 @@ KaTrain의 UX 중 Go AI Coach에 가져올 만한 항목을 효과와 구현 난
 
 ## 현재 앱에 이미 반영된 항목
 
-- 후보수 N개 표시
+- `Top Moves` 버튼 기반 후보수 표시
+- 사람 차례 백그라운드 pre-move analysis에서 현재 합법 착점 수만큼 후보 데이터 확보
 - 후보수별 green/yellow/red/unknown spot
 - 후보수별 점수 lead label
 - 착수 후 해당 돌 중앙에 착수 당시 평가 색상 dot 유지
-- 힌트 표시 여부와 무관한 백그라운드 pre-move analysis
+- Top Moves 표시 여부와 무관한 백그라운드 pre-move analysis
 - 3D 질감의 흑/백 바둑알 렌더링
 - pass 2회 이후 계가 처리
 - `Copy Log` 기반 디버그 리포트 수집
@@ -33,7 +34,6 @@ KaTrain의 UX 중 Go AI Coach에 가져올 만한 항목을 효과와 구현 난
 - 옵션 기반 보드 좌표 표시
 - 옵션 기반 수순 번호 표시
 - 옵션 기반 마지막 수 ring 표시
-- 옵션 기반 후보수 compact list
 - 옵션 기반 spot 색상 범례
 - 옵션 기반 엔진 상태 badge
 - 옵션 기반 차례/포획/마지막 수 status strip
@@ -47,10 +47,10 @@ KaTrain의 UX 중 Go AI Coach에 가져올 만한 항목을 효과와 구현 난
 | --- | --- | --- | --- | --- |
 | 보드 좌표 표시 토글 | KaTrain의 좌표/수순 표시 토글처럼 A-J, 1-9 좌표를 켜고 끄기 | `GoBoard` Canvas에 좌표 label 옵션 추가 | 사용자가 로그와 화면을 대조하기 쉬움. 현재 디버그 리포트의 `A1` 좌표와 실제 화면 연결성이 좋아짐 | 낮음 |
 | 마지막 수/수순 번호 표시 토글 | 마지막 수 강조와 move number 표시 | 현재 착수 평가 dot과 충돌하지 않도록 작은 수순 번호 또는 마지막 수 ring 추가 | 실기기 테스트 중 “방금 어디에 뒀는지” 확인이 쉬워짐 | 낮음 |
-| 후보수 리스트 패널 | 보드 spot과 별도로 후보수 목록을 `좌표 / 손실 / visits / prior`로 표시 | `CandidateMove`를 정렬해 하단 compact list로 렌더링 | spot이 많은 상황에서도 숫자 정보를 안정적으로 읽을 수 있음 | 낮음 |
-| 색상 범례 | green/yellow/red/gray-blue 의미를 한 줄로 표시 | Hints 설정 영역에 작은 legend 추가 | 사용자와 테스트 참여자가 점 색상을 바로 이해함 | 낮음 |
+| 후보수 디버그 텍스트 | 보드 spot과 별도로 후보수 목록을 `좌표 / 손실 / visits / prior`로 출력 | 하단 engine response/debug 영역과 `Copy Log`에 `candidateText`로 출력 | 보드 중심 화면을 유지하면서 필요 시 숫자 정보를 확인 가능 | 완료 |
+| 색상 범례 | green/yellow/red/gray-blue 의미를 한 줄로 표시 | `Spot legend` 메뉴 옵션으로 작은 legend 추가 | 사용자와 테스트 참여자가 점 색상을 바로 이해함 | 낮음 |
 | 엔진 상태 badge | KaTrain의 engine ready/busy/down dot처럼 명확한 상태 표시 | `engineReady`, `engineBusy`, fallback 상태를 별도 badge로 표시 | “목업으로 바뀐 것 같다” 같은 혼란을 줄임 | 낮음 |
-| 분석 중 표시와 취소 버튼 | 분석이 길어질 때 spinner/progress와 cancel 제공 | `EngineAdapter`에 취소까지 바로 넣기 어렵다면 우선 UI busy/cooldown 표시부터 적용 | 느린 힌트 분석 시 앱이 멈춘 것처럼 보이는 문제 완화 | 낮음-중간 |
+| 분석 중 표시와 취소 버튼 | 분석이 길어질 때 spinner/progress와 cancel 제공 | `EngineAdapter`에 취소까지 바로 넣기 어렵다면 우선 UI busy/cooldown 표시부터 적용 | 느린 Top Moves 분석 시 앱이 멈춘 것처럼 보이는 문제 완화 | 낮음-중간 |
 | 잡은 돌/차례 표시 강화 | KaTrain의 prisoner/active player UI처럼 흑백 캡처와 다음 차례를 더 눈에 띄게 표시 | 현재 텍스트 표시를 compact score strip으로 변경 | 계가 논의와 테스트에서 포획 수 확인이 쉬워짐 | 낮음 |
 | 디버그 리포트 공유 UX | 현재 `Copy Log`를 유지하되, 제목/요약/클립보드 성공 상태를 더 명확히 표시 | 복사 완료 toast/snackbar, 리포트 파일 저장 옵션 검토 | 사용자 테스트 중 오류 수집 품질 향상 | 낮음 |
 
@@ -62,7 +62,7 @@ KaTrain의 UX 중 Go AI Coach에 가져올 만한 항목을 효과와 구현 난
 | 점수/승률 미니 그래프 | KaTrain `ScoreGraph`처럼 수순별 score lead/winrate 추이 표시 | move별 `ScoreSnapshot` 저장 모델과 작은 line chart 추가 | 대국 흐름에서 어느 수가 판세를 바꿨는지 확인 가능 | 완료 |
 | 착수 리뷰 문장 개선 | KaTrain이 `pointsLost`로 착수를 분류하듯 `좋음/부정확/실수/큰 실수` 문구 제공 | 현재 `pointLoss` threshold를 사용자 친화적 문장으로 변환 | 색상 dot만으로 부족한 설명을 보강 | 중간 |
 | 후보수 상세 모드 | 후보 spot label을 `점수 손실`, `승률`, `visits`, `prior` 중 선택 | `top_moves_show`류 옵션을 단순 segmented control로 구현 | 초급자는 점수, 디버깅은 visits/prior 중심으로 볼 수 있음 | 중간 |
-| 수동 “더 깊게 분석” | KaTrain의 extra/deeper analysis처럼 현재 국면만 visits/time을 임시 상향 | 기존 힌트 일시 상향 로직을 버튼으로 노출하고 완료 후 원복 | 평소 AI는 가볍게, 필요 시 강한 힌트 확보 | 중간 |
+| 수동 “더 깊게 분석” | KaTrain의 extra/deeper analysis처럼 현재 국면만 visits/time을 임시 상향 | Top Moves 분석을 한 번 더 강하게 요청하는 버튼으로 노출하고 완료 후 원복 | 평소 AI는 가볍게, 필요 시 강한 후보수 확보 | 중간 |
 | 최종 계가 확인 화면 | pass 2회 후 바로 결과만 표시하지 않고 board + 영역 + 사석 후보를 확인 | 우선 Chinese area 기준 overlay, 이후 dead stone marking으로 확장 | 사용자가 계가 오류를 인지/보고하기 쉬움 | 중간 |
 | 착수 preview | KaTrain ghost stone처럼 터치 위치에 반투명 돌 preview | 모바일에서는 long press 또는 drag 중 preview로 제한 | 오터치 감소, 9x9 이후 13x13/19x19 확장 대비 | 중간 |
 
@@ -86,7 +86,7 @@ KaTrain의 UX 중 Go AI Coach에 가져올 만한 항목을 효과와 구현 난
 | 전체 키보드/마우스 단축키 UX | Android-first 앱에서는 초기 우선순위가 낮음 |
 | 기여/분석 공유용 고급 엔진 화면 | 첫 릴리즈 전 사용자 가치가 낮고 엔진 운영 복잡도가 큼 |
 | 지역 선택 분석 ROI | 강력하지만 모바일 조작이 까다롭고, 기본 후보수/PV/ownership 이후에 검토하는 것이 맞음 |
-| 고급 AI 스타일 전체 이식 | KaTrain의 AI profile은 풍부하지만, 현재는 낮은 난이도/힌트 품질/엔진 안정성이 더 중요함 |
+| 고급 AI 스타일 전체 이식 | KaTrain의 AI profile은 풍부하지만, 현재는 낮은 난이도/Top Moves 품질/엔진 안정성이 더 중요함 |
 
 ## 권장 적용 순서
 
@@ -96,8 +96,9 @@ KaTrain의 UX 중 Go AI Coach에 가져올 만한 항목을 효과와 구현 난
    - 수순 번호 표시 토글: 구현됨
    - 잡은 돌/차례 표시 강화: 옵션 status strip 구현됨
 
-2. **힌트 UX 완성**
-   - 후보수 리스트 패널: 구현됨
+2. **Top Moves UX 완성**
+   - 후보수 compact list 패널: 화면 집중을 위해 제거됨. 상세 후보 정보는 debug text와 `Copy Log`로 확인한다.
+   - Top Moves 버튼: 구현됨. 사람 차례마다 현재 합법 착점 수 기준으로 pre-move analysis를 수행하고, 버튼 클릭 시 cache를 보드에 표시한다.
    - 색상 범례: 구현됨
    - 후보 label 표시 모드: 미구현
    - 엔진 busy/ready/fallback badge: 구현됨
@@ -123,7 +124,7 @@ KaTrain의 UX 중 Go AI Coach에 가져올 만한 항목을 효과와 구현 난
 지금 앱 상태에서 가장 빠르게 체감 효과를 만들 수 있는 순서는 다음이 적절하다.
 
 1. `GoBoard` 좌표 표시 토글과 마지막 수 ring 추가: 완료
-2. 후보수 compact list 패널 추가: 완료
+2. 후보수 compact list 패널: 제거됨. 상세 후보 정보는 debug text와 `Copy Log`로 확인
 3. green/yellow/red/unknown 색상 범례 추가: 완료
 4. 엔진 상태 badge를 상단 상태 영역에 고정 표시: 완료
 5. ownership overlay를 `Eval` 결과와 연결해 보드 위에 시각화: 완료
