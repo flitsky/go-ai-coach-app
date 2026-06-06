@@ -40,7 +40,7 @@
   - 사람 차례가 오면 백그라운드에서 현재 합법 착점 수만큼 후보 분석을 먼저 요청한다.
   - 버튼은 토글로 동작한다. 켜진 상태에서는 매 사용자 턴마다 준비된 pre-move analysis cache를 보드에 자동 표시한다.
   - 꺼진 상태에서도 착수 평가를 위한 pre-move analysis cache는 백그라운드에서 계속 준비한다.
-  - 후보 순위, 점수 손실, 예상 리드, visits, policy prior 같은 상세 텍스트는 화면 하단 응답/디버그 영역과 `Copy Log`로 확인한다.
+  - 후보 순위, 점수 손실, 예상 리드, visits, policy prior 같은 상세 텍스트는 화면 하단의 약 10줄 스크롤 박스와 `Copy Log`로 확인한다.
   - 분석은 대국 AI보다 한 단계 높은 difficulty의 기본 visits/time을 사용한다. 단, 사용자가 이미 더 강한 visits/time을 설정했다면 그 값을 유지한다.
   - 후보 수가 많을 때는 엔진 어댑터가 최소 검색량을 후보 수에 맞춰 내부 상향할 수 있다.
   - 엔진 search나 raw NN policy가 모든 합법점을 채우지 못하면, 나머지 합법점은 `Legal fallback`으로 표시한다. 이 후보에는 점수 손실이나 policy prior가 없을 수 있다.

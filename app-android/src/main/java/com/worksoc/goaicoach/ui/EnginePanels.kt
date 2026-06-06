@@ -1,9 +1,12 @@
 package com.worksoc.goaicoach.ui
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -180,6 +183,8 @@ internal fun EngineResponsePanel(
     scoreText: String,
     moveReviewText: String,
 ) {
+    val analysisLogScrollState = rememberScrollState()
+
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
@@ -231,16 +236,30 @@ internal fun EngineResponsePanel(
                 fontFamily = FontFamily.Monospace,
             )
 
-            Text(
-                text = candidateText,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.secondary,
-                fontFamily = FontFamily.Monospace,
-            )
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = AnalysisLogMaxHeight),
+                shape = RoundedCornerShape(6.dp),
+                tonalElevation = 0.dp,
+                shadowElevation = 0.dp,
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+            ) {
+                Text(
+                    text = candidateText,
+                    modifier = Modifier
+                        .verticalScroll(analysisLogScrollState)
+                        .padding(8.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.secondary,
+                    fontFamily = FontFamily.Monospace,
+                )
+            }
         }
     }
 }
 
+private val AnalysisLogMaxHeight = 180.dp
 private val VisitOptions = listOf(16, 64, 160, 400, 1_000)
 
 private fun previousVisits(current: Int): Int =

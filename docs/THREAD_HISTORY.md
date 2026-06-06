@@ -242,3 +242,6 @@
 - 사용자가 `Spot legend` 기능은 대국 화면에서 필요성이 낮고, 색상 의미는 사용자 매뉴얼/도움말에서 설명하면 충분하다고 판단해 제거를 요청했다.
 - `KaTrainUxOptions.showSpotLegend`, 메뉴의 `Spot legend` 토글, `SpotLegendPanel` UI, 화면 호출부를 제거했다.
 - `docs/USER_OPTION_MANUAL.md`에는 별도 화면 패널 대신 후보/착수 평가 색상 의미를 짧은 문서 섹션으로 남겼고, `docs/KATRAIN_UX_BACKLOG.md`에는 색상 범례를 제거/문서 대체 결정으로 갱신했다.
+- 사용자가 화면 아래쪽 `KataGo analysis` 상세 텍스트 때문에 전체 대국 화면이 길어지지 않도록, 해당 영역을 약 10줄만 보이는 스크롤 박스로 바꿔달라고 요청했다.
+- `EngineResponsePanel`의 긴 `candidateText` 영역을 최대 `180dp` 높이의 내부 스크롤 박스로 감싸고, 상태 요약/점수/착수 평가는 기존처럼 바로 보이게 유지했다.
+- `docs/USER_OPTION_MANUAL.md`에 Top Moves 상세 텍스트가 하단 약 10줄 스크롤 박스와 `Copy Log`로 확인된다는 설명을 반영했다.
