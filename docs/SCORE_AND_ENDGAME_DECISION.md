@@ -7,6 +7,7 @@
 대국 중 형세 지표와 양쪽 패스 이후 계가는 모두 `EngineAdapter` 계약 뒤에 둔다.
 
 - 중간 형세 평가는 `EngineAdapter.estimateScore()`로 요청한다.
+- 수순별 형세 추이는 `shared`의 `ScoreTimeline`에 `ScoreSnapshot`으로 기록한다.
 - 양쪽이 연속으로 `pass`하면 `EngineAdapter.scoreFinal()`로 최종 계가를 요청한다.
 - 엔진이 없는 `2P 테스트` 모드는 `shared`의 로컬 area scoring projection을 사용한다.
 
@@ -40,6 +41,22 @@ KataGo GTP에서 확인한 관련 명령은 다음이다.
   - `Black`, `White`, `unclear`로 구분
 
 주의: 이 값은 “현재 집이 확정되었다”는 의미가 아니라, 신경망이 보는 영향권/형세 지표다. 사활, 끝내기, 미확정 사석 상태에 따라 최종 계가와 다를 수 있다.
+
+## 수순별 score graph
+
+KaTrain의 `ScoreGraph`는 착수 노드마다 분석 결과의 `scoreLead`와 `winrate`를 읽고, 그래프 위젯은 그 배열만 시각화한다. Go AI Coach도 같은 방향을 따른다.
+
+- `ScoreSnapshot`
+  - `moveNumber`
+  - White 기준 `whiteScoreLead`
+  - White 기준 `whiteWinRate`
+  - 값의 출처인 `ScoreSnapshotSource`
+- `ScoreTimeline`
+  - 같은 수순의 스냅샷은 최신 값으로 교체한다.
+  - 무르기 후 미래 수순 스냅샷은 잘라낸다.
+  - 최종 계가 결과도 같은 timeline에 `FinalScore`로 기록한다.
+
+Android UI는 `ScoreSnapshot` 목록을 받아 그래프를 그리기만 한다. 엔진 분석 방식, 로컬 2P 추정 방식, 최종 계가 방식은 UI와 직접 결합하지 않는다.
 
 ## 양패스 후 계가
 

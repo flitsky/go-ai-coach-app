@@ -25,9 +25,11 @@ internal suspend fun applyAiResponseAfterHumanTurn(
     engineAdapter: EngineAdapter,
     stateAfterHuman: GameState,
     humanMove: Move,
+    onHumanMoveAccepted: suspend () -> Unit = {},
 ): TurnOutcome {
     val humanStatus = engineAdapter.playMove(humanMove)
     val humanText = humanMove.describe(stateAfterHuman.boardSize)
+    onHumanMoveAccepted()
 
     if (stateAfterHuman.isBoardFull()) {
         return TurnOutcome(

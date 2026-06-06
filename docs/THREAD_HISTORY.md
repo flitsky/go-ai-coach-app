@@ -217,3 +217,10 @@
 - 사용자가 `Coords`, `Last ring`, `Engine badge`를 기본 활성화 상태로 바꾸고, 엔진 배지를 `Game strip` 아래쪽에 배치하며, `Engine` 설정과 `Hints` 설정도 `Menu` 아래로 옮겨달라고 요청했다.
 - `KaTrainUxOptions` 기본값을 조정해 좌표, 마지막 수 ring, 엔진 배지가 기본으로 켜지도록 했다.
 - `Engine`/`Hints` 패널은 메뉴가 펼쳐졌을 때만 보이도록 이동했고, 엔진 배지는 `Game strip` 다음, 보드 바로 위 영역에 표시되도록 재배치했다.
+- 사용자가 KaTrain의 실시간 score graph를 포팅하되, 분석된 값을 코어 데이터로 일관되게 만들고 UI는 그 데이터를 시각화하는 구조를 요청했다.
+- KaTrain `ScoreGraph`는 노드별 `scoreLead`/`winrate`를 기록하고 그래프 위젯은 해당 배열만 렌더링하는 구조임을 재확인했다.
+- `shared`에 `ScoreSnapshot`, `ScoreSnapshotSource`, `ScoreTimeline`을 추가해 수순별 White 기준 score lead/winrate 기록을 도메인 모델로 분리했다.
+- Android UI에는 `Score graph` quick display 옵션과 `ScoreGraphPanel`을 추가했다. AI 대국은 KataGo `estimateScore()` 결과, 2P 모드는 로컬 area estimate, 종국은 final score를 같은 timeline에 기록한다.
+- `Copy Log` debug report에 `[ScoreTimeline]` 섹션을 추가해 score graph 데이터도 오류 보고에 포함되도록 했다.
+- `docs/SCORE_AND_ENDGAME_DECISION.md`에 score graph용 timeline 결정을 추가해 분석값 생산/저장과 UI 시각화 경계를 문서화했다.
+- Gradle `:shared:check :engine-android:testDebugUnitTest :app-android:assembleDebug :app-android:testDebugUnitTest`가 통과했고, 에뮬레이터 재설치 후 초기 `M0` 및 착수 후 `M2` score graph 헤드라인 갱신을 확인했다.

@@ -38,6 +38,7 @@ KaTrain의 UX 중 Go AI Coach에 가져올 만한 항목을 효과와 구현 난
 - 옵션 기반 엔진 상태 badge
 - 옵션 기반 차례/포획/마지막 수 status strip
 - 옵션 기반 ownership heatmap overlay
+- 옵션 기반 score graph panel
 - `Copy Log` 실행 시 clipboard toast 표시
 
 ## 1순위: 간단하면서 임팩트 큰 항목
@@ -58,7 +59,7 @@ KaTrain의 UX 중 Go AI Coach에 가져올 만한 항목을 효과와 구현 난
 | 항목 | 가져올 UX | 현재 앱 대비 구현 범위 | 기대 효과 | 난이도 |
 | --- | --- | --- | --- | --- |
 | Ownership overlay | KaTrain의 ownership 시각화처럼 각 교차점/영역의 흑백 지배도를 색으로 표시 | `ScoreEstimate.ownership` 또는 KataGo raw NN `whiteOwnership`을 보드 heatmap으로 렌더링 | “집이 어디에 형성되는지”, “왜 우세한지”를 즉시 이해 가능 | 중간 |
-| 점수/승률 미니 그래프 | KaTrain `ScoreGraph`처럼 수순별 score lead/winrate 추이 표시 | move별 `ScoreSnapshot` 저장 모델과 작은 line chart 추가 | 대국 흐름에서 어느 수가 판세를 바꿨는지 확인 가능 | 중간 |
+| 점수/승률 미니 그래프 | KaTrain `ScoreGraph`처럼 수순별 score lead/winrate 추이 표시 | move별 `ScoreSnapshot` 저장 모델과 작은 line chart 추가 | 대국 흐름에서 어느 수가 판세를 바꿨는지 확인 가능 | 완료 |
 | 착수 리뷰 문장 개선 | KaTrain이 `pointsLost`로 착수를 분류하듯 `좋음/부정확/실수/큰 실수` 문구 제공 | 현재 `pointLoss` threshold를 사용자 친화적 문장으로 변환 | 색상 dot만으로 부족한 설명을 보강 | 중간 |
 | 후보수 상세 모드 | 후보 spot label을 `점수 손실`, `승률`, `visits`, `prior` 중 선택 | `top_moves_show`류 옵션을 단순 segmented control로 구현 | 초급자는 점수, 디버깅은 visits/prior 중심으로 볼 수 있음 | 중간 |
 | 수동 “더 깊게 분석” | KaTrain의 extra/deeper analysis처럼 현재 국면만 visits/time을 임시 상향 | 기존 힌트 일시 상향 로직을 버튼으로 노출하고 완료 후 원복 | 평소 AI는 가볍게, 필요 시 강한 힌트 확보 | 중간 |
@@ -103,7 +104,7 @@ KaTrain의 UX 중 Go AI Coach에 가져올 만한 항목을 효과와 구현 난
 
 3. **형세 이해 보강**
    - ownership overlay: 구현됨. `Eval` 실행 후 `Ownership` 옵션을 켜면 KataGo `whiteOwnership` 값을 보드 heatmap으로 표시한다.
-   - 점수/승률 미니 그래프
+   - 점수/승률 미니 그래프: 구현됨. `ScoreSnapshot`/`ScoreTimeline` 도메인 모델에 수순별 score lead/winrate를 기록하고, Android `ScoreGraphPanel`이 해당 데이터를 시각화한다.
    - 착수 리뷰 문장 개선
 
 4. **복기 기능 확장**

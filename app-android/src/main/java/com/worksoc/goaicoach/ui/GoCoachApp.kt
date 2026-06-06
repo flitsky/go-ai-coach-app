@@ -35,6 +35,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.match.HumanPlayer
 import com.worksoc.goaicoach.match.MatchMode
+import com.worksoc.goaicoach.match.TurnOutcome
 import com.worksoc.goaicoach.match.activePlayer
 import com.worksoc.goaicoach.match.applyAiResponseAfterHumanTurn
 import com.worksoc.goaicoach.match.boardInputEnabled
@@ -51,6 +52,9 @@ import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.ScoreEstimate
+import com.worksoc.goaicoach.shared.ScoreSnapshot
+import com.worksoc.goaicoach.shared.ScoreSnapshotSource
+import com.worksoc.goaicoach.shared.ScoreTimeline
 import com.worksoc.goaicoach.shared.StoneColor
 import com.worksoc.goaicoach.shared.describe
 import com.worksoc.goaicoach.shared.replayWithoutLastMoves
@@ -98,6 +102,9 @@ private fun GoCoachScreen(
     var reviewCandidateMoves by remember { mutableStateOf(emptyList<CandidateMove>()) }
     var scoreText by remember { mutableStateOf("No score estimate yet.") }
     var scoreEstimate by remember { mutableStateOf<ScoreEstimate?>(null) }
+    var scoreSnapshots by remember {
+        mutableStateOf(listOf(localScoreSnapshot(GameState.empty(BoardSize.Nine, Ruleset.Chinese))))
+    }
     var moveReviewText by remember { mutableStateOf("No move review yet.") }
     var moveReviews by remember { mutableStateOf(emptyList<MoveReviewMarker>()) }
     var lastMoveText by remember { mutableStateOf("None") }
@@ -120,10 +127,17 @@ private fun GoCoachScreen(
             val newGame = withContext(Dispatchers.IO) {
                 engineAdapter.newGame(gameState.boardSize, gameState.ruleset)
             }
-            "Ready for 9x9 match.\n${init.message}\n${newGame.message}"
-        }.onSuccess { message ->
+            val estimate = withContext(Dispatchers.IO) {
+                runCatching { engineAdapter.estimateScore(scoreGraphAnalysisLimit(engineProfile)) }.getOrNull()
+            }
+            EngineStartupResult(
+                message = "Ready for 9x9 match.\n${init.message}\n${newGame.message}",
+                scoreSnapshot = estimate?.let { ScoreTimeline.fromEstimate(gameState.moves.size, it) },
+            )
+        }.onSuccess { result ->
             isEngineReady = true
-            engineMessage = message
+            scoreSnapshots = listOf(result.scoreSnapshot ?: localScoreSnapshot(gameState))
+            engineMessage = result.message
         }.onFailure { error ->
             isEngineReady = false
             engineMessage = "Engine initialization failed.\n${error.message ?: "Unknown error"}"
@@ -228,6 +242,7 @@ private fun GoCoachScreen(
         lastAnalysisKey = null
         scoreText = "No score estimate yet."
         scoreEstimate = null
+        scoreSnapshots = listOf(localScoreSnapshot(gameState))
         moveReviewText = "No move review yet."
         moveReviews = emptyList()
         lastMoveText = "None"
@@ -245,6 +260,7 @@ private fun GoCoachScreen(
             val score = BoardAreaScorer.score(gameState)
             scoreText = score.toDisplayText()
             scoreEstimate = null
+            scoreSnapshots = ScoreTimeline.record(scoreSnapshots, localScoreSnapshot(gameState))
             engineMessage = "Local area estimate refreshed."
             return
         }
@@ -264,6 +280,10 @@ private fun GoCoachScreen(
                 engineMessage = estimate.status.message
                 scoreText = estimate.toDisplayText()
                 scoreEstimate = estimate
+                scoreSnapshots = ScoreTimeline.record(
+                    scoreSnapshots,
+                    ScoreTimeline.fromEstimate(gameState.moves.size, estimate),
+                )
             }.onFailure { error ->
                 engineMessage = error.message ?: "Score estimate failed."
                 scoreEstimate = null
@@ -288,10 +308,18 @@ private fun GoCoachScreen(
             var nextHintState: GameState? = null
             runCatching {
                 withContext(Dispatchers.IO) {
-                    engineAdapter.newGame(BoardSize.Nine, Ruleset.Chinese)
+                    val status = engineAdapter.newGame(BoardSize.Nine, Ruleset.Chinese)
+                    val estimate = runCatching {
+                        engineAdapter.estimateScore(scoreGraphAnalysisLimit(engineProfile))
+                    }.getOrNull()
+                    EngineStartupResult(
+                        message = status.message,
+                        scoreSnapshot = estimate?.let { ScoreTimeline.fromEstimate(0, it) },
+                    )
                 }
-            }.onSuccess { status ->
-                resetLocalGame(status.message)
+            }.onSuccess { result ->
+                resetLocalGame(result.message)
+                scoreSnapshots = listOf(result.scoreSnapshot ?: localScoreSnapshot(gameState))
                 nextHintState = gameState
             }.onFailure { error ->
                 resetLocalGame(error.message ?: "New AI game failed.")
@@ -358,12 +386,21 @@ private fun GoCoachScreen(
             lastMoveText = move.describe(beforeMove.boardSize)
             scoreText = "Score estimate not current."
             scoreEstimate = null
+            scoreSnapshots = ScoreTimeline.record(scoreSnapshots, localScoreSnapshot(afterMove))
             if (afterMove.hasConsecutivePasses()) {
                 val finalScore = BoardAreaScorer.score(afterMove)
                 val finalScoreText = finalScore.toDisplayText()
                 isGameEnded = true
                 scoreText = finalScoreText
                 scoreEstimate = null
+                scoreSnapshots = ScoreTimeline.record(
+                    scoreSnapshots,
+                    ScoreTimeline.fromFinalScore(
+                        moveNumber = afterMove.moves.size,
+                        finalScore = finalScore,
+                        source = ScoreSnapshotSource.FinalScore,
+                    ),
+                )
                 candidateText = "Game ended after two passes."
                 endgameLog = buildEndgameLog(
                     source = "local-two-player-consecutive-pass",
@@ -404,6 +441,7 @@ private fun GoCoachScreen(
 
         gameState = afterHuman
         val previousMoveReviews = moveReviews
+        val previousScoreSnapshots = scoreSnapshots
         val moveReview = buildMoveReview(
             move = move,
             candidates = reviewCandidateMoves,
@@ -426,14 +464,39 @@ private fun GoCoachScreen(
             var nextHintState: GameState? = null
             runCatching {
                 withContext(Dispatchers.IO) {
-                    applyAiResponseAfterHumanTurn(
+                    var nextScoreSnapshots = previousScoreSnapshots
+                    val outcome = applyAiResponseAfterHumanTurn(
                         engineAdapter = engineAdapter,
                         stateAfterHuman = afterHuman,
                         humanMove = move,
+                        onHumanMoveAccepted = {
+                            runCatching {
+                                engineAdapter.estimateScore(scoreGraphAnalysisLimit(engineProfile))
+                            }.getOrNull()?.let { estimate ->
+                                nextScoreSnapshots = ScoreTimeline.record(
+                                    nextScoreSnapshots,
+                                    ScoreTimeline.fromEstimate(afterHuman.moves.size, estimate),
+                                )
+                            }
+                        },
+                    )
+                    runCatching {
+                        engineAdapter.estimateScore(scoreGraphAnalysisLimit(engineProfile))
+                    }.getOrNull()?.let { estimate ->
+                        nextScoreSnapshots = ScoreTimeline.record(
+                            nextScoreSnapshots,
+                            ScoreTimeline.fromEstimate(outcome.gameState.moves.size, estimate),
+                        )
+                    }
+                    ScoredTurnOutcome(
+                        turnOutcome = outcome,
+                        scoreSnapshots = nextScoreSnapshots,
                     )
                 }
-            }.onSuccess { outcome ->
+            }.onSuccess { scoredOutcome ->
+                val outcome = scoredOutcome.turnOutcome
                 gameState = outcome.gameState
+                scoreSnapshots = scoredOutcome.scoreSnapshots
                 clearHints()
                 engineMessage = outcome.engineMessage
                 candidateText = outcome.candidateText
@@ -447,6 +510,14 @@ private fun GoCoachScreen(
                         val finalScoreText = finalScore.toDisplayText()
                         scoreText = finalScoreText
                         scoreEstimate = null
+                        scoreSnapshots = ScoreTimeline.record(
+                            scoreSnapshots,
+                            ScoreTimeline.fromFinalScore(
+                                moveNumber = outcome.gameState.moves.size,
+                                finalScore = finalScore,
+                                source = ScoreSnapshotSource.FinalScore,
+                            ),
+                        )
                         endgameLog = buildEndgameLog(
                             source = "ai-engine-final-score",
                             state = outcome.gameState,
@@ -472,6 +543,7 @@ private fun GoCoachScreen(
                 moveReviews = previousMoveReviews
                 reviewCandidateMoves = previousReviewCandidates
                 lastAnalysisKey = previousAnalysisKey
+                scoreSnapshots = previousScoreSnapshots
                 moveReviewText = "Move review cleared after rollback."
                 engineMessage = error.message ?: "Move failed."
                 candidateText = "Move was rolled back after engine failure."
@@ -505,6 +577,10 @@ private fun GoCoachScreen(
             candidateText = "Captured: Black ${nextState.capturedBy(StoneColor.Black)} / White ${nextState.capturedBy(StoneColor.White)}"
             scoreText = "Score estimate not current."
             scoreEstimate = null
+            scoreSnapshots = ScoreTimeline.record(
+                ScoreTimeline.trimAfter(scoreSnapshots, nextState.moves.size),
+                localScoreSnapshot(nextState),
+            )
             endgameLog = "Endgame log cleared by undo."
             engineMessage = "Local undo completed."
             return
@@ -540,6 +616,7 @@ private fun GoCoachScreen(
                 candidateText = "Undo cleared current analysis hints."
                 scoreText = "Score estimate not current."
                 scoreEstimate = null
+                scoreSnapshots = ScoreTimeline.trimAfter(scoreSnapshots, nextState.moves.size)
                 endgameLog = "Endgame log cleared by undo."
                 engineMessage = "Undid $undoCount move(s) in local state and engine state."
                 nextHintState = nextState
@@ -572,6 +649,7 @@ private fun GoCoachScreen(
             engineMessage = engineMessage,
             candidateText = candidateText,
             scoreText = scoreText,
+            scoreSnapshots = scoreSnapshots,
             moveReviewText = moveReviewText,
             lastMoveText = lastMoveText,
             endgameLog = endgameLog,
@@ -707,6 +785,10 @@ private fun GoCoachScreen(
             )
         }
 
+        if (uxOptions.showScoreGraph) {
+            ScoreGraphPanel(scoreSnapshots)
+        }
+
         GoBoard(
             gameState = gameState,
             candidateMoves = candidateMoves,
@@ -815,6 +897,26 @@ private fun GoCoachScreen(
     }
 }
 
+private data class EngineStartupResult(
+    val message: String,
+    val scoreSnapshot: ScoreSnapshot?,
+)
+
+private data class ScoredTurnOutcome(
+    val turnOutcome: TurnOutcome,
+    val scoreSnapshots: List<ScoreSnapshot>,
+)
+
+private fun scoreGraphAnalysisLimit(profile: EngineProfile): AnalysisLimit =
+    profile.analysisLimit.copy(candidateCount = 1)
+
+private fun localScoreSnapshot(state: GameState): ScoreSnapshot =
+    ScoreTimeline.fromFinalScore(
+        moveNumber = state.moves.size,
+        finalScore = BoardAreaScorer.score(state),
+        source = ScoreSnapshotSource.LocalAreaEstimate,
+    )
+
 private fun buildDebugReport(
     mode: MatchMode,
     engineName: String,
@@ -829,6 +931,7 @@ private fun buildDebugReport(
     engineMessage: String,
     candidateText: String,
     scoreText: String,
+    scoreSnapshots: List<ScoreSnapshot>,
     moveReviewText: String,
     lastMoveText: String,
     endgameLog: String,
@@ -876,6 +979,17 @@ private fun buildDebugReport(
         appendLine()
         appendLine("[LocalAreaScoreNow]")
         appendLine(localScoreText)
+        appendLine()
+        appendLine("[ScoreTimeline]")
+        if (scoreSnapshots.isEmpty()) {
+            appendLine("none")
+        } else {
+            scoreSnapshots.forEach { snapshot ->
+                appendLine(
+                    "${snapshot.moveNumber}. source=${snapshot.source}, whiteScoreLead=${snapshot.whiteScoreLead ?: "none"}, whiteWinRate=${snapshot.whiteWinRate ?: "none"}",
+                )
+            }
+        }
         appendLine()
         appendLine("[DisplayedTexts]")
         appendLine("lastMove=$lastMoveText")

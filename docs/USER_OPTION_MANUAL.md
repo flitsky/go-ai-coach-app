@@ -21,6 +21,11 @@
 
 플레이 화면에 바로 보이는 2열 표시 옵션이다.
 
+- `Score graph`
+  - 수순별 판세 변화를 작은 그래프로 보여준다.
+  - 초록 선은 White 기준 score lead, 파란 선은 White 기준 win rate 흐름이다.
+  - 그래프 위쪽은 백 우세, 가운데는 비슷함, 아래쪽은 흑 우세로 읽는다.
+  - AI 대국에서는 KataGo score estimate를 기록하고, 2P 모드에서는 로컬 area estimate를 기록한다.
 - `Candidate list`
   - 현재 보드에 표시된 후보수를 아래 목록으로도 보여준다.
   - 후보 순위, 착점 좌표, 점수 손실, 예상 리드, visits, policy prior 같은 compact 정보를 표시한다.

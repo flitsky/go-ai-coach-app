@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -109,10 +110,15 @@ internal fun KaTrainUxQuickOptionsPanel(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text("Quick display", fontWeight = FontWeight.SemiBold)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
+            QuickOptionRow {
+                OptionSwitchTile(
+                    label = "Score graph",
+                    checked = options.showScoreGraph,
+                    onCheckedChange = {
+                        onOptionsChange(options.copy(showScoreGraph = it))
+                    },
+                    modifier = Modifier.weight(1f),
+                )
                 OptionSwitchTile(
                     label = "Candidate list",
                     checked = options.showCandidateList,
@@ -121,6 +127,8 @@ internal fun KaTrainUxQuickOptionsPanel(
                     },
                     modifier = Modifier.weight(1f),
                 )
+            }
+            QuickOptionRow {
                 OptionSwitchTile(
                     label = "Game strip",
                     checked = options.showGameStatusStrip,
@@ -129,9 +137,21 @@ internal fun KaTrainUxQuickOptionsPanel(
                     },
                     modifier = Modifier.weight(1f),
                 )
+                Box(modifier = Modifier.weight(1f))
             }
         }
     }
+}
+
+@Composable
+private fun QuickOptionRow(
+    content: @Composable RowScope.() -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        content = content,
+    )
 }
 
 @Composable
