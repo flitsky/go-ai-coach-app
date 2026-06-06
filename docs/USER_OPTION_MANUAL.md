@@ -39,6 +39,7 @@
   - 엔진이 준비된 AI/2P 모드에서는 KataGo estimate를 사용한다.
   - 2P 모드에서 엔진이 준비되지 않은 경우에는 기존처럼 로컬 area estimate로 fallback한다.
   - ownership 값이 포함된 estimate를 받으면 별도 메뉴 없이 보드 위에 영향권 overlay를 바로 표시한다.
+  - ownership overlay는 교차점별 값을 사각형으로 칠하지 않고, 흑/백 영향권이 자연스럽게 퍼지는 반투명 gradient로 표현한다.
 
 ### 엔진 진행 상태
 

@@ -153,7 +153,6 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawOwnershipOverla
     gameState: GameState,
     ownershipEstimate: OwnershipEstimate,
 ) {
-    val markerSize = geometry.spacing * 0.64f
     ownershipEstimate.points.forEach { point ->
         if (!point.coordinate.isInside(gameState.boardSize)) {
             return@forEach
@@ -163,15 +162,25 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawOwnershipOverla
             return@forEach
         }
         val center = geometry.pointFor(point.coordinate)
-        val color = if (point.value < 0.0) {
-            Color(0xFF263238).copy(alpha = 0.10f + strength * 0.28f)
+        val baseColor = if (point.value < 0.0) {
+            Color(0xFF1F2327)
         } else {
-            Color(0xFFFFFFFF).copy(alpha = 0.14f + strength * 0.30f)
+            Color(0xFFFFF8E6)
         }
-        drawRect(
-            color = color,
-            topLeft = Offset(center.x - markerSize / 2f, center.y - markerSize / 2f),
-            size = Size(markerSize, markerSize),
+        val radius = geometry.spacing * (0.68f + strength * 0.42f)
+        val centerAlpha = 0.10f + strength * 0.32f
+        drawCircle(
+            brush = Brush.radialGradient(
+                colors = listOf(
+                    baseColor.copy(alpha = centerAlpha),
+                    baseColor.copy(alpha = centerAlpha * 0.42f),
+                    baseColor.copy(alpha = 0.0f),
+                ),
+                center = center,
+                radius = radius,
+            ),
+            radius = radius,
+            center = center,
         )
     }
 }

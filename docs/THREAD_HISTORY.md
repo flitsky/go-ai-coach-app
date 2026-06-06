@@ -293,3 +293,4 @@
 - 2P 모드에서도 엔진이 준비된 경우 현재 수순을 `EngineAdapter`에 재동기화하고, `Top Moves`, `Eval`, Score/Win Rate graph를 사용할 수 있게 했다. 엔진이 없으면 기존 로컬 룰 테스트로 fallback한다.
 - Top Moves의 점수 손실이 없는 policy/legal fallback 후보는 보드 위 회색 스팟으로 그리지 않고, 상세 텍스트와 `Copy Log`에만 남기도록 바꿨다.
 - `Ownership` 메뉴 옵션을 제거하고, `Eval` 결과에 ownership 값이 있으면 별도 토글 없이 보드 overlay로 표시되도록 통합했다.
+- 2차로 ownership overlay 표현을 사각형 heatmap에서 부드러운 radial gradient overlay로 바꿨다. 흑/백 영향권이 교차점 주변으로 퍼져 보이도록 중심 alpha와 radius를 ownership strength에 따라 조절한다.
