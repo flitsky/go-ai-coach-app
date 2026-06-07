@@ -48,12 +48,14 @@
   - 꺼져 있어도 착수 평가를 위한 pre-move analysis cache는 백그라운드에서 계속 준비한다.
 - 후보 개수
   - 현재 UI에서 사용자가 직접 N을 입력하지 않는다.
-  - 앱은 현재 합법 착점 수와 내부 최대값 중 작은 값을 `AnalysisLimit.candidateCount`로 엔진 adapter에 전달한다.
-  - 현재 내부 최대값은 상위 20개 후보다.
-  - `Beginner`처럼 낮은 visits/time 설정에서는 KataGo 검색이 실제로 방문한 후보수가 목표 후보수보다 적을 수 있다.
+- 앱은 현재 합법 착점 수와 내부 최대값 중 작은 값을 `AnalysisLimit.candidateCount`로 엔진 adapter에 전달한다.
+- 현재 내부 최대값은 상위 20개 후보다.
+- `analysis_learning.cfg`가 준비된 KataGo local process에서는 JSON analysis protocol을 우선 사용한다.
+  - `moveInfos` 후보는 `WR`, `score`, `visits`, `prior`, `loss`를 가진다.
+  - 보드에는 `pointLoss`가 있는 후보만 표시한다.
+- JSON analysis config가 없거나 JSON analysis 프로세스가 실패하면 기존 GTP `kata-search_analyze` 경로로 fallback한다.
+  - GTP fallback에서는 낮은 visits/time 설정에서 실제 score 후보가 목표 후보수보다 적을 수 있다.
   - 이 경우 앱은 부족한 후보 목록을 `kata-raw-nn` 정책 우선순위와 합법 착점 fallback으로 보강하되, 이 fallback 후보는 로그 전용이다.
-  - 보드에는 `pointLoss`가 있는 검색 후보만 표시한다.
-  - 검색 후보는 `WR`, `score`, `visits`, `loss`를 가질 수 있고, 정책 보강 후보는 `prior` 중심으로 로그에 표시된다.
 
 Top Moves 분석은 대국 AI 응수 설정과 분리한다.
 
@@ -61,18 +63,28 @@ Top Moves 분석은 대국 AI 응수 설정과 분리한다.
 - Top Moves와 착수 리뷰용 pre-move analysis는 현재 difficulty보다 한 단계 높은 difficulty의 기본 visits/time을 사용한다.
   - 예: 대국 AI가 `Beginner`이면 Top Moves는 최소 `Casual` 기본값인 `64 visits / 500ms`를 사용한다.
   - 수동으로 visits/time을 이미 더 높게 올려둔 경우에는 Top Moves가 약해지지 않도록 현재 값과 한 단계 위 기본값 중 큰 값을 사용한다.
-- KataGo process adapter는 후보수 목표가 커질 때 여기에 추가로 최소 `후보수 * 20 visits`, `2000ms`까지 Top Moves 검색을 일시 상향한다.
+- KataGo process adapter는 후보수 목표가 커질 때 여기에 추가로 최소 `후보수 * 20 visits`, `2000ms`까지 Top Moves 분석을 일시 상향한다.
 - 자동 cache에 점수 손실이 있는 후보가 5개 미만이면, 사용자가 `Top Moves`를 눌렀을 때 수동 deep analysis를 1회 실행한다. 이때는 `Full Analysis` 기본값인 `1000 visits / 5000ms` 이상을 사용한다.
-- Top Moves 검색 후에는 기존 AI 대국용 `EngineProfile.analysisLimit`로 `maxVisits/maxTime`을 되돌린다. 따라서 Top Moves를 강하게 해도 AI 응수 강도가 영구적으로 올라가지 않는다.
+- GTP fallback을 사용한 Top Moves 검색 후에는 기존 AI 대국용 `EngineProfile.analysisLimit`로 `maxVisits/maxTime`을 되돌린다. JSON analysis 경로는 별도 analysis process에 전체 수순을 query로 보내므로 GTP 대국 process의 응수 강도 설정을 바꾸지 않는다.
 
 ## KataGo process adapter 매핑
 
-`KataGoProcessEngineAdapter`는 설정을 다음 방식으로 엔진에 전달한다.
+`KataGoProcessEngineAdapter`는 대국용 GTP process와 분석용 JSON analysis process를 분리한다.
+
+대국/착수 생성:
 
 - process 시작 시 `-override-config maxVisits=<visits>`를 포함한다.
 - process 시작 시 `numSearchThreads=1`을 적용한다.
 - 설정 변경 시 GTP 명령으로 `kata-set-param maxVisits <visits>`를 보낸다.
 - time limit이 있으면 `kata-set-param maxTime <seconds>`를 보낸다.
+
+Top Moves:
+
+- `analysis_learning.cfg`가 있으면 `katago analysis` process를 별도로 시작한다.
+- 분석용 process는 대국용 GTP process와 분리되어 `numAnalysisThreads=1`, `numSearchThreads=4`를 사용한다.
+- query에는 현재 앱 수순 전체, rules, komi, board size, `maxVisits`, `overrideSettings.maxTime`, `includePolicy=true`가 들어간다.
+- JSON 응답의 `moveInfos`를 `CandidateMove`로 변환한다.
+- seed/config가 누락되었거나 JSON analysis가 실패하면 기존 GTP `kata-search_analyze`로 fallback한다.
 
 따라서 현재 앱의 최저 KataGo process 설정은 대략 다음과 같다.
 
@@ -83,7 +95,7 @@ numSearchThreads=1
 candidateCount=20
 ```
 
-주의: `candidateCount`는 “검색 방문수”가 아니라 “후보 목표 개수”다. 낮은 visits/time에서는 검색 후보가 적게 나올 수 있으므로, 앱은 로그 completeness를 위해 raw NN policy/legal fallback을 보관한다. 다만 점수 손실이 없는 fallback은 보드에 그리지 않는다.
+주의: `candidateCount`는 “검색 방문수”가 아니라 “후보 목표 개수”다. JSON analysis 경로에서는 실제 응답 후보 중 상위 `candidateCount`개만 사용한다. GTP fallback에서는 낮은 visits/time에서 검색 후보가 적게 나올 수 있으므로, 앱은 로그 completeness를 위해 raw NN policy/legal fallback을 보관한다. 다만 점수 손실이 없는 fallback은 보드에 그리지 않는다.
 
 ## Stub adapter 주의점
 

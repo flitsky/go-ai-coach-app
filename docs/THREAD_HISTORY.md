@@ -321,6 +321,13 @@
 - 에뮬레이터 확인 결과 자동 2초 분석은 Android CPU에서 scored 후보가 1개만 나올 수 있었다. 이에 따라 cache의 scored 후보가 5개 미만이면 사용자가 `Top Moves`를 누를 때 `Full Analysis` 수준 deep analysis를 1회 실행하도록 보강했다.
 - 최신 APK를 에뮬레이터에 재설치해 `Top Moves` 버튼 탭 후 `Cached Top Moves has only 1 scored candidate(s). Running deeper analysis.`와 보드 상단 `Thinking` 표시를 확인했다.
 - deep 분석 완료 후에도 에뮬레이터 CPU에서는 빈 9x9 기준 `Full Analysis 1000 visits / 5000ms`가 실제 29 visits, scored 후보 1개에 머물렀다. 따라서 KaTrain식 다중 색상 후보를 안정적으로 만들려면 GTP search 시간 상향만으로는 부족하고 JSON analysis/sweep/equalize adapter 실험이 필요하다고 정리했다.
+- 사용자가 “그럼 이제 다음 단계로 넘어갑시다”라고 하여 JSON analysis protocol 스파이크에 착수했다.
+- KaTrain `core/engine.py`, `core/game_node.py`, `core/game.py`를 다시 확인했다. KaTrain은 `katago analysis` JSON protocol로 `rootInfo`, `moveInfos`, `ownership`, `policy`를 받고, sweep/equalize는 후보별 refine query를 반복하는 구조다.
+- 로컬 KataGo 1.16.4에서 빈 9x9 JSON analysis smoke test를 실행했다. `gtp_learning.cfg`만으로는 `numAnalysisThreads` 키가 없어 실패하고, `analysis_learning.cfg`를 사용하면 `moveInfos` 40개 이상과 `rootInfo`, `policy`, `ownership`이 반환됨을 확인했다.
+- `KataGoJsonAnalysisParser`를 추가했다. JSON `moveInfos`의 흑 기준 `scoreLead/winrate`를 앱의 기존 white-lead/player-winrate convention으로 변환하고, 현재 착수자 기준 `pointLoss`를 계산한다.
+- `KataGoProcessEngineAdapter.analyze()`는 `analysis_learning.cfg`가 있으면 별도 `katago analysis` process를 우선 사용하고, 실패하거나 config가 없으면 기존 GTP `kata-search_analyze` fallback을 사용하도록 변경했다. 대국용 GTP process와 분석용 JSON process는 분리되며, 분석 process는 `numAnalysisThreads=1`, `numSearchThreads=4`를 사용한다.
+- dev seed script와 friend APK asset 준비에 `analysis_learning.cfg`를 추가했다. 친구 전달용 APK도 model, `gtp_learning.cfg`, `analysis_learning.cfg`를 함께 포함한다.
+- 에뮬레이터에 재설치 후 자동 Top Moves 분석을 확인했다. 기존 GTP/JSON 1-thread 경로에서는 빈 9x9에서 scored 후보가 1개였지만, JSON analysis process `numSearchThreads=4` 적용 후 `Top Moves analysis ready for Black: 13/20 scored spot(s).`와 `KataGo JSON analysis with 400 visits / 2000ms. Returned 13 scored candidate(s).`를 확인했다.
 - 사용자가 사석 확인/수정 UX 도입에 동의하고, 이를 얼마나 간결하게 넣을 수 있는지와 KaTrain 처리 방식을 질문했다.
 - KaTrain 소스 기준으로는 양패스 후 단순 엔진 `final_score`만 쓰지 않고, 일본식 규칙에서는 현재 노드와 이전 노드의 ownership을 평균해 `manual_score`를 계산한다. 불확실하면 `?`가 붙은 추정 점수 또는 `board-game-end` 상태로 남긴다.
 - Go AI Coach에는 양패스 후 자동으로 `Endgame Review` 상태로 전환하고, `Eval` ownership overlay + 엔진/로컬 사석 후보를 보드에 표시한 뒤 사용자가 돌을 탭해 dead/alive를 수정하고 `Accept score`로 확정하는 간결한 UX가 적절하다고 판단했다.

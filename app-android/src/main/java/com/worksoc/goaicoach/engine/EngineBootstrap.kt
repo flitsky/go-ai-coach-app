@@ -24,11 +24,13 @@ fun createEngineBootstrap(
     val compressedModel = File(katagoDir, "model.bin.gz")
     val bundledModel = File(katagoDir, "model.bin")
     val config = File(katagoDir, "gtp_learning.cfg")
+    val analysisConfig = File(katagoDir, "analysis_learning.cfg")
     val bundleSeedMessages = seedBundledKataGoAssetsIfNeeded(
         context = context,
         katagoDir = katagoDir,
         bundledModel = bundledModel,
         config = config,
+        analysisConfig = analysisConfig,
     )
     val model = compressedModel.takeIf { it.isFile && it.length() > 0L } ?: bundledModel
 
@@ -67,6 +69,7 @@ fun createEngineBootstrap(
                 executablePath = executable.absolutePath,
                 modelPath = model.absolutePath,
                 configPath = config.absolutePath,
+                analysisConfigPath = analysisConfig.takeIf { it.isFile }?.absolutePath,
                 startupOverrides = mapOf(
                     "numSearchThreads" to "1",
                     "logDir" to logsDir.absolutePath,
@@ -82,6 +85,10 @@ fun createEngineBootstrap(
         displayName = "KataGo",
         diagnostic = buildString {
             append("KataGo assets found. Using local process engine.")
+            if (!analysisConfig.isFile) {
+                append("\n")
+                append("KataGo JSON analysis config missing. Top Moves will fall back to GTP search analysis.")
+            }
             if (bundleSeedMessages.isNotEmpty()) {
                 append("\n")
                 append(bundleSeedMessages.joinToString("\n"))
@@ -95,6 +102,7 @@ private fun seedBundledKataGoAssetsIfNeeded(
     katagoDir: File,
     bundledModel: File,
     config: File,
+    analysisConfig: File,
 ): List<String> {
     katagoDir.mkdirs()
     val messages = mutableListOf<String>()
@@ -109,6 +117,12 @@ private fun seedBundledKataGoAssetsIfNeeded(
         context = context,
         assetPath = "katago/gtp_learning.cfg",
         destination = config,
+    )?.let { messages += it }
+
+    seedAssetIfMissing(
+        context = context,
+        assetPath = "katago/analysis_learning.cfg",
+        destination = analysisConfig,
     )?.let { messages += it }
 
     return messages

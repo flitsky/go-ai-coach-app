@@ -23,11 +23,14 @@ import java.io.BufferedWriter
 import java.io.File
 import java.io.InputStreamReader
 import java.io.OutputStreamWriter
+import org.json.JSONArray
+import org.json.JSONObject
 
 data class KataGoProcessConfig(
     val executablePath: String,
     val modelPath: String,
     val configPath: String,
+    val analysisConfigPath: String? = null,
     val startupOverrides: Map<String, String> = emptyMap(),
 )
 
@@ -41,6 +44,10 @@ class KataGoProcessEngineAdapter(
     private var process: Process? = null
     private var input: BufferedWriter? = null
     private var output: BufferedReader? = null
+    private var analysisProcess: Process? = null
+    private var analysisInput: BufferedWriter? = null
+    private var analysisOutput: BufferedReader? = null
+    private var analysisQueryCounter: Int = 0
     private val playedMoves = mutableListOf<Move>()
 
     override suspend fun initialize(profile: EngineProfile): EngineStatus {
@@ -108,20 +115,13 @@ class KataGoProcessEngineAdapter(
     override suspend fun analyze(limit: AnalysisLimit): AnalysisResult {
         ensureProcessStarted()
         val effectiveLimit = limit.effectiveAnalysisLimit()
-        val candidates = try {
-            applySearchLimit(effectiveLimit)
-            val response = sendCommand(effectiveLimit.toSearchAnalyzeCommand(nextPlayer))
-            KataGoAnalysisParser.attachPointLoss(
-                candidates = KataGoAnalysisParser.parseCandidates(
-                    response = response,
-                    player = nextPlayer,
-                    boardSize = boardSize,
-                    maxCandidates = limit.candidateCount,
-                ),
-            ).fillFromPolicyIfNeeded(limit)
-        } finally {
-            applySearchLimit(profile.analysisLimit)
+        runCatching {
+            analyzeWithJson(effectiveLimit, limit.candidateCount)
+        }.getOrNull()?.let { jsonResult ->
+            return jsonResult
         }
+
+        val candidates = analyzeWithGtp(effectiveLimit, limit)
         val policyFallbackCount = candidates.count { it.visits == null && it.policyPrior != null }
         val legalFallbackCount = candidates.count { it.visits == null && it.policyPrior == null }
         val scoredCount = candidates.count { it.pointLoss != null }
@@ -140,6 +140,50 @@ class KataGoProcessEngineAdapter(
             ),
         )
     }
+
+    private fun analyzeWithJson(
+        effectiveLimit: AnalysisLimit,
+        candidateCount: Int,
+    ): AnalysisResult? {
+        val analysisConfigPath = processConfig.analysisConfigPath
+            ?.takeIf { File(it).isFile }
+            ?: return null
+        ensureAnalysisProcessStarted(analysisConfigPath)
+        val response = sendAnalysisQuery(effectiveLimit.toJsonAnalysisQuery())
+        val candidates = KataGoJsonAnalysisParser.parseCandidates(
+            response = response,
+            player = nextPlayer,
+            boardSize = boardSize,
+            maxCandidates = candidateCount,
+        )
+        val scoredCount = candidates.count { it.pointLoss != null }
+        return AnalysisResult(
+            status = EngineStatus.ready(
+                "KataGo JSON analysis complete for ${nextPlayer.label}: $scoredCount/$candidateCount scored candidate(s)",
+            ),
+            candidates = candidates,
+            summary = "KataGo JSON analysis with ${effectiveLimit.visits} visits / ${effectiveLimit.timeMillis ?: 0}ms. Returned ${candidates.size} scored candidate(s).",
+        )
+    }
+
+    private fun analyzeWithGtp(
+        effectiveLimit: AnalysisLimit,
+        limit: AnalysisLimit,
+    ): List<CandidateMove> =
+        try {
+            applySearchLimit(effectiveLimit)
+            val response = sendCommand(effectiveLimit.toSearchAnalyzeCommand(nextPlayer))
+            KataGoAnalysisParser.attachPointLoss(
+                candidates = KataGoAnalysisParser.parseCandidates(
+                    response = response,
+                    player = nextPlayer,
+                    boardSize = boardSize,
+                    maxCandidates = limit.candidateCount,
+                ),
+            ).fillFromPolicyIfNeeded(limit)
+        } finally {
+            applySearchLimit(profile.analysisLimit)
+        }
 
     private fun List<CandidateMove>.fillFromPolicyIfNeeded(
         limit: AnalysisLimit,
@@ -269,6 +313,10 @@ class KataGoProcessEngineAdapter(
         output = null
         process?.destroy()
         process = null
+        analysisInput = null
+        analysisOutput = null
+        analysisProcess?.destroy()
+        analysisProcess = null
         return EngineStatus.stopped("KataGo process stopped")
     }
 
@@ -315,6 +363,46 @@ class KataGoProcessEngineAdapter(
         output = BufferedReader(InputStreamReader(process!!.inputStream))
     }
 
+    private fun ensureAnalysisProcessStarted(analysisConfigPath: String) {
+        if (analysisProcess?.isAlive == true) {
+            return
+        }
+
+        val analysisOverrides = (
+            processConfig.startupOverrides
+                .filterKeys { key ->
+                    key in setOf("logDir", "homeDataDir", "logToStderr")
+                } +
+                mapOf(
+                    "numAnalysisThreads" to "1",
+                    "numSearchThreads" to AnalysisSearchThreads.toString(),
+                    "logToStderr" to "false",
+                    "logAllRequests" to "false",
+                    "logAllResponses" to "false",
+                    "logSearchInfo" to "false",
+                )
+            )
+            .entries
+            .joinToString(",") { (key, value) -> "$key=$value" }
+
+        val command = listOf(
+            processConfig.executablePath,
+            "analysis",
+            "-model",
+            processConfig.modelPath,
+            "-config",
+            analysisConfigPath,
+            "-override-config",
+            analysisOverrides,
+        )
+
+        analysisProcess = ProcessBuilder(command)
+            .redirectError(ProcessBuilder.Redirect.INHERIT)
+            .start()
+        analysisInput = BufferedWriter(OutputStreamWriter(analysisProcess!!.outputStream))
+        analysisOutput = BufferedReader(InputStreamReader(analysisProcess!!.inputStream))
+    }
+
     private fun sendCommand(command: String): String {
         val writer = requireNotNull(input) { "KataGo process input is not initialized" }
         val reader = requireNotNull(output) { "KataGo process output is not initialized" }
@@ -344,6 +432,37 @@ class KataGoProcessEngineAdapter(
             .trim()
     }
 
+    private fun sendAnalysisQuery(query: JSONObject): String {
+        val writer = requireNotNull(analysisInput) { "KataGo analysis process input is not initialized" }
+        val reader = requireNotNull(analysisOutput) { "KataGo analysis process output is not initialized" }
+        writer.write(query.toString())
+        writer.newLine()
+        writer.flush()
+
+        val queryId = query.getString("id")
+        while (true) {
+            val line = reader.readLine() ?: error("KataGo analysis process ended while waiting for: $queryId")
+            val trimmed = line.trim()
+            if (!trimmed.startsWith("{")) {
+                continue
+            }
+            val response = JSONObject(trimmed)
+            if (response.optString("id") != queryId) {
+                continue
+            }
+            require(!response.has("error")) {
+                "KataGo JSON analysis failed for `$queryId`: ${response.optString("error")}"
+            }
+            if (response.has("warning") || !response.has("moveInfos")) {
+                continue
+            }
+            if (response.optBoolean("isDuringSearch", false)) {
+                continue
+            }
+            return trimmed
+        }
+    }
+
     private fun applySearchLimit(limit: AnalysisLimit) {
         sendCommand("kata-set-param maxVisits ${limit.visits}")
         limit.timeMillis?.let { timeMillis ->
@@ -369,11 +488,51 @@ class KataGoProcessEngineAdapter(
         )
     }
 
+    private fun AnalysisLimit.toJsonAnalysisQuery(): JSONObject {
+        analysisQueryCounter += 1
+        val overrideSettings = JSONObject()
+        timeMillis?.let { overrideSettings.put("maxTime", it / 1_000.0) }
+        return JSONObject()
+            .put("id", "go-ai-coach-analysis-$analysisQueryCounter")
+            .put("rules", ruleset.katagoName)
+            .put("komi", 6.5)
+            .put("boardXSize", boardSize.value)
+            .put("boardYSize", boardSize.value)
+            .put("initialPlayer", "B")
+            .put("initialStones", JSONArray())
+            .put("moves", playedMoves.toJsonMoves())
+            .put("analyzeTurns", JSONArray().put(playedMoves.size))
+            .put("maxVisits", visits)
+            .put("includeOwnership", false)
+            .put("includeMovesOwnership", false)
+            .put("includePolicy", true)
+            .put("overrideSettings", overrideSettings)
+            .put("priority", 0)
+    }
+
+    private fun List<Move>.toJsonMoves(): JSONArray =
+        JSONArray().also { moves ->
+            forEach { move ->
+                moves.put(
+                    JSONArray()
+                        .put(move.player.toGtpColor())
+                        .put(move.toGtpVertex(boardSize)),
+                )
+            }
+        }
+
     private fun Move.toGtpCommand(boardSize: BoardSize): String =
         when (this) {
-            is Move.Play -> "play ${player.toGtpColor()} ${coordinate.label(boardSize)}"
-            is Move.Pass -> "play ${player.toGtpColor()} pass"
-            is Move.Resign -> "play ${player.toGtpColor()} resign"
+            is Move.Play -> "play ${player.toGtpColor()} ${toGtpVertex(boardSize)}"
+            is Move.Pass -> "play ${player.toGtpColor()} ${toGtpVertex(boardSize)}"
+            is Move.Resign -> "play ${player.toGtpColor()} ${toGtpVertex(boardSize)}"
+        }
+
+    private fun Move.toGtpVertex(boardSize: BoardSize): String =
+        when (this) {
+            is Move.Play -> coordinate.label(boardSize)
+            is Move.Pass -> "pass"
+            is Move.Resign -> "resign"
         }
 
     private fun String.toMove(
@@ -398,5 +557,6 @@ class KataGoProcessEngineAdapter(
     private companion object {
         private const val VisitsPerCandidate = 20
         private const val MinAnalysisTimeMillis = 2_000L
+        private const val AnalysisSearchThreads = 4
     }
 }

@@ -40,7 +40,7 @@ make dev
 make friend-apk
 ```
 
-`make friend-apk`는 로컬 model/config를 `app-android/src/friend/assets/katago/`로 복사한 뒤 `:app-android:assembleFriend`를 실행한다. 따라서 평소 `assembleDebug` / `make dev`는 100MB 모델 asset을 처리하지 않는다.
+`make friend-apk`는 로컬 model/config/analysis config를 `app-android/src/friend/assets/katago/`로 복사한 뒤 `:app-android:assembleFriend`를 실행한다. 따라서 평소 `assembleDebug` / `make dev`는 100MB 모델 asset을 처리하지 않는다.
 
 ## APK에 포함된 엔진 산출물
 
@@ -48,6 +48,7 @@ make friend-apk
 lib/arm64-v8a/libkatago.so
 assets/katago/model.bin
 assets/katago/gtp_learning.cfg
+assets/katago/analysis_learning.cfg
 ```
 
 주의: source asset은 `model.bin.gz`이지만 Android asset merge 과정에서 APK 내부 이름은 `assets/katago/model.bin`으로 들어간다. 앱 bootstrap은 이 파일을 첫 실행 시 `files/katago/model.bin`으로 복사한 뒤 KataGo process adapter에 넘긴다.
@@ -60,8 +61,9 @@ assets/katago/gtp_learning.cfg
 2. 기존 개발 seed 파일 `files/katago/model.bin.gz` 확인
 3. 번들 APK에서 복사한 `files/katago/model.bin` 확인
 4. `files/katago/gtp_learning.cfg` 확인
-5. 누락된 파일이 있고 APK assets에 있으면 첫 실행 시 app files로 복사
-6. 준비가 끝나면 `KataGoProcessEngineAdapter`를 선택
+5. `files/katago/analysis_learning.cfg` 확인
+6. 누락된 파일이 있고 APK assets에 있으면 첫 실행 시 app files로 복사
+7. 준비가 끝나면 `KataGoProcessEngineAdapter`를 선택
 
 첫 실행 때 100MB 안팎의 모델 파일을 복사하므로 잠시 준비 화면이 보일 수 있다.
 
@@ -90,6 +92,7 @@ adb shell am start -W -n com.worksoc.goaicoach/.MainActivity
 KataGo assets found. Using local process engine.
 Seeded bundled asset katago/model.bin.
 Seeded bundled asset katago/gtp_learning.cfg.
+Seeded bundled asset katago/analysis_learning.cfg.
 ```
 
 이미 한 번 복사된 뒤에는 `Seeded bundled asset...` 줄이 보이지 않을 수 있다.

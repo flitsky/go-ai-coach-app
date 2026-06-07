@@ -63,7 +63,7 @@ make friend-apk
 
 `make install-dev-engine` installs the debug APK, seeds the KataGo model/config into app files, and restarts the app. Use `make reinstall-dev-engine` when the emulator reports low storage or when a clean reinstall is needed. Reinstalling removes app files, so the seed step must run again before KataGo mode can work.
 
-`make friend-apk` creates a separate engine-bundled sideload APK at `dist/go-ai-coach-katago-friend.apk`. This target copies the model/config into the `friend` build type only, so normal `make dev` / `assembleDebug` remains fast and model-free.
+`make friend-apk` creates a separate engine-bundled sideload APK at `dist/go-ai-coach-katago-friend.apk`. This target copies the model, GTP config, and analysis config into the `friend` build type only, so normal `make dev` / `assembleDebug` remains fast and model-free.
 
 `make release` requires a prepared release engine artifact at `app-android/src/main/jniLibs/arm64-v8a/libkatago.so` and fails early if it is missing.
 

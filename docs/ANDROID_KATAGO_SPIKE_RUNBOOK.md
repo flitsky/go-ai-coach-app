@@ -10,6 +10,7 @@
 - 실제 앱 프로세스에서는 app private data의 실행 파일 실행이 SELinux `execute_no_trans`로 거부됨.
 - 따라서 앱에서 process 방식으로 실행하려면 executable을 app data가 아니라 APK native library 영역에 넣고 extract되게 해야 한다.
 - `app-android`는 `nativeLibraryDir/libkatago.so`가 있고 `files/katago/model.bin.gz`, `files/katago/gtp_learning.cfg`가 있을 때 `KataGoProcessEngineAdapter`를 선택한다.
+- `files/katago/analysis_learning.cfg`가 있으면 Top Moves는 별도 `katago analysis` JSON process를 우선 사용한다. 이 파일이 없으면 기존 GTP `kata-search_analyze` fallback으로 동작한다.
 - `libkatago.so`를 `app-android/src/debug/jniLibs/arm64-v8a/`에 임시 포함하고 model/config를 app files에 seed한 뒤, Android 앱 UI에서 실제 KataGo 대국 루프를 확인했다.
 
 ## 분리 원칙
@@ -58,7 +59,8 @@ ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./scripts/seed-katago-model-to-
 기본 model/config 경로:
 
 - model: `/opt/homebrew/Cellar/katago/1.16.4/share/katago/kata1-b18c384nbt-s9996604416-d4316597426.bin.gz`
-- config: `/Users/ryan9kim/worksoc/katago/config/katago/gtp_learning.cfg`
+- GTP config: `/Users/ryan9kim/worksoc/katago/config/katago/gtp_learning.cfg`
+- analysis config: `/Users/ryan9kim/worksoc/katago/config/katago/analysis_learning.cfg`
 
 다른 파일을 쓰려면 환경변수로 바꿀 수 있다.
 

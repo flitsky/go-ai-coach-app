@@ -11,6 +11,7 @@ FRIEND_ASSET_DIR := app-android/src/friend/assets/katago
 FRIEND_APK := dist/go-ai-coach-katago-friend.apk
 FRIEND_MODEL_PATH ?= /opt/homebrew/Cellar/katago/1.16.4/share/katago/kata1-b18c384nbt-s9996604416-d4316597426.bin.gz
 FRIEND_CONFIG_PATH ?= /Users/ryan9kim/worksoc/katago/config/katago/gtp_learning.cfg
+FRIEND_ANALYSIS_CONFIG_PATH ?= /Users/ryan9kim/worksoc/katago/config/katago/analysis_learning.cfg
 
 export ANDROID_HOME
 export JAVA_HOME
@@ -65,10 +66,12 @@ friend-apk: doctor ensure-debug-engine prepare-friend-assets
 prepare-friend-assets:
 	@test -f "$(FRIEND_MODEL_PATH)" || (echo "Friend APK model not found: $(FRIEND_MODEL_PATH)" && exit 1)
 	@test -f "$(FRIEND_CONFIG_PATH)" || (echo "Friend APK config not found: $(FRIEND_CONFIG_PATH)" && exit 1)
+	@test -f "$(FRIEND_ANALYSIS_CONFIG_PATH)" || (echo "Friend APK analysis config not found: $(FRIEND_ANALYSIS_CONFIG_PATH)" && exit 1)
 	@rm -rf "$(FRIEND_ASSET_DIR)"
 	@mkdir -p "$(FRIEND_ASSET_DIR)"
 	@cp "$(FRIEND_MODEL_PATH)" "$(FRIEND_ASSET_DIR)/model.bin.gz"
 	@cp "$(FRIEND_CONFIG_PATH)" "$(FRIEND_ASSET_DIR)/gtp_learning.cfg"
+	@cp "$(FRIEND_ANALYSIS_CONFIG_PATH)" "$(FRIEND_ASSET_DIR)/analysis_learning.cfg"
 	@echo "Prepared friend APK assets in $(FRIEND_ASSET_DIR)"
 
 release: doctor ensure-release-engine

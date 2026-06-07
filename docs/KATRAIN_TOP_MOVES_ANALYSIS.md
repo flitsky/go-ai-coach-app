@@ -39,7 +39,10 @@ KaTrain의 초록/노랑/빨강 spot은 엔진이 직접 분류해서 주는 값
 - `Top Moves`는 점수 손실이 있는 후보만 보드에 그린다.
 - 점수 손실이 없는 fallback 후보의 회색 spot은 제거했다.
 - 기본 Top Moves 요청은 모든 합법점을 전부 표시하려 하지 않고, 상위 20개 후보를 목표로 한다.
-- KataGo process adapter는 Top Moves 요청에 대해 최소 `후보수 * 20 visits`, `2000ms`를 적용하고, `kata-search_analyze <color> <centiseconds>` 형태로 time limit도 명시한다.
+- KataGo process adapter는 `analysis_learning.cfg`가 있으면 KataGo JSON analysis protocol을 우선 사용한다.
+- JSON analysis query는 현재 수순 전체, `maxVisits`, `overrideSettings.maxTime`, `includePolicy=true`를 전달하고, `moveInfos`를 `CandidateMove`로 변환한다.
+- JSON analysis process는 대국용 GTP process와 별도로 뜨며 `numAnalysisThreads=1`, `numSearchThreads=4`를 사용한다.
+- JSON analysis config가 없거나 실패하면 기존 GTP fallback으로 돌아간다. 이때는 최소 `후보수 * 20 visits`, `2000ms`를 적용하고, `kata-search_analyze <color> <centiseconds>` 형태로 time limit도 명시한다.
 - 자동 cache의 scored 후보가 5개 미만이면 사용자가 `Top Moves`를 누를 때 `Full Analysis` 수준의 deep analysis를 1회 실행한다.
 - 착수 후 돌 중앙의 평가 dot도 같은 `pointLoss` 분류를 사용한다.
 - 색상 단계는 KaTrain 기본 임계값을 모바일 UX에 맞춰 5단계로 단순화했다.
@@ -53,13 +56,13 @@ KaTrain의 초록/노랑/빨강 spot은 엔진이 직접 분류해서 주는 값
 
 ## 현재 구조의 한계
 
-현재 Android local process adapter는 GTP 계열 `kata-search_analyze`와 `kata-raw-nn` 파싱을 중심으로 동작한다. 이 방식은 빠르게 붙이기 좋지만, KaTrain식 풍부한 후보 분석에는 한계가 있다.
+현재 Android local process adapter는 Top Moves에 대해 JSON analysis protocol을 우선 사용하고, 실패 시 GTP 계열 `kata-search_analyze`와 `kata-raw-nn` 파싱으로 fallback한다.
 
-- 낮은 visits에서는 실제 score가 있는 후보가 적게 나올 수 있다.
-- 모든 합법 착점에 대해 `pointLoss`를 안정적으로 얻으려면 후보별 refine 분석이 필요하다.
-- `kata-raw-nn` policy는 prior 정보에는 좋지만, 후보별 실전 점수 손실을 대신할 수 없다.
-- ownership, policy, rootInfo, moveInfos를 한 번에 일관되게 관리하려면 KataGo analysis JSON 프로토콜이 더 적합하다.
-- 에뮬레이터 CPU 검증에서는 자동 2초 분석뿐 아니라 수동 `Full Analysis 5초`에서도 빈 9x9 scored 후보가 1개에 머물 수 있었다. 따라서 단순히 GTP search 시간을 늘리는 것만으로 KaTrain식 다중 색상 후보를 안정적으로 만들기는 어렵다.
+- JSON normal analysis는 GTP보다 많은 `moveInfos`를 안정적으로 준다.
+- 모든 합법 착점에 대해 `pointLoss`를 더 촘촘히 얻으려면 여전히 후보별 refine 분석이 필요하다.
+- `kata-raw-nn` policy는 prior 정보에는 좋지만, 후보별 실전 점수 손실을 대신할 수 없으므로 fallback 로그 전용으로 유지한다.
+- ownership, policy, rootInfo, moveInfos를 한 번에 일관되게 관리하려면 JSON analysis 결과를 앱 내부 분석 cache 모델로 더 확장할 필요가 있다.
+- 에뮬레이터 CPU 검증에서는 GTP 자동 2초 분석뿐 아니라 수동 `Full Analysis 5초`에서도 빈 9x9 scored 후보가 1개에 머물 수 있었다. JSON analysis normal query가 이 병목의 1차 해법이고, sweep/equalize는 다음 고도화 단계다.
 
 ## 권장 적용 순서
 
@@ -73,10 +76,10 @@ KaTrain의 초록/노랑/빨강 spot은 엔진이 직접 분류해서 주는 값
    - 사용자가 직접 `Top Moves`를 요청했을 때 cache 품질이 낮으면 1회 deep analysis로 보강한다.
    - 모든 합법점 전수 분석은 기본 자동 UX로 두지 않는다.
 
-3. KataGo analysis JSON adapter 추가 검토
-   - `EngineAdapter` 뒤에 새 구현으로 추가한다.
-   - 앱 UI와 shared 도메인 모델은 바꾸지 않고 adapter 내부만 교체한다.
-   - `rootInfo`, `moveInfos`, `ownership`, `policy`, partial result를 일관된 모델로 받을 수 있다.
+3. KataGo analysis JSON adapter
+   - 1차 구현 완료: `EngineAdapter.analyze()` 내부에서 JSON analysis process를 우선 사용한다.
+   - 앱 UI와 shared 도메인 모델은 바꾸지 않고 adapter 내부에서 `CandidateMove`로 변환한다.
+   - 아직 `rootInfo`, `ownership`, `policy`, partial result를 앱 cache 모델로 모두 승격하지는 않았다.
 
 4. Sweep/Equalize 분석 도입 검토
    - KaTrain처럼 모든 합법 후보를 빠르게 훑는 sweep 분석을 추가하면 더 많은 색상 spot을 만들 수 있다.
@@ -86,6 +89,6 @@ KaTrain의 초록/노랑/빨강 spot은 엔진이 직접 분류해서 주는 값
 
 ## 의사결정
 
-당장 앱의 기본 대국 UX에서는 빠른 Top Moves와 부드러운 Eval overlay를 유지한다. KaTrain식 전체 후보 색상 품질은 엔진 호출 구조를 JSON analysis protocol로 확장하는 별도 작업으로 둔다.
+당장 앱의 기본 대국 UX에서는 JSON analysis 기반 Top Moves와 부드러운 Eval overlay를 유지한다. KaTrain식 전체 후보 색상 품질은 JSON normal analysis 이후 sweep/equalize/refine 분석을 별도 작업으로 확장한다.
 
 이 결정은 도메인 분리 원칙과 맞다. UI는 계속 `CandidateMove`, `ScoreEstimate`, `OwnershipEstimate`만 사용하고, GTP/process/JNI/remote/JSON analysis 차이는 `EngineAdapter` 구현 내부로 숨긴다.

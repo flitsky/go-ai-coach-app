@@ -20,7 +20,8 @@ KaTrain류 UI는 대체로 엔진 분석 결과의 후보수 리스트를 보드
 - 보드 상태 canonical source는 `shared`의 `GameState`와 move history다.
 - 엔진은 평가자/추천자이며, 후보수는 `CandidateMove` DTO로만 앱에 노출한다.
 - UI는 `CandidateMove` 목록만 보고 오버레이를 그린다.
-- KataGo process adapter의 `analyze()`는 `kata-search_analyze` 검색 후보를 우선 사용하고, 부족분은 raw NN policy/legal 후보로 보강한다.
+- KataGo process adapter의 `analyze()`는 `analysis_learning.cfg`가 있으면 KataGo JSON analysis protocol을 우선 사용한다.
+- JSON analysis config가 없거나 실패하면 `kata-search_analyze` 검색 후보를 사용하고, 부족분은 raw NN policy/legal 후보로 보강한다.
 - 단, 보드 위 Top Moves spot은 후보별 점수 손실이 있는 후보만 그린다. policy/legal fallback처럼 점수 손실이 없는 후보는 debug text와 `Copy Log`에는 남기되 회색 spot으로 표시하지 않는다.
 
 ## 현재 구현
@@ -36,7 +37,8 @@ KaTrain류 UI는 대체로 엔진 분석 결과의 후보수 리스트를 보드
   - policy/legal fallback처럼 점수 손실이 없는 후보: 보드 spot 없음
 - 첫 번째 후보수는 더 진하고 크게 표시해 “best move”로 구분한다.
 - 사람이 착수하거나, AI 응수가 완료되거나, 새 판/undo가 실행되면 이전 후보수 표시는 지운다.
-- KataGo process adapter는 `kata-search_analyze` 응답의 `info move ...` 블록을 파싱해 후보 spot을 표시한다.
+- KataGo process adapter는 JSON analysis 응답의 `moveInfos`를 우선 파싱해 후보 spot을 표시한다.
+- fallback 경로에서는 `kata-search_analyze` 응답의 `info move ...` 블록을 파싱한다.
 - 낮은 visits/time에서 검색 후보가 요청 개수보다 적으면 `kata-raw-nn 0`의 policy 상위 후보와 합법 착점으로 부족한 후보 목록을 채운다.
 - 검색 후보는 visits/winrate/score를 가질 수 있고, policy fallback 후보는 `prior` 중심으로 표시된다.
 - UI 버튼명은 `Top Moves`로 표시한다.
@@ -47,8 +49,9 @@ KaTrain류 UI는 대체로 엔진 분석 결과의 후보수 리스트를 보드
 - Top Moves와 착수 리뷰용 pre-move analysis는 대국 AI 응수 설정보다 한 단계 높은 difficulty의 visits/time을 사용한다.
   - 예: 대국 AI가 `Beginner`이면 Top Moves 분석은 최소 `Casual` 기본값을 사용한다.
   - 사용자가 visits/time을 이미 더 높게 조정한 경우에는 현재 값과 한 단계 위 기본값 중 더 큰 값을 사용해 Top Moves가 약해지지 않게 한다.
-- `KataGoProcessEngineAdapter.analyze()`는 후보수 목표가 커질 때 최소 `후보수 * 20 visits`, `2000ms`로 Top Moves 검색을 일시 상향한다.
-- `kata-search_analyze`에는 time limit을 centisecond 인자로도 전달한다. Android CPU 환경에서 score가 있는 후보가 너무 적게 나오는 상황을 줄이기 위한 조치다.
+- `KataGoProcessEngineAdapter.analyze()`는 후보수 목표가 커질 때 최소 `후보수 * 20 visits`, `2000ms`로 Top Moves 분석을 일시 상향한다.
+- JSON analysis query에는 `maxVisits`와 `overrideSettings.maxTime`을 전달한다.
+- GTP fallback의 `kata-search_analyze`에는 time limit을 centisecond 인자로도 전달한다. Android CPU 환경에서 score가 있는 후보가 너무 적게 나오는 상황을 줄이기 위한 조치다.
 - 자동 cache에 score가 있는 후보가 5개 미만이면, 사용자가 `Top Moves`를 누르는 시점에 `Full Analysis` 수준의 수동 deep analysis를 한 번 수행한다.
 - Top Moves 검색 후에는 기존 AI 대국용 `EngineProfile.analysisLimit`로 `maxVisits/maxTime`을 되돌린다. 따라서 Top Moves 품질 보강이 AI 응수 강도 설정을 영구적으로 바꾸지 않는다.
 

@@ -25,4 +25,5 @@ dependencies {
     implementation(project(":shared"))
 
     testImplementation(kotlin("test"))
+    testImplementation("org.json:json:20240303")
 }
