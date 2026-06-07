@@ -23,6 +23,8 @@ KaTrain류 UI는 대체로 엔진 분석 결과의 후보수 리스트를 보드
 - KataGo process adapter의 `analyze()`는 `analysis_learning.cfg`가 있으면 KataGo JSON analysis protocol을 우선 사용한다.
 - JSON analysis config가 없거나 실패하면 `kata-search_analyze` 검색 후보를 사용하고, 부족분은 raw NN policy/legal 후보로 보강한다.
 - 단, 보드 위 Top Moves spot은 후보별 점수 손실이 있는 후보만 그린다. policy/legal fallback처럼 점수 손실이 없는 후보는 debug text와 `Copy Log`에는 남기되 회색 spot으로 표시하지 않는다.
+- 앱은 `AnalysisResult.candidates`를 그대로 UI에 연결하지 않고, 현재 `GameState`의 모든 합법 착점을 포함하는 `MoveAnalysisSnapshot`으로 변환한다.
+- `MoveAnalysisSnapshot`은 각 착점을 `Scored`, `PolicyOnly`, `LegalOnly`로 구분한다. 현재 보드 UI는 `Scored` 착점만 그리지만, 착수 리뷰와 로그는 전체 snapshot을 기준으로 한다.
 
 ## 현재 구현
 
@@ -44,7 +46,7 @@ KaTrain류 UI는 대체로 엔진 분석 결과의 후보수 리스트를 보드
 - UI 버튼명은 `Top Moves`로 표시한다.
 - `Top Moves` 버튼은 토글이다. 켜져 있으면 매 사용자 차례에 준비된 후보 spot을 자동 표시한다.
 - 착수 후 평가 dot을 안정적으로 남기기 위해, 사람 차례가 되면 `Top Moves` 표시 여부와 관계없이 백그라운드 pre-move analysis를 수행한다.
-- 실제 요청 후보는 현재 합법 착점 수와 내부 상한 중 작은 값이다. 현재 내부 상한은 상위 20개 후보다.
+- 실제 요청 후보는 현재 합법 착점 수와 내부 상한 중 작은 값이다. 9x9 POC에서는 전체 합법 착점을 목표로 한다.
 - 보드에는 score가 있는 후보만 표시한다.
 - Top Moves와 착수 리뷰용 pre-move analysis는 대국 AI 응수 설정보다 한 단계 높은 difficulty의 visits/time을 사용한다.
   - 예: 대국 AI가 `Beginner`이면 Top Moves 분석은 최소 `Casual` 기본값을 사용한다.
@@ -61,6 +63,7 @@ KaTrain류 UI는 대체로 엔진 분석 결과의 후보수 리스트를 보드
 
 - 실제 착수 좌표가 직전 후보 목록에 있으면 해당 후보의 `pointLoss`로 green/yellow/red marker를 돌 중앙에 표시한다.
 - 노랑/빨강 spot은 UI 색상이 아니라 엔진 후보 데이터의 문제다. JSON normal analysis가 상위 후보만 반환하고 그 후보들의 `pointLoss`가 낮으면 초록 계열만 보인다. 더 나쁜 후보까지 색칠하려면 KaTrain식 sweep/refine 분석이 필요하다.
+- 직전 snapshot에 합법 착점으로는 존재하지만 아직 `pointLoss`가 없으면 착수 리뷰는 `unknown`으로 처리한다. 상위 후보 밖이라는 이유만으로 실수 색상을 찍지 않는다.
 - 착수 후 marker는 바둑알 위에 작은 색상 원만 표시하고, 점수 숫자는 보드 위에 겹쳐 쓰지 않는다.
 - 착수 후 marker는 단일 last marker가 아니라 `moveNumber`가 포함된 목록으로 유지한다. 따라서 AI 응수나 다음 힌트 갱신 후에도 착수 당시 평가 dot이 해당 돌 위에 남는다.
 - 직전 후보 목록에는 있으나 policy fallback 후보라서 점수 손실이 없으면 unknown으로 처리한다.

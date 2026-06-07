@@ -49,7 +49,8 @@
 - 후보 개수
   - 현재 UI에서 사용자가 직접 N을 입력하지 않는다.
 - 앱은 현재 합법 착점 수와 내부 최대값 중 작은 값을 `AnalysisLimit.candidateCount`로 엔진 adapter에 전달한다.
-- 현재 내부 최대값은 상위 20개 후보다.
+- 9x9 POC에서는 전체 합법 착점을 목표 후보수로 사용한다.
+- 앱은 엔진 응답 후보와 현재 합법 착점을 합쳐 `MoveAnalysisSnapshot`을 만든다. snapshot에는 `Scored`, `PolicyOnly`, `LegalOnly` coverage가 함께 보존된다.
 - `analysis_learning.cfg`가 준비된 KataGo local process에서는 JSON analysis protocol을 우선 사용한다.
   - `moveInfos` 후보는 `WR`, `score`, `visits`, `prior`, `loss`를 가진다.
   - 보드에는 `pointLoss`가 있는 후보만 표시한다.
@@ -92,10 +93,10 @@ Top Moves:
 maxVisits=16
 maxTime=0.25
 numSearchThreads=1
-candidateCount=20
+candidateCount=현재 9x9 합법 착점 수, 빈 보드 예시 81
 ```
 
-주의: `candidateCount`는 “검색 방문수”가 아니라 “후보 목표 개수”다. JSON analysis 경로에서는 실제 응답 후보 중 상위 `candidateCount`개만 사용한다. GTP fallback에서는 낮은 visits/time에서 검색 후보가 적게 나올 수 있으므로, 앱은 로그 completeness를 위해 raw NN policy/legal fallback을 보관한다. 다만 점수 손실이 없는 fallback은 보드에 그리지 않는다.
+주의: `candidateCount`는 “검색 방문수”가 아니라 “후보 목표 개수”다. 현재 9x9 Top Moves에서는 합법 착점 수까지 목표로 올릴 수 있지만, 실제 `pointLoss`가 채워지는 후보 수는 KataGo 응답 품질과 분석 예산에 따라 달라진다. GTP fallback에서는 낮은 visits/time에서 검색 후보가 적게 나올 수 있으므로, 앱은 로그 completeness를 위해 raw NN policy/legal fallback을 보관한다. 다만 점수 손실이 없는 fallback은 보드에 그리지 않는다.
 
 ## Stub adapter 주의점
 

@@ -30,15 +30,16 @@ KaTrain의 초록/노랑/빨강 spot은 엔진이 직접 분류해서 주는 값
 따라서 우리 앱도 다음 구조가 맞다.
 
 - `EngineAdapter`는 후보별 정량값만 DTO로 반환한다.
-- UI는 `CandidateMove.pointLoss`가 있는 후보만 보드에 표시한다.
+- 앱은 엔진 후보 DTO와 현재 `GameState`를 합쳐 `MoveAnalysisSnapshot`을 만든다.
+- UI는 snapshot 중 `CandidateMove.pointLoss`가 있는 후보만 보드에 표시한다.
 - 색상은 앱 공통 규칙으로 계산한다.
-- 점수 없는 policy/legal fallback 후보는 debug text와 로그에는 남길 수 있지만, 보드 spot으로는 그리지 않는다.
+- 점수 없는 policy/legal/legal-only 후보는 snapshot과 로그에는 남기지만, 보드 spot으로는 그리지 않는다.
 
 ## 현재 반영 상태
 
 - `Top Moves`는 점수 손실이 있는 후보만 보드에 그린다.
 - 점수 손실이 없는 fallback 후보의 회색 spot은 제거했다.
-- 기본 Top Moves 요청은 모든 합법점을 전부 표시하려 하지 않고, 상위 20개 후보를 목표로 한다.
+- 기본 Top Moves 데이터 모델은 모든 합법 착점을 snapshot에 보존한다. 9x9 POC에서는 전체 합법 착점 수를 후보 목표로 요청하되, 실제 `pointLoss`가 채워지는 범위는 엔진 응답 품질에 따른다.
 - KataGo process adapter는 `analysis_learning.cfg`가 있으면 KataGo JSON analysis protocol을 우선 사용한다.
 - JSON analysis query는 현재 수순 전체, `maxVisits`, `overrideSettings.maxTime`, `includePolicy=true`를 전달하고, `moveInfos`를 `CandidateMove`로 변환한다.
 - JSON 후보 spot의 `pointLoss`는 KaTrain의 `pointsLost`와 맞춰 `rootInfo.scoreLead` 대비 손실로 계산한다. `rootInfo`가 없는 예외 응답에서는 기존처럼 order 0 후보 대비 손실로 fallback한다.
@@ -46,6 +47,7 @@ KaTrain의 초록/노랑/빨강 spot은 엔진이 직접 분류해서 주는 값
 - JSON analysis config가 없거나 실패하면 기존 GTP fallback으로 돌아간다. 이때는 최소 `후보수 * 20 visits`, `2000ms`를 적용하고, `kata-search_analyze <color> <centiseconds>` 형태로 time limit도 명시한다.
 - 자동 cache의 scored 후보가 5개 미만이면 사용자가 `Top Moves`를 누를 때 `Full Analysis` 수준의 deep analysis를 1회 실행한다.
 - 착수 후 돌 중앙의 평가 dot도 같은 `pointLoss` 분류를 사용한다.
+- 착수 리뷰는 전체 합법 착점 snapshot에서 착수 좌표를 조회한다. 합법이지만 아직 점수 손실이 없는 착점은 `unknown`으로 처리한다.
 - 색상 단계는 KaTrain 기본 임계값을 모바일 UX에 맞춰 5단계로 단순화했다.
   - `0.5`집 이하: 진한 초록
   - `1.5`집 이하: 연한 초록
@@ -73,7 +75,7 @@ KaTrain의 초록/노랑/빨강 spot은 엔진이 직접 분류해서 주는 값
    - `Top Moves`는 score가 있는 후보만 표시하고 fallback spot은 숨긴다.
 
 2. Top Moves scored 후보 품질 보강
-   - 기본 Top Moves는 상위 20개 후보를 목표로 한다.
+   - 9x9 POC의 기본 Top Moves는 전체 합법 착점 snapshot을 목표로 한다.
    - 평소 AI 난이도와 분석 강도를 분리한다.
    - 사용자가 직접 `Top Moves`를 요청했을 때 cache 품질이 낮으면 1회 deep analysis로 보강한다.
    - 모든 합법점 전수 분석은 기본 자동 UX로 두지 않는다.

@@ -20,7 +20,7 @@ KaTrain의 UX 중 Go AI Coach에 가져올 만한 항목을 효과와 구현 난
 ## 현재 앱에 이미 반영된 항목
 
 - `Top Moves` 버튼 기반 후보수 표시
-- 사람 차례 백그라운드 pre-move analysis에서 상위 20개 후보를 목표로 후보 데이터 확보
+- 사람 차례 백그라운드 pre-move analysis에서 전체 합법 착점 snapshot을 만들고, 엔진이 점수를 준 후보를 `Scored`로 보존
 - 후보수별 KaTrain식 손실 구간 색상 spot
 - 점수 손실이 없는 policy/legal fallback 후보의 회색 spot 제거
 - KataGo JSON analysis protocol 기반 Top Moves 후보 파싱
@@ -100,7 +100,7 @@ KaTrain의 UX 중 Go AI Coach에 가져올 만한 항목을 효과와 구현 난
 
 2. **Top Moves UX 완성**
    - 후보수 compact list 패널: 화면 집중을 위해 제거됨. 상세 후보 정보는 debug text와 `Copy Log`로 확인한다.
-   - Top Moves 버튼: 구현됨. 사람 차례마다 최대 20개 상위 후보 기준으로 pre-move analysis를 수행하고, 버튼 클릭 시 cache를 보드에 표시한다.
+   - Top Moves 버튼: 구현됨. 사람 차례마다 전체 합법 착점 snapshot을 만들고, 버튼 클릭 시 `Scored` 후보만 보드에 표시한다.
    - 점수 손실이 없는 fallback 후보는 보드 spot으로 표시하지 않는다.
    - 색상 단계는 KaTrain 기본 임계값을 참고해 진한 초록/연한 초록/노랑/주황/빨강으로 세분화했다.
    - KataGo process adapter가 Top Moves 분석에 JSON analysis protocol을 우선 사용한다.

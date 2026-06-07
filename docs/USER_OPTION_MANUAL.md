@@ -27,7 +27,7 @@
 - `Pass`: 현재 차례 플레이어가 패스한다. 양 진영이 연속 패스하면 최종 계가 흐름으로 들어간다.
 - `Undo`: 마지막 착수를 되돌린다. AI 대국에서는 사람 착수와 AI 응수를 한 턴 단위로 되돌린다.
 - `Top Moves`: 현재 차례의 강한 후보를 분석하고, 점수 손실이 계산된 후보 위치를 보드 위에 표시한다.
-  - 사람 차례가 오면 백그라운드에서 최대 20개 상위 후보 분석을 먼저 요청한다.
+  - 사람 차례가 오면 백그라운드에서 현재 합법 착점 전체를 포함하는 분석 snapshot을 만든다.
   - 버튼은 토글로 동작한다. 켜진 상태에서는 매 사용자 턴마다 준비된 pre-move analysis cache를 보드에 자동 표시한다.
   - 꺼진 상태에서도 착수 평가를 위한 pre-move analysis cache는 백그라운드에서 계속 준비한다.
   - 후보 순위, 점수 손실, 예상 리드, visits, policy prior 같은 상세 텍스트는 화면 하단의 약 10줄 스크롤 박스와 `Copy Log`로 확인한다.
@@ -35,8 +35,8 @@
   - 후보 수가 많을 때는 엔진 어댑터가 최소 검색량을 후보 수에 맞춰 내부 상향할 수 있다. 현재 Top Moves 분석은 최소 `후보수 * 20 visits`, `2000ms`까지 일시 상향될 수 있다.
   - KataGo JSON analysis config가 준비된 경우에는 KaTrain과 같은 JSON analysis protocol을 우선 사용해 더 많은 scored 후보를 받는다.
   - 준비된 cache에 점수 있는 후보가 5개 미만이면, 사용자가 `Top Moves`를 눌렀을 때 1회 수동 deep analysis를 실행해 `Full Analysis` 수준으로 다시 분석한다.
-  - 엔진 search가 목표 후보수를 채우지 못하면, 나머지는 raw NN policy 또는 `Legal fallback`으로 로그에만 보관한다. 이 후보에는 점수 손실이나 policy prior가 없을 수 있다.
-  - 점수 손실이 없는 policy/legal fallback 후보는 보드 위 스팟으로 그리지 않는다. 상세 텍스트와 `Copy Log`에서만 확인한다.
+  - 엔진 search가 목표 후보수를 채우지 못하면, 나머지 합법 착점은 `PolicyOnly` 또는 `LegalOnly` 상태로 snapshot에 보관한다. 이 후보에는 점수 손실이나 policy prior가 없을 수 있다.
+  - 점수 손실이 없는 policy/legal fallback 후보는 보드 위 스팟으로 그리지 않는다. 분석 snapshot, 상세 텍스트, `Copy Log`에서만 확인한다.
 - `Eval`: 현재 판의 점수 추정과 ownership 정보를 요청한다.
   - 엔진이 준비된 AI/2P 모드에서는 KataGo estimate를 사용한다.
   - 2P 모드에서 엔진이 준비되지 않은 경우에는 현재 선택된 계가 방식의 로컬 estimate로 fallback한다.
@@ -53,8 +53,9 @@
 ### 후보/착수 평가 색상
 
 - 진한 초록은 최선에 가까운 수, 연한 초록은 좋은 수, 노랑은 약간 아쉬운 수, 주황은 실수, 빨강은 큰 손실이 있는 수를 뜻한다.
-- 색상 기준은 최선 후보 대비 점수 손실이다. 현재 기준은 `0.5`, `1.5`, `3.0`, `6.0`집 구간이다.
+- 색상 기준은 KataGo JSON analysis의 root score 대비 점수 손실이다. 현재 기준은 `0.5`, `1.5`, `3.0`, `6.0`집 구간이다.
 - 엔진 점수 손실 정보가 없는 policy 또는 legal fallback 후보는 보드 위에 표시하지 않는다.
+- 착수 리뷰는 전체 합법 착점 snapshot에서 실제 착수 좌표를 조회한다. 합법이지만 아직 점수 손실이 없는 착점은 실수로 단정하지 않고 `unknown`으로 처리한다.
 - 앱 화면 안의 별도 `Spot legend` 패널은 제거했다. 색상 의미는 이 매뉴얼/도움말 문서로 안내한다.
 - KaTrain 기반 분석 근거와 다음 구조 개선 방향은 `docs/KATRAIN_TOP_MOVES_ANALYSIS.md`에 별도 기록한다.
 

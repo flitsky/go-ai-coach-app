@@ -335,3 +335,9 @@
 - 로그상 실제 JSON analysis 응답은 `Returned 3 scored candidate(s)`였고 후보별 손실은 `0.0`, `0.1`, `0.0`이라 현재 색상 임계값 기준 모두 초록 계열로 표시되는 것이 정상이다.
 - UI는 이미 초록/연두/노랑/주황/빨강 5단계를 지원하지만, 노랑/빨강은 엔진이 점수 손실이 큰 착점을 `moveInfos`로 반환해야만 표시된다. 상위 후보 중심 normal analysis만으로는 나쁜 착점 후보가 부족할 수 있어 KaTrain식 sweep/refine 분석이 다음 고도화 과제다.
 - KaTrain 재확인 결과 candidate spot 색상은 최선 후보 대비가 아니라 `rootInfo.scoreLead` 대비 `pointsLost`를 기준으로 한다. `KataGoJsonAnalysisParser`의 `pointLoss` 계산을 `rootInfo.scoreLead` 기준으로 수정하고, `rootInfo`가 없는 예외 응답만 order 0 후보 대비로 fallback하도록 바꿨다.
+- 사용자가 학습용 플레이에서 가능한 모든 착점 데이터를 확보하고, 시각화는 버전업에 따라 바꿀 수 있는 구조를 요청했다.
+- `shared`에 `MoveAnalysisSnapshot`을 추가했다. 앱은 엔진 후보 리스트를 바로 UI에 연결하지 않고, 현재 `GameState`의 모든 합법 착점을 포함하는 snapshot으로 변환한다.
+- 각 착점은 `Scored`, `PolicyOnly`, `LegalOnly` coverage를 가진다. 현재 보드 UI는 `Scored` 후보만 그리지만, 착수 리뷰와 debug report는 전체 snapshot coverage를 기준으로 한다.
+- 착수 리뷰는 실제 착수 좌표가 합법이지만 아직 `pointLoss`가 없으면 실수로 단정하지 않고 `unknown`으로 처리한다.
+- 9x9 POC에서는 Top Moves 후보 목표를 현재 합법 착점 수까지 올리도록 조정했다. 다만 실제 색상 표시 수는 KataGo가 `pointLoss`를 채워준 후보 수에 따라 달라진다.
+- `docs/MOVE_ANALYSIS_DATA_MODEL.md`를 추가해 전체 합법 착점 snapshot, display policy, sweep/refine 확장 방향을 문서화했다.

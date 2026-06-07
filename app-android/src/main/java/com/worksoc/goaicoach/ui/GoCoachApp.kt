@@ -62,6 +62,7 @@ import com.worksoc.goaicoach.shared.FinalScoreResult
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.LegalMoveGenerator
 import com.worksoc.goaicoach.shared.Move
+import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.ScoreSnapshot
@@ -112,6 +113,7 @@ private fun GoCoachScreen(
     var candidateText by remember { mutableStateOf(engineDiagnostic) }
     var candidateMoves by remember { mutableStateOf(emptyList<CandidateMove>()) }
     var reviewCandidateMoves by remember { mutableStateOf(emptyList<CandidateMove>()) }
+    var reviewAnalysis by remember { mutableStateOf(MoveAnalysisSnapshot.empty(gameState)) }
     var scoreText by remember { mutableStateOf("No score estimate yet.") }
     var scoreEstimate by remember { mutableStateOf<ScoreEstimate?>(null) }
     var scoreSnapshots by remember {
@@ -184,6 +186,11 @@ private fun GoCoachScreen(
         }
     }
 
+    fun clearReviewAnalysis(state: GameState = gameState) {
+        reviewAnalysis = MoveAnalysisSnapshot.empty(state)
+        reviewCandidateMoves = emptyList()
+    }
+
     fun topMoveCandidateCountFor(state: GameState): Int =
         LegalMoveGenerator
             .legalPlayCount(state)
@@ -223,8 +230,8 @@ private fun GoCoachScreen(
         }
         val analysisKey = analysisKeyFor(targetState, analysisLimit)
         if (automatic && analysisKey == lastAnalysisKey) {
-            if (topMovesEnabled && candidateMoves.isEmpty() && reviewCandidateMoves.isNotEmpty()) {
-                candidateMoves = reviewCandidateMoves
+            if (topMovesEnabled && candidateMoves.isEmpty() && reviewAnalysis.scoredPlayCount > 0) {
+                candidateMoves = reviewAnalysis.candidatesForDisplay()
             }
             return
         }
@@ -237,19 +244,22 @@ private fun GoCoachScreen(
                     engineAdapter.analyze(analysisLimit)
                 }
             }.onSuccess { result ->
-                reviewCandidateMoves = result.candidates.take(candidateCount)
+                val snapshot = MoveAnalysisSnapshot.from(targetState, result.candidates)
+                reviewAnalysis = snapshot
+                reviewCandidateMoves = snapshot.candidatesForReview()
                 candidateText = result.toCandidateText(targetState.boardSize)
+                    .withAnalysisCoverage(snapshot)
                     .withTopMovesStrengthHeader(engineProfile, analysisLimit, candidateCount, deep)
                 if (topMovesEnabled) {
                     engineMessage = result.status.message
-                    candidateMoves = reviewCandidateMoves
+                    candidateMoves = snapshot.candidatesForDisplay()
                 } else {
                     engineMessage =
-                        "Top Moves analysis ready for ${targetState.nextPlayer.label}: ${reviewCandidateMoves.scoredCandidateCount()}/$candidateCount scored spot(s)."
+                        "Top Moves analysis ready for ${targetState.nextPlayer.label}: ${snapshot.scoredPlayCount}/${snapshot.legalPlayCount} legal spot(s) scored."
                 }
             }.onFailure { error ->
                 engineMessage = error.message ?: "Top Moves analysis failed."
-                reviewCandidateMoves = emptyList()
+                clearReviewAnalysis(targetState)
                 lastAnalysisKey = null
                 if (topMovesEnabled) {
                     clearTopMoveSpots("Top Moves analysis failed.")
@@ -262,13 +272,13 @@ private fun GoCoachScreen(
     fun showTopMovesForCurrentState() {
         topMovesEnabled = true
         if (
-            reviewCandidateMoves.isNotEmpty() &&
+            reviewAnalysis.hasEngineCandidates &&
             lastAnalysisKey == analysisKeyFor(gameState, currentTopMoveAnalysisLimit(gameState))
         ) {
-            val scoredCount = reviewCandidateMoves.scoredCandidateCount()
+            val scoredCount = reviewAnalysis.scoredPlayCount
             if (scoredCount >= MinScoredTopMovesForDisplay || isEngineBusy) {
-                candidateMoves = reviewCandidateMoves
-                engineMessage = "Showing ${candidateMoves.scoredCandidateCount()} scored Top Moves from cached pre-move analysis."
+                candidateMoves = reviewAnalysis.candidatesForDisplay()
+                engineMessage = "Showing ${candidateMoves.scoredCandidateCount()} scored Top Moves from cached full legal-move snapshot."
                 return
             }
             candidateMoves = emptyList()
@@ -306,7 +316,7 @@ private fun GoCoachScreen(
         val nextState = gameState.copy(ruleset = nextRuleset)
         gameState = nextState
         clearTopMoveSpots("Scoring rule changed.")
-        reviewCandidateMoves = emptyList()
+        clearReviewAnalysis(nextState)
         lastAnalysisKey = null
         scoreEstimate = null
         scoreText = if (isGameEnded || (matchMode == MatchMode.LocalTwoPlayer && !isEngineReady)) {
@@ -358,7 +368,7 @@ private fun GoCoachScreen(
         gameState = GameState.empty(BoardSize.Nine, ruleset)
         isGameEnded = false
         clearTopMoveSpots("No analysis yet.")
-        reviewCandidateMoves = emptyList()
+        clearReviewAnalysis()
         lastAnalysisKey = null
         scoreText = "No score estimate yet."
         scoreEstimate = null
@@ -505,7 +515,7 @@ private fun GoCoachScreen(
         }
 
         engineProfile = nextProfile
-        reviewCandidateMoves = emptyList()
+        clearReviewAnalysis()
         lastAnalysisKey = null
         scope.launch {
             isEngineBusy = true
@@ -543,14 +553,14 @@ private fun GoCoachScreen(
             gameState = afterMove
             val moveReview = buildMoveReview(
                 move = move,
-                candidates = reviewCandidateMoves,
+                analysis = reviewAnalysis,
                 boardSize = beforeMove.boardSize,
                 moveNumber = afterMove.moves.size,
             )
             clearTopMoveSpots()
             moveReviewText = moveReview.text
             moveReviews = previousMoveReviews.withReviewMarker(moveReview.marker)
-            reviewCandidateMoves = emptyList()
+            clearReviewAnalysis(afterMove)
             lastAnalysisKey = null
             lastMoveText = move.describe(beforeMove.boardSize)
             scoreText = "Score estimate not current."
@@ -679,6 +689,7 @@ private fun GoCoachScreen(
 
         val beforeMove = gameState
         val previousReviewCandidates = reviewCandidateMoves
+        val previousReviewAnalysis = reviewAnalysis
         val previousAnalysisKey = lastAnalysisKey
         val afterHuman = runCatching { beforeMove.play(move) }
             .onFailure { error ->
@@ -692,13 +703,13 @@ private fun GoCoachScreen(
         val previousScoreSnapshots = scoreSnapshots
         val moveReview = buildMoveReview(
             move = move,
-            candidates = reviewCandidateMoves,
+            analysis = reviewAnalysis,
             boardSize = beforeMove.boardSize,
             moveNumber = afterHuman.moves.size,
         )
         moveReviewText = moveReview.text
         moveReviews = previousMoveReviews.withReviewMarker(moveReview.marker)
-        reviewCandidateMoves = emptyList()
+        clearReviewAnalysis(afterHuman)
         lastAnalysisKey = null
         clearTopMoveSpots()
         scoreText = "Score estimate not current."
@@ -746,6 +757,7 @@ private fun GoCoachScreen(
                 gameState = outcome.gameState
                 scoreSnapshots = scoredOutcome.scoreSnapshots
                 clearTopMoveSpots()
+                clearReviewAnalysis(outcome.gameState)
                 engineMessage = outcome.engineMessage
                 candidateText = outcome.candidateText
                 lastMoveText = outcome.lastMoveText
@@ -803,6 +815,7 @@ private fun GoCoachScreen(
                 gameState = beforeMove
                 moveReviews = previousMoveReviews
                 reviewCandidateMoves = previousReviewCandidates
+                reviewAnalysis = previousReviewAnalysis
                 lastAnalysisKey = previousAnalysisKey
                 scoreSnapshots = previousScoreSnapshots
                 moveReviewText = "Move review cleared after rollback."
@@ -835,6 +848,8 @@ private fun GoCoachScreen(
             gameState = nextState
             isGameEnded = false
             clearTopMoveSpots()
+            clearReviewAnalysis(nextState)
+            lastAnalysisKey = null
             moveReviews = emptyList()
             moveReviewText = "Move review cleared by undo."
             lastMoveText = nextState.moves.lastOrNull()?.describe(nextState.boardSize) ?: "None"
@@ -901,6 +916,8 @@ private fun GoCoachScreen(
                 gameState = nextState
                 isGameEnded = false
                 clearTopMoveSpots()
+                clearReviewAnalysis(nextState)
+                lastAnalysisKey = null
                 moveReviews = moveReviews.filter { marker -> marker.moveNumber <= nextState.moves.size }
                 moveReviewText = "Move review cleared by undo."
                 lastMoveText = nextState.moves.lastOrNull()?.describe(nextState.boardSize) ?: "None"
@@ -934,7 +951,8 @@ private fun GoCoachScreen(
             isEngineBusy = isEngineBusy,
             isGameEnded = isGameEnded,
             topMovesEnabled = topMovesEnabled,
-            topMoveCandidateCount = reviewCandidateMoves.size,
+            topMoveCandidateCount = reviewAnalysis.legalPlayCount,
+            moveAnalysisCoverage = reviewAnalysis.coverageSummary(),
             gameState = gameState,
             engineMessage = engineMessage,
             candidateText = candidateText,
@@ -1329,6 +1347,7 @@ private fun buildDebugReport(
     isGameEnded: Boolean,
     topMovesEnabled: Boolean,
     topMoveCandidateCount: Int,
+    moveAnalysisCoverage: String,
     gameState: GameState,
     engineMessage: String,
     candidateText: String,
@@ -1354,6 +1373,7 @@ private fun buildDebugReport(
         appendLine("analysisLimit=visits:${engineProfile.analysisLimit.visits}, timeMillis:${engineProfile.analysisLimit.timeMillis}, candidates:${engineProfile.analysisLimit.candidateCount}")
         appendLine("topMovesEnabled=$topMovesEnabled")
         appendLine("topMoveCandidateCount=$topMoveCandidateCount")
+        appendLine("moveAnalysisCoverage=$moveAnalysisCoverage")
         appendLine()
         appendLine("[GameState]")
         appendLine("boardSize=${gameState.boardSize.value}")
@@ -1520,7 +1540,7 @@ private data class MoveReviewResult(
 
 private fun buildMoveReview(
     move: Move,
-    candidates: List<CandidateMove>,
+    analysis: MoveAnalysisSnapshot,
     boardSize: BoardSize,
     moveNumber: Int,
 ): MoveReviewResult {
@@ -1530,24 +1550,22 @@ private fun buildMoveReview(
             text = "Move review: pass/resign has no board spot evaluation.",
         )
 
-    if (candidates.isEmpty()) {
+    if (!analysis.hasEngineCandidates) {
         return MoveReviewResult(
             marker = null,
             text = "Move review: no pre-move analysis cache was ready.",
         )
     }
 
-    val matchedCandidate = candidates.firstOrNull { candidate ->
-        (candidate.move as? Move.Play)?.coordinate == play.coordinate
-    }
+    val matchedCandidate = analysis.candidateAt(play.coordinate)
     if (matchedCandidate == null) {
         return MoveReviewResult(
             marker = MoveReviewMarker(
                 coordinate = play.coordinate,
                 moveNumber = moveNumber,
-                tone = MoveReviewTone.Mistake,
+                tone = MoveReviewTone.Unknown,
             ),
-            text = "Move review: ${play.coordinate.label(boardSize)} was outside the analyzed top ${candidates.size} candidate(s).",
+            text = "Move review: ${play.coordinate.label(boardSize)} was not legal in the pre-move analysis snapshot.",
         )
     }
 
@@ -1559,8 +1577,8 @@ private fun buildMoveReview(
         ?.let { ", score lead $it" }
         .orEmpty()
     val lossText = pointLoss
-        ?.let { "loss ${it.formatOneDecimal()} point(s) vs best" }
-        ?: "score loss unavailable"
+        ?.let { "loss ${it.formatOneDecimal()} point(s)" }
+        ?: "score loss pending"
     val priorText = matchedCandidate.policyPrior
         ?.let { ", policy ${(it * 100).toInt()}%" }
         .orEmpty()
@@ -1655,5 +1673,8 @@ private fun String.withTopMovesStrengthHeader(
     return "Top Moves request: up to $candidateCount scored candidate(s), $label ($suffix), base ${limit.visits} visits / ${limit.timeMillis ?: 0}ms\n$this"
 }
 
-private const val MaxTopMoveCandidateCount = 20
+private fun String.withAnalysisCoverage(snapshot: MoveAnalysisSnapshot): String =
+    "${snapshot.coverageSummary()}\n$this"
+
+private const val MaxTopMoveCandidateCount = 81
 private const val MinScoredTopMovesForDisplay = 5
