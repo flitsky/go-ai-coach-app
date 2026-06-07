@@ -351,3 +351,8 @@
 - 같은 화면에서 `KataGo JSON analysis with 1620 visits / 2000ms. Returned 33 scored, 48 policy-only candidate(s); refined 12 policy move(s).`가 확인되어 전체 합법 착점 snapshot, policy fallback, budgeted refine가 앱 UI까지 반영된 것을 검증했다.
 - 사용자가 폰에도 설치를 요청했다. `adb devices -l`, `adb start-server`, USB 장치 목록, `adb mdns services`를 확인했지만 현재는 `emulator-5554`만 잡히고 실제 폰 serial은 보이지 않았다.
 - 약 1분간 `adb devices -l`을 반복 확인했으나 폰은 계속 미검출 상태였다. 폰에서 USB 디버깅을 켜고 RSA 인증 팝업을 승인한 뒤 `device` 상태로 보이면, `ANDROID_SERIAL=<폰 serial> make reinstall-dev-engine`로 최신 앱과 KataGo asset을 폰에 설치할 예정이다.
+- 사용자가 폰을 다시 연결했고, `adb devices -l`에서 `R5CT22WTVXP` (`SM_S908N`)가 `device` 상태로 확인되었다.
+- 에뮬레이터가 함께 연결되어 있어 폰 serial을 명시해 수동 설치했다. `make dev`는 약 1초, `adb -s R5CT22WTVXP install -r app-android/build/outputs/apk/debug/app-android-debug.apk`는 약 16초가 걸렸다.
+- `ANDROID_SERIAL=R5CT22WTVXP make seed-engine`로 KataGo model, `gtp_learning.cfg`, `analysis_learning.cfg`를 폰 앱 내부 저장소에 seed했다. 모델 push는 약 2.7초, 전체 seed는 약 3.5초가 걸렸다.
+- 폰에서 앱 cold launch를 실행했고 `TotalTime=624ms`로 실행됐다. 첫 확인 때 이전/복원 상태처럼 `Moves: 2`가 보여 `pm clear com.worksoc.goaicoach`로 앱 데이터를 초기화했다.
+- 초기화 후 엔진 asset을 다시 seed하고 cold launch했다. `TotalTime=559ms`였고, UI dump에서 새 게임 상태 `Your turn: Black`, `Moves: 0`, `Last: None`, `Top Moves analysis ready for Black: 25/81 legal spot(s) scored.`를 확인했다.
