@@ -356,3 +356,7 @@
 - `ANDROID_SERIAL=R5CT22WTVXP make seed-engine`로 KataGo model, `gtp_learning.cfg`, `analysis_learning.cfg`를 폰 앱 내부 저장소에 seed했다. 모델 push는 약 2.7초, 전체 seed는 약 3.5초가 걸렸다.
 - 폰에서 앱 cold launch를 실행했고 `TotalTime=624ms`로 실행됐다. 첫 확인 때 이전/복원 상태처럼 `Moves: 2`가 보여 `pm clear com.worksoc.goaicoach`로 앱 데이터를 초기화했다.
 - 초기화 후 엔진 asset을 다시 seed하고 cold launch했다. `TotalTime=559ms`였고, UI dump에서 새 게임 상태 `Your turn: Black`, `Moves: 0`, `Last: None`, `Top Moves analysis ready for Black: 25/81 legal spot(s) scored.`를 확인했다.
+- 사용자가 실제 폰에서 최신 버전을 테스트한 결과 매우 느리다고 피드백했다.
+- 당장 구현하지 말고, 오늘 변경 전 수준의 경량 탐색 방식과 현재 최신 정밀 분석 방식을 둘 다 설정할 수 있는 향후 방향성만 잡아달라고 요청했다.
+- `docs/ENGINE_SEARCH_MODE_DIRECTION.md`를 추가했다. 기본 방향은 느린 폰 기본값을 `Fast Play`로 두고, 현재 최신 전체 합법 착점 snapshot/refine 흐름은 `Study Analysis`로 보존하는 것이다.
+- `Fast Play`는 대국 리듬을 우선해 전체 합법점 refine를 하지 않고 상위 소수 후보만 빠르게 분석한다. `Study Analysis`는 학습 품질을 우선해 JSON policy, snapshot, budgeted refine, 향후 sweep/equalize 확장을 담당한다.
