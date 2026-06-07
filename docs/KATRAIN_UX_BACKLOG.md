@@ -20,7 +20,7 @@ KaTrain의 UX 중 Go AI Coach에 가져올 만한 항목을 효과와 구현 난
 ## 현재 앱에 이미 반영된 항목
 
 - `Top Moves` 버튼 기반 후보수 표시
-- 사람 차례 백그라운드 pre-move analysis에서 현재 합법 착점 수만큼 후보 데이터 확보
+- 사람 차례 백그라운드 pre-move analysis에서 상위 20개 후보를 목표로 후보 데이터 확보
 - 후보수별 KaTrain식 손실 구간 색상 spot
 - 점수 손실이 없는 policy/legal fallback 후보의 회색 spot 제거
 - 후보수별 점수 lead label
@@ -62,7 +62,7 @@ KaTrain의 UX 중 Go AI Coach에 가져올 만한 항목을 효과와 구현 난
 | 점수/승률 미니 그래프 | KaTrain `ScoreGraph`처럼 수순별 score lead/winrate 추이 표시 | move별 `ScoreSnapshot` 저장 모델과 작은 line chart 추가 | 대국 흐름에서 어느 수가 판세를 바꿨는지 확인 가능 | 완료 |
 | 착수 리뷰 문장 개선 | KaTrain이 `pointsLost`로 착수를 분류하듯 `좋음/부정확/실수/큰 실수` 문구 제공 | 현재 `pointLoss` threshold를 사용자 친화적 문장으로 변환 | 색상 dot만으로 부족한 설명을 보강 | 중간 |
 | 후보수 상세 모드 | 후보 spot label을 `점수 손실`, `승률`, `visits`, `prior` 중 선택 | `top_moves_show`류 옵션을 단순 segmented control로 구현 | 초급자는 점수, 디버깅은 visits/prior 중심으로 볼 수 있음 | 중간 |
-| 수동 “더 깊게 분석” | KaTrain의 extra/deeper analysis처럼 현재 국면만 visits/time을 임시 상향 | Top Moves 분석을 한 번 더 강하게 요청하는 버튼으로 노출하고 완료 후 원복 | 평소 AI는 가볍게, 필요 시 강한 후보수 확보 | 중간 |
+| 수동 “더 깊게 분석” | KaTrain의 extra/deeper analysis처럼 현재 국면만 visits/time을 임시 상향 | cache의 scored 후보가 5개 미만이면 `Top Moves` 버튼이 1회 deep analysis를 실행한다. 별도 deep 버튼은 아직 미구현 | 평소 AI는 가볍게, 필요 시 강한 후보수 확보 | 중간 |
 | Sweep/Equalize 후보 분석 | KaTrain의 `sweep`, `equalize`처럼 더 많은 후보를 실제 score가 있는 후보로 보강 | KataGo JSON analysis adapter 또는 후보별 refine 분석 경로 추가 | 초록/노랑/빨강 spot의 밀도와 신뢰도 향상 | 중간-높음 |
 | 최종 계가 확인 화면 | pass 2회 후 바로 결과만 표시하지 않고 board + 영역 + 사석 후보를 확인 | 우선 Chinese area 기준 overlay, 이후 dead stone marking으로 확장 | 사용자가 계가 오류를 인지/보고하기 쉬움 | 중간 |
 | 착수 preview | KaTrain ghost stone처럼 터치 위치에 반투명 돌 preview | 모바일에서는 long press 또는 drag 중 preview로 제한 | 오터치 감소, 9x9 이후 13x13/19x19 확장 대비 | 중간 |
@@ -99,9 +99,11 @@ KaTrain의 UX 중 Go AI Coach에 가져올 만한 항목을 효과와 구현 난
 
 2. **Top Moves UX 완성**
    - 후보수 compact list 패널: 화면 집중을 위해 제거됨. 상세 후보 정보는 debug text와 `Copy Log`로 확인한다.
-   - Top Moves 버튼: 구현됨. 사람 차례마다 현재 합법 착점 수 기준으로 pre-move analysis를 수행하고, 버튼 클릭 시 cache를 보드에 표시한다.
+   - Top Moves 버튼: 구현됨. 사람 차례마다 최대 20개 상위 후보 기준으로 pre-move analysis를 수행하고, 버튼 클릭 시 cache를 보드에 표시한다.
    - 점수 손실이 없는 fallback 후보는 보드 spot으로 표시하지 않는다.
    - 색상 단계는 KaTrain 기본 임계값을 참고해 진한 초록/연한 초록/노랑/주황/빨강으로 세분화했다.
+   - KataGo process adapter가 Top Moves 분석에 최소 `후보수 * 20 visits`, `2000ms`와 `kata-search_analyze <color> <centiseconds>` 호출을 적용한다.
+   - scored 후보가 5개 미만인 cache를 사용자가 직접 열면 `Full Analysis` 수준의 deep analysis를 1회 실행한다.
    - 색상 범례: 제거됨. 색상 의미는 사용자 매뉴얼/도움말 문서로 안내한다.
    - 후보 label 표시 모드: 미구현
    - 엔진 busy/ready/fallback badge: 구현됨

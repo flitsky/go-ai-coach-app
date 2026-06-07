@@ -185,7 +185,13 @@ private fun GoCoachScreen(
     }
 
     fun topMoveCandidateCountFor(state: GameState): Int =
-        LegalMoveGenerator.legalPlayCount(state).coerceAtLeast(1)
+        LegalMoveGenerator
+            .legalPlayCount(state)
+            .coerceAtLeast(1)
+            .coerceAtMost(MaxTopMoveCandidateCount)
+
+    fun List<CandidateMove>.scoredCandidateCount(): Int =
+        count { it.pointLoss != null }
 
     fun currentTopMoveAnalysisLimit(state: GameState): AnalysisLimit =
         topMovesAnalysisLimitFor(
@@ -196,6 +202,7 @@ private fun GoCoachScreen(
     fun requestTopMoveAnalysisForState(
         targetState: GameState,
         automatic: Boolean,
+        deep: Boolean = false,
     ) {
         if (
             isGameEnded ||
@@ -209,7 +216,11 @@ private fun GoCoachScreen(
         }
 
         val candidateCount = topMoveCandidateCountFor(targetState)
-        val analysisLimit = topMovesAnalysisLimitFor(engineProfile, candidateCount)
+        val analysisLimit = if (deep) {
+            deepTopMovesAnalysisLimitFor(engineProfile, candidateCount)
+        } else {
+            topMovesAnalysisLimitFor(engineProfile, candidateCount)
+        }
         val analysisKey = analysisKeyFor(targetState, analysisLimit)
         if (automatic && analysisKey == lastAnalysisKey) {
             if (topMovesEnabled && candidateMoves.isEmpty() && reviewCandidateMoves.isNotEmpty()) {
@@ -228,12 +239,13 @@ private fun GoCoachScreen(
             }.onSuccess { result ->
                 reviewCandidateMoves = result.candidates.take(candidateCount)
                 candidateText = result.toCandidateText(targetState.boardSize)
-                    .withTopMovesStrengthHeader(engineProfile, analysisLimit, candidateCount)
+                    .withTopMovesStrengthHeader(engineProfile, analysisLimit, candidateCount, deep)
                 if (topMovesEnabled) {
                     engineMessage = result.status.message
                     candidateMoves = reviewCandidateMoves
                 } else {
-                    engineMessage = "Top Moves analysis ready for ${targetState.nextPlayer.label}: ${reviewCandidateMoves.size}/${candidateCount} spot(s)."
+                    engineMessage =
+                        "Top Moves analysis ready for ${targetState.nextPlayer.label}: ${reviewCandidateMoves.scoredCandidateCount()}/$candidateCount scored spot(s)."
                 }
             }.onFailure { error ->
                 engineMessage = error.message ?: "Top Moves analysis failed."
@@ -253,8 +265,19 @@ private fun GoCoachScreen(
             reviewCandidateMoves.isNotEmpty() &&
             lastAnalysisKey == analysisKeyFor(gameState, currentTopMoveAnalysisLimit(gameState))
         ) {
-            candidateMoves = reviewCandidateMoves
-            engineMessage = "Showing ${candidateMoves.size} Top Moves from cached pre-move analysis."
+            val scoredCount = reviewCandidateMoves.scoredCandidateCount()
+            if (scoredCount >= MinScoredTopMovesForDisplay || isEngineBusy) {
+                candidateMoves = reviewCandidateMoves
+                engineMessage = "Showing ${candidateMoves.scoredCandidateCount()} scored Top Moves from cached pre-move analysis."
+                return
+            }
+            candidateMoves = emptyList()
+            engineMessage = "Cached Top Moves has only $scoredCount scored candidate(s). Running deeper analysis."
+            requestTopMoveAnalysisForState(
+                targetState = gameState,
+                automatic = false,
+                deep = true,
+            )
             return
         }
 
@@ -1591,6 +1614,21 @@ private fun topMovesAnalysisLimitFor(
     )
 }
 
+private fun deepTopMovesAnalysisLimitFor(
+    profile: EngineProfile,
+    candidateCount: Int,
+): AnalysisLimit {
+    val full = DifficultyProfile.FullAnalysis.defaultAnalysisLimit()
+    val fullTimeMillis = full.timeMillis
+        ?: profile.analysisLimit.timeMillis
+        ?: 5_000L
+    return profile.analysisLimit.copy(
+        visits = maxOf(profile.analysisLimit.visits, full.visits),
+        timeMillis = strongerTopMovesTimeMillis(profile.analysisLimit.timeMillis, fullTimeMillis),
+        candidateCount = candidateCount,
+    )
+}
+
 private fun strongerTopMovesTimeMillis(
     current: Long?,
     promoted: Long,
@@ -1600,12 +1638,22 @@ private fun String.withTopMovesStrengthHeader(
     profile: EngineProfile,
     limit: AnalysisLimit,
     candidateCount: Int,
+    deep: Boolean,
 ): String {
-    val analysisDifficulty = profile.difficulty.next()
-    val suffix = if (analysisDifficulty == profile.difficulty) {
+    val label = if (deep) {
+        DifficultyProfile.FullAnalysis.label
+    } else {
+        profile.difficulty.next().label
+    }
+    val suffix = if (deep) {
+        "manual deep analysis"
+    } else if (profile.difficulty.next() == profile.difficulty) {
         "same as max profile"
     } else {
         "one grade above ${profile.difficulty.label}"
     }
-    return "Top Moves request: $candidateCount legal spot(s), ${analysisDifficulty.label} ($suffix), base ${limit.visits} visits / ${limit.timeMillis ?: 0}ms\n$this"
+    return "Top Moves request: up to $candidateCount scored candidate(s), $label ($suffix), base ${limit.visits} visits / ${limit.timeMillis ?: 0}ms\n$this"
 }
+
+private const val MaxTopMoveCandidateCount = 20
+private const val MinScoredTopMovesForDisplay = 5

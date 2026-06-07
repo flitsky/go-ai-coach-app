@@ -313,6 +313,14 @@
 - KataGo local process adapter와 Stub adapter 기본 ruleset을 `Japanese`로 변경했다. KataGo 새 대국 시작 시 `kata-set-rules chinese/japanese`를 명시 호출해 앱 ruleset과 엔진 ruleset을 동기화한다.
 - Android 메뉴 `Game` 섹션에 `Scoring rule: Area | Territory` 토글을 추가했다. 선택 변경 시 엔진이 준비되어 있으면 현재 수순을 새 ruleset으로 재동기화하고 score estimate/top moves cache를 갱신한다.
 - `docs/RULESET_SCORING_DECISION.md`, `docs/USER_OPTION_MANUAL.md`, `docs/SCORE_AND_ENDGAME_DECISION.md`를 Territory 기본값과 Area/Territory 토글 기준으로 갱신했다. 제품 단계에서 사석 확인/수정 UX가 여전히 필수라는 한계도 함께 남겼다.
+- 사용자가 “좋습니다 진행”이라고 하여 KaTrain Top Moves 분석 기반 다음 단계에 착수했다.
+- 로컬 KataGo GTP로 빈 9x9 `kata-search_analyze B`와 `kata-search_analyze B 300`을 비교해, time limit을 centisecond 인자로 명시할 수 있음을 확인했다.
+- 기본 Top Moves는 모든 합법 착점 81개를 fallback으로 채우는 대신 상위 20개 후보를 목표로 하고, 보드/상태 메시지는 실제 `pointLoss`가 있는 scored 후보 수를 기준으로 표시하도록 변경했다.
+- `KataGoProcessEngineAdapter`는 Top Moves 요청에서 최소 `후보수 * 20 visits`, `2000ms`를 적용하고, `kata-search_analyze <color> <centiseconds>` 형태로 분석 시간을 명시한다. policy/legal fallback 후보는 로그 전용으로 유지한다.
+- `kata-search_analyze <time>` 출력은 중간 업데이트 때문에 같은 move가 여러 번 나올 수 있어 `KataGoAnalysisParser`가 같은 move를 visits 기준으로 병합하도록 수정하고 회귀 테스트를 추가했다.
+- 에뮬레이터 확인 결과 자동 2초 분석은 Android CPU에서 scored 후보가 1개만 나올 수 있었다. 이에 따라 cache의 scored 후보가 5개 미만이면 사용자가 `Top Moves`를 누를 때 `Full Analysis` 수준 deep analysis를 1회 실행하도록 보강했다.
+- 최신 APK를 에뮬레이터에 재설치해 `Top Moves` 버튼 탭 후 `Cached Top Moves has only 1 scored candidate(s). Running deeper analysis.`와 보드 상단 `Thinking` 표시를 확인했다.
+- deep 분석 완료 후에도 에뮬레이터 CPU에서는 빈 9x9 기준 `Full Analysis 1000 visits / 5000ms`가 실제 29 visits, scored 후보 1개에 머물렀다. 따라서 KaTrain식 다중 색상 후보를 안정적으로 만들려면 GTP search 시간 상향만으로는 부족하고 JSON analysis/sweep/equalize adapter 실험이 필요하다고 정리했다.
 - 사용자가 사석 확인/수정 UX 도입에 동의하고, 이를 얼마나 간결하게 넣을 수 있는지와 KaTrain 처리 방식을 질문했다.
 - KaTrain 소스 기준으로는 양패스 후 단순 엔진 `final_score`만 쓰지 않고, 일본식 규칙에서는 현재 노드와 이전 노드의 ownership을 평균해 `manual_score`를 계산한다. 불확실하면 `?`가 붙은 추정 점수 또는 `board-game-end` 상태로 남긴다.
 - Go AI Coach에는 양패스 후 자동으로 `Endgame Review` 상태로 전환하고, `Eval` ownership overlay + 엔진/로컬 사석 후보를 보드에 표시한 뒤 사용자가 돌을 탭해 dead/alive를 수정하고 `Accept score`로 확정하는 간결한 UX가 적절하다고 판단했다.

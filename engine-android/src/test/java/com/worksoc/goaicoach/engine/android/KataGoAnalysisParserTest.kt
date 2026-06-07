@@ -70,6 +70,28 @@ class KataGoAnalysisParserTest {
     }
 
     @Test
+    fun mergesStreamingDuplicateInfoMoves() {
+        val response = """
+            info move E5 visits 7 winrate 0.34 scoreLead 0.2 prior 0.8 order 0 pv E5
+            info move E5 visits 8 winrate 0.35 scoreLead 0.3 prior 0.8 order 0 pv E5
+            info move D5 visits 2 winrate 0.31 scoreLead -0.1 prior 0.04 order 1 pv D5
+        """.trimIndent()
+
+        val candidates = KataGoAnalysisParser.parseCandidates(
+            response = response,
+            player = StoneColor.Black,
+            boardSize = BoardSize.Nine,
+            maxCandidates = 20,
+        )
+
+        assertEquals(2, candidates.size)
+        assertEquals("E5", (candidates[0].move as Move.Play).coordinate.label(BoardSize.Nine))
+        assertEquals(8, candidates[0].visits)
+        assertEquals(0.3, candidates[0].scoreLead)
+        assertEquals("D5", (candidates[1].move as Move.Play).coordinate.label(BoardSize.Nine))
+    }
+
+    @Test
     fun attachesPointLossFromTopCandidateForPlayerPerspective() {
         val blackCandidates = listOf(
             CandidateMove(move = Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("F6", BoardSize.Nine)), scoreLead = 2.0),

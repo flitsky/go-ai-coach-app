@@ -110,7 +110,7 @@ class KataGoProcessEngineAdapter(
         val effectiveLimit = limit.effectiveAnalysisLimit()
         val candidates = try {
             applySearchLimit(effectiveLimit)
-            val response = sendCommand("kata-search_analyze ${nextPlayer.toGtpColor()}")
+            val response = sendCommand(effectiveLimit.toSearchAnalyzeCommand(nextPlayer))
             KataGoAnalysisParser.attachPointLoss(
                 candidates = KataGoAnalysisParser.parseCandidates(
                     response = response,
@@ -124,13 +124,17 @@ class KataGoProcessEngineAdapter(
         }
         val policyFallbackCount = candidates.count { it.visits == null && it.policyPrior != null }
         val legalFallbackCount = candidates.count { it.visits == null && it.policyPrior == null }
+        val scoredCount = candidates.count { it.pointLoss != null }
         return AnalysisResult(
-            status = EngineStatus.ready("KataGo analysis complete for ${nextPlayer.label}: ${candidates.size}/${limit.candidateCount} candidate(s)"),
+            status = EngineStatus.ready(
+                "KataGo analysis complete for ${nextPlayer.label}: $scoredCount scored / ${limit.candidateCount} requested candidate(s)",
+            ),
             candidates = candidates,
             summary = buildAnalysisSummary(
                 requestedLimit = limit,
                 effectiveLimit = effectiveLimit,
-                shownCount = candidates.size,
+                candidateCount = candidates.size,
+                scoredCount = scoredCount,
                 policyFallbackCount = policyFallbackCount,
                 legalFallbackCount = legalFallbackCount,
             ),
@@ -195,7 +199,8 @@ class KataGoProcessEngineAdapter(
     private fun buildAnalysisSummary(
         requestedLimit: AnalysisLimit,
         effectiveLimit: AnalysisLimit,
-        shownCount: Int,
+        candidateCount: Int,
+        scoredCount: Int,
         policyFallbackCount: Int,
         legalFallbackCount: Int,
     ): String {
@@ -207,21 +212,23 @@ class KataGoProcessEngineAdapter(
         } else {
             "KataGo search analysis with ${effectiveLimit.visits} visits / ${effectiveLimit.timeMillis ?: 0}ms."
         }
-        val searchedCount = shownCount - policyFallbackCount - legalFallbackCount
+        val searchedCount = candidateCount - policyFallbackCount - legalFallbackCount
         return if (policyFallbackCount > 0 || legalFallbackCount > 0) {
             buildString {
                 append(searchText)
                 append(" Returned $searchedCount searched candidate(s)")
                 if (policyFallbackCount > 0) {
-                    append("; filled $policyFallbackCount spot(s) from raw NN policy without score loss")
+                    append("; kept $policyFallbackCount raw NN policy fallback candidate(s) for logs only")
                 }
                 if (legalFallbackCount > 0) {
-                    append("; filled $legalFallbackCount legal spot(s) without engine score/policy")
+                    append("; kept $legalFallbackCount legal fallback candidate(s) for logs only")
                 }
+                append(". ")
+                append("Showing $scoredCount scored spot(s) on the board")
                 append(".")
             }
         } else {
-            "$searchText Showing $shownCount/${requestedLimit.candidateCount} scored spot(s)."
+            "$searchText Showing $scoredCount/${requestedLimit.candidateCount} scored spot(s)."
         }
     }
 
@@ -345,6 +352,12 @@ class KataGoProcessEngineAdapter(
         }
     }
 
+    private fun AnalysisLimit.toSearchAnalyzeCommand(player: StoneColor): String {
+        val timeMillis = timeMillis ?: return "kata-search_analyze ${player.toGtpColor()}"
+        val centiseconds = ((timeMillis + 9) / 10).coerceAtLeast(1)
+        return "kata-search_analyze ${player.toGtpColor()} $centiseconds"
+    }
+
     private fun AnalysisLimit.effectiveAnalysisLimit(): AnalysisLimit {
         val minimumVisits = (candidateCount * VisitsPerCandidate).coerceAtLeast(visits)
         val minimumTimeMillis = timeMillis
@@ -383,7 +396,7 @@ class KataGoProcessEngineAdapter(
         "${difficulty.label}, visits=${analysisLimit.visits}, time=${analysisLimit.timeMillis ?: "none"}ms"
 
     private companion object {
-        private const val VisitsPerCandidate = 10
-        private const val MinAnalysisTimeMillis = 1_000L
+        private const val VisitsPerCandidate = 20
+        private const val MinAnalysisTimeMillis = 2_000L
     }
 }

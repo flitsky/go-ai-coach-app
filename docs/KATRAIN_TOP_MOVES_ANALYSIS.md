@@ -38,6 +38,9 @@ KaTrain의 초록/노랑/빨강 spot은 엔진이 직접 분류해서 주는 값
 
 - `Top Moves`는 점수 손실이 있는 후보만 보드에 그린다.
 - 점수 손실이 없는 fallback 후보의 회색 spot은 제거했다.
+- 기본 Top Moves 요청은 모든 합법점을 전부 표시하려 하지 않고, 상위 20개 후보를 목표로 한다.
+- KataGo process adapter는 Top Moves 요청에 대해 최소 `후보수 * 20 visits`, `2000ms`를 적용하고, `kata-search_analyze <color> <centiseconds>` 형태로 time limit도 명시한다.
+- 자동 cache의 scored 후보가 5개 미만이면 사용자가 `Top Moves`를 누를 때 `Full Analysis` 수준의 deep analysis를 1회 실행한다.
 - 착수 후 돌 중앙의 평가 dot도 같은 `pointLoss` 분류를 사용한다.
 - 색상 단계는 KaTrain 기본 임계값을 모바일 UX에 맞춰 5단계로 단순화했다.
   - `0.5`집 이하: 진한 초록
@@ -56,6 +59,7 @@ KaTrain의 초록/노랑/빨강 spot은 엔진이 직접 분류해서 주는 값
 - 모든 합법 착점에 대해 `pointLoss`를 안정적으로 얻으려면 후보별 refine 분석이 필요하다.
 - `kata-raw-nn` policy는 prior 정보에는 좋지만, 후보별 실전 점수 손실을 대신할 수 없다.
 - ownership, policy, rootInfo, moveInfos를 한 번에 일관되게 관리하려면 KataGo analysis JSON 프로토콜이 더 적합하다.
+- 에뮬레이터 CPU 검증에서는 자동 2초 분석뿐 아니라 수동 `Full Analysis 5초`에서도 빈 9x9 scored 후보가 1개에 머물 수 있었다. 따라서 단순히 GTP search 시간을 늘리는 것만으로 KaTrain식 다중 색상 후보를 안정적으로 만들기는 어렵다.
 
 ## 권장 적용 순서
 
@@ -63,10 +67,11 @@ KaTrain의 초록/노랑/빨강 spot은 엔진이 직접 분류해서 주는 값
    - 빠른 개발/실기기 검증을 유지한다.
    - `Top Moves`는 score가 있는 후보만 표시하고 fallback spot은 숨긴다.
 
-2. Deep Top Moves 추가
-   - 사용자가 현재 국면을 더 깊게 보고 싶을 때 visits/time을 임시 상향한다.
+2. Top Moves scored 후보 품질 보강
+   - 기본 Top Moves는 상위 20개 후보를 목표로 한다.
    - 평소 AI 난이도와 분석 강도를 분리한다.
-   - 9x9에서는 우선 상위 12-20개 후보를 안정적으로 scoring하는 방향이 적절하다.
+   - 사용자가 직접 `Top Moves`를 요청했을 때 cache 품질이 낮으면 1회 deep analysis로 보강한다.
+   - 모든 합법점 전수 분석은 기본 자동 UX로 두지 않는다.
 
 3. KataGo analysis JSON adapter 추가 검토
    - `EngineAdapter` 뒤에 새 구현으로 추가한다.
@@ -77,6 +82,7 @@ KaTrain의 초록/노랑/빨강 spot은 엔진이 직접 분류해서 주는 값
    - KaTrain처럼 모든 합법 후보를 빠르게 훑는 sweep 분석을 추가하면 더 많은 색상 spot을 만들 수 있다.
    - 이미 후보가 된 수들의 visits를 맞추는 equalize 분석은 상위 후보 비교 품질을 높인다.
    - 모바일에서는 전체 합법점 sweep을 기본 자동 실행하기보다 수동 고급 분석으로 두는 편이 안전하다.
+   - Android CPU에서 GTP search가 매우 느린 점을 고려해, JSON analysis protocol과 후보별 refine 분석을 별도 adapter 경로로 실험해야 한다.
 
 ## 의사결정
 

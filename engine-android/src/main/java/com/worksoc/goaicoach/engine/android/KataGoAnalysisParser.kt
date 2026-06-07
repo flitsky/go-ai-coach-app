@@ -22,15 +22,29 @@ internal object KataGoAnalysisParser {
         player: StoneColor,
         boardSize: BoardSize,
         maxCandidates: Int = 5,
-    ): List<CandidateMove> =
+    ): List<CandidateMove> {
+        val candidatesByMove = linkedMapOf<Move, OrderedCandidate>()
         response
             .split(infoBoundary)
             .asSequence()
             .map { it.trim() }
             .filter { it.startsWith("info move ") }
             .mapNotNull { parseCandidate(it, player, boardSize) }
+            .forEach { parsed ->
+                val previous = candidatesByMove[parsed.candidate.move]
+                if (previous == null || parsed.visits >= previous.visits) {
+                    candidatesByMove[parsed.candidate.move] = parsed
+                }
+            }
+
+        return candidatesByMove
+            .values
+            .asSequence()
+            .sortedWith(compareBy<OrderedCandidate> { it.order }.thenByDescending { it.visits })
+            .map { it.candidate }
             .take(maxCandidates)
             .toList()
+    }
 
     fun attachPointLoss(
         candidates: List<CandidateMove>,
@@ -54,7 +68,7 @@ internal object KataGoAnalysisParser {
         info: String,
         player: StoneColor,
         boardSize: BoardSize,
-    ): CandidateMove? {
+    ): OrderedCandidate? {
         val tokens = info.split(whitespace).filter { it.isNotBlank() }
         if (tokens.size < 3 || tokens[0] != "info" || tokens[1] != "move") {
             return null
@@ -72,15 +86,27 @@ internal object KataGoAnalysisParser {
             index += 2
         }
 
-        return CandidateMove(
-            move = move,
-            winRate = fields["winrate"]?.toDoubleOrNull()?.normalizeWinRate(),
-            scoreLead = fields["scoreLead"]?.toDoubleOrNull(),
-            visits = fields["visits"]?.toIntOrNull(),
-            policyPrior = fields["prior"]?.toDoubleOrNull(),
-            note = fields["order"]?.let { "KataGo order $it" },
+        val order = fields["order"]?.toIntOrNull() ?: Int.MAX_VALUE
+        val visits = fields["visits"]?.toIntOrNull()
+        return OrderedCandidate(
+            order = order,
+            visits = visits ?: -1,
+            candidate = CandidateMove(
+                move = move,
+                winRate = fields["winrate"]?.toDoubleOrNull()?.normalizeWinRate(),
+                scoreLead = fields["scoreLead"]?.toDoubleOrNull(),
+                visits = visits,
+                policyPrior = fields["prior"]?.toDoubleOrNull(),
+                note = fields["order"]?.let { "KataGo order $it" },
+            ),
         )
     }
+
+    private data class OrderedCandidate(
+        val order: Int,
+        val visits: Int,
+        val candidate: CandidateMove,
+    )
 
     fun parsePolicyCandidates(
         response: String,

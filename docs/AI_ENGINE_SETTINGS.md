@@ -9,7 +9,6 @@
 - 기본 difficulty: `DifficultyProfile.Beginner`
 - 기본 visits: `16`
 - 기본 time limit: `250ms`
-- 기본 hint count: `1`
 - UI visits 최저값: `16`
 - process adapter startup thread: `numSearchThreads=1`
 
@@ -42,27 +41,29 @@
 
 설정 변경은 엔진이 준비되어 있고 AI가 생각 중이 아닐 때만 허용한다.
 
-`Hints` 패널은 후보수 표시를 조정한다.
+`Top Moves`는 착수 후보 분석 표시를 조정한다.
 
-- `Hints` 토글
-  - 켜져 있으면 사람 차례가 돌아온 시점에 자동으로 후보수를 분석한다.
-  - 꺼져 있어도 `Hint` 버튼을 누르면 수동으로 현재 후보수를 볼 수 있다.
-- `N`
-  - 한 번에 표시할 후보수 개수다.
-  - 현재 UI 범위는 `1-12`다.
-  - `AnalysisLimit.candidateCount`로 엔진 adapter에 전달된다.
-  - `Beginner`처럼 낮은 visits/time 설정에서는 KataGo 검색이 실제로 방문한 후보수가 N보다 적을 수 있다.
-  - 이 경우 앱은 부족한 spot을 `kata-raw-nn` 정책 우선순위 후보로 보강한다.
-  - 검색 후보는 `WR`, `score`, `visits`를 가질 수 있고, 정책 보강 후보는 `prior` 중심으로 표시된다.
+- `Top Moves` 토글
+  - 켜져 있으면 사람 차례가 돌아온 시점에 준비된 후보수를 보드에 표시한다.
+  - 꺼져 있어도 착수 평가를 위한 pre-move analysis cache는 백그라운드에서 계속 준비한다.
+- 후보 개수
+  - 현재 UI에서 사용자가 직접 N을 입력하지 않는다.
+  - 앱은 현재 합법 착점 수와 내부 최대값 중 작은 값을 `AnalysisLimit.candidateCount`로 엔진 adapter에 전달한다.
+  - 현재 내부 최대값은 상위 20개 후보다.
+  - `Beginner`처럼 낮은 visits/time 설정에서는 KataGo 검색이 실제로 방문한 후보수가 목표 후보수보다 적을 수 있다.
+  - 이 경우 앱은 부족한 후보 목록을 `kata-raw-nn` 정책 우선순위와 합법 착점 fallback으로 보강하되, 이 fallback 후보는 로그 전용이다.
+  - 보드에는 `pointLoss`가 있는 검색 후보만 표시한다.
+  - 검색 후보는 `WR`, `score`, `visits`, `loss`를 가질 수 있고, 정책 보강 후보는 `prior` 중심으로 로그에 표시된다.
 
-힌트 분석은 대국 AI 응수 설정과 분리한다.
+Top Moves 분석은 대국 AI 응수 설정과 분리한다.
 
 - AI 응수는 현재 `EngineProfile.analysisLimit`를 사용한다.
-- 힌트와 착수 리뷰용 pre-move analysis는 현재 difficulty보다 한 단계 높은 difficulty의 기본 visits/time을 사용한다.
-  - 예: 대국 AI가 `Beginner`이면 힌트는 최소 `Casual` 기본값인 `64 visits / 500ms`를 사용한다.
-  - 수동으로 visits/time을 이미 더 높게 올려둔 경우에는 힌트가 약해지지 않도록 현재 값과 한 단계 위 기본값 중 큰 값을 사용한다.
-- KataGo process adapter는 후보수 N이 커질 때 여기에 추가로 최소 `N * 10 visits`, `1000ms`까지 힌트 검색을 일시 상향할 수 있다.
-- 힌트 검색 후에는 기존 AI 대국용 `EngineProfile.analysisLimit`로 `maxVisits/maxTime`을 되돌린다. 따라서 힌트를 강하게 해도 AI 응수 강도가 영구적으로 올라가지 않는다.
+- Top Moves와 착수 리뷰용 pre-move analysis는 현재 difficulty보다 한 단계 높은 difficulty의 기본 visits/time을 사용한다.
+  - 예: 대국 AI가 `Beginner`이면 Top Moves는 최소 `Casual` 기본값인 `64 visits / 500ms`를 사용한다.
+  - 수동으로 visits/time을 이미 더 높게 올려둔 경우에는 Top Moves가 약해지지 않도록 현재 값과 한 단계 위 기본값 중 큰 값을 사용한다.
+- KataGo process adapter는 후보수 목표가 커질 때 여기에 추가로 최소 `후보수 * 20 visits`, `2000ms`까지 Top Moves 검색을 일시 상향한다.
+- 자동 cache에 점수 손실이 있는 후보가 5개 미만이면, 사용자가 `Top Moves`를 눌렀을 때 수동 deep analysis를 1회 실행한다. 이때는 `Full Analysis` 기본값인 `1000 visits / 5000ms` 이상을 사용한다.
+- Top Moves 검색 후에는 기존 AI 대국용 `EngineProfile.analysisLimit`로 `maxVisits/maxTime`을 되돌린다. 따라서 Top Moves를 강하게 해도 AI 응수 강도가 영구적으로 올라가지 않는다.
 
 ## KataGo process adapter 매핑
 
@@ -79,10 +80,10 @@
 maxVisits=16
 maxTime=0.25
 numSearchThreads=1
-candidateCount=1
+candidateCount=20
 ```
 
-주의: `candidateCount`는 “검색 방문수”가 아니라 “표시 목표 개수”다. 낮은 visits/time에서는 검색 후보가 적게 나올 수 있으므로, 앱은 표시 개수를 맞추기 위해 raw NN policy fallback을 사용한다.
+주의: `candidateCount`는 “검색 방문수”가 아니라 “후보 목표 개수”다. 낮은 visits/time에서는 검색 후보가 적게 나올 수 있으므로, 앱은 로그 completeness를 위해 raw NN policy/legal fallback을 보관한다. 다만 점수 손실이 없는 fallback은 보드에 그리지 않는다.
 
 ## Stub adapter 주의점
 

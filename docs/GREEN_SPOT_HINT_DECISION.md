@@ -42,12 +42,15 @@ KaTrain류 UI는 대체로 엔진 분석 결과의 후보수 리스트를 보드
 - UI 버튼명은 `Top Moves`로 표시한다.
 - `Top Moves` 버튼은 토글이다. 켜져 있으면 매 사용자 차례에 준비된 후보 spot을 자동 표시한다.
 - 착수 후 평가 dot을 안정적으로 남기기 위해, 사람 차례가 되면 `Top Moves` 표시 여부와 관계없이 백그라운드 pre-move analysis를 수행한다.
-- 실제 표시 후보는 현재 합법 착점 수를 기준으로 요청하되, 보드에는 score가 있는 후보만 표시한다.
+- 실제 요청 후보는 현재 합법 착점 수와 내부 상한 중 작은 값이다. 현재 내부 상한은 상위 20개 후보다.
+- 보드에는 score가 있는 후보만 표시한다.
 - Top Moves와 착수 리뷰용 pre-move analysis는 대국 AI 응수 설정보다 한 단계 높은 difficulty의 visits/time을 사용한다.
-  - 예: 대국 AI가 `Beginner`이면 힌트 분석은 최소 `Casual` 기본값을 사용한다.
-  - 사용자가 visits/time을 이미 더 높게 조정한 경우에는 현재 값과 한 단계 위 기본값 중 더 큰 값을 사용해 힌트가 약해지지 않게 한다.
-- `KataGoProcessEngineAdapter.analyze()`는 후보수 N이 커질 때 최소 `N * 10 visits`, `1000ms`로 힌트 검색을 일시 상향한다.
-- 힌트 검색 후에는 기존 AI 대국용 `EngineProfile.analysisLimit`로 `maxVisits/maxTime`을 되돌린다. 따라서 힌트 품질 보강이 AI 응수 강도 설정을 영구적으로 바꾸지 않는다.
+  - 예: 대국 AI가 `Beginner`이면 Top Moves 분석은 최소 `Casual` 기본값을 사용한다.
+  - 사용자가 visits/time을 이미 더 높게 조정한 경우에는 현재 값과 한 단계 위 기본값 중 더 큰 값을 사용해 Top Moves가 약해지지 않게 한다.
+- `KataGoProcessEngineAdapter.analyze()`는 후보수 목표가 커질 때 최소 `후보수 * 20 visits`, `2000ms`로 Top Moves 검색을 일시 상향한다.
+- `kata-search_analyze`에는 time limit을 centisecond 인자로도 전달한다. Android CPU 환경에서 score가 있는 후보가 너무 적게 나오는 상황을 줄이기 위한 조치다.
+- 자동 cache에 score가 있는 후보가 5개 미만이면, 사용자가 `Top Moves`를 누르는 시점에 `Full Analysis` 수준의 수동 deep analysis를 한 번 수행한다.
+- Top Moves 검색 후에는 기존 AI 대국용 `EngineProfile.analysisLimit`로 `maxVisits/maxTime`을 되돌린다. 따라서 Top Moves 품질 보강이 AI 응수 강도 설정을 영구적으로 바꾸지 않는다.
 
 ## 착수 후 평가
 
@@ -76,5 +79,6 @@ KaTrain류 UI는 대체로 엔진 분석 결과의 후보수 리스트를 보드
 1. 분석 취소/타임아웃 처리
 2. 자동 분석이 너무 잦아질 경우 debounce/cooldown 정책 추가
 3. 별도 `katago analysis` JSON 프로토콜 전환 검토: `rootInfo`, `moveInfos`, `ownership`, `policy`를 함께 받으면 KaTrain식 `pointsLost`, sweep/equalize 분석, partial result를 더 안정적으로 구현할 수 있다.
+4. 모든 합법 착점 전수 평가는 기본 자동 Top Moves가 아니라 sweep/equalize 기반 고급 분석으로 분리한다.
 
 자세한 KaTrain 분석 근거는 `docs/KATRAIN_TOP_MOVES_ANALYSIS.md`에 기록한다.
