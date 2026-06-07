@@ -8,6 +8,12 @@ import com.worksoc.goaicoach.shared.StoneColor
 import org.json.JSONObject
 
 internal object KataGoJsonAnalysisParser {
+    fun parseRootWhiteScoreLead(response: String): Double? =
+        JSONObject(response)
+            .optJSONObject("rootInfo")
+            ?.optNullableDouble("scoreLead")
+            ?.let { -it }
+
     fun parseCandidates(
         response: String,
         player: StoneColor,
@@ -62,6 +68,68 @@ internal object KataGoJsonAnalysisParser {
                     )
                 }
             }
+    }
+
+    fun parsePolicyCandidates(
+        response: String,
+        player: StoneColor,
+        boardSize: BoardSize,
+        maxCandidates: Int,
+        excludedCoordinates: Set<BoardCoordinate> = emptySet(),
+    ): List<CandidateMove> {
+        val policy = JSONObject(response).optJSONArray("policy") ?: return emptyList()
+        val boardPointCount = boardSize.value * boardSize.value
+        if (policy.length() < boardPointCount) {
+            return emptyList()
+        }
+
+        return (0 until boardPointCount)
+            .asSequence()
+            .map { index ->
+                val coordinate = BoardCoordinate(
+                    row = index / boardSize.value,
+                    column = index % boardSize.value,
+                )
+                coordinate to policy.optDouble(index, -1.0)
+            }
+            .filter { (coordinate, prior) ->
+                prior >= 0.0 && coordinate !in excludedCoordinates
+            }
+            .sortedByDescending { (_, prior) -> prior }
+            .take(maxCandidates)
+            .mapIndexed { index, (coordinate, prior) ->
+                CandidateMove(
+                    move = Move.Play(player, coordinate),
+                    policyPrior = prior,
+                    note = "KataGo JSON policy fallback ${index + 1}",
+                )
+            }
+            .toList()
+    }
+
+    fun parseRefinedCandidate(
+        response: String,
+        player: StoneColor,
+        move: Move.Play,
+        referenceScoreLead: Double,
+        policyPrior: Double?,
+    ): CandidateMove? {
+        val rootInfo = JSONObject(response).optJSONObject("rootInfo") ?: return null
+        val blackScoreLead = rootInfo.optNullableDouble("scoreLead") ?: return null
+        val scoreLead = -blackScoreLead
+        val blackWinRate = rootInfo.optNullableDouble("winrate")
+        return CandidateMove(
+            move = move,
+            winRate = blackWinRate?.toPlayerWinRate(player),
+            scoreLead = scoreLead,
+            pointLoss = scoreLead.pointLossFromReference(
+                player = player,
+                referenceScoreLead = referenceScoreLead,
+            ),
+            visits = rootInfo.optNullableInt("visits"),
+            policyPrior = policyPrior,
+            note = "KataGo JSON refine",
+        )
     }
 
     private data class OrderedCandidate(

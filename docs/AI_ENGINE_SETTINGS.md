@@ -53,6 +53,8 @@
 - 앱은 엔진 응답 후보와 현재 합법 착점을 합쳐 `MoveAnalysisSnapshot`을 만든다. snapshot에는 `Scored`, `PolicyOnly`, `LegalOnly` coverage가 함께 보존된다.
 - `analysis_learning.cfg`가 준비된 KataGo local process에서는 JSON analysis protocol을 우선 사용한다.
   - `moveInfos` 후보는 `WR`, `score`, `visits`, `prior`, `loss`를 가진다.
+  - `policy` 배열은 shared 룰 projection으로 합법 착점만 필터링한 뒤 `PolicyOnly` 후보로 보관한다.
+  - 점수 손실이 없는 상위 policy 후보 일부는 낮은 visits refine query로 추가 보강한다.
   - 보드에는 `pointLoss`가 있는 후보만 표시한다.
 - JSON analysis config가 없거나 JSON analysis 프로세스가 실패하면 기존 GTP `kata-search_analyze` 경로로 fallback한다.
   - GTP fallback에서는 낮은 visits/time 설정에서 실제 score 후보가 목표 후보수보다 적을 수 있다.
@@ -65,6 +67,7 @@ Top Moves 분석은 대국 AI 응수 설정과 분리한다.
   - 예: 대국 AI가 `Beginner`이면 Top Moves는 최소 `Casual` 기본값인 `64 visits / 500ms`를 사용한다.
   - 수동으로 visits/time을 이미 더 높게 올려둔 경우에는 Top Moves가 약해지지 않도록 현재 값과 한 단계 위 기본값 중 큰 값을 사용한다.
 - KataGo process adapter는 후보수 목표가 커질 때 여기에 추가로 최소 `후보수 * 20 visits`, `2000ms`까지 Top Moves 분석을 일시 상향한다.
+- JSON analysis 경로는 normal query 이후 상위 policy 후보 일부를 `8 visits` refine query로 추가 보강한다. 현재 자동 budget은 최대 12개 후보다.
 - 자동 cache에 점수 손실이 있는 후보가 5개 미만이면, 사용자가 `Top Moves`를 눌렀을 때 수동 deep analysis를 1회 실행한다. 이때는 `Full Analysis` 기본값인 `1000 visits / 5000ms` 이상을 사용한다.
 - GTP fallback을 사용한 Top Moves 검색 후에는 기존 AI 대국용 `EngineProfile.analysisLimit`로 `maxVisits/maxTime`을 되돌린다. JSON analysis 경로는 별도 analysis process에 전체 수순을 query로 보내므로 GTP 대국 process의 응수 강도 설정을 바꾸지 않는다.
 

@@ -341,3 +341,7 @@
 - 착수 리뷰는 실제 착수 좌표가 합법이지만 아직 `pointLoss`가 없으면 실수로 단정하지 않고 `unknown`으로 처리한다.
 - 9x9 POC에서는 Top Moves 후보 목표를 현재 합법 착점 수까지 올리도록 조정했다. 다만 실제 색상 표시 수는 KataGo가 `pointLoss`를 채워준 후보 수에 따라 달라진다.
 - `docs/MOVE_ANALYSIS_DATA_MODEL.md`를 추가해 전체 합법 착점 snapshot, display policy, sweep/refine 확장 방향을 문서화했다.
+- 다음 단계로 KataGo JSON analysis의 `policy` 배열을 파싱해 합법 착점의 `PolicyOnly` 데이터를 채우도록 했다.
+- KaTrain의 `refine_move` 흐름을 참고해 `playedMoves + 후보수` 형태의 낮은 visits refine query를 추가했다. 현재 자동 budget은 상위 policy 후보 최대 12개, 후보당 8 visits다.
+- refine query의 `rootInfo`를 부모 root score와 비교해 `pointLoss`를 계산하므로, normal `moveInfos`에 없던 후보도 일부 `Scored`로 승격될 수 있다.
+- JSON policy/refine 후보도 shared rules projection으로 합법 착점만 남기도록 adapter에서 필터링한다.

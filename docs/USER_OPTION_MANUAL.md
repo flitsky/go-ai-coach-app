@@ -34,6 +34,7 @@
   - 분석은 대국 AI보다 한 단계 높은 difficulty의 기본 visits/time을 사용한다. 단, 사용자가 이미 더 강한 visits/time을 설정했다면 그 값을 유지한다.
   - 후보 수가 많을 때는 엔진 어댑터가 최소 검색량을 후보 수에 맞춰 내부 상향할 수 있다. 현재 Top Moves 분석은 최소 `후보수 * 20 visits`, `2000ms`까지 일시 상향될 수 있다.
   - KataGo JSON analysis config가 준비된 경우에는 KaTrain과 같은 JSON analysis protocol을 우선 사용해 더 많은 scored 후보를 받는다.
+  - JSON analysis 경로에서는 normal query의 `policy` 배열도 합법 착점 snapshot에 보존하고, 상위 policy 후보 일부를 낮은 visits로 추가 refine해 scored 후보를 보강한다.
   - 준비된 cache에 점수 있는 후보가 5개 미만이면, 사용자가 `Top Moves`를 눌렀을 때 1회 수동 deep analysis를 실행해 `Full Analysis` 수준으로 다시 분석한다.
   - 엔진 search가 목표 후보수를 채우지 못하면, 나머지 합법 착점은 `PolicyOnly` 또는 `LegalOnly` 상태로 snapshot에 보관한다. 이 후보에는 점수 손실이나 policy prior가 없을 수 있다.
   - 점수 손실이 없는 policy/legal fallback 후보는 보드 위 스팟으로 그리지 않는다. 분석 snapshot, 상세 텍스트, `Copy Log`에서만 확인한다.

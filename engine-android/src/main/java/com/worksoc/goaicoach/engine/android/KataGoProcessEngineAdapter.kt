@@ -150,20 +150,89 @@ class KataGoProcessEngineAdapter(
             ?: return null
         ensureAnalysisProcessStarted(analysisConfigPath)
         val response = sendAnalysisQuery(effectiveLimit.toJsonAnalysisQuery())
-        val candidates = KataGoJsonAnalysisParser.parseCandidates(
+        val searchedCandidates = KataGoJsonAnalysisParser.parseCandidates(
             response = response,
             player = nextPlayer,
             boardSize = boardSize,
             maxCandidates = candidateCount,
         )
+        val currentState = GameStateReplayer
+            .replay(boardSize = boardSize, ruleset = ruleset, moves = playedMoves)
+        val legalCoordinates = allCoordinates()
+            .filter { coordinate ->
+                runCatching { currentState.play(Move.Play(nextPlayer, coordinate)) }.isSuccess
+            }
+            .toSet()
+        val illegalCoordinates = allCoordinates().toSet() - legalCoordinates
+        val searchedCoordinates = searchedCandidates.playCoordinates()
+        val policyCandidates = KataGoJsonAnalysisParser.parsePolicyCandidates(
+            response = response,
+            player = nextPlayer,
+            boardSize = boardSize,
+            maxCandidates = candidateCount,
+            excludedCoordinates = searchedCoordinates + illegalCoordinates,
+        )
+        val referenceScoreLead = KataGoJsonAnalysisParser.parseRootWhiteScoreLead(response)
+        val refinedCandidates = if (referenceScoreLead == null) {
+            emptyList()
+        } else {
+            refineJsonPolicyCandidates(
+                policyCandidates = policyCandidates,
+                referenceScoreLead = referenceScoreLead,
+                maxCandidates = candidateCount,
+            )
+        }
+        val refinedCoordinates = refinedCandidates.playCoordinates()
+        val candidates = (
+            searchedCandidates +
+                refinedCandidates +
+                policyCandidates.filterNot { candidate ->
+                    (candidate.move as? Move.Play)?.coordinate in refinedCoordinates
+                }
+            )
+            .take(candidateCount)
         val scoredCount = candidates.count { it.pointLoss != null }
+        val policyOnlyCount = candidates.count { it.pointLoss == null && it.policyPrior != null }
         return AnalysisResult(
             status = EngineStatus.ready(
                 "KataGo JSON analysis complete for ${nextPlayer.label}: $scoredCount/$candidateCount scored candidate(s)",
             ),
             candidates = candidates,
-            summary = "KataGo JSON analysis with ${effectiveLimit.visits} visits / ${effectiveLimit.timeMillis ?: 0}ms. Returned ${candidates.size} scored candidate(s).",
+            summary = "KataGo JSON analysis with ${effectiveLimit.visits} visits / ${effectiveLimit.timeMillis ?: 0}ms. Returned $scoredCount scored, $policyOnlyCount policy-only candidate(s); refined ${refinedCandidates.size} policy move(s).",
         )
+    }
+
+    private fun refineJsonPolicyCandidates(
+        policyCandidates: List<CandidateMove>,
+        referenceScoreLead: Double,
+        maxCandidates: Int,
+    ): List<CandidateMove> {
+        val refineCount = (maxCandidates / JsonRefineCandidateDivisor)
+            .coerceIn(0, JsonRefineMaxMoves)
+        if (refineCount <= 0) {
+            return emptyList()
+        }
+
+        return policyCandidates
+            .asSequence()
+            .mapNotNull { candidate ->
+                val move = candidate.move as? Move.Play ?: return@mapNotNull null
+                move to candidate.policyPrior
+            }
+            .take(refineCount)
+            .mapNotNull { (move, policyPrior) ->
+                runCatching {
+                    val response = sendAnalysisQuery(JsonRefineLimit.toJsonAnalysisQuery(refineMove = move))
+                    KataGoJsonAnalysisParser.parseRefinedCandidate(
+                        response = response,
+                        player = nextPlayer,
+                        move = move,
+                        referenceScoreLead = referenceScoreLead,
+                        policyPrior = policyPrior,
+                    )
+                }.getOrNull()
+            }
+            .toList()
     }
 
     private fun analyzeWithGtp(
@@ -239,6 +308,10 @@ class KataGoProcessEngineAdapter(
                 }
             }
         }
+
+    private fun List<CandidateMove>.playCoordinates(): Set<BoardCoordinate> =
+        mapNotNull { candidate -> (candidate.move as? Move.Play)?.coordinate }
+            .toSet()
 
     private fun buildAnalysisSummary(
         requestedLimit: AnalysisLimit,
@@ -488,10 +561,15 @@ class KataGoProcessEngineAdapter(
         )
     }
 
-    private fun AnalysisLimit.toJsonAnalysisQuery(): JSONObject {
+    private fun AnalysisLimit.toJsonAnalysisQuery(refineMove: Move.Play? = null): JSONObject {
         analysisQueryCounter += 1
         val overrideSettings = JSONObject()
         timeMillis?.let { overrideSettings.put("maxTime", it / 1_000.0) }
+        val queryMoves = if (refineMove == null) {
+            playedMoves
+        } else {
+            playedMoves + refineMove
+        }
         return JSONObject()
             .put("id", "go-ai-coach-analysis-$analysisQueryCounter")
             .put("rules", ruleset.katagoName)
@@ -500,12 +578,12 @@ class KataGoProcessEngineAdapter(
             .put("boardYSize", boardSize.value)
             .put("initialPlayer", "B")
             .put("initialStones", JSONArray())
-            .put("moves", playedMoves.toJsonMoves())
-            .put("analyzeTurns", JSONArray().put(playedMoves.size))
+            .put("moves", queryMoves.toJsonMoves())
+            .put("analyzeTurns", JSONArray().put(queryMoves.size))
             .put("maxVisits", visits)
             .put("includeOwnership", false)
             .put("includeMovesOwnership", false)
-            .put("includePolicy", true)
+            .put("includePolicy", refineMove == null)
             .put("overrideSettings", overrideSettings)
             .put("priority", 0)
     }
@@ -558,5 +636,8 @@ class KataGoProcessEngineAdapter(
         private const val VisitsPerCandidate = 20
         private const val MinAnalysisTimeMillis = 2_000L
         private const val AnalysisSearchThreads = 4
+        private const val JsonRefineMaxMoves = 12
+        private const val JsonRefineCandidateDivisor = 4
+        private val JsonRefineLimit = AnalysisLimit(visits = 8)
     }
 }

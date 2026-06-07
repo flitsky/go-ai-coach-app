@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.engine.android
 
 import com.worksoc.goaicoach.shared.BoardSize
+import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.StoneColor
 import kotlin.test.Test
@@ -87,4 +88,69 @@ class KataGoJsonAnalysisParserTest {
         assertEquals(0.0, candidates[0].pointLoss ?: error("missing point loss"), 0.000001)
         assertEquals(0.3, candidates[1].pointLoss ?: error("missing point loss"), 0.000001)
     }
+
+    @Test
+    fun parsesJsonPolicyAsPolicyOnlyCandidates() {
+        val policy = List(82) { index ->
+            when (index) {
+                0 -> 0.2
+                10 -> 0.8
+                80 -> 0.4
+                else -> -1.0
+            }
+        }.joinToString(",")
+        val json = """
+            {
+              "id": "q1",
+              "moveInfos": [],
+              "rootInfo": {"scoreLead":0.0,"winrate":0.5},
+              "policy": [$policy]
+            }
+        """.trimIndent()
+
+        val candidates = KataGoJsonAnalysisParser.parsePolicyCandidates(
+            response = json,
+            player = StoneColor.Black,
+            boardSize = BoardSize.Nine,
+            maxCandidates = 3,
+            excludedCoordinates = setOf(point("A9")),
+        )
+
+        assertEquals(2, candidates.size)
+        assertEquals("B8", (candidates[0].move as Move.Play).coordinate.label(BoardSize.Nine))
+        assertEquals(0.8, candidates[0].policyPrior ?: error("missing prior"), 0.000001)
+        assertEquals("J1", (candidates[1].move as Move.Play).coordinate.label(BoardSize.Nine))
+        assertEquals(0.4, candidates[1].policyPrior ?: error("missing prior"), 0.000001)
+    }
+
+    @Test
+    fun parsesRefinedRootInfoAsCandidateEvaluation() {
+        val json = """
+            {
+              "id": "q1",
+              "moveInfos": [
+                {"move":"D4","order":0,"scoreLead":0.2,"winrate":0.55,"visits":2}
+              ],
+              "rootInfo": {"scoreLead":-2.0,"winrate":0.25,"visits":8}
+            }
+        """.trimIndent()
+
+        val candidate = KataGoJsonAnalysisParser.parseRefinedCandidate(
+            response = json,
+            player = StoneColor.Black,
+            move = Move.Play(StoneColor.Black, point("E5")),
+            referenceScoreLead = -0.5,
+            policyPrior = 0.42,
+        ) ?: error("missing refined candidate")
+
+        assertEquals("E5", (candidate.move as Move.Play).coordinate.label(BoardSize.Nine))
+        assertEquals(2.0, candidate.scoreLead ?: error("missing score lead"), 0.000001)
+        assertEquals(0.25, candidate.winRate ?: error("missing win rate"), 0.000001)
+        assertEquals(2.5, candidate.pointLoss ?: error("missing point loss"), 0.000001)
+        assertEquals(8, candidate.visits)
+        assertEquals(0.42, candidate.policyPrior ?: error("missing prior"), 0.000001)
+    }
+
+    private fun point(label: String): BoardCoordinate =
+        BoardCoordinate.fromLabel(label, BoardSize.Nine)
 }

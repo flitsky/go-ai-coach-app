@@ -43,6 +43,8 @@ KaTrain의 초록/노랑/빨강 spot은 엔진이 직접 분류해서 주는 값
 - KataGo process adapter는 `analysis_learning.cfg`가 있으면 KataGo JSON analysis protocol을 우선 사용한다.
 - JSON analysis query는 현재 수순 전체, `maxVisits`, `overrideSettings.maxTime`, `includePolicy=true`를 전달하고, `moveInfos`를 `CandidateMove`로 변환한다.
 - JSON 후보 spot의 `pointLoss`는 KaTrain의 `pointsLost`와 맞춰 `rootInfo.scoreLead` 대비 손실로 계산한다. `rootInfo`가 없는 예외 응답에서는 기존처럼 order 0 후보 대비 손실로 fallback한다.
+- JSON `policy` 배열은 합법 착점으로 필터링해 `PolicyOnly` 후보로 snapshot에 보존한다.
+- JSON normal query에서 점수가 없는 상위 policy 후보 일부는 KaTrain의 `refine_move` 방식처럼 `playedMoves + 후보수` query를 추가 실행해 `Scored` 후보로 보강한다.
 - JSON analysis process는 대국용 GTP process와 별도로 뜨며 `numAnalysisThreads=1`, `numSearchThreads=4`를 사용한다.
 - JSON analysis config가 없거나 실패하면 기존 GTP fallback으로 돌아간다. 이때는 최소 `후보수 * 20 visits`, `2000ms`를 적용하고, `kata-search_analyze <color> <centiseconds>` 형태로 time limit도 명시한다.
 - 자동 cache의 scored 후보가 5개 미만이면 사용자가 `Top Moves`를 누를 때 `Full Analysis` 수준의 deep analysis를 1회 실행한다.
@@ -63,7 +65,7 @@ KaTrain의 초록/노랑/빨강 spot은 엔진이 직접 분류해서 주는 값
 
 - JSON normal analysis는 GTP보다 많은 `moveInfos`를 안정적으로 준다.
 - 다만 normal analysis는 상위 후보 중심이다. 점수 손실이 큰 노랑/빨강 후보는 엔진이 해당 착점을 `moveInfos`에 포함해줄 때만 표시된다.
-- 모든 합법 착점에 대해 `pointLoss`를 더 촘촘히 얻으려면 여전히 후보별 refine 분석이 필요하다.
+- budgeted refine으로 일부 policy 후보를 추가 scoring하지만, 모든 합법 착점에 대해 `pointLoss`를 더 촘촘히 얻으려면 별도 full sweep 분석이 필요하다.
 - `kata-raw-nn` policy는 prior 정보에는 좋지만, 후보별 실전 점수 손실을 대신할 수 없으므로 fallback 로그 전용으로 유지한다.
 - ownership, policy, rootInfo, moveInfos를 한 번에 일관되게 관리하려면 JSON analysis 결과를 앱 내부 분석 cache 모델로 더 확장할 필요가 있다.
 - 에뮬레이터 CPU 검증에서는 GTP 자동 2초 분석뿐 아니라 수동 `Full Analysis 5초`에서도 빈 9x9 scored 후보가 1개에 머물 수 있었다. JSON analysis normal query가 이 병목의 1차 해법이고, sweep/equalize는 다음 고도화 단계다.
@@ -86,7 +88,8 @@ KaTrain의 초록/노랑/빨강 spot은 엔진이 직접 분류해서 주는 값
    - 아직 `rootInfo`, `ownership`, `policy`, partial result를 앱 cache 모델로 모두 승격하지는 않았다.
 
 4. Sweep/Equalize 분석 도입 검토
-   - KaTrain처럼 모든 합법 후보를 빠르게 훑는 sweep 분석을 추가하면 더 많은 색상 spot을 만들 수 있다.
+   - 1차 budgeted refine 구현 완료: 상위 policy 후보 일부를 낮은 visits로 추가 분석한다.
+   - KaTrain처럼 모든 합법 후보를 빠르게 훑는 full sweep 분석을 추가하면 더 많은 색상 spot을 만들 수 있다.
    - 이미 후보가 된 수들의 visits를 맞추는 equalize 분석은 상위 후보 비교 품질을 높인다.
    - 모바일에서는 전체 합법점 sweep을 기본 자동 실행하기보다 수동 고급 분석으로 두는 편이 안전하다.
    - Android CPU에서 GTP search가 매우 느린 점을 고려해, JSON analysis protocol과 후보별 refine 분석을 별도 adapter 경로로 실험해야 한다.

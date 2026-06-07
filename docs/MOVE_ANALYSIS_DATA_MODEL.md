@@ -20,6 +20,18 @@
 - 현재 보드 시각화는 `Scored` 착점만 그린다.
 - 착수 리뷰는 snapshot에서 실제 착수 좌표를 조회한다. 착점이 합법이지만 아직 `pointLoss`가 없으면 실수로 단정하지 않고 `unknown`으로 남긴다.
 
+## JSON analysis 보강 흐름
+
+KataGo JSON analysis 경로에서는 normal query 하나로 끝내지 않는다.
+
+1. normal query로 `rootInfo`, `moveInfos`, `policy`를 받는다.
+2. `moveInfos`는 `Scored` 후보가 된다.
+3. `policy` 배열은 현재 shared rules projection의 합법 착점과 교차 확인한 뒤 `PolicyOnly` 후보로 보존한다.
+4. 아직 `pointLoss`가 없는 상위 policy 후보 일부는 `playedMoves + 후보수` 형태의 refine query로 낮은 visits 재분석을 수행한다.
+5. refine query의 `rootInfo`를 부모 root score와 비교해 해당 후보의 `pointLoss`를 계산한다.
+
+현재 refine은 모바일 응답성을 위해 budgeted sweep으로 제한한다. 빈 9x9 기준으로 한 번의 Top Moves 분석에서 최대 12개 policy 후보를 추가 refine한다.
+
 ## 왜 이렇게 분리하는가
 
 엔진 분석 품질과 UI 표현은 별개로 진화해야 한다.
@@ -30,8 +42,8 @@
 
 ## 현재 한계
 
-- JSON normal analysis는 상위 후보 중심이므로 모든 합법 착점의 `pointLoss`가 바로 채워지지는 않는다.
-- 모든 착점을 색상 평가하려면 sweep/refine 단계가 필요하다.
+- JSON normal analysis와 budgeted refine만으로 모든 합법 착점의 `pointLoss`가 바로 채워지지는 않는다.
+- 모든 착점을 색상 평가하려면 refine budget을 높이거나 별도 수동 full sweep 모드를 추가해야 한다.
 - 모바일에서는 모든 착점을 매 턴 깊게 분석하면 응답성이 나빠질 수 있으므로, 자동 분석과 수동 deep 분석의 예산을 분리해야 한다.
 
 ## 다음 단계
