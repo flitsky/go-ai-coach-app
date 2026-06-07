@@ -349,3 +349,5 @@
 - `make reinstall-dev-engine`로 에뮬레이터에 최신 디버그 앱과 KataGo model/config/analysis config를 재설치했다. 설치 후 앱 cold launch는 `TotalTime=637ms`, 전체 명령은 약 4.5초가 걸렸다.
 - UI dump로 실제 실행 화면을 확인했다. 첫 화면에서 `Score`, `Win Rate`, `Pass`, `Undo`, `Top Moves`, `Eval`이 보이고, Top Moves 분석 텍스트에 `Analysis coverage: legal 81, scored 33, policy-only 48, pending 0.`가 표시되었다.
 - 같은 화면에서 `KataGo JSON analysis with 1620 visits / 2000ms. Returned 33 scored, 48 policy-only candidate(s); refined 12 policy move(s).`가 확인되어 전체 합법 착점 snapshot, policy fallback, budgeted refine가 앱 UI까지 반영된 것을 검증했다.
+- 사용자가 폰에도 설치를 요청했다. `adb devices -l`, `adb start-server`, USB 장치 목록, `adb mdns services`를 확인했지만 현재는 `emulator-5554`만 잡히고 실제 폰 serial은 보이지 않았다.
+- 약 1분간 `adb devices -l`을 반복 확인했으나 폰은 계속 미검출 상태였다. 폰에서 USB 디버깅을 켜고 RSA 인증 팝업을 승인한 뒤 `device` 상태로 보이면, `ANDROID_SERIAL=<폰 serial> make reinstall-dev-engine`로 최신 앱과 KataGo asset을 폰에 설치할 예정이다.
