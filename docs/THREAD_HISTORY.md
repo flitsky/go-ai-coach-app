@@ -345,3 +345,7 @@
 - KaTrain의 `refine_move` 흐름을 참고해 `playedMoves + 후보수` 형태의 낮은 visits refine query를 추가했다. 현재 자동 budget은 상위 policy 후보 최대 12개, 후보당 8 visits다.
 - refine query의 `rootInfo`를 부모 root score와 비교해 `pointLoss`를 계산하므로, normal `moveInfos`에 없던 후보도 일부 `Scored`로 승격될 수 있다.
 - JSON policy/refine 후보도 shared rules projection으로 합법 착점만 남기도록 adapter에서 필터링한다.
+- 사용자가 최신 수정사항이 앱에 반영되었는지 확인을 요청했다.
+- `make reinstall-dev-engine`로 에뮬레이터에 최신 디버그 앱과 KataGo model/config/analysis config를 재설치했다. 설치 후 앱 cold launch는 `TotalTime=637ms`, 전체 명령은 약 4.5초가 걸렸다.
+- UI dump로 실제 실행 화면을 확인했다. 첫 화면에서 `Score`, `Win Rate`, `Pass`, `Undo`, `Top Moves`, `Eval`이 보이고, Top Moves 분석 텍스트에 `Analysis coverage: legal 81, scored 33, policy-only 48, pending 0.`가 표시되었다.
+- 같은 화면에서 `KataGo JSON analysis with 1620 visits / 2000ms. Returned 33 scored, 48 policy-only candidate(s); refined 12 policy move(s).`가 확인되어 전체 합법 착점 snapshot, policy fallback, budgeted refine가 앱 UI까지 반영된 것을 검증했다.
