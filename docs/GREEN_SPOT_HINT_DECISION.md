@@ -28,7 +28,7 @@ KaTrain류 UI는 대체로 엔진 분석 결과의 후보수 리스트를 보드
 
 - `GoBoard`는 `candidateMoves`를 받아 비어 있는 교차점에 후보 spot을 표시한다.
 - 검색 후보는 현재 착수자 관점의 예상 score lead를 보드 위 label로 표시한다.
-- 후보 색상은 최선 후보 대비 `pointLoss` 기준으로 표시한다.
+- 후보 색상은 KataGo JSON analysis의 `rootInfo.scoreLead` 대비 `pointLoss` 기준으로 표시한다. `rootInfo`가 없는 예외 응답은 order 0 후보 대비 손실로 fallback한다.
   - `0.5`집 이하 손실: 진한 초록
   - `1.5`집 이하 손실: 연한 초록
   - `3.0`집 이하 손실: 노랑
@@ -60,6 +60,7 @@ KaTrain류 UI는 대체로 엔진 분석 결과의 후보수 리스트를 보드
 착수 후 방금 둔 수에 대한 평가는 별도 엔진 명령을 추가하지 않고, 착수 직전에 백그라운드로 준비된 후보수 목록을 사용한다.
 
 - 실제 착수 좌표가 직전 후보 목록에 있으면 해당 후보의 `pointLoss`로 green/yellow/red marker를 돌 중앙에 표시한다.
+- 노랑/빨강 spot은 UI 색상이 아니라 엔진 후보 데이터의 문제다. JSON normal analysis가 상위 후보만 반환하고 그 후보들의 `pointLoss`가 낮으면 초록 계열만 보인다. 더 나쁜 후보까지 색칠하려면 KaTrain식 sweep/refine 분석이 필요하다.
 - 착수 후 marker는 바둑알 위에 작은 색상 원만 표시하고, 점수 숫자는 보드 위에 겹쳐 쓰지 않는다.
 - 착수 후 marker는 단일 last marker가 아니라 `moveNumber`가 포함된 목록으로 유지한다. 따라서 AI 응수나 다음 힌트 갱신 후에도 착수 당시 평가 dot이 해당 돌 위에 남는다.
 - 직전 후보 목록에는 있으나 policy fallback 후보라서 점수 손실이 없으면 unknown으로 처리한다.

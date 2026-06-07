@@ -16,6 +16,9 @@ internal object KataGoJsonAnalysisParser {
     ): List<CandidateMove> {
         val root = JSONObject(response)
         val moveInfos = root.optJSONArray("moveInfos") ?: return emptyList()
+        val rootScoreLead = root.optJSONObject("rootInfo")
+            ?.optNullableDouble("scoreLead")
+            ?.let { -it }
         val parsed = buildList {
             for (index in 0 until moveInfos.length()) {
                 val moveInfo = moveInfos.optJSONObject(index) ?: continue
@@ -38,7 +41,7 @@ internal object KataGoJsonAnalysisParser {
             }
         }
 
-        val topScoreLead = parsed
+        val referenceScoreLead = rootScoreLead ?: parsed
             .minByOrNull { it.order }
             ?.candidate
             ?.scoreLead
@@ -48,13 +51,13 @@ internal object KataGoJsonAnalysisParser {
             .take(maxCandidates)
             .map { ordered ->
                 val scoreLead = ordered.candidate.scoreLead
-                if (topScoreLead == null || scoreLead == null) {
+                if (referenceScoreLead == null || scoreLead == null) {
                     ordered.candidate
                 } else {
                     ordered.candidate.copy(
-                        pointLoss = scoreLead.pointLossFromTop(
+                        pointLoss = scoreLead.pointLossFromReference(
                             player = player,
-                            topScoreLead = topScoreLead,
+                            referenceScoreLead = referenceScoreLead,
                         ),
                     )
                 }
@@ -66,13 +69,13 @@ internal object KataGoJsonAnalysisParser {
         val candidate: CandidateMove,
     )
 
-    private fun Double.pointLossFromTop(
+    private fun Double.pointLossFromReference(
         player: StoneColor,
-        topScoreLead: Double,
+        referenceScoreLead: Double,
     ): Double {
         val rawLoss = when (player) {
-            StoneColor.Black -> this - topScoreLead
-            StoneColor.White -> topScoreLead - this
+            StoneColor.Black -> this - referenceScoreLead
+            StoneColor.White -> referenceScoreLead - this
         }
         return if (kotlin.math.abs(rawLoss) < 0.000001) 0.0 else rawLoss.coerceAtLeast(0.0)
     }

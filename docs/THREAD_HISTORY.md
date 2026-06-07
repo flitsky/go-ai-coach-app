@@ -331,3 +331,7 @@
 - 사용자가 사석 확인/수정 UX 도입에 동의하고, 이를 얼마나 간결하게 넣을 수 있는지와 KaTrain 처리 방식을 질문했다.
 - KaTrain 소스 기준으로는 양패스 후 단순 엔진 `final_score`만 쓰지 않고, 일본식 규칙에서는 현재 노드와 이전 노드의 ownership을 평균해 `manual_score`를 계산한다. 불확실하면 `?`가 붙은 추정 점수 또는 `board-game-end` 상태로 남긴다.
 - Go AI Coach에는 양패스 후 자동으로 `Endgame Review` 상태로 전환하고, `Eval` ownership overlay + 엔진/로컬 사석 후보를 보드에 표시한 뒤 사용자가 돌을 탭해 dead/alive를 수정하고 `Accept score`로 확정하는 간결한 UX가 적절하다고 판단했다.
+- 사용자가 Top Moves에서 초록점이 3개만 보이는 로그를 공유하고, 노랑/빨강 spot도 가능한지 확인을 요청했다.
+- 로그상 실제 JSON analysis 응답은 `Returned 3 scored candidate(s)`였고 후보별 손실은 `0.0`, `0.1`, `0.0`이라 현재 색상 임계값 기준 모두 초록 계열로 표시되는 것이 정상이다.
+- UI는 이미 초록/연두/노랑/주황/빨강 5단계를 지원하지만, 노랑/빨강은 엔진이 점수 손실이 큰 착점을 `moveInfos`로 반환해야만 표시된다. 상위 후보 중심 normal analysis만으로는 나쁜 착점 후보가 부족할 수 있어 KaTrain식 sweep/refine 분석이 다음 고도화 과제다.
+- KaTrain 재확인 결과 candidate spot 색상은 최선 후보 대비가 아니라 `rootInfo.scoreLead` 대비 `pointsLost`를 기준으로 한다. `KataGoJsonAnalysisParser`의 `pointLoss` 계산을 `rootInfo.scoreLead` 기준으로 수정하고, `rootInfo`가 없는 예외 응답만 order 0 후보 대비로 fallback하도록 바꿨다.
