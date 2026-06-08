@@ -413,3 +413,8 @@
 - `adb devices -l`에서 폰 `R5CT22WTVXP` (`SM_S908N`)가 `device` 상태로 확인되었다.
 - `ANDROID_SERIAL=R5CT22WTVXP make reinstall-dev-engine`를 실행했다. 기존 앱 uninstall, debug APK install, KataGo model/config/analysis config seed, 앱 cold launch가 모두 성공했다.
 - 전체 명령은 약 17.2초가 걸렸고, 앱 cold launch `TotalTime=673ms`가 기록되었다.
+- 사용자가 종국에 AI가 불필요하게 상대 진영에 무의미한 착수/자살수처럼 보이는 수를 두는 문제를 보고했다. 난이도 적용 전에는 기대대로 pass하던 상황이라고 설명했다.
+- 원인은 새 `MoveSelectionPolicy` 기반 AI 응수 로직이 분석 후보 중 `Move.Play`만 선택 대상으로 삼아, KataGo가 `pass`를 최선 후보로 반환해도 pass를 제외하고 하위 play 후보를 랜덤 선택할 수 있었기 때문이라고 판단했다.
+- `MatchPolicy`를 수정해 전체 scored 후보 중 `pass`가 1위이면 레벨 단계와 무관하게 endgame pass override를 적용하도록 했다. pass가 최선이 아닌 경우에는 premature pass를 막기 위해 기존처럼 play 후보만 선택한다.
+- `MatchPolicyTest`를 추가해 pass가 최선일 때 낮은 레벨도 pass를 선택하고, play 후보가 최선일 때는 pass를 선택하지 않는 회귀 테스트를 만들었다.
+- 검증으로 `make test`가 통과했다.

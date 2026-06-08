@@ -481,6 +481,13 @@ fallback:
 
 AI 대국에서는 사람 착수 후 바로 `genMove`를 호출하지 않고, 현재 `PlayLevelSetting`의 분석 예산으로 후보를 얻은 뒤 `MoveSelectionPolicy`에 따라 후보를 고른다. 선택된 수는 `playMove`로 엔진에 동기화한다. 분석 후보가 없거나 로컬 룰 검증을 통과하지 못하면 기존 `genMove`로 fallback한다.
 
+종국 예외:
+
+- `MoveSelectionPolicy`는 일반 착수 후보에서만 난이도 랜덤성을 적용한다.
+- KataGo가 `pass`를 전체 scored 후보 중 1위로 반환하면, 난이도 단계와 무관하게 pass를 선택한다.
+- 이유는 종국에서 pass를 제외하고 하위 `Move.Play`만 고르면 상대 진영에 무의미한 착수나 사실상의 자살수처럼 보이는 착수가 발생하기 때문이다.
+- pass가 최선이 아닌 경우에는 초중반 premature pass를 막기 위해 기존처럼 play 후보만 선택한다.
+
 ## 중급 1~5 방향
 
 중급부터는 “명백한 blunder”보다 “작은 손해가 누적되는 AI”가 더 적절하다.

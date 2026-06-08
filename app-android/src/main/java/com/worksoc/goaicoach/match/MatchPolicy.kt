@@ -122,12 +122,26 @@ private suspend fun EngineAdapter.selectAiMoveFromAnalysis(
 ): SelectedAiMove? =
     runCatching {
         val analysis = analyze(playLevel.group.defaultAnalysisLimit())
-        val scoredPlayCandidates = analysis.candidates
+        val scoredCandidates = analysis.candidates
             .filter { candidate ->
-                val move = candidate.move
-                move is Move.Play && move.player == AiPlayer && candidate.pointLoss != null
+                candidate.move.player == AiPlayer && candidate.pointLoss != null
             }
             .sortedBy { it.pointLoss ?: Double.MAX_VALUE }
+
+        val bestCandidate = scoredCandidates.firstOrNull()
+        if (bestCandidate?.move is Move.Pass) {
+            return@runCatching SelectedAiMove(
+                move = bestCandidate.move,
+                summary = buildString {
+                    appendLine("AI level: ${playLevel.displayLabel}, endgame pass override.")
+                    appendLine("AI selected pass because KataGo ranked pass as the best scored candidate.")
+                    appendLine(analysis.summary)
+                }.trim(),
+            )
+        }
+
+        val scoredPlayCandidates = scoredCandidates
+            .filter { candidate -> candidate.move is Move.Play }
         val range = playLevel.selectionPolicy.candidateIndexRange(scoredPlayCandidates.size)
             ?: return@runCatching null
         val pool = scoredPlayCandidates.slice(range)
