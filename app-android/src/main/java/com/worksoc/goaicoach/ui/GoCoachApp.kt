@@ -147,11 +147,13 @@ private fun GoCoachScreen(
     var lastAnalysisKey by remember { mutableStateOf<AnalysisCacheKey?>(null) }
     var isGameEnded by remember { mutableStateOf(false) }
     var endgameLog by remember { mutableStateOf("No endgame result recorded.") }
+    var hasCompletedEngineStartup by remember { mutableStateOf(false) }
     var hasCheckedSavedSession by remember { mutableStateOf(false) }
     var pendingSavedSession by remember { mutableStateOf<SavedGameSnapshot?>(null) }
     var shouldShowResumePrompt by remember { mutableStateOf(false) }
 
     LaunchedEffect(engineAdapter) {
+        hasCompletedEngineStartup = false
         isEngineBusy = true
         runCatching {
             val init = withContext(Dispatchers.IO) { engineAdapter.initialize(engineProfile) }
@@ -175,6 +177,7 @@ private fun GoCoachScreen(
             candidateText = "2P test mode is still available.\n$engineDiagnostic"
         }
         isEngineBusy = false
+        hasCompletedEngineStartup = true
     }
 
     LaunchedEffect(sessionStore) {
@@ -305,7 +308,8 @@ private fun GoCoachScreen(
         if (
             isGameEnded ||
             !isEngineReady ||
-            isEngineBusy
+            isEngineBusy ||
+            shouldShowResumePrompt
         ) {
             return
         }
@@ -731,6 +735,7 @@ private fun GoCoachScreen(
             isGameEnded ||
             !isEngineReady ||
             isEngineBusy ||
+            shouldShowResumePrompt ||
             playerSetup.sideFor(gameState.nextPlayer).controller != SeatController.Ai
         ) {
             return
@@ -1150,6 +1155,7 @@ private fun GoCoachScreen(
         isEngineReady,
         isEngineBusy,
         isGameEnded,
+        shouldShowResumePrompt,
         playerSetup,
         gameState.nextPlayer,
         gameState.moves.size,
@@ -1161,6 +1167,7 @@ private fun GoCoachScreen(
         isEngineReady,
         playerSetup,
         isGameEnded,
+        shouldShowResumePrompt,
         gameState.nextPlayer,
         gameState.moves.size,
     ) {
@@ -1171,7 +1178,12 @@ private fun GoCoachScreen(
     }
 
     val savedSessionToPrompt = pendingSavedSession
-    if (shouldShowResumePrompt && savedSessionToPrompt != null && !isEngineBusy) {
+    if (
+        shouldShowResumePrompt &&
+        savedSessionToPrompt != null &&
+        hasCompletedEngineStartup &&
+        !isEngineBusy
+    ) {
         AlertDialog(
             onDismissRequest = {
                 sessionStore.clear()

@@ -499,3 +499,8 @@
 - `SavedGameSessionCodecTest`를 추가해 수순/Player Setup roundtrip, invalid JSON, resumable 판정을 검증했다. Android 로컬 unit test에서 실제 JSON 구현을 쓰기 위해 `org.json:json:20240303` test dependency를 추가했다.
 - `USER_OPTION_MANUAL.md`, `ENGINE_LEVELING_DISCUSSION.md`, `ENGINE_LEVEL_SIMULATION_REPORT.md`를 빠른 초급 2단계 조정과 자동 저장/이어하기 정책 기준으로 갱신했다.
 - 검증으로 `make test`가 통과했다. 현재 셸 기본 Java는 25라 Gradle/Kotlin이 실패하지만, `make test`는 Makefile의 JDK 17 설정을 사용해 정상 동작한다.
+- 사용자가 폰에서 이어하기 팝업이 처음에는 잠깐 떴다가 엔진 `Thinking...` 중 사라지고, 두 번째 표시 이후 안정화되는 현상을 확인했다.
+- 엔진 시작 흐름을 확인한 결과 앱 시작 시 `engineAdapter.initialize(engineProfile)`, `engineAdapter.newGame(boardSize, ruleset)`, `engineAdapter.estimateScore(scoreGraphAnalysisLimit)` 순서로 기본 엔진 준비가 진행된다.
+- 이어하기 snapshot 로드는 별도 `LaunchedEffect`로 먼저 끝날 수 있고, 기존 팝업 표시 조건은 `!isEngineBusy`만 보았기 때문에 첫 composition 순간의 false busy 상태에서 팝업이 잠깐 노출될 수 있었다.
+- `hasCompletedEngineStartup` 플래그를 추가해 기본 엔진 시작 절차가 끝난 뒤에만 `이전 대국 이어하기` 다이얼로그가 보이도록 수정했다.
+- 이어하기 선택 대기 중에는 자동 AI 턴과 자동 Top Moves 분석도 시작하지 않도록 `shouldShowResumePrompt` guard를 추가했다. 사용자가 `예` 또는 `아니오`를 선택한 뒤에만 다음 분석/자동 턴 흐름이 재개된다.
