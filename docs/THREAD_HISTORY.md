@@ -379,3 +379,7 @@
 - 사용자가 `Lite`, `Balanced`, `Deep` 세 분석 preset의 정확한 목표, 베스트 무브 동일성, Deep 모드의 실제 장점, 착수 후 국면 변화 분석으로 착수 평가를 대체할 수 있는지 질문했다.
 - 현재 구현 기준으로 분석 preset은 AI 응수 자체보다 사용자 턴의 Top Moves/pre-move analysis 예산과 후보 coverage를 제어한다고 정리했다. `Lite`는 빠른 상위 후보, `Balanced`는 제한된 policy/refine, `Deep`은 넓은 후보 coverage와 착수 평가 데이터 확보가 목표다.
 - 베스트 무브는 preset마다 항상 동일하다고 보장할 수 없으며, 낮은 visits/time에서는 KataGo search의 샘플링과 후보 포함 여부가 달라질 수 있다고 설명할 예정이다.
+- 사용자가 엔진 난이도 설정을 세분화해 플레이어 기력 향상을 위한 레벨링을 만들고 싶다고 요청했다. 초급 1~5 예시로 best/green/yellow/gray/red spot 비율에 따라 AI 착수 품질을 조절하는 안을 제시했다.
+- `docs/ENGINE_LEVELING_DISCUSSION.md`를 토론 초안으로 추가했다. 최종 결정 문서가 아니라, 레벨링 방향을 함께 논의하기 위한 작업 파일이다.
+- 초안에서는 `Engine strength`, `Move selection policy`, `Analysis preset`, `Hint/review visibility` 네 축을 분리해야 한다고 정리했다. 사용자 예시는 방향성이 좋지만, `gray`는 나쁜 수가 아니라 미평가 후보이므로 선택 bucket으로 쓰면 안 된다고 기록했다.
+- 초급 AI는 red를 많이 두는 방식보다 yellow/orange 중심의 “그럴듯한 실수”를 하도록 설계하는 수정안을 제안했다. 또한 pre-move snapshot이 없을 때는 post-move score delta fallback을 검토할 가치가 있다고 정리했다.
