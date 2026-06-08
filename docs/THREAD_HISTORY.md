@@ -516,3 +516,7 @@
 - `GoCoachApp.kt`는 이제 `resolveAiEndgame()` 결과인 `AiEndgameResolution`만 받아 UI 상태에 반영한다. 사석 정리/계가 선택 세부 로직은 application 계층 뒤에 숨겨졌다.
 - `EndgameResolverTest`를 추가해 엔진이 표시한 사석이 제거되고, 포로 수와 종국 로그(`removedStones=D4=White`)가 유지되는지 검증했다.
 - 검증으로 `make test`가 통과했다.
+- 리팩토링 Phase 3 일부를 착수했다. Top Moves 분석 캐시, 분석 key, 후보 수 cap, Lite/Balanced/Deep 분석 limit 계산, 분석 coverage/header formatting을 `app-android/application/AnalysisSession.kt`로 분리했다.
+- `GoCoachApp.kt`는 분석 cache 객체와 key 타입을 application 계층에서 가져다 쓰고, UI 내부에서는 분석 요청 흐름과 상태 반영만 유지한다.
+- `AnalysisSessionTest`를 추가해 후보 수 cap, Balanced 난이도 승격, Deep 수동 분석 예산, LRU cache hit/miss, 분석 헤더/coverage 문자열을 검증했다.
+- 검증으로 `make test`가 통과했다.

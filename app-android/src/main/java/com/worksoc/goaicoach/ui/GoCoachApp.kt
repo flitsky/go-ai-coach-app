@@ -38,9 +38,19 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.AiEndgameResolution
+import com.worksoc.goaicoach.application.AnalysisCacheKey
+import com.worksoc.goaicoach.application.AnalysisResultCache
+import com.worksoc.goaicoach.application.CachedAnalysisResult
+import com.worksoc.goaicoach.application.MinScoredTopMovesForDisplay
+import com.worksoc.goaicoach.application.analysisKeyFor
 import com.worksoc.goaicoach.application.buildDebugReport
 import com.worksoc.goaicoach.application.buildEndgameLog
+import com.worksoc.goaicoach.application.deepTopMovesAnalysisLimitFor
 import com.worksoc.goaicoach.application.resolveAiEndgame
+import com.worksoc.goaicoach.application.topMoveCandidateCountFor
+import com.worksoc.goaicoach.application.topMovesAnalysisLimitFor
+import com.worksoc.goaicoach.application.withAnalysisCoverage
+import com.worksoc.goaicoach.application.withTopMovesStrengthHeader
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
@@ -57,12 +67,10 @@ import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardScorer
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.CandidateMove
-import com.worksoc.goaicoach.shared.DifficultyProfile
 import com.worksoc.goaicoach.shared.EngineAdapter
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.EngineStatus
 import com.worksoc.goaicoach.shared.GameState
-import com.worksoc.goaicoach.shared.LegalMoveGenerator
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
 import com.worksoc.goaicoach.shared.PlayLevelSetting
@@ -72,13 +80,11 @@ import com.worksoc.goaicoach.shared.ScoreSnapshot
 import com.worksoc.goaicoach.shared.ScoreSnapshotSource
 import com.worksoc.goaicoach.shared.ScoreTimeline
 import com.worksoc.goaicoach.shared.StoneColor
-import com.worksoc.goaicoach.shared.analysisFingerprint
 import com.worksoc.goaicoach.shared.describe
 import com.worksoc.goaicoach.shared.replayWithoutLastMoves
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.util.LinkedHashMap
 
 @Composable
 fun GoCoachApp(
@@ -210,18 +216,6 @@ private fun GoCoachScreen(
         }
     }
 
-    fun analysisKeyFor(
-        state: GameState,
-        limit: AnalysisLimit,
-        deep: Boolean,
-    ): AnalysisCacheKey =
-        AnalysisCacheKey(
-            positionFingerprint = state.analysisFingerprint(),
-            preset = analysisPreset,
-            limit = limit,
-            deep = deep,
-        )
-
     fun clearTopMoveSpots(message: String? = null) {
         candidateMoves = emptyList()
         if (message != null) {
@@ -234,12 +228,6 @@ private fun GoCoachScreen(
         reviewCandidateMoves = emptyList()
     }
 
-    fun topMoveCandidateCountFor(state: GameState): Int =
-        LegalMoveGenerator
-            .legalPlayCount(state)
-            .coerceAtLeast(1)
-            .coerceAtMost(analysisPreset.candidateCap)
-
     fun List<CandidateMove>.scoredCandidateCount(): Int =
         count { it.pointLoss != null }
 
@@ -247,7 +235,7 @@ private fun GoCoachScreen(
         topMovesAnalysisLimitFor(
             profile = engineProfile,
             preset = analysisPreset,
-            candidateCount = topMoveCandidateCountFor(state),
+            candidateCount = topMoveCandidateCountFor(state, analysisPreset),
         )
 
     fun primaryPlayLevelForSetup(
@@ -313,13 +301,13 @@ private fun GoCoachScreen(
             return
         }
 
-        val candidateCount = topMoveCandidateCountFor(targetState)
+        val candidateCount = topMoveCandidateCountFor(targetState, analysisPreset)
         val analysisLimit = if (deep) {
             deepTopMovesAnalysisLimitFor(engineProfile, candidateCount)
         } else {
             topMovesAnalysisLimitFor(engineProfile, analysisPreset, candidateCount)
         }
-        val analysisKey = analysisKeyFor(targetState, analysisLimit, deep)
+        val analysisKey = analysisKeyFor(targetState, analysisPreset, analysisLimit, deep)
         analysisCache.get(analysisKey)?.let { cached ->
             applyCachedAnalysis(targetState, analysisKey, cached)
             return
@@ -376,7 +364,7 @@ private fun GoCoachScreen(
         topMovesEnabled = true
         if (
             reviewAnalysis.hasEngineCandidates &&
-            lastAnalysisKey == analysisKeyFor(gameState, currentTopMoveAnalysisLimit(gameState), deep = false)
+            lastAnalysisKey == analysisKeyFor(gameState, analysisPreset, currentTopMoveAnalysisLimit(gameState), deep = false)
         ) {
             val scoredCount = reviewAnalysis.scoredPlayCount
             if (
@@ -1498,128 +1486,3 @@ private fun List<MoveReviewMarker>.withReviewMarker(
     } else {
         filterNot { existing -> existing.moveNumber == marker.moveNumber } + marker
     }
-
-private fun topMovesAnalysisLimitFor(
-    profile: EngineProfile,
-    preset: AnalysisPreset,
-    candidateCount: Int,
-): AnalysisLimit {
-    val promoted = if (preset.promoteTopMovesDifficulty) {
-        profile.difficulty.next().defaultAnalysisLimit()
-    } else {
-        profile.analysisLimit
-    }
-    val promotedTimeMillis = promoted.timeMillis ?: profile.analysisLimit.timeMillis
-    return profile.analysisLimit.copy(
-        visits = maxOf(profile.analysisLimit.visits, promoted.visits),
-        timeMillis = promotedTimeMillis?.let {
-            strongerTopMovesTimeMillis(profile.analysisLimit.timeMillis, it)
-        } ?: profile.analysisLimit.timeMillis,
-        candidateCount = candidateCount,
-        includePolicy = preset.includePolicy,
-        refinePolicyMoves = preset.refinePolicyMoves,
-        minVisitsPerCandidate = preset.minVisitsPerCandidate,
-        minTimeMillis = preset.minTimeMillis,
-    )
-}
-
-private fun deepTopMovesAnalysisLimitFor(
-    profile: EngineProfile,
-    candidateCount: Int,
-): AnalysisLimit {
-    val full = DifficultyProfile.FullAnalysis.defaultAnalysisLimit()
-    val fullTimeMillis = full.timeMillis
-        ?: profile.analysisLimit.timeMillis
-        ?: 5_000L
-    return profile.analysisLimit.copy(
-        visits = maxOf(profile.analysisLimit.visits, full.visits),
-        timeMillis = strongerTopMovesTimeMillis(profile.analysisLimit.timeMillis, fullTimeMillis),
-        candidateCount = candidateCount,
-        includePolicy = AnalysisPreset.Deep.includePolicy,
-        refinePolicyMoves = AnalysisPreset.Deep.refinePolicyMoves,
-        minVisitsPerCandidate = AnalysisPreset.Deep.minVisitsPerCandidate,
-        minTimeMillis = AnalysisPreset.Deep.minTimeMillis,
-    )
-}
-
-private fun strongerTopMovesTimeMillis(
-    current: Long?,
-    promoted: Long,
-): Long = current?.coerceAtLeast(promoted) ?: promoted
-
-private fun String.withTopMovesStrengthHeader(
-    profile: EngineProfile,
-    preset: AnalysisPreset,
-    limit: AnalysisLimit,
-    candidateCount: Int,
-    deep: Boolean,
-): String {
-    val label = if (deep) {
-        DifficultyProfile.FullAnalysis.label
-    } else if (!preset.promoteTopMovesDifficulty) {
-        profile.difficulty.label
-    } else {
-        profile.difficulty.next().label
-    }
-    val suffix = if (deep) {
-        "manual deep analysis"
-    } else if (profile.difficulty.next() == profile.difficulty) {
-        "same as max profile"
-    } else if (!preset.promoteTopMovesDifficulty) {
-        "same as ${profile.difficulty.label}"
-    } else {
-        "one grade above ${profile.difficulty.label}"
-    }
-    return "Top Moves request: ${preset.label}, up to $candidateCount candidate(s), $label ($suffix), base ${limit.visits} visits / ${limit.timeMillis ?: 0}ms, refine ${limit.refinePolicyMoves}\n$this"
-}
-
-private fun String.withAnalysisCoverage(snapshot: MoveAnalysisSnapshot): String =
-    "${snapshot.coverageSummary()}\n$this"
-
-private const val MaxTopMoveCandidateCount = 81
-private const val MinScoredTopMovesForDisplay = 5
-
-private data class AnalysisCacheKey(
-    val positionFingerprint: String,
-    val preset: AnalysisPreset,
-    val limit: AnalysisLimit,
-    val deep: Boolean,
-)
-
-private data class CachedAnalysisResult(
-    val snapshot: MoveAnalysisSnapshot,
-    val candidateText: String,
-)
-
-private class AnalysisResultCache(
-    private val maxEntries: Int,
-) {
-    private val entries = object : LinkedHashMap<AnalysisCacheKey, CachedAnalysisResult>(16, 0.75f, true) {
-        override fun removeEldestEntry(
-            eldest: MutableMap.MutableEntry<AnalysisCacheKey, CachedAnalysisResult>?,
-        ): Boolean = size > maxEntries
-    }
-
-    private var hits: Int = 0
-    private var misses: Int = 0
-
-    fun get(key: AnalysisCacheKey): CachedAnalysisResult? {
-        val value = entries[key]
-        if (value == null) {
-            misses += 1
-        } else {
-            hits += 1
-        }
-        return value
-    }
-
-    fun put(
-        key: AnalysisCacheKey,
-        result: CachedAnalysisResult,
-    ) {
-        entries[key] = result
-    }
-
-    fun statsText(): String =
-        "entries=${entries.size}, hits=$hits, misses=$misses"
-}
