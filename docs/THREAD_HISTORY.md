@@ -541,3 +541,6 @@
 - 리팩토링 Phase 2 후속으로 `GameScreenStateInput`과 `buildGameScreenState()`를 추가했다. `GoCoachApp.kt`가 직접 `GameScreenState(...)`를 조립하지 않고 presentation helper를 통해 화면 상태 계약을 만든다.
 - `GameScreenStateTest`를 helper 중심으로 갱신하고, 이어하기 팝업이 엔진 startup 완료 후 idle 상태에서만 노출되는 조건을 테스트로 고정했다.
 - 검증으로 `make test`가 통과했다.
+- 리팩토링 Phase 2 후속으로 `GameUiEventHandlers`와 `dispatchGameUiEvent()`를 추가했다. UI 파일 내부 `dispatch`는 이제 presentation dispatcher에 handler 묶음을 넘기는 얇은 adapter 역할만 한다.
+- `GameUiEventDispatchTest`를 추가해 Top Moves toggle이 현재 상태에 따라 show/hide로 분기하는지, `PlayAt`/`Pass`가 현재 차례의 `Move`로 변환되는지, 이어하기 dismiss/restore 이벤트가 각각의 handler로 전달되는지 검증했다.
+- 검증으로 `make test`가 통과했다.

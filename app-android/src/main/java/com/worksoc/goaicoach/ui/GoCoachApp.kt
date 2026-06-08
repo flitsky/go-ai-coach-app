@@ -74,8 +74,10 @@ import com.worksoc.goaicoach.persistence.GameSessionStore
 import com.worksoc.goaicoach.persistence.SavedGameSnapshot
 import com.worksoc.goaicoach.presentation.GameScreenStateInput
 import com.worksoc.goaicoach.presentation.GameUiEvent
+import com.worksoc.goaicoach.presentation.GameUiEventHandlers
 import com.worksoc.goaicoach.presentation.KaTrainUxOptions
 import com.worksoc.goaicoach.presentation.buildGameScreenState
+import com.worksoc.goaicoach.presentation.dispatchGameUiEvent
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.AnalysisPreset
 import com.worksoc.goaicoach.shared.BoardCoordinate
@@ -1046,37 +1048,33 @@ private fun GoCoachScreen(
     }
 
     fun dispatch(event: GameUiEvent) {
-        when (event) {
-            GameUiEvent.StartConfiguredGame -> startConfiguredGame()
-            GameUiEvent.CopyDebugReport -> copyDebugReport()
-            GameUiEvent.RequestScoreEstimate -> requestScoreEstimate()
-            GameUiEvent.ToggleTopMoves -> {
-                if (topMovesEnabled) {
-                    hideTopMoves()
-                } else {
-                    showTopMovesForCurrentState()
-                }
-            }
-            GameUiEvent.UndoLastTurn -> undoLastTurn()
-            GameUiEvent.Pass -> submitHumanMove(Move.Pass(gameState.nextPlayer))
-            GameUiEvent.DismissResumePrompt -> {
-                sessionStore.clear()
-                pendingSavedSession = null
-                shouldShowResumePrompt = false
-            }
-            is GameUiEvent.ResumeSavedSession -> {
-                pendingSavedSession = null
-                shouldShowResumePrompt = false
-                restoreSavedSession(event.snapshot)
-            }
-            is GameUiEvent.PlayAt -> submitHumanMove(Move.Play(gameState.nextPlayer, event.coordinate))
-            is GameUiEvent.SubmitMove -> submitHumanMove(event.move)
-            is GameUiEvent.ChangePlayerSetup -> changePlayerSetup(event.setup)
-            is GameUiEvent.ChangeScoringRule -> changeScoringRule(event.ruleset)
-            is GameUiEvent.ChangeUxOptions -> {
-                uxOptions = event.options
-            }
-        }
+        dispatchGameUiEvent(
+            event = event,
+            handlers = GameUiEventHandlers(
+                currentPlayer = { gameState.nextPlayer },
+                isTopMovesEnabled = { topMovesEnabled },
+                startConfiguredGame = ::startConfiguredGame,
+                copyDebugReport = ::copyDebugReport,
+                requestScoreEstimate = ::requestScoreEstimate,
+                showTopMoves = ::showTopMovesForCurrentState,
+                hideTopMoves = ::hideTopMoves,
+                undoLastTurn = ::undoLastTurn,
+                submitMove = ::submitHumanMove,
+                dismissResumePrompt = {
+                    sessionStore.clear()
+                    pendingSavedSession = null
+                    shouldShowResumePrompt = false
+                },
+                restoreSavedSession = { snapshot ->
+                    pendingSavedSession = null
+                    shouldShowResumePrompt = false
+                    restoreSavedSession(snapshot)
+                },
+                changePlayerSetup = ::changePlayerSetup,
+                changeScoringRule = ::changeScoringRule,
+                changeUxOptions = { options -> uxOptions = options },
+            ),
+        )
     }
 
     LaunchedEffect(
