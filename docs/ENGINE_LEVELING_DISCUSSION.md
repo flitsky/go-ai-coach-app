@@ -35,6 +35,59 @@ AI가 실제로 응수할 때 쓰는 기본 탐색 예산이다.
 
 주의: 이것만 낮춘다고 “인간 초급자처럼 둔다”가 보장되지는 않는다. KataGo는 낮은 visits에서도 매우 강한 정책망 prior를 사용하기 때문에, 초급자에게는 여전히 강하게 느껴질 수 있다.
 
+현재 토론 기준의 등급 매핑:
+
+| 사용자 등급 | 우선 사용할 Profile | 의미 |
+| --- | --- | --- |
+| 초급 | Beginner | 가장 낮은 응수 예산을 기반으로, 선택 정책으로 약함을 만든다 |
+| 중급 | Casual | 가벼운 일반 대국 수준의 응수 예산을 기반으로 한다 |
+| 고급 | Intermediate | 중간 강도 응수를 기반으로 한다 |
+| 상위 고급/추후 확장 | Strong | 첫 릴리즈 이후 더 높은 단계 확장에 사용한다 |
+| 복기/분석 | Full Analysis | 대국 레벨이 아니라 분석/복기 품질용으로 둔다 |
+
+즉 1차 레벨링에서는 `초급=Beginner`, `중급=Casual`, `고급=Intermediate`를 사용하고, 각 등급 안의 1~5단계는 엔진 profile을 계속 바꾸기보다 `MoveSelectionPolicy`의 후보 선택 비율로 조절하는 쪽이 더 단순하다.
+
+### Beginner 16과 후보 확보 예산은 분리 가능하다
+
+사용자 질문:
+
+> Beginner 수준이지만 여러 수를 탐색해서 보여주면 착수 가능 위치 수 부족 현상이 줄어들지 않을까? Beginner 16 대신 32나 64를 선택할 수 있는가?
+
+답변:
+
+가능하다. 다만 여기서 두 예산을 분리해서 봐야 한다.
+
+| 예산 종류 | 목적 | 높이면 생기는 효과 |
+| --- | --- | --- |
+| AI 응수 예산 | AI가 실제로 둘 수를 정한다 | best move 선택 시 AI가 강해질 수 있다 |
+| 후보 평가 예산 | 후보별 손실/색상/학습 데이터를 확보한다 | 표시 가능한 후보와 선택 bucket이 늘어난다 |
+
+따라서 초급 AI를 만들 때 반드시 모든 것을 `Beginner 16`으로 묶을 필요는 없다.
+
+권장 방향:
+
+- AI 실제 응수의 기본 profile은 `Beginner 16 / 250ms`로 유지한다.
+- 다만 후보가 부족하면 selection/review용 분석만 `32`, `64`, 또는 `Balanced-light` 수준으로 올린다.
+- 이때 AI가 항상 best move를 두면 강해지므로, 실제 착수는 여전히 `MoveSelectionPolicy`가 yellow/orange/green bucket에서 고르게 한다.
+- 즉 “초급 엔진”은 약한 탐색만 의미하는 것이 아니라, “좋은 평가 데이터를 바탕으로 초급자에게 맞는 수를 선택하는 정책”까지 포함해야 한다.
+
+중요한 점은 visits만 16에서 32/64로 올린다고 yellow/red 후보가 자동으로 많이 생긴다고 보장할 수 없다는 것이다. KataGo는 낮은 visits에서도 좋은 후보에 탐색을 집중하는 경향이 있으므로, 나쁜 수까지 평가하려면 다음 장치가 더 중요하다.
+
+- `candidateCap`을 충분히 둔다.
+- policy 후보를 포함한다.
+- 상위 policy 후보 일부를 낮은 budget으로 refine한다.
+- 필요하면 selection-only 분석을 별도 실행한다.
+
+토론용 추가 preset:
+
+| 이름 | 용도 | 예산 방향 |
+| --- | --- | --- |
+| Beginner Fast | 느린 폰 기본 대국 | AI 응수 Beginner 16, 후보 분석 Lite |
+| Beginner Wide | 초급이지만 후보 bucket 확보 | AI 응수 Beginner 16, 후보 분석 32~64 또는 Balanced-light |
+| Casual Wide | 중급 후보 bucket 확보 | AI 응수 Casual 64, 후보 분석 Balanced |
+
+현재 구현의 `Lite/Balanced/Deep`은 이 방향과 잘 맞는다. 앞으로는 `PlayLevel`이 내부적으로 `EngineProfile`, `MoveSelectionPolicy`, `AnalysisPreset`을 조합하도록 만드는 것이 좋다.
+
 ### 2. 분석 preset
 
 사용자 턴에서 Top Moves/착수 평가용 데이터를 얼마나 넓고 깊게 모을지 정한다.

@@ -383,3 +383,6 @@
 - `docs/ENGINE_LEVELING_DISCUSSION.md`를 토론 초안으로 추가했다. 최종 결정 문서가 아니라, 레벨링 방향을 함께 논의하기 위한 작업 파일이다.
 - 초안에서는 `Engine strength`, `Move selection policy`, `Analysis preset`, `Hint/review visibility` 네 축을 분리해야 한다고 정리했다. 사용자 예시는 방향성이 좋지만, `gray`는 나쁜 수가 아니라 미평가 후보이므로 선택 bucket으로 쓰면 안 된다고 기록했다.
 - 초급 AI는 red를 많이 두는 방식보다 yellow/orange 중심의 “그럴듯한 실수”를 하도록 설계하는 수정안을 제안했다. 또한 pre-move snapshot이 없을 때는 post-move score delta fallback을 검토할 가치가 있다고 정리했다.
+- 사용자가 1차 레벨링을 `초급=Beginner`, `중급=Casual`, `고급=Intermediate`로 구성하고, 이후 `Strong`으로 상위 단계를 확장하는 방향을 제안했다.
+- `ENGINE_LEVELING_DISCUSSION.md`에 해당 등급 매핑을 추가하고, `Beginner 16` 응수 강도와 후보 확보용 분석 예산을 분리할 수 있다고 정리했다.
+- 초급 AI는 실제 응수 profile을 `Beginner 16 / 250ms`로 유지하되, 후보 bucket 확보가 부족하면 selection/review 분석만 32/64 또는 `Balanced-light`로 올릴 수 있다. 단, visits만 올린다고 yellow/red가 자동 확보되는 것은 아니며 policy 후보 포함과 낮은 budget refine가 더 중요하다고 기록했다.
