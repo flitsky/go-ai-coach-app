@@ -459,3 +459,6 @@
 - `ENGINE_BEGINNER_VISITS_BENCHMARK.md`, `ENGINE_LEVELING_DISCUSSION.md`, `USER_OPTION_MANUAL.md`도 engine order 우선 정책으로 갱신했다.
 - 사용자가 Top Moves 그린스팟 위 숫자가 음수 loss로 표시되는 문제를 보고했다. 원인은 보드 label이 `pointLoss`를 `-pointLoss` delta로 반전해 표시하던 `pointDeltaLabel()` 경로였다.
 - 보드 위 후보수 숫자도 후보 상세와 동일하게 양수 `loss`를 표시하도록 `GoBoard`를 수정하고, 반전 label helper를 제거했다.
+- 사용자가 2P 모드 반복 테스트 후 `loss`의 음수 가능성과 signed 이득 표시 여부를 재검토해달라고 요청했다.
+- 코드/스펙 재확인 결과 KataGo는 `loss`를 직접 주지 않고 `scoreLead`를 준다. 앱은 KaTrain 방식으로 raw loss를 계산하되 `coerceAtLeast(0.0)`으로 정규화하므로 exposed `pointLoss`는 음수가 되지 않아야 한다.
+- 긴 논의는 `docs/TOP_MOVES_VALUE_GUIDE.md`로 압축했다. 기준 한줄 요약: `pointLoss`는 0 이상 손실값, 후보 순위는 KataGo `order`, signed 이득 표시는 별도 필드 도입 전까지 금지.

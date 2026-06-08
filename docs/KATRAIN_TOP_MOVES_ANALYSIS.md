@@ -27,6 +27,9 @@ Top Moves, 착수 평가 색상, ownership overlay를 KaTrain처럼 고도화하
 
 KaTrain의 초록/노랑/빨강 spot은 엔진이 직접 분류해서 주는 값이 아니다. 엔진은 `rootInfo.scoreLead`와 후보별 `scoreLead`, `winrate`, `visits`, `prior`를 주고, KaTrain이 현재 root score 대비 후보의 `pointsLost`를 계산해 색상으로 바꾼다. 별도로 `relativePointsLost`는 최선 후보 대비 손실값으로 계산된다.
 
+> [!IMPORTANT]
+> Go AI Coach의 `pointLoss`는 0 이상 손실값으로 유지한다. raw 계산상 음수 손실이 생기면 `0.0`으로 정규화하며, signed 이득/손실 표시는 별도 필드가 생기기 전까지 `pointLoss`로 처리하지 않는다. 짧은 기준 문서는 `docs/TOP_MOVES_VALUE_GUIDE.md`를 우선 참조한다.
+
 KaTrain 기준 계산식은 다음과 같다.
 
 ```text

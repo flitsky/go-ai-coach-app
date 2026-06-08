@@ -31,6 +31,7 @@ Next goal:
 - [docs/AI_ENGINE_SETTINGS.md](./docs/AI_ENGINE_SETTINGS.md): current AI difficulty and engine tuning settings
 - [docs/SCORE_AND_ENDGAME_DECISION.md](./docs/SCORE_AND_ENDGAME_DECISION.md): score estimate and endgame scoring decision
 - [docs/USER_OPTION_MANUAL.md](./docs/USER_OPTION_MANUAL.md): current Android option manual draft
+- [docs/TOP_MOVES_VALUE_GUIDE.md](./docs/TOP_MOVES_VALUE_GUIDE.md): canonical Top Moves order/loss/sign guide
 
 ## Working Decision
 

@@ -114,6 +114,19 @@ class KataGoAnalysisParserTest {
     }
 
     @Test
+    fun attachPointLossClampsNegativeRawLossToZero() {
+        val candidates = listOf(
+            CandidateMove(move = Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("F6", BoardSize.Nine)), scoreLead = 1.0),
+            CandidateMove(move = Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)), scoreLead = 1.5),
+        )
+
+        val withLoss = KataGoAnalysisParser.attachPointLoss(candidates)
+
+        assertEquals(0.0, withLoss[0].pointLoss)
+        assertEquals(0.0, withLoss[1].pointLoss)
+    }
+
+    @Test
     fun parsesRawPolicyCandidates() {
         val response = """
             symmetry 0

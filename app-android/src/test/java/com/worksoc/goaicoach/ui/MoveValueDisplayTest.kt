@@ -35,6 +35,16 @@ class MoveValueDisplayTest {
     }
 
     @Test
+    fun negativePointLossIsNotDisplayedAsNegativeLoss() {
+        val candidate = CandidateMove(
+            move = Move.Play(StoneColor.Black, BoardCoordinate(row = 3, column = 4)),
+            pointLoss = -1.5,
+        )
+
+        assertEquals("0.0", candidate.pointLossLabel())
+    }
+
+    @Test
     fun candidateTextShowsLossAndDoesNotExposeLeadByDefault() {
         val result = AnalysisResult(
             status = EngineStatus.ready("ready"),
