@@ -468,3 +468,7 @@
 - `docs/ENGINE_ANALYSIS_CONSISTENCY_REVIEW.md`를 추가해 KataGo 공식 analysis 스펙, KaTrain `pointsLost`/`order` 처리, Go AI Coach `CandidateMove` 기준을 분리해 기록했다.
 - 공식 KataGo 기준 `order`는 `playSelectionValue` 기반 순위이며 score loss 단일 기준이 아니다. 따라서 `order 0`이 항상 최소 `pointLoss`라고 기대하면 안 된다는 점도 문서에 고정했다.
 - `CandidateMove`에 `engineOrder`와 `source`를 추가해 normal `moveInfos.order`를 구조적으로 보존하고, policy/refine/legal fallback 후보와 섞이지 않도록 기반을 보강했다.
+- 사용자가 최신 앱을 폰에 설치해달라고 요청했다.
+- `adb devices -l`에서 폰 `R5CT22WTVXP` (`SM_S908N`)가 `device` 상태로 확인되었다.
+- `ANDROID_SERIAL=R5CT22WTVXP make reinstall-dev-engine`를 실행해 debug APK 재설치, KataGo model/config/analysis config seed, 앱 cold launch를 완료했다.
+- 전체 명령은 약 13초가 걸렸고, 앱 cold launch `TotalTime=668ms`가 기록되었다.
