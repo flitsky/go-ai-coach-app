@@ -371,3 +371,8 @@
 - 에뮬레이터 `emulator-5554`에 최신 debug APK를 설치하고 KataGo asset을 seed한 뒤 실행 검증했다.
 - 기본 `Lite` preset에서 실행 후 첫 UI poll 약 2초 시점에 이미 `Your turn: Black`, `Moves: 0`, `Top Moves analysis ready for Black: 5/81 legal spot(s) scored.`가 표시됐다.
 - 하단 분석 텍스트에서 `Top Moves request: Lite, up to 8 candidate(s), Beginner ... base 16 visits / 250ms, refine 0`, `Analysis coverage: legal 81, scored 5, policy-only 0, pending 76`, `KataGo JSON analysis with 16 visits / 250ms`를 확인했다.
+- 사용자가 폰에도 최신 분석 preset/cache 버전을 설치 요청했다.
+- 폰 `R5CT22WTVXP` (`SM_S908N`)만 연결된 상태에서 `make dev`로 최신 debug APK를 확인 빌드했고, `adb -s R5CT22WTVXP install -r`로 설치했다. APK 설치는 약 9.35초가 걸렸다.
+- `ANDROID_SERIAL=R5CT22WTVXP make seed-engine`로 KataGo model/config/analysis config를 다시 seed했다. 전체 seed는 약 3.8초가 걸렸다.
+- 폰에서 앱 cold launch를 실행했고 `TotalTime=770ms`로 실행됐다. 첫 UI poll 약 2초 시점에 `Your turn: Black`, `Moves: 0`, `Top Moves analysis ready for Black: 5/81 legal spot(s) scored.`를 확인했다.
+- 폰 메뉴에서 `Engine`, `Analysis`, `Lite`, `Balanced`, `Deep`, `Fast play on slower devices` 텍스트가 보여 분석 preset UI도 확인했다.
