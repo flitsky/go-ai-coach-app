@@ -376,3 +376,6 @@
 - `ANDROID_SERIAL=R5CT22WTVXP make seed-engine`로 KataGo model/config/analysis config를 다시 seed했다. 전체 seed는 약 3.8초가 걸렸다.
 - 폰에서 앱 cold launch를 실행했고 `TotalTime=770ms`로 실행됐다. 첫 UI poll 약 2초 시점에 `Your turn: Black`, `Moves: 0`, `Top Moves analysis ready for Black: 5/81 legal spot(s) scored.`를 확인했다.
 - 폰 메뉴에서 `Engine`, `Analysis`, `Lite`, `Balanced`, `Deep`, `Fast play on slower devices` 텍스트가 보여 분석 preset UI도 확인했다.
+- 사용자가 `Lite`, `Balanced`, `Deep` 세 분석 preset의 정확한 목표, 베스트 무브 동일성, Deep 모드의 실제 장점, 착수 후 국면 변화 분석으로 착수 평가를 대체할 수 있는지 질문했다.
+- 현재 구현 기준으로 분석 preset은 AI 응수 자체보다 사용자 턴의 Top Moves/pre-move analysis 예산과 후보 coverage를 제어한다고 정리했다. `Lite`는 빠른 상위 후보, `Balanced`는 제한된 policy/refine, `Deep`은 넓은 후보 coverage와 착수 평가 데이터 확보가 목표다.
+- 베스트 무브는 preset마다 항상 동일하다고 보장할 수 없으며, 낮은 visits/time에서는 KataGo search의 샘플링과 후보 포함 여부가 달라질 수 있다고 설명할 예정이다.
