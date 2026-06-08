@@ -48,9 +48,9 @@ import com.worksoc.goaicoach.application.MoveReviewMarker
 import com.worksoc.goaicoach.application.analysisKeyFor
 import com.worksoc.goaicoach.application.buildDebugReport
 import com.worksoc.goaicoach.application.buildEndgameLog
-import com.worksoc.goaicoach.application.buildMoveReview
 import com.worksoc.goaicoach.application.configureSyncAndEstimateGraphScore
 import com.worksoc.goaicoach.application.deepTopMovesAnalysisLimitFor
+import com.worksoc.goaicoach.application.applyHumanMoveLocally
 import com.worksoc.goaicoach.application.localScoreSnapshot
 import com.worksoc.goaicoach.application.resolveAiEndgame
 import com.worksoc.goaicoach.application.scoreGraphAnalysisLimit
@@ -61,7 +61,6 @@ import com.worksoc.goaicoach.application.syncToGameState
 import com.worksoc.goaicoach.application.topMoveCandidateCountFor
 import com.worksoc.goaicoach.application.topMovesAnalysisLimitFor
 import com.worksoc.goaicoach.application.withAnalysisCoverage
-import com.worksoc.goaicoach.application.withReviewMarker
 import com.worksoc.goaicoach.application.withTopMovesStrengthHeader
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
@@ -775,42 +774,41 @@ private fun GoCoachScreen(
 
         val beforeMove = gameState
         val previousReviewCandidates = reviewCandidateMoves
-        val previousMoveReviews = moveReviews
-        val afterMove = runCatching { beforeMove.play(move) }
+        val localMove = applyHumanMoveLocally(
+            beforeMove = beforeMove,
+            move = move,
+            reviewAnalysis = reviewAnalysis,
+            previousMoveReviews = moveReviews,
+        )
             .onFailure { error ->
                 engineMessage = error.message ?: "Illegal move."
             }
             .getOrNull()
             ?: return
+        val afterMove = localMove.afterMove
 
         gameState = afterMove
-        val moveReview = buildMoveReview(
-            move = move,
-            analysis = reviewAnalysis,
-            boardSize = beforeMove.boardSize,
-            moveNumber = afterMove.moves.size,
-        )
         clearTopMoveSpots()
-        moveReviewText = moveReview.text
-        moveReviews = previousMoveReviews.withReviewMarker(moveReview.marker)
+        moveReviewText = localMove.moveReview.text
+        moveReviews = localMove.moveReviews
         clearReviewAnalysis(afterMove)
         lastAnalysisKey = null
-        lastMoveText = move.describe(beforeMove.boardSize)
+        lastMoveText = localMove.lastMoveText
         scoreText = "Score estimate not current."
         scoreEstimate = null
 
         if (!isEngineReady) {
-            scoreSnapshots = ScoreTimeline.record(scoreSnapshots, localScoreSnapshot(afterMove))
-            if (afterMove.hasConsecutivePasses()) {
-                val finalScore = BoardScorer.score(afterMove)
-                val finalScoreText = finalScore.toDisplayText()
+            scoreSnapshots = ScoreTimeline.record(scoreSnapshots, localMove.localScoreSnapshot)
+            val localFinalScore = localMove.localFinalScore
+            if (localFinalScore != null) {
+                val finalScoreText = localFinalScore.toDisplayText()
                 isGameEnded = true
                 scoreText = finalScoreText
                 scoreSnapshots = ScoreTimeline.record(
                     scoreSnapshots,
                     ScoreTimeline.fromFinalScore(
                         moveNumber = afterMove.moves.size,
-                        finalScore = finalScore,
+                        finalScore = localFinalScore,
                         source = ScoreSnapshotSource.FinalScore,
                     ),
                 )
@@ -821,9 +819,9 @@ private fun GoCoachScreen(
                     finalScoreText = finalScoreText,
                     detail = "triggerMove=${move.describe(beforeMove.boardSize)}",
                 )
-                engineMessage = "Local game ended after two passes. ${finalScore.status.message}"
+                engineMessage = "Local game ended after two passes. ${localFinalScore.status.message}"
             } else {
-                candidateText = "Captured: Black ${afterMove.capturedBy(StoneColor.Black)} / White ${afterMove.capturedBy(StoneColor.White)}"
+                candidateText = localMove.capturedText
                 engineMessage = "Local move accepted without engine sync: ${move.describe(beforeMove.boardSize)}."
             }
             return
@@ -886,13 +884,13 @@ private fun GoCoachScreen(
                         scoreSnapshots,
                         ScoreTimeline.fromEstimate(afterMove.moves.size, estimate),
                     )
-                    candidateText = "Captured: Black ${afterMove.capturedBy(StoneColor.Black)} / White ${afterMove.capturedBy(StoneColor.White)}"
+                    candidateText = localMove.capturedText
                     engineMessage = "Human move accepted and engine analysis synced: ${move.describe(beforeMove.boardSize)}."
                     nextAnalysisState = afterMove
                 }
             }.onFailure { error ->
-                scoreSnapshots = ScoreTimeline.record(scoreSnapshots, localScoreSnapshot(afterMove))
-                candidateText = "Captured: Black ${afterMove.capturedBy(StoneColor.Black)} / White ${afterMove.capturedBy(StoneColor.White)}"
+                scoreSnapshots = ScoreTimeline.record(scoreSnapshots, localMove.localScoreSnapshot)
+                candidateText = localMove.capturedText
                 engineMessage = error.message ?: "Human move accepted, but engine sync failed."
             }
             isEngineBusy = false

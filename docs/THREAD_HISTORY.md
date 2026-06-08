@@ -544,3 +544,7 @@
 - 리팩토링 Phase 2 후속으로 `GameUiEventHandlers`와 `dispatchGameUiEvent()`를 추가했다. UI 파일 내부 `dispatch`는 이제 presentation dispatcher에 handler 묶음을 넘기는 얇은 adapter 역할만 한다.
 - `GameUiEventDispatchTest`를 추가해 Top Moves toggle이 현재 상태에 따라 show/hide로 분기하는지, `PlayAt`/`Pass`가 현재 차례의 `Move`로 변환되는지, 이어하기 dismiss/restore 이벤트가 각각의 handler로 전달되는지 검증했다.
 - 검증으로 `make test`가 통과했다.
+- 리팩토링 Phase 3 후속으로 `HumanMoveApplication.kt`를 추가했다. 사람 착수의 순수 로컬 처리, 즉 `GameState.play()`, 착수 리뷰 생성, marker 갱신, last move text, captured text, local score snapshot, 로컬 연속 pass 최종 점수 생성을 application helper로 분리했다.
+- `GoCoachApp.kt`의 `submitHumanMove()`는 이제 로컬 착수 결과를 `applyHumanMoveLocally()`에서 받아 화면 상태와 엔진 동기화 흐름에 반영한다.
+- `HumanMoveApplicationTest`를 추가해 합법 착수 리뷰/포로 문구 생성, 연속 pass 로컬 최종 점수 생성, 불법 착수 실패를 검증했다.
+- 검증으로 `make test`가 통과했다.
