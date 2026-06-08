@@ -40,37 +40,33 @@ import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.AiEndgameResolution
 import com.worksoc.goaicoach.application.AnalysisCacheKey
 import com.worksoc.goaicoach.application.AnalysisResultCache
-import com.worksoc.goaicoach.application.AutoAiTurnResult
-import com.worksoc.goaicoach.application.CachedAnalysisResult
 import com.worksoc.goaicoach.application.LocalEngineMoveResult
-import com.worksoc.goaicoach.application.MinScoredTopMovesForDisplay
 import com.worksoc.goaicoach.application.MoveReviewMarker
-import com.worksoc.goaicoach.application.analysisKeyFor
 import com.worksoc.goaicoach.application.buildDebugReport
 import com.worksoc.goaicoach.application.buildEndgameLog
 import com.worksoc.goaicoach.application.buildEngineUndoPlan
 import com.worksoc.goaicoach.application.buildLocalTwoPlayerUndoPlan
+import com.worksoc.goaicoach.application.buildCachedTopMoveAnalysisUpdate
+import com.worksoc.goaicoach.application.buildCompletedTopMoveAnalysisUpdate
 import com.worksoc.goaicoach.application.buildNewLocalGameSessionPlan
 import com.worksoc.goaicoach.application.buildSavedGameRestorePlan
+import com.worksoc.goaicoach.application.buildTopMoveAnalysisPlan
 import com.worksoc.goaicoach.application.configureSyncAndEstimateGraphScore
-import com.worksoc.goaicoach.application.deepTopMovesAnalysisLimitFor
 import com.worksoc.goaicoach.application.applyHumanMoveLocally
 import com.worksoc.goaicoach.application.localScoreSnapshot
+import com.worksoc.goaicoach.application.planShowTopMoves
 import com.worksoc.goaicoach.application.resolveAiEndgame
+import com.worksoc.goaicoach.application.runAutoAiTurn
 import com.worksoc.goaicoach.application.scoreGraphAnalysisLimit
 import com.worksoc.goaicoach.application.selectRuntimePlayLevel
 import com.worksoc.goaicoach.application.startEngineSession
 import com.worksoc.goaicoach.application.startNewEngineGame
 import com.worksoc.goaicoach.application.syncAndEstimateGraphScore
 import com.worksoc.goaicoach.application.syncToGameState
-import com.worksoc.goaicoach.application.topMoveCandidateCountFor
-import com.worksoc.goaicoach.application.topMovesAnalysisLimitFor
-import com.worksoc.goaicoach.application.withAnalysisCoverage
-import com.worksoc.goaicoach.application.withTopMovesStrengthHeader
+import com.worksoc.goaicoach.application.ShowTopMovesPlan
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
-import com.worksoc.goaicoach.match.applyAiTurn
 import com.worksoc.goaicoach.match.boardInputEnabled
 import com.worksoc.goaicoach.match.modeSummary
 import com.worksoc.goaicoach.match.summary
@@ -82,7 +78,6 @@ import com.worksoc.goaicoach.presentation.GameUiEventHandlers
 import com.worksoc.goaicoach.presentation.KaTrainUxOptions
 import com.worksoc.goaicoach.presentation.buildGameScreenState
 import com.worksoc.goaicoach.presentation.dispatchGameUiEvent
-import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.AnalysisPreset
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardScorer
@@ -238,16 +233,6 @@ private fun GoCoachScreen(
         reviewCandidateMoves = emptyList()
     }
 
-    fun List<CandidateMove>.scoredCandidateCount(): Int =
-        count { it.pointLoss != null }
-
-    fun currentTopMoveAnalysisLimit(state: GameState): AnalysisLimit =
-        topMovesAnalysisLimitFor(
-            profile = engineProfile,
-            preset = analysisPreset,
-            candidateCount = topMoveCandidateCountFor(state, analysisPreset),
-        )
-
     fun changePlayerSetup(nextSetup: PlayerSetup) {
         if (isEngineBusy) {
             engineMessage = "Engine is busy. Change Player Setup after the current action."
@@ -268,23 +253,6 @@ private fun GoCoachScreen(
         lastAnalysisKey = null
     }
 
-    fun applyCachedAnalysis(
-        targetState: GameState,
-        cacheKey: AnalysisCacheKey,
-        cached: CachedAnalysisResult,
-    ) {
-        reviewAnalysis = cached.snapshot
-        reviewCandidateMoves = cached.snapshot.candidatesForReview()
-        candidateText = "Analysis cache hit: ${cacheKey.preset.label}.\n${cached.candidateText}"
-        if (topMovesEnabled) {
-            engineMessage = "Top Moves cache hit for ${targetState.nextPlayer.label}: ${cached.snapshot.scoredPlayCount}/${cached.snapshot.legalPlayCount} legal spot(s) scored."
-            candidateMoves = cached.snapshot.candidatesForDisplay()
-        } else {
-            engineMessage = "Pre-move analysis cache hit for ${targetState.nextPlayer.label}: ${cached.snapshot.scoredPlayCount}/${cached.snapshot.legalPlayCount} legal spot(s) scored."
-        }
-        lastAnalysisKey = cacheKey
-    }
-
     fun requestTopMoveAnalysisForState(
         targetState: GameState,
         automatic: Boolean,
@@ -302,53 +270,60 @@ private fun GoCoachScreen(
             return
         }
 
-        val candidateCount = topMoveCandidateCountFor(targetState, analysisPreset)
-        val analysisLimit = if (deep) {
-            deepTopMovesAnalysisLimitFor(engineProfile, candidateCount)
-        } else {
-            topMovesAnalysisLimitFor(engineProfile, analysisPreset, candidateCount)
-        }
-        val analysisKey = analysisKeyFor(targetState, analysisPreset, analysisLimit, deep)
-        analysisCache.get(analysisKey)?.let { cached ->
-            applyCachedAnalysis(targetState, analysisKey, cached)
+        val plan = buildTopMoveAnalysisPlan(
+            targetState = targetState,
+            engineProfile = engineProfile,
+            analysisPreset = analysisPreset,
+            deep = deep,
+        )
+        analysisCache.get(plan.analysisKey)?.let { cached ->
+            val update = buildCachedTopMoveAnalysisUpdate(
+                targetState = targetState,
+                cacheKey = plan.analysisKey,
+                cached = cached,
+                topMovesEnabled = topMovesEnabled,
+            )
+            reviewAnalysis = update.snapshot
+            reviewCandidateMoves = update.reviewCandidateMoves
+            candidateText = update.candidateText
+            candidateMoves = update.candidateMoves
+            engineMessage = update.engineMessage
+            lastAnalysisKey = plan.analysisKey
             return
         }
-        if (automatic && analysisKey == lastAnalysisKey) {
+        if (automatic && plan.analysisKey == lastAnalysisKey) {
             if (topMovesEnabled && candidateMoves.isEmpty() && reviewAnalysis.scoredPlayCount > 0) {
                 candidateMoves = reviewAnalysis.candidatesForDisplay()
             }
             return
         }
 
-        lastAnalysisKey = analysisKey
+        lastAnalysisKey = plan.analysisKey
         scope.launch {
             isEngineBusy = true
             runCatching {
                 withContext(Dispatchers.IO) {
-                    engineAdapter.analyze(analysisLimit)
+                    engineAdapter.analyze(plan.analysisLimit)
                 }
             }.onSuccess { result ->
-                val snapshot = MoveAnalysisSnapshot.from(targetState, result.candidates)
-                val analysisText = result.toCandidateText(targetState.boardSize)
-                    .withAnalysisCoverage(snapshot)
-                    .withTopMovesStrengthHeader(engineProfile, analysisPreset, analysisLimit, candidateCount, deep)
-                reviewAnalysis = snapshot
-                reviewCandidateMoves = snapshot.candidatesForReview()
-                candidateText = "Analysis cache miss: stored ${analysisPreset.label} result.\n$analysisText"
-                analysisCache.put(
-                    analysisKey,
-                    CachedAnalysisResult(
-                        snapshot = snapshot,
-                        candidateText = analysisText,
-                    ),
+                val update = buildCompletedTopMoveAnalysisUpdate(
+                    targetState = targetState,
+                    result = result,
+                    rawCandidateText = result.toCandidateText(targetState.boardSize),
+                    engineProfile = engineProfile,
+                    analysisPreset = analysisPreset,
+                    plan = plan,
+                    deep = deep,
+                    topMovesEnabled = topMovesEnabled,
                 )
-                if (topMovesEnabled) {
-                    engineMessage = result.status.message
-                    candidateMoves = snapshot.candidatesForDisplay()
-                } else {
-                    engineMessage =
-                        "Top Moves analysis ready for ${targetState.nextPlayer.label}: ${snapshot.scoredPlayCount}/${snapshot.legalPlayCount} legal spot(s) scored."
+                reviewAnalysis = update.snapshot
+                reviewCandidateMoves = update.reviewCandidateMoves
+                candidateText = update.candidateText
+                candidateMoves = update.candidateMoves
+                update.cachedResult?.let { cached ->
+                    analysisCache.put(plan.analysisKey, cached)
                 }
+                engineMessage = update.engineMessage
             }.onFailure { error ->
                 engineMessage = error.message ?: "Top Moves analysis failed."
                 clearReviewAnalysis(targetState)
@@ -363,35 +338,34 @@ private fun GoCoachScreen(
 
     fun showTopMovesForCurrentState() {
         topMovesEnabled = true
-        if (
-            reviewAnalysis.hasEngineCandidates &&
-            lastAnalysisKey == analysisKeyFor(gameState, analysisPreset, currentTopMoveAnalysisLimit(gameState), deep = false)
-        ) {
-            val scoredCount = reviewAnalysis.scoredPlayCount
-            if (
-                scoredCount >= MinScoredTopMovesForDisplay ||
-                isEngineBusy ||
-                !analysisPreset.allowManualDeepFallback
-            ) {
-                candidateMoves = reviewAnalysis.candidatesForDisplay()
-                engineMessage = "Showing ${candidateMoves.scoredCandidateCount()} scored Top Moves from cached ${analysisPreset.label} analysis."
-                return
-            }
-            candidateMoves = emptyList()
-            engineMessage = "Cached Top Moves has only $scoredCount scored candidate(s). Running deeper analysis."
-            requestTopMoveAnalysisForState(
-                targetState = gameState,
-                automatic = false,
-                deep = true,
+        when (
+            val plan = planShowTopMoves(
+                reviewAnalysis = reviewAnalysis,
+                lastAnalysisKey = lastAnalysisKey,
+                currentPlan = buildTopMoveAnalysisPlan(
+                    targetState = gameState,
+                    engineProfile = engineProfile,
+                    analysisPreset = analysisPreset,
+                    deep = false,
+                ),
+                analysisPreset = analysisPreset,
+                isEngineBusy = isEngineBusy,
             )
-            return
+        ) {
+            is ShowTopMovesPlan.ShowCached -> {
+                candidateMoves = plan.candidateMoves
+                engineMessage = plan.engineMessage
+            }
+            is ShowTopMovesPlan.RequestAnalysis -> {
+                candidateMoves = plan.candidateMoves
+                plan.engineMessage?.let { message -> engineMessage = message }
+                requestTopMoveAnalysisForState(
+                    targetState = gameState,
+                    automatic = false,
+                    deep = plan.deep,
+                )
+            }
         }
-
-        candidateMoves = emptyList()
-        requestTopMoveAnalysisForState(
-            targetState = gameState,
-            automatic = false,
-        )
     }
 
     fun hideTopMoves() {
@@ -649,7 +623,6 @@ private fun GoCoachScreen(
         val aiPlayer = turnState.nextPlayer
         val side = playerSetup.sideFor(aiPlayer)
         val aiPlayLevel = side.playLevel
-        val turnProfile = aiPlayLevel.toEngineProfile(engineProfile)
         val previousReviewCandidates = reviewCandidateMoves
 
         scope.launch {
@@ -657,22 +630,10 @@ private fun GoCoachScreen(
             var nextAnalysisState: GameState? = null
             runCatching {
                 withContext(Dispatchers.IO) {
-                    engineAdapter.configure(turnProfile)
-                    engineAdapter.syncToGameState(turnState)
-                    val outcome = applyAiTurn(
-                        engineAdapter = engineAdapter,
+                    engineAdapter.runAutoAiTurn(
                         currentState = turnState,
-                        aiPlayer = aiPlayer,
                         playLevel = aiPlayLevel,
-                    )
-                    val estimate = runCatching {
-                        engineAdapter.estimateScore(scoreGraphAnalysisLimit(turnProfile))
-                    }.getOrNull()
-                    AutoAiTurnResult(
-                        turnOutcome = outcome,
-                        scoreEstimate = estimate,
-                        profile = turnProfile,
-                        playLevel = aiPlayLevel,
+                        currentProfile = engineProfile,
                     )
                 }
             }.onSuccess { result ->

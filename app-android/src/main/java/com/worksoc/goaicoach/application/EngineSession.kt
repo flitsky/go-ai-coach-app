@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.application
 
 import com.worksoc.goaicoach.match.TurnOutcome
+import com.worksoc.goaicoach.match.applyAiTurn
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.BoardScorer
 import com.worksoc.goaicoach.shared.BoardSize
@@ -85,6 +86,32 @@ internal suspend fun EngineAdapter.configureSyncAndEstimateGraphScore(
 ): ScoreEstimate {
     configure(profile)
     return syncAndEstimateGraphScore(state, profile)
+}
+
+internal suspend fun EngineAdapter.runAutoAiTurn(
+    currentState: GameState,
+    playLevel: PlayLevelSetting,
+    currentProfile: EngineProfile,
+): AutoAiTurnResult {
+    val aiPlayer = currentState.nextPlayer
+    val turnProfile = playLevel.toEngineProfile(currentProfile)
+    configure(turnProfile)
+    syncToGameState(currentState)
+    val outcome = applyAiTurn(
+        engineAdapter = this,
+        currentState = currentState,
+        aiPlayer = aiPlayer,
+        playLevel = playLevel,
+    )
+    val estimate = runCatching {
+        estimateScore(scoreGraphAnalysisLimit(turnProfile))
+    }.getOrNull()
+    return AutoAiTurnResult(
+        turnOutcome = outcome,
+        scoreEstimate = estimate,
+        profile = turnProfile,
+        playLevel = playLevel,
+    )
 }
 
 internal fun scoreGraphAnalysisLimit(profile: EngineProfile): AnalysisLimit =

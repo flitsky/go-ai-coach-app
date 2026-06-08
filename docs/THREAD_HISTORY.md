@@ -557,3 +557,8 @@
 - `GoCoachApp.kt`는 새 게임/저장 복원 시 직접 레벨과 화면 상태 기본값을 계산하지 않고 helper 결과를 적용하도록 변경했다.
 - `UndoApplication.kt`를 추가해 2인용 무르기와 엔진 동기화 무르기 후 로컬 상태 계획을 application 계층으로 분리했다. 무르기 후 score timeline trim, move review marker trim, 마지막 수 문구, candidate text 초기화가 테스트 가능한 단위가 되었다.
 - `GameSessionApplicationTest`, `UndoApplicationTest`를 추가했고, 검증으로 `make test`가 통과했다.
+- 사용자가 다음 리팩토링 후보도 진행해달라고 요청했다.
+- `TopMovesApplication.kt`를 추가해 Top Moves 분석 요청 계획, cache hit 반영, 분석 완료 반영, Top Moves 표시/Deep fallback 판단을 application 계층으로 분리했다.
+- `GoCoachApp.kt`는 분석 limit/key/snapshot/candidate text/cache payload를 직접 조립하지 않고 `TopMoveAnalysisPlan`과 `TopMoveAnalysisUpdate` 결과를 적용하도록 변경했다.
+- `EngineSession.kt`에 `runAutoAiTurn()`을 추가해 AI 턴의 `configure -> syncToGameState -> applyAiTurn -> estimateScore` 순서를 application service로 묶었다.
+- `TopMovesApplicationTest`와 `EngineSessionTest` 케이스를 추가했고, 검증으로 `make test`가 통과했다.

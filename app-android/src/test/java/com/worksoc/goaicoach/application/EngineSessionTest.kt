@@ -12,6 +12,7 @@ import com.worksoc.goaicoach.shared.FinalScoreResult
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.MoveResult
+import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.StoneColor
@@ -72,6 +73,33 @@ class EngineSessionTest {
 
         assertEquals(1, snapshot.moveNumber)
     }
+
+    @Test
+    fun runAutoAiTurnConfiguresSyncsSelectsMoveAndEstimatesScore() = runBlocking {
+        val engine = RecordingEngineAdapter()
+        val state = GameState.empty()
+        val playLevel = PlayLevelSetting()
+
+        val result = engine.runAutoAiTurn(
+            currentState = state,
+            playLevel = playLevel,
+            currentProfile = EngineProfile(),
+        )
+
+        assertEquals(
+            listOf(
+                "configure:16",
+                "newGame:9:japanese",
+                "analyze:16",
+                "genMove:Black",
+                "estimate:1",
+            ),
+            engine.calls,
+        )
+        assertEquals(playLevel, result.playLevel)
+        assertEquals(1, result.turnOutcome.gameState.moves.size)
+        assertEquals("Black pass", result.turnOutcome.lastMoveText)
+    }
 }
 
 private class RecordingEngineAdapter : EngineAdapter {
@@ -105,7 +133,9 @@ private class RecordingEngineAdapter : EngineAdapter {
             status = EngineStatus.ready("generated"),
             move = Move.Pass(player),
             summary = "generated",
-        )
+        ).also {
+            calls += "genMove:${player.label}"
+        }
 
     override suspend fun undoMove(): EngineStatus =
         EngineStatus.ready("undone")
@@ -115,7 +145,9 @@ private class RecordingEngineAdapter : EngineAdapter {
             status = EngineStatus.ready("analyzed"),
             candidates = emptyList(),
             summary = "analyzed",
-        )
+        ).also {
+            calls += "analyze:${limit.visits}"
+        }
 
     override suspend fun estimateScore(limit: AnalysisLimit): ScoreEstimate {
         calls += "estimate:${limit.candidateCount}"
