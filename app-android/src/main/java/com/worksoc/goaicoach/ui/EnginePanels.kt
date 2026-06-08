@@ -22,6 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.turnStatus
+import com.worksoc.goaicoach.shared.AnalysisPreset
 import com.worksoc.goaicoach.shared.DifficultyProfile
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.Ruleset
@@ -181,9 +182,11 @@ internal fun GameMenuActionsPanel(
 @Composable
 internal fun EngineTuningPanel(
     profile: EngineProfile,
+    analysisPreset: AnalysisPreset,
     enabled: Boolean,
     onDifficultyChange: (DifficultyProfile) -> Unit,
     onVisitsChange: (Int) -> Unit,
+    onAnalysisPresetChange: (AnalysisPreset) -> Unit,
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -259,6 +262,37 @@ internal fun EngineTuningPanel(
                     Text("+")
                 }
             }
+
+            Text("Analysis", fontWeight = FontWeight.SemiBold)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                AnalysisPreset.entries.forEach { preset ->
+                    if (preset == analysisPreset) {
+                        Button(
+                            onClick = { onAnalysisPresetChange(preset) },
+                            enabled = enabled,
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Text(preset.label)
+                        }
+                    } else {
+                        OutlinedButton(
+                            onClick = { onAnalysisPresetChange(preset) },
+                            enabled = enabled,
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Text(preset.label)
+                        }
+                    }
+                }
+            }
+            Text(
+                text = analysisPreset.description,
+                color = MaterialTheme.colorScheme.secondary,
+                style = MaterialTheme.typography.bodySmall,
+            )
         }
     }
 }

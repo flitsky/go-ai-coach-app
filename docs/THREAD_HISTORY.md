@@ -360,3 +360,14 @@
 - 당장 구현하지 말고, 오늘 변경 전 수준의 경량 탐색 방식과 현재 최신 정밀 분석 방식을 둘 다 설정할 수 있는 향후 방향성만 잡아달라고 요청했다.
 - `docs/ENGINE_SEARCH_MODE_DIRECTION.md`를 추가했다. 기본 방향은 느린 폰 기본값을 `Fast Play`로 두고, 현재 최신 전체 합법 착점 snapshot/refine 흐름은 `Study Analysis`로 보존하는 것이다.
 - `Fast Play`는 대국 리듬을 우선해 전체 합법점 refine를 하지 않고 상위 소수 후보만 빠르게 분석한다. `Study Analysis`는 학습 품질을 우선해 JSON policy, snapshot, budgeted refine, 향후 sweep/equalize 확장을 담당한다.
+- 사용자가 맥북 에뮬레이터에서도 초기 분석이 오래 걸리는 것을 확인하고, 엔진 분석 요청을 여러 단계로 세분화해 디바이스 상황에 맞게 설정할 수 있게 해달라고 요청했다. 또한 한수 무르기 후 동일 국면 재분석을 피하기 위한 캐싱 시스템 도입을 요청했다.
+- `AnalysisPreset`을 추가해 `Lite`, `Balanced`, `Deep` 3단계 분석 preset을 만들었다. 기본값은 느린 폰/에뮬레이터용 `Lite`로 두었다.
+- `AnalysisLimit`에 `includePolicy`, `refinePolicyMoves`, `minVisitsPerCandidate`, `minTimeMillis`를 추가했다. 따라서 adapter가 항상 `후보수 * 20 visits`, `2000ms`로 상향하지 않고 preset별 예산을 따른다.
+- `KataGoProcessEngineAdapter`는 `Lite`에서 JSON policy/refine를 생략하고, `Balanced`/`Deep`에서는 설정된 refine budget만 사용하도록 수정했다.
+- Android 메뉴의 `Engine` 섹션에 `Analysis` preset 버튼을 추가했다. 사용자는 `Lite`, `Balanced`, `Deep`을 직접 선택할 수 있다.
+- `GameState.analysisFingerprint()`와 UI 메모리 LRU cache를 추가했다. cache key는 국면 fingerprint, preset, analysis limit, deep 여부를 포함한다. 한수 무르기 등으로 같은 국면에 돌아오면 Top Moves/pre-move analysis 결과를 재사용할 수 있다.
+- `Copy Log` debug report에 `analysisPreset`과 `analysisCache` 통계를 추가했다.
+- `GameStateFingerprintTest`를 추가했고, 검증으로 `make test`가 통과했다.
+- 에뮬레이터 `emulator-5554`에 최신 debug APK를 설치하고 KataGo asset을 seed한 뒤 실행 검증했다.
+- 기본 `Lite` preset에서 실행 후 첫 UI poll 약 2초 시점에 이미 `Your turn: Black`, `Moves: 0`, `Top Moves analysis ready for Black: 5/81 legal spot(s) scored.`가 표시됐다.
+- 하단 분석 텍스트에서 `Top Moves request: Lite, up to 8 candidate(s), Beginner ... base 16 visits / 250ms, refine 0`, `Analysis coverage: legal 81, scored 5, policy-only 0, pending 76`, `KataGo JSON analysis with 16 visits / 250ms`를 확인했다.

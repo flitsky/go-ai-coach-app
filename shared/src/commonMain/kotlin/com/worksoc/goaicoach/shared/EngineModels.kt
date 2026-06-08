@@ -82,12 +82,65 @@ data class AnalysisLimit(
     val visits: Int = 64,
     val timeMillis: Long? = null,
     val candidateCount: Int = 5,
+    val includePolicy: Boolean = true,
+    val refinePolicyMoves: Int = 12,
+    val minVisitsPerCandidate: Int = 20,
+    val minTimeMillis: Long? = 2_000L,
 ) {
     init {
         require(visits > 0) { "visits must be positive" }
         require(timeMillis == null || timeMillis > 0) { "timeMillis must be positive when set" }
         require(candidateCount > 0) { "candidateCount must be positive" }
+        require(refinePolicyMoves >= 0) { "refinePolicyMoves must be non-negative" }
+        require(minVisitsPerCandidate >= 0) { "minVisitsPerCandidate must be non-negative" }
+        require(minTimeMillis == null || minTimeMillis > 0) { "minTimeMillis must be positive when set" }
     }
+}
+
+enum class AnalysisPreset(
+    val label: String,
+    val description: String,
+    val candidateCap: Int,
+    val promoteTopMovesDifficulty: Boolean,
+    val includePolicy: Boolean,
+    val refinePolicyMoves: Int,
+    val minVisitsPerCandidate: Int,
+    val minTimeMillis: Long?,
+    val allowManualDeepFallback: Boolean,
+) {
+    Lite(
+        label = "Lite",
+        description = "Fast play on slower devices",
+        candidateCap = 8,
+        promoteTopMovesDifficulty = false,
+        includePolicy = false,
+        refinePolicyMoves = 0,
+        minVisitsPerCandidate = 0,
+        minTimeMillis = null,
+        allowManualDeepFallback = false,
+    ),
+    Balanced(
+        label = "Balanced",
+        description = "Moderate hints with limited policy refinement",
+        candidateCap = 20,
+        promoteTopMovesDifficulty = true,
+        includePolicy = true,
+        refinePolicyMoves = 4,
+        minVisitsPerCandidate = 4,
+        minTimeMillis = 800L,
+        allowManualDeepFallback = false,
+    ),
+    Deep(
+        label = "Deep",
+        description = "Study mode with broad legal-move coverage",
+        candidateCap = 81,
+        promoteTopMovesDifficulty = true,
+        includePolicy = true,
+        refinePolicyMoves = 12,
+        minVisitsPerCandidate = 20,
+        minTimeMillis = 2_000L,
+        allowManualDeepFallback = true,
+    ),
 }
 
 data class CandidateMove(

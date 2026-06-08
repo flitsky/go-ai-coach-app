@@ -27,15 +27,18 @@
 - `Pass`: 현재 차례 플레이어가 패스한다. 양 진영이 연속 패스하면 최종 계가 흐름으로 들어간다.
 - `Undo`: 마지막 착수를 되돌린다. AI 대국에서는 사람 착수와 AI 응수를 한 턴 단위로 되돌린다.
 - `Top Moves`: 현재 차례의 강한 후보를 분석하고, 점수 손실이 계산된 후보 위치를 보드 위에 표시한다.
-  - 사람 차례가 오면 백그라운드에서 현재 합법 착점 전체를 포함하는 분석 snapshot을 만든다.
+  - 사람 차례가 오면 백그라운드에서 현재 국면의 분석 snapshot을 만든다.
   - 버튼은 토글로 동작한다. 켜진 상태에서는 매 사용자 턴마다 준비된 pre-move analysis cache를 보드에 자동 표시한다.
   - 꺼진 상태에서도 착수 평가를 위한 pre-move analysis cache는 백그라운드에서 계속 준비한다.
   - 후보 순위, 점수 손실, 예상 리드, visits, policy prior 같은 상세 텍스트는 화면 하단의 약 10줄 스크롤 박스와 `Copy Log`로 확인한다.
-  - 분석은 대국 AI보다 한 단계 높은 difficulty의 기본 visits/time을 사용한다. 단, 사용자가 이미 더 강한 visits/time을 설정했다면 그 값을 유지한다.
-  - 후보 수가 많을 때는 엔진 어댑터가 최소 검색량을 후보 수에 맞춰 내부 상향할 수 있다. 현재 Top Moves 분석은 최소 `후보수 * 20 visits`, `2000ms`까지 일시 상향될 수 있다.
-  - KataGo JSON analysis config가 준비된 경우에는 KaTrain과 같은 JSON analysis protocol을 우선 사용해 더 많은 scored 후보를 받는다.
-  - JSON analysis 경로에서는 normal query의 `policy` 배열도 합법 착점 snapshot에 보존하고, 상위 policy 후보 일부를 낮은 visits로 추가 refine해 scored 후보를 보강한다.
-  - 준비된 cache에 점수 있는 후보가 5개 미만이면, 사용자가 `Top Moves`를 눌렀을 때 1회 수동 deep analysis를 실행해 `Full Analysis` 수준으로 다시 분석한다.
+  - 분석 강도는 메뉴의 `Engine > Analysis`에서 `Lite`, `Balanced`, `Deep` 중 선택한다.
+  - `Lite`는 느린 폰/에뮬레이터 기본값이다. 상위 소수 후보만 빠르게 분석하고 policy/refine를 기본 생략한다.
+  - `Balanced`는 후보 수와 policy/refine를 제한해 힌트 품질과 속도를 절충한다.
+  - `Deep`은 학습/복기용이다. 더 넓은 후보 범위와 policy/refine를 사용하므로 느릴 수 있다.
+  - KataGo JSON analysis config가 준비된 경우에는 KaTrain과 같은 JSON analysis protocol을 우선 사용한다.
+  - JSON analysis 경로에서는 선택된 `Analysis` preset에 따라 `policy` 보존, 추가 refine 개수, 최소 visits/time 상향 폭이 달라진다.
+  - 동일한 국면, 규칙, 차례, 분석 preset, 분석 예산으로 이미 분석한 값이 있으면 엔진을 다시 호출하지 않고 메모리 cache를 사용한다.
+  - 무르기로 최근 국면으로 돌아온 경우 같은 cache key가 있으면 즉시 재사용한다.
   - 엔진 search가 목표 후보수를 채우지 못하면, 나머지 합법 착점은 `PolicyOnly` 또는 `LegalOnly` 상태로 snapshot에 보관한다. 이 후보에는 점수 손실이나 policy prior가 없을 수 있다.
   - 점수 손실이 없는 policy/legal fallback 후보는 보드 위 스팟으로 그리지 않는다. 분석 snapshot, 상세 텍스트, `Copy Log`에서만 확인한다.
 - `Eval`: 현재 판의 점수 추정과 ownership 정보를 요청한다.

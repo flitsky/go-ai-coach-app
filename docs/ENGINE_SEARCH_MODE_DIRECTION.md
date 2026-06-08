@@ -1,6 +1,7 @@
 # 엔진 탐색 모드 방향성
 
 작성일: 2026-06-07
+갱신일: 2026-06-08
 
 ## 배경
 
@@ -18,10 +19,16 @@
 
 ## 결정 방향
 
-앱에는 최소 2가지 엔진 탐색 방법을 제공한다.
+앱에는 최소 2가지 성격의 엔진 탐색 방법을 제공한다.
 
 1. `Fast Play`
 2. `Study Analysis`
+
+2026-06-08 구현에서는 이를 사용자 설정으로 바로 다루기 쉽도록 3단계 preset으로 구체화했다.
+
+1. `Lite`: 느린 폰/에뮬레이터용 빠른 대국 기본값
+2. `Balanced`: 속도와 힌트 품질 절충
+3. `Deep`: 학습/복기용 정밀 분석
 
 사용자 관점에서는 "대국을 쾌적하게 둘 것인가"와 "분석 품질을 높일 것인가"를 선택하는 설정이다.
 
@@ -56,6 +63,17 @@
 - Top Moves 색상 품질은 낮아질 수 있지만, 대국이 먼저 가능하다.
 - 학습용 평가가 비어 있는 수는 실수로 단정하지 않는다.
 
+현재 구현:
+
+- `AnalysisPreset.Lite`
+- 후보 목표 상한: 8개
+- Top Moves difficulty 승급 없음
+- JSON `includePolicy=false`
+- policy refine 0개
+- 후보수에 따른 최소 visits 상향 없음
+- 최소 분석 시간 상향 없음
+- 기본값으로 사용
+
 ## 모드 2: Study Analysis
 
 현재 최신 버전의 방향을 유지하는 정밀 분석 모드다.
@@ -82,15 +100,39 @@
 - 분석 결과가 늦어도 학습 화면에서는 받아들일 수 있다.
 - 이후 server engine 또는 더 큰 모델과도 같은 모델을 재사용할 수 있다.
 
+현재 구현:
+
+- `AnalysisPreset.Deep`
+- 후보 목표 상한: 81개
+- Top Moves difficulty를 한 단계 승급
+- JSON `includePolicy=true`
+- policy refine 최대 12개
+- 후보당 최소 20 visits, 최소 2000ms 상향
+- 사용자가 명시적으로 선택할 때 사용
+
+## 중간 모드: Balanced
+
+느린 기기에서도 어느 정도 후보 다양성을 보고 싶을 때 쓰는 절충 모드다.
+
+현재 구현:
+
+- `AnalysisPreset.Balanced`
+- 후보 목표 상한: 20개
+- Top Moves difficulty를 한 단계 승급
+- JSON `includePolicy=true`
+- policy refine 최대 4개
+- 후보당 최소 4 visits, 최소 800ms 상향
+
 ## 사용자 설정 UX 방향
 
 처음에는 복잡한 raw 설정을 노출하지 않는다.
 
 권장 UI:
 
-- `Engine speed`
-  - `Fast Play`
-  - `Study Analysis`
+- `Engine > Analysis`
+  - `Lite`
+  - `Balanced`
+  - `Deep`
 
 추가 고도화 후:
 
@@ -103,36 +145,31 @@
   - refine count
   - background analysis on/off
 
-기본값은 `Fast Play`가 적절하다. 앱의 1차 목적은 사용자가 실제로 대국을 이어가는 것이고, 정밀 분석은 명시적 학습 의도가 있을 때 켜는 것이 맞다.
+기본값은 `Lite`가 적절하다. 앱의 1차 목적은 사용자가 실제로 대국을 이어가는 것이고, 정밀 분석은 명시적 학습 의도가 있을 때 켜는 것이 맞다.
 
 ## 내부 설계 방향
 
-추상화 이름 후보:
-
-- `EngineSearchMode`
-- `AnalysisStrategy`
-- `AnalysisBudget`
-
-예상 모델:
+현재 모델:
 
 ```kotlin
-enum class EngineSearchMode {
-    FastPlay,
-    StudyAnalysis,
+enum class AnalysisPreset {
+    Lite,
+    Balanced,
+    Deep,
 }
 ```
 
-또는:
+`AnalysisLimit`에는 단순 visits/time/candidates 외에도 실제 adapter가 지켜야 할 budget 필드를 둔다.
 
 ```kotlin
-data class AnalysisStrategy(
-    val mode: EngineSearchMode,
-    val autoAnalyzeOnTurn: Boolean,
-    val candidateTarget: CandidateTarget,
-    val maxTimeMillis: Int,
-    val maxVisits: Int,
+data class AnalysisLimit(
+    val visits: Int,
+    val timeMillis: Long?,
+    val candidateCount: Int,
+    val includePolicy: Boolean,
     val refinePolicyMoves: Int,
-    val refineVisitsPerMove: Int,
+    val minVisitsPerCandidate: Int,
+    val minTimeMillis: Long?,
 )
 ```
 
@@ -148,17 +185,34 @@ KataGo JSON/GTP/refine/sweep 여부는 UI에 노출하지 않는다.
 ## 중요한 정책
 
 - 대국 흐름을 막는 분석은 금지한다.
-- 느린 폰 기본값은 `Fast Play`로 둔다.
-- `Study Analysis`는 켰을 때만 무거운 background refine를 수행한다.
+- 느린 폰 기본값은 `Lite`로 둔다.
+- `Deep`은 켰을 때만 무거운 background refine를 수행한다.
 - 분석 결과가 늦게 도착해도 현재 수순과 맞지 않으면 폐기한다.
 - 착수 평가 데이터가 없으면 나쁜 수로 단정하지 않고 `unknown`으로 둔다.
 - 나중에 remote/server engine을 붙여도 같은 `EngineSearchMode` 개념을 유지한다.
 
-## 다음 구현 시 작업 순서 제안
+## 분석 캐시
 
-1. 현재 최신 분석 경로를 `StudyAnalysis`로 이름 붙여 캡슐화한다.
-2. 오늘 변경 전과 유사한 경량 경로를 `FastPlay`로 복원한다.
-3. 설정 메뉴에 `Engine speed: Fast Play | Study Analysis`를 추가한다.
-4. 기본값을 `Fast Play`로 둔다.
-5. 폰에서 각 모드의 첫 턴 대기 시간, 착수 후 응답 시간, Top Moves 표시 시간을 측정한다.
-6. 측정값을 기준으로 `Auto` 모드 도입 여부를 결정한다.
+2026-06-08 구현에서 메모리 LRU cache를 도입했다.
+
+cache key는 다음 정보를 포함한다.
+
+- board size
+- ruleset
+- next player
+- captures
+- ko state
+- stone placement
+- move history
+- analysis preset
+- analysis limit
+- deep/manual 여부
+
+따라서 한수 무르기로 최근 국면에 돌아오거나, 같은 초기 국면을 다시 분석할 때 엔진을 재호출하지 않고 cache를 사용할 수 있다. 현재는 앱 프로세스 생명주기 안의 메모리 cache이며, 나중에 SGF/복기 기반 persistent cache로 확장할 수 있다.
+
+## 다음 작업 제안
+
+1. 폰/에뮬레이터에서 `Lite`, `Balanced`, `Deep`의 첫 턴 대기 시간과 착수 후 응답 시간을 측정한다.
+2. `Lite`에서도 초기 자동 분석이 너무 느리면 시작 직후 자동 Top Moves 분석을 끄고, 첫 `Top Moves` 버튼 클릭 때만 수행하는 옵션을 추가한다.
+3. 분석 job cancel/discard 정책을 강화해 새 착수 이후 늦게 도착한 결과가 화면을 덮지 않도록 한다.
+4. 측정값을 기준으로 `Auto` preset 도입 여부를 결정한다.
