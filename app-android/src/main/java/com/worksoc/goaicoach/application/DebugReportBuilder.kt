@@ -17,7 +17,6 @@ import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.ScoreSnapshot
 import com.worksoc.goaicoach.shared.StoneColor
 import com.worksoc.goaicoach.shared.describe
-import com.worksoc.goaicoach.ui.toDisplayText
 
 internal fun buildDebugReport(
     mode: MatchMode,

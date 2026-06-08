@@ -5,10 +5,12 @@ import com.worksoc.goaicoach.match.applyAiTurn
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.BoardScorer
 import com.worksoc.goaicoach.shared.BoardSize
+import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.EngineAdapter
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.EngineStatus
 import com.worksoc.goaicoach.shared.GameState
+import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.ScoreEstimate
@@ -113,6 +115,56 @@ internal suspend fun EngineAdapter.runAutoAiTurn(
         playLevel = playLevel,
     )
 }
+
+internal suspend fun EngineAdapter.syncAfterHumanMove(
+    afterMove: GameState,
+    profile: EngineProfile,
+    move: Move,
+    previousReviewCandidates: List<CandidateMove>,
+): LocalEngineMoveResult {
+    syncToGameState(afterMove)
+    return if (afterMove.hasConsecutivePasses() || afterMove.isBoardFull()) {
+        LocalEngineMoveResult(
+            endgame = resolveAiEndgame(
+                engineAdapter = this,
+                originalState = afterMove,
+                estimateLimit = scoreGraphAnalysisLimit(profile),
+                prePassCandidates = if (move is Move.Pass) {
+                    previousReviewCandidates
+                } else {
+                    emptyList()
+                },
+            ),
+        )
+    } else {
+        LocalEngineMoveResult(
+            estimate = estimateScore(scoreGraphAnalysisLimit(profile)),
+        )
+    }
+}
+
+internal suspend fun EngineAdapter.estimateScoreForState(
+    state: GameState,
+    profile: EngineProfile,
+    syncFirst: Boolean,
+): ScoreEstimate {
+    if (syncFirst) {
+        syncToGameState(state)
+    }
+    return estimateScore(profile.analysisLimit)
+}
+
+internal suspend fun EngineAdapter.resolveEndgameForState(
+    state: GameState,
+    profile: EngineProfile,
+    prePassCandidates: List<CandidateMove>,
+): AiEndgameResolution =
+    resolveAiEndgame(
+        engineAdapter = this,
+        originalState = state,
+        estimateLimit = scoreGraphAnalysisLimit(profile),
+        prePassCandidates = prePassCandidates,
+    )
 
 internal fun scoreGraphAnalysisLimit(profile: EngineProfile): AnalysisLimit =
     profile.analysisLimit.copy(candidateCount = 1)

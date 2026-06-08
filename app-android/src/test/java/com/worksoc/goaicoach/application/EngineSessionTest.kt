@@ -100,6 +100,28 @@ class EngineSessionTest {
         assertEquals(1, result.turnOutcome.gameState.moves.size)
         assertEquals("Black pass", result.turnOutcome.lastMoveText)
     }
+
+    @Test
+    fun estimateScoreForStateOptionallySyncsBoardBeforeEstimating() = runBlocking {
+        val engine = RecordingEngineAdapter()
+        val state = GameState.empty()
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+
+        engine.estimateScoreForState(
+            state = state,
+            profile = EngineProfile(),
+            syncFirst = true,
+        )
+
+        assertEquals(
+            listOf(
+                "newGame:9:japanese",
+                "play:Black E5",
+                "estimate:5",
+            ),
+            engine.calls,
+        )
+    }
 }
 
 private class RecordingEngineAdapter : EngineAdapter {

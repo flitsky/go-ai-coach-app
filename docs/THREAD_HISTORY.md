@@ -562,3 +562,9 @@
 - `GoCoachApp.kt`는 분석 limit/key/snapshot/candidate text/cache payload를 직접 조립하지 않고 `TopMoveAnalysisPlan`과 `TopMoveAnalysisUpdate` 결과를 적용하도록 변경했다.
 - `EngineSession.kt`에 `runAutoAiTurn()`을 추가해 AI 턴의 `configure -> syncToGameState -> applyAiTurn -> estimateScore` 순서를 application service로 묶었다.
 - `TopMovesApplicationTest`와 `EngineSessionTest` 케이스를 추가했고, 검증으로 `make test`가 통과했다.
+- 사용자가 현재 상태에서 안전하게 진행 가능한 모든 리팩토링 후보를 한 번에 진행해달라고 요청했다.
+- `AnalysisFormatter.kt`를 `ui` 패키지에서 `application` 패키지로 이동했다. 후보수/점수 텍스트 formatter가 더 이상 UI 전용 패키지에 묶이지 않고 `DebugReportBuilder`, score display helper, 화면에서 공통 사용된다.
+- `ScoreDisplayApplication.kt`를 추가해 엔진 점수 추정 표시, 로컬 점수 표시, 로컬 최종 점수, 엔진 종국 성공/실패 표시 계획을 application 계층으로 분리했다.
+- `GoCoachApp.kt`는 `toDisplayText`, `buildEndgameLog`, `ScoreTimeline.fromEstimate/fromFinalScore`, `estimateScore`, `syncToGameState`를 직접 호출하지 않고 application helper 결과를 적용하도록 변경했다.
+- `EngineSession.kt`에 `syncAfterHumanMove`, `estimateScoreForState`, `resolveEndgameForState`를 추가해 사람 착수 후 엔진 동기화/종국 처리와 일반 점수 추정의 저수준 엔진 호출 순서를 숨겼다.
+- `ScoreDisplayApplicationTest`와 `EngineSessionTest` 케이스를 추가했고, 검증으로 `make test`가 통과했다.

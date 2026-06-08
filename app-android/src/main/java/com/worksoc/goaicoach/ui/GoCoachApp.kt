@@ -37,33 +37,36 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.worksoc.goaicoach.application.AiEndgameResolution
 import com.worksoc.goaicoach.application.AnalysisCacheKey
 import com.worksoc.goaicoach.application.AnalysisResultCache
-import com.worksoc.goaicoach.application.LocalEngineMoveResult
 import com.worksoc.goaicoach.application.MoveReviewMarker
 import com.worksoc.goaicoach.application.buildDebugReport
-import com.worksoc.goaicoach.application.buildEndgameLog
+import com.worksoc.goaicoach.application.buildEndgameFailureDisplayPlan
+import com.worksoc.goaicoach.application.buildEngineEstimateDisplayPlan
 import com.worksoc.goaicoach.application.buildEngineUndoPlan
+import com.worksoc.goaicoach.application.buildLocalFinalScoreDisplayPlan
 import com.worksoc.goaicoach.application.buildLocalTwoPlayerUndoPlan
 import com.worksoc.goaicoach.application.buildCachedTopMoveAnalysisUpdate
 import com.worksoc.goaicoach.application.buildCompletedTopMoveAnalysisUpdate
+import com.worksoc.goaicoach.application.buildLocalScoreEstimateDisplayPlan
 import com.worksoc.goaicoach.application.buildNewLocalGameSessionPlan
+import com.worksoc.goaicoach.application.buildResolvedEndgameDisplayPlan
 import com.worksoc.goaicoach.application.buildSavedGameRestorePlan
 import com.worksoc.goaicoach.application.buildTopMoveAnalysisPlan
 import com.worksoc.goaicoach.application.configureSyncAndEstimateGraphScore
 import com.worksoc.goaicoach.application.applyHumanMoveLocally
 import com.worksoc.goaicoach.application.localScoreSnapshot
 import com.worksoc.goaicoach.application.planShowTopMoves
-import com.worksoc.goaicoach.application.resolveAiEndgame
+import com.worksoc.goaicoach.application.estimateScoreForState
+import com.worksoc.goaicoach.application.resolveEndgameForState
 import com.worksoc.goaicoach.application.runAutoAiTurn
-import com.worksoc.goaicoach.application.scoreGraphAnalysisLimit
 import com.worksoc.goaicoach.application.selectRuntimePlayLevel
 import com.worksoc.goaicoach.application.startEngineSession
 import com.worksoc.goaicoach.application.startNewEngineGame
 import com.worksoc.goaicoach.application.syncAndEstimateGraphScore
-import com.worksoc.goaicoach.application.syncToGameState
+import com.worksoc.goaicoach.application.syncAfterHumanMove
 import com.worksoc.goaicoach.application.ShowTopMovesPlan
+import com.worksoc.goaicoach.application.toCandidateText
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
@@ -80,7 +83,6 @@ import com.worksoc.goaicoach.presentation.buildGameScreenState
 import com.worksoc.goaicoach.presentation.dispatchGameUiEvent
 import com.worksoc.goaicoach.shared.AnalysisPreset
 import com.worksoc.goaicoach.shared.BoardCoordinate
-import com.worksoc.goaicoach.shared.BoardScorer
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.EngineAdapter
@@ -91,7 +93,6 @@ import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.ScoreEstimate
-import com.worksoc.goaicoach.shared.ScoreSnapshotSource
 import com.worksoc.goaicoach.shared.ScoreTimeline
 import com.worksoc.goaicoach.shared.StoneColor
 import com.worksoc.goaicoach.shared.describe
@@ -390,7 +391,11 @@ private fun GoCoachScreen(
         lastAnalysisKey = null
         scoreEstimate = null
         scoreText = if (isGameEnded || (matchMode == MatchMode.LocalTwoPlayer && !isEngineReady)) {
-            BoardScorer.score(nextState).toDisplayText()
+            buildLocalScoreEstimateDisplayPlan(
+                state = nextState,
+                previousSnapshots = scoreSnapshots,
+                engineMessage = "",
+            ).scoreText
         } else {
             "Score estimate not current."
         }
@@ -412,13 +417,17 @@ private fun GoCoachScreen(
                     engineAdapter.syncAndEstimateGraphScore(nextState, engineProfile)
                 }
             }.onSuccess { estimate ->
-                scoreText = estimate.toDisplayText()
-                scoreEstimate = estimate
-                scoreSnapshots = ScoreTimeline.record(
-                    ScoreTimeline.trimAfter(scoreSnapshots, nextState.moves.size),
-                    ScoreTimeline.fromEstimate(nextState.moves.size, estimate),
+                val score = buildEngineEstimateDisplayPlan(
+                    state = nextState,
+                    estimate = estimate,
+                    previousSnapshots = scoreSnapshots,
+                    engineMessage = "Scoring rule changed to ${nextRuleset.scoringLabel}; engine rules synchronized.",
+                    trimAfterMove = true,
                 )
-                engineMessage = "Scoring rule changed to ${nextRuleset.scoringLabel}; engine rules synchronized."
+                scoreText = score.scoreText
+                scoreEstimate = score.scoreEstimate
+                scoreSnapshots = score.scoreSnapshots
+                engineMessage = score.engineMessage
             }.onFailure { error ->
                 engineMessage = error.message ?: "Scoring rule changed, but engine rule sync failed."
             }
@@ -498,10 +507,16 @@ private fun GoCoachScreen(
                     engineAdapter.configureSyncAndEstimateGraphScore(restoredState, restoredProfile)
                 }
             }.onSuccess { estimate ->
-                scoreText = estimate.toDisplayText()
-                scoreEstimate = estimate
-                scoreSnapshots = listOf(ScoreTimeline.fromEstimate(restoredState.moves.size, estimate))
-                engineMessage = "Previous game restored and engine state synchronized."
+                val score = buildEngineEstimateDisplayPlan(
+                    state = restoredState,
+                    estimate = estimate,
+                    previousSnapshots = emptyList(),
+                    engineMessage = "Previous game restored and engine state synchronized.",
+                )
+                scoreText = score.scoreText
+                scoreEstimate = score.scoreEstimate
+                scoreSnapshots = score.scoreSnapshots
+                engineMessage = score.engineMessage
             }.onFailure { error ->
                 engineMessage = error.message ?: "Saved game restored locally, but engine sync failed."
             }
@@ -520,11 +535,15 @@ private fun GoCoachScreen(
         }
 
         if (matchMode == MatchMode.LocalTwoPlayer && !isEngineReady) {
-            val score = BoardScorer.score(gameState)
-            scoreText = score.toDisplayText()
-            scoreEstimate = null
-            scoreSnapshots = ScoreTimeline.record(scoreSnapshots, localScoreSnapshot(gameState))
-            engineMessage = "Local ${gameState.ruleset.scoringLabel} estimate refreshed."
+            val score = buildLocalScoreEstimateDisplayPlan(
+                state = gameState,
+                previousSnapshots = scoreSnapshots,
+                engineMessage = "Local ${gameState.ruleset.scoringLabel} estimate refreshed.",
+            )
+            scoreText = score.scoreText
+            scoreEstimate = score.scoreEstimate
+            scoreSnapshots = score.scoreSnapshots
+            engineMessage = score.engineMessage
             return
         }
 
@@ -538,19 +557,22 @@ private fun GoCoachScreen(
             isEngineBusy = true
             runCatching {
                 withContext(Dispatchers.IO) {
-                    if (matchMode == MatchMode.LocalTwoPlayer) {
-                        engineAdapter.syncToGameState(estimateState)
-                    }
-                    engineAdapter.estimateScore(engineProfile.analysisLimit)
+                    engineAdapter.estimateScoreForState(
+                        state = estimateState,
+                        profile = engineProfile,
+                        syncFirst = matchMode == MatchMode.LocalTwoPlayer,
+                    )
                 }
             }.onSuccess { estimate ->
-                engineMessage = estimate.status.message
-                scoreText = estimate.toDisplayText()
-                scoreEstimate = estimate
-                scoreSnapshots = ScoreTimeline.record(
-                    scoreSnapshots,
-                    ScoreTimeline.fromEstimate(gameState.moves.size, estimate),
+                val score = buildEngineEstimateDisplayPlan(
+                    state = gameState,
+                    estimate = estimate,
+                    previousSnapshots = scoreSnapshots,
                 )
+                engineMessage = score.engineMessage
+                scoreText = score.scoreText
+                scoreEstimate = score.scoreEstimate
+                scoreSnapshots = score.scoreSnapshots
             }.onFailure { error ->
                 engineMessage = error.message ?: "Score estimate failed."
                 scoreEstimate = null
@@ -651,12 +673,14 @@ private fun GoCoachScreen(
                 lastMoveText = outcome.lastMoveText
 
                 result.scoreEstimate?.let { estimate ->
-                    scoreText = estimate.toDisplayText()
-                    scoreEstimate = estimate
-                    scoreSnapshots = ScoreTimeline.record(
-                        scoreSnapshots,
-                        ScoreTimeline.fromEstimate(outcome.gameState.moves.size, estimate),
+                    val score = buildEngineEstimateDisplayPlan(
+                        state = outcome.gameState,
+                        estimate = estimate,
+                        previousSnapshots = scoreSnapshots,
                     )
+                    scoreText = score.scoreText
+                    scoreEstimate = score.scoreEstimate
+                    scoreSnapshots = score.scoreSnapshots
                 } ?: run {
                     scoreText = "Score estimate not current."
                     scoreEstimate = null
@@ -669,10 +693,9 @@ private fun GoCoachScreen(
                     nextAnalysisState = null
                     runCatching {
                         withContext(Dispatchers.IO) {
-                            resolveAiEndgame(
-                                engineAdapter = engineAdapter,
-                                originalState = outcome.gameState,
-                                estimateLimit = scoreGraphAnalysisLimit(result.profile),
+                            engineAdapter.resolveEndgameForState(
+                                state = outcome.gameState,
+                                profile = result.profile,
                                 prePassCandidates = if (outcome.gameState.moves.lastOrNull() is Move.Pass) {
                                     previousReviewCandidates
                                 } else {
@@ -681,36 +704,30 @@ private fun GoCoachScreen(
                             )
                         }
                     }.onSuccess { endgame ->
-                        gameState = endgame.cleanup.state
-                        val finalScoreText = endgame.finalScore.toDisplayText()
-                        scoreText = finalScoreText
-                        scoreEstimate = null
-                        scoreSnapshots = ScoreTimeline.record(
-                            scoreSnapshots,
-                            ScoreTimeline.fromFinalScore(
-                                moveNumber = endgame.cleanup.state.moves.size,
-                                finalScore = endgame.finalScore,
-                                source = ScoreSnapshotSource.FinalScore,
-                            ),
-                        )
-                        endgameLog = buildEndgameLog(
+                        val final = buildResolvedEndgameDisplayPlan(
                             source = "auto-ai-engine-dead-stone-cleanup",
-                            state = endgame.cleanup.state,
-                            finalScoreText = finalScoreText,
-                            detail = endgame.toLogDetail(outcome.gameState),
+                            originalState = outcome.gameState,
+                            resolution = endgame,
+                            previousSnapshots = scoreSnapshots,
+                            engineMessagePrefix = outcome.engineMessage,
                         )
-                        engineMessage = "${outcome.engineMessage}\n${endgame.toEngineMessage()}"
-                        candidateText = endgame.toCandidateText()
+                        gameState = final.gameState
+                        scoreText = final.scoreText
+                        scoreEstimate = final.scoreEstimate
+                        scoreSnapshots = final.scoreSnapshots
+                        endgameLog = final.endgameLog
+                        engineMessage = final.engineMessage
+                        candidateText = final.candidateText
                     }.onFailure { error ->
-                        val finalScoreText = "Final score failed: ${error.message ?: "Unknown error"}"
-                        endgameLog = buildEndgameLog(
+                        val failure = buildEndgameFailureDisplayPlan(
                             source = "auto-ai-engine-final-score-failed",
                             state = outcome.gameState,
-                            finalScoreText = finalScoreText,
-                            detail = "lastMove=${outcome.gameState.moves.lastOrNull()?.describe(outcome.gameState.boardSize) ?: "None"}",
+                            errorMessage = error.message ?: "Unknown error",
+                            engineMessagePrefix = outcome.engineMessage,
                         )
-                        engineMessage = "${outcome.engineMessage}\nFinal score failed: ${error.message ?: "Unknown error"}"
-                        candidateText = "Game ended after two passes, but final score failed."
+                        endgameLog = failure.endgameLog
+                        engineMessage = failure.engineMessage
+                        candidateText = failure.candidateText
                     }
                 }
             }.onFailure { error ->
@@ -770,25 +787,22 @@ private fun GoCoachScreen(
             scoreSnapshots = ScoreTimeline.record(scoreSnapshots, localMove.localScoreSnapshot)
             val localFinalScore = localMove.localFinalScore
             if (localFinalScore != null) {
-                val finalScoreText = localFinalScore.toDisplayText()
-                isGameEnded = true
-                scoreText = finalScoreText
-                scoreSnapshots = ScoreTimeline.record(
-                    scoreSnapshots,
-                    ScoreTimeline.fromFinalScore(
-                        moveNumber = afterMove.moves.size,
-                        finalScore = localFinalScore,
-                        source = ScoreSnapshotSource.FinalScore,
-                    ),
-                )
-                candidateText = "Game ended after two passes."
-                endgameLog = buildEndgameLog(
+                val final = buildLocalFinalScoreDisplayPlan(
                     source = "local-human-consecutive-pass",
                     state = afterMove,
-                    finalScoreText = finalScoreText,
+                    finalScore = localFinalScore,
+                    previousSnapshots = scoreSnapshots,
                     detail = "triggerMove=${move.describe(beforeMove.boardSize)}",
+                    engineMessage = "Local game ended after two passes. ${localFinalScore.status.message}",
+                    candidateText = "Game ended after two passes.",
                 )
-                engineMessage = "Local game ended after two passes. ${localFinalScore.status.message}"
+                isGameEnded = true
+                scoreText = final.scoreText
+                scoreEstimate = final.scoreEstimate
+                scoreSnapshots = final.scoreSnapshots
+                candidateText = final.candidateText
+                endgameLog = final.endgameLog
+                engineMessage = final.engineMessage
             } else {
                 candidateText = localMove.capturedText
                 engineMessage = "Local move accepted without engine sync: ${move.describe(beforeMove.boardSize)}."
@@ -801,60 +815,44 @@ private fun GoCoachScreen(
             var nextAnalysisState: GameState? = null
             runCatching {
                 withContext(Dispatchers.IO) {
-                    engineAdapter.syncToGameState(afterMove)
-                    if (afterMove.hasConsecutivePasses() || afterMove.isBoardFull()) {
-                        LocalEngineMoveResult(
-                            endgame = resolveAiEndgame(
-                                engineAdapter = engineAdapter,
-                                originalState = afterMove,
-                                estimateLimit = scoreGraphAnalysisLimit(engineProfile),
-                                prePassCandidates = if (move is Move.Pass) {
-                                    previousReviewCandidates
-                                } else {
-                                    emptyList()
-                                },
-                            ),
-                        )
-                    } else {
-                        LocalEngineMoveResult(
-                            estimate = engineAdapter.estimateScore(scoreGraphAnalysisLimit(engineProfile)),
-                        )
-                    }
+                    engineAdapter.syncAfterHumanMove(
+                        afterMove = afterMove,
+                        profile = engineProfile,
+                        move = move,
+                        previousReviewCandidates = previousReviewCandidates,
+                    )
                 }
             }.onSuccess { result ->
                 val endgame = result.endgame
                 val estimate = result.estimate
                 if (endgame != null) {
-                    isGameEnded = true
-                    gameState = endgame.cleanup.state
-                    val finalScoreText = endgame.finalScore.toDisplayText()
-                    scoreText = finalScoreText
-                    scoreEstimate = null
-                    scoreSnapshots = ScoreTimeline.record(
-                        scoreSnapshots,
-                        ScoreTimeline.fromFinalScore(
-                            moveNumber = endgame.cleanup.state.moves.size,
-                            finalScore = endgame.finalScore,
-                            source = ScoreSnapshotSource.FinalScore,
-                        ),
-                    )
-                    endgameLog = buildEndgameLog(
+                    val final = buildResolvedEndgameDisplayPlan(
                         source = "human-engine-dead-stone-cleanup",
-                        state = endgame.cleanup.state,
-                        finalScoreText = finalScoreText,
-                        detail = endgame.toLogDetail(afterMove),
+                        originalState = afterMove,
+                        resolution = endgame,
+                        previousSnapshots = scoreSnapshots,
+                        engineMessagePrefix = "Game ended after two passes.",
                     )
-                    engineMessage = "Game ended after two passes.\n${endgame.toEngineMessage()}"
-                    candidateText = endgame.toCandidateText()
+                    isGameEnded = true
+                    gameState = final.gameState
+                    scoreText = final.scoreText
+                    scoreEstimate = final.scoreEstimate
+                    scoreSnapshots = final.scoreSnapshots
+                    endgameLog = final.endgameLog
+                    engineMessage = final.engineMessage
+                    candidateText = final.candidateText
                 } else if (estimate != null) {
-                    scoreText = estimate.toDisplayText()
-                    scoreEstimate = estimate
-                    scoreSnapshots = ScoreTimeline.record(
-                        scoreSnapshots,
-                        ScoreTimeline.fromEstimate(afterMove.moves.size, estimate),
+                    val score = buildEngineEstimateDisplayPlan(
+                        state = afterMove,
+                        estimate = estimate,
+                        previousSnapshots = scoreSnapshots,
+                        engineMessage = "Human move accepted and engine analysis synced: ${move.describe(beforeMove.boardSize)}.",
                     )
+                    scoreText = score.scoreText
+                    scoreEstimate = score.scoreEstimate
+                    scoreSnapshots = score.scoreSnapshots
                     candidateText = localMove.capturedText
-                    engineMessage = "Human move accepted and engine analysis synced: ${move.describe(beforeMove.boardSize)}."
+                    engineMessage = score.engineMessage
                     nextAnalysisState = afterMove
                 }
             }.onFailure { error ->
@@ -913,13 +911,16 @@ private fun GoCoachScreen(
                         engineAdapter.syncAndEstimateGraphScore(nextState, engineProfile)
                     }
                 }.onSuccess { estimate ->
-                    scoreText = estimate.toDisplayText()
-                    scoreEstimate = estimate
-                    scoreSnapshots = ScoreTimeline.record(
-                        scoreSnapshots,
-                        ScoreTimeline.fromEstimate(nextState.moves.size, estimate),
+                    val score = buildEngineEstimateDisplayPlan(
+                        state = nextState,
+                        estimate = estimate,
+                        previousSnapshots = scoreSnapshots,
+                        engineMessage = "Local undo completed and engine analysis synced.",
                     )
-                    engineMessage = "Local undo completed and engine analysis synced."
+                    scoreText = score.scoreText
+                    scoreEstimate = score.scoreEstimate
+                    scoreSnapshots = score.scoreSnapshots
+                    engineMessage = score.engineMessage
                 }.onFailure { error ->
                     engineMessage = error.message ?: "Local undo engine sync failed."
                 }

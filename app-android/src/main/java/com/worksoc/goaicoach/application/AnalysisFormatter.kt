@@ -1,6 +1,5 @@
-package com.worksoc.goaicoach.ui
+package com.worksoc.goaicoach.application
 
-import com.worksoc.goaicoach.application.pointLossLabel
 import com.worksoc.goaicoach.shared.AnalysisResult
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.FinalScoreResult
