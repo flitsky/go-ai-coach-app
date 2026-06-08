@@ -35,6 +35,7 @@ import com.worksoc.goaicoach.application.MoveReviewMarker
 import com.worksoc.goaicoach.application.MoveReviewTone
 import com.worksoc.goaicoach.application.topMoveDeltaScoreLabel
 import com.worksoc.goaicoach.application.topMoveDisplayToneFor
+import com.worksoc.goaicoach.presentation.KaTrainUxOptions
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.CandidateMove

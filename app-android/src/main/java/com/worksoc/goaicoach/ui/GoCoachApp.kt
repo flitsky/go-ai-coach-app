@@ -72,6 +72,12 @@ import com.worksoc.goaicoach.match.modeSummary
 import com.worksoc.goaicoach.match.summary
 import com.worksoc.goaicoach.persistence.GameSessionStore
 import com.worksoc.goaicoach.persistence.SavedGameSnapshot
+import com.worksoc.goaicoach.presentation.AnalysisUiState
+import com.worksoc.goaicoach.presentation.EngineUiState
+import com.worksoc.goaicoach.presentation.GameScreenState
+import com.worksoc.goaicoach.presentation.KaTrainUxOptions
+import com.worksoc.goaicoach.presentation.ResumePromptState
+import com.worksoc.goaicoach.presentation.ScoreUiState
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.AnalysisPreset
 import com.worksoc.goaicoach.shared.BoardCoordinate
@@ -1149,12 +1155,48 @@ private fun GoCoachScreen(
         )
     }
 
-    val savedSessionToPrompt = pendingSavedSession
+    val screenState = GameScreenState(
+        gameState = gameState,
+        matchMode = matchMode,
+        playerSetup = playerSetup,
+        playLevel = playLevel,
+        uxOptions = uxOptions,
+        engine = EngineUiState(
+            name = engineName,
+            diagnostic = engineDiagnostic,
+            profile = engineProfile,
+            isReady = isEngineReady,
+            isBusy = isEngineBusy,
+            message = engineMessage,
+        ),
+        analysis = AnalysisUiState(
+            preset = analysisPreset,
+            cacheStats = analysisCache.statsText(),
+            topMovesEnabled = topMovesEnabled,
+            candidateMoves = candidateMoves,
+            candidateText = candidateText,
+            reviewAnalysis = reviewAnalysis,
+            reviewCandidateMoves = reviewCandidateMoves,
+            moveReviews = moveReviews,
+            moveReviewText = moveReviewText,
+            lastMoveText = lastMoveText,
+        ),
+        score = ScoreUiState(
+            text = scoreText,
+            estimate = scoreEstimate,
+            snapshots = scoreSnapshots,
+            isGraphExpanded = isScoreGraphExpanded,
+        ),
+        resumePrompt = pendingSavedSession
+            ?.takeIf { shouldShowResumePrompt && hasCompletedEngineStartup && !isEngineBusy }
+            ?.let(::ResumePromptState),
+        isGameEnded = isGameEnded,
+        endgameLog = endgameLog,
+    )
+
+    val savedSessionToPrompt = screenState.resumePrompt?.snapshot
     if (
-        shouldShowResumePrompt &&
-        savedSessionToPrompt != null &&
-        hasCompletedEngineStartup &&
-        !isEngineBusy
+        savedSessionToPrompt != null
     ) {
         AlertDialog(
             onDismissRequest = {
@@ -1228,7 +1270,7 @@ private fun GoCoachScreen(
                 )
 
                 Text(
-                    text = modeSummary(playerSetup, engineName),
+                    text = modeSummary(screenState.playerSetup, screenState.engine.name),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.secondary,
                 )
@@ -1242,50 +1284,57 @@ private fun GoCoachScreen(
 
         if (isDisplayMenuExpanded) {
             PlayerSetupPanel(
-                playerSetup = playerSetup,
-                engineName = engineName,
-                enabled = !isEngineBusy,
+                playerSetup = screenState.playerSetup,
+                engineName = screenState.engine.name,
+                enabled = !screenState.engine.isBusy,
                 onPlayerSetupChange = ::changePlayerSetup,
             )
 
             GameMenuActionsPanel(
-                mode = matchMode,
-                ruleset = gameState.ruleset,
-                canStartNew = !isEngineBusy && (matchMode == MatchMode.LocalTwoPlayer || isEngineReady),
-                canChangeRuleset = !isEngineBusy,
+                mode = screenState.matchMode,
+                ruleset = screenState.gameState.ruleset,
+                canStartNew = !screenState.engine.isBusy &&
+                    (screenState.matchMode == MatchMode.LocalTwoPlayer || screenState.engine.isReady),
+                canChangeRuleset = !screenState.engine.isBusy,
                 onNewGame = ::startConfiguredGame,
                 onCopyLog = ::copyDebugReport,
                 onRulesetChange = ::changeScoringRule,
             )
 
             KaTrainUxMenuPanel(
-                options = uxOptions,
+                options = screenState.uxOptions,
                 onOptionsChange = { nextOptions -> uxOptions = nextOptions },
             )
 
         }
 
         ScoreGraphPanel(
-            snapshots = scoreSnapshots,
-            capturedByBlack = gameState.capturedBy(StoneColor.Black),
-            capturedByWhite = gameState.capturedBy(StoneColor.White),
-            isExpanded = isScoreGraphExpanded,
+            snapshots = screenState.score.snapshots,
+            capturedByBlack = screenState.gameState.capturedBy(StoneColor.Black),
+            capturedByWhite = screenState.gameState.capturedBy(StoneColor.White),
+            isExpanded = screenState.score.isGraphExpanded,
             onExpandedChange = { expanded -> isScoreGraphExpanded = expanded },
         )
 
         GoBoard(
-            gameState = gameState,
-            candidateMoves = candidateMoves,
-            moveReviews = moveReviews,
-            ownershipEstimate = scoreEstimate?.ownership,
-            uxOptions = uxOptions,
-            inputEnabled = !isGameEnded && boardInputEnabled(playerSetup, isEngineReady, isEngineBusy, gameState.nextPlayer),
-            engineBusy = isEngineBusy,
+            gameState = screenState.gameState,
+            candidateMoves = screenState.analysis.candidateMoves,
+            moveReviews = screenState.analysis.moveReviews,
+            ownershipEstimate = screenState.score.estimate?.ownership,
+            uxOptions = screenState.uxOptions,
+            inputEnabled = !screenState.isGameEnded &&
+                boardInputEnabled(
+                    screenState.playerSetup,
+                    screenState.engine.isReady,
+                    screenState.engine.isBusy,
+                    screenState.nextPlayer,
+                ),
+            engineBusy = screenState.engine.isBusy,
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(1f),
             onCoordinateTap = { coordinate ->
-                submitHumanMove(Move.Play(gameState.nextPlayer, coordinate))
+                submitHumanMove(Move.Play(screenState.nextPlayer, coordinate))
             },
         )
 
@@ -1295,9 +1344,15 @@ private fun GoCoachScreen(
         ) {
             Button(
                 onClick = {
-                    submitHumanMove(Move.Pass(gameState.nextPlayer))
+                    submitHumanMove(Move.Pass(screenState.nextPlayer))
                 },
-                enabled = !isGameEnded && boardInputEnabled(playerSetup, isEngineReady, isEngineBusy, gameState.nextPlayer),
+                enabled = !screenState.isGameEnded &&
+                    boardInputEnabled(
+                        screenState.playerSetup,
+                        screenState.engine.isReady,
+                        screenState.engine.isBusy,
+                        screenState.nextPlayer,
+                    ),
                 modifier = Modifier.weight(1f),
                 contentPadding = ActionButtonContentPadding,
             ) {
@@ -1306,19 +1361,19 @@ private fun GoCoachScreen(
 
             OutlinedButton(
                 onClick = ::undoLastTurn,
-                enabled = !isEngineBusy &&
-                    gameState.moves.isNotEmpty() &&
-                    (isEngineReady || matchMode == MatchMode.LocalTwoPlayer),
+                enabled = !screenState.engine.isBusy &&
+                    screenState.gameState.moves.isNotEmpty() &&
+                    (screenState.engine.isReady || screenState.matchMode == MatchMode.LocalTwoPlayer),
                 modifier = Modifier.weight(1f),
                 contentPadding = ActionButtonContentPadding,
             ) {
                 ActionButtonText("Undo")
             }
 
-            val topMovesButtonEnabled = !isGameEnded &&
-                isEngineReady &&
-                (!isEngineBusy || topMovesEnabled)
-            if (topMovesEnabled) {
+            val topMovesButtonEnabled = !screenState.isGameEnded &&
+                screenState.engine.isReady &&
+                (!screenState.engine.isBusy || screenState.analysis.topMovesEnabled)
+            if (screenState.analysis.topMovesEnabled) {
                 Button(
                     onClick = ::hideTopMoves,
                     enabled = topMovesButtonEnabled,
@@ -1340,7 +1395,8 @@ private fun GoCoachScreen(
 
             OutlinedButton(
                 onClick = ::requestScoreEstimate,
-                enabled = !isEngineBusy && (isEngineReady || matchMode == MatchMode.LocalTwoPlayer),
+                enabled = !screenState.engine.isBusy &&
+                    (screenState.engine.isReady || screenState.matchMode == MatchMode.LocalTwoPlayer),
                 modifier = Modifier.weight(1f),
                 contentPadding = ActionButtonContentPadding,
             ) {
@@ -1349,17 +1405,17 @@ private fun GoCoachScreen(
         }
 
         EngineResponsePanel(
-            nextPlayer = gameState.nextPlayer,
-            moveCount = gameState.moves.size,
-            capturedByBlack = gameState.capturedBy(StoneColor.Black),
-            capturedByWhite = gameState.capturedBy(StoneColor.White),
-            lastMoveText = lastMoveText,
-            isEngineBusy = isEngineBusy,
-            playerSetup = playerSetup,
-            engineMessage = engineMessage,
-            candidateText = candidateText,
-            scoreText = scoreText,
-            moveReviewText = moveReviewText,
+            nextPlayer = screenState.nextPlayer,
+            moveCount = screenState.gameState.moves.size,
+            capturedByBlack = screenState.gameState.capturedBy(StoneColor.Black),
+            capturedByWhite = screenState.gameState.capturedBy(StoneColor.White),
+            lastMoveText = screenState.analysis.lastMoveText,
+            isEngineBusy = screenState.engine.isBusy,
+            playerSetup = screenState.playerSetup,
+            engineMessage = screenState.engine.message,
+            candidateText = screenState.analysis.candidateText,
+            scoreText = screenState.score.text,
+            moveReviewText = screenState.analysis.moveReviewText,
         )
     }
 }

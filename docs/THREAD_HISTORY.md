@@ -528,3 +528,8 @@
 - `GoCoachApp.kt`의 하단 `EngineStartupResult`, `AutoAiTurnResult`, `LocalEngineMoveResult`, `syncToGameState`, `scoreGraphAnalysisLimit`, `localScoreSnapshot` 중복 정의를 제거하고 새 application API를 import해 사용한다.
 - `EngineSessionTest`를 추가해 `newGame -> playMove...` replay 순서, 새 엔진 게임 `configure -> newGame -> estimate` 흐름, local score snapshot move number를 검증했다.
 - 검증으로 `make test`가 통과했다.
+- 리팩토링 Phase 2로 `app-android/presentation/GameScreenState.kt`를 추가했다. `GameScreenState`, `EngineUiState`, `AnalysisUiState`, `ScoreUiState`, `ResumePromptState`, `KaTrainUxOptions`를 정의해 화면 렌더링 계약을 명문화했다.
+- 기존 `ui/KaTrainUxOptions.kt`는 presentation 계층으로 이동했다. `GoBoard`와 `KaTrainUxPanels`는 presentation 옵션 모델을 import해 렌더링만 수행한다.
+- `GoCoachApp.kt`는 렌더링 직전 `screenState`를 구성하고, 보드/그래프/엔진 응답/메뉴 일부를 이 상태 모델에서 읽도록 변경했다. 아직 모든 `remember`를 제거하지는 않았지만 ViewModel/Controller 전환을 위한 상태 계약이 생겼다.
+- `GameScreenStateTest`를 추가해 현재 차례 노출과 UX 옵션 기본값을 검증했다.
+- 검증으로 `make test`가 통과했다.
