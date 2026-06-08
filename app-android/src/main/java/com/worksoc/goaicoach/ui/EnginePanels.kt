@@ -3,6 +3,7 @@ package com.worksoc.goaicoach.ui
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -10,33 +11,39 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.worksoc.goaicoach.match.AiEngineChoice
+import com.worksoc.goaicoach.match.HumanGameType
 import com.worksoc.goaicoach.match.MatchMode
+import com.worksoc.goaicoach.match.PlayerSetup
+import com.worksoc.goaicoach.match.SeatController
+import com.worksoc.goaicoach.match.SidePlayerSetup
 import com.worksoc.goaicoach.match.turnStatus
-import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.PlayLevelGroup
-import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.StoneColor
 
 @Composable
-internal fun ModePanel(
-    mode: MatchMode,
+internal fun PlayerSetupPanel(
+    playerSetup: PlayerSetup,
     engineName: String,
-    engineDiagnostic: String,
-    canStartAi: Boolean,
-    canStartLocal: Boolean,
-    onAiMode: () -> Unit,
-    onLocalTwoPlayerMode: () -> Unit,
+    enabled: Boolean,
+    onPlayerSetupChange: (PlayerSetup) -> Unit,
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -46,43 +53,182 @@ internal fun ModePanel(
     ) {
         Column(
             modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Text("Mode", fontWeight = FontWeight.SemiBold)
+            Text("Player Setup", fontWeight = FontWeight.SemiBold)
+            PlayerSetupSideRow(
+                color = StoneColor.Black,
+                side = playerSetup.black,
+                engineName = engineName,
+                enabled = enabled,
+                onSideChange = { side -> onPlayerSetupChange(playerSetup.updateSide(StoneColor.Black, side)) },
+            )
+            PlayerSetupSideRow(
+                color = StoneColor.White,
+                side = playerSetup.white,
+                engineName = engineName,
+                enabled = enabled,
+                onSideChange = { side -> onPlayerSetupChange(playerSetup.updateSide(StoneColor.White, side)) },
+            )
+            Text(
+                text = playerSetup.summary(engineName),
+                color = MaterialTheme.colorScheme.secondary,
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+    }
+}
+
+@Composable
+private fun PlayerSetupSideRow(
+    color: StoneColor,
+    side: SidePlayerSetup,
+    engineName: String,
+    enabled: Boolean,
+    onSideChange: (SidePlayerSetup) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = if (color == StoneColor.Black) "흑" else "백",
+                modifier = Modifier.weight(0.38f),
+                fontWeight = FontWeight.SemiBold,
+            )
+            SetupDropdown(
+                selectedText = side.controller.label,
+                enabled = enabled,
+                modifier = Modifier.weight(1f),
+                options = SeatController.entries,
+                optionLabel = { it.label },
+                onSelected = { controller ->
+                    onSideChange(side.copy(controller = controller))
+                },
+            )
+            when (side.controller) {
+                SeatController.Human -> {
+                    SetupDropdown(
+                        selectedText = side.humanGameType.label,
+                        enabled = enabled,
+                        modifier = Modifier.weight(1.08f),
+                        options = HumanGameType.entries,
+                        optionLabel = { it.label },
+                        onSelected = { gameType ->
+                            onSideChange(side.copy(humanGameType = gameType))
+                        },
+                    )
+                    SetupStaticBox(
+                        text = "-",
+                        modifier = Modifier.weight(0.8f),
+                    )
+                }
+
+                SeatController.Ai -> {
+                    SetupDropdown(
+                        selectedText = side.playLevel.group.label,
+                        enabled = enabled,
+                        modifier = Modifier.weight(1.08f),
+                        options = PlayLevelGroup.entries,
+                        optionLabel = { it.label },
+                        onSelected = { group ->
+                            onSideChange(side.copy(playLevel = side.playLevel.withGroup(group)))
+                        },
+                    )
+                    SetupDropdown(
+                        selectedText = "${side.playLevel.safeLevel}단계",
+                        enabled = enabled,
+                        modifier = Modifier.weight(0.8f),
+                        options = (1..side.playLevel.group.maxLevel).toList(),
+                        optionLabel = { "${it}단계" },
+                        onSelected = { level ->
+                            onSideChange(side.copy(playLevel = side.playLevel.withLevel(level)))
+                        },
+                    )
+                }
+            }
+        }
+        if (side.controller == SeatController.Ai) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Button(
-                    onClick = onAiMode,
-                    enabled = mode != MatchMode.HumanVsAi && canStartAi,
+                Text(
+                    text = "엔진",
+                    modifier = Modifier.weight(0.38f),
+                    color = MaterialTheme.colorScheme.secondary,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                SetupDropdown(
+                    selectedText = side.aiEngine.label.ifBlank { engineName },
+                    enabled = enabled,
                     modifier = Modifier.weight(1f),
-                ) {
-                    Text("AI")
-                }
-                OutlinedButton(
-                    onClick = onLocalTwoPlayerMode,
-                    enabled = mode != MatchMode.LocalTwoPlayer && canStartLocal,
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Text("2P")
-                }
+                    options = AiEngineChoice.entries,
+                    optionLabel = { it.label },
+                    onSelected = { engineChoice ->
+                        onSideChange(side.copy(aiEngine = engineChoice))
+                    },
+                )
+                Text(
+                    text = "${side.playLevel.group.difficulty.label} / ${side.playLevel.group.visits} visits",
+                    modifier = Modifier.weight(1.88f),
+                    color = MaterialTheme.colorScheme.secondary,
+                    style = MaterialTheme.typography.bodySmall,
+                )
             }
-            Text(
-                text = when (mode) {
-                    MatchMode.HumanVsAi -> "Black: human / White: $engineName"
-                    MatchMode.LocalTwoPlayer -> "Black and White are both local players"
-                },
-                color = MaterialTheme.colorScheme.secondary,
-                style = MaterialTheme.typography.bodySmall,
-            )
-            Text(
-                text = engineDiagnostic,
-                color = MaterialTheme.colorScheme.secondary,
-                style = MaterialTheme.typography.bodySmall,
-                fontFamily = FontFamily.Monospace,
-            )
         }
+    }
+}
+
+@Composable
+private fun <T> SetupDropdown(
+    selectedText: String,
+    enabled: Boolean,
+    modifier: Modifier,
+    options: List<T>,
+    optionLabel: (T) -> String,
+    onSelected: (T) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    Box(modifier = modifier) {
+        OutlinedButton(
+            onClick = { expanded = true },
+            enabled = enabled,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(selectedText, maxLines = 1)
+        }
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+        ) {
+            options.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(optionLabel(option)) },
+                    onClick = {
+                        expanded = false
+                        onSelected(option)
+                    },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SetupStaticBox(
+    text: String,
+    modifier: Modifier,
+) {
+    OutlinedButton(
+        onClick = {},
+        enabled = false,
+        modifier = modifier,
+    ) {
+        Text(text, maxLines = 1)
     }
 }
 
@@ -180,126 +326,6 @@ internal fun GameMenuActionsPanel(
 }
 
 @Composable
-internal fun EngineTuningPanel(
-    profile: EngineProfile,
-    playLevel: PlayLevelSetting,
-    enabled: Boolean,
-    onPlayLevelChange: (PlayLevelSetting) -> Unit,
-) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
-        tonalElevation = 1.dp,
-        shadowElevation = 0.dp,
-    ) {
-        Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text("Engine", fontWeight = FontWeight.SemiBold)
-                Text(
-                    text = "${profile.analysisLimit.visits} visits / ${profile.analysisLimit.timeMillis ?: 0}ms",
-                    color = MaterialTheme.colorScheme.secondary,
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                PlayLevelGroup.entries.take(2).forEach { group ->
-                    PlayLevelGroupButton(
-                        group = group,
-                        selected = playLevel.group == group,
-                        enabled = enabled,
-                        modifier = Modifier.weight(1f),
-                        onClick = { onPlayLevelChange(playLevel.withGroup(group)) },
-                    )
-                }
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                PlayLevelGroup.entries.drop(2).forEach { group ->
-                    PlayLevelGroupButton(
-                        group = group,
-                        selected = playLevel.group == group,
-                        enabled = enabled,
-                        modifier = Modifier.weight(1f),
-                        onClick = { onPlayLevelChange(playLevel.withGroup(group)) },
-                    )
-                }
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                OutlinedButton(
-                    onClick = { onPlayLevelChange(playLevel.withLevel(playLevel.safeLevel - 1)) },
-                    enabled = enabled && playLevel.safeLevel > 1,
-                    modifier = Modifier.weight(0.7f),
-                ) {
-                    Text("-")
-                }
-                Text(
-                    text = "${playLevel.group.label} ${playLevel.safeLevel}단계 / ${playLevel.group.maxLevel}",
-                    modifier = Modifier.weight(2.5f),
-                    fontWeight = FontWeight.SemiBold,
-                )
-                OutlinedButton(
-                    onClick = { onPlayLevelChange(playLevel.withLevel(playLevel.safeLevel + 1)) },
-                    enabled = enabled && playLevel.safeLevel < playLevel.group.maxLevel,
-                    modifier = Modifier.weight(0.7f),
-                ) {
-                    Text("+")
-                }
-            }
-            Text(
-                text = "${profile.difficulty.label} ${profile.analysisLimit.visits} / ${profile.analysisLimit.timeMillis ?: 0}ms, ${playLevel.selectionPolicy.description}",
-                color = MaterialTheme.colorScheme.secondary,
-                style = MaterialTheme.typography.bodySmall,
-            )
-        }
-    }
-}
-
-@Composable
-private fun PlayLevelGroupButton(
-    group: PlayLevelGroup,
-    selected: Boolean,
-    enabled: Boolean,
-    modifier: Modifier,
-    onClick: () -> Unit,
-) {
-    if (selected) {
-        Button(
-            onClick = onClick,
-            enabled = enabled,
-            modifier = modifier,
-        ) {
-            Text(group.label)
-        }
-    } else {
-        OutlinedButton(
-            onClick = onClick,
-            enabled = enabled,
-            modifier = modifier,
-        ) {
-            Text(group.label)
-        }
-    }
-}
-
-@Composable
 internal fun EngineResponsePanel(
     nextPlayer: StoneColor,
     moveCount: Int,
@@ -307,7 +333,7 @@ internal fun EngineResponsePanel(
     capturedByWhite: Int,
     lastMoveText: String,
     isEngineBusy: Boolean,
-    mode: MatchMode,
+    playerSetup: PlayerSetup,
     engineMessage: String,
     candidateText: String,
     scoreText: String,
@@ -330,7 +356,7 @@ internal fun EngineResponsePanel(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(turnStatus(nextPlayer, isEngineBusy, mode), fontWeight = FontWeight.SemiBold)
+                Text(turnStatus(nextPlayer, isEngineBusy, playerSetup), fontWeight = FontWeight.SemiBold)
                 Text("Moves: $moveCount", color = MaterialTheme.colorScheme.secondary)
             }
 

@@ -41,11 +41,14 @@ KaTrain의 UX 중 Go AI Coach에 가져올 만한 항목을 효과와 구현 난
 - 옵션 기반 ownership heatmap overlay
 - 옵션 기반 score graph panel
 - `Copy Log` 실행 시 clipboard toast 표시
+- KaTrain식 `Player Setup` 메뉴: 흑/백 각각을 `플레이어` 또는 `AI`로 지정하고, AI 진영별 플레이 그룹/단계를 별도 설정
+- 흑 AI/백 플레이어, 흑 AI/백 AI 자동 대국 흐름
 
 ## 1순위: 간단하면서 임팩트 큰 항목
 
 | 항목 | 가져올 UX | 현재 앱 대비 구현 범위 | 기대 효과 | 난이도 |
 | --- | --- | --- | --- | --- |
+| Player Setup | KaTrain처럼 흑/백 역할을 따로 지정 | `Mode` 버튼을 제거하고 흑/백별 Player/AI 드롭다운과 AI 레벨 드롭다운 추가 | 사용자가 선후공, 2P, AI-vs-AI, 진영별 난이도를 한 구조에서 이해 가능 | 완료 |
 | 보드 좌표 표시 토글 | KaTrain의 좌표/수순 표시 토글처럼 A-J, 1-9 좌표를 켜고 끄기 | `GoBoard` Canvas에 좌표 label 옵션 추가 | 사용자가 로그와 화면을 대조하기 쉬움. 현재 디버그 리포트의 `A1` 좌표와 실제 화면 연결성이 좋아짐 | 낮음 |
 | 마지막 수/수순 번호 표시 토글 | 마지막 수 강조와 move number 표시 | 현재 착수 평가 dot과 충돌하지 않도록 작은 수순 번호 또는 마지막 수 ring 추가 | 실기기 테스트 중 “방금 어디에 뒀는지” 확인이 쉬워짐 | 낮음 |
 | 후보수 디버그 텍스트 | 보드 spot과 별도로 후보수 목록을 `좌표 / 손실 / visits / prior`로 출력 | 하단 engine response/debug 영역과 `Copy Log`에 `candidateText`로 출력 | 보드 중심 화면을 유지하면서 필요 시 숫자 정보를 확인 가능 | 완료 |

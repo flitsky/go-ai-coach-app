@@ -472,3 +472,13 @@
 - `adb devices -l`에서 폰 `R5CT22WTVXP` (`SM_S908N`)가 `device` 상태로 확인되었다.
 - `ANDROID_SERIAL=R5CT22WTVXP make reinstall-dev-engine`를 실행해 debug APK 재설치, KataGo model/config/analysis config seed, 앱 cold launch를 완료했다.
 - 전체 명령은 약 13초가 걸렸고, 앱 cold launch `TotalTime=668ms`가 기록되었다.
+- 사용자가 메뉴의 기존 모드 버튼이 어색하다고 보고하고, KaTrain처럼 `Player Setup` 구조로 바꿔달라고 요청했다.
+- `MatchPolicy`에 `PlayerSetup`, `SidePlayerSetup`, `SeatController`, `HumanGameType`, `AiEngineChoice`를 추가했다. 흑/백 각각을 `플레이어` 또는 `AI`로 지정하고, AI 진영별 플레이 그룹/단계를 따로 유지한다.
+- 기존 `Mode` 버튼과 전역 `Engine` 레벨 패널을 메뉴에서 제거하고, `Player Setup` 패널 하나로 통합했다. 기본 구성은 `흑: 플레이어 일반`, `백: AI 빠른 초급 1단계`이다.
+- 흑을 AI, 백을 플레이어로 설정하면 AI 선공 대국이 가능하고, 흑/백 모두 AI로 설정하면 자동 대국이 진행되도록 `requestAiTurnForCurrentState()` 자동 턴 루프를 추가했다.
+- 사람 착수 처리는 “현재 차례가 사람인 경우 한 수만 둔다”로 정리했고, AI 응수는 새 자동 턴 루프에서만 수행하도록 오래된 HumanVsAi 전용 분기를 제거했다.
+- 무르기는 사람 1명 대 AI이면 기존처럼 2수 단위, 양쪽 모두 사람 또는 양쪽 모두 AI이면 1수 단위로 동작하게 조정했다.
+- `Copy Log` debug report에 `playerSetup`, `blackSeat`, `whiteSeat`를 추가해 로그만으로 흑/백 역할과 AI 레벨을 확인할 수 있게 했다.
+- `MatchPolicyTest`에 Player Setup 모드 판정, 사람 차례 입력 허용, 요청된 AI 색상 후보 선택 테스트를 추가했다.
+- `USER_OPTION_MANUAL.md`와 `KATRAIN_UX_BACKLOG.md`를 Player Setup 구조 기준으로 갱신했다.
+- 검증으로 `make test`가 통과했다.

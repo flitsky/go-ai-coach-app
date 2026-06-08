@@ -26,6 +26,93 @@ import org.junit.Test
 
 class MatchPolicyTest {
     @Test
+    fun playerSetupDerivesAllMatchModes() {
+        assertEquals(MatchMode.HumanVsAi, PlayerSetup().matchMode())
+        assertEquals(
+            MatchMode.AiVsHuman,
+            PlayerSetup(
+                black = SidePlayerSetup(controller = SeatController.Ai),
+                white = SidePlayerSetup(controller = SeatController.Human),
+            ).matchMode(),
+        )
+        assertEquals(
+            MatchMode.AiVsAi,
+            PlayerSetup(
+                black = SidePlayerSetup(controller = SeatController.Ai),
+                white = SidePlayerSetup(controller = SeatController.Ai),
+            ).matchMode(),
+        )
+        assertEquals(
+            MatchMode.LocalTwoPlayer,
+            PlayerSetup(
+                black = SidePlayerSetup(controller = SeatController.Human),
+                white = SidePlayerSetup(controller = SeatController.Human),
+            ).matchMode(),
+        )
+    }
+
+    @Test
+    fun boardInputIsEnabledOnlyForCurrentHumanSeat() {
+        val setup = PlayerSetup(
+            black = SidePlayerSetup(controller = SeatController.Ai),
+            white = SidePlayerSetup(controller = SeatController.Human),
+        )
+
+        assertFalse(
+            boardInputEnabled(
+                playerSetup = setup,
+                isEngineReady = true,
+                isEngineBusy = false,
+                nextPlayer = StoneColor.Black,
+            ),
+        )
+        assertTrue(
+            boardInputEnabled(
+                playerSetup = setup,
+                isEngineReady = true,
+                isEngineBusy = false,
+                nextPlayer = StoneColor.White,
+            ),
+        )
+        assertFalse(
+            boardInputEnabled(
+                playerSetup = setup,
+                isEngineReady = true,
+                isEngineBusy = true,
+                nextPlayer = StoneColor.White,
+            ),
+        )
+    }
+
+    @Test
+    fun applyAiTurnSelectsCandidateForRequestedAiColor() = runBlocking {
+        val blackMove = Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine))
+        val adapter = FakeEngineAdapter(
+            analysisCandidates = listOf(
+                CandidateMove(
+                    move = Move.Play(StoneColor.White, BoardCoordinate.fromLabel("D4", BoardSize.Nine)),
+                    pointLoss = 0.0,
+                ),
+                CandidateMove(
+                    move = blackMove,
+                    pointLoss = 0.2,
+                ),
+            ),
+        )
+
+        val outcome = applyAiTurn(
+            engineAdapter = adapter,
+            currentState = GameState.empty(),
+            aiPlayer = StoneColor.Black,
+            playLevel = PlayLevelSetting(PlayLevelGroup.FastBeginner, level = 3),
+        )
+
+        assertEquals(blackMove, outcome.gameState.moves.last())
+        assertEquals(blackMove, adapter.playedMoves.last())
+        assertFalse(adapter.genMoveCalled)
+    }
+
+    @Test
     fun passBestCandidateOverridesLowLevelRandomPlaySelection() = runBlocking {
         val humanMove = Move.Play(StoneColor.Black, BoardCoordinate(row = 4, column = 4))
         val stateAfterHuman = GameState.empty().play(humanMove)
