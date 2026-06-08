@@ -256,10 +256,59 @@ Next: Black
 4. 실제 AI 착수는 visits 증가와 별개로 `MoveSelectionPolicy`가 선택해야 한다.
 5. Android 실기기에서 같은 benchmark를 실행해 latency 기준을 재검증한다.
 
+## 레벨링 적용안
+
+benchmark 결과를 반영하면 초급 레벨링은 색상 bucket 비율보다 상대 순위 기반 선택이 더 단순하다.
+
+정렬 기준:
+
+- scored 후보를 `pointLoss` 오름차순으로 정렬한다.
+- `0%`는 최상위 후보, `100%`는 최하위 scored 후보로 본다.
+- 각 레벨은 정해진 percentile window 안에서 균등 랜덤으로 착수한다.
+
+### Fast Beginner
+
+| 레벨 | Budget | 선택 정책 |
+| --- | --- | --- |
+| FB 1 | B16 | 하위 50% 후보 중 랜덤 |
+| FB 2 | B16 | 상위 50% 후보 중 랜덤 |
+| FB 3 | B16 | 최적수 |
+
+해석:
+
+- B16은 후보 수가 적으므로 3단계면 충분하다.
+- 빠른 대국과 느린 폰 fallback에 적합하다.
+- FB 3은 B16 best라서 강한 중급은 아니지만, Fast 계열의 상한으로는 명확하다.
+
+### Learning Beginner
+
+| 레벨 | Budget | 선택 정책 | Percentile window |
+| --- | --- | --- | ---: |
+| LB 1 | B32 | 최하위 30% 후보 중 랜덤 | 70~100% |
+| LB 2 | B32 | 하위 50% 후보 중 랜덤 | 50~100% |
+| LB 3 | B32 | 중위 40~70% 후보 중 랜덤 | 40~70% |
+| LB 4 | B32 | 상위 30~60% 후보 중 랜덤 | 30~60% |
+| LB 5 | B32 | 상위 10~50% 후보 중 랜덤 | 10~50% |
+| LB 6 | B32 | 상위 30% 후보 중 랜덤 | 0~30% |
+| LB 7 | B32 | 최적수 | 0% |
+
+해석:
+
+- B32는 benchmark에서 B16보다 후보 수와 bucket 다양성이 뚜렷하게 좋아졌다.
+- B64보다 latency 부담이 낮으므로 학습형 초급 기본값으로 적절하다.
+- 랜덤 선택은 같은 레벨에서도 매판 다른 체감 난이도를 만든다.
+- 단, 사용자가 보는 평가 색상은 상대 순위가 아니라 절대 `pointLoss` 기준으로 유지한다.
+
+fallback:
+
+- scored 후보가 부족하면 window를 가장 가까운 후보까지 확장한다.
+- Learning 계열에서 scored 후보가 3개 미만이면 `64 / 500ms` 보강 분석을 검토한다.
+- pass는 종국 또는 엔진 최상위 pass가 아닌 경우 선택 후보에서 제외한다.
+
 ## 다음 액션
 
 1. shared/domain에 `MoveQualityBucket`을 추가한다.
-2. `Beginner 32`를 별도 `Learning Beginner` profile 또는 `PlayLevel` 조합으로 설계한다.
-3. AI 착수용 `MoveSelectionPolicy`를 구현해 `Best/Good/Yellow/Orange/Red`와 상대 bucket을 함께 사용한다.
+2. shared/domain에 `MoveRelativeBucket` 또는 percentile window 모델을 추가한다.
+3. `Fast Beginner` 3단계와 `Learning Beginner` 7단계를 `PlayLevel`로 정의한다.
 4. 실기기에서 `16/32/64` benchmark를 재측정한다.
 5. 실기기 결과까지 반영한 뒤 제품 기본값을 확정한다.

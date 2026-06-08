@@ -396,3 +396,7 @@
 - MacBook Metal 환경의 KataGo v1.16.4 JSON analysis로 빈 9x9, 초반 8수, 중반 20수 국면을 측정했다. 각 조합은 새 analysis process에서 더미 warm-up 1회 후 실제 query 1회를 측정했다.
 - `docs/ENGINE_BEGINNER_VISITS_BENCHMARK.md`를 추가했다. 결과상 `B16`은 빠르지만 후보가 2~5개 수준으로 부족하고, `B32`부터 Good/Yellow/Orange/Red bucket이 확보되기 시작하며, `B64`는 후보가 조금 더 늘지만 latency가 500ms 부근으로 올라간다.
 - 1차 결론은 `Fast Beginner = 16/250ms` 유지, `Learning Beginner = 32/350ms` 기본 후보, `64/500ms`는 후보 보강/Top Moves/복기용으로 우선 사용하는 방향이다. 실기기 latency 재측정 전까지 `64`를 초급 기본 응수로 바로 올리는 것은 보류한다.
+- 사용자가 초급 레벨링을 더 간결하게 `Fast Beginner 3단계`, `Learning Beginner 7단계`로 나누고, 각 단계가 탐색 후보의 상대 순위 구간에서 랜덤 착수하는 안을 제안했다.
+- 검토 결과, 이 안은 yellow/orange/red 후보가 부족한 국면에서도 동작하고 구현이 단순하므로 1차 구현안으로 적절하다고 판단했다. 단, 사용자 피드백 색상은 절대 `pointLoss` 기준을 유지하고, 상대 순위는 AI 내부 선택 정책으로만 사용해야 한다.
+- `ENGINE_LEVELING_DISCUSSION.md`의 기존 초급 색상 bucket 비율안을 상대 순위 기반 간결화안으로 대체했다. `FB 1~3`은 B16, `LB 1~7`은 B32 percentile window 기반으로 정리했다.
+- `ENGINE_BEGINNER_VISITS_BENCHMARK.md`에도 benchmark 결론과 연결되는 Fast/Learning Beginner 단계표, fallback 규칙, 다음 액션을 추가했다.
