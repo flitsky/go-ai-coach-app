@@ -22,9 +22,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.turnStatus
-import com.worksoc.goaicoach.shared.AnalysisPreset
-import com.worksoc.goaicoach.shared.DifficultyProfile
 import com.worksoc.goaicoach.shared.EngineProfile
+import com.worksoc.goaicoach.shared.PlayLevelGroup
+import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.StoneColor
 
@@ -182,11 +182,9 @@ internal fun GameMenuActionsPanel(
 @Composable
 internal fun EngineTuningPanel(
     profile: EngineProfile,
-    analysisPreset: AnalysisPreset,
+    playLevel: PlayLevelSetting,
     enabled: Boolean,
-    onDifficultyChange: (DifficultyProfile) -> Unit,
-    onVisitsChange: (Int) -> Unit,
-    onAnalysisPresetChange: (AnalysisPreset) -> Unit,
+    onPlayLevelChange: (PlayLevelSetting) -> Unit,
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -205,7 +203,7 @@ internal fun EngineTuningPanel(
             ) {
                 Text("Engine", fontWeight = FontWeight.SemiBold)
                 Text(
-                    text = "time ${profile.analysisLimit.timeMillis ?: 0}ms",
+                    text = "${profile.analysisLimit.visits} visits / ${profile.analysisLimit.timeMillis ?: 0}ms",
                     color = MaterialTheme.colorScheme.secondary,
                     style = MaterialTheme.typography.bodySmall,
                 )
@@ -214,26 +212,29 @@ internal fun EngineTuningPanel(
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
             ) {
-                OutlinedButton(
-                    onClick = { onDifficultyChange(profile.difficulty.previous()) },
-                    enabled = enabled && profile.difficulty != DifficultyProfile.entries.first(),
-                    modifier = Modifier.weight(0.7f),
-                ) {
-                    Text("-")
+                PlayLevelGroup.entries.take(2).forEach { group ->
+                    PlayLevelGroupButton(
+                        group = group,
+                        selected = playLevel.group == group,
+                        enabled = enabled,
+                        modifier = Modifier.weight(1f),
+                        onClick = { onPlayLevelChange(playLevel.withGroup(group)) },
+                    )
                 }
-                Text(
-                    text = profile.difficulty.label,
-                    modifier = Modifier.weight(2f),
-                    fontWeight = FontWeight.SemiBold,
-                )
-                OutlinedButton(
-                    onClick = { onDifficultyChange(profile.difficulty.next()) },
-                    enabled = enabled && profile.difficulty != DifficultyProfile.entries.last(),
-                    modifier = Modifier.weight(0.7f),
-                ) {
-                    Text("+")
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                PlayLevelGroup.entries.drop(2).forEach { group ->
+                    PlayLevelGroupButton(
+                        group = group,
+                        selected = playLevel.group == group,
+                        enabled = enabled,
+                        modifier = Modifier.weight(1f),
+                        onClick = { onPlayLevelChange(playLevel.withGroup(group)) },
+                    )
                 }
             }
 
@@ -243,56 +244,57 @@ internal fun EngineTuningPanel(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 OutlinedButton(
-                    onClick = { onVisitsChange(previousVisits(profile.analysisLimit.visits)) },
-                    enabled = enabled && profile.analysisLimit.visits > VisitOptions.first(),
+                    onClick = { onPlayLevelChange(playLevel.withLevel(playLevel.safeLevel - 1)) },
+                    enabled = enabled && playLevel.safeLevel > 1,
                     modifier = Modifier.weight(0.7f),
                 ) {
                     Text("-")
                 }
                 Text(
-                    text = "Visits ${profile.analysisLimit.visits}",
-                    modifier = Modifier.weight(2f),
+                    text = "${playLevel.group.label} ${playLevel.safeLevel}단계 / ${playLevel.group.maxLevel}",
+                    modifier = Modifier.weight(2.5f),
                     fontWeight = FontWeight.SemiBold,
                 )
                 OutlinedButton(
-                    onClick = { onVisitsChange(nextVisits(profile.analysisLimit.visits)) },
-                    enabled = enabled && profile.analysisLimit.visits < VisitOptions.last(),
+                    onClick = { onPlayLevelChange(playLevel.withLevel(playLevel.safeLevel + 1)) },
+                    enabled = enabled && playLevel.safeLevel < playLevel.group.maxLevel,
                     modifier = Modifier.weight(0.7f),
                 ) {
                     Text("+")
-                }
-            }
-
-            Text("Analysis", fontWeight = FontWeight.SemiBold)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                AnalysisPreset.entries.forEach { preset ->
-                    if (preset == analysisPreset) {
-                        Button(
-                            onClick = { onAnalysisPresetChange(preset) },
-                            enabled = enabled,
-                            modifier = Modifier.weight(1f),
-                        ) {
-                            Text(preset.label)
-                        }
-                    } else {
-                        OutlinedButton(
-                            onClick = { onAnalysisPresetChange(preset) },
-                            enabled = enabled,
-                            modifier = Modifier.weight(1f),
-                        ) {
-                            Text(preset.label)
-                        }
-                    }
                 }
             }
             Text(
-                text = analysisPreset.description,
+                text = "${profile.difficulty.label} ${profile.analysisLimit.visits} / ${profile.analysisLimit.timeMillis ?: 0}ms, ${playLevel.selectionPolicy.description}",
                 color = MaterialTheme.colorScheme.secondary,
                 style = MaterialTheme.typography.bodySmall,
             )
+        }
+    }
+}
+
+@Composable
+private fun PlayLevelGroupButton(
+    group: PlayLevelGroup,
+    selected: Boolean,
+    enabled: Boolean,
+    modifier: Modifier,
+    onClick: () -> Unit,
+) {
+    if (selected) {
+        Button(
+            onClick = onClick,
+            enabled = enabled,
+            modifier = modifier,
+        ) {
+            Text(group.label)
+        }
+    } else {
+        OutlinedButton(
+            onClick = onClick,
+            enabled = enabled,
+            modifier = modifier,
+        ) {
+            Text(group.label)
         }
     }
 }
@@ -388,10 +390,3 @@ internal fun EngineResponsePanel(
 }
 
 private val AnalysisLogMaxHeight = 180.dp
-private val VisitOptions = listOf(16, 64, 160, 400, 1_000)
-
-private fun previousVisits(current: Int): Int =
-    VisitOptions.lastOrNull { it < current } ?: VisitOptions.first()
-
-private fun nextVisits(current: Int): Int =
-    VisitOptions.firstOrNull { it > current } ?: VisitOptions.last()

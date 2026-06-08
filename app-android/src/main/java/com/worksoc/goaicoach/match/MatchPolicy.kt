@@ -1,10 +1,13 @@
 package com.worksoc.goaicoach.match
 
+import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.EngineAdapter
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
+import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.StoneColor
 import com.worksoc.goaicoach.shared.describe
+import kotlin.random.Random
 
 internal val HumanPlayer = StoneColor.Black
 internal val AiPlayer = StoneColor.White
@@ -25,6 +28,7 @@ internal suspend fun applyAiResponseAfterHumanTurn(
     engineAdapter: EngineAdapter,
     stateAfterHuman: GameState,
     humanMove: Move,
+    playLevel: PlayLevelSetting,
     onHumanMoveAccepted: suspend () -> Unit = {},
 ): TurnOutcome {
     val humanStatus = engineAdapter.playMove(humanMove)
@@ -38,6 +42,21 @@ internal suspend fun applyAiResponseAfterHumanTurn(
             candidateText = "Game ended after $humanText.",
             lastMoveText = humanText,
         )
+    }
+
+    val selectedAiMove = engineAdapter.selectAiMoveFromAnalysis(stateAfterHuman, playLevel)
+    if (selectedAiMove != null) {
+        val afterAi = runCatching { stateAfterHuman.play(selectedAiMove.move) }.getOrNull()
+        if (afterAi != null) {
+            val syncStatus = engineAdapter.playMove(selectedAiMove.move)
+            val aiText = selectedAiMove.move.describe(stateAfterHuman.boardSize)
+            return TurnOutcome(
+                gameState = afterAi,
+                engineMessage = "${humanStatus.message}\n${syncStatus.message}\nAI selected $aiText from ${playLevel.displayLabel}.",
+                candidateText = selectedAiMove.summary,
+                lastMoveText = aiText,
+            )
+        }
     }
 
     val aiResult = engineAdapter.genMove(AiPlayer)
@@ -91,3 +110,53 @@ internal fun modeSummary(
         MatchMode.HumanVsAi -> "9x9 match: human Black vs $engineName White"
         MatchMode.LocalTwoPlayer -> "9x9 local two-player rules test"
     }
+
+private data class SelectedAiMove(
+    val move: Move,
+    val summary: String,
+)
+
+private suspend fun EngineAdapter.selectAiMoveFromAnalysis(
+    stateAfterHuman: GameState,
+    playLevel: PlayLevelSetting,
+): SelectedAiMove? =
+    runCatching {
+        val analysis = analyze(playLevel.group.defaultAnalysisLimit())
+        val scoredPlayCandidates = analysis.candidates
+            .filter { candidate ->
+                val move = candidate.move
+                move is Move.Play && move.player == AiPlayer && candidate.pointLoss != null
+            }
+            .sortedBy { it.pointLoss ?: Double.MAX_VALUE }
+        val range = playLevel.selectionPolicy.candidateIndexRange(scoredPlayCandidates.size)
+            ?: return@runCatching null
+        val pool = scoredPlayCandidates.slice(range)
+        if (pool.isEmpty()) {
+            return@runCatching null
+        }
+
+        val selected = pool[Random.nextInt(pool.size)]
+        val selectedRank = scoredPlayCandidates.indexOf(selected) + 1
+        SelectedAiMove(
+            move = selected.move,
+            summary = buildString {
+                appendLine("AI level: ${playLevel.displayLabel}, ${playLevel.selectionPolicy.description}.")
+                appendLine("AI selected rank $selectedRank/${scoredPlayCandidates.size}: ${selected.describeForSelection(stateAfterHuman)}.")
+                appendLine(analysis.summary)
+            }.trim(),
+        )
+    }.getOrNull()
+
+private fun CandidateMove.describeForSelection(stateAfterHuman: GameState): String =
+    buildString {
+        append(move.describe(stateAfterHuman.boardSize))
+        pointLoss?.let { append(" loss=${it.formatOneDecimal()}") }
+        winRate?.let { append(" winRate=${(it * 100).toInt()}%") }
+        scoreLead?.let { append(" scoreLead=${it.formatOneDecimal()}") }
+        visits?.let { append(" visits=$it") }
+    }
+
+private fun Double.formatOneDecimal(): String =
+    (kotlin.math.round(this * 10.0) / 10.0)
+        .let { if (kotlin.math.abs(it) < 0.05) 0.0 else it }
+        .toString()

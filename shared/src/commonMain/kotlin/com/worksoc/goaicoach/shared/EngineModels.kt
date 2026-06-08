@@ -119,6 +119,17 @@ enum class AnalysisPreset(
         minTimeMillis = null,
         allowManualDeepFallback = false,
     ),
+    Learning(
+        label = "Learning",
+        description = "Beginner candidate coverage with low latency",
+        candidateCap = 16,
+        promoteTopMovesDifficulty = false,
+        includePolicy = true,
+        refinePolicyMoves = 0,
+        minVisitsPerCandidate = 0,
+        minTimeMillis = null,
+        allowManualDeepFallback = false,
+    ),
     Balanced(
         label = "Balanced",
         description = "Moderate hints with limited policy refinement",

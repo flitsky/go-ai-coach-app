@@ -307,8 +307,16 @@ fallback:
 
 ## 다음 액션
 
-1. shared/domain에 `MoveQualityBucket`을 추가한다.
-2. shared/domain에 `MoveRelativeBucket` 또는 percentile window 모델을 추가한다.
-3. `Fast Beginner` 3단계와 `Learning Beginner` 7단계를 `PlayLevel`로 정의한다.
-4. 실기기에서 `16/32/64` benchmark를 재측정한다.
-5. 실기기 결과까지 반영한 뒤 제품 기본값을 확정한다.
+완료:
+
+1. shared/domain에 percentile window 기반 `MoveSelectionPolicy`를 추가했다.
+2. `Fast Beginner` 3단계와 `Learning Beginner` 7단계를 포함하는 `PlayLevelSetting`을 정의했다.
+3. 사용자 메뉴에서는 raw `Lite/Balanced/Deep` 버튼을 제거하고 `빠른 초급`, `초급`, `중급`, `고급` 그룹과 단계 조정 UX로 변경했다.
+4. AI 대국 응수는 현재 `PlayLevelSetting`의 분석 예산으로 scored 후보를 받은 뒤, 단계별 상대 순위 구간에서 랜덤 선택하도록 연결했다.
+
+남은 작업:
+
+1. shared/domain에 `MoveQualityBucket`을 추가해 사용자 표시 색상과 평가 문구를 더 명시적으로 관리한다.
+2. 실제 Android 폰에서 `16/32/64` benchmark를 재측정한다.
+3. 실기기 결과까지 반영한 뒤 제품 기본값과 자동 fallback 기준을 확정한다.
+4. 후보가 너무 적을 때 `64 / 500ms` 보강 분석을 자동 수행할지 결정한다.

@@ -64,6 +64,7 @@ import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.LegalMoveGenerator
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
+import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.ScoreSnapshot
@@ -127,10 +128,12 @@ private fun GoCoachScreen(
     var lastMoveText by remember { mutableStateOf("None") }
     var isEngineBusy by remember { mutableStateOf(false) }
     var isEngineReady by remember { mutableStateOf(false) }
-    var engineProfile by remember { mutableStateOf(EngineProfile()) }
+    val defaultPlayLevel = remember { PlayLevelSetting() }
+    var playLevel by remember { mutableStateOf(defaultPlayLevel) }
+    var engineProfile by remember { mutableStateOf(defaultPlayLevel.toEngineProfile(EngineProfile())) }
     var matchMode by remember { mutableStateOf(MatchMode.HumanVsAi) }
     var topMovesEnabled by remember { mutableStateOf(false) }
-    var analysisPreset by remember { mutableStateOf(AnalysisPreset.Lite) }
+    var analysisPreset by remember { mutableStateOf(defaultPlayLevel.analysisPreset) }
     val analysisCache = remember { AnalysisResultCache(maxEntries = 96) }
     var uxOptions by remember { mutableStateOf(KaTrainUxOptions()) }
     var isDisplayMenuExpanded by remember { mutableStateOf(false) }
@@ -536,25 +539,33 @@ private fun GoCoachScreen(
         }
     }
 
-    fun configureEngine(nextProfile: EngineProfile) {
+    fun changePlayLevel(nextSetting: PlayLevelSetting) {
+        val normalized = nextSetting.normalized()
+        if (normalized == playLevel) {
+            return
+        }
         if (!isEngineReady) {
             engineMessage = "Engine is not ready."
             return
         }
         if (isEngineBusy) {
-            engineMessage = "AI is busy. Change settings after the current response."
+            engineMessage = "AI is busy. Change level after the current response."
             return
         }
 
+        val nextProfile = normalized.toEngineProfile(engineProfile)
+        playLevel = normalized
         engineProfile = nextProfile
-        clearReviewAnalysis()
+        analysisPreset = normalized.analysisPreset
+        clearTopMoveSpots("Engine level changed to ${normalized.displayLabel}.")
+        clearReviewAnalysis(gameState)
         lastAnalysisKey = null
         scope.launch {
             isEngineBusy = true
             runCatching {
                 withContext(Dispatchers.IO) { engineAdapter.configure(nextProfile) }
             }.onSuccess { status ->
-                engineMessage = status.message
+                engineMessage = "${status.message}\nLevel: ${normalized.displayLabel} (${normalized.selectionPolicy.description})."
             }.onFailure { error ->
                 engineMessage = error.message ?: "Engine configuration failed."
             }
@@ -564,26 +575,6 @@ private fun GoCoachScreen(
                 automatic = true,
             )
         }
-    }
-
-    fun changeAnalysisPreset(nextPreset: AnalysisPreset) {
-        if (nextPreset == analysisPreset) {
-            return
-        }
-        if (isEngineBusy) {
-            engineMessage = "Engine is busy. Change analysis preset after the current response."
-            return
-        }
-
-        analysisPreset = nextPreset
-        clearTopMoveSpots("Analysis preset changed to ${nextPreset.label}.")
-        clearReviewAnalysis(gameState)
-        lastAnalysisKey = null
-        engineMessage = "Analysis preset changed to ${nextPreset.label}: ${nextPreset.description}."
-        requestTopMoveAnalysisForState(
-            targetState = gameState,
-            automatic = true,
-        )
     }
 
     fun submitHumanMove(move: Move) {
@@ -780,6 +771,7 @@ private fun GoCoachScreen(
                         engineAdapter = engineAdapter,
                         stateAfterHuman = afterHuman,
                         humanMove = move,
+                        playLevel = playLevel,
                         onHumanMoveAccepted = {
                             runCatching {
                                 engineAdapter.estimateScore(scoreGraphAnalysisLimit(engineProfile))
@@ -999,6 +991,7 @@ private fun GoCoachScreen(
             engineName = engineName,
             engineDiagnostic = engineDiagnostic,
             engineProfile = engineProfile,
+            playLevel = playLevel,
             analysisPreset = analysisPreset,
             analysisCacheStats = analysisCache.statsText(),
             isEngineReady = isEngineReady,
@@ -1102,24 +1095,9 @@ private fun GoCoachScreen(
 
             EngineTuningPanel(
                 profile = engineProfile,
-                analysisPreset = analysisPreset,
+                playLevel = playLevel,
                 enabled = isEngineReady && !isEngineBusy,
-                onDifficultyChange = { difficulty: DifficultyProfile ->
-                    configureEngine(
-                        engineProfile.copy(
-                            difficulty = difficulty,
-                            analysisLimit = difficulty.defaultAnalysisLimit(),
-                        ),
-                    )
-                },
-                onVisitsChange = { visits ->
-                    configureEngine(
-                        engineProfile.copy(
-                            analysisLimit = engineProfile.analysisLimit.copy(visits = visits),
-                        ),
-                    )
-                },
-                onAnalysisPresetChange = ::changeAnalysisPreset,
+                onPlayLevelChange = ::changePlayLevel,
             )
         }
 
@@ -1398,6 +1376,7 @@ private fun buildDebugReport(
     engineName: String,
     engineDiagnostic: String,
     engineProfile: EngineProfile,
+    playLevel: PlayLevelSetting,
     analysisPreset: AnalysisPreset,
     analysisCacheStats: String,
     isEngineReady: Boolean,
@@ -1428,6 +1407,7 @@ private fun buildDebugReport(
         appendLine("engineBusy=$isEngineBusy")
         appendLine("gameEnded=$isGameEnded")
         appendLine("engineProfile=${engineProfile.name}/${engineProfile.mode}/${engineProfile.difficulty.label}")
+        appendLine("playLevel=${playLevel.displayLabel} (${playLevel.selectionPolicy.description})")
         appendLine("analysisLimit=visits:${engineProfile.analysisLimit.visits}, timeMillis:${engineProfile.analysisLimit.timeMillis}, candidates:${engineProfile.analysisLimit.candidateCount}")
         appendLine("analysisPreset=${analysisPreset.label}")
         appendLine("analysisCache=$analysisCacheStats")

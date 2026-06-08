@@ -31,13 +31,13 @@
   - 버튼은 토글로 동작한다. 켜진 상태에서는 매 사용자 턴마다 준비된 pre-move analysis cache를 보드에 자동 표시한다.
   - 꺼진 상태에서도 착수 평가를 위한 pre-move analysis cache는 백그라운드에서 계속 준비한다.
   - 후보 순위, 점수 손실, 예상 리드, visits, policy prior 같은 상세 텍스트는 화면 하단의 약 10줄 스크롤 박스와 `Copy Log`로 확인한다.
-  - 분석 강도는 메뉴의 `Engine > Analysis`에서 `Lite`, `Balanced`, `Deep` 중 선택한다.
-  - `Lite`는 느린 폰/에뮬레이터 기본값이다. 상위 소수 후보만 빠르게 분석하고 policy/refine를 기본 생략한다.
-  - `Balanced`는 후보 수와 policy/refine를 제한해 힌트 품질과 속도를 절충한다.
-  - `Deep`은 학습/복기용이다. 더 넓은 후보 범위와 policy/refine를 사용하므로 느릴 수 있다.
+  - 분석 강도는 메뉴의 `Engine` 플레이 레벨에 의해 자동 결정된다. 화면에는 `Lite`, `Balanced`, `Deep` raw preset을 직접 노출하지 않는다.
+  - `빠른 초급`은 느린 폰/에뮬레이터용 기본 경량 설정이며, B16 수준의 빠른 분석을 사용한다.
+  - `초급`은 B32 수준으로 후보 coverage를 조금 넓힌 학습용 초급 설정이다.
+  - `중급`, `고급`은 더 높은 visits/time을 사용하므로 후보 품질은 좋아질 수 있지만 응답이 느려질 수 있다.
   - KataGo JSON analysis config가 준비된 경우에는 KaTrain과 같은 JSON analysis protocol을 우선 사용한다.
-  - JSON analysis 경로에서는 선택된 `Analysis` preset에 따라 `policy` 보존, 추가 refine 개수, 최소 visits/time 상향 폭이 달라진다.
-  - 동일한 국면, 규칙, 차례, 분석 preset, 분석 예산으로 이미 분석한 값이 있으면 엔진을 다시 호출하지 않고 메모리 cache를 사용한다.
+  - JSON analysis 경로에서는 플레이 레벨이 정한 내부 analysis preset에 따라 `policy` 보존, 추가 refine 개수, 최소 visits/time 상향 폭이 달라진다.
+  - 동일한 국면, 규칙, 차례, 내부 analysis preset, 분석 예산으로 이미 분석한 값이 있으면 엔진을 다시 호출하지 않고 메모리 cache를 사용한다.
   - 무르기로 최근 국면으로 돌아온 경우 같은 cache key가 있으면 즉시 재사용한다.
   - 엔진 search가 목표 후보수를 채우지 못하면, 나머지 합법 착점은 `PolicyOnly` 또는 `LegalOnly` 상태로 snapshot에 보관한다. 이 후보에는 점수 손실이나 policy prior가 없을 수 있다.
   - 점수 손실이 없는 policy/legal fallback 후보는 보드 위 스팟으로 그리지 않는다. 분석 snapshot, 상세 텍스트, `Copy Log`에서만 확인한다.
@@ -87,10 +87,15 @@
 
 ### Engine
 
-- 엔진 난이도와 검색량을 조정한다. AI 대국과 엔진 연결 2P 분석에 모두 적용된다.
-- 난이도 `- / +`는 `Beginner`, `Casual`, `Intermediate`, `Strong`, `FullAnalysis` preset을 변경한다.
-- `Visits - / +`는 현재 난이도 안에서 엔진 검색 방문 수를 직접 조정한다.
-- 값이 커질수록 AI 응수와 분석 품질은 좋아질 수 있지만 응답이 느려질 수 있다.
+- 플레이 레벨과 단계를 조정한다. AI 대국과 엔진 연결 2P 분석에 모두 적용된다.
+- 화면에는 `빠른 초급`, `초급`, `중급`, `고급` 4개 그룹이 보인다.
+- 그룹 아래 `- / +` 버튼으로 단계를 조정한다. 예: `빠른 초급 1단계 / 3`.
+- `빠른 초급`: Beginner 16 visits / 250ms. 느린 폰에서도 대국 리듬을 유지하기 위한 기본 설정이다.
+- `초급`: Beginner 32 visits / 350ms. 후보를 조금 더 확보해 학습 피드백을 늘리는 설정이다.
+- `중급`: Casual 64 visits / 500ms. 일반 대국과 후보 품질의 절충 설정이다.
+- `고급`: Intermediate 160 visits / 1000ms. 더 강한 응수와 분석 품질을 목표로 한다.
+- 단계는 AI가 엔진 후보를 고르는 상대 순위 구간을 조정한다. 낮은 단계는 하위/중위 후보를 더 섞고, 최고 단계는 최적수만 고른다.
+- 내부적으로는 레벨에 따라 `Lite`, `Learning`, `Balanced` 분석 preset이 자동 선택된다. 이 raw preset은 사용자 메뉴에서 직접 조작하지 않는다.
 
 ## Menu 안의 표시 옵션
 

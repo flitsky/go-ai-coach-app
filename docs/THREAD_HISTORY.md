@@ -400,3 +400,12 @@
 - 검토 결과, 이 안은 yellow/orange/red 후보가 부족한 국면에서도 동작하고 구현이 단순하므로 1차 구현안으로 적절하다고 판단했다. 단, 사용자 피드백 색상은 절대 `pointLoss` 기준을 유지하고, 상대 순위는 AI 내부 선택 정책으로만 사용해야 한다.
 - `ENGINE_LEVELING_DISCUSSION.md`의 기존 초급 색상 bucket 비율안을 상대 순위 기반 간결화안으로 대체했다. `FB 1~3`은 B16, `LB 1~7`은 B32 percentile window 기반으로 정리했다.
 - `ENGINE_BEGINNER_VISITS_BENCHMARK.md`에도 benchmark 결론과 연결되는 Fast/Learning Beginner 단계표, fallback 규칙, 다음 액션을 추가했다.
+- 사용자가 기존 `Lite`, `Balanced`, `Deep` 버튼을 제거하고 `빠른 초급`, `초급`, `중급`, `고급` 설정 메뉴로 바꿔달라고 요청했다.
+- `shared`에 `PlayLevelGroup`, `PlayLevelSetting`, `MoveSelectionPolicy`를 추가했다. 현재 기본값은 `빠른 초급 1단계`이며, 각 레벨은 `EngineProfile`, 내부 `AnalysisPreset`, AI 후보 선택 구간을 함께 결정한다.
+- 내부 분석 preset에는 `Learning`을 추가했다. `초급`은 B32 / 350ms와 `Learning` preset을 사용해 B16보다 후보 coverage를 조금 넓힌다.
+- Android `Engine` 메뉴에서 raw difficulty/visits/analysis preset 버튼을 제거하고, 4개 그룹 버튼과 단계 `- / +` UX로 교체했다.
+- AI 대국 응수는 사람 착수 후 바로 `genMove`를 호출하지 않고, 현재 `PlayLevelSetting`의 분석 예산으로 scored 후보를 얻은 뒤 단계별 percentile window에서 랜덤 선택한다. 후보가 부족하거나 로컬 룰 검증에 실패하면 기존 `genMove`로 fallback한다.
+- `Copy Log` debug report에 `playLevel`과 선택 정책 설명을 추가했다.
+- `PlayLevelSettingTest`를 추가해 B16/B32 매핑, 단계 clamp, percentile index 계산을 검증했다.
+- 문서는 `USER_OPTION_MANUAL.md`, `ENGINE_SEARCH_MODE_DIRECTION.md`, `ENGINE_LEVELING_DISCUSSION.md`, `ENGINE_BEGINNER_VISITS_BENCHMARK.md`를 갱신했다.
+- 검증으로 `make test`가 통과했다.

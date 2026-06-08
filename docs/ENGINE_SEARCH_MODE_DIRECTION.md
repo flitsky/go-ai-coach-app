@@ -24,11 +24,18 @@
 1. `Fast Play`
 2. `Study Analysis`
 
-2026-06-08 구현에서는 이를 사용자 설정으로 바로 다루기 쉽도록 3단계 preset으로 구체화했다.
+2026-06-08 1차 구현에서는 이를 사용자 설정으로 바로 다루기 쉽도록 3단계 preset으로 구체화했다.
 
 1. `Lite`: 느린 폰/에뮬레이터용 빠른 대국 기본값
 2. `Balanced`: 속도와 힌트 품질 절충
 3. `Deep`: 학습/복기용 정밀 분석
+
+2026-06-08 후속 구현에서는 이 raw preset 버튼을 사용자 UI에서 제거하고, 플레이 레벨이 내부 preset과 엔진 예산을 자동 선택하도록 변경했다.
+
+1. `빠른 초급`: B16 / 250ms, 내부 `Lite`
+2. `초급`: B32 / 350ms, 내부 `Learning`
+3. `중급`: Casual 64 / 500ms, 내부 `Balanced`
+4. `고급`: Intermediate 160 / 1000ms, 내부 `Balanced`
 
 사용자 관점에서는 "대국을 쾌적하게 둘 것인가"와 "분석 품질을 높일 것인가"를 선택하는 설정이다.
 
@@ -127,12 +134,16 @@
 
 처음에는 복잡한 raw 설정을 노출하지 않는다.
 
-권장 UI:
+현재 UI:
 
-- `Engine > Analysis`
-  - `Lite`
-  - `Balanced`
-  - `Deep`
+- `Engine`
+  - `빠른 초급`
+  - `초급`
+  - `중급`
+  - `고급`
+  - 각 그룹별 단계 `- / +`
+
+`Lite`, `Learning`, `Balanced`, `Deep`은 사용자 버튼이 아니라 내부 분석 preset이다. raw preset을 직접 노출하면 대국 난이도, 후보 coverage, 학습용 분석 품질이 한 화면에서 섞이므로 현재는 숨긴다.
 
 추가 고도화 후:
 
@@ -145,7 +156,7 @@
   - refine count
   - background analysis on/off
 
-기본값은 `Lite`가 적절하다. 앱의 1차 목적은 사용자가 실제로 대국을 이어가는 것이고, 정밀 분석은 명시적 학습 의도가 있을 때 켜는 것이 맞다.
+기본값은 `빠른 초급 1단계`가 적절하다. 앱의 1차 목적은 사용자가 실제로 대국을 이어가는 것이고, 정밀 분석은 명시적 학습 의도가 있을 때 켜는 것이 맞다.
 
 ## 내부 설계 방향
 
@@ -154,10 +165,26 @@
 ```kotlin
 enum class AnalysisPreset {
     Lite,
+    Learning,
     Balanced,
     Deep,
 }
 ```
+
+사용자 조작 모델은 별도의 `PlayLevelSetting`으로 둔다.
+
+```kotlin
+data class PlayLevelSetting(
+    val group: PlayLevelGroup,
+    val level: Int,
+)
+```
+
+`PlayLevelSetting`은 다음 값을 함께 결정한다.
+
+- AI 응수용 `EngineProfile`
+- Top Moves/pre-move analysis용 내부 `AnalysisPreset`
+- AI가 후보 중 어떤 상대 순위 구간에서 랜덤 선택할지 정하는 `MoveSelectionPolicy`
 
 `AnalysisLimit`에는 단순 visits/time/candidates 외에도 실제 adapter가 지켜야 할 budget 필드를 둔다.
 
@@ -212,7 +239,7 @@ cache key는 다음 정보를 포함한다.
 
 ## 다음 작업 제안
 
-1. 폰/에뮬레이터에서 `Lite`, `Balanced`, `Deep`의 첫 턴 대기 시간과 착수 후 응답 시간을 측정한다.
-2. `Lite`에서도 초기 자동 분석이 너무 느리면 시작 직후 자동 Top Moves 분석을 끄고, 첫 `Top Moves` 버튼 클릭 때만 수행하는 옵션을 추가한다.
+1. 폰/에뮬레이터에서 `빠른 초급`, `초급`, `중급`, `고급`의 첫 턴 대기 시간과 착수 후 응답 시간을 측정한다.
+2. `빠른 초급`에서도 초기 자동 분석이 너무 느리면 시작 직후 자동 Top Moves 분석을 끄고, 첫 `Top Moves` 버튼 클릭 때만 수행하는 옵션을 추가한다.
 3. 분석 job cancel/discard 정책을 강화해 새 착수 이후 늦게 도착한 결과가 화면을 덮지 않도록 한다.
-4. 측정값을 기준으로 `Auto` preset 도입 여부를 결정한다.
+4. 측정값을 기준으로 기기별 자동 fallback 또는 `Auto` 레벨 도입 여부를 결정한다.
