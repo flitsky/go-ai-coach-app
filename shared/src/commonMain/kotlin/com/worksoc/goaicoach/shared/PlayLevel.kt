@@ -71,7 +71,7 @@ enum class PlayLevelGroup(
         return when (this) {
             FastBeginner -> when (safeLevel) {
                 1 -> MoveSelectionPolicy.PercentileRange(50, 100, "탐색 후보 하위 50%")
-                2 -> MoveSelectionPolicy.PercentileRange(0, 50, "탐색 후보 상위 50%")
+                2 -> MoveSelectionPolicy.ExcludeBestPercentileRange(0, 60, "최적수 제외 상위 후보")
                 else -> MoveSelectionPolicy.BestOnly
             }
             Beginner -> when (safeLevel) {
@@ -148,14 +148,41 @@ sealed class MoveSelectionPolicy {
         }
     }
 
+    data class ExcludeBestPercentileRange(
+        val startPercent: Int,
+        val endPercent: Int,
+        override val description: String,
+    ) : MoveSelectionPolicy() {
+        init {
+            require(startPercent in 0..99) { "startPercent must be 0..99" }
+            require(endPercent in 1..100) { "endPercent must be 1..100" }
+            require(startPercent < endPercent) { "startPercent must be lower than endPercent" }
+        }
+    }
+
     fun candidateIndexRange(candidateCount: Int): IntRange? {
         if (candidateCount <= 0) return null
         if (this is BestOnly) return 0..0
 
-        val range = this as PercentileRange
+        if (this is ExcludeBestPercentileRange && candidateCount == 1) {
+            return 0..0
+        }
+
+        val range = when (this) {
+            is BestOnly -> return 0..0
+            is PercentileRange -> PercentileWindow(startPercent, endPercent)
+            is ExcludeBestPercentileRange -> PercentileWindow(startPercent, endPercent, minimumStartIndex = 1)
+        }
         val last = candidateCount - 1
         val start = floor(candidateCount * range.startPercent / 100.0).toInt().coerceIn(0, last)
+            .coerceAtLeast(range.minimumStartIndex.coerceAtMost(last))
         val exclusiveEnd = ceil(candidateCount * range.endPercent / 100.0).toInt().coerceIn(start + 1, candidateCount)
         return start until exclusiveEnd
     }
+
+    private data class PercentileWindow(
+        val startPercent: Int,
+        val endPercent: Int,
+        val minimumStartIndex: Int = 0,
+    )
 }

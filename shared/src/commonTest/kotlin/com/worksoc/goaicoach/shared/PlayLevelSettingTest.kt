@@ -45,6 +45,20 @@ class PlayLevelSettingTest {
     }
 
     @Test
+    fun fastBeginnerStageTwoAvoidsTopCandidateWhenPossible() {
+        val policy = PlayLevelSetting(
+            group = PlayLevelGroup.FastBeginner,
+            level = 2,
+        ).selectionPolicy
+
+        assertEquals("최적수 제외 상위 후보", policy.description)
+        assertEquals(0..0, policy.candidateIndexRange(candidateCount = 1))
+        assertEquals(1..1, policy.candidateIndexRange(candidateCount = 2))
+        assertEquals(1..2, policy.candidateIndexRange(candidateCount = 5))
+        assertEquals(1..5, policy.candidateIndexRange(candidateCount = 10))
+    }
+
+    @Test
     fun bestOnlyAlwaysChoosesTopIndex() {
         assertEquals(0..0, MoveSelectionPolicy.BestOnly.candidateIndexRange(candidateCount = 10))
     }

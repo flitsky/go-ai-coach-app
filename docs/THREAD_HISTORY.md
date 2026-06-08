@@ -489,3 +489,13 @@
 - `MatchPolicyTest`에 Player Setup 모드 판정, 사람 차례 입력 허용, 요청된 AI 색상 후보 선택 테스트를 추가했다.
 - `USER_OPTION_MANUAL.md`와 `KATRAIN_UX_BACKLOG.md`를 Player Setup 구조 기준으로 갱신했다.
 - 검증으로 `make test`가 통과했다.
+- 사용자가 AI 2단계 랜덤수와 플레이어 최적 추천수 반복 테스트 결과를 바탕으로, 제안한 `빠른 초급 2단계` 조정 방향이 타당하다고 승인했다.
+- `MoveSelectionPolicy`에 `ExcludeBestPercentileRange`를 추가했다. `빠른 초급 2단계`는 후보가 2개 이상이면 KataGo `order 0` 최적수를 제외하고 `order 1`부터 상위 60% 범위에서 랜덤 착수한다. 후보가 1개뿐이면 대국 진행을 위해 그 후보를 허용한다.
+- `PlayLevelSettingTest`에 새 정책 테스트를 추가했다. 후보 1개는 `0`, 후보 2개는 `1`, 후보 5개는 `1..2`, 후보 10개는 `1..5`를 선택 범위로 확인한다.
+- 사용자가 앱 바깥으로 나갔다 오면 대국이 초기화되는 문제를 보고하고, 매 착수 로컬 저장과 앱 재실행 시 이어하기 확인 UX를 요청했다.
+- Android 앱에 `GameSessionStore`와 `SavedGameSessionCodec`를 추가했다. 저장 snapshot은 수순, 계가 규칙, Player Setup, 현재 플레이 레벨, Top Moves 토글 상태를 JSON으로 저장한다.
+- 복원 시 돌 배치를 직접 신뢰하지 않고 저장된 수순을 `GameStateReplayer`로 재생해 `GameState`를 재구성한다. 엔진이 준비된 경우 복원 직후 `syncToGameState`로 KataGo 상태를 다시 동기화한다.
+- 앱 재시작 시 미완료 snapshot이 있으면 `이전 대국 이어하기` 다이얼로그를 띄운다. `예`는 마지막 수순으로 복원하고, `아니오`나 dismiss는 저장본을 삭제한다. 연속 pass 종료 대국이나 빈 대국은 이어하기 대상으로 저장하지 않는다.
+- `SavedGameSessionCodecTest`를 추가해 수순/Player Setup roundtrip, invalid JSON, resumable 판정을 검증했다. Android 로컬 unit test에서 실제 JSON 구현을 쓰기 위해 `org.json:json:20240303` test dependency를 추가했다.
+- `USER_OPTION_MANUAL.md`, `ENGINE_LEVELING_DISCUSSION.md`, `ENGINE_LEVEL_SIMULATION_REPORT.md`를 빠른 초급 2단계 조정과 자동 저장/이어하기 정책 기준으로 갱신했다.
+- 검증으로 `make test`가 통과했다. 현재 셸 기본 Java는 25라 Gradle/Kotlin이 실패하지만, `make test`는 Makefile의 JDK 17 설정을 사용해 정상 동작한다.

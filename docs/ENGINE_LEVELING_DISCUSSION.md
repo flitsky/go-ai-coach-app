@@ -397,7 +397,7 @@ KataGo analysis 결과는 기본적으로 수치 기반이다.
 | 레벨 | 선택 정책 | 의도 |
 | --- | --- | --- |
 | FB 1 | B16 탐색 후보 중 하위 50% 랜덤 | 빠른 초급 최저 단계. 가능한 약한 후보를 고른다 |
-| FB 2 | B16 탐색 후보 중 상위 50% 랜덤 | 여전히 빠르지만 좋은 후보를 더 자주 둔다 |
+| FB 2 | B16 탐색 후보 중 최적수 제외 상위 후보 랜덤 | 여전히 빠르지만 order 0을 피해서 1단계와 3단계 사이를 완만하게 둔다 |
 | FB 3 | B16 최적수 | Fast 계열 최상위. 적은 탐색 예산의 best move만 둔다 |
 
 ### Learning Beginner
@@ -469,7 +469,7 @@ fallback:
 
 | 그룹 | 단계 | Engine budget | 내부 analysis preset | AI 선택 정책 |
 | --- | ---: | --- | --- | --- |
-| 빠른 초급 | 1~3 | Beginner 16 / 250ms | Lite | FB 1 하위 50%, FB 2 상위 50%, FB 3 최적수 |
+| 빠른 초급 | 1~3 | Beginner 16 / 250ms | Lite | FB 1 하위 50%, FB 2 최적수 제외 상위 후보, FB 3 최적수 |
 | 초급 | 1~7 | Beginner 32 / 350ms | Learning | LB 1~7 percentile window |
 | 중급 | 1~5 | Casual 64 / 500ms | Balanced | 하위 50%에서 최적수까지 점진 이동 |
 | 고급 | 1~5 | Intermediate 160 / 1000ms | Balanced | 중위권에서 최적수까지 점진 이동 |

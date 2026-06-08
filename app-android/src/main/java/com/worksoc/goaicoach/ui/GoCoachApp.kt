@@ -16,11 +16,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -43,6 +45,8 @@ import com.worksoc.goaicoach.match.applyAiTurn
 import com.worksoc.goaicoach.match.boardInputEnabled
 import com.worksoc.goaicoach.match.modeSummary
 import com.worksoc.goaicoach.match.summary
+import com.worksoc.goaicoach.persistence.GameSessionStore
+import com.worksoc.goaicoach.persistence.SavedGameSnapshot
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.AnalysisPreset
 import com.worksoc.goaicoach.shared.BoardCoordinate
@@ -112,6 +116,7 @@ private fun GoCoachScreen(
 ) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+    val sessionStore = remember(context) { GameSessionStore(context) }
     var gameState by remember { mutableStateOf(GameState.empty(BoardSize.Nine, Ruleset.Japanese)) }
     var engineMessage by remember { mutableStateOf("Engine not initialized.") }
     var candidateText by remember { mutableStateOf(engineDiagnostic) }
@@ -142,6 +147,9 @@ private fun GoCoachScreen(
     var lastAnalysisKey by remember { mutableStateOf<AnalysisCacheKey?>(null) }
     var isGameEnded by remember { mutableStateOf(false) }
     var endgameLog by remember { mutableStateOf("No endgame result recorded.") }
+    var hasCheckedSavedSession by remember { mutableStateOf(false) }
+    var pendingSavedSession by remember { mutableStateOf<SavedGameSnapshot?>(null) }
+    var shouldShowResumePrompt by remember { mutableStateOf(false) }
 
     LaunchedEffect(engineAdapter) {
         isEngineBusy = true
@@ -167,6 +175,40 @@ private fun GoCoachScreen(
             candidateText = "2P test mode is still available.\n$engineDiagnostic"
         }
         isEngineBusy = false
+    }
+
+    LaunchedEffect(sessionStore) {
+        val savedSession = sessionStore.load()
+        pendingSavedSession = savedSession
+        shouldShowResumePrompt = savedSession != null
+        hasCheckedSavedSession = true
+    }
+
+    LaunchedEffect(
+        hasCheckedSavedSession,
+        shouldShowResumePrompt,
+        isGameEnded,
+        gameState.moves.size,
+        gameState.ruleset,
+        playerSetup,
+        playLevel,
+        topMovesEnabled,
+    ) {
+        if (!hasCheckedSavedSession || shouldShowResumePrompt) {
+            return@LaunchedEffect
+        }
+        val snapshot = SavedGameSnapshot(
+            gameState = gameState,
+            playerSetup = playerSetup,
+            playLevel = playLevel,
+            topMovesEnabled = topMovesEnabled,
+            savedAtMillis = System.currentTimeMillis(),
+        )
+        if (isGameEnded || !snapshot.isResumable) {
+            sessionStore.clear()
+        } else {
+            sessionStore.save(snapshot)
+        }
     }
 
     fun analysisKeyFor(
@@ -443,6 +485,65 @@ private fun GoCoachScreen(
         lastMoveText = "None"
         endgameLog = "No endgame result recorded."
         engineMessage = message
+    }
+
+    fun restoreSavedSession(snapshot: SavedGameSnapshot) {
+        if (isEngineBusy) {
+            engineMessage = "Engine is busy. Restore the saved game after the current action."
+            return
+        }
+
+        val restoredState = snapshot.gameState
+        val restoredPlayLevel = primaryPlayLevelForSetup(snapshot.playerSetup, restoredState)
+        val restoredProfile = restoredPlayLevel.toEngineProfile(engineProfile)
+        if (isEngineReady) {
+            isEngineBusy = true
+        }
+
+        playerSetup = snapshot.playerSetup
+        playLevel = restoredPlayLevel
+        engineProfile = restoredProfile
+        analysisPreset = restoredPlayLevel.analysisPreset
+        topMovesEnabled = snapshot.topMovesEnabled
+        gameState = restoredState
+        isGameEnded = false
+        clearTopMoveSpots("Restored previous game. Analysis cache will rebuild.")
+        clearReviewAnalysis(restoredState)
+        lastAnalysisKey = null
+        scoreText = "Score estimate not current."
+        scoreEstimate = null
+        scoreSnapshots = listOf(localScoreSnapshot(restoredState))
+        moveReviewText = "Move review restored after app restart; pre-move analysis cache will rebuild."
+        moveReviews = emptyList()
+        lastMoveText = restoredState.moves.lastOrNull()?.describe(restoredState.boardSize) ?: "None"
+        endgameLog = "No endgame result recorded after restore."
+        engineMessage = "Previous game restored at move ${restoredState.moves.size}."
+
+        if (!isEngineReady) {
+            return
+        }
+
+        scope.launch {
+            runCatching {
+                withContext(Dispatchers.IO) {
+                    engineAdapter.configure(restoredProfile)
+                    engineAdapter.syncToGameState(restoredState)
+                    engineAdapter.estimateScore(scoreGraphAnalysisLimit(restoredProfile))
+                }
+            }.onSuccess { estimate ->
+                scoreText = estimate.toDisplayText()
+                scoreEstimate = estimate
+                scoreSnapshots = listOf(ScoreTimeline.fromEstimate(restoredState.moves.size, estimate))
+                engineMessage = "Previous game restored and engine state synchronized."
+            }.onFailure { error ->
+                engineMessage = error.message ?: "Saved game restored locally, but engine sync failed."
+            }
+            isEngineBusy = false
+            requestTopMoveAnalysisForState(
+                targetState = restoredState,
+                automatic = true,
+            )
+        }
     }
 
     fun requestScoreEstimate() {
@@ -1066,6 +1167,58 @@ private fun GoCoachScreen(
         requestTopMoveAnalysisForState(
             targetState = gameState,
             automatic = true,
+        )
+    }
+
+    val savedSessionToPrompt = pendingSavedSession
+    if (shouldShowResumePrompt && savedSessionToPrompt != null && !isEngineBusy) {
+        AlertDialog(
+            onDismissRequest = {
+                sessionStore.clear()
+                pendingSavedSession = null
+                shouldShowResumePrompt = false
+            },
+            title = { Text("이전 대국 이어하기") },
+            text = {
+                Text(
+                    text = buildString {
+                        appendLine("진행 중이던 ${savedSessionToPrompt.gameState.moves.size}수 대국이 있습니다.")
+                        appendLine("이어 진행하시겠습니까?")
+                        appendLine()
+                        append("마지막 수: ")
+                        append(
+                            savedSessionToPrompt.gameState.moves
+                                .lastOrNull()
+                                ?.describe(savedSessionToPrompt.gameState.boardSize)
+                                ?: "None",
+                        )
+                        appendLine()
+                        append(savedSessionToPrompt.playerSetup.summary(engineName))
+                    },
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        pendingSavedSession = null
+                        shouldShowResumePrompt = false
+                        restoreSavedSession(savedSessionToPrompt)
+                    },
+                ) {
+                    Text("예")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        sessionStore.clear()
+                        pendingSavedSession = null
+                        shouldShowResumePrompt = false
+                    },
+                ) {
+                    Text("아니오")
+                }
+            },
         )
     }
 
