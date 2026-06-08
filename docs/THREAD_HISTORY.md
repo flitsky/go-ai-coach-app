@@ -418,3 +418,7 @@
 - `MatchPolicy`를 수정해 전체 scored 후보 중 `pass`가 1위이면 레벨 단계와 무관하게 endgame pass override를 적용하도록 했다. pass가 최선이 아닌 경우에는 premature pass를 막기 위해 기존처럼 play 후보만 선택한다.
 - `MatchPolicyTest`를 추가해 pass가 최선일 때 낮은 레벨도 pass를 선택하고, play 후보가 최선일 때는 pass를 선택하지 않는 회귀 테스트를 만들었다.
 - 검증으로 `make test`가 통과했다.
+- 사용자가 endgame pass override 수정 버전을 폰에 설치해달라고 요청했다.
+- `adb devices -l`에서 폰 `R5CT22WTVXP` (`SM_S908N`)가 `device` 상태로 확인되었다.
+- `ANDROID_SERIAL=R5CT22WTVXP make reinstall-dev-engine`를 실행해 최신 debug APK 설치, KataGo model/config/analysis config seed, 앱 cold launch를 완료했다.
+- 전체 명령은 약 15.2초가 걸렸고, 앱 cold launch `TotalTime=612ms`가 기록되었다.
