@@ -392,3 +392,7 @@
 - KaTrain 소스 재확인 결과, spot 색상은 엔진이 직접 분류하지 않고 `pointsLost = player_sign(next_player) * (root_score - candidate_scoreLead)`로 계산한 뒤 기본 `eval_thresholds [12, 6, 3, 1.5, 0.5, 0]`에 따라 색상 index를 고른다.
 - `KATRAIN_TOP_MOVES_ANALYSIS.md`에 KaTrain 계산식, threshold별 의미, 우리 앱의 `MoveQualityBucket` 도메인화 적용 방향을 추가했다.
 - `ENGINE_LEVELING_DISCUSSION.md`에는 `Beginner 32/64`가 후보 수집과 학습 피드백 품질에는 도움이 되지만, AI가 best를 고르면 체감 난이도가 올라가고 느린 폰 지연이 커질 수 있다고 기록했다. 권장 방향은 `Fast Beginner`와 `Learning Beginner`를 분리하고, 후자는 `MoveSelectionPolicy`로 약함을 유지하는 것이다.
+- 사용자가 `Beginner 16`, `32`, `64`를 바로 비교 평가해, 32/64 기본 운영 여부를 판단할 근거 문서를 요청했다.
+- MacBook Metal 환경의 KataGo v1.16.4 JSON analysis로 빈 9x9, 초반 8수, 중반 20수 국면을 측정했다. 각 조합은 새 analysis process에서 더미 warm-up 1회 후 실제 query 1회를 측정했다.
+- `docs/ENGINE_BEGINNER_VISITS_BENCHMARK.md`를 추가했다. 결과상 `B16`은 빠르지만 후보가 2~5개 수준으로 부족하고, `B32`부터 Good/Yellow/Orange/Red bucket이 확보되기 시작하며, `B64`는 후보가 조금 더 늘지만 latency가 500ms 부근으로 올라간다.
+- 1차 결론은 `Fast Beginner = 16/250ms` 유지, `Learning Beginner = 32/350ms` 기본 후보, `64/500ms`는 후보 보강/Top Moves/복기용으로 우선 사용하는 방향이다. 실기기 latency 재측정 전까지 `64`를 초급 기본 응수로 바로 올리는 것은 보류한다.
