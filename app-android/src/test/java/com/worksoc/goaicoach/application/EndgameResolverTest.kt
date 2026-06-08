@@ -1,0 +1,118 @@
+package com.worksoc.goaicoach.application
+
+import com.worksoc.goaicoach.shared.AnalysisLimit
+import com.worksoc.goaicoach.shared.AnalysisResult
+import com.worksoc.goaicoach.shared.BoardCoordinate
+import com.worksoc.goaicoach.shared.BoardSize
+import com.worksoc.goaicoach.shared.DeadStonesResult
+import com.worksoc.goaicoach.shared.EngineAdapter
+import com.worksoc.goaicoach.shared.EngineProfile
+import com.worksoc.goaicoach.shared.EngineStatus
+import com.worksoc.goaicoach.shared.FinalScoreResult
+import com.worksoc.goaicoach.shared.GameState
+import com.worksoc.goaicoach.shared.Move
+import com.worksoc.goaicoach.shared.MoveResult
+import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.ScoreEstimate
+import com.worksoc.goaicoach.shared.StoneColor
+import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class EndgameResolverTest {
+    @Test
+    fun resolveAiEndgameRemovesEngineMarkedDeadStonesAndBuildsLog() = runBlocking {
+        val deadWhite = BoardCoordinate.fromLabel("D4", BoardSize.Nine)
+        val state = GameState.empty(ruleset = Ruleset.Japanese)
+            .copy(
+                stones = mapOf(
+                    deadWhite to StoneColor.White,
+                    BoardCoordinate.fromLabel("C4", BoardSize.Nine) to StoneColor.Black,
+                ),
+                moves = listOf(
+                    Move.Pass(StoneColor.Black),
+                    Move.Pass(StoneColor.White),
+                ),
+            )
+        val engine = FakeEndgameEngineAdapter(deadStones = listOf(deadWhite))
+
+        val resolution = resolveAiEndgame(
+            engineAdapter = engine,
+            originalState = state,
+            estimateLimit = AnalysisLimit(visits = 16, timeMillis = 250, candidateCount = 8),
+        )
+
+        assertEquals(1, resolution.cleanup.removedCount)
+        assertNull(resolution.cleanup.state.stoneAt(deadWhite))
+        assertEquals(1, resolution.cleanup.state.capturedByBlack)
+        assertEquals(0, resolution.cleanup.state.capturedByWhite)
+        assertTrue(resolution.toCandidateText().contains("Removed 1"))
+        assertTrue(resolution.toEngineMessage().contains("Dead-stone cleanup removed 1"))
+        assertTrue(resolution.toLogDetail(state).contains("removedStones=D4=White"))
+    }
+}
+
+private class FakeEndgameEngineAdapter(
+    private val deadStones: List<BoardCoordinate>,
+) : EngineAdapter {
+    override suspend fun initialize(profile: EngineProfile): EngineStatus =
+        EngineStatus.ready("initialized")
+
+    override suspend fun configure(profile: EngineProfile): EngineStatus =
+        EngineStatus.ready("configured")
+
+    override suspend fun newGame(
+        boardSize: BoardSize,
+        ruleset: Ruleset,
+    ): EngineStatus =
+        EngineStatus.ready("new game")
+
+    override suspend fun playMove(move: Move): EngineStatus =
+        EngineStatus.ready("played")
+
+    override suspend fun genMove(player: StoneColor): MoveResult =
+        MoveResult(
+            status = EngineStatus.ready("generated"),
+            move = Move.Pass(player),
+            summary = "fake pass",
+        )
+
+    override suspend fun undoMove(): EngineStatus =
+        EngineStatus.ready("undone")
+
+    override suspend fun analyze(limit: AnalysisLimit): AnalysisResult =
+        AnalysisResult(
+            status = EngineStatus.ready("analyzed"),
+            candidates = emptyList(),
+            summary = "fake analysis",
+        )
+
+    override suspend fun estimateScore(limit: AnalysisLimit): ScoreEstimate =
+        ScoreEstimate(
+            status = EngineStatus.ready("estimated"),
+            whiteScoreLead = -5.0,
+            whiteWinRate = 0.1,
+            summary = "fake estimate",
+        )
+
+    override suspend fun deadStones(): DeadStonesResult =
+        DeadStonesResult(
+            status = EngineStatus.ready("dead stones"),
+            coordinates = deadStones,
+            summary = "fake dead stones",
+        )
+
+    override suspend fun scoreFinal(): FinalScoreResult =
+        FinalScoreResult(
+            status = EngineStatus.ready("final"),
+            rawScore = "B+5.5",
+            winner = StoneColor.Black,
+            margin = 5.5,
+            summary = "fake final",
+        )
+
+    override suspend fun stop(): EngineStatus =
+        EngineStatus.stopped("stopped")
+}

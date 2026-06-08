@@ -512,3 +512,7 @@
 - `GoCoachApp.kt`는 debug report 문자열 생성 책임을 내려놓고 새 application helper를 import해 사용한다.
 - `DebugReportBuilderTest`를 추가해 Runtime, Board, Stones, Moves, DisplayedTexts, EngineDiagnostic 섹션이 생성되는지 확인했다.
 - 검증으로 `make test`가 통과했다.
+- 리팩토링 Phase 2를 착수했다. `GoCoachApp.kt`에 있던 AI 종국 처리, 사석 정리, 최종 점수 선택, 종국 로그/메시지 생성 책임을 `app-android/application/EndgameResolver.kt`로 분리했다.
+- `GoCoachApp.kt`는 이제 `resolveAiEndgame()` 결과인 `AiEndgameResolution`만 받아 UI 상태에 반영한다. 사석 정리/계가 선택 세부 로직은 application 계층 뒤에 숨겨졌다.
+- `EndgameResolverTest`를 추가해 엔진이 표시한 사석이 제거되고, 포로 수와 종국 로그(`removedStones=D4=White`)가 유지되는지 검증했다.
+- 검증으로 `make test`가 통과했다.
