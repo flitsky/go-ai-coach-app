@@ -568,3 +568,6 @@
 - `GoCoachApp.kt`는 `toDisplayText`, `buildEndgameLog`, `ScoreTimeline.fromEstimate/fromFinalScore`, `estimateScore`, `syncToGameState`를 직접 호출하지 않고 application helper 결과를 적용하도록 변경했다.
 - `EngineSession.kt`에 `syncAfterHumanMove`, `estimateScoreForState`, `resolveEndgameForState`를 추가해 사람 착수 후 엔진 동기화/종국 처리와 일반 점수 추정의 저수준 엔진 호출 순서를 숨겼다.
 - `ScoreDisplayApplicationTest`와 `EngineSessionTest` 케이스를 추가했고, 검증으로 `make test`가 통과했다.
+- 사용자가 최신 리팩토링 결과물을 폰에서 테스트하기 위해 무선 앱 설치를 요청했다.
+- `adb devices -l`에서 `SM_S908N`이 Wi-Fi ADB `device` 상태로 확인되었고, `make reinstall-dev-engine`로 debug APK 재설치, KataGo model/config seed, 앱 cold launch를 완료했다.
+- 전체 설치/seed/실행 소요 시간은 약 27.3초였고, 앱 cold launch는 `Status: ok`, `TotalTime=556ms`로 확인되었다.
