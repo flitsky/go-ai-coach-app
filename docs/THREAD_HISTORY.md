@@ -571,3 +571,6 @@
 - 사용자가 최신 리팩토링 결과물을 폰에서 테스트하기 위해 무선 앱 설치를 요청했다.
 - `adb devices -l`에서 `SM_S908N`이 Wi-Fi ADB `device` 상태로 확인되었고, `make reinstall-dev-engine`로 debug APK 재설치, KataGo model/config seed, 앱 cold launch를 완료했다.
 - 전체 설치/seed/실행 소요 시간은 약 27.3초였고, 앱 cold launch는 `Status: ok`, `TotalTime=556ms`로 확인되었다.
+- 사용자가 무선 앱 설치를 다시 요청했고, 네트워크 변경 시 사용할 페어링 코드 `192757`을 제공했다.
+- `adb devices -l`에서 기존 Wi-Fi ADB 세션이 `SM_S908N` `device` 상태로 유지되어 있어 추가 페어링 없이 설치를 진행했다. mDNS에는 `192.168.0.20:40521` pairing, `192.168.0.20:44949` connect 서비스가 보였다.
+- `make reinstall-dev-engine`로 debug APK 재설치, KataGo model/config seed, 앱 cold launch를 완료했다. 전체 설치/seed/실행 소요 시간은 약 37.6초였고, 앱 cold launch는 `Status: ok`, `TotalTime=586ms`로 확인되었다.
