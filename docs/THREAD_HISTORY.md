@@ -433,3 +433,7 @@
 - `KataGoJsonAnalysisParser`는 JSON `rootInfo.scoreLead`를 앱의 백 기준 lead로 변환하고, 후보별 `scoreLead`와 root score의 차이를 현재 착수자 기준 `pointLoss`로 계산한다. `rootInfo`가 없는 예외 응답만 order 0 후보 대비 손실로 fallback한다.
 - 따라서 흑이 절대적으로 크게 이기는 후보라도 root/best 대비 몇 집을 잃으면 노랑/주황으로 표시될 수 있다. 이는 현재 KaTrain식 점수손실 기준과 일치한다.
 - 혼동을 줄이기 위해 `USER_OPTION_MANUAL.md`에 스팟 색상은 절대 예상 리드가 아니라 root score 대비 `pointLoss` 기준이라는 설명과 예시를 추가했다.
+- 사용자가 최신 업데이트를 폰에 설치해달라고 요청했다.
+- `adb devices -l`에서 폰 `R5CT22WTVXP` (`SM_S908N`)가 `device` 상태로 확인되었다.
+- `ANDROID_SERIAL=R5CT22WTVXP make reinstall-dev-engine`를 실행해 최신 debug APK 설치, KataGo model/config/analysis config seed, 앱 cold launch를 완료했다.
+- 전체 명령은 약 13.6초가 걸렸고, 앱 cold launch `TotalTime=611ms`가 기록되었다.
