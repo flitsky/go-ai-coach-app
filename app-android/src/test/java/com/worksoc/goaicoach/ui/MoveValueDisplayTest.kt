@@ -58,4 +58,31 @@ class MoveValueDisplayTest {
         assertTrue(text.contains("loss=0.2"))
         assertFalse(text.contains("lead="))
     }
+
+    @Test
+    fun candidateTextOrdersScoredMovesByPointLossBeforeEngineOrder() {
+        val result = AnalysisResult(
+            status = EngineStatus.ready("ready"),
+            summary = "analysis complete",
+            candidates = listOf(
+                CandidateMove(
+                    move = Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("F5", BoardSize.Nine)),
+                    winRate = 0.74,
+                    pointLoss = 0.3,
+                    visits = 1,
+                ),
+                CandidateMove(
+                    move = Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("B3", BoardSize.Nine)),
+                    winRate = 0.56,
+                    pointLoss = 0.0,
+                    visits = 1,
+                ),
+            ),
+        )
+
+        val text = result.toCandidateText(BoardSize.Nine)
+
+        assertTrue(text.contains("1. Black B3"))
+        assertTrue(text.contains("2. Black F5"))
+    }
 }

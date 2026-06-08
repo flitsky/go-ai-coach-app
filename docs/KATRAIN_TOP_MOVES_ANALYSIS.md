@@ -62,6 +62,9 @@ KaTrain의 `evaluation_class()`는 큰 손실에서 작은 손실 방향으로 t
 - 앱은 엔진 후보 DTO와 현재 `GameState`를 합쳐 `MoveAnalysisSnapshot`을 만든다.
 - UI는 snapshot 중 `CandidateMove.pointLoss`가 있는 후보만 보드에 표시한다.
 - 색상은 앱 공통 규칙으로 계산한다.
+- KataGo JSON `scoreLead`는 흑 기준 값으로 취급한다. KaTrain은 `player_sign(B)=+1`, `player_sign(W)=-1`를 곱해 `pointsLost = player_sign(next_player) * (root_scoreLead - candidate_scoreLead)`를 계산한다.
+- Go AI Coach 내부 `CandidateMove.scoreLead`는 기존 score graph convention에 맞춰 white-lead로 보관하지만, `pointLoss`는 위 KaTrain 계산과 같은 결과가 되도록 현재 착수자 관점으로 계산한다.
+- 학습용 Top Moves 표시는 `pointLoss` 오름차순을 우선한다. KataGo `order`는 엔진 search order라 저예산 분석에서는 root score 기반 손실 순위와 다를 수 있으므로, 동률 보조 기준으로만 사용한다.
 - 점수 없는 policy/legal/legal-only 후보는 snapshot과 로그에는 남기지만, 보드 spot으로는 그리지 않는다.
 - 표시 색상은 KaTrain식 절대 `pointsLost` threshold를 따른다. AI 레벨링 선택 정책은 이 절대 bucket에 상대 순위/분위수 bucket을 추가로 조합한다.
 

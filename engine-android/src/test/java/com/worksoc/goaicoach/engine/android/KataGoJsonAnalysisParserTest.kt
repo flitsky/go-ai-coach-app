@@ -90,6 +90,32 @@ class KataGoJsonAnalysisParserTest {
     }
 
     @Test
+    fun blackPointLossUsesKatrainRootMinusCandidateScoreLeadDirection() {
+        val json = """
+            {
+              "id": "black-turn-after-16",
+              "moveInfos": [
+                {"move":"F5","order":0,"scoreLead":0.323012561,"winrate":0.740915671,"visits":1,"prior":0.425682873},
+                {"move":"B3","order":1,"scoreLead":0.420630336,"winrate":0.555510387,"visits":1,"prior":0.279828697}
+              ],
+              "rootInfo": {"scoreLead":0.689856329,"winrate":0.751761888}
+            }
+        """.trimIndent()
+
+        val candidates = KataGoJsonAnalysisParser.parseCandidates(
+            response = json,
+            player = StoneColor.Black,
+            boardSize = BoardSize.Nine,
+            maxCandidates = 20,
+        )
+
+        assertEquals("F5", (candidates[0].move as Move.Play).coordinate.label(BoardSize.Nine))
+        assertEquals(0.366843768, candidates[0].pointLoss ?: error("missing F5 point loss"), 0.000001)
+        assertEquals("B3", (candidates[1].move as Move.Play).coordinate.label(BoardSize.Nine))
+        assertEquals(0.269225993, candidates[1].pointLoss ?: error("missing B3 point loss"), 0.000001)
+    }
+
+    @Test
     fun parsesJsonPolicyAsPolicyOnlyCandidates() {
         val policy = List(82) { index ->
             when (index) {

@@ -60,6 +60,29 @@ class MoveAnalysisSnapshotTest {
         assertNull(snapshot.candidateAt(point("E5")))
     }
 
+    @Test
+    fun ordersDisplayCandidatesByPointLossBeforeEngineOrder() {
+        val state = GameState.empty(BoardSize.Nine, Ruleset.Japanese)
+        val snapshot = MoveAnalysisSnapshot.from(
+            state = state,
+            candidates = listOf(
+                CandidateMove(
+                    move = Move.Play(StoneColor.Black, point("F5")),
+                    pointLoss = 0.3,
+                ),
+                CandidateMove(
+                    move = Move.Play(StoneColor.Black, point("B3")),
+                    pointLoss = 0.0,
+                ),
+            ),
+        )
+
+        val display = snapshot.candidatesForDisplay()
+
+        assertEquals(point("B3"), (display[0].move as Move.Play).coordinate)
+        assertEquals(point("F5"), (display[1].move as Move.Play).coordinate)
+    }
+
     private fun point(label: String): BoardCoordinate =
         BoardCoordinate.fromLabel(label, BoardSize.Nine)
 }

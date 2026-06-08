@@ -449,3 +449,6 @@
 - 사용자가 후보수 착점 위 숫자에 `lead`를 표시하는 것이 직관적이지 않고, 후보 평가에는 `loss`만 보여주는 편이 낫다고 피드백했다.
 - KataGo 원본 JSON analysis는 `scoreLead`/`winrate`를 제공하고, 앱과 KaTrain은 root score 대비 손실값을 각각 `pointLoss`/`pointsLost`로 계산한다는 점을 다시 확인했다.
 - 보드 위 Top Moves 숫자는 후보 착수 후 형세 리드가 아니라 현재 착수자 기준 `-pointLoss` delta로 표시하도록 변경했다. 후보 상세 텍스트와 착수 리뷰 문구도 기본 `lead` 표시를 제거하고 `loss` 중심으로 정리했다.
+- 사용자가 흑 차례 로그에서 `1. Black F5 loss=0.3`, `2. Black B3 loss=0.0`처럼 손실이 더 큰 후보가 1번으로 표시되는 문제를 보고하고, 백 기준 loss 사용 여부를 의심했다.
+- 같은 수순을 로컬 KataGo JSON analysis로 재현했다. 원본 `scoreLead`는 흑 기준이고, KaTrain은 `pointsLost = player_sign(next_player) * (root_scoreLead - candidate_scoreLead)`로 현재 착수자 관점 손실을 계산한다. 우리 JSON parser의 부호 계산은 이 공식과 일치했다.
+- 문제 원인은 `pointLoss`가 아니라 UI/후보 상세가 KataGo `order`를 우선해 정렬하던 데 있었다. Top Moves 보드 표시와 후보 상세 텍스트는 이제 `pointLoss` 오름차순을 우선하고, 동률일 때만 engine order를 보조 기준으로 사용한다.
