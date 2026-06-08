@@ -409,3 +409,7 @@
 - `PlayLevelSettingTest`를 추가해 B16/B32 매핑, 단계 clamp, percentile index 계산을 검증했다.
 - 문서는 `USER_OPTION_MANUAL.md`, `ENGINE_SEARCH_MODE_DIRECTION.md`, `ENGINE_LEVELING_DISCUSSION.md`, `ENGINE_BEGINNER_VISITS_BENCHMARK.md`를 갱신했다.
 - 검증으로 `make test`가 통과했다.
+- 사용자가 최신 앱을 폰에 설치해달라고 요청했다.
+- `adb devices -l`에서 폰 `R5CT22WTVXP` (`SM_S908N`)가 `device` 상태로 확인되었다.
+- `ANDROID_SERIAL=R5CT22WTVXP make reinstall-dev-engine`를 실행했다. 기존 앱 uninstall, debug APK install, KataGo model/config/analysis config seed, 앱 cold launch가 모두 성공했다.
+- 전체 명령은 약 17.2초가 걸렸고, 앱 cold launch `TotalTime=673ms`가 기록되었다.
