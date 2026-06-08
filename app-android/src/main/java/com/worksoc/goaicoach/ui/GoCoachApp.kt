@@ -75,6 +75,7 @@ import com.worksoc.goaicoach.persistence.SavedGameSnapshot
 import com.worksoc.goaicoach.presentation.AnalysisUiState
 import com.worksoc.goaicoach.presentation.EngineUiState
 import com.worksoc.goaicoach.presentation.GameScreenState
+import com.worksoc.goaicoach.presentation.GameUiEvent
 import com.worksoc.goaicoach.presentation.KaTrainUxOptions
 import com.worksoc.goaicoach.presentation.ResumePromptState
 import com.worksoc.goaicoach.presentation.ScoreUiState
@@ -627,88 +628,6 @@ private fun GoCoachScreen(
         }
     }
 
-    fun startAiGame() {
-        playerSetup = PlayerSetup()
-        startConfiguredGame()
-    }
-
-    fun startLocalTwoPlayerGame() {
-        val targetRuleset = gameState.ruleset
-        playerSetup = PlayerSetup(
-            black = playerSetup.black.copy(controller = SeatController.Human),
-            white = playerSetup.white.copy(controller = SeatController.Human),
-        )
-        resetLocalGame("2P test mode. Local shared rules handle captures, suicide, and simple ko.", targetRuleset)
-        if (!isEngineReady) {
-            engineMessage = "2P test mode without engine analysis. Local rules are active."
-            return
-        }
-        if (isEngineBusy) {
-            engineMessage = "Engine is busy. Change mode after the current response."
-            return
-        }
-
-        val nextState = gameState
-        scope.launch {
-            isEngineBusy = true
-            runCatching {
-                withContext(Dispatchers.IO) {
-                    engineAdapter.syncAndEstimateGraphScore(nextState, engineProfile)
-                }
-            }.onSuccess { estimate ->
-                scoreText = estimate.toDisplayText()
-                scoreEstimate = estimate
-                scoreSnapshots = listOf(ScoreTimeline.fromEstimate(0, estimate))
-                engineMessage = "2P test mode connected to engine analysis."
-            }.onFailure { error ->
-                engineMessage = error.message ?: "2P engine sync failed."
-            }
-            isEngineBusy = false
-            requestTopMoveAnalysisForState(
-                targetState = gameState,
-                automatic = true,
-            )
-        }
-    }
-
-    fun changePlayLevel(nextSetting: PlayLevelSetting) {
-        val normalized = nextSetting.normalized()
-        if (normalized == playLevel) {
-            return
-        }
-        if (!isEngineReady) {
-            engineMessage = "Engine is not ready."
-            return
-        }
-        if (isEngineBusy) {
-            engineMessage = "AI is busy. Change level after the current response."
-            return
-        }
-
-        val nextProfile = normalized.toEngineProfile(engineProfile)
-        playLevel = normalized
-        engineProfile = nextProfile
-        analysisPreset = normalized.analysisPreset
-        clearTopMoveSpots("Engine level changed to ${normalized.displayLabel}.")
-        clearReviewAnalysis(gameState)
-        lastAnalysisKey = null
-        scope.launch {
-            isEngineBusy = true
-            runCatching {
-                withContext(Dispatchers.IO) { engineAdapter.configure(nextProfile) }
-            }.onSuccess { status ->
-                engineMessage = "${status.message}\nLevel: ${normalized.displayLabel} (${normalized.selectionPolicy.description})."
-            }.onFailure { error ->
-                engineMessage = error.message ?: "Engine configuration failed."
-            }
-            isEngineBusy = false
-            requestTopMoveAnalysisForState(
-                targetState = gameState,
-                automatic = true,
-            )
-        }
-    }
-
     fun requestAiTurnForCurrentState() {
         if (
             isGameEnded ||
@@ -1129,6 +1048,40 @@ private fun GoCoachScreen(
         Toast.makeText(context, "Debug report copied", Toast.LENGTH_SHORT).show()
     }
 
+    fun dispatch(event: GameUiEvent) {
+        when (event) {
+            GameUiEvent.StartConfiguredGame -> startConfiguredGame()
+            GameUiEvent.CopyDebugReport -> copyDebugReport()
+            GameUiEvent.RequestScoreEstimate -> requestScoreEstimate()
+            GameUiEvent.ToggleTopMoves -> {
+                if (topMovesEnabled) {
+                    hideTopMoves()
+                } else {
+                    showTopMovesForCurrentState()
+                }
+            }
+            GameUiEvent.UndoLastTurn -> undoLastTurn()
+            GameUiEvent.Pass -> submitHumanMove(Move.Pass(gameState.nextPlayer))
+            GameUiEvent.DismissResumePrompt -> {
+                sessionStore.clear()
+                pendingSavedSession = null
+                shouldShowResumePrompt = false
+            }
+            is GameUiEvent.ResumeSavedSession -> {
+                pendingSavedSession = null
+                shouldShowResumePrompt = false
+                restoreSavedSession(event.snapshot)
+            }
+            is GameUiEvent.PlayAt -> submitHumanMove(Move.Play(gameState.nextPlayer, event.coordinate))
+            is GameUiEvent.SubmitMove -> submitHumanMove(event.move)
+            is GameUiEvent.ChangePlayerSetup -> changePlayerSetup(event.setup)
+            is GameUiEvent.ChangeScoringRule -> changeScoringRule(event.ruleset)
+            is GameUiEvent.ChangeUxOptions -> {
+                uxOptions = event.options
+            }
+        }
+    }
+
     LaunchedEffect(
         isEngineReady,
         isEngineBusy,
@@ -1200,9 +1153,7 @@ private fun GoCoachScreen(
     ) {
         AlertDialog(
             onDismissRequest = {
-                sessionStore.clear()
-                pendingSavedSession = null
-                shouldShowResumePrompt = false
+                dispatch(GameUiEvent.DismissResumePrompt)
             },
             title = { Text("이전 대국 이어하기") },
             text = {
@@ -1226,9 +1177,7 @@ private fun GoCoachScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        pendingSavedSession = null
-                        shouldShowResumePrompt = false
-                        restoreSavedSession(savedSessionToPrompt)
+                        dispatch(GameUiEvent.ResumeSavedSession(savedSessionToPrompt))
                     },
                 ) {
                     Text("예")
@@ -1237,9 +1186,7 @@ private fun GoCoachScreen(
             dismissButton = {
                 TextButton(
                     onClick = {
-                        sessionStore.clear()
-                        pendingSavedSession = null
-                        shouldShowResumePrompt = false
+                        dispatch(GameUiEvent.DismissResumePrompt)
                     },
                 ) {
                     Text("아니오")
@@ -1287,7 +1234,7 @@ private fun GoCoachScreen(
                 playerSetup = screenState.playerSetup,
                 engineName = screenState.engine.name,
                 enabled = !screenState.engine.isBusy,
-                onPlayerSetupChange = ::changePlayerSetup,
+                onPlayerSetupChange = { setup -> dispatch(GameUiEvent.ChangePlayerSetup(setup)) },
             )
 
             GameMenuActionsPanel(
@@ -1296,14 +1243,14 @@ private fun GoCoachScreen(
                 canStartNew = !screenState.engine.isBusy &&
                     (screenState.matchMode == MatchMode.LocalTwoPlayer || screenState.engine.isReady),
                 canChangeRuleset = !screenState.engine.isBusy,
-                onNewGame = ::startConfiguredGame,
-                onCopyLog = ::copyDebugReport,
-                onRulesetChange = ::changeScoringRule,
+                onNewGame = { dispatch(GameUiEvent.StartConfiguredGame) },
+                onCopyLog = { dispatch(GameUiEvent.CopyDebugReport) },
+                onRulesetChange = { ruleset -> dispatch(GameUiEvent.ChangeScoringRule(ruleset)) },
             )
 
             KaTrainUxMenuPanel(
                 options = screenState.uxOptions,
-                onOptionsChange = { nextOptions -> uxOptions = nextOptions },
+                onOptionsChange = { nextOptions -> dispatch(GameUiEvent.ChangeUxOptions(nextOptions)) },
             )
 
         }
@@ -1334,7 +1281,7 @@ private fun GoCoachScreen(
                 .fillMaxWidth()
                 .aspectRatio(1f),
             onCoordinateTap = { coordinate ->
-                submitHumanMove(Move.Play(screenState.nextPlayer, coordinate))
+                dispatch(GameUiEvent.PlayAt(coordinate))
             },
         )
 
@@ -1344,7 +1291,7 @@ private fun GoCoachScreen(
         ) {
             Button(
                 onClick = {
-                    submitHumanMove(Move.Pass(screenState.nextPlayer))
+                    dispatch(GameUiEvent.Pass)
                 },
                 enabled = !screenState.isGameEnded &&
                     boardInputEnabled(
@@ -1360,7 +1307,7 @@ private fun GoCoachScreen(
             }
 
             OutlinedButton(
-                onClick = ::undoLastTurn,
+                onClick = { dispatch(GameUiEvent.UndoLastTurn) },
                 enabled = !screenState.engine.isBusy &&
                     screenState.gameState.moves.isNotEmpty() &&
                     (screenState.engine.isReady || screenState.matchMode == MatchMode.LocalTwoPlayer),
@@ -1375,7 +1322,7 @@ private fun GoCoachScreen(
                 (!screenState.engine.isBusy || screenState.analysis.topMovesEnabled)
             if (screenState.analysis.topMovesEnabled) {
                 Button(
-                    onClick = ::hideTopMoves,
+                    onClick = { dispatch(GameUiEvent.ToggleTopMoves) },
                     enabled = topMovesButtonEnabled,
                     modifier = Modifier.weight(1f),
                     contentPadding = ActionButtonContentPadding,
@@ -1384,7 +1331,7 @@ private fun GoCoachScreen(
                 }
             } else {
                 OutlinedButton(
-                    onClick = ::showTopMovesForCurrentState,
+                    onClick = { dispatch(GameUiEvent.ToggleTopMoves) },
                     enabled = topMovesButtonEnabled,
                     modifier = Modifier.weight(1f),
                     contentPadding = ActionButtonContentPadding,
@@ -1394,7 +1341,7 @@ private fun GoCoachScreen(
             }
 
             OutlinedButton(
-                onClick = ::requestScoreEstimate,
+                onClick = { dispatch(GameUiEvent.RequestScoreEstimate) },
                 enabled = !screenState.engine.isBusy &&
                     (screenState.engine.isReady || screenState.matchMode == MatchMode.LocalTwoPlayer),
                 modifier = Modifier.weight(1f),

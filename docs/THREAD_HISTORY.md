@@ -533,3 +533,8 @@
 - `GoCoachApp.kt`는 렌더링 직전 `screenState`를 구성하고, 보드/그래프/엔진 응답/메뉴 일부를 이 상태 모델에서 읽도록 변경했다. 아직 모든 `remember`를 제거하지는 않았지만 ViewModel/Controller 전환을 위한 상태 계약이 생겼다.
 - `GameScreenStateTest`를 추가해 현재 차례 노출과 UX 옵션 기본값을 검증했다.
 - 검증으로 `make test`가 통과했다.
+- 리팩토링 Phase 2 후속으로 `app-android/presentation/GameUiEvent.kt`를 추가했다. Start/New, Copy Log, Eval, Top Moves toggle, Undo, Pass, 좌표 착수, Player Setup 변경, 규칙 변경, UX 옵션 변경, 이어하기/취소를 typed event로 표현한다.
+- `GoCoachApp.kt`의 버튼/패널 콜백은 직접 내부 함수를 넘기는 대신 `dispatch(GameUiEvent...)`를 호출하도록 바꿨다. 현재 dispatch는 같은 파일 안에서 기존 함수를 위임하지만, 이후 ViewModel/Controller로 옮길 이벤트 계약이 생겼다.
+- Player Setup 도입 이후 더 이상 호출되지 않던 과거 `startAiGame`, `startLocalTwoPlayerGame`, `changePlayLevel` 함수를 제거했다.
+- `GameUiEventTest`를 추가해 event payload가 의도대로 보존되는지 검증했다.
+- 중간 점검 요청에 따라 `make test` 통과 후 원격 Wi-Fi 디바이스 `192.168.35.178:45059`에 개발용 엔진 포함 APK를 설치했고, 앱 cold launch `TotalTime=663ms`를 확인했다.
