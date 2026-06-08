@@ -388,3 +388,7 @@
 - 초급 AI는 실제 응수 profile을 `Beginner 16 / 250ms`로 유지하되, 후보 bucket 확보가 부족하면 selection/review 분석만 32/64 또는 `Balanced-light`로 올릴 수 있다. 단, visits만 올린다고 yellow/red가 자동 확보되는 것은 아니며 policy 후보 포함과 낮은 budget refine가 더 중요하다고 기록했다.
 - 사용자가 엔진 탐색 결과가 수치 기반인지, yellow/orange 후보가 없을 수 있는지, 그리고 색상이 아니라 탐색 후보 내 최저 점수 기준 상대 분포가 더 명확한지 질문했다.
 - `ENGINE_LEVELING_DISCUSSION.md`에 엔진 수치(`scoreLead`, `winrate`, `visits`, `prior`, `pointLoss`)와 색상 분포의 관계를 추가했다. 사용자 피드백 색상은 절대 `pointLoss` 기준을 유지하고, AI 난이도 선택은 상대 순위/분위수 bucket을 함께 쓰는 하이브리드가 적절하다고 정리했다.
+- 사용자가 KaTrain의 yellow/orange/red spot 구분 방식과, `Beginner 16` 대신 32/64를 기본 운영하며 후보를 더 많이 수집하는 방식의 레벨링 장단점 분석을 요청했다.
+- KaTrain 소스 재확인 결과, spot 색상은 엔진이 직접 분류하지 않고 `pointsLost = player_sign(next_player) * (root_score - candidate_scoreLead)`로 계산한 뒤 기본 `eval_thresholds [12, 6, 3, 1.5, 0.5, 0]`에 따라 색상 index를 고른다.
+- `KATRAIN_TOP_MOVES_ANALYSIS.md`에 KaTrain 계산식, threshold별 의미, 우리 앱의 `MoveQualityBucket` 도메인화 적용 방향을 추가했다.
+- `ENGINE_LEVELING_DISCUSSION.md`에는 `Beginner 32/64`가 후보 수집과 학습 피드백 품질에는 도움이 되지만, AI가 best를 고르면 체감 난이도가 올라가고 느린 폰 지연이 커질 수 있다고 기록했다. 권장 방향은 `Fast Beginner`와 `Learning Beginner`를 분리하고, 후자는 `MoveSelectionPolicy`로 약함을 유지하는 것이다.

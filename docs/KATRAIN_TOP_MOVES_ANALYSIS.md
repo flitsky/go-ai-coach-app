@@ -27,6 +27,35 @@ Top Moves, 착수 평가 색상, ownership overlay를 KaTrain처럼 고도화하
 
 KaTrain의 초록/노랑/빨강 spot은 엔진이 직접 분류해서 주는 값이 아니다. 엔진은 `rootInfo.scoreLead`와 후보별 `scoreLead`, `winrate`, `visits`, `prior`를 주고, KaTrain이 현재 root score 대비 후보의 `pointsLost`를 계산해 색상으로 바꾼다. 별도로 `relativePointsLost`는 최선 후보 대비 손실값으로 계산된다.
 
+KaTrain 기준 계산식은 다음과 같다.
+
+```text
+pointsLost = player_sign(next_player) * (root_score - candidate_scoreLead)
+relativePointsLost = player_sign(next_player) * (top_move_scoreLead - candidate_scoreLead)
+winrateLost = player_sign(next_player) * (root_winrate - candidate_winrate)
+```
+
+여기서 `player_sign`은 흑이면 `+1`, 백이면 `-1`이다. 즉 같은 `scoreLead`라도 현재 착수자가 누구인지에 따라 손실 방향이 바뀐다.
+
+KaTrain 기본 `eval_thresholds`는 다음 순서다.
+
+```text
+[12, 6, 3, 1.5, 0.5, 0]
+```
+
+KaTrain의 `evaluation_class()`는 큰 손실에서 작은 손실 방향으로 threshold를 통과시킨 뒤 색상 index를 고른다. 기본 색상 테마 기준으로 해석하면 다음과 같다.
+
+| `pointsLost` 구간 | KaTrain 색상 계열 | 의미 |
+| ---: | --- | --- |
+| `0.5` 이하 | 진한 초록 | 최선 또는 거의 최선 |
+| `0.5` 초과, `1.5` 이하 | 연한 초록 | 좋은 수 |
+| `1.5` 초과, `3` 이하 | 노랑 | 부정확 |
+| `3` 초과, `6` 이하 | 주황 | 실수 |
+| `6` 초과, `12` 이하 | 빨강 | 큰 실수 |
+| `12` 초과 | 보라/자주 계열 | 매우 큰 실수 |
+
+현재 Go AI Coach의 색상 단계는 모바일 화면에 맞춰 `6` 초과를 모두 빨강으로 단순화해 두었다. 레벨링 데이터 모델에서는 KaTrain처럼 `12` 초과를 별도 `SevereBlunder` bucket으로 보관하고, UI에서는 일단 빨강 계열로 표시하는 방식이 좋다.
+
 따라서 우리 앱도 다음 구조가 맞다.
 
 - `EngineAdapter`는 후보별 정량값만 DTO로 반환한다.
@@ -34,6 +63,7 @@ KaTrain의 초록/노랑/빨강 spot은 엔진이 직접 분류해서 주는 값
 - UI는 snapshot 중 `CandidateMove.pointLoss`가 있는 후보만 보드에 표시한다.
 - 색상은 앱 공통 규칙으로 계산한다.
 - 점수 없는 policy/legal/legal-only 후보는 snapshot과 로그에는 남기지만, 보드 spot으로는 그리지 않는다.
+- 표시 색상은 KaTrain식 절대 `pointsLost` threshold를 따른다. AI 레벨링 선택 정책은 이 절대 bucket에 상대 순위/분위수 bucket을 추가로 조합한다.
 
 ## 현재 반영 상태
 
@@ -55,7 +85,8 @@ KaTrain의 초록/노랑/빨강 spot은 엔진이 직접 분류해서 주는 값
   - `1.5`집 이하: 연한 초록
   - `3.0`집 이하: 노랑
   - `6.0`집 이하: 주황
-  - 그 이상: 빨강
+  - `12.0`집 이하: 빨강
+  - 그 이상: 현재 UI는 빨강 계열로 표시하되, 내부 데이터 bucket은 `SevereBlunder`로 분리 가능
 - ownership은 `Eval` 결과가 있으면 별도 메뉴 없이 보드에 표시한다.
 - ownership 렌더링은 기존 사각형 heatmap 대신 교차점 주변 radial gradient로 표현한다.
 
@@ -93,6 +124,12 @@ KaTrain의 초록/노랑/빨강 spot은 엔진이 직접 분류해서 주는 값
    - 이미 후보가 된 수들의 visits를 맞추는 equalize 분석은 상위 후보 비교 품질을 높인다.
    - 모바일에서는 전체 합법점 sweep을 기본 자동 실행하기보다 수동 고급 분석으로 두는 편이 안전하다.
    - Android CPU에서 GTP search가 매우 느린 점을 고려해, JSON analysis protocol과 후보별 refine 분석을 별도 adapter 경로로 실험해야 한다.
+
+5. KaTrain식 색상 bucket 도메인화
+   - UI 함수 안에 threshold를 직접 두지 않고, shared/domain에 `MoveQualityBucket`을 둔다.
+   - bucket은 `Excellent`, `Good`, `Inaccuracy`, `Mistake`, `Blunder`, `SevereBlunder`, `Unknown`으로 둔다.
+   - Top Moves spot, 착수 후 돌 중앙 dot, move review 문구, AI 레벨링 정책이 같은 bucket 계산기를 사용하게 한다.
+   - 단, AI 레벨링은 이 bucket만 쓰지 않고 상대 순위 bucket도 함께 사용한다.
 
 ## 의사결정
 

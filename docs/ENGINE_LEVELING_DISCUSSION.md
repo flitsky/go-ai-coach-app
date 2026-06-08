@@ -88,6 +88,50 @@ AI가 실제로 응수할 때 쓰는 기본 탐색 예산이다.
 
 현재 구현의 `Lite/Balanced/Deep`은 이 방향과 잘 맞는다. 앞으로는 `PlayLevel`이 내부적으로 `EngineProfile`, `MoveSelectionPolicy`, `AnalysisPreset`을 조합하도록 만드는 것이 좋다.
 
+### Beginner 기본값을 32/64로 올리는 방안
+
+사용자 의견:
+
+> Beginner 16 대신 32 또는 64를 기본값으로 운영하면서 가급적 많은 수를 수집하면 레벨링에 도움이 되지 않는가?
+
+검토:
+
+도움이 된다. 다만 “AI가 더 강해지는 효과”와 “후보 데이터가 많아지는 효과”가 같이 발생하므로 목적별로 다르게 써야 한다.
+
+장점:
+
+- `moveInfos`가 늘어날 가능성이 높아져 `Scored` 후보가 늘 수 있다.
+- yellow/orange/red bucket이 실제로 생길 가능성이 올라간다.
+- AI가 둘 수를 고를 때 `Unknown`이 아니라 정량 평가된 후보 중에서 고를 수 있다.
+- 착수 후 평가 dot, Top Moves, debug report의 품질이 좋아진다.
+- 9x9에서는 후보 수가 최대 81개라, 32/64 정도의 예산 증가는 학습 품질 대비 비용이 받아들일 만할 수 있다.
+
+단점:
+
+- AI가 단순히 best move를 고르면 `Beginner`라도 체감 난이도가 올라간다.
+- 느린 폰에서는 매 턴 지연이 커질 수 있다.
+- 64 visits라도 나쁜 후보까지 충분히 scoring된다는 보장은 없다. KataGo는 좋은 후보에 탐색을 집중할 수 있다.
+- 초급 레벨의 “약함”이 엔진 방문 수와 선택 정책 양쪽에 섞이면 나중에 튜닝 원인 분석이 어려워진다.
+- 엔진이 자주 늦어지면 사용자는 학습 품질보다 대국 리듬 저하를 먼저 느낀다.
+
+권장안:
+
+1. `Beginner 16`을 완전히 폐기하지 않는다.
+2. 기본 빠른 대국은 `Beginner Fast = AI 응수 16 + Lite 분석`으로 유지한다.
+3. 학습 기본값은 `Beginner Wide = AI 응수 32 또는 64 + selection/review 분석 64`를 검토한다.
+4. 단, `Beginner Wide`에서도 AI가 항상 best move를 두지 않도록 `MoveSelectionPolicy`를 반드시 적용한다.
+5. 느린 기기에서는 `Fast`, 빠른 기기 또는 학습 모드에서는 `Wide`를 선택할 수 있게 한다.
+
+1차 제품 기본값 후보:
+
+| 모드 | AI 응수 예산 | 후보 분석 예산 | 의도 |
+| --- | ---: | ---: | --- |
+| Fast Beginner | 16 / 250ms | Lite 16 / 250ms | 느린 폰에서도 대국 리듬 유지 |
+| Learning Beginner | 32 / 350ms | Wide 64 / 500~800ms | 초급이지만 후보 bucket과 피드백 품질 확보 |
+| Review Assist | 16~64 | Balanced/Deep | 대국 중이 아니라 복기/학습 품질 우선 |
+
+현재 토론 기준에서는 `Learning Beginner`가 가장 제품 방향에 맞다. 다만 실제 폰에서 체감 지연을 확인하기 전까지는 `Fast Beginner`를 fallback으로 유지해야 한다.
+
 ### 2. 분석 preset
 
 사용자 턴에서 Top Moves/착수 평가용 데이터를 얼마나 넓고 깊게 모을지 정한다.
@@ -225,10 +269,13 @@ AI가 yellow/red 후보를 의도적으로 고르려면 후보별 `pointLoss`가
 | Green | 0.5~1.5집 | 좋은 수 |
 | Yellow | 1.5~3.0집 | 약간 손해 |
 | Orange | 3.0~6.0집 | 분명한 손해 |
-| Red | 6.0집 초과 | 큰 실수 |
+| Red | 6.0~12.0집 | 큰 실수 |
+| Severe | 12.0집 초과 | 매우 큰 실수 |
 | Unknown | 점수 없음 | 선택 정책에 사용 금지 |
 
 초급 레벨에서는 red를 무조건 많이 쓰기보다 yellow/orange 중심으로 구성하는 것이 낫다.
+
+KaTrain도 이와 거의 같은 절대 손실 기준을 쓴다. 기본 `eval_thresholds`는 `[12, 6, 3, 1.5, 0.5, 0]`이며, 색상 index는 `pointsLost`가 어느 구간에 들어가는지로 결정된다. 우리 앱은 현재 `6` 초과를 빨강으로 단순화했지만, 레벨링 도메인에서는 `6~12`와 `12 초과`를 분리하는 편이 좋다.
 
 ## 엔진 수치와 색상 분포의 관계
 
@@ -291,6 +338,15 @@ KataGo analysis 결과는 기본적으로 수치 기반이다.
 5. 초급 AI가 더 명확히 약해져야 하면 상대 하위 후보를 고르기보다, selection-only 분석 예산을 넓혀 실제 yellow/orange 후보를 확보한다.
 
 즉 사용자 학습 피드백은 “절대 평가”, AI 난이도 조절은 “절대 평가 + 상대 분포”를 함께 쓰는 하이브리드가 가장 안전하다.
+
+적용 구조:
+
+- `MoveQualityBucket`: KaTrain식 절대 손실 bucket
+- `MoveRelativeBucket`: 현재 scored 후보 안에서의 상대 순위 bucket
+- `MoveSelectionPolicy`: 위 두 bucket과 레벨별 확률을 조합해 AI 착수를 선택
+- `MoveDisplayPolicy`: 사용자에게 어떤 spot을 어떤 수량으로 보여줄지 결정
+
+이렇게 나누면 UI 색상과 AI 난이도 정책이 서로 오염되지 않는다.
 
 ## 초급 1~5 수정안
 
