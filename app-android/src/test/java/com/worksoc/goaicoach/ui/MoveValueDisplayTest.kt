@@ -14,25 +14,23 @@ import org.junit.Test
 
 class MoveValueDisplayTest {
     @Test
-    fun topMoveBoardLabelUsesPointLossDeltaInsteadOfScoreLead() {
+    fun topMoveBoardLabelUsesPositivePointLossInsteadOfScoreLead() {
         val candidate = CandidateMove(
             move = Move.Play(StoneColor.Black, BoardCoordinate(row = 3, column = 4)),
             scoreLead = -12.0,
             pointLoss = 0.2,
         )
 
-        assertEquals("-0.2", candidate.pointDeltaLabel())
         assertEquals("0.2", candidate.pointLossLabel())
     }
 
     @Test
-    fun zeroPointLossDisplaysAsNeutralDelta() {
+    fun zeroPointLossDisplaysAsNeutralLoss() {
         val candidate = CandidateMove(
             move = Move.Play(StoneColor.White, BoardCoordinate(row = 3, column = 4)),
             pointLoss = 0.0,
         )
 
-        assertEquals("0.0", candidate.pointDeltaLabel())
         assertEquals("0.0", candidate.pointLossLabel())
     }
 

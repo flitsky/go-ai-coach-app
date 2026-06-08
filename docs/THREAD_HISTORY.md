@@ -457,3 +457,5 @@
 - `MoveAnalysisSnapshot.candidatesForDisplay()`와 후보 상세 텍스트를 engine order 우선으로 되돌리고, 저예산 분석에서 order와 `pointLoss`가 어긋나도 앱이 순위를 임의로 뒤집지 않도록 테스트를 수정했다.
 - 같은 원칙을 AI 응수 선택에도 적용했다. 레벨링의 상위/하위 percentile window는 KataGo가 반환한 후보 순서 기준이며, `pointLoss`가 낮다는 이유만으로 엔진 order 뒤 후보를 최적수로 승격하지 않는다.
 - `ENGINE_BEGINNER_VISITS_BENCHMARK.md`, `ENGINE_LEVELING_DISCUSSION.md`, `USER_OPTION_MANUAL.md`도 engine order 우선 정책으로 갱신했다.
+- 사용자가 Top Moves 그린스팟 위 숫자가 음수 loss로 표시되는 문제를 보고했다. 원인은 보드 label이 `pointLoss`를 `-pointLoss` delta로 반전해 표시하던 `pointDeltaLabel()` 경로였다.
+- 보드 위 후보수 숫자도 후보 상세와 동일하게 양수 `loss`를 표시하도록 `GoBoard`를 수정하고, 반전 label helper를 제거했다.
