@@ -30,6 +30,7 @@ internal fun moveReviewToneFor(pointLoss: Double?): MoveReviewTone =
 internal fun topMoveDisplayToneFor(
     pointLoss: Double?,
     bestShownPointLoss: Double?,
+    worstShownPointLoss: Double?,
 ): MoveReviewTone {
     val absoluteTone = moveReviewToneFor(pointLoss)
     val loss = pointLoss ?: return absoluteTone
@@ -38,12 +39,16 @@ internal fun topMoveDisplayToneFor(
         return absoluteTone
     }
 
-    val relativeLoss = (loss - bestLoss).coerceAtLeast(0.0)
+    val worstLoss = worstShownPointLoss ?: bestLoss
+    if (worstLoss <= bestLoss) {
+        return MoveReviewTone.Inaccuracy
+    }
+
+    val relativeLoss = ((loss - bestLoss) / (worstLoss - bestLoss)).coerceIn(0.0, 1.0)
     return when {
-        relativeLoss <= 0.5 -> MoveReviewTone.Good
-        relativeLoss <= 1.5 -> MoveReviewTone.Inaccuracy
-        relativeLoss <= 3.0 -> MoveReviewTone.Mistake
-        else -> MoveReviewTone.Blunder
+        relativeLoss <= 0.15 -> MoveReviewTone.Inaccuracy
+        relativeLoss >= 0.85 -> MoveReviewTone.Blunder
+        else -> MoveReviewTone.Mistake
     }
 }
 

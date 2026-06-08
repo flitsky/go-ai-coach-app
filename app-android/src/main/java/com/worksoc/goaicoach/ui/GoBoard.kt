@@ -232,6 +232,9 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawCandidateMoves(
     val bestShownPointLoss = candidateMoves.minOfOrNull { candidate ->
         candidate.pointLoss ?: Double.POSITIVE_INFINITY
     }?.takeIf { it.isFinite() }
+    val worstShownPointLoss = candidateMoves.maxOfOrNull { candidate ->
+        candidate.pointLoss ?: Double.NEGATIVE_INFINITY
+    }?.takeIf { it.isFinite() }
 
     candidateMoves.forEachIndexed { index, candidate ->
         val play = candidate.move as? Move.Play ?: return@forEachIndexed
@@ -243,7 +246,9 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawCandidateMoves(
         val center = geometry.pointFor(play.coordinate)
         val radius = geometry.spacing * if (index == 0) 0.24f else 0.18f
         val fillAlpha = if (index == 0) 0.76f else 0.48f
-        val color = candidateToneColor(topMoveDisplayToneFor(pointLoss, bestShownPointLoss))
+        val color = candidateToneColor(
+            topMoveDisplayToneFor(pointLoss, bestShownPointLoss, worstShownPointLoss),
+        )
         drawCircle(
             color = color.copy(alpha = fillAlpha),
             radius = radius,
