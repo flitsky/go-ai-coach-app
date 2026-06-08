@@ -428,3 +428,8 @@
 - 사용자 로그와 같은 `localScore=B+31.5`, `prePass scoreLead=-30.546...`, `engineEstimate=-31.655` 케이스를 `EndgameScoreSelectorTest`에 추가했다. 이제 이 경우 불필요한 `UnsettledPrePassTopMoveEstimate`가 아니라 cleaned local area `B+31.5`를 유지한다.
 - 기존 pre-pass 종국 회귀 테스트의 테스트 데이터도 백 기준 scoreLead convention에 맞게 갱신했다.
 - 검증으로 `make test`가 통과했다.
+- 사용자가 흑 기준 높은 점수를 얻는 후보인데도 노랑/주황 스팟이 표시되는 현상을 보고하고, 색상이 최고 점수 후보를 green으로 둔 뒤 순위 차등으로 계산되는 실수가 있는지 검토를 요청했다.
+- 코드 확인 결과 보드 스팟 색상은 `GoBoard.drawCandidateMoves()`에서 `candidate.pointLoss`만으로 결정된다. 후보 index는 원 크기/투명도에만 쓰이며 색상에는 쓰이지 않는다.
+- `KataGoJsonAnalysisParser`는 JSON `rootInfo.scoreLead`를 앱의 백 기준 lead로 변환하고, 후보별 `scoreLead`와 root score의 차이를 현재 착수자 기준 `pointLoss`로 계산한다. `rootInfo`가 없는 예외 응답만 order 0 후보 대비 손실로 fallback한다.
+- 따라서 흑이 절대적으로 크게 이기는 후보라도 root/best 대비 몇 집을 잃으면 노랑/주황으로 표시될 수 있다. 이는 현재 KaTrain식 점수손실 기준과 일치한다.
+- 혼동을 줄이기 위해 `USER_OPTION_MANUAL.md`에 스팟 색상은 절대 예상 리드가 아니라 root score 대비 `pointLoss` 기준이라는 설명과 예시를 추가했다.
