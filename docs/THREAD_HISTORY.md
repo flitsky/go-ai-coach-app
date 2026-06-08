@@ -538,3 +538,6 @@
 - Player Setup 도입 이후 더 이상 호출되지 않던 과거 `startAiGame`, `startLocalTwoPlayerGame`, `changePlayLevel` 함수를 제거했다.
 - `GameUiEventTest`를 추가해 event payload가 의도대로 보존되는지 검증했다.
 - 중간 점검 요청에 따라 `make test` 통과 후 원격 Wi-Fi 디바이스 `192.168.35.178:45059`에 개발용 엔진 포함 APK를 설치했고, 앱 cold launch `TotalTime=663ms`를 확인했다.
+- 리팩토링 Phase 2 후속으로 `GameScreenStateInput`과 `buildGameScreenState()`를 추가했다. `GoCoachApp.kt`가 직접 `GameScreenState(...)`를 조립하지 않고 presentation helper를 통해 화면 상태 계약을 만든다.
+- `GameScreenStateTest`를 helper 중심으로 갱신하고, 이어하기 팝업이 엔진 startup 완료 후 idle 상태에서만 노출되는 조건을 테스트로 고정했다.
+- 검증으로 `make test`가 통과했다.

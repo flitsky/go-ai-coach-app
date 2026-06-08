@@ -72,13 +72,10 @@ import com.worksoc.goaicoach.match.modeSummary
 import com.worksoc.goaicoach.match.summary
 import com.worksoc.goaicoach.persistence.GameSessionStore
 import com.worksoc.goaicoach.persistence.SavedGameSnapshot
-import com.worksoc.goaicoach.presentation.AnalysisUiState
-import com.worksoc.goaicoach.presentation.EngineUiState
-import com.worksoc.goaicoach.presentation.GameScreenState
+import com.worksoc.goaicoach.presentation.GameScreenStateInput
 import com.worksoc.goaicoach.presentation.GameUiEvent
 import com.worksoc.goaicoach.presentation.KaTrainUxOptions
-import com.worksoc.goaicoach.presentation.ResumePromptState
-import com.worksoc.goaicoach.presentation.ScoreUiState
+import com.worksoc.goaicoach.presentation.buildGameScreenState
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.AnalysisPreset
 import com.worksoc.goaicoach.shared.BoardCoordinate
@@ -1108,23 +1105,21 @@ private fun GoCoachScreen(
         )
     }
 
-    val screenState = GameScreenState(
-        gameState = gameState,
-        matchMode = matchMode,
-        playerSetup = playerSetup,
-        playLevel = playLevel,
-        uxOptions = uxOptions,
-        engine = EngineUiState(
-            name = engineName,
-            diagnostic = engineDiagnostic,
-            profile = engineProfile,
-            isReady = isEngineReady,
-            isBusy = isEngineBusy,
-            message = engineMessage,
-        ),
-        analysis = AnalysisUiState(
-            preset = analysisPreset,
-            cacheStats = analysisCache.statsText(),
+    val screenState = buildGameScreenState(
+        GameScreenStateInput(
+            gameState = gameState,
+            matchMode = matchMode,
+            playerSetup = playerSetup,
+            playLevel = playLevel,
+            uxOptions = uxOptions,
+            engineName = engineName,
+            engineDiagnostic = engineDiagnostic,
+            engineProfile = engineProfile,
+            isEngineReady = isEngineReady,
+            isEngineBusy = isEngineBusy,
+            engineMessage = engineMessage,
+            analysisPreset = analysisPreset,
+            analysisCacheStats = analysisCache.statsText(),
             topMovesEnabled = topMovesEnabled,
             candidateMoves = candidateMoves,
             candidateText = candidateText,
@@ -1133,18 +1128,16 @@ private fun GoCoachScreen(
             moveReviews = moveReviews,
             moveReviewText = moveReviewText,
             lastMoveText = lastMoveText,
+            scoreText = scoreText,
+            scoreEstimate = scoreEstimate,
+            scoreSnapshots = scoreSnapshots,
+            isScoreGraphExpanded = isScoreGraphExpanded,
+            pendingSavedSession = pendingSavedSession,
+            shouldShowResumePrompt = shouldShowResumePrompt,
+            hasCompletedEngineStartup = hasCompletedEngineStartup,
+            isGameEnded = isGameEnded,
+            endgameLog = endgameLog,
         ),
-        score = ScoreUiState(
-            text = scoreText,
-            estimate = scoreEstimate,
-            snapshots = scoreSnapshots,
-            isGraphExpanded = isScoreGraphExpanded,
-        ),
-        resumePrompt = pendingSavedSession
-            ?.takeIf { shouldShowResumePrompt && hasCompletedEngineStartup && !isEngineBusy }
-            ?.let(::ResumePromptState),
-        isGameEnded = isGameEnded,
-        endgameLog = endgameLog,
     )
 
     val savedSessionToPrompt = screenState.resumePrompt?.snapshot
