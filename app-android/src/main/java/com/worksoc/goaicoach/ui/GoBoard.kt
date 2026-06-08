@@ -31,6 +31,10 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import com.worksoc.goaicoach.application.MoveReviewMarker
+import com.worksoc.goaicoach.application.MoveReviewTone
+import com.worksoc.goaicoach.application.topMoveDeltaScoreLabel
+import com.worksoc.goaicoach.application.topMoveDisplayToneFor
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.CandidateMove

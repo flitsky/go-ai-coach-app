@@ -42,13 +42,16 @@ import com.worksoc.goaicoach.application.AnalysisCacheKey
 import com.worksoc.goaicoach.application.AnalysisResultCache
 import com.worksoc.goaicoach.application.CachedAnalysisResult
 import com.worksoc.goaicoach.application.MinScoredTopMovesForDisplay
+import com.worksoc.goaicoach.application.MoveReviewMarker
 import com.worksoc.goaicoach.application.analysisKeyFor
 import com.worksoc.goaicoach.application.buildDebugReport
+import com.worksoc.goaicoach.application.buildMoveReview
 import com.worksoc.goaicoach.application.buildEndgameLog
 import com.worksoc.goaicoach.application.deepTopMovesAnalysisLimitFor
 import com.worksoc.goaicoach.application.resolveAiEndgame
 import com.worksoc.goaicoach.application.topMoveCandidateCountFor
 import com.worksoc.goaicoach.application.topMovesAnalysisLimitFor
+import com.worksoc.goaicoach.application.withReviewMarker
 import com.worksoc.goaicoach.application.withAnalysisCoverage
 import com.worksoc.goaicoach.application.withTopMovesStrengthHeader
 import com.worksoc.goaicoach.match.MatchMode
@@ -1422,67 +1425,3 @@ private fun localScoreSnapshot(state: GameState): ScoreSnapshot =
         finalScore = BoardScorer.score(state),
         source = ScoreSnapshotSource.LocalAreaEstimate,
     )
-
-private data class MoveReviewResult(
-    val marker: MoveReviewMarker?,
-    val text: String,
-)
-
-private fun buildMoveReview(
-    move: Move,
-    analysis: MoveAnalysisSnapshot,
-    boardSize: BoardSize,
-    moveNumber: Int,
-): MoveReviewResult {
-    val play = move as? Move.Play
-        ?: return MoveReviewResult(
-            marker = null,
-            text = "Move review: pass/resign has no board spot evaluation.",
-        )
-
-    if (!analysis.hasEngineCandidates) {
-        return MoveReviewResult(
-            marker = null,
-            text = "Move review: no pre-move analysis cache was ready.",
-        )
-    }
-
-    val matchedCandidate = analysis.candidateAt(play.coordinate)
-    if (matchedCandidate == null) {
-        return MoveReviewResult(
-            marker = MoveReviewMarker(
-                coordinate = play.coordinate,
-                moveNumber = moveNumber,
-                tone = MoveReviewTone.Unknown,
-            ),
-            text = "Move review: ${play.coordinate.label(boardSize)} was not legal in the pre-move analysis snapshot.",
-        )
-    }
-
-    val pointLoss = matchedCandidate.pointLoss
-    val tone = moveReviewToneFor(pointLoss)
-    val lossText = matchedCandidate.pointLossLabel()
-        ?.let { "loss $it point(s)" }
-        ?: "score loss pending"
-    val priorText = matchedCandidate.policyPrior
-        ?.let { ", policy ${(it * 100).toInt()}%" }
-        .orEmpty()
-
-    return MoveReviewResult(
-        marker = MoveReviewMarker(
-            coordinate = play.coordinate,
-            moveNumber = moveNumber,
-            tone = tone,
-        ),
-        text = "Move review: ${play.coordinate.label(boardSize)} ${moveReviewTextFor(pointLoss)} ($lossText$priorText).",
-    )
-}
-
-private fun List<MoveReviewMarker>.withReviewMarker(
-    marker: MoveReviewMarker?,
-): List<MoveReviewMarker> =
-    if (marker == null) {
-        this
-    } else {
-        filterNot { existing -> existing.moveNumber == marker.moveNumber } + marker
-    }

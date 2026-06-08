@@ -520,3 +520,7 @@
 - `GoCoachApp.kt`는 분석 cache 객체와 key 타입을 application 계층에서 가져다 쓰고, UI 내부에서는 분석 요청 흐름과 상태 반영만 유지한다.
 - `AnalysisSessionTest`를 추가해 후보 수 cap, Balanced 난이도 승격, Deep 수동 분석 예산, LRU cache hit/miss, 분석 헤더/coverage 문자열을 검증했다.
 - 검증으로 `make test`가 통과했다.
+- 리팩토링 Phase 3 후속으로 착수 후 평가 marker/tone, Top Moves 표시 tone, `pointLoss`/delta label formatter, `buildMoveReview()`를 application 계층으로 이동했다.
+- `GoBoard`는 `MoveReviewMarker`와 `MoveReviewTone`을 렌더링만 하고, `GoCoachApp.kt`는 `buildMoveReview()` 결과를 상태에 반영하는 역할만 유지한다.
+- `MoveReviewTest`를 추가해 후보 매칭 시 marker 생성, pass/분석 cache 부재 시 marker 미생성, 같은 수 번호 marker 교체를 검증했다.
+- 검증으로 `make test`가 통과했다.

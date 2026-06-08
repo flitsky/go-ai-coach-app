@@ -1,5 +1,8 @@
 package com.worksoc.goaicoach.ui
 
+import com.worksoc.goaicoach.application.MoveReviewTone
+import com.worksoc.goaicoach.application.moveReviewToneFor
+import com.worksoc.goaicoach.application.topMoveDisplayToneFor
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
