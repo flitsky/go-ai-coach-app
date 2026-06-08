@@ -3,6 +3,7 @@ package com.worksoc.goaicoach.engine.android
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.CandidateMove
+import com.worksoc.goaicoach.shared.CandidateMoveSource
 import com.worksoc.goaicoach.shared.EngineStatus
 import com.worksoc.goaicoach.shared.FinalScoreResult
 import com.worksoc.goaicoach.shared.Move
@@ -97,6 +98,8 @@ internal object KataGoAnalysisParser {
                 scoreLead = fields["scoreLead"]?.toDoubleOrNull(),
                 visits = visits,
                 policyPrior = fields["prior"]?.toDoubleOrNull(),
+                engineOrder = fields["order"]?.toIntOrNull(),
+                source = CandidateMoveSource.EngineSearch,
                 note = fields["order"]?.let { "KataGo order $it" },
             ),
         )
@@ -146,6 +149,7 @@ internal object KataGoAnalysisParser {
                 CandidateMove(
                     move = Move.Play(player, coordinate),
                     policyPrior = prior,
+                    source = CandidateMoveSource.PolicyOnly,
                     note = "NN policy fallback ${index + 1}",
                 )
             }

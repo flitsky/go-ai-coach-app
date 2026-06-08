@@ -14,7 +14,7 @@ import org.junit.Test
 
 class MoveValueDisplayTest {
     @Test
-    fun topMoveBoardLabelUsesPositivePointLossInsteadOfScoreLead() {
+    fun topMoveBoardLabelUsesKatrainStyleDeltaScore() {
         val candidate = CandidateMove(
             move = Move.Play(StoneColor.Black, BoardCoordinate(row = 3, column = 4)),
             scoreLead = -12.0,
@@ -22,6 +22,7 @@ class MoveValueDisplayTest {
         )
 
         assertEquals("0.2", candidate.pointLossLabel())
+        assertEquals("-0.2", candidate.topMoveDeltaScoreLabel())
     }
 
     @Test
@@ -32,6 +33,7 @@ class MoveValueDisplayTest {
         )
 
         assertEquals("0.0", candidate.pointLossLabel())
+        assertEquals("0.0", candidate.topMoveDeltaScoreLabel())
     }
 
     @Test
@@ -42,6 +44,7 @@ class MoveValueDisplayTest {
         )
 
         assertEquals("0.0", candidate.pointLossLabel())
+        assertEquals("0.0", candidate.topMoveDeltaScoreLabel())
     }
 
     @Test

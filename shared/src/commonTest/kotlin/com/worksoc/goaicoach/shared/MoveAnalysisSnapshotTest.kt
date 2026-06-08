@@ -69,10 +69,12 @@ class MoveAnalysisSnapshotTest {
                 CandidateMove(
                     move = Move.Play(StoneColor.Black, point("F5")),
                     pointLoss = 0.3,
+                    engineOrder = 0,
                 ),
                 CandidateMove(
                     move = Move.Play(StoneColor.Black, point("B3")),
                     pointLoss = 0.0,
+                    engineOrder = 1,
                 ),
             ),
         )
@@ -81,6 +83,31 @@ class MoveAnalysisSnapshotTest {
 
         assertEquals(point("F5"), (display[0].move as Move.Play).coordinate)
         assertEquals(point("B3"), (display[1].move as Move.Play).coordinate)
+    }
+
+    @Test
+    fun usesStructuredEngineOrderInsteadOfMergedListIndex() {
+        val state = GameState.empty(BoardSize.Nine, Ruleset.Japanese)
+        val snapshot = MoveAnalysisSnapshot.from(
+            state = state,
+            candidates = listOf(
+                CandidateMove(
+                    move = Move.Play(StoneColor.Black, point("D5")),
+                    pointLoss = 0.1,
+                    engineOrder = 2,
+                ),
+                CandidateMove(
+                    move = Move.Play(StoneColor.Black, point("E5")),
+                    pointLoss = 0.3,
+                    engineOrder = 0,
+                ),
+            ),
+        )
+
+        val display = snapshot.candidatesForDisplay()
+
+        assertEquals(point("E5"), (display[0].move as Move.Play).coordinate)
+        assertEquals(point("D5"), (display[1].move as Move.Play).coordinate)
     }
 
     private fun point(label: String): BoardCoordinate =

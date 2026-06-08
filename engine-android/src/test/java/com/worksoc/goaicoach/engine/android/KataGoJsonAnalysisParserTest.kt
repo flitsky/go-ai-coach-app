@@ -3,6 +3,7 @@ package com.worksoc.goaicoach.engine.android
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.Move
+import com.worksoc.goaicoach.shared.CandidateMoveSource
 import com.worksoc.goaicoach.shared.StoneColor
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -33,9 +34,12 @@ class KataGoJsonAnalysisParserTest {
         assertEquals(-0.5, candidates[0].scoreLead ?: error("missing score lead"), 0.000001)
         assertEquals(0.62, candidates[0].winRate ?: error("missing win rate"), 0.000001)
         assertEquals(0.5, candidates[0].pointLoss ?: error("missing point loss"), 0.000001)
+        assertEquals(0, candidates[0].engineOrder)
+        assertEquals(CandidateMoveSource.EngineSearch, candidates[0].source)
         assertEquals("F5", (candidates[1].move as Move.Play).coordinate.label(BoardSize.Nine))
         assertEquals(-0.2, candidates[1].scoreLead ?: error("missing score lead"), 0.000001)
         assertEquals(0.8, candidates[1].pointLoss ?: error("missing point loss"), 0.000001)
+        assertEquals(1, candidates[1].engineOrder)
     }
 
     @Test
@@ -169,6 +173,8 @@ class KataGoJsonAnalysisParserTest {
         assertEquals(2, candidates.size)
         assertEquals("B8", (candidates[0].move as Move.Play).coordinate.label(BoardSize.Nine))
         assertEquals(0.8, candidates[0].policyPrior ?: error("missing prior"), 0.000001)
+        assertEquals(null, candidates[0].engineOrder)
+        assertEquals(CandidateMoveSource.PolicyOnly, candidates[0].source)
         assertEquals("J1", (candidates[1].move as Move.Play).coordinate.label(BoardSize.Nine))
         assertEquals(0.4, candidates[1].policyPrior ?: error("missing prior"), 0.000001)
     }
@@ -199,6 +205,8 @@ class KataGoJsonAnalysisParserTest {
         assertEquals(2.5, candidate.pointLoss ?: error("missing point loss"), 0.000001)
         assertEquals(8, candidate.visits)
         assertEquals(0.42, candidate.policyPrior ?: error("missing prior"), 0.000001)
+        assertEquals(null, candidate.engineOrder)
+        assertEquals(CandidateMoveSource.PolicyRefine, candidate.source)
     }
 
     private fun point(label: String): BoardCoordinate =

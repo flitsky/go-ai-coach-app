@@ -6,6 +6,7 @@ import com.worksoc.goaicoach.shared.BoardScorer
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.CandidateMove
+import com.worksoc.goaicoach.shared.CandidateMoveSource
 import com.worksoc.goaicoach.shared.DeadStonesResult
 import com.worksoc.goaicoach.shared.EngineAdapter
 import com.worksoc.goaicoach.shared.EngineProfile
@@ -102,6 +103,8 @@ class StubEngineAdapter : EngineAdapter {
                     scoreLead = 0.8 - index * 0.3,
                     pointLoss = index * 0.3,
                     visits = (limit.visits / (index + 1)).coerceAtLeast(1),
+                    engineOrder = index,
+                    source = CandidateMoveSource.Stub,
                     note = if (index == 0) "Stub best candidate" else "Stub candidate ${index + 1}",
                 )
             }

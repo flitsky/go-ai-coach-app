@@ -3,6 +3,7 @@ package com.worksoc.goaicoach.engine.android
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.CandidateMove
+import com.worksoc.goaicoach.shared.CandidateMoveSource
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.StoneColor
 import org.json.JSONObject
@@ -40,6 +41,8 @@ internal object KataGoJsonAnalysisParser {
                             scoreLead = blackScoreLead?.let { -it },
                             visits = moveInfo.optNullableInt("visits"),
                             policyPrior = moveInfo.optNullableDouble("prior"),
+                            engineOrder = moveInfo.optInt("order", index),
+                            source = CandidateMoveSource.EngineSearch,
                             note = "KataGo JSON order ${moveInfo.optInt("order", index)}",
                         ),
                     ),
@@ -101,6 +104,7 @@ internal object KataGoJsonAnalysisParser {
                 CandidateMove(
                     move = Move.Play(player, coordinate),
                     policyPrior = prior,
+                    source = CandidateMoveSource.PolicyOnly,
                     note = "KataGo JSON policy fallback ${index + 1}",
                 )
             }
@@ -128,6 +132,7 @@ internal object KataGoJsonAnalysisParser {
             ),
             visits = rootInfo.optNullableInt("visits"),
             policyPrior = policyPrior,
+            source = CandidateMoveSource.PolicyRefine,
             note = "KataGo JSON refine",
         )
     }

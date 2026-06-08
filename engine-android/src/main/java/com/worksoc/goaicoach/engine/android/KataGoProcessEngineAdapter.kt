@@ -5,6 +5,7 @@ import com.worksoc.goaicoach.shared.AnalysisResult
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.CandidateMove
+import com.worksoc.goaicoach.shared.CandidateMoveSource
 import com.worksoc.goaicoach.shared.DeadStonesResult
 import com.worksoc.goaicoach.shared.EngineAdapter
 import com.worksoc.goaicoach.shared.EngineMode
@@ -307,6 +308,7 @@ class KataGoProcessEngineAdapter(
             .mapIndexed { index, coordinate ->
                 CandidateMove(
                     move = Move.Play(nextPlayer, coordinate),
+                    source = CandidateMoveSource.LegalFallback,
                     note = "Legal fallback ${index + 1}",
                 )
             }

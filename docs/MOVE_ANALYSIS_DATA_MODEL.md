@@ -11,6 +11,7 @@
 ## 현재 구조
 
 - `EngineAdapter.analyze()`는 엔진이 실제로 반환한 후보 목록을 `AnalysisResult.candidates`로 제공한다.
+- `CandidateMove`는 원본 KataGo `moveInfos.order`가 있을 경우 `engineOrder`로 보존하고, 후보 출처를 `source`로 구분한다.
 - 앱은 현재 `GameState`와 후보 목록을 합쳐 `MoveAnalysisSnapshot`을 만든다.
 - `MoveAnalysisSnapshot`은 현재 착수자의 모든 합법 착점을 보존한다.
 - 각 착점은 다음 coverage 중 하나를 가진다.
@@ -25,7 +26,7 @@
 KataGo JSON analysis 경로에서는 normal query 하나로 끝내지 않는다.
 
 1. normal query로 `rootInfo`, `moveInfos`, `policy`를 받는다.
-2. `moveInfos`는 `Scored` 후보가 된다.
+2. `moveInfos`는 `Scored` 후보가 되며 `source=EngineSearch`, `engineOrder=<KataGo order>`를 가진다.
 3. `policy` 배열은 현재 shared rules projection의 합법 착점과 교차 확인한 뒤 `PolicyOnly` 후보로 보존한다.
 4. 아직 `pointLoss`가 없는 상위 policy 후보 일부는 `playedMoves + 후보수` 형태의 refine query로 낮은 visits 재분석을 수행한다.
 5. refine query의 `rootInfo`를 부모 root score와 비교해 해당 후보의 `pointLoss`를 계산한다.
@@ -43,6 +44,7 @@ KataGo JSON analysis 경로에서는 normal query 하나로 끝내지 않는다.
 ## 현재 한계
 
 - JSON normal analysis와 budgeted refine만으로 모든 합법 착점의 `pointLoss`가 바로 채워지지는 않는다.
+- `PolicyRefine` 후보는 별도 query 결과이므로 KataGo normal `moveInfos.order`와 같은 order를 갖지 않는다. UI 표시 순서에서는 원본 `engineOrder`가 있는 후보를 우선하고, 없는 후보는 앱 병합 순서를 fallback으로만 사용한다.
 - 모든 착점을 색상 평가하려면 refine budget을 높이거나 별도 수동 full sweep 모드를 추가해야 한다.
 - 모바일에서는 모든 착점을 매 턴 깊게 분석하면 응답성이 나빠질 수 있으므로, 자동 분석과 수동 deep 분석의 예산을 분리해야 한다.
 

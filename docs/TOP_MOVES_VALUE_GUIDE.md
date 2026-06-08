@@ -4,16 +4,16 @@
 
 ## 한줄 요약
 
-`pointLoss`는 엔진 원본값이 아니라 앱이 계산한 0 이상 손실값이며, 후보 순위는 KataGo `order`, 후보 숫자/색상은 `pointLoss` annotation으로만 해석한다.
+`pointLoss`는 엔진 원본값이 아니라 앱이 계산한 0 이상 손실값이며, 후보 순위는 KataGo `order`, 보드 숫자는 KaTrain식 `-pointLoss` 델타, 색상은 `pointLoss` annotation으로 해석한다.
 
 ## 중요 가이드
 
 > [!IMPORTANT]
-> `pointLoss`에 음수 이득 의미를 넣지 않는다. 화면에 `+1.5 이득` 같은 signed 값을 보여주고 싶다면 `pointDeltaFromRoot` 같은 별도 필드를 추가한다.
+> `pointLoss`에 음수 이득 의미를 넣지 않는다. 다만 보드 위 Top Moves 숫자는 사용자가 직관적으로 읽도록 `-pointLoss`를 표시한다. 화면에 raw 이득까지 포함한 `+1.5` 같은 signed 값을 보여주고 싶다면 `pointDeltaFromRoot` 같은 별도 필드를 추가한다.
 
 KataGo analysis JSON은 `loss`를 직접 주지 않는다. KataGo가 주는 핵심 값은 다음이다.
 
-- `moveInfos.order`: 엔진이 제시한 후보 순서
+- `moveInfos.order`: 엔진이 제시한 후보 순서. `0`이 최선이지만, 이 순위는 score loss 단일 기준이 아니라 KataGo의 play selection 기준이다.
 - `rootInfo.scoreLead`: 현재 root 국면 점수 리드
 - `moveInfos[].scoreLead`: 해당 후보를 둔 뒤의 점수 리드
 - `winrate`, `visits`, `prior`: 보조 분석값
@@ -29,9 +29,9 @@ pointLoss = max(rawLoss, 0.0)
 
 ## UI 표기 규칙
 
-- 보드 위 후보 숫자는 `loss`를 양수로 표시한다.
+- 보드 위 후보 숫자는 KaTrain 기본 UX처럼 `-pointLoss` 델타로 표시한다.
   - `0.0`: 손실 없음
-  - `0.3`: 현재 root 기준 0.3집 손실
+  - `-0.3`: 현재 root 기준 0.3집 손실
 - 후보 상세 텍스트도 `loss=0.3`처럼 표시한다.
 - 음수 `loss=-0.3`은 표시하지 않는다.
 - `+0.3` 같은 이득 표시는 현재 `pointLoss` 모델에서 하지 않는다.
@@ -41,7 +41,7 @@ pointLoss = max(rawLoss, 0.0)
 - 후보 순위와 첫 번째 큰 강조점은 KataGo `moveInfos.order`를 따른다.
 - `pointLoss`가 더 낮더라도 앱이 후보 순서를 임의로 뒤집지 않는다.
 - 색상은 `pointLoss` 기반이다.
-- 저예산 분석에서는 `order`와 `pointLoss`가 어긋날 수 있다. 이 경우도 순위는 `order`, 설명은 `loss`로 분리한다.
+- 저예산 분석에서는 `order`와 `pointLoss`가 어긋날 수 있다. 공식 KataGo 기준 `order`는 `playSelectionValue` 기반이므로, `order 0`이 항상 점수 손실 최소라고 가정하지 않는다. 이 경우도 순위는 `order`, 설명은 `loss`로 분리한다.
 
 ## 향후 확장 규칙
 

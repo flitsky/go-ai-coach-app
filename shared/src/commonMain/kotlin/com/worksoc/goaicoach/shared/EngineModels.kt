@@ -161,8 +161,19 @@ data class CandidateMove(
     val pointLoss: Double? = null,
     val visits: Int? = null,
     val policyPrior: Double? = null,
+    val engineOrder: Int? = null,
+    val source: CandidateMoveSource = CandidateMoveSource.Unknown,
     val note: String? = null,
 )
+
+enum class CandidateMoveSource {
+    EngineSearch,
+    PolicyRefine,
+    PolicyOnly,
+    LegalFallback,
+    Stub,
+    Unknown,
+}
 
 data class AnalysisResult(
     val status: EngineStatus,

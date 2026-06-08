@@ -34,7 +34,7 @@ data class MoveAnalysisSnapshot(
             .asSequence()
             .filter { analyzed -> policy.includes(analyzed.coverage) }
             .sortedWith(
-                compareBy<AnalyzedPlayMove> { it.engineOrder ?: Int.MAX_VALUE }
+                compareBy<AnalyzedPlayMove> { it.displayOrder ?: Int.MAX_VALUE }
                     .thenBy { it.coordinate.row }
                     .thenBy { it.coordinate.column },
             )
@@ -76,7 +76,7 @@ data class MoveAnalysisSnapshot(
                     IndexedCandidate(index, candidate)
                 }
                 .groupBy { indexed -> (indexed.candidate.move as Move.Play).coordinate }
-                .mapValues { (_, values) -> values.minBy { it.index } }
+                .mapValues { (_, values) -> values.minBy { it.candidate.engineOrder ?: it.index } }
 
             val playMoves = legalCoordinates.map { coordinate ->
                 val indexed = indexedCandidates[coordinate]
@@ -84,12 +84,13 @@ data class MoveAnalysisSnapshot(
                     ?: CandidateMove(
                         move = Move.Play(player, coordinate),
                         note = "Legal move pending engine evaluation",
+                        source = CandidateMoveSource.LegalFallback,
                     )
                 AnalyzedPlayMove(
                     coordinate = coordinate,
                     candidate = candidate,
                     coverage = candidate.coverage(),
-                    engineOrder = indexed?.index,
+                    displayOrder = indexed?.candidate?.engineOrder ?: indexed?.index,
                 )
             }
 
@@ -115,7 +116,7 @@ data class AnalyzedPlayMove(
     val coordinate: BoardCoordinate,
     val candidate: CandidateMove,
     val coverage: MoveEvaluationCoverage,
-    val engineOrder: Int?,
+    val displayOrder: Int?,
 )
 
 enum class MoveEvaluationCoverage {

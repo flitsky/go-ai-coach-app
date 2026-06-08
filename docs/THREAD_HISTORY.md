@@ -462,3 +462,9 @@
 - 사용자가 2P 모드 반복 테스트 후 `loss`의 음수 가능성과 signed 이득 표시 여부를 재검토해달라고 요청했다.
 - 코드/스펙 재확인 결과 KataGo는 `loss`를 직접 주지 않고 `scoreLead`를 준다. 앱은 KaTrain 방식으로 raw loss를 계산하되 `coerceAtLeast(0.0)`으로 정규화하므로 exposed `pointLoss`는 음수가 되지 않아야 한다.
 - 긴 논의는 `docs/TOP_MOVES_VALUE_GUIDE.md`로 압축했다. 기준 한줄 요약: `pointLoss`는 0 이상 손실값, 후보 순위는 KataGo `order`, signed 이득 표시는 별도 필드 도입 전까지 금지.
+- 사용자가 “보드 UX에서는 손실을 마이너스 델타로 보기로 한 것 아닌가”라고 재질문했고, KaTrain 원본 로직을 다시 확인했다.
+- KaTrain은 내부 `pointsLost`를 후보 색상에 사용하지만 Top Moves 기본 숫자 `top_move_delta_score`는 `format_loss(-pointsLost)`로 그린다. 따라서 직전 “보드도 양수 loss” 결정은 UI 관점에서 잘못된 정리였다.
+- Go AI Coach 기준을 `내부 pointLoss=0 이상 손실값`, `후보 상세/debug=loss 양수`, `보드 Top Moves 숫자=-pointLoss 델타`로 정정했다.
+- `docs/ENGINE_ANALYSIS_CONSISTENCY_REVIEW.md`를 추가해 KataGo 공식 analysis 스펙, KaTrain `pointsLost`/`order` 처리, Go AI Coach `CandidateMove` 기준을 분리해 기록했다.
+- 공식 KataGo 기준 `order`는 `playSelectionValue` 기반 순위이며 score loss 단일 기준이 아니다. 따라서 `order 0`이 항상 최소 `pointLoss`라고 기대하면 안 된다는 점도 문서에 고정했다.
+- `CandidateMove`에 `engineOrder`와 `source`를 추가해 normal `moveInfos.order`를 구조적으로 보존하고, policy/refine/legal fallback 후보와 섞이지 않도록 기반을 보강했다.

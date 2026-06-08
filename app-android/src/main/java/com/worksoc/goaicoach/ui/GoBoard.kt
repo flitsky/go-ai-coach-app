@@ -260,7 +260,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawCandidateMoves(
             center = center,
             style = Stroke(width = if (index == 0) 4f else 2f),
         )
-        candidate.pointLossLabel()
+        candidate.topMoveDeltaScoreLabel()
             ?.let { drawSpotLabel(center, it, geometry.spacing * 0.28f) }
     }
 }
