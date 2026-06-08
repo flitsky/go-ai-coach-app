@@ -64,15 +64,15 @@ class EndgameRegressionTest {
             prePassCandidates = listOf(
                 CandidateMove(
                     move = Move.Play(StoneColor.Black, point("J5")),
-                    scoreLead = 6.9,
+                    scoreLead = -6.9,
                 ),
                 CandidateMove(
                     move = Move.Play(StoneColor.Black, point("G7")),
-                    scoreLead = 6.8,
+                    scoreLead = -6.8,
                 ),
                 CandidateMove(
                     move = Move.Pass(StoneColor.Black),
-                    scoreLead = -4.1,
+                    scoreLead = 4.1,
                 ),
             ),
         )
@@ -125,11 +125,11 @@ class EndgameRegressionTest {
             prePassCandidates = listOf(
                 CandidateMove(
                     move = Move.Play(StoneColor.Black, point("G9")),
-                    scoreLead = 10.3,
+                    scoreLead = -10.3,
                 ),
                 CandidateMove(
                     move = Move.Play(StoneColor.Black, point("J5")),
-                    scoreLead = 10.1,
+                    scoreLead = -10.1,
                 ),
                 CandidateMove(
                     move = Move.Pass(StoneColor.Black),

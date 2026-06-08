@@ -94,11 +94,11 @@ class EndgameScoreSelectorTest {
         val prePassCandidates = listOf(
             CandidateMove(
                 move = Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("J5", BoardSize.Nine)),
-                scoreLead = 6.9,
+                scoreLead = -6.9,
             ),
             CandidateMove(
                 move = Move.Pass(StoneColor.Black),
-                scoreLead = -4.1,
+                scoreLead = 4.1,
             ),
         )
 
@@ -116,5 +116,52 @@ class EndgameScoreSelectorTest {
         assertEquals(EndgameScoreSource.UnsettledPrePassTopMoveEstimate, selection.source)
         assertEquals(StoneColor.Black, selection.displayScore.winner)
         assertEquals("B+6.9?", selection.displayScore.rawScore)
+    }
+
+    @Test
+    fun keepsCleanedLocalAreaWhenPrePassLeadAgreesWithCleanupFinal() {
+        val localScore = FinalScoreResult(
+            status = EngineStatus.ready("Local score"),
+            rawScore = "B+31.5",
+            winner = StoneColor.Black,
+            margin = 31.5,
+            blackArea = 51.0,
+            whiteAreaWithKomi = 19.5,
+            komi = 6.5,
+            summary = "Local area",
+        )
+        val cleanup = DeadStoneCleanupResult(
+            state = GameState.empty(),
+            removedStones = listOf(
+                DeadStoneRemoval(
+                    coordinate = BoardCoordinate.fromLabel("A9", BoardSize.Nine),
+                    color = StoneColor.White,
+                ),
+            ),
+        )
+        val prePassCandidates = listOf(
+            CandidateMove(
+                move = Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("H8", BoardSize.Nine)),
+                scoreLead = -30.546545,
+            ),
+            CandidateMove(
+                move = Move.Pass(StoneColor.Black),
+                scoreLead = -31.0,
+            ),
+        )
+
+        val selection = EndgameScoreSelector.selectDisplayScore(
+            cleanup = cleanup,
+            localScore = localScore,
+            engineEstimate = ScoreEstimate(
+                status = EngineStatus.ready("Estimate"),
+                whiteScoreLead = -31.655,
+                summary = "Post-pass estimate",
+            ),
+            prePassCandidates = prePassCandidates,
+        )
+
+        assertEquals(EndgameScoreSource.CleanedLocalArea, selection.source)
+        assertEquals("B+31.5", selection.displayScore.rawScore)
     }
 }

@@ -69,20 +69,12 @@ object EndgameScoreSelector {
     private fun List<CandidateMove>.bestScoredPlayableLead(): Double? =
         firstOrNull { candidate ->
             candidate.scoreLead != null && candidate.move is Move.Play
-        }?.whitePerspectiveScoreLead()
+        }?.scoreLead
 
     private fun List<CandidateMove>.hasScoredPassCandidate(): Boolean =
         any { candidate ->
             candidate.scoreLead != null && candidate.move is Move.Pass
         }
-
-    private fun CandidateMove.whitePerspectiveScoreLead(): Double? {
-        val lead = scoreLead ?: return null
-        return when (move.player) {
-            StoneColor.Black -> -lead
-            StoneColor.White -> lead
-        }
-    }
 
     private fun Double.toUnsettledFinalScore(
         localScore: FinalScoreResult,

@@ -422,3 +422,9 @@
 - `adb devices -l`에서 폰 `R5CT22WTVXP` (`SM_S908N`)가 `device` 상태로 확인되었다.
 - `ANDROID_SERIAL=R5CT22WTVXP make reinstall-dev-engine`를 실행해 최신 debug APK 설치, KataGo model/config/analysis config seed, 앱 cold launch를 완료했다.
 - 전체 명령은 약 15.2초가 걸렸고, 앱 cold launch `TotalTime=612ms`가 기록되었다.
+- 사용자가 종국 debug report에서 엔진 최종 평가는 `B+31.5`로 정확한데, 표시 점수는 `KataGo pre-pass Top Moves estimate` 경로에서 `W+30.5?`로 뒤집혀 나오는 오류를 공유했다.
+- 로그상 pre-pass 후보 `Black H8 scoreLead=-30.546...`는 백 기준 lead convention에서 흑 30.5집 리드를 뜻한다. 그러나 `EndgameScoreSelector`가 Black 착수 후보라는 이유로 scoreLead 부호를 한 번 더 뒤집어 불확정 점수를 `W+30.5?`로 만든 것이 원인이었다.
+- `EndgameScoreSelector`를 수정해 `CandidateMove.scoreLead`를 이미 백 기준 lead로 보고 그대로 사용하도록 했다.
+- 사용자 로그와 같은 `localScore=B+31.5`, `prePass scoreLead=-30.546...`, `engineEstimate=-31.655` 케이스를 `EndgameScoreSelectorTest`에 추가했다. 이제 이 경우 불필요한 `UnsettledPrePassTopMoveEstimate`가 아니라 cleaned local area `B+31.5`를 유지한다.
+- 기존 pre-pass 종국 회귀 테스트의 테스트 데이터도 백 기준 scoreLead convention에 맞게 갱신했다.
+- 검증으로 `make test`가 통과했다.
