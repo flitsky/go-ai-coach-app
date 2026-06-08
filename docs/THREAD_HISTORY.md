@@ -524,3 +524,7 @@
 - `GoBoard`는 `MoveReviewMarker`와 `MoveReviewTone`을 렌더링만 하고, `GoCoachApp.kt`는 `buildMoveReview()` 결과를 상태에 반영하는 역할만 유지한다.
 - `MoveReviewTest`를 추가해 후보 매칭 시 marker 생성, pass/분석 cache 부재 시 marker 미생성, 같은 수 번호 marker 교체를 검증했다.
 - 검증으로 `make test`가 통과했다.
+- 리팩토링 Phase 2/3 진입 준비로 `app-android/application/EngineSession.kt`를 추가했다. 엔진 시작, 새 엔진 게임 시작, 현재 `GameState`를 엔진에 replay 동기화, 그래프용 score estimate, 로컬 score snapshot 생성을 application API로 묶었다.
+- `GoCoachApp.kt`의 하단 `EngineStartupResult`, `AutoAiTurnResult`, `LocalEngineMoveResult`, `syncToGameState`, `scoreGraphAnalysisLimit`, `localScoreSnapshot` 중복 정의를 제거하고 새 application API를 import해 사용한다.
+- `EngineSessionTest`를 추가해 `newGame -> playMove...` replay 순서, 새 엔진 게임 `configure -> newGame -> estimate` 흐름, local score snapshot move number를 검증했다.
+- 검증으로 `make test`가 통과했다.

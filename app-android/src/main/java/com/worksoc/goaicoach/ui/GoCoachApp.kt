@@ -40,24 +40,32 @@ import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.AiEndgameResolution
 import com.worksoc.goaicoach.application.AnalysisCacheKey
 import com.worksoc.goaicoach.application.AnalysisResultCache
+import com.worksoc.goaicoach.application.AutoAiTurnResult
 import com.worksoc.goaicoach.application.CachedAnalysisResult
+import com.worksoc.goaicoach.application.LocalEngineMoveResult
 import com.worksoc.goaicoach.application.MinScoredTopMovesForDisplay
 import com.worksoc.goaicoach.application.MoveReviewMarker
 import com.worksoc.goaicoach.application.analysisKeyFor
 import com.worksoc.goaicoach.application.buildDebugReport
-import com.worksoc.goaicoach.application.buildMoveReview
 import com.worksoc.goaicoach.application.buildEndgameLog
+import com.worksoc.goaicoach.application.buildMoveReview
+import com.worksoc.goaicoach.application.configureSyncAndEstimateGraphScore
 import com.worksoc.goaicoach.application.deepTopMovesAnalysisLimitFor
+import com.worksoc.goaicoach.application.localScoreSnapshot
 import com.worksoc.goaicoach.application.resolveAiEndgame
+import com.worksoc.goaicoach.application.scoreGraphAnalysisLimit
+import com.worksoc.goaicoach.application.startEngineSession
+import com.worksoc.goaicoach.application.startNewEngineGame
+import com.worksoc.goaicoach.application.syncAndEstimateGraphScore
+import com.worksoc.goaicoach.application.syncToGameState
 import com.worksoc.goaicoach.application.topMoveCandidateCountFor
 import com.worksoc.goaicoach.application.topMovesAnalysisLimitFor
-import com.worksoc.goaicoach.application.withReviewMarker
 import com.worksoc.goaicoach.application.withAnalysisCoverage
+import com.worksoc.goaicoach.application.withReviewMarker
 import com.worksoc.goaicoach.application.withTopMovesStrengthHeader
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
-import com.worksoc.goaicoach.match.TurnOutcome
 import com.worksoc.goaicoach.match.applyAiTurn
 import com.worksoc.goaicoach.match.boardInputEnabled
 import com.worksoc.goaicoach.match.modeSummary
@@ -72,14 +80,12 @@ import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.EngineAdapter
 import com.worksoc.goaicoach.shared.EngineProfile
-import com.worksoc.goaicoach.shared.EngineStatus
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.ScoreEstimate
-import com.worksoc.goaicoach.shared.ScoreSnapshot
 import com.worksoc.goaicoach.shared.ScoreSnapshotSource
 import com.worksoc.goaicoach.shared.ScoreTimeline
 import com.worksoc.goaicoach.shared.StoneColor
@@ -161,17 +167,9 @@ private fun GoCoachScreen(
         hasCompletedEngineStartup = false
         isEngineBusy = true
         runCatching {
-            val init = withContext(Dispatchers.IO) { engineAdapter.initialize(engineProfile) }
-            val newGame = withContext(Dispatchers.IO) {
-                engineAdapter.newGame(gameState.boardSize, gameState.ruleset)
+            withContext(Dispatchers.IO) {
+                engineAdapter.startEngineSession(engineProfile, gameState)
             }
-            val estimate = withContext(Dispatchers.IO) {
-                runCatching { engineAdapter.estimateScore(scoreGraphAnalysisLimit(engineProfile)) }.getOrNull()
-            }
-            EngineStartupResult(
-                message = "Ready for 9x9 match.\n${init.message}\n${newGame.message}",
-                scoreSnapshot = estimate?.let { ScoreTimeline.fromEstimate(gameState.moves.size, it) },
-            )
         }.onSuccess { result ->
             isEngineReady = true
             scoreSnapshots = listOf(result.scoreSnapshot ?: localScoreSnapshot(gameState))
@@ -437,8 +435,7 @@ private fun GoCoachScreen(
             isEngineBusy = true
             runCatching {
                 withContext(Dispatchers.IO) {
-                    engineAdapter.syncToGameState(nextState)
-                    engineAdapter.estimateScore(scoreGraphAnalysisLimit(engineProfile))
+                    engineAdapter.syncAndEstimateGraphScore(nextState, engineProfile)
                 }
             }.onSuccess { estimate ->
                 scoreText = estimate.toDisplayText()
@@ -517,9 +514,7 @@ private fun GoCoachScreen(
         scope.launch {
             runCatching {
                 withContext(Dispatchers.IO) {
-                    engineAdapter.configure(restoredProfile)
-                    engineAdapter.syncToGameState(restoredState)
-                    engineAdapter.estimateScore(scoreGraphAnalysisLimit(restoredProfile))
+                    engineAdapter.configureSyncAndEstimateGraphScore(restoredState, restoredProfile)
                 }
             }.onSuccess { estimate ->
                 scoreText = estimate.toDisplayText()
@@ -609,15 +604,7 @@ private fun GoCoachScreen(
             var nextAnalysisState: GameState? = null
             runCatching {
                 withContext(Dispatchers.IO) {
-                    engineAdapter.configure(targetProfile)
-                    val status = engineAdapter.newGame(BoardSize.Nine, targetRuleset)
-                    val estimate = runCatching {
-                        engineAdapter.estimateScore(scoreGraphAnalysisLimit(targetProfile))
-                    }.getOrNull()
-                    EngineStartupResult(
-                        message = status.message,
-                        scoreSnapshot = estimate?.let { ScoreTimeline.fromEstimate(0, it) },
-                    )
+                    engineAdapter.startNewEngineGame(targetProfile, BoardSize.Nine, targetRuleset)
                 }
             }.onSuccess { result ->
                 resetLocalGame(result.message, targetRuleset)
@@ -660,8 +647,7 @@ private fun GoCoachScreen(
             isEngineBusy = true
             runCatching {
                 withContext(Dispatchers.IO) {
-                    engineAdapter.syncToGameState(nextState)
-                    engineAdapter.estimateScore(scoreGraphAnalysisLimit(engineProfile))
+                    engineAdapter.syncAndEstimateGraphScore(nextState, engineProfile)
                 }
             }.onSuccess { estimate ->
                 scoreText = estimate.toDisplayText()
@@ -1031,8 +1017,7 @@ private fun GoCoachScreen(
             scope.launch {
                 runCatching {
                     withContext(Dispatchers.IO) {
-                        engineAdapter.syncToGameState(nextState)
-                        engineAdapter.estimateScore(scoreGraphAnalysisLimit(engineProfile))
+                        engineAdapter.syncAndEstimateGraphScore(nextState, engineProfile)
                     }
                 }.onSuccess { estimate ->
                     scoreText = estimate.toDisplayText()
@@ -1390,38 +1375,3 @@ private fun ActionButtonText(label: String) {
 }
 
 private val ActionButtonContentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp)
-
-private data class EngineStartupResult(
-    val message: String,
-    val scoreSnapshot: ScoreSnapshot?,
-)
-
-private data class AutoAiTurnResult(
-    val turnOutcome: TurnOutcome,
-    val scoreEstimate: ScoreEstimate?,
-    val profile: EngineProfile,
-    val playLevel: PlayLevelSetting,
-)
-
-private data class LocalEngineMoveResult(
-    val estimate: ScoreEstimate? = null,
-    val endgame: AiEndgameResolution? = null,
-)
-
-private suspend fun EngineAdapter.syncToGameState(state: GameState): EngineStatus {
-    val status = newGame(state.boardSize, state.ruleset)
-    state.moves.forEach { move ->
-        playMove(move)
-    }
-    return status
-}
-
-private fun scoreGraphAnalysisLimit(profile: EngineProfile): AnalysisLimit =
-    profile.analysisLimit.copy(candidateCount = 1)
-
-private fun localScoreSnapshot(state: GameState): ScoreSnapshot =
-    ScoreTimeline.fromFinalScore(
-        moveNumber = state.moves.size,
-        finalScore = BoardScorer.score(state),
-        source = ScoreSnapshotSource.LocalAreaEstimate,
-    )

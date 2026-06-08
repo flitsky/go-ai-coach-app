@@ -1,0 +1,146 @@
+package com.worksoc.goaicoach.application
+
+import com.worksoc.goaicoach.shared.AnalysisLimit
+import com.worksoc.goaicoach.shared.AnalysisResult
+import com.worksoc.goaicoach.shared.BoardCoordinate
+import com.worksoc.goaicoach.shared.BoardSize
+import com.worksoc.goaicoach.shared.DeadStonesResult
+import com.worksoc.goaicoach.shared.EngineAdapter
+import com.worksoc.goaicoach.shared.EngineProfile
+import com.worksoc.goaicoach.shared.EngineStatus
+import com.worksoc.goaicoach.shared.FinalScoreResult
+import com.worksoc.goaicoach.shared.GameState
+import com.worksoc.goaicoach.shared.Move
+import com.worksoc.goaicoach.shared.MoveResult
+import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.ScoreEstimate
+import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.describe
+import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class EngineSessionTest {
+    @Test
+    fun syncToGameStateStartsNewGameAndReplaysAllMoves() = runBlocking {
+        val engine = RecordingEngineAdapter()
+        val state = GameState.empty()
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+            .play(Move.Pass(StoneColor.White))
+
+        engine.syncToGameState(state)
+
+        assertEquals(
+            listOf(
+                "newGame:9:japanese",
+                "play:Black E5",
+                "play:White pass",
+            ),
+            engine.calls,
+        )
+    }
+
+    @Test
+    fun startNewEngineGameConfiguresProfileAndReturnsInitialEstimateSnapshot() = runBlocking {
+        val engine = RecordingEngineAdapter()
+        val profile = EngineProfile(
+            analysisLimit = AnalysisLimit(visits = 32, timeMillis = 500, candidateCount = 8),
+        )
+
+        val result = engine.startNewEngineGame(profile, BoardSize.Nine, Ruleset.Japanese)
+
+        assertEquals(
+            listOf(
+                "configure:32",
+                "newGame:9:japanese",
+                "estimate:1",
+            ),
+            engine.calls,
+        )
+        assertEquals("new game", result.message)
+        assertEquals(0, result.scoreSnapshot?.moveNumber)
+        assertTrue(result.scoreSnapshot?.whiteScoreLead == 1.5)
+    }
+
+    @Test
+    fun localScoreSnapshotUsesCurrentMoveNumber() {
+        val state = GameState.empty()
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+
+        val snapshot = localScoreSnapshot(state)
+
+        assertEquals(1, snapshot.moveNumber)
+    }
+}
+
+private class RecordingEngineAdapter : EngineAdapter {
+    val calls = mutableListOf<String>()
+
+    override suspend fun initialize(profile: EngineProfile): EngineStatus {
+        calls += "initialize:${profile.analysisLimit.visits}"
+        return EngineStatus.ready("initialized")
+    }
+
+    override suspend fun configure(profile: EngineProfile): EngineStatus {
+        calls += "configure:${profile.analysisLimit.visits}"
+        return EngineStatus.ready("configured")
+    }
+
+    override suspend fun newGame(
+        boardSize: BoardSize,
+        ruleset: Ruleset,
+    ): EngineStatus {
+        calls += "newGame:${boardSize.value}:${ruleset.katagoName}"
+        return EngineStatus.ready("new game")
+    }
+
+    override suspend fun playMove(move: Move): EngineStatus {
+        calls += "play:${move.describe(BoardSize.Nine)}"
+        return EngineStatus.ready("played")
+    }
+
+    override suspend fun genMove(player: StoneColor): MoveResult =
+        MoveResult(
+            status = EngineStatus.ready("generated"),
+            move = Move.Pass(player),
+            summary = "generated",
+        )
+
+    override suspend fun undoMove(): EngineStatus =
+        EngineStatus.ready("undone")
+
+    override suspend fun analyze(limit: AnalysisLimit): AnalysisResult =
+        AnalysisResult(
+            status = EngineStatus.ready("analyzed"),
+            candidates = emptyList(),
+            summary = "analyzed",
+        )
+
+    override suspend fun estimateScore(limit: AnalysisLimit): ScoreEstimate {
+        calls += "estimate:${limit.candidateCount}"
+        return ScoreEstimate(
+            status = EngineStatus.ready("estimated"),
+            whiteScoreLead = 1.5,
+            whiteWinRate = 0.55,
+            summary = "estimated",
+        )
+    }
+
+    override suspend fun deadStones(): DeadStonesResult =
+        DeadStonesResult(
+            status = EngineStatus.ready("dead stones"),
+            coordinates = emptyList(),
+            summary = "dead stones",
+        )
+
+    override suspend fun scoreFinal(): FinalScoreResult =
+        FinalScoreResult(
+            status = EngineStatus.ready("final"),
+            rawScore = "B+0.5",
+            summary = "final",
+        )
+
+    override suspend fun stop(): EngineStatus =
+        EngineStatus.stopped("stopped")
+}
