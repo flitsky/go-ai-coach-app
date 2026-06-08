@@ -4,25 +4,9 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.widget.Toast
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -31,12 +15,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.AnalysisCacheKey
 import com.worksoc.goaicoach.application.AnalysisResultCache
 import com.worksoc.goaicoach.application.MoveReviewMarker
@@ -70,9 +51,6 @@ import com.worksoc.goaicoach.application.toCandidateText
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
-import com.worksoc.goaicoach.match.boardInputEnabled
-import com.worksoc.goaicoach.match.modeSummary
-import com.worksoc.goaicoach.match.summary
 import com.worksoc.goaicoach.persistence.GameSessionStore
 import com.worksoc.goaicoach.persistence.SavedGameSnapshot
 import com.worksoc.goaicoach.presentation.GameScreenStateInput
@@ -94,7 +72,6 @@ import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.ScoreTimeline
-import com.worksoc.goaicoach.shared.StoneColor
 import com.worksoc.goaicoach.shared.describe
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -1115,234 +1092,11 @@ private fun GoCoachScreen(
         ),
     )
 
-    val savedSessionToPrompt = screenState.resumePrompt?.snapshot
-    if (
-        savedSessionToPrompt != null
-    ) {
-        AlertDialog(
-            onDismissRequest = {
-                dispatch(GameUiEvent.DismissResumePrompt)
-            },
-            title = { Text("이전 대국 이어하기") },
-            text = {
-                Text(
-                    text = buildString {
-                        appendLine("진행 중이던 ${savedSessionToPrompt.gameState.moves.size}수 대국이 있습니다.")
-                        appendLine("이어 진행하시겠습니까?")
-                        appendLine()
-                        append("마지막 수: ")
-                        append(
-                            savedSessionToPrompt.gameState.moves
-                                .lastOrNull()
-                                ?.describe(savedSessionToPrompt.gameState.boardSize)
-                                ?: "None",
-                        )
-                        appendLine()
-                        append(savedSessionToPrompt.playerSetup.summary(engineName))
-                    },
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        dispatch(GameUiEvent.ResumeSavedSession(savedSessionToPrompt))
-                    },
-                ) {
-                    Text("예")
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = {
-                        dispatch(GameUiEvent.DismissResumePrompt)
-                    },
-                ) {
-                    Text("아니오")
-                }
-            },
-        )
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .statusBarsPadding()
-            .navigationBarsPadding()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "Go AI Coach POC",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.SemiBold,
-                )
-
-                Text(
-                    text = modeSummary(screenState.playerSetup, screenState.engine.name),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.secondary,
-                )
-            }
-
-            KaTrainUxMenuButton(
-                menuExpanded = isDisplayMenuExpanded,
-                onMenuExpandedChange = { expanded -> isDisplayMenuExpanded = expanded },
-            )
-        }
-
-        if (isDisplayMenuExpanded) {
-            PlayerSetupPanel(
-                playerSetup = screenState.playerSetup,
-                engineName = screenState.engine.name,
-                enabled = !screenState.engine.isBusy,
-                onPlayerSetupChange = { setup -> dispatch(GameUiEvent.ChangePlayerSetup(setup)) },
-            )
-
-            GameMenuActionsPanel(
-                mode = screenState.matchMode,
-                ruleset = screenState.gameState.ruleset,
-                canStartNew = !screenState.engine.isBusy &&
-                    (screenState.matchMode == MatchMode.LocalTwoPlayer || screenState.engine.isReady),
-                canChangeRuleset = !screenState.engine.isBusy,
-                onNewGame = { dispatch(GameUiEvent.StartConfiguredGame) },
-                onCopyLog = { dispatch(GameUiEvent.CopyDebugReport) },
-                onRulesetChange = { ruleset -> dispatch(GameUiEvent.ChangeScoringRule(ruleset)) },
-            )
-
-            KaTrainUxMenuPanel(
-                options = screenState.uxOptions,
-                onOptionsChange = { nextOptions -> dispatch(GameUiEvent.ChangeUxOptions(nextOptions)) },
-            )
-
-        }
-
-        ScoreGraphPanel(
-            snapshots = screenState.score.snapshots,
-            capturedByBlack = screenState.gameState.capturedBy(StoneColor.Black),
-            capturedByWhite = screenState.gameState.capturedBy(StoneColor.White),
-            isExpanded = screenState.score.isGraphExpanded,
-            onExpandedChange = { expanded -> isScoreGraphExpanded = expanded },
-        )
-
-        GoBoard(
-            gameState = screenState.gameState,
-            candidateMoves = screenState.analysis.candidateMoves,
-            moveReviews = screenState.analysis.moveReviews,
-            ownershipEstimate = screenState.score.estimate?.ownership,
-            uxOptions = screenState.uxOptions,
-            inputEnabled = !screenState.isGameEnded &&
-                boardInputEnabled(
-                    screenState.playerSetup,
-                    screenState.engine.isReady,
-                    screenState.engine.isBusy,
-                    screenState.nextPlayer,
-                ),
-            engineBusy = screenState.engine.isBusy,
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(1f),
-            onCoordinateTap = { coordinate ->
-                dispatch(GameUiEvent.PlayAt(coordinate))
-            },
-        )
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Button(
-                onClick = {
-                    dispatch(GameUiEvent.Pass)
-                },
-                enabled = !screenState.isGameEnded &&
-                    boardInputEnabled(
-                        screenState.playerSetup,
-                        screenState.engine.isReady,
-                        screenState.engine.isBusy,
-                        screenState.nextPlayer,
-                    ),
-                modifier = Modifier.weight(1f),
-                contentPadding = ActionButtonContentPadding,
-            ) {
-                ActionButtonText("Pass")
-            }
-
-            OutlinedButton(
-                onClick = { dispatch(GameUiEvent.UndoLastTurn) },
-                enabled = !screenState.engine.isBusy &&
-                    screenState.gameState.moves.isNotEmpty() &&
-                    (screenState.engine.isReady || screenState.matchMode == MatchMode.LocalTwoPlayer),
-                modifier = Modifier.weight(1f),
-                contentPadding = ActionButtonContentPadding,
-            ) {
-                ActionButtonText("Undo")
-            }
-
-            val topMovesButtonEnabled = !screenState.isGameEnded &&
-                screenState.engine.isReady &&
-                (!screenState.engine.isBusy || screenState.analysis.topMovesEnabled)
-            if (screenState.analysis.topMovesEnabled) {
-                Button(
-                    onClick = { dispatch(GameUiEvent.ToggleTopMoves) },
-                    enabled = topMovesButtonEnabled,
-                    modifier = Modifier.weight(1f),
-                    contentPadding = ActionButtonContentPadding,
-                ) {
-                    ActionButtonText("Top Moves")
-                }
-            } else {
-                OutlinedButton(
-                    onClick = { dispatch(GameUiEvent.ToggleTopMoves) },
-                    enabled = topMovesButtonEnabled,
-                    modifier = Modifier.weight(1f),
-                    contentPadding = ActionButtonContentPadding,
-                ) {
-                    ActionButtonText("Top Moves")
-                }
-            }
-
-            OutlinedButton(
-                onClick = { dispatch(GameUiEvent.RequestScoreEstimate) },
-                enabled = !screenState.engine.isBusy &&
-                    (screenState.engine.isReady || screenState.matchMode == MatchMode.LocalTwoPlayer),
-                modifier = Modifier.weight(1f),
-                contentPadding = ActionButtonContentPadding,
-            ) {
-                ActionButtonText("Eval")
-            }
-        }
-
-        EngineResponsePanel(
-            nextPlayer = screenState.nextPlayer,
-            moveCount = screenState.gameState.moves.size,
-            capturedByBlack = screenState.gameState.capturedBy(StoneColor.Black),
-            capturedByWhite = screenState.gameState.capturedBy(StoneColor.White),
-            lastMoveText = screenState.analysis.lastMoveText,
-            isEngineBusy = screenState.engine.isBusy,
-            playerSetup = screenState.playerSetup,
-            engineMessage = screenState.engine.message,
-            candidateText = screenState.analysis.candidateText,
-            scoreText = screenState.score.text,
-            moveReviewText = screenState.analysis.moveReviewText,
-        )
-    }
-}
-
-@Composable
-private fun ActionButtonText(label: String) {
-    Text(
-        text = label,
-        maxLines = 1,
-        softWrap = false,
-        style = MaterialTheme.typography.labelSmall,
+    GoCoachContent(
+        screenState = screenState,
+        isDisplayMenuExpanded = isDisplayMenuExpanded,
+        onDisplayMenuExpandedChange = { expanded -> isDisplayMenuExpanded = expanded },
+        onScoreGraphExpandedChange = { expanded -> isScoreGraphExpanded = expanded },
+        onEvent = ::dispatch,
     )
 }
-
-private val ActionButtonContentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp)

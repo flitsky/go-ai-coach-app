@@ -574,3 +574,8 @@
 - 사용자가 무선 앱 설치를 다시 요청했고, 네트워크 변경 시 사용할 페어링 코드 `192757`을 제공했다.
 - `adb devices -l`에서 기존 Wi-Fi ADB 세션이 `SM_S908N` `device` 상태로 유지되어 있어 추가 페어링 없이 설치를 진행했다. mDNS에는 `192.168.0.20:40521` pairing, `192.168.0.20:44949` connect 서비스가 보였다.
 - `make reinstall-dev-engine`로 debug APK 재설치, KataGo model/config seed, 앱 cold launch를 완료했다. 전체 설치/seed/실행 소요 시간은 약 37.6초였고, 앱 cold launch는 `Status: ok`, `TotalTime=586ms`로 확인되었다.
+- 사용자가 리팩토링이 기술 부채 감소와 유연한 확장에 도움이 되는지, 현 상태에서 계속 권고할 수 있는지 냉정한 의견과 단계별 착수를 요청했다.
+- 판단은 “권고하되 과도한 추상화는 피한다”로 정리했다. 현재 domain/application/presentation 분리는 상당히 좋아졌지만 `GoCoachApp.kt`가 아직 상태 보관, 엔진 orchestration, 자동 AI 턴, 저장/복원, 화면 렌더링을 함께 들고 있어 변경 영향 범위가 크다.
+- 이번 안전 단위로 `GoCoachContent.kt`를 추가해 화면 렌더링, 이어하기 다이얼로그, 상단 메뉴, 점수 그래프, 보드, 하단 액션 버튼, 엔진 응답 패널 조립을 UI content composable로 분리했다.
+- `GoCoachApp.kt`는 `GameScreenState`를 만들고 `GameUiEvent`를 dispatch한 뒤 `GoCoachContent()`에 상태와 이벤트 sink를 넘기는 구조로 정리했다. 파일 길이는 약 1,348줄에서 1,102줄로 줄었다.
+- 검증으로 `make test`가 통과했다.
