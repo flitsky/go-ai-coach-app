@@ -34,8 +34,7 @@ data class MoveAnalysisSnapshot(
             .asSequence()
             .filter { analyzed -> policy.includes(analyzed.coverage) }
             .sortedWith(
-                compareBy<AnalyzedPlayMove> { it.candidate.pointLoss ?: Double.POSITIVE_INFINITY }
-                    .thenBy { it.engineOrder ?: Int.MAX_VALUE }
+                compareBy<AnalyzedPlayMove> { it.engineOrder ?: Int.MAX_VALUE }
                     .thenBy { it.coordinate.row }
                     .thenBy { it.coordinate.column },
             )

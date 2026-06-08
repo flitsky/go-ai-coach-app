@@ -262,9 +262,10 @@ benchmark 결과를 반영하면 초급 레벨링은 색상 bucket 비율보다 
 
 정렬 기준:
 
-- scored 후보를 `pointLoss` 오름차순으로 정렬한다.
-- `0%`는 최상위 후보, `100%`는 최하위 scored 후보로 본다.
+- scored 후보는 KataGo가 반환한 `moveInfos.order` 순서를 우선한다.
+- `0%`는 엔진 order 최상위 후보, `100%`는 엔진 order 최하위 scored 후보로 본다.
 - 각 레벨은 정해진 percentile window 안에서 균등 랜덤으로 착수한다.
+- `pointLoss`는 후보의 색상/숫자 피드백에만 사용한다. 저예산 분석에서는 `order`와 `pointLoss`가 어긋날 수 있으므로 앱이 손실값만으로 후보 순서를 뒤집지 않는다.
 
 ### Fast Beginner
 

@@ -61,7 +61,7 @@
 - KataGo 원본 JSON analysis는 후보별 `scoreLead`, `winrate`, `visits`, `prior`를 제공한다. `pointLoss`는 KataGo가 직접 주는 필드가 아니라 앱이 root score와 후보 score를 비교해 계산한 값이다. KaTrain도 같은 개념을 `pointsLost`로 계산해 사용한다.
 - 보드 위 후보수 숫자는 `scoreLead`가 아니라 현재 착수자 기준 점수 변화량을 표시한다. 예를 들어 `-0.2`는 “이 후보를 두면 현재 분석 기준 대비 0.2집 손실”을 뜻하고, `0.0`은 손실이 없는 후보를 뜻한다.
 - 후보 상세 텍스트도 기본적으로 `lead` 대신 `loss`를 표시한다. `scoreLead`는 그래프, 점수 추정, 엔진 진단용 내부 값으로 유지한다.
-- KataGo `moveInfos.order`와 `pointLoss` 순위는 저예산 분석에서 어긋날 수 있다. 학습용 UI에서는 손실이 작은 수가 직관적으로 먼저 보여야 하므로, Top Moves 보드 표시와 후보 상세 텍스트는 `pointLoss`가 작은 순서로 정렬한다. 동률일 때만 엔진 order를 보조 기준으로 사용한다.
+- KataGo `moveInfos.order`와 `pointLoss` 순위는 저예산 분석에서 어긋날 수 있다. Top Moves의 순위와 큰 강조점은 엔진이 반환한 `order`를 우선한다. `pointLoss`는 색상과 숫자 annotation으로 사용해 “이 order 후보가 현재 root 기준으로 몇 집 손실인지”를 설명한다.
 - 예를 들어 흑이 어떤 후보를 두면 여전히 `B+20`으로 크게 앞서더라도, 현재 root/best 기준으로는 `B+25`가 가능한 국면이면 그 후보는 `5집 손실`로 주황 계열이 될 수 있다.
 - 즉 스팟 색상은 “이 수를 두면 누가 이기는가”가 아니라 “현재 국면에서 이 수가 얼마나 손해인가”를 보여준다.
 - JSON analysis에 `rootInfo`가 있는 정상 경로에서는 root score 기준으로 `pointLoss`를 계산한다. `rootInfo`가 없는 예외 fallback에서만 order 0 후보 대비 손실로 계산한다.
@@ -105,7 +105,7 @@
 - `초급`: Beginner 32 visits / 350ms. 후보를 조금 더 확보해 학습 피드백을 늘리는 설정이다.
 - `중급`: Casual 64 visits / 500ms. 일반 대국과 후보 품질의 절충 설정이다.
 - `고급`: Intermediate 160 visits / 1000ms. 더 강한 응수와 분석 품질을 목표로 한다.
-- 단계는 AI가 엔진 후보를 고르는 상대 순위 구간을 조정한다. 낮은 단계는 하위/중위 후보를 더 섞고, 최고 단계는 최적수만 고른다.
+- 단계는 AI가 KataGo `moveInfos.order` 기준 후보를 고르는 상대 순위 구간을 조정한다. 낮은 단계는 order 하위/중위 후보를 더 섞고, 최고 단계는 엔진 order 최상위 후보만 고른다. `pointLoss`는 이 후보의 학습 피드백으로 표시되지만 후보 순서를 뒤집는 기준으로 쓰지 않는다.
 - 단, KataGo가 `pass`를 최선 scored 후보로 판단한 종국 국면에서는 레벨 단계보다 pass를 우선한다. 약한 레벨이라도 상대 진영에 무의미하게 착수하지 않고 계가 흐름으로 들어가기 위함이다.
 - 내부적으로는 레벨에 따라 `Lite`, `Learning`, `Balanced` 분석 preset이 자동 선택된다. 이 raw preset은 사용자 메뉴에서 직접 조작하지 않는다.
 

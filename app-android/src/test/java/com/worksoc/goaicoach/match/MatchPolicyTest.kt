@@ -33,12 +33,12 @@ class MatchPolicyTest {
         val adapter = FakeEngineAdapter(
             analysisCandidates = listOf(
                 CandidateMove(
-                    move = Move.Play(StoneColor.White, BoardCoordinate(row = 0, column = 0)),
-                    pointLoss = 8.0,
-                ),
-                CandidateMove(
                     move = pass,
                     pointLoss = 0.0,
+                ),
+                CandidateMove(
+                    move = Move.Play(StoneColor.White, BoardCoordinate(row = 0, column = 0)),
+                    pointLoss = 8.0,
                 ),
             ),
         )
@@ -84,6 +84,38 @@ class MatchPolicyTest {
         assertEquals(bestPlay, outcome.gameState.moves.last())
         assertEquals(bestPlay, adapter.playedMoves.last())
         assertFalse(adapter.genMoveCalled)
+    }
+
+    @Test
+    fun bestOnlySelectionRespectsEngineOrderBeforePointLoss() = runBlocking {
+        val humanMove = Move.Play(StoneColor.Black, BoardCoordinate(row = 4, column = 4))
+        val stateAfterHuman = GameState.empty().play(humanMove)
+        val engineFirst = Move.Play(StoneColor.White, BoardCoordinate.fromLabel("F5", BoardSize.Nine))
+        val lowerPointLoss = Move.Play(StoneColor.White, BoardCoordinate.fromLabel("B3", BoardSize.Nine))
+        val adapter = FakeEngineAdapter(
+            analysisCandidates = listOf(
+                CandidateMove(
+                    move = engineFirst,
+                    pointLoss = 0.3,
+                ),
+                CandidateMove(
+                    move = lowerPointLoss,
+                    pointLoss = 0.0,
+                ),
+            ),
+        )
+
+        val outcome = applyAiResponseAfterHumanTurn(
+            engineAdapter = adapter,
+            stateAfterHuman = stateAfterHuman,
+            humanMove = humanMove,
+            playLevel = PlayLevelSetting(PlayLevelGroup.FastBeginner, level = 3),
+        )
+
+        assertEquals(engineFirst, outcome.gameState.moves.last())
+        assertEquals(engineFirst, adapter.playedMoves.last())
+        assertFalse(adapter.genMoveCalled)
+        assertTrue(outcome.candidateText.contains("rank 1/2"))
     }
 }
 

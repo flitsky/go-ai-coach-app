@@ -60,7 +60,7 @@ class MoveValueDisplayTest {
     }
 
     @Test
-    fun candidateTextOrdersScoredMovesByPointLossBeforeEngineOrder() {
+    fun candidateTextKeepsEngineOrderEvenWhenPointLossIsHigher() {
         val result = AnalysisResult(
             status = EngineStatus.ready("ready"),
             summary = "analysis complete",
@@ -82,7 +82,7 @@ class MoveValueDisplayTest {
 
         val text = result.toCandidateText(BoardSize.Nine)
 
-        assertTrue(text.contains("1. Black B3"))
-        assertTrue(text.contains("2. Black F5"))
+        assertTrue(text.contains("1. Black F5"))
+        assertTrue(text.contains("2. Black B3"))
     }
 }

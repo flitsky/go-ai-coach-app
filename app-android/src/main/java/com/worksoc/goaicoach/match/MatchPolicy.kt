@@ -126,7 +126,6 @@ private suspend fun EngineAdapter.selectAiMoveFromAnalysis(
             .filter { candidate ->
                 candidate.move.player == AiPlayer && candidate.pointLoss != null
             }
-            .sortedBy { it.pointLoss ?: Double.MAX_VALUE }
 
         val bestCandidate = scoredCandidates.firstOrNull()
         if (bestCandidate?.move is Move.Pass) {

@@ -356,14 +356,15 @@ KataGo analysis 결과는 기본적으로 수치 기반이다.
 - 후보가 모두 green인 국면에서는 레벨링 선택지가 부족해 보인다.
 - bucket 비율을 맞추려면 후보 보강 분석이나 fallback 규칙이 복잡해진다.
 
-따라서 1차 구현은 “탐색된 scored 후보를 `pointLoss` 오름차순으로 정렬하고, 정해진 상대 순위 구간에서 랜덤 선택”하는 방식이 더 적절하다.
+따라서 1차 구현은 “탐색된 scored 후보를 KataGo가 반환한 `moveInfos.order` 순서로 유지하고, 정해진 상대 순위 구간에서 랜덤 선택”하는 방식이 더 적절하다.
 
 정렬 기준:
 
-- `pointLoss`가 낮을수록 좋은 수다.
-- `0%`는 최상위 후보, `100%`는 최하위 scored 후보를 뜻한다.
+- `moveInfos.order`가 낮을수록 엔진이 우선 제시한 수다.
+- `0%`는 엔진 order 최상위 후보, `100%`는 엔진 order 최하위 scored 후보를 뜻한다.
 - 선택은 해당 구간 안에서 균등 랜덤으로 한다.
 - `Unknown`, `PolicyOnly`, `LegalOnly` 후보는 AI 선택 대상에서 제외한다.
+- `pointLoss`는 색상/숫자 피드백에만 사용한다. 저예산 분석에서는 root score 기반 손실값이 엔진 order와 어긋날 수 있으므로, 레벨링 선택이 손실값만으로 순서를 뒤집지 않는다.
 
 이 방식의 장점:
 
@@ -411,7 +412,7 @@ KataGo analysis 결과는 기본적으로 수치 기반이다.
 
 - Analysis budget: `B32 / 350ms`
 - 선택 대상: scored 후보
-- 선택 구간은 `pointLoss` 오름차순 정렬의 percentile window로 정의한다.
+- 선택 구간은 KataGo `moveInfos.order`의 percentile window로 정의한다.
 - 후보 수가 부족해 선택 구간이 비면 가장 가까운 후보 1개를 포함하도록 window를 보정한다.
 - scored 후보가 3개 미만이면 B16/B32 결과만으로 레벨링이 어렵다고 보고, 필요 시 `64 / 500ms` 보강 분석을 검토한다.
 
@@ -431,7 +432,7 @@ KataGo analysis 결과는 기본적으로 수치 기반이다.
 
 1. 현재 국면을 분석해 scored 후보를 얻는다.
 2. 불법/점유/자충/선택 금지 pass를 제거한다.
-3. `pointLoss` 오름차순으로 정렬한다.
+3. KataGo가 반환한 `moveInfos.order` 순서를 유지한다.
 4. 레벨의 percentile window에 해당하는 후보를 고른다.
 5. 해당 구간에서 균등 랜덤으로 1수를 선택한다.
 6. 선택 결과에는 `playLevel`, `budget`, `candidateCount`, `window`, `randomSeed`, `selectedMove`, `selectedPointLoss`를 debug log에 남긴다.

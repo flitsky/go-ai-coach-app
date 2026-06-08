@@ -451,4 +451,9 @@
 - 보드 위 Top Moves 숫자는 후보 착수 후 형세 리드가 아니라 현재 착수자 기준 `-pointLoss` delta로 표시하도록 변경했다. 후보 상세 텍스트와 착수 리뷰 문구도 기본 `lead` 표시를 제거하고 `loss` 중심으로 정리했다.
 - 사용자가 흑 차례 로그에서 `1. Black F5 loss=0.3`, `2. Black B3 loss=0.0`처럼 손실이 더 큰 후보가 1번으로 표시되는 문제를 보고하고, 백 기준 loss 사용 여부를 의심했다.
 - 같은 수순을 로컬 KataGo JSON analysis로 재현했다. 원본 `scoreLead`는 흑 기준이고, KaTrain은 `pointsLost = player_sign(next_player) * (root_scoreLead - candidate_scoreLead)`로 현재 착수자 관점 손실을 계산한다. 우리 JSON parser의 부호 계산은 이 공식과 일치했다.
-- 문제 원인은 `pointLoss`가 아니라 UI/후보 상세가 KataGo `order`를 우선해 정렬하던 데 있었다. Top Moves 보드 표시와 후보 상세 텍스트는 이제 `pointLoss` 오름차순을 우선하고, 동률일 때만 engine order를 보조 기준으로 사용한다.
+- 당시 1차 대응으로 Top Moves 보드 표시와 후보 상세 텍스트를 `pointLoss` 오름차순 우선으로 바꿨다. 그러나 이후 빈 9x9 order 0 후보가 밀리는 문제가 확인되어 이 정렬 정책은 취소했다.
+- 사용자가 빈 9x9 로그에서 정가운데 `E5`가 `KataGo JSON order 0`인데 앱에서는 5번으로 밀리는 문제를 보고했다.
+- 재검토 결과 직전 `pointLoss` 오름차순 정렬은 과한 앱 자체 판단이었다. Top Moves의 순위와 큰 강조점은 KataGo `order`를 우선해야 하고, `pointLoss`는 색상/숫자 annotation으로만 사용해야 한다.
+- `MoveAnalysisSnapshot.candidatesForDisplay()`와 후보 상세 텍스트를 engine order 우선으로 되돌리고, 저예산 분석에서 order와 `pointLoss`가 어긋나도 앱이 순위를 임의로 뒤집지 않도록 테스트를 수정했다.
+- 같은 원칙을 AI 응수 선택에도 적용했다. 레벨링의 상위/하위 percentile window는 KataGo가 반환한 후보 순서 기준이며, `pointLoss`가 낮다는 이유만으로 엔진 order 뒤 후보를 최적수로 승격하지 않는다.
+- `ENGINE_BEGINNER_VISITS_BENCHMARK.md`, `ENGINE_LEVELING_DISCUSSION.md`, `USER_OPTION_MANUAL.md`도 engine order 우선 정책으로 갱신했다.

@@ -2,7 +2,6 @@ package com.worksoc.goaicoach.ui
 
 import com.worksoc.goaicoach.shared.AnalysisResult
 import com.worksoc.goaicoach.shared.BoardSize
-import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.FinalScoreResult
 import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.StoneColor
@@ -15,7 +14,7 @@ internal fun AnalysisResult.toCandidateText(boardSize: BoardSize): String {
     }
     return buildString {
         appendLine(summary)
-        candidates.sortedByDisplayLoss().forEachIndexed { index, candidate ->
+        candidates.forEachIndexed { index, candidate ->
             append(index + 1)
             append(". ")
             append(candidate.move.describe(boardSize))
@@ -68,9 +67,3 @@ private fun Double.formatOneDecimal(): String =
 
 private fun Double.formatTwoDecimals(): String =
     ((this * 100).roundToInt() / 100.0).toString()
-
-private fun List<CandidateMove>.sortedByDisplayLoss(): List<CandidateMove> =
-    sortedWith(
-        compareBy<CandidateMove> { it.pointLoss ?: Double.POSITIVE_INFINITY }
-            .thenByDescending { it.visits ?: -1 },
-    )
