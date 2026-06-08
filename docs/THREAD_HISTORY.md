@@ -508,3 +508,7 @@
 - 현재 파일 규모를 확인했다. `GoCoachApp.kt`는 약 1,957줄로 UI, 상태, 엔진 orchestration, 자동 AI 턴, Top Moves 분석, 종국 처리, 저장/복원, debug report를 모두 직접 관리한다.
 - `docs/REFACTORING_STRATEGY_2026-06-08.md`를 추가해 리팩토링 전략을 문서화했다. 권장 방향은 UI가 엔진을 직접 호출하지 않고, application/controller 계층이 `EngineAdapter`, session store, domain model을 조합하는 구조다.
 - 1차 착수안은 기능 변화가 적은 `DebugReportBuilder`, `EndgameResolver`, analysis cache/helper 분리다. 이후 `GameScreenState`, `GameUiEvent`, `GameSessionController` 또는 ViewModel을 도입하는 순서가 안정적이라고 정리했다.
+- 리팩토링 Phase 1을 착수했다. 첫 단계로 `buildDebugReport`, `buildEndgameLog`, 보드/수순/사석 로그 formatter를 `app-android/application/DebugReportBuilder.kt`로 분리했다.
+- `GoCoachApp.kt`는 debug report 문자열 생성 책임을 내려놓고 새 application helper를 import해 사용한다.
+- `DebugReportBuilderTest`를 추가해 Runtime, Board, Stones, Moves, DisplayedTexts, EngineDiagnostic 섹션이 생성되는지 확인했다.
+- 검증으로 `make test`가 통과했다.
