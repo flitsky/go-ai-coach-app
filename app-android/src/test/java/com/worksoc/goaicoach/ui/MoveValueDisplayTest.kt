@@ -1,0 +1,61 @@
+package com.worksoc.goaicoach.ui
+
+import com.worksoc.goaicoach.shared.AnalysisResult
+import com.worksoc.goaicoach.shared.BoardCoordinate
+import com.worksoc.goaicoach.shared.BoardSize
+import com.worksoc.goaicoach.shared.CandidateMove
+import com.worksoc.goaicoach.shared.EngineStatus
+import com.worksoc.goaicoach.shared.Move
+import com.worksoc.goaicoach.shared.StoneColor
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class MoveValueDisplayTest {
+    @Test
+    fun topMoveBoardLabelUsesPointLossDeltaInsteadOfScoreLead() {
+        val candidate = CandidateMove(
+            move = Move.Play(StoneColor.Black, BoardCoordinate(row = 3, column = 4)),
+            scoreLead = -12.0,
+            pointLoss = 0.2,
+        )
+
+        assertEquals("-0.2", candidate.pointDeltaLabel())
+        assertEquals("0.2", candidate.pointLossLabel())
+    }
+
+    @Test
+    fun zeroPointLossDisplaysAsNeutralDelta() {
+        val candidate = CandidateMove(
+            move = Move.Play(StoneColor.White, BoardCoordinate(row = 3, column = 4)),
+            pointLoss = 0.0,
+        )
+
+        assertEquals("0.0", candidate.pointDeltaLabel())
+        assertEquals("0.0", candidate.pointLossLabel())
+    }
+
+    @Test
+    fun candidateTextShowsLossAndDoesNotExposeLeadByDefault() {
+        val result = AnalysisResult(
+            status = EngineStatus.ready("ready"),
+            summary = "analysis complete",
+            candidates = listOf(
+                CandidateMove(
+                    move = Move.Play(StoneColor.Black, BoardCoordinate(row = 3, column = 4)),
+                    winRate = 0.26,
+                    scoreLead = -0.8,
+                    pointLoss = 0.2,
+                    visits = 1,
+                    policyPrior = 0.94,
+                ),
+            ),
+        )
+
+        val text = result.toCandidateText(BoardSize.Nine)
+
+        assertTrue(text.contains("loss=0.2"))
+        assertFalse(text.contains("lead="))
+    }
+}

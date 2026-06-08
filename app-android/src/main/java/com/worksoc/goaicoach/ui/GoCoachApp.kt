@@ -78,7 +78,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.LinkedHashMap
-import kotlin.math.roundToInt
 
 @Composable
 fun GoCoachApp(
@@ -1611,13 +1610,8 @@ private fun buildMoveReview(
 
     val pointLoss = matchedCandidate.pointLoss
     val tone = moveReviewToneFor(pointLoss)
-    val scoreText = matchedCandidate.scoreLead
-        ?.toPlayerPerspective(play.player)
-        ?.toSignedOneDecimal()
-        ?.let { ", score lead $it" }
-        .orEmpty()
-    val lossText = pointLoss
-        ?.let { "loss ${it.formatOneDecimal()} point(s)" }
+    val lossText = matchedCandidate.pointLossLabel()
+        ?.let { "loss $it point(s)" }
         ?: "score loss pending"
     val priorText = matchedCandidate.policyPrior
         ?.let { ", policy ${(it * 100).toInt()}%" }
@@ -1629,7 +1623,7 @@ private fun buildMoveReview(
             moveNumber = moveNumber,
             tone = tone,
         ),
-        text = "Move review: ${play.coordinate.label(boardSize)} ${moveReviewTextFor(pointLoss)} ($lossText$scoreText$priorText).",
+        text = "Move review: ${play.coordinate.label(boardSize)} ${moveReviewTextFor(pointLoss)} ($lossText$priorText).",
     )
 }
 
@@ -1641,21 +1635,6 @@ private fun List<MoveReviewMarker>.withReviewMarker(
     } else {
         filterNot { existing -> existing.moveNumber == marker.moveNumber } + marker
     }
-
-private fun Double.toPlayerPerspective(player: StoneColor): Double =
-    when (player) {
-        StoneColor.Black -> -this
-        StoneColor.White -> this
-    }
-
-private fun Double.toSignedOneDecimal(): String {
-    val rounded = (this * 10).roundToInt() / 10.0
-    val normalized = if (kotlin.math.abs(rounded) < 0.05) 0.0 else rounded
-    return if (normalized > 0.0) "+$normalized" else normalized.toString()
-}
-
-private fun Double.formatOneDecimal(): String =
-    ((this * 10).roundToInt() / 10.0).toString()
 
 private fun topMovesAnalysisLimitFor(
     profile: EngineProfile,

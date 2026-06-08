@@ -260,9 +260,8 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawCandidateMoves(
             center = center,
             style = Stroke(width = if (index == 0) 4f else 2f),
         )
-        candidate.scoreLead
-            ?.toPlayerPerspective(play.player)
-            ?.let { drawSpotLabel(center, it.toSignedOneDecimal(), geometry.spacing * 0.28f) }
+        candidate.pointDeltaLabel()
+            ?.let { drawSpotLabel(center, it, geometry.spacing * 0.28f) }
     }
 }
 
@@ -380,18 +379,6 @@ private fun Color.darken(): Color =
         blue = blue * 0.62f,
         alpha = alpha,
     )
-
-private fun Double.toPlayerPerspective(player: StoneColor): Double =
-    when (player) {
-        StoneColor.Black -> -this
-        StoneColor.White -> this
-    }
-
-private fun Double.toSignedOneDecimal(): String {
-    val rounded = (this * 10).roundToInt() / 10.0
-    val normalized = if (abs(rounded) < 0.05) 0.0 else rounded
-    return if (normalized > 0.0) "+$normalized" else normalized.toString()
-}
 
 private fun GameState.hasCurrentStoneFor(marker: MoveReviewMarker): Boolean {
     if (stoneAt(marker.coordinate) == null) {
