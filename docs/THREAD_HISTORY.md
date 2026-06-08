@@ -386,3 +386,5 @@
 - 사용자가 1차 레벨링을 `초급=Beginner`, `중급=Casual`, `고급=Intermediate`로 구성하고, 이후 `Strong`으로 상위 단계를 확장하는 방향을 제안했다.
 - `ENGINE_LEVELING_DISCUSSION.md`에 해당 등급 매핑을 추가하고, `Beginner 16` 응수 강도와 후보 확보용 분석 예산을 분리할 수 있다고 정리했다.
 - 초급 AI는 실제 응수 profile을 `Beginner 16 / 250ms`로 유지하되, 후보 bucket 확보가 부족하면 selection/review 분석만 32/64 또는 `Balanced-light`로 올릴 수 있다. 단, visits만 올린다고 yellow/red가 자동 확보되는 것은 아니며 policy 후보 포함과 낮은 budget refine가 더 중요하다고 기록했다.
+- 사용자가 엔진 탐색 결과가 수치 기반인지, yellow/orange 후보가 없을 수 있는지, 그리고 색상이 아니라 탐색 후보 내 최저 점수 기준 상대 분포가 더 명확한지 질문했다.
+- `ENGINE_LEVELING_DISCUSSION.md`에 엔진 수치(`scoreLead`, `winrate`, `visits`, `prior`, `pointLoss`)와 색상 분포의 관계를 추가했다. 사용자 피드백 색상은 절대 `pointLoss` 기준을 유지하고, AI 난이도 선택은 상대 순위/분위수 bucket을 함께 쓰는 하이브리드가 적절하다고 정리했다.
