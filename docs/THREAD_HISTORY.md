@@ -409,6 +409,13 @@
 - `PlayLevelSettingTest`를 추가해 B16/B32 매핑, 단계 clamp, percentile index 계산을 검증했다.
 - 문서는 `USER_OPTION_MANUAL.md`, `ENGINE_SEARCH_MODE_DIRECTION.md`, `ENGINE_LEVELING_DISCUSSION.md`, `ENGINE_BEGINNER_VISITS_BENCHMARK.md`를 갱신했다.
 - 검증으로 `make test`가 통과했다.
+- 사용자가 폰에서 대국은 잘 진행되지만, 초급 1단계는 추천수로 이기고 2단계부터 이기기 힘들다고 보고했다.
+- 사용자는 AI 2단계 랜덤수와 플레이어 최적 추천수 조건으로 반복 검증이 가능한지 물었다.
+- MacBook의 KataGo v1.16.4 analysis CLI로 40수 제한 시뮬레이션을 수행했다. 조건은 플레이어 흑이 매번 `moveInfos.order == 0` 최적 추천수를 두고, AI 백은 현재 앱의 2단계 랜덤 정책을 따르는 방식이다.
+- `빠른 초급 2단계(FB2)` 3판 결과는 흑 최적 추천수 플레이어가 2/3판 앞섰고 평균 B+11.86이었다. 그러나 AI 평균 order가 0.35로 매우 낮아, B16 저후보 환경에서는 2단계가 사실상 최적수/차선 랜덤으로 동작한다는 점이 확인되었다.
+- `초급 2단계(LB2)` 3판 결과는 흑 최적 추천수 플레이어가 3/3판 크게 앞섰고 평균 B+54.02였다. 이 경우 AI 평균 order가 4.15~4.45 수준으로 하위 후보 랜덤이 잘 적용되었다.
+- 결론: 사용자가 체감한 “2단계부터 어려움”은 `빠른 초급 2단계`라면 합리적인 보고다. 원인은 엔진 오류가 아니라 B16 후보 수가 적은 상태에서 `상위 50%` 선택 정책이 거의 최적수 선택으로 수렴하기 때문이다.
+- `docs/ENGINE_LEVEL_SIMULATION_REPORT.md`를 추가해 검증 방법, 결과, 조정 제안을 기록했다.
 - 사용자가 최신 앱을 폰에 설치해달라고 요청했다.
 - `adb devices -l`에서 폰 `R5CT22WTVXP` (`SM_S908N`)가 `device` 상태로 확인되었다.
 - `ANDROID_SERIAL=R5CT22WTVXP make reinstall-dev-engine`를 실행했다. 기존 앱 uninstall, debug APK install, KataGo model/config/analysis config seed, 앱 cold launch가 모두 성공했다.
