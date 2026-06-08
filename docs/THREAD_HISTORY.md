@@ -437,3 +437,8 @@
 - `adb devices -l`에서 폰 `R5CT22WTVXP` (`SM_S908N`)가 `device` 상태로 확인되었다.
 - `ANDROID_SERIAL=R5CT22WTVXP make reinstall-dev-engine`를 실행해 최신 debug APK 설치, KataGo model/config/analysis config seed, 앱 cold launch를 완료했다.
 - 전체 명령은 약 13.6초가 걸렸고, 앱 cold launch `TotalTime=611ms`가 기록되었다.
+- 사용자가 흑 차례인데 Top Moves에 레드 스팟만 보이는 debug report를 공유했다.
+- 로그상 설정은 `빠른 초급 1단계`, `AnalysisPreset=Lite`, `visits=16`, `timeMillis=250`, `refine=0`이었다. 합법 착점 43개 중 점수까지 나온 후보는 2개뿐이었다.
+- 후보 2개는 `Black B2 lead=+25.8 loss=6.9`, `Black A4 lead=+24.0 loss=8.6`이었다. 흑이 여전히 크게 앞서는 수지만 root/best 기준으로 각각 6.9집, 8.6집 손실이라 현재 threshold상 둘 다 red/blunder로 표시되는 것이 정상이다.
+- 원인은 색상 계산이 후보 순위로 차등된 것이 아니라, Lite 저예산 분석이 Top Moves로 보기에는 너무 적고 나쁜 scored 후보만 반환한 데 있다.
+- 개선 방향은 Top Moves 표시 정책에 품질 가드를 두는 것이다. 예: scored 후보 수가 너무 적거나 모든 scored 후보가 red이면 자동 표시에서는 스팟을 숨기고, 사용자가 수동으로 Top Moves를 요청한 경우에는 더 강한 분석으로 한 번 보강한다.
