@@ -548,3 +548,12 @@
 - `GoCoachApp.kt`의 `submitHumanMove()`는 이제 로컬 착수 결과를 `applyHumanMoveLocally()`에서 받아 화면 상태와 엔진 동기화 흐름에 반영한다.
 - `HumanMoveApplicationTest`를 추가해 합법 착수 리뷰/포로 문구 생성, 연속 pass 로컬 최종 점수 생성, 불법 착수 실패를 검증했다.
 - 검증으로 `make test`가 통과했다.
+- 사용자가 새 무선 디버깅 페어링 코드 `261639`를 전달하고 앱 설치를 요청했다.
+- `adb devices -l` 확인 결과 폰 `SM_S908N`이 이미 Wi-Fi ADB `device` 상태로 연결되어 있었고, `adb mdns services`에서 `192.168.35.178:38181` 연결 서비스가 확인되었다. 따라서 추가 `adb pair` 없이 기존 무선 연결을 사용했다.
+- `make reinstall-dev-engine`를 실행해 기존 앱 제거, debug APK 설치, KataGo model/config/analysis config seed, 앱 cold launch를 완료했다.
+- 설치 명령 전체 소요 시간은 약 34.8초였고, 앱 실행 결과는 `Status: ok`, cold launch `TotalTime=673ms`로 확인되었다.
+- 사용자가 다음 리팩토링 진행을 요청했다.
+- `GameSessionApplication.kt`를 추가해 Player Setup 기준 대표 AI 레벨 선택, 새 로컬 게임 초기 상태 계획, 저장 대국 복원 상태 계획을 application 계층으로 분리했다.
+- `GoCoachApp.kt`는 새 게임/저장 복원 시 직접 레벨과 화면 상태 기본값을 계산하지 않고 helper 결과를 적용하도록 변경했다.
+- `UndoApplication.kt`를 추가해 2인용 무르기와 엔진 동기화 무르기 후 로컬 상태 계획을 application 계층으로 분리했다. 무르기 후 score timeline trim, move review marker trim, 마지막 수 문구, candidate text 초기화가 테스트 가능한 단위가 되었다.
+- `GameSessionApplicationTest`, `UndoApplicationTest`를 추가했고, 검증으로 `make test`가 통과했다.

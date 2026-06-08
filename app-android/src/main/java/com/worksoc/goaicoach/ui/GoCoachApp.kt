@@ -48,12 +48,17 @@ import com.worksoc.goaicoach.application.MoveReviewMarker
 import com.worksoc.goaicoach.application.analysisKeyFor
 import com.worksoc.goaicoach.application.buildDebugReport
 import com.worksoc.goaicoach.application.buildEndgameLog
+import com.worksoc.goaicoach.application.buildEngineUndoPlan
+import com.worksoc.goaicoach.application.buildLocalTwoPlayerUndoPlan
+import com.worksoc.goaicoach.application.buildNewLocalGameSessionPlan
+import com.worksoc.goaicoach.application.buildSavedGameRestorePlan
 import com.worksoc.goaicoach.application.configureSyncAndEstimateGraphScore
 import com.worksoc.goaicoach.application.deepTopMovesAnalysisLimitFor
 import com.worksoc.goaicoach.application.applyHumanMoveLocally
 import com.worksoc.goaicoach.application.localScoreSnapshot
 import com.worksoc.goaicoach.application.resolveAiEndgame
 import com.worksoc.goaicoach.application.scoreGraphAnalysisLimit
+import com.worksoc.goaicoach.application.selectRuntimePlayLevel
 import com.worksoc.goaicoach.application.startEngineSession
 import com.worksoc.goaicoach.application.startNewEngineGame
 import com.worksoc.goaicoach.application.syncAndEstimateGraphScore
@@ -95,7 +100,6 @@ import com.worksoc.goaicoach.shared.ScoreSnapshotSource
 import com.worksoc.goaicoach.shared.ScoreTimeline
 import com.worksoc.goaicoach.shared.StoneColor
 import com.worksoc.goaicoach.shared.describe
-import com.worksoc.goaicoach.shared.replayWithoutLastMoves
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -244,30 +248,21 @@ private fun GoCoachScreen(
             candidateCount = topMoveCandidateCountFor(state, analysisPreset),
         )
 
-    fun primaryPlayLevelForSetup(
-        setup: PlayerSetup = playerSetup,
-        state: GameState = gameState,
-    ): PlayLevelSetting =
-        setup.sideFor(state.nextPlayer)
-            .takeIf { side -> side.controller == SeatController.Ai }
-            ?.playLevel
-            ?: setup.black.takeIf { side -> side.controller == SeatController.Ai }?.playLevel
-            ?: setup.white.takeIf { side -> side.controller == SeatController.Ai }?.playLevel
-            ?: defaultPlayLevel
-
-    fun applyRuntimePlayLevel(nextPlayLevel: PlayLevelSetting) {
-        playLevel = nextPlayLevel
-        engineProfile = nextPlayLevel.toEngineProfile(engineProfile)
-        analysisPreset = nextPlayLevel.analysisPreset
-    }
-
     fun changePlayerSetup(nextSetup: PlayerSetup) {
         if (isEngineBusy) {
             engineMessage = "Engine is busy. Change Player Setup after the current action."
             return
         }
         playerSetup = nextSetup
-        applyRuntimePlayLevel(primaryPlayLevelForSetup(nextSetup))
+        val runtime = selectRuntimePlayLevel(
+            setup = nextSetup,
+            nextPlayer = gameState.nextPlayer,
+            currentProfile = engineProfile,
+            defaultPlayLevel = defaultPlayLevel,
+        )
+        playLevel = runtime.playLevel
+        engineProfile = runtime.engineProfile
+        analysisPreset = runtime.analysisPreset
         clearTopMoveSpots("Player Setup changed. Press New to restart with this setup, or continue from the current position.")
         clearReviewAnalysis(gameState)
         lastAnalysisKey = null
@@ -465,19 +460,21 @@ private fun GoCoachScreen(
         message: String,
         ruleset: Ruleset = gameState.ruleset,
     ) {
-        gameState = GameState.empty(BoardSize.Nine, ruleset)
+        val reset = buildNewLocalGameSessionPlan(message, ruleset)
+        gameState = reset.gameState
         isGameEnded = false
-        clearTopMoveSpots("No analysis yet.")
-        clearReviewAnalysis()
+        clearTopMoveSpots(reset.candidateText)
+        reviewAnalysis = reset.reviewAnalysis
+        reviewCandidateMoves = emptyList()
         lastAnalysisKey = null
-        scoreText = "No score estimate yet."
+        scoreText = reset.scoreText
         scoreEstimate = null
-        scoreSnapshots = listOf(localScoreSnapshot(gameState))
-        moveReviewText = "No move review yet."
+        scoreSnapshots = reset.scoreSnapshots
+        moveReviewText = reset.moveReviewText
         moveReviews = emptyList()
-        lastMoveText = "None"
-        endgameLog = "No endgame result recorded."
-        engineMessage = message
+        lastMoveText = reset.lastMoveText
+        endgameLog = reset.endgameLog
+        engineMessage = reset.engineMessage
     }
 
     fun restoreSavedSession(snapshot: SavedGameSnapshot) {
@@ -486,31 +483,36 @@ private fun GoCoachScreen(
             return
         }
 
-        val restoredState = snapshot.gameState
-        val restoredPlayLevel = primaryPlayLevelForSetup(snapshot.playerSetup, restoredState)
-        val restoredProfile = restoredPlayLevel.toEngineProfile(engineProfile)
+        val restore = buildSavedGameRestorePlan(
+            snapshot = snapshot,
+            currentProfile = engineProfile,
+            defaultPlayLevel = defaultPlayLevel,
+        )
+        val restoredState = restore.gameState
+        val restoredProfile = restore.runtime.engineProfile
         if (isEngineReady) {
             isEngineBusy = true
         }
 
-        playerSetup = snapshot.playerSetup
-        playLevel = restoredPlayLevel
+        playerSetup = restore.playerSetup
+        playLevel = restore.runtime.playLevel
         engineProfile = restoredProfile
-        analysisPreset = restoredPlayLevel.analysisPreset
-        topMovesEnabled = snapshot.topMovesEnabled
+        analysisPreset = restore.runtime.analysisPreset
+        topMovesEnabled = restore.topMovesEnabled
         gameState = restoredState
         isGameEnded = false
-        clearTopMoveSpots("Restored previous game. Analysis cache will rebuild.")
-        clearReviewAnalysis(restoredState)
+        clearTopMoveSpots(restore.candidateText)
+        reviewAnalysis = restore.reviewAnalysis
+        reviewCandidateMoves = emptyList()
         lastAnalysisKey = null
-        scoreText = "Score estimate not current."
+        scoreText = restore.scoreText
         scoreEstimate = null
-        scoreSnapshots = listOf(localScoreSnapshot(restoredState))
-        moveReviewText = "Move review restored after app restart; pre-move analysis cache will rebuild."
+        scoreSnapshots = restore.scoreSnapshots
+        moveReviewText = restore.moveReviewText
         moveReviews = emptyList()
-        lastMoveText = restoredState.moves.lastOrNull()?.describe(restoredState.boardSize) ?: "None"
-        endgameLog = "No endgame result recorded after restore."
-        engineMessage = "Previous game restored at move ${restoredState.moves.size}."
+        lastMoveText = restore.lastMoveText
+        endgameLog = restore.endgameLog
+        engineMessage = restore.engineMessage
 
         if (!isEngineReady) {
             return
@@ -600,16 +602,22 @@ private fun GoCoachScreen(
             return
         }
 
-        val targetPlayLevel = primaryPlayLevelForSetup(targetSetup)
-        val targetProfile = targetPlayLevel.toEngineProfile(engineProfile)
-        applyRuntimePlayLevel(targetPlayLevel)
+        val runtime = selectRuntimePlayLevel(
+            setup = targetSetup,
+            nextPlayer = gameState.nextPlayer,
+            currentProfile = engineProfile,
+            defaultPlayLevel = defaultPlayLevel,
+        )
+        playLevel = runtime.playLevel
+        engineProfile = runtime.engineProfile
+        analysisPreset = runtime.analysisPreset
 
         scope.launch {
             isEngineBusy = true
             var nextAnalysisState: GameState? = null
             runCatching {
                 withContext(Dispatchers.IO) {
-                    engineAdapter.startNewEngineGame(targetProfile, BoardSize.Nine, targetRuleset)
+                    engineAdapter.startNewEngineGame(runtime.engineProfile, BoardSize.Nine, targetRuleset)
                 }
             }.onSuccess { result ->
                 resetLocalGame(result.message, targetRuleset)
@@ -914,23 +922,25 @@ private fun GoCoachScreen(
                 engineMessage = "Engine is busy. Undo after the current analysis."
                 return
             }
-            val nextState = gameState.replayWithoutLastMoves(1)
+            val undo = buildLocalTwoPlayerUndoPlan(
+                currentState = gameState,
+                scoreSnapshots = scoreSnapshots,
+            )
+            val nextState = undo.gameState
             gameState = nextState
             isGameEnded = false
             clearTopMoveSpots()
-            clearReviewAnalysis(nextState)
+            reviewAnalysis = undo.reviewAnalysis
+            reviewCandidateMoves = emptyList()
             lastAnalysisKey = null
-            moveReviews = emptyList()
-            moveReviewText = "Move review cleared by undo."
-            lastMoveText = nextState.moves.lastOrNull()?.describe(nextState.boardSize) ?: "None"
-            candidateText = "Captured: Black ${nextState.capturedBy(StoneColor.Black)} / White ${nextState.capturedBy(StoneColor.White)}"
-            scoreText = "Score estimate not current."
+            moveReviews = undo.moveReviews
+            moveReviewText = undo.moveReviewText
+            lastMoveText = undo.lastMoveText
+            candidateText = undo.candidateText
+            scoreText = undo.scoreText
             scoreEstimate = null
-            scoreSnapshots = ScoreTimeline.record(
-                ScoreTimeline.trimAfter(scoreSnapshots, nextState.moves.size),
-                localScoreSnapshot(nextState),
-            )
-            endgameLog = "Endgame log cleared by undo."
+            scoreSnapshots = undo.scoreSnapshots
+            endgameLog = undo.endgameLog
             if (!isEngineReady) {
                 engineMessage = "Local undo completed without engine sync."
                 return
@@ -985,20 +995,27 @@ private fun GoCoachScreen(
                     }
                 }
             }.onSuccess {
-                val nextState = gameState.replayWithoutLastMoves(undoCount)
+                val undo = buildEngineUndoPlan(
+                    currentState = gameState,
+                    undoCount = undoCount,
+                    previousMoveReviews = moveReviews,
+                    scoreSnapshots = scoreSnapshots,
+                )
+                val nextState = undo.gameState
                 gameState = nextState
                 isGameEnded = false
                 clearTopMoveSpots()
-                clearReviewAnalysis(nextState)
+                reviewAnalysis = undo.reviewAnalysis
+                reviewCandidateMoves = emptyList()
                 lastAnalysisKey = null
-                moveReviews = moveReviews.filter { marker -> marker.moveNumber <= nextState.moves.size }
-                moveReviewText = "Move review cleared by undo."
-                lastMoveText = nextState.moves.lastOrNull()?.describe(nextState.boardSize) ?: "None"
-                candidateText = "Undo cleared current Top Moves."
-                scoreText = "Score estimate not current."
+                moveReviews = undo.moveReviews
+                moveReviewText = undo.moveReviewText
+                lastMoveText = undo.lastMoveText
+                candidateText = undo.candidateText
+                scoreText = undo.scoreText
                 scoreEstimate = null
-                scoreSnapshots = ScoreTimeline.trimAfter(scoreSnapshots, nextState.moves.size)
-                endgameLog = "Endgame log cleared by undo."
+                scoreSnapshots = undo.scoreSnapshots
+                endgameLog = undo.endgameLog
                 engineMessage = "Undid $undoCount move(s) in local state and engine state."
                 nextAnalysisState = nextState
             }.onFailure { error ->
