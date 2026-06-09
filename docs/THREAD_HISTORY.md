@@ -613,3 +613,4 @@
 - `GoCoachApp.kt`는 초기 사용자 설정 계산과 preferences 저장 payload 조립을 직접 하지 않고 `buildInitialUserPreferencesPlan`, `buildUserPreferencesSnapshot` helper를 사용하도록 정리했다.
 - `UserPreferencesApplicationTest`를 추가해 저장된 계가 규칙/AI 레벨이 초기 런타임으로 반영되는지, 현재 UI 설정이 preferences snapshot으로 보존되는지 검증했다.
 - 검증으로 `make test`가 통과했다.
+- 리팩토링 후 최신 APK를 데이터 유지 방식으로 다시 설치하려고 `make install-dev-engine`를 실행했지만, 이 시점에는 ADB 연결 기기가 없어 `No connected devices`로 실패했다. 리팩토링 전 요청받은 우선 설치는 이미 성공한 상태다.
