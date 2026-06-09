@@ -582,3 +582,9 @@
 - `docs/REFACTORING_STRATEGY_2026-06-08.md`를 최신 상태로 갱신했다. 리팩토링 장점/단점, 현재 냉정한 평가, 과도한 ViewModel 일괄 전환을 피하고 controller 후보를 작은 단위로 만드는 다음 권고 순서를 기록했다.
 - 후속 안전 리팩토링으로 Top Moves cache hit와 분석 완료의 상태 반영 중복을 `applyTopMoveAnalysisUpdate()`로 묶었다. 이후 `GoCoachApp.kt`에서 controller로 옮길 수 있는 상태 적용 단위가 하나 더 명확해졌다.
 - 검증으로 `make test`가 통과했다.
+- 사용자가 안정적으로 수행 가능한 리팩토링 단위를 최소 5개 이상 단계별로 진행하고, 각 단계마다 커밋/푸시해달라고 요청했다.
+- 1단계로 점수 추정/종국 표시 결과를 화면 상태에 반영하는 반복 코드를 `applyScoreEstimateDisplayPlan()`, `applyFinalScoreDisplayPlan()`, `applyEndgameFailureDisplayPlan()`으로 묶었다. 검증으로 `make test`가 통과했고 `Extract score display state appliers`로 커밋/푸시했다.
+- 2단계로 새 게임 reset과 저장 대국 restore plan 반영을 `applyGameSessionResetPlan()`, `applySavedGameRestorePlan()`으로 묶었다. 검증으로 `make test`가 통과했고 `Extract session state appliers`로 커밋/푸시했다.
+- 3단계로 2인용/엔진 무르기 결과 적용 중복을 `applyUndoLocalStatePlan()`으로 묶었다. 검증으로 `make test`가 통과했고 `Extract undo state applier`로 커밋/푸시했다.
+- 4단계로 `playLevel`, `engineProfile`, `analysisPreset`을 함께 갱신하는 `applyRuntimePlayLevelSelection()`을 추가했다. 검증으로 `make test`가 통과했고 `Extract runtime level applier`로 커밋/푸시했다.
+- 5단계로 저장 snapshot 생성과 save/clear/skip 판단을 `SavedGamePersistence.kt` application helper로 분리하고 `SavedGamePersistenceTest`를 추가했다. 검증으로 `make test`가 통과했고 `Extract saved game persistence plan`으로 커밋/푸시했다.
