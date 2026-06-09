@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.match.AiEngineChoice
+import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.HumanGameType
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
@@ -33,9 +34,11 @@ import com.worksoc.goaicoach.shared.StoneColor
 @Composable
 internal fun PlayerSetupPanel(
     playerSetup: PlayerSetup,
+    autoPlayDelaySetting: AutoPlayDelaySetting,
     engineName: String,
     enabled: Boolean,
     onPlayerSetupChange: (PlayerSetup) -> Unit,
+    onAutoPlayDelayChange: (AutoPlayDelaySetting) -> Unit,
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -62,12 +65,45 @@ internal fun PlayerSetupPanel(
                 enabled = enabled,
                 onSideChange = { side -> onPlayerSetupChange(playerSetup.updateSide(StoneColor.White, side)) },
             )
+            if (playerSetup.isAutoPlay()) {
+                AutoPlayDelayRow(
+                    selected = autoPlayDelaySetting,
+                    onSelected = onAutoPlayDelayChange,
+                )
+            }
             Text(
                 text = playerSetup.summary(engineName),
                 color = MaterialTheme.colorScheme.secondary,
                 style = MaterialTheme.typography.bodySmall,
             )
         }
+    }
+}
+
+@Composable
+private fun AutoPlayDelayRow(
+    selected: AutoPlayDelaySetting,
+    onSelected: (AutoPlayDelaySetting) -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = "Auto delay",
+            modifier = Modifier.weight(1f),
+            color = MaterialTheme.colorScheme.secondary,
+            style = MaterialTheme.typography.bodySmall,
+        )
+        SetupDropdown(
+            selectedText = selected.label,
+            enabled = true,
+            modifier = Modifier.weight(1f),
+            options = AutoPlayDelaySetting.entries,
+            optionLabel = { setting -> setting.label },
+            onSelected = onSelected,
+        )
     }
 }
 

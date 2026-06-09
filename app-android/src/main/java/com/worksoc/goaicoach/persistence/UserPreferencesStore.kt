@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.persistence
 
 import android.content.Context
+import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.persistence.PlayerSetupJsonCodec.decodePlayerSetup
 import com.worksoc.goaicoach.persistence.PlayerSetupJsonCodec.encodePlayerSetup
@@ -15,6 +16,7 @@ internal data class UserPreferencesSnapshot(
     val showMoveNumbers: Boolean = false,
     val showLastMoveRing: Boolean = true,
     val showOwnershipOverlay: Boolean = true,
+    val autoPlayDelayMillis: Long = AutoPlayDelaySetting.Default.millis,
 )
 
 internal class UserPreferencesStore(context: Context) {
@@ -50,6 +52,7 @@ internal object UserPreferencesCodec {
             .put("showMoveNumbers", snapshot.showMoveNumbers)
             .put("showLastMoveRing", snapshot.showLastMoveRing)
             .put("showOwnershipOverlay", snapshot.showOwnershipOverlay)
+            .put("autoPlayDelayMillis", snapshot.autoPlayDelayMillis)
             .toString()
 
     fun decode(raw: String): UserPreferencesSnapshot? =
@@ -66,6 +69,9 @@ internal object UserPreferencesCodec {
                 showMoveNumbers = json.optBoolean("showMoveNumbers", false),
                 showLastMoveRing = json.optBoolean("showLastMoveRing", true),
                 showOwnershipOverlay = json.optBoolean("showOwnershipOverlay", true),
+                autoPlayDelayMillis = AutoPlayDelaySetting
+                    .fromMillis(json.optLong("autoPlayDelayMillis", AutoPlayDelaySetting.Default.millis))
+                    .millis,
             )
         }.getOrNull()
 }

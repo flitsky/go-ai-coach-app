@@ -21,6 +21,7 @@ import androidx.compose.ui.platform.LocalContext
 import com.worksoc.goaicoach.application.AnalysisCacheKey
 import com.worksoc.goaicoach.application.AnalysisResultCache
 import com.worksoc.goaicoach.application.MoveReviewMarker
+import com.worksoc.goaicoach.application.autoAiTurnDelayMillis
 import com.worksoc.goaicoach.application.buildDebugReport
 import com.worksoc.goaicoach.application.buildEndgameFailureDisplayPlan
 import com.worksoc.goaicoach.application.buildEngineEstimateDisplayPlan
@@ -109,6 +110,7 @@ import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.ScoreTimeline
 import com.worksoc.goaicoach.shared.describe
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -175,6 +177,7 @@ private fun GoCoachScreen(
     var engineProfile by remember { mutableStateOf(initialPlan.runtime.engineProfile) }
     var playerSetup by remember { mutableStateOf(initialPlan.playerSetup) }
     val matchMode = playerSetup.matchMode()
+    var autoPlayDelaySetting by remember { mutableStateOf(initialPlan.autoPlayDelaySetting) }
     var topMovesEnabled by remember { mutableStateOf(initialPlan.topMovesEnabled) }
     var analysisPreset by remember { mutableStateOf(initialPlan.runtime.analysisPreset) }
     val analysisCache = remember { AnalysisResultCache(maxEntries = 96) }
@@ -188,6 +191,7 @@ private fun GoCoachScreen(
     var hasCheckedSavedSession by remember { mutableStateOf(false) }
     var pendingSavedSession by remember { mutableStateOf<SavedGameSnapshot?>(null) }
     var shouldShowResumePrompt by remember { mutableStateOf(false) }
+    var isAutoAiTurnPending by remember { mutableStateOf(false) }
 
     fun applyEngineStartupDisplayPlan(startup: EngineStartupDisplayPlan) {
         isEngineReady = startup.isEngineReady
@@ -237,6 +241,7 @@ private fun GoCoachScreen(
     LaunchedEffect(
         preferencesStore,
         playerSetup,
+        autoPlayDelaySetting,
         topMovesEnabled,
         uxOptions,
         gameState.ruleset,
@@ -250,6 +255,7 @@ private fun GoCoachScreen(
                 showMoveNumbers = uxOptions.showMoveNumbers,
                 showLastMoveRing = uxOptions.showLastMoveRing,
                 showOwnershipOverlay = uxOptions.showOwnershipOverlay,
+                autoPlayDelaySetting = autoPlayDelaySetting,
             ),
         )
     }
@@ -752,6 +758,9 @@ private fun GoCoachScreen(
     }
 
     fun requestAiTurnForCurrentState() {
+        if (isAutoAiTurnPending) {
+            return
+        }
         if (
             !shouldRequestAiTurn(
                 isGameEnded = isGameEnded,
@@ -765,13 +774,31 @@ private fun GoCoachScreen(
             return
         }
 
-        val turnState = gameState
-        val aiPlayer = turnState.nextPlayer
-        val side = playerSetup.sideFor(aiPlayer)
-        val aiPlayLevel = side.playLevel
-        val previousReviewCandidates = reviewCandidateMoves
-
+        val delayMillis = autoAiTurnDelayMillis(playerSetup, autoPlayDelaySetting)
+        isAutoAiTurnPending = true
         scope.launch {
+            if (delayMillis > 0L) {
+                delay(delayMillis)
+            }
+            if (
+                !shouldRequestAiTurn(
+                    isGameEnded = isGameEnded,
+                    isEngineReady = isEngineReady,
+                    isEngineBusy = isEngineBusy,
+                    shouldShowResumePrompt = shouldShowResumePrompt,
+                    playerSetup = playerSetup,
+                    gameState = gameState,
+                )
+            ) {
+                isAutoAiTurnPending = false
+                return@launch
+            }
+
+            val turnState = gameState
+            val aiPlayer = turnState.nextPlayer
+            val side = playerSetup.sideFor(aiPlayer)
+            val aiPlayLevel = side.playLevel
+            val previousReviewCandidates = reviewCandidateMoves
             isEngineBusy = true
             var nextAnalysisState: GameState? = null
             runCatching {
@@ -836,6 +863,7 @@ private fun GoCoachScreen(
                 candidateText = "AI turn failed. Current board state was not changed."
             }
             isEngineBusy = false
+            isAutoAiTurnPending = false
             nextAnalysisState?.let { state ->
                 requestTopMoveAnalysisForState(
                     targetState = state,
@@ -1105,6 +1133,7 @@ private fun GoCoachScreen(
                     restoreSavedSession(snapshot)
                 },
                 changePlayerSetup = ::changePlayerSetup,
+                changeAutoPlayDelay = { setting -> autoPlayDelaySetting = setting },
                 changeScoringRule = ::changeScoringRule,
                 changeUxOptions = { options -> uxOptions = options },
             ),
@@ -1117,6 +1146,7 @@ private fun GoCoachScreen(
         isGameEnded,
         shouldShowResumePrompt,
         playerSetup,
+        autoPlayDelaySetting,
         gameState.nextPlayer,
         gameState.moves.size,
     ) {
@@ -1142,6 +1172,7 @@ private fun GoCoachScreen(
             gameState = gameState,
             matchMode = matchMode,
             playerSetup = playerSetup,
+            autoPlayDelaySetting = autoPlayDelaySetting,
             playLevel = playLevel,
             uxOptions = uxOptions,
             engineName = engineName,

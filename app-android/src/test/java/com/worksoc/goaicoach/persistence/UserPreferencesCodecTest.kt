@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.persistence
 
 import com.worksoc.goaicoach.match.HumanGameType
+import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.match.SidePlayerSetup
@@ -34,6 +35,7 @@ class UserPreferencesCodecTest {
             showMoveNumbers = true,
             showLastMoveRing = false,
             showOwnershipOverlay = false,
+            autoPlayDelayMillis = AutoPlayDelaySetting.Slow.millis,
         )
 
         val restored = UserPreferencesCodec.decode(UserPreferencesCodec.encode(snapshot))
@@ -45,6 +47,7 @@ class UserPreferencesCodecTest {
         assertEquals(true, restored?.showMoveNumbers)
         assertEquals(false, restored?.showLastMoveRing)
         assertEquals(false, restored?.showOwnershipOverlay)
+        assertEquals(AutoPlayDelaySetting.Slow.millis, restored?.autoPlayDelayMillis)
     }
 
     @Test
@@ -58,6 +61,7 @@ class UserPreferencesCodecTest {
         assertFalse(restored?.showMoveNumbers ?: true)
         assertTrue(restored?.showLastMoveRing ?: false)
         assertTrue(restored?.showOwnershipOverlay ?: false)
+        assertEquals(AutoPlayDelaySetting.Default.millis, restored?.autoPlayDelayMillis)
     }
 
     @Test

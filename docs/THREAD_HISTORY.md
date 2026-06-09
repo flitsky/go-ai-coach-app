@@ -632,3 +632,9 @@
 - 후속 리팩토링으로 저장 대국 복원 요청 판단을 `SavedGameRestoreRequestPlan`으로 application 계층에 분리했다. 엔진 busy 차단, 엔진 미준비 시 로컬 복원만 수행, 엔진 ready 시 복원 후 engine sync 수행 여부를 UI 밖에서 결정한다.
 - `GoCoachApp.kt`는 저장 대국 복원 시 새 request plan을 실행만 하도록 정리했고, `GameSessionApplicationTest`에 busy/로컬 복원/엔진 sync 세 분기 테스트를 추가했다.
 - 검증으로 `make test`가 통과했다.
+- 사용자가 흑/백 양 진영을 모두 AI로 설정하면 자동 착수가 빠르게 이어지면서 메뉴 조작이 막히는 느낌이 있고, AI 자동 대국 턴 딜레이를 설정할 수 있게 해달라고 요청했다.
+- 원인은 AI vs AI에서 `isEngineBusy=false`가 되는 즉시 다음 `LaunchedEffect`가 AI 턴을 다시 요청하는 촘촘한 자동 루프였다. 엔진 호출 자체는 IO 코루틴으로 분리되어 있지만, busy/idle 간격이 거의 없어 UI 조작 여유가 부족했다.
+- `AutoPlayDelaySetting`을 추가하고 사용자 preference에 저장/복원하도록 반영했다. 기본값은 `1초`이며 선택지는 `즉시`, `0.5초`, `1초`, `2초`, `3초`이다.
+- Player Setup 메뉴에서 양 진영이 모두 AI일 때 `Auto delay` 드롭다운을 표시한다. 이 항목은 엔진 busy 중에도 설정 가능하다.
+- 자동 AI 턴 실행은 딜레이 동안 `isEngineBusy`를 걸지 않고 `isAutoAiTurnPending`으로 중복 실행만 막도록 변경했다. 딜레이가 끝난 시점에 현재 game/player setup 상태를 재검증한 뒤 엔진 턴을 시작한다.
+- `GameAutomationApplicationTest`, `UserPreferencesCodecTest`, `UserPreferencesApplicationTest`, `GameScreenStateTest`, `GameUiEvent*Test`를 갱신했고, 검증으로 `make test`가 통과했다.

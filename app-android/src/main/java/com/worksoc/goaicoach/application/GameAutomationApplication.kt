@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.application
 
+import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.shared.AnalysisPreset
@@ -38,6 +39,12 @@ internal fun shouldRequestTopMoveAnalysis(
         !isEngineBusy &&
         !shouldShowResumePrompt &&
         playerSetup.sideFor(targetState.nextPlayer).controller == SeatController.Human
+
+internal fun autoAiTurnDelayMillis(
+    playerSetup: PlayerSetup,
+    setting: AutoPlayDelaySetting,
+): Long =
+    if (playerSetup.isAutoPlay()) setting.millis else 0L
 
 internal data class AutoAiTurnDisplayPlan(
     val playLevel: PlayLevelSetting,

@@ -55,9 +55,11 @@ internal fun ExpandedGameMenuSection(
 ) {
     PlayerSetupPanel(
         playerSetup = screenState.playerSetup,
+        autoPlayDelaySetting = screenState.autoPlayDelaySetting,
         engineName = screenState.engine.name,
         enabled = !screenState.engine.isBusy,
         onPlayerSetupChange = { setup -> onEvent(GameUiEvent.ChangePlayerSetup(setup)) },
+        onAutoPlayDelayChange = { setting -> onEvent(GameUiEvent.ChangeAutoPlayDelay(setting)) },
     )
 
     GameMenuActionsPanel(

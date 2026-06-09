@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.application
 
+import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.persistence.UserPreferencesSnapshot
 import com.worksoc.goaicoach.shared.BoardSize
@@ -13,6 +14,7 @@ internal data class InitialUserPreferencesPlan(
     val playerSetup: PlayerSetup,
     val runtime: RuntimePlayLevelSelection,
     val topMovesEnabled: Boolean,
+    val autoPlayDelaySetting: AutoPlayDelaySetting,
 )
 
 internal fun buildInitialUserPreferencesPlan(
@@ -31,6 +33,7 @@ internal fun buildInitialUserPreferencesPlan(
             defaultPlayLevel = defaultPlayLevel,
         ),
         topMovesEnabled = preferences.topMovesEnabled,
+        autoPlayDelaySetting = AutoPlayDelaySetting.fromMillis(preferences.autoPlayDelayMillis),
     )
 }
 
@@ -42,6 +45,7 @@ internal fun buildUserPreferencesSnapshot(
     showMoveNumbers: Boolean,
     showLastMoveRing: Boolean,
     showOwnershipOverlay: Boolean,
+    autoPlayDelaySetting: AutoPlayDelaySetting,
 ): UserPreferencesSnapshot =
     UserPreferencesSnapshot(
         playerSetup = playerSetup,
@@ -51,4 +55,5 @@ internal fun buildUserPreferencesSnapshot(
         showMoveNumbers = showMoveNumbers,
         showLastMoveRing = showLastMoveRing,
         showOwnershipOverlay = showOwnershipOverlay,
+        autoPlayDelayMillis = autoPlayDelaySetting.millis,
     )

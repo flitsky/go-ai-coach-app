@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.presentation
 
+import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
@@ -18,12 +19,14 @@ class GameUiEventTest {
         val submitMove = GameUiEvent.SubmitMove(Move.Pass(StoneColor.Black))
         val setup = PlayerSetup()
         val changeSetup = GameUiEvent.ChangePlayerSetup(setup)
+        val changeDelay = GameUiEvent.ChangeAutoPlayDelay(AutoPlayDelaySetting.Slow)
         val changeRuleset = GameUiEvent.ChangeScoringRule(Ruleset.Chinese)
         val changeOptions = GameUiEvent.ChangeUxOptions(KaTrainUxOptions(showMoveNumbers = true))
 
         assertEquals(coordinate, playAt.coordinate)
         assertEquals(Move.Pass(StoneColor.Black), submitMove.move)
         assertSame(setup, changeSetup.setup)
+        assertEquals(AutoPlayDelaySetting.Slow, changeDelay.setting)
         assertEquals(Ruleset.Chinese, changeRuleset.ruleset)
         assertEquals(true, changeOptions.options.showMoveNumbers)
     }

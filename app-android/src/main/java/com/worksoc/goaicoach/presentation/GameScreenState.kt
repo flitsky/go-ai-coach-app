@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.presentation
 
 import com.worksoc.goaicoach.application.MoveReviewMarker
+import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.boardInputEnabled
@@ -19,6 +20,7 @@ internal data class GameScreenState(
     val gameState: GameState,
     val matchMode: MatchMode,
     val playerSetup: PlayerSetup,
+    val autoPlayDelaySetting: AutoPlayDelaySetting,
     val playLevel: PlayLevelSetting,
     val uxOptions: KaTrainUxOptions,
     val engine: EngineUiState,
@@ -37,6 +39,7 @@ internal data class GameScreenStateInput(
     val gameState: GameState,
     val matchMode: MatchMode,
     val playerSetup: PlayerSetup,
+    val autoPlayDelaySetting: AutoPlayDelaySetting,
     val playLevel: PlayLevelSetting,
     val uxOptions: KaTrainUxOptions,
     val engineName: String,
@@ -71,6 +74,7 @@ internal fun buildGameScreenState(input: GameScreenStateInput): GameScreenState 
         gameState = input.gameState,
         matchMode = input.matchMode,
         playerSetup = input.playerSetup,
+        autoPlayDelaySetting = input.autoPlayDelaySetting,
         playLevel = input.playLevel,
         uxOptions = input.uxOptions,
         engine = EngineUiState(

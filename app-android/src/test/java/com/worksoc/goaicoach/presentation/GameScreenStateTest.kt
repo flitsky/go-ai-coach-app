@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.presentation
 
+import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.persistence.SavedGameSnapshot
@@ -27,6 +28,7 @@ class GameScreenStateTest {
         assertTrue(screenState.uxOptions.showLastMoveRing)
         assertTrue(screenState.uxOptions.showOwnershipOverlay)
         assertFalse(screenState.uxOptions.showMoveNumbers)
+        assertEquals(AutoPlayDelaySetting.Default, screenState.autoPlayDelaySetting)
         assertNull(screenState.resumePrompt)
     }
 
@@ -123,6 +125,7 @@ class GameScreenStateTest {
             gameState = gameState,
             matchMode = MatchMode.HumanVsAi,
             playerSetup = PlayerSetup(),
+            autoPlayDelaySetting = AutoPlayDelaySetting.Default,
             playLevel = PlayLevelSetting(),
             uxOptions = KaTrainUxOptions(),
             engineName = "KataGo",

@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.application
 
+import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.match.SidePlayerSetup
@@ -28,6 +29,7 @@ class UserPreferencesApplicationTest {
             playerSetup = setup,
             ruleset = Ruleset.Chinese,
             topMovesEnabled = false,
+            autoPlayDelayMillis = AutoPlayDelaySetting.Study.millis,
         )
 
         val plan = buildInitialUserPreferencesPlan(
@@ -41,6 +43,7 @@ class UserPreferencesApplicationTest {
         assertEquals(setup, plan.playerSetup)
         assertEquals(PlayLevelSetting(PlayLevelGroup.Beginner, level = 3), plan.runtime.playLevel)
         assertEquals(false, plan.topMovesEnabled)
+        assertEquals(AutoPlayDelaySetting.Study, plan.autoPlayDelaySetting)
     }
 
     @Test
@@ -55,6 +58,7 @@ class UserPreferencesApplicationTest {
             showMoveNumbers = true,
             showLastMoveRing = false,
             showOwnershipOverlay = false,
+            autoPlayDelaySetting = AutoPlayDelaySetting.Short,
         )
 
         assertEquals(setup, snapshot.playerSetup)
@@ -64,5 +68,6 @@ class UserPreferencesApplicationTest {
         assertTrue(snapshot.showMoveNumbers)
         assertFalse(snapshot.showLastMoveRing)
         assertFalse(snapshot.showOwnershipOverlay)
+        assertEquals(AutoPlayDelaySetting.Short.millis, snapshot.autoPlayDelayMillis)
     }
 }

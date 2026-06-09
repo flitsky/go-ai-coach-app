@@ -33,6 +33,25 @@ internal enum class AiEngineChoice(val label: String) {
     KataGo("KataGo"),
 }
 
+internal enum class AutoPlayDelaySetting(
+    val millis: Long,
+    val label: String,
+) {
+    None(0L, "즉시"),
+    Short(500L, "0.5초"),
+    Normal(1_000L, "1초"),
+    Slow(2_000L, "2초"),
+    Study(3_000L, "3초");
+
+    companion object {
+        val Default: AutoPlayDelaySetting = Normal
+
+        fun fromMillis(millis: Long): AutoPlayDelaySetting =
+            entries.firstOrNull { setting -> setting.millis == millis }
+                ?: Default
+    }
+}
+
 internal data class SidePlayerSetup(
     val controller: SeatController,
     val humanGameType: HumanGameType = HumanGameType.Normal,
@@ -69,6 +88,9 @@ internal data class PlayerSetup(
 
     fun humanSeatCount(): Int =
         listOf(black, white).count { it.controller == SeatController.Human }
+
+    fun isAutoPlay(): Boolean =
+        matchMode() == MatchMode.AiVsAi
 
     fun summary(engineName: String): String =
         "Black: ${black.summary(engineName)} / White: ${white.summary(engineName)}"

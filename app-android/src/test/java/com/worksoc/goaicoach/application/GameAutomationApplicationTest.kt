@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.application
 
+import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.match.SidePlayerSetup
@@ -75,6 +76,27 @@ class GameAutomationApplicationTest {
                 playerSetup = setup,
                 targetState = GameState.empty(),
             ),
+        )
+    }
+
+    @Test
+    fun autoAiTurnDelayAppliesOnlyWhenBothSeatsAreAi() {
+        val autoSetup = PlayerSetup(
+            black = SidePlayerSetup(controller = SeatController.Ai),
+            white = SidePlayerSetup(controller = SeatController.Ai),
+        )
+        val humanVsAiSetup = PlayerSetup(
+            black = SidePlayerSetup(controller = SeatController.Human),
+            white = SidePlayerSetup(controller = SeatController.Ai),
+        )
+
+        assertEquals(
+            AutoPlayDelaySetting.Slow.millis,
+            autoAiTurnDelayMillis(autoSetup, AutoPlayDelaySetting.Slow),
+        )
+        assertEquals(
+            0L,
+            autoAiTurnDelayMillis(humanVsAiSetup, AutoPlayDelaySetting.Slow),
         )
     }
 

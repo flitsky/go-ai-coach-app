@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.presentation
 
+import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.persistence.SavedGameSnapshot
 import com.worksoc.goaicoach.shared.BoardCoordinate
@@ -32,6 +33,10 @@ internal sealed interface GameUiEvent {
         val setup: PlayerSetup,
     ) : GameUiEvent
 
+    data class ChangeAutoPlayDelay(
+        val setting: AutoPlayDelaySetting,
+    ) : GameUiEvent
+
     data class ChangeScoringRule(
         val ruleset: Ruleset,
     ) : GameUiEvent
@@ -54,6 +59,7 @@ internal data class GameUiEventHandlers(
     val dismissResumePrompt: () -> Unit,
     val restoreSavedSession: (SavedGameSnapshot) -> Unit,
     val changePlayerSetup: (PlayerSetup) -> Unit,
+    val changeAutoPlayDelay: (AutoPlayDelaySetting) -> Unit,
     val changeScoringRule: (Ruleset) -> Unit,
     val changeUxOptions: (KaTrainUxOptions) -> Unit,
 )
@@ -80,6 +86,7 @@ internal fun dispatchGameUiEvent(
         is GameUiEvent.PlayAt -> handlers.submitMove(Move.Play(handlers.currentPlayer(), event.coordinate))
         is GameUiEvent.SubmitMove -> handlers.submitMove(event.move)
         is GameUiEvent.ChangePlayerSetup -> handlers.changePlayerSetup(event.setup)
+        is GameUiEvent.ChangeAutoPlayDelay -> handlers.changeAutoPlayDelay(event.setting)
         is GameUiEvent.ChangeScoringRule -> handlers.changeScoringRule(event.ruleset)
         is GameUiEvent.ChangeUxOptions -> handlers.changeUxOptions(event.options)
     }
