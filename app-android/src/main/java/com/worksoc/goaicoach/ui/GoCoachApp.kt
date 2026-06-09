@@ -38,6 +38,7 @@ import com.worksoc.goaicoach.application.configureSyncAndEstimateGraphScore
 import com.worksoc.goaicoach.application.EndgameFailureDisplayPlan
 import com.worksoc.goaicoach.application.applyHumanMoveLocally
 import com.worksoc.goaicoach.application.FinalScoreDisplayPlan
+import com.worksoc.goaicoach.application.GameSessionResetPlan
 import com.worksoc.goaicoach.application.localScoreSnapshot
 import com.worksoc.goaicoach.application.planShowTopMoves
 import com.worksoc.goaicoach.application.estimateScoreForState
@@ -50,6 +51,7 @@ import com.worksoc.goaicoach.application.syncAndEstimateGraphScore
 import com.worksoc.goaicoach.application.syncAfterHumanMove
 import com.worksoc.goaicoach.application.ShowTopMovesPlan
 import com.worksoc.goaicoach.application.ScoreEstimateDisplayPlan
+import com.worksoc.goaicoach.application.SavedGameRestorePlan
 import com.worksoc.goaicoach.application.TopMoveAnalysisUpdate
 import com.worksoc.goaicoach.application.toCandidateText
 import com.worksoc.goaicoach.match.MatchMode
@@ -251,6 +253,45 @@ private fun GoCoachScreen(
         candidateText = failure.candidateText
     }
 
+    fun applyGameSessionResetPlan(reset: GameSessionResetPlan) {
+        gameState = reset.gameState
+        isGameEnded = false
+        clearTopMoveSpots(reset.candidateText)
+        reviewAnalysis = reset.reviewAnalysis
+        reviewCandidateMoves = emptyList()
+        lastAnalysisKey = null
+        scoreText = reset.scoreText
+        scoreEstimate = null
+        scoreSnapshots = reset.scoreSnapshots
+        moveReviewText = reset.moveReviewText
+        moveReviews = emptyList()
+        lastMoveText = reset.lastMoveText
+        endgameLog = reset.endgameLog
+        engineMessage = reset.engineMessage
+    }
+
+    fun applySavedGameRestorePlan(restore: SavedGameRestorePlan) {
+        playerSetup = restore.playerSetup
+        playLevel = restore.runtime.playLevel
+        engineProfile = restore.runtime.engineProfile
+        analysisPreset = restore.runtime.analysisPreset
+        topMovesEnabled = restore.topMovesEnabled
+        gameState = restore.gameState
+        isGameEnded = false
+        clearTopMoveSpots(restore.candidateText)
+        reviewAnalysis = restore.reviewAnalysis
+        reviewCandidateMoves = emptyList()
+        lastAnalysisKey = null
+        scoreText = restore.scoreText
+        scoreEstimate = null
+        scoreSnapshots = restore.scoreSnapshots
+        moveReviewText = restore.moveReviewText
+        moveReviews = emptyList()
+        lastMoveText = restore.lastMoveText
+        endgameLog = restore.endgameLog
+        engineMessage = restore.engineMessage
+    }
+
     fun changePlayerSetup(nextSetup: PlayerSetup) {
         if (isEngineBusy) {
             engineMessage = "Engine is busy. Change Player Setup after the current action."
@@ -448,21 +489,7 @@ private fun GoCoachScreen(
         message: String,
         ruleset: Ruleset = gameState.ruleset,
     ) {
-        val reset = buildNewLocalGameSessionPlan(message, ruleset)
-        gameState = reset.gameState
-        isGameEnded = false
-        clearTopMoveSpots(reset.candidateText)
-        reviewAnalysis = reset.reviewAnalysis
-        reviewCandidateMoves = emptyList()
-        lastAnalysisKey = null
-        scoreText = reset.scoreText
-        scoreEstimate = null
-        scoreSnapshots = reset.scoreSnapshots
-        moveReviewText = reset.moveReviewText
-        moveReviews = emptyList()
-        lastMoveText = reset.lastMoveText
-        endgameLog = reset.endgameLog
-        engineMessage = reset.engineMessage
+        applyGameSessionResetPlan(buildNewLocalGameSessionPlan(message, ruleset))
     }
 
     fun restoreSavedSession(snapshot: SavedGameSnapshot) {
@@ -482,25 +509,7 @@ private fun GoCoachScreen(
             isEngineBusy = true
         }
 
-        playerSetup = restore.playerSetup
-        playLevel = restore.runtime.playLevel
-        engineProfile = restoredProfile
-        analysisPreset = restore.runtime.analysisPreset
-        topMovesEnabled = restore.topMovesEnabled
-        gameState = restoredState
-        isGameEnded = false
-        clearTopMoveSpots(restore.candidateText)
-        reviewAnalysis = restore.reviewAnalysis
-        reviewCandidateMoves = emptyList()
-        lastAnalysisKey = null
-        scoreText = restore.scoreText
-        scoreEstimate = null
-        scoreSnapshots = restore.scoreSnapshots
-        moveReviewText = restore.moveReviewText
-        moveReviews = emptyList()
-        lastMoveText = restore.lastMoveText
-        endgameLog = restore.endgameLog
-        engineMessage = restore.engineMessage
+        applySavedGameRestorePlan(restore)
 
         if (!isEngineReady) {
             return
