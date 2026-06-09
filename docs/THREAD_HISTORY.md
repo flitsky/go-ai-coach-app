@@ -644,3 +644,5 @@
 - `GameAutomationApplicationTest`에 이미 pending 중이면 skip하는 케이스와 AI vs AI 딜레이가 schedule에 반영되는 케이스를 추가했다.
 - 검증으로 `make test`가 통과했다.
 - `docs/REFACTORING_STRATEGY_2026-06-08.md`를 갱신해 현재 리팩토링 완성도를 약 84%로 평가했다. 다음 85~90% 구간은 `GameSessionController` 또는 state holder 도입이 핵심이다.
+- 리팩토링 커밋 후 최종 APK를 다시 설치하기 위해 처음에는 직접 `./gradlew :app-android:installDebug`를 실행했으나 Gradle이 짧은 예외 코드 `25`만 출력하고 실패했다. 같은 환경에서 make 경로는 정상 동작하므로 `make install-dev-engine`로 재시도했다.
+- 최종 커밋 포함 debug APK 설치, KataGo model/config seed, 앱 cold launch를 완료했다. cold launch는 `Status: ok`, `TotalTime=503ms`였고, 전체 설치/seed/실행은 약 1분 7초였다. 모델 push는 약 40.2초였다.
