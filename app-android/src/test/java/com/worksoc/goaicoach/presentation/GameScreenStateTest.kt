@@ -75,12 +75,49 @@ class GameScreenStateTest {
         assertEquals(snapshot, visible.resumePrompt?.snapshot)
     }
 
+    @Test
+    fun buildGameScreenStateBuildsDefaultActionButtonStates() {
+        val screenState = buildGameScreenState(defaultInput())
+
+        assertEquals(
+            listOf(
+                GameActionButtonRole.Pass,
+                GameActionButtonRole.Undo,
+                GameActionButtonRole.TopMoves,
+                GameActionButtonRole.Eval,
+            ),
+            screenState.actionButtons.map { it.role },
+        )
+        assertTrue(screenState.actionButtons.first { it.role == GameActionButtonRole.Pass }.enabled)
+        assertTrue(screenState.actionButtons.first { it.role == GameActionButtonRole.Pass }.isFilled)
+        assertFalse(screenState.actionButtons.first { it.role == GameActionButtonRole.Undo }.enabled)
+        assertFalse(screenState.actionButtons.first { it.role == GameActionButtonRole.TopMoves }.isFilled)
+        assertTrue(screenState.actionButtons.first { it.role == GameActionButtonRole.Eval }.enabled)
+    }
+
+    @Test
+    fun buildGameScreenStateKeepsTopMovesButtonActiveWhileBusyWhenToggleIsOn() {
+        val screenState = buildGameScreenState(
+            defaultInput(
+                isEngineBusy = true,
+                topMovesEnabled = true,
+            ),
+        )
+
+        val topMoves = screenState.actionButtons.first { it.role == GameActionButtonRole.TopMoves }
+        assertTrue(topMoves.enabled)
+        assertTrue(topMoves.isFilled)
+        assertFalse(screenState.actionButtons.first { it.role == GameActionButtonRole.Pass }.enabled)
+        assertFalse(screenState.actionButtons.first { it.role == GameActionButtonRole.Eval }.enabled)
+    }
+
     private fun defaultInput(
         gameState: GameState = GameState.empty(),
         pendingSavedSession: SavedGameSnapshot? = null,
         shouldShowResumePrompt: Boolean = false,
         hasCompletedEngineStartup: Boolean = true,
         isEngineBusy: Boolean = false,
+        topMovesEnabled: Boolean = false,
     ): GameScreenStateInput =
         GameScreenStateInput(
             gameState = gameState,
@@ -96,7 +133,7 @@ class GameScreenStateTest {
             engineMessage = "ready",
             analysisPreset = AnalysisPreset.Lite,
             analysisCacheStats = "entries=0, hits=0, misses=0",
-            topMovesEnabled = false,
+            topMovesEnabled = topMovesEnabled,
             candidateMoves = emptyList(),
             candidateText = "none",
             reviewAnalysis = MoveAnalysisSnapshot.empty(gameState),

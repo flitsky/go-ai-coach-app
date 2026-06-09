@@ -12,7 +12,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.boardInputEnabled
 import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.presentation.GameUiEvent
@@ -80,69 +79,30 @@ private fun GameActionButtons(
     screenState: GameScreenState,
     onEvent: (GameUiEvent) -> Unit,
 ) {
-    val canPlayOnBoard = !screenState.isGameEnded &&
-        boardInputEnabled(
-            screenState.playerSetup,
-            screenState.engine.isReady,
-            screenState.engine.isBusy,
-            screenState.nextPlayer,
-        )
-    val topMovesButtonEnabled = !screenState.isGameEnded &&
-        screenState.engine.isReady &&
-        (!screenState.engine.isBusy || screenState.analysis.topMovesEnabled)
-
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Button(
-            onClick = { onEvent(GameUiEvent.Pass) },
-            enabled = canPlayOnBoard,
-            modifier = Modifier.weight(1f),
-            contentPadding = ActionButtonContentPadding,
-        ) {
-            ActionButtonText("Pass")
-        }
-
-        OutlinedButton(
-            onClick = { onEvent(GameUiEvent.UndoLastTurn) },
-            enabled = !screenState.engine.isBusy &&
-                screenState.gameState.moves.isNotEmpty() &&
-                (screenState.engine.isReady || screenState.matchMode == MatchMode.LocalTwoPlayer),
-            modifier = Modifier.weight(1f),
-            contentPadding = ActionButtonContentPadding,
-        ) {
-            ActionButtonText("Undo")
-        }
-
-        if (screenState.analysis.topMovesEnabled) {
-            Button(
-                onClick = { onEvent(GameUiEvent.ToggleTopMoves) },
-                enabled = topMovesButtonEnabled,
-                modifier = Modifier.weight(1f),
-                contentPadding = ActionButtonContentPadding,
-            ) {
-                ActionButtonText("Top Moves")
+        screenState.actionButtons.forEach { action ->
+            if (action.isFilled) {
+                Button(
+                    onClick = { onEvent(action.event) },
+                    enabled = action.enabled,
+                    modifier = Modifier.weight(1f),
+                    contentPadding = ActionButtonContentPadding,
+                ) {
+                    ActionButtonText(action.label)
+                }
+            } else {
+                OutlinedButton(
+                    onClick = { onEvent(action.event) },
+                    enabled = action.enabled,
+                    modifier = Modifier.weight(1f),
+                    contentPadding = ActionButtonContentPadding,
+                ) {
+                    ActionButtonText(action.label)
+                }
             }
-        } else {
-            OutlinedButton(
-                onClick = { onEvent(GameUiEvent.ToggleTopMoves) },
-                enabled = topMovesButtonEnabled,
-                modifier = Modifier.weight(1f),
-                contentPadding = ActionButtonContentPadding,
-            ) {
-                ActionButtonText("Top Moves")
-            }
-        }
-
-        OutlinedButton(
-            onClick = { onEvent(GameUiEvent.RequestScoreEstimate) },
-            enabled = !screenState.engine.isBusy &&
-                (screenState.engine.isReady || screenState.matchMode == MatchMode.LocalTwoPlayer),
-            modifier = Modifier.weight(1f),
-            contentPadding = ActionButtonContentPadding,
-        ) {
-            ActionButtonText("Eval")
         }
     }
 }

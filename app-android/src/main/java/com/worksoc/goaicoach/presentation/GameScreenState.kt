@@ -1,7 +1,9 @@
 package com.worksoc.goaicoach.presentation
 
+import com.worksoc.goaicoach.application.MoveReviewMarker
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
+import com.worksoc.goaicoach.match.boardInputEnabled
 import com.worksoc.goaicoach.persistence.SavedGameSnapshot
 import com.worksoc.goaicoach.shared.AnalysisPreset
 import com.worksoc.goaicoach.shared.CandidateMove
@@ -12,7 +14,6 @@ import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.ScoreSnapshot
 import com.worksoc.goaicoach.shared.StoneColor
-import com.worksoc.goaicoach.application.MoveReviewMarker
 
 internal data class GameScreenState(
     val gameState: GameState,
@@ -23,6 +24,7 @@ internal data class GameScreenState(
     val engine: EngineUiState,
     val analysis: AnalysisUiState,
     val score: ScoreUiState,
+    val actionButtons: List<GameActionButtonState>,
     val resumePrompt: ResumePromptState?,
     val isGameEnded: Boolean,
     val endgameLog: String,
@@ -97,6 +99,7 @@ internal fun buildGameScreenState(input: GameScreenStateInput): GameScreenState 
             snapshots = input.scoreSnapshots,
             isGraphExpanded = input.isScoreGraphExpanded,
         ),
+        actionButtons = buildGameActionButtonStates(input),
         resumePrompt = input.pendingSavedSession
             ?.takeIf {
                 input.shouldShowResumePrompt &&
@@ -140,6 +143,68 @@ internal data class ScoreUiState(
 internal data class ResumePromptState(
     val snapshot: SavedGameSnapshot,
 )
+
+internal enum class GameActionButtonRole {
+    Pass,
+    Undo,
+    TopMoves,
+    Eval,
+}
+
+internal data class GameActionButtonState(
+    val role: GameActionButtonRole,
+    val label: String,
+    val event: GameUiEvent,
+    val enabled: Boolean,
+    val isFilled: Boolean,
+)
+
+internal fun buildGameActionButtonStates(input: GameScreenStateInput): List<GameActionButtonState> {
+    val canPlayOnBoard = !input.isGameEnded &&
+        boardInputEnabled(
+            input.playerSetup,
+            input.isEngineReady,
+            input.isEngineBusy,
+            input.gameState.nextPlayer,
+        )
+    val topMovesButtonEnabled = !input.isGameEnded &&
+        input.isEngineReady &&
+        (!input.isEngineBusy || input.topMovesEnabled)
+
+    return listOf(
+        GameActionButtonState(
+            role = GameActionButtonRole.Pass,
+            label = "Pass",
+            event = GameUiEvent.Pass,
+            enabled = canPlayOnBoard,
+            isFilled = true,
+        ),
+        GameActionButtonState(
+            role = GameActionButtonRole.Undo,
+            label = "Undo",
+            event = GameUiEvent.UndoLastTurn,
+            enabled = !input.isEngineBusy &&
+                input.gameState.moves.isNotEmpty() &&
+                (input.isEngineReady || input.matchMode == MatchMode.LocalTwoPlayer),
+            isFilled = false,
+        ),
+        GameActionButtonState(
+            role = GameActionButtonRole.TopMoves,
+            label = "Top Moves",
+            event = GameUiEvent.ToggleTopMoves,
+            enabled = topMovesButtonEnabled,
+            isFilled = input.topMovesEnabled,
+        ),
+        GameActionButtonState(
+            role = GameActionButtonRole.Eval,
+            label = "Eval",
+            event = GameUiEvent.RequestScoreEstimate,
+            enabled = !input.isEngineBusy &&
+                (input.isEngineReady || input.matchMode == MatchMode.LocalTwoPlayer),
+            isFilled = false,
+        ),
+    )
+}
 
 internal data class KaTrainUxOptions(
     val showCoordinates: Boolean = true,
