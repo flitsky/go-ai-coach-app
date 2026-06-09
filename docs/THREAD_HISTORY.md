@@ -596,3 +596,7 @@
 - 사용자가 남은 리팩토링 추천 항목과 현재 프로젝트의 리팩토링 완성도를 질문했다.
 - 현재 완성도는 약 68%로 평가했다. 도메인/엔진 경계와 application helper 분리는 상당히 진행됐지만, `GoCoachApp.kt`의 상태 소유권과 엔진 orchestration을 controller/state holder로 이전하는 작업이 아직 핵심 잔여 과제로 남아 있다.
 - `docs/REFACTORING_STRATEGY_2026-06-08.md`에 세부 완성도 표와 남은 8개 큰 리팩토링 추천 항목을 기록했다.
+- 사용자가 다음 리팩토링에 앞서 메뉴 설정 유지, Top Moves 기본 활성화 및 사용자 선택 기억, 점령 가능 지역 그라데이션 기본 활성화/토글 추가를 요청하며 작업 순서 의사결정을 요청했다.
+- 의사결정은 “큰 리팩토링 전에 먼저 처리한다”로 정리했다. 단순 UI 옵션이 아니라 사용자 설정 상태와 진행 중 대국 저장 상태의 경계를 확정하는 문제이므로, controller/state holder 리팩토링 전에 `GameSessionStore`와 별도의 사용자 설정 저장 경계를 만드는 것이 더 안전하다.
+- 권장 구현 방향은 별도 `UserPreferencesStore`를 추가해 Player Setup, Top Moves on/off, KaTrain UX 옵션을 저장하고, 기존 `GameSessionStore`는 이어하기 가능한 진행 중 대국 snapshot 전용으로 유지하는 것이다.
+- 기본값은 Top Moves on, 점령/영역 그라데이션 on으로 두되, 사용자가 끄면 다음 앱 실행에서도 꺼진 상태를 유지한다. 점령/영역 그라데이션은 `KaTrainUxOptions`에 옵션을 추가하고 메뉴에서 on/off할 수 있게 한다.
