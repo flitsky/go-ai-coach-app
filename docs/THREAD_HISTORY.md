@@ -671,3 +671,7 @@
 - `USER_OPTION_MANUAL.md`, `ENGINE_BEGINNER_VISITS_BENCHMARK.md`, `ENGINE_LEVELING_DISCUSSION.md`에 `초급 1~6 = B32/350ms`, `초급 7 = B32/500ms capstone` 결정을 반영했다.
 - 사용자가 초급 단계는 모두 동일한 엔진 request를 보내고, 레벨링은 최적수/후보 선택 방식만 바꾸는 것이 더 예측 가능하다고 정정했다.
 - 최종 조정: `초급 1~7단계 = B32 / 500ms` 동일 요청으로 통일했다. 레벨별 `analysisLimit` override는 제거하고, `PlayLevelSetting.analysisLimit`는 그룹 기본 request만 사용한다. 초급 난이도 차이는 `MoveSelectionPolicy`로만 만든다.
+- 사용자가 `빠른 초급 3단계(B16 best)`가 `초급 7단계(B32 best)`를 이기는 현상이 계속 보여 엔진 설정 누락 여부, `16`과 `32`의 기대 차이, 응답시간 강제 가능 여부, 공식 최소 시간 제안을 확인해달라고 요청했다.
+- 확인 결과 `maxTime`은 최소 thinking time이 아니라 search time cap이며, `maxVisits=32`가 먼저 도달하면 500ms를 다 쓰지 않는다. KataGo 공식 문서는 고정 최소 시간을 제안하지 않고 하드웨어/용도별 benchmark tuning을 권장한다.
+- 현재 놓친 가능성이 큰 항목은 `analysis_learning.cfg`의 `nnRandomize=true`, seed 미고정, 낮은 visits에서의 불안정성, analysis process의 `numSearchThreads=4`가 고정 visits 품질 비교에는 불리할 수 있다는 점이다.
+- `docs/ENGINE_LEVEL_STRENGTH_REVIEW_2026-06-10.md`를 추가해 공식 문서 기준, 우리 설정, 기대 차이, 다음 검증 제안을 정리했다.

@@ -1,0 +1,167 @@
+# 엔진 레벨 강도 검토
+
+작성일: 2026-06-10
+
+## 질문
+
+`빠른 초급 3단계(B16 best)`가 `초급 7단계(B32 best)`를 자주 이기는 현상이 있다.
+
+확인할 내용:
+
+1. `16 visits`와 `32 visits`의 기대 차이는 무엇인가?
+2. 엔진 응답시간을 강제할 수 있는가?
+3. KataGo 공식 설명에 최적 품질을 위한 최소 시간 제안이 있는가?
+4. 우리 설정에서 놓친 부분은 무엇인가?
+
+## 현재 앱 구현
+
+현재 AI 응수는 `MatchPolicy.selectAiMoveFromAnalysis()`에서 다음 흐름으로 동작한다.
+
+1. 현재 진영의 `PlayLevelSetting.analysisLimit`로 `EngineAdapter.analyze()` 호출
+2. `pointLoss`가 있는 searched 후보만 선택 대상으로 사용
+3. `MoveSelectionPolicy`가 지정한 후보 index 범위에서 착수 선택
+4. `BestOnly`는 후보 range가 `0..0`이므로 엔진이 반환한 첫 번째 searched 후보만 선택
+
+현재 주요 레벨:
+
+| 레벨 | 요청 | 선택 |
+| --- | --- | --- |
+| 빠른 초급 3단계 | `16 visits / 250ms` | `BestOnly` |
+| 초급 1~7단계 | `32 visits / 500ms` | 1~6단계는 percentile window, 7단계는 `BestOnly` |
+| 중급 | `64 visits / 500ms` | 단계별 percentile window 또는 `BestOnly` |
+
+따라서 `빠른 초급 3단계`와 `초급 7단계`의 차이는 현재 다음 하나다.
+
+- 같은 `BestOnly` 선택 정책
+- 단, search budget이 `16 visits`에서 `32 visits`로 증가
+
+## KataGo 공식 동작 기준
+
+KataGo analysis engine의 query는 `maxVisits`를 받을 수 있고, 지정하지 않으면 analysis config의 기본값을 사용한다. 우리 JSON query도 `maxVisits`를 직접 넣는다.
+
+KataGo config의 `maxTime`은 "이만큼은 반드시 생각하라"가 아니라 검색 시간을 제한하는 cap이다. `maxVisits`, `maxPlayouts`, `maxTime`은 모두 search limit이다.
+
+따라서 `maxVisits=32`, `maxTime=0.5`를 같이 넣으면 실무적으로는 다음처럼 이해해야 한다.
+
+- `32 visits`에 먼저 도달하면 500ms를 다 쓰기 전에 멈출 수 있다.
+- 500ms에 먼저 도달하면 32 visits를 채우기 전에 멈출 수 있다.
+- 즉 `maxTime`은 품질을 높이는 최소 시간 보장이 아니라 과도한 지연을 막는 상한이다.
+
+KataGo 공식 config는 `numSearchThreads`에 대해 benchmark로 튜닝하라고 설명한다. 공식 문서에 “최소 몇 ms 이상이면 최적 품질” 같은 고정 제안은 없다. 하드웨어, backend, board size, search threads, batch 상황에 따라 달라진다.
+
+## 16과 32 visits의 기대 차이
+
+기대 효과:
+
+- `32 visits`는 `16 visits`보다 root 후보를 조금 더 검증한다.
+- 후보별 `scoreLead`, `winrate`, `pointLoss` 추정이 조금 더 안정될 가능성이 있다.
+- 같은 `BestOnly`라면 장기적으로는 B32가 B16보다 더 좋은 수를 고를 가능성이 높다.
+
+하지만 현재 수준에서는 기대 차이가 작다.
+
+- `16 -> 32`는 두 배이지만 절대량은 여전히 매우 낮다.
+- 9x9 초반/중반은 한두 수 swing이 커서 10판 표본으로 강약을 단정하기 어렵다.
+- KataGo `order`는 점수 손실 하나만이 아니라 `playSelectionValue` 기준이다.
+- 저예산에서는 후보별 평가가 흔들릴 수 있다.
+- 현재 `analysis_learning.cfg`는 `nnRandomize = true`다. 저예산에서는 이 랜덤화가 결과 흔들림을 더 크게 만들 수 있다.
+
+즉 `초급 7단계(B32 best)`가 `빠른 초급 3단계(B16 best)`보다 항상 이긴다고 기대하면 안 된다. 다만 반복 실험에서 계속 역전된다면 설정 또는 실험 조건을 더 통제해야 한다.
+
+## 놓친 가능성이 큰 설정
+
+### 1. `maxTime`을 최소 thinking time으로 오해
+
+현재 가장 큰 혼선 포인트다.
+
+`500ms`는 “최소 500ms 동안 더 좋은 수를 찾는다”가 아니다. `32 visits`가 빨리 끝나면 품질은 사실상 `32 visits` 품질이다.
+
+초급을 B32로 고정하겠다는 제품 결정이 있다면, 초급 7단계의 품질을 더 올리는 방법은 `500ms`를 늘리는 것이 아니라 아래 항목을 조정해야 한다.
+
+### 2. analysis randomization
+
+현재 bundled `analysis_learning.cfg`:
+
+```text
+nnRandomize = true
+```
+
+공식 config도 `nnRandomize`와 `nnRandSeed`를 제공한다. 강도 비교와 재현 테스트 목적이라면 다음을 별도 실험 모드에서 검토할 수 있다.
+
+```text
+nnRandomize = false
+```
+
+또는 seed 고정:
+
+```text
+nnRandSeed = <fixed seed>
+searchRandSeed = <fixed seed>
+```
+
+주의: 실제 사용자 대국에서는 약간의 랜덤성이 자연스럽게 느껴질 수 있다. 하지만 레벨 강도 검증에는 방해가 된다.
+
+### 3. search thread 수
+
+우리 analysis process는 runtime override로 `numAnalysisThreads=1`, `numSearchThreads=4`를 사용한다.
+
+KataGo example config는 같은 MCTS tree 안에서 여러 thread를 쓰면 고정 playout 기준으로 검색 품질이 약간 약해질 수 있다고 설명한다. 빠른 응답에는 유리하지만, 아주 낮은 visits에서는 이 영향이 상대적으로 커질 수 있다.
+
+강도 검증 실험에서는 다음 두 조건을 비교할 가치가 있다.
+
+| 목적 | numSearchThreads |
+| --- | ---: |
+| 실사용 응답성 | 4 |
+| 고정 visits 품질/재현성 검증 | 1 |
+
+### 4. 너무 낮은 절대 visits
+
+B16과 B32는 둘 다 매우 낮은 search다. 초급/중급 구분을 `16/32/64`로 유지한다면, B32의 기대 강도 차이는 “명확히 더 안정적”이라기보다 “조금 더 검증한다”에 가깝다.
+
+따라서 B16 best와 B32 best 사이 승률 격차가 작게 나오는 것은 이상 현상이라기보다 가능한 현상이다.
+
+## 제안
+
+### 1차: 설정 변경 전 검증부터
+
+바로 레벨 값을 바꾸기보다, 먼저 실험 조건을 고정한다.
+
+1. AI-vs-AI 자동 대전 테스트 harness를 만든다.
+2. 같은 매치업을 흑백 교대 20~50판 이상 실행한다.
+3. `B16 best` vs `B32 best` 승률, 평균 집 차이, pass 시점, 선택 후보 order, raw visits를 기록한다.
+4. `nnRandomize=true/false`, `numSearchThreads=4/1`을 비교한다.
+
+### 2차: 검증용 deterministic mode 추가
+
+사용자 대국 기본값은 유지하되, 개발/검증용으로 deterministic analysis config를 추가한다.
+
+후보:
+
+```text
+nnRandomize = false
+numSearchThreads = 1
+```
+
+이 모드는 레벨 강도 비교용이며, 실사용 기본값으로 바로 쓰지는 않는다.
+
+### 3차: 제품 레벨링 재판단
+
+검증 후에도 `B32 best`가 `B16 best`를 안정적으로 이기지 못한다면, 다음 중 하나를 선택해야 한다.
+
+1. `빠른 초급 3단계`를 BestOnly가 아니라 상위 후보 랜덤으로 낮춘다.
+2. `초급 7단계`는 B32 유지하되 deterministic settings를 적용한다.
+3. 초급/중급 경계 정책을 재검토한다.
+4. `16/32/64`를 엔진 search 강도만이 아니라 `MoveSelectionPolicy` 중심의 제품 레벨로 재정의한다.
+
+현재 제품 원칙이 `빠른 초급=16`, `초급=32`, `중급=64`라면 1번 또는 2번이 가장 보수적이다.
+
+## 현재 결론
+
+놓친 가능성이 가장 큰 것은 `maxTime`보다 `랜덤성`과 `저방문수에서의 불안정성`이다.
+
+`500ms`를 늘리는 것만으로는 `B32` 품질이 반드시 좋아지지 않는다. `maxVisits=32`가 먼저 걸리면 search는 끝난다. 따라서 레벨 강도를 검증하려면 deterministic analysis 조건과 충분한 반복 대전 로그가 먼저 필요하다.
+
+## 참고 근거
+
+- KataGo Analysis Engine: https://github.com/lightvector/KataGo/blob/master/docs/Analysis_Engine.md
+- KataGo GTP example config: https://github.com/lightvector/KataGo/blob/master/cpp/configs/gtp_example.cfg
+- KataGo analysis example config: https://github.com/lightvector/KataGo/blob/master/cpp/configs/analysis_example.cfg
