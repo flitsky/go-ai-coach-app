@@ -34,6 +34,33 @@
 - 지금 당장 대규모 ViewModel 전환을 한 번에 수행하는 것은 권장하지 않는다. 먼저 화면 렌더링, 상태 조립, 저장/복원, 자동 분석 trigger를 더 작은 단위로 빼면서 회귀 테스트를 유지해야 한다.
 - 다음 권고 순서는 `GoCoachApp.kt` 내부의 상태 전이 helper를 controller 후보로 묶고, 그 다음에 Compose 상태를 ViewModel 또는 controller state holder로 이전하는 것이다.
 
+## 2026-06-09 리팩토링 완성도 평가
+
+현재 전체 리팩토링 완성도는 약 68%로 본다. POC 앱을 계속 고도화할 수 있는 기반은 확보됐지만, 첫 마켓 릴리즈 이후 유지보수까지 안정적으로 보장하는 수준은 아직 아니다.
+
+세부 평가:
+
+| 영역 | 완성도 | 평가 |
+| --- | ---: | --- |
+| 도메인/엔진 경계 | 82% | `shared` 룰/DTO와 `EngineAdapter` 경계는 안정적이다. |
+| application service 분리 | 72% | 점수, 종국, Top Moves, 저장, 무르기, 사람 착수 로직이 많이 분리됐다. |
+| presentation 상태/이벤트 계약 | 70% | `GameScreenState`, `GameUiEvent`가 생겨 UI 계약은 명확해졌다. |
+| UI/UX 파일 분리 | 74% | 메뉴, 플레이 화면, Player Setup, 응답 패널이 분리됐다. |
+| 상태 소유권/controller 전환 | 38% | `GoCoachApp.kt`가 아직 많은 `remember` 상태와 엔진 orchestration을 직접 가진다. |
+| 테스트 기반 | 78% | 핵심 application helper 테스트는 좋지만 UI 상태 전이/controller 테스트는 더 필요하다. |
+| 패키지 구조 정리 | 62% | 큰 방향은 잡혔지만 `match`/`shared` 일부 재배치 후보가 남아 있다. |
+
+남은 큰 리팩토링 추천 항목은 8개 정도다.
+
+1. `GameSessionController` 또는 일반 Kotlin state holder 도입
+2. `LaunchedEffect` trigger를 startup/resume/auto-ai/auto-analysis 단위로 분리
+3. 엔진 orchestration 상태 전이를 UI 밖으로 이전
+4. Top Moves/analysis cache lifecycle을 controller 또는 store로 이전
+5. `GoBoard`를 board base, stones, candidate overlay, ownership overlay, input 처리로 분리
+6. `ScoreGraphPanel`의 graph data model과 drawing을 분리
+7. 메뉴/UX 옵션을 data-driven menu schema로 정리
+8. `match` 정책 중 shared/application으로 내려갈 항목을 선별
+
 ## 현재 구조 진단
 
 현재 주요 파일 규모:

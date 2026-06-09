@@ -593,3 +593,6 @@
 - 보드, score graph, 하단 액션 버튼, 엔진 응답 패널을 `GamePlaySection.kt`로 분리했다. 향후 메뉴 개편과 플레이 화면 밀도 개편을 독립적으로 진행할 수 있게 되었다. 검증으로 `make test`가 통과했고 `Extract game play section`으로 커밋/푸시했다.
 - Player Setup UI를 `PlayerSetupPanel.kt`로 분리했다. 플레이어/AI/난이도 설정 UX를 향후 독립적으로 재설계할 수 있게 했다. 검증으로 `make test`가 통과했고 `Extract player setup panel`로 커밋/푸시했다.
 - Game 메뉴 액션과 엔진 응답 패널을 각각 `GameMenuActionsPanel.kt`, `EngineResponsePanel.kt`로 분리했다. 기존 `EnginePanels.kt`는 역할별 파일로 정리되었다. 검증으로 `make test`가 통과했고 `Split menu actions and response panels`로 커밋/푸시했다.
+- 사용자가 남은 리팩토링 추천 항목과 현재 프로젝트의 리팩토링 완성도를 질문했다.
+- 현재 완성도는 약 68%로 평가했다. 도메인/엔진 경계와 application helper 분리는 상당히 진행됐지만, `GoCoachApp.kt`의 상태 소유권과 엔진 orchestration을 controller/state holder로 이전하는 작업이 아직 핵심 잔여 과제로 남아 있다.
+- `docs/REFACTORING_STRATEGY_2026-06-08.md`에 세부 완성도 표와 남은 8개 큰 리팩토링 추천 항목을 기록했다.
