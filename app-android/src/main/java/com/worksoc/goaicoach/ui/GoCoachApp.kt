@@ -35,6 +35,7 @@ import com.worksoc.goaicoach.application.buildLocalScoreEstimateDisplayPlan
 import com.worksoc.goaicoach.application.buildNewLocalGameSessionPlan
 import com.worksoc.goaicoach.application.buildResolvedEndgameDisplayPlan
 import com.worksoc.goaicoach.application.buildSavedGameRestorePlan
+import com.worksoc.goaicoach.application.buildScoringRuleChangePlan
 import com.worksoc.goaicoach.application.buildTopMoveAnalysisPlan
 import com.worksoc.goaicoach.application.buildInitialUserPreferencesPlan
 import com.worksoc.goaicoach.application.buildUserPreferencesSnapshot
@@ -56,6 +57,7 @@ import com.worksoc.goaicoach.application.startNewEngineGame
 import com.worksoc.goaicoach.application.syncAndEstimateGraphScore
 import com.worksoc.goaicoach.application.syncAfterHumanMove
 import com.worksoc.goaicoach.application.RuntimePlayLevelSelection
+import com.worksoc.goaicoach.application.ScoringRuleChangePlan
 import com.worksoc.goaicoach.application.ShowTopMovesPlan
 import com.worksoc.goaicoach.application.ScoreEstimateDisplayPlan
 import com.worksoc.goaicoach.application.SavedGameRestorePlan
@@ -369,6 +371,19 @@ private fun GoCoachScreen(
         endgameLog = undo.endgameLog
     }
 
+    fun applyScoringRuleChangePlan(ruleChange: ScoringRuleChangePlan) {
+        gameState = ruleChange.gameState
+        clearTopMoveSpots(ruleChange.candidateText)
+        reviewAnalysis = ruleChange.reviewAnalysis
+        reviewCandidateMoves = emptyList()
+        lastAnalysisKey = null
+        scoreEstimate = null
+        scoreText = ruleChange.scoreText
+        scoreSnapshots = ruleChange.scoreSnapshots
+        endgameLog = ruleChange.endgameLog
+        ruleChange.engineMessage?.let { message -> engineMessage = message }
+    }
+
     fun changePlayerSetup(nextSetup: PlayerSetup) {
         if (isEngineBusy) {
             engineMessage = "Engine is busy. Change Player Setup after the current action."
@@ -508,29 +523,18 @@ private fun GoCoachScreen(
             return
         }
 
-        val nextState = gameState.copy(ruleset = nextRuleset)
-        gameState = nextState
-        clearTopMoveSpots("Scoring rule changed.")
-        clearReviewAnalysis(nextState)
-        lastAnalysisKey = null
-        scoreEstimate = null
-        scoreText = if (isGameEnded || (matchMode == MatchMode.LocalTwoPlayer && !isEngineReady)) {
-            buildLocalScoreEstimateDisplayPlan(
-                state = nextState,
-                previousSnapshots = scoreSnapshots,
-                engineMessage = "",
-            ).scoreText
-        } else {
-            "Score estimate not current."
-        }
-        scoreSnapshots = ScoreTimeline.record(
-            ScoreTimeline.trimAfter(scoreSnapshots, nextState.moves.size),
-            localScoreSnapshot(nextState),
+        val ruleChange = buildScoringRuleChangePlan(
+            currentState = gameState,
+            nextRuleset = nextRuleset,
+            isGameEnded = isGameEnded,
+            matchMode = matchMode,
+            isEngineReady = isEngineReady,
+            previousSnapshots = scoreSnapshots,
         )
-        endgameLog = "Scoring rule changed to ${nextRuleset.scoringLabel}. No endgame result recorded for the new scoring rule yet."
+        val nextState = ruleChange.gameState
+        applyScoringRuleChangePlan(ruleChange)
 
-        if (!isEngineReady) {
-            engineMessage = "Scoring rule changed to ${nextRuleset.scoringLabel}. Local scoring is active."
+        if (!ruleChange.requiresEngineSync) {
             return
         }
 
