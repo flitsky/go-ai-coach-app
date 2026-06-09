@@ -49,6 +49,7 @@ import com.worksoc.goaicoach.application.startEngineSession
 import com.worksoc.goaicoach.application.startNewEngineGame
 import com.worksoc.goaicoach.application.syncAndEstimateGraphScore
 import com.worksoc.goaicoach.application.syncAfterHumanMove
+import com.worksoc.goaicoach.application.RuntimePlayLevelSelection
 import com.worksoc.goaicoach.application.ShowTopMovesPlan
 import com.worksoc.goaicoach.application.ScoreEstimateDisplayPlan
 import com.worksoc.goaicoach.application.SavedGameRestorePlan
@@ -254,6 +255,12 @@ private fun GoCoachScreen(
         candidateText = failure.candidateText
     }
 
+    fun applyRuntimePlayLevelSelection(runtime: RuntimePlayLevelSelection) {
+        playLevel = runtime.playLevel
+        engineProfile = runtime.engineProfile
+        analysisPreset = runtime.analysisPreset
+    }
+
     fun applyGameSessionResetPlan(reset: GameSessionResetPlan) {
         gameState = reset.gameState
         isGameEnded = false
@@ -273,9 +280,7 @@ private fun GoCoachScreen(
 
     fun applySavedGameRestorePlan(restore: SavedGameRestorePlan) {
         playerSetup = restore.playerSetup
-        playLevel = restore.runtime.playLevel
-        engineProfile = restore.runtime.engineProfile
-        analysisPreset = restore.runtime.analysisPreset
+        applyRuntimePlayLevelSelection(restore.runtime)
         topMovesEnabled = restore.topMovesEnabled
         gameState = restore.gameState
         isGameEnded = false
@@ -322,9 +327,7 @@ private fun GoCoachScreen(
             currentProfile = engineProfile,
             defaultPlayLevel = defaultPlayLevel,
         )
-        playLevel = runtime.playLevel
-        engineProfile = runtime.engineProfile
-        analysisPreset = runtime.analysisPreset
+        applyRuntimePlayLevelSelection(runtime)
         clearTopMoveSpots("Player Setup changed. Press New to restart with this setup, or continue from the current position.")
         clearReviewAnalysis(gameState)
         lastAnalysisKey = null
@@ -627,9 +630,7 @@ private fun GoCoachScreen(
             currentProfile = engineProfile,
             defaultPlayLevel = defaultPlayLevel,
         )
-        playLevel = runtime.playLevel
-        engineProfile = runtime.engineProfile
-        analysisPreset = runtime.analysisPreset
+        applyRuntimePlayLevelSelection(runtime)
 
         scope.launch {
             isEngineBusy = true
