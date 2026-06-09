@@ -92,6 +92,20 @@ def level_spec(raw: str) -> LevelSpec:
     raise argparse.ArgumentTypeError(f"unknown level group: {group}")
 
 
+def with_time_override(spec: LevelSpec, time_ms: int | None) -> LevelSpec:
+    if time_ms is None:
+        return spec
+    return LevelSpec(
+        label=f"{spec.label} ({time_ms}ms cap)",
+        visits=spec.visits,
+        time_seconds=time_ms / 1000.0,
+        candidate_count=spec.candidate_count,
+        policy=spec.policy,
+        window=spec.window,
+        exclude_best=spec.exclude_best,
+    )
+
+
 def candidate_range(spec: LevelSpec, count: int) -> range:
     if count <= 0:
         return range(0)
@@ -288,6 +302,8 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--black", type=level_spec, default=level_spec("fast_beginner:3"))
     parser.add_argument("--white", type=level_spec, default=level_spec("beginner:7"))
+    parser.add_argument("--black-time-ms", type=int)
+    parser.add_argument("--white-time-ms", type=int)
     parser.add_argument("--games", type=int, default=10)
     parser.add_argument("--max-moves", type=int, default=120)
     parser.add_argument("--seed", type=int, default=20260610)
@@ -303,6 +319,8 @@ def main() -> int:
     parser.add_argument("--config", default=os.environ.get("KATAGO_ANALYSIS_CONFIG", DEFAULT_CONFIG))
     parser.add_argument("--out", type=Path, default=Path("docs/engine-match-logs/latest.jsonl"))
     args = parser.parse_args()
+    args.black = with_time_override(args.black, args.black_time_ms)
+    args.white = with_time_override(args.white, args.white_time_ms)
 
     process = start_engine(args)
     rng = random.Random(args.seed)

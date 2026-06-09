@@ -689,3 +689,9 @@
 - 150판 결과는 `docs/engine-match-logs/matrix-20260610/summary.md`와 각 JSONL 로그에 저장했다. `B16 vs B32`는 B32가 35승 15패, `B16 vs B64`는 B64가 40승 10패, `B32 vs B64`는 B64가 27승 23패였다.
 - 결론: 이번 데이터에서는 `B32 best`가 `B16 best`에게 열세라는 현상은 재현되지 않았다. 다만 `B32`와 `B64`의 분리도는 23승 27패로 약했으므로, 중급이 확실히 강하게 느껴지도록 하려면 visits/time 외에도 selection policy, 랜덤성, 엔진 config, 종료 정책을 함께 검토해야 한다.
 - 중급 5단계 속도는 AI 응수용 Top Moves 보강 제거 후 로컬 자동 대전 평균 약 190~232ms로 측정되었다. 폰에서는 더 느릴 수 있지만, 이제 대국 응수는 실제 `64 visits / 500ms` 빠른 경로를 사용한다.
+- 사용자가 맥북에서는 `16 < 32 < 64` 우세가 기대대로 보이므로, 폰에서 다른 결과가 나온 원인이 탐색 시간 부족일 가능성을 제기했다. 현재 설정은 `빠른 초급 B16=250ms`, `초급 B32=500ms`, `중급 B64=500ms`임을 확인했다.
+- 단일 자동 대전 스크립트에 `--black-time-ms`, `--white-time-ms` 옵션을 추가했다. 이를 통해 visits는 그대로 두고 time cap만 바꾼 실험을 수행할 수 있게 했다.
+- 추가 실험으로 `python3 scripts/run-katago-level-match.py --black fast_beginner:3 --white beginner:7 --black-time-ms 1000 --white-time-ms 1000 --games 50 --swap-colors --seed 20260611 --out docs/engine-match-logs/b16-vs-b32-time1000-20260610.jsonl`를 실행했다. 소요 시간은 약 6분 26초였다.
+- 추가 50판 결과는 B16 24승, B32 26승이었다. 평균 root visits는 B16 `16.981`, B32 `34.899`로 기존 250/500ms 조건의 B16 `16.984`, B32 `34.855`와 거의 같았다.
+- 방문수 미달은 기존 B16/B32 50판에서 3453턴 중 1턴, 1000ms 조건에서 3367턴 중 0턴이었다. 따라서 맥북에서는 시간 cap이 아니라 visits cap이 먼저 걸리며, time cap 확대가 B32 우세를 더 뚜렷하게 만든다는 증거는 아직 없다.
+- 폰에서는 500ms 안에 B32/B64가 목표 visits를 못 채울 수 있으므로, time cap 확대는 강도 향상보다는 느린 기기 안정성 확보 장치로 계속 검토한다.
