@@ -638,3 +638,9 @@
 - Player Setup 메뉴에서 양 진영이 모두 AI일 때 `Auto delay` 드롭다운을 표시한다. 이 항목은 엔진 busy 중에도 설정 가능하다.
 - 자동 AI 턴 실행은 딜레이 동안 `isEngineBusy`를 걸지 않고 `isAutoAiTurnPending`으로 중복 실행만 막도록 변경했다. 딜레이가 끝난 시점에 현재 game/player setup 상태를 재검증한 뒤 엔진 턴을 시작한다.
 - `GameAutomationApplicationTest`, `UserPreferencesCodecTest`, `UserPreferencesApplicationTest`, `GameScreenStateTest`, `GameUiEvent*Test`를 갱신했고, 검증으로 `make test`가 통과했다.
+- 사용자가 최신 앱 설치 후 다음 리팩토링 진행과 현재 리팩토링 완성도 보고를 요청했다.
+- Wi-Fi ADB로 `SM-S908N`이 연결되어 있어 `make install-dev-engine`로 최신 debug APK를 데이터 유지 방식으로 설치했다. KataGo model/config/analysis config seed와 앱 cold launch까지 완료했고, cold launch는 `TotalTime=518ms`, 전체 설치/seed/실행은 약 1분 13초였다. 이번에도 약 98MB 모델 push가 46.4초로 대부분을 차지했다.
+- 후속 리팩토링으로 자동 AI 턴 시작 조건, pending 중복 방지, AI vs AI 딜레이 계산을 `AutoAiTurnRequestPlan`으로 application 계층에 분리했다. `GoCoachApp.kt`는 request plan을 받아 실제 코루틴 실행만 담당한다.
+- `GameAutomationApplicationTest`에 이미 pending 중이면 skip하는 케이스와 AI vs AI 딜레이가 schedule에 반영되는 케이스를 추가했다.
+- 검증으로 `make test`가 통과했다.
+- `docs/REFACTORING_STRATEGY_2026-06-08.md`를 갱신해 현재 리팩토링 완성도를 약 84%로 평가했다. 다음 85~90% 구간은 `GameSessionController` 또는 state holder 도입이 핵심이다.

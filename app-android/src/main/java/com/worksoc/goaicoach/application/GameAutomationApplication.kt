@@ -46,6 +46,44 @@ internal fun autoAiTurnDelayMillis(
 ): Long =
     if (playerSetup.isAutoPlay()) setting.millis else 0L
 
+internal sealed class AutoAiTurnRequestPlan {
+    data object Skip : AutoAiTurnRequestPlan()
+    data class Schedule(
+        val delayMillis: Long,
+    ) : AutoAiTurnRequestPlan()
+}
+
+internal fun buildAutoAiTurnRequestPlan(
+    isGameEnded: Boolean,
+    isEngineReady: Boolean,
+    isEngineBusy: Boolean,
+    isAutoAiTurnPending: Boolean,
+    shouldShowResumePrompt: Boolean,
+    playerSetup: PlayerSetup,
+    gameState: GameState,
+    autoPlayDelaySetting: AutoPlayDelaySetting,
+): AutoAiTurnRequestPlan {
+    if (isAutoAiTurnPending) {
+        return AutoAiTurnRequestPlan.Skip
+    }
+    if (
+        !shouldRequestAiTurn(
+            isGameEnded = isGameEnded,
+            isEngineReady = isEngineReady,
+            isEngineBusy = isEngineBusy,
+            shouldShowResumePrompt = shouldShowResumePrompt,
+            playerSetup = playerSetup,
+            gameState = gameState,
+        )
+    ) {
+        return AutoAiTurnRequestPlan.Skip
+    }
+
+    return AutoAiTurnRequestPlan.Schedule(
+        delayMillis = autoAiTurnDelayMillis(playerSetup, autoPlayDelaySetting),
+    )
+}
+
 internal data class AutoAiTurnDisplayPlan(
     val playLevel: PlayLevelSetting,
     val profile: EngineProfile,

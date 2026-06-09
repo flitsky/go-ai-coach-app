@@ -21,8 +21,9 @@ import androidx.compose.ui.platform.LocalContext
 import com.worksoc.goaicoach.application.AnalysisCacheKey
 import com.worksoc.goaicoach.application.AnalysisResultCache
 import com.worksoc.goaicoach.application.MoveReviewMarker
-import com.worksoc.goaicoach.application.autoAiTurnDelayMillis
+import com.worksoc.goaicoach.application.AutoAiTurnRequestPlan
 import com.worksoc.goaicoach.application.buildDebugReport
+import com.worksoc.goaicoach.application.buildAutoAiTurnRequestPlan
 import com.worksoc.goaicoach.application.buildEndgameFailureDisplayPlan
 import com.worksoc.goaicoach.application.buildEngineEstimateDisplayPlan
 import com.worksoc.goaicoach.application.buildEngineStartupFailureDisplayPlan
@@ -758,117 +759,116 @@ private fun GoCoachScreen(
     }
 
     fun requestAiTurnForCurrentState() {
-        if (isAutoAiTurnPending) {
-            return
-        }
-        if (
-            !shouldRequestAiTurn(
+        when (
+            val request = buildAutoAiTurnRequestPlan(
                 isGameEnded = isGameEnded,
                 isEngineReady = isEngineReady,
                 isEngineBusy = isEngineBusy,
+                isAutoAiTurnPending = isAutoAiTurnPending,
                 shouldShowResumePrompt = shouldShowResumePrompt,
                 playerSetup = playerSetup,
                 gameState = gameState,
+                autoPlayDelaySetting = autoPlayDelaySetting,
             )
         ) {
-            return
-        }
+            AutoAiTurnRequestPlan.Skip -> return
+            is AutoAiTurnRequestPlan.Schedule -> {
+                isAutoAiTurnPending = true
+                scope.launch {
+                    if (request.delayMillis > 0L) {
+                        delay(request.delayMillis)
+                    }
+                    if (
+                        !shouldRequestAiTurn(
+                            isGameEnded = isGameEnded,
+                            isEngineReady = isEngineReady,
+                            isEngineBusy = isEngineBusy,
+                            shouldShowResumePrompt = shouldShowResumePrompt,
+                            playerSetup = playerSetup,
+                            gameState = gameState,
+                        )
+                    ) {
+                        isAutoAiTurnPending = false
+                        return@launch
+                    }
 
-        val delayMillis = autoAiTurnDelayMillis(playerSetup, autoPlayDelaySetting)
-        isAutoAiTurnPending = true
-        scope.launch {
-            if (delayMillis > 0L) {
-                delay(delayMillis)
-            }
-            if (
-                !shouldRequestAiTurn(
-                    isGameEnded = isGameEnded,
-                    isEngineReady = isEngineReady,
-                    isEngineBusy = isEngineBusy,
-                    shouldShowResumePrompt = shouldShowResumePrompt,
-                    playerSetup = playerSetup,
-                    gameState = gameState,
-                )
-            ) {
-                isAutoAiTurnPending = false
-                return@launch
-            }
-
-            val turnState = gameState
-            val aiPlayer = turnState.nextPlayer
-            val side = playerSetup.sideFor(aiPlayer)
-            val aiPlayLevel = side.playLevel
-            val previousReviewCandidates = reviewCandidateMoves
-            isEngineBusy = true
-            var nextAnalysisState: GameState? = null
-            runCatching {
-                withContext(Dispatchers.IO) {
-                    engineAdapter.runAutoAiTurn(
-                        currentState = turnState,
-                        playLevel = aiPlayLevel,
-                        currentProfile = engineProfile,
-                    )
-                }
-            }.onSuccess { result ->
-                val display = buildAutoAiTurnDisplayPlan(
-                    result = result,
-                    previousSnapshots = scoreSnapshots,
-                    previousReviewCandidates = previousReviewCandidates,
-                )
-                playLevel = display.playLevel
-                engineProfile = display.profile
-                analysisPreset = display.analysisPreset
-
-                gameState = display.gameState
-                clearTopMoveSpots()
-                clearReviewAnalysis(display.gameState)
-                lastAnalysisKey = null
-                engineMessage = display.turnEngineMessage
-                candidateText = display.candidateText
-                lastMoveText = display.lastMoveText
-                applyScoreEstimateDisplayPlan(display.scoreDisplay)
-
-                nextAnalysisState = display.nextAnalysisState
-                if (display.shouldResolveEndgame) {
-                    isGameEnded = true
+                    val turnState = gameState
+                    val aiPlayer = turnState.nextPlayer
+                    val side = playerSetup.sideFor(aiPlayer)
+                    val aiPlayLevel = side.playLevel
+                    val previousReviewCandidates = reviewCandidateMoves
+                    isEngineBusy = true
+                    var nextAnalysisState: GameState? = null
                     runCatching {
                         withContext(Dispatchers.IO) {
-                            engineAdapter.resolveEndgameForState(
-                                state = display.gameState,
-                                profile = display.profile,
-                                prePassCandidates = display.endgamePrePassCandidates,
+                            engineAdapter.runAutoAiTurn(
+                                currentState = turnState,
+                                playLevel = aiPlayLevel,
+                                currentProfile = engineProfile,
                             )
                         }
-                    }.onSuccess { endgame ->
-                        val final = buildResolvedEndgameDisplayPlan(
-                            source = "auto-ai-engine-dead-stone-cleanup",
-                            originalState = display.gameState,
-                            resolution = endgame,
+                    }.onSuccess { result ->
+                        val display = buildAutoAiTurnDisplayPlan(
+                            result = result,
                             previousSnapshots = scoreSnapshots,
-                            engineMessagePrefix = display.turnEngineMessage,
+                            previousReviewCandidates = previousReviewCandidates,
                         )
-                        applyFinalScoreDisplayPlan(final)
+                        playLevel = display.playLevel
+                        engineProfile = display.profile
+                        analysisPreset = display.analysisPreset
+
+                        gameState = display.gameState
+                        clearTopMoveSpots()
+                        clearReviewAnalysis(display.gameState)
+                        lastAnalysisKey = null
+                        engineMessage = display.turnEngineMessage
+                        candidateText = display.candidateText
+                        lastMoveText = display.lastMoveText
+                        applyScoreEstimateDisplayPlan(display.scoreDisplay)
+
+                        nextAnalysisState = display.nextAnalysisState
+                        if (display.shouldResolveEndgame) {
+                            isGameEnded = true
+                            runCatching {
+                                withContext(Dispatchers.IO) {
+                                    engineAdapter.resolveEndgameForState(
+                                        state = display.gameState,
+                                        profile = display.profile,
+                                        prePassCandidates = display.endgamePrePassCandidates,
+                                    )
+                                }
+                            }.onSuccess { endgame ->
+                                val final = buildResolvedEndgameDisplayPlan(
+                                    source = "auto-ai-engine-dead-stone-cleanup",
+                                    originalState = display.gameState,
+                                    resolution = endgame,
+                                    previousSnapshots = scoreSnapshots,
+                                    engineMessagePrefix = display.turnEngineMessage,
+                                )
+                                applyFinalScoreDisplayPlan(final)
+                            }.onFailure { error ->
+                                val failure = buildEndgameFailureDisplayPlan(
+                                    source = "auto-ai-engine-final-score-failed",
+                                    state = display.gameState,
+                                    errorMessage = error.message ?: "Unknown error",
+                                    engineMessagePrefix = display.turnEngineMessage,
+                                )
+                                applyEndgameFailureDisplayPlan(failure)
+                            }
+                        }
                     }.onFailure { error ->
-                        val failure = buildEndgameFailureDisplayPlan(
-                            source = "auto-ai-engine-final-score-failed",
-                            state = display.gameState,
-                            errorMessage = error.message ?: "Unknown error",
-                            engineMessagePrefix = display.turnEngineMessage,
+                        engineMessage = error.message ?: "AI turn failed."
+                        candidateText = "AI turn failed. Current board state was not changed."
+                    }
+                    isEngineBusy = false
+                    isAutoAiTurnPending = false
+                    nextAnalysisState?.let { state ->
+                        requestTopMoveAnalysisForState(
+                            targetState = state,
+                            automatic = true,
                         )
-                        applyEndgameFailureDisplayPlan(failure)
                     }
                 }
-            }.onFailure { error ->
-                engineMessage = error.message ?: "AI turn failed."
-                candidateText = "AI turn failed. Current board state was not changed."
-            }
-            isEngineBusy = false
-            isAutoAiTurnPending = false
-            nextAnalysisState?.let { state ->
-                requestTopMoveAnalysisForState(
-                    targetState = state,
-                    automatic = true,
-                )
             }
         }
     }

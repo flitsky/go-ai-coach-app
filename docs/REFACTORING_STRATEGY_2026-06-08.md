@@ -36,15 +36,15 @@
 
 ## 2026-06-09 리팩토링 완성도 평가
 
-현재 전체 리팩토링 완성도는 약 82%로 본다. POC 앱을 계속 고도화할 수 있는 기반은 상당히 확보됐고, 메뉴/UX 개편과 엔진 분석 정책 변경을 작은 단위로 테스트하며 진행할 수 있는 구조가 됐다. 다만 85~90% 수준은 `GameSessionController` 또는 state holder를 도입해 `GoCoachApp.kt`의 상태 소유권과 엔진 orchestration을 UI 밖으로 이전해야 달성 가능하다.
+현재 전체 리팩토링 완성도는 약 84%로 본다. POC 앱을 계속 고도화할 수 있는 기반은 상당히 확보됐고, 메뉴/UX 개편과 엔진 분석 정책 변경을 작은 단위로 테스트하며 진행할 수 있는 구조가 됐다. 자동 AI 턴의 시작 조건, pending 중복 방지, AI vs AI 딜레이 계산도 application plan으로 분리됐다. 다만 85~90% 수준은 `GameSessionController` 또는 state holder를 도입해 `GoCoachApp.kt`의 상태 소유권과 엔진 orchestration을 UI 밖으로 이전해야 달성 가능하다.
 
 세부 평가:
 
 | 영역 | 완성도 | 평가 |
 | --- | ---: | --- |
 | 도메인/엔진 경계 | 84% | `shared` 룰/DTO와 `EngineAdapter` 경계는 안정적이다. 앱은 여전히 `EngineAdapter` 뒤에서 process/JNI/remote 교체 가능성을 유지한다. |
-| application service 분리 | 86% | 점수, 종국, Top Moves, 저장, 무르기, 사람 착수, 사용자 설정, 엔진 시작, 시작 게임, 점수 요청, 자동 AI 턴 표시, 사람 착수 후 엔진 sync 표시, Player Setup 변경 계획이 분리됐다. |
-| presentation 상태/이벤트 계약 | 82% | `GameScreenState`, `GameUiEvent`, action button state가 생겨 UI 계약과 주요 UX enable/selected 판단이 테스트 가능해졌다. |
+| application service 분리 | 88% | 점수, 종국, Top Moves, 저장, 무르기, 사람 착수, 사용자 설정, 엔진 시작, 시작 게임, 점수 요청, 자동 AI 턴 표시/요청, 사람 착수 후 엔진 sync 표시, Player Setup 변경 계획이 분리됐다. |
+| presentation 상태/이벤트 계약 | 84% | `GameScreenState`, `GameUiEvent`, action button state가 생겨 UI 계약과 주요 UX enable/selected 판단이 테스트 가능해졌다. AI 자동 대국 딜레이도 화면 상태와 event 계약에 포함됐다. |
 | UI/UX 파일 분리 | 78% | 메뉴, 플레이 화면, Player Setup, 응답 패널이 분리됐다. 하단 액션 버튼은 presentation state를 렌더링하는 형태가 됐다. |
 | 상태 소유권/controller 전환 | 52% | `GoCoachApp.kt`가 아직 많은 `remember` 상태와 엔진 coroutine orchestration을 직접 가진다. 다만 상태 적용/요청 plan이 많이 분리되어 controller 전환 준비도는 높아졌다. |
 | 테스트 기반 | 86% | application/presentation helper 테스트가 크게 늘었다. 남은 핵심은 controller 수준의 상태 전이 테스트다. |
@@ -55,6 +55,7 @@
 - scoring rule 변경 계획 분리
 - 저장 세션 prompt 계획 분리
 - 자동 AI/Top Moves trigger gate 분리
+- 자동 AI 턴 request plan 및 AI vs AI 딜레이 정책 분리
 - Player Setup 기반 새 게임 시작 계획 분리
 - 점수 추정 요청 preflight 계획 분리
 - 자동 AI 턴 결과 표시 계획 분리
@@ -78,12 +79,12 @@
 
 | 파일 | 라인 수 | 역할 |
 | --- | ---: | --- |
-| `app-android/.../ui/GoCoachApp.kt` | 1,185 | 화면 상태, 엔진 orchestration, 자동 분석/AI 턴, 저장/복원 trigger. 조건 판단은 상당수 application plan으로 이전됨 |
+| `app-android/.../ui/GoCoachApp.kt` | 1,221 | 화면 상태, 엔진 orchestration, 자동 분석/AI 턴, 저장/복원 trigger. 조건 판단은 상당수 application plan으로 이전됨 |
 | `app-android/.../ui/GoCoachContent.kt` | 110 | 화면 렌더링 최상위 조립, 이어하기 다이얼로그 |
 | `engine-android/.../KataGoProcessEngineAdapter.kt` | 666 | KataGo process/JNI 경계 |
 | `app-android/.../ui/GoBoard.kt` | 580 | 바둑판 drawing/input |
-| `app-android/.../ui/PlayerSetupPanel.kt` | 225 | Player Setup 설정 UI |
-| `app-android/.../presentation/GameScreenState.kt` | 214 | 화면 상태, 이벤트 버튼 state, resume prompt 표시 계약 |
+| `app-android/.../ui/PlayerSetupPanel.kt` | 261 | Player Setup 설정 UI, AI 자동 대국 딜레이 설정 |
+| `app-android/.../presentation/GameScreenState.kt` | 218 | 화면 상태, 이벤트 버튼 state, resume prompt 표시 계약 |
 | `app-android/.../ui/GamePlaySection.kt` | 120 | 보드, score graph, 액션 버튼, 엔진 응답 조립 |
 | `app-android/.../ui/EngineResponsePanel.kt` | 115 | 엔진 메시지와 분석 텍스트 표시 |
 | `app-android/.../ui/GameMenuActionsPanel.kt` | 112 | New, Copy Log, scoring rule 메뉴 |
@@ -91,7 +92,7 @@
 | `app-android/.../application/GameSessionApplication.kt` | 158 | 런타임 레벨 선택, 새 게임/복원/Player Setup 변경 계획 |
 | `app-android/.../application/HumanMoveApplication.kt` | 112 | 사람 착수 로컬 처리와 엔진 sync 표시 계획 |
 | `app-android/.../application/UndoApplication.kt` | 103 | Undo 요청/상태 반영 계획 |
-| `app-android/.../application/GameAutomationApplication.kt` | 97 | 자동 AI/Top Moves trigger와 자동 AI 턴 표시 계획 |
+| `app-android/.../application/GameAutomationApplication.kt` | 142 | 자동 AI/Top Moves trigger, 자동 AI 턴 request plan, 자동 AI 턴 표시 계획 |
 | `engine-android/.../KataGoAnalysisParser.kt` | 291 | GTP/분석 파싱 |
 | `app-android/.../match/MatchPolicy.kt` | 283 | Player Setup, AI 착수 선택 정책 |
 | `app-android/.../persistence/GameSessionStore.kt` | 196 | 로컬 저장/복원 codec |
@@ -102,7 +103,7 @@
 - `shared`에는 바둑 룰, 수순 재생, 계가, 사석 정리, 엔진 DTO/interface가 비교적 잘 분리되어 있다.
 - `engine-android`는 실제 KataGo process 경계를 `EngineAdapter` 뒤에 숨기고 있다.
 - `match`, `persistence`, `application`, `presentation`이 생기면서 Android UI 밖으로 상당수 책임이 빠져나갔다.
-- Debug report, 종국 처리, Top Moves 분석 계획, AI 턴 실행, 점수 표시 계획, 사람 착수 로컬 처리, 무르기 계획, 새 게임 시작, 점수 요청, 자동 AI 턴 표시, 사람 착수 후 엔진 sync 표시, Player Setup 변경은 application 계층에서 테스트 가능한 상태가 되었다.
+- Debug report, 종국 처리, Top Moves 분석 계획, AI 턴 실행, 점수 표시 계획, 사람 착수 로컬 처리, 무르기 계획, 새 게임 시작, 점수 요청, 자동 AI 턴 요청/표시, 사람 착수 후 엔진 sync 표시, Player Setup 변경은 application 계층에서 테스트 가능한 상태가 되었다.
 
 문제점:
 

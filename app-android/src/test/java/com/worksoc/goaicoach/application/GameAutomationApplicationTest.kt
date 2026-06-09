@@ -101,6 +101,47 @@ class GameAutomationApplicationTest {
     }
 
     @Test
+    fun autoAiTurnRequestPlanSkipsWhenAlreadyPending() {
+        val plan = buildAutoAiTurnRequestPlan(
+            isGameEnded = false,
+            isEngineReady = true,
+            isEngineBusy = false,
+            isAutoAiTurnPending = true,
+            shouldShowResumePrompt = false,
+            playerSetup = PlayerSetup(
+                black = SidePlayerSetup(controller = SeatController.Ai),
+                white = SidePlayerSetup(controller = SeatController.Ai),
+            ),
+            gameState = GameState.empty(),
+            autoPlayDelaySetting = AutoPlayDelaySetting.Slow,
+        )
+
+        assertEquals(AutoAiTurnRequestPlan.Skip, plan)
+    }
+
+    @Test
+    fun autoAiTurnRequestPlanSchedulesWithAutoPlayDelay() {
+        val plan = buildAutoAiTurnRequestPlan(
+            isGameEnded = false,
+            isEngineReady = true,
+            isEngineBusy = false,
+            isAutoAiTurnPending = false,
+            shouldShowResumePrompt = false,
+            playerSetup = PlayerSetup(
+                black = SidePlayerSetup(controller = SeatController.Ai),
+                white = SidePlayerSetup(controller = SeatController.Ai),
+            ),
+            gameState = GameState.empty(),
+            autoPlayDelaySetting = AutoPlayDelaySetting.Slow,
+        )
+
+        assertEquals(
+            AutoAiTurnRequestPlan.Schedule(AutoPlayDelaySetting.Slow.millis),
+            plan,
+        )
+    }
+
+    @Test
     fun autoAiTurnDisplayPlanUsesEngineEstimateWhenAvailable() {
         val state = GameState.empty()
             .play(Move.Pass(StoneColor.Black))
