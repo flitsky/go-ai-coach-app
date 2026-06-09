@@ -669,3 +669,5 @@
 - `PlayLevelSetting`에 레벨별 `analysisLimit`를 추가하고, AI 착수 분석은 이제 `playLevel.analysisLimit`를 사용한다.
 - `PlayLevelSettingTest`와 `MatchPolicyTest`에 초급 7단계가 32 visits / 500ms로 분석되는지 검증하는 테스트를 추가했다.
 - `USER_OPTION_MANUAL.md`, `ENGINE_BEGINNER_VISITS_BENCHMARK.md`, `ENGINE_LEVELING_DISCUSSION.md`에 `초급 1~6 = B32/350ms`, `초급 7 = B32/500ms capstone` 결정을 반영했다.
+- 사용자가 초급 단계는 모두 동일한 엔진 request를 보내고, 레벨링은 최적수/후보 선택 방식만 바꾸는 것이 더 예측 가능하다고 정정했다.
+- 최종 조정: `초급 1~7단계 = B32 / 500ms` 동일 요청으로 통일했다. 레벨별 `analysisLimit` override는 제거하고, `PlayLevelSetting.analysisLimit`는 그룹 기본 request만 사용한다. 초급 난이도 차이는 `MoveSelectionPolicy`로만 만든다.

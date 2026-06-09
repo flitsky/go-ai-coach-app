@@ -23,23 +23,25 @@ class PlayLevelSettingTest {
 
         assertEquals(DifficultyProfile.Beginner, profile.difficulty)
         assertEquals(32, profile.analysisLimit.visits)
-        assertEquals(350L, profile.analysisLimit.timeMillis)
+        assertEquals(500L, profile.analysisLimit.timeMillis)
         assertEquals(16, profile.analysisLimit.candidateCount)
         assertEquals(AnalysisPreset.Learning, setting.analysisPreset)
     }
 
     @Test
-    fun beginnerCapstoneKeepsB32AndExtendsTimeBudget() {
-        val setting = PlayLevelSetting(PlayLevelGroup.Beginner, level = 7)
-        val profile = setting.toEngineProfile(EngineProfile())
+    fun beginnerLevelsShareSameB32RequestAndDifferOnlyBySelectionPolicy() {
+        val levelOne = PlayLevelSetting(PlayLevelGroup.Beginner, level = 1)
+        val levelFour = PlayLevelSetting(PlayLevelGroup.Beginner, level = 4)
+        val levelSeven = PlayLevelSetting(PlayLevelGroup.Beginner, level = 7)
 
-        assertEquals(DifficultyProfile.Beginner, profile.difficulty)
-        assertEquals(32, setting.analysisLimit.visits)
-        assertEquals(500L, setting.analysisLimit.timeMillis)
-        assertEquals(16, setting.analysisLimit.candidateCount)
-        assertEquals(32, profile.analysisLimit.visits)
-        assertEquals(500L, profile.analysisLimit.timeMillis)
-        assertEquals(MoveSelectionPolicy.BestOnly, setting.selectionPolicy)
+        assertEquals(levelOne.analysisLimit, levelFour.analysisLimit)
+        assertEquals(levelOne.analysisLimit, levelSeven.analysisLimit)
+        assertEquals(32, levelSeven.analysisLimit.visits)
+        assertEquals(500L, levelSeven.analysisLimit.timeMillis)
+        assertEquals(16, levelSeven.analysisLimit.candidateCount)
+        assertEquals(MoveSelectionPolicy.PercentileRange(70, 100, "탐색 후보 최하위 30%"), levelOne.selectionPolicy)
+        assertEquals(MoveSelectionPolicy.PercentileRange(30, 60, "탐색 후보 상위 30~60%"), levelFour.selectionPolicy)
+        assertEquals(MoveSelectionPolicy.BestOnly, levelSeven.selectionPolicy)
     }
 
     @Test

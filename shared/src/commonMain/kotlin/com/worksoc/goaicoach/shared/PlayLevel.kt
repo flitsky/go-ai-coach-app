@@ -29,7 +29,7 @@ enum class PlayLevelGroup(
         maxLevel = 7,
         difficulty = DifficultyProfile.Beginner,
         visits = 32,
-        timeMillis = 350,
+        timeMillis = 500,
         candidateCount = 16,
         analysisPreset = AnalysisPreset.Learning,
     ),
@@ -65,17 +65,6 @@ enum class PlayLevelGroup(
             minVisitsPerCandidate = analysisPreset.minVisitsPerCandidate,
             minTimeMillis = analysisPreset.minTimeMillis,
         )
-
-    fun analysisLimit(level: Int): AnalysisLimit {
-        val safeLevel = level.coerceIn(1, maxLevel)
-        val base = defaultAnalysisLimit()
-        return when {
-            this == Beginner && safeLevel == maxLevel -> base.copy(
-                timeMillis = 500,
-            )
-            else -> base
-        }
-    }
 
     fun selectionPolicy(level: Int): MoveSelectionPolicy {
         val safeLevel = level.coerceIn(1, maxLevel)
@@ -118,7 +107,7 @@ data class PlayLevelSetting(
 ) {
     val safeLevel: Int = level.coerceIn(1, group.maxLevel)
     val analysisPreset: AnalysisPreset = group.analysisPreset
-    val analysisLimit: AnalysisLimit = group.analysisLimit(safeLevel)
+    val analysisLimit: AnalysisLimit = group.defaultAnalysisLimit()
     val selectionPolicy: MoveSelectionPolicy = group.selectionPolicy(safeLevel)
     val displayLabel: String = "${group.label} ${safeLevel}단계"
 

@@ -127,7 +127,7 @@ AI가 실제로 응수할 때 쓰는 기본 탐색 예산이다.
 | 모드 | AI 응수 예산 | 후보 분석 예산 | 의도 |
 | --- | ---: | ---: | --- |
 | Fast Beginner | 16 / 250ms | Lite 16 / 250ms | 느린 폰에서도 대국 리듬 유지 |
-| Learning Beginner | 32 / 350ms | Wide 64 / 500~800ms | 초급이지만 후보 bucket과 피드백 품질 확보 |
+| Learning Beginner | 32 / 500ms | Wide 64 / 500~800ms | 초급이지만 후보 bucket과 피드백 품질 확보 |
 | Review Assist | 16~64 | Balanced/Deep | 대국 중이 아니라 복기/학습 품질 우선 |
 
 현재 토론 기준에서는 `Learning Beginner`가 가장 제품 방향에 맞다. 다만 실제 폰에서 체감 지연을 확인하기 전까지는 `Fast Beginner`를 fallback으로 유지해야 한다.
@@ -410,9 +410,10 @@ KataGo analysis 결과는 기본적으로 수치 기반이다.
 
 공통:
 
-- Analysis budget: `LB 1~6 = B32 / 350ms`, `LB 7 = B32 / 500ms`
+- Analysis budget: `LB 1~7 = B32 / 500ms`
 - 선택 대상: scored 후보
 - 선택 구간은 KataGo `moveInfos.order`의 percentile window로 정의한다.
+- 초급 단계는 모두 동일한 엔진 요청을 보내고, 레벨링은 선택 구간만 바꾸는 방식으로 운영한다.
 - 후보 수가 부족해 선택 구간이 비면 가장 가까운 후보 1개를 포함하도록 window를 보정한다.
 - scored 후보가 3개 미만이면 B16/B32 결과만으로 레벨링이 어렵다고 보고, 필요 시 `64 / 500ms` 보강 분석을 검토한다.
 
@@ -424,7 +425,7 @@ KataGo analysis 결과는 기본적으로 수치 기반이다.
 | LB 4 | B32 탐색 후보 중 상위 30~60% 랜덤 | 30~60% | 중간보다 조금 좋은 후보 중심 |
 | LB 5 | B32 탐색 후보 중 상위 10~50% 랜덤 | 10~50% | 좋은 후보를 주로 두되 최선만 고정하지 않음 |
 | LB 6 | B32 탐색 후보 중 상위 30% 랜덤 | 0~30% | 거의 좋은 수 위주 |
-| LB 7 | B32, 500ms 최적수 | 0% | Learning Beginner 최상위 capstone |
+| LB 7 | B32 탐색 후보 중 최적수 | 0% | Learning Beginner 최상위 |
 
 ### 구현 규칙
 
@@ -457,7 +458,7 @@ fallback:
 
 보류할 점:
 
-- 기존 `LB 7 = B32 / 350ms 최적수`는 중급으로 넘어가기 전 관문으로는 좋지만, `FB 3 = B16 최적수`와 둘 다 BestOnly라 실전 차이가 충분히 벌어지지 않을 수 있다. 사용자 AI 대전 반복 테스트 이후 `LB 7`은 B32 visits를 유지하되 `500ms`까지 허용해 시간 제한으로 32 visits가 잘리는 위험을 줄이는 capstone으로 조정한다.
+- 기존 `LB 7 = B32 / 350ms 최적수`는 중급으로 넘어가기 전 관문으로는 좋지만, `FB 3 = B16 최적수`와 둘 다 BestOnly라 실전 차이가 충분히 벌어지지 않을 수 있다. 사용자 정정 이후 초급 1~7단계는 모두 B32 / 500ms 동일 요청으로 통일하고, 단계 차이는 후보 선택 정책으로만 만든다.
 - 따라서 중급 1단계는 `Casual 64`의 하위/중위 상대 구간에서 시작하는 식으로 이어 붙이는 것이 자연스럽다.
 - 실제 폰에서 B32 latency가 불편하면 `LB` 기본값도 기기별로 `B16` fallback을 허용해야 한다.
 
@@ -470,7 +471,7 @@ fallback:
 | 그룹 | 단계 | Engine budget | 내부 analysis preset | AI 선택 정책 |
 | --- | ---: | --- | --- | --- |
 | 빠른 초급 | 1~3 | Beginner 16 / 250ms | Lite | FB 1 하위 50%, FB 2 최적수 제외 상위 후보, FB 3 최적수 |
-| 초급 | 1~6, 7 | 1~6: Beginner 32 / 350ms, 7: Beginner 32 / 500ms | Learning | LB 1~6 percentile window, LB 7 최적수 |
+| 초급 | 1~7 | Beginner 32 / 500ms | Learning | LB 1~6 percentile window, LB 7 최적수 |
 | 중급 | 1~5 | Casual 64 / 500ms | Balanced | 하위 50%에서 최적수까지 점진 이동 |
 | 고급 | 1~5 | Intermediate 160 / 1000ms | Balanced | 중위권에서 최적수까지 점진 이동 |
 

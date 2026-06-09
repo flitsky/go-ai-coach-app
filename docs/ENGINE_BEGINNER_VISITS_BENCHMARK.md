@@ -244,7 +244,7 @@ Next: Black
 | 용도 | 권장값 |
 | --- | --- |
 | 느린 폰/빠른 대국 fallback | `Beginner 16 / 250ms` |
-| 학습용 초급 기본값 | `Beginner 32 / 350ms` |
+| 학습용 초급 기본값 | `Beginner 32 / 500ms` |
 | 후보 보강/Top Moves 수동 분석 | `64 / 500ms` |
 | 복기/정밀 학습 | `Balanced` 또는 `Deep` |
 
@@ -291,13 +291,13 @@ benchmark 결과를 반영하면 초급 레벨링은 색상 bucket 비율보다 
 | LB 4 | B32 | 상위 30~60% 후보 중 랜덤 | 30~60% |
 | LB 5 | B32 | 상위 10~50% 후보 중 랜덤 | 10~50% |
 | LB 6 | B32 | 상위 30% 후보 중 랜덤 | 0~30% |
-| LB 7 | B32, 500ms | 최적수 | 0% |
+| LB 7 | B32 | 최적수 | 0% |
 
 해석:
 
 - B32는 benchmark에서 B16보다 후보 수와 bucket 다양성이 뚜렷하게 좋아졌다.
 - B64보다 latency 부담이 낮으므로 학습형 초급 기본값으로 적절하다.
-- LB7은 초급 상한 단계이지만 중급 경계를 침범하지 않도록 B32를 유지한다. 대신 500ms까지 허용해 느린 기기에서 32 visits가 시간 제한에 잘리지 않게 하고, 선택 정책은 최적수만 사용한다.
+- 초급 1~7단계는 모두 동일한 B32 / 500ms 요청을 사용한다. 레벨링은 엔진 요청을 바꾸지 않고 선택 정책만 바꾸는 방식으로 운영한다.
 - 랜덤 선택은 같은 레벨에서도 매판 다른 체감 난이도를 만든다.
 - 단, 사용자가 보는 평가 색상은 상대 순위가 아니라 절대 `pointLoss` 기준으로 유지한다.
 
@@ -312,7 +312,7 @@ fallback:
 완료:
 
 1. shared/domain에 percentile window 기반 `MoveSelectionPolicy`를 추가했다.
-2. `Fast Beginner` 3단계와 `Learning Beginner` 7단계를 포함하는 `PlayLevelSetting`을 정의했다. 이후 실전 테스트 결과를 반영해 `Learning Beginner` 7단계는 B32 visits를 유지하되 time limit을 500ms로 완화하는 capstone으로 조정했다.
+2. `Fast Beginner` 3단계와 `Learning Beginner` 7단계를 포함하는 `PlayLevelSetting`을 정의했다. `Learning Beginner`는 모든 단계에서 B32 / 500ms 요청을 공유하고, 단계별 차이는 `MoveSelectionPolicy`만으로 만든다.
 3. 사용자 메뉴에서는 raw `Lite/Balanced/Deep` 버튼을 제거하고 `빠른 초급`, `초급`, `중급`, `고급` 그룹과 단계 조정 UX로 변경했다.
 4. AI 대국 응수는 현재 `PlayLevelSetting`의 분석 예산으로 scored 후보를 받은 뒤, 단계별 상대 순위 구간에서 랜덤 선택하도록 연결했다.
 
