@@ -53,6 +53,8 @@ import com.worksoc.goaicoach.application.estimateScoreForState
 import com.worksoc.goaicoach.application.resolveEndgameForState
 import com.worksoc.goaicoach.application.runAutoAiTurn
 import com.worksoc.goaicoach.application.selectRuntimePlayLevel
+import com.worksoc.goaicoach.application.shouldRequestAiTurn
+import com.worksoc.goaicoach.application.shouldRequestTopMoveAnalysis
 import com.worksoc.goaicoach.application.planSavedGamePersistence
 import com.worksoc.goaicoach.application.startEngineSession
 import com.worksoc.goaicoach.application.startNewEngineGame
@@ -414,14 +416,15 @@ private fun GoCoachScreen(
         deep: Boolean = false,
     ) {
         if (
-            isGameEnded ||
-            !isEngineReady ||
-            isEngineBusy ||
-            shouldShowResumePrompt
+            !shouldRequestTopMoveAnalysis(
+                isGameEnded = isGameEnded,
+                isEngineReady = isEngineReady,
+                isEngineBusy = isEngineBusy,
+                shouldShowResumePrompt = shouldShowResumePrompt,
+                playerSetup = playerSetup,
+                targetState = targetState,
+            )
         ) {
-            return
-        }
-        if (playerSetup.sideFor(targetState.nextPlayer).controller == SeatController.Ai) {
             return
         }
 
@@ -720,11 +723,14 @@ private fun GoCoachScreen(
 
     fun requestAiTurnForCurrentState() {
         if (
-            isGameEnded ||
-            !isEngineReady ||
-            isEngineBusy ||
-            shouldShowResumePrompt ||
-            playerSetup.sideFor(gameState.nextPlayer).controller != SeatController.Ai
+            !shouldRequestAiTurn(
+                isGameEnded = isGameEnded,
+                isEngineReady = isEngineReady,
+                isEngineBusy = isEngineBusy,
+                shouldShowResumePrompt = shouldShowResumePrompt,
+                playerSetup = playerSetup,
+                gameState = gameState,
+            )
         ) {
             return
         }
