@@ -607,3 +607,9 @@
 - `UserPreferencesCodecTest`를 추가해 Player Setup 단계값, 계가 규칙, Top Moves, Eval gradient 등 표시 옵션의 round-trip과 기본값을 검증했다. `GameScreenStateTest`는 ownership overlay 기본값이 켜짐임을 검증하도록 갱신했다.
 - `docs/USER_OPTION_MANUAL.md`에 사용자 설정 저장 정책과 `Eval gradient` 옵션 설명을 추가했다.
 - 검증으로 `make test`가 통과했다.
+- 사용자가 우선 앱 설치 후 다음 리팩토링 진행을 요청했다.
+- `make reinstall-dev-engine`로 `SM-S908N`에 최신 debug APK를 설치하고 KataGo model/config를 seed한 뒤 앱을 실행했다. cold launch는 `TotalTime=610ms`, 전체 설치/seed/실행은 약 16초였다.
+- 후속 리팩토링으로 `UserPreferencesApplication.kt`를 추가했다. 사용자 설정 snapshot에서 초기 `GameState`, Player Setup, runtime play level, Top Moves 상태를 만드는 로직과 현재 UI 상태를 `UserPreferencesSnapshot`으로 조립하는 로직을 application 계층으로 분리했다.
+- `GoCoachApp.kt`는 초기 사용자 설정 계산과 preferences 저장 payload 조립을 직접 하지 않고 `buildInitialUserPreferencesPlan`, `buildUserPreferencesSnapshot` helper를 사용하도록 정리했다.
+- `UserPreferencesApplicationTest`를 추가해 저장된 계가 규칙/AI 레벨이 초기 런타임으로 반영되는지, 현재 UI 설정이 preferences snapshot으로 보존되는지 검증했다.
+- 검증으로 `make test`가 통과했다.
