@@ -588,3 +588,8 @@
 - 3단계로 2인용/엔진 무르기 결과 적용 중복을 `applyUndoLocalStatePlan()`으로 묶었다. 검증으로 `make test`가 통과했고 `Extract undo state applier`로 커밋/푸시했다.
 - 4단계로 `playLevel`, `engineProfile`, `analysisPreset`을 함께 갱신하는 `applyRuntimePlayLevelSelection()`을 추가했다. 검증으로 `make test`가 통과했고 `Extract runtime level applier`로 커밋/푸시했다.
 - 5단계로 저장 snapshot 생성과 save/clear/skip 판단을 `SavedGamePersistence.kt` application helper로 분리하고 `SavedGamePersistenceTest`를 추가했다. 검증으로 `make test`가 통과했고 `Extract saved game persistence plan`으로 커밋/푸시했다.
+- 사용자가 다음 단계 진행을 요청하면서 특히 메뉴와 UX가 앞으로 더 고도화될 예정임을 감안해 리팩토링해달라고 요청했다.
+- 메뉴/헤더 조립을 `GameMenuSection.kt`로 분리했다. `GoCoachContent.kt`는 상위 레이아웃만 유지하고, Player Setup/Game 메뉴/KaTrain UX 메뉴 조립은 `ExpandedGameMenuSection()`으로 위임한다. 검증으로 `make test`가 통과했고 `Extract game menu section`으로 커밋/푸시했다.
+- 보드, score graph, 하단 액션 버튼, 엔진 응답 패널을 `GamePlaySection.kt`로 분리했다. 향후 메뉴 개편과 플레이 화면 밀도 개편을 독립적으로 진행할 수 있게 되었다. 검증으로 `make test`가 통과했고 `Extract game play section`으로 커밋/푸시했다.
+- Player Setup UI를 `PlayerSetupPanel.kt`로 분리했다. 플레이어/AI/난이도 설정 UX를 향후 독립적으로 재설계할 수 있게 했다. 검증으로 `make test`가 통과했고 `Extract player setup panel`로 커밋/푸시했다.
+- Game 메뉴 액션과 엔진 응답 패널을 각각 `GameMenuActionsPanel.kt`, `EngineResponsePanel.kt`로 분리했다. 기존 `EnginePanels.kt`는 역할별 파일로 정리되었다. 검증으로 `make test`가 통과했고 `Split menu actions and response panels`로 커밋/푸시했다.
