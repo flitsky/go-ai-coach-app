@@ -621,3 +621,8 @@
 - 검증으로 `make test`가 통과했다.
 - 리팩토링 결과물을 다시 `make install-dev-engine`로 폰에 설치했고, cold launch는 `TotalTime=478ms`, 전체 설치/seed/실행은 약 22.9초였다.
 - `docs/REFACTORING_STRATEGY_2026-06-08.md`의 리팩토링 완성도 평가를 약 70%로 갱신했다. application service 분리, 상태 소유권/controller 전환, 테스트 기반 항목을 최신 상태로 조정하고 UI 파일 규모 표를 현재 파일 구조에 맞췄다.
+- 사용자가 다음 리팩토링을 85~90% 수준에 가까워질 때까지 연속 작업으로 진행하고 단계별 커밋/푸시해달라고 요청했다.
+- 이번 연속 리팩토링 배치에서 scoring rule 변경 계획, 저장 세션 prompt 계획, 자동 AI/Top Moves trigger gate, 새 게임 시작 계획, 점수 추정 요청 계획, 자동 AI 턴 표시 계획, 사람 착수 후 엔진 sync 표시 계획, 하단 액션 버튼 state, Undo 요청 계획, Player Setup 변경 계획을 순차적으로 application/presentation 계층으로 분리했다.
+- 각 단계마다 `make test`로 `:shared:check`, `:engine-android:testDebugUnitTest`, `:app-android:assembleDebug`, `:app-android:testDebugUnitTest`를 통과시킨 뒤 커밋/푸시했다.
+- 이번 배치 커밋은 `6ddfecb` scoring rule, `6b4a5f1` saved session prompt, `6e76d6e` automation gates, `b6d2973` start game, `be96d6c` score estimate request, `dbbf141` auto AI turn display, `35f54f0` human engine sync display, `c6920f4` action button state, `570ab03` undo request, `6952225` player setup change plan이다.
+- `docs/REFACTORING_STRATEGY_2026-06-08.md`를 갱신해 현재 완성도를 약 82%로 평가했다. 85~90% 달성에는 `GameSessionController` 또는 state holder 도입, `LaunchedEffect` trigger 분리, 엔진 orchestration 상태 전이 이전이 필요하다고 명시했다.

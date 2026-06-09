@@ -36,21 +36,34 @@
 
 ## 2026-06-09 리팩토링 완성도 평가
 
-현재 전체 리팩토링 완성도는 약 70%로 본다. POC 앱을 계속 고도화할 수 있는 기반은 확보됐지만, 첫 마켓 릴리즈 이후 유지보수까지 안정적으로 보장하는 수준은 아직 아니다.
+현재 전체 리팩토링 완성도는 약 82%로 본다. POC 앱을 계속 고도화할 수 있는 기반은 상당히 확보됐고, 메뉴/UX 개편과 엔진 분석 정책 변경을 작은 단위로 테스트하며 진행할 수 있는 구조가 됐다. 다만 85~90% 수준은 `GameSessionController` 또는 state holder를 도입해 `GoCoachApp.kt`의 상태 소유권과 엔진 orchestration을 UI 밖으로 이전해야 달성 가능하다.
 
 세부 평가:
 
 | 영역 | 완성도 | 평가 |
 | --- | ---: | --- |
-| 도메인/엔진 경계 | 82% | `shared` 룰/DTO와 `EngineAdapter` 경계는 안정적이다. |
-| application service 분리 | 75% | 점수, 종국, Top Moves, 저장, 무르기, 사람 착수, 사용자 설정, 엔진 시작 표시 계획이 많이 분리됐다. |
-| presentation 상태/이벤트 계약 | 70% | `GameScreenState`, `GameUiEvent`가 생겨 UI 계약은 명확해졌다. |
-| UI/UX 파일 분리 | 74% | 메뉴, 플레이 화면, Player Setup, 응답 패널이 분리됐다. |
-| 상태 소유권/controller 전환 | 40% | `GoCoachApp.kt`가 아직 많은 `remember` 상태와 엔진 orchestration을 직접 가지지만, 상태 적용 plan은 일부 분리됐다. |
-| 테스트 기반 | 80% | 핵심 application helper 테스트는 좋지만 UI 상태 전이/controller 테스트는 더 필요하다. |
-| 패키지 구조 정리 | 62% | 큰 방향은 잡혔지만 `match`/`shared` 일부 재배치 후보가 남아 있다. |
+| 도메인/엔진 경계 | 84% | `shared` 룰/DTO와 `EngineAdapter` 경계는 안정적이다. 앱은 여전히 `EngineAdapter` 뒤에서 process/JNI/remote 교체 가능성을 유지한다. |
+| application service 분리 | 86% | 점수, 종국, Top Moves, 저장, 무르기, 사람 착수, 사용자 설정, 엔진 시작, 시작 게임, 점수 요청, 자동 AI 턴 표시, 사람 착수 후 엔진 sync 표시, Player Setup 변경 계획이 분리됐다. |
+| presentation 상태/이벤트 계약 | 82% | `GameScreenState`, `GameUiEvent`, action button state가 생겨 UI 계약과 주요 UX enable/selected 판단이 테스트 가능해졌다. |
+| UI/UX 파일 분리 | 78% | 메뉴, 플레이 화면, Player Setup, 응답 패널이 분리됐다. 하단 액션 버튼은 presentation state를 렌더링하는 형태가 됐다. |
+| 상태 소유권/controller 전환 | 52% | `GoCoachApp.kt`가 아직 많은 `remember` 상태와 엔진 coroutine orchestration을 직접 가진다. 다만 상태 적용/요청 plan이 많이 분리되어 controller 전환 준비도는 높아졌다. |
+| 테스트 기반 | 86% | application/presentation helper 테스트가 크게 늘었다. 남은 핵심은 controller 수준의 상태 전이 테스트다. |
+| 패키지 구조 정리 | 68% | 큰 방향은 잡혔지만 `match`/`shared` 일부 재배치와 controller 패키지 도입 후보가 남아 있다. |
 
-남은 큰 리팩토링 추천 항목은 8개 정도다.
+이번 2026-06-09 후속 배치에서 완료한 주요 리팩토링:
+
+- scoring rule 변경 계획 분리
+- 저장 세션 prompt 계획 분리
+- 자동 AI/Top Moves trigger gate 분리
+- Player Setup 기반 새 게임 시작 계획 분리
+- 점수 추정 요청 preflight 계획 분리
+- 자동 AI 턴 결과 표시 계획 분리
+- 사람 착수 후 엔진 sync 결과 표시 계획 분리
+- 하단 액션 버튼 state 모델 분리
+- Undo 요청 preflight 계획 분리
+- Player Setup 변경 계획 분리
+
+남은 큰 리팩토링 추천 항목은 6개 정도다.
 
 1. `GameSessionController` 또는 일반 Kotlin state holder 도입
 2. `LaunchedEffect` trigger를 startup/resume/auto-ai/auto-analysis 단위로 분리
@@ -58,8 +71,6 @@
 4. Top Moves/analysis cache lifecycle을 controller 또는 store로 이전
 5. `GoBoard`를 board base, stones, candidate overlay, ownership overlay, input 처리로 분리
 6. `ScoreGraphPanel`의 graph data model과 drawing을 분리
-7. 메뉴/UX 옵션을 data-driven menu schema로 정리
-8. `match` 정책 중 shared/application으로 내려갈 항목을 선별
 
 ## 현재 구조 진단
 
@@ -67,14 +78,20 @@
 
 | 파일 | 라인 수 | 역할 |
 | --- | ---: | --- |
-| `app-android/.../ui/GoCoachApp.kt` | 1,156 | 화면 상태, 엔진 orchestration, 자동 분석/AI 턴, 저장/복원 trigger |
+| `app-android/.../ui/GoCoachApp.kt` | 1,185 | 화면 상태, 엔진 orchestration, 자동 분석/AI 턴, 저장/복원 trigger. 조건 판단은 상당수 application plan으로 이전됨 |
 | `app-android/.../ui/GoCoachContent.kt` | 110 | 화면 렌더링 최상위 조립, 이어하기 다이얼로그 |
 | `engine-android/.../KataGoProcessEngineAdapter.kt` | 666 | KataGo process/JNI 경계 |
 | `app-android/.../ui/GoBoard.kt` | 580 | 바둑판 drawing/input |
 | `app-android/.../ui/PlayerSetupPanel.kt` | 225 | Player Setup 설정 UI |
-| `app-android/.../ui/GamePlaySection.kt` | 160 | 보드, score graph, 액션 버튼, 엔진 응답 조립 |
+| `app-android/.../presentation/GameScreenState.kt` | 214 | 화면 상태, 이벤트 버튼 state, resume prompt 표시 계약 |
+| `app-android/.../ui/GamePlaySection.kt` | 120 | 보드, score graph, 액션 버튼, 엔진 응답 조립 |
 | `app-android/.../ui/EngineResponsePanel.kt` | 115 | 엔진 메시지와 분석 텍스트 표시 |
 | `app-android/.../ui/GameMenuActionsPanel.kt` | 112 | New, Copy Log, scoring rule 메뉴 |
+| `app-android/.../application/ScoreDisplayApplication.kt` | 198 | 점수 추정/최종 점수/종국 실패 표시 계획 |
+| `app-android/.../application/GameSessionApplication.kt` | 158 | 런타임 레벨 선택, 새 게임/복원/Player Setup 변경 계획 |
+| `app-android/.../application/HumanMoveApplication.kt` | 112 | 사람 착수 로컬 처리와 엔진 sync 표시 계획 |
+| `app-android/.../application/UndoApplication.kt` | 103 | Undo 요청/상태 반영 계획 |
+| `app-android/.../application/GameAutomationApplication.kt` | 97 | 자동 AI/Top Moves trigger와 자동 AI 턴 표시 계획 |
 | `engine-android/.../KataGoAnalysisParser.kt` | 291 | GTP/분석 파싱 |
 | `app-android/.../match/MatchPolicy.kt` | 283 | Player Setup, AI 착수 선택 정책 |
 | `app-android/.../persistence/GameSessionStore.kt` | 196 | 로컬 저장/복원 codec |
@@ -85,13 +102,13 @@
 - `shared`에는 바둑 룰, 수순 재생, 계가, 사석 정리, 엔진 DTO/interface가 비교적 잘 분리되어 있다.
 - `engine-android`는 실제 KataGo process 경계를 `EngineAdapter` 뒤에 숨기고 있다.
 - `match`, `persistence`, `application`, `presentation`이 생기면서 Android UI 밖으로 상당수 책임이 빠져나갔다.
-- Debug report, 종국 처리, Top Moves 분석 계획, AI 턴 실행, 점수 표시 계획, 사람 착수 로컬 처리, 무르기 계획은 application 계층에서 테스트 가능한 상태가 되었다.
+- Debug report, 종국 처리, Top Moves 분석 계획, AI 턴 실행, 점수 표시 계획, 사람 착수 로컬 처리, 무르기 계획, 새 게임 시작, 점수 요청, 자동 AI 턴 표시, 사람 착수 후 엔진 sync 표시, Player Setup 변경은 application 계층에서 테스트 가능한 상태가 되었다.
 
 문제점:
 
 - `GoCoachApp.kt`가 화면 컴포저블이면서 동시에 application service처럼 동작한다.
 - `LaunchedEffect`가 여러 개이고, 각 effect가 서로 다른 상태 플래그에 반응한다. 이어하기 팝업처럼 timing 문제가 생기기 쉽다.
-- 엔진 분석 cache, Top Moves 자동 분석, AI 자동 착수, 종국 cleanup이 한 파일 안에서 직접 상태를 변경한다.
+- 엔진 분석 cache, Top Moves 자동 분석, AI 자동 착수, 종국 cleanup의 coroutine orchestration은 아직 한 파일 안에서 직접 상태를 변경한다. 다만 조건 판단과 표시 결과 조립은 대부분 helper로 빠져나갔다.
 - `match` 패키지는 현재 Android app 계층에 있지만, 일부 정책은 shared/application 계층으로 내려갈 수 있다.
 - `GoCoachApp.kt`의 `remember` 상태가 많아 상태 전이의 소유권이 아직 명확하지 않다.
 
