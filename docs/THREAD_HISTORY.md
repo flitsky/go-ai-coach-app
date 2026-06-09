@@ -680,3 +680,12 @@
 - deterministic, `numSearchThreads=1`, warm-up 후 `빠른 초급 3단계` vs `초급 7단계` 4판 smoke 로그를 `docs/engine-match-logs/fb3-vs-lb7-det-20260610.jsonl`에 기록했다. 결과는 초급 7단계 3승, 빠른 초급 3단계 1승이다.
 - 사용자가 `중급 5단계`가 빠른 초급 3단계에는 이기지만 너무 느리다고 보고했다. 확인 결과 중급 5단계 표면 설정은 `64 visits / 500ms / BestOnly`이지만, 기존 AI 응수에서 `Balanced`의 `minVisitsPerCandidate=4`, `minTimeMillis=800ms`, `refinePolicyMoves=4`가 같이 적용될 수 있었다.
 - AI 응수 분석 요청에서 Top Moves용 보강을 제거했다. 이제 대국 응수는 `includePolicy=false`, `refinePolicyMoves=0`, `minVisitsPerCandidate=0`, `minTimeMillis=null`로 정규화되며, 중급 5단계는 실제 `64 visits / 500ms` 요청으로 동작한다.
+- 사용자가 `B16 vs B32`, `B16 vs B64`, `B32 vs B64`를 각각 50판씩 총 150판 반복 테스트하여 데이터로 확인해달라고 요청했다.
+- `scripts/run-katago-level-match.py`를 보강해 대국 종료 후 final evaluator analysis query를 별도로 수행하도록 했다. 기본 final evaluator는 `400 visits / 2000ms`이며, 자동 대전 로그에는 선택 수, root visits, 응답 시간, 최종 추정 점수차가 기록된다.
+- `scripts/run-katago-level-matrix.py`를 추가했다. 기본 매트릭스는 `빠른 초급 3단계(B16 best) vs 초급 7단계(B32 best)`, `빠른 초급 3단계(B16 best) vs 중급 5단계(B64 best)`, `초급 7단계(B32 best) vs 중급 5단계(B64 best)`이며, 각 조합을 흑백 교대 방식으로 반복 실행한다.
+- Makefile에 `make engine-level-benchmark`를 추가했다. 주요 변수는 `ENGINE_MATCH_GAMES`, `ENGINE_MATCH_OUT`, `ENGINE_MATCH_ARGS`이다.
+- smoke 검증으로 `make engine-level-benchmark ENGINE_MATCH_GAMES=1 ENGINE_MATCH_OUT=docs/engine-match-logs/matrix-smoke ENGINE_MATCH_ARGS='--deterministic --search-threads 1 --max-moves 6 --final-visits 16 --final-time-ms 250'`를 실행했고, 스크립트 import 문제를 수정한 뒤 정상 완료했다. smoke 로그 폴더는 커밋 대상에서 제외했다.
+- 실제 1차 데이터 수집으로 `make engine-level-benchmark ENGINE_MATCH_GAMES=50 ENGINE_MATCH_OUT=docs/engine-match-logs/matrix-20260610`를 실행했다. 실사용에 가까운 non-deterministic, `numSearchThreads=4`, 흑백 교대, warm-up, final evaluator `400 visits / 2000ms` 조건이며 약 23분 41초가 걸렸다.
+- 150판 결과는 `docs/engine-match-logs/matrix-20260610/summary.md`와 각 JSONL 로그에 저장했다. `B16 vs B32`는 B32가 35승 15패, `B16 vs B64`는 B64가 40승 10패, `B32 vs B64`는 B64가 27승 23패였다.
+- 결론: 이번 데이터에서는 `B32 best`가 `B16 best`에게 열세라는 현상은 재현되지 않았다. 다만 `B32`와 `B64`의 분리도는 23승 27패로 약했으므로, 중급이 확실히 강하게 느껴지도록 하려면 visits/time 외에도 selection policy, 랜덤성, 엔진 config, 종료 정책을 함께 검토해야 한다.
+- 중급 5단계 속도는 AI 응수용 Top Moves 보강 제거 후 로컬 자동 대전 평균 약 190~232ms로 측정되었다. 폰에서는 더 느릴 수 있지만, 이제 대국 응수는 실제 `64 visits / 500ms` 빠른 경로를 사용한다.

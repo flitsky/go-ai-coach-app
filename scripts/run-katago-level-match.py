@@ -223,6 +223,7 @@ def play_game(
     white: LevelSpec,
     rng: random.Random,
     max_moves: int,
+    final_eval: LevelSpec,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     moves: list[list[str]] = []
     turn_logs: list[dict[str, Any]] = []
@@ -259,7 +260,13 @@ def play_game(
         if consecutive_passes >= 2:
             break
 
-    final_lead = black_score_lead(last_response or {})
+    final_response, final_elapsed_ms = query_engine(
+        process,
+        f"g{game_index}-final",
+        moves,
+        final_eval,
+    )
+    final_lead = black_score_lead(final_response or last_response or {})
     return (
         {
             "game": game_index,
@@ -268,6 +275,9 @@ def play_game(
             "moves": len(moves),
             "endedByPassPass": consecutive_passes >= 2,
             "finalEstimateBlackLead": final_lead,
+            "finalEvalVisits": final_eval.visits,
+            "finalEvalTimeMs": int(final_eval.time_seconds * 1000),
+            "finalEvalElapsedMs": round(final_elapsed_ms, 1),
             "estimatedWinner": expected_winner(final_lead),
         },
         turn_logs,
@@ -286,6 +296,8 @@ def main() -> int:
     parser.add_argument("--no-warmup", action="store_true")
     parser.add_argument("--search-threads", type=int, default=4)
     parser.add_argument("--analysis-threads", type=int, default=1)
+    parser.add_argument("--final-visits", type=int, default=400)
+    parser.add_argument("--final-time-ms", type=int, default=2_000)
     parser.add_argument("--katago", default=os.environ.get("KATAGO_BIN", DEFAULT_KATAGO))
     parser.add_argument("--model", default=os.environ.get("KATAGO_MODEL", DEFAULT_MODEL))
     parser.add_argument("--config", default=os.environ.get("KATAGO_ANALYSIS_CONFIG", DEFAULT_CONFIG))
@@ -295,6 +307,13 @@ def main() -> int:
     process = start_engine(args)
     rng = random.Random(args.seed)
     args.out.parent.mkdir(parents=True, exist_ok=True)
+    final_eval = LevelSpec(
+        label="final evaluator",
+        visits=args.final_visits,
+        time_seconds=args.final_time_ms / 1000.0,
+        candidate_count=1,
+        policy="best",
+    )
 
     summaries: list[dict[str, Any]] = []
     try:
@@ -311,7 +330,7 @@ def main() -> int:
                 black, white = args.black, args.white
                 if args.swap_colors and game % 2 == 0:
                     black, white = args.white, args.black
-                summary, turns = play_game(process, game, black, white, rng, args.max_moves)
+                summary, turns = play_game(process, game, black, white, rng, args.max_moves, final_eval)
                 summaries.append(summary)
                 handle.write(json.dumps({"type": "game", **summary}, ensure_ascii=False) + "\n")
                 for turn in turns:

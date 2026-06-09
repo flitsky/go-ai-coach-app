@@ -1,0 +1,77 @@
+{
+  "gamesPerMatchup": 50,
+  "totalGames": 150,
+  "deterministic": false,
+  "searchThreads": 4,
+  "analysisThreads": 1,
+  "finalVisits": 400,
+  "finalTimeMs": 2000,
+  "results": [
+    {
+      "log": "docs/engine-match-logs/matrix-20260610/B16-vs-B32.jsonl",
+      "games": 50,
+      "leftLevel": "빠른 초급 3단계",
+      "rightLevel": "초급 7단계",
+      "wins": {
+        "빠른 초급 3단계": 15,
+        "초급 7단계": 35,
+        "unknown": 0
+      },
+      "leftWinRate": 0.3,
+      "rightWinRate": 0.7,
+      "leftAverageScoreLead": -5.766,
+      "averageElapsedMsByLevel": {
+        "빠른 초급 3단계": 32.843,
+        "초급 7단계": 126.339
+      },
+      "averageRootVisitsByLevel": {
+        "빠른 초급 3단계": 16.984,
+        "초급 7단계": 34.855
+      }
+    },
+    {
+      "log": "docs/engine-match-logs/matrix-20260610/B16-vs-B64.jsonl",
+      "games": 50,
+      "leftLevel": "빠른 초급 3단계",
+      "rightLevel": "중급 5단계",
+      "wins": {
+        "빠른 초급 3단계": 10,
+        "중급 5단계": 40,
+        "unknown": 0
+      },
+      "leftWinRate": 0.2,
+      "rightWinRate": 0.8,
+      "leftAverageScoreLead": -5.62,
+      "averageElapsedMsByLevel": {
+        "빠른 초급 3단계": 17.53,
+        "중급 5단계": 189.444
+      },
+      "averageRootVisitsByLevel": {
+        "빠른 초급 3단계": 16.977,
+        "중급 5단계": 66.867
+      }
+    },
+    {
+      "log": "docs/engine-match-logs/matrix-20260610/B32-vs-B64.jsonl",
+      "games": 50,
+      "leftLevel": "초급 7단계",
+      "rightLevel": "중급 5단계",
+      "wins": {
+        "초급 7단계": 23,
+        "중급 5단계": 27,
+        "unknown": 0
+      },
+      "leftWinRate": 0.46,
+      "rightWinRate": 0.54,
+      "leftAverageScoreLead": -0.276,
+      "averageElapsedMsByLevel": {
+        "초급 7단계": 61.802,
+        "중급 5단계": 231.842
+      },
+      "averageRootVisitsByLevel": {
+        "초급 7단계": 34.907,
+        "중급 5단계": 66.904
+      }
+    }
+  ]
+}
