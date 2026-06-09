@@ -53,6 +53,7 @@ import com.worksoc.goaicoach.application.ShowTopMovesPlan
 import com.worksoc.goaicoach.application.ScoreEstimateDisplayPlan
 import com.worksoc.goaicoach.application.SavedGameRestorePlan
 import com.worksoc.goaicoach.application.TopMoveAnalysisUpdate
+import com.worksoc.goaicoach.application.UndoLocalStatePlan
 import com.worksoc.goaicoach.application.toCandidateText
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
@@ -290,6 +291,23 @@ private fun GoCoachScreen(
         lastMoveText = restore.lastMoveText
         endgameLog = restore.endgameLog
         engineMessage = restore.engineMessage
+    }
+
+    fun applyUndoLocalStatePlan(undo: UndoLocalStatePlan) {
+        gameState = undo.gameState
+        isGameEnded = false
+        clearTopMoveSpots()
+        reviewAnalysis = undo.reviewAnalysis
+        reviewCandidateMoves = emptyList()
+        lastAnalysisKey = null
+        moveReviews = undo.moveReviews
+        moveReviewText = undo.moveReviewText
+        lastMoveText = undo.lastMoveText
+        candidateText = undo.candidateText
+        scoreText = undo.scoreText
+        scoreEstimate = null
+        scoreSnapshots = undo.scoreSnapshots
+        endgameLog = undo.endgameLog
     }
 
     fun changePlayerSetup(nextSetup: PlayerSetup) {
@@ -865,20 +883,7 @@ private fun GoCoachScreen(
                 scoreSnapshots = scoreSnapshots,
             )
             val nextState = undo.gameState
-            gameState = nextState
-            isGameEnded = false
-            clearTopMoveSpots()
-            reviewAnalysis = undo.reviewAnalysis
-            reviewCandidateMoves = emptyList()
-            lastAnalysisKey = null
-            moveReviews = undo.moveReviews
-            moveReviewText = undo.moveReviewText
-            lastMoveText = undo.lastMoveText
-            candidateText = undo.candidateText
-            scoreText = undo.scoreText
-            scoreEstimate = null
-            scoreSnapshots = undo.scoreSnapshots
-            endgameLog = undo.endgameLog
+            applyUndoLocalStatePlan(undo)
             if (!isEngineReady) {
                 engineMessage = "Local undo completed without engine sync."
                 return
@@ -940,20 +945,7 @@ private fun GoCoachScreen(
                     scoreSnapshots = scoreSnapshots,
                 )
                 val nextState = undo.gameState
-                gameState = nextState
-                isGameEnded = false
-                clearTopMoveSpots()
-                reviewAnalysis = undo.reviewAnalysis
-                reviewCandidateMoves = emptyList()
-                lastAnalysisKey = null
-                moveReviews = undo.moveReviews
-                moveReviewText = undo.moveReviewText
-                lastMoveText = undo.lastMoveText
-                candidateText = undo.candidateText
-                scoreText = undo.scoreText
-                scoreEstimate = null
-                scoreSnapshots = undo.scoreSnapshots
-                endgameLog = undo.endgameLog
+                applyUndoLocalStatePlan(undo)
                 engineMessage = "Undid $undoCount move(s) in local state and engine state."
                 nextAnalysisState = nextState
             }.onFailure { error ->
