@@ -661,3 +661,4 @@
 - `GameMenuEventPolicy.kt`를 추가해 메뉴 이벤트 후 접힘 여부를 presentation 정책으로 분리했다. 현재 정책은 `StartConfiguredGame`만 메뉴를 접고, 로그 복사/계가 규칙 변경/표시 옵션 변경은 메뉴를 유지한다.
 - `GoCoachContent`는 메뉴 내부 이벤트를 `shouldCollapseMenuAfterEvent()` 정책에 통과시켜 `New` 후 `onDisplayMenuExpandedChange(false)`를 실행한다.
 - `GameMenuEventPolicyTest`를 추가했고, `docs/USER_OPTION_MANUAL.md`에 `New` 후 메뉴 자동 접힘 동작을 기록했다.
+- 검증으로 `make test`가 통과했고, 모델 재전송 없이 `adb install -r app-android/build/outputs/apk/debug/app-android-debug.apk`로 최신 debug APK를 설치했다. 앱 cold launch는 `Status: ok`, `TotalTime=734ms`였다.
