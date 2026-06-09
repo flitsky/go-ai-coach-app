@@ -28,6 +28,8 @@ import com.worksoc.goaicoach.application.buildEngineStartupFailureDisplayPlan
 import com.worksoc.goaicoach.application.buildEngineStartupSuccessDisplayPlan
 import com.worksoc.goaicoach.application.buildEngineUndoPlan
 import com.worksoc.goaicoach.application.buildAutoAiTurnDisplayPlan
+import com.worksoc.goaicoach.application.buildHumanEngineSyncFailurePlan
+import com.worksoc.goaicoach.application.buildHumanEngineSyncSuccessPlan
 import com.worksoc.goaicoach.application.buildLocalFinalScoreDisplayPlan
 import com.worksoc.goaicoach.application.buildLocalTwoPlayerUndoPlan
 import com.worksoc.goaicoach.application.buildCachedTopMoveAnalysisUpdate
@@ -48,6 +50,7 @@ import com.worksoc.goaicoach.application.EndgameFailureDisplayPlan
 import com.worksoc.goaicoach.application.applyHumanMoveLocally
 import com.worksoc.goaicoach.application.FinalScoreDisplayPlan
 import com.worksoc.goaicoach.application.GameSessionResetPlan
+import com.worksoc.goaicoach.application.HumanEngineSyncDisplayPlan
 import com.worksoc.goaicoach.application.EngineStartupDisplayPlan
 import com.worksoc.goaicoach.application.localScoreSnapshot
 import com.worksoc.goaicoach.application.planShowTopMoves
@@ -901,32 +904,34 @@ private fun GoCoachScreen(
                     )
                 }
             }.onSuccess { result ->
-                val endgame = result.endgame
-                val estimate = result.estimate
-                if (endgame != null) {
-                    val final = buildResolvedEndgameDisplayPlan(
-                        source = "human-engine-dead-stone-cleanup",
-                        originalState = afterMove,
-                        resolution = endgame,
+                when (
+                    val sync = buildHumanEngineSyncSuccessPlan(
+                        afterMove = afterMove,
+                        moveDescription = move.describe(beforeMove.boardSize),
+                        result = result,
+                        localMove = localMove,
                         previousSnapshots = scoreSnapshots,
-                        engineMessagePrefix = "Game ended after two passes.",
                     )
-                    applyFinalScoreDisplayPlan(final)
-                } else if (estimate != null) {
-                    val score = buildEngineEstimateDisplayPlan(
-                        state = afterMove,
-                        estimate = estimate,
-                        previousSnapshots = scoreSnapshots,
-                        engineMessage = "Human move accepted and engine analysis synced: ${move.describe(beforeMove.boardSize)}.",
-                    )
-                    applyScoreEstimateDisplayPlan(score)
-                    candidateText = localMove.capturedText
-                    nextAnalysisState = afterMove
+                ) {
+                    is HumanEngineSyncDisplayPlan.FinalScore -> {
+                        applyFinalScoreDisplayPlan(sync.display)
+                    }
+                    is HumanEngineSyncDisplayPlan.ScoreEstimate -> {
+                        applyScoreEstimateDisplayPlan(sync.display)
+                        candidateText = sync.candidateText
+                        nextAnalysisState = sync.nextAnalysisState
+                    }
+                    HumanEngineSyncDisplayPlan.NoUpdate -> Unit
                 }
             }.onFailure { error ->
-                scoreSnapshots = ScoreTimeline.record(scoreSnapshots, localMove.localScoreSnapshot)
-                candidateText = localMove.capturedText
-                engineMessage = error.message ?: "Human move accepted, but engine sync failed."
+                val failure = buildHumanEngineSyncFailurePlan(
+                    localMove = localMove,
+                    previousSnapshots = scoreSnapshots,
+                    errorMessage = error.message,
+                )
+                scoreSnapshots = failure.scoreSnapshots
+                candidateText = failure.candidateText
+                engineMessage = failure.engineMessage
             }
             isEngineBusy = false
             nextAnalysisState?.let { state ->

@@ -6,6 +6,7 @@ import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
 import com.worksoc.goaicoach.shared.ScoreSnapshot
+import com.worksoc.goaicoach.shared.ScoreTimeline
 import com.worksoc.goaicoach.shared.StoneColor
 import com.worksoc.goaicoach.shared.describe
 
@@ -17,6 +18,22 @@ internal data class HumanMoveLocalResult(
     val capturedText: String,
     val localScoreSnapshot: ScoreSnapshot,
     val localFinalScore: FinalScoreResult?,
+)
+
+internal sealed class HumanEngineSyncDisplayPlan {
+    data class FinalScore(val display: FinalScoreDisplayPlan) : HumanEngineSyncDisplayPlan()
+    data class ScoreEstimate(
+        val display: ScoreEstimateDisplayPlan,
+        val candidateText: String,
+        val nextAnalysisState: GameState,
+    ) : HumanEngineSyncDisplayPlan()
+    data object NoUpdate : HumanEngineSyncDisplayPlan()
+}
+
+internal data class HumanEngineSyncFailurePlan(
+    val scoreSnapshots: List<ScoreSnapshot>,
+    val candidateText: String,
+    val engineMessage: String,
 )
 
 internal fun applyHumanMoveLocally(
@@ -47,3 +64,49 @@ internal fun applyHumanMoveLocally(
             },
         )
     }
+
+internal fun buildHumanEngineSyncSuccessPlan(
+    afterMove: GameState,
+    moveDescription: String,
+    result: LocalEngineMoveResult,
+    localMove: HumanMoveLocalResult,
+    previousSnapshots: List<ScoreSnapshot>,
+): HumanEngineSyncDisplayPlan {
+    result.endgame?.let { endgame ->
+        return HumanEngineSyncDisplayPlan.FinalScore(
+            buildResolvedEndgameDisplayPlan(
+                source = "human-engine-dead-stone-cleanup",
+                originalState = afterMove,
+                resolution = endgame,
+                previousSnapshots = previousSnapshots,
+                engineMessagePrefix = "Game ended after two passes.",
+            ),
+        )
+    }
+
+    result.estimate?.let { estimate ->
+        return HumanEngineSyncDisplayPlan.ScoreEstimate(
+            display = buildEngineEstimateDisplayPlan(
+                state = afterMove,
+                estimate = estimate,
+                previousSnapshots = previousSnapshots,
+                engineMessage = "Human move accepted and engine analysis synced: $moveDescription.",
+            ),
+            candidateText = localMove.capturedText,
+            nextAnalysisState = afterMove,
+        )
+    }
+
+    return HumanEngineSyncDisplayPlan.NoUpdate
+}
+
+internal fun buildHumanEngineSyncFailurePlan(
+    localMove: HumanMoveLocalResult,
+    previousSnapshots: List<ScoreSnapshot>,
+    errorMessage: String?,
+): HumanEngineSyncFailurePlan =
+    HumanEngineSyncFailurePlan(
+        scoreSnapshots = ScoreTimeline.record(previousSnapshots, localMove.localScoreSnapshot),
+        candidateText = localMove.capturedText,
+        engineMessage = errorMessage ?: "Human move accepted, but engine sync failed.",
+    )
