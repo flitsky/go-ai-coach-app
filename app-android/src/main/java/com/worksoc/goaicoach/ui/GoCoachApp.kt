@@ -35,6 +35,8 @@ import com.worksoc.goaicoach.application.buildLocalScoreEstimateDisplayPlan
 import com.worksoc.goaicoach.application.buildNewLocalGameSessionPlan
 import com.worksoc.goaicoach.application.buildResolvedEndgameDisplayPlan
 import com.worksoc.goaicoach.application.buildSavedGameRestorePlan
+import com.worksoc.goaicoach.application.buildSavedSessionCheckPlan
+import com.worksoc.goaicoach.application.buildSavedSessionDismissPlan
 import com.worksoc.goaicoach.application.buildScoringRuleChangePlan
 import com.worksoc.goaicoach.application.buildTopMoveAnalysisPlan
 import com.worksoc.goaicoach.application.buildInitialUserPreferencesPlan
@@ -62,6 +64,7 @@ import com.worksoc.goaicoach.application.ShowTopMovesPlan
 import com.worksoc.goaicoach.application.ScoreEstimateDisplayPlan
 import com.worksoc.goaicoach.application.SavedGameRestorePlan
 import com.worksoc.goaicoach.application.SavedGamePersistencePlan
+import com.worksoc.goaicoach.application.SavedSessionPromptPlan
 import com.worksoc.goaicoach.application.TopMoveAnalysisUpdate
 import com.worksoc.goaicoach.application.UndoLocalStatePlan
 import com.worksoc.goaicoach.application.toCandidateText
@@ -182,6 +185,12 @@ private fun GoCoachScreen(
         startup.candidateText?.let { text -> candidateText = text }
     }
 
+    fun applySavedSessionPromptPlan(prompt: SavedSessionPromptPlan) {
+        pendingSavedSession = prompt.pendingSavedSession
+        shouldShowResumePrompt = prompt.shouldShowResumePrompt
+        hasCheckedSavedSession = prompt.hasCheckedSavedSession
+    }
+
     LaunchedEffect(engineAdapter) {
         hasCompletedEngineStartup = false
         isEngineBusy = true
@@ -209,10 +218,7 @@ private fun GoCoachScreen(
     }
 
     LaunchedEffect(sessionStore) {
-        val savedSession = sessionStore.load()
-        pendingSavedSession = savedSession
-        shouldShowResumePrompt = savedSession != null
-        hasCheckedSavedSession = true
+        applySavedSessionPromptPlan(buildSavedSessionCheckPlan(sessionStore.load()))
     }
 
     LaunchedEffect(
@@ -1066,12 +1072,10 @@ private fun GoCoachScreen(
                 submitMove = ::submitHumanMove,
                 dismissResumePrompt = {
                     sessionStore.clear()
-                    pendingSavedSession = null
-                    shouldShowResumePrompt = false
+                    applySavedSessionPromptPlan(buildSavedSessionDismissPlan())
                 },
                 restoreSavedSession = { snapshot ->
-                    pendingSavedSession = null
-                    shouldShowResumePrompt = false
+                    applySavedSessionPromptPlan(buildSavedSessionDismissPlan())
                     restoreSavedSession(snapshot)
                 },
                 changePlayerSetup = ::changePlayerSetup,
