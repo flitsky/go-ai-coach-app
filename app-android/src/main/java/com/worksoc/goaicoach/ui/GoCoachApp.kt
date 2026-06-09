@@ -47,6 +47,7 @@ import com.worksoc.goaicoach.application.startNewEngineGame
 import com.worksoc.goaicoach.application.syncAndEstimateGraphScore
 import com.worksoc.goaicoach.application.syncAfterHumanMove
 import com.worksoc.goaicoach.application.ShowTopMovesPlan
+import com.worksoc.goaicoach.application.TopMoveAnalysisUpdate
 import com.worksoc.goaicoach.application.toCandidateText
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
@@ -211,6 +212,18 @@ private fun GoCoachScreen(
         reviewCandidateMoves = emptyList()
     }
 
+    fun applyTopMoveAnalysisUpdate(
+        update: TopMoveAnalysisUpdate,
+        analysisKey: AnalysisCacheKey,
+    ) {
+        reviewAnalysis = update.snapshot
+        reviewCandidateMoves = update.reviewCandidateMoves
+        candidateText = update.candidateText
+        candidateMoves = update.candidateMoves
+        engineMessage = update.engineMessage
+        lastAnalysisKey = analysisKey
+    }
+
     fun changePlayerSetup(nextSetup: PlayerSetup) {
         if (isEngineBusy) {
             engineMessage = "Engine is busy. Change Player Setup after the current action."
@@ -261,12 +274,7 @@ private fun GoCoachScreen(
                 cached = cached,
                 topMovesEnabled = topMovesEnabled,
             )
-            reviewAnalysis = update.snapshot
-            reviewCandidateMoves = update.reviewCandidateMoves
-            candidateText = update.candidateText
-            candidateMoves = update.candidateMoves
-            engineMessage = update.engineMessage
-            lastAnalysisKey = plan.analysisKey
+            applyTopMoveAnalysisUpdate(update, plan.analysisKey)
             return
         }
         if (automatic && plan.analysisKey == lastAnalysisKey) {
@@ -294,14 +302,10 @@ private fun GoCoachScreen(
                     deep = deep,
                     topMovesEnabled = topMovesEnabled,
                 )
-                reviewAnalysis = update.snapshot
-                reviewCandidateMoves = update.reviewCandidateMoves
-                candidateText = update.candidateText
-                candidateMoves = update.candidateMoves
+                applyTopMoveAnalysisUpdate(update, plan.analysisKey)
                 update.cachedResult?.let { cached ->
                     analysisCache.put(plan.analysisKey, cached)
                 }
-                engineMessage = update.engineMessage
             }.onFailure { error ->
                 engineMessage = error.message ?: "Top Moves analysis failed."
                 clearReviewAnalysis(targetState)

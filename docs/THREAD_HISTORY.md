@@ -579,3 +579,6 @@
 - 이번 안전 단위로 `GoCoachContent.kt`를 추가해 화면 렌더링, 이어하기 다이얼로그, 상단 메뉴, 점수 그래프, 보드, 하단 액션 버튼, 엔진 응답 패널 조립을 UI content composable로 분리했다.
 - `GoCoachApp.kt`는 `GameScreenState`를 만들고 `GameUiEvent`를 dispatch한 뒤 `GoCoachContent()`에 상태와 이벤트 sink를 넘기는 구조로 정리했다. 파일 길이는 약 1,348줄에서 1,102줄로 줄었다.
 - 검증으로 `make test`가 통과했다.
+- `docs/REFACTORING_STRATEGY_2026-06-08.md`를 최신 상태로 갱신했다. 리팩토링 장점/단점, 현재 냉정한 평가, 과도한 ViewModel 일괄 전환을 피하고 controller 후보를 작은 단위로 만드는 다음 권고 순서를 기록했다.
+- 후속 안전 리팩토링으로 Top Moves cache hit와 분석 완료의 상태 반영 중복을 `applyTopMoveAnalysisUpdate()`로 묶었다. 이후 `GoCoachApp.kt`에서 controller로 옮길 수 있는 상태 적용 단위가 하나 더 명확해졌다.
+- 검증으로 `make test`가 통과했다.
