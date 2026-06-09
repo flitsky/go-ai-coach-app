@@ -695,3 +695,9 @@
 - 추가 50판 결과는 B16 24승, B32 26승이었다. 평균 root visits는 B16 `16.981`, B32 `34.899`로 기존 250/500ms 조건의 B16 `16.984`, B32 `34.855`와 거의 같았다.
 - 방문수 미달은 기존 B16/B32 50판에서 3453턴 중 1턴, 1000ms 조건에서 3367턴 중 0턴이었다. 따라서 맥북에서는 시간 cap이 아니라 visits cap이 먼저 걸리며, time cap 확대가 B32 우세를 더 뚜렷하게 만든다는 증거는 아직 없다.
 - 폰에서는 500ms 안에 B32/B64가 목표 visits를 못 채울 수 있으므로, time cap 확대는 강도 향상보다는 느린 기기 안정성 확보 장치로 계속 검토한다.
+- 사용자가 폰에서 직접 visits를 못 채우는지 로그를 확보할 수 있게 앱을 수정하고 설치해달라고 요청했다.
+- `KataGoJsonAnalysisParser.parseRootVisits()`를 추가하고 JSON analysis summary에 `Visit diagnostics: request=..., root=..., elapsedMs=..., timeCapMs=..., fill=OK/SHORT`를 넣었다. 이제 AI가 한 수 둔 직후 `Copy Log`를 누르면 `candidateText`에 해당 턴의 visits 충족 여부가 남는다.
+- `KataGoJsonAnalysisParserTest`에 root visits 파싱 테스트를 추가했고, `make test`가 통과했다.
+- Wi-Fi ADB로 연결된 `SM-S908N`에 모델 재전송 없이 debug APK만 `adb install -r`로 설치했다. 설치는 약 25.2초, cold launch는 `TotalTime=865ms`였다.
+- 맥북에서 B16/B32 1000ms 조건을 새 seed `20260612`로 50판 더 실행했다. 결과는 B16 24승, B32 26승이었다. 평균 root visits는 B16 `16.961`, B32 `34.742`였고, 방문수 미달은 B16 1698턴 중 5턴, B32 1696턴 중 18턴이었다.
+- 1000ms 조건 누적 100판은 B16 48승, B32 52승이다. 평균 root visits는 B16 `16.971`, B32 `34.820`이라 맥북에서는 대부분 요청 visits를 채운다. 따라서 맥북 기준으로 time cap 확대가 B32 우세를 뚜렷하게 만든다는 근거는 약하며, 폰에서 `fill=SHORT` 빈도를 확인하는 것이 다음 판단 기준이다.

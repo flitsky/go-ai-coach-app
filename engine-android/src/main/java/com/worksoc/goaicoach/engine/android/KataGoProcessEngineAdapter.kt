@@ -150,7 +150,10 @@ class KataGoProcessEngineAdapter(
             ?.takeIf { File(it).isFile }
             ?: return null
         ensureAnalysisProcessStarted(analysisConfigPath)
+        val startNanos = System.nanoTime()
         val response = sendAnalysisQuery(effectiveLimit.toJsonAnalysisQuery())
+        val elapsedMs = (System.nanoTime() - startNanos) / 1_000_000
+        val rootVisits = KataGoJsonAnalysisParser.parseRootVisits(response)
         val searchedCandidates = KataGoJsonAnalysisParser.parseCandidates(
             response = response,
             player = nextPlayer,
@@ -204,8 +207,35 @@ class KataGoProcessEngineAdapter(
                 "KataGo JSON analysis complete for ${nextPlayer.label}: $scoredCount/$candidateCount scored candidate(s)",
             ),
             candidates = candidates,
-            summary = "KataGo JSON analysis with ${effectiveLimit.visits} visits / ${effectiveLimit.timeMillis ?: 0}ms. Returned $scoredCount scored, $policyOnlyCount policy-only candidate(s); refined ${refinedCandidates.size}/${effectiveLimit.refinePolicyMoves} policy move(s).",
+            summary = buildJsonAnalysisSummary(
+                effectiveLimit = effectiveLimit,
+                rootVisits = rootVisits,
+                elapsedMs = elapsedMs,
+                scoredCount = scoredCount,
+                policyOnlyCount = policyOnlyCount,
+                refinedCount = refinedCandidates.size,
+            ),
         )
+    }
+
+    private fun buildJsonAnalysisSummary(
+        effectiveLimit: AnalysisLimit,
+        rootVisits: Int?,
+        elapsedMs: Long,
+        scoredCount: Int,
+        policyOnlyCount: Int,
+        refinedCount: Int,
+    ): String {
+        val fillStatus = when {
+            rootVisits == null -> "UNKNOWN"
+            rootVisits < effectiveLimit.visits -> "SHORT"
+            else -> "OK"
+        }
+        return buildString {
+            append("KataGo JSON analysis with ${effectiveLimit.visits} visits / ${effectiveLimit.timeMillis ?: 0}ms.")
+            append(" Visit diagnostics: request=${effectiveLimit.visits}, root=${rootVisits ?: "none"}, elapsedMs=$elapsedMs, timeCapMs=${effectiveLimit.timeMillis ?: "none"}, fill=$fillStatus.")
+            append(" Returned $scoredCount scored, $policyOnlyCount policy-only candidate(s); refined $refinedCount/${effectiveLimit.refinePolicyMoves} policy move(s).")
+        }
     }
 
     private fun refineJsonPolicyCandidates(

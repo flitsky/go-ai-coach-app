@@ -9,6 +9,11 @@ import com.worksoc.goaicoach.shared.StoneColor
 import org.json.JSONObject
 
 internal object KataGoJsonAnalysisParser {
+    fun parseRootVisits(response: String): Int? =
+        JSONObject(response)
+            .optJSONObject("rootInfo")
+            ?.optNullableInt("visits")
+
     fun parseRootWhiteScoreLead(response: String): Double? =
         JSONObject(response)
             .optJSONObject("rootInfo")

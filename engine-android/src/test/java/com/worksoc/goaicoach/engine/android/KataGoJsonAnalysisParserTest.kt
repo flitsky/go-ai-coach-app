@@ -10,6 +10,19 @@ import kotlin.test.assertEquals
 
 class KataGoJsonAnalysisParserTest {
     @Test
+    fun parsesRootVisitsForVisitFillDiagnostics() {
+        val json = """
+            {
+              "id": "q1",
+              "moveInfos": [],
+              "rootInfo": {"scoreLead":1.0,"winrate":0.6,"visits":32}
+            }
+        """.trimIndent()
+
+        assertEquals(32, KataGoJsonAnalysisParser.parseRootVisits(json))
+    }
+
+    @Test
     fun parsesBlackPerspectiveJsonCandidatesAndUsesRootScoreForPointLoss() {
         val json = """
             {
