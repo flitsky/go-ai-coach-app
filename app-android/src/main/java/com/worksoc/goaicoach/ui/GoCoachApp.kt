@@ -31,12 +31,12 @@ import com.worksoc.goaicoach.application.buildLocalFinalScoreDisplayPlan
 import com.worksoc.goaicoach.application.buildLocalTwoPlayerUndoPlan
 import com.worksoc.goaicoach.application.buildCachedTopMoveAnalysisUpdate
 import com.worksoc.goaicoach.application.buildCompletedTopMoveAnalysisUpdate
-import com.worksoc.goaicoach.application.buildLocalScoreEstimateDisplayPlan
 import com.worksoc.goaicoach.application.buildNewLocalGameSessionPlan
 import com.worksoc.goaicoach.application.buildResolvedEndgameDisplayPlan
 import com.worksoc.goaicoach.application.buildSavedGameRestorePlan
 import com.worksoc.goaicoach.application.buildSavedSessionCheckPlan
 import com.worksoc.goaicoach.application.buildSavedSessionDismissPlan
+import com.worksoc.goaicoach.application.buildScoreEstimateRequestPlan
 import com.worksoc.goaicoach.application.buildScoringRuleChangePlan
 import com.worksoc.goaicoach.application.buildStartConfiguredGamePlan
 import com.worksoc.goaicoach.application.buildTopMoveAnalysisPlan
@@ -65,6 +65,7 @@ import com.worksoc.goaicoach.application.RuntimePlayLevelSelection
 import com.worksoc.goaicoach.application.ScoringRuleChangePlan
 import com.worksoc.goaicoach.application.ShowTopMovesPlan
 import com.worksoc.goaicoach.application.ScoreEstimateDisplayPlan
+import com.worksoc.goaicoach.application.ScoreEstimateRequestPlan
 import com.worksoc.goaicoach.application.SavedGameRestorePlan
 import com.worksoc.goaicoach.application.SavedGamePersistencePlan
 import com.worksoc.goaicoach.application.SavedSessionPromptPlan
@@ -629,36 +630,16 @@ private fun GoCoachScreen(
         }
     }
 
-    fun requestScoreEstimate() {
-        if (isEngineBusy) {
-            engineMessage = "Engine is busy. Estimate after the current response."
-            return
-        }
-
-        if (matchMode == MatchMode.LocalTwoPlayer && !isEngineReady) {
-            val score = buildLocalScoreEstimateDisplayPlan(
-                state = gameState,
-                previousSnapshots = scoreSnapshots,
-                engineMessage = "Local ${gameState.ruleset.scoringLabel} estimate refreshed.",
-            )
-            applyScoreEstimateDisplayPlan(score)
-            return
-        }
-
-        if (!isEngineReady) {
-            engineMessage = "Engine is not ready."
-            return
-        }
-
-        val estimateState = gameState
+    fun requestEngineScoreEstimate(plan: ScoreEstimateRequestPlan.RequestEngineEstimate) {
+        val estimateState = plan.state
         scope.launch {
             isEngineBusy = true
             runCatching {
                 withContext(Dispatchers.IO) {
                     engineAdapter.estimateScoreForState(
                         state = estimateState,
-                        profile = engineProfile,
-                        syncFirst = matchMode == MatchMode.LocalTwoPlayer,
+                        profile = plan.profile,
+                        syncFirst = plan.syncFirst,
                     )
                 }
             }.onSuccess { estimate ->
@@ -673,6 +654,28 @@ private fun GoCoachScreen(
                 scoreEstimate = null
             }
             isEngineBusy = false
+        }
+    }
+
+    fun requestScoreEstimate() {
+        val plan = buildScoreEstimateRequestPlan(
+            state = gameState,
+            previousSnapshots = scoreSnapshots,
+            isEngineReady = isEngineReady,
+            isEngineBusy = isEngineBusy,
+            matchMode = matchMode,
+            engineProfile = engineProfile,
+        )
+        when (plan) {
+            is ScoreEstimateRequestPlan.ShowMessage -> {
+                engineMessage = plan.message
+            }
+            is ScoreEstimateRequestPlan.ShowLocalEstimate -> {
+                applyScoreEstimateDisplayPlan(plan.display)
+            }
+            is ScoreEstimateRequestPlan.RequestEngineEstimate -> {
+                requestEngineScoreEstimate(plan)
+            }
         }
     }
 

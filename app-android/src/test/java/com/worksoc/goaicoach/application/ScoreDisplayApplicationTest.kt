@@ -1,7 +1,9 @@
 package com.worksoc.goaicoach.application
 
+import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.shared.DeadStoneCleanupResult
 import com.worksoc.goaicoach.shared.EndgameScoreSource
+import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.EngineStatus
 import com.worksoc.goaicoach.shared.FinalScoreResult
 import com.worksoc.goaicoach.shared.GameState
@@ -15,6 +17,74 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ScoreDisplayApplicationTest {
+    @Test
+    fun scoreEstimateRequestPlanBlocksWhileEngineIsBusy() {
+        val plan = buildScoreEstimateRequestPlan(
+            state = GameState.empty(),
+            previousSnapshots = emptyList(),
+            isEngineReady = true,
+            isEngineBusy = true,
+            matchMode = MatchMode.HumanVsAi,
+            engineProfile = EngineProfile(),
+        )
+
+        assertEquals(
+            ScoreEstimateRequestPlan.ShowMessage("Engine is busy. Estimate after the current response."),
+            plan,
+        )
+    }
+
+    @Test
+    fun scoreEstimateRequestPlanUsesLocalEstimateForOfflineTwoPlayerMode() {
+        val plan = buildScoreEstimateRequestPlan(
+            state = GameState.empty(),
+            previousSnapshots = emptyList(),
+            isEngineReady = false,
+            isEngineBusy = false,
+            matchMode = MatchMode.LocalTwoPlayer,
+            engineProfile = EngineProfile(),
+        )
+
+        assertTrue(plan is ScoreEstimateRequestPlan.ShowLocalEstimate)
+        val local = plan as ScoreEstimateRequestPlan.ShowLocalEstimate
+        assertNull(local.display.scoreEstimate)
+        assertTrue(local.display.engineMessage.contains("Local"))
+    }
+
+    @Test
+    fun scoreEstimateRequestPlanReportsEngineNotReadyForAiModes() {
+        val plan = buildScoreEstimateRequestPlan(
+            state = GameState.empty(),
+            previousSnapshots = emptyList(),
+            isEngineReady = false,
+            isEngineBusy = false,
+            matchMode = MatchMode.HumanVsAi,
+            engineProfile = EngineProfile(),
+        )
+
+        assertEquals(ScoreEstimateRequestPlan.ShowMessage("Engine is not ready."), plan)
+    }
+
+    @Test
+    fun scoreEstimateRequestPlanRequestsEngineAndSyncsTwoPlayerModeWhenReady() {
+        val state = GameState.empty()
+        val profile = EngineProfile()
+        val plan = buildScoreEstimateRequestPlan(
+            state = state,
+            previousSnapshots = emptyList(),
+            isEngineReady = true,
+            isEngineBusy = false,
+            matchMode = MatchMode.LocalTwoPlayer,
+            engineProfile = profile,
+        )
+
+        assertTrue(plan is ScoreEstimateRequestPlan.RequestEngineEstimate)
+        val request = plan as ScoreEstimateRequestPlan.RequestEngineEstimate
+        assertEquals(state, request.state)
+        assertEquals(profile, request.profile)
+        assertTrue(request.syncFirst)
+    }
+
     @Test
     fun engineEstimateDisplayPlanRecordsScoreSnapshotAndMessage() {
         val state = GameState.empty()

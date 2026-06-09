@@ -1,8 +1,10 @@
 package com.worksoc.goaicoach.application
 
+import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.shared.FinalScoreResult
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.BoardScorer
+import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.ScoreSnapshot
 import com.worksoc.goaicoach.shared.ScoreSnapshotSource
@@ -31,6 +33,49 @@ internal data class EndgameFailureDisplayPlan(
     val engineMessage: String,
     val candidateText: String,
 )
+
+internal sealed class ScoreEstimateRequestPlan {
+    data class ShowMessage(val message: String) : ScoreEstimateRequestPlan()
+    data class ShowLocalEstimate(val display: ScoreEstimateDisplayPlan) : ScoreEstimateRequestPlan()
+    data class RequestEngineEstimate(
+        val state: GameState,
+        val profile: EngineProfile,
+        val syncFirst: Boolean,
+    ) : ScoreEstimateRequestPlan()
+}
+
+internal fun buildScoreEstimateRequestPlan(
+    state: GameState,
+    previousSnapshots: List<ScoreSnapshot>,
+    isEngineReady: Boolean,
+    isEngineBusy: Boolean,
+    matchMode: MatchMode,
+    engineProfile: EngineProfile,
+): ScoreEstimateRequestPlan {
+    if (isEngineBusy) {
+        return ScoreEstimateRequestPlan.ShowMessage("Engine is busy. Estimate after the current response.")
+    }
+
+    if (matchMode == MatchMode.LocalTwoPlayer && !isEngineReady) {
+        return ScoreEstimateRequestPlan.ShowLocalEstimate(
+            buildLocalScoreEstimateDisplayPlan(
+                state = state,
+                previousSnapshots = previousSnapshots,
+                engineMessage = "Local ${state.ruleset.scoringLabel} estimate refreshed.",
+            ),
+        )
+    }
+
+    if (!isEngineReady) {
+        return ScoreEstimateRequestPlan.ShowMessage("Engine is not ready.")
+    }
+
+    return ScoreEstimateRequestPlan.RequestEngineEstimate(
+        state = state,
+        profile = engineProfile,
+        syncFirst = matchMode == MatchMode.LocalTwoPlayer,
+    )
+}
 
 internal fun buildEngineEstimateDisplayPlan(
     state: GameState,
