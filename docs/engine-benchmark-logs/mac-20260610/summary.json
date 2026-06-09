@@ -1,0 +1,103 @@
+{
+  "samples": 10,
+  "positions": [
+    "empty",
+    "random"
+  ],
+  "visits": [
+    16,
+    32,
+    64
+  ],
+  "timeCapMs": 5000,
+  "deterministic": false,
+  "searchThreads": 4,
+  "analysisThreads": 1,
+  "randomMoves": 24,
+  "results": [
+    {
+      "position": "empty",
+      "visits": 16,
+      "samples": 10,
+      "shortCount": 0,
+      "elapsedMinMs": 0.536,
+      "elapsedAvgMs": 20.369,
+      "elapsedMaxMs": 187.928,
+      "elapsedP90Ms": 10.832,
+      "rootVisitsMin": 16,
+      "rootVisitsAvg": 16.9,
+      "rootVisitsMax": 17,
+      "recommendedTimeCapMs": 250
+    },
+    {
+      "position": "empty",
+      "visits": 32,
+      "samples": 10,
+      "shortCount": 0,
+      "elapsedMinMs": 0.645,
+      "elapsedAvgMs": 104.136,
+      "elapsedMaxMs": 547.4,
+      "elapsedP90Ms": 435.891,
+      "rootVisitsMin": 34,
+      "rootVisitsAvg": 34.6,
+      "rootVisitsMax": 35,
+      "recommendedTimeCapMs": 700
+    },
+    {
+      "position": "empty",
+      "visits": 64,
+      "samples": 10,
+      "shortCount": 0,
+      "elapsedMinMs": 1.131,
+      "elapsedAvgMs": 39.849,
+      "elapsedMaxMs": 231.45,
+      "elapsedP90Ms": 65.93,
+      "rootVisitsMin": 66,
+      "rootVisitsAvg": 66.9,
+      "rootVisitsMax": 67,
+      "recommendedTimeCapMs": 300
+    },
+    {
+      "position": "random",
+      "visits": 16,
+      "samples": 10,
+      "shortCount": 0,
+      "elapsedMinMs": 162.565,
+      "elapsedAvgMs": 168.383,
+      "elapsedMaxMs": 177.699,
+      "elapsedP90Ms": 175.727,
+      "rootVisitsMin": 17,
+      "rootVisitsAvg": 17,
+      "rootVisitsMax": 17,
+      "recommendedTimeCapMs": 250
+    },
+    {
+      "position": "random",
+      "visits": 32,
+      "samples": 10,
+      "shortCount": 0,
+      "elapsedMinMs": 274.513,
+      "elapsedAvgMs": 292.554,
+      "elapsedMaxMs": 314.81,
+      "elapsedP90Ms": 300.869,
+      "rootVisitsMin": 35,
+      "rootVisitsAvg": 35,
+      "rootVisitsMax": 35,
+      "recommendedTimeCapMs": 400
+    },
+    {
+      "position": "random",
+      "visits": 64,
+      "samples": 10,
+      "shortCount": 0,
+      "elapsedMinMs": 481.18,
+      "elapsedAvgMs": 541.364,
+      "elapsedMaxMs": 586.379,
+      "elapsedP90Ms": 574.045,
+      "rootVisitsMin": 67,
+      "rootVisitsAvg": 67,
+      "rootVisitsMax": 67,
+      "recommendedTimeCapMs": 750
+    }
+  ]
+}

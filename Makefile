@@ -15,11 +15,14 @@ FRIEND_ANALYSIS_CONFIG_PATH ?= /Users/ryan9kim/worksoc/katago/config/katago/anal
 ENGINE_MATCH_GAMES ?= 50
 ENGINE_MATCH_OUT ?= docs/engine-match-logs/matrix-20260610
 ENGINE_MATCH_ARGS ?=
+ENGINE_DEVICE_BENCHMARK_SAMPLES ?= 10
+ENGINE_DEVICE_BENCHMARK_OUT ?= docs/engine-benchmark-logs/mac-20260610
+ENGINE_DEVICE_BENCHMARK_ARGS ?=
 
 export ANDROID_HOME
 export JAVA_HOME
 
-.PHONY: doctor test dev dev-stub install-dev install-dev-engine reinstall-dev-engine seed-engine launch friend-apk prepare-friend-assets engine-level-benchmark release ensure-debug-engine ensure-release-engine prebuild-engine clean
+.PHONY: doctor test dev dev-stub install-dev install-dev-engine reinstall-dev-engine seed-engine launch friend-apk prepare-friend-assets engine-level-benchmark engine-device-benchmark release ensure-debug-engine ensure-release-engine prebuild-engine clean
 
 doctor:
 	@echo "Checking local Android development environment..."
@@ -68,6 +71,9 @@ friend-apk: doctor ensure-debug-engine prepare-friend-assets
 
 engine-level-benchmark:
 	python3 scripts/run-katago-level-matrix.py --games-per-matchup "$(ENGINE_MATCH_GAMES)" --out-dir "$(ENGINE_MATCH_OUT)" $(ENGINE_MATCH_ARGS)
+
+engine-device-benchmark:
+	python3 scripts/run-katago-device-benchmark.py --samples "$(ENGINE_DEVICE_BENCHMARK_SAMPLES)" --out-dir "$(ENGINE_DEVICE_BENCHMARK_OUT)" $(ENGINE_DEVICE_BENCHMARK_ARGS)
 
 prepare-friend-assets:
 	@test -f "$(FRIEND_MODEL_PATH)" || (echo "Friend APK model not found: $(FRIEND_MODEL_PATH)" && exit 1)

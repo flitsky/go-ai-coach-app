@@ -173,3 +173,62 @@ data class DeviceEngineBenchmarkProfile(
 방문수 기반 레벨링은 유지한다.
 
 다만 time cap은 고정 제품 상수가 아니라 디바이스별 안정화 값으로 봐야 한다. 폰에서 `fill=SHORT`가 반복된다면, 해당 디바이스에서는 현재 time cap이 부족하므로 자동 벤치마크 기반 보정 기능을 추가하는 방향이 타당하다.
+
+## 로컬 벤치마크 스크립트
+
+맥북 또는 개발 머신에서 같은 성능 측정을 반복할 수 있도록 Makefile 타깃을 추가했다.
+
+```bash
+make engine-device-benchmark
+```
+
+기본값:
+
+| 항목 | 값 |
+| --- | --- |
+| samples | 10 |
+| visits | 16, 32, 64 |
+| positions | empty, random |
+| time cap | 5000ms |
+| output | `docs/engine-benchmark-logs/mac-20260610` |
+
+옵션 예시:
+
+```bash
+make engine-device-benchmark \
+  ENGINE_DEVICE_BENCHMARK_SAMPLES=20 \
+  ENGINE_DEVICE_BENCHMARK_OUT=docs/engine-benchmark-logs/mac-custom \
+  ENGINE_DEVICE_BENCHMARK_ARGS='--positions random --deterministic'
+```
+
+주의:
+
+- `empty`는 같은 빈 판을 반복 질의하므로 KataGo 내부 cache/reuse 영향이 섞일 수 있다.
+- `random`은 sample마다 새 random legal 9x9 position을 생성하므로, 디바이스 안정 time cap 판단에는 `random` 결과를 우선 사용한다.
+
+## 맥북 1차 로컬 벤치마크 결과
+
+실행:
+
+```bash
+make engine-device-benchmark
+```
+
+결과:
+
+- summary: `docs/engine-benchmark-logs/mac-20260610/summary.md`
+- raw samples: `docs/engine-benchmark-logs/mac-20260610/samples.jsonl`
+- 조건: non-deterministic, `numSearchThreads=4`, time cap `5000ms`, random position은 sample마다 새로 생성
+
+| Position | Visits | SHORT | Min ms | Avg ms | Max ms | P90 ms | Root avg | Recommended cap |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| random | 16 | 0 | 162.565 | 168.383 | 177.699 | 175.727 | 17.0 | 250ms |
+| random | 32 | 0 | 274.513 | 292.554 | 314.810 | 300.869 | 35.0 | 400ms |
+| random | 64 | 0 | 481.180 | 541.364 | 586.379 | 574.045 | 67.0 | 750ms |
+
+맥북 기준 해석:
+
+- B16/B32/B64 모두 `fill=OK`로 안정적으로 목표 visits를 채웠다.
+- random position 기준으로 B16은 현재 250ms 기본값이면 충분하다.
+- B32는 현재 500ms 기본값이면 충분하다.
+- B64는 현재 500ms에서는 일부 random position에서 부족할 수 있으므로, 안정 cap 후보는 750ms 이상이다.

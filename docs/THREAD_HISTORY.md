@@ -705,3 +705,8 @@
 - 정리: `fill=OK`는 요청 visits를 채웠다는 의미이지, 그 visits 예산이 충분히 강한 차이를 만든다는 의미는 아니다. B16/B32는 절대 visits가 낮고 non-deterministic, search thread, 9x9 swing 영향이 커서 맥북에서도 100판 승률이 비슷할 수 있다.
 - `docs/ENGINE_DEVICE_BENCHMARK_PLAN.md`를 추가했다. 최초 실행 또는 엔진 asset 변경 후 디바이스 벤치마크를 실행해 B16/B32/B64가 목표 visits를 안정적으로 채우는 최소 time cap을 측정하고, 로컬 설정에 반영하는 방향을 정리했다.
 - 제안한 UX는 “최초 실행환경에서 최적 플레이를 위해 벤치마크 테스트가 진행중입니다.” 팝업을 띄운 뒤 warm-up, 고정 9x9 포지션 2~3개, B16/B32/B64 time cap ladder를 측정하는 방식이다. 이후 `자동 / 빠른 응답 / 안정 탐색 / 수동` 옵션으로 사용자가 조정할 수 있게 한다.
+- 사용자가 맥북에서도 B16/B32/B64 안정 수행 필요 시간을 make 명령으로 측정할 수 있게 해달라고 요청했다.
+- `scripts/run-katago-device-benchmark.py`를 추가했다. B16/B32/B64를 기본 방문수로, empty/random 포지션에서 각 10회 analysis query를 실행하고 min/avg/max/P90 elapsed, root visits, SHORT 여부, 권장 time cap을 JSONL/JSON/Markdown으로 저장한다.
+- Makefile에 `make engine-device-benchmark`를 추가했다. 기본 출력 경로는 `docs/engine-benchmark-logs/mac-20260610`이며, `ENGINE_DEVICE_BENCHMARK_SAMPLES`, `ENGINE_DEVICE_BENCHMARK_OUT`, `ENGINE_DEVICE_BENCHMARK_ARGS`로 조정 가능하다.
+- 첫 실행에서 같은 random position을 반복해 cache 영향이 확인되어, random 포지션은 sample마다 새 legal random 9x9 position을 생성하도록 보정 후 재실행했다.
+- 맥북 1차 benchmark 결과 random position 기준: B16 평균 `168.383ms`, 최대 `177.699ms`, 권장 cap `250ms`; B32 평균 `292.554ms`, 최대 `314.810ms`, 권장 cap `400ms`; B64 평균 `541.364ms`, 최대 `586.379ms`, 권장 cap `750ms`. 모두 `fill=OK`였다.
