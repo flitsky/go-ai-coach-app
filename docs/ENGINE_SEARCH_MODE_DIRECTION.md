@@ -33,7 +33,7 @@
 2026-06-08 후속 구현에서는 이 raw preset 버튼을 사용자 UI에서 제거하고, 플레이 레벨이 내부 preset과 엔진 예산을 자동 선택하도록 변경했다.
 
 1. `빠른 초급`: B16 / 250ms, 내부 `Lite`
-2. `초급`: B32 / 350ms, 내부 `Learning`
+2. `초급`: 1~6단계는 B32 / 350ms, 7단계는 B32 / 500ms, 내부 `Learning`
 3. `중급`: Casual 64 / 500ms, 내부 `Balanced`
 4. `고급`: Intermediate 160 / 1000ms, 내부 `Balanced`
 

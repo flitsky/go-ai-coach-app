@@ -251,7 +251,7 @@ private suspend fun EngineAdapter.selectAiMoveFromAnalysis(
     playLevel: PlayLevelSetting,
 ): SelectedAiMove? =
     runCatching {
-        val analysis = analyze(playLevel.group.defaultAnalysisLimit())
+        val analysis = analyze(playLevel.analysisLimit)
         val scoredCandidates = analysis.candidates
             .filter { candidate ->
                 candidate.move.player == aiPlayer && candidate.pointLoss != null

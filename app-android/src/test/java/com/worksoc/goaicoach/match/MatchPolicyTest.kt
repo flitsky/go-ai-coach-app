@@ -204,12 +204,36 @@ class MatchPolicyTest {
         assertFalse(adapter.genMoveCalled)
         assertTrue(outcome.candidateText.contains("rank 1/2"))
     }
+
+    @Test
+    fun aiTurnUsesPlayLevelSpecificAnalysisBudget() = runBlocking {
+        val blackMove = Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine))
+        val adapter = FakeEngineAdapter(
+            analysisCandidates = listOf(
+                CandidateMove(
+                    move = blackMove,
+                    pointLoss = 0.0,
+                ),
+            ),
+        )
+
+        applyAiTurn(
+            engineAdapter = adapter,
+            currentState = GameState.empty(),
+            aiPlayer = StoneColor.Black,
+            playLevel = PlayLevelSetting(PlayLevelGroup.Beginner, level = 7),
+        )
+
+        assertEquals(32, adapter.analysisLimits.single().visits)
+        assertEquals(500L, adapter.analysisLimits.single().timeMillis)
+    }
 }
 
 private class FakeEngineAdapter(
     private val analysisCandidates: List<CandidateMove>,
 ) : EngineAdapter {
     val playedMoves = mutableListOf<Move>()
+    val analysisLimits = mutableListOf<AnalysisLimit>()
     var genMoveCalled = false
 
     override suspend fun initialize(profile: EngineProfile): EngineStatus =
@@ -242,12 +266,14 @@ private class FakeEngineAdapter(
     override suspend fun undoMove(): EngineStatus =
         EngineStatus.ready("undone")
 
-    override suspend fun analyze(limit: AnalysisLimit): AnalysisResult =
-        AnalysisResult(
+    override suspend fun analyze(limit: AnalysisLimit): AnalysisResult {
+        analysisLimits += limit
+        return AnalysisResult(
             status = EngineStatus.ready("analyzed"),
             candidates = analysisCandidates,
             summary = "fake analysis",
         )
+    }
 
     override suspend fun estimateScore(limit: AnalysisLimit): ScoreEstimate =
         ScoreEstimate(

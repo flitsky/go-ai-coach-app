@@ -29,6 +29,20 @@ class PlayLevelSettingTest {
     }
 
     @Test
+    fun beginnerCapstoneKeepsB32AndExtendsTimeBudget() {
+        val setting = PlayLevelSetting(PlayLevelGroup.Beginner, level = 7)
+        val profile = setting.toEngineProfile(EngineProfile())
+
+        assertEquals(DifficultyProfile.Beginner, profile.difficulty)
+        assertEquals(32, setting.analysisLimit.visits)
+        assertEquals(500L, setting.analysisLimit.timeMillis)
+        assertEquals(16, setting.analysisLimit.candidateCount)
+        assertEquals(32, profile.analysisLimit.visits)
+        assertEquals(500L, profile.analysisLimit.timeMillis)
+        assertEquals(MoveSelectionPolicy.BestOnly, setting.selectionPolicy)
+    }
+
+    @Test
     fun stageIsClampedToGroupRange() {
         val setting = PlayLevelSetting(PlayLevelGroup.FastBeginner, level = 10)
 

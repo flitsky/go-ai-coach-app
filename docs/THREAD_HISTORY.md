@@ -662,3 +662,10 @@
 - `GoCoachContent`는 메뉴 내부 이벤트를 `shouldCollapseMenuAfterEvent()` 정책에 통과시켜 `New` 후 `onDisplayMenuExpandedChange(false)`를 실행한다.
 - `GameMenuEventPolicyTest`를 추가했고, `docs/USER_OPTION_MANUAL.md`에 `New` 후 메뉴 자동 접힘 동작을 기록했다.
 - 검증으로 `make test`가 통과했고, 모델 재전송 없이 `adb install -r app-android/build/outputs/apk/debug/app-android-debug.apk`로 최신 debug APK를 설치했다. 앱 cold launch는 `Status: ok`, `TotalTime=734ms`였다.
+- 사용자가 `빠른 초급 3단계`와 `초급 7단계` AI 대전에서 오히려 빠른 초급 3단계가 더 자주 이긴다고 보고했고, 초급 7단계 엔진 설정 또는 응답 시간 제한으로 품질이 저하되는지 검토를 요청했다.
+- 확인 결과 두 단계가 모두 BestOnly 정책이고, 기존 `초급 7단계`가 `B32 / 350ms`에 머물러 `빠른 초급 3단계(B16 / 250ms)`와 실전 차이가 충분히 크지 않았다. 또한 AI 착수 분석 경로에서 레벨별 분석 예산 대신 그룹 기본 예산을 사용하던 부분을 확인했다.
+- 사용자가 `빠른 초급=16`, `초급=32`, `중급=64` 분류가 유지되어야 하므로 초급 7단계에서 64 visits를 쓰면 안 된다고 정정했다.
+- 최종 결정은 `초급 7단계 = B32 visits 유지 + 500ms time headroom + BestOnly`이다. 이렇게 하면 중급 경계를 침범하지 않으면서 느린 기기에서 32 visits가 시간 제한으로 잘리는 위험을 줄인다.
+- `PlayLevelSetting`에 레벨별 `analysisLimit`를 추가하고, AI 착수 분석은 이제 `playLevel.analysisLimit`를 사용한다.
+- `PlayLevelSettingTest`와 `MatchPolicyTest`에 초급 7단계가 32 visits / 500ms로 분석되는지 검증하는 테스트를 추가했다.
+- `USER_OPTION_MANUAL.md`, `ENGINE_BEGINNER_VISITS_BENCHMARK.md`, `ENGINE_LEVELING_DISCUSSION.md`에 `초급 1~6 = B32/350ms`, `초급 7 = B32/500ms capstone` 결정을 반영했다.

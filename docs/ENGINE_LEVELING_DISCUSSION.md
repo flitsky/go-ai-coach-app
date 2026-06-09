@@ -410,7 +410,7 @@ KataGo analysis 결과는 기본적으로 수치 기반이다.
 
 공통:
 
-- Analysis budget: `B32 / 350ms`
+- Analysis budget: `LB 1~6 = B32 / 350ms`, `LB 7 = B32 / 500ms`
 - 선택 대상: scored 후보
 - 선택 구간은 KataGo `moveInfos.order`의 percentile window로 정의한다.
 - 후보 수가 부족해 선택 구간이 비면 가장 가까운 후보 1개를 포함하도록 window를 보정한다.
@@ -424,7 +424,7 @@ KataGo analysis 결과는 기본적으로 수치 기반이다.
 | LB 4 | B32 탐색 후보 중 상위 30~60% 랜덤 | 30~60% | 중간보다 조금 좋은 후보 중심 |
 | LB 5 | B32 탐색 후보 중 상위 10~50% 랜덤 | 10~50% | 좋은 후보를 주로 두되 최선만 고정하지 않음 |
 | LB 6 | B32 탐색 후보 중 상위 30% 랜덤 | 0~30% | 거의 좋은 수 위주 |
-| LB 7 | B32 최적수 | 0% | Learning Beginner 최상위 |
+| LB 7 | B32, 500ms 최적수 | 0% | Learning Beginner 최상위 capstone |
 
 ### 구현 규칙
 
@@ -457,7 +457,7 @@ fallback:
 
 보류할 점:
 
-- `LB 7 = B32 최적수`는 중급으로 넘어가기 전 관문으로는 좋지만, 실제로는 `Casual 64` 최적수보다 약하다.
+- 기존 `LB 7 = B32 / 350ms 최적수`는 중급으로 넘어가기 전 관문으로는 좋지만, `FB 3 = B16 최적수`와 둘 다 BestOnly라 실전 차이가 충분히 벌어지지 않을 수 있다. 사용자 AI 대전 반복 테스트 이후 `LB 7`은 B32 visits를 유지하되 `500ms`까지 허용해 시간 제한으로 32 visits가 잘리는 위험을 줄이는 capstone으로 조정한다.
 - 따라서 중급 1단계는 `Casual 64`의 하위/중위 상대 구간에서 시작하는 식으로 이어 붙이는 것이 자연스럽다.
 - 실제 폰에서 B32 latency가 불편하면 `LB` 기본값도 기기별로 `B16` fallback을 허용해야 한다.
 
@@ -470,7 +470,7 @@ fallback:
 | 그룹 | 단계 | Engine budget | 내부 analysis preset | AI 선택 정책 |
 | --- | ---: | --- | --- | --- |
 | 빠른 초급 | 1~3 | Beginner 16 / 250ms | Lite | FB 1 하위 50%, FB 2 최적수 제외 상위 후보, FB 3 최적수 |
-| 초급 | 1~7 | Beginner 32 / 350ms | Learning | LB 1~7 percentile window |
+| 초급 | 1~6, 7 | 1~6: Beginner 32 / 350ms, 7: Beginner 32 / 500ms | Learning | LB 1~6 percentile window, LB 7 최적수 |
 | 중급 | 1~5 | Casual 64 / 500ms | Balanced | 하위 50%에서 최적수까지 점진 이동 |
 | 고급 | 1~5 | Intermediate 160 / 1000ms | Balanced | 중위권에서 최적수까지 점진 이동 |
 
