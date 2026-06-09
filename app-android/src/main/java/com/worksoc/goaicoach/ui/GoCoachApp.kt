@@ -24,6 +24,8 @@ import com.worksoc.goaicoach.application.MoveReviewMarker
 import com.worksoc.goaicoach.application.buildDebugReport
 import com.worksoc.goaicoach.application.buildEndgameFailureDisplayPlan
 import com.worksoc.goaicoach.application.buildEngineEstimateDisplayPlan
+import com.worksoc.goaicoach.application.buildEngineStartupFailureDisplayPlan
+import com.worksoc.goaicoach.application.buildEngineStartupSuccessDisplayPlan
 import com.worksoc.goaicoach.application.buildEngineUndoPlan
 import com.worksoc.goaicoach.application.buildLocalFinalScoreDisplayPlan
 import com.worksoc.goaicoach.application.buildLocalTwoPlayerUndoPlan
@@ -41,6 +43,7 @@ import com.worksoc.goaicoach.application.EndgameFailureDisplayPlan
 import com.worksoc.goaicoach.application.applyHumanMoveLocally
 import com.worksoc.goaicoach.application.FinalScoreDisplayPlan
 import com.worksoc.goaicoach.application.GameSessionResetPlan
+import com.worksoc.goaicoach.application.EngineStartupDisplayPlan
 import com.worksoc.goaicoach.application.localScoreSnapshot
 import com.worksoc.goaicoach.application.planShowTopMoves
 import com.worksoc.goaicoach.application.estimateScoreForState
@@ -168,6 +171,15 @@ private fun GoCoachScreen(
     var pendingSavedSession by remember { mutableStateOf<SavedGameSnapshot?>(null) }
     var shouldShowResumePrompt by remember { mutableStateOf(false) }
 
+    fun applyEngineStartupDisplayPlan(startup: EngineStartupDisplayPlan) {
+        isEngineReady = startup.isEngineReady
+        if (startup.scoreSnapshots.isNotEmpty()) {
+            scoreSnapshots = startup.scoreSnapshots
+        }
+        engineMessage = startup.engineMessage
+        startup.candidateText?.let { text -> candidateText = text }
+    }
+
     LaunchedEffect(engineAdapter) {
         hasCompletedEngineStartup = false
         isEngineBusy = true
@@ -176,13 +188,19 @@ private fun GoCoachScreen(
                 engineAdapter.startEngineSession(engineProfile, gameState)
             }
         }.onSuccess { result ->
-            isEngineReady = true
-            scoreSnapshots = listOf(result.scoreSnapshot ?: localScoreSnapshot(gameState))
-            engineMessage = result.message
+            applyEngineStartupDisplayPlan(
+                buildEngineStartupSuccessDisplayPlan(
+                    state = gameState,
+                    result = result,
+                ),
+            )
         }.onFailure { error ->
-            isEngineReady = false
-            engineMessage = "Engine initialization failed.\n${error.message ?: "Unknown error"}"
-            candidateText = "2P test mode is still available.\n$engineDiagnostic"
+            applyEngineStartupDisplayPlan(
+                buildEngineStartupFailureDisplayPlan(
+                    errorMessage = error.message,
+                    engineDiagnostic = engineDiagnostic,
+                ),
+            )
         }
         isEngineBusy = false
         hasCompletedEngineStartup = true
