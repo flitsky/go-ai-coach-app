@@ -600,3 +600,10 @@
 - 의사결정은 “큰 리팩토링 전에 먼저 처리한다”로 정리했다. 단순 UI 옵션이 아니라 사용자 설정 상태와 진행 중 대국 저장 상태의 경계를 확정하는 문제이므로, controller/state holder 리팩토링 전에 `GameSessionStore`와 별도의 사용자 설정 저장 경계를 만드는 것이 더 안전하다.
 - 권장 구현 방향은 별도 `UserPreferencesStore`를 추가해 Player Setup, Top Moves on/off, KaTrain UX 옵션을 저장하고, 기존 `GameSessionStore`는 이어하기 가능한 진행 중 대국 snapshot 전용으로 유지하는 것이다.
 - 기본값은 Top Moves on, 점령/영역 그라데이션 on으로 두되, 사용자가 끄면 다음 앱 실행에서도 꺼진 상태를 유지한다. 점령/영역 그라데이션은 `KaTrainUxOptions`에 옵션을 추가하고 메뉴에서 on/off할 수 있게 한다.
+- 사용자 설정 저장 기능을 구현했다. `UserPreferencesStore`와 `UserPreferencesCodec`을 추가해 Player Setup, 계가 규칙, Top Moves on/off, 좌표/수순/마지막 수 ring/영역 그라데이션 표시 옵션을 진행 중 대국 snapshot과 별도로 저장한다.
+- 초기 기본값은 Top Moves on, Eval gradient on으로 변경했다. 사용자가 Top Moves 또는 Eval gradient를 끄면 앱 재실행 후에도 꺼진 상태를 유지한다.
+- `KaTrainUxOptions`에 `showOwnershipOverlay`를 추가하고 Display menu에 `Eval gradient` 토글을 추가했다. `GamePlaySection`은 이 옵션이 켜져 있을 때만 ownership overlay를 `GoBoard`에 전달한다.
+- 리팩토링 후속으로 Player Setup/Play Level JSON 직렬화 규칙을 `PlayerSetupJsonCodec`으로 분리했다. `GameSessionStore`와 `UserPreferencesStore`가 같은 코덱을 공유해 저장 포맷 중복을 줄였다.
+- `UserPreferencesCodecTest`를 추가해 Player Setup 단계값, 계가 규칙, Top Moves, Eval gradient 등 표시 옵션의 round-trip과 기본값을 검증했다. `GameScreenStateTest`는 ownership overlay 기본값이 켜짐임을 검증하도록 갱신했다.
+- `docs/USER_OPTION_MANUAL.md`에 사용자 설정 저장 정책과 `Eval gradient` 옵션 설명을 추가했다.
+- 검증으로 `make test`가 통과했다.
