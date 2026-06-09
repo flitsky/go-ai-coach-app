@@ -45,6 +45,7 @@ import com.worksoc.goaicoach.application.buildScoringRuleChangePlan
 import com.worksoc.goaicoach.application.buildStartConfiguredGamePlan
 import com.worksoc.goaicoach.application.buildTopMoveAnalysisPlan
 import com.worksoc.goaicoach.application.buildInitialUserPreferencesPlan
+import com.worksoc.goaicoach.application.buildPlayerSetupChangePlan
 import com.worksoc.goaicoach.application.buildUserPreferencesSnapshot
 import com.worksoc.goaicoach.application.configureSyncAndEstimateGraphScore
 import com.worksoc.goaicoach.application.EndgameFailureDisplayPlan
@@ -53,12 +54,12 @@ import com.worksoc.goaicoach.application.FinalScoreDisplayPlan
 import com.worksoc.goaicoach.application.GameSessionResetPlan
 import com.worksoc.goaicoach.application.HumanEngineSyncDisplayPlan
 import com.worksoc.goaicoach.application.EngineStartupDisplayPlan
+import com.worksoc.goaicoach.application.PlayerSetupChangePlan
 import com.worksoc.goaicoach.application.localScoreSnapshot
 import com.worksoc.goaicoach.application.planShowTopMoves
 import com.worksoc.goaicoach.application.estimateScoreForState
 import com.worksoc.goaicoach.application.resolveEndgameForState
 import com.worksoc.goaicoach.application.runAutoAiTurn
-import com.worksoc.goaicoach.application.selectRuntimePlayLevel
 import com.worksoc.goaicoach.application.shouldRequestAiTurn
 import com.worksoc.goaicoach.application.shouldRequestTopMoveAnalysis
 import com.worksoc.goaicoach.application.planSavedGamePersistence
@@ -402,21 +403,27 @@ private fun GoCoachScreen(
     }
 
     fun changePlayerSetup(nextSetup: PlayerSetup) {
-        if (isEngineBusy) {
-            engineMessage = "Engine is busy. Change Player Setup after the current action."
-            return
+        when (
+            val plan = buildPlayerSetupChangePlan(
+                nextSetup = nextSetup,
+                currentState = gameState,
+                currentProfile = engineProfile,
+                defaultPlayLevel = defaultPlayLevel,
+                isEngineBusy = isEngineBusy,
+            )
+        ) {
+            is PlayerSetupChangePlan.ShowMessage -> {
+                engineMessage = plan.message
+            }
+            is PlayerSetupChangePlan.Apply -> {
+                playerSetup = plan.playerSetup
+                applyRuntimePlayLevelSelection(plan.runtime)
+                clearTopMoveSpots(plan.topMoveClearMessage)
+                reviewAnalysis = plan.reviewAnalysis
+                reviewCandidateMoves = emptyList()
+                lastAnalysisKey = null
+            }
         }
-        playerSetup = nextSetup
-        val runtime = selectRuntimePlayLevel(
-            setup = nextSetup,
-            nextPlayer = gameState.nextPlayer,
-            currentProfile = engineProfile,
-            defaultPlayLevel = defaultPlayLevel,
-        )
-        applyRuntimePlayLevelSelection(runtime)
-        clearTopMoveSpots("Player Setup changed. Press New to restart with this setup, or continue from the current position.")
-        clearReviewAnalysis(gameState)
-        lastAnalysisKey = null
     }
 
     fun requestTopMoveAnalysisForState(

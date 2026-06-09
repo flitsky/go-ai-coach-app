@@ -47,6 +47,16 @@ internal data class SavedGameRestorePlan(
     val engineMessage: String,
 )
 
+internal sealed class PlayerSetupChangePlan {
+    data class ShowMessage(val message: String) : PlayerSetupChangePlan()
+    data class Apply(
+        val playerSetup: PlayerSetup,
+        val runtime: RuntimePlayLevelSelection,
+        val reviewAnalysis: MoveAnalysisSnapshot,
+        val topMoveClearMessage: String,
+    ) : PlayerSetupChangePlan()
+}
+
 internal fun selectPrimaryPlayLevel(
     setup: PlayerSetup,
     nextPlayer: StoneColor,
@@ -74,6 +84,30 @@ internal fun selectRuntimePlayLevel(
         playLevel = playLevel,
         engineProfile = playLevel.toEngineProfile(currentProfile),
         analysisPreset = playLevel.analysisPreset,
+    )
+}
+
+internal fun buildPlayerSetupChangePlan(
+    nextSetup: PlayerSetup,
+    currentState: GameState,
+    currentProfile: EngineProfile,
+    defaultPlayLevel: PlayLevelSetting,
+    isEngineBusy: Boolean,
+): PlayerSetupChangePlan {
+    if (isEngineBusy) {
+        return PlayerSetupChangePlan.ShowMessage("Engine is busy. Change Player Setup after the current action.")
+    }
+
+    return PlayerSetupChangePlan.Apply(
+        playerSetup = nextSetup,
+        runtime = selectRuntimePlayLevel(
+            setup = nextSetup,
+            nextPlayer = currentState.nextPlayer,
+            currentProfile = currentProfile,
+            defaultPlayLevel = defaultPlayLevel,
+        ),
+        reviewAnalysis = MoveAnalysisSnapshot.empty(currentState),
+        topMoveClearMessage = "Player Setup changed. Press New to restart with this setup, or continue from the current position.",
     )
 }
 

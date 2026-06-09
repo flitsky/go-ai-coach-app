@@ -15,9 +15,51 @@ import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.StoneColor
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class GameSessionApplicationTest {
+    @Test
+    fun buildPlayerSetupChangePlanBlocksWhileEngineIsBusy() {
+        val plan = buildPlayerSetupChangePlan(
+            nextSetup = PlayerSetup(),
+            currentState = GameState.empty(),
+            currentProfile = EngineProfile(),
+            defaultPlayLevel = PlayLevelSetting(),
+            isEngineBusy = true,
+        )
+
+        assertEquals(
+            PlayerSetupChangePlan.ShowMessage("Engine is busy. Change Player Setup after the current action."),
+            plan,
+        )
+    }
+
+    @Test
+    fun buildPlayerSetupChangePlanSelectsRuntimeAndClearsReviewAnalysis() {
+        val level = PlayLevelSetting(group = PlayLevelGroup.Beginner, level = 6)
+        val setup = PlayerSetup(
+            black = SidePlayerSetup(controller = SeatController.Human),
+            white = SidePlayerSetup(controller = SeatController.Ai, playLevel = level),
+        )
+        val state = GameState.empty(nextPlayer = StoneColor.White)
+
+        val plan = buildPlayerSetupChangePlan(
+            nextSetup = setup,
+            currentState = state,
+            currentProfile = EngineProfile(),
+            defaultPlayLevel = PlayLevelSetting(),
+            isEngineBusy = false,
+        )
+
+        assertTrue(plan is PlayerSetupChangePlan.Apply)
+        val apply = plan as PlayerSetupChangePlan.Apply
+        assertEquals(setup, apply.playerSetup)
+        assertEquals(level, apply.runtime.playLevel)
+        assertFalse(apply.reviewAnalysis.hasEngineCandidates)
+        assertTrue(apply.topMoveClearMessage.startsWith("Player Setup changed."))
+    }
+
     @Test
     fun selectRuntimePlayLevelPrefersCurrentAiSide() {
         val blackLevel = PlayLevelSetting(group = PlayLevelGroup.FastBeginner, level = 1)
