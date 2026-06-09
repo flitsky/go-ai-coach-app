@@ -614,3 +614,10 @@
 - `UserPreferencesApplicationTest`를 추가해 저장된 계가 규칙/AI 레벨이 초기 런타임으로 반영되는지, 현재 UI 설정이 preferences snapshot으로 보존되는지 검증했다.
 - 검증으로 `make test`가 통과했다.
 - 리팩토링 후 최신 APK를 데이터 유지 방식으로 다시 설치하려고 `make install-dev-engine`를 실행했지만, 이 시점에는 ADB 연결 기기가 없어 `No connected devices`로 실패했다. 리팩토링 전 요청받은 우선 설치는 이미 성공한 상태다.
+- 사용자가 “폰 설치 -> 리팩토링 -> 리팩토링 결과물 설치 -> 진행률 보고/다음 단계 제안” 사이클을 요청했다.
+- USB 연결된 `SM-S908N`을 확인한 뒤 `make install-dev-engine`로 최신 앱을 데이터 유지 방식으로 설치하고 KataGo model/config를 seed했다. 설치 후 cold launch는 `TotalTime=501ms`, 전체 설치/seed/실행은 약 22.5초였다.
+- 이번 리팩토링으로 `EngineStartupApplication.kt`를 추가했다. 엔진 시작 성공/실패 결과를 `EngineStartupDisplayPlan`으로 변환하는 순수 application helper를 만들고, `GoCoachApp.kt`는 이 plan을 적용만 하도록 정리했다.
+- `EngineStartupApplicationTest`를 추가해 엔진 시작 성공 시 엔진 score snapshot 사용, snapshot 부재 시 local fallback, 실패 시 진단 메시지 표시 계획을 검증했다.
+- 검증으로 `make test`가 통과했다.
+- 리팩토링 결과물을 다시 `make install-dev-engine`로 폰에 설치했고, cold launch는 `TotalTime=478ms`, 전체 설치/seed/실행은 약 22.9초였다.
+- `docs/REFACTORING_STRATEGY_2026-06-08.md`의 리팩토링 완성도 평가를 약 70%로 갱신했다. application service 분리, 상태 소유권/controller 전환, 테스트 기반 항목을 최신 상태로 조정하고 UI 파일 규모 표를 현재 파일 구조에 맞췄다.

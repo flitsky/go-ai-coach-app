@@ -36,18 +36,18 @@
 
 ## 2026-06-09 리팩토링 완성도 평가
 
-현재 전체 리팩토링 완성도는 약 68%로 본다. POC 앱을 계속 고도화할 수 있는 기반은 확보됐지만, 첫 마켓 릴리즈 이후 유지보수까지 안정적으로 보장하는 수준은 아직 아니다.
+현재 전체 리팩토링 완성도는 약 70%로 본다. POC 앱을 계속 고도화할 수 있는 기반은 확보됐지만, 첫 마켓 릴리즈 이후 유지보수까지 안정적으로 보장하는 수준은 아직 아니다.
 
 세부 평가:
 
 | 영역 | 완성도 | 평가 |
 | --- | ---: | --- |
 | 도메인/엔진 경계 | 82% | `shared` 룰/DTO와 `EngineAdapter` 경계는 안정적이다. |
-| application service 분리 | 72% | 점수, 종국, Top Moves, 저장, 무르기, 사람 착수 로직이 많이 분리됐다. |
+| application service 분리 | 75% | 점수, 종국, Top Moves, 저장, 무르기, 사람 착수, 사용자 설정, 엔진 시작 표시 계획이 많이 분리됐다. |
 | presentation 상태/이벤트 계약 | 70% | `GameScreenState`, `GameUiEvent`가 생겨 UI 계약은 명확해졌다. |
 | UI/UX 파일 분리 | 74% | 메뉴, 플레이 화면, Player Setup, 응답 패널이 분리됐다. |
-| 상태 소유권/controller 전환 | 38% | `GoCoachApp.kt`가 아직 많은 `remember` 상태와 엔진 orchestration을 직접 가진다. |
-| 테스트 기반 | 78% | 핵심 application helper 테스트는 좋지만 UI 상태 전이/controller 테스트는 더 필요하다. |
+| 상태 소유권/controller 전환 | 40% | `GoCoachApp.kt`가 아직 많은 `remember` 상태와 엔진 orchestration을 직접 가지지만, 상태 적용 plan은 일부 분리됐다. |
+| 테스트 기반 | 80% | 핵심 application helper 테스트는 좋지만 UI 상태 전이/controller 테스트는 더 필요하다. |
 | 패키지 구조 정리 | 62% | 큰 방향은 잡혔지만 `match`/`shared` 일부 재배치 후보가 남아 있다. |
 
 남은 큰 리팩토링 추천 항목은 8개 정도다.
@@ -67,11 +67,14 @@
 
 | 파일 | 라인 수 | 역할 |
 | --- | ---: | --- |
-| `app-android/.../ui/GoCoachApp.kt` | 1,102 | 화면 상태, 엔진 orchestration, 자동 분석/AI 턴, 저장/복원 trigger |
-| `app-android/.../ui/GoCoachContent.kt` | 300 | 화면 렌더링 조립, 메뉴, 보드, 액션 버튼, 이어하기 다이얼로그 |
+| `app-android/.../ui/GoCoachApp.kt` | 1,156 | 화면 상태, 엔진 orchestration, 자동 분석/AI 턴, 저장/복원 trigger |
+| `app-android/.../ui/GoCoachContent.kt` | 110 | 화면 렌더링 최상위 조립, 이어하기 다이얼로그 |
 | `engine-android/.../KataGoProcessEngineAdapter.kt` | 666 | KataGo process/JNI 경계 |
-| `app-android/.../ui/GoBoard.kt` | 575 | 바둑판 drawing/input |
-| `app-android/.../ui/EnginePanels.kt` | 418 | Player Setup, 메뉴, 로그 패널 |
+| `app-android/.../ui/GoBoard.kt` | 580 | 바둑판 drawing/input |
+| `app-android/.../ui/PlayerSetupPanel.kt` | 225 | Player Setup 설정 UI |
+| `app-android/.../ui/GamePlaySection.kt` | 160 | 보드, score graph, 액션 버튼, 엔진 응답 조립 |
+| `app-android/.../ui/EngineResponsePanel.kt` | 115 | 엔진 메시지와 분석 텍스트 표시 |
+| `app-android/.../ui/GameMenuActionsPanel.kt` | 112 | New, Copy Log, scoring rule 메뉴 |
 | `engine-android/.../KataGoAnalysisParser.kt` | 291 | GTP/분석 파싱 |
 | `app-android/.../match/MatchPolicy.kt` | 283 | Player Setup, AI 착수 선택 정책 |
 | `app-android/.../persistence/GameSessionStore.kt` | 196 | 로컬 저장/복원 codec |
