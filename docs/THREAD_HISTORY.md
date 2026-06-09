@@ -657,3 +657,7 @@
 - 이 작업은 자동 AI 턴 상태 적용 helper와 같은 패턴으로, `GameSessionController` 또는 state holder로 이전 가능한 상태 적용 경계를 하나 더 만든 것이다.
 - 검증으로 `make test`가 통과했다.
 - `docs/REFACTORING_STRATEGY_2026-06-08.md`를 갱신해 리팩토링 완성도는 약 84%로 유지하되, 사람 착수 후 엔진 sync display state applier 분리를 완료 항목에 추가했다.
+- 사용자가 메뉴에서 `New` 버튼을 누르면 메뉴가 닫혀 새 대국 보드판에 바로 집중할 수 있게 해달라고 요청했다.
+- `GameMenuEventPolicy.kt`를 추가해 메뉴 이벤트 후 접힘 여부를 presentation 정책으로 분리했다. 현재 정책은 `StartConfiguredGame`만 메뉴를 접고, 로그 복사/계가 규칙 변경/표시 옵션 변경은 메뉴를 유지한다.
+- `GoCoachContent`는 메뉴 내부 이벤트를 `shouldCollapseMenuAfterEvent()` 정책에 통과시켜 `New` 후 `onDisplayMenuExpandedChange(false)`를 실행한다.
+- `GameMenuEventPolicyTest`를 추가했고, `docs/USER_OPTION_MANUAL.md`에 `New` 후 메뉴 자동 접힘 동작을 기록했다.

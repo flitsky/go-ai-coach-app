@@ -110,7 +110,7 @@
 
 ### Game
 
-- `New`: 현재 Player Setup으로 새 대국을 시작한다.
+- `New`: 현재 Player Setup으로 새 대국을 시작한다. 새 대국이 시작되면 메뉴가 자동으로 접혀 보드판에 바로 집중할 수 있다.
 - `Copy Log`: 현재 런타임 상태, 보드, 수순, 종료 로그, 화면 표시 텍스트, 엔진 진단 정보를 clipboard에 복사한다.
 - `Scoring rule: Area | Territory`: 계가 방식을 전환한다.
   - `Territory`가 기본값이다. 한국/일본식처럼 집 + 상대 포로를 기준으로 계산한다.

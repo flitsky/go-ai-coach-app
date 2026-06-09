@@ -63,6 +63,7 @@
 - 사람 착수 후 엔진 sync 결과 표시 계획 분리
 - 사람 착수 후 엔진 sync display state applier 분리
 - 하단 액션 버튼 state 모델 분리
+- 메뉴 이벤트 후 접힘 정책 분리
 - Undo 요청 preflight 계획 분리
 - Player Setup 변경 계획 분리
 

@@ -18,6 +18,7 @@ import com.worksoc.goaicoach.match.summary
 import com.worksoc.goaicoach.persistence.SavedGameSnapshot
 import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.presentation.GameUiEvent
+import com.worksoc.goaicoach.presentation.shouldCollapseMenuAfterEvent
 import com.worksoc.goaicoach.shared.describe
 
 @Composable
@@ -29,6 +30,13 @@ internal fun GoCoachContent(
     onEvent: (GameUiEvent) -> Unit,
 ) {
     val savedSessionToPrompt = screenState.resumePrompt?.snapshot
+    val onMenuEvent: (GameUiEvent) -> Unit = { event ->
+        onEvent(event)
+        if (shouldCollapseMenuAfterEvent(event)) {
+            onDisplayMenuExpandedChange(false)
+        }
+    }
+
     if (savedSessionToPrompt != null) {
         ResumeSavedSessionDialog(
             snapshot = savedSessionToPrompt,
@@ -56,7 +64,7 @@ internal fun GoCoachContent(
         if (isDisplayMenuExpanded) {
             ExpandedGameMenuSection(
                 screenState = screenState,
-                onEvent = onEvent,
+                onEvent = onMenuEvent,
             )
         }
 
