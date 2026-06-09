@@ -47,6 +47,14 @@ internal data class SavedGameRestorePlan(
     val engineMessage: String,
 )
 
+internal sealed class SavedGameRestoreRequestPlan {
+    data class ShowMessage(val message: String) : SavedGameRestoreRequestPlan()
+    data class Restore(
+        val restore: SavedGameRestorePlan,
+        val syncEngineAfterRestore: Boolean,
+    ) : SavedGameRestoreRequestPlan()
+}
+
 internal sealed class PlayerSetupChangePlan {
     data class ShowMessage(val message: String) : PlayerSetupChangePlan()
     data class Apply(
@@ -154,5 +162,28 @@ internal fun buildSavedGameRestorePlan(
         lastMoveText = state.moves.lastOrNull()?.describe(state.boardSize) ?: "None",
         endgameLog = "No endgame result recorded after restore.",
         engineMessage = "Previous game restored at move ${state.moves.size}.",
+    )
+}
+
+internal fun buildSavedGameRestoreRequestPlan(
+    snapshot: SavedGameSnapshot,
+    currentProfile: EngineProfile,
+    defaultPlayLevel: PlayLevelSetting,
+    isEngineBusy: Boolean,
+    isEngineReady: Boolean,
+): SavedGameRestoreRequestPlan {
+    if (isEngineBusy) {
+        return SavedGameRestoreRequestPlan.ShowMessage(
+            "Engine is busy. Restore the saved game after the current action.",
+        )
+    }
+
+    return SavedGameRestoreRequestPlan.Restore(
+        restore = buildSavedGameRestorePlan(
+            snapshot = snapshot,
+            currentProfile = currentProfile,
+            defaultPlayLevel = defaultPlayLevel,
+        ),
+        syncEngineAfterRestore = isEngineReady,
     )
 }

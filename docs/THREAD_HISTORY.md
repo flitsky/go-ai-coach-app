@@ -626,3 +626,9 @@
 - 각 단계마다 `make test`로 `:shared:check`, `:engine-android:testDebugUnitTest`, `:app-android:assembleDebug`, `:app-android:testDebugUnitTest`를 통과시킨 뒤 커밋/푸시했다.
 - 이번 배치 커밋은 `6ddfecb` scoring rule, `6b4a5f1` saved session prompt, `6e76d6e` automation gates, `b6d2973` start game, `be96d6c` score estimate request, `dbbf141` auto AI turn display, `35f54f0` human engine sync display, `c6920f4` action button state, `570ab03` undo request, `6952225` player setup change plan이다.
 - `docs/REFACTORING_STRATEGY_2026-06-08.md`를 갱신해 현재 완성도를 약 82%로 평가했다. 85~90% 달성에는 `GameSessionController` 또는 state holder 도입, `LaunchedEffect` trigger 분리, 엔진 orchestration 상태 전이 이전이 필요하다고 명시했다.
+- 사용자가 무선 디버깅으로 앱 설치를 요청했고, 필요 시 사용할 페어링 코드 `987157`을 제공했다.
+- `adb devices -l` 확인 결과 `SM-S908N`이 이미 Wi-Fi ADB `device` 상태로 연결되어 있어 추가 pairing 없이 `make install-dev-engine`를 실행했다.
+- debug APK 데이터 유지 설치, KataGo model/config/analysis config seed, 앱 cold launch를 완료했다. cold launch는 `Status: ok`, `TotalTime=557ms`였고, 전체 설치/seed/실행은 약 55.6초였다. 이번에는 약 98MB 모델 push가 31.4초를 차지했다.
+- 후속 리팩토링으로 저장 대국 복원 요청 판단을 `SavedGameRestoreRequestPlan`으로 application 계층에 분리했다. 엔진 busy 차단, 엔진 미준비 시 로컬 복원만 수행, 엔진 ready 시 복원 후 engine sync 수행 여부를 UI 밖에서 결정한다.
+- `GoCoachApp.kt`는 저장 대국 복원 시 새 request plan을 실행만 하도록 정리했고, `GameSessionApplicationTest`에 busy/로컬 복원/엔진 sync 세 분기 테스트를 추가했다.
+- 검증으로 `make test`가 통과했다.

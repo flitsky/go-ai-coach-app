@@ -37,7 +37,7 @@ import com.worksoc.goaicoach.application.buildCachedTopMoveAnalysisUpdate
 import com.worksoc.goaicoach.application.buildCompletedTopMoveAnalysisUpdate
 import com.worksoc.goaicoach.application.buildNewLocalGameSessionPlan
 import com.worksoc.goaicoach.application.buildResolvedEndgameDisplayPlan
-import com.worksoc.goaicoach.application.buildSavedGameRestorePlan
+import com.worksoc.goaicoach.application.buildSavedGameRestoreRequestPlan
 import com.worksoc.goaicoach.application.buildSavedSessionCheckPlan
 import com.worksoc.goaicoach.application.buildSavedSessionDismissPlan
 import com.worksoc.goaicoach.application.buildScoreEstimateRequestPlan
@@ -73,6 +73,7 @@ import com.worksoc.goaicoach.application.ShowTopMovesPlan
 import com.worksoc.goaicoach.application.ScoreEstimateDisplayPlan
 import com.worksoc.goaicoach.application.ScoreEstimateRequestPlan
 import com.worksoc.goaicoach.application.SavedGameRestorePlan
+import com.worksoc.goaicoach.application.SavedGameRestoreRequestPlan
 import com.worksoc.goaicoach.application.SavedGamePersistencePlan
 import com.worksoc.goaicoach.application.SavedSessionPromptPlan
 import com.worksoc.goaicoach.application.StartConfiguredGamePlan
@@ -597,25 +598,29 @@ private fun GoCoachScreen(
     }
 
     fun restoreSavedSession(snapshot: SavedGameSnapshot) {
-        if (isEngineBusy) {
-            engineMessage = "Engine is busy. Restore the saved game after the current action."
-            return
-        }
-
-        val restore = buildSavedGameRestorePlan(
+        val request = buildSavedGameRestoreRequestPlan(
             snapshot = snapshot,
             currentProfile = engineProfile,
             defaultPlayLevel = defaultPlayLevel,
+            isEngineBusy = isEngineBusy,
+            isEngineReady = isEngineReady,
         )
+        if (request is SavedGameRestoreRequestPlan.ShowMessage) {
+            engineMessage = request.message
+            return
+        }
+
+        val restoreRequest = request as SavedGameRestoreRequestPlan.Restore
+        val restore = restoreRequest.restore
         val restoredState = restore.gameState
         val restoredProfile = restore.runtime.engineProfile
-        if (isEngineReady) {
+        if (restoreRequest.syncEngineAfterRestore) {
             isEngineBusy = true
         }
 
         applySavedGameRestorePlan(restore)
 
-        if (!isEngineReady) {
+        if (!restoreRequest.syncEngineAfterRestore) {
             return
         }
 

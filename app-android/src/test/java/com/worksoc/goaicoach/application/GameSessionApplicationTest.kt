@@ -155,4 +155,72 @@ class GameSessionApplicationTest {
         assertEquals("Previous game restored at move 1.", plan.engineMessage)
         assertEquals("Score estimate not current.", plan.scoreText)
     }
+
+    @Test
+    fun buildSavedGameRestoreRequestPlanBlocksWhileEngineIsBusy() {
+        val plan = buildSavedGameRestoreRequestPlan(
+            snapshot = savedGameSnapshot(),
+            currentProfile = EngineProfile(),
+            defaultPlayLevel = PlayLevelSetting(),
+            isEngineBusy = true,
+            isEngineReady = true,
+        )
+
+        assertEquals(
+            SavedGameRestoreRequestPlan.ShowMessage(
+                "Engine is busy. Restore the saved game after the current action.",
+            ),
+            plan,
+        )
+    }
+
+    @Test
+    fun buildSavedGameRestoreRequestPlanRestoresLocallyWhenEngineIsNotReady() {
+        val plan = buildSavedGameRestoreRequestPlan(
+            snapshot = savedGameSnapshot(),
+            currentProfile = EngineProfile(),
+            defaultPlayLevel = PlayLevelSetting(),
+            isEngineBusy = false,
+            isEngineReady = false,
+        )
+
+        assertTrue(plan is SavedGameRestoreRequestPlan.Restore)
+        val restore = plan as SavedGameRestoreRequestPlan.Restore
+        assertFalse(restore.syncEngineAfterRestore)
+        assertEquals("Previous game restored at move 1.", restore.restore.engineMessage)
+    }
+
+    @Test
+    fun buildSavedGameRestoreRequestPlanRestoresAndRequestsEngineSyncWhenReady() {
+        val plan = buildSavedGameRestoreRequestPlan(
+            snapshot = savedGameSnapshot(),
+            currentProfile = EngineProfile(),
+            defaultPlayLevel = PlayLevelSetting(),
+            isEngineBusy = false,
+            isEngineReady = true,
+        )
+
+        assertTrue(plan is SavedGameRestoreRequestPlan.Restore)
+        val restore = plan as SavedGameRestoreRequestPlan.Restore
+        assertTrue(restore.syncEngineAfterRestore)
+        assertEquals("Black E5", restore.restore.lastMoveText)
+    }
+
+    private fun savedGameSnapshot(): SavedGameSnapshot {
+        val state = GameState.empty()
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+        return SavedGameSnapshot(
+            gameState = state,
+            playerSetup = PlayerSetup(
+                black = SidePlayerSetup(controller = SeatController.Human),
+                white = SidePlayerSetup(
+                    controller = SeatController.Ai,
+                    playLevel = PlayLevelSetting(group = PlayLevelGroup.Beginner, level = 3),
+                ),
+            ),
+            playLevel = PlayLevelSetting(),
+            topMovesEnabled = true,
+            savedAtMillis = 123L,
+        )
+    }
 }
