@@ -38,6 +38,7 @@ import com.worksoc.goaicoach.application.buildSavedGameRestorePlan
 import com.worksoc.goaicoach.application.buildSavedSessionCheckPlan
 import com.worksoc.goaicoach.application.buildSavedSessionDismissPlan
 import com.worksoc.goaicoach.application.buildScoringRuleChangePlan
+import com.worksoc.goaicoach.application.buildStartConfiguredGamePlan
 import com.worksoc.goaicoach.application.buildTopMoveAnalysisPlan
 import com.worksoc.goaicoach.application.buildInitialUserPreferencesPlan
 import com.worksoc.goaicoach.application.buildUserPreferencesSnapshot
@@ -67,6 +68,7 @@ import com.worksoc.goaicoach.application.ScoreEstimateDisplayPlan
 import com.worksoc.goaicoach.application.SavedGameRestorePlan
 import com.worksoc.goaicoach.application.SavedGamePersistencePlan
 import com.worksoc.goaicoach.application.SavedSessionPromptPlan
+import com.worksoc.goaicoach.application.StartConfiguredGamePlan
 import com.worksoc.goaicoach.application.TopMoveAnalysisUpdate
 import com.worksoc.goaicoach.application.UndoLocalStatePlan
 import com.worksoc.goaicoach.application.toCandidateText
@@ -674,31 +676,10 @@ private fun GoCoachScreen(
         }
     }
 
-    fun startConfiguredGame() {
-        val targetRuleset = gameState.ruleset
-        val targetSetup = playerSetup
-        val targetMode = targetSetup.matchMode()
-        if (!isEngineReady && targetMode != MatchMode.LocalTwoPlayer) {
-            resetLocalGame("Player Setup includes AI, but engine is not ready.", targetRuleset)
-            return
-        }
-        if (isEngineBusy) {
-            engineMessage = "Engine is busy. Start a new game after the current action."
-            return
-        }
-        if (!isEngineReady && targetMode == MatchMode.LocalTwoPlayer) {
-            resetLocalGame("Local two-player game. Engine analysis is not connected.", targetRuleset)
-            return
-        }
-
-        val runtime = selectRuntimePlayLevel(
-            setup = targetSetup,
-            nextPlayer = gameState.nextPlayer,
-            currentProfile = engineProfile,
-            defaultPlayLevel = defaultPlayLevel,
-        )
+    fun startEngineBackedNewGame(plan: StartConfiguredGamePlan.StartEngineGame) {
+        val targetRuleset = plan.ruleset
+        val runtime = plan.runtime
         applyRuntimePlayLevelSelection(runtime)
-
         scope.launch {
             isEngineBusy = true
             var nextAnalysisState: GameState? = null
@@ -718,6 +699,34 @@ private fun GoCoachScreen(
                 targetState = nextAnalysisState ?: gameState,
                 automatic = true,
             )
+        }
+    }
+
+    fun startConfiguredGame() {
+        val targetRuleset = gameState.ruleset
+        val targetSetup = playerSetup
+        when (
+            val plan = buildStartConfiguredGamePlan(
+                setup = targetSetup,
+                ruleset = targetRuleset,
+                nextPlayer = gameState.nextPlayer,
+                isEngineReady = isEngineReady,
+                isEngineBusy = isEngineBusy,
+                currentProfile = engineProfile,
+                defaultPlayLevel = defaultPlayLevel,
+            )
+        ) {
+            is StartConfiguredGamePlan.ShowMessage -> {
+                engineMessage = plan.message
+                return
+            }
+            is StartConfiguredGamePlan.ResetLocalGame -> {
+                resetLocalGame(plan.message, plan.ruleset)
+                return
+            }
+            is StartConfiguredGamePlan.StartEngineGame -> {
+                startEngineBackedNewGame(plan)
+            }
         }
     }
 
