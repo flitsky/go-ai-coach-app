@@ -34,6 +34,8 @@ import com.worksoc.goaicoach.application.buildNewLocalGameSessionPlan
 import com.worksoc.goaicoach.application.buildResolvedEndgameDisplayPlan
 import com.worksoc.goaicoach.application.buildSavedGameRestorePlan
 import com.worksoc.goaicoach.application.buildTopMoveAnalysisPlan
+import com.worksoc.goaicoach.application.buildInitialUserPreferencesPlan
+import com.worksoc.goaicoach.application.buildUserPreferencesSnapshot
 import com.worksoc.goaicoach.application.configureSyncAndEstimateGraphScore
 import com.worksoc.goaicoach.application.EndgameFailureDisplayPlan
 import com.worksoc.goaicoach.application.applyHumanMoveLocally
@@ -124,19 +126,15 @@ private fun GoCoachScreen(
     val sessionStore = remember(context) { GameSessionStore(context) }
     val preferencesStore = remember(context) { UserPreferencesStore(context) }
     val initialPreferences = remember(preferencesStore) { preferencesStore.load() }
-    val initialGameState = remember(initialPreferences) {
-        GameState.empty(BoardSize.Nine, initialPreferences.ruleset)
-    }
     val defaultPlayLevel = remember { PlayLevelSetting() }
-    val initialRuntime = remember(initialPreferences, defaultPlayLevel) {
-        selectRuntimePlayLevel(
-            setup = initialPreferences.playerSetup,
-            nextPlayer = initialGameState.nextPlayer,
-            currentProfile = EngineProfile(),
+    val initialPlan = remember(initialPreferences, defaultPlayLevel) {
+        buildInitialUserPreferencesPlan(
+            preferences = initialPreferences,
             defaultPlayLevel = defaultPlayLevel,
+            currentProfile = EngineProfile(),
         )
     }
-    var gameState by remember { mutableStateOf(initialGameState) }
+    var gameState by remember { mutableStateOf(initialPlan.gameState) }
     var engineMessage by remember { mutableStateOf("Engine not initialized.") }
     var candidateText by remember { mutableStateOf(engineDiagnostic) }
     var candidateMoves by remember { mutableStateOf(emptyList<CandidateMove>()) }
@@ -145,19 +143,19 @@ private fun GoCoachScreen(
     var scoreText by remember { mutableStateOf("No score estimate yet.") }
     var scoreEstimate by remember { mutableStateOf<ScoreEstimate?>(null) }
     var scoreSnapshots by remember {
-        mutableStateOf(listOf(localScoreSnapshot(initialGameState)))
+        mutableStateOf(listOf(localScoreSnapshot(initialPlan.gameState)))
     }
     var moveReviewText by remember { mutableStateOf("No move review yet.") }
     var moveReviews by remember { mutableStateOf(emptyList<MoveReviewMarker>()) }
     var lastMoveText by remember { mutableStateOf("None") }
     var isEngineBusy by remember { mutableStateOf(false) }
     var isEngineReady by remember { mutableStateOf(false) }
-    var playLevel by remember { mutableStateOf(initialRuntime.playLevel) }
-    var engineProfile by remember { mutableStateOf(initialRuntime.engineProfile) }
-    var playerSetup by remember { mutableStateOf(initialPreferences.playerSetup) }
+    var playLevel by remember { mutableStateOf(initialPlan.runtime.playLevel) }
+    var engineProfile by remember { mutableStateOf(initialPlan.runtime.engineProfile) }
+    var playerSetup by remember { mutableStateOf(initialPlan.playerSetup) }
     val matchMode = playerSetup.matchMode()
-    var topMovesEnabled by remember { mutableStateOf(initialPreferences.topMovesEnabled) }
-    var analysisPreset by remember { mutableStateOf(initialRuntime.analysisPreset) }
+    var topMovesEnabled by remember { mutableStateOf(initialPlan.topMovesEnabled) }
+    var analysisPreset by remember { mutableStateOf(initialPlan.runtime.analysisPreset) }
     val analysisCache = remember { AnalysisResultCache(maxEntries = 96) }
     var uxOptions by remember { mutableStateOf(initialPreferences.toKaTrainUxOptions()) }
     var isDisplayMenuExpanded by remember { mutableStateOf(false) }
@@ -205,7 +203,7 @@ private fun GoCoachScreen(
         gameState.ruleset,
     ) {
         preferencesStore.save(
-            UserPreferencesSnapshot(
+            buildUserPreferencesSnapshot(
                 playerSetup = playerSetup,
                 ruleset = gameState.ruleset,
                 topMovesEnabled = topMovesEnabled,
