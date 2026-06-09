@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import com.worksoc.goaicoach.application.AnalysisCacheKey
 import com.worksoc.goaicoach.application.AnalysisResultCache
+import com.worksoc.goaicoach.application.AutoAiTurnDisplayPlan
 import com.worksoc.goaicoach.application.MoveReviewMarker
 import com.worksoc.goaicoach.application.AutoAiTurnRequestPlan
 import com.worksoc.goaicoach.application.buildDebugReport
@@ -341,6 +342,21 @@ private fun GoCoachScreen(
         playLevel = runtime.playLevel
         engineProfile = runtime.engineProfile
         analysisPreset = runtime.analysisPreset
+    }
+
+    fun applyAutoAiTurnDisplayPlan(display: AutoAiTurnDisplayPlan): GameState? {
+        playLevel = display.playLevel
+        engineProfile = display.profile
+        analysisPreset = display.analysisPreset
+        gameState = display.gameState
+        clearTopMoveSpots()
+        clearReviewAnalysis(display.gameState)
+        lastAnalysisKey = null
+        engineMessage = display.turnEngineMessage
+        candidateText = display.candidateText
+        lastMoveText = display.lastMoveText
+        applyScoreEstimateDisplayPlan(display.scoreDisplay)
+        return display.nextAnalysisState
     }
 
     fun applyGameSessionResetPlan(reset: GameSessionResetPlan) {
@@ -813,20 +829,7 @@ private fun GoCoachScreen(
                             previousSnapshots = scoreSnapshots,
                             previousReviewCandidates = previousReviewCandidates,
                         )
-                        playLevel = display.playLevel
-                        engineProfile = display.profile
-                        analysisPreset = display.analysisPreset
-
-                        gameState = display.gameState
-                        clearTopMoveSpots()
-                        clearReviewAnalysis(display.gameState)
-                        lastAnalysisKey = null
-                        engineMessage = display.turnEngineMessage
-                        candidateText = display.candidateText
-                        lastMoveText = display.lastMoveText
-                        applyScoreEstimateDisplayPlan(display.scoreDisplay)
-
-                        nextAnalysisState = display.nextAnalysisState
+                        nextAnalysisState = applyAutoAiTurnDisplayPlan(display)
                         if (display.shouldResolveEndgame) {
                             isGameEnded = true
                             runCatching {

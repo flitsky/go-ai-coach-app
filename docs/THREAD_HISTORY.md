@@ -646,3 +646,8 @@
 - `docs/REFACTORING_STRATEGY_2026-06-08.md`를 갱신해 현재 리팩토링 완성도를 약 84%로 평가했다. 다음 85~90% 구간은 `GameSessionController` 또는 state holder 도입이 핵심이다.
 - 리팩토링 커밋 후 최종 APK를 다시 설치하기 위해 처음에는 직접 `./gradlew :app-android:installDebug`를 실행했으나 Gradle이 짧은 예외 코드 `25`만 출력하고 실패했다. 같은 환경에서 make 경로는 정상 동작하므로 `make install-dev-engine`로 재시도했다.
 - 최종 커밋 포함 debug APK 설치, KataGo model/config seed, 앱 cold launch를 완료했다. cold launch는 `Status: ok`, `TotalTime=503ms`였고, 전체 설치/seed/실행은 약 1분 7초였다. 모델 push는 약 40.2초였다.
+- 사용자가 다음 단계 진행을 요청했다.
+- 후속 리팩토링으로 자동 AI 턴 성공 결과를 `GoCoachApp.kt`에 직접 펼쳐서 반영하던 코드를 `applyAutoAiTurnDisplayPlan()` helper로 묶었다. 기존 동작 순서, 특히 score estimate 표시 계획이 마지막에 engine message를 갱신하는 순서는 유지했다.
+- 이 작업은 기능 변경보다는 `GameSessionController` 또는 state holder로 옮길 수 있는 상태 적용 경계를 하나 더 만든 것이다.
+- 검증으로 `make test`가 통과했다.
+- `docs/REFACTORING_STRATEGY_2026-06-08.md`를 갱신해 리팩토링 완성도는 약 84%로 유지하되, 자동 AI 턴 display state applier 분리를 완료 항목에 추가했다.
