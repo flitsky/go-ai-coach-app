@@ -25,6 +25,7 @@ class GameScreenStateTest {
         assertEquals(StoneColor.White, screenState.nextPlayer)
         assertTrue(screenState.uxOptions.showCoordinates)
         assertTrue(screenState.uxOptions.showLastMoveRing)
+        assertTrue(screenState.uxOptions.showOwnershipOverlay)
         assertFalse(screenState.uxOptions.showMoveNumbers)
         assertNull(screenState.resumePrompt)
     }

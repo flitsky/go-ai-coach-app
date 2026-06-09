@@ -1,0 +1,71 @@
+package com.worksoc.goaicoach.persistence
+
+import android.content.Context
+import com.worksoc.goaicoach.match.PlayerSetup
+import com.worksoc.goaicoach.persistence.PlayerSetupJsonCodec.decodePlayerSetup
+import com.worksoc.goaicoach.persistence.PlayerSetupJsonCodec.encodePlayerSetup
+import com.worksoc.goaicoach.shared.Ruleset
+import org.json.JSONObject
+
+internal data class UserPreferencesSnapshot(
+    val playerSetup: PlayerSetup = PlayerSetup(),
+    val ruleset: Ruleset = Ruleset.Japanese,
+    val topMovesEnabled: Boolean = true,
+    val showCoordinates: Boolean = true,
+    val showMoveNumbers: Boolean = false,
+    val showLastMoveRing: Boolean = true,
+    val showOwnershipOverlay: Boolean = true,
+)
+
+internal class UserPreferencesStore(context: Context) {
+    private val prefs = context.applicationContext.getSharedPreferences(PrefsName, Context.MODE_PRIVATE)
+
+    fun save(snapshot: UserPreferencesSnapshot) {
+        prefs.edit()
+            .putString(PreferencesKey, UserPreferencesCodec.encode(snapshot))
+            .apply()
+    }
+
+    fun load(): UserPreferencesSnapshot {
+        val raw = prefs.getString(PreferencesKey, null) ?: return UserPreferencesSnapshot()
+        return UserPreferencesCodec.decode(raw) ?: UserPreferencesSnapshot()
+    }
+
+    private companion object {
+        const val PrefsName = "go_ai_coach_user_preferences"
+        const val PreferencesKey = "user_preferences"
+    }
+}
+
+internal object UserPreferencesCodec {
+    private const val SchemaVersion = 1
+
+    fun encode(snapshot: UserPreferencesSnapshot): String =
+        JSONObject()
+            .put("schema", SchemaVersion)
+            .put("playerSetup", encodePlayerSetup(snapshot.playerSetup))
+            .put("ruleset", snapshot.ruleset.name)
+            .put("topMovesEnabled", snapshot.topMovesEnabled)
+            .put("showCoordinates", snapshot.showCoordinates)
+            .put("showMoveNumbers", snapshot.showMoveNumbers)
+            .put("showLastMoveRing", snapshot.showLastMoveRing)
+            .put("showOwnershipOverlay", snapshot.showOwnershipOverlay)
+            .toString()
+
+    fun decode(raw: String): UserPreferencesSnapshot? =
+        runCatching {
+            val json = JSONObject(raw)
+            if (json.optInt("schema", SchemaVersion) != SchemaVersion) {
+                return@runCatching null
+            }
+            UserPreferencesSnapshot(
+                playerSetup = decodePlayerSetup(json.optJSONObject("playerSetup")),
+                ruleset = enumOrDefault(json.optString("ruleset"), Ruleset.Japanese),
+                topMovesEnabled = json.optBoolean("topMovesEnabled", true),
+                showCoordinates = json.optBoolean("showCoordinates", true),
+                showMoveNumbers = json.optBoolean("showMoveNumbers", false),
+                showLastMoveRing = json.optBoolean("showLastMoveRing", true),
+                showOwnershipOverlay = json.optBoolean("showOwnershipOverlay", true),
+            )
+        }.getOrNull()
+}

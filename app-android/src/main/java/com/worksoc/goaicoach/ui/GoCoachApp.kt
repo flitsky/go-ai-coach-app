@@ -63,6 +63,8 @@ import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.persistence.GameSessionStore
 import com.worksoc.goaicoach.persistence.SavedGameSnapshot
+import com.worksoc.goaicoach.persistence.UserPreferencesSnapshot
+import com.worksoc.goaicoach.persistence.UserPreferencesStore
 import com.worksoc.goaicoach.presentation.GameScreenStateInput
 import com.worksoc.goaicoach.presentation.GameUiEvent
 import com.worksoc.goaicoach.presentation.GameUiEventHandlers
@@ -120,7 +122,21 @@ private fun GoCoachScreen(
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val sessionStore = remember(context) { GameSessionStore(context) }
-    var gameState by remember { mutableStateOf(GameState.empty(BoardSize.Nine, Ruleset.Japanese)) }
+    val preferencesStore = remember(context) { UserPreferencesStore(context) }
+    val initialPreferences = remember(preferencesStore) { preferencesStore.load() }
+    val initialGameState = remember(initialPreferences) {
+        GameState.empty(BoardSize.Nine, initialPreferences.ruleset)
+    }
+    val defaultPlayLevel = remember { PlayLevelSetting() }
+    val initialRuntime = remember(initialPreferences, defaultPlayLevel) {
+        selectRuntimePlayLevel(
+            setup = initialPreferences.playerSetup,
+            nextPlayer = initialGameState.nextPlayer,
+            currentProfile = EngineProfile(),
+            defaultPlayLevel = defaultPlayLevel,
+        )
+    }
+    var gameState by remember { mutableStateOf(initialGameState) }
     var engineMessage by remember { mutableStateOf("Engine not initialized.") }
     var candidateText by remember { mutableStateOf(engineDiagnostic) }
     var candidateMoves by remember { mutableStateOf(emptyList<CandidateMove>()) }
@@ -129,22 +145,21 @@ private fun GoCoachScreen(
     var scoreText by remember { mutableStateOf("No score estimate yet.") }
     var scoreEstimate by remember { mutableStateOf<ScoreEstimate?>(null) }
     var scoreSnapshots by remember {
-        mutableStateOf(listOf(localScoreSnapshot(GameState.empty(BoardSize.Nine, Ruleset.Japanese))))
+        mutableStateOf(listOf(localScoreSnapshot(initialGameState)))
     }
     var moveReviewText by remember { mutableStateOf("No move review yet.") }
     var moveReviews by remember { mutableStateOf(emptyList<MoveReviewMarker>()) }
     var lastMoveText by remember { mutableStateOf("None") }
     var isEngineBusy by remember { mutableStateOf(false) }
     var isEngineReady by remember { mutableStateOf(false) }
-    val defaultPlayLevel = remember { PlayLevelSetting() }
-    var playLevel by remember { mutableStateOf(defaultPlayLevel) }
-    var engineProfile by remember { mutableStateOf(defaultPlayLevel.toEngineProfile(EngineProfile())) }
-    var playerSetup by remember { mutableStateOf(PlayerSetup()) }
+    var playLevel by remember { mutableStateOf(initialRuntime.playLevel) }
+    var engineProfile by remember { mutableStateOf(initialRuntime.engineProfile) }
+    var playerSetup by remember { mutableStateOf(initialPreferences.playerSetup) }
     val matchMode = playerSetup.matchMode()
-    var topMovesEnabled by remember { mutableStateOf(false) }
-    var analysisPreset by remember { mutableStateOf(defaultPlayLevel.analysisPreset) }
+    var topMovesEnabled by remember { mutableStateOf(initialPreferences.topMovesEnabled) }
+    var analysisPreset by remember { mutableStateOf(initialRuntime.analysisPreset) }
     val analysisCache = remember { AnalysisResultCache(maxEntries = 96) }
-    var uxOptions by remember { mutableStateOf(KaTrainUxOptions()) }
+    var uxOptions by remember { mutableStateOf(initialPreferences.toKaTrainUxOptions()) }
     var isDisplayMenuExpanded by remember { mutableStateOf(false) }
     var isScoreGraphExpanded by remember { mutableStateOf(false) }
     var lastAnalysisKey by remember { mutableStateOf<AnalysisCacheKey?>(null) }
@@ -180,6 +195,26 @@ private fun GoCoachScreen(
         pendingSavedSession = savedSession
         shouldShowResumePrompt = savedSession != null
         hasCheckedSavedSession = true
+    }
+
+    LaunchedEffect(
+        preferencesStore,
+        playerSetup,
+        topMovesEnabled,
+        uxOptions,
+        gameState.ruleset,
+    ) {
+        preferencesStore.save(
+            UserPreferencesSnapshot(
+                playerSetup = playerSetup,
+                ruleset = gameState.ruleset,
+                topMovesEnabled = topMovesEnabled,
+                showCoordinates = uxOptions.showCoordinates,
+                showMoveNumbers = uxOptions.showMoveNumbers,
+                showLastMoveRing = uxOptions.showLastMoveRing,
+                showOwnershipOverlay = uxOptions.showOwnershipOverlay,
+            ),
+        )
     }
 
     LaunchedEffect(
@@ -1095,3 +1130,11 @@ private fun GoCoachScreen(
         onEvent = ::dispatch,
     )
 }
+
+private fun UserPreferencesSnapshot.toKaTrainUxOptions(): KaTrainUxOptions =
+    KaTrainUxOptions(
+        showCoordinates = showCoordinates,
+        showMoveNumbers = showMoveNumbers,
+        showLastMoveRing = showLastMoveRing,
+        showOwnershipOverlay = showOwnershipOverlay,
+    )

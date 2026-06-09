@@ -36,7 +36,8 @@ internal fun GamePlaySection(
         gameState = screenState.gameState,
         candidateMoves = screenState.analysis.candidateMoves,
         moveReviews = screenState.analysis.moveReviews,
-        ownershipEstimate = screenState.score.estimate?.ownership,
+        ownershipEstimate = screenState.score.estimate?.ownership
+            ?.takeIf { screenState.uxOptions.showOwnershipOverlay },
         uxOptions = screenState.uxOptions,
         inputEnabled = !screenState.isGameEnded &&
             boardInputEnabled(

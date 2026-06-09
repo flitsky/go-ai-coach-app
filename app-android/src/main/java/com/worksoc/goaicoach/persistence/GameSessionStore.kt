@@ -1,17 +1,16 @@
 package com.worksoc.goaicoach.persistence
 
 import android.content.Context
-import com.worksoc.goaicoach.match.AiEngineChoice
-import com.worksoc.goaicoach.match.HumanGameType
 import com.worksoc.goaicoach.match.PlayerSetup
-import com.worksoc.goaicoach.match.SeatController
-import com.worksoc.goaicoach.match.SidePlayerSetup
+import com.worksoc.goaicoach.persistence.PlayerSetupJsonCodec.decodePlayerSetup
+import com.worksoc.goaicoach.persistence.PlayerSetupJsonCodec.decodePlayLevel
+import com.worksoc.goaicoach.persistence.PlayerSetupJsonCodec.encodePlayerSetup
+import com.worksoc.goaicoach.persistence.PlayerSetupJsonCodec.encodePlayLevel
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.GameStateReplayer
 import com.worksoc.goaicoach.shared.Move
-import com.worksoc.goaicoach.shared.PlayLevelGroup
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.StoneColor
@@ -138,59 +137,10 @@ internal object SavedGameSessionCodec {
             }
         }
 
-    private fun encodePlayerSetup(playerSetup: PlayerSetup): JSONObject =
-        JSONObject()
-            .put("black", encodeSidePlayerSetup(playerSetup.black))
-            .put("white", encodeSidePlayerSetup(playerSetup.white))
-
-    private fun decodePlayerSetup(json: JSONObject?): PlayerSetup =
-        PlayerSetup(
-            black = decodeSidePlayerSetup(json?.optJSONObject("black"), SeatController.Human),
-            white = decodeSidePlayerSetup(json?.optJSONObject("white"), SeatController.Ai),
-        )
-
-    private fun encodeSidePlayerSetup(side: SidePlayerSetup): JSONObject =
-        JSONObject()
-            .put("controller", side.controller.name)
-            .put("humanGameType", side.humanGameType.name)
-            .put("aiEngine", side.aiEngine.name)
-            .put("playLevel", encodePlayLevel(side.playLevel))
-
-    private fun decodeSidePlayerSetup(
-        json: JSONObject?,
-        defaultController: SeatController,
-    ): SidePlayerSetup =
-        SidePlayerSetup(
-            controller = enumOrDefault(json?.optString("controller"), defaultController),
-            humanGameType = enumOrDefault(json?.optString("humanGameType"), HumanGameType.Normal),
-            aiEngine = enumOrDefault(json?.optString("aiEngine"), AiEngineChoice.KataGo),
-            playLevel = decodePlayLevel(json?.optJSONObject("playLevel")),
-        )
-
-    private fun encodePlayLevel(playLevel: PlayLevelSetting): JSONObject =
-        JSONObject()
-            .put("group", playLevel.group.name)
-            .put("level", playLevel.safeLevel)
-
-    private fun decodePlayLevel(json: JSONObject?): PlayLevelSetting {
-        val group = enumOrDefault(json?.optString("group"), PlayLevelGroup.FastBeginner)
-        val level = json?.optInt("level", 1) ?: 1
-        return PlayLevelSetting(group = group, level = level).normalized()
-    }
-
     private fun Move.typeName(): String =
         when (this) {
             is Move.Play -> "play"
             is Move.Pass -> "pass"
             is Move.Resign -> "resign"
         }
-
-    private inline fun <reified T : Enum<T>> enumOrDefault(
-        name: String?,
-        default: T,
-    ): T =
-        name
-            ?.takeIf { it.isNotBlank() }
-            ?.let { value -> runCatching { enumValueOf<T>(value) }.getOrNull() }
-            ?: default
 }
