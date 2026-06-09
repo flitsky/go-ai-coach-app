@@ -27,6 +27,7 @@ import com.worksoc.goaicoach.application.buildEngineEstimateDisplayPlan
 import com.worksoc.goaicoach.application.buildEngineStartupFailureDisplayPlan
 import com.worksoc.goaicoach.application.buildEngineStartupSuccessDisplayPlan
 import com.worksoc.goaicoach.application.buildEngineUndoPlan
+import com.worksoc.goaicoach.application.buildAutoAiTurnDisplayPlan
 import com.worksoc.goaicoach.application.buildLocalFinalScoreDisplayPlan
 import com.worksoc.goaicoach.application.buildLocalTwoPlayerUndoPlan
 import com.worksoc.goaicoach.application.buildCachedTopMoveAnalysisUpdate
@@ -765,63 +766,50 @@ private fun GoCoachScreen(
                     )
                 }
             }.onSuccess { result ->
-                playLevel = result.playLevel
-                engineProfile = result.profile
-                analysisPreset = result.playLevel.analysisPreset
+                val display = buildAutoAiTurnDisplayPlan(
+                    result = result,
+                    previousSnapshots = scoreSnapshots,
+                    previousReviewCandidates = previousReviewCandidates,
+                )
+                playLevel = display.playLevel
+                engineProfile = display.profile
+                analysisPreset = display.analysisPreset
 
-                val outcome = result.turnOutcome
-                gameState = outcome.gameState
+                gameState = display.gameState
                 clearTopMoveSpots()
-                clearReviewAnalysis(outcome.gameState)
+                clearReviewAnalysis(display.gameState)
                 lastAnalysisKey = null
-                engineMessage = outcome.engineMessage
-                candidateText = outcome.candidateText
-                lastMoveText = outcome.lastMoveText
+                engineMessage = display.turnEngineMessage
+                candidateText = display.candidateText
+                lastMoveText = display.lastMoveText
+                applyScoreEstimateDisplayPlan(display.scoreDisplay)
 
-                result.scoreEstimate?.let { estimate ->
-                    val score = buildEngineEstimateDisplayPlan(
-                        state = outcome.gameState,
-                        estimate = estimate,
-                        previousSnapshots = scoreSnapshots,
-                    )
-                    applyScoreEstimateDisplayPlan(score)
-                } ?: run {
-                    scoreText = "Score estimate not current."
-                    scoreEstimate = null
-                    scoreSnapshots = ScoreTimeline.record(scoreSnapshots, localScoreSnapshot(outcome.gameState))
-                }
-
-                nextAnalysisState = outcome.gameState
-                if (outcome.gameState.hasConsecutivePasses() || outcome.gameState.isBoardFull()) {
+                nextAnalysisState = display.nextAnalysisState
+                if (display.shouldResolveEndgame) {
                     isGameEnded = true
-                    nextAnalysisState = null
                     runCatching {
                         withContext(Dispatchers.IO) {
                             engineAdapter.resolveEndgameForState(
-                                state = outcome.gameState,
-                                profile = result.profile,
-                                prePassCandidates = if (outcome.gameState.moves.lastOrNull() is Move.Pass) {
-                                    previousReviewCandidates
-                                } else {
-                                    emptyList()
-                                },
+                                state = display.gameState,
+                                profile = display.profile,
+                                prePassCandidates = display.endgamePrePassCandidates,
                             )
                         }
                     }.onSuccess { endgame ->
                         val final = buildResolvedEndgameDisplayPlan(
                             source = "auto-ai-engine-dead-stone-cleanup",
-                            originalState = outcome.gameState,
+                            originalState = display.gameState,
                             resolution = endgame,
                             previousSnapshots = scoreSnapshots,
-                            engineMessagePrefix = outcome.engineMessage,
+                            engineMessagePrefix = display.turnEngineMessage,
                         )
                         applyFinalScoreDisplayPlan(final)
                     }.onFailure { error ->
                         val failure = buildEndgameFailureDisplayPlan(
                             source = "auto-ai-engine-final-score-failed",
-                            state = outcome.gameState,
+                            state = display.gameState,
                             errorMessage = error.message ?: "Unknown error",
-                            engineMessagePrefix = outcome.engineMessage,
+                            engineMessagePrefix = display.turnEngineMessage,
                         )
                         applyEndgameFailureDisplayPlan(failure)
                     }
