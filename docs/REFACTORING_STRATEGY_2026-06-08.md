@@ -36,7 +36,7 @@
 
 ## 2026-06-09 리팩토링 완성도 평가
 
-현재 전체 리팩토링 완성도는 약 84%로 본다. POC 앱을 계속 고도화할 수 있는 기반은 상당히 확보됐고, 메뉴/UX 개편과 엔진 분석 정책 변경을 작은 단위로 테스트하며 진행할 수 있는 구조가 됐다. 자동 AI 턴의 시작 조건, pending 중복 방지, AI vs AI 딜레이 계산도 application plan으로 분리됐고, 자동 AI 턴 결과를 화면 상태에 반영하는 helper도 controller 후보로 묶였다. 다만 85~90% 수준은 `GameSessionController` 또는 state holder를 도입해 `GoCoachApp.kt`의 상태 소유권과 엔진 orchestration을 UI 밖으로 이전해야 달성 가능하다.
+현재 전체 리팩토링 완성도는 약 84%로 본다. POC 앱을 계속 고도화할 수 있는 기반은 상당히 확보됐고, 메뉴/UX 개편과 엔진 분석 정책 변경을 작은 단위로 테스트하며 진행할 수 있는 구조가 됐다. 자동 AI 턴의 시작 조건, pending 중복 방지, AI vs AI 딜레이 계산도 application plan으로 분리됐고, 자동 AI 턴 및 사람 착수 후 엔진 sync 결과를 화면 상태에 반영하는 helper도 controller 후보로 묶였다. 다만 85~90% 수준은 `GameSessionController` 또는 state holder를 도입해 `GoCoachApp.kt`의 상태 소유권과 엔진 orchestration을 UI 밖으로 이전해야 달성 가능하다.
 
 세부 평가:
 
@@ -61,6 +61,7 @@
 - 점수 추정 요청 preflight 계획 분리
 - 자동 AI 턴 결과 표시 계획 분리
 - 사람 착수 후 엔진 sync 결과 표시 계획 분리
+- 사람 착수 후 엔진 sync display state applier 분리
 - 하단 액션 버튼 state 모델 분리
 - Undo 요청 preflight 계획 분리
 - Player Setup 변경 계획 분리
@@ -80,7 +81,7 @@
 
 | 파일 | 라인 수 | 역할 |
 | --- | ---: | --- |
-| `app-android/.../ui/GoCoachApp.kt` | 1,224 | 화면 상태, 엔진 orchestration, 자동 분석/AI 턴, 저장/복원 trigger. 조건 판단과 일부 상태 반영은 application plan/state applier로 이전됨 |
+| `app-android/.../ui/GoCoachApp.kt` | 1,234 | 화면 상태, 엔진 orchestration, 자동 분석/AI 턴, 저장/복원 trigger. 조건 판단과 일부 상태 반영은 application plan/state applier로 이전됨 |
 | `app-android/.../ui/GoCoachContent.kt` | 110 | 화면 렌더링 최상위 조립, 이어하기 다이얼로그 |
 | `engine-android/.../KataGoProcessEngineAdapter.kt` | 666 | KataGo process/JNI 경계 |
 | `app-android/.../ui/GoBoard.kt` | 580 | 바둑판 drawing/input |

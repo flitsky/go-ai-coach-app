@@ -651,3 +651,9 @@
 - 이 작업은 기능 변경보다는 `GameSessionController` 또는 state holder로 옮길 수 있는 상태 적용 경계를 하나 더 만든 것이다.
 - 검증으로 `make test`가 통과했다.
 - `docs/REFACTORING_STRATEGY_2026-06-08.md`를 갱신해 리팩토링 완성도는 약 84%로 유지하되, 자동 AI 턴 display state applier 분리를 완료 항목에 추가했다.
+- 사용자가 앱 설치와 다음 리팩토링 진행을 요청했다.
+- Wi-Fi ADB로 `SM-S908N`이 연결되어 있어 `make install-dev-engine`로 최신 debug APK를 데이터 유지 방식으로 설치했다. KataGo model/config seed와 앱 cold launch까지 완료했고, cold launch는 `Status: ok`, `TotalTime=496ms`, 전체 설치/seed/실행은 약 53.4초였다. 모델 push는 약 29.6초였다.
+- 후속 리팩토링으로 사람 착수 후 엔진 sync 성공/실패 결과를 `GoCoachApp.kt`에 직접 펼쳐서 반영하던 코드를 `applyHumanEngineSyncDisplayPlan()`, `applyHumanEngineSyncFailurePlan()` helper로 묶었다.
+- 이 작업은 자동 AI 턴 상태 적용 helper와 같은 패턴으로, `GameSessionController` 또는 state holder로 이전 가능한 상태 적용 경계를 하나 더 만든 것이다.
+- 검증으로 `make test`가 통과했다.
+- `docs/REFACTORING_STRATEGY_2026-06-08.md`를 갱신해 리팩토링 완성도는 약 84%로 유지하되, 사람 착수 후 엔진 sync display state applier 분리를 완료 항목에 추가했다.

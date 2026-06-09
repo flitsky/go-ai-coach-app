@@ -55,6 +55,7 @@ import com.worksoc.goaicoach.application.EndgameFailureDisplayPlan
 import com.worksoc.goaicoach.application.applyHumanMoveLocally
 import com.worksoc.goaicoach.application.FinalScoreDisplayPlan
 import com.worksoc.goaicoach.application.GameSessionResetPlan
+import com.worksoc.goaicoach.application.HumanEngineSyncFailurePlan
 import com.worksoc.goaicoach.application.HumanEngineSyncDisplayPlan
 import com.worksoc.goaicoach.application.EngineStartupDisplayPlan
 import com.worksoc.goaicoach.application.PlayerSetupChangePlan
@@ -357,6 +358,26 @@ private fun GoCoachScreen(
         lastMoveText = display.lastMoveText
         applyScoreEstimateDisplayPlan(display.scoreDisplay)
         return display.nextAnalysisState
+    }
+
+    fun applyHumanEngineSyncDisplayPlan(sync: HumanEngineSyncDisplayPlan): GameState? =
+        when (sync) {
+            is HumanEngineSyncDisplayPlan.FinalScore -> {
+                applyFinalScoreDisplayPlan(sync.display)
+                null
+            }
+            is HumanEngineSyncDisplayPlan.ScoreEstimate -> {
+                applyScoreEstimateDisplayPlan(sync.display)
+                candidateText = sync.candidateText
+                sync.nextAnalysisState
+            }
+            HumanEngineSyncDisplayPlan.NoUpdate -> null
+        }
+
+    fun applyHumanEngineSyncFailurePlan(failure: HumanEngineSyncFailurePlan) {
+        scoreSnapshots = failure.scoreSnapshots
+        candidateText = failure.candidateText
+        engineMessage = failure.engineMessage
     }
 
     fun applyGameSessionResetPlan(reset: GameSessionResetPlan) {
@@ -949,34 +970,23 @@ private fun GoCoachScreen(
                     )
                 }
             }.onSuccess { result ->
-                when (
-                    val sync = buildHumanEngineSyncSuccessPlan(
+                nextAnalysisState = applyHumanEngineSyncDisplayPlan(
+                    buildHumanEngineSyncSuccessPlan(
                         afterMove = afterMove,
                         moveDescription = move.describe(beforeMove.boardSize),
                         result = result,
                         localMove = localMove,
                         previousSnapshots = scoreSnapshots,
-                    )
-                ) {
-                    is HumanEngineSyncDisplayPlan.FinalScore -> {
-                        applyFinalScoreDisplayPlan(sync.display)
-                    }
-                    is HumanEngineSyncDisplayPlan.ScoreEstimate -> {
-                        applyScoreEstimateDisplayPlan(sync.display)
-                        candidateText = sync.candidateText
-                        nextAnalysisState = sync.nextAnalysisState
-                    }
-                    HumanEngineSyncDisplayPlan.NoUpdate -> Unit
-                }
-            }.onFailure { error ->
-                val failure = buildHumanEngineSyncFailurePlan(
-                    localMove = localMove,
-                    previousSnapshots = scoreSnapshots,
-                    errorMessage = error.message,
+                    ),
                 )
-                scoreSnapshots = failure.scoreSnapshots
-                candidateText = failure.candidateText
-                engineMessage = failure.engineMessage
+            }.onFailure { error ->
+                applyHumanEngineSyncFailurePlan(
+                    buildHumanEngineSyncFailurePlan(
+                        localMove = localMove,
+                        previousSnapshots = scoreSnapshots,
+                        errorMessage = error.message,
+                    ),
+                )
             }
             isEngineBusy = false
             nextAnalysisState?.let { state ->
