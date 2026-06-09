@@ -45,6 +45,7 @@ import com.worksoc.goaicoach.application.estimateScoreForState
 import com.worksoc.goaicoach.application.resolveEndgameForState
 import com.worksoc.goaicoach.application.runAutoAiTurn
 import com.worksoc.goaicoach.application.selectRuntimePlayLevel
+import com.worksoc.goaicoach.application.planSavedGamePersistence
 import com.worksoc.goaicoach.application.startEngineSession
 import com.worksoc.goaicoach.application.startNewEngineGame
 import com.worksoc.goaicoach.application.syncAndEstimateGraphScore
@@ -53,6 +54,7 @@ import com.worksoc.goaicoach.application.RuntimePlayLevelSelection
 import com.worksoc.goaicoach.application.ShowTopMovesPlan
 import com.worksoc.goaicoach.application.ScoreEstimateDisplayPlan
 import com.worksoc.goaicoach.application.SavedGameRestorePlan
+import com.worksoc.goaicoach.application.SavedGamePersistencePlan
 import com.worksoc.goaicoach.application.TopMoveAnalysisUpdate
 import com.worksoc.goaicoach.application.UndoLocalStatePlan
 import com.worksoc.goaicoach.application.toCandidateText
@@ -190,20 +192,21 @@ private fun GoCoachScreen(
         playLevel,
         topMovesEnabled,
     ) {
-        if (!hasCheckedSavedSession || shouldShowResumePrompt) {
-            return@LaunchedEffect
-        }
-        val snapshot = SavedGameSnapshot(
-            gameState = gameState,
-            playerSetup = playerSetup,
-            playLevel = playLevel,
-            topMovesEnabled = topMovesEnabled,
-            savedAtMillis = System.currentTimeMillis(),
-        )
-        if (isGameEnded || !snapshot.isResumable) {
-            sessionStore.clear()
-        } else {
-            sessionStore.save(snapshot)
+        when (
+            val plan = planSavedGamePersistence(
+                hasCheckedSavedSession = hasCheckedSavedSession,
+                shouldShowResumePrompt = shouldShowResumePrompt,
+                isGameEnded = isGameEnded,
+                gameState = gameState,
+                playerSetup = playerSetup,
+                playLevel = playLevel,
+                topMovesEnabled = topMovesEnabled,
+                nowMillis = System.currentTimeMillis(),
+            )
+        ) {
+            SavedGamePersistencePlan.Skip -> Unit
+            SavedGamePersistencePlan.Clear -> sessionStore.clear()
+            is SavedGamePersistencePlan.Save -> sessionStore.save(plan.snapshot)
         }
     }
 
