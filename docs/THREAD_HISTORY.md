@@ -675,3 +675,8 @@
 - 확인 결과 `maxTime`은 최소 thinking time이 아니라 search time cap이며, `maxVisits=32`가 먼저 도달하면 500ms를 다 쓰지 않는다. KataGo 공식 문서는 고정 최소 시간을 제안하지 않고 하드웨어/용도별 benchmark tuning을 권장한다.
 - 현재 놓친 가능성이 큰 항목은 `analysis_learning.cfg`의 `nnRandomize=true`, seed 미고정, 낮은 visits에서의 불안정성, analysis process의 `numSearchThreads=4`가 고정 visits 품질 비교에는 불리할 수 있다는 점이다.
 - `docs/ENGINE_LEVEL_STRENGTH_REVIEW_2026-06-10.md`를 추가해 공식 문서 기준, 우리 설정, 기대 차이, 다음 검증 제안을 정리했다.
+- 사용자가 자동 대전 로그를 통해 엔진 품질 일관성을 먼저 확보하자고 했고, `32 visits`가 `16 visits`의 두 배인데도 기대 차이가 작은 논리를 더 검토해달라고 요청했다.
+- `scripts/run-katago-level-match.py`를 추가했다. 로컬 KataGo analysis engine으로 앱 레벨 정책을 모사해 AI-vs-AI 자동 대전 JSONL 로그를 생성한다. warm-up query, deterministic mode, 흑백 교대, 레벨별 visits/time/선택 정책 기록을 지원한다.
+- deterministic, `numSearchThreads=1`, warm-up 후 `빠른 초급 3단계` vs `초급 7단계` 4판 smoke 로그를 `docs/engine-match-logs/fb3-vs-lb7-det-20260610.jsonl`에 기록했다. 결과는 초급 7단계 3승, 빠른 초급 3단계 1승이다.
+- 사용자가 `중급 5단계`가 빠른 초급 3단계에는 이기지만 너무 느리다고 보고했다. 확인 결과 중급 5단계 표면 설정은 `64 visits / 500ms / BestOnly`이지만, 기존 AI 응수에서 `Balanced`의 `minVisitsPerCandidate=4`, `minTimeMillis=800ms`, `refinePolicyMoves=4`가 같이 적용될 수 있었다.
+- AI 응수 분석 요청에서 Top Moves용 보강을 제거했다. 이제 대국 응수는 `includePolicy=false`, `refinePolicyMoves=0`, `minVisitsPerCandidate=0`, `minTimeMillis=null`로 정규화되며, 중급 5단계는 실제 `64 visits / 500ms` 요청으로 동작한다.

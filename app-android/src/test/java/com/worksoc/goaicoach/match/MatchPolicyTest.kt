@@ -226,6 +226,39 @@ class MatchPolicyTest {
 
         assertEquals(32, adapter.analysisLimits.single().visits)
         assertEquals(500L, adapter.analysisLimits.single().timeMillis)
+        assertEquals(16, adapter.analysisLimits.single().candidateCount)
+        assertFalse(adapter.analysisLimits.single().includePolicy)
+        assertEquals(0, adapter.analysisLimits.single().refinePolicyMoves)
+        assertEquals(0, adapter.analysisLimits.single().minVisitsPerCandidate)
+        assertEquals(null, adapter.analysisLimits.single().minTimeMillis)
+    }
+
+    @Test
+    fun intermediateBestOnlyAiTurnUsesFastPlayBudgetWithoutTopMovesRefinement() = runBlocking {
+        val blackMove = Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine))
+        val adapter = FakeEngineAdapter(
+            analysisCandidates = listOf(
+                CandidateMove(
+                    move = blackMove,
+                    pointLoss = 0.0,
+                ),
+            ),
+        )
+
+        applyAiTurn(
+            engineAdapter = adapter,
+            currentState = GameState.empty(),
+            aiPlayer = StoneColor.Black,
+            playLevel = PlayLevelSetting(PlayLevelGroup.Intermediate, level = 5),
+        )
+
+        assertEquals(64, adapter.analysisLimits.single().visits)
+        assertEquals(500L, adapter.analysisLimits.single().timeMillis)
+        assertEquals(20, adapter.analysisLimits.single().candidateCount)
+        assertFalse(adapter.analysisLimits.single().includePolicy)
+        assertEquals(0, adapter.analysisLimits.single().refinePolicyMoves)
+        assertEquals(0, adapter.analysisLimits.single().minVisitsPerCandidate)
+        assertEquals(null, adapter.analysisLimits.single().minTimeMillis)
     }
 }
 

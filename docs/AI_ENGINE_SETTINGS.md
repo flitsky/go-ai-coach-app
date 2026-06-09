@@ -62,7 +62,12 @@
 
 Top Moves 분석은 대국 AI 응수 설정과 분리한다.
 
-- AI 응수는 현재 `EngineProfile.analysisLimit`를 사용한다.
+- AI 응수는 현재 `PlayLevelSetting.analysisLimit`를 사용하되, 대국 속도를 위해 Top Moves용 보강을 제거한다.
+  - `includePolicy=false`
+  - `refinePolicyMoves=0`
+  - `minVisitsPerCandidate=0`
+  - `minTimeMillis=null`
+  - 예: `중급 5단계`는 `64 visits / 500ms / BestOnly`로 착수한다. 기존처럼 `Balanced`의 최소 `80 visits / 800ms` 및 policy refine query를 AI 응수에 붙이지 않는다.
 - Top Moves와 착수 리뷰용 pre-move analysis는 현재 difficulty보다 한 단계 높은 difficulty의 기본 visits/time을 사용한다.
   - 예: 대국 AI가 `Beginner`이면 Top Moves는 최소 `Casual` 기본값인 `64 visits / 500ms`를 사용한다.
   - 수동으로 visits/time을 이미 더 높게 올려둔 경우에는 Top Moves가 약해지지 않도록 현재 값과 한 단계 위 기본값 중 큰 값을 사용한다.

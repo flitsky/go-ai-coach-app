@@ -251,7 +251,7 @@ private suspend fun EngineAdapter.selectAiMoveFromAnalysis(
     playLevel: PlayLevelSetting,
 ): SelectedAiMove? =
     runCatching {
-        val analysis = analyze(playLevel.analysisLimit)
+        val analysis = analyze(playLevel.aiMoveAnalysisLimit())
         val scoredCandidates = analysis.candidates
             .filter { candidate ->
                 candidate.move.player == aiPlayer && candidate.pointLoss != null
@@ -289,6 +289,14 @@ private suspend fun EngineAdapter.selectAiMoveFromAnalysis(
             }.trim(),
         )
     }.getOrNull()
+
+private fun PlayLevelSetting.aiMoveAnalysisLimit() =
+    analysisLimit.copy(
+        includePolicy = false,
+        refinePolicyMoves = 0,
+        minVisitsPerCandidate = 0,
+        minTimeMillis = null,
+    )
 
 private fun CandidateMove.describeForSelection(stateAfterHuman: GameState): String =
     buildString {
