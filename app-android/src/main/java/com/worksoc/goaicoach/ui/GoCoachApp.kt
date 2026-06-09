@@ -32,6 +32,7 @@ import com.worksoc.goaicoach.application.buildHumanEngineSyncFailurePlan
 import com.worksoc.goaicoach.application.buildHumanEngineSyncSuccessPlan
 import com.worksoc.goaicoach.application.buildLocalFinalScoreDisplayPlan
 import com.worksoc.goaicoach.application.buildLocalTwoPlayerUndoPlan
+import com.worksoc.goaicoach.application.buildUndoRequestPlan
 import com.worksoc.goaicoach.application.buildCachedTopMoveAnalysisUpdate
 import com.worksoc.goaicoach.application.buildCompletedTopMoveAnalysisUpdate
 import com.worksoc.goaicoach.application.buildNewLocalGameSessionPlan
@@ -75,6 +76,7 @@ import com.worksoc.goaicoach.application.SavedGamePersistencePlan
 import com.worksoc.goaicoach.application.SavedSessionPromptPlan
 import com.worksoc.goaicoach.application.StartConfiguredGamePlan
 import com.worksoc.goaicoach.application.TopMoveAnalysisUpdate
+import com.worksoc.goaicoach.application.UndoRequestPlan
 import com.worksoc.goaicoach.application.UndoLocalStatePlan
 import com.worksoc.goaicoach.application.toCandidateText
 import com.worksoc.goaicoach.match.MatchMode
@@ -943,67 +945,44 @@ private fun GoCoachScreen(
         }
     }
 
-    fun undoLastTurn() {
-        if (gameState.moves.isEmpty()) {
-            engineMessage = "No move to undo."
+    fun undoLocalTwoPlayerTurn(plan: UndoRequestPlan.LocalTwoPlayerUndo) {
+        val undo = buildLocalTwoPlayerUndoPlan(
+            currentState = gameState,
+            scoreSnapshots = scoreSnapshots,
+        )
+        val nextState = undo.gameState
+        applyUndoLocalStatePlan(undo)
+        if (!plan.syncEngineAfterUndo) {
+            engineMessage = "Local undo completed without engine sync."
             return
         }
-
-        if (matchMode == MatchMode.LocalTwoPlayer) {
-            if (isEngineBusy) {
-                engineMessage = "Engine is busy. Undo after the current analysis."
-                return
-            }
-            val undo = buildLocalTwoPlayerUndoPlan(
-                currentState = gameState,
-                scoreSnapshots = scoreSnapshots,
-            )
-            val nextState = undo.gameState
-            applyUndoLocalStatePlan(undo)
-            if (!isEngineReady) {
-                engineMessage = "Local undo completed without engine sync."
-                return
-            }
-            isEngineBusy = true
-            scope.launch {
-                runCatching {
-                    withContext(Dispatchers.IO) {
-                        engineAdapter.syncAndEstimateGraphScore(nextState, engineProfile)
-                    }
-                }.onSuccess { estimate ->
-                    val score = buildEngineEstimateDisplayPlan(
-                        state = nextState,
-                        estimate = estimate,
-                        previousSnapshots = scoreSnapshots,
-                        engineMessage = "Local undo completed and engine analysis synced.",
-                    )
-                    applyScoreEstimateDisplayPlan(score)
-                }.onFailure { error ->
-                    engineMessage = error.message ?: "Local undo engine sync failed."
+        isEngineBusy = true
+        scope.launch {
+            runCatching {
+                withContext(Dispatchers.IO) {
+                    engineAdapter.syncAndEstimateGraphScore(nextState, engineProfile)
                 }
-                isEngineBusy = false
-                requestTopMoveAnalysisForState(
-                    targetState = nextState,
-                    automatic = true,
+            }.onSuccess { estimate ->
+                val score = buildEngineEstimateDisplayPlan(
+                    state = nextState,
+                    estimate = estimate,
+                    previousSnapshots = scoreSnapshots,
+                    engineMessage = "Local undo completed and engine analysis synced.",
                 )
+                applyScoreEstimateDisplayPlan(score)
+            }.onFailure { error ->
+                engineMessage = error.message ?: "Local undo engine sync failed."
             }
-            return
+            isEngineBusy = false
+            requestTopMoveAnalysisForState(
+                targetState = nextState,
+                automatic = true,
+            )
         }
+    }
 
-        if (!isEngineReady) {
-            engineMessage = "Engine is not ready."
-            return
-        }
-        if (isEngineBusy) {
-            engineMessage = "AI is busy. Undo after the current response."
-            return
-        }
-
-        val undoCount = if (playerSetup.humanSeatCount() == 1) {
-            minOf(2, gameState.moves.size)
-        } else {
-            1
-        }
+    fun undoEngineBackedTurn(plan: UndoRequestPlan.EngineUndo) {
+        val undoCount = plan.undoCount
         scope.launch {
             isEngineBusy = true
             var nextAnalysisState: GameState? = null
@@ -1033,6 +1012,30 @@ private fun GoCoachScreen(
                     targetState = state,
                     automatic = true,
                 )
+            }
+        }
+    }
+
+    fun undoLastTurn() {
+        when (
+            val plan = buildUndoRequestPlan(
+                currentState = gameState,
+                matchMode = matchMode,
+                isEngineReady = isEngineReady,
+                isEngineBusy = isEngineBusy,
+                humanSeatCount = playerSetup.humanSeatCount(),
+            )
+        ) {
+            is UndoRequestPlan.ShowMessage -> {
+                engineMessage = plan.message
+                return
+            }
+            is UndoRequestPlan.LocalTwoPlayerUndo -> {
+                undoLocalTwoPlayerTurn(plan)
+                return
+            }
+            is UndoRequestPlan.EngineUndo -> {
+                undoEngineBackedTurn(plan)
             }
         }
     }

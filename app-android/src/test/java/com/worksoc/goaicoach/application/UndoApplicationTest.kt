@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.application
 
+import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.GameState
@@ -12,6 +13,72 @@ import org.junit.Assert.assertFalse
 import org.junit.Test
 
 class UndoApplicationTest {
+    @Test
+    fun undoRequestPlanReportsEmptyMoveHistoryFirst() {
+        val plan = buildUndoRequestPlan(
+            currentState = GameState.empty(),
+            matchMode = MatchMode.HumanVsAi,
+            isEngineReady = true,
+            isEngineBusy = false,
+            humanSeatCount = 1,
+        )
+
+        assertEquals(UndoRequestPlan.ShowMessage("No move to undo."), plan)
+    }
+
+    @Test
+    fun undoRequestPlanHandlesOfflineLocalTwoPlayerUndo() {
+        val state = GameState.empty()
+            .play(Move.Pass(StoneColor.Black))
+
+        val plan = buildUndoRequestPlan(
+            currentState = state,
+            matchMode = MatchMode.LocalTwoPlayer,
+            isEngineReady = false,
+            isEngineBusy = false,
+            humanSeatCount = 2,
+        )
+
+        assertEquals(UndoRequestPlan.LocalTwoPlayerUndo(syncEngineAfterUndo = false), plan)
+    }
+
+    @Test
+    fun undoRequestPlanBlocksBusyLocalTwoPlayerUndo() {
+        val state = GameState.empty()
+            .play(Move.Pass(StoneColor.Black))
+
+        val plan = buildUndoRequestPlan(
+            currentState = state,
+            matchMode = MatchMode.LocalTwoPlayer,
+            isEngineReady = true,
+            isEngineBusy = true,
+            humanSeatCount = 2,
+        )
+
+        assertEquals(
+            UndoRequestPlan.ShowMessage("Engine is busy. Undo after the current analysis."),
+            plan,
+        )
+    }
+
+    @Test
+    fun undoRequestPlanComputesEngineUndoCountForSingleHumanGame() {
+        val state = GameState.empty()
+            .play(Move.Pass(StoneColor.Black))
+            .play(Move.Pass(StoneColor.White))
+            .play(Move.Pass(StoneColor.Black))
+
+        val plan = buildUndoRequestPlan(
+            currentState = state,
+            matchMode = MatchMode.HumanVsAi,
+            isEngineReady = true,
+            isEngineBusy = false,
+            humanSeatCount = 1,
+        )
+
+        assertEquals(UndoRequestPlan.EngineUndo(undoCount = 2), plan)
+    }
+
     @Test
     fun localTwoPlayerUndoPlanReplaysOneMoveBackAndRecordsLocalSnapshot() {
         val state = GameState.empty()

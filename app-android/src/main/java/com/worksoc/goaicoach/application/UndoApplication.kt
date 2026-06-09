@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.application
 
+import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
 import com.worksoc.goaicoach.shared.ScoreSnapshot
@@ -19,6 +20,46 @@ internal data class UndoLocalStatePlan(
     val lastMoveText: String,
     val endgameLog: String,
 )
+
+internal sealed class UndoRequestPlan {
+    data class ShowMessage(val message: String) : UndoRequestPlan()
+    data class LocalTwoPlayerUndo(val syncEngineAfterUndo: Boolean) : UndoRequestPlan()
+    data class EngineUndo(val undoCount: Int) : UndoRequestPlan()
+}
+
+internal fun buildUndoRequestPlan(
+    currentState: GameState,
+    matchMode: MatchMode,
+    isEngineReady: Boolean,
+    isEngineBusy: Boolean,
+    humanSeatCount: Int,
+): UndoRequestPlan {
+    if (currentState.moves.isEmpty()) {
+        return UndoRequestPlan.ShowMessage("No move to undo.")
+    }
+
+    if (matchMode == MatchMode.LocalTwoPlayer) {
+        if (isEngineBusy) {
+            return UndoRequestPlan.ShowMessage("Engine is busy. Undo after the current analysis.")
+        }
+        return UndoRequestPlan.LocalTwoPlayerUndo(syncEngineAfterUndo = isEngineReady)
+    }
+
+    if (!isEngineReady) {
+        return UndoRequestPlan.ShowMessage("Engine is not ready.")
+    }
+    if (isEngineBusy) {
+        return UndoRequestPlan.ShowMessage("AI is busy. Undo after the current response.")
+    }
+
+    return UndoRequestPlan.EngineUndo(
+        undoCount = if (humanSeatCount == 1) {
+            minOf(2, currentState.moves.size)
+        } else {
+            1
+        },
+    )
+}
 
 internal fun buildLocalTwoPlayerUndoPlan(
     currentState: GameState,
