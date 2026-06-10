@@ -782,3 +782,6 @@
 - 확보 로그는 `docs/engine-benchmark-logs/emulator-pixel7-20260610/`에 저장했다. 포함 파일은 `engine_benchmark_profile.json`, KataGo process log, `logcat-tail.txt`, 사람이 읽기 위한 `summary.md`다.
 - 에뮬레이터 benchmark 결과는 v5 `b16-best-3-variants`, Japanese ruleset, samples 5회, time cap 5000ms 조건에서 B16 avg `3980.669ms`, B32 avg `4355.943ms`, B64 avg `5115.025ms`였다.
 - 이번 profile의 `fillStatus`는 모두 `UNKNOWN`이다. 원인은 현재 경량 GTP fast path summary에 JSON analysis처럼 `Visit diagnostics`가 포함되지 않아 benchmark가 root visits를 파싱하지 못하기 때문이다. elapsed time 근거는 확보됐지만 root visits 충족 여부 판단은 다음 개선 대상이다.
+- 사용자가 무선 디버깅을 다시 활성화했고 폰 설치를 요청했다. ADB 서버 재시작 후 mDNS에서 `SM-S908N`을 `192.168.35.191:42353`로 발견해 연결했다.
+- 로컬 기본 `java`가 Java 25라 Gradle/Kotlin DSL이 `IllegalArgumentException: 25`로 실패했다. `JAVA_HOME=$(/usr/libexec/java_home -v 17)`와 `ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk`를 명시해 debug APK 빌드를 성공시켰다.
+- 에뮬레이터가 함께 연결된 상태였으므로 `adb -s 192.168.35.191:42353`로 폰만 지정해 APK를 설치했다. `ANDROID_SERIAL=192.168.35.191:42353`로 KataGo model/config seed를 수행했고, `com.worksoc.goaicoach/.MainActivity`를 cold launch했다.
