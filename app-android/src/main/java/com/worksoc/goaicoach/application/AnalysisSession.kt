@@ -5,12 +5,11 @@ import com.worksoc.goaicoach.shared.AnalysisPreset
 import com.worksoc.goaicoach.shared.DifficultyProfile
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.GameState
-import com.worksoc.goaicoach.shared.LegalMoveGenerator
 import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
 import com.worksoc.goaicoach.shared.analysisFingerprint
 import java.util.LinkedHashMap
 
-internal const val MinScoredTopMovesForDisplay = 5
+internal const val LightweightTopMoveCandidateCount = 1
 
 internal data class AnalysisCacheKey(
     val positionFingerprint: String,
@@ -73,33 +72,21 @@ internal fun analysisKeyFor(
 internal fun topMoveCandidateCountFor(
     state: GameState,
     preset: AnalysisPreset,
-): Int =
-    LegalMoveGenerator
-        .legalPlayCount(state)
-        .coerceAtLeast(1)
-        .coerceAtMost(preset.candidateCap)
+): Int = LightweightTopMoveCandidateCount
 
 internal fun topMovesAnalysisLimitFor(
     profile: EngineProfile,
     preset: AnalysisPreset,
     candidateCount: Int,
 ): AnalysisLimit {
-    val promoted = if (preset.promoteTopMovesDifficulty) {
-        profile.difficulty.next().defaultAnalysisLimit()
-    } else {
-        profile.analysisLimit
-    }
-    val promotedTimeMillis = promoted.timeMillis ?: profile.analysisLimit.timeMillis
     return profile.analysisLimit.copy(
-        visits = maxOf(profile.analysisLimit.visits, promoted.visits),
-        timeMillis = promotedTimeMillis?.let {
-            strongerTopMovesTimeMillis(profile.analysisLimit.timeMillis, it)
-        } ?: profile.analysisLimit.timeMillis,
+        visits = profile.analysisLimit.visits,
+        timeMillis = profile.analysisLimit.timeMillis,
         candidateCount = candidateCount,
-        includePolicy = preset.includePolicy,
-        refinePolicyMoves = preset.refinePolicyMoves,
-        minVisitsPerCandidate = preset.minVisitsPerCandidate,
-        minTimeMillis = preset.minTimeMillis,
+        includePolicy = false,
+        refinePolicyMoves = 0,
+        minVisitsPerCandidate = 0,
+        minTimeMillis = null,
     )
 }
 
@@ -136,19 +123,13 @@ internal fun String.withTopMovesStrengthHeader(
 ): String {
     val label = if (deep) {
         DifficultyProfile.FullAnalysis.label
-    } else if (!preset.promoteTopMovesDifficulty) {
-        profile.difficulty.label
     } else {
-        profile.difficulty.next().label
+        profile.difficulty.label
     }
     val suffix = if (deep) {
         "manual deep analysis"
-    } else if (profile.difficulty.next() == profile.difficulty) {
-        "same as max profile"
-    } else if (!preset.promoteTopMovesDifficulty) {
-        "same as ${profile.difficulty.label}"
     } else {
-        "one grade above ${profile.difficulty.label}"
+        "fast best-only"
     }
     return "Top Moves request: ${preset.label}, up to $candidateCount candidate(s), $label ($suffix), base ${limit.visits} visits / ${limit.timeMillis ?: 0}ms, refine ${limit.refinePolicyMoves}\n$this"
 }

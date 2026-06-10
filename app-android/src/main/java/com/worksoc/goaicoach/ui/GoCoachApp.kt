@@ -603,6 +603,9 @@ private fun GoCoachScreen(
         automatic: Boolean,
         deep: Boolean = false,
     ) {
+        if (automatic) {
+            return
+        }
         if (
             !shouldRequestTopMoveAnalysis(
                 isGameEnded = isGameEnded,
@@ -708,7 +711,7 @@ private fun GoCoachScreen(
     fun hideTopMoves() {
         topMovesEnabled = false
         clearTopMoveSpots()
-        engineMessage = "Top Moves hidden. Pre-move analysis cache still runs for move review."
+        engineMessage = "Top Moves hidden. Automatic engine analysis is paused."
     }
 
     fun changeScoringRule(nextRuleset: Ruleset) {

@@ -755,3 +755,9 @@
 - 맥북 `b16-best-3-variants` 5회 benchmark를 `docs/engine-benchmark-logs/mac-b16best3-20260610`에 저장했다. 결과는 B16 평균 `139.174ms`, B32 평균 `200.021ms`, B64 평균 `247.521ms`, 모두 `fill=OK`였다.
 - `make test`가 통과했다.
 - USB로 연결된 `SM-S908N`에 최신 debug APK를 설치하고 모델/config를 seed했다. 앱 실행 후 version 4 benchmark가 자동 수행되어 `benchmarkPositionName=b16-best-3-variants`, prefix `Black E5, White C4, Black E3`, sample별 `positionMoves` 저장을 확인했다. 실기기 결과도 B16/B32/B64 모두 `fill=OK`였다.
+- 사용자가 추가로 “호출 오버헤드가 발생하는 부분을 재정리하고, JSON 기반 전체수 평가 고도화는 나중으로 미룬 뒤 우선 빠른 최적수 분석만 쓰자”고 요청했다.
+- Top Moves 자동 백그라운드 분석을 중지했다. `requestTopMoveAnalysisForState(... automatic=true)`는 초입에서 반환하므로 새 게임, 착수, 무르기, 이어하기, 규칙 변경 후에 pre-move analysis cache를 자동 생성하지 않는다.
+- Top Moves 수동 분석도 best-1 경량 정책으로 바꿨다. 후보수는 항상 1개이고 현재 Player Setup의 visits/time을 그대로 쓰며, `includePolicy=false`, `refinePolicyMoves=0`, `minVisitsPerCandidate=0`, `minTimeMillis=null`, deep fallback 없음으로 요청한다.
+- `KataGoProcessEngineAdapter.analyze()`에서 경량 요청은 JSON analysis process를 건너뛰고 GTP `kata-search_analyze` fast path를 사용하도록 변경했다. JSON `policy`/refine/sweep은 `includePolicy=true` 또는 `refinePolicyMoves>0`인 broad study analysis에서만 사용한다.
+- 첫 설치/초기 상태의 `Top Moves` 기본값을 꺼짐으로 변경했다. 기존 저장 설정이 켜짐이어도 자동 분석은 실행되지 않고, 사용자가 버튼을 눌렀을 때만 현재 국면 best-1을 분석한다.
+- `docs/USER_OPTION_MANUAL.md`, `docs/AI_ENGINE_SETTINGS.md`, `docs/MOVE_ANALYSIS_DATA_MODEL.md`, `docs/KATRAIN_UX_BACKLOG.md`를 갱신해 모바일 기본은 빠른 대국 경로, KaTrain식 전체 후보/policy/refine/deep 분석은 향후 수동 study mode 후보라는 의사결정을 기록했다.

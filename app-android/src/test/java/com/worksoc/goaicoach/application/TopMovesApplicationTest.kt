@@ -29,8 +29,8 @@ class TopMovesApplicationTest {
             deep = false,
         )
 
-        assertEquals(8, plan.candidateCount)
-        assertEquals(8, plan.analysisLimit.candidateCount)
+        assertEquals(1, plan.candidateCount)
+        assertEquals(1, plan.analysisLimit.candidateCount)
         assertEquals(AnalysisPreset.Lite, plan.analysisKey.preset)
         assertEquals(false, plan.analysisKey.deep)
     }
@@ -117,7 +117,7 @@ class TopMovesApplicationTest {
     }
 
     @Test
-    fun planShowTopMovesRequestsDeepFallbackWhenDeepPresetHasTooFewScoredMoves() {
+    fun planShowTopMovesUsesCachedBestMoveWithoutDeepFallback() {
         val state = GameState.empty()
         val snapshot = MoveAnalysisSnapshot.from(
             state = state,
@@ -146,7 +146,7 @@ class TopMovesApplicationTest {
             isEngineBusy = false,
         )
 
-        assertTrue(showPlan is ShowTopMovesPlan.RequestAnalysis)
-        assertEquals(true, (showPlan as ShowTopMovesPlan.RequestAnalysis).deep)
+        assertTrue(showPlan is ShowTopMovesPlan.ShowCached)
+        assertEquals(1, (showPlan as ShowTopMovesPlan.ShowCached).candidateMoves.size)
     }
 }

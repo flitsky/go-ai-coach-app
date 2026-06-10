@@ -87,7 +87,7 @@ fun createEngineBootstrap(
             append("KataGo assets found. Using local process engine.")
             if (!analysisConfig.isFile) {
                 append("\n")
-                append("KataGo JSON analysis config missing. Top Moves will fall back to GTP search analysis.")
+                append("KataGo JSON analysis config missing. Broad study analysis will fall back to GTP search analysis.")
             }
             if (bundleSeedMessages.isNotEmpty()) {
                 append("\n")

@@ -121,22 +121,10 @@ internal fun planShowTopMoves(
     isEngineBusy: Boolean,
 ): ShowTopMovesPlan {
     if (reviewAnalysis.hasEngineCandidates && lastAnalysisKey == currentPlan.analysisKey) {
-        val scoredCount = reviewAnalysis.scoredPlayCount
-        if (
-            scoredCount >= MinScoredTopMovesForDisplay ||
-            isEngineBusy ||
-            !analysisPreset.allowManualDeepFallback
-        ) {
-            val candidateMoves = reviewAnalysis.candidatesForDisplay()
-            return ShowTopMovesPlan.ShowCached(
-                candidateMoves = candidateMoves,
-                engineMessage = "Showing ${candidateMoves.scoredCandidateCount()} scored Top Moves from cached ${analysisPreset.label} analysis.",
-            )
-        }
-        return ShowTopMovesPlan.RequestAnalysis(
-            deep = true,
-            candidateMoves = emptyList(),
-            engineMessage = "Cached Top Moves has only $scoredCount scored candidate(s). Running deeper analysis.",
+        val candidateMoves = reviewAnalysis.candidatesForDisplay()
+        return ShowTopMovesPlan.ShowCached(
+            candidateMoves = candidateMoves,
+            engineMessage = "Showing ${candidateMoves.scoredCandidateCount()} scored best move from cached ${analysisPreset.label} analysis.",
         )
     }
 

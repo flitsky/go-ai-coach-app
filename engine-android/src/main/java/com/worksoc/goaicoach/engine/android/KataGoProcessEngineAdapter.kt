@@ -116,10 +116,12 @@ class KataGoProcessEngineAdapter(
     override suspend fun analyze(limit: AnalysisLimit): AnalysisResult {
         ensureProcessStarted()
         val effectiveLimit = limit.effectiveAnalysisLimit()
-        runCatching {
-            analyzeWithJson(effectiveLimit, limit.candidateCount)
-        }.getOrNull()?.let { jsonResult ->
-            return jsonResult
+        if (effectiveLimit.needsJsonAnalysis()) {
+            runCatching {
+                analyzeWithJson(effectiveLimit, limit.candidateCount)
+            }.getOrNull()?.let { jsonResult ->
+                return jsonResult
+            }
         }
 
         val candidates = analyzeWithGtp(effectiveLimit, limit)
@@ -607,6 +609,9 @@ class KataGoProcessEngineAdapter(
             timeMillis = minimumTimeMillis,
         )
     }
+
+    private fun AnalysisLimit.needsJsonAnalysis(): Boolean =
+        includePolicy || refinePolicyMoves > 0
 
     private fun AnalysisLimit.toJsonAnalysisQuery(
         refineMove: Move.Play? = null,

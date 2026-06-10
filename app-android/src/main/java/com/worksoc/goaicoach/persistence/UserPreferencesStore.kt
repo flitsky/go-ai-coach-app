@@ -11,7 +11,7 @@ import org.json.JSONObject
 internal data class UserPreferencesSnapshot(
     val playerSetup: PlayerSetup = PlayerSetup(),
     val ruleset: Ruleset = Ruleset.Japanese,
-    val topMovesEnabled: Boolean = true,
+    val topMovesEnabled: Boolean = false,
     val showCoordinates: Boolean = true,
     val showMoveNumbers: Boolean = false,
     val showLastMoveRing: Boolean = true,
@@ -64,7 +64,7 @@ internal object UserPreferencesCodec {
             UserPreferencesSnapshot(
                 playerSetup = decodePlayerSetup(json.optJSONObject("playerSetup")),
                 ruleset = enumOrDefault(json.optString("ruleset"), Ruleset.Japanese),
-                topMovesEnabled = json.optBoolean("topMovesEnabled", true),
+                topMovesEnabled = json.optBoolean("topMovesEnabled", false),
                 showCoordinates = json.optBoolean("showCoordinates", true),
                 showMoveNumbers = json.optBoolean("showMoveNumbers", false),
                 showLastMoveRing = json.optBoolean("showLastMoveRing", true),

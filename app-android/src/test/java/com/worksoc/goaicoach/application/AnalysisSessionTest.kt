@@ -20,7 +20,7 @@ import org.junit.Test
 
 class AnalysisSessionTest {
     @Test
-    fun topMoveCandidateCountIsBoundedByPresetCapAndLegalMoves() {
+    fun topMoveCandidateCountUsesLightweightBestOnlyPolicy() {
         val empty = GameState.empty()
         val nearlyFull = empty.copy(
             stones = buildMap {
@@ -35,30 +35,30 @@ class AnalysisSessionTest {
             },
         )
 
-        assertEquals(8, topMoveCandidateCountFor(empty, AnalysisPreset.Lite))
-        assertEquals(81, topMoveCandidateCountFor(empty, AnalysisPreset.Deep))
+        assertEquals(1, topMoveCandidateCountFor(empty, AnalysisPreset.Lite))
+        assertEquals(1, topMoveCandidateCountFor(empty, AnalysisPreset.Deep))
         assertEquals(1, topMoveCandidateCountFor(nearlyFull, AnalysisPreset.Deep))
     }
 
     @Test
-    fun topMovesLimitPromotesBalancedButKeepsLiteAtCurrentProfile() {
+    fun topMovesLimitUsesCurrentProfileBestOnlyBudget() {
         val profile = EngineProfile(
             difficulty = DifficultyProfile.Beginner,
             analysisLimit = AnalysisLimit(visits = 16, timeMillis = 250, candidateCount = 8),
         )
 
-        val lite = topMovesAnalysisLimitFor(profile, AnalysisPreset.Lite, candidateCount = 8)
-        val balanced = topMovesAnalysisLimitFor(profile, AnalysisPreset.Balanced, candidateCount = 20)
+        val lite = topMovesAnalysisLimitFor(profile, AnalysisPreset.Lite, candidateCount = 1)
+        val balanced = topMovesAnalysisLimitFor(profile, AnalysisPreset.Balanced, candidateCount = 1)
 
         assertEquals(16, lite.visits)
         assertEquals(250L, lite.timeMillis)
-        assertEquals(8, lite.candidateCount)
+        assertEquals(1, lite.candidateCount)
         assertEquals(0, lite.refinePolicyMoves)
 
-        assertEquals(64, balanced.visits)
-        assertEquals(500L, balanced.timeMillis)
-        assertEquals(20, balanced.candidateCount)
-        assertEquals(4, balanced.refinePolicyMoves)
+        assertEquals(16, balanced.visits)
+        assertEquals(250L, balanced.timeMillis)
+        assertEquals(1, balanced.candidateCount)
+        assertEquals(0, balanced.refinePolicyMoves)
     }
 
     @Test
