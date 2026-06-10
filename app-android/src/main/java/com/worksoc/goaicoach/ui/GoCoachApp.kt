@@ -248,14 +248,10 @@ private fun GoCoachScreen(
 
     LaunchedEffect(
         hasCompletedEngineStartup,
-        hasCheckedSavedSession,
-        shouldShowResumePrompt,
         isEngineReady,
     ) {
         if (
             !hasCompletedEngineStartup ||
-            !hasCheckedSavedSession ||
-            shouldShowResumePrompt ||
             !isEngineReady ||
             !isLocalKataGoEngine(engineName = engineName, engineDiagnostic = engineDiagnostic) ||
             hasCheckedEngineBenchmark

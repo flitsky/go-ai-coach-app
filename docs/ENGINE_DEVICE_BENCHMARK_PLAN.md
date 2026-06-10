@@ -181,6 +181,8 @@ data class DeviceEngineBenchmarkProfile(
 5. 벤치마크 중에는 엔진 busy 상태로 표시하고, 완료 후 현재 game state로 엔진을 다시 sync한다.
 6. `Copy Log`에는 `[EngineBenchmark]` 섹션으로 저장 파일 내용이 포함된다.
 
+복원할 저장 대국이 있어도 benchmark는 실행된다. benchmark는 완료 후 현재 game state로 엔진을 다시 sync하므로, 이후 사용자가 저장 대국을 복원해도 engine state가 다시 해당 대국으로 맞춰진다.
+
 저장 위치:
 
 ```text
@@ -208,6 +210,16 @@ data class DeviceEngineBenchmarkProfile(
 - 저장만 수행한다.
 - 실제 `PlayLevelSetting.analysisLimit`에는 아직 반영하지 않는다.
 - 다음 단계에서 저장된 benchmark profile을 읽어 `자동 / 빠른 응답 / 안정 탐색 / 수동` 정책에 반영한다.
+
+SM-S908N 1차 저장 확인:
+
+| Visits | Min ms | Avg ms | Max ms |
+| ---: | ---: | ---: | ---: |
+| 16 | 1491.209 | 3089.351 | 5844.946 |
+| 32 | 783.649 | 1449.502 | 2590.657 |
+| 64 | 1934.299 | 2687.389 | 4227.159 |
+
+이 결과는 폰에서는 현재 고정 time cap이 부족할 수 있음을 보여준다. 다음 단계에서는 저장된 benchmark profile을 읽어 실제 엔진 요청 time cap에 반영해야 한다.
 
 ## 현재 결론
 

@@ -715,3 +715,7 @@
 - `EngineBenchmarkStore.kt`를 추가했다. 내부 파일 `engine_benchmark_profile.json`에 `createdAtMillis`, `samplesPerVisit`, `timeCapMs`, visits별 `minMs`, `avgMs`, `maxMs`, `samples`를 JSON으로 저장한다.
 - `Copy Log`의 debug report에 `[EngineBenchmark]` 섹션을 추가해 저장된 benchmark file 내용을 함께 복사할 수 있게 했다.
 - 이번 구현은 benchmark 측정/저장까지만 수행하고, 실제 `PlayLevelSetting.analysisLimit`에 benchmark result를 반영하는 기능은 다음 단계로 분리했다.
+- 무선 ADB가 끊겨 있어 mDNS 탐색으로 `adb-R5CT22WTVXP-4zK8Uu`를 찾고, 사용자가 제공한 pairing code `693876`으로 `192.168.0.62:35321`에 페어링했다. 이후 `192.168.0.62:33337`로 연결했다.
+- 최신 debug APK를 무선 설치하고 실행했다. 처음에는 저장 대국 복원 prompt 조건 때문에 benchmark file이 생성되지 않아, 복원 prompt 여부와 무관하게 엔진 준비 후 benchmark가 실행되도록 조건을 완화했다.
+- 수정 후 `make test`가 통과했고, 다시 무선 설치/실행했다. 앱 내부 파일 `files/engine_benchmark_profile.json` 생성 확인까지 완료했다.
+- SM-S908N 첫 로컬 benchmark 저장값: B16 min `1491.209ms`, avg `3089.351ms`, max `5844.946ms`; B32 min `783.649ms`, avg `1449.502ms`, max `2590.657ms`; B64 min `1934.299ms`, avg `2687.389ms`, max `4227.159ms`. 이 값은 실제 time cap 보정이 필요하다는 강한 근거다.
