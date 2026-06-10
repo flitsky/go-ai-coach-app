@@ -115,9 +115,11 @@
 - `Copy Log`: 현재 런타임 상태, 보드, 수순, 종료 로그, 화면 표시 텍스트, 엔진 진단 정보를 clipboard에 복사한다.
 - `Benchmark`: 현재 기기에 저장된 엔진 벤치마크 결과를 다시 표시한다.
   - 결과 팝업은 B16/B32/B64별 elapsed `min / max / avg`, root visits `min / avg / max`, fill `OK / SHORT / UNKNOWN` 개수를 보여준다.
+  - 측정 포지션은 앱이 B16 최적수로 3수 prefix를 만든 뒤 sample별 deterministic 변형을 붙인 `b16-best-3-variants`다. 같은 포지션 반복으로 인한 KataGo 내부 재사용 영향을 줄이기 위한 방식이다.
   - `다시 체크해보기`를 누르면 현재 기기에서 benchmark를 다시 실행한다.
   - 엔진이 busy 상태이면 재측정은 시작하지 않고, 현재 엔진 작업이 끝난 뒤 다시 시도해야 한다.
   - 저장된 결과가 아직 없으면 benchmark를 바로 실행한다.
+  - 상세 sample별 `elapsedMs`, `rootVisits`, `fillStatus`, 측정 수순은 `Copy Log`의 `[EngineBenchmark]` 섹션에 포함된다. 따라서 benchmark 결과 팝업에는 별도 로그 복사 버튼을 두지 않는다.
 - `Scoring rule: Area | Territory`: 계가 방식을 전환한다.
   - `Territory`가 기본값이다. 한국/일본식처럼 집 + 상대 포로를 기준으로 계산한다.
   - `Area`는 중국식처럼 현재 보드의 돌 + 집을 기준으로 계산한다.

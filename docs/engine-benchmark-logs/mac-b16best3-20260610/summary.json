@@ -1,0 +1,76 @@
+{
+  "samples": 5,
+  "positions": [
+    "b16-best-3-variants"
+  ],
+  "visits": [
+    16,
+    32,
+    64
+  ],
+  "timeCapMs": 5000,
+  "deterministic": false,
+  "searchThreads": 4,
+  "analysisThreads": 1,
+  "randomMoves": 24,
+  "generatedPositions": {
+    "b16-best-3-variants": [
+      [
+        "B",
+        "E5"
+      ],
+      [
+        "W",
+        "C4"
+      ],
+      [
+        "B",
+        "E3"
+      ]
+    ]
+  },
+  "results": [
+    {
+      "position": "b16-best-3-variants",
+      "visits": 16,
+      "samples": 5,
+      "shortCount": 0,
+      "elapsedMinMs": 68.398,
+      "elapsedAvgMs": 139.174,
+      "elapsedMaxMs": 160.655,
+      "elapsedP90Ms": 160.655,
+      "rootVisitsMin": 17,
+      "rootVisitsAvg": 17,
+      "rootVisitsMax": 17,
+      "recommendedTimeCapMs": 250
+    },
+    {
+      "position": "b16-best-3-variants",
+      "visits": 32,
+      "samples": 5,
+      "shortCount": 0,
+      "elapsedMinMs": 140.606,
+      "elapsedAvgMs": 200.021,
+      "elapsedMaxMs": 435.463,
+      "elapsedP90Ms": 435.463,
+      "rootVisitsMin": 35,
+      "rootVisitsAvg": 35,
+      "rootVisitsMax": 35,
+      "recommendedTimeCapMs": 550
+    },
+    {
+      "position": "b16-best-3-variants",
+      "visits": 64,
+      "samples": 5,
+      "shortCount": 0,
+      "elapsedMinMs": 242.257,
+      "elapsedAvgMs": 247.521,
+      "elapsedMaxMs": 253.707,
+      "elapsedP90Ms": 253.707,
+      "rootVisitsMin": 67,
+      "rootVisitsAvg": 67,
+      "rootVisitsMax": 67,
+      "recommendedTimeCapMs": 350
+    }
+  ]
+}

@@ -747,3 +747,11 @@
 - `GameUiEvent.ShowEngineBenchmark`와 dispatch test를 추가했다. `make test`는 통과했다. 폰 설치는 시도했지만 ADB 연결이 끊겨 실기기 설치는 다음 연결 시점으로 남겼다.
 - 사용자가 메뉴 benchmark 재측정에서도 B16과 B32 시간이 크게 차이 나지 않는다고 보고했다. 폰 저장 파일을 읽어 확인한 결과 B16은 root `17`, B32는 root `35`로 모두 `fill=OK`라 root 탐색 요청은 정상 수행되고 있었다.
 - 같은 profile의 elapsed는 B16 평균 `1831ms`, B32 평균 `1566ms`, B64 평균 `4046ms`였다. 첫 샘플 제외 평균도 B16 `1349ms`, B32 `1314ms`로 비슷했다. 결론은 16→32 visits 증가 비용보다 KataGo JSON analysis 호출/NN 평가/스레드 스케줄링/포지션별 변동 같은 고정 오버헤드가 더 커서 저방문수 구간에서는 시간이 선형으로 늘지 않는다는 것이다.
+- 사용자가 엔진 setup부에서 앱 분석 cache가 benchmark에 영향을 주는지, 그리고 B16 최적수 3수로 만든 benchmark용 맵을 쓰는 방향을 제안했다.
+- 코드 확인 결과 앱의 `AnalysisResultCache`는 Top Moves 경로에서만 사용되고, benchmark는 `EngineAdapter.analyze()`를 직접 호출하므로 앱 레벨 cache는 benchmark에 끼지 않는다.
+- 다만 KataGo JSON analysis process는 살아 있는 프로세스라 같은 포지션을 반복 질의하면 내부 search/NN 재사용 영향이 섞인다. 실제 맥북 테스트에서도 단일 `b16-best-3` 포지션 반복 시 0ms대 응답이 발생했다.
+- 이에 benchmark 방식을 `measurementVersion=4`, `b16-best-3-variants`로 변경했다. 앱은 B16 최적수 3수 prefix를 만든 뒤 sample별 deterministic 변형 수순을 붙여 서로 다른 포지션에서 B16/B32/B64를 라운드 로빈 측정한다.
+- benchmark 저장 JSON에는 `benchmarkPositionName`, `benchmarkPositionMoves`, sample별 `positionMoves`를 추가했다. 결과 팝업에는 측정 포지션과 prefix 수순을 표시하고, 상세 sampleDetails는 기존 `Copy Log`의 `[EngineBenchmark]` 섹션으로 수집하게 했다. 별도 로그 복사 버튼은 추가하지 않았다.
+- 맥북 `b16-best-3-variants` 5회 benchmark를 `docs/engine-benchmark-logs/mac-b16best3-20260610`에 저장했다. 결과는 B16 평균 `139.174ms`, B32 평균 `200.021ms`, B64 평균 `247.521ms`, 모두 `fill=OK`였다.
+- `make test`가 통과했다.
+- USB로 연결된 `SM-S908N`에 최신 debug APK를 설치하고 모델/config를 seed했다. 앱 실행 후 version 4 benchmark가 자동 수행되어 `benchmarkPositionName=b16-best-3-variants`, prefix `Black E5, White C4, Black E3`, sample별 `positionMoves` 저장을 확인했다. 실기기 결과도 B16/B32/B64 모두 `fill=OK`였다.

@@ -3,6 +3,8 @@ package com.worksoc.goaicoach.application
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.AnalysisResult
 import com.worksoc.goaicoach.shared.BoardSize
+import com.worksoc.goaicoach.shared.BoardCoordinate
+import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.DeadStonesResult
 import com.worksoc.goaicoach.shared.EngineAdapter
 import com.worksoc.goaicoach.shared.EngineProfile
@@ -43,9 +45,11 @@ class EngineDeviceBenchmarkApplicationTest {
 
         assertEquals(
             """
-                measurementVersion=3
+                measurementVersion=4
                 samplesPerVisit=5
                 timeCapMs=5000
+                benchmarkPosition=b16-best-3-variants
+                benchmarkPositionMoves=none
                 B16: minMs=1.0, avgMs=2.0, maxMs=3.0, samples=5, root=none, fill=OK=0, SHORT=0, UNKNOWN=0
             """.trimIndent(),
             profile.toSummaryText(),
@@ -129,14 +133,21 @@ class EngineDeviceBenchmarkApplicationTest {
             visitsTargets = listOf(16, 32, 64),
         )
 
-        assertEquals(listOf(16, 32, 64, 16, 32, 64), engine.analyzeVisits)
+        assertEquals(listOf(16, 16, 16), engine.analyzeVisits.take(3))
+        assertEquals(listOf(16, 32, 64, 16, 32, 64), engine.analyzeVisits.drop(3))
         assertEquals(listOf(16, 32, 64), profile.metrics.map { metric -> metric.visits })
         assertEquals(listOf(2, 2, 2), profile.metrics.map { metric -> metric.samples })
+        assertEquals(listOf("Black E5", "White C5", "Black G6"), profile.benchmarkPositionMoves)
+        assertEquals(
+            listOf("Black E5", "White C5", "Black G6", "White A9"),
+            profile.metrics.first { metric -> metric.visits == 16 }.sampleDetails[1].positionMoves,
+        )
     }
 }
 
 private class RecordingBenchmarkEngineAdapter : EngineAdapter {
     val analyzeVisits = mutableListOf<Int>()
+    private var state = GameState.empty()
 
     override suspend fun initialize(profile: EngineProfile): EngineStatus =
         EngineStatus.ready("initialized")
@@ -147,11 +158,15 @@ private class RecordingBenchmarkEngineAdapter : EngineAdapter {
     override suspend fun newGame(
         boardSize: BoardSize,
         ruleset: Ruleset,
-    ): EngineStatus =
-        EngineStatus.ready("new game")
+    ): EngineStatus {
+        state = GameState.empty(boardSize = boardSize, ruleset = ruleset)
+        return EngineStatus.ready("new game")
+    }
 
-    override suspend fun playMove(move: Move): EngineStatus =
-        EngineStatus.ready("played")
+    override suspend fun playMove(move: Move): EngineStatus {
+        state = state.play(move)
+        return EngineStatus.ready("played")
+    }
 
     override suspend fun genMove(player: StoneColor): MoveResult =
         MoveResult(
@@ -167,7 +182,7 @@ private class RecordingBenchmarkEngineAdapter : EngineAdapter {
         analyzeVisits += limit.visits
         return AnalysisResult(
             status = EngineStatus.ready("analyzed"),
-            candidates = emptyList(),
+            candidates = listOfNotNull(state.nextBenchmarkCandidate()),
             summary = "analyzed",
         )
     }
@@ -196,4 +211,14 @@ private class RecordingBenchmarkEngineAdapter : EngineAdapter {
 
     override suspend fun stop(): EngineStatus =
         EngineStatus.stopped("stopped")
+
+    private fun GameState.nextBenchmarkCandidate(): CandidateMove? {
+        val labels = listOf("E5", "C5", "G6", "F3", "C6", "D4")
+        val label = labels.getOrNull(moves.size) ?: return null
+        return CandidateMove(
+            move = Move.Play(nextPlayer, BoardCoordinate.fromLabel(label, boardSize)),
+            pointLoss = 0.0,
+            engineOrder = 0,
+        )
+    }
 }

@@ -303,7 +303,7 @@ make engine-device-benchmark
 | --- | --- |
 | samples | 10 |
 | visits | 16, 32, 64 |
-| positions | empty, random |
+| positions | b16-best-3-variants |
 | time cap | 5000ms |
 | output | `docs/engine-benchmark-logs/mac-20260610` |
 
@@ -318,8 +318,11 @@ make engine-device-benchmark \
 
 주의:
 
-- `empty`는 같은 빈 판을 반복 질의하므로 KataGo 내부 cache/reuse 영향이 섞일 수 있다.
-- `random`은 sample마다 새 random legal 9x9 position을 생성하므로, 디바이스 안정 time cap 판단에는 `random` 결과를 우선 사용한다.
+- 앱의 Top Moves `AnalysisResultCache`는 benchmark 경로에 들어가지 않는다. benchmark는 `EngineAdapter.analyze()`를 직접 호출한다.
+- 다만 KataGo JSON analysis process 자체는 살아 있는 프로세스이므로, 같은 포지션을 반복 질의하면 내부 search/NN 재사용 영향이 섞일 수 있다.
+- 이를 줄이기 위해 기본 benchmark 포지션은 `b16-best-3-variants`를 사용한다. 먼저 B16 최적수 3수 prefix를 만든 뒤, sample별 deterministic 변형 수순을 붙여 서로 다른 포지션에서 측정한다.
+- `empty`는 같은 빈 판 반복 질의라 cache/reuse 영향을 보기 위한 비교용에 가깝다.
+- `random`은 sample마다 새 random legal 9x9 position을 생성한다. 완전 랜덤 분포 확인이 필요할 때만 보조로 사용한다.
 
 ## 맥북 1차 로컬 벤치마크 결과
 
@@ -347,3 +350,33 @@ make engine-device-benchmark
 - random position 기준으로 B16은 현재 250ms 기본값이면 충분하다.
 - B32는 현재 500ms 기본값이면 충분하다.
 - B64는 현재 500ms에서는 일부 random position에서 부족할 수 있으므로, 안정 cap 후보는 750ms 이상이다.
+
+## 맥북 B16 3수 prefix 벤치마크 결과
+
+실행:
+
+```bash
+make engine-device-benchmark \
+  ENGINE_DEVICE_BENCHMARK_SAMPLES=5 \
+  ENGINE_DEVICE_BENCHMARK_OUT=docs/engine-benchmark-logs/mac-b16best3-20260610
+```
+
+결과:
+
+- summary: `docs/engine-benchmark-logs/mac-b16best3-20260610/summary.md`
+- raw samples: `docs/engine-benchmark-logs/mac-b16best3-20260610/samples.jsonl`
+- 생성 prefix: `B E5, W C4, B E3`
+- 조건: non-deterministic, `numSearchThreads=4`, time cap `5000ms`, sample별 deterministic 변형 포지션
+
+| Position | Visits | SHORT | Min ms | Avg ms | Max ms | P90 ms | Root avg | Recommended cap |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| b16-best-3-variants | 16 | 0 | 68.398 | 139.174 | 160.655 | 160.655 | 17 | 250ms |
+| b16-best-3-variants | 32 | 0 | 140.606 | 200.021 | 435.463 | 435.463 | 35 | 550ms |
+| b16-best-3-variants | 64 | 0 | 242.257 | 247.521 | 253.707 | 253.707 | 67 | 350ms |
+
+해석:
+
+- 모든 샘플이 `fill=OK`로 목표 root visits를 채웠다.
+- 같은 포지션을 그대로 5회 반복했을 때는 0ms대 응답이 발생해 KataGo analysis process 내부 재사용 영향이 컸다. 따라서 앱에는 단일 고정 포지션 반복이 아니라 `b16-best-3-variants` 방식을 적용한다.
+- B16과 B32의 elapsed가 선형적으로 벌어지지는 않는다. 저방문수 구간에서는 JSON analysis 호출, NN 평가, search thread scheduling, 직전 같은 sample 포지션의 낮은 visits 검색 재사용이 함께 섞인다.
+- 이 benchmark는 “요청 visits를 채우는가”를 판정하는 용도에 더 적합하며, B16/B32의 실력 차이를 elapsed만으로 판단하면 안 된다.

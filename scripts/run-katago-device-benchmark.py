@@ -24,7 +24,24 @@ DEFAULT_MODEL = "/opt/homebrew/Cellar/katago/1.16.4/share/katago/kata1-b18c384nb
 DEFAULT_CONFIG = "app-android/src/friend/assets/katago/analysis_learning.cfg"
 LETTERS = "ABCDEFGHJ"
 DEFAULT_VISITS = (16, 32, 64)
-DEFAULT_POSITIONS = ("empty", "random")
+DEFAULT_POSITIONS = ("b16-best-3-variants", "empty", "random")
+BENCHMARK_VARIANT_MOVES = (
+    "A9",
+    "J1",
+    "A1",
+    "J9",
+    "E1",
+    "E9",
+    "A5",
+    "J5",
+    "C3",
+    "G7",
+    "C7",
+    "G3",
+    "B8",
+    "H2",
+    "B2",
+)
 
 
 @dataclass(frozen=True)
@@ -231,6 +248,80 @@ def root_visits(response: dict[str, Any]) -> int | None:
     return int(value) if value is not None else None
 
 
+def best_move(response: dict[str, Any]) -> str | None:
+    move_infos = response.get("moveInfos") or []
+    ordered = sorted(
+        (
+            move_info
+            for move_info in move_infos
+            if isinstance(move_info, dict) and move_info.get("move")
+        ),
+        key=lambda move_info: int(move_info.get("order", 999999)),
+    )
+    for move_info in ordered:
+        move = str(move_info["move"])
+        if move.lower() not in {"pass", "resign"}:
+            return move
+    return None
+
+
+def b16_best_three_position(
+    process: subprocess.Popen[str],
+    args: argparse.Namespace,
+) -> BenchmarkPosition:
+    position = BenchmarkPosition(name="b16-best-3-variants", moves=[])
+    for ply in range(1, 4):
+        response, _ = query_engine(
+            process,
+            f"b16-best-3-seed-{ply}",
+            position,
+            visits=16,
+            time_cap_ms=args.time_cap_ms,
+        )
+        move = best_move(response)
+        if move is None:
+            break
+        position = BenchmarkPosition(
+            name="b16-best-3-variants",
+            moves=position.moves + [[position.next_player, move]],
+        )
+    return position
+
+
+def board_from_position(position: BenchmarkPosition) -> RandomGoBoard:
+    board = RandomGoBoard()
+    for color, move in position.moves:
+        if move.lower() in {"pass", "resign"}:
+            continue
+        if not board.play(color, parse_vertex(move)):
+            raise RuntimeError(f"generated illegal benchmark move: {color} {move}")
+    return board
+
+
+def benchmark_variant_position(
+    base: BenchmarkPosition,
+    sample_index: int,
+) -> BenchmarkPosition:
+    if sample_index <= 0:
+        return base
+
+    board = board_from_position(base)
+    moves = list(base.moves)
+    added = 0
+    for move in BENCHMARK_VARIANT_MOVES:
+        if added >= sample_index:
+            break
+        color = "B" if len(moves) % 2 == 0 else "W"
+        point = parse_vertex(move)
+        if not board.is_legal(color, point):
+            continue
+        if not board.play(color, point):
+            continue
+        moves.append([color, move])
+        added += 1
+    return BenchmarkPosition(name=base.name, moves=moves)
+
+
 def percentile(values: list[float], pct: float) -> float:
     if not values:
         return 0.0
@@ -278,16 +369,25 @@ def write_markdown(summary: dict[str, Any], path: Path) -> None:
     lines = [
         "# 엔진 디바이스 벤치마크 결과",
         "",
-        f"- samplesPerVisitPosition: `{summary['samples']}`",
+        f"- samplesPerVisit: `{summary['samples']}`",
         f"- positions: `{', '.join(summary['positions'])}`",
         f"- visits: `{', '.join(str(value) for value in summary['visits'])}`",
         f"- timeCap: `{summary['timeCapMs']}ms`",
         f"- deterministic: `{summary['deterministic']}`",
         f"- searchThreads: `{summary['searchThreads']}`",
-        "",
-        "| Position | Visits | Samples | SHORT | Min ms | Avg ms | Max ms | P90 ms | Root avg | Recommended cap |",
-        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
+    if summary.get("generatedPositions"):
+        lines.append("- generatedPositions:")
+        for name, moves in summary["generatedPositions"].items():
+            rendered_moves = ", ".join(f"{color} {move}" for color, move in moves) or "none"
+            lines.append(f"  - `{name}`: `{rendered_moves}`")
+    lines.extend(
+        [
+            "",
+            "| Position | Visits | Samples | SHORT | Min ms | Avg ms | Max ms | P90 ms | Root avg | Recommended cap |",
+            "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+        ],
+    )
     for result in summary["results"]:
         lines.append(
             "| {position} | {visits} | {samples} | {short} | {min_ms} | {avg_ms} | {max_ms} | {p90_ms} | {root_avg} | {recommended}ms |".format(
@@ -310,7 +410,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--samples", type=int, default=10)
     parser.add_argument("--visits", default="16,32,64")
-    parser.add_argument("--positions", default="empty,random")
+    parser.add_argument("--positions", default="b16-best-3-variants")
     parser.add_argument("--random-moves", type=int, default=24)
     parser.add_argument("--time-cap-ms", type=int, default=5_000)
     parser.add_argument("--seed", type=int, default=20260610)
@@ -337,6 +437,7 @@ def main() -> int:
 
     process = start_engine(args)
     rows: list[dict[str, Any]] = []
+    generated_positions: dict[str, BenchmarkPosition] = {}
     try:
         query_engine(
             process,
@@ -345,6 +446,8 @@ def main() -> int:
             visits=1,
             time_cap_ms=args.time_cap_ms,
         )
+        if "b16-best-3-variants" in positions:
+            generated_positions["b16-best-3-variants"] = b16_best_three_position(process, args)
         with jsonl_path.open("w", encoding="utf-8") as handle:
             handle.write(
                 json.dumps(
@@ -357,14 +460,26 @@ def main() -> int:
                         "timeCapMs": args.time_cap_ms,
                         "deterministic": args.deterministic,
                         "searchThreads": args.search_threads,
+                        "generatedPositions": {
+                            name: position.moves
+                            for name, position in generated_positions.items()
+                        },
                     },
                     ensure_ascii=False,
                 ) + "\n",
             )
             for position_name in positions:
-                for visit_target in visits:
-                    for sample in range(1, args.samples + 1):
-                        position = BenchmarkPosition(name="empty", moves=[]) if position_name == "empty" else random_position("random", rng, args.random_moves)
+                for sample in range(1, args.samples + 1):
+                    if position_name == "b16-best-3-variants":
+                        position = benchmark_variant_position(
+                            generated_positions["b16-best-3-variants"],
+                            sample - 1,
+                        )
+                    elif position_name == "empty":
+                        position = BenchmarkPosition(name="empty", moves=[])
+                    else:
+                        position = random_position("random", rng, args.random_moves)
+                    for visit_target in visits:
                         query_id = f"{position.name}-v{visit_target}-s{sample}"
                         response, elapsed_ms = query_engine(
                             process,
@@ -413,6 +528,10 @@ def main() -> int:
         "searchThreads": args.search_threads,
         "analysisThreads": args.analysis_threads,
         "randomMoves": args.random_moves,
+        "generatedPositions": {
+            name: position.moves
+            for name, position in generated_positions.items()
+        },
         "results": summarize(rows),
     }
     summary_path.write_text(json.dumps(summary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

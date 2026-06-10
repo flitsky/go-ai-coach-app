@@ -156,6 +156,8 @@ private fun EngineBenchmarkProfile.toResultDialogText(): String =
     buildString {
         appendLine("측정 샘플: B16/B32/B64 각각 ${samplesPerVisit}회")
         appendLine("측정 상한: ${timeCapMs}ms")
+        appendLine("측정 포지션: $benchmarkPositionName")
+        appendLine("포지션 수순: ${benchmarkPositionMoves.ifEmpty { listOf("none") }.joinToString(", ")}")
         appendLine()
         metrics.sortedBy { metric -> metric.visits }.forEach { metric ->
             appendLine(
@@ -163,6 +165,8 @@ private fun EngineBenchmarkProfile.toResultDialogText(): String =
             )
             appendLine("  root ${metric.rootSummaryText()} / fill ${metric.fillSummaryText()}")
         }
+        appendLine()
+        appendLine("상세 sampleDetails는 메뉴의 Copy Log에 포함됩니다.")
     }.trim()
 
 @Composable

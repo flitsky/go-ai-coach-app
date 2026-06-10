@@ -2,11 +2,12 @@ package com.worksoc.goaicoach.application
 
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.BoardCoordinate
+import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.EngineAdapter
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.Ruleset
-import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.describe
 
 internal data class EngineBenchmarkMetric(
     val visits: Int,
@@ -30,6 +31,7 @@ internal data class EngineBenchmarkSample(
     val engineElapsedMs: Long?,
     val rootVisits: Int?,
     val fillStatus: String,
+    val positionMoves: List<String> = emptyList(),
 )
 
 internal data class EngineBenchmarkProfile(
@@ -37,6 +39,8 @@ internal data class EngineBenchmarkProfile(
     val samplesPerVisit: Int,
     val timeCapMs: Long,
     val measurementVersion: Int = EngineBenchmarkMeasurementVersion,
+    val benchmarkPositionName: String = EngineBenchmarkPositionName,
+    val benchmarkPositionMoves: List<String> = emptyList(),
     val metrics: List<EngineBenchmarkMetric>,
 ) {
     fun toSummaryText(): String =
@@ -44,6 +48,8 @@ internal data class EngineBenchmarkProfile(
             appendLine("measurementVersion=$measurementVersion")
             appendLine("samplesPerVisit=$samplesPerVisit")
             appendLine("timeCapMs=$timeCapMs")
+            appendLine("benchmarkPosition=$benchmarkPositionName")
+            appendLine("benchmarkPositionMoves=${benchmarkPositionMoves.ifEmpty { listOf("none") }.joinToString(", ")}")
             metrics.sortedBy { metric -> metric.visits }.forEach { metric ->
                 appendLine(
                     "B${metric.visits}: minMs=${metric.minMs}, avgMs=${metric.avgMs}, maxMs=${metric.maxMs}, samples=${metric.samples}, root=${metric.rootSummaryText()}, fill=${metric.fillSummaryText()}",
@@ -74,7 +80,11 @@ internal data class EngineBenchmarkProgress(
         get() = stageOverride ?: "B$currentVisits 실행시간 확보 중..."
 
     val sampleText: String
-        get() = "샘플 $currentSample / $samplesPerVisit"
+        get() = if (currentSample <= 0) {
+            "준비 중"
+        } else {
+            "샘플 $currentSample / $samplesPerVisit"
+        }
 
     val progressText: String
         get() = "전체 진행률 $completedCalls / $totalCalls"
@@ -84,6 +94,12 @@ internal data class EngineBenchmarkProgress(
             "직전 결과 root=${lastRootVisits ?: "none"}, elapsed=${lastElapsedMs ?: "none"}ms, fill=$fill"
         }
 }
+
+private data class EngineBenchmarkPosition(
+    val state: GameState,
+    val name: String,
+    val moveLabels: List<String>,
+)
 
 internal suspend fun EngineAdapter.runStartupEngineBenchmark(
     currentState: GameState,
@@ -100,8 +116,24 @@ internal suspend fun EngineAdapter.runStartupEngineBenchmark(
     var completedCalls = 0
 
     val benchmarkSamplesByVisits = visitsTargets.associateWith { mutableListOf<EngineBenchmarkSample>() }
+    var benchmarkPosition = EngineBenchmarkPosition(
+        state = GameState.empty(ruleset = currentState.ruleset),
+        name = EngineBenchmarkPositionName,
+        moveLabels = emptyList(),
+    )
 
     try {
+        onProgress(
+            EngineBenchmarkProgress(
+                currentVisits = EngineBenchmarkPositionSeedVisits,
+                currentSample = 0,
+                samplesPerVisit = samplesPerVisit,
+                completedCalls = completedCalls,
+                totalCalls = totalCalls,
+                stageOverride = "벤치마크 포지션 생성 중...",
+            ),
+        )
+        benchmarkPosition = prepareBenchmarkPosition(currentState.ruleset, timeCapMs)
         (0 until samplesPerVisit).forEach { sampleIndex ->
             visitsTargets.forEach { visits ->
                 val currentSample = sampleIndex + 1
@@ -114,7 +146,8 @@ internal suspend fun EngineAdapter.runStartupEngineBenchmark(
                         totalCalls = totalCalls,
                     ),
                 )
-                syncToGameState(benchmarkStateForSample(sampleIndex, currentState.ruleset))
+                val benchmarkState = benchmarkPosition.state.variantForBenchmarkSample(sampleIndex)
+                syncToGameState(benchmarkState)
                 val startNanos = System.nanoTime()
                 val result = analyze(benchmarkAnalysisLimit(visits = visits, timeCapMs = timeCapMs))
                 val elapsedMs = ((System.nanoTime() - startNanos) / 1_000_000.0).roundMillis()
@@ -126,6 +159,7 @@ internal suspend fun EngineAdapter.runStartupEngineBenchmark(
                     engineElapsedMs = parseBenchmarkEngineElapsedMs(result.summary),
                     rootVisits = rootVisits,
                     fillStatus = rootVisits.toBenchmarkFillStatus(visits),
+                    positionMoves = benchmarkState.moves.map { move -> move.describe(benchmarkState.boardSize) },
                 )
                 benchmarkSamplesByVisits.getValue(visits) += sample
                 completedCalls += 1
@@ -156,8 +190,67 @@ internal suspend fun EngineAdapter.runStartupEngineBenchmark(
         samplesPerVisit = samplesPerVisit,
         timeCapMs = timeCapMs,
         measurementVersion = EngineBenchmarkMeasurementVersion,
+        benchmarkPositionName = benchmarkPosition.name,
+        benchmarkPositionMoves = benchmarkPosition.moveLabels,
         metrics = metrics,
     )
+}
+
+private suspend fun EngineAdapter.prepareBenchmarkPosition(
+    ruleset: Ruleset,
+    timeCapMs: Long,
+): EngineBenchmarkPosition {
+    var state = GameState.empty(ruleset = ruleset)
+    syncToGameState(state)
+
+    while (state.moves.size < EngineBenchmarkPositionMoveCount) {
+        val analysis = analyze(
+            benchmarkAnalysisLimit(
+                visits = EngineBenchmarkPositionSeedVisits,
+                timeCapMs = timeCapMs,
+            ),
+        )
+        val move = analysis.candidates.bestBenchmarkPlayMove() ?: break
+        playMove(move)
+        state = state.play(move)
+    }
+
+    return EngineBenchmarkPosition(
+        state = state,
+        name = EngineBenchmarkPositionName,
+        moveLabels = state.moves.map { move -> move.describe(state.boardSize) },
+    )
+}
+
+private fun List<CandidateMove>.bestBenchmarkPlayMove(): Move.Play? =
+    sortedWith(
+        compareBy<CandidateMove> { candidate -> candidate.engineOrder ?: Int.MAX_VALUE }
+            .thenBy { candidate -> candidate.pointLoss ?: Double.MAX_VALUE },
+    )
+        .mapNotNull { candidate -> candidate.move as? Move.Play }
+        .firstOrNull()
+
+private fun GameState.variantForBenchmarkSample(sampleIndex: Int): GameState {
+    if (sampleIndex <= 0) {
+        return this
+    }
+
+    var state = this
+    var addedMoves = 0
+    for (label in BenchmarkVariantMoveLabels) {
+        if (addedMoves >= sampleIndex) {
+            break
+        }
+        val coordinate = runCatching {
+            BoardCoordinate.fromLabel(label, state.boardSize)
+        }.getOrNull() ?: continue
+        val move = Move.Play(state.nextPlayer, coordinate)
+        state = runCatching { state.play(move) }
+            .getOrNull()
+            ?.also { addedMoves += 1 }
+            ?: state
+    }
+    return state
 }
 
 internal fun List<Double>.toBenchmarkMetric(visits: Int): EngineBenchmarkMetric {
@@ -238,30 +331,16 @@ private fun benchmarkAnalysisLimit(
         minTimeMillis = null,
     )
 
-private fun benchmarkStateForSample(
-    sampleIndex: Int,
-    ruleset: Ruleset,
-): GameState {
-    val moveCount = ((sampleIndex + 1) * 2).coerceAtMost(BenchmarkMoveLabels.size)
-    return BenchmarkMoveLabels
-        .take(moveCount)
-        .fold(GameState.empty(ruleset = ruleset)) { state, label ->
-            state.play(
-                Move.Play(
-                    player = state.nextPlayer,
-                    coordinate = BoardCoordinate.fromLabel(label, state.boardSize),
-                ),
-            )
-        }
-}
-
 private fun Double.roundMillis(): Double =
     kotlin.math.round(this * 1_000.0) / 1_000.0
 
 internal val EngineBenchmarkDefaultVisits = listOf(16, 32, 64)
 internal const val EngineBenchmarkDefaultSamplesPerVisit = 5
 internal const val EngineBenchmarkDefaultTimeCapMs = 5_000L
-internal const val EngineBenchmarkMeasurementVersion = 3
+internal const val EngineBenchmarkMeasurementVersion = 4
+internal const val EngineBenchmarkPositionName = "b16-best-3-variants"
+private const val EngineBenchmarkPositionMoveCount = 3
+private const val EngineBenchmarkPositionSeedVisits = 16
 
 private const val FillOk = "OK"
 private const val FillShort = "SHORT"
@@ -271,15 +350,8 @@ private const val VisitDiagnosticsElapsedGroup = 3
 private val VisitDiagnosticsRegex =
     Regex("""Visit diagnostics: request=(\d+), root=(\d+|none), elapsedMs=(\d+), timeCapMs=([^,]+), fill=([A-Z]+)\.""")
 
-private val BenchmarkMoveLabels = listOf(
-    "E5", "C5",
-    "G6", "F3",
-    "C6", "D4",
-    "B6", "G4",
-    "H5", "F6",
-    "F7", "F5",
-    "E7", "B5",
-    "D5", "E4",
-    "A5", "G7",
-    "H7", "G8",
+private val BenchmarkVariantMoveLabels = listOf(
+    "A9", "J1", "A1", "J9", "E1",
+    "E9", "A5", "J5", "C3", "G7",
+    "C7", "G3", "B8", "H2", "B2",
 )

@@ -68,6 +68,15 @@ internal object EngineBenchmarkCodec {
             .put("measurementVersion", profile.measurementVersion)
             .put("samplesPerVisit", profile.samplesPerVisit)
             .put("timeCapMs", profile.timeCapMs)
+            .put("benchmarkPositionName", profile.benchmarkPositionName)
+            .put(
+                "benchmarkPositionMoves",
+                JSONArray().also { moves ->
+                    profile.benchmarkPositionMoves.forEach { move ->
+                        moves.put(move)
+                    }
+                },
+            )
             .put(
                 "metrics",
                 JSONArray().also { array ->
@@ -96,7 +105,15 @@ internal object EngineBenchmarkCodec {
                                                     .put("elapsedMs", sample.elapsedMs)
                                                     .put("engineElapsedMs", sample.engineElapsedMs)
                                                     .put("rootVisits", sample.rootVisits)
-                                                    .put("fillStatus", sample.fillStatus),
+                                                    .put("fillStatus", sample.fillStatus)
+                                                    .put(
+                                                        "positionMoves",
+                                                        JSONArray().also { moves ->
+                                                            sample.positionMoves.forEach { move ->
+                                                                moves.put(move)
+                                                            }
+                                                        },
+                                                    ),
                                             )
                                         }
                                     },
@@ -119,6 +136,10 @@ internal object EngineBenchmarkCodec {
                 samplesPerVisit = json.optInt("samplesPerVisit", 0),
                 timeCapMs = json.optLong("timeCapMs", 0L),
                 measurementVersion = json.optInt("measurementVersion", 0),
+                benchmarkPositionName = json.optString("benchmarkPositionName", ""),
+                benchmarkPositionMoves = json.optJSONArray("benchmarkPositionMoves")?.let { movesJson ->
+                    List(movesJson.length()) { index -> movesJson.getString(index) }
+                }.orEmpty(),
                 metrics = List(metricsJson.length()) { index ->
                     val metric = metricsJson.getJSONObject(index)
                     EngineBenchmarkMetric(
@@ -143,6 +164,9 @@ internal object EngineBenchmarkCodec {
                                     engineElapsedMs = sample.optNullableLong("engineElapsedMs"),
                                     rootVisits = sample.optNullableInt("rootVisits"),
                                     fillStatus = sample.optString("fillStatus", "UNKNOWN"),
+                                    positionMoves = sample.optJSONArray("positionMoves")?.let { movesJson ->
+                                        List(movesJson.length()) { moveIndex -> movesJson.getString(moveIndex) }
+                                    }.orEmpty(),
                                 )
                             }
                         }.orEmpty(),
