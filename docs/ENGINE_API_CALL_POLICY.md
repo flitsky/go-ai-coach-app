@@ -12,6 +12,7 @@
 - `docs/TOP_MOVES_VALUE_GUIDE.md`: 후보 순위, `pointLoss`, 보드 숫자 표시 기준
 - `docs/ENGINE_ANALYSIS_CONSISTENCY_REVIEW.md`: KataGo `order`, `scoreLead`, `pointLoss` 해석 기준
 - `docs/AI_ENGINE_SETTINGS.md`: 실제 레벨별 visits/time/candidate count
+- `docs/ENGINE_TIME_CAP_POLICY_DISCUSSION.md`: time cap을 속도/정확도 중 어디에 맞출지에 대한 논의 화두
 
 ## 현재 결정
 

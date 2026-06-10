@@ -794,3 +794,4 @@
 - 진단 보강 후 benchmark를 재측정해 `engine_benchmark_profile_after_diagnostics.json`에 저장했다. B16 avg `2656.835ms` root avg `15.0`, B32 avg `3173.179ms` root avg `31.0`, B64 avg `5104.116ms` root avg `56.4`로 모두 `SHORT`였다.
 - `ENGINE_API_CALL_POLICY.md`에 benchmark는 실제 대국 속도 예측값이 아니라 5000ms 장시간 진단값이라는 설명을 추가했다. 상세 조사 요약은 `docs/engine-benchmark-logs/phone-gameplay-20260611/summary.md`에 정리했다.
 - 사용자가 `fill=SHORT`라면 결국 root visits 16을 못 채우고 있다는 뜻인지 확인했다. 답변 기준은 “이번 폰 실측 로그상으로는 맞다. 실제 대국 sample은 `request=16`, `root=2`, `elapsedMs=397`, `fill=SHORT`라 250ms 경량 호출이 visits를 다 채우기 전에 반환된 것으로 해석한다. 다만 GTP fast path의 root 값은 `kata-search_analyze` 응답의 candidate visits 합산 추정치라 JSON `rootInfo.visits`보다 보수적으로 볼 필요가 있다.”로 정리했다.
+- 사용자가 현재 로직에 250ms 제한이 있는지, benchmark 평균 시간이 2초라면 1초로 줄여 쾌적하게 둘지 같은 정책을 논의하고 싶다고 요청했다. `docs/ENGINE_TIME_CAP_POLICY_DISCUSSION.md`를 새로 만들고 속도 우선/benchmark 평균 반영/평균 일부 반영/사용자 선택형 후보와 논의 질문만 기록했다.
