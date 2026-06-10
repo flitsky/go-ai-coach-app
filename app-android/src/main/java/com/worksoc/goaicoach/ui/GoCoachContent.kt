@@ -18,6 +18,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.worksoc.goaicoach.application.EngineBenchmarkProfile
 import com.worksoc.goaicoach.application.EngineBenchmarkProgress
 import com.worksoc.goaicoach.match.summary
 import com.worksoc.goaicoach.persistence.SavedGameSnapshot
@@ -30,12 +31,14 @@ import com.worksoc.goaicoach.shared.describe
 internal fun GoCoachContent(
     screenState: GameScreenState,
     benchmarkProgress: EngineBenchmarkProgress?,
+    benchmarkResult: EngineBenchmarkProfile?,
+    onBenchmarkResultConfirmed: () -> Unit,
     isDisplayMenuExpanded: Boolean,
     onDisplayMenuExpandedChange: (Boolean) -> Unit,
     onScoreGraphExpandedChange: (Boolean) -> Unit,
     onEvent: (GameUiEvent) -> Unit,
 ) {
-    val savedSessionToPrompt = if (benchmarkProgress == null) {
+    val savedSessionToPrompt = if (benchmarkProgress == null && benchmarkResult == null) {
         screenState.resumePrompt?.snapshot
     } else {
         null
@@ -49,6 +52,11 @@ internal fun GoCoachContent(
 
     if (benchmarkProgress != null) {
         EngineBenchmarkProgressDialog(progress = benchmarkProgress)
+    } else if (benchmarkResult != null) {
+        EngineBenchmarkResultDialog(
+            profile = benchmarkResult,
+            onConfirm = onBenchmarkResultConfirmed,
+        )
     }
 
     if (savedSessionToPrompt != null) {
@@ -91,6 +99,25 @@ internal fun GoCoachContent(
 }
 
 @Composable
+private fun EngineBenchmarkResultDialog(
+    profile: EngineBenchmarkProfile,
+    onConfirm: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = {},
+        title = { Text("엔진 벤치마크 완료") },
+        text = {
+            Text(profile.toResultDialogText())
+        },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text("확인")
+            }
+        },
+    )
+}
+
+@Composable
 private fun EngineBenchmarkProgressDialog(progress: EngineBenchmarkProgress) {
     AlertDialog(
         onDismissRequest = {},
@@ -111,6 +138,18 @@ private fun EngineBenchmarkProgressDialog(progress: EngineBenchmarkProgress) {
         confirmButton = {},
     )
 }
+
+private fun EngineBenchmarkProfile.toResultDialogText(): String =
+    buildString {
+        appendLine("측정 샘플: B16/B32/B64 각각 ${samplesPerVisit}회")
+        appendLine("측정 상한: ${timeCapMs}ms")
+        appendLine()
+        metrics.sortedBy { metric -> metric.visits }.forEach { metric ->
+            appendLine(
+                "B${metric.visits}: min ${metric.minMs}ms / max ${metric.maxMs}ms / avg ${metric.avgMs}ms",
+            )
+        }
+    }.trim()
 
 @Composable
 private fun ResumeSavedSessionDialog(

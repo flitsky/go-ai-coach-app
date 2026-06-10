@@ -55,6 +55,7 @@ import com.worksoc.goaicoach.application.EndgameFailureDisplayPlan
 import com.worksoc.goaicoach.application.EngineBenchmarkDefaultSamplesPerVisit
 import com.worksoc.goaicoach.application.EngineBenchmarkDefaultTimeCapMs
 import com.worksoc.goaicoach.application.EngineBenchmarkDefaultVisits
+import com.worksoc.goaicoach.application.EngineBenchmarkProfile
 import com.worksoc.goaicoach.application.EngineBenchmarkProgress
 import com.worksoc.goaicoach.application.runStartupEngineBenchmark
 import com.worksoc.goaicoach.application.applyHumanMoveLocally
@@ -210,6 +211,7 @@ private fun GoCoachScreen(
     }
     var engineBenchmarkText by remember { mutableStateOf(benchmarkStore.loadText()) }
     var benchmarkProgress by remember { mutableStateOf<EngineBenchmarkProgress?>(null) }
+    var benchmarkResultToConfirm by remember { mutableStateOf<EngineBenchmarkProfile?>(null) }
     var pendingSavedSession by remember { mutableStateOf<SavedGameSnapshot?>(null) }
     var shouldShowResumePrompt by remember { mutableStateOf(false) }
     var isAutoAiTurnPending by remember { mutableStateOf(false) }
@@ -314,6 +316,7 @@ private fun GoCoachScreen(
             engineBenchmarkText = benchmarkStore.loadText()
             engineMessage = "Engine benchmark saved to ${benchmarkStore.path()}."
             candidateText = "Engine benchmark complete.\n${profile.toSummaryText()}"
+            benchmarkResultToConfirm = profile
         }.onFailure { error ->
             engineMessage = "Engine benchmark failed: ${error.message ?: "unknown error"}"
             candidateText = "Engine benchmark failed. The app will continue with built-in defaults."
@@ -1301,6 +1304,8 @@ private fun GoCoachScreen(
     GoCoachContent(
         screenState = screenState,
         benchmarkProgress = benchmarkProgress,
+        benchmarkResult = benchmarkResultToConfirm,
+        onBenchmarkResultConfirmed = { benchmarkResultToConfirm = null },
         isDisplayMenuExpanded = isDisplayMenuExpanded,
         onDisplayMenuExpandedChange = { expanded -> isDisplayMenuExpanded = expanded },
         onScoreGraphExpandedChange = { expanded -> isScoreGraphExpanded = expanded },
