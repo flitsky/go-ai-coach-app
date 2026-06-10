@@ -6,6 +6,13 @@
 
 대국 중 착수 판단과 학습 피드백은 모두 `TurnAnalysis`라는 같은 개념의 엔진 분석 결과를 사용한다. UI는 엔진을 직접 호출하지 않고, application 계층이 목적별 분석 예산을 정한 뒤 `EngineAdapter.analyze()` 뒤로 숨긴다.
 
+## 먼저 볼 문서
+
+- 이 문서: 엔진 API 호출 정책, 호출 비용 순서, AI/사람 턴 일관성 기준
+- `docs/TOP_MOVES_VALUE_GUIDE.md`: 후보 순위, `pointLoss`, 보드 숫자 표시 기준
+- `docs/ENGINE_ANALYSIS_CONSISTENCY_REVIEW.md`: KataGo `order`, `scoreLead`, `pointLoss` 해석 기준
+- `docs/AI_ENGINE_SETTINGS.md`: 실제 레벨별 visits/time/candidate count
+
 ## 현재 결정
 
 1. AI 차례에는 항상 현재 진영의 플레이 레벨로 `TurnAnalysis`를 요청한다.
@@ -31,6 +38,35 @@
 
 즉 “항상 분석 snapshot을 만든다”는 정책은 유지하되, 폰 실시간 대국에서는 best-1 경량 snapshot만 자동 생성한다. 여러 색상의 후보 분포나 전체 착점 평가가 필요하면 별도 `StudyBroad` 예산으로 분리해서 켠다.
 
+## 엔진 호출 방식 우선순위
+
+대국 중 기본 경로는 아래 순서를 따른다. 위쪽일수록 가볍고, 아래쪽일수록 분석 정보는 풍부하지만 느리다.
+
+| 우선순위 | 호출 방식 | 상대 비용 | 현재 사용 여부 | 용도 |
+| ---: | --- | --- | --- | --- |
+| 1 | `playMove()` / `newGame()` / `syncToGameState()` | 매우 낮음 | 항상 사용 | 엔진 상태 동기화. 분석 정보 없음 |
+| 2 | `analyze(fastCandidateAnalysis)` | 낮음 | 기본 대국 경로 | AI best move 확보, 사람 착수 리뷰, Top Moves 표시 |
+| 3 | `estimateScore(scoreGraphAnalysisLimit)` | 낮음-중간 | 그래프/Eval | Score / Win Rate / ownership 추정 |
+| 4 | `deadStones()` + `scoreFinal()` | 중간 | 종국 pass/pass | 사석 정리와 최종 계가 |
+| 5 | JSON broad analysis, `includePolicy=true` | 높음 | 기본 경로 비활성 | 여러 후보/정책 후보 확보 |
+| 6 | policy refine / sweep / deep fallback | 매우 높음 | 기본 경로 비활성 | 모든 합법 착점 평가, 복기/학습 모드 |
+
+현재 가장 효율적인 기본 호출은 2번이다.
+
+```text
+EngineAdapter.analyze(
+    visits = 플레이 레벨 visits,
+    timeMillis = 플레이 레벨 time cap,
+    candidateCount = 목적별 후보 수,
+    includePolicy = false,
+    refinePolicyMoves = 0,
+    minVisitsPerCandidate = 0,
+    minTimeMillis = null,
+)
+```
+
+KataGo process adapter에서는 이 조건일 때 JSON analysis process를 피하고 GTP `kata-search_analyze` 빠른 경로를 우선 사용한다.
+
 ## 호출 목적별 예산
 
 | 목적 | 현재 예산 | 사용처 |
@@ -42,6 +78,31 @@
 | `Benchmark` | 사용자 설정과 무관한 고정 B16/B32/B64 | 기기별 엔진 성능 측정 |
 
 `Benchmark`는 사용자 Player Setup, Top Moves 토글, 현재 계가 규칙, analysis cache를 절대 참조하지 않는다.
+
+## 턴별 일관성 정책
+
+AI 차례와 사람 차례는 같은 `TurnAnalysis` snapshot 개념을 사용한다.
+
+### AI 차례
+
+1. 현재 AI 진영의 플레이 레벨로 fast `TurnAnalysis`를 요청한다.
+2. 반환된 후보의 `engineOrder` 순서를 신뢰한다.
+3. AI 레벨링은 이 order 순서 후보 리스트에서 선택 구간을 정해 수행한다.
+4. 최고 단계는 항상 order 최상위 후보를 선택한다.
+5. AI가 착수한 수는 같은 snapshot에서 찾아 색상 dot을 남긴다.
+6. 후보에 없거나 `pointLoss`가 없으면 평가를 단정하지 않고 `unknown`으로 둔다.
+
+### 사람 차례
+
+1. 사람 차례가 오면 fast `TurnAnalysis`를 요청해 best move snapshot을 확보한다.
+2. `Top Moves` 또는 향후 `Best Move` 표시 옵션이 켜져 있으면, 이 snapshot의 후보를 보드 위에 표시한다.
+3. 옵션이 꺼져 있으면 후보는 표시하지 않지만 snapshot은 착수 리뷰용으로 유지한다.
+4. 사람이 둔 위치가 snapshot 후보에 있으면 `pointLoss` 기준으로 green/yellow/orange/red dot을 남긴다.
+5. 사람이 둔 위치가 snapshot 후보에 없으면 회색 `unknown` dot을 남긴다.
+
+회색 dot은 “나쁜 수”가 아니라 “현재 경량 분석에서 점수 평가가 없는 수”라는 의미로 고정한다. 이 정책은 추가 엔진 호출을 줄여 대국 리듬을 유지하는 데 유리하다.
+
+임의 착점까지 정확히 평가해야 하는 학습 모드에서는 별도 `StudyBroad` 또는 “착수 후 단일 후보 재분석”을 추가할 수 있다. 다만 이 기능은 기본 대국 경로에 섞지 않는다.
 
 ## 계층 경계
 

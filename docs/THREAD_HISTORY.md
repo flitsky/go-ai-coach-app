@@ -773,3 +773,5 @@
 - AI 응수 경로는 `PlayLevelSetting.turnAnalysisLimitFor(AiMoveSelection)`을 사용하게 변경했다. `빠른 초급 3단계`, `초급 7단계`, `중급 5단계`, `고급 5단계`의 `BestOnly` 정책은 그대로 유지된다.
 - 사람 차례 자동 분석은 다시 열되, broad JSON/policy/refine이 아니라 fast best-1 경량 분석만 사용한다. `Top Moves`가 꺼져 있으면 후보 스팟은 보이지 않고 착수 리뷰 snapshot만 갱신된다.
 - `USER_OPTION_MANUAL.md`, `AI_ENGINE_SETTINGS.md`, `MOVE_ANALYSIS_DATA_MODEL.md`, `KATRAIN_UX_BACKLOG.md`를 최신 정책으로 갱신했다.
+- 사용자가 엔진 API 문서 위치와 호출 방식의 비용/효과 순서를 확인하고 싶다고 요청했다. `ENGINE_API_CALL_POLICY.md`에 먼저 볼 문서, 엔진 호출 방식 우선순위, AI/사람 턴 일관성 정책을 보강했다.
+- 정책상 AI와 사람 차례 모두 fast `TurnAnalysis`로 best move snapshot을 확보한다. AI는 order 후보를 레벨링에 쓰고, 사람은 표시 옵션이 켜진 경우 후보를 보드에 표시한다. 후보 밖 착점은 추가 엔진 호출 없이 회색 `unknown`으로 처리한다.
