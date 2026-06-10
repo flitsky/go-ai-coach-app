@@ -47,6 +47,37 @@ internal object KataGoAnalysisParser {
             .toList()
     }
 
+    fun parseRootVisitsEstimate(response: String): Int? {
+        val visitsByMove = linkedMapOf<String, Int>()
+        response
+            .split(infoBoundary)
+            .asSequence()
+            .map { it.trim() }
+            .filter { it.startsWith("info move ") }
+            .forEach { info ->
+                val tokens = info.split(whitespace).filter { it.isNotBlank() }
+                if (tokens.size < 5 || tokens[0] != "info" || tokens[1] != "move") {
+                    return@forEach
+                }
+                val move = tokens[2]
+                val visits = tokens
+                    .windowed(2, 1)
+                    .firstOrNull { pair -> pair[0] == "visits" }
+                    ?.get(1)
+                    ?.toIntOrNull()
+                    ?: return@forEach
+                val previous = visitsByMove[move]
+                if (previous == null || visits >= previous) {
+                    visitsByMove[move] = visits
+                }
+            }
+
+        return visitsByMove
+            .values
+            .takeIf { it.isNotEmpty() }
+            ?.sum()
+    }
+
     fun attachPointLoss(
         candidates: List<CandidateMove>,
     ): List<CandidateMove> {

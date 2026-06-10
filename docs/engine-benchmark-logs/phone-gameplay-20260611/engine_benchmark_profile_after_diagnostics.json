@@ -1,0 +1,286 @@
+{
+  "schema": 1,
+  "createdAtMillis": 1781129954971,
+  "measurementVersion": 5,
+  "samplesPerVisit": 5,
+  "timeCapMs": 5000,
+  "benchmarkPositionName": "b16-best-3-variants",
+  "benchmarkRuleset": "Japanese",
+  "benchmarkPositionMoves": [
+    "Black E5",
+    "White C4",
+    "Black E3"
+  ],
+  "metrics": [
+    {
+      "visits": 16,
+      "samples": 5,
+      "minMs": 410.439,
+      "maxMs": 3233.408,
+      "avgMs": 2656.835,
+      "rootMinVisits": 15,
+      "rootMaxVisits": 15,
+      "rootAvgVisits": 15,
+      "fillOk": 0,
+      "fillShort": 5,
+      "fillUnknown": 0,
+      "sampleDetails": [
+        {
+          "sampleIndex": 1,
+          "visits": 16,
+          "elapsedMs": 410.439,
+          "engineElapsedMs": 404,
+          "rootVisits": 15,
+          "fillStatus": "SHORT",
+          "positionMoves": [
+            "Black E5",
+            "White C4",
+            "Black E3"
+          ]
+        },
+        {
+          "sampleIndex": 2,
+          "visits": 16,
+          "elapsedMs": 3202.121,
+          "engineElapsedMs": 3189,
+          "rootVisits": 15,
+          "fillStatus": "SHORT",
+          "positionMoves": [
+            "Black E5",
+            "White C4",
+            "Black E3",
+            "White A9"
+          ]
+        },
+        {
+          "sampleIndex": 3,
+          "visits": 16,
+          "elapsedMs": 3216.47,
+          "engineElapsedMs": 3210,
+          "rootVisits": 15,
+          "fillStatus": "SHORT",
+          "positionMoves": [
+            "Black E5",
+            "White C4",
+            "Black E3",
+            "White A9",
+            "Black J1"
+          ]
+        },
+        {
+          "sampleIndex": 4,
+          "visits": 16,
+          "elapsedMs": 3221.737,
+          "engineElapsedMs": 3212,
+          "rootVisits": 15,
+          "fillStatus": "SHORT",
+          "positionMoves": [
+            "Black E5",
+            "White C4",
+            "Black E3",
+            "White A9",
+            "Black J1",
+            "White A1"
+          ]
+        },
+        {
+          "sampleIndex": 5,
+          "visits": 16,
+          "elapsedMs": 3233.408,
+          "engineElapsedMs": 3225,
+          "rootVisits": 15,
+          "fillStatus": "SHORT",
+          "positionMoves": [
+            "Black E5",
+            "White C4",
+            "Black E3",
+            "White A9",
+            "Black J1",
+            "White A1",
+            "Black J9"
+          ]
+        }
+      ]
+    },
+    {
+      "visits": 32,
+      "samples": 5,
+      "minMs": 3010.444,
+      "maxMs": 3220.545,
+      "avgMs": 3173.179,
+      "rootMinVisits": 31,
+      "rootMaxVisits": 31,
+      "rootAvgVisits": 31,
+      "fillOk": 0,
+      "fillShort": 5,
+      "fillUnknown": 0,
+      "sampleDetails": [
+        {
+          "sampleIndex": 1,
+          "visits": 32,
+          "elapsedMs": 3200.125,
+          "engineElapsedMs": 3193,
+          "rootVisits": 31,
+          "fillStatus": "SHORT",
+          "positionMoves": [
+            "Black E5",
+            "White C4",
+            "Black E3"
+          ]
+        },
+        {
+          "sampleIndex": 2,
+          "visits": 32,
+          "elapsedMs": 3219.587,
+          "engineElapsedMs": 3199,
+          "rootVisits": 31,
+          "fillStatus": "SHORT",
+          "positionMoves": [
+            "Black E5",
+            "White C4",
+            "Black E3",
+            "White A9"
+          ]
+        },
+        {
+          "sampleIndex": 3,
+          "visits": 32,
+          "elapsedMs": 3010.444,
+          "engineElapsedMs": 3005,
+          "rootVisits": 31,
+          "fillStatus": "SHORT",
+          "positionMoves": [
+            "Black E5",
+            "White C4",
+            "Black E3",
+            "White A9",
+            "Black J1"
+          ]
+        },
+        {
+          "sampleIndex": 4,
+          "visits": 32,
+          "elapsedMs": 3215.192,
+          "engineElapsedMs": 3204,
+          "rootVisits": 31,
+          "fillStatus": "SHORT",
+          "positionMoves": [
+            "Black E5",
+            "White C4",
+            "Black E3",
+            "White A9",
+            "Black J1",
+            "White A1"
+          ]
+        },
+        {
+          "sampleIndex": 5,
+          "visits": 32,
+          "elapsedMs": 3220.545,
+          "engineElapsedMs": 3212,
+          "rootVisits": 31,
+          "fillStatus": "SHORT",
+          "positionMoves": [
+            "Black E5",
+            "White C4",
+            "Black E3",
+            "White A9",
+            "Black J1",
+            "White A1",
+            "Black J9"
+          ]
+        }
+      ]
+    },
+    {
+      "visits": 64,
+      "samples": 5,
+      "minMs": 5025.483,
+      "maxMs": 5203.314,
+      "avgMs": 5104.116,
+      "rootMinVisits": 56,
+      "rootMaxVisits": 57,
+      "rootAvgVisits": 56.4,
+      "fillOk": 0,
+      "fillShort": 5,
+      "fillUnknown": 0,
+      "sampleDetails": [
+        {
+          "sampleIndex": 1,
+          "visits": 64,
+          "elapsedMs": 5203.314,
+          "engineElapsedMs": 5193,
+          "rootVisits": 57,
+          "fillStatus": "SHORT",
+          "positionMoves": [
+            "Black E5",
+            "White C4",
+            "Black E3"
+          ]
+        },
+        {
+          "sampleIndex": 2,
+          "visits": 64,
+          "elapsedMs": 5198.422,
+          "engineElapsedMs": 5175,
+          "rootVisits": 57,
+          "fillStatus": "SHORT",
+          "positionMoves": [
+            "Black E5",
+            "White C4",
+            "Black E3",
+            "White A9"
+          ]
+        },
+        {
+          "sampleIndex": 3,
+          "visits": 64,
+          "elapsedMs": 5034.077,
+          "engineElapsedMs": 5016,
+          "rootVisits": 56,
+          "fillStatus": "SHORT",
+          "positionMoves": [
+            "Black E5",
+            "White C4",
+            "Black E3",
+            "White A9",
+            "Black J1"
+          ]
+        },
+        {
+          "sampleIndex": 4,
+          "visits": 64,
+          "elapsedMs": 5025.483,
+          "engineElapsedMs": 5006,
+          "rootVisits": 56,
+          "fillStatus": "SHORT",
+          "positionMoves": [
+            "Black E5",
+            "White C4",
+            "Black E3",
+            "White A9",
+            "Black J1",
+            "White A1"
+          ]
+        },
+        {
+          "sampleIndex": 5,
+          "visits": 64,
+          "elapsedMs": 5059.286,
+          "engineElapsedMs": 5046,
+          "rootVisits": 56,
+          "fillStatus": "SHORT",
+          "positionMoves": [
+            "Black E5",
+            "White C4",
+            "Black E3",
+            "White A9",
+            "Black J1",
+            "White A1",
+            "Black J9"
+          ]
+        }
+      ]
+    }
+  ]
+}

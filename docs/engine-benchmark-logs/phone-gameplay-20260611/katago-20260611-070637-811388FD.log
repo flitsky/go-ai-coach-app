@@ -1,0 +1,61 @@
+2026-06-11 07:06:37+0900: Running with following config:
+allowResignation = false
+homeDataDir = /data/user/0/com.worksoc.goaicoach/files/katago/home
+lagBuffer = 1.0
+logAllGTPCommunication = false
+logDir = /data/user/0/com.worksoc.goaicoach/files/katago/logs
+logSearchInfo = false
+logSearchInfoForChosenMove = false
+logToStderr = false
+maxTimePondering = 60.0
+maxVisits = 16
+numSearchThreads = 1
+ponderingEnabled = false
+resignConsecTurns = 3
+resignThreshold = -0.90
+rules = tromp-taylor
+searchFactorAfterOnePass = 0.50
+searchFactorAfterTwoPass = 0.25
+searchFactorWhenWinning = 0.40
+searchFactorWhenWinningThreshold = 0.95
+startupPrintMessageToStderr = false
+
+2026-06-11 07:06:37+0900: GTP Engine starting...
+2026-06-11 07:06:37+0900: KataGo v1.16.4
+2026-06-11 07:06:37+0900: Using TrompTaylor rules initially, unless GTP/GUI overrides this
+2026-06-11 07:06:37+0900: Using 1 CPU thread(s) for search
+2026-06-11 07:06:37+0900: nnRandSeed0 = 3587713220201567984
+2026-06-11 07:06:37+0900: After dedups: nnModelFile0 = /data/user/0/com.worksoc.goaicoach/files/katago/model.bin.gz useFP16 auto useNHWC auto
+2026-06-11 07:06:37+0900: Initializing neural net buffer to be size 19 * 19 exactly
+2026-06-11 07:06:38+0900: Eigen (CPU) backend thread 0: Model version 14
+2026-06-11 07:06:38+0900: Eigen (CPU) backend thread 0: Model name: kata1-b18c384nbt-s9996604416-d4316597426
+2026-06-11 07:06:38+0900: Loaded neural net with nnXLen 19 nnYLen 19
+2026-06-11 07:06:38+0900: Initializing board with boardXSize 19 boardYSize 19
+2026-06-11 07:06:38+0900: Loaded config /data/user/0/com.worksoc.goaicoach/files/katago/gtp_learning.cfg and/or command-line and query overrides
+2026-06-11 07:06:38+0900: Loaded model /data/user/0/com.worksoc.goaicoach/files/katago/model.bin.gz
+2026-06-11 07:06:38+0900: Config override: allowResignation = false
+2026-06-11 07:06:38+0900: Config override: homeDataDir = /data/user/0/com.worksoc.goaicoach/files/katago/home
+2026-06-11 07:06:38+0900: Config override: logAllGTPCommunication = false
+2026-06-11 07:06:38+0900: Config override: logDir = /data/user/0/com.worksoc.goaicoach/files/katago/logs
+2026-06-11 07:06:38+0900: Config override: logSearchInfo = false
+2026-06-11 07:06:38+0900: Config override: logToStderr = false
+2026-06-11 07:06:38+0900: Config override: maxVisits = 16
+2026-06-11 07:06:38+0900: Config override: numSearchThreads = 1
+2026-06-11 07:06:38+0900: Config override: startupPrintMessageToStderr = false
+2026-06-11 07:06:38+0900: Model name: kata1-b18c384nbt-s9996604416-d4316597426
+2026-06-11 07:06:38+0900: GTP ready, beginning main protocol loop
+2026-06-11 07:06:39+0900: GPU -1 finishing, processed 0 rows 0 batches
+2026-06-11 07:06:39+0900: Cleaned up old neural net and bot
+2026-06-11 07:06:39+0900: nnRandSeed0 = 5221491843072503952
+2026-06-11 07:06:39+0900: After dedups: nnModelFile0 = /data/user/0/com.worksoc.goaicoach/files/katago/model.bin.gz useFP16 auto useNHWC auto
+2026-06-11 07:06:39+0900: Initializing neural net buffer to be size 9 * 9 exactly
+2026-06-11 07:06:40+0900: Eigen (CPU) backend thread 0: Model version 14
+2026-06-11 07:06:40+0900: Eigen (CPU) backend thread 0: Model name: kata1-b18c384nbt-s9996604416-d4316597426
+2026-06-11 07:06:40+0900: Loaded neural net with nnXLen 9 nnYLen 9
+2026-06-11 07:06:40+0900: Initializing board with boardXSize 9 boardYSize 9
+2026-06-11 07:06:40+0900: Changed rules to Japanese
+2026-06-11 07:06:48+0900: Changed rules to Japanese
+2026-06-11 07:07:40+0900: Changed rules to Japanese
+2026-06-11 07:07:40+0900: Changed rules to Japanese
+2026-06-11 07:09:14+0900: Changed rules to Japanese
+2026-06-11 07:09:14+0900: Changed rules to Japanese

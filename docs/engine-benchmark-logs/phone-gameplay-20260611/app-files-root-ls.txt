@@ -1,0 +1,6 @@
+total 21
+drwxrwxrwx 3 u0_a1444 u0_a1444 3452 2026-06-11 07:06 .
+drwx------ 6 u0_a1444 u0_a1444 3452 2026-06-09 12:04 ..
+-rw------- 1 u0_a1444 u0_a1444 5494 2026-06-11 07:00 engine_benchmark_profile.json
+drwxrwxrwx 4 u0_a1444 u0_a1444 3452 2026-06-09 12:04 katago
+-rw------- 1 u0_a1444 u0_a1444   24 2026-06-11 07:06 profileInstalled

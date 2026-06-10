@@ -1263,6 +1263,11 @@ private fun GoCoachScreen(
         )
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         clipboard.setPrimaryClip(ClipData.newPlainText("Go AI Coach debug report", report))
+        runCatching {
+            context.openFileOutput(DebugReportMirrorFileName, Context.MODE_PRIVATE).use { output ->
+                output.write(report.toByteArray(Charsets.UTF_8))
+            }
+        }
         engineMessage = "Debug report copied to clipboard. Paste it into chat for review."
         Toast.makeText(context, "Debug report copied", Toast.LENGTH_SHORT).show()
     }
@@ -1389,3 +1394,4 @@ private fun isLocalKataGoEngine(
     engineName == "KataGo" && engineDiagnostic.contains("Using local process engine")
 
 private const val EngineBenchmarkStartupSettleDelayMillis = 1_500L
+private const val DebugReportMirrorFileName = "last_debug_report.txt"

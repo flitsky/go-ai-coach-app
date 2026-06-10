@@ -124,7 +124,8 @@ class KataGoProcessEngineAdapter(
             }
         }
 
-        val candidates = analyzeWithGtp(effectiveLimit, limit)
+        val gtpResult = analyzeWithGtp(effectiveLimit, limit)
+        val candidates = gtpResult.candidates
         val policyFallbackCount = candidates.count { it.visits == null && it.policyPrior != null }
         val legalFallbackCount = candidates.count { it.visits == null && it.policyPrior == null }
         val scoredCount = candidates.count { it.pointLoss != null }
@@ -140,6 +141,8 @@ class KataGoProcessEngineAdapter(
                 scoredCount = scoredCount,
                 policyFallbackCount = policyFallbackCount,
                 legalFallbackCount = legalFallbackCount,
+                rootVisits = gtpResult.rootVisits,
+                elapsedMs = gtpResult.elapsedMs,
             ),
         )
     }
@@ -282,11 +285,13 @@ class KataGoProcessEngineAdapter(
     private fun analyzeWithGtp(
         effectiveLimit: AnalysisLimit,
         limit: AnalysisLimit,
-    ): List<CandidateMove> =
+    ): GtpAnalysisResult =
         try {
             applySearchLimit(effectiveLimit)
+            val startNanos = System.nanoTime()
             val response = sendCommand(effectiveLimit.toSearchAnalyzeCommand(nextPlayer))
-            KataGoAnalysisParser.attachPointLoss(
+            val elapsedMs = (System.nanoTime() - startNanos) / 1_000_000
+            val candidates = KataGoAnalysisParser.attachPointLoss(
                 candidates = KataGoAnalysisParser.parseCandidates(
                     response = response,
                     player = nextPlayer,
@@ -294,9 +299,20 @@ class KataGoProcessEngineAdapter(
                     maxCandidates = limit.candidateCount,
                 ),
             ).fillFromPolicyIfNeeded(limit)
+            GtpAnalysisResult(
+                candidates = candidates,
+                rootVisits = KataGoAnalysisParser.parseRootVisitsEstimate(response),
+                elapsedMs = elapsedMs,
+            )
         } finally {
             applySearchLimit(profile.analysisLimit)
         }
+
+    private data class GtpAnalysisResult(
+        val candidates: List<CandidateMove>,
+        val rootVisits: Int?,
+        val elapsedMs: Long,
+    )
 
     private fun List<CandidateMove>.fillFromPolicyIfNeeded(
         limit: AnalysisLimit,
@@ -369,6 +385,8 @@ class KataGoProcessEngineAdapter(
         scoredCount: Int,
         policyFallbackCount: Int,
         legalFallbackCount: Int,
+        rootVisits: Int?,
+        elapsedMs: Long,
     ): String {
         val searchText = if (
             effectiveLimit.visits != requestedLimit.visits ||
@@ -379,9 +397,17 @@ class KataGoProcessEngineAdapter(
             "KataGo search analysis with ${effectiveLimit.visits} visits / ${effectiveLimit.timeMillis ?: 0}ms."
         }
         val searchedCount = candidateCount - policyFallbackCount - legalFallbackCount
+        val fillStatus = when {
+            rootVisits == null -> "UNKNOWN"
+            rootVisits < effectiveLimit.visits -> "SHORT"
+            else -> "OK"
+        }
+        val diagnosticsText =
+            " Visit diagnostics: request=${effectiveLimit.visits}, root=${rootVisits ?: "none"}, elapsedMs=$elapsedMs, timeCapMs=${effectiveLimit.timeMillis ?: "none"}, fill=$fillStatus."
         return if (policyFallbackCount > 0 || legalFallbackCount > 0) {
             buildString {
                 append(searchText)
+                append(diagnosticsText)
                 append(" Returned $searchedCount searched candidate(s)")
                 if (policyFallbackCount > 0) {
                     append("; kept $policyFallbackCount raw NN policy fallback candidate(s) for logs only")
@@ -394,7 +420,7 @@ class KataGoProcessEngineAdapter(
                 append(".")
             }
         } else {
-            "$searchText Showing $scoredCount/${requestedLimit.candidateCount} scored spot(s)."
+            "$searchText$diagnosticsText Showing $scoredCount/${requestedLimit.candidateCount} scored spot(s)."
         }
     }
 

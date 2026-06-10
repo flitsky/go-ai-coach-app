@@ -70,6 +70,18 @@ class KataGoAnalysisParserTest {
     }
 
     @Test
+    fun estimatesRootVisitsFromLatestMoveInfos() {
+        val response = """
+            info move E5 visits 7 winrate 0.34 scoreLead 0.2 prior 0.8 order 0 pv E5
+            info move D5 visits 3 winrate 0.31 scoreLead -0.1 prior 0.04 order 1 pv D5
+            info move E5 visits 10 winrate 0.35 scoreLead 0.3 prior 0.8 order 0 pv E5
+            play E5
+        """.trimIndent()
+
+        assertEquals(13, KataGoAnalysisParser.parseRootVisitsEstimate(response))
+    }
+
+    @Test
     fun mergesStreamingDuplicateInfoMoves() {
         val response = """
             info move E5 visits 7 winrate 0.34 scoreLead 0.2 prior 0.8 order 0 pv E5

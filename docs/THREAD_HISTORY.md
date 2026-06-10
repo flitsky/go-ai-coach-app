@@ -785,3 +785,11 @@
 - 사용자가 무선 디버깅을 다시 활성화했고 폰 설치를 요청했다. ADB 서버 재시작 후 mDNS에서 `SM-S908N`을 `192.168.35.191:42353`로 발견해 연결했다.
 - 로컬 기본 `java`가 Java 25라 Gradle/Kotlin DSL이 `IllegalArgumentException: 25`로 실패했다. `JAVA_HOME=$(/usr/libexec/java_home -v 17)`와 `ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk`를 명시해 debug APK 빌드를 성공시켰다.
 - 에뮬레이터가 함께 연결된 상태였으므로 `adb -s 192.168.35.191:42353`로 폰만 지정해 APK를 설치했다. `ANDROID_SERIAL=192.168.35.191:42353`로 KataGo model/config seed를 수행했고, `com.worksoc.goaicoach/.MainActivity`를 cold launch했다.
+- 사용자가 benchmark는 느린데 `빠른 초급 3단계` 실제 대국은 쾌적한 이유를 물었고, 폰에서 직접 한 수씩 두며 로그 확보를 요청했다.
+- 확인 결과 실제 대국은 `빠른 초급 3단계 = 16 visits / 250ms` fast GTP path이고, startup benchmark는 `timeCapMs=5000` 진단 호출이라 성격이 다르다. 이 차이가 체감 속도 차이의 핵심 원인이다.
+- 기존 앱은 GTP fast path summary에 root visits/elapsed/fill 진단을 남기지 않아 benchmark와 실제 대국 호출을 비교하기 어려웠다. `KataGoAnalysisParser.parseRootVisitsEstimate()`를 추가하고 GTP summary에 `Visit diagnostics`를 붙이도록 보강했다.
+- `Copy Log`는 Android shell에서 클립보드 본문을 읽기 어려워, 같은 report를 앱 내부 `files/last_debug_report.txt`에도 저장하도록 보강했다.
+- 최신 APK를 SM-S908N에 설치하고 9수까지 직접 진행했다. debug report는 `docs/engine-benchmark-logs/phone-gameplay-20260611/debug-report-after-diagnostic-9-moves.txt`에 저장했다.
+- 실제 대국 9수 후 사람 차례 분석은 `KataGo search analysis with 16 visits / 250ms`, `root=2`, `elapsedMs=397`, `fill=SHORT`였다. 체감이 빠른 이유는 250ms 경량 호출이기 때문이다.
+- 진단 보강 후 benchmark를 재측정해 `engine_benchmark_profile_after_diagnostics.json`에 저장했다. B16 avg `2656.835ms` root avg `15.0`, B32 avg `3173.179ms` root avg `31.0`, B64 avg `5104.116ms` root avg `56.4`로 모두 `SHORT`였다.
+- `ENGINE_API_CALL_POLICY.md`에 benchmark는 실제 대국 속도 예측값이 아니라 5000ms 장시간 진단값이라는 설명을 추가했다. 상세 조사 요약은 `docs/engine-benchmark-logs/phone-gameplay-20260611/summary.md`에 정리했다.

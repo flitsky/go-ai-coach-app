@@ -1,0 +1,4 @@
+<?xml version='1.0' encoding='utf-8' standalone='yes' ?>
+<map>
+    <string name="user_preferences">{&quot;schema&quot;:1,&quot;playerSetup&quot;:{&quot;black&quot;:{&quot;controller&quot;:&quot;Ai&quot;,&quot;humanGameType&quot;:&quot;Normal&quot;,&quot;aiEngine&quot;:&quot;KataGo&quot;,&quot;playLevel&quot;:{&quot;group&quot;:&quot;FastBeginner&quot;,&quot;level&quot;:3}},&quot;white&quot;:{&quot;controller&quot;:&quot;Human&quot;,&quot;humanGameType&quot;:&quot;Normal&quot;,&quot;aiEngine&quot;:&quot;KataGo&quot;,&quot;playLevel&quot;:{&quot;group&quot;:&quot;FastBeginner&quot;,&quot;level&quot;:3}}},&quot;ruleset&quot;:&quot;Japanese&quot;,&quot;topMovesEnabled&quot;:true,&quot;showCoordinates&quot;:true,&quot;showMoveNumbers&quot;:false,&quot;showLastMoveRing&quot;:true,&quot;showOwnershipOverlay&quot;:true,&quot;autoPlayDelayMillis&quot;:3000}</string>
+</map>

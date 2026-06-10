@@ -1,0 +1,349 @@
+Go AI Coach debug report
+createdAtMillis=1781129912435
+
+[Runtime]
+mode=AiVsHuman
+playerSetup=Black: KataGo 빠른 초급 3단계 / White: 플레이어 일반
+blackSeat=KataGo 빠른 초급 3단계
+whiteSeat=플레이어 일반
+engineName=KataGo
+engineReady=true
+engineBusy=false
+gameEnded=false
+engineProfile=stub/Stub/Beginner
+playLevel=빠른 초급 3단계 (최적수만 착수)
+analysisLimit=visits:16, timeMillis:250, candidates:8
+analysisPreset=Lite
+analysisCache=entries=1, hits=0, misses=1
+topMovesEnabled=true
+topMoveCandidateCount=72
+moveAnalysisCoverage=Analysis coverage: legal 72, scored 1, policy-only 0, pending 71.
+
+[GameState]
+boardSize=9
+ruleset=Japanese
+nextPlayer=White
+moves=9
+capturedByBlack=0
+capturedByWhite=0
+consecutivePasses=false
+boardFull=false
+koPoint=none
+koForbiddenFor=none
+
+[Board]
+   A B C D E F G H J 
+ 9 . . . . . . . . . 9
+ 8 . . . . . . . . . 8
+ 7 . . . . . . . X . 7
+ 6 . . . . . . X O . 6
+ 5 . . O . X . . . . 5
+ 4 . . . . . . O . . 4
+ 3 . . . . X X . . . 3
+ 2 . . . . O . . . . 2
+ 1 . . . . . . . . . 1
+   A B C D E F G H J 
+
+[Stones]
+H7=Black
+G6=Black
+H6=White
+C5=White
+E5=Black
+G4=White
+E3=Black
+F3=Black
+E2=White
+
+[Moves]
+1. Black E5
+2. White C5
+3. Black G6
+4. White G4
+5. Black F3
+6. White H6
+7. Black H7
+8. White E2
+9. Black E3
+
+[EndgameLog]
+No endgame result recorded after restore.
+
+[LocalRulesetScoreNow]
+Local Japanese/Korean territory estimate: Black territory 0 + prisoners 0, White territory 0 + prisoners 0 + komi 6.5. This scorer assumes dead stones have already been removed.
+Final: W+6.5
+Winner: White by 6.5
+Score: Black 0.0 / White+komi 6.5 (komi 6.5)
+
+[ScoreTimeline]
+9. source=EngineEstimate, whiteScoreLead=-2.853, whiteWinRate=0.04633
+
+[DisplayedTexts]
+lastMove=Black E3
+engineMessage:
+KataGo analysis complete for White: 1 scored / 1 requested candidate(s)
+scoreText:
+Raw NN estimate. Positive score lead favors White; negative favors Black. Ownership counts are an influence indicator, not final scoring.
+White win: 5% / Black win: 95%
+Lead: Black by 2.9 points
+Influence: Black 41, White 19, unclear 21 (threshold 0.15)
+moveReviewText:
+Move review restored after app restart; pre-move analysis cache will rebuild.
+candidateText:
+Analysis cache miss: stored Lite result.
+Top Moves request: Lite, up to 1 candidate(s), Beginner (fast best-only), base 16 visits / 250ms, refine 0
+Analysis coverage: legal 72, scored 1, policy-only 0, pending 71.
+KataGo search analysis with 16 visits / 250ms. Visit diagnostics: request=16, root=2, elapsedMs=397, timeCapMs=250, fill=SHORT. Showing 1/1 scored spot(s).
+1. White C3 WR=3% loss=0.0 visits=2 prior=52% - KataGo order 0
+
+[EngineDiagnostic]
+KataGo assets found. Using local process engine.
+
+[EngineBenchmark]
+{
+  "schema": 1,
+  "createdAtMillis": 1781128783845,
+  "measurementVersion": 5,
+  "samplesPerVisit": 5,
+  "timeCapMs": 5000,
+  "benchmarkPositionName": "b16-best-3-variants",
+  "benchmarkRuleset": "Japanese",
+  "benchmarkPositionMoves": [
+    "Black E5",
+    "White C4",
+    "Black E3"
+  ],
+  "metrics": [
+    {
+      "visits": 16,
+      "samples": 5,
+      "minMs": 401.15,
+      "maxMs": 3574.666,
+      "avgMs": 2750.897,
+      "fillOk": 0,
+      "fillShort": 0,
+      "fillUnknown": 5,
+      "sampleDetails": [
+        {
+          "sampleIndex": 1,
+          "visits": 16,
+          "elapsedMs": 401.15,
+          "fillStatus": "UNKNOWN",
+          "positionMoves": [
+            "Black E5",
+            "White C4",
+            "Black E3"
+          ]
+        },
+        {
+          "sampleIndex": 2,
+          "visits": 16,
+          "elapsedMs": 3163.157,
+          "fillStatus": "UNKNOWN",
+          "positionMoves": [
+            "Black E5",
+            "White C4",
+            "Black E3",
+            "White A9"
+          ]
+        },
+        {
+          "sampleIndex": 3,
+          "visits": 16,
+          "elapsedMs": 3214.204,
+          "fillStatus": "UNKNOWN",
+          "positionMoves": [
+            "Black E5",
+            "White C4",
+            "Black E3",
+            "White A9",
+            "Black J1"
+          ]
+        },
+        {
+          "sampleIndex": 4,
+          "visits": 16,
+          "elapsedMs": 3401.307,
+          "fillStatus": "UNKNOWN",
+          "positionMoves": [
+            "Black E5",
+            "White C4",
+            "Black E3",
+            "White A9",
+            "Black J1",
+            "White A1"
+          ]
+        },
+        {
+          "sampleIndex": 5,
+          "visits": 16,
+          "elapsedMs": 3574.666,
+          "fillStatus": "UNKNOWN",
+          "positionMoves": [
+            "Black E5",
+            "White C4",
+            "Black E3",
+            "White A9",
+            "Black J1",
+            "White A1",
+            "Black J9"
+          ]
+        }
+      ]
+    },
+    {
+      "visits": 32,
+      "samples": 5,
+      "minMs": 3059.944,
+      "maxMs": 3728.87,
+      "avgMs": 3315.197,
+      "fillOk": 0,
+      "fillShort": 0,
+      "fillUnknown": 5,
+      "sampleDetails": [
+        {
+          "sampleIndex": 1,
+          "visits": 32,
+          "elapsedMs": 3185.124,
+          "fillStatus": "UNKNOWN",
+          "positionMoves": [
+            "Black E5",
+            "White C4",
+            "Black E3"
+          ]
+        },
+        {
+          "sampleIndex": 2,
+          "visits": 32,
+          "elapsedMs": 3059.944,
+          "fillStatus": "UNKNOWN",
+          "positionMoves": [
+            "Black E5",
+            "White C4",
+            "Black E3",
+            "White A9"
+          ]
+        },
+        {
+          "sampleIndex": 3,
+          "visits": 32,
+          "elapsedMs": 3196.948,
+          "fillStatus": "UNKNOWN",
+          "positionMoves": [
+            "Black E5",
+            "White C4",
+            "Black E3",
+            "White A9",
+            "Black J1"
+          ]
+        },
+        {
+          "sampleIndex": 4,
+          "visits": 32,
+          "elapsedMs": 3405.101,
+          "fillStatus": "UNKNOWN",
+          "positionMoves": [
+            "Black E5",
+            "White C4",
+            "Black E3",
+            "White A9",
+            "Black J1",
+            "White A1"
+          ]
+        },
+        {
+          "sampleIndex": 5,
+          "visits": 32,
+          "elapsedMs": 3728.87,
+          "fillStatus": "UNKNOWN",
+          "positionMoves": [
+            "Black E5",
+            "White C4",
+            "Black E3",
+            "White A9",
+            "Black J1",
+            "White A1",
+            "Black J9"
+          ]
+        }
+      ]
+    },
+    {
+      "visits": 64,
+      "samples": 5,
+      "minMs": 3595.701,
+      "maxMs": 5225.823,
+      "avgMs": 4857.196,
+      "fillOk": 0,
+      "fillShort": 0,
+      "fillUnknown": 5,
+      "sampleDetails": [
+        {
+          "sampleIndex": 1,
+          "visits": 64,
+          "elapsedMs": 3595.701,
+          "fillStatus": "UNKNOWN",
+          "positionMoves": [
+            "Black E5",
+            "White C4",
+            "Black E3"
+          ]
+        },
+        {
+          "sampleIndex": 2,
+          "visits": 64,
+          "elapsedMs": 5176.981,
+          "fillStatus": "UNKNOWN",
+          "positionMoves": [
+            "Black E5",
+            "White C4",
+            "Black E3",
+            "White A9"
+          ]
+        },
+        {
+          "sampleIndex": 3,
+          "visits": 64,
+          "elapsedMs": 5188.755,
+          "fillStatus": "UNKNOWN",
+          "positionMoves": [
+            "Black E5",
+            "White C4",
+            "Black E3",
+            "White A9",
+            "Black J1"
+          ]
+        },
+        {
+          "sampleIndex": 4,
+          "visits": 64,
+          "elapsedMs": 5098.719,
+          "fillStatus": "UNKNOWN",
+          "positionMoves": [
+            "Black E5",
+            "White C4",
+            "Black E3",
+            "White A9",
+            "Black J1",
+            "White A1"
+          ]
+        },
+        {
+          "sampleIndex": 5,
+          "visits": 64,
+          "elapsedMs": 5225.823,
+          "fillStatus": "UNKNOWN",
+          "positionMoves": [
+            "Black E5",
+            "White C4",
+            "Black E3",
+            "White A9",
+            "Black J1",
+            "White A1",
+            "Black J9"
+          ]
+        }
+      ]
+    }
+  ]
+}
