@@ -745,3 +745,5 @@
 - Game 메뉴에 `Benchmark` 버튼을 추가했다. 누르면 저장된 benchmark profile을 완료 팝업과 같은 형식으로 다시 보여주며, 저장 결과가 없으면 benchmark를 바로 실행한다.
 - benchmark 결과 팝업에 `다시 체크해보기` 버튼을 추가했다. 버튼을 누르면 팝업을 닫고 동일한 benchmark 실행 흐름을 다시 시작한다. 자동 최초 benchmark와 수동 재측정은 같은 `runEngineBenchmark()` 경로를 사용한다.
 - `GameUiEvent.ShowEngineBenchmark`와 dispatch test를 추가했다. `make test`는 통과했다. 폰 설치는 시도했지만 ADB 연결이 끊겨 실기기 설치는 다음 연결 시점으로 남겼다.
+- 사용자가 메뉴 benchmark 재측정에서도 B16과 B32 시간이 크게 차이 나지 않는다고 보고했다. 폰 저장 파일을 읽어 확인한 결과 B16은 root `17`, B32는 root `35`로 모두 `fill=OK`라 root 탐색 요청은 정상 수행되고 있었다.
+- 같은 profile의 elapsed는 B16 평균 `1831ms`, B32 평균 `1566ms`, B64 평균 `4046ms`였다. 첫 샘플 제외 평균도 B16 `1349ms`, B32 `1314ms`로 비슷했다. 결론은 16→32 visits 증가 비용보다 KataGo JSON analysis 호출/NN 평가/스레드 스케줄링/포지션별 변동 같은 고정 오버헤드가 더 커서 저방문수 구간에서는 시간이 선형으로 늘지 않는다는 것이다.
