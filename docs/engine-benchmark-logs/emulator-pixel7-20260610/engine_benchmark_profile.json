@@ -1,0 +1,247 @@
+{
+  "schema": 1,
+  "createdAtMillis": 1781097698310,
+  "measurementVersion": 5,
+  "samplesPerVisit": 5,
+  "timeCapMs": 5000,
+  "benchmarkPositionName": "b16-best-3-variants",
+  "benchmarkRuleset": "Japanese",
+  "benchmarkPositionMoves": [
+    "Black E5",
+    "White C4",
+    "Black E3"
+  ],
+  "metrics": [
+    {
+      "visits": 16,
+      "samples": 5,
+      "minMs": 1073.444,
+      "maxMs": 5058.076,
+      "avgMs": 3980.669,
+      "fillOk": 0,
+      "fillShort": 0,
+      "fillUnknown": 5,
+      "sampleDetails": [
+        {
+          "sampleIndex": 1,
+          "visits": 16,
+          "elapsedMs": 1073.444,
+          "fillStatus": "UNKNOWN",
+          "positionMoves": [
+            "Black E5",
+            "White C4",
+            "Black E3"
+          ]
+        },
+        {
+          "sampleIndex": 2,
+          "visits": 16,
+          "elapsedMs": 4352.701,
+          "fillStatus": "UNKNOWN",
+          "positionMoves": [
+            "Black E5",
+            "White C4",
+            "Black E3",
+            "White A9"
+          ]
+        },
+        {
+          "sampleIndex": 3,
+          "visits": 16,
+          "elapsedMs": 4698.488,
+          "fillStatus": "UNKNOWN",
+          "positionMoves": [
+            "Black E5",
+            "White C4",
+            "Black E3",
+            "White A9",
+            "Black J1"
+          ]
+        },
+        {
+          "sampleIndex": 4,
+          "visits": 16,
+          "elapsedMs": 4720.636,
+          "fillStatus": "UNKNOWN",
+          "positionMoves": [
+            "Black E5",
+            "White C4",
+            "Black E3",
+            "White A9",
+            "Black J1",
+            "White A1"
+          ]
+        },
+        {
+          "sampleIndex": 5,
+          "visits": 16,
+          "elapsedMs": 5058.076,
+          "fillStatus": "UNKNOWN",
+          "positionMoves": [
+            "Black E5",
+            "White C4",
+            "Black E3",
+            "White A9",
+            "Black J1",
+            "White A1",
+            "Black J9"
+          ]
+        }
+      ]
+    },
+    {
+      "visits": 32,
+      "samples": 5,
+      "minMs": 3790.214,
+      "maxMs": 4967.754,
+      "avgMs": 4355.943,
+      "fillOk": 0,
+      "fillShort": 0,
+      "fillUnknown": 5,
+      "sampleDetails": [
+        {
+          "sampleIndex": 1,
+          "visits": 32,
+          "elapsedMs": 3790.214,
+          "fillStatus": "UNKNOWN",
+          "positionMoves": [
+            "Black E5",
+            "White C4",
+            "Black E3"
+          ]
+        },
+        {
+          "sampleIndex": 2,
+          "visits": 32,
+          "elapsedMs": 4338.435,
+          "fillStatus": "UNKNOWN",
+          "positionMoves": [
+            "Black E5",
+            "White C4",
+            "Black E3",
+            "White A9"
+          ]
+        },
+        {
+          "sampleIndex": 3,
+          "visits": 32,
+          "elapsedMs": 4386.734,
+          "fillStatus": "UNKNOWN",
+          "positionMoves": [
+            "Black E5",
+            "White C4",
+            "Black E3",
+            "White A9",
+            "Black J1"
+          ]
+        },
+        {
+          "sampleIndex": 4,
+          "visits": 32,
+          "elapsedMs": 4296.577,
+          "fillStatus": "UNKNOWN",
+          "positionMoves": [
+            "Black E5",
+            "White C4",
+            "Black E3",
+            "White A9",
+            "Black J1",
+            "White A1"
+          ]
+        },
+        {
+          "sampleIndex": 5,
+          "visits": 32,
+          "elapsedMs": 4967.754,
+          "fillStatus": "UNKNOWN",
+          "positionMoves": [
+            "Black E5",
+            "White C4",
+            "Black E3",
+            "White A9",
+            "Black J1",
+            "White A1",
+            "Black J9"
+          ]
+        }
+      ]
+    },
+    {
+      "visits": 64,
+      "samples": 5,
+      "minMs": 5046.995,
+      "maxMs": 5246.744,
+      "avgMs": 5115.025,
+      "fillOk": 0,
+      "fillShort": 0,
+      "fillUnknown": 5,
+      "sampleDetails": [
+        {
+          "sampleIndex": 1,
+          "visits": 64,
+          "elapsedMs": 5046.995,
+          "fillStatus": "UNKNOWN",
+          "positionMoves": [
+            "Black E5",
+            "White C4",
+            "Black E3"
+          ]
+        },
+        {
+          "sampleIndex": 2,
+          "visits": 64,
+          "elapsedMs": 5118.356,
+          "fillStatus": "UNKNOWN",
+          "positionMoves": [
+            "Black E5",
+            "White C4",
+            "Black E3",
+            "White A9"
+          ]
+        },
+        {
+          "sampleIndex": 3,
+          "visits": 64,
+          "elapsedMs": 5081.984,
+          "fillStatus": "UNKNOWN",
+          "positionMoves": [
+            "Black E5",
+            "White C4",
+            "Black E3",
+            "White A9",
+            "Black J1"
+          ]
+        },
+        {
+          "sampleIndex": 4,
+          "visits": 64,
+          "elapsedMs": 5246.744,
+          "fillStatus": "UNKNOWN",
+          "positionMoves": [
+            "Black E5",
+            "White C4",
+            "Black E3",
+            "White A9",
+            "Black J1",
+            "White A1"
+          ]
+        },
+        {
+          "sampleIndex": 5,
+          "visits": 64,
+          "elapsedMs": 5081.048,
+          "fillStatus": "UNKNOWN",
+          "positionMoves": [
+            "Black E5",
+            "White C4",
+            "Black E3",
+            "White A9",
+            "Black J1",
+            "White A1",
+            "Black J9"
+          ]
+        }
+      ]
+    }
+  ]
+}

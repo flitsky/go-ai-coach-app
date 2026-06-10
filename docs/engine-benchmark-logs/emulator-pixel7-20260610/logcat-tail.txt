@@ -1,0 +1,1082 @@
+--------- beginning of main
+06-10 22:21:58.386  1835  1835 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.ondevicepersonalization' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-10 22:21:58.389  1835  1835 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.sdkext' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-10 22:21:58.389  1835  1835 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.healthfitness' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-10 22:21:58.398  1835  1835 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.adservices' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-10 22:21:58.398  1835  1835 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.tethering' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-10 22:21:58.402  2586  2598 I artd    : GetBestInfo: /data/app/~~NP24NfYGw-2OLp4ymyOoFA==/com.zenit9hub.ai.janggi.dev-7Vk_DnOOg-1uze2utqmnHQ==/base.apk has no usable artifacts
+06-10 22:21:58.410  2586  2598 I artd    : GetBestInfo: odex next to the dex file (/data/app/~~fP-wq8ZOsZzARrPkfqXkhw==/com.google.android.captiveportallogin-82yQXUrZ2sNMZMpOEP-fIA==/oat/arm64/base.odex) is kOatBootImageOutOfDate with filter 'speed-profile' executable 'false': Image checksum mismatch, expected i;28/43d546b2 to start with i;28/a05f2e69
+06-10 22:21:58.410  2586  2598 I artd    : GetBestInfo: vdex next to the dex file (/data/app/~~fP-wq8ZOsZzARrPkfqXkhw==/com.google.android.captiveportallogin-82yQXUrZ2sNMZMpOEP-fIA==/oat/arm64/base.vdex) is kOatUpToDate with filter 'verify' executable 'false'
+06-10 22:21:58.415  1835  1835 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.extservices' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-10 22:21:58.418  2586  2598 I artd    : GetBestInfo: odex next to the dex file (/data/app/~~ZXQJrsqw1TDzQKIa4wRNaA==/com.android.vending-EgNIuth5kV6pUhuR4_GKIA==/oat/arm64/base.odex) is kOatUpToDate with filter 'speed-profile' executable 'false'
+06-10 22:21:58.419  2586  2598 I artd    : GetBestInfo: vdex next to the dex file (/data/user/0/com.android.vending/app_dg_cache/729D45471C06B554246842057AC1D981DDFFE340/oat/arm64/the.vdex) is kOatUpToDate with filter 'verify' executable 'false'
+06-10 22:21:58.420  2586  2598 I artd    : GetBestInfo: vdex next to the dex file (/data/user/0/com.android.vending/app_dg_cache/5833371D1ACC412507A92815B074897510CCCEDD/oat/arm64/the.vdex) is kOatUpToDate with filter 'verify' executable 'false'
+06-10 22:21:58.420  2586  2598 I artd    : GetBestInfo: vdex next to the dex file (/data/user/0/com.android.vending/app_dg_cache/9D5BCED7935D64431BF672B8BBD597199833CA19/oat/arm64/the.vdex) is kOatUpToDate with filter 'verify' executable 'false'
+06-10 22:21:58.426  2586  2598 I artd    : GetBestInfo: odex next to the dex file (/data/app/~~rpjU_mgNlKxd9CmGNpiRBg==/com.android.chrome-rQS3uKhpeQJecVB8poyVpA==/oat/arm64/base.odex) is kOatBootImageOutOfDate with filter 'speed-profile' executable 'false': Image checksum mismatch, expected i;13/ee1951ff:i;28/3786918a to start with i;13/c85d305a
+06-10 22:21:58.426  2586  2598 I artd    : GetBestInfo: vdex next to the dex file (/data/app/~~rpjU_mgNlKxd9CmGNpiRBg==/com.android.chrome-rQS3uKhpeQJecVB8poyVpA==/oat/arm64/base.vdex) is kOatUpToDate with filter 'verify' executable 'false'
+06-10 22:21:58.427  2586  2598 I artd    : GetBestInfo: dm (/data/app/~~rpjU_mgNlKxd9CmGNpiRBg==/com.android.chrome-rQS3uKhpeQJecVB8poyVpA==/split_chrome.dm) is kOatUpToDate with filter 'verify' executable 'false'
+06-10 22:21:58.427  2586  2598 I artd    : GetBestInfo: dm (/data/app/~~rpjU_mgNlKxd9CmGNpiRBg==/com.android.chrome-rQS3uKhpeQJecVB8poyVpA==/split_dev_ui.dm) is kOatUpToDate with filter 'verify' executable 'false'
+06-10 22:21:58.428  2586  2598 I artd    : GetBestInfo: dm (/data/app/~~rpjU_mgNlKxd9CmGNpiRBg==/com.android.chrome-rQS3uKhpeQJecVB8poyVpA==/split_on_demand.dm) is kOatUpToDate with filter 'verify' executable 'false'
+06-10 22:21:58.429  2586  2598 I artd    : GetBestInfo: dm (/data/app/~~rpjU_mgNlKxd9CmGNpiRBg==/com.android.chrome-rQS3uKhpeQJecVB8poyVpA==/split_stack_unwinder.dm) is kOatUpToDate with filter 'verify' executable 'false'
+06-10 22:21:58.429  2586  2598 I artd    : GetBestInfo: dm (/data/app/~~rpjU_mgNlKxd9CmGNpiRBg==/com.android.chrome-rQS3uKhpeQJecVB8poyVpA==/split_test_dummy.dm) is kOatUpToDate with filter 'verify' executable 'false'
+06-10 22:21:58.444  2586  2598 I artd    : GetBestInfo: odex next to the dex file (/data/app/~~jEHHttU6wpWW4oWKyXhqbg==/com.google.android.youtube-7q_d_8lZZWCGMfR77_Eg3w==/oat/arm64/base.odex) is kOatUpToDate with filter 'speed-profile' executable 'false'
+06-10 22:21:58.445  2586  2598 I artd    : GetBestInfo: vdex next to the dex file (/data/user/0/com.google.android.youtube/app_yqzdkcache/drgd/v/oat/arm64/pcam.vdex) is kOatUpToDate with filter 'verify' executable 'false'
+06-10 22:21:58.448  1835  1835 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.os.statsd' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-10 22:21:58.448  1835  1835 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.hardware.rebootescrow' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-10 22:21:58.449  2586  2598 I artd    : GetBestInfo: odex next to the dex file (/data/app/~~2GQEQblUhuUD2C3F6dFqdQ==/com.google.android.contacts-7PzLc11U78WDC4wQXuGvJA==/oat/arm64/base.odex) is kOatUpToDate with filter 'speed-profile' executable 'false'
+06-10 22:21:58.451  1835  1835 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.cellbroadcast' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-10 22:21:58.454  1835  1835 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.rkpd' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-10 22:21:58.459  1835  1835 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.scheduling' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-10 22:21:58.461  2586  2598 I artd    : GetBestInfo: odex next to the dex file (/data/app/~~j1N6RhWS2zWbO-KeAbWeJg==/com.google.android.gm-xSi0qQUDk1UgPbAKuujlhg==/oat/arm64/base.odex) is kOatBootImageOutOfDate with filter 'speed-profile' executable 'false': Image checksum mismatch, expected i;13/ee1951ff:i;28/3786918a to start with i;13/c85d305a
+06-10 22:21:58.461  2586  2598 I artd    : GetBestInfo: vdex next to the dex file (/data/app/~~j1N6RhWS2zWbO-KeAbWeJg==/com.google.android.gm-xSi0qQUDk1UgPbAKuujlhg==/oat/arm64/base.vdex) is kOatUpToDate with filter 'verify' executable 'false'
+06-10 22:21:58.464  2586  2598 I artd    : GetBestInfo: odex next to the dex file (/data/app/~~lXxw_IUL9XHUHuo23mqRWg==/com.google.android.inputmethod.latin-gujDXAkilBh8v4oaMYPdhw==/oat/arm64/base.odex) is kOatBootImageOutOfDate with filter 'speed-profile' executable 'false': Image checksum mismatch, expected i;13/ee1951ff:i;28/3786918a to start with i;13/c85d305a
+06-10 22:21:58.465  2586  2598 I artd    : GetBestInfo: vdex next to the dex file (/data/app/~~lXxw_IUL9XHUHuo23mqRWg==/com.google.android.inputmethod.latin-gujDXAkilBh8v4oaMYPdhw==/oat/arm64/base.vdex) is kOatUpToDate with filter 'verify' executable 'false'
+06-10 22:21:58.468  2586  2598 I artd    : GetBestInfo: odex next to the dex file (/data/app/~~nNn7BWVZRCuuOv27HIlQqw==/com.google.android.calendar-7ZYjF8SqdCQWhphvQT8gzA==/oat/arm64/base.odex) is kOatUpToDate with filter 'speed-profile' executable 'false'
+06-10 22:21:58.471  1835  1835 I Finsky  : [2] App states replicator found 34 unowned apps
+06-10 22:21:58.517  1835  1835 W JobService: onNetworkChanged() not implemented in com.google.android.finsky.scheduler.process.mainimpl.PhoneskyJobServiceMain. Must override in a subclass.
+06-10 22:21:58.517   567   745 W IPCThreadState: Sending oneway calls to frozen process.
+06-10 22:21:58.517   567   745 W IPCThreadState: Sending oneway calls to frozen process.
+06-10 22:21:58.552   567   739 I HalDevMgr: bestIfaceCreationProposal is null, requestIface=STA, existingIface=[name=wlan0 type=STA]
+06-10 22:21:58.572  3897  3915 D WM-NetworkStateTracker: Network capabilities changed: [ Transports: WIFI Capabilities: NOT_METERED&INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VPN&VALIDATED&NOT_ROAMING&FOREGROUND&NOT_CONGESTED&NOT_SUSPENDED&NOT_VCN_MANAGED&NOT_BANDWIDTH_CONSTRAINED LinkUpBandwidth>=12000Kbps LinkDnBandwidth>=30000Kbps TransportInfo: <SSID: <unknown ssid>, BSSID: 02:00:00:00:00:00, MAC: 02:00:00:00:00:00, IP: /10.0.2.16, Security type: 0, Supplicant state: COMPLETED, Wi-Fi standard: legacy, RSSI: -50, Link speed: 2Mbps, Tx Link speed: 2Mbps, Max Supported Tx Link speed: 11Mbps, Rx Link speed: 2Mbps, Max Supported Rx Link speed: 11Mbps, Frequency: 2447MHz, Net ID: -1, Metered hint: false, score: 100, isUsable: true, CarrierMerged: false, SubscriptionId: -1, IsPrimary: -1, Trusted: true, Restricted: false, Ephemeral: false, OEM paid: false, OEM private: false, OSU AP: false, FQDN: <none>, Provider friendly name: <none>, Requesting package name: <none><none>MLO Information: , Is TID-To-Link negotiation supported by the AP: false, AP MLD Address: <none>, AP MLO Link Id: <none>, AP MLO Affiliated links: <none>, Vendor Data: <none>> SignalStrength: -50 UnderlyingNetworks: Null]
+06-10 22:21:58.575  1059  1059 I MagicTether: (REDACTED) [ActiveNetworkTracker] setActiveNetwork: %s
+06-10 22:21:58.578  1059  1059 I MagicTether: (REDACTED) [TetherService] onActiveNetworkChanged: network=%s isLost=%s
+06-10 22:21:58.580  3742  3760 D EGL_emulation: app_time_stats: avg=209.43ms min=189.35ms max=244.61ms count=5
+06-10 22:21:58.582  1059  3943 I MagicTether: [WifiConnectionHandler] Ignoring getWifiConfigurationByNetworkId when checking connected state [CONTEXT service_id=276 ]
+06-10 22:21:58.582  1059  3943 I MagicTether: [WifiConnectionHandler] No networkId set, can't be connected. [CONTEXT service_id=276 ]
+06-10 22:21:58.582  1059  3943 I MagicTether: (REDACTED) [TetherService] TRANSPORT_CELLULAR [%s], TRANSPORT_ETHERNET [%s], TRANSPORT_WIFI [%s]
+06-10 22:21:58.584  1059  1078 I NullBinder: NullBinder for android.net.action.RECOMMEND_NETWORKS triggering remote TransactionTooLargeException due to Service without Chimera impl, calling uid: 1000, calling pid: 0
+06-10 22:21:58.584  1059  1078 W .gms.persistent: Large reply transaction of 1056768 bytes, interface descriptor , code 1
+06-10 22:21:58.585  1059  3943 I MagicTether: (REDACTED) [TetherService] setRoles hasActiveNetworkConnection=%s canActiveNetworkBeTethered=%s isConnectedToInstantTether=%s isWifiEnabled=%s isHosting=%s
+06-10 22:21:58.605  1590  2517 I BugleRcsEngine: handleMessage processing message:[NOTIFY_UPTIME_IGNORE_STATE_CHANGED] with [non-null]:RcsEngineImpl reference [CONTEXT log_prefix="RcsEngineImpl[DUAL_REG]:[40be24d5-8cc0]>Handler" thread_id=68 ]
+06-10 22:21:58.605  1590  2126 I BugleRcsEngine: Connected state: [1], networkType: [WIFI] [CONTEXT thread_id=59 ]
+06-10 22:21:58.607  1059  1059 I MagicTether: (REDACTED) [LaunchUtils] Instant Wifi for status account: name: %s | type: %s | isLaunched: %s
+06-10 22:21:58.607  1059  1059 I MagicTether: (REDACTED) [TidepoolFeatureStatusManager] isInstantHotspotEnabled=%s
+06-10 22:21:58.607  1059  1059 I MagicTether: (REDACTED) [TidepoolFeatureStatusManager] isInstantWifiEnabled=%s
+06-10 22:21:58.607  1059  1059 I MagicTether: (REDACTED) [TetherService] startNearbyHostRole: start: %s isInstantHotspotEnabled: %s isInstantWifiEnabled: %s
+06-10 22:21:58.608  1059  1059 I MagicTether: [HostTetherRole] Nearby host role already stopped [CONTEXT service_id=276 ]
+06-10 22:21:58.611  1059  1059 I MagicTether: (REDACTED) [LaunchUtils] Instant Wifi for status account: name: %s | type: %s | isLaunched: %s
+06-10 22:21:58.612  1059  1059 I MagicTether: (REDACTED) [TidepoolFeatureStatusManager] isInstantHotspotEnabled=%s
+06-10 22:21:58.612  1059  1059 I MagicTether: (REDACTED) [TidepoolFeatureStatusManager] isInstantWifiEnabled=%s
+06-10 22:21:58.612  1059  1059 I MagicTether: (REDACTED) [TetherService] startNearbyClientRole: start: %s isInstantHotspotEnabled: %s isInstantWifiEnabled: %s
+06-10 22:21:58.612  1059  1059 I MagicTether: [TetherService] Stopping Nearby client role [CONTEXT service_id=276 ]
+06-10 22:21:58.612  1059  1059 I MagicTether: [ClientTetherRole] Client role already stopped [CONTEXT service_id=276 ]
+06-10 22:21:58.630  1059  1059 I MagicTether: (REDACTED) [NotificationPresenter] cancelNotification: %d
+06-10 22:21:58.632  1059  1059 I MagicTether: [AutoDisconnectIntentOperation] Canceling task. [CONTEXT service_id=276 ]
+06-10 22:21:58.634  1059  3847 I MagicTether: [AutoDisconnectIntentOperation] Canceling task. [CONTEXT service_id=276 ]
+06-10 22:21:58.635  1059  3847 I MagicTether: (REDACTED) [NotificationPresenter] cancelNotification: %d
+06-10 22:21:58.637  1059  3847 I MagicTether: [AutoDisconnectIntentOperation] Canceling task. [CONTEXT service_id=276 ]
+06-10 22:21:58.637  1059  3847 I MagicTether: (REDACTED) [NotificationPresenter] cancelNotification: %d
+06-10 22:21:59.079  1835  3886 I Finsky  : [123] Completed 1 account content syncs with 1 successful.
+06-10 22:21:59.081  1835  1835 I Finsky  : [2] [ContentSync] Installation state replication succeeded.
+06-10 22:21:59.082  1835  1835 I Finsky  : [2] SCH: jobFinished: 12-1. TimeElapsed: 2422ms.
+06-10 22:21:59.082  1835  1835 I Finsky  : [2] WM::SCH: Logging work end for 12-1
+06-10 22:21:59.094  1835  2247 I Finsky  : [55] SCH: Scheduling phonesky job Id: 1-1337, CT: 1781097405930, Constraints: [{ L: 38062324, D: 81262324, C: CHARGING_NONE, I: IDLE_NONE, N: NET_ANY, B: BATTERY_ANY }]
+06-10 22:21:59.094  1835  2247 I Finsky  : [55] SCH: Scheduling phonesky job Id: 10-4, CT: 1781097405685, Constraints: [{ L: 1200000, D: 86400000, C: CHARGING_NONE, I: IDLE_NONE, N: NET_ANY, B: BATTERY_ANY }]
+06-10 22:21:59.094  1835  2247 I Finsky  : [55] SCH: Scheduling phonesky job Id: 10-11, CT: 1781097405685, Constraints: [{ L: 600000, D: 86400000, C: CHARGING_NONE, I: IDLE_NONE, N: NET_ANY, B: BATTERY_ANY }]
+06-10 22:21:59.094  1835  2247 I Finsky  : [55] SCH: Scheduling phonesky job Id: 10-26, CT: 1781097405685, Constraints: [{ L: 600000, D: 86400000, C: CHARGING_NONE, I: IDLE_NONE, N: NET_ANY, B: BATTERY_ANY }]
+06-10 22:21:59.094  1835  2247 I Finsky  : [55] SCH: Scheduling phonesky job Id: 10-123, CT: 1781097405686, Constraints: [{ L: 600000, D: 86400000, C: CHARGING_NONE, I: IDLE_NONE, N: NET_ANY, B: BATTERY_ANY }]
+06-10 22:21:59.096  1835  2251 I Finsky  : [58] SCH: Scheduling 1 system job(s)
+06-10 22:21:59.097  1835  2251 I Finsky  : [58] SCH: Scheduling system job Id: 9868, L: 286588, D: 80949157, C: false, I: false, N: 1
+06-10 22:21:59.100  1835  3881 I Finsky  : [122] SCH: job service finished with id 9861.
+06-10 22:21:59.105  1835  1835 I Finsky  : [2] Memory trim requested to level 40
+06-10 22:21:59.105  2911  2911 I Finsky:background: [2] Memory trim requested to level 40
+06-10 22:21:59.105  1835  1835 I Finsky  : [2] Flushing in-memory image cache
+06-10 22:21:59.657   838  1012 D EGL_emulation: app_time_stats: avg=1029.12ms min=13.52ms max=13126.97ms count=13
+06-10 22:21:59.749  3742  3760 D EGL_emulation: app_time_stats: avg=194.82ms min=170.74ms max=201.59ms count=6
+06-10 22:22:00.050  1533  1732 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+06-10 22:22:00.050  1533  1732 I AiAiEcho: EchoTargets: 
+06-10 22:22:00.050  1533  1732 I AiAiEcho: Filtered by AiAi flag check: 
+06-10 22:22:00.050  1533  1732 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+06-10 22:22:00.050  1533  1732 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+06-10 22:22:00.052  1533  1732 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+06-10 22:22:00.052  1533  1732 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+06-10 22:22:00.052  1533  1732 I AiAiEcho: EchoTargets: 
+06-10 22:22:00.052  1533  1732 I AiAiEcho: Filtered by AiAi flag check: 
+06-10 22:22:00.052  1533  1732 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+06-10 22:22:00.053  1533  1732 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+06-10 22:22:00.053  1533  1732 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+06-10 22:22:00.056  1533  1732 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+06-10 22:22:00.057  1533  1732 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface home with targets# 0 (types=[])
+06-10 22:22:00.058   838   838 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+06-10 22:22:00.067  1127  1127 D SsBaseTemplateCard: No text view can be set up
+06-10 22:22:00.068  1127  1127 D SsBaseTemplateCard: Passed-in item info is null
+06-10 22:22:00.069  1127  1127 D SsBaseTemplateCard: Passed-in item info is null
+06-10 22:22:00.069  1127  1127 D SsBaseTemplateCard: Passed-in item info is null
+06-10 22:22:00.069  1127  1127 I SsBaseTemplateCard: Secondary card pane is null
+06-10 22:22:00.948  3742  3760 D EGL_emulation: app_time_stats: avg=199.81ms min=198.36ms max=203.01ms count=6
+06-10 22:22:01.036  3742  3760 D EGL_emulation: app_time_stats: avg=5061.63ms min=5061.63ms max=5061.63ms count=1
+06-10 22:22:01.364   449   464 D installd: Device /data has 246898688 free; requested 622811544; needed 375912856
+06-10 22:22:01.364   449   464 W installd: Failed to find storage mount for /data/media
+--------- beginning of system
+06-10 22:22:01.421   567   817 D OomAdjuster: Not killing cached processes
+06-10 22:22:01.445   567   817 D ActivityManager: sync unfroze 1236 com.google.android.permissioncontroller for 6
+06-10 22:22:01.481  1236  3500 I PermissionControllerServiceImpl: Updating user sensitive for user 0
+06-10 22:22:01.491   449   464 D installd: Active ratio 4764 isn't over quota, and defy not requested
+06-10 22:22:01.491   449   464 E installd: Failed to free up 622811544 on /data; final free space 246898688: Success
+06-10 22:22:01.495   567   754 W PackageManager: Not removing package com.google.android.trichromelibrary hosting lib com.google.android.trichromelibrary version 755913233 used by [VersionedPackage[com.android.chrome/755913233]] for user 0
+06-10 22:22:01.497   449   464 D installd: Device /data has 246898688 free; requested 622811544; needed 375912856
+06-10 22:22:01.497   449   464 W installd: Failed to find storage mount for /data/media
+06-10 22:22:01.502   449   464 D installd: Purging /data/data/com.android.chrome/cache/oat_primary/arm64/base.art size=348160 mod=1781097685 from UID=10138 used=23863296 quota=62281155 ratio=3831
+06-10 22:22:01.502   449   464 D installd: Purging /data/data/com.android.chrome/cache/oat_primary/arm64 size=8192 mod=1781097685 from UID=10138 used=23515136 quota=62281155 ratio=3775
+06-10 22:22:01.502   449   464 D installd: Purging /data/data/com.android.chrome/cache/oat_primary size=8192 mod=1781097685 from UID=10138 used=23506944 quota=62281155 ratio=3774
+06-10 22:22:01.511   449   464 D installd: Purging /data/data/com.google.android.gms/cache/android:/com.google.android.gms/managed/common/shared/cgal.mdi.sync.moonlander.autofill-domain-predictions-prod-spanner/infinite_data_cache size=32768 mod=1781097678 from UID=10136 used=17219584 quota=62281155 ratio=2764
+06-10 22:22:01.511   449   464 D installd: Purging /data/data/com.google.android.gms/cache/cronet-cache/com.google.android.gms.persistent/version size=8192 mod=1781097678 from UID=10136 used=17186816 quota=62281155 ratio=2759
+06-10 22:22:01.511   449   464 D installd: Purging /data/data/com.google.android.gms/cache/cronet-cache/com.google.android.gms.persistent/prefs size=8192 mod=1781097678 from UID=10136 used=17178624 quota=62281155 ratio=2758
+06-10 22:22:01.511   449   464 D installd: Purging /data/data/com.google.android.gms/cache/autofill_infinite_data_cache/infinite_data_cache-journal size=4096 mod=1781097678 from UID=10136 used=17170432 quota=62281155 ratio=2756
+06-10 22:22:01.511   449   464 D installd: Purging /data/data/com.google.android.gms/cache/autofill_infinite_data_cache/infinite_data_cache size=32768 mod=1781097678 from UID=10136 used=17166336 quota=62281155 ratio=2756
+06-10 22:22:01.511   449   464 D installd: Purging /data/data/com.google.android.gms/cache/autofill_infinite_data_cache size=8192 mod=1781097678 from UID=10136 used=17133568 quota=62281155 ratio=2751
+06-10 22:22:01.511   449   464 D installd: Purging /data/data/com.google.android.gms/cache/cronet-cache/com.google.android.gms/version size=8192 mod=1781097679 from UID=10136 used=17125376 quota=62281155 ratio=2749
+06-10 22:22:01.511   449   464 D installd: Purging /data/data/com.google.android.gms/cache/cronet-cache/com.google.android.gms/prefs size=8192 mod=1781097679 from UID=10136 used=17117184 quota=62281155 ratio=2748
+06-10 22:22:01.511   449   464 D installd: Purging /data/data/com.google.android.gms/cache/constellation_room_database.lck size=4096 mod=1781097679 from UID=10136 used=17108992 quota=62281155 ratio=2747
+06-10 22:22:01.511   449   464 D installd: Purging /data/data/com.google.android.gms/cache/StatementServiceVerificationRequest.db.lck size=4096 mod=1781097680 from UID=10136 used=17104896 quota=62281155 ratio=2746
+06-10 22:22:01.511   449   464 D installd: Purging /data/data/com.google.android.gms/cache/personalsafety_db.lck size=4096 mod=1781097680 from UID=10136 used=17100800 quota=62281155 ratio=2745
+06-10 22:22:01.511   449   464 D installd: Purging /data/data/com.google.android.gms/cache/nearby_bluetooth_metadata size=8192 mod=1781097680 from UID=10136 used=17096704 quota=62281155 ratio=2745
+06-10 22:22:01.511   449   464 D installd: Purging /data/data/com.google.android.gms/cache/cronet-cache/com.google.android.gms.unstable/disk_cache/index-dir/the-real-index size=8192 mod=1781097681 from UID=10136 used=17088512 quota=62281155 ratio=2743
+06-10 22:22:01.511   449   464 D installd: Purging /data/data/com.google.android.gms/cache/cronet-cache/com.google.android.gms.unstable/disk_cache/index size=8192 mod=1781097681 from UID=10136 used=17080320 quota=62281155 ratio=2742
+06-10 22:22:01.511   449   464 D installd: Purging /data/data/com.google.android.gms/cache/cronet-cache/com.google.android.gms.unstable/disk_cache/index-dir size=8192 mod=1781097681 from UID=10136 used=17072128 quota=62281155 ratio=2741
+06-10 22:22:01.511   449   464 D installd: Purging /data/data/com.google.android.gms/cache/cronet-cache/com.google.android.gms.unstable/version size=8192 mod=1781097681 from UID=10136 used=17063936 quota=62281155 ratio=2739
+06-10 22:22:01.511   449   464 D installd: Purging /data/data/com.google.android.gms/cache/cronet-cache/com.google.android.gms.unstable/prefs size=8192 mod=1781097681 from UID=10136 used=17055744 quota=62281155 ratio=2738
+06-10 22:22:01.511   449   464 D installd: Purging /data/data/com.google.android.gms/cache/cronet-cache/com.google.android.gms.unstable/disk_cache size=8192 mod=1781097681 from UID=10136 used=17047552 quota=62281155 ratio=2737
+06-10 22:22:01.512   449   464 D installd: Purging /data/data/com.google.android.gms/cache/cronet-cache/com.google.android.gms.unstable size=8192 mod=1781097681 from UID=10136 used=17039360 quota=62281155 ratio=2735
+06-10 22:22:01.512   449   464 D installd: Purging /data/data/com.google.android.gms/cache/cronet-cache/com.google.android.gms/disk_cache/index-dir/the-real-index size=8192 mod=1781097682 from UID=10136 used=17031168 quota=62281155 ratio=2734
+06-10 22:22:01.512   449   464 D installd: Purging /data/data/com.google.android.gms/cache/cronet-cache/com.google.android.gms/disk_cache/index size=8192 mod=1781097682 from UID=10136 used=17022976 quota=62281155 ratio=2733
+06-10 22:22:01.512   449   464 D installd: Purging /data/data/com.google.android.gms/cache/cronet-cache/com.google.android.gms/disk_cache/index-dir size=8192 mod=1781097682 from UID=10136 used=17014784 quota=62281155 ratio=2731
+06-10 22:22:01.512   449   464 D installd: Purging /data/data/com.google.android.gms/cache/cronet-cache/com.google.android.gms/disk_cache size=8192 mod=1781097682 from UID=10136 used=17006592 quota=62281155 ratio=2730
+06-10 22:22:01.512   449   464 D installd: Purging /data/data/com.google.android.gms/cache/cronet-cache/com.google.android.gms size=8192 mod=1781097682 from UID=10136 used=16998400 quota=62281155 ratio=2729
+06-10 22:22:01.512   449   464 D installd: Purging /data/data/com.google.android.gms/cache/cronet-cache/com.google.android.gms.persistent/disk_cache/index-dir/the-real-index size=8192 mod=1781097683 from UID=10136 used=16990208 quota=62281155 ratio=2727
+06-10 22:22:01.512   449   464 D installd: Purging /data/data/com.google.android.gms/cache/cronet-cache/com.google.android.gms.persistent/disk_cache/index size=8192 mod=1781097683 from UID=10136 used=16982016 quota=62281155 ratio=2726
+06-10 22:22:01.512   449   464 D installd: Purging /data/data/com.google.android.gms/cache/cronet-cache/com.google.android.gms.persistent/disk_cache/index-dir size=8192 mod=1781097683 from UID=10136 used=16973824 quota=62281155 ratio=2725
+06-10 22:22:01.512   449   464 D installd: Purging /data/data/com.google.android.gms/cache/cronet-cache/com.google.android.gms.persistent/disk_cache size=8192 mod=1781097683 from UID=10136 used=16965632 quota=62281155 ratio=2724
+06-10 22:22:01.512   449   464 D installd: Purging /data/data/com.google.android.gms/cache/cronet-cache/com.google.android.gms.persistent size=8192 mod=1781097683 from UID=10136 used=16957440 quota=62281155 ratio=2722
+06-10 22:22:01.512   449   464 D installd: Purging /data/data/com.google.android.gms/cache/cronet-cache size=8192 mod=1781097683 from UID=10136 used=16949248 quota=62281155 ratio=2721
+06-10 22:22:01.512   449   464 D installd: Purging /data/data/com.google.android.gms/cache/oat_primary/arm64/base.art size=4452352 mod=1781097686 from UID=10136 used=16941056 quota=62281155 ratio=2720
+06-10 22:22:01.512   449   464 D installd: Purging /data/data/com.google.android.gms/cache/oat_primary/arm64 size=8192 mod=1781097686 from UID=10136 used=12488704 quota=62281155 ratio=2005
+06-10 22:22:01.512   449   464 D installd: Purging /data/data/com.google.android.gms/cache/oat_primary size=8192 mod=1781097686 from UID=10136 used=12480512 quota=62281155 ratio=2003
+06-10 22:22:01.512   449   464 D installd: Purging /data/data/com.google.android.gms/cache/android:/com.google.android.gms/managed/common/shared/cgal.mdi.sync.moonlander.autofill-domain-predictions-prod-spanner/infinite_data_cache-shm size=36864 mod=1781097690 from UID=10136 used=12472320 quota=62281155 ratio=2002
+06-10 22:22:01.512   449   464 D installd: Purging /data/data/com.google.android.gms/cache/android:/com.google.android.gms/managed/common/shared/cgal.mdi.sync.moonlander.autofill-domain-predictions-prod-spanner/infinite_data_cache-wal size=24576 mod=1781097690 from UID=10136 used=12435456 quota=62281155 ratio=1996
+06-10 22:22:01.512   449   464 D installd: Purging /data/data/com.google.android.gms/cache/android:/com.google.android.gms/managed/common/shared/cgal.mdi.sync.moonlander.autofill-domain-predictions-prod-spanner size=8192 mod=1781097690 from UID=10136 used=12410880 quota=62281155 ratio=1992
+06-10 22:22:01.512   449   464 D installd: Purging /data/data/com.google.android.gms/cache/android:/com.google.android.gms/managed/common/shared size=8192 mod=1781097690 from UID=10136 used=12402688 quota=62281155 ratio=1991
+06-10 22:22:01.512   449   464 D installd: Purging /data/data/com.google.android.gms/cache/android:/com.google.android.gms/managed/common size=8192 mod=1781097690 from UID=10136 used=12394496 quota=62281155 ratio=1990
+06-10 22:22:01.512   449   464 D installd: Purging /data/data/com.google.android.gms/cache/android:/com.google.android.gms/managed size=8192 mod=1781097690 from UID=10136 used=12386304 quota=62281155 ratio=1988
+06-10 22:22:01.512   449   464 D installd: Purging /data/data/com.google.android.gms/cache/android:/com.google.android.gms size=8192 mod=1781097690 from UID=10136 used=12378112 quota=62281155 ratio=1987
+06-10 22:22:01.512   449   464 D installd: Purging /data/data/com.google.android.gms/cache/android: size=8192 mod=1781097690 from UID=10136 used=12369920 quota=62281155 ratio=1986
+06-10 22:22:01.515   449   464 D installd: Purging /data/data/com.google.android.apps.messaging/cache/oat_primary/arm64/base.art size=5214208 mod=1781097679 from UID=10134 used=5267456 quota=62281155 ratio=845
+06-10 22:22:01.520   449   464 D installd: Purging /data/data/com.google.android.apps.photos/cache/data/user/0/com.google.android.apps.photos/no_backup/androidx.work.workdb.lck size=4096 mod=1781097680 from UID=10157 used=3510272 quota=62281155 ratio=563
+06-10 22:22:01.520   449   464 D installd: Purging /data/data/com.google.android.apps.photos/cache/data/user/0/com.google.android.apps.photos/no_backup size=8192 mod=1781097680 from UID=10157 used=3506176 quota=62281155 ratio=562
+06-10 22:22:01.520   449   464 D installd: Purging /data/data/com.google.android.apps.photos/cache/data/user/0/com.google.android.apps.photos size=8192 mod=1781097680 from UID=10157 used=3497984 quota=62281155 ratio=561
+06-10 22:22:01.520   449   464 D installd: Purging /data/data/com.google.android.apps.photos/cache/data/user/0 size=8192 mod=1781097680 from UID=10157 used=3489792 quota=62281155 ratio=560
+06-10 22:22:01.520   449   464 D installd: Purging /data/data/com.google.android.apps.photos/cache/data/user size=8192 mod=1781097680 from UID=10157 used=3481600 quota=62281155 ratio=559
+06-10 22:22:01.520   449   464 D installd: Purging /data/data/com.google.android.apps.photos/cache/data size=8192 mod=1781097680 from UID=10157 used=3473408 quota=62281155 ratio=557
+06-10 22:22:01.520   449   464 D installd: Purging /data/data/com.google.android.apps.photos/cache/oat_primary/arm64/base.art size=3416064 mod=1781097685 from UID=10157 used=3465216 quota=62281155 ratio=556
+06-10 22:22:01.521   449   464 D installd: Purging /data/data/com.android.dynsystem/cache/oat_primary/arm64/DynamicSystemInstallationService.art size=16384 mod=1781097681 from UID=1000 used=1597440 quota=51199259 ratio=312
+06-10 22:22:01.521   449   464 D installd: Purging /data/data/com.android.dynsystem/cache/oat_primary/arm64 size=8192 mod=1781097681 from UID=1000 used=1581056 quota=51199259 ratio=308
+06-10 22:22:01.521   449   464 D installd: Purging /data/data/com.android.dynsystem/cache/oat_primary size=8192 mod=1781097681 from UID=1000 used=1572864 quota=51199259 ratio=307
+06-10 22:22:01.521   449   464 D installd: Purging /data/user_de/0/com.android.settings/cache/oat_primary/arm64/SettingsGoogle.art size=1187840 mod=1781097684 from UID=1000 used=1564672 quota=51199259 ratio=305
+06-10 22:22:01.523   567   662 W ParceledListSlice: Element #61 is 140068 bytes.
+06-10 22:22:01.523   567   662 W ParceledListSlice: Overly large reply size: 160628
+06-10 22:22:01.525   567   662 W ParceledListSlice: Element #133 is 69452 bytes.
+06-10 22:22:01.525   567   662 W ParceledListSlice: Overly large reply size: 128696
+06-10 22:22:01.526   567   662 W ParceledListSlice: Element #134 is 16984 bytes.
+06-10 22:22:01.526   567   662 W ParceledListSlice: Element #181 is 76568 bytes.
+06-10 22:22:01.526   567   662 W ParceledListSlice: Overly large reply size: 134164
+06-10 22:22:01.527   567   662 W ParceledListSlice: Element #211 is 29204 bytes.
+06-10 22:22:01.528   449   464 D installd: Purging /data/data/com.google.android.youtube/cache/data/user/0/com.google.android.youtube/no_backup/androidx.work.workdb.lck size=4096 mod=1781097680 from UID=10158 used=1875968 quota=62281155 ratio=301
+06-10 22:22:01.528   449   464 D installd: Purging /data/data/com.google.android.youtube/cache/data/user/0/com.google.android.youtube/no_backup size=8192 mod=1781097680 from UID=10158 used=1871872 quota=62281155 ratio=300
+06-10 22:22:01.528   449   464 D installd: Purging /data/data/com.google.android.youtube/cache/data/user/0/com.google.android.youtube size=8192 mod=1781097680 from UID=10158 used=1863680 quota=62281155 ratio=299
+06-10 22:22:01.528   449   464 D installd: Purging /data/data/com.google.android.youtube/cache/accounts/1/media/cache size=8192 mod=1781097680 from UID=10158 used=1855488 quota=62281155 ratio=297
+06-10 22:22:01.528   449   464 D installd: Purging /data/data/com.google.android.youtube/cache/accounts/2/media/cache size=8192 mod=1781097680 from UID=10158 used=1847296 quota=62281155 ratio=296
+06-10 22:22:01.528   449   464 D installd: Purging /data/data/com.google.android.youtube/cache/data/user/0 size=8192 mod=1781097680 from UID=10158 used=1839104 quota=62281155 ratio=295
+06-10 22:22:01.528   449   464 D installd: Purging /data/data/com.google.android.youtube/cache/accounts/1/media size=8192 mod=1781097680 from UID=10158 used=1830912 quota=62281155 ratio=293
+06-10 22:22:01.528   449   464 D installd: Purging /data/data/com.google.android.youtube/cache/accounts/2/media size=8192 mod=1781097680 from UID=10158 used=1822720 quota=62281155 ratio=292
+06-10 22:22:01.528   449   464 D installd: Purging /data/data/com.google.android.youtube/cache/volleyCache/journal size=8192 mod=1781097680 from UID=10158 used=1814528 quota=62281155 ratio=291
+06-10 22:22:01.528   449   464 D installd: Purging /data/data/com.google.android.youtube/cache/data/user size=8192 mod=1781097680 from UID=10158 used=1806336 quota=62281155 ratio=290
+06-10 22:22:01.528   449   464 D installd: Purging /data/data/com.google.android.youtube/cache/accounts/1 size=8192 mod=1781097680 from UID=10158 used=1798144 quota=62281155 ratio=288
+06-10 22:22:01.528   449   464 D installd: Purging /data/data/com.google.android.youtube/cache/accounts/2 size=8192 mod=1781097680 from UID=10158 used=1789952 quota=62281155 ratio=287
+06-10 22:22:01.528   449   464 D installd: Purging /data/data/com.google.android.youtube/cache/data size=8192 mod=1781097680 from UID=10158 used=1781760 quota=62281155 ratio=286
+06-10 22:22:01.528   449   464 D installd: Purging /data/data/com.google.android.youtube/cache/accounts size=8192 mod=1781097680 from UID=10158 used=1773568 quota=62281155 ratio=284
+06-10 22:22:01.528   449   464 D installd: Purging /data/data/com.google.android.youtube/cache/volleyCache size=8192 mod=1781097680 from UID=10158 used=1765376 quota=62281155 ratio=283
+06-10 22:22:01.530   449   464 D installd: Purging /data/data/com.google.android.apps.restore/cache/data/user/0/com.google.android.apps.restore/no_backup/androidx.work.workdb.lck size=4096 mod=1781097677 from UID=10128 used=1060864 quota=62281155 ratio=170
+06-10 22:22:01.531   449   464 D installd: Purging /data/data/com.google.android.apps.restore/cache/data/user/0/com.google.android.apps.restore/no_backup size=8192 mod=1781097677 from UID=10128 used=1056768 quota=62281155 ratio=169
+06-10 22:22:01.531   449   464 D installd: Purging /data/data/com.google.android.apps.restore/cache/data/user/0/com.google.android.apps.restore size=8192 mod=1781097677 from UID=10128 used=1048576 quota=62281155 ratio=168
+06-10 22:22:01.531   449   464 D installd: Purging /data/data/com.google.android.apps.restore/cache/data/user/0 size=8192 mod=1781097677 from UID=10128 used=1040384 quota=62281155 ratio=167
+06-10 22:22:01.531   449   464 D installd: Purging /data/data/com.google.android.apps.restore/cache/data/user size=8192 mod=1781097677 from UID=10128 used=1032192 quota=62281155 ratio=165
+06-10 22:22:01.531   449   464 D installd: Purging /data/data/com.google.android.apps.restore/cache/data size=8192 mod=1781097677 from UID=10128 used=1024000 quota=62281155 ratio=164
+06-10 22:22:01.531   449   464 D installd: Purging /data/data/com.google.android.apps.restore/cache/oat_primary/arm64/base.art size=966656 mod=1781097682 from UID=10128 used=1015808 quota=62281155 ratio=163
+06-10 22:22:01.535   449   464 D installd: Purging /data/data/com.google.android.deskclock/cache/data/user/0/com.google.android.deskclock/no_backup/androidx.work.workdb.lck size=4096 mod=1781097678 from UID=10152 used=974848 quota=62281155 ratio=156
+06-10 22:22:01.535   449   464 D installd: Purging /data/data/com.google.android.deskclock/cache/data/user/0/com.google.android.deskclock/no_backup size=8192 mod=1781097678 from UID=10152 used=970752 quota=62281155 ratio=155
+06-10 22:22:01.535   449   464 D installd: Purging /data/data/com.google.android.deskclock/cache/data/user/0/com.google.android.deskclock size=8192 mod=1781097678 from UID=10152 used=962560 quota=62281155 ratio=154
+06-10 22:22:01.535   449   464 D installd: Purging /data/data/com.google.android.deskclock/cache/data/user/0 size=8192 mod=1781097678 from UID=10152 used=954368 quota=62281155 ratio=153
+06-10 22:22:01.535   449   464 D installd: Purging /data/data/com.google.android.deskclock/cache/data/user size=8192 mod=1781097678 from UID=10152 used=946176 quota=62281155 ratio=151
+06-10 22:22:01.535   449   464 D installd: Purging /data/data/com.google.android.deskclock/cache/data size=8192 mod=1781097678 from UID=10152 used=937984 quota=62281155 ratio=150
+06-10 22:22:01.535   449   464 D installd: Purging /data/data/com.google.android.deskclock/cache/oat_primary/arm64/base.art size=880640 mod=1781097682 from UID=10152 used=929792 quota=62281155 ratio=149
+06-10 22:22:01.539   449   464 D installd: Purging /data/data/com.google.android.settings.intelligence/cache/data/user/0/com.google.android.settings.intelligence/no_backup/androidx.work.workdb.lck size=4096 mod=1781097679 from UID=10132 used=634880 quota=62281155 ratio=101
+06-10 22:22:01.539   449   464 D installd: Purging /data/data/com.google.android.settings.intelligence/cache/data/user/0/com.google.android.settings.intelligence/no_backup size=8192 mod=1781097679 from UID=10132 used=630784 quota=62281155 ratio=101
+06-10 22:22:01.539   449   464 D installd: Purging /data/data/com.google.android.settings.intelligence/cache/data/user/0/com.google.android.settings.intelligence size=8192 mod=1781097679 from UID=10132 used=622592 quota=62281155 ratio=99
+06-10 22:22:01.539   449   464 D installd: Purging /data/data/com.google.android.settings.intelligence/cache/data/user/0 size=8192 mod=1781097679 from UID=10132 used=614400 quota=62281155 ratio=98
+06-10 22:22:01.539   449   464 D installd: Purging /data/data/com.google.android.settings.intelligence/cache/data/user size=8192 mod=1781097679 from UID=10132 used=606208 quota=62281155 ratio=97
+06-10 22:22:01.539   449   464 D installd: Purging /data/data/com.google.android.settings.intelligence/cache/routines.lck size=4096 mod=1781097679 from UID=10132 used=598016 quota=62281155 ratio=96
+06-10 22:22:01.539   449   464 D installd: Purging /data/data/com.google.android.settings.intelligence/cache/data size=8192 mod=1781097679 from UID=10132 used=593920 quota=62281155 ratio=95
+06-10 22:22:01.539   449   464 D installd: Purging /data/data/com.google.android.settings.intelligence/cache/oat_primary/arm64/SettingsIntelligenceGooglePrebuilt.art size=536576 mod=1781097684 from UID=10132 used=585728 quota=62281155 ratio=94
+06-10 22:22:01.540   449   464 D installd: Purging /data/user_de/0/com.android.settings/cache/oat_primary/arm64 size=8192 mod=1781097684 from UID=1000 used=376832 quota=51199259 ratio=73
+06-10 22:22:01.540   449   464 D installd: Purging /data/user_de/0/com.android.settings/cache/oat_primary size=8192 mod=1781097684 from UID=1000 used=368640 quota=51199259 ratio=72
+06-10 22:22:01.543   449   464 D installd: Purging /data/data/com.google.android.googlequicksearchbox/cache/data/user/0/com.google.android.googlequicksearchbox/files/work-monitoring-search.db.lck size=4096 mod=1781097679 from UID=10137 used=323584 quota=62281155 ratio=51
+06-10 22:22:01.543   449   464 D installd: Purging /data/data/com.google.android.googlequicksearchbox/cache/data/user/0/com.google.android.googlequicksearchbox/databases/bisto_devices.db.lck size=4096 mod=1781097681 from UID=10137 used=319488 quota=62281155 ratio=51
+06-10 22:22:01.543   449   464 D installd: Purging /data/data/com.google.android.googlequicksearchbox/cache/data/user/0/com.google.android.googlequicksearchbox/databases size=8192 mod=1781097681 from UID=10137 used=315392 quota=62281155 ratio=50
+06-10 22:22:01.543   449   464 D installd: Purging /data/data/com.google.android.googlequicksearchbox/cache/WebView/Profile 2/HTTP Cache/Code Cache/js/index-dir/the-real-index size=8192 mod=1781097705 from UID=10137 used=307200 quota=62281155 ratio=49
+06-10 22:22:01.543   449   464 D installd: Purging /data/data/com.google.android.googlequicksearchbox/cache/WebView/Profile 2/HTTP Cache/Code Cache/wasm/index-dir/the-real-index size=8192 mod=1781097705 from UID=10137 used=299008 quota=62281155 ratio=48
+06-10 22:22:01.543   449   464 D installd: Purging /data/data/com.google.android.googlequicksearchbox/cache/WebView/Profile 2/HTTP Cache/Code Cache/js/index size=8192 mod=1781097705 from UID=10137 used=290816 quota=62281155 ratio=46
+06-10 22:22:01.543   449   464 D installd: Purging /data/data/com.google.android.googlequicksearchbox/cache/WebView/Profile 2/HTTP Cache/Code Cache/wasm/index size=8192 mod=1781097705 from UID=10137 used=282624 quota=62281155 ratio=45
+06-10 22:22:01.543   449   464 D installd: Purging /data/data/com.google.android.googlequicksearchbox/cache/WebView/Profile 2/HTTP Cache/Code Cache/wasm/index-dir size=8192 mod=1781097705 from UID=10137 used=274432 quota=62281155 ratio=44
+06-10 22:22:01.547   449   464 D installd: Purging /data/data/com.google.android.partnersetup/cache/oat_primary/arm64/base.art size=225280 mod=1781097684 from UID=10130 used=274432 quota=62281155 ratio=44
+06-10 22:22:01.547   449   464 D installd: Purging /data/data/com.google.android.googlequicksearchbox/cache/WebView/Profile 2/HTTP Cache/Code Cache/js/index-dir size=8192 mod=1781097705 from UID=10137 used=266240 quota=62281155 ratio=42
+06-10 22:22:01.547   449   464 D installd: Purging /data/data/com.google.android.googlequicksearchbox/cache/WebView/Profile 2/HTTP Cache/Code Cache/wasm size=8192 mod=1781097705 from UID=10137 used=258048 quota=62281155 ratio=41
+06-10 22:22:01.547   449   464 D installd: Purging /data/data/com.google.android.googlequicksearchbox/cache/WebView/Profile 2/HTTP Cache/Code Cache/js size=8192 mod=1781097705 from UID=10137 used=249856 quota=62281155 ratio=40
+06-10 22:22:01.547   449   464 D installd: Purging /data/data/com.google.android.googlequicksearchbox/cache/WebView/Profile 2/HTTP Cache/Code Cache size=8192 mod=1781097705 from UID=10137 used=241664 quota=62281155 ratio=38
+06-10 22:22:01.548   449   464 D installd: Purging /data/data/com.google.android.googlequicksearchbox/cache/Crash Reports/ANR Variations/ca17b37a26ab8881f4b15937a49ecee3 size=8192 mod=1781097705 from UID=10137 used=233472 quota=62281155 ratio=37
+06-10 22:22:01.548   449   464 D installd: Purging /data/data/com.google.android.googlequicksearchbox/cache/WebView/Profile 2/HTTP Cache size=8192 mod=1781097705 from UID=10137 used=225280 quota=62281155 ratio=36
+06-10 22:22:01.549   449   464 D installd: Purging /data/data/com.google.android.googlequicksearchbox/cache/image_manager_disk_cache/4747ded988217af667e703b92a0121fc6aecb6f3cf074d7562ad269a6db777c9.0 size=12288 mod=1781097705 from UID=10137 used=217088 quota=62281155 ratio=34
+06-10 22:22:01.549   449   464 D installd: Purging /data/data/com.google.android.googlequicksearchbox/cache/image_manager_disk_cache/a9d4081b990584c63c888b7cf64b1f2b188fb85debe14e0d272f1a0c5f0d7bcd.0 size=57344 mod=1781097705 from UID=10137 used=204800 quota=62281155 ratio=32
+06-10 22:22:01.552   449   464 D installd: Purging /data/data/com.google.android.marvin.talkback/cache/oat_primary/arm64/talkback.art size=139264 mod=1781097686 from UID=10159 used=188416 quota=62281155 ratio=30
+06-10 22:22:01.554   567   739 I HalDevMgr: bestIfaceCreationProposal is null, requestIface=STA, existingIface=[name=wlan0 type=STA]
+06-10 22:22:01.567   916  1060 D IpClient/wlan0: interfaceLinkStateChanged: ifindex 16 up
+06-10 22:22:01.571   449   464 D installd: Purging /data/data/com.android.vending/cache/images size=8192 mod=1781097677 from UID=10133 used=163840 quota=62281155 ratio=26
+06-10 22:22:01.571   449   464 D installd: Purging /data/data/com.android.vending/cache/logs_background/com.google.flit9sky%40gmail.com/eventlog.store6225582922176991261.log size=8192 mod=1781097685 from UID=10133 used=155648 quota=62281155 ratio=24
+06-10 22:22:01.571   449   464 D installd: Purging /data/data/com.android.vending/cache/logs_background/com.google.flit9sky%40gmail.com size=8192 mod=1781097685 from UID=10133 used=147456 quota=62281155 ratio=23
+06-10 22:22:01.571   449   464 D installd: Purging /data/data/com.google.android.googlequicksearchbox/cache/image_manager_disk_cache/5dc06510ed1219b30ddc8a859e171fad446b91ccb85852289105e3925873ddf2.0 size=12288 mod=1781097705 from UID=10137 used=147456 quota=62281155 ratio=23
+06-10 22:22:01.571   449   464 D installd: Purging /data/data/com.android.vending/cache/logs_background/com.google.flit9sky%40gmail.com.metalog/logs_upload_attempt.log size=8192 mod=1781097687 from UID=10133 used=139264 quota=62281155 ratio=22
+06-10 22:22:01.572   449   464 D installd: Purging /data/data/com.android.vending/cache/logs_background/com.google.flit9sky%40gmail.com.metalog/play_metalog.log size=8192 mod=1781097687 from UID=10133 used=131072 quota=62281155 ratio=21
+06-10 22:22:01.572   449   464 D installd: Purging /data/data/com.google.android.googlequicksearchbox/cache/image_manager_disk_cache/journal size=8192 mod=1781097705 from UID=10137 used=135168 quota=62281155 ratio=21
+06-10 22:22:01.572   449   464 D installd: Purging /data/data/com.google.android.googlequicksearchbox/cache/Crash Reports/ANR Variations size=8192 mod=1781097705 from UID=10137 used=126976 quota=62281155 ratio=20
+06-10 22:22:01.572   449   464 D installd: Purging /data/data/com.google.android.googlequicksearchbox/cache/WebView/Profile 2 size=8192 mod=1781097705 from UID=10137 used=118784 quota=62281155 ratio=19
+06-10 22:22:01.572   449   464 D installd: Purging /data/data/com.android.vending/cache/logs_background/com.google.flit9sky%40gmail.com.metalog size=8192 mod=1781097687 from UID=10133 used=122880 quota=62281155 ratio=19
+06-10 22:22:01.572   449   464 D installd: Purging /data/data/com.android.vending/cache/logs_background size=8192 mod=1781097687 from UID=10133 used=114688 quota=62281155 ratio=18
+06-10 22:22:01.572   449   464 D installd: Purging /data/data/com.android.vending/cache/main size=8192 mod=1781097688 from UID=10133 used=106496 quota=62281155 ratio=17
+06-10 22:22:01.573   916  1060 D IpClient/wlan0: interfaceLinkStateChanged: ifindex 16 up
+06-10 22:22:01.574   449   464 D installd: Purging /data/data/com.android.managedprovisioning/cache/oat_primary/arm64/ManagedProvisioning.art size=57344 mod=1781097681 from UID=10098 used=106496 quota=62281155 ratio=17
+06-10 22:22:01.574   449   464 D installd: Purging /data/data/com.google.android.googlequicksearchbox/cache/Crash Reports size=8192 mod=1781097705 from UID=10137 used=110592 quota=62281155 ratio=17
+06-10 22:22:01.574   449   464 D installd: Purging /data/data/com.google.android.googlequicksearchbox/cache/image_manager_disk_cache size=8192 mod=1781097705 from UID=10137 used=102400 quota=62281155 ratio=16
+06-10 22:22:01.574   449   464 D installd: Purging /data/data/com.google.android.googlequicksearchbox/cache/WebView size=8192 mod=1781097705 from UID=10137 used=94208 quota=62281155 ratio=15
+06-10 22:22:01.575   449   464 D installd: Purging /data/data/com.android.vending/cache/logs/com.google.flit9sky%40gmail.com.metalog/logs_upload_attempt.log size=8192 mod=1781097690 from UID=10133 used=98304 quota=62281155 ratio=15
+06-10 22:22:01.575   449   464 D installd: Purging /data/data/com.android.vending/cache/logs/com.google.flit9sky%40gmail.com.metalog/play_metalog.log size=8192 mod=1781097690 from UID=10133 used=90112 quota=62281155 ratio=14
+06-10 22:22:01.575   449   464 D installd: Purging /data/data/com.android.vending/cache/logs/com.google.flit9sky%40gmail.com.metalog size=8192 mod=1781097690 from UID=10133 used=81920 quota=62281155 ratio=13
+06-10 22:22:01.580   449   464 D installd: Purging /data/data/com.google.android.configupdater/cache/oat_primary/arm64/ConfigUpdater.art size=32768 mod=1781097682 from UID=10121 used=81920 quota=62281155 ratio=13
+06-10 22:22:01.581   449   464 D installd: Purging /data/data/com.google.android.rkpdapp/cache/data/user/0/com.google.android.rkpdapp/no_backup/androidx.work.workdb.lck size=4096 mod=1781097717 from UID=10176 used=81920 quota=62281155 ratio=13
+06-10 22:22:01.581   449   464 D installd: Purging /data/data/com.google.android.googlequicksearchbox/cache/data/user/0/com.google.android.googlequicksearchbox/files/googleapp_sentinel_events.db.lck size=4096 mod=1781097710 from UID=10137 used=86016 quota=62281155 ratio=13
+06-10 22:22:01.581   449   464 D installd: Purging /data/data/com.google.android.googlequicksearchbox/cache/data/user/0/com.google.android.googlequicksearchbox/files/default_sentinel_events.db.lck size=4096 mod=1781097710 from UID=10137 used=81920 quota=62281155 ratio=13
+06-10 22:22:01.581   449   464 D installd: Purging /data/data/com.google.android.googlequicksearchbox/cache/data/user/0/com.google.android.googlequicksearchbox/files size=8192 mod=1781097710 from UID=10137 used=77824 quota=62281155 ratio=12
+06-10 22:22:01.582   449   464 D installd: Purging /data/user_de/0/com.android.emergency/cache/oat_primary/arm64/EmergencyInfo.art size=28672 mod=1781097686 from UID=10168 used=77824 quota=62281155 ratio=12
+06-10 22:22:01.583   449   464 D installd: Purging /data/data/com.google.android.rkpdapp/cache/data/user/0/com.google.android.rkpdapp/no_backup size=8192 mod=1781097717 from UID=10176 used=77824 quota=62281155 ratio=12
+06-10 22:22:01.583   449   464 D installd: Purging /data/data/com.google.android.rkpdapp/cache/data/user/0/com.google.android.rkpdapp size=8192 mod=1781097717 from UID=10176 used=69632 quota=62281155 ratio=11
+06-10 22:22:01.585   449   464 D installd: Purging /data/user_de/0/com.google.android.packageinstaller/cache/oat_primary/arm64/GooglePackageInstaller.art size=24576 mod=1781097684 from UID=10095 used=73728 quota=62281155 ratio=11
+06-10 22:22:01.587   449   464 D installd: Purging /data/data/com.android.traceur/cache/oat_primary/arm64/Traceur.art size=24576 mod=1781097686 from UID=10120 used=73728 quota=62281155 ratio=11
+06-10 22:22:01.588   449   464 D installd: Purging /data/data/com.android.providers.calendar/cache/oat_primary/arm64/CalendarProvider.art size=20480 mod=1781097681 from UID=10086 used=69632 quota=62281155 ratio=11
+06-10 22:22:01.588   449   464 D installd: Purging /data/data/com.android.vending/cache/logs size=8192 mod=1781097690 from UID=10133 used=73728 quota=62281155 ratio=11
+06-10 22:22:01.589   449   464 D installd: Purging /data/data/com.google.android.googlequicksearchbox/cache/data/user/0/com.google.android.googlequicksearchbox size=8192 mod=1781097710 from UID=10137 used=69632 quota=62281155 ratio=11
+06-10 22:22:01.589   449   464 D installd: Purging /data/user_de/0/com.android.shell/cache/oat_primary/arm64/Shell.art size=16384 mod=1781097682 from UID=2000 used=65536 quota=62281155 ratio=10
+06-10 22:22:01.589   449   464 D installd: Purging /data/data/com.android.vending/cache/streamdatastore/streamdatastore.db-journal size=4096 mod=1781097717 from UID=10133 used=65536 quota=62281155 ratio=10
+06-10 22:22:01.589   449   464 D installd: Purging /data/data/com.android.vending/cache/streamdatastore/streamdatastore.db size=155648 mod=1781097717 from UID=10133 used=61440 quota=62281155 ratio=9
+06-10 22:22:01.590   449   464 D installd: Purging /data/data/com.android.externalstorage/cache/oat_primary/arm64/ExternalStorageProvider.art size=12288 mod=1781097685 from UID=10091 used=61440 quota=62281155 ratio=9
+06-10 22:22:01.590   449   464 D installd: Purging /data/data/com.google.android.rkpdapp/cache/data/user/0 size=8192 mod=1781097717 from UID=10176 used=61440 quota=62281155 ratio=9
+06-10 22:22:01.590   449   464 D installd: Purging /data/data/com.google.android.googlequicksearchbox/cache/data/user/0 size=8192 mod=1781097710 from UID=10137 used=61440 quota=62281155 ratio=9
+06-10 22:22:01.590   449   464 D installd: Purging /data/data/com.google.android.googlequicksearchbox/cache/data/user size=8192 mod=1781097710 from UID=10137 used=53248 quota=62281155 ratio=8
+06-10 22:22:01.590   449   464 D installd: Purging /data/data/com.google.android.apps.messaging/cache/oat_primary/arm64 size=8192 mod=1781097679 from UID=10134 used=53248 quota=62281155 ratio=8
+06-10 22:22:01.591   449   464 D installd: Purging /data/data/com.google.android.rkpdapp/cache/data/user size=8192 mod=1781097717 from UID=10176 used=53248 quota=62281155 ratio=8
+06-10 22:22:01.591   449   464 D installd: Purging /data/data/com.google.android.rkpdapp/cache/rkpd_database.lck size=4096 mod=1781097717 from UID=10176 used=45056 quota=62281155 ratio=7
+06-10 22:22:01.591   449   464 D installd: Purging /data/data/com.google.android.marvin.talkback/cache/oat_primary/arm64 size=8192 mod=1781097686 from UID=10159 used=49152 quota=62281155 ratio=7
+06-10 22:22:01.591   449   464 D installd: Purging /data/user_de/0/com.android.emergency/cache/oat_primary/arm64 size=8192 mod=1781097686 from UID=10168 used=49152 quota=62281155 ratio=7
+06-10 22:22:01.591   449   464 D installd: Purging /data/user_de/0/com.google.android.packageinstaller/cache/oat_primary/arm64 size=8192 mod=1781097684 from UID=10095 used=49152 quota=62281155 ratio=7
+06-10 22:22:01.591   449   464 D installd: Purging /data/data/com.google.android.apps.messaging/cache/oat_primary size=8192 mod=1781097679 from UID=10134 used=45056 quota=62281155 ratio=7
+06-10 22:22:01.591   449   464 D installd: Purging /data/data/com.android.traceur/cache/oat_primary/arm64 size=8192 mod=1781097686 from UID=10120 used=49152 quota=62281155 ratio=7
+06-10 22:22:01.591   449   464 D installd: Purging /data/data/com.android.externalstorage/cache/oat_primary/arm64 size=8192 mod=1781097685 from UID=10091 used=49152 quota=62281155 ratio=7
+06-10 22:22:01.591   449   464 D installd: Purging /data/data/com.google.android.configupdater/cache/oat_primary/arm64 size=8192 mod=1781097682 from UID=10121 used=49152 quota=62281155 ratio=7
+06-10 22:22:01.591   449   464 D installd: Purging /data/data/com.google.android.googlequicksearchbox/cache/data size=8192 mod=1781097710 from UID=10137 used=45056 quota=62281155 ratio=7
+06-10 22:22:01.591   449   464 D installd: Purging /data/user_de/0/com.android.shell/cache/oat_primary/arm64 size=8192 mod=1781097682 from UID=2000 used=49152 quota=62281155 ratio=7
+06-10 22:22:01.591   449   464 D installd: Purging /data/data/com.google.android.partnersetup/cache/oat_primary/arm64 size=8192 mod=1781097684 from UID=10130 used=49152 quota=62281155 ratio=7
+06-10 22:22:01.591   449   464 D installd: Purging /data/data/com.google.android.apps.restore/cache/oat_primary/arm64 size=8192 mod=1781097682 from UID=10128 used=49152 quota=62281155 ratio=7
+06-10 22:22:01.591   449   464 D installd: Purging /data/data/com.android.managedprovisioning/cache/oat_primary/arm64 size=8192 mod=1781097681 from UID=10098 used=49152 quota=62281155 ratio=7
+06-10 22:22:01.591   449   464 D installd: Purging /data/data/com.google.android.settings.intelligence/cache/oat_primary/arm64 size=8192 mod=1781097684 from UID=10132 used=49152 quota=62281155 ratio=7
+06-10 22:22:01.591   449   464 D installd: Purging /data/data/com.google.android.apps.photos/cache/oat_primary/arm64 size=8192 mod=1781097685 from UID=10157 used=49152 quota=62281155 ratio=7
+06-10 22:22:01.591   449   464 D installd: Purging /data/data/com.google.android.deskclock/cache/oat_primary/arm64 size=8192 mod=1781097682 from UID=10152 used=49152 quota=62281155 ratio=7
+06-10 22:22:01.591   449   464 D installd: Purging /data/data/com.android.providers.calendar/cache/oat_primary/arm64 size=8192 mod=1781097681 from UID=10086 used=49152 quota=62281155 ratio=7
+06-10 22:22:01.591   449   464 D installd: Purging /data/data/com.android.providers.calendar/cache/oat_primary size=8192 mod=1781097681 from UID=10086 used=40960 quota=62281155 ratio=6
+06-10 22:22:01.591   449   464 D installd: Purging /data/data/com.google.android.rkpdapp/cache/data size=8192 mod=1781097717 from UID=10176 used=40960 quota=62281155 ratio=6
+06-10 22:22:01.591   449   464 D installd: Purging /data/data/com.google.android.marvin.talkback/cache/oat_primary size=8192 mod=1781097686 from UID=10159 used=40960 quota=62281155 ratio=6
+06-10 22:22:01.591   449   464 D installd: Purging /data/user_de/0/com.android.emergency/cache/oat_primary size=8192 mod=1781097686 from UID=10168 used=40960 quota=62281155 ratio=6
+06-10 22:22:01.591   449   464 D installd: Purging /data/data/com.google.android.deskclock/cache/oat_primary size=8192 mod=1781097682 from UID=10152 used=40960 quota=62281155 ratio=6
+06-10 22:22:01.591   449   464 D installd: Purging /data/user_de/0/com.google.android.packageinstaller/cache/oat_primary size=8192 mod=1781097684 from UID=10095 used=40960 quota=62281155 ratio=6
+06-10 22:22:01.591   449   464 D installd: Purging /data/data/com.android.traceur/cache/oat_primary size=8192 mod=1781097686 from UID=10120 used=40960 quota=62281155 ratio=6
+06-10 22:22:01.591   449   464 D installd: Purging /data/data/com.android.externalstorage/cache/oat_primary size=8192 mod=1781097685 from UID=10091 used=40960 quota=62281155 ratio=6
+06-10 22:22:01.591   449   464 D installd: Purging /data/user_de/0/com.android.shell/cache/oat_primary size=8192 mod=1781097682 from UID=2000 used=40960 quota=62281155 ratio=6
+06-10 22:22:01.591   449   464 D installd: Purging /data/data/com.android.managedprovisioning/cache/oat_primary size=8192 mod=1781097681 from UID=10098 used=40960 quota=62281155 ratio=6
+06-10 22:22:01.591   449   464 D installd: Purging /data/data/com.google.android.apps.photos/cache/oat_primary size=8192 mod=1781097685 from UID=10157 used=40960 quota=62281155 ratio=6
+06-10 22:22:01.591   449   464 D installd: Purging /data/data/com.google.android.configupdater/cache/oat_primary size=8192 mod=1781097682 from UID=10121 used=40960 quota=62281155 ratio=6
+06-10 22:22:01.591   449   464 D installd: Purging /data/data/com.google.android.partnersetup/cache/oat_primary size=8192 mod=1781097684 from UID=10130 used=40960 quota=62281155 ratio=6
+06-10 22:22:01.591   449   464 D installd: Purging /data/data/com.google.android.apps.restore/cache/oat_primary size=8192 mod=1781097682 from UID=10128 used=40960 quota=62281155 ratio=6
+06-10 22:22:01.591   449   464 D installd: Purging /data/data/com.google.android.settings.intelligence/cache/oat_primary size=8192 mod=1781097684 from UID=10132 used=40960 quota=62281155 ratio=6
+06-10 22:22:01.652   567  2084 W BatteryExternalStatsWorker: error reading Bluetooth stats: 11
+06-10 22:22:01.697   449   464 D installd: Purging /data/data/com.google.android.apps.messaging/cache/gnp_fcm_database.lck size=4096 mod=1781097690 from UID=10134 used=36864 quota=62281155 ratio=5
+06-10 22:22:01.765   449   464 D installd: Purging /data/data/com.android.vending/cache/streamdatastore size=8192 mod=1781097717 from UID=10133 used=-94208 quota=62281155 ratio=-15
+06-10 22:22:01.765   449   464 E installd: Failed to free up 622811544 on /data; final free space 263221248: Success
+06-10 22:22:01.778  1510  1798 I ExternalStorageServiceImpl: Free cache requested for 359590296 bytes
+06-10 22:22:01.790   567   754 W DeviceStorageMonitorService: java.io.IOException: Failed to free 622811544 on storage device at /data
+06-10 22:22:01.790   567   754 W DeviceStorageMonitorService: 	at com.android.server.pm.FreeStorageHelper.freeStorage(FreeStorageHelper.java:182)
+06-10 22:22:01.790   567   754 W DeviceStorageMonitorService: 	at com.android.server.pm.PackageManagerService.freeStorage(PackageManagerService.java:2922)
+06-10 22:22:01.790   567   754 W DeviceStorageMonitorService: 	at com.android.server.pm.PackageManagerInternalBase.freeStorage(PackageManagerInternalBase.java:571)
+06-10 22:22:01.790   567   754 W DeviceStorageMonitorService: 	at com.android.server.storage.DeviceStorageMonitorService.checkLow(DeviceStorageMonitorService.java:194)
+06-10 22:22:01.790   567   754 W DeviceStorageMonitorService: 	at com.android.server.storage.DeviceStorageMonitorService.-$$Nest$mcheckLow(DeviceStorageMonitorService.java:0)
+06-10 22:22:01.790   567   754 W DeviceStorageMonitorService: 	at com.android.server.storage.DeviceStorageMonitorService$1.handleMessage(DeviceStorageMonitorService.java:297)
+06-10 22:22:01.790   567   754 W DeviceStorageMonitorService: 	at android.os.Handler.dispatchMessage(Handler.java:107)
+06-10 22:22:01.790   567   754 W DeviceStorageMonitorService: 	at android.os.Looper.loopOnce(Looper.java:232)
+06-10 22:22:01.790   567   754 W DeviceStorageMonitorService: 	at android.os.Looper.loop(Looper.java:317)
+06-10 22:22:01.790   567   754 W DeviceStorageMonitorService: 	at android.os.HandlerThread.run(HandlerThread.java:85)
+06-10 22:22:01.797   567   754 W PermissionService: getPermissionFlags: Unknown user -1
+06-10 22:22:01.797   567   754 W PermissionService: getPermissionFlags: Unknown user -1
+06-10 22:22:01.797   567   754 W BroadcastLoopers: Found previously unknown looper Thread[DeviceStorageMonitorService,5,main]
+06-10 22:22:01.799   567   625 D ActivityManager: sync unfroze 3285 com.google.android.apps.photos for 3
+06-10 22:22:01.966  3742  3760 D EGL_emulation: app_time_stats: avg=169.55ms min=81.85ms max=217.06ms count=6
+06-10 22:22:02.020   567   567 D FlashNotifController: requestStartFlashNotification
+06-10 22:22:02.020   567   567 I FlashNotifController: startFlashNotification: type=1, tag=android
+06-10 22:22:02.020   567   567 D FlashNotifController: Flash notification is disabled
+06-10 22:22:02.024   567   567 W NotificationHistory: Attempted to add notif for locked/gone/disabled user 0
+06-10 22:22:02.032  1533  1957 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+06-10 22:22:02.033  1533  1957 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+06-10 22:22:02.079   567   745 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET, states=14
+06-10 22:22:02.084   567   745 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET6, states=14
+06-10 22:22:02.084   567   745 D InetDiagMessage: Destroyed live tcp sockets for uids={10176} in 5ms
+06-10 22:22:02.084   567   745 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET, states=14
+06-10 22:22:02.084   567   691 D ActivityManager: freezing 3853 com.android.settings
+06-10 22:22:02.084   567   745 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET6, states=14
+06-10 22:22:02.084   567   745 D InetDiagMessage: Destroyed live tcp sockets for uids={20176} in 0ms
+06-10 22:22:02.098   457  1895 D NuPlayerDriver: NuPlayerDriver(0xb4000077101051d0) created, clientPid(838)
+06-10 22:22:02.104   160   160 I hwservicemanager: getTransport: Cannot find entry android.hardware.media.omx@1.0::IOmx/default in either framework or device VINTF manifest.
+06-10 22:22:02.104   457  1895 D MediaPlayerService: OMX service is not available
+06-10 22:22:02.152   457  3988 D GenericSource: FileSource remote
+06-10 22:22:02.196   567   902 I MediaFocusControl: requestAudioFocus() from uid/pid 10174/838 AA=USAGE_NOTIFICATION/CONTENT_TYPE_SONIFICATION clientId=android.media.AudioManager@209ff57 callingPack=com.android.systemui req=3 flags=0x0 sdk=35
+06-10 22:22:02.198   567   902 I AS.FadeOutManager: unfadeOutUid() uid:10174
+06-10 22:22:02.217   838  1012 D EGL_emulation: app_time_stats: avg=1279.91ms min=384.17ms max=2175.64ms count=2
+06-10 22:22:02.700   457  3985 I GenericSource: start
+06-10 22:22:02.712   457  3993 D CCodec  : allocate(c2.android.vorbis.decoder)
+06-10 22:22:02.713   457  3993 I CCodec  : setting up 'default' as default (vendor) store
+06-10 22:22:02.716   838   838 D MediaRouter: onRestoreRoute() : route=RouteInfo{ name=Phone, description=null, status=null, category=RouteCategory{ name=System types=ROUTE_TYPE_LIVE_AUDIO ROUTE_TYPE_LIVE_VIDEO  groupable=false }, supportedTypes=ROUTE_TYPE_LIVE_AUDIO ROUTE_TYPE_LIVE_VIDEO , presentationDisplay=null }
+06-10 22:22:02.716   838   838 V MediaRouter: Selecting route: RouteInfo{ name=Phone, description=null, status=null, category=RouteCategory{ name=System types=ROUTE_TYPE_LIVE_AUDIO ROUTE_TYPE_LIVE_VIDEO  groupable=false }, supportedTypes=ROUTE_TYPE_LIVE_AUDIO ROUTE_TYPE_LIVE_VIDEO , presentationDisplay=null }
+06-10 22:22:02.741   567   959 D BufferPoolAccessor2.0: bufferpool2 0xb400007a43a6eb98 : 0(0 size) total buffers - 0(0 size) used buffers - 1/7 (recycle/alloc) - 6/18 (fetch/transfer)
+06-10 22:22:02.741   838  1216 D BufferPoolAccessor2.0: bufferpool2 0xb400007a43a00978 : 0(0 size) total buffers - 0(0 size) used buffers - 2/7 (recycle/alloc) - 7/36 (fetch/transfer)
+06-10 22:22:02.741   838  1216 D BufferPoolAccessor2.0: Destruction - bufferpool2 0xb400007a43a00978 cached: 0/0M, 0/0% in use; allocs: 7, 29% recycled; transfers: 36, 81% unfetched
+06-10 22:22:02.741   567   959 D BufferPoolAccessor2.0: Destruction - bufferpool2 0xb400007a43a6eb98 cached: 0/0M, 0/0% in use; allocs: 7, 14% recycled; transfers: 18, 67% unfetched
+06-10 22:22:02.741   567  3998 D BufferPoolAccessor2.0: bufferpool2 0xb400007a43a5cf28 : 0(0 size) total buffers - 0(0 size) used buffers - 2/7 (recycle/alloc) - 5/24 (fetch/transfer)
+06-10 22:22:02.741   567  3998 D BufferPoolAccessor2.0: Destruction - bufferpool2 0xb400007a43a5cf28 cached: 0/0M, 0/0% in use; allocs: 7, 29% recycled; transfers: 24, 79% unfetched
+06-10 22:22:02.741   567   704 D BufferPoolAccessor2.0: bufferpool2 0xb400007a43a5df58 : 0(0 size) total buffers - 0(0 size) used buffers - 1/7 (recycle/alloc) - 6/34 (fetch/transfer)
+06-10 22:22:02.741   567   705 D BufferPoolAccessor2.0: bufferpool2 0xb400007a43a70068 : 0(0 size) total buffers - 0(0 size) used buffers - 2/7 (recycle/alloc) - 5/24 (fetch/transfer)
+06-10 22:22:02.741   567   705 D BufferPoolAccessor2.0: Destruction - bufferpool2 0xb400007a43a70068 cached: 0/0M, 0/0% in use; allocs: 7, 29% recycled; transfers: 24, 79% unfetched
+06-10 22:22:02.741   567   704 D BufferPoolAccessor2.0: Destruction - bufferpool2 0xb400007a43a5df58 cached: 0/0M, 0/0% in use; allocs: 7, 14% recycled; transfers: 34, 82% unfetched
+06-10 22:22:02.741   567   959 D BufferPoolAccessor2.0: bufferpool2 0xb400007a43a5f428 : 0(0 size) total buffers - 0(0 size) used buffers - 2/7 (recycle/alloc) - 8/26 (fetch/transfer)
+06-10 22:22:02.741   838  1216 D BufferPoolAccessor2.0: bufferpool2 0xb400007a43a065f8 : 0(0 size) total buffers - 0(0 size) used buffers - 1/7 (recycle/alloc) - 6/38 (fetch/transfer)
+06-10 22:22:02.741   567  3998 D BufferPoolAccessor2.0: bufferpool2 0xb400007a43a5ffb8 : 0(0 size) total buffers - 0(0 size) used buffers - 2/7 (recycle/alloc) - 8/34 (fetch/transfer)
+06-10 22:22:02.741   567  3998 D BufferPoolAccessor2.0: Destruction - bufferpool2 0xb400007a43a5ffb8 cached: 0/0M, 0/0% in use; allocs: 7, 29% recycled; transfers: 34, 76% unfetched
+06-10 22:22:02.741   838  1216 D BufferPoolAccessor2.0: Destruction - bufferpool2 0xb400007a43a065f8 cached: 0/0M, 0/0% in use; allocs: 7, 14% recycled; transfers: 38, 84% unfetched
+06-10 22:22:02.741   567   959 D BufferPoolAccessor2.0: Destruction - bufferpool2 0xb400007a43a5f428 cached: 0/0M, 0/0% in use; allocs: 7, 29% recycled; transfers: 26, 69% unfetched
+06-10 22:22:02.741   838  1216 D BufferPoolAccessor2.0: bufferpool2 0xb400007a43a01e48 : 0(0 size) total buffers - 0(0 size) used buffers - 2/7 (recycle/alloc) - 5/18 (fetch/transfer)
+06-10 22:22:02.741   838  1216 D BufferPoolAccessor2.0: Destruction - bufferpool2 0xb400007a43a01e48 cached: 0/0M, 0/0% in use; allocs: 7, 29% recycled; transfers: 18, 72% unfetched
+06-10 22:22:02.744   457  3993 I CCodec  : Created component [c2.android.vorbis.decoder]
+06-10 22:22:02.745   457  3993 D CCodecConfig: read media type: audio/vorbis
+06-10 22:22:02.746   457  3993 D ReflectedParamUpdater: extent() != 1 for single value type: algo.buffers.max-count.values
+06-10 22:22:02.746   457  3993 D ReflectedParamUpdater: extent() != 1 for single value type: output.subscribed-indices.values
+06-10 22:22:02.746   457  3993 D ReflectedParamUpdater: extent() != 1 for single value type: input.buffers.allocator-ids.values
+06-10 22:22:02.747   457  3993 D ReflectedParamUpdater: extent() != 1 for single value type: output.buffers.allocator-ids.values
+06-10 22:22:02.747   457  3993 D ReflectedParamUpdater: extent() != 1 for single value type: algo.buffers.allocator-ids.values
+06-10 22:22:02.747   457  3993 D ReflectedParamUpdater: extent() != 1 for single value type: output.buffers.pool-ids.values
+06-10 22:22:02.747   457  3993 D ReflectedParamUpdater: extent() != 1 for single value type: algo.buffers.pool-ids.values
+06-10 22:22:02.749   457  3993 I CCodecConfig: query failed after returning 8 values (BAD_INDEX)
+06-10 22:22:02.749   457  3993 D CCodecConfig: c2 config diff is Dict {
+06-10 22:22:02.749   457  3993 D CCodecConfig:   c2::u32 coded.bitrate.value = 64000
+06-10 22:22:02.749   457  3993 D CCodecConfig:   c2::u32 input.buffers.max-size.value = 32768
+06-10 22:22:02.749   457  3993 D CCodecConfig:   c2::u32 input.delay.value = 0
+06-10 22:22:02.749   457  3993 D CCodecConfig:   string input.media-type.value = "audio/vorbis"
+06-10 22:22:02.749   457  3993 D CCodecConfig:   c2::u32 output.large-frame.max-size = 0
+06-10 22:22:02.749   457  3993 D CCodecConfig:   c2::u32 output.large-frame.threshold-size = 0
+06-10 22:22:02.749   457  3993 D CCodecConfig:   string output.media-type.value = "audio/raw"
+06-10 22:22:02.749   457  3993 D CCodecConfig:   c2::u32 raw.channel-count.value = 1
+06-10 22:22:02.749   457  3993 D CCodecConfig:   c2::u32 raw.sample-rate.value = 48000
+06-10 22:22:02.749   457  3993 D CCodecConfig: }
+06-10 22:22:02.750   457  3993 D CCodec  : [c2.android.vorbis.decoder] buffers are bound to CCodec for this session
+06-10 22:22:02.750   457  3993 D CCodecConfig: no c2 equivalents for durationUs
+06-10 22:22:02.750   457  3993 D CCodecConfig: no c2 equivalents for csd-1
+06-10 22:22:02.750   457  3993 D CCodecConfig: no c2 equivalents for flags
+06-10 22:22:02.750   457  3993 D CCodecConfig: c2 config diff is   c2::u32 coded.bitrate.value = 70000
+06-10 22:22:02.751   457  3993 W Codec2Client: query -- param skipped: index = 1107298332.
+06-10 22:22:02.751   457  3993 D CCodec  : encoding statistics level = 0
+06-10 22:22:02.751   457  3993 D CCodec  : setup formats input: AMessage(what = 0x00000000) = {
+06-10 22:22:02.751   457  3993 D CCodec  :   int32_t bitrate = 70000
+06-10 22:22:02.751   457  3993 D CCodec  :   int32_t channel-count = 1
+06-10 22:22:02.751   457  3993 D CCodec  :   int32_t max-input-size = 32768
+06-10 22:22:02.751   457  3993 D CCodec  :   string mime = "audio/vorbis"
+06-10 22:22:02.751   457  3993 D CCodec  :   int32_t sample-rate = 48000
+06-10 22:22:02.751   457  3993 D CCodec  : }
+06-10 22:22:02.751   457  3993 D CCodec  : setup formats output: AMessage(what = 0x00000000) = {
+06-10 22:22:02.751   457  3993 D CCodec  :   int32_t buffer-batch-max-output-size = 0
+06-10 22:22:02.751   457  3993 D CCodec  :   int32_t buffer-batch-threshold-output-size = 0
+06-10 22:22:02.751   457  3993 D CCodec  :   int32_t channel-count = 1
+06-10 22:22:02.751   457  3993 D CCodec  :   string mime = "audio/raw"
+06-10 22:22:02.751   457  3993 D CCodec  :   int32_t sample-rate = 48000
+06-10 22:22:02.751   457  3993 D CCodec  :   int32_t channel-mask = 1
+06-10 22:22:02.751   457  3993 D CCodec  :   int32_t android._config-pcm-encoding = 2
+06-10 22:22:02.751   457  3993 D CCodec  : }
+06-10 22:22:02.751   457  3993 I CCodecConfig: query failed after returning 8 values (BAD_INDEX)
+06-10 22:22:02.751   457  3993 I MediaCodec: MediaCodec will operate in async mode
+06-10 22:22:02.751   457  3992 D MediaCodec: keep callback message for reclaim
+06-10 22:22:02.752   457  3993 W Codec2Client: query -- param skipped: index = 1342179345.
+06-10 22:22:02.752   457  3993 W Codec2Client: query -- param skipped: index = 2415921170.
+06-10 22:22:02.752   457  3993 D C2Store : Using DMABUF Heaps
+06-10 22:22:02.753   457  3993 D CCodecBufferChannel: [c2.android.vorbis.decoder#271] Created input block pool with allocatorID 16 => poolID 17 - OK (0)
+06-10 22:22:02.755   457  3993 I CCodecBufferChannel: [c2.android.vorbis.decoder#271] Created output block pool with allocatorID 16 => poolID 36 - OK
+06-10 22:22:02.755   457  3993 D CCodecBufferChannel: [c2.android.vorbis.decoder#271] Configured output block pool ids 36 => OK
+06-10 22:22:02.757   462   876 E Codec2-ComponentInterface: We have a failed config
+06-10 22:22:02.757   457  3993 I DMABUFHEAPS: Using DMA-BUF heap named: system
+06-10 22:22:02.758   462  3997 D SimpleC2Component: Using output block pool with poolID 36 => got 36 - 0
+06-10 22:22:02.770   406   491 D AudioFlinger: Client defaulted notificationFrames to 12512 for frameCount 25024
+06-10 22:22:02.786   406   491 D audioserver: logFgsApiBegin: FGS Logger Transaction failed, -129
+06-10 22:22:02.892   406   509 D AudioFlinger: mixer(0xb4000079975278e0) throttle end: throttle time(32)
+06-10 22:22:02.954  1059  1059 D BoundBrokerSvc: onUnbind: Intent { act=com.google.android.gms.common.telemetry.service.START dat=chimera-action:/... cmp=com.google.android.gms/.chimera.PersistentApiService }
+06-10 22:22:03.166  3742  3760 D EGL_emulation: app_time_stats: avg=199.94ms min=198.35ms max=202.20ms count=6
+06-10 22:22:03.204   567   745 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET, states=14
+06-10 22:22:03.205   567   745 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET6, states=14
+06-10 22:22:03.205   567   745 D InetDiagMessage: Destroyed live tcp sockets for uids={10138} in 1ms
+06-10 22:22:03.205   567   745 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET, states=14
+06-10 22:22:03.205   567   745 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET6, states=14
+06-10 22:22:03.205   567   745 D InetDiagMessage: Destroyed live tcp sockets for uids={20138} in 0ms
+06-10 22:22:03.211   567   745 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET, states=14
+06-10 22:22:03.211   567   745 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET6, states=14
+06-10 22:22:03.211   567   745 D InetDiagMessage: Destroyed live tcp sockets for uids={10130} in 0ms
+06-10 22:22:03.211   567   745 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET, states=14
+06-10 22:22:03.211   567   745 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET6, states=14
+06-10 22:22:03.211   567   745 D InetDiagMessage: Destroyed live tcp sockets for uids={20130} in 0ms
+06-10 22:22:04.152   457  3991 D AudioTrack: stop(15): called with 82980 frames delivered
+06-10 22:22:04.166  3742  3760 D EGL_emulation: app_time_stats: avg=200.12ms min=198.90ms max=201.25ms count=5
+06-10 22:22:04.563   567   739 I HalDevMgr: bestIfaceCreationProposal is null, requestIface=STA, existingIface=[name=wlan0 type=STA]
+06-10 22:22:04.566   567   745 W IPCThreadState: Sending oneway calls to frozen process.
+06-10 22:22:04.566   567   745 W IPCThreadState: Sending oneway calls to frozen process.
+06-10 22:22:04.572  1590  2517 I BugleRcsEngine: handleMessage processing message:[NOTIFY_UPTIME_IGNORE_STATE_CHANGED] with [non-null]:RcsEngineImpl reference [CONTEXT log_prefix="RcsEngineImpl[DUAL_REG]:[40be24d5-8cc0]>Handler" thread_id=68 ]
+06-10 22:22:04.572  1590  2126 I BugleRcsEngine: Connected state: [1], networkType: [WIFI] [CONTEXT thread_id=59 ]
+06-10 22:22:04.581  1059  1604 I NullBinder: NullBinder for android.net.action.RECOMMEND_NETWORKS triggering remote TransactionTooLargeException due to Service without Chimera impl, calling uid: 1000, calling pid: 0
+06-10 22:22:04.581  1059  1604 W .gms.persistent: Large reply transaction of 1056768 bytes, interface descriptor , code 1
+06-10 22:22:04.583  1059  1059 I MagicTether: (REDACTED) [ActiveNetworkTracker] setActiveNetwork: %s
+06-10 22:22:04.583  1059  1059 I MagicTether: (REDACTED) [TetherService] onActiveNetworkChanged: network=%s isLost=%s
+06-10 22:22:04.584  1059  3943 I MagicTether: [WifiConnectionHandler] Ignoring getWifiConfigurationByNetworkId when checking connected state [CONTEXT service_id=276 ]
+06-10 22:22:04.584  1059  3943 I MagicTether: [WifiConnectionHandler] No networkId set, can't be connected. [CONTEXT service_id=276 ]
+06-10 22:22:04.585  1059  3943 I MagicTether: (REDACTED) [TetherService] TRANSPORT_CELLULAR [%s], TRANSPORT_ETHERNET [%s], TRANSPORT_WIFI [%s]
+06-10 22:22:04.585  1059  3943 I MagicTether: (REDACTED) [TetherService] setRoles hasActiveNetworkConnection=%s canActiveNetworkBeTethered=%s isConnectedToInstantTether=%s isWifiEnabled=%s isHosting=%s
+06-10 22:22:04.587  3897  3915 D WM-NetworkStateTracker: Network capabilities changed: [ Transports: WIFI Capabilities: NOT_METERED&INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VPN&VALIDATED&NOT_ROAMING&FOREGROUND&NOT_CONGESTED&NOT_SUSPENDED&NOT_VCN_MANAGED&NOT_BANDWIDTH_CONSTRAINED LinkUpBandwidth>=12000Kbps LinkDnBandwidth>=30000Kbps TransportInfo: <SSID: <unknown ssid>, BSSID: 02:00:00:00:00:00, MAC: 02:00:00:00:00:00, IP: /10.0.2.16, Security type: 0, Supplicant state: COMPLETED, Wi-Fi standard: legacy, RSSI: -50, Link speed: 1Mbps, Tx Link speed: 1Mbps, Max Supported Tx Link speed: 11Mbps, Rx Link speed: 2Mbps, Max Supported Rx Link speed: 11Mbps, Frequency: 2447MHz, Net ID: -1, Metered hint: false, score: 100, isUsable: true, CarrierMerged: false, SubscriptionId: -1, IsPrimary: -1, Trusted: true, Restricted: false, Ephemeral: false, OEM paid: false, OEM private: false, OSU AP: false, FQDN: <none>, Provider friendly name: <none>, Requesting package name: <none><none>MLO Information: , Is TID-To-Link negotiation supported by the AP: false, AP MLD Address: <none>, AP MLO Link Id: <none>, AP MLO Affiliated links: <none>, Vendor Data: <none>> SignalStrength: -50 UnderlyingNetworks: Null]
+06-10 22:22:04.590  1059  1059 I MagicTether: (REDACTED) [LaunchUtils] Instant Wifi for status account: name: %s | type: %s | isLaunched: %s
+06-10 22:22:04.590  1059  1059 I MagicTether: (REDACTED) [TidepoolFeatureStatusManager] isInstantHotspotEnabled=%s
+06-10 22:22:04.590  1059  1059 I MagicTether: (REDACTED) [TidepoolFeatureStatusManager] isInstantWifiEnabled=%s
+06-10 22:22:04.590  1059  1059 I MagicTether: (REDACTED) [TetherService] startNearbyHostRole: start: %s isInstantHotspotEnabled: %s isInstantWifiEnabled: %s
+06-10 22:22:04.590  1059  1059 I MagicTether: [HostTetherRole] Nearby host role already stopped [CONTEXT service_id=276 ]
+06-10 22:22:04.591  1059  1059 I MagicTether: (REDACTED) [LaunchUtils] Instant Wifi for status account: name: %s | type: %s | isLaunched: %s
+06-10 22:22:04.591  1059  1059 I MagicTether: (REDACTED) [TidepoolFeatureStatusManager] isInstantHotspotEnabled=%s
+06-10 22:22:04.591  1059  1059 I MagicTether: (REDACTED) [TidepoolFeatureStatusManager] isInstantWifiEnabled=%s
+06-10 22:22:04.591  1059  1059 I MagicTether: (REDACTED) [TetherService] startNearbyClientRole: start: %s isInstantHotspotEnabled: %s isInstantWifiEnabled: %s
+06-10 22:22:04.591  1059  1059 I MagicTether: [TetherService] Stopping Nearby client role [CONTEXT service_id=276 ]
+06-10 22:22:04.591  1059  1059 I MagicTether: [ClientTetherRole] Client role already stopped [CONTEXT service_id=276 ]
+06-10 22:22:04.594  1059  1059 I MagicTether: (REDACTED) [NotificationPresenter] cancelNotification: %d
+06-10 22:22:04.595  1059  1059 I MagicTether: [AutoDisconnectIntentOperation] Canceling task. [CONTEXT service_id=276 ]
+06-10 22:22:04.598  1059  3877 I MagicTether: [AutoDisconnectIntentOperation] Canceling task. [CONTEXT service_id=276 ]
+06-10 22:22:04.598  1059  3877 I MagicTether: (REDACTED) [NotificationPresenter] cancelNotification: %d
+06-10 22:22:04.598   567  1756 I MediaFocusControl: abandonAudioFocus() from uid/pid 10174/838 clientId=android.media.AudioManager@209ff57
+06-10 22:22:04.599   838  3983 V MediaPlayer: resetDrmState:  mDrmInfo=null mDrmProvisioningThread=null mPrepareDrmInProgress=false mActiveDrmScheme=false
+06-10 22:22:04.599   838  3983 V MediaPlayer: cleanDrmObj: mDrmObj=null mDrmSessionId=null
+06-10 22:22:04.599   457   906 D NuPlayerDriver: reset(0xb4000077101051d0) at state 6
+06-10 22:22:04.600  1059  3877 I MagicTether: [AutoDisconnectIntentOperation] Canceling task. [CONTEXT service_id=276 ]
+06-10 22:22:04.600  1059  3877 I MagicTether: (REDACTED) [NotificationPresenter] cancelNotification: %d
+06-10 22:22:04.601   457  3993 I hw-BpHwBinder: onLastStrongRef automatically unlinking death recipients
+06-10 22:22:04.601   462   968 I hw-BpHwBinder: onLastStrongRef automatically unlinking death recipients
+06-10 22:22:04.601   462   968 I hw-BpHwBinder: onLastStrongRef automatically unlinking death recipients
+06-10 22:22:04.601   462   968 D BufferPoolAccessor2.0: Destruction - bufferpool2 0xb40000755e165818 cached: 0/0M, 0/0% in use; allocs: 0, 0% recycled; transfers: 0, 0% unfetched
+06-10 22:22:04.603   457  3985 D NuPlayerDriver: notifyResetComplete(0xb4000077101051d0)
+06-10 22:22:04.603   457   906 W AMessage: failed to post message as target looper for handler 0 is gone.
+06-10 22:22:04.660   406   509 D audioserver: logFgsApiEnd: FGS Logger Transaction failed, -129
+06-10 22:22:04.671   567  1673 I AppSearchIcing: icing-search-engine.cc:2405: Persisting data to disk with mode 3
+06-10 22:22:04.672   406   509 D audioserver: logFgsApiEnd: FGS Logger Transaction failed, -129
+06-10 22:22:04.694   567  1673 I AppSearchIcing: icing-search-engine.cc:2418: PersistToDisk completed.
+06-10 22:22:04.797  3924  3954 V ClearcutMetricXmitter: Transmission is done.
+06-10 22:22:04.797  3924  3954 V ClearcutMetricXmitter: Transmission is done.
+06-10 22:22:05.184  3742  3760 D EGL_emulation: app_time_stats: avg=203.45ms min=187.89ms max=215.02ms count=5
+06-10 22:22:05.393  3742  3760 D EGL_emulation: app_time_stats: avg=4356.87ms min=4356.87ms max=4356.87ms count=1
+06-10 22:22:06.009  1538  2219 I dixx    : (REDACTED) Scheduling(%s) voice interaction service reliability check.
+06-10 22:22:06.011  1538  2219 I dixx    : (REDACTED) Scheduling(%s) voice interaction service reliability check.
+06-10 22:22:06.011  1538  2219 I dixx    : (REDACTED) Scheduling(%s) voice interaction service reliability check.
+06-10 22:22:06.012  1538  2219 I dixx    : (REDACTED) Scheduling(%s) voice interaction service reliability check.
+06-10 22:22:06.012  1538  2219 I dixx    : (REDACTED) Scheduling(%s) voice interaction service reliability check.
+06-10 22:22:06.012  1538  2219 I dixx    : (REDACTED) Scheduling(%s) voice interaction service reliability check.
+06-10 22:22:06.185  3742  3760 D EGL_emulation: app_time_stats: avg=200.35ms min=185.23ms max=214.73ms count=5
+06-10 22:22:06.877   567   745 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET, states=14
+06-10 22:22:06.877   567   745 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET6, states=14
+06-10 22:22:06.877   567   745 D InetDiagMessage: Destroyed live tcp sockets for uids={10157} in 0ms
+06-10 22:22:06.877   567   745 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET, states=14
+06-10 22:22:06.877   567   745 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET6, states=14
+06-10 22:22:06.877   567   745 D InetDiagMessage: Destroyed live tcp sockets for uids={20157} in 0ms
+06-10 22:22:07.095   567   691 D ActivityManager: freezing 3897 com.google.android.rkpdapp
+06-10 22:22:07.096   567   745 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET, states=14
+06-10 22:22:07.096   567   745 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET6, states=14
+06-10 22:22:07.096   567   745 D InetDiagMessage: Destroyed live tcp sockets for uids={10176} in 1ms
+06-10 22:22:07.156  1835  2174 I Finsky  : [42] Stats for Executor: LightweightExecutor vzk@8c8f321[Running, pool size = 3, active threads = 0, queued tasks = 0, completed tasks = 353]
+06-10 22:22:07.247  1835  2174 I Finsky  : [42] Stats for Executor: BlockingExecutor vzk@b8fcea3[Running, pool size = 3, active threads = 0, queued tasks = 0, completed tasks = 83]
+06-10 22:22:07.386  3742  3760 D EGL_emulation: app_time_stats: avg=200.16ms min=194.87ms max=203.37ms count=6
+06-10 22:22:07.388  1835  2174 I Finsky  : [42] Stats for Executor: bgExecutor vzk@607b6e2[Running, pool size = 4, active threads = 0, queued tasks = 0, completed tasks = 786]
+06-10 22:22:07.522   567   682 D OomAdjuster: Not killing cached processes
+06-10 22:22:07.522   567   682 D ActivityManager: sync unfroze 3723 com.google.android.configupdater for 6
+06-10 22:22:07.528   372  4003 D android.hardware.audio@7.1-impl.ranchu: threadLoop: entering standby, frames: 227392
+06-10 22:22:07.537  3723  3732 W d.configupdater: userfaultfd: MOVE ioctl seems unsupported: Connection timed out
+06-10 22:22:07.545   567   662 W JobScheduler: Job didn't exist in JobStore: d7ab5cd #u0a121/1 com.google.android.configupdater/.MainJobService
+06-10 22:22:07.590   567   739 I HalDevMgr: bestIfaceCreationProposal is null, requestIface=STA, existingIface=[name=wlan0 type=STA]
+06-10 22:22:07.594   916  1060 D IpClient/wlan0: interfaceLinkStateChanged: ifindex 16 up
+06-10 22:22:07.596   916  1060 D IpClient/wlan0: interfaceLinkStateChanged: ifindex 16 up
+06-10 22:22:07.596   916  1060 D IpClient/wlan0: interfaceLinkStateChanged: ifindex 16 up
+06-10 22:22:07.607  1538  1557 W hbox:interactor: Missing inline cache for int eysf.a(java.lang.Object)
+06-10 22:22:07.624   183  3893 I keystore2: system/security/keystore2/watchdog/src/lib.rs:319 - Watchdog thread idle -> terminating. Have a great day.
+06-10 22:22:07.744   567   913 D BufferPoolAccessor2.0: evictor expired: 6, evicted: 0
+06-10 22:22:07.745   838  1215 D BufferPoolAccessor2.0: evictor expired: 3, evicted: 0
+06-10 22:22:07.771  1510  1510 D WM-DelayedWorkTracker: Scheduling work 5306149d-3862-4e84-9ca4-c440f290a071
+06-10 22:22:07.774  1510  1510 D WM-GreedyScheduler: Starting work for 5306149d-3862-4e84-9ca4-c440f290a071
+06-10 22:22:07.784  1510  1790 D WM-Processor: Processor: processing WorkGenerationalId(workSpecId=5306149d-3862-4e84-9ca4-c440f290a071, generation=0)
+06-10 22:22:07.791  1510  1510 D WM-WorkerWrapper: Starting work for com.android.providers.media.MediaServiceV2
+06-10 22:22:07.791  1510  4014 I MediaServiceV2: Work initiated for action [ android.intent.action.MEDIA_MOUNTED ]
+06-10 22:22:07.794  1510  4014 I MediaProvider: Volume MediaVolume name: [external_primary] id: [emulated;0] user: [UserHandle{0}] path: [/storage/emulated/0] externallyManaged: [false] mPublicVolume: [false] already attached
+06-10 22:22:07.794  1510  4014 I MediaServiceV2: Work ended for action [ android.intent.action.MEDIA_MOUNTED ]
+06-10 22:22:07.796  1510  1790 I WM-WorkerWrapper: Worker result SUCCESS for Work [ id=5306149d-3862-4e84-9ca4-c440f290a071, tags={ com.android.providers.media.MediaServiceV2 } ]
+06-10 22:22:07.797  1510  1790 I WM-WorkerWrapper: Setting status to enqueued for 9d68a618-809b-49bd-a2f1-293e1699681c
+06-10 22:22:07.797  1510  1510 D WM-Processor: Processor 5306149d-3862-4e84-9ca4-c440f290a071 executed; reschedule = false
+06-10 22:22:07.799  1446  3923 I GmscoreIpa: Starting mediastore instant index [CONTEXT service_id=255 ]
+06-10 22:22:07.803  1510  1797 D WM-GreedyScheduler: Cancelling work ID 5306149d-3862-4e84-9ca4-c440f290a071
+06-10 22:22:07.805  1510  1797 D WM-SystemJobScheduler: Scheduling work ID 9d68a618-809b-49bd-a2f1-293e1699681cJob ID 190
+06-10 22:22:07.808  1510  1797 D WM-GreedyScheduler: Ignoring {WorkSpec: 5c6bc7e1-22e9-49ab-9b89-df2411ef41f5}. Requires device idle.
+06-10 22:22:07.808  1510  1797 D WM-GreedyScheduler: Ignoring {WorkSpec: ae14b989-c053-4328-bf23-257e6f8154b1}. Requires device idle.
+06-10 22:22:07.808  1510  1797 D WM-GreedyScheduler: Ignoring {WorkSpec: 0f201edf-20d8-4494-884a-b94adb21b508}. Requires device idle.
+06-10 22:22:07.808  1510  1797 D WM-GreedyScheduler: Ignoring {WorkSpec: 2a39ac40-1480-4266-b406-326d556d5dff}. Requires device idle.
+06-10 22:22:08.203   567   691 D ActivityManager: freezing 3953 com.android.chrome
+06-10 22:22:08.204   567   745 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET, states=14
+06-10 22:22:08.204   567   745 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET6, states=14
+06-10 22:22:08.204   567   745 D InetDiagMessage: Destroyed live tcp sockets for uids={10138} in 0ms
+06-10 22:22:08.225   567   691 D ActivityManager: freezing 3924 com.google.android.partnersetup
+06-10 22:22:08.226   567   745 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET, states=14
+06-10 22:22:08.226   567   745 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET6, states=14
+06-10 22:22:08.226   567   745 D InetDiagMessage: Destroyed live tcp sockets for uids={10130} in 1ms
+06-10 22:22:08.419  3742  3760 D EGL_emulation: app_time_stats: avg=206.40ms min=194.51ms max=219.48ms count=5
+06-10 22:22:09.108   567   691 D ActivityManager: freezing 1835 com.android.vending
+06-10 22:22:09.109   567   691 D ActivityManager: freezing 2911 com.android.vending:background
+06-10 22:22:09.140   567   745 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET, states=14
+06-10 22:22:09.140   567   745 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET6, states=14
+06-10 22:22:09.140   567   745 D InetDiagMessage: Destroyed live tcp sockets for uids={10133} in 0ms
+06-10 22:22:09.616  3742  3760 D EGL_emulation: app_time_stats: avg=199.52ms min=197.55ms max=200.72ms count=6
+06-10 22:22:09.724  3742  3760 D EGL_emulation: app_time_stats: avg=4331.32ms min=4331.32ms max=4331.32ms count=1
+06-10 22:22:09.743   462   837 D BufferPoolAccessor2.0: bufferpool2 0xb40000755e163318 : 0(0 size) total buffers - 0(0 size) used buffers - 93/97 (recycle/alloc) - 4/96 (fetch/transfer)
+06-10 22:22:09.743   462   837 D BufferPoolAccessor2.0: evictor expired: 2, evicted: 1
+06-10 22:22:09.757   457  3996 D BufferPoolAccessor2.0: bufferpool2 0xb400007690111068 : 0(0 size) total buffers - 0(0 size) used buffers - 93/101 (recycle/alloc) - 8/198 (fetch/transfer)
+06-10 22:22:09.757   457  3996 D BufferPoolAccessor2.0: evictor expired: 1, evicted: 1
+06-10 22:22:10.595   567   739 I HalDevMgr: bestIfaceCreationProposal is null, requestIface=STA, existingIface=[name=wlan0 type=STA]
+06-10 22:22:10.596   567   745 W IPCThreadState: Sending oneway calls to frozen process.
+06-10 22:22:10.596   567   745 W IPCThreadState: Sending oneway calls to frozen process.
+06-10 22:22:10.598  1059  1059 I MagicTether: (REDACTED) [ActiveNetworkTracker] setActiveNetwork: %s
+06-10 22:22:10.599  1059  1059 I MagicTether: (REDACTED) [TetherService] onActiveNetworkChanged: network=%s isLost=%s
+06-10 22:22:10.599  1059  1234 I MagicTether: [WifiConnectionHandler] Ignoring getWifiConfigurationByNetworkId when checking connected state [CONTEXT service_id=276 ]
+06-10 22:22:10.599  1059  1234 I MagicTether: [WifiConnectionHandler] No networkId set, can't be connected. [CONTEXT service_id=276 ]
+06-10 22:22:10.599  1059  1234 I MagicTether: (REDACTED) [TetherService] TRANSPORT_CELLULAR [%s], TRANSPORT_ETHERNET [%s], TRANSPORT_WIFI [%s]
+06-10 22:22:10.599  1059  1234 I MagicTether: (REDACTED) [TetherService] setRoles hasActiveNetworkConnection=%s canActiveNetworkBeTethered=%s isConnectedToInstantTether=%s isWifiEnabled=%s isHosting=%s
+06-10 22:22:10.600  1590  2126 I BugleRcsEngine: Connected state: [1], networkType: [WIFI] [CONTEXT thread_id=59 ]
+06-10 22:22:10.600  1590  2517 I BugleRcsEngine: handleMessage processing message:[NOTIFY_UPTIME_IGNORE_STATE_CHANGED] with [non-null]:RcsEngineImpl reference [CONTEXT log_prefix="RcsEngineImpl[DUAL_REG]:[40be24d5-8cc0]>Handler" thread_id=68 ]
+06-10 22:22:10.600  1059  1059 I MagicTether: (REDACTED) [LaunchUtils] Instant Wifi for status account: name: %s | type: %s | isLaunched: %s
+06-10 22:22:10.600  1059  1059 I MagicTether: (REDACTED) [TidepoolFeatureStatusManager] isInstantHotspotEnabled=%s
+06-10 22:22:10.600  1059  1059 I MagicTether: (REDACTED) [TidepoolFeatureStatusManager] isInstantWifiEnabled=%s
+06-10 22:22:10.600  1059  1059 I MagicTether: (REDACTED) [TetherService] startNearbyHostRole: start: %s isInstantHotspotEnabled: %s isInstantWifiEnabled: %s
+06-10 22:22:10.600  1059  1059 I MagicTether: [HostTetherRole] Nearby host role already stopped [CONTEXT service_id=276 ]
+06-10 22:22:10.601  1059  1604 I NullBinder: NullBinder for android.net.action.RECOMMEND_NETWORKS triggering remote TransactionTooLargeException due to Service without Chimera impl, calling uid: 1000, calling pid: 0
+06-10 22:22:10.601  1059  1604 W .gms.persistent: Large reply transaction of 1056768 bytes, interface descriptor , code 1
+06-10 22:22:10.603  1059  1059 I MagicTether: (REDACTED) [NotificationPresenter] cancelNotification: %d
+06-10 22:22:10.603  1059  1059 I MagicTether: [AutoDisconnectIntentOperation] Canceling task. [CONTEXT service_id=276 ]
+06-10 22:22:10.604  1059  1059 I MagicTether: (REDACTED) [LaunchUtils] Instant Wifi for status account: name: %s | type: %s | isLaunched: %s
+06-10 22:22:10.604  1059  1059 I MagicTether: (REDACTED) [TidepoolFeatureStatusManager] isInstantHotspotEnabled=%s
+06-10 22:22:10.604  1059  1059 I MagicTether: (REDACTED) [TidepoolFeatureStatusManager] isInstantWifiEnabled=%s
+06-10 22:22:10.604  1059  1059 I MagicTether: (REDACTED) [TetherService] startNearbyClientRole: start: %s isInstantHotspotEnabled: %s isInstantWifiEnabled: %s
+06-10 22:22:10.604  1059  1059 I MagicTether: [TetherService] Stopping Nearby client role [CONTEXT service_id=276 ]
+06-10 22:22:10.604  1059  1059 I MagicTether: [ClientTetherRole] Client role already stopped [CONTEXT service_id=276 ]
+06-10 22:22:10.605  1059  3877 I MagicTether: [AutoDisconnectIntentOperation] Canceling task. [CONTEXT service_id=276 ]
+06-10 22:22:10.605  1059  3877 I MagicTether: (REDACTED) [NotificationPresenter] cancelNotification: %d
+06-10 22:22:10.606  1059  3877 I MagicTether: [AutoDisconnectIntentOperation] Canceling task. [CONTEXT service_id=276 ]
+06-10 22:22:10.606  1059  3877 I MagicTether: (REDACTED) [NotificationPresenter] cancelNotification: %d
+06-10 22:22:10.632  3742  3760 D EGL_emulation: app_time_stats: avg=169.43ms min=94.83ms max=215.98ms count=6
+06-10 22:22:11.633  3742  3760 D EGL_emulation: app_time_stats: avg=200.13ms min=198.64ms max=200.94ms count=5
+06-10 22:22:11.658  1059  1059 D BoundBrokerSvc: onUnbind: Intent { act=com.google.android.gms.presencemanager.service.START dat=chimera-action:/... cmp=com.google.android.gms/.chimera.PersistentApiService }
+06-10 22:22:11.658  1059  1059 D BoundBrokerSvc: onUnbind: Intent { act=com.google.android.gms.presencemanager.service.INTERNAL_IDENTITY dat=chimera-action:/... cmp=com.google.android.gms/.chimera.PersistentApiService }
+06-10 22:22:11.875   567   691 D ActivityManager: freezing 3285 com.google.android.apps.photos
+06-10 22:22:11.877   567   745 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET, states=14
+06-10 22:22:11.877   567   745 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET6, states=14
+06-10 22:22:11.877   567   745 D InetDiagMessage: Destroyed live tcp sockets for uids={10157} in 1ms
+06-10 22:22:12.506   567  2084 D CompatChangeReporter: Compat change id reported: 311208629; UID 10122; state: ENABLED
+06-10 22:22:12.517  1533  1952 I IPCThreadState: oneway function results for code 2 on binder at 0xb4000079f3a29490 will be dropped but finished with status UNKNOWN_TRANSACTION
+06-10 22:22:12.518  1881  1881 I AstreaGrpcService: AstreaGrpcService#onDestroy called.
+06-10 22:22:12.530   567  2084 D OomAdjuster: Not killing cached processes
+06-10 22:22:12.603   567   745 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET, states=14
+06-10 22:22:12.603   567   745 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET6, states=14
+06-10 22:22:12.603   567   745 D InetDiagMessage: Destroyed live tcp sockets for uids={10121} in 0ms
+06-10 22:22:12.603   567   745 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET, states=14
+06-10 22:22:12.603   567   745 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET6, states=14
+06-10 22:22:12.603   567   745 D InetDiagMessage: Destroyed live tcp sockets for uids={20121} in 0ms
+06-10 22:22:12.604  1059  1059 D BoundBrokerSvc: onUnbind: Intent { act=com.google.android.gms.auth.aang.events.services.START dat=chimera-action:/... cmp=com.google.android.gms/.chimera.PersistentApiService }
+06-10 22:22:12.832  3742  3760 D EGL_emulation: app_time_stats: avg=199.83ms min=197.86ms max=202.06ms count=6
+06-10 22:22:12.946  1446  1446 D BoundBrokerSvc: onUnbind: Intent { act=com.google.android.gms.chimera.container.moduleinstall.ModuleInstallService.START dat=chimera-action:/... cmp=com.google.android.gms/.chimera.GmsApiService }
+06-10 22:22:12.947  1446  1446 D BoundBrokerSvc: onUnbind: Intent { act=com.google.android.gms.ocr.service.internal.START dat=chimera-action:/... cmp=com.google.android.gms/.chimera.GmsInternalApiService }
+06-10 22:22:13.599   567   745 W IPCThreadState: Sending oneway calls to frozen process.
+06-10 22:22:13.599   567   745 W IPCThreadState: Sending oneway calls to frozen process.
+06-10 22:22:13.600   567   739 I HalDevMgr: bestIfaceCreationProposal is null, requestIface=STA, existingIface=[name=wlan0 type=STA]
+06-10 22:22:13.603  1590  2126 I BugleRcsEngine: Connected state: [1], networkType: [WIFI] [CONTEXT thread_id=59 ]
+06-10 22:22:13.604   916  1060 D IpClient/wlan0: interfaceLinkStateChanged: ifindex 16 up
+06-10 22:22:13.604  1059  1059 I MagicTether: (REDACTED) [ActiveNetworkTracker] setActiveNetwork: %s
+06-10 22:22:13.604  1059  1059 I MagicTether: (REDACTED) [TetherService] onActiveNetworkChanged: network=%s isLost=%s
+06-10 22:22:13.605  1059  1234 I MagicTether: [WifiConnectionHandler] Ignoring getWifiConfigurationByNetworkId when checking connected state [CONTEXT service_id=276 ]
+06-10 22:22:13.605  1059  1234 I MagicTether: [WifiConnectionHandler] No networkId set, can't be connected. [CONTEXT service_id=276 ]
+06-10 22:22:13.605  1590  2517 I BugleRcsEngine: handleMessage processing message:[NOTIFY_UPTIME_IGNORE_STATE_CHANGED] with [non-null]:RcsEngineImpl reference [CONTEXT log_prefix="RcsEngineImpl[DUAL_REG]:[40be24d5-8cc0]>Handler" thread_id=68 ]
+06-10 22:22:13.605  1059  1234 I MagicTether: (REDACTED) [TetherService] TRANSPORT_CELLULAR [%s], TRANSPORT_ETHERNET [%s], TRANSPORT_WIFI [%s]
+06-10 22:22:13.605  1059  1234 I MagicTether: (REDACTED) [TetherService] setRoles hasActiveNetworkConnection=%s canActiveNetworkBeTethered=%s isConnectedToInstantTether=%s isWifiEnabled=%s isHosting=%s
+06-10 22:22:13.607  1059  1059 I MagicTether: (REDACTED) [LaunchUtils] Instant Wifi for status account: name: %s | type: %s | isLaunched: %s
+06-10 22:22:13.607  1059  1059 I MagicTether: (REDACTED) [TidepoolFeatureStatusManager] isInstantHotspotEnabled=%s
+06-10 22:22:13.607  1059  1059 I MagicTether: (REDACTED) [TidepoolFeatureStatusManager] isInstantWifiEnabled=%s
+06-10 22:22:13.607  1059  1059 I MagicTether: (REDACTED) [TetherService] startNearbyHostRole: start: %s isInstantHotspotEnabled: %s isInstantWifiEnabled: %s
+06-10 22:22:13.607  1059  1059 I MagicTether: [HostTetherRole] Nearby host role already stopped [CONTEXT service_id=276 ]
+06-10 22:22:13.607  1059  1059 I MagicTether: (REDACTED) [LaunchUtils] Instant Wifi for status account: name: %s | type: %s | isLaunched: %s
+06-10 22:22:13.607  1059  1059 I MagicTether: (REDACTED) [TidepoolFeatureStatusManager] isInstantHotspotEnabled=%s
+06-10 22:22:13.608  1059  1059 I MagicTether: (REDACTED) [TidepoolFeatureStatusManager] isInstantWifiEnabled=%s
+06-10 22:22:13.608  1059  1059 I MagicTether: (REDACTED) [TetherService] startNearbyClientRole: start: %s isInstantHotspotEnabled: %s isInstantWifiEnabled: %s
+06-10 22:22:13.608  1059  1059 I MagicTether: [TetherService] Stopping Nearby client role [CONTEXT service_id=276 ]
+06-10 22:22:13.608  1059  1059 I MagicTether: [ClientTetherRole] Client role already stopped [CONTEXT service_id=276 ]
+06-10 22:22:13.609  1059  1604 I NullBinder: NullBinder for android.net.action.RECOMMEND_NETWORKS triggering remote TransactionTooLargeException due to Service without Chimera impl, calling uid: 1000, calling pid: 0
+06-10 22:22:13.609  1059  1604 W .gms.persistent: Large reply transaction of 1056768 bytes, interface descriptor , code 1
+06-10 22:22:13.610   916  1060 D IpClient/wlan0: interfaceLinkStateChanged: ifindex 16 up
+06-10 22:22:13.612  1059  1059 I MagicTether: (REDACTED) [NotificationPresenter] cancelNotification: %d
+06-10 22:22:13.612  1059  1059 I MagicTether: [AutoDisconnectIntentOperation] Canceling task. [CONTEXT service_id=276 ]
+06-10 22:22:13.614  1059  3877 I MagicTether: [AutoDisconnectIntentOperation] Canceling task. [CONTEXT service_id=276 ]
+06-10 22:22:13.614  1059  3877 I MagicTether: (REDACTED) [NotificationPresenter] cancelNotification: %d
+06-10 22:22:13.615  1059  3877 I MagicTether: [AutoDisconnectIntentOperation] Canceling task. [CONTEXT service_id=276 ]
+06-10 22:22:13.615  1059  3877 I MagicTether: (REDACTED) [NotificationPresenter] cancelNotification: %d
+06-10 22:22:13.849  3742  3760 D EGL_emulation: app_time_stats: avg=203.24ms min=198.81ms max=218.72ms count=5
+06-10 22:22:14.851  3742  3747 I rksoc.goaicoach: Compiler allocated 4195KB to compile void com.worksoc.goaicoach.ui.GoCoachAppKt.GoCoachScreen(com.worksoc.goaicoach.shared.EngineAdapter, java.lang.String, java.lang.String, androidx.compose.runtime.Composer, int)
+06-10 22:22:14.856  3742  3760 D EGL_emulation: app_time_stats: avg=201.54ms min=198.91ms max=207.32ms count=5
+06-10 22:22:14.859  3742  3760 D EGL_emulation: app_time_stats: avg=5134.60ms min=5134.60ms max=5134.60ms count=1
+06-10 22:22:15.867  3742  3760 D EGL_emulation: app_time_stats: avg=202.04ms min=192.50ms max=219.19ms count=5
+06-10 22:22:16.607   567   739 I HalDevMgr: bestIfaceCreationProposal is null, requestIface=STA, existingIface=[name=wlan0 type=STA]
+06-10 22:22:17.035  3742  3760 D EGL_emulation: app_time_stats: avg=233.66ms min=199.06ms max=369.69ms count=5
+06-10 22:22:17.533   567   745 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET, states=14
+06-10 22:22:17.533   567   745 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET6, states=14
+06-10 22:22:17.533   567   745 D InetDiagMessage: Destroyed live tcp sockets for uids={10122} in 1ms
+06-10 22:22:17.534   567   745 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET, states=14
+06-10 22:22:17.534   567   745 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET6, states=14
+06-10 22:22:17.534   567   745 D InetDiagMessage: Destroyed live tcp sockets for uids={20122} in 0ms
+06-10 22:22:17.616   567   691 D ActivityManager: freezing 3723 com.google.android.configupdater
+06-10 22:22:17.617   567   745 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET, states=14
+06-10 22:22:17.617   567   745 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET6, states=14
+06-10 22:22:17.617   567   745 D InetDiagMessage: Destroyed live tcp sockets for uids={10121} in 0ms
+06-10 22:22:18.098  3742  3760 D EGL_emulation: app_time_stats: avg=176.99ms min=48.76ms max=211.99ms count=6
+06-10 22:22:18.577  1446  1788 W SQLiteLog: (28) file unlinked while open: /data/data/com.google.android.gms/cache/autofill_infinite_data_cache/infinite_data_cache
+06-10 22:22:18.908   567   624 D OomAdjuster: Not killing cached processes
+06-10 22:22:19.299  3742  3760 D EGL_emulation: app_time_stats: avg=200.02ms min=199.15ms max=201.62ms count=6
+06-10 22:22:19.454  3428  4032 W TracingHelper: Mismatched RequestContext found for module CORE. Module id from RequestContext is MODULEID_UNKNOWN [CONTEXT service_id=259 ratelimit_count=1410065408 ]
+06-10 22:22:19.470  1059  3800 W PhBaseOp: Phenotype API error. Event: # hxdx@f0b15c76, EventCode: COMMIT_CONFIG [CONTEXT service_id=51 ]
+06-10 22:22:19.470  1059  3800 W PhBaseOp: eqdf: 29544: Stale snapshot for com.google.android.gms.gmslogger#com.google.android.gms(new configuration available)
+06-10 22:22:19.470  1059  3800 W PhBaseOp: 	at eqfd.d(:com.google.android.gms@260235035@26.02.35 (260400-862924022):441)
+06-10 22:22:19.470  1059  3800 W PhBaseOp: 	at eqfd.b(:com.google.android.gms@260235035@26.02.35 (260400-862924022):44)
+06-10 22:22:19.470  1059  3800 W PhBaseOp: 	at eqfc.i(:com.google.android.gms@260235035@26.02.35 (260400-862924022):3)
+06-10 22:22:19.470  1059  3800 W PhBaseOp: 	at eqey.h(:com.google.android.gms@260235035@26.02.35 (260400-862924022):31)
+06-10 22:22:19.470  1059  3800 W PhBaseOp: 	at eqey.f(:com.google.android.gms@260235035@26.02.35 (260400-862924022):13)
+06-10 22:22:19.470  1059  3800 W PhBaseOp: 	at cqhc.fB(:com.google.android.gms@260235035@26.02.35 (260400-862924022):1)
+06-10 22:22:19.470  1059  3800 W PhBaseOp: 	at cqhg.run(:com.google.android.gms@260235035@26.02.35 (260400-862924022):118)
+06-10 22:22:19.470  1059  3800 W PhBaseOp: 	at gnkz.run(:com.google.android.gms@260235035@26.02.35 (260400-862924022):19)
+06-10 22:22:19.470  1059  3800 W PhBaseOp: 	at beqw.c(:com.google.android.gms@260235035@26.02.35 (260400-862924022):50)
+06-10 22:22:19.470  1059  3800 W PhBaseOp: 	at beqw.run(:com.google.android.gms@260235035@26.02.35 (260400-862924022):73)
+06-10 22:22:19.470  1059  3800 W PhBaseOp: 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1154)
+06-10 22:22:19.470  1059  3800 W PhBaseOp: 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:652)
+06-10 22:22:19.470  1059  3800 W PhBaseOp: 	at bewn.run(:com.google.android.gms@260235035@26.02.35 (260400-862924022):8)
+06-10 22:22:19.470  1059  3800 W PhBaseOp: 	at java.lang.Thread.run(Thread.java:1564)
+06-10 22:22:19.470  1059  3800 W AsyncOperation: operation=CommitToConfigurationOperationCall, opStatusCode=29544 [CONTEXT service_id=51 ]
+06-10 22:22:19.470  1059  3800 W AsyncOperation: OperationException[Status{statusCode=Stale snapshot for com.google.android.gms.gmslogger#com.google.android.gms(new configuration available), resolution=null}]
+06-10 22:22:19.470  1059  3800 W AsyncOperation: 	at eqey.h(:com.google.android.gms@260235035@26.02.35 (260400-862924022):61)
+06-10 22:22:19.470  1059  3800 W AsyncOperation: 	at eqey.f(:com.google.android.gms@260235035@26.02.35 (260400-862924022):13)
+06-10 22:22:19.470  1059  3800 W AsyncOperation: 	at cqhc.fB(:com.google.android.gms@260235035@26.02.35 (260400-862924022):1)
+06-10 22:22:19.470  1059  3800 W AsyncOperation: 	at cqhg.run(:com.google.android.gms@260235035@26.02.35 (260400-862924022):118)
+06-10 22:22:19.470  1059  3800 W AsyncOperation: 	at gnkz.run(:com.google.android.gms@260235035@26.02.35 (260400-862924022):19)
+06-10 22:22:19.470  1059  3800 W AsyncOperation: 	at beqw.c(:com.google.android.gms@260235035@26.02.35 (260400-862924022):50)
+06-10 22:22:19.470  1059  3800 W AsyncOperation: 	at beqw.run(:com.google.android.gms@260235035@26.02.35 (260400-862924022):73)
+06-10 22:22:19.470  1059  3800 W AsyncOperation: 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1154)
+06-10 22:22:19.470  1059  3800 W AsyncOperation: 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:652)
+06-10 22:22:19.470  1059  3800 W AsyncOperation: 	at bewn.run(:com.google.android.gms@260235035@26.02.35 (260400-862924022):8)
+06-10 22:22:19.470  1059  3800 W AsyncOperation: 	at java.lang.Thread.run(Thread.java:1564)
+06-10 22:22:19.558  3742  3760 D EGL_emulation: app_time_stats: avg=4699.34ms min=4699.34ms max=4699.34ms count=1
+06-10 22:22:19.615   567   739 I HalDevMgr: bestIfaceCreationProposal is null, requestIface=STA, existingIface=[name=wlan0 type=STA]
+06-10 22:22:19.622   916  1060 D IpClient/wlan0: interfaceLinkStateChanged: ifindex 16 up
+06-10 22:22:19.625   916  1060 D IpClient/wlan0: interfaceLinkStateChanged: ifindex 16 up
+06-10 22:22:19.650   838  1012 D EGL_emulation: app_time_stats: avg=1089.34ms min=4.68ms max=17168.52ms count=16
+06-10 22:22:20.301  3742  3760 D EGL_emulation: app_time_stats: avg=167.10ms min=56.00ms max=202.04ms count=6
+06-10 22:22:20.738  1446  1450 W gle.android.gms: Cleared Reference was only reachable from finalizer (only reported once)
+06-10 22:22:20.810  1446  1452 W gle.android.gms: ApkAssets: Deleting an ApkAssets object '<empty> and /system_ext/priv-app/GoogleServicesFramework/GoogleServicesFramework.apk' with 1 weak references
+06-10 22:22:21.316  3742  3760 D EGL_emulation: app_time_stats: avg=202.85ms min=198.31ms max=216.15ms count=5
+06-10 22:22:21.721   567   691 D ActivityManager: freezing 1236 com.google.android.permissioncontroller
+06-10 22:22:21.722   567   745 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET, states=14
+06-10 22:22:21.722   567   745 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET6, states=14
+06-10 22:22:21.722   567   745 D InetDiagMessage: Destroyed live tcp sockets for uids={10178} in 1ms
+06-10 22:22:22.385  1538  1566 I IPCThreadState: oneway function results for code 2 on binder at 0xb4000079f3a17130 will be dropped but finished with status UNKNOWN_TRANSACTION
+06-10 22:22:22.515  3742  3760 D EGL_emulation: app_time_stats: avg=199.93ms min=199.30ms max=200.87ms count=6
+06-10 22:22:22.532   567   691 D ActivityManager: freezing 1881 com.google.android.as.oss
+06-10 22:22:22.533   567   745 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET, states=14
+06-10 22:22:22.533   567   745 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET6, states=14
+06-10 22:22:22.533   567   745 D InetDiagMessage: Destroyed live tcp sockets for uids={10122} in 0ms
+06-10 22:22:22.622   567   739 I HalDevMgr: bestIfaceCreationProposal is null, requestIface=STA, existingIface=[name=wlan0 type=STA]
+06-10 22:22:22.625  1059  1604 I NullBinder: NullBinder for android.net.action.RECOMMEND_NETWORKS triggering remote TransactionTooLargeException due to Service without Chimera impl, calling uid: 1000, calling pid: 0
+06-10 22:22:22.625  1059  1604 W .gms.persistent: Large reply transaction of 1056768 bytes, interface descriptor , code 1
+06-10 22:22:22.626   567   745 W IPCThreadState: Sending oneway calls to frozen process.
+06-10 22:22:22.626   567   745 W IPCThreadState: Sending oneway calls to frozen process.
+06-10 22:22:22.629  1059  1059 I MagicTether: (REDACTED) [ActiveNetworkTracker] setActiveNetwork: %s
+06-10 22:22:22.629  1059  1059 I MagicTether: (REDACTED) [TetherService] onActiveNetworkChanged: network=%s isLost=%s
+06-10 22:22:22.630  1059  1234 I MagicTether: [WifiConnectionHandler] Ignoring getWifiConfigurationByNetworkId when checking connected state [CONTEXT service_id=276 ]
+06-10 22:22:22.630  1590  2126 I BugleRcsEngine: Connected state: [1], networkType: [WIFI] [CONTEXT thread_id=59 ]
+06-10 22:22:22.630  1059  1234 I MagicTether: [WifiConnectionHandler] No networkId set, can't be connected. [CONTEXT service_id=276 ]
+06-10 22:22:22.630  1059  1234 I MagicTether: (REDACTED) [TetherService] TRANSPORT_CELLULAR [%s], TRANSPORT_ETHERNET [%s], TRANSPORT_WIFI [%s]
+06-10 22:22:22.630  1059  1234 I MagicTether: (REDACTED) [TetherService] setRoles hasActiveNetworkConnection=%s canActiveNetworkBeTethered=%s isConnectedToInstantTether=%s isWifiEnabled=%s isHosting=%s
+06-10 22:22:22.630  1590  2517 I BugleRcsEngine: handleMessage processing message:[NOTIFY_UPTIME_IGNORE_STATE_CHANGED] with [non-null]:RcsEngineImpl reference [CONTEXT log_prefix="RcsEngineImpl[DUAL_REG]:[40be24d5-8cc0]>Handler" thread_id=68 ]
+06-10 22:22:22.631  1059  1059 I MagicTether: (REDACTED) [LaunchUtils] Instant Wifi for status account: name: %s | type: %s | isLaunched: %s
+06-10 22:22:22.632  1059  1059 I MagicTether: (REDACTED) [TidepoolFeatureStatusManager] isInstantHotspotEnabled=%s
+06-10 22:22:22.632  1059  1059 I MagicTether: (REDACTED) [TidepoolFeatureStatusManager] isInstantWifiEnabled=%s
+06-10 22:22:22.632  1059  1059 I MagicTether: (REDACTED) [TetherService] startNearbyHostRole: start: %s isInstantHotspotEnabled: %s isInstantWifiEnabled: %s
+06-10 22:22:22.632  1059  1059 I MagicTether: [HostTetherRole] Nearby host role already stopped [CONTEXT service_id=276 ]
+06-10 22:22:22.632  1059  1059 I MagicTether: (REDACTED) [LaunchUtils] Instant Wifi for status account: name: %s | type: %s | isLaunched: %s
+06-10 22:22:22.632  1059  1059 I MagicTether: (REDACTED) [TidepoolFeatureStatusManager] isInstantHotspotEnabled=%s
+06-10 22:22:22.632  1059  1059 I MagicTether: (REDACTED) [TidepoolFeatureStatusManager] isInstantWifiEnabled=%s
+06-10 22:22:22.632  1059  1059 I MagicTether: (REDACTED) [TetherService] startNearbyClientRole: start: %s isInstantHotspotEnabled: %s isInstantWifiEnabled: %s
+06-10 22:22:22.632  1059  1059 I MagicTether: [TetherService] Stopping Nearby client role [CONTEXT service_id=276 ]
+06-10 22:22:22.632  1059  1059 I MagicTether: [ClientTetherRole] Client role already stopped [CONTEXT service_id=276 ]
+06-10 22:22:22.640  1059  1059 I MagicTether: (REDACTED) [NotificationPresenter] cancelNotification: %d
+06-10 22:22:22.641  1059  1059 I MagicTether: [AutoDisconnectIntentOperation] Canceling task. [CONTEXT service_id=276 ]
+06-10 22:22:22.646  1059  4039 I MagicTether: [AutoDisconnectIntentOperation] Canceling task. [CONTEXT service_id=276 ]
+06-10 22:22:22.646  1059  4039 I MagicTether: (REDACTED) [NotificationPresenter] cancelNotification: %d
+06-10 22:22:22.647  1059  4039 I MagicTether: [AutoDisconnectIntentOperation] Canceling task. [CONTEXT service_id=276 ]
+06-10 22:22:22.647  1059  4039 I MagicTether: (REDACTED) [NotificationPresenter] cancelNotification: %d
+06-10 22:22:23.550  3742  3760 D EGL_emulation: app_time_stats: avg=206.84ms min=199.32ms max=217.50ms count=5
+06-10 22:22:23.940  3742  3760 D EGL_emulation: app_time_stats: avg=4382.11ms min=4382.11ms max=4382.11ms count=1
+06-10 22:22:24.093   567   902 D WifiNl80211Manager: Scan result ready event
+06-10 22:22:24.093   567   902 D WifiNative: Scan result ready event
+06-10 22:22:24.099  1059  2462 I WifiScanner: onFullResults
+06-10 22:22:24.102   567   739 I HalDevMgr: bestIfaceCreationProposal is null, requestIface=STA, existingIface=[name=wlan0 type=STA]
+06-10 22:22:24.565  3742  3760 D EGL_emulation: app_time_stats: avg=169.30ms min=11.79ms max=216.49ms count=6
+06-10 22:22:25.625   567   739 I HalDevMgr: bestIfaceCreationProposal is null, requestIface=STA, existingIface=[name=wlan0 type=STA]
+06-10 22:22:25.627   567   745 W IPCThreadState: Sending oneway calls to frozen process.
+06-10 22:22:25.627   567   745 W IPCThreadState: Sending oneway calls to frozen process.
+06-10 22:22:25.629  1590  2126 I BugleRcsEngine: Connected state: [1], networkType: [WIFI] [CONTEXT thread_id=59 ]
+06-10 22:22:25.629  1059  1059 I MagicTether: (REDACTED) [ActiveNetworkTracker] setActiveNetwork: %s
+06-10 22:22:25.629  1059  1059 I MagicTether: (REDACTED) [TetherService] onActiveNetworkChanged: network=%s isLost=%s
+06-10 22:22:25.629  1059  3943 I MagicTether: [WifiConnectionHandler] Ignoring getWifiConfigurationByNetworkId when checking connected state [CONTEXT service_id=276 ]
+06-10 22:22:25.629  1590  2517 I BugleRcsEngine: handleMessage processing message:[NOTIFY_UPTIME_IGNORE_STATE_CHANGED] with [non-null]:RcsEngineImpl reference [CONTEXT log_prefix="RcsEngineImpl[DUAL_REG]:[40be24d5-8cc0]>Handler" thread_id=68 ]
+06-10 22:22:25.629  1059  3943 I MagicTether: [WifiConnectionHandler] No networkId set, can't be connected. [CONTEXT service_id=276 ]
+06-10 22:22:25.629  1059  3943 I MagicTether: (REDACTED) [TetherService] TRANSPORT_CELLULAR [%s], TRANSPORT_ETHERNET [%s], TRANSPORT_WIFI [%s]
+06-10 22:22:25.629  1059  3943 I MagicTether: (REDACTED) [TetherService] setRoles hasActiveNetworkConnection=%s canActiveNetworkBeTethered=%s isConnectedToInstantTether=%s isWifiEnabled=%s isHosting=%s
+06-10 22:22:25.631   916  1060 D IpClient/wlan0: interfaceLinkStateChanged: ifindex 16 up
+06-10 22:22:25.631  1059  1059 I MagicTether: (REDACTED) [LaunchUtils] Instant Wifi for status account: name: %s | type: %s | isLaunched: %s
+06-10 22:22:25.631  1059  1059 I MagicTether: (REDACTED) [TidepoolFeatureStatusManager] isInstantHotspotEnabled=%s
+06-10 22:22:25.631  1059  1059 I MagicTether: (REDACTED) [TidepoolFeatureStatusManager] isInstantWifiEnabled=%s
+06-10 22:22:25.631  1059  1059 I MagicTether: (REDACTED) [TetherService] startNearbyHostRole: start: %s isInstantHotspotEnabled: %s isInstantWifiEnabled: %s
+06-10 22:22:25.632  1059  1059 I MagicTether: [HostTetherRole] Nearby host role already stopped [CONTEXT service_id=276 ]
+06-10 22:22:25.633   567   662 D OomAdjuster: Not killing cached processes
+06-10 22:22:25.633  1059  1059 I MagicTether: (REDACTED) [NotificationPresenter] cancelNotification: %d
+06-10 22:22:25.634  1059  1059 I MagicTether: [AutoDisconnectIntentOperation] Canceling task. [CONTEXT service_id=276 ]
+06-10 22:22:25.635  1059  4039 I MagicTether: [AutoDisconnectIntentOperation] Canceling task. [CONTEXT service_id=276 ]
+06-10 22:22:25.635  1059  1059 I MagicTether: (REDACTED) [LaunchUtils] Instant Wifi for status account: name: %s | type: %s | isLaunched: %s
+06-10 22:22:25.636  1059  1059 I MagicTether: (REDACTED) [TidepoolFeatureStatusManager] isInstantHotspotEnabled=%s
+06-10 22:22:25.636  1059  1059 I MagicTether: (REDACTED) [TidepoolFeatureStatusManager] isInstantWifiEnabled=%s
+06-10 22:22:25.636  1059  1059 I MagicTether: (REDACTED) [TetherService] startNearbyClientRole: start: %s isInstantHotspotEnabled: %s isInstantWifiEnabled: %s
+06-10 22:22:25.636  1059  1059 I MagicTether: [TetherService] Stopping Nearby client role [CONTEXT service_id=276 ]
+06-10 22:22:25.636  1059  1059 I MagicTether: [ClientTetherRole] Client role already stopped [CONTEXT service_id=276 ]
+06-10 22:22:25.636  1059  4039 I MagicTether: (REDACTED) [NotificationPresenter] cancelNotification: %d
+06-10 22:22:25.637  1059  4039 I MagicTether: [AutoDisconnectIntentOperation] Canceling task. [CONTEXT service_id=276 ]
+06-10 22:22:25.638  1059  4039 I MagicTether: (REDACTED) [NotificationPresenter] cancelNotification: %d
+06-10 22:22:25.638  1059  1604 I NullBinder: NullBinder for android.net.action.RECOMMEND_NETWORKS triggering remote TransactionTooLargeException due to Service without Chimera impl, calling uid: 1000, calling pid: 0
+06-10 22:22:25.639   916  1060 D IpClient/wlan0: interfaceLinkStateChanged: ifindex 16 up
+06-10 22:22:25.639  1059  1604 W .gms.persistent: Large reply transaction of 1056768 bytes, interface descriptor , code 1
+06-10 22:22:25.765  3742  3760 D EGL_emulation: app_time_stats: avg=199.98ms min=199.28ms max=200.76ms count=6
+06-10 22:22:26.783  3742  3760 D EGL_emulation: app_time_stats: avg=203.44ms min=199.52ms max=215.02ms count=5
+06-10 22:22:27.981  3742  3760 D EGL_emulation: app_time_stats: avg=199.78ms min=199.33ms max=200.83ms count=6
+06-10 22:22:28.633   567   739 I HalDevMgr: bestIfaceCreationProposal is null, requestIface=STA, existingIface=[name=wlan0 type=STA]
+06-10 22:22:28.633   567   745 W IPCThreadState: Sending oneway calls to frozen process.
+06-10 22:22:28.633   567   745 W IPCThreadState: Sending oneway calls to frozen process.
+06-10 22:22:28.635  1059  1059 I MagicTether: (REDACTED) [ActiveNetworkTracker] setActiveNetwork: %s
+06-10 22:22:28.635  1059  1059 I MagicTether: (REDACTED) [TetherService] onActiveNetworkChanged: network=%s isLost=%s
+06-10 22:22:28.636  1059  3943 I MagicTether: [WifiConnectionHandler] Ignoring getWifiConfigurationByNetworkId when checking connected state [CONTEXT service_id=276 ]
+06-10 22:22:28.636  1059  3943 I MagicTether: [WifiConnectionHandler] No networkId set, can't be connected. [CONTEXT service_id=276 ]
+06-10 22:22:28.636  1059  3943 I MagicTether: (REDACTED) [TetherService] TRANSPORT_CELLULAR [%s], TRANSPORT_ETHERNET [%s], TRANSPORT_WIFI [%s]
+06-10 22:22:28.636  1059  3943 I MagicTether: (REDACTED) [TetherService] setRoles hasActiveNetworkConnection=%s canActiveNetworkBeTethered=%s isConnectedToInstantTether=%s isWifiEnabled=%s isHosting=%s
+06-10 22:22:28.636  1590  2126 I BugleRcsEngine: Connected state: [1], networkType: [WIFI] [CONTEXT thread_id=59 ]
+06-10 22:22:28.636  1590  2517 I BugleRcsEngine: handleMessage processing message:[NOTIFY_UPTIME_IGNORE_STATE_CHANGED] with [non-null]:RcsEngineImpl reference [CONTEXT log_prefix="RcsEngineImpl[DUAL_REG]:[40be24d5-8cc0]>Handler" thread_id=68 ]
+06-10 22:22:28.637  1059  1059 I MagicTether: (REDACTED) [LaunchUtils] Instant Wifi for status account: name: %s | type: %s | isLaunched: %s
+06-10 22:22:28.637  1059  1059 I MagicTether: (REDACTED) [TidepoolFeatureStatusManager] isInstantHotspotEnabled=%s
+06-10 22:22:28.637  1059  1059 I MagicTether: (REDACTED) [TidepoolFeatureStatusManager] isInstantWifiEnabled=%s
+06-10 22:22:28.637  1059  1059 I MagicTether: (REDACTED) [TetherService] startNearbyHostRole: start: %s isInstantHotspotEnabled: %s isInstantWifiEnabled: %s
+06-10 22:22:28.637  1059  1059 I MagicTether: [HostTetherRole] Nearby host role already stopped [CONTEXT service_id=276 ]
+06-10 22:22:28.638  1059  1059 I MagicTether: (REDACTED) [LaunchUtils] Instant Wifi for status account: name: %s | type: %s | isLaunched: %s
+06-10 22:22:28.638  1059  1059 I MagicTether: (REDACTED) [TidepoolFeatureStatusManager] isInstantHotspotEnabled=%s
+06-10 22:22:28.638  1059  1059 I MagicTether: (REDACTED) [TidepoolFeatureStatusManager] isInstantWifiEnabled=%s
+06-10 22:22:28.638  1059  1059 I MagicTether: (REDACTED) [TetherService] startNearbyClientRole: start: %s isInstantHotspotEnabled: %s isInstantWifiEnabled: %s
+06-10 22:22:28.638  1059  1059 I MagicTether: [TetherService] Stopping Nearby client role [CONTEXT service_id=276 ]
+06-10 22:22:28.638  1059  1059 I MagicTether: [ClientTetherRole] Client role already stopped [CONTEXT service_id=276 ]
+06-10 22:22:28.639  1059  2462 I NullBinder: NullBinder for android.net.action.RECOMMEND_NETWORKS triggering remote TransactionTooLargeException due to Service without Chimera impl, calling uid: 1000, calling pid: 0
+06-10 22:22:28.639  1059  2462 W .gms.persistent: Large reply transaction of 1056768 bytes, interface descriptor , code 1
+06-10 22:22:28.640  1059  1059 I MagicTether: (REDACTED) [NotificationPresenter] cancelNotification: %d
+06-10 22:22:28.641  1059  1059 I MagicTether: [AutoDisconnectIntentOperation] Canceling task. [CONTEXT service_id=276 ]
+06-10 22:22:28.643  1059  4039 I MagicTether: [AutoDisconnectIntentOperation] Canceling task. [CONTEXT service_id=276 ]
+06-10 22:22:28.643  1059  4039 I MagicTether: (REDACTED) [NotificationPresenter] cancelNotification: %d
+06-10 22:22:28.644  1059  4039 I MagicTether: [AutoDisconnectIntentOperation] Canceling task. [CONTEXT service_id=276 ]
+06-10 22:22:28.644  1059  4039 I MagicTether: (REDACTED) [NotificationPresenter] cancelNotification: %d
+06-10 22:22:28.982  3742  3760 D EGL_emulation: app_time_stats: avg=200.02ms min=199.15ms max=200.95ms count=5
+06-10 22:22:29.023  3742  3760 D EGL_emulation: app_time_stats: avg=5082.83ms min=5082.83ms max=5082.83ms count=1
+06-10 22:22:29.998  3742  3760 D EGL_emulation: app_time_stats: avg=169.39ms min=37.68ms max=216.30ms count=6
+06-10 22:22:30.393  1446  2102 W SQLiteLog: (28) file unlinked while open: /data/data/com.google.android.gms/cache/android:/com.google.android.gms/managed/common/shared/cgal.mdi.sync.moonlander.autofill-domain-predictions-prod-spanner/infinite_data_cache
+06-10 22:22:30.394  1446  2102 W SQLiteLog: (28) file unlinked while open: /data/data/com.google.android.gms/cache/android:/com.google.android.gms/managed/common/shared/cgal.mdi.sync.moonlander.autofill-domain-predictions-prod-spanner/infinite_data_cache
+06-10 22:22:30.850   567  2085 D OomAdjuster: Not killing cached processes
+06-10 22:22:31.015  3742  3760 D EGL_emulation: app_time_stats: avg=203.44ms min=198.03ms max=217.51ms count=5
+06-10 22:22:31.642   567   739 I HalDevMgr: bestIfaceCreationProposal is null, requestIface=STA, existingIface=[name=wlan0 type=STA]
+06-10 22:22:32.086  3742  3760 D EGL_emulation: app_time_stats: avg=214.14ms min=176.61ms max=237.17ms count=5
+06-10 22:22:32.432   567   691 D ActivityManager: freezing 1635 com.google.android.googlequicksearchbox:search
+06-10 22:22:33.281  3742  3760 D EGL_emulation: app_time_stats: avg=199.14ms min=197.09ms max=201.93ms count=6
+06-10 22:22:33.757  3742  3760 D EGL_emulation: app_time_stats: avg=4734.30ms min=4734.30ms max=4734.30ms count=1
+06-10 22:22:34.299  3742  3760 D EGL_emulation: app_time_stats: avg=169.64ms min=54.33ms max=217.59ms count=6
+06-10 22:22:34.648   567   739 I HalDevMgr: bestIfaceCreationProposal is null, requestIface=STA, existingIface=[name=wlan0 type=STA]
+06-10 22:22:35.499  3742  3760 D EGL_emulation: app_time_stats: avg=200.04ms min=198.78ms max=200.97ms count=6
+06-10 22:22:36.049   567  2085 D OomAdjuster: Not killing cached processes
+06-10 22:22:36.050  1446  1446 D BoundBrokerSvc: onUnbind: Intent { act=com.google.android.gms.common.BIND_SHARED_PREFS pkg=com.google.android.gms }
+06-10 22:22:36.516  3742  3760 D EGL_emulation: app_time_stats: avg=203.23ms min=198.61ms max=218.45ms count=5
+06-10 22:22:37.517  3742  3760 D EGL_emulation: app_time_stats: avg=200.29ms min=199.35ms max=201.36ms count=5
+06-10 22:22:37.657   567   739 I HalDevMgr: bestIfaceCreationProposal is null, requestIface=STA, existingIface=[name=wlan0 type=STA]
+06-10 22:22:37.751  1059  1059 D BoundBrokerSvc: onBind: Intent { act=com.google.android.gms.auth.aang.impl.deviceaccount.DeviceAccountTaskService.ACTION_TASK_READY dat=chimera-action:/... cmp=com.google.android.gms/.chimera.PersistentInternalBoundBrokerService }
+06-10 22:22:37.751  1059  1059 D BoundBrokerSvc: Loading bound service for intent: Intent { act=com.google.android.gms.auth.aang.impl.deviceaccount.DeviceAccountTaskService.ACTION_TASK_READY dat=chimera-action:/... cmp=com.google.android.gms/.chimera.PersistentInternalBoundBrokerService }
+06-10 22:22:37.761  1059  4046 I NetworkScheduler.Stats: (REDACTED) Task %s/%s started execution. cause:%s exec_start_elapsed_seconds: %s
+06-10 22:22:37.782  1059  1059 D BoundBrokerSvc: onUnbind: Intent { act=com.google.android.gms.auth.aang.impl.deviceaccount.DeviceAccountTaskService.ACTION_TASK_READY dat=chimera-action:/... cmp=com.google.android.gms/.chimera.PersistentInternalBoundBrokerService }
+06-10 22:22:37.782  1059  3941 I NetworkScheduler.Stats: (REDACTED) Task %s/%s finished executing. cause:%s result: %s elapsed_millis: %s uptime_millis: %s exec_start_elapsed_seconds: %s
+06-10 22:22:37.809  1059  4046 I NetworkScheduler.Stats: (REDACTED) Task %s/%s started execution. cause:%s exec_start_elapsed_seconds: %s
+06-10 22:22:37.826  1510  1510 D WM-DelayedWorkTracker: Scheduling work 9d68a618-809b-49bd-a2f1-293e1699681c
+06-10 22:22:37.827  1510  1510 D WM-GreedyScheduler: Starting work for 9d68a618-809b-49bd-a2f1-293e1699681c
+06-10 22:22:37.830  1510  1797 D WM-Processor: Processor: processing WorkGenerationalId(workSpecId=9d68a618-809b-49bd-a2f1-293e1699681c, generation=0)
+06-10 22:22:37.833  1059  4046 I TapAndPay: deviceSupportsHce has detected emulator [CONTEXT service_id=79 ]
+06-10 22:22:37.833  1510  1510 D WM-WorkerWrapper: Starting work for com.android.providers.media.MediaServiceV2
+06-10 22:22:37.834  1059  4046 I TapAndPay: Sending QUICK_ACCESS_WALLET_STATE_CHANGED broadcast to wallet app. [CONTEXT service_id=79 ]
+06-10 22:22:37.834  1510  4062 I MediaServiceV2: Work initiated for action [ android.intent.action.MEDIA_MOUNTED ]
+06-10 22:22:37.835  1510  4062 I MediaProvider: Volume MediaVolume name: [external_primary] id: [emulated;0] user: [UserHandle{0}] path: [/storage/emulated/0] externallyManaged: [false] mPublicVolume: [false] already attached
+06-10 22:22:37.835  1510  4062 I MediaServiceV2: Work ended for action [ android.intent.action.MEDIA_MOUNTED ]
+06-10 22:22:37.836  1510  1797 I WM-WorkerWrapper: Worker result SUCCESS for Work [ id=9d68a618-809b-49bd-a2f1-293e1699681c, tags={ com.android.providers.media.MediaServiceV2 } ]
+06-10 22:22:37.837  1510  1510 D WM-Processor: Processor 9d68a618-809b-49bd-a2f1-293e1699681c executed; reschedule = false
+06-10 22:22:37.840  1059  4046 I NetworkScheduler.Stats: (REDACTED) Task %s/%s finished executing. cause:%s result: %s elapsed_millis: %s uptime_millis: %s exec_start_elapsed_seconds: %s
+06-10 22:22:37.840  1510  1797 D WM-GreedyScheduler: Cancelling work ID 9d68a618-809b-49bd-a2f1-293e1699681c
+06-10 22:22:37.841  1510  1797 D WM-GreedyScheduler: Ignoring {WorkSpec: 5c6bc7e1-22e9-49ab-9b89-df2411ef41f5}. Requires device idle.
+06-10 22:22:37.841  1510  1797 D WM-GreedyScheduler: Ignoring {WorkSpec: ae14b989-c053-4328-bf23-257e6f8154b1}. Requires device idle.
+06-10 22:22:37.842  1510  1797 D WM-GreedyScheduler: Ignoring {WorkSpec: 0f201edf-20d8-4494-884a-b94adb21b508}. Requires device idle.
+06-10 22:22:37.842  1510  1797 D WM-GreedyScheduler: Ignoring {WorkSpec: 2a39ac40-1480-4266-b406-326d556d5dff}. Requires device idle.
+06-10 22:22:37.858   567   682 D ActivityManager: sync unfroze 3285 com.google.android.apps.photos for 6
+06-10 22:22:38.057  3742  3760 D EGL_emulation: app_time_stats: avg=4299.11ms min=4299.11ms max=4299.11ms count=1
+06-10 22:22:38.565  3742  3760 D EGL_emulation: app_time_stats: avg=174.61ms min=61.69ms max=250.83ms count=6
+06-10 22:22:39.733  3742  3760 D EGL_emulation: app_time_stats: avg=194.56ms min=168.08ms max=200.88ms count=6
+06-10 22:22:40.663   567   739 I HalDevMgr: bestIfaceCreationProposal is null, requestIface=STA, existingIface=[name=wlan0 type=STA]
+06-10 22:22:40.749  3742  3760 D EGL_emulation: app_time_stats: avg=203.25ms min=198.45ms max=218.85ms count=5
+06-10 22:22:41.949  3742  3760 D EGL_emulation: app_time_stats: avg=199.91ms min=199.17ms max=200.37ms count=6
+06-10 22:22:42.902   567   745 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET, states=14
+06-10 22:22:42.902   567   745 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET6, states=14
+06-10 22:22:42.902   567   745 D InetDiagMessage: Destroyed live tcp sockets for uids={10157} in 3ms
+06-10 22:22:42.902   567   745 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET, states=14
+06-10 22:22:42.902   567   745 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET6, states=14
+06-10 22:22:42.902   567   745 D InetDiagMessage: Destroyed live tcp sockets for uids={20157} in 0ms
+06-10 22:22:42.966  3742  3760 D EGL_emulation: app_time_stats: avg=203.40ms min=172.38ms max=244.60ms count=5
+06-10 22:22:43.308  3742  3760 D EGL_emulation: app_time_stats: avg=5251.15ms min=5251.15ms max=5251.15ms count=1
+06-10 22:22:43.662  1059  1059 D BoundBrokerSvc: onUnbind: Intent { act=com.google.android.gms.scheduler.ACTION_PROXY_SCHEDULE dat=chimera-action:/... cmp=com.google.android.gms/.chimera.PersistentDirectBootAwareApiService }
+06-10 22:22:43.666   567   739 I HalDevMgr: bestIfaceCreationProposal is null, requestIface=STA, existingIface=[name=wlan0 type=STA]
+06-10 22:22:44.166  3742  3760 D EGL_emulation: app_time_stats: avg=171.50ms min=61.13ms max=200.78ms count=7
+06-10 22:22:44.652  1059  1059 D BoundBrokerSvc: onUnbind: Intent { act=com.google.android.gms.libs.gmscorelogger.service.START dat=chimera-action:/... cmp=com.google.android.gms/.chimera.PersistentDirectBootAwareApiService }
+06-10 22:22:44.731   567  2084 D OomAdjuster: Not killing cached processes
+06-10 22:22:45.364  3742  3760 D EGL_emulation: app_time_stats: avg=199.69ms min=198.68ms max=200.45ms count=6
+06-10 22:22:46.414  3742  3760 D EGL_emulation: app_time_stats: avg=209.98ms min=197.28ms max=226.62ms count=5
+06-10 22:22:46.790   567   739 I HalDevMgr: bestIfaceCreationProposal is null, requestIface=STA, existingIface=[name=wlan0 type=STA]
+06-10 22:22:47.437  3742  3760 D EGL_emulation: app_time_stats: avg=204.26ms min=47.91ms max=335.05ms count=5
+06-10 22:22:47.780   183  4061 I keystore2: system/security/keystore2/watchdog/src/lib.rs:319 - Watchdog thread idle -> terminating. Have a great day.
+06-10 22:22:47.940   567   691 D ActivityManager: freezing 3285 com.google.android.apps.photos
+06-10 22:22:47.944   567   745 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET, states=14
+06-10 22:22:47.944   567   745 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET6, states=14
+06-10 22:22:47.944   567   745 D InetDiagMessage: Destroyed live tcp sockets for uids={10157} in 1ms
+06-10 22:22:48.362  3742  3760 D EGL_emulation: app_time_stats: avg=5053.63ms min=5053.63ms max=5053.63ms count=1
+06-10 22:22:48.633  3742  3760 D EGL_emulation: app_time_stats: avg=170.84ms min=75.53ms max=219.40ms count=7
+06-10 22:22:49.633  3742  3760 D EGL_emulation: app_time_stats: avg=200.09ms min=199.21ms max=201.06ms count=5
+06-10 22:22:49.822   567   739 I HalDevMgr: bestIfaceCreationProposal is null, requestIface=STA, existingIface=[name=wlan0 type=STA]
+06-10 22:22:50.849  3742  3760 D EGL_emulation: app_time_stats: avg=202.55ms min=198.72ms max=216.94ms count=6
+06-10 22:22:51.849  3742  3760 D EGL_emulation: app_time_stats: avg=199.99ms min=163.92ms max=237.43ms count=5
+06-10 22:22:52.829   567   739 I HalDevMgr: bestIfaceCreationProposal is null, requestIface=STA, existingIface=[name=wlan0 type=STA]
+06-10 22:22:52.866  3742  3760 D EGL_emulation: app_time_stats: avg=203.42ms min=196.41ms max=220.82ms count=5
+06-10 22:22:53.339  3742  3760 D EGL_emulation: app_time_stats: avg=4977.07ms min=4977.07ms max=4977.07ms count=1
+06-10 22:22:54.065  3742  3760 D EGL_emulation: app_time_stats: avg=171.23ms min=71.62ms max=200.14ms count=7
+06-10 22:22:55.083  3742  3760 D EGL_emulation: app_time_stats: avg=203.53ms min=197.12ms max=218.13ms count=5
+06-10 22:22:55.836   567   739 I HalDevMgr: bestIfaceCreationProposal is null, requestIface=STA, existingIface=[name=wlan0 type=STA]
+06-10 22:22:56.099  3742  3760 D EGL_emulation: app_time_stats: avg=203.26ms min=198.74ms max=217.33ms count=5
+06-10 22:22:57.298  3742  3760 D EGL_emulation: app_time_stats: avg=199.88ms min=198.43ms max=200.63ms count=6
+06-10 22:22:58.315  3742  3760 D EGL_emulation: app_time_stats: avg=203.30ms min=199.27ms max=216.66ms count=5
+06-10 22:22:58.601  3742  3742 W WindowOnBackDispatcher: sendCancelIfRunning: isInProgress=false callback=android.view.ViewRootImpl$$ExternalSyntheticLambda11@6c7deb8
+06-10 22:22:58.606   567   902 D CoreBackPreview: Window{8fb9a8a u0 com.worksoc.goaicoach/com.worksoc.goaicoach.MainActivity}: Setting back callback null
+06-10 22:22:58.620   567  2084 W InputManager-JNI: Input channel object '8fb9a8a com.worksoc.goaicoach/com.worksoc.goaicoach.MainActivity (client)' was disposed without first being removed with the input manager!
+06-10 22:22:58.632   567   618 V WindowManager: Unknown focus tokens, dropping reportFocusChanged
+06-10 22:22:58.635  3742  3742 W WindowOnBackDispatcher: OnBackInvokedCallback is not enabled for the application.
+06-10 22:22:58.635  3742  3742 W WindowOnBackDispatcher: Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+06-10 22:22:58.672   567  2084 D CoreBackPreview: Window{8636583 u0 com.worksoc.goaicoach/com.worksoc.goaicoach.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@67201fb, mPriority=0, mIsAnimationCallback=false}
+06-10 22:22:58.764   567   710 I ImeTracker: com.worksoc.goaicoach:c6508962: onRequestHide at ORIGIN_SERVER reason HIDE_UNSPECIFIED_WINDOW fromUser false
+06-10 22:22:58.769   567   710 I ImeTracker: com.worksoc.goaicoach:c6508962: onCancelled at PHASE_SERVER_SHOULD_HIDE
+06-10 22:22:58.776  1127  1647 D EGL_emulation: app_time_stats: avg=11658.04ms min=14.18ms max=81512.16ms count=7
+06-10 22:22:58.794  1404  1404 I GoogleInputMethodService: GoogleInputMethodService.onFinishInput():2099 
+06-10 22:22:58.820  1404  1404 I Module  : DeviceLockedStatusModuleProvider$Module.updateDeviceLockedStatus():103 repeatCheckTimes = 0, locked = false
+06-10 22:22:58.826  1404  1404 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1371 onStartInput(EditorInfo{EditorInfo{packageName=com.worksoc.goaicoach, inputType=0, inputTypeString=NULL, enableLearning=false, autoCorrection=false, autoComplete=false, imeOptions=0, privateImeOptions=null, actionName=UNSPECIFIED, actionLabel=null, initialSelStart=-1, initialSelEnd=-1, initialCapsMode=0, label=null, fieldId=0, fieldName=null, extras=null, hintText=null, hintLocales=[]}}, false)
+06-10 22:22:58.838  1404  1404 I Module  : DeviceLockedStatusModuleProvider$Module.updateDeviceLockedStatus():103 repeatCheckTimes = 1, locked = false
+06-10 22:22:58.842   567   739 I HalDevMgr: bestIfaceCreationProposal is null, requestIface=STA, existingIface=[name=wlan0 type=STA]
+06-10 22:22:58.847   567  2084 W PackageConfigPersister: App-specific configuration not found for packageName: com.worksoc.goaicoach and userId: 0
+06-10 22:23:00.069  1533  1732 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+06-10 22:23:00.070  1533  1732 I AiAiEcho: EchoTargets: 
+06-10 22:23:00.070  1533  1732 I AiAiEcho: Filtered by AiAi flag check: 
+06-10 22:23:00.070  1533  1732 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+06-10 22:23:00.070  1533  1732 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+06-10 22:23:00.072   838  1012 D EGL_emulation: app_time_stats: avg=40422.18ms min=40422.18ms max=40422.18ms count=1
+06-10 22:23:00.076  1533  1732 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+06-10 22:23:00.076  1533  1732 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+06-10 22:23:00.076  1533  1732 I AiAiEcho: EchoTargets: 
+06-10 22:23:00.076  1533  1732 I AiAiEcho: Filtered by AiAi flag check: 
+06-10 22:23:00.076  1533  1732 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+06-10 22:23:00.077  1533  1732 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+06-10 22:23:00.077  1533  1732 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+06-10 22:23:00.084  1533  1732 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+06-10 22:23:00.084  1533  1732 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface home with targets# 0 (types=[])
+06-10 22:23:00.088   838   838 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+06-10 22:23:00.090  1127  1127 D SsBaseTemplateCard: No text view can be set up
+06-10 22:23:00.090  1127  1127 D SsBaseTemplateCard: Passed-in item info is null
+06-10 22:23:00.090  1127  1127 D SsBaseTemplateCard: Passed-in item info is null
+06-10 22:23:00.090  1127  1127 D SsBaseTemplateCard: Passed-in item info is null
+06-10 22:23:00.090  1127  1127 I SsBaseTemplateCard: Secondary card pane is null
+06-10 22:23:01.856   567   739 I HalDevMgr: bestIfaceCreationProposal is null, requestIface=STA, existingIface=[name=wlan0 type=STA]
+06-10 22:23:01.908   449   464 D installd: Device /data has 264339456 free; requested 622811544; needed 358472088
+06-10 22:23:01.909   449   464 W installd: Failed to find storage mount for /data/media
+06-10 22:23:02.053   449   464 D installd: Active ratio 4764 isn't over quota, and defy not requested
+06-10 22:23:02.053   449   464 E installd: Failed to free up 622811544 on /data; final free space 264339456: Success
+06-10 22:23:02.058   567   754 W PackageManager: Not removing package com.google.android.trichromelibrary hosting lib com.google.android.trichromelibrary version 755913233 used by [VersionedPackage[com.android.chrome/755913233]] for user 0
+06-10 22:23:02.061   449   464 D installd: Device /data has 264339456 free; requested 622811544; needed 358472088
+06-10 22:23:02.062   449   464 W installd: Failed to find storage mount for /data/media
+06-10 22:23:02.207   449   464 E installd: Failed to free up 622811544 on /data; final free space 264339456: Success
+06-10 22:23:02.214  1510  1798 I ExternalStorageServiceImpl: Free cache requested for 358472088 bytes
+06-10 22:23:02.221   567   754 W DeviceStorageMonitorService: java.io.IOException: Failed to free 622811544 on storage device at /data
+06-10 22:23:02.221   567   754 W DeviceStorageMonitorService: 	at com.android.server.pm.FreeStorageHelper.freeStorage(FreeStorageHelper.java:182)
+06-10 22:23:02.221   567   754 W DeviceStorageMonitorService: 	at com.android.server.pm.PackageManagerService.freeStorage(PackageManagerService.java:2922)
+06-10 22:23:02.221   567   754 W DeviceStorageMonitorService: 	at com.android.server.pm.PackageManagerInternalBase.freeStorage(PackageManagerInternalBase.java:571)
+06-10 22:23:02.221   567   754 W DeviceStorageMonitorService: 	at com.android.server.storage.DeviceStorageMonitorService.checkLow(DeviceStorageMonitorService.java:194)
+06-10 22:23:02.221   567   754 W DeviceStorageMonitorService: 	at com.android.server.storage.DeviceStorageMonitorService.-$$Nest$mcheckLow(DeviceStorageMonitorService.java:0)
+06-10 22:23:02.221   567   754 W DeviceStorageMonitorService: 	at com.android.server.storage.DeviceStorageMonitorService$1.handleMessage(DeviceStorageMonitorService.java:297)
+06-10 22:23:02.221   567   754 W DeviceStorageMonitorService: 	at android.os.Handler.dispatchMessage(Handler.java:107)
+06-10 22:23:02.221   567   754 W DeviceStorageMonitorService: 	at android.os.Looper.loopOnce(Looper.java:232)
+06-10 22:23:02.221   567   754 W DeviceStorageMonitorService: 	at android.os.Looper.loop(Looper.java:317)
+06-10 22:23:02.221   567   754 W DeviceStorageMonitorService: 	at android.os.HandlerThread.run(HandlerThread.java:85)
+06-10 22:23:04.861   567   739 I HalDevMgr: bestIfaceCreationProposal is null, requestIface=STA, existingIface=[name=wlan0 type=STA]
+06-10 22:23:07.870   567   739 I HalDevMgr: bestIfaceCreationProposal is null, requestIface=STA, existingIface=[name=wlan0 type=STA]
+06-10 22:23:10.883   567   739 I HalDevMgr: bestIfaceCreationProposal is null, requestIface=STA, existingIface=[name=wlan0 type=STA]
+06-10 22:23:12.525   567   625 D OomAdjuster: Not killing cached processes
+06-10 22:23:12.597  1059  3943 I NetworkScheduler.Stats: (REDACTED) Task %s/%s started execution. cause:%s exec_start_elapsed_seconds: %s
+06-10 22:23:12.599  1059  4104 I TapAndPay: deviceSupportsHce has detected emulator [CONTEXT service_id=79 ]
+06-10 22:23:12.609  1059  4104 I TapAndPay: NfcAdapter is null while obtaining CardEmulation instance. [CONTEXT service_id=79 ]
+06-10 22:23:12.621  1059  3943 I NetworkScheduler.Stats: (REDACTED) Task %s/%s finished executing. cause:%s result: %s elapsed_millis: %s uptime_millis: %s exec_start_elapsed_seconds: %s
+06-10 22:23:13.898   567   739 I HalDevMgr: bestIfaceCreationProposal is null, requestIface=STA, existingIface=[name=wlan0 type=STA]
+06-10 22:23:16.907   567   739 I HalDevMgr: bestIfaceCreationProposal is null, requestIface=STA, existingIface=[name=wlan0 type=STA]
+06-10 22:23:19.579   567  1756 D OomAdjuster: Not killing cached processes
+06-10 22:23:19.920   567   739 I HalDevMgr: bestIfaceCreationProposal is null, requestIface=STA, existingIface=[name=wlan0 type=STA]
+06-10 22:23:19.936   567   745 W IPCThreadState: Sending oneway calls to frozen process.
+06-10 22:23:19.936   567   745 W IPCThreadState: Sending oneway calls to frozen process.
+06-10 22:23:19.936   567   745 W IPCThreadState: Sending oneway calls to frozen process.
+06-10 22:23:19.968  1059  2461 I NullBinder: NullBinder for android.net.action.RECOMMEND_NETWORKS triggering remote TransactionTooLargeException due to Service without Chimera impl, calling uid: 1000, calling pid: 0
+06-10 22:23:19.968  1059  2461 W .gms.persistent: Large reply transaction of 1056768 bytes, interface descriptor , code 1
+06-10 22:23:19.973  1590  2517 I BugleRcsEngine: handleMessage processing message:[NOTIFY_UPTIME_IGNORE_STATE_CHANGED] with [non-null]:RcsEngineImpl reference [CONTEXT log_prefix="RcsEngineImpl[DUAL_REG]:[40be24d5-8cc0]>Handler" thread_id=68 ]
+06-10 22:23:19.977  1590  2126 I BugleRcsEngine: Connected state: [1], networkType: [WIFI] [CONTEXT thread_id=59 ]
+06-10 22:23:19.980   916  1060 D IpClient/wlan0: interfaceLinkStateChanged: ifindex 16 up
+06-10 22:23:19.986   916  1060 D IpClient/wlan0: interfaceLinkStateChanged: ifindex 16 up
+06-10 22:23:19.990  1059  1059 I MagicTether: (REDACTED) [ActiveNetworkTracker] setActiveNetwork: %s
+06-10 22:23:19.991  1059  1059 I MagicTether: (REDACTED) [TetherService] onActiveNetworkChanged: network=%s isLost=%s
+06-10 22:23:19.996  1059  4104 I MagicTether: [WifiConnectionHandler] Ignoring getWifiConfigurationByNetworkId when checking connected state [CONTEXT service_id=276 ]
+06-10 22:23:20.004  1059  4104 I MagicTether: [WifiConnectionHandler] No networkId set, can't be connected. [CONTEXT service_id=276 ]
+06-10 22:23:20.004  1059  4104 I MagicTether: (REDACTED) [TetherService] TRANSPORT_CELLULAR [%s], TRANSPORT_ETHERNET [%s], TRANSPORT_WIFI [%s]
+06-10 22:23:20.005  1059  4104 I MagicTether: (REDACTED) [TetherService] setRoles hasActiveNetworkConnection=%s canActiveNetworkBeTethered=%s isConnectedToInstantTether=%s isWifiEnabled=%s isHosting=%s
+06-10 22:23:20.030  1059  1059 I MagicTether: (REDACTED) [LaunchUtils] Instant Wifi for status account: name: %s | type: %s | isLaunched: %s
+06-10 22:23:20.030  1059  1059 I MagicTether: (REDACTED) [TidepoolFeatureStatusManager] isInstantHotspotEnabled=%s
+06-10 22:23:20.030  1059  1059 I MagicTether: (REDACTED) [TidepoolFeatureStatusManager] isInstantWifiEnabled=%s
+06-10 22:23:20.030  1059  1059 I MagicTether: (REDACTED) [TetherService] startNearbyHostRole: start: %s isInstantHotspotEnabled: %s isInstantWifiEnabled: %s
+06-10 22:23:20.030  1059  1059 I MagicTether: [HostTetherRole] Nearby host role already stopped [CONTEXT service_id=276 ]
+06-10 22:23:20.031  1059  1059 I MagicTether: (REDACTED) [LaunchUtils] Instant Wifi for status account: name: %s | type: %s | isLaunched: %s
+06-10 22:23:20.031  1059  1059 I MagicTether: (REDACTED) [TidepoolFeatureStatusManager] isInstantHotspotEnabled=%s
+06-10 22:23:20.031  1059  1059 I MagicTether: (REDACTED) [TidepoolFeatureStatusManager] isInstantWifiEnabled=%s
+06-10 22:23:20.031  1059  1059 I MagicTether: (REDACTED) [TetherService] startNearbyClientRole: start: %s isInstantHotspotEnabled: %s isInstantWifiEnabled: %s
+06-10 22:23:20.031  1059  1059 I MagicTether: [TetherService] Stopping Nearby client role [CONTEXT service_id=276 ]
+06-10 22:23:20.031  1059  1059 I MagicTether: [ClientTetherRole] Client role already stopped [CONTEXT service_id=276 ]
+06-10 22:23:20.040  1059  1059 I MagicTether: (REDACTED) [NotificationPresenter] cancelNotification: %d
+06-10 22:23:20.047  1059  1059 I MagicTether: [AutoDisconnectIntentOperation] Canceling task. [CONTEXT service_id=276 ]
+06-10 22:23:20.059  1059  4106 I MagicTether: [AutoDisconnectIntentOperation] Canceling task. [CONTEXT service_id=276 ]
+06-10 22:23:20.059  1059  4106 I MagicTether: (REDACTED) [NotificationPresenter] cancelNotification: %d
+06-10 22:23:20.061  1059  4108 I MagicTether: [AutoDisconnectIntentOperation] Canceling task. [CONTEXT service_id=276 ]
+06-10 22:23:20.061  1059  4108 I MagicTether: (REDACTED) [NotificationPresenter] cancelNotification: %d
+06-10 22:23:20.577  1059  4046 I NetworkScheduler.Stats: (REDACTED) Task %s/%s started execution. cause:%s exec_start_elapsed_seconds: %s
+06-10 22:23:20.588  1059  4104 I NetworkScheduler.Stats: (REDACTED) Task %s/%s finished executing. cause:%s result: %s elapsed_millis: %s uptime_millis: %s exec_start_elapsed_seconds: %s
+06-10 22:23:21.052  1059  1059 D BoundBrokerSvc: onRebind: Intent { act=com.google.android.gms.libs.gmscorelogger.service.START dat=chimera-action:/... cmp=com.google.android.gms/.chimera.PersistentDirectBootAwareApiService }
+06-10 22:23:21.523  3742  3742 W WindowOnBackDispatcher: sendCancelIfRunning: isInProgress=false callback=android.view.ViewRootImpl$$ExternalSyntheticLambda11@a291c99
+06-10 22:23:21.524   567   902 D CoreBackPreview: Window{8636583 u0 com.worksoc.goaicoach/com.worksoc.goaicoach.MainActivity}: Setting back callback null
+06-10 22:23:21.527  3742  3760 D HWUI    : endAllActiveAnimators on 0xb4000079c3a15260 (UnprojectedRipple) with handle 0xb4000079f3a27b40
+06-10 22:23:21.528   567   902 W InputManager-JNI: Input channel object '8636583 com.worksoc.goaicoach/com.worksoc.goaicoach.MainActivity (client)' was disposed without first being removed with the input manager!
+06-10 22:23:21.548   567   618 V WindowManager: Unknown focus tokens, dropping reportFocusChanged
+06-10 22:23:21.566   567   710 I ImeTracker: com.worksoc.goaicoach:9c47e19c: onRequestHide at ORIGIN_SERVER reason HIDE_UNSPECIFIED_WINDOW fromUser false
+06-10 22:23:21.566   567   710 I ImeTracker: com.worksoc.goaicoach:9c47e19c: onCancelled at PHASE_SERVER_SHOULD_HIDE
+06-10 22:23:21.569  1404  1404 I GoogleInputMethodService: GoogleInputMethodService.onFinishInput():2099 
+06-10 22:23:21.571  1404  1404 I Module  : DeviceLockedStatusModuleProvider$Module.updateDeviceLockedStatus():103 repeatCheckTimes = 0, locked = false
+06-10 22:23:21.572  1404  1404 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1371 onStartInput(EditorInfo{EditorInfo{packageName=com.worksoc.goaicoach, inputType=0, inputTypeString=NULL, enableLearning=false, autoCorrection=false, autoComplete=false, imeOptions=0, privateImeOptions=null, actionName=UNSPECIFIED, actionLabel=null, initialSelStart=-1, initialSelEnd=-1, initialCapsMode=0, label=null, fieldId=0, fieldName=null, extras=null, hintText=null, hintLocales=[]}}, false)
+06-10 22:23:21.573  1404  1404 I Module  : DeviceLockedStatusModuleProvider$Module.updateDeviceLockedStatus():103 repeatCheckTimes = 1, locked = false
+06-10 22:23:21.575   567   902 W PackageConfigPersister: App-specific configuration not found for packageName: com.worksoc.goaicoach and userId: 0
+06-10 22:23:21.724   838  1012 D EGL_emulation: app_time_stats: avg=21652.26ms min=21652.26ms max=21652.26ms count=1
+06-10 22:23:21.736  1127  1647 D EGL_emulation: app_time_stats: avg=1350.08ms min=4.94ms max=22673.04ms count=17
+06-10 22:23:22.939   567   745 W IPCThreadState: Sending oneway calls to frozen process.
+06-10 22:23:22.939   567   745 W IPCThreadState: Sending oneway calls to frozen process.
+06-10 22:23:22.939   567   745 W IPCThreadState: Sending oneway calls to frozen process.
+06-10 22:23:22.940   567   739 I HalDevMgr: bestIfaceCreationProposal is null, requestIface=STA, existingIface=[name=wlan0 type=STA]
+06-10 22:23:22.941  1590  2126 I BugleRcsEngine: Connected state: [1], networkType: [WIFI] [CONTEXT thread_id=59 ]
+06-10 22:23:22.941  1590  2517 I BugleRcsEngine: handleMessage processing message:[NOTIFY_UPTIME_IGNORE_STATE_CHANGED] with [non-null]:RcsEngineImpl reference [CONTEXT log_prefix="RcsEngineImpl[DUAL_REG]:[40be24d5-8cc0]>Handler" thread_id=68 ]
+06-10 22:23:22.944  1059  1744 I NullBinder: NullBinder for android.net.action.RECOMMEND_NETWORKS triggering remote TransactionTooLargeException due to Service without Chimera impl, calling uid: 1000, calling pid: 0
+06-10 22:23:22.944  1059  1744 W .gms.persistent: Large reply transaction of 1056768 bytes, interface descriptor , code 1
+06-10 22:23:22.944  1059  1059 I MagicTether: (REDACTED) [ActiveNetworkTracker] setActiveNetwork: %s
+06-10 22:23:22.944  1059  1059 I MagicTether: (REDACTED) [TetherService] onActiveNetworkChanged: network=%s isLost=%s
+06-10 22:23:22.946  1059  4109 I MagicTether: [WifiConnectionHandler] Ignoring getWifiConfigurationByNetworkId when checking connected state [CONTEXT service_id=276 ]
+06-10 22:23:22.947  1059  4109 I MagicTether: [WifiConnectionHandler] No networkId set, can't be connected. [CONTEXT service_id=276 ]
+06-10 22:23:22.947  1059  4109 I MagicTether: (REDACTED) [TetherService] TRANSPORT_CELLULAR [%s], TRANSPORT_ETHERNET [%s], TRANSPORT_WIFI [%s]
+06-10 22:23:22.947  1059  4109 I MagicTether: (REDACTED) [TetherService] setRoles hasActiveNetworkConnection=%s canActiveNetworkBeTethered=%s isConnectedToInstantTether=%s isWifiEnabled=%s isHosting=%s
+06-10 22:23:22.949  1059  1059 I MagicTether: (REDACTED) [LaunchUtils] Instant Wifi for status account: name: %s | type: %s | isLaunched: %s
+06-10 22:23:22.949  1059  1059 I MagicTether: (REDACTED) [TidepoolFeatureStatusManager] isInstantHotspotEnabled=%s
+06-10 22:23:22.949  1059  1059 I MagicTether: (REDACTED) [TidepoolFeatureStatusManager] isInstantWifiEnabled=%s
+06-10 22:23:22.949  1059  1059 I MagicTether: (REDACTED) [TetherService] startNearbyHostRole: start: %s isInstantHotspotEnabled: %s isInstantWifiEnabled: %s
+06-10 22:23:22.949  1059  1059 I MagicTether: [HostTetherRole] Nearby host role already stopped [CONTEXT service_id=276 ]
+06-10 22:23:22.951  1059  1059 I MagicTether: (REDACTED) [LaunchUtils] Instant Wifi for status account: name: %s | type: %s | isLaunched: %s
+06-10 22:23:22.951  1059  1059 I MagicTether: (REDACTED) [TidepoolFeatureStatusManager] isInstantHotspotEnabled=%s
+06-10 22:23:22.951  1059  1059 I MagicTether: (REDACTED) [TidepoolFeatureStatusManager] isInstantWifiEnabled=%s
+06-10 22:23:22.951  1059  1059 I MagicTether: (REDACTED) [TetherService] startNearbyClientRole: start: %s isInstantHotspotEnabled: %s isInstantWifiEnabled: %s
+06-10 22:23:22.951  1059  1059 I MagicTether: [TetherService] Stopping Nearby client role [CONTEXT service_id=276 ]
+06-10 22:23:22.951  1059  1059 I MagicTether: [ClientTetherRole] Client role already stopped [CONTEXT service_id=276 ]
+06-10 22:23:22.954  1059  1059 I MagicTether: (REDACTED) [NotificationPresenter] cancelNotification: %d
+06-10 22:23:22.955  1059  1059 I MagicTether: [AutoDisconnectIntentOperation] Canceling task. [CONTEXT service_id=276 ]
+06-10 22:23:22.958  1059  4108 I MagicTether: [AutoDisconnectIntentOperation] Canceling task. [CONTEXT service_id=276 ]
+06-10 22:23:22.958  1059  4108 I MagicTether: (REDACTED) [NotificationPresenter] cancelNotification: %d
+06-10 22:23:22.959  1059  4108 I MagicTether: [AutoDisconnectIntentOperation] Canceling task. [CONTEXT service_id=276 ]
+06-10 22:23:22.960  1059  4108 I MagicTether: (REDACTED) [NotificationPresenter] cancelNotification: %d
+06-10 22:23:25.518  3742  3760 D EGL_emulation: app_time_stats: avg=4533.36ms min=2.89ms max=26768.29ms count=6
+06-10 22:23:25.605   567   625 D OomAdjuster: Not killing cached processes
+06-10 22:23:25.626  1059  4046 I NetworkScheduler.Stats: (REDACTED) Task %s/%s started execution. cause:%s exec_start_elapsed_seconds: %s
+06-10 22:23:25.628  1446  1791 I TelephonySpamChimeraSer: Running Telephony Spam Chimera Service [CONTEXT service_id=150 ]
+06-10 22:23:25.634  1446  1791 I TelephonySpamChimeraSer: Cleaning SIP Header local table of old entries [CONTEXT service_id=150 ]
+06-10 22:23:25.634  1446  1791 I SpamListSync: Call spam module disabled. Skipping cleaning cache sip header table. [CONTEXT service_id=150 ]
+06-10 22:23:25.634  1446  1791 I TelephonySpamChimeraSer: Syncing Call Spam List [CONTEXT service_id=150 ]
+06-10 22:23:25.634  1446  1791 I SpamListSync: (REDACTED) SpamListSyncChimeraService.syncSpamList called with tag: %s, extras: %s
+06-10 22:23:25.634  1446  1791 I SpamListSync: Call spam module disabled. Skipping spam list syncing. [CONTEXT service_id=150 ]
+06-10 22:23:25.636  1059  4104 I NetworkScheduler.Stats: (REDACTED) Task %s/%s finished executing. cause:%s result: %s elapsed_millis: %s uptime_millis: %s exec_start_elapsed_seconds: %s
+06-10 22:23:25.945   567   739 I HalDevMgr: bestIfaceCreationProposal is null, requestIface=STA, existingIface=[name=wlan0 type=STA]
+06-10 22:23:25.948   916  1060 D IpClient/wlan0: interfaceLinkStateChanged: ifindex 16 up
+06-10 22:23:25.953   916  1060 D IpClient/wlan0: interfaceLinkStateChanged: ifindex 16 up
+06-10 22:23:26.591  3742  3760 D EGL_emulation: app_time_stats: avg=116.92ms min=1.31ms max=201.48ms count=9
