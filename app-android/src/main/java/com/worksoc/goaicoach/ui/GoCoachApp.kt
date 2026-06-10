@@ -263,32 +263,22 @@ private fun GoCoachScreen(
         applySavedSessionPromptPlan(buildSavedSessionCheckPlan(sessionStore.load()))
     }
 
-    LaunchedEffect(
-        hasCompletedEngineStartup,
-        isEngineReady,
-    ) {
-        if (
-            !hasCompletedEngineStartup ||
-            !isEngineReady ||
-            !isLocalKataGoEngine(engineName = engineName, engineDiagnostic = engineDiagnostic) ||
-            hasCheckedEngineBenchmark
-        ) {
-            return@LaunchedEffect
+    suspend fun runEngineBenchmark() {
+        if (!isEngineReady) {
+            engineMessage = "Engine benchmark requires a ready local engine."
+            return
         }
-        if (
-            benchmarkStore.hasUsableProfile(
-                samplesPerVisit = EngineBenchmarkDefaultSamplesPerVisit,
-                timeCapMs = EngineBenchmarkDefaultTimeCapMs,
-                measurementVersion = EngineBenchmarkMeasurementVersion,
-                visitsTargets = EngineBenchmarkDefaultVisits,
-            )
-        ) {
-            hasCheckedEngineBenchmark = true
-            engineBenchmarkText = benchmarkStore.loadText()
-            return@LaunchedEffect
+        if (!isLocalKataGoEngine(engineName = engineName, engineDiagnostic = engineDiagnostic)) {
+            engineMessage = "Engine benchmark is available only for the local KataGo process engine."
+            return
+        }
+        if (isEngineBusy || benchmarkProgress != null) {
+            engineMessage = "Engine is busy. Run benchmark after the current response."
+            return
         }
 
-        hasCheckedEngineBenchmark = true
+        benchmarkResultToConfirm = null
+        isEngineBusy = true
         engineMessage = "엔진 벤치마크 시작 전 안정화 대기 중입니다."
         benchmarkProgress = EngineBenchmarkProgress(
             currentVisits = EngineBenchmarkDefaultVisits.first(),
@@ -298,8 +288,9 @@ private fun GoCoachScreen(
             totalCalls = EngineBenchmarkDefaultVisits.size * EngineBenchmarkDefaultSamplesPerVisit,
             stageOverride = "엔진 안정화 대기 중...",
         )
+        candidateText = "Engine benchmark waiting for startup settle delay."
         delay(EngineBenchmarkStartupSettleDelayMillis)
-        isEngineBusy = true
+
         engineMessage = "최초 실행환경에서 최적 플레이를 위해 벤치마크 테스트가 진행중입니다."
         candidateText = "Engine benchmark running: B16/B32/B64, ${EngineBenchmarkDefaultSamplesPerVisit} samples each."
         runCatching {
@@ -329,6 +320,52 @@ private fun GoCoachScreen(
         }
         benchmarkProgress = null
         isEngineBusy = false
+    }
+
+    fun showEngineBenchmarkResult() {
+        benchmarkStore.load()?.let { profile ->
+            benchmarkResultToConfirm = profile
+            return
+        }
+        scope.launch {
+            runEngineBenchmark()
+        }
+    }
+
+    fun rerunEngineBenchmark() {
+        benchmarkResultToConfirm = null
+        scope.launch {
+            runEngineBenchmark()
+        }
+    }
+
+    LaunchedEffect(
+        hasCompletedEngineStartup,
+        isEngineReady,
+    ) {
+        if (
+            !hasCompletedEngineStartup ||
+            !isEngineReady ||
+            !isLocalKataGoEngine(engineName = engineName, engineDiagnostic = engineDiagnostic) ||
+            hasCheckedEngineBenchmark
+        ) {
+            return@LaunchedEffect
+        }
+        if (
+            benchmarkStore.hasUsableProfile(
+                samplesPerVisit = EngineBenchmarkDefaultSamplesPerVisit,
+                timeCapMs = EngineBenchmarkDefaultTimeCapMs,
+                measurementVersion = EngineBenchmarkMeasurementVersion,
+                visitsTargets = EngineBenchmarkDefaultVisits,
+            )
+        ) {
+            hasCheckedEngineBenchmark = true
+            engineBenchmarkText = benchmarkStore.loadText()
+            return@LaunchedEffect
+        }
+
+        hasCheckedEngineBenchmark = true
+        runEngineBenchmark()
     }
 
     LaunchedEffect(
@@ -1223,6 +1260,7 @@ private fun GoCoachScreen(
                 isTopMovesEnabled = { topMovesEnabled },
                 startConfiguredGame = ::startConfiguredGame,
                 copyDebugReport = ::copyDebugReport,
+                showEngineBenchmark = ::showEngineBenchmarkResult,
                 requestScoreEstimate = ::requestScoreEstimate,
                 showTopMoves = ::showTopMovesForCurrentState,
                 hideTopMoves = ::hideTopMoves,
@@ -1312,6 +1350,7 @@ private fun GoCoachScreen(
         benchmarkProgress = benchmarkProgress,
         benchmarkResult = benchmarkResultToConfirm,
         onBenchmarkResultConfirmed = { benchmarkResultToConfirm = null },
+        onBenchmarkRerun = ::rerunEngineBenchmark,
         isDisplayMenuExpanded = isDisplayMenuExpanded,
         onDisplayMenuExpandedChange = { expanded -> isDisplayMenuExpanded = expanded },
         onScoreGraphExpandedChange = { expanded -> isScoreGraphExpanded = expanded },

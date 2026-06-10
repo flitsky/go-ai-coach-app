@@ -11,6 +11,7 @@ import com.worksoc.goaicoach.shared.StoneColor
 internal sealed interface GameUiEvent {
     data object StartConfiguredGame : GameUiEvent
     data object CopyDebugReport : GameUiEvent
+    data object ShowEngineBenchmark : GameUiEvent
     data object RequestScoreEstimate : GameUiEvent
     data object ToggleTopMoves : GameUiEvent
     data object UndoLastTurn : GameUiEvent
@@ -51,6 +52,7 @@ internal data class GameUiEventHandlers(
     val isTopMovesEnabled: () -> Boolean,
     val startConfiguredGame: () -> Unit,
     val copyDebugReport: () -> Unit,
+    val showEngineBenchmark: () -> Unit,
     val requestScoreEstimate: () -> Unit,
     val showTopMoves: () -> Unit,
     val hideTopMoves: () -> Unit,
@@ -71,6 +73,7 @@ internal fun dispatchGameUiEvent(
     when (event) {
         GameUiEvent.StartConfiguredGame -> handlers.startConfiguredGame()
         GameUiEvent.CopyDebugReport -> handlers.copyDebugReport()
+        GameUiEvent.ShowEngineBenchmark -> handlers.showEngineBenchmark()
         GameUiEvent.RequestScoreEstimate -> handlers.requestScoreEstimate()
         GameUiEvent.ToggleTopMoves -> {
             if (handlers.isTopMovesEnabled()) {

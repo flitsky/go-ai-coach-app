@@ -26,6 +26,7 @@ internal fun GameMenuActionsPanel(
     canChangeRuleset: Boolean,
     onNewGame: () -> Unit,
     onCopyLog: () -> Unit,
+    onBenchmark: () -> Unit,
     onRulesetChange: (Ruleset) -> Unit,
 ) {
     Surface(
@@ -55,6 +56,12 @@ internal fun GameMenuActionsPanel(
                     modifier = Modifier.weight(1f),
                 ) {
                     Text("Copy Log")
+                }
+                OutlinedButton(
+                    onClick = onBenchmark,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text("Benchmark")
                 }
             }
             Text(

@@ -35,6 +35,7 @@ internal fun GoCoachContent(
     benchmarkProgress: EngineBenchmarkProgress?,
     benchmarkResult: EngineBenchmarkProfile?,
     onBenchmarkResultConfirmed: () -> Unit,
+    onBenchmarkRerun: () -> Unit,
     isDisplayMenuExpanded: Boolean,
     onDisplayMenuExpandedChange: (Boolean) -> Unit,
     onScoreGraphExpandedChange: (Boolean) -> Unit,
@@ -58,6 +59,7 @@ internal fun GoCoachContent(
         EngineBenchmarkResultDialog(
             profile = benchmarkResult,
             onConfirm = onBenchmarkResultConfirmed,
+            onRerun = onBenchmarkRerun,
         )
     }
 
@@ -104,6 +106,7 @@ internal fun GoCoachContent(
 private fun EngineBenchmarkResultDialog(
     profile: EngineBenchmarkProfile,
     onConfirm: () -> Unit,
+    onRerun: () -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = {},
@@ -114,6 +117,11 @@ private fun EngineBenchmarkResultDialog(
         confirmButton = {
             TextButton(onClick = onConfirm) {
                 Text("확인")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onRerun) {
+                Text("다시 체크해보기")
             }
         },
     )

@@ -70,6 +70,7 @@ internal fun ExpandedGameMenuSection(
         canChangeRuleset = !screenState.engine.isBusy,
         onNewGame = { onEvent(GameUiEvent.StartConfiguredGame) },
         onCopyLog = { onEvent(GameUiEvent.CopyDebugReport) },
+        onBenchmark = { onEvent(GameUiEvent.ShowEngineBenchmark) },
         onRulesetChange = { ruleset -> onEvent(GameUiEvent.ChangeScoringRule(ruleset)) },
     )
 

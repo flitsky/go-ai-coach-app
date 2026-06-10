@@ -113,6 +113,11 @@
 
 - `New`: 현재 Player Setup으로 새 대국을 시작한다. 새 대국이 시작되면 메뉴가 자동으로 접혀 보드판에 바로 집중할 수 있다.
 - `Copy Log`: 현재 런타임 상태, 보드, 수순, 종료 로그, 화면 표시 텍스트, 엔진 진단 정보를 clipboard에 복사한다.
+- `Benchmark`: 현재 기기에 저장된 엔진 벤치마크 결과를 다시 표시한다.
+  - 결과 팝업은 B16/B32/B64별 elapsed `min / max / avg`, root visits `min / avg / max`, fill `OK / SHORT / UNKNOWN` 개수를 보여준다.
+  - `다시 체크해보기`를 누르면 현재 기기에서 benchmark를 다시 실행한다.
+  - 엔진이 busy 상태이면 재측정은 시작하지 않고, 현재 엔진 작업이 끝난 뒤 다시 시도해야 한다.
+  - 저장된 결과가 아직 없으면 benchmark를 바로 실행한다.
 - `Scoring rule: Area | Territory`: 계가 방식을 전환한다.
   - `Territory`가 기본값이다. 한국/일본식처럼 집 + 상대 포로를 기준으로 계산한다.
   - `Area`는 중국식처럼 현재 보드의 돌 + 집을 기준으로 계산한다.

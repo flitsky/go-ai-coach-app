@@ -741,3 +741,7 @@
 - benchmark 저장 스키마를 `measurementVersion=3`으로 올리고, sample별 `elapsedMs`, `engineElapsedMs`, `rootVisits`, `fillStatus`를 저장하도록 했다. metric aggregate에는 root min/avg/max와 fill OK/SHORT/UNKNOWN count를 추가했다.
 - 진행 팝업에는 직전 sample의 `root`, `elapsed`, `fill`을 표시하고, 완료 팝업에는 각 B등급별 elapsed min/max/avg와 root min/avg/max, fill count를 표시하도록 했다. Copy Log의 `[EngineBenchmark]`에는 sampleDetails JSON이 포함된다.
 - `make test`는 통과했고 debug APK 설치도 성공했다. 다만 실기기 화면이 패턴 잠금 상태라 앱 전면 실행과 measurementVersion=3 재측정 완료 확인은 사용자가 잠금 해제한 뒤 재시도해야 한다. 현재 폰 파일은 아직 measurementVersion=2다.
+- 사용자가 benchmark 팝업이 사라진 뒤 결과를 다시 보기 어렵다고 보고했고, 메뉴에서 언제든 benchmark 결과를 확인하고 `다시 체크해보기`로 반복 측정할 수 있게 해달라고 요청했다.
+- Game 메뉴에 `Benchmark` 버튼을 추가했다. 누르면 저장된 benchmark profile을 완료 팝업과 같은 형식으로 다시 보여주며, 저장 결과가 없으면 benchmark를 바로 실행한다.
+- benchmark 결과 팝업에 `다시 체크해보기` 버튼을 추가했다. 버튼을 누르면 팝업을 닫고 동일한 benchmark 실행 흐름을 다시 시작한다. 자동 최초 benchmark와 수동 재측정은 같은 `runEngineBenchmark()` 경로를 사용한다.
+- `GameUiEvent.ShowEngineBenchmark`와 dispatch test를 추가했다. `make test`는 통과했다. 폰 설치는 시도했지만 ADB 연결이 끊겨 실기기 설치는 다음 연결 시점으로 남겼다.

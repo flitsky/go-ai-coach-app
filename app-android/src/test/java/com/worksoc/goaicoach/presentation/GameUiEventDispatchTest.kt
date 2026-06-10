@@ -92,11 +92,24 @@ class GameUiEventDispatchTest {
         assertEquals(AutoPlayDelaySetting.Slow, selected)
     }
 
+    @Test
+    fun dispatchShowEngineBenchmarkRoutesToHandler() {
+        val calls = mutableListOf<String>()
+        val handlers = handlers(
+            showEngineBenchmark = { calls += "benchmark" },
+        )
+
+        dispatchGameUiEvent(GameUiEvent.ShowEngineBenchmark, handlers)
+
+        assertEquals(listOf("benchmark"), calls)
+    }
+
     private fun handlers(
         currentPlayer: () -> StoneColor = { StoneColor.Black },
         isTopMovesEnabled: () -> Boolean = { false },
         startConfiguredGame: () -> Unit = {},
         copyDebugReport: () -> Unit = {},
+        showEngineBenchmark: () -> Unit = {},
         requestScoreEstimate: () -> Unit = {},
         showTopMoves: () -> Unit = {},
         hideTopMoves: () -> Unit = {},
@@ -114,6 +127,7 @@ class GameUiEventDispatchTest {
             isTopMovesEnabled = isTopMovesEnabled,
             startConfiguredGame = startConfiguredGame,
             copyDebugReport = copyDebugReport,
+            showEngineBenchmark = showEngineBenchmark,
             requestScoreEstimate = requestScoreEstimate,
             showTopMoves = showTopMoves,
             hideTopMoves = hideTopMoves,
