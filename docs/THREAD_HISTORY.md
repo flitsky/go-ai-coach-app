@@ -710,3 +710,8 @@
 - Makefile에 `make engine-device-benchmark`를 추가했다. 기본 출력 경로는 `docs/engine-benchmark-logs/mac-20260610`이며, `ENGINE_DEVICE_BENCHMARK_SAMPLES`, `ENGINE_DEVICE_BENCHMARK_OUT`, `ENGINE_DEVICE_BENCHMARK_ARGS`로 조정 가능하다.
 - 첫 실행에서 같은 random position을 반복해 cache 영향이 확인되어, random 포지션은 sample마다 새 legal random 9x9 position을 생성하도록 보정 후 재실행했다.
 - 맥북 1차 benchmark 결과 random position 기준: B16 평균 `168.383ms`, 최대 `177.699ms`, 권장 cap `250ms`; B32 평균 `292.554ms`, 최대 `314.810ms`, 권장 cap `400ms`; B64 평균 `541.364ms`, 최대 `586.379ms`, 권장 cap `750ms`. 모두 `fill=OK`였다.
+- 사용자가 앱 로컬에서도 B16/B32/B64를 각각 10회 호출해 min/max/avg time을 로컬 저장소에 저장하는 벤치마크 기능을 먼저 탑재해달라고 요청했다.
+- `EngineDeviceBenchmarkApplication.kt`를 추가했다. 앱 시작 후 엔진 startup이 완료되고 저장된 벤치마크 파일이 없으면 B16/B32/B64를 각각 10회 측정한다. 측정 중에는 벤치마크용 9x9 상태로 sync하고, 완료 후 현재 game state로 엔진을 다시 sync한다.
+- `EngineBenchmarkStore.kt`를 추가했다. 내부 파일 `engine_benchmark_profile.json`에 `createdAtMillis`, `samplesPerVisit`, `timeCapMs`, visits별 `minMs`, `avgMs`, `maxMs`, `samples`를 JSON으로 저장한다.
+- `Copy Log`의 debug report에 `[EngineBenchmark]` 섹션을 추가해 저장된 benchmark file 내용을 함께 복사할 수 있게 했다.
+- 이번 구현은 benchmark 측정/저장까지만 수행하고, 실제 `PlayLevelSetting.analysisLimit`에 benchmark result를 반영하는 기능은 다음 단계로 분리했다.

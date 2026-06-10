@@ -168,6 +168,47 @@ data class DeviceEngineBenchmarkProfile(
 6. 사용자 옵션에 `자동 / 빠른 응답 / 안정 탐색 / 수동` 추가
 7. debug report에 benchmark profile 포함
 
+## 앱 탑재 1차 구현
+
+우선 실제 time cap 반영 전에, 앱 로컬에서 벤치마크 파일을 생성하는 기능만 탑재했다.
+
+동작:
+
+1. 앱 시작 후 엔진 startup이 완료된다.
+2. 내부 파일 `engine_benchmark_profile.json`이 없으면 1회 벤치마크를 실행한다.
+3. B16/B32/B64를 각각 10회 호출한다.
+4. 각 visits별 `minMs`, `avgMs`, `maxMs`, `samples`를 저장한다.
+5. 벤치마크 중에는 엔진 busy 상태로 표시하고, 완료 후 현재 game state로 엔진을 다시 sync한다.
+6. `Copy Log`에는 `[EngineBenchmark]` 섹션으로 저장 파일 내용이 포함된다.
+
+저장 위치:
+
+```text
+<app internal files>/engine_benchmark_profile.json
+```
+
+저장 예시:
+
+```json
+{
+  "schema": 1,
+  "createdAtMillis": 1780000000000,
+  "samplesPerVisit": 10,
+  "timeCapMs": 5000,
+  "metrics": [
+    {"visits": 16, "samples": 10, "minMs": 160.1, "maxMs": 190.2, "avgMs": 171.3},
+    {"visits": 32, "samples": 10, "minMs": 280.1, "maxMs": 330.2, "avgMs": 295.3},
+    {"visits": 64, "samples": 10, "minMs": 520.1, "maxMs": 650.2, "avgMs": 570.3}
+  ]
+}
+```
+
+현재 범위:
+
+- 저장만 수행한다.
+- 실제 `PlayLevelSetting.analysisLimit`에는 아직 반영하지 않는다.
+- 다음 단계에서 저장된 benchmark profile을 읽어 `자동 / 빠른 응답 / 안정 탐색 / 수동` 정책에 반영한다.
+
 ## 현재 결론
 
 방문수 기반 레벨링은 유지한다.

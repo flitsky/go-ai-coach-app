@@ -41,6 +41,7 @@ internal fun buildDebugReport(
     moveReviewText: String,
     lastMoveText: String,
     endgameLog: String,
+    engineBenchmarkText: String,
 ): String {
     val localScoreText = BoardScorer.score(gameState).toDisplayText()
 
@@ -117,6 +118,9 @@ internal fun buildDebugReport(
         appendLine()
         appendLine("[EngineDiagnostic]")
         appendLine(engineDiagnostic)
+        appendLine()
+        appendLine("[EngineBenchmark]")
+        appendLine(engineBenchmarkText)
     }.trim()
 }
 

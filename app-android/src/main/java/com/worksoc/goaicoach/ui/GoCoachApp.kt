@@ -52,6 +52,7 @@ import com.worksoc.goaicoach.application.buildPlayerSetupChangePlan
 import com.worksoc.goaicoach.application.buildUserPreferencesSnapshot
 import com.worksoc.goaicoach.application.configureSyncAndEstimateGraphScore
 import com.worksoc.goaicoach.application.EndgameFailureDisplayPlan
+import com.worksoc.goaicoach.application.runStartupEngineBenchmark
 import com.worksoc.goaicoach.application.applyHumanMoveLocally
 import com.worksoc.goaicoach.application.FinalScoreDisplayPlan
 import com.worksoc.goaicoach.application.GameSessionResetPlan
@@ -89,6 +90,7 @@ import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.persistence.GameSessionStore
+import com.worksoc.goaicoach.persistence.EngineBenchmarkStore
 import com.worksoc.goaicoach.persistence.SavedGameSnapshot
 import com.worksoc.goaicoach.persistence.UserPreferencesSnapshot
 import com.worksoc.goaicoach.persistence.UserPreferencesStore
@@ -151,6 +153,7 @@ private fun GoCoachScreen(
     val context = LocalContext.current
     val sessionStore = remember(context) { GameSessionStore(context) }
     val preferencesStore = remember(context) { UserPreferencesStore(context) }
+    val benchmarkStore = remember(context) { EngineBenchmarkStore(context) }
     val initialPreferences = remember(preferencesStore) { preferencesStore.load() }
     val defaultPlayLevel = remember { PlayLevelSetting() }
     val initialPlan = remember(initialPreferences, defaultPlayLevel) {
@@ -192,6 +195,8 @@ private fun GoCoachScreen(
     var endgameLog by remember { mutableStateOf("No endgame result recorded.") }
     var hasCompletedEngineStartup by remember { mutableStateOf(false) }
     var hasCheckedSavedSession by remember { mutableStateOf(false) }
+    var hasCheckedEngineBenchmark by remember { mutableStateOf(benchmarkStore.exists()) }
+    var engineBenchmarkText by remember { mutableStateOf(benchmarkStore.loadText()) }
     var pendingSavedSession by remember { mutableStateOf<SavedGameSnapshot?>(null) }
     var shouldShowResumePrompt by remember { mutableStateOf(false) }
     var isAutoAiTurnPending by remember { mutableStateOf(false) }
@@ -239,6 +244,52 @@ private fun GoCoachScreen(
 
     LaunchedEffect(sessionStore) {
         applySavedSessionPromptPlan(buildSavedSessionCheckPlan(sessionStore.load()))
+    }
+
+    LaunchedEffect(
+        hasCompletedEngineStartup,
+        hasCheckedSavedSession,
+        shouldShowResumePrompt,
+        isEngineReady,
+    ) {
+        if (
+            !hasCompletedEngineStartup ||
+            !hasCheckedSavedSession ||
+            shouldShowResumePrompt ||
+            !isEngineReady ||
+            !isLocalKataGoEngine(engineName = engineName, engineDiagnostic = engineDiagnostic) ||
+            hasCheckedEngineBenchmark
+        ) {
+            return@LaunchedEffect
+        }
+        if (benchmarkStore.exists()) {
+            hasCheckedEngineBenchmark = true
+            engineBenchmarkText = benchmarkStore.loadText()
+            return@LaunchedEffect
+        }
+
+        hasCheckedEngineBenchmark = true
+        isEngineBusy = true
+        engineMessage = "최초 실행환경에서 최적 플레이를 위해 벤치마크 테스트가 진행중입니다."
+        candidateText = "Engine benchmark running: B16/B32/B64, 10 samples each."
+        runCatching {
+            withContext(Dispatchers.IO) {
+                engineAdapter
+                    .runStartupEngineBenchmark(
+                        currentState = gameState,
+                        nowMillis = System.currentTimeMillis(),
+                    )
+                    .also { profile -> benchmarkStore.save(profile) }
+            }
+        }.onSuccess { profile ->
+            engineBenchmarkText = benchmarkStore.loadText()
+            engineMessage = "Engine benchmark saved to ${benchmarkStore.path()}."
+            candidateText = "Engine benchmark complete.\n${profile.toSummaryText()}"
+        }.onFailure { error ->
+            engineMessage = "Engine benchmark failed: ${error.message ?: "unknown error"}"
+            candidateText = "Engine benchmark failed. The app will continue with built-in defaults."
+        }
+        isEngineBusy = false
     }
 
     LaunchedEffect(
@@ -1117,6 +1168,7 @@ private fun GoCoachScreen(
             moveReviewText = moveReviewText,
             lastMoveText = lastMoveText,
             endgameLog = endgameLog,
+            engineBenchmarkText = engineBenchmarkText,
         )
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         clipboard.setPrimaryClip(ClipData.newPlainText("Go AI Coach debug report", report))
@@ -1232,3 +1284,9 @@ private fun UserPreferencesSnapshot.toKaTrainUxOptions(): KaTrainUxOptions =
         showLastMoveRing = showLastMoveRing,
         showOwnershipOverlay = showOwnershipOverlay,
     )
+
+private fun isLocalKataGoEngine(
+    engineName: String,
+    engineDiagnostic: String,
+): Boolean =
+    engineName == "KataGo" && engineDiagnostic.contains("Using local process engine")

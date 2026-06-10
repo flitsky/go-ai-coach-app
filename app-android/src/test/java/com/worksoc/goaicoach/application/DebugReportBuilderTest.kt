@@ -52,6 +52,7 @@ class DebugReportBuilderTest {
             moveReviewText = "move review",
             lastMoveText = "White pass",
             endgameLog = "No endgame result recorded.",
+            engineBenchmarkText = "benchmark ok",
         )
 
         assertTrue(report.contains("[Runtime]"))
@@ -64,5 +65,7 @@ class DebugReportBuilderTest {
         assertTrue(report.contains("engine message"))
         assertTrue(report.contains("[EngineDiagnostic]"))
         assertTrue(report.contains("diagnostic ok"))
+        assertTrue(report.contains("[EngineBenchmark]"))
+        assertTrue(report.contains("benchmark ok"))
     }
 }
