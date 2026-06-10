@@ -16,10 +16,15 @@ internal class EngineBenchmarkStore(context: Context) {
     fun hasUsableProfile(
         samplesPerVisit: Int,
         timeCapMs: Long,
+        measurementVersion: Int,
         visitsTargets: List<Int>,
     ): Boolean {
         val profile = load() ?: return false
-        if (profile.samplesPerVisit != samplesPerVisit || profile.timeCapMs != timeCapMs) {
+        if (
+            profile.samplesPerVisit != samplesPerVisit ||
+            profile.timeCapMs != timeCapMs ||
+            profile.measurementVersion != measurementVersion
+        ) {
             return false
         }
         val metricByVisits = profile.metrics.associateBy { metric -> metric.visits }
@@ -59,6 +64,7 @@ internal object EngineBenchmarkCodec {
         JSONObject()
             .put("schema", SchemaVersion)
             .put("createdAtMillis", profile.createdAtMillis)
+            .put("measurementVersion", profile.measurementVersion)
             .put("samplesPerVisit", profile.samplesPerVisit)
             .put("timeCapMs", profile.timeCapMs)
             .put(
@@ -89,6 +95,7 @@ internal object EngineBenchmarkCodec {
                 createdAtMillis = json.optLong("createdAtMillis", 0L),
                 samplesPerVisit = json.optInt("samplesPerVisit", 0),
                 timeCapMs = json.optLong("timeCapMs", 0L),
+                measurementVersion = json.optInt("measurementVersion", 0),
                 metrics = List(metricsJson.length()) { index ->
                     val metric = metricsJson.getJSONObject(index)
                     EngineBenchmarkMetric(

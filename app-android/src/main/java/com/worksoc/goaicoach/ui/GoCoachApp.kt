@@ -55,6 +55,7 @@ import com.worksoc.goaicoach.application.EndgameFailureDisplayPlan
 import com.worksoc.goaicoach.application.EngineBenchmarkDefaultSamplesPerVisit
 import com.worksoc.goaicoach.application.EngineBenchmarkDefaultTimeCapMs
 import com.worksoc.goaicoach.application.EngineBenchmarkDefaultVisits
+import com.worksoc.goaicoach.application.EngineBenchmarkMeasurementVersion
 import com.worksoc.goaicoach.application.EngineBenchmarkProfile
 import com.worksoc.goaicoach.application.EngineBenchmarkProgress
 import com.worksoc.goaicoach.application.runStartupEngineBenchmark
@@ -205,6 +206,7 @@ private fun GoCoachScreen(
             benchmarkStore.hasUsableProfile(
                 samplesPerVisit = EngineBenchmarkDefaultSamplesPerVisit,
                 timeCapMs = EngineBenchmarkDefaultTimeCapMs,
+                measurementVersion = EngineBenchmarkMeasurementVersion,
                 visitsTargets = EngineBenchmarkDefaultVisits,
             ),
         )
@@ -277,6 +279,7 @@ private fun GoCoachScreen(
             benchmarkStore.hasUsableProfile(
                 samplesPerVisit = EngineBenchmarkDefaultSamplesPerVisit,
                 timeCapMs = EngineBenchmarkDefaultTimeCapMs,
+                measurementVersion = EngineBenchmarkMeasurementVersion,
                 visitsTargets = EngineBenchmarkDefaultVisits,
             )
         ) {
@@ -286,15 +289,18 @@ private fun GoCoachScreen(
         }
 
         hasCheckedEngineBenchmark = true
-        isEngineBusy = true
-        engineMessage = "최초 실행환경에서 최적 플레이를 위해 벤치마크 테스트가 진행중입니다."
+        engineMessage = "엔진 벤치마크 시작 전 안정화 대기 중입니다."
         benchmarkProgress = EngineBenchmarkProgress(
             currentVisits = EngineBenchmarkDefaultVisits.first(),
             currentSample = 1,
             samplesPerVisit = EngineBenchmarkDefaultSamplesPerVisit,
             completedCalls = 0,
             totalCalls = EngineBenchmarkDefaultVisits.size * EngineBenchmarkDefaultSamplesPerVisit,
+            stageOverride = "엔진 안정화 대기 중...",
         )
+        delay(EngineBenchmarkStartupSettleDelayMillis)
+        isEngineBusy = true
+        engineMessage = "최초 실행환경에서 최적 플레이를 위해 벤치마크 테스트가 진행중입니다."
         candidateText = "Engine benchmark running: B16/B32/B64, ${EngineBenchmarkDefaultSamplesPerVisit} samples each."
         runCatching {
             withContext(Dispatchers.IO) {
@@ -1326,3 +1332,5 @@ private fun isLocalKataGoEngine(
     engineDiagnostic: String,
 ): Boolean =
     engineName == "KataGo" && engineDiagnostic.contains("Using local process engine")
+
+private const val EngineBenchmarkStartupSettleDelayMillis = 1_500L

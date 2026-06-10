@@ -20,10 +20,12 @@ internal data class EngineBenchmarkProfile(
     val createdAtMillis: Long,
     val samplesPerVisit: Int,
     val timeCapMs: Long,
+    val measurementVersion: Int = EngineBenchmarkMeasurementVersion,
     val metrics: List<EngineBenchmarkMetric>,
 ) {
     fun toSummaryText(): String =
         buildString {
+            appendLine("measurementVersion=$measurementVersion")
             appendLine("samplesPerVisit=$samplesPerVisit")
             appendLine("timeCapMs=$timeCapMs")
             metrics.sortedBy { metric -> metric.visits }.forEach { metric ->
@@ -40,6 +42,7 @@ internal data class EngineBenchmarkProgress(
     val samplesPerVisit: Int,
     val completedCalls: Int,
     val totalCalls: Int,
+    val stageOverride: String? = null,
 ) {
     val fraction: Float
         get() = if (totalCalls <= 0) {
@@ -49,7 +52,7 @@ internal data class EngineBenchmarkProgress(
         }
 
     val stageText: String
-        get() = "B$currentVisits 실행시간 확보 중..."
+        get() = stageOverride ?: "B$currentVisits 실행시간 확보 중..."
 
     val sampleText: String
         get() = "샘플 $currentSample / $samplesPerVisit"
@@ -72,9 +75,11 @@ internal suspend fun EngineAdapter.runStartupEngineBenchmark(
     val totalCalls = samplesPerVisit * visitsTargets.size
     var completedCalls = 0
 
-    val metrics = try {
-        visitsTargets.map { visits ->
-            val elapsedSamples = (0 until samplesPerVisit).map { sampleIndex ->
+    val elapsedSamplesByVisits = visitsTargets.associateWith { mutableListOf<Double>() }
+
+    try {
+        (0 until samplesPerVisit).forEach { sampleIndex ->
+            visitsTargets.forEach { visits ->
                 val currentSample = sampleIndex + 1
                 onProgress(
                     EngineBenchmarkProgress(
@@ -89,6 +94,7 @@ internal suspend fun EngineAdapter.runStartupEngineBenchmark(
                 val startNanos = System.nanoTime()
                 analyze(benchmarkAnalysisLimit(visits = visits, timeCapMs = timeCapMs))
                 val elapsedMs = ((System.nanoTime() - startNanos) / 1_000_000.0).roundMillis()
+                elapsedSamplesByVisits.getValue(visits) += elapsedMs
                 completedCalls += 1
                 onProgress(
                     EngineBenchmarkProgress(
@@ -99,18 +105,21 @@ internal suspend fun EngineAdapter.runStartupEngineBenchmark(
                         totalCalls = totalCalls,
                     ),
                 )
-                elapsedMs
             }
-            elapsedSamples.toBenchmarkMetric(visits)
         }
     } finally {
         syncToGameState(currentState)
+    }
+
+    val metrics = visitsTargets.map { visits ->
+        elapsedSamplesByVisits.getValue(visits).toBenchmarkMetric(visits)
     }
 
     return EngineBenchmarkProfile(
         createdAtMillis = nowMillis,
         samplesPerVisit = samplesPerVisit,
         timeCapMs = timeCapMs,
+        measurementVersion = EngineBenchmarkMeasurementVersion,
         metrics = metrics,
     )
 }
@@ -163,6 +172,7 @@ private fun Double.roundMillis(): Double =
 internal val EngineBenchmarkDefaultVisits = listOf(16, 32, 64)
 internal const val EngineBenchmarkDefaultSamplesPerVisit = 5
 internal const val EngineBenchmarkDefaultTimeCapMs = 5_000L
+internal const val EngineBenchmarkMeasurementVersion = 2
 
 private val BenchmarkMoveLabels = listOf(
     "E5", "C5",

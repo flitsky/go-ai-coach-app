@@ -730,3 +730,7 @@
 - `make test` 통과 후 Wi-Fi ADB로 최신 debug APK를 설치했다. 앱 내부 benchmark 파일만 제거하고 재실행해 진행 팝업에서 완료 팝업으로 전환되는 흐름을 실기기에서 확인했다.
 - 완료 팝업 실기기 표시값: B16 min `2434.701ms`, max `5757.112ms`, avg `3804.821ms`; B32 min `1142.02ms`, max `2762.755ms`, avg `1762.031ms`; B64 min `2113.519ms`, max `4386.564ms`, avg `2989.97ms`.
 - 사용자가 폰 벤치마크 결과에서 B16이 B32/B64보다 오래 걸린 이유를 질문했다. 폰 저장 파일을 다시 읽어 같은 값을 확인했고, 현재 구현이 B16 -> B32 -> B64 순서로 warm-up 없이 측정하므로 첫 분석 비용, NN/cache warm-up, Android CPU governor ramp-up, IPC/process overhead가 B16 aggregate에 몰렸을 가능성이 가장 높다고 분석했다.
+- 사용자가 엔진 초기화 busy가 끝난 뒤 1~2초 뒤에 benchmark를 실행하고, `B16 -> B32 -> B64`를 순차적으로 5회 반복하면 B16 값만 오염되는 현상을 줄일 수 있지 않냐고 제안했다.
+- 이 방향을 반영해 앱 benchmark 시작 전에 1.5초 안정화 대기를 추가했다. 대기 중에는 저장 대국 prompt가 먼저 뜨지 않도록 `엔진 안정화 대기 중...` benchmark 팝업을 유지한다.
+- benchmark 측정 순서를 기존 `B16 5회 -> B32 5회 -> B64 5회`에서 `B16 -> B32 -> B64`를 1라운드로 총 5라운드 반복하는 방식으로 변경했다. 측정 방식 변경을 구분하기 위해 `measurementVersion=2`를 저장하고, 기존 파일은 자동 재측정되게 했다.
+- `make test`는 통과했다. 폰 설치를 시도했으나 Wi-Fi ADB가 `device offline` 상태가 되었고, ADB 서버 재시작 후에도 mDNS 서비스가 발견되지 않아 실기기 설치 검증은 다음 연결 시점으로 남겼다.

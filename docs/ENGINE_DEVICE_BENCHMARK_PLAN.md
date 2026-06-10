@@ -178,11 +178,13 @@ data class DeviceEngineBenchmarkProfile(
 2. 내부 파일 `engine_benchmark_profile.json`이 없거나 현재 benchmark spec과 다르면 1회 벤치마크를 실행한다.
 3. 벤치마크 중에는 닫을 수 없는 팝업으로 “사용자 개입 없이 진행됩니다. 느린 기기에서는 1~3분 정도 소요될 수 있습니다.”를 안내한다.
 4. 팝업에는 `B16 실행시간 확보 중...`, `B32 실행시간 확보 중...`, `B64 실행시간 확보 중...` 단계와 `샘플 n / 5`, 전체 진행률이 표시된다.
-5. B16/B32/B64를 각각 5회 호출한다.
-6. 각 visits별 `minMs`, `avgMs`, `maxMs`, `samples`를 저장한다.
-7. 완료 후에는 별도 완료 팝업으로 B16/B32/B64별 `min / max / avg` 측정 결과를 보여주고, 사용자가 `확인`을 누르면 닫는다.
-8. 벤치마크 중에는 엔진 busy 상태로 표시하고, 완료 후 현재 game state로 엔진을 다시 sync한다.
-9. `Copy Log`에는 `[EngineBenchmark]` 섹션으로 저장 파일 내용이 포함된다.
+5. 엔진 startup busy가 끝난 뒤 1.5초 안정화 대기를 둔다.
+6. B16/B32/B64를 각각 5회 호출하되, `B16 -> B32 -> B64`를 한 라운드로 보고 총 5라운드를 반복한다.
+7. 이 방식은 첫 측정 그룹에 warm-up/CPU ramp-up 비용이 몰리는 오염을 줄이기 위한 것이다.
+8. 각 visits별 `minMs`, `avgMs`, `maxMs`, `samples`를 저장한다.
+9. 완료 후에는 별도 완료 팝업으로 B16/B32/B64별 `min / max / avg` 측정 결과를 보여주고, 사용자가 `확인`을 누르면 닫는다.
+10. 벤치마크 중에는 엔진 busy 상태로 표시하고, 완료 후 현재 game state로 엔진을 다시 sync한다.
+11. `Copy Log`에는 `[EngineBenchmark]` 섹션으로 저장 파일 내용이 포함된다.
 
 측정 호출은 `ms 미지정` 또는 무제한 호출이 아니다. 현재 1차 구현은 `timeCapMs=5000`을 충분히 큰 상한으로 주고, B16/B32/B64 요청이 그 안에서 완료되는 실제 elapsed time을 저장한다. 따라서 일반적으로는 요청 visits를 채우는 데 걸린 시간을 측정하고, 5초 안에도 목표 visits를 못 채우는 기기라면 그 한계가 `maxMs` 또는 후속 diagnostics에 드러난다.
 
@@ -200,6 +202,7 @@ data class DeviceEngineBenchmarkProfile(
 {
   "schema": 1,
   "createdAtMillis": 1780000000000,
+  "measurementVersion": 2,
   "samplesPerVisit": 5,
   "timeCapMs": 5000,
   "metrics": [
