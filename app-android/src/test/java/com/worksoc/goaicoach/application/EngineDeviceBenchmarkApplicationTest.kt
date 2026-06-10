@@ -43,10 +43,10 @@ class EngineDeviceBenchmarkApplicationTest {
 
         assertEquals(
             """
-                measurementVersion=2
+                measurementVersion=3
                 samplesPerVisit=5
                 timeCapMs=5000
-                B16: minMs=1.0, avgMs=2.0, maxMs=3.0, samples=5
+                B16: minMs=1.0, avgMs=2.0, maxMs=3.0, samples=5, root=none, fill=OK=0, SHORT=0, UNKNOWN=0
             """.trimIndent(),
             profile.toSummaryText(),
         )
@@ -66,6 +66,55 @@ class EngineDeviceBenchmarkApplicationTest {
         assertEquals("샘플 2 / 5", progress.sampleText)
         assertEquals("전체 진행률 6 / 15", progress.progressText)
         assertEquals(0.4f, progress.fraction, 0.000001f)
+    }
+
+    @Test
+    fun parsesVisitDiagnosticsFromEngineSummary() {
+        val summary = "KataGo JSON analysis with 32 visits / 5000ms. " +
+            "Visit diagnostics: request=32, root=34, elapsedMs=123, timeCapMs=5000, fill=OK."
+
+        assertEquals(34, parseBenchmarkRootVisits(summary))
+        assertEquals(123L, parseBenchmarkEngineElapsedMs(summary))
+    }
+
+    @Test
+    fun sampleMetricsSummarizeRootVisitsAndFillCounts() {
+        val metric = listOf(
+            EngineBenchmarkSample(
+                sampleIndex = 1,
+                visits = 32,
+                elapsedMs = 10.0,
+                engineElapsedMs = 8L,
+                rootVisits = 33,
+                fillStatus = "OK",
+            ),
+            EngineBenchmarkSample(
+                sampleIndex = 2,
+                visits = 32,
+                elapsedMs = 20.0,
+                engineElapsedMs = 18L,
+                rootVisits = 20,
+                fillStatus = "SHORT",
+            ),
+            EngineBenchmarkSample(
+                sampleIndex = 3,
+                visits = 32,
+                elapsedMs = 30.0,
+                engineElapsedMs = null,
+                rootVisits = null,
+                fillStatus = "UNKNOWN",
+            ),
+        ).toBenchmarkMetricFromSamples(visits = 32)
+
+        assertEquals(10.0, metric.minMs, 0.000001)
+        assertEquals(20.0, metric.avgMs, 0.000001)
+        assertEquals(30.0, metric.maxMs, 0.000001)
+        assertEquals(20, metric.rootMinVisits)
+        assertEquals(33, metric.rootMaxVisits)
+        assertEquals(26.5, metric.rootAvgVisits!!, 0.000001)
+        assertEquals(1, metric.fillOk)
+        assertEquals(1, metric.fillShort)
+        assertEquals(1, metric.fillUnknown)
     }
 
     @Test

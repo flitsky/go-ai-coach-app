@@ -14,6 +14,22 @@ internal data class EngineBenchmarkMetric(
     val minMs: Double,
     val maxMs: Double,
     val avgMs: Double,
+    val rootMinVisits: Int? = null,
+    val rootMaxVisits: Int? = null,
+    val rootAvgVisits: Double? = null,
+    val fillOk: Int = 0,
+    val fillShort: Int = 0,
+    val fillUnknown: Int = 0,
+    val sampleDetails: List<EngineBenchmarkSample> = emptyList(),
+)
+
+internal data class EngineBenchmarkSample(
+    val sampleIndex: Int,
+    val visits: Int,
+    val elapsedMs: Double,
+    val engineElapsedMs: Long?,
+    val rootVisits: Int?,
+    val fillStatus: String,
 )
 
 internal data class EngineBenchmarkProfile(
@@ -30,7 +46,7 @@ internal data class EngineBenchmarkProfile(
             appendLine("timeCapMs=$timeCapMs")
             metrics.sortedBy { metric -> metric.visits }.forEach { metric ->
                 appendLine(
-                    "B${metric.visits}: minMs=${metric.minMs}, avgMs=${metric.avgMs}, maxMs=${metric.maxMs}, samples=${metric.samples}",
+                    "B${metric.visits}: minMs=${metric.minMs}, avgMs=${metric.avgMs}, maxMs=${metric.maxMs}, samples=${metric.samples}, root=${metric.rootSummaryText()}, fill=${metric.fillSummaryText()}",
                 )
             }
         }.trim()
@@ -43,6 +59,9 @@ internal data class EngineBenchmarkProgress(
     val completedCalls: Int,
     val totalCalls: Int,
     val stageOverride: String? = null,
+    val lastRootVisits: Int? = null,
+    val lastFillStatus: String? = null,
+    val lastElapsedMs: Double? = null,
 ) {
     val fraction: Float
         get() = if (totalCalls <= 0) {
@@ -59,6 +78,11 @@ internal data class EngineBenchmarkProgress(
 
     val progressText: String
         get() = "전체 진행률 $completedCalls / $totalCalls"
+
+    val lastResultText: String?
+        get() = lastFillStatus?.let { fill ->
+            "직전 결과 root=${lastRootVisits ?: "none"}, elapsed=${lastElapsedMs ?: "none"}ms, fill=$fill"
+        }
 }
 
 internal suspend fun EngineAdapter.runStartupEngineBenchmark(
@@ -75,7 +99,7 @@ internal suspend fun EngineAdapter.runStartupEngineBenchmark(
     val totalCalls = samplesPerVisit * visitsTargets.size
     var completedCalls = 0
 
-    val elapsedSamplesByVisits = visitsTargets.associateWith { mutableListOf<Double>() }
+    val benchmarkSamplesByVisits = visitsTargets.associateWith { mutableListOf<EngineBenchmarkSample>() }
 
     try {
         (0 until samplesPerVisit).forEach { sampleIndex ->
@@ -92,9 +116,18 @@ internal suspend fun EngineAdapter.runStartupEngineBenchmark(
                 )
                 syncToGameState(benchmarkStateForSample(sampleIndex, currentState.ruleset))
                 val startNanos = System.nanoTime()
-                analyze(benchmarkAnalysisLimit(visits = visits, timeCapMs = timeCapMs))
+                val result = analyze(benchmarkAnalysisLimit(visits = visits, timeCapMs = timeCapMs))
                 val elapsedMs = ((System.nanoTime() - startNanos) / 1_000_000.0).roundMillis()
-                elapsedSamplesByVisits.getValue(visits) += elapsedMs
+                val rootVisits = parseBenchmarkRootVisits(result.summary)
+                val sample = EngineBenchmarkSample(
+                    sampleIndex = currentSample,
+                    visits = visits,
+                    elapsedMs = elapsedMs,
+                    engineElapsedMs = parseBenchmarkEngineElapsedMs(result.summary),
+                    rootVisits = rootVisits,
+                    fillStatus = rootVisits.toBenchmarkFillStatus(visits),
+                )
+                benchmarkSamplesByVisits.getValue(visits) += sample
                 completedCalls += 1
                 onProgress(
                     EngineBenchmarkProgress(
@@ -103,6 +136,9 @@ internal suspend fun EngineAdapter.runStartupEngineBenchmark(
                         samplesPerVisit = samplesPerVisit,
                         completedCalls = completedCalls,
                         totalCalls = totalCalls,
+                        lastRootVisits = sample.rootVisits,
+                        lastFillStatus = sample.fillStatus,
+                        lastElapsedMs = sample.elapsedMs,
                     ),
                 )
             }
@@ -112,7 +148,7 @@ internal suspend fun EngineAdapter.runStartupEngineBenchmark(
     }
 
     val metrics = visitsTargets.map { visits ->
-        elapsedSamplesByVisits.getValue(visits).toBenchmarkMetric(visits)
+        benchmarkSamplesByVisits.getValue(visits).toBenchmarkMetricFromSamples(visits)
     }
 
     return EngineBenchmarkProfile(
@@ -134,6 +170,59 @@ internal fun List<Double>.toBenchmarkMetric(visits: Int): EngineBenchmarkMetric 
         avgMs = average().roundMillis(),
     )
 }
+
+internal fun List<EngineBenchmarkSample>.toBenchmarkMetricFromSamples(visits: Int): EngineBenchmarkMetric {
+    require(isNotEmpty()) { "benchmark samples must not be empty" }
+    val rootSamples = mapNotNull { sample -> sample.rootVisits }
+    return EngineBenchmarkMetric(
+        visits = visits,
+        samples = size,
+        minMs = minOf { sample -> sample.elapsedMs }.roundMillis(),
+        maxMs = maxOf { sample -> sample.elapsedMs }.roundMillis(),
+        avgMs = map { sample -> sample.elapsedMs }.average().roundMillis(),
+        rootMinVisits = rootSamples.minOrNull(),
+        rootMaxVisits = rootSamples.maxOrNull(),
+        rootAvgVisits = rootSamples.takeIf { it.isNotEmpty() }?.average()?.roundMillis(),
+        fillOk = count { sample -> sample.fillStatus == FillOk },
+        fillShort = count { sample -> sample.fillStatus == FillShort },
+        fillUnknown = count { sample -> sample.fillStatus == FillUnknown },
+        sampleDetails = sortedBy { sample -> sample.sampleIndex },
+    )
+}
+
+internal fun parseBenchmarkRootVisits(summary: String): Int? =
+    VisitDiagnosticsRegex
+        .find(summary)
+        ?.groups
+        ?.get(VisitDiagnosticsRootGroup)
+        ?.value
+        ?.takeUnless { value -> value == "none" }
+        ?.toIntOrNull()
+
+internal fun parseBenchmarkEngineElapsedMs(summary: String): Long? =
+    VisitDiagnosticsRegex
+        .find(summary)
+        ?.groups
+        ?.get(VisitDiagnosticsElapsedGroup)
+        ?.value
+        ?.toLongOrNull()
+
+private fun Int?.toBenchmarkFillStatus(requestVisits: Int): String =
+    when {
+        this == null -> FillUnknown
+        this < requestVisits -> FillShort
+        else -> FillOk
+    }
+
+internal fun EngineBenchmarkMetric.rootSummaryText(): String =
+    if (rootMinVisits == null || rootMaxVisits == null || rootAvgVisits == null) {
+        "none"
+    } else {
+        "min=$rootMinVisits, avg=$rootAvgVisits, max=$rootMaxVisits"
+    }
+
+internal fun EngineBenchmarkMetric.fillSummaryText(): String =
+    "OK=$fillOk, SHORT=$fillShort, UNKNOWN=$fillUnknown"
 
 private fun benchmarkAnalysisLimit(
     visits: Int,
@@ -172,7 +261,15 @@ private fun Double.roundMillis(): Double =
 internal val EngineBenchmarkDefaultVisits = listOf(16, 32, 64)
 internal const val EngineBenchmarkDefaultSamplesPerVisit = 5
 internal const val EngineBenchmarkDefaultTimeCapMs = 5_000L
-internal const val EngineBenchmarkMeasurementVersion = 2
+internal const val EngineBenchmarkMeasurementVersion = 3
+
+private const val FillOk = "OK"
+private const val FillShort = "SHORT"
+private const val FillUnknown = "UNKNOWN"
+private const val VisitDiagnosticsRootGroup = 2
+private const val VisitDiagnosticsElapsedGroup = 3
+private val VisitDiagnosticsRegex =
+    Regex("""Visit diagnostics: request=(\d+), root=(\d+|none), elapsedMs=(\d+), timeCapMs=([^,]+), fill=([A-Z]+)\.""")
 
 private val BenchmarkMoveLabels = listOf(
     "E5", "C5",

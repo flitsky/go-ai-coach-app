@@ -3,6 +3,7 @@ package com.worksoc.goaicoach.persistence
 import android.content.Context
 import com.worksoc.goaicoach.application.EngineBenchmarkMetric
 import com.worksoc.goaicoach.application.EngineBenchmarkProfile
+import com.worksoc.goaicoach.application.EngineBenchmarkSample
 import java.io.File
 import org.json.JSONArray
 import org.json.JSONObject
@@ -77,7 +78,29 @@ internal object EngineBenchmarkCodec {
                                 .put("samples", metric.samples)
                                 .put("minMs", metric.minMs)
                                 .put("maxMs", metric.maxMs)
-                                .put("avgMs", metric.avgMs),
+                                .put("avgMs", metric.avgMs)
+                                .put("rootMinVisits", metric.rootMinVisits)
+                                .put("rootMaxVisits", metric.rootMaxVisits)
+                                .put("rootAvgVisits", metric.rootAvgVisits)
+                                .put("fillOk", metric.fillOk)
+                                .put("fillShort", metric.fillShort)
+                                .put("fillUnknown", metric.fillUnknown)
+                                .put(
+                                    "sampleDetails",
+                                    JSONArray().also { samples ->
+                                        metric.sampleDetails.forEach { sample ->
+                                            samples.put(
+                                                JSONObject()
+                                                    .put("sampleIndex", sample.sampleIndex)
+                                                    .put("visits", sample.visits)
+                                                    .put("elapsedMs", sample.elapsedMs)
+                                                    .put("engineElapsedMs", sample.engineElapsedMs)
+                                                    .put("rootVisits", sample.rootVisits)
+                                                    .put("fillStatus", sample.fillStatus),
+                                            )
+                                        }
+                                    },
+                                ),
                         )
                     }
                 },
@@ -104,8 +127,36 @@ internal object EngineBenchmarkCodec {
                         minMs = metric.getDouble("minMs"),
                         maxMs = metric.getDouble("maxMs"),
                         avgMs = metric.getDouble("avgMs"),
+                        rootMinVisits = metric.optNullableInt("rootMinVisits"),
+                        rootMaxVisits = metric.optNullableInt("rootMaxVisits"),
+                        rootAvgVisits = metric.optNullableDouble("rootAvgVisits"),
+                        fillOk = metric.optInt("fillOk", 0),
+                        fillShort = metric.optInt("fillShort", 0),
+                        fillUnknown = metric.optInt("fillUnknown", 0),
+                        sampleDetails = metric.optJSONArray("sampleDetails")?.let { samplesJson ->
+                            List(samplesJson.length()) { sampleIndex ->
+                                val sample = samplesJson.getJSONObject(sampleIndex)
+                                EngineBenchmarkSample(
+                                    sampleIndex = sample.getInt("sampleIndex"),
+                                    visits = sample.getInt("visits"),
+                                    elapsedMs = sample.getDouble("elapsedMs"),
+                                    engineElapsedMs = sample.optNullableLong("engineElapsedMs"),
+                                    rootVisits = sample.optNullableInt("rootVisits"),
+                                    fillStatus = sample.optString("fillStatus", "UNKNOWN"),
+                                )
+                            }
+                        }.orEmpty(),
                     )
                 },
             )
         }.getOrNull()
 }
+
+private fun JSONObject.optNullableInt(name: String): Int? =
+    if (has(name) && !isNull(name)) optInt(name) else null
+
+private fun JSONObject.optNullableLong(name: String): Long? =
+    if (has(name) && !isNull(name)) optLong(name) else null
+
+private fun JSONObject.optNullableDouble(name: String): Double? =
+    if (has(name) && !isNull(name)) optDouble(name) else null

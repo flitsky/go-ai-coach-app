@@ -737,3 +737,7 @@
 - 사용자가 무선 디버깅을 다시 켜 앱 설치를 요청했다. mDNS에서 `192.168.0.62:33221`을 찾아 연결했고, 최신 debug APK 설치와 앱 실행을 완료했다.
 - 실기기에서 `B16 -> B32 -> B64` 라운드 로빈 진행이 확인됐다. 진행 팝업은 `B64 실행시간 확보 중...`, `샘플 1 / 5 · 전체 진행률 2 / 15` 상태를 보여 새 순서가 적용되었음을 확인했다.
 - 새 저장 파일은 `measurementVersion=2`로 생성됐다. 결과는 B16 min `685.887ms`, avg `2309.363ms`, max `5034.612ms`; B32 min `38.841ms`, avg `1811.875ms`, max `2944.291ms`; B64 min `2323.803ms`, avg `4111.532ms`, max `5272.528ms`였다.
+- 사용자가 benchmark 팝업과 디버그창에 root 탐색 수치를 표시하고, B32의 `38.841ms` 같은 cache성 값과 B16 max `5034ms`가 root/fill 기준으로 오염 데이터인지 판단할 수 있게 해달라고 요청했다.
+- benchmark 저장 스키마를 `measurementVersion=3`으로 올리고, sample별 `elapsedMs`, `engineElapsedMs`, `rootVisits`, `fillStatus`를 저장하도록 했다. metric aggregate에는 root min/avg/max와 fill OK/SHORT/UNKNOWN count를 추가했다.
+- 진행 팝업에는 직전 sample의 `root`, `elapsed`, `fill`을 표시하고, 완료 팝업에는 각 B등급별 elapsed min/max/avg와 root min/avg/max, fill count를 표시하도록 했다. Copy Log의 `[EngineBenchmark]`에는 sampleDetails JSON이 포함된다.
+- `make test`는 통과했고 debug APK 설치도 성공했다. 다만 실기기 화면이 패턴 잠금 상태라 앱 전면 실행과 measurementVersion=3 재측정 완료 확인은 사용자가 잠금 해제한 뒤 재시도해야 한다. 현재 폰 파일은 아직 measurementVersion=2다.

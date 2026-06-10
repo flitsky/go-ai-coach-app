@@ -181,8 +181,8 @@ data class DeviceEngineBenchmarkProfile(
 5. 엔진 startup busy가 끝난 뒤 1.5초 안정화 대기를 둔다.
 6. B16/B32/B64를 각각 5회 호출하되, `B16 -> B32 -> B64`를 한 라운드로 보고 총 5라운드를 반복한다.
 7. 이 방식은 첫 측정 그룹에 warm-up/CPU ramp-up 비용이 몰리는 오염을 줄이기 위한 것이다.
-8. 각 visits별 `minMs`, `avgMs`, `maxMs`, `samples`를 저장한다.
-9. 완료 후에는 별도 완료 팝업으로 B16/B32/B64별 `min / max / avg` 측정 결과를 보여주고, 사용자가 `확인`을 누르면 닫는다.
+8. 각 visits별 `minMs`, `avgMs`, `maxMs`, `root min/avg/max`, `fill OK/SHORT/UNKNOWN`, sample details를 저장한다.
+9. 완료 후에는 별도 완료 팝업으로 B16/B32/B64별 `min / max / avg`, root visits 요약, fill count를 보여주고, 사용자가 `확인`을 누르면 닫는다.
 10. 벤치마크 중에는 엔진 busy 상태로 표시하고, 완료 후 현재 game state로 엔진을 다시 sync한다.
 11. `Copy Log`에는 `[EngineBenchmark]` 섹션으로 저장 파일 내용이 포함된다.
 
@@ -202,13 +202,33 @@ data class DeviceEngineBenchmarkProfile(
 {
   "schema": 1,
   "createdAtMillis": 1780000000000,
-  "measurementVersion": 2,
+  "measurementVersion": 3,
   "samplesPerVisit": 5,
   "timeCapMs": 5000,
   "metrics": [
-    {"visits": 16, "samples": 5, "minMs": 160.1, "maxMs": 190.2, "avgMs": 171.3},
-    {"visits": 32, "samples": 5, "minMs": 280.1, "maxMs": 330.2, "avgMs": 295.3},
-    {"visits": 64, "samples": 5, "minMs": 520.1, "maxMs": 650.2, "avgMs": 570.3}
+    {
+      "visits": 16,
+      "samples": 5,
+      "minMs": 160.1,
+      "maxMs": 190.2,
+      "avgMs": 171.3,
+      "rootMinVisits": 16,
+      "rootMaxVisits": 18,
+      "rootAvgVisits": 16.8,
+      "fillOk": 5,
+      "fillShort": 0,
+      "fillUnknown": 0,
+      "sampleDetails": [
+        {
+          "sampleIndex": 1,
+          "visits": 16,
+          "elapsedMs": 170.2,
+          "engineElapsedMs": 165,
+          "rootVisits": 17,
+          "fillStatus": "OK"
+        }
+      ]
+    }
   ]
 }
 ```
@@ -255,9 +275,12 @@ B16 실행시간 확보 중...
 측정 샘플: B16/B32/B64 각각 5회
 측정 상한: 5000ms
 
-B16: min 685.887ms / max 5034.612ms / avg 2309.363ms
-B32: min 38.841ms / max 2944.291ms / avg 1811.875ms
-B64: min 2323.803ms / max 5272.528ms / avg 4111.532ms
+B16: min 160.1ms / max 190.2ms / avg 171.3ms
+  root min=16, avg=16.8, max=18 / fill OK=5, SHORT=0, UNKNOWN=0
+B32: min 280.1ms / max 330.2ms / avg 295.3ms
+  root min=32, avg=33.2, max=35 / fill OK=5, SHORT=0, UNKNOWN=0
+B64: min 520.1ms / max 650.2ms / avg 570.3ms
+  root min=64, avg=65.4, max=68 / fill OK=5, SHORT=0, UNKNOWN=0
 ```
 
 ## 현재 결론

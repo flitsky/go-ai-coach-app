@@ -20,6 +20,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.EngineBenchmarkProfile
 import com.worksoc.goaicoach.application.EngineBenchmarkProgress
+import com.worksoc.goaicoach.application.fillSummaryText
+import com.worksoc.goaicoach.application.rootSummaryText
 import com.worksoc.goaicoach.match.summary
 import com.worksoc.goaicoach.persistence.SavedGameSnapshot
 import com.worksoc.goaicoach.presentation.GameScreenState
@@ -128,6 +130,9 @@ private fun EngineBenchmarkProgressDialog(progress: EngineBenchmarkProgress) {
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(progress.stageText)
                 Text("${progress.sampleText} · ${progress.progressText}")
+                progress.lastResultText?.let { text ->
+                    Text(text)
+                }
                 Spacer(modifier = Modifier.height(12.dp))
                 LinearProgressIndicator(
                     progress = { progress.fraction },
@@ -148,6 +153,7 @@ private fun EngineBenchmarkProfile.toResultDialogText(): String =
             appendLine(
                 "B${metric.visits}: min ${metric.minMs}ms / max ${metric.maxMs}ms / avg ${metric.avgMs}ms",
             )
+            appendLine("  root ${metric.rootSummaryText()} / fill ${metric.fillSummaryText()}")
         }
     }.trim()
 
