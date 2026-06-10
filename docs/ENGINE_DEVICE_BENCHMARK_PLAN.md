@@ -71,6 +71,8 @@ Visit diagnostics: request=32, root=20, elapsedMs=501, timeCapMs=500, fill=SHORT
 
 ## 벤치마크 절차
 
+벤치마크는 사용자 설정을 평가하지 않는다. 사용자 Player Setup, 현재 계가 규칙, `Top Moves` 토글, 현재 후보 표시 상태는 측정에 유입되면 안 된다. 측정 중에는 앱이 정한 고정 9x9 Territory 규칙과 고정 B16/B32/B64 경량 `AnalysisLimit`만 사용한다.
+
 ### 1. Warm-up
 
 - 엔진 시작 직후 1회 warm-up query를 실행한다.
@@ -181,14 +183,14 @@ data class DeviceEngineBenchmarkProfile(
 5. 엔진 startup busy가 끝난 뒤 1.5초 안정화 대기를 둔다.
 6. B16/B32/B64를 각각 5회 호출하되, `B16 -> B32 -> B64`를 한 라운드로 보고 총 5라운드를 반복한다.
 7. 이 방식은 첫 측정 그룹에 warm-up/CPU ramp-up 비용이 몰리는 오염을 줄이기 위한 것이다.
-8. 각 visits별 `minMs`, `avgMs`, `maxMs`, `root min/avg/max`, `fill OK/SHORT/UNKNOWN`, sample details를 저장한다.
+8. 각 visits별 `minMs`, `avgMs`, `maxMs`, root min/avg/max, fill OK/SHORT/UNKNOWN, sample details를 저장한다.
 9. 완료 후에는 별도 완료 팝업으로 B16/B32/B64별 `min / max / avg`, root visits 요약, fill count를 보여주고, 사용자가 `확인`을 누르면 닫는다.
-10. 벤치마크 중에는 엔진 busy 상태로 표시하고, 완료 후 현재 game state로 엔진을 다시 sync한다.
+10. 벤치마크 중에는 엔진 busy 상태로 표시하고, 완료 후 벤치마크 시작 전 game state로 엔진을 다시 sync한다.
 11. `Copy Log`에는 `[EngineBenchmark]` 섹션으로 저장 파일 내용이 포함된다.
 
 측정 호출은 `ms 미지정` 또는 무제한 호출이 아니다. 현재 1차 구현은 `timeCapMs=5000`을 충분히 큰 상한으로 주고, B16/B32/B64 요청이 그 안에서 완료되는 실제 elapsed time을 저장한다. 따라서 일반적으로는 요청 visits를 채우는 데 걸린 시간을 측정하고, 5초 안에도 목표 visits를 못 채우는 기기라면 그 한계가 `maxMs` 또는 후속 diagnostics에 드러난다.
 
-복원할 저장 대국이 있어도 benchmark는 실행된다. benchmark는 완료 후 현재 game state로 엔진을 다시 sync하므로, 이후 사용자가 저장 대국을 복원해도 engine state가 다시 해당 대국으로 맞춰진다.
+복원할 저장 대국이 있어도 benchmark는 실행된다. benchmark는 사용자 설정과 독립된 고정 benchmark state에서만 측정하고, 완료 후 benchmark 시작 전 game state로 엔진을 다시 sync한다. 이후 사용자가 저장 대국을 복원하면 engine state는 다시 해당 대국으로 맞춰진다.
 
 저장 위치:
 
@@ -202,9 +204,12 @@ data class DeviceEngineBenchmarkProfile(
 {
   "schema": 1,
   "createdAtMillis": 1780000000000,
-  "measurementVersion": 3,
+  "measurementVersion": 5,
   "samplesPerVisit": 5,
   "timeCapMs": 5000,
+  "benchmarkPositionName": "b16-best-3-variants",
+  "benchmarkRuleset": "Japanese",
+  "benchmarkPositionMoves": ["Black E5", "White C4", "Black E3"],
   "metrics": [
     {
       "visits": 16,

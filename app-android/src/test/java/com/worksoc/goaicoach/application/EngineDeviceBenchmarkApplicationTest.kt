@@ -45,10 +45,11 @@ class EngineDeviceBenchmarkApplicationTest {
 
         assertEquals(
             """
-                measurementVersion=4
+                measurementVersion=5
                 samplesPerVisit=5
                 timeCapMs=5000
                 benchmarkPosition=b16-best-3-variants
+                benchmarkRuleset=Territory
                 benchmarkPositionMoves=none
                 B16: minMs=1.0, avgMs=2.0, maxMs=3.0, samples=5, root=none, fill=OK=0, SHORT=0, UNKNOWN=0
             """.trimIndent(),
@@ -126,7 +127,7 @@ class EngineDeviceBenchmarkApplicationTest {
         val engine = RecordingBenchmarkEngineAdapter()
 
         val profile = engine.runStartupEngineBenchmark(
-            currentState = GameState.empty(ruleset = Ruleset.Japanese),
+            restoreState = GameState.empty(ruleset = Ruleset.Japanese),
             nowMillis = 123L,
             samplesPerVisit = 2,
             timeCapMs = 5_000L,
@@ -143,11 +144,34 @@ class EngineDeviceBenchmarkApplicationTest {
             profile.metrics.first { metric -> metric.visits == 16 }.sampleDetails[1].positionMoves,
         )
     }
+
+    @Test
+    fun startupBenchmarkUsesFixedRulesetAndRestoresUserStateAfterMeasurement() = runBlocking {
+        val engine = RecordingBenchmarkEngineAdapter()
+        val restoreState = GameState.empty(ruleset = Ruleset.Chinese)
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+
+        val profile = engine.runStartupEngineBenchmark(
+            restoreState = restoreState,
+            nowMillis = 123L,
+            samplesPerVisit = 1,
+            timeCapMs = 5_000L,
+            visitsTargets = listOf(16),
+        )
+
+        assertEquals(Ruleset.Japanese, profile.benchmarkRuleset)
+        assertEquals(Ruleset.Chinese, engine.newGameRulesets.last())
+        assertEquals(restoreState.moves, engine.state.moves)
+        assertEquals(Ruleset.Chinese, engine.state.ruleset)
+        assertEquals(true, engine.newGameRulesets.dropLast(1).all { ruleset -> ruleset == Ruleset.Japanese })
+    }
 }
 
 private class RecordingBenchmarkEngineAdapter : EngineAdapter {
     val analyzeVisits = mutableListOf<Int>()
-    private var state = GameState.empty()
+    val newGameRulesets = mutableListOf<Ruleset>()
+    var state = GameState.empty()
+        private set
 
     override suspend fun initialize(profile: EngineProfile): EngineStatus =
         EngineStatus.ready("initialized")
@@ -159,6 +183,7 @@ private class RecordingBenchmarkEngineAdapter : EngineAdapter {
         boardSize: BoardSize,
         ruleset: Ruleset,
     ): EngineStatus {
+        newGameRulesets += ruleset
         state = GameState.empty(boardSize = boardSize, ruleset = ruleset)
         return EngineStatus.ready("new game")
     }

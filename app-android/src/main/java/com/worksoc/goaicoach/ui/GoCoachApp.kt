@@ -297,7 +297,7 @@ private fun GoCoachScreen(
             withContext(Dispatchers.IO) {
                 engineAdapter
                     .runStartupEngineBenchmark(
-                        currentState = gameState,
+                        restoreState = gameState,
                         nowMillis = System.currentTimeMillis(),
                         onProgress = { progress ->
                             withContext(Dispatchers.Main) {
@@ -677,6 +677,21 @@ private fun GoCoachScreen(
     }
 
     fun showTopMovesForCurrentState() {
+        if (
+            !shouldRequestTopMoveAnalysis(
+                isGameEnded = isGameEnded,
+                isEngineReady = isEngineReady,
+                isEngineBusy = isEngineBusy,
+                shouldShowResumePrompt = shouldShowResumePrompt,
+                playerSetup = playerSetup,
+                targetState = gameState,
+            )
+        ) {
+            topMovesEnabled = false
+            clearTopMoveSpots()
+            engineMessage = "Top Moves is available only on human turns."
+            return
+        }
         topMovesEnabled = true
         when (
             val plan = planShowTopMoves(

@@ -3,7 +3,9 @@ package com.worksoc.goaicoach.persistence
 import android.content.Context
 import com.worksoc.goaicoach.application.EngineBenchmarkMetric
 import com.worksoc.goaicoach.application.EngineBenchmarkProfile
+import com.worksoc.goaicoach.application.EngineBenchmarkRuleset
 import com.worksoc.goaicoach.application.EngineBenchmarkSample
+import com.worksoc.goaicoach.shared.Ruleset
 import java.io.File
 import org.json.JSONArray
 import org.json.JSONObject
@@ -24,7 +26,8 @@ internal class EngineBenchmarkStore(context: Context) {
         if (
             profile.samplesPerVisit != samplesPerVisit ||
             profile.timeCapMs != timeCapMs ||
-            profile.measurementVersion != measurementVersion
+            profile.measurementVersion != measurementVersion ||
+            profile.benchmarkRuleset != EngineBenchmarkRuleset
         ) {
             return false
         }
@@ -69,6 +72,7 @@ internal object EngineBenchmarkCodec {
             .put("samplesPerVisit", profile.samplesPerVisit)
             .put("timeCapMs", profile.timeCapMs)
             .put("benchmarkPositionName", profile.benchmarkPositionName)
+            .put("benchmarkRuleset", profile.benchmarkRuleset.name)
             .put(
                 "benchmarkPositionMoves",
                 JSONArray().also { moves ->
@@ -140,6 +144,7 @@ internal object EngineBenchmarkCodec {
                 benchmarkPositionMoves = json.optJSONArray("benchmarkPositionMoves")?.let { movesJson ->
                     List(movesJson.length()) { index -> movesJson.getString(index) }
                 }.orEmpty(),
+                benchmarkRuleset = enumOrDefault(json.optString("benchmarkRuleset"), Ruleset.Japanese),
                 metrics = List(metricsJson.length()) { index ->
                     val metric = metricsJson.getJSONObject(index)
                     EngineBenchmarkMetric(

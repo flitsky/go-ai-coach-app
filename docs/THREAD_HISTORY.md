@@ -761,3 +761,8 @@
 - `KataGoProcessEngineAdapter.analyze()`에서 경량 요청은 JSON analysis process를 건너뛰고 GTP `kata-search_analyze` fast path를 사용하도록 변경했다. JSON `policy`/refine/sweep은 `includePolicy=true` 또는 `refinePolicyMoves>0`인 broad study analysis에서만 사용한다.
 - 첫 설치/초기 상태의 `Top Moves` 기본값을 꺼짐으로 변경했다. 기존 저장 설정이 켜짐이어도 자동 분석은 실행되지 않고, 사용자가 버튼을 눌렀을 때만 현재 국면 best-1을 분석한다.
 - `docs/USER_OPTION_MANUAL.md`, `docs/AI_ENGINE_SETTINGS.md`, `docs/MOVE_ANALYSIS_DATA_MODEL.md`, `docs/KATRAIN_UX_BACKLOG.md`를 갱신해 모바일 기본은 빠른 대국 경로, KaTrain식 전체 후보/policy/refine/deep 분석은 향후 수동 study mode 후보라는 의사결정을 기록했다.
+- 사용자가 benchmark에는 사용자 설정값이 유입되면 안 되고, `Top Moves`는 사용자가 켜더라도 사용자 턴에만 호출되어야 한다고 정리했다.
+- benchmark 실행 경로를 고정 9x9 Territory ruleset으로 분리했다. 사용자 Player Setup, 현재 계가 규칙, Top Moves 토글과 무관하게 B16/B32/B64 경량 요청만 측정하며, 완료 후 benchmark 시작 전 game state로 엔진을 다시 sync한다.
+- benchmark 저장 schema에 `benchmarkRuleset`을 추가하고 `measurementVersion=5`로 올렸다. 기존 v4 이하 저장값은 자동 재측정 대상이다.
+- `Top Moves` 버튼 진입점에도 human-turn guard를 추가했다. AI 차례에는 `Top Moves is available only on human turns.` 메시지만 남기고 엔진 호출을 보내지 않는다.
+- `EngineDeviceBenchmarkApplicationTest`에 사용자 ruleset이 Chinese여도 benchmark는 Japanese/Territory로 측정하고 마지막에는 사용자 state로 복원되는 회귀 테스트를 추가했다.

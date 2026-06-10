@@ -53,6 +53,7 @@ AI 응수는 대국 속도를 위해 항상 경량 분석 요청을 사용한다
 - 첫 설치 기본값은 꺼짐이다.
 - 사람 차례가 돌아와도 자동 pre-move analysis cache를 만들지 않는다.
 - 사용자가 `Top Moves`를 누른 경우에만 현재 국면을 분석한다.
+- 단, 현재 차례가 사람인 경우에만 엔진을 호출한다. AI 차례에서는 Top Moves 요청을 보내지 않는다.
 - 현재 모바일 기본 요청은 best-1이다.
   - `candidateCount=1`
   - 현재 Player Setup의 visits/time을 그대로 사용
@@ -73,6 +74,12 @@ KaTrain식 broad analysis는 향후 학습/복기 모드로 분리한다.
 - scored 후보 부족 시 Full Analysis fallback
 
 위 항목들은 학습 가치는 크지만 폰 실시간 대국에서는 호출 오버헤드가 커서 현재 기본 경로에서는 사용하지 않는다.
+
+엔진 디바이스 벤치마크는 사용자 설정과 분리한다.
+
+- Player Setup, Top Moves 토글, 현재 대국 계가 규칙을 참조하지 않는다.
+- 고정 9x9 Territory 규칙과 고정 B16/B32/B64 경량 요청만 사용한다.
+- 측정이 끝나면 benchmark 시작 전 game state로 엔진을 다시 sync한다.
 
 ## KataGo process adapter 매핑
 

@@ -29,6 +29,7 @@
 - `Top Moves`: 사용자가 누른 시점의 현재 차례 최적 후보를 빠르게 분석하고 보드 위에 표시한다.
   - 모바일 기본 동작은 자동 백그라운드 분석을 수행하지 않는다. 사람 차례가 와도 엔진을 먼저 호출하지 않고, 사용자가 `Top Moves`를 누를 때만 분석한다.
   - 수동 분석도 현재는 best-1 경량 요청이다. 현재 Player Setup의 visits/time을 그대로 쓰고, 후보수는 1개, `policy=false`, `refine=0`, deep fallback 없음으로 호출한다.
+  - `Top Moves`는 현재 차례가 사람인 경우에만 엔진을 호출한다. AI 차례에는 버튼을 눌러도 분석 요청을 보내지 않고 안내 메시지만 표시한다.
   - 경량 요청은 KataGo JSON analysis process를 거치지 않고 기존 대국 GTP process의 `kata-search_analyze` 빠른 경로를 우선 사용한다.
   - 버튼은 표시 토글처럼 동작한다. 켜면 현재 국면의 best-1 분석을 요청하거나 cache가 있으면 즉시 표시하고, 끄면 표시를 지우며 자동 분석도 계속 멈춘 상태로 둔다.
   - 후보 순위, 점수 손실, 예상 리드, visits 같은 상세 텍스트는 화면 하단의 약 10줄 스크롤 박스와 `Copy Log`로 확인한다.
@@ -114,6 +115,7 @@
 - `Benchmark`: 현재 기기에 저장된 엔진 벤치마크 결과를 다시 표시한다.
   - 결과 팝업은 B16/B32/B64별 elapsed `min / max / avg`, root visits `min / avg / max`, fill `OK / SHORT / UNKNOWN` 개수를 보여준다.
   - 측정 포지션은 앱이 B16 최적수로 3수 prefix를 만든 뒤 sample별 deterministic 변형을 붙인 `b16-best-3-variants`다. 같은 포지션 반복으로 인한 KataGo 내부 재사용 영향을 줄이기 위한 방식이다.
+  - 벤치마크는 사용자 Player Setup, Top Moves 토글, 현재 계가 규칙을 사용하지 않는다. 항상 앱이 정한 고정 Territory 규칙과 고정 B16/B32/B64 경량 요청으로 엔진 호출 성능만 측정한다.
   - `다시 체크해보기`를 누르면 현재 기기에서 benchmark를 다시 실행한다.
   - 엔진이 busy 상태이면 재측정은 시작하지 않고, 현재 엔진 작업이 끝난 뒤 다시 시도해야 한다.
   - 저장된 결과가 아직 없으면 benchmark를 바로 실행한다.

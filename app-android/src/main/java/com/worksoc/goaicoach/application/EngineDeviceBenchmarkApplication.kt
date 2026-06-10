@@ -41,6 +41,7 @@ internal data class EngineBenchmarkProfile(
     val measurementVersion: Int = EngineBenchmarkMeasurementVersion,
     val benchmarkPositionName: String = EngineBenchmarkPositionName,
     val benchmarkPositionMoves: List<String> = emptyList(),
+    val benchmarkRuleset: Ruleset = EngineBenchmarkRuleset,
     val metrics: List<EngineBenchmarkMetric>,
 ) {
     fun toSummaryText(): String =
@@ -49,6 +50,7 @@ internal data class EngineBenchmarkProfile(
             appendLine("samplesPerVisit=$samplesPerVisit")
             appendLine("timeCapMs=$timeCapMs")
             appendLine("benchmarkPosition=$benchmarkPositionName")
+            appendLine("benchmarkRuleset=${benchmarkRuleset.scoringLabel}")
             appendLine("benchmarkPositionMoves=${benchmarkPositionMoves.ifEmpty { listOf("none") }.joinToString(", ")}")
             metrics.sortedBy { metric -> metric.visits }.forEach { metric ->
                 appendLine(
@@ -102,11 +104,12 @@ private data class EngineBenchmarkPosition(
 )
 
 internal suspend fun EngineAdapter.runStartupEngineBenchmark(
-    currentState: GameState,
+    restoreState: GameState,
     nowMillis: Long,
     samplesPerVisit: Int = EngineBenchmarkDefaultSamplesPerVisit,
     timeCapMs: Long = EngineBenchmarkDefaultTimeCapMs,
     visitsTargets: List<Int> = EngineBenchmarkDefaultVisits,
+    benchmarkRuleset: Ruleset = EngineBenchmarkRuleset,
     onProgress: suspend (EngineBenchmarkProgress) -> Unit = {},
 ): EngineBenchmarkProfile {
     require(samplesPerVisit > 0) { "benchmark samplesPerVisit must be positive" }
@@ -117,7 +120,7 @@ internal suspend fun EngineAdapter.runStartupEngineBenchmark(
 
     val benchmarkSamplesByVisits = visitsTargets.associateWith { mutableListOf<EngineBenchmarkSample>() }
     var benchmarkPosition = EngineBenchmarkPosition(
-        state = GameState.empty(ruleset = currentState.ruleset),
+        state = GameState.empty(ruleset = benchmarkRuleset),
         name = EngineBenchmarkPositionName,
         moveLabels = emptyList(),
     )
@@ -133,7 +136,7 @@ internal suspend fun EngineAdapter.runStartupEngineBenchmark(
                 stageOverride = "벤치마크 포지션 생성 중...",
             ),
         )
-        benchmarkPosition = prepareBenchmarkPosition(currentState.ruleset, timeCapMs)
+        benchmarkPosition = prepareBenchmarkPosition(benchmarkRuleset, timeCapMs)
         (0 until samplesPerVisit).forEach { sampleIndex ->
             visitsTargets.forEach { visits ->
                 val currentSample = sampleIndex + 1
@@ -178,7 +181,7 @@ internal suspend fun EngineAdapter.runStartupEngineBenchmark(
             }
         }
     } finally {
-        syncToGameState(currentState)
+        syncToGameState(restoreState)
     }
 
     val metrics = visitsTargets.map { visits ->
@@ -192,6 +195,7 @@ internal suspend fun EngineAdapter.runStartupEngineBenchmark(
         measurementVersion = EngineBenchmarkMeasurementVersion,
         benchmarkPositionName = benchmarkPosition.name,
         benchmarkPositionMoves = benchmarkPosition.moveLabels,
+        benchmarkRuleset = benchmarkRuleset,
         metrics = metrics,
     )
 }
@@ -335,9 +339,10 @@ private fun Double.roundMillis(): Double =
     kotlin.math.round(this * 1_000.0) / 1_000.0
 
 internal val EngineBenchmarkDefaultVisits = listOf(16, 32, 64)
+internal val EngineBenchmarkRuleset = Ruleset.Japanese
 internal const val EngineBenchmarkDefaultSamplesPerVisit = 5
 internal const val EngineBenchmarkDefaultTimeCapMs = 5_000L
-internal const val EngineBenchmarkMeasurementVersion = 4
+internal const val EngineBenchmarkMeasurementVersion = 5
 internal const val EngineBenchmarkPositionName = "b16-best-3-variants"
 private const val EngineBenchmarkPositionMoveCount = 3
 private const val EngineBenchmarkPositionSeedVisits = 16
