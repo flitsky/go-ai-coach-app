@@ -67,6 +67,29 @@ EngineAdapter.analyze(
 
 KataGo process adapter에서는 이 조건일 때 JSON analysis process를 피하고 GTP `kata-search_analyze` 빠른 경로를 우선 사용한다.
 
+## `candidateCount` 의미
+
+`candidateCount`는 “엔진이 반드시 그 개수만큼 깊게 평가해야 한다”는 강제값이 아니다. 현재 fast path에서는 다음처럼 동작한다.
+
+- `maxVisits`와 `maxTime`이 실제 탐색량과 응답시간의 주된 상한이다.
+- `candidateCount`는 앱이 엔진 응답 후보를 최대 몇 개까지 파싱/보관/표시/레벨링에 사용할지 정하는 상한이다.
+- GTP `kata-search_analyze` 명령에는 후보 개수를 직접 넘기지 않는다.
+- 따라서 `candidateCount=10`을 넣어도 scored 후보가 1개, 3개, 10개 등으로 달라질 수 있다.
+- scored 후보가 부족하면 앱은 policy/legal fallback 후보를 채울 수 있지만, `pointLoss`가 없는 fallback 후보는 레벨링/색상 평가에 쓰지 않는다.
+
+현재 fast path에서는 `minVisitsPerCandidate=0`, `minTimeMillis=null`을 사용하므로 `candidateCount=10` 자체가 방문수나 시간 상한을 자동으로 늘리지는 않는다. 다만 더 많은 후보를 의미 있게 받으려면 같은 visits/time 안에서 엔진이 그만큼 후보를 반환해야 하므로, 느린 기기나 낮은 visits에서는 후보 수가 적을 수 있다.
+
+운영 정책은 다음과 같이 둔다.
+
+| 요청 후보 수 | 실제 scored 후보 수 | 운영 방식 |
+| ---: | ---: | --- |
+| 10 | 1 | 최상위 후보만 사용. 레벨링 불가 |
+| 10 | 2 | 최상위/하위 후보 정도로만 약한 레벨링 |
+| 10 | 3 | 최적수 / 중간수 / 최하수 구간 레벨링 가능 |
+| 10 | 4 이상 | percentile 기반 레벨링 가능 |
+
+즉 앱 정책은 “항상 10개가 온다”가 아니라 “최대 10개를 요청하고, 실제 scored 후보 수에 맞춰 안전하게 축소 운영한다”로 둔다.
+
 ## 호출 목적별 예산
 
 | 목적 | 현재 예산 | 사용처 |

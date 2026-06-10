@@ -775,3 +775,5 @@
 - `USER_OPTION_MANUAL.md`, `AI_ENGINE_SETTINGS.md`, `MOVE_ANALYSIS_DATA_MODEL.md`, `KATRAIN_UX_BACKLOG.md`를 최신 정책으로 갱신했다.
 - 사용자가 엔진 API 문서 위치와 호출 방식의 비용/효과 순서를 확인하고 싶다고 요청했다. `ENGINE_API_CALL_POLICY.md`에 먼저 볼 문서, 엔진 호출 방식 우선순위, AI/사람 턴 일관성 정책을 보강했다.
 - 정책상 AI와 사람 차례 모두 fast `TurnAnalysis`로 best move snapshot을 확보한다. AI는 order 후보를 레벨링에 쓰고, 사람은 표시 옵션이 켜진 경우 후보를 보드에 표시한다. 후보 밖 착점은 추가 엔진 호출 없이 회색 `unknown`으로 처리한다.
+- 사용자가 `candidateCount=10`을 넣으면 응답시간이 지연되는지, 실제 후보수에 따라 레벨링하는 전략이 가능한지 질문했다. 코드 검토 결과 fast path에서 `candidateCount`는 엔진 탐색량 강제값이 아니라 앱의 후보 파싱/활용 상한이며, `maxVisits/maxTime`이 주된 시간 상한이다.
+- `ENGINE_API_CALL_POLICY.md`에 `candidateCount` 의미를 추가했다. 정책은 “최대 10개를 요청하고, 실제 scored 후보가 1개면 최상위만, 3개면 최적/중간/하위, 4개 이상이면 percentile 레벨링으로 축소 운영”하는 방향이다.
