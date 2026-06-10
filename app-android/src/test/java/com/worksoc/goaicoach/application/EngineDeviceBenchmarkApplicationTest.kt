@@ -19,20 +19,36 @@ class EngineDeviceBenchmarkApplicationTest {
     fun benchmarkProfileSummaryUsesCompactPerVisitLines() {
         val profile = EngineBenchmarkProfile(
             createdAtMillis = 123L,
-            samplesPerVisit = 10,
+            samplesPerVisit = 5,
             timeCapMs = 5_000L,
             metrics = listOf(
-                EngineBenchmarkMetric(visits = 16, samples = 10, minMs = 1.0, avgMs = 2.0, maxMs = 3.0),
+                EngineBenchmarkMetric(visits = 16, samples = 5, minMs = 1.0, avgMs = 2.0, maxMs = 3.0),
             ),
         )
 
         assertEquals(
             """
-                samplesPerVisit=10
+                samplesPerVisit=5
                 timeCapMs=5000
-                B16: minMs=1.0, avgMs=2.0, maxMs=3.0, samples=10
+                B16: minMs=1.0, avgMs=2.0, maxMs=3.0, samples=5
             """.trimIndent(),
             profile.toSummaryText(),
         )
+    }
+
+    @Test
+    fun benchmarkProgressShowsKoreanStageAndFraction() {
+        val progress = EngineBenchmarkProgress(
+            currentVisits = 32,
+            currentSample = 2,
+            samplesPerVisit = 5,
+            completedCalls = 6,
+            totalCalls = 15,
+        )
+
+        assertEquals("B32 실행시간 확보 중...", progress.stageText)
+        assertEquals("샘플 2 / 5", progress.sampleText)
+        assertEquals("전체 진행률 6 / 15", progress.progressText)
+        assertEquals(0.4f, progress.fraction, 0.000001f)
     }
 }

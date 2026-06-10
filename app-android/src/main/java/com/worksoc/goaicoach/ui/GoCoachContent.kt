@@ -3,17 +3,22 @@ package com.worksoc.goaicoach.ui
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.worksoc.goaicoach.application.EngineBenchmarkProgress
 import com.worksoc.goaicoach.match.summary
 import com.worksoc.goaicoach.persistence.SavedGameSnapshot
 import com.worksoc.goaicoach.presentation.GameScreenState
@@ -24,17 +29,26 @@ import com.worksoc.goaicoach.shared.describe
 @Composable
 internal fun GoCoachContent(
     screenState: GameScreenState,
+    benchmarkProgress: EngineBenchmarkProgress?,
     isDisplayMenuExpanded: Boolean,
     onDisplayMenuExpandedChange: (Boolean) -> Unit,
     onScoreGraphExpandedChange: (Boolean) -> Unit,
     onEvent: (GameUiEvent) -> Unit,
 ) {
-    val savedSessionToPrompt = screenState.resumePrompt?.snapshot
+    val savedSessionToPrompt = if (benchmarkProgress == null) {
+        screenState.resumePrompt?.snapshot
+    } else {
+        null
+    }
     val onMenuEvent: (GameUiEvent) -> Unit = { event ->
         onEvent(event)
         if (shouldCollapseMenuAfterEvent(event)) {
             onDisplayMenuExpandedChange(false)
         }
+    }
+
+    if (benchmarkProgress != null) {
+        EngineBenchmarkProgressDialog(progress = benchmarkProgress)
     }
 
     if (savedSessionToPrompt != null) {
@@ -74,6 +88,28 @@ internal fun GoCoachContent(
             onEvent = onEvent,
         )
     }
+}
+
+@Composable
+private fun EngineBenchmarkProgressDialog(progress: EngineBenchmarkProgress) {
+    AlertDialog(
+        onDismissRequest = {},
+        title = { Text("엔진 벤치마크 진행 중") },
+        text = {
+            Column {
+                Text("사용자 개입 없이 진행됩니다. 느린 기기에서는 1~3분 정도 소요될 수 있습니다.")
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(progress.stageText)
+                Text("${progress.sampleText} · ${progress.progressText}")
+                Spacer(modifier = Modifier.height(12.dp))
+                LinearProgressIndicator(
+                    progress = { progress.fraction },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        },
+        confirmButton = {},
+    )
 }
 
 @Composable

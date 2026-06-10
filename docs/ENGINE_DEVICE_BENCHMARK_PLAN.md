@@ -175,11 +175,15 @@ data class DeviceEngineBenchmarkProfile(
 동작:
 
 1. 앱 시작 후 엔진 startup이 완료된다.
-2. 내부 파일 `engine_benchmark_profile.json`이 없으면 1회 벤치마크를 실행한다.
-3. B16/B32/B64를 각각 10회 호출한다.
-4. 각 visits별 `minMs`, `avgMs`, `maxMs`, `samples`를 저장한다.
-5. 벤치마크 중에는 엔진 busy 상태로 표시하고, 완료 후 현재 game state로 엔진을 다시 sync한다.
-6. `Copy Log`에는 `[EngineBenchmark]` 섹션으로 저장 파일 내용이 포함된다.
+2. 내부 파일 `engine_benchmark_profile.json`이 없거나 현재 benchmark spec과 다르면 1회 벤치마크를 실행한다.
+3. 벤치마크 중에는 닫을 수 없는 팝업으로 “사용자 개입 없이 진행됩니다. 느린 기기에서는 1~3분 정도 소요될 수 있습니다.”를 안내한다.
+4. 팝업에는 `B16 실행시간 확보 중...`, `B32 실행시간 확보 중...`, `B64 실행시간 확보 중...` 단계와 `샘플 n / 5`, 전체 진행률이 표시된다.
+5. B16/B32/B64를 각각 5회 호출한다.
+6. 각 visits별 `minMs`, `avgMs`, `maxMs`, `samples`를 저장한다.
+7. 벤치마크 중에는 엔진 busy 상태로 표시하고, 완료 후 현재 game state로 엔진을 다시 sync한다.
+8. `Copy Log`에는 `[EngineBenchmark]` 섹션으로 저장 파일 내용이 포함된다.
+
+측정 호출은 `ms 미지정` 또는 무제한 호출이 아니다. 현재 1차 구현은 `timeCapMs=5000`을 충분히 큰 상한으로 주고, B16/B32/B64 요청이 그 안에서 완료되는 실제 elapsed time을 저장한다. 따라서 일반적으로는 요청 visits를 채우는 데 걸린 시간을 측정하고, 5초 안에도 목표 visits를 못 채우는 기기라면 그 한계가 `maxMs` 또는 후속 diagnostics에 드러난다.
 
 복원할 저장 대국이 있어도 benchmark는 실행된다. benchmark는 완료 후 현재 game state로 엔진을 다시 sync하므로, 이후 사용자가 저장 대국을 복원해도 engine state가 다시 해당 대국으로 맞춰진다.
 
@@ -195,12 +199,12 @@ data class DeviceEngineBenchmarkProfile(
 {
   "schema": 1,
   "createdAtMillis": 1780000000000,
-  "samplesPerVisit": 10,
+  "samplesPerVisit": 5,
   "timeCapMs": 5000,
   "metrics": [
-    {"visits": 16, "samples": 10, "minMs": 160.1, "maxMs": 190.2, "avgMs": 171.3},
-    {"visits": 32, "samples": 10, "minMs": 280.1, "maxMs": 330.2, "avgMs": 295.3},
-    {"visits": 64, "samples": 10, "minMs": 520.1, "maxMs": 650.2, "avgMs": 570.3}
+    {"visits": 16, "samples": 5, "minMs": 160.1, "maxMs": 190.2, "avgMs": 171.3},
+    {"visits": 32, "samples": 5, "minMs": 280.1, "maxMs": 330.2, "avgMs": 295.3},
+    {"visits": 64, "samples": 5, "minMs": 520.1, "maxMs": 650.2, "avgMs": 570.3}
   ]
 }
 ```
@@ -213,6 +217,8 @@ data class DeviceEngineBenchmarkProfile(
 
 SM-S908N 1차 저장 확인:
 
+아래 값은 최초 10회 샘플 구현 당시 측정값이다. 현재 앱 기본은 느린 폰 부담을 낮추기 위해 5회 샘플로 조정했다.
+
 | Visits | Min ms | Avg ms | Max ms |
 | ---: | ---: | ---: | ---: |
 | 16 | 1491.209 | 3089.351 | 5844.946 |
@@ -220,6 +226,23 @@ SM-S908N 1차 저장 확인:
 | 64 | 1934.299 | 2687.389 | 4227.159 |
 
 이 결과는 폰에서는 현재 고정 time cap이 부족할 수 있음을 보여준다. 다음 단계에서는 저장된 benchmark profile을 읽어 실제 엔진 요청 time cap에 반영해야 한다.
+
+SM-S908N 5회 샘플 재측정 확인:
+
+| Visits | Min ms | Avg ms | Max ms |
+| ---: | ---: | ---: | ---: |
+| 16 | 2304.157 | 3645.083 | 6125.828 |
+| 32 | 1142.625 | 1647.247 | 2607.692 |
+| 64 | 1875.472 | 3061.392 | 4588.022 |
+
+팝업 표시 확인:
+
+```text
+엔진 벤치마크 진행 중
+사용자 개입 없이 진행됩니다. 느린 기기에서는 1~3분 정도 소요될 수 있습니다.
+B16 실행시간 확보 중...
+샘플 1 / 5 · 전체 진행률 0 / 15
+```
 
 ## 현재 결론
 

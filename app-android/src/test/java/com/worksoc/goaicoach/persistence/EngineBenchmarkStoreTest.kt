@@ -11,11 +11,11 @@ class EngineBenchmarkStoreTest {
     fun codecRoundTripsBenchmarkProfile() {
         val profile = EngineBenchmarkProfile(
             createdAtMillis = 1234L,
-            samplesPerVisit = 10,
+            samplesPerVisit = 5,
             timeCapMs = 5_000L,
             metrics = listOf(
-                EngineBenchmarkMetric(visits = 16, samples = 10, minMs = 11.1, avgMs = 22.2, maxMs = 33.3),
-                EngineBenchmarkMetric(visits = 32, samples = 10, minMs = 44.4, avgMs = 55.5, maxMs = 66.6),
+                EngineBenchmarkMetric(visits = 16, samples = 5, minMs = 11.1, avgMs = 22.2, maxMs = 33.3),
+                EngineBenchmarkMetric(visits = 32, samples = 5, minMs = 44.4, avgMs = 55.5, maxMs = 66.6),
             ),
         )
 

@@ -13,6 +13,21 @@ internal class EngineBenchmarkStore(context: Context) {
     fun exists(): Boolean =
         file.isFile
 
+    fun hasUsableProfile(
+        samplesPerVisit: Int,
+        timeCapMs: Long,
+        visitsTargets: List<Int>,
+    ): Boolean {
+        val profile = load() ?: return false
+        if (profile.samplesPerVisit != samplesPerVisit || profile.timeCapMs != timeCapMs) {
+            return false
+        }
+        val metricByVisits = profile.metrics.associateBy { metric -> metric.visits }
+        return visitsTargets.all { visits ->
+            metricByVisits[visits]?.samples == samplesPerVisit
+        }
+    }
+
     fun save(profile: EngineBenchmarkProfile) {
         file.writeText(EngineBenchmarkCodec.encode(profile), Charsets.UTF_8)
     }

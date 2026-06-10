@@ -52,6 +52,10 @@ import com.worksoc.goaicoach.application.buildPlayerSetupChangePlan
 import com.worksoc.goaicoach.application.buildUserPreferencesSnapshot
 import com.worksoc.goaicoach.application.configureSyncAndEstimateGraphScore
 import com.worksoc.goaicoach.application.EndgameFailureDisplayPlan
+import com.worksoc.goaicoach.application.EngineBenchmarkDefaultSamplesPerVisit
+import com.worksoc.goaicoach.application.EngineBenchmarkDefaultTimeCapMs
+import com.worksoc.goaicoach.application.EngineBenchmarkDefaultVisits
+import com.worksoc.goaicoach.application.EngineBenchmarkProgress
 import com.worksoc.goaicoach.application.runStartupEngineBenchmark
 import com.worksoc.goaicoach.application.applyHumanMoveLocally
 import com.worksoc.goaicoach.application.FinalScoreDisplayPlan
@@ -195,8 +199,17 @@ private fun GoCoachScreen(
     var endgameLog by remember { mutableStateOf("No endgame result recorded.") }
     var hasCompletedEngineStartup by remember { mutableStateOf(false) }
     var hasCheckedSavedSession by remember { mutableStateOf(false) }
-    var hasCheckedEngineBenchmark by remember { mutableStateOf(benchmarkStore.exists()) }
+    var hasCheckedEngineBenchmark by remember {
+        mutableStateOf(
+            benchmarkStore.hasUsableProfile(
+                samplesPerVisit = EngineBenchmarkDefaultSamplesPerVisit,
+                timeCapMs = EngineBenchmarkDefaultTimeCapMs,
+                visitsTargets = EngineBenchmarkDefaultVisits,
+            ),
+        )
+    }
     var engineBenchmarkText by remember { mutableStateOf(benchmarkStore.loadText()) }
+    var benchmarkProgress by remember { mutableStateOf<EngineBenchmarkProgress?>(null) }
     var pendingSavedSession by remember { mutableStateOf<SavedGameSnapshot?>(null) }
     var shouldShowResumePrompt by remember { mutableStateOf(false) }
     var isAutoAiTurnPending by remember { mutableStateOf(false) }
@@ -258,7 +271,13 @@ private fun GoCoachScreen(
         ) {
             return@LaunchedEffect
         }
-        if (benchmarkStore.exists()) {
+        if (
+            benchmarkStore.hasUsableProfile(
+                samplesPerVisit = EngineBenchmarkDefaultSamplesPerVisit,
+                timeCapMs = EngineBenchmarkDefaultTimeCapMs,
+                visitsTargets = EngineBenchmarkDefaultVisits,
+            )
+        ) {
             hasCheckedEngineBenchmark = true
             engineBenchmarkText = benchmarkStore.loadText()
             return@LaunchedEffect
@@ -267,13 +286,27 @@ private fun GoCoachScreen(
         hasCheckedEngineBenchmark = true
         isEngineBusy = true
         engineMessage = "최초 실행환경에서 최적 플레이를 위해 벤치마크 테스트가 진행중입니다."
-        candidateText = "Engine benchmark running: B16/B32/B64, 10 samples each."
+        benchmarkProgress = EngineBenchmarkProgress(
+            currentVisits = EngineBenchmarkDefaultVisits.first(),
+            currentSample = 1,
+            samplesPerVisit = EngineBenchmarkDefaultSamplesPerVisit,
+            completedCalls = 0,
+            totalCalls = EngineBenchmarkDefaultVisits.size * EngineBenchmarkDefaultSamplesPerVisit,
+        )
+        candidateText = "Engine benchmark running: B16/B32/B64, ${EngineBenchmarkDefaultSamplesPerVisit} samples each."
         runCatching {
             withContext(Dispatchers.IO) {
                 engineAdapter
                     .runStartupEngineBenchmark(
                         currentState = gameState,
                         nowMillis = System.currentTimeMillis(),
+                        onProgress = { progress ->
+                            withContext(Dispatchers.Main) {
+                                benchmarkProgress = progress
+                                engineMessage = progress.stageText
+                                candidateText = "Engine benchmark running: ${progress.progressText}, ${progress.sampleText}."
+                            }
+                        },
                     )
                     .also { profile -> benchmarkStore.save(profile) }
             }
@@ -285,6 +318,7 @@ private fun GoCoachScreen(
             engineMessage = "Engine benchmark failed: ${error.message ?: "unknown error"}"
             candidateText = "Engine benchmark failed. The app will continue with built-in defaults."
         }
+        benchmarkProgress = null
         isEngineBusy = false
     }
 
@@ -1266,6 +1300,7 @@ private fun GoCoachScreen(
 
     GoCoachContent(
         screenState = screenState,
+        benchmarkProgress = benchmarkProgress,
         isDisplayMenuExpanded = isDisplayMenuExpanded,
         onDisplayMenuExpandedChange = { expanded -> isDisplayMenuExpanded = expanded },
         onScoreGraphExpandedChange = { expanded -> isScoreGraphExpanded = expanded },
