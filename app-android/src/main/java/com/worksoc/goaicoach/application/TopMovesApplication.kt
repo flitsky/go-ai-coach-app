@@ -70,7 +70,7 @@ internal fun buildCachedTopMoveAnalysisUpdate(
         engineMessage = if (topMovesEnabled) {
             "Top Moves cache hit for ${targetState.nextPlayer.label}: ${snapshot.scoredPlayCount}/${snapshot.legalPlayCount} legal spot(s) scored."
         } else {
-            "Pre-move analysis cache hit for ${targetState.nextPlayer.label}: ${snapshot.scoredPlayCount}/${snapshot.legalPlayCount} legal spot(s) scored."
+            "Move review analysis cache hit for ${targetState.nextPlayer.label}: ${snapshot.scoredPlayCount}/${snapshot.legalPlayCount} legal spot(s) scored."
         },
         cachedResult = null,
     )
@@ -104,7 +104,7 @@ internal fun buildCompletedTopMoveAnalysisUpdate(
         engineMessage = if (topMovesEnabled) {
             result.status.message
         } else {
-            "Top Moves analysis ready for ${targetState.nextPlayer.label}: ${snapshot.scoredPlayCount}/${snapshot.legalPlayCount} legal spot(s) scored."
+            "Move review analysis ready for ${targetState.nextPlayer.label}: ${snapshot.scoredPlayCount}/${snapshot.legalPlayCount} legal spot(s) scored."
         },
         cachedResult = CachedAnalysisResult(
             snapshot = snapshot,

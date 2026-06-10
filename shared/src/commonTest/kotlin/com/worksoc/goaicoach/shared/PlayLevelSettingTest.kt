@@ -45,6 +45,37 @@ class PlayLevelSettingTest {
     }
 
     @Test
+    fun turnAnalysisPolicyKeepsAiSelectionBudgetFastAndLevelSpecific() {
+        val levelSeven = PlayLevelSetting(PlayLevelGroup.Beginner, level = 7)
+
+        val limit = levelSeven.turnAnalysisLimitFor(TurnAnalysisPurpose.AiMoveSelection)
+
+        assertEquals(32, limit.visits)
+        assertEquals(500L, limit.timeMillis)
+        assertEquals(16, limit.candidateCount)
+        assertEquals(false, limit.includePolicy)
+        assertEquals(0, limit.refinePolicyMoves)
+        assertEquals(0, limit.minVisitsPerCandidate)
+        assertEquals(null, limit.minTimeMillis)
+        assertEquals(MoveSelectionPolicy.BestOnly, levelSeven.selectionPolicy)
+    }
+
+    @Test
+    fun humanReviewAndTopMovesUseFastBestOneBudget() {
+        val level = PlayLevelSetting(PlayLevelGroup.Intermediate, level = 5)
+
+        val review = level.turnAnalysisLimitFor(TurnAnalysisPurpose.HumanMoveReview)
+        val display = level.turnAnalysisLimitFor(TurnAnalysisPurpose.TopMovesDisplay)
+
+        assertEquals(64, review.visits)
+        assertEquals(500L, review.timeMillis)
+        assertEquals(1, review.candidateCount)
+        assertEquals(false, review.includePolicy)
+        assertEquals(0, review.refinePolicyMoves)
+        assertEquals(review, display)
+    }
+
+    @Test
     fun stageIsClampedToGroupRange() {
         val setting = PlayLevelSetting(PlayLevelGroup.FastBeginner, level = 10)
 

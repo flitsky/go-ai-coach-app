@@ -21,13 +21,13 @@ KaTrain의 UX 중 Go AI Coach에 가져올 만한 항목을 효과와 구현 난
 ## 현재 앱에 이미 반영된 항목
 
 - `Top Moves` 버튼 기반 후보수 표시
-- 모바일 기본 경량 정책: 사용자가 `Top Moves`를 누를 때만 best-1 후보를 분석하고 표시
+- 모바일 기본 경량 정책: 사람 차례마다 best-1 착수 리뷰 분석을 만들고, 사용자가 `Top Moves`를 켰을 때만 보드에 표시
 - 후보수별 KaTrain식 손실 구간 색상 spot
 - 점수 손실이 없는 policy/legal fallback 후보의 회색 spot 제거
 - KataGo JSON analysis protocol 기반 후보 파싱은 구현되어 있으나, 현재 모바일 기본 Top Moves에서는 비활성
 - 후보수별 점수 lead/loss label
 - 착수 후 해당 돌 중앙에 착수 당시 평가 색상 dot 유지
-- Top Moves 표시 여부와 무관한 백그라운드 pre-move analysis는 성능 문제로 비활성화
+- Top Moves 표시 여부와 무관한 백그라운드 pre-move analysis는 fast best-1로 제한
 - 3D 질감의 흑/백 바둑알 렌더링
 - pass 2회 이후 계가 처리
 - `Copy Log` 기반 디버그 리포트 수집
@@ -104,7 +104,7 @@ KaTrain의 UX 중 Go AI Coach에 가져올 만한 항목을 효과와 구현 난
 
 2. **Top Moves UX 완성**
    - 후보수 compact list 패널: 화면 집중을 위해 제거됨. 상세 후보 정보는 debug text와 `Copy Log`로 확인한다.
-   - Top Moves 버튼: 모바일 기본은 수동 best-1만 표시한다. 사람 차례마다 전체 합법 착점 snapshot을 만드는 자동 분석은 비활성화했다.
+   - Top Moves 버튼: 모바일 기본은 best-1만 표시한다. 사람 차례마다 전체 합법 착점 snapshot을 만드는 broad 자동 분석은 비활성화했다.
    - 점수 손실이 없는 fallback 후보는 보드 spot으로 표시하지 않는다.
    - 색상 단계는 KaTrain 기본 임계값을 참고해 진한 초록/연한 초록/노랑/주황/빨강으로 세분화했다.
    - KataGo process adapter는 경량 Top Moves 분석에 GTP `kata-search_analyze` fast path를 우선 사용한다.
@@ -113,7 +113,7 @@ KaTrain의 UX 중 Go AI Coach에 가져올 만한 항목을 효과와 구현 난
    - 후보 label 표시 모드: 미구현
    - 엔진 busy/ready/fallback badge: 구현됨
    - KaTrain식 JSON analysis normal query: 1차 구현 완료
-   - KaTrain식 sweep/equalize 적용 검토: `docs/KATRAIN_TOP_MOVES_ANALYSIS.md`에 기록됨
+   - KaTrain식 sweep/equalize 적용 검토: `docs/archive/2026-06-engine-policy-superseded/KATRAIN_TOP_MOVES_ANALYSIS.md`에 보관됨
 
 3. **형세 이해 보강**
    - ownership overlay: 구현됨. `Eval` 실행 후 KataGo `whiteOwnership` 값을 별도 옵션 없이 보드 위 부드러운 gradient overlay로 표시한다.

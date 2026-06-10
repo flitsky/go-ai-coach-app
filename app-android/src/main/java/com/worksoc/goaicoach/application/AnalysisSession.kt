@@ -6,7 +6,9 @@ import com.worksoc.goaicoach.shared.DifficultyProfile
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
+import com.worksoc.goaicoach.shared.TurnAnalysisPurpose
 import com.worksoc.goaicoach.shared.analysisFingerprint
+import com.worksoc.goaicoach.shared.turnAnalysisLimitFor
 import java.util.LinkedHashMap
 
 internal const val LightweightTopMoveCandidateCount = 1
@@ -78,17 +80,11 @@ internal fun topMovesAnalysisLimitFor(
     profile: EngineProfile,
     preset: AnalysisPreset,
     candidateCount: Int,
-): AnalysisLimit {
-    return profile.analysisLimit.copy(
-        visits = profile.analysisLimit.visits,
-        timeMillis = profile.analysisLimit.timeMillis,
+): AnalysisLimit =
+    profile.turnAnalysisLimitFor(
+        purpose = TurnAnalysisPurpose.TopMovesDisplay,
         candidateCount = candidateCount,
-        includePolicy = false,
-        refinePolicyMoves = 0,
-        minVisitsPerCandidate = 0,
-        minTimeMillis = null,
     )
-}
 
 internal fun deepTopMovesAnalysisLimitFor(
     profile: EngineProfile,

@@ -6,7 +6,9 @@ import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.TurnAnalysisPurpose
 import com.worksoc.goaicoach.shared.describe
+import com.worksoc.goaicoach.shared.turnAnalysisLimitFor
 import kotlin.random.Random
 
 internal val HumanPlayer = StoneColor.Black
@@ -251,7 +253,7 @@ private suspend fun EngineAdapter.selectAiMoveFromAnalysis(
     playLevel: PlayLevelSetting,
 ): SelectedAiMove? =
     runCatching {
-        val analysis = analyze(playLevel.aiMoveAnalysisLimit())
+        val analysis = analyze(playLevel.turnAnalysisLimitFor(TurnAnalysisPurpose.AiMoveSelection))
         val scoredCandidates = analysis.candidates
             .filter { candidate ->
                 candidate.move.player == aiPlayer && candidate.pointLoss != null
@@ -289,14 +291,6 @@ private suspend fun EngineAdapter.selectAiMoveFromAnalysis(
             }.trim(),
         )
     }.getOrNull()
-
-private fun PlayLevelSetting.aiMoveAnalysisLimit() =
-    analysisLimit.copy(
-        includePolicy = false,
-        refinePolicyMoves = 0,
-        minVisitsPerCandidate = 0,
-        minTimeMillis = null,
-    )
 
 private fun CandidateMove.describeForSelection(stateAfterHuman: GameState): String =
     buildString {

@@ -17,6 +17,8 @@ import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.ScoreSnapshot
 import com.worksoc.goaicoach.shared.ScoreSnapshotSource
 import com.worksoc.goaicoach.shared.ScoreTimeline
+import com.worksoc.goaicoach.shared.TurnAnalysisPurpose
+import com.worksoc.goaicoach.shared.turnAnalysisLimitFor
 
 internal data class EngineStartupResult(
     val message: String,
@@ -167,7 +169,7 @@ internal suspend fun EngineAdapter.resolveEndgameForState(
     )
 
 internal fun scoreGraphAnalysisLimit(profile: EngineProfile): AnalysisLimit =
-    profile.analysisLimit.copy(candidateCount = 1)
+    profile.turnAnalysisLimitFor(TurnAnalysisPurpose.ScoreGraph)
 
 internal fun localScoreSnapshot(state: GameState): ScoreSnapshot =
     ScoreTimeline.fromFinalScore(

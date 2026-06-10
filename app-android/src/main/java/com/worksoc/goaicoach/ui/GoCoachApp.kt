@@ -603,9 +603,6 @@ private fun GoCoachScreen(
         automatic: Boolean,
         deep: Boolean = false,
     ) {
-        if (automatic) {
-            return
-        }
         if (
             !shouldRequestTopMoveAnalysis(
                 isGameEnded = isGameEnded,
@@ -625,6 +622,12 @@ private fun GoCoachScreen(
             analysisPreset = analysisPreset,
             deep = deep,
         )
+        if (automatic && plan.analysisKey == lastAnalysisKey) {
+            if (topMovesEnabled && candidateMoves.isEmpty() && reviewAnalysis.scoredPlayCount > 0) {
+                candidateMoves = reviewAnalysis.candidatesForDisplay()
+            }
+            return
+        }
         analysisCache.get(plan.analysisKey)?.let { cached ->
             val update = buildCachedTopMoveAnalysisUpdate(
                 targetState = targetState,
@@ -633,12 +636,6 @@ private fun GoCoachScreen(
                 topMovesEnabled = topMovesEnabled,
             )
             applyTopMoveAnalysisUpdate(update, plan.analysisKey)
-            return
-        }
-        if (automatic && plan.analysisKey == lastAnalysisKey) {
-            if (topMovesEnabled && candidateMoves.isEmpty() && reviewAnalysis.scoredPlayCount > 0) {
-                candidateMoves = reviewAnalysis.candidatesForDisplay()
-            }
             return
         }
 
@@ -726,7 +723,7 @@ private fun GoCoachScreen(
     fun hideTopMoves() {
         topMovesEnabled = false
         clearTopMoveSpots()
-        engineMessage = "Top Moves hidden. Automatic engine analysis is paused."
+        engineMessage = "Top Moves hidden. Background move review keeps using fast best-1 analysis."
     }
 
     fun changeScoringRule(nextRuleset: Ruleset) {
@@ -1315,6 +1312,7 @@ private fun GoCoachScreen(
 
     LaunchedEffect(
         isEngineReady,
+        isEngineBusy,
         playerSetup,
         isGameEnded,
         shouldShowResumePrompt,

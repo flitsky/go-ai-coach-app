@@ -112,7 +112,7 @@ class TopMovesApplicationTest {
 
         assertEquals(0, hidden.candidateMoves.size)
         assertEquals(1, shown.candidateMoves.size)
-        assertTrue(hidden.engineMessage.startsWith("Pre-move analysis cache hit"))
+        assertTrue(hidden.engineMessage.startsWith("Move review analysis cache hit"))
         assertTrue(shown.engineMessage.startsWith("Top Moves cache hit"))
     }
 

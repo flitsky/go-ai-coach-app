@@ -766,3 +766,10 @@
 - benchmark 저장 schema에 `benchmarkRuleset`을 추가하고 `measurementVersion=5`로 올렸다. 기존 v4 이하 저장값은 자동 재측정 대상이다.
 - `Top Moves` 버튼 진입점에도 human-turn guard를 추가했다. AI 차례에는 `Top Moves is available only on human turns.` 메시지만 남기고 엔진 호출을 보내지 않는다.
 - `EngineDeviceBenchmarkApplicationTest`에 사용자 ruleset이 Chinese여도 benchmark는 Japanese/Territory로 측정하고 마지막에는 사용자 state로 복원되는 회귀 테스트를 추가했다.
+- 사용자가 엔진 API 호출 정책을 명확히 정리하고, 오래된 문서가 혼선을 만들면 archive로 옮기며, AI/사람 턴 모두 Top Moves 계열 분석 snapshot을 일관되게 쓰는 방향을 요청했다.
+- `docs/ENGINE_API_CALL_POLICY.md`를 추가했다. 최신 기준은 `TurnAnalysis`를 공통 개념으로 두고, AI 차례는 후보를 레벨링해 착수하며 최고 단계는 항상 최상위 후보를 둔다. 사람 차례는 fast best-1 백그라운드 분석을 만들고, `Top Moves`가 켜진 경우에만 보드에 표시한다.
+- 혼선을 주던 초기 결정 문서 `GREEN_SPOT_HINT_DECISION.md`, `KATRAIN_TOP_MOVES_ANALYSIS.md`는 `docs/archive/2026-06-engine-policy-superseded/`로 이동했다. 새 의사결정은 `ENGINE_API_CALL_POLICY.md`, 값 해석은 `TOP_MOVES_VALUE_GUIDE.md`, 엔진 값 일관성은 `ENGINE_ANALYSIS_CONSISTENCY_REVIEW.md`를 기준으로 삼는다.
+- `shared`에 `EngineAnalysisPolicy.kt`를 추가해 `AiMoveSelection`, `HumanMoveReview`, `TopMovesDisplay`, `ScoreGraph` 목적별 analysis budget을 한 곳에서 만들게 했다.
+- AI 응수 경로는 `PlayLevelSetting.turnAnalysisLimitFor(AiMoveSelection)`을 사용하게 변경했다. `빠른 초급 3단계`, `초급 7단계`, `중급 5단계`, `고급 5단계`의 `BestOnly` 정책은 그대로 유지된다.
+- 사람 차례 자동 분석은 다시 열되, broad JSON/policy/refine이 아니라 fast best-1 경량 분석만 사용한다. `Top Moves`가 꺼져 있으면 후보 스팟은 보이지 않고 착수 리뷰 snapshot만 갱신된다.
+- `USER_OPTION_MANUAL.md`, `AI_ENGINE_SETTINGS.md`, `MOVE_ANALYSIS_DATA_MODEL.md`, `KATRAIN_UX_BACKLOG.md`를 최신 정책으로 갱신했다.

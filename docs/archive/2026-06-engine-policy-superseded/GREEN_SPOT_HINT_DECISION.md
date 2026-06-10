@@ -1,5 +1,8 @@
 # 착수 전 후보수/점수 스팟 표시 결정
 
+> [!WARNING]
+> 이 문서는 2026-06 엔진 호출 정책 정리 전의 초기 결정 기록이다. 최신 기준은 `docs/ENGINE_API_CALL_POLICY.md`를 따른다.
+
 작성일: 2026-05-31
 갱신일: 2026-06-06
 
@@ -88,4 +91,4 @@ KaTrain류 UI는 대체로 엔진 분석 결과의 후보수 리스트를 보드
 3. 별도 `katago analysis` JSON 프로토콜 전환 검토: `rootInfo`, `moveInfos`, `ownership`, `policy`를 함께 받으면 KaTrain식 `pointsLost`, sweep/equalize 분석, partial result를 더 안정적으로 구현할 수 있다.
 4. 모든 합법 착점 전수 평가는 기본 자동 Top Moves가 아니라 sweep/equalize 기반 고급 분석으로 분리한다.
 
-자세한 KaTrain 분석 근거는 `docs/KATRAIN_TOP_MOVES_ANALYSIS.md`에 기록한다.
+자세한 KaTrain 분석 근거는 같은 archive 폴더의 `KATRAIN_TOP_MOVES_ANALYSIS.md`에 기록한다.

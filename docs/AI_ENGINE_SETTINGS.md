@@ -48,12 +48,13 @@ AI 응수는 대국 속도를 위해 항상 경량 분석 요청을 사용한다
 - `minTimeMillis=null`
 - 예: `중급 5단계`는 `64 visits / 500ms / BestOnly`로 착수한다.
 
-`Top Moves`는 대국 중 수동 힌트 표시 기능이다.
+`Top Moves`는 대국 중 후보 표시 토글이고, 사람 착수 리뷰 분석과 같은 snapshot을 사용한다.
 
 - 첫 설치 기본값은 꺼짐이다.
-- 사람 차례가 돌아와도 자동 pre-move analysis cache를 만들지 않는다.
-- 사용자가 `Top Moves`를 누른 경우에만 현재 국면을 분석한다.
-- 단, 현재 차례가 사람인 경우에만 엔진을 호출한다. AI 차례에서는 Top Moves 요청을 보내지 않는다.
+- 사람 차례가 돌아오면 앱은 착수 리뷰를 위해 fast best-1 `TurnAnalysis`를 백그라운드로 만든다.
+- 사용자가 `Top Moves`를 켜면 같은 snapshot을 보드에 표시한다.
+- 사용자가 `Top Moves`를 끄면 후보 표시만 숨기고, 착수 후 리뷰에 사용할 snapshot은 유지한다.
+- `Top Moves` 버튼은 현재 차례가 사람인 경우에만 표시 분석을 요청한다. AI 차례의 착수 선택은 AI 응수 경로에서 별도 `TurnAnalysis`를 사용한다.
 - 현재 모바일 기본 요청은 best-1이다.
   - `candidateCount=1`
   - 현재 Player Setup의 visits/time을 그대로 사용
@@ -63,7 +64,7 @@ AI 응수는 대국 속도를 위해 항상 경량 분석 요청을 사용한다
   - `minVisitsPerCandidate=0`
   - `minTimeMillis=null`
   - deep fallback 없음
-- 같은 국면, 규칙, 차례, preset, 분석 예산의 메모리 cache가 있으면 재호출하지 않고 표시만 복원한다.
+- 같은 국면, 규칙, 차례, preset, 분석 예산의 메모리 cache가 있으면 재호출하지 않고 리뷰/표시에 재사용한다.
 
 KaTrain식 broad analysis는 향후 학습/복기 모드로 분리한다.
 
@@ -74,6 +75,8 @@ KaTrain식 broad analysis는 향후 학습/복기 모드로 분리한다.
 - scored 후보 부족 시 Full Analysis fallback
 
 위 항목들은 학습 가치는 크지만 폰 실시간 대국에서는 호출 오버헤드가 커서 현재 기본 경로에서는 사용하지 않는다.
+
+최신 호출 정책은 `docs/ENGINE_API_CALL_POLICY.md`를 기준으로 한다.
 
 엔진 디바이스 벤치마크는 사용자 설정과 분리한다.
 

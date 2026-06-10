@@ -1,5 +1,8 @@
 # KaTrain Top Moves 분석 메모
 
+> [!WARNING]
+> 이 문서는 2026-06 엔진 호출 정책 정리 전의 KaTrain 분석 기록이다. 최신 기본 호출 정책은 `docs/ENGINE_API_CALL_POLICY.md`를 따르고, 이 문서는 broad study analysis를 다시 설계할 때 참고용으로만 사용한다.
+
 작성일: 2026-06-06
 
 ## 목적
