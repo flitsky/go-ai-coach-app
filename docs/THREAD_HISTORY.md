@@ -826,3 +826,5 @@
 - `EngineAdapter` KDoc에 앱 canonical state, 엔진 내부 search tree/cache 가능성, `clearSearchCache()`의 의미, 랜덤 시드가 cache isolation 대체재가 아니라는 내용을 명시했다. 앞으로 process/JNI/remote 구현체가 같은 계약을 따르도록 인터페이스에 정책을 남기는 방향을 채택했다.
 - 사용자가 search tree visits 재사용은 원래 좋은 기능인데 우리가 과하게 비활성화한 것 아닌지 재검토를 요청했다. 코드 기반 검토 결과 현재 adapter는 `maxVisits`/`maxTime`만 제어하고 `maxPlayouts`는 쓰지 않는다. `maxVisits`는 이전 유효 tree visits를 포함할 수 있으므로, 같은 process에서 B64가 본 자식 국면을 B16이 즉시 가져와 레벨 경계를 오염시킬 수 있다.
 - `docs/ENGINE_SEARCH_TREE_REUSE_REVIEW.md`를 추가해 search tree reuse의 장점, 현재 문제가 된 조건, random seed의 한계, `maxPlayouts` 기반 재사용 모드, side별 engine process 분리 후보를 정리했다. 결론은 “재사용 기능을 영구 금지한 것이 아니라, 현재 기본값은 레벨 보정과 디버깅 가능성을 위해 격리하고, 향후 성능 모드에서 통제된 재사용을 실험한다”이다.
+- 사용자가 B16이 B64의 tree를 어느 수준까지 참조하는지, 이것이 B16의 열세를 가리는지 질문했다. 정리: B16이 B64의 모든 tree를 전부 참조하는 것은 아니지만, 실제 착수 후 새 root가 된 하위 subtree는 재사용될 수 있다. 그 subtree가 B64의 강한 탐색으로 만들어진 경우 B16은 자기 예산 이상의 사전 정보를 얻어 사실상 “B64가 일부 예습한 B16”이 된다.
+- 해소책은 현재 기본값으로는 AI 착수 직전 `clear_cache`가 가장 명확하다. AI side별 process 분리는 이론적으로 더 자연스럽지만 Android 비용과 orchestration 복잡도가 높다. `maxPlayouts` 기반 tree reuse는 성능 모드 후보로 남기되, 기본 레벨링 모드에 바로 적용하지 않는다. `ENGINE_SEARCH_TREE_REUSE_REVIEW.md`에 해당 비교를 보강했다.

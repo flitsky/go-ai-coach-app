@@ -73,6 +73,82 @@ KataGo search tree 재사용은 좋은 기능이다. 다만 현재 앱의 기본
 - 낮은 레벨이 실제보다 강해지거나, 높은 레벨의 직전 탐색 영향을 받는다.
 - `빠른 초급 3단계`와 `중급 5단계` 같은 레벨 비교가 오염된다.
 
+## B16은 B64의 트리를 얼마나 참조하는가
+
+정확한 양은 국면과 B64가 실제로 탐색한 분기 분포에 따라 달라진다. 하지만 구조적으로는 다음처럼 이해하는 것이 맞다.
+
+1. B64가 현재 국면에서 `Black E5`를 고르기 위해 search tree를 만든다.
+2. 그 tree 안에는 `Black E5` 이후 White가 둘 수 있는 여러 응수와 그 하위 변화가 일부 포함될 수 있다.
+3. 실제로 `Black E5`가 착수되면, 다음 White 차례의 새 root는 기존 tree의 `Black E5` 하위 subtree가 된다.
+4. 같은 KataGo process가 이 subtree를 보존하면, White B16 분석은 이 subtree의 root visits를 자기 `maxVisits=16`에 포함할 수 있다.
+
+따라서 B16이 B64가 본 "모든 tree"를 전부 커닝하는 것은 아니다. 현재 실제 국면으로 이어지는 하위 subtree만 재사용된다. 하지만 이 하위 subtree가 B64의 강한 탐색에서 생성된 것이라면, B16 입장에서는 자기 예산보다 훨씬 좋은 사전 정보를 받은 것과 비슷해진다.
+
+이번 실기기 로그에서 B16이 1~4ms에 끝난 구간은 이 해석과 잘 맞는다. 요청이 B16이어도 이미 유효한 root visits가 충분하면 새 playout을 거의 하지 않고 반환할 수 있기 때문이다.
+
+결론적으로 shared single process에서 B16 vs B64를 돌리면 B16은 "B16만의 독립 AI"가 아니다. 같은 process 안에서 직전 B64 탐색의 하위 subtree를 공유하는, 사실상 "B64가 일부 예습한 B16"에 가까워질 수 있다.
+
+## 문제를 해소하는 선택지
+
+### 선택지 A: AI 착수마다 `clear_cache`
+
+현재 적용한 방식이다.
+
+장점:
+
+- B16/B32/B64 레벨 경계가 가장 명확하다.
+- B16은 B16만큼, B64는 B64만큼 새로 탐색한다는 해석이 쉽다.
+- AI vs AI 자동대국과 반복 회귀 테스트가 안정적이다.
+- 구현이 단순하고 로그 해석이 쉽다.
+
+단점:
+
+- KataGo의 좋은 search tree reuse 최적화를 포기한다.
+- 느린 폰에서 체감 대국 속도가 느려질 수 있다.
+
+현재 제품 단계에서는 이 방식을 기본값으로 유지하는 것이 맞다.
+
+### 선택지 B: Black/White 엔진 process 분리
+
+Black AI와 White AI가 별도 KataGo process를 갖는다.
+
+장점:
+
+- B64의 tree가 B16에게 직접 넘어가지 않는다.
+- 각 진영 AI는 자기 process 안에서만 search tree reuse를 활용할 수 있다.
+- AI vs AI에서 "각 AI가 자기 기억을 가진다"는 모델에 가깝다.
+
+단점:
+
+- 메모리와 CPU 비용이 커진다.
+- Android 기기에서 process 2개는 부담이 크다.
+- 사람 대국, 2P 분석, ScoreGraph, Endgame cleanup까지 어느 process가 authoritative engine인지 orchestration이 복잡해진다.
+
+이 방식은 장기적으로 의미가 있지만, 현재 모바일 기본값으로 바로 적용하기에는 무겁다.
+
+### 선택지 C: tree reuse + `maxPlayouts`
+
+같은 process를 유지하되 `maxVisits`만 쓰지 않고 `maxPlayouts`를 도입한다.
+
+장점:
+
+- 기존 subtree를 재사용하면서도 매 턴 새로 수행할 탐색량을 보장할 수 있다.
+- `clear_cache`보다 KataGo의 장점을 더 살릴 수 있다.
+
+단점:
+
+- 기존 subtree가 더해지므로 B16의 실제 강도는 여전히 B16 fresh보다 높을 수 있다.
+- 레벨 정의가 `visits`가 아니라 `fresh playouts + inherited tree`로 바뀐다.
+- 실측 없이 레벨 승률을 예측하기 어렵다.
+
+이 방식은 "성능 우선 모드" 또는 "고급 엔진 모드"로 실험할 가치가 있다. 하지만 기본 레벨링 모드로 바로 쓰기에는 아직 검증이 부족하다.
+
+### 선택지 D: random seed만 조정
+
+권장하지 않는다.
+
+seed는 탐색 흔들림과 재현성을 조절하지만, B64 subtree가 B16 root로 승격되는 구조를 막지 못한다. 이미 충분한 visits가 남아 있으면 seed가 달라도 새 탐색이 거의 없을 수 있다.
+
 ## 랜덤 seed로 해결 가능한가
 
 부분적으로만 가능하다.
