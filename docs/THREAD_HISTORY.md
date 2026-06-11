@@ -806,3 +806,10 @@
 - 기기 저장 설정은 `Black: AI 초급 7단계`, `White: AI 빠른 초급 3단계`, `Search Time: B16 2000ms / B32 3000ms / B64 4500ms`, `analysisCache=disabled`였다. 메뉴 화면에도 B16 `2초`, B32 `3초`, B64 `4.5초`로 표시됨을 확인했다.
 - `Copy Log`로 실제 엔진 호출을 확인했다. 백 `빠른 초급 3단계`는 `16 visits / 2000ms`, `timeCapMs=2000`으로 호출됐고, 흑 `초급 7단계`는 `32 visits / 3000ms`, `timeCapMs=3000`으로 호출됐다. 따라서 메뉴에서 설정된 시간이 실제 `EngineAdapter.analyze()` 호출까지 내려가고 있으며, 기존 `250ms` 제한은 이번 런타임 호출 로그에서는 보이지 않았다.
 - 단, `timeCapMs`는 최대 허용 시간이라 엔진이 visit을 채우거나 응답하면 더 빨리 끝날 수 있다. 이번 실기기 로그에서도 B16/B32 모두 `fill=SHORT`가 관측됐고, B32는 `root=31`, `elapsedMs=2031`, `timeCapMs=3000`이었다.
+- 사용자가 `AI 초급 7단계` vs `빠른 초급 3단계` 자동대국이 `투두둑` 진행되는 것은 `delay=0`만으로 설명되면 안 되고, 새 국면 기준 최적수 탐색이 매번 수행되는지 확인해야 한다고 지적했다.
+- `RuntimeEventLog`를 추가했다. 앱 내부 `files/runtime_event_log.txt`에 최대 1MB까지 최근 이벤트를 보존하고, 초과 시 최근 약 900KB만 남긴다. `Copy Log`의 `[RuntimeEventLog]` 섹션에도 같은 로그를 포함한다.
+- 자동대국 진단을 위해 `app_start`, `game_reset`, `engine_game_start_*`, `ai_turn_schedule`, `ai_turn_begin`, `ai_turn_success`, `ai_turn_complete`, `ai_turn_failure`, `ai_turn_endgame_*` 이벤트를 추가했다. 각 AI 착수 로그에는 move number, player, play level, search limit, auto delay, before/after 국면 fingerprint, selected move, `KataGo search analysis` 요약이 포함된다.
+- `docs/AI_AUTO_PLAY_DIAGNOSTIC_LOG.md`를 추가해 로그 파일 위치, ADB 수집 명령, 보존 정책, 이벤트 해석 기준을 정리했다.
+- 단위 테스트 `:app-android:testDebugUnitTest` 통과 후 USB 연결된 `SM-S908N`에 최신 debug APK를 설치했다. 화면은 패턴 잠금 상태였지만 앱 프로세스는 자동대국을 진행했고, `docs/engine-benchmark-logs/phone-autoplay-diagnostic-20260611/runtime_event_log_locked.txt`에 43수까지의 런타임 로그를 수집했다.
+- 수집 로그 분석 결과 앱은 매 착수마다 `ai_turn_begin`/`ai_turn_success`를 1회씩 실행했고 before/after fingerprint가 매번 달라졌다. 즉, 현재 근거만으로는 분석 생략보다는 B16 `kata-search_analyze`가 매우 빠르게 반환되는 현상이 핵심이다.
+- B16 `빠른 초급 3단계`는 21회 중 11회가 100ms 미만이었고 engine elapsed 평균은 `489.1ms`였다. B32 `초급 7단계`는 22회 중 100ms 미만이 없었고 평균은 `2445.1ms`였다. 상세 요약은 `docs/engine-benchmark-logs/phone-autoplay-diagnostic-20260611/summary.md`에 기록했다.

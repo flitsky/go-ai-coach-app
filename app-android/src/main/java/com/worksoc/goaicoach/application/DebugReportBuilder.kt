@@ -43,6 +43,7 @@ internal fun buildDebugReport(
     lastMoveText: String,
     endgameLog: String,
     engineBenchmarkText: String,
+    runtimeEventLogText: String = "Runtime event log not loaded.",
     searchTimeSettings: SearchTimeSettings = SearchTimeSettings(),
 ): String {
     val localScoreText = BoardScorer.score(gameState).toDisplayText()
@@ -124,6 +125,9 @@ internal fun buildDebugReport(
         appendLine()
         appendLine("[EngineBenchmark]")
         appendLine(engineBenchmarkText)
+        appendLine()
+        appendLine("[RuntimeEventLog]")
+        appendLine(runtimeEventLogText)
     }.trim()
 }
 

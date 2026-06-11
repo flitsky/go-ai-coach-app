@@ -93,11 +93,14 @@ import com.worksoc.goaicoach.application.TopMoveAnalysisUpdate
 import com.worksoc.goaicoach.application.UndoRequestPlan
 import com.worksoc.goaicoach.application.UndoLocalStatePlan
 import com.worksoc.goaicoach.application.toCandidateText
+import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
+import com.worksoc.goaicoach.match.summary
 import com.worksoc.goaicoach.persistence.GameSessionStore
 import com.worksoc.goaicoach.persistence.EngineBenchmarkStore
+import com.worksoc.goaicoach.persistence.RuntimeEventLog
 import com.worksoc.goaicoach.persistence.SavedGameSnapshot
 import com.worksoc.goaicoach.persistence.UserPreferencesSnapshot
 import com.worksoc.goaicoach.persistence.UserPreferencesStore
@@ -108,6 +111,7 @@ import com.worksoc.goaicoach.presentation.KaTrainUxOptions
 import com.worksoc.goaicoach.presentation.buildGameScreenState
 import com.worksoc.goaicoach.presentation.dispatchGameUiEvent
 import com.worksoc.goaicoach.shared.AnalysisPreset
+import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.CandidateMove
@@ -121,11 +125,13 @@ import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.ScoreTimeline
+import com.worksoc.goaicoach.shared.analysisFingerprint
 import com.worksoc.goaicoach.shared.describe
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
 
 @Composable
 fun GoCoachApp(
@@ -162,6 +168,9 @@ private fun GoCoachScreen(
     val sessionStore = remember(context) { GameSessionStore(context) }
     val preferencesStore = remember(context) { UserPreferencesStore(context) }
     val benchmarkStore = remember(context) { EngineBenchmarkStore(context) }
+    val runtimeEventLog = remember(context) {
+        RuntimeEventLog(File(context.filesDir, RuntimeEventLog.FileName))
+    }
     val initialPreferences = remember(preferencesStore) { preferencesStore.load() }
     val defaultPlayLevel = remember { PlayLevelSetting() }
     val initialPlan = remember(initialPreferences, defaultPlayLevel) {
@@ -223,6 +232,12 @@ private fun GoCoachScreen(
     var pendingSavedSession by remember { mutableStateOf<SavedGameSnapshot?>(null) }
     var shouldShowResumePrompt by remember { mutableStateOf(false) }
     var isAutoAiTurnPending by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        runtimeEventLog.append(
+            "app_start engine=$engineName diagnostic=${engineDiagnostic.logSnippet(180)}",
+        )
+    }
 
     fun applyEngineStartupDisplayPlan(startup: EngineStartupDisplayPlan) {
         isEngineReady = startup.isEngineReady
@@ -532,6 +547,13 @@ private fun GoCoachScreen(
         lastMoveText = reset.lastMoveText
         endgameLog = reset.endgameLog
         engineMessage = reset.engineMessage
+        runtimeEventLog.append(
+            "game_reset moves=${reset.gameState.moves.size} next=${reset.gameState.nextPlayer.label} " +
+                "ruleset=${reset.gameState.ruleset} mode=${playerSetup.matchMode()} " +
+                "setup=${playerSetup.summary(engineName).logSnippet(160)} autoDelayMs=${autoPlayDelaySetting.millis} " +
+                "search=${searchTimeSettings.normalized().summaryText()} fp=${reset.gameState.shortFingerprint()} " +
+                "message=${reset.engineMessage.logSnippet(220)}",
+        )
     }
 
     fun applySavedGameRestorePlan(restore: SavedGameRestorePlan) {
@@ -921,18 +943,33 @@ private fun GoCoachScreen(
         val targetRuleset = plan.ruleset
         val runtime = plan.runtime
         applyRuntimePlayLevelSelection(runtime)
+        runtimeEventLog.append(
+            "engine_game_start_request ruleset=$targetRuleset mode=${playerSetup.matchMode()} " +
+                "setup=${playerSetup.summary(engineName).logSnippet(160)} runtimeLevel=${runtime.playLevel.displayLabel} " +
+                "limit=${runtime.engineProfile.analysisLimit.logSummary()} autoDelayMs=${autoPlayDelaySetting.millis} " +
+                "search=${searchTimeSettings.normalized().summaryText()}",
+        )
         scope.launch {
             isEngineBusy = true
             var nextAnalysisState: GameState? = null
+            val startMillis = System.currentTimeMillis()
             runCatching {
                 withContext(Dispatchers.IO) {
                     engineAdapter.startNewEngineGame(runtime.engineProfile, BoardSize.Nine, targetRuleset)
                 }
             }.onSuccess { result ->
+                runtimeEventLog.append(
+                    "engine_game_start_success elapsedMs=${System.currentTimeMillis() - startMillis} " +
+                        "message=${result.message.logSnippet(220)}",
+                )
                 resetLocalGame(result.message, targetRuleset)
                 scoreSnapshots = listOf(result.scoreSnapshot ?: localScoreSnapshot(gameState))
                 nextAnalysisState = gameState
             }.onFailure { error ->
+                runtimeEventLog.append(
+                    "engine_game_start_failure elapsedMs=${System.currentTimeMillis() - startMillis} " +
+                        "error=${(error.message ?: error::class.simpleName ?: "unknown").logSnippet(220)}",
+                )
                 resetLocalGame(error.message ?: "New AI game failed.", targetRuleset)
             }
             isEngineBusy = false
@@ -972,6 +1009,14 @@ private fun GoCoachScreen(
         }
     }
 
+    fun changeAutoPlayDelay(setting: AutoPlayDelaySetting) {
+        runtimeEventLog.append(
+            "auto_play_delay_change from=${autoPlayDelaySetting.label}/${autoPlayDelaySetting.millis}ms " +
+                "to=${setting.label}/${setting.millis}ms",
+        )
+        autoPlayDelaySetting = setting
+    }
+
     fun requestAiTurnForCurrentState() {
         when (
             val request = buildAutoAiTurnRequestPlan(
@@ -988,6 +1033,11 @@ private fun GoCoachScreen(
             AutoAiTurnRequestPlan.Skip -> return
             is AutoAiTurnRequestPlan.Schedule -> {
                 isAutoAiTurnPending = true
+                runtimeEventLog.append(
+                    "ai_turn_schedule nextMove=${gameState.moves.size + 1} player=${gameState.nextPlayer.label} " +
+                        "delayMs=${request.delayMillis} autoDelaySetting=${autoPlayDelaySetting.label} " +
+                        "engineBusy=$isEngineBusy fp=${gameState.shortFingerprint()}",
+                )
                 scope.launch {
                     if (request.delayMillis > 0L) {
                         delay(request.delayMillis)
@@ -1002,6 +1052,11 @@ private fun GoCoachScreen(
                             gameState = gameState,
                         )
                     ) {
+                        runtimeEventLog.append(
+                            "ai_turn_schedule_cancelled nextMove=${gameState.moves.size + 1} " +
+                                "player=${gameState.nextPlayer.label} engineReady=$isEngineReady engineBusy=$isEngineBusy " +
+                                "gameEnded=$isGameEnded resumePrompt=$shouldShowResumePrompt fp=${gameState.shortFingerprint()}",
+                        )
                         isAutoAiTurnPending = false
                         return@launch
                     }
@@ -1010,7 +1065,14 @@ private fun GoCoachScreen(
                     val aiPlayer = turnState.nextPlayer
                     val side = playerSetup.sideFor(aiPlayer)
                     val aiPlayLevel = side.playLevel
+                    val aiLimit = aiPlayLevel.analysisLimitWith(searchTimeSettings)
                     val previousReviewCandidates = reviewCandidateMoves
+                    val turnStartMillis = System.currentTimeMillis()
+                    runtimeEventLog.append(
+                        "ai_turn_begin move=${turnState.moves.size + 1} player=${aiPlayer.label} " +
+                            "level=${aiPlayLevel.displayLabel} policy=${aiPlayLevel.selectionPolicy.description.logSnippet(80)} " +
+                            "limit=${aiLimit.logSummary()} delayMs=${request.delayMillis} fp=${turnState.shortFingerprint()}",
+                    )
                     isEngineBusy = true
                     var nextAnalysisState: GameState? = null
                     runCatching {
@@ -1028,9 +1090,20 @@ private fun GoCoachScreen(
                             previousSnapshots = scoreSnapshots,
                             previousReviewCandidates = previousReviewCandidates,
                         )
+                        runtimeEventLog.append(
+                            "ai_turn_success move=${turnState.moves.size + 1} player=${aiPlayer.label} " +
+                                "selected=${display.lastMoveText.logSnippet(80)} turnElapsedMs=${System.currentTimeMillis() - turnStartMillis} " +
+                                "beforeFp=${turnState.shortFingerprint()} afterFp=${display.gameState.shortFingerprint()} " +
+                                "summary=${result.turnOutcome.candidateText.logSnippet(900)}",
+                        )
                         nextAnalysisState = applyAutoAiTurnDisplayPlan(display)
                         if (display.shouldResolveEndgame) {
                             isGameEnded = true
+                            runtimeEventLog.append(
+                                "ai_turn_endgame_detected move=${display.gameState.moves.size} " +
+                                    "consecutivePasses=${display.gameState.hasConsecutivePasses()} boardFull=${display.gameState.isBoardFull()} " +
+                                    "fp=${display.gameState.shortFingerprint()}",
+                            )
                             runCatching {
                                 withContext(Dispatchers.IO) {
                                     engineAdapter.resolveEndgameForState(
@@ -1040,6 +1113,11 @@ private fun GoCoachScreen(
                                     )
                                 }
                             }.onSuccess { endgame ->
+                                runtimeEventLog.append(
+                                    "ai_turn_endgame_success move=${display.gameState.moves.size} " +
+                                        "removed=${endgame.cleanup.removedCount} " +
+                                        "score=${endgame.finalScore.toString().logSnippet(180)}",
+                                )
                                 val final = buildResolvedEndgameDisplayPlan(
                                     source = "auto-ai-engine-dead-stone-cleanup",
                                     originalState = display.gameState,
@@ -1049,6 +1127,10 @@ private fun GoCoachScreen(
                                 )
                                 applyFinalScoreDisplayPlan(final)
                             }.onFailure { error ->
+                                runtimeEventLog.append(
+                                    "ai_turn_endgame_failure move=${display.gameState.moves.size} " +
+                                        "error=${(error.message ?: error::class.simpleName ?: "unknown").logSnippet(220)}",
+                                )
                                 val failure = buildEndgameFailureDisplayPlan(
                                     source = "auto-ai-engine-final-score-failed",
                                     state = display.gameState,
@@ -1059,11 +1141,20 @@ private fun GoCoachScreen(
                             }
                         }
                     }.onFailure { error ->
+                        runtimeEventLog.append(
+                            "ai_turn_failure move=${turnState.moves.size + 1} player=${aiPlayer.label} " +
+                                "turnElapsedMs=${System.currentTimeMillis() - turnStartMillis} " +
+                                "fp=${turnState.shortFingerprint()} error=${(error.message ?: error::class.simpleName ?: "unknown").logSnippet(300)}",
+                        )
                         engineMessage = error.message ?: "AI turn failed."
                         candidateText = "AI turn failed. Current board state was not changed."
                     }
                     isEngineBusy = false
                     isAutoAiTurnPending = false
+                    runtimeEventLog.append(
+                        "ai_turn_complete currentMoves=${gameState.moves.size} next=${gameState.nextPlayer.label} " +
+                            "engineBusy=$isEngineBusy pending=$isAutoAiTurnPending fp=${gameState.shortFingerprint()}",
+                    )
                     nextAnalysisState?.let { state ->
                         requestTopMoveAnalysisForState(
                             targetState = state,
@@ -1296,6 +1387,7 @@ private fun GoCoachScreen(
             lastMoveText = lastMoveText,
             endgameLog = endgameLog,
             engineBenchmarkText = engineBenchmarkText,
+            runtimeEventLogText = runtimeEventLog.readText(),
             searchTimeSettings = searchTimeSettings,
         )
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
@@ -1332,7 +1424,7 @@ private fun GoCoachScreen(
                     restoreSavedSession(snapshot)
                 },
                 changePlayerSetup = ::changePlayerSetup,
-                changeAutoPlayDelay = { setting -> autoPlayDelaySetting = setting },
+                changeAutoPlayDelay = ::changeAutoPlayDelay,
                 changeSearchTimeSettings = ::changeSearchTimeSettings,
                 changeScoringRule = ::changeScoringRule,
                 changeUxOptions = { options -> uxOptions = options },
@@ -1437,6 +1529,28 @@ private fun isLocalKataGoEngine(
 
 private fun EngineBenchmarkProfile.averageMillisByVisits(): Map<Int, Double> =
     metrics.associate { metric -> metric.visits to metric.avgMs }
+
+private fun GameState.shortFingerprint(): String =
+    analysisFingerprint()
+        .hashCode()
+        .toUInt()
+        .toString(16)
+
+private fun AnalysisLimit.logSummary(): String =
+    "visits=$visits,timeMs=${timeMillis ?: "none"},candidates=$candidateCount"
+
+private fun String.logSnippet(maxChars: Int): String =
+    replace('\n', ' ')
+        .replace('\r', ' ')
+        .replace(Regex("\\s+"), " ")
+        .trim()
+        .let { value ->
+            if (value.length <= maxChars) {
+                value
+            } else {
+                value.take(maxChars) + "..."
+            }
+        }
 
 private const val EngineBenchmarkStartupSettleDelayMillis = 1_500L
 private const val DebugReportMirrorFileName = "last_debug_report.txt"
