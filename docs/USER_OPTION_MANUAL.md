@@ -29,9 +29,10 @@
 - `Top Moves`: 사용자가 누른 시점의 현재 차례 최적 후보를 빠르게 분석하고 보드 위에 표시한다.
   - 사람 차례가 오면 앱은 착수 리뷰를 위해 백그라운드 fast best-1 분석을 수행한다.
   - `Top Moves`가 꺼져 있으면 이 분석 결과를 보드에 표시하지 않고, 사용자가 착수한 뒤 best/green/yellow/orange/red/unknown 판정에만 사용한다.
-  - `Top Moves`를 켜면 이미 확보된 snapshot을 표시하거나, 같은 국면의 cache가 없을 때 현재 차례 best-1 분석을 요청한다.
-  - 현재 모바일 기본 분석은 best-1 경량 요청이다. 현재 Player Setup의 visits/time을 그대로 쓰고, 후보수는 1개, `policy=false`, `refine=0`, deep fallback 없음으로 호출한다.
-  - `Top Moves` 버튼은 현재 차례가 사람인 경우에만 표시 분석을 요청한다. AI 차례의 착수 선택은 별도 AI turn analysis 경로에서 같은 엔진 후보 모델을 사용한다.
+- `Top Moves`를 켜면 이미 확보된 snapshot을 표시하거나, 같은 국면의 cache가 없을 때 현재 차례 best-1 분석을 요청한다.
+- 현재 모바일 기본 분석은 best-1 경량 요청이다. 현재 Player Setup의 visits/time을 그대로 쓰고, 후보수는 1개, `policy=false`, `refine=0`, deep fallback 없음으로 호출한다.
+- `Top Moves` 버튼은 현재 차례가 사람인 경우에만 표시 분석을 요청한다. AI 차례의 착수 선택은 별도 AI turn analysis 경로에서 같은 엔진 후보 모델을 사용한다.
+- 이전 국면의 `AnalysisResultCache` 재사용은 현재 기본 비활성이다. 같은 턴에서 이미 확보된 분석 snapshot을 표시하는 것은 유지하지만, fingerprint가 같다는 이유만으로 과거 분석을 재사용하지 않는다.
   - 경량 요청은 KataGo JSON analysis process를 거치지 않고 기존 대국 GTP process의 `kata-search_analyze` 빠른 경로를 우선 사용한다.
   - 버튼은 표시 토글처럼 동작한다. 켜면 현재 국면의 best-1 분석을 요청하거나 cache가 있으면 즉시 표시하고, 끄면 표시만 지운다. 백그라운드 착수 리뷰 분석은 계속 fast best-1로 유지된다.
   - 후보 순위, 점수 손실, 예상 리드, visits 같은 상세 텍스트는 화면 하단의 약 10줄 스크롤 박스와 `Copy Log`로 확인한다.

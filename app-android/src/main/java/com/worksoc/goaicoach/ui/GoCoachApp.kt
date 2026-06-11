@@ -688,6 +688,7 @@ private fun GoCoachScreen(
                     plan = plan,
                     deep = deep,
                     topMovesEnabled = topMovesEnabled,
+                    cacheEnabled = analysisCache.isEnabled,
                 )
                 applyTopMoveAnalysisUpdate(update, plan.analysisKey)
                 update.cachedResult?.let { cached ->

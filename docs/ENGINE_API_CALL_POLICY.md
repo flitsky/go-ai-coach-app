@@ -13,6 +13,7 @@
 - `docs/ENGINE_ANALYSIS_CONSISTENCY_REVIEW.md`: KataGo `order`, `scoreLead`, `pointLoss` 해석 기준
 - `docs/AI_ENGINE_SETTINGS.md`: 실제 레벨별 visits/time/candidate count
 - `docs/ENGINE_TIME_CAP_POLICY_DISCUSSION.md`: time cap을 속도/정확도 중 어디에 맞출지에 대한 논의 화두
+- `docs/ENGINE_ANALYSIS_CACHE_POLICY.md`: 분석 cache 비활성화 이유와 재도입 조건
 
 ## 현재 결정
 
@@ -27,6 +28,7 @@
 5. `Top Moves` 토글이 켜져 있으면 같은 분석 snapshot에서 후보수를 보드에 표시한다.
 6. `Top Moves` 토글이 꺼져 있으면 후보수는 표시하지 않지만, 사용자가 착수했을 때 방금 둔 수가 best/green/yellow/orange/red/unknown 중 무엇인지 판단하는 리뷰 데이터로 쓴다.
 7. 분석 후보에 없는 착점은 실수로 단정하지 않고 `unknown` 또는 회색 계열로 취급한다.
+8. `AnalysisResultCache`는 기본 비활성화한다. 같은 fingerprint가 있더라도 이전 분석 결과를 재사용하지 않는다.
 
 ## 현재 구현 범위
 
@@ -35,6 +37,7 @@
 - AI 응수: 레벨별 visits/candidate count와 `Search Time`의 visits별 time cap으로 `EngineAdapter.analyze()`를 호출한다.
 - 사람 착수 리뷰: 사람 차례가 오면 fast best-1 분석을 백그라운드로 요청한다.
 - Top Moves 표시: 사용자가 토글을 켜면 같은 fast best-1 snapshot을 보드에 표시한다.
+- Analysis cache: 기본 비활성. 현재 턴의 snapshot 표시만 유지하고, 이전 국면 cache hit 재사용은 하지 않는다.
 - Broad study analysis: 전체 합법 착점, policy 후보, refine sweep, deep fallback은 기본 대국 경로에서 비활성이다.
 
 즉 “항상 분석 snapshot을 만든다”는 정책은 유지하되, 폰 실시간 대국에서는 best-1 경량 snapshot만 자동 생성한다. 여러 색상의 후보 분포나 전체 착점 평가가 필요하면 별도 `StudyBroad` 예산으로 분리해서 켠다.

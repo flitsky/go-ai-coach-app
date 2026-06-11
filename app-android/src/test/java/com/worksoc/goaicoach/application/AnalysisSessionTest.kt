@@ -98,7 +98,7 @@ class AnalysisSessionTest {
             deep = false,
         )
         val secondKey = firstKey.copy(deep = true)
-        val cache = AnalysisResultCache(maxEntries = 1)
+        val cache = AnalysisResultCache(maxEntries = 1, mode = AnalysisCacheMode.Enabled)
         val cached = CachedAnalysisResult(snapshot = snapshot, candidateText = "first")
 
         assertNull(cache.get(firstKey))
@@ -111,6 +111,24 @@ class AnalysisSessionTest {
         assertTrue(cache.statsText().contains("hits=1"))
         assertTrue(cache.statsText().contains("misses=2"))
         assertNotEquals(firstKey, secondKey)
+    }
+
+    @Test
+    fun analysisCacheIsDisabledByDefault() {
+        val state = GameState.empty()
+        val key = analysisKeyFor(
+            state = state,
+            preset = AnalysisPreset.Lite,
+            limit = AnalysisLimit(visits = 16, timeMillis = 250, candidateCount = 8),
+            deep = false,
+        )
+        val snapshot = MoveAnalysisSnapshot.empty(state)
+        val cache = AnalysisResultCache(maxEntries = 1)
+
+        cache.put(key, CachedAnalysisResult(snapshot = snapshot, candidateText = "ignored"))
+
+        assertNull(cache.get(key))
+        assertEquals("disabled, entries=0, hits=0, misses=0", cache.statsText())
     }
 
     @Test

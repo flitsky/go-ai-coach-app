@@ -799,3 +799,6 @@
 - `shared`에 `SearchTimeSettings`/`SearchTimeProfile`을 추가하고, `PlayLevelGroup` 기본 time cap을 B16=1000ms, B32=2000ms, B64=3000ms로 변경했다. B16은 0.5~2.5초, B32는 1~5초, B64는 3~9초 5단계 선택지를 갖는다.
 - Android 메뉴에 `Search Time` 섹션을 추가해 B16/B32/B64별 선택값과 benchmark 평균 기반 `추천[...]` 라벨을 표시하도록 했다. 설정은 `UserPreferencesStore`에 저장되며, 런타임 `EngineProfile`과 AI 후보 분석 limit에 모두 반영된다.
 - `AI_ENGINE_SETTINGS.md`, `USER_OPTION_MANUAL.md`, `ENGINE_API_CALL_POLICY.md`, `ENGINE_TIME_CAP_POLICY_DISCUSSION.md`를 새 time cap 정책에 맞춰 갱신했다.
+- 사용자가 현재 cache 재사용이 불안정하고 같은 결론이 반복되는 문제가 있어 우선 비활성화하고, 50% 확률 재사용, 패배 시 무효화, 3회 연속 안정 결과만 등록 같은 고도화 포인트를 남겨달라고 요청했다.
+- `AnalysisResultCache` 기본 mode를 `Disabled`로 바꾸고, Top Moves 완료 메시지는 `Analysis cache disabled: fresh ... result`로 표시되도록 했다. 같은 턴의 현재 `MoveAnalysisSnapshot`을 표시하는 기능은 유지하되, 이전 국면 cache hit 재사용은 하지 않는다.
+- `docs/ENGINE_ANALYSIS_CACHE_POLICY.md`를 추가해 cache 재도입 전 필요한 품질 게이트, 확률적 재사용, 패배 기반 무효화, 안정성 기반 등록, fill/root visits 조건 등을 정리했다.

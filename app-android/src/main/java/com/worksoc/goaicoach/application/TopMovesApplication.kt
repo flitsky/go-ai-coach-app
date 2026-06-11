@@ -85,6 +85,7 @@ internal fun buildCompletedTopMoveAnalysisUpdate(
     plan: TopMoveAnalysisPlan,
     deep: Boolean,
     topMovesEnabled: Boolean,
+    cacheEnabled: Boolean = true,
 ): TopMoveAnalysisUpdate {
     val snapshot = MoveAnalysisSnapshot.from(targetState, result.candidates)
     val analysisText = rawCandidateText
@@ -96,20 +97,29 @@ internal fun buildCompletedTopMoveAnalysisUpdate(
             candidateCount = plan.candidateCount,
             deep = deep,
         )
+    val cacheText = if (cacheEnabled) {
+        "Analysis cache miss: stored ${analysisPreset.label} result."
+    } else {
+        "Analysis cache disabled: fresh ${analysisPreset.label} result."
+    }
     return TopMoveAnalysisUpdate(
         snapshot = snapshot,
         reviewCandidateMoves = snapshot.candidatesForReview(),
         candidateMoves = if (topMovesEnabled) snapshot.candidatesForDisplay() else emptyList(),
-        candidateText = "Analysis cache miss: stored ${analysisPreset.label} result.\n$analysisText",
+        candidateText = "$cacheText\n$analysisText",
         engineMessage = if (topMovesEnabled) {
             result.status.message
         } else {
             "Move review analysis ready for ${targetState.nextPlayer.label}: ${snapshot.scoredPlayCount}/${snapshot.legalPlayCount} legal spot(s) scored."
         },
-        cachedResult = CachedAnalysisResult(
-            snapshot = snapshot,
-            candidateText = analysisText,
-        ),
+        cachedResult = if (cacheEnabled) {
+            CachedAnalysisResult(
+                snapshot = snapshot,
+                candidateText = analysisText,
+            )
+        } else {
+            null
+        },
     )
 }
 
@@ -124,7 +134,7 @@ internal fun planShowTopMoves(
         val candidateMoves = reviewAnalysis.candidatesForDisplay()
         return ShowTopMovesPlan.ShowCached(
             candidateMoves = candidateMoves,
-            engineMessage = "Showing ${candidateMoves.scoredCandidateCount()} scored best move from cached ${analysisPreset.label} analysis.",
+            engineMessage = "Showing ${candidateMoves.scoredCandidateCount()} scored best move from current ${analysisPreset.label} analysis.",
         )
     }
 

@@ -13,6 +13,7 @@ import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
 import com.worksoc.goaicoach.shared.StoneColor
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -73,6 +74,38 @@ class TopMovesApplicationTest {
         assertEquals("analysis complete", update.engineMessage)
         assertNotNull(update.cachedResult)
     }
+
+    @Test
+    fun completedAnalysisUpdateDoesNotStorePayloadWhenCacheDisabled() {
+        val state = GameState.empty()
+        val result = AnalysisResult(
+            status = EngineStatus.ready("analysis complete"),
+            candidates = emptyList(),
+            summary = "raw",
+        )
+        val plan = buildTopMoveAnalysisPlan(
+            targetState = state,
+            engineProfile = EngineProfile(),
+            analysisPreset = AnalysisPreset.Lite,
+            deep = false,
+        )
+
+        val update = buildCompletedTopMoveAnalysisUpdate(
+            targetState = state,
+            result = result,
+            rawCandidateText = "raw candidate text",
+            engineProfile = EngineProfile(),
+            analysisPreset = AnalysisPreset.Lite,
+            plan = plan,
+            deep = false,
+            topMovesEnabled = false,
+            cacheEnabled = false,
+        )
+
+        assertTrue(update.candidateText.contains("Analysis cache disabled"))
+        assertNull(update.cachedResult)
+    }
+
 
     @Test
     fun cachedAnalysisUpdateKeepsDisplayMovesOnlyWhenTopMovesEnabled() {

@@ -25,8 +25,16 @@ internal data class CachedAnalysisResult(
     val candidateText: String,
 )
 
+// Disabled by default until cache reuse has quality gates such as repeated stable engine results,
+// sufficient root visits, probabilistic reuse, and loss-triggered invalidation.
+internal enum class AnalysisCacheMode {
+    Disabled,
+    Enabled,
+}
+
 internal class AnalysisResultCache(
     private val maxEntries: Int,
+    val mode: AnalysisCacheMode = AnalysisCacheMode.Disabled,
 ) {
     private val entries = object : LinkedHashMap<AnalysisCacheKey, CachedAnalysisResult>(16, 0.75f, true) {
         override fun removeEldestEntry(
@@ -37,7 +45,13 @@ internal class AnalysisResultCache(
     private var hits: Int = 0
     private var misses: Int = 0
 
+    val isEnabled: Boolean
+        get() = mode == AnalysisCacheMode.Enabled
+
     fun get(key: AnalysisCacheKey): CachedAnalysisResult? {
+        if (!isEnabled) {
+            return null
+        }
         val value = entries[key]
         if (value == null) {
             misses += 1
@@ -51,11 +65,18 @@ internal class AnalysisResultCache(
         key: AnalysisCacheKey,
         result: CachedAnalysisResult,
     ) {
+        if (!isEnabled) {
+            return
+        }
         entries[key] = result
     }
 
     fun statsText(): String =
-        "entries=${entries.size}, hits=$hits, misses=$misses"
+        if (isEnabled) {
+            "enabled, entries=${entries.size}, hits=$hits, misses=$misses"
+        } else {
+            "disabled, entries=0, hits=0, misses=0"
+        }
 }
 
 internal fun analysisKeyFor(
