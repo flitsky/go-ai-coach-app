@@ -102,6 +102,7 @@ internal suspend fun EngineAdapter.runAutoAiTurn(
     playLevel: PlayLevelSetting,
     currentProfile: EngineProfile,
     searchTimeSettings: SearchTimeSettings = SearchTimeSettings(),
+    isolateSearchCache: Boolean = false,
 ): AutoAiTurnResult {
     val aiPlayer = currentState.nextPlayer
     val turnProfile = playLevel.toEngineProfile(currentProfile, searchTimeSettings)
@@ -113,6 +114,7 @@ internal suspend fun EngineAdapter.runAutoAiTurn(
         aiPlayer = aiPlayer,
         playLevel = playLevel,
         searchTimeSettings = searchTimeSettings,
+        isolateSearchCache = isolateSearchCache,
     )
     val estimate = runCatching {
         estimateScore(scoreGraphAnalysisLimit(turnProfile))

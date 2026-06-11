@@ -6,10 +6,11 @@ package com.worksoc.goaicoach.shared
  * The app owns canonical game state and replays it into this adapter. Engine
  * implementations may keep internal search trees, NN caches, or transport
  * sessions, so callers must not infer that `newGame()` or `playMove()` also
- * isolates search history. Reusing prior tree work can be valuable, but it can
- * also contaminate visit-calibrated play levels when multiple AI seats share
- * one process. Use `clearSearchCache()` before AI move selection when fair
- * per-turn search is more important than reuse.
+ * isolates search history. Reusing prior tree work is valuable in human-vs-AI
+ * play because the same AI is continuing its reading. It can contaminate
+ * visit-calibrated play levels only when multiple AI seats share one process.
+ * Use `clearSearchCache()` before AI-vs-AI move selection when fair per-seat
+ * search is more important than reuse.
  */
 interface EngineAdapter {
     suspend fun initialize(profile: EngineProfile): EngineStatus
@@ -26,8 +27,10 @@ interface EngineAdapter {
      * can count reusable tree visits from previous turns and can also retain
      * enough state across repeated games to replay moves nearly instantly.
      * Random seeds may diversify search, but they are not a correctness
-     * substitute for cache isolation. A future performance-oriented policy may
-     * choose tree reuse with a new-playout budget instead.
+     * substitute for cache isolation. The current app calls this for AI-vs-AI
+     * shared-process play only; human-vs-AI keeps reuse for strength and speed.
+     * A future performance-oriented policy may choose tree reuse with a
+     * new-playout budget instead.
      */
     suspend fun clearSearchCache(): EngineStatus =
         EngineStatus.ready("Engine search cache unchanged.")

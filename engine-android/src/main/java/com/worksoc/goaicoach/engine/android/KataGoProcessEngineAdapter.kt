@@ -115,6 +115,8 @@ class KataGoProcessEngineAdapter(
 
     override suspend fun clearSearchCache(): EngineStatus {
         ensureProcessStarted()
+        // Used only when shared-process AI-vs-AI play must prevent one side's
+        // deeper search tree from becoming the other side's effective budget.
         sendCommand("clear_cache")
         return EngineStatus.ready("KataGo search cache cleared")
     }

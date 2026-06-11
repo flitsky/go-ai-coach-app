@@ -29,6 +29,7 @@
 6. `Top Moves` 토글이 꺼져 있으면 후보수는 표시하지 않지만, 사용자가 착수했을 때 방금 둔 수가 best/green/yellow/orange/red/unknown 중 무엇인지 판단하는 리뷰 데이터로 쓴다.
 7. 분석 후보에 없는 착점은 실수로 단정하지 않고 `unknown` 또는 회색 계열로 취급한다.
 8. `AnalysisResultCache`는 기본 비활성화한다. 같은 fingerprint가 있더라도 이전 분석 결과를 재사용하지 않는다.
+9. 사람 vs AI 또는 AI vs 사람 대국에서는 KataGo search tree 재사용을 유지한다. AI vs AI 자동대국에서만 한 진영의 깊은 탐색이 다른 진영의 낮은 레벨에 섞이지 않도록 착수 분석 직전 `clearSearchCache()`를 호출한다.
 
 ## 현재 구현 범위
 
@@ -127,16 +128,16 @@ AI 차례와 사람 차례는 같은 `TurnAnalysis` snapshot 개념을 사용한
 ### AI 차례
 
 1. 현재 AI 진영의 플레이 레벨로 fast `TurnAnalysis`를 요청한다.
-2. AI 착수 분석 직전에는 `EngineAdapter.clearSearchCache()`를 호출한다.
+2. AI vs AI 자동대국이면 착수 분석 직전에 `EngineAdapter.clearSearchCache()`를 호출한다. 사람과 AI가 두는 대국이면 search tree 재사용을 유지한다.
 3. 반환된 후보의 `engineOrder` 순서를 신뢰한다.
 4. AI 레벨링은 이 order 순서 후보 리스트에서 선택 구간을 정해 수행한다.
 5. 최고 단계는 항상 order 최상위 후보를 선택한다.
 6. AI가 착수한 수는 같은 snapshot에서 찾아 색상 dot을 남긴다.
 7. 후보에 없거나 `pointLoss`가 없으면 평가를 단정하지 않고 `unknown`으로 둔다.
 
-`clearSearchCache()`는 앱 레벨 분석 cache와 다른 경계다. 앱 cache는 이전 국면의 결과 재사용 여부를 다루고, `clearSearchCache()`는 KataGo process 내부 검색 트리/NN cache가 직전 턴 또는 이전 판의 국면을 과도하게 재사용하지 못하게 막기 위한 엔진 경계다.
+`clearSearchCache()`는 앱 레벨 분석 cache와 다른 경계다. 앱 cache는 이전 국면의 결과 재사용 여부를 다루고, `clearSearchCache()`는 KataGo process 내부 검색 트리/NN cache가 직전 턴 또는 이전 판의 국면을 과도하게 재사용하지 못하게 막기 위한 엔진 경계다. 현재 기본 정책은 사람 대국에서는 이 재사용을 장점으로 보고 유지하며, AI vs AI 자동대국에서만 shared process의 진영 간 오염을 막기 위해 호출한다.
 
-search tree 재사용 자체는 나쁜 기능이 아니다. KataGo의 원래 성능 최적화이며, 한쪽 AI가 같은 대국을 이어갈 때는 유용하다. 현재 기본 대국 경로에서 격리하는 이유는 `maxVisits`가 이전 턴에서 유효한 tree visits를 포함할 수 있어, B16/B32/B64 같은 visit 기반 레벨링이 오염되기 때문이다.
+search tree 재사용 자체는 나쁜 기능이 아니다. KataGo의 원래 성능 최적화이며, 한쪽 AI가 같은 대국을 이어갈 때는 유용하다. 현재 AI vs AI 자동대국에서만 격리하는 이유는 `maxVisits`가 이전 턴에서 유효한 tree visits를 포함할 수 있어, B16/B32/B64 같은 visit 기반 레벨링이 오염되기 때문이다. 사람 vs AI에서는 같은 AI가 자기 읽기를 이어가는 구조이므로 재사용을 유지하는 편이 속도와 품질 측면에서 유리하다.
 
 ### 랜덤 시드와 search cache
 
@@ -148,7 +149,8 @@ KataGo GTP config 주석 기준으로 `visits`는 현재 턴에서 새로 수행
 
 - 사용자 대국 다양성: 앱 레벨 후보 구간 랜덤 선택과 KataGo 기본 search randomness를 활용한다.
 - 강도 검증/회귀 테스트: 필요하면 `searchRandSeed` 또는 `nnRandSeed`를 고정하는 별도 실험 모드를 둔다.
-- 공정한 턴별 AI 착수 분석: `clearSearchCache()`를 유지한다.
+- 공정한 AI vs AI 레벨 비교: `clearSearchCache()`를 유지한다.
+- 사람 vs AI 대국: search tree 재사용을 유지한다.
 - 새 판 반복 테스트: `startNewEngineGame()`의 fresh process 정책을 유지한다.
 
 따라서 “매판 random seed를 넣으면 프로세스 재시작이나 `clear_cache`가 불필요한가?”에 대한 현재 결론은 아니오다. 랜덤 시드는 다양성/재현성 제어 수단이고, `clear_cache`/fresh process는 엔진 내부 상태 격리 수단이다.

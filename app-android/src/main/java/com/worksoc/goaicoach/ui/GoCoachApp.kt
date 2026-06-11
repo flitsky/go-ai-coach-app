@@ -1066,12 +1066,14 @@ private fun GoCoachScreen(
                     val side = playerSetup.sideFor(aiPlayer)
                     val aiPlayLevel = side.playLevel
                     val aiLimit = aiPlayLevel.analysisLimitWith(searchTimeSettings)
+                    val isolateSearchCache = playerSetup.isAutoPlay()
                     val previousReviewCandidates = reviewCandidateMoves
                     val turnStartMillis = System.currentTimeMillis()
                     runtimeEventLog.append(
                         "ai_turn_begin move=${turnState.moves.size + 1} player=${aiPlayer.label} " +
                             "level=${aiPlayLevel.displayLabel} policy=${aiPlayLevel.selectionPolicy.description.logSnippet(80)} " +
-                            "limit=${aiLimit.logSummary()} delayMs=${request.delayMillis} fp=${turnState.shortFingerprint()}",
+                            "limit=${aiLimit.logSummary()} delayMs=${request.delayMillis} " +
+                            "searchCache=${if (isolateSearchCache) "clear" else "reuse"} fp=${turnState.shortFingerprint()}",
                     )
                     isEngineBusy = true
                     var nextAnalysisState: GameState? = null
@@ -1082,6 +1084,7 @@ private fun GoCoachScreen(
                                 playLevel = aiPlayLevel,
                                 currentProfile = engineProfile,
                                 searchTimeSettings = searchTimeSettings,
+                                isolateSearchCache = isolateSearchCache,
                             )
                         }
                     }.onSuccess { result ->

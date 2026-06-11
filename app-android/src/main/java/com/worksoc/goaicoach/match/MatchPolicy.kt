@@ -132,7 +132,9 @@ internal suspend fun applyAiResponseAfterHumanTurn(
         )
     }
 
-    engineAdapter.clearSearchCache()
+    // Human-vs-AI keeps KataGo's search tree reuse. This is the normal engine
+    // continuation case: the same AI benefits from prior reading, and there is
+    // no cross-seat leakage between two differently budgeted AI players.
     val selectedAiMove = engineAdapter.selectAiMoveFromAnalysis(
         currentState = stateAfterHuman,
         aiPlayer = AiPlayer,
@@ -170,8 +172,14 @@ internal suspend fun applyAiTurn(
     aiPlayer: StoneColor,
     playLevel: PlayLevelSetting,
     searchTimeSettings: SearchTimeSettings = SearchTimeSettings(),
+    isolateSearchCache: Boolean = false,
 ): TurnOutcome {
-    engineAdapter.clearSearchCache()
+    if (isolateSearchCache) {
+        // AI-vs-AI currently shares one KataGo process. Without this isolation,
+        // a lower-budget side can inherit the previous higher-budget side's
+        // subtree and hide the intended B16/B32/B64 strength gap.
+        engineAdapter.clearSearchCache()
+    }
     val selectedAiMove = engineAdapter.selectAiMoveFromAnalysis(
         currentState = currentState,
         aiPlayer = aiPlayer,

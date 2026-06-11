@@ -68,6 +68,7 @@ Visit diagnostics: request=32, root=31, elapsedMs=2031, timeCapMs=3000, fill=SHO
 
 - `ai_turn_begin`이 착수마다 1회씩만 찍히는가.
 - 각 턴의 `fp`가 이전 턴과 다른가.
+- `ai_turn_begin`의 `searchCache`가 AI vs AI에서는 `clear`, 사람 대국에서는 `reuse`로 남는가.
 - `summary`의 `timeCapMs`가 메뉴 설정값과 일치하는가.
 - `elapsedMs`가 비정상적으로 0~수 ms로 반복되는가.
 - `root`가 요청 visits에 근접하는가, 아니면 계속 `SHORT`인가.
@@ -84,12 +85,13 @@ Visit diagnostics: request=32, root=31, elapsedMs=2031, timeCapMs=3000, fill=SHO
 대응은 다음과 같이 적용했다.
 
 - 새 판 시작: `startNewEngineGame()`에서 KataGo process를 `stop()` 후 `initialize()`한다.
-- AI 착수 분석 직전: `EngineAdapter.clearSearchCache()`를 호출한다.
+- AI vs AI 자동대국의 AI 착수 분석 직전: `EngineAdapter.clearSearchCache()`를 호출한다.
+- 사람 vs AI 대국: 같은 AI가 읽기를 이어가는 이점이 있으므로 search tree 재사용을 유지한다.
 - KataGo 구현체: GTP `clear_cache`를 호출한다.
 
 랜덤 시드(`searchRandSeed`, `nnRandSeed`)는 이 정책의 대체재로 보지 않는다. 시드는 검색 다양성 또는 재현성을 조정하지만, 직전 턴이나 이전 판에서 남은 search tree/NN cache를 격리하지는 않는다.
 
-단, search tree 재사용 자체는 성능 최적화 관점에서 좋은 기능이다. 기본 대국 경로에서는 레벨 보정을 우선해 격리하지만, 향후 `maxPlayouts` 기반 성능 모드에서 재사용을 다시 실험할 수 있다.
+단, search tree 재사용 자체는 성능 최적화 관점에서 좋은 기능이다. 기본 사람 대국 경로에서는 재사용하고, AI vs AI 자동대국에서는 레벨 보정을 우선해 격리한다. 향후 `maxPlayouts` 기반 성능 모드에서 AI vs AI 재사용을 다시 실험할 수 있다.
 
 검증 로그:
 

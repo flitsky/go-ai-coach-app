@@ -113,6 +113,54 @@ class MatchPolicyTest {
     }
 
     @Test
+    fun humanVsAiResponseKeepsSearchCacheReuse() = runBlocking {
+        val humanMove = Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine))
+        val stateAfterHuman = GameState.empty().play(humanMove)
+        val aiMove = Move.Play(StoneColor.White, BoardCoordinate.fromLabel("D4", BoardSize.Nine))
+        val adapter = FakeEngineAdapter(
+            analysisCandidates = listOf(
+                CandidateMove(
+                    move = aiMove,
+                    pointLoss = 0.0,
+                ),
+            ),
+        )
+
+        applyAiResponseAfterHumanTurn(
+            engineAdapter = adapter,
+            stateAfterHuman = stateAfterHuman,
+            humanMove = humanMove,
+            playLevel = PlayLevelSetting(),
+        )
+
+        assertEquals(0, adapter.clearSearchCacheCount)
+    }
+
+    @Test
+    fun isolatedAiTurnClearsSearchCacheBeforeAnalysis() = runBlocking {
+        val blackMove = Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine))
+        val adapter = FakeEngineAdapter(
+            analysisCandidates = listOf(
+                CandidateMove(
+                    move = blackMove,
+                    pointLoss = 0.0,
+                ),
+            ),
+        )
+
+        applyAiTurn(
+            engineAdapter = adapter,
+            currentState = GameState.empty(),
+            aiPlayer = StoneColor.Black,
+            playLevel = PlayLevelSetting(),
+            isolateSearchCache = true,
+        )
+
+        assertEquals(1, adapter.clearSearchCacheCount)
+        assertEquals(1, adapter.analysisLimits.size)
+    }
+
+    @Test
     fun passBestCandidateOverridesLowLevelRandomPlaySelection() = runBlocking {
         val humanMove = Move.Play(StoneColor.Black, BoardCoordinate(row = 4, column = 4))
         val stateAfterHuman = GameState.empty().play(humanMove)
@@ -267,6 +315,7 @@ private class FakeEngineAdapter(
 ) : EngineAdapter {
     val playedMoves = mutableListOf<Move>()
     val analysisLimits = mutableListOf<AnalysisLimit>()
+    var clearSearchCacheCount = 0
     var genMoveCalled = false
 
     override suspend fun initialize(profile: EngineProfile): EngineStatus =
@@ -298,6 +347,11 @@ private class FakeEngineAdapter(
 
     override suspend fun undoMove(): EngineStatus =
         EngineStatus.ready("undone")
+
+    override suspend fun clearSearchCache(): EngineStatus {
+        clearSearchCacheCount += 1
+        return EngineStatus.ready("cache cleared")
+    }
 
     override suspend fun analyze(limit: AnalysisLimit): AnalysisResult {
         analysisLimits += limit

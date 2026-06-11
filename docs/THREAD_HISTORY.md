@@ -828,3 +828,9 @@
 - `docs/ENGINE_SEARCH_TREE_REUSE_REVIEW.md`를 추가해 search tree reuse의 장점, 현재 문제가 된 조건, random seed의 한계, `maxPlayouts` 기반 재사용 모드, side별 engine process 분리 후보를 정리했다. 결론은 “재사용 기능을 영구 금지한 것이 아니라, 현재 기본값은 레벨 보정과 디버깅 가능성을 위해 격리하고, 향후 성능 모드에서 통제된 재사용을 실험한다”이다.
 - 사용자가 B16이 B64의 tree를 어느 수준까지 참조하는지, 이것이 B16의 열세를 가리는지 질문했다. 정리: B16이 B64의 모든 tree를 전부 참조하는 것은 아니지만, 실제 착수 후 새 root가 된 하위 subtree는 재사용될 수 있다. 그 subtree가 B64의 강한 탐색으로 만들어진 경우 B16은 자기 예산 이상의 사전 정보를 얻어 사실상 “B64가 일부 예습한 B16”이 된다.
 - 해소책은 현재 기본값으로는 AI 착수 직전 `clear_cache`가 가장 명확하다. AI side별 process 분리는 이론적으로 더 자연스럽지만 Android 비용과 orchestration 복잡도가 높다. `maxPlayouts` 기반 tree reuse는 성능 모드 후보로 남기되, 기본 레벨링 모드에 바로 적용하지 않는다. `ENGINE_SEARCH_TREE_REUSE_REVIEW.md`에 해당 비교를 보강했다.
+- 사용자가 사람과 둘 때는 이전 탐색을 유지하는 것이 유리하다는 점을 반영하고, AI끼리 대국하는 상황에서만 `clear_cache`를 적용해달라고 요청했다.
+- `applyAiResponseAfterHumanTurn()`에서는 `clearSearchCache()` 호출을 제거해 사람 vs AI/AI vs 사람 대국에서는 KataGo search tree 재사용을 유지한다. 같은 AI가 계속 읽기를 이어가는 정상 엔진 사용 케이스로 판단했다.
+- `applyAiTurn()`과 `runAutoAiTurn()`에는 `isolateSearchCache` 플래그를 추가했다. Compose 자동대국 경로에서는 `playerSetup.isAutoPlay()`일 때만 이 플래그를 켜서 AI vs AI shared process 레벨 오염을 차단한다.
+- `ai_turn_begin` 런타임 로그에 `searchCache=clear/reuse`를 추가해 실제 턴별 정책을 Copy Log에서 확인할 수 있게 했다.
+- `EngineAdapter`와 `KataGoProcessEngineAdapter.clearSearchCache()` 주석에 사람 대국 재사용의 장점, AI vs AI shared process에서 B16/B32/B64 강도 경계가 오염될 수 있는 우려를 남겼다.
+- `ENGINE_API_CALL_POLICY.md`, `ENGINE_SEARCH_TREE_REUSE_REVIEW.md`, `AI_AUTO_PLAY_DIAGNOSTIC_LOG.md`를 갱신해 현재 정책을 “사람 대국은 reuse, AI vs AI는 clear”로 정리했다.

@@ -4,7 +4,7 @@
 
 ## 한줄 결론
 
-KataGo search tree 재사용은 좋은 기능이다. 다만 현재 앱의 기본 대국 경로에서는 `레벨 보정`, `AI vs AI 비교`, `반복 새 판 검증`을 우선해야 하므로 AI 착수 분석 직전 `clear_cache`를 유지한다.
+KataGo search tree 재사용은 좋은 기능이다. 사람 vs AI 대국에서는 같은 AI가 읽기를 이어가는 장점이 크므로 재사용을 유지한다. 다만 AI vs AI 자동대국에서는 `레벨 보정`, `AI vs AI 비교`, `반복 새 판 검증`을 우선해야 하므로 AI 착수 분석 직전 `clear_cache`를 호출한다.
 
 재사용을 다시 켜려면 단순히 random seed를 바꾸는 방식이 아니라, `maxPlayouts` 또는 엔진 세션 분리 같은 별도 정책으로 “새로 수행할 탐색량”을 보장해야 한다.
 
@@ -29,7 +29,8 @@ KataGo search tree 재사용은 좋은 기능이다. 다만 현재 앱의 기본
 
 [MatchPolicy.kt](/Users/ryan9kim/worksoc/go-ai-coach/app-android/src/main/java/com/worksoc/goaicoach/match/MatchPolicy.kt)
 
-- 사람 착수 후 AI 응수, AI vs AI 자동대국 모두 AI 착수 분석 직전에 `engineAdapter.clearSearchCache()`를 호출한다.
+- 사람 착수 후 AI 응수는 search tree 재사용을 유지한다.
+- AI vs AI 자동대국은 AI 착수 분석 직전에 `engineAdapter.clearSearchCache()`를 호출한다.
 - 그 다음 `analyze()` 결과의 후보 순서와 `MoveSelectionPolicy`로 착수한다.
 - 비최고 단계는 앱 레벨 `Random.nextInt()`로 후보 구간에서 균등 랜덤 선택한다.
 
@@ -90,21 +91,22 @@ KataGo search tree 재사용은 좋은 기능이다. 다만 현재 앱의 기본
 
 ## 문제를 해소하는 선택지
 
-### 선택지 A: AI 착수마다 `clear_cache`
+### 선택지 A: AI vs AI에서만 `clear_cache`
 
 현재 적용한 방식이다.
 
 장점:
 
 - B16/B32/B64 레벨 경계가 가장 명확하다.
-- B16은 B16만큼, B64는 B64만큼 새로 탐색한다는 해석이 쉽다.
+- AI vs AI에서는 B16은 B16만큼, B64는 B64만큼 새로 탐색한다는 해석이 쉽다.
 - AI vs AI 자동대국과 반복 회귀 테스트가 안정적이다.
+- 사람 vs AI에서는 KataGo의 search tree reuse 장점을 유지해 속도와 품질을 얻는다.
 - 구현이 단순하고 로그 해석이 쉽다.
 
 단점:
 
-- KataGo의 좋은 search tree reuse 최적화를 포기한다.
-- 느린 폰에서 체감 대국 속도가 느려질 수 있다.
+- AI vs AI 자동대국에서는 KataGo의 좋은 search tree reuse 최적화를 포기한다.
+- AI vs AI 자동대국은 느린 폰에서 체감 진행 속도가 느려질 수 있다.
 
 현재 제품 단계에서는 이 방식을 기본값으로 유지하는 것이 맞다.
 
@@ -165,12 +167,13 @@ seed는 탐색 흔들림과 재현성을 조절하지만, B64 subtree가 B16 roo
 
 ## 좋은 재사용을 살리는 대안
 
-### 1. 현재 기본: isolated turn search
+### 1. 현재 기본: hybrid reuse policy
 
-- AI 착수 분석 직전 `clear_cache`
+- 사람 vs AI: search tree reuse 유지
+- AI vs AI: AI 착수 분석 직전 `clear_cache`
 - `maxVisits`, `maxTime`으로 분석
-- 장점: 레벨 비교와 테스트가 명확하다.
-- 단점: KataGo의 search tree reuse 이점을 버린다.
+- 장점: 사람 대국 성능을 유지하면서 AI vs AI 레벨 비교와 테스트가 명확하다.
+- 단점: AI vs AI에서는 KataGo의 search tree reuse 이점을 버린다.
 
 현재 사용자 테스트에서 착수 안정성과 레벨별 승률 기대가 가장 좋아졌으므로 기본값으로 유지한다.
 
@@ -218,7 +221,8 @@ seed는 탐색 흔들림과 재현성을 조절하지만, B64 subtree가 B16 roo
 현재는 다음 정책을 유지한다.
 
 - 새 판 시작: fresh process
-- AI 착수 분석: `clear_cache`
+- 사람 vs AI 착수 분석: search tree reuse 유지
+- AI vs AI 착수 분석: `clear_cache`
 - 레벨링: 현재 `maxVisits` 기반 B16/B32/B64/B160
 - 후보 다양성: 앱 레벨 후보 구간 랜덤 선택
 

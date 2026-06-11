@@ -103,6 +103,30 @@ class EngineSessionTest {
     }
 
     @Test
+    fun runAutoAiTurnClearsSearchCacheOnlyWhenIsolationIsRequested() = runBlocking {
+        val engine = RecordingEngineAdapter()
+
+        engine.runAutoAiTurn(
+            currentState = GameState.empty(),
+            playLevel = PlayLevelSetting(),
+            currentProfile = EngineProfile(),
+            isolateSearchCache = true,
+        )
+
+        assertEquals(
+            listOf(
+                "configure:16",
+                "newGame:9:japanese",
+                "clearSearchCache",
+                "analyze:16",
+                "genMove:Black",
+                "estimate:1",
+            ),
+            engine.calls,
+        )
+    }
+
+    @Test
     fun estimateScoreForStateOptionallySyncsBoardBeforeEstimating() = runBlocking {
         val engine = RecordingEngineAdapter()
         val state = GameState.empty()
@@ -162,6 +186,11 @@ private class RecordingEngineAdapter : EngineAdapter {
 
     override suspend fun undoMove(): EngineStatus =
         EngineStatus.ready("undone")
+
+    override suspend fun clearSearchCache(): EngineStatus =
+        EngineStatus.ready("cache cleared").also {
+            calls += "clearSearchCache"
+        }
 
     override suspend fun analyze(limit: AnalysisLimit): AnalysisResult =
         AnalysisResult(
