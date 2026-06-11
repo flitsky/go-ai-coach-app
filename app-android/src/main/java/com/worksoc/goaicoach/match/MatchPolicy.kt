@@ -132,6 +132,7 @@ internal suspend fun applyAiResponseAfterHumanTurn(
         )
     }
 
+    engineAdapter.clearSearchCache()
     val selectedAiMove = engineAdapter.selectAiMoveFromAnalysis(
         currentState = stateAfterHuman,
         aiPlayer = AiPlayer,
@@ -170,6 +171,7 @@ internal suspend fun applyAiTurn(
     playLevel: PlayLevelSetting,
     searchTimeSettings: SearchTimeSettings = SearchTimeSettings(),
 ): TurnOutcome {
+    engineAdapter.clearSearchCache()
     val selectedAiMove = engineAdapter.selectAiMoveFromAnalysis(
         currentState = currentState,
         aiPlayer = aiPlayer,

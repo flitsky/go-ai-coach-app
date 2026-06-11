@@ -127,11 +127,14 @@ AI 차례와 사람 차례는 같은 `TurnAnalysis` snapshot 개념을 사용한
 ### AI 차례
 
 1. 현재 AI 진영의 플레이 레벨로 fast `TurnAnalysis`를 요청한다.
-2. 반환된 후보의 `engineOrder` 순서를 신뢰한다.
-3. AI 레벨링은 이 order 순서 후보 리스트에서 선택 구간을 정해 수행한다.
-4. 최고 단계는 항상 order 최상위 후보를 선택한다.
-5. AI가 착수한 수는 같은 snapshot에서 찾아 색상 dot을 남긴다.
-6. 후보에 없거나 `pointLoss`가 없으면 평가를 단정하지 않고 `unknown`으로 둔다.
+2. AI 착수 분석 직전에는 `EngineAdapter.clearSearchCache()`를 호출한다.
+3. 반환된 후보의 `engineOrder` 순서를 신뢰한다.
+4. AI 레벨링은 이 order 순서 후보 리스트에서 선택 구간을 정해 수행한다.
+5. 최고 단계는 항상 order 최상위 후보를 선택한다.
+6. AI가 착수한 수는 같은 snapshot에서 찾아 색상 dot을 남긴다.
+7. 후보에 없거나 `pointLoss`가 없으면 평가를 단정하지 않고 `unknown`으로 둔다.
+
+`clearSearchCache()`는 앱 레벨 분석 cache와 다른 경계다. 앱 cache는 이전 국면의 결과 재사용 여부를 다루고, `clearSearchCache()`는 KataGo process 내부 검색 트리/NN cache가 직전 턴 또는 이전 판의 국면을 과도하게 재사용하지 못하게 막기 위한 엔진 경계다.
 
 ### 사람 차례
 

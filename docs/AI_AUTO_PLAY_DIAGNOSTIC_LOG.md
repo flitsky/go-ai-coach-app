@@ -71,3 +71,24 @@ Visit diagnostics: request=32, root=31, elapsedMs=2031, timeCapMs=3000, fill=SHO
 - `summary`의 `timeCapMs`가 메뉴 설정값과 일치하는가.
 - `elapsedMs`가 비정상적으로 0~수 ms로 반복되는가.
 - `root`가 요청 visits에 근접하는가, 아니면 계속 `SHORT`인가.
+
+## 2026-06-11 분석 결론
+
+실기기에서 자동대국이 한 판 단위로 매우 빠르게 끝나는 현상을 수집했다. 앱의 `AnalysisResultCache`는 비활성 상태였고, `fp`는 착수마다 바뀌었으므로 앱이 같은 후보수를 그대로 재사용한 문제는 아니었다.
+
+확인된 원인은 두 단계였다.
+
+1. 새 판 반복 시 `clear_board`만으로는 KataGo GTP 프로세스 내부 검색 트리/캐시가 충분히 비워지지 않았다.
+2. 같은 판 안에서도 직전 깊은 탐색의 자식 국면이 다음 얕은 탐색에 재사용되어 B16 분석이 1~4ms로 끝나는 구간이 있었다.
+
+대응은 다음과 같이 적용했다.
+
+- 새 판 시작: `startNewEngineGame()`에서 KataGo process를 `stop()` 후 `initialize()`한다.
+- AI 착수 분석 직전: `EngineAdapter.clearSearchCache()`를 호출한다.
+- KataGo 구현체: GTP `clear_cache`를 호출한다.
+
+검증 로그:
+
+- `docs/engine-benchmark-logs/phone-autoplay-fastgame-20260611-203429/summary.md`
+- `docs/engine-benchmark-logs/phone-autoplay-freshprocess-20260611-203855/summary.md`
+- `docs/engine-benchmark-logs/phone-autoplay-clearcache-20260611-204836/summary.md`

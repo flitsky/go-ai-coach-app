@@ -113,6 +113,12 @@ class KataGoProcessEngineAdapter(
         return EngineStatus.ready("KataGo undid one move")
     }
 
+    override suspend fun clearSearchCache(): EngineStatus {
+        ensureProcessStarted()
+        sendCommand("clear_cache")
+        return EngineStatus.ready("KataGo search cache cleared")
+    }
+
     override suspend fun analyze(limit: AnalysisLimit): AnalysisResult {
         ensureProcessStarted()
         val effectiveLimit = limit.effectiveAnalysisLimit()

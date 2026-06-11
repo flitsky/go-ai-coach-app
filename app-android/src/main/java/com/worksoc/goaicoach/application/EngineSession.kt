@@ -58,7 +58,11 @@ internal suspend fun EngineAdapter.startNewEngineGame(
     boardSize: BoardSize,
     ruleset: Ruleset,
 ): EngineStartupResult {
-    configure(profile)
+    // A fresh process is intentional here. KataGo's GTP search tree can survive
+    // clear_board across repeated games, causing the next game to replay nearly
+    // instantly from retained search data.
+    stop()
+    initialize(profile)
     val status = newGame(boardSize, ruleset)
     val estimate = runCatching {
         estimateScore(scoreGraphAnalysisLimit(profile))

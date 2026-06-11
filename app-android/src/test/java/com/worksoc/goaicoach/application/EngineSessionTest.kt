@@ -53,7 +53,8 @@ class EngineSessionTest {
 
         assertEquals(
             listOf(
-                "configure:32",
+                "stop",
+                "initialize:32",
                 "newGame:9:japanese",
                 "estimate:1",
             ),
@@ -196,5 +197,7 @@ private class RecordingEngineAdapter : EngineAdapter {
         )
 
     override suspend fun stop(): EngineStatus =
-        EngineStatus.stopped("stopped")
+        EngineStatus.stopped("stopped").also {
+            calls += "stop"
+        }
 }

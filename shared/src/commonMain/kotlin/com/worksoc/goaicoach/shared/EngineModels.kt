@@ -7,6 +7,8 @@ interface EngineAdapter {
     suspend fun playMove(move: Move): EngineStatus
     suspend fun genMove(player: StoneColor): MoveResult
     suspend fun undoMove(): EngineStatus
+    suspend fun clearSearchCache(): EngineStatus =
+        EngineStatus.ready("Engine search cache unchanged.")
     suspend fun analyze(limit: AnalysisLimit): AnalysisResult
     suspend fun estimateScore(limit: AnalysisLimit): ScoreEstimate
     suspend fun deadStones(): DeadStonesResult

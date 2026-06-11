@@ -813,3 +813,12 @@
 - 단위 테스트 `:app-android:testDebugUnitTest` 통과 후 USB 연결된 `SM-S908N`에 최신 debug APK를 설치했다. 화면은 패턴 잠금 상태였지만 앱 프로세스는 자동대국을 진행했고, `docs/engine-benchmark-logs/phone-autoplay-diagnostic-20260611/runtime_event_log_locked.txt`에 43수까지의 런타임 로그를 수집했다.
 - 수집 로그 분석 결과 앱은 매 착수마다 `ai_turn_begin`/`ai_turn_success`를 1회씩 실행했고 before/after fingerprint가 매번 달라졌다. 즉, 현재 근거만으로는 분석 생략보다는 B16 `kata-search_analyze`가 매우 빠르게 반환되는 현상이 핵심이다.
 - B16 `빠른 초급 3단계`는 21회 중 11회가 100ms 미만이었고 engine elapsed 평균은 `489.1ms`였다. B32 `초급 7단계`는 22회 중 100ms 미만이 없었고 평균은 `2445.1ms`였다. 상세 요약은 `docs/engine-benchmark-logs/phone-autoplay-diagnostic-20260611/summary.md`에 기록했다.
+- 사용자가 마지막 판이 10초 내외로 끝난 것 같다고 알려 주어, 무선 ADB로 즉시 `files/runtime_event_log.txt`를 수집했다. 당시 실제 설정은 `Black: 중급 5단계(B64)`, `White: 빠른 초급 3단계(B16)`, `autoDelay=0ms`, Search Time `B16 2000ms / B32 3000ms / B64 4500ms`였다.
+- `docs/engine-benchmark-logs/phone-autoplay-fastgame-20260611-203429/`에 원본 로그를 저장했다. 로그상 마지막 두 판은 착수 순서가 완전히 같았고, 12번째 판은 70수 약 20.6초, B64 평균 `69.5ms`, B16 평균 `1.1ms`로 사실상 KataGo 내부 결과가 즉시 재사용된 상태였다.
+- 앱 레벨 `AnalysisResultCache`는 이미 비활성이고 착수 fingerprint가 바뀌었으므로, 원인은 앱 cache가 아니라 KataGo GTP process 내부 검색 트리/NN cache가 새 판 반복에서도 살아 있는 것으로 판단했다.
+- 1차로 `EngineAdapter.startNewEngineGame()`을 `stop() -> initialize() -> newGame()` 순서로 바꿨다. 같은 앱 프로세스에서 새 판을 시작해도 KataGo process 자체를 fresh하게 만들기 위한 조치다.
+- 수정 APK 설치 후 `docs/engine-benchmark-logs/phone-autoplay-freshprocess-20260611-203855/`에 검증 로그를 저장했다. 새 판 전체 즉시 재생은 사라졌고 B64는 평균 약 `4.58초`를 사용했지만, 같은 판 내부에서 B16이 3ms 수준으로 끝나는 구간은 남았다.
+- 추가 원인은 같은 KataGo process가 직전 B64 깊은 탐색의 자식 국면을 다음 B16 얕은 탐색에 재사용하는 것으로 판단했다. `clear_board`/수순 replay는 보드 동기화에는 충분하지만 search cache isolation에는 충분하지 않았다.
+- `EngineAdapter.clearSearchCache()`를 추가하고, KataGo process adapter에서는 GTP `clear_cache`를 호출하도록 했다. 사람 착수 후 AI 응수 분석과 AI vs AI 각 AI 착수 분석 직전에 이 경계를 호출한다.
+- `docs/engine-benchmark-logs/phone-autoplay-clearcache-20260611-204836/`에 최종 검증 로그를 저장했다. 23수 관찰에서 B16은 평균 `2158.7ms`, B64는 평균 `4577.4ms`, 100ms 미만 응답은 0회였다. 따라서 “투다닥” 자동착수의 핵심 원인은 KataGo process 내부 cache/tree 재사용이 맞고, AI 착수 직전 `clear_cache`로 차단됨을 확인했다.
+- 최신 APK를 무선 ADB로 `SM-S908N`에 설치했다. `:app-android:testDebugUnitTest`도 통과했다.
