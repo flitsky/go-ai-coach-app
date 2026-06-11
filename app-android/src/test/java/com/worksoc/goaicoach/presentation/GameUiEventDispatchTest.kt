@@ -9,6 +9,7 @@ import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.StoneColor
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -93,6 +94,19 @@ class GameUiEventDispatchTest {
     }
 
     @Test
+    fun dispatchChangeSearchTimeSettingsRoutesToHandler() {
+        var selected = SearchTimeSettings()
+        val next = SearchTimeSettings(b16Millis = 1_500L)
+        val handlers = handlers(
+            changeSearchTimeSettings = { settings -> selected = settings },
+        )
+
+        dispatchGameUiEvent(GameUiEvent.ChangeSearchTimeSettings(next), handlers)
+
+        assertEquals(next, selected)
+    }
+
+    @Test
     fun dispatchShowEngineBenchmarkRoutesToHandler() {
         val calls = mutableListOf<String>()
         val handlers = handlers(
@@ -119,6 +133,7 @@ class GameUiEventDispatchTest {
         restoreSavedSession: (SavedGameSnapshot) -> Unit = {},
         changePlayerSetup: (PlayerSetup) -> Unit = {},
         changeAutoPlayDelay: (AutoPlayDelaySetting) -> Unit = {},
+        changeSearchTimeSettings: (SearchTimeSettings) -> Unit = {},
         changeScoringRule: (Ruleset) -> Unit = {},
         changeUxOptions: (KaTrainUxOptions) -> Unit = {},
     ): GameUiEventHandlers =
@@ -137,6 +152,7 @@ class GameUiEventDispatchTest {
             restoreSavedSession = restoreSavedSession,
             changePlayerSetup = changePlayerSetup,
             changeAutoPlayDelay = changeAutoPlayDelay,
+            changeSearchTimeSettings = changeSearchTimeSettings,
             changeScoringRule = changeScoringRule,
             changeUxOptions = changeUxOptions,
         )

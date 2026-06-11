@@ -71,6 +71,7 @@ import com.worksoc.goaicoach.application.planShowTopMoves
 import com.worksoc.goaicoach.application.estimateScoreForState
 import com.worksoc.goaicoach.application.resolveEndgameForState
 import com.worksoc.goaicoach.application.runAutoAiTurn
+import com.worksoc.goaicoach.application.selectRuntimePlayLevel
 import com.worksoc.goaicoach.application.shouldRequestAiTurn
 import com.worksoc.goaicoach.application.shouldRequestTopMoveAnalysis
 import com.worksoc.goaicoach.application.planSavedGamePersistence
@@ -117,6 +118,7 @@ import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.ScoreTimeline
 import com.worksoc.goaicoach.shared.describe
@@ -190,6 +192,7 @@ private fun GoCoachScreen(
     var playerSetup by remember { mutableStateOf(initialPlan.playerSetup) }
     val matchMode = playerSetup.matchMode()
     var autoPlayDelaySetting by remember { mutableStateOf(initialPlan.autoPlayDelaySetting) }
+    var searchTimeSettings by remember { mutableStateOf(initialPreferences.searchTimeSettings.normalized()) }
     var topMovesEnabled by remember { mutableStateOf(initialPlan.topMovesEnabled) }
     var analysisPreset by remember { mutableStateOf(initialPlan.runtime.analysisPreset) }
     val analysisCache = remember { AnalysisResultCache(maxEntries = 96) }
@@ -212,6 +215,9 @@ private fun GoCoachScreen(
         )
     }
     var engineBenchmarkText by remember { mutableStateOf(benchmarkStore.loadText()) }
+    var searchTimeBenchmarkAverages by remember {
+        mutableStateOf(benchmarkStore.load()?.averageMillisByVisits().orEmpty())
+    }
     var benchmarkProgress by remember { mutableStateOf<EngineBenchmarkProgress?>(null) }
     var benchmarkResultToConfirm by remember { mutableStateOf<EngineBenchmarkProfile?>(null) }
     var pendingSavedSession by remember { mutableStateOf<SavedGameSnapshot?>(null) }
@@ -311,6 +317,7 @@ private fun GoCoachScreen(
             }
         }.onSuccess { profile ->
             engineBenchmarkText = benchmarkStore.loadText()
+            searchTimeBenchmarkAverages = profile.averageMillisByVisits()
             engineMessage = "Engine benchmark saved to ${benchmarkStore.path()}."
             candidateText = "Engine benchmark complete.\n${profile.toSummaryText()}"
             benchmarkResultToConfirm = profile
@@ -361,6 +368,7 @@ private fun GoCoachScreen(
         ) {
             hasCheckedEngineBenchmark = true
             engineBenchmarkText = benchmarkStore.loadText()
+            searchTimeBenchmarkAverages = benchmarkStore.load()?.averageMillisByVisits().orEmpty()
             return@LaunchedEffect
         }
 
@@ -372,6 +380,7 @@ private fun GoCoachScreen(
         preferencesStore,
         playerSetup,
         autoPlayDelaySetting,
+        searchTimeSettings,
         topMovesEnabled,
         uxOptions,
         gameState.ruleset,
@@ -386,6 +395,7 @@ private fun GoCoachScreen(
                 showLastMoveRing = uxOptions.showLastMoveRing,
                 showOwnershipOverlay = uxOptions.showOwnershipOverlay,
                 autoPlayDelaySetting = autoPlayDelaySetting,
+                searchTimeSettings = searchTimeSettings,
             ),
         )
     }
@@ -582,6 +592,7 @@ private fun GoCoachScreen(
                 currentProfile = engineProfile,
                 defaultPlayLevel = defaultPlayLevel,
                 isEngineBusy = isEngineBusy,
+                searchTimeSettings = searchTimeSettings,
             )
         ) {
             is PlayerSetupChangePlan.ShowMessage -> {
@@ -596,6 +607,27 @@ private fun GoCoachScreen(
                 lastAnalysisKey = null
             }
         }
+    }
+
+    fun changeSearchTimeSettings(nextSettings: SearchTimeSettings) {
+        if (isEngineBusy) {
+            engineMessage = "Engine is busy. Change search time after the current action."
+            return
+        }
+        val normalized = nextSettings.normalized()
+        searchTimeSettings = normalized
+        applyRuntimePlayLevelSelection(
+            selectRuntimePlayLevel(
+                setup = playerSetup,
+                nextPlayer = gameState.nextPlayer,
+                currentProfile = engineProfile,
+                defaultPlayLevel = defaultPlayLevel,
+                searchTimeSettings = normalized,
+            ),
+        )
+        clearTopMoveSpots("Search time changed. Analysis cache will rebuild with the new time cap.")
+        clearReviewAnalysis(gameState)
+        lastAnalysisKey = null
     }
 
     fun requestTopMoveAnalysisForState(
@@ -790,6 +822,7 @@ private fun GoCoachScreen(
             defaultPlayLevel = defaultPlayLevel,
             isEngineBusy = isEngineBusy,
             isEngineReady = isEngineReady,
+            searchTimeSettings = searchTimeSettings,
         )
         if (request is SavedGameRestoreRequestPlan.ShowMessage) {
             engineMessage = request.message
@@ -921,6 +954,7 @@ private fun GoCoachScreen(
                 isEngineBusy = isEngineBusy,
                 currentProfile = engineProfile,
                 defaultPlayLevel = defaultPlayLevel,
+                searchTimeSettings = searchTimeSettings,
             )
         ) {
             is StartConfiguredGamePlan.ShowMessage -> {
@@ -984,6 +1018,7 @@ private fun GoCoachScreen(
                                 currentState = turnState,
                                 playLevel = aiPlayLevel,
                                 currentProfile = engineProfile,
+                                searchTimeSettings = searchTimeSettings,
                             )
                         }
                     }.onSuccess { result ->
@@ -1260,6 +1295,7 @@ private fun GoCoachScreen(
             lastMoveText = lastMoveText,
             endgameLog = endgameLog,
             engineBenchmarkText = engineBenchmarkText,
+            searchTimeSettings = searchTimeSettings,
         )
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         clipboard.setPrimaryClip(ClipData.newPlainText("Go AI Coach debug report", report))
@@ -1296,6 +1332,7 @@ private fun GoCoachScreen(
                 },
                 changePlayerSetup = ::changePlayerSetup,
                 changeAutoPlayDelay = { setting -> autoPlayDelaySetting = setting },
+                changeSearchTimeSettings = ::changeSearchTimeSettings,
                 changeScoringRule = ::changeScoringRule,
                 changeUxOptions = { options -> uxOptions = options },
             ),
@@ -1309,6 +1346,7 @@ private fun GoCoachScreen(
         shouldShowResumePrompt,
         playerSetup,
         autoPlayDelaySetting,
+        searchTimeSettings,
         gameState.nextPlayer,
         gameState.moves.size,
     ) {
@@ -1319,6 +1357,7 @@ private fun GoCoachScreen(
         isEngineReady,
         isEngineBusy,
         playerSetup,
+        searchTimeSettings,
         isGameEnded,
         shouldShowResumePrompt,
         gameState.nextPlayer,
@@ -1336,6 +1375,8 @@ private fun GoCoachScreen(
             matchMode = matchMode,
             playerSetup = playerSetup,
             autoPlayDelaySetting = autoPlayDelaySetting,
+            searchTimeSettings = searchTimeSettings,
+            searchTimeBenchmarkAverages = searchTimeBenchmarkAverages,
             playLevel = playLevel,
             uxOptions = uxOptions,
             engineName = engineName,
@@ -1392,6 +1433,9 @@ private fun isLocalKataGoEngine(
     engineDiagnostic: String,
 ): Boolean =
     engineName == "KataGo" && engineDiagnostic.contains("Using local process engine")
+
+private fun EngineBenchmarkProfile.averageMillisByVisits(): Map<Int, Double> =
+    metrics.associate { metric -> metric.visits to metric.avgMs }
 
 private const val EngineBenchmarkStartupSettleDelayMillis = 1_500L
 private const val DebugReportMirrorFileName = "last_debug_report.txt"

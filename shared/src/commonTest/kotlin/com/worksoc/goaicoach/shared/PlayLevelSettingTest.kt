@@ -11,7 +11,7 @@ class PlayLevelSettingTest {
 
         assertEquals(DifficultyProfile.Beginner, profile.difficulty)
         assertEquals(16, profile.analysisLimit.visits)
-        assertEquals(250L, profile.analysisLimit.timeMillis)
+        assertEquals(1_000L, profile.analysisLimit.timeMillis)
         assertEquals(8, profile.analysisLimit.candidateCount)
         assertEquals(AnalysisPreset.Lite, setting.analysisPreset)
     }
@@ -23,7 +23,7 @@ class PlayLevelSettingTest {
 
         assertEquals(DifficultyProfile.Beginner, profile.difficulty)
         assertEquals(32, profile.analysisLimit.visits)
-        assertEquals(500L, profile.analysisLimit.timeMillis)
+        assertEquals(2_000L, profile.analysisLimit.timeMillis)
         assertEquals(16, profile.analysisLimit.candidateCount)
         assertEquals(AnalysisPreset.Learning, setting.analysisPreset)
     }
@@ -37,7 +37,7 @@ class PlayLevelSettingTest {
         assertEquals(levelOne.analysisLimit, levelFour.analysisLimit)
         assertEquals(levelOne.analysisLimit, levelSeven.analysisLimit)
         assertEquals(32, levelSeven.analysisLimit.visits)
-        assertEquals(500L, levelSeven.analysisLimit.timeMillis)
+        assertEquals(2_000L, levelSeven.analysisLimit.timeMillis)
         assertEquals(16, levelSeven.analysisLimit.candidateCount)
         assertEquals(MoveSelectionPolicy.PercentileRange(70, 100, "탐색 후보 최하위 30%"), levelOne.selectionPolicy)
         assertEquals(MoveSelectionPolicy.PercentileRange(30, 60, "탐색 후보 상위 30~60%"), levelFour.selectionPolicy)
@@ -51,7 +51,7 @@ class PlayLevelSettingTest {
         val limit = levelSeven.turnAnalysisLimitFor(TurnAnalysisPurpose.AiMoveSelection)
 
         assertEquals(32, limit.visits)
-        assertEquals(500L, limit.timeMillis)
+        assertEquals(2_000L, limit.timeMillis)
         assertEquals(16, limit.candidateCount)
         assertEquals(false, limit.includePolicy)
         assertEquals(0, limit.refinePolicyMoves)
@@ -68,11 +68,30 @@ class PlayLevelSettingTest {
         val display = level.turnAnalysisLimitFor(TurnAnalysisPurpose.TopMovesDisplay)
 
         assertEquals(64, review.visits)
-        assertEquals(500L, review.timeMillis)
+        assertEquals(3_000L, review.timeMillis)
         assertEquals(1, review.candidateCount)
         assertEquals(false, review.includePolicy)
         assertEquals(0, review.refinePolicyMoves)
         assertEquals(review, display)
+    }
+
+    @Test
+    fun searchTimeSettingsOverrideTrackedVisitTypesOnly() {
+        val settings = SearchTimeSettings(
+            b16Millis = 1_500L,
+            b32Millis = 4_000L,
+            b64Millis = 7_500L,
+        )
+
+        val fast = PlayLevelSetting(PlayLevelGroup.FastBeginner, level = 1)
+        val beginner = PlayLevelSetting(PlayLevelGroup.Beginner, level = 1)
+        val intermediate = PlayLevelSetting(PlayLevelGroup.Intermediate, level = 1)
+        val advanced = PlayLevelSetting(PlayLevelGroup.Advanced, level = 1)
+
+        assertEquals(1_500L, fast.analysisLimitWith(settings).timeMillis)
+        assertEquals(4_000L, beginner.analysisLimitWith(settings).timeMillis)
+        assertEquals(7_500L, intermediate.analysisLimitWith(settings).timeMillis)
+        assertEquals(1_000L, advanced.analysisLimitWith(settings).timeMillis)
     }
 
     @Test

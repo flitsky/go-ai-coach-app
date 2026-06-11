@@ -3,16 +3,26 @@
 작성일: 2026-06-11  
 상태: 논의 전 화두 정리. 아직 결정 문서가 아니다.
 
+## 2026-06-11 1차 반영
+
+앱 기본값은 우선 다음처럼 조정했다.
+
+- B16: 기본 `1000ms`, 선택지 `500/1000/1500/2000/2500ms`
+- B32: 기본 `2000ms`, 선택지 `1000/2000/3000/4000/5000ms`
+- B64: 기본 `3000ms`, 선택지 `3000/4500/6000/7500/9000ms`
+
+benchmark 평균값은 자동 적용하지 않고, 메뉴의 `추천[...]` 보조 지표로만 표시한다. 실제 time cap은 사용자가 선택한 값이 적용된다.
+
 ## 배경
 
-현재 `빠른 초급`은 코드상 `16 visits / 250ms`로 제한되어 있다.
+이전 `빠른 초급`은 코드상 `16 visits / 250ms`로 제한되어 있었다.
 
 - 위치: `shared/src/commonMain/kotlin/com/worksoc/goaicoach/shared/PlayLevel.kt`
-- 현재 값: `FastBeginner.visits=16`, `FastBeginner.timeMillis=250`
+- 과거 값: `FastBeginner.visits=16`, `FastBeginner.timeMillis=250`
 - 폰 실측 예시: `request=16`, `root=2`, `elapsedMs=397`, `fill=SHORT`
 - 같은 폰 benchmark 예시: B16 평균 약 `2656ms`, root avg 약 `15.0`, `SHORT`
 
-즉 현재 기본 대국은 쾌적하지만 visits를 안정적으로 채우지 못할 수 있다.
+즉 과거 기본 대국은 쾌적하지만 visits를 안정적으로 채우지 못할 수 있었다.
 
 ## 논의할 질문
 

@@ -29,6 +29,8 @@ import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.match.SidePlayerSetup
 import com.worksoc.goaicoach.shared.PlayLevelGroup
+import com.worksoc.goaicoach.shared.SearchTimeProfile
+import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.StoneColor
 
 @Composable
@@ -81,6 +83,74 @@ internal fun PlayerSetupPanel(
 }
 
 @Composable
+internal fun SearchTimeSettingsPanel(
+    settings: SearchTimeSettings,
+    benchmarkAverages: Map<Int, Double>,
+    enabled: Boolean,
+    onSettingsChange: (SearchTimeSettings) -> Unit,
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(8.dp),
+        tonalElevation = 1.dp,
+        shadowElevation = 0.dp,
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Text("Search Time", fontWeight = FontWeight.SemiBold)
+            SearchTimeProfile.entries.forEach { profile ->
+                SearchTimeRow(
+                    profile = profile,
+                    selectedMillis = settings.millisFor(profile),
+                    recommendedAverageMs = benchmarkAverages[profile.visits],
+                    enabled = enabled,
+                    onSelectedMillis = { millis ->
+                        onSettingsChange(settings.withMillis(profile, millis))
+                    },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SearchTimeRow(
+    profile: SearchTimeProfile,
+    selectedMillis: Long,
+    recommendedAverageMs: Double?,
+    enabled: Boolean,
+    onSelectedMillis: (Long) -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = "B${profile.displayLabel}",
+            modifier = Modifier.weight(0.52f),
+            fontWeight = FontWeight.SemiBold,
+        )
+        Text(
+            text = "추천[${recommendedAverageMs.toTimeRecommendationLabel()}]",
+            modifier = Modifier.weight(1.12f),
+            color = MaterialTheme.colorScheme.secondary,
+            style = MaterialTheme.typography.bodySmall,
+        )
+        SetupDropdown(
+            selectedText = selectedMillis.toSecondsLabel(),
+            enabled = enabled,
+            modifier = Modifier.weight(0.9f),
+            options = profile.optionMillis,
+            optionLabel = { millis -> millis.toSecondsLabel() },
+            onSelected = onSelectedMillis,
+        )
+    }
+}
+
+@Composable
 private fun AutoPlayDelayRow(
     selected: AutoPlayDelaySetting,
     onSelected: (AutoPlayDelaySetting) -> Unit,
@@ -104,6 +174,20 @@ private fun AutoPlayDelayRow(
             optionLabel = { setting -> setting.label },
             onSelected = onSelected,
         )
+    }
+}
+
+private fun Double?.toTimeRecommendationLabel(): String =
+    this
+        ?.let { millis -> (kotlin.math.round(millis / 100.0) * 100).toLong().toSecondsLabel() }
+        ?: "없음"
+
+private fun Long.toSecondsLabel(): String {
+    val seconds = this / 1_000.0
+    return if (this % 1_000L == 0L) {
+        "${seconds.toInt()}초"
+    } else {
+        "${((seconds * 10.0).toInt() / 10.0)}초"
     }
 }
 

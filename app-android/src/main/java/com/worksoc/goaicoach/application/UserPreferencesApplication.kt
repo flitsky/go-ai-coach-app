@@ -8,6 +8,7 @@ import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.SearchTimeSettings
 
 internal data class InitialUserPreferencesPlan(
     val gameState: GameState,
@@ -31,6 +32,7 @@ internal fun buildInitialUserPreferencesPlan(
             nextPlayer = state.nextPlayer,
             currentProfile = currentProfile,
             defaultPlayLevel = defaultPlayLevel,
+            searchTimeSettings = preferences.searchTimeSettings,
         ),
         topMovesEnabled = preferences.topMovesEnabled,
         autoPlayDelaySetting = AutoPlayDelaySetting.fromMillis(preferences.autoPlayDelayMillis),
@@ -46,6 +48,7 @@ internal fun buildUserPreferencesSnapshot(
     showLastMoveRing: Boolean,
     showOwnershipOverlay: Boolean,
     autoPlayDelaySetting: AutoPlayDelaySetting,
+    searchTimeSettings: SearchTimeSettings = SearchTimeSettings(),
 ): UserPreferencesSnapshot =
     UserPreferencesSnapshot(
         playerSetup = playerSetup,
@@ -56,4 +59,5 @@ internal fun buildUserPreferencesSnapshot(
         showLastMoveRing = showLastMoveRing,
         showOwnershipOverlay = showOwnershipOverlay,
         autoPlayDelayMillis = autoPlayDelaySetting.millis,
+        searchTimeSettings = searchTimeSettings.normalized(),
     )

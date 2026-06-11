@@ -6,6 +6,7 @@ import com.worksoc.goaicoach.persistence.SavedGameSnapshot
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.StoneColor
 
 internal sealed interface GameUiEvent {
@@ -38,6 +39,10 @@ internal sealed interface GameUiEvent {
         val setting: AutoPlayDelaySetting,
     ) : GameUiEvent
 
+    data class ChangeSearchTimeSettings(
+        val settings: SearchTimeSettings,
+    ) : GameUiEvent
+
     data class ChangeScoringRule(
         val ruleset: Ruleset,
     ) : GameUiEvent
@@ -62,6 +67,7 @@ internal data class GameUiEventHandlers(
     val restoreSavedSession: (SavedGameSnapshot) -> Unit,
     val changePlayerSetup: (PlayerSetup) -> Unit,
     val changeAutoPlayDelay: (AutoPlayDelaySetting) -> Unit,
+    val changeSearchTimeSettings: (SearchTimeSettings) -> Unit,
     val changeScoringRule: (Ruleset) -> Unit,
     val changeUxOptions: (KaTrainUxOptions) -> Unit,
 )
@@ -90,6 +96,7 @@ internal fun dispatchGameUiEvent(
         is GameUiEvent.SubmitMove -> handlers.submitMove(event.move)
         is GameUiEvent.ChangePlayerSetup -> handlers.changePlayerSetup(event.setup)
         is GameUiEvent.ChangeAutoPlayDelay -> handlers.changeAutoPlayDelay(event.setting)
+        is GameUiEvent.ChangeSearchTimeSettings -> handlers.changeSearchTimeSettings(event.settings)
         is GameUiEvent.ChangeScoringRule -> handlers.changeScoringRule(event.ruleset)
         is GameUiEvent.ChangeUxOptions -> handlers.changeUxOptions(event.options)
     }

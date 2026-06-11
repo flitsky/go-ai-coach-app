@@ -12,6 +12,7 @@ import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.PlayLevelGroup
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.StoneColor
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -85,6 +86,28 @@ class GameSessionApplicationTest {
         assertEquals(whiteLevel, runtime.playLevel)
         assertEquals(whiteLevel.analysisPreset, runtime.analysisPreset)
         assertEquals(whiteLevel.group.difficulty, runtime.engineProfile.difficulty)
+    }
+
+    @Test
+    fun selectRuntimePlayLevelAppliesSearchTimeSettings() {
+        val setup = PlayerSetup(
+            black = SidePlayerSetup(controller = SeatController.Human),
+            white = SidePlayerSetup(
+                controller = SeatController.Ai,
+                playLevel = PlayLevelSetting(group = PlayLevelGroup.Beginner, level = 7),
+            ),
+        )
+
+        val runtime = selectRuntimePlayLevel(
+            setup = setup,
+            nextPlayer = StoneColor.White,
+            currentProfile = EngineProfile(),
+            defaultPlayLevel = PlayLevelSetting(),
+            searchTimeSettings = SearchTimeSettings(b32Millis = 4_000L),
+        )
+
+        assertEquals(32, runtime.engineProfile.analysisLimit.visits)
+        assertEquals(4_000L, runtime.engineProfile.analysisLimit.timeMillis)
     }
 
     @Test

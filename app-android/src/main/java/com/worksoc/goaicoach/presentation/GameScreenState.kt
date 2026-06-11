@@ -12,6 +12,7 @@ import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
 import com.worksoc.goaicoach.shared.PlayLevelSetting
+import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.ScoreSnapshot
 import com.worksoc.goaicoach.shared.StoneColor
@@ -21,6 +22,8 @@ internal data class GameScreenState(
     val matchMode: MatchMode,
     val playerSetup: PlayerSetup,
     val autoPlayDelaySetting: AutoPlayDelaySetting,
+    val searchTimeSettings: SearchTimeSettings,
+    val searchTimeBenchmarkAverages: Map<Int, Double>,
     val playLevel: PlayLevelSetting,
     val uxOptions: KaTrainUxOptions,
     val engine: EngineUiState,
@@ -40,6 +43,8 @@ internal data class GameScreenStateInput(
     val matchMode: MatchMode,
     val playerSetup: PlayerSetup,
     val autoPlayDelaySetting: AutoPlayDelaySetting,
+    val searchTimeSettings: SearchTimeSettings,
+    val searchTimeBenchmarkAverages: Map<Int, Double>,
     val playLevel: PlayLevelSetting,
     val uxOptions: KaTrainUxOptions,
     val engineName: String,
@@ -75,6 +80,8 @@ internal fun buildGameScreenState(input: GameScreenStateInput): GameScreenState 
         matchMode = input.matchMode,
         playerSetup = input.playerSetup,
         autoPlayDelaySetting = input.autoPlayDelaySetting,
+        searchTimeSettings = input.searchTimeSettings,
+        searchTimeBenchmarkAverages = input.searchTimeBenchmarkAverages,
         playLevel = input.playLevel,
         uxOptions = input.uxOptions,
         engine = EngineUiState(

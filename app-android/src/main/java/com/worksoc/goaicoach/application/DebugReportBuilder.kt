@@ -14,6 +14,7 @@ import com.worksoc.goaicoach.shared.FinalScoreResult
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.PlayLevelSetting
+import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.ScoreSnapshot
 import com.worksoc.goaicoach.shared.StoneColor
 import com.worksoc.goaicoach.shared.describe
@@ -42,6 +43,7 @@ internal fun buildDebugReport(
     lastMoveText: String,
     endgameLog: String,
     engineBenchmarkText: String,
+    searchTimeSettings: SearchTimeSettings = SearchTimeSettings(),
 ): String {
     val localScoreText = BoardScorer.score(gameState).toDisplayText()
 
@@ -61,6 +63,7 @@ internal fun buildDebugReport(
         appendLine("engineProfile=${engineProfile.name}/${engineProfile.mode}/${engineProfile.difficulty.label}")
         appendLine("playLevel=${playLevel.displayLabel} (${playLevel.selectionPolicy.description})")
         appendLine("analysisLimit=visits:${engineProfile.analysisLimit.visits}, timeMillis:${engineProfile.analysisLimit.timeMillis}, candidates:${engineProfile.analysisLimit.candidateCount}")
+        appendLine("searchTimeSettings=${searchTimeSettings.normalized().summaryText()}")
         appendLine("analysisPreset=${analysisPreset.label}")
         appendLine("analysisCache=$analysisCacheStats")
         appendLine("topMovesEnabled=$topMovesEnabled")

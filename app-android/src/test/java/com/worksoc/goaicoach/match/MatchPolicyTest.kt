@@ -225,7 +225,7 @@ class MatchPolicyTest {
         )
 
         assertEquals(32, adapter.analysisLimits.single().visits)
-        assertEquals(500L, adapter.analysisLimits.single().timeMillis)
+        assertEquals(2_000L, adapter.analysisLimits.single().timeMillis)
         assertEquals(16, adapter.analysisLimits.single().candidateCount)
         assertFalse(adapter.analysisLimits.single().includePolicy)
         assertEquals(0, adapter.analysisLimits.single().refinePolicyMoves)
@@ -253,7 +253,7 @@ class MatchPolicyTest {
         )
 
         assertEquals(64, adapter.analysisLimits.single().visits)
-        assertEquals(500L, adapter.analysisLimits.single().timeMillis)
+        assertEquals(3_000L, adapter.analysisLimits.single().timeMillis)
         assertEquals(20, adapter.analysisLimits.single().candidateCount)
         assertFalse(adapter.analysisLimits.single().includePolicy)
         assertEquals(0, adapter.analysisLimits.single().refinePolicyMoves)

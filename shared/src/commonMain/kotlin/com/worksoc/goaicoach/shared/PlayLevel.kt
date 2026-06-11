@@ -19,7 +19,7 @@ enum class PlayLevelGroup(
         maxLevel = 3,
         difficulty = DifficultyProfile.Beginner,
         visits = 16,
-        timeMillis = 250,
+        timeMillis = SearchTimeProfile.B16.defaultMillis,
         candidateCount = 8,
         analysisPreset = AnalysisPreset.Lite,
     ),
@@ -29,7 +29,7 @@ enum class PlayLevelGroup(
         maxLevel = 7,
         difficulty = DifficultyProfile.Beginner,
         visits = 32,
-        timeMillis = 500,
+        timeMillis = SearchTimeProfile.B32.defaultMillis,
         candidateCount = 16,
         analysisPreset = AnalysisPreset.Learning,
     ),
@@ -39,7 +39,7 @@ enum class PlayLevelGroup(
         maxLevel = 5,
         difficulty = DifficultyProfile.Casual,
         visits = 64,
-        timeMillis = 500,
+        timeMillis = SearchTimeProfile.B64.defaultMillis,
         candidateCount = 20,
         analysisPreset = AnalysisPreset.Balanced,
     ),
@@ -123,10 +123,16 @@ data class PlayLevelSetting(
     fun normalized(): PlayLevelSetting =
         if (level == safeLevel) this else copy(level = safeLevel)
 
-    fun toEngineProfile(base: EngineProfile): EngineProfile =
+    fun analysisLimitWith(searchTimeSettings: SearchTimeSettings): AnalysisLimit =
+        searchTimeSettings.applyTo(analysisLimit)
+
+    fun toEngineProfile(
+        base: EngineProfile,
+        searchTimeSettings: SearchTimeSettings = SearchTimeSettings(),
+    ): EngineProfile =
         base.copy(
             difficulty = group.difficulty,
-            analysisLimit = analysisLimit,
+            analysisLimit = analysisLimitWith(searchTimeSettings),
         )
 }
 

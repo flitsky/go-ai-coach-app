@@ -1,16 +1,17 @@
 # AI 엔진 설정 정리
 
 작성일: 2026-05-31
-최근 갱신: 2026-06-10
+최근 갱신: 2026-06-11
 
 ## 결론
 
-현재 앱에 정의되고 UI로 조정 가능한 설정 중 가장 낮은 설정은 `Beginner`다.
+현재 앱에 정의되고 UI로 조정 가능한 AI 응수의 가장 낮은 visits 설정은 `Beginner` B16이다.
 
-- 기본 difficulty: `DifficultyProfile.Beginner`
-- 기본 visits: `16`
-- 기본 time limit: `250ms`
+- 기본 Player Setup difficulty: `DifficultyProfile.Beginner`
+- 기본 Player Setup visits: `16`
+- 기본 Player Setup time limit: `1,000ms`
 - UI visits 최저값: `16`
+- UI time limit 최저값: `500ms`
 - process adapter startup thread: `numSearchThreads=1`
 
 다만 이것은 “현재 앱이 제공하는 최저 설정”이라는 의미다. KataGo 자체는 더 낮은 visits 값으로도 실행할 수 있으므로, 실제 첫 릴리즈 플레이테스트에서 AI가 여전히 너무 강하면 `VeryEasy` 같은 더 낮은 profile을 추가하는 것이 맞다.
@@ -27,18 +28,26 @@
 | Strong | 400 | 2,000ms | 더 강한 분석/응수 |
 | Full Analysis | 1,000 | 5,000ms | 느리지만 더 깊은 분석 |
 
-`EngineProfile()`의 기본값은 `DifficultyProfile.Beginner`와 그 기본 `AnalysisLimit`을 사용한다. Android 화면도 시작 시 이 기본 profile로 엔진을 초기화한다.
+`EngineProfile()`의 raw 기본값은 `DifficultyProfile.Beginner`와 그 기본 `AnalysisLimit`을 사용한다. Android 앱의 실제 대국 profile은 `Player Setup`의 `PlayLevelSetting`과 `Search Time` 설정을 합쳐 생성한다.
 
 ## UI 동작
 
-현재 Android 화면은 `Engine` raw 패널 대신 `Player Setup`에서 흑/백 진영별 역할과 AI 레벨을 설정한다.
+현재 Android 화면은 `Engine` raw 패널 대신 `Player Setup`에서 흑/백 진영별 역할과 AI 레벨을 설정하고, `Search Time`에서 B16/B32/B64 time cap을 별도로 설정한다.
 
-- `빠른 초급`: B16 / 250ms
-- `초급`: B32 / 500ms
-- `중급`: B64 / 500ms
+- `빠른 초급`: B16 / 기본 1000ms
+- `초급`: B32 / 기본 2000ms
+- `중급`: B64 / 기본 3000ms
 - `고급`: B160 / 1000ms
 
-각 그룹 안의 단계는 같은 엔진 요청 안에서 후보 선택 정책만 바꾼다. 예를 들어 `초급 1단계`와 `초급 7단계`는 모두 B32 / 500ms 요청을 사용하고, 1단계는 낮은 후보 구간을 섞으며 7단계는 최상위 후보만 고른다.
+각 그룹 안의 단계는 같은 엔진 요청 안에서 후보 선택 정책만 바꾼다. 예를 들어 `초급 1단계`와 `초급 7단계`는 모두 B32 요청을 사용하고, 1단계는 낮은 후보 구간을 섞으며 7단계는 최상위 후보만 고른다. B32의 시간은 `Search Time`에서 선택한 값을 따른다.
+
+`Search Time` 선택지는 다음과 같다. 괄호의 추천값은 저장된 benchmark 평균 시간이 있으면 메뉴에 표시되는 보조 지표이며, 실제 적용값은 사용자가 선택한 값이다.
+
+| 타입 | 기본값 | 선택지 |
+| --- | ---: | --- |
+| B16 | 1초 | 0.5초, 1초, 1.5초, 2초, 2.5초 |
+| B32 | 2초 | 1초, 2초, 3초, 4초, 5초 |
+| B64 | 3초 | 3초, 4.5초, 6초, 7.5초, 9초 |
 
 AI 응수는 대국 속도를 위해 항상 경량 분석 요청을 사용한다.
 
@@ -46,7 +55,7 @@ AI 응수는 대국 속도를 위해 항상 경량 분석 요청을 사용한다
 - `refinePolicyMoves=0`
 - `minVisitsPerCandidate=0`
 - `minTimeMillis=null`
-- 예: `중급 5단계`는 `64 visits / 500ms / BestOnly`로 착수한다.
+- 예: `중급 5단계`는 `64 visits / Search Time의 B64 time cap / BestOnly`로 착수한다.
 
 `Top Moves`는 대국 중 후보 표시 토글이고, 사람 착수 리뷰 분석과 같은 snapshot을 사용한다.
 
@@ -116,7 +125,7 @@ Broad study analysis:
 
 ```text
 maxVisits=16
-maxTime=0.25
+maxTime=1.0
 numSearchThreads=1
 candidateCount=1
 includePolicy=false
@@ -135,7 +144,7 @@ Stub은 엔진 통신 구조와 UI 흐름 검증용이며, profile별로 determi
 
 현재 설정은 “앱이 제공하는 최저 설정”으로는 맞다.
 
-하지만 9x9 초급자 대국 관점에서는 `16 visits / 250ms`도 충분히 강하게 느껴질 수 있다. 첫 마켓 릴리즈 전에는 다음 중 하나를 추가 검토한다.
+하지만 9x9 초급자 대국 관점에서는 `16 visits / 1000ms`도 충분히 강하게 느껴질 수 있다. 첫 마켓 릴리즈 전에는 다음 중 하나를 추가 검토한다.
 
 1. `VeryEasy`: `visits=4`, `time=100ms`
 2. `Beginner`를 `visits=8`, `time=150ms`로 낮추고 현재 Beginner는 `Casual`에 가깝게 재배치

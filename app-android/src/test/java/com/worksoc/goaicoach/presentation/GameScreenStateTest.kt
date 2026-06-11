@@ -10,6 +10,7 @@ import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
 import com.worksoc.goaicoach.shared.PlayLevelSetting
+import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.StoneColor
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -126,6 +127,8 @@ class GameScreenStateTest {
             matchMode = MatchMode.HumanVsAi,
             playerSetup = PlayerSetup(),
             autoPlayDelaySetting = AutoPlayDelaySetting.Default,
+            searchTimeSettings = SearchTimeSettings(),
+            searchTimeBenchmarkAverages = emptyMap(),
             playLevel = PlayLevelSetting(),
             uxOptions = KaTrainUxOptions(),
             engineName = "KataGo",

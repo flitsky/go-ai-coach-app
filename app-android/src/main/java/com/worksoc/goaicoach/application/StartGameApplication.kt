@@ -5,6 +5,7 @@ import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.StoneColor
 
 internal sealed class StartConfiguredGamePlan {
@@ -27,6 +28,7 @@ internal fun buildStartConfiguredGamePlan(
     isEngineBusy: Boolean,
     currentProfile: EngineProfile,
     defaultPlayLevel: PlayLevelSetting,
+    searchTimeSettings: SearchTimeSettings = SearchTimeSettings(),
 ): StartConfiguredGamePlan {
     val targetMode = setup.matchMode()
     if (!isEngineReady && targetMode != MatchMode.LocalTwoPlayer) {
@@ -52,6 +54,7 @@ internal fun buildStartConfiguredGamePlan(
             nextPlayer = nextPlayer,
             currentProfile = currentProfile,
             defaultPlayLevel = defaultPlayLevel,
+            searchTimeSettings = searchTimeSettings,
         ),
     )
 }

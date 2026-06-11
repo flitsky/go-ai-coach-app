@@ -6,6 +6,7 @@ import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.persistence.PlayerSetupJsonCodec.decodePlayerSetup
 import com.worksoc.goaicoach.persistence.PlayerSetupJsonCodec.encodePlayerSetup
 import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.SearchTimeSettings
 import org.json.JSONObject
 
 internal data class UserPreferencesSnapshot(
@@ -17,6 +18,7 @@ internal data class UserPreferencesSnapshot(
     val showLastMoveRing: Boolean = true,
     val showOwnershipOverlay: Boolean = true,
     val autoPlayDelayMillis: Long = AutoPlayDelaySetting.Default.millis,
+    val searchTimeSettings: SearchTimeSettings = SearchTimeSettings(),
 )
 
 internal class UserPreferencesStore(context: Context) {
@@ -53,6 +55,7 @@ internal object UserPreferencesCodec {
             .put("showLastMoveRing", snapshot.showLastMoveRing)
             .put("showOwnershipOverlay", snapshot.showOwnershipOverlay)
             .put("autoPlayDelayMillis", snapshot.autoPlayDelayMillis)
+            .put("searchTimeSettings", encodeSearchTimeSettings(snapshot.searchTimeSettings))
             .toString()
 
     fun decode(raw: String): UserPreferencesSnapshot? =
@@ -72,6 +75,20 @@ internal object UserPreferencesCodec {
                 autoPlayDelayMillis = AutoPlayDelaySetting
                     .fromMillis(json.optLong("autoPlayDelayMillis", AutoPlayDelaySetting.Default.millis))
                     .millis,
+                searchTimeSettings = decodeSearchTimeSettings(json.optJSONObject("searchTimeSettings")),
             )
         }.getOrNull()
+
+    private fun encodeSearchTimeSettings(settings: SearchTimeSettings): JSONObject =
+        JSONObject()
+            .put("b16Millis", settings.normalized().b16Millis)
+            .put("b32Millis", settings.normalized().b32Millis)
+            .put("b64Millis", settings.normalized().b64Millis)
+
+    private fun decodeSearchTimeSettings(json: JSONObject?): SearchTimeSettings =
+        SearchTimeSettings(
+            b16Millis = json?.optLong("b16Millis", SearchTimeSettings().b16Millis) ?: SearchTimeSettings().b16Millis,
+            b32Millis = json?.optLong("b32Millis", SearchTimeSettings().b32Millis) ?: SearchTimeSettings().b32Millis,
+            b64Millis = json?.optLong("b64Millis", SearchTimeSettings().b64Millis) ?: SearchTimeSettings().b64Millis,
+        ).normalized()
 }

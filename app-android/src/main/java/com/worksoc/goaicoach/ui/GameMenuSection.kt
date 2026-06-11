@@ -62,6 +62,13 @@ internal fun ExpandedGameMenuSection(
         onAutoPlayDelayChange = { setting -> onEvent(GameUiEvent.ChangeAutoPlayDelay(setting)) },
     )
 
+    SearchTimeSettingsPanel(
+        settings = screenState.searchTimeSettings,
+        benchmarkAverages = screenState.searchTimeBenchmarkAverages,
+        enabled = !screenState.engine.isBusy,
+        onSettingsChange = { settings -> onEvent(GameUiEvent.ChangeSearchTimeSettings(settings)) },
+    )
+
     GameMenuActionsPanel(
         mode = screenState.matchMode,
         ruleset = screenState.gameState.ruleset,

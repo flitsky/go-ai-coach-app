@@ -13,6 +13,7 @@ import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.ScoreSnapshot
 import com.worksoc.goaicoach.shared.ScoreSnapshotSource
@@ -96,9 +97,10 @@ internal suspend fun EngineAdapter.runAutoAiTurn(
     currentState: GameState,
     playLevel: PlayLevelSetting,
     currentProfile: EngineProfile,
+    searchTimeSettings: SearchTimeSettings = SearchTimeSettings(),
 ): AutoAiTurnResult {
     val aiPlayer = currentState.nextPlayer
-    val turnProfile = playLevel.toEngineProfile(currentProfile)
+    val turnProfile = playLevel.toEngineProfile(currentProfile, searchTimeSettings)
     configure(turnProfile)
     syncToGameState(currentState)
     val outcome = applyAiTurn(
@@ -106,6 +108,7 @@ internal suspend fun EngineAdapter.runAutoAiTurn(
         currentState = currentState,
         aiPlayer = aiPlayer,
         playLevel = playLevel,
+        searchTimeSettings = searchTimeSettings,
     )
     val estimate = runCatching {
         estimateScore(scoreGraphAnalysisLimit(turnProfile))

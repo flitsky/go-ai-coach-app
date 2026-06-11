@@ -8,6 +8,7 @@ import com.worksoc.goaicoach.match.SidePlayerSetup
 import com.worksoc.goaicoach.shared.PlayLevelGroup
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.SearchTimeSettings
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -36,6 +37,11 @@ class UserPreferencesCodecTest {
             showLastMoveRing = false,
             showOwnershipOverlay = false,
             autoPlayDelayMillis = AutoPlayDelaySetting.Slow.millis,
+            searchTimeSettings = SearchTimeSettings(
+                b16Millis = 1_500L,
+                b32Millis = 4_000L,
+                b64Millis = 7_500L,
+            ),
         )
 
         val restored = UserPreferencesCodec.decode(UserPreferencesCodec.encode(snapshot))
@@ -48,6 +54,7 @@ class UserPreferencesCodecTest {
         assertEquals(false, restored?.showLastMoveRing)
         assertEquals(false, restored?.showOwnershipOverlay)
         assertEquals(AutoPlayDelaySetting.Slow.millis, restored?.autoPlayDelayMillis)
+        assertEquals(SearchTimeSettings(1_500L, 4_000L, 7_500L), restored?.searchTimeSettings)
     }
 
     @Test
@@ -62,6 +69,7 @@ class UserPreferencesCodecTest {
         assertTrue(restored?.showLastMoveRing ?: false)
         assertTrue(restored?.showOwnershipOverlay ?: false)
         assertEquals(AutoPlayDelaySetting.Default.millis, restored?.autoPlayDelayMillis)
+        assertEquals(SearchTimeSettings(), restored?.searchTimeSettings)
     }
 
     @Test

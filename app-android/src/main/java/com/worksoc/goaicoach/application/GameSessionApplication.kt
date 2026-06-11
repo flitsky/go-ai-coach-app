@@ -10,6 +10,7 @@ import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.ScoreSnapshot
 import com.worksoc.goaicoach.shared.StoneColor
 import com.worksoc.goaicoach.shared.describe
@@ -18,6 +19,7 @@ internal data class RuntimePlayLevelSelection(
     val playLevel: PlayLevelSetting,
     val engineProfile: EngineProfile,
     val analysisPreset: AnalysisPreset,
+    val searchTimeSettings: SearchTimeSettings,
 )
 
 internal data class GameSessionResetPlan(
@@ -82,6 +84,7 @@ internal fun selectRuntimePlayLevel(
     nextPlayer: StoneColor,
     currentProfile: EngineProfile,
     defaultPlayLevel: PlayLevelSetting,
+    searchTimeSettings: SearchTimeSettings = SearchTimeSettings(),
 ): RuntimePlayLevelSelection {
     val playLevel = selectPrimaryPlayLevel(
         setup = setup,
@@ -90,8 +93,9 @@ internal fun selectRuntimePlayLevel(
     )
     return RuntimePlayLevelSelection(
         playLevel = playLevel,
-        engineProfile = playLevel.toEngineProfile(currentProfile),
+        engineProfile = playLevel.toEngineProfile(currentProfile, searchTimeSettings),
         analysisPreset = playLevel.analysisPreset,
+        searchTimeSettings = searchTimeSettings.normalized(),
     )
 }
 
@@ -101,6 +105,7 @@ internal fun buildPlayerSetupChangePlan(
     currentProfile: EngineProfile,
     defaultPlayLevel: PlayLevelSetting,
     isEngineBusy: Boolean,
+    searchTimeSettings: SearchTimeSettings = SearchTimeSettings(),
 ): PlayerSetupChangePlan {
     if (isEngineBusy) {
         return PlayerSetupChangePlan.ShowMessage("Engine is busy. Change Player Setup after the current action.")
@@ -113,6 +118,7 @@ internal fun buildPlayerSetupChangePlan(
             nextPlayer = currentState.nextPlayer,
             currentProfile = currentProfile,
             defaultPlayLevel = defaultPlayLevel,
+            searchTimeSettings = searchTimeSettings,
         ),
         reviewAnalysis = MoveAnalysisSnapshot.empty(currentState),
         topMoveClearMessage = "Player Setup changed. Press New to restart with this setup, or continue from the current position.",
@@ -141,6 +147,7 @@ internal fun buildSavedGameRestorePlan(
     snapshot: SavedGameSnapshot,
     currentProfile: EngineProfile,
     defaultPlayLevel: PlayLevelSetting,
+    searchTimeSettings: SearchTimeSettings = SearchTimeSettings(),
 ): SavedGameRestorePlan {
     val state = snapshot.gameState
     val runtime = selectRuntimePlayLevel(
@@ -148,6 +155,7 @@ internal fun buildSavedGameRestorePlan(
         nextPlayer = state.nextPlayer,
         currentProfile = currentProfile,
         defaultPlayLevel = defaultPlayLevel,
+        searchTimeSettings = searchTimeSettings,
     )
     return SavedGameRestorePlan(
         gameState = state,
@@ -171,6 +179,7 @@ internal fun buildSavedGameRestoreRequestPlan(
     defaultPlayLevel: PlayLevelSetting,
     isEngineBusy: Boolean,
     isEngineReady: Boolean,
+    searchTimeSettings: SearchTimeSettings = SearchTimeSettings(),
 ): SavedGameRestoreRequestPlan {
     if (isEngineBusy) {
         return SavedGameRestoreRequestPlan.ShowMessage(
@@ -183,6 +192,7 @@ internal fun buildSavedGameRestoreRequestPlan(
             snapshot = snapshot,
             currentProfile = currentProfile,
             defaultPlayLevel = defaultPlayLevel,
+            searchTimeSettings = searchTimeSettings,
         ),
         syncEngineAfterRestore = isEngineReady,
     )

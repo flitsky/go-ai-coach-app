@@ -5,10 +5,10 @@ import com.worksoc.goaicoach.shared.EngineAdapter
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.PlayLevelSetting
+import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.StoneColor
-import com.worksoc.goaicoach.shared.TurnAnalysisPurpose
 import com.worksoc.goaicoach.shared.describe
-import com.worksoc.goaicoach.shared.turnAnalysisLimitFor
+import com.worksoc.goaicoach.shared.fastCandidateAnalysis
 import kotlin.random.Random
 
 internal val HumanPlayer = StoneColor.Black
@@ -116,6 +116,7 @@ internal suspend fun applyAiResponseAfterHumanTurn(
     stateAfterHuman: GameState,
     humanMove: Move,
     playLevel: PlayLevelSetting,
+    searchTimeSettings: SearchTimeSettings = SearchTimeSettings(),
     onHumanMoveAccepted: suspend () -> Unit = {},
 ): TurnOutcome {
     val humanStatus = engineAdapter.playMove(humanMove)
@@ -135,6 +136,7 @@ internal suspend fun applyAiResponseAfterHumanTurn(
         currentState = stateAfterHuman,
         aiPlayer = AiPlayer,
         playLevel = playLevel,
+        searchTimeSettings = searchTimeSettings,
     )
     if (selectedAiMove != null) {
         val afterAi = runCatching { stateAfterHuman.play(selectedAiMove.move) }.getOrNull()
@@ -166,11 +168,13 @@ internal suspend fun applyAiTurn(
     currentState: GameState,
     aiPlayer: StoneColor,
     playLevel: PlayLevelSetting,
+    searchTimeSettings: SearchTimeSettings = SearchTimeSettings(),
 ): TurnOutcome {
     val selectedAiMove = engineAdapter.selectAiMoveFromAnalysis(
         currentState = currentState,
         aiPlayer = aiPlayer,
         playLevel = playLevel,
+        searchTimeSettings = searchTimeSettings,
     )
     if (selectedAiMove != null) {
         val afterAi = runCatching { currentState.play(selectedAiMove.move) }.getOrNull()
@@ -251,9 +255,11 @@ private suspend fun EngineAdapter.selectAiMoveFromAnalysis(
     currentState: GameState,
     aiPlayer: StoneColor,
     playLevel: PlayLevelSetting,
+    searchTimeSettings: SearchTimeSettings,
 ): SelectedAiMove? =
     runCatching {
-        val analysis = analyze(playLevel.turnAnalysisLimitFor(TurnAnalysisPurpose.AiMoveSelection))
+        val baseLimit = playLevel.analysisLimitWith(searchTimeSettings)
+        val analysis = analyze(baseLimit.fastCandidateAnalysis(baseLimit.candidateCount))
         val scoredCandidates = analysis.candidates
             .filter { candidate ->
                 candidate.move.player == aiPlayer && candidate.pointLoss != null
