@@ -87,6 +87,8 @@ Visit diagnostics: request=32, root=31, elapsedMs=2031, timeCapMs=3000, fill=SHO
 - AI 착수 분석 직전: `EngineAdapter.clearSearchCache()`를 호출한다.
 - KataGo 구현체: GTP `clear_cache`를 호출한다.
 
+랜덤 시드(`searchRandSeed`, `nnRandSeed`)는 이 정책의 대체재로 보지 않는다. 시드는 검색 다양성 또는 재현성을 조정하지만, 직전 턴이나 이전 판에서 남은 search tree/NN cache를 격리하지는 않는다.
+
 검증 로그:
 
 - `docs/engine-benchmark-logs/phone-autoplay-fastgame-20260611-203429/summary.md`

@@ -822,3 +822,5 @@
 - `EngineAdapter.clearSearchCache()`를 추가하고, KataGo process adapter에서는 GTP `clear_cache`를 호출하도록 했다. 사람 착수 후 AI 응수 분석과 AI vs AI 각 AI 착수 분석 직전에 이 경계를 호출한다.
 - `docs/engine-benchmark-logs/phone-autoplay-clearcache-20260611-204836/`에 최종 검증 로그를 저장했다. 23수 관찰에서 B16은 평균 `2158.7ms`, B64는 평균 `4577.4ms`, 100ms 미만 응답은 0회였다. 따라서 “투다닥” 자동착수의 핵심 원인은 KataGo process 내부 cache/tree 재사용이 맞고, AI 착수 직전 `clear_cache`로 차단됨을 확인했다.
 - 최신 APK를 무선 ADB로 `SM-S908N`에 설치했다. `:app-android:testDebugUnitTest`도 통과했다.
+- 사용자가 랜덤 시드가 다양한 수를 두게 만드는 방편이라면 매판 초기화 없이도 충분한지 질문했다. 로컬 KataGo config 확인 결과 `searchRandSeed`, `nnRandSeed`, `nnRandomize`는 검색 다양성/재현성 조정 수단이며, 이전 턴에서 적용 가능한 search tree visits를 포함할 수 있다는 KataGo 주석과 별개다. 따라서 랜덤 시드는 `clear_cache`나 fresh process의 대체재가 아니고, 앱 레벨 후보 구간 랜덤 선택과 함께 다양성 목적으로만 별도 검토한다.
+- `EngineAdapter` KDoc에 앱 canonical state, 엔진 내부 search tree/cache 가능성, `clearSearchCache()`의 의미, 랜덤 시드가 cache isolation 대체재가 아니라는 내용을 명시했다. 앞으로 process/JNI/remote 구현체가 같은 계약을 따르도록 인터페이스에 정책을 남기는 방향을 채택했다.

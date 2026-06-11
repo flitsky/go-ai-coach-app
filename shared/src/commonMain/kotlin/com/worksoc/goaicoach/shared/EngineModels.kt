@@ -1,5 +1,14 @@
 package com.worksoc.goaicoach.shared
 
+/**
+ * Boundary for all Go engine implementations.
+ *
+ * The app owns canonical game state and replays it into this adapter. Engine
+ * implementations may keep internal search trees, NN caches, or transport
+ * sessions, so callers must not infer that `newGame()` or `playMove()` also
+ * isolates search history. Use `clearSearchCache()` before AI move selection
+ * when fair per-turn search is more important than reusing prior tree work.
+ */
 interface EngineAdapter {
     suspend fun initialize(profile: EngineProfile): EngineStatus
     suspend fun configure(profile: EngineProfile): EngineStatus
@@ -7,6 +16,16 @@ interface EngineAdapter {
     suspend fun playMove(move: Move): EngineStatus
     suspend fun genMove(player: StoneColor): MoveResult
     suspend fun undoMove(): EngineStatus
+
+    /**
+     * Clears engine-side search state without changing the board.
+     *
+     * This is intentionally separate from app-level analysis caching. KataGo
+     * can count reusable tree visits from previous turns and can also retain
+     * enough state across repeated games to replay moves nearly instantly.
+     * Random seeds may diversify search, but they are not a correctness
+     * substitute for cache isolation.
+     */
     suspend fun clearSearchCache(): EngineStatus =
         EngineStatus.ready("Engine search cache unchanged.")
     suspend fun analyze(limit: AnalysisLimit): AnalysisResult

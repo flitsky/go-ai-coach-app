@@ -136,6 +136,21 @@ AI 차례와 사람 차례는 같은 `TurnAnalysis` snapshot 개념을 사용한
 
 `clearSearchCache()`는 앱 레벨 분석 cache와 다른 경계다. 앱 cache는 이전 국면의 결과 재사용 여부를 다루고, `clearSearchCache()`는 KataGo process 내부 검색 트리/NN cache가 직전 턴 또는 이전 판의 국면을 과도하게 재사용하지 못하게 막기 위한 엔진 경계다.
 
+### 랜덤 시드와 search cache
+
+KataGo config에는 `nnRandSeed`, `searchRandSeed`, `nnRandomize`가 있다. 이 값들은 검색/NN 평가의 랜덤성 또는 재현성을 조정하는 도구다. 그러나 search cache isolation의 대체재는 아니다.
+
+KataGo GTP config 주석 기준으로 `visits`는 현재 턴에서 새로 수행한 playout뿐 아니라 이전 턴에서 여전히 현재 국면에 적용 가능한 search tree도 포함할 수 있다. 즉 같은 process 안에서 직전 검색 트리가 살아 있으면, 랜덤 시드가 달라도 “이미 유효한 검색량”이 남아 빠르게 반환될 수 있다.
+
+현재 정책은 다음과 같이 둔다.
+
+- 사용자 대국 다양성: 앱 레벨 후보 구간 랜덤 선택과 KataGo 기본 search randomness를 활용한다.
+- 강도 검증/회귀 테스트: 필요하면 `searchRandSeed` 또는 `nnRandSeed`를 고정하는 별도 실험 모드를 둔다.
+- 공정한 턴별 AI 착수 분석: `clearSearchCache()`를 유지한다.
+- 새 판 반복 테스트: `startNewEngineGame()`의 fresh process 정책을 유지한다.
+
+따라서 “매판 random seed를 넣으면 프로세스 재시작이나 `clear_cache`가 불필요한가?”에 대한 현재 결론은 아니오다. 랜덤 시드는 다양성/재현성 제어 수단이고, `clear_cache`/fresh process는 엔진 내부 상태 격리 수단이다.
+
 ### 사람 차례
 
 1. 사람 차례가 오면 fast `TurnAnalysis`를 요청해 best move snapshot을 확보한다.
