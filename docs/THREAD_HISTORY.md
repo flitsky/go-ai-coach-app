@@ -802,3 +802,7 @@
 - 사용자가 현재 cache 재사용이 불안정하고 같은 결론이 반복되는 문제가 있어 우선 비활성화하고, 50% 확률 재사용, 패배 시 무효화, 3회 연속 안정 결과만 등록 같은 고도화 포인트를 남겨달라고 요청했다.
 - `AnalysisResultCache` 기본 mode를 `Disabled`로 바꾸고, Top Moves 완료 메시지는 `Analysis cache disabled: fresh ... result`로 표시되도록 했다. 같은 턴의 현재 `MoveAnalysisSnapshot`을 표시하는 기능은 유지하되, 이전 국면 cache hit 재사용은 하지 않는다.
 - `docs/ENGINE_ANALYSIS_CACHE_POLICY.md`를 추가해 cache 재도입 전 필요한 품질 게이트, 확률적 재사용, 패배 기반 무효화, 안정성 기반 등록, fill/root visits 조건 등을 정리했다.
+- 사용자가 무선 대신 유선으로 폰을 연결했다고 알려왔다. ADB에서 `SM-S908N` USB device `R5CT22WTVXP`를 확인했고, 앱 데이터를 보존하는 `:app-android:installDebug`로 최신 debug APK를 설치했다.
+- 기기 저장 설정은 `Black: AI 초급 7단계`, `White: AI 빠른 초급 3단계`, `Search Time: B16 2000ms / B32 3000ms / B64 4500ms`, `analysisCache=disabled`였다. 메뉴 화면에도 B16 `2초`, B32 `3초`, B64 `4.5초`로 표시됨을 확인했다.
+- `Copy Log`로 실제 엔진 호출을 확인했다. 백 `빠른 초급 3단계`는 `16 visits / 2000ms`, `timeCapMs=2000`으로 호출됐고, 흑 `초급 7단계`는 `32 visits / 3000ms`, `timeCapMs=3000`으로 호출됐다. 따라서 메뉴에서 설정된 시간이 실제 `EngineAdapter.analyze()` 호출까지 내려가고 있으며, 기존 `250ms` 제한은 이번 런타임 호출 로그에서는 보이지 않았다.
+- 단, `timeCapMs`는 최대 허용 시간이라 엔진이 visit을 채우거나 응답하면 더 빨리 끝날 수 있다. 이번 실기기 로그에서도 B16/B32 모두 `fill=SHORT`가 관측됐고, B32는 `root=31`, `elapsedMs=2031`, `timeCapMs=3000`이었다.
