@@ -136,6 +136,8 @@ AI 차례와 사람 차례는 같은 `TurnAnalysis` snapshot 개념을 사용한
 
 `clearSearchCache()`는 앱 레벨 분석 cache와 다른 경계다. 앱 cache는 이전 국면의 결과 재사용 여부를 다루고, `clearSearchCache()`는 KataGo process 내부 검색 트리/NN cache가 직전 턴 또는 이전 판의 국면을 과도하게 재사용하지 못하게 막기 위한 엔진 경계다.
 
+search tree 재사용 자체는 나쁜 기능이 아니다. KataGo의 원래 성능 최적화이며, 한쪽 AI가 같은 대국을 이어갈 때는 유용하다. 현재 기본 대국 경로에서 격리하는 이유는 `maxVisits`가 이전 턴에서 유효한 tree visits를 포함할 수 있어, B16/B32/B64 같은 visit 기반 레벨링이 오염되기 때문이다.
+
 ### 랜덤 시드와 search cache
 
 KataGo config에는 `nnRandSeed`, `searchRandSeed`, `nnRandomize`가 있다. 이 값들은 검색/NN 평가의 랜덤성 또는 재현성을 조정하는 도구다. 그러나 search cache isolation의 대체재는 아니다.
@@ -150,6 +152,8 @@ KataGo GTP config 주석 기준으로 `visits`는 현재 턴에서 새로 수행
 - 새 판 반복 테스트: `startNewEngineGame()`의 fresh process 정책을 유지한다.
 
 따라서 “매판 random seed를 넣으면 프로세스 재시작이나 `clear_cache`가 불필요한가?”에 대한 현재 결론은 아니오다. 랜덤 시드는 다양성/재현성 제어 수단이고, `clear_cache`/fresh process는 엔진 내부 상태 격리 수단이다.
+
+재사용을 다시 살릴 후보는 random seed보다 `maxPlayouts` 기반 정책이다. `maxPlayouts`는 이전 tree visits를 포함하는 `maxVisits`와 달리 새로 수행할 탐색량을 더 직접적으로 제한할 수 있다. 다만 기존 tree 위에 새 playout을 더하는 방식이므로, 강도 보정 모드와는 별도인 “성능/품질 우선 모드”로 검증해야 한다. 자세한 검토는 `docs/ENGINE_SEARCH_TREE_REUSE_REVIEW.md`를 따른다.
 
 ### 사람 차례
 

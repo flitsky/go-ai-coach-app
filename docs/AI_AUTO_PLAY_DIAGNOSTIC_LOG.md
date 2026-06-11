@@ -89,6 +89,8 @@ Visit diagnostics: request=32, root=31, elapsedMs=2031, timeCapMs=3000, fill=SHO
 
 랜덤 시드(`searchRandSeed`, `nnRandSeed`)는 이 정책의 대체재로 보지 않는다. 시드는 검색 다양성 또는 재현성을 조정하지만, 직전 턴이나 이전 판에서 남은 search tree/NN cache를 격리하지는 않는다.
 
+단, search tree 재사용 자체는 성능 최적화 관점에서 좋은 기능이다. 기본 대국 경로에서는 레벨 보정을 우선해 격리하지만, 향후 `maxPlayouts` 기반 성능 모드에서 재사용을 다시 실험할 수 있다.
+
 검증 로그:
 
 - `docs/engine-benchmark-logs/phone-autoplay-fastgame-20260611-203429/summary.md`

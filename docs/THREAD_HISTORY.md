@@ -824,3 +824,5 @@
 - 최신 APK를 무선 ADB로 `SM-S908N`에 설치했다. `:app-android:testDebugUnitTest`도 통과했다.
 - 사용자가 랜덤 시드가 다양한 수를 두게 만드는 방편이라면 매판 초기화 없이도 충분한지 질문했다. 로컬 KataGo config 확인 결과 `searchRandSeed`, `nnRandSeed`, `nnRandomize`는 검색 다양성/재현성 조정 수단이며, 이전 턴에서 적용 가능한 search tree visits를 포함할 수 있다는 KataGo 주석과 별개다. 따라서 랜덤 시드는 `clear_cache`나 fresh process의 대체재가 아니고, 앱 레벨 후보 구간 랜덤 선택과 함께 다양성 목적으로만 별도 검토한다.
 - `EngineAdapter` KDoc에 앱 canonical state, 엔진 내부 search tree/cache 가능성, `clearSearchCache()`의 의미, 랜덤 시드가 cache isolation 대체재가 아니라는 내용을 명시했다. 앞으로 process/JNI/remote 구현체가 같은 계약을 따르도록 인터페이스에 정책을 남기는 방향을 채택했다.
+- 사용자가 search tree visits 재사용은 원래 좋은 기능인데 우리가 과하게 비활성화한 것 아닌지 재검토를 요청했다. 코드 기반 검토 결과 현재 adapter는 `maxVisits`/`maxTime`만 제어하고 `maxPlayouts`는 쓰지 않는다. `maxVisits`는 이전 유효 tree visits를 포함할 수 있으므로, 같은 process에서 B64가 본 자식 국면을 B16이 즉시 가져와 레벨 경계를 오염시킬 수 있다.
+- `docs/ENGINE_SEARCH_TREE_REUSE_REVIEW.md`를 추가해 search tree reuse의 장점, 현재 문제가 된 조건, random seed의 한계, `maxPlayouts` 기반 재사용 모드, side별 engine process 분리 후보를 정리했다. 결론은 “재사용 기능을 영구 금지한 것이 아니라, 현재 기본값은 레벨 보정과 디버깅 가능성을 위해 격리하고, 향후 성능 모드에서 통제된 재사용을 실험한다”이다.
