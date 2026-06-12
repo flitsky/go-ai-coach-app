@@ -904,3 +904,5 @@
 - `GoCoachApp.kt`의 score estimate/final score/endgame failure 적용부가 `GameSessionScoreState`를 통해 계산되도록 정리했고, `GameSessionScoreStateTest`를 추가했다. JDK 17/Android SDK 환경에서 `:app-android:testDebugUnitTest`가 통과했다.
 - 3단계로 `GameSessionRuntimeState`를 추가해 `playLevel`, `engineProfile`, `analysisPreset`를 runtime triple로 묶었다.
 - `GoCoachApp.kt`의 runtime selection 및 자동 AI 턴 display plan 적용부가 `GameSessionRuntimeState`를 통해 계산되도록 정리했고, `GameSessionRuntimeStateTest`를 추가했다. JDK 17/Android SDK 환경에서 `:app-android:testDebugUnitTest`가 통과했다.
+- `docs/refactoring/GAME_SESSION_CONTROLLER_CANDIDATES_2026-06-13.md`에 다음 추천 항목을 갱신했다. 추천 순서는 analysis state 단일 source of truth 승격, score state 단일 source of truth 승격, runtime state 범위 확장, thin `GameSessionController` skeleton, 플랫폼 port 분리다.
+- 이번 배치 최종 검증으로 JDK 17/Android SDK 환경에서 `make test`를 실행했고 통과했다.
