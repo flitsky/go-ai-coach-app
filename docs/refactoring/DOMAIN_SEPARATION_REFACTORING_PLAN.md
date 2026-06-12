@@ -191,7 +191,7 @@ Game UX는 다음만 담당한다.
 3. `[완료]` `SeatId`, `SeatAssignment`, `AiCharacterProfile` 도입
 4. `[완료]` PlayerSetup helper를 seat 도메인 기반으로 정리
 5. `[완료]` MatchReferee 후보를 추가하고 사람 착수 로컬 처리부터 적용
-6. 테스트/문서/히스토리 갱신 후 커밋/푸시
+6. `[완료]` 테스트/문서/히스토리 갱신 후 커밋/푸시
 
 ### 진행 로그
 
@@ -214,6 +214,7 @@ Game UX는 다음만 담당한다.
 - 검증: `:app-android:testDebugUnitTest` 통과.
 - `EngineBootstrap.adapter`를 `EngineBootstrap.coreApi`로 바꿔 app bootstrap wiring에서도 원시 엔진 계약 이름이 드러나게 했다. concrete 구현체는 기존 `EngineAdapter` 호환 타입을 그대로 사용한다.
 - 검증: `:app-android:testDebugUnitTest` 통과.
+- 통합 검증: `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test` 통과.
 
 ## 주의할 점
 

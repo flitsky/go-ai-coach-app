@@ -883,3 +883,4 @@
 - JDK 17/Android SDK 환경에서 `:app-android:testDebugUnitTest`가 통과했다.
 - `EngineBootstrap.adapter` 필드를 `coreApi`로 rename해 app bootstrap wiring에서도 구체 adapter보다 엔진 코어 계약을 주입한다는 의미가 드러나게 했다. Stub/KataGo 구현체는 기존 `EngineAdapter` 호환 타입으로 유지했다.
 - JDK 17/Android SDK 환경에서 `:app-android:testDebugUnitTest`가 통과했다.
+- 이번 도메인 분리 배치의 최종 통합 검증으로 `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test`를 실행했고 통과했다. 현재 git status는 기존 untracked `.bkit/`만 남아 있다.
