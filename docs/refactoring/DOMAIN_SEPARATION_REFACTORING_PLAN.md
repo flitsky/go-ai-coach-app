@@ -210,6 +210,8 @@ Game UX는 다음만 담당한다.
 - `GameSettings`를 추가해 ruleset, Top Moves 기본 상태, AI 자동대국 딜레이, Search Time 설정을 application 계층의 설정 도메인 묶음으로 다루게 했다.
 - 기존 UI 호환을 위해 `InitialUserPreferencesPlan.topMovesEnabled`와 `autoPlayDelaySetting`은 computed property로 유지하고, 내부에는 `settings`를 추가했다.
 - 검증: `UserPreferencesApplicationTest`에 `GameSettings` 복원 검증 추가, `:app-android:testDebugUnitTest` 통과.
+- `LayeringContractTest`를 추가해 `ui`와 `presentation` 계층이 `EngineAdapter`, `EngineCoreApi`, `engine.android` 구현체를 직접 import하지 못하도록 회귀 방지 테스트를 걸었다.
+- 검증: `:app-android:testDebugUnitTest` 통과.
 
 ## 주의할 점
 

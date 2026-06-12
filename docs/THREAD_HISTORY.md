@@ -879,3 +879,5 @@
 - 리팩토링 Phase 4로 `GameSettings`를 추가해 ruleset, Top Moves 기본 상태, 자동대국 딜레이, Search Time을 application 계층 설정 도메인으로 묶었다.
 - `InitialUserPreferencesPlan`은 `settings`를 보유하고, 기존 UI 호환을 위해 `topMovesEnabled`와 `autoPlayDelaySetting`은 computed property로 유지했다.
 - `UserPreferencesApplicationTest`에 settings 복원 검증을 추가했고, JDK 17/Android SDK 환경에서 `:app-android:testDebugUnitTest`가 통과했다.
+- `LayeringContractTest`를 추가해 `ui`/`presentation` 계층이 원시 엔진 API(`EngineAdapter`, `EngineCoreApi`)나 Android 엔진 구현체(`engine.android`)를 직접 import하지 못하게 했다. 도메인 분리 원칙이 이후 기능 추가 중 회귀되지 않도록 하는 안전장치다.
+- JDK 17/Android SDK 환경에서 `:app-android:testDebugUnitTest`가 통과했다.
