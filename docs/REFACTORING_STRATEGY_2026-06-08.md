@@ -30,7 +30,7 @@
 냉정한 현재 평가:
 
 - `shared`, `engine-android`, `application`, `presentation`, `ui`의 큰 경계는 이미 좋아졌다.
-- `GoCoachApp.kt`는 1,957줄에서 1,102줄까지 줄었지만, 아직 화면 상태 보관과 엔진 orchestration을 모두 가진다. 이 파일은 여전히 가장 큰 기술 부채다.
+- `GoCoachApp.kt`는 기능 추가와 후속 분리 이후 현재 약 1,528줄이다. 일부 엔진 실행 결과 조립은 application 계층으로 빠졌지만, 아직 화면 상태 보관과 coroutine orchestration을 모두 가진다. 이 파일은 여전히 가장 큰 기술 부채다.
 - 지금 당장 대규모 ViewModel 전환을 한 번에 수행하는 것은 권장하지 않는다. 먼저 화면 렌더링, 상태 조립, 저장/복원, 자동 분석 trigger를 더 작은 단위로 빼면서 회귀 테스트를 유지해야 한다.
 - 다음 권고 순서는 `GoCoachApp.kt` 내부의 상태 전이 helper를 controller 후보로 묶고, 그 다음에 Compose 상태를 ViewModel 또는 controller state holder로 이전하는 것이다.
 
@@ -99,13 +99,34 @@
 4. Player Setup/Menu 상태 변경을 controller 이벤트로 정리
 5. Board overlay 렌더링 DTO를 분리해 Top Moves, 착수 평가 dot, ownership을 같은 데이터 파이프라인으로 관리
 
+## 2026-06-12 리팩토링 진행 결과
+
+서버 엔진 대비 경계 도입 이후, `GoCoachApp.kt`의 엔진 호출 결과 조립 책임을 더 줄였다.
+
+완료한 작업:
+
+- Top Moves: `EngineSessionClient.runTopMoveAnalysis(...)`로 명시적 `GameState` 분석 요청과 `TopMoveAnalysisUpdate` 조립을 application 계층으로 이동
+- Score sync: `runScoreEstimateDisplayPlan`, `runScoringRuleSyncDisplayPlan`, `runRestoredGameSyncDisplayPlan`으로 점수/룰 변경/복원 후 엔진 결과 조립을 application 계층으로 이동
+- Auto AI: `runAutoAiTurnDisplayPlan(...)`으로 AI 턴 실행 결과를 `AutoAiTurnDisplayPlan`으로 바꾸는 책임을 application 계층으로 이동
+- 각 helper는 fake `EngineSessionClient` 기반 테스트를 추가해 서버형 엔진 구현체가 들어와도 같은 계약을 지키도록 했다.
+
+현재 리팩토링 완성도는 약 86%로 본다. 엔진 호출 결과 조립은 꽤 많이 분리됐지만, `GoCoachApp.kt`가 아직 `isEngineBusy`, pending flag, runtime log, coroutine launch, 종국 처리, 상태 적용 순서를 직접 관리한다. 90%에 도달하려면 다음 단계에서 `GameSessionController` 또는 일반 Kotlin state holder를 도입해 상태 전이 소유권을 UI 밖으로 옮겨야 한다.
+
+다음 우선순위:
+
+1. 자동 AI 턴 schedule/cancel/busy/pending 상태 전이를 controller 후보로 이동
+2. 종국 처리 `resolveEndgameForState -> FinalScoreDisplayPlan/FailurePlan` 실행 경로를 application helper로 이동
+3. `LaunchedEffect` trigger를 startup, benchmark, saved-session, auto-ai, auto-analysis 단위 controller 이벤트로 정리
+4. `GameScreenState` 입력 모델에 benchmark/resume/engine busy 상태를 더 흡수
+5. `GoBoard` overlay DTO 분리
+
 ## 현재 구조 진단
 
 현재 주요 파일 규모:
 
 | 파일 | 라인 수 | 역할 |
 | --- | ---: | --- |
-| `app-android/.../ui/GoCoachApp.kt` | 1,234 | 화면 상태, 엔진 orchestration, 자동 분석/AI 턴, 저장/복원 trigger. 조건 판단과 일부 상태 반영은 application plan/state applier로 이전됨 |
+| `app-android/.../ui/GoCoachApp.kt` | 1,528 | 화면 상태, coroutine orchestration, 자동 분석/AI 턴, 저장/복원 trigger. 엔진 실행 결과 조립은 application helper로 일부 이전됨 |
 | `app-android/.../ui/GoCoachContent.kt` | 110 | 화면 렌더링 최상위 조립, 이어하기 다이얼로그 |
 | `engine-android/.../KataGoProcessEngineAdapter.kt` | 666 | KataGo process/JNI 경계 |
 | `app-android/.../ui/GoBoard.kt` | 580 | 바둑판 drawing/input |
@@ -114,11 +135,13 @@
 | `app-android/.../ui/GamePlaySection.kt` | 120 | 보드, score graph, 액션 버튼, 엔진 응답 조립 |
 | `app-android/.../ui/EngineResponsePanel.kt` | 115 | 엔진 메시지와 분석 텍스트 표시 |
 | `app-android/.../ui/GameMenuActionsPanel.kt` | 112 | New, Copy Log, scoring rule 메뉴 |
-| `app-android/.../application/ScoreDisplayApplication.kt` | 198 | 점수 추정/최종 점수/종국 실패 표시 계획 |
+| `app-android/.../application/EngineSessionClient.kt` | 196 | UI/application-facing 엔진 세션 경계. local adapter와 future remote server 구현의 교체 지점 |
+| `app-android/.../application/ScoreDisplayApplication.kt` | 243 | 점수 추정/최종 점수/종국 실패 표시 계획, 점수 sync 실행 결과 조립 |
+| `app-android/.../application/TopMovesApplication.kt` | 174 | Top Moves 분석 계획, cache/display update, 엔진 분석 실행 결과 조립 |
 | `app-android/.../application/GameSessionApplication.kt` | 158 | 런타임 레벨 선택, 새 게임/복원/Player Setup 변경 계획 |
 | `app-android/.../application/HumanMoveApplication.kt` | 112 | 사람 착수 로컬 처리와 엔진 sync 표시 계획 |
 | `app-android/.../application/UndoApplication.kt` | 103 | Undo 요청/상태 반영 계획 |
-| `app-android/.../application/GameAutomationApplication.kt` | 142 | 자동 AI/Top Moves trigger, 자동 AI 턴 request plan, 자동 AI 턴 표시 계획 |
+| `app-android/.../application/GameAutomationApplication.kt` | 166 | 자동 AI/Top Moves trigger, 자동 AI 턴 request plan, 자동 AI 턴 표시 계획과 실행 결과 조립 |
 | `engine-android/.../KataGoAnalysisParser.kt` | 291 | GTP/분석 파싱 |
 | `app-android/.../match/MatchPolicy.kt` | 283 | Player Setup, AI 착수 선택 정책 |
 | `app-android/.../persistence/GameSessionStore.kt` | 196 | 로컬 저장/복원 codec |

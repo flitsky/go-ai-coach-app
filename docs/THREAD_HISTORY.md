@@ -863,3 +863,4 @@
 - 3단계로 자동 AI 턴 실행 결과 조립을 application 계층으로 분리했다. `EngineSessionClient.runAutoAiTurnDisplayPlan(...)`을 추가해 `GoCoachApp.kt`는 자동 턴 schedule, 로그, 화면 적용에 집중하고, 엔진 세션 실행 결과를 `AutoAiTurnDisplayPlan`으로 바꾸는 책임은 application으로 이동했다.
 - `GameAutomationApplicationTest`에 fake `EngineSessionClient` 테스트를 추가해 현재 국면, 플레이 레벨, search cache isolation 플래그가 자동 AI 턴 세션 경계로 전달되는지 검증했다.
 - `:app-android:testDebugUnitTest`를 실행해 통과했다.
+- `docs/REFACTORING_STRATEGY_2026-06-08.md`를 갱신해 이번 배치 결과, 현재 완성도 약 86%, 다음 후보를 기록했다. 다음 핵심은 `GameSessionController` 또는 state holder 도입으로 busy/pending/coroutine 상태 전이를 UI 밖으로 옮기는 것이다.
