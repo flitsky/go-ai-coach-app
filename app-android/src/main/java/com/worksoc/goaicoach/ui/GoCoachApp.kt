@@ -73,6 +73,9 @@ import com.worksoc.goaicoach.application.planSavedGamePersistence
 import com.worksoc.goaicoach.application.RuntimePlayLevelSelection
 import com.worksoc.goaicoach.application.runTopMoveAnalysis
 import com.worksoc.goaicoach.application.ScoringRuleChangePlan
+import com.worksoc.goaicoach.application.runRestoredGameSyncDisplayPlan
+import com.worksoc.goaicoach.application.runScoreEstimateDisplayPlan
+import com.worksoc.goaicoach.application.runScoringRuleSyncDisplayPlan
 import com.worksoc.goaicoach.application.ShowTopMovesPlan
 import com.worksoc.goaicoach.application.ScoreEstimateDisplayPlan
 import com.worksoc.goaicoach.application.ScoreEstimateRequestPlan
@@ -796,16 +799,14 @@ private fun GoCoachScreen(
             isEngineBusy = true
             runCatching {
                 withContext(Dispatchers.IO) {
-                    engineClient.syncAndEstimateGraphScore(nextState, engineProfile)
+                    engineClient.runScoringRuleSyncDisplayPlan(
+                        state = nextState,
+                        profile = engineProfile,
+                        previousSnapshots = scoreSnapshots,
+                        engineMessage = "Scoring rule changed to ${nextRuleset.scoringLabel}; engine rules synchronized.",
+                    )
                 }
-            }.onSuccess { estimate ->
-                val score = buildEngineEstimateDisplayPlan(
-                    state = nextState,
-                    estimate = estimate,
-                    previousSnapshots = scoreSnapshots,
-                    engineMessage = "Scoring rule changed to ${nextRuleset.scoringLabel}; engine rules synchronized.",
-                    trimAfterMove = true,
-                )
+            }.onSuccess { score ->
                 applyScoreEstimateDisplayPlan(score)
             }.onFailure { error ->
                 engineMessage = error.message ?: "Scoring rule changed, but engine rule sync failed."
@@ -856,15 +857,12 @@ private fun GoCoachScreen(
         scope.launch {
             runCatching {
                 withContext(Dispatchers.IO) {
-                    engineClient.configureSyncAndEstimateGraphScore(restoredState, restoredProfile)
+                    engineClient.runRestoredGameSyncDisplayPlan(
+                        state = restoredState,
+                        profile = restoredProfile,
+                    )
                 }
-            }.onSuccess { estimate ->
-                val score = buildEngineEstimateDisplayPlan(
-                    state = restoredState,
-                    estimate = estimate,
-                    previousSnapshots = emptyList(),
-                    engineMessage = "Previous game restored and engine state synchronized.",
-                )
+            }.onSuccess { score ->
                 applyScoreEstimateDisplayPlan(score)
             }.onFailure { error ->
                 engineMessage = error.message ?: "Saved game restored locally, but engine sync failed."
@@ -878,23 +876,16 @@ private fun GoCoachScreen(
     }
 
     fun requestEngineScoreEstimate(plan: ScoreEstimateRequestPlan.RequestEngineEstimate) {
-        val estimateState = plan.state
         scope.launch {
             isEngineBusy = true
             runCatching {
                 withContext(Dispatchers.IO) {
-                    engineClient.estimateScoreForState(
-                        state = estimateState,
-                        profile = plan.profile,
-                        syncFirst = plan.syncFirst,
+                    engineClient.runScoreEstimateDisplayPlan(
+                        request = plan,
+                        previousSnapshots = scoreSnapshots,
                     )
                 }
-            }.onSuccess { estimate ->
-                val score = buildEngineEstimateDisplayPlan(
-                    state = gameState,
-                    estimate = estimate,
-                    previousSnapshots = scoreSnapshots,
-                )
+            }.onSuccess { score ->
                 applyScoreEstimateDisplayPlan(score)
             }.onFailure { error ->
                 engineMessage = error.message ?: "Score estimate failed."

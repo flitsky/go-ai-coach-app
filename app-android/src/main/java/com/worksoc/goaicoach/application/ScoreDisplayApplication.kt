@@ -100,6 +100,51 @@ internal fun buildEngineEstimateDisplayPlan(
     )
 }
 
+internal suspend fun EngineSessionClient.runScoreEstimateDisplayPlan(
+    request: ScoreEstimateRequestPlan.RequestEngineEstimate,
+    previousSnapshots: List<ScoreSnapshot>,
+): ScoreEstimateDisplayPlan {
+    val estimate = estimateScoreForState(
+        state = request.state,
+        profile = request.profile,
+        syncFirst = request.syncFirst,
+    )
+    return buildEngineEstimateDisplayPlan(
+        state = request.state,
+        estimate = estimate,
+        previousSnapshots = previousSnapshots,
+    )
+}
+
+internal suspend fun EngineSessionClient.runScoringRuleSyncDisplayPlan(
+    state: GameState,
+    profile: EngineProfile,
+    previousSnapshots: List<ScoreSnapshot>,
+    engineMessage: String,
+): ScoreEstimateDisplayPlan {
+    val estimate = syncAndEstimateGraphScore(state, profile)
+    return buildEngineEstimateDisplayPlan(
+        state = state,
+        estimate = estimate,
+        previousSnapshots = previousSnapshots,
+        engineMessage = engineMessage,
+        trimAfterMove = true,
+    )
+}
+
+internal suspend fun EngineSessionClient.runRestoredGameSyncDisplayPlan(
+    state: GameState,
+    profile: EngineProfile,
+): ScoreEstimateDisplayPlan {
+    val estimate = configureSyncAndEstimateGraphScore(state, profile)
+    return buildEngineEstimateDisplayPlan(
+        state = state,
+        estimate = estimate,
+        previousSnapshots = emptyList(),
+        engineMessage = "Previous game restored and engine state synchronized.",
+    )
+}
+
 internal fun buildLocalScoreEstimateDisplayPlan(
     state: GameState,
     previousSnapshots: List<ScoreSnapshot>,

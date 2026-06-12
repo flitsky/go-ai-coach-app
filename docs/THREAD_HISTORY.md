@@ -857,3 +857,6 @@
 - 1단계로 Top Moves 엔진 실행 경로를 application 계층으로 분리했다. `EngineSessionClient.runTopMoveAnalysis(...)`를 추가해 `GoCoachApp.kt`는 coroutine 시작과 화면 상태 적용만 담당하고, 명시적 국면 분석 호출과 `TopMoveAnalysisUpdate` 조립은 application 함수가 담당하게 했다.
 - `TopMovesApplicationTest`에 fake `EngineSessionClient` 기반 테스트를 추가해 `runTopMoveAnalysis`가 `GameState`와 `AnalysisLimit`을 그대로 엔진 세션 경계에 전달하는지 검증했다.
 - `:app-android:testDebugUnitTest`를 실행해 통과했다.
+- 2단계로 점수 추정, scoring rule 변경 후 엔진 sync, 저장 대국 복원 후 엔진 sync의 결과 조립을 application 계층으로 분리했다. `runScoreEstimateDisplayPlan`, `runScoringRuleSyncDisplayPlan`, `runRestoredGameSyncDisplayPlan`을 추가했다.
+- `ScoreDisplayApplicationTest`에 fake `EngineSessionClient` 테스트를 추가해 각 helper가 엔진 세션 호출 결과를 `ScoreEstimateDisplayPlan`으로 조립하는지 검증했다.
+- `:app-android:testDebugUnitTest`를 실행해 통과했다.

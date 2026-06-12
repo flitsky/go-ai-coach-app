@@ -1,16 +1,25 @@
 package com.worksoc.goaicoach.application
 
 import com.worksoc.goaicoach.match.MatchMode
+import com.worksoc.goaicoach.shared.AnalysisLimit
+import com.worksoc.goaicoach.shared.AnalysisResult
+import com.worksoc.goaicoach.shared.BoardSize
+import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.DeadStoneCleanupResult
 import com.worksoc.goaicoach.shared.EndgameScoreSource
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.EngineStatus
 import com.worksoc.goaicoach.shared.FinalScoreResult
 import com.worksoc.goaicoach.shared.GameState
+import com.worksoc.goaicoach.shared.Move
+import com.worksoc.goaicoach.shared.PlayLevelSetting
+import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.ScoreSnapshot
 import com.worksoc.goaicoach.shared.ScoreSnapshotSource
 import com.worksoc.goaicoach.shared.StoneColor
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -109,6 +118,64 @@ class ScoreDisplayApplicationTest {
     }
 
     @Test
+    fun scoreEstimateDisplayRunnerRequestsEngineAndBuildsPlan() = runBlocking {
+        val state = GameState.empty()
+        val profile = EngineProfile()
+        val client = FakeScoreEngineSessionClient()
+        val request = ScoreEstimateRequestPlan.RequestEngineEstimate(
+            state = state,
+            profile = profile,
+            syncFirst = true,
+        )
+
+        val plan = client.runScoreEstimateDisplayPlan(
+            request = request,
+            previousSnapshots = emptyList(),
+        )
+
+        assertEquals(state, client.estimatedState)
+        assertEquals(profile, client.estimatedProfile)
+        assertEquals(true, client.estimatedSyncFirst)
+        assertEquals("estimated", plan.engineMessage)
+        assertEquals(ScoreSnapshotSource.EngineEstimate, plan.scoreSnapshots.single().source)
+    }
+
+    @Test
+    fun scoringRuleSyncRunnerBuildsTrimmedEngineEstimatePlan() = runBlocking {
+        val state = GameState.empty()
+        val client = FakeScoreEngineSessionClient()
+        val previous = listOf(
+            ScoreSnapshot(moveNumber = 5, source = ScoreSnapshotSource.EngineEstimate),
+        )
+
+        val plan = client.runScoringRuleSyncDisplayPlan(
+            state = state,
+            profile = EngineProfile(),
+            previousSnapshots = previous,
+            engineMessage = "rules synced",
+        )
+
+        assertEquals(state, client.syncedState)
+        assertEquals("rules synced", plan.engineMessage)
+        assertEquals(0, plan.scoreSnapshots.single().moveNumber)
+    }
+
+    @Test
+    fun restoredGameSyncRunnerUsesRestoreMessageAndFreshTimeline() = runBlocking {
+        val state = GameState.empty()
+        val client = FakeScoreEngineSessionClient()
+
+        val plan = client.runRestoredGameSyncDisplayPlan(
+            state = state,
+            profile = EngineProfile(),
+        )
+
+        assertEquals(state, client.configuredSyncState)
+        assertEquals("Previous game restored and engine state synchronized.", plan.engineMessage)
+        assertEquals(1, plan.scoreSnapshots.size)
+    }
+
+    @Test
     fun localScoreEstimateDisplayPlanClearsEngineEstimateAndRecordsLocalSnapshot() {
         val state = GameState.empty()
 
@@ -165,4 +232,108 @@ class ScoreDisplayApplicationTest {
         assertTrue(plan.candidateText.contains("Game ended after pass/pass"))
         assertEquals(ScoreSnapshotSource.FinalScore, plan.scoreSnapshots.single().source)
     }
+}
+
+private class FakeScoreEngineSessionClient : EngineSessionClient {
+    var estimatedState: GameState? = null
+        private set
+    var estimatedProfile: EngineProfile? = null
+        private set
+    var estimatedSyncFirst: Boolean? = null
+        private set
+    var syncedState: GameState? = null
+        private set
+    var configuredSyncState: GameState? = null
+        private set
+
+    override val capabilities: EngineSessionCapabilities =
+        EngineSessionCapabilities(supportsDeviceBenchmark = false)
+
+    override suspend fun startSession(
+        profile: EngineProfile,
+        state: GameState,
+    ): EngineStartupResult =
+        error("not used")
+
+    override suspend fun startNewGame(
+        profile: EngineProfile,
+        boardSize: BoardSize,
+        ruleset: Ruleset,
+    ): EngineStartupResult =
+        error("not used")
+
+    override suspend fun analyzePosition(
+        state: GameState,
+        limit: AnalysisLimit,
+    ): AnalysisResult =
+        error("not used")
+
+    override suspend fun syncAndEstimateGraphScore(
+        state: GameState,
+        profile: EngineProfile,
+    ): ScoreEstimate {
+        syncedState = state
+        return testEstimate()
+    }
+
+    override suspend fun configureSyncAndEstimateGraphScore(
+        state: GameState,
+        profile: EngineProfile,
+    ): ScoreEstimate {
+        configuredSyncState = state
+        return testEstimate()
+    }
+
+    override suspend fun runAutoAiTurn(
+        currentState: GameState,
+        playLevel: PlayLevelSetting,
+        currentProfile: EngineProfile,
+        searchTimeSettings: SearchTimeSettings,
+        isolateSearchCache: Boolean,
+    ): AutoAiTurnResult =
+        error("not used")
+
+    override suspend fun syncAfterHumanMove(
+        afterMove: GameState,
+        profile: EngineProfile,
+        move: Move,
+        previousReviewCandidates: List<CandidateMove>,
+    ): LocalEngineMoveResult =
+        error("not used")
+
+    override suspend fun estimateScoreForState(
+        state: GameState,
+        profile: EngineProfile,
+        syncFirst: Boolean,
+    ): ScoreEstimate {
+        estimatedState = state
+        estimatedProfile = profile
+        estimatedSyncFirst = syncFirst
+        return testEstimate()
+    }
+
+    override suspend fun resolveEndgameForState(
+        state: GameState,
+        profile: EngineProfile,
+        prePassCandidates: List<CandidateMove>,
+    ): AiEndgameResolution =
+        error("not used")
+
+    override suspend fun undoMove(): EngineStatus =
+        error("not used")
+
+    override suspend fun runStartupBenchmark(
+        restoreState: GameState,
+        nowMillis: Long,
+        onProgress: suspend (EngineBenchmarkProgress) -> Unit,
+    ): EngineBenchmarkProfile =
+        error("not used")
+
+    private fun testEstimate(): ScoreEstimate =
+        ScoreEstimate(
+            status = EngineStatus.ready("estimated"),
+            whiteScoreLead = 0.5,
+            whiteWinRate = 0.5,
+            summary = "estimate",
+        )
 }
