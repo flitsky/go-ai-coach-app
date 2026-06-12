@@ -887,3 +887,6 @@
 - 사용자가 다음 리팩토링 항목과 최소 2시간 이상의 상세 작업 리스트 작성을 요청했고, 최종 완결사항만 통합 테스트하겠다고 했다.
 - `docs/refactoring/NEXT_REFACTORING_WORKLIST_2026-06-13.md`를 추가해 다음 배치를 Runtime Event Log formatter 분리, Engine operation guard 분리, Top Moves request launcher 전 단계 정리, Auto AI runtime flow 분리 준비, Display plan applier 후보 정리, 통합 검증 순서로 정리했다.
 - 이번 배치에서는 `GoCoachApp.kt`의 대규모 controller 전환을 바로 하지 않고, controller 도입 전 안전하게 분리 가능한 application 로직부터 순차 진행하기로 했다.
+- 1단계로 `RuntimeEventApplication.kt`를 추가해 `GoCoachApp.kt`에 있던 app start, game reset, engine game start, auto play delay, AI turn schedule/begin/success/endgame/failure/complete runtime log 문자열 조립을 application 계층으로 이동했다.
+- `GoCoachApp.kt` 하단의 `shortFingerprint`, `logSummary`, `logSnippet` helper를 제거하고, 런타임 로그 생성 함수들을 호출하도록 변경했다.
+- `RuntimeEventApplicationTest`를 추가했고, JDK 17/Android SDK 환경에서 `:app-android:testDebugUnitTest`가 통과했다.

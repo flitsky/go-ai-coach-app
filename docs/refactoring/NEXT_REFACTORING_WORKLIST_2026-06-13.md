@@ -46,3 +46,4 @@
 ## 진행 로그
 
 - 2026-06-13: 작업 리스트 작성.
+- 2026-06-13: Runtime Event Log formatter 분리 완료. `RuntimeEventApplication.kt`를 추가해 app start, game reset, engine game start, auto play delay, AI turn schedule/begin/success/endgame/failure/complete 로그 문자열을 application 계층에서 생성하도록 했다. `RuntimeEventApplicationTest` 추가, `:app-android:testDebugUnitTest` 통과.
