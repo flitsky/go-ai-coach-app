@@ -890,3 +890,5 @@
 - 1단계로 `RuntimeEventApplication.kt`를 추가해 `GoCoachApp.kt`에 있던 app start, game reset, engine game start, auto play delay, AI turn schedule/begin/success/endgame/failure/complete runtime log 문자열 조립을 application 계층으로 이동했다.
 - `GoCoachApp.kt` 하단의 `shortFingerprint`, `logSummary`, `logSnippet` helper를 제거하고, 런타임 로그 생성 함수들을 호출하도록 변경했다.
 - `RuntimeEventApplicationTest`를 추가했고, JDK 17/Android SDK 환경에서 `:app-android:testDebugUnitTest`가 통과했다.
+- 2단계로 `EngineOperationPolicy.kt`를 추가했다. benchmark 실행 조건, Search Time 변경 조건, scoring rule 변경 조건을 `EngineOperationGate.Allow/NoOp/Block`으로 판정하게 하여 `GoCoachApp.kt`의 busy/ready 메시지 분기를 줄였다.
+- `EngineOperationPolicyTest`를 추가했고, JDK 17/Android SDK 환경에서 `:app-android:testDebugUnitTest`가 통과했다.

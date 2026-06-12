@@ -55,8 +55,12 @@ import com.worksoc.goaicoach.application.EngineBenchmarkDefaultVisits
 import com.worksoc.goaicoach.application.EngineBenchmarkMeasurementVersion
 import com.worksoc.goaicoach.application.EngineBenchmarkProfile
 import com.worksoc.goaicoach.application.EngineBenchmarkProgress
+import com.worksoc.goaicoach.application.EngineOperationGate
 import com.worksoc.goaicoach.application.EngineSessionClient
 import com.worksoc.goaicoach.application.applyHumanMoveLocally
+import com.worksoc.goaicoach.application.evaluateEngineBenchmarkGate
+import com.worksoc.goaicoach.application.evaluateScoringRuleChangeGate
+import com.worksoc.goaicoach.application.evaluateSearchTimeChangeGate
 import com.worksoc.goaicoach.application.FinalScoreDisplayPlan
 import com.worksoc.goaicoach.application.GameSessionResetPlan
 import com.worksoc.goaicoach.application.HumanEngineSyncFailurePlan
@@ -288,17 +292,20 @@ private fun GoCoachScreen(
     }
 
     suspend fun runEngineBenchmark() {
-        if (!isEngineReady) {
-            engineMessage = "Engine benchmark requires a ready local engine."
-            return
-        }
-        if (!engineClient.capabilities.supportsDeviceBenchmark) {
-            engineMessage = "Engine benchmark is available only for the local KataGo process engine."
-            return
-        }
-        if (isEngineBusy || benchmarkProgress != null) {
-            engineMessage = "Engine is busy. Run benchmark after the current response."
-            return
+        when (
+            val gate = evaluateEngineBenchmarkGate(
+                isEngineReady = isEngineReady,
+                supportsDeviceBenchmark = engineClient.capabilities.supportsDeviceBenchmark,
+                isEngineBusy = isEngineBusy,
+                isBenchmarkRunning = benchmarkProgress != null,
+            )
+        ) {
+            EngineOperationGate.Allow -> Unit
+            EngineOperationGate.NoOp -> return
+            is EngineOperationGate.Block -> {
+                engineMessage = gate.message
+                return
+            }
         }
 
         benchmarkResultToConfirm = null
@@ -637,9 +644,13 @@ private fun GoCoachScreen(
     }
 
     fun changeSearchTimeSettings(nextSettings: SearchTimeSettings) {
-        if (isEngineBusy) {
-            engineMessage = "Engine is busy. Change search time after the current action."
-            return
+        when (val gate = evaluateSearchTimeChangeGate(isEngineBusy = isEngineBusy)) {
+            EngineOperationGate.Allow -> Unit
+            EngineOperationGate.NoOp -> return
+            is EngineOperationGate.Block -> {
+                engineMessage = gate.message
+                return
+            }
         }
         val normalized = nextSettings.normalized()
         searchTimeSettings = normalized
@@ -784,12 +795,19 @@ private fun GoCoachScreen(
     }
 
     fun changeScoringRule(nextRuleset: Ruleset) {
-        if (nextRuleset == gameState.ruleset) {
-            return
-        }
-        if (isEngineBusy) {
-            engineMessage = "Engine is busy. Change scoring rule after the current response."
-            return
+        when (
+            val gate = evaluateScoringRuleChangeGate(
+                currentRuleset = gameState.ruleset,
+                nextRuleset = nextRuleset,
+                isEngineBusy = isEngineBusy,
+            )
+        ) {
+            EngineOperationGate.Allow -> Unit
+            EngineOperationGate.NoOp -> return
+            is EngineOperationGate.Block -> {
+                engineMessage = gate.message
+                return
+            }
         }
 
         val ruleChange = buildScoringRuleChangePlan(
