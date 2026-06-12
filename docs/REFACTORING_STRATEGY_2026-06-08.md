@@ -1,7 +1,7 @@
 # Go AI Coach 리팩토링 전략 보고
 
 작성일: 2026-06-08
-최근 갱신: 2026-06-09
+최근 갱신: 2026-06-12
 
 ## 요약
 
@@ -75,6 +75,28 @@
 4. Top Moves/analysis cache lifecycle을 controller 또는 store로 이전
 5. `GoBoard`를 board base, stones, candidate overlay, ownership overlay, input 처리로 분리
 6. `ScoreGraphPanel`의 graph data model과 drawing을 분리
+
+## 2026-06-12 서버 엔진 대비 업데이트
+
+향후 엔진이 앱 내부 local process/JNI가 아니라 서버에서 실행될 수 있다는 요구를 반영해, UI가 `EngineAdapter`를 직접 의존하지 않도록 1차 경계를 추가했다.
+
+현재 결정:
+
+- `EngineAdapter`는 여전히 process/JNI/remote 구현체가 따라야 하는 저수준 엔진 transport 계약이다.
+- Compose UI는 `EngineAdapter`를 직접 호출하지 않고 application 계층의 `EngineSessionClient`를 호출한다.
+- `AdapterEngineSessionClient`는 현재 local `EngineAdapter`를 감싼다. 나중에 서버 엔진으로 고도화할 경우 `RemoteEngineSessionClient`를 추가하고 UI는 그대로 둔다.
+- Top Moves 분석처럼 서버에서 stateless하게 처리될 가능성이 큰 요청은 `analyze(limit)`가 아니라 `analyzePosition(state, limit)` 형태로 명시적인 보드 상태를 넘긴다.
+- local process 구현은 `analyzePosition` 내부에서 `syncToGameState(state)` 후 `analyze(limit)`를 실행한다. remote 구현은 같은 `state`를 HTTP/gRPC payload로 보낼 수 있다.
+
+이 변경으로 리팩토링 완성도는 약 85%로 본다. UI의 엔진 직접 의존을 끊는 첫 경계가 생겼고, 서버 엔진을 도입할 때 바꿔야 할 범위가 `EngineSessionClient` 구현체와 bootstrap wiring으로 좁아졌다. 다만 `GoCoachApp.kt`가 여전히 coroutine orchestration과 많은 화면 상태를 직접 가진다는 핵심 부채는 남아 있다.
+
+다음 리팩토링 우선순위는 다음과 같이 조정한다.
+
+1. `GoCoachApp.kt`의 AI 턴/Top Moves/점수 요청 coroutine orchestration을 `GameSessionController` 후보로 이동
+2. `EngineSessionClient` 구현을 local process용과 future remote용 계약 문서/테스트로 강화
+3. `GameScreenState`에 엔진 busy/benchmark/resume prompt 상태를 더 많이 흡수해 UI 상태 소유권을 줄임
+4. Player Setup/Menu 상태 변경을 controller 이벤트로 정리
+5. Board overlay 렌더링 DTO를 분리해 Top Moves, 착수 평가 dot, ownership을 같은 데이터 파이프라인으로 관리
 
 ## 현재 구조 진단
 

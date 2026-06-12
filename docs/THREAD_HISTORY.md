@@ -845,3 +845,10 @@
 - `docs/` 최상위 Markdown 문서를 이 파일 포함 10개로 줄였다. 현재 활성 문서는 `DOCS_INDEX.md`, `THREAD_HISTORY.md`, `STACK_DECISION.md`, `USER_OPTION_MANUAL.md`, `ENGINE_API_CALL_POLICY.md`, `ENGINE_SEARCH_TREE_REUSE_REVIEW.md`, `ENGINE_LEVEL_STRENGTH_REVIEW_2026-06-10.md`, `SCORE_AND_ENDGAME_DECISION.md`, `KATRAIN_UX_BACKLOG.md`, `REFACTORING_STRATEGY_2026-06-08.md`다.
 - 오래된 계획/실험/세부 논의 문서 23개는 삭제하지 않고 `docs/archive/2026-06-docs-consolidation/`로 이동했다. 최신 기준은 `docs/DOCS_INDEX.md`와 활성 문서를 우선하고, `THREAD_HISTORY.md`의 과거 경로 기록은 당시 맥락 보존용으로 남긴다.
 - `README.md`, `ENGINE_API_CALL_POLICY.md`, `USER_OPTION_MANUAL.md`의 주요 문서 링크를 활성 문서 또는 새 아카이브 경로 기준으로 갱신했다.
+- 사용자가 향후 엔진이 서버에서 실행되고 앱이 호출하는 구조까지 고려해 도메인 분리 리팩토링을 진행해달라고 요청했다.
+- `app-android/application/EngineSessionClient.kt`를 추가했다. UI가 저수준 `EngineAdapter`를 직접 받지 않고 application 계층의 `EngineSessionClient`를 받도록 변경했다.
+- 현재 구현은 `AdapterEngineSessionClient`가 local `EngineAdapter`를 감싸는 방식이다. future remote server 엔진은 같은 `EngineSessionClient`를 구현하면 UI와 대부분의 대국 화면 로직을 유지할 수 있다.
+- Top Moves 분석 경계는 `analyze(limit)` 대신 `analyzePosition(state, limit)`로 바꿨다. local process 구현은 내부에서 `syncToGameState(state)` 후 분석하고, 서버 구현은 명시적인 `GameState`를 요청 payload로 보낼 수 있다.
+- `GoCoachApp.kt`와 `MainActivity.kt` wiring을 새 경계로 변경했고, `EngineSessionTest`에 `analyzePosition`이 명시적 국면을 sync한 뒤 분석하는 회귀 테스트를 추가했다.
+- `:app-android:testDebugUnitTest`를 실행해 통과했다.
+- `docs/REFACTORING_STRATEGY_2026-06-08.md`와 `docs/ENGINE_API_CALL_POLICY.md`에 서버 엔진 대비 계층 경계와 다음 리팩토링 우선순위를 기록했다.

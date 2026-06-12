@@ -127,6 +127,28 @@ class EngineSessionTest {
     }
 
     @Test
+    fun adapterSessionClientAnalyzesExplicitPositionAfterSyncingState() = runBlocking {
+        val engine = RecordingEngineAdapter()
+        val client = AdapterEngineSessionClient(engine)
+        val state = GameState.empty()
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+
+        client.analyzePosition(
+            state = state,
+            limit = AnalysisLimit(visits = 32, timeMillis = 1_000, candidateCount = 3),
+        )
+
+        assertEquals(
+            listOf(
+                "newGame:9:japanese",
+                "play:Black E5",
+                "analyze:32",
+            ),
+            engine.calls,
+        )
+    }
+
+    @Test
     fun estimateScoreForStateOptionallySyncsBoardBeforeEstimating() = runBlocking {
         val engine = RecordingEngineAdapter()
         val state = GameState.empty()

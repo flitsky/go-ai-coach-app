@@ -172,11 +172,21 @@ KataGo GTP config 주석 기준으로 `visits`는 현재 턴에서 새로 수행
 ## 계층 경계
 
 - `shared`: `EngineAdapter`, `AnalysisLimit`, `CandidateMove`, `MoveAnalysisSnapshot`, `PlayLevel`, `MoveSelectionPolicy` 같은 순수 모델과 정책을 둔다.
-- `application`: 현재 화면 상태와 사용자 설정을 보고 어떤 목적의 `TurnAnalysis`가 필요한지 결정한다.
+- `application`: `EngineSessionClient`를 통해 현재 화면 상태와 사용자 설정을 보고 어떤 목적의 `TurnAnalysis`가 필요한지 결정한다.
 - `engine-android`: GTP process, JSON analysis process, 향후 JNI/remote 구현을 `EngineAdapter` 뒤에 숨긴다.
 - `ui`: 분석 요청을 직접 만들지 않는다. 버튼/토글 이벤트를 application 계층에 전달하고, 반환된 snapshot과 표시 DTO만 렌더링한다.
 
 이 경계를 유지해야 process KataGo, JNI native engine, remote server로 바꿔도 상위 학습 UX가 흔들리지 않는다.
+
+2026-06-12 기준으로 Compose UI는 저수준 `EngineAdapter`를 직접 받지 않고 `EngineSessionClient`를 받는다. `EngineAdapter`는 로컬 process/JNI/remote transport의 최하위 계약이고, `EngineSessionClient`는 앱 대국 흐름에 필요한 고수준 계약이다.
+
+서버 엔진을 고려한 중요한 차이는 다음과 같다.
+
+- local process는 내부 보드 상태를 sync한 뒤 분석한다.
+- remote server는 매 요청에 보드 상태를 payload로 받을 수 있다.
+- 따라서 UI에서 발생하는 Top Moves 분석은 `analyzePosition(state, limit)`처럼 명시적인 `GameState`를 포함한다.
+- local 구현인 `AdapterEngineSessionClient`는 `syncToGameState(state)` 후 `EngineAdapter.analyze(limit)`를 호출한다.
+- future `RemoteEngineSessionClient`는 같은 계약을 HTTP/gRPC 요청으로 변환하면 된다.
 
 ## 후보 순위와 평가값
 

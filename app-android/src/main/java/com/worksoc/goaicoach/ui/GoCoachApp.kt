@@ -50,7 +50,6 @@ import com.worksoc.goaicoach.application.buildTopMoveAnalysisPlan
 import com.worksoc.goaicoach.application.buildInitialUserPreferencesPlan
 import com.worksoc.goaicoach.application.buildPlayerSetupChangePlan
 import com.worksoc.goaicoach.application.buildUserPreferencesSnapshot
-import com.worksoc.goaicoach.application.configureSyncAndEstimateGraphScore
 import com.worksoc.goaicoach.application.EndgameFailureDisplayPlan
 import com.worksoc.goaicoach.application.EngineBenchmarkDefaultSamplesPerVisit
 import com.worksoc.goaicoach.application.EngineBenchmarkDefaultTimeCapMs
@@ -58,7 +57,7 @@ import com.worksoc.goaicoach.application.EngineBenchmarkDefaultVisits
 import com.worksoc.goaicoach.application.EngineBenchmarkMeasurementVersion
 import com.worksoc.goaicoach.application.EngineBenchmarkProfile
 import com.worksoc.goaicoach.application.EngineBenchmarkProgress
-import com.worksoc.goaicoach.application.runStartupEngineBenchmark
+import com.worksoc.goaicoach.application.EngineSessionClient
 import com.worksoc.goaicoach.application.applyHumanMoveLocally
 import com.worksoc.goaicoach.application.FinalScoreDisplayPlan
 import com.worksoc.goaicoach.application.GameSessionResetPlan
@@ -68,17 +67,10 @@ import com.worksoc.goaicoach.application.EngineStartupDisplayPlan
 import com.worksoc.goaicoach.application.PlayerSetupChangePlan
 import com.worksoc.goaicoach.application.localScoreSnapshot
 import com.worksoc.goaicoach.application.planShowTopMoves
-import com.worksoc.goaicoach.application.estimateScoreForState
-import com.worksoc.goaicoach.application.resolveEndgameForState
-import com.worksoc.goaicoach.application.runAutoAiTurn
 import com.worksoc.goaicoach.application.selectRuntimePlayLevel
 import com.worksoc.goaicoach.application.shouldRequestAiTurn
 import com.worksoc.goaicoach.application.shouldRequestTopMoveAnalysis
 import com.worksoc.goaicoach.application.planSavedGamePersistence
-import com.worksoc.goaicoach.application.startEngineSession
-import com.worksoc.goaicoach.application.startNewEngineGame
-import com.worksoc.goaicoach.application.syncAndEstimateGraphScore
-import com.worksoc.goaicoach.application.syncAfterHumanMove
 import com.worksoc.goaicoach.application.RuntimePlayLevelSelection
 import com.worksoc.goaicoach.application.ScoringRuleChangePlan
 import com.worksoc.goaicoach.application.ShowTopMovesPlan
@@ -115,7 +107,6 @@ import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.CandidateMove
-import com.worksoc.goaicoach.shared.EngineAdapter
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
@@ -134,8 +125,8 @@ import kotlinx.coroutines.withContext
 import java.io.File
 
 @Composable
-fun GoCoachApp(
-    engineAdapter: EngineAdapter,
+internal fun GoCoachApp(
+    engineClient: EngineSessionClient,
     engineName: String,
     engineDiagnostic: String,
 ) {
@@ -149,7 +140,7 @@ fun GoCoachApp(
     ) {
         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             GoCoachScreen(
-                engineAdapter = engineAdapter,
+                engineClient = engineClient,
                 engineName = engineName,
                 engineDiagnostic = engineDiagnostic,
             )
@@ -159,7 +150,7 @@ fun GoCoachApp(
 
 @Composable
 private fun GoCoachScreen(
-    engineAdapter: EngineAdapter,
+    engineClient: EngineSessionClient,
     engineName: String,
     engineDiagnostic: String,
 ) {
@@ -254,12 +245,12 @@ private fun GoCoachScreen(
         hasCheckedSavedSession = prompt.hasCheckedSavedSession
     }
 
-    LaunchedEffect(engineAdapter) {
+    LaunchedEffect(engineClient) {
         hasCompletedEngineStartup = false
         isEngineBusy = true
         runCatching {
             withContext(Dispatchers.IO) {
-                engineAdapter.startEngineSession(engineProfile, gameState)
+                engineClient.startSession(engineProfile, gameState)
             }
         }.onSuccess { result ->
             applyEngineStartupDisplayPlan(
@@ -316,8 +307,8 @@ private fun GoCoachScreen(
         candidateText = "Engine benchmark running: B16/B32/B64, ${EngineBenchmarkDefaultSamplesPerVisit} samples each."
         runCatching {
             withContext(Dispatchers.IO) {
-                engineAdapter
-                    .runStartupEngineBenchmark(
+                engineClient
+                    .runStartupBenchmark(
                         restoreState = gameState,
                         nowMillis = System.currentTimeMillis(),
                         onProgress = { progress ->
@@ -698,7 +689,10 @@ private fun GoCoachScreen(
             isEngineBusy = true
             runCatching {
                 withContext(Dispatchers.IO) {
-                    engineAdapter.analyze(plan.analysisLimit)
+                    engineClient.analyzePosition(
+                        state = targetState,
+                        limit = plan.analysisLimit,
+                    )
                 }
             }.onSuccess { result ->
                 val update = buildCompletedTopMoveAnalysisUpdate(
@@ -809,7 +803,7 @@ private fun GoCoachScreen(
             isEngineBusy = true
             runCatching {
                 withContext(Dispatchers.IO) {
-                    engineAdapter.syncAndEstimateGraphScore(nextState, engineProfile)
+                    engineClient.syncAndEstimateGraphScore(nextState, engineProfile)
                 }
             }.onSuccess { estimate ->
                 val score = buildEngineEstimateDisplayPlan(
@@ -869,7 +863,7 @@ private fun GoCoachScreen(
         scope.launch {
             runCatching {
                 withContext(Dispatchers.IO) {
-                    engineAdapter.configureSyncAndEstimateGraphScore(restoredState, restoredProfile)
+                    engineClient.configureSyncAndEstimateGraphScore(restoredState, restoredProfile)
                 }
             }.onSuccess { estimate ->
                 val score = buildEngineEstimateDisplayPlan(
@@ -896,7 +890,7 @@ private fun GoCoachScreen(
             isEngineBusy = true
             runCatching {
                 withContext(Dispatchers.IO) {
-                    engineAdapter.estimateScoreForState(
+                    engineClient.estimateScoreForState(
                         state = estimateState,
                         profile = plan.profile,
                         syncFirst = plan.syncFirst,
@@ -955,7 +949,7 @@ private fun GoCoachScreen(
             val startMillis = System.currentTimeMillis()
             runCatching {
                 withContext(Dispatchers.IO) {
-                    engineAdapter.startNewEngineGame(runtime.engineProfile, BoardSize.Nine, targetRuleset)
+                    engineClient.startNewGame(runtime.engineProfile, BoardSize.Nine, targetRuleset)
                 }
             }.onSuccess { result ->
                 runtimeEventLog.append(
@@ -1079,7 +1073,7 @@ private fun GoCoachScreen(
                     var nextAnalysisState: GameState? = null
                     runCatching {
                         withContext(Dispatchers.IO) {
-                            engineAdapter.runAutoAiTurn(
+                            engineClient.runAutoAiTurn(
                                 currentState = turnState,
                                 playLevel = aiPlayLevel,
                                 currentProfile = engineProfile,
@@ -1109,7 +1103,7 @@ private fun GoCoachScreen(
                             )
                             runCatching {
                                 withContext(Dispatchers.IO) {
-                                    engineAdapter.resolveEndgameForState(
+                                    engineClient.resolveEndgameForState(
                                         state = display.gameState,
                                         profile = display.profile,
                                         prePassCandidates = display.endgamePrePassCandidates,
@@ -1234,7 +1228,7 @@ private fun GoCoachScreen(
             var nextAnalysisState: GameState? = null
             runCatching {
                 withContext(Dispatchers.IO) {
-                    engineAdapter.syncAfterHumanMove(
+                    engineClient.syncAfterHumanMove(
                         afterMove = afterMove,
                         profile = engineProfile,
                         move = move,
@@ -1285,7 +1279,7 @@ private fun GoCoachScreen(
         scope.launch {
             runCatching {
                 withContext(Dispatchers.IO) {
-                    engineAdapter.syncAndEstimateGraphScore(nextState, engineProfile)
+                    engineClient.syncAndEstimateGraphScore(nextState, engineProfile)
                 }
             }.onSuccess { estimate ->
                 val score = buildEngineEstimateDisplayPlan(
@@ -1314,7 +1308,7 @@ private fun GoCoachScreen(
             runCatching {
                 withContext(Dispatchers.IO) {
                     repeat(undoCount) {
-                        engineAdapter.undoMove()
+                        engineClient.undoMove()
                     }
                 }
             }.onSuccess {
