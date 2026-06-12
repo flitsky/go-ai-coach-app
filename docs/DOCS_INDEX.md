@@ -47,3 +47,4 @@
 | --- | --- |
 | `refactoring/DOMAIN_SEPARATION_REFACTORING_PLAN.md` | Engine Core API, Middleware Domain, Game UX 계층 분리 원칙과 단계별 리팩토링 절차 |
 | `refactoring/NEXT_REFACTORING_WORKLIST_2026-06-13.md` | 다음 2시간 이상 리팩토링 상세 작업 리스트와 진행 로그 |
+| `refactoring/GAME_SESSION_CONTROLLER_CANDIDATES_2026-06-13.md` | `GoCoachApp.kt`의 display plan applier/reducer 이전 후보와 `GameSessionController` 도입 순서 |
