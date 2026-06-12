@@ -64,6 +64,7 @@ import com.worksoc.goaicoach.application.evaluateScoringRuleChangeGate
 import com.worksoc.goaicoach.application.evaluateSearchTimeChangeGate
 import com.worksoc.goaicoach.application.FinalScoreDisplayPlan
 import com.worksoc.goaicoach.application.GameSessionResetPlan
+import com.worksoc.goaicoach.application.GameSessionAnalysisState
 import com.worksoc.goaicoach.application.HumanEngineSyncFailurePlan
 import com.worksoc.goaicoach.application.HumanEngineSyncDisplayPlan
 import com.worksoc.goaicoach.application.EngineStartupDisplayPlan
@@ -455,28 +456,49 @@ private fun GoCoachScreen(
         }
     }
 
+    fun currentAnalysisSessionState(): GameSessionAnalysisState =
+        GameSessionAnalysisState(
+            candidateMoves = candidateMoves,
+            candidateText = candidateText,
+            reviewAnalysis = reviewAnalysis,
+            reviewCandidateMoves = reviewCandidateMoves,
+            lastAnalysisKey = lastAnalysisKey,
+        )
+
+    fun applyAnalysisSessionState(analysis: GameSessionAnalysisState) {
+        candidateMoves = analysis.candidateMoves
+        candidateText = analysis.candidateText
+        reviewAnalysis = analysis.reviewAnalysis
+        reviewCandidateMoves = analysis.reviewCandidateMoves
+        lastAnalysisKey = analysis.lastAnalysisKey
+    }
+
+    fun resetAnalysisSessionState(
+        candidateText: String,
+        reviewAnalysis: MoveAnalysisSnapshot,
+    ) {
+        applyAnalysisSessionState(
+            GameSessionAnalysisState.reset(
+                candidateText = candidateText,
+                reviewAnalysis = reviewAnalysis,
+            ),
+        )
+    }
+
     fun clearTopMoveSpots(message: String? = null) {
-        candidateMoves = emptyList()
-        if (message != null) {
-            candidateText = message
-        }
+        applyAnalysisSessionState(currentAnalysisSessionState().clearTopMoveSpots(message))
     }
 
     fun clearReviewAnalysis(state: GameState = gameState) {
-        reviewAnalysis = MoveAnalysisSnapshot.empty(state)
-        reviewCandidateMoves = emptyList()
+        applyAnalysisSessionState(currentAnalysisSessionState().clearReviewAnalysis(state))
     }
 
     fun applyTopMoveAnalysisUpdate(
         update: TopMoveAnalysisUpdate,
         analysisKey: AnalysisCacheKey,
     ) {
-        reviewAnalysis = update.snapshot
-        reviewCandidateMoves = update.reviewCandidateMoves
-        candidateText = update.candidateText
-        candidateMoves = update.candidateMoves
+        applyAnalysisSessionState(currentAnalysisSessionState().applyTopMoveAnalysisUpdate(update, analysisKey))
         engineMessage = update.engineMessage
-        lastAnalysisKey = analysisKey
     }
 
     fun applyScoreEstimateDisplayPlan(score: ScoreEstimateDisplayPlan) {
@@ -547,10 +569,10 @@ private fun GoCoachScreen(
     fun applyGameSessionResetPlan(reset: GameSessionResetPlan) {
         gameState = reset.gameState
         isGameEnded = false
-        clearTopMoveSpots(reset.candidateText)
-        reviewAnalysis = reset.reviewAnalysis
-        reviewCandidateMoves = emptyList()
-        lastAnalysisKey = null
+        resetAnalysisSessionState(
+            candidateText = reset.candidateText,
+            reviewAnalysis = reset.reviewAnalysis,
+        )
         scoreText = reset.scoreText
         scoreEstimate = null
         scoreSnapshots = reset.scoreSnapshots
@@ -576,10 +598,10 @@ private fun GoCoachScreen(
         topMovesEnabled = restore.topMovesEnabled
         gameState = restore.gameState
         isGameEnded = false
-        clearTopMoveSpots(restore.candidateText)
-        reviewAnalysis = restore.reviewAnalysis
-        reviewCandidateMoves = emptyList()
-        lastAnalysisKey = null
+        resetAnalysisSessionState(
+            candidateText = restore.candidateText,
+            reviewAnalysis = restore.reviewAnalysis,
+        )
         scoreText = restore.scoreText
         scoreEstimate = null
         scoreSnapshots = restore.scoreSnapshots
@@ -593,14 +615,13 @@ private fun GoCoachScreen(
     fun applyUndoLocalStatePlan(undo: UndoLocalStatePlan) {
         gameState = undo.gameState
         isGameEnded = false
-        clearTopMoveSpots()
-        reviewAnalysis = undo.reviewAnalysis
-        reviewCandidateMoves = emptyList()
-        lastAnalysisKey = null
+        resetAnalysisSessionState(
+            candidateText = undo.candidateText,
+            reviewAnalysis = undo.reviewAnalysis,
+        )
         moveReviews = undo.moveReviews
         moveReviewText = undo.moveReviewText
         lastMoveText = undo.lastMoveText
-        candidateText = undo.candidateText
         scoreText = undo.scoreText
         scoreEstimate = null
         scoreSnapshots = undo.scoreSnapshots
@@ -609,10 +630,10 @@ private fun GoCoachScreen(
 
     fun applyScoringRuleChangePlan(ruleChange: ScoringRuleChangePlan) {
         gameState = ruleChange.gameState
-        clearTopMoveSpots(ruleChange.candidateText)
-        reviewAnalysis = ruleChange.reviewAnalysis
-        reviewCandidateMoves = emptyList()
-        lastAnalysisKey = null
+        resetAnalysisSessionState(
+            candidateText = ruleChange.candidateText,
+            reviewAnalysis = ruleChange.reviewAnalysis,
+        )
         scoreEstimate = null
         scoreText = ruleChange.scoreText
         scoreSnapshots = ruleChange.scoreSnapshots
@@ -637,10 +658,10 @@ private fun GoCoachScreen(
             is PlayerSetupChangePlan.Apply -> {
                 playerSetup = plan.playerSetup
                 applyRuntimePlayLevelSelection(plan.runtime)
-                clearTopMoveSpots(plan.topMoveClearMessage)
-                reviewAnalysis = plan.reviewAnalysis
-                reviewCandidateMoves = emptyList()
-                lastAnalysisKey = null
+                resetAnalysisSessionState(
+                    candidateText = plan.topMoveClearMessage,
+                    reviewAnalysis = plan.reviewAnalysis,
+                )
             }
         }
     }

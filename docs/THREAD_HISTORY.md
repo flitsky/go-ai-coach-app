@@ -898,3 +898,5 @@
 - `TopMovesApplicationTest`에 launch plan 분기 검증을 추가했고, JDK 17/Android SDK 환경에서 `:app-android:testDebugUnitTest`가 통과했다.
 - 5단계로 `docs/refactoring/GAME_SESSION_CONTROLLER_CANDIDATES_2026-06-13.md`를 추가했다. `GoCoachApp.kt`의 display plan applier/reducer 후보를 난이도별로 정리하고, 다음 리팩토링은 immutable state holder 도입 후 `AnalysisUiReducer`, `ScoreUiReducer`, `GameSessionController` 순서로 진행하는 것이 안전하다고 결론냈다.
 - 이번 배치의 최종 검증으로 JDK 17/Android SDK 환경에서 `make test`를 실행했고 통과했다.
+- 다음 리팩토링 배치에 착수했다. 1단계로 `GameSessionAnalysisState`를 추가해 Top Moves 후보, candidate text, move review snapshot, review candidates, `lastAnalysisKey`를 immutable reducer 상태로 묶었다.
+- `GoCoachApp.kt`의 분석 상태 clear/reset/update 적용부가 `GameSessionAnalysisState`를 통해 계산되도록 정리했고, `GameSessionAnalysisStateTest`를 추가했다. JDK 17/Android SDK 환경에서 `:app-android:testDebugUnitTest`가 통과했다.
