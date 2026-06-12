@@ -35,6 +35,46 @@ internal enum class AiEngineChoice(val label: String) {
     KataGo("KataGo"),
 }
 
+internal enum class SeatId(
+    val player: StoneColor,
+    val label: String,
+    val debugLabel: String,
+) {
+    Black(StoneColor.Black, "흑", "Black"),
+    White(StoneColor.White, "백", "White"),
+    ;
+
+    companion object {
+        fun fromPlayer(player: StoneColor): SeatId =
+            when (player) {
+                StoneColor.Black -> Black
+                StoneColor.White -> White
+            }
+    }
+}
+
+internal data class AiCharacterProfile(
+    val engine: AiEngineChoice,
+    val playLevel: PlayLevelSetting,
+) {
+    val displayLabel: String = "${engine.label} ${playLevel.displayLabel}"
+    val selectionDescription: String = playLevel.selectionPolicy.description
+}
+
+internal data class SeatAssignment(
+    val id: SeatId,
+    val setup: SidePlayerSetup,
+) {
+    val player: StoneColor = id.player
+    val controller: SeatController = setup.controller
+    val isHuman: Boolean = controller == SeatController.Human
+    val isAi: Boolean = controller == SeatController.Ai
+    val aiCharacter: AiCharacterProfile? = setup.aiCharacterProfile()
+
+    fun summary(engineName: String): String =
+        "${id.debugLabel}: ${setup.summary(engineName)}"
+}
+
 internal enum class AutoPlayDelaySetting(
     val millis: Long,
     val label: String,
@@ -61,41 +101,72 @@ internal data class SidePlayerSetup(
     val playLevel: PlayLevelSetting = PlayLevelSetting(),
 )
 
+internal fun SidePlayerSetup.aiCharacterProfile(): AiCharacterProfile? =
+    if (controller == SeatController.Ai) {
+        AiCharacterProfile(
+            engine = aiEngine,
+            playLevel = playLevel,
+        )
+    } else {
+        null
+    }
+
 internal data class PlayerSetup(
     val black: SidePlayerSetup = SidePlayerSetup(controller = SeatController.Human),
     val white: SidePlayerSetup = SidePlayerSetup(controller = SeatController.Ai),
 ) {
+    fun seat(id: SeatId): SeatAssignment =
+        SeatAssignment(
+            id = id,
+            setup = when (id) {
+                SeatId.Black -> black
+                SeatId.White -> white
+            },
+        )
+
+    fun seatFor(player: StoneColor): SeatAssignment =
+        seat(SeatId.fromPlayer(player))
+
+    fun seats(): List<SeatAssignment> =
+        listOf(seat(SeatId.Black), seat(SeatId.White))
+
     fun sideFor(player: StoneColor): SidePlayerSetup =
-        when (player) {
-            StoneColor.Black -> black
-            StoneColor.White -> white
+        seatFor(player).setup
+
+    fun updateSeat(
+        id: SeatId,
+        side: SidePlayerSetup,
+    ): PlayerSetup =
+        when (id) {
+            SeatId.Black -> copy(black = side)
+            SeatId.White -> copy(white = side)
         }
 
     fun updateSide(
         player: StoneColor,
         side: SidePlayerSetup,
     ): PlayerSetup =
-        when (player) {
-            StoneColor.Black -> copy(black = side)
-            StoneColor.White -> copy(white = side)
-        }
+        updateSeat(SeatId.fromPlayer(player), side)
 
-    fun matchMode(): MatchMode =
-        when {
-            black.controller == SeatController.Human && white.controller == SeatController.Ai -> MatchMode.HumanVsAi
-            black.controller == SeatController.Ai && white.controller == SeatController.Human -> MatchMode.AiVsHuman
-            black.controller == SeatController.Ai && white.controller == SeatController.Ai -> MatchMode.AiVsAi
+    fun matchMode(): MatchMode {
+        val blackSeat = seat(SeatId.Black)
+        val whiteSeat = seat(SeatId.White)
+        return when {
+            blackSeat.isHuman && whiteSeat.isAi -> MatchMode.HumanVsAi
+            blackSeat.isAi && whiteSeat.isHuman -> MatchMode.AiVsHuman
+            blackSeat.isAi && whiteSeat.isAi -> MatchMode.AiVsAi
             else -> MatchMode.LocalTwoPlayer
         }
+    }
 
     fun humanSeatCount(): Int =
-        listOf(black, white).count { it.controller == SeatController.Human }
+        seats().count { seat -> seat.isHuman }
 
     fun isAutoPlay(): Boolean =
-        matchMode() == MatchMode.AiVsAi
+        seats().all { seat -> seat.isAi }
 
     fun summary(engineName: String): String =
-        "Black: ${black.summary(engineName)} / White: ${white.summary(engineName)}"
+        seats().joinToString(" / ") { seat -> seat.summary(engineName) }
 }
 
 internal fun SidePlayerSetup.summary(engineName: String): String =
@@ -229,7 +300,7 @@ internal fun boardInputEnabled(
     nextPlayer: StoneColor,
 ): Boolean =
     !isEngineBusy &&
-        playerSetup.sideFor(nextPlayer).controller == SeatController.Human &&
+        playerSetup.seatFor(nextPlayer).isHuman &&
         (isEngineReady || playerSetup.matchMode() == MatchMode.LocalTwoPlayer)
 
 internal fun turnStatus(
@@ -239,7 +310,7 @@ internal fun turnStatus(
 ): String =
     when {
         isEngineBusy -> "AI thinking"
-        playerSetup.sideFor(nextPlayer).controller == SeatController.Human -> "Your turn: ${nextPlayer.label}"
+        playerSetup.seatFor(nextPlayer).isHuman -> "Your turn: ${nextPlayer.label}"
         else -> "AI turn: ${nextPlayer.label}"
     }
 

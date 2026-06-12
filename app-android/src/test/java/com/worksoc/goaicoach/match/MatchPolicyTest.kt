@@ -21,6 +21,7 @@ import com.worksoc.goaicoach.shared.StoneColor
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -49,6 +50,32 @@ class MatchPolicyTest {
                 white = SidePlayerSetup(controller = SeatController.Human),
             ).matchMode(),
         )
+    }
+
+    @Test
+    fun playerSetupExposesSeatAssignmentsAndAiCharacters() {
+        val blackLevel = PlayLevelSetting(PlayLevelGroup.Beginner, level = 4)
+        val setup = PlayerSetup(
+            black = SidePlayerSetup(
+                controller = SeatController.Ai,
+                playLevel = blackLevel,
+            ),
+            white = SidePlayerSetup(controller = SeatController.Human),
+        )
+
+        val blackSeat = setup.seat(SeatId.Black)
+        val whiteSeat = setup.seatFor(StoneColor.White)
+
+        assertEquals(StoneColor.Black, blackSeat.player)
+        assertTrue(blackSeat.isAi)
+        assertEquals(AiEngineChoice.KataGo, blackSeat.aiCharacter?.engine)
+        assertEquals(blackLevel.normalized(), blackSeat.aiCharacter?.playLevel)
+        assertEquals("KataGo 초급 4단계", blackSeat.aiCharacter?.displayLabel)
+        assertTrue(blackSeat.aiCharacter?.selectionDescription?.isNotBlank() == true)
+
+        assertEquals(StoneColor.White, whiteSeat.player)
+        assertTrue(whiteSeat.isHuman)
+        assertNull(whiteSeat.aiCharacter)
     }
 
     @Test

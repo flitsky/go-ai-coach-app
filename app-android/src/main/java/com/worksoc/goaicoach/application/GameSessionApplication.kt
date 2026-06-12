@@ -1,7 +1,6 @@
 package com.worksoc.goaicoach.application
 
 import com.worksoc.goaicoach.match.PlayerSetup
-import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.persistence.SavedGameSnapshot
 import com.worksoc.goaicoach.shared.AnalysisPreset
 import com.worksoc.goaicoach.shared.BoardSize
@@ -72,11 +71,8 @@ internal fun selectPrimaryPlayLevel(
     nextPlayer: StoneColor,
     defaultPlayLevel: PlayLevelSetting,
 ): PlayLevelSetting =
-    setup.sideFor(nextPlayer)
-        .takeIf { side -> side.controller == SeatController.Ai }
-        ?.playLevel
-        ?: setup.black.takeIf { side -> side.controller == SeatController.Ai }?.playLevel
-        ?: setup.white.takeIf { side -> side.controller == SeatController.Ai }?.playLevel
+    setup.seatFor(nextPlayer).aiCharacter?.playLevel
+        ?: setup.seats().mapNotNull { seat -> seat.aiCharacter?.playLevel }.firstOrNull()
         ?: defaultPlayLevel
 
 internal fun selectRuntimePlayLevel(

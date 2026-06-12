@@ -870,3 +870,6 @@
 - 리팩토링 Phase 1로 `shared`에 `EngineCoreApi`를 추가하고, 기존 `EngineAdapter`는 `EngineCoreApi`를 상속하는 호환 이름으로 유지했다.
 - `EngineSessionClient`, `EngineSession`, `EndgameResolver`, `EngineDeviceBenchmarkApplication`, `MatchPolicy`의 원시 엔진 의존 타입을 `EngineCoreApi`로 전환했다. `MainActivity` wiring은 `coreApi = bootstrap.adapter`로 맞췄다.
 - 검증 시 기본 셸 Java 25 때문에 Gradle Kotlin DSL이 `IllegalArgumentException: 25`로 실패해, JDK 17과 Android SDK 경로를 명시했다. `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest`는 통과했다.
+- 리팩토링 Phase 2로 `SeatId.Black/White`, `SeatAssignment`, `AiCharacterProfile`을 도입했다. 저장/복원 호환성을 위해 `PlayerSetup.black/white` 필드는 유지하되, 내부 판단과 요약은 seat helper를 통해 접근할 수 있게 했다.
+- `PlayerSetup.matchMode`, `humanSeatCount`, `isAutoPlay`, `summary`, `boardInputEnabled`, `turnStatus`, 자동 AI/Top Moves trigger, runtime play level 선택을 seat/AI character 도메인 기반으로 정리했다.
+- `MatchPolicyTest.playerSetupExposesSeatAssignmentsAndAiCharacters`를 추가했고, JDK 17/Android SDK 환경에서 `:app-android:testDebugUnitTest`가 통과했다.

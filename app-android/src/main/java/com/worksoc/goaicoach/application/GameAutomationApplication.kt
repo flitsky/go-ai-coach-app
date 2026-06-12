@@ -2,7 +2,6 @@ package com.worksoc.goaicoach.application
 
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.PlayerSetup
-import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.shared.AnalysisPreset
 import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.EngineProfile
@@ -25,7 +24,7 @@ internal fun shouldRequestAiTurn(
         isEngineReady &&
         !isEngineBusy &&
         !shouldShowResumePrompt &&
-        playerSetup.sideFor(gameState.nextPlayer).controller == SeatController.Ai
+        playerSetup.seatFor(gameState.nextPlayer).isAi
 
 internal fun shouldRequestTopMoveAnalysis(
     isGameEnded: Boolean,
@@ -39,7 +38,7 @@ internal fun shouldRequestTopMoveAnalysis(
         isEngineReady &&
         !isEngineBusy &&
         !shouldShowResumePrompt &&
-        playerSetup.sideFor(targetState.nextPlayer).controller == SeatController.Human
+        playerSetup.seatFor(targetState.nextPlayer).isHuman
 
 internal fun autoAiTurnDelayMillis(
     playerSetup: PlayerSetup,
