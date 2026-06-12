@@ -13,6 +13,7 @@ import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.EngineStatus
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
+import com.worksoc.goaicoach.shared.PlayLevelGroup
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.SearchTimeSettings
@@ -145,6 +146,53 @@ class GameAutomationApplicationTest {
             AutoAiTurnRequestPlan.Schedule(AutoPlayDelaySetting.Slow.millis),
             plan,
         )
+    }
+
+    @Test
+    fun autoAiTurnExecutionContextUsesCurrentAiSeatLevelAndSearchTime() {
+        val whiteLevel = PlayLevelSetting(PlayLevelGroup.Beginner, level = 7)
+        val setup = PlayerSetup(
+            black = SidePlayerSetup(controller = SeatController.Human),
+            white = SidePlayerSetup(
+                controller = SeatController.Ai,
+                playLevel = whiteLevel,
+            ),
+        )
+        val state = GameState.empty()
+            .play(Move.Pass(StoneColor.Black))
+        val reviewCandidate = CandidateMove(Move.Pass(StoneColor.White), pointLoss = 0.0)
+
+        val context = buildAutoAiTurnExecutionContext(
+            gameState = state,
+            playerSetup = setup,
+            searchTimeSettings = SearchTimeSettings(b32Millis = 4_000L),
+            reviewCandidateMoves = listOf(reviewCandidate),
+        )
+
+        assertEquals(state, context.turnState)
+        assertEquals(StoneColor.White, context.aiPlayer)
+        assertEquals(whiteLevel, context.playLevel)
+        assertEquals(32, context.analysisLimit.visits)
+        assertEquals(4_000L, context.analysisLimit.timeMillis)
+        assertFalse(context.isolateSearchCache)
+        assertEquals(listOf(reviewCandidate), context.previousReviewCandidates)
+    }
+
+    @Test
+    fun autoAiTurnExecutionContextIsolatesSearchCacheOnlyForAiVsAi() {
+        val setup = PlayerSetup(
+            black = SidePlayerSetup(controller = SeatController.Ai),
+            white = SidePlayerSetup(controller = SeatController.Ai),
+        )
+
+        val context = buildAutoAiTurnExecutionContext(
+            gameState = GameState.empty(),
+            playerSetup = setup,
+            searchTimeSettings = SearchTimeSettings(),
+            reviewCandidateMoves = emptyList(),
+        )
+
+        assertTrue(context.isolateSearchCache)
     }
 
     @Test

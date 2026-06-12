@@ -48,3 +48,4 @@
 - 2026-06-13: 작업 리스트 작성.
 - 2026-06-13: Runtime Event Log formatter 분리 완료. `RuntimeEventApplication.kt`를 추가해 app start, game reset, engine game start, auto play delay, AI turn schedule/begin/success/endgame/failure/complete 로그 문자열을 application 계층에서 생성하도록 했다. `RuntimeEventApplicationTest` 추가, `:app-android:testDebugUnitTest` 통과.
 - 2026-06-13: Engine operation guard 분리 완료. `EngineOperationPolicy.kt`를 추가해 benchmark 실행, Search Time 변경, scoring rule 변경의 ready/busy/no-op 판정을 application 계층으로 이동했다. `EngineOperationPolicyTest` 추가, `:app-android:testDebugUnitTest` 통과.
+- 2026-06-13: Auto AI runtime flow 분리 준비 완료. `AutoAiTurnExecutionContext`와 `buildAutoAiTurnExecutionContext()`를 추가해 자동 AI 턴 직전의 state/player/level/analysis limit/cache isolation/review candidates snapshot 생성을 application 계층으로 이동했다. `GameAutomationApplicationTest` 확장, `:app-android:testDebugUnitTest` 통과.

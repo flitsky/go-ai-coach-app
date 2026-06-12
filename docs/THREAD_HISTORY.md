@@ -892,3 +892,5 @@
 - `RuntimeEventApplicationTest`를 추가했고, JDK 17/Android SDK 환경에서 `:app-android:testDebugUnitTest`가 통과했다.
 - 2단계로 `EngineOperationPolicy.kt`를 추가했다. benchmark 실행 조건, Search Time 변경 조건, scoring rule 변경 조건을 `EngineOperationGate.Allow/NoOp/Block`으로 판정하게 하여 `GoCoachApp.kt`의 busy/ready 메시지 분기를 줄였다.
 - `EngineOperationPolicyTest`를 추가했고, JDK 17/Android SDK 환경에서 `:app-android:testDebugUnitTest`가 통과했다.
+- 3단계로 `AutoAiTurnExecutionContext`와 `buildAutoAiTurnExecutionContext()`를 추가했다. 자동 AI 턴 실행 직전 UI에서 직접 계산하던 `turnState`, `aiPlayer`, `playLevel`, `analysisLimit`, search cache 격리 여부, 이전 리뷰 후보 snapshot을 application 계층에서 묶도록 했다.
+- `GameAutomationApplicationTest`에 execution context 검증을 추가했고, JDK 17/Android SDK 환경에서 `:app-android:testDebugUnitTest`가 통과했다.

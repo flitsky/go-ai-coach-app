@@ -25,6 +25,7 @@ import com.worksoc.goaicoach.application.MoveReviewMarker
 import com.worksoc.goaicoach.application.AutoAiTurnRequestPlan
 import com.worksoc.goaicoach.application.buildDebugReport
 import com.worksoc.goaicoach.application.buildAutoAiTurnRequestPlan
+import com.worksoc.goaicoach.application.buildAutoAiTurnExecutionContext
 import com.worksoc.goaicoach.application.buildEndgameFailureDisplayPlan
 import com.worksoc.goaicoach.application.buildEngineEstimateDisplayPlan
 import com.worksoc.goaicoach.application.buildEngineStartupFailureDisplayPlan
@@ -1086,22 +1087,21 @@ private fun GoCoachScreen(
                         return@launch
                     }
 
-                    val turnState = gameState
-                    val aiPlayer = turnState.nextPlayer
-                    val side = playerSetup.sideFor(aiPlayer)
-                    val aiPlayLevel = side.playLevel
-                    val aiLimit = aiPlayLevel.analysisLimitWith(searchTimeSettings)
-                    val isolateSearchCache = playerSetup.isAutoPlay()
-                    val previousReviewCandidates = reviewCandidateMoves
+                    val turnContext = buildAutoAiTurnExecutionContext(
+                        gameState = gameState,
+                        playerSetup = playerSetup,
+                        searchTimeSettings = searchTimeSettings,
+                        reviewCandidateMoves = reviewCandidateMoves,
+                    )
                     val turnStartMillis = System.currentTimeMillis()
                     runtimeEventLog.append(
                         runtimeAiTurnBeginLog(
-                            turnState = turnState,
-                            aiPlayer = aiPlayer,
-                            playLevel = aiPlayLevel,
-                            analysisLimit = aiLimit,
+                            turnState = turnContext.turnState,
+                            aiPlayer = turnContext.aiPlayer,
+                            playLevel = turnContext.playLevel,
+                            analysisLimit = turnContext.analysisLimit,
                             delayMillis = request.delayMillis,
-                            isolateSearchCache = isolateSearchCache,
+                            isolateSearchCache = turnContext.isolateSearchCache,
                         ),
                     )
                     isEngineBusy = true
@@ -1109,20 +1109,20 @@ private fun GoCoachScreen(
                     runCatching {
                         withContext(Dispatchers.IO) {
                             engineClient.runAutoAiTurnDisplayPlan(
-                                currentState = turnState,
-                                playLevel = aiPlayLevel,
+                                currentState = turnContext.turnState,
+                                playLevel = turnContext.playLevel,
                                 currentProfile = engineProfile,
                                 searchTimeSettings = searchTimeSettings,
-                                isolateSearchCache = isolateSearchCache,
+                                isolateSearchCache = turnContext.isolateSearchCache,
                                 previousSnapshots = scoreSnapshots,
-                                previousReviewCandidates = previousReviewCandidates,
+                                previousReviewCandidates = turnContext.previousReviewCandidates,
                             )
                         }
                     }.onSuccess { display ->
                         runtimeEventLog.append(
                             runtimeAiTurnSuccessLog(
-                                turnState = turnState,
-                                aiPlayer = aiPlayer,
+                                turnState = turnContext.turnState,
+                                aiPlayer = turnContext.aiPlayer,
                                 display = display,
                                 turnElapsedMs = System.currentTimeMillis() - turnStartMillis,
                             ),
@@ -1175,8 +1175,8 @@ private fun GoCoachScreen(
                     }.onFailure { error ->
                         runtimeEventLog.append(
                             runtimeAiTurnFailureLog(
-                                turnState = turnState,
-                                aiPlayer = aiPlayer,
+                                turnState = turnContext.turnState,
+                                aiPlayer = turnContext.aiPlayer,
                                 turnElapsedMs = System.currentTimeMillis() - turnStartMillis,
                                 error = error,
                             ),

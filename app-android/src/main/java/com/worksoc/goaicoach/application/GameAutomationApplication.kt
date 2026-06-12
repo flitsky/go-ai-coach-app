@@ -4,6 +4,7 @@ import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.MatchReferee
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.shared.AnalysisPreset
+import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.GameState
@@ -12,6 +13,7 @@ import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.ScoreSnapshot
 import com.worksoc.goaicoach.shared.ScoreTimeline
+import com.worksoc.goaicoach.shared.StoneColor
 
 internal fun shouldRequestAiTurn(
     isGameEnded: Boolean,
@@ -98,6 +100,36 @@ internal data class AutoAiTurnDisplayPlan(
     val endgamePrePassCandidates: List<CandidateMove>,
     val nextAnalysisState: GameState?,
 )
+
+internal data class AutoAiTurnExecutionContext(
+    val turnState: GameState,
+    val aiPlayer: StoneColor,
+    val playLevel: PlayLevelSetting,
+    val analysisLimit: AnalysisLimit,
+    val isolateSearchCache: Boolean,
+    val previousReviewCandidates: List<CandidateMove>,
+)
+
+internal fun buildAutoAiTurnExecutionContext(
+    gameState: GameState,
+    playerSetup: PlayerSetup,
+    searchTimeSettings: SearchTimeSettings,
+    reviewCandidateMoves: List<CandidateMove>,
+): AutoAiTurnExecutionContext {
+    val aiPlayer = gameState.nextPlayer
+    val playLevel = playerSetup.seatFor(aiPlayer)
+        .aiCharacter
+        ?.playLevel
+        ?: PlayLevelSetting()
+    return AutoAiTurnExecutionContext(
+        turnState = gameState,
+        aiPlayer = aiPlayer,
+        playLevel = playLevel,
+        analysisLimit = playLevel.analysisLimitWith(searchTimeSettings),
+        isolateSearchCache = playerSetup.isAutoPlay(),
+        previousReviewCandidates = reviewCandidateMoves,
+    )
+}
 
 internal fun buildAutoAiTurnDisplayPlan(
     result: AutoAiTurnResult,
