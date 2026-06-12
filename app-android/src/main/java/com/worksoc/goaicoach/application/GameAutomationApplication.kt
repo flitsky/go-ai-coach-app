@@ -9,6 +9,7 @@ import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.PlayLevelSetting
+import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.ScoreSnapshot
 import com.worksoc.goaicoach.shared.ScoreTimeline
 
@@ -138,5 +139,28 @@ internal fun buildAutoAiTurnDisplayPlan(
             emptyList()
         },
         nextAnalysisState = nextState.takeUnless { shouldResolveEndgame },
+    )
+}
+
+internal suspend fun EngineSessionClient.runAutoAiTurnDisplayPlan(
+    currentState: GameState,
+    playLevel: PlayLevelSetting,
+    currentProfile: EngineProfile,
+    searchTimeSettings: SearchTimeSettings,
+    isolateSearchCache: Boolean,
+    previousSnapshots: List<ScoreSnapshot>,
+    previousReviewCandidates: List<CandidateMove>,
+): AutoAiTurnDisplayPlan {
+    val result = runAutoAiTurn(
+        currentState = currentState,
+        playLevel = playLevel,
+        currentProfile = currentProfile,
+        searchTimeSettings = searchTimeSettings,
+        isolateSearchCache = isolateSearchCache,
+    )
+    return buildAutoAiTurnDisplayPlan(
+        result = result,
+        previousSnapshots = previousSnapshots,
+        previousReviewCandidates = previousReviewCandidates,
     )
 }

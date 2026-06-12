@@ -5,15 +5,21 @@ import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.match.SidePlayerSetup
 import com.worksoc.goaicoach.match.TurnOutcome
+import com.worksoc.goaicoach.shared.AnalysisLimit
+import com.worksoc.goaicoach.shared.AnalysisResult
+import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.EngineStatus
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.PlayLevelSetting
+import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.ScoreSnapshotSource
 import com.worksoc.goaicoach.shared.StoneColor
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -206,6 +212,41 @@ class GameAutomationApplicationTest {
         assertEquals(listOf(passCandidate), plan.endgamePrePassCandidates)
     }
 
+    @Test
+    fun autoAiTurnDisplayRunnerDelegatesToEngineSessionAndBuildsDisplayPlan() = runBlocking {
+        val initialState = GameState.empty()
+        val nextState = initialState.play(Move.Pass(StoneColor.Black))
+        val playLevel = PlayLevelSetting()
+        val client = FakeAutoAiEngineSessionClient(
+            result = autoAiTurnResult(
+                state = nextState,
+                estimate = ScoreEstimate(
+                    status = EngineStatus.ready("estimate ready"),
+                    whiteScoreLead = 0.0,
+                    whiteWinRate = 0.5,
+                    summary = "estimate",
+                ),
+            ),
+        )
+
+        val display = client.runAutoAiTurnDisplayPlan(
+            currentState = initialState,
+            playLevel = playLevel,
+            currentProfile = EngineProfile(),
+            searchTimeSettings = SearchTimeSettings(),
+            isolateSearchCache = true,
+            previousSnapshots = emptyList(),
+            previousReviewCandidates = emptyList(),
+        )
+
+        assertEquals(initialState, client.currentState)
+        assertEquals(playLevel, client.playLevel)
+        assertEquals(true, client.isolateSearchCache)
+        assertEquals(nextState, display.gameState)
+        assertEquals("candidate text", display.candidateText)
+        assertEquals("estimate ready", display.scoreDisplay.engineMessage)
+    }
+
     private fun autoAiTurnResult(
         state: GameState,
         estimate: ScoreEstimate?,
@@ -221,4 +262,94 @@ class GameAutomationApplicationTest {
             profile = EngineProfile(),
             playLevel = PlayLevelSetting(),
         )
+}
+
+private class FakeAutoAiEngineSessionClient(
+    private val result: AutoAiTurnResult,
+) : EngineSessionClient {
+    var currentState: GameState? = null
+        private set
+    var playLevel: PlayLevelSetting? = null
+        private set
+    var isolateSearchCache: Boolean? = null
+        private set
+
+    override val capabilities: EngineSessionCapabilities =
+        EngineSessionCapabilities(supportsDeviceBenchmark = false)
+
+    override suspend fun startSession(
+        profile: EngineProfile,
+        state: GameState,
+    ): EngineStartupResult =
+        error("not used")
+
+    override suspend fun startNewGame(
+        profile: EngineProfile,
+        boardSize: BoardSize,
+        ruleset: Ruleset,
+    ): EngineStartupResult =
+        error("not used")
+
+    override suspend fun analyzePosition(
+        state: GameState,
+        limit: AnalysisLimit,
+    ): AnalysisResult =
+        error("not used")
+
+    override suspend fun syncAndEstimateGraphScore(
+        state: GameState,
+        profile: EngineProfile,
+    ): ScoreEstimate =
+        error("not used")
+
+    override suspend fun configureSyncAndEstimateGraphScore(
+        state: GameState,
+        profile: EngineProfile,
+    ): ScoreEstimate =
+        error("not used")
+
+    override suspend fun runAutoAiTurn(
+        currentState: GameState,
+        playLevel: PlayLevelSetting,
+        currentProfile: EngineProfile,
+        searchTimeSettings: SearchTimeSettings,
+        isolateSearchCache: Boolean,
+    ): AutoAiTurnResult {
+        this.currentState = currentState
+        this.playLevel = playLevel
+        this.isolateSearchCache = isolateSearchCache
+        return result
+    }
+
+    override suspend fun syncAfterHumanMove(
+        afterMove: GameState,
+        profile: EngineProfile,
+        move: Move,
+        previousReviewCandidates: List<CandidateMove>,
+    ): LocalEngineMoveResult =
+        error("not used")
+
+    override suspend fun estimateScoreForState(
+        state: GameState,
+        profile: EngineProfile,
+        syncFirst: Boolean,
+    ): ScoreEstimate =
+        error("not used")
+
+    override suspend fun resolveEndgameForState(
+        state: GameState,
+        profile: EngineProfile,
+        prePassCandidates: List<CandidateMove>,
+    ): AiEndgameResolution =
+        error("not used")
+
+    override suspend fun undoMove(): EngineStatus =
+        error("not used")
+
+    override suspend fun runStartupBenchmark(
+        restoreState: GameState,
+        nowMillis: Long,
+        onProgress: suspend (EngineBenchmarkProgress) -> Unit,
+    ): EngineBenchmarkProfile =
+        error("not used")
 }

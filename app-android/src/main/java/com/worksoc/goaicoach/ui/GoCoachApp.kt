@@ -30,7 +30,6 @@ import com.worksoc.goaicoach.application.buildEngineEstimateDisplayPlan
 import com.worksoc.goaicoach.application.buildEngineStartupFailureDisplayPlan
 import com.worksoc.goaicoach.application.buildEngineStartupSuccessDisplayPlan
 import com.worksoc.goaicoach.application.buildEngineUndoPlan
-import com.worksoc.goaicoach.application.buildAutoAiTurnDisplayPlan
 import com.worksoc.goaicoach.application.buildHumanEngineSyncFailurePlan
 import com.worksoc.goaicoach.application.buildHumanEngineSyncSuccessPlan
 import com.worksoc.goaicoach.application.buildLocalFinalScoreDisplayPlan
@@ -74,6 +73,7 @@ import com.worksoc.goaicoach.application.RuntimePlayLevelSelection
 import com.worksoc.goaicoach.application.runTopMoveAnalysis
 import com.worksoc.goaicoach.application.ScoringRuleChangePlan
 import com.worksoc.goaicoach.application.runRestoredGameSyncDisplayPlan
+import com.worksoc.goaicoach.application.runAutoAiTurnDisplayPlan
 import com.worksoc.goaicoach.application.runScoreEstimateDisplayPlan
 import com.worksoc.goaicoach.application.runScoringRuleSyncDisplayPlan
 import com.worksoc.goaicoach.application.ShowTopMovesPlan
@@ -1057,25 +1057,22 @@ private fun GoCoachScreen(
                     var nextAnalysisState: GameState? = null
                     runCatching {
                         withContext(Dispatchers.IO) {
-                            engineClient.runAutoAiTurn(
+                            engineClient.runAutoAiTurnDisplayPlan(
                                 currentState = turnState,
                                 playLevel = aiPlayLevel,
                                 currentProfile = engineProfile,
                                 searchTimeSettings = searchTimeSettings,
                                 isolateSearchCache = isolateSearchCache,
+                                previousSnapshots = scoreSnapshots,
+                                previousReviewCandidates = previousReviewCandidates,
                             )
                         }
-                    }.onSuccess { result ->
-                        val display = buildAutoAiTurnDisplayPlan(
-                            result = result,
-                            previousSnapshots = scoreSnapshots,
-                            previousReviewCandidates = previousReviewCandidates,
-                        )
+                    }.onSuccess { display ->
                         runtimeEventLog.append(
                             "ai_turn_success move=${turnState.moves.size + 1} player=${aiPlayer.label} " +
                                 "selected=${display.lastMoveText.logSnippet(80)} turnElapsedMs=${System.currentTimeMillis() - turnStartMillis} " +
                                 "beforeFp=${turnState.shortFingerprint()} afterFp=${display.gameState.shortFingerprint()} " +
-                                "summary=${result.turnOutcome.candidateText.logSnippet(900)}",
+                                "summary=${display.candidateText.logSnippet(900)}",
                         )
                         nextAnalysisState = applyAutoAiTurnDisplayPlan(display)
                         if (display.shouldResolveEndgame) {

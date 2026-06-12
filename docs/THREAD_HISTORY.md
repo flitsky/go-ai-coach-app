@@ -860,3 +860,6 @@
 - 2단계로 점수 추정, scoring rule 변경 후 엔진 sync, 저장 대국 복원 후 엔진 sync의 결과 조립을 application 계층으로 분리했다. `runScoreEstimateDisplayPlan`, `runScoringRuleSyncDisplayPlan`, `runRestoredGameSyncDisplayPlan`을 추가했다.
 - `ScoreDisplayApplicationTest`에 fake `EngineSessionClient` 테스트를 추가해 각 helper가 엔진 세션 호출 결과를 `ScoreEstimateDisplayPlan`으로 조립하는지 검증했다.
 - `:app-android:testDebugUnitTest`를 실행해 통과했다.
+- 3단계로 자동 AI 턴 실행 결과 조립을 application 계층으로 분리했다. `EngineSessionClient.runAutoAiTurnDisplayPlan(...)`을 추가해 `GoCoachApp.kt`는 자동 턴 schedule, 로그, 화면 적용에 집중하고, 엔진 세션 실행 결과를 `AutoAiTurnDisplayPlan`으로 바꾸는 책임은 application으로 이동했다.
+- `GameAutomationApplicationTest`에 fake `EngineSessionClient` 테스트를 추가해 현재 국면, 플레이 레벨, search cache isolation 플래그가 자동 AI 턴 세션 경계로 전달되는지 검증했다.
+- `:app-android:testDebugUnitTest`를 실행해 통과했다.
