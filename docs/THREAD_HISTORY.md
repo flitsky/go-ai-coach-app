@@ -881,3 +881,5 @@
 - `UserPreferencesApplicationTest`에 settings 복원 검증을 추가했고, JDK 17/Android SDK 환경에서 `:app-android:testDebugUnitTest`가 통과했다.
 - `LayeringContractTest`를 추가해 `ui`/`presentation` 계층이 원시 엔진 API(`EngineAdapter`, `EngineCoreApi`)나 Android 엔진 구현체(`engine.android`)를 직접 import하지 못하게 했다. 도메인 분리 원칙이 이후 기능 추가 중 회귀되지 않도록 하는 안전장치다.
 - JDK 17/Android SDK 환경에서 `:app-android:testDebugUnitTest`가 통과했다.
+- `EngineBootstrap.adapter` 필드를 `coreApi`로 rename해 app bootstrap wiring에서도 구체 adapter보다 엔진 코어 계약을 주입한다는 의미가 드러나게 했다. Stub/KataGo 구현체는 기존 `EngineAdapter` 호환 타입으로 유지했다.
+- JDK 17/Android SDK 환경에서 `:app-android:testDebugUnitTest`가 통과했다.

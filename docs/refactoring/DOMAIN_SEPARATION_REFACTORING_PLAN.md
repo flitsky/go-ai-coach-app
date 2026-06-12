@@ -212,6 +212,8 @@ Game UX는 다음만 담당한다.
 - 검증: `UserPreferencesApplicationTest`에 `GameSettings` 복원 검증 추가, `:app-android:testDebugUnitTest` 통과.
 - `LayeringContractTest`를 추가해 `ui`와 `presentation` 계층이 `EngineAdapter`, `EngineCoreApi`, `engine.android` 구현체를 직접 import하지 못하도록 회귀 방지 테스트를 걸었다.
 - 검증: `:app-android:testDebugUnitTest` 통과.
+- `EngineBootstrap.adapter`를 `EngineBootstrap.coreApi`로 바꿔 app bootstrap wiring에서도 원시 엔진 계약 이름이 드러나게 했다. concrete 구현체는 기존 `EngineAdapter` 호환 타입을 그대로 사용한다.
+- 검증: `:app-android:testDebugUnitTest` 통과.
 
 ## 주의할 점
 

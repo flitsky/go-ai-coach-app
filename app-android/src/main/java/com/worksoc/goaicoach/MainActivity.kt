@@ -49,9 +49,9 @@ class MainActivity : ComponentActivity() {
             if (bootstrap == null) {
                 PreparingEngineScreen()
             } else {
-                val engineClient = remember(bootstrap.adapter) {
+                val engineClient = remember(bootstrap.coreApi) {
                     AdapterEngineSessionClient(
-                        coreApi = bootstrap.adapter,
+                        coreApi = bootstrap.coreApi,
                         capabilities = EngineSessionCapabilities(
                             supportsDeviceBenchmark = bootstrap.mode == EngineMode.LocalProcess,
                         ),

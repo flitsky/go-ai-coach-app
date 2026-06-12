@@ -4,13 +4,13 @@ import android.content.Context
 import com.worksoc.goaicoach.engine.android.KataGoProcessConfig
 import com.worksoc.goaicoach.engine.android.KataGoProcessEngineAdapter
 import com.worksoc.goaicoach.engine.android.StubEngineAdapter
-import com.worksoc.goaicoach.shared.EngineAdapter
+import com.worksoc.goaicoach.shared.EngineCoreApi
 import com.worksoc.goaicoach.shared.EngineMode
 import java.io.File
 import java.io.IOException
 
 data class EngineBootstrap(
-    val adapter: EngineAdapter,
+    val coreApi: EngineCoreApi,
     val mode: EngineMode,
     val displayName: String,
     val diagnostic: String,
@@ -50,7 +50,7 @@ fun createEngineBootstrap(
 
     if (missing.isNotEmpty()) {
         return EngineBootstrap(
-            adapter = StubEngineAdapter(),
+            coreApi = StubEngineAdapter(),
             mode = EngineMode.Stub,
             displayName = "stub AI",
             diagnostic = buildString {
@@ -67,7 +67,7 @@ fun createEngineBootstrap(
     val logsDir = File(katagoDir, "logs").apply { mkdirs() }
     val homeDir = File(katagoDir, "home").apply { mkdirs() }
     return EngineBootstrap(
-        adapter = KataGoProcessEngineAdapter(
+        coreApi = KataGoProcessEngineAdapter(
             KataGoProcessConfig(
                 executablePath = executable.absolutePath,
                 modelPath = model.absolutePath,
