@@ -130,7 +130,6 @@ import com.worksoc.goaicoach.presentation.dispatchGameUiEvent
 import com.worksoc.goaicoach.shared.AnalysisPreset
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
-import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
@@ -197,10 +196,14 @@ private fun GoCoachScreen(
     }
     var gameState by remember { mutableStateOf(initialPlan.gameState) }
     var engineMessage by remember { mutableStateOf("Engine not initialized.") }
-    var candidateText by remember { mutableStateOf(engineDiagnostic) }
-    var candidateMoves by remember { mutableStateOf(emptyList<CandidateMove>()) }
-    var reviewCandidateMoves by remember { mutableStateOf(emptyList<CandidateMove>()) }
-    var reviewAnalysis by remember { mutableStateOf(MoveAnalysisSnapshot.empty(gameState)) }
+    var analysisState by remember {
+        mutableStateOf(
+            GameSessionAnalysisState.empty(
+                state = initialPlan.gameState,
+                candidateText = engineDiagnostic,
+            ),
+        )
+    }
     var scoreText by remember { mutableStateOf("No score estimate yet.") }
     var scoreEstimate by remember { mutableStateOf<ScoreEstimate?>(null) }
     var scoreSnapshots by remember {
@@ -223,7 +226,6 @@ private fun GoCoachScreen(
     var uxOptions by remember { mutableStateOf(initialPreferences.toKaTrainUxOptions()) }
     var isDisplayMenuExpanded by remember { mutableStateOf(false) }
     var isScoreGraphExpanded by remember { mutableStateOf(false) }
-    var lastAnalysisKey by remember { mutableStateOf<AnalysisCacheKey?>(null) }
     var isGameEnded by remember { mutableStateOf(false) }
     var endgameLog by remember { mutableStateOf("No endgame result recorded.") }
     var hasCompletedEngineStartup by remember { mutableStateOf(false) }
@@ -258,7 +260,7 @@ private fun GoCoachScreen(
             scoreSnapshots = startup.scoreSnapshots
         }
         engineMessage = startup.engineMessage
-        startup.candidateText?.let { text -> candidateText = text }
+        startup.candidateText?.let { text -> analysisState = analysisState.copy(candidateText = text) }
     }
 
     fun applySavedSessionPromptPlan(prompt: SavedSessionPromptPlan) {
@@ -325,11 +327,13 @@ private fun GoCoachScreen(
             totalCalls = EngineBenchmarkDefaultVisits.size * EngineBenchmarkDefaultSamplesPerVisit,
             stageOverride = "엔진 안정화 대기 중...",
         )
-        candidateText = "Engine benchmark waiting for startup settle delay."
+        analysisState = analysisState.copy(candidateText = "Engine benchmark waiting for startup settle delay.")
         delay(EngineBenchmarkStartupSettleDelayMillis)
 
         engineMessage = "최초 실행환경에서 최적 플레이를 위해 벤치마크 테스트가 진행중입니다."
-        candidateText = "Engine benchmark running: B16/B32/B64, ${EngineBenchmarkDefaultSamplesPerVisit} samples each."
+        analysisState = analysisState.copy(
+            candidateText = "Engine benchmark running: B16/B32/B64, ${EngineBenchmarkDefaultSamplesPerVisit} samples each.",
+        )
         runCatching {
             withContext(Dispatchers.IO) {
                 engineClient
@@ -340,7 +344,9 @@ private fun GoCoachScreen(
                             withContext(Dispatchers.Main) {
                                 benchmarkProgress = progress
                                 engineMessage = progress.stageText
-                                candidateText = "Engine benchmark running: ${progress.progressText}, ${progress.sampleText}."
+                                analysisState = analysisState.copy(
+                                    candidateText = "Engine benchmark running: ${progress.progressText}, ${progress.sampleText}.",
+                                )
                             }
                         },
                     )
@@ -350,11 +356,11 @@ private fun GoCoachScreen(
             engineBenchmarkText = benchmarkStore.loadText()
             searchTimeBenchmarkAverages = profile.averageMillisByVisits()
             engineMessage = "Engine benchmark saved to ${benchmarkStore.path()}."
-            candidateText = "Engine benchmark complete.\n${profile.toSummaryText()}"
+            analysisState = analysisState.copy(candidateText = "Engine benchmark complete.\n${profile.toSummaryText()}")
             benchmarkResultToConfirm = profile
         }.onFailure { error ->
             engineMessage = "Engine benchmark failed: ${error.message ?: "unknown error"}"
-            candidateText = "Engine benchmark failed. The app will continue with built-in defaults."
+            analysisState = analysisState.copy(candidateText = "Engine benchmark failed. The app will continue with built-in defaults.")
         }
         benchmarkProgress = null
         isEngineBusy = false
@@ -459,21 +465,10 @@ private fun GoCoachScreen(
         }
     }
 
-    fun currentAnalysisSessionState(): GameSessionAnalysisState =
-        GameSessionAnalysisState(
-            candidateMoves = candidateMoves,
-            candidateText = candidateText,
-            reviewAnalysis = reviewAnalysis,
-            reviewCandidateMoves = reviewCandidateMoves,
-            lastAnalysisKey = lastAnalysisKey,
-        )
+    fun currentAnalysisSessionState(): GameSessionAnalysisState = analysisState
 
     fun applyAnalysisSessionState(analysis: GameSessionAnalysisState) {
-        candidateMoves = analysis.candidateMoves
-        candidateText = analysis.candidateText
-        reviewAnalysis = analysis.reviewAnalysis
-        reviewCandidateMoves = analysis.reviewCandidateMoves
-        lastAnalysisKey = analysis.lastAnalysisKey
+        analysisState = analysis
     }
 
     fun resetAnalysisSessionState(
@@ -493,7 +488,11 @@ private fun GoCoachScreen(
     }
 
     fun clearReviewAnalysis(state: GameState = gameState) {
-        applyAnalysisSessionState(currentAnalysisSessionState().clearReviewAnalysis(state))
+        applyAnalysisSessionState(
+            currentAnalysisSessionState()
+                .clearReviewAnalysis(state)
+                .copy(lastAnalysisKey = null),
+        )
     }
 
     fun applyTopMoveAnalysisUpdate(
@@ -543,13 +542,13 @@ private fun GoCoachScreen(
         gameState = final.gameState
         applyScoreSessionState(currentScoreSessionState().applyFinalScoreDisplayPlan(final))
         engineMessage = final.engineMessage
-        candidateText = final.candidateText
+        analysisState = analysisState.copy(candidateText = final.candidateText)
     }
 
     fun applyEndgameFailureDisplayPlan(failure: EndgameFailureDisplayPlan) {
         applyScoreSessionState(currentScoreSessionState().applyEndgameFailureDisplayPlan(failure))
         engineMessage = failure.engineMessage
-        candidateText = failure.candidateText
+        analysisState = analysisState.copy(candidateText = failure.candidateText)
     }
 
     fun currentRuntimeSessionState(): GameSessionRuntimeState =
@@ -572,11 +571,11 @@ private fun GoCoachScreen(
     fun applyAutoAiTurnDisplayPlan(display: AutoAiTurnDisplayPlan): GameState? {
         applyRuntimeSessionState(currentRuntimeSessionState().applyAutoAiTurnDisplayPlan(display))
         gameState = display.gameState
-        clearTopMoveSpots()
-        clearReviewAnalysis(display.gameState)
-        lastAnalysisKey = null
+        resetAnalysisSessionState(
+            candidateText = display.candidateText,
+            reviewAnalysis = MoveAnalysisSnapshot.empty(display.gameState),
+        )
         engineMessage = display.turnEngineMessage
-        candidateText = display.candidateText
         lastMoveText = display.lastMoveText
         applyScoreEstimateDisplayPlan(display.scoreDisplay)
         return display.nextAnalysisState
@@ -590,7 +589,7 @@ private fun GoCoachScreen(
             }
             is HumanEngineSyncDisplayPlan.ScoreEstimate -> {
                 applyScoreEstimateDisplayPlan(sync.display)
-                candidateText = sync.candidateText
+                analysisState = analysisState.copy(candidateText = sync.candidateText)
                 sync.nextAnalysisState
             }
             HumanEngineSyncDisplayPlan.NoUpdate -> null
@@ -598,7 +597,7 @@ private fun GoCoachScreen(
 
     fun applyHumanEngineSyncFailurePlan(failure: HumanEngineSyncFailurePlan) {
         scoreSnapshots = failure.scoreSnapshots
-        candidateText = failure.candidateText
+        analysisState = analysisState.copy(candidateText = failure.candidateText)
         engineMessage = failure.engineMessage
     }
 
@@ -728,7 +727,6 @@ private fun GoCoachScreen(
         )
         clearTopMoveSpots("Search time changed. Analysis cache will rebuild with the new time cap.")
         clearReviewAnalysis(gameState)
-        lastAnalysisKey = null
     }
 
     fun requestTopMoveAnalysisForState(
@@ -756,15 +754,15 @@ private fun GoCoachScreen(
             deep = deep,
             automatic = automatic,
             topMovesEnabled = topMovesEnabled,
-            currentCandidateMoves = candidateMoves,
-            reviewAnalysis = reviewAnalysis,
-            lastAnalysisKey = lastAnalysisKey,
+            currentCandidateMoves = analysisState.candidateMoves,
+            reviewAnalysis = analysisState.reviewAnalysis,
+            lastAnalysisKey = analysisState.lastAnalysisKey,
             cachedResultFor = analysisCache::get,
         )
         val plan = when (launchPlan) {
             TopMoveAnalysisLaunchPlan.Skip -> return
             is TopMoveAnalysisLaunchPlan.RestoreCurrentSnapshot -> {
-                candidateMoves = launchPlan.candidateMoves
+                analysisState = analysisState.copy(candidateMoves = launchPlan.candidateMoves)
                 return
             }
             is TopMoveAnalysisLaunchPlan.UseCached -> {
@@ -776,7 +774,7 @@ private fun GoCoachScreen(
             }
         }
 
-        lastAnalysisKey = plan.analysisKey
+        analysisState = analysisState.copy(lastAnalysisKey = plan.analysisKey)
         scope.launch {
             isEngineBusy = true
             runCatching {
@@ -799,7 +797,6 @@ private fun GoCoachScreen(
             }.onFailure { error ->
                 engineMessage = error.message ?: "Top Moves analysis failed."
                 clearReviewAnalysis(targetState)
-                lastAnalysisKey = null
                 if (topMovesEnabled) {
                     clearTopMoveSpots("Top Moves analysis failed.")
                 }
@@ -827,8 +824,8 @@ private fun GoCoachScreen(
         topMovesEnabled = true
         when (
             val plan = planShowTopMoves(
-                reviewAnalysis = reviewAnalysis,
-                lastAnalysisKey = lastAnalysisKey,
+                reviewAnalysis = analysisState.reviewAnalysis,
+                lastAnalysisKey = analysisState.lastAnalysisKey,
                 currentPlan = buildTopMoveAnalysisPlan(
                     targetState = gameState,
                     engineProfile = engineProfile,
@@ -840,11 +837,11 @@ private fun GoCoachScreen(
             )
         ) {
             is ShowTopMovesPlan.ShowCached -> {
-                candidateMoves = plan.candidateMoves
+                analysisState = analysisState.copy(candidateMoves = plan.candidateMoves)
                 engineMessage = plan.engineMessage
             }
             is ShowTopMovesPlan.RequestAnalysis -> {
-                candidateMoves = plan.candidateMoves
+                analysisState = analysisState.copy(candidateMoves = plan.candidateMoves)
                 plan.engineMessage?.let { message -> engineMessage = message }
                 requestTopMoveAnalysisForState(
                     targetState = gameState,
@@ -1157,7 +1154,7 @@ private fun GoCoachScreen(
                         gameState = gameState,
                         playerSetup = playerSetup,
                         searchTimeSettings = searchTimeSettings,
-                        reviewCandidateMoves = reviewCandidateMoves,
+                        reviewCandidateMoves = analysisState.reviewCandidateMoves,
                     )
                     val turnStartMillis = System.currentTimeMillis()
                     runtimeEventLog.append(
@@ -1248,7 +1245,9 @@ private fun GoCoachScreen(
                             ),
                         )
                         engineMessage = error.message ?: "AI turn failed."
-                        candidateText = "AI turn failed. Current board state was not changed."
+                        analysisState = analysisState.copy(
+                            candidateText = "AI turn failed. Current board state was not changed.",
+                        )
                     }
                     isEngineBusy = false
                     isAutoAiTurnPending = false
@@ -1285,11 +1284,11 @@ private fun GoCoachScreen(
         }
 
         val beforeMove = gameState
-        val previousReviewCandidates = reviewCandidateMoves
+        val previousReviewCandidates = analysisState.reviewCandidateMoves
         val localMove = applyHumanMoveLocally(
             beforeMove = beforeMove,
             move = move,
-            reviewAnalysis = reviewAnalysis,
+            reviewAnalysis = analysisState.reviewAnalysis,
             previousMoveReviews = moveReviews,
         )
             .onFailure { error ->
@@ -1304,7 +1303,6 @@ private fun GoCoachScreen(
         moveReviewText = localMove.moveReview.text
         moveReviews = localMove.moveReviews
         clearReviewAnalysis(afterMove)
-        lastAnalysisKey = null
         lastMoveText = localMove.lastMoveText
         scoreText = "Score estimate not current."
         scoreEstimate = null
@@ -1324,7 +1322,7 @@ private fun GoCoachScreen(
                 )
                 applyFinalScoreDisplayPlan(final)
             } else {
-                candidateText = localMove.capturedText
+                analysisState = analysisState.copy(candidateText = localMove.capturedText)
                 engineMessage = "Local move accepted without engine sync: ${move.describe(beforeMove.boardSize)}."
             }
             return
@@ -1480,11 +1478,11 @@ private fun GoCoachScreen(
             isEngineBusy = isEngineBusy,
             isGameEnded = isGameEnded,
             topMovesEnabled = topMovesEnabled,
-            topMoveCandidateCount = reviewAnalysis.legalPlayCount,
-            moveAnalysisCoverage = reviewAnalysis.coverageSummary(),
+            topMoveCandidateCount = analysisState.reviewAnalysis.legalPlayCount,
+            moveAnalysisCoverage = analysisState.reviewAnalysis.coverageSummary(),
             gameState = gameState,
             engineMessage = engineMessage,
-            candidateText = candidateText,
+            candidateText = analysisState.candidateText,
             scoreText = scoreText,
             scoreSnapshots = scoreSnapshots,
             moveReviewText = moveReviewText,
@@ -1585,10 +1583,10 @@ private fun GoCoachScreen(
             analysisPreset = analysisPreset,
             analysisCacheStats = analysisCache.statsText(),
             topMovesEnabled = topMovesEnabled,
-            candidateMoves = candidateMoves,
-            candidateText = candidateText,
-            reviewAnalysis = reviewAnalysis,
-            reviewCandidateMoves = reviewCandidateMoves,
+            candidateMoves = analysisState.candidateMoves,
+            candidateText = analysisState.candidateText,
+            reviewAnalysis = analysisState.reviewAnalysis,
+            reviewCandidateMoves = analysisState.reviewCandidateMoves,
             moveReviews = moveReviews,
             moveReviewText = moveReviewText,
             lastMoveText = lastMoveText,
