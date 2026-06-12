@@ -884,3 +884,6 @@
 - `EngineBootstrap.adapter` 필드를 `coreApi`로 rename해 app bootstrap wiring에서도 구체 adapter보다 엔진 코어 계약을 주입한다는 의미가 드러나게 했다. Stub/KataGo 구현체는 기존 `EngineAdapter` 호환 타입으로 유지했다.
 - JDK 17/Android SDK 환경에서 `:app-android:testDebugUnitTest`가 통과했다.
 - 이번 도메인 분리 배치의 최종 통합 검증으로 `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test`를 실행했고 통과했다. 현재 git status는 기존 untracked `.bkit/`만 남아 있다.
+- 사용자가 다음 리팩토링 항목과 최소 2시간 이상의 상세 작업 리스트 작성을 요청했고, 최종 완결사항만 통합 테스트하겠다고 했다.
+- `docs/refactoring/NEXT_REFACTORING_WORKLIST_2026-06-13.md`를 추가해 다음 배치를 Runtime Event Log formatter 분리, Engine operation guard 분리, Top Moves request launcher 전 단계 정리, Auto AI runtime flow 분리 준비, Display plan applier 후보 정리, 통합 검증 순서로 정리했다.
+- 이번 배치에서는 `GoCoachApp.kt`의 대규모 controller 전환을 바로 하지 않고, controller 도입 전 안전하게 분리 가능한 application 로직부터 순차 진행하기로 했다.
