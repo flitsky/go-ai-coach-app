@@ -65,6 +65,7 @@ import com.worksoc.goaicoach.application.evaluateSearchTimeChangeGate
 import com.worksoc.goaicoach.application.FinalScoreDisplayPlan
 import com.worksoc.goaicoach.application.GameSessionResetPlan
 import com.worksoc.goaicoach.application.GameSessionAnalysisState
+import com.worksoc.goaicoach.application.GameSessionRuntimeState
 import com.worksoc.goaicoach.application.GameSessionScoreState
 import com.worksoc.goaicoach.application.HumanEngineSyncFailurePlan
 import com.worksoc.goaicoach.application.HumanEngineSyncDisplayPlan
@@ -551,16 +552,25 @@ private fun GoCoachScreen(
         candidateText = failure.candidateText
     }
 
-    fun applyRuntimePlayLevelSelection(runtime: RuntimePlayLevelSelection) {
+    fun currentRuntimeSessionState(): GameSessionRuntimeState =
+        GameSessionRuntimeState(
+            playLevel = playLevel,
+            engineProfile = engineProfile,
+            analysisPreset = analysisPreset,
+        )
+
+    fun applyRuntimeSessionState(runtime: GameSessionRuntimeState) {
         playLevel = runtime.playLevel
         engineProfile = runtime.engineProfile
         analysisPreset = runtime.analysisPreset
     }
 
+    fun applyRuntimePlayLevelSelection(selection: RuntimePlayLevelSelection) {
+        applyRuntimeSessionState(currentRuntimeSessionState().applySelection(selection))
+    }
+
     fun applyAutoAiTurnDisplayPlan(display: AutoAiTurnDisplayPlan): GameState? {
-        playLevel = display.playLevel
-        engineProfile = display.profile
-        analysisPreset = display.analysisPreset
+        applyRuntimeSessionState(currentRuntimeSessionState().applyAutoAiTurnDisplayPlan(display))
         gameState = display.gameState
         clearTopMoveSpots()
         clearReviewAnalysis(display.gameState)
