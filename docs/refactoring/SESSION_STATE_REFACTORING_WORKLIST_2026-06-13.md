@@ -38,3 +38,26 @@
 - 2026-06-13: `GameSessionAnalysisState` 단일 source of truth 승격 완료. `GoCoachApp.kt`의 `candidateMoves`, `candidateText`, `reviewAnalysis`, `reviewCandidateMoves`, `lastAnalysisKey` 개별 Compose state를 제거하고 `analysisState` 하나로 통합했다. Top Moves 요청/표시, benchmark candidate text, debug report, screen state 입력이 모두 `analysisState`를 참조하도록 정리했다. `:app-android:testDebugUnitTest` 통과.
 - 2026-06-13: `GameSessionScoreState` 단일 source of truth 승격 완료. `GoCoachApp.kt`의 `scoreText`, `scoreEstimate`, `scoreSnapshots`, `endgameLog` 개별 Compose state를 제거하고 `scoreState` 하나로 통합했다. score graph, score estimate request, human move local snapshot, undo, debug report, screen state 입력이 모두 `scoreState`를 참조하도록 정리했다. `:app-android:testDebugUnitTest` 통과.
 - 2026-06-13: `GameSessionRuntimeState` 단일 source of truth 승격 완료. `GoCoachApp.kt`의 `playLevel`, `engineProfile`, `analysisPreset` 개별 Compose state를 제거하고 `runtimeState` 하나로 통합했다. 엔진 시작, Top Moves, 점수 추정, 새 대국 시작, 자동 AI 턴, undo sync, debug report, screen state 입력이 모두 `runtimeState`를 참조하도록 정리했다. `:app-android:testDebugUnitTest` 통과.
+- 2026-06-13: 통합 검증 완료. `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test`를 실행했고 통과했다. 현재 `GoCoachApp.kt`는 1,626줄이며, analysis/score/runtime 핵심 표시 상태는 단일 source of truth로 정리되었다.
+
+## 다음 리팩토링 추천 항목
+
+1. `GameSessionCoreState` 초안 도입
+   - `gameState`, `isGameEnded`, `analysisState`, `scoreState`, `runtimeState`, `moveReviewText`, `moveReviews`, `lastMoveText`, `engineMessage`를 하나의 application state로 묶는다.
+   - 초기에는 Compose state를 완전히 대체하지 말고 reducer 테스트부터 만든다.
+
+2. `GameSessionReducer` 순수 함수 도입
+   - `GameSessionResetPlan`, `SavedGameRestorePlan`, `UndoLocalStatePlan`, `ScoringRuleChangePlan`, `AutoAiTurnDisplayPlan`을 `GameSessionCoreState -> GameSessionCoreState`로 적용한다.
+   - 지금 UI에 남아 있는 `apply*Plan` 함수들을 reducer 테스트로 옮기는 준비 단계다.
+
+3. `MoveReviewState` 분리
+   - `moveReviewText`, `moveReviews`, `lastMoveText`는 아직 개별 Compose state다.
+   - 착수/무르기/복원에서 같이 움직이므로 별도 state holder로 빼면 `GameSessionCoreState` 결합이 쉬워진다.
+
+4. Thin `GameSessionController` skeleton
+   - coroutine 실행까지 한 번에 옮기지 말고, event 입력과 reducer 결과/effect 타입만 먼저 정의한다.
+   - UI는 effect를 실행하고 controller는 다음 state와 필요한 engine action을 설명하는 구조가 안전하다.
+
+5. 플랫폼 port 분리
+   - `GameSessionStore`, `EngineBenchmarkStore`, debug report mirror, clipboard/toast를 port로 감싼다.
+   - 서버 엔진/원격 대국을 염두에 두면 persistence/diagnostic boundary를 먼저 분리하는 것이 좋다.
