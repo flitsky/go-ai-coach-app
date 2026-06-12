@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.application
 
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
+import com.worksoc.goaicoach.match.MatchReferee
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.shared.AnalysisPreset
 import com.worksoc.goaicoach.shared.CandidateMove
@@ -105,7 +106,7 @@ internal fun buildAutoAiTurnDisplayPlan(
 ): AutoAiTurnDisplayPlan {
     val outcome = result.turnOutcome
     val nextState = outcome.gameState
-    val shouldResolveEndgame = nextState.hasConsecutivePasses() || nextState.isBoardFull()
+    val shouldResolveEndgame = MatchReferee.shouldResolveEndgame(nextState)
     val scoreDisplay = result.scoreEstimate?.let { estimate ->
         buildEngineEstimateDisplayPlan(
             state = nextState,

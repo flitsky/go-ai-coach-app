@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.application
 
 import com.worksoc.goaicoach.match.TurnOutcome
+import com.worksoc.goaicoach.match.MatchReferee
 import com.worksoc.goaicoach.match.applyAiTurn
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.BoardScorer
@@ -134,7 +135,7 @@ internal suspend fun EngineCoreApi.syncAfterHumanMove(
     previousReviewCandidates: List<CandidateMove>,
 ): LocalEngineMoveResult {
     syncToGameState(afterMove)
-    return if (afterMove.hasConsecutivePasses() || afterMove.isBoardFull()) {
+    return if (MatchReferee.shouldResolveEndgame(afterMove)) {
         LocalEngineMoveResult(
             endgame = resolveAiEndgame(
                 engineAdapter = this,

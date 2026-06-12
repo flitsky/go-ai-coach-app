@@ -873,3 +873,6 @@
 - 리팩토링 Phase 2로 `SeatId.Black/White`, `SeatAssignment`, `AiCharacterProfile`을 도입했다. 저장/복원 호환성을 위해 `PlayerSetup.black/white` 필드는 유지하되, 내부 판단과 요약은 seat helper를 통해 접근할 수 있게 했다.
 - `PlayerSetup.matchMode`, `humanSeatCount`, `isAutoPlay`, `summary`, `boardInputEnabled`, `turnStatus`, 자동 AI/Top Moves trigger, runtime play level 선택을 seat/AI character 도메인 기반으로 정리했다.
 - `MatchPolicyTest.playerSetupExposesSeatAssignmentsAndAiCharacters`를 추가했고, JDK 17/Android SDK 환경에서 `:app-android:testDebugUnitTest`가 통과했다.
+- 리팩토링 Phase 3로 `MatchReferee`를 추가했다. 현재는 `GameState` 규칙에 위임하지만, 사람/AI/향후 원격 유저 착수가 같은 심판 경계로 들어오도록 `play`, `playOrThrow`, `shouldResolveEndgame`, `endgameReasonText`, `localFinalScoreIfGameEndedByPasses`를 제공한다.
+- `HumanMoveApplication`, `EngineSession.syncAfterHumanMove`, `GameAutomationApplication`, `MatchPolicy`의 착수 적용/종국 판정을 `MatchReferee` 기반으로 바꿨다. pass/pass 후 AI 응수로 이어질 수 있는 경로도 종료 판정이 우선되도록 정리했다.
+- `MatchRefereeTest`를 추가했고, JDK 17/Android SDK 환경에서 `:app-android:testDebugUnitTest`가 통과했다.

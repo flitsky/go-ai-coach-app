@@ -190,7 +190,7 @@ Game UX는 다음만 담당한다.
 2. `[완료]` application/match의 코어 의존 타입을 `EngineCoreApi`로 점진 전환
 3. `[완료]` `SeatId`, `SeatAssignment`, `AiCharacterProfile` 도입
 4. `[완료]` PlayerSetup helper를 seat 도메인 기반으로 정리
-5. MatchReferee 후보를 추가하고 사람 착수 로컬 처리부터 적용
+5. `[완료]` MatchReferee 후보를 추가하고 사람 착수 로컬 처리부터 적용
 6. 테스트/문서/히스토리 갱신 후 커밋/푸시
 
 ### 진행 로그
@@ -204,6 +204,9 @@ Game UX는 다음만 담당한다.
 - `SeatId.Black/White`, `SeatAssignment`, `AiCharacterProfile`을 추가했다. 저장 포맷의 `PlayerSetup.black/white`는 유지하되, 내부 판단은 seat helper를 통해 접근할 수 있게 했다.
 - `PlayerSetup.matchMode`, `humanSeatCount`, `isAutoPlay`, `summary`, `boardInputEnabled`, `turnStatus`, 자동 AI/Top Moves trigger, runtime play level 선택을 seat 도메인 기반으로 정리했다.
 - 검증: `MatchPolicyTest.playerSetupExposesSeatAssignmentsAndAiCharacters` 추가, `:app-android:testDebugUnitTest` 통과.
+- `MatchReferee`를 추가해 착수 적용, pass/pass 또는 board full 종국 판정, pass/pass 로컬 최종 점수 생성을 심판 도메인 경계로 모았다.
+- 사람 착수 로컬 처리, AI 착수 적용, 자동 AI 종국 표시 계획, 사람 착수 후 엔진 sync 종국 판단이 `MatchReferee` 경계를 사용하게 했다.
+- 검증: `MatchRefereeTest` 추가, `:app-android:testDebugUnitTest` 통과.
 
 ## 주의할 점
 

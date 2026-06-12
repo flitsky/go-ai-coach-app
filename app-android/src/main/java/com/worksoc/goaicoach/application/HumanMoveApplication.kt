@@ -1,6 +1,6 @@
 package com.worksoc.goaicoach.application
 
-import com.worksoc.goaicoach.shared.BoardScorer
+import com.worksoc.goaicoach.match.MatchReferee
 import com.worksoc.goaicoach.shared.FinalScoreResult
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
@@ -43,7 +43,7 @@ internal fun applyHumanMoveLocally(
     previousMoveReviews: List<MoveReviewMarker>,
 ): Result<HumanMoveLocalResult> =
     runCatching {
-        val afterMove = beforeMove.play(move)
+        val afterMove = MatchReferee.playOrThrow(beforeMove, move)
         val moveReview = buildMoveReview(
             move = move,
             analysis = reviewAnalysis,
@@ -57,11 +57,7 @@ internal fun applyHumanMoveLocally(
             lastMoveText = move.describe(beforeMove.boardSize),
             capturedText = "Captured: Black ${afterMove.capturedBy(StoneColor.Black)} / White ${afterMove.capturedBy(StoneColor.White)}",
             localScoreSnapshot = localScoreSnapshot(afterMove),
-            localFinalScore = if (afterMove.hasConsecutivePasses()) {
-                BoardScorer.score(afterMove)
-            } else {
-                null
-            },
+            localFinalScore = MatchReferee.localFinalScoreIfGameEndedByPasses(afterMove),
         )
     }
 

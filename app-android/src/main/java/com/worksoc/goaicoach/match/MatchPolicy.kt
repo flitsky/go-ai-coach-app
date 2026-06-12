@@ -194,10 +194,11 @@ internal suspend fun applyAiResponseAfterHumanTurn(
     val humanText = humanMove.describe(stateAfterHuman.boardSize)
     onHumanMoveAccepted()
 
-    if (stateAfterHuman.isBoardFull()) {
+    if (MatchReferee.shouldResolveEndgame(stateAfterHuman)) {
+        val endgameReason = MatchReferee.endgameReasonText(stateAfterHuman) ?: "Game ended."
         return TurnOutcome(
             gameState = stateAfterHuman,
-            engineMessage = "${humanStatus.message}\nBoard is full.",
+            engineMessage = "${humanStatus.message}\n$endgameReason",
             candidateText = "Game ended after $humanText.",
             lastMoveText = humanText,
         )
@@ -213,7 +214,7 @@ internal suspend fun applyAiResponseAfterHumanTurn(
         searchTimeSettings = searchTimeSettings,
     )
     if (selectedAiMove != null) {
-        val afterAi = runCatching { stateAfterHuman.play(selectedAiMove.move) }.getOrNull()
+        val afterAi = MatchReferee.play(stateAfterHuman, selectedAiMove.move).getOrNull()
         if (afterAi != null) {
             val syncStatus = engineAdapter.playMove(selectedAiMove.move)
             val aiText = selectedAiMove.move.describe(stateAfterHuman.boardSize)
@@ -227,7 +228,7 @@ internal suspend fun applyAiResponseAfterHumanTurn(
     }
 
     val aiResult = engineAdapter.genMove(AiPlayer)
-    val afterAi = stateAfterHuman.play(aiResult.move)
+    val afterAi = MatchReferee.playOrThrow(stateAfterHuman, aiResult.move)
     val aiText = aiResult.move.describe(stateAfterHuman.boardSize)
     return TurnOutcome(
         gameState = afterAi,
@@ -258,7 +259,7 @@ internal suspend fun applyAiTurn(
         searchTimeSettings = searchTimeSettings,
     )
     if (selectedAiMove != null) {
-        val afterAi = runCatching { currentState.play(selectedAiMove.move) }.getOrNull()
+        val afterAi = MatchReferee.play(currentState, selectedAiMove.move).getOrNull()
         if (afterAi != null) {
             val syncStatus = engineAdapter.playMove(selectedAiMove.move)
             val aiText = selectedAiMove.move.describe(currentState.boardSize)
@@ -272,7 +273,7 @@ internal suspend fun applyAiTurn(
     }
 
     val aiResult = engineAdapter.genMove(aiPlayer)
-    val afterAi = currentState.play(aiResult.move)
+    val afterAi = MatchReferee.playOrThrow(currentState, aiResult.move)
     val aiText = aiResult.move.describe(currentState.boardSize)
     return TurnOutcome(
         gameState = afterAi,
