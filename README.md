@@ -26,13 +26,13 @@ Next goal:
 ## Key Documents
 
 - [PRD.md](./PRD.md): app product requirements and roadmap
+- [docs/DOCS_INDEX.md](./docs/DOCS_INDEX.md): current documentation map and archive policy
 - [docs/STACK_DECISION.md](./docs/STACK_DECISION.md): KMP vs Flutter final opinion
-- [docs/ANDROID_KATAGO_SPIKE_RUNBOOK.md](./docs/ANDROID_KATAGO_SPIKE_RUNBOOK.md): Android KataGo build and emulator smoke-test notes
-- [docs/AI_ENGINE_SETTINGS.md](./docs/AI_ENGINE_SETTINGS.md): current AI difficulty and engine tuning settings
 - [docs/ENGINE_API_CALL_POLICY.md](./docs/ENGINE_API_CALL_POLICY.md): canonical engine analysis call policy
+- [docs/ENGINE_LEVEL_STRENGTH_REVIEW_2026-06-10.md](./docs/ENGINE_LEVEL_STRENGTH_REVIEW_2026-06-10.md): B16/B32/B64 level validation results
 - [docs/SCORE_AND_ENDGAME_DECISION.md](./docs/SCORE_AND_ENDGAME_DECISION.md): score estimate and endgame scoring decision
 - [docs/USER_OPTION_MANUAL.md](./docs/USER_OPTION_MANUAL.md): current Android option manual draft
-- [docs/TOP_MOVES_VALUE_GUIDE.md](./docs/TOP_MOVES_VALUE_GUIDE.md): canonical Top Moves order/loss/sign guide
+- [docs/REFACTORING_STRATEGY_2026-06-08.md](./docs/REFACTORING_STRATEGY_2026-06-08.md): refactoring status and next structural candidates
 
 ## Working Decision
 

@@ -9,11 +9,11 @@
 ## 먼저 볼 문서
 
 - 이 문서: 엔진 API 호출 정책, 호출 비용 순서, AI/사람 턴 일관성 기준
-- `docs/TOP_MOVES_VALUE_GUIDE.md`: 후보 순위, `pointLoss`, 보드 숫자 표시 기준
-- `docs/ENGINE_ANALYSIS_CONSISTENCY_REVIEW.md`: KataGo `order`, `scoreLead`, `pointLoss` 해석 기준
-- `docs/AI_ENGINE_SETTINGS.md`: 실제 레벨별 visits/time/candidate count
-- `docs/ENGINE_TIME_CAP_POLICY_DISCUSSION.md`: time cap을 속도/정확도 중 어디에 맞출지에 대한 논의 화두
-- `docs/ENGINE_ANALYSIS_CACHE_POLICY.md`: 분석 cache 비활성화 이유와 재도입 조건
+- `docs/ENGINE_LEVEL_STRENGTH_REVIEW_2026-06-10.md`: 실제 레벨별 visits/time/candidate count와 반복 대국 결과
+- `docs/ENGINE_SEARCH_TREE_REUSE_REVIEW.md`: KataGo search tree reuse와 AI vs AI 격리 정책
+- `docs/archive/2026-06-docs-consolidation/TOP_MOVES_VALUE_GUIDE.md`: 후보 순위, `pointLoss`, 보드 숫자 표시 기준의 과거 상세 기록
+- `docs/archive/2026-06-docs-consolidation/ENGINE_ANALYSIS_CONSISTENCY_REVIEW.md`: KataGo `order`, `scoreLead`, `pointLoss` 해석 기준 상세 기록
+- `docs/archive/2026-06-docs-consolidation/ENGINE_ANALYSIS_CACHE_POLICY.md`: 분석 cache 비활성화 이유와 재도입 조건
 
 ## 현재 결정
 
@@ -155,7 +155,7 @@ KataGo GTP config 주석 기준으로 `visits`는 현재 턴에서 새로 수행
 
 따라서 “매판 random seed를 넣으면 프로세스 재시작이나 `clear_cache`가 불필요한가?”에 대한 현재 결론은 아니오다. 랜덤 시드는 다양성/재현성 제어 수단이고, `clear_cache`/fresh process는 엔진 내부 상태 격리 수단이다.
 
-재사용을 다시 살릴 후보는 random seed보다 `maxPlayouts` 기반 정책이다. `maxPlayouts`는 이전 tree visits를 포함하는 `maxVisits`와 달리 새로 수행할 탐색량을 더 직접적으로 제한할 수 있다. 다만 기존 tree 위에 새 playout을 더하는 방식이므로, 강도 보정 모드와는 별도인 “성능/품질 우선 모드”로 검증해야 한다. 자세한 검토는 `docs/ENGINE_SEARCH_TREE_REUSE_REVIEW.md`를 따른다.
+재사용을 다시 살릴 후보는 random seed보다 `maxPlayouts` 기반 정책이다. `maxPlayouts`는 이전 tree visits를 포함하는 `maxVisits`와 달리 새로 수행할 탐색량을 더 직접적으로 제한할 수 있다. 다만 기존 tree 위에 새 playout을 더하는 방식이므로, 강도 보정 모드와는 별도인 “성능/품질 우선 모드”로 검증해야 한다. 자세한 검토는 `ENGINE_SEARCH_TREE_REUSE_REVIEW.md`를 따른다.
 
 ### 사람 차례
 
@@ -186,7 +186,7 @@ KataGo GTP config 주석 기준으로 `visits`는 현재 턴에서 새로 수행
 - `pointLoss`가 없는 후보는 표시나 리뷰에서 `unknown`으로 다룬다.
 - `pointLoss`는 앱 내부에서 0 이상 손실값으로 유지한다. 보드 숫자는 KaTrain식으로 `-pointLoss`를 표시할 수 있지만, 내부 모델에는 음수 이득 의미를 섞지 않는다.
 
-자세한 값 해석은 `docs/TOP_MOVES_VALUE_GUIDE.md`와 `docs/ENGINE_ANALYSIS_CONSISTENCY_REVIEW.md`를 따른다.
+자세한 값 해석의 과거 상세 기록은 `archive/2026-06-docs-consolidation/TOP_MOVES_VALUE_GUIDE.md`와 `archive/2026-06-docs-consolidation/ENGINE_ANALYSIS_CONSISTENCY_REVIEW.md`를 따른다.
 
 ## 오래된 문서 처리
 

@@ -840,3 +840,8 @@
 - `ENGINE_MATCH_OUT=docs/engine-match-logs/matrix-tinycache-20260611 ENGINE_MATCH_GAMES=50 make engine-level-benchmark`로 3개 조합 50판씩 총 150판을 실행했다.
 - 결과: B16 vs B32는 B32 `30승/50판`으로 60%, B16 vs B64는 B64 `42승/50판`으로 84%, B32 vs B64는 B64 `41승/50판`으로 82%였다. 기대치와 비교하면 B16/B32 격차는 기대보다 약하고, B16/B64는 거의 유사하며, B32/B64는 기대보다 B64가 강하게 나왔다.
 - 상세 결과와 해석을 `docs/ENGINE_LEVEL_STRENGTH_REVIEW_2026-06-10.md`와 `docs/engine-match-logs/matrix-tinycache-20260611/summary.md`에 기록했다.
+- 로컬 변경사항 중 엔진 레벨 매트릭스 테스트/문서 변경분을 `6d52b5a Add isolated engine level matrix results`로 커밋하고 `main`에 푸시했다.
+- 사용자가 문서 통폐합 정리를 요청했다. `docs/DOCS_INDEX.md`를 추가해 현재 기준 문서 목록과 아카이브 정책을 명시했다.
+- `docs/` 최상위 Markdown 문서를 이 파일 포함 10개로 줄였다. 현재 활성 문서는 `DOCS_INDEX.md`, `THREAD_HISTORY.md`, `STACK_DECISION.md`, `USER_OPTION_MANUAL.md`, `ENGINE_API_CALL_POLICY.md`, `ENGINE_SEARCH_TREE_REUSE_REVIEW.md`, `ENGINE_LEVEL_STRENGTH_REVIEW_2026-06-10.md`, `SCORE_AND_ENDGAME_DECISION.md`, `KATRAIN_UX_BACKLOG.md`, `REFACTORING_STRATEGY_2026-06-08.md`다.
+- 오래된 계획/실험/세부 논의 문서 23개는 삭제하지 않고 `docs/archive/2026-06-docs-consolidation/`로 이동했다. 최신 기준은 `docs/DOCS_INDEX.md`와 활성 문서를 우선하고, `THREAD_HISTORY.md`의 과거 경로 기록은 당시 맥락 보존용으로 남긴다.
+- `README.md`, `ENGINE_API_CALL_POLICY.md`, `USER_OPTION_MANUAL.md`의 주요 문서 링크를 활성 문서 또는 새 아카이브 경로 기준으로 갱신했다.

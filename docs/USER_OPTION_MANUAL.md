@@ -65,8 +65,8 @@
 - `pointLoss`는 앱 내부에서 0 이상 손실값으로 유지한다. raw 계산 중 후보가 root보다 좋게 나와 음수 손실이 생기더라도 앱은 이를 `0.0`으로 정규화한다.
 - 보드 위 후보수 숫자는 `scoreLead`가 아니라 KaTrain 기본 UX처럼 현재 착수자 기준 손실값의 델타(`-pointLoss`)를 표시한다. 예를 들어 `-0.2`는 “이 후보를 두면 현재 분석 기준 대비 0.2집 손실”을 뜻하고, `0.0`은 손실이 없는 후보를 뜻한다.
 - 후보 상세 텍스트도 기본적으로 `lead` 대신 `loss`를 표시한다. `scoreLead`는 그래프, 점수 추정, 엔진 진단용 내부 값으로 유지한다.
-- `+1.5`처럼 이득을 표시해야 하는 기능은 `pointLoss`가 아니라 별도 signed 평가 필드를 추가한 뒤 구현한다. 이 기준은 `docs/TOP_MOVES_VALUE_GUIDE.md`에 짧게 정리한다.
-- KataGo `moveInfos.order`와 `pointLoss` 순위는 저예산 분석에서 어긋날 수 있다. Top Moves의 순위와 큰 강조점은 엔진이 반환한 `order`를 우선한다. `pointLoss`는 색상과 숫자 annotation으로 사용해 “이 order 후보가 현재 root 기준으로 몇 집 손실인지”를 설명한다. 이 기준은 `docs/ENGINE_ANALYSIS_CONSISTENCY_REVIEW.md`에 별도로 고정한다.
+- `+1.5`처럼 이득을 표시해야 하는 기능은 `pointLoss`가 아니라 별도 signed 평가 필드를 추가한 뒤 구현한다. 과거 상세 기준은 `docs/archive/2026-06-docs-consolidation/TOP_MOVES_VALUE_GUIDE.md`에 남겨 둔다.
+- KataGo `moveInfos.order`와 `pointLoss` 순위는 저예산 분석에서 어긋날 수 있다. Top Moves의 순위와 큰 강조점은 엔진이 반환한 `order`를 우선한다. `pointLoss`는 색상과 숫자 annotation으로 사용해 “이 order 후보가 현재 root 기준으로 몇 집 손실인지”를 설명한다. 과거 상세 기준은 `docs/archive/2026-06-docs-consolidation/ENGINE_ANALYSIS_CONSISTENCY_REVIEW.md`에 남겨 둔다.
 - 예를 들어 흑이 어떤 후보를 두면 여전히 `B+20`으로 크게 앞서더라도, 현재 root/best 기준으로는 `B+25`가 가능한 국면이면 그 후보는 `5집 손실`로 주황 계열이 될 수 있다.
 - 즉 스팟 색상은 “이 수를 두면 누가 이기는가”가 아니라 “현재 국면에서 이 수가 얼마나 손해인가”를 보여준다.
 - JSON study analysis에 `rootInfo`가 있으면 root score 기준으로 `pointLoss`를 계산한다. 현재 GTP fast path처럼 root score가 없는 경량 경로에서는 order 0 후보 대비 손실로 계산한다.
@@ -191,7 +191,7 @@
 
 - 이 문서는 POC 기준이며, 최종 앱 사용자 매뉴얼은 화면 구조와 용어가 안정된 뒤 다시 정리한다.
 - 현재 대국 기본 계가는 한국/일본식 Territory scoring이다. 메뉴에서 중국식 Area scoring으로 전환할 수 있다.
-- 계가 방식 옵션화 결정과 필요한 작업은 `docs/RULESET_SCORING_DECISION.md`에 기록한다.
+- 계가 방식 옵션화 과거 상세 결정은 `docs/archive/2026-06-docs-consolidation/RULESET_SCORING_DECISION.md`에 기록되어 있다.
 - ownership overlay는 엔진 분석 결과에 의존하므로, stub 모드나 분석 실패 상태에서는 의미 있는 값이 없을 수 있다.
 - AI 대국에서 양쪽이 연속 pass하면 KataGo `final_status_list dead` 결과로 사석을 정리한 뒤 최종 점수를 표시한다.
 - 엔진 사석 목록 외에도, 한 활로짜리로 즉시 따이는 그룹은 로컬 fallback으로 사석 후보에 포함한다.
