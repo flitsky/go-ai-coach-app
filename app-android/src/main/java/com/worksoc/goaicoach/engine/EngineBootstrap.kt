@@ -5,11 +5,13 @@ import com.worksoc.goaicoach.engine.android.KataGoProcessConfig
 import com.worksoc.goaicoach.engine.android.KataGoProcessEngineAdapter
 import com.worksoc.goaicoach.engine.android.StubEngineAdapter
 import com.worksoc.goaicoach.shared.EngineAdapter
+import com.worksoc.goaicoach.shared.EngineMode
 import java.io.File
 import java.io.IOException
 
 data class EngineBootstrap(
     val adapter: EngineAdapter,
+    val mode: EngineMode,
     val displayName: String,
     val diagnostic: String,
 )
@@ -49,6 +51,7 @@ fun createEngineBootstrap(
     if (missing.isNotEmpty()) {
         return EngineBootstrap(
             adapter = StubEngineAdapter(),
+            mode = EngineMode.Stub,
             displayName = "stub AI",
             diagnostic = buildString {
                 append("Stub fallback: missing ${missing.joinToString()}. ")
@@ -82,6 +85,7 @@ fun createEngineBootstrap(
                 ),
             ),
         ),
+        mode = EngineMode.LocalProcess,
         displayName = "KataGo",
         diagnostic = buildString {
             append("KataGo assets found. Using local process engine.")

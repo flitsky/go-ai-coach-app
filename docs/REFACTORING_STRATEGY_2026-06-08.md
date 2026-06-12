@@ -87,6 +87,7 @@
 - `AdapterEngineSessionClient`는 현재 local `EngineAdapter`를 감싼다. 나중에 서버 엔진으로 고도화할 경우 `RemoteEngineSessionClient`를 추가하고 UI는 그대로 둔다.
 - Top Moves 분석처럼 서버에서 stateless하게 처리될 가능성이 큰 요청은 `analyze(limit)`가 아니라 `analyzePosition(state, limit)` 형태로 명시적인 보드 상태를 넘긴다.
 - local process 구현은 `analyzePosition` 내부에서 `syncToGameState(state)` 후 `analyze(limit)`를 실행한다. remote 구현은 같은 `state`를 HTTP/gRPC payload로 보낼 수 있다.
+- benchmark처럼 특정 transport에서만 가능한 기능은 `engineName`/`diagnostic` 문자열로 판별하지 않고 `EngineSessionCapabilities`로 판별한다.
 
 이 변경으로 리팩토링 완성도는 약 85%로 본다. UI의 엔진 직접 의존을 끊는 첫 경계가 생겼고, 서버 엔진을 도입할 때 바꿔야 할 범위가 `EngineSessionClient` 구현체와 bootstrap wiring으로 좁아졌다. 다만 `GoCoachApp.kt`가 여전히 coroutine orchestration과 많은 화면 상태를 직접 가진다는 핵심 부채는 남아 있다.
 

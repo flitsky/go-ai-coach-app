@@ -852,3 +852,4 @@
 - `GoCoachApp.kt`와 `MainActivity.kt` wiring을 새 경계로 변경했고, `EngineSessionTest`에 `analyzePosition`이 명시적 국면을 sync한 뒤 분석하는 회귀 테스트를 추가했다.
 - `:app-android:testDebugUnitTest`를 실행해 통과했다.
 - `docs/REFACTORING_STRATEGY_2026-06-08.md`와 `docs/ENGINE_API_CALL_POLICY.md`에 서버 엔진 대비 계층 경계와 다음 리팩토링 우선순위를 기록했다.
+- 후속으로 `EngineSessionCapabilities`를 추가했다. 기기 benchmark 가능 여부를 `engineName`/`diagnostic` 문자열이 아니라 capability로 판단하게 바꿨고, `EngineBootstrap`은 `EngineMode.Stub` 또는 `EngineMode.LocalProcess`를 명시한다.

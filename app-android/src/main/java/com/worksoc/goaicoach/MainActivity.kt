@@ -22,8 +22,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.AdapterEngineSessionClient
+import com.worksoc.goaicoach.application.EngineSessionCapabilities
 import com.worksoc.goaicoach.engine.EngineBootstrap
 import com.worksoc.goaicoach.engine.createEngineBootstrap
+import com.worksoc.goaicoach.shared.EngineMode
 import com.worksoc.goaicoach.ui.GoCoachApp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -48,7 +50,12 @@ class MainActivity : ComponentActivity() {
                 PreparingEngineScreen()
             } else {
                 val engineClient = remember(bootstrap.adapter) {
-                    AdapterEngineSessionClient(bootstrap.adapter)
+                    AdapterEngineSessionClient(
+                        adapter = bootstrap.adapter,
+                        capabilities = EngineSessionCapabilities(
+                            supportsDeviceBenchmark = bootstrap.mode == EngineMode.LocalProcess,
+                        ),
+                    )
                 }
                 GoCoachApp(
                     engineClient = engineClient,

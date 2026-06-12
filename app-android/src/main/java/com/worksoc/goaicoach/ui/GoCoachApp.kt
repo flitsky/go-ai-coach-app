@@ -280,7 +280,7 @@ private fun GoCoachScreen(
             engineMessage = "Engine benchmark requires a ready local engine."
             return
         }
-        if (!isLocalKataGoEngine(engineName = engineName, engineDiagnostic = engineDiagnostic)) {
+        if (!engineClient.capabilities.supportsDeviceBenchmark) {
             engineMessage = "Engine benchmark is available only for the local KataGo process engine."
             return
         }
@@ -359,7 +359,7 @@ private fun GoCoachScreen(
         if (
             !hasCompletedEngineStartup ||
             !isEngineReady ||
-            !isLocalKataGoEngine(engineName = engineName, engineDiagnostic = engineDiagnostic) ||
+            !engineClient.capabilities.supportsDeviceBenchmark ||
             hasCheckedEngineBenchmark
         ) {
             return@LaunchedEffect
@@ -1517,12 +1517,6 @@ private fun UserPreferencesSnapshot.toKaTrainUxOptions(): KaTrainUxOptions =
         showLastMoveRing = showLastMoveRing,
         showOwnershipOverlay = showOwnershipOverlay,
     )
-
-private fun isLocalKataGoEngine(
-    engineName: String,
-    engineDiagnostic: String,
-): Boolean =
-    engineName == "KataGo" && engineDiagnostic.contains("Using local process engine")
 
 private fun EngineBenchmarkProfile.averageMillisByVisits(): Map<Int, Double> =
     metrics.associate { metric -> metric.visits to metric.avgMs }

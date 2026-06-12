@@ -187,6 +187,7 @@ KataGo GTP config 주석 기준으로 `visits`는 현재 턴에서 새로 수행
 - 따라서 UI에서 발생하는 Top Moves 분석은 `analyzePosition(state, limit)`처럼 명시적인 `GameState`를 포함한다.
 - local 구현인 `AdapterEngineSessionClient`는 `syncToGameState(state)` 후 `EngineAdapter.analyze(limit)`를 호출한다.
 - future `RemoteEngineSessionClient`는 같은 계약을 HTTP/gRPC 요청으로 변환하면 된다.
+- engine-specific feature gate는 문자열 진단문이 아니라 `EngineSessionCapabilities`로 판단한다. 예를 들어 기기 benchmark는 local process capability가 있을 때만 실행하고, remote server 엔진에서는 기본적으로 비활성화한다.
 
 ## 후보 순위와 평가값
 

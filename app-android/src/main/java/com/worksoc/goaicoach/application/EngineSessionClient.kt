@@ -14,6 +14,10 @@ import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.ScoreEstimate
 
+internal data class EngineSessionCapabilities(
+    val supportsDeviceBenchmark: Boolean,
+)
+
 /**
  * Application-facing engine session boundary.
  *
@@ -23,6 +27,8 @@ import com.worksoc.goaicoach.shared.ScoreEstimate
  * exposing process sync, cache isolation, or transport details to Compose.
  */
 internal interface EngineSessionClient {
+    val capabilities: EngineSessionCapabilities
+
     suspend fun startSession(
         profile: EngineProfile,
         state: GameState,
@@ -87,6 +93,9 @@ internal interface EngineSessionClient {
 
 internal class AdapterEngineSessionClient(
     private val adapter: EngineAdapter,
+    override val capabilities: EngineSessionCapabilities = EngineSessionCapabilities(
+        supportsDeviceBenchmark = false,
+    ),
 ) : EngineSessionClient {
     override suspend fun startSession(
         profile: EngineProfile,
