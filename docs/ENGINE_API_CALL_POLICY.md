@@ -4,7 +4,7 @@
 
 ## 한줄 결론
 
-대국 중 착수 판단과 학습 피드백은 모두 `TurnAnalysis`라는 같은 개념의 엔진 분석 결과를 사용한다. UI는 엔진을 직접 호출하지 않고, application 계층이 목적별 분석 예산을 정한 뒤 `EngineAdapter.analyze()` 뒤로 숨긴다.
+대국 중 착수 판단과 학습 피드백은 모두 `TurnAnalysis`라는 같은 개념의 엔진 분석 결과를 사용한다. UI는 엔진을 직접 호출하지 않고, middleware/application 계층이 목적별 분석 예산을 정한 뒤 `EngineCoreApi.analyze()` 뒤로 숨긴다.
 
 ## 먼저 볼 문서
 
@@ -35,7 +35,7 @@
 
 2026-06-11 현재 모바일 기본 구현은 성능을 우선하되, B16/B32/B64 time cap은 사용자가 `Search Time` 메뉴에서 조정할 수 있다.
 
-- AI 응수: 레벨별 visits/candidate count와 `Search Time`의 visits별 time cap으로 `EngineAdapter.analyze()`를 호출한다.
+- AI 응수: 레벨별 visits/candidate count와 `Search Time`의 visits별 time cap으로 `EngineCoreApi.analyze()`를 호출한다.
 - 사람 착수 리뷰: 사람 차례가 오면 fast best-1 분석을 백그라운드로 요청한다.
 - Top Moves 표시: 사용자가 토글을 켜면 같은 fast best-1 snapshot을 보드에 표시한다.
 - Analysis cache: 기본 비활성. 현재 턴의 snapshot 표시만 유지하고, 이전 국면 cache hit 재사용은 하지 않는다.
@@ -171,14 +171,14 @@ KataGo GTP config 주석 기준으로 `visits`는 현재 턴에서 새로 수행
 
 ## 계층 경계
 
-- `shared`: `EngineAdapter`, `AnalysisLimit`, `CandidateMove`, `MoveAnalysisSnapshot`, `PlayLevel`, `MoveSelectionPolicy` 같은 순수 모델과 정책을 둔다.
+- `shared`: `EngineCoreApi`, 호환 이름인 `EngineAdapter`, `AnalysisLimit`, `CandidateMove`, `MoveAnalysisSnapshot`, `PlayLevel`, `MoveSelectionPolicy` 같은 순수 모델과 정책을 둔다.
 - `application`: `EngineSessionClient`를 통해 현재 화면 상태와 사용자 설정을 보고 어떤 목적의 `TurnAnalysis`가 필요한지 결정한다.
-- `engine-android`: GTP process, JSON analysis process, 향후 JNI/remote 구현을 `EngineAdapter` 뒤에 숨긴다.
+- `engine-android`: GTP process, JSON analysis process, 향후 JNI/remote 구현을 `EngineCoreApi`/`EngineAdapter` 뒤에 숨긴다.
 - `ui`: 분석 요청을 직접 만들지 않는다. 버튼/토글 이벤트를 application 계층에 전달하고, 반환된 snapshot과 표시 DTO만 렌더링한다.
 
 이 경계를 유지해야 process KataGo, JNI native engine, remote server로 바꿔도 상위 학습 UX가 흔들리지 않는다.
 
-2026-06-12 기준으로 Compose UI는 저수준 `EngineAdapter`를 직접 받지 않고 `EngineSessionClient`를 받는다. `EngineAdapter`는 로컬 process/JNI/remote transport의 최하위 계약이고, `EngineSessionClient`는 앱 대국 흐름에 필요한 고수준 계약이다.
+2026-06-12 기준으로 Compose UI는 저수준 `EngineCoreApi`/`EngineAdapter`를 직접 받지 않고 `EngineSessionClient`를 받는다. `EngineCoreApi`는 엔진 원시 기능의 최하위 계약이고, `EngineAdapter`는 기존 구현체를 위한 호환 이름이다. `EngineSessionClient`는 앱 대국 흐름에 필요한 고수준 미들웨어 계약이다.
 
 서버 엔진을 고려한 중요한 차이는 다음과 같다.
 

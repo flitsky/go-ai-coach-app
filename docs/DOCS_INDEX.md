@@ -38,3 +38,11 @@
 | `engine-match-logs/` | 맥북 KataGo 레벨 매트릭스 raw/summary 로그 |
 | `engine-benchmark-logs/` | 실기기/에뮬레이터 엔진 성능 및 자동대국 진단 로그 |
 | `error-cases/` | 계가/사석/패스 관련 재현 케이스 |
+
+## 세부 설계 문서
+
+최상위 문서는 의사결정 요약만 유지하고, 실행 단계가 긴 설계/리팩토링 절차는 하위 폴더에서 관리한다.
+
+| 위치 | 용도 |
+| --- | --- |
+| `refactoring/DOMAIN_SEPARATION_REFACTORING_PLAN.md` | Engine Core API, Middleware Domain, Game UX 계층 분리 원칙과 단계별 리팩토링 절차 |
