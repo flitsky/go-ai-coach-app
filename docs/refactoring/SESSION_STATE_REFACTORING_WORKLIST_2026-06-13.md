@@ -36,3 +36,4 @@
 
 - 2026-06-13: 작업 리스트 작성.
 - 2026-06-13: `GameSessionAnalysisState` 단일 source of truth 승격 완료. `GoCoachApp.kt`의 `candidateMoves`, `candidateText`, `reviewAnalysis`, `reviewCandidateMoves`, `lastAnalysisKey` 개별 Compose state를 제거하고 `analysisState` 하나로 통합했다. Top Moves 요청/표시, benchmark candidate text, debug report, screen state 입력이 모두 `analysisState`를 참조하도록 정리했다. `:app-android:testDebugUnitTest` 통과.
+- 2026-06-13: `GameSessionScoreState` 단일 source of truth 승격 완료. `GoCoachApp.kt`의 `scoreText`, `scoreEstimate`, `scoreSnapshots`, `endgameLog` 개별 Compose state를 제거하고 `scoreState` 하나로 통합했다. score graph, score estimate request, human move local snapshot, undo, debug report, screen state 입력이 모두 `scoreState`를 참조하도록 정리했다. `:app-android:testDebugUnitTest` 통과.

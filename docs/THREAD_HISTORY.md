@@ -910,3 +910,5 @@
 - `docs/refactoring/SESSION_STATE_REFACTORING_WORKLIST_2026-06-13.md`를 추가해 `GameSessionAnalysisState`, `GameSessionScoreState`, `GameSessionRuntimeState`를 실제 단일 source of truth로 승격하는 작업 순서와 리스크를 정리했다.
 - `GameSessionAnalysisState`를 단일 source of truth로 승격했다. `GoCoachApp.kt`의 `candidateMoves`, `candidateText`, `reviewAnalysis`, `reviewCandidateMoves`, `lastAnalysisKey` 개별 Compose state를 제거하고 `analysisState` 하나로 통합했다.
 - Top Moves 요청/표시, benchmark candidate text, debug report, screen state 입력이 모두 `analysisState`를 참조하도록 정리했고, JDK 17/Android SDK 환경에서 `:app-android:testDebugUnitTest`가 통과했다.
+- `GameSessionScoreState`를 단일 source of truth로 승격했다. `GoCoachApp.kt`의 `scoreText`, `scoreEstimate`, `scoreSnapshots`, `endgameLog` 개별 Compose state를 제거하고 `scoreState` 하나로 통합했다.
+- score graph, score estimate request, human move local snapshot, undo, debug report, screen state 입력이 모두 `scoreState`를 참조하도록 정리했고, JDK 17/Android SDK 환경에서 `:app-android:testDebugUnitTest`가 통과했다.

@@ -137,7 +137,6 @@ import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.SearchTimeSettings
-import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.ScoreSnapshot
 import com.worksoc.goaicoach.shared.ScoreTimeline
 import com.worksoc.goaicoach.shared.describe
@@ -204,10 +203,14 @@ private fun GoCoachScreen(
             ),
         )
     }
-    var scoreText by remember { mutableStateOf("No score estimate yet.") }
-    var scoreEstimate by remember { mutableStateOf<ScoreEstimate?>(null) }
-    var scoreSnapshots by remember {
-        mutableStateOf(listOf(localScoreSnapshot(initialPlan.gameState)))
+    var scoreState by remember {
+        mutableStateOf(
+            GameSessionScoreState.reset(
+                scoreText = "No score estimate yet.",
+                scoreSnapshots = listOf(localScoreSnapshot(initialPlan.gameState)),
+                endgameLog = "No endgame result recorded.",
+            ),
+        )
     }
     var moveReviewText by remember { mutableStateOf("No move review yet.") }
     var moveReviews by remember { mutableStateOf(emptyList<MoveReviewMarker>()) }
@@ -227,7 +230,6 @@ private fun GoCoachScreen(
     var isDisplayMenuExpanded by remember { mutableStateOf(false) }
     var isScoreGraphExpanded by remember { mutableStateOf(false) }
     var isGameEnded by remember { mutableStateOf(false) }
-    var endgameLog by remember { mutableStateOf("No endgame result recorded.") }
     var hasCompletedEngineStartup by remember { mutableStateOf(false) }
     var hasCheckedSavedSession by remember { mutableStateOf(false) }
     var hasCheckedEngineBenchmark by remember {
@@ -257,7 +259,7 @@ private fun GoCoachScreen(
     fun applyEngineStartupDisplayPlan(startup: EngineStartupDisplayPlan) {
         isEngineReady = startup.isEngineReady
         if (startup.scoreSnapshots.isNotEmpty()) {
-            scoreSnapshots = startup.scoreSnapshots
+            scoreState = scoreState.replaceSnapshots(startup.scoreSnapshots)
         }
         engineMessage = startup.engineMessage
         startup.candidateText?.let { text -> analysisState = analysisState.copy(candidateText = text) }
@@ -503,19 +505,10 @@ private fun GoCoachScreen(
         engineMessage = update.engineMessage
     }
 
-    fun currentScoreSessionState(): GameSessionScoreState =
-        GameSessionScoreState(
-            scoreText = scoreText,
-            scoreEstimate = scoreEstimate,
-            scoreSnapshots = scoreSnapshots,
-            endgameLog = endgameLog,
-        )
+    fun currentScoreSessionState(): GameSessionScoreState = scoreState
 
     fun applyScoreSessionState(score: GameSessionScoreState) {
-        scoreText = score.scoreText
-        scoreEstimate = score.scoreEstimate
-        scoreSnapshots = score.scoreSnapshots
-        endgameLog = score.endgameLog
+        scoreState = score
     }
 
     fun resetScoreSessionState(
@@ -596,7 +589,7 @@ private fun GoCoachScreen(
         }
 
     fun applyHumanEngineSyncFailurePlan(failure: HumanEngineSyncFailurePlan) {
-        scoreSnapshots = failure.scoreSnapshots
+        scoreState = scoreState.replaceSnapshots(failure.scoreSnapshots)
         analysisState = analysisState.copy(candidateText = failure.candidateText)
         engineMessage = failure.engineMessage
     }
@@ -880,7 +873,7 @@ private fun GoCoachScreen(
             isGameEnded = isGameEnded,
             matchMode = matchMode,
             isEngineReady = isEngineReady,
-            previousSnapshots = scoreSnapshots,
+            previousSnapshots = scoreState.scoreSnapshots,
         )
         val nextState = ruleChange.gameState
         applyScoringRuleChangePlan(ruleChange)
@@ -896,7 +889,7 @@ private fun GoCoachScreen(
                     engineClient.runScoringRuleSyncDisplayPlan(
                         state = nextState,
                         profile = engineProfile,
-                        previousSnapshots = scoreSnapshots,
+                        previousSnapshots = scoreState.scoreSnapshots,
                         engineMessage = "Scoring rule changed to ${nextRuleset.scoringLabel}; engine rules synchronized.",
                     )
                 }
@@ -976,14 +969,14 @@ private fun GoCoachScreen(
                 withContext(Dispatchers.IO) {
                     engineClient.runScoreEstimateDisplayPlan(
                         request = plan,
-                        previousSnapshots = scoreSnapshots,
+                        previousSnapshots = scoreState.scoreSnapshots,
                     )
                 }
             }.onSuccess { score ->
                 applyScoreEstimateDisplayPlan(score)
             }.onFailure { error ->
                 engineMessage = error.message ?: "Score estimate failed."
-                scoreEstimate = null
+                scoreState = scoreState.copy(scoreEstimate = null)
             }
             isEngineBusy = false
         }
@@ -992,7 +985,7 @@ private fun GoCoachScreen(
     fun requestScoreEstimate() {
         val plan = buildScoreEstimateRequestPlan(
             state = gameState,
-            previousSnapshots = scoreSnapshots,
+            previousSnapshots = scoreState.scoreSnapshots,
             isEngineReady = isEngineReady,
             isEngineBusy = isEngineBusy,
             matchMode = matchMode,
@@ -1041,7 +1034,7 @@ private fun GoCoachScreen(
                     ),
                 )
                 resetLocalGame(result.message, targetRuleset)
-                scoreSnapshots = listOf(result.scoreSnapshot ?: localScoreSnapshot(gameState))
+                scoreState = scoreState.replaceSnapshots(listOf(result.scoreSnapshot ?: localScoreSnapshot(gameState)))
                 nextAnalysisState = gameState
             }.onFailure { error ->
                 runtimeEventLog.append(
@@ -1177,7 +1170,7 @@ private fun GoCoachScreen(
                                 currentProfile = engineProfile,
                                 searchTimeSettings = searchTimeSettings,
                                 isolateSearchCache = turnContext.isolateSearchCache,
-                                previousSnapshots = scoreSnapshots,
+                                previousSnapshots = scoreState.scoreSnapshots,
                                 previousReviewCandidates = turnContext.previousReviewCandidates,
                             )
                         }
@@ -1215,7 +1208,7 @@ private fun GoCoachScreen(
                                     source = "auto-ai-engine-dead-stone-cleanup",
                                     originalState = display.gameState,
                                     resolution = endgame,
-                                    previousSnapshots = scoreSnapshots,
+                                    previousSnapshots = scoreState.scoreSnapshots,
                                     engineMessagePrefix = display.turnEngineMessage,
                                 )
                                 applyFinalScoreDisplayPlan(final)
@@ -1304,18 +1297,21 @@ private fun GoCoachScreen(
         moveReviews = localMove.moveReviews
         clearReviewAnalysis(afterMove)
         lastMoveText = localMove.lastMoveText
-        scoreText = "Score estimate not current."
-        scoreEstimate = null
+        scoreState = scoreState.copy(
+            scoreText = "Score estimate not current.",
+            scoreEstimate = null,
+        )
 
         if (!isEngineReady) {
-            scoreSnapshots = ScoreTimeline.record(scoreSnapshots, localMove.localScoreSnapshot)
+            val updatedSnapshots = ScoreTimeline.record(scoreState.scoreSnapshots, localMove.localScoreSnapshot)
+            scoreState = scoreState.replaceSnapshots(updatedSnapshots)
             val localFinalScore = localMove.localFinalScore
             if (localFinalScore != null) {
                 val final = buildLocalFinalScoreDisplayPlan(
                     source = "local-human-consecutive-pass",
                     state = afterMove,
                     finalScore = localFinalScore,
-                    previousSnapshots = scoreSnapshots,
+                    previousSnapshots = updatedSnapshots,
                     detail = "triggerMove=${move.describe(beforeMove.boardSize)}",
                     engineMessage = "Local game ended after two passes. ${localFinalScore.status.message}",
                     candidateText = "Game ended after two passes.",
@@ -1347,14 +1343,14 @@ private fun GoCoachScreen(
                         moveDescription = move.describe(beforeMove.boardSize),
                         result = result,
                         localMove = localMove,
-                        previousSnapshots = scoreSnapshots,
+                        previousSnapshots = scoreState.scoreSnapshots,
                     ),
                 )
             }.onFailure { error ->
                 applyHumanEngineSyncFailurePlan(
                     buildHumanEngineSyncFailurePlan(
                         localMove = localMove,
-                        previousSnapshots = scoreSnapshots,
+                        previousSnapshots = scoreState.scoreSnapshots,
                         errorMessage = error.message,
                     ),
                 )
@@ -1372,7 +1368,7 @@ private fun GoCoachScreen(
     fun undoLocalTwoPlayerTurn(plan: UndoRequestPlan.LocalTwoPlayerUndo) {
         val undo = buildLocalTwoPlayerUndoPlan(
             currentState = gameState,
-            scoreSnapshots = scoreSnapshots,
+            scoreSnapshots = scoreState.scoreSnapshots,
         )
         val nextState = undo.gameState
         applyUndoLocalStatePlan(undo)
@@ -1390,7 +1386,7 @@ private fun GoCoachScreen(
                 val score = buildEngineEstimateDisplayPlan(
                     state = nextState,
                     estimate = estimate,
-                    previousSnapshots = scoreSnapshots,
+                    previousSnapshots = scoreState.scoreSnapshots,
                     engineMessage = "Local undo completed and engine analysis synced.",
                 )
                 applyScoreEstimateDisplayPlan(score)
@@ -1421,7 +1417,7 @@ private fun GoCoachScreen(
                     currentState = gameState,
                     undoCount = undoCount,
                     previousMoveReviews = moveReviews,
-                    scoreSnapshots = scoreSnapshots,
+                    scoreSnapshots = scoreState.scoreSnapshots,
                 )
                 val nextState = undo.gameState
                 applyUndoLocalStatePlan(undo)
@@ -1483,11 +1479,11 @@ private fun GoCoachScreen(
             gameState = gameState,
             engineMessage = engineMessage,
             candidateText = analysisState.candidateText,
-            scoreText = scoreText,
-            scoreSnapshots = scoreSnapshots,
+            scoreText = scoreState.scoreText,
+            scoreSnapshots = scoreState.scoreSnapshots,
             moveReviewText = moveReviewText,
             lastMoveText = lastMoveText,
-            endgameLog = endgameLog,
+            endgameLog = scoreState.endgameLog,
             engineBenchmarkText = engineBenchmarkText,
             runtimeEventLogText = runtimeEventLog.readText(),
             searchTimeSettings = searchTimeSettings,
@@ -1590,15 +1586,15 @@ private fun GoCoachScreen(
             moveReviews = moveReviews,
             moveReviewText = moveReviewText,
             lastMoveText = lastMoveText,
-            scoreText = scoreText,
-            scoreEstimate = scoreEstimate,
-            scoreSnapshots = scoreSnapshots,
+            scoreText = scoreState.scoreText,
+            scoreEstimate = scoreState.scoreEstimate,
+            scoreSnapshots = scoreState.scoreSnapshots,
             isScoreGraphExpanded = isScoreGraphExpanded,
             pendingSavedSession = pendingSavedSession,
             shouldShowResumePrompt = shouldShowResumePrompt,
             hasCompletedEngineStartup = hasCompletedEngineStartup,
             isGameEnded = isGameEnded,
-            endgameLog = endgameLog,
+            endgameLog = scoreState.endgameLog,
         ),
     )
 
