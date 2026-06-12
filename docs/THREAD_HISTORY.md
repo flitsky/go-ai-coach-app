@@ -834,3 +834,9 @@
 - `ai_turn_begin` 런타임 로그에 `searchCache=clear/reuse`를 추가해 실제 턴별 정책을 Copy Log에서 확인할 수 있게 했다.
 - `EngineAdapter`와 `KataGoProcessEngineAdapter.clearSearchCache()` 주석에 사람 대국 재사용의 장점, AI vs AI shared process에서 B16/B32/B64 강도 경계가 오염될 수 있는 우려를 남겼다.
 - `ENGINE_API_CALL_POLICY.md`, `ENGINE_SEARCH_TREE_REUSE_REVIEW.md`, `AI_AUTO_PLAY_DIAGNOSTIC_LOG.md`를 갱신해 현재 정책을 “사람 대국은 reuse, AI vs AI는 clear”로 정리했다.
+- 사용자가 맥북 반복 대국 테스트에도 비짓/cache 참조를 줄인 조건을 적용하고, 기존 50판씩 매트릭스를 다시 돌려보고 싶다고 요청했다.
+- `scripts/run-katago-level-match.py`와 `run-katago-level-matrix.py`를 앱 기본 time cap 기준으로 정렬했다. 기본값은 B16 `1000ms`, B32 `2000ms`, B64 `3000ms`다.
+- 로컬 Homebrew KataGo v1.16.4 Metal의 JSON analysis `clear_cache` special action은 `query_version`은 정상인 반면 `clear_cache` 요청에서 SIGSEGV(-11)로 종료되는 문제가 재현됐다. 따라서 맥북 매트릭스 기본 cache isolation은 `nnCacheSizePowerOfTwo=0`으로 NN cache를 사실상 1엔트리로 줄이는 `tiny-nn-cache` 모드로 잡았다.
+- `ENGINE_MATCH_OUT=docs/engine-match-logs/matrix-tinycache-20260611 ENGINE_MATCH_GAMES=50 make engine-level-benchmark`로 3개 조합 50판씩 총 150판을 실행했다.
+- 결과: B16 vs B32는 B32 `30승/50판`으로 60%, B16 vs B64는 B64 `42승/50판`으로 84%, B32 vs B64는 B64 `41승/50판`으로 82%였다. 기대치와 비교하면 B16/B32 격차는 기대보다 약하고, B16/B64는 거의 유사하며, B32/B64는 기대보다 B64가 강하게 나왔다.
+- 상세 결과와 해석을 `docs/ENGINE_LEVEL_STRENGTH_REVIEW_2026-06-10.md`와 `docs/engine-match-logs/matrix-tinycache-20260611/summary.md`에 기록했다.

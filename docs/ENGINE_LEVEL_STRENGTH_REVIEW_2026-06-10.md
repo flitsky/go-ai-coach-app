@@ -13,6 +13,68 @@
 3. KataGo 공식 설명에 최적 품질을 위한 최소 시간 제안이 있는가?
 4. 우리 설정에서 놓친 부분은 무엇인가?
 
+## 2026-06-11 추가 검증: cache isolation 적용 매트릭스
+
+앱 쪽 정책 변경 후, 맥북 반복 대국 테스트도 “이전 분석의 cache 영향을 줄인 상태”로 다시 돌렸다.
+
+주의할 점:
+
+- 앱 실제 자동대국 경로는 GTP `kata-search_analyze`와 GTP `clear_cache`를 사용한다.
+- 기존 맥북 매트릭스 스크립트는 KataGo JSON `analysis` 엔진을 직접 사용한다.
+- 로컬 Homebrew KataGo v1.16.4 Metal analysis engine은 JSON special action `clear_cache`를 받으면 SIGSEGV(-11)로 종료되는 문제가 재현됐다.
+- 따라서 이번 매트릭스는 직접 `clear_cache` 대신 `nnCacheSizePowerOfTwo=0` override를 사용해 NN cache를 사실상 1엔트리로 줄이는 `tiny-nn-cache` 격리 모드로 실행했다.
+- search tree 재사용 이슈는 원래 GTP process에서 가장 크게 관측됐고, JSON analysis 엔진은 요청 단위 분석에 가깝다. 이번 결과는 앱 자동대국과 완전히 동일한 검증은 아니지만, 레벨별 visits/time 차이가 통계적으로 어떻게 드러나는지 보는 근거로는 유효하다.
+
+스크립트 변경:
+
+- `scripts/run-katago-level-match.py`의 기본 time cap을 앱 기본값과 맞췄다.
+  - B16: `16 visits / 1000ms`
+  - B32: `32 visits / 2000ms`
+  - B64: `64 visits / 3000ms`
+- 기본 cache isolation은 `tiny-nn-cache`다.
+- `--cache-isolation none | tiny-nn-cache | clear-cache` 옵션을 추가했다. 단, 현재 로컬 v1.16.4 Metal에서는 `clear-cache`가 크래시하므로 기본값으로 쓰지 않는다.
+
+실행:
+
+```bash
+ENGINE_MATCH_OUT=docs/engine-match-logs/matrix-tinycache-20260611 \
+ENGINE_MATCH_GAMES=50 \
+make engine-level-benchmark
+```
+
+결과:
+
+- summary: `docs/engine-match-logs/matrix-tinycache-20260611/summary.md`
+- raw logs:
+  - `docs/engine-match-logs/matrix-tinycache-20260611/B16-vs-B32.jsonl`
+  - `docs/engine-match-logs/matrix-tinycache-20260611/B16-vs-B64.jsonl`
+  - `docs/engine-match-logs/matrix-tinycache-20260611/B32-vs-B64.jsonl`
+
+| Matchup | 기대 | 실제 | 해석 |
+| --- | ---: | ---: | --- |
+| B16 vs B32 | `25% : 75%` | `40% : 60%` | B32가 우세하지만 기대보다 약하다. B16/B32는 둘 다 절대 visits가 낮아 격차가 작다. |
+| B16 vs B64 | `12% : 88%` | `16% : 84%` | 기대와 거의 비슷하다. B64는 B16보다 명확히 강하다. |
+| B32 vs B64 | `25% : 75%` | `18% : 82%` | 기대보다 B64가 더 강하게 나왔다. B32/B64 구분은 충분히 드러난다. |
+
+평균 root visits:
+
+| Matchup | Level | Avg root visits | Avg elapsed |
+| --- | --- | ---: | ---: |
+| B16 vs B32 | B16 | `16.995` | `172.421ms` |
+| B16 vs B32 | B32 | `34.961` | `285.602ms` |
+| B16 vs B64 | B16 | `16.994` | `169.114ms` |
+| B16 vs B64 | B64 | `66.944` | `521.464ms` |
+| B32 vs B64 | B32 | `34.966` | `272.563ms` |
+| B32 vs B64 | B64 | `66.969` | `502.051ms` |
+
+판단:
+
+- 맥북에서는 B16/B32/B64 모두 요청 visits를 안정적으로 채운다.
+- `B16 < B32 < B64` 방향성은 재현됐다.
+- 다만 B16과 B32의 격차는 제품 기대치인 `25:75`보다 약하다. 이는 설정 오류라기보다 `16 -> 32`가 여전히 초저방문수 구간이라는 점, 9x9의 큰 swing, 저방문수에서의 후보 order 흔들림 때문으로 보는 것이 합리적이다.
+- B64는 B16/B32 양쪽에 대해 충분히 강한 차이를 보인다.
+- 앱과 100% 같은 검증이 필요하면 다음 단계는 JSON analysis 스크립트가 아니라 GTP 기반 자동대국 harness를 만들어 GTP `clear_cache`와 `kata-search_analyze`를 그대로 사용해야 한다.
+
 ## 현재 앱 구현
 
 현재 AI 응수는 `MatchPolicy.selectAiMoveFromAnalysis()`에서 다음 흐름으로 동작한다.
@@ -26,9 +88,9 @@
 
 | 레벨 | 요청 | 선택 |
 | --- | --- | --- |
-| 빠른 초급 3단계 | `16 visits / 250ms` | `BestOnly` |
-| 초급 1~7단계 | `32 visits / 500ms` | 1~6단계는 percentile window, 7단계는 `BestOnly` |
-| 중급 | `64 visits / 500ms` | 단계별 percentile window 또는 `BestOnly` |
+| 빠른 초급 3단계 | `16 visits / 1000ms` 기본 | `BestOnly` |
+| 초급 1~7단계 | `32 visits / 2000ms` 기본 | 1~6단계는 percentile window, 7단계는 `BestOnly` |
+| 중급 | `64 visits / 3000ms` 기본 | 단계별 percentile window 또는 `BestOnly` |
 
 따라서 `빠른 초급 3단계`와 `초급 7단계`의 차이는 현재 다음 하나다.
 

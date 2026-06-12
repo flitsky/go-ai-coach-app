@@ -88,6 +88,8 @@ def write_markdown(summary: dict[str, Any], path: Path) -> None:
         "",
         f"- gamesPerMatchup: `{summary['gamesPerMatchup']}`",
         f"- deterministic: `{summary['deterministic']}`",
+        f"- cacheIsolation: `{summary['cacheIsolation']}`",
+        f"- cacheClearedBeforeQuery: `{summary['cacheClearedBeforeQuery']}`",
         f"- searchThreads: `{summary['searchThreads']}`",
         f"- finalEval: `{summary['finalVisits']} visits / {summary['finalTimeMs']}ms`",
         "",
@@ -127,11 +129,27 @@ def main() -> int:
     parser.add_argument("--max-moves", type=int, default=120)
     parser.add_argument("--seed", type=int, default=20260610)
     parser.add_argument("--deterministic", action="store_true")
+    parser.add_argument(
+        "--reuse-cache",
+        action="store_true",
+        help="Deprecated alias for --cache-isolation none.",
+    )
+    parser.add_argument(
+        "--cache-isolation",
+        choices=("tiny-nn-cache", "clear-cache", "none"),
+        default="tiny-nn-cache",
+        help=(
+            "Cache isolation for local benchmarks. tiny-nn-cache is the default "
+            "because the local KataGo v1.16.4 Metal analysis clear_cache action crashes."
+        ),
+    )
     parser.add_argument("--search-threads", type=int, default=4)
     parser.add_argument("--analysis-threads", type=int, default=1)
     parser.add_argument("--final-visits", type=int, default=400)
     parser.add_argument("--final-time-ms", type=int, default=2_000)
     args = parser.parse_args()
+    if args.reuse_cache:
+        args.cache_isolation = "none"
 
     runner = load_runner_module()
     args.out_dir.mkdir(parents=True, exist_ok=True)
@@ -161,11 +179,15 @@ def main() -> int:
             str(args.final_visits),
             "--final-time-ms",
             str(args.final_time_ms),
+            "--cache-isolation",
+            args.cache_isolation,
             "--out",
             str(out),
         ]
         if args.deterministic:
             command.append("--deterministic")
+        if args.reuse_cache:
+            command.append("--reuse-cache")
         print(f"running {slug}: {left} vs {right}")
         subprocess.run(command, cwd=ROOT, check=True)
         left_label = runner.level_spec(left).label
@@ -176,6 +198,8 @@ def main() -> int:
         "gamesPerMatchup": args.games_per_matchup,
         "totalGames": args.games_per_matchup * len(DEFAULT_MATCHUPS),
         "deterministic": args.deterministic,
+        "cacheIsolation": args.cache_isolation,
+        "cacheClearedBeforeQuery": args.cache_isolation == "clear-cache",
         "searchThreads": args.search_threads,
         "analysisThreads": args.analysis_threads,
         "finalVisits": args.final_visits,

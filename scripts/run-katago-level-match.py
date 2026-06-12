@@ -49,10 +49,10 @@ def level_spec(raw: str) -> LevelSpec:
 
     if group in {"fast", "fast_beginner", "fb"}:
         if level == 1:
-            return LevelSpec("빠른 초급 1단계", 16, 0.25, 8, "percentile", (50, 100))
+            return LevelSpec("빠른 초급 1단계", 16, 1.0, 8, "percentile", (50, 100))
         if level == 2:
-            return LevelSpec("빠른 초급 2단계", 16, 0.25, 8, "percentile", (0, 60), True)
-        return LevelSpec("빠른 초급 3단계", 16, 0.25, 8, "best")
+            return LevelSpec("빠른 초급 2단계", 16, 1.0, 8, "percentile", (0, 60), True)
+        return LevelSpec("빠른 초급 3단계", 16, 1.0, 8, "best")
 
     if group in {"beginner", "learning_beginner", "lb"}:
         windows = {
@@ -64,8 +64,8 @@ def level_spec(raw: str) -> LevelSpec:
             6: (0, 30),
         }
         if level >= 7:
-            return LevelSpec("초급 7단계", 32, 0.5, 16, "best")
-        return LevelSpec(f"초급 {level}단계", 32, 0.5, 16, "percentile", windows[level])
+            return LevelSpec("초급 7단계", 32, 2.0, 16, "best")
+        return LevelSpec(f"초급 {level}단계", 32, 2.0, 16, "percentile", windows[level])
 
     if group in {"intermediate", "im"}:
         windows = {
@@ -75,8 +75,8 @@ def level_spec(raw: str) -> LevelSpec:
             4: (0, 40),
         }
         if level >= 5:
-            return LevelSpec("중급 5단계", 64, 0.5, 20, "best")
-        return LevelSpec(f"중급 {level}단계", 64, 0.5, 20, "percentile", windows[level])
+            return LevelSpec("중급 5단계", 64, 3.0, 20, "best")
+        return LevelSpec(f"중급 {level}단계", 64, 3.0, 20, "percentile", windows[level])
 
     if group in {"advanced", "ad"}:
         windows = {
@@ -137,6 +137,14 @@ def start_engine(args: argparse.Namespace) -> subprocess.Popen[str]:
         overrides += [
             "nnRandomize=false",
         ]
+    if args.cache_isolation == "tiny-nn-cache":
+        # The analysis-engine clear_cache action crashes on the local
+        # Homebrew KataGo v1.16.4 Metal binary, so benchmark isolation uses a
+        # near-empty NN cache by default. This avoids cross-query cache reuse
+        # without restarting the model for every move.
+        overrides += [
+            "nnCacheSizePowerOfTwo=0",
+        ]
     command = [
         args.katago,
         "analysis",
@@ -157,14 +165,38 @@ def start_engine(args: argparse.Namespace) -> subprocess.Popen[str]:
     )
 
 
+def clear_engine_cache(
+    process: subprocess.Popen[str],
+    query_id: str,
+) -> None:
+    assert process.stdin is not None
+    assert process.stdout is not None
+    query = {"id": query_id, "action": "clear_cache"}
+    process.stdin.write(json.dumps(query, separators=(",", ":")) + "\n")
+    process.stdin.flush()
+    while True:
+        line = process.stdout.readline()
+        if not line:
+            raise RuntimeError("KataGo analysis process exited before clearing cache")
+        response = json.loads(line)
+        if response.get("id") != query_id:
+            continue
+        if "error" in response:
+            raise RuntimeError(f"KataGo clear_cache failed: {response['error']}")
+        return
+
+
 def query_engine(
     process: subprocess.Popen[str],
     query_id: str,
     moves: list[list[str]],
     spec: LevelSpec,
+    clear_cache_before_query: bool = False,
 ) -> tuple[dict[str, Any], float]:
     assert process.stdin is not None
     assert process.stdout is not None
+    if clear_cache_before_query:
+        clear_engine_cache(process, f"{query_id}-clear")
     query = {
         "id": query_id,
         "rules": "japanese",
@@ -238,6 +270,7 @@ def play_game(
     rng: random.Random,
     max_moves: int,
     final_eval: LevelSpec,
+    cache_isolation: str,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     moves: list[list[str]] = []
     turn_logs: list[dict[str, Any]] = []
@@ -247,7 +280,13 @@ def play_game(
     for turn in range(max_moves):
         player = "B" if turn % 2 == 0 else "W"
         spec = black if player == "B" else white
-        response, elapsed_ms = query_engine(process, f"g{game_index}-t{turn}", moves, spec)
+        response, elapsed_ms = query_engine(
+            process,
+            f"g{game_index}-t{turn}",
+            moves,
+            spec,
+            clear_cache_before_query=cache_isolation == "clear-cache",
+        )
         last_response = response
         move, selected = choose_move(response, spec, rng)
         moves.append([player, move])
@@ -269,6 +308,8 @@ def play_game(
                 "rootVisits": (response.get("rootInfo") or {}).get("visits"),
                 "rootScoreLeadBlack": black_score_lead(response),
                 "moveInfoCount": len(response.get("moveInfos", [])),
+                "cacheIsolation": cache_isolation,
+                "cacheClearedBeforeQuery": cache_isolation == "clear-cache",
             },
         )
         if consecutive_passes >= 2:
@@ -279,6 +320,7 @@ def play_game(
         f"g{game_index}-final",
         moves,
         final_eval,
+        clear_cache_before_query=cache_isolation == "clear-cache",
     )
     final_lead = black_score_lead(final_response or last_response or {})
     return (
@@ -292,6 +334,8 @@ def play_game(
             "finalEvalVisits": final_eval.visits,
             "finalEvalTimeMs": int(final_eval.time_seconds * 1000),
             "finalEvalElapsedMs": round(final_elapsed_ms, 1),
+            "cacheIsolation": cache_isolation,
+            "cacheClearedBeforeQuery": cache_isolation == "clear-cache",
             "estimatedWinner": expected_winner(final_lead),
         },
         turn_logs,
@@ -310,6 +354,20 @@ def main() -> int:
     parser.add_argument("--swap-colors", action="store_true")
     parser.add_argument("--deterministic", action="store_true")
     parser.add_argument("--no-warmup", action="store_true")
+    parser.add_argument(
+        "--reuse-cache",
+        action="store_true",
+        help="Deprecated alias for --cache-isolation none.",
+    )
+    parser.add_argument(
+        "--cache-isolation",
+        choices=("tiny-nn-cache", "clear-cache", "none"),
+        default="tiny-nn-cache",
+        help=(
+            "Cache isolation for local benchmarks. tiny-nn-cache is the default "
+            "because the local KataGo v1.16.4 Metal analysis clear_cache action crashes."
+        ),
+    )
     parser.add_argument("--search-threads", type=int, default=4)
     parser.add_argument("--analysis-threads", type=int, default=1)
     parser.add_argument("--final-visits", type=int, default=400)
@@ -319,6 +377,8 @@ def main() -> int:
     parser.add_argument("--config", default=os.environ.get("KATAGO_ANALYSIS_CONFIG", DEFAULT_CONFIG))
     parser.add_argument("--out", type=Path, default=Path("docs/engine-match-logs/latest.jsonl"))
     args = parser.parse_args()
+    if args.reuse_cache:
+        args.cache_isolation = "none"
     args.black = with_time_override(args.black, args.black_time_ms)
     args.white = with_time_override(args.white, args.white_time_ms)
 
@@ -343,12 +403,31 @@ def main() -> int:
                 LevelSpec("warmup", 1, 2.0, 1, "best"),
             )
         with args.out.open("w", encoding="utf-8") as handle:
-            handle.write(json.dumps({"type": "run", "seed": args.seed, "deterministic": args.deterministic}) + "\n")
+            handle.write(
+                json.dumps(
+                    {
+                        "type": "run",
+                        "seed": args.seed,
+                        "deterministic": args.deterministic,
+                        "cacheIsolation": args.cache_isolation,
+                        "cacheClearedBeforeQuery": args.cache_isolation == "clear-cache",
+                    },
+                ) + "\n",
+            )
             for game in range(1, args.games + 1):
                 black, white = args.black, args.white
                 if args.swap_colors and game % 2 == 0:
                     black, white = args.white, args.black
-                summary, turns = play_game(process, game, black, white, rng, args.max_moves, final_eval)
+                summary, turns = play_game(
+                    process,
+                    game,
+                    black,
+                    white,
+                    rng,
+                    args.max_moves,
+                    final_eval,
+                    cache_isolation=args.cache_isolation,
+                )
                 summaries.append(summary)
                 handle.write(json.dumps({"type": "game", **summary}, ensure_ascii=False) + "\n")
                 for turn in turns:
