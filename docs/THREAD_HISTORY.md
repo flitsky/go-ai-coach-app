@@ -924,3 +924,6 @@
 - `GameSessionCoreState` 초안을 추가했다. `gameState`, `isGameEnded`, `analysisState`, `scoreState`, `runtimeState`, `moveReviewState`, `engineMessage`를 하나의 application 상태 모델로 묶고, reset/restore/undo/scoring/final score/score estimate/endgame failure/자동 AI 턴/human move local result 적용 함수를 순수 상태 전이로 만들었다.
 - `GameSessionCoreStateTest`를 추가해 reset, 자동 AI 턴, 사람 착수, undo 상태 전이를 검증했다. 아직 UI wiring은 바꾸지 않았고, 다음 반복에서 `GoCoachApp.kt`의 `apply*Plan` helper를 core reducer 호출로 이관할 예정이다.
 - JDK 17/Android SDK 환경에서 `:app-android:testDebugUnitTest`가 통과했다.
+- `GoCoachApp.kt`의 주요 `apply*Plan` helper를 `GameSessionCoreState` reducer 브리지로 이관했다. score estimate, final score, endgame failure, 자동 AI 턴, 새 대국, 저장 대국 복원, undo, scoring rule change, human move local result가 transient core state를 통해 계산된 뒤 기존 Compose state에 반영된다.
+- core state를 Compose에 중복 저장하지 않아 이행 과정의 이중 source of truth 위험을 피했고, 기존 화면 동작은 유지하는 방향으로 정리했다.
+- JDK 17/Android SDK 환경에서 `:app-android:testDebugUnitTest`가 통과했다.

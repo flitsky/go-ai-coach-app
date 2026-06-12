@@ -41,6 +41,7 @@
 - 2026-06-13: 통합 검증 완료. `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test`를 실행했고 통과했다. 현재 `GoCoachApp.kt`는 1,626줄이며, analysis/score/runtime 핵심 표시 상태는 단일 source of truth로 정리되었다.
 - 2026-06-13: `GameSessionMoveReviewState` 단일 source of truth 승격 완료. `GoCoachApp.kt`의 `moveReviewText`, `moveReviews`, `lastMoveText` 개별 Compose state를 제거하고 `moveReviewState` 하나로 통합했다. human move, undo, reset, restore, 자동 AI 턴 표시, debug report, screen state 입력이 모두 `moveReviewState`를 참조하도록 정리했다. `:app-android:testDebugUnitTest` 통과.
 - 2026-06-13: `GameSessionCoreState` 초안 도입 완료. `gameState`, `isGameEnded`, `analysisState`, `scoreState`, `runtimeState`, `moveReviewState`, `engineMessage`를 application 계층의 순수 상태 모델로 묶고 reset, restore, undo, scoring rule change, final score, score estimate, endgame failure, 자동 AI 턴, human move local result 적용 함수를 추가했다. 아직 UI wiring은 변경하지 않았고, 다음 반복에서 `GoCoachApp.kt`의 `apply*Plan` helper를 core reducer 호출로 이관할 예정이다. `:app-android:testDebugUnitTest` 통과.
+- 2026-06-13: `GoCoachApp.kt`의 주요 `apply*Plan` helper를 `GameSessionCoreState` reducer 브리지로 이관했다. score estimate, final score, endgame failure, 자동 AI 턴, 새 대국, 저장 대국 복원, undo, scoring rule change, human move local result가 transient core state를 통해 계산된 뒤 기존 Compose state에 반영된다. core state를 Compose에 중복 저장하지 않아 이행 과정의 이중 source of truth 위험을 피했다. `:app-android:testDebugUnitTest` 통과.
 
 ## 다음 리팩토링 추천 항목
 
@@ -49,8 +50,8 @@
    - 완료: Compose state를 완전히 대체하지 않고 reducer 테스트부터 만들었다.
 
 2. `GameSessionReducer` 순수 함수 도입
-   - 일부 완료: core state 내부 함수로 주요 plan 적용 경로를 만들었다.
-   - 다음 반복에서 `GoCoachApp.kt`의 `apply*Plan` 함수들이 core state 전이 결과를 참조하도록 이관한다.
+   - 완료: core state 내부 함수로 주요 plan 적용 경로를 만들고 `GoCoachApp.kt`의 주요 `apply*Plan` 함수들이 core state 전이 결과를 참조하도록 이관했다.
+   - 남은 작업은 `HumanEngineSyncFailurePlan`, `PlayerSetupChangePlan`, `EngineStartupDisplayPlan`처럼 부분 상태만 바꾸는 경로까지 core reducer로 흡수하는 것이다.
 
 3. Thin `GameSessionController` skeleton
    - coroutine 실행까지 한 번에 옮기지 말고, event 입력과 reducer 결과/effect 타입만 먼저 정의한다.

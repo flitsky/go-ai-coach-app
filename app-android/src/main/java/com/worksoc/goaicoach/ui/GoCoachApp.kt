@@ -64,6 +64,7 @@ import com.worksoc.goaicoach.application.evaluateSearchTimeChangeGate
 import com.worksoc.goaicoach.application.FinalScoreDisplayPlan
 import com.worksoc.goaicoach.application.GameSessionResetPlan
 import com.worksoc.goaicoach.application.GameSessionAnalysisState
+import com.worksoc.goaicoach.application.GameSessionCoreState
 import com.worksoc.goaicoach.application.GameSessionMoveReviewState
 import com.worksoc.goaicoach.application.GameSessionRuntimeState
 import com.worksoc.goaicoach.application.GameSessionScoreState
@@ -137,7 +138,6 @@ import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.SearchTimeSettings
-import com.worksoc.goaicoach.shared.ScoreSnapshot
 import com.worksoc.goaicoach.shared.ScoreTimeline
 import com.worksoc.goaicoach.shared.describe
 import kotlinx.coroutines.Dispatchers
@@ -516,43 +516,37 @@ private fun GoCoachScreen(
         engineMessage = update.engineMessage
     }
 
-    fun currentScoreSessionState(): GameSessionScoreState = scoreState
-
-    fun applyScoreSessionState(score: GameSessionScoreState) {
-        scoreState = score
-    }
-
-    fun resetScoreSessionState(
-        scoreText: String,
-        scoreSnapshots: List<ScoreSnapshot>,
-        endgameLog: String,
-    ) {
-        applyScoreSessionState(
-            GameSessionScoreState.reset(
-                scoreText = scoreText,
-                scoreSnapshots = scoreSnapshots,
-                endgameLog = endgameLog,
-            ),
+    fun currentCoreSessionState(): GameSessionCoreState =
+        GameSessionCoreState(
+            gameState = gameState,
+            isGameEnded = isGameEnded,
+            analysisState = analysisState,
+            scoreState = scoreState,
+            runtimeState = runtimeState,
+            moveReviewState = moveReviewState,
+            engineMessage = engineMessage,
         )
+
+    fun applyCoreSessionState(core: GameSessionCoreState) {
+        gameState = core.gameState
+        isGameEnded = core.isGameEnded
+        analysisState = core.analysisState
+        scoreState = core.scoreState
+        runtimeState = core.runtimeState
+        moveReviewState = core.moveReviewState
+        engineMessage = core.engineMessage
     }
 
     fun applyScoreEstimateDisplayPlan(score: ScoreEstimateDisplayPlan) {
-        applyScoreSessionState(currentScoreSessionState().applyScoreEstimateDisplayPlan(score))
-        engineMessage = score.engineMessage
+        applyCoreSessionState(currentCoreSessionState().applyScoreEstimateDisplayPlan(score))
     }
 
     fun applyFinalScoreDisplayPlan(final: FinalScoreDisplayPlan) {
-        isGameEnded = true
-        gameState = final.gameState
-        applyScoreSessionState(currentScoreSessionState().applyFinalScoreDisplayPlan(final))
-        engineMessage = final.engineMessage
-        analysisState = analysisState.copy(candidateText = final.candidateText)
+        applyCoreSessionState(currentCoreSessionState().applyFinalScoreDisplayPlan(final))
     }
 
     fun applyEndgameFailureDisplayPlan(failure: EndgameFailureDisplayPlan) {
-        applyScoreSessionState(currentScoreSessionState().applyEndgameFailureDisplayPlan(failure))
-        engineMessage = failure.engineMessage
-        analysisState = analysisState.copy(candidateText = failure.candidateText)
+        applyCoreSessionState(currentCoreSessionState().applyEndgameFailureDisplayPlan(failure))
     }
 
     fun currentRuntimeSessionState(): GameSessionRuntimeState =
@@ -566,35 +560,8 @@ private fun GoCoachScreen(
         applyRuntimeSessionState(currentRuntimeSessionState().applySelection(selection))
     }
 
-    fun currentMoveReviewSessionState(): GameSessionMoveReviewState =
-        moveReviewState
-
-    fun applyMoveReviewSessionState(review: GameSessionMoveReviewState) {
-        moveReviewState = review
-    }
-
-    fun resetMoveReviewSessionState(
-        moveReviewText: String,
-        lastMoveText: String,
-    ) {
-        applyMoveReviewSessionState(
-            GameSessionMoveReviewState.reset(
-                moveReviewText = moveReviewText,
-                lastMoveText = lastMoveText,
-            ),
-        )
-    }
-
     fun applyAutoAiTurnDisplayPlan(display: AutoAiTurnDisplayPlan): GameState? {
-        applyRuntimeSessionState(currentRuntimeSessionState().applyAutoAiTurnDisplayPlan(display))
-        gameState = display.gameState
-        resetAnalysisSessionState(
-            candidateText = display.candidateText,
-            reviewAnalysis = MoveAnalysisSnapshot.empty(display.gameState),
-        )
-        engineMessage = display.turnEngineMessage
-        applyMoveReviewSessionState(currentMoveReviewSessionState().applyAutoAiTurnDisplayPlan(display))
-        applyScoreEstimateDisplayPlan(display.scoreDisplay)
+        applyCoreSessionState(currentCoreSessionState().applyAutoAiTurnDisplayPlan(display))
         return display.nextAnalysisState
     }
 
@@ -619,22 +586,7 @@ private fun GoCoachScreen(
     }
 
     fun applyGameSessionResetPlan(reset: GameSessionResetPlan) {
-        gameState = reset.gameState
-        isGameEnded = false
-        resetAnalysisSessionState(
-            candidateText = reset.candidateText,
-            reviewAnalysis = reset.reviewAnalysis,
-        )
-        resetScoreSessionState(
-            scoreText = reset.scoreText,
-            scoreSnapshots = reset.scoreSnapshots,
-            endgameLog = reset.endgameLog,
-        )
-        resetMoveReviewSessionState(
-            moveReviewText = reset.moveReviewText,
-            lastMoveText = reset.lastMoveText,
-        )
-        engineMessage = reset.engineMessage
+        applyCoreSessionState(currentCoreSessionState().applyGameSessionResetPlan(reset))
         runtimeEventLog.append(
             runtimeGameResetLog(
                 reset = reset,
@@ -648,53 +600,16 @@ private fun GoCoachScreen(
 
     fun applySavedGameRestorePlan(restore: SavedGameRestorePlan) {
         playerSetup = restore.playerSetup
-        applyRuntimePlayLevelSelection(restore.runtime)
         topMovesEnabled = restore.topMovesEnabled
-        gameState = restore.gameState
-        isGameEnded = false
-        resetAnalysisSessionState(
-            candidateText = restore.candidateText,
-            reviewAnalysis = restore.reviewAnalysis,
-        )
-        resetScoreSessionState(
-            scoreText = restore.scoreText,
-            scoreSnapshots = restore.scoreSnapshots,
-            endgameLog = restore.endgameLog,
-        )
-        resetMoveReviewSessionState(
-            moveReviewText = restore.moveReviewText,
-            lastMoveText = restore.lastMoveText,
-        )
-        engineMessage = restore.engineMessage
+        applyCoreSessionState(currentCoreSessionState().applySavedGameRestorePlan(restore))
     }
 
     fun applyUndoLocalStatePlan(undo: UndoLocalStatePlan) {
-        gameState = undo.gameState
-        isGameEnded = false
-        resetAnalysisSessionState(
-            candidateText = undo.candidateText,
-            reviewAnalysis = undo.reviewAnalysis,
-        )
-        applyMoveReviewSessionState(currentMoveReviewSessionState().applyUndoLocalStatePlan(undo))
-        resetScoreSessionState(
-            scoreText = undo.scoreText,
-            scoreSnapshots = undo.scoreSnapshots,
-            endgameLog = undo.endgameLog,
-        )
+        applyCoreSessionState(currentCoreSessionState().applyUndoLocalStatePlan(undo))
     }
 
     fun applyScoringRuleChangePlan(ruleChange: ScoringRuleChangePlan) {
-        gameState = ruleChange.gameState
-        resetAnalysisSessionState(
-            candidateText = ruleChange.candidateText,
-            reviewAnalysis = ruleChange.reviewAnalysis,
-        )
-        resetScoreSessionState(
-            scoreText = ruleChange.scoreText,
-            scoreSnapshots = ruleChange.scoreSnapshots,
-            endgameLog = ruleChange.endgameLog,
-        )
-        ruleChange.engineMessage?.let { message -> engineMessage = message }
+        applyCoreSessionState(currentCoreSessionState().applyScoringRuleChangePlan(ruleChange))
     }
 
     fun changePlayerSetup(nextSetup: PlayerSetup) {
@@ -1315,14 +1230,7 @@ private fun GoCoachScreen(
             ?: return
         val afterMove = localMove.afterMove
 
-        gameState = afterMove
-        clearTopMoveSpots()
-        applyMoveReviewSessionState(currentMoveReviewSessionState().applyHumanMoveLocalResult(localMove))
-        clearReviewAnalysis(afterMove)
-        scoreState = scoreState.copy(
-            scoreText = "Score estimate not current.",
-            scoreEstimate = null,
-        )
+        applyCoreSessionState(currentCoreSessionState().applyHumanMoveLocalResult(localMove))
 
         if (!isEngineReady) {
             val updatedSnapshots = ScoreTimeline.record(scoreState.scoreSnapshots, localMove.localScoreSnapshot)
