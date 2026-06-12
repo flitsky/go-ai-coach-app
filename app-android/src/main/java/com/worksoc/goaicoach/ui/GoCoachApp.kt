@@ -217,14 +217,20 @@ private fun GoCoachScreen(
     var lastMoveText by remember { mutableStateOf("None") }
     var isEngineBusy by remember { mutableStateOf(false) }
     var isEngineReady by remember { mutableStateOf(false) }
-    var playLevel by remember { mutableStateOf(initialPlan.runtime.playLevel) }
-    var engineProfile by remember { mutableStateOf(initialPlan.runtime.engineProfile) }
+    var runtimeState by remember {
+        mutableStateOf(
+            GameSessionRuntimeState(
+                playLevel = initialPlan.runtime.playLevel,
+                engineProfile = initialPlan.runtime.engineProfile,
+                analysisPreset = initialPlan.runtime.analysisPreset,
+            ),
+        )
+    }
     var playerSetup by remember { mutableStateOf(initialPlan.playerSetup) }
     val matchMode = playerSetup.matchMode()
     var autoPlayDelaySetting by remember { mutableStateOf(initialPlan.autoPlayDelaySetting) }
     var searchTimeSettings by remember { mutableStateOf(initialPreferences.searchTimeSettings.normalized()) }
     var topMovesEnabled by remember { mutableStateOf(initialPlan.topMovesEnabled) }
-    var analysisPreset by remember { mutableStateOf(initialPlan.runtime.analysisPreset) }
     val analysisCache = remember { AnalysisResultCache(maxEntries = 96) }
     var uxOptions by remember { mutableStateOf(initialPreferences.toKaTrainUxOptions()) }
     var isDisplayMenuExpanded by remember { mutableStateOf(false) }
@@ -276,7 +282,7 @@ private fun GoCoachScreen(
         isEngineBusy = true
         runCatching {
             withContext(Dispatchers.IO) {
-                engineClient.startSession(engineProfile, gameState)
+                engineClient.startSession(runtimeState.engineProfile, gameState)
             }
         }.onSuccess { result ->
             applyEngineStartupDisplayPlan(
@@ -446,7 +452,7 @@ private fun GoCoachScreen(
         gameState.moves.size,
         gameState.ruleset,
         playerSetup,
-        playLevel,
+        runtimeState.playLevel,
         topMovesEnabled,
     ) {
         when (
@@ -456,7 +462,7 @@ private fun GoCoachScreen(
                 isGameEnded = isGameEnded,
                 gameState = gameState,
                 playerSetup = playerSetup,
-                playLevel = playLevel,
+                playLevel = runtimeState.playLevel,
                 topMovesEnabled = topMovesEnabled,
                 nowMillis = System.currentTimeMillis(),
             )
@@ -545,16 +551,10 @@ private fun GoCoachScreen(
     }
 
     fun currentRuntimeSessionState(): GameSessionRuntimeState =
-        GameSessionRuntimeState(
-            playLevel = playLevel,
-            engineProfile = engineProfile,
-            analysisPreset = analysisPreset,
-        )
+        runtimeState
 
     fun applyRuntimeSessionState(runtime: GameSessionRuntimeState) {
-        playLevel = runtime.playLevel
-        engineProfile = runtime.engineProfile
-        analysisPreset = runtime.analysisPreset
+        runtimeState = runtime
     }
 
     fun applyRuntimePlayLevelSelection(selection: RuntimePlayLevelSelection) {
@@ -678,7 +678,7 @@ private fun GoCoachScreen(
             val plan = buildPlayerSetupChangePlan(
                 nextSetup = nextSetup,
                 currentState = gameState,
-                currentProfile = engineProfile,
+                currentProfile = runtimeState.engineProfile,
                 defaultPlayLevel = defaultPlayLevel,
                 isEngineBusy = isEngineBusy,
                 searchTimeSettings = searchTimeSettings,
@@ -713,7 +713,7 @@ private fun GoCoachScreen(
             selectRuntimePlayLevel(
                 setup = playerSetup,
                 nextPlayer = gameState.nextPlayer,
-                currentProfile = engineProfile,
+                currentProfile = runtimeState.engineProfile,
                 defaultPlayLevel = defaultPlayLevel,
                 searchTimeSettings = normalized,
             ),
@@ -742,8 +742,8 @@ private fun GoCoachScreen(
 
         val launchPlan = buildTopMoveAnalysisLaunchPlan(
             targetState = targetState,
-            engineProfile = engineProfile,
-            analysisPreset = analysisPreset,
+            engineProfile = runtimeState.engineProfile,
+            analysisPreset = runtimeState.analysisPreset,
             deep = deep,
             automatic = automatic,
             topMovesEnabled = topMovesEnabled,
@@ -774,8 +774,8 @@ private fun GoCoachScreen(
                 withContext(Dispatchers.IO) {
                     engineClient.runTopMoveAnalysis(
                         targetState = targetState,
-                        engineProfile = engineProfile,
-                        analysisPreset = analysisPreset,
+                        engineProfile = runtimeState.engineProfile,
+                        analysisPreset = runtimeState.analysisPreset,
                         plan = plan,
                         deep = deep,
                         topMovesEnabled = topMovesEnabled,
@@ -821,11 +821,11 @@ private fun GoCoachScreen(
                 lastAnalysisKey = analysisState.lastAnalysisKey,
                 currentPlan = buildTopMoveAnalysisPlan(
                     targetState = gameState,
-                    engineProfile = engineProfile,
-                    analysisPreset = analysisPreset,
+                    engineProfile = runtimeState.engineProfile,
+                    analysisPreset = runtimeState.analysisPreset,
                     deep = false,
                 ),
-                analysisPreset = analysisPreset,
+                analysisPreset = runtimeState.analysisPreset,
                 isEngineBusy = isEngineBusy,
             )
         ) {
@@ -888,7 +888,7 @@ private fun GoCoachScreen(
                 withContext(Dispatchers.IO) {
                     engineClient.runScoringRuleSyncDisplayPlan(
                         state = nextState,
-                        profile = engineProfile,
+                        profile = runtimeState.engineProfile,
                         previousSnapshots = scoreState.scoreSnapshots,
                         engineMessage = "Scoring rule changed to ${nextRuleset.scoringLabel}; engine rules synchronized.",
                     )
@@ -916,7 +916,7 @@ private fun GoCoachScreen(
     fun restoreSavedSession(snapshot: SavedGameSnapshot) {
         val request = buildSavedGameRestoreRequestPlan(
             snapshot = snapshot,
-            currentProfile = engineProfile,
+            currentProfile = runtimeState.engineProfile,
             defaultPlayLevel = defaultPlayLevel,
             isEngineBusy = isEngineBusy,
             isEngineReady = isEngineReady,
@@ -989,7 +989,7 @@ private fun GoCoachScreen(
             isEngineReady = isEngineReady,
             isEngineBusy = isEngineBusy,
             matchMode = matchMode,
-            engineProfile = engineProfile,
+            engineProfile = runtimeState.engineProfile,
         )
         when (plan) {
             is ScoreEstimateRequestPlan.ShowMessage -> {
@@ -1063,7 +1063,7 @@ private fun GoCoachScreen(
                 nextPlayer = gameState.nextPlayer,
                 isEngineReady = isEngineReady,
                 isEngineBusy = isEngineBusy,
-                currentProfile = engineProfile,
+                currentProfile = runtimeState.engineProfile,
                 defaultPlayLevel = defaultPlayLevel,
                 searchTimeSettings = searchTimeSettings,
             )
@@ -1167,7 +1167,7 @@ private fun GoCoachScreen(
                             engineClient.runAutoAiTurnDisplayPlan(
                                 currentState = turnContext.turnState,
                                 playLevel = turnContext.playLevel,
-                                currentProfile = engineProfile,
+                                currentProfile = runtimeState.engineProfile,
                                 searchTimeSettings = searchTimeSettings,
                                 isolateSearchCache = turnContext.isolateSearchCache,
                                 previousSnapshots = scoreState.scoreSnapshots,
@@ -1331,7 +1331,7 @@ private fun GoCoachScreen(
                 withContext(Dispatchers.IO) {
                     engineClient.syncAfterHumanMove(
                         afterMove = afterMove,
-                        profile = engineProfile,
+                        profile = runtimeState.engineProfile,
                         move = move,
                         previousReviewCandidates = previousReviewCandidates,
                     )
@@ -1380,7 +1380,7 @@ private fun GoCoachScreen(
         scope.launch {
             runCatching {
                 withContext(Dispatchers.IO) {
-                    engineClient.syncAndEstimateGraphScore(nextState, engineProfile)
+                    engineClient.syncAndEstimateGraphScore(nextState, runtimeState.engineProfile)
                 }
             }.onSuccess { estimate ->
                 val score = buildEngineEstimateDisplayPlan(
@@ -1466,9 +1466,9 @@ private fun GoCoachScreen(
             playerSetup = playerSetup,
             engineName = engineName,
             engineDiagnostic = engineDiagnostic,
-            engineProfile = engineProfile,
-            playLevel = playLevel,
-            analysisPreset = analysisPreset,
+            engineProfile = runtimeState.engineProfile,
+            playLevel = runtimeState.playLevel,
+            analysisPreset = runtimeState.analysisPreset,
             analysisCacheStats = analysisCache.statsText(),
             isEngineReady = isEngineReady,
             isEngineBusy = isEngineBusy,
@@ -1568,15 +1568,15 @@ private fun GoCoachScreen(
             autoPlayDelaySetting = autoPlayDelaySetting,
             searchTimeSettings = searchTimeSettings,
             searchTimeBenchmarkAverages = searchTimeBenchmarkAverages,
-            playLevel = playLevel,
+            playLevel = runtimeState.playLevel,
             uxOptions = uxOptions,
             engineName = engineName,
             engineDiagnostic = engineDiagnostic,
-            engineProfile = engineProfile,
+            engineProfile = runtimeState.engineProfile,
             isEngineReady = isEngineReady,
             isEngineBusy = isEngineBusy,
             engineMessage = engineMessage,
-            analysisPreset = analysisPreset,
+            analysisPreset = runtimeState.analysisPreset,
             analysisCacheStats = analysisCache.statsText(),
             topMovesEnabled = topMovesEnabled,
             candidateMoves = analysisState.candidateMoves,
