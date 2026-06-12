@@ -51,7 +51,7 @@ class MainActivity : ComponentActivity() {
             } else {
                 val engineClient = remember(bootstrap.adapter) {
                     AdapterEngineSessionClient(
-                        adapter = bootstrap.adapter,
+                        coreApi = bootstrap.adapter,
                         capabilities = EngineSessionCapabilities(
                             supportsDeviceBenchmark = bootstrap.mode == EngineMode.LocalProcess,
                         ),

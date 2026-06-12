@@ -4,7 +4,7 @@ import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.AnalysisResult
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.CandidateMove
-import com.worksoc.goaicoach.shared.EngineAdapter
+import com.worksoc.goaicoach.shared.EngineCoreApi
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.EngineStatus
 import com.worksoc.goaicoach.shared.GameState
@@ -21,7 +21,7 @@ internal data class EngineSessionCapabilities(
 /**
  * Application-facing engine session boundary.
  *
- * UI code depends on this contract instead of the low-level [EngineAdapter].
+ * UI code depends on this contract instead of the low-level [EngineCoreApi].
  * The current implementation delegates to a stateful local process adapter,
  * but a future remote-server engine can implement this interface without
  * exposing process sync, cache isolation, or transport details to Compose.
@@ -92,7 +92,7 @@ internal interface EngineSessionClient {
 }
 
 internal class AdapterEngineSessionClient(
-    private val adapter: EngineAdapter,
+    private val coreApi: EngineCoreApi,
     override val capabilities: EngineSessionCapabilities = EngineSessionCapabilities(
         supportsDeviceBenchmark = false,
     ),
@@ -101,34 +101,34 @@ internal class AdapterEngineSessionClient(
         profile: EngineProfile,
         state: GameState,
     ): EngineStartupResult =
-        adapter.startEngineSession(profile, state)
+        coreApi.startEngineSession(profile, state)
 
     override suspend fun startNewGame(
         profile: EngineProfile,
         boardSize: BoardSize,
         ruleset: Ruleset,
     ): EngineStartupResult =
-        adapter.startNewEngineGame(profile, boardSize, ruleset)
+        coreApi.startNewEngineGame(profile, boardSize, ruleset)
 
     override suspend fun analyzePosition(
         state: GameState,
         limit: AnalysisLimit,
     ): AnalysisResult {
-        adapter.syncToGameState(state)
-        return adapter.analyze(limit)
+        coreApi.syncToGameState(state)
+        return coreApi.analyze(limit)
     }
 
     override suspend fun syncAndEstimateGraphScore(
         state: GameState,
         profile: EngineProfile,
     ): ScoreEstimate =
-        adapter.syncAndEstimateGraphScore(state, profile)
+        coreApi.syncAndEstimateGraphScore(state, profile)
 
     override suspend fun configureSyncAndEstimateGraphScore(
         state: GameState,
         profile: EngineProfile,
     ): ScoreEstimate =
-        adapter.configureSyncAndEstimateGraphScore(state, profile)
+        coreApi.configureSyncAndEstimateGraphScore(state, profile)
 
     override suspend fun runAutoAiTurn(
         currentState: GameState,
@@ -137,7 +137,7 @@ internal class AdapterEngineSessionClient(
         searchTimeSettings: SearchTimeSettings,
         isolateSearchCache: Boolean,
     ): AutoAiTurnResult =
-        adapter.runAutoAiTurn(
+        coreApi.runAutoAiTurn(
             currentState = currentState,
             playLevel = playLevel,
             currentProfile = currentProfile,
@@ -151,7 +151,7 @@ internal class AdapterEngineSessionClient(
         move: Move,
         previousReviewCandidates: List<CandidateMove>,
     ): LocalEngineMoveResult =
-        adapter.syncAfterHumanMove(
+        coreApi.syncAfterHumanMove(
             afterMove = afterMove,
             profile = profile,
             move = move,
@@ -163,7 +163,7 @@ internal class AdapterEngineSessionClient(
         profile: EngineProfile,
         syncFirst: Boolean,
     ): ScoreEstimate =
-        adapter.estimateScoreForState(
+        coreApi.estimateScoreForState(
             state = state,
             profile = profile,
             syncFirst = syncFirst,
@@ -174,21 +174,21 @@ internal class AdapterEngineSessionClient(
         profile: EngineProfile,
         prePassCandidates: List<CandidateMove>,
     ): AiEndgameResolution =
-        adapter.resolveEndgameForState(
+        coreApi.resolveEndgameForState(
             state = state,
             profile = profile,
             prePassCandidates = prePassCandidates,
         )
 
     override suspend fun undoMove(): EngineStatus =
-        adapter.undoMove()
+        coreApi.undoMove()
 
     override suspend fun runStartupBenchmark(
         restoreState: GameState,
         nowMillis: Long,
         onProgress: suspend (EngineBenchmarkProgress) -> Unit,
     ): EngineBenchmarkProfile =
-        adapter.runStartupEngineBenchmark(
+        coreApi.runStartupEngineBenchmark(
             restoreState = restoreState,
             nowMillis = nowMillis,
             onProgress = onProgress,

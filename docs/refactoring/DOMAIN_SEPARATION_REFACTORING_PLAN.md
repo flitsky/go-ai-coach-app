@@ -186,12 +186,21 @@ Game UX는 다음만 담당한다.
 
 이번 리팩토링 배치에서 바로 진행할 안전한 순서:
 
-1. `EngineCoreApi` 도입
-2. application/match의 코어 의존 타입을 `EngineCoreApi`로 점진 전환
+1. `[완료]` `EngineCoreApi` 도입
+2. `[완료]` application/match의 코어 의존 타입을 `EngineCoreApi`로 점진 전환
 3. `SeatId`, `SeatAssignment`, `AiCharacterProfile` 도입
 4. PlayerSetup helper를 seat 도메인 기반으로 정리
 5. MatchReferee 후보를 추가하고 사람 착수 로컬 처리부터 적용
 6. 테스트/문서/히스토리 갱신 후 커밋/푸시
+
+### 진행 로그
+
+2026-06-12:
+
+- `shared`에 `EngineCoreApi`를 추가하고, 기존 `EngineAdapter`는 이를 상속하는 호환 이름으로 전환했다.
+- `EngineSessionClient`, `EngineSession` application helper, `EndgameResolver`, `EngineDeviceBenchmarkApplication`, `MatchPolicy`의 원시 엔진 의존 타입을 `EngineCoreApi`로 낮췄다.
+- 실제 process/stub 구현체와 bootstrap wiring은 기존 `EngineAdapter` 이름을 유지해 대규모 rename 없이 안전하게 이전할 수 있게 했다.
+- 검증: `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest` 통과.
 
 ## 주의할 점
 

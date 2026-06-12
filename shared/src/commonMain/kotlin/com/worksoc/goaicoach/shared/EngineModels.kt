@@ -1,7 +1,7 @@
 package com.worksoc.goaicoach.shared
 
 /**
- * Boundary for all Go engine implementations.
+ * Core boundary for all Go engine implementations.
  *
  * The app owns canonical game state and replays it into this adapter. Engine
  * implementations may keep internal search trees, NN caches, or transport
@@ -11,8 +11,12 @@ package com.worksoc.goaicoach.shared
  * visit-calibrated play levels only when multiple AI seats share one process.
  * Use `clearSearchCache()` before AI-vs-AI move selection when fair per-seat
  * search is more important than reuse.
+ *
+ * Keep this interface as the 1:1 layer for raw engine capabilities. Higher
+ * middleware APIs may compose these calls, but should not hide or drop engine
+ * primitives that a local process, JNI runtime, or remote server can provide.
  */
-interface EngineAdapter {
+interface EngineCoreApi {
     suspend fun initialize(profile: EngineProfile): EngineStatus
     suspend fun configure(profile: EngineProfile): EngineStatus
     suspend fun newGame(boardSize: BoardSize, ruleset: Ruleset): EngineStatus
@@ -40,6 +44,15 @@ interface EngineAdapter {
     suspend fun scoreFinal(): FinalScoreResult
     suspend fun stop(): EngineStatus
 }
+
+/**
+ * Compatibility name for current local engine implementations.
+ *
+ * New middleware code should depend on [EngineCoreApi] when it needs raw engine
+ * primitives. Concrete process/JNI/remote implementations may continue to
+ * implement `EngineAdapter` while the codebase migrates terminology.
+ */
+interface EngineAdapter : EngineCoreApi
 
 data class EngineProfile(
     val mode: EngineMode = EngineMode.Stub,

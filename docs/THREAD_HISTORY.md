@@ -867,3 +867,6 @@
 - 사용자가 앞으로 엔진 원시 API를 하나도 빠뜨리지 않고 코어 API로 계층화하고, 미들웨어가 이를 조합하며, Game UX는 로컬/서버 엔진 차이를 모르도록 더 엄격한 도메인 분리를 요청했다.
 - `docs/refactoring/DOMAIN_SEPARATION_REFACTORING_PLAN.md`를 추가해 `Engine Core API -> Middleware Domain -> Game UX` 목표 구조, 엔진 원시 기능 목록, AI 캐릭터/게임 설정/심판/흑백 진영/원격 유저 대국 도메인 분리 전략, 단계별 리팩토링 절차를 기록했다.
 - `DOCS_INDEX.md`, `REFACTORING_STRATEGY_2026-06-08.md`, `ENGINE_API_CALL_POLICY.md`를 갱신해 새 설계 문서를 현재 리팩토링 기준으로 연결하고, `EngineAdapter`는 호환 이름, `EngineCoreApi`는 원시 엔진 계약, `EngineSessionClient`는 미들웨어 계약으로 정리했다.
+- 리팩토링 Phase 1로 `shared`에 `EngineCoreApi`를 추가하고, 기존 `EngineAdapter`는 `EngineCoreApi`를 상속하는 호환 이름으로 유지했다.
+- `EngineSessionClient`, `EngineSession`, `EndgameResolver`, `EngineDeviceBenchmarkApplication`, `MatchPolicy`의 원시 엔진 의존 타입을 `EngineCoreApi`로 전환했다. `MainActivity` wiring은 `coreApi = bootstrap.adapter`로 맞췄다.
+- 검증 시 기본 셸 Java 25 때문에 Gradle Kotlin DSL이 `IllegalArgumentException: 25`로 실패해, JDK 17과 Android SDK 경로를 명시했다. `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest`는 통과했다.

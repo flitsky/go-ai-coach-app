@@ -8,7 +8,7 @@ import com.worksoc.goaicoach.shared.DeadStoneCleaner
 import com.worksoc.goaicoach.shared.DeadStoneCleanupResult
 import com.worksoc.goaicoach.shared.DeadStoneDetector
 import com.worksoc.goaicoach.shared.DeadStonesResult
-import com.worksoc.goaicoach.shared.EngineAdapter
+import com.worksoc.goaicoach.shared.EngineCoreApi
 import com.worksoc.goaicoach.shared.EndgameScoreSelector
 import com.worksoc.goaicoach.shared.EndgameScoreSource
 import com.worksoc.goaicoach.shared.FinalScoreResult
@@ -87,7 +87,7 @@ internal data class AiEndgameResolution(
 }
 
 internal suspend fun resolveAiEndgame(
-    engineAdapter: EngineAdapter,
+    engineAdapter: EngineCoreApi,
     originalState: GameState,
     estimateLimit: AnalysisLimit,
     prePassCandidates: List<CandidateMove> = emptyList(),

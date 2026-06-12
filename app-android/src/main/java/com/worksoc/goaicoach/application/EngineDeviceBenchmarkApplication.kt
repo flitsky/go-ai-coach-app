@@ -3,7 +3,7 @@ package com.worksoc.goaicoach.application
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.CandidateMove
-import com.worksoc.goaicoach.shared.EngineAdapter
+import com.worksoc.goaicoach.shared.EngineCoreApi
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.Ruleset
@@ -103,7 +103,7 @@ private data class EngineBenchmarkPosition(
     val moveLabels: List<String>,
 )
 
-internal suspend fun EngineAdapter.runStartupEngineBenchmark(
+internal suspend fun EngineCoreApi.runStartupEngineBenchmark(
     restoreState: GameState,
     nowMillis: Long,
     samplesPerVisit: Int = EngineBenchmarkDefaultSamplesPerVisit,
@@ -200,7 +200,7 @@ internal suspend fun EngineAdapter.runStartupEngineBenchmark(
     )
 }
 
-private suspend fun EngineAdapter.prepareBenchmarkPosition(
+private suspend fun EngineCoreApi.prepareBenchmarkPosition(
     ruleset: Ruleset,
     timeCapMs: Long,
 ): EngineBenchmarkPosition {

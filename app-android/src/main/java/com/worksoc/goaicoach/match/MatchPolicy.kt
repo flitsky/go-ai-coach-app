@@ -1,7 +1,7 @@
 package com.worksoc.goaicoach.match
 
 import com.worksoc.goaicoach.shared.CandidateMove
-import com.worksoc.goaicoach.shared.EngineAdapter
+import com.worksoc.goaicoach.shared.EngineCoreApi
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.PlayLevelSetting
@@ -112,7 +112,7 @@ internal data class TurnOutcome(
 )
 
 internal suspend fun applyAiResponseAfterHumanTurn(
-    engineAdapter: EngineAdapter,
+    engineAdapter: EngineCoreApi,
     stateAfterHuman: GameState,
     humanMove: Move,
     playLevel: PlayLevelSetting,
@@ -167,7 +167,7 @@ internal suspend fun applyAiResponseAfterHumanTurn(
 }
 
 internal suspend fun applyAiTurn(
-    engineAdapter: EngineAdapter,
+    engineAdapter: EngineCoreApi,
     currentState: GameState,
     aiPlayer: StoneColor,
     playLevel: PlayLevelSetting,
@@ -261,7 +261,7 @@ private data class SelectedAiMove(
     val summary: String,
 )
 
-private suspend fun EngineAdapter.selectAiMoveFromAnalysis(
+private suspend fun EngineCoreApi.selectAiMoveFromAnalysis(
     currentState: GameState,
     aiPlayer: StoneColor,
     playLevel: PlayLevelSetting,

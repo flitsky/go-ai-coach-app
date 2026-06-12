@@ -6,7 +6,7 @@ import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.BoardScorer
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.CandidateMove
-import com.worksoc.goaicoach.shared.EngineAdapter
+import com.worksoc.goaicoach.shared.EngineCoreApi
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.EngineStatus
 import com.worksoc.goaicoach.shared.GameState
@@ -38,7 +38,7 @@ internal data class LocalEngineMoveResult(
     val endgame: AiEndgameResolution? = null,
 )
 
-internal suspend fun EngineAdapter.startEngineSession(
+internal suspend fun EngineCoreApi.startEngineSession(
     profile: EngineProfile,
     state: GameState,
 ): EngineStartupResult {
@@ -53,7 +53,7 @@ internal suspend fun EngineAdapter.startEngineSession(
     )
 }
 
-internal suspend fun EngineAdapter.startNewEngineGame(
+internal suspend fun EngineCoreApi.startNewEngineGame(
     profile: EngineProfile,
     boardSize: BoardSize,
     ruleset: Ruleset,
@@ -73,7 +73,7 @@ internal suspend fun EngineAdapter.startNewEngineGame(
     )
 }
 
-internal suspend fun EngineAdapter.syncToGameState(state: GameState): EngineStatus {
+internal suspend fun EngineCoreApi.syncToGameState(state: GameState): EngineStatus {
     val status = newGame(state.boardSize, state.ruleset)
     state.moves.forEach { move ->
         playMove(move)
@@ -81,7 +81,7 @@ internal suspend fun EngineAdapter.syncToGameState(state: GameState): EngineStat
     return status
 }
 
-internal suspend fun EngineAdapter.syncAndEstimateGraphScore(
+internal suspend fun EngineCoreApi.syncAndEstimateGraphScore(
     state: GameState,
     profile: EngineProfile,
 ): ScoreEstimate {
@@ -89,7 +89,7 @@ internal suspend fun EngineAdapter.syncAndEstimateGraphScore(
     return estimateScore(scoreGraphAnalysisLimit(profile))
 }
 
-internal suspend fun EngineAdapter.configureSyncAndEstimateGraphScore(
+internal suspend fun EngineCoreApi.configureSyncAndEstimateGraphScore(
     state: GameState,
     profile: EngineProfile,
 ): ScoreEstimate {
@@ -97,7 +97,7 @@ internal suspend fun EngineAdapter.configureSyncAndEstimateGraphScore(
     return syncAndEstimateGraphScore(state, profile)
 }
 
-internal suspend fun EngineAdapter.runAutoAiTurn(
+internal suspend fun EngineCoreApi.runAutoAiTurn(
     currentState: GameState,
     playLevel: PlayLevelSetting,
     currentProfile: EngineProfile,
@@ -127,7 +127,7 @@ internal suspend fun EngineAdapter.runAutoAiTurn(
     )
 }
 
-internal suspend fun EngineAdapter.syncAfterHumanMove(
+internal suspend fun EngineCoreApi.syncAfterHumanMove(
     afterMove: GameState,
     profile: EngineProfile,
     move: Move,
@@ -154,7 +154,7 @@ internal suspend fun EngineAdapter.syncAfterHumanMove(
     }
 }
 
-internal suspend fun EngineAdapter.estimateScoreForState(
+internal suspend fun EngineCoreApi.estimateScoreForState(
     state: GameState,
     profile: EngineProfile,
     syncFirst: Boolean,
@@ -165,7 +165,7 @@ internal suspend fun EngineAdapter.estimateScoreForState(
     return estimateScore(profile.analysisLimit)
 }
 
-internal suspend fun EngineAdapter.resolveEndgameForState(
+internal suspend fun EngineCoreApi.resolveEndgameForState(
     state: GameState,
     profile: EngineProfile,
     prePassCandidates: List<CandidateMove>,
