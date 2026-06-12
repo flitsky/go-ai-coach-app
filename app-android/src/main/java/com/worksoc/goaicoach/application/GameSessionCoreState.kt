@@ -106,6 +106,22 @@ internal data class GameSessionCoreState(
             engineMessage = ruleChange.engineMessage ?: engineMessage,
         )
 
+    fun applyPlayerSetupChangePlan(change: PlayerSetupChangePlan.Apply): GameSessionCoreState =
+        copy(
+            runtimeState = runtimeState.applySelection(change.runtime),
+            analysisState = GameSessionAnalysisState.reset(
+                candidateText = change.topMoveClearMessage,
+                reviewAnalysis = change.reviewAnalysis,
+            ),
+        )
+
+    fun applyHumanEngineSyncFailurePlan(failure: HumanEngineSyncFailurePlan): GameSessionCoreState =
+        copy(
+            scoreState = scoreState.replaceSnapshots(failure.scoreSnapshots),
+            analysisState = analysisState.copy(candidateText = failure.candidateText),
+            engineMessage = failure.engineMessage,
+        )
+
     fun applyAutoAiTurnDisplayPlan(display: AutoAiTurnDisplayPlan): GameSessionCoreState =
         copy(
             gameState = display.gameState,

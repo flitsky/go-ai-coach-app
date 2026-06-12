@@ -577,12 +577,10 @@ private fun GoCoachScreen(
                 sync.nextAnalysisState
             }
             HumanEngineSyncDisplayPlan.NoUpdate -> null
-        }
+    }
 
     fun applyHumanEngineSyncFailurePlan(failure: HumanEngineSyncFailurePlan) {
-        scoreState = scoreState.replaceSnapshots(failure.scoreSnapshots)
-        analysisState = analysisState.copy(candidateText = failure.candidateText)
-        engineMessage = failure.engineMessage
+        applyCoreSessionState(currentCoreSessionState().applyHumanEngineSyncFailurePlan(failure))
     }
 
     fun applyGameSessionResetPlan(reset: GameSessionResetPlan) {
@@ -628,11 +626,7 @@ private fun GoCoachScreen(
             }
             is PlayerSetupChangePlan.Apply -> {
                 playerSetup = plan.playerSetup
-                applyRuntimePlayLevelSelection(plan.runtime)
-                resetAnalysisSessionState(
-                    candidateText = plan.topMoveClearMessage,
-                    reviewAnalysis = plan.reviewAnalysis,
-                )
+                applyCoreSessionState(currentCoreSessionState().applyPlayerSetupChangePlan(plan))
             }
         }
     }

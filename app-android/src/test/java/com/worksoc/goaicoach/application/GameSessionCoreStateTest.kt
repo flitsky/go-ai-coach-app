@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.application
 
+import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.shared.AnalysisPreset
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
@@ -166,6 +167,49 @@ class GameSessionCoreStateTest {
         assertEquals("Move review cleared by undo.", next.moveReviewState.moveReviewText)
         assertEquals(listOf(marker), next.moveReviewState.moveReviews)
         assertEquals("previous message", next.engineMessage)
+    }
+
+    @Test
+    fun applyPlayerSetupChangePlanUpdatesRuntimeAndAnalysisTogether() {
+        val playLevel = PlayLevelSetting(group = PlayLevelGroup.Intermediate, level = 5)
+        val searchTimeSettings = SearchTimeSettings(b64Millis = 3_000L)
+        val profile = playLevel.toEngineProfile(EngineProfile(), searchTimeSettings)
+        val runtime = RuntimePlayLevelSelection(
+            playLevel = playLevel,
+            engineProfile = profile,
+            analysisPreset = playLevel.analysisPreset,
+            searchTimeSettings = searchTimeSettings,
+        )
+        val change = PlayerSetupChangePlan.Apply(
+            playerSetup = PlayerSetup(),
+            runtime = runtime,
+            reviewAnalysis = MoveAnalysisSnapshot.empty(GameState.empty()),
+            topMoveClearMessage = "Player setup changed. Analysis cache will rebuild.",
+        )
+
+        val next = baseCoreState().applyPlayerSetupChangePlan(change)
+
+        assertEquals(playLevel, next.runtimeState.playLevel)
+        assertEquals(profile, next.runtimeState.engineProfile)
+        assertEquals(playLevel.analysisPreset, next.runtimeState.analysisPreset)
+        assertEquals("Player setup changed. Analysis cache will rebuild.", next.analysisState.candidateText)
+        assertFalse(next.analysisState.reviewAnalysis.hasEngineCandidates)
+    }
+
+    @Test
+    fun applyHumanEngineSyncFailurePlanUpdatesScoreAnalysisAndMessage() {
+        val snapshots = listOf(localScoreSnapshot(GameState.empty()))
+        val failure = HumanEngineSyncFailurePlan(
+            scoreSnapshots = snapshots,
+            candidateText = "Captured: Black 0 / White 0",
+            engineMessage = "Human move accepted, but engine sync failed.",
+        )
+
+        val next = baseCoreState().applyHumanEngineSyncFailurePlan(failure)
+
+        assertEquals(snapshots, next.scoreState.scoreSnapshots)
+        assertEquals("Captured: Black 0 / White 0", next.analysisState.candidateText)
+        assertEquals("Human move accepted, but engine sync failed.", next.engineMessage)
     }
 
     private fun baseCoreState(

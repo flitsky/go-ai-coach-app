@@ -927,3 +927,6 @@
 - `GoCoachApp.kt`의 주요 `apply*Plan` helper를 `GameSessionCoreState` reducer 브리지로 이관했다. score estimate, final score, endgame failure, 자동 AI 턴, 새 대국, 저장 대국 복원, undo, scoring rule change, human move local result가 transient core state를 통해 계산된 뒤 기존 Compose state에 반영된다.
 - core state를 Compose에 중복 저장하지 않아 이행 과정의 이중 source of truth 위험을 피했고, 기존 화면 동작은 유지하는 방향으로 정리했다.
 - JDK 17/Android SDK 환경에서 `:app-android:testDebugUnitTest`가 통과했다.
+- `HumanEngineSyncFailurePlan`과 `PlayerSetupChangePlan.Apply` 적용도 `GameSessionCoreState` reducer로 흡수했다.
+- `GameSessionCoreStateTest`에 엔진 sync 실패 표시 상태와 Player Setup 변경 시 runtime/analysis reset 검증을 추가했다.
+- JDK 17/Android SDK 환경에서 `:app-android:testDebugUnitTest`가 통과했다.
