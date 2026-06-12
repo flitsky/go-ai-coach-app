@@ -65,6 +65,7 @@ import com.worksoc.goaicoach.application.evaluateSearchTimeChangeGate
 import com.worksoc.goaicoach.application.FinalScoreDisplayPlan
 import com.worksoc.goaicoach.application.GameSessionResetPlan
 import com.worksoc.goaicoach.application.GameSessionAnalysisState
+import com.worksoc.goaicoach.application.GameSessionScoreState
 import com.worksoc.goaicoach.application.HumanEngineSyncFailurePlan
 import com.worksoc.goaicoach.application.HumanEngineSyncDisplayPlan
 import com.worksoc.goaicoach.application.EngineStartupDisplayPlan
@@ -137,6 +138,7 @@ import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.ScoreEstimate
+import com.worksoc.goaicoach.shared.ScoreSnapshot
 import com.worksoc.goaicoach.shared.ScoreTimeline
 import com.worksoc.goaicoach.shared.describe
 import kotlinx.coroutines.Dispatchers
@@ -501,26 +503,50 @@ private fun GoCoachScreen(
         engineMessage = update.engineMessage
     }
 
-    fun applyScoreEstimateDisplayPlan(score: ScoreEstimateDisplayPlan) {
+    fun currentScoreSessionState(): GameSessionScoreState =
+        GameSessionScoreState(
+            scoreText = scoreText,
+            scoreEstimate = scoreEstimate,
+            scoreSnapshots = scoreSnapshots,
+            endgameLog = endgameLog,
+        )
+
+    fun applyScoreSessionState(score: GameSessionScoreState) {
         scoreText = score.scoreText
         scoreEstimate = score.scoreEstimate
         scoreSnapshots = score.scoreSnapshots
+        endgameLog = score.endgameLog
+    }
+
+    fun resetScoreSessionState(
+        scoreText: String,
+        scoreSnapshots: List<ScoreSnapshot>,
+        endgameLog: String,
+    ) {
+        applyScoreSessionState(
+            GameSessionScoreState.reset(
+                scoreText = scoreText,
+                scoreSnapshots = scoreSnapshots,
+                endgameLog = endgameLog,
+            ),
+        )
+    }
+
+    fun applyScoreEstimateDisplayPlan(score: ScoreEstimateDisplayPlan) {
+        applyScoreSessionState(currentScoreSessionState().applyScoreEstimateDisplayPlan(score))
         engineMessage = score.engineMessage
     }
 
     fun applyFinalScoreDisplayPlan(final: FinalScoreDisplayPlan) {
         isGameEnded = true
         gameState = final.gameState
-        scoreText = final.scoreText
-        scoreEstimate = final.scoreEstimate
-        scoreSnapshots = final.scoreSnapshots
-        endgameLog = final.endgameLog
+        applyScoreSessionState(currentScoreSessionState().applyFinalScoreDisplayPlan(final))
         engineMessage = final.engineMessage
         candidateText = final.candidateText
     }
 
     fun applyEndgameFailureDisplayPlan(failure: EndgameFailureDisplayPlan) {
-        endgameLog = failure.endgameLog
+        applyScoreSessionState(currentScoreSessionState().applyEndgameFailureDisplayPlan(failure))
         engineMessage = failure.engineMessage
         candidateText = failure.candidateText
     }
@@ -573,13 +599,14 @@ private fun GoCoachScreen(
             candidateText = reset.candidateText,
             reviewAnalysis = reset.reviewAnalysis,
         )
-        scoreText = reset.scoreText
-        scoreEstimate = null
-        scoreSnapshots = reset.scoreSnapshots
+        resetScoreSessionState(
+            scoreText = reset.scoreText,
+            scoreSnapshots = reset.scoreSnapshots,
+            endgameLog = reset.endgameLog,
+        )
         moveReviewText = reset.moveReviewText
         moveReviews = emptyList()
         lastMoveText = reset.lastMoveText
-        endgameLog = reset.endgameLog
         engineMessage = reset.engineMessage
         runtimeEventLog.append(
             runtimeGameResetLog(
@@ -602,13 +629,14 @@ private fun GoCoachScreen(
             candidateText = restore.candidateText,
             reviewAnalysis = restore.reviewAnalysis,
         )
-        scoreText = restore.scoreText
-        scoreEstimate = null
-        scoreSnapshots = restore.scoreSnapshots
+        resetScoreSessionState(
+            scoreText = restore.scoreText,
+            scoreSnapshots = restore.scoreSnapshots,
+            endgameLog = restore.endgameLog,
+        )
         moveReviewText = restore.moveReviewText
         moveReviews = emptyList()
         lastMoveText = restore.lastMoveText
-        endgameLog = restore.endgameLog
         engineMessage = restore.engineMessage
     }
 
@@ -622,10 +650,11 @@ private fun GoCoachScreen(
         moveReviews = undo.moveReviews
         moveReviewText = undo.moveReviewText
         lastMoveText = undo.lastMoveText
-        scoreText = undo.scoreText
-        scoreEstimate = null
-        scoreSnapshots = undo.scoreSnapshots
-        endgameLog = undo.endgameLog
+        resetScoreSessionState(
+            scoreText = undo.scoreText,
+            scoreSnapshots = undo.scoreSnapshots,
+            endgameLog = undo.endgameLog,
+        )
     }
 
     fun applyScoringRuleChangePlan(ruleChange: ScoringRuleChangePlan) {
@@ -634,10 +663,11 @@ private fun GoCoachScreen(
             candidateText = ruleChange.candidateText,
             reviewAnalysis = ruleChange.reviewAnalysis,
         )
-        scoreEstimate = null
-        scoreText = ruleChange.scoreText
-        scoreSnapshots = ruleChange.scoreSnapshots
-        endgameLog = ruleChange.endgameLog
+        resetScoreSessionState(
+            scoreText = ruleChange.scoreText,
+            scoreSnapshots = ruleChange.scoreSnapshots,
+            endgameLog = ruleChange.endgameLog,
+        )
         ruleChange.engineMessage?.let { message -> engineMessage = message }
     }
 
