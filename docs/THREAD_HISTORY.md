@@ -921,3 +921,6 @@
 - `GoCoachApp.kt`의 human move, undo, reset, restore, 자동 AI 턴 표시, debug report, screen state 입력이 모두 `moveReviewState`를 참조하도록 정리했다.
 - `GameSessionMoveReviewStateTest`를 추가해 reset, human move 적용, undo 적용, 자동 AI 턴 last move 갱신을 검증했다.
 - JDK 17/Android SDK 환경에서 `:app-android:testDebugUnitTest`가 통과했다.
+- `GameSessionCoreState` 초안을 추가했다. `gameState`, `isGameEnded`, `analysisState`, `scoreState`, `runtimeState`, `moveReviewState`, `engineMessage`를 하나의 application 상태 모델로 묶고, reset/restore/undo/scoring/final score/score estimate/endgame failure/자동 AI 턴/human move local result 적용 함수를 순수 상태 전이로 만들었다.
+- `GameSessionCoreStateTest`를 추가해 reset, 자동 AI 턴, 사람 착수, undo 상태 전이를 검증했다. 아직 UI wiring은 바꾸지 않았고, 다음 반복에서 `GoCoachApp.kt`의 `apply*Plan` helper를 core reducer 호출로 이관할 예정이다.
+- JDK 17/Android SDK 환경에서 `:app-android:testDebugUnitTest`가 통과했다.

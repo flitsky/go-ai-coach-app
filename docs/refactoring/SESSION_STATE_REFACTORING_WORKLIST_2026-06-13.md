@@ -40,16 +40,17 @@
 - 2026-06-13: `GameSessionRuntimeState` 단일 source of truth 승격 완료. `GoCoachApp.kt`의 `playLevel`, `engineProfile`, `analysisPreset` 개별 Compose state를 제거하고 `runtimeState` 하나로 통합했다. 엔진 시작, Top Moves, 점수 추정, 새 대국 시작, 자동 AI 턴, undo sync, debug report, screen state 입력이 모두 `runtimeState`를 참조하도록 정리했다. `:app-android:testDebugUnitTest` 통과.
 - 2026-06-13: 통합 검증 완료. `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test`를 실행했고 통과했다. 현재 `GoCoachApp.kt`는 1,626줄이며, analysis/score/runtime 핵심 표시 상태는 단일 source of truth로 정리되었다.
 - 2026-06-13: `GameSessionMoveReviewState` 단일 source of truth 승격 완료. `GoCoachApp.kt`의 `moveReviewText`, `moveReviews`, `lastMoveText` 개별 Compose state를 제거하고 `moveReviewState` 하나로 통합했다. human move, undo, reset, restore, 자동 AI 턴 표시, debug report, screen state 입력이 모두 `moveReviewState`를 참조하도록 정리했다. `:app-android:testDebugUnitTest` 통과.
+- 2026-06-13: `GameSessionCoreState` 초안 도입 완료. `gameState`, `isGameEnded`, `analysisState`, `scoreState`, `runtimeState`, `moveReviewState`, `engineMessage`를 application 계층의 순수 상태 모델로 묶고 reset, restore, undo, scoring rule change, final score, score estimate, endgame failure, 자동 AI 턴, human move local result 적용 함수를 추가했다. 아직 UI wiring은 변경하지 않았고, 다음 반복에서 `GoCoachApp.kt`의 `apply*Plan` helper를 core reducer 호출로 이관할 예정이다. `:app-android:testDebugUnitTest` 통과.
 
 ## 다음 리팩토링 추천 항목
 
 1. `GameSessionCoreState` 초안 도입
    - `gameState`, `isGameEnded`, `analysisState`, `scoreState`, `runtimeState`, `moveReviewState`, `engineMessage`를 하나의 application state로 묶는다.
-   - 초기에는 Compose state를 완전히 대체하지 말고 reducer 테스트부터 만든다.
+   - 완료: Compose state를 완전히 대체하지 않고 reducer 테스트부터 만들었다.
 
 2. `GameSessionReducer` 순수 함수 도입
-   - `GameSessionResetPlan`, `SavedGameRestorePlan`, `UndoLocalStatePlan`, `ScoringRuleChangePlan`, `AutoAiTurnDisplayPlan`을 `GameSessionCoreState -> GameSessionCoreState`로 적용한다.
-   - 지금 UI에 남아 있는 `apply*Plan` 함수들을 reducer 테스트로 옮기는 준비 단계다.
+   - 일부 완료: core state 내부 함수로 주요 plan 적용 경로를 만들었다.
+   - 다음 반복에서 `GoCoachApp.kt`의 `apply*Plan` 함수들이 core state 전이 결과를 참조하도록 이관한다.
 
 3. Thin `GameSessionController` skeleton
    - coroutine 실행까지 한 번에 옮기지 말고, event 입력과 reducer 결과/effect 타입만 먼저 정의한다.
