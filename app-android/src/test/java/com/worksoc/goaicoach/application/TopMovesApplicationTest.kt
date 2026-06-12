@@ -16,6 +16,7 @@ import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.StoneColor
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -189,6 +190,149 @@ class TopMovesApplicationTest {
         assertEquals(1, shown.candidateMoves.size)
         assertTrue(hidden.engineMessage.startsWith("Move review analysis cache hit"))
         assertTrue(shown.engineMessage.startsWith("Top Moves cache hit"))
+    }
+
+    @Test
+    fun launchPlanRestoresCurrentSnapshotForAutomaticSameKeyDisplayRefresh() {
+        val state = GameState.empty()
+        val candidate = CandidateMove(
+            move = Move.Play(
+                player = StoneColor.Black,
+                coordinate = BoardCoordinate.fromLabel("E5", BoardSize.Nine),
+            ),
+            pointLoss = 0.0,
+        )
+        val snapshot = MoveAnalysisSnapshot.from(state = state, candidates = listOf(candidate))
+        val plan = buildTopMoveAnalysisPlan(
+            targetState = state,
+            engineProfile = EngineProfile(),
+            analysisPreset = AnalysisPreset.Lite,
+            deep = false,
+        )
+        var cacheRequested = false
+
+        val launchPlan = buildTopMoveAnalysisLaunchPlan(
+            targetState = state,
+            engineProfile = EngineProfile(),
+            analysisPreset = AnalysisPreset.Lite,
+            deep = false,
+            automatic = true,
+            topMovesEnabled = true,
+            currentCandidateMoves = emptyList(),
+            reviewAnalysis = snapshot,
+            lastAnalysisKey = plan.analysisKey,
+            cachedResultFor = {
+                cacheRequested = true
+                null
+            },
+        )
+
+        assertTrue(launchPlan is TopMoveAnalysisLaunchPlan.RestoreCurrentSnapshot)
+        assertEquals(1, (launchPlan as TopMoveAnalysisLaunchPlan.RestoreCurrentSnapshot).candidateMoves.size)
+        assertFalse(cacheRequested)
+    }
+
+    @Test
+    fun launchPlanSkipsAutomaticSameKeyWhenDisplayDoesNotNeedRefresh() {
+        val state = GameState.empty()
+        val candidate = CandidateMove(
+            move = Move.Play(
+                player = StoneColor.Black,
+                coordinate = BoardCoordinate.fromLabel("E5", BoardSize.Nine),
+            ),
+            pointLoss = 0.0,
+        )
+        val snapshot = MoveAnalysisSnapshot.from(state = state, candidates = listOf(candidate))
+        val plan = buildTopMoveAnalysisPlan(
+            targetState = state,
+            engineProfile = EngineProfile(),
+            analysisPreset = AnalysisPreset.Lite,
+            deep = false,
+        )
+
+        val launchPlan = buildTopMoveAnalysisLaunchPlan(
+            targetState = state,
+            engineProfile = EngineProfile(),
+            analysisPreset = AnalysisPreset.Lite,
+            deep = false,
+            automatic = true,
+            topMovesEnabled = true,
+            currentCandidateMoves = listOf(candidate),
+            reviewAnalysis = snapshot,
+            lastAnalysisKey = plan.analysisKey,
+            cachedResultFor = { null },
+        )
+
+        assertTrue(launchPlan is TopMoveAnalysisLaunchPlan.Skip)
+    }
+
+    @Test
+    fun launchPlanUsesCachedAnalysisBeforeRunningEngine() {
+        val state = GameState.empty()
+        val candidate = CandidateMove(
+            move = Move.Play(
+                player = StoneColor.Black,
+                coordinate = BoardCoordinate.fromLabel("E5", BoardSize.Nine),
+            ),
+            pointLoss = 0.0,
+        )
+        val snapshot = MoveAnalysisSnapshot.from(state = state, candidates = listOf(candidate))
+        val plan = buildTopMoveAnalysisPlan(
+            targetState = state,
+            engineProfile = EngineProfile(),
+            analysisPreset = AnalysisPreset.Lite,
+            deep = false,
+        )
+
+        val launchPlan = buildTopMoveAnalysisLaunchPlan(
+            targetState = state,
+            engineProfile = EngineProfile(),
+            analysisPreset = AnalysisPreset.Lite,
+            deep = false,
+            automatic = false,
+            topMovesEnabled = true,
+            currentCandidateMoves = emptyList(),
+            reviewAnalysis = MoveAnalysisSnapshot.empty(state),
+            lastAnalysisKey = null,
+            cachedResultFor = { key ->
+                if (key == plan.analysisKey) {
+                    CachedAnalysisResult(snapshot = snapshot, candidateText = "cached text")
+                } else {
+                    null
+                }
+            },
+        )
+
+        assertTrue(launchPlan is TopMoveAnalysisLaunchPlan.UseCached)
+        assertEquals(plan.analysisKey, (launchPlan as TopMoveAnalysisLaunchPlan.UseCached).analysisKey)
+        assertEquals(1, launchPlan.update.candidateMoves.size)
+    }
+
+    @Test
+    fun launchPlanRunsEngineWhenNoCurrentOrCachedAnalysisExists() {
+        val state = GameState.empty()
+        val expected = buildTopMoveAnalysisPlan(
+            targetState = state,
+            engineProfile = EngineProfile(),
+            analysisPreset = AnalysisPreset.Lite,
+            deep = false,
+        )
+
+        val launchPlan = buildTopMoveAnalysisLaunchPlan(
+            targetState = state,
+            engineProfile = EngineProfile(),
+            analysisPreset = AnalysisPreset.Lite,
+            deep = false,
+            automatic = false,
+            topMovesEnabled = false,
+            currentCandidateMoves = emptyList(),
+            reviewAnalysis = MoveAnalysisSnapshot.empty(state),
+            lastAnalysisKey = null,
+            cachedResultFor = { null },
+        )
+
+        assertTrue(launchPlan is TopMoveAnalysisLaunchPlan.RunEngine)
+        assertEquals(expected, (launchPlan as TopMoveAnalysisLaunchPlan.RunEngine).plan)
     }
 
     @Test

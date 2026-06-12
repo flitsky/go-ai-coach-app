@@ -36,6 +36,23 @@ internal sealed class ShowTopMovesPlan {
     ) : ShowTopMovesPlan()
 }
 
+internal sealed class TopMoveAnalysisLaunchPlan {
+    data object Skip : TopMoveAnalysisLaunchPlan()
+
+    data class RestoreCurrentSnapshot(
+        val candidateMoves: List<CandidateMove>,
+    ) : TopMoveAnalysisLaunchPlan()
+
+    data class UseCached(
+        val analysisKey: AnalysisCacheKey,
+        val update: TopMoveAnalysisUpdate,
+    ) : TopMoveAnalysisLaunchPlan()
+
+    data class RunEngine(
+        val plan: TopMoveAnalysisPlan,
+    ) : TopMoveAnalysisLaunchPlan()
+}
+
 internal fun buildTopMoveAnalysisPlan(
     targetState: GameState,
     engineProfile: EngineProfile,
@@ -53,6 +70,49 @@ internal fun buildTopMoveAnalysisPlan(
         analysisLimit = analysisLimit,
         analysisKey = analysisKeyFor(targetState, analysisPreset, analysisLimit, deep),
     )
+}
+
+internal fun buildTopMoveAnalysisLaunchPlan(
+    targetState: GameState,
+    engineProfile: EngineProfile,
+    analysisPreset: AnalysisPreset,
+    deep: Boolean,
+    automatic: Boolean,
+    topMovesEnabled: Boolean,
+    currentCandidateMoves: List<CandidateMove>,
+    reviewAnalysis: MoveAnalysisSnapshot,
+    lastAnalysisKey: AnalysisCacheKey?,
+    cachedResultFor: (AnalysisCacheKey) -> CachedAnalysisResult?,
+): TopMoveAnalysisLaunchPlan {
+    val plan = buildTopMoveAnalysisPlan(
+        targetState = targetState,
+        engineProfile = engineProfile,
+        analysisPreset = analysisPreset,
+        deep = deep,
+    )
+
+    if (automatic && plan.analysisKey == lastAnalysisKey) {
+        return if (topMovesEnabled && currentCandidateMoves.isEmpty() && reviewAnalysis.scoredPlayCount > 0) {
+            TopMoveAnalysisLaunchPlan.RestoreCurrentSnapshot(reviewAnalysis.candidatesForDisplay())
+        } else {
+            TopMoveAnalysisLaunchPlan.Skip
+        }
+    }
+
+    val cached = cachedResultFor(plan.analysisKey)
+    if (cached != null) {
+        return TopMoveAnalysisLaunchPlan.UseCached(
+            analysisKey = plan.analysisKey,
+            update = buildCachedTopMoveAnalysisUpdate(
+                targetState = targetState,
+                cacheKey = plan.analysisKey,
+                cached = cached,
+                topMovesEnabled = topMovesEnabled,
+            ),
+        )
+    }
+
+    return TopMoveAnalysisLaunchPlan.RunEngine(plan)
 }
 
 internal fun buildCachedTopMoveAnalysisUpdate(

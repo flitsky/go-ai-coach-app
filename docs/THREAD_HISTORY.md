@@ -894,3 +894,5 @@
 - `EngineOperationPolicyTest`를 추가했고, JDK 17/Android SDK 환경에서 `:app-android:testDebugUnitTest`가 통과했다.
 - 3단계로 `AutoAiTurnExecutionContext`와 `buildAutoAiTurnExecutionContext()`를 추가했다. 자동 AI 턴 실행 직전 UI에서 직접 계산하던 `turnState`, `aiPlayer`, `playLevel`, `analysisLimit`, search cache 격리 여부, 이전 리뷰 후보 snapshot을 application 계층에서 묶도록 했다.
 - `GameAutomationApplicationTest`에 execution context 검증을 추가했고, JDK 17/Android SDK 환경에서 `:app-android:testDebugUnitTest`가 통과했다.
+- 4단계로 `TopMoveAnalysisLaunchPlan`과 `buildTopMoveAnalysisLaunchPlan()`을 추가했다. Top Moves 자동 중복 요청, 현재 snapshot 복원, 캐시 hit 적용, 신규 엔진 호출 결정을 application 계층에서 수행하도록 정리했다.
+- `TopMovesApplicationTest`에 launch plan 분기 검증을 추가했고, JDK 17/Android SDK 환경에서 `:app-android:testDebugUnitTest`가 통과했다.

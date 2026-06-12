@@ -36,7 +36,6 @@ import com.worksoc.goaicoach.application.buildHumanEngineSyncSuccessPlan
 import com.worksoc.goaicoach.application.buildLocalFinalScoreDisplayPlan
 import com.worksoc.goaicoach.application.buildLocalTwoPlayerUndoPlan
 import com.worksoc.goaicoach.application.buildUndoRequestPlan
-import com.worksoc.goaicoach.application.buildCachedTopMoveAnalysisUpdate
 import com.worksoc.goaicoach.application.buildNewLocalGameSessionPlan
 import com.worksoc.goaicoach.application.buildResolvedEndgameDisplayPlan
 import com.worksoc.goaicoach.application.buildSavedGameRestoreRequestPlan
@@ -46,6 +45,7 @@ import com.worksoc.goaicoach.application.buildScoreEstimateRequestPlan
 import com.worksoc.goaicoach.application.buildScoringRuleChangePlan
 import com.worksoc.goaicoach.application.buildStartConfiguredGamePlan
 import com.worksoc.goaicoach.application.buildTopMoveAnalysisPlan
+import com.worksoc.goaicoach.application.buildTopMoveAnalysisLaunchPlan
 import com.worksoc.goaicoach.application.buildInitialUserPreferencesPlan
 import com.worksoc.goaicoach.application.buildPlayerSetupChangePlan
 import com.worksoc.goaicoach.application.buildUserPreferencesSnapshot
@@ -105,6 +105,7 @@ import com.worksoc.goaicoach.application.SavedGamePersistencePlan
 import com.worksoc.goaicoach.application.SavedSessionPromptPlan
 import com.worksoc.goaicoach.application.StartConfiguredGamePlan
 import com.worksoc.goaicoach.application.TopMoveAnalysisUpdate
+import com.worksoc.goaicoach.application.TopMoveAnalysisLaunchPlan
 import com.worksoc.goaicoach.application.UndoRequestPlan
 import com.worksoc.goaicoach.application.UndoLocalStatePlan
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
@@ -687,27 +688,31 @@ private fun GoCoachScreen(
             return
         }
 
-        val plan = buildTopMoveAnalysisPlan(
+        val launchPlan = buildTopMoveAnalysisLaunchPlan(
             targetState = targetState,
             engineProfile = engineProfile,
             analysisPreset = analysisPreset,
             deep = deep,
+            automatic = automatic,
+            topMovesEnabled = topMovesEnabled,
+            currentCandidateMoves = candidateMoves,
+            reviewAnalysis = reviewAnalysis,
+            lastAnalysisKey = lastAnalysisKey,
+            cachedResultFor = analysisCache::get,
         )
-        if (automatic && plan.analysisKey == lastAnalysisKey) {
-            if (topMovesEnabled && candidateMoves.isEmpty() && reviewAnalysis.scoredPlayCount > 0) {
-                candidateMoves = reviewAnalysis.candidatesForDisplay()
+        val plan = when (launchPlan) {
+            TopMoveAnalysisLaunchPlan.Skip -> return
+            is TopMoveAnalysisLaunchPlan.RestoreCurrentSnapshot -> {
+                candidateMoves = launchPlan.candidateMoves
+                return
             }
-            return
-        }
-        analysisCache.get(plan.analysisKey)?.let { cached ->
-            val update = buildCachedTopMoveAnalysisUpdate(
-                targetState = targetState,
-                cacheKey = plan.analysisKey,
-                cached = cached,
-                topMovesEnabled = topMovesEnabled,
-            )
-            applyTopMoveAnalysisUpdate(update, plan.analysisKey)
-            return
+            is TopMoveAnalysisLaunchPlan.UseCached -> {
+                applyTopMoveAnalysisUpdate(launchPlan.update, launchPlan.analysisKey)
+                return
+            }
+            is TopMoveAnalysisLaunchPlan.RunEngine -> {
+                launchPlan.plan
+            }
         }
 
         lastAnalysisKey = plan.analysisKey
