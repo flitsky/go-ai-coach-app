@@ -21,7 +21,6 @@ import androidx.compose.ui.platform.LocalContext
 import com.worksoc.goaicoach.application.AnalysisCacheKey
 import com.worksoc.goaicoach.application.AnalysisResultCache
 import com.worksoc.goaicoach.application.AutoAiTurnDisplayPlan
-import com.worksoc.goaicoach.application.MoveReviewMarker
 import com.worksoc.goaicoach.application.AutoAiTurnRequestPlan
 import com.worksoc.goaicoach.application.buildDebugReport
 import com.worksoc.goaicoach.application.buildAutoAiTurnRequestPlan
@@ -65,6 +64,7 @@ import com.worksoc.goaicoach.application.evaluateSearchTimeChangeGate
 import com.worksoc.goaicoach.application.FinalScoreDisplayPlan
 import com.worksoc.goaicoach.application.GameSessionResetPlan
 import com.worksoc.goaicoach.application.GameSessionAnalysisState
+import com.worksoc.goaicoach.application.GameSessionMoveReviewState
 import com.worksoc.goaicoach.application.GameSessionRuntimeState
 import com.worksoc.goaicoach.application.GameSessionScoreState
 import com.worksoc.goaicoach.application.HumanEngineSyncFailurePlan
@@ -212,9 +212,14 @@ private fun GoCoachScreen(
             ),
         )
     }
-    var moveReviewText by remember { mutableStateOf("No move review yet.") }
-    var moveReviews by remember { mutableStateOf(emptyList<MoveReviewMarker>()) }
-    var lastMoveText by remember { mutableStateOf("None") }
+    var moveReviewState by remember {
+        mutableStateOf(
+            GameSessionMoveReviewState.reset(
+                moveReviewText = "No move review yet.",
+                lastMoveText = "None",
+            ),
+        )
+    }
     var isEngineBusy by remember { mutableStateOf(false) }
     var isEngineReady by remember { mutableStateOf(false) }
     var runtimeState by remember {
@@ -561,6 +566,25 @@ private fun GoCoachScreen(
         applyRuntimeSessionState(currentRuntimeSessionState().applySelection(selection))
     }
 
+    fun currentMoveReviewSessionState(): GameSessionMoveReviewState =
+        moveReviewState
+
+    fun applyMoveReviewSessionState(review: GameSessionMoveReviewState) {
+        moveReviewState = review
+    }
+
+    fun resetMoveReviewSessionState(
+        moveReviewText: String,
+        lastMoveText: String,
+    ) {
+        applyMoveReviewSessionState(
+            GameSessionMoveReviewState.reset(
+                moveReviewText = moveReviewText,
+                lastMoveText = lastMoveText,
+            ),
+        )
+    }
+
     fun applyAutoAiTurnDisplayPlan(display: AutoAiTurnDisplayPlan): GameState? {
         applyRuntimeSessionState(currentRuntimeSessionState().applyAutoAiTurnDisplayPlan(display))
         gameState = display.gameState
@@ -569,7 +593,7 @@ private fun GoCoachScreen(
             reviewAnalysis = MoveAnalysisSnapshot.empty(display.gameState),
         )
         engineMessage = display.turnEngineMessage
-        lastMoveText = display.lastMoveText
+        applyMoveReviewSessionState(currentMoveReviewSessionState().applyAutoAiTurnDisplayPlan(display))
         applyScoreEstimateDisplayPlan(display.scoreDisplay)
         return display.nextAnalysisState
     }
@@ -606,9 +630,10 @@ private fun GoCoachScreen(
             scoreSnapshots = reset.scoreSnapshots,
             endgameLog = reset.endgameLog,
         )
-        moveReviewText = reset.moveReviewText
-        moveReviews = emptyList()
-        lastMoveText = reset.lastMoveText
+        resetMoveReviewSessionState(
+            moveReviewText = reset.moveReviewText,
+            lastMoveText = reset.lastMoveText,
+        )
         engineMessage = reset.engineMessage
         runtimeEventLog.append(
             runtimeGameResetLog(
@@ -636,9 +661,10 @@ private fun GoCoachScreen(
             scoreSnapshots = restore.scoreSnapshots,
             endgameLog = restore.endgameLog,
         )
-        moveReviewText = restore.moveReviewText
-        moveReviews = emptyList()
-        lastMoveText = restore.lastMoveText
+        resetMoveReviewSessionState(
+            moveReviewText = restore.moveReviewText,
+            lastMoveText = restore.lastMoveText,
+        )
         engineMessage = restore.engineMessage
     }
 
@@ -649,9 +675,7 @@ private fun GoCoachScreen(
             candidateText = undo.candidateText,
             reviewAnalysis = undo.reviewAnalysis,
         )
-        moveReviews = undo.moveReviews
-        moveReviewText = undo.moveReviewText
-        lastMoveText = undo.lastMoveText
+        applyMoveReviewSessionState(currentMoveReviewSessionState().applyUndoLocalStatePlan(undo))
         resetScoreSessionState(
             scoreText = undo.scoreText,
             scoreSnapshots = undo.scoreSnapshots,
@@ -1282,7 +1306,7 @@ private fun GoCoachScreen(
             beforeMove = beforeMove,
             move = move,
             reviewAnalysis = analysisState.reviewAnalysis,
-            previousMoveReviews = moveReviews,
+            previousMoveReviews = moveReviewState.moveReviews,
         )
             .onFailure { error ->
                 engineMessage = error.message ?: "Illegal move."
@@ -1293,10 +1317,8 @@ private fun GoCoachScreen(
 
         gameState = afterMove
         clearTopMoveSpots()
-        moveReviewText = localMove.moveReview.text
-        moveReviews = localMove.moveReviews
+        applyMoveReviewSessionState(currentMoveReviewSessionState().applyHumanMoveLocalResult(localMove))
         clearReviewAnalysis(afterMove)
-        lastMoveText = localMove.lastMoveText
         scoreState = scoreState.copy(
             scoreText = "Score estimate not current.",
             scoreEstimate = null,
@@ -1416,7 +1438,7 @@ private fun GoCoachScreen(
                 val undo = buildEngineUndoPlan(
                     currentState = gameState,
                     undoCount = undoCount,
-                    previousMoveReviews = moveReviews,
+                    previousMoveReviews = moveReviewState.moveReviews,
                     scoreSnapshots = scoreState.scoreSnapshots,
                 )
                 val nextState = undo.gameState
@@ -1481,8 +1503,8 @@ private fun GoCoachScreen(
             candidateText = analysisState.candidateText,
             scoreText = scoreState.scoreText,
             scoreSnapshots = scoreState.scoreSnapshots,
-            moveReviewText = moveReviewText,
-            lastMoveText = lastMoveText,
+            moveReviewText = moveReviewState.moveReviewText,
+            lastMoveText = moveReviewState.lastMoveText,
             endgameLog = scoreState.endgameLog,
             engineBenchmarkText = engineBenchmarkText,
             runtimeEventLogText = runtimeEventLog.readText(),
@@ -1583,9 +1605,9 @@ private fun GoCoachScreen(
             candidateText = analysisState.candidateText,
             reviewAnalysis = analysisState.reviewAnalysis,
             reviewCandidateMoves = analysisState.reviewCandidateMoves,
-            moveReviews = moveReviews,
-            moveReviewText = moveReviewText,
-            lastMoveText = lastMoveText,
+            moveReviews = moveReviewState.moveReviews,
+            moveReviewText = moveReviewState.moveReviewText,
+            lastMoveText = moveReviewState.lastMoveText,
             scoreText = scoreState.scoreText,
             scoreEstimate = scoreState.scoreEstimate,
             scoreSnapshots = scoreState.scoreSnapshots,

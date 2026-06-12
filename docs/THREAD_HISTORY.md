@@ -916,3 +916,8 @@
 - 엔진 시작, Top Moves, 점수 추정, 새 대국 시작, 자동 AI 턴, undo sync, debug report, screen state 입력이 모두 `runtimeState`를 참조하도록 정리했고, JDK 17/Android SDK 환경에서 `:app-android:testDebugUnitTest`가 통과했다.
 - 이번 배치 최종 검증으로 JDK 17/Android SDK 환경에서 `make test`를 실행했고 통과했다. `GoCoachApp.kt`는 1,626줄이며, analysis/score/runtime 핵심 표시 상태는 단일 source of truth로 정리되었다.
 - 다음 추천 항목은 `GameSessionCoreState` 초안 도입, `GameSessionReducer` 순수 함수 도입, `MoveReviewState` 분리, thin `GameSessionController` skeleton, 플랫폼 port 분리다.
+- 사용자가 “리팩토링 반복”을 요청했다.
+- `GameSessionMoveReviewState`를 추가해 `moveReviewText`, `moveReviews`, `lastMoveText`를 하나의 application state holder로 묶었다.
+- `GoCoachApp.kt`의 human move, undo, reset, restore, 자동 AI 턴 표시, debug report, screen state 입력이 모두 `moveReviewState`를 참조하도록 정리했다.
+- `GameSessionMoveReviewStateTest`를 추가해 reset, human move 적용, undo 적용, 자동 AI 턴 last move 갱신을 검증했다.
+- JDK 17/Android SDK 환경에서 `:app-android:testDebugUnitTest`가 통과했다.
