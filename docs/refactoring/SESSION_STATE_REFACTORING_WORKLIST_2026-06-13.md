@@ -43,6 +43,7 @@
 - 2026-06-13: `GameSessionCoreState` 초안 도입 완료. `gameState`, `isGameEnded`, `analysisState`, `scoreState`, `runtimeState`, `moveReviewState`, `engineMessage`를 application 계층의 순수 상태 모델로 묶고 reset, restore, undo, scoring rule change, final score, score estimate, endgame failure, 자동 AI 턴, human move local result 적용 함수를 추가했다. 아직 UI wiring은 변경하지 않았고, 다음 반복에서 `GoCoachApp.kt`의 `apply*Plan` helper를 core reducer 호출로 이관할 예정이다. `:app-android:testDebugUnitTest` 통과.
 - 2026-06-13: `GoCoachApp.kt`의 주요 `apply*Plan` helper를 `GameSessionCoreState` reducer 브리지로 이관했다. score estimate, final score, endgame failure, 자동 AI 턴, 새 대국, 저장 대국 복원, undo, scoring rule change, human move local result가 transient core state를 통해 계산된 뒤 기존 Compose state에 반영된다. core state를 Compose에 중복 저장하지 않아 이행 과정의 이중 source of truth 위험을 피했다. `:app-android:testDebugUnitTest` 통과.
 - 2026-06-13: `HumanEngineSyncFailurePlan`과 `PlayerSetupChangePlan.Apply` 적용도 `GameSessionCoreState` reducer로 흡수했다. 사람 착수 후 엔진 sync 실패 표시 상태와 Player Setup 변경 시 runtime/analysis reset이 core state 테스트로 고정되었다. `:app-android:testDebugUnitTest` 통과.
+- 2026-06-13: runtime log enrichment를 도입했다. `RuntimeLogContext`가 앱 목적, 모드, 플레이어 설정, 보드 요약, 엔진 준비/Busy 상태, runtime profile, Top Moves/cache/coverage, score text, flags, 다음 예상 transition을 모든 runtime event에 공통으로 붙인다. 또한 사람 착수 흐름을 `human_move_accepted`, `human_engine_sync_success`, `human_engine_sync_failure` 이벤트로 기록해 로그만 보고 사람 턴에서 엔진 sync/Top Moves/종국 판정으로 이어지는 흐름을 추적할 수 있게 했다. `make test` 통과.
 
 ## 다음 리팩토링 추천 항목
 
@@ -58,6 +59,7 @@
 3. Thin `GameSessionController` skeleton
    - coroutine 실행까지 한 번에 옮기지 말고, event 입력과 reducer 결과/effect 타입만 먼저 정의한다.
    - UI는 effect를 실행하고 controller는 다음 state와 필요한 engine action을 설명하는 구조가 안전하다.
+   - 로그 인리치먼트 이후에는 controller effect가 runtime event를 직접 생성하도록 옮기는 것이 자연스럽다.
 
 4. 플랫폼 port 분리
    - `GameSessionStore`, `EngineBenchmarkStore`, debug report mirror, clipboard/toast를 port로 감싼다.

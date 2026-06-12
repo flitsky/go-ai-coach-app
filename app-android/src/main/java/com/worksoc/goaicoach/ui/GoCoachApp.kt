@@ -100,6 +100,10 @@ import com.worksoc.goaicoach.application.runtimeEngineGameStartFailureLog
 import com.worksoc.goaicoach.application.runtimeEngineGameStartRequestLog
 import com.worksoc.goaicoach.application.runtimeEngineGameStartSuccessLog
 import com.worksoc.goaicoach.application.runtimeGameResetLog
+import com.worksoc.goaicoach.application.runtimeHumanEngineSyncFailureLog
+import com.worksoc.goaicoach.application.runtimeHumanEngineSyncSuccessLog
+import com.worksoc.goaicoach.application.runtimeHumanMoveAcceptedLog
+import com.worksoc.goaicoach.application.RuntimeLogContext
 import com.worksoc.goaicoach.application.ShowTopMovesPlan
 import com.worksoc.goaicoach.application.ScoreEstimateDisplayPlan
 import com.worksoc.goaicoach.application.ScoreEstimateRequestPlan
@@ -263,8 +267,28 @@ private fun GoCoachScreen(
     var shouldShowResumePrompt by remember { mutableStateOf(false) }
     var isAutoAiTurnPending by remember { mutableStateOf(false) }
 
+    fun currentRuntimeLogContext(): RuntimeLogContext =
+        RuntimeLogContext(
+            engineName = engineName,
+            engineDiagnostic = engineDiagnostic,
+            playerSetup = playerSetup,
+            gameState = gameState,
+            runtimeState = runtimeState,
+            autoPlayDelaySetting = autoPlayDelaySetting,
+            searchTimeSettings = searchTimeSettings,
+            topMovesEnabled = topMovesEnabled,
+            isEngineReady = isEngineReady,
+            isEngineBusy = isEngineBusy,
+            isGameEnded = isGameEnded,
+            isAutoAiTurnPending = isAutoAiTurnPending,
+            shouldShowResumePrompt = shouldShowResumePrompt,
+            analysisCacheStats = analysisCache.statsText(),
+            moveAnalysisCoverage = analysisState.reviewAnalysis.coverageSummary(),
+            scoreText = scoreState.scoreText,
+        )
+
     LaunchedEffect(Unit) {
-        runtimeEventLog.append(runtimeAppStartLog(engineName, engineDiagnostic))
+        runtimeEventLog.append(runtimeAppStartLog(currentRuntimeLogContext()))
     }
 
     fun applyEngineStartupDisplayPlan(startup: EngineStartupDisplayPlan) {
@@ -587,11 +611,8 @@ private fun GoCoachScreen(
         applyCoreSessionState(currentCoreSessionState().applyGameSessionResetPlan(reset))
         runtimeEventLog.append(
             runtimeGameResetLog(
+                context = currentRuntimeLogContext(),
                 reset = reset,
-                playerSetup = playerSetup,
-                engineName = engineName,
-                autoPlayDelaySetting = autoPlayDelaySetting,
-                searchTimeSettings = searchTimeSettings,
             ),
         )
     }
@@ -943,12 +964,9 @@ private fun GoCoachScreen(
         applyRuntimePlayLevelSelection(runtime)
         runtimeEventLog.append(
             runtimeEngineGameStartRequestLog(
+                context = currentRuntimeLogContext(),
                 ruleset = targetRuleset,
-                playerSetup = playerSetup,
-                engineName = engineName,
                 runtime = runtime,
-                autoPlayDelaySetting = autoPlayDelaySetting,
-                searchTimeSettings = searchTimeSettings,
             ),
         )
         scope.launch {
@@ -962,6 +980,7 @@ private fun GoCoachScreen(
             }.onSuccess { result ->
                 runtimeEventLog.append(
                     runtimeEngineGameStartSuccessLog(
+                        context = currentRuntimeLogContext(),
                         elapsedMs = System.currentTimeMillis() - startMillis,
                         message = result.message,
                     ),
@@ -972,6 +991,7 @@ private fun GoCoachScreen(
             }.onFailure { error ->
                 runtimeEventLog.append(
                     runtimeEngineGameStartFailureLog(
+                        context = currentRuntimeLogContext(),
                         elapsedMs = System.currentTimeMillis() - startMillis,
                         error = error,
                     ),
@@ -1018,6 +1038,7 @@ private fun GoCoachScreen(
     fun changeAutoPlayDelay(setting: AutoPlayDelaySetting) {
         runtimeEventLog.append(
             runtimeAutoPlayDelayChangeLog(
+                context = currentRuntimeLogContext(),
                 from = autoPlayDelaySetting,
                 to = setting,
             ),
@@ -1043,6 +1064,7 @@ private fun GoCoachScreen(
                 isAutoAiTurnPending = true
                 runtimeEventLog.append(
                     runtimeAiTurnScheduleLog(
+                        context = currentRuntimeLogContext(),
                         gameState = gameState,
                         delayMillis = request.delayMillis,
                         autoPlayDelaySetting = autoPlayDelaySetting,
@@ -1065,6 +1087,7 @@ private fun GoCoachScreen(
                     ) {
                         runtimeEventLog.append(
                             runtimeAiTurnScheduleCancelledLog(
+                                context = currentRuntimeLogContext(),
                                 gameState = gameState,
                                 isEngineReady = isEngineReady,
                                 isEngineBusy = isEngineBusy,
@@ -1085,6 +1108,7 @@ private fun GoCoachScreen(
                     val turnStartMillis = System.currentTimeMillis()
                     runtimeEventLog.append(
                         runtimeAiTurnBeginLog(
+                            context = currentRuntimeLogContext(),
                             turnState = turnContext.turnState,
                             aiPlayer = turnContext.aiPlayer,
                             playLevel = turnContext.playLevel,
@@ -1110,6 +1134,7 @@ private fun GoCoachScreen(
                     }.onSuccess { display ->
                         runtimeEventLog.append(
                             runtimeAiTurnSuccessLog(
+                                context = currentRuntimeLogContext(),
                                 turnState = turnContext.turnState,
                                 aiPlayer = turnContext.aiPlayer,
                                 display = display,
@@ -1120,7 +1145,10 @@ private fun GoCoachScreen(
                         if (display.shouldResolveEndgame) {
                             isGameEnded = true
                             runtimeEventLog.append(
-                                runtimeAiTurnEndgameDetectedLog(display.gameState),
+                                runtimeAiTurnEndgameDetectedLog(
+                                    context = currentRuntimeLogContext(),
+                                    state = display.gameState,
+                                ),
                             )
                             runCatching {
                                 withContext(Dispatchers.IO) {
@@ -1133,6 +1161,7 @@ private fun GoCoachScreen(
                             }.onSuccess { endgame ->
                                 runtimeEventLog.append(
                                     runtimeAiTurnEndgameSuccessLog(
+                                        context = currentRuntimeLogContext(),
                                         state = display.gameState,
                                         endgame = endgame,
                                     ),
@@ -1148,6 +1177,7 @@ private fun GoCoachScreen(
                             }.onFailure { error ->
                                 runtimeEventLog.append(
                                     runtimeAiTurnEndgameFailureLog(
+                                        context = currentRuntimeLogContext(),
                                         state = display.gameState,
                                         error = error,
                                     ),
@@ -1164,6 +1194,7 @@ private fun GoCoachScreen(
                     }.onFailure { error ->
                         runtimeEventLog.append(
                             runtimeAiTurnFailureLog(
+                                context = currentRuntimeLogContext(),
                                 turnState = turnContext.turnState,
                                 aiPlayer = turnContext.aiPlayer,
                                 turnElapsedMs = System.currentTimeMillis() - turnStartMillis,
@@ -1179,6 +1210,7 @@ private fun GoCoachScreen(
                     isAutoAiTurnPending = false
                     runtimeEventLog.append(
                         runtimeAiTurnCompleteLog(
+                            context = currentRuntimeLogContext(),
                             gameState = gameState,
                             isEngineBusy = isEngineBusy,
                             isAutoAiTurnPending = isAutoAiTurnPending,
@@ -1224,6 +1256,13 @@ private fun GoCoachScreen(
             ?: return
         val afterMove = localMove.afterMove
 
+        runtimeEventLog.append(
+            runtimeHumanMoveAcceptedLog(
+                context = currentRuntimeLogContext(),
+                beforeMove = beforeMove,
+                localMove = localMove,
+            ),
+        )
         applyCoreSessionState(currentCoreSessionState().applyHumanMoveLocalResult(localMove))
 
         if (!isEngineReady) {
@@ -1251,6 +1290,7 @@ private fun GoCoachScreen(
         isEngineBusy = true
         scope.launch {
             var nextAnalysisState: GameState? = null
+            val syncStartMillis = System.currentTimeMillis()
             runCatching {
                 withContext(Dispatchers.IO) {
                     engineClient.syncAfterHumanMove(
@@ -1261,23 +1301,35 @@ private fun GoCoachScreen(
                     )
                 }
             }.onSuccess { result ->
-                nextAnalysisState = applyHumanEngineSyncDisplayPlan(
-                    buildHumanEngineSyncSuccessPlan(
-                        afterMove = afterMove,
-                        moveDescription = move.describe(beforeMove.boardSize),
-                        result = result,
-                        localMove = localMove,
-                        previousSnapshots = scoreState.scoreSnapshots,
+                val sync = buildHumanEngineSyncSuccessPlan(
+                    afterMove = afterMove,
+                    moveDescription = move.describe(beforeMove.boardSize),
+                    result = result,
+                    localMove = localMove,
+                    previousSnapshots = scoreState.scoreSnapshots,
+                )
+                runtimeEventLog.append(
+                    runtimeHumanEngineSyncSuccessLog(
+                        context = currentRuntimeLogContext(),
+                        sync = sync,
+                        elapsedMs = System.currentTimeMillis() - syncStartMillis,
                     ),
                 )
+                nextAnalysisState = applyHumanEngineSyncDisplayPlan(sync)
             }.onFailure { error ->
-                applyHumanEngineSyncFailurePlan(
-                    buildHumanEngineSyncFailurePlan(
-                        localMove = localMove,
-                        previousSnapshots = scoreState.scoreSnapshots,
-                        errorMessage = error.message,
+                val failure = buildHumanEngineSyncFailurePlan(
+                    localMove = localMove,
+                    previousSnapshots = scoreState.scoreSnapshots,
+                    errorMessage = error.message,
+                )
+                runtimeEventLog.append(
+                    runtimeHumanEngineSyncFailureLog(
+                        context = currentRuntimeLogContext(),
+                        failure = failure,
+                        elapsedMs = System.currentTimeMillis() - syncStartMillis,
                     ),
                 )
+                applyHumanEngineSyncFailurePlan(failure)
             }
             isEngineBusy = false
             nextAnalysisState?.let { state ->

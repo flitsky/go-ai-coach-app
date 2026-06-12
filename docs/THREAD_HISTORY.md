@@ -930,3 +930,8 @@
 - `HumanEngineSyncFailurePlan`과 `PlayerSetupChangePlan.Apply` 적용도 `GameSessionCoreState` reducer로 흡수했다.
 - `GameSessionCoreStateTest`에 엔진 sync 실패 표시 상태와 Player Setup 변경 시 runtime/analysis reset 검증을 추가했다.
 - JDK 17/Android SDK 환경에서 `:app-android:testDebugUnitTest`가 통과했다.
+- 사용자가 무선 디버깅 앱 설치와 로그 인리치먼트 도입을 요청했다.
+- `adb devices -l`에서 Wi-Fi ADB `192.168.35.3:45513`의 `SM_S908N`이 `device` 상태로 연결된 것을 확인했고, `ANDROID_SERIAL=192.168.35.3:45513 make install-dev-engine`로 현재 main debug APK 설치, KataGo model/config seed, cold launch를 완료했다. 앱 cold launch는 `TotalTime=762ms`였다.
+- `RuntimeLogContext`를 추가해 모든 runtime event가 앱 이름/목적, 대국 모드, 흑백 설정, 보드 요약, 엔진 ready/busy, runtime profile, Top Moves/cache/coverage, score text, flags, 예상 transition을 공통으로 포함하도록 했다.
+- 사람 착수 흐름을 `human_move_accepted`, `human_engine_sync_success`, `human_engine_sync_failure` 이벤트로 추가했다. 이제 로그만 봐도 사람 착수 후 엔진 sync, Top Moves 재요청, pass/pass 종국 판정 등 다음 상태를 더 명확히 추적할 수 있다.
+- `RuntimeEventApplicationTest`를 새 포맷 기준으로 갱신하고 사람 착수 로그 테스트를 추가했다. JDK 17/Android SDK 환경에서 `make test`가 통과했다.
