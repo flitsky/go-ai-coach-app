@@ -123,6 +123,32 @@ internal fun buildCompletedTopMoveAnalysisUpdate(
     )
 }
 
+internal suspend fun EngineSessionClient.runTopMoveAnalysis(
+    targetState: GameState,
+    engineProfile: EngineProfile,
+    analysisPreset: AnalysisPreset,
+    plan: TopMoveAnalysisPlan,
+    deep: Boolean,
+    topMovesEnabled: Boolean,
+    cacheEnabled: Boolean,
+): TopMoveAnalysisUpdate {
+    val result = analyzePosition(
+        state = targetState,
+        limit = plan.analysisLimit,
+    )
+    return buildCompletedTopMoveAnalysisUpdate(
+        targetState = targetState,
+        result = result,
+        rawCandidateText = result.toCandidateText(targetState.boardSize),
+        engineProfile = engineProfile,
+        analysisPreset = analysisPreset,
+        plan = plan,
+        deep = deep,
+        topMovesEnabled = topMovesEnabled,
+        cacheEnabled = cacheEnabled,
+    )
+}
+
 internal fun planShowTopMoves(
     reviewAnalysis: MoveAnalysisSnapshot,
     lastAnalysisKey: AnalysisCacheKey?,

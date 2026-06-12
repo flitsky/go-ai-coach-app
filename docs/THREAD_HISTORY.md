@@ -853,3 +853,7 @@
 - `:app-android:testDebugUnitTest`를 실행해 통과했다.
 - `docs/REFACTORING_STRATEGY_2026-06-08.md`와 `docs/ENGINE_API_CALL_POLICY.md`에 서버 엔진 대비 계층 경계와 다음 리팩토링 우선순위를 기록했다.
 - 후속으로 `EngineSessionCapabilities`를 추가했다. 기기 benchmark 가능 여부를 `engineName`/`diagnostic` 문자열이 아니라 capability로 판단하게 바꿨고, `EngineBootstrap`은 `EngineMode.Stub` 또는 `EngineMode.LocalProcess`를 명시한다.
+- 사용자가 계획된 리팩토링 항목을 순차 진행하고 단계별 커밋/푸시를 요청했다.
+- 1단계로 Top Moves 엔진 실행 경로를 application 계층으로 분리했다. `EngineSessionClient.runTopMoveAnalysis(...)`를 추가해 `GoCoachApp.kt`는 coroutine 시작과 화면 상태 적용만 담당하고, 명시적 국면 분석 호출과 `TopMoveAnalysisUpdate` 조립은 application 함수가 담당하게 했다.
+- `TopMovesApplicationTest`에 fake `EngineSessionClient` 기반 테스트를 추가해 `runTopMoveAnalysis`가 `GameState`와 `AnalysisLimit`을 그대로 엔진 세션 경계에 전달하는지 검증했다.
+- `:app-android:testDebugUnitTest`를 실행해 통과했다.

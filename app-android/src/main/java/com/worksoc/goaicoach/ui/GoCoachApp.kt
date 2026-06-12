@@ -37,7 +37,6 @@ import com.worksoc.goaicoach.application.buildLocalFinalScoreDisplayPlan
 import com.worksoc.goaicoach.application.buildLocalTwoPlayerUndoPlan
 import com.worksoc.goaicoach.application.buildUndoRequestPlan
 import com.worksoc.goaicoach.application.buildCachedTopMoveAnalysisUpdate
-import com.worksoc.goaicoach.application.buildCompletedTopMoveAnalysisUpdate
 import com.worksoc.goaicoach.application.buildNewLocalGameSessionPlan
 import com.worksoc.goaicoach.application.buildResolvedEndgameDisplayPlan
 import com.worksoc.goaicoach.application.buildSavedGameRestoreRequestPlan
@@ -72,6 +71,7 @@ import com.worksoc.goaicoach.application.shouldRequestAiTurn
 import com.worksoc.goaicoach.application.shouldRequestTopMoveAnalysis
 import com.worksoc.goaicoach.application.planSavedGamePersistence
 import com.worksoc.goaicoach.application.RuntimePlayLevelSelection
+import com.worksoc.goaicoach.application.runTopMoveAnalysis
 import com.worksoc.goaicoach.application.ScoringRuleChangePlan
 import com.worksoc.goaicoach.application.ShowTopMovesPlan
 import com.worksoc.goaicoach.application.ScoreEstimateDisplayPlan
@@ -84,7 +84,6 @@ import com.worksoc.goaicoach.application.StartConfiguredGamePlan
 import com.worksoc.goaicoach.application.TopMoveAnalysisUpdate
 import com.worksoc.goaicoach.application.UndoRequestPlan
 import com.worksoc.goaicoach.application.UndoLocalStatePlan
-import com.worksoc.goaicoach.application.toCandidateText
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
@@ -689,23 +688,17 @@ private fun GoCoachScreen(
             isEngineBusy = true
             runCatching {
                 withContext(Dispatchers.IO) {
-                    engineClient.analyzePosition(
-                        state = targetState,
-                        limit = plan.analysisLimit,
+                    engineClient.runTopMoveAnalysis(
+                        targetState = targetState,
+                        engineProfile = engineProfile,
+                        analysisPreset = analysisPreset,
+                        plan = plan,
+                        deep = deep,
+                        topMovesEnabled = topMovesEnabled,
+                        cacheEnabled = analysisCache.isEnabled,
                     )
                 }
-            }.onSuccess { result ->
-                val update = buildCompletedTopMoveAnalysisUpdate(
-                    targetState = targetState,
-                    result = result,
-                    rawCandidateText = result.toCandidateText(targetState.boardSize),
-                    engineProfile = engineProfile,
-                    analysisPreset = analysisPreset,
-                    plan = plan,
-                    deep = deep,
-                    topMovesEnabled = topMovesEnabled,
-                    cacheEnabled = analysisCache.isEnabled,
-                )
+            }.onSuccess { update ->
                 applyTopMoveAnalysisUpdate(update, plan.analysisKey)
                 update.cachedResult?.let { cached ->
                     analysisCache.put(plan.analysisKey, cached)

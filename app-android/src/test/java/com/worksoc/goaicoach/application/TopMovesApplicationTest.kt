@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.application
 
+import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.AnalysisPreset
 import com.worksoc.goaicoach.shared.AnalysisResult
 import com.worksoc.goaicoach.shared.BoardCoordinate
@@ -10,7 +11,10 @@ import com.worksoc.goaicoach.shared.EngineStatus
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
+import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.StoneColor
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -106,6 +110,44 @@ class TopMovesApplicationTest {
         assertNull(update.cachedResult)
     }
 
+    @Test
+    fun runTopMoveAnalysisDelegatesExplicitStateToEngineClient() = runBlocking {
+        val state = GameState.empty()
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+        val candidate = CandidateMove(
+            move = Move.Play(StoneColor.White, BoardCoordinate.fromLabel("D4", BoardSize.Nine)),
+            pointLoss = 0.0,
+        )
+        val client = FakeTopMoveEngineSessionClient(
+            result = AnalysisResult(
+                status = EngineStatus.ready("analysis ready"),
+                candidates = listOf(candidate),
+                summary = "engine summary",
+            ),
+        )
+        val plan = buildTopMoveAnalysisPlan(
+            targetState = state,
+            engineProfile = EngineProfile(),
+            analysisPreset = AnalysisPreset.Lite,
+            deep = false,
+        )
+
+        val update = client.runTopMoveAnalysis(
+            targetState = state,
+            engineProfile = EngineProfile(),
+            analysisPreset = AnalysisPreset.Lite,
+            plan = plan,
+            deep = false,
+            topMovesEnabled = true,
+            cacheEnabled = false,
+        )
+
+        assertEquals(state, client.analyzedState)
+        assertEquals(plan.analysisLimit, client.analyzedLimit)
+        assertEquals("analysis ready", update.engineMessage)
+        assertEquals(1, update.candidateMoves.size)
+        assertNull(update.cachedResult)
+    }
 
     @Test
     fun cachedAnalysisUpdateKeepsDisplayMovesOnlyWhenTopMovesEnabled() {
@@ -182,4 +224,91 @@ class TopMovesApplicationTest {
         assertTrue(showPlan is ShowTopMovesPlan.ShowCached)
         assertEquals(1, (showPlan as ShowTopMovesPlan.ShowCached).candidateMoves.size)
     }
+}
+
+private class FakeTopMoveEngineSessionClient(
+    private val result: AnalysisResult,
+) : EngineSessionClient {
+    var analyzedState: GameState? = null
+        private set
+    var analyzedLimit: AnalysisLimit? = null
+        private set
+
+    override val capabilities: EngineSessionCapabilities =
+        EngineSessionCapabilities(supportsDeviceBenchmark = false)
+
+    override suspend fun startSession(
+        profile: EngineProfile,
+        state: GameState,
+    ): EngineStartupResult =
+        error("not used")
+
+    override suspend fun startNewGame(
+        profile: EngineProfile,
+        boardSize: BoardSize,
+        ruleset: Ruleset,
+    ): EngineStartupResult =
+        error("not used")
+
+    override suspend fun analyzePosition(
+        state: GameState,
+        limit: AnalysisLimit,
+    ): AnalysisResult {
+        analyzedState = state
+        analyzedLimit = limit
+        return result
+    }
+
+    override suspend fun syncAndEstimateGraphScore(
+        state: GameState,
+        profile: EngineProfile,
+    ): ScoreEstimate =
+        error("not used")
+
+    override suspend fun configureSyncAndEstimateGraphScore(
+        state: GameState,
+        profile: EngineProfile,
+    ): ScoreEstimate =
+        error("not used")
+
+    override suspend fun runAutoAiTurn(
+        currentState: GameState,
+        playLevel: com.worksoc.goaicoach.shared.PlayLevelSetting,
+        currentProfile: EngineProfile,
+        searchTimeSettings: com.worksoc.goaicoach.shared.SearchTimeSettings,
+        isolateSearchCache: Boolean,
+    ): AutoAiTurnResult =
+        error("not used")
+
+    override suspend fun syncAfterHumanMove(
+        afterMove: GameState,
+        profile: EngineProfile,
+        move: Move,
+        previousReviewCandidates: List<CandidateMove>,
+    ): LocalEngineMoveResult =
+        error("not used")
+
+    override suspend fun estimateScoreForState(
+        state: GameState,
+        profile: EngineProfile,
+        syncFirst: Boolean,
+    ): ScoreEstimate =
+        error("not used")
+
+    override suspend fun resolveEndgameForState(
+        state: GameState,
+        profile: EngineProfile,
+        prePassCandidates: List<CandidateMove>,
+    ): AiEndgameResolution =
+        error("not used")
+
+    override suspend fun undoMove(): EngineStatus =
+        error("not used")
+
+    override suspend fun runStartupBenchmark(
+        restoreState: GameState,
+        nowMillis: Long,
+        onProgress: suspend (EngineBenchmarkProgress) -> Unit,
+    ): EngineBenchmarkProfile =
+        error("not used")
 }
