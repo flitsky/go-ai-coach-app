@@ -68,6 +68,7 @@ import com.worksoc.goaicoach.application.GameSessionCoreState
 import com.worksoc.goaicoach.application.GameSessionMoveReviewState
 import com.worksoc.goaicoach.application.GameSessionRuntimeState
 import com.worksoc.goaicoach.application.GameSessionScoreState
+import com.worksoc.goaicoach.application.GameSessionTurnTimeState
 import com.worksoc.goaicoach.application.HumanEngineSyncFailurePlan
 import com.worksoc.goaicoach.application.HumanEngineSyncDisplayPlan
 import com.worksoc.goaicoach.application.EngineStartupDisplayPlan
@@ -224,6 +225,14 @@ private fun GoCoachScreen(
             ),
         )
     }
+    var turnTimeState by remember {
+        mutableStateOf(
+            GameSessionTurnTimeState.reset(
+                state = initialPlan.gameState,
+                nowMillis = System.currentTimeMillis(),
+            ),
+        )
+    }
     var isEngineBusy by remember { mutableStateOf(false) }
     var isEngineReady by remember { mutableStateOf(false) }
     var runtimeState by remember {
@@ -285,6 +294,7 @@ private fun GoCoachScreen(
             analysisCacheStats = analysisCache.statsText(),
             moveAnalysisCoverage = analysisState.reviewAnalysis.coverageSummary(),
             scoreText = scoreState.scoreText,
+            turnTimeText = turnTimeState.runtimeText(),
         )
 
     LaunchedEffect(Unit) {
@@ -609,6 +619,10 @@ private fun GoCoachScreen(
 
     fun applyGameSessionResetPlan(reset: GameSessionResetPlan) {
         applyCoreSessionState(currentCoreSessionState().applyGameSessionResetPlan(reset))
+        turnTimeState = GameSessionTurnTimeState.reset(
+            state = reset.gameState,
+            nowMillis = System.currentTimeMillis(),
+        )
         runtimeEventLog.append(
             runtimeGameResetLog(
                 context = currentRuntimeLogContext(),
@@ -621,10 +635,18 @@ private fun GoCoachScreen(
         playerSetup = restore.playerSetup
         topMovesEnabled = restore.topMovesEnabled
         applyCoreSessionState(currentCoreSessionState().applySavedGameRestorePlan(restore))
+        turnTimeState = GameSessionTurnTimeState.reset(
+            state = restore.gameState,
+            nowMillis = System.currentTimeMillis(),
+        )
     }
 
     fun applyUndoLocalStatePlan(undo: UndoLocalStatePlan) {
         applyCoreSessionState(currentCoreSessionState().applyUndoLocalStatePlan(undo))
+        turnTimeState = turnTimeState.restartCurrentTurn(
+            state = undo.gameState,
+            nowMillis = System.currentTimeMillis(),
+        )
     }
 
     fun applyScoringRuleChangePlan(ruleChange: ScoringRuleChangePlan) {
@@ -1132,6 +1154,11 @@ private fun GoCoachScreen(
                             )
                         }
                     }.onSuccess { display ->
+                        val turnTimeUpdate = turnTimeState.recordMove(
+                            player = turnContext.aiPlayer,
+                            nowMillis = System.currentTimeMillis(),
+                            nextPlayer = display.gameState.nextPlayer,
+                        )
                         runtimeEventLog.append(
                             runtimeAiTurnSuccessLog(
                                 context = currentRuntimeLogContext(),
@@ -1139,8 +1166,10 @@ private fun GoCoachScreen(
                                 aiPlayer = turnContext.aiPlayer,
                                 display = display,
                                 turnElapsedMs = System.currentTimeMillis() - turnStartMillis,
+                                turnTimeUpdate = turnTimeUpdate,
                             ),
                         )
+                        turnTimeState = turnTimeUpdate.after
                         nextAnalysisState = applyAutoAiTurnDisplayPlan(display)
                         if (display.shouldResolveEndgame) {
                             isGameEnded = true
@@ -1255,14 +1284,21 @@ private fun GoCoachScreen(
             .getOrNull()
             ?: return
         val afterMove = localMove.afterMove
+        val turnTimeUpdate = turnTimeState.recordMove(
+            player = move.player,
+            nowMillis = System.currentTimeMillis(),
+            nextPlayer = afterMove.nextPlayer,
+        )
 
         runtimeEventLog.append(
             runtimeHumanMoveAcceptedLog(
                 context = currentRuntimeLogContext(),
                 beforeMove = beforeMove,
                 localMove = localMove,
+                turnTimeUpdate = turnTimeUpdate,
             ),
         )
+        turnTimeState = turnTimeUpdate.after
         applyCoreSessionState(currentCoreSessionState().applyHumanMoveLocalResult(localMove))
 
         if (!isEngineReady) {
@@ -1461,6 +1497,8 @@ private fun GoCoachScreen(
             lastMoveText = moveReviewState.lastMoveText,
             endgameLog = scoreState.endgameLog,
             engineBenchmarkText = engineBenchmarkText,
+            turnTimeText = turnTimeState.summaryText(),
+            turnTimeDebugText = turnTimeState.debugText(System.currentTimeMillis()),
             runtimeEventLogText = runtimeEventLog.readText(),
             searchTimeSettings = searchTimeSettings,
         )
@@ -1566,6 +1604,7 @@ private fun GoCoachScreen(
             scoreEstimate = scoreState.scoreEstimate,
             scoreSnapshots = scoreState.scoreSnapshots,
             isScoreGraphExpanded = isScoreGraphExpanded,
+            turnTimeText = turnTimeState.summaryText(),
             pendingSavedSession = pendingSavedSession,
             shouldShowResumePrompt = shouldShowResumePrompt,
             hasCompletedEngineStartup = hasCompletedEngineStartup,

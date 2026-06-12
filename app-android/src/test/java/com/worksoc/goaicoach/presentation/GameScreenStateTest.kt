@@ -30,6 +30,7 @@ class GameScreenStateTest {
         assertTrue(screenState.uxOptions.showOwnershipOverlay)
         assertFalse(screenState.uxOptions.showMoveNumbers)
         assertEquals(AutoPlayDelaySetting.Default, screenState.autoPlayDelaySetting)
+        assertEquals("Time B 1.2s / W 0.0s", screenState.turnTimeText)
         assertNull(screenState.resumePrompt)
     }
 
@@ -151,6 +152,7 @@ class GameScreenStateTest {
             scoreEstimate = null,
             scoreSnapshots = emptyList(),
             isScoreGraphExpanded = false,
+            turnTimeText = "Time B 1.2s / W 0.0s",
             pendingSavedSession = pendingSavedSession,
             shouldShowResumePrompt = shouldShowResumePrompt,
             hasCompletedEngineStartup = hasCompletedEngineStartup,

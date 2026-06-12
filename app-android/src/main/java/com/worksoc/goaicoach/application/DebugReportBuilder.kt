@@ -43,6 +43,8 @@ internal fun buildDebugReport(
     lastMoveText: String,
     endgameLog: String,
     engineBenchmarkText: String,
+    turnTimeText: String = "Time B 0.0s / W 0.0s",
+    turnTimeDebugText: String = "blackMillis=0, whiteMillis=0, currentTurn=Black, currentElapsedMillis=0",
     runtimeEventLogText: String = "Runtime event log not loaded.",
     searchTimeSettings: SearchTimeSettings = SearchTimeSettings(),
 ): String {
@@ -70,6 +72,8 @@ internal fun buildDebugReport(
         appendLine("topMovesEnabled=$topMovesEnabled")
         appendLine("topMoveCandidateCount=$topMoveCandidateCount")
         appendLine("moveAnalysisCoverage=$moveAnalysisCoverage")
+        appendLine("turnTime=$turnTimeText")
+        appendLine("turnTimeDebug=$turnTimeDebugText")
         appendLine()
         appendLine("[GameState]")
         appendLine("boardSize=${gameState.boardSize.value}")

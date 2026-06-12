@@ -28,6 +28,7 @@ internal fun EngineResponsePanel(
     moveCount: Int,
     capturedByBlack: Int,
     capturedByWhite: Int,
+    turnTimeText: String,
     lastMoveText: String,
     isEngineBusy: Boolean,
     playerSetup: PlayerSetup,
@@ -67,6 +68,13 @@ internal fun EngineResponsePanel(
                 text = "Captured by Black: $capturedByBlack / White: $capturedByWhite",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.secondary,
+            )
+
+            Text(
+                text = turnTimeText,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.secondary,
+                fontFamily = FontFamily.Monospace,
             )
 
             Text(

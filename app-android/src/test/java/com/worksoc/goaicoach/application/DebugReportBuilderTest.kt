@@ -53,11 +53,15 @@ class DebugReportBuilderTest {
             lastMoveText = "White pass",
             endgameLog = "No endgame result recorded.",
             engineBenchmarkText = "benchmark ok",
+            turnTimeText = "Time B 3.2s / W 4.1s",
+            turnTimeDebugText = "blackMillis=3200, whiteMillis=4100, currentTurn=Black, currentElapsedMillis=0",
             runtimeEventLogText = "runtime log ok",
         )
 
         assertTrue(report.contains("[Runtime]"))
         assertTrue(report.contains("mode=HumanVsAi"))
+        assertTrue(report.contains("turnTime=Time B 3.2s / W 4.1s"))
+        assertTrue(report.contains("turnTimeDebug=blackMillis=3200"))
         assertTrue(report.contains("[Board]"))
         assertTrue(report.contains("E5=Black"))
         assertTrue(report.contains("1. Black E5"))

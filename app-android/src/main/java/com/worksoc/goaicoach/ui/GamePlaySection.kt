@@ -64,6 +64,7 @@ internal fun GamePlaySection(
         moveCount = screenState.gameState.moves.size,
         capturedByBlack = screenState.gameState.capturedBy(StoneColor.Black),
         capturedByWhite = screenState.gameState.capturedBy(StoneColor.White),
+        turnTimeText = screenState.turnTimeText,
         lastMoveText = screenState.analysis.lastMoveText,
         isEngineBusy = screenState.engine.isBusy,
         playerSetup = screenState.playerSetup,

@@ -44,6 +44,7 @@
 - 2026-06-13: `GoCoachApp.kt`의 주요 `apply*Plan` helper를 `GameSessionCoreState` reducer 브리지로 이관했다. score estimate, final score, endgame failure, 자동 AI 턴, 새 대국, 저장 대국 복원, undo, scoring rule change, human move local result가 transient core state를 통해 계산된 뒤 기존 Compose state에 반영된다. core state를 Compose에 중복 저장하지 않아 이행 과정의 이중 source of truth 위험을 피했다. `:app-android:testDebugUnitTest` 통과.
 - 2026-06-13: `HumanEngineSyncFailurePlan`과 `PlayerSetupChangePlan.Apply` 적용도 `GameSessionCoreState` reducer로 흡수했다. 사람 착수 후 엔진 sync 실패 표시 상태와 Player Setup 변경 시 runtime/analysis reset이 core state 테스트로 고정되었다. `:app-android:testDebugUnitTest` 통과.
 - 2026-06-13: runtime log enrichment를 도입했다. `RuntimeLogContext`가 앱 목적, 모드, 플레이어 설정, 보드 요약, 엔진 준비/Busy 상태, runtime profile, Top Moves/cache/coverage, score text, flags, 다음 예상 transition을 모든 runtime event에 공통으로 붙인다. 또한 사람 착수 흐름을 `human_move_accepted`, `human_engine_sync_success`, `human_engine_sync_failure` 이벤트로 기록해 로그만 보고 사람 턴에서 엔진 sync/Top Moves/종국 판정으로 이어지는 흐름을 추적할 수 있게 했다. `make test` 통과.
+- 2026-06-13: `GameSessionTurnTimeState`를 추가해 흑/백 누적 착수 시간을 application state holder로 분리했다. 사람 착수와 AI 착수 성공 시점에서 동일한 타이머 경계를 사용하고, reset/restore는 새 타이머로 시작하며 undo는 기존 누적값을 유지한 채 현재 턴 시작점만 다시 잡는다. 화면, debug report, runtime event log가 모두 같은 시간 상태를 참조한다. `make test` 통과.
 
 ## 다음 리팩토링 추천 항목
 
@@ -64,3 +65,7 @@
 4. 플랫폼 port 분리
    - `GameSessionStore`, `EngineBenchmarkStore`, debug report mirror, clipboard/toast를 port로 감싼다.
    - 서버 엔진/원격 대국을 염두에 두면 persistence/diagnostic boundary를 먼저 분리하는 것이 좋다.
+
+5. Turn time persistence/effect 분리
+   - 현재 `GameSessionTurnTimeState`는 앱 프로세스 내 세션 시간이다. 다음 단계에서 저장 대국 snapshot에 포함할지, 앱 재시작 후는 새 측정으로 볼지 정책을 확정한다.
+   - 자동 AI 턴 delay, engine busy, human input disabled 시간을 착수 시간에 포함하는 현재 정책이 UX 기대와 맞는지 로그 기반으로 검증한다.

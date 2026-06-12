@@ -935,3 +935,7 @@
 - `RuntimeLogContext`를 추가해 모든 runtime event가 앱 이름/목적, 대국 모드, 흑백 설정, 보드 요약, 엔진 ready/busy, runtime profile, Top Moves/cache/coverage, score text, flags, 예상 transition을 공통으로 포함하도록 했다.
 - 사람 착수 흐름을 `human_move_accepted`, `human_engine_sync_success`, `human_engine_sync_failure` 이벤트로 추가했다. 이제 로그만 봐도 사람 착수 후 엔진 sync, Top Moves 재요청, pass/pass 종국 판정 등 다음 상태를 더 명확히 추적할 수 있다.
 - `RuntimeEventApplicationTest`를 새 포맷 기준으로 갱신하고 사람 착수 로그 테스트를 추가했다. JDK 17/Android SDK 환경에서 `make test`가 통과했다.
+- 사용자가 양 진영의 대국 소요 시간을 표현하고, 각 진영의 차례 시작부터 착수 순간까지 걸린 시간을 누적해 소수점 1~2자리 수준으로 보여달라고 요청했다.
+- `GameSessionTurnTimeState`를 추가해 흑/백 누적 시간, 현재 턴 주체, 현재 턴 시작 시각을 application 계층에서 관리하게 했다. 사람 착수와 AI 착수 성공 지점에서만 시간을 기록해 엔진 sync/종국 후처리 시간이 중복 누적되지 않도록 했다.
+- 화면의 엔진 응답 패널에 `Time B ... / W ...` 단일 라인을 추가했고, 디버그 리포트와 runtime event log에도 누적 시간과 원시 ms 정보를 남기도록 확장했다.
+- `GameSessionTurnTimeStateTest`, `RuntimeEventApplicationTest`, `GameScreenStateTest`, `DebugReportBuilderTest`를 갱신했고, JDK 17/Android SDK 환경에서 `make test`가 통과했다.

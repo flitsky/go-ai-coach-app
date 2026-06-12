@@ -34,6 +34,7 @@ internal data class RuntimeLogContext(
     val analysisCacheStats: String,
     val moveAnalysisCoverage: String,
     val scoreText: String,
+    val turnTimeText: String = "Time B 0.0s / W 0.0s",
 ) {
     fun event(
         name: String,
@@ -55,6 +56,7 @@ internal data class RuntimeLogContext(
             "runtime=${runtimeState.runtimeSummary().runtimeLogValue(180)}",
             "analysis=${analysisSummary().runtimeLogValue(180)}",
             "score=${scoreText.runtimeLogValue(180)}",
+            "turnTime=${turnTimeText.runtimeLogValue(80)}",
             "flags=${flagsSummary().runtimeLogValue(160)}",
             "transition=${transition.runtimeLogValue(120)}",
             "detail=${detail.runtimeLogValue(1_200)}",
@@ -207,6 +209,7 @@ internal fun runtimeAiTurnSuccessLog(
     aiPlayer: StoneColor,
     display: AutoAiTurnDisplayPlan,
     turnElapsedMs: Long,
+    turnTimeUpdate: TurnTimeMoveUpdate? = null,
 ): String =
     context.event(
         name = "ai_turn_success",
@@ -218,6 +221,7 @@ internal fun runtimeAiTurnSuccessLog(
         },
         detail = "move=${turnState.moves.size + 1} player=${aiPlayer.label} " +
             "selected=${display.lastMoveText.runtimeLogSnippet(80)} turnElapsedMs=$turnElapsedMs " +
+            "turnTime=${turnTimeUpdate?.runtimeText()?.runtimeLogSnippet(140) ?: "not_recorded"} " +
             "before=${turnState.runtimeBoardSummary()} after=${display.gameState.runtimeBoardSummary()} " +
             "summary=${display.candidateText.runtimeLogSnippet(900)}",
     )
@@ -292,6 +296,7 @@ internal fun runtimeHumanMoveAcceptedLog(
     context: RuntimeLogContext,
     beforeMove: GameState,
     localMove: HumanMoveLocalResult,
+    turnTimeUpdate: TurnTimeMoveUpdate? = null,
 ): String =
     context.event(
         name = "human_move_accepted",
@@ -305,6 +310,7 @@ internal fun runtimeHumanMoveAcceptedLog(
         },
         detail = "move=${localMove.lastMoveText} before=${beforeMove.runtimeBoardSummary()} " +
             "after=${localMove.afterMove.runtimeBoardSummary()} review=${localMove.moveReview.text.runtimeLogSnippet(240)} " +
+            "turnTime=${turnTimeUpdate?.runtimeText()?.runtimeLogSnippet(140) ?: "not_recorded"} " +
             "captured=${localMove.capturedText.runtimeLogSnippet(120)}",
     )
 

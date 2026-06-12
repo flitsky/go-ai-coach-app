@@ -29,6 +29,7 @@ internal data class GameScreenState(
     val engine: EngineUiState,
     val analysis: AnalysisUiState,
     val score: ScoreUiState,
+    val turnTimeText: String,
     val actionButtons: List<GameActionButtonState>,
     val resumePrompt: ResumePromptState?,
     val isGameEnded: Boolean,
@@ -67,6 +68,7 @@ internal data class GameScreenStateInput(
     val scoreEstimate: ScoreEstimate?,
     val scoreSnapshots: List<ScoreSnapshot>,
     val isScoreGraphExpanded: Boolean,
+    val turnTimeText: String,
     val pendingSavedSession: SavedGameSnapshot?,
     val shouldShowResumePrompt: Boolean,
     val hasCompletedEngineStartup: Boolean,
@@ -110,6 +112,7 @@ internal fun buildGameScreenState(input: GameScreenStateInput): GameScreenState 
             snapshots = input.scoreSnapshots,
             isGraphExpanded = input.isScoreGraphExpanded,
         ),
+        turnTimeText = input.turnTimeText,
         actionButtons = buildGameActionButtonStates(input),
         resumePrompt = input.pendingSavedSession
             ?.takeIf {

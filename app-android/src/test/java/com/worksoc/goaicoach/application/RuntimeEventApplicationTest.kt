@@ -36,6 +36,7 @@ class RuntimeEventApplicationTest {
         assertTrue(log.contains("purpose=\"Android-first local AI Go coaching app"))
         assertTrue(log.contains("engine=\"KataGo\""))
         assertTrue(log.contains("diagnostic=ready with local process"))
+        assertTrue(log.contains("turnTime=\"B=0.0s W=0.0s current=Black\""))
         assertTrue(log.contains("transition=\"engine_startup_then_saved_game_check\""))
     }
 
@@ -98,6 +99,9 @@ class RuntimeEventApplicationTest {
             context = runtimeContext(gameState = beforeMove, isEngineReady = true),
             beforeMove = beforeMove,
             localMove = result,
+            turnTimeUpdate = GameSessionTurnTimeState
+                .reset(beforeMove, nowMillis = 1_000L)
+                .recordMove(StoneColor.Black, nowMillis = 2_200L, nextPlayer = StoneColor.White),
         )
 
         assertTrue(log.startsWith("event=human_move_accepted phase=human_turn"))
@@ -106,6 +110,7 @@ class RuntimeEventApplicationTest {
         assertTrue(log.contains("after=size=9 ruleset=Japanese moves=1 next=White"))
         assertTrue(log.contains("transition=\"sync_engine_after_human_move\""))
         assertTrue(log.contains("review=Move review: no pre-move analysis cache was ready."))
+        assertTrue(log.contains("turnTime=player=Black elapsed=1.2s total=B=1.2s W=0.0s current=White"))
     }
 
     private fun runtimeContext(
@@ -135,5 +140,6 @@ class RuntimeEventApplicationTest {
             analysisCacheStats = "entries=0, hits=0, misses=0",
             moveAnalysisCoverage = "Analysis coverage: legal 81, scored 0, policy-only 0, pending 81.",
             scoreText = "No score estimate yet.",
+            turnTimeText = "B=0.0s W=0.0s current=${gameState.nextPlayer.label}",
         )
 }
