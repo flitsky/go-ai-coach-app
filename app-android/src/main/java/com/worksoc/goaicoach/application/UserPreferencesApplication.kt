@@ -10,20 +10,33 @@ import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 
+internal data class GameSettings(
+    val ruleset: Ruleset,
+    val topMovesEnabled: Boolean,
+    val autoPlayDelaySetting: AutoPlayDelaySetting,
+    val searchTimeSettings: SearchTimeSettings,
+)
+
 internal data class InitialUserPreferencesPlan(
     val gameState: GameState,
     val playerSetup: PlayerSetup,
     val runtime: RuntimePlayLevelSelection,
-    val topMovesEnabled: Boolean,
-    val autoPlayDelaySetting: AutoPlayDelaySetting,
-)
+    val settings: GameSettings,
+) {
+    val topMovesEnabled: Boolean
+        get() = settings.topMovesEnabled
+
+    val autoPlayDelaySetting: AutoPlayDelaySetting
+        get() = settings.autoPlayDelaySetting
+}
 
 internal fun buildInitialUserPreferencesPlan(
     preferences: UserPreferencesSnapshot,
     defaultPlayLevel: PlayLevelSetting,
     currentProfile: EngineProfile,
 ): InitialUserPreferencesPlan {
-    val state = GameState.empty(BoardSize.Nine, preferences.ruleset)
+    val settings = preferences.toGameSettings()
+    val state = GameState.empty(BoardSize.Nine, settings.ruleset)
     return InitialUserPreferencesPlan(
         gameState = state,
         playerSetup = preferences.playerSetup,
@@ -32,10 +45,9 @@ internal fun buildInitialUserPreferencesPlan(
             nextPlayer = state.nextPlayer,
             currentProfile = currentProfile,
             defaultPlayLevel = defaultPlayLevel,
-            searchTimeSettings = preferences.searchTimeSettings,
+            searchTimeSettings = settings.searchTimeSettings,
         ),
-        topMovesEnabled = preferences.topMovesEnabled,
-        autoPlayDelaySetting = AutoPlayDelaySetting.fromMillis(preferences.autoPlayDelayMillis),
+        settings = settings,
     )
 }
 
@@ -50,6 +62,47 @@ internal fun buildUserPreferencesSnapshot(
     autoPlayDelaySetting: AutoPlayDelaySetting,
     searchTimeSettings: SearchTimeSettings = SearchTimeSettings(),
 ): UserPreferencesSnapshot =
+    buildGameSettings(
+        ruleset = ruleset,
+        topMovesEnabled = topMovesEnabled,
+        autoPlayDelaySetting = autoPlayDelaySetting,
+        searchTimeSettings = searchTimeSettings,
+    ).toUserPreferencesSnapshot(
+        playerSetup = playerSetup,
+        showCoordinates = showCoordinates,
+        showMoveNumbers = showMoveNumbers,
+        showLastMoveRing = showLastMoveRing,
+        showOwnershipOverlay = showOwnershipOverlay,
+    )
+
+internal fun buildGameSettings(
+    ruleset: Ruleset,
+    topMovesEnabled: Boolean,
+    autoPlayDelaySetting: AutoPlayDelaySetting,
+    searchTimeSettings: SearchTimeSettings = SearchTimeSettings(),
+): GameSettings =
+    GameSettings(
+        ruleset = ruleset,
+        topMovesEnabled = topMovesEnabled,
+        autoPlayDelaySetting = autoPlayDelaySetting,
+        searchTimeSettings = searchTimeSettings.normalized(),
+    )
+
+private fun UserPreferencesSnapshot.toGameSettings(): GameSettings =
+    buildGameSettings(
+        ruleset = ruleset,
+        topMovesEnabled = topMovesEnabled,
+        autoPlayDelaySetting = AutoPlayDelaySetting.fromMillis(autoPlayDelayMillis),
+        searchTimeSettings = searchTimeSettings,
+    )
+
+private fun GameSettings.toUserPreferencesSnapshot(
+    playerSetup: PlayerSetup,
+    showCoordinates: Boolean,
+    showMoveNumbers: Boolean,
+    showLastMoveRing: Boolean,
+    showOwnershipOverlay: Boolean,
+): UserPreferencesSnapshot =
     UserPreferencesSnapshot(
         playerSetup = playerSetup,
         ruleset = ruleset,
@@ -59,5 +112,5 @@ internal fun buildUserPreferencesSnapshot(
         showLastMoveRing = showLastMoveRing,
         showOwnershipOverlay = showOwnershipOverlay,
         autoPlayDelayMillis = autoPlayDelaySetting.millis,
-        searchTimeSettings = searchTimeSettings.normalized(),
+        searchTimeSettings = searchTimeSettings,
     )

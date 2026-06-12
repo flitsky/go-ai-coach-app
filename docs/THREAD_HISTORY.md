@@ -876,3 +876,6 @@
 - 리팩토링 Phase 3로 `MatchReferee`를 추가했다. 현재는 `GameState` 규칙에 위임하지만, 사람/AI/향후 원격 유저 착수가 같은 심판 경계로 들어오도록 `play`, `playOrThrow`, `shouldResolveEndgame`, `endgameReasonText`, `localFinalScoreIfGameEndedByPasses`를 제공한다.
 - `HumanMoveApplication`, `EngineSession.syncAfterHumanMove`, `GameAutomationApplication`, `MatchPolicy`의 착수 적용/종국 판정을 `MatchReferee` 기반으로 바꿨다. pass/pass 후 AI 응수로 이어질 수 있는 경로도 종료 판정이 우선되도록 정리했다.
 - `MatchRefereeTest`를 추가했고, JDK 17/Android SDK 환경에서 `:app-android:testDebugUnitTest`가 통과했다.
+- 리팩토링 Phase 4로 `GameSettings`를 추가해 ruleset, Top Moves 기본 상태, 자동대국 딜레이, Search Time을 application 계층 설정 도메인으로 묶었다.
+- `InitialUserPreferencesPlan`은 `settings`를 보유하고, 기존 UI 호환을 위해 `topMovesEnabled`와 `autoPlayDelaySetting`은 computed property로 유지했다.
+- `UserPreferencesApplicationTest`에 settings 복원 검증을 추가했고, JDK 17/Android SDK 환경에서 `:app-android:testDebugUnitTest`가 통과했다.

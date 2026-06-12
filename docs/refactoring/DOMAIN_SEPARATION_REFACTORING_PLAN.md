@@ -207,6 +207,9 @@ Game UX는 다음만 담당한다.
 - `MatchReferee`를 추가해 착수 적용, pass/pass 또는 board full 종국 판정, pass/pass 로컬 최종 점수 생성을 심판 도메인 경계로 모았다.
 - 사람 착수 로컬 처리, AI 착수 적용, 자동 AI 종국 표시 계획, 사람 착수 후 엔진 sync 종국 판단이 `MatchReferee` 경계를 사용하게 했다.
 - 검증: `MatchRefereeTest` 추가, `:app-android:testDebugUnitTest` 통과.
+- `GameSettings`를 추가해 ruleset, Top Moves 기본 상태, AI 자동대국 딜레이, Search Time 설정을 application 계층의 설정 도메인 묶음으로 다루게 했다.
+- 기존 UI 호환을 위해 `InitialUserPreferencesPlan.topMovesEnabled`와 `autoPlayDelaySetting`은 computed property로 유지하고, 내부에는 `settings`를 추가했다.
+- 검증: `UserPreferencesApplicationTest`에 `GameSettings` 복원 검증 추가, `:app-android:testDebugUnitTest` 통과.
 
 ## 주의할 점
 

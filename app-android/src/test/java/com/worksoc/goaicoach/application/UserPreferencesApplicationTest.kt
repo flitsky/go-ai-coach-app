@@ -47,6 +47,15 @@ class UserPreferencesApplicationTest {
         assertEquals(4_000L, plan.runtime.engineProfile.analysisLimit.timeMillis)
         assertEquals(false, plan.topMovesEnabled)
         assertEquals(AutoPlayDelaySetting.Study, plan.autoPlayDelaySetting)
+        assertEquals(
+            GameSettings(
+                ruleset = Ruleset.Chinese,
+                topMovesEnabled = false,
+                autoPlayDelaySetting = AutoPlayDelaySetting.Study,
+                searchTimeSettings = SearchTimeSettings(b32Millis = 4_000L),
+            ),
+            plan.settings,
+        )
     }
 
     @Test
