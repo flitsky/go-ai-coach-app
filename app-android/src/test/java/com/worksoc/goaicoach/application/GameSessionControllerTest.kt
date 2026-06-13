@@ -21,6 +21,62 @@ import org.junit.Test
 
 class GameSessionControllerTest {
     @Test
+    fun builderComposesControllerStateFromCurrentStateHolders() {
+        val gameState = GameState.empty(nextPlayer = StoneColor.White)
+        val analysis = GameSessionAnalysisState.empty(gameState, candidateText = "candidate text")
+        val score = GameSessionScoreState.reset(
+            scoreText = "score text",
+            scoreSnapshots = listOf(localScoreSnapshot(gameState)),
+            endgameLog = "endgame log",
+        )
+        val runtime = GameSessionRuntimeState(
+            playLevel = PlayLevelSetting(level = 2),
+            engineProfile = EngineProfile(name = "Builder"),
+            analysisPreset = AnalysisPreset.Balanced,
+        )
+        val review = GameSessionMoveReviewState.reset(
+            moveReviewText = "review",
+            lastMoveText = "White pass",
+        )
+        val settings = settingsState().showTopMoves()
+        val benchmark = EngineBenchmarkUiState(
+            benchmarkText = "benchmark",
+            searchTimeBenchmarkAverages = mapOf(16 to 1_000.0),
+        )
+        val saved = SavedSessionUiState(hasCheckedSavedSession = true)
+        val autoAiTurn = AutoAiTurnUiState().markScheduled()
+        val cacheOptimization = PositionAnalysisCacheOptimizationUiState().startRunning()
+
+        val state = buildGameSessionControllerState(
+            gameState = gameState,
+            isGameEnded = true,
+            analysisState = analysis,
+            scoreState = score,
+            runtimeState = runtime,
+            moveReviewState = review,
+            engineMessage = "engine",
+            settings = settings,
+            benchmark = benchmark,
+            savedSession = saved,
+            autoAiTurn = autoAiTurn,
+            positionCacheOptimization = cacheOptimization,
+        )
+
+        assertEquals(gameState, state.gameState)
+        assertEquals(true, state.isGameEnded)
+        assertEquals(analysis, state.core.analysisState)
+        assertEquals(score, state.core.scoreState)
+        assertEquals(runtime, state.core.runtimeState)
+        assertEquals(review, state.core.moveReviewState)
+        assertEquals("engine", state.engineMessage)
+        assertEquals(settings, state.settings)
+        assertEquals(benchmark, state.benchmark)
+        assertEquals(saved, state.savedSession)
+        assertEquals(autoAiTurn, state.autoAiTurn)
+        assertEquals(cacheOptimization, state.positionCacheOptimization)
+    }
+
+    @Test
     fun exposesFrequentlyUsedFieldsFromNestedState() {
         val gameState = GameState.empty()
             .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))

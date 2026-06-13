@@ -49,6 +49,7 @@ import com.worksoc.goaicoach.application.buildInitialUserPreferencesPlan
 import com.worksoc.goaicoach.application.buildPlayerSetupChangePlan
 import com.worksoc.goaicoach.application.buildPositionAnalysisCacheOptimizationPlan
 import com.worksoc.goaicoach.application.buildPositionAnalysisCacheOptimizationPrompt
+import com.worksoc.goaicoach.application.buildGameSessionControllerState
 import com.worksoc.goaicoach.application.buildUserPreferencesSnapshot
 import com.worksoc.goaicoach.application.EndgameFailureDisplayPlan
 import com.worksoc.goaicoach.application.EngineBenchmarkDefaultSamplesPerVisit
@@ -302,16 +303,14 @@ private fun GoCoachScreen(
     }
 
     fun currentControllerSessionState(): GameSessionControllerState =
-        GameSessionControllerState(
-            core = GameSessionCoreState(
-                gameState = gameState,
-                isGameEnded = isGameEnded,
-                analysisState = analysisState,
-                scoreState = scoreState,
-                runtimeState = runtimeState,
-                moveReviewState = moveReviewState,
-                engineMessage = engineMessage,
-            ),
+        buildGameSessionControllerState(
+            gameState = gameState,
+            isGameEnded = isGameEnded,
+            analysisState = analysisState,
+            scoreState = scoreState,
+            runtimeState = runtimeState,
+            moveReviewState = moveReviewState,
+            engineMessage = engineMessage,
             settings = settingsState,
             benchmark = benchmarkUiState,
             savedSession = savedSessionUiState,
@@ -573,15 +572,7 @@ private fun GoCoachScreen(
     }
 
     fun currentCoreSessionState(): GameSessionCoreState =
-        GameSessionCoreState(
-            gameState = gameState,
-            isGameEnded = isGameEnded,
-            analysisState = analysisState,
-            scoreState = scoreState,
-            runtimeState = runtimeState,
-            moveReviewState = moveReviewState,
-            engineMessage = engineMessage,
-        )
+        currentControllerSessionState().core
 
     fun applyCoreSessionState(core: GameSessionCoreState) {
         gameState = core.gameState

@@ -1021,3 +1021,5 @@
 - `GameScreenStateTest`를 보강했고, JDK 17과 Android SDK를 명시해 `:app-android:testDebugUnitTest`를 실행했고 통과했다.
 - `GameSessionControllerState.toDebugReportSnapshot(...)` 확장 함수를 추가해 debug report snapshot 조립을 application 계층으로 이동했다. `GoCoachApp.kt`는 engine/cache/runtime-log/turn-time 같은 외부 값만 넘기고 세션 내부 진단 항목은 controller snapshot에서 파생한다.
 - `DebugReportBuilderTest`를 보강했고, JDK 17과 Android SDK를 명시해 `:app-android:testDebugUnitTest`를 실행했고 통과했다.
+- `buildGameSessionControllerState(...)` builder를 추가해 `GoCoachApp.kt`의 controller/core snapshot 수동 조립 중복을 줄였다. UI는 Compose state 소유권을 유지하되 현재 상태를 application controller snapshot으로 변환하는 책임을 application helper에 위임한다.
+- `GameSessionControllerTest`를 보강했고, JDK 17과 Android SDK를 명시해 `:app-android:testDebugUnitTest`를 실행했고 통과했다.

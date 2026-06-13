@@ -54,6 +54,37 @@ internal data class GameSessionControllerState(
         copy(positionCacheOptimization = next)
 }
 
+internal fun buildGameSessionControllerState(
+    gameState: GameState,
+    isGameEnded: Boolean,
+    analysisState: GameSessionAnalysisState,
+    scoreState: GameSessionScoreState,
+    runtimeState: GameSessionRuntimeState,
+    moveReviewState: GameSessionMoveReviewState,
+    engineMessage: String,
+    settings: GameSessionSettingsState,
+    benchmark: EngineBenchmarkUiState,
+    savedSession: SavedSessionUiState,
+    autoAiTurn: AutoAiTurnUiState,
+    positionCacheOptimization: PositionAnalysisCacheOptimizationUiState,
+): GameSessionControllerState =
+    GameSessionControllerState(
+        core = GameSessionCoreState(
+            gameState = gameState,
+            isGameEnded = isGameEnded,
+            analysisState = analysisState,
+            scoreState = scoreState,
+            runtimeState = runtimeState,
+            moveReviewState = moveReviewState,
+            engineMessage = engineMessage,
+        ),
+        settings = settings,
+        benchmark = benchmark,
+        savedSession = savedSession,
+        autoAiTurn = autoAiTurn,
+        positionCacheOptimization = positionCacheOptimization,
+    )
+
 internal sealed interface GameSessionEffect {
     data class RunTopMoveAnalysis(
         val plan: TopMoveAnalysisPlan,
