@@ -146,3 +146,17 @@ POC를 계속 고도화하는 관점에서는 이미 충분히 좋은 상태다.
 
 - `AiMoveSelectionPolicyTest`, `MatchPolicyTest` 통과.
 - `make test` 통과.
+
+## 4단계 추가 리팩토링 결과
+
+2026-06-14에 local/remote engine session client 경계를 더 명확히 했다.
+
+- `EngineSessionBackend`를 추가해 session client가 `local-engine`인지 `remote-server`인지 capability로 표현할 수 있게 했다.
+- 기존 `AdapterEngineSessionClient` 구현체 이름을 `LocalEngineSessionClient`로 바꿨다.
+- 기존 이름은 deprecated typealias로 남겨 외부 변경 폭을 줄이고, 새 코드에서는 local 구현체임이 드러나도록 했다.
+- `MainActivity`는 이제 `LocalEngineSessionClient`를 직접 생성하고 `EngineSessionBackend.LocalEngine` capability를 명시한다.
+
+검증:
+
+- `EngineSessionTest`에서 local backend capability를 검증했다.
+- `make test` 통과.

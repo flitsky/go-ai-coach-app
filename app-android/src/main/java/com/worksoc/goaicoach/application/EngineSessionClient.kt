@@ -17,8 +17,16 @@ import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.analysisFingerprint
 import com.worksoc.goaicoach.shared.forcedJsonPositionAnalysis
 
+internal enum class EngineSessionBackend(
+    val label: String,
+) {
+    LocalEngine("local-engine"),
+    RemoteServer("remote-server"),
+}
+
 internal data class EngineSessionCapabilities(
     val supportsDeviceBenchmark: Boolean,
+    val backend: EngineSessionBackend = EngineSessionBackend.LocalEngine,
 )
 
 /**
@@ -109,7 +117,7 @@ internal interface EngineSessionClient {
     ): EngineBenchmarkProfile
 }
 
-internal class AdapterEngineSessionClient(
+internal class LocalEngineSessionClient(
     private val coreApi: EngineCoreApi,
     override val capabilities: EngineSessionCapabilities = EngineSessionCapabilities(
         supportsDeviceBenchmark = false,
@@ -379,6 +387,12 @@ internal class AdapterEngineSessionClient(
             onProgress = onProgress,
         )
 }
+
+@Deprecated(
+    message = "Use LocalEngineSessionClient. The old name hid that this implementation is tied to a local EngineCoreApi.",
+    replaceWith = ReplaceWith("LocalEngineSessionClient"),
+)
+internal typealias AdapterEngineSessionClient = LocalEngineSessionClient
 
 private fun List<TrustedPositionAnalysisCacheProvider>.bestEntryFor(
     key: PositionAnalysisCacheKey,

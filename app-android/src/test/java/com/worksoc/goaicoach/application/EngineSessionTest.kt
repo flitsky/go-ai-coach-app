@@ -132,7 +132,13 @@ class EngineSessionTest {
     @Test
     fun adapterSessionClientAnalyzesExplicitPositionAfterSyncingState() = runBlocking {
         val engine = RecordingEngineAdapter()
-        val client = AdapterEngineSessionClient(engine)
+        val client = LocalEngineSessionClient(
+            coreApi = engine,
+            capabilities = EngineSessionCapabilities(
+                supportsDeviceBenchmark = true,
+                backend = EngineSessionBackend.LocalEngine,
+            ),
+        )
         val state = GameState.empty()
             .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
 
@@ -149,13 +155,15 @@ class EngineSessionTest {
             ),
             engine.calls,
         )
+        assertEquals(EngineSessionBackend.LocalEngine, client.capabilities.backend)
+        assertEquals(true, client.capabilities.supportsDeviceBenchmark)
     }
 
     @Test
     fun adapterSessionClientReusesCompleteJsonPositionAnalysisCache() = runBlocking {
         val engine = RecordingEngineAdapter()
         val cacheStore = InMemoryPositionAnalysisCacheStore()
-        val client = AdapterEngineSessionClient(
+        val client = LocalEngineSessionClient(
             coreApi = engine,
             positionAnalysisCacheStore = cacheStore,
         )
@@ -199,7 +207,7 @@ class EngineSessionTest {
     fun adapterSessionClientReusesReusablePartialJsonPositionAnalysisCache() = runBlocking {
         val engine = RecordingEngineAdapter(analyzedRootVisits = { 20 })
         val cacheStore = InMemoryPositionAnalysisCacheStore()
-        val client = AdapterEngineSessionClient(
+        val client = LocalEngineSessionClient(
             coreApi = engine,
             positionAnalysisCacheStore = cacheStore,
         )
@@ -233,7 +241,7 @@ class EngineSessionTest {
     fun adapterSessionClientStoresButDoesNotReuseDiagnosticOnlyJsonCache() = runBlocking {
         val engine = RecordingEngineAdapter(analyzedRootVisits = { 4 })
         val cacheStore = InMemoryPositionAnalysisCacheStore()
-        val client = AdapterEngineSessionClient(
+        val client = LocalEngineSessionClient(
             coreApi = engine,
             positionAnalysisCacheStore = cacheStore,
         )
@@ -265,7 +273,7 @@ class EngineSessionTest {
     fun adapterSessionClientRecordsVisitFillWarningWhenRootVisitsAreShort() = runBlocking {
         val engine = RecordingEngineAdapter(analyzedRootVisits = { 12 })
         val diagnosticLog = RecordingDiagnosticEventLog()
-        val client = AdapterEngineSessionClient(
+        val client = LocalEngineSessionClient(
             coreApi = engine,
             diagnosticEventLog = diagnosticLog,
         )
@@ -288,7 +296,7 @@ class EngineSessionTest {
     fun adapterSessionClientDoesNotRecordVisitFillWarningWhenRootVisitsAreComplete() = runBlocking {
         val engine = RecordingEngineAdapter(analyzedRootVisits = { limit -> limit.visits })
         val diagnosticLog = RecordingDiagnosticEventLog()
-        val client = AdapterEngineSessionClient(
+        val client = LocalEngineSessionClient(
             coreApi = engine,
             diagnosticEventLog = diagnosticLog,
         )
@@ -341,7 +349,7 @@ class EngineSessionTest {
             rootVisits = 64,
             origin = PositionAnalysisCacheOrigin.OperatorTrusted,
         )
-        val client = AdapterEngineSessionClient(
+        val client = LocalEngineSessionClient(
             coreApi = engine,
             trustedPositionAnalysisCacheProviders = listOf(
                 InMemoryTrustedPositionAnalysisCacheProvider(listOf(trustedEntry)),
@@ -363,7 +371,7 @@ class EngineSessionTest {
     fun adapterSessionClientOptimizesCacheWithUncappedExecutionLimitUnderGameplayKey() = runBlocking {
         val engine = RecordingEngineAdapter()
         val cacheStore = InMemoryPositionAnalysisCacheStore()
-        val client = AdapterEngineSessionClient(
+        val client = LocalEngineSessionClient(
             coreApi = engine,
             positionAnalysisCacheStore = cacheStore,
         )

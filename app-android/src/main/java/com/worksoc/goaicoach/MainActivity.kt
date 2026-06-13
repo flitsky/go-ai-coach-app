@@ -21,9 +21,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.worksoc.goaicoach.application.AdapterEngineSessionClient
 import com.worksoc.goaicoach.application.DiagnosticEventLogPort
+import com.worksoc.goaicoach.application.EngineSessionBackend
 import com.worksoc.goaicoach.application.EngineSessionCapabilities
+import com.worksoc.goaicoach.application.LocalEngineSessionClient
 import com.worksoc.goaicoach.engine.EngineBootstrap
 import com.worksoc.goaicoach.engine.createEngineBootstrap
 import com.worksoc.goaicoach.persistence.DiagnosticEventLog
@@ -60,10 +61,11 @@ class MainActivity : ComponentActivity() {
                     DiagnosticEventLog(File(applicationContext.filesDir, DiagnosticEventLog.FileName))
                 }
                 val engineClient = remember(bootstrap.coreApi, diagnosticEventLog) {
-                    AdapterEngineSessionClient(
+                    LocalEngineSessionClient(
                         coreApi = bootstrap.coreApi,
                         capabilities = EngineSessionCapabilities(
                             supportsDeviceBenchmark = bootstrap.mode == EngineMode.LocalProcess,
+                            backend = EngineSessionBackend.LocalEngine,
                         ),
                         positionAnalysisCacheStore = positionAnalysisCacheStore,
                         diagnosticEventLog = diagnosticEventLog,

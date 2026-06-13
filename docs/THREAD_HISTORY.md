@@ -1072,3 +1072,7 @@
 - 3단계로 AI 후보수 선택 정책을 `MatchPolicy`에서 `AiMoveSelectionPolicy`로 분리했다. analysis limit 결정, pass best candidate override, 후보 색상 필터링, pointLoss 없는 후보 제외, selection policy range 기반 선택이 독립 정책으로 이동했다.
 - `SelectedAiMove`도 별도 domain model로 이동했다. `applyAiTurn()`은 더 이상 후보수 선택 세부를 직접 알지 않고 정책 호출 결과만 처리한다.
 - `AiMoveSelectionPolicyTest`를 추가하고 `MatchPolicyTest`와 `make test`를 실행해 모두 통과했다.
+- 3단계 완료 후 무선 ADB `SM-S908N(192.168.35.166:42037)`에 최신 APK와 KataGo model/config를 설치했고 cold launch `TotalTime=490ms`를 확인했다.
+- 4단계로 local/remote engine session client 경계를 정리했다. `EngineSessionBackend`를 추가해 session client capability가 `local-engine`인지 `remote-server`인지 표현할 수 있게 했다.
+- 기존 `AdapterEngineSessionClient` 구현체 이름을 `LocalEngineSessionClient`로 바꾸고, 기존 이름은 deprecated typealias로 남겼다. `MainActivity`는 이제 `LocalEngineSessionClient`와 `EngineSessionBackend.LocalEngine`을 명시해 생성한다.
+- `EngineSessionTest`에서 local backend capability를 검증했고 `make test`를 통과했다.
