@@ -1009,3 +1009,5 @@
 - `GameSessionControllerState`에 `autoAiTurn: AutoAiTurnUiState` 축과 `shouldShowResumePrompt`, `isAutoAiTurnPending` convenience property를 추가했다.
 - `GoCoachApp.kt`에 `currentControllerSessionState()`를 추가했고, runtime log context와 `GameScreenStateInput` 조립이 controller snapshot을 참조하게 했다. 상태 source를 한 번에 합치지 않고 읽기/조립 경계를 먼저 controller로 연결했다.
 - JDK 17과 Android SDK를 명시해 `:app-android:testDebugUnitTest`를 실행했고 통과했다.
+- `PromptPriorityApplication`을 추가해 resume prompt와 cache optimization prompt 표시 우선순위를 application 계층 함수로 분리했다. 엔진 startup 완료와 idle 상태를 공통 gate로 두고, resume prompt가 보일 때 cache optimization prompt를 숨기는 정책을 테스트로 고정했다.
+- `GameScreenState`는 inline prompt 조건 대신 `decidePromptVisibility()`를 호출한다. JDK 17과 Android SDK를 명시해 `:app-android:testDebugUnitTest`를 실행했고 통과했다.

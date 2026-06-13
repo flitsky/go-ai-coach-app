@@ -2,6 +2,7 @@ package com.worksoc.goaicoach.presentation
 
 import com.worksoc.goaicoach.application.MoveReviewMarker
 import com.worksoc.goaicoach.application.PositionAnalysisCacheOptimizationPrompt
+import com.worksoc.goaicoach.application.decidePromptVisibility
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
@@ -79,8 +80,15 @@ internal data class GameScreenStateInput(
     val endgameLog: String,
 )
 
-internal fun buildGameScreenState(input: GameScreenStateInput): GameScreenState =
-    GameScreenState(
+internal fun buildGameScreenState(input: GameScreenStateInput): GameScreenState {
+    val promptVisibility = decidePromptVisibility(
+        hasCompletedEngineStartup = input.hasCompletedEngineStartup,
+        isEngineBusy = input.isEngineBusy,
+        hasPendingSavedSession = input.pendingSavedSession != null,
+        shouldShowResumePrompt = input.shouldShowResumePrompt,
+        hasCacheOptimizationPrompt = input.cacheOptimizationPrompt != null,
+    )
+    return GameScreenState(
         gameState = input.gameState,
         matchMode = input.matchMode,
         playerSetup = input.playerSetup,
@@ -118,21 +126,14 @@ internal fun buildGameScreenState(input: GameScreenStateInput): GameScreenState 
         turnTimeText = input.turnTimeText,
         actionButtons = buildGameActionButtonStates(input),
         resumePrompt = input.pendingSavedSession
-            ?.takeIf {
-                input.shouldShowResumePrompt &&
-                    input.hasCompletedEngineStartup &&
-                    !input.isEngineBusy
-            }
+            ?.takeIf { promptVisibility.showResumePrompt }
             ?.let(::ResumePromptState),
         cacheOptimizationPrompt = input.cacheOptimizationPrompt
-            ?.takeIf {
-                input.hasCompletedEngineStartup &&
-                    !input.isEngineBusy &&
-                    !(input.shouldShowResumePrompt && input.pendingSavedSession != null)
-            },
+            ?.takeIf { promptVisibility.showCacheOptimizationPrompt },
         isGameEnded = input.isGameEnded,
         endgameLog = input.endgameLog,
     )
+}
 
 internal data class EngineUiState(
     val name: String,
