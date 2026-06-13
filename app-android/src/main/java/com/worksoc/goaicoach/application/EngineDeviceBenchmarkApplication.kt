@@ -97,6 +97,75 @@ internal data class EngineBenchmarkProgress(
         }
 }
 
+internal data class EngineBenchmarkUiState(
+    val benchmarkText: String,
+    val searchTimeBenchmarkAverages: Map<Int, Double>,
+    val progress: EngineBenchmarkProgress? = null,
+    val resultToConfirm: EngineBenchmarkProfile? = null,
+) {
+    val isRunning: Boolean
+        get() = progress != null
+
+    fun clearResult(): EngineBenchmarkUiState =
+        copy(resultToConfirm = null)
+
+    fun startWaitingForEngineSettle(): EngineBenchmarkUiState =
+        copy(
+            resultToConfirm = null,
+            progress = EngineBenchmarkProgress(
+                currentVisits = EngineBenchmarkDefaultVisits.first(),
+                currentSample = 1,
+                samplesPerVisit = EngineBenchmarkDefaultSamplesPerVisit,
+                completedCalls = 0,
+                totalCalls = EngineBenchmarkDefaultVisits.size * EngineBenchmarkDefaultSamplesPerVisit,
+                stageOverride = "엔진 안정화 대기 중...",
+            ),
+        )
+
+    fun updateProgress(progress: EngineBenchmarkProgress): EngineBenchmarkUiState =
+        copy(progress = progress)
+
+    fun applyStoredProfile(
+        benchmarkText: String,
+        profile: EngineBenchmarkProfile?,
+    ): EngineBenchmarkUiState =
+        copy(
+            benchmarkText = benchmarkText,
+            searchTimeBenchmarkAverages = profile?.averageMillisByVisits().orEmpty(),
+        )
+
+    fun completeWithProfile(
+        benchmarkText: String,
+        profile: EngineBenchmarkProfile,
+    ): EngineBenchmarkUiState =
+        copy(
+            benchmarkText = benchmarkText,
+            searchTimeBenchmarkAverages = profile.averageMillisByVisits(),
+            progress = null,
+            resultToConfirm = profile,
+        )
+
+    fun failWithoutProfile(): EngineBenchmarkUiState =
+        copy(progress = null)
+
+    fun showResult(profile: EngineBenchmarkProfile): EngineBenchmarkUiState =
+        copy(resultToConfirm = profile)
+
+    fun clearConfirmedResult(): EngineBenchmarkUiState =
+        copy(resultToConfirm = null)
+
+    companion object {
+        fun initial(
+            benchmarkText: String,
+            profile: EngineBenchmarkProfile?,
+        ): EngineBenchmarkUiState =
+            EngineBenchmarkUiState(
+                benchmarkText = benchmarkText,
+                searchTimeBenchmarkAverages = profile?.averageMillisByVisits().orEmpty(),
+            )
+    }
+}
+
 private data class EngineBenchmarkPosition(
     val state: GameState,
     val name: String,
@@ -320,6 +389,9 @@ internal fun EngineBenchmarkMetric.rootSummaryText(): String =
 
 internal fun EngineBenchmarkMetric.fillSummaryText(): String =
     "OK=$fillOk, SHORT=$fillShort, UNKNOWN=$fillUnknown"
+
+internal fun EngineBenchmarkProfile.averageMillisByVisits(): Map<Int, Double> =
+    metrics.associate { metric -> metric.visits to metric.avgMs }
 
 private fun benchmarkAnalysisLimit(
     visits: Int,

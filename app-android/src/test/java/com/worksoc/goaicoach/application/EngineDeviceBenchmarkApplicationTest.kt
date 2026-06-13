@@ -74,6 +74,37 @@ class EngineDeviceBenchmarkApplicationTest {
     }
 
     @Test
+    fun benchmarkUiStateTracksProgressAndResult() {
+        val initial = EngineBenchmarkUiState.initial(
+            benchmarkText = "no benchmark",
+            profile = null,
+        )
+
+        val waiting = initial.startWaitingForEngineSettle()
+        val profile = EngineBenchmarkProfile(
+            createdAtMillis = 123L,
+            samplesPerVisit = 5,
+            timeCapMs = 5_000L,
+            metrics = listOf(
+                EngineBenchmarkMetric(visits = 16, samples = 5, minMs = 1.0, avgMs = 2.0, maxMs = 3.0),
+            ),
+        )
+        val completed = waiting.completeWithProfile(
+            benchmarkText = "stored benchmark",
+            profile = profile,
+        )
+        val confirmed = completed.clearConfirmedResult()
+
+        assertEquals(true, waiting.isRunning)
+        assertEquals("엔진 안정화 대기 중...", waiting.progress?.stageText)
+        assertEquals(false, completed.isRunning)
+        assertEquals("stored benchmark", completed.benchmarkText)
+        assertEquals(mapOf(16 to 2.0), completed.searchTimeBenchmarkAverages)
+        assertEquals(profile, completed.resultToConfirm)
+        assertEquals(null, confirmed.resultToConfirm)
+    }
+
+    @Test
     fun parsesVisitDiagnosticsFromEngineSummary() {
         val summary = "KataGo JSON analysis with 32 visits / 5000ms. " +
             "Visit diagnostics: request=32, root=34, elapsedMs=123, timeCapMs=5000, fill=OK."

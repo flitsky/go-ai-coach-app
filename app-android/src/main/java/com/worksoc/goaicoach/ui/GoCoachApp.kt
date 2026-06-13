@@ -55,8 +55,7 @@ import com.worksoc.goaicoach.application.EngineBenchmarkDefaultSamplesPerVisit
 import com.worksoc.goaicoach.application.EngineBenchmarkDefaultTimeCapMs
 import com.worksoc.goaicoach.application.EngineBenchmarkDefaultVisits
 import com.worksoc.goaicoach.application.EngineBenchmarkMeasurementVersion
-import com.worksoc.goaicoach.application.EngineBenchmarkProfile
-import com.worksoc.goaicoach.application.EngineBenchmarkProgress
+import com.worksoc.goaicoach.application.EngineBenchmarkUiState
 import com.worksoc.goaicoach.application.EngineOperationGate
 import com.worksoc.goaicoach.application.EngineSessionClient
 import com.worksoc.goaicoach.application.applyHumanMoveLocally
@@ -274,12 +273,14 @@ private fun GoCoachScreen(
             ),
         )
     }
-    var engineBenchmarkText by remember { mutableStateOf(benchmarkStore.loadText()) }
-    var searchTimeBenchmarkAverages by remember {
-        mutableStateOf(benchmarkStore.load()?.averageMillisByVisits().orEmpty())
+    var benchmarkUiState by remember {
+        mutableStateOf(
+            EngineBenchmarkUiState.initial(
+                benchmarkText = benchmarkStore.loadText(),
+                profile = benchmarkStore.load(),
+            ),
+        )
     }
-    var benchmarkProgress by remember { mutableStateOf<EngineBenchmarkProgress?>(null) }
-    var benchmarkResultToConfirm by remember { mutableStateOf<EngineBenchmarkProfile?>(null) }
     var pendingSavedSession by remember { mutableStateOf<SavedGameSnapshot?>(null) }
     var shouldShowResumePrompt by remember { mutableStateOf(false) }
     var isAutoAiTurnPending by remember { mutableStateOf(false) }
@@ -365,7 +366,7 @@ private fun GoCoachScreen(
                 isEngineReady = isEngineReady,
                 supportsDeviceBenchmark = engineClient.capabilities.supportsDeviceBenchmark,
                 isEngineBusy = isEngineBusy,
-                isBenchmarkRunning = benchmarkProgress != null,
+                isBenchmarkRunning = benchmarkUiState.isRunning,
             )
         ) {
             EngineOperationGate.Allow -> Unit
@@ -376,17 +377,10 @@ private fun GoCoachScreen(
             }
         }
 
-        benchmarkResultToConfirm = null
+        benchmarkUiState = benchmarkUiState.clearResult()
         isEngineBusy = true
         engineMessage = "엔진 벤치마크 시작 전 안정화 대기 중입니다."
-        benchmarkProgress = EngineBenchmarkProgress(
-            currentVisits = EngineBenchmarkDefaultVisits.first(),
-            currentSample = 1,
-            samplesPerVisit = EngineBenchmarkDefaultSamplesPerVisit,
-            completedCalls = 0,
-            totalCalls = EngineBenchmarkDefaultVisits.size * EngineBenchmarkDefaultSamplesPerVisit,
-            stageOverride = "엔진 안정화 대기 중...",
-        )
+        benchmarkUiState = benchmarkUiState.startWaitingForEngineSettle()
         analysisState = analysisState.copy(candidateText = "Engine benchmark waiting for startup settle delay.")
         delay(EngineBenchmarkStartupSettleDelayMillis)
 
@@ -402,7 +396,7 @@ private fun GoCoachScreen(
                         nowMillis = System.currentTimeMillis(),
                         onProgress = { progress ->
                             withContext(Dispatchers.Main) {
-                                benchmarkProgress = progress
+                                benchmarkUiState = benchmarkUiState.updateProgress(progress)
                                 engineMessage = progress.stageText
                                 analysisState = analysisState.copy(
                                     candidateText = "Engine benchmark running: ${progress.progressText}, ${progress.sampleText}.",
@@ -413,22 +407,23 @@ private fun GoCoachScreen(
                     .also { profile -> benchmarkStore.save(profile) }
             }
         }.onSuccess { profile ->
-            engineBenchmarkText = benchmarkStore.loadText()
-            searchTimeBenchmarkAverages = profile.averageMillisByVisits()
+            benchmarkUiState = benchmarkUiState.completeWithProfile(
+                benchmarkText = benchmarkStore.loadText(),
+                profile = profile,
+            )
             engineMessage = "Engine benchmark saved to ${benchmarkStore.path()}."
             analysisState = analysisState.copy(candidateText = "Engine benchmark complete.\n${profile.toSummaryText()}")
-            benchmarkResultToConfirm = profile
         }.onFailure { error ->
             engineMessage = "Engine benchmark failed: ${error.message ?: "unknown error"}"
             analysisState = analysisState.copy(candidateText = "Engine benchmark failed. The app will continue with built-in defaults.")
+            benchmarkUiState = benchmarkUiState.failWithoutProfile()
         }
-        benchmarkProgress = null
         isEngineBusy = false
     }
 
     fun showEngineBenchmarkResult() {
         benchmarkStore.load()?.let { profile ->
-            benchmarkResultToConfirm = profile
+            benchmarkUiState = benchmarkUiState.showResult(profile)
             return
         }
         scope.launch {
@@ -437,7 +432,7 @@ private fun GoCoachScreen(
     }
 
     fun rerunEngineBenchmark() {
-        benchmarkResultToConfirm = null
+        benchmarkUiState = benchmarkUiState.clearResult()
         scope.launch {
             runEngineBenchmark()
         }
@@ -464,8 +459,10 @@ private fun GoCoachScreen(
             )
         ) {
             hasCheckedEngineBenchmark = true
-            engineBenchmarkText = benchmarkStore.loadText()
-            searchTimeBenchmarkAverages = benchmarkStore.load()?.averageMillisByVisits().orEmpty()
+            benchmarkUiState = benchmarkUiState.applyStoredProfile(
+                benchmarkText = benchmarkStore.loadText(),
+                profile = benchmarkStore.load(),
+            )
             return@LaunchedEffect
         }
 
@@ -1564,7 +1561,7 @@ private fun GoCoachScreen(
             moveReviewText = moveReviewState.moveReviewText,
             lastMoveText = moveReviewState.lastMoveText,
             endgameLog = scoreState.endgameLog,
-            engineBenchmarkText = engineBenchmarkText,
+            engineBenchmarkText = benchmarkUiState.benchmarkText,
             turnTimeText = turnTimeState.summaryText(),
             turnTimeDebugText = turnTimeState.debugText(System.currentTimeMillis()),
             runtimeEventLogText = runtimeEventLog.readText(),
@@ -1671,7 +1668,7 @@ private fun GoCoachScreen(
             playerSetup = playerSetup,
             autoPlayDelaySetting = autoPlayDelaySetting,
             searchTimeSettings = searchTimeSettings,
-            searchTimeBenchmarkAverages = searchTimeBenchmarkAverages,
+            searchTimeBenchmarkAverages = benchmarkUiState.searchTimeBenchmarkAverages,
             playLevel = runtimeState.playLevel,
             uxOptions = uxOptions,
             engineName = engineName,
@@ -1706,9 +1703,9 @@ private fun GoCoachScreen(
 
     GoCoachContent(
         screenState = screenState,
-        benchmarkProgress = benchmarkProgress,
-        benchmarkResult = benchmarkResultToConfirm,
-        onBenchmarkResultConfirmed = { benchmarkResultToConfirm = null },
+        benchmarkProgress = benchmarkUiState.progress,
+        benchmarkResult = benchmarkUiState.resultToConfirm,
+        onBenchmarkResultConfirmed = { benchmarkUiState = benchmarkUiState.clearConfirmedResult() },
         onBenchmarkRerun = ::rerunEngineBenchmark,
         isDisplayMenuExpanded = isDisplayMenuExpanded,
         onDisplayMenuExpandedChange = { expanded -> isDisplayMenuExpanded = expanded },
@@ -1724,9 +1721,6 @@ private fun UserPreferencesSnapshot.toKaTrainUxOptions(): KaTrainUxOptions =
         showLastMoveRing = showLastMoveRing,
         showOwnershipOverlay = showOwnershipOverlay,
     )
-
-private fun EngineBenchmarkProfile.averageMillisByVisits(): Map<Int, Double> =
-    metrics.associate { metric -> metric.visits to metric.avgMs }
 
 private const val EngineBenchmarkStartupSettleDelayMillis = 1_500L
 private const val DebugReportMirrorFileName = "last_debug_report.txt"
