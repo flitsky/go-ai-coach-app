@@ -1049,3 +1049,6 @@
 - operator-trusted provider hit 시 엔진 sync/analyze를 호출하지 않는 `EngineSessionTest`를 추가했다. 검증 성공: `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest`.
 - 5단계로 `Game Domain` seat snapshot을 도입했다. `MatchSeatRuntimeState`와 `MatchSeatSnapshot`이 흑/백 seat, 현재 턴 seat, 보드 입력 가능 여부, 자동대국 여부를 한 번에 제공한다.
 - `boardInputEnabled()`와 `turnStatus()`는 `PlayerSetup.seatSnapshot()`을 통해 판단하도록 바뀌었다. 이 경계는 향후 원격 seat, seat clock, observer 권한을 붙일 때 확장 지점이 된다. 검증 성공: `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest`.
+- 6-7단계로 App Service/Presentation 연결부를 줄였다. `GameScreenStateInput`과 `GameScreenState`가 `MatchSeatSnapshot`을 포함하고, action button enabled 판단과 보드 입력 가능 여부가 같은 seat snapshot을 공유한다.
+- `EngineResponsePanel`과 `GamePlaySection`은 더 이상 `boardInputEnabled()`나 `turnStatus()`를 직접 호출하지 않고, presentation state의 `turnStatusText`와 `matchSeats.current.canAcceptBoardInput`만 렌더링한다. 검증 성공: `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest`.
+- 이번 하위 계층부터 상위 계층까지의 리팩토링 배치 최종 검증으로 `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test`를 실행했고 통과했다.

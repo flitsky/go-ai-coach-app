@@ -12,7 +12,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.worksoc.goaicoach.match.boardInputEnabled
 import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.presentation.GameUiEvent
 import com.worksoc.goaicoach.shared.StoneColor
@@ -39,12 +38,7 @@ internal fun GamePlaySection(
             ?.takeIf { screenState.uxOptions.showOwnershipOverlay },
         uxOptions = screenState.uxOptions,
         inputEnabled = !screenState.isGameEnded &&
-            boardInputEnabled(
-                screenState.playerSetup,
-                screenState.engine.isReady,
-                screenState.engine.isBusy,
-                screenState.nextPlayer,
-            ),
+            screenState.matchSeats.current.canAcceptBoardInput,
         engineBusy = screenState.engine.isBusy,
         modifier = Modifier
             .fillMaxWidth()
@@ -60,14 +54,12 @@ internal fun GamePlaySection(
     )
 
     EngineResponsePanel(
-        nextPlayer = screenState.nextPlayer,
+        turnStatusText = screenState.turnStatusText,
         moveCount = screenState.gameState.moves.size,
         capturedByBlack = screenState.gameState.capturedBy(StoneColor.Black),
         capturedByWhite = screenState.gameState.capturedBy(StoneColor.White),
         turnTimeText = screenState.turnTimeText,
         lastMoveText = screenState.analysis.lastMoveText,
-        isEngineBusy = screenState.engine.isBusy,
-        playerSetup = screenState.playerSetup,
         engineMessage = screenState.engine.message,
         candidateText = screenState.analysis.candidateText,
         scoreText = screenState.score.text,

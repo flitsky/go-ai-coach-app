@@ -110,6 +110,13 @@ internal data class MatchSeatSnapshot(
         }
 }
 
+internal fun MatchSeatSnapshot.turnStatusText(isEngineBusy: Boolean): String =
+    when {
+        isEngineBusy -> "AI thinking"
+        current.isHuman -> "Your turn: ${current.player.label}"
+        else -> "AI turn: ${current.player.label}"
+    }
+
 internal enum class AutoPlayDelaySetting(
     val millis: Long,
     val label: String,
@@ -381,18 +388,13 @@ internal fun turnStatus(
     isEngineBusy: Boolean,
     playerSetup: PlayerSetup,
 ): String {
-    val currentSeat = playerSetup
+    val snapshot = playerSetup
         .seatSnapshot(
             nextPlayer = nextPlayer,
             isEngineReady = true,
             isEngineBusy = isEngineBusy,
         )
-        .current
-    return when {
-        isEngineBusy -> "AI thinking"
-        currentSeat.isHuman -> "Your turn: ${nextPlayer.label}"
-        else -> "AI turn: ${nextPlayer.label}"
-    }
+    return snapshot.turnStatusText(isEngineBusy)
 }
 
 internal fun modeSummary(

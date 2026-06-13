@@ -42,6 +42,7 @@ class GameScreenStateTest {
         assertTrue(screenState.uxOptions.showOwnershipOverlay)
         assertFalse(screenState.uxOptions.showMoveNumbers)
         assertEquals(AutoPlayDelaySetting.Default, screenState.autoPlayDelaySetting)
+        assertEquals("AI turn: White", screenState.turnStatusText)
         assertEquals("Time B 1.2s / W 0.0s", screenState.turnTimeText)
         assertNull(screenState.resumePrompt)
     }
@@ -183,6 +184,7 @@ class GameScreenStateTest {
         assertEquals(AutoPlayDelaySetting.Slow, input.autoPlayDelaySetting)
         assertEquals(mapOf(16 to 1_200.0), input.searchTimeBenchmarkAverages)
         assertEquals(PlayLevelSetting(level = 3), input.playLevel)
+        assertEquals(StoneColor.White, input.matchSeats.current.player)
         assertTrue(input.topMovesEnabled)
         assertEquals("analysis", input.candidateText)
         assertEquals("score", input.scoreText)
@@ -206,6 +208,11 @@ class GameScreenStateTest {
             searchTimeSettings = SearchTimeSettings(),
             searchTimeBenchmarkAverages = emptyMap(),
             playLevel = PlayLevelSetting(),
+            matchSeats = PlayerSetup().seatSnapshot(
+                nextPlayer = gameState.nextPlayer,
+                isEngineReady = true,
+                isEngineBusy = isEngineBusy,
+            ),
             uxOptions = KaTrainUxOptions(),
             engineName = "KataGo",
             engineDiagnostic = "ready",

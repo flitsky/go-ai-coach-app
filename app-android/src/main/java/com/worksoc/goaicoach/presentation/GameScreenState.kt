@@ -5,9 +5,10 @@ import com.worksoc.goaicoach.application.PositionAnalysisCacheOptimizationPrompt
 import com.worksoc.goaicoach.application.decidePromptVisibility
 import com.worksoc.goaicoach.application.GameSessionControllerState
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
+import com.worksoc.goaicoach.match.MatchSeatSnapshot
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
-import com.worksoc.goaicoach.match.boardInputEnabled
+import com.worksoc.goaicoach.match.turnStatusText
 import com.worksoc.goaicoach.persistence.SavedGameSnapshot
 import com.worksoc.goaicoach.shared.AnalysisPreset
 import com.worksoc.goaicoach.shared.CandidateMove
@@ -28,10 +29,12 @@ internal data class GameScreenState(
     val searchTimeSettings: SearchTimeSettings,
     val searchTimeBenchmarkAverages: Map<Int, Double>,
     val playLevel: PlayLevelSetting,
+    val matchSeats: MatchSeatSnapshot,
     val uxOptions: KaTrainUxOptions,
     val engine: EngineUiState,
     val analysis: AnalysisUiState,
     val score: ScoreUiState,
+    val turnStatusText: String,
     val turnTimeText: String,
     val actionButtons: List<GameActionButtonState>,
     val resumePrompt: ResumePromptState?,
@@ -51,6 +54,7 @@ internal data class GameScreenStateInput(
     val searchTimeSettings: SearchTimeSettings,
     val searchTimeBenchmarkAverages: Map<Int, Double>,
     val playLevel: PlayLevelSetting,
+    val matchSeats: MatchSeatSnapshot,
     val uxOptions: KaTrainUxOptions,
     val engineName: String,
     val engineDiagnostic: String,
@@ -101,6 +105,11 @@ internal fun buildGameScreenStateInput(
         searchTimeSettings = controller.settings.searchTimeSettings,
         searchTimeBenchmarkAverages = controller.benchmark.searchTimeBenchmarkAverages,
         playLevel = controller.core.runtimeState.playLevel,
+        matchSeats = controller.playerSetup.seatSnapshot(
+            nextPlayer = controller.gameState.nextPlayer,
+            isEngineReady = isEngineReady,
+            isEngineBusy = isEngineBusy,
+        ),
         uxOptions = uxOptions,
         engineName = engineName,
         engineDiagnostic = engineDiagnostic,
@@ -147,6 +156,7 @@ internal fun buildGameScreenState(input: GameScreenStateInput): GameScreenState 
         searchTimeSettings = input.searchTimeSettings,
         searchTimeBenchmarkAverages = input.searchTimeBenchmarkAverages,
         playLevel = input.playLevel,
+        matchSeats = input.matchSeats,
         uxOptions = input.uxOptions,
         engine = EngineUiState(
             name = input.engineName,
@@ -174,6 +184,7 @@ internal fun buildGameScreenState(input: GameScreenStateInput): GameScreenState 
             snapshots = input.scoreSnapshots,
             isGraphExpanded = input.isScoreGraphExpanded,
         ),
+        turnStatusText = input.matchSeats.turnStatusText(input.isEngineBusy),
         turnTimeText = input.turnTimeText,
         actionButtons = buildGameActionButtonStates(input),
         resumePrompt = input.pendingSavedSession
@@ -236,12 +247,7 @@ internal data class GameActionButtonState(
 
 internal fun buildGameActionButtonStates(input: GameScreenStateInput): List<GameActionButtonState> {
     val canPlayOnBoard = !input.isGameEnded &&
-        boardInputEnabled(
-            input.playerSetup,
-            input.isEngineReady,
-            input.isEngineBusy,
-            input.gameState.nextPlayer,
-        )
+        input.matchSeats.current.canAcceptBoardInput
     val topMovesButtonEnabled = !input.isGameEnded &&
         input.isEngineReady &&
         (!input.isEngineBusy || input.topMovesEnabled)

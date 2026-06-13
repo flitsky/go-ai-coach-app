@@ -18,20 +18,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.worksoc.goaicoach.match.PlayerSetup
-import com.worksoc.goaicoach.match.turnStatus
-import com.worksoc.goaicoach.shared.StoneColor
 
 @Composable
 internal fun EngineResponsePanel(
-    nextPlayer: StoneColor,
+    turnStatusText: String,
     moveCount: Int,
     capturedByBlack: Int,
     capturedByWhite: Int,
     turnTimeText: String,
     lastMoveText: String,
-    isEngineBusy: Boolean,
-    playerSetup: PlayerSetup,
     engineMessage: String,
     candidateText: String,
     scoreText: String,
@@ -54,7 +49,7 @@ internal fun EngineResponsePanel(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(turnStatus(nextPlayer, isEngineBusy, playerSetup), fontWeight = FontWeight.SemiBold)
+                Text(turnStatusText, fontWeight = FontWeight.SemiBold)
                 Text("Moves: $moveCount", color = MaterialTheme.colorScheme.secondary)
             }
 

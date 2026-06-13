@@ -331,7 +331,7 @@ Game UX는 다음만 담당한다.
 3. `[완료]` Core Rules Domain: 좌표/합법수/리플레이 helper를 순수 core 쪽으로 더 모아 adapter 중복을 줄임
 4. `[완료]` Middleware / Cache Domain: position analysis cache provider/origin 포트를 더 명확히 분리
 5. `[완료]` Game Domain: seat/referee/AI character가 engine 호출 세부를 모르도록 경계 강화
-6. `[대기]` App Service / Presentation: controller snapshot과 UI 연결부를 더 얇게 만들고 계층 테스트 보강
+6. `[완료]` App Service / Presentation: controller snapshot과 UI 연결부를 더 얇게 만들고 계층 테스트 보강
 
 이번 리팩토링 배치에서 바로 진행할 안전한 순서:
 
@@ -367,6 +367,11 @@ Game UX는 다음만 담당한다.
 - `boardInputEnabled()`와 `turnStatus()`는 더 이상 흑/백 필드를 직접 풀어 판단하지 않고 `PlayerSetup.seatSnapshot()` 결과를 사용한다. 향후 원격 seat, seat clock, observer 권한을 붙일 때 같은 snapshot 경계를 확장할 수 있다.
 - `MatchPolicyTest`에 현재 턴 seat snapshot, engine busy gate, local two-player engine-not-ready input 허용 케이스를 추가했다.
 - 검증: `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest` 통과.
+- 6-7계층 `App Service / Presentation` 연결부를 정리했다. `GameScreenStateInput`과 `GameScreenState`가 `MatchSeatSnapshot`을 포함하도록 바꿔, action button enabled 판단과 보드 입력 가능 여부가 같은 seat snapshot을 공유한다.
+- `EngineResponsePanel`과 `GamePlaySection`은 더 이상 `boardInputEnabled()`나 `turnStatus()`를 직접 호출하지 않고 `GameScreenState.turnStatusText`, `GameScreenState.matchSeats.current.canAcceptBoardInput`만 렌더링한다.
+- `MatchSeatSnapshot.turnStatusText()`를 추가하고 기존 `turnStatus()`는 호환 wrapper로 남겼다.
+- 검증: `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest` 통과.
+- 하위 계층부터 6개 단계까지 완료한 뒤 통합 검증으로 `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test`를 실행했고 통과했다.
 
 2026-06-12:
 
