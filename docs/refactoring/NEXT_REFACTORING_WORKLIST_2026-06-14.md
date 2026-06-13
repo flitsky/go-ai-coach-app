@@ -98,3 +98,22 @@
 - 2026-06-14: `planSavedGamePersistence(savedSessionUiState, ...)` overload를 추가해 자동 저장 계획이 저장 세션 prompt gate를 개별 Boolean이 아니라 application state holder로 받게 했다. `GoCoachApp.kt`의 자동 저장 `LaunchedEffect`도 `savedSessionUiState`를 key로 사용한다. `SavedGamePersistenceTest`를 보강했고 JDK 17/Android SDK 환경에서 `:app-android:testDebugUnitTest`가 통과했다.
 - 2026-06-14: `GameSessionControllerState`에 `savedSession: SavedSessionUiState` 축을 추가했다. controller state가 core/settings/benchmark/saved-session/cache-optimization 상태를 함께 대표하게 되었고, `withSavedSession()` 교체 메서드를 테스트했다. JDK 17/Android SDK 환경에서 `:app-android:testDebugUnitTest`가 통과했다.
 - 2026-06-14: `AutoAiTurnUiState`를 추가해 자동 AI 턴 예약 pending 플래그를 application state holder로 묶었다. `GoCoachApp.kt`는 직접 Boolean 대입 대신 `markScheduled()`와 `clearPending()`을 사용한다. 이는 이후 Auto AI turn runner/effect 분리 전 단계다. `GameAutomationApplicationTest`를 보강했고 JDK 17/Android SDK 환경에서 `:app-android:testDebugUnitTest`가 통과했다.
+- 2026-06-14: 이번 배치 통합 검증으로 `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test`를 실행했고 통과했다.
+
+## 다음 추천 리팩토링 항목
+
+1. `GameSessionControllerState`를 `GoCoachApp.kt`에 실제로 도입
+   - 현재는 controller state skeleton과 테스트만 존재한다.
+   - 다음 단계에서는 Compose state들을 한 번에 옮기지 말고, `core/settings/benchmark/savedSession/autoAiTurn/cacheOptimization` 순서로 controller snapshot을 조립하는 helper부터 둔다.
+
+2. Auto AI turn runner plan 분리
+   - `requestAiTurnForCurrentState()` 내부의 schedule, delay, cancellation, begin/success/failure/endgame completion을 `AutoAiTurnRunnerPlan` 또는 controller effect로 나눈다.
+   - UI는 effect 실행만 담당하고, 성공/실패 display plan은 application reducer로 반영하게 한다.
+
+3. Prompt priority 정책 분리
+   - resume prompt, benchmark progress/result, cache optimization prompt가 동시에 걸릴 때 어떤 prompt가 우선인지 application 계층에 명문화한다.
+   - 현재는 각 흐름이 UI에서 독립적으로 계산된다.
+
+4. Persistence/diagnostic port 인터페이스 도입
+   - `GameSessionStore`, `UserPreferencesStore`, `EngineBenchmarkStore`, `RuntimeEventLog`, debug report mirror 저장을 application port로 묶는다.
+   - 로컬 저장소와 향후 원격/서버 저장소를 바꿔 끼울 수 있는 기반을 만든다.

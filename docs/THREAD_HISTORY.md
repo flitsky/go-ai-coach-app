@@ -1002,3 +1002,5 @@
 - JDK 17과 Android SDK를 명시해 `:app-android:testDebugUnitTest`를 실행했고 통과했다.
 - `AutoAiTurnUiState`를 추가해 자동 AI 턴 예약 pending 플래그를 application state holder로 묶었다. `GoCoachApp.kt`는 자동 턴 예약/취소/완료 지점에서 직접 Boolean을 대입하지 않고 `markScheduled()`와 `clearPending()`을 통과한다.
 - `GameAutomationApplicationTest`를 보강했고, JDK 17과 Android SDK를 명시해 `:app-android:testDebugUnitTest`를 실행해 통과했다.
+- 이번 리팩토링 반복 배치의 통합 검증으로 `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test`를 실행했고 통과했다.
+- 다음 추천 리팩토링은 `GameSessionControllerState`를 `GoCoachApp.kt`에 실제 조립 helper로 도입, Auto AI turn runner plan 분리, prompt priority 정책 분리, persistence/diagnostic port 인터페이스 도입 순서다.
