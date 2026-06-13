@@ -50,3 +50,4 @@
 | `refactoring/GAME_SESSION_CONTROLLER_CANDIDATES_2026-06-13.md` | `GoCoachApp.kt`의 display plan applier/reducer 이전 후보와 `GameSessionController` 도입 순서 |
 | `refactoring/SESSION_STATE_REFACTORING_WORKLIST_2026-06-13.md` | reducer state holder를 단일 source of truth로 승격하는 작업 리스트와 진행 로그 |
 | `refactoring/ENGINE_SEARCH_MODE_ROADMAP_2026-06-13.md` | GTP stateful fast path와 JSON position analysis를 정책으로 분리하고 단계적으로 실험하는 로드맵 |
+| `refactoring/REFACTORING_COMPLETION_ASSESSMENT_2026-06-13.md` | 현재 계층 분리 완성도 평가, 남은 리스크, 다음 리팩토링 추천 순서 |
