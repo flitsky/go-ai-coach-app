@@ -1027,3 +1027,5 @@
 - `GameAutomationApplicationTest`를 보강했고, JDK 17과 Android SDK를 명시해 `:app-android:testDebugUnitTest`를 실행했고 통과했다.
 - `GameSessionControllerState.toTopMoveAnalysisLaunchPlan(...)`와 `toShowTopMovesPlan(...)`를 추가했다. Top Moves 분석 launch/cache/display 판단이 UI 세부 필드 조합 대신 controller snapshot에서 파생된다.
 - `TopMovesApplicationTest`를 보강했고, JDK 17과 Android SDK를 명시해 `:app-android:testDebugUnitTest`를 실행했고 통과했다.
+- 이번 추가 리팩토링 배치 최종 검증으로 `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test`를 실행했고 통과했다.
+- 무선 ADB `SM-S908N(192.168.35.166:33421)`에 `make install-dev-engine`로 최신 debug APK와 KataGo model/config를 설치했고, cold launch `TotalTime=617ms`를 확인했다.
