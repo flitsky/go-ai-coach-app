@@ -145,6 +145,25 @@ internal fun buildTopMoveAnalysisLaunchPlan(
     return TopMoveAnalysisLaunchPlan.RunEngine(plan)
 }
 
+internal fun GameSessionControllerState.toTopMoveAnalysisLaunchPlan(
+    targetState: GameState,
+    deep: Boolean,
+    automatic: Boolean,
+    cachedResultFor: (AnalysisCacheKey) -> CachedAnalysisResult?,
+): TopMoveAnalysisLaunchPlan =
+    buildTopMoveAnalysisLaunchPlan(
+        targetState = targetState,
+        engineProfile = core.runtimeState.engineProfile,
+        analysisPreset = core.runtimeState.analysisPreset,
+        deep = deep,
+        automatic = automatic,
+        topMovesEnabled = settings.topMovesEnabled,
+        currentCandidateMoves = core.analysisState.candidateMoves,
+        reviewAnalysis = core.analysisState.reviewAnalysis,
+        lastAnalysisKey = core.analysisState.lastAnalysisKey,
+        cachedResultFor = cachedResultFor,
+    )
+
 internal fun buildCachedTopMoveAnalysisUpdate(
     targetState: GameState,
     cacheKey: AnalysisCacheKey,
@@ -259,6 +278,22 @@ internal fun planShowTopMoves(
         candidateMoves = emptyList(),
     )
 }
+
+internal fun GameSessionControllerState.toShowTopMovesPlan(
+    isEngineBusy: Boolean,
+): ShowTopMovesPlan =
+    planShowTopMoves(
+        reviewAnalysis = core.analysisState.reviewAnalysis,
+        lastAnalysisKey = core.analysisState.lastAnalysisKey,
+        currentPlan = buildTopMoveAnalysisPlan(
+            targetState = gameState,
+            engineProfile = core.runtimeState.engineProfile,
+            analysisPreset = core.runtimeState.analysisPreset,
+            deep = false,
+        ),
+        analysisPreset = core.runtimeState.analysisPreset,
+        isEngineBusy = isEngineBusy,
+    )
 
 private fun List<CandidateMove>.scoredCandidateCount(): Int =
     count { it.pointLoss != null }

@@ -1,5 +1,7 @@
 package com.worksoc.goaicoach.application
 
+import com.worksoc.goaicoach.match.AutoPlayDelaySetting
+import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.AnalysisPreset
 import com.worksoc.goaicoach.shared.AnalysisResult
@@ -12,7 +14,9 @@ import com.worksoc.goaicoach.shared.EngineStatus
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
+import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.StoneColor
 import kotlinx.coroutines.runBlocking
@@ -394,6 +398,28 @@ class TopMovesApplicationTest {
     }
 
     @Test
+    fun controllerStateBuildsTopMoveAnalysisLaunchPlan() {
+        val state = GameState.empty()
+        val controller = topMoveControllerState(state = state)
+        val expected = buildTopMoveAnalysisPlan(
+            targetState = state,
+            engineProfile = EngineProfile(),
+            analysisPreset = AnalysisPreset.Lite,
+            deep = false,
+        )
+
+        val launchPlan = controller.toTopMoveAnalysisLaunchPlan(
+            targetState = state,
+            deep = false,
+            automatic = false,
+            cachedResultFor = { null },
+        )
+
+        assertTrue(launchPlan is TopMoveAnalysisLaunchPlan.RunEngine)
+        assertEquals(expected, (launchPlan as TopMoveAnalysisLaunchPlan.RunEngine).plan)
+    }
+
+    @Test
     fun planShowTopMovesUsesCachedBestMoveWithoutDeepFallback() {
         val state = GameState.empty()
         val snapshot = MoveAnalysisSnapshot.from(
@@ -426,7 +452,78 @@ class TopMovesApplicationTest {
         assertTrue(showPlan is ShowTopMovesPlan.ShowCached)
         assertEquals(1, (showPlan as ShowTopMovesPlan.ShowCached).candidateMoves.size)
     }
+
+    @Test
+    fun controllerStateBuildsShowTopMovesPlanFromCurrentAnalysis() {
+        val state = GameState.empty()
+        val candidate = CandidateMove(
+            move = Move.Play(
+                player = StoneColor.Black,
+                coordinate = BoardCoordinate.fromLabel("E5", BoardSize.Nine),
+            ),
+            pointLoss = 0.0,
+        )
+        val snapshot = MoveAnalysisSnapshot.from(state = state, candidates = listOf(candidate))
+        val currentPlan = buildTopMoveAnalysisPlan(
+            targetState = state,
+            engineProfile = EngineProfile(),
+            analysisPreset = AnalysisPreset.Lite,
+            deep = false,
+        )
+        val controller = topMoveControllerState(
+            state = state,
+            analysisState = GameSessionAnalysisState.reset(
+                candidateText = "cached analysis",
+                reviewAnalysis = snapshot,
+            ).copy(lastAnalysisKey = currentPlan.analysisKey),
+        )
+
+        val showPlan = controller.toShowTopMovesPlan(isEngineBusy = false)
+
+        assertTrue(showPlan is ShowTopMovesPlan.ShowCached)
+        assertEquals(1, (showPlan as ShowTopMovesPlan.ShowCached).candidateMoves.size)
+    }
 }
+
+private fun topMoveControllerState(
+    state: GameState,
+    analysisState: GameSessionAnalysisState = GameSessionAnalysisState.empty(state),
+): GameSessionControllerState =
+    GameSessionControllerState(
+        core = GameSessionCoreState(
+            gameState = state,
+            isGameEnded = false,
+            analysisState = analysisState,
+            scoreState = GameSessionScoreState.reset(
+                scoreText = "score",
+                scoreSnapshots = listOf(localScoreSnapshot(state)),
+                endgameLog = "endgame",
+            ),
+            runtimeState = GameSessionRuntimeState(
+                playLevel = PlayLevelSetting(),
+                engineProfile = EngineProfile(),
+                analysisPreset = AnalysisPreset.Lite,
+            ),
+            moveReviewState = GameSessionMoveReviewState.reset(
+                moveReviewText = "review",
+                lastMoveText = "none",
+            ),
+            engineMessage = "engine",
+        ),
+        settings = GameSessionSettingsState(
+            playerSetup = PlayerSetup(),
+            autoPlayDelaySetting = AutoPlayDelaySetting.Default,
+            searchTimeSettings = SearchTimeSettings(),
+            topMovesEnabled = true,
+        ),
+        benchmark = EngineBenchmarkUiState.initial(
+            benchmarkText = "benchmark",
+            profile = null,
+        ),
+        savedSession = SavedSessionUiState(),
+        autoAiTurn = AutoAiTurnUiState(),
+        positionCacheOptimization = PositionAnalysisCacheOptimizationUiState(),
+    )
 
 private class FakeTopMoveEngineSessionClient(
     private val result: AnalysisResult,

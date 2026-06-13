@@ -1025,3 +1025,5 @@
 - `GameSessionControllerTest`를 보강했고, JDK 17과 Android SDK를 명시해 `:app-android:testDebugUnitTest`를 실행했고 통과했다.
 - `GameSessionControllerState.toAutoAiTurnRequestPlan(...)`와 `toAutoAiTurnExecutionContext(...)`를 추가했다. 자동 AI 턴의 요청 가능 여부와 실행 context 생성이 UI 세부 필드 조합 대신 controller snapshot에서 파생된다.
 - `GameAutomationApplicationTest`를 보강했고, JDK 17과 Android SDK를 명시해 `:app-android:testDebugUnitTest`를 실행했고 통과했다.
+- `GameSessionControllerState.toTopMoveAnalysisLaunchPlan(...)`와 `toShowTopMovesPlan(...)`를 추가했다. Top Moves 분석 launch/cache/display 판단이 UI 세부 필드 조합 대신 controller snapshot에서 파생된다.
+- `TopMovesApplicationTest`를 보강했고, JDK 17과 Android SDK를 명시해 `:app-android:testDebugUnitTest`를 실행했고 통과했다.

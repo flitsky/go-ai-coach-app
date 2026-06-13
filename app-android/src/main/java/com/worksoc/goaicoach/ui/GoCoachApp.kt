@@ -41,8 +41,6 @@ import com.worksoc.goaicoach.application.buildSavedSessionCheckPlan
 import com.worksoc.goaicoach.application.buildScoreEstimateRequestPlan
 import com.worksoc.goaicoach.application.buildScoringRuleChangePlan
 import com.worksoc.goaicoach.application.buildStartConfiguredGamePlan
-import com.worksoc.goaicoach.application.buildTopMoveAnalysisPlan
-import com.worksoc.goaicoach.application.buildTopMoveAnalysisLaunchPlan
 import com.worksoc.goaicoach.application.buildInitialUserPreferencesPlan
 import com.worksoc.goaicoach.application.buildPlayerSetupChangePlan
 import com.worksoc.goaicoach.application.buildPositionAnalysisCacheOptimizationPlan
@@ -79,7 +77,6 @@ import com.worksoc.goaicoach.application.EngineStartupDisplayPlan
 import com.worksoc.goaicoach.application.PlayerSetupChangePlan
 import com.worksoc.goaicoach.application.PositionAnalysisCacheOptimizationUiState
 import com.worksoc.goaicoach.application.localScoreSnapshot
-import com.worksoc.goaicoach.application.planShowTopMoves
 import com.worksoc.goaicoach.application.selectRuntimePlayLevel
 import com.worksoc.goaicoach.application.shouldRequestAiTurn
 import com.worksoc.goaicoach.application.shouldRequestTopMoveAnalysis
@@ -114,6 +111,8 @@ import com.worksoc.goaicoach.application.RuntimeLogContext
 import com.worksoc.goaicoach.application.toDebugReportSnapshot
 import com.worksoc.goaicoach.application.toAutoAiTurnExecutionContext
 import com.worksoc.goaicoach.application.toAutoAiTurnRequestPlan
+import com.worksoc.goaicoach.application.toShowTopMovesPlan
+import com.worksoc.goaicoach.application.toTopMoveAnalysisLaunchPlan
 import com.worksoc.goaicoach.application.ShowTopMovesPlan
 import com.worksoc.goaicoach.application.ScoreEstimateDisplayPlan
 import com.worksoc.goaicoach.application.ScoreEstimateRequestPlan
@@ -737,16 +736,10 @@ private fun GoCoachScreen(
             return
         }
 
-        val launchPlan = buildTopMoveAnalysisLaunchPlan(
+        val launchPlan = currentControllerSessionState().toTopMoveAnalysisLaunchPlan(
             targetState = targetState,
-            engineProfile = runtimeState.engineProfile,
-            analysisPreset = runtimeState.analysisPreset,
             deep = deep,
             automatic = automatic,
-            topMovesEnabled = currentTopMovesEnabled,
-            currentCandidateMoves = analysisState.candidateMoves,
-            reviewAnalysis = analysisState.reviewAnalysis,
-            lastAnalysisKey = analysisState.lastAnalysisKey,
             cachedResultFor = analysisCache::get,
         )
         val launchUpdate = analysisState.applyTopMoveAnalysisLaunchPlan(launchPlan) ?: return
@@ -802,16 +795,7 @@ private fun GoCoachScreen(
         }
         settingsState = settingsState.showTopMoves()
         when (
-            val plan = planShowTopMoves(
-                reviewAnalysis = analysisState.reviewAnalysis,
-                lastAnalysisKey = analysisState.lastAnalysisKey,
-                currentPlan = buildTopMoveAnalysisPlan(
-                    targetState = gameState,
-                    engineProfile = runtimeState.engineProfile,
-                    analysisPreset = runtimeState.analysisPreset,
-                    deep = false,
-                ),
-                analysisPreset = runtimeState.analysisPreset,
+            val plan = currentControllerSessionState().toShowTopMovesPlan(
                 isEngineBusy = isEngineBusy,
             )
         ) {
