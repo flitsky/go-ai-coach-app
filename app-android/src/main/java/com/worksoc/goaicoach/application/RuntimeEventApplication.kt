@@ -4,6 +4,7 @@ import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.summary
 import com.worksoc.goaicoach.shared.AnalysisLimit
+import com.worksoc.goaicoach.shared.EngineSearchMode
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.PlayLevelSetting
@@ -190,6 +191,7 @@ internal fun runtimeAiTurnBeginLog(
     aiPlayer: StoneColor,
     playLevel: PlayLevelSetting,
     analysisLimit: AnalysisLimit,
+    searchMode: EngineSearchMode = EngineSearchMode.GtpStatefulFast,
     delayMillis: Long,
     isolateSearchCache: Boolean,
 ): String =
@@ -200,6 +202,7 @@ internal fun runtimeAiTurnBeginLog(
         detail = "move=${turnState.moves.size + 1} player=${aiPlayer.label} " +
             "level=${playLevel.displayLabel} policy=${playLevel.selectionPolicy.description.runtimeLogSnippet(100)} " +
             "limit=${analysisLimit.runtimeLogSummary()} delayMs=$delayMillis " +
+            "searchMode=${searchMode.name} " +
             "searchCache=${if (isolateSearchCache) "clear" else "reuse"} fp=${turnState.runtimeShortFingerprint()}",
     )
 

@@ -7,6 +7,7 @@ import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.EngineProfile
+import com.worksoc.goaicoach.shared.EngineSearchMode
 import com.worksoc.goaicoach.shared.EngineStatus
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
@@ -397,6 +398,7 @@ private class FakeTopMoveEngineSessionClient(
     override suspend fun analyzePosition(
         state: GameState,
         limit: AnalysisLimit,
+        searchMode: EngineSearchMode,
     ): AnalysisResult {
         analyzedState = state
         analyzedLimit = limit
@@ -420,6 +422,7 @@ private class FakeTopMoveEngineSessionClient(
         playLevel: com.worksoc.goaicoach.shared.PlayLevelSetting,
         currentProfile: EngineProfile,
         searchTimeSettings: com.worksoc.goaicoach.shared.SearchTimeSettings,
+        searchMode: EngineSearchMode,
         isolateSearchCache: Boolean,
     ): AutoAiTurnResult =
         error("not used")

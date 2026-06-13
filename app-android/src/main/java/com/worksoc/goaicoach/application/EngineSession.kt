@@ -9,6 +9,7 @@ import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.EngineCoreApi
 import com.worksoc.goaicoach.shared.EngineProfile
+import com.worksoc.goaicoach.shared.EngineSearchMode
 import com.worksoc.goaicoach.shared.EngineStatus
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
@@ -103,6 +104,7 @@ internal suspend fun EngineCoreApi.runAutoAiTurn(
     playLevel: PlayLevelSetting,
     currentProfile: EngineProfile,
     searchTimeSettings: SearchTimeSettings = SearchTimeSettings(),
+    searchMode: EngineSearchMode = EngineSearchMode.GtpStatefulFast,
     isolateSearchCache: Boolean = false,
 ): AutoAiTurnResult {
     val aiPlayer = currentState.nextPlayer
@@ -115,6 +117,7 @@ internal suspend fun EngineCoreApi.runAutoAiTurn(
         aiPlayer = aiPlayer,
         playLevel = playLevel,
         searchTimeSettings = searchTimeSettings,
+        searchMode = searchMode,
         isolateSearchCache = isolateSearchCache,
     )
     val estimate = runCatching {

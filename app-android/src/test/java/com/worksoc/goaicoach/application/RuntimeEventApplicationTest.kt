@@ -78,6 +78,7 @@ class RuntimeEventApplicationTest {
         assertTrue(log.contains("level=초급 7단계"))
         assertTrue(log.contains("limit=visits=32,timeMs=2000,candidates=16"))
         assertTrue(log.contains("delayMs=500"))
+        assertTrue(log.contains("searchMode=GtpStatefulFast"))
         assertTrue(log.contains("searchCache=clear"))
         assertTrue(log.contains("transition=\"engine_select_move\""))
     }

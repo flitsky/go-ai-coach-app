@@ -8,6 +8,7 @@ import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.DeadStoneCleanupResult
 import com.worksoc.goaicoach.shared.EndgameScoreSource
 import com.worksoc.goaicoach.shared.EngineProfile
+import com.worksoc.goaicoach.shared.EngineSearchMode
 import com.worksoc.goaicoach.shared.EngineStatus
 import com.worksoc.goaicoach.shared.FinalScoreResult
 import com.worksoc.goaicoach.shared.GameState
@@ -265,6 +266,7 @@ private class FakeScoreEngineSessionClient : EngineSessionClient {
     override suspend fun analyzePosition(
         state: GameState,
         limit: AnalysisLimit,
+        searchMode: EngineSearchMode,
     ): AnalysisResult =
         error("not used")
 
@@ -289,6 +291,7 @@ private class FakeScoreEngineSessionClient : EngineSessionClient {
         playLevel: PlayLevelSetting,
         currentProfile: EngineProfile,
         searchTimeSettings: SearchTimeSettings,
+        searchMode: EngineSearchMode,
         isolateSearchCache: Boolean,
     ): AutoAiTurnResult =
         error("not used")

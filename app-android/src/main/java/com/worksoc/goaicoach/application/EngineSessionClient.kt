@@ -6,6 +6,7 @@ import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.EngineCoreApi
 import com.worksoc.goaicoach.shared.EngineProfile
+import com.worksoc.goaicoach.shared.EngineSearchMode
 import com.worksoc.goaicoach.shared.EngineStatus
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
@@ -43,6 +44,7 @@ internal interface EngineSessionClient {
     suspend fun analyzePosition(
         state: GameState,
         limit: AnalysisLimit,
+        searchMode: EngineSearchMode = EngineSearchMode.GtpStatefulFast,
     ): AnalysisResult
 
     suspend fun syncAndEstimateGraphScore(
@@ -60,6 +62,7 @@ internal interface EngineSessionClient {
         playLevel: PlayLevelSetting,
         currentProfile: EngineProfile,
         searchTimeSettings: SearchTimeSettings,
+        searchMode: EngineSearchMode,
         isolateSearchCache: Boolean,
     ): AutoAiTurnResult
 
@@ -113,6 +116,7 @@ internal class AdapterEngineSessionClient(
     override suspend fun analyzePosition(
         state: GameState,
         limit: AnalysisLimit,
+        searchMode: EngineSearchMode,
     ): AnalysisResult {
         coreApi.syncToGameState(state)
         return coreApi.analyze(limit)
@@ -135,6 +139,7 @@ internal class AdapterEngineSessionClient(
         playLevel: PlayLevelSetting,
         currentProfile: EngineProfile,
         searchTimeSettings: SearchTimeSettings,
+        searchMode: EngineSearchMode,
         isolateSearchCache: Boolean,
     ): AutoAiTurnResult =
         coreApi.runAutoAiTurn(
@@ -142,6 +147,7 @@ internal class AdapterEngineSessionClient(
             playLevel = playLevel,
             currentProfile = currentProfile,
             searchTimeSettings = searchTimeSettings,
+            searchMode = searchMode,
             isolateSearchCache = isolateSearchCache,
         )
 

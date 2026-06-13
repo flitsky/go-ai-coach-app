@@ -30,6 +30,7 @@
 7. 분석 후보에 없는 착점은 실수로 단정하지 않고 `unknown` 또는 회색 계열로 취급한다.
 8. `AnalysisResultCache`는 기본 비활성화한다. 같은 fingerprint가 있더라도 이전 분석 결과를 재사용하지 않는다.
 9. 사람 vs AI 또는 AI vs 사람 대국에서는 KataGo search tree 재사용을 유지한다. AI vs AI 자동대국에서만 한 진영의 깊은 탐색이 다른 진영의 낮은 레벨에 섞이지 않도록 착수 분석 직전 `clearSearchCache()`를 호출한다.
+10. 엔진 탐색 방식은 `EngineSearchMode` 정책으로 분리한다. 현재 기본값은 `GtpStatefulFast`이며, `JsonPositionAnalysis`는 AI vs AI 실험 모드로 검증한 뒤 기본값 전환 여부를 판단한다.
 
 ## 현재 구현 범위
 
@@ -42,6 +43,8 @@
 - Broad study analysis: 전체 합법 착점, policy 후보, refine sweep, deep fallback은 기본 대국 경로에서 비활성이다.
 
 즉 “항상 분석 snapshot을 만든다”는 정책은 유지하되, 폰 실시간 대국에서는 best-1 경량 snapshot만 자동 생성한다. 여러 색상의 후보 분포나 전체 착점 평가가 필요하면 별도 `StudyBroad` 예산으로 분리해서 켠다.
+
+`EngineSearchMode`는 visits/time/candidate count 같은 search budget이 아니라, 엔진을 어떤 방식으로 orchestration할지 정하는 정책이다. `GtpStatefulFast`는 현재의 stateful GTP process와 search tree reuse를 활용하는 빠른 경로이고, `JsonPositionAnalysis`는 명시적 board position을 JSON query로 분석하는 실험 경로다. 2026-06-13 현재 제품 기본값은 `GtpStatefulFast`로 유지한다.
 
 ## Visit의 의미와 탐색 원리
 

@@ -7,6 +7,7 @@ import com.worksoc.goaicoach.shared.AnalysisPreset
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.EngineProfile
+import com.worksoc.goaicoach.shared.EngineSearchMode
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.PlayLevelSetting
@@ -106,6 +107,7 @@ internal data class AutoAiTurnExecutionContext(
     val aiPlayer: StoneColor,
     val playLevel: PlayLevelSetting,
     val analysisLimit: AnalysisLimit,
+    val searchMode: EngineSearchMode,
     val isolateSearchCache: Boolean,
     val previousReviewCandidates: List<CandidateMove>,
 )
@@ -115,6 +117,7 @@ internal fun buildAutoAiTurnExecutionContext(
     playerSetup: PlayerSetup,
     searchTimeSettings: SearchTimeSettings,
     reviewCandidateMoves: List<CandidateMove>,
+    searchMode: EngineSearchMode = EngineSearchMode.GtpStatefulFast,
 ): AutoAiTurnExecutionContext {
     val aiPlayer = gameState.nextPlayer
     val playLevel = playerSetup.seatFor(aiPlayer)
@@ -126,6 +129,7 @@ internal fun buildAutoAiTurnExecutionContext(
         aiPlayer = aiPlayer,
         playLevel = playLevel,
         analysisLimit = playLevel.analysisLimitWith(searchTimeSettings),
+        searchMode = searchMode,
         isolateSearchCache = playerSetup.isAutoPlay(),
         previousReviewCandidates = reviewCandidateMoves,
     )
@@ -179,6 +183,7 @@ internal suspend fun EngineSessionClient.runAutoAiTurnDisplayPlan(
     playLevel: PlayLevelSetting,
     currentProfile: EngineProfile,
     searchTimeSettings: SearchTimeSettings,
+    searchMode: EngineSearchMode,
     isolateSearchCache: Boolean,
     previousSnapshots: List<ScoreSnapshot>,
     previousReviewCandidates: List<CandidateMove>,
@@ -188,6 +193,7 @@ internal suspend fun EngineSessionClient.runAutoAiTurnDisplayPlan(
         playLevel = playLevel,
         currentProfile = currentProfile,
         searchTimeSettings = searchTimeSettings,
+        searchMode = searchMode,
         isolateSearchCache = isolateSearchCache,
     )
     return buildAutoAiTurnDisplayPlan(

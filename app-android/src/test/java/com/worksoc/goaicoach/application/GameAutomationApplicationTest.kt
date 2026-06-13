@@ -10,6 +10,7 @@ import com.worksoc.goaicoach.shared.AnalysisResult
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.EngineProfile
+import com.worksoc.goaicoach.shared.EngineSearchMode
 import com.worksoc.goaicoach.shared.EngineStatus
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
@@ -174,6 +175,7 @@ class GameAutomationApplicationTest {
         assertEquals(whiteLevel, context.playLevel)
         assertEquals(32, context.analysisLimit.visits)
         assertEquals(4_000L, context.analysisLimit.timeMillis)
+        assertEquals(EngineSearchMode.GtpStatefulFast, context.searchMode)
         assertFalse(context.isolateSearchCache)
         assertEquals(listOf(reviewCandidate), context.previousReviewCandidates)
     }
@@ -282,6 +284,7 @@ class GameAutomationApplicationTest {
             playLevel = playLevel,
             currentProfile = EngineProfile(),
             searchTimeSettings = SearchTimeSettings(),
+            searchMode = EngineSearchMode.GtpStatefulFast,
             isolateSearchCache = true,
             previousSnapshots = emptyList(),
             previousReviewCandidates = emptyList(),
@@ -289,6 +292,7 @@ class GameAutomationApplicationTest {
 
         assertEquals(initialState, client.currentState)
         assertEquals(playLevel, client.playLevel)
+        assertEquals(EngineSearchMode.GtpStatefulFast, client.searchMode)
         assertEquals(true, client.isolateSearchCache)
         assertEquals(nextState, display.gameState)
         assertEquals("candidate text", display.candidateText)
@@ -321,6 +325,8 @@ private class FakeAutoAiEngineSessionClient(
         private set
     var isolateSearchCache: Boolean? = null
         private set
+    var searchMode: EngineSearchMode? = null
+        private set
 
     override val capabilities: EngineSessionCapabilities =
         EngineSessionCapabilities(supportsDeviceBenchmark = false)
@@ -341,6 +347,7 @@ private class FakeAutoAiEngineSessionClient(
     override suspend fun analyzePosition(
         state: GameState,
         limit: AnalysisLimit,
+        searchMode: EngineSearchMode,
     ): AnalysisResult =
         error("not used")
 
@@ -361,10 +368,12 @@ private class FakeAutoAiEngineSessionClient(
         playLevel: PlayLevelSetting,
         currentProfile: EngineProfile,
         searchTimeSettings: SearchTimeSettings,
+        searchMode: EngineSearchMode,
         isolateSearchCache: Boolean,
     ): AutoAiTurnResult {
         this.currentState = currentState
         this.playLevel = playLevel
+        this.searchMode = searchMode
         this.isolateSearchCache = isolateSearchCache
         return result
     }

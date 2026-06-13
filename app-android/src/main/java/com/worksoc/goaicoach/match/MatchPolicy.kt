@@ -2,6 +2,7 @@ package com.worksoc.goaicoach.match
 
 import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.EngineCoreApi
+import com.worksoc.goaicoach.shared.EngineSearchMode
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.PlayLevelSetting
@@ -212,6 +213,7 @@ internal suspend fun applyAiResponseAfterHumanTurn(
         aiPlayer = AiPlayer,
         playLevel = playLevel,
         searchTimeSettings = searchTimeSettings,
+        searchMode = EngineSearchMode.GtpStatefulFast,
     )
     if (selectedAiMove != null) {
         val afterAi = MatchReferee.play(stateAfterHuman, selectedAiMove.move).getOrNull()
@@ -244,9 +246,10 @@ internal suspend fun applyAiTurn(
     aiPlayer: StoneColor,
     playLevel: PlayLevelSetting,
     searchTimeSettings: SearchTimeSettings = SearchTimeSettings(),
+    searchMode: EngineSearchMode = EngineSearchMode.GtpStatefulFast,
     isolateSearchCache: Boolean = false,
 ): TurnOutcome {
-    if (isolateSearchCache) {
+    if (isolateSearchCache && searchMode == EngineSearchMode.GtpStatefulFast) {
         // AI-vs-AI currently shares one KataGo process. Without this isolation,
         // a lower-budget side can inherit the previous higher-budget side's
         // subtree and hide the intended B16/B32/B64 strength gap.
@@ -257,6 +260,7 @@ internal suspend fun applyAiTurn(
         aiPlayer = aiPlayer,
         playLevel = playLevel,
         searchTimeSettings = searchTimeSettings,
+        searchMode = searchMode,
     )
     if (selectedAiMove != null) {
         val afterAi = MatchReferee.play(currentState, selectedAiMove.move).getOrNull()
@@ -338,6 +342,7 @@ private suspend fun EngineCoreApi.selectAiMoveFromAnalysis(
     aiPlayer: StoneColor,
     playLevel: PlayLevelSetting,
     searchTimeSettings: SearchTimeSettings,
+    searchMode: EngineSearchMode,
 ): SelectedAiMove? =
     runCatching {
         val baseLimit = playLevel.analysisLimitWith(searchTimeSettings)
@@ -374,6 +379,7 @@ private suspend fun EngineCoreApi.selectAiMoveFromAnalysis(
             move = selected.move,
             summary = buildString {
                 appendLine("AI level: ${playLevel.displayLabel}, ${playLevel.selectionPolicy.description}.")
+                appendLine("Search mode: ${searchMode.label}.")
                 appendLine("AI selected rank $selectedRank/${scoredPlayCandidates.size}: ${selected.describeForSelection(currentState)}.")
                 appendLine(analysis.summary)
             }.trim(),
