@@ -44,6 +44,31 @@ class SavedSessionPromptApplicationTest {
         assertTrue(plan.hasCheckedSavedSession)
     }
 
+    @Test
+    fun uiStateAppliesSavedSessionCheckPlan() {
+        val snapshot = savedSnapshot()
+
+        val state = SavedSessionUiState()
+            .applyPrompt(buildSavedSessionCheckPlan(snapshot))
+
+        assertEquals(snapshot, state.pendingSavedSession)
+        assertTrue(state.shouldShowResumePrompt)
+        assertTrue(state.hasCheckedSavedSession)
+    }
+
+    @Test
+    fun uiStateDismissClearsPromptButKeepsCheckedState() {
+        val snapshot = savedSnapshot()
+        val prompted = SavedSessionUiState()
+            .applyPrompt(buildSavedSessionCheckPlan(snapshot))
+
+        val dismissed = prompted.dismiss()
+
+        assertNull(dismissed.pendingSavedSession)
+        assertFalse(dismissed.shouldShowResumePrompt)
+        assertTrue(dismissed.hasCheckedSavedSession)
+    }
+
     private fun savedSnapshot(): SavedGameSnapshot =
         SavedGameSnapshot(
             gameState = GameState.empty()

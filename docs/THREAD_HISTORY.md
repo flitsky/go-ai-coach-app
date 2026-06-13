@@ -994,3 +994,5 @@
 - `GameSessionControllerState` 얇은 skeleton을 추가했다. `GameSessionCoreState`, `GameSessionSettingsState`, `EngineBenchmarkUiState`, `PositionAnalysisCacheOptimizationUiState`를 controller state로 묶고, 자주 쓰는 `gameState`, `isGameEnded`, `playerSetup`, `matchMode`, `engineMessage`를 읽기 전용 property로 노출했다.
 - `GameSessionEffect` sealed interface 초안을 추가했다. Top Moves 분석, 자동 AI 턴, 점수 추정, 시작 벤치마크, post-game cache optimization, 복원 게임 sync를 effect 타입으로 표현해 다음 단계에서 UI coroutine 실행을 application/controller 경계로 이동할 기반을 마련했다.
 - `GameSessionControllerTest`를 추가했고, 기본 셸 Java 25에서는 Gradle Kotlin DSL이 `IllegalArgumentException: 25`로 실패함을 확인했다. JDK 17과 Android SDK를 명시해 `:app-android:testDebugUnitTest`를 실행했고 통과했다.
+- `SavedSessionUiState`를 추가해 `pendingSavedSession`, `shouldShowResumePrompt`, `hasCheckedSavedSession`를 application state holder로 묶었다. `GoCoachApp.kt`는 저장 세션 prompt 상태를 `savedSessionUiState` 하나에서 파생해 사용하고, prompt dismiss는 `SavedSessionUiState.dismiss()`를 통과한다.
+- `SavedSessionPromptApplicationTest`를 보강했고, JDK 17과 Android SDK를 명시해 `:app-android:testDebugUnitTest`를 실행해 통과했다.

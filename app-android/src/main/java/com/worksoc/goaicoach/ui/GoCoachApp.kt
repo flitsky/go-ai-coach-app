@@ -39,7 +39,6 @@ import com.worksoc.goaicoach.application.buildNewLocalGameSessionPlan
 import com.worksoc.goaicoach.application.buildResolvedEndgameDisplayPlan
 import com.worksoc.goaicoach.application.buildSavedGameRestoreRequestPlan
 import com.worksoc.goaicoach.application.buildSavedSessionCheckPlan
-import com.worksoc.goaicoach.application.buildSavedSessionDismissPlan
 import com.worksoc.goaicoach.application.buildScoreEstimateRequestPlan
 import com.worksoc.goaicoach.application.buildScoringRuleChangePlan
 import com.worksoc.goaicoach.application.buildStartConfiguredGamePlan
@@ -116,6 +115,7 @@ import com.worksoc.goaicoach.application.SavedGameRestorePlan
 import com.worksoc.goaicoach.application.SavedGameRestoreRequestPlan
 import com.worksoc.goaicoach.application.SavedGamePersistencePlan
 import com.worksoc.goaicoach.application.SavedSessionPromptPlan
+import com.worksoc.goaicoach.application.SavedSessionUiState
 import com.worksoc.goaicoach.application.StartConfiguredGamePlan
 import com.worksoc.goaicoach.application.TopMoveAnalysisUpdate
 import com.worksoc.goaicoach.application.toGameSessionSettingsState
@@ -263,7 +263,10 @@ private fun GoCoachScreen(
     var isScoreGraphExpanded by remember { mutableStateOf(false) }
     var isGameEnded by remember { mutableStateOf(false) }
     var hasCompletedEngineStartup by remember { mutableStateOf(false) }
-    var hasCheckedSavedSession by remember { mutableStateOf(false) }
+    var savedSessionUiState by remember { mutableStateOf(SavedSessionUiState()) }
+    val pendingSavedSession = savedSessionUiState.pendingSavedSession
+    val shouldShowResumePrompt = savedSessionUiState.shouldShowResumePrompt
+    val hasCheckedSavedSession = savedSessionUiState.hasCheckedSavedSession
     var hasCheckedEngineBenchmark by remember {
         mutableStateOf(
             benchmarkStore.hasUsableProfile(
@@ -282,8 +285,6 @@ private fun GoCoachScreen(
             ),
         )
     }
-    var pendingSavedSession by remember { mutableStateOf<SavedGameSnapshot?>(null) }
-    var shouldShowResumePrompt by remember { mutableStateOf(false) }
     var isAutoAiTurnPending by remember { mutableStateOf(false) }
     var positionCacheOptimizationState by remember {
         mutableStateOf(PositionAnalysisCacheOptimizationUiState())
@@ -324,9 +325,7 @@ private fun GoCoachScreen(
     }
 
     fun applySavedSessionPromptPlan(prompt: SavedSessionPromptPlan) {
-        pendingSavedSession = prompt.pendingSavedSession
-        shouldShowResumePrompt = prompt.shouldShowResumePrompt
-        hasCheckedSavedSession = prompt.hasCheckedSavedSession
+        savedSessionUiState = savedSessionUiState.applyPrompt(prompt)
     }
 
     LaunchedEffect(engineClient) {
@@ -1584,12 +1583,12 @@ private fun GoCoachScreen(
                 submitMove = ::submitHumanMove,
                 dismissResumePrompt = {
                     sessionStore.clear()
-                    applySavedSessionPromptPlan(buildSavedSessionDismissPlan())
+                    savedSessionUiState = savedSessionUiState.dismiss()
                 },
                 acceptCacheOptimizationPrompt = ::acceptCacheOptimizationPrompt,
                 dismissCacheOptimizationPrompt = ::dismissCacheOptimizationPrompt,
                 restoreSavedSession = { snapshot ->
-                    applySavedSessionPromptPlan(buildSavedSessionDismissPlan())
+                    savedSessionUiState = savedSessionUiState.dismiss()
                     restoreSavedSession(snapshot)
                 },
                 changePlayerSetup = ::changePlayerSetup,
