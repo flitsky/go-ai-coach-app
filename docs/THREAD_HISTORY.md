@@ -1029,3 +1029,7 @@
 - `TopMovesApplicationTest`를 보강했고, JDK 17과 Android SDK를 명시해 `:app-android:testDebugUnitTest`를 실행했고 통과했다.
 - 이번 추가 리팩토링 배치 최종 검증으로 `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test`를 실행했고 통과했다.
 - 무선 ADB `SM-S908N(192.168.35.166:33421)`에 `make install-dev-engine`로 최신 debug APK와 KataGo model/config를 설치했고, cold launch `TotalTime=617ms`를 확인했다.
+- 사용자가 대국 종료 후 root visits가 충분히 차지 않았을 때 “이번 판 분석 최적화” prompt가 뜨는 기능을 비활성화하고, 모바일에서는 대국 중 필수 엔진 검색 결과만 로컬 cache로 활용하며, 공식 cache는 맥북/서버에서 생성해 앱에 적재/업데이트하는 방향을 요청했다.
+- `PostGamePositionAnalysisCacheOptimizationPromptEnabled=false` 정책 플래그를 추가했다. `GoCoachApp.kt`는 이 플래그가 꺼져 있으면 종국 후 cache optimization plan 계산과 prompt 표시를 건너뛰고 기존 prompt를 clear한다. 도메인 API와 실험용 prompt 로직은 유지했다.
+- `ENGINE_API_CALL_POLICY.md`에 모바일 post-game warm-up 비활성 정책, `bundled-trusted`/`operator-trusted` 공식 cache 공급 방향, 개발자 원격 수집 방식, 출시 후 Firebase Crashlytics/Analytics/Remote Config/Cloud Storage 기반 warning/critical 로그 수집 권장안을 정리했다.
+- `USER_OPTION_MANUAL.md`와 `ENGINE_SEARCH_MODE_ROADMAP_2026-06-13.md`에도 대국 종료 후 추가 분석 prompt 비활성, 대국 중 필수 분석 cache와 공식 cache 우선 정책을 반영했다. JDK 17/Android SDK 환경에서 `:app-android:testDebugUnitTest`가 통과했다.

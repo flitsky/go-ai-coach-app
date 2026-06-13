@@ -95,7 +95,28 @@ class PositionAnalysisCacheOptimizationTest {
     }
 
     @Test
-    fun promptAppearsOnlyAfterStableEndedGameWithTargets() {
+    fun promptIsDisabledByDefaultForMobilePlayExperience() {
+        val plan = buildPositionAnalysisCacheOptimizationPlan(
+            finalState = shortFinishedGame(),
+            playerSetup = beginnerAiSetup(),
+            searchTimeSettings = SearchTimeSettings(),
+            maxTargets = 2,
+        )
+
+        assertNull(
+            buildPositionAnalysisCacheOptimizationPrompt(
+                isGameEnded = true,
+                isEngineReady = true,
+                isEngineBusy = false,
+                isOptimizationRunning = false,
+                dismissedGameFingerprint = null,
+                plan = plan,
+            ),
+        )
+    }
+
+    @Test
+    fun promptLogicCanBeEnabledForExplicitExperimentBuilds() {
         val plan = buildPositionAnalysisCacheOptimizationPlan(
             finalState = shortFinishedGame(),
             playerSetup = PlayerSetup(
@@ -116,6 +137,7 @@ class PositionAnalysisCacheOptimizationTest {
             isOptimizationRunning = false,
             dismissedGameFingerprint = null,
             plan = plan,
+            isPromptEnabled = true,
         )
 
         assertEquals(2, prompt?.targetCount)
@@ -127,6 +149,7 @@ class PositionAnalysisCacheOptimizationTest {
                 isOptimizationRunning = false,
                 dismissedGameFingerprint = plan.gameFingerprint,
                 plan = plan,
+                isPromptEnabled = true,
             ),
         )
     }

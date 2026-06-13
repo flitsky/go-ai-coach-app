@@ -14,6 +14,7 @@ import com.worksoc.goaicoach.shared.forcedJsonPositionAnalysis
 internal const val JsonPositionAnalysisCacheOptimizationBatchMaxTargets: Int = 10
 internal const val JsonPositionAnalysisCacheOpeningInitialMoveCount: Int = 10
 internal const val JsonPositionAnalysisCacheOpeningMaxMoveCount: Int = 20
+internal const val PostGamePositionAnalysisCacheOptimizationPromptEnabled: Boolean = false
 
 internal data class PositionAnalysisCacheOptimizationPrompt(
     val gameFingerprint: String,
@@ -149,8 +150,10 @@ internal fun buildPositionAnalysisCacheOptimizationPrompt(
     isOptimizationRunning: Boolean,
     dismissedGameFingerprint: String?,
     plan: PositionAnalysisCacheOptimizationPlan,
+    isPromptEnabled: Boolean = PostGamePositionAnalysisCacheOptimizationPromptEnabled,
 ): PositionAnalysisCacheOptimizationPrompt? {
     if (
+        !isPromptEnabled ||
         !isGameEnded ||
         !isEngineReady ||
         isEngineBusy ||

@@ -43,6 +43,8 @@
   - JSON position analysis 결과는 root visit 품질과 출처와 함께 디스크 cache에 최대 20개 저장한다. 저장 후 1년이 지나면 무효화한다.
   - root visits가 목표치를 채우면 `complete`, 50% 이상 채우면 `partial`로 재사용 가능하다. 50% 미만은 진단용으로만 남기고 자동 재사용하지 않는다.
   - 무르기나 반복 국면에서 같은 fingerprint/search mode/budget의 reusable JSON cache가 있으면 엔진을 다시 호출하지 않고 재사용할 수 있다.
+  - 대국 종료 후 “이번 판을 추가 분석해 cache를 최적화할까요?” prompt는 기본 비활성이다. 모바일 대국 경험을 방해하지 않기 위해, 앱은 대국 중 필수 엔진 분석에서 얻은 값만 로컬 cache로 활용한다.
+  - 공식 opening cache는 향후 맥북/서버에서 생성한 `bundled-trusted` 또는 `operator-trusted` 데이터로 앱에 탑재/업데이트하는 방향으로 운영한다.
   - KaTrain식 전체 합법 착점 snapshot, policy 후보 보존, refine sweep, deep fallback은 향후 학습/복기 모드로 분리한다. 현재 모바일 대국 기본 경로에는 붙이지 않는다.
 - `Eval`: 현재 판의 점수 추정과 ownership 정보를 요청한다.
   - 엔진이 준비된 AI/2P 모드에서는 KataGo estimate를 사용한다.

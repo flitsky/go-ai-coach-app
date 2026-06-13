@@ -13,7 +13,7 @@ AI 자동대국은 우선 빠른 대국 체감을 위해 현행 GTP stateful fas
 | 1 | `EngineSearchMode.GtpStatefulFast` / `EngineSearchMode.JsonPositionAnalysis` 정책 분리 | 완료 | 기본 동작은 GTP fast path 유지. 자동 AI 턴 context, session interface, runtime log에 search mode가 명시되어야 함 |
 | 2 | AI 착수 경로에 level별 search mode 정책 적용 | 완료 | `빠른 초급`은 B16/GTP/best-only, `초급` 이상은 B32+/JSON 후보군 레벨링 |
 | 3 | JSON result cache 품질/origin 정책 추가 | 완료 | JSON mode 결과를 `complete`/`partial`/`diagnostic`으로 분류하고 최대 20개/365일 저장 |
-| 3.5 | 종국 후 사용자 동의 기반 opening cache warm-up | 완료 | 초반 1~10수를 우선 확보하고 안정화 후 11~20수까지 uncapped JSON 실행으로 보강 |
+| 3.5 | 종국 후 사용자 동의 기반 opening cache warm-up | 도메인 구현 완료, 모바일 기본 비활성 | 모바일 UX에서는 prompt를 띄우지 않고, 공식/운영자 cache 공급과 대국 중 필수 분석 cache를 우선 |
 | 3.6 | 사용자 선택형 Time cap Off 추가 | 완료 | Search Time에서 응답시간 제한을 끄면 실제 분석 요청도 `timeMillis=null`로 실행해 고품질 cache 수집을 우선 |
 | 4 | B16 vs B32, B32 vs B64, B16 vs B64 각각 50판 이상 비교 | 대기 | 승률, 평균 root visits, fill rate, 평균 착수 시간 수집 |
 | 5 | 사람 차례 Top Moves/착수 리뷰도 JSON snapshot 기반으로 확장 | 대기 | 후보 표시와 착수 후 spot 평가가 같은 JSON snapshot을 공유 |
@@ -56,7 +56,7 @@ JSON position analysis는 구조적으로 장점이 있지만, Android 실기기
 - 저장 시각: `createdAtMillis`
 - origin: `local-user`, `bundled-trusted`, `operator-trusted`, `peer-shared`
 - key: `GameState.analysisFingerprint() + searchMode + AnalysisLimit`
-- 종국 후 최적화: 사용자 동의 시 이번 판의 초반 1~10수 미완성 포지션을 먼저 샘플링하고, 모두 complete가 되면 11~20수로 점진 확장한다. cache key는 실제 플레이 limit으로 유지하되 실행 limit은 `timeMillis=null`로 둬 root visits 충족 가능성을 높인다.
+- 종국 후 최적화: 도메인 API는 유지하지만 모바일 앱 기본 UI에서는 prompt를 띄우지 않는다. 대국 종료 후 추가 탐색은 UX를 방해하므로, 모바일은 대국 중 필수 JSON 분석 결과만 `local-user` cache로 활용한다. opening cache 보강은 맥북/서버에서 생성한 `bundled-trusted` 또는 `operator-trusted` bundle 공급을 우선한다.
 - 사용자 선택형 고품질 모드: `Search Time > Time cap Off`를 켜면 실제 플레이의 JSON analysis budget도 `timeMillis=null`이 되어 같은 cache key로 complete entry를 축적하기 쉬워진다. 이 옵션은 응답 지연을 감수하고 캐시 품질과 분석 품질을 우선하는 모드다.
 
 이 cache는 GTP search tree cache나 기존 Top Moves 임시 `AnalysisResultCache`와 다른 목적이다. 특정 position result와 품질 정보를 재사용해 JSON mode의 반복 분석 부담을 줄이기 위한 것이다.
@@ -66,6 +66,7 @@ JSON position analysis는 구조적으로 장점이 있지만, Android 실기기
 - APK/AAB에 `bundled-trusted` opening cache data를 탑재한다.
 - 운영자가 검수한 `operator-trusted` cache bundle을 원격 업데이트로 내려받는다.
 - 유저 로컬 플레이에서 생성된 랜덤 국면은 `local-user` origin으로만 저장한다.
+- 모바일 앱에서 종국 후 uncapped warm-up prompt를 다시 켤지 여부는 별도 실험 빌드/개발자 모드에서만 검토한다.
 - 원격 유저 대국에서는 양측이 `complete` 수준의 cache entry를 가지고 있을 때만 `peer-shared` 교환 후보로 올린다.
 
 ## 맥북 1차 latency 비교

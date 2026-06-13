@@ -302,9 +302,32 @@ Origin 계층:
 
 ### 종국 후 cache 최적화
 
-대국이 끝났고 현재 Player Setup에 `초급` 이상 JSON level AI가 포함되어 있으면, 앱은 사용자에게 “이번 판을 분석해 다음 플레이를 더 쾌적하게 할지” 묻는 prompt를 띄울 수 있다.
+모바일 앱 기본 UX에서는 대국 종료 후 “이번 판을 분석해 다음 플레이를 더 쾌적하게 할지” 묻는 prompt를 띄우지 않는다.
 
-동의 시 application layer는 이번 판의 opening 포지션을 한 번에 최대 10개 분석한다. 선택 순서는 다음과 같다.
+결정 이유:
+
+- 대국 종료 직후 추가 엔진 탐색은 사용자가 다음 대국으로 넘어가는 흐름을 방해한다.
+- 느린 모바일 기기에서는 `timeMillis=null` 기반 보강 분석이 수십 초 이상 걸릴 수 있다.
+- 사용자가 직접 둔 판을 종료할 때는 계가와 결과 확인이 우선이며, cache 품질 보강은 백그라운드/운영자 데이터 배포/개발자 도구 영역으로 분리하는 편이 낫다.
+
+현재 모바일 기본 정책:
+
+1. 대국 중 필수 AI 착수/Top Moves/착수 리뷰 과정에서 발생한 JSON position analysis 결과만 `local-user` cache 후보로 저장한다.
+2. `complete` 또는 `partial` 품질 결과만 자동 재사용한다.
+3. `diagnostic` 품질 결과는 Copy Log와 향후 관측 데이터에서 원인 분석용으로만 사용하고 자동 재사용하지 않는다.
+4. 대국 종료 후 추가 opening warm-up prompt는 기본 비활성이다.
+
+공식 cache 공급 방향:
+
+- 맥북/서버 등 충분한 연산 자원에서 공식적으로 생성한 opening cache를 `bundled-trusted` origin으로 앱에 탑재한다.
+- 출시 이후에는 Firebase Remote Config/Cloud Storage 또는 별도 manifest 기반 업데이트로 `operator-trusted` cache bundle을 내려받아 갱신한다.
+- 앱은 로컬 플레이 중 얻은 랜덤 국면을 `local-user` origin으로만 저장하고, 공식 cache를 덮어쓸 때는 origin 우선순위와 root visits 품질을 비교한다.
+
+도메인 API 상태:
+
+`PositionAnalysisCacheOptimizationPlan`과 `EngineSessionClient.optimizePositionAnalysisCache()`는 남겨 둔다. 이 경계는 개발자 도구, 맥북/서버 cache 생성, 실험 빌드에서 재사용 가능하다. 단, Android 모바일 UI의 기본 prompt 진입점은 `PostGamePositionAnalysisCacheOptimizationPromptEnabled=false`로 닫혀 있다.
+
+개발/실험 빌드에서만 이 기능을 켤 경우, application layer는 이번 판의 opening 포지션을 한 번에 최대 10개 분석한다. 선택 순서는 다음과 같다.
 
 1. 1~10수 중 아직 `complete`가 아닌 포지션을 먼저 채운다.
 2. 1~10수가 안정적으로 `complete`가 되면 11수, 12수처럼 점진적으로 확장한다.
@@ -312,7 +335,57 @@ Origin 계층:
 
 실제 플레이 cache key는 유지하되 실행 limit에서는 `timeMillis=null`을 사용한다. 즉 다음 플레이의 동일 budget key로 cache hit이 나도록 저장하면서, 최적화 실행 자체는 maxVisits를 채우는 쪽을 우선한다. 사용자가 `Search Time > Time cap Off`를 선택한 경우에는 실제 플레이 budget 자체도 `timeMillis=null`이므로, JSON position analysis cache key와 실행 limit이 모두 uncapped 상태가 된다. 이 모드는 응답이 느릴 수 있지만 complete/partial cache를 빠르게 축적하는 데 유리하다.
 
-이 기능은 UI가 엔진 호출을 직접 조합하지 않는다. UI는 prompt accept/dismiss만 전달하고, `EngineSessionClient.optimizePositionAnalysisCache()`가 position sync, JSON analysis, cache write 정책을 캡슐화한다. 나중에 엔진이 remote server로 이동해도 같은 middleware API로 대체할 수 있어야 한다.
+이 기능은 UI가 엔진 호출을 직접 조합하지 않는다. 실험 UI는 prompt accept/dismiss만 전달하고, `EngineSessionClient.optimizePositionAnalysisCache()`가 position sync, JSON analysis, cache write 정책을 캡슐화한다. 나중에 엔진이 remote server로 이동해도 같은 middleware API로 대체할 수 있어야 한다.
+
+## 관측/로그 수집 정책
+
+목표는 “사용자 경험은 방해하지 않되, visits 미충족/엔진 실패/계가 불일치 같은 critical 또는 warning 상황은 개발자가 재현 가능한 수준으로 수집”하는 것이다.
+
+### 현재 개발자 수집 방식
+
+가장 쉬운 현재 방식은 앱 내부 `Copy Log`와 app-private 파일을 함께 쓰는 것이다.
+
+- `Copy Log`: 현재 보드, moves, score timeline, candidate text, engine diagnostic, runtime event log tail을 한 번에 복사한다.
+- `last_debug_report.txt`: `Copy Log` 실행 시 app private files에 mirror 저장된다.
+- `runtime_events.log`: 앱 흐름 이벤트를 누적 기록한다.
+- 원격 수집: debug 빌드에서는 ADB `run-as com.worksoc.goaicoach`로 app-private 파일을 읽는다.
+
+예시:
+
+```bash
+adb shell run-as com.worksoc.goaicoach ls files
+adb shell run-as com.worksoc.goaicoach cat files/last_debug_report.txt
+adb shell run-as com.worksoc.goaicoach cat files/runtime_events.log
+adb shell run-as com.worksoc.goaicoach cat files/json_position_analysis_cache.json
+```
+
+visits 충족 우선 모드에서 `fill=SHORT`가 발생하면 우선 `Copy Log`를 수집한다. 로그에서 확인해야 할 항목은 `searchTimeSettings`, `analysisLimit`, `candidateText`의 `Visit diagnostics`, `positionAnalysisCache`, runtime event log의 search mode/elapsed/root visits 관련 이벤트다.
+
+### 다음 구현 권장 순서
+
+1. app-private `warning_events.jsonl` ring buffer를 추가한다.
+   - 최대 1MB 또는 최근 N개 event만 유지한다.
+   - `severity=warning|critical`, `eventType`, `gameFingerprint`, `moveNumber`, `searchMode`, `requestedVisits`, `rootVisits`, `timeMillis`, `elapsedMillis`, `engineProfile`, `playLevel`, `deviceModel`을 JSONL로 남긴다.
+   - 예: `VISIT_FILL_SHORT`, `ENGINE_TIMEOUT`, `ENGINE_PROCESS_RESTART`, `FINAL_SCORE_DISAGREEMENT`, `CACHE_CORRUPTION`, `ENDGAME_CLEANUP_FAILED`.
+2. `Copy Log`에 warning ring buffer tail을 포함한다.
+3. 개발자 메뉴 또는 debug build에서 `진단 번들 복사/공유` 버튼을 추가한다.
+4. 출시 빌드에서는 사용자 동의 기반 전송만 허용한다.
+
+### 출시 후 수집 권장안
+
+MQ를 앱에서 직접 운영하기보다는 Firebase/Crashlytics 계층을 먼저 쓰는 편이 비용 대비 안정적이다.
+
+- Crashlytics: crash와 non-fatal critical event 수집. `VISIT_FILL_SHORT` 같은 warning은 sampling해서 non-fatal로 보내거나 custom log로 첨부한다.
+- Firebase Analytics: 빈도/분포 집계. 예: `engine_fill_short`, `engine_latency_bucket`, `cache_hit_quality`.
+- Remote Config: 수집 sampling rate, warning 전송 허용 여부, 특정 엔진 profile disable 같은 운영 스위치.
+- Cloud Storage 또는 Firestore: 사용자가 “오류 로그 전송”에 동의했을 때 debug bundle 업로드.
+- Pub/Sub 또는 MQ: 나중에 서버 middleware가 생긴 뒤, Cloud Functions가 Crashlytics/Firestore event를 받아 내부 분석 파이프라인으로 넘기는 방식이 낫다. 앱이 직접 MQ endpoint에 붙는 구조는 인증/재시도/배터리/개인정보 부담이 크다.
+
+사용자 팝업 원칙:
+
+- crash 또는 critical error 이후: “오류 진단 정보를 전송할까요?” 팝업을 띄운다.
+- warning 수준: 기본 자동 전송은 끄고, 개발/베타 채널에서만 opt-in sampling을 허용한다.
+- 전송 전에는 포함 정보 요약을 보여준다. SGF/수순, 엔진 설정, 기기 모델, 앱 버전, runtime log tail은 포함 가능하되 개인 식별 정보는 넣지 않는다.
 
 ## 원격 폰 엔진 벤치마크 표준
 

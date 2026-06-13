@@ -76,6 +76,7 @@ import com.worksoc.goaicoach.application.HumanEngineSyncDisplayPlan
 import com.worksoc.goaicoach.application.EngineStartupDisplayPlan
 import com.worksoc.goaicoach.application.PlayerSetupChangePlan
 import com.worksoc.goaicoach.application.PositionAnalysisCacheOptimizationUiState
+import com.worksoc.goaicoach.application.PostGamePositionAnalysisCacheOptimizationPromptEnabled
 import com.worksoc.goaicoach.application.localScoreSnapshot
 import com.worksoc.goaicoach.application.selectRuntimePlayLevel
 import com.worksoc.goaicoach.application.shouldRequestAiTurn
@@ -1597,6 +1598,10 @@ private fun GoCoachScreen(
         searchTimeSettings,
         gameState.moves.size,
     ) {
+        if (!PostGamePositionAnalysisCacheOptimizationPromptEnabled) {
+            positionCacheOptimizationState = positionCacheOptimizationState.clearPrompt()
+            return@LaunchedEffect
+        }
         val plan = currentCacheOptimizationPlan()
         val prompt = buildPositionAnalysisCacheOptimizationPrompt(
             isGameEnded = isGameEnded,
