@@ -1033,3 +1033,7 @@
 - `PostGamePositionAnalysisCacheOptimizationPromptEnabled=false` 정책 플래그를 추가했다. `GoCoachApp.kt`는 이 플래그가 꺼져 있으면 종국 후 cache optimization plan 계산과 prompt 표시를 건너뛰고 기존 prompt를 clear한다. 도메인 API와 실험용 prompt 로직은 유지했다.
 - `ENGINE_API_CALL_POLICY.md`에 모바일 post-game warm-up 비활성 정책, `bundled-trusted`/`operator-trusted` 공식 cache 공급 방향, 개발자 원격 수집 방식, 출시 후 Firebase Crashlytics/Analytics/Remote Config/Cloud Storage 기반 warning/critical 로그 수집 권장안을 정리했다.
 - `USER_OPTION_MANUAL.md`와 `ENGINE_SEARCH_MODE_ROADMAP_2026-06-13.md`에도 대국 종료 후 추가 분석 prompt 비활성, 대국 중 필수 분석 cache와 공식 cache 우선 정책을 반영했다. JDK 17/Android SDK 환경에서 `:app-android:testDebugUnitTest`가 통과했다.
+- 사용자가 불필요한 빈 디렉토리 삭제와 함께 엔진 도메인, 코어 도메인, 미들웨어/캐싱 도메인, 게임 도메인, 앱서비스 도메인으로 최소 5계층 이상 분리하는 설계 업데이트를 요청했다.
+- 빈 디렉토리 후보를 점검해 git 추적 파일이 없는 `poc`, `research`, `.bkit/runtime`, `.kotlin/sessions`를 `rmdir`로 삭제했다. 재검사 결과 `.git`, `.gradle`, build 산출물을 제외한 빈 디렉토리는 남지 않았다.
+- `DOMAIN_SEPARATION_REFACTORING_PLAN.md`를 업데이트해 목표 구조를 7계층으로 명시했다. 계층은 `Engine Runtime/Transport`, `Engine Core API`, `Core Rules`, `Middleware/Cache`, `Game Domain`, `App Service/Session Orchestration`, `Presentation/Game UX`이며, 각 계층의 현재 코드 위치와 금지 의존 방향을 정리했다.
+- 캐싱 시스템은 `Middleware / Cache Domain`에 두고, `Game Domain` 내부에는 `Match Referee`, `Black Seat`, `White Seat`, `AI Character`, `Match Settings`, `Remote Seat` 세부 도메인을 둔다는 방향을 설계 문서에 반영했다.

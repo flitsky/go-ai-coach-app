@@ -18,31 +18,146 @@
 ## 목표 계층
 
 ```text
-Game UX
-  - Compose 화면
-  - 사용자 입력/표시
-  - 미들웨어 API 호출만 허용
-
-Middleware Domain
-  - Engine Core 기능 래핑 도메인
-  - AI 캐릭터/성향 도메인
-  - 게임 설정 도메인
-  - 대국 진행/심판 도메인
-  - 흑 진영 도메인
-  - 백 진영 도메인
-  - 원격 유저 대국 확장 도메인
-
-Engine Core API
-  - 엔진이 제공하는 원시 기능 1:1
-  - initialize/configure/newGame/playMove/genMove/undo
-  - clearSearchCache/analyze/estimateScore/deadStones/scoreFinal/stop
-  - 구현체: Stub, LocalProcess, JNI, RemoteServer
-
-Engine Runtime
-  - KataGo GTP process
-  - JNI native engine
-  - remote server transport
+Presentation / Game UX
+  -> App Service / Session Orchestration
+  -> Game Domain
+  -> Middleware Domain
+  -> Core Rules Domain
+  -> Engine Core API
+  -> Engine Runtime / Transport
 ```
+
+2026-06-14 업데이트:
+
+앞으로 목표 구조는 최소 5계층이 아니라 7계층으로 명시한다. 이유는 엔진 로컬/원격 전환, 캐시 공급 체계, 흑/백 진영 확장, 앱 서비스 orchestration을 한 계층에 몰아넣으면 다시 `GoCoachApp.kt` 같은 거대한 조율자가 생기기 때문이다.
+
+## 목표 7계층 구조
+
+| 계층 | 이름 | 핵심 책임 | 현재 대표 위치 | 향후 목표 |
+| ---: | --- | --- | --- | --- |
+| 1 | Engine Runtime / Transport | KataGo binary/process/JNI/remote server 실행, asset/config/model 위치, OS별 transport | `engine-android`, `KataGoProcessEngineAdapter`, `scripts/seed-katago...` | Android local process, JNI, remote server transport를 구현체로 교체 가능하게 유지 |
+| 2 | Engine Core API Domain | 엔진 원시 기능 1:1 노출. `initialize`, `configure`, `newGame`, `playMove`, `genMove`, `undo`, `clearSearchCache`, `analyze`, `estimateScore`, `deadStones`, `scoreFinal`, `stop` | `shared/EngineModels.kt`, `EngineCoreApi`, `EngineAdapter` | 엔진 기능은 빠짐없이 이 계층에 먼저 추가. UX 정책/캐시/AI 성향은 절대 넣지 않음 |
+| 3 | Core Rules Domain | 바둑판, 착수, 합법수, 포획, 사석, 계가, fingerprint, engine DTO처럼 플랫폼 독립 순수 모델 | `shared/BoardModels.kt`, `BoardRules.kt`, `LegalMoveGenerator.kt`, `BoardScorer.kt`, `DeadStoneCleaner.kt`, `GameStateFingerprint.kt` | Android/Compose/엔진 process를 모르는 순수 KMP core로 유지 |
+| 4 | Middleware / Cache Domain | Engine Core API를 조합해 position analysis, score sync, benchmark, cache read/write, 공식 cache origin, local/remote routing 제공 | `EngineSessionClient`, `EngineSession.kt`, `AnalysisSession.kt`, `PositionAnalysisCache.kt`, `PositionAnalysisCacheOptimization.kt`, `JsonPositionAnalysisCacheStore` | 캐싱 시스템의 중심. 로컬/원격 엔진과 공식 cache bundle을 같은 API로 감쌈 |
+| 5 | Game Domain | 대국 규칙의 응용 계층. 심판, 턴 진행, 흑/백 진영, Player/AI/Remote seat, AI 캐릭터, 레벨링, 자동대국 정책 | `match/MatchReferee.kt`, `MatchPolicy.kt`, `PlayerSetup`, `SeatId`, `AiCharacterProfile`, `PlayLevel.kt` | 흑/백 진영 도메인을 명확히 유지하고, 원격 유저 seat까지 확장 가능하게 함 |
+| 6 | App Service / Session Orchestration | 앱 use case 조율. 새 게임, 복원, 무르기, 사람 착수, AI 턴, Top Moves, 점수 요청, runtime log, debug report, 저장 port | `application/*`, `GameSessionControllerState`, `GameSessionCoreState`, `GameSessionSettingsState`, `ApplicationPorts.kt` | `GoCoachApp.kt`의 coroutine orchestration과 상태 전이를 점진 흡수 |
+| 7 | Presentation / Game UX | 화면 상태, 이벤트, Compose 렌더링, 보드 drawing, 메뉴, 팝업. 도메인 판단 없이 상태 표시와 이벤트 전달 | `presentation/*`, `ui/*`, `GoCoachApp.kt`, `GoBoard.kt` | Engine Core API 직접 접근 금지. App Service API와 ViewState만 사용 |
+
+### 의존 방향
+
+허용 방향은 아래 한 방향이다.
+
+```text
+Presentation / Game UX
+  -> App Service / Session Orchestration
+  -> Game Domain
+  -> Middleware / Cache Domain
+  -> Core Rules Domain
+  -> Engine Core API
+  -> Engine Runtime / Transport
+```
+
+예외:
+
+- `App Service`는 use case 조율을 위해 `Game Domain`, `Middleware`, `Core Rules`, port interface를 함께 볼 수 있다.
+- `Middleware / Cache`는 `Engine Core API`와 `Core Rules`의 `GameState`/`AnalysisLimit`/fingerprint를 볼 수 있다.
+- `Engine Runtime / Transport` 구현체는 `Engine Core API`를 구현하지만 상위 앱 정책을 알아서는 안 된다.
+
+금지:
+
+- `ui`/`presentation`에서 `EngineCoreApi`, `EngineAdapter`, `KataGoProcessEngineAdapter` 직접 import 금지.
+- `shared` core rules에서 Android, Compose, persistence, Firebase, 파일 시스템 의존 금지.
+- `Engine Core API`에 AI 레벨링, 후보 색상, 캐시 origin, prompt 정책 추가 금지.
+- `Game Domain`에 Android 저장소 구현이나 UI text rendering 정책 추가 금지.
+- `Middleware / Cache`에 Compose state나 사용자 메뉴 표시 조건 추가 금지.
+
+## 현재 코드 위치 재분류
+
+현재 패키지와 목표 계층의 대응은 다음과 같이 본다.
+
+| 현재 위치 | 목표 계층 | 판단 |
+| --- | --- | --- |
+| `shared/EngineModels.kt`, `EngineSearchMode.kt` | 2 Engine Core API | 엔진 DTO/API 계약. 유지 |
+| `shared/Board*`, `LegalMoveGenerator`, `DeadStone*`, `EndgameScoreSelector` | 3 Core Rules | 순수 바둑 룰. 유지 |
+| `shared/PlayLevel.kt`, `EngineAnalysisPolicy.kt`, `SearchTimeSettings.kt` | 5 Game Domain + 4 Middleware 경계 | 현재 shared에 있어 플랫폼 독립성은 좋다. 다만 AI 캐릭터/레벨링은 Game Domain 의미가 강하고, analysis budget 변환은 Middleware와 닿는다. 당장 이동보다 의미 문서화 우선 |
+| `engine-android/*` | 1 Engine Runtime + 2 구현체 | local process 구현체. 서버 구현체가 생기면 sibling 구현체로 추가 |
+| `application/EngineSessionClient.kt`, `EngineSession.kt`, `AnalysisSession.kt` | 4 Middleware | UI가 보는 엔진 조합 API. 적절한 위치 |
+| `application/PositionAnalysisCache*`, `persistence/JsonPositionAnalysisCacheStore.kt` | 4 Middleware / Cache | cache domain. `persistence` 구현체는 infra adapter로 유지하되 port는 application/middleware에 둠 |
+| `match/MatchReferee.kt`, `MatchPolicy.kt` | 5 Game Domain | 심판/seat/AI 자동대국 정책의 중심. 앞으로 더 강화 |
+| `application/GameSession*`, `StartGameApplication`, `UndoApplication`, `HumanMoveApplication`, `GameAutomationApplication`, `TopMovesApplication` | 6 App Service | use case와 상태 전이. 현재 적절하나 controller로 더 묶을 필요 있음 |
+| `application/ApplicationPorts.kt`, `persistence/*Store.kt` | 6 App Service port + infrastructure adapter | port/interface와 Android 구현 분리 방향 유지 |
+| `presentation/GameScreenState.kt`, `GameUiEvent.kt` | 7 Presentation | UI 계약. 유지 |
+| `ui/*` | 7 Game UX | Compose rendering. `GoCoachApp.kt`의 orchestration은 6계층으로 더 내려야 함 |
+
+## 캐싱 시스템 도메인의 위치
+
+캐싱 시스템은 `Middleware / Cache Domain`에 둔다. 이유는 cache가 엔진 원시 기능도 아니고, 순수 바둑 룰도 아니며, 특정 UI 기능도 아니기 때문이다.
+
+캐시 도메인이 가져야 할 책임:
+
+- cache key 생성: `GameState.analysisFingerprint() + searchMode + AnalysisLimit`
+- 품질 판정: `complete`, `partial`, `diagnostic`
+- origin 우선순위: `bundled-trusted`, `operator-trusted`, `peer-shared`, `local-user`
+- TTL/최대 개수/덮어쓰기 정책
+- local engine result와 remote/operator cache bundle을 동일 API로 제공
+- warning/diagnostic 로그로 `fill=SHORT` 같은 품질 이슈 노출
+
+캐시 도메인이 갖지 말아야 할 책임:
+
+- 팝업 표시 여부
+- 보드 위 스팟 색상 rendering
+- AI 캐릭터 성격
+- KataGo process 실행 세부
+- Firebase/Cloud Storage의 concrete SDK 호출
+
+Firebase/원격 cache 업데이트는 별도 infrastructure adapter로 둔다. 미들웨어는 `TrustedPositionCacheProvider` 같은 port만 본다.
+
+## Game Domain 내부 세부 도메인
+
+Game Domain은 하나의 `match` 패키지로 끝내지 않고, 다음 개념을 명확히 분리한다.
+
+| 세부 도메인 | 역할 | 현재 대응 | 목표 |
+| --- | --- | --- | --- |
+| Match Referee | 합법수, 착수 적용, pass/pass, board full, 종국 트리거 | `MatchReferee` | 사람/AI/원격 착수가 모두 같은 referee path 사용 |
+| Black Seat | 흑 진영 controller, player/AI/remote 상태, 누적 시간 | `PlayerSetup.black`, `SeatId.Black` | seat state와 clock/state를 명시화 |
+| White Seat | 백 진영 controller, player/AI/remote 상태, 누적 시간 | `PlayerSetup.white`, `SeatId.White` | Black과 대칭 API 유지 |
+| AI Character | 엔진 종류, 레벨, 후보 선택 정책, randomness/personality | `AiCharacterProfile`, `PlayLevelSetting` | GTP fast / JSON leveling / server AI를 하나의 profile로 관리 |
+| Match Settings | ruleset, board size, komi, time/search settings 연결 | `GameSettings`, `SearchTimeSettings` | 앱 설정과 대국 설정을 분리 |
+| Remote Seat | 원격 유저 착수 송수신, 지연/재접속, 권한 | 아직 없음 | local/AI seat과 같은 referee path로 연결 |
+
+## App Service Domain 내부 세부 도메인
+
+App Service는 화면이 호출하는 use case 계층이다. 이 계층은 상위 UI보다 도메인과 미들웨어를 많이 알지만, Android concrete 구현에는 port를 통해 접근해야 한다.
+
+| 세부 도메인 | 역할 | 현재 대응 | 다음 단계 |
+| --- | --- | --- | --- |
+| Session Controller | 전체 세션 상태와 effect 조율 | `GameSessionControllerState`, `GameSessionEffect` | Compose `remember` 상태를 점진 흡수 |
+| Engine Operation Use Cases | start, restore sync, AI turn, score estimate, Top Moves | `EngineStartupApplication`, `GameAutomationApplication`, `TopMovesApplication`, `ScoreDisplayApplication` | coroutine runner와 reducer 분리 |
+| Persistence Use Cases | 자동 저장, 이어하기, 설정 저장 | `SavedGamePersistence`, `SavedSessionPromptApplication`, `UserPreferencesApplication` | port 기반 테스트 강화 |
+| Diagnostics Use Cases | runtime event, debug report, warning/critical log | `RuntimeEventApplication`, `DebugReportBuilder` | warning ring buffer port 추가 |
+| Benchmark Use Cases | 기기 벤치마크, Search Time 추천 | `EngineDeviceBenchmarkApplication` | 개발자/운영자 진단 도구로 분리 가능 |
+
+## 다음 리팩토링 우선순위
+
+1. `warning_events.jsonl` port와 domain model 추가
+   - 계층: App Service diagnostics + Middleware cache diagnostics
+   - 목적: visits 미충족, 엔진 timeout, 계가 불일치 같은 warning/critical을 Copy Log와 별도 수집
+
+2. `TrustedPositionCacheProvider` port 설계
+   - 계층: Middleware / Cache Domain
+   - 목적: bundled/operator/peer cache를 로컬 cache와 같은 조회 API로 통합
+
+3. `GameSessionController`를 state holder에서 effect runner로 승격
+   - 계층: App Service
+   - 목적: `GoCoachApp.kt`의 coroutine orchestration 축소
+
+4. `SeatState` 또는 `MatchSeatState` 도입
+   - 계층: Game Domain
+   - 목적: 흑/백 진영의 controller, 누적 시간, AI profile, remote 상태를 대칭 구조로 관리
+
+5. `EngineSessionClient` 구현체 분리 강화
+   - 계층: Middleware
+   - 목적: `LocalEngineSessionClient`, future `RemoteEngineSessionClient`, future `ServerAnalysisClient`가 같은 contract를 구현
 
 ## 계층별 책임
 
@@ -76,19 +191,43 @@ Engine Runtime
 
 ### Middleware Domain
 
-미들웨어는 엔진 코어 기능을 조합해 앱이 쓰기 좋은 API를 만든다.
+미들웨어는 엔진 코어 기능과 core rules model을 조합해 앱/서버 공통 분석 API와 cache API를 만든다. AI 캐릭터, 심판, 흑/백 진영은 더 이상 Middleware 책임으로 보지 않고 Game Domain으로 분리한다.
 
-초기 도메인 분리 목표:
+도메인 분리 목표:
 
 | 도메인 | 역할 | 현재 대응 |
 | --- | --- | --- |
 | Engine Core Wrapping | 명시적 국면 분석, sync 후 점수 추정, 복원 후 sync, benchmark | `EngineSessionClient`, `EngineSession.kt`, `EngineDeviceBenchmarkApplication.kt` |
-| AI Character | AI 성향, 엔진 종류, 플레이 레벨, 후보 선택 정책 | `PlayLevelSetting`, `MoveSelectionPolicy`, 향후 `AiCharacterProfile` |
-| Game Settings | ruleset, Search Time, Top Moves, UX 옵션, auto-play delay | `UserPreferencesSnapshot`, `SearchTimeSettings`, `AutoPlayDelaySetting` |
-| Match Referee | 합법수, 착수 적용, pass/pass 종료, 사석/계가 트리거 | `GameState`, `HumanMoveApplication`, `EndgameResolver`, 향후 `MatchReferee` |
-| Black Seat | 흑 진영 controller, AI/사람/원격 유저 설정 | `PlayerSetup.black`, 향후 `SeatId.Black` |
-| White Seat | 백 진영 controller, AI/사람/원격 유저 설정 | `PlayerSetup.white`, 향후 `SeatId.White` |
+| Position Analysis | 특정 `GameState`를 기준으로 JSON/GTP 분석을 요청하고 결과를 앱 모델로 변환 | `AnalysisSession.kt`, `TopMovesApplication.kt` 일부 |
+| Score / Endgame Middleware | engine score estimate, final score, dead stone cleanup을 조합 | `ScoreDisplayApplication.kt`, `EndgameResolver.kt` |
+| Position Cache | JSON position analysis 결과 저장/조회, 품질/origin/TTL 정책 | `PositionAnalysisCache.kt`, `JsonPositionAnalysisCacheStore` |
+| Trusted Cache Provider | bundled/operator/peer cache bundle을 동일 조회 API로 제공 | 아직 없음 |
+| Engine Benchmark | B16/B32/B64 latency/root visits 측정 | `EngineDeviceBenchmarkApplication.kt` |
+
+### Game Domain
+
+Game Domain은 바둑 대국의 의미를 다룬다. 여기에는 엔진 호출 방법이 아니라 “누가 어떤 진영으로 어떤 규칙 아래 착수하는가”가 들어간다.
+
+| 도메인 | 역할 | 현재 대응 |
+| --- | --- | --- |
+| Match Referee | 합법수, 착수 적용, pass/pass 종료, 사석/계가 트리거 | `MatchReferee`, `GameState`, `HumanMoveApplication` 일부 |
+| Black Seat | 흑 진영 controller, AI/사람/원격 유저 설정 | `PlayerSetup.black`, `SeatId.Black` |
+| White Seat | 백 진영 controller, AI/사람/원격 유저 설정 | `PlayerSetup.white`, `SeatId.White` |
+| AI Character | AI 성향, 엔진 종류, 플레이 레벨, 후보 선택 정책 | `AiCharacterProfile`, `PlayLevelSetting`, `MoveSelectionPolicy` |
+| Game Settings | ruleset, Search Time, Top Moves, auto-play delay 같은 대국 설정 | `GameSettings`, `SearchTimeSettings`, `AutoPlayDelaySetting` |
 | Remote User Match | 원격 유저 착수 수신/송신, 동기화, 지연/재접속 | 아직 없음 |
+
+### App Service Domain
+
+App Service는 UI가 호출하는 use case 계층이다. Game Domain과 Middleware를 조합하지만, Android 저장소와 엔진 구현체에는 port/interface로만 접근한다.
+
+| 도메인 | 역할 | 현재 대응 |
+| --- | --- | --- |
+| Session Controller | 세션 상태, engine busy, 자동 AI pending, prompt priority, effect 조율 | `GameSessionControllerState`, `GameSessionEffect` |
+| Move Use Cases | 사람 착수, AI 착수, 무르기, 새 게임, 복원 | `HumanMoveApplication`, `GameAutomationApplication`, `UndoApplication`, `StartGameApplication` |
+| Analysis Use Cases | Top Moves 표시, 착수 리뷰, score graph, score estimate | `TopMovesApplication`, `ScoreDisplayApplication` |
+| Persistence Use Cases | 저장/복원, 사용자 설정, benchmark profile 저장 | `SavedGamePersistence`, `UserPreferencesApplication`, `ApplicationPorts.kt` |
+| Diagnostics Use Cases | runtime log, debug report, warning/critical log | `RuntimeEventApplication`, `DebugReportBuilder` |
 
 ### Game UX
 
@@ -99,13 +238,14 @@ Game UX는 다음을 하지 않는다.
 - AI 후보 선택 정책 결정
 - 종국 점수 선택 정책 결정
 - 엔진 capability 문자열 판별
+- cache 품질/origin/TTL 판단
 
 Game UX는 다음만 담당한다.
 
 - 화면 상태 렌더링
 - 사용자 이벤트 수집
-- 미들웨어 API 호출
-- 미들웨어 결과를 화면 상태에 적용
+- App Service API 또는 controller event 호출
+- App Service가 만든 `GameScreenState`/presentation state 표시
 
 ## 핵심 설계 결정
 
