@@ -1011,3 +1011,5 @@
 - JDK 17과 Android SDK를 명시해 `:app-android:testDebugUnitTest`를 실행했고 통과했다.
 - `PromptPriorityApplication`을 추가해 resume prompt와 cache optimization prompt 표시 우선순위를 application 계층 함수로 분리했다. 엔진 startup 완료와 idle 상태를 공통 gate로 두고, resume prompt가 보일 때 cache optimization prompt를 숨기는 정책을 테스트로 고정했다.
 - `GameScreenState`는 inline prompt 조건 대신 `decidePromptVisibility()`를 호출한다. JDK 17과 Android SDK를 명시해 `:app-android:testDebugUnitTest`를 실행했고 통과했다.
+- `ApplicationPorts.kt`를 추가해 saved game, user preferences, engine benchmark, runtime event log, debug report mirror 저장 경계를 application port로 정의했다. 기존 Android persistence 구현체가 port를 구현하도록 연결했다.
+- `DebugReportMirrorStore`를 추가해 `GoCoachApp.kt`의 직접 `openFileOutput()` 호출을 제거하고 debug report mirror 저장을 persistence 구현체로 분리했다. JDK 17과 Android SDK를 명시해 `:app-android:testDebugUnitTest`를 실행했고 통과했다.

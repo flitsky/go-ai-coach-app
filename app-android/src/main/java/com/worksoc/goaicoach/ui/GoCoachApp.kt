@@ -129,6 +129,7 @@ import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.persistence.GameSessionStore
 import com.worksoc.goaicoach.persistence.EngineBenchmarkStore
+import com.worksoc.goaicoach.persistence.DebugReportMirrorStore
 import com.worksoc.goaicoach.persistence.RuntimeEventLog
 import com.worksoc.goaicoach.persistence.SavedGameSnapshot
 import com.worksoc.goaicoach.persistence.UserPreferencesSnapshot
@@ -193,6 +194,7 @@ private fun GoCoachScreen(
     val sessionStore = remember(context) { GameSessionStore(context) }
     val preferencesStore = remember(context) { UserPreferencesStore(context) }
     val benchmarkStore = remember(context) { EngineBenchmarkStore(context) }
+    val debugReportMirror = remember(context) { DebugReportMirrorStore(context) }
     val runtimeEventLog = remember(context) {
         RuntimeEventLog(File(context.filesDir, RuntimeEventLog.FileName))
     }
@@ -1579,11 +1581,7 @@ private fun GoCoachScreen(
         )
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         clipboard.setPrimaryClip(ClipData.newPlainText("Go AI Coach debug report", report))
-        runCatching {
-            context.openFileOutput(DebugReportMirrorFileName, Context.MODE_PRIVATE).use { output ->
-                output.write(report.toByteArray(Charsets.UTF_8))
-            }
-        }
+        runCatching { debugReportMirror.save(report) }
         engineMessage = "Debug report copied to clipboard. Paste it into chat for review."
         Toast.makeText(context, "Debug report copied", Toast.LENGTH_SHORT).show()
     }
@@ -1735,4 +1733,3 @@ private fun UserPreferencesSnapshot.toKaTrainUxOptions(): KaTrainUxOptions =
     )
 
 private const val EngineBenchmarkStartupSettleDelayMillis = 1_500L
-private const val DebugReportMirrorFileName = "last_debug_report.txt"

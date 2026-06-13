@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.persistence
 
 import android.content.Context
+import com.worksoc.goaicoach.application.UserPreferencesStorePort
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.persistence.PlayerSetupJsonCodec.decodePlayerSetup
@@ -21,16 +22,16 @@ internal data class UserPreferencesSnapshot(
     val searchTimeSettings: SearchTimeSettings = SearchTimeSettings(),
 )
 
-internal class UserPreferencesStore(context: Context) {
+internal class UserPreferencesStore(context: Context) : UserPreferencesStorePort {
     private val prefs = context.applicationContext.getSharedPreferences(PrefsName, Context.MODE_PRIVATE)
 
-    fun save(snapshot: UserPreferencesSnapshot) {
+    override fun save(snapshot: UserPreferencesSnapshot) {
         prefs.edit()
             .putString(PreferencesKey, UserPreferencesCodec.encode(snapshot))
             .apply()
     }
 
-    fun load(): UserPreferencesSnapshot {
+    override fun load(): UserPreferencesSnapshot {
         val raw = prefs.getString(PreferencesKey, null) ?: return UserPreferencesSnapshot()
         return UserPreferencesCodec.decode(raw) ?: UserPreferencesSnapshot()
     }

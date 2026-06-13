@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.persistence
 
+import com.worksoc.goaicoach.application.RuntimeEventLogPort
 import java.io.File
 import kotlin.math.min
 
@@ -7,19 +8,23 @@ internal class RuntimeEventLog(
     private val file: File,
     private val maxBytes: Int = DefaultMaxBytes,
     private val trimToBytes: Int = DefaultTrimToBytes,
-) {
+) : RuntimeEventLogPort {
     @Synchronized
-    fun append(
+    override fun append(
         event: String,
-        nowMillis: Long = System.currentTimeMillis(),
+        nowMillis: Long,
     ) {
         file.parentFile?.mkdirs()
         file.appendText("t=$nowMillis ${event.oneLine()}\n", Charsets.UTF_8)
         trimIfNeeded()
     }
 
+    fun append(event: String) {
+        append(event, System.currentTimeMillis())
+    }
+
     @Synchronized
-    fun readText(): String =
+    override fun readText(): String =
         if (file.isFile) {
             file.readText(Charsets.UTF_8)
         } else {
@@ -27,7 +32,7 @@ internal class RuntimeEventLog(
         }
 
     @Synchronized
-    fun clear() {
+    override fun clear() {
         if (file.isFile) {
             file.delete()
         }

@@ -5,18 +5,19 @@ import com.worksoc.goaicoach.application.EngineBenchmarkMetric
 import com.worksoc.goaicoach.application.EngineBenchmarkProfile
 import com.worksoc.goaicoach.application.EngineBenchmarkRuleset
 import com.worksoc.goaicoach.application.EngineBenchmarkSample
+import com.worksoc.goaicoach.application.EngineBenchmarkStorePort
 import com.worksoc.goaicoach.shared.Ruleset
 import java.io.File
 import org.json.JSONArray
 import org.json.JSONObject
 
-internal class EngineBenchmarkStore(context: Context) {
+internal class EngineBenchmarkStore(context: Context) : EngineBenchmarkStorePort {
     private val file = File(context.applicationContext.filesDir, BenchmarkFileName)
 
-    fun exists(): Boolean =
+    override fun exists(): Boolean =
         file.isFile
 
-    fun hasUsableProfile(
+    override fun hasUsableProfile(
         samplesPerVisit: Int,
         timeCapMs: Long,
         measurementVersion: Int,
@@ -37,23 +38,23 @@ internal class EngineBenchmarkStore(context: Context) {
         }
     }
 
-    fun save(profile: EngineBenchmarkProfile) {
+    override fun save(profile: EngineBenchmarkProfile) {
         file.writeText(EngineBenchmarkCodec.encode(profile), Charsets.UTF_8)
     }
 
-    fun load(): EngineBenchmarkProfile? =
+    override fun load(): EngineBenchmarkProfile? =
         file
             .takeIf { it.isFile }
             ?.readText(Charsets.UTF_8)
             ?.let(EngineBenchmarkCodec::decode)
 
-    fun loadText(): String =
+    override fun loadText(): String =
         file
             .takeIf { it.isFile }
             ?.readText(Charsets.UTF_8)
             ?: "No engine benchmark file recorded."
 
-    fun path(): String =
+    override fun path(): String =
         file.absolutePath
 
     private companion object {

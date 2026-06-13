@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.persistence
 
 import android.content.Context
+import com.worksoc.goaicoach.application.SavedGameStorePort
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.persistence.PlayerSetupJsonCodec.decodePlayerSetup
 import com.worksoc.goaicoach.persistence.PlayerSetupJsonCodec.decodePlayLevel
@@ -28,10 +29,10 @@ internal data class SavedGameSnapshot(
         gameState.moves.isNotEmpty() && !gameState.hasConsecutivePasses() && !gameState.isBoardFull()
 }
 
-internal class GameSessionStore(context: Context) {
+internal class GameSessionStore(context: Context) : SavedGameStorePort {
     private val prefs = context.applicationContext.getSharedPreferences(PrefsName, Context.MODE_PRIVATE)
 
-    fun save(snapshot: SavedGameSnapshot) {
+    override fun save(snapshot: SavedGameSnapshot) {
         if (!snapshot.isResumable) {
             clear()
             return
@@ -41,7 +42,7 @@ internal class GameSessionStore(context: Context) {
             .apply()
     }
 
-    fun load(): SavedGameSnapshot? {
+    override fun load(): SavedGameSnapshot? {
         val raw = prefs.getString(SessionKey, null) ?: return null
         return SavedGameSessionCodec.decode(raw)
             .also { snapshot ->
@@ -52,7 +53,7 @@ internal class GameSessionStore(context: Context) {
             ?.takeIf { snapshot -> snapshot.isResumable }
     }
 
-    fun clear() {
+    override fun clear() {
         prefs.edit().remove(SessionKey).apply()
     }
 
