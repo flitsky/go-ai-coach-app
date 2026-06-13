@@ -58,6 +58,7 @@ import com.worksoc.goaicoach.application.EngineBenchmarkMeasurementVersion
 import com.worksoc.goaicoach.application.EngineBenchmarkUiState
 import com.worksoc.goaicoach.application.EngineOperationGate
 import com.worksoc.goaicoach.application.EngineSessionClient
+import com.worksoc.goaicoach.application.DebugReportSnapshot
 import com.worksoc.goaicoach.application.applyHumanMoveLocally
 import com.worksoc.goaicoach.application.applyTopMoveAnalysisLaunchPlan
 import com.worksoc.goaicoach.application.evaluateEngineBenchmarkGate
@@ -1525,34 +1526,36 @@ private fun GoCoachScreen(
 
     fun copyDebugReport() {
         val report = buildDebugReport(
-            mode = matchMode,
-            playerSetup = playerSetup,
-            engineName = engineName,
-            engineDiagnostic = engineDiagnostic,
-            engineProfile = runtimeState.engineProfile,
-            playLevel = runtimeState.playLevel,
-            analysisPreset = runtimeState.analysisPreset,
-            analysisCacheStats = analysisCache.statsText(),
-            positionAnalysisCacheStats = engineClient.positionAnalysisCacheStatsText(System.currentTimeMillis()),
-            isEngineReady = isEngineReady,
-            isEngineBusy = isEngineBusy,
-            isGameEnded = isGameEnded,
-            topMovesEnabled = topMovesEnabled,
-            topMoveCandidateCount = analysisState.reviewAnalysis.legalPlayCount,
-            moveAnalysisCoverage = analysisState.reviewAnalysis.coverageSummary(),
-            gameState = gameState,
-            engineMessage = engineMessage,
-            candidateText = analysisState.candidateText,
-            scoreText = scoreState.scoreText,
-            scoreSnapshots = scoreState.scoreSnapshots,
-            moveReviewText = moveReviewState.moveReviewText,
-            lastMoveText = moveReviewState.lastMoveText,
-            endgameLog = scoreState.endgameLog,
-            engineBenchmarkText = benchmarkUiState.benchmarkText,
-            turnTimeText = turnTimeState.summaryText(),
-            turnTimeDebugText = turnTimeState.debugText(System.currentTimeMillis()),
-            runtimeEventLogText = runtimeEventLog.readText(),
-            searchTimeSettings = searchTimeSettings,
+            DebugReportSnapshot(
+                mode = matchMode,
+                playerSetup = playerSetup,
+                engineName = engineName,
+                engineDiagnostic = engineDiagnostic,
+                engineProfile = runtimeState.engineProfile,
+                playLevel = runtimeState.playLevel,
+                analysisPreset = runtimeState.analysisPreset,
+                analysisCacheStats = analysisCache.statsText(),
+                positionAnalysisCacheStats = engineClient.positionAnalysisCacheStatsText(System.currentTimeMillis()),
+                isEngineReady = isEngineReady,
+                isEngineBusy = isEngineBusy,
+                isGameEnded = isGameEnded,
+                topMovesEnabled = topMovesEnabled,
+                topMoveCandidateCount = analysisState.reviewAnalysis.legalPlayCount,
+                moveAnalysisCoverage = analysisState.reviewAnalysis.coverageSummary(),
+                gameState = gameState,
+                engineMessage = engineMessage,
+                candidateText = analysisState.candidateText,
+                scoreText = scoreState.scoreText,
+                scoreSnapshots = scoreState.scoreSnapshots,
+                moveReviewText = moveReviewState.moveReviewText,
+                lastMoveText = moveReviewState.lastMoveText,
+                endgameLog = scoreState.endgameLog,
+                engineBenchmarkText = benchmarkUiState.benchmarkText,
+                turnTimeText = turnTimeState.summaryText(),
+                turnTimeDebugText = turnTimeState.debugText(System.currentTimeMillis()),
+                runtimeEventLogText = runtimeEventLog.readText(),
+                searchTimeSettings = searchTimeSettings,
+            ),
         )
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         clipboard.setPrimaryClip(ClipData.newPlainText("Go AI Coach debug report", report))
