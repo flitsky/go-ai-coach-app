@@ -983,3 +983,4 @@
 - 사용자 설정 저장소와 문서(`ENGINE_API_CALL_POLICY.md`, `USER_OPTION_MANUAL.md`, `ENGINE_SEARCH_MODE_ROADMAP_2026-06-13.md`)에 Time cap Off 정책을 반영했다. Off는 실시간 대국 기본값이 아니라 응답 지연을 감수하고 root visits/cache 품질을 우선하는 모드로 정의했다.
 - 사용자가 현재 리팩토링 상황 보고와 최소 6시간 이상 작업 분량의 다음 리팩토링 계획 수립, 단계별 커밋/푸시 진행을 요청했다.
 - `docs/refactoring/NEXT_REFACTORING_WORKLIST_2026-06-14.md`를 추가했다. 현재 완료된 engine/session/state 분리 상태를 요약하고, 다음 배치를 `GameSessionSettingsState`, benchmark UI state, cache optimization UI state, Top Moves launch reducer, debug report snapshot, 문서/검증 순서로 나눴다.
+- 1차 리팩토링으로 `GameSessionSettingsState`를 추가했다. `playerSetup`, `autoPlayDelaySetting`, `searchTimeSettings`, `topMovesEnabled`가 하나의 application state holder로 묶였고, `GoCoachApp.kt`의 개별 설정 Compose state가 `settingsState`로 대체되었다. `GameSessionSettingsStateTest`를 추가하고 `:app-android:testDebugUnitTest`를 통과시켰다.

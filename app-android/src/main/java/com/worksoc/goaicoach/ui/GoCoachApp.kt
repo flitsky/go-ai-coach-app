@@ -118,6 +118,7 @@ import com.worksoc.goaicoach.application.SavedSessionPromptPlan
 import com.worksoc.goaicoach.application.StartConfiguredGamePlan
 import com.worksoc.goaicoach.application.TopMoveAnalysisUpdate
 import com.worksoc.goaicoach.application.TopMoveAnalysisLaunchPlan
+import com.worksoc.goaicoach.application.toGameSessionSettingsState
 import com.worksoc.goaicoach.application.UndoRequestPlan
 import com.worksoc.goaicoach.application.UndoLocalStatePlan
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
@@ -248,11 +249,14 @@ private fun GoCoachScreen(
             ),
         )
     }
-    var playerSetup by remember { mutableStateOf(initialPlan.playerSetup) }
-    val matchMode = playerSetup.matchMode()
-    var autoPlayDelaySetting by remember { mutableStateOf(initialPlan.autoPlayDelaySetting) }
-    var searchTimeSettings by remember { mutableStateOf(initialPreferences.searchTimeSettings.normalized()) }
-    var topMovesEnabled by remember { mutableStateOf(initialPlan.topMovesEnabled) }
+    var settingsState by remember {
+        mutableStateOf(initialPlan.toGameSessionSettingsState())
+    }
+    val playerSetup = settingsState.playerSetup
+    val matchMode = settingsState.matchMode
+    val autoPlayDelaySetting = settingsState.autoPlayDelaySetting
+    val searchTimeSettings = settingsState.searchTimeSettings
+    val topMovesEnabled = settingsState.topMovesEnabled
     val analysisCache = remember { AnalysisResultCache(maxEntries = 96) }
     var uxOptions by remember { mutableStateOf(initialPreferences.toKaTrainUxOptions()) }
     var isDisplayMenuExpanded by remember { mutableStateOf(false) }
@@ -646,8 +650,10 @@ private fun GoCoachScreen(
 
     fun applySavedGameRestorePlan(restore: SavedGameRestorePlan) {
         cacheOptimizationPrompt = null
-        playerSetup = restore.playerSetup
-        topMovesEnabled = restore.topMovesEnabled
+        settingsState = settingsState.applySavedGameRestore(
+            restoredSetup = restore.playerSetup,
+            restoredTopMovesEnabled = restore.topMovesEnabled,
+        )
         applyCoreSessionState(currentCoreSessionState().applySavedGameRestorePlan(restore))
         turnTimeState = GameSessionTurnTimeState.reset(
             state = restore.gameState,
@@ -682,7 +688,7 @@ private fun GoCoachScreen(
                 engineMessage = plan.message
             }
             is PlayerSetupChangePlan.Apply -> {
-                playerSetup = plan.playerSetup
+                settingsState = settingsState.applyPlayerSetup(plan.playerSetup)
                 applyCoreSessionState(currentCoreSessionState().applyPlayerSetupChangePlan(plan))
             }
         }
@@ -698,7 +704,7 @@ private fun GoCoachScreen(
             }
         }
         val normalized = nextSettings.normalized()
-        searchTimeSettings = normalized
+        settingsState = settingsState.applySearchTimeSettings(normalized)
         applyRuntimePlayLevelSelection(
             selectRuntimePlayLevel(
                 setup = playerSetup,
@@ -717,6 +723,7 @@ private fun GoCoachScreen(
         automatic: Boolean,
         deep: Boolean = false,
     ) {
+        val currentTopMovesEnabled = settingsState.topMovesEnabled
         if (
             !shouldRequestTopMoveAnalysis(
                 isGameEnded = isGameEnded,
@@ -736,7 +743,7 @@ private fun GoCoachScreen(
             analysisPreset = runtimeState.analysisPreset,
             deep = deep,
             automatic = automatic,
-            topMovesEnabled = topMovesEnabled,
+            topMovesEnabled = currentTopMovesEnabled,
             currentCandidateMoves = analysisState.candidateMoves,
             reviewAnalysis = analysisState.reviewAnalysis,
             lastAnalysisKey = analysisState.lastAnalysisKey,
@@ -768,7 +775,7 @@ private fun GoCoachScreen(
                         analysisPreset = runtimeState.analysisPreset,
                         plan = plan,
                         deep = deep,
-                        topMovesEnabled = topMovesEnabled,
+                        topMovesEnabled = currentTopMovesEnabled,
                         cacheEnabled = analysisCache.isEnabled,
                     )
                 }
@@ -780,7 +787,7 @@ private fun GoCoachScreen(
             }.onFailure { error ->
                 engineMessage = error.message ?: "Top Moves analysis failed."
                 clearReviewAnalysis(targetState)
-                if (topMovesEnabled) {
+                if (currentTopMovesEnabled) {
                     clearTopMoveSpots("Top Moves analysis failed.")
                 }
             }
@@ -799,12 +806,12 @@ private fun GoCoachScreen(
                 targetState = gameState,
             )
         ) {
-            topMovesEnabled = false
+            settingsState = settingsState.hideTopMoves()
             clearTopMoveSpots()
             engineMessage = "Top Moves is available only on human turns."
             return
         }
-        topMovesEnabled = true
+        settingsState = settingsState.showTopMoves()
         when (
             val plan = planShowTopMoves(
                 reviewAnalysis = analysisState.reviewAnalysis,
@@ -836,7 +843,7 @@ private fun GoCoachScreen(
     }
 
     fun hideTopMoves() {
-        topMovesEnabled = false
+        settingsState = settingsState.hideTopMoves()
         clearTopMoveSpots()
         engineMessage = "Top Moves hidden. Background move review keeps using fast best-1 analysis."
     }
@@ -1079,7 +1086,7 @@ private fun GoCoachScreen(
                 to = setting,
             ),
         )
-        autoPlayDelaySetting = setting
+        settingsState = settingsState.applyAutoPlayDelay(setting)
     }
 
     fun requestAiTurnForCurrentState() {
