@@ -23,7 +23,7 @@ import com.worksoc.goaicoach.application.AnalysisResultCache
 import com.worksoc.goaicoach.application.AutoAiTurnDisplayPlan
 import com.worksoc.goaicoach.application.AutoAiTurnRequestPlan
 import com.worksoc.goaicoach.application.AutoAiTurnUiState
-import com.worksoc.goaicoach.application.buildDebugReport
+import com.worksoc.goaicoach.application.buildDebugReportCopyPlan
 import com.worksoc.goaicoach.application.buildEndgameFailureDisplayPlan
 import com.worksoc.goaicoach.application.buildEngineEstimateDisplayPlan
 import com.worksoc.goaicoach.application.buildEngineStartupFailureDisplayPlan
@@ -1510,7 +1510,7 @@ private fun GoCoachScreen(
     }
 
     fun copyDebugReport() {
-        val report = buildDebugReport(
+        val plan = buildDebugReportCopyPlan(
             currentControllerSessionState().toDebugReportSnapshot(
                 engineName = engineName,
                 engineDiagnostic = engineDiagnostic,
@@ -1525,10 +1525,10 @@ private fun GoCoachScreen(
             ),
         )
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        clipboard.setPrimaryClip(ClipData.newPlainText("Go AI Coach debug report", report))
-        runCatching { debugReportMirror.save(report) }
-        engineMessage = "Debug report copied to clipboard. Paste it into chat for review."
-        Toast.makeText(context, "Debug report copied", Toast.LENGTH_SHORT).show()
+        clipboard.setPrimaryClip(ClipData.newPlainText(plan.clipboardLabel, plan.report))
+        runCatching { debugReportMirror.save(plan.report) }
+        engineMessage = plan.engineMessage
+        Toast.makeText(context, plan.toastMessage, Toast.LENGTH_SHORT).show()
     }
 
     fun dispatch(event: GameUiEvent) {

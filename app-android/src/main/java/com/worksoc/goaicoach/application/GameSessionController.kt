@@ -109,4 +109,8 @@ internal sealed interface GameSessionEffect {
     data class SyncRestoredGame(
         val gameState: GameState,
     ) : GameSessionEffect
+
+    data class CopyDebugReport(
+        val plan: DebugReportCopyPlan,
+    ) : GameSessionEffect
 }

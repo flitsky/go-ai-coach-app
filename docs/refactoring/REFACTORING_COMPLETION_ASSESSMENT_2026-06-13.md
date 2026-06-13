@@ -118,3 +118,17 @@ POC를 계속 고도화하는 관점에서는 이미 충분히 좋은 상태다.
 
 - `EngineSessionTest`, `DiagnosticEventApplicationTest`, `DebugReportBuilderTest` 관련 테스트 통과.
 - `make test` 통과.
+
+## 2단계 추가 리팩토링 결과
+
+2026-06-14에 `GameSession Effect Runner` 분리의 첫 안전 단위로 debug report copy effect를 application plan으로 분리했다.
+
+- `DebugReportCopyPlan`을 추가해 clipboard label, report 본문, engine message, toast message를 application 계층에서 구성한다.
+- `buildDebugReportCopyPlan()`이 `DebugReportSnapshot`을 받아 복사 effect에 필요한 값을 모두 만든다.
+- `GoCoachApp.kt`는 report 문자열과 사용자 메시지를 직접 조합하지 않고, plan을 받아 Clipboard/Toast/Mirror 같은 플랫폼 effect만 실행한다.
+- `GameSessionEffect.CopyDebugReport` 타입을 추가해 향후 controller/effect runner가 debug report copy를 명시적 effect로 다룰 수 있게 했다.
+
+검증:
+
+- `DebugReportBuilderTest`, `GameSessionControllerTest` 관련 테스트 통과.
+- `make test` 통과.

@@ -152,4 +152,43 @@ class DebugReportBuilderTest {
         assertEquals("position entries=2", snapshot.positionAnalysisCacheStats)
         assertEquals("diagnostic log", snapshot.diagnosticEventLogText)
     }
+
+    @Test
+    fun debugReportCopyPlanCarriesReportAndPlatformEffectText() {
+        val state = GameState.empty()
+        val plan = buildDebugReportCopyPlan(
+            DebugReportSnapshot(
+                mode = MatchMode.HumanVsAi,
+                playerSetup = PlayerSetup(),
+                engineName = "KataGo",
+                engineDiagnostic = "diagnostic ok",
+                engineProfile = EngineProfile(),
+                playLevel = PlayLevelSetting(),
+                analysisPreset = AnalysisPreset.Lite,
+                analysisCacheStats = "entries=0",
+                isEngineReady = true,
+                isEngineBusy = false,
+                isGameEnded = false,
+                topMovesEnabled = true,
+                topMoveCandidateCount = 0,
+                moveAnalysisCoverage = "none",
+                gameState = state,
+                engineMessage = "engine",
+                candidateText = "candidate",
+                scoreText = "score",
+                scoreSnapshots = emptyList(),
+                moveReviewText = "review",
+                lastMoveText = "None",
+                endgameLog = "No endgame result recorded.",
+                engineBenchmarkText = "benchmark",
+                runtimeEventLogText = "runtime",
+                diagnosticEventLogText = "diagnostic",
+            ),
+        )
+
+        assertEquals("Go AI Coach debug report", plan.clipboardLabel)
+        assertEquals("Debug report copied", plan.toastMessage)
+        assertTrue(plan.engineMessage.contains("clipboard"))
+        assertTrue(plan.report.contains("[DiagnosticEventLog]"))
+    }
 }

@@ -128,6 +128,21 @@ internal fun buildDebugReport(snapshot: DebugReportSnapshot): String =
         searchTimeSettings = snapshot.searchTimeSettings,
     )
 
+internal data class DebugReportCopyPlan(
+    val clipboardLabel: String,
+    val report: String,
+    val engineMessage: String,
+    val toastMessage: String,
+)
+
+internal fun buildDebugReportCopyPlan(snapshot: DebugReportSnapshot): DebugReportCopyPlan =
+    DebugReportCopyPlan(
+        clipboardLabel = "Go AI Coach debug report",
+        report = buildDebugReport(snapshot),
+        engineMessage = "Debug report copied to clipboard. Paste it into chat for review.",
+        toastMessage = "Debug report copied",
+    )
+
 internal fun buildDebugReport(
     mode: MatchMode,
     playerSetup: PlayerSetup,

@@ -184,11 +184,19 @@ class GameSessionControllerTest {
         )
         val autoAiEffect = GameSessionEffect.RunAutoAiTurn(autoAiContext)
         val restoredEffect = GameSessionEffect.SyncRestoredGame(gameState)
+        val debugReportPlan = DebugReportCopyPlan(
+            clipboardLabel = "label",
+            report = "report",
+            engineMessage = "message",
+            toastMessage = "toast",
+        )
+        val debugReportEffect = GameSessionEffect.CopyDebugReport(debugReportPlan)
 
         assertSame(topMovePlan, topMoveEffect.plan)
         assertEquals(true, topMoveEffect.automatic)
         assertSame(autoAiContext, autoAiEffect.context)
         assertSame(gameState, restoredEffect.gameState)
+        assertSame(debugReportPlan, debugReportEffect.plan)
     }
 
     private fun controllerState(

@@ -1064,3 +1064,7 @@
 - 1단계로 diagnostic event 실제 수집 경계를 강화했다. `AdapterEngineSessionClient`가 `DiagnosticEventLogPort`를 선택 주입받고, 실제 엔진 분석 결과의 root visits가 요청 visits를 못 채우거나 보고되지 않으면 `engine.visit_fill_short` 또는 `engine.visit_fill_unknown` warning event를 기록한다.
 - cache hit 결과는 새 엔진 호출이 아니므로 diagnostic event를 중복 기록하지 않도록 했다. `MainActivity`는 하나의 `DiagnosticEventLog` 인스턴스를 생성해 `AdapterEngineSessionClient`와 `GoCoachApp`에 함께 주입한다.
 - `EngineSessionTest`를 보강해 short root visits warning 기록과 complete root visits 무기록을 검증했다. 관련 테스트와 `make test`를 모두 통과했다.
+- 1단계 완료 후 무선 ADB `SM-S908N(192.168.35.166:42037)`에 `make install-dev-engine`로 APK와 KataGo model/config를 설치했고 cold launch `TotalTime=548ms`를 확인했다.
+- 2단계로 `GameSession Effect Runner` 분리의 첫 안전 단위를 진행했다. `DebugReportCopyPlan`과 `buildDebugReportCopyPlan()`을 추가해 debug report copy에 필요한 report 본문, clipboard label, engine message, toast message를 application 계층에서 구성하게 했다.
+- `GoCoachApp.kt`는 report 내용을 직접 만들지 않고 plan을 받아 Clipboard/Toast/Mirror 같은 플랫폼 effect만 수행한다. `GameSessionEffect.CopyDebugReport` 타입도 추가해 향후 controller/effect runner가 debug report copy를 명시적 effect로 다룰 수 있게 했다.
+- `DebugReportBuilderTest`, `GameSessionControllerTest`를 보강했고 관련 테스트와 `make test`를 모두 통과했다.
