@@ -59,6 +59,16 @@ internal sealed class AutoAiTurnRequestPlan {
     ) : AutoAiTurnRequestPlan()
 }
 
+internal data class AutoAiTurnUiState(
+    val isPending: Boolean = false,
+) {
+    fun markScheduled(): AutoAiTurnUiState =
+        copy(isPending = true)
+
+    fun clearPending(): AutoAiTurnUiState =
+        copy(isPending = false)
+}
+
 internal fun buildAutoAiTurnRequestPlan(
     isGameEnded: Boolean,
     isEngineReady: Boolean,

@@ -109,6 +109,15 @@ class GameAutomationApplicationTest {
     }
 
     @Test
+    fun autoAiTurnUiStateTracksPendingSchedule() {
+        val scheduled = AutoAiTurnUiState().markScheduled()
+        val cleared = scheduled.clearPending()
+
+        assertTrue(scheduled.isPending)
+        assertFalse(cleared.isPending)
+    }
+
+    @Test
     fun autoAiTurnRequestPlanSkipsWhenAlreadyPending() {
         val plan = buildAutoAiTurnRequestPlan(
             isGameEnded = false,

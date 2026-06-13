@@ -1000,3 +1000,5 @@
 - `SavedGamePersistenceTest`를 보강했고, JDK 17과 Android SDK를 명시해 `:app-android:testDebugUnitTest`를 실행해 통과했다.
 - `GameSessionControllerState`에 `savedSession: SavedSessionUiState`를 추가했다. controller state는 이제 core/settings/benchmark/saved-session/cache-optimization 상태를 함께 대표하며, `withSavedSession()` 교체 경로를 `GameSessionControllerTest`에서 검증했다.
 - JDK 17과 Android SDK를 명시해 `:app-android:testDebugUnitTest`를 실행했고 통과했다.
+- `AutoAiTurnUiState`를 추가해 자동 AI 턴 예약 pending 플래그를 application state holder로 묶었다. `GoCoachApp.kt`는 자동 턴 예약/취소/완료 지점에서 직접 Boolean을 대입하지 않고 `markScheduled()`와 `clearPending()`을 통과한다.
+- `GameAutomationApplicationTest`를 보강했고, JDK 17과 Android SDK를 명시해 `:app-android:testDebugUnitTest`를 실행해 통과했다.

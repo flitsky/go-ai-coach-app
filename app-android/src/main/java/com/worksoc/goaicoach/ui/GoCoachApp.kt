@@ -22,6 +22,7 @@ import com.worksoc.goaicoach.application.AnalysisCacheKey
 import com.worksoc.goaicoach.application.AnalysisResultCache
 import com.worksoc.goaicoach.application.AutoAiTurnDisplayPlan
 import com.worksoc.goaicoach.application.AutoAiTurnRequestPlan
+import com.worksoc.goaicoach.application.AutoAiTurnUiState
 import com.worksoc.goaicoach.application.buildDebugReport
 import com.worksoc.goaicoach.application.buildAutoAiTurnRequestPlan
 import com.worksoc.goaicoach.application.buildAutoAiTurnExecutionContext
@@ -285,7 +286,8 @@ private fun GoCoachScreen(
             ),
         )
     }
-    var isAutoAiTurnPending by remember { mutableStateOf(false) }
+    var autoAiTurnUiState by remember { mutableStateOf(AutoAiTurnUiState()) }
+    val isAutoAiTurnPending = autoAiTurnUiState.isPending
     var positionCacheOptimizationState by remember {
         mutableStateOf(PositionAnalysisCacheOptimizationUiState())
     }
@@ -1083,7 +1085,7 @@ private fun GoCoachScreen(
         ) {
             AutoAiTurnRequestPlan.Skip -> return
             is AutoAiTurnRequestPlan.Schedule -> {
-                isAutoAiTurnPending = true
+                autoAiTurnUiState = autoAiTurnUiState.markScheduled()
                 runtimeEventLog.append(
                     runtimeAiTurnScheduleLog(
                         context = currentRuntimeLogContext(),
@@ -1117,7 +1119,7 @@ private fun GoCoachScreen(
                                 shouldShowResumePrompt = shouldShowResumePrompt,
                             ),
                         )
-                        isAutoAiTurnPending = false
+                        autoAiTurnUiState = autoAiTurnUiState.clearPending()
                         return@launch
                     }
 
@@ -1238,7 +1240,7 @@ private fun GoCoachScreen(
                         )
                     }
                     isEngineBusy = false
-                    isAutoAiTurnPending = false
+                    autoAiTurnUiState = autoAiTurnUiState.clearPending()
                     runtimeEventLog.append(
                         runtimeAiTurnCompleteLog(
                             context = currentRuntimeLogContext(),
