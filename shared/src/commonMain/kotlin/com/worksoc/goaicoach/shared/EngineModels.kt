@@ -219,6 +219,8 @@ data class AnalysisResult(
     val status: EngineStatus,
     val candidates: List<CandidateMove>,
     val summary: String,
+    val rootVisits: Int? = null,
+    val elapsedMillis: Long? = null,
 )
 
 data class OwnershipEstimate(

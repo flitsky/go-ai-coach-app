@@ -48,15 +48,16 @@ class PlayLevelSettingTest {
     fun turnAnalysisPolicyKeepsAiSelectionBudgetFastAndLevelSpecific() {
         val levelSeven = PlayLevelSetting(PlayLevelGroup.Beginner, level = 7)
 
-        val limit = levelSeven.turnAnalysisLimitFor(TurnAnalysisPurpose.AiMoveSelection)
+        val limit = levelSeven.aiMoveAnalysisLimitWith(SearchTimeSettings())
 
         assertEquals(32, limit.visits)
         assertEquals(2_000L, limit.timeMillis)
         assertEquals(16, limit.candidateCount)
-        assertEquals(false, limit.includePolicy)
+        assertEquals(true, limit.includePolicy)
         assertEquals(0, limit.refinePolicyMoves)
         assertEquals(0, limit.minVisitsPerCandidate)
         assertEquals(null, limit.minTimeMillis)
+        assertEquals(EngineSearchMode.JsonPositionAnalysis, levelSeven.aiMoveSearchMode())
         assertEquals(MoveSelectionPolicy.BestOnly, levelSeven.selectionPolicy)
     }
 
@@ -111,17 +112,23 @@ class PlayLevelSettingTest {
     }
 
     @Test
-    fun fastBeginnerStageTwoAvoidsTopCandidateWhenPossible() {
+    fun fastBeginnerAlwaysUsesGtpBestOnlyForFastPlay() {
         val policy = PlayLevelSetting(
             group = PlayLevelGroup.FastBeginner,
             level = 2,
         ).selectionPolicy
+        val limit = PlayLevelSetting(
+            group = PlayLevelGroup.FastBeginner,
+            level = 2,
+        ).aiMoveAnalysisLimitWith(SearchTimeSettings())
 
-        assertEquals("최적수 제외 상위 후보", policy.description)
+        assertEquals(MoveSelectionPolicy.BestOnly, policy)
+        assertEquals(EngineSearchMode.GtpStatefulFast, PlayLevelSetting(PlayLevelGroup.FastBeginner, level = 2).aiMoveSearchMode())
+        assertEquals(16, limit.visits)
+        assertEquals(1, limit.candidateCount)
+        assertEquals(false, limit.includePolicy)
         assertEquals(0..0, policy.candidateIndexRange(candidateCount = 1))
-        assertEquals(1..1, policy.candidateIndexRange(candidateCount = 2))
-        assertEquals(1..2, policy.candidateIndexRange(candidateCount = 5))
-        assertEquals(1..5, policy.candidateIndexRange(candidateCount = 10))
+        assertEquals(0..0, policy.candidateIndexRange(candidateCount = 10))
     }
 
     @Test

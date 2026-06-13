@@ -152,6 +152,8 @@ class KataGoProcessEngineAdapter(
                 rootVisits = gtpResult.rootVisits,
                 elapsedMs = gtpResult.elapsedMs,
             ),
+            rootVisits = gtpResult.rootVisits,
+            elapsedMillis = gtpResult.elapsedMs,
         )
     }
 
@@ -228,6 +230,8 @@ class KataGoProcessEngineAdapter(
                 policyOnlyCount = policyOnlyCount,
                 refinedCount = refinedCandidates.size,
             ),
+            rootVisits = rootVisits,
+            elapsedMillis = elapsedMs,
         )
     }
 

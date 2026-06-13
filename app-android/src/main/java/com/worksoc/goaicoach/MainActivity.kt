@@ -25,6 +25,7 @@ import com.worksoc.goaicoach.application.AdapterEngineSessionClient
 import com.worksoc.goaicoach.application.EngineSessionCapabilities
 import com.worksoc.goaicoach.engine.EngineBootstrap
 import com.worksoc.goaicoach.engine.createEngineBootstrap
+import com.worksoc.goaicoach.persistence.JsonPositionAnalysisCacheStore
 import com.worksoc.goaicoach.shared.EngineMode
 import com.worksoc.goaicoach.ui.GoCoachApp
 import kotlinx.coroutines.Dispatchers
@@ -49,12 +50,16 @@ class MainActivity : ComponentActivity() {
             if (bootstrap == null) {
                 PreparingEngineScreen()
             } else {
+                val positionAnalysisCacheStore = remember(applicationContext) {
+                    JsonPositionAnalysisCacheStore(applicationContext)
+                }
                 val engineClient = remember(bootstrap.coreApi) {
                     AdapterEngineSessionClient(
                         coreApi = bootstrap.coreApi,
                         capabilities = EngineSessionCapabilities(
                             supportsDeviceBenchmark = bootstrap.mode == EngineMode.LocalProcess,
                         ),
+                        positionAnalysisCacheStore = positionAnalysisCacheStore,
                     )
                 }
                 GoCoachApp(

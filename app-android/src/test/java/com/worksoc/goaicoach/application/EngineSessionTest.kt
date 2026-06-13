@@ -7,6 +7,7 @@ import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.DeadStonesResult
 import com.worksoc.goaicoach.shared.EngineAdapter
 import com.worksoc.goaicoach.shared.EngineProfile
+import com.worksoc.goaicoach.shared.EngineSearchMode
 import com.worksoc.goaicoach.shared.EngineStatus
 import com.worksoc.goaicoach.shared.FinalScoreResult
 import com.worksoc.goaicoach.shared.GameState
@@ -149,6 +150,50 @@ class EngineSessionTest {
     }
 
     @Test
+    fun adapterSessionClientReusesCompleteJsonPositionAnalysisCache() = runBlocking {
+        val engine = RecordingEngineAdapter()
+        val cacheStore = InMemoryPositionAnalysisCacheStore()
+        val client = AdapterEngineSessionClient(
+            coreApi = engine,
+            positionAnalysisCacheStore = cacheStore,
+        )
+        val state = GameState.empty()
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+        val limit = AnalysisLimit(
+            visits = 32,
+            timeMillis = 2_000L,
+            candidateCount = 16,
+            includePolicy = true,
+            refinePolicyMoves = 0,
+            minVisitsPerCandidate = 0,
+            minTimeMillis = null,
+        )
+
+        val first = client.analyzePosition(
+            state = state,
+            limit = limit,
+            searchMode = EngineSearchMode.JsonPositionAnalysis,
+        )
+        val second = client.analyzePosition(
+            state = state,
+            limit = limit,
+            searchMode = EngineSearchMode.JsonPositionAnalysis,
+        )
+
+        assertEquals(32, first.rootVisits)
+        assertEquals(32, second.rootVisits)
+        assertTrue(second.summary.contains("cache hit"))
+        assertEquals(
+            listOf(
+                "newGame:9:japanese",
+                "play:Black E5",
+                "analyze:32",
+            ),
+            engine.calls,
+        )
+    }
+
+    @Test
     fun estimateScoreForStateOptionallySyncsBoardBeforeEstimating() = runBlocking {
         val engine = RecordingEngineAdapter()
         val state = GameState.empty()
@@ -219,6 +264,8 @@ private class RecordingEngineAdapter : EngineAdapter {
             status = EngineStatus.ready("analyzed"),
             candidates = emptyList(),
             summary = "analyzed",
+            rootVisits = limit.visits,
+            elapsedMillis = 10L,
         ).also {
             calls += "analyze:${limit.visits}"
         }
@@ -251,4 +298,24 @@ private class RecordingEngineAdapter : EngineAdapter {
         EngineStatus.stopped("stopped").also {
             calls += "stop"
         }
+}
+
+private class InMemoryPositionAnalysisCacheStore : PositionAnalysisCacheStore {
+    private val entries = mutableMapOf<PositionAnalysisCacheKey, PositionAnalysisCacheEntry>()
+
+    override fun get(
+        key: PositionAnalysisCacheKey,
+        nowMillis: Long,
+    ): PositionAnalysisCacheEntry? =
+        entries[key]
+
+    override fun put(
+        entry: PositionAnalysisCacheEntry,
+        nowMillis: Long,
+    ) {
+        entries[entry.key] = entry
+    }
+
+    override fun statsText(nowMillis: Long): String =
+        "entries=${entries.size}"
 }

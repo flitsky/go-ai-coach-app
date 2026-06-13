@@ -36,12 +36,12 @@
   - 경량 요청은 KataGo JSON analysis process를 거치지 않고 기존 대국 GTP process의 `kata-search_analyze` 빠른 경로를 우선 사용한다.
   - 버튼은 표시 토글처럼 동작한다. 켜면 현재 국면의 best-1 분석을 요청하거나 cache가 있으면 즉시 표시하고, 끄면 표시만 지운다. 백그라운드 착수 리뷰 분석은 계속 fast best-1로 유지된다.
   - 후보 순위, 점수 손실, 예상 리드, visits 같은 상세 텍스트는 화면 하단의 약 10줄 스크롤 박스와 `Copy Log`로 확인한다.
-  - 분석 강도는 메뉴의 `Player Setup`에서 각 AI 진영에 지정한 플레이 레벨에 의해 자동 결정된다. 화면에는 `Lite`, `Balanced`, `Deep` raw preset을 직접 노출하지 않는다.
-  - `빠른 초급`은 느린 폰/에뮬레이터용 기본 경량 설정이며, B16 수준의 빠른 분석을 사용한다.
-  - `초급`은 모든 단계가 동일한 B32 / 500ms 요청을 사용한다. 단계 차이는 엔진 요청이 아니라 후보 선택 정책으로만 만든다.
+  - AI 착수 분석 강도는 메뉴의 `Player Setup`에서 각 AI 진영에 지정한 플레이 레벨에 의해 자동 결정된다. 화면에는 `Lite`, `Balanced`, `Deep` raw preset을 직접 노출하지 않는다.
+  - `빠른 초급`은 느린 폰/에뮬레이터용 빠른 대국 모드이며, B16 GTP fast 경로에서 최적수 1개만 요청해 둔다.
+  - `초급`은 모든 단계가 동일한 B32 / 기본 2초 JSON position analysis 요청을 사용한다. 단계 차이는 엔진 요청이 아니라 후보 선택 정책으로만 만든다.
   - `중급`, `고급`은 더 높은 visits/time을 사용하므로 후보 품질은 좋아질 수 있지만 응답이 느려질 수 있다.
-  - 동일한 국면, 규칙, 차례, 내부 analysis preset, 분석 예산으로 이미 분석한 값이 있으면 엔진을 다시 호출하지 않고 메모리 cache를 사용한다.
-  - 무르기로 최근 국면으로 돌아온 경우 같은 cache key가 있으면 즉시 재사용한다.
+  - JSON position analysis 결과는 요청 root visits가 충분히 채워졌을 때만 디스크 cache에 최대 10개 저장한다. 저장 후 30일이 지나면 무효화한다.
+  - 무르기나 반복 국면에서 같은 fingerprint/search mode/budget의 JSON cache가 있으면 엔진을 다시 호출하지 않고 재사용할 수 있다.
   - KaTrain식 전체 합법 착점 snapshot, policy 후보 보존, refine sweep, deep fallback은 향후 학습/복기 모드로 분리한다. 현재 모바일 대국 기본 경로에는 붙이지 않는다.
 - `Eval`: 현재 판의 점수 추정과 ownership 정보를 요청한다.
   - 엔진이 준비된 AI/2P 모드에서는 KataGo estimate를 사용한다.
@@ -102,11 +102,11 @@
 - 엔진이 준비되지 않은 2인용 모드는 로컬 룰 테스트로 계속 동작한다.
 - 사람 1명 대 AI 대국에서 `Undo`는 사람 착수와 AI 응수까지 2수를 한 턴으로 되돌린다. 양쪽 모두 사람이거나 양쪽 모두 AI이면 한 수만 되돌린다.
 - 플레이 레벨은 AI 응수와 해당 진영의 분석 예산을 함께 결정한다.
-- `빠른 초급`: Beginner 16 visits / 기본 1초. 느린 폰에서도 대국 리듬을 유지하기 위한 기본 설정이다. 2단계는 후보가 2개 이상이면 최적수 `order 0`을 제외하고 상위 후보에서 고른다.
-- `초급`: 1~7단계 모두 Beginner 32 visits / 기본 2초. 같은 엔진 요청을 보내고, 1~6단계는 후보 선택 구간을 다르게 섞으며, 7단계는 초급 B32 경계 안에서 최적수만 선택한다.
-- `중급`: Casual 64 visits / 기본 3초. 일반 대국과 후보 품질의 절충 설정이다.
+- `빠른 초급`: Beginner 16 visits / 기본 1초. GTP fast 경로에서 최적수 1개만 요청해 둔다. 1~3단계는 현재 모두 빠른 대국용 best-only로 동작한다.
+- `초급`: 1~7단계 모두 Beginner 32 visits / 기본 2초. JSON position analysis로 후보군을 받고, 1~6단계는 후보 선택 구간을 다르게 섞으며, 7단계는 초급 B32 경계 안에서 최적수만 선택한다.
+- `중급`: Casual 64 visits / 기본 3초. JSON position analysis로 더 안정적인 후보군을 받는 절충 설정이다.
 - `고급`: Intermediate 160 visits / 1000ms. 더 강한 응수와 분석 품질을 목표로 한다.
-- AI 응수는 대국 속도를 위해 Top Moves용 policy/refine 보강을 붙이지 않는다. 예를 들어 `중급 5단계`는 `64 visits / Search Time의 B64 time cap` 요청에서 최적수만 선택한다.
+- AI 응수는 대국 속도를 위해 Top Moves용 deep refine 보강을 붙이지 않는다. 예를 들어 `중급 5단계`는 `64 visits / Search Time의 B64 time cap` JSON 요청에서 최적수만 선택한다.
 - 단계는 AI가 KataGo `moveInfos.order` 기준 후보를 고르는 상대 순위 구간을 조정한다. 낮은 단계는 order 하위/중위 후보를 더 섞고, 최고 단계는 엔진 order 최상위 후보만 고른다. `pointLoss`는 이 후보의 학습 피드백으로 표시되지만 후보 순서를 뒤집는 기준으로 쓰지 않는다.
 - 단, KataGo가 `pass`를 최선 scored 후보로 판단한 종국 국면에서는 레벨 단계보다 pass를 우선한다. 약한 레벨이라도 상대 진영에 무의미하게 착수하지 않고 계가 흐름으로 들어가기 위함이다.
 - 내부적으로는 레벨에 따라 `Lite`, `Learning`, `Balanced` 분석 preset이 자동 선택된다. 이 raw preset은 사용자 메뉴에서 직접 조작하지 않는다.

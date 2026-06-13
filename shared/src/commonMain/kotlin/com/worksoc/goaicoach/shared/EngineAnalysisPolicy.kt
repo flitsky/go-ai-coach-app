@@ -42,3 +42,39 @@ fun AnalysisLimit.fastCandidateAnalysis(candidateCount: Int = this.candidateCoun
         minVisitsPerCandidate = 0,
         minTimeMillis = null,
     )
+
+fun PlayLevelSetting.aiMoveSearchMode(): EngineSearchMode =
+    if (group == PlayLevelGroup.FastBeginner) {
+        EngineSearchMode.GtpStatefulFast
+    } else {
+        EngineSearchMode.JsonPositionAnalysis
+    }
+
+fun PlayLevelSetting.aiMoveAnalysisLimitWith(
+    searchTimeSettings: SearchTimeSettings,
+): AnalysisLimit {
+    val base = analysisLimitWith(searchTimeSettings)
+    return when (aiMoveSearchMode()) {
+        EngineSearchMode.GtpStatefulFast ->
+            base.fastCandidateAnalysis(candidateCount = 1)
+        EngineSearchMode.JsonPositionAnalysis ->
+            base.copy(
+                includePolicy = true,
+                refinePolicyMoves = 0,
+                minVisitsPerCandidate = 0,
+                minTimeMillis = null,
+            )
+    }
+}
+
+fun AnalysisLimit.forcedJsonPositionAnalysis(): AnalysisLimit =
+    if (includePolicy || refinePolicyMoves > 0) {
+        this
+    } else {
+        copy(
+            includePolicy = true,
+            refinePolicyMoves = 0,
+            minVisitsPerCandidate = 0,
+            minTimeMillis = null,
+        )
+    }

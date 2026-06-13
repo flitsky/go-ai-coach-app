@@ -15,6 +15,8 @@ import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.ScoreSnapshot
 import com.worksoc.goaicoach.shared.ScoreTimeline
 import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.aiMoveAnalysisLimitWith
+import com.worksoc.goaicoach.shared.aiMoveSearchMode
 
 internal fun shouldRequestAiTurn(
     isGameEnded: Boolean,
@@ -117,19 +119,20 @@ internal fun buildAutoAiTurnExecutionContext(
     playerSetup: PlayerSetup,
     searchTimeSettings: SearchTimeSettings,
     reviewCandidateMoves: List<CandidateMove>,
-    searchMode: EngineSearchMode = EngineSearchMode.GtpStatefulFast,
+    searchMode: EngineSearchMode? = null,
 ): AutoAiTurnExecutionContext {
     val aiPlayer = gameState.nextPlayer
     val playLevel = playerSetup.seatFor(aiPlayer)
         .aiCharacter
         ?.playLevel
         ?: PlayLevelSetting()
+    val resolvedSearchMode = searchMode ?: playLevel.aiMoveSearchMode()
     return AutoAiTurnExecutionContext(
         turnState = gameState,
         aiPlayer = aiPlayer,
         playLevel = playLevel,
-        analysisLimit = playLevel.analysisLimitWith(searchTimeSettings),
-        searchMode = searchMode,
+        analysisLimit = playLevel.aiMoveAnalysisLimitWith(searchTimeSettings),
+        searchMode = resolvedSearchMode,
         isolateSearchCache = playerSetup.isAutoPlay(),
         previousReviewCandidates = reviewCandidateMoves,
     )

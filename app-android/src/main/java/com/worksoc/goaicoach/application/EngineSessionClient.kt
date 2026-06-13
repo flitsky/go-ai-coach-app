@@ -14,6 +14,7 @@ import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.ScoreEstimate
+import com.worksoc.goaicoach.shared.forcedJsonPositionAnalysis
 
 internal data class EngineSessionCapabilities(
     val supportsDeviceBenchmark: Boolean,
@@ -99,6 +100,7 @@ internal class AdapterEngineSessionClient(
     override val capabilities: EngineSessionCapabilities = EngineSessionCapabilities(
         supportsDeviceBenchmark = false,
     ),
+    private val positionAnalysisCacheStore: PositionAnalysisCacheStore = NoopPositionAnalysisCacheStore,
 ) : EngineSessionClient {
     override suspend fun startSession(
         profile: EngineProfile,
@@ -117,9 +119,54 @@ internal class AdapterEngineSessionClient(
         state: GameState,
         limit: AnalysisLimit,
         searchMode: EngineSearchMode,
+    ): AnalysisResult =
+        analyzePositionWithCache(
+            state = state,
+            limit = limit,
+            searchMode = searchMode,
+        )
+
+    private suspend fun analyzePositionWithCache(
+        state: GameState,
+        limit: AnalysisLimit,
+        searchMode: EngineSearchMode,
     ): AnalysisResult {
+        val effectiveLimit = when (searchMode) {
+            EngineSearchMode.GtpStatefulFast -> limit
+            EngineSearchMode.JsonPositionAnalysis -> limit.forcedJsonPositionAnalysis()
+        }
+        val nowMillis = System.currentTimeMillis()
+        val cacheKey = positionAnalysisCacheKeyFor(
+            state = state,
+            searchMode = searchMode,
+            limit = effectiveLimit,
+        )
+        if (searchMode == EngineSearchMode.JsonPositionAnalysis) {
+            positionAnalysisCacheStore
+                .get(cacheKey, nowMillis)
+                ?.let { entry -> return entry.result.withCacheHitSummary(entry) }
+        }
         coreApi.syncToGameState(state)
-        return coreApi.analyze(limit)
+        val result = coreApi.analyze(effectiveLimit)
+        if (
+            searchMode == EngineSearchMode.JsonPositionAnalysis &&
+            result.hasCompleteRootVisitsFor(effectiveLimit)
+        ) {
+            val rootVisits = result.rootVisits
+            if (rootVisits != null) {
+                positionAnalysisCacheStore.put(
+                    entry = PositionAnalysisCacheEntry(
+                        key = cacheKey,
+                        result = result,
+                        createdAtMillis = nowMillis,
+                        requestedRootVisits = effectiveLimit.visits,
+                        rootVisits = rootVisits,
+                    ),
+                    nowMillis = nowMillis,
+                )
+            }
+        }
+        return result
     }
 
     override suspend fun syncAndEstimateGraphScore(
@@ -141,15 +188,37 @@ internal class AdapterEngineSessionClient(
         searchTimeSettings: SearchTimeSettings,
         searchMode: EngineSearchMode,
         isolateSearchCache: Boolean,
-    ): AutoAiTurnResult =
-        coreApi.runAutoAiTurn(
+    ): AutoAiTurnResult {
+        val aiPlayer = currentState.nextPlayer
+        val turnProfile = playLevel.toEngineProfile(currentProfile, searchTimeSettings)
+        coreApi.configure(turnProfile)
+        coreApi.syncToGameState(currentState)
+        val outcome = com.worksoc.goaicoach.match.applyAiTurn(
+            engineAdapter = coreApi,
             currentState = currentState,
+            aiPlayer = aiPlayer,
             playLevel = playLevel,
-            currentProfile = currentProfile,
             searchTimeSettings = searchTimeSettings,
             searchMode = searchMode,
             isolateSearchCache = isolateSearchCache,
+            analysisProvider = { limit ->
+                analyzePositionWithCache(
+                    state = currentState,
+                    limit = limit,
+                    searchMode = searchMode,
+                )
+            },
         )
+        val estimate = runCatching {
+            coreApi.estimateScore(scoreGraphAnalysisLimit(turnProfile))
+        }.getOrNull()
+        return AutoAiTurnResult(
+            turnOutcome = outcome,
+            scoreEstimate = estimate,
+            profile = turnProfile,
+            playLevel = playLevel,
+        )
+    }
 
     override suspend fun syncAfterHumanMove(
         afterMove: GameState,

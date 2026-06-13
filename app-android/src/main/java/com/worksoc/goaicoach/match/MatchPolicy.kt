@@ -1,5 +1,7 @@
 package com.worksoc.goaicoach.match
 
+import com.worksoc.goaicoach.shared.AnalysisLimit
+import com.worksoc.goaicoach.shared.AnalysisResult
 import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.EngineCoreApi
 import com.worksoc.goaicoach.shared.EngineSearchMode
@@ -8,6 +10,8 @@ import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.aiMoveAnalysisLimitWith
+import com.worksoc.goaicoach.shared.aiMoveSearchMode
 import com.worksoc.goaicoach.shared.describe
 import com.worksoc.goaicoach.shared.fastCandidateAnalysis
 import kotlin.random.Random
@@ -213,7 +217,7 @@ internal suspend fun applyAiResponseAfterHumanTurn(
         aiPlayer = AiPlayer,
         playLevel = playLevel,
         searchTimeSettings = searchTimeSettings,
-        searchMode = EngineSearchMode.GtpStatefulFast,
+        searchMode = playLevel.aiMoveSearchMode(),
     )
     if (selectedAiMove != null) {
         val afterAi = MatchReferee.play(stateAfterHuman, selectedAiMove.move).getOrNull()
@@ -246,10 +250,12 @@ internal suspend fun applyAiTurn(
     aiPlayer: StoneColor,
     playLevel: PlayLevelSetting,
     searchTimeSettings: SearchTimeSettings = SearchTimeSettings(),
-    searchMode: EngineSearchMode = EngineSearchMode.GtpStatefulFast,
+    searchMode: EngineSearchMode? = null,
     isolateSearchCache: Boolean = false,
+    analysisProvider: (suspend (AnalysisLimit) -> AnalysisResult)? = null,
 ): TurnOutcome {
-    if (isolateSearchCache && searchMode == EngineSearchMode.GtpStatefulFast) {
+    val resolvedSearchMode = searchMode ?: playLevel.aiMoveSearchMode()
+    if (isolateSearchCache && resolvedSearchMode == EngineSearchMode.GtpStatefulFast) {
         // AI-vs-AI currently shares one KataGo process. Without this isolation,
         // a lower-budget side can inherit the previous higher-budget side's
         // subtree and hide the intended B16/B32/B64 strength gap.
@@ -260,7 +266,8 @@ internal suspend fun applyAiTurn(
         aiPlayer = aiPlayer,
         playLevel = playLevel,
         searchTimeSettings = searchTimeSettings,
-        searchMode = searchMode,
+        searchMode = resolvedSearchMode,
+        analysisProvider = analysisProvider,
     )
     if (selectedAiMove != null) {
         val afterAi = MatchReferee.play(currentState, selectedAiMove.move).getOrNull()
@@ -343,10 +350,28 @@ private suspend fun EngineCoreApi.selectAiMoveFromAnalysis(
     playLevel: PlayLevelSetting,
     searchTimeSettings: SearchTimeSettings,
     searchMode: EngineSearchMode,
+    analysisProvider: (suspend (AnalysisLimit) -> AnalysisResult)? = null,
 ): SelectedAiMove? =
     runCatching {
-        val baseLimit = playLevel.analysisLimitWith(searchTimeSettings)
-        val analysis = analyze(baseLimit.fastCandidateAnalysis(baseLimit.candidateCount))
+        val analysisLimit = when (searchMode) {
+            EngineSearchMode.GtpStatefulFast -> {
+                val baseLimit = playLevel.analysisLimitWith(searchTimeSettings)
+                baseLimit.fastCandidateAnalysis(
+                    candidateCount = if (playLevel.aiMoveSearchMode() == EngineSearchMode.GtpStatefulFast) {
+                        1
+                    } else {
+                        baseLimit.candidateCount
+                    },
+                )
+            }
+            EngineSearchMode.JsonPositionAnalysis ->
+                playLevel.aiMoveAnalysisLimitWith(searchTimeSettings)
+        }
+        val analysis = if (analysisProvider != null) {
+            analysisProvider(analysisLimit)
+        } else {
+            analyze(analysisLimit)
+        }
         val scoredCandidates = analysis.candidates
             .filter { candidate ->
                 candidate.move.player == aiPlayer && candidate.pointLoss != null

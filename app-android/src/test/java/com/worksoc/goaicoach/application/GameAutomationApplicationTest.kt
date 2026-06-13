@@ -175,9 +175,34 @@ class GameAutomationApplicationTest {
         assertEquals(whiteLevel, context.playLevel)
         assertEquals(32, context.analysisLimit.visits)
         assertEquals(4_000L, context.analysisLimit.timeMillis)
-        assertEquals(EngineSearchMode.GtpStatefulFast, context.searchMode)
+        assertEquals(true, context.analysisLimit.includePolicy)
+        assertEquals(EngineSearchMode.JsonPositionAnalysis, context.searchMode)
         assertFalse(context.isolateSearchCache)
         assertEquals(listOf(reviewCandidate), context.previousReviewCandidates)
+    }
+
+    @Test
+    fun fastBeginnerAutoAiTurnExecutionContextUsesGtpBestOnly() {
+        val setup = PlayerSetup(
+            black = SidePlayerSetup(
+                controller = SeatController.Ai,
+                playLevel = PlayLevelSetting(PlayLevelGroup.FastBeginner, level = 2),
+            ),
+            white = SidePlayerSetup(controller = SeatController.Human),
+        )
+
+        val context = buildAutoAiTurnExecutionContext(
+            gameState = GameState.empty(),
+            playerSetup = setup,
+            searchTimeSettings = SearchTimeSettings(b16Millis = 1_500L),
+            reviewCandidateMoves = emptyList(),
+        )
+
+        assertEquals(EngineSearchMode.GtpStatefulFast, context.searchMode)
+        assertEquals(16, context.analysisLimit.visits)
+        assertEquals(1_500L, context.analysisLimit.timeMillis)
+        assertEquals(1, context.analysisLimit.candidateCount)
+        assertEquals(false, context.analysisLimit.includePolicy)
     }
 
     @Test

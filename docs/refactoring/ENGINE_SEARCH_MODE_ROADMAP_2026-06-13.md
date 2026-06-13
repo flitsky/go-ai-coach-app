@@ -11,10 +11,11 @@ AI 자동대국은 우선 빠른 대국 체감을 위해 현행 GTP stateful fas
 | 단계 | 작업 | 상태 | 판단 기준 |
 | ---: | --- | --- | --- |
 | 1 | `EngineSearchMode.GtpStatefulFast` / `EngineSearchMode.JsonPositionAnalysis` 정책 분리 | 완료 | 기본 동작은 GTP fast path 유지. 자동 AI 턴 context, session interface, runtime log에 search mode가 명시되어야 함 |
-| 2 | AI vs AI 자동대국에만 JSON position analysis 실험 모드 추가 | 대기 | 메뉴/설정 또는 내부 실험 flag로 자동대국만 JSON mode 선택 가능 |
-| 3 | B16 vs B32, B32 vs B64, B16 vs B64 각각 50판 이상 비교 | 대기 | 승률, 평균 root visits, fill rate, 평균 착수 시간 수집 |
-| 4 | 폰에서 B16/B32/B64 latency와 `rootInfo.visits` fill 수집 | 대기 | 실기기에서 B16/B32/B64가 사용 가능한 응답시간인지 확인 |
-| 5 | 결과가 좋으면 AI vs AI 기본값을 JSON으로 전환, 사람 vs AI는 GTP reuse 유지 또는 옵션화 | 대기 | JSON mode가 자동대국 공정성과 체감 속도를 모두 만족할 때만 전환 |
+| 2 | AI 착수 경로에 level별 search mode 정책 적용 | 완료 | `빠른 초급`은 B16/GTP/best-only, `초급` 이상은 B32+/JSON 후보군 레벨링 |
+| 3 | root visits 충족 JSON result cache 추가 | 완료 | JSON mode, rootVisits >= requested visits일 때만 최대 10개/30일 저장 |
+| 4 | B16 vs B32, B32 vs B64, B16 vs B64 각각 50판 이상 비교 | 대기 | 승률, 평균 root visits, fill rate, 평균 착수 시간 수집 |
+| 5 | 사람 차례 Top Moves/착수 리뷰도 JSON snapshot 기반으로 확장 | 대기 | 후보 표시와 착수 후 spot 평가가 같은 JSON snapshot을 공유 |
+| 6 | 결과가 좋으면 JSON mode 적용 범위 확대, GTP fast는 빠른 대국 옵션으로 유지 | 대기 | JSON mode가 공정성/학습 가치와 체감 속도를 모두 만족할 때만 확대 |
 
 ## 1단계 구현 원칙
 
@@ -35,6 +36,23 @@ AI 자동대국은 우선 빠른 대국 체감을 위해 현행 GTP stateful fas
 ## 2~5단계 보류 이유
 
 JSON position analysis는 구조적으로 장점이 있지만, Android 실기기 latency와 자동대국 승률 분포 검증 전에는 기본값으로 바꾸지 않는다. 특히 현재 GTP 경로는 이미 빠른 대국 체감을 제공하고 있으므로, 사용자 플레이 품질을 흔드는 변경은 실험 모드와 데이터 확보 이후에 진행한다.
+
+## 2026-06-13 정책 적용 기록
+
+폰 벤치마크 결과를 토대로 AI 착수 경로를 다음처럼 나눴다.
+
+- `빠른 초급`: B16, `GtpStatefulFast`, 후보 1개, best-only. 느린 폰에서도 빠르게 대국하는 모드로 둔다.
+- `초급` 이상: B32/B64/B160, `JsonPositionAnalysis`, 후보군 기반 레벨링. AI 캐릭터 성향과 단계별 후보 선택 정책을 이 경로에서 운영한다.
+
+추가로 JSON analysis 결과 cache를 도입했다.
+
+- 저장 조건: `EngineSearchMode.JsonPositionAnalysis`이며 `rootVisits >= requested visits`
+- 최대 개수: 10개
+- TTL: 30일
+- 저장 시각: `createdAtMillis`
+- key: `GameState.analysisFingerprint() + searchMode + AnalysisLimit`
+
+이 cache는 GTP search tree cache나 기존 Top Moves 임시 `AnalysisResultCache`와 다른 목적이다. 충분히 분석된 특정 position result만 재사용해 JSON mode의 반복 분석 부담을 줄이기 위한 것이다.
 
 ## 맥북 1차 latency 비교
 
