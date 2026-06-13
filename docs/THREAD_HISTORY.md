@@ -1017,3 +1017,5 @@
 - JDK 17과 Android SDK를 명시해 `:app-android:testDebugUnitTest`를 실행했고 통과했다.
 - `GameSessionControllerState.toRuntimeLogContext(...)` 확장 함수를 추가해 runtime log context 조립을 application 계층으로 이동했다. UI는 engine ready/busy, cache stats, turn time 같은 외부 값만 넘긴다.
 - `RuntimeEventApplicationTest`를 보강했고, JDK 17과 Android SDK를 명시해 `:app-android:testDebugUnitTest`를 실행했고 통과했다.
+- `buildGameScreenStateInput(controller, ...)` helper를 추가해 `GameScreenStateInput` 조립을 controller snapshot 기반으로 옮겼다. `GoCoachApp.kt`는 화면 외부 값만 넘기고 세션 내부 상태를 직접 풀어 쓰지 않는다.
+- `GameScreenStateTest`를 보강했고, JDK 17과 Android SDK를 명시해 `:app-android:testDebugUnitTest`를 실행했고 통과했다.

@@ -3,6 +3,7 @@ package com.worksoc.goaicoach.presentation
 import com.worksoc.goaicoach.application.MoveReviewMarker
 import com.worksoc.goaicoach.application.PositionAnalysisCacheOptimizationPrompt
 import com.worksoc.goaicoach.application.decidePromptVisibility
+import com.worksoc.goaicoach.application.GameSessionControllerState
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
@@ -79,6 +80,56 @@ internal data class GameScreenStateInput(
     val isGameEnded: Boolean,
     val endgameLog: String,
 )
+
+internal fun buildGameScreenStateInput(
+    controller: GameSessionControllerState,
+    uxOptions: KaTrainUxOptions,
+    engineName: String,
+    engineDiagnostic: String,
+    isEngineReady: Boolean,
+    isEngineBusy: Boolean,
+    analysisCacheStats: String,
+    isScoreGraphExpanded: Boolean,
+    turnTimeText: String,
+    hasCompletedEngineStartup: Boolean,
+): GameScreenStateInput =
+    GameScreenStateInput(
+        gameState = controller.gameState,
+        matchMode = controller.matchMode,
+        playerSetup = controller.playerSetup,
+        autoPlayDelaySetting = controller.settings.autoPlayDelaySetting,
+        searchTimeSettings = controller.settings.searchTimeSettings,
+        searchTimeBenchmarkAverages = controller.benchmark.searchTimeBenchmarkAverages,
+        playLevel = controller.core.runtimeState.playLevel,
+        uxOptions = uxOptions,
+        engineName = engineName,
+        engineDiagnostic = engineDiagnostic,
+        engineProfile = controller.core.runtimeState.engineProfile,
+        isEngineReady = isEngineReady,
+        isEngineBusy = isEngineBusy,
+        engineMessage = controller.engineMessage,
+        analysisPreset = controller.core.runtimeState.analysisPreset,
+        analysisCacheStats = analysisCacheStats,
+        topMovesEnabled = controller.settings.topMovesEnabled,
+        candidateMoves = controller.core.analysisState.candidateMoves,
+        candidateText = controller.core.analysisState.candidateText,
+        reviewAnalysis = controller.core.analysisState.reviewAnalysis,
+        reviewCandidateMoves = controller.core.analysisState.reviewCandidateMoves,
+        moveReviews = controller.core.moveReviewState.moveReviews,
+        moveReviewText = controller.core.moveReviewState.moveReviewText,
+        lastMoveText = controller.core.moveReviewState.lastMoveText,
+        scoreText = controller.core.scoreState.scoreText,
+        scoreEstimate = controller.core.scoreState.scoreEstimate,
+        scoreSnapshots = controller.core.scoreState.scoreSnapshots,
+        isScoreGraphExpanded = isScoreGraphExpanded,
+        turnTimeText = turnTimeText,
+        pendingSavedSession = controller.savedSession.pendingSavedSession,
+        shouldShowResumePrompt = controller.savedSession.shouldShowResumePrompt,
+        cacheOptimizationPrompt = controller.positionCacheOptimization.prompt,
+        hasCompletedEngineStartup = hasCompletedEngineStartup,
+        isGameEnded = controller.isGameEnded,
+        endgameLog = controller.core.scoreState.endgameLog,
+    )
 
 internal fun buildGameScreenState(input: GameScreenStateInput): GameScreenState {
     val promptVisibility = decidePromptVisibility(

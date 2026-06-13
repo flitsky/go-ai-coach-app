@@ -3,6 +3,18 @@ package com.worksoc.goaicoach.presentation
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
+import com.worksoc.goaicoach.application.AutoAiTurnUiState
+import com.worksoc.goaicoach.application.EngineBenchmarkUiState
+import com.worksoc.goaicoach.application.GameSessionAnalysisState
+import com.worksoc.goaicoach.application.GameSessionControllerState
+import com.worksoc.goaicoach.application.GameSessionCoreState
+import com.worksoc.goaicoach.application.GameSessionMoveReviewState
+import com.worksoc.goaicoach.application.GameSessionRuntimeState
+import com.worksoc.goaicoach.application.GameSessionScoreState
+import com.worksoc.goaicoach.application.GameSessionSettingsState
+import com.worksoc.goaicoach.application.PositionAnalysisCacheOptimizationUiState
+import com.worksoc.goaicoach.application.SavedSessionUiState
+import com.worksoc.goaicoach.application.localScoreSnapshot
 import com.worksoc.goaicoach.persistence.SavedGameSnapshot
 import com.worksoc.goaicoach.shared.AnalysisPreset
 import com.worksoc.goaicoach.shared.EngineProfile
@@ -113,6 +125,69 @@ class GameScreenStateTest {
         assertTrue(topMoves.isFilled)
         assertFalse(screenState.actionButtons.first { it.role == GameActionButtonRole.Pass }.enabled)
         assertFalse(screenState.actionButtons.first { it.role == GameActionButtonRole.Eval }.enabled)
+    }
+
+    @Test
+    fun buildGameScreenStateInputCanBeDerivedFromControllerState() {
+        val gameState = GameState.empty(nextPlayer = StoneColor.White)
+        val controller = GameSessionControllerState(
+            core = GameSessionCoreState(
+                gameState = gameState,
+                isGameEnded = false,
+                analysisState = GameSessionAnalysisState.empty(gameState, candidateText = "analysis"),
+                scoreState = GameSessionScoreState.reset(
+                    scoreText = "score",
+                    scoreSnapshots = listOf(localScoreSnapshot(gameState)),
+                    endgameLog = "endgame",
+                ),
+                runtimeState = GameSessionRuntimeState(
+                    playLevel = PlayLevelSetting(level = 3),
+                    engineProfile = EngineProfile(name = "Test"),
+                    analysisPreset = AnalysisPreset.Lite,
+                ),
+                moveReviewState = GameSessionMoveReviewState.reset(
+                    moveReviewText = "review",
+                    lastMoveText = "White pass",
+                ),
+                engineMessage = "engine",
+            ),
+            settings = GameSessionSettingsState(
+                playerSetup = PlayerSetup(),
+                autoPlayDelaySetting = AutoPlayDelaySetting.Slow,
+                searchTimeSettings = SearchTimeSettings(b16Millis = 1_500L),
+                topMovesEnabled = true,
+            ),
+            benchmark = EngineBenchmarkUiState(
+                benchmarkText = "bench",
+                searchTimeBenchmarkAverages = mapOf(16 to 1_200.0),
+            ),
+            savedSession = SavedSessionUiState(),
+            autoAiTurn = AutoAiTurnUiState(),
+            positionCacheOptimization = PositionAnalysisCacheOptimizationUiState(),
+        )
+
+        val input = buildGameScreenStateInput(
+            controller = controller,
+            uxOptions = KaTrainUxOptions(showMoveNumbers = true),
+            engineName = "KataGo",
+            engineDiagnostic = "ready",
+            isEngineReady = true,
+            isEngineBusy = false,
+            analysisCacheStats = "entries=1",
+            isScoreGraphExpanded = true,
+            turnTimeText = "Time B 0.0s / W 0.0s",
+            hasCompletedEngineStartup = true,
+        )
+
+        assertEquals(gameState, input.gameState)
+        assertEquals(AutoPlayDelaySetting.Slow, input.autoPlayDelaySetting)
+        assertEquals(mapOf(16 to 1_200.0), input.searchTimeBenchmarkAverages)
+        assertEquals(PlayLevelSetting(level = 3), input.playLevel)
+        assertTrue(input.topMovesEnabled)
+        assertEquals("analysis", input.candidateText)
+        assertEquals("score", input.scoreText)
+        assertEquals("review", input.moveReviewText)
+        assertTrue(input.uxOptions.showMoveNumbers)
     }
 
     private fun defaultInput(

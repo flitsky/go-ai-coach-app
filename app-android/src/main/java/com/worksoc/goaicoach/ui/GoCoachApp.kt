@@ -140,10 +140,10 @@ import com.worksoc.goaicoach.persistence.RuntimeEventLog
 import com.worksoc.goaicoach.persistence.SavedGameSnapshot
 import com.worksoc.goaicoach.persistence.UserPreferencesSnapshot
 import com.worksoc.goaicoach.persistence.UserPreferencesStore
-import com.worksoc.goaicoach.presentation.GameScreenStateInput
 import com.worksoc.goaicoach.presentation.GameUiEvent
 import com.worksoc.goaicoach.presentation.GameUiEventHandlers
 import com.worksoc.goaicoach.presentation.KaTrainUxOptions
+import com.worksoc.goaicoach.presentation.buildGameScreenStateInput
 import com.worksoc.goaicoach.presentation.buildGameScreenState
 import com.worksoc.goaicoach.presentation.dispatchGameUiEvent
 import com.worksoc.goaicoach.shared.AnalysisPreset
@@ -1666,42 +1666,17 @@ private fun GoCoachScreen(
 
     val controllerState = currentControllerSessionState()
     val screenState = buildGameScreenState(
-        GameScreenStateInput(
-            gameState = controllerState.gameState,
-            matchMode = controllerState.matchMode,
-            playerSetup = controllerState.playerSetup,
-            autoPlayDelaySetting = controllerState.settings.autoPlayDelaySetting,
-            searchTimeSettings = controllerState.settings.searchTimeSettings,
-            searchTimeBenchmarkAverages = controllerState.benchmark.searchTimeBenchmarkAverages,
-            playLevel = controllerState.core.runtimeState.playLevel,
+        buildGameScreenStateInput(
+            controller = controllerState,
             uxOptions = uxOptions,
             engineName = engineName,
             engineDiagnostic = engineDiagnostic,
-            engineProfile = controllerState.core.runtimeState.engineProfile,
             isEngineReady = isEngineReady,
             isEngineBusy = isEngineBusy,
-            engineMessage = controllerState.engineMessage,
-            analysisPreset = controllerState.core.runtimeState.analysisPreset,
             analysisCacheStats = analysisCache.statsText(),
-            topMovesEnabled = controllerState.settings.topMovesEnabled,
-            candidateMoves = controllerState.core.analysisState.candidateMoves,
-            candidateText = controllerState.core.analysisState.candidateText,
-            reviewAnalysis = controllerState.core.analysisState.reviewAnalysis,
-            reviewCandidateMoves = controllerState.core.analysisState.reviewCandidateMoves,
-            moveReviews = controllerState.core.moveReviewState.moveReviews,
-            moveReviewText = controllerState.core.moveReviewState.moveReviewText,
-            lastMoveText = controllerState.core.moveReviewState.lastMoveText,
-            scoreText = controllerState.core.scoreState.scoreText,
-            scoreEstimate = controllerState.core.scoreState.scoreEstimate,
-            scoreSnapshots = controllerState.core.scoreState.scoreSnapshots,
             isScoreGraphExpanded = isScoreGraphExpanded,
             turnTimeText = turnTimeState.summaryText(),
-            pendingSavedSession = controllerState.savedSession.pendingSavedSession,
-            shouldShowResumePrompt = controllerState.savedSession.shouldShowResumePrompt,
-            cacheOptimizationPrompt = controllerState.positionCacheOptimization.prompt,
             hasCompletedEngineStartup = hasCompletedEngineStartup,
-            isGameEnded = controllerState.isGameEnded,
-            endgameLog = controllerState.core.scoreState.endgameLog,
         ),
     )
 
