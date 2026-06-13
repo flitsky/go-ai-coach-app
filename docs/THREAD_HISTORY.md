@@ -1068,3 +1068,7 @@
 - 2단계로 `GameSession Effect Runner` 분리의 첫 안전 단위를 진행했다. `DebugReportCopyPlan`과 `buildDebugReportCopyPlan()`을 추가해 debug report copy에 필요한 report 본문, clipboard label, engine message, toast message를 application 계층에서 구성하게 했다.
 - `GoCoachApp.kt`는 report 내용을 직접 만들지 않고 plan을 받아 Clipboard/Toast/Mirror 같은 플랫폼 effect만 수행한다. `GameSessionEffect.CopyDebugReport` 타입도 추가해 향후 controller/effect runner가 debug report copy를 명시적 effect로 다룰 수 있게 했다.
 - `DebugReportBuilderTest`, `GameSessionControllerTest`를 보강했고 관련 테스트와 `make test`를 모두 통과했다.
+- 2단계 완료 후 무선 ADB `SM-S908N(192.168.35.166:42037)`에 최신 APK와 KataGo model/config를 설치했고 cold launch `TotalTime=531ms`를 확인했다.
+- 3단계로 AI 후보수 선택 정책을 `MatchPolicy`에서 `AiMoveSelectionPolicy`로 분리했다. analysis limit 결정, pass best candidate override, 후보 색상 필터링, pointLoss 없는 후보 제외, selection policy range 기반 선택이 독립 정책으로 이동했다.
+- `SelectedAiMove`도 별도 domain model로 이동했다. `applyAiTurn()`은 더 이상 후보수 선택 세부를 직접 알지 않고 정책 호출 결과만 처리한다.
+- `AiMoveSelectionPolicyTest`를 추가하고 `MatchPolicyTest`와 `make test`를 실행해 모두 통과했다.

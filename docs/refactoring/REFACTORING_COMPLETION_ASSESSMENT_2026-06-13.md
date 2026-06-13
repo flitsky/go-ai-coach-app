@@ -132,3 +132,17 @@ POC를 계속 고도화하는 관점에서는 이미 충분히 좋은 상태다.
 
 - `DebugReportBuilderTest`, `GameSessionControllerTest` 관련 테스트 통과.
 - `make test` 통과.
+
+## 3단계 추가 리팩토링 결과
+
+2026-06-14에 AI 후보수 선택 정책을 `MatchPolicy`에서 분리했다.
+
+- `AiMoveSelectionPolicy`를 추가해 AI 착수용 analysis limit 결정과 후보수 선택을 전담하게 했다.
+- `SelectedAiMove`를 별도 domain model로 이동해 `applyAiTurn()`은 후보 선택 정책 호출 결과만 처리한다.
+- 기존 pass best candidate override, 현재 AI 색상 후보 필터링, pointLoss 없는 후보 제외, selection policy range 기반 random 선택 동작은 유지했다.
+- 정책 함수에 `Random`을 주입할 수 있게 해 독립 테스트에서 재현 가능한 선택 검증이 가능해졌다.
+
+검증:
+
+- `AiMoveSelectionPolicyTest`, `MatchPolicyTest` 통과.
+- `make test` 통과.

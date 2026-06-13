@@ -2,7 +2,6 @@ package com.worksoc.goaicoach.match
 
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.AnalysisResult
-import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.EngineCoreApi
 import com.worksoc.goaicoach.shared.EngineSearchMode
 import com.worksoc.goaicoach.shared.GameState
@@ -10,11 +9,8 @@ import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.StoneColor
-import com.worksoc.goaicoach.shared.aiMoveAnalysisLimitWith
 import com.worksoc.goaicoach.shared.aiMoveSearchMode
 import com.worksoc.goaicoach.shared.describe
-import com.worksoc.goaicoach.shared.fastCandidateAnalysis
-import kotlin.random.Random
 
 internal val HumanPlayer = StoneColor.Black
 internal val AiPlayer = StoneColor.White
@@ -410,11 +406,6 @@ internal fun modeSummary(
         MatchMode.LocalTwoPlayer -> "9x9 local two-player rules test"
     }
 
-private data class SelectedAiMove(
-    val move: Move,
-    val summary: String,
-)
-
 private suspend fun EngineCoreApi.selectAiMoveFromAnalysis(
     currentState: GameState,
     aiPlayer: StoneColor,
@@ -424,74 +415,22 @@ private suspend fun EngineCoreApi.selectAiMoveFromAnalysis(
     analysisProvider: (suspend (AnalysisLimit) -> AnalysisResult)? = null,
 ): SelectedAiMove? =
     runCatching {
-        val analysisLimit = when (searchMode) {
-            EngineSearchMode.GtpStatefulFast -> {
-                val baseLimit = playLevel.analysisLimitWith(searchTimeSettings)
-                baseLimit.fastCandidateAnalysis(
-                    candidateCount = if (playLevel.aiMoveSearchMode() == EngineSearchMode.GtpStatefulFast) {
-                        1
-                    } else {
-                        baseLimit.candidateCount
-                    },
-                )
-            }
-            EngineSearchMode.JsonPositionAnalysis ->
-                playLevel.aiMoveAnalysisLimitWith(searchTimeSettings)
-        }
+        val analysisLimit = AiMoveSelectionPolicy.analysisLimitFor(
+            playLevel = playLevel,
+            searchTimeSettings = searchTimeSettings,
+            searchMode = searchMode,
+        )
         val analysis = if (analysisProvider != null) {
             analysisProvider(analysisLimit)
         } else {
             analyze(analysisLimit)
         }
-        val scoredCandidates = analysis.candidates
-            .filter { candidate ->
-                candidate.move.player == aiPlayer && candidate.pointLoss != null
-            }
-
-        val bestCandidate = scoredCandidates.firstOrNull()
-        if (bestCandidate?.move is Move.Pass) {
-            return@runCatching SelectedAiMove(
-                move = bestCandidate.move,
-                summary = buildString {
-                    appendLine("AI level: ${playLevel.displayLabel}, endgame pass override.")
-                    appendLine("AI selected pass because KataGo ranked pass as the best scored candidate.")
-                    appendLine(analysis.summary)
-                }.trim(),
-            )
-        }
-
-        val scoredPlayCandidates = scoredCandidates
-            .filter { candidate -> candidate.move is Move.Play }
-        val range = playLevel.selectionPolicy.candidateIndexRange(scoredPlayCandidates.size)
-            ?: return@runCatching null
-        val pool = scoredPlayCandidates.slice(range)
-        if (pool.isEmpty()) {
-            return@runCatching null
-        }
-
-        val selected = pool[Random.nextInt(pool.size)]
-        val selectedRank = scoredPlayCandidates.indexOf(selected) + 1
-        SelectedAiMove(
-            move = selected.move,
-            summary = buildString {
-                appendLine("AI level: ${playLevel.displayLabel}, ${playLevel.selectionPolicy.description}.")
-                appendLine("Search mode: ${searchMode.label}.")
-                appendLine("AI selected rank $selectedRank/${scoredPlayCandidates.size}: ${selected.describeForSelection(currentState)}.")
-                appendLine(analysis.summary)
-            }.trim(),
+        AiMoveSelectionPolicy.select(
+            currentState = currentState,
+            aiPlayer = aiPlayer,
+            playLevel = playLevel,
+            searchMode = searchMode,
+            candidates = analysis.candidates,
+            analysisSummary = analysis.summary,
         )
     }.getOrNull()
-
-private fun CandidateMove.describeForSelection(stateAfterHuman: GameState): String =
-    buildString {
-        append(move.describe(stateAfterHuman.boardSize))
-        pointLoss?.let { append(" loss=${it.formatOneDecimal()}") }
-        winRate?.let { append(" winRate=${(it * 100).toInt()}%") }
-        scoreLead?.let { append(" scoreLead=${it.formatOneDecimal()}") }
-        visits?.let { append(" visits=$it") }
-    }
-
-private fun Double.formatOneDecimal(): String =
-    (kotlin.math.round(this * 10.0) / 10.0)
-        .let { if (kotlin.math.abs(it) < 0.05) 0.0 else it }
-        .toString()
