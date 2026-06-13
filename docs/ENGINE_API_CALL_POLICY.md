@@ -43,6 +43,108 @@
 
 즉 “항상 분석 snapshot을 만든다”는 정책은 유지하되, 폰 실시간 대국에서는 best-1 경량 snapshot만 자동 생성한다. 여러 색상의 후보 분포나 전체 착점 평가가 필요하면 별도 `StudyBroad` 예산으로 분리해서 켠다.
 
+## Visit의 의미와 탐색 원리
+
+### 핵심 요약
+
+`visit`는 KataGo가 현재 루트 국면 또는 어떤 후보 수 하위 노드에 검색량을 얼마나 배정했는지 나타내는 단위다. `maxVisits=32`는 “정확히 모든 합법수 32개를 한 번씩 본다”가 아니라 “현재 검색 트리 기준 루트 방문수를 최대 32 수준으로 제한한다”에 가깝다.
+
+KataGo는 신경망이 처음부터 모든 수를 같은 확률로 보지 않는다. 신경망 policy prior가 유망해 보이는 수를 제안하고, MCTS가 그 prior와 현재까지의 value, uncertainty, exploration 항을 조합해 다음 visit을 어느 수/변화도에 쓸지 계속 갱신한다. 따라서 낮은 visit에서는 높은 prior의 후보가 주로 탐색되고, 낮은 prior 수나 바깥 영역은 meaningful score를 받지 못할 수 있다.
+
+### KataGo 공식 문서 기준 필드
+
+KataGo JSON analysis 결과에는 크게 두 종류의 visit 값이 있다.
+
+| 필드 | 의미 | 앱에서의 사용 |
+| --- | --- | --- |
+| `rootInfo.visits` | 분석 요청 턴의 루트 국면 전체 visits | 요청한 `maxVisits`가 실제로 채워졌는지 `fill=OK/SHORT` 진단에 사용 |
+| `moveInfos[].visits` | 특정 후보 수의 child node가 받은 visits | 후보가 얼마나 실제 검색되었는지, 후보 품질 신뢰도 참고 |
+| `moveInfos[].order` | KataGo가 매긴 후보 순위. `0`이 최상위 | AI 착수와 Top Moves 정렬의 1차 기준 |
+| `moveInfos[].prior` | 신경망 policy prior | 초반 후보 탐색의 강한 힌트. 단, 최종 순위 자체는 아님 |
+| `moveInfos[].scoreLead`, `winrate`, `utility` | 해당 후보의 평가값 | 그래프, 후보 표시, pointLoss 계산의 원천 |
+
+공식 `Analysis_Engine.md`는 `moveInfos[].order`를 KataGo의 ordinal ranking으로 설명하고, `0`을 best로 둔다. 또한 `rootInfo`에는 요청 턴 자체의 `winrate`, `scoreLead`, `utility`, `visits`가 들어간다. 우리 앱이 “order를 신뢰한다”는 정책은 이 문서와 맞다.
+
+### Visits와 playouts 차이
+
+KataGo GTP config 주석 기준으로 `playouts`는 이번 턴에 새로 수행한 검색량이고, `visits`는 이번 턴에 새로 수행한 검색량뿐 아니라 이전 턴에서 현재 국면에도 여전히 유효한 search tree 일부를 포함할 수 있다.
+
+예를 들어 직전 턴에 200개 노드를 검색했고 상대 응수 후 그중 50개가 현재 국면에도 유효하다면, `maxVisits=200`은 새로 150개 정도만 더 검색해 최종 tree size 200 수준이 될 수 있다. 반대로 `maxPlayouts=200`이라면 새 검색 200개를 더 수행해 최종 tree size는 250 수준이 될 수 있다.
+
+현재 앱은 local KataGo 경로에서 `maxVisits`를 사용한다. 그래서 사람 vs AI에서는 search tree 재사용이 속도와 품질에 유리하지만, AI vs AI 레벨 비교에서는 한쪽의 깊은 search tree가 다른 쪽 B16/B32/B64 visit 레벨에 섞이는 오염이 생길 수 있다. 이 때문에 현재 정책은 AI vs AI 자동대국 직전만 `clearSearchCache()`를 호출한다.
+
+### visit이 늘면 왜 더 강해지는가
+
+visit이 늘면 보통 다음 효과가 생긴다.
+
+1. 초반 policy prior가 높았던 후보의 주요 변화도가 더 깊게 검증된다.
+2. 처음에는 애매하거나 낮게 보였던 후보도 exploration 항, root noise, uncertainty, policy 설정에 따라 추가로 검색될 기회를 얻는다.
+3. 후보별 `scoreLead`, `winrate`, `pointLoss`의 분산이 줄고, tactical blind spot이 줄어들 수 있다.
+4. 후보 순위 `order`가 낮은 visit 결과보다 안정될 가능성이 높다.
+
+하지만 visit 증가는 선형 또는 지수적으로 강도를 보장하지 않는다. 특히 B16에서 B32로 2배 늘린다고 항상 “실력 2배”가 되지는 않는다. 이유는 다음과 같다.
+
+- MCTS는 유망 후보에 비대칭적으로 visits를 배분한다. 이미 확실한 후보에는 추가 visit의 한계효용이 작을 수 있다.
+- 9x9 초반처럼 유력 후보가 몇 개로 좁혀지는 국면에서는 16 visits만으로도 충분히 좋은 수를 찾는 경우가 있다.
+- 반대로 전투/사활/패/종국 정리처럼 깊은 reading이 필요한 국면에서는 16과 32 차이가 크게 나타날 수 있다.
+- time cap이 너무 짧으면 requested visits를 채우지 못해 `fill=SHORT`가 되고, visit 설정의 의미가 약해진다.
+- 여러 후보를 학습용으로 넓게 보고 싶다면 visit만 늘리는 것보다 `includePolicy`, `wideRootNoise`, human policy exploration, refine sweep 같은 별도 broad analysis 설정이 더 직접적일 수 있다. 다만 이런 설정은 top move 정확도와 응답속도에 비용을 준다.
+
+결론적으로 `visits`는 “엔진 사고량의 핵심 축”이지만, 성능은 대체로 sublinear하게 좋아진다고 보는 것이 현실적이다. 즉 방문수를 늘릴수록 평균적으로 더 좋은 수를 둘 가능성은 높아지지만, 증가분마다 얻는 개선폭은 줄어들 수 있고, 기기 속도와 time cap이 같은 수준으로 따라와야 한다.
+
+### “초반 최적수 밖에서 더 좋은 수가 발견되는가?”
+
+가능하다. 다만 조건이 있다.
+
+MCTS는 처음부터 신경망 policy prior가 높은 수를 많이 본다. 이후 search 중 어떤 후보의 value가 예상보다 나쁘거나, 다른 후보가 예상보다 좋거나, exploration 항이 충분히 커지면 visits가 다른 후보로 이동한다. 이 과정에서 초반 top prior 밖의 수가 더 좋은 수로 올라올 수 있다.
+
+그러나 낮은 visits에서는 매우 낮은 prior의 수가 의미 있게 검색되지 않을 수 있다. 그래서 “visit을 늘리면 바깥 영역에서 숨은 최적수를 찾는다”는 표현은 절반만 맞다. 더 정확히는 “visit을 늘리면 MCTS가 policy prior 밖의 후보를 검증할 기회가 증가하지만, 넓은 후보 분포를 보장하려면 broad analysis용 설정이 필요할 수 있다”이다.
+
+KataGo analysis config에는 `wideRootNoise`가 있으며, 이 값을 크게 하면 top move를 덜 깊고 정확하게 보더라도 더 다양한 수를 평가하게 된다. 공식 주석도 분석 엔진의 기본값은 분석 용도에 맞춰 다양성을 주는 반면, 대국에서 playing strength를 극대화하려면 `wideRootNoise=0.0`이 적합하다고 설명한다. 따라서 실시간 대국과 학습용 광범위 후보 평가는 같은 설정으로 밀어붙이지 않는 것이 맞다.
+
+### 현재 앱의 visit 적용 구조
+
+현재 앱의 주요 경로는 두 가지다.
+
+| 경로 | 코드 | visit 주입 방식 | 용도 |
+| --- | --- | --- | --- |
+| GTP fast path | `KataGoProcessEngineAdapter.analyzeWithGtp` | `kata-set-param maxVisits`, `kata-set-param maxTime`, `kata-search_analyze` | 기본 AI 응수, 빠른 Top Moves/리뷰 |
+| JSON analysis path | `KataGoProcessEngineAdapter.analyzeWithJson` | query JSON의 `maxVisits`, `overrideSettings.maxTime` | policy 포함, refine, broad study 후보 |
+
+`AnalysisLimit.effectiveAnalysisLimit()`는 `candidateCount * minVisitsPerCandidate`와 `minTimeMillis`가 설정된 경우 요청 visits/time을 올릴 수 있다. 기본 실시간 대국 preset인 `Lite`와 현재 `Learning`은 `minVisitsPerCandidate=0`, `minTimeMillis=null`이므로 후보 수를 늘린다고 자동으로 visit/time이 늘지는 않는다. 반면 `Balanced` 이상이나 향후 broad study preset에서는 후보당 최소 visits를 요구해 더 무거운 분석으로 승격될 수 있다.
+
+현재 레벨별 기본 visits는 다음과 같다.
+
+| 레벨 그룹 | visits | 기본 time cap | 후보 상한 | 의미 |
+| --- | ---: | ---: | ---: | --- |
+| 빠른 초급 | 16 | B16 Search Time 기본 1000ms | 8 | 폰 실시간 대국 우선 |
+| 초급 | 32 | B32 Search Time 기본 2000ms | 16 | 더 안정적인 초급/학습 후보 |
+| 중급 | 64 | B64 Search Time 기본 3000ms | 20 | 후보 순위 안정성 강화 |
+| 고급 | 160 | 1000ms 현재 기본 | 24 | 추후 time cap 재검토 필요 |
+
+주의할 점은 `visits=32`가 `candidateCount=16`개 후보를 모두 2 visits씩 본다는 뜻이 아니라는 점이다. 실제 scored 후보 수는 KataGo가 어떤 후보에 visits를 배정했는지에 따라 달라진다.
+
+### 운영 판단
+
+현재 정책은 다음과 같이 유지한다.
+
+1. AI 착수 순위는 `order=0,1,2...`를 신뢰한다.
+2. `pointLoss`는 order를 뒤집는 기준이 아니라 표시/학습 annotation이다.
+3. 낮은 visit에서 후보 수가 적거나 `fill=SHORT`면 레벨링 구간을 안전하게 축소한다.
+4. 사람 대국은 `maxVisits` + tree reuse로 빠르고 자연스럽게 둔다.
+5. AI vs AI 비교/테스트는 `clearSearchCache()`로 search tree 오염을 막는다.
+6. 향후 더 엄격한 레벨 비교를 원하면 `maxPlayouts` 기반 모드를 별도 실험한다.
+7. 다양한 후보 spot이 필요한 학습 모드는 기본 대국 경로와 분리해 `StudyBroad`로 둔다.
+
+### 근거 링크
+
+- KataGo 공식 Analysis Engine 문서: `maxVisits`, `moveInfos`, `rootInfo`, `order`, `visits` 필드 설명
+  https://github.com/lightvector/KataGo/blob/master/docs/Analysis_Engine.md
+- KataGo 공식 GTP example config: `Playouts`와 `Visits` 차이, tree reuse 설명
+  https://raw.githubusercontent.com/lightvector/KataGo/master/cpp/configs/gtp_example.cfg
+- KataGo 공식 analysis example config: `wideRootNoise`, analysis thread, `maxVisits`, `includePolicy` 관련 설명
+  https://raw.githubusercontent.com/lightvector/KataGo/master/cpp/configs/analysis_example.cfg
+
 ## 엔진 호출 방식 우선순위
 
 대국 중 기본 경로는 아래 순서를 따른다. 위쪽일수록 가볍고, 아래쪽일수록 분석 정보는 풍부하지만 느리다.

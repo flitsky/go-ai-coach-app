@@ -939,3 +939,5 @@
 - `GameSessionTurnTimeState`를 추가해 흑/백 누적 시간, 현재 턴 주체, 현재 턴 시작 시각을 application 계층에서 관리하게 했다. 사람 착수와 AI 착수 성공 지점에서만 시간을 기록해 엔진 sync/종국 후처리 시간이 중복 누적되지 않도록 했다.
 - 화면의 엔진 응답 패널에 `Time B ... / W ...` 단일 라인을 추가했고, 디버그 리포트와 runtime event log에도 누적 시간과 원시 ms 정보를 남기도록 확장했다.
 - `GameSessionTurnTimeStateTest`, `RuntimeEventApplicationTest`, `GameScreenStateTest`, `DebugReportBuilderTest`를 갱신했고, JDK 17/Android SDK 환경에서 `make test`가 통과했다.
+- 사용자가 KataGo `visit`의 의미, MCTS가 최적수를 어떻게 예측해 visit을 배정하는지, visit 증가가 성능에 어떤 방식으로 작용하는지 문서화를 요청했다.
+- `docs/ENGINE_API_CALL_POLICY.md`에 `Visit의 의미와 탐색 원리` 챕터를 추가했다. 공식 KataGo `Analysis_Engine.md`, `gtp_example.cfg`, `analysis_example.cfg`와 현재 `KataGoProcessEngineAdapter` 구현을 기준으로 `rootInfo.visits`, `moveInfos[].visits`, `order`, `maxVisits`와 `maxPlayouts` 차이, search tree reuse, `wideRootNoise`, 현재 앱의 GTP/JSON analysis 경로와 레벨별 visits/time cap을 정리했다.
