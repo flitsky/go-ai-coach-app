@@ -998,3 +998,5 @@
 - `SavedSessionPromptApplicationTest`를 보강했고, JDK 17과 Android SDK를 명시해 `:app-android:testDebugUnitTest`를 실행해 통과했다.
 - `planSavedGamePersistence(savedSessionUiState, ...)` overload를 추가했다. 자동 저장 계획은 이제 저장 세션 prompt gate를 개별 Boolean 대신 `SavedSessionUiState`로 받을 수 있고, `GoCoachApp.kt`의 자동 저장 `LaunchedEffect`도 `savedSessionUiState`를 key로 사용한다.
 - `SavedGamePersistenceTest`를 보강했고, JDK 17과 Android SDK를 명시해 `:app-android:testDebugUnitTest`를 실행해 통과했다.
+- `GameSessionControllerState`에 `savedSession: SavedSessionUiState`를 추가했다. controller state는 이제 core/settings/benchmark/saved-session/cache-optimization 상태를 함께 대표하며, `withSavedSession()` 교체 경로를 `GameSessionControllerTest`에서 검증했다.
+- JDK 17과 Android SDK를 명시해 `:app-android:testDebugUnitTest`를 실행했고 통과했다.

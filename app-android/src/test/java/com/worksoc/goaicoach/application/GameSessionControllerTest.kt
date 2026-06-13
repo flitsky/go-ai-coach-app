@@ -50,30 +50,42 @@ class GameSessionControllerTest {
         val nextCore = initial.core.copy(engineMessage = "Engine ready.")
         val nextSettings = initial.settings.showTopMoves()
         val nextBenchmark = initial.benchmark.startWaitingForEngineSettle()
+        val nextSavedSession = initial.savedSession.copy(hasCheckedSavedSession = true)
         val nextCacheOptimization = initial.positionCacheOptimization.startRunning()
 
         val withCore = initial.withCore(nextCore)
         assertEquals(nextCore, withCore.core)
         assertSame(initial.settings, withCore.settings)
         assertSame(initial.benchmark, withCore.benchmark)
+        assertSame(initial.savedSession, withCore.savedSession)
         assertSame(initial.positionCacheOptimization, withCore.positionCacheOptimization)
 
         val withSettings = initial.withSettings(nextSettings)
         assertSame(initial.core, withSettings.core)
         assertEquals(nextSettings, withSettings.settings)
         assertSame(initial.benchmark, withSettings.benchmark)
+        assertSame(initial.savedSession, withSettings.savedSession)
         assertSame(initial.positionCacheOptimization, withSettings.positionCacheOptimization)
 
         val withBenchmark = initial.withBenchmark(nextBenchmark)
         assertSame(initial.core, withBenchmark.core)
         assertSame(initial.settings, withBenchmark.settings)
         assertEquals(nextBenchmark, withBenchmark.benchmark)
+        assertSame(initial.savedSession, withBenchmark.savedSession)
         assertSame(initial.positionCacheOptimization, withBenchmark.positionCacheOptimization)
+
+        val withSavedSession = initial.withSavedSession(nextSavedSession)
+        assertSame(initial.core, withSavedSession.core)
+        assertSame(initial.settings, withSavedSession.settings)
+        assertSame(initial.benchmark, withSavedSession.benchmark)
+        assertEquals(nextSavedSession, withSavedSession.savedSession)
+        assertSame(initial.positionCacheOptimization, withSavedSession.positionCacheOptimization)
 
         val withCacheOptimization = initial.withPositionCacheOptimization(nextCacheOptimization)
         assertSame(initial.core, withCacheOptimization.core)
         assertSame(initial.settings, withCacheOptimization.settings)
         assertSame(initial.benchmark, withCacheOptimization.benchmark)
+        assertSame(initial.savedSession, withCacheOptimization.savedSession)
         assertEquals(nextCacheOptimization, withCacheOptimization.positionCacheOptimization)
     }
 
@@ -114,6 +126,7 @@ class GameSessionControllerTest {
             benchmarkText = "No benchmark yet.",
             profile = null,
         ),
+        savedSession: SavedSessionUiState = SavedSessionUiState(),
         positionCacheOptimization: PositionAnalysisCacheOptimizationUiState =
             PositionAnalysisCacheOptimizationUiState(),
     ): GameSessionControllerState =
@@ -121,6 +134,7 @@ class GameSessionControllerTest {
             core = core,
             settings = settings,
             benchmark = benchmark,
+            savedSession = savedSession,
             positionCacheOptimization = positionCacheOptimization,
         )
 

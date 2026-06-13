@@ -8,6 +8,7 @@ internal data class GameSessionControllerState(
     val core: GameSessionCoreState,
     val settings: GameSessionSettingsState,
     val benchmark: EngineBenchmarkUiState,
+    val savedSession: SavedSessionUiState,
     val positionCacheOptimization: PositionAnalysisCacheOptimizationUiState,
 ) {
     val gameState: GameState
@@ -33,6 +34,9 @@ internal data class GameSessionControllerState(
 
     fun withBenchmark(next: EngineBenchmarkUiState): GameSessionControllerState =
         copy(benchmark = next)
+
+    fun withSavedSession(next: SavedSessionUiState): GameSessionControllerState =
+        copy(savedSession = next)
 
     fun withPositionCacheOptimization(
         next: PositionAnalysisCacheOptimizationUiState,
