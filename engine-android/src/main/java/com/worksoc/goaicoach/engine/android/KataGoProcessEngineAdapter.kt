@@ -13,11 +13,13 @@ import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.EngineStatus
 import com.worksoc.goaicoach.shared.FinalScoreResult
 import com.worksoc.goaicoach.shared.GameStateReplayer
+import com.worksoc.goaicoach.shared.LegalMoveGenerator
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.MoveResult
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.allCoordinates
 import com.worksoc.goaicoach.shared.describe
 import java.io.BufferedReader
 import java.io.BufferedWriter
@@ -166,12 +168,10 @@ class KataGoProcessEngineAdapter(
         )
         val currentState = GameStateReplayer
             .replay(boardSize = boardSize, ruleset = ruleset, moves = playedMoves)
-        val legalCoordinates = allCoordinates()
-            .filter { coordinate ->
-                runCatching { currentState.play(Move.Play(nextPlayer, coordinate)) }.isSuccess
-            }
+        val legalCoordinates = LegalMoveGenerator
+            .legalPlayCoordinates(currentState, nextPlayer)
             .toSet()
-        val illegalCoordinates = allCoordinates().toSet() - legalCoordinates
+        val illegalCoordinates = boardSize.allCoordinates().toSet() - legalCoordinates
         val searchedCoordinates = searchedCandidates.playCoordinates()
         val policyCandidates = if (effectiveLimit.includePolicy) {
             KataGoJsonAnalysisParser.parsePolicyCandidates(
@@ -325,12 +325,10 @@ class KataGoProcessEngineAdapter(
 
         val currentState = GameStateReplayer
             .replay(boardSize = boardSize, ruleset = ruleset, moves = playedMoves)
-        val legalCoordinates = allCoordinates()
-            .filter { coordinate ->
-                runCatching { currentState.play(Move.Play(nextPlayer, coordinate)) }.isSuccess
-            }
+        val legalCoordinates = LegalMoveGenerator
+            .legalPlayCoordinates(currentState, nextPlayer)
             .toSet()
-        val illegalCoordinates = allCoordinates().toSet() - legalCoordinates
+        val illegalCoordinates = boardSize.allCoordinates().toSet() - legalCoordinates
         val occupiedCoordinates = currentState
             .stones
             .keys
@@ -351,7 +349,7 @@ class KataGoProcessEngineAdapter(
         }
         val usedCoordinates = occupiedCoordinates + illegalCoordinates + searchCoordinates +
             policyCandidates.mapNotNull { candidate -> (candidate.move as? Move.Play)?.coordinate }
-        val legalFallbackCandidates = allCoordinates()
+        val legalFallbackCandidates = boardSize.allCoordinates()
             .filter { coordinate -> coordinate in legalCoordinates && coordinate !in usedCoordinates }
             .take(remaining - policyCandidates.size)
             .mapIndexed { index, coordinate ->
@@ -365,15 +363,6 @@ class KataGoProcessEngineAdapter(
 
         return (this + policyCandidates + legalFallbackCandidates).take(limit.candidateCount)
     }
-
-    private fun allCoordinates(): Sequence<BoardCoordinate> =
-        sequence {
-            for (row in 0 until boardSize.value) {
-                for (column in 0 until boardSize.value) {
-                    yield(BoardCoordinate(row, column))
-                }
-            }
-        }
 
     private fun List<CandidateMove>.playCoordinates(): Set<BoardCoordinate> =
         mapNotNull { candidate -> (candidate.move as? Move.Play)?.coordinate }

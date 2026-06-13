@@ -328,7 +328,7 @@ Game UX는 다음만 담당한다.
 
 1. `[완료]` Engine Runtime / Transport 경계: KataGo process config, 파일 검증, GTP/JSON analysis command 생성 책임을 adapter 본문에서 분리
 2. `[완료]` Engine Core API Domain: 원시 API 계약과 transport 구현체의 의존 방향을 테스트/문서로 보강
-3. `[대기]` Core Rules Domain: 좌표/합법수/리플레이 helper를 순수 core 쪽으로 더 모아 adapter 중복을 줄임
+3. `[완료]` Core Rules Domain: 좌표/합법수/리플레이 helper를 순수 core 쪽으로 더 모아 adapter 중복을 줄임
 4. `[대기]` Middleware / Cache Domain: position analysis cache provider/origin 포트를 더 명확히 분리
 5. `[대기]` Game Domain: seat/referee/AI character가 engine 호출 세부를 모르도록 경계 강화
 6. `[대기]` App Service / Presentation: controller snapshot과 UI 연결부를 더 얇게 만들고 계층 테스트 보강
@@ -354,6 +354,10 @@ Game UX는 다음만 담당한다.
 - `EngineAdapter`는 외부/과거 코드 호환 이름으로 남기되, 새 concrete local process/JNI/remote 구현체는 `EngineCoreApi`를 직접 구현해야 한다는 KDoc을 명시했다.
 - `LayeringContractTest`를 보강해 production `application`/`match` 계층이 `EngineAdapter` compatibility alias나 `engine.android` runtime 구현체를 직접 import하지 못하도록 했다.
 - 검증: `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest` 통과.
+- 3계층 `Core Rules Domain` 정리를 진행했다. `BoardSize.allCoordinates()`를 shared core API로 추가해 좌표 순회 순서를 한 곳에서 관리하게 했다.
+- `LegalMoveGenerator`는 새 좌표 helper를 사용하도록 바뀌었고, `KataGoProcessEngineAdapter`의 JSON/GTP fallback 합법수 계산도 `LegalMoveGenerator.legalPlayCoordinates()`를 호출하게 했다. 이로써 transport 구현체 안의 직접 합법수 계산 중복을 줄였다.
+- `StubEngineAdapter`의 fallback 좌표 순회도 `BoardSize.allCoordinates()`로 연결했다.
+- 검증: `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :shared:testDebugUnitTest :engine-android:testDebugUnitTest` 통과.
 
 2026-06-12:
 

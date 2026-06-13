@@ -90,6 +90,15 @@ data class BoardCoordinate(
     }
 }
 
+fun BoardSize.allCoordinates(): Sequence<BoardCoordinate> =
+    sequence {
+        for (row in 0 until value) {
+            for (column in 0 until value) {
+                yield(BoardCoordinate(row, column))
+            }
+        }
+    }
+
 sealed interface Move {
     val player: StoneColor
 

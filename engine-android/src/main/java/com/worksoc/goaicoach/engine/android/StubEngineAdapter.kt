@@ -19,6 +19,7 @@ import com.worksoc.goaicoach.shared.OwnershipEstimate
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.allCoordinates
 import com.worksoc.goaicoach.shared.describe
 
 class StubEngineAdapter : EngineCoreApi {
@@ -233,13 +234,7 @@ class StubEngineAdapter : EngineCoreApi {
             BoardCoordinate(center, last),
             BoardCoordinate(last, center),
         )
-        val remaining = buildList {
-            for (row in 0..last) {
-                for (column in 0..last) {
-                    add(BoardCoordinate(row, column))
-                }
-            }
-        }
+        val remaining = boardSize.allCoordinates().toList()
         val profileOrdered = when (profile.difficulty) {
             com.worksoc.goaicoach.shared.DifficultyProfile.Beginner -> corners + sideCenters + star + remaining
             com.worksoc.goaicoach.shared.DifficultyProfile.Casual -> sideCenters + star + corners + remaining

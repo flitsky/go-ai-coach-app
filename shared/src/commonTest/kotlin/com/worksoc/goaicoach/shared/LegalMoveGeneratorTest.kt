@@ -6,6 +6,19 @@ import kotlin.test.assertFalse
 
 class LegalMoveGeneratorTest {
     @Test
+    fun boardSizeCoordinatesUseStableTopLeftToBottomRightOrder() {
+        val labels = BoardSize.Nine
+            .allCoordinates()
+            .map { coordinate -> coordinate.label(BoardSize.Nine) }
+            .toList()
+
+        assertEquals("A9", labels.first())
+        assertEquals(listOf("A9", "B9", "C9"), labels.take(3))
+        assertEquals("J1", labels.last())
+        assertEquals(81, labels.size)
+    }
+
+    @Test
     fun emptyNineByNineHasEveryIntersectionAvailable() {
         val state = GameState.empty(BoardSize.Nine, Ruleset.Chinese)
 
