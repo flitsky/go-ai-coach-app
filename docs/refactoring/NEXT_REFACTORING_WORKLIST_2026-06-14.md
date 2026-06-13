@@ -52,3 +52,39 @@
 - 2026-06-14: `PositionAnalysisCacheOptimizationUiState`를 추가해 종국 후 JSON cache 최적화 prompt, dismissed fingerprint, running flag를 하나로 묶었다. `GoCoachApp.kt`의 `cacheOptimizationPrompt`, `dismissedCacheOptimizationFingerprint`, `isPositionCacheOptimizationRunning` 개별 state를 제거했고, prompt 표시/닫기/수락/실행 완료 흐름이 state holder 메서드를 통과한다. `PositionAnalysisCacheOptimizationTest`를 보강했고 `:app-android:testDebugUnitTest`가 통과했다.
 - 2026-06-14: Top Moves launch state reducer를 보강했다. `GameSessionAnalysisState.applyTopMoveAnalysisLaunchPlan()`을 추가해 skip/restore/cache-hit/run-engine 결과가 application 계층에서 분석 상태 전이로 변환되게 했다. `GoCoachApp.kt`는 더 이상 `TopMoveAnalysisLaunchPlan` sealed 하위 타입을 직접 분기하지 않고, engine 실행이 필요한 경우의 `runEnginePlan`만 처리한다. `TopMovesApplicationTest`를 보강했고 `:app-android:testDebugUnitTest`가 통과했다.
 - 2026-06-14: `DebugReportSnapshot`을 추가했다. `copyDebugReport()`는 이제 수십 개 인자를 직접 `buildDebugReport()`에 넘기지 않고 snapshot을 구성해 넘긴다. 기존 문자열 생성 함수는 호환 overload로 유지했다. `DebugReportBuilderTest`를 snapshot 기반으로 갱신했고 `:app-android:testDebugUnitTest`가 통과했다.
+
+## 배치 완료 결과
+
+- 커밋 단위로 7개 변경을 완료했다.
+  - `Plan next session refactoring batch`
+  - `Consolidate session settings state`
+  - `Use settings state for preference snapshots`
+  - `Consolidate benchmark UI state`
+  - `Consolidate position cache optimization UI state`
+  - `Move top move launch state updates into application`
+  - `Introduce debug report snapshot`
+- `GoCoachApp.kt` 라인 수는 약 1,728줄에서 약 1,717줄로 소폭 감소했다.
+- 라인 수보다 중요한 변화는 설정/benchmark/cache optimization/Top Moves launch/debug report 입력이 application 계층의 state holder 또는 reducer를 통과하게 된 점이다.
+- 최종 검증은 `make test`로 수행한다.
+
+## 다음 리팩토링 추천 항목
+
+1. `GameSessionController` thin skeleton 도입
+   - 지금까지 만든 `GameSessionCoreState`, `GameSessionSettingsState`, `EngineBenchmarkUiState`, `PositionAnalysisCacheOptimizationUiState`를 하나의 controller state로 묶는다.
+   - 첫 단계에서는 coroutine 실행을 옮기지 말고 event -> state/effect plan만 반환한다.
+
+2. Engine effect 타입 분리
+   - `RunTopMoveAnalysis`, `RunAutoAiTurn`, `RunScoreEstimate`, `RunBenchmark`, `RunCacheOptimization`, `SyncRestoredGame` 같은 effect sealed class를 만든다.
+   - UI는 effect를 실행하고 결과를 controller reducer에 다시 넣는다.
+
+3. Persistence/diagnostic port 분리
+   - `GameSessionStore`, `UserPreferencesStore`, `EngineBenchmarkStore`, `RuntimeEventLog`, debug report mirror 저장을 port/interface로 묶는다.
+   - 서버 엔진/원격 대국으로 이동할 때 UI와 저장소 정책이 얽히지 않게 한다.
+
+4. Saved session state holder 도입
+   - `pendingSavedSession`, `shouldShowResumePrompt`, `hasCheckedSavedSession`을 묶는다.
+   - 저장/복원 prompt가 engine startup/benchmark/cache optimization prompt와 충돌하지 않도록 prompt priority 정책을 application 계층에서 관리한다.
+
+5. Auto AI turn runner 분리
+   - 자동 AI 턴의 schedule, cancellation, begin/success/failure/endgame 로그, turn time 기록을 하나의 runner plan으로 묶는다.
+   - AI vs AI 자동대국 UI 입력 막힘, delay 설정, search cache isolation 정책을 이 경계에서 더 쉽게 검증할 수 있다.
