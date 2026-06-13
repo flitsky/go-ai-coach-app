@@ -59,6 +59,7 @@ import com.worksoc.goaicoach.application.EngineBenchmarkUiState
 import com.worksoc.goaicoach.application.EngineOperationGate
 import com.worksoc.goaicoach.application.EngineSessionClient
 import com.worksoc.goaicoach.application.applyHumanMoveLocally
+import com.worksoc.goaicoach.application.applyTopMoveAnalysisLaunchPlan
 import com.worksoc.goaicoach.application.evaluateEngineBenchmarkGate
 import com.worksoc.goaicoach.application.evaluateScoringRuleChangeGate
 import com.worksoc.goaicoach.application.evaluateSearchTimeChangeGate
@@ -116,7 +117,6 @@ import com.worksoc.goaicoach.application.SavedGamePersistencePlan
 import com.worksoc.goaicoach.application.SavedSessionPromptPlan
 import com.worksoc.goaicoach.application.StartConfiguredGamePlan
 import com.worksoc.goaicoach.application.TopMoveAnalysisUpdate
-import com.worksoc.goaicoach.application.TopMoveAnalysisLaunchPlan
 import com.worksoc.goaicoach.application.toGameSessionSettingsState
 import com.worksoc.goaicoach.application.UndoRequestPlan
 import com.worksoc.goaicoach.application.UndoLocalStatePlan
@@ -741,22 +741,11 @@ private fun GoCoachScreen(
             lastAnalysisKey = analysisState.lastAnalysisKey,
             cachedResultFor = analysisCache::get,
         )
-        val plan = when (launchPlan) {
-            TopMoveAnalysisLaunchPlan.Skip -> return
-            is TopMoveAnalysisLaunchPlan.RestoreCurrentSnapshot -> {
-                analysisState = analysisState.copy(candidateMoves = launchPlan.candidateMoves)
-                return
-            }
-            is TopMoveAnalysisLaunchPlan.UseCached -> {
-                applyTopMoveAnalysisUpdate(launchPlan.update, launchPlan.analysisKey)
-                return
-            }
-            is TopMoveAnalysisLaunchPlan.RunEngine -> {
-                launchPlan.plan
-            }
-        }
+        val launchUpdate = analysisState.applyTopMoveAnalysisLaunchPlan(launchPlan) ?: return
+        analysisState = launchUpdate.analysisState
+        launchUpdate.engineMessage?.let { message -> engineMessage = message }
+        val plan = launchUpdate.runEnginePlan ?: return
 
-        analysisState = analysisState.copy(lastAnalysisKey = plan.analysisKey)
         scope.launch {
             isEngineBusy = true
             runCatching {

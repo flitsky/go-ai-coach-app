@@ -310,6 +310,63 @@ class TopMovesApplicationTest {
     }
 
     @Test
+    fun launchStateUpdateAppliesCachedAnalysisToAnalysisState() {
+        val state = GameState.empty()
+        val candidate = CandidateMove(
+            move = Move.Play(
+                player = StoneColor.Black,
+                coordinate = BoardCoordinate.fromLabel("E5", BoardSize.Nine),
+            ),
+            pointLoss = 0.0,
+        )
+        val snapshot = MoveAnalysisSnapshot.from(state = state, candidates = listOf(candidate))
+        val plan = buildTopMoveAnalysisPlan(
+            targetState = state,
+            engineProfile = EngineProfile(),
+            analysisPreset = AnalysisPreset.Lite,
+            deep = false,
+        )
+        val update = buildCachedTopMoveAnalysisUpdate(
+            targetState = state,
+            cacheKey = plan.analysisKey,
+            cached = CachedAnalysisResult(snapshot = snapshot, candidateText = "cached text"),
+            topMovesEnabled = true,
+        )
+
+        val stateUpdate = GameSessionAnalysisState.empty(state)
+            .applyTopMoveAnalysisLaunchPlan(
+                TopMoveAnalysisLaunchPlan.UseCached(
+                    analysisKey = plan.analysisKey,
+                    update = update,
+                ),
+            )
+
+        assertNotNull(stateUpdate)
+        assertEquals(plan.analysisKey, stateUpdate?.analysisState?.lastAnalysisKey)
+        assertEquals(1, stateUpdate?.analysisState?.candidateMoves?.size)
+        assertEquals(update.engineMessage, stateUpdate?.engineMessage)
+        assertNull(stateUpdate?.runEnginePlan)
+    }
+
+    @Test
+    fun launchStateUpdateMarksRunEnginePlanAsPendingAnalysisKey() {
+        val state = GameState.empty()
+        val plan = buildTopMoveAnalysisPlan(
+            targetState = state,
+            engineProfile = EngineProfile(),
+            analysisPreset = AnalysisPreset.Lite,
+            deep = false,
+        )
+
+        val stateUpdate = GameSessionAnalysisState.empty(state)
+            .applyTopMoveAnalysisLaunchPlan(TopMoveAnalysisLaunchPlan.RunEngine(plan))
+
+        assertEquals(plan.analysisKey, stateUpdate?.analysisState?.lastAnalysisKey)
+        assertEquals(plan, stateUpdate?.runEnginePlan)
+        assertNull(stateUpdate?.engineMessage)
+    }
+
+    @Test
     fun launchPlanRunsEngineWhenNoCurrentOrCachedAnalysisExists() {
         val state = GameState.empty()
         val expected = buildTopMoveAnalysisPlan(

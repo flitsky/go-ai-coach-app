@@ -53,6 +53,36 @@ internal sealed class TopMoveAnalysisLaunchPlan {
     ) : TopMoveAnalysisLaunchPlan()
 }
 
+internal data class TopMoveAnalysisLaunchStateUpdate(
+    val analysisState: GameSessionAnalysisState,
+    val engineMessage: String? = null,
+    val runEnginePlan: TopMoveAnalysisPlan? = null,
+)
+
+internal fun GameSessionAnalysisState.applyTopMoveAnalysisLaunchPlan(
+    launchPlan: TopMoveAnalysisLaunchPlan,
+): TopMoveAnalysisLaunchStateUpdate? =
+    when (launchPlan) {
+        TopMoveAnalysisLaunchPlan.Skip -> null
+        is TopMoveAnalysisLaunchPlan.RestoreCurrentSnapshot ->
+            TopMoveAnalysisLaunchStateUpdate(
+                analysisState = copy(candidateMoves = launchPlan.candidateMoves),
+            )
+        is TopMoveAnalysisLaunchPlan.UseCached ->
+            TopMoveAnalysisLaunchStateUpdate(
+                analysisState = applyTopMoveAnalysisUpdate(
+                    update = launchPlan.update,
+                    analysisKey = launchPlan.analysisKey,
+                ),
+                engineMessage = launchPlan.update.engineMessage,
+            )
+        is TopMoveAnalysisLaunchPlan.RunEngine ->
+            TopMoveAnalysisLaunchStateUpdate(
+                analysisState = copy(lastAnalysisKey = launchPlan.plan.analysisKey),
+                runEnginePlan = launchPlan.plan,
+            )
+    }
+
 internal fun buildTopMoveAnalysisPlan(
     targetState: GameState,
     engineProfile: EngineProfile,
