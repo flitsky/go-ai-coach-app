@@ -28,6 +28,7 @@ internal fun buildDebugReport(
     playLevel: PlayLevelSetting,
     analysisPreset: AnalysisPreset,
     analysisCacheStats: String,
+    positionAnalysisCacheStats: String = "disabled",
     isEngineReady: Boolean,
     isEngineBusy: Boolean,
     isGameEnded: Boolean,
@@ -69,6 +70,7 @@ internal fun buildDebugReport(
         appendLine("searchTimeSettings=${searchTimeSettings.normalized().summaryText()}")
         appendLine("analysisPreset=${analysisPreset.label}")
         appendLine("analysisCache=$analysisCacheStats")
+        appendLine("positionAnalysisCache=$positionAnalysisCacheStats")
         appendLine("topMovesEnabled=$topMovesEnabled")
         appendLine("topMoveCandidateCount=$topMoveCandidateCount")
         appendLine("moveAnalysisCoverage=$moveAnalysisCoverage")

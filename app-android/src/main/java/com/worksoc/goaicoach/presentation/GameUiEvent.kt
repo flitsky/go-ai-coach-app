@@ -18,6 +18,8 @@ internal sealed interface GameUiEvent {
     data object UndoLastTurn : GameUiEvent
     data object Pass : GameUiEvent
     data object DismissResumePrompt : GameUiEvent
+    data object AcceptCacheOptimizationPrompt : GameUiEvent
+    data object DismissCacheOptimizationPrompt : GameUiEvent
 
     data class ResumeSavedSession(
         val snapshot: SavedGameSnapshot,
@@ -64,6 +66,8 @@ internal data class GameUiEventHandlers(
     val undoLastTurn: () -> Unit,
     val submitMove: (Move) -> Unit,
     val dismissResumePrompt: () -> Unit,
+    val acceptCacheOptimizationPrompt: () -> Unit,
+    val dismissCacheOptimizationPrompt: () -> Unit,
     val restoreSavedSession: (SavedGameSnapshot) -> Unit,
     val changePlayerSetup: (PlayerSetup) -> Unit,
     val changeAutoPlayDelay: (AutoPlayDelaySetting) -> Unit,
@@ -91,6 +95,8 @@ internal fun dispatchGameUiEvent(
         GameUiEvent.UndoLastTurn -> handlers.undoLastTurn()
         GameUiEvent.Pass -> handlers.submitMove(Move.Pass(handlers.currentPlayer()))
         GameUiEvent.DismissResumePrompt -> handlers.dismissResumePrompt()
+        GameUiEvent.AcceptCacheOptimizationPrompt -> handlers.acceptCacheOptimizationPrompt()
+        GameUiEvent.DismissCacheOptimizationPrompt -> handlers.dismissCacheOptimizationPrompt()
         is GameUiEvent.ResumeSavedSession -> handlers.restoreSavedSession(event.snapshot)
         is GameUiEvent.PlayAt -> handlers.submitMove(Move.Play(handlers.currentPlayer(), event.coordinate))
         is GameUiEvent.SubmitMove -> handlers.submitMove(event.move)

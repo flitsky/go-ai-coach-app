@@ -46,6 +46,11 @@ internal fun GoCoachContent(
     } else {
         null
     }
+    val cacheOptimizationPrompt = if (benchmarkProgress == null && benchmarkResult == null) {
+        screenState.cacheOptimizationPrompt
+    } else {
+        null
+    }
     val onMenuEvent: (GameUiEvent) -> Unit = { event ->
         onEvent(event)
         if (shouldCollapseMenuAfterEvent(event)) {
@@ -69,6 +74,13 @@ internal fun GoCoachContent(
             engineName = screenState.engine.name,
             onResume = { onEvent(GameUiEvent.ResumeSavedSession(savedSessionToPrompt)) },
             onDismiss = { onEvent(GameUiEvent.DismissResumePrompt) },
+        )
+    } else if (cacheOptimizationPrompt != null) {
+        CacheOptimizationPromptDialog(
+            title = cacheOptimizationPrompt.title,
+            message = cacheOptimizationPrompt.message,
+            onAccept = { onEvent(GameUiEvent.AcceptCacheOptimizationPrompt) },
+            onDismiss = { onEvent(GameUiEvent.DismissCacheOptimizationPrompt) },
         )
     }
 
@@ -100,6 +112,30 @@ internal fun GoCoachContent(
             onEvent = onEvent,
         )
     }
+}
+
+@Composable
+private fun CacheOptimizationPromptDialog(
+    title: String,
+    message: String,
+    onAccept: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = { Text(message) },
+        confirmButton = {
+            TextButton(onClick = onAccept) {
+                Text("분석하기")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("나중에")
+            }
+        },
+    )
 }
 
 @Composable

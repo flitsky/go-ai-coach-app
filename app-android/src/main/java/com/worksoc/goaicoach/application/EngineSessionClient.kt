@@ -31,6 +31,8 @@ internal data class EngineSessionCapabilities(
 internal interface EngineSessionClient {
     val capabilities: EngineSessionCapabilities
 
+    fun positionAnalysisCacheStatsText(nowMillis: Long): String
+
     suspend fun startSession(
         profile: EngineProfile,
         state: GameState,
@@ -47,6 +49,10 @@ internal interface EngineSessionClient {
         limit: AnalysisLimit,
         searchMode: EngineSearchMode = EngineSearchMode.GtpStatefulFast,
     ): AnalysisResult
+
+    suspend fun optimizePositionAnalysisCache(
+        plan: PositionAnalysisCacheOptimizationPlan,
+    ): PositionAnalysisCacheOptimizationResult
 
     suspend fun syncAndEstimateGraphScore(
         state: GameState,
@@ -102,6 +108,9 @@ internal class AdapterEngineSessionClient(
     ),
     private val positionAnalysisCacheStore: PositionAnalysisCacheStore = NoopPositionAnalysisCacheStore,
 ) : EngineSessionClient {
+    override fun positionAnalysisCacheStatsText(nowMillis: Long): String =
+        positionAnalysisCacheStore.statsText(nowMillis)
+
     override suspend fun startSession(
         profile: EngineProfile,
         state: GameState,
@@ -130,18 +139,23 @@ internal class AdapterEngineSessionClient(
         state: GameState,
         limit: AnalysisLimit,
         searchMode: EngineSearchMode,
+        readCache: Boolean = true,
+        cacheLimitOverride: AnalysisLimit? = null,
     ): AnalysisResult {
         val effectiveLimit = when (searchMode) {
             EngineSearchMode.GtpStatefulFast -> limit
             EngineSearchMode.JsonPositionAnalysis -> limit.forcedJsonPositionAnalysis()
         }
+        val cacheLimit = cacheLimitOverride
+            ?.forcedJsonPositionAnalysis()
+            ?: effectiveLimit
         val nowMillis = System.currentTimeMillis()
         val cacheKey = positionAnalysisCacheKeyFor(
             state = state,
             searchMode = searchMode,
-            limit = effectiveLimit,
+            limit = cacheLimit,
         )
-        if (searchMode == EngineSearchMode.JsonPositionAnalysis) {
+        if (searchMode == EngineSearchMode.JsonPositionAnalysis && readCache) {
             positionAnalysisCacheStore
                 .get(cacheKey, nowMillis)
                 ?.let { entry -> return entry.result.withCacheHitSummary(entry) }
@@ -150,7 +164,7 @@ internal class AdapterEngineSessionClient(
         val result = coreApi.analyze(effectiveLimit)
         if (
             searchMode == EngineSearchMode.JsonPositionAnalysis &&
-            result.hasCompleteRootVisitsFor(effectiveLimit)
+            result.isStorablePositionAnalysisFor(cacheLimit)
         ) {
             val rootVisits = result.rootVisits
             if (rootVisits != null) {
@@ -159,7 +173,7 @@ internal class AdapterEngineSessionClient(
                         key = cacheKey,
                         result = result,
                         createdAtMillis = nowMillis,
-                        requestedRootVisits = effectiveLimit.visits,
+                        requestedRootVisits = cacheLimit.visits,
                         rootVisits = rootVisits,
                     ),
                     nowMillis = nowMillis,
@@ -167,6 +181,40 @@ internal class AdapterEngineSessionClient(
             }
         }
         return result
+    }
+
+    override suspend fun optimizePositionAnalysisCache(
+        plan: PositionAnalysisCacheOptimizationPlan,
+    ): PositionAnalysisCacheOptimizationResult {
+        val summaries = mutableListOf<String>()
+        var analyzedTargets = 0
+        var reusableTargets = 0
+        var completeTargets = 0
+        plan.targets.forEach { target ->
+            val result = analyzePositionWithCache(
+                state = target.state,
+                limit = target.executionLimit,
+                searchMode = EngineSearchMode.JsonPositionAnalysis,
+                readCache = false,
+                cacheLimitOverride = target.cacheLimit,
+            )
+            val quality = result.cacheQualityFor(target.cacheLimit)
+            analyzedTargets += 1
+            if (quality.isReusable) {
+                reusableTargets += 1
+            }
+            if (quality.isComplete) {
+                completeTargets += 1
+            }
+            summaries += "M${target.moveNumber} ${target.levelLabel}: ${quality.summaryText()}"
+        }
+        return PositionAnalysisCacheOptimizationResult(
+            requestedTargets = plan.targets.size,
+            analyzedTargets = analyzedTargets,
+            reusableTargets = reusableTargets,
+            completeTargets = completeTargets,
+            summaries = summaries,
+        )
     }
 
     override suspend fun syncAndEstimateGraphScore(

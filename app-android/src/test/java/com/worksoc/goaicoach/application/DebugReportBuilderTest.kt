@@ -31,6 +31,7 @@ class DebugReportBuilderTest {
             playLevel = PlayLevelSetting(),
             analysisPreset = AnalysisPreset.Lite,
             analysisCacheStats = "entries=1, hits=0, misses=1",
+            positionAnalysisCacheStats = "entries=2, reusable=1, complete=0",
             isEngineReady = true,
             isEngineBusy = false,
             isGameEnded = false,
@@ -60,6 +61,7 @@ class DebugReportBuilderTest {
 
         assertTrue(report.contains("[Runtime]"))
         assertTrue(report.contains("mode=HumanVsAi"))
+        assertTrue(report.contains("positionAnalysisCache=entries=2, reusable=1, complete=0"))
         assertTrue(report.contains("turnTime=Time B 3.2s / W 4.1s"))
         assertTrue(report.contains("turnTimeDebug=blackMillis=3200"))
         assertTrue(report.contains("[Board]"))

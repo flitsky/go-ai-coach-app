@@ -967,3 +967,8 @@
 - `PositionAnalysisCacheStore` 계약과 Android 영속 저장소 `JsonPositionAnalysisCacheStore`를 추가했다. 캐시 key는 포지션 fingerprint, search mode, analysis limit으로 구성하며, JSON position analysis이고 `rootVisits >= requested visits`인 결과만 `files/json_position_analysis_cache.json`에 저장한다. 캐시는 30일 TTL, 최신 10개 유지 정책이다.
 - `EngineSessionClient`의 `analyzePosition`과 자동 AI 턴 경로가 JSON position analysis 캐시를 통과하도록 변경했다. 캐시 hit 시 엔진 재분석 없이 저장된 후보를 활용하고, miss 시 엔진 분석 후 root visits가 충분한 결과만 저장한다.
 - `docs/ENGINE_API_CALL_POLICY.md`, `docs/USER_OPTION_MANUAL.md`, `docs/refactoring/ENGINE_SEARCH_MODE_ROADMAP_2026-06-13.md`에 새 정책을 반영했다. 현 단계의 다음 과제는 사람 턴 Top Moves/착수 리뷰도 같은 JSON snapshot cache 정책에 더 명확히 연결하는 것이다.
+- 사용자가 캐시 정책을 더 고도화해 root visits를 완전히 채우지 못한 결과도 품질을 병기해 관리하고, 대국 후 사용자 동의하에 이번 판을 분석해 다음 플레이를 더 쾌적하게 만드는 기능을 요청했다.
+- `PositionAnalysisCacheQuality`를 추가해 JSON position cache를 `complete`, `partial`, `diagnostic`으로 분류했다. `complete`는 root visits 충족, `partial`은 50% 이상 충족, `diagnostic`은 50% 미만이다. `diagnostic`은 저장 가능하지만 자동 재사용하지 않는다.
+- `JsonPositionAnalysisCacheStore`는 같은 key의 기존 entry보다 낮은 root visits 결과로 덮어쓰지 않도록 변경했다. Copy Log에는 persistent JSON cache 통계가 `positionAnalysisCache=entries/reusable/complete/...` 형태로 포함된다.
+- `PositionAnalysisCacheOptimizationPlan`과 `EngineSessionClient.optimizePositionAnalysisCache()`를 추가했다. 종국 후 현재 Player Setup에 초급 이상 JSON AI가 있으면 “이번 판 분석 최적화” prompt가 뜨고, 사용자가 동의하면 주요 포지션을 최대 10개 샘플링해 uncapped JSON 실행으로 cache를 보강한다. 이때 cache key는 실제 플레이 limit으로 유지해 다음 대국의 동일 budget 요청이 cache hit 되도록 했다.
+- 새 정책에 맞춰 `ENGINE_API_CALL_POLICY.md`, `USER_OPTION_MANUAL.md`, `ENGINE_SEARCH_MODE_ROADMAP_2026-06-13.md`를 업데이트했고, 앱 단위 테스트로 partial 재사용, diagnostic 비재사용, post-game 최적화 plan/prompt를 검증했다.

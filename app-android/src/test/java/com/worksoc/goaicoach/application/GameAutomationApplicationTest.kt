@@ -356,6 +356,9 @@ private class FakeAutoAiEngineSessionClient(
     override val capabilities: EngineSessionCapabilities =
         EngineSessionCapabilities(supportsDeviceBenchmark = false)
 
+    override fun positionAnalysisCacheStatsText(nowMillis: Long): String =
+        "disabled"
+
     override suspend fun startSession(
         profile: EngineProfile,
         state: GameState,
@@ -374,6 +377,11 @@ private class FakeAutoAiEngineSessionClient(
         limit: AnalysisLimit,
         searchMode: EngineSearchMode,
     ): AnalysisResult =
+        error("not used")
+
+    override suspend fun optimizePositionAnalysisCache(
+        plan: PositionAnalysisCacheOptimizationPlan,
+    ): PositionAnalysisCacheOptimizationResult =
         error("not used")
 
     override suspend fun syncAndEstimateGraphScore(

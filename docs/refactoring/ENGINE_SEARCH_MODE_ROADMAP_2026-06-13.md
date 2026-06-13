@@ -12,7 +12,8 @@ AI 자동대국은 우선 빠른 대국 체감을 위해 현행 GTP stateful fas
 | ---: | --- | --- | --- |
 | 1 | `EngineSearchMode.GtpStatefulFast` / `EngineSearchMode.JsonPositionAnalysis` 정책 분리 | 완료 | 기본 동작은 GTP fast path 유지. 자동 AI 턴 context, session interface, runtime log에 search mode가 명시되어야 함 |
 | 2 | AI 착수 경로에 level별 search mode 정책 적용 | 완료 | `빠른 초급`은 B16/GTP/best-only, `초급` 이상은 B32+/JSON 후보군 레벨링 |
-| 3 | root visits 충족 JSON result cache 추가 | 완료 | JSON mode, rootVisits >= requested visits일 때만 최대 10개/30일 저장 |
+| 3 | JSON result cache 품질 정책 추가 | 완료 | JSON mode 결과를 `complete`/`partial`/`diagnostic`으로 분류하고 최대 10개/30일 저장 |
+| 3.5 | 종국 후 사용자 동의 기반 cache warm-up | 완료 | game over 후 초급 이상 JSON AI가 있으면 최대 10개 포지션을 uncapped JSON 실행으로 보강 |
 | 4 | B16 vs B32, B32 vs B64, B16 vs B64 각각 50판 이상 비교 | 대기 | 승률, 평균 root visits, fill rate, 평균 착수 시간 수집 |
 | 5 | 사람 차례 Top Moves/착수 리뷰도 JSON snapshot 기반으로 확장 | 대기 | 후보 표시와 착수 후 spot 평가가 같은 JSON snapshot을 공유 |
 | 6 | 결과가 좋으면 JSON mode 적용 범위 확대, GTP fast는 빠른 대국 옵션으로 유지 | 대기 | JSON mode가 공정성/학습 가치와 체감 속도를 모두 만족할 때만 확대 |
@@ -21,7 +22,7 @@ AI 자동대국은 우선 빠른 대국 체감을 위해 현행 GTP stateful fas
 
 - `EngineSearchMode`는 search budget이 아니라 engine orchestration 정책이다.
 - 현재 기본값은 반드시 `GtpStatefulFast`다.
-- JSON mode는 이번 단계에서 실제 AI 착수 경로로 켜지지 않는다.
+- 초기 1단계에서는 JSON mode를 실제 AI 착수 경로에 켜지 않았고, 이후 정책 적용 단계에서 `초급` 이상 AI 착수 경로에 연결했다.
 - `EngineSessionClient`와 자동 AI 실행 context에 mode를 통과시켜 다음 단계가 UI/엔진 코드를 크게 흔들지 않고 붙도록 한다.
 - runtime log에 `searchMode`를 남겨 향후 실험 로그를 비교 가능하게 한다.
 
@@ -33,9 +34,9 @@ AI 자동대국은 우선 빠른 대국 체감을 위해 현행 GTP stateful fas
 - AI vs AI search cache 격리도 `GtpStatefulFast`일 때만 `clearSearchCache()`를 호출하도록 제한했다.
 - runtime event log의 `ai_turn_begin`에 `searchMode=GtpStatefulFast`가 남는다.
 
-## 2~5단계 보류 이유
+## 남은 단계 보류 이유
 
-JSON position analysis는 구조적으로 장점이 있지만, Android 실기기 latency와 자동대국 승률 분포 검증 전에는 기본값으로 바꾸지 않는다. 특히 현재 GTP 경로는 이미 빠른 대국 체감을 제공하고 있으므로, 사용자 플레이 품질을 흔드는 변경은 실험 모드와 데이터 확보 이후에 진행한다.
+JSON position analysis는 구조적으로 장점이 있지만, Android 실기기 latency와 자동대국 승률 분포 검증 전에는 전체 앱 기본값으로 확대하지 않는다. 현재 GTP 경로는 이미 빠른 대국 체감을 제공하므로 `빠른 초급`에는 유지한다. 사람 차례 Top Moves/착수 리뷰를 broad JSON snapshot으로 전환하는 작업도 체감 속도와 cache 품질 데이터를 더 본 뒤 진행한다.
 
 ## 2026-06-13 정책 적용 기록
 
@@ -44,15 +45,18 @@ JSON position analysis는 구조적으로 장점이 있지만, Android 실기기
 - `빠른 초급`: B16, `GtpStatefulFast`, 후보 1개, best-only. 느린 폰에서도 빠르게 대국하는 모드로 둔다.
 - `초급` 이상: B32/B64/B160, `JsonPositionAnalysis`, 후보군 기반 레벨링. AI 캐릭터 성향과 단계별 후보 선택 정책을 이 경로에서 운영한다.
 
-추가로 JSON analysis 결과 cache를 도입했다.
+추가로 JSON analysis 결과 cache를 도입했고, 이후 품질 정책을 보강했다.
 
-- 저장 조건: `EngineSearchMode.JsonPositionAnalysis`이며 `rootVisits >= requested visits`
+- 저장 조건: `EngineSearchMode.JsonPositionAnalysis`, `rootVisits > 0`, 후보 리스트 존재
+- 재사용 조건: `complete` 또는 50% 이상 채워진 `partial`
+- 진단 조건: 50% 미만은 `diagnostic`으로 저장 가능하지만 자동 재사용하지 않음
 - 최대 개수: 10개
 - TTL: 30일
 - 저장 시각: `createdAtMillis`
 - key: `GameState.analysisFingerprint() + searchMode + AnalysisLimit`
+- 종국 후 최적화: 사용자 동의 시 이번 판 주요 포지션을 샘플링하고, cache key는 실제 플레이 limit으로 유지하되 실행 limit은 `timeMillis=null`로 둬 root visits 충족 가능성을 높인다.
 
-이 cache는 GTP search tree cache나 기존 Top Moves 임시 `AnalysisResultCache`와 다른 목적이다. 충분히 분석된 특정 position result만 재사용해 JSON mode의 반복 분석 부담을 줄이기 위한 것이다.
+이 cache는 GTP search tree cache나 기존 Top Moves 임시 `AnalysisResultCache`와 다른 목적이다. 특정 position result와 품질 정보를 재사용해 JSON mode의 반복 분석 부담을 줄이기 위한 것이다.
 
 ## 맥북 1차 latency 비교
 

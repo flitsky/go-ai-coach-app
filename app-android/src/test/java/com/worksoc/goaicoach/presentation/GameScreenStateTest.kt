@@ -155,6 +155,7 @@ class GameScreenStateTest {
             turnTimeText = "Time B 1.2s / W 0.0s",
             pendingSavedSession = pendingSavedSession,
             shouldShowResumePrompt = shouldShowResumePrompt,
+            cacheOptimizationPrompt = null,
             hasCompletedEngineStartup = hasCompletedEngineStartup,
             isGameEnded = false,
             endgameLog = "No endgame result recorded.",

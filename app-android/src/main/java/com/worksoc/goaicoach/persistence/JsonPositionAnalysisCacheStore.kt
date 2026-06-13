@@ -6,6 +6,7 @@ import com.worksoc.goaicoach.application.JsonPositionAnalysisCacheTtlMillis
 import com.worksoc.goaicoach.application.PositionAnalysisCacheEntry
 import com.worksoc.goaicoach.application.PositionAnalysisCacheKey
 import com.worksoc.goaicoach.application.PositionAnalysisCacheStore
+import com.worksoc.goaicoach.application.shouldReplacePositionAnalysisCacheEntry
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.AnalysisResult
 import com.worksoc.goaicoach.shared.BoardCoordinate
@@ -30,9 +31,7 @@ internal class JsonPositionAnalysisCacheStore(context: Context) : PositionAnalys
         val entries = loadEntries().filterFresh(nowMillis)
         saveEntries(entries)
         return entries.firstOrNull { entry ->
-            entry.key == key &&
-                entry.rootVisits >= key.limit.visits &&
-                entry.requestedRootVisits == key.limit.visits
+            entry.key == key && entry.quality.isReusable
         }
     }
 
@@ -43,10 +42,16 @@ internal class JsonPositionAnalysisCacheStore(context: Context) : PositionAnalys
         if (entry.key.searchMode != EngineSearchMode.JsonPositionAnalysis) {
             return
         }
-        if (entry.rootVisits < entry.requestedRootVisits) {
+        if (!entry.quality.isStorable) {
             return
         }
-        val entries = (loadEntries().filterFresh(nowMillis).filterNot { it.key == entry.key } + entry)
+        val freshEntries = loadEntries().filterFresh(nowMillis)
+        val existing = freshEntries.firstOrNull { it.key == entry.key }
+        if (!shouldReplacePositionAnalysisCacheEntry(existing, entry)) {
+            saveEntries(freshEntries)
+            return
+        }
+        val entries = (freshEntries.filterNot { it.key == entry.key } + entry)
             .sortedByDescending { it.createdAtMillis }
             .take(JsonPositionAnalysisCacheMaxEntries)
         saveEntries(entries)
@@ -54,7 +59,9 @@ internal class JsonPositionAnalysisCacheStore(context: Context) : PositionAnalys
 
     override fun statsText(nowMillis: Long): String {
         val entries = loadEntries().filterFresh(nowMillis)
-        return "entries=${entries.size}, ttlDays=${JsonPositionAnalysisCacheTtlMillis / DayMillis}, max=$JsonPositionAnalysisCacheMaxEntries"
+        val completeCount = entries.count { entry -> entry.quality.isComplete }
+        val reusableCount = entries.count { entry -> entry.quality.isReusable }
+        return "entries=${entries.size}, reusable=$reusableCount, complete=$completeCount, ttlDays=${JsonPositionAnalysisCacheTtlMillis / DayMillis}, max=$JsonPositionAnalysisCacheMaxEntries"
     }
 
     private fun loadEntries(): List<PositionAnalysisCacheEntry> =

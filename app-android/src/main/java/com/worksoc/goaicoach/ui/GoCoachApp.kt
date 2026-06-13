@@ -47,6 +47,8 @@ import com.worksoc.goaicoach.application.buildTopMoveAnalysisPlan
 import com.worksoc.goaicoach.application.buildTopMoveAnalysisLaunchPlan
 import com.worksoc.goaicoach.application.buildInitialUserPreferencesPlan
 import com.worksoc.goaicoach.application.buildPlayerSetupChangePlan
+import com.worksoc.goaicoach.application.buildPositionAnalysisCacheOptimizationPlan
+import com.worksoc.goaicoach.application.buildPositionAnalysisCacheOptimizationPrompt
 import com.worksoc.goaicoach.application.buildUserPreferencesSnapshot
 import com.worksoc.goaicoach.application.EndgameFailureDisplayPlan
 import com.worksoc.goaicoach.application.EngineBenchmarkDefaultSamplesPerVisit
@@ -73,6 +75,7 @@ import com.worksoc.goaicoach.application.HumanEngineSyncFailurePlan
 import com.worksoc.goaicoach.application.HumanEngineSyncDisplayPlan
 import com.worksoc.goaicoach.application.EngineStartupDisplayPlan
 import com.worksoc.goaicoach.application.PlayerSetupChangePlan
+import com.worksoc.goaicoach.application.PositionAnalysisCacheOptimizationPrompt
 import com.worksoc.goaicoach.application.localScoreSnapshot
 import com.worksoc.goaicoach.application.planShowTopMoves
 import com.worksoc.goaicoach.application.selectRuntimePlayLevel
@@ -275,6 +278,11 @@ private fun GoCoachScreen(
     var pendingSavedSession by remember { mutableStateOf<SavedGameSnapshot?>(null) }
     var shouldShowResumePrompt by remember { mutableStateOf(false) }
     var isAutoAiTurnPending by remember { mutableStateOf(false) }
+    var cacheOptimizationPrompt by remember {
+        mutableStateOf<PositionAnalysisCacheOptimizationPrompt?>(null)
+    }
+    var dismissedCacheOptimizationFingerprint by remember { mutableStateOf<String?>(null) }
+    var isPositionCacheOptimizationRunning by remember { mutableStateOf(false) }
 
     fun currentRuntimeLogContext(): RuntimeLogContext =
         RuntimeLogContext(
@@ -569,6 +577,9 @@ private fun GoCoachScreen(
         runtimeState = core.runtimeState
         moveReviewState = core.moveReviewState
         engineMessage = core.engineMessage
+        if (!core.isGameEnded) {
+            cacheOptimizationPrompt = null
+        }
     }
 
     fun applyScoreEstimateDisplayPlan(score: ScoreEstimateDisplayPlan) {
@@ -618,6 +629,7 @@ private fun GoCoachScreen(
     }
 
     fun applyGameSessionResetPlan(reset: GameSessionResetPlan) {
+        cacheOptimizationPrompt = null
         applyCoreSessionState(currentCoreSessionState().applyGameSessionResetPlan(reset))
         turnTimeState = GameSessionTurnTimeState.reset(
             state = reset.gameState,
@@ -632,6 +644,7 @@ private fun GoCoachScreen(
     }
 
     fun applySavedGameRestorePlan(restore: SavedGameRestorePlan) {
+        cacheOptimizationPrompt = null
         playerSetup = restore.playerSetup
         topMovesEnabled = restore.topMovesEnabled
         applyCoreSessionState(currentCoreSessionState().applySavedGameRestorePlan(restore))
@@ -1474,6 +1487,45 @@ private fun GoCoachScreen(
         }
     }
 
+    fun currentCacheOptimizationPlan() =
+        buildPositionAnalysisCacheOptimizationPlan(
+            finalState = gameState,
+            playerSetup = playerSetup,
+            searchTimeSettings = searchTimeSettings,
+        )
+
+    fun dismissCacheOptimizationPrompt() {
+        dismissedCacheOptimizationFingerprint = cacheOptimizationPrompt?.gameFingerprint
+            ?: currentCacheOptimizationPlan().gameFingerprint
+        cacheOptimizationPrompt = null
+    }
+
+    fun acceptCacheOptimizationPrompt() {
+        val plan = currentCacheOptimizationPlan()
+        dismissedCacheOptimizationFingerprint = plan.gameFingerprint
+        cacheOptimizationPrompt = null
+        if (plan.isEmpty || isEngineBusy || isPositionCacheOptimizationRunning) {
+            return
+        }
+        isPositionCacheOptimizationRunning = true
+        isEngineBusy = true
+        engineMessage = "Post-game cache optimization started: ${plan.targets.size} JSON position(s)."
+        scope.launch {
+            runCatching {
+                withContext(Dispatchers.IO) {
+                    engineClient.optimizePositionAnalysisCache(plan)
+                }
+            }.onSuccess { result ->
+                engineMessage = result.messageText()
+                analysisState = analysisState.copy(candidateText = result.messageText())
+            }.onFailure { error ->
+                engineMessage = error.message ?: "Post-game cache optimization failed."
+            }
+            isPositionCacheOptimizationRunning = false
+            isEngineBusy = false
+        }
+    }
+
     fun copyDebugReport() {
         val report = buildDebugReport(
             mode = matchMode,
@@ -1484,6 +1536,7 @@ private fun GoCoachScreen(
             playLevel = runtimeState.playLevel,
             analysisPreset = runtimeState.analysisPreset,
             analysisCacheStats = analysisCache.statsText(),
+            positionAnalysisCacheStats = engineClient.positionAnalysisCacheStatsText(System.currentTimeMillis()),
             isEngineReady = isEngineReady,
             isEngineBusy = isEngineBusy,
             isGameEnded = isGameEnded,
@@ -1533,6 +1586,8 @@ private fun GoCoachScreen(
                     sessionStore.clear()
                     applySavedSessionPromptPlan(buildSavedSessionDismissPlan())
                 },
+                acceptCacheOptimizationPrompt = ::acceptCacheOptimizationPrompt,
+                dismissCacheOptimizationPrompt = ::dismissCacheOptimizationPrompt,
                 restoreSavedSession = { snapshot ->
                     applySavedSessionPromptPlan(buildSavedSessionDismissPlan())
                     restoreSavedSession(snapshot)
@@ -1576,6 +1631,26 @@ private fun GoCoachScreen(
         )
     }
 
+    LaunchedEffect(
+        isGameEnded,
+        isEngineReady,
+        isEngineBusy,
+        isPositionCacheOptimizationRunning,
+        playerSetup,
+        searchTimeSettings,
+        gameState.moves.size,
+    ) {
+        val plan = currentCacheOptimizationPlan()
+        cacheOptimizationPrompt = buildPositionAnalysisCacheOptimizationPrompt(
+            isGameEnded = isGameEnded,
+            isEngineReady = isEngineReady,
+            isEngineBusy = isEngineBusy,
+            isOptimizationRunning = isPositionCacheOptimizationRunning,
+            dismissedGameFingerprint = dismissedCacheOptimizationFingerprint,
+            plan = plan,
+        )
+    }
+
     val screenState = buildGameScreenState(
         GameScreenStateInput(
             gameState = gameState,
@@ -1609,6 +1684,7 @@ private fun GoCoachScreen(
             turnTimeText = turnTimeState.summaryText(),
             pendingSavedSession = pendingSavedSession,
             shouldShowResumePrompt = shouldShowResumePrompt,
+            cacheOptimizationPrompt = cacheOptimizationPrompt,
             hasCompletedEngineStartup = hasCompletedEngineStartup,
             isGameEnded = isGameEnded,
             endgameLog = scoreState.endgameLog,

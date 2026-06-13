@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.presentation
 
 import com.worksoc.goaicoach.application.MoveReviewMarker
+import com.worksoc.goaicoach.application.PositionAnalysisCacheOptimizationPrompt
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
@@ -32,6 +33,7 @@ internal data class GameScreenState(
     val turnTimeText: String,
     val actionButtons: List<GameActionButtonState>,
     val resumePrompt: ResumePromptState?,
+    val cacheOptimizationPrompt: PositionAnalysisCacheOptimizationPrompt?,
     val isGameEnded: Boolean,
     val endgameLog: String,
 ) {
@@ -71,6 +73,7 @@ internal data class GameScreenStateInput(
     val turnTimeText: String,
     val pendingSavedSession: SavedGameSnapshot?,
     val shouldShowResumePrompt: Boolean,
+    val cacheOptimizationPrompt: PositionAnalysisCacheOptimizationPrompt?,
     val hasCompletedEngineStartup: Boolean,
     val isGameEnded: Boolean,
     val endgameLog: String,
@@ -121,6 +124,12 @@ internal fun buildGameScreenState(input: GameScreenStateInput): GameScreenState 
                     !input.isEngineBusy
             }
             ?.let(::ResumePromptState),
+        cacheOptimizationPrompt = input.cacheOptimizationPrompt
+            ?.takeIf {
+                input.hasCompletedEngineStartup &&
+                    !input.isEngineBusy &&
+                    !(input.shouldShowResumePrompt && input.pendingSavedSession != null)
+            },
         isGameEnded = input.isGameEnded,
         endgameLog = input.endgameLog,
     )
