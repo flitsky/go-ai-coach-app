@@ -1023,3 +1023,5 @@
 - `DebugReportBuilderTest`를 보강했고, JDK 17과 Android SDK를 명시해 `:app-android:testDebugUnitTest`를 실행했고 통과했다.
 - `buildGameSessionControllerState(...)` builder를 추가해 `GoCoachApp.kt`의 controller/core snapshot 수동 조립 중복을 줄였다. UI는 Compose state 소유권을 유지하되 현재 상태를 application controller snapshot으로 변환하는 책임을 application helper에 위임한다.
 - `GameSessionControllerTest`를 보강했고, JDK 17과 Android SDK를 명시해 `:app-android:testDebugUnitTest`를 실행했고 통과했다.
+- `GameSessionControllerState.toAutoAiTurnRequestPlan(...)`와 `toAutoAiTurnExecutionContext(...)`를 추가했다. 자동 AI 턴의 요청 가능 여부와 실행 context 생성이 UI 세부 필드 조합 대신 controller snapshot에서 파생된다.
+- `GameAutomationApplicationTest`를 보강했고, JDK 17과 Android SDK를 명시해 `:app-android:testDebugUnitTest`를 실행했고 통과했다.

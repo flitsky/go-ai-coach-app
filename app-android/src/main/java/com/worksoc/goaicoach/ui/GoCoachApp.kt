@@ -24,8 +24,6 @@ import com.worksoc.goaicoach.application.AutoAiTurnDisplayPlan
 import com.worksoc.goaicoach.application.AutoAiTurnRequestPlan
 import com.worksoc.goaicoach.application.AutoAiTurnUiState
 import com.worksoc.goaicoach.application.buildDebugReport
-import com.worksoc.goaicoach.application.buildAutoAiTurnRequestPlan
-import com.worksoc.goaicoach.application.buildAutoAiTurnExecutionContext
 import com.worksoc.goaicoach.application.buildEndgameFailureDisplayPlan
 import com.worksoc.goaicoach.application.buildEngineEstimateDisplayPlan
 import com.worksoc.goaicoach.application.buildEngineStartupFailureDisplayPlan
@@ -114,6 +112,8 @@ import com.worksoc.goaicoach.application.runtimeHumanEngineSyncSuccessLog
 import com.worksoc.goaicoach.application.runtimeHumanMoveAcceptedLog
 import com.worksoc.goaicoach.application.RuntimeLogContext
 import com.worksoc.goaicoach.application.toDebugReportSnapshot
+import com.worksoc.goaicoach.application.toAutoAiTurnExecutionContext
+import com.worksoc.goaicoach.application.toAutoAiTurnRequestPlan
 import com.worksoc.goaicoach.application.ShowTopMovesPlan
 import com.worksoc.goaicoach.application.ScoreEstimateDisplayPlan
 import com.worksoc.goaicoach.application.ScoreEstimateRequestPlan
@@ -1080,15 +1080,9 @@ private fun GoCoachScreen(
 
     fun requestAiTurnForCurrentState() {
         when (
-            val request = buildAutoAiTurnRequestPlan(
-                isGameEnded = isGameEnded,
+            val request = currentControllerSessionState().toAutoAiTurnRequestPlan(
                 isEngineReady = isEngineReady,
                 isEngineBusy = isEngineBusy,
-                isAutoAiTurnPending = isAutoAiTurnPending,
-                shouldShowResumePrompt = shouldShowResumePrompt,
-                playerSetup = playerSetup,
-                gameState = gameState,
-                autoPlayDelaySetting = autoPlayDelaySetting,
             )
         ) {
             AutoAiTurnRequestPlan.Skip -> return
@@ -1131,12 +1125,7 @@ private fun GoCoachScreen(
                         return@launch
                     }
 
-                    val turnContext = buildAutoAiTurnExecutionContext(
-                        gameState = gameState,
-                        playerSetup = playerSetup,
-                        searchTimeSettings = searchTimeSettings,
-                        reviewCandidateMoves = analysisState.reviewCandidateMoves,
-                    )
+                    val turnContext = currentControllerSessionState().toAutoAiTurnExecutionContext()
                     val turnStartMillis = System.currentTimeMillis()
                     runtimeEventLog.append(
                         runtimeAiTurnBeginLog(

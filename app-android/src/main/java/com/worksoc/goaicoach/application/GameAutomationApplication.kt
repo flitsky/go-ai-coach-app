@@ -100,6 +100,21 @@ internal fun buildAutoAiTurnRequestPlan(
     )
 }
 
+internal fun GameSessionControllerState.toAutoAiTurnRequestPlan(
+    isEngineReady: Boolean,
+    isEngineBusy: Boolean,
+): AutoAiTurnRequestPlan =
+    buildAutoAiTurnRequestPlan(
+        isGameEnded = isGameEnded,
+        isEngineReady = isEngineReady,
+        isEngineBusy = isEngineBusy,
+        isAutoAiTurnPending = isAutoAiTurnPending,
+        shouldShowResumePrompt = shouldShowResumePrompt,
+        playerSetup = playerSetup,
+        gameState = gameState,
+        autoPlayDelaySetting = settings.autoPlayDelaySetting,
+    )
+
 internal data class AutoAiTurnDisplayPlan(
     val playLevel: PlayLevelSetting,
     val profile: EngineProfile,
@@ -147,6 +162,17 @@ internal fun buildAutoAiTurnExecutionContext(
         previousReviewCandidates = reviewCandidateMoves,
     )
 }
+
+internal fun GameSessionControllerState.toAutoAiTurnExecutionContext(
+    searchMode: EngineSearchMode? = null,
+): AutoAiTurnExecutionContext =
+    buildAutoAiTurnExecutionContext(
+        gameState = gameState,
+        playerSetup = playerSetup,
+        searchTimeSettings = settings.searchTimeSettings,
+        reviewCandidateMoves = core.analysisState.reviewCandidateMoves,
+        searchMode = searchMode,
+    )
 
 internal fun buildAutoAiTurnDisplayPlan(
     result: AutoAiTurnResult,
