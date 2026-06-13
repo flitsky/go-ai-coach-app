@@ -262,6 +262,63 @@ class EngineSessionTest {
     }
 
     @Test
+    fun adapterSessionClientReusesTrustedJsonPositionAnalysisProvider() = runBlocking {
+        val engine = RecordingEngineAdapter()
+        val state = GameState.empty()
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+        val limit = AnalysisLimit(
+            visits = 32,
+            timeMillis = 2_000L,
+            candidateCount = 16,
+            includePolicy = true,
+            refinePolicyMoves = 0,
+            minVisitsPerCandidate = 0,
+            minTimeMillis = null,
+        )
+        val key = positionAnalysisCacheKeyFor(
+            state = state,
+            searchMode = EngineSearchMode.JsonPositionAnalysis,
+            limit = limit,
+        )
+        val trustedEntry = PositionAnalysisCacheEntry(
+            key = key,
+            result = AnalysisResult(
+                status = EngineStatus.ready("trusted"),
+                candidates = listOf(
+                    CandidateMove(
+                        move = Move.Play(StoneColor.White, BoardCoordinate.fromLabel("D4", BoardSize.Nine)),
+                        pointLoss = 0.0,
+                        engineOrder = 0,
+                    ),
+                ),
+                summary = "trusted cache result",
+                rootVisits = 64,
+                elapsedMillis = 1_000L,
+            ),
+            createdAtMillis = System.currentTimeMillis(),
+            requestedRootVisits = 32,
+            rootVisits = 64,
+            origin = PositionAnalysisCacheOrigin.OperatorTrusted,
+        )
+        val client = AdapterEngineSessionClient(
+            coreApi = engine,
+            trustedPositionAnalysisCacheProviders = listOf(
+                InMemoryTrustedPositionAnalysisCacheProvider(listOf(trustedEntry)),
+            ),
+        )
+
+        val result = client.analyzePosition(
+            state = state,
+            limit = limit,
+            searchMode = EngineSearchMode.JsonPositionAnalysis,
+        )
+
+        assertEquals(64, result.rootVisits)
+        assertTrue(result.summary.contains("origin=operator-trusted"))
+        assertEquals(emptyList<String>(), engine.calls)
+    }
+
+    @Test
     fun adapterSessionClientOptimizesCacheWithUncappedExecutionLimitUnderGameplayKey() = runBlocking {
         val engine = RecordingEngineAdapter()
         val cacheStore = InMemoryPositionAnalysisCacheStore()
@@ -447,4 +504,25 @@ private class InMemoryPositionAnalysisCacheStore : PositionAnalysisCacheStore {
 
     override fun statsText(nowMillis: Long): String =
         "entries=${entryMap.size}"
+}
+
+private class InMemoryTrustedPositionAnalysisCacheProvider(
+    entries: List<PositionAnalysisCacheEntry>,
+) : TrustedPositionAnalysisCacheProvider {
+    private val entryMap = entries.associateBy { entry -> entry.key }
+
+    override fun get(
+        key: PositionAnalysisCacheKey,
+        nowMillis: Long,
+    ): PositionAnalysisCacheEntry? =
+        entryMap[key]?.takeIf { entry -> entry.quality.isReusable && !entry.isExpired(nowMillis) }
+
+    override fun peek(
+        key: PositionAnalysisCacheKey,
+        nowMillis: Long,
+    ): PositionAnalysisCacheEntry? =
+        entryMap[key]?.takeIf { entry -> !entry.isExpired(nowMillis) }
+
+    override fun statsText(nowMillis: Long): String =
+        "trustedEntries=${entryMap.size}"
 }

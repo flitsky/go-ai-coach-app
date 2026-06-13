@@ -114,9 +114,17 @@ internal class AdapterEngineSessionClient(
         supportsDeviceBenchmark = false,
     ),
     private val positionAnalysisCacheStore: PositionAnalysisCacheStore = NoopPositionAnalysisCacheStore,
+    private val trustedPositionAnalysisCacheProviders: List<TrustedPositionAnalysisCacheProvider> = emptyList(),
 ) : EngineSessionClient {
-    override fun positionAnalysisCacheStatsText(nowMillis: Long): String =
-        positionAnalysisCacheStore.statsText(nowMillis)
+    override fun positionAnalysisCacheStatsText(nowMillis: Long): String {
+        val localStats = positionAnalysisCacheStore.statsText(nowMillis)
+        if (trustedPositionAnalysisCacheProviders.isEmpty()) {
+            return localStats
+        }
+        val trustedStats = trustedPositionAnalysisCacheProviders
+            .joinToString(";") { provider -> provider.statsText(nowMillis) }
+        return "$localStats, trusted={$trustedStats}"
+    }
 
     override fun positionAnalysisCacheQualityFor(
         state: GameState,
@@ -134,6 +142,9 @@ internal class AdapterEngineSessionClient(
             limit = effectiveLimit,
         )
         return positionAnalysisCacheStore.peek(key, nowMillis)?.quality
+            ?: trustedPositionAnalysisCacheProviders
+                .bestEntryFor(key = key, nowMillis = nowMillis, reusableOnly = false)
+                ?.quality
     }
 
     override suspend fun startSession(
@@ -183,6 +194,9 @@ internal class AdapterEngineSessionClient(
         if (searchMode == EngineSearchMode.JsonPositionAnalysis && readCache) {
             positionAnalysisCacheStore
                 .get(cacheKey, nowMillis)
+                ?.let { entry -> return entry.result.withCacheHitSummary(entry) }
+            trustedPositionAnalysisCacheProviders
+                .bestEntryFor(key = cacheKey, nowMillis = nowMillis, reusableOnly = true)
                 ?.let { entry -> return entry.result.withCacheHitSummary(entry) }
         }
         coreApi.syncToGameState(state)
@@ -342,3 +356,18 @@ internal class AdapterEngineSessionClient(
             onProgress = onProgress,
         )
 }
+
+private fun List<TrustedPositionAnalysisCacheProvider>.bestEntryFor(
+    key: PositionAnalysisCacheKey,
+    nowMillis: Long,
+    reusableOnly: Boolean,
+): PositionAnalysisCacheEntry? =
+    bestPositionAnalysisCacheEntry(
+        mapNotNull { provider ->
+            if (reusableOnly) {
+                provider.get(key, nowMillis)
+            } else {
+                provider.peek(key, nowMillis)
+            }
+        }.filterNot { entry -> entry.isExpired(nowMillis) },
+    )

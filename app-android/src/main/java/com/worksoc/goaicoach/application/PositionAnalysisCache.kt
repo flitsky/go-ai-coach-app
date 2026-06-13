@@ -121,6 +121,20 @@ internal interface PositionAnalysisCacheStore {
     fun statsText(nowMillis: Long): String
 }
 
+internal interface TrustedPositionAnalysisCacheProvider {
+    fun get(
+        key: PositionAnalysisCacheKey,
+        nowMillis: Long,
+    ): PositionAnalysisCacheEntry?
+
+    fun peek(
+        key: PositionAnalysisCacheKey,
+        nowMillis: Long,
+    ): PositionAnalysisCacheEntry?
+
+    fun statsText(nowMillis: Long): String
+}
+
 internal object NoopPositionAnalysisCacheStore : PositionAnalysisCacheStore {
     override fun get(
         key: PositionAnalysisCacheKey,
@@ -131,6 +145,21 @@ internal object NoopPositionAnalysisCacheStore : PositionAnalysisCacheStore {
         entry: PositionAnalysisCacheEntry,
         nowMillis: Long,
     ) = Unit
+
+    override fun peek(
+        key: PositionAnalysisCacheKey,
+        nowMillis: Long,
+    ): PositionAnalysisCacheEntry? = null
+
+    override fun statsText(nowMillis: Long): String =
+        "disabled"
+}
+
+internal object NoopTrustedPositionAnalysisCacheProvider : TrustedPositionAnalysisCacheProvider {
+    override fun get(
+        key: PositionAnalysisCacheKey,
+        nowMillis: Long,
+    ): PositionAnalysisCacheEntry? = null
 
     override fun peek(
         key: PositionAnalysisCacheKey,
@@ -180,13 +209,20 @@ internal fun shouldReplacePositionAnalysisCacheEntry(
     return candidate.createdAtMillis >= existing.createdAtMillis
 }
 
+internal fun bestPositionAnalysisCacheEntry(
+    entries: Iterable<PositionAnalysisCacheEntry>,
+): PositionAnalysisCacheEntry? =
+    entries.fold(null as PositionAnalysisCacheEntry?) { best, entry ->
+        if (shouldReplacePositionAnalysisCacheEntry(best, entry)) entry else best
+    }
+
 internal fun AnalysisResult.withCacheHitSummary(entry: PositionAnalysisCacheEntry): AnalysisResult =
     copy(
         status = status.copy(
             message = "JSON position analysis cache hit: ${entry.quality.summaryText()}",
         ),
         summary = buildString {
-            append("JSON position analysis cache hit: createdAtMillis=${entry.createdAtMillis}, ")
+            append("JSON position analysis cache hit: origin=${entry.origin.label}, createdAtMillis=${entry.createdAtMillis}, ")
             append("${entry.quality.summaryText()}.\n")
             append(summary)
         },
