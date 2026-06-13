@@ -42,6 +42,8 @@ class GameSessionControllerTest {
         assertEquals(playerSetup, state.playerSetup)
         assertEquals(MatchMode.AiVsAi, state.matchMode)
         assertEquals("Final score complete.", state.engineMessage)
+        assertEquals(false, state.shouldShowResumePrompt)
+        assertEquals(false, state.isAutoAiTurnPending)
     }
 
     @Test
@@ -51,6 +53,7 @@ class GameSessionControllerTest {
         val nextSettings = initial.settings.showTopMoves()
         val nextBenchmark = initial.benchmark.startWaitingForEngineSettle()
         val nextSavedSession = initial.savedSession.copy(hasCheckedSavedSession = true)
+        val nextAutoAiTurn = initial.autoAiTurn.markScheduled()
         val nextCacheOptimization = initial.positionCacheOptimization.startRunning()
 
         val withCore = initial.withCore(nextCore)
@@ -58,6 +61,7 @@ class GameSessionControllerTest {
         assertSame(initial.settings, withCore.settings)
         assertSame(initial.benchmark, withCore.benchmark)
         assertSame(initial.savedSession, withCore.savedSession)
+        assertSame(initial.autoAiTurn, withCore.autoAiTurn)
         assertSame(initial.positionCacheOptimization, withCore.positionCacheOptimization)
 
         val withSettings = initial.withSettings(nextSettings)
@@ -65,6 +69,7 @@ class GameSessionControllerTest {
         assertEquals(nextSettings, withSettings.settings)
         assertSame(initial.benchmark, withSettings.benchmark)
         assertSame(initial.savedSession, withSettings.savedSession)
+        assertSame(initial.autoAiTurn, withSettings.autoAiTurn)
         assertSame(initial.positionCacheOptimization, withSettings.positionCacheOptimization)
 
         val withBenchmark = initial.withBenchmark(nextBenchmark)
@@ -72,6 +77,7 @@ class GameSessionControllerTest {
         assertSame(initial.settings, withBenchmark.settings)
         assertEquals(nextBenchmark, withBenchmark.benchmark)
         assertSame(initial.savedSession, withBenchmark.savedSession)
+        assertSame(initial.autoAiTurn, withBenchmark.autoAiTurn)
         assertSame(initial.positionCacheOptimization, withBenchmark.positionCacheOptimization)
 
         val withSavedSession = initial.withSavedSession(nextSavedSession)
@@ -79,13 +85,23 @@ class GameSessionControllerTest {
         assertSame(initial.settings, withSavedSession.settings)
         assertSame(initial.benchmark, withSavedSession.benchmark)
         assertEquals(nextSavedSession, withSavedSession.savedSession)
+        assertSame(initial.autoAiTurn, withSavedSession.autoAiTurn)
         assertSame(initial.positionCacheOptimization, withSavedSession.positionCacheOptimization)
+
+        val withAutoAiTurn = initial.withAutoAiTurn(nextAutoAiTurn)
+        assertSame(initial.core, withAutoAiTurn.core)
+        assertSame(initial.settings, withAutoAiTurn.settings)
+        assertSame(initial.benchmark, withAutoAiTurn.benchmark)
+        assertSame(initial.savedSession, withAutoAiTurn.savedSession)
+        assertEquals(nextAutoAiTurn, withAutoAiTurn.autoAiTurn)
+        assertSame(initial.positionCacheOptimization, withAutoAiTurn.positionCacheOptimization)
 
         val withCacheOptimization = initial.withPositionCacheOptimization(nextCacheOptimization)
         assertSame(initial.core, withCacheOptimization.core)
         assertSame(initial.settings, withCacheOptimization.settings)
         assertSame(initial.benchmark, withCacheOptimization.benchmark)
         assertSame(initial.savedSession, withCacheOptimization.savedSession)
+        assertSame(initial.autoAiTurn, withCacheOptimization.autoAiTurn)
         assertEquals(nextCacheOptimization, withCacheOptimization.positionCacheOptimization)
     }
 
@@ -127,6 +143,7 @@ class GameSessionControllerTest {
             profile = null,
         ),
         savedSession: SavedSessionUiState = SavedSessionUiState(),
+        autoAiTurn: AutoAiTurnUiState = AutoAiTurnUiState(),
         positionCacheOptimization: PositionAnalysisCacheOptimizationUiState =
             PositionAnalysisCacheOptimizationUiState(),
     ): GameSessionControllerState =
@@ -135,6 +152,7 @@ class GameSessionControllerTest {
             settings = settings,
             benchmark = benchmark,
             savedSession = savedSession,
+            autoAiTurn = autoAiTurn,
             positionCacheOptimization = positionCacheOptimization,
         )
 

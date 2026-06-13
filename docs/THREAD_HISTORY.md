@@ -1004,3 +1004,8 @@
 - `GameAutomationApplicationTest`를 보강했고, JDK 17과 Android SDK를 명시해 `:app-android:testDebugUnitTest`를 실행해 통과했다.
 - 이번 리팩토링 반복 배치의 통합 검증으로 `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test`를 실행했고 통과했다.
 - 다음 추천 리팩토링은 `GameSessionControllerState`를 `GoCoachApp.kt`에 실제 조립 helper로 도입, Auto AI turn runner plan 분리, prompt priority 정책 분리, persistence/diagnostic port 인터페이스 도입 순서다.
+- 사용자가 현재까지 최종 바이너리를 폰에 원격 설치하고 다음 리팩토링 항목을 최대한 많이 수행해달라고 요청했다.
+- `adb devices`에는 처음에 연결 기기가 없었으나, `adb mdns services`에서 `SM-S908N` 무선 디버깅 주소 `192.168.35.166:33421`을 발견해 연결했다. `ANDROID_SERIAL=192.168.35.166:33421 JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make install-dev-engine`로 최신 debug APK 설치, KataGo model/config seed, cold launch를 완료했다. cold launch `TotalTime=616ms`.
+- `GameSessionControllerState`에 `autoAiTurn: AutoAiTurnUiState` 축과 `shouldShowResumePrompt`, `isAutoAiTurnPending` convenience property를 추가했다.
+- `GoCoachApp.kt`에 `currentControllerSessionState()`를 추가했고, runtime log context와 `GameScreenStateInput` 조립이 controller snapshot을 참조하게 했다. 상태 source를 한 번에 합치지 않고 읽기/조립 경계를 먼저 controller로 연결했다.
+- JDK 17과 Android SDK를 명시해 `:app-android:testDebugUnitTest`를 실행했고 통과했다.

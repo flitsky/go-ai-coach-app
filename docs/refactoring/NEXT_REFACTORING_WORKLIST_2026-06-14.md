@@ -117,3 +117,9 @@
 4. Persistence/diagnostic port 인터페이스 도입
    - `GameSessionStore`, `UserPreferencesStore`, `EngineBenchmarkStore`, `RuntimeEventLog`, debug report mirror 저장을 application port로 묶는다.
    - 로컬 저장소와 향후 원격/서버 저장소를 바꿔 끼울 수 있는 기반을 만든다.
+
+## 2026-06-14 추가 리팩토링 진행 로그
+
+- 2026-06-14: 폰 원격 설치를 먼저 수행했다. mDNS에서 `SM-S908N` 무선 ADB 서비스를 발견해 `192.168.35.166:33421`로 연결했고, `make install-dev-engine`로 최신 debug APK 설치, KataGo model/config seed, cold launch를 완료했다.
+- 2026-06-14: `GameSessionControllerState`에 `autoAiTurn: AutoAiTurnUiState` 축을 추가했다. controller state convenience property로 `shouldShowResumePrompt`, `isAutoAiTurnPending`도 노출한다.
+- 2026-06-14: `GoCoachApp.kt`에 `currentControllerSessionState()`를 추가하고 runtime log context 및 `GameScreenStateInput` 조립이 controller snapshot을 참조하게 했다. 아직 상태 저장 source 자체를 controller 하나로 합치지는 않았고, 읽기/조립 경계부터 연결했다. JDK 17/Android SDK 환경에서 `:app-android:testDebugUnitTest`가 통과했다.

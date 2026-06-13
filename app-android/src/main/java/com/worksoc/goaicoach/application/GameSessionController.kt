@@ -9,6 +9,7 @@ internal data class GameSessionControllerState(
     val settings: GameSessionSettingsState,
     val benchmark: EngineBenchmarkUiState,
     val savedSession: SavedSessionUiState,
+    val autoAiTurn: AutoAiTurnUiState,
     val positionCacheOptimization: PositionAnalysisCacheOptimizationUiState,
 ) {
     val gameState: GameState
@@ -26,6 +27,12 @@ internal data class GameSessionControllerState(
     val engineMessage: String
         get() = core.engineMessage
 
+    val shouldShowResumePrompt: Boolean
+        get() = savedSession.shouldShowResumePrompt
+
+    val isAutoAiTurnPending: Boolean
+        get() = autoAiTurn.isPending
+
     fun withCore(next: GameSessionCoreState): GameSessionControllerState =
         copy(core = next)
 
@@ -37,6 +44,9 @@ internal data class GameSessionControllerState(
 
     fun withSavedSession(next: SavedSessionUiState): GameSessionControllerState =
         copy(savedSession = next)
+
+    fun withAutoAiTurn(next: AutoAiTurnUiState): GameSessionControllerState =
+        copy(autoAiTurn = next)
 
     fun withPositionCacheOptimization(
         next: PositionAnalysisCacheOptimizationUiState,
