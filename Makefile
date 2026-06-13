@@ -21,11 +21,14 @@ ENGINE_DEVICE_BENCHMARK_ARGS ?=
 ENGINE_SEARCH_MODE_BENCHMARK_SAMPLES ?= 5
 ENGINE_SEARCH_MODE_BENCHMARK_OUT ?= docs/engine-benchmark-logs/search-mode-mac-20260613
 ENGINE_SEARCH_MODE_BENCHMARK_ARGS ?=
+ENGINE_PHONE_BENCHMARK_SERIAL ?= $(ANDROID_SERIAL)
+ENGINE_PHONE_SEARCH_MODE_BENCHMARK_OUT ?= docs/engine-benchmark-logs/search-mode-phone-latest
+ENGINE_PHONE_SEARCH_MODE_BENCHMARK_ARGS ?= --time-cap-ms 10000
 
 export ANDROID_HOME
 export JAVA_HOME
 
-.PHONY: doctor test dev dev-stub install-dev install-dev-engine reinstall-dev-engine seed-engine launch friend-apk prepare-friend-assets engine-level-benchmark engine-device-benchmark engine-search-mode-benchmark release ensure-debug-engine ensure-release-engine prebuild-engine clean
+.PHONY: doctor test dev dev-stub install-dev install-dev-engine reinstall-dev-engine seed-engine launch friend-apk prepare-friend-assets engine-level-benchmark engine-device-benchmark engine-search-mode-benchmark engine-search-mode-benchmark-phone release ensure-debug-engine ensure-release-engine prebuild-engine clean
 
 doctor:
 	@echo "Checking local Android development environment..."
@@ -80,6 +83,10 @@ engine-device-benchmark:
 
 engine-search-mode-benchmark:
 	python3 scripts/run-katago-search-mode-benchmark.py --samples "$(ENGINE_SEARCH_MODE_BENCHMARK_SAMPLES)" --out-dir "$(ENGINE_SEARCH_MODE_BENCHMARK_OUT)" $(ENGINE_SEARCH_MODE_BENCHMARK_ARGS)
+
+engine-search-mode-benchmark-phone:
+	@test -n "$(ENGINE_PHONE_BENCHMARK_SERIAL)" || (echo "Set ENGINE_PHONE_BENCHMARK_SERIAL=<adb serial> or ANDROID_SERIAL=<adb serial>." && exit 2)
+	python3 scripts/run-katago-search-mode-benchmark.py --samples "$(ENGINE_SEARCH_MODE_BENCHMARK_SAMPLES)" --out-dir "$(ENGINE_PHONE_SEARCH_MODE_BENCHMARK_OUT)" --adb-serial "$(ENGINE_PHONE_BENCHMARK_SERIAL)" $(ENGINE_PHONE_SEARCH_MODE_BENCHMARK_ARGS)
 
 prepare-friend-assets:
 	@test -f "$(FRIEND_MODEL_PATH)" || (echo "Friend APK model not found: $(FRIEND_MODEL_PATH)" && exit 1)

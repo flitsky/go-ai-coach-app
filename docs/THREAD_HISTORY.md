@@ -956,3 +956,7 @@
 - Android 실기기 `SM-S908N`에서 3샘플, time cap 10000ms로 GTP fast와 JSON position analysis를 비교했고 결과를 `docs/engine-benchmark-logs/search-mode-phone-20260613/`에 저장했다. JSON은 B16/B32/B64 모두 rootInfo fill OK였고 평균 시간은 B16 4760ms, B32 3067ms, B64 4995ms였다. GTP fast는 B16 3815ms, B32 7603ms, B64 10168ms였고 root estimate는 15/31/47로, 특히 B64는 10초 cap에서도 부족했다.
 - `docs/ENGINE_API_CALL_POLICY.md`에 계층별 책임 원칙을 보강했다. `EngineCoreApi`/`EngineAdapter`는 엔진 원시 기능 1:1 노출, `EngineSessionClient`/application middleware는 search mode, 목적별 budget, AI character/level, Top Moves, 착수 리뷰, local/remote routing을 조합, UI는 미들웨어 상태만 렌더링하는 구조로 정리했다.
 - `docs/refactoring/ENGINE_SEARCH_MODE_ROADMAP_2026-06-13.md`와 `docs/ENGINE_SEARCH_TREE_REUSE_REVIEW.md`에 폰 1차 latency 결과를 추가했다. 결론은 사람 vs AI 기본 대국은 GTP fast 유지가 합리적이고, AI vs AI 레벨링 공정성과 root visit fill 검증은 JSON position analysis 실험 모드를 우선 진행할 가치가 높다는 것이다.
+- 사용자가 ADB `run-as` 방식이 원격 폰 벤치마크 기본 방식으로 좋아 보이며, UX 기반 벤치마크와 별도로 엔진별 비교/원격 데이터 수집 단계에서 기본 차용하도록 문서화를 요청했다.
+- `Makefile`에 `make engine-search-mode-benchmark-phone` target을 추가했다. `ENGINE_PHONE_BENCHMARK_SERIAL` 또는 `ANDROID_SERIAL`로 ADB serial을 지정하면 설치된 debug 앱의 app-private bundled KataGo binary/model/config를 `run-as com.worksoc.goaicoach`로 실행해 search mode benchmark를 수집한다.
+- `docs/ENGINE_API_CALL_POLICY.md`에 원격 폰 엔진 벤치마크 표준 섹션을 추가했다. 전제 조건, 표준 명령, `run-as`가 측정하는 것과 UX benchmark가 측정하는 것의 차이, raw/summary 저장 기준을 정리했다.
+- `docs/refactoring/ENGINE_SEARCH_MODE_ROADMAP_2026-06-13.md`에도 앞으로 엔진 모드별 폰 데이터 수집은 `run-as` benchmark를 우선하고, 사용자 체감 속도는 별도 UX benchmark로 보완한다는 운영 기준을 추가했다.

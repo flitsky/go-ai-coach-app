@@ -87,6 +87,26 @@ JSON position analysis는 구조적으로 장점이 있지만, Android 실기기
 - 따라서 AI vs AI 레벨링 공정성과 visit fill을 중시하는 실험에서는 JSON mode 우선 검증 가치가 높다.
 - 사람 vs AI 기본 대국은 현재 체감 속도가 중요한 경로이므로 GTP fast 유지가 여전히 합리적이다.
 
+## 원격 폰 데이터 수집 표준
+
+앞으로 엔진 모드별 폰 데이터 수집은 ADB `run-as` benchmark를 기본 방식으로 사용한다.
+
+```bash
+ENGINE_PHONE_BENCHMARK_SERIAL=<adb-serial> \
+ENGINE_SEARCH_MODE_BENCHMARK_SAMPLES=3 \
+ENGINE_PHONE_SEARCH_MODE_BENCHMARK_OUT=docs/engine-benchmark-logs/search-mode-phone-YYYYMMDD \
+make engine-search-mode-benchmark-phone
+```
+
+이 방식의 목적은 앱 UI를 거치지 않고, 폰에 설치된 debug 앱의 실제 bundled `libkatago.so`, app-private model/config를 직접 실행해 GTP fast와 JSON position analysis의 순수 엔진 비용을 비교하는 것이다.
+
+운영 기준:
+
+- 엔진 모드 비교, B16/B32/B64 root fill, thread/config 변경 전후 비교는 `run-as` benchmark를 우선한다.
+- 사용자 체감 속도, benchmark popup, 앱 lifecycle, 화면 반응성은 별도 UX 기반 benchmark로 확인한다.
+- raw/summary는 항상 `docs/engine-benchmark-logs/search-mode-phone-<date>/` 아래에 저장한다.
+- 같은 폰에서 반복 측정할 때도 output directory를 날짜 또는 실험명으로 분리해 이전 결과를 덮어쓰지 않는다.
+
 ## 다음 작업 진입 조건
 
 2단계에 들어가기 전에 다음이 준비되어야 한다.
