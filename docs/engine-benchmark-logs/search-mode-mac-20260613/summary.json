@@ -1,0 +1,114 @@
+{
+  "samples": 10,
+  "visits": [
+    16,
+    32,
+    64
+  ],
+  "timeCapMs": 5000,
+  "deterministic": false,
+  "gtpSearchThreads": 1,
+  "jsonAnalysisThreads": 1,
+  "jsonSearchThreads": 4,
+  "gtpClearCache": true,
+  "baseMoves": [
+    [
+      "B",
+      "E5"
+    ],
+    [
+      "W",
+      "C4"
+    ],
+    [
+      "B",
+      "E3"
+    ]
+  ],
+  "results": [
+    {
+      "mode": "gtp_stateful_fast_clearcache",
+      "visits": 16,
+      "samples": 10,
+      "shortCount": 10,
+      "elapsedMinMs": 100.846,
+      "elapsedAvgMs": 108.353,
+      "elapsedMaxMs": 113.753,
+      "elapsedP90Ms": 113.114,
+      "rootVisitsMin": 15,
+      "rootVisitsAvg": 15,
+      "rootVisitsMax": 15,
+      "recommendedTimeCapMs": 150
+    },
+    {
+      "mode": "gtp_stateful_fast_clearcache",
+      "visits": 32,
+      "samples": 10,
+      "shortCount": 10,
+      "elapsedMinMs": 205.203,
+      "elapsedAvgMs": 224.661,
+      "elapsedMaxMs": 277.788,
+      "elapsedP90Ms": 243.228,
+      "rootVisitsMin": 31,
+      "rootVisitsAvg": 31,
+      "rootVisitsMax": 31,
+      "recommendedTimeCapMs": 350
+    },
+    {
+      "mode": "gtp_stateful_fast_clearcache",
+      "visits": 64,
+      "samples": 10,
+      "shortCount": 10,
+      "elapsedMinMs": 374.984,
+      "elapsedAvgMs": 424.623,
+      "elapsedMaxMs": 460.235,
+      "elapsedP90Ms": 439.578,
+      "rootVisitsMin": 63,
+      "rootVisitsAvg": 63,
+      "rootVisitsMax": 63,
+      "recommendedTimeCapMs": 600
+    },
+    {
+      "mode": "json_position_analysis",
+      "visits": 16,
+      "samples": 10,
+      "shortCount": 0,
+      "elapsedMinMs": 161.321,
+      "elapsedAvgMs": 167.361,
+      "elapsedMaxMs": 171.626,
+      "elapsedP90Ms": 170.789,
+      "rootVisitsMin": 17,
+      "rootVisitsAvg": 17,
+      "rootVisitsMax": 17,
+      "recommendedTimeCapMs": 250
+    },
+    {
+      "mode": "json_position_analysis",
+      "visits": 32,
+      "samples": 10,
+      "shortCount": 0,
+      "elapsedMinMs": 136.308,
+      "elapsedAvgMs": 173.103,
+      "elapsedMaxMs": 418.136,
+      "elapsedP90Ms": 152.326,
+      "rootVisitsMin": 34,
+      "rootVisitsAvg": 34.9,
+      "rootVisitsMax": 35,
+      "recommendedTimeCapMs": 550
+    },
+    {
+      "mode": "json_position_analysis",
+      "visits": 64,
+      "samples": 10,
+      "shortCount": 0,
+      "elapsedMinMs": 225.114,
+      "elapsedAvgMs": 282.043,
+      "elapsedMaxMs": 536.843,
+      "elapsedP90Ms": 265.292,
+      "rootVisitsMin": 67,
+      "rootVisitsAvg": 67,
+      "rootVisitsMax": 67,
+      "recommendedTimeCapMs": 700
+    }
+  ]
+}

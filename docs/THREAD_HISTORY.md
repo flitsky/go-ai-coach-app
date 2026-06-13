@@ -948,3 +948,6 @@
 - 사용자가 AI 자동대국은 우선 빠른 현행 GTP 경로를 유지하되, `EngineSearchMode.GtpStatefulFast`와 `EngineSearchMode.JsonPositionAnalysis`를 정책으로 분리하고 2~5단계는 로드맵만 수립해달라고 요청했다.
 - `shared`에 `EngineSearchMode`를 추가했고, 자동 AI 턴 execution context, `EngineSessionClient`, `EngineCoreApi.runAutoAiTurn`, `MatchPolicy.applyAiTurn`, runtime event log에 search mode를 통과시켰다. 기본값은 `GtpStatefulFast`로 유지했고, JSON mode는 아직 실제 착수 경로에 연결하지 않았다.
 - `docs/refactoring/ENGINE_SEARCH_MODE_ROADMAP_2026-06-13.md`를 추가해 1단계 완료와 2~5단계 로드맵을 기록했다. 다음 단계는 AI vs AI 자동대국에만 JSON position analysis 실험 모드를 붙이고, B16/B32/B64 승률과 폰 latency/root visits fill을 수집하는 것이다.
+- 사용자가 AI 대국 레벨링 관점에서는 JSON analysis가 필요해 보이고, B16/B32/B64에서 충분한 root visits가 나오려면 빠른 GTP 모드 대비 어느 정도 시간이 필요한지 맥북에서 먼저 비교하고 문서화하자는 의견을 냈다.
+- `scripts/run-katago-search-mode-benchmark.py`와 `make engine-search-mode-benchmark`를 추가해 현재 앱 기본 thread 조건에서 GTP fast path와 JSON position analysis를 같은 benchmark position으로 비교할 수 있게 했다.
+- 맥북 10샘플 결과를 `docs/engine-benchmark-logs/search-mode-mac-20260613/`에 저장했다. JSON은 B16/B32/B64에서 rootInfo fill이 모두 OK였고 평균 시간은 B16 167ms, B32 173ms, B64 282ms였다. GTP fast는 평균 B16 108ms, B32 225ms, B64 425ms였으며, root 값은 JSON 원본이 아니라 후보 visits 합산 추정치라 15/31/63으로 기록됐다.

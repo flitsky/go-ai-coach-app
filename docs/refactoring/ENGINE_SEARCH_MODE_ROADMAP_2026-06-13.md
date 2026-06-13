@@ -36,6 +36,31 @@ AI 자동대국은 우선 빠른 대국 체감을 위해 현행 GTP stateful fas
 
 JSON position analysis는 구조적으로 장점이 있지만, Android 실기기 latency와 자동대국 승률 분포 검증 전에는 기본값으로 바꾸지 않는다. 특히 현재 GTP 경로는 이미 빠른 대국 체감을 제공하고 있으므로, 사용자 플레이 품질을 흔드는 변경은 실험 모드와 데이터 확보 이후에 진행한다.
 
+## 맥북 1차 latency 비교
+
+2026-06-13에 맥북 Homebrew KataGo v1.16.4 Metal backend에서 GTP fast path와 JSON position analysis를 같은 benchmark position으로 비교했다.
+
+- raw/summary: `docs/engine-benchmark-logs/search-mode-mac-20260613/`
+- command: `ENGINE_SEARCH_MODE_BENCHMARK_SAMPLES=10 make engine-search-mode-benchmark`
+- 기준 포지션: `B E5, W C4, B E3` 이후 sample별 변형
+- time cap: `5000ms`
+- GTP fast: 앱의 AI vs AI 격리 흐름에 맞춰 `clear_cache` 후 `kata-search_analyze`
+- JSON position analysis: `moves`, `maxVisits`, `overrideSettings.maxTime`을 넣는 요청별 analysis query
+- thread 조건: 현재 앱 기본값에 맞춰 GTP `numSearchThreads=1`, JSON `numAnalysisThreads=1`, `numSearchThreads=4`
+
+| Visits | GTP avg ms | JSON avg ms | JSON/GTP | GTP root estimate | JSON rootInfo |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 16 | 108.353 | 167.361 | 1.54x | 15 | 17 |
+| 32 | 224.661 | 173.103 | 0.77x | 31 | 34.9 |
+| 64 | 424.623 | 282.043 | 0.66x | 63 | 67 |
+
+해석:
+
+- 맥북에서는 JSON position analysis도 B16/B32/B64 root visits를 안정적으로 채웠다.
+- B16은 JSON이 GTP보다 느렸고, B32/B64는 현재 앱 thread 조건에서는 JSON이 더 빨랐다.
+- GTP fast path는 JSON의 `rootInfo.visits` 같은 원본 root 값을 주지 않으므로 후보별 visits 합산 추정치를 기록한다. 그래서 `15/31/63`처럼 목표보다 1 낮게 보일 수 있다.
+- 이 결과는 2단계 JSON 실험 모드를 진행할 근거는 되지만, 폰 기본값 전환 근거로는 부족하다. 다음에는 Android 실기기에서 같은 로그 포맷으로 latency와 fill을 수집해야 한다.
+
 ## 다음 작업 진입 조건
 
 2단계에 들어가기 전에 다음이 준비되어야 한다.
