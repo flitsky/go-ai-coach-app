@@ -324,6 +324,15 @@ Game UX는 다음만 담당한다.
 
 ## 현재 착수 순서
 
+2026-06-13 하향식이 아니라 하위 계층부터 다시 정리하는 배치에서는 아래 순서로 진행한다.
+
+1. `[진행중]` Engine Runtime / Transport 경계: KataGo process config, 파일 검증, GTP/JSON analysis command 생성 책임을 adapter 본문에서 분리
+2. `[대기]` Engine Core API Domain: 원시 API 계약과 transport 구현체의 의존 방향을 테스트/문서로 보강
+3. `[대기]` Core Rules Domain: 좌표/합법수/리플레이 helper를 순수 core 쪽으로 더 모아 adapter 중복을 줄임
+4. `[대기]` Middleware / Cache Domain: position analysis cache provider/origin 포트를 더 명확히 분리
+5. `[대기]` Game Domain: seat/referee/AI character가 engine 호출 세부를 모르도록 경계 강화
+6. `[대기]` App Service / Presentation: controller snapshot과 UI 연결부를 더 얇게 만들고 계층 테스트 보강
+
 이번 리팩토링 배치에서 바로 진행할 안전한 순서:
 
 1. `[완료]` `EngineCoreApi` 도입
@@ -334,6 +343,13 @@ Game UX는 다음만 담당한다.
 6. `[완료]` 테스트/문서/히스토리 갱신 후 커밋/푸시
 
 ### 진행 로그
+
+2026-06-13:
+
+- 1계층 `Engine Runtime / Transport` 정리를 시작했다. `KataGoProcessRuntime.kt`를 추가해 `KataGoProcessConfig`, GTP command 생성, JSON analysis command 생성, 실행 파일/model/config 검증 책임을 `KataGoProcessEngineAdapter` 본문에서 분리했다.
+- `KataGoProcessEngineAdapter`는 이제 엔진 프로토콜 orchestration과 응답 parsing 흐름에 집중하고, process command 세부는 runtime helper를 호출한다. 이 구조는 향후 JNI/remote server transport를 추가할 때 실행 경계만 대체하기 쉽게 만든다.
+- `KataGoProcessRuntimeTest`를 추가해 GTP command가 profile visits와 startup override를 반영하는지, JSON analysis command가 runtime-safe override만 통과시키는지 검증했다.
+- 검증: `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :engine-android:testDebugUnitTest` 통과.
 
 2026-06-12:
 

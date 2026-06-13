@@ -1037,3 +1037,6 @@
 - 빈 디렉토리 후보를 점검해 git 추적 파일이 없는 `poc`, `research`, `.bkit/runtime`, `.kotlin/sessions`를 `rmdir`로 삭제했다. 재검사 결과 `.git`, `.gradle`, build 산출물을 제외한 빈 디렉토리는 남지 않았다.
 - `DOMAIN_SEPARATION_REFACTORING_PLAN.md`를 업데이트해 목표 구조를 7계층으로 명시했다. 계층은 `Engine Runtime/Transport`, `Engine Core API`, `Core Rules`, `Middleware/Cache`, `Game Domain`, `App Service/Session Orchestration`, `Presentation/Game UX`이며, 각 계층의 현재 코드 위치와 금지 의존 방향을 정리했다.
 - 캐싱 시스템은 `Middleware / Cache Domain`에 두고, `Game Domain` 내부에는 `Match Referee`, `Black Seat`, `White Seat`, `AI Character`, `Match Settings`, `Remote Seat` 세부 도메인을 둔다는 방향을 설계 문서에 반영했다.
+- 사용자가 정리한 계층에 맞춰 맨 아래 엔진 도메인부터 점진적으로 상위 레이어까지 리팩토링하고, 각 단계별 커밋/푸시를 요청했다.
+- 1단계로 `Engine Runtime / Transport` 경계를 정리했다. `KataGoProcessRuntime.kt`를 추가해 `KataGoProcessConfig`, process 파일 검증, GTP command 생성, JSON analysis command 생성을 `KataGoProcessEngineAdapter` 본문에서 분리했다.
+- `KataGoProcessRuntimeTest`를 추가해 GTP command의 profile visits/startup override 반영과 JSON analysis command의 override allow-list 정책을 검증했다. 검증 성공: `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :engine-android:testDebugUnitTest`.

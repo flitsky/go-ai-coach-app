@@ -21,19 +21,10 @@ import com.worksoc.goaicoach.shared.StoneColor
 import com.worksoc.goaicoach.shared.describe
 import java.io.BufferedReader
 import java.io.BufferedWriter
-import java.io.File
 import java.io.InputStreamReader
 import java.io.OutputStreamWriter
 import org.json.JSONArray
 import org.json.JSONObject
-
-data class KataGoProcessConfig(
-    val executablePath: String,
-    val modelPath: String,
-    val configPath: String,
-    val analysisConfigPath: String? = null,
-    val startupOverrides: Map<String, String> = emptyMap(),
-)
 
 class KataGoProcessEngineAdapter(
     private val processConfig: KataGoProcessConfig,
@@ -161,9 +152,7 @@ class KataGoProcessEngineAdapter(
         effectiveLimit: AnalysisLimit,
         candidateCount: Int,
     ): AnalysisResult? {
-        val analysisConfigPath = processConfig.analysisConfigPath
-            ?.takeIf { File(it).isFile }
-            ?: return null
+        val analysisConfigPath = processConfig.resolveAnalysisConfigPath() ?: return null
         ensureAnalysisProcessStarted(analysisConfigPath)
         val startNanos = System.nanoTime()
         val response = sendAnalysisQuery(effectiveLimit.toJsonAnalysisQuery())
@@ -485,36 +474,8 @@ class KataGoProcessEngineAdapter(
             return
         }
 
-        require(File(processConfig.executablePath).canExecute()) {
-            "KataGo executable is not executable: ${processConfig.executablePath}"
-        }
-        require(File(processConfig.modelPath).isFile) {
-            "KataGo model not found: ${processConfig.modelPath}"
-        }
-        require(File(processConfig.configPath).isFile) {
-            "KataGo config not found: ${processConfig.configPath}"
-        }
-
-        val overrides = (
-            processConfig.startupOverrides +
-                mapOf(
-                    "maxVisits" to profile.analysisLimit.visits.toString(),
-                    "logToStderr" to "false",
-                )
-            )
-            .entries
-            .joinToString(",") { (key, value) -> "$key=$value" }
-
-        val command = listOf(
-            processConfig.executablePath,
-            "gtp",
-            "-model",
-            processConfig.modelPath,
-            "-config",
-            processConfig.configPath,
-            "-override-config",
-            overrides,
-        )
+        processConfig.validateGtpFiles()
+        val command = processConfig.buildGtpCommand(profile).commandLine
 
         process = ProcessBuilder(command)
             .redirectError(ProcessBuilder.Redirect.INHERIT)
@@ -528,33 +489,10 @@ class KataGoProcessEngineAdapter(
             return
         }
 
-        val analysisOverrides = (
-            processConfig.startupOverrides
-                .filterKeys { key ->
-                    key in setOf("logDir", "homeDataDir", "logToStderr")
-                } +
-                mapOf(
-                    "numAnalysisThreads" to "1",
-                    "numSearchThreads" to AnalysisSearchThreads.toString(),
-                    "logToStderr" to "false",
-                    "logAllRequests" to "false",
-                    "logAllResponses" to "false",
-                    "logSearchInfo" to "false",
-                )
-            )
-            .entries
-            .joinToString(",") { (key, value) -> "$key=$value" }
-
-        val command = listOf(
-            processConfig.executablePath,
-            "analysis",
-            "-model",
-            processConfig.modelPath,
-            "-config",
-            analysisConfigPath,
-            "-override-config",
-            analysisOverrides,
-        )
+        val command = processConfig.buildAnalysisCommand(
+            analysisConfigPath = analysisConfigPath,
+            analysisSearchThreads = AnalysisSearchThreads,
+        ).commandLine
 
         analysisProcess = ProcessBuilder(command)
             .redirectError(ProcessBuilder.Redirect.INHERIT)
