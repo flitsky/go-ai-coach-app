@@ -40,6 +40,16 @@ internal interface RuntimeEventLogPort {
     fun clear()
 }
 
+internal interface DiagnosticEventLogPort {
+    fun append(
+        event: DiagnosticEvent,
+        nowMillis: Long = System.currentTimeMillis(),
+    )
+
+    fun readText(): String
+    fun clear()
+}
+
 internal interface DebugReportMirrorPort {
     fun save(report: String)
 }

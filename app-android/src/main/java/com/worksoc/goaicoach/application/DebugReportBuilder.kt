@@ -47,6 +47,7 @@ internal data class DebugReportSnapshot(
     val turnTimeText: String = "Time B 0.0s / W 0.0s",
     val turnTimeDebugText: String = "blackMillis=0, whiteMillis=0, currentTurn=Black, currentElapsedMillis=0",
     val runtimeEventLogText: String = "Runtime event log not loaded.",
+    val diagnosticEventLogText: String = "Diagnostic event log not loaded.",
     val searchTimeSettings: SearchTimeSettings = SearchTimeSettings(),
 )
 
@@ -60,6 +61,7 @@ internal fun GameSessionControllerState.toDebugReportSnapshot(
     turnTimeText: String = "Time B 0.0s / W 0.0s",
     turnTimeDebugText: String = "blackMillis=0, whiteMillis=0, currentTurn=Black, currentElapsedMillis=0",
     runtimeEventLogText: String = "Runtime event log not loaded.",
+    diagnosticEventLogText: String = "Diagnostic event log not loaded.",
 ): DebugReportSnapshot =
     DebugReportSnapshot(
         mode = matchMode,
@@ -89,6 +91,7 @@ internal fun GameSessionControllerState.toDebugReportSnapshot(
         turnTimeText = turnTimeText,
         turnTimeDebugText = turnTimeDebugText,
         runtimeEventLogText = runtimeEventLogText,
+        diagnosticEventLogText = diagnosticEventLogText,
         searchTimeSettings = settings.searchTimeSettings,
     )
 
@@ -121,6 +124,7 @@ internal fun buildDebugReport(snapshot: DebugReportSnapshot): String =
         turnTimeText = snapshot.turnTimeText,
         turnTimeDebugText = snapshot.turnTimeDebugText,
         runtimeEventLogText = snapshot.runtimeEventLogText,
+        diagnosticEventLogText = snapshot.diagnosticEventLogText,
         searchTimeSettings = snapshot.searchTimeSettings,
     )
 
@@ -152,6 +156,7 @@ internal fun buildDebugReport(
     turnTimeText: String = "Time B 0.0s / W 0.0s",
     turnTimeDebugText: String = "blackMillis=0, whiteMillis=0, currentTurn=Black, currentElapsedMillis=0",
     runtimeEventLogText: String = "Runtime event log not loaded.",
+    diagnosticEventLogText: String = "Diagnostic event log not loaded.",
     searchTimeSettings: SearchTimeSettings = SearchTimeSettings(),
 ): String {
     val localScoreText = BoardScorer.score(gameState).toDisplayText()
@@ -239,6 +244,9 @@ internal fun buildDebugReport(
         appendLine()
         appendLine("[RuntimeEventLog]")
         appendLine(runtimeEventLogText)
+        appendLine()
+        appendLine("[DiagnosticEventLog]")
+        appendLine(diagnosticEventLogText)
     }.trim()
 }
 

@@ -87,3 +87,19 @@ POC를 계속 고도화하는 관점에서는 이미 충분히 좋은 상태다.
 - Android local persistence는 JSONL 파일에 최근 1MB까지 저장한다.
 - visits short 같은 엔진 품질 warning을 만들 수 있는 순수 함수와 단위 테스트가 생긴다.
 
+## 즉시 착수 결과
+
+2026-06-13에 1차 리팩토링을 완료했다.
+
+- `DiagnosticEvent`, `DiagnosticSeverity`를 추가해 warning/critical event를 구조화했다.
+- `engineVisitFillDiagnosticEvent()`로 root visits 미충족/미보고 상황을 순수 application 로직에서 판정할 수 있게 했다.
+- `scoreDisagreementDiagnosticEvent()`로 종국 계가 불일치 같은 critical event를 표현할 수 있게 했다.
+- `DiagnosticEventLogPort`를 추가해 저장소 구현을 application 계층 뒤에 숨겼다.
+- `DiagnosticEventLog`는 `diagnostic_events.jsonl`에 JSONL 형식으로 최근 1MB까지 저장한다.
+- `Copy Log` debug report에 `[DiagnosticEventLog]` 섹션을 추가했다.
+- 이 단계에서는 실제 엔진 호출부에 무리하게 연결하지 않고, 다음 리팩토링에서 engine/session 정책과 연결할 수 있는 안정적 기반과 수집 통로만 만들었다.
+
+검증:
+
+- `./gradlew :app-android:testDebugUnitTest --tests 'com.worksoc.goaicoach.application.DiagnosticEventApplicationTest' --tests 'com.worksoc.goaicoach.persistence.DiagnosticEventLogTest'` 통과.
+- `make test` 통과.

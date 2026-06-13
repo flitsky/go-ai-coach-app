@@ -56,6 +56,7 @@ import com.worksoc.goaicoach.application.EngineBenchmarkUiState
 import com.worksoc.goaicoach.application.EngineOperationGate
 import com.worksoc.goaicoach.application.EngineSessionClient
 import com.worksoc.goaicoach.application.DebugReportMirrorPort
+import com.worksoc.goaicoach.application.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.applyHumanMoveLocally
 import com.worksoc.goaicoach.application.EngineBenchmarkStorePort
 import com.worksoc.goaicoach.application.applyTopMoveAnalysisLaunchPlan
@@ -137,6 +138,7 @@ import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.persistence.GameSessionStore
 import com.worksoc.goaicoach.persistence.EngineBenchmarkStore
 import com.worksoc.goaicoach.persistence.DebugReportMirrorStore
+import com.worksoc.goaicoach.persistence.DiagnosticEventLog
 import com.worksoc.goaicoach.persistence.RuntimeEventLog
 import com.worksoc.goaicoach.persistence.SavedGameSnapshot
 import com.worksoc.goaicoach.persistence.UserPreferencesSnapshot
@@ -204,6 +206,9 @@ private fun GoCoachScreen(
     val debugReportMirror: DebugReportMirrorPort = remember(context) { DebugReportMirrorStore(context) }
     val runtimeEventLog: RuntimeEventLogPort = remember(context) {
         RuntimeEventLog(File(context.filesDir, RuntimeEventLog.FileName))
+    }
+    val diagnosticEventLog: DiagnosticEventLogPort = remember(context) {
+        DiagnosticEventLog(File(context.filesDir, DiagnosticEventLog.FileName))
     }
     val initialPreferences = remember(preferencesStore) { preferencesStore.load() }
     val defaultPlayLevel = remember { PlayLevelSetting() }
@@ -1517,6 +1522,7 @@ private fun GoCoachScreen(
                 turnTimeText = turnTimeState.summaryText(),
                 turnTimeDebugText = turnTimeState.debugText(System.currentTimeMillis()),
                 runtimeEventLogText = runtimeEventLog.readText(),
+                diagnosticEventLogText = diagnosticEventLog.readText(),
             ),
         )
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager

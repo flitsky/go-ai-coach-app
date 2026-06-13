@@ -1052,3 +1052,11 @@
 - 6-7단계로 App Service/Presentation 연결부를 줄였다. `GameScreenStateInput`과 `GameScreenState`가 `MatchSeatSnapshot`을 포함하고, action button enabled 판단과 보드 입력 가능 여부가 같은 seat snapshot을 공유한다.
 - `EngineResponsePanel`과 `GamePlaySection`은 더 이상 `boardInputEnabled()`나 `turnStatus()`를 직접 호출하지 않고, presentation state의 `turnStatusText`와 `matchSeats.current.canAcceptBoardInput`만 렌더링한다. 검증 성공: `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest`.
 - 이번 하위 계층부터 상위 계층까지의 리팩토링 배치 최종 검증으로 `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test`를 실행했고 통과했다.
+- 사용자가 최신 앱을 폰에 설치하고, 현재 프로젝트의 리팩토링 완성도를 평가한 뒤 문서화하고 바로 이어서 리팩토링을 수행해달라고 요청했다.
+- 무선 ADB `SM-S908N(192.168.35.166:33421)`에 `make install-dev-engine`로 최신 debug APK와 KataGo model/config를 설치했고, cold launch `TotalTime=619ms`를 확인했다.
+- `docs/refactoring/REFACTORING_COMPLETION_ASSESSMENT_2026-06-13.md`를 추가했다. 현재 리팩토링 완성도를 84/100으로 평가하고, 7계층별 점수/근거/남은 리스크와 다음 추천 순서를 정리했다.
+- 평가 문서에서 즉시 착수 항목으로 warning/critical diagnostic event 경계를 선정했다. 이유는 실기기 `fill=SHORT`, 캐시/자동대국/종국 score disagreement 같은 이슈를 앱을 모르는 사람도 로그로 추적할 수 있게 하기 위함이다.
+- 1차 리팩토링으로 `DiagnosticEvent`, `DiagnosticSeverity`, `engineVisitFillDiagnosticEvent()`, `scoreDisagreementDiagnosticEvent()`를 추가했다. warning/critical event를 severity/code/message/context 구조로 표현한다.
+- `DiagnosticEventLogPort`와 `DiagnosticEventLog`를 추가해 `diagnostic_events.jsonl`에 JSONL 형식으로 최근 1MB까지 저장할 수 있게 했다.
+- `Copy Log` debug report에 `[DiagnosticEventLog]` 섹션을 추가했다. 아직 실제 엔진 호출부에는 무리하게 연결하지 않고 다음 단계에서 안전하게 wiring할 수 있는 기반과 수집 통로만 만들었다.
+- `DiagnosticEventApplicationTest`, `DiagnosticEventLogTest`, `DebugReportBuilderTest`를 보강했고, JDK 17과 Android SDK를 명시해 신규 테스트와 `make test`를 실행해 통과했다.

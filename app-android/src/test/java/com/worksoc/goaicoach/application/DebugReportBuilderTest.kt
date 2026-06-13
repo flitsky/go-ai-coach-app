@@ -61,6 +61,7 @@ class DebugReportBuilderTest {
                 turnTimeText = "Time B 3.2s / W 4.1s",
                 turnTimeDebugText = "blackMillis=3200, whiteMillis=4100, currentTurn=Black, currentElapsedMillis=0",
                 runtimeEventLogText = "runtime log ok",
+                diagnosticEventLogText = "diagnostic event log ok",
             ),
         )
 
@@ -81,6 +82,8 @@ class DebugReportBuilderTest {
         assertTrue(report.contains("benchmark ok"))
         assertTrue(report.contains("[RuntimeEventLog]"))
         assertTrue(report.contains("runtime log ok"))
+        assertTrue(report.contains("[DiagnosticEventLog]"))
+        assertTrue(report.contains("diagnostic event log ok"))
     }
 
     @Test
@@ -134,6 +137,7 @@ class DebugReportBuilderTest {
             turnTimeText = "Time B 1.2s / W 2.3s",
             turnTimeDebugText = "blackMillis=1200, whiteMillis=2300",
             runtimeEventLogText = "runtime log",
+            diagnosticEventLogText = "diagnostic log",
         )
 
         assertEquals(MatchMode.HumanVsAi, snapshot.mode)
@@ -146,5 +150,6 @@ class DebugReportBuilderTest {
         assertEquals("benchmark text", snapshot.engineBenchmarkText)
         assertEquals(searchTimeSettings, snapshot.searchTimeSettings)
         assertEquals("position entries=2", snapshot.positionAnalysisCacheStats)
+        assertEquals("diagnostic log", snapshot.diagnosticEventLogText)
     }
 }
