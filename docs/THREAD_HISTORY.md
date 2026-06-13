@@ -1013,3 +1013,5 @@
 - `GameScreenState`는 inline prompt 조건 대신 `decidePromptVisibility()`를 호출한다. JDK 17과 Android SDK를 명시해 `:app-android:testDebugUnitTest`를 실행했고 통과했다.
 - `ApplicationPorts.kt`를 추가해 saved game, user preferences, engine benchmark, runtime event log, debug report mirror 저장 경계를 application port로 정의했다. 기존 Android persistence 구현체가 port를 구현하도록 연결했다.
 - `DebugReportMirrorStore`를 추가해 `GoCoachApp.kt`의 직접 `openFileOutput()` 호출을 제거하고 debug report mirror 저장을 persistence 구현체로 분리했다. JDK 17과 Android SDK를 명시해 `:app-android:testDebugUnitTest`를 실행했고 통과했다.
+- `GoCoachApp.kt`의 저장소 변수 타입을 구체 persistence class가 아니라 `SavedGameStorePort`, `UserPreferencesStorePort`, `EngineBenchmarkStorePort`, `RuntimeEventLogPort`, `DebugReportMirrorPort`로 바꿨다. 생성 지점은 Android 구현체를 사용하지만, 이후 호출부는 port 계약에 의존한다.
+- JDK 17과 Android SDK를 명시해 `:app-android:testDebugUnitTest`를 실행했고 통과했다.

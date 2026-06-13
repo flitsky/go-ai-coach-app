@@ -59,7 +59,9 @@ import com.worksoc.goaicoach.application.EngineBenchmarkUiState
 import com.worksoc.goaicoach.application.EngineOperationGate
 import com.worksoc.goaicoach.application.EngineSessionClient
 import com.worksoc.goaicoach.application.DebugReportSnapshot
+import com.worksoc.goaicoach.application.DebugReportMirrorPort
 import com.worksoc.goaicoach.application.applyHumanMoveLocally
+import com.worksoc.goaicoach.application.EngineBenchmarkStorePort
 import com.worksoc.goaicoach.application.applyTopMoveAnalysisLaunchPlan
 import com.worksoc.goaicoach.application.evaluateEngineBenchmarkGate
 import com.worksoc.goaicoach.application.evaluateScoringRuleChangeGate
@@ -85,6 +87,7 @@ import com.worksoc.goaicoach.application.shouldRequestAiTurn
 import com.worksoc.goaicoach.application.shouldRequestTopMoveAnalysis
 import com.worksoc.goaicoach.application.planSavedGamePersistence
 import com.worksoc.goaicoach.application.RuntimePlayLevelSelection
+import com.worksoc.goaicoach.application.RuntimeEventLogPort
 import com.worksoc.goaicoach.application.runTopMoveAnalysis
 import com.worksoc.goaicoach.application.ScoringRuleChangePlan
 import com.worksoc.goaicoach.application.runRestoredGameSyncDisplayPlan
@@ -116,6 +119,7 @@ import com.worksoc.goaicoach.application.ScoreEstimateRequestPlan
 import com.worksoc.goaicoach.application.SavedGameRestorePlan
 import com.worksoc.goaicoach.application.SavedGameRestoreRequestPlan
 import com.worksoc.goaicoach.application.SavedGamePersistencePlan
+import com.worksoc.goaicoach.application.SavedGameStorePort
 import com.worksoc.goaicoach.application.SavedSessionPromptPlan
 import com.worksoc.goaicoach.application.SavedSessionUiState
 import com.worksoc.goaicoach.application.StartConfiguredGamePlan
@@ -123,6 +127,7 @@ import com.worksoc.goaicoach.application.TopMoveAnalysisUpdate
 import com.worksoc.goaicoach.application.toGameSessionSettingsState
 import com.worksoc.goaicoach.application.UndoRequestPlan
 import com.worksoc.goaicoach.application.UndoLocalStatePlan
+import com.worksoc.goaicoach.application.UserPreferencesStorePort
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
@@ -191,11 +196,11 @@ private fun GoCoachScreen(
 ) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
-    val sessionStore = remember(context) { GameSessionStore(context) }
-    val preferencesStore = remember(context) { UserPreferencesStore(context) }
-    val benchmarkStore = remember(context) { EngineBenchmarkStore(context) }
-    val debugReportMirror = remember(context) { DebugReportMirrorStore(context) }
-    val runtimeEventLog = remember(context) {
+    val sessionStore: SavedGameStorePort = remember(context) { GameSessionStore(context) }
+    val preferencesStore: UserPreferencesStorePort = remember(context) { UserPreferencesStore(context) }
+    val benchmarkStore: EngineBenchmarkStorePort = remember(context) { EngineBenchmarkStore(context) }
+    val debugReportMirror: DebugReportMirrorPort = remember(context) { DebugReportMirrorStore(context) }
+    val runtimeEventLog: RuntimeEventLogPort = remember(context) {
         RuntimeEventLog(File(context.filesDir, RuntimeEventLog.FileName))
     }
     val initialPreferences = remember(preferencesStore) { preferencesStore.load() }
