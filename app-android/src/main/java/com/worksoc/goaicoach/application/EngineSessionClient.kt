@@ -14,6 +14,7 @@ import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.ScoreEstimate
+import com.worksoc.goaicoach.shared.analysisFingerprint
 import com.worksoc.goaicoach.shared.forcedJsonPositionAnalysis
 
 internal data class EngineSessionCapabilities(
@@ -115,6 +116,7 @@ internal class AdapterEngineSessionClient(
     ),
     private val positionAnalysisCacheStore: PositionAnalysisCacheStore = NoopPositionAnalysisCacheStore,
     private val trustedPositionAnalysisCacheProviders: List<TrustedPositionAnalysisCacheProvider> = emptyList(),
+    private val diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
 ) : EngineSessionClient {
     override fun positionAnalysisCacheStatsText(nowMillis: Long): String {
         val localStats = positionAnalysisCacheStore.statsText(nowMillis)
@@ -201,6 +203,12 @@ internal class AdapterEngineSessionClient(
         }
         coreApi.syncToGameState(state)
         val result = coreApi.analyze(effectiveLimit)
+        recordAnalysisDiagnosticEvent(
+            state = state,
+            requestedVisits = cacheLimit.visits,
+            rootVisits = result.rootVisits,
+            searchMode = searchMode,
+        )
         if (
             searchMode == EngineSearchMode.JsonPositionAnalysis &&
             result.isStorablePositionAnalysisFor(cacheLimit)
@@ -220,6 +228,21 @@ internal class AdapterEngineSessionClient(
             }
         }
         return result
+    }
+
+    private fun recordAnalysisDiagnosticEvent(
+        state: GameState,
+        requestedVisits: Int,
+        rootVisits: Int?,
+        searchMode: EngineSearchMode,
+    ) {
+        val event = engineVisitFillDiagnosticEvent(
+            requestedVisits = requestedVisits,
+            rootVisits = rootVisits,
+            searchMode = searchMode.name,
+            positionFingerprint = state.analysisFingerprint(),
+        ) ?: return
+        diagnosticEventLog.append(event)
     }
 
     override suspend fun optimizePositionAnalysisCache(

@@ -138,7 +138,6 @@ import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.persistence.GameSessionStore
 import com.worksoc.goaicoach.persistence.EngineBenchmarkStore
 import com.worksoc.goaicoach.persistence.DebugReportMirrorStore
-import com.worksoc.goaicoach.persistence.DiagnosticEventLog
 import com.worksoc.goaicoach.persistence.RuntimeEventLog
 import com.worksoc.goaicoach.persistence.SavedGameSnapshot
 import com.worksoc.goaicoach.persistence.UserPreferencesSnapshot
@@ -173,6 +172,7 @@ internal fun GoCoachApp(
     engineClient: EngineSessionClient,
     engineName: String,
     engineDiagnostic: String,
+    diagnosticEventLog: DiagnosticEventLogPort,
 ) {
     MaterialTheme(
         colorScheme = lightColorScheme(
@@ -187,6 +187,7 @@ internal fun GoCoachApp(
                 engineClient = engineClient,
                 engineName = engineName,
                 engineDiagnostic = engineDiagnostic,
+                diagnosticEventLog = diagnosticEventLog,
             )
         }
     }
@@ -197,6 +198,7 @@ private fun GoCoachScreen(
     engineClient: EngineSessionClient,
     engineName: String,
     engineDiagnostic: String,
+    diagnosticEventLog: DiagnosticEventLogPort,
 ) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -206,9 +208,6 @@ private fun GoCoachScreen(
     val debugReportMirror: DebugReportMirrorPort = remember(context) { DebugReportMirrorStore(context) }
     val runtimeEventLog: RuntimeEventLogPort = remember(context) {
         RuntimeEventLog(File(context.filesDir, RuntimeEventLog.FileName))
-    }
-    val diagnosticEventLog: DiagnosticEventLogPort = remember(context) {
-        DiagnosticEventLog(File(context.filesDir, DiagnosticEventLog.FileName))
     }
     val initialPreferences = remember(preferencesStore) { preferencesStore.load() }
     val defaultPlayLevel = remember { PlayLevelSetting() }

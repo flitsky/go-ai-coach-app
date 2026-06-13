@@ -22,12 +22,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.AdapterEngineSessionClient
+import com.worksoc.goaicoach.application.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.EngineSessionCapabilities
 import com.worksoc.goaicoach.engine.EngineBootstrap
 import com.worksoc.goaicoach.engine.createEngineBootstrap
+import com.worksoc.goaicoach.persistence.DiagnosticEventLog
 import com.worksoc.goaicoach.persistence.JsonPositionAnalysisCacheStore
 import com.worksoc.goaicoach.shared.EngineMode
 import com.worksoc.goaicoach.ui.GoCoachApp
+import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -53,19 +56,24 @@ class MainActivity : ComponentActivity() {
                 val positionAnalysisCacheStore = remember(applicationContext) {
                     JsonPositionAnalysisCacheStore(applicationContext)
                 }
-                val engineClient = remember(bootstrap.coreApi) {
+                val diagnosticEventLog: DiagnosticEventLogPort = remember(applicationContext) {
+                    DiagnosticEventLog(File(applicationContext.filesDir, DiagnosticEventLog.FileName))
+                }
+                val engineClient = remember(bootstrap.coreApi, diagnosticEventLog) {
                     AdapterEngineSessionClient(
                         coreApi = bootstrap.coreApi,
                         capabilities = EngineSessionCapabilities(
                             supportsDeviceBenchmark = bootstrap.mode == EngineMode.LocalProcess,
                         ),
                         positionAnalysisCacheStore = positionAnalysisCacheStore,
+                        diagnosticEventLog = diagnosticEventLog,
                     )
                 }
                 GoCoachApp(
                     engineClient = engineClient,
                     engineName = bootstrap.displayName,
                     engineDiagnostic = bootstrap.diagnostic,
+                    diagnosticEventLog = diagnosticEventLog,
                 )
             }
         }

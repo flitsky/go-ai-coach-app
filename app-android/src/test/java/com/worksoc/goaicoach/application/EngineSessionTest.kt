@@ -262,6 +262,47 @@ class EngineSessionTest {
     }
 
     @Test
+    fun adapterSessionClientRecordsVisitFillWarningWhenRootVisitsAreShort() = runBlocking {
+        val engine = RecordingEngineAdapter(analyzedRootVisits = { 12 })
+        val diagnosticLog = RecordingDiagnosticEventLog()
+        val client = AdapterEngineSessionClient(
+            coreApi = engine,
+            diagnosticEventLog = diagnosticLog,
+        )
+        val state = GameState.empty()
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+
+        client.analyzePosition(
+            state = state,
+            limit = AnalysisLimit(visits = 32, timeMillis = 2_000L, candidateCount = 16),
+            searchMode = EngineSearchMode.JsonPositionAnalysis,
+        )
+
+        assertEquals(1, diagnosticLog.events.size)
+        assertEquals("engine.visit_fill_short", diagnosticLog.events.single().code)
+        assertEquals("12", diagnosticLog.events.single().context["rootVisits"])
+        assertEquals("32", diagnosticLog.events.single().context["requestedVisits"])
+    }
+
+    @Test
+    fun adapterSessionClientDoesNotRecordVisitFillWarningWhenRootVisitsAreComplete() = runBlocking {
+        val engine = RecordingEngineAdapter(analyzedRootVisits = { limit -> limit.visits })
+        val diagnosticLog = RecordingDiagnosticEventLog()
+        val client = AdapterEngineSessionClient(
+            coreApi = engine,
+            diagnosticEventLog = diagnosticLog,
+        )
+
+        client.analyzePosition(
+            state = GameState.empty(),
+            limit = AnalysisLimit(visits = 32, timeMillis = 2_000L, candidateCount = 16),
+            searchMode = EngineSearchMode.JsonPositionAnalysis,
+        )
+
+        assertEquals(emptyList<DiagnosticEvent>(), diagnosticLog.events)
+    }
+
+    @Test
     fun adapterSessionClientReusesTrustedJsonPositionAnalysisProvider() = runBlocking {
         val engine = RecordingEngineAdapter()
         val state = GameState.empty()
@@ -525,4 +566,22 @@ private class InMemoryTrustedPositionAnalysisCacheProvider(
 
     override fun statsText(nowMillis: Long): String =
         "trustedEntries=${entryMap.size}"
+}
+
+private class RecordingDiagnosticEventLog : DiagnosticEventLogPort {
+    val events = mutableListOf<DiagnosticEvent>()
+
+    override fun append(
+        event: DiagnosticEvent,
+        nowMillis: Long,
+    ) {
+        events += event
+    }
+
+    override fun readText(): String =
+        events.joinToString("\n") { event -> event.summary() }
+
+    override fun clear() {
+        events.clear()
+    }
 }

@@ -103,3 +103,18 @@ POC를 계속 고도화하는 관점에서는 이미 충분히 좋은 상태다.
 
 - `./gradlew :app-android:testDebugUnitTest --tests 'com.worksoc.goaicoach.application.DiagnosticEventApplicationTest' --tests 'com.worksoc.goaicoach.persistence.DiagnosticEventLogTest'` 통과.
 - `make test` 통과.
+
+## 1단계 추가 리팩토링 결과
+
+2026-06-14에 diagnostic event 경계를 실제 엔진 분석 결과에 연결했다.
+
+- `AdapterEngineSessionClient`가 선택적으로 `DiagnosticEventLogPort`를 주입받는다.
+- `analyzePosition()`이 실제 엔진 호출을 수행한 뒤 `rootVisits < requestedVisits` 또는 `rootVisits == null`이면 warning event를 기록한다.
+- cache hit 결과는 새 엔진 호출이 아니므로 diagnostic event를 중복 기록하지 않는다.
+- `MainActivity`가 하나의 `DiagnosticEventLog` 인스턴스를 생성해 `AdapterEngineSessionClient`와 `GoCoachApp`에 함께 주입한다.
+- `GoCoachApp`은 diagnostic log 파일을 직접 생성하지 않고 주입받은 port를 debug report에 사용한다.
+
+검증:
+
+- `EngineSessionTest`, `DiagnosticEventApplicationTest`, `DebugReportBuilderTest` 관련 테스트 통과.
+- `make test` 통과.

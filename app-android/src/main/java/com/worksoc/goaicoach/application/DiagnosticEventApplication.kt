@@ -89,10 +89,21 @@ internal fun scoreDisagreementDiagnosticEvent(
         ),
     )
 
+internal object NoopDiagnosticEventLog : DiagnosticEventLogPort {
+    override fun append(
+        event: DiagnosticEvent,
+        nowMillis: Long,
+    ) = Unit
+
+    override fun readText(): String =
+        "Diagnostic event log disabled."
+
+    override fun clear() = Unit
+}
+
 private fun String.oneLineValue(): String =
     replace('\n', ' ')
         .replace('\r', ' ')
         .replace(Regex("\\s+"), " ")
         .trim()
         .take(240)
-

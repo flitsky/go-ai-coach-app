@@ -1060,3 +1060,7 @@
 - `DiagnosticEventLogPort`와 `DiagnosticEventLog`를 추가해 `diagnostic_events.jsonl`에 JSONL 형식으로 최근 1MB까지 저장할 수 있게 했다.
 - `Copy Log` debug report에 `[DiagnosticEventLog]` 섹션을 추가했다. 아직 실제 엔진 호출부에는 무리하게 연결하지 않고 다음 단계에서 안전하게 wiring할 수 있는 기반과 수집 통로만 만들었다.
 - `DiagnosticEventApplicationTest`, `DiagnosticEventLogTest`, `DebugReportBuilderTest`를 보강했고, JDK 17과 Android SDK를 명시해 신규 테스트와 `make test`를 실행해 통과했다.
+- 사용자가 추천 리팩토링 순서를 7단계로 수행하면서 각 단계마다 커밋/푸시 및 무선 디버깅 설치를 요청했다.
+- 1단계로 diagnostic event 실제 수집 경계를 강화했다. `AdapterEngineSessionClient`가 `DiagnosticEventLogPort`를 선택 주입받고, 실제 엔진 분석 결과의 root visits가 요청 visits를 못 채우거나 보고되지 않으면 `engine.visit_fill_short` 또는 `engine.visit_fill_unknown` warning event를 기록한다.
+- cache hit 결과는 새 엔진 호출이 아니므로 diagnostic event를 중복 기록하지 않도록 했다. `MainActivity`는 하나의 `DiagnosticEventLog` 인스턴스를 생성해 `AdapterEngineSessionClient`와 `GoCoachApp`에 함께 주입한다.
+- `EngineSessionTest`를 보강해 short root visits warning 기록과 complete root visits 무기록을 검증했다. 관련 테스트와 `make test`를 모두 통과했다.
