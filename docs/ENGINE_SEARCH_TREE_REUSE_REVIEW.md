@@ -133,6 +133,82 @@ KataGo 설정에는 `playouts`와 `visits`의 차이가 명시되어 있다. `vi
 
 다만 현재 앱의 실시간 AI 착수는 GTP fast path를 사용한다. JSON analysis path는 policy/refine/broad study에 더 가깝고, Android 실시간 대국에서 항상 쓰기에는 비용과 오류 표면을 더 검증해야 한다. 그래서 "profile 분리"의 장기 해법은 가능하지만, 지금 기본값은 `clear_cache`가 더 안전하다.
 
+### JSON position analysis로 B16/B32/B64가 가능한가
+
+가능하다. KataGo Analysis Engine의 query는 `maxVisits`를 요청별로 받을 수 있고, 우리 현재 코드도 `AnalysisLimit.toJsonAnalysisQuery()`에서 다음 값을 넣는다.
+
+- `moves`: 현재까지의 전체 수순
+- `analyzeTurns`: 현재 마지막 턴
+- `maxVisits`: `AnalysisLimit.visits`
+- `overrideSettings.maxTime`: `AnalysisLimit.timeMillis`
+- `includePolicy`: policy 후보가 필요한 경우
+- `boardXSize`, `boardYSize`, `rules`, `komi`
+
+따라서 B16/B32/B64는 JSON 방식에서도 다음처럼 그대로 표현할 수 있다.
+
+| 레벨 | JSON query `maxVisits` | JSON query `overrideSettings.maxTime` | 비고 |
+| --- | ---: | ---: | --- |
+| B16 | 16 | Search Time B16 값 | 빠른 초급 |
+| B32 | 32 | Search Time B32 값 | 초급 |
+| B64 | 64 | Search Time B64 값 | 중급 |
+
+즉 JSON position analysis의 장점은 "visit 레벨 설정이 안 된다"가 아니라, 오히려 `maxVisits`를 요청 payload에 명시하므로 원격 서버/로컬 process/JNI 어디서든 같은 분석 계약으로 표현하기 쉽다는 점이다.
+
+### JSON position analysis 장점
+
+1. **position-scoped 요청**
+   - 매 요청에 전체 `moves`, board size, rules, komi가 들어간다.
+   - GTP process의 현재 보드 상태가 맞는지에 덜 의존한다.
+   - 원격 서버 엔진으로 바꿀 때도 API payload가 자연스럽다.
+
+2. **AI vs AI visit 오염 완화**
+   - GTP `playMove()`로 이어지는 단일 game tree를 그대로 상속하는 방식이 아니다.
+   - B64가 만든 GTP 하위 subtree가 다음 B16 root로 직접 승격되는 문제를 피하기 쉽다.
+   - 다만 같은 analysis process의 NN cache는 공유될 수 있다. 이것은 search tree budget 오염과는 성격이 다르며, 보통 성능 최적화에 가깝다.
+
+3. **분석 기능 확장성**
+   - `includePolicy`, `includeOwnership`, `includeMovesOwnership`, `rootPolicyTemperature`, `rootFpuReductionMax`, `overrideSettings`를 요청별로 다룰 수 있다.
+   - Top Moves, ownership, 학습용 broad analysis, 서버 분석 모드로 확장하기 좋다.
+
+4. **미들웨어 계층화에 유리**
+   - `analyzePosition(state, budget)` 형태로 만들면 local process와 remote server가 같은 계약을 공유한다.
+   - 앱의 canonical `GameState`를 payload로 보내므로, "엔진 내부 상태가 지금 맞는가" 문제를 줄일 수 있다.
+
+### JSON position analysis 단점
+
+1. **실시간 대국 latency 검증 필요**
+   - 현재 GTP fast path는 이미 가볍게 동작한다.
+   - JSON path는 요청 직렬화, analysis process, response parsing 비용이 추가된다.
+   - Android 폰에서 B16/B32/B64 실제 지연시간을 다시 측정해야 한다.
+
+2. **tree reuse 장점을 덜 활용할 수 있음**
+   - 사람 vs AI에서 같은 AI가 계속 읽기를 이어가는 장점은 GTP stateful search tree가 더 자연스럽다.
+   - JSON position analysis는 공정성과 분리에 유리하지만, 매 턴 새 position analysis에 가까워져 기존 GTP reuse의 속도/품질 이점을 일부 잃을 수 있다.
+
+3. **현재 엔진 기능 분리 비용**
+   - 현재 final score, dead stone cleanup, GTP `playMove()` sync는 GTP process 경로에 남아 있다.
+   - AI 착수만 JSON으로 고르면, 선택된 수를 GTP process에도 동기화해야 한다.
+   - 장기적으로는 `EngineSessionClient`가 "analysis engine"과 "game-state engine"을 명확히 분리해야 한다.
+
+4. **분석 엔진 운영 이슈**
+   - 로컬 맥북 Homebrew KataGo v1.16.4 Metal에서는 JSON analysis `clear_cache` special action이 SIGSEGV로 죽는 현상이 있었다.
+   - Android bundled KataGo에서 동일 문제 여부는 별도 확인이 필요하다.
+   - 다만 JSON position analysis를 요청별로 독립 사용한다면 매 턴 `clear_cache`가 필수는 아닐 수 있다.
+
+### 현재 방식 대비 판단
+
+JSON position analysis는 현재 GTP fast path 대비 **구조적 장점이 뚜렷하다**. 특히 서버 엔진 전환, AI vs AI 레벨 오염 완화, Top Moves/ownership/학습 분석 확장 면에서는 더 좋은 방향이다.
+
+하지만 "지금 당장 기본 대국 경로를 모두 JSON으로 바꾸자"는 결론은 아직 이르다. 폰에서 B16/B32/B64 latency, root visits fill, 자동대국 승률 분포를 비교해야 한다.
+
+권장 순서는 다음과 같다.
+
+1. `EngineSearchMode.GtpStatefulFast`와 `EngineSearchMode.JsonPositionAnalysis`를 정책으로 분리한다.
+2. AI vs AI 자동대국에만 JSON position analysis 실험 모드를 먼저 추가한다.
+3. B16 vs B32, B32 vs B64, B16 vs B64를 각 50판 이상 비교한다.
+4. 폰에서 B16/B32/B64 latency와 `rootInfo.visits` fill을 수집한다.
+5. 결과가 좋으면 AI vs AI 기본값을 JSON으로 전환하고, 사람 vs AI는 GTP reuse 유지 또는 옵션화한다.
+
 ## 문제를 해소하는 선택지
 
 ### 선택지 A: AI vs AI에서만 `clear_cache`
