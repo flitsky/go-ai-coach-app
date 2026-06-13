@@ -94,6 +94,28 @@ class SavedGamePersistenceTest {
         assertEquals(99L, snapshot.savedAtMillis)
     }
 
+    @Test
+    fun acceptsSavedSessionUiStateAsPromptGate() {
+        val state = playableState()
+        val savedSessionUiState = SavedSessionUiState(
+            hasCheckedSavedSession = true,
+            shouldShowResumePrompt = false,
+        )
+
+        val plan = planSavedGamePersistence(
+            savedSessionUiState = savedSessionUiState,
+            isGameEnded = false,
+            gameState = state,
+            playerSetup = PlayerSetup(),
+            playLevel = PlayLevelSetting(),
+            topMovesEnabled = true,
+            nowMillis = 123L,
+        )
+
+        assertTrue(plan is SavedGamePersistencePlan.Save)
+        assertEquals(state, (plan as SavedGamePersistencePlan.Save).snapshot.gameState)
+    }
+
     private fun playableState(): GameState =
         GameState.empty()
             .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))

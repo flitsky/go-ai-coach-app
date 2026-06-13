@@ -996,3 +996,5 @@
 - `GameSessionControllerTest`를 추가했고, 기본 셸 Java 25에서는 Gradle Kotlin DSL이 `IllegalArgumentException: 25`로 실패함을 확인했다. JDK 17과 Android SDK를 명시해 `:app-android:testDebugUnitTest`를 실행했고 통과했다.
 - `SavedSessionUiState`를 추가해 `pendingSavedSession`, `shouldShowResumePrompt`, `hasCheckedSavedSession`를 application state holder로 묶었다. `GoCoachApp.kt`는 저장 세션 prompt 상태를 `savedSessionUiState` 하나에서 파생해 사용하고, prompt dismiss는 `SavedSessionUiState.dismiss()`를 통과한다.
 - `SavedSessionPromptApplicationTest`를 보강했고, JDK 17과 Android SDK를 명시해 `:app-android:testDebugUnitTest`를 실행해 통과했다.
+- `planSavedGamePersistence(savedSessionUiState, ...)` overload를 추가했다. 자동 저장 계획은 이제 저장 세션 prompt gate를 개별 Boolean 대신 `SavedSessionUiState`로 받을 수 있고, `GoCoachApp.kt`의 자동 저장 `LaunchedEffect`도 `savedSessionUiState`를 key로 사용한다.
+- `SavedGamePersistenceTest`를 보강했고, JDK 17과 Android SDK를 명시해 `:app-android:testDebugUnitTest`를 실행해 통과했다.

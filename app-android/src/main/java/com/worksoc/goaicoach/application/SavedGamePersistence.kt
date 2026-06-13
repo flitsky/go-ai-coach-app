@@ -12,6 +12,26 @@ internal sealed class SavedGamePersistencePlan {
 }
 
 internal fun planSavedGamePersistence(
+    savedSessionUiState: SavedSessionUiState,
+    isGameEnded: Boolean,
+    gameState: GameState,
+    playerSetup: PlayerSetup,
+    playLevel: PlayLevelSetting,
+    topMovesEnabled: Boolean,
+    nowMillis: Long,
+): SavedGamePersistencePlan =
+    planSavedGamePersistence(
+        hasCheckedSavedSession = savedSessionUiState.hasCheckedSavedSession,
+        shouldShowResumePrompt = savedSessionUiState.shouldShowResumePrompt,
+        isGameEnded = isGameEnded,
+        gameState = gameState,
+        playerSetup = playerSetup,
+        playLevel = playLevel,
+        topMovesEnabled = topMovesEnabled,
+        nowMillis = nowMillis,
+    )
+
+internal fun planSavedGamePersistence(
     hasCheckedSavedSession: Boolean,
     shouldShowResumePrompt: Boolean,
     isGameEnded: Boolean,

@@ -490,8 +490,7 @@ private fun GoCoachScreen(
     }
 
     LaunchedEffect(
-        hasCheckedSavedSession,
-        shouldShowResumePrompt,
+        savedSessionUiState,
         isGameEnded,
         gameState.moves.size,
         gameState.ruleset,
@@ -501,8 +500,7 @@ private fun GoCoachScreen(
     ) {
         when (
             val plan = planSavedGamePersistence(
-                hasCheckedSavedSession = hasCheckedSavedSession,
-                shouldShowResumePrompt = shouldShowResumePrompt,
+                savedSessionUiState = savedSessionUiState,
                 isGameEnded = isGameEnded,
                 gameState = gameState,
                 playerSetup = playerSetup,
