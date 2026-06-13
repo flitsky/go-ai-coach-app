@@ -1040,3 +1040,5 @@
 - 사용자가 정리한 계층에 맞춰 맨 아래 엔진 도메인부터 점진적으로 상위 레이어까지 리팩토링하고, 각 단계별 커밋/푸시를 요청했다.
 - 1단계로 `Engine Runtime / Transport` 경계를 정리했다. `KataGoProcessRuntime.kt`를 추가해 `KataGoProcessConfig`, process 파일 검증, GTP command 생성, JSON analysis command 생성을 `KataGoProcessEngineAdapter` 본문에서 분리했다.
 - `KataGoProcessRuntimeTest`를 추가해 GTP command의 profile visits/startup override 반영과 JSON analysis command의 override allow-list 정책을 검증했다. 검증 성공: `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :engine-android:testDebugUnitTest`.
+- 2단계로 `Engine Core API Domain` 계약을 보강했다. `KataGoProcessEngineAdapter`와 `StubEngineAdapter`가 `EngineAdapter` 호환 alias 대신 `EngineCoreApi`를 직접 구현하도록 바꾸고, `EngineAdapter` KDoc에는 기존 호환명일 뿐 새 concrete 구현체는 `EngineCoreApi`를 직접 구현해야 한다고 명시했다.
+- `LayeringContractTest`를 보강해 production `application`/`match` 계층이 `EngineAdapter` compatibility alias나 `engine.android` runtime 구현체를 직접 import하지 못하게 했다. 검증 성공: `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest`.

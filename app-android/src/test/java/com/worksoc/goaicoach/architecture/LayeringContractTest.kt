@@ -33,6 +33,33 @@ class LayeringContractTest {
         )
     }
 
+    @Test
+    fun applicationAndMatchDoNotDependOnCompatibilityEngineAdapterOrAndroidRuntime() {
+        val sourceRoot = repoRoot()
+            .resolve("app-android/src/main/java/com/worksoc/goaicoach")
+        val checkedDirs = listOf(
+            sourceRoot.resolve("application"),
+            sourceRoot.resolve("match"),
+        )
+        val forbiddenImports = listOf(
+            "import com.worksoc.goaicoach.shared.EngineAdapter",
+            "import com.worksoc.goaicoach.engine.android",
+        )
+
+        val offenders = checkedDirs
+            .flatMap { dir -> dir.walkTopDown().filter { file -> file.extension == "kt" }.toList() }
+            .flatMap { file ->
+                file.readLines()
+                    .filter { line -> forbiddenImports.any { forbidden -> line.startsWith(forbidden) } }
+                    .map { line -> "${file.relativeTo(repoRoot()).path}: $line" }
+            }
+
+        assertTrue(
+            "Application/match must depend on EngineCoreApi or middleware ports, not compatibility aliases/runtime implementations:\n${offenders.joinToString("\n")}",
+            offenders.isEmpty(),
+        )
+    }
+
     private fun repoRoot(): File {
         var current = File(".").canonicalFile
         while (true) {

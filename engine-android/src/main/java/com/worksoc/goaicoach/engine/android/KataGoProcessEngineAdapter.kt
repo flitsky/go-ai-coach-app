@@ -7,7 +7,7 @@ import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.CandidateMoveSource
 import com.worksoc.goaicoach.shared.DeadStonesResult
-import com.worksoc.goaicoach.shared.EngineAdapter
+import com.worksoc.goaicoach.shared.EngineCoreApi
 import com.worksoc.goaicoach.shared.EngineMode
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.EngineStatus
@@ -28,7 +28,7 @@ import org.json.JSONObject
 
 class KataGoProcessEngineAdapter(
     private val processConfig: KataGoProcessConfig,
-) : EngineAdapter {
+) : EngineCoreApi {
     private var profile: EngineProfile = EngineProfile(mode = EngineMode.LocalProcess)
     private var boardSize: BoardSize = BoardSize.Nine
     private var ruleset: Ruleset = Ruleset.Japanese

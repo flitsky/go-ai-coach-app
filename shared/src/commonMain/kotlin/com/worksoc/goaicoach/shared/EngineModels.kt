@@ -49,8 +49,9 @@ interface EngineCoreApi {
  * Compatibility name for current local engine implementations.
  *
  * New middleware code should depend on [EngineCoreApi] when it needs raw engine
- * primitives. Concrete process/JNI/remote implementations may continue to
- * implement `EngineAdapter` while the codebase migrates terminology.
+ * primitives. Existing external code may still use this alias, but concrete
+ * local process/JNI/remote implementations should implement [EngineCoreApi]
+ * directly.
  */
 interface EngineAdapter : EngineCoreApi
 

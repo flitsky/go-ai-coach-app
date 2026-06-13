@@ -8,7 +8,7 @@ import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.CandidateMoveSource
 import com.worksoc.goaicoach.shared.DeadStonesResult
-import com.worksoc.goaicoach.shared.EngineAdapter
+import com.worksoc.goaicoach.shared.EngineCoreApi
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.EngineStatus
 import com.worksoc.goaicoach.shared.FinalScoreResult
@@ -21,7 +21,7 @@ import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.StoneColor
 import com.worksoc.goaicoach.shared.describe
 
-class StubEngineAdapter : EngineAdapter {
+class StubEngineAdapter : EngineCoreApi {
     private var boardSize: BoardSize = BoardSize.Nine
     private var ruleset: Ruleset = Ruleset.Japanese
     private var initialized: Boolean = false
@@ -161,7 +161,7 @@ class StubEngineAdapter : EngineAdapter {
     }
 
     private fun ensureInitialized() {
-        check(initialized) { "EngineAdapter must be initialized before use" }
+        check(initialized) { "EngineCoreApi must be initialized before use" }
     }
 
     private fun chooseCoordinate(): BoardCoordinate {
