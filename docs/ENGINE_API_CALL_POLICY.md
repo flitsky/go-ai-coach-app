@@ -32,6 +32,40 @@
 9. 사람 vs AI 또는 AI vs 사람 대국에서는 KataGo search tree 재사용을 유지한다. AI vs AI 자동대국에서만 한 진영의 깊은 탐색이 다른 진영의 낮은 레벨에 섞이지 않도록 착수 분석 직전 `clearSearchCache()`를 호출한다.
 10. 엔진 탐색 방식은 `EngineSearchMode` 정책으로 분리한다. 현재 기본값은 `GtpStatefulFast`이며, `JsonPositionAnalysis`는 AI vs AI 실험 모드로 검증한 뒤 기본값 전환 여부를 판단한다.
 
+## 계층별 책임 원칙
+
+현재 목표 구조는 “엔진 코어 API는 가능한 한 KataGo가 제공하는 원시 기능을 1:1로 열어두고, 제품 정책은 미들웨어/application 계층에서 감싼다”이다.
+
+| 계층 | 책임 | 하지 않는 일 |
+| --- | --- | --- |
+| `EngineCoreApi` / `EngineAdapter` | `newGame`, `playMove`, `syncToGameState`, `analyze`, `estimateScore`, `deadStones`, `scoreFinal`, `clearSearchCache` 같은 엔진 원시 기능을 노출 | AI 성격, 레벨링, UI 표시 색상, 사용자 설정 정책을 결정하지 않음 |
+| `EngineSessionClient` / application middleware | search mode 선택, 목적별 analysis budget, AI character/level, Top Moves snapshot, 착수 리뷰, 종국 처리, 로컬/원격 엔진 routing을 조합 | Compose UI 상태에 직접 의존하지 않음 |
+| match/referee/settings domain | 규칙 적용, 차례 전환, pass/pass 종국, 플레이어 설정, 자동대국 delay, search time 같은 게임 정책 관리 | KataGo process 명령을 직접 호출하지 않음 |
+| UI / presentation | 미들웨어가 만든 상태와 표시 DTO를 렌더링하고 사용자 이벤트를 전달 | 원시 엔진 API를 직접 호출하지 않음 |
+
+이 원칙의 이유는 나중에 engine implementation이 local GTP process, JNI/native library, remote server 중 무엇이 되더라도 상위 게임 UX와 학습 정책을 유지하기 위해서다. 원격 서버 전환 시에도 UI는 같은 `EngineSessionClient` 계약을 호출하고, middleware가 local/remote의 차이를 숨긴다.
+
+## GTP fast와 JSON position analysis 운영 방향
+
+앞으로 두 탐색 모드를 모두 제품 정책으로 유지한다.
+
+| 모드 | 용도 | 장점 | 현재 상태 |
+| --- | --- | --- | --- |
+| `EngineSearchMode.GtpStatefulFast` | 빠른 실시간 대국, 사람 vs AI 기본 경로 | stateful GTP process와 search tree reuse로 체감이 빠름 | 현재 기본값 |
+| `EngineSearchMode.JsonPositionAnalysis` | AI vs AI 레벨링 공정성, 서버 호환, 다양한 후보/착수 리뷰 spot, 학습 분석 | 요청마다 `moves`, `maxVisits`, `maxTime`을 명시하는 position-scoped 분석 | 실험 모드 준비 단계 |
+
+JSON 기반 운영의 목표는 다음과 같다.
+
+1. AI 차례에는 JSON position analysis로 받은 `moveInfos.order` 후보를 AI character/level 정책에 넘긴다.
+2. 각 레벨의 최고 단계는 항상 `order=0` 후보를 선택한다.
+3. 비최고 단계는 반환된 후보 개수에 맞춰 percentile/range 기반으로 안전하게 축소 선택한다.
+4. 사람 차례에도 같은 snapshot을 확보한다.
+5. `Top Moves`가 켜져 있으면 snapshot 후보를 보드 위에 표시한다.
+6. 사용자가 착수하면 직전 snapshot에서 해당 위치를 찾아 green/yellow/orange/red spot을 남긴다.
+7. 직전 snapshot에 없는 착점은 추가 즉시 분석을 강제하지 않고 gray/unknown spot으로 남긴다.
+
+이 방식의 핵심은 AI와 사람이 같은 `TurnAnalysis` snapshot을 공유한다는 점이다. 후보 표시, AI 착수, 착수 후 평가는 모두 같은 분석 데이터에서 파생되므로 일관성이 높다. 단, JSON broad analysis는 폰에서 비용이 커질 수 있으므로 기본 대국 경로 전환은 latency/fill/승률 실험 후 결정한다.
+
 ## 현재 구현 범위
 
 2026-06-11 현재 모바일 기본 구현은 성능을 우선하되, B16/B32/B64 time cap은 사용자가 `Search Time` 메뉴에서 조정할 수 있다.

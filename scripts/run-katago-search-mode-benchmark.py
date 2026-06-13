@@ -28,6 +28,10 @@ DEFAULT_KATAGO = "/opt/homebrew/bin/katago"
 DEFAULT_MODEL = "/opt/homebrew/Cellar/katago/1.16.4/share/katago/kata1-b18c384nbt-s9996604416-d4316597426.bin.gz"
 DEFAULT_GTP_CONFIG = "app-android/src/friend/assets/katago/gtp_learning.cfg"
 DEFAULT_ANALYSIS_CONFIG = "app-android/src/friend/assets/katago/analysis_learning.cfg"
+DEFAULT_ADB_PACKAGE = "com.worksoc.goaicoach"
+DEFAULT_ADB_MODEL = "files/katago/model.bin.gz"
+DEFAULT_ADB_GTP_CONFIG = "files/katago/gtp_learning.cfg"
+DEFAULT_ADB_ANALYSIS_CONFIG = "files/katago/analysis_learning.cfg"
 DEFAULT_BASE_MOVES = (("B", "E5"), ("W", "C4"), ("B", "E3"))
 BENCHMARK_VARIANT_MOVES = (
     "A9",
@@ -90,18 +94,15 @@ class GtpEngine:
             "allowResignation=false",
             "startupPrintMessageToStderr=false",
         ]
+        overrides += args.runtime_overrides
         if args.deterministic:
             overrides.append("nnRandomize=false")
-        command = [
-            args.katago,
-            "gtp",
-            "-model",
-            args.model,
-            "-config",
-            args.gtp_config,
-            "-override-config",
-            ",".join(overrides),
-        ]
+        command = engine_command(
+            args = args,
+            mode = "gtp",
+            config = args.gtp_config,
+            overrides = overrides,
+        )
         self.process = subprocess.Popen(
             command,
             stdin=subprocess.PIPE,
@@ -182,18 +183,15 @@ class JsonAnalysisEngine:
             "logAllResponses=false",
             "logSearchInfo=false",
         ]
+        overrides += args.runtime_overrides
         if args.deterministic:
             overrides.append("nnRandomize=false")
-        command = [
-            args.katago,
-            "analysis",
-            "-model",
-            args.model,
-            "-config",
-            args.analysis_config,
-            "-override-config",
-            ",".join(overrides),
-        ]
+        command = engine_command(
+            args = args,
+            mode = "analysis",
+            config = args.analysis_config,
+            overrides = overrides,
+        )
         self.process = subprocess.Popen(
             command,
             stdin=subprocess.PIPE,
@@ -252,6 +250,65 @@ class JsonAnalysisEngine:
             if "error" in response:
                 raise RuntimeError(f"KataGo JSON query failed: {response['error']}")
             return normalize_json_response(response), (time.perf_counter() - start) * 1000.0
+
+
+def engine_command(
+    args: argparse.Namespace,
+    mode: str,
+    config: str,
+    overrides: list[str],
+) -> list[str]:
+    command = [
+        args.katago,
+        mode,
+        "-model",
+        args.model,
+        "-config",
+        config,
+        "-override-config",
+        ",".join(overrides),
+    ]
+    if not args.adb_serial:
+        return command
+
+    return [
+        "adb",
+        "-s",
+        args.adb_serial,
+        "shell",
+        "run-as",
+        args.adb_package,
+    ] + command
+
+
+def resolve_adb_defaults(args: argparse.Namespace) -> None:
+    args.runtime_overrides = []
+    if not args.adb_serial:
+        return
+
+    if args.katago == DEFAULT_KATAGO:
+        args.katago = find_adb_katago_executable(args.adb_serial, args.adb_package)
+    if args.model == DEFAULT_MODEL:
+        args.model = DEFAULT_ADB_MODEL
+    if args.gtp_config == DEFAULT_GTP_CONFIG:
+        args.gtp_config = DEFAULT_ADB_GTP_CONFIG
+    if args.analysis_config == DEFAULT_ANALYSIS_CONFIG:
+        args.analysis_config = DEFAULT_ADB_ANALYSIS_CONFIG
+    args.runtime_overrides = [
+        "logDir=files/katago/logs",
+        "homeDataDir=files/katago/home",
+    ]
+
+
+def find_adb_katago_executable(serial: str, package: str) -> str:
+    output = subprocess.check_output(
+        ["adb", "-s", serial, "shell", "dumpsys", "package", package],
+        text=True,
+    )
+    match = re.search(r"legacyNativeLibraryDir=([^\r\n]+)", output)
+    if not match:
+        raise RuntimeError(f"Could not find legacyNativeLibraryDir for {package}")
+    return f"{match.group(1).strip()}/arm64/libkatago.so"
 
 
 def parse_gtp_response(response: str) -> dict[str, Any]:
@@ -375,6 +432,13 @@ def write_markdown(summary: dict[str, Any], path: Path) -> None:
         (result["mode"], result["visits"]): result
         for result in summary["results"]
     }
+    if summary["transport"] == "adb":
+        environment_note = (
+            "이 결과는 Android ADB 실기기 "
+            f"`{summary.get('adbSerial')}`의 app-private bundled KataGo Eigen(CPU) backend 기준이다."
+        )
+    else:
+        environment_note = "이 결과는 맥북 Homebrew KataGo Metal backend 기준이다."
     lines = [
         "# 엔진 search mode 벤치마크 결과",
         "",
@@ -384,6 +448,9 @@ def write_markdown(summary: dict[str, Any], path: Path) -> None:
         f"- visits: `{', '.join(str(value) for value in summary['visits'])}`",
         f"- timeCap: `{summary['timeCapMs']}ms`",
         f"- deterministic: `{summary['deterministic']}`",
+        f"- transport: `{summary['transport']}`",
+        f"- adbSerial: `{summary.get('adbSerial')}`" if summary.get("adbSerial") else "",
+        f"- adbPackage: `{summary.get('adbPackage')}`" if summary.get("adbPackage") else "",
         f"- GTP searchThreads: `{summary['gtpSearchThreads']}`",
         f"- JSON analysisThreads/searchThreads: `{summary['jsonAnalysisThreads']}` / `{summary['jsonSearchThreads']}`",
         f"- GTP clearCacheBeforeAnalyze: `{summary['gtpClearCache']}`",
@@ -436,12 +503,13 @@ def write_markdown(summary: dict[str, Any], path: Path) -> None:
             "",
             "## 해석",
             "",
-            "- 이 결과는 맥북 Homebrew KataGo Metal backend 기준이다.",
+            f"- {environment_note}",
             "- GTP fast path는 현재 Android 앱의 AI vs AI 격리 흐름에 맞춰 `clear_cache` 후 측정했다.",
             "- JSON position analysis는 요청 payload에 전체 수순과 `maxVisits`를 넣는 방식이므로 AI vs AI 레벨 오염을 줄이기 쉽다.",
             "- 폰 기본값 전환 여부는 이 결과만으로 결정하지 않고, 실기기 latency와 `rootInfo.visits` fill 수집 후 판단한다.",
         ],
     )
+    lines = [line for line in lines if line]
     path.write_text("\n".join(lines).strip() + "\n", encoding="utf-8")
 
 
@@ -455,12 +523,15 @@ def main() -> int:
     parser.add_argument("--gtp-search-threads", type=int, default=1)
     parser.add_argument("--json-analysis-threads", type=int, default=1)
     parser.add_argument("--json-search-threads", type=int, default=4)
+    parser.add_argument("--adb-serial")
+    parser.add_argument("--adb-package", default=DEFAULT_ADB_PACKAGE)
     parser.add_argument("--katago", default=os.environ.get("KATAGO_BIN", DEFAULT_KATAGO))
     parser.add_argument("--model", default=os.environ.get("KATAGO_MODEL", DEFAULT_MODEL))
     parser.add_argument("--gtp-config", default=os.environ.get("KATAGO_GTP_CONFIG", DEFAULT_GTP_CONFIG))
     parser.add_argument("--analysis-config", default=os.environ.get("KATAGO_ANALYSIS_CONFIG", DEFAULT_ANALYSIS_CONFIG))
     parser.add_argument("--out-dir", type=Path, default=ROOT / "docs" / "engine-benchmark-logs" / "search-mode-latest")
     args = parser.parse_args()
+    resolve_adb_defaults(args)
 
     visits = [int(value.strip()) for value in args.visits.split(",") if value.strip()]
     args.out_dir.mkdir(parents=True, exist_ok=True)
@@ -489,6 +560,9 @@ def main() -> int:
                 "visits": visits,
                 "timeCapMs": args.time_cap_ms,
                 "deterministic": args.deterministic,
+                "transport": "adb" if args.adb_serial else "local",
+                "adbSerial": args.adb_serial,
+                "adbPackage": args.adb_package if args.adb_serial else None,
                 "gtpSearchThreads": args.gtp_search_threads,
                 "jsonAnalysisThreads": args.json_analysis_threads,
                 "jsonSearchThreads": args.json_search_threads,
@@ -546,6 +620,9 @@ def main() -> int:
         "visits": visits,
         "timeCapMs": args.time_cap_ms,
         "deterministic": args.deterministic,
+        "transport": "adb" if args.adb_serial else "local",
+        "adbSerial": args.adb_serial,
+        "adbPackage": args.adb_package if args.adb_serial else None,
         "gtpSearchThreads": args.gtp_search_threads,
         "jsonAnalysisThreads": args.json_analysis_threads,
         "jsonSearchThreads": args.json_search_threads,

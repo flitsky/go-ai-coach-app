@@ -61,6 +61,32 @@ JSON position analysis는 구조적으로 장점이 있지만, Android 실기기
 - GTP fast path는 JSON의 `rootInfo.visits` 같은 원본 root 값을 주지 않으므로 후보별 visits 합산 추정치를 기록한다. 그래서 `15/31/63`처럼 목표보다 1 낮게 보일 수 있다.
 - 이 결과는 2단계 JSON 실험 모드를 진행할 근거는 되지만, 폰 기본값 전환 근거로는 부족하다. 다음에는 Android 실기기에서 같은 로그 포맷으로 latency와 fill을 수집해야 한다.
 
+## 폰 1차 latency 비교
+
+2026-06-13에 Android 실기기 `SM-S908N`에서 앱에 번들된 KataGo v1.16.4 Eigen(CPU) backend를 ADB `run-as`로 실행해 같은 benchmark를 수행했다.
+
+- raw/summary: `docs/engine-benchmark-logs/search-mode-phone-20260613/`
+- command: `python3 scripts/run-katago-search-mode-benchmark.py --samples 3 --time-cap-ms 10000 --adb-serial 192.168.35.3:45513 --out-dir docs/engine-benchmark-logs/search-mode-phone-20260613`
+- 기준 포지션: `B E5, W C4, B E3` 이후 sample별 변형
+- time cap: `10000ms`
+- GTP fast: 앱의 AI vs AI 격리 흐름에 맞춰 `clear_cache` 후 `kata-search_analyze`
+- JSON position analysis: `moves`, `maxVisits`, `overrideSettings.maxTime`을 넣는 요청별 analysis query
+- thread 조건: GTP `numSearchThreads=1`, JSON `numAnalysisThreads=1`, `numSearchThreads=4`
+
+| Visits | GTP avg ms | JSON avg ms | JSON/GTP | GTP root estimate | JSON rootInfo |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 16 | 3815.258 | 4759.967 | 1.25x | 15 | 17 |
+| 32 | 7602.830 | 3067.418 | 0.40x | 31 | 35 |
+| 64 | 10167.884 | 4994.955 | 0.49x | 47 | 67 |
+
+해석:
+
+- 이 폰에서는 B32/B64 기준 JSON position analysis가 GTP fast보다 빠르게 목표 root visits를 채웠다.
+- JSON은 B16/B32/B64 모두 `rootInfo` 기준 fill OK였다.
+- GTP fast의 root 값은 원본 root visits가 아니라 후보별 visits 합산 추정치다. B16/B32의 `15/31`은 이 추정 방식 때문에 목표보다 1 낮게 보일 수 있지만, B64의 `47`은 10초 cap에서도 목표를 채우지 못한 신호로 본다.
+- 따라서 AI vs AI 레벨링 공정성과 visit fill을 중시하는 실험에서는 JSON mode 우선 검증 가치가 높다.
+- 사람 vs AI 기본 대국은 현재 체감 속도가 중요한 경로이므로 GTP fast 유지가 여전히 합리적이다.
+
 ## 다음 작업 진입 조건
 
 2단계에 들어가기 전에 다음이 준비되어야 한다.

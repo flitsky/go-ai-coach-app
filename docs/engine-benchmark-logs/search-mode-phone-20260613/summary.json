@@ -1,0 +1,117 @@
+{
+  "samples": 3,
+  "visits": [
+    16,
+    32,
+    64
+  ],
+  "timeCapMs": 10000,
+  "deterministic": false,
+  "transport": "adb",
+  "adbSerial": "192.168.35.3:45513",
+  "adbPackage": "com.worksoc.goaicoach",
+  "gtpSearchThreads": 1,
+  "jsonAnalysisThreads": 1,
+  "jsonSearchThreads": 4,
+  "gtpClearCache": true,
+  "baseMoves": [
+    [
+      "B",
+      "E5"
+    ],
+    [
+      "W",
+      "C4"
+    ],
+    [
+      "B",
+      "E3"
+    ]
+  ],
+  "results": [
+    {
+      "mode": "gtp_stateful_fast_clearcache",
+      "visits": 16,
+      "samples": 3,
+      "shortCount": 3,
+      "elapsedMinMs": 3795.388,
+      "elapsedAvgMs": 3815.258,
+      "elapsedMaxMs": 3847.406,
+      "elapsedP90Ms": 3847.406,
+      "rootVisitsMin": 15,
+      "rootVisitsAvg": 15,
+      "rootVisitsMax": 15,
+      "recommendedTimeCapMs": 4850
+    },
+    {
+      "mode": "gtp_stateful_fast_clearcache",
+      "visits": 32,
+      "samples": 3,
+      "shortCount": 3,
+      "elapsedMinMs": 7488.675,
+      "elapsedAvgMs": 7602.83,
+      "elapsedMaxMs": 7673.222,
+      "elapsedP90Ms": 7673.222,
+      "rootVisitsMin": 31,
+      "rootVisitsAvg": 31,
+      "rootVisitsMax": 31,
+      "recommendedTimeCapMs": 9600
+    },
+    {
+      "mode": "gtp_stateful_fast_clearcache",
+      "visits": 64,
+      "samples": 3,
+      "shortCount": 3,
+      "elapsedMinMs": 10061.645,
+      "elapsedAvgMs": 10167.884,
+      "elapsedMaxMs": 10255.742,
+      "elapsedP90Ms": 10255.742,
+      "rootVisitsMin": 42,
+      "rootVisitsAvg": 47,
+      "rootVisitsMax": 57,
+      "recommendedTimeCapMs": 12850
+    },
+    {
+      "mode": "json_position_analysis",
+      "visits": 16,
+      "samples": 3,
+      "shortCount": 0,
+      "elapsedMinMs": 4563.296,
+      "elapsedAvgMs": 4759.967,
+      "elapsedMaxMs": 5049.033,
+      "elapsedP90Ms": 5049.033,
+      "rootVisitsMin": 17,
+      "rootVisitsAvg": 17,
+      "rootVisitsMax": 17,
+      "recommendedTimeCapMs": 6350
+    },
+    {
+      "mode": "json_position_analysis",
+      "visits": 32,
+      "samples": 3,
+      "shortCount": 0,
+      "elapsedMinMs": 2894.954,
+      "elapsedAvgMs": 3067.418,
+      "elapsedMaxMs": 3154.911,
+      "elapsedP90Ms": 3154.911,
+      "rootVisitsMin": 35,
+      "rootVisitsAvg": 35,
+      "rootVisitsMax": 35,
+      "recommendedTimeCapMs": 3950
+    },
+    {
+      "mode": "json_position_analysis",
+      "visits": 64,
+      "samples": 3,
+      "shortCount": 0,
+      "elapsedMinMs": 4659.762,
+      "elapsedAvgMs": 4994.955,
+      "elapsedMaxMs": 5174.066,
+      "elapsedP90Ms": 5174.066,
+      "rootVisitsMin": 67,
+      "rootVisitsAvg": 67,
+      "rootVisitsMax": 67,
+      "recommendedTimeCapMs": 6500
+    }
+  ]
+}
