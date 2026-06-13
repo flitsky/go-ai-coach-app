@@ -990,3 +990,7 @@
 - 5차 리팩토링으로 Top Moves launch state reducer를 보강했다. `GameSessionAnalysisState.applyTopMoveAnalysisLaunchPlan()`이 skip/restore/cache-hit/run-engine 결과를 분석 상태 전이로 바꾸며, `GoCoachApp.kt`는 engine 실행이 필요한 plan만 처리하게 했다. `TopMovesApplicationTest`를 보강하고 `:app-android:testDebugUnitTest`를 통과시켰다.
 - 6차 리팩토링으로 `DebugReportSnapshot`을 추가했다. debug report 생성 입력을 하나의 immutable snapshot으로 묶어 diagnostic port 분리 준비를 했고, `copyDebugReport()`는 snapshot overload를 사용한다. `DebugReportBuilderTest`를 갱신하고 `:app-android:testDebugUnitTest`를 통과시켰다.
 - 이번 리팩토링 배치 결과를 `NEXT_REFACTORING_WORKLIST_2026-06-14.md`에 정리했다. 다음 추천 항목은 thin `GameSessionController`, Engine effect 타입, Persistence/diagnostic port, Saved session state holder, Auto AI turn runner 분리다. 이번 배치는 라인 수 축소보다 상태 소유권과 테스트 가능한 application 전이를 늘리는 데 초점을 두었다.
+- 사용자가 다음 추천 항목 리팩토링 진행을 요청했다.
+- `GameSessionControllerState` 얇은 skeleton을 추가했다. `GameSessionCoreState`, `GameSessionSettingsState`, `EngineBenchmarkUiState`, `PositionAnalysisCacheOptimizationUiState`를 controller state로 묶고, 자주 쓰는 `gameState`, `isGameEnded`, `playerSetup`, `matchMode`, `engineMessage`를 읽기 전용 property로 노출했다.
+- `GameSessionEffect` sealed interface 초안을 추가했다. Top Moves 분석, 자동 AI 턴, 점수 추정, 시작 벤치마크, post-game cache optimization, 복원 게임 sync를 effect 타입으로 표현해 다음 단계에서 UI coroutine 실행을 application/controller 경계로 이동할 기반을 마련했다.
+- `GameSessionControllerTest`를 추가했고, 기본 셸 Java 25에서는 Gradle Kotlin DSL이 `IllegalArgumentException: 25`로 실패함을 확인했다. JDK 17과 Android SDK를 명시해 `:app-android:testDebugUnitTest`를 실행했고 통과했다.

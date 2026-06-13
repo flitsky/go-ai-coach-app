@@ -88,3 +88,9 @@
 5. Auto AI turn runner 분리
    - 자동 AI 턴의 schedule, cancellation, begin/success/failure/endgame 로그, turn time 기록을 하나의 runner plan으로 묶는다.
    - AI vs AI 자동대국 UI 입력 막힘, delay 설정, search cache isolation 정책을 이 경계에서 더 쉽게 검증할 수 있다.
+
+## 다음 배치 진행 로그
+
+- 2026-06-14: `GameSessionControllerState` 얇은 skeleton을 추가했다. 기존 `GameSessionCoreState`, `GameSessionSettingsState`, `EngineBenchmarkUiState`, `PositionAnalysisCacheOptimizationUiState`를 한 객체로 묶고, `gameState`, `isGameEnded`, `playerSetup`, `matchMode`, `engineMessage`를 읽기 전용 convenience property로 노출한다. 아직 coroutine 실행이나 UI wiring은 옮기지 않았다.
+- 2026-06-14: `GameSessionEffect` sealed interface 초안을 추가했다. `RunTopMoveAnalysis`, `RunAutoAiTurn`, `RunScoreEstimate`, `RunStartupBenchmark`, `RunPositionCacheOptimization`, `SyncRestoredGame` effect 타입만 정의해 다음 단계에서 UI coroutine 실행을 application/controller 경계로 분리할 수 있게 했다.
+- 2026-06-14: `GameSessionControllerTest`를 추가해 controller state가 중첩 상태를 손실 없이 노출/교체하는지, effect 타입이 기존 application plan을 실행하지 않고 운반만 하는지 검증했다. 기본 셸 Java 25에서는 Gradle Kotlin DSL이 `IllegalArgumentException: 25`로 실패하므로, JDK 17과 Android SDK를 명시해 `:app-android:testDebugUnitTest`를 실행했고 통과했다.
