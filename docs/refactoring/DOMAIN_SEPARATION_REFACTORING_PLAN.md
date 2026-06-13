@@ -330,7 +330,7 @@ Game UX는 다음만 담당한다.
 2. `[완료]` Engine Core API Domain: 원시 API 계약과 transport 구현체의 의존 방향을 테스트/문서로 보강
 3. `[완료]` Core Rules Domain: 좌표/합법수/리플레이 helper를 순수 core 쪽으로 더 모아 adapter 중복을 줄임
 4. `[완료]` Middleware / Cache Domain: position analysis cache provider/origin 포트를 더 명확히 분리
-5. `[대기]` Game Domain: seat/referee/AI character가 engine 호출 세부를 모르도록 경계 강화
+5. `[완료]` Game Domain: seat/referee/AI character가 engine 호출 세부를 모르도록 경계 강화
 6. `[대기]` App Service / Presentation: controller snapshot과 UI 연결부를 더 얇게 만들고 계층 테스트 보강
 
 이번 리팩토링 배치에서 바로 진행할 안전한 순서:
@@ -362,6 +362,10 @@ Game UX는 다음만 담당한다.
 - `AdapterEngineSessionClient`는 JSON position analysis 요청에서 local store를 먼저 확인하고, 없으면 trusted provider 목록에서 best entry를 선택한다. provider가 없을 때는 기존 local cache 동작과 stats text가 그대로 유지된다.
 - `bestPositionAnalysisCacheEntry()` helper를 추가해 root visits, origin trust rank, 생성 시각 순서의 replacement 정책을 provider 선택에도 재사용했다.
 - `EngineSessionTest`에 operator-trusted provider hit 시 엔진 sync/analyze를 호출하지 않고 cached result를 반환하는 테스트를 추가했다.
+- 검증: `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest` 통과.
+- 5계층 `Game Domain` 정리를 진행했다. `MatchSeatRuntimeState`와 `MatchSeatSnapshot`을 추가해 흑/백 seat, 현재 턴 seat, 보드 입력 가능 여부, 자동대국 여부를 game domain snapshot으로 묶었다.
+- `boardInputEnabled()`와 `turnStatus()`는 더 이상 흑/백 필드를 직접 풀어 판단하지 않고 `PlayerSetup.seatSnapshot()` 결과를 사용한다. 향후 원격 seat, seat clock, observer 권한을 붙일 때 같은 snapshot 경계를 확장할 수 있다.
+- `MatchPolicyTest`에 현재 턴 seat snapshot, engine busy gate, local two-player engine-not-ready input 허용 케이스를 추가했다.
 - 검증: `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest` 통과.
 
 2026-06-12:

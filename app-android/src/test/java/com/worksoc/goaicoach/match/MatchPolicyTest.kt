@@ -79,6 +79,52 @@ class MatchPolicyTest {
     }
 
     @Test
+    fun playerSetupBuildsCurrentSeatSnapshotForInputAndAutomation() {
+        val setup = PlayerSetup(
+            black = SidePlayerSetup(controller = SeatController.Ai),
+            white = SidePlayerSetup(controller = SeatController.Human),
+        )
+
+        val snapshot = setup.seatSnapshot(
+            nextPlayer = StoneColor.White,
+            isEngineReady = true,
+            isEngineBusy = false,
+        )
+
+        assertEquals(MatchMode.AiVsHuman, snapshot.mode)
+        assertEquals(SeatId.White, snapshot.current.id)
+        assertTrue(snapshot.current.isHuman)
+        assertTrue(snapshot.current.canAcceptBoardInput)
+        assertFalse(snapshot.black.canAcceptBoardInput)
+        assertFalse(snapshot.isAutoPlay)
+
+        val busySnapshot = setup.seatSnapshot(
+            nextPlayer = StoneColor.White,
+            isEngineReady = true,
+            isEngineBusy = true,
+        )
+        assertFalse(busySnapshot.current.canAcceptBoardInput)
+    }
+
+    @Test
+    fun localTwoPlayerSeatSnapshotAllowsInputBeforeEngineIsReady() {
+        val setup = PlayerSetup(
+            black = SidePlayerSetup(controller = SeatController.Human),
+            white = SidePlayerSetup(controller = SeatController.Human),
+        )
+
+        val snapshot = setup.seatSnapshot(
+            nextPlayer = StoneColor.Black,
+            isEngineReady = false,
+            isEngineBusy = false,
+        )
+
+        assertEquals(MatchMode.LocalTwoPlayer, snapshot.mode)
+        assertEquals(SeatId.Black, snapshot.current.id)
+        assertTrue(snapshot.current.canAcceptBoardInput)
+    }
+
+    @Test
     fun boardInputIsEnabledOnlyForCurrentHumanSeat() {
         val setup = PlayerSetup(
             black = SidePlayerSetup(controller = SeatController.Ai),

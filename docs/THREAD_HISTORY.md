@@ -1047,3 +1047,5 @@
 - 4단계로 `Middleware / Cache Domain` 경계를 보강했다. `TrustedPositionAnalysisCacheProvider` port를 추가해 향후 bundled/operator/peer cache 공급자를 local user cache store와 분리 주입할 수 있게 했다.
 - `AdapterEngineSessionClient`는 JSON position analysis 요청에서 local store를 먼저 보고, 없으면 trusted provider 목록에서 root visits/origin trust rank/생성 시각 기준 best entry를 선택한다. provider가 없을 때 기존 local cache 동작은 유지된다.
 - operator-trusted provider hit 시 엔진 sync/analyze를 호출하지 않는 `EngineSessionTest`를 추가했다. 검증 성공: `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest`.
+- 5단계로 `Game Domain` seat snapshot을 도입했다. `MatchSeatRuntimeState`와 `MatchSeatSnapshot`이 흑/백 seat, 현재 턴 seat, 보드 입력 가능 여부, 자동대국 여부를 한 번에 제공한다.
+- `boardInputEnabled()`와 `turnStatus()`는 `PlayerSetup.seatSnapshot()`을 통해 판단하도록 바뀌었다. 이 경계는 향후 원격 seat, seat clock, observer 권한을 붙일 때 확장 지점이 된다. 검증 성공: `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest`.

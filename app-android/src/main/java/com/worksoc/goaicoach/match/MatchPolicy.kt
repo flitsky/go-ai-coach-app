@@ -80,6 +80,36 @@ internal data class SeatAssignment(
         "${id.debugLabel}: ${setup.summary(engineName)}"
 }
 
+internal data class MatchSeatRuntimeState(
+    val assignment: SeatAssignment,
+    val isCurrentTurn: Boolean,
+    val canAcceptBoardInput: Boolean,
+) {
+    val id: SeatId = assignment.id
+    val player: StoneColor = assignment.player
+    val isHuman: Boolean = assignment.isHuman
+    val isAi: Boolean = assignment.isAi
+    val aiCharacter: AiCharacterProfile? = assignment.aiCharacter
+}
+
+internal data class MatchSeatSnapshot(
+    val mode: MatchMode,
+    val black: MatchSeatRuntimeState,
+    val white: MatchSeatRuntimeState,
+) {
+    val current: MatchSeatRuntimeState =
+        if (black.isCurrentTurn) black else white
+
+    val isAutoPlay: Boolean =
+        black.isAi && white.isAi
+
+    fun seat(id: SeatId): MatchSeatRuntimeState =
+        when (id) {
+            SeatId.Black -> black
+            SeatId.White -> white
+        }
+}
+
 internal enum class AutoPlayDelaySetting(
     val millis: Long,
     val label: String,
@@ -172,6 +202,32 @@ internal data class PlayerSetup(
 
     fun summary(engineName: String): String =
         seats().joinToString(" / ") { seat -> seat.summary(engineName) }
+
+    fun seatSnapshot(
+        nextPlayer: StoneColor,
+        isEngineReady: Boolean,
+        isEngineBusy: Boolean,
+    ): MatchSeatSnapshot {
+        val mode = matchMode()
+        fun runtimeState(id: SeatId): MatchSeatRuntimeState {
+            val assignment = seat(id)
+            val isCurrentTurn = assignment.player == nextPlayer
+            return MatchSeatRuntimeState(
+                assignment = assignment,
+                isCurrentTurn = isCurrentTurn,
+                canAcceptBoardInput = !isEngineBusy &&
+                    isCurrentTurn &&
+                    assignment.isHuman &&
+                    (isEngineReady || mode == MatchMode.LocalTwoPlayer),
+            )
+        }
+
+        return MatchSeatSnapshot(
+            mode = mode,
+            black = runtimeState(SeatId.Black),
+            white = runtimeState(SeatId.White),
+        )
+    }
 }
 
 internal fun SidePlayerSetup.summary(engineName: String): String =
@@ -311,20 +367,33 @@ internal fun boardInputEnabled(
     isEngineBusy: Boolean,
     nextPlayer: StoneColor,
 ): Boolean =
-    !isEngineBusy &&
-        playerSetup.seatFor(nextPlayer).isHuman &&
-        (isEngineReady || playerSetup.matchMode() == MatchMode.LocalTwoPlayer)
+    playerSetup
+        .seatSnapshot(
+            nextPlayer = nextPlayer,
+            isEngineReady = isEngineReady,
+            isEngineBusy = isEngineBusy,
+        )
+        .current
+        .canAcceptBoardInput
 
 internal fun turnStatus(
     nextPlayer: StoneColor,
     isEngineBusy: Boolean,
     playerSetup: PlayerSetup,
-): String =
-    when {
+): String {
+    val currentSeat = playerSetup
+        .seatSnapshot(
+            nextPlayer = nextPlayer,
+            isEngineReady = true,
+            isEngineBusy = isEngineBusy,
+        )
+        .current
+    return when {
         isEngineBusy -> "AI thinking"
-        playerSetup.seatFor(nextPlayer).isHuman -> "Your turn: ${nextPlayer.label}"
+        currentSeat.isHuman -> "Your turn: ${nextPlayer.label}"
         else -> "AI turn: ${nextPlayer.label}"
     }
+}
 
 internal fun modeSummary(
     playerSetup: PlayerSetup,
