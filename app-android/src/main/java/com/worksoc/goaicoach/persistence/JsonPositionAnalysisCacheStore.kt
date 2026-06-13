@@ -5,6 +5,7 @@ import com.worksoc.goaicoach.application.JsonPositionAnalysisCacheMaxEntries
 import com.worksoc.goaicoach.application.JsonPositionAnalysisCacheTtlMillis
 import com.worksoc.goaicoach.application.PositionAnalysisCacheEntry
 import com.worksoc.goaicoach.application.PositionAnalysisCacheKey
+import com.worksoc.goaicoach.application.PositionAnalysisCacheOrigin
 import com.worksoc.goaicoach.application.PositionAnalysisCacheStore
 import com.worksoc.goaicoach.application.shouldReplacePositionAnalysisCacheEntry
 import com.worksoc.goaicoach.shared.AnalysisLimit
@@ -57,11 +58,26 @@ internal class JsonPositionAnalysisCacheStore(context: Context) : PositionAnalys
         saveEntries(entries)
     }
 
+    override fun peek(
+        key: PositionAnalysisCacheKey,
+        nowMillis: Long,
+    ): PositionAnalysisCacheEntry? {
+        val entries = loadEntries().filterFresh(nowMillis)
+        saveEntries(entries)
+        return entries.firstOrNull { entry -> entry.key == key }
+    }
+
     override fun statsText(nowMillis: Long): String {
         val entries = loadEntries().filterFresh(nowMillis)
         val completeCount = entries.count { entry -> entry.quality.isComplete }
         val reusableCount = entries.count { entry -> entry.quality.isReusable }
-        return "entries=${entries.size}, reusable=$reusableCount, complete=$completeCount, ttlDays=${JsonPositionAnalysisCacheTtlMillis / DayMillis}, max=$JsonPositionAnalysisCacheMaxEntries"
+        val originCounts = entries
+            .groupingBy { entry -> entry.origin.label }
+            .eachCount()
+            .entries
+            .sortedBy { entry -> entry.key }
+            .joinToString(",") { entry -> "${entry.key}:${entry.value}" }
+        return "entries=${entries.size}, reusable=$reusableCount, complete=$completeCount, ttlDays=${JsonPositionAnalysisCacheTtlMillis / DayMillis}, max=$JsonPositionAnalysisCacheMaxEntries, origins=${originCounts.ifEmpty { "none" }}"
     }
 
     private fun loadEntries(): List<PositionAnalysisCacheEntry> =
@@ -117,6 +133,7 @@ internal object JsonPositionAnalysisCacheCodec {
             .put("createdAtMillis", entry.createdAtMillis)
             .put("requestedRootVisits", entry.requestedRootVisits)
             .put("rootVisits", entry.rootVisits)
+            .put("origin", entry.origin.name)
             .put("key", encodeKey(entry.key))
             .put("result", encodeResult(entry.result))
 
@@ -127,6 +144,10 @@ internal object JsonPositionAnalysisCacheCodec {
             createdAtMillis = json.getLong("createdAtMillis"),
             requestedRootVisits = json.getInt("requestedRootVisits"),
             rootVisits = json.getInt("rootVisits"),
+            origin = enumOrDefault(
+                json.optString("origin"),
+                PositionAnalysisCacheOrigin.LocalUser,
+            ),
         )
 
     private fun encodeKey(key: PositionAnalysisCacheKey): JSONObject =

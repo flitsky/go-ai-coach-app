@@ -33,6 +33,13 @@ internal interface EngineSessionClient {
 
     fun positionAnalysisCacheStatsText(nowMillis: Long): String
 
+    fun positionAnalysisCacheQualityFor(
+        state: GameState,
+        limit: AnalysisLimit,
+        searchMode: EngineSearchMode,
+        nowMillis: Long,
+    ): PositionAnalysisCacheQuality?
+
     suspend fun startSession(
         profile: EngineProfile,
         state: GameState,
@@ -110,6 +117,24 @@ internal class AdapterEngineSessionClient(
 ) : EngineSessionClient {
     override fun positionAnalysisCacheStatsText(nowMillis: Long): String =
         positionAnalysisCacheStore.statsText(nowMillis)
+
+    override fun positionAnalysisCacheQualityFor(
+        state: GameState,
+        limit: AnalysisLimit,
+        searchMode: EngineSearchMode,
+        nowMillis: Long,
+    ): PositionAnalysisCacheQuality? {
+        val effectiveLimit = when (searchMode) {
+            EngineSearchMode.GtpStatefulFast -> limit
+            EngineSearchMode.JsonPositionAnalysis -> limit.forcedJsonPositionAnalysis()
+        }
+        val key = positionAnalysisCacheKeyFor(
+            state = state,
+            searchMode = searchMode,
+            limit = effectiveLimit,
+        )
+        return positionAnalysisCacheStore.peek(key, nowMillis)?.quality
+    }
 
     override suspend fun startSession(
         profile: EngineProfile,

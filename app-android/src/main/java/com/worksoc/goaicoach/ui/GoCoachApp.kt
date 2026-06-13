@@ -140,6 +140,7 @@ import com.worksoc.goaicoach.shared.AnalysisPreset
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.EngineProfile
+import com.worksoc.goaicoach.shared.EngineSearchMode
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
@@ -1492,6 +1493,14 @@ private fun GoCoachScreen(
             finalState = gameState,
             playerSetup = playerSetup,
             searchTimeSettings = searchTimeSettings,
+            qualityFor = { state, limit ->
+                engineClient.positionAnalysisCacheQualityFor(
+                    state = state,
+                    limit = limit,
+                    searchMode = EngineSearchMode.JsonPositionAnalysis,
+                    nowMillis = System.currentTimeMillis(),
+                )
+            },
         )
 
     fun dismissCacheOptimizationPrompt() {

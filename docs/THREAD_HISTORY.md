@@ -972,3 +972,8 @@
 - `JsonPositionAnalysisCacheStore`는 같은 key의 기존 entry보다 낮은 root visits 결과로 덮어쓰지 않도록 변경했다. Copy Log에는 persistent JSON cache 통계가 `positionAnalysisCache=entries/reusable/complete/...` 형태로 포함된다.
 - `PositionAnalysisCacheOptimizationPlan`과 `EngineSessionClient.optimizePositionAnalysisCache()`를 추가했다. 종국 후 현재 Player Setup에 초급 이상 JSON AI가 있으면 “이번 판 분석 최적화” prompt가 뜨고, 사용자가 동의하면 주요 포지션을 최대 10개 샘플링해 uncapped JSON 실행으로 cache를 보강한다. 이때 cache key는 실제 플레이 limit으로 유지해 다음 대국의 동일 budget 요청이 cache hit 되도록 했다.
 - 새 정책에 맞춰 `ENGINE_API_CALL_POLICY.md`, `USER_OPTION_MANUAL.md`, `ENGINE_SEARCH_MODE_ROADMAP_2026-06-13.md`를 업데이트했고, 앱 단위 테스트로 partial 재사용, diagnostic 비재사용, post-game 최적화 plan/prompt를 검증했다.
+- 사용자가 사용자 동의 기반 캐시 최적화는 초반 10수 확보를 우선하고, 안정적으로 확보되면 11~20수까지 점진 확장하기를 요청했다. 또한 캐시 무효화 기간을 1년으로 늘리고, 향후 여러 유저/운영자/앱 기본 제공 캐시 데이터를 교환·탑재할 수 있는 방향을 요청했다.
+- `JsonPositionAnalysisCacheTtlMillis`를 365일로 변경하고, cache 최대 entry 수를 20개로 확장했다. 단, 한 번의 post-game optimization batch는 최대 10개로 유지해 사용자 동의 후 부담을 제한한다.
+- `PositionAnalysisCacheOrigin`을 추가해 `local-user`, `peer-shared`, `bundled-trusted`, `operator-trusted` 출처를 구분할 수 있게 했다. 기존 캐시 파일에 origin이 없으면 `local-user`로 읽는다. 같은 root visits에서는 더 신뢰도 높은 origin이 낮은 origin을 대체할 수 있다.
+- post-game optimization 대상 선택을 전체 대국 균등 샘플링에서 opening progressive 방식으로 바꿨다. 1~10수 중 complete가 아닌 포지션을 먼저 선택하고, 1~10수가 complete이면 11~20수 미complete 포지션으로 확장한다. 이를 위해 `PositionAnalysisCacheStore.peek()`와 `EngineSessionClient.positionAnalysisCacheQualityFor()`를 추가해 UI가 저장소 세부 구현을 알지 않고도 계획 수립용 품질을 조회하게 했다.
+- `ENGINE_API_CALL_POLICY.md`, `USER_OPTION_MANUAL.md`, `ENGINE_SEARCH_MODE_ROADMAP_2026-06-13.md`에 1년 TTL, 20개 보관, opening 10→20수 progressive warm-up, bundled/operator/peer cache origin 로드맵을 반영했다.

@@ -7,9 +7,19 @@ import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.analysisFingerprint
 import kotlin.math.roundToInt
 
-internal const val JsonPositionAnalysisCacheMaxEntries: Int = 10
-internal const val JsonPositionAnalysisCacheTtlMillis: Long = 30L * 24L * 60L * 60L * 1_000L
+internal const val JsonPositionAnalysisCacheMaxEntries: Int = 20
+internal const val JsonPositionAnalysisCacheTtlMillis: Long = 365L * 24L * 60L * 60L * 1_000L
 internal const val JsonPositionAnalysisCacheMinReusableFillRatio: Double = 0.5
+
+internal enum class PositionAnalysisCacheOrigin(
+    val label: String,
+    val trustRank: Int,
+) {
+    LocalUser("local-user", 20),
+    PeerShared("peer-shared", 15),
+    BundledTrusted("bundled-trusted", 30),
+    OperatorTrusted("operator-trusted", 40),
+}
 
 internal data class PositionAnalysisCacheKey(
     val positionFingerprint: String,
@@ -23,6 +33,7 @@ internal data class PositionAnalysisCacheEntry(
     val createdAtMillis: Long,
     val requestedRootVisits: Int,
     val rootVisits: Int,
+    val origin: PositionAnalysisCacheOrigin = PositionAnalysisCacheOrigin.LocalUser,
 ) {
     fun isExpired(nowMillis: Long): Boolean =
         nowMillis - createdAtMillis > JsonPositionAnalysisCacheTtlMillis
@@ -102,6 +113,11 @@ internal interface PositionAnalysisCacheStore {
         nowMillis: Long,
     )
 
+    fun peek(
+        key: PositionAnalysisCacheKey,
+        nowMillis: Long,
+    ): PositionAnalysisCacheEntry?
+
     fun statsText(nowMillis: Long): String
 }
 
@@ -115,6 +131,11 @@ internal object NoopPositionAnalysisCacheStore : PositionAnalysisCacheStore {
         entry: PositionAnalysisCacheEntry,
         nowMillis: Long,
     ) = Unit
+
+    override fun peek(
+        key: PositionAnalysisCacheKey,
+        nowMillis: Long,
+    ): PositionAnalysisCacheEntry? = null
 
     override fun statsText(nowMillis: Long): String =
         "disabled"
@@ -152,6 +173,9 @@ internal fun shouldReplacePositionAnalysisCacheEntry(
     }
     if (candidate.rootVisits != existing.rootVisits) {
         return candidate.rootVisits > existing.rootVisits
+    }
+    if (candidate.origin.trustRank != existing.origin.trustRank) {
+        return candidate.origin.trustRank > existing.origin.trustRank
     }
     return candidate.createdAtMillis >= existing.createdAtMillis
 }

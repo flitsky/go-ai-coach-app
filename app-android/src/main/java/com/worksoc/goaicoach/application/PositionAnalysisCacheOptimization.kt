@@ -11,6 +11,10 @@ import com.worksoc.goaicoach.shared.aiMoveSearchMode
 import com.worksoc.goaicoach.shared.analysisFingerprint
 import com.worksoc.goaicoach.shared.forcedJsonPositionAnalysis
 
+internal const val JsonPositionAnalysisCacheOptimizationBatchMaxTargets: Int = 10
+internal const val JsonPositionAnalysisCacheOpeningInitialMoveCount: Int = 10
+internal const val JsonPositionAnalysisCacheOpeningMaxMoveCount: Int = 20
+
 internal data class PositionAnalysisCacheOptimizationPrompt(
     val gameFingerprint: String,
     val moveCount: Int,
@@ -20,6 +24,7 @@ internal data class PositionAnalysisCacheOptimizationPrompt(
     val message: String =
         "이번 판의 주요 국면을 분석 캐시에 저장해도 될까요?\n" +
             "다음 플레이에서 같은 흐름이 나오면 더 쾌적하게 응수할 수 있습니다.\n\n" +
+            "우선 초반 ${JsonPositionAnalysisCacheOpeningInitialMoveCount}수를 확보하고, 안정화되면 ${JsonPositionAnalysisCacheOpeningMaxMoveCount}수까지 확장합니다.\n" +
             "대상: ${moveCount}수 대국 중 최대 ${targetCount}개 JSON 분석"
 }
 
@@ -62,7 +67,8 @@ internal fun buildPositionAnalysisCacheOptimizationPlan(
     finalState: GameState,
     playerSetup: PlayerSetup,
     searchTimeSettings: SearchTimeSettings,
-    maxTargets: Int = JsonPositionAnalysisCacheMaxEntries,
+    maxTargets: Int = JsonPositionAnalysisCacheOptimizationBatchMaxTargets,
+    qualityFor: (GameState, AnalysisLimit) -> PositionAnalysisCacheQuality? = { _, _ -> null },
 ): PositionAnalysisCacheOptimizationPlan {
     val levels = playerSetup
         .seats()
@@ -83,9 +89,11 @@ internal fun buildPositionAnalysisCacheOptimizationPlan(
         val cacheLimit = level.aiMoveAnalysisLimitWith(searchTimeSettings)
             .forcedJsonPositionAnalysis()
         val executionLimit = cacheLimit.copy(timeMillis = null)
-        selectOptimizationStates(
+        selectProgressiveOpeningOptimizationStates(
             finalState = finalState,
             maxStates = perLevelTargetCount,
+            cacheLimit = cacheLimit,
+            qualityFor = qualityFor,
         ).map { state ->
             PositionAnalysisCacheOptimizationTarget(
                 state = state,
@@ -129,37 +137,43 @@ internal fun buildPositionAnalysisCacheOptimizationPrompt(
     )
 }
 
-private fun selectOptimizationStates(
+private fun selectProgressiveOpeningOptimizationStates(
     finalState: GameState,
     maxStates: Int,
+    cacheLimit: AnalysisLimit,
+    qualityFor: (GameState, AnalysisLimit) -> PositionAnalysisCacheQuality?,
 ): List<GameState> {
     if (maxStates <= 0) {
         return emptyList()
     }
 
-    val states = buildList {
+    val states = buildOpeningStates(finalState)
+    val initialBand = states
+        .filter { state -> state.moves.size <= JsonPositionAnalysisCacheOpeningInitialMoveCount }
+        .filterNot { state -> qualityFor(state, cacheLimit)?.isComplete == true }
+    if (initialBand.isNotEmpty()) {
+        return initialBand.take(maxStates)
+    }
+
+    return states
+        .filter { state -> state.moves.size > JsonPositionAnalysisCacheOpeningInitialMoveCount }
+        .filterNot { state -> qualityFor(state, cacheLimit)?.isComplete == true }
+        .take(maxStates)
+}
+
+private fun buildOpeningStates(finalState: GameState): List<GameState> =
+    buildList {
         var state = GameState.empty(
             boardSize = finalState.boardSize,
             ruleset = finalState.ruleset,
         )
-        add(state)
         finalState.moves.forEach { move ->
             state = state.play(move)
-            if (!state.hasConsecutivePasses()) {
+            if (
+                state.moves.size in 1..JsonPositionAnalysisCacheOpeningMaxMoveCount &&
+                !state.hasConsecutivePasses()
+            ) {
                 add(state)
             }
         }
     }.distinctBy { state -> state.analysisFingerprint() }
-
-    if (states.size <= maxStates) {
-        return states
-    }
-    if (maxStates == 1) {
-        return listOf(states.last())
-    }
-
-    val lastIndex = states.lastIndex
-    return (0 until maxStates)
-        .map { index -> states[(index * lastIndex) / (maxStates - 1)] }
-        .distinctBy { state -> state.analysisFingerprint() }
-}

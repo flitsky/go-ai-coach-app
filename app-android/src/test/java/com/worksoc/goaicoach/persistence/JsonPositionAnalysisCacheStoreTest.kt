@@ -2,6 +2,7 @@ package com.worksoc.goaicoach.persistence
 
 import com.worksoc.goaicoach.application.PositionAnalysisCacheEntry
 import com.worksoc.goaicoach.application.PositionAnalysisCacheKey
+import com.worksoc.goaicoach.application.PositionAnalysisCacheOrigin
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.AnalysisResult
 import com.worksoc.goaicoach.shared.BoardCoordinate
@@ -50,6 +51,7 @@ class JsonPositionAnalysisCacheStoreTest {
             createdAtMillis = 1_780_000_000_000L,
             requestedRootVisits = 32,
             rootVisits = 35,
+            origin = PositionAnalysisCacheOrigin.OperatorTrusted,
         )
 
         val decoded = JsonPositionAnalysisCacheCodec.decode(

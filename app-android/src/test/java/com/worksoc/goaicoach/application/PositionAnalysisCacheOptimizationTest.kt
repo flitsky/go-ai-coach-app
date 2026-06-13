@@ -61,6 +61,40 @@ class PositionAnalysisCacheOptimizationTest {
     }
 
     @Test
+    fun planPrioritizesFirstTenOpeningMovesBeforeLaterMoves() {
+        val plan = buildPositionAnalysisCacheOptimizationPlan(
+            finalState = openingGame(moveCount = 20),
+            playerSetup = beginnerAiSetup(),
+            searchTimeSettings = SearchTimeSettings(),
+            maxTargets = 10,
+        )
+
+        assertEquals((1..10).toList(), plan.targets.map { target -> target.moveNumber })
+    }
+
+    @Test
+    fun planExtendsToMoveElevenOnlyAfterFirstTenAreComplete() {
+        val plan = buildPositionAnalysisCacheOptimizationPlan(
+            finalState = openingGame(moveCount = 20),
+            playerSetup = beginnerAiSetup(),
+            searchTimeSettings = SearchTimeSettings(),
+            maxTargets = 5,
+            qualityFor = { state, limit ->
+                if (state.moves.size <= 10) {
+                    PositionAnalysisCacheQuality.from(
+                        rootVisits = limit.visits,
+                        requestedRootVisits = limit.visits,
+                    )
+                } else {
+                    null
+                }
+            },
+        )
+
+        assertEquals((11..15).toList(), plan.targets.map { target -> target.moveNumber })
+    }
+
+    @Test
     fun promptAppearsOnlyAfterStableEndedGameWithTargets() {
         val plan = buildPositionAnalysisCacheOptimizationPlan(
             finalState = shortFinishedGame(),
@@ -103,4 +137,32 @@ class PositionAnalysisCacheOptimizationTest {
             .play(Move.Play(StoneColor.White, BoardCoordinate.fromLabel("C5", BoardSize.Nine)))
             .play(Move.Pass(StoneColor.Black))
             .play(Move.Pass(StoneColor.White))
+
+    private fun beginnerAiSetup(): PlayerSetup =
+        PlayerSetup(
+            black = SidePlayerSetup(controller = SeatController.Human),
+            white = SidePlayerSetup(
+                controller = SeatController.Ai,
+                playLevel = PlayLevelSetting(PlayLevelGroup.Beginner, 7),
+            ),
+        )
+
+    private fun openingGame(moveCount: Int): GameState {
+        val coordinates = listOf(
+            "A9", "C9", "E9", "G9", "J9",
+            "B8", "D8", "F8", "H8",
+            "A7", "C7", "E7", "G7", "J7",
+            "B6", "D6", "F6", "H6",
+            "A5", "C5", "E5", "G5", "J5",
+            "B4", "D4",
+        )
+        return coordinates.take(moveCount).fold(GameState.empty()) { state, label ->
+            state.play(
+                Move.Play(
+                    player = state.nextPlayer,
+                    coordinate = BoardCoordinate.fromLabel(label, BoardSize.Nine),
+                ),
+            )
+        }
+    }
 }

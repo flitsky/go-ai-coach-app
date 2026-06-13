@@ -429,6 +429,12 @@ private class InMemoryPositionAnalysisCacheStore : PositionAnalysisCacheStore {
     ): PositionAnalysisCacheEntry? =
         entryMap[key]?.takeIf { entry -> entry.quality.isReusable }
 
+    override fun peek(
+        key: PositionAnalysisCacheKey,
+        nowMillis: Long,
+    ): PositionAnalysisCacheEntry? =
+        entryMap[key]
+
     override fun put(
         entry: PositionAnalysisCacheEntry,
         nowMillis: Long,

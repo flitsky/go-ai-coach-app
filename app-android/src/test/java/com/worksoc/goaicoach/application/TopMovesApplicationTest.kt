@@ -385,6 +385,13 @@ private class FakeTopMoveEngineSessionClient(
     override fun positionAnalysisCacheStatsText(nowMillis: Long): String =
         "disabled"
 
+    override fun positionAnalysisCacheQualityFor(
+        state: GameState,
+        limit: AnalysisLimit,
+        searchMode: EngineSearchMode,
+        nowMillis: Long,
+    ): PositionAnalysisCacheQuality? = null
+
     override suspend fun startSession(
         profile: EngineProfile,
         state: GameState,

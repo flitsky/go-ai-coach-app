@@ -40,7 +40,7 @@
   - `빠른 초급`은 느린 폰/에뮬레이터용 빠른 대국 모드이며, B16 GTP fast 경로에서 최적수 1개만 요청해 둔다.
   - `초급`은 모든 단계가 동일한 B32 / 기본 2초 JSON position analysis 요청을 사용한다. 단계 차이는 엔진 요청이 아니라 후보 선택 정책으로만 만든다.
   - `중급`, `고급`은 더 높은 visits/time을 사용하므로 후보 품질은 좋아질 수 있지만 응답이 느려질 수 있다.
-  - JSON position analysis 결과는 root visit 품질과 함께 디스크 cache에 최대 10개 저장한다. 저장 후 30일이 지나면 무효화한다.
+  - JSON position analysis 결과는 root visit 품질과 출처와 함께 디스크 cache에 최대 20개 저장한다. 저장 후 1년이 지나면 무효화한다.
   - root visits가 목표치를 채우면 `complete`, 50% 이상 채우면 `partial`로 재사용 가능하다. 50% 미만은 진단용으로만 남기고 자동 재사용하지 않는다.
   - 무르기나 반복 국면에서 같은 fingerprint/search mode/budget의 reusable JSON cache가 있으면 엔진을 다시 호출하지 않고 재사용할 수 있다.
   - KaTrain식 전체 합법 착점 snapshot, policy 후보 보존, refine sweep, deep fallback은 향후 학습/복기 모드로 분리한다. 현재 모바일 대국 기본 경로에는 붙이지 않는다.
@@ -108,7 +108,7 @@
 - `중급`: Casual 64 visits / 기본 3초. JSON position analysis로 더 안정적인 후보군을 받는 절충 설정이다.
 - `고급`: Intermediate 160 visits / 1000ms. 더 강한 응수와 분석 품질을 목표로 한다.
 - AI 응수는 대국 속도를 위해 Top Moves용 deep refine 보강을 붙이지 않는다. 예를 들어 `중급 5단계`는 `64 visits / Search Time의 B64 time cap` JSON 요청에서 최적수만 선택한다.
-- 대국 종료 후 현재 Player Setup에 `초급` 이상 JSON AI가 있으면, “이번 판 분석 최적화” 팝업이 뜰 수 있다. 동의하면 이번 판 주요 국면을 최대 10개까지 다시 분석해 다음 대국의 같은 국면 응수를 더 빠르게 만들 수 있다.
+- 대국 종료 후 현재 Player Setup에 `초급` 이상 JSON AI가 있으면, “이번 판 분석 최적화” 팝업이 뜰 수 있다. 동의하면 우선 초반 1~10수 국면을 최대 10개까지 다시 분석하고, 이 구간이 안정화되면 11~20수까지 점진적으로 확장한다.
 - 단계는 AI가 KataGo `moveInfos.order` 기준 후보를 고르는 상대 순위 구간을 조정한다. 낮은 단계는 order 하위/중위 후보를 더 섞고, 최고 단계는 엔진 order 최상위 후보만 고른다. `pointLoss`는 이 후보의 학습 피드백으로 표시되지만 후보 순서를 뒤집는 기준으로 쓰지 않는다.
 - 단, KataGo가 `pass`를 최선 scored 후보로 판단한 종국 국면에서는 레벨 단계보다 pass를 우선한다. 약한 레벨이라도 상대 진영에 무의미하게 착수하지 않고 계가 흐름으로 들어가기 위함이다.
 - 내부적으로는 레벨에 따라 `Lite`, `Learning`, `Balanced` 분석 preset이 자동 선택된다. 이 raw preset은 사용자 메뉴에서 직접 조작하지 않는다.
