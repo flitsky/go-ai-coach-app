@@ -960,3 +960,4 @@
 - `Makefile`에 `make engine-search-mode-benchmark-phone` target을 추가했다. `ENGINE_PHONE_BENCHMARK_SERIAL` 또는 `ANDROID_SERIAL`로 ADB serial을 지정하면 설치된 debug 앱의 app-private bundled KataGo binary/model/config를 `run-as com.worksoc.goaicoach`로 실행해 search mode benchmark를 수집한다.
 - `docs/ENGINE_API_CALL_POLICY.md`에 원격 폰 엔진 벤치마크 표준 섹션을 추가했다. 전제 조건, 표준 명령, `run-as`가 측정하는 것과 UX benchmark가 측정하는 것의 차이, raw/summary 저장 기준을 정리했다.
 - `docs/refactoring/ENGINE_SEARCH_MODE_ROADMAP_2026-06-13.md`에도 앞으로 엔진 모드별 폰 데이터 수집은 `run-as` benchmark를 우선하고, 사용자 체감 속도는 별도 UX benchmark로 보완한다는 운영 기준을 추가했다.
+- 사용자가 `.bkit/` 폴더의 용도와 git 추적 필요 여부를 질문했다. 확인 결과 `.bkit/state/pdca-status.json`, `.bkit/state/memory.json`에 로컬 에이전트/도구 세션 상태가 들어 있었고 앱 소스나 빌드 산출물이 아니므로 `.gitignore`에 `.bkit/`를 추가하기로 했다.

@@ -36,3 +36,6 @@ app-android/src/main/jniLibs/
 logs/
 tmp/
 *.log
+
+# Local agent/tool state
+.bkit/
