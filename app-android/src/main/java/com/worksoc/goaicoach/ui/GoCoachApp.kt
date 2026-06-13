@@ -484,15 +484,12 @@ private fun GoCoachScreen(
     ) {
         preferencesStore.save(
             buildUserPreferencesSnapshot(
-                playerSetup = playerSetup,
+                settingsState = settingsState,
                 ruleset = gameState.ruleset,
-                topMovesEnabled = topMovesEnabled,
                 showCoordinates = uxOptions.showCoordinates,
                 showMoveNumbers = uxOptions.showMoveNumbers,
                 showLastMoveRing = uxOptions.showLastMoveRing,
                 showOwnershipOverlay = uxOptions.showOwnershipOverlay,
-                autoPlayDelaySetting = autoPlayDelaySetting,
-                searchTimeSettings = searchTimeSettings,
             ),
         )
     }

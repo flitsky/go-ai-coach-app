@@ -84,4 +84,39 @@ class UserPreferencesApplicationTest {
         assertEquals(AutoPlayDelaySetting.Short.millis, snapshot.autoPlayDelayMillis)
         assertEquals(SearchTimeSettings(b16Millis = 1_500L), snapshot.searchTimeSettings)
     }
+
+    @Test
+    fun buildsSnapshotFromSessionSettingsState() {
+        val setup = PlayerSetup(
+            white = SidePlayerSetup(
+                controller = SeatController.Ai,
+                playLevel = PlayLevelSetting(PlayLevelGroup.Intermediate, level = 5),
+            ),
+        )
+        val settingsState = GameSessionSettingsState(
+            playerSetup = setup,
+            autoPlayDelaySetting = AutoPlayDelaySetting.Study,
+            searchTimeSettings = SearchTimeSettings(timeCapEnabled = false),
+            topMovesEnabled = true,
+        )
+
+        val snapshot = buildUserPreferencesSnapshot(
+            settingsState = settingsState,
+            ruleset = Ruleset.Chinese,
+            showCoordinates = true,
+            showMoveNumbers = false,
+            showLastMoveRing = true,
+            showOwnershipOverlay = false,
+        )
+
+        assertEquals(setup, snapshot.playerSetup)
+        assertEquals(Ruleset.Chinese, snapshot.ruleset)
+        assertTrue(snapshot.topMovesEnabled)
+        assertEquals(AutoPlayDelaySetting.Study.millis, snapshot.autoPlayDelayMillis)
+        assertEquals(SearchTimeSettings(timeCapEnabled = false), snapshot.searchTimeSettings)
+        assertTrue(snapshot.showCoordinates)
+        assertFalse(snapshot.showMoveNumbers)
+        assertTrue(snapshot.showLastMoveRing)
+        assertFalse(snapshot.showOwnershipOverlay)
+    }
 }

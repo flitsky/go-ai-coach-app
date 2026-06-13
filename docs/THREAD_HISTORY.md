@@ -984,3 +984,4 @@
 - 사용자가 현재 리팩토링 상황 보고와 최소 6시간 이상 작업 분량의 다음 리팩토링 계획 수립, 단계별 커밋/푸시 진행을 요청했다.
 - `docs/refactoring/NEXT_REFACTORING_WORKLIST_2026-06-14.md`를 추가했다. 현재 완료된 engine/session/state 분리 상태를 요약하고, 다음 배치를 `GameSessionSettingsState`, benchmark UI state, cache optimization UI state, Top Moves launch reducer, debug report snapshot, 문서/검증 순서로 나눴다.
 - 1차 리팩토링으로 `GameSessionSettingsState`를 추가했다. `playerSetup`, `autoPlayDelaySetting`, `searchTimeSettings`, `topMovesEnabled`가 하나의 application state holder로 묶였고, `GoCoachApp.kt`의 개별 설정 Compose state가 `settingsState`로 대체되었다. `GameSessionSettingsStateTest`를 추가하고 `:app-android:testDebugUnitTest`를 통과시켰다.
+- 2차 리팩토링으로 사용자 설정 저장 경계를 정리했다. `buildUserPreferencesSnapshot(settingsState, ...)`를 추가해 UI가 설정 값을 개별 인자로 풀지 않고 application state holder를 저장 snapshot으로 변환하게 했다. `UserPreferencesApplicationTest`를 보강하고 `:app-android:testDebugUnitTest`를 통과시켰다.

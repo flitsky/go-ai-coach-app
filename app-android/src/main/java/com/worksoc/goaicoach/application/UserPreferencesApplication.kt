@@ -75,6 +75,26 @@ internal fun buildUserPreferencesSnapshot(
         showOwnershipOverlay = showOwnershipOverlay,
     )
 
+internal fun buildUserPreferencesSnapshot(
+    settingsState: GameSessionSettingsState,
+    ruleset: Ruleset,
+    showCoordinates: Boolean,
+    showMoveNumbers: Boolean,
+    showLastMoveRing: Boolean,
+    showOwnershipOverlay: Boolean,
+): UserPreferencesSnapshot =
+    buildUserPreferencesSnapshot(
+        playerSetup = settingsState.playerSetup,
+        ruleset = ruleset,
+        topMovesEnabled = settingsState.topMovesEnabled,
+        showCoordinates = showCoordinates,
+        showMoveNumbers = showMoveNumbers,
+        showLastMoveRing = showLastMoveRing,
+        showOwnershipOverlay = showOwnershipOverlay,
+        autoPlayDelaySetting = settingsState.autoPlayDelaySetting,
+        searchTimeSettings = settingsState.searchTimeSettings,
+    )
+
 internal fun buildGameSettings(
     ruleset: Ruleset,
     topMovesEnabled: Boolean,
