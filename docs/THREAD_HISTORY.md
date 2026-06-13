@@ -1015,3 +1015,5 @@
 - `DebugReportMirrorStore`를 추가해 `GoCoachApp.kt`의 직접 `openFileOutput()` 호출을 제거하고 debug report mirror 저장을 persistence 구현체로 분리했다. JDK 17과 Android SDK를 명시해 `:app-android:testDebugUnitTest`를 실행했고 통과했다.
 - `GoCoachApp.kt`의 저장소 변수 타입을 구체 persistence class가 아니라 `SavedGameStorePort`, `UserPreferencesStorePort`, `EngineBenchmarkStorePort`, `RuntimeEventLogPort`, `DebugReportMirrorPort`로 바꿨다. 생성 지점은 Android 구현체를 사용하지만, 이후 호출부는 port 계약에 의존한다.
 - JDK 17과 Android SDK를 명시해 `:app-android:testDebugUnitTest`를 실행했고 통과했다.
+- `GameSessionControllerState.toRuntimeLogContext(...)` 확장 함수를 추가해 runtime log context 조립을 application 계층으로 이동했다. UI는 engine ready/busy, cache stats, turn time 같은 외부 값만 넘긴다.
+- `RuntimeEventApplicationTest`를 보강했고, JDK 17과 Android SDK를 명시해 `:app-android:testDebugUnitTest`를 실행했고 통과했다.

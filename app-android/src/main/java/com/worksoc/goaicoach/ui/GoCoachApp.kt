@@ -125,6 +125,7 @@ import com.worksoc.goaicoach.application.SavedSessionUiState
 import com.worksoc.goaicoach.application.StartConfiguredGamePlan
 import com.worksoc.goaicoach.application.TopMoveAnalysisUpdate
 import com.worksoc.goaicoach.application.toGameSessionSettingsState
+import com.worksoc.goaicoach.application.toRuntimeLogContext
 import com.worksoc.goaicoach.application.UndoRequestPlan
 import com.worksoc.goaicoach.application.UndoLocalStatePlan
 import com.worksoc.goaicoach.application.UserPreferencesStorePort
@@ -319,24 +320,12 @@ private fun GoCoachScreen(
         )
 
     fun currentRuntimeLogContext(): RuntimeLogContext {
-        val controller = currentControllerSessionState()
-        return RuntimeLogContext(
+        return currentControllerSessionState().toRuntimeLogContext(
             engineName = engineName,
             engineDiagnostic = engineDiagnostic,
-            playerSetup = controller.playerSetup,
-            gameState = controller.gameState,
-            runtimeState = controller.core.runtimeState,
-            autoPlayDelaySetting = controller.settings.autoPlayDelaySetting,
-            searchTimeSettings = controller.settings.searchTimeSettings,
-            topMovesEnabled = controller.settings.topMovesEnabled,
             isEngineReady = isEngineReady,
             isEngineBusy = isEngineBusy,
-            isGameEnded = controller.isGameEnded,
-            isAutoAiTurnPending = controller.isAutoAiTurnPending,
-            shouldShowResumePrompt = controller.shouldShowResumePrompt,
             analysisCacheStats = analysisCache.statsText(),
-            moveAnalysisCoverage = controller.core.analysisState.reviewAnalysis.coverageSummary(),
-            scoreText = controller.core.scoreState.scoreText,
             turnTimeText = turnTimeState.runtimeText(),
         )
     }

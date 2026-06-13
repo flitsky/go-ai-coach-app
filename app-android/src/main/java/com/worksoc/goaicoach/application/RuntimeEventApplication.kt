@@ -84,6 +84,34 @@ internal data class RuntimeLogContext(
             "search=${searchTimeSettings.normalized().summaryText()} diagnostic=${engineDiagnostic.runtimeLogSnippet(140)}"
 }
 
+internal fun GameSessionControllerState.toRuntimeLogContext(
+    engineName: String,
+    engineDiagnostic: String,
+    isEngineReady: Boolean,
+    isEngineBusy: Boolean,
+    analysisCacheStats: String,
+    turnTimeText: String,
+): RuntimeLogContext =
+    RuntimeLogContext(
+        engineName = engineName,
+        engineDiagnostic = engineDiagnostic,
+        playerSetup = playerSetup,
+        gameState = gameState,
+        runtimeState = core.runtimeState,
+        autoPlayDelaySetting = settings.autoPlayDelaySetting,
+        searchTimeSettings = settings.searchTimeSettings,
+        topMovesEnabled = settings.topMovesEnabled,
+        isEngineReady = isEngineReady,
+        isEngineBusy = isEngineBusy,
+        isGameEnded = isGameEnded,
+        isAutoAiTurnPending = isAutoAiTurnPending,
+        shouldShowResumePrompt = shouldShowResumePrompt,
+        analysisCacheStats = analysisCacheStats,
+        moveAnalysisCoverage = core.analysisState.reviewAnalysis.coverageSummary(),
+        scoreText = core.scoreState.scoreText,
+        turnTimeText = turnTimeText,
+    )
+
 internal fun runtimeAppStartLog(context: RuntimeLogContext): String =
     context.event(
         name = "app_start",

@@ -2,6 +2,8 @@ package com.worksoc.goaicoach.application
 
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.PlayerSetup
+import com.worksoc.goaicoach.match.SeatController
+import com.worksoc.goaicoach.match.SidePlayerSetup
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.AnalysisPreset
 import com.worksoc.goaicoach.shared.BoardCoordinate
@@ -112,6 +114,64 @@ class RuntimeEventApplicationTest {
         assertTrue(log.contains("transition=\"sync_engine_after_human_move\""))
         assertTrue(log.contains("review=Move review: no pre-move analysis cache was ready."))
         assertTrue(log.contains("turnTime=player=Black elapsed=1.2s total=B=1.2s W=0.0s current=White"))
+    }
+
+    @Test
+    fun controllerStateBuildsRuntimeLogContext() {
+        val gameState = GameState.empty()
+            .play(Move.Pass(StoneColor.Black))
+        val playerSetup = PlayerSetup(
+            black = SidePlayerSetup(controller = SeatController.Ai),
+            white = SidePlayerSetup(controller = SeatController.Ai),
+        )
+        val controller = GameSessionControllerState(
+            core = GameSessionCoreState(
+                gameState = gameState,
+                isGameEnded = false,
+                analysisState = GameSessionAnalysisState.empty(gameState),
+                scoreState = GameSessionScoreState.reset(
+                    scoreText = "Score estimate not current.",
+                    scoreSnapshots = emptyList(),
+                    endgameLog = "No endgame result recorded.",
+                ),
+                runtimeState = GameSessionRuntimeState(
+                    playLevel = PlayLevelSetting(),
+                    engineProfile = EngineProfile(),
+                    analysisPreset = AnalysisPreset.Lite,
+                ),
+                moveReviewState = GameSessionMoveReviewState.reset(
+                    moveReviewText = "none",
+                    lastMoveText = "Black pass",
+                ),
+                engineMessage = "ready",
+            ),
+            settings = GameSessionSettingsState(
+                playerSetup = playerSetup,
+                autoPlayDelaySetting = AutoPlayDelaySetting.Slow,
+                searchTimeSettings = SearchTimeSettings(b16Millis = 1_500L),
+                topMovesEnabled = true,
+            ),
+            benchmark = EngineBenchmarkUiState.initial("none", null),
+            savedSession = SavedSessionUiState(shouldShowResumePrompt = true),
+            autoAiTurn = AutoAiTurnUiState(isPending = true),
+            positionCacheOptimization = PositionAnalysisCacheOptimizationUiState(),
+        )
+
+        val context = controller.toRuntimeLogContext(
+            engineName = "KataGo",
+            engineDiagnostic = "ready",
+            isEngineReady = true,
+            isEngineBusy = false,
+            analysisCacheStats = "entries=1",
+            turnTimeText = "B=1.0s W=0.0s current=White",
+        )
+
+        assertEquals(playerSetup, context.playerSetup)
+        assertEquals(gameState, context.gameState)
+        assertEquals(true, context.topMovesEnabled)
+        assertEquals(true, context.isAutoAiTurnPending)
+        assertEquals(true, context.shouldShowResumePrompt)
+        assertEquals("Score estimate not current.", context.scoreText)
     }
 
     private fun runtimeContext(
