@@ -63,6 +63,36 @@ internal data class PositionAnalysisCacheOptimizationResult(
         }
 }
 
+internal data class PositionAnalysisCacheOptimizationUiState(
+    val prompt: PositionAnalysisCacheOptimizationPrompt? = null,
+    val dismissedGameFingerprint: String? = null,
+    val isRunning: Boolean = false,
+) {
+    fun withPrompt(prompt: PositionAnalysisCacheOptimizationPrompt?): PositionAnalysisCacheOptimizationUiState =
+        copy(prompt = prompt)
+
+    fun clearPrompt(): PositionAnalysisCacheOptimizationUiState =
+        copy(prompt = null)
+
+    fun dismiss(currentGameFingerprint: String): PositionAnalysisCacheOptimizationUiState =
+        copy(
+            prompt = null,
+            dismissedGameFingerprint = prompt?.gameFingerprint ?: currentGameFingerprint,
+        )
+
+    fun accept(plan: PositionAnalysisCacheOptimizationPlan): PositionAnalysisCacheOptimizationUiState =
+        copy(
+            prompt = null,
+            dismissedGameFingerprint = plan.gameFingerprint,
+        )
+
+    fun startRunning(): PositionAnalysisCacheOptimizationUiState =
+        copy(isRunning = true)
+
+    fun finishRunning(): PositionAnalysisCacheOptimizationUiState =
+        copy(isRunning = false)
+}
+
 internal fun buildPositionAnalysisCacheOptimizationPlan(
     finalState: GameState,
     playerSetup: PlayerSetup,

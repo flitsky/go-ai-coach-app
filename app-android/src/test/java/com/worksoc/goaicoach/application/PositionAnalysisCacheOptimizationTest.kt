@@ -131,6 +131,35 @@ class PositionAnalysisCacheOptimizationTest {
         )
     }
 
+    @Test
+    fun uiStateTracksPromptDismissAcceptAndRunningFlag() {
+        val plan = buildPositionAnalysisCacheOptimizationPlan(
+            finalState = shortFinishedGame(),
+            playerSetup = beginnerAiSetup(),
+            searchTimeSettings = SearchTimeSettings(),
+            maxTargets = 2,
+        )
+        val prompt = PositionAnalysisCacheOptimizationPrompt(
+            gameFingerprint = plan.gameFingerprint,
+            moveCount = plan.finalMoveCount,
+            targetCount = plan.targets.size,
+        )
+
+        val prompted = PositionAnalysisCacheOptimizationUiState().withPrompt(prompt)
+        val dismissed = prompted.dismiss(currentGameFingerprint = "fallback")
+        val accepted = prompted.accept(plan)
+        val running = accepted.startRunning()
+        val finished = running.finishRunning()
+
+        assertEquals(prompt, prompted.prompt)
+        assertNull(dismissed.prompt)
+        assertEquals(plan.gameFingerprint, dismissed.dismissedGameFingerprint)
+        assertNull(accepted.prompt)
+        assertEquals(plan.gameFingerprint, accepted.dismissedGameFingerprint)
+        assertTrue(running.isRunning)
+        assertFalse(finished.isRunning)
+    }
+
     private fun shortFinishedGame(): GameState =
         GameState.empty()
             .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))

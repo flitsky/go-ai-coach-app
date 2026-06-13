@@ -74,7 +74,7 @@ import com.worksoc.goaicoach.application.HumanEngineSyncFailurePlan
 import com.worksoc.goaicoach.application.HumanEngineSyncDisplayPlan
 import com.worksoc.goaicoach.application.EngineStartupDisplayPlan
 import com.worksoc.goaicoach.application.PlayerSetupChangePlan
-import com.worksoc.goaicoach.application.PositionAnalysisCacheOptimizationPrompt
+import com.worksoc.goaicoach.application.PositionAnalysisCacheOptimizationUiState
 import com.worksoc.goaicoach.application.localScoreSnapshot
 import com.worksoc.goaicoach.application.planShowTopMoves
 import com.worksoc.goaicoach.application.selectRuntimePlayLevel
@@ -284,11 +284,9 @@ private fun GoCoachScreen(
     var pendingSavedSession by remember { mutableStateOf<SavedGameSnapshot?>(null) }
     var shouldShowResumePrompt by remember { mutableStateOf(false) }
     var isAutoAiTurnPending by remember { mutableStateOf(false) }
-    var cacheOptimizationPrompt by remember {
-        mutableStateOf<PositionAnalysisCacheOptimizationPrompt?>(null)
+    var positionCacheOptimizationState by remember {
+        mutableStateOf(PositionAnalysisCacheOptimizationUiState())
     }
-    var dismissedCacheOptimizationFingerprint by remember { mutableStateOf<String?>(null) }
-    var isPositionCacheOptimizationRunning by remember { mutableStateOf(false) }
 
     fun currentRuntimeLogContext(): RuntimeLogContext =
         RuntimeLogContext(
@@ -577,7 +575,7 @@ private fun GoCoachScreen(
         moveReviewState = core.moveReviewState
         engineMessage = core.engineMessage
         if (!core.isGameEnded) {
-            cacheOptimizationPrompt = null
+            positionCacheOptimizationState = positionCacheOptimizationState.clearPrompt()
         }
     }
 
@@ -628,7 +626,7 @@ private fun GoCoachScreen(
     }
 
     fun applyGameSessionResetPlan(reset: GameSessionResetPlan) {
-        cacheOptimizationPrompt = null
+        positionCacheOptimizationState = positionCacheOptimizationState.clearPrompt()
         applyCoreSessionState(currentCoreSessionState().applyGameSessionResetPlan(reset))
         turnTimeState = GameSessionTurnTimeState.reset(
             state = reset.gameState,
@@ -643,7 +641,7 @@ private fun GoCoachScreen(
     }
 
     fun applySavedGameRestorePlan(restore: SavedGameRestorePlan) {
-        cacheOptimizationPrompt = null
+        positionCacheOptimizationState = positionCacheOptimizationState.clearPrompt()
         settingsState = settingsState.applySavedGameRestore(
             restoredSetup = restore.playerSetup,
             restoredTopMovesEnabled = restore.topMovesEnabled,
@@ -1505,19 +1503,19 @@ private fun GoCoachScreen(
         )
 
     fun dismissCacheOptimizationPrompt() {
-        dismissedCacheOptimizationFingerprint = cacheOptimizationPrompt?.gameFingerprint
-            ?: currentCacheOptimizationPlan().gameFingerprint
-        cacheOptimizationPrompt = null
+        positionCacheOptimizationState = positionCacheOptimizationState.dismiss(
+            currentGameFingerprint = currentCacheOptimizationPlan().gameFingerprint,
+        )
     }
 
     fun acceptCacheOptimizationPrompt() {
         val plan = currentCacheOptimizationPlan()
-        dismissedCacheOptimizationFingerprint = plan.gameFingerprint
-        cacheOptimizationPrompt = null
-        if (plan.isEmpty || isEngineBusy || isPositionCacheOptimizationRunning) {
+        val wasRunning = positionCacheOptimizationState.isRunning
+        positionCacheOptimizationState = positionCacheOptimizationState.accept(plan)
+        if (plan.isEmpty || isEngineBusy || wasRunning) {
             return
         }
-        isPositionCacheOptimizationRunning = true
+        positionCacheOptimizationState = positionCacheOptimizationState.startRunning()
         isEngineBusy = true
         engineMessage = "Post-game cache optimization started: ${plan.targets.size} JSON position(s)."
         scope.launch {
@@ -1531,7 +1529,7 @@ private fun GoCoachScreen(
             }.onFailure { error ->
                 engineMessage = error.message ?: "Post-game cache optimization failed."
             }
-            isPositionCacheOptimizationRunning = false
+            positionCacheOptimizationState = positionCacheOptimizationState.finishRunning()
             isEngineBusy = false
         }
     }
@@ -1645,20 +1643,21 @@ private fun GoCoachScreen(
         isGameEnded,
         isEngineReady,
         isEngineBusy,
-        isPositionCacheOptimizationRunning,
+        positionCacheOptimizationState.isRunning,
         playerSetup,
         searchTimeSettings,
         gameState.moves.size,
     ) {
         val plan = currentCacheOptimizationPlan()
-        cacheOptimizationPrompt = buildPositionAnalysisCacheOptimizationPrompt(
+        val prompt = buildPositionAnalysisCacheOptimizationPrompt(
             isGameEnded = isGameEnded,
             isEngineReady = isEngineReady,
             isEngineBusy = isEngineBusy,
-            isOptimizationRunning = isPositionCacheOptimizationRunning,
-            dismissedGameFingerprint = dismissedCacheOptimizationFingerprint,
+            isOptimizationRunning = positionCacheOptimizationState.isRunning,
+            dismissedGameFingerprint = positionCacheOptimizationState.dismissedGameFingerprint,
             plan = plan,
         )
+        positionCacheOptimizationState = positionCacheOptimizationState.withPrompt(prompt)
     }
 
     val screenState = buildGameScreenState(
@@ -1694,7 +1693,7 @@ private fun GoCoachScreen(
             turnTimeText = turnTimeState.summaryText(),
             pendingSavedSession = pendingSavedSession,
             shouldShowResumePrompt = shouldShowResumePrompt,
-            cacheOptimizationPrompt = cacheOptimizationPrompt,
+            cacheOptimizationPrompt = positionCacheOptimizationState.prompt,
             hasCompletedEngineStartup = hasCompletedEngineStartup,
             isGameEnded = isGameEnded,
             endgameLog = scoreState.endgameLog,
