@@ -50,6 +50,48 @@ internal data class DebugReportSnapshot(
     val searchTimeSettings: SearchTimeSettings = SearchTimeSettings(),
 )
 
+internal fun GameSessionControllerState.toDebugReportSnapshot(
+    engineName: String,
+    engineDiagnostic: String,
+    analysisCacheStats: String,
+    positionAnalysisCacheStats: String = "disabled",
+    isEngineReady: Boolean,
+    isEngineBusy: Boolean,
+    turnTimeText: String = "Time B 0.0s / W 0.0s",
+    turnTimeDebugText: String = "blackMillis=0, whiteMillis=0, currentTurn=Black, currentElapsedMillis=0",
+    runtimeEventLogText: String = "Runtime event log not loaded.",
+): DebugReportSnapshot =
+    DebugReportSnapshot(
+        mode = matchMode,
+        playerSetup = playerSetup,
+        engineName = engineName,
+        engineDiagnostic = engineDiagnostic,
+        engineProfile = core.runtimeState.engineProfile,
+        playLevel = core.runtimeState.playLevel,
+        analysisPreset = core.runtimeState.analysisPreset,
+        analysisCacheStats = analysisCacheStats,
+        positionAnalysisCacheStats = positionAnalysisCacheStats,
+        isEngineReady = isEngineReady,
+        isEngineBusy = isEngineBusy,
+        isGameEnded = isGameEnded,
+        topMovesEnabled = settings.topMovesEnabled,
+        topMoveCandidateCount = core.analysisState.reviewAnalysis.legalPlayCount,
+        moveAnalysisCoverage = core.analysisState.reviewAnalysis.coverageSummary(),
+        gameState = gameState,
+        engineMessage = engineMessage,
+        candidateText = core.analysisState.candidateText,
+        scoreText = core.scoreState.scoreText,
+        scoreSnapshots = core.scoreState.scoreSnapshots,
+        moveReviewText = core.moveReviewState.moveReviewText,
+        lastMoveText = core.moveReviewState.lastMoveText,
+        endgameLog = core.scoreState.endgameLog,
+        engineBenchmarkText = benchmark.benchmarkText,
+        turnTimeText = turnTimeText,
+        turnTimeDebugText = turnTimeDebugText,
+        runtimeEventLogText = runtimeEventLogText,
+        searchTimeSettings = settings.searchTimeSettings,
+    )
+
 internal fun buildDebugReport(snapshot: DebugReportSnapshot): String =
     buildDebugReport(
         mode = snapshot.mode,

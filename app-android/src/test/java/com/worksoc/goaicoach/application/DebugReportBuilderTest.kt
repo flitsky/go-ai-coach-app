@@ -2,6 +2,7 @@ package com.worksoc.goaicoach.application
 
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
+import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.shared.AnalysisPreset
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
@@ -12,6 +13,8 @@ import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.ScoreSnapshot
 import com.worksoc.goaicoach.shared.ScoreSnapshotSource
 import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.SearchTimeSettings
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -78,5 +81,70 @@ class DebugReportBuilderTest {
         assertTrue(report.contains("benchmark ok"))
         assertTrue(report.contains("[RuntimeEventLog]"))
         assertTrue(report.contains("runtime log ok"))
+    }
+
+    @Test
+    fun controllerStateBuildsDebugReportSnapshot() {
+        val state = GameState.empty()
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+        val searchTimeSettings = SearchTimeSettings(b16Millis = 1_500L)
+        val controller = GameSessionControllerState(
+            core = GameSessionCoreState(
+                gameState = state,
+                isGameEnded = true,
+                analysisState = GameSessionAnalysisState.empty(state, candidateText = "candidate text"),
+                scoreState = GameSessionScoreState.reset(
+                    scoreText = "score text",
+                    scoreSnapshots = listOf(localScoreSnapshot(state)),
+                    endgameLog = "endgame log",
+                ),
+                runtimeState = GameSessionRuntimeState(
+                    playLevel = PlayLevelSetting(level = 2),
+                    engineProfile = EngineProfile(name = "Diagnostic"),
+                    analysisPreset = AnalysisPreset.Balanced,
+                ),
+                moveReviewState = GameSessionMoveReviewState.reset(
+                    moveReviewText = "move review",
+                    lastMoveText = "Black E5",
+                ),
+                engineMessage = "engine message",
+            ),
+            settings = GameSessionSettingsState(
+                playerSetup = PlayerSetup(),
+                autoPlayDelaySetting = AutoPlayDelaySetting.Default,
+                searchTimeSettings = searchTimeSettings,
+                topMovesEnabled = true,
+            ),
+            benchmark = EngineBenchmarkUiState(
+                benchmarkText = "benchmark text",
+                searchTimeBenchmarkAverages = mapOf(16 to 1_250.0),
+            ),
+            savedSession = SavedSessionUiState(),
+            autoAiTurn = AutoAiTurnUiState(),
+            positionCacheOptimization = PositionAnalysisCacheOptimizationUiState(),
+        )
+
+        val snapshot = controller.toDebugReportSnapshot(
+            engineName = "KataGo",
+            engineDiagnostic = "diagnostic ok",
+            analysisCacheStats = "entries=1",
+            positionAnalysisCacheStats = "position entries=2",
+            isEngineReady = true,
+            isEngineBusy = false,
+            turnTimeText = "Time B 1.2s / W 2.3s",
+            turnTimeDebugText = "blackMillis=1200, whiteMillis=2300",
+            runtimeEventLogText = "runtime log",
+        )
+
+        assertEquals(MatchMode.HumanVsAi, snapshot.mode)
+        assertEquals(state, snapshot.gameState)
+        assertEquals(true, snapshot.isGameEnded)
+        assertEquals(true, snapshot.topMovesEnabled)
+        assertEquals("candidate text", snapshot.candidateText)
+        assertEquals("score text", snapshot.scoreText)
+        assertEquals("move review", snapshot.moveReviewText)
+        assertEquals("benchmark text", snapshot.engineBenchmarkText)
+        assertEquals(searchTimeSettings, snapshot.searchTimeSettings)
+        assertEquals("position entries=2", snapshot.positionAnalysisCacheStats)
     }
 }

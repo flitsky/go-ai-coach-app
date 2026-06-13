@@ -1019,3 +1019,5 @@
 - `RuntimeEventApplicationTest`를 보강했고, JDK 17과 Android SDK를 명시해 `:app-android:testDebugUnitTest`를 실행했고 통과했다.
 - `buildGameScreenStateInput(controller, ...)` helper를 추가해 `GameScreenStateInput` 조립을 controller snapshot 기반으로 옮겼다. `GoCoachApp.kt`는 화면 외부 값만 넘기고 세션 내부 상태를 직접 풀어 쓰지 않는다.
 - `GameScreenStateTest`를 보강했고, JDK 17과 Android SDK를 명시해 `:app-android:testDebugUnitTest`를 실행했고 통과했다.
+- `GameSessionControllerState.toDebugReportSnapshot(...)` 확장 함수를 추가해 debug report snapshot 조립을 application 계층으로 이동했다. `GoCoachApp.kt`는 engine/cache/runtime-log/turn-time 같은 외부 값만 넘기고 세션 내부 진단 항목은 controller snapshot에서 파생한다.
+- `DebugReportBuilderTest`를 보강했고, JDK 17과 Android SDK를 명시해 `:app-android:testDebugUnitTest`를 실행했고 통과했다.
