@@ -941,3 +941,5 @@
 - `GameSessionTurnTimeStateTest`, `RuntimeEventApplicationTest`, `GameScreenStateTest`, `DebugReportBuilderTest`를 갱신했고, JDK 17/Android SDK 환경에서 `make test`가 통과했다.
 - 사용자가 KataGo `visit`의 의미, MCTS가 최적수를 어떻게 예측해 visit을 배정하는지, visit 증가가 성능에 어떤 방식으로 작용하는지 문서화를 요청했다.
 - `docs/ENGINE_API_CALL_POLICY.md`에 `Visit의 의미와 탐색 원리` 챕터를 추가했다. 공식 KataGo `Analysis_Engine.md`, `gtp_example.cfg`, `analysis_example.cfg`와 현재 `KataGoProcessEngineAdapter` 구현을 기준으로 `rootInfo.visits`, `moveInfos[].visits`, `order`, `maxVisits`와 `maxPlayouts` 차이, search tree reuse, `wideRootNoise`, 현재 앱의 GTP/JSON analysis 경로와 레벨별 visits/time cap을 정리했다.
+- 사용자가 AI vs AI에서 B16/B32/B64처럼 서로 다른 visit 설정으로 번갈아 둘 때 이전 탐색값을 막는 것이 최선인지, KataGo 내부에서 visit profile별로 분리 관리할 수 없는지 질문했다.
+- `docs/ENGINE_SEARCH_TREE_REUSE_REVIEW.md`에 `엔진 내부에서 B16/B32/B64를 분리 관리할 수 있는가` 섹션을 추가했다. 현재 GTP fast path는 같은 process에 `maxVisits/maxTime`만 바꿔 넣는 구조라 profile별 search tree namespace가 없고, B64 하위 subtree가 다음 B16 root로 이어질 수 있음을 정리했다. 대안으로 AI vs AI `clear_cache`, 흑/백 process 분리, profile별 process pool, JSON analysis 기반 move selection, `maxPlayouts` 기반 reuse를 비교했다.
