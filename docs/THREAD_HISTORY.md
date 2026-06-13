@@ -981,3 +981,5 @@
 - `SearchTimeSettings`에 `timeCapEnabled`를 추가했다. 기본값은 On이며, Off이면 `SearchTimeSettings.applyTo()`가 모든 `AnalysisLimit.timeMillis`를 `null`로 만든다. 따라서 AI 착수, JSON position analysis, 캐시 최적화 경로가 같은 도메인 정책을 공유한다.
 - Android `Search Time` 메뉴에 `Time cap On/Off` 행을 추가했다. Off일 때 B16/B32/B64 시간 드롭다운은 비활성화되지만 값은 저장되어, 다시 On으로 돌리면 기존 선택값을 복원한다.
 - 사용자 설정 저장소와 문서(`ENGINE_API_CALL_POLICY.md`, `USER_OPTION_MANUAL.md`, `ENGINE_SEARCH_MODE_ROADMAP_2026-06-13.md`)에 Time cap Off 정책을 반영했다. Off는 실시간 대국 기본값이 아니라 응답 지연을 감수하고 root visits/cache 품질을 우선하는 모드로 정의했다.
+- 사용자가 현재 리팩토링 상황 보고와 최소 6시간 이상 작업 분량의 다음 리팩토링 계획 수립, 단계별 커밋/푸시 진행을 요청했다.
+- `docs/refactoring/NEXT_REFACTORING_WORKLIST_2026-06-14.md`를 추가했다. 현재 완료된 engine/session/state 분리 상태를 요약하고, 다음 배치를 `GameSessionSettingsState`, benchmark UI state, cache optimization UI state, Top Moves launch reducer, debug report snapshot, 문서/검증 순서로 나눴다.
