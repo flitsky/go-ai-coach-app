@@ -39,6 +39,7 @@ data class SearchTimeSettings(
     val b16Millis: Long = SearchTimeProfile.B16.defaultMillis,
     val b32Millis: Long = SearchTimeProfile.B32.defaultMillis,
     val b64Millis: Long = SearchTimeProfile.B64.defaultMillis,
+    val timeCapEnabled: Boolean = true,
 ) {
     fun millisFor(profile: SearchTimeProfile): Long =
         when (profile) {
@@ -48,6 +49,16 @@ data class SearchTimeSettings(
         }
 
     fun millisForVisits(
+        visits: Int,
+        fallbackMillis: Long?,
+    ): Long? =
+        if (!timeCapEnabled) {
+            null
+        } else {
+            millisForVisitsWhenEnabled(visits, fallbackMillis)
+        }
+
+    fun millisForVisitsWhenEnabled(
         visits: Int,
         fallbackMillis: Long?,
     ): Long? =
@@ -73,10 +84,18 @@ data class SearchTimeSettings(
             b16Millis = SearchTimeProfile.B16.sanitize(b16Millis),
             b32Millis = SearchTimeProfile.B32.sanitize(b32Millis),
             b64Millis = SearchTimeProfile.B64.sanitize(b64Millis),
+            timeCapEnabled = timeCapEnabled,
         )
 
+    fun withTimeCapEnabled(enabled: Boolean): SearchTimeSettings =
+        copy(timeCapEnabled = enabled).normalized()
+
     fun summaryText(): String =
-        SearchTimeProfile.entries.joinToString(separator = " / ") { profile ->
-            "B${profile.displayLabel} ${millisFor(profile)}ms"
+        if (!timeCapEnabled) {
+            "Time cap OFF"
+        } else {
+            SearchTimeProfile.entries.joinToString(separator = " / ") { profile ->
+                "B${profile.displayLabel} ${millisFor(profile)}ms"
+            }
         }
 }

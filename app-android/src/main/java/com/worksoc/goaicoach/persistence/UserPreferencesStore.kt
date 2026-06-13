@@ -79,16 +79,23 @@ internal object UserPreferencesCodec {
             )
         }.getOrNull()
 
-    private fun encodeSearchTimeSettings(settings: SearchTimeSettings): JSONObject =
-        JSONObject()
-            .put("b16Millis", settings.normalized().b16Millis)
-            .put("b32Millis", settings.normalized().b32Millis)
-            .put("b64Millis", settings.normalized().b64Millis)
+    private fun encodeSearchTimeSettings(settings: SearchTimeSettings): JSONObject {
+        val normalized = settings.normalized()
+        return JSONObject()
+            .put("timeCapEnabled", normalized.timeCapEnabled)
+            .put("b16Millis", normalized.b16Millis)
+            .put("b32Millis", normalized.b32Millis)
+            .put("b64Millis", normalized.b64Millis)
+    }
 
-    private fun decodeSearchTimeSettings(json: JSONObject?): SearchTimeSettings =
-        SearchTimeSettings(
-            b16Millis = json?.optLong("b16Millis", SearchTimeSettings().b16Millis) ?: SearchTimeSettings().b16Millis,
-            b32Millis = json?.optLong("b32Millis", SearchTimeSettings().b32Millis) ?: SearchTimeSettings().b32Millis,
-            b64Millis = json?.optLong("b64Millis", SearchTimeSettings().b64Millis) ?: SearchTimeSettings().b64Millis,
+    private fun decodeSearchTimeSettings(json: JSONObject?): SearchTimeSettings {
+        val defaults = SearchTimeSettings()
+        return SearchTimeSettings(
+            b16Millis = json?.optLong("b16Millis", defaults.b16Millis) ?: defaults.b16Millis,
+            b32Millis = json?.optLong("b32Millis", defaults.b32Millis) ?: defaults.b32Millis,
+            b64Millis = json?.optLong("b64Millis", defaults.b64Millis) ?: defaults.b64Millis,
+            timeCapEnabled = json?.optBoolean("timeCapEnabled", defaults.timeCapEnabled)
+                ?: defaults.timeCapEnabled,
         ).normalized()
+    }
 }

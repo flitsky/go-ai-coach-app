@@ -41,6 +41,7 @@ class UserPreferencesCodecTest {
                 b16Millis = 1_500L,
                 b32Millis = 4_000L,
                 b64Millis = 7_500L,
+                timeCapEnabled = false,
             ),
         )
 
@@ -54,7 +55,7 @@ class UserPreferencesCodecTest {
         assertEquals(false, restored?.showLastMoveRing)
         assertEquals(false, restored?.showOwnershipOverlay)
         assertEquals(AutoPlayDelaySetting.Slow.millis, restored?.autoPlayDelayMillis)
-        assertEquals(SearchTimeSettings(1_500L, 4_000L, 7_500L), restored?.searchTimeSettings)
+        assertEquals(SearchTimeSettings(1_500L, 4_000L, 7_500L, timeCapEnabled = false), restored?.searchTimeSettings)
     }
 
     @Test

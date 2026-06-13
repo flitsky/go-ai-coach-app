@@ -2,6 +2,7 @@ package com.worksoc.goaicoach.shared
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 class PlayLevelSettingTest {
     @Test
@@ -93,6 +94,26 @@ class PlayLevelSettingTest {
         assertEquals(4_000L, beginner.analysisLimitWith(settings).timeMillis)
         assertEquals(7_500L, intermediate.analysisLimitWith(settings).timeMillis)
         assertEquals(1_000L, advanced.analysisLimitWith(settings).timeMillis)
+    }
+
+    @Test
+    fun searchTimeSettingsCanDisableTimeCapsForUncappedVisits() {
+        val settings = SearchTimeSettings(
+            b16Millis = 1_500L,
+            b32Millis = 4_000L,
+            b64Millis = 7_500L,
+            timeCapEnabled = false,
+        )
+        val fast = PlayLevelSetting(PlayLevelGroup.FastBeginner, level = 1)
+        val beginner = PlayLevelSetting(PlayLevelGroup.Beginner, level = 1)
+        val intermediate = PlayLevelSetting(PlayLevelGroup.Intermediate, level = 1)
+        val advanced = PlayLevelSetting(PlayLevelGroup.Advanced, level = 1)
+
+        assertNull(fast.analysisLimitWith(settings).timeMillis)
+        assertNull(beginner.analysisLimitWith(settings).timeMillis)
+        assertNull(intermediate.analysisLimitWith(settings).timeMillis)
+        assertNull(advanced.analysisLimitWith(settings).timeMillis)
+        assertEquals("Time cap OFF", settings.summaryText())
     }
 
     @Test

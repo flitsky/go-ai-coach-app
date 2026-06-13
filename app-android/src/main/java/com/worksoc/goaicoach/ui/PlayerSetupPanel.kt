@@ -100,18 +100,58 @@ internal fun SearchTimeSettingsPanel(
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Text("Search Time", fontWeight = FontWeight.SemiBold)
+            SearchTimeCapRow(
+                timeCapEnabled = settings.timeCapEnabled,
+                enabled = enabled,
+                onSelected = { timeCapEnabled ->
+                    onSettingsChange(settings.withTimeCapEnabled(timeCapEnabled))
+                },
+            )
             SearchTimeProfile.entries.forEach { profile ->
                 SearchTimeRow(
                     profile = profile,
                     selectedMillis = settings.millisFor(profile),
                     recommendedAverageMs = benchmarkAverages[profile.visits],
-                    enabled = enabled,
+                    enabled = enabled && settings.timeCapEnabled,
                     onSelectedMillis = { millis ->
                         onSettingsChange(settings.withMillis(profile, millis))
                     },
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun SearchTimeCapRow(
+    timeCapEnabled: Boolean,
+    enabled: Boolean,
+    onSelected: (Boolean) -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = "Time cap",
+            modifier = Modifier.weight(0.52f),
+            fontWeight = FontWeight.SemiBold,
+        )
+        Text(
+            text = if (timeCapEnabled) "응답시간 제한 적용" else "visits 충족 우선",
+            modifier = Modifier.weight(1.12f),
+            color = MaterialTheme.colorScheme.secondary,
+            style = MaterialTheme.typography.bodySmall,
+        )
+        SetupDropdown(
+            selectedText = if (timeCapEnabled) "On" else "Off",
+            enabled = enabled,
+            modifier = Modifier.weight(0.9f),
+            options = listOf(true, false),
+            optionLabel = { selected -> if (selected) "On" else "Off" },
+            onSelected = onSelected,
+        )
     }
 }
 

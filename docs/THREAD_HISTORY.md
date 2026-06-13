@@ -977,3 +977,7 @@
 - `PositionAnalysisCacheOrigin`을 추가해 `local-user`, `peer-shared`, `bundled-trusted`, `operator-trusted` 출처를 구분할 수 있게 했다. 기존 캐시 파일에 origin이 없으면 `local-user`로 읽는다. 같은 root visits에서는 더 신뢰도 높은 origin이 낮은 origin을 대체할 수 있다.
 - post-game optimization 대상 선택을 전체 대국 균등 샘플링에서 opening progressive 방식으로 바꿨다. 1~10수 중 complete가 아닌 포지션을 먼저 선택하고, 1~10수가 complete이면 11~20수 미complete 포지션으로 확장한다. 이를 위해 `PositionAnalysisCacheStore.peek()`와 `EngineSessionClient.positionAnalysisCacheQualityFor()`를 추가해 UI가 저장소 세부 구현을 알지 않고도 계획 수립용 품질을 조회하게 했다.
 - `ENGINE_API_CALL_POLICY.md`, `USER_OPTION_MANUAL.md`, `ENGINE_SEARCH_MODE_ROADMAP_2026-06-13.md`에 1년 TTL, 20개 보관, opening 10→20수 progressive warm-up, bundled/operator/peer cache origin 로드맵을 반영했다.
+- 사용자가 엔진 응답시간 설정을 Off할 수 있게 하고, Off일 때 시간 제약 없이 visits 충족을 우선해 고품질 캐싱이 되게 해달라고 요청했다.
+- `SearchTimeSettings`에 `timeCapEnabled`를 추가했다. 기본값은 On이며, Off이면 `SearchTimeSettings.applyTo()`가 모든 `AnalysisLimit.timeMillis`를 `null`로 만든다. 따라서 AI 착수, JSON position analysis, 캐시 최적화 경로가 같은 도메인 정책을 공유한다.
+- Android `Search Time` 메뉴에 `Time cap On/Off` 행을 추가했다. Off일 때 B16/B32/B64 시간 드롭다운은 비활성화되지만 값은 저장되어, 다시 On으로 돌리면 기존 선택값을 복원한다.
+- 사용자 설정 저장소와 문서(`ENGINE_API_CALL_POLICY.md`, `USER_OPTION_MANUAL.md`, `ENGINE_SEARCH_MODE_ROADMAP_2026-06-13.md`)에 Time cap Off 정책을 반영했다. Off는 실시간 대국 기본값이 아니라 응답 지연을 감수하고 root visits/cache 품질을 우선하는 모드로 정의했다.
