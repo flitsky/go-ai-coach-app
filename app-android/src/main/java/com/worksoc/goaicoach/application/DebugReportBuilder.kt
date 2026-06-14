@@ -143,6 +143,23 @@ internal fun buildDebugReportCopyPlan(snapshot: DebugReportSnapshot): DebugRepor
         toastMessage = "Debug report copied",
     )
 
+internal data class DebugReportCopyResult(
+    val engineMessage: String,
+)
+
+internal fun runDebugReportCopyEffect(
+    effect: GameSessionEffect.CopyDebugReport,
+    clipboard: ClipboardPort,
+    mirror: DebugReportMirrorPort,
+    userNotice: UserNoticePort,
+): DebugReportCopyResult {
+    val plan = effect.plan
+    clipboard.setText(plan.clipboardLabel, plan.report)
+    runCatching { mirror.save(plan.report) }
+    userNotice.showShort(plan.toastMessage)
+    return DebugReportCopyResult(engineMessage = plan.engineMessage)
+}
+
 internal fun buildDebugReport(
     mode: MatchMode,
     playerSetup: PlayerSetup,

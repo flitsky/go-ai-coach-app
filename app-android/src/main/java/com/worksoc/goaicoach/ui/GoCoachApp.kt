@@ -1,9 +1,5 @@
 package com.worksoc.goaicoach.ui
 
-import android.content.ClipData
-import android.content.ClipboardManager
-import android.content.Context
-import android.widget.Toast
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -69,6 +65,7 @@ import com.worksoc.goaicoach.application.DebugReportMirrorPort
 import com.worksoc.goaicoach.application.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.applyHumanMoveLocally
 import com.worksoc.goaicoach.application.EngineBenchmarkStorePort
+import com.worksoc.goaicoach.application.ClipboardPort
 import com.worksoc.goaicoach.application.applyTopMoveAnalysisLaunchPlan
 import com.worksoc.goaicoach.application.evaluateEngineBenchmarkGate
 import com.worksoc.goaicoach.application.evaluateAutoAiEndgameResultGuard
@@ -132,6 +129,7 @@ import com.worksoc.goaicoach.application.runtimeHumanMoveAcceptedLog
 import com.worksoc.goaicoach.application.RuntimeLogContext
 import com.worksoc.goaicoach.application.StartupBenchmarkExecutionContext
 import com.worksoc.goaicoach.application.toDebugReportSnapshot
+import com.worksoc.goaicoach.application.runDebugReportCopyEffect
 import com.worksoc.goaicoach.application.toAutoAiTurnRequestPlan
 import com.worksoc.goaicoach.application.toAutoAiTurnScheduleValidationPlan
 import com.worksoc.goaicoach.application.toShowTopMovesPlan
@@ -158,6 +156,7 @@ import com.worksoc.goaicoach.application.UndoAnalysisRestoreCache
 import com.worksoc.goaicoach.application.UndoRequestPlan
 import com.worksoc.goaicoach.application.UndoLocalStatePlan
 import com.worksoc.goaicoach.application.UserPreferencesStorePort
+import com.worksoc.goaicoach.application.UserNoticePort
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
@@ -239,6 +238,8 @@ private fun GoCoachScreen(
     val preferencesStore: UserPreferencesStorePort = remember(context) { UserPreferencesStore(context) }
     val benchmarkStore: EngineBenchmarkStorePort = remember(context) { EngineBenchmarkStore(context) }
     val debugReportMirror: DebugReportMirrorPort = remember(context) { DebugReportMirrorStore(context) }
+    val clipboardPort: ClipboardPort = remember(context) { AndroidClipboardPort(context) }
+    val userNoticePort: UserNoticePort = remember(context) { AndroidUserNoticePort(context) }
     val runtimeEventLog: RuntimeEventLogPort = remember(context) {
         RuntimeEventLog(File(context.filesDir, RuntimeEventLog.FileName))
     }
@@ -1767,11 +1768,13 @@ private fun GoCoachScreen(
                 diagnosticEventLogText = diagnosticEventLog.readText(),
             ),
         )
-        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        clipboard.setPrimaryClip(ClipData.newPlainText(plan.clipboardLabel, plan.report))
-        runCatching { debugReportMirror.save(plan.report) }
-        engineMessage = plan.engineMessage
-        Toast.makeText(context, plan.toastMessage, Toast.LENGTH_SHORT).show()
+        val result = runDebugReportCopyEffect(
+            effect = GameSessionEffect.CopyDebugReport(plan),
+            clipboard = clipboardPort,
+            mirror = debugReportMirror,
+            userNotice = userNoticePort,
+        )
+        engineMessage = result.engineMessage
     }
 
     fun dispatch(event: GameUiEvent) {

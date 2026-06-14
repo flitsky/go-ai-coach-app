@@ -191,4 +191,60 @@ class DebugReportBuilderTest {
         assertTrue(plan.engineMessage.contains("clipboard"))
         assertTrue(plan.report.contains("[DiagnosticEventLog]"))
     }
+
+    @Test
+    fun debugReportCopyEffectUsesPlatformPortsAndReturnsDisplayMessage() {
+        val plan = DebugReportCopyPlan(
+            clipboardLabel = "label",
+            report = "report",
+            engineMessage = "copied",
+            toastMessage = "toast",
+        )
+        val clipboard = FakeClipboardPort()
+        val mirror = FakeDebugReportMirrorPort()
+        val userNotice = FakeUserNoticePort()
+
+        val result = runDebugReportCopyEffect(
+            effect = GameSessionEffect.CopyDebugReport(plan),
+            clipboard = clipboard,
+            mirror = mirror,
+            userNotice = userNotice,
+        )
+
+        assertEquals("label", clipboard.label)
+        assertEquals("report", clipboard.text)
+        assertEquals("report", mirror.report)
+        assertEquals("toast", userNotice.message)
+        assertEquals("copied", result.engineMessage)
+    }
+}
+
+private class FakeClipboardPort : ClipboardPort {
+    var label: String? = null
+        private set
+    var text: String? = null
+        private set
+
+    override fun setText(label: String, text: String) {
+        this.label = label
+        this.text = text
+    }
+}
+
+private class FakeDebugReportMirrorPort : DebugReportMirrorPort {
+    var report: String? = null
+        private set
+
+    override fun save(report: String) {
+        this.report = report
+    }
+}
+
+private class FakeUserNoticePort : UserNoticePort {
+    var message: String? = null
+        private set
+
+    override fun showShort(message: String) {
+        this.message = message
+    }
 }

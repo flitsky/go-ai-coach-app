@@ -1224,3 +1224,6 @@
 - 사용자가 다음 리팩토링 진행과 결과 보고 시 현재 리팩토링 완성도 표현을 요청했다.
 - 다음 리팩토링으로 saved game restore sync 실행부를 `GameSessionEffect.SyncRestoredGame` runner로 연결했다. `RestoredGameSyncExecutionContext`와 `EngineSessionClient.runRestoredGameSyncEffect()`를 추가해 UI가 raw `runRestoredGameSyncDisplayPlan(...)`을 직접 호출하지 않도록 했다.
 - `ScoreDisplayApplicationTest`에 restore sync effect runner가 effect의 `gameState`와 context의 `profile`을 그대로 engine session client에 위임하는 테스트를 추가했고, 관련 application 테스트가 통과했다.
+- 사용자가 다음 리팩토링 진행과 결과 보고 시 현재 리팩토링 완성도 표현을 요청했다.
+- 다음 리팩토링으로 debug report copy의 Android platform side effect를 port/effect 경계로 정리했다. `ClipboardPort`, `UserNoticePort`, `runDebugReportCopyEffect()`를 추가하고, Android clipboard/toast 구현은 `AndroidPlatformPorts.kt`로 분리했다. `GoCoachApp.kt`는 더 이상 `ClipData`, `ClipboardManager`, `Toast`를 직접 import하지 않고 `GameSessionEffect.CopyDebugReport` 실행 결과만 반영한다.
+- `DebugReportBuilderTest`에 clipboard, mirror 저장, user notice port가 호출되는 effect runner 테스트를 추가했고, 관련 application 테스트가 통과했다.
