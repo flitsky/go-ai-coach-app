@@ -1214,3 +1214,7 @@
 - 사용자가 같은 형식으로 다음 리팩토링 진행과 보고를 요청했다.
 - 다음 리팩토링으로 Score Estimate 요청도 `GameSessionEffect.RunScoreEstimate` 흐름에 연결했다. `ScoreEstimateLaunchStateUpdate`와 `ScoreEstimateRequestPlan.toScoreEstimateLaunchStateUpdate()`를 추가해 message/local display/engine effect 분기를 application 계층에서 만들고, `EngineSessionClient.runScoreEstimateEffect()`를 추가해 UI가 raw `runScoreEstimateDisplayPlan()`을 직접 호출하지 않도록 했다.
 - `ScoreDisplayApplicationTest`에 launch update 변환 테스트와 score estimate effect runner 테스트를 추가했고, `GameSessionControllerTest`와 함께 관련 application 테스트가 통과했다.
+- 사용자가 폰 원격 설치 후 같은 형식으로 다음 리팩토링 진행과 보고를 요청했다.
+- mDNS에서 `SM-S908N` 무선 ADB 서비스 `192.168.35.47:41809`를 발견해 연결했고, `make install-dev-engine`로 최신 debug APK 설치, KataGo model/config seed, 앱 cold launch를 완료했다. launch `TotalTime=1175ms`.
+- 다음 리팩토링으로 post-game position analysis cache optimization 실행부를 `GameSessionEffect.RunPositionCacheOptimization` runner로 연결했다. `EngineSessionClient.runPositionAnalysisCacheOptimizationEffect()`를 추가해 UI가 raw `optimizePositionAnalysisCache(plan)`를 직접 호출하지 않도록 했다. 현재 post-game cache optimization prompt는 기본 비활성 상태지만, 향후 재활성화 시 실행 경계가 application effect 패턴을 따르게 된다.
+- `PositionAnalysisCacheOptimizationTest`에 effect runner 위임 테스트를 추가했고, 관련 application 테스트가 통과했다.

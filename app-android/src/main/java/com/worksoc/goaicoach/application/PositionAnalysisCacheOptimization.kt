@@ -64,6 +64,11 @@ internal data class PositionAnalysisCacheOptimizationResult(
         }
 }
 
+internal suspend fun EngineSessionClient.runPositionAnalysisCacheOptimizationEffect(
+    effect: GameSessionEffect.RunPositionCacheOptimization,
+): PositionAnalysisCacheOptimizationResult =
+    optimizePositionAnalysisCache(effect.plan)
+
 internal data class PositionAnalysisCacheOptimizationUiState(
     val prompt: PositionAnalysisCacheOptimizationPrompt? = null,
     val dismissedGameFingerprint: String? = null,

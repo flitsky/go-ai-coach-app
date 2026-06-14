@@ -3,14 +3,23 @@ package com.worksoc.goaicoach.application
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.match.SidePlayerSetup
+import com.worksoc.goaicoach.shared.AnalysisLimit
+import com.worksoc.goaicoach.shared.AnalysisResult
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
+import com.worksoc.goaicoach.shared.CandidateMove
+import com.worksoc.goaicoach.shared.EngineProfile
+import com.worksoc.goaicoach.shared.EngineSearchMode
+import com.worksoc.goaicoach.shared.EngineStatus
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.PlayLevelGroup
 import com.worksoc.goaicoach.shared.PlayLevelSetting
+import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.SearchTimeSettings
+import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.StoneColor
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -183,6 +192,30 @@ class PositionAnalysisCacheOptimizationTest {
         assertFalse(finished.isRunning)
     }
 
+    @Test
+    fun cacheOptimizationEffectRunnerDelegatesPlanToEngineClient() = runBlocking {
+        val plan = PositionAnalysisCacheOptimizationPlan(
+            gameFingerprint = "game",
+            finalMoveCount = 2,
+            targets = emptyList(),
+        )
+        val expected = PositionAnalysisCacheOptimizationResult(
+            requestedTargets = 0,
+            analyzedTargets = 0,
+            reusableTargets = 0,
+            completeTargets = 0,
+            summaries = listOf("done"),
+        )
+        val client = FakeCacheOptimizationEngineSessionClient(expected)
+
+        val actual = client.runPositionAnalysisCacheOptimizationEffect(
+            GameSessionEffect.RunPositionCacheOptimization(plan),
+        )
+
+        assertEquals(plan, client.optimizedPlan)
+        assertEquals(expected, actual)
+    }
+
     private fun shortFinishedGame(): GameState =
         GameState.empty()
             .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
@@ -217,4 +250,105 @@ class PositionAnalysisCacheOptimizationTest {
             )
         }
     }
+}
+
+private class FakeCacheOptimizationEngineSessionClient(
+    private val result: PositionAnalysisCacheOptimizationResult,
+) : EngineSessionClient {
+    var optimizedPlan: PositionAnalysisCacheOptimizationPlan? = null
+        private set
+
+    override val capabilities: EngineSessionCapabilities =
+        EngineSessionCapabilities(supportsDeviceBenchmark = false)
+
+    override fun positionAnalysisCacheStatsText(nowMillis: Long): String =
+        "disabled"
+
+    override fun positionAnalysisCacheQualityFor(
+        state: GameState,
+        limit: AnalysisLimit,
+        searchMode: EngineSearchMode,
+        nowMillis: Long,
+    ): PositionAnalysisCacheQuality? = null
+
+    override suspend fun startSession(
+        profile: EngineProfile,
+        state: GameState,
+    ): EngineStartupResult =
+        error("not used")
+
+    override suspend fun startNewGame(
+        profile: EngineProfile,
+        boardSize: BoardSize,
+        ruleset: Ruleset,
+    ): EngineStartupResult =
+        error("not used")
+
+    override suspend fun analyzePosition(
+        state: GameState,
+        limit: AnalysisLimit,
+        searchMode: EngineSearchMode,
+    ): AnalysisResult =
+        error("not used")
+
+    override suspend fun optimizePositionAnalysisCache(
+        plan: PositionAnalysisCacheOptimizationPlan,
+    ): PositionAnalysisCacheOptimizationResult {
+        optimizedPlan = plan
+        return result
+    }
+
+    override suspend fun syncAndEstimateGraphScore(
+        state: GameState,
+        profile: EngineProfile,
+    ): ScoreEstimate =
+        error("not used")
+
+    override suspend fun configureSyncAndEstimateGraphScore(
+        state: GameState,
+        profile: EngineProfile,
+    ): ScoreEstimate =
+        error("not used")
+
+    override suspend fun runAutoAiTurn(
+        currentState: GameState,
+        playLevel: PlayLevelSetting,
+        currentProfile: EngineProfile,
+        searchTimeSettings: SearchTimeSettings,
+        searchMode: EngineSearchMode,
+        isolateSearchCache: Boolean,
+    ): AutoAiTurnResult =
+        error("not used")
+
+    override suspend fun syncAfterHumanMove(
+        afterMove: GameState,
+        profile: EngineProfile,
+        move: Move,
+        previousReviewCandidates: List<CandidateMove>,
+    ): LocalEngineMoveResult =
+        error("not used")
+
+    override suspend fun estimateScoreForState(
+        state: GameState,
+        profile: EngineProfile,
+        syncFirst: Boolean,
+    ): ScoreEstimate =
+        error("not used")
+
+    override suspend fun resolveEndgameForState(
+        state: GameState,
+        profile: EngineProfile,
+        prePassCandidates: List<CandidateMove>,
+    ): AiEndgameResolution =
+        error("not used")
+
+    override suspend fun undoMove(): EngineStatus =
+        error("not used")
+
+    override suspend fun runStartupBenchmark(
+        restoreState: GameState,
+        nowMillis: Long,
+        onProgress: suspend (EngineBenchmarkProgress) -> Unit,
+    ): EngineBenchmarkProfile =
+        error("not used")
 }

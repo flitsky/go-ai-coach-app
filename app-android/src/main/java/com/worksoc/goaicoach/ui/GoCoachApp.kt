@@ -105,6 +105,7 @@ import com.worksoc.goaicoach.application.ScoringRuleChangePlan
 import com.worksoc.goaicoach.application.runAutoAiEndgameDisplayPlan
 import com.worksoc.goaicoach.application.runRestoredGameSyncDisplayPlan
 import com.worksoc.goaicoach.application.runAutoAiTurnDisplayPlan
+import com.worksoc.goaicoach.application.runPositionAnalysisCacheOptimizationEffect
 import com.worksoc.goaicoach.application.runScoreEstimateEffect
 import com.worksoc.goaicoach.application.runScoringRuleSyncDisplayPlan
 import com.worksoc.goaicoach.application.runtimeAiTurnBeginLog
@@ -1726,10 +1727,11 @@ private fun GoCoachScreen(
         positionCacheOptimizationState = positionCacheOptimizationState.startRunning()
         isEngineBusy = true
         engineMessage = "Post-game cache optimization started: ${plan.targets.size} JSON position(s)."
+        val effect = GameSessionEffect.RunPositionCacheOptimization(plan)
         scope.launch {
             runCatching {
                 withContext(Dispatchers.IO) {
-                    engineClient.optimizePositionAnalysisCache(plan)
+                    engineClient.runPositionAnalysisCacheOptimizationEffect(effect)
                 }
             }.onSuccess { result ->
                 engineMessage = result.messageText()
