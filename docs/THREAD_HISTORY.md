@@ -1166,3 +1166,7 @@
 - 기존 상태를 확인한 결과 JSON position analysis cache는 이미 root visits 품질 기반으로 재사용되지만, 과거 Top Moves용 `AnalysisResultCache`는 반복/고착 우려로 기본 비활성이고, undo 플랜은 분석 snapshot을 비워버려 “undo 전용 복원 cache” 의도가 명확하지 않았다.
 - `UndoAnalysisRestoreCache`를 추가했다. 일반 분석 cache는 계속 기본 비활성으로 두되, 같은 앱 세션에서 root visits가 requested visits를 충족한 complete 분석 snapshot만 undo 복원 cache에 저장한다. Top Moves launch는 undo 복원 cache를 먼저 확인하고, 정확한 `AnalysisCacheKey`가 있으면 엔진 호출 없이 cached update를 적용한다.
 - `TopMovesApplicationTest`에 complete root visits 결과만 undo 복원 payload/cache에 들어가고, short root visits 결과는 들어가지 않는 테스트를 추가했다. 디버그/런타임 로그의 analysis cache stats에는 undo restore entry 수도 함께 표시되도록 했다.
+- 사용자가 다음 리팩토링 진행 후 경과 보고를 요청했다.
+- stale result guard 1차 리팩토링을 진행했다. `PositionScopedOperationToken`과 `EngineOperationResultGuard`를 추가해 엔진 요청 당시의 position fingerprint/move count를 보관하고, 응답 도착 시 현재 국면과 비교할 수 있게 했다.
+- Top Moves 분석 실행 경로에 `TopMoveAnalysisOperationToken`을 적용했다. 요청 당시 `AnalysisCacheKey`와 현재 `analysisState.lastAnalysisKey`가 일치하고, board fingerprint도 같은 경우에만 성공/실패 결과를 화면에 반영한다. 무르기, 새 게임, 복원, search time 변경 등으로 현재 상태가 바뀐 경우 과거 Top Moves 응답은 적용하지 않는다.
+- `EngineOperationPolicyTest`와 `TopMovesApplicationTest`를 보강했고, `:app-android:testDebugUnitTest`가 통과했다. 이번 단계는 Top Moves 경로에 먼저 적용한 안전 단위이며, 자동 AI 턴/종국 resolve/score estimate의 operation guard는 다음 단계 후보로 남았다.

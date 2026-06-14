@@ -59,6 +59,7 @@ import com.worksoc.goaicoach.application.EngineBenchmarkDefaultVisits
 import com.worksoc.goaicoach.application.EngineBenchmarkMeasurementVersion
 import com.worksoc.goaicoach.application.EngineBenchmarkUiState
 import com.worksoc.goaicoach.application.EngineOperationGate
+import com.worksoc.goaicoach.application.EngineOperationResultGuard
 import com.worksoc.goaicoach.application.EngineSessionClient
 import com.worksoc.goaicoach.application.DebugReportMirrorPort
 import com.worksoc.goaicoach.application.DiagnosticEventLogPort
@@ -68,6 +69,7 @@ import com.worksoc.goaicoach.application.applyTopMoveAnalysisLaunchPlan
 import com.worksoc.goaicoach.application.evaluateEngineBenchmarkGate
 import com.worksoc.goaicoach.application.evaluateScoringRuleChangeGate
 import com.worksoc.goaicoach.application.evaluateSearchTimeChangeGate
+import com.worksoc.goaicoach.application.evaluateTopMoveAnalysisResultGuard
 import com.worksoc.goaicoach.application.FinalScoreDisplayPlan
 import com.worksoc.goaicoach.application.GameSessionResetPlan
 import com.worksoc.goaicoach.application.GameSessionAnalysisState
@@ -131,6 +133,7 @@ import com.worksoc.goaicoach.application.SavedSessionPromptPlan
 import com.worksoc.goaicoach.application.SavedSessionUiState
 import com.worksoc.goaicoach.application.StartConfiguredGamePlan
 import com.worksoc.goaicoach.application.TopMoveAnalysisUpdate
+import com.worksoc.goaicoach.application.topMoveAnalysisOperationToken
 import com.worksoc.goaicoach.application.toGameSessionSettingsState
 import com.worksoc.goaicoach.application.toRuntimeLogContext
 import com.worksoc.goaicoach.application.undoEngineInterventionQuietUntilMillis
@@ -815,6 +818,10 @@ private fun GoCoachScreen(
         analysisState = launchUpdate.analysisState
         launchUpdate.engineMessage?.let { message -> engineMessage = message }
         val plan = launchUpdate.runEnginePlan ?: return
+        val operationToken = topMoveAnalysisOperationToken(
+            targetState = targetState,
+            plan = plan,
+        )
 
         scope.launch {
             isEngineBusy = true
@@ -831,18 +838,40 @@ private fun GoCoachScreen(
                     )
                 }
             }.onSuccess { update ->
-                applyTopMoveAnalysisUpdate(update, plan.analysisKey)
-                update.undoRestoreResult?.let { cached ->
-                    undoAnalysisRestoreCache.put(plan.analysisKey, cached)
-                }
-                update.cachedResult?.let { cached ->
-                    analysisCache.put(plan.analysisKey, cached)
+                when (
+                    evaluateTopMoveAnalysisResultGuard(
+                        token = operationToken,
+                        currentState = gameState,
+                        currentAnalysisKey = analysisState.lastAnalysisKey,
+                    )
+                ) {
+                    EngineOperationResultGuard.Apply -> {
+                        applyTopMoveAnalysisUpdate(update, plan.analysisKey)
+                        update.undoRestoreResult?.let { cached ->
+                            undoAnalysisRestoreCache.put(plan.analysisKey, cached)
+                        }
+                        update.cachedResult?.let { cached ->
+                            analysisCache.put(plan.analysisKey, cached)
+                        }
+                    }
+                    is EngineOperationResultGuard.Discard -> Unit
                 }
             }.onFailure { error ->
-                engineMessage = error.message ?: "Top Moves analysis failed."
-                clearReviewAnalysis(targetState)
-                if (currentTopMovesEnabled) {
-                    clearTopMoveSpots("Top Moves analysis failed.")
+                when (
+                    evaluateTopMoveAnalysisResultGuard(
+                        token = operationToken,
+                        currentState = gameState,
+                        currentAnalysisKey = analysisState.lastAnalysisKey,
+                    )
+                ) {
+                    EngineOperationResultGuard.Apply -> {
+                        engineMessage = error.message ?: "Top Moves analysis failed."
+                        clearReviewAnalysis(targetState)
+                        if (currentTopMovesEnabled) {
+                            clearTopMoveSpots("Top Moves analysis failed.")
+                        }
+                    }
+                    is EngineOperationResultGuard.Discard -> Unit
                 }
             }
             isEngineBusy = false

@@ -1,11 +1,34 @@
 package com.worksoc.goaicoach.application
 
+import com.worksoc.goaicoach.shared.BoardCoordinate
+import com.worksoc.goaicoach.shared.BoardSize
+import com.worksoc.goaicoach.shared.GameState
+import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.StoneColor
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class EngineOperationPolicyTest {
+    @Test
+    fun positionScopedResultGuardAppliesOnlyToSamePosition() {
+        val requestedState = GameState.empty()
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+        val changedState = requestedState
+            .play(Move.Play(StoneColor.White, BoardCoordinate.fromLabel("D5", BoardSize.Nine)))
+        val token = positionScopedOperationToken(
+            kind = "test_operation",
+            state = requestedState,
+        )
+
+        assertEquals(
+            EngineOperationResultGuard.Apply,
+            evaluatePositionScopedResultGuard(token, requestedState),
+        )
+        assertTrue(evaluatePositionScopedResultGuard(token, changedState) is EngineOperationResultGuard.Discard)
+    }
+
     @Test
     fun benchmarkGateRequiresReadyLocalIdleEngine() {
         assertEquals(

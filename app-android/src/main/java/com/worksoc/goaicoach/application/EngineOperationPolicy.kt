@@ -1,11 +1,50 @@
 package com.worksoc.goaicoach.application
 
+import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.analysisFingerprint
 
 internal sealed class EngineOperationGate {
     data object Allow : EngineOperationGate()
     data object NoOp : EngineOperationGate()
     data class Block(val message: String) : EngineOperationGate()
+}
+
+internal data class PositionScopedOperationToken(
+    val kind: String,
+    val positionFingerprint: String,
+    val moveCount: Int,
+)
+
+internal sealed class EngineOperationResultGuard {
+    data object Apply : EngineOperationResultGuard()
+    data class Discard(
+        val reason: String,
+    ) : EngineOperationResultGuard()
+}
+
+internal fun positionScopedOperationToken(
+    kind: String,
+    state: GameState,
+): PositionScopedOperationToken =
+    PositionScopedOperationToken(
+        kind = kind,
+        positionFingerprint = state.analysisFingerprint(),
+        moveCount = state.moves.size,
+    )
+
+internal fun evaluatePositionScopedResultGuard(
+    token: PositionScopedOperationToken,
+    currentState: GameState,
+): EngineOperationResultGuard {
+    val currentFingerprint = currentState.analysisFingerprint()
+    return if (currentFingerprint == token.positionFingerprint) {
+        EngineOperationResultGuard.Apply
+    } else {
+        EngineOperationResultGuard.Discard(
+            reason = "${token.kind} result is stale: requested move=${token.moveCount}, current move=${currentState.moves.size}.",
+        )
+    }
 }
 
 internal fun evaluateEngineBenchmarkGate(

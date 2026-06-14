@@ -73,6 +73,7 @@ JSON 기반 운영의 목표는 다음과 같다.
 - AI 응수: `빠른 초급`은 B16/GTP/best-only로 빠르게 둔다. `초급` 이상은 B32 이상 visits/time과 JSON position analysis를 사용해 후보군을 받고 `MoveSelectionPolicy`로 레벨링한다.
 - 사람 착수 리뷰: 사람 차례가 오면 fast best-1 분석을 백그라운드로 요청한다.
 - Top Moves 표시: 사용자가 토글을 켜면 같은 fast best-1 snapshot을 보드에 표시한다.
+- Top Moves 결과 적용: 엔진 응답이 돌아왔을 때 요청 당시 position fingerprint와 `AnalysisCacheKey`가 현재 상태와 일치할 때만 화면에 적용한다. 무르기, 새 게임, 복원, search time 변경 등으로 국면이나 분석 key가 바뀐 경우 해당 응답은 stale result로 보고 적용하지 않는다.
 - Analysis cache: 과거 Top Moves용 `AnalysisResultCache`는 기본 비활성이다. JSON position analysis 결과는 root visits 품질과 origin을 기록해 별도 디스크 cache에 최대 20개 저장한다.
 - Undo 복원 cache: 같은 앱 세션에서 무르기로 과거 국면에 돌아왔을 때만 사용하는 짧은 메모리 cache를 둔다. 이 cache는 `rootInfo.visits >= requested visits` 또는 동등한 complete 품질이 확인된 분석 snapshot만 저장하며, 같은 `AnalysisCacheKey`가 다시 요청되면 엔진 호출 없이 복원한다. 새 게임/복원 같은 session boundary에서는 비운다.
 - Broad study analysis: 전체 합법 착점, policy 후보, refine sweep, deep fallback은 기본 대국 경로에서 비활성이다.

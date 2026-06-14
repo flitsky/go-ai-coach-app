@@ -526,6 +526,53 @@ class TopMovesApplicationTest {
     }
 
     @Test
+    fun topMoveAnalysisResultGuardRejectsChangedPositionOrAnalysisKey() {
+        val state = GameState.empty()
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+        val changedState = state
+            .play(Move.Play(StoneColor.White, BoardCoordinate.fromLabel("D5", BoardSize.Nine)))
+        val plan = buildTopMoveAnalysisPlan(
+            targetState = state,
+            engineProfile = EngineProfile(),
+            analysisPreset = AnalysisPreset.Lite,
+            deep = false,
+        )
+        val deepPlan = buildTopMoveAnalysisPlan(
+            targetState = state,
+            engineProfile = EngineProfile(),
+            analysisPreset = AnalysisPreset.Lite,
+            deep = true,
+        )
+        val token = topMoveAnalysisOperationToken(
+            targetState = state,
+            plan = plan,
+        )
+
+        assertEquals(
+            EngineOperationResultGuard.Apply,
+            evaluateTopMoveAnalysisResultGuard(
+                token = token,
+                currentState = state,
+                currentAnalysisKey = plan.analysisKey,
+            ),
+        )
+        assertTrue(
+            evaluateTopMoveAnalysisResultGuard(
+                token = token,
+                currentState = changedState,
+                currentAnalysisKey = plan.analysisKey,
+            ) is EngineOperationResultGuard.Discard,
+        )
+        assertTrue(
+            evaluateTopMoveAnalysisResultGuard(
+                token = token,
+                currentState = state,
+                currentAnalysisKey = deepPlan.analysisKey,
+            ) is EngineOperationResultGuard.Discard,
+        )
+    }
+
+    @Test
     fun planShowTopMovesUsesCachedBestMoveWithoutDeepFallback() {
         val state = GameState.empty()
         val snapshot = MoveAnalysisSnapshot.from(

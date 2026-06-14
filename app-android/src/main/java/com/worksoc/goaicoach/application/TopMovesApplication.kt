@@ -14,6 +14,11 @@ internal data class TopMoveAnalysisPlan(
     val analysisKey: AnalysisCacheKey,
 )
 
+internal data class TopMoveAnalysisOperationToken(
+    val position: PositionScopedOperationToken,
+    val analysisKey: AnalysisCacheKey,
+)
+
 internal data class TopMoveAnalysisUpdate(
     val snapshot: MoveAnalysisSnapshot,
     val reviewCandidateMoves: List<CandidateMove>,
@@ -59,6 +64,39 @@ internal data class TopMoveAnalysisLaunchStateUpdate(
     val engineMessage: String? = null,
     val runEnginePlan: TopMoveAnalysisPlan? = null,
 )
+
+internal fun topMoveAnalysisOperationToken(
+    targetState: GameState,
+    plan: TopMoveAnalysisPlan,
+): TopMoveAnalysisOperationToken =
+    TopMoveAnalysisOperationToken(
+        position = positionScopedOperationToken(
+            kind = "top_moves_analysis",
+            state = targetState,
+        ),
+        analysisKey = plan.analysisKey,
+    )
+
+internal fun evaluateTopMoveAnalysisResultGuard(
+    token: TopMoveAnalysisOperationToken,
+    currentState: GameState,
+    currentAnalysisKey: AnalysisCacheKey?,
+): EngineOperationResultGuard {
+    val positionGuard = evaluatePositionScopedResultGuard(
+        token = token.position,
+        currentState = currentState,
+    )
+    if (positionGuard is EngineOperationResultGuard.Discard) {
+        return positionGuard
+    }
+    return if (currentAnalysisKey == token.analysisKey) {
+        EngineOperationResultGuard.Apply
+    } else {
+        EngineOperationResultGuard.Discard(
+            reason = "top_moves_analysis result is stale: analysis key changed before result arrived.",
+        )
+    }
+}
 
 internal fun GameSessionAnalysisState.applyTopMoveAnalysisLaunchPlan(
     launchPlan: TopMoveAnalysisLaunchPlan,
