@@ -1245,3 +1245,5 @@
 - 사용자가 다음 추천 순서인 구조화 진단 이벤트, middleware 물리 경계 정리, remote position analysis spike를 모두 단계별로 진행하고 리팩토링 척도/권장 항목을 제안해달라고 요청했다.
 - 1단계로 구조화 진단 이벤트를 보강했다. `engine.operation.slow`, `engine.operation.timeout`, `engine.operation.discarded` 이벤트 생성 함수를 추가했고, stale engine result discard 시 runtime log뿐 아니라 `diagnostic_events.jsonl`에도 `engine.operation.discarded`가 기록되도록 연결했다.
 - `DiagnosticEventApplicationTest`를 보강했고 JDK 17/Android SDK 환경에서 관련 diagnostic 테스트가 통과했다.
+- 2단계로 middleware 물리 경계 정리를 진행했다. `middleware/PositionAnalysisGateway.kt`를 추가해 read-only position analysis 요청/응답/gateway 계약을 `shared` DTO만 의존하는 KMP-ready 경계로 정의했다.
+- `LayeringContractTest`에 `PositionAnalysisGateway`가 Android/application/UI/persistence/engine runtime을 import하지 못하도록 회귀 방지 테스트를 추가했고 관련 architecture 테스트가 통과했다.

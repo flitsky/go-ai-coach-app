@@ -60,6 +60,29 @@ class LayeringContractTest {
         )
     }
 
+    @Test
+    fun positionAnalysisGatewayContractStaysKmpReady() {
+        val contract = repoRoot()
+            .resolve("app-android/src/main/java/com/worksoc/goaicoach/middleware/PositionAnalysisGateway.kt")
+        val forbiddenImports = listOf(
+            "import android.",
+            "import androidx.",
+            "import com.worksoc.goaicoach.application.",
+            "import com.worksoc.goaicoach.ui.",
+            "import com.worksoc.goaicoach.persistence.",
+            "import com.worksoc.goaicoach.engine.",
+        )
+
+        val offenders = contract
+            .readLines()
+            .filter { line -> forbiddenImports.any { forbidden -> line.startsWith(forbidden) } }
+
+        assertTrue(
+            "PositionAnalysisGateway must remain a KMP-ready middleware contract:\n${offenders.joinToString("\n")}",
+            offenders.isEmpty(),
+        )
+    }
+
     private fun repoRoot(): File {
         var current = File(".").canonicalFile
         while (true) {
