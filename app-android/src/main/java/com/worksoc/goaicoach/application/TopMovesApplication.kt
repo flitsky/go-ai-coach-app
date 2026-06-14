@@ -77,6 +77,17 @@ internal data class TopMoveAnalysisExecutionContext(
     val cacheEnabled: Boolean,
 )
 
+internal data class TopMoveAnalysisEffectLaunchRequest(
+    val effect: GameSessionEffect.RunTopMoveAnalysis,
+    val context: TopMoveAnalysisExecutionContext,
+    val token: TopMoveAnalysisOperationToken,
+    val currentState: GameState,
+    val currentAnalysisKey: AnalysisCacheKey?,
+    val currentSessionGeneration: Long,
+    val targetState: GameState,
+    val topMovesEnabled: Boolean,
+)
+
 internal data class TopMoveAnalysisFailureDisplayPlan(
     val targetState: GameState,
     val engineMessage: String,
@@ -550,6 +561,22 @@ internal suspend fun EngineSessionClient.runTopMoveAnalysisWorkflowResult(
         onSuccess = { update -> TopMoveAnalysisWorkflowResult.Success(update) },
         onFailure = { error -> TopMoveAnalysisWorkflowResult.Failure(error) },
     )
+
+internal suspend fun EngineSessionClient.runTopMoveAnalysisEffectApplyPlan(
+    request: TopMoveAnalysisEffectLaunchRequest,
+): TopMoveAnalysisCompletionApplyPlan =
+    buildTopMoveAnalysisCompletionPlan(
+        result = runTopMoveAnalysisWorkflowResult(
+            effect = request.effect,
+            context = request.context,
+        ),
+        token = request.token,
+        currentState = request.currentState,
+        currentAnalysisKey = request.currentAnalysisKey,
+        currentSessionGeneration = request.currentSessionGeneration,
+        targetState = request.targetState,
+        topMovesEnabled = request.topMovesEnabled,
+    ).toApplyPlan()
 
 internal fun planShowTopMoves(
     reviewAnalysis: MoveAnalysisSnapshot,

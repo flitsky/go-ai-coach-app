@@ -50,7 +50,6 @@ import com.worksoc.goaicoach.application.buildPlayerSetupChangePlan
 import com.worksoc.goaicoach.application.buildPositionAnalysisCacheOptimizationPlan
 import com.worksoc.goaicoach.application.buildPositionAnalysisCacheOptimizationPrompt
 import com.worksoc.goaicoach.application.buildGameSessionControllerState
-import com.worksoc.goaicoach.application.buildTopMoveAnalysisCompletionPlan
 import com.worksoc.goaicoach.application.buildUserPreferencesSnapshot
 import com.worksoc.goaicoach.application.EndgameFailureDisplayPlan
 import com.worksoc.goaicoach.application.EngineBenchmarkDefaultSamplesPerVisit
@@ -116,10 +115,10 @@ import com.worksoc.goaicoach.application.planSavedGamePersistence
 import com.worksoc.goaicoach.application.RuntimePlayLevelSelection
 import com.worksoc.goaicoach.application.RuntimeEventLogPort
 import com.worksoc.goaicoach.application.TopMoveAnalysisExecutionContext
+import com.worksoc.goaicoach.application.TopMoveAnalysisEffectLaunchRequest
 import com.worksoc.goaicoach.application.TopMoveAnalysisCompletionApplyPlan
-import com.worksoc.goaicoach.application.TopMoveAnalysisCompletionPlan
 import com.worksoc.goaicoach.application.TopMoveAnalysisFailureDisplayPlan
-import com.worksoc.goaicoach.application.runTopMoveAnalysisWorkflowResult
+import com.worksoc.goaicoach.application.runTopMoveAnalysisEffectApplyPlan
 import com.worksoc.goaicoach.application.ScoringRuleChangePlan
 import com.worksoc.goaicoach.application.ScoringRuleSyncEffectLaunchRequest
 import com.worksoc.goaicoach.application.runAutoAiEndgameEffect
@@ -132,11 +131,11 @@ import com.worksoc.goaicoach.application.runEngineStartupWorkflowResult
 import com.worksoc.goaicoach.application.runEngineUndoWorkflowResult
 import com.worksoc.goaicoach.application.runHumanEngineSyncWorkflowResult
 import com.worksoc.goaicoach.application.runPositionAnalysisCacheOptimizationWorkflowResult
-import com.worksoc.goaicoach.application.runPostUndoScoreSyncCompletionPlan
-import com.worksoc.goaicoach.application.runScoreEstimateEffectCompletionPlan
+import com.worksoc.goaicoach.application.runPostUndoScoreSyncApplyPlan
+import com.worksoc.goaicoach.application.runScoreEstimateEffectApplyPlan
 import com.worksoc.goaicoach.application.runStartupBenchmarkWorkflowResult
-import com.worksoc.goaicoach.application.runRestoredGameSyncCompletionPlan
-import com.worksoc.goaicoach.application.runScoringRuleSyncCompletionPlan
+import com.worksoc.goaicoach.application.runRestoredGameSyncApplyPlan
+import com.worksoc.goaicoach.application.runScoringRuleSyncApplyPlan
 import com.worksoc.goaicoach.application.runtimeAiTurnBeginLog
 import com.worksoc.goaicoach.application.runtimeAiTurnCompleteLog
 import com.worksoc.goaicoach.application.runtimeAiTurnEndgameDetectedLog
@@ -173,7 +172,7 @@ import com.worksoc.goaicoach.application.ScoreEstimateDisplayPlan
 import com.worksoc.goaicoach.application.ScoreEstimateCompletionApplyPlan
 import com.worksoc.goaicoach.application.ScoreEstimateEffectLaunchRequest
 import com.worksoc.goaicoach.application.ScoreEstimateRequestPlan
-import com.worksoc.goaicoach.application.ScoreSyncCompletionPlan
+import com.worksoc.goaicoach.application.ScoreSyncCompletionApplyPlan
 import com.worksoc.goaicoach.application.scoreEstimateOperationToken
 import com.worksoc.goaicoach.application.toScoreEstimateLaunchStateUpdate
 import com.worksoc.goaicoach.application.SavedGameRestorePlan
@@ -803,6 +802,11 @@ private fun GoCoachScreen(
         )
     }
 
+    suspend fun <T> runEngineIo(block: suspend () -> T): T =
+        withContext(Dispatchers.IO) {
+            block()
+        }
+
     fun applyTopMoveAnalysisFailureDisplayPlan(
         failure: TopMoveAnalysisFailureDisplayPlan,
     ) {
@@ -829,10 +833,6 @@ private fun GoCoachScreen(
         }
     }
 
-    fun applyTopMoveAnalysisCompletionPlan(completion: TopMoveAnalysisCompletionPlan) {
-        applyTopMoveAnalysisCompletionApplyPlan(completion.toApplyPlan())
-    }
-
     fun applyScoreEstimateDisplayPlan(score: ScoreEstimateDisplayPlan) {
         uiStateHolder.applyScoreEstimateDisplayPlan(score)
     }
@@ -850,20 +850,20 @@ private fun GoCoachScreen(
         }
     }
 
-    fun applyScoreSyncCompletionPlan(completion: ScoreSyncCompletionPlan): GameState? =
-        when (completion) {
-            is ScoreSyncCompletionPlan.ApplySuccess -> {
-                applyScoreEstimateDisplayPlan(completion.display)
-                completion.followUpAnalysisState
+    fun applyScoreSyncCompletionApplyPlan(applyPlan: ScoreSyncCompletionApplyPlan): GameState? =
+        when (applyPlan) {
+            is ScoreSyncCompletionApplyPlan.ApplySuccess -> {
+                applyScoreEstimateDisplayPlan(applyPlan.display)
+                applyPlan.followUpAnalysisState
             }
 
-            is ScoreSyncCompletionPlan.ApplyFailure -> {
-                engineMessage = completion.engineMessage
-                completion.followUpAnalysisState
+            is ScoreSyncCompletionApplyPlan.ApplyFailure -> {
+                engineMessage = applyPlan.engineMessage
+                applyPlan.followUpAnalysisState
             }
 
-            is ScoreSyncCompletionPlan.Discard -> {
-                appendEngineOperationDiscardLog(completion.discard)
+            is ScoreSyncCompletionApplyPlan.Discard -> {
+                appendEngineOperationDiscardLog(applyPlan.discard)
                 null
             }
         }
@@ -1099,30 +1099,28 @@ private fun GoCoachScreen(
         )
 
         launchTrackedEngineOperation(operationToken.operation) {
-            val result =
-                withContext(Dispatchers.IO) {
-                    engineClient.runTopMoveAnalysisWorkflowResult(
-                        effect = effect,
-                        context = TopMoveAnalysisExecutionContext(
+            val applyPlan =
+                runEngineIo {
+                    engineClient.runTopMoveAnalysisEffectApplyPlan(
+                        request = TopMoveAnalysisEffectLaunchRequest(
+                            effect = effect,
+                            context = TopMoveAnalysisExecutionContext(
+                                targetState = targetState,
+                                engineProfile = runtimeState.engineProfile,
+                                analysisPreset = runtimeState.analysisPreset,
+                                topMovesEnabled = currentTopMovesEnabled,
+                                cacheEnabled = analysisCache.isEnabled,
+                            ),
+                            token = operationToken,
+                            currentState = gameState,
+                            currentAnalysisKey = analysisState.lastAnalysisKey,
+                            currentSessionGeneration = runtimeState.sessionGeneration,
                             targetState = targetState,
-                            engineProfile = runtimeState.engineProfile,
-                            analysisPreset = runtimeState.analysisPreset,
                             topMovesEnabled = currentTopMovesEnabled,
-                            cacheEnabled = analysisCache.isEnabled,
                         ),
                     )
                 }
-            applyTopMoveAnalysisCompletionPlan(
-                buildTopMoveAnalysisCompletionPlan(
-                    result = result,
-                    token = operationToken,
-                    currentState = gameState,
-                    currentAnalysisKey = analysisState.lastAnalysisKey,
-                    currentSessionGeneration = runtimeState.sessionGeneration,
-                    targetState = targetState,
-                    topMovesEnabled = currentTopMovesEnabled,
-                ),
-            )
+            applyTopMoveAnalysisCompletionApplyPlan(applyPlan)
         }
     }
 
@@ -1167,9 +1165,9 @@ private fun GoCoachScreen(
             )
             var followUpAnalysisState: GameState? = null
             runTrackedEngineOperation(operation) {
-                followUpAnalysisState = applyScoreSyncCompletionPlan(
-                    withContext(Dispatchers.IO) {
-                        engineClient.runPostUndoScoreSyncCompletionPlan(
+                followUpAnalysisState = applyScoreSyncCompletionApplyPlan(
+                    runEngineIo {
+                        engineClient.runPostUndoScoreSyncApplyPlan(
                             request = PostUndoScoreSyncEffectLaunchRequest(
                                 state = pending.targetState,
                                 profile = runtimeState.engineProfile,
@@ -1281,9 +1279,9 @@ private fun GoCoachScreen(
             fallbackPolicy = EngineFallbackPolicy.LocalRules,
         )
         launchTrackedEngineOperation(ruleSyncOperation) {
-            val followUpAnalysisState = applyScoreSyncCompletionPlan(
-                withContext(Dispatchers.IO) {
-                    engineClient.runScoringRuleSyncCompletionPlan(
+            val followUpAnalysisState = applyScoreSyncCompletionApplyPlan(
+                runEngineIo {
+                    engineClient.runScoringRuleSyncApplyPlan(
                         request = ScoringRuleSyncEffectLaunchRequest(
                             state = nextState,
                             profile = runtimeState.engineProfile,
@@ -1348,9 +1346,9 @@ private fun GoCoachScreen(
         }
 
         launchTrackedEngineOperation(restoreOperation) {
-            val followUpAnalysisState = applyScoreSyncCompletionPlan(
-                withContext(Dispatchers.IO) {
-                    engineClient.runRestoredGameSyncCompletionPlan(
+            val followUpAnalysisState = applyScoreSyncCompletionApplyPlan(
+                runEngineIo {
+                    engineClient.runRestoredGameSyncApplyPlan(
                         request = RestoredGameSyncEffectLaunchRequest(
                             effect = GameSessionEffect.SyncRestoredGame(restoredState),
                             context = RestoredGameSyncExecutionContext(
@@ -1383,8 +1381,8 @@ private fun GoCoachScreen(
         )
         launchTrackedEngineOperation(operationToken.operation) {
             val completion =
-                withContext(Dispatchers.IO) {
-                    engineClient.runScoreEstimateEffectCompletionPlan(
+                runEngineIo {
+                    engineClient.runScoreEstimateEffectApplyPlan(
                         request = ScoreEstimateEffectLaunchRequest(
                             effect = effect,
                             previousSnapshots = scoreState.scoreSnapshots,
@@ -1395,7 +1393,7 @@ private fun GoCoachScreen(
                         diagnosticEventLog = diagnosticEventLog,
                     )
                 }
-            applyScoreEstimateCompletionApplyPlan(completion.toApplyPlan())
+            applyScoreEstimateCompletionApplyPlan(completion)
         }
     }
 

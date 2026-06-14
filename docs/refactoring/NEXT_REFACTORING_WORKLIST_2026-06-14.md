@@ -908,3 +908,37 @@
 
 5. `GoCoachApp.kt` metric 축소
    - 다음 batch 목표는 `withContext(Dispatchers.IO)`/`runCatching` 직접 지점 13개를 11개 이하로 줄이는 것이다.
+
+## 2026-06-15 추가 진행 로그: Apply Runner / Score Sync Apply Plan new 5 정리
+
+- 2026-06-15: `ScoreSyncCompletionApplyPlan`과 `ScoreSyncCompletionPlan.toApplyPlan()`을 추가했다. post-undo/scoring/restored sync도 raw completion plan 대신 application-defined apply disposition으로 UI에 전달할 수 있다.
+- 2026-06-15: `ScoreEstimateRunnerApplication.kt`에 `runScoreEstimateEffectApplyPlan()`을 추가했다. score estimate effect 실행, completion guard, apply plan 변환이 runner 경계에서 끝나도록 했다.
+- 2026-06-15: `ScoreSyncRunnerApplication.kt`에 `runPostUndoScoreSyncApplyPlan()`, `runScoringRuleSyncApplyPlan()`, `runRestoredGameSyncApplyPlan()`을 추가했다. 세 score sync 경로 모두 completion plan을 UI에 직접 노출하지 않는 선택지가 생겼다.
+- 2026-06-15: `TopMoveAnalysisEffectLaunchRequest`와 `runTopMoveAnalysisEffectApplyPlan()`을 추가했다. Top Moves engine call 결과를 completion guard와 apply plan으로 묶어 UI는 cache/write 적용만 담당한다.
+- 2026-06-15: `GoCoachApp.kt`의 score estimate, Top Moves, post-undo sync, scoring rule sync, restored game sync 호출부를 apply runner 기반으로 변경했다. 반복 `withContext(Dispatchers.IO)`는 `runEngineIo()` helper를 통과한다.
+- 2026-06-15: `ScoreDisplayApplicationTest`와 `TopMovesApplicationTest`에 score sync/score estimate/Top Moves apply runner 테스트를 추가했다.
+- 현재 metric: `GoCoachApp.kt`는 2,195줄이며, UI 파일 안의 `withContext(Dispatchers.IO)`/`runCatching` 직접 지점은 9개다. 직전 13개에서 4개 줄어 다음 목표였던 11개 이하를 달성했다.
+- 검증: `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest --tests 'com.worksoc.goaicoach.application.ScoreDisplayApplicationTest' --tests 'com.worksoc.goaicoach.application.TopMovesApplicationTest' --tests 'com.worksoc.goaicoach.architecture.LayeringContractTest'` 통과. 최종 통합 검증으로 `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test`도 통과했다.
+
+## 현재 리팩토링 완성도 평가
+
+- 주관 점수: 99.72/100.
+- 상향 요인: score estimate, Top Moves, score sync 세 계열이 모두 apply runner 또는 apply plan을 갖게 되었다. UI는 여전히 state/cache mutation을 소유하지만, engine result의 success/failure/discard 판정과 apply disposition 생성은 application 계층으로 더 이동했다.
+- 남은 감점 요인: `runEngineIo()` helper는 아직 `GoCoachApp.kt` local function이다. 즉, IO dispatch 자체는 UI 파일에 남아 있으며, cache write/undo restore write도 UI local helper에 남아 있다. 실제 shared/common 물리 이동은 아직 하지 않았다.
+
+## 다음 추천 리팩토링 항목
+
+1. Engine IO dispatcher helper의 application/controller 경계 이동 검토
+   - 현재 `runEngineIo()`는 UI local helper다. 다음에는 dispatcher port 또는 effect runner helper로 이동해 UI의 실행 정책 소유권을 더 낮춘다.
+
+2. Top Moves cache write port 분리
+   - `analysisCache.put()`과 `undoAnalysisRestoreCache.put()`을 UI local mutation에서 cache writer port/helper로 분리한다.
+
+3. Score estimate display apply port 분리
+   - `applyScoreEstimateDisplayPlan()`이 holder를 직접 호출하는 구조를 display apply port로 한 번 더 감싼다.
+
+4. `ScoreSyncCompletionApplication.kt` KMP 물리 이동 후보 검토
+   - 새 apply plan까지 포함해 shared/common 이동 시 필요한 타입 의존을 정리한다.
+
+5. 남은 IO 지점 9개 분류
+   - startup/benchmark/endgame/cache optimization 등 남은 IO 지점을 operation kind별로 나누고, 다음 목표를 9개에서 7개 이하로 잡는다.

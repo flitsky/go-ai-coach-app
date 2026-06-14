@@ -299,6 +299,46 @@ class ScoreDisplayApplicationTest {
     }
 
     @Test
+    fun scoreSyncCompletionApplyPlanCarriesDisposition() {
+        val state = GameState.empty()
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+        val operation = engineOperationRequest(
+            kind = EngineOperationKind.PostUndoSync,
+            state = state,
+            sessionGeneration = 4L,
+            fallbackPolicy = EngineFallbackPolicy.LocalRules,
+        )
+        val display = buildLocalScoreEstimateDisplayPlan(
+            state = state,
+            previousSnapshots = emptyList(),
+            engineMessage = "synced",
+        )
+        val request = ScoreSyncCompletionRequest(
+            operation = operation,
+            currentState = state,
+            currentSessionGeneration = 4L,
+            followUpAnalysisState = state,
+        )
+
+        val success = buildScoreSyncSuccessCompletionPlan(
+            request = request,
+            display = display,
+        ).toApplyPlan()
+        val failure = buildScoreSyncFailureCompletionPlan(
+            request = request,
+            error = IllegalStateException("sync failed"),
+            fallbackMessage = "fallback",
+        ).toApplyPlan()
+
+        assertTrue(success is ScoreSyncCompletionApplyPlan.ApplySuccess)
+        assertEquals(display, (success as ScoreSyncCompletionApplyPlan.ApplySuccess).display)
+        assertEquals(state, success.followUpAnalysisState)
+        assertTrue(failure is ScoreSyncCompletionApplyPlan.ApplyFailure)
+        assertEquals("sync failed", (failure as ScoreSyncCompletionApplyPlan.ApplyFailure).engineMessage)
+        assertEquals(state, failure.followUpAnalysisState)
+    }
+
+    @Test
     fun scoreSyncWorkflowCompletionPlanWrapsRunnerResult() = runBlocking {
         val state = GameState.empty()
             .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
@@ -573,6 +613,39 @@ class ScoreDisplayApplicationTest {
     }
 
     @Test
+    fun scoreEstimateEffectApplyRunnerBuildsApplyPlan() = runBlocking {
+        val state = GameState.empty()
+        val request = ScoreEstimateRequestPlan.RequestEngineEstimate(
+            state = state,
+            profile = EngineProfile(),
+            syncFirst = true,
+        )
+        val launchRequest = ScoreEstimateEffectLaunchRequest(
+            effect = GameSessionEffect.RunScoreEstimate(request),
+            previousSnapshots = emptyList(),
+            token = scoreEstimateOperationToken(
+                request = request,
+                sessionGeneration = 3L,
+            ),
+            currentState = state,
+            currentSessionGeneration = 3L,
+        )
+
+        val success = FakeScoreEngineSessionClient()
+            .runScoreEstimateEffectApplyPlan(launchRequest)
+        val failure = FakeScoreEngineSessionClient(
+            estimateError = IllegalStateException("estimate failed"),
+        ).runScoreEstimateEffectApplyPlan(launchRequest)
+
+        assertTrue(success is ScoreEstimateCompletionApplyPlan.ApplySuccess)
+        assertTrue(failure is ScoreEstimateCompletionApplyPlan.ApplyFailure)
+        assertEquals(
+            "estimate failed",
+            (failure as ScoreEstimateCompletionApplyPlan.ApplyFailure).failure.engineMessage,
+        )
+    }
+
+    @Test
     fun scoringRuleSyncRunnerBuildsTrimmedEngineEstimatePlan() = runBlocking {
         val state = GameState.empty()
         val client = FakeScoreEngineSessionClient()
@@ -624,6 +697,38 @@ class ScoreDisplayApplicationTest {
         assertEquals("rules synced", (success as ScoreSyncCompletionPlan.ApplySuccess).display.engineMessage)
         assertTrue(failure is ScoreSyncCompletionPlan.ApplyFailure)
         assertEquals("sync failed", (failure as ScoreSyncCompletionPlan.ApplyFailure).engineMessage)
+    }
+
+    @Test
+    fun scoringRuleSyncApplyRunnerBuildsApplyPlan() = runBlocking {
+        val state = GameState.empty()
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+        val operation = engineOperationRequest(
+            kind = EngineOperationKind.ScoringRuleSync,
+            state = state,
+            sessionGeneration = 4L,
+            fallbackPolicy = EngineFallbackPolicy.LocalRules,
+        )
+        val request = ScoringRuleSyncEffectLaunchRequest(
+            state = state,
+            profile = EngineProfile(),
+            previousSnapshots = emptyList(),
+            engineMessage = "rules synced",
+            operation = operation,
+            currentState = state,
+            currentSessionGeneration = 4L,
+            followUpAnalysisState = state,
+            fallbackMessage = "rules failed",
+        )
+
+        val success = FakeScoreEngineSessionClient()
+            .runScoringRuleSyncApplyPlan(request)
+
+        assertTrue(success is ScoreSyncCompletionApplyPlan.ApplySuccess)
+        assertEquals(
+            "rules synced",
+            (success as ScoreSyncCompletionApplyPlan.ApplySuccess).display.engineMessage,
+        )
     }
 
     @Test

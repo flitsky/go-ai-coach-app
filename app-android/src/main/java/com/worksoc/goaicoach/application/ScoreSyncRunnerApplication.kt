@@ -81,6 +81,15 @@ internal suspend fun EngineSessionClient.runScoringRuleSyncCompletionPlan(
         )
     }
 
+internal suspend fun EngineSessionClient.runScoringRuleSyncApplyPlan(
+    request: ScoringRuleSyncEffectLaunchRequest,
+    diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
+): ScoreSyncCompletionApplyPlan =
+    runScoringRuleSyncCompletionPlan(
+        request = request,
+        diagnosticEventLog = diagnosticEventLog,
+    ).toApplyPlan()
+
 internal suspend fun EngineSessionClient.runPostUndoScoreSyncCompletionPlan(
     request: PostUndoScoreSyncEffectLaunchRequest,
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
@@ -101,6 +110,15 @@ internal suspend fun EngineSessionClient.runPostUndoScoreSyncCompletionPlan(
             diagnosticEventLog = diagnosticEventLog,
         )
     }
+
+internal suspend fun EngineSessionClient.runPostUndoScoreSyncApplyPlan(
+    request: PostUndoScoreSyncEffectLaunchRequest,
+    diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
+): ScoreSyncCompletionApplyPlan =
+    runPostUndoScoreSyncCompletionPlan(
+        request = request,
+        diagnosticEventLog = diagnosticEventLog,
+    ).toApplyPlan()
 
 internal suspend fun EngineSessionClient.runRestoredGameSyncDisplayPlan(
     state: GameState,
@@ -176,3 +194,12 @@ internal suspend fun EngineSessionClient.runRestoredGameSyncCompletionPlan(
             diagnosticEventLog = diagnosticEventLog,
         )
     }
+
+internal suspend fun EngineSessionClient.runRestoredGameSyncApplyPlan(
+    request: RestoredGameSyncEffectLaunchRequest,
+    diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
+): ScoreSyncCompletionApplyPlan =
+    runRestoredGameSyncCompletionPlan(
+        request = request,
+        diagnosticEventLog = diagnosticEventLog,
+    ).toApplyPlan()

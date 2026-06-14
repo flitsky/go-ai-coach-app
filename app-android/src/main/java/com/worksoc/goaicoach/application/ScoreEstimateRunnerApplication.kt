@@ -80,3 +80,12 @@ internal suspend fun EngineSessionClient.runScoreEstimateEffectCompletionPlan(
         currentState = request.currentState,
         currentSessionGeneration = request.currentSessionGeneration,
     )
+
+internal suspend fun EngineSessionClient.runScoreEstimateEffectApplyPlan(
+    request: ScoreEstimateEffectLaunchRequest,
+    diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
+): ScoreEstimateCompletionApplyPlan =
+    runScoreEstimateEffectCompletionPlan(
+        request = request,
+        diagnosticEventLog = diagnosticEventLog,
+    ).toApplyPlan()

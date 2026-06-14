@@ -18,12 +18,46 @@ internal sealed class ScoreSyncCompletionPlan {
     ) : ScoreSyncCompletionPlan()
 }
 
+internal sealed class ScoreSyncCompletionApplyPlan {
+    data class ApplySuccess(
+        val display: ScoreEstimateDisplayPlan,
+        val followUpAnalysisState: GameState,
+    ) : ScoreSyncCompletionApplyPlan()
+
+    data class ApplyFailure(
+        val engineMessage: String,
+        val followUpAnalysisState: GameState,
+    ) : ScoreSyncCompletionApplyPlan()
+
+    data class Discard(
+        val discard: EngineOperationResultGuard.Discard,
+    ) : ScoreSyncCompletionApplyPlan()
+}
+
 internal data class ScoreSyncCompletionRequest(
     val operation: EngineOperationRequest,
     val currentState: GameState,
     val currentSessionGeneration: Long,
     val followUpAnalysisState: GameState,
 )
+
+internal fun ScoreSyncCompletionPlan.toApplyPlan(): ScoreSyncCompletionApplyPlan =
+    when (this) {
+        is ScoreSyncCompletionPlan.ApplySuccess ->
+            ScoreSyncCompletionApplyPlan.ApplySuccess(
+                display = display,
+                followUpAnalysisState = followUpAnalysisState,
+            )
+
+        is ScoreSyncCompletionPlan.ApplyFailure ->
+            ScoreSyncCompletionApplyPlan.ApplyFailure(
+                engineMessage = engineMessage,
+                followUpAnalysisState = followUpAnalysisState,
+            )
+
+        is ScoreSyncCompletionPlan.Discard ->
+            ScoreSyncCompletionApplyPlan.Discard(discard)
+    }
 
 internal fun buildScoreSyncSuccessCompletionPlan(
     request: ScoreSyncCompletionRequest,

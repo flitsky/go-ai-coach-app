@@ -421,6 +421,70 @@ class TopMovesApplicationTest {
     }
 
     @Test
+    fun runTopMoveAnalysisEffectApplyPlanBuildsApplyDisposition() = runBlocking {
+        val state = GameState.empty()
+        val candidate = CandidateMove(
+            move = Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)),
+            pointLoss = 0.0,
+        )
+        val plan = buildTopMoveAnalysisPlan(
+            targetState = state,
+            engineProfile = EngineProfile(),
+            analysisPreset = AnalysisPreset.Lite,
+            deep = false,
+        )
+        val effect = GameSessionEffect.RunTopMoveAnalysis(
+            plan = plan,
+            deep = false,
+            automatic = true,
+        )
+        val context = TopMoveAnalysisExecutionContext(
+            targetState = state,
+            engineProfile = EngineProfile(),
+            analysisPreset = AnalysisPreset.Lite,
+            topMovesEnabled = true,
+            cacheEnabled = true,
+        )
+        val token = topMoveAnalysisOperationToken(
+            targetState = state,
+            plan = plan,
+            sessionGeneration = 3L,
+        )
+        val request = TopMoveAnalysisEffectLaunchRequest(
+            effect = effect,
+            context = context,
+            token = token,
+            currentState = state,
+            currentAnalysisKey = plan.analysisKey,
+            currentSessionGeneration = 3L,
+            targetState = state,
+            topMovesEnabled = true,
+        )
+
+        val success = FakeTopMoveEngineSessionClient(
+            result = AnalysisResult(
+                status = EngineStatus.ready("analysis ready"),
+                candidates = listOf(candidate),
+                summary = "summary",
+            ),
+        ).runTopMoveAnalysisEffectApplyPlan(request)
+        val failure = FakeTopMoveEngineSessionClient(
+            failure = IllegalStateException("engine failed"),
+        ).runTopMoveAnalysisEffectApplyPlan(request)
+
+        assertTrue(success is TopMoveAnalysisCompletionApplyPlan.ApplySuccess)
+        assertEquals(
+            "analysis ready",
+            (success as TopMoveAnalysisCompletionApplyPlan.ApplySuccess).update.engineMessage,
+        )
+        assertTrue(failure is TopMoveAnalysisCompletionApplyPlan.ApplyFailure)
+        assertEquals(
+            "engine failed",
+            (failure as TopMoveAnalysisCompletionApplyPlan.ApplyFailure).display.engineMessage,
+        )
+    }
+
+    @Test
     fun cachedAnalysisUpdateKeepsDisplayMovesOnlyWhenTopMovesEnabled() {
         val state = GameState.empty()
         val snapshot = MoveAnalysisSnapshot.from(
