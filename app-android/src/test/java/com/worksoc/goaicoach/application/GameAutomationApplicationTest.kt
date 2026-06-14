@@ -213,6 +213,65 @@ class GameAutomationApplicationTest {
     }
 
     @Test
+    fun controllerStateValidatesScheduledAutoAiTurnAndBuildsContext() {
+        val whiteLevel = PlayLevelSetting(PlayLevelGroup.Beginner, level = 7)
+        val setup = PlayerSetup(
+            black = SidePlayerSetup(controller = SeatController.Human),
+            white = SidePlayerSetup(
+                controller = SeatController.Ai,
+                playLevel = whiteLevel,
+            ),
+        )
+        val state = GameState.empty()
+            .play(Move.Pass(StoneColor.Black))
+        val reviewCandidate = CandidateMove(Move.Pass(StoneColor.White), pointLoss = 0.0)
+        val controller = automationControllerState(
+            gameState = state,
+            playerSetup = setup,
+            searchTimeSettings = SearchTimeSettings(b32Millis = 4_000L),
+            reviewCandidateMoves = listOf(reviewCandidate),
+        )
+
+        val plan = controller.toAutoAiTurnScheduleValidationPlan(
+            isEngineReady = true,
+            isEngineBusy = false,
+        )
+
+        assertTrue(plan is AutoAiTurnScheduleValidationPlan.Continue)
+        val context = (plan as AutoAiTurnScheduleValidationPlan.Continue).context
+        assertEquals(state, context.turnState)
+        assertEquals(StoneColor.White, context.aiPlayer)
+        assertEquals(whiteLevel, context.playLevel)
+        assertEquals(32, context.analysisLimit.visits)
+        assertEquals(4_000L, context.analysisLimit.timeMillis)
+        assertEquals(listOf(reviewCandidate), context.previousReviewCandidates)
+    }
+
+    @Test
+    fun controllerStateCancelsScheduledAutoAiTurnWhenGateChanges() {
+        val controller = automationControllerState()
+
+        val engineBusy = controller.toAutoAiTurnScheduleValidationPlan(
+            isEngineReady = true,
+            isEngineBusy = true,
+        )
+        val resumePrompt = controller
+            .withSavedSession(
+                SavedSessionUiState(
+                    shouldShowResumePrompt = true,
+                    hasCheckedSavedSession = true,
+                ),
+            )
+            .toAutoAiTurnScheduleValidationPlan(
+                isEngineReady = true,
+                isEngineBusy = false,
+            )
+
+        assertEquals(AutoAiTurnScheduleValidationPlan.Cancel, engineBusy)
+        assertEquals(AutoAiTurnScheduleValidationPlan.Cancel, resumePrompt)
+    }
+
+    @Test
     fun autoAiTurnExecutionContextUsesCurrentAiSeatLevelAndSearchTime() {
         val whiteLevel = PlayLevelSetting(PlayLevelGroup.Beginner, level = 7)
         val setup = PlayerSetup(

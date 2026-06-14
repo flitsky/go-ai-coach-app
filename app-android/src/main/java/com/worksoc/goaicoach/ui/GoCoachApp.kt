@@ -22,6 +22,7 @@ import com.worksoc.goaicoach.application.AnalysisCacheKey
 import com.worksoc.goaicoach.application.AnalysisResultCache
 import com.worksoc.goaicoach.application.AutoAiTurnDisplayPlan
 import com.worksoc.goaicoach.application.AutoAiTurnRequestPlan
+import com.worksoc.goaicoach.application.AutoAiTurnScheduleValidationPlan
 import com.worksoc.goaicoach.application.AutoAiTurnUiState
 import com.worksoc.goaicoach.application.buildDebugReportCopyPlan
 import com.worksoc.goaicoach.application.buildEndgameFailureDisplayPlan
@@ -80,7 +81,6 @@ import com.worksoc.goaicoach.application.PositionAnalysisCacheOptimizationUiStat
 import com.worksoc.goaicoach.application.PostGamePositionAnalysisCacheOptimizationPromptEnabled
 import com.worksoc.goaicoach.application.localScoreSnapshot
 import com.worksoc.goaicoach.application.selectRuntimePlayLevel
-import com.worksoc.goaicoach.application.shouldRequestAiTurn
 import com.worksoc.goaicoach.application.shouldRequestTopMoveAnalysis
 import com.worksoc.goaicoach.application.planSavedGamePersistence
 import com.worksoc.goaicoach.application.RuntimePlayLevelSelection
@@ -111,8 +111,8 @@ import com.worksoc.goaicoach.application.runtimeHumanEngineSyncSuccessLog
 import com.worksoc.goaicoach.application.runtimeHumanMoveAcceptedLog
 import com.worksoc.goaicoach.application.RuntimeLogContext
 import com.worksoc.goaicoach.application.toDebugReportSnapshot
-import com.worksoc.goaicoach.application.toAutoAiTurnExecutionContext
 import com.worksoc.goaicoach.application.toAutoAiTurnRequestPlan
+import com.worksoc.goaicoach.application.toAutoAiTurnScheduleValidationPlan
 import com.worksoc.goaicoach.application.toShowTopMovesPlan
 import com.worksoc.goaicoach.application.toTopMoveAnalysisLaunchPlan
 import com.worksoc.goaicoach.application.ShowTopMovesPlan
@@ -1200,31 +1200,28 @@ private fun GoCoachScreen(
                     if (request.delayMillis > 0L) {
                         delay(request.delayMillis)
                     }
-                    if (
-                        !shouldRequestAiTurn(
-                            isGameEnded = isGameEnded,
+                    val turnContext = when (
+                        val validation = currentControllerSessionState().toAutoAiTurnScheduleValidationPlan(
                             isEngineReady = isEngineReady,
                             isEngineBusy = isEngineBusy,
-                            shouldShowResumePrompt = shouldShowResumePrompt,
-                            playerSetup = playerSetup,
-                            gameState = gameState,
                         )
                     ) {
-                        runtimeEventLog.append(
-                            runtimeAiTurnScheduleCancelledLog(
-                                context = currentRuntimeLogContext(),
-                                gameState = gameState,
-                                isEngineReady = isEngineReady,
-                                isEngineBusy = isEngineBusy,
-                                isGameEnded = isGameEnded,
-                                shouldShowResumePrompt = shouldShowResumePrompt,
-                            ),
-                        )
-                        autoAiTurnUiState = autoAiTurnUiState.clearPending()
-                        return@launch
+                        AutoAiTurnScheduleValidationPlan.Cancel -> {
+                            runtimeEventLog.append(
+                                runtimeAiTurnScheduleCancelledLog(
+                                    context = currentRuntimeLogContext(),
+                                    gameState = gameState,
+                                    isEngineReady = isEngineReady,
+                                    isEngineBusy = isEngineBusy,
+                                    isGameEnded = isGameEnded,
+                                    shouldShowResumePrompt = shouldShowResumePrompt,
+                                ),
+                            )
+                            autoAiTurnUiState = autoAiTurnUiState.clearPending()
+                            return@launch
+                        }
+                        is AutoAiTurnScheduleValidationPlan.Continue -> validation.context
                     }
-
-                    val turnContext = currentControllerSessionState().toAutoAiTurnExecutionContext()
                     val turnStartMillis = System.currentTimeMillis()
                     runtimeEventLog.append(
                         runtimeAiTurnBeginLog(

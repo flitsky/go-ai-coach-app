@@ -99,6 +99,7 @@
 - 2026-06-14: `GameSessionControllerState`에 `savedSession: SavedSessionUiState` 축을 추가했다. controller state가 core/settings/benchmark/saved-session/cache-optimization 상태를 함께 대표하게 되었고, `withSavedSession()` 교체 메서드를 테스트했다. JDK 17/Android SDK 환경에서 `:app-android:testDebugUnitTest`가 통과했다.
 - 2026-06-14: `AutoAiTurnUiState`를 추가해 자동 AI 턴 예약 pending 플래그를 application state holder로 묶었다. `GoCoachApp.kt`는 직접 Boolean 대입 대신 `markScheduled()`와 `clearPending()`을 사용한다. 이는 이후 Auto AI turn runner/effect 분리 전 단계다. `GameAutomationApplicationTest`를 보강했고 JDK 17/Android SDK 환경에서 `:app-android:testDebugUnitTest`가 통과했다.
 - 2026-06-14: 이번 배치 통합 검증으로 `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test`를 실행했고 통과했다.
+- 2026-06-14: Auto AI turn runner 분리의 다음 안전 단위로 `AutoAiTurnScheduleValidationPlan`을 추가했다. delay 이후 현재 상태가 여전히 AI 턴 실행 가능한지 검증하고, 가능하면 `AutoAiTurnExecutionContext`를 함께 반환한다. `GoCoachApp.kt`는 더 이상 delay 후 `shouldRequestAiTurn(...)` 조건을 직접 풀지 않고 controller snapshot의 validation plan만 처리한다. `GameAutomationApplicationTest`를 보강했고 JDK 17/Android SDK 환경에서 `:app-android:testDebugUnitTest`가 통과했다.
 
 ## 다음 추천 리팩토링 항목
 

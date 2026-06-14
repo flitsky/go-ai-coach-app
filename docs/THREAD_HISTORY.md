@@ -1131,3 +1131,7 @@
 - `EngineCoreApi`는 드라이버 레지스트리 자체가 아니라 local process/JNI/remote server runtime이 구현해야 하는 원시 엔진 기능 계약이라고 바로잡았다. 상위 앱은 `EngineSessionClient` 같은 미들웨어 API만 보도록 구조를 설명했다.
 - 서버/MSA 장점에는 네트워크 지연, 비용, 인증/abuse control, privacy, model/cache schema mismatch, fallback 같은 리스크를 함께 기록했다. 글로벌 cache도 board/ruleset/komi/fingerprint/model version/search mode/visits/time cap/options/origin/fill status가 맞아야 신뢰할 수 있다고 정리했다.
 - Remote Engine 도입 게이트를 추가했다. `GameSessionController` 경계, local/remote backend capability, 공통 DTO, cache key/model versioning, timeout/cancel/generation 폐기, offline fallback이 준비된 뒤 remote spike에 착수하는 기준으로 삼는다.
+- 미래 아키텍처 문서를 `deaf2c4 Refine future architecture vision`으로 커밋/푸시했다. 이어 다음 리팩토링 후보로 `Auto AI turn runner plan 분리`의 첫 단계를 선택했다.
+- `AutoAiTurnScheduleValidationPlan`을 추가했다. delay 이후 현재 상태가 여전히 AI 턴 실행 가능한지 application 계층에서 재검증하고, 가능하면 `AutoAiTurnExecutionContext`를 함께 반환한다.
+- `GoCoachApp.kt`는 delay 후 `shouldRequestAiTurn(...)` 조건을 직접 풀어 검사하지 않고, `currentControllerSessionState().toAutoAiTurnScheduleValidationPlan(...)` 결과만 처리한다. 이는 다음 단계에서 schedule/cancel/execute effect를 controller runner로 옮기기 위한 전제 작업이다.
+- `GameAutomationApplicationTest`에 validation continue/cancel 케이스를 추가했고, `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest`가 통과했다.

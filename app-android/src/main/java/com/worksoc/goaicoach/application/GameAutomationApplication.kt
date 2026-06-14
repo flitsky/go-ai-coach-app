@@ -59,6 +59,13 @@ internal sealed class AutoAiTurnRequestPlan {
     ) : AutoAiTurnRequestPlan()
 }
 
+internal sealed class AutoAiTurnScheduleValidationPlan {
+    data object Cancel : AutoAiTurnScheduleValidationPlan()
+    data class Continue(
+        val context: AutoAiTurnExecutionContext,
+    ) : AutoAiTurnScheduleValidationPlan()
+}
+
 internal data class AutoAiTurnUiState(
     val isPending: Boolean = false,
 ) {
@@ -113,6 +120,54 @@ internal fun GameSessionControllerState.toAutoAiTurnRequestPlan(
         playerSetup = playerSetup,
         gameState = gameState,
         autoPlayDelaySetting = settings.autoPlayDelaySetting,
+    )
+
+internal fun buildAutoAiTurnScheduleValidationPlan(
+    isGameEnded: Boolean,
+    isEngineReady: Boolean,
+    isEngineBusy: Boolean,
+    shouldShowResumePrompt: Boolean,
+    playerSetup: PlayerSetup,
+    gameState: GameState,
+    searchTimeSettings: SearchTimeSettings,
+    reviewCandidateMoves: List<CandidateMove>,
+): AutoAiTurnScheduleValidationPlan {
+    if (
+        !shouldRequestAiTurn(
+            isGameEnded = isGameEnded,
+            isEngineReady = isEngineReady,
+            isEngineBusy = isEngineBusy,
+            shouldShowResumePrompt = shouldShowResumePrompt,
+            playerSetup = playerSetup,
+            gameState = gameState,
+        )
+    ) {
+        return AutoAiTurnScheduleValidationPlan.Cancel
+    }
+
+    return AutoAiTurnScheduleValidationPlan.Continue(
+        context = buildAutoAiTurnExecutionContext(
+            gameState = gameState,
+            playerSetup = playerSetup,
+            searchTimeSettings = searchTimeSettings,
+            reviewCandidateMoves = reviewCandidateMoves,
+        ),
+    )
+}
+
+internal fun GameSessionControllerState.toAutoAiTurnScheduleValidationPlan(
+    isEngineReady: Boolean,
+    isEngineBusy: Boolean,
+): AutoAiTurnScheduleValidationPlan =
+    buildAutoAiTurnScheduleValidationPlan(
+        isGameEnded = isGameEnded,
+        isEngineReady = isEngineReady,
+        isEngineBusy = isEngineBusy,
+        shouldShowResumePrompt = shouldShowResumePrompt,
+        playerSetup = playerSetup,
+        gameState = gameState,
+        searchTimeSettings = settings.searchTimeSettings,
+        reviewCandidateMoves = core.analysisState.reviewCandidateMoves,
     )
 
 internal data class AutoAiTurnDisplayPlan(
