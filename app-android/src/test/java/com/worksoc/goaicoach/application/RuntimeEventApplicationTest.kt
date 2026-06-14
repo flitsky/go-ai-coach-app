@@ -137,6 +137,35 @@ class RuntimeEventApplicationTest {
     }
 
     @Test
+    fun recordEngineOperationDiscardLogWritesRuntimeAndDiagnosticPorts() {
+        val currentState = GameState.empty()
+            .play(Move.Pass(StoneColor.Black))
+        val runtimeLog = RecordingRuntimeEventLog()
+        val diagnosticLog = RecordingDiagnosticEventLog()
+
+        recordEngineOperationDiscardLog(
+            context = runtimeContext(gameState = currentState),
+            currentState = currentState,
+            discard = EngineOperationResultGuard.Discard(
+                reason = "late restored sync",
+                operation = "restored_game_sync",
+                operationId = "restored_game_sync:g5:m1:abc",
+                sessionGeneration = 5L,
+            ),
+            runtimeEventLog = runtimeLog,
+            diagnosticEventLog = diagnosticLog,
+            nowMillis = 123L,
+        )
+
+        assertEquals(1, runtimeLog.events.size)
+        assertTrue(runtimeLog.events.single().first.contains("event=engine_operation_discarded"))
+        assertEquals(123L, runtimeLog.events.single().second)
+        assertEquals(1, diagnosticLog.events.size)
+        assertEquals("engine.operation.discarded", diagnosticLog.events.single().first.code)
+        assertEquals(123L, diagnosticLog.events.single().second)
+    }
+
+    @Test
     fun engineOperationStartedAndCompletedLogsIncludeLifecycleCounts() {
         val context = runtimeContext(isEngineReady = true)
 
@@ -279,4 +308,40 @@ class RuntimeEventApplicationTest {
             scoreText = "No score estimate yet.",
             turnTimeText = "B=0.0s W=0.0s current=${gameState.nextPlayer.label}",
         )
+
+    private class RecordingRuntimeEventLog : RuntimeEventLogPort {
+        val events = mutableListOf<Pair<String, Long>>()
+
+        override fun append(
+            event: String,
+            nowMillis: Long,
+        ) {
+            events += event to nowMillis
+        }
+
+        override fun readText(): String =
+            events.joinToString("\n") { it.first }
+
+        override fun clear() {
+            events.clear()
+        }
+    }
+
+    private class RecordingDiagnosticEventLog : DiagnosticEventLogPort {
+        val events = mutableListOf<Pair<DiagnosticEvent, Long>>()
+
+        override fun append(
+            event: DiagnosticEvent,
+            nowMillis: Long,
+        ) {
+            events += event to nowMillis
+        }
+
+        override fun readText(): String =
+            events.joinToString("\n") { it.first.summary() }
+
+        override fun clear() {
+            events.clear()
+        }
+    }
 }

@@ -22,6 +22,22 @@ internal data class ScoreEstimateFailureDisplayPlan(
     val engineMessage: String,
 )
 
+internal sealed class ScoreSyncCompletionPlan {
+    data class ApplySuccess(
+        val display: ScoreEstimateDisplayPlan,
+        val followUpAnalysisState: GameState,
+    ) : ScoreSyncCompletionPlan()
+
+    data class ApplyFailure(
+        val engineMessage: String,
+        val followUpAnalysisState: GameState,
+    ) : ScoreSyncCompletionPlan()
+
+    data class Discard(
+        val discard: EngineOperationResultGuard.Discard,
+    ) : ScoreSyncCompletionPlan()
+}
+
 internal data class FinalScoreDisplayPlan(
     val gameState: GameState,
     val scoreText: String,
@@ -91,6 +107,55 @@ internal fun buildScoreEstimateFailureDisplayPlan(error: Throwable): ScoreEstima
     ScoreEstimateFailureDisplayPlan(
         engineMessage = error.message ?: "Score estimate failed.",
     )
+
+internal fun buildScoreSyncSuccessCompletionPlan(
+    operation: EngineOperationRequest,
+    currentState: GameState,
+    currentSessionGeneration: Long,
+    display: ScoreEstimateDisplayPlan,
+    followUpAnalysisState: GameState,
+): ScoreSyncCompletionPlan =
+    when (
+        val applyPlan = buildEngineOperationApplyPlan(
+            request = operation,
+            currentState = currentState,
+            currentSessionGeneration = currentSessionGeneration,
+        )
+    ) {
+        EngineOperationApplyPlan.Apply ->
+            ScoreSyncCompletionPlan.ApplySuccess(
+                display = display,
+                followUpAnalysisState = followUpAnalysisState,
+            )
+
+        is EngineOperationApplyPlan.Discard ->
+            ScoreSyncCompletionPlan.Discard(applyPlan.discard)
+    }
+
+internal fun buildScoreSyncFailureCompletionPlan(
+    operation: EngineOperationRequest,
+    currentState: GameState,
+    currentSessionGeneration: Long,
+    error: Throwable,
+    fallbackMessage: String,
+    followUpAnalysisState: GameState,
+): ScoreSyncCompletionPlan =
+    when (
+        val applyPlan = buildEngineOperationApplyPlan(
+            request = operation,
+            currentState = currentState,
+            currentSessionGeneration = currentSessionGeneration,
+        )
+    ) {
+        EngineOperationApplyPlan.Apply ->
+            ScoreSyncCompletionPlan.ApplyFailure(
+                engineMessage = error.message ?: fallbackMessage,
+                followUpAnalysisState = followUpAnalysisState,
+            )
+
+        is EngineOperationApplyPlan.Discard ->
+            ScoreSyncCompletionPlan.Discard(applyPlan.discard)
+    }
 
 internal fun buildScoreEstimateRequestPlan(
     state: GameState,

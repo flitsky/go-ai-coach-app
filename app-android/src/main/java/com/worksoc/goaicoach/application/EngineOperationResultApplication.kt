@@ -22,3 +22,20 @@ internal fun buildEngineOperationDiscardLogPlan(
             currentState = currentState,
         ),
     )
+
+internal fun recordEngineOperationDiscardLog(
+    context: RuntimeLogContext,
+    discard: EngineOperationResultGuard.Discard,
+    currentState: GameState,
+    runtimeEventLog: RuntimeEventLogPort,
+    diagnosticEventLog: DiagnosticEventLogPort,
+    nowMillis: Long = System.currentTimeMillis(),
+) {
+    val plan = buildEngineOperationDiscardLogPlan(
+        context = context,
+        discard = discard,
+        currentState = currentState,
+    )
+    runtimeEventLog.append(plan.runtimeLog, nowMillis)
+    diagnosticEventLog.append(plan.diagnosticEvent, nowMillis)
+}

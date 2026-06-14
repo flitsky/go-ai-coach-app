@@ -1315,3 +1315,8 @@
 - `LayeringContractTest`를 보강해 `EngineOperationPolicy.kt`, `EngineOperationResultApplication.kt`, `DiagnosticEventApplication.kt`가 Android/UI/persistence/engine runtime 의존을 갖지 못하도록 했다.
 - `docs/DIAGNOSTIC_EVENT_SCHEMA.md`에 로컬 JSONL 저장과 향후 외부 수집 sink를 분리하는 운영 원칙을 추가했다.
 - 관련 검증으로 `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest --tests 'com.worksoc.goaicoach.architecture.LayeringContractTest' --tests 'com.worksoc.goaicoach.application.RuntimeEventApplicationTest' --tests 'com.worksoc.goaicoach.application.DiagnosticEventApplicationTest'`와 `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test`가 통과했다.
+- 다음 리팩토링으로 `ScoreSyncCompletionPlan`을 추가했다. post-undo sync, scoring rule sync, restored game sync가 success/failure/discard completion plan을 공유하며 stale result이면 score display, error message, 후속 Top Moves 요청을 적용하지 않는다.
+- `GoCoachApp.kt`의 미사용 `shouldApplyEngineOperationResult()` helper를 제거했고, score sync completion 적용은 `applyScoreSyncSuccessCompletion()`/`applyScoreSyncFailureCompletion()` helper로 정리했다.
+- `recordEngineOperationDiscardLog()`를 추가해 stale result discard 기록을 runtime/diagnostic port에 쓰는 순서를 application helper로 이동했다.
+- `planDiagnosticEventExternalExport()`를 추가해 diagnostic event 외부 전송 후보 판단을 순수 정책으로 분리했다. `info`는 local only, `warning`/`critical`은 사용자 동의 기반 export 후보로 분류한다.
+- `DIAGNOSTIC_EVENT_SCHEMA.md`와 refactoring worklist를 갱신했고, 관련 targeted test와 `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test`가 통과했다.

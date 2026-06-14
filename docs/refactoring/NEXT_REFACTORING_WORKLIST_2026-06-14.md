@@ -394,3 +394,42 @@
 5. Middleware 물리 모듈 이동 준비 목록 확정
    - architecture test가 보호하는 파일부터 `shared` 또는 별도 KMP middleware 모듈로 이동 가능한지 dependency map을 작성한다.
    - 바로 이동하기보다 CI에서 import boundary를 더 촘촘히 고정한 뒤 작은 파일 단위로 옮긴다.
+
+## 2026-06-15 추가 진행 로그: Score Sync Completion/Diagnostic Export Policy
+
+- 2026-06-15: `ScoreSyncCompletionPlan`을 추가했다. post-undo sync, scoring rule sync, restored game sync가 성공/실패/폐기를 같은 completion plan으로 처리한다.
+- 2026-06-15: `GoCoachApp.kt`의 post-undo/scoring/restored sync 경로는 더 이상 성공/실패마다 `shouldApplyEngineOperationResult()`를 직접 호출하지 않는다. application plan을 만든 뒤 `ApplySuccess`, `ApplyFailure`, `Discard`만 적용한다.
+- 2026-06-15: 더 이상 사용되지 않는 UI-local `shouldApplyEngineOperationResult()` helper를 제거했다.
+- 2026-06-15: `recordEngineOperationDiscardLog()`를 추가했다. engine operation discard 발생 시 runtime log와 diagnostic event를 어떤 순서로 어떤 port에 기록하는지는 application helper가 담당하고, UI는 context/current state/port만 넘긴다.
+- 2026-06-15: `planDiagnosticEventExternalExport()`를 추가했다. `info` 이벤트는 로컬 보존만, `warning`/`critical` 이벤트는 사용자 동의 기반 외부 전송 후보로 분류한다. 아직 네트워크 sink는 붙이지 않았고, 정책만 순수 함수로 고정했다.
+- 2026-06-15: `DIAGNOSTIC_EVENT_SCHEMA.md`에 외부 전송 후보 판단 정책을 보강했다.
+- 2026-06-15: `ScoreDisplayApplicationTest`, `RuntimeEventApplicationTest`, `DiagnosticEventApplicationTest`를 보강해 sync completion guard, discard port 기록, 외부 export 판단 정책을 검증했다.
+- 검증: `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest --tests 'com.worksoc.goaicoach.application.ScoreDisplayApplicationTest' --tests 'com.worksoc.goaicoach.application.RuntimeEventApplicationTest' --tests 'com.worksoc.goaicoach.application.DiagnosticEventApplicationTest' --tests 'com.worksoc.goaicoach.architecture.LayeringContractTest'` 통과, `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test` 통과.
+
+## 현재 리팩토링 완성도 평가
+
+- 주관 점수: 97.5/100.
+- 상향 요인: sync 계열 apply/discard 규칙이 더 균일해졌고, UI-local result guard helper가 제거됐다. discard logging은 application port helper를 통과하며, 외부 diagnostic export 여부도 순수 정책으로 분리됐다.
+- 남은 감점 요인: `GoCoachApp.kt`는 여전히 큰 파일이며, sync completion plan을 적용하는 local helper 자체는 UI에 남아 있다. 또한 외부 diagnostic sink는 아직 실제 transport가 아니라 export eligibility policy까지만 있다.
+
+## 다음 추천 리팩토링 항목
+
+1. Score sync runner helper 추가 축소
+   - post-undo/scoring/restored sync의 `runCatching + withContext + completion plan 적용` 반복을 작은 runner/helper로 묶는다.
+   - 단, 각 경로의 follow-up target과 UX message가 다르므로 context object를 먼저 정의한다.
+
+2. Auto AI endgame/result completion plan 정리
+   - auto AI turn/endgame 성공/실패/stale 분기도 completion plan 패턴으로 맞춘다.
+   - runtime success/failure log 생성과 discard log 생성 순서를 application test로 고정한다.
+
+3. Diagnostic external sink port spike
+   - `planDiagnosticEventExternalExport()` 이후 단계로, 사용자 동의가 들어왔을 때 최근 JSONL/debug report bundle을 외부 sink에 넘기는 port 계약만 정의한다.
+   - Android/Firebase 구현은 아직 붙이지 않는다.
+
+4. `GoCoachApp.kt` orchestration split 후보 선정
+   - score sync, auto AI, top moves 세 덩어리 중 파일 분리 효과가 가장 큰 순서를 정한다.
+   - 단순 줄 수 절감보다 “각 파일이 하나의 workflow만 소유하는가”를 기준으로 한다.
+
+5. Middleware/KMP 이동 dependency map 작성
+   - `EngineOperationPolicy`, `EngineOperationResultApplication`, `DiagnosticEventApplication`, `ScoreDisplayApplication`의 import graph를 정리한다.
+   - shared 또는 별도 middleware KMP 모듈로 옮기려면 어떤 shared DTO가 추가로 필요한지 확인한다.

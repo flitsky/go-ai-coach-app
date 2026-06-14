@@ -76,6 +76,37 @@ class DiagnosticEventApplicationTest {
     }
 
     @Test
+    fun diagnosticExternalExportPlanKeepsInfoLocalAndEscalatesWarningsWithConsent() {
+        val info = planDiagnosticEventExternalExport(
+            DiagnosticEvent(
+                severity = DiagnosticSeverity.Info,
+                code = "engine.operation.discarded",
+                message = "discarded",
+            ),
+        )
+        val warning = planDiagnosticEventExternalExport(
+            DiagnosticEvent(
+                severity = DiagnosticSeverity.Warning,
+                code = "engine.operation.slow",
+                message = "slow",
+            ),
+        )
+        val critical = planDiagnosticEventExternalExport(
+            DiagnosticEvent(
+                severity = DiagnosticSeverity.Critical,
+                code = "score.final_disagreement",
+                message = "score mismatch",
+            ),
+        )
+
+        assertEquals(DiagnosticEventExternalExportDecision.LocalOnly, info.decision)
+        assertEquals(DiagnosticEventExternalExportDecision.EligibleForUserConsentExport, warning.decision)
+        assertEquals(DiagnosticEventExternalExportDecision.EligibleForUserConsentExport, critical.decision)
+        assertTrue(warning.reason.contains("user consent"))
+        assertTrue(critical.reason.contains("user consent"))
+    }
+
+    @Test
     fun slowOperationDiagnosticWarnsOnlyAboveThreshold() {
         assertNull(
             engineOperationSlowDiagnosticEvent(

@@ -39,6 +39,37 @@ internal data class DiagnosticEvent(
         }
 }
 
+internal enum class DiagnosticEventExternalExportDecision {
+    LocalOnly,
+    EligibleForUserConsentExport,
+}
+
+internal data class DiagnosticEventExternalExportPlan(
+    val decision: DiagnosticEventExternalExportDecision,
+    val reason: String,
+)
+
+internal fun planDiagnosticEventExternalExport(event: DiagnosticEvent): DiagnosticEventExternalExportPlan =
+    when (event.severity) {
+        DiagnosticSeverity.Info ->
+            DiagnosticEventExternalExportPlan(
+                decision = DiagnosticEventExternalExportDecision.LocalOnly,
+                reason = "Info diagnostic events are retained locally unless a debug report is manually shared.",
+            )
+
+        DiagnosticSeverity.Warning ->
+            DiagnosticEventExternalExportPlan(
+                decision = DiagnosticEventExternalExportDecision.EligibleForUserConsentExport,
+                reason = "Warning diagnostic events can be exported with user consent for performance analysis.",
+            )
+
+        DiagnosticSeverity.Critical ->
+            DiagnosticEventExternalExportPlan(
+                decision = DiagnosticEventExternalExportDecision.EligibleForUserConsentExport,
+                reason = "Critical diagnostic events can be exported with user consent for correctness analysis.",
+            )
+    }
+
 internal fun engineVisitFillDiagnosticEvent(
     requestedVisits: Int,
     rootVisits: Int?,

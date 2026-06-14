@@ -33,6 +33,14 @@
 - 정상 lifecycle event(`engine_operation_started`, `engine_operation_completed`)는 기본 외부 전송 대상이 아니다. slow/timeout/discarded/final disagreement처럼 분석 가치가 높은 이벤트부터 수집한다.
 - 외부 전송 실패는 대국 흐름을 막지 않는다. 전송 실패 자체는 별도 local warning으로 남길 수 있지만, 재귀적으로 무한 전송하지 않는다.
 
+현재 코드 기준 외부 전송 후보 판단은 `planDiagnosticEventExternalExport()`가 담당한다.
+
+- `info`: `LocalOnly`. 로컬 JSONL과 사용자가 직접 복사한 debug report에만 포함한다.
+- `warning`: `EligibleForUserConsentExport`. 성능/품질 분석 목적으로 사용자 동의 후 전송할 수 있다.
+- `critical`: `EligibleForUserConsentExport`. 계가 불일치나 timeout처럼 정확성 문제가 의심되는 경우 사용자 동의 후 전송할 수 있다.
+
+이 정책은 외부 네트워크 transport가 붙기 전에도 테스트 가능한 순수 application 정책으로 유지한다.
+
 ## Engine Operation Events
 
 참고: `engine_operation_started`, `engine_operation_completed`는 현재 `diagnostic_events.jsonl`이 아니라 runtime event log에 남긴다. 이 두 이벤트는 정상 흐름에서도 매우 자주 발생하므로 운영 진단 JSONL에는 slow/timeout/discarded처럼 분석 가치가 높은 이벤트만 구조화해 저장한다.

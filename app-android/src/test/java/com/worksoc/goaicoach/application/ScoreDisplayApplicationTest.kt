@@ -154,6 +154,64 @@ class ScoreDisplayApplicationTest {
     }
 
     @Test
+    fun scoreSyncCompletionPlanAppliesOnlyForCurrentOperationState() {
+        val state = GameState.empty()
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+        val changedState = state
+            .play(Move.Play(StoneColor.White, BoardCoordinate.fromLabel("D5", BoardSize.Nine)))
+        val operation = engineOperationRequest(
+            kind = EngineOperationKind.PostUndoSync,
+            state = state,
+            sessionGeneration = 4L,
+            fallbackPolicy = EngineFallbackPolicy.LocalRules,
+        )
+        val display = buildLocalScoreEstimateDisplayPlan(
+            state = state,
+            previousSnapshots = emptyList(),
+            engineMessage = "synced",
+        )
+
+        val success = buildScoreSyncSuccessCompletionPlan(
+            operation = operation,
+            currentState = state,
+            currentSessionGeneration = 4L,
+            display = display,
+            followUpAnalysisState = state,
+        )
+        val failure = buildScoreSyncFailureCompletionPlan(
+            operation = operation,
+            currentState = state,
+            currentSessionGeneration = 4L,
+            error = IllegalStateException("sync failed"),
+            fallbackMessage = "fallback",
+            followUpAnalysisState = state,
+        )
+        val changedPosition = buildScoreSyncSuccessCompletionPlan(
+            operation = operation,
+            currentState = changedState,
+            currentSessionGeneration = 4L,
+            display = display,
+            followUpAnalysisState = state,
+        )
+        val changedGeneration = buildScoreSyncFailureCompletionPlan(
+            operation = operation,
+            currentState = state,
+            currentSessionGeneration = 5L,
+            error = Throwable(),
+            fallbackMessage = "fallback",
+            followUpAnalysisState = state,
+        )
+
+        assertTrue(success is ScoreSyncCompletionPlan.ApplySuccess)
+        assertEquals(display, (success as ScoreSyncCompletionPlan.ApplySuccess).display)
+        assertEquals(state, success.followUpAnalysisState)
+        assertTrue(failure is ScoreSyncCompletionPlan.ApplyFailure)
+        assertEquals("sync failed", (failure as ScoreSyncCompletionPlan.ApplyFailure).engineMessage)
+        assertTrue(changedPosition is ScoreSyncCompletionPlan.Discard)
+        assertTrue(changedGeneration is ScoreSyncCompletionPlan.Discard)
+    }
+
+    @Test
     fun engineEstimateDisplayPlanRecordsScoreSnapshotAndMessage() {
         val state = GameState.empty()
         val estimate = ScoreEstimate(
