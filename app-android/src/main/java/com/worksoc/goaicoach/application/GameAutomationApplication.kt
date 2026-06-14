@@ -62,8 +62,11 @@ internal sealed class AutoAiTurnRequestPlan {
 internal sealed class AutoAiTurnScheduleValidationPlan {
     data object Cancel : AutoAiTurnScheduleValidationPlan()
     data class Continue(
-        val context: AutoAiTurnExecutionContext,
-    ) : AutoAiTurnScheduleValidationPlan()
+        val runPlan: AutoAiTurnRunPlan,
+    ) : AutoAiTurnScheduleValidationPlan() {
+        val context: AutoAiTurnExecutionContext
+            get() = runPlan.context
+    }
 }
 
 internal data class AutoAiTurnUiState(
@@ -131,6 +134,7 @@ internal fun buildAutoAiTurnScheduleValidationPlan(
     gameState: GameState,
     searchTimeSettings: SearchTimeSettings,
     reviewCandidateMoves: List<CandidateMove>,
+    scheduledDelayMillis: Long = 0L,
 ): AutoAiTurnScheduleValidationPlan {
     if (
         !shouldRequestAiTurn(
@@ -146,11 +150,14 @@ internal fun buildAutoAiTurnScheduleValidationPlan(
     }
 
     return AutoAiTurnScheduleValidationPlan.Continue(
-        context = buildAutoAiTurnExecutionContext(
-            gameState = gameState,
-            playerSetup = playerSetup,
-            searchTimeSettings = searchTimeSettings,
-            reviewCandidateMoves = reviewCandidateMoves,
+        runPlan = AutoAiTurnRunPlan(
+            delayMillis = scheduledDelayMillis,
+            context = buildAutoAiTurnExecutionContext(
+                gameState = gameState,
+                playerSetup = playerSetup,
+                searchTimeSettings = searchTimeSettings,
+                reviewCandidateMoves = reviewCandidateMoves,
+            ),
         ),
     )
 }
@@ -158,6 +165,7 @@ internal fun buildAutoAiTurnScheduleValidationPlan(
 internal fun GameSessionControllerState.toAutoAiTurnScheduleValidationPlan(
     isEngineReady: Boolean,
     isEngineBusy: Boolean,
+    scheduledDelayMillis: Long = 0L,
 ): AutoAiTurnScheduleValidationPlan =
     buildAutoAiTurnScheduleValidationPlan(
         isGameEnded = isGameEnded,
@@ -168,6 +176,7 @@ internal fun GameSessionControllerState.toAutoAiTurnScheduleValidationPlan(
         gameState = gameState,
         searchTimeSettings = settings.searchTimeSettings,
         reviewCandidateMoves = core.analysisState.reviewCandidateMoves,
+        scheduledDelayMillis = scheduledDelayMillis,
     )
 
 internal data class AutoAiTurnDisplayPlan(
@@ -182,6 +191,11 @@ internal data class AutoAiTurnDisplayPlan(
     val shouldResolveEndgame: Boolean,
     val endgamePrePassCandidates: List<CandidateMove>,
     val nextAnalysisState: GameState?,
+)
+
+internal data class AutoAiTurnRunPlan(
+    val delayMillis: Long,
+    val context: AutoAiTurnExecutionContext,
 )
 
 internal data class AutoAiTurnExecutionContext(

@@ -176,13 +176,17 @@ class GameSessionControllerTest {
             searchTimeSettings = SearchTimeSettings(),
             reviewCandidateMoves = emptyList(),
         )
+        val autoAiRunPlan = AutoAiTurnRunPlan(
+            delayMillis = 500L,
+            context = autoAiContext,
+        )
 
         val topMoveEffect = GameSessionEffect.RunTopMoveAnalysis(
             plan = topMovePlan,
             deep = false,
             automatic = true,
         )
-        val autoAiEffect = GameSessionEffect.RunAutoAiTurn(autoAiContext)
+        val autoAiEffect = GameSessionEffect.RunAutoAiTurn(autoAiRunPlan)
         val restoredEffect = GameSessionEffect.SyncRestoredGame(gameState)
         val debugReportPlan = DebugReportCopyPlan(
             clipboardLabel = "label",
@@ -194,7 +198,8 @@ class GameSessionControllerTest {
 
         assertSame(topMovePlan, topMoveEffect.plan)
         assertEquals(true, topMoveEffect.automatic)
-        assertSame(autoAiContext, autoAiEffect.context)
+        assertSame(autoAiRunPlan, autoAiEffect.plan)
+        assertSame(autoAiContext, autoAiEffect.plan.context)
         assertSame(gameState, restoredEffect.gameState)
         assertSame(debugReportPlan, debugReportEffect.plan)
     }

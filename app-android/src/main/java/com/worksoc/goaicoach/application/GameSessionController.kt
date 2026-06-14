@@ -93,7 +93,7 @@ internal sealed interface GameSessionEffect {
     ) : GameSessionEffect
 
     data class RunAutoAiTurn(
-        val context: AutoAiTurnExecutionContext,
+        val plan: AutoAiTurnRunPlan,
     ) : GameSessionEffect
 
     data class RunScoreEstimate(

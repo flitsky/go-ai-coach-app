@@ -1200,10 +1200,11 @@ private fun GoCoachScreen(
                     if (request.delayMillis > 0L) {
                         delay(request.delayMillis)
                     }
-                    val turnContext = when (
+                    val turnRunPlan = when (
                         val validation = currentControllerSessionState().toAutoAiTurnScheduleValidationPlan(
                             isEngineReady = isEngineReady,
                             isEngineBusy = isEngineBusy,
+                            scheduledDelayMillis = request.delayMillis,
                         )
                     ) {
                         AutoAiTurnScheduleValidationPlan.Cancel -> {
@@ -1220,8 +1221,9 @@ private fun GoCoachScreen(
                             autoAiTurnUiState = autoAiTurnUiState.clearPending()
                             return@launch
                         }
-                        is AutoAiTurnScheduleValidationPlan.Continue -> validation.context
+                        is AutoAiTurnScheduleValidationPlan.Continue -> validation.runPlan
                     }
+                    val turnContext = turnRunPlan.context
                     val turnStartMillis = System.currentTimeMillis()
                     runtimeEventLog.append(
                         runtimeAiTurnBeginLog(
@@ -1231,7 +1233,7 @@ private fun GoCoachScreen(
                             playLevel = turnContext.playLevel,
                             analysisLimit = turnContext.analysisLimit,
                             searchMode = turnContext.searchMode,
-                            delayMillis = request.delayMillis,
+                            delayMillis = turnRunPlan.delayMillis,
                             isolateSearchCache = turnContext.isolateSearchCache,
                         ),
                     )

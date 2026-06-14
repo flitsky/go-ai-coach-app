@@ -235,10 +235,13 @@ class GameAutomationApplicationTest {
         val plan = controller.toAutoAiTurnScheduleValidationPlan(
             isEngineReady = true,
             isEngineBusy = false,
+            scheduledDelayMillis = 750L,
         )
 
         assertTrue(plan is AutoAiTurnScheduleValidationPlan.Continue)
-        val context = (plan as AutoAiTurnScheduleValidationPlan.Continue).context
+        val runPlan = (plan as AutoAiTurnScheduleValidationPlan.Continue).runPlan
+        val context = runPlan.context
+        assertEquals(750L, runPlan.delayMillis)
         assertEquals(state, context.turnState)
         assertEquals(StoneColor.White, context.aiPlayer)
         assertEquals(whiteLevel, context.playLevel)

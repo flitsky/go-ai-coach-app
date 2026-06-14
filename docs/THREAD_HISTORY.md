@@ -1135,3 +1135,7 @@
 - `AutoAiTurnScheduleValidationPlan`을 추가했다. delay 이후 현재 상태가 여전히 AI 턴 실행 가능한지 application 계층에서 재검증하고, 가능하면 `AutoAiTurnExecutionContext`를 함께 반환한다.
 - `GoCoachApp.kt`는 delay 후 `shouldRequestAiTurn(...)` 조건을 직접 풀어 검사하지 않고, `currentControllerSessionState().toAutoAiTurnScheduleValidationPlan(...)` 결과만 처리한다. 이는 다음 단계에서 schedule/cancel/execute effect를 controller runner로 옮기기 위한 전제 작업이다.
 - `GameAutomationApplicationTest`에 validation continue/cancel 케이스를 추가했고, `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest`가 통과했다.
+- 사용자가 다음 작업 착수를 요청했고, Auto AI turn runner 분리의 후속 단계로 `AutoAiTurnRunPlan`을 추가했다.
+- `AutoAiTurnRunPlan`은 자동 AI 턴의 `delayMillis`와 `AutoAiTurnExecutionContext`를 함께 운반한다. `AutoAiTurnScheduleValidationPlan.Continue`는 이제 context 대신 run plan을 반환하며, `GameSessionEffect.RunAutoAiTurn`도 run plan을 받는다.
+- `GoCoachApp.kt`는 delay 후 validation에서 `runPlan`을 받아 begin log에 동일 delay 값을 사용한다. 이번 변경은 실행 coroutine 전체를 옮기기 전, runner/effect 입력 단위를 안정화하는 작업이다.
+- `GameAutomationApplicationTest`와 `GameSessionControllerTest`를 갱신했고, `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest`가 통과했다.
