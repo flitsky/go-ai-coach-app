@@ -128,6 +128,8 @@ import com.worksoc.goaicoach.application.StartConfiguredGamePlan
 import com.worksoc.goaicoach.application.TopMoveAnalysisUpdate
 import com.worksoc.goaicoach.application.toGameSessionSettingsState
 import com.worksoc.goaicoach.application.toRuntimeLogContext
+import com.worksoc.goaicoach.application.undoEngineInterventionQuietUntilMillis
+import com.worksoc.goaicoach.application.undoEngineInterventionRemainingDelayMillis
 import com.worksoc.goaicoach.application.UndoRequestPlan
 import com.worksoc.goaicoach.application.UndoLocalStatePlan
 import com.worksoc.goaicoach.application.UserPreferencesStorePort
@@ -163,9 +165,15 @@ import com.worksoc.goaicoach.shared.ScoreTimeline
 import com.worksoc.goaicoach.shared.describe
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+
+private data class PendingPostUndoEngineSync(
+    val targetState: GameState,
+    val quietUntilMillis: Long,
+)
 
 @Composable
 internal fun GoCoachApp(
@@ -304,6 +312,36 @@ private fun GoCoachScreen(
     val isAutoAiTurnPending = autoAiTurnUiState.isPending
     var positionCacheOptimizationState by remember {
         mutableStateOf(PositionAnalysisCacheOptimizationUiState())
+    }
+    var undoEngineInterventionQuietUntil by remember { mutableStateOf(0L) }
+    var pendingPostUndoEngineSync by remember { mutableStateOf<PendingPostUndoEngineSync?>(null) }
+    var pendingPostUndoEngineSyncJob by remember { mutableStateOf<Job?>(null) }
+
+    fun markUndoEngineInterventionQuiet(): Long {
+        val quietUntil = undoEngineInterventionQuietUntilMillis(System.currentTimeMillis())
+        undoEngineInterventionQuietUntil = quietUntil
+        return quietUntil
+    }
+
+    suspend fun waitForUndoEngineInterventionQuietWindow() {
+        val delayMillis = undoEngineInterventionRemainingDelayMillis(
+            nowMillis = System.currentTimeMillis(),
+            quietUntilMillis = undoEngineInterventionQuietUntil,
+        )
+        if (delayMillis > 0L) {
+            delay(delayMillis)
+        }
+    }
+
+    fun cancelPendingPostUndoEngineSync() {
+        pendingPostUndoEngineSyncJob?.cancel()
+        pendingPostUndoEngineSyncJob = null
+        pendingPostUndoEngineSync = null
+    }
+
+    fun clearUndoEngineInterventionQuietWindow() {
+        undoEngineInterventionQuietUntil = 0L
+        cancelPendingPostUndoEngineSync()
     }
 
     fun currentControllerSessionState(): GameSessionControllerState =
@@ -638,6 +676,7 @@ private fun GoCoachScreen(
     }
 
     fun applyGameSessionResetPlan(reset: GameSessionResetPlan) {
+        clearUndoEngineInterventionQuietWindow()
         positionCacheOptimizationState = positionCacheOptimizationState.clearPrompt()
         applyCoreSessionState(currentCoreSessionState().applyGameSessionResetPlan(reset))
         turnTimeState = GameSessionTurnTimeState.reset(
@@ -653,6 +692,7 @@ private fun GoCoachScreen(
     }
 
     fun applySavedGameRestorePlan(restore: SavedGameRestorePlan) {
+        clearUndoEngineInterventionQuietWindow()
         positionCacheOptimizationState = positionCacheOptimizationState.clearPrompt()
         settingsState = settingsState.applySavedGameRestore(
             restoredSetup = restore.playerSetup,
@@ -692,6 +732,7 @@ private fun GoCoachScreen(
                 engineMessage = plan.message
             }
             is PlayerSetupChangePlan.Apply -> {
+                clearUndoEngineInterventionQuietWindow()
                 settingsState = settingsState.applyPlayerSetup(plan.playerSetup)
                 applyCoreSessionState(currentCoreSessionState().applyPlayerSetupChangePlan(plan))
             }
@@ -708,6 +749,7 @@ private fun GoCoachScreen(
             }
         }
         val normalized = nextSettings.normalized()
+        clearUndoEngineInterventionQuietWindow()
         settingsState = settingsState.applySearchTimeSettings(normalized)
         applyRuntimePlayLevelSelection(
             selectRuntimePlayLevel(
@@ -727,6 +769,9 @@ private fun GoCoachScreen(
         automatic: Boolean,
         deep: Boolean = false,
     ) {
+        if (automatic && pendingPostUndoEngineSync != null) {
+            return
+        }
         val currentTopMovesEnabled = settingsState.topMovesEnabled
         if (
             !shouldRequestTopMoveAnalysis(
@@ -779,6 +824,71 @@ private fun GoCoachScreen(
                 }
             }
             isEngineBusy = false
+        }
+    }
+
+    fun schedulePostUndoLocalEngineSync(
+        targetState: GameState,
+        quietUntilMillis: Long,
+    ) {
+        val pending = PendingPostUndoEngineSync(
+            targetState = targetState,
+            quietUntilMillis = quietUntilMillis,
+        )
+        pendingPostUndoEngineSync = pending
+        pendingPostUndoEngineSyncJob?.cancel()
+        pendingPostUndoEngineSyncJob = scope.launch {
+            val delayMillis = undoEngineInterventionRemainingDelayMillis(
+                nowMillis = System.currentTimeMillis(),
+                quietUntilMillis = pending.quietUntilMillis,
+            )
+            if (delayMillis > 0L) {
+                delay(delayMillis)
+            }
+            while (pendingPostUndoEngineSync == pending && gameState == pending.targetState && isEngineBusy) {
+                delay(100L)
+            }
+            if (
+                pendingPostUndoEngineSync != pending ||
+                gameState != pending.targetState ||
+                !isEngineReady
+            ) {
+                if (pendingPostUndoEngineSync == pending) {
+                    pendingPostUndoEngineSync = null
+                }
+                return@launch
+            }
+
+            isEngineBusy = true
+            runCatching {
+                withContext(Dispatchers.IO) {
+                    engineClient.syncAndEstimateGraphScore(pending.targetState, runtimeState.engineProfile)
+                }
+            }.onSuccess { estimate ->
+                if (gameState == pending.targetState) {
+                    val score = buildEngineEstimateDisplayPlan(
+                        state = pending.targetState,
+                        estimate = estimate,
+                        previousSnapshots = scoreState.scoreSnapshots,
+                        engineMessage = "Local undo settled; engine analysis synced.",
+                    )
+                    applyScoreEstimateDisplayPlan(score)
+                }
+            }.onFailure { error ->
+                if (gameState == pending.targetState) {
+                    engineMessage = error.message ?: "Local undo engine sync failed."
+                }
+            }
+            isEngineBusy = false
+            if (pendingPostUndoEngineSync == pending) {
+                pendingPostUndoEngineSync = null
+            }
+            if (gameState == pending.targetState) {
+                requestTopMoveAnalysisForState(
+                    targetState = pending.targetState,
+                    automatic = true,
+                )
+            }
         }
     }
 
@@ -1259,6 +1369,7 @@ private fun GoCoachScreen(
             engineMessage = "Engine is busy. Wait for the current analysis."
             return
         }
+        clearUndoEngineInterventionQuietWindow()
 
         val beforeMove = gameState
         val previousReviewCandidates = analysisState.reviewCandidateMoves
@@ -1374,40 +1485,23 @@ private fun GoCoachScreen(
         )
         val nextState = undo.gameState
         applyUndoLocalStatePlan(undo)
+        val quietUntilMillis = markUndoEngineInterventionQuiet()
         if (!plan.syncEngineAfterUndo) {
             engineMessage = "Local undo completed without engine sync."
+            cancelPendingPostUndoEngineSync()
             return
         }
-        isEngineBusy = true
-        scope.launch {
-            runCatching {
-                withContext(Dispatchers.IO) {
-                    engineClient.syncAndEstimateGraphScore(nextState, runtimeState.engineProfile)
-                }
-            }.onSuccess { estimate ->
-                val score = buildEngineEstimateDisplayPlan(
-                    state = nextState,
-                    estimate = estimate,
-                    previousSnapshots = scoreState.scoreSnapshots,
-                    engineMessage = "Local undo completed and engine analysis synced.",
-                )
-                applyScoreEstimateDisplayPlan(score)
-            }.onFailure { error ->
-                engineMessage = error.message ?: "Local undo engine sync failed."
-            }
-            isEngineBusy = false
-            requestTopMoveAnalysisForState(
-                targetState = nextState,
-                automatic = true,
-            )
-        }
+        engineMessage = "Local undo completed. Engine analysis will resume after undo input settles."
+        schedulePostUndoLocalEngineSync(
+            targetState = nextState,
+            quietUntilMillis = quietUntilMillis,
+        )
     }
 
     fun undoEngineBackedTurn(plan: UndoRequestPlan.EngineUndo) {
         val undoCount = plan.undoCount
         scope.launch {
             isEngineBusy = true
-            var nextAnalysisState: GameState? = null
             runCatching {
                 withContext(Dispatchers.IO) {
                     repeat(undoCount) {
@@ -1424,17 +1518,12 @@ private fun GoCoachScreen(
                 val nextState = undo.gameState
                 applyUndoLocalStatePlan(undo)
                 engineMessage = "Undid $undoCount move(s) in local state and engine state."
-                nextAnalysisState = nextState
+                markUndoEngineInterventionQuiet()
+                cancelPendingPostUndoEngineSync()
             }.onFailure { error ->
                 engineMessage = error.message ?: "Undo failed."
             }
             isEngineBusy = false
-            nextAnalysisState?.let { state ->
-                requestTopMoveAnalysisForState(
-                    targetState = state,
-                    automatic = true,
-                )
-            }
         }
     }
 
@@ -1572,9 +1661,11 @@ private fun GoCoachScreen(
         playerSetup,
         autoPlayDelaySetting,
         searchTimeSettings,
+        undoEngineInterventionQuietUntil,
         gameState.nextPlayer,
         gameState.moves.size,
     ) {
+        waitForUndoEngineInterventionQuietWindow()
         requestAiTurnForCurrentState()
     }
 
@@ -1585,9 +1676,11 @@ private fun GoCoachScreen(
         searchTimeSettings,
         isGameEnded,
         shouldShowResumePrompt,
+        undoEngineInterventionQuietUntil,
         gameState.nextPlayer,
         gameState.moves.size,
     ) {
+        waitForUndoEngineInterventionQuietWindow()
         requestTopMoveAnalysisForState(
             targetState = gameState,
             automatic = true,

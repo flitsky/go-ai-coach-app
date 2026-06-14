@@ -14,6 +14,25 @@ import org.junit.Test
 
 class UndoApplicationTest {
     @Test
+    fun undoEngineInterventionQuietWindowUsesOneSecondDefault() {
+        assertEquals(2_000L, undoEngineInterventionQuietUntilMillis(nowMillis = 1_000L))
+        assertEquals(1_000L, undoEngineInterventionRemainingDelayMillis(nowMillis = 1_000L, quietUntilMillis = 2_000L))
+        assertEquals(0L, undoEngineInterventionRemainingDelayMillis(nowMillis = 2_100L, quietUntilMillis = 2_000L))
+    }
+
+    @Test
+    fun undoEngineInterventionQuietWindowAcceptsCustomDelayForTestsAndPolicies() {
+        assertEquals(
+            1_250L,
+            undoEngineInterventionQuietUntilMillis(nowMillis = 1_000L, delayMillis = 250L),
+        )
+        assertEquals(
+            1_000L,
+            undoEngineInterventionQuietUntilMillis(nowMillis = 1_000L, delayMillis = -100L),
+        )
+    }
+
+    @Test
     fun undoRequestPlanReportsEmptyMoveHistoryFirst() {
         val plan = buildUndoRequestPlan(
             currentState = GameState.empty(),

@@ -1089,3 +1089,7 @@
 - `KataGoJsonAnalysisQueryFactory`를 추가해 JSON position analysis query 생성을 `KataGoProcessEngineAdapter`에서 분리했다. 어댑터는 process lifecycle, send/receive, state replay, parser 조합에 더 집중하게 했다.
 - `KataGoProtocolCommandsTest`, `KataGoJsonAnalysisQueryFactoryTest`를 추가했고, JDK 17과 Android SDK를 명시해 `:engine-android:testDebugUnitTest`와 `make test`를 실행해 모두 통과했다.
 - 7단계 완료 후 무선 ADB `SM-S908N(192.168.35.166:42037)`에 최신 APK와 KataGo model/config를 설치했고 cold launch `TotalTime=628ms`를 확인했다.
+- 사용자가 연속 무르기 시 무르기 버튼을 누를 때마다 엔진이 바로 개입해 응답이 느려지는 문제를 제기했고, 마지막 무르기 후 1초 정도 지나 현재 국면 기준으로만 엔진 분석/AI 개입이 재개되길 요청했다.
+- `UndoEngineInterventionDelayMillis=1000ms`와 quiet-window 계산 함수를 `UndoApplication.kt`에 추가했다. 자동 AI 턴과 자동 Top Moves 분석 `LaunchedEffect`는 무르기 quiet-window 동안 delay 후 최신 상태를 다시 검증하게 했다.
+- 2인용 모드의 엔진 동기화 무르기는 즉시 `syncAndEstimateGraphScore()`를 호출하지 않고, 마지막 무르기 후 1초 뒤 현재 보드가 그대로일 때만 엔진 동기화/score estimate/Top Moves 분석을 수행하도록 예약 방식으로 바꿨다. 새 착수, 새 게임, 복원, player setup/search time 변경 시에는 pending post-undo sync를 취소한다.
+- `UndoApplicationTest`에 quiet-window 계산 테스트를 추가했고, JDK 17과 Android SDK를 명시해 `UndoApplicationTest`와 `make test`를 실행해 모두 통과했다.

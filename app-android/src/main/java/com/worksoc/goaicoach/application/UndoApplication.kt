@@ -27,6 +27,20 @@ internal sealed class UndoRequestPlan {
     data class EngineUndo(val undoCount: Int) : UndoRequestPlan()
 }
 
+internal const val UndoEngineInterventionDelayMillis = 1_000L
+
+internal fun undoEngineInterventionQuietUntilMillis(
+    nowMillis: Long,
+    delayMillis: Long = UndoEngineInterventionDelayMillis,
+): Long =
+    nowMillis + delayMillis.coerceAtLeast(0L)
+
+internal fun undoEngineInterventionRemainingDelayMillis(
+    nowMillis: Long,
+    quietUntilMillis: Long,
+): Long =
+    (quietUntilMillis - nowMillis).coerceAtLeast(0L)
+
 internal fun buildUndoRequestPlan(
     currentState: GameState,
     matchMode: MatchMode,
