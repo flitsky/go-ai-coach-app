@@ -1,6 +1,6 @@
 # 문서 인덱스
 
-작성일: 2026-06-12
+작성일: 2026-06-14
 
 ## 운영 원칙
 
@@ -21,6 +21,7 @@
 | `SCORE_AND_ENDGAME_DECISION.md` | 중간 형세, 사석 정리, 종국 계가 정책 |
 | `KATRAIN_UX_BACKLOG.md` | KaTrain에서 참고할 UX 후보 backlog |
 | `REFACTORING_STRATEGY_2026-06-08.md` | 현재 구조 평가와 다음 리팩토링 방향 |
+| `FUTURE_ARCHITECTURE_VISION.md` | 미래 지향적 아키텍처 이상향 설계 및 로드맵 |
 
 ## 아카이브
 

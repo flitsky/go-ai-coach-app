@@ -1126,3 +1126,8 @@
 - `EngineCoreApi.configure()` KDoc에 KataGo GTP의 `maxTime`이 process 전역 파라미터이며 `timeMillis=null` 처리는 adapter가 명시적으로 검토해야 한다고 남겼다. `deadStones()`와 `scoreFinal()` KDoc에는 raw 엔진 primitive는 유지하되 기본 pass/pass UX에서는 5초 부심 SLA로 감싸고, 무제한 주심 분석은 사용자 이의 제기와 session generation 격리 뒤에서만 실행해야 한다고 명시했다.
 - `AnalysisLimit.timeMillis`에는 최대 시간 cap이지 최소 사고시간 보장이 아니며, stateful engine의 process-global time 설정은 별도 reset/documentation이 필요하다고 주석을 추가했다.
 - `KataGoProcessEngineAdapter.applySearchLimit()`에는 `timeMillis=null`일 때 `maxTime` replacement command를 보내지 않는 현재 구현의 확인 과제를 적었다. `EndgameResolver`와 `EngineSessionClient.resolveEndgameForState()`에도 raw 종국 조합 경로를 기본 UI에 무제한으로 연결하지 말고 5초 부심/명시적 주심 정책 뒤에 두라는 주석을 추가했다.
+- 사용자가 `docs/FUTURE_ARCHITECTURE_VISION.md` 초안을 정제하고 커밋/푸시한 뒤 다음 리팩토링을 진행해달라고 요청했다.
+- 초안의 핵심 방향은 유지하되, `Local-first, Hybrid-ready` 원칙을 문서 앞부분에 명시했다. 서버 엔진은 기본값이 아니라 저사양 기기 보완, 정밀 분석, 공식 cache 업데이트, 원격 대국 같은 선택적 확장으로 정리했다.
+- `EngineCoreApi`는 드라이버 레지스트리 자체가 아니라 local process/JNI/remote server runtime이 구현해야 하는 원시 엔진 기능 계약이라고 바로잡았다. 상위 앱은 `EngineSessionClient` 같은 미들웨어 API만 보도록 구조를 설명했다.
+- 서버/MSA 장점에는 네트워크 지연, 비용, 인증/abuse control, privacy, model/cache schema mismatch, fallback 같은 리스크를 함께 기록했다. 글로벌 cache도 board/ruleset/komi/fingerprint/model version/search mode/visits/time cap/options/origin/fill status가 맞아야 신뢰할 수 있다고 정리했다.
+- Remote Engine 도입 게이트를 추가했다. `GameSessionController` 경계, local/remote backend capability, 공통 DTO, cache key/model versioning, timeout/cancel/generation 폐기, offline fallback이 준비된 뒤 remote spike에 착수하는 기준으로 삼는다.
