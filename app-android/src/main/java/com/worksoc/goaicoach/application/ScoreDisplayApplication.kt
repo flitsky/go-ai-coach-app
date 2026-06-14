@@ -83,6 +83,12 @@ internal sealed class ScoreEstimateCompletionPlan {
     data class Discard(val discard: EngineOperationResultGuard.Discard) : ScoreEstimateCompletionPlan()
 }
 
+internal sealed class ScoreEstimateCompletionApplyPlan {
+    data class ApplySuccess(val display: ScoreEstimateDisplayPlan) : ScoreEstimateCompletionApplyPlan()
+    data class ApplyFailure(val failure: ScoreEstimateFailureDisplayPlan) : ScoreEstimateCompletionApplyPlan()
+    data class Discard(val discard: EngineOperationResultGuard.Discard) : ScoreEstimateCompletionApplyPlan()
+}
+
 internal fun scoreEstimateOperationToken(
     request: ScoreEstimateRequestPlan.RequestEngineEstimate,
     sessionGeneration: Long = 0L,
@@ -142,6 +148,18 @@ internal fun buildScoreEstimateCompletionPlan(
 
         is EngineOperationResultGuard.Discard ->
             ScoreEstimateCompletionPlan.Discard(guard)
+    }
+
+internal fun ScoreEstimateCompletionPlan.toApplyPlan(): ScoreEstimateCompletionApplyPlan =
+    when (this) {
+        is ScoreEstimateCompletionPlan.ApplySuccess ->
+            ScoreEstimateCompletionApplyPlan.ApplySuccess(display)
+
+        is ScoreEstimateCompletionPlan.ApplyFailure ->
+            ScoreEstimateCompletionApplyPlan.ApplyFailure(failure)
+
+        is ScoreEstimateCompletionPlan.Discard ->
+            ScoreEstimateCompletionApplyPlan.Discard(discard)
     }
 
 internal fun buildScoreEstimateRequestPlan(

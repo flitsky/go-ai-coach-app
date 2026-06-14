@@ -44,6 +44,21 @@ internal sealed class TopMoveAnalysisCompletionPlan {
     ) : TopMoveAnalysisCompletionPlan()
 }
 
+internal sealed class TopMoveAnalysisCompletionApplyPlan {
+    data class ApplySuccess(
+        val update: TopMoveAnalysisUpdate,
+        val analysisKey: AnalysisCacheKey,
+    ) : TopMoveAnalysisCompletionApplyPlan()
+
+    data class ApplyFailure(
+        val display: TopMoveAnalysisFailureDisplayPlan,
+    ) : TopMoveAnalysisCompletionApplyPlan()
+
+    data class Discard(
+        val discard: EngineOperationResultGuard.Discard,
+    ) : TopMoveAnalysisCompletionApplyPlan()
+}
+
 internal sealed class TopMoveAnalysisWorkflowResult {
     data class Success(
         val update: TopMoveAnalysisUpdate,
@@ -260,6 +275,21 @@ internal fun buildTopMoveAnalysisCompletionPlan(
                 error = result.error,
                 topMovesEnabled = topMovesEnabled,
             )
+    }
+
+internal fun TopMoveAnalysisCompletionPlan.toApplyPlan(): TopMoveAnalysisCompletionApplyPlan =
+    when (this) {
+        is TopMoveAnalysisCompletionPlan.ApplySuccess ->
+            TopMoveAnalysisCompletionApplyPlan.ApplySuccess(
+                update = update,
+                analysisKey = analysisKey,
+            )
+
+        is TopMoveAnalysisCompletionPlan.ApplyFailure ->
+            TopMoveAnalysisCompletionApplyPlan.ApplyFailure(display)
+
+        is TopMoveAnalysisCompletionPlan.Discard ->
+            TopMoveAnalysisCompletionApplyPlan.Discard(discard)
     }
 
 internal fun GameSessionAnalysisState.applyTopMoveAnalysisLaunchPlan(

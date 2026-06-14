@@ -192,6 +192,46 @@ class ScoreDisplayApplicationTest {
     }
 
     @Test
+    fun scoreEstimateCompletionApplyPlanCarriesDisposition() {
+        val state = GameState.empty()
+        val request = ScoreEstimateRequestPlan.RequestEngineEstimate(
+            state = state,
+            profile = EngineProfile(),
+            syncFirst = false,
+        )
+        val token = scoreEstimateOperationToken(
+            request = request,
+            sessionGeneration = 7L,
+        )
+        val display = buildLocalScoreEstimateDisplayPlan(
+            state = state,
+            previousSnapshots = emptyList(),
+            engineMessage = "estimated",
+        )
+
+        val success = buildScoreEstimateCompletionPlan(
+            result = ScoreEstimateWorkflowResult.Success(display),
+            token = token,
+            currentState = state,
+            currentSessionGeneration = 7L,
+        ).toApplyPlan()
+        val failure = buildScoreEstimateCompletionPlan(
+            result = ScoreEstimateWorkflowResult.Failure(IllegalStateException("estimate failed")),
+            token = token,
+            currentState = state,
+            currentSessionGeneration = 7L,
+        ).toApplyPlan()
+
+        assertTrue(success is ScoreEstimateCompletionApplyPlan.ApplySuccess)
+        assertEquals(display, (success as ScoreEstimateCompletionApplyPlan.ApplySuccess).display)
+        assertTrue(failure is ScoreEstimateCompletionApplyPlan.ApplyFailure)
+        assertEquals(
+            "estimate failed",
+            (failure as ScoreEstimateCompletionApplyPlan.ApplyFailure).failure.engineMessage,
+        )
+    }
+
+    @Test
     fun scoreEstimateFailureDisplayPlanUsesErrorMessageOrDefault() {
         val withMessage = buildScoreEstimateFailureDisplayPlan(IllegalStateException("engine stalled"))
         val withoutMessage = buildScoreEstimateFailureDisplayPlan(Throwable())

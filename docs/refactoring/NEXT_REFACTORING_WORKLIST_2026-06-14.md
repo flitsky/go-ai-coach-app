@@ -872,3 +872,39 @@
 
 5. Effect launcher metric 축소 재시도
    - 남은 13개 IO 지점을 operation kind별로 분류하고, 첫 목표를 13개에서 11개 이하로 잡는다.
+
+## 2026-06-15 추가 진행 로그: Score / Top Moves Apply Plan new 4 정리
+
+- 2026-06-15: `ScoreEstimateCompletionApplyPlan`과 `ScoreEstimateCompletionPlan.toApplyPlan()`을 추가했다. score estimate completion의 success/failure/discard 적용 disposition이 UI 적용용 타입으로 명시됐다.
+- 2026-06-15: `TopMoveAnalysisCompletionApplyPlan`과 `TopMoveAnalysisCompletionPlan.toApplyPlan()`을 추가했다. Top Moves completion도 cache update, failure display, discard disposition을 application apply plan으로 한 번 감싼다.
+- 2026-06-15: `GoCoachApp.kt`의 score estimate completion 적용은 `applyScoreEstimateCompletionApplyPlan()`으로 정리했다. 직접 `ScoreEstimateCompletionPlan` 분기를 UI에 노출하지 않는다.
+- 2026-06-15: `GoCoachApp.kt`의 Top Moves completion 적용은 `applyTopMoveAnalysisCompletionApplyPlan()`으로 정리했다. cache write와 undo restore cache write 순서는 유지하되, completion disposition은 application apply plan을 통과한다.
+- 2026-06-15: `ScoreDisplayApplicationTest`에 score estimate apply plan 테스트를 추가했고, `TopMovesApplicationTest`에 Top Moves apply plan cache update disposition 테스트를 추가했다.
+- 2026-06-15: KMP 관점에서는 `ScoreDisplayFormatterApplication.kt`가 가장 얇은 실제 이동 후보로 남아 있다. `TopMovesApplication.kt`와 `ScoreDisplayApplication.kt`는 Android 의존은 없지만 cache/write port와 UI 적용 port가 아직 UI local helper에 남아 있어 바로 물리 이동보다 포트 경계 정리가 먼저다.
+- 현재 metric: `GoCoachApp.kt`는 2,197줄이며, UI 파일 안의 `withContext(Dispatchers.IO)`/`runCatching` 직접 지점은 13개다. 이번 batch는 IO 지점 수를 줄이지 않고 completion disposition 노출을 줄이는 데 집중했다.
+- 검증: `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest --tests 'com.worksoc.goaicoach.application.ScoreDisplayApplicationTest' --tests 'com.worksoc.goaicoach.application.TopMovesApplicationTest' --tests 'com.worksoc.goaicoach.application.HumanMoveApplicationTest' --tests 'com.worksoc.goaicoach.architecture.LayeringContractTest'` 통과. 최종 통합 검증으로 `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test`도 통과했다.
+
+## 현재 리팩토링 완성도 평가
+
+- 주관 점수: 99.65/100.
+- 상향 요인: human sync, score estimate, Top Moves의 completion 결과가 모두 application apply plan을 거쳐 UI에 적용된다. UI는 아직 상태 mutation을 수행하지만, 어떤 disposition을 적용하는지는 더 이상 raw completion 타입에 직접 묶이지 않는다.
+- 남은 감점 요인: `GoCoachApp.kt`의 IO launch 지점은 여전히 13개이고, Top Moves cache write와 score estimate display apply는 UI local helper가 수행한다. 실제 KMP 물리 이동은 아직 하지 않았다.
+
+## 다음 추천 리팩토링 항목
+
+1. Score estimate IO launch wrapper 분리
+   - `requestEngineScoreEstimate()`의 `withContext(Dispatchers.IO)`를 목적별 runner/helper로 이동한다.
+   - 완료 시점의 최신 state/session generation으로 guard를 평가하는 세맨틱스는 유지한다.
+
+2. Top Moves IO launch wrapper 분리
+   - `requestTopMoveAnalysisForState()` 내부의 engine call launch와 completion apply를 작은 helper로 분리한다.
+   - cache write는 UI local cache port를 명시적으로 주입하거나 controller helper로 이동한다.
+
+3. Score sync completion apply plan 도입
+   - post-undo/scoring/restored sync도 `ScoreSyncCompletionPlan` raw 분기 대신 apply plan으로 통일한다.
+
+4. KMP 물리 이동 미니 스파이크
+   - `ScoreDisplayFormatterApplication.kt`를 실제 shared/common 후보로 옮길 때 필요한 import/package 변경만 별도 브랜치 수준으로 실험한다.
+
+5. `GoCoachApp.kt` metric 축소
+   - 다음 batch 목표는 `withContext(Dispatchers.IO)`/`runCatching` 직접 지점 13개를 11개 이하로 줄이는 것이다.

@@ -116,6 +116,7 @@ import com.worksoc.goaicoach.application.planSavedGamePersistence
 import com.worksoc.goaicoach.application.RuntimePlayLevelSelection
 import com.worksoc.goaicoach.application.RuntimeEventLogPort
 import com.worksoc.goaicoach.application.TopMoveAnalysisExecutionContext
+import com.worksoc.goaicoach.application.TopMoveAnalysisCompletionApplyPlan
 import com.worksoc.goaicoach.application.TopMoveAnalysisCompletionPlan
 import com.worksoc.goaicoach.application.TopMoveAnalysisFailureDisplayPlan
 import com.worksoc.goaicoach.application.runTopMoveAnalysisWorkflowResult
@@ -169,7 +170,7 @@ import com.worksoc.goaicoach.application.toTopMoveAnalysisLaunchPlan
 import com.worksoc.goaicoach.application.ShowTopMovesPlan
 import com.worksoc.goaicoach.application.toApplyPlan
 import com.worksoc.goaicoach.application.ScoreEstimateDisplayPlan
-import com.worksoc.goaicoach.application.ScoreEstimateCompletionPlan
+import com.worksoc.goaicoach.application.ScoreEstimateCompletionApplyPlan
 import com.worksoc.goaicoach.application.ScoreEstimateEffectLaunchRequest
 import com.worksoc.goaicoach.application.ScoreEstimateRequestPlan
 import com.worksoc.goaicoach.application.ScoreSyncCompletionPlan
@@ -808,28 +809,45 @@ private fun GoCoachScreen(
         uiStateHolder.applyTopMoveAnalysisFailureDisplayPlan(failure)
     }
 
-    fun applyTopMoveAnalysisCompletionPlan(completion: TopMoveAnalysisCompletionPlan) {
-        when (completion) {
-            is TopMoveAnalysisCompletionPlan.ApplySuccess -> {
-                applyTopMoveAnalysisUpdate(completion.update, completion.analysisKey)
-                completion.update.undoRestoreResult?.let { cached ->
-                    undoAnalysisRestoreCache.put(completion.analysisKey, cached)
+    fun applyTopMoveAnalysisCompletionApplyPlan(applyPlan: TopMoveAnalysisCompletionApplyPlan) {
+        when (applyPlan) {
+            is TopMoveAnalysisCompletionApplyPlan.ApplySuccess -> {
+                applyTopMoveAnalysisUpdate(applyPlan.update, applyPlan.analysisKey)
+                applyPlan.update.undoRestoreResult?.let { cached ->
+                    undoAnalysisRestoreCache.put(applyPlan.analysisKey, cached)
                 }
-                completion.update.cachedResult?.let { cached ->
-                    analysisCache.put(completion.analysisKey, cached)
+                applyPlan.update.cachedResult?.let { cached ->
+                    analysisCache.put(applyPlan.analysisKey, cached)
                 }
             }
 
-            is TopMoveAnalysisCompletionPlan.ApplyFailure ->
-                applyTopMoveAnalysisFailureDisplayPlan(completion.display)
+            is TopMoveAnalysisCompletionApplyPlan.ApplyFailure ->
+                applyTopMoveAnalysisFailureDisplayPlan(applyPlan.display)
 
-            is TopMoveAnalysisCompletionPlan.Discard ->
-                appendEngineOperationDiscardLog(completion.discard)
+            is TopMoveAnalysisCompletionApplyPlan.Discard ->
+                appendEngineOperationDiscardLog(applyPlan.discard)
         }
+    }
+
+    fun applyTopMoveAnalysisCompletionPlan(completion: TopMoveAnalysisCompletionPlan) {
+        applyTopMoveAnalysisCompletionApplyPlan(completion.toApplyPlan())
     }
 
     fun applyScoreEstimateDisplayPlan(score: ScoreEstimateDisplayPlan) {
         uiStateHolder.applyScoreEstimateDisplayPlan(score)
+    }
+
+    fun applyScoreEstimateCompletionApplyPlan(applyPlan: ScoreEstimateCompletionApplyPlan) {
+        when (applyPlan) {
+            is ScoreEstimateCompletionApplyPlan.ApplySuccess ->
+                applyScoreEstimateDisplayPlan(applyPlan.display)
+
+            is ScoreEstimateCompletionApplyPlan.ApplyFailure ->
+                uiStateHolder.applyScoreEstimateFailureDisplayPlan(applyPlan.failure)
+
+            is ScoreEstimateCompletionApplyPlan.Discard ->
+                appendEngineOperationDiscardLog(applyPlan.discard)
+        }
     }
 
     fun applyScoreSyncCompletionPlan(completion: ScoreSyncCompletionPlan): GameState? =
@@ -1377,16 +1395,7 @@ private fun GoCoachScreen(
                         diagnosticEventLog = diagnosticEventLog,
                     )
                 }
-            when (completion) {
-                is ScoreEstimateCompletionPlan.ApplySuccess ->
-                    applyScoreEstimateDisplayPlan(completion.display)
-
-                is ScoreEstimateCompletionPlan.ApplyFailure ->
-                    uiStateHolder.applyScoreEstimateFailureDisplayPlan(completion.failure)
-
-                is ScoreEstimateCompletionPlan.Discard ->
-                    appendEngineOperationDiscardLog(completion.discard)
-            }
+            applyScoreEstimateCompletionApplyPlan(completion.toApplyPlan())
         }
     }
 

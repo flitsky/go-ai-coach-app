@@ -246,6 +246,54 @@ class TopMovesApplicationTest {
     }
 
     @Test
+    fun topMoveAnalysisCompletionApplyPlanCarriesCacheUpdateDisposition() {
+        val state = GameState.empty()
+        val plan = buildTopMoveAnalysisPlan(
+            targetState = state,
+            engineProfile = EngineProfile(),
+            analysisPreset = AnalysisPreset.Lite,
+            deep = false,
+        )
+        val token = topMoveAnalysisOperationToken(
+            targetState = state,
+            plan = plan,
+            sessionGeneration = 3L,
+        )
+        val candidate = CandidateMove(
+            move = Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)),
+            pointLoss = 0.0,
+        )
+        val update = buildCompletedTopMoveAnalysisUpdate(
+            targetState = state,
+            result = AnalysisResult(
+                status = EngineStatus.ready("cached"),
+                candidates = listOf(candidate),
+                rootVisits = plan.analysisLimit.visits,
+                summary = "cached summary",
+            ),
+            rawCandidateText = "cached candidate text",
+            engineProfile = EngineProfile(),
+            analysisPreset = AnalysisPreset.Lite,
+            plan = plan,
+            deep = false,
+            topMovesEnabled = true,
+        )
+        val applyPlan = buildTopMoveAnalysisSuccessCompletionPlan(
+            token = token,
+            currentState = state,
+            currentAnalysisKey = plan.analysisKey,
+            currentSessionGeneration = 3L,
+            update = update,
+        ).toApplyPlan()
+
+        assertTrue(applyPlan is TopMoveAnalysisCompletionApplyPlan.ApplySuccess)
+        val success = applyPlan as TopMoveAnalysisCompletionApplyPlan.ApplySuccess
+        assertEquals(plan.analysisKey, success.analysisKey)
+        assertEquals(update, success.update)
+        assertEquals(update.cachedResult, success.update.cachedResult)
+    }
+
+    @Test
     fun runTopMoveAnalysisDelegatesExplicitStateToEngineClient() = runBlocking {
         val state = GameState.empty()
             .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
