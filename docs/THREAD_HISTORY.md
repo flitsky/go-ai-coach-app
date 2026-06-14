@@ -1192,3 +1192,6 @@
 - `빠른 초급 1~3단계`는 현재 코드상 모두 `MoveSelectionPolicy.BestOnly`이며, 빠른초급 AI 착수도 B16 `GtpStatefulFast` candidate 1 경로다. 빠른초급 3단계를 상대로 Top Moves를 그대로 따라도 같은 B16 best-only 계열이라 승리가 보장되지 않는 구조다.
 - `초급` 이상 AI 착수는 `PlayLevelSetting.aiMoveSearchMode()` 기준 `JsonPositionAnalysis`를 사용한다. 초급은 B32 후보 16, 중급은 B64 후보 20을 기반으로 JSON 후보군을 받고 `MoveSelectionPolicy`로 레벨링한다.
 - `ENGINE_API_CALL_POLICY.md`에 현재 Top Moves 한계와 Coach Analysis 분리 방향을 추가했다. 단기 방향은 Top Moves가 켜진 경우에만 `JsonPositionAnalysis` 기반 coach budget을 사용하고, 중기에는 `playEngine`과 `analysisEngine`을 분리하는 것이다. 폰 로컬에서 물리적 KataGo 2개를 항상 돌리는 것은 비용이 커서 기본값으로 강제하지 않는다.
+- 사용자가 학습용 힌트 때문에 앱이 과도하게 무거워져서는 안 되며, 한 엔진을 공유하면서 cache/tree 초기화를 반복하는 대신 엔진을 2개 띄워 각자 관심사와 engine-side cache를 유지하는 방식이 어떤지 질문했다.
+- 현재 코드의 한계는 AI-vs-AI가 한 GTP 프로세스를 공유하기 때문에 B16/B32/B64 공정성 검증 시 `clearSearchCache()`가 필요하다는 점이다. 반면 사람-vs-AI에서는 같은 AI의 이전 탐색 재사용이 속도와 강도 면에서 이득이므로 유지하는 것이 맞다.
+- `ENGINE_API_CALL_POLICY.md`에 역할별 다중 엔진 인스턴스 검토를 추가했다. `PlayEngine`은 빠른 대국과 AI 착수를 담당하고, `CoachEngine`은 사용자가 학습 분석을 켠 경우에만 lazy start하여 후보수/착수 리뷰/eval을 담당하는 방향이다. 다만 모바일 기본값으로 항상 2개를 띄우는 것은 메모리, 초기화 지연, CPU contention, 발열 비용 때문에 권장하지 않는다.

@@ -93,6 +93,38 @@ JSON 기반 운영의 목표는 다음과 같다.
 
 폰 로컬에서 물리적으로 KataGo 엔진 2개를 항상 돌리는 것은 메모리, 발열, 배터리, CPU contention 비용이 크다. 따라서 기본값으로 강제하지 않고, `Top Moves/Coach Analysis`가 켜진 경우에만 JSON analysis process 또는 원격 분석을 사용하는 방향이 안전하다.
 
+### 역할별 다중 엔진 인스턴스 검토
+
+빠른 대국과 학습 힌트의 관심사를 더 강하게 분리하려면 로컬에서도 엔진 인스턴스를 역할별로 나눌 수 있다.
+
+- `PlayEngine`: 실제 대국 진행과 AI 착수를 담당한다. `빠른 초급`에서는 GTP search tree reuse를 유지해 체감 속도와 응수 일관성을 얻는다.
+- `CoachEngine`: 사용자가 `Top Moves` 또는 학습 분석을 켠 경우에만 별도로 시작한다. 후보수, point loss, 착수 리뷰 spot, ownership/eval 같은 분석 관심사를 담당한다.
+- `BenchmarkEngine` 또는 `MaintenanceEngine`: 기기 benchmark, 공식 cache 생성, background optimization처럼 대국 UX와 분리되어야 하는 작업을 담당한다. 모바일 기본 대국 중에는 실행하지 않는다.
+
+이 방식의 장점은 명확하다.
+
+- AI 대국 엔진과 학습 힌트 엔진의 search tree/cache가 섞이지 않는다.
+- 빠른초급 B16 대국은 계속 가볍게 유지하면서, 사용자가 명시적으로 켠 경우에만 B32/B64 coach analysis를 돌릴 수 있다.
+- AI-vs-AI에서 한 프로세스를 공유할 때 필요했던 `clearSearchCache()` 의존을 줄일 수 있다.
+- 향후 `CoachEngine`만 원격 서버나 trusted cache backend로 교체해도 게임 UX 계층은 크게 바뀌지 않는다.
+
+단점도 크다.
+
+- 로컬 KataGo 프로세스 2개는 모델/NN cache/search tree를 각자 들 수 있으므로 메모리 사용량과 startup latency가 증가한다.
+- 동시에 search하면 CPU contention, 발열, 배터리 소모가 늘고 오히려 양쪽 응답 시간이 불안정해질 수 있다.
+- 저사양 폰에서는 PlayEngine이 안정적이어도 CoachEngine 때문에 전체 UX가 느려질 수 있다.
+- 두 엔진에 동일한 `GameState`를 주입하고, 늦게 도착한 분석 결과를 폐기하는 operation guard가 반드시 필요하다.
+
+따라서 기본 정책은 다음으로 둔다.
+
+1. 기본 대국은 단일 `PlayEngine`으로 유지한다.
+2. `Coach Analysis`가 켜진 경우에만 `CoachEngine`을 lazy start한다.
+3. `CoachEngine`은 항상 명시적 `GameState` 기반 position analysis를 수행하고, `PlayEngine`의 GTP search tree에 의존하지 않는다.
+4. 기기 메모리/응답시간이 기준 이하이면 `CoachEngine` 대신 기존 단일 엔진 JSON 분석 또는 원격/공식 cache를 사용한다.
+5. AI-vs-AI 공정성 검증에서는 장기적으로 seat별 engine instance 또는 JSON position analysis를 사용한다. 단기 빠른 자동대국은 현행 `clearSearchCache()` 정책을 유지한다.
+
+즉 다중 엔진은 좋은 방향이지만 “항상 켜지는 기본값”이 아니라 “학습/검증 모드에서 켜지는 역할별 resource policy”로 설계한다.
+
 ## 현재 구현 범위
 
 2026-06-13 현재 모바일 기본 구현은 성능을 우선하되, B16/B32/B64 time cap은 사용자가 `Search Time` 메뉴에서 조정할 수 있다. 또한 `Time cap Off`를 선택하면 `AnalysisLimit.timeMillis=null`로 내려가 응답시간 제한 없이 요청 visits 충족을 우선한다.
