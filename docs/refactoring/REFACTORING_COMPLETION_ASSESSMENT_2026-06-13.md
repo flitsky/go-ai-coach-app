@@ -189,3 +189,18 @@ POC를 계속 고도화하는 관점에서는 이미 충분히 좋은 상태다.
 
 - `PlayerSetupUiStateTest`, `GameScreenStateTest` 통과.
 - `make test` 통과.
+
+## 7단계 추가 리팩토링 결과
+
+2026-06-14에 KataGo GTP/JSON protocol 생성 경계를 분리했다.
+
+- `KataGoProtocolCommands`를 추가해 board setup, move, genmove, search analyze, raw NN, final score/status, maintenance command 문자열 생성을 한 곳으로 모았다.
+- `KataGoJsonAnalysisQueryFactory`를 추가해 JSON position analysis query 생성 책임을 `KataGoProcessEngineAdapter`에서 분리했다.
+- `KataGoProcessEngineAdapter`는 process lifecycle, send/receive, engine state replay, parser 조합에 집중하고 protocol 포맷 지식은 helper에 위임한다.
+- 이 단계는 아직 별도 process client 클래스까지 나누지는 않았다. 다음 단계에서 `GtpStatefulFastClient`와 `JsonPositionAnalysisClient`를 별도 협력 객체로 추출할 수 있는 기반 작업이다.
+
+검증:
+
+- `KataGoProtocolCommandsTest`, `KataGoJsonAnalysisQueryFactoryTest` 통과.
+- `:engine-android:testDebugUnitTest` 통과.
+- `make test` 통과.

@@ -1084,3 +1084,7 @@
 - 6단계로 Player Setup presentation DTO를 도입했다. `PlayerSetupUiState`와 `PlayerSetupSideUiState`를 추가해 seat label, controller label, AI 단계 label, engine label, visits detail, 자동대국 delay 표시 여부, summary text를 presentation 계층에서 계산하게 했다.
 - `GameScreenState`는 원본 `PlayerSetup`과 함께 `playerSetupUi`를 제공하고, `PlayerSetupPanel`은 표시 문자열을 직접 계산하지 않고 DTO를 렌더링한다. 기존 이벤트는 여전히 `PlayerSetup`을 반환하므로 설정 변경 동작은 유지했다.
 - `PlayerSetupUiStateTest`, `GameScreenStateTest`, `make test`를 모두 통과했다.
+- 6단계 완료 후 무선 ADB `SM-S908N(192.168.35.166:42037)`에 최신 APK와 KataGo model/config를 설치했고 cold launch `TotalTime=516ms`를 확인했다.
+- 7단계로 KataGo GTP/JSON protocol 생성 경계를 분리했다. `KataGoProtocolCommands`를 추가해 board setup, move, genmove, search analyze, raw NN, final score/status, maintenance command 문자열 생성을 한 곳으로 모았다.
+- `KataGoJsonAnalysisQueryFactory`를 추가해 JSON position analysis query 생성을 `KataGoProcessEngineAdapter`에서 분리했다. 어댑터는 process lifecycle, send/receive, state replay, parser 조합에 더 집중하게 했다.
+- `KataGoProtocolCommandsTest`, `KataGoJsonAnalysisQueryFactoryTest`를 추가했고, JDK 17과 Android SDK를 명시해 `:engine-android:testDebugUnitTest`와 `make test`를 실행해 모두 통과했다.

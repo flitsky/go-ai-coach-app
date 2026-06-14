@@ -25,7 +25,6 @@ import java.io.BufferedReader
 import java.io.BufferedWriter
 import java.io.InputStreamReader
 import java.io.OutputStreamWriter
-import org.json.JSONArray
 import org.json.JSONObject
 
 class KataGoProcessEngineAdapter(
@@ -64,16 +63,16 @@ class KataGoProcessEngineAdapter(
         this.ruleset = ruleset
         nextPlayer = StoneColor.Black
         playedMoves.clear()
-        sendCommand("boardsize ${boardSize.value}")
-        sendCommand("komi 6.5")
-        sendCommand("kata-set-rules ${ruleset.katagoName}")
-        sendCommand("clear_board")
+        sendCommand(KataGoProtocolCommands.boardSize(boardSize))
+        sendCommand(KataGoProtocolCommands.komi())
+        sendCommand(KataGoProtocolCommands.rules(ruleset))
+        sendCommand(KataGoProtocolCommands.clearBoard())
         return EngineStatus.ready("KataGo new ${boardSize.value}x${boardSize.value} ${ruleset.scoringLabel} game")
     }
 
     override suspend fun playMove(move: Move): EngineStatus {
         ensureProcessStarted()
-        sendCommand(move.toGtpCommand(boardSize))
+        sendCommand(KataGoProtocolCommands.play(move, boardSize))
         playedMoves += move
         if (move is Move.Play || move is Move.Pass) {
             nextPlayer = move.player.opponent
@@ -83,7 +82,7 @@ class KataGoProcessEngineAdapter(
 
     override suspend fun genMove(player: StoneColor): MoveResult {
         ensureProcessStarted()
-        val response = sendCommand("genmove ${player.toGtpColor()}")
+        val response = sendCommand(KataGoProtocolCommands.genMove(player))
         val move = response.toMove(player, boardSize)
         playedMoves += move
         if (move is Move.Play || move is Move.Pass) {
@@ -98,7 +97,7 @@ class KataGoProcessEngineAdapter(
 
     override suspend fun undoMove(): EngineStatus {
         ensureProcessStarted()
-        sendCommand("undo")
+        sendCommand(KataGoProtocolCommands.undo())
         val removed = playedMoves.removeLastOrNull()
         if (removed != null) {
             nextPlayer = removed.player
@@ -110,7 +109,7 @@ class KataGoProcessEngineAdapter(
         ensureProcessStarted()
         // Used only when shared-process AI-vs-AI play must prevent one side's
         // deeper search tree from becoming the other side's effective budget.
-        sendCommand("clear_cache")
+        sendCommand(KataGoProtocolCommands.clearSearchCache())
         return EngineStatus.ready("KataGo search cache cleared")
     }
 
@@ -290,7 +289,7 @@ class KataGoProcessEngineAdapter(
         try {
             applySearchLimit(effectiveLimit)
             val startNanos = System.nanoTime()
-            val response = sendCommand(effectiveLimit.toSearchAnalyzeCommand(nextPlayer))
+            val response = sendCommand(KataGoProtocolCommands.searchAnalyze(nextPlayer, effectiveLimit))
             val elapsedMs = (System.nanoTime() - startNanos) / 1_000_000
             val candidates = KataGoAnalysisParser.attachPointLoss(
                 candidates = KataGoAnalysisParser.parseCandidates(
@@ -336,7 +335,7 @@ class KataGoProcessEngineAdapter(
             (candidate.move as? Move.Play)?.coordinate
         }
         val policyCandidates = if (limit.includePolicy) {
-            val policyResponse = sendCommand("kata-raw-nn 0")
+            val policyResponse = sendCommand(KataGoProtocolCommands.rawNn())
             KataGoAnalysisParser.parsePolicyCandidates(
                 response = policyResponse,
                 player = nextPlayer,
@@ -416,19 +415,19 @@ class KataGoProcessEngineAdapter(
 
     override suspend fun estimateScore(limit: AnalysisLimit): ScoreEstimate {
         ensureProcessStarted()
-        val response = sendCommand("kata-raw-nn 0")
+        val response = sendCommand(KataGoProtocolCommands.rawNn())
         return KataGoAnalysisParser.parseScoreEstimate(response, boardSize)
     }
 
     override suspend fun scoreFinal(): FinalScoreResult {
         ensureProcessStarted()
-        val response = sendCommand("final_score")
+        val response = sendCommand(KataGoProtocolCommands.finalScore())
         return KataGoAnalysisParser.parseFinalScore(response)
     }
 
     override suspend fun deadStones(): DeadStonesResult {
         ensureProcessStarted()
-        val response = sendCommand("final_status_list dead")
+        val response = sendCommand(KataGoProtocolCommands.finalStatusList("dead"))
         val coordinates = KataGoAnalysisParser.parseFinalStatusList(response, boardSize)
         return DeadStonesResult(
             status = EngineStatus.ready("KataGo dead-stone status complete: ${coordinates.size} stone(s)."),
@@ -444,7 +443,7 @@ class KataGoProcessEngineAdapter(
     override suspend fun stop(): EngineStatus {
         runCatching {
             if (process != null) {
-                sendCommand("quit")
+                sendCommand(KataGoProtocolCommands.quit())
             }
         }
         input = null
@@ -551,17 +550,10 @@ class KataGoProcessEngineAdapter(
     }
 
     private fun applySearchLimit(limit: AnalysisLimit) {
-        sendCommand("kata-set-param maxVisits ${limit.visits}")
+        sendCommand(KataGoProtocolCommands.setMaxVisits(limit.visits))
         limit.timeMillis?.let { timeMillis ->
-            val seconds = (timeMillis / 1_000.0).coerceAtLeast(0.001)
-            sendCommand("kata-set-param maxTime $seconds")
+            sendCommand(KataGoProtocolCommands.setMaxTime(timeMillis))
         }
-    }
-
-    private fun AnalysisLimit.toSearchAnalyzeCommand(player: StoneColor): String {
-        val timeMillis = timeMillis ?: return "kata-search_analyze ${player.toGtpColor()}"
-        val centiseconds = ((timeMillis + 9) / 10).coerceAtLeast(1)
-        return "kata-search_analyze ${player.toGtpColor()} $centiseconds"
     }
 
     private fun AnalysisLimit.effectiveAnalysisLimit(): AnalysisLimit {
@@ -583,55 +575,16 @@ class KataGoProcessEngineAdapter(
         includePolicyOverride: Boolean? = null,
     ): JSONObject {
         analysisQueryCounter += 1
-        val overrideSettings = JSONObject()
-        timeMillis?.let { overrideSettings.put("maxTime", it / 1_000.0) }
-        val queryMoves = if (refineMove == null) {
-            playedMoves
-        } else {
-            playedMoves + refineMove
-        }
-        return JSONObject()
-            .put("id", "go-ai-coach-analysis-$analysisQueryCounter")
-            .put("rules", ruleset.katagoName)
-            .put("komi", 6.5)
-            .put("boardXSize", boardSize.value)
-            .put("boardYSize", boardSize.value)
-            .put("initialPlayer", "B")
-            .put("initialStones", JSONArray())
-            .put("moves", queryMoves.toJsonMoves())
-            .put("analyzeTurns", JSONArray().put(queryMoves.size))
-            .put("maxVisits", visits)
-            .put("includeOwnership", false)
-            .put("includeMovesOwnership", false)
-            .put("includePolicy", includePolicyOverride ?: (refineMove == null && includePolicy))
-            .put("overrideSettings", overrideSettings)
-            .put("priority", 0)
+        return KataGoJsonAnalysisQueryFactory.build(
+            id = "go-ai-coach-analysis-$analysisQueryCounter",
+            boardSize = boardSize,
+            ruleset = ruleset,
+            playedMoves = playedMoves,
+            limit = this,
+            refineMove = refineMove,
+            includePolicyOverride = includePolicyOverride,
+        )
     }
-
-    private fun List<Move>.toJsonMoves(): JSONArray =
-        JSONArray().also { moves ->
-            forEach { move ->
-                moves.put(
-                    JSONArray()
-                        .put(move.player.toGtpColor())
-                        .put(move.toGtpVertex(boardSize)),
-                )
-            }
-        }
-
-    private fun Move.toGtpCommand(boardSize: BoardSize): String =
-        when (this) {
-            is Move.Play -> "play ${player.toGtpColor()} ${toGtpVertex(boardSize)}"
-            is Move.Pass -> "play ${player.toGtpColor()} ${toGtpVertex(boardSize)}"
-            is Move.Resign -> "play ${player.toGtpColor()} ${toGtpVertex(boardSize)}"
-        }
-
-    private fun Move.toGtpVertex(boardSize: BoardSize): String =
-        when (this) {
-            is Move.Play -> coordinate.label(boardSize)
-            is Move.Pass -> "pass"
-            is Move.Resign -> "resign"
-        }
 
     private fun String.toMove(
         player: StoneColor,
@@ -641,12 +594,6 @@ class KataGoProcessEngineAdapter(
             "pass" -> Move.Pass(player)
             "resign" -> Move.Resign(player)
             else -> Move.Play(player, BoardCoordinate.fromLabel(this, boardSize))
-        }
-
-    private fun StoneColor.toGtpColor(): String =
-        when (this) {
-            StoneColor.Black -> "B"
-            StoneColor.White -> "W"
         }
 
     private fun EngineProfile.describe(): String =
