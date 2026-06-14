@@ -62,24 +62,45 @@ class LayeringContractTest {
 
     @Test
     fun positionAnalysisGatewayContractStaysKmpReady() {
-        val contract = repoRoot()
-            .resolve("app-android/src/main/java/com/worksoc/goaicoach/middleware/PositionAnalysisGateway.kt")
+        val middlewareRoot = repoRoot()
+            .resolve("app-android/src/main/java/com/worksoc/goaicoach/middleware")
+        val contracts = listOf(
+            middlewareRoot.resolve("PositionAnalysisGateway.kt"),
+            middlewareRoot.resolve("RemotePositionAnalysisGateway.kt"),
+        )
         val forbiddenImports = listOf(
             "import android.",
             "import androidx.",
+            "import java.",
+            "import org.json.",
             "import com.worksoc.goaicoach.application.",
             "import com.worksoc.goaicoach.ui.",
             "import com.worksoc.goaicoach.persistence.",
             "import com.worksoc.goaicoach.engine.",
         )
 
-        val offenders = contract
-            .readLines()
-            .filter { line -> forbiddenImports.any { forbidden -> line.startsWith(forbidden) } }
+        val offenders = contracts.flatMap { contract ->
+            contract
+                .readLines()
+                .filter { line -> forbiddenImports.any { forbidden -> line.startsWith(forbidden) } }
+                .map { line -> "${contract.relativeTo(repoRoot()).path}: $line" }
+        }
 
         assertTrue(
-            "PositionAnalysisGateway must remain a KMP-ready middleware contract:\n${offenders.joinToString("\n")}",
+            "Position analysis middleware gateway contracts must remain KMP-ready:\n${offenders.joinToString("\n")}",
             offenders.isEmpty(),
+        )
+    }
+
+    @Test
+    fun httpRemoteAnalysisTransportStaysOutOfKmpReadyGatewayContracts() {
+        val transport = repoRoot()
+            .resolve("app-android/src/main/java/com/worksoc/goaicoach/middleware/HttpRemotePositionAnalysisTransport.kt")
+        val text = transport.readText()
+
+        assertTrue(
+            "HTTP transport is intentionally JVM/Android-bound and should remain in its own file.",
+            text.contains("java.net.HttpURLConnection") && text.contains("org.json.JSONObject"),
         )
     }
 

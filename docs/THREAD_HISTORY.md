@@ -1263,3 +1263,6 @@
 - 3단계로 structured diagnostic 자동 계측을 연결했다. `runObservedEngineOperation()`을 추가해 `EngineOperationRequest` 단위로 elapsed time을 측정하고, threshold 초과 시 `engine.operation.slow`, coroutine timeout 시 `engine.operation.timeout` 이벤트를 `DiagnosticEventLogPort`에 기록한다.
 - `LocalEngineSessionClient.analyzePositionWithCache()`의 `syncToGameState + analyze` 구간을 observer로 감쌌다. 일반 빠른 분석은 기존 로그 동작을 유지하고, 실제 엔진 분석이 time cap/threshold를 넘기는 경우에만 slow diagnostic이 추가된다.
 - `DiagnosticEventApplicationTest`에 slow/timeout observer 테스트를 추가했고, `EngineSessionTest`와 함께 관련 application 테스트가 통과했다.
+- 4단계로 middleware KMP 이동 준비를 진행했다. 1단계에서 추가한 HTTP transport/JSON codec이 `RemotePositionAnalysisGateway.kt`에 함께 들어가 KMP-ready gateway 계약을 오염시킬 수 있음을 확인하고, `HttpRemotePositionAnalysisTransport.kt`로 분리했다.
+- `RemotePositionAnalysisGateway.kt`는 다시 shared DTO와 `analysisFingerprint`만 의존하는 읽기 전용 gateway/transport 계약 파일이 되었다. HTTP 구현은 의도적으로 Android/JVM-bound 파일에 남겨 향후 Ktor/OkHttp/remote server client로 교체 가능한 transport detail로 취급한다.
+- `LayeringContractTest`를 강화해 `PositionAnalysisGateway.kt`와 `RemotePositionAnalysisGateway.kt` 모두 `android`, `androidx`, `java`, `org.json`, application/UI/persistence/engine runtime import를 금지했다. 관련 architecture/middleware 테스트가 통과했다.
