@@ -96,7 +96,7 @@ import com.worksoc.goaicoach.application.GameSessionTurnTimeState
 import com.worksoc.goaicoach.application.GameSessionUiStateHolder
 import com.worksoc.goaicoach.application.HumanEngineSyncFailurePlan
 import com.worksoc.goaicoach.application.HumanEngineSyncDisplayPlan
-import com.worksoc.goaicoach.application.HumanEngineSyncCompletionPlan
+import com.worksoc.goaicoach.application.HumanEngineSyncCompletionApplyPlan
 import com.worksoc.goaicoach.application.HumanEngineSyncRuntimeLogPlan
 import com.worksoc.goaicoach.application.HumanEngineSyncCompletionRequest
 import com.worksoc.goaicoach.application.HumanEngineSyncEffectLaunchRequest
@@ -167,6 +167,7 @@ import com.worksoc.goaicoach.application.toAutoAiTurnFollowUpRequest
 import com.worksoc.goaicoach.application.toShowTopMovesPlan
 import com.worksoc.goaicoach.application.toTopMoveAnalysisLaunchPlan
 import com.worksoc.goaicoach.application.ShowTopMovesPlan
+import com.worksoc.goaicoach.application.toApplyPlan
 import com.worksoc.goaicoach.application.ScoreEstimateDisplayPlan
 import com.worksoc.goaicoach.application.ScoreEstimateCompletionPlan
 import com.worksoc.goaicoach.application.ScoreEstimateEffectLaunchRequest
@@ -184,7 +185,6 @@ import com.worksoc.goaicoach.application.StartConfiguredGamePlan
 import com.worksoc.goaicoach.application.TopMoveAnalysisUpdate
 import com.worksoc.goaicoach.application.topMoveAnalysisOperationToken
 import com.worksoc.goaicoach.application.toGameSessionSettingsState
-import com.worksoc.goaicoach.application.toRuntimeLogPlan
 import com.worksoc.goaicoach.application.toRuntimeLogContext
 import com.worksoc.goaicoach.application.undoEngineInterventionQuietUntilMillis
 import com.worksoc.goaicoach.application.undoEngineInterventionRemainingDelayMillis
@@ -795,16 +795,17 @@ private fun GoCoachScreen(
         }
     }
 
-    fun uiStateHolder(): GameSessionUiStateHolder =
+    val uiStateHolder = remember {
         GameSessionUiStateHolder(
             currentCoreState = ::currentCoreSessionState,
             applyCoreState = ::applyCoreSessionState,
         )
+    }
 
     fun applyTopMoveAnalysisFailureDisplayPlan(
         failure: TopMoveAnalysisFailureDisplayPlan,
     ) {
-        uiStateHolder().applyTopMoveAnalysisFailureDisplayPlan(failure)
+        uiStateHolder.applyTopMoveAnalysisFailureDisplayPlan(failure)
     }
 
     fun applyTopMoveAnalysisCompletionPlan(completion: TopMoveAnalysisCompletionPlan) {
@@ -828,7 +829,7 @@ private fun GoCoachScreen(
     }
 
     fun applyScoreEstimateDisplayPlan(score: ScoreEstimateDisplayPlan) {
-        uiStateHolder().applyScoreEstimateDisplayPlan(score)
+        uiStateHolder.applyScoreEstimateDisplayPlan(score)
     }
 
     fun applyScoreSyncCompletionPlan(completion: ScoreSyncCompletionPlan): GameState? =
@@ -850,11 +851,11 @@ private fun GoCoachScreen(
         }
 
     fun applyFinalScoreDisplayPlan(final: FinalScoreDisplayPlan) {
-        uiStateHolder().applyFinalScoreDisplayPlan(final)
+        uiStateHolder.applyFinalScoreDisplayPlan(final)
     }
 
     fun applyEndgameFailureDisplayPlan(failure: EndgameFailureDisplayPlan) {
-        uiStateHolder().applyEndgameFailureDisplayPlan(failure)
+        uiStateHolder.applyEndgameFailureDisplayPlan(failure)
     }
 
     fun currentRuntimeSessionState(): GameSessionRuntimeState =
@@ -869,11 +870,11 @@ private fun GoCoachScreen(
     }
 
     fun applyAutoAiTurnDisplayPlan(display: AutoAiTurnDisplayPlan): AutoAiTurnFollowUpPlan {
-        return uiStateHolder().applyAutoAiTurnDisplayPlan(display)
+        return uiStateHolder.applyAutoAiTurnDisplayPlan(display)
     }
 
     fun applyAutoAiTurnFailureDisplayPlan(error: Throwable) {
-        uiStateHolder().applyAutoAiTurnFailureDisplayPlan(
+        uiStateHolder.applyAutoAiTurnFailureDisplayPlan(
             buildAutoAiTurnFailureDisplayPlan(error),
         )
     }
@@ -893,7 +894,7 @@ private fun GoCoachScreen(
     }
 
     fun applyHumanEngineSyncFailurePlan(failure: HumanEngineSyncFailurePlan) {
-        uiStateHolder().applyHumanEngineSyncFailurePlan(failure)
+        uiStateHolder.applyHumanEngineSyncFailurePlan(failure)
     }
 
     fun appendHumanEngineSyncRuntimeLog(
@@ -920,6 +921,30 @@ private fun GoCoachScreen(
                 )
 
             HumanEngineSyncRuntimeLogPlan.None -> Unit
+        }
+    }
+
+    fun applyHumanEngineSyncCompletionApplyPlan(
+        applyPlan: HumanEngineSyncCompletionApplyPlan,
+        elapsedMs: Long,
+    ): GameState? {
+        appendHumanEngineSyncRuntimeLog(
+            logPlan = applyPlan.runtimeLogPlan,
+            elapsedMs = elapsedMs,
+        )
+        return when (applyPlan) {
+            is HumanEngineSyncCompletionApplyPlan.ApplySuccess ->
+                applyHumanEngineSyncDisplayPlan(applyPlan.display)
+
+            is HumanEngineSyncCompletionApplyPlan.ApplyFailure -> {
+                applyHumanEngineSyncFailurePlan(applyPlan.failure)
+                null
+            }
+
+            is HumanEngineSyncCompletionApplyPlan.Discard -> {
+                appendEngineOperationDiscardLog(applyPlan.discard)
+                null
+            }
         }
     }
 
@@ -956,7 +981,7 @@ private fun GoCoachScreen(
     }
 
     fun applyUndoLocalStatePlan(undo: UndoLocalStatePlan) {
-        uiStateHolder().applyUndoLocalStatePlan(undo)
+        uiStateHolder.applyUndoLocalStatePlan(undo)
         turnTimeState = turnTimeState.restartCurrentTurn(
             state = undo.gameState,
             nowMillis = System.currentTimeMillis(),
@@ -1357,7 +1382,7 @@ private fun GoCoachScreen(
                     applyScoreEstimateDisplayPlan(completion.display)
 
                 is ScoreEstimateCompletionPlan.ApplyFailure ->
-                    uiStateHolder().applyScoreEstimateFailureDisplayPlan(completion.failure)
+                    uiStateHolder.applyScoreEstimateFailureDisplayPlan(completion.failure)
 
                 is ScoreEstimateCompletionPlan.Discard ->
                     appendEngineOperationDiscardLog(completion.discard)
@@ -1776,7 +1801,7 @@ private fun GoCoachScreen(
             ),
         )
         turnTimeState = turnTimeUpdate.after
-        uiStateHolder().applyHumanMoveLocalResult(localMove)
+        uiStateHolder.applyHumanMoveLocalResult(localMove)
 
         if (!isEngineReady) {
             val updatedSnapshots = ScoreTimeline.record(scoreState.scoreSnapshots, localMove.localScoreSnapshot)
@@ -1828,7 +1853,7 @@ private fun GoCoachScreen(
                         diagnosticEventLog = diagnosticEventLog,
                     )
                 }
-            when (val completion = buildHumanEngineSyncCompletionPlan(
+            val completion = buildHumanEngineSyncCompletionPlan(
                 HumanEngineSyncCompletionRequest(
                     result = syncResult,
                     operation = humanSyncOperation,
@@ -1839,31 +1864,11 @@ private fun GoCoachScreen(
                     localMove = localMove,
                     previousSnapshots = scoreState.scoreSnapshots,
                 ),
-            )) {
-                is HumanEngineSyncCompletionPlan.ApplySuccess -> {
-                    appendHumanEngineSyncRuntimeLog(
-                        logPlan = completion.toRuntimeLogPlan(),
-                        elapsedMs = System.currentTimeMillis() - syncStartMillis,
-                    )
-                    nextAnalysisState = applyHumanEngineSyncDisplayPlan(completion.display)
-                }
-
-                is HumanEngineSyncCompletionPlan.ApplyFailure -> {
-                    appendHumanEngineSyncRuntimeLog(
-                        logPlan = completion.toRuntimeLogPlan(),
-                        elapsedMs = System.currentTimeMillis() - syncStartMillis,
-                    )
-                    applyHumanEngineSyncFailurePlan(completion.failure)
-                }
-
-                is HumanEngineSyncCompletionPlan.Discard -> {
-                    appendHumanEngineSyncRuntimeLog(
-                        logPlan = completion.toRuntimeLogPlan(),
-                        elapsedMs = System.currentTimeMillis() - syncStartMillis,
-                    )
-                    appendEngineOperationDiscardLog(completion.discard)
-                }
-            }
+            )
+            nextAnalysisState = applyHumanEngineSyncCompletionApplyPlan(
+                applyPlan = completion.toApplyPlan(),
+                elapsedMs = System.currentTimeMillis() - syncStartMillis,
+            )
             nextAnalysisState?.let { state ->
                 requestTopMoveAnalysisForState(
                     targetState = state,

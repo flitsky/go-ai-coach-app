@@ -837,3 +837,38 @@
 
 5. Effect launcher metric 축소
    - Top Moves, score estimate, human sync 중 남은 IO launch 지점을 분류하고 13개에서 10개 이하로 줄일 batch를 선정한다.
+
+## 2026-06-15 추가 진행 로그: Human Sync Apply / Holder Lifetime new 3 정리
+
+- 2026-06-15: `HumanEngineSyncCompletionApplyPlan`과 `HumanEngineSyncCompletionPlan.toApplyPlan()`을 추가했다. success/failure/discard completion은 runtime log plan과 실제 적용 disposition을 함께 가진다.
+- 2026-06-15: `GoCoachApp.kt`의 human sync completion 처리에서 success/failure/discard별 runtime log append 반복을 제거했다. UI는 `applyHumanEngineSyncCompletionApplyPlan()`에서 runtime log를 먼저 append하고, 이후 display/failure/discard 적용을 수행한다.
+- 2026-06-15: `uiStateHolder()` local factory를 제거하고 `remember { GameSessionUiStateHolder(...) }` 값으로 holder lifetime을 고정했다. holder wrapper가 호출 때마다 새로 만들어지는 구조를 없애고 state mutation 경계를 더 명확히 했다.
+- 2026-06-15: `EndgameFailureDisplayText`와 `buildEndgameFailureDisplayText()`를 `ScoreDisplayFormatterApplication.kt`에 추가했다. endgame failure 문구 조립도 formatter 파일로 이동해 `ScoreDisplayApplication.kt`의 문자열 책임을 더 줄였다.
+- 2026-06-15: `HumanMoveApplicationTest`에 completion apply plan 테스트를 추가했고, `ScoreDisplayApplicationTest`에 endgame failure formatter 테스트를 추가했다.
+- 현재 metric: `GoCoachApp.kt`는 2,188줄이며, UI 파일 안의 `withContext(Dispatchers.IO)`/`runCatching` 직접 지점은 13개다. 이번 batch는 metric 축소보다 completion apply 순서 안정화와 holder lifetime 고정을 우선했다.
+- 검증: `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest --tests 'com.worksoc.goaicoach.application.HumanMoveApplicationTest' --tests 'com.worksoc.goaicoach.application.ScoreDisplayApplicationTest' --tests 'com.worksoc.goaicoach.application.GameSessionUiStateHolderApplicationTest' --tests 'com.worksoc.goaicoach.architecture.LayeringContractTest'` 통과. 최종 통합 검증으로 `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test`도 통과.
+
+## 현재 리팩토링 완성도 평가
+
+- 주관 점수: 99.6/100.
+- 상향 요인: human sync completion은 runtime log, display/failure, discard 적용 순서가 한 helper에 모였다. holder lifetime도 고정되어 다음 controller/state holder 분리의 기반이 더 안정화됐다. formatter 파일은 final/endgame success뿐 아니라 failure 문구도 흡수했다.
+- 남은 감점 요인: `GoCoachApp.kt`의 effect launch와 Compose state 소유권은 여전히 UI 파일에 남아 있다. `withContext(Dispatchers.IO)` 직접 지점은 13개로 줄지 않았다. 실제 shared/common 물리 이동도 아직 수행 전이다.
+
+## 다음 추천 리팩토링 항목
+
+1. Human sync completion apply helper의 application/controller 위치 재평가
+   - 현재 helper는 UI local function이다. 다음에는 runtime log port와 display apply port를 분리해 controller helper로 옮길 수 있는지 검토한다.
+
+2. Score estimate effect launcher 정리
+   - score estimate는 completion plan이 이미 있으므로 IO launch와 completion apply를 작게 감싸는 runner 후보로 적합하다.
+   - stale guard는 완료 시점 state를 쓰도록 유지해야 한다.
+
+3. Top Moves completion apply helper 정리
+   - cache write, undo restore cache write, failure/discard apply 순서를 작은 helper로 묶는다.
+   - UI branch를 줄이되 cache mutation 소유권은 명확히 유지한다.
+
+4. KMP 물리 이동 후보를 실제 Gradle 관점에서 검토
+   - `ScoreDisplayFormatterApplication.kt` 또는 `DiagnosticEventModel.kt`를 shared/common으로 옮길 때 필요한 package/type 의존을 목록화한다.
+
+5. Effect launcher metric 축소 재시도
+   - 남은 13개 IO 지점을 operation kind별로 분류하고, 첫 목표를 13개에서 11개 이하로 잡는다.

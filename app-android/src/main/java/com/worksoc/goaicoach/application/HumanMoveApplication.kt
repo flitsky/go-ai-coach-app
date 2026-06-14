@@ -73,6 +73,25 @@ internal sealed class HumanEngineSyncRuntimeLogPlan {
     data object None : HumanEngineSyncRuntimeLogPlan()
 }
 
+internal sealed class HumanEngineSyncCompletionApplyPlan {
+    abstract val runtimeLogPlan: HumanEngineSyncRuntimeLogPlan
+
+    data class ApplySuccess(
+        val display: HumanEngineSyncDisplayPlan,
+        override val runtimeLogPlan: HumanEngineSyncRuntimeLogPlan,
+    ) : HumanEngineSyncCompletionApplyPlan()
+
+    data class ApplyFailure(
+        val failure: HumanEngineSyncFailurePlan,
+        override val runtimeLogPlan: HumanEngineSyncRuntimeLogPlan,
+    ) : HumanEngineSyncCompletionApplyPlan()
+
+    data class Discard(
+        val discard: EngineOperationResultGuard.Discard,
+        override val runtimeLogPlan: HumanEngineSyncRuntimeLogPlan,
+    ) : HumanEngineSyncCompletionApplyPlan()
+}
+
 internal sealed class HumanEngineSyncWorkflowResult {
     data class Success(val result: LocalEngineMoveResult) : HumanEngineSyncWorkflowResult()
     data class Failure(val error: Throwable) : HumanEngineSyncWorkflowResult()
@@ -267,6 +286,27 @@ internal fun HumanEngineSyncCompletionPlan.toRuntimeLogPlan(): HumanEngineSyncRu
 
         is HumanEngineSyncCompletionPlan.Discard ->
             HumanEngineSyncRuntimeLogPlan.None
+    }
+
+internal fun HumanEngineSyncCompletionPlan.toApplyPlan(): HumanEngineSyncCompletionApplyPlan =
+    when (this) {
+        is HumanEngineSyncCompletionPlan.ApplySuccess ->
+            HumanEngineSyncCompletionApplyPlan.ApplySuccess(
+                display = display,
+                runtimeLogPlan = toRuntimeLogPlan(),
+            )
+
+        is HumanEngineSyncCompletionPlan.ApplyFailure ->
+            HumanEngineSyncCompletionApplyPlan.ApplyFailure(
+                failure = failure,
+                runtimeLogPlan = toRuntimeLogPlan(),
+            )
+
+        is HumanEngineSyncCompletionPlan.Discard ->
+            HumanEngineSyncCompletionApplyPlan.Discard(
+                discard = discard,
+                runtimeLogPlan = toRuntimeLogPlan(),
+            )
     }
 
 internal suspend fun EngineSessionClient.runHumanEngineSyncEffect(

@@ -298,6 +298,53 @@ class HumanMoveApplicationTest {
     }
 
     @Test
+    fun humanEngineSyncApplyPlanCarriesRuntimeLogAndDisposition() {
+        val beforeMove = GameState.empty()
+        val move = Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine))
+        val localMove = applyHumanMoveLocally(
+            beforeMove = beforeMove,
+            move = move,
+            reviewAnalysis = MoveAnalysisSnapshot.empty(beforeMove),
+            previousMoveReviews = emptyList(),
+        ).getOrThrow()
+        val operation = engineOperationRequest(
+            kind = EngineOperationKind.HumanMoveSync,
+            state = localMove.afterMove,
+            sessionGeneration = 2,
+        )
+        val estimate = ScoreEstimate(
+            status = EngineStatus.ready("estimated"),
+            whiteScoreLead = 0.0,
+            whiteWinRate = 0.5,
+            summary = "estimate",
+        )
+
+        val success = buildHumanEngineSyncSuccessCompletionPlan(
+            operation = operation,
+            currentState = localMove.afterMove,
+            currentSessionGeneration = 2,
+            afterMove = localMove.afterMove,
+            moveDescription = localMove.lastMoveText,
+            result = LocalEngineMoveResult(estimate = estimate),
+            localMove = localMove,
+            previousSnapshots = emptyList(),
+        ).toApplyPlan()
+        val discard = buildHumanEngineSyncFailureCompletionPlan(
+            operation = operation,
+            currentState = localMove.afterMove.play(Move.Pass(StoneColor.White)),
+            currentSessionGeneration = 2,
+            localMove = localMove,
+            previousSnapshots = emptyList(),
+            errorMessage = "late failure",
+        ).toApplyPlan()
+
+        assertTrue(success is HumanEngineSyncCompletionApplyPlan.ApplySuccess)
+        assertTrue(success.runtimeLogPlan is HumanEngineSyncRuntimeLogPlan.Success)
+        assertTrue(discard is HumanEngineSyncCompletionApplyPlan.Discard)
+        assertEquals(HumanEngineSyncRuntimeLogPlan.None, discard.runtimeLogPlan)
+    }
+
+    @Test
     fun humanEngineSyncEffectRunnerDelegatesPlanToEngineClient() = runBlocking {
         val afterMove = GameState.empty()
             .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))

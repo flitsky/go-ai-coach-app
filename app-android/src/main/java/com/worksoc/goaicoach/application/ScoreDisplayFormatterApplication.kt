@@ -8,6 +8,12 @@ internal data class FinalScoreDisplayText(
     val candidateText: String,
 )
 
+internal data class EndgameFailureDisplayText(
+    val finalScoreText: String,
+    val engineMessage: String,
+    val candidateText: String,
+)
+
 internal fun buildLocalFinalScoreDisplayText(
     finalScore: FinalScoreResult,
     engineMessage: String,
@@ -28,3 +34,15 @@ internal fun buildResolvedEndgameDisplayText(
         engineMessage = listOfNotNull(engineMessagePrefix, resolution.toEngineMessage()).joinToString("\n"),
         candidateText = resolution.toCandidateText(),
     )
+
+internal fun buildEndgameFailureDisplayText(
+    errorMessage: String,
+    engineMessagePrefix: String? = null,
+): EndgameFailureDisplayText {
+    val finalScoreText = "Final score failed: $errorMessage"
+    return EndgameFailureDisplayText(
+        finalScoreText = finalScoreText,
+        engineMessage = listOfNotNull(engineMessagePrefix, finalScoreText).joinToString("\n"),
+        candidateText = "Game ended after two passes, but final score failed.",
+    )
+}

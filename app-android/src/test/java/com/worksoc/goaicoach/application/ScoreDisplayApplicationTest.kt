@@ -407,6 +407,21 @@ class ScoreDisplayApplicationTest {
     }
 
     @Test
+    fun endgameFailureDisplayTextWrapsFailureMessageAndCandidateText() {
+        val text = buildEndgameFailureDisplayText(
+            errorMessage = "timeout",
+            engineMessagePrefix = "Assistant judge failed.",
+        )
+
+        assertEquals("Final score failed: timeout", text.finalScoreText)
+        assertEquals(
+            "Assistant judge failed.\nFinal score failed: timeout",
+            text.engineMessage,
+        )
+        assertEquals("Game ended after two passes, but final score failed.", text.candidateText)
+    }
+
+    @Test
     fun scoreEstimateDisplayRunnerRequestsEngineAndBuildsPlan() = runBlocking {
         val state = GameState.empty()
         val profile = EngineProfile()

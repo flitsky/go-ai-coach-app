@@ -387,15 +387,18 @@ internal fun buildEndgameFailureDisplayPlan(
     errorMessage: String,
     engineMessagePrefix: String? = null,
 ): EndgameFailureDisplayPlan {
-    val finalScoreText = "Final score failed: $errorMessage"
+    val text = buildEndgameFailureDisplayText(
+        errorMessage = errorMessage,
+        engineMessagePrefix = engineMessagePrefix,
+    )
     return EndgameFailureDisplayPlan(
         endgameLog = buildEndgameLog(
             source = source,
             state = state,
-            finalScoreText = finalScoreText,
+            finalScoreText = text.finalScoreText,
             detail = "lastMove=${state.moves.lastOrNull()?.describe(state.boardSize) ?: "None"}",
         ),
-        engineMessage = listOfNotNull(engineMessagePrefix, finalScoreText).joinToString("\n"),
-        candidateText = "Game ended after two passes, but final score failed.",
+        engineMessage = text.engineMessage,
+        candidateText = text.candidateText,
     )
 }
