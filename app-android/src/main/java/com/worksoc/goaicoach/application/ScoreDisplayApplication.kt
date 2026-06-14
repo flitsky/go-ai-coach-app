@@ -18,6 +18,11 @@ internal data class ScoreEstimateDisplayPlan(
     val engineMessage: String,
 )
 
+internal data class ScoreEstimateStateResult(
+    val scoreEstimate: ScoreEstimate?,
+    val scoreSnapshots: List<ScoreSnapshot>,
+)
+
 internal data class ScoreEstimateFailureDisplayPlan(
     val engineMessage: String,
 )
@@ -174,38 +179,73 @@ internal fun ScoreEstimateRequestPlan.toScoreEstimateLaunchStateUpdate(): ScoreE
             ScoreEstimateLaunchStateUpdate(effect = GameSessionEffect.RunScoreEstimate(this))
     }
 
+internal fun buildEngineScoreEstimateStateResult(
+    state: GameState,
+    estimate: ScoreEstimate,
+    previousSnapshots: List<ScoreSnapshot>,
+    trimAfterMove: Boolean = false,
+): ScoreEstimateStateResult {
+    val snapshots = if (trimAfterMove) {
+        ScoreTimeline.trimAfter(previousSnapshots, state.moves.size)
+    } else {
+        previousSnapshots
+    }
+    return ScoreEstimateStateResult(
+        scoreEstimate = estimate,
+        scoreSnapshots = ScoreTimeline.record(
+            snapshots,
+            ScoreTimeline.fromEstimate(state.moves.size, estimate),
+        ),
+    )
+}
+
+internal fun buildLocalScoreEstimateStateResult(
+    state: GameState,
+    previousSnapshots: List<ScoreSnapshot>,
+): ScoreEstimateStateResult =
+    ScoreEstimateStateResult(
+        scoreEstimate = null,
+        scoreSnapshots = ScoreTimeline.record(previousSnapshots, localScoreSnapshot(state)),
+    )
+
+internal fun ScoreEstimateStateResult.toScoreEstimateDisplayPlan(
+    scoreText: String,
+    engineMessage: String,
+): ScoreEstimateDisplayPlan =
+    ScoreEstimateDisplayPlan(
+        scoreText = scoreText,
+        scoreEstimate = scoreEstimate,
+        scoreSnapshots = scoreSnapshots,
+        engineMessage = engineMessage,
+    )
+
 internal fun buildEngineEstimateDisplayPlan(
     state: GameState,
     estimate: ScoreEstimate,
     previousSnapshots: List<ScoreSnapshot>,
     engineMessage: String = estimate.status.message,
     trimAfterMove: Boolean = false,
-): ScoreEstimateDisplayPlan {
-    val snapshots = if (trimAfterMove) {
-        ScoreTimeline.trimAfter(previousSnapshots, state.moves.size)
-    } else {
-        previousSnapshots
-    }
-    return ScoreEstimateDisplayPlan(
+): ScoreEstimateDisplayPlan =
+    buildEngineScoreEstimateStateResult(
+        state = state,
+        estimate = estimate,
+        previousSnapshots = previousSnapshots,
+        trimAfterMove = trimAfterMove,
+    ).toScoreEstimateDisplayPlan(
         scoreText = estimate.toDisplayText(),
-        scoreEstimate = estimate,
-        scoreSnapshots = ScoreTimeline.record(
-            snapshots,
-            ScoreTimeline.fromEstimate(state.moves.size, estimate),
-        ),
         engineMessage = engineMessage,
     )
-}
 
 internal fun buildLocalScoreEstimateDisplayPlan(
     state: GameState,
     previousSnapshots: List<ScoreSnapshot>,
     engineMessage: String,
 ): ScoreEstimateDisplayPlan =
-    ScoreEstimateDisplayPlan(
+    buildLocalScoreEstimateStateResult(
+        state = state,
+        previousSnapshots = previousSnapshots,
+    ).toScoreEstimateDisplayPlan(
         scoreText = BoardScorer.score(state).toDisplayText(),
-        scoreEstimate = null,
-        scoreSnapshots = ScoreTimeline.record(previousSnapshots, localScoreSnapshot(state)),
         engineMessage = engineMessage,
     )
 

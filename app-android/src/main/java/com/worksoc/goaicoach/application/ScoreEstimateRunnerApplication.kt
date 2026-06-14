@@ -4,6 +4,14 @@ import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.ScoreSnapshot
 
+internal data class ScoreEstimateEffectLaunchRequest(
+    val effect: GameSessionEffect.RunScoreEstimate,
+    val previousSnapshots: List<ScoreSnapshot>,
+    val token: ScoreEstimateOperationToken,
+    val currentState: GameState,
+    val currentSessionGeneration: Long,
+)
+
 internal suspend fun EngineSessionClient.runScoreEstimateDisplayPlan(
     request: ScoreEstimateRequestPlan.RequestEngineEstimate,
     previousSnapshots: List<ScoreSnapshot>,
@@ -56,6 +64,22 @@ internal suspend fun EngineSessionClient.runScoreEstimateWorkflowResult(
     }.fold(
         onSuccess = { display -> ScoreEstimateWorkflowResult.Success(display) },
         onFailure = { error -> ScoreEstimateWorkflowResult.Failure(error) },
+    )
+
+internal suspend fun EngineSessionClient.runScoreEstimateEffectCompletionPlan(
+    request: ScoreEstimateEffectLaunchRequest,
+    diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
+): ScoreEstimateCompletionPlan =
+    buildScoreEstimateCompletionPlan(
+        result = runScoreEstimateWorkflowResult(
+            effect = request.effect,
+            previousSnapshots = request.previousSnapshots,
+            operationRequest = request.token.operation,
+            diagnosticEventLog = diagnosticEventLog,
+        ),
+        token = request.token,
+        currentState = request.currentState,
+        currentSessionGeneration = request.currentSessionGeneration,
     )
 
 internal suspend fun EngineSessionClient.runScoringRuleSyncDisplayPlan(

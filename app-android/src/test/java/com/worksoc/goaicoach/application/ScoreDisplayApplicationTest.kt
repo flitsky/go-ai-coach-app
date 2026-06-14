@@ -323,6 +323,34 @@ class ScoreDisplayApplicationTest {
     }
 
     @Test
+    fun scoreEstimateStateResultSeparatesDomainDataFromDisplayText() {
+        val state = GameState.empty()
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+        val estimate = ScoreEstimate(
+            status = EngineStatus.ready("estimated"),
+            whiteScoreLead = -2.5,
+            whiteWinRate = 0.2,
+            summary = "estimate",
+        )
+
+        val result = buildEngineScoreEstimateStateResult(
+            state = state,
+            estimate = estimate,
+            previousSnapshots = emptyList(),
+        )
+        val display = result.toScoreEstimateDisplayPlan(
+            scoreText = "display text",
+            engineMessage = "display message",
+        )
+
+        assertEquals(estimate, result.scoreEstimate)
+        assertEquals(ScoreSnapshotSource.EngineEstimate, result.scoreSnapshots.single().source)
+        assertEquals("display text", display.scoreText)
+        assertEquals("display message", display.engineMessage)
+        assertEquals(result.scoreSnapshots, display.scoreSnapshots)
+    }
+
+    @Test
     fun scoreEstimateDisplayRunnerRequestsEngineAndBuildsPlan() = runBlocking {
         val state = GameState.empty()
         val profile = EngineProfile()
@@ -393,6 +421,44 @@ class ScoreDisplayApplicationTest {
         assertEquals("estimated", (success as ScoreEstimateWorkflowResult.Success).display.engineMessage)
         assertTrue(failure is ScoreEstimateWorkflowResult.Failure)
         assertEquals("estimate failed", (failure as ScoreEstimateWorkflowResult.Failure).error.message)
+    }
+
+    @Test
+    fun scoreEstimateEffectCompletionRunnerBuildsCompletionPlan() = runBlocking {
+        val state = GameState.empty()
+        val changedState = state
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+        val request = ScoreEstimateRequestPlan.RequestEngineEstimate(
+            state = state,
+            profile = EngineProfile(),
+            syncFirst = true,
+        )
+        val token = scoreEstimateOperationToken(
+            request = request,
+            sessionGeneration = 3L,
+        )
+        val launchRequest = ScoreEstimateEffectLaunchRequest(
+            effect = GameSessionEffect.RunScoreEstimate(request),
+            previousSnapshots = emptyList(),
+            token = token,
+            currentState = state,
+            currentSessionGeneration = 3L,
+        )
+
+        val success = FakeScoreEngineSessionClient()
+            .runScoreEstimateEffectCompletionPlan(launchRequest)
+        val failure = FakeScoreEngineSessionClient(
+            estimateError = IllegalStateException("estimate failed"),
+        ).runScoreEstimateEffectCompletionPlan(launchRequest)
+        val discard = FakeScoreEngineSessionClient()
+            .runScoreEstimateEffectCompletionPlan(
+                launchRequest.copy(currentState = changedState),
+            )
+
+        assertTrue(success is ScoreEstimateCompletionPlan.ApplySuccess)
+        assertTrue(failure is ScoreEstimateCompletionPlan.ApplyFailure)
+        assertEquals("estimate failed", (failure as ScoreEstimateCompletionPlan.ApplyFailure).failure.engineMessage)
+        assertTrue(discard is ScoreEstimateCompletionPlan.Discard)
     }
 
     @Test

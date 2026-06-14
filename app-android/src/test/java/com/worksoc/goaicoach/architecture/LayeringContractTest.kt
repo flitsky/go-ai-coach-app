@@ -120,6 +120,7 @@ class LayeringContractTest {
             applicationRoot.resolve("EngineDeviceBenchmarkApplication.kt"),
             applicationRoot.resolve("EngineSessionLifecycleApplication.kt"),
             applicationRoot.resolve("EngineStartupApplication.kt"),
+            applicationRoot.resolve("GameSessionUiStateHolderApplication.kt"),
             applicationRoot.resolve("HumanMoveApplication.kt"),
             applicationRoot.resolve("PositionAnalysisCacheOptimization.kt"),
             applicationRoot.resolve("ScoreDisplayApplication.kt"),

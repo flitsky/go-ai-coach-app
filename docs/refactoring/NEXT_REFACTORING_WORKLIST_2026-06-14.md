@@ -692,3 +692,39 @@
 5. KMP 물리 이동 준비 PR
    - `UndoApplication.kt` 또는 `ScoreSyncCompletionApplication.kt`를 실제 shared/common 후보로 옮길 때 필요한 port 의존을 정리한다.
    - 바로 이동하지 않더라도 Gradle 제약과 package dependency를 테스트로 고정한다.
+
+## 2026-06-15 추가 진행 로그: State Holder / Score Boundary 9차 정리
+
+- 2026-06-15: `ScoreEstimateStateResult`를 추가했다. score estimate의 domain state result와 `scoreText`/`engineMessage` display formatting을 분리해 `ScoreDisplayApplication.kt`의 KMP 이동 전제 조건을 한 단계 정리했다.
+- 2026-06-15: `ScoreEstimateEffectLaunchRequest`와 `runScoreEstimateEffectCompletionPlan()`을 추가했다. `GoCoachApp.kt`는 score estimate engine call의 workflow result 생성과 stale guard completion 선택을 직접 수행하지 않고, application launcher가 반환한 completion plan을 적용한다.
+- 2026-06-15: `GameSessionUiStateHolderApplication.kt`를 추가했다. 아직 Compose state를 직접 분리하지는 않지만, score/final/endgame/undo display plan 적용은 `GameSessionUiStateHolder` 경계를 통과한다.
+- 2026-06-15: `LayeringContractTest`에 `GameSessionUiStateHolderApplication.kt`를 추가했다. state holder 후보도 Android/UI/persistence/runtime 구현 import 없이 유지하도록 자동화했다.
+- 2026-06-15: `docs/refactoring/KMP_MOVE_SPIKE_2026-06-15.md`에 `GameSessionUiStateHolderApplication.kt` 위치를 추가했다. 이 파일은 즉시 KMP 이동 후보라기보다 UI reducer 경계 안정화 후 재평가할 중간 어댑터로 분류했다.
+- 검증: `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest --tests 'com.worksoc.goaicoach.application.ScoreDisplayApplicationTest' --tests 'com.worksoc.goaicoach.application.UndoApplicationTest' --tests 'com.worksoc.goaicoach.application.GameSessionUiStateHolderApplicationTest' --tests 'com.worksoc.goaicoach.architecture.LayeringContractTest'` 통과. 최종 통합 검증으로 `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test`도 통과.
+
+## 현재 리팩토링 완성도 평가
+
+- 주관 점수: 99.3/100.
+- 상향 요인: score estimate는 launch request/result/completion 경계가 application 계층에 더 모였다. score domain result와 display text의 분리도 시작됐다. UI state holder 1차 도입으로 `GoCoachApp.kt`의 state mutation 적용부를 다음 파일 분리로 옮길 수 있는 접점이 생겼다.
+- 남은 감점 요인: `GoCoachApp.kt`는 아직 2,187줄이며 실제 Compose state 변수는 동일 파일에 남아 있다. `ScoreDisplayApplication.kt`도 display 문구와 domain result가 완전히 분리된 것은 아니며, final score/endgame 쪽은 아직 display plan 중심이다.
+
+## 다음 추천 리팩토링 항목
+
+1. `GameSessionUiStateHolder` 적용 범위 확대
+   - Top Moves failure, Auto AI display/failure, Human sync failure도 holder 경계로 통과시킨다.
+   - 단, runtime log append와 follow-up scheduling은 UI/controller에 남긴다.
+
+2. Final score domain result 분리
+   - `FinalScoreDisplayPlan` 생성 전에 `FinalScoreStateResult` 또는 `ResolvedEndgameStateResult`를 둔다.
+   - 종국 판정/사석 정리 도메인 데이터와 사용자 표시 문구를 분리한다.
+
+3. Score estimate launcher 패턴을 scoring/restored sync로 확장
+   - 현재 `runScoreSyncWorkflowCompletionPlan()`은 generic block 기반이다.
+   - scoring rule sync/restored game sync에도 명시적 launch request를 두면 추적성이 올라간다.
+
+4. UI state holder 파일 위치 재평가
+   - 지금은 application package에 두었지만, 장기적으로 `ui/state` 또는 KMP reducer 후보 중 어디가 더 적합한지 비교한다.
+
+5. KMP 물리 이동 전 의존성 그래프 작성
+   - `ScoreDisplayApplication.kt`, `UndoApplication.kt`, `ScoreSyncCompletionApplication.kt`의 import graph를 문서화한다.
+   - 실제 shared/common 이동 전 필요한 port/type 이동 순서를 확정한다.

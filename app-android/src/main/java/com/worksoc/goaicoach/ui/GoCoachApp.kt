@@ -43,8 +43,6 @@ import com.worksoc.goaicoach.application.buildUndoRequestPlan
 import com.worksoc.goaicoach.application.buildNewLocalGameSessionPlan
 import com.worksoc.goaicoach.application.buildSavedGameRestoreRequestPlan
 import com.worksoc.goaicoach.application.buildSavedSessionCheckPlan
-import com.worksoc.goaicoach.application.buildScoreEstimateFailureDisplayPlan
-import com.worksoc.goaicoach.application.buildScoreEstimateCompletionPlan
 import com.worksoc.goaicoach.application.buildScoreEstimateRequestPlan
 import com.worksoc.goaicoach.application.buildScoringRuleChangePlan
 import com.worksoc.goaicoach.application.buildStartConfiguredGamePlan
@@ -96,6 +94,7 @@ import com.worksoc.goaicoach.application.GameSessionMoveReviewState
 import com.worksoc.goaicoach.application.GameSessionRuntimeState
 import com.worksoc.goaicoach.application.GameSessionScoreState
 import com.worksoc.goaicoach.application.GameSessionTurnTimeState
+import com.worksoc.goaicoach.application.GameSessionUiStateHolder
 import com.worksoc.goaicoach.application.HumanEngineSyncFailurePlan
 import com.worksoc.goaicoach.application.HumanEngineSyncDisplayPlan
 import com.worksoc.goaicoach.application.HumanEngineSyncCompletionPlan
@@ -129,7 +128,7 @@ import com.worksoc.goaicoach.application.runEngineStartupWorkflowResult
 import com.worksoc.goaicoach.application.runEngineUndoWorkflowResult
 import com.worksoc.goaicoach.application.runHumanEngineSyncWorkflowResult
 import com.worksoc.goaicoach.application.runPositionAnalysisCacheOptimizationWorkflowResult
-import com.worksoc.goaicoach.application.runScoreEstimateWorkflowResult
+import com.worksoc.goaicoach.application.runScoreEstimateEffectCompletionPlan
 import com.worksoc.goaicoach.application.runStartupBenchmarkWorkflowResult
 import com.worksoc.goaicoach.application.runScoringRuleSyncDisplayPlan
 import com.worksoc.goaicoach.application.runtimeAiTurnBeginLog
@@ -165,6 +164,7 @@ import com.worksoc.goaicoach.application.toTopMoveAnalysisLaunchPlan
 import com.worksoc.goaicoach.application.ShowTopMovesPlan
 import com.worksoc.goaicoach.application.ScoreEstimateDisplayPlan
 import com.worksoc.goaicoach.application.ScoreEstimateCompletionPlan
+import com.worksoc.goaicoach.application.ScoreEstimateEffectLaunchRequest
 import com.worksoc.goaicoach.application.ScoreEstimateRequestPlan
 import com.worksoc.goaicoach.application.ScoreSyncCompletionPlan
 import com.worksoc.goaicoach.application.runScoreSyncWorkflowCompletionPlan
@@ -791,6 +791,12 @@ private fun GoCoachScreen(
         }
     }
 
+    fun uiStateHolder(): GameSessionUiStateHolder =
+        GameSessionUiStateHolder(
+            currentCoreState = ::currentCoreSessionState,
+            applyCoreState = ::applyCoreSessionState,
+        )
+
     fun applyTopMoveAnalysisFailureDisplayPlan(
         failure: TopMoveAnalysisFailureDisplayPlan,
     ) {
@@ -820,7 +826,7 @@ private fun GoCoachScreen(
     }
 
     fun applyScoreEstimateDisplayPlan(score: ScoreEstimateDisplayPlan) {
-        applyCoreSessionState(currentCoreSessionState().applyScoreEstimateDisplayPlan(score))
+        uiStateHolder().applyScoreEstimateDisplayPlan(score)
     }
 
     fun applyScoreSyncCompletionPlan(completion: ScoreSyncCompletionPlan): GameState? =
@@ -861,20 +867,12 @@ private fun GoCoachScreen(
             },
         )
 
-    fun applyScoreEstimateFailureDisplayPlan(error: Throwable) {
-        applyCoreSessionState(
-            currentCoreSessionState().applyScoreEstimateFailureDisplayPlan(
-                buildScoreEstimateFailureDisplayPlan(error),
-            ),
-        )
-    }
-
     fun applyFinalScoreDisplayPlan(final: FinalScoreDisplayPlan) {
-        applyCoreSessionState(currentCoreSessionState().applyFinalScoreDisplayPlan(final))
+        uiStateHolder().applyFinalScoreDisplayPlan(final)
     }
 
     fun applyEndgameFailureDisplayPlan(failure: EndgameFailureDisplayPlan) {
-        applyCoreSessionState(currentCoreSessionState().applyEndgameFailureDisplayPlan(failure))
+        uiStateHolder().applyEndgameFailureDisplayPlan(failure)
     }
 
     fun currentRuntimeSessionState(): GameSessionRuntimeState =
@@ -979,7 +977,7 @@ private fun GoCoachScreen(
     }
 
     fun applyUndoLocalStatePlan(undo: UndoLocalStatePlan) {
-        applyCoreSessionState(currentCoreSessionState().applyUndoLocalStatePlan(undo))
+        uiStateHolder().applyUndoLocalStatePlan(undo)
         turnTimeState = turnTimeState.restartCurrentTurn(
             state = undo.gameState,
             nowMillis = System.currentTimeMillis(),
@@ -1350,28 +1348,25 @@ private fun GoCoachScreen(
             sessionGeneration = runtimeState.sessionGeneration,
         )
         launchTrackedEngineOperation(operationToken.operation) {
-            val result =
+            val completion =
                 withContext(Dispatchers.IO) {
-                    engineClient.runScoreEstimateWorkflowResult(
-                        effect = effect,
-                        previousSnapshots = scoreState.scoreSnapshots,
-                        operationRequest = operationToken.operation,
+                    engineClient.runScoreEstimateEffectCompletionPlan(
+                        request = ScoreEstimateEffectLaunchRequest(
+                            effect = effect,
+                            previousSnapshots = scoreState.scoreSnapshots,
+                            token = operationToken,
+                            currentState = gameState,
+                            currentSessionGeneration = runtimeState.sessionGeneration,
+                        ),
                         diagnosticEventLog = diagnosticEventLog,
                     )
                 }
-            when (val completion = buildScoreEstimateCompletionPlan(
-                result = result,
-                token = operationToken,
-                currentState = gameState,
-                currentSessionGeneration = runtimeState.sessionGeneration,
-            )) {
+            when (completion) {
                 is ScoreEstimateCompletionPlan.ApplySuccess ->
                     applyScoreEstimateDisplayPlan(completion.display)
 
                 is ScoreEstimateCompletionPlan.ApplyFailure ->
-                    applyCoreSessionState(
-                        currentCoreSessionState().applyScoreEstimateFailureDisplayPlan(completion.failure),
-                    )
+                    uiStateHolder().applyScoreEstimateFailureDisplayPlan(completion.failure)
 
                 is ScoreEstimateCompletionPlan.Discard ->
                     appendEngineOperationDiscardLog(completion.discard)
