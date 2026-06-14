@@ -38,6 +38,13 @@ internal sealed class ScoreSyncCompletionPlan {
     ) : ScoreSyncCompletionPlan()
 }
 
+internal data class ScoreSyncCompletionRequest(
+    val operation: EngineOperationRequest,
+    val currentState: GameState,
+    val currentSessionGeneration: Long,
+    val followUpAnalysisState: GameState,
+)
+
 internal data class FinalScoreDisplayPlan(
     val gameState: GameState,
     val scoreText: String,
@@ -109,6 +116,18 @@ internal fun buildScoreEstimateFailureDisplayPlan(error: Throwable): ScoreEstima
     )
 
 internal fun buildScoreSyncSuccessCompletionPlan(
+    request: ScoreSyncCompletionRequest,
+    display: ScoreEstimateDisplayPlan,
+): ScoreSyncCompletionPlan =
+    buildScoreSyncSuccessCompletionPlan(
+        operation = request.operation,
+        currentState = request.currentState,
+        currentSessionGeneration = request.currentSessionGeneration,
+        display = display,
+        followUpAnalysisState = request.followUpAnalysisState,
+    )
+
+internal fun buildScoreSyncSuccessCompletionPlan(
     operation: EngineOperationRequest,
     currentState: GameState,
     currentSessionGeneration: Long,
@@ -131,6 +150,20 @@ internal fun buildScoreSyncSuccessCompletionPlan(
         is EngineOperationApplyPlan.Discard ->
             ScoreSyncCompletionPlan.Discard(applyPlan.discard)
     }
+
+internal fun buildScoreSyncFailureCompletionPlan(
+    request: ScoreSyncCompletionRequest,
+    error: Throwable,
+    fallbackMessage: String,
+): ScoreSyncCompletionPlan =
+    buildScoreSyncFailureCompletionPlan(
+        operation = request.operation,
+        currentState = request.currentState,
+        currentSessionGeneration = request.currentSessionGeneration,
+        error = error,
+        fallbackMessage = fallbackMessage,
+        followUpAnalysisState = request.followUpAnalysisState,
+    )
 
 internal fun buildScoreSyncFailureCompletionPlan(
     operation: EngineOperationRequest,

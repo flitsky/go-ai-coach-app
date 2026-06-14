@@ -145,6 +145,29 @@ class DiagnosticEventApplicationTest {
     }
 
     @Test
+    fun diagnosticExternalSinkPortCanBeFakedForConsentBasedExportFlow() {
+        val event = DiagnosticEvent(
+            severity = DiagnosticSeverity.Warning,
+            code = "engine.operation.slow",
+            message = "slow",
+        )
+        val payload = DiagnosticEventExternalExportPayload(
+            event = event,
+            debugReportText = "debug report",
+        )
+        val sink = RecordingDiagnosticEventExternalSinkForDiagnostics()
+
+        val success = sink.send(payload)
+        sink.failure = IllegalStateException("transport unavailable")
+        val failure = sink.send(payload)
+
+        assertTrue(success.isSuccess)
+        assertEquals(listOf(payload), sink.payloads)
+        assertTrue(failure.isFailure)
+        assertEquals("transport unavailable", failure.exceptionOrNull()?.message)
+    }
+
+    @Test
     fun slowOperationDiagnosticWarnsOnlyAboveThreshold() {
         assertNull(
             engineOperationSlowDiagnosticEvent(
@@ -359,5 +382,16 @@ private class RecordingDiagnosticEventLogForDiagnostics : DiagnosticEventLogPort
 
     override fun clear() {
         events.clear()
+    }
+}
+
+private class RecordingDiagnosticEventExternalSinkForDiagnostics : DiagnosticEventExternalSinkPort {
+    val payloads = mutableListOf<DiagnosticEventExternalExportPayload>()
+    var failure: Throwable? = null
+
+    override fun send(payload: DiagnosticEventExternalExportPayload): Result<Unit> {
+        failure?.let { return Result.failure(it) }
+        payloads += payload
+        return Result.success(Unit)
     }
 }

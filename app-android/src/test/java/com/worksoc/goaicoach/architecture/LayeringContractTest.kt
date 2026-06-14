@@ -109,9 +109,11 @@ class LayeringContractTest {
         val applicationRoot = repoRoot()
             .resolve("app-android/src/main/java/com/worksoc/goaicoach/application")
         val portableCandidates = listOf(
+            applicationRoot.resolve("AutoAiCompletionApplication.kt"),
             applicationRoot.resolve("EngineOperationPolicy.kt"),
             applicationRoot.resolve("EngineOperationResultApplication.kt"),
             applicationRoot.resolve("DiagnosticEventApplication.kt"),
+            applicationRoot.resolve("DiagnosticEventModel.kt"),
         )
         val forbiddenImports = listOf(
             "import android.",

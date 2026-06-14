@@ -469,3 +469,42 @@
 
 5. `GameAutomationApplication.kt` 파일 분리
    - request/schedule policy, completion plan, engine runner를 별도 파일로 나눠 KMP 이동 가능성과 리뷰 단위를 개선한다.
+
+## 2026-06-15 추가 진행 로그: Diagnostic/Auto AI 파일 분리와 Score Sync 입력 축소
+
+- 2026-06-15: `DiagnosticEventModel.kt`를 추가했다. diagnostic severity/event model, summary normalization, 외부 export eligibility, sink plan은 coroutine observer와 분리되어 Android/coroutine-free 정책 파일로 관리된다.
+- 2026-06-15: `DiagnosticEventApplication.kt`는 324줄에서 216줄로 줄었고, 이제 visit fill/score disagreement/slow/timeout/discarded event builder와 `runObservedEngineOperation()`만 담당한다.
+- 2026-06-15: `AutoAiCompletionApplication.kt`를 추가했다. auto AI turn/endgame operation token, result guard, completion plan은 `GameAutomationApplication.kt`에서 분리되어 161줄짜리 독립 application 파일이 됐다.
+- 2026-06-15: `GameAutomationApplication.kt`는 661줄에서 503줄로 줄었다. 아직 request/schedule policy와 display runner가 함께 남아 있으므로 다음에는 policy/runner 분리를 이어간다.
+- 2026-06-15: `ScoreSyncCompletionRequest`를 추가했다. UI helper는 operation/current state/session generation/follow-up state를 직접 반복 전달하지 않고 하나의 request object로 completion plan을 만든다.
+- 2026-06-15: `DiagnosticEventExternalSinkPort` fake test를 추가했다. 실제 Firebase/원격 sink 구현 없이도 consent 기반 export payload가 전송 성공/실패를 표현할 수 있는지 검증한다.
+- 2026-06-15: `LayeringContractTest` 대상에 `DiagnosticEventModel.kt`와 `AutoAiCompletionApplication.kt`를 추가했다. 새로 분리한 파일도 Android/UI/persistence/engine runtime import를 가질 수 없다.
+- 검증: `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest --tests 'com.worksoc.goaicoach.application.DiagnosticEventApplicationTest' --tests 'com.worksoc.goaicoach.application.GameAutomationApplicationTest' --tests 'com.worksoc.goaicoach.application.ScoreDisplayApplicationTest' --tests 'com.worksoc.goaicoach.architecture.LayeringContractTest'` 통과, `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test` 통과.
+
+## 현재 리팩토링 완성도 평가
+
+- 주관 점수: 98.1/100.
+- 상향 요인: 이전 문서에서 조건부 KMP 후보로 분류한 diagnostic event model/export policy와 auto AI completion plan이 실제 파일 경계로 분리됐다. score sync도 runner 추출 전에 필요한 request object가 생겼고, external diagnostic sink는 fake로 테스트 가능한 port 계약이 됐다.
+- 남은 감점 요인: `GoCoachApp.kt`는 2,211줄로 아직 크며, auto AI coroutine orchestration과 score sync execution orchestration은 UI 내부에 남아 있다. `ScoreDisplayApplication.kt`는 request object 추가로 소폭 커졌으므로 다음 배치에서 completion/runner 파일 분리로 상쇄해야 한다.
+
+## 다음 추천 리팩토링 항목
+
+1. Diagnostic observer 파일 추가 분리
+   - `runObservedEngineOperation()`과 `NoopDiagnosticEventLog`를 `DiagnosticEventObserverApplication.kt`로 이동한다.
+   - event builder 파일과 coroutine observer 파일을 분리해 KMP 이동 후보를 더 명확히 한다.
+
+2. Auto AI policy/runner 파일 분리
+   - `GameAutomationApplication.kt`에서 request/schedule policy와 engine runner/display builder를 나눈다.
+   - completion은 이미 분리됐으므로 다음에는 `AutoAiTurnPolicyApplication.kt`, `AutoAiRunnerApplication.kt` 성격으로 나누는 것이 자연스럽다.
+
+3. Score display completion/runner 파일 분리
+   - `ScoreSyncCompletionPlan`과 `ScoreSyncCompletionRequest`를 별도 파일로 옮긴다.
+   - `runScoreEstimateDisplayPlan`, restored/scoring sync runner는 app-service runner 파일로 이동 후보를 만든다.
+
+4. `GoCoachApp.kt` auto AI workflow local helper 추출
+   - 긴 auto AI coroutine block에서 completion apply, endgame apply, follow-up request 부분을 local helper로 먼저 쪼갠다.
+   - 바로 class runner로 이동하기보다 callback 경계를 안정화한다.
+
+5. Top Moves workflow runner 준비
+   - Top Moves 분석 경로도 operation request, cache hit, engine run, stale discard, review update가 한 곳에 몰려 있다.
+   - 바로 이동하기 전에 cache policy와 UI display update 입력을 request object로 묶는다.

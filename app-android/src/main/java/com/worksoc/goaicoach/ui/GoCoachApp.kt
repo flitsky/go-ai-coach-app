@@ -165,6 +165,7 @@ import com.worksoc.goaicoach.application.ShowTopMovesPlan
 import com.worksoc.goaicoach.application.ScoreEstimateDisplayPlan
 import com.worksoc.goaicoach.application.ScoreEstimateRequestPlan
 import com.worksoc.goaicoach.application.ScoreSyncCompletionPlan
+import com.worksoc.goaicoach.application.ScoreSyncCompletionRequest
 import com.worksoc.goaicoach.application.scoreEstimateOperationToken
 import com.worksoc.goaicoach.application.toScoreEstimateLaunchStateUpdate
 import com.worksoc.goaicoach.application.SavedGameRestorePlan
@@ -826,6 +827,17 @@ private fun GoCoachScreen(
             }
         }
 
+    fun scoreSyncCompletionRequest(
+        operation: EngineOperationRequest,
+        followUpAnalysisState: GameState,
+    ): ScoreSyncCompletionRequest =
+        ScoreSyncCompletionRequest(
+            operation = operation,
+            currentState = gameState,
+            currentSessionGeneration = runtimeState.sessionGeneration,
+            followUpAnalysisState = followUpAnalysisState,
+        )
+
     fun applyScoreSyncSuccessCompletion(
         operation: EngineOperationRequest,
         display: ScoreEstimateDisplayPlan,
@@ -833,11 +845,11 @@ private fun GoCoachScreen(
     ): GameState? =
         applyScoreSyncCompletionPlan(
             buildScoreSyncSuccessCompletionPlan(
-                operation = operation,
-                currentState = gameState,
-                currentSessionGeneration = runtimeState.sessionGeneration,
+                request = scoreSyncCompletionRequest(
+                    operation = operation,
+                    followUpAnalysisState = followUpAnalysisState,
+                ),
                 display = display,
-                followUpAnalysisState = followUpAnalysisState,
             ),
         )
 
@@ -849,12 +861,12 @@ private fun GoCoachScreen(
     ): GameState? =
         applyScoreSyncCompletionPlan(
             buildScoreSyncFailureCompletionPlan(
-                operation = operation,
-                currentState = gameState,
-                currentSessionGeneration = runtimeState.sessionGeneration,
+                request = scoreSyncCompletionRequest(
+                    operation = operation,
+                    followUpAnalysisState = followUpAnalysisState,
+                ),
                 error = error,
                 fallbackMessage = fallbackMessage,
-                followUpAnalysisState = followUpAnalysisState,
             ),
         )
 

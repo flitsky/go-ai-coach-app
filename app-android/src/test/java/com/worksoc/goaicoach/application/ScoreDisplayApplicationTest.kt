@@ -170,21 +170,21 @@ class ScoreDisplayApplicationTest {
             previousSnapshots = emptyList(),
             engineMessage = "synced",
         )
-
-        val success = buildScoreSyncSuccessCompletionPlan(
+        val request = ScoreSyncCompletionRequest(
             operation = operation,
             currentState = state,
             currentSessionGeneration = 4L,
-            display = display,
             followUpAnalysisState = state,
         )
+
+        val success = buildScoreSyncSuccessCompletionPlan(
+            request = request,
+            display = display,
+        )
         val failure = buildScoreSyncFailureCompletionPlan(
-            operation = operation,
-            currentState = state,
-            currentSessionGeneration = 4L,
+            request = request,
             error = IllegalStateException("sync failed"),
             fallbackMessage = "fallback",
-            followUpAnalysisState = state,
         )
         val changedPosition = buildScoreSyncSuccessCompletionPlan(
             operation = operation,
