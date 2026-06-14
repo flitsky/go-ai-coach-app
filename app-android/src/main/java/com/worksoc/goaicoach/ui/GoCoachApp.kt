@@ -138,6 +138,7 @@ import com.worksoc.goaicoach.application.toDebugReportSnapshot
 import com.worksoc.goaicoach.application.runDebugReportCopyEffect
 import com.worksoc.goaicoach.application.toAutoAiTurnRequestPlan
 import com.worksoc.goaicoach.application.toAutoAiTurnScheduleValidationPlan
+import com.worksoc.goaicoach.application.toAutoAiTurnFollowUpRequest
 import com.worksoc.goaicoach.application.toShowTopMovesPlan
 import com.worksoc.goaicoach.application.toTopMoveAnalysisLaunchPlan
 import com.worksoc.goaicoach.application.ShowTopMovesPlan
@@ -1500,15 +1501,14 @@ private fun GoCoachScreen(
                             isAutoAiTurnPending = isAutoAiTurnPending,
                         ),
                     )
-                    when (val plan = followUpPlan) {
-                        AutoAiTurnFollowUpPlan.None -> Unit
-                        is AutoAiTurnFollowUpPlan.RequestTopMoveAnalysis -> {
+                    followUpPlan.toAutoAiTurnFollowUpRequest()
+                        ?.let { request ->
                             requestTopMoveAnalysisForState(
-                                targetState = plan.targetState,
-                                automatic = true,
+                                targetState = request.targetState,
+                                automatic = request.automatic,
+                                deep = request.deep,
                             )
                         }
-                    }
                 }
             }
         }

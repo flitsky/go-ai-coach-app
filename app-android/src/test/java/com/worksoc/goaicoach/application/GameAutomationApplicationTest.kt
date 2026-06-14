@@ -528,6 +528,20 @@ class GameAutomationApplicationTest {
     }
 
     @Test
+    fun autoAiTurnFollowUpPlanBuildsNullableTopMoveRequestForUiRunner() {
+        val state = GameState.empty()
+            .play(Move.Pass(StoneColor.Black))
+        val request = AutoAiTurnFollowUpPlan
+            .RequestTopMoveAnalysis(state)
+            .toAutoAiTurnFollowUpRequest()
+
+        assertEquals(state, request?.targetState)
+        assertEquals(true, request?.automatic)
+        assertEquals(false, request?.deep)
+        assertNull(AutoAiTurnFollowUpPlan.None.toAutoAiTurnFollowUpRequest())
+    }
+
+    @Test
     fun autoAiTurnEndgamePlanResolvesOnlyForConsecutivePasses() {
         val continuingState = GameState.empty()
             .play(Move.Pass(StoneColor.Black))

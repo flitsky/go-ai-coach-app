@@ -219,10 +219,27 @@ internal sealed class AutoAiTurnFollowUpPlan {
     ) : AutoAiTurnFollowUpPlan()
 }
 
+internal data class AutoAiTurnFollowUpRequest(
+    val targetState: GameState,
+    val automatic: Boolean,
+    val deep: Boolean,
+)
+
 internal fun buildAutoAiTurnFollowUpPlan(display: AutoAiTurnDisplayPlan): AutoAiTurnFollowUpPlan =
     display.nextAnalysisState?.let { state ->
         AutoAiTurnFollowUpPlan.RequestTopMoveAnalysis(state)
     } ?: AutoAiTurnFollowUpPlan.None
+
+internal fun AutoAiTurnFollowUpPlan.toAutoAiTurnFollowUpRequest(): AutoAiTurnFollowUpRequest? =
+    when (this) {
+        AutoAiTurnFollowUpPlan.None -> null
+        is AutoAiTurnFollowUpPlan.RequestTopMoveAnalysis ->
+            AutoAiTurnFollowUpRequest(
+                targetState = targetState,
+                automatic = true,
+                deep = false,
+            )
+    }
 
 internal sealed class AutoAiTurnEndgamePlan {
     data object None : AutoAiTurnEndgamePlan()

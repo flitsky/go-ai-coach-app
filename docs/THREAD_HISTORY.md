@@ -1236,3 +1236,6 @@
 - 사용자가 다음 리팩토링 진행과 결과 보고 시 현재 리팩토링 완성도 표현을 요청했다.
 - 다음 리팩토링으로 자동 AI 턴 pending 상태 전이를 `AutoAiTurnUiState` reducer로 정리했다. `applyAutoAiTurnRequestPlan()`, `applyAutoAiTurnScheduleValidationPlan()`, `completeAutoAiTurnRun()`을 추가해 `GoCoachApp.kt`가 request/validation/completion 단계에서 raw `markScheduled()`/`clearPending()`을 직접 호출하지 않도록 했다.
 - `GameAutomationApplicationTest`에 request skip/schedule, validation continue/cancel, completion 상태 전이를 고정하는 테스트를 추가했고, 관련 application 테스트가 통과했다.
+- 사용자가 다음 리팩토링 진행과 결과 보고 시 현재 리팩토링 완성도 표현을 요청했다.
+- 다음 리팩토링으로 자동 AI 턴 완료 후 후속 Top Moves 요청 분기를 application helper로 정리했다. `AutoAiTurnFollowUpRequest`와 `AutoAiTurnFollowUpPlan.toAutoAiTurnFollowUpRequest()`를 추가해 `GoCoachApp.kt`가 follow-up sealed subtype을 직접 분기하지 않고 nullable request가 있을 때만 `requestTopMoveAnalysisForState(...)`를 호출하도록 했다.
+- `GameAutomationApplicationTest`에 continuing game은 자동 Top Moves request를 만들고, 종국/none은 null을 반환하는 테스트를 추가했고, 관련 application 테스트가 통과했다.
