@@ -1118,3 +1118,7 @@
 - 검토 결과 이 방향을 권장안으로 정리했다. `Search Time = OFF`는 AI 착수 품질 설정이지 종국 화면 대기를 무제한 허용한다는 의미가 아니므로, 종국 판정은 별도 SLA를 둔다.
 - `SCORE_AND_ENDGAME_DECISION.md`에 부심/주심 구조를 추가했다. 부심은 로컬 사석 fallback, 기존 Top Moves/NN estimate, 짧은 제한 엔진 사석 판정 등을 조합해 2~10초 안에 화면 결과를 표시하고, 주심은 백그라운드 정밀 검증으로 돌린다. 두 결과가 크게 다르면 `critical` diagnostic event로 기록한다.
 - `ENGINE_API_CALL_POLICY.md`의 `deadStones()+scoreFinal()` 비용 설명을 실기기 계측값에 맞춰 수정했다. GTP 종국 명령은 일반 분석 time cap과 별도이며 수십 초까지 늘 수 있고, 강제 timeout을 넣을 경우 늦게 도착한 GTP 응답이 process stream을 오염시킬 수 있으므로 process restart 또는 명시적 재동기화 정책과 함께 구현해야 한다고 명시했다.
+- 사용자가 “time cap ON에서는 빠르게 판정했는데 OFF에서 1분 걸리는 현상은 여전히 이상하다”는 점과 “주심을 백그라운드로 몰래 돌리면 새 게임과 충돌한다”는 점을 지적했다.
+- 코드 재검토 결과 `kata-set-param maxTime`은 process 전역 파라미터이고, 현재 adapter의 `applySearchLimit()`은 `timeMillis=null`일 때 `maxTime`을 명시적으로 해제하지 않는다. 따라서 time cap ON/OFF가 종국 GTP 명령에 간접 영향을 줬을 가능성이 있으며, 이 부분은 같은 board에서 `maxTime` 값을 바꿔가며 추가 검증해야 한다.
+- 맥북 KataGo 1.16.4에서 한 debug report 수순을 재생하고 `maxTime=0.5/2/10/미설정`으로 `final_status_list dead`와 `final_score`를 비교했다. 해당 수순에서는 모두 약 1~3초대라 폰의 47초 지연은 재현되지 않았다. 다만 폰의 특정 국면/기기/엔진 상태 조합에서는 여전히 장시간 종국 명령이 발생하므로 앱 UX는 별도 안전장치가 필요하다.
+- 최종 절충안은 “기본 종국은 5초 SLA의 부심 판정, 무제한 주심 분석은 사용자가 `이의 제기: 주심 분석 요구`를 누를 때만 실행”으로 정리했다. 몰래 백그라운드 주심은 두지 않는다. 주심 작업에는 match/session generation id를 붙이고 새 게임/무르기/ruleset 변경/앱 종료 시 취소하거나 결과를 폐기한다.
