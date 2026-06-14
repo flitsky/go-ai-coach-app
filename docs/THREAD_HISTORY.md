@@ -1253,3 +1253,7 @@
 - 이미 완료한 1~3단계 결과를 문서에 반영했다. `REFACTORING_COMPLETION_ASSESSMENT_2026-06-13.md`의 현재 평가는 98.5/100으로 갱신했고, structured diagnostics, KMP-ready `PositionAnalysisGateway`, read-only `RemotePositionAnalysisGateway`를 최신 강점으로 반영했다.
 - `NEXT_REFACTORING_WORKLIST_2026-06-14.md`에는 이번 요청의 세 단계 완료 로그와 다음 추천 항목을 추가했다. 다음 권장 순서는 HTTP `RemotePositionAnalysisTransport` spike, 공통 `EngineOperationRequest`, structured diagnostic 자동 계측, middleware KMP 물리 이동 준비다.
 - `ARCHITECTURE_LAYERS_REVIEW_2026-06-14.md`에는 계획 항목 중 이미 구현된 부분과 아직 남은 부분을 구분했다. remote spike는 읽기 전용 position analysis에만 한정되며, production wiring과 HTTP fallback은 후속 단계로 남겼다.
+- 사용자가 다음 권장순서 5가지를 순차 진행하고 각 단계 커밋/푸시, 최종 5단계 완료 후 폰 원격 설치와 결과 보고를 요청했다.
+- 1단계로 HTTP `RemotePositionAnalysisTransport` spike를 구현했다. `RemotePositionAnalysisHttpConfig`는 `enabled=false` 기본값을 갖고, `HttpRemotePositionAnalysisTransport`는 명시적으로 활성화된 경우에만 읽기 전용 position analysis JSON을 POST한다.
+- remote HTTP spike는 `GameState`, `AnalysisLimit`, `EngineSearchMode`, `positionFingerprint`를 요청 JSON으로 직렬화하고, response의 `AnalysisResult` 후보수/방문수/진단 문구를 파싱한다. production wiring은 아직 없으므로 일반 앱 실행은 계속 로컬 엔진 경로만 사용한다.
+- `RemotePositionAnalysisGatewayTest`에 HTTP transport 비활성 기본값 테스트와 fake `HttpURLConnection` 기반 request/response 테스트를 추가했고, JDK 17/Android SDK 환경에서 관련 middleware 테스트가 통과했다.
