@@ -192,6 +192,8 @@ class GameSessionControllerTest {
             move = Move.Pass(StoneColor.Black),
             previousReviewCandidates = emptyList(),
         )
+        val startupProfile = EngineProfile(name = "Startup")
+        val newGameProfile = EngineProfile(name = "NewGame")
 
         val topMoveEffect = GameSessionEffect.RunTopMoveAnalysis(
             plan = topMovePlan,
@@ -201,6 +203,14 @@ class GameSessionControllerTest {
         val autoAiEffect = GameSessionEffect.RunAutoAiTurn(autoAiRunPlan)
         val autoAiEndgameEffect = GameSessionEffect.ResolveAutoAiEndgame(autoAiEndgamePlan)
         val humanSyncEffect = GameSessionEffect.SyncHumanMove(humanSyncPlan)
+        val startupEffect = GameSessionEffect.StartEngineSession(gameState, startupProfile)
+        val newGameEffect = GameSessionEffect.StartEngineBackedGame(
+            currentState = gameState,
+            profile = newGameProfile,
+            boardSize = BoardSize.Nine,
+            ruleset = gameState.ruleset,
+        )
+        val undoEffect = GameSessionEffect.UndoEngineMoves(gameState, undoCount = 2)
         val restoredEffect = GameSessionEffect.SyncRestoredGame(gameState)
         val debugReportPlan = DebugReportCopyPlan(
             clipboardLabel = "label",
@@ -216,6 +226,11 @@ class GameSessionControllerTest {
         assertSame(autoAiContext, autoAiEffect.plan.context)
         assertSame(autoAiEndgamePlan, autoAiEndgameEffect.plan)
         assertSame(humanSyncPlan, humanSyncEffect.plan)
+        assertSame(gameState, startupEffect.state)
+        assertSame(startupProfile, startupEffect.profile)
+        assertSame(gameState, newGameEffect.currentState)
+        assertSame(newGameProfile, newGameEffect.profile)
+        assertEquals(2, undoEffect.undoCount)
         assertSame(gameState, restoredEffect.gameState)
         assertSame(debugReportPlan, debugReportEffect.plan)
     }

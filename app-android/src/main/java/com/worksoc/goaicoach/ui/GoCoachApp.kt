@@ -63,7 +63,10 @@ import com.worksoc.goaicoach.application.EngineOperationGate
 import com.worksoc.goaicoach.application.EngineOperationKind
 import com.worksoc.goaicoach.application.EngineOperationLifecycleState
 import com.worksoc.goaicoach.application.EngineOperationLifecycleTransition
+import com.worksoc.goaicoach.application.EngineOperationLifecycleCallbacks
 import com.worksoc.goaicoach.application.EngineOperationResultGuard
+import com.worksoc.goaicoach.application.EngineOperationRequest
+import com.worksoc.goaicoach.application.EngineOperationScope
 import com.worksoc.goaicoach.application.EngineSessionClient
 import com.worksoc.goaicoach.application.EngineTimeoutPolicy
 import com.worksoc.goaicoach.application.DebugReportMirrorPort
@@ -85,6 +88,7 @@ import com.worksoc.goaicoach.application.evaluateScoringRuleChangeGate
 import com.worksoc.goaicoach.application.evaluateSearchTimeChangeGate
 import com.worksoc.goaicoach.application.evaluateScoreEstimateResultGuard
 import com.worksoc.goaicoach.application.evaluateTopMoveAnalysisResultGuard
+import com.worksoc.goaicoach.application.evaluateEngineOperationResultGuard
 import com.worksoc.goaicoach.application.FinalScoreDisplayPlan
 import com.worksoc.goaicoach.application.GameSessionResetPlan
 import com.worksoc.goaicoach.application.GameSessionAnalysisState
@@ -115,6 +119,9 @@ import com.worksoc.goaicoach.application.runAutoAiEndgameEffect
 import com.worksoc.goaicoach.application.RestoredGameSyncExecutionContext
 import com.worksoc.goaicoach.application.runRestoredGameSyncEffect
 import com.worksoc.goaicoach.application.runAutoAiTurnEffect
+import com.worksoc.goaicoach.application.runEngineBackedNewGameEffect
+import com.worksoc.goaicoach.application.runEngineStartupEffect
+import com.worksoc.goaicoach.application.runEngineUndoEffect
 import com.worksoc.goaicoach.application.runHumanEngineSyncEffect
 import com.worksoc.goaicoach.application.runPositionAnalysisCacheOptimizationEffect
 import com.worksoc.goaicoach.application.runScoreEstimateEffect
@@ -451,28 +458,34 @@ private fun GoCoachScreen(
             label = "${profile.difficulty.label}:${profile.analysisLimit.visits}v",
         )
 
+    fun engineOperationLifecycleCallbacks(): EngineOperationLifecycleCallbacks =
+        EngineOperationLifecycleCallbacks(
+            onStarted = { request -> markEngineOperationStarted(request.operationId) },
+            onCompleted = { request -> markEngineOperationCompleted(request.operationId) },
+        )
+
     fun launchTrackedEngineOperation(
-        operationId: String,
+        operation: EngineOperationRequest,
         block: suspend () -> Unit,
     ): Job =
         scope.launch {
-            markEngineOperationStarted(operationId)
-            try {
+            EngineOperationScope(
+                request = operation,
+                callbacks = engineOperationLifecycleCallbacks(),
+            ).run {
                 block()
-            } finally {
-                markEngineOperationCompleted(operationId)
             }
         }
 
     suspend fun runTrackedEngineOperation(
-        operationId: String,
+        operation: EngineOperationRequest,
         block: suspend () -> Unit,
     ) {
-        markEngineOperationStarted(operationId)
-        try {
+        EngineOperationScope(
+            request = operation,
+            callbacks = engineOperationLifecycleCallbacks(),
+        ).run {
             block()
-        } finally {
-            markEngineOperationCompleted(operationId)
         }
     }
 
@@ -490,6 +503,21 @@ private fun GoCoachScreen(
             ),
         )
     }
+
+    fun shouldApplyEngineOperationResult(operation: EngineOperationRequest): Boolean =
+        when (
+            val guard = evaluateEngineOperationResultGuard(
+                request = operation,
+                currentState = gameState,
+                currentSessionGeneration = runtimeState.sessionGeneration,
+            )
+        ) {
+            EngineOperationResultGuard.Apply -> true
+            is EngineOperationResultGuard.Discard -> {
+                appendEngineOperationDiscardLog(guard)
+                false
+            }
+        }
 
     LaunchedEffect(Unit) {
         runtimeEventLog.append(runtimeAppStartLog(currentRuntimeLogContext()))
@@ -517,10 +545,17 @@ private fun GoCoachScreen(
             timeoutPolicy = EngineTimeoutPolicy(label = "engine-startup"),
             fallbackPolicy = EngineFallbackPolicy.None,
         )
-        runTrackedEngineOperation(operation.operationId) {
+        runTrackedEngineOperation(operation) {
             runCatching {
                 withContext(Dispatchers.IO) {
-                    engineClient.startSession(runtimeState.engineProfile, gameState)
+                    engineClient.runEngineStartupEffect(
+                        effect = GameSessionEffect.StartEngineSession(
+                            state = gameState,
+                            profile = runtimeState.engineProfile,
+                        ),
+                        operationRequest = operation,
+                        diagnosticEventLog = diagnosticEventLog,
+                    )
                 }
             }.onSuccess { result ->
                 applyEngineStartupDisplayPlan(
@@ -570,7 +605,7 @@ private fun GoCoachScreen(
             timeoutPolicy = EngineTimeoutPolicy(label = "startup-benchmark"),
             fallbackPolicy = EngineFallbackPolicy.None,
         )
-        runTrackedEngineOperation(operation.operationId) {
+        runTrackedEngineOperation(operation) {
             engineMessage = "엔진 벤치마크 시작 전 안정화 대기 중입니다."
             benchmarkUiState = benchmarkUiState.startWaitingForEngineSettle()
             analysisState = analysisState.copy(candidateText = "Engine benchmark waiting for startup settle delay.")
@@ -978,7 +1013,7 @@ private fun GoCoachScreen(
             sessionGeneration = runtimeState.sessionGeneration,
         )
 
-        launchTrackedEngineOperation(operationToken.operation.operationId) {
+        launchTrackedEngineOperation(operationToken.operation) {
             runCatching {
                 withContext(Dispatchers.IO) {
                     engineClient.runTopMoveAnalysisEffect(
@@ -1073,7 +1108,8 @@ private fun GoCoachScreen(
                 timeoutPolicy = engineProfileTimeoutPolicy(runtimeState.engineProfile),
                 fallbackPolicy = EngineFallbackPolicy.LocalRules,
             )
-            runTrackedEngineOperation(operation.operationId) {
+            var shouldRequestFollowUpAnalysis = false
+            runTrackedEngineOperation(operation) {
                 runCatching {
                     withContext(Dispatchers.IO) {
                         engineClient.runScoringRuleSyncDisplayPlan(
@@ -1086,19 +1122,21 @@ private fun GoCoachScreen(
                         )
                     }
                 }.onSuccess { score ->
-                    if (gameState == pending.targetState) {
+                    if (shouldApplyEngineOperationResult(operation)) {
                         applyScoreEstimateDisplayPlan(score)
+                        shouldRequestFollowUpAnalysis = true
                     }
                 }.onFailure { error ->
-                    if (gameState == pending.targetState) {
+                    if (shouldApplyEngineOperationResult(operation)) {
                         engineMessage = error.message ?: "Local undo engine sync failed."
+                        shouldRequestFollowUpAnalysis = true
                     }
                 }
             }
             if (pendingPostUndoEngineSync == pending) {
                 pendingPostUndoEngineSync = null
             }
-            if (gameState == pending.targetState) {
+            if (shouldRequestFollowUpAnalysis) {
                 requestTopMoveAnalysisForState(
                     targetState = pending.targetState,
                     automatic = true,
@@ -1189,7 +1227,8 @@ private fun GoCoachScreen(
             timeoutPolicy = engineProfileTimeoutPolicy(runtimeState.engineProfile),
             fallbackPolicy = EngineFallbackPolicy.LocalRules,
         )
-        launchTrackedEngineOperation(ruleSyncOperation.operationId) {
+        launchTrackedEngineOperation(ruleSyncOperation) {
+            var shouldRequestFollowUpAnalysis = false
             runCatching {
                 withContext(Dispatchers.IO) {
                     engineClient.runScoringRuleSyncDisplayPlan(
@@ -1202,14 +1241,22 @@ private fun GoCoachScreen(
                     )
                 }
             }.onSuccess { score ->
-                applyScoreEstimateDisplayPlan(score)
+                if (shouldApplyEngineOperationResult(ruleSyncOperation)) {
+                    applyScoreEstimateDisplayPlan(score)
+                    shouldRequestFollowUpAnalysis = true
+                }
             }.onFailure { error ->
-                engineMessage = error.message ?: "Scoring rule changed, but engine rule sync failed."
+                if (shouldApplyEngineOperationResult(ruleSyncOperation)) {
+                    engineMessage = error.message ?: "Scoring rule changed, but engine rule sync failed."
+                    shouldRequestFollowUpAnalysis = true
+                }
             }
-            requestTopMoveAnalysisForState(
-                targetState = gameState,
-                automatic = true,
-            )
+            if (shouldRequestFollowUpAnalysis) {
+                requestTopMoveAnalysisForState(
+                    targetState = gameState,
+                    automatic = true,
+                )
+            }
         }
     }
 
@@ -1245,9 +1292,6 @@ private fun GoCoachScreen(
             timeoutPolicy = engineProfileTimeoutPolicy(restoredProfile),
             fallbackPolicy = EngineFallbackPolicy.LocalRules,
         )
-        if (restoreRequest.syncEngineAfterRestore) {
-            markEngineOperationStarted(restoreOperation.operationId)
-        }
 
         applySavedGameRestorePlan(restore)
 
@@ -1255,7 +1299,8 @@ private fun GoCoachScreen(
             return
         }
 
-        scope.launch {
+        launchTrackedEngineOperation(restoreOperation) {
+            var shouldRequestFollowUpAnalysis = false
             runCatching {
                 withContext(Dispatchers.IO) {
                     engineClient.runRestoredGameSyncEffect(
@@ -1268,15 +1313,22 @@ private fun GoCoachScreen(
                     )
                 }
             }.onSuccess { score ->
-                applyScoreEstimateDisplayPlan(score)
+                if (shouldApplyEngineOperationResult(restoreOperation)) {
+                    applyScoreEstimateDisplayPlan(score)
+                    shouldRequestFollowUpAnalysis = true
+                }
             }.onFailure { error ->
-                engineMessage = error.message ?: "Saved game restored locally, but engine sync failed."
+                if (shouldApplyEngineOperationResult(restoreOperation)) {
+                    engineMessage = error.message ?: "Saved game restored locally, but engine sync failed."
+                    shouldRequestFollowUpAnalysis = true
+                }
             }
-            markEngineOperationCompleted(restoreOperation.operationId)
-            requestTopMoveAnalysisForState(
-                targetState = restoredState,
-                automatic = true,
-            )
+            if (shouldRequestFollowUpAnalysis) {
+                requestTopMoveAnalysisForState(
+                    targetState = restoredState,
+                    automatic = true,
+                )
+            }
         }
     }
 
@@ -1286,7 +1338,7 @@ private fun GoCoachScreen(
             request,
             sessionGeneration = runtimeState.sessionGeneration,
         )
-        launchTrackedEngineOperation(operationToken.operation.operationId) {
+        launchTrackedEngineOperation(operationToken.operation) {
             runCatching {
                 withContext(Dispatchers.IO) {
                     engineClient.runScoreEstimateEffect(
@@ -1357,12 +1409,21 @@ private fun GoCoachScreen(
             timeoutPolicy = EngineTimeoutPolicy(label = "engine-new-game"),
             fallbackPolicy = EngineFallbackPolicy.LocalEngine,
         )
-        launchTrackedEngineOperation(operation.operationId) {
+        launchTrackedEngineOperation(operation) {
             var nextAnalysisState: GameState? = null
             val startMillis = System.currentTimeMillis()
             runCatching {
                 withContext(Dispatchers.IO) {
-                    engineClient.startNewGame(runtime.engineProfile, BoardSize.Nine, targetRuleset)
+                    engineClient.runEngineBackedNewGameEffect(
+                        effect = GameSessionEffect.StartEngineBackedGame(
+                            currentState = gameState,
+                            profile = runtime.engineProfile,
+                            boardSize = BoardSize.Nine,
+                            ruleset = targetRuleset,
+                        ),
+                        operationRequest = operation,
+                        diagnosticEventLog = diagnosticEventLog,
+                    )
                 }
             }.onSuccess { result ->
                 runtimeEventLog.append(
@@ -1731,8 +1792,7 @@ private fun GoCoachScreen(
             timeoutPolicy = engineProfileTimeoutPolicy(runtimeState.engineProfile),
             fallbackPolicy = EngineFallbackPolicy.LocalRules,
         )
-        markEngineOperationStarted(humanSyncOperation.operationId)
-        scope.launch {
+        launchTrackedEngineOperation(humanSyncOperation) {
             var nextAnalysisState: GameState? = null
             val syncStartMillis = System.currentTimeMillis()
             runCatching {
@@ -1758,30 +1818,33 @@ private fun GoCoachScreen(
                     localMove = localMove,
                     previousSnapshots = scoreState.scoreSnapshots,
                 )
-                runtimeEventLog.append(
-                    runtimeHumanEngineSyncSuccessLog(
-                        context = currentRuntimeLogContext(),
-                        sync = sync,
-                        elapsedMs = System.currentTimeMillis() - syncStartMillis,
-                    ),
-                )
-                nextAnalysisState = applyHumanEngineSyncDisplayPlan(sync)
+                if (shouldApplyEngineOperationResult(humanSyncOperation)) {
+                    runtimeEventLog.append(
+                        runtimeHumanEngineSyncSuccessLog(
+                            context = currentRuntimeLogContext(),
+                            sync = sync,
+                            elapsedMs = System.currentTimeMillis() - syncStartMillis,
+                        ),
+                    )
+                    nextAnalysisState = applyHumanEngineSyncDisplayPlan(sync)
+                }
             }.onFailure { error ->
                 val failure = buildHumanEngineSyncFailurePlan(
                     localMove = localMove,
                     previousSnapshots = scoreState.scoreSnapshots,
                     errorMessage = error.message,
                 )
-                runtimeEventLog.append(
-                    runtimeHumanEngineSyncFailureLog(
-                        context = currentRuntimeLogContext(),
-                        failure = failure,
-                        elapsedMs = System.currentTimeMillis() - syncStartMillis,
-                    ),
-                )
-                applyHumanEngineSyncFailurePlan(failure)
+                if (shouldApplyEngineOperationResult(humanSyncOperation)) {
+                    runtimeEventLog.append(
+                        runtimeHumanEngineSyncFailureLog(
+                            context = currentRuntimeLogContext(),
+                            failure = failure,
+                            elapsedMs = System.currentTimeMillis() - syncStartMillis,
+                        ),
+                    )
+                    applyHumanEngineSyncFailurePlan(failure)
+                }
             }
-            markEngineOperationCompleted(humanSyncOperation.operationId)
             nextAnalysisState?.let { state ->
                 requestTopMoveAnalysisForState(
                     targetState = state,
@@ -1820,12 +1883,17 @@ private fun GoCoachScreen(
             timeoutPolicy = EngineTimeoutPolicy(label = "engine-undo"),
             fallbackPolicy = EngineFallbackPolicy.LocalEngine,
         )
-        launchTrackedEngineOperation(operation.operationId) {
+        launchTrackedEngineOperation(operation) {
             runCatching {
                 withContext(Dispatchers.IO) {
-                    repeat(undoCount) {
-                        engineClient.undoMove()
-                    }
+                    engineClient.runEngineUndoEffect(
+                        effect = GameSessionEffect.UndoEngineMoves(
+                            state = gameState,
+                            undoCount = undoCount,
+                        ),
+                        operationRequest = operation,
+                        diagnosticEventLog = diagnosticEventLog,
+                    )
                 }
             }.onSuccess {
                 val undo = buildEngineUndoPlan(
@@ -1908,7 +1976,7 @@ private fun GoCoachScreen(
         engineMessage = "Post-game cache optimization started: ${plan.targets.size} JSON position(s)."
         val effect = GameSessionEffect.RunPositionCacheOptimization(plan)
         scope.launch {
-            runTrackedEngineOperation(operation.operationId) {
+            runTrackedEngineOperation(operation) {
                 runCatching {
                     withContext(Dispatchers.IO) {
                         engineClient.runPositionAnalysisCacheOptimizationEffect(

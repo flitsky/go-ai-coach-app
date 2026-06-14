@@ -1298,3 +1298,10 @@
 - `RuntimeEventApplicationTest`에 operation started/completed runtime log 테스트를 추가했다.
 - `docs/DIAGNOSTIC_EVENT_SCHEMA.md`와 `docs/refactoring/NEXT_REFACTORING_WORKLIST_2026-06-14.md`를 갱신해 started/completed는 runtime log, slow/timeout/discarded는 diagnostic JSONL로 분리하는 정책을 기록했다.
 - 검증으로 `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest`를 실행했고 통과했다.
+- 사용자가 다음 리팩토링 추천 항목을 단계별로 모두 진행하고, 결과 보고 시 현재 리팩토링 완성도와 다음 추천 작업 리스트업을 요청했다.
+- 다음 리팩토링으로 startup, engine-backed new game, engine undo를 `GameSessionEffect`와 `EngineSessionLifecycleApplication` runner 뒤로 이동했다. `GoCoachApp.kt`는 더 이상 `startSession`, `startNewGame`, `undoMove` raw primitive를 직접 호출하지 않는다.
+- `EngineOperationScope`를 추가해 lifecycle start/complete callback을 한 실행 경계에서 보장하게 했다. slow/timeout diagnostic은 기존 effect runner의 `runObservedEngineOperation()`이 담당하고, scope는 lifecycle만 담당해 중복 진단 이벤트를 피한다.
+- `launchTrackedEngineOperation()`과 `runTrackedEngineOperation()`이 문자열 operation id 대신 `EngineOperationRequest` 전체를 받도록 변경했다. operation metadata가 실행 scope의 입력으로 쓰이기 시작했다.
+- post-undo sync, scoring rule sync, restored game sync, human move sync 결과에 `evaluateEngineOperationResultGuard()`를 적용했다. 요청 이후 세대나 보드가 바뀐 경우 늦은 sync 결과는 화면에 반영하지 않고 discard log만 남긴다.
+- `EngineSessionLifecycleApplicationTest`를 추가해 startup/new-game/undo runner 위임과 scope complete 보장을 검증했고, `GameSessionControllerTest`는 새 effect 타입을 포함하도록 보강했다.
+- 검증으로 `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest`를 실행했고 통과했다.

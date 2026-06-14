@@ -281,3 +281,41 @@
 5. Middleware KMP 이동 후보 파일 2차 분류
    - Android-free application/middleware 파일을 추려 `shared` 또는 별도 KMP middleware 모듈로 이동 가능한 순서를 만든다.
    - 먼저 architecture test를 강화하고, 물리 이동은 작은 단위로 수행한다.
+
+## 2026-06-15 추가 진행 로그: Session Lifecycle Runner/Guard
+
+- 2026-06-15: `GameSessionEffect.StartEngineSession`, `StartEngineBackedGame`, `UndoEngineMoves`를 추가했다. startup/new game/undo도 effect로 운반되며, UI가 raw engine session primitive를 직접 호출하지 않는 방향으로 이동했다.
+- 2026-06-15: `EngineSessionLifecycleApplication.kt`를 추가했다. `EngineSessionClient.runEngineStartupEffect()`, `runEngineBackedNewGameEffect()`, `runEngineUndoEffect()`가 `startSession`, `startNewGame`, `undoMove` raw 호출을 감싸고, `EngineOperationRequest` 기반 `runObservedEngineOperation()`을 통과한다.
+- 2026-06-15: `EngineOperationScope`를 추가했다. 이 scope는 operation lifecycle start/complete callback만 담당하고, slow/timeout diagnostic은 기존 effect runner의 observer에 맡긴다. 이렇게 해서 lifecycle log와 diagnostic JSONL이 중복 기록되지 않도록 했다.
+- 2026-06-15: `GoCoachApp.kt`의 `launchTrackedEngineOperation()`/`runTrackedEngineOperation()`이 문자열 id가 아니라 `EngineOperationRequest` 전체를 받도록 바꿨다. Top Moves, score estimate, benchmark, startup, new game, undo, sync 경로가 같은 lifecycle scope를 사용한다.
+- 2026-06-15: post-undo sync, scoring rule sync, restored game sync, human move sync 결과에 `evaluateEngineOperationResultGuard()`를 적용했다. 늦게 도착한 sync 결과는 화면에 반영하지 않고 discard runtime/diagnostic log만 남긴다.
+- 2026-06-15: `EngineSessionLifecycleApplicationTest`를 추가해 startup/new-game/undo runner 위임과 `EngineOperationScope` 실패 시 complete callback 보장을 검증했다. `GameSessionControllerTest`도 새 effect 타입을 포함하도록 보강했다.
+- 검증: `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest` 통과.
+
+## 현재 리팩토링 완성도 평가
+
+- 주관 점수: 96.5/100.
+- 상향 요인: session lifecycle raw primitive가 application runner 뒤로 이동했고, sync 계열 늦은 결과 폐기 정책이 더 넓게 적용됐다. operation request가 단순 로그 id가 아니라 실행 scope의 입력으로 쓰이기 시작했다.
+- 남은 감점 요인: UI가 아직 많은 coroutine orchestration과 success/failure display plan 조합을 직접 소유한다. `EngineOperationScope`는 도입됐지만 아직 application-level supervisor/runner까지 완전히 승격되지는 않았다.
+
+## 다음 추천 리팩토링 항목
+
+1. `EngineOperationScope`를 application runner까지 끌어올리기
+   - 현재 scope 생성은 `GoCoachApp.kt`에 남아 있다.
+   - lifecycle callbacks를 주입받는 앱서비스 runner를 만들어 UI는 callback 구현만 제공하게 한다.
+
+2. Sync result guard helper를 application 계층으로 분리
+   - `shouldApplyEngineOperationResult()`는 아직 UI local helper다.
+   - apply/discard decision과 follow-up Top Moves 요청 여부를 reducer/plan으로 분리한다.
+
+3. Human sync success/failure display runner 정리
+   - `buildHumanEngineSyncSuccessPlan()`/`FailurePlan()` 호출과 runtime log 생성 순서를 application runner plan으로 묶는다.
+   - stale result일 때 success/failure log를 남기지 않는 정책을 테스트로 더 구체화한다.
+
+4. Runtime event log volume 정책 실측
+   - started/completed가 늘어난 뒤 1MB ring buffer가 한 판 이상의 흐름을 충분히 담는지 확인한다.
+   - 필요하면 lifecycle event sampling 또는 operation summary event로 압축한다.
+
+5. Middleware KMP 이동 후보 2차 정리
+   - `EngineOperationPolicy`, `DiagnosticEventApplication`, position analysis gateway 중 Android-free 파일을 물리 이동 후보로 분류한다.
+   - 이동 전 package dependency test를 먼저 강화한다.

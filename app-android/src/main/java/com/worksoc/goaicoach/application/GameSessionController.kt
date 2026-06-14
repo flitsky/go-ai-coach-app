@@ -2,7 +2,10 @@ package com.worksoc.goaicoach.application
 
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
+import com.worksoc.goaicoach.shared.BoardSize
+import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.GameState
+import com.worksoc.goaicoach.shared.Ruleset
 
 internal data class GameSessionControllerState(
     val core: GameSessionCoreState,
@@ -103,6 +106,27 @@ internal sealed interface GameSessionEffect {
     data class SyncHumanMove(
         val plan: HumanEngineSyncRunPlan,
     ) : GameSessionEffect
+
+    data class StartEngineSession(
+        val state: GameState,
+        val profile: EngineProfile,
+    ) : GameSessionEffect
+
+    data class StartEngineBackedGame(
+        val currentState: GameState,
+        val profile: EngineProfile,
+        val boardSize: BoardSize,
+        val ruleset: Ruleset,
+    ) : GameSessionEffect
+
+    data class UndoEngineMoves(
+        val state: GameState,
+        val undoCount: Int,
+    ) : GameSessionEffect {
+        init {
+            require(undoCount > 0) { "undoCount must be positive" }
+        }
+    }
 
     data class RunScoreEstimate(
         val request: ScoreEstimateRequestPlan.RequestEngineEstimate,
