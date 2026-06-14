@@ -160,3 +160,17 @@ POC를 계속 고도화하는 관점에서는 이미 충분히 좋은 상태다.
 
 - `EngineSessionTest`에서 local backend capability를 검증했다.
 - `make test` 통과.
+
+## 5단계 추가 리팩토링 결과
+
+2026-06-14에 middleware/cache 경계를 점진적으로 분리했다.
+
+- `com.worksoc.goaicoach.middleware.PositionAnalysisCacheResolver`를 추가했다.
+- local cache store와 trusted cache provider 목록 중 어떤 entry를 재사용할지 결정하는 책임을 `LocalEngineSessionClient`에서 resolver로 이동했다.
+- `LocalEngineSessionClient`는 cache stats, quality lookup, reusable entry lookup, local put을 resolver에 위임한다.
+- 이 단계에서는 대량 패키지 이동을 피하고, cache 선택 정책만 먼저 middleware helper로 분리했다.
+
+검증:
+
+- `PositionAnalysisCacheResolverTest`, `EngineSessionTest` 통과.
+- `make test` 통과.

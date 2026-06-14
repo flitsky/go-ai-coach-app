@@ -1076,3 +1076,7 @@
 - 4단계로 local/remote engine session client 경계를 정리했다. `EngineSessionBackend`를 추가해 session client capability가 `local-engine`인지 `remote-server`인지 표현할 수 있게 했다.
 - 기존 `AdapterEngineSessionClient` 구현체 이름을 `LocalEngineSessionClient`로 바꾸고, 기존 이름은 deprecated typealias로 남겼다. `MainActivity`는 이제 `LocalEngineSessionClient`와 `EngineSessionBackend.LocalEngine`을 명시해 생성한다.
 - `EngineSessionTest`에서 local backend capability를 검증했고 `make test`를 통과했다.
+- 4단계 완료 후 무선 ADB `SM-S908N(192.168.35.166:42037)`에 최신 APK와 KataGo model/config를 설치했고 cold launch `TotalTime=532ms`를 확인했다.
+- 5단계로 middleware/cache 경계를 점진적으로 분리했다. `com.worksoc.goaicoach.middleware.PositionAnalysisCacheResolver`를 추가해 local cache store와 trusted cache provider 중 재사용할 entry를 고르는 책임을 `LocalEngineSessionClient`에서 분리했다.
+- `LocalEngineSessionClient`는 cache stats, quality lookup, reusable entry lookup, local put을 resolver에 위임한다. 대량 패키지 이동 대신 cache 선택 정책을 먼저 middleware helper로 분리했다.
+- `PositionAnalysisCacheResolverTest`, `EngineSessionTest`, `make test`를 모두 통과했다.
