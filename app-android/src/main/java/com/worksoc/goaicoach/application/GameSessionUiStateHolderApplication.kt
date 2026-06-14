@@ -12,6 +12,10 @@ internal class GameSessionUiStateHolder(
         applyCoreState(currentCoreState().applyScoreEstimateFailureDisplayPlan(failure))
     }
 
+    fun applyTopMoveAnalysisFailureDisplayPlan(failure: TopMoveAnalysisFailureDisplayPlan) {
+        applyCoreState(currentCoreState().applyTopMoveAnalysisFailureDisplayPlan(failure))
+    }
+
     fun applyFinalScoreDisplayPlan(final: FinalScoreDisplayPlan) {
         applyCoreState(currentCoreState().applyFinalScoreDisplayPlan(final))
     }
@@ -22,5 +26,18 @@ internal class GameSessionUiStateHolder(
 
     fun applyUndoLocalStatePlan(undo: UndoLocalStatePlan) {
         applyCoreState(currentCoreState().applyUndoLocalStatePlan(undo))
+    }
+
+    fun applyHumanEngineSyncFailurePlan(failure: HumanEngineSyncFailurePlan) {
+        applyCoreState(currentCoreState().applyHumanEngineSyncFailurePlan(failure))
+    }
+
+    fun applyAutoAiTurnDisplayPlan(display: AutoAiTurnDisplayPlan): AutoAiTurnFollowUpPlan {
+        applyCoreState(currentCoreState().applyAutoAiTurnDisplayPlan(display))
+        return buildAutoAiTurnFollowUpPlan(display)
+    }
+
+    fun applyAutoAiTurnFailureDisplayPlan(failure: AutoAiTurnFailureDisplayPlan) {
+        applyCoreState(currentCoreState().applyAutoAiTurnFailureDisplayPlan(failure))
     }
 }

@@ -728,3 +728,39 @@
 5. KMP 물리 이동 전 의존성 그래프 작성
    - `ScoreDisplayApplication.kt`, `UndoApplication.kt`, `ScoreSyncCompletionApplication.kt`의 import graph를 문서화한다.
    - 실제 shared/common 이동 전 필요한 port/type 이동 순서를 확정한다.
+
+## 2026-06-15 추가 진행 로그: Holder / Final Score / Sync Launch 10차 정리
+
+- 2026-06-15: `GameSessionUiStateHolder` 적용 범위를 Top Moves failure, Auto AI display/failure, Human sync failure까지 확대했다. UI helper 함수는 유지하지만 core state mutation은 더 일관되게 holder 경계를 통과한다.
+- 2026-06-15: `FinalScoreStateResult`와 `toFinalScoreDisplayPlan()`을 추가했다. local final score와 resolved endgame score는 먼저 state result를 만든 뒤 display plan으로 변환한다.
+- 2026-06-15: `ScoringRuleSyncEffectLaunchRequest`, `RestoredGameSyncEffectLaunchRequest`와 각각의 completion runner를 추가했다. scoring rule sync/restored game sync는 이제 generic block helper 대신 명시적 launch request로 completion plan을 생성한다.
+- 2026-06-15: `ScoreDisplayApplicationTest`에 final state result, scoring sync completion runner, restored sync completion runner 테스트를 추가했다.
+- 2026-06-15: `GameSessionUiStateHolderApplicationTest`에 Top Moves failure, Auto AI failure, Human sync failure 적용 테스트를 추가했다.
+- 2026-06-15: `docs/refactoring/KMP_MOVE_SPIKE_2026-06-15.md`에 holder 적용 범위 확대와 score/final state result 분리 현황을 기록했다.
+- 검증: `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest --tests 'com.worksoc.goaicoach.application.ScoreDisplayApplicationTest' --tests 'com.worksoc.goaicoach.application.GameSessionUiStateHolderApplicationTest' --tests 'com.worksoc.goaicoach.architecture.LayeringContractTest'` 통과. 최종 통합 검증으로 `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test`도 통과.
+
+## 현재 리팩토링 완성도 평가
+
+- 주관 점수: 99.4/100.
+- 상향 요인: application state holder 경계가 실제로 더 많은 UI state mutation을 흡수했다. score/final score는 display plan 전에 state result를 만들기 시작했고, scoring/restored sync는 명시적 launch request로 입력 구조가 선명해졌다.
+- 남은 감점 요인: `GoCoachApp.kt`는 아직 2,192줄이며 실제 Compose state 변수와 effect launch는 UI 파일에 남아 있다. post-undo score sync는 아직 generic block helper를 사용한다. endgame/final score의 display text formatter도 완전히 분리되지는 않았다.
+
+## 다음 추천 리팩토링 항목
+
+1. Post-undo sync launch request 도입
+   - 현재 `runScoreSyncCompletion()` generic block을 쓰는 마지막 주요 경로다.
+   - `PostUndoScoreSyncEffectLaunchRequest`를 추가하면 score sync 세부 경로가 모두 명시 request 기반이 된다.
+
+2. Final score/endgame formatter 분리
+   - `FinalScoreStateResult`는 생겼으므로 다음은 score text, engine message, candidate text formatter를 별도 함수/파일로 분리한다.
+
+3. Human move local apply도 holder 경계로 이동
+   - `applyHumanMoveLocalResult()` 직접 호출을 holder 메서드로 이동한다.
+   - local offline final score 처리와 engine sync launch는 UI에 남긴다.
+
+4. Score sync runner 파일 분리 재평가
+   - `ScoreEstimateRunnerApplication.kt`가 223줄까지 커졌다.
+   - estimate runner와 sync runner를 `ScoreSyncRunnerApplication.kt`로 분리할지 검토한다.
+
+5. `GoCoachApp.kt` effect launch metric 재측정
+   - `withContext(Dispatchers.IO)`와 workflow별 UI-owned branch 수를 다시 측정해 다음 0.1점 개선 후보를 선정한다.

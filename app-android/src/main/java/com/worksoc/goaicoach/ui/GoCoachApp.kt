@@ -31,7 +31,6 @@ import com.worksoc.goaicoach.application.autoAiTurnOperationToken
 import com.worksoc.goaicoach.application.buildAutoAiTurnCompletionPlan
 import com.worksoc.goaicoach.application.buildAutoAiTurnFailureDisplayPlan
 import com.worksoc.goaicoach.application.buildAutoAiTurnEndgamePlan
-import com.worksoc.goaicoach.application.buildAutoAiTurnFollowUpPlan
 import com.worksoc.goaicoach.application.buildAutoAiEndgameCompletionPlan
 import com.worksoc.goaicoach.application.buildDebugReportCopyPlan
 import com.worksoc.goaicoach.application.buildEngineStartupDisplayPlan
@@ -118,9 +117,10 @@ import com.worksoc.goaicoach.application.TopMoveAnalysisCompletionPlan
 import com.worksoc.goaicoach.application.TopMoveAnalysisFailureDisplayPlan
 import com.worksoc.goaicoach.application.runTopMoveAnalysisWorkflowResult
 import com.worksoc.goaicoach.application.ScoringRuleChangePlan
+import com.worksoc.goaicoach.application.ScoringRuleSyncEffectLaunchRequest
 import com.worksoc.goaicoach.application.runAutoAiEndgameEffect
 import com.worksoc.goaicoach.application.RestoredGameSyncExecutionContext
-import com.worksoc.goaicoach.application.runRestoredGameSyncEffect
+import com.worksoc.goaicoach.application.RestoredGameSyncEffectLaunchRequest
 import com.worksoc.goaicoach.application.runAutoAiTurnWorkflowResult
 import com.worksoc.goaicoach.application.runEngineBackedNewGameWorkflowResult
 import com.worksoc.goaicoach.application.runEngineOperationInScope
@@ -130,6 +130,8 @@ import com.worksoc.goaicoach.application.runHumanEngineSyncWorkflowResult
 import com.worksoc.goaicoach.application.runPositionAnalysisCacheOptimizationWorkflowResult
 import com.worksoc.goaicoach.application.runScoreEstimateEffectCompletionPlan
 import com.worksoc.goaicoach.application.runStartupBenchmarkWorkflowResult
+import com.worksoc.goaicoach.application.runRestoredGameSyncCompletionPlan
+import com.worksoc.goaicoach.application.runScoringRuleSyncCompletionPlan
 import com.worksoc.goaicoach.application.runScoringRuleSyncDisplayPlan
 import com.worksoc.goaicoach.application.runtimeAiTurnBeginLog
 import com.worksoc.goaicoach.application.runtimeAiTurnCompleteLog
@@ -800,9 +802,7 @@ private fun GoCoachScreen(
     fun applyTopMoveAnalysisFailureDisplayPlan(
         failure: TopMoveAnalysisFailureDisplayPlan,
     ) {
-        applyCoreSessionState(
-            currentCoreSessionState().applyTopMoveAnalysisFailureDisplayPlan(failure),
-        )
+        uiStateHolder().applyTopMoveAnalysisFailureDisplayPlan(failure)
     }
 
     fun applyTopMoveAnalysisCompletionPlan(completion: TopMoveAnalysisCompletionPlan) {
@@ -887,15 +887,12 @@ private fun GoCoachScreen(
     }
 
     fun applyAutoAiTurnDisplayPlan(display: AutoAiTurnDisplayPlan): AutoAiTurnFollowUpPlan {
-        applyCoreSessionState(currentCoreSessionState().applyAutoAiTurnDisplayPlan(display))
-        return buildAutoAiTurnFollowUpPlan(display)
+        return uiStateHolder().applyAutoAiTurnDisplayPlan(display)
     }
 
     fun applyAutoAiTurnFailureDisplayPlan(error: Throwable) {
-        applyCoreSessionState(
-            currentCoreSessionState().applyAutoAiTurnFailureDisplayPlan(
-                buildAutoAiTurnFailureDisplayPlan(error),
-            ),
+        uiStateHolder().applyAutoAiTurnFailureDisplayPlan(
+            buildAutoAiTurnFailureDisplayPlan(error),
         )
     }
 
@@ -914,7 +911,7 @@ private fun GoCoachScreen(
     }
 
     fun applyHumanEngineSyncFailurePlan(failure: HumanEngineSyncFailurePlan) {
-        applyCoreSessionState(currentCoreSessionState().applyHumanEngineSyncFailurePlan(failure))
+        uiStateHolder().applyHumanEngineSyncFailurePlan(failure)
     }
 
     fun appendHumanEngineSyncRuntimeLog(
@@ -1255,20 +1252,24 @@ private fun GoCoachScreen(
             fallbackPolicy = EngineFallbackPolicy.LocalRules,
         )
         launchTrackedEngineOperation(ruleSyncOperation) {
-            val followUpAnalysisState = runScoreSyncCompletion(
-                operation = ruleSyncOperation,
-                followUpAnalysisState = nextState,
-                fallbackMessage = "Scoring rule changed, but engine rule sync failed.",
-            ) {
-                engineClient.runScoringRuleSyncDisplayPlan(
-                    state = nextState,
-                    profile = runtimeState.engineProfile,
-                    previousSnapshots = scoreState.scoreSnapshots,
-                    engineMessage = "Scoring rule changed to ${nextRuleset.scoringLabel}; engine rules synchronized.",
-                    operationRequest = ruleSyncOperation,
-                    diagnosticEventLog = diagnosticEventLog,
-                )
-            }
+            val followUpAnalysisState = applyScoreSyncCompletionPlan(
+                withContext(Dispatchers.IO) {
+                    engineClient.runScoringRuleSyncCompletionPlan(
+                        request = ScoringRuleSyncEffectLaunchRequest(
+                            state = nextState,
+                            profile = runtimeState.engineProfile,
+                            previousSnapshots = scoreState.scoreSnapshots,
+                            engineMessage = "Scoring rule changed to ${nextRuleset.scoringLabel}; engine rules synchronized.",
+                            operation = ruleSyncOperation,
+                            currentState = gameState,
+                            currentSessionGeneration = runtimeState.sessionGeneration,
+                            followUpAnalysisState = nextState,
+                            fallbackMessage = "Scoring rule changed, but engine rule sync failed.",
+                        ),
+                        diagnosticEventLog = diagnosticEventLog,
+                    )
+                },
+            )
             followUpAnalysisState?.let { state ->
                 requestTopMoveAnalysisForState(
                     targetState = state,
@@ -1318,20 +1319,24 @@ private fun GoCoachScreen(
         }
 
         launchTrackedEngineOperation(restoreOperation) {
-            val followUpAnalysisState = runScoreSyncCompletion(
-                operation = restoreOperation,
-                followUpAnalysisState = restoredState,
-                fallbackMessage = "Saved game restored locally, but engine sync failed.",
-            ) {
-                engineClient.runRestoredGameSyncEffect(
-                    effect = GameSessionEffect.SyncRestoredGame(restoredState),
-                    context = RestoredGameSyncExecutionContext(
-                        profile = restoredProfile,
-                    ),
-                    operationRequest = restoreOperation,
-                    diagnosticEventLog = diagnosticEventLog,
-                )
-            }
+            val followUpAnalysisState = applyScoreSyncCompletionPlan(
+                withContext(Dispatchers.IO) {
+                    engineClient.runRestoredGameSyncCompletionPlan(
+                        request = RestoredGameSyncEffectLaunchRequest(
+                            effect = GameSessionEffect.SyncRestoredGame(restoredState),
+                            context = RestoredGameSyncExecutionContext(
+                                profile = restoredProfile,
+                            ),
+                            operation = restoreOperation,
+                            currentState = gameState,
+                            currentSessionGeneration = runtimeState.sessionGeneration,
+                            followUpAnalysisState = restoredState,
+                            fallbackMessage = "Saved game restored locally, but engine sync failed.",
+                        ),
+                        diagnosticEventLog = diagnosticEventLog,
+                    )
+                },
+            )
             followUpAnalysisState?.let { state ->
                 requestTopMoveAnalysisForState(
                     targetState = state,

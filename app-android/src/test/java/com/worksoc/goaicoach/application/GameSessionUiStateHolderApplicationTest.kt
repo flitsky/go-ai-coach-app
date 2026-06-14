@@ -90,6 +90,41 @@ class GameSessionUiStateHolderApplicationTest {
         assertNull(core.scoreState.scoreEstimate)
     }
 
+    @Test
+    fun holderAppliesAnalysisAndAiFailurePlans() {
+        val state = GameState.empty()
+        var core = baseCoreState(gameState = state)
+        val holder = GameSessionUiStateHolder(
+            currentCoreState = { core },
+            applyCoreState = { next -> core = next },
+        )
+
+        holder.applyTopMoveAnalysisFailureDisplayPlan(
+            TopMoveAnalysisFailureDisplayPlan(
+                targetState = state,
+                engineMessage = "top moves failed",
+                candidateText = "analysis failed",
+                clearDisplayedTopMoves = true,
+            ),
+        )
+        holder.applyAutoAiTurnFailureDisplayPlan(
+            AutoAiTurnFailureDisplayPlan(
+                engineMessage = "ai failed",
+                candidateText = "ai candidate failed",
+            ),
+        )
+        holder.applyHumanEngineSyncFailurePlan(
+            HumanEngineSyncFailurePlan(
+                scoreSnapshots = core.scoreState.scoreSnapshots,
+                candidateText = "human sync failed",
+                engineMessage = "human failed",
+            ),
+        )
+
+        assertEquals("human failed", core.engineMessage)
+        assertEquals("human sync failed", core.analysisState.candidateText)
+    }
+
     private fun baseCoreState(
         gameState: GameState = GameState.empty(),
     ): GameSessionCoreState =

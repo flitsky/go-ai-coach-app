@@ -12,6 +12,18 @@ internal data class ScoreEstimateEffectLaunchRequest(
     val currentSessionGeneration: Long,
 )
 
+internal data class ScoringRuleSyncEffectLaunchRequest(
+    val state: GameState,
+    val profile: EngineProfile,
+    val previousSnapshots: List<ScoreSnapshot>,
+    val engineMessage: String,
+    val operation: EngineOperationRequest,
+    val currentState: GameState,
+    val currentSessionGeneration: Long,
+    val followUpAnalysisState: GameState,
+    val fallbackMessage: String,
+)
+
 internal suspend fun EngineSessionClient.runScoreEstimateDisplayPlan(
     request: ScoreEstimateRequestPlan.RequestEngineEstimate,
     previousSnapshots: List<ScoreSnapshot>,
@@ -114,6 +126,27 @@ internal suspend fun EngineSessionClient.runScoringRuleSyncDisplayPlan(
     )
 }
 
+internal suspend fun EngineSessionClient.runScoringRuleSyncCompletionPlan(
+    request: ScoringRuleSyncEffectLaunchRequest,
+    diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
+): ScoreSyncCompletionPlan =
+    runScoreSyncWorkflowCompletionPlan(
+        operation = request.operation,
+        currentState = request.currentState,
+        currentSessionGeneration = request.currentSessionGeneration,
+        followUpAnalysisState = request.followUpAnalysisState,
+        fallbackMessage = request.fallbackMessage,
+    ) {
+        runScoringRuleSyncDisplayPlan(
+            state = request.state,
+            profile = request.profile,
+            previousSnapshots = request.previousSnapshots,
+            engineMessage = request.engineMessage,
+            operationRequest = request.operation,
+            diagnosticEventLog = diagnosticEventLog,
+        )
+    }
+
 internal suspend fun EngineSessionClient.runRestoredGameSyncDisplayPlan(
     state: GameState,
     profile: EngineProfile,
@@ -147,6 +180,16 @@ internal data class RestoredGameSyncExecutionContext(
     val profile: EngineProfile,
 )
 
+internal data class RestoredGameSyncEffectLaunchRequest(
+    val effect: GameSessionEffect.SyncRestoredGame,
+    val context: RestoredGameSyncExecutionContext,
+    val operation: EngineOperationRequest,
+    val currentState: GameState,
+    val currentSessionGeneration: Long,
+    val followUpAnalysisState: GameState,
+    val fallbackMessage: String,
+)
+
 internal suspend fun EngineSessionClient.runRestoredGameSyncEffect(
     effect: GameSessionEffect.SyncRestoredGame,
     context: RestoredGameSyncExecutionContext,
@@ -159,3 +202,22 @@ internal suspend fun EngineSessionClient.runRestoredGameSyncEffect(
         operationRequest = operationRequest,
         diagnosticEventLog = diagnosticEventLog,
     )
+
+internal suspend fun EngineSessionClient.runRestoredGameSyncCompletionPlan(
+    request: RestoredGameSyncEffectLaunchRequest,
+    diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
+): ScoreSyncCompletionPlan =
+    runScoreSyncWorkflowCompletionPlan(
+        operation = request.operation,
+        currentState = request.currentState,
+        currentSessionGeneration = request.currentSessionGeneration,
+        followUpAnalysisState = request.followUpAnalysisState,
+        fallbackMessage = request.fallbackMessage,
+    ) {
+        runRestoredGameSyncEffect(
+            effect = request.effect,
+            context = request.context,
+            operationRequest = request.operation,
+            diagnosticEventLog = diagnosticEventLog,
+        )
+    }

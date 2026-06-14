@@ -1354,3 +1354,9 @@
 - `GameSessionUiStateHolderApplication.kt`를 추가해 score/final/endgame/undo display plan 적용이 얇은 holder 경계를 통과하도록 했다. 아직 Compose state 자체는 `GoCoachApp.kt`에 남기되, 다음 파일 분리의 안전한 접점을 만들었다.
 - `GameSessionUiStateHolderApplicationTest`, `ScoreDisplayApplicationTest`, `LayeringContractTest`를 보강했고, KMP 이동 스파이크 문서와 refactoring worklist에 9차 결과와 다음 추천 항목을 반영했다.
 - 9차 targeted 검증과 최종 `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test`가 통과했다. 현재 리팩토링 완성도는 99.3/100으로 평가했다.
+- 사용자가 10차 다음 추천 리팩토링 항목을 단계별로 모두 진행하고, 결과 보고 시 현재 리팩토링 완성도 및 다음 추천 작업 리스트업을 요청했다.
+- 10차 리팩토링으로 `GameSessionUiStateHolder` 적용 범위를 Top Moves failure, Auto AI display/failure, Human sync failure까지 확대했다. UI helper는 남아 있지만 core state mutation은 더 넓게 holder 경계를 통과한다.
+- `FinalScoreStateResult`와 `toFinalScoreDisplayPlan()`을 추가해 final score/endgame score도 display plan 전에 state result를 만드는 형태로 정리했다. 아직 formatter 분리는 남아 있지만 KMP 이동 전제 조건을 한 단계 더 충족했다.
+- `ScoringRuleSyncEffectLaunchRequest`, `RestoredGameSyncEffectLaunchRequest`와 각 completion runner를 추가했다. scoring rule sync/restored game sync는 generic block helper 대신 명시적 launch request로 completion plan을 만든다.
+- `ScoreDisplayApplicationTest`, `GameSessionUiStateHolderApplicationTest`를 보강했고, KMP 이동 스파이크 문서와 refactoring worklist에 10차 결과와 다음 추천 항목을 반영했다.
+- 10차 targeted 검증과 최종 `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test`가 통과했다. 현재 리팩토링 완성도는 99.4/100으로 평가했다.

@@ -351,6 +351,41 @@ class ScoreDisplayApplicationTest {
     }
 
     @Test
+    fun finalScoreStateResultSeparatesDomainDataFromDisplayText() {
+        val state = GameState.empty()
+            .play(Move.Pass(StoneColor.Black))
+            .play(Move.Pass(StoneColor.White))
+        val finalScore = FinalScoreResult(
+            status = EngineStatus.ready("B+0.5"),
+            rawScore = "B+0.5",
+            winner = StoneColor.Black,
+            margin = 0.5,
+            summary = "final",
+        )
+
+        val result = buildLocalFinalScoreStateResult(
+            source = "test-final",
+            state = state,
+            finalScore = finalScore,
+            previousSnapshots = emptyList(),
+            detail = "test",
+        )
+        val display = result.toFinalScoreDisplayPlan(
+            scoreText = "display score",
+            engineMessage = "display message",
+            candidateText = "display candidate",
+        )
+
+        assertEquals(state, result.gameState)
+        assertEquals(ScoreSnapshotSource.FinalScore, result.scoreSnapshots.single().source)
+        assertTrue(result.endgameLog.contains("source=test-final"))
+        assertEquals("display score", display.scoreText)
+        assertEquals("display message", display.engineMessage)
+        assertEquals("display candidate", display.candidateText)
+        assertEquals(result.endgameLog, display.endgameLog)
+    }
+
+    @Test
     fun scoreEstimateDisplayRunnerRequestsEngineAndBuildsPlan() = runBlocking {
         val state = GameState.empty()
         val profile = EngineProfile()
@@ -482,6 +517,40 @@ class ScoreDisplayApplicationTest {
     }
 
     @Test
+    fun scoringRuleSyncCompletionRunnerBuildsCompletionPlan() = runBlocking {
+        val state = GameState.empty()
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+        val operation = engineOperationRequest(
+            kind = EngineOperationKind.ScoringRuleSync,
+            state = state,
+            sessionGeneration = 4L,
+            fallbackPolicy = EngineFallbackPolicy.LocalRules,
+        )
+        val request = ScoringRuleSyncEffectLaunchRequest(
+            state = state,
+            profile = EngineProfile(),
+            previousSnapshots = emptyList(),
+            engineMessage = "rules synced",
+            operation = operation,
+            currentState = state,
+            currentSessionGeneration = 4L,
+            followUpAnalysisState = state,
+            fallbackMessage = "rules failed",
+        )
+
+        val success = FakeScoreEngineSessionClient()
+            .runScoringRuleSyncCompletionPlan(request)
+        val failure = FakeScoreEngineSessionClient(
+            syncError = IllegalStateException("sync failed"),
+        ).runScoringRuleSyncCompletionPlan(request)
+
+        assertTrue(success is ScoreSyncCompletionPlan.ApplySuccess)
+        assertEquals("rules synced", (success as ScoreSyncCompletionPlan.ApplySuccess).display.engineMessage)
+        assertTrue(failure is ScoreSyncCompletionPlan.ApplyFailure)
+        assertEquals("sync failed", (failure as ScoreSyncCompletionPlan.ApplyFailure).engineMessage)
+    }
+
+    @Test
     fun restoredGameSyncRunnerUsesRestoreMessageAndFreshTimeline() = runBlocking {
         val state = GameState.empty()
         val client = FakeScoreEngineSessionClient()
@@ -494,6 +563,42 @@ class ScoreDisplayApplicationTest {
         assertEquals(state, client.configuredSyncState)
         assertEquals("Previous game restored and engine state synchronized.", plan.engineMessage)
         assertEquals(1, plan.scoreSnapshots.size)
+    }
+
+    @Test
+    fun restoredGameSyncCompletionRunnerBuildsCompletionPlan() = runBlocking {
+        val state = GameState.empty()
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+        val profile = EngineProfile(name = "restored")
+        val operation = engineOperationRequest(
+            kind = EngineOperationKind.RestoredGameSync,
+            state = state,
+            sessionGeneration = 5L,
+            fallbackPolicy = EngineFallbackPolicy.LocalRules,
+        )
+        val request = RestoredGameSyncEffectLaunchRequest(
+            effect = GameSessionEffect.SyncRestoredGame(state),
+            context = RestoredGameSyncExecutionContext(profile = profile),
+            operation = operation,
+            currentState = state,
+            currentSessionGeneration = 5L,
+            followUpAnalysisState = state,
+            fallbackMessage = "restore failed",
+        )
+
+        val success = FakeScoreEngineSessionClient()
+            .runRestoredGameSyncCompletionPlan(request)
+        val failure = FakeScoreEngineSessionClient(
+            configuredSyncError = IllegalStateException("restore sync failed"),
+        ).runRestoredGameSyncCompletionPlan(request)
+
+        assertTrue(success is ScoreSyncCompletionPlan.ApplySuccess)
+        assertEquals(
+            "Previous game restored and engine state synchronized.",
+            (success as ScoreSyncCompletionPlan.ApplySuccess).display.engineMessage,
+        )
+        assertTrue(failure is ScoreSyncCompletionPlan.ApplyFailure)
+        assertEquals("restore sync failed", (failure as ScoreSyncCompletionPlan.ApplyFailure).engineMessage)
     }
 
     @Test
@@ -574,6 +679,8 @@ class ScoreDisplayApplicationTest {
 
 private class FakeScoreEngineSessionClient(
     private val estimateError: Throwable? = null,
+    private val syncError: Throwable? = null,
+    private val configuredSyncError: Throwable? = null,
 ) : EngineSessionClient {
     var estimatedState: GameState? = null
         private set
@@ -631,6 +738,7 @@ private class FakeScoreEngineSessionClient(
         profile: EngineProfile,
     ): ScoreEstimate {
         syncedState = state
+        syncError?.let { throw it }
         return testEstimate()
     }
 
@@ -640,6 +748,7 @@ private class FakeScoreEngineSessionClient(
     ): ScoreEstimate {
         configuredSyncState = state
         configuredSyncProfile = profile
+        configuredSyncError?.let { throw it }
         return testEstimate()
     }
 
