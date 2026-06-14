@@ -8,6 +8,7 @@ import com.worksoc.goaicoach.shared.EngineStatus
 import com.worksoc.goaicoach.shared.FinalScoreResult
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
+import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.ScoreSnapshotSource
@@ -123,6 +124,29 @@ class GameSessionUiStateHolderApplicationTest {
 
         assertEquals("human failed", core.engineMessage)
         assertEquals("human sync failed", core.analysisState.candidateText)
+    }
+
+    @Test
+    fun holderAppliesHumanMoveLocalResult() {
+        val move = Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine))
+        var core = baseCoreState()
+        val holder = GameSessionUiStateHolder(
+            currentCoreState = { core },
+            applyCoreState = { next -> core = next },
+        )
+        val localMove = applyHumanMoveLocally(
+            beforeMove = core.gameState,
+            move = move,
+            reviewAnalysis = MoveAnalysisSnapshot.empty(core.gameState),
+            previousMoveReviews = emptyList(),
+        ).getOrThrow()
+
+        holder.applyHumanMoveLocalResult(localMove)
+
+        assertEquals(1, core.gameState.moves.size)
+        assertEquals("Black E5", core.moveReviewState.lastMoveText)
+        assertEquals("Score estimate not current.", core.scoreState.scoreText)
+        assertNull(core.analysisState.lastAnalysisKey)
     }
 
     private fun baseCoreState(

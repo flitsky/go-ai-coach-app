@@ -102,6 +102,7 @@ import com.worksoc.goaicoach.application.HumanEngineSyncRunPlan
 import com.worksoc.goaicoach.application.EngineStartupWorkflowResult
 import com.worksoc.goaicoach.application.EngineStartupDisplayPlan
 import com.worksoc.goaicoach.application.PlayerSetupChangePlan
+import com.worksoc.goaicoach.application.PostUndoScoreSyncEffectLaunchRequest
 import com.worksoc.goaicoach.application.PositionAnalysisCacheOptimizationWorkflowResult
 import com.worksoc.goaicoach.application.PositionAnalysisCacheOptimizationUiState
 import com.worksoc.goaicoach.application.PostGamePositionAnalysisCacheOptimizationPromptEnabled
@@ -128,11 +129,11 @@ import com.worksoc.goaicoach.application.runEngineStartupWorkflowResult
 import com.worksoc.goaicoach.application.runEngineUndoWorkflowResult
 import com.worksoc.goaicoach.application.runHumanEngineSyncWorkflowResult
 import com.worksoc.goaicoach.application.runPositionAnalysisCacheOptimizationWorkflowResult
+import com.worksoc.goaicoach.application.runPostUndoScoreSyncCompletionPlan
 import com.worksoc.goaicoach.application.runScoreEstimateEffectCompletionPlan
 import com.worksoc.goaicoach.application.runStartupBenchmarkWorkflowResult
 import com.worksoc.goaicoach.application.runRestoredGameSyncCompletionPlan
 import com.worksoc.goaicoach.application.runScoringRuleSyncCompletionPlan
-import com.worksoc.goaicoach.application.runScoringRuleSyncDisplayPlan
 import com.worksoc.goaicoach.application.runtimeAiTurnBeginLog
 import com.worksoc.goaicoach.application.runtimeAiTurnCompleteLog
 import com.worksoc.goaicoach.application.runtimeAiTurnEndgameDetectedLog
@@ -169,7 +170,6 @@ import com.worksoc.goaicoach.application.ScoreEstimateCompletionPlan
 import com.worksoc.goaicoach.application.ScoreEstimateEffectLaunchRequest
 import com.worksoc.goaicoach.application.ScoreEstimateRequestPlan
 import com.worksoc.goaicoach.application.ScoreSyncCompletionPlan
-import com.worksoc.goaicoach.application.runScoreSyncWorkflowCompletionPlan
 import com.worksoc.goaicoach.application.scoreEstimateOperationToken
 import com.worksoc.goaicoach.application.toScoreEstimateLaunchStateUpdate
 import com.worksoc.goaicoach.application.SavedGameRestorePlan
@@ -847,26 +847,6 @@ private fun GoCoachScreen(
             }
         }
 
-    suspend fun runScoreSyncCompletion(
-        operation: EngineOperationRequest,
-        followUpAnalysisState: GameState,
-        fallbackMessage: String,
-        block: suspend () -> ScoreEstimateDisplayPlan,
-    ): GameState? =
-        applyScoreSyncCompletionPlan(
-            runScoreSyncWorkflowCompletionPlan(
-                operation = operation,
-                currentState = gameState,
-                currentSessionGeneration = runtimeState.sessionGeneration,
-                followUpAnalysisState = followUpAnalysisState,
-                fallbackMessage = fallbackMessage,
-            ) {
-                withContext(Dispatchers.IO) {
-                    block()
-                }
-            },
-        )
-
     fun applyFinalScoreDisplayPlan(final: FinalScoreDisplayPlan) {
         uiStateHolder().applyFinalScoreDisplayPlan(final)
     }
@@ -1142,20 +1122,24 @@ private fun GoCoachScreen(
             )
             var followUpAnalysisState: GameState? = null
             runTrackedEngineOperation(operation) {
-                followUpAnalysisState = runScoreSyncCompletion(
-                    operation = operation,
-                    followUpAnalysisState = pending.targetState,
-                    fallbackMessage = "Local undo engine sync failed.",
-                ) {
-                    engineClient.runScoringRuleSyncDisplayPlan(
-                        state = pending.targetState,
-                        profile = runtimeState.engineProfile,
-                        previousSnapshots = scoreState.scoreSnapshots,
-                        engineMessage = "Local undo settled; engine analysis synced.",
-                        operationRequest = operation,
-                        diagnosticEventLog = diagnosticEventLog,
-                    )
-                }
+                followUpAnalysisState = applyScoreSyncCompletionPlan(
+                    withContext(Dispatchers.IO) {
+                        engineClient.runPostUndoScoreSyncCompletionPlan(
+                            request = PostUndoScoreSyncEffectLaunchRequest(
+                                state = pending.targetState,
+                                profile = runtimeState.engineProfile,
+                                previousSnapshots = scoreState.scoreSnapshots,
+                                engineMessage = "Local undo settled; engine analysis synced.",
+                                operation = operation,
+                                currentState = gameState,
+                                currentSessionGeneration = runtimeState.sessionGeneration,
+                                followUpAnalysisState = pending.targetState,
+                                fallbackMessage = "Local undo engine sync failed.",
+                            ),
+                            diagnosticEventLog = diagnosticEventLog,
+                        )
+                    },
+                )
             }
             if (pendingPostUndoEngineSync == pending) {
                 pendingPostUndoEngineSync = null
@@ -1790,7 +1774,7 @@ private fun GoCoachScreen(
             ),
         )
         turnTimeState = turnTimeUpdate.after
-        applyCoreSessionState(currentCoreSessionState().applyHumanMoveLocalResult(localMove))
+        uiStateHolder().applyHumanMoveLocalResult(localMove)
 
         if (!isEngineReady) {
             val updatedSnapshots = ScoreTimeline.record(scoreState.scoreSnapshots, localMove.localScoreSnapshot)

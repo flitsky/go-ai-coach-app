@@ -1360,3 +1360,10 @@
 - `ScoringRuleSyncEffectLaunchRequest`, `RestoredGameSyncEffectLaunchRequest`와 각 completion runner를 추가했다. scoring rule sync/restored game sync는 generic block helper 대신 명시적 launch request로 completion plan을 만든다.
 - `ScoreDisplayApplicationTest`, `GameSessionUiStateHolderApplicationTest`를 보강했고, KMP 이동 스파이크 문서와 refactoring worklist에 10차 결과와 다음 추천 항목을 반영했다.
 - 10차 targeted 검증과 최종 `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test`가 통과했다. 현재 리팩토링 완성도는 99.4/100으로 평가했다.
+- 사용자가 `new 1` 다음 리팩토링 추천 항목을 단계별로 모두 진행하고, 결과 보고 시 현재 리팩토링 완성도 및 다음 추천 작업 리스트업을 요청했다.
+- `ScoreSyncRunnerApplication.kt`를 추가해 scoring rule sync, post-undo sync, restored game sync runner를 `ScoreEstimateRunnerApplication.kt`에서 분리했다. `ScoreEstimateRunnerApplication.kt`는 score estimate 전용 runner로 다시 좁혔다.
+- `PostUndoScoreSyncEffectLaunchRequest`와 `runPostUndoScoreSyncCompletionPlan()`을 추가했다. post-undo sync도 명시적 launch request와 completion plan을 통과하며, `GoCoachApp.kt`의 generic `runScoreSyncCompletion()` local helper는 제거했다.
+- `FinalScoreDisplayText`, `buildLocalFinalScoreDisplayText()`, `buildResolvedEndgameDisplayText()`를 추가해 final/endgame state result와 화면 문구 조립 책임을 한 단계 더 분리했다.
+- `GameSessionUiStateHolder.applyHumanMoveLocalResult()`를 추가해 사람 착수 local state apply도 holder 경계를 통과하도록 했다.
+- `LayeringContractTest`와 KMP 이동 스파이크 문서를 갱신해 `ScoreSyncRunnerApplication.kt`가 Android/UI/persistence/runtime 구현 import 없이 유지되도록 고정했다.
+- 관련 targeted 검증으로 `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest --tests 'com.worksoc.goaicoach.application.ScoreDisplayApplicationTest' --tests 'com.worksoc.goaicoach.application.GameSessionUiStateHolderApplicationTest' --tests 'com.worksoc.goaicoach.architecture.LayeringContractTest'`를 실행했고 통과했다. 최종 통합 검증으로 `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test`도 통과했다. 현재 리팩토링 완성도는 99.5/100으로 평가했다.

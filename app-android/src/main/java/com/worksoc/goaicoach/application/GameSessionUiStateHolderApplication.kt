@@ -32,6 +32,10 @@ internal class GameSessionUiStateHolder(
         applyCoreState(currentCoreState().applyHumanEngineSyncFailurePlan(failure))
     }
 
+    fun applyHumanMoveLocalResult(result: HumanMoveLocalResult) {
+        applyCoreState(currentCoreState().applyHumanMoveLocalResult(result))
+    }
+
     fun applyAutoAiTurnDisplayPlan(display: AutoAiTurnDisplayPlan): AutoAiTurnFollowUpPlan {
         applyCoreState(currentCoreState().applyAutoAiTurnDisplayPlan(display))
         return buildAutoAiTurnFollowUpPlan(display)

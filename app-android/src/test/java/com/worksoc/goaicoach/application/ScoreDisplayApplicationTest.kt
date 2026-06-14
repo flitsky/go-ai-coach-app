@@ -386,6 +386,27 @@ class ScoreDisplayApplicationTest {
     }
 
     @Test
+    fun finalScoreDisplayTextWrapsScoreMessageAndCandidateText() {
+        val finalScore = FinalScoreResult(
+            status = EngineStatus.ready("W+6.5"),
+            rawScore = "W+6.5",
+            winner = StoneColor.White,
+            margin = 6.5,
+            summary = "final",
+        )
+
+        val text = buildLocalFinalScoreDisplayText(
+            finalScore = finalScore,
+            engineMessage = "local final",
+            candidateText = "ended",
+        )
+
+        assertEquals(finalScore.toDisplayText(), text.scoreText)
+        assertEquals("local final", text.engineMessage)
+        assertEquals("ended", text.candidateText)
+    }
+
+    @Test
     fun scoreEstimateDisplayRunnerRequestsEngineAndBuildsPlan() = runBlocking {
         val state = GameState.empty()
         val profile = EngineProfile()
@@ -548,6 +569,40 @@ class ScoreDisplayApplicationTest {
         assertEquals("rules synced", (success as ScoreSyncCompletionPlan.ApplySuccess).display.engineMessage)
         assertTrue(failure is ScoreSyncCompletionPlan.ApplyFailure)
         assertEquals("sync failed", (failure as ScoreSyncCompletionPlan.ApplyFailure).engineMessage)
+    }
+
+    @Test
+    fun postUndoScoreSyncCompletionRunnerBuildsCompletionPlan() = runBlocking {
+        val state = GameState.empty()
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+        val operation = engineOperationRequest(
+            kind = EngineOperationKind.PostUndoSync,
+            state = state,
+            sessionGeneration = 4L,
+            fallbackPolicy = EngineFallbackPolicy.LocalRules,
+        )
+        val request = PostUndoScoreSyncEffectLaunchRequest(
+            state = state,
+            profile = EngineProfile(),
+            previousSnapshots = emptyList(),
+            engineMessage = "undo synced",
+            operation = operation,
+            currentState = state,
+            currentSessionGeneration = 4L,
+            followUpAnalysisState = state,
+            fallbackMessage = "undo sync failed",
+        )
+
+        val success = FakeScoreEngineSessionClient()
+            .runPostUndoScoreSyncCompletionPlan(request)
+        val failure = FakeScoreEngineSessionClient(
+            syncError = IllegalStateException("post undo failed"),
+        ).runPostUndoScoreSyncCompletionPlan(request)
+
+        assertTrue(success is ScoreSyncCompletionPlan.ApplySuccess)
+        assertEquals("undo synced", (success as ScoreSyncCompletionPlan.ApplySuccess).display.engineMessage)
+        assertTrue(failure is ScoreSyncCompletionPlan.ApplyFailure)
+        assertEquals("post undo failed", (failure as ScoreSyncCompletionPlan.ApplyFailure).engineMessage)
     }
 
     @Test

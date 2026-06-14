@@ -125,6 +125,7 @@ class LayeringContractTest {
             applicationRoot.resolve("PositionAnalysisCacheOptimization.kt"),
             applicationRoot.resolve("ScoreDisplayApplication.kt"),
             applicationRoot.resolve("ScoreEstimateRunnerApplication.kt"),
+            applicationRoot.resolve("ScoreSyncRunnerApplication.kt"),
             applicationRoot.resolve("ScoreSyncCompletionApplication.kt"),
             applicationRoot.resolve("TopMovesApplication.kt"),
             applicationRoot.resolve("UndoApplication.kt"),

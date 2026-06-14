@@ -46,6 +46,12 @@ internal data class FinalScoreStateResult(
     val endgameTimingSummary: String? = null,
 )
 
+internal data class FinalScoreDisplayText(
+    val scoreText: String,
+    val engineMessage: String,
+    val candidateText: String,
+)
+
 internal data class EndgameFailureDisplayPlan(
     val endgameLog: String,
     val engineMessage: String,
@@ -258,6 +264,15 @@ internal fun buildLocalScoreEstimateDisplayPlan(
     )
 
 internal fun FinalScoreStateResult.toFinalScoreDisplayPlan(
+    text: FinalScoreDisplayText,
+): FinalScoreDisplayPlan =
+    toFinalScoreDisplayPlan(
+        scoreText = text.scoreText,
+        engineMessage = text.engineMessage,
+        candidateText = text.candidateText,
+    )
+
+internal fun FinalScoreStateResult.toFinalScoreDisplayPlan(
     scoreText: String,
     engineMessage: String,
     candidateText: String,
@@ -271,6 +286,17 @@ internal fun FinalScoreStateResult.toFinalScoreDisplayPlan(
         engineMessage = engineMessage,
         candidateText = candidateText,
         endgameTimingSummary = endgameTimingSummary,
+    )
+
+internal fun buildLocalFinalScoreDisplayText(
+    finalScore: FinalScoreResult,
+    engineMessage: String,
+    candidateText: String,
+): FinalScoreDisplayText =
+    FinalScoreDisplayText(
+        scoreText = finalScore.toDisplayText(),
+        engineMessage = engineMessage,
+        candidateText = candidateText,
     )
 
 internal fun buildLocalFinalScoreStateResult(
@@ -310,19 +336,29 @@ internal fun buildLocalFinalScoreDisplayPlan(
     engineMessage: String,
     candidateText: String,
 ): FinalScoreDisplayPlan {
-    val finalScoreText = finalScore.toDisplayText()
+    val text = buildLocalFinalScoreDisplayText(
+        finalScore = finalScore,
+        engineMessage = engineMessage,
+        candidateText = candidateText,
+    )
     return buildLocalFinalScoreStateResult(
         source = source,
         state = state,
         finalScore = finalScore,
         previousSnapshots = previousSnapshots,
         detail = detail,
-    ).toFinalScoreDisplayPlan(
-        scoreText = finalScoreText,
-        engineMessage = engineMessage,
-        candidateText = candidateText,
-    )
+    ).toFinalScoreDisplayPlan(text)
 }
+
+internal fun buildResolvedEndgameDisplayText(
+    resolution: AiEndgameResolution,
+    engineMessagePrefix: String? = null,
+): FinalScoreDisplayText =
+    FinalScoreDisplayText(
+        scoreText = resolution.finalScore.toDisplayText(),
+        engineMessage = listOfNotNull(engineMessagePrefix, resolution.toEngineMessage()).joinToString("\n"),
+        candidateText = resolution.toCandidateText(),
+    )
 
 internal fun buildResolvedEndgameStateResult(
     source: String,
@@ -360,18 +396,16 @@ internal fun buildResolvedEndgameDisplayPlan(
     previousSnapshots: List<ScoreSnapshot>,
     engineMessagePrefix: String? = null,
 ): FinalScoreDisplayPlan {
-    val finalScoreText = resolution.finalScore.toDisplayText()
-    val resolvedMessage = resolution.toEngineMessage()
+    val text = buildResolvedEndgameDisplayText(
+        resolution = resolution,
+        engineMessagePrefix = engineMessagePrefix,
+    )
     return buildResolvedEndgameStateResult(
         source = source,
         originalState = originalState,
         resolution = resolution,
         previousSnapshots = previousSnapshots,
-    ).toFinalScoreDisplayPlan(
-        scoreText = finalScoreText,
-        engineMessage = listOfNotNull(engineMessagePrefix, resolvedMessage).joinToString("\n"),
-        candidateText = resolution.toCandidateText(),
-    )
+    ).toFinalScoreDisplayPlan(text)
 }
 
 internal fun buildEndgameFailureDisplayPlan(

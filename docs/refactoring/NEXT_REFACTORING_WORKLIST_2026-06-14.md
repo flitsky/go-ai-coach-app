@@ -764,3 +764,39 @@
 
 5. `GoCoachApp.kt` effect launch metric 재측정
    - `withContext(Dispatchers.IO)`와 workflow별 UI-owned branch 수를 다시 측정해 다음 0.1점 개선 후보를 선정한다.
+
+## 2026-06-15 추가 진행 로그: Score Sync Runner / Final Text / Holder Boundary new 1 정리
+
+- 2026-06-15: `ScoreSyncRunnerApplication.kt`를 추가해 scoring rule sync, post-undo sync, restored game sync runner를 `ScoreEstimateRunnerApplication.kt`에서 분리했다. `ScoreEstimateRunnerApplication.kt`는 score estimate 전용 runner로 다시 좁아졌다.
+- 2026-06-15: `PostUndoScoreSyncEffectLaunchRequest`와 `runPostUndoScoreSyncCompletionPlan()`을 추가했다. post-undo sync도 generic block helper 없이 명시적 launch request와 completion plan을 통과한다.
+- 2026-06-15: `GoCoachApp.kt`의 `runScoreSyncCompletion()` local helper를 제거했다. score sync 세부 경로는 `runScoringRuleSyncCompletionPlan()`, `runPostUndoScoreSyncCompletionPlan()`, `runRestoredGameSyncCompletionPlan()`처럼 목적별 runner를 호출한다.
+- 2026-06-15: `FinalScoreDisplayText`, `buildLocalFinalScoreDisplayText()`, `buildResolvedEndgameDisplayText()`를 추가했다. final/endgame state result와 화면 문구 조립 책임을 한 단계 더 분리했다.
+- 2026-06-15: `GameSessionUiStateHolder.applyHumanMoveLocalResult()`를 추가했다. 사람 착수의 local state apply도 holder 경계를 통과하며, engine sync launch와 후속 scheduling은 UI/controller에 남겨 두었다.
+- 2026-06-15: `LayeringContractTest`의 platform-free 후보에 `ScoreSyncRunnerApplication.kt`를 추가했다. 새 sync runner도 Android/UI/persistence/runtime 구현 import 없이 유지해야 한다.
+- 현재 metric: `GoCoachApp.kt`는 2,176줄이며, UI 파일 안의 `withContext(Dispatchers.IO)`/`runCatching` 직접 지점은 13개다.
+- 검증: `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest --tests 'com.worksoc.goaicoach.application.ScoreDisplayApplicationTest' --tests 'com.worksoc.goaicoach.application.GameSessionUiStateHolderApplicationTest' --tests 'com.worksoc.goaicoach.architecture.LayeringContractTest'` 통과. 최종 통합 검증으로 `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test`도 통과.
+
+## 현재 리팩토링 완성도 평가
+
+- 주관 점수: 99.5/100.
+- 상향 요인: score estimate runner와 score sync runner가 분리되어 파일 책임이 선명해졌다. score sync 주요 경로는 모두 명시적 request 기반 completion runner를 갖게 되었고, final/endgame 표시 텍스트도 domain state result에서 한 단계 분리되기 시작했다.
+- 남은 감점 요인: `GoCoachApp.kt`는 여전히 2천 줄대이고 Compose state 변수 소유권은 UI 파일에 있다. final/endgame formatter는 함수 수준 분리이며 아직 파일 단위 분리는 아니다. 실제 KMP 물리 이동도 아직 수행하지 않았다.
+
+## 다음 추천 리팩토링 항목
+
+1. Final/endgame formatter 파일 분리
+   - `FinalScoreDisplayText` 관련 함수를 `ScoreDisplayFormatterApplication.kt` 같은 별도 파일로 이동한다.
+   - `ScoreDisplayApplication.kt`를 domain result 중심으로 더 줄인다.
+
+2. Human move sync launch request 정리
+   - 사람 착수 후 engine sync 경로의 launch request/result/completion apply를 더 명시적으로 묶는다.
+   - local apply, engine sync, runtime log append의 경계를 문서와 테스트로 고정한다.
+
+3. UI state holder 생명주기 재검토
+   - 현재 holder는 helper 함수에서 매번 생성된다. 상태 소유권을 더 명확히 하려면 holder 생성 위치와 lifetime을 고정할 필요가 있다.
+
+4. KMP 이동 1차 후보 실제 이전 준비
+   - `ScoreSyncCompletionApplication.kt` 또는 `DiagnosticEventModel.kt`부터 shared/common 후보로 옮길 때 필요한 port/type dependency를 구체화한다.
+
+5. Effect launcher metric 축소
+   - 남은 `withContext(Dispatchers.IO)` 지점을 workflow별로 분류해 13개에서 10개 이하로 줄이는 작은 batch를 잡는다.
