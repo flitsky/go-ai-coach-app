@@ -1187,3 +1187,8 @@
 - `AutoAiTurnOperationToken`, `AutoAiEndgameOperationToken`을 추가했다. 요청 당시 board fingerprint를 저장하고, 결과 도착 시 현재 `gameState`와 비교해 같을 때만 AI 착수 결과, 실패 메시지, 자동 종국 결과를 화면에 반영한다.
 - `GoCoachApp.kt`의 자동 AI 턴 success/failure와 pass/pass endgame success/failure 반영 지점에 guard를 적용했다. stale 결과는 상태/메시지/점수/기보를 바꾸지 않고 폐기된다.
 - `GameAutomationApplicationTest`에 자동 AI 턴과 자동 종국 guard 테스트를 추가했고, 대상 테스트 `GameAutomationApplicationTest`, `EngineOperationPolicyTest`가 통과했다.
+- 사용자가 현재 `Top Moves` 후보 수를 어떤 방식으로 구하는지, 빠른초급 3단계를 추천수로 이기기 어려운 이유, 별도 엔진/JSON 분석으로 학습용 Top Moves를 제공하는 방향, 초급/중급 AI가 JSON 방식인지 재확인을 요청했다.
+- 코드 기준으로 확인한 결과 현재 `Top Moves`는 `topMoveCandidateCountFor() = 1` 고정이며, `TopMovesDisplay`는 `fastCandidateAnalysis(candidateCount=1)`로 정규화된다. 또한 `runTopMoveAnalysis()`는 명시적 search mode를 넘기지 않아 `EngineSessionClient.analyzePosition()`의 기본값인 `GtpStatefulFast`를 사용한다. 따라서 현재 Top Moves는 학습용 다중 후보가 아니라 현재 runtime profile의 GTP fast best-only 힌트다.
+- `빠른 초급 1~3단계`는 현재 코드상 모두 `MoveSelectionPolicy.BestOnly`이며, 빠른초급 AI 착수도 B16 `GtpStatefulFast` candidate 1 경로다. 빠른초급 3단계를 상대로 Top Moves를 그대로 따라도 같은 B16 best-only 계열이라 승리가 보장되지 않는 구조다.
+- `초급` 이상 AI 착수는 `PlayLevelSetting.aiMoveSearchMode()` 기준 `JsonPositionAnalysis`를 사용한다. 초급은 B32 후보 16, 중급은 B64 후보 20을 기반으로 JSON 후보군을 받고 `MoveSelectionPolicy`로 레벨링한다.
+- `ENGINE_API_CALL_POLICY.md`에 현재 Top Moves 한계와 Coach Analysis 분리 방향을 추가했다. 단기 방향은 Top Moves가 켜진 경우에만 `JsonPositionAnalysis` 기반 coach budget을 사용하고, 중기에는 `playEngine`과 `analysisEngine`을 분리하는 것이다. 폰 로컬에서 물리적 KataGo 2개를 항상 돌리는 것은 비용이 커서 기본값으로 강제하지 않는다.

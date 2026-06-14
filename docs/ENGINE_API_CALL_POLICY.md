@@ -66,6 +66,33 @@ JSON 기반 운영의 목표는 다음과 같다.
 
 이 방식의 핵심은 AI와 사람이 같은 `TurnAnalysis` snapshot을 공유한다는 점이다. 후보 표시, AI 착수, 착수 후 평가는 모두 같은 분석 데이터에서 파생되므로 일관성이 높다. 현재 구현은 먼저 AI 착수 경로에 적용했다. 사람 차례의 Top Moves/착수 리뷰를 JSON broad snapshot으로 전환하는 작업은 별도 단계로 둔다.
 
+### 현재 Top Moves 구현 상태와 한계
+
+2026-06-14 현재 `Top Moves`는 학습용 broad 후보 분석이 아니라 경량 best-only 분석이다.
+
+- `topMoveCandidateCountFor()`는 항상 `1`을 반환한다.
+- `TopMovesDisplay` limit은 `fastCandidateAnalysis(candidateCount=1)`로 정규화되어 `includePolicy=false`, `refinePolicyMoves=0`, `minVisitsPerCandidate=0`, `minTimeMillis=null`이 된다.
+- `runTopMoveAnalysis()`는 `EngineSessionClient.analyzePosition(state, limit)`를 호출하며, 명시적 search mode를 넘기지 않으므로 기본값인 `EngineSearchMode.GtpStatefulFast`를 사용한다.
+- 따라서 플레이어가 보는 `Top Moves`는 현재 대국 runtime profile의 GTP fast 최상위 후보 1개다. 상대 AI가 `빠른 초급`이면 사실상 같은 B16 계열 best-only 힌트를 받는다.
+- `빠른 초급 1~3단계`는 현재 코드상 모두 `MoveSelectionPolicy.BestOnly`다. 단계 이름은 남아 있지만 착수 선택 정책은 동일하다.
+- 이 구조에서는 `빠른 초급 3단계`를 상대로 Top Moves를 그대로 따라도 승리가 보장되지 않는다. 같은 수준의 최상위 후보를 서로 두는 대국이며, 선후/komi/엔진 tree reuse/후보 fill/사용자 착수 타이밍에 따라 사용자가 불리할 수 있다.
+
+제품 메시지는 다음처럼 잡는다.
+
+- 빠른 대국: `빠른 초급` + GTP fast + best-only. 쾌적함 우선이며, 추천수로 둔다고 반드시 이기는 모드가 아니다.
+- 학습 대국: `초급` 이상 또는 향후 `Coach Analysis` 옵션. JSON position analysis로 여러 후보, point loss, 착수 리뷰 색상을 확보한다.
+- 향후 Top Moves 고도화: 사용자가 `Top Moves`를 켰을 때만 별도 coach analysis budget을 사용한다. 최소 `B32 JsonPositionAnalysis`, 가능하면 상대 AI보다 한 단계 강한 profile을 사용한다.
+
+### Coach Analysis 분리 방향
+
+사용자에게 더 강한 힌트를 주려면 AI 착수 엔진과 coach 분석 엔진을 논리적으로 분리한다.
+
+1. 단기: 같은 `EngineSessionClient` 안에서 Top Moves만 `EngineSearchMode.JsonPositionAnalysis`로 호출한다. 현재 local adapter는 JSON analysis process를 별도로 띄울 수 있으므로, GTP fast 대국 경로와 position-scoped coach 분석을 분리할 수 있다.
+2. 중기: `EngineSessionRouter` 또는 `CoachEngineSessionClient`를 둬 `playEngine`과 `analysisEngine`을 명시적으로 분리한다. 폰에서는 옵션으로 켜고, 부하가 크면 끄게 한다.
+3. 장기: coach 분석은 원격 서버나 운영자가 제공하는 trusted JSON position cache로 대체할 수 있다. 이 경우 로컬 폰은 빠른 대국만 담당하고 학습 분석은 서버/캐시가 담당한다.
+
+폰 로컬에서 물리적으로 KataGo 엔진 2개를 항상 돌리는 것은 메모리, 발열, 배터리, CPU contention 비용이 크다. 따라서 기본값으로 강제하지 않고, `Top Moves/Coach Analysis`가 켜진 경우에만 JSON analysis process 또는 원격 분석을 사용하는 방향이 안전하다.
+
 ## 현재 구현 범위
 
 2026-06-13 현재 모바일 기본 구현은 성능을 우선하되, B16/B32/B64 time cap은 사용자가 `Search Time` 메뉴에서 조정할 수 있다. 또한 `Time cap Off`를 선택하면 `AnalysisLimit.timeMillis=null`로 내려가 응답시간 제한 없이 요청 visits 충족을 우선한다.
