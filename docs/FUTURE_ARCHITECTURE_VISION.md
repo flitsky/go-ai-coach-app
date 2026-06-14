@@ -142,6 +142,9 @@ graph TD
 - 운영자가 배포하는 최신 cache는 `operator-trusted`로 분리한다.
 - 사용자 플레이 중 얻은 값은 `local-user`로 저장하되, root visits와 fill status를 반드시 보존한다.
 - 원격 사용자 간 공유 cache는 장기 과제이며, 검증과 privacy 정책이 준비되기 전까지 기본 경로에 넣지 않는다.
+- 초기 제품 정책은 정확성 우선을 위해 `exact-hit`을 신뢰 경로로 둔다. 즉 board/ruleset/komi/model/search mode/analysis options/visits/time cap이 모두 맞는 cache만 자동 의사결정에 사용한다.
+- 다만 key가 너무 촘촘하면 미세한 visits/time cap 차이만으로 쌓아 둔 cache를 재사용하지 못한다. 장기적으로는 `rootVisits >= requiredVisits`, 동일 model/ruleset/komi/search mode, 호환 가능한 candidate 옵션을 만족하는 `compatible-hit` 정책을 도입한다.
+- `compatible-hit`은 `exact-hit`보다 낮은 신뢰 등급으로 취급한다. AI 자동 착수, Top Moves 표시, 착수 리뷰, 운영자 cache 배포 중 어디까지 허용할지는 Middleware / Cache Domain의 정책과 테스트로 분리한다.
 
 ## 종국 판정과 장시간 분석
 
@@ -154,6 +157,7 @@ graph TD
 - 주심 분석은 가능하면 별도 engine worker/process 또는 원격 서버로 분리
 - 새 게임, 무르기, ruleset 변경, 앱 종료 시 주심 결과는 취소하거나 폐기
 - 부심/주심 결과가 크게 다르면 `critical` diagnostic event로 기록
+- 부심 결과로 이미 대국 종료 화면을 보여준 뒤 주심 결과가 크게 다르게 나오더라도 앱은 조용히 최종 결과를 덮어쓰지 않는다. 빠른 계가와 정밀 계가를 모두 보존하고, 사용자에게 차이와 신뢰도를 설명한 뒤 최종 채택 여부를 선택하게 한다.
 
 이 정책은 local process뿐 아니라 remote server에서도 동일하게 유지한다. remote server가 생겨도 사용자가 원하지 않는 장시간 분석을 몰래 실행하지 않는다.
 
