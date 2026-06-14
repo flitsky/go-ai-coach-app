@@ -1211,3 +1211,6 @@
 - 사용자가 Git GC 경고가 무엇인지, 해결 난이도가 있는지 질문했고, 먼저 해결한 뒤 다음 리팩토링을 진행해 달라고 요청했다.
 - `.git/gc.log`를 확인한 결과 경고는 코드/커밋 문제가 아니라 unreachable loose object가 많이 쌓인 로컬 Git 저장소 housekeeping 문제였다. `git prune`과 `.git/gc.log` 제거 후 loose object 수가 7788개/40.81MiB에서 1145개/10.17MiB로 줄었고, `git gc --auto` 재확인에서도 경고가 사라졌다.
 - 다음 리팩토링으로 Top Moves effect 실행 세부 인자 조립을 application runner로 이동했다. `TopMoveAnalysisExecutionContext`와 `EngineSessionClient.runTopMoveAnalysisEffect()`를 추가해 UI가 `GameSessionEffect.RunTopMoveAnalysis`를 실행할 때 raw plan/deep/cache 표시 세부 조합을 덜 알도록 했다. `TopMovesApplicationTest`에 effect runner 테스트를 추가했고 관련 application 테스트가 통과했다.
+- 사용자가 같은 형식으로 다음 리팩토링 진행과 보고를 요청했다.
+- 다음 리팩토링으로 Score Estimate 요청도 `GameSessionEffect.RunScoreEstimate` 흐름에 연결했다. `ScoreEstimateLaunchStateUpdate`와 `ScoreEstimateRequestPlan.toScoreEstimateLaunchStateUpdate()`를 추가해 message/local display/engine effect 분기를 application 계층에서 만들고, `EngineSessionClient.runScoreEstimateEffect()`를 추가해 UI가 raw `runScoreEstimateDisplayPlan()`을 직접 호출하지 않도록 했다.
+- `ScoreDisplayApplicationTest`에 launch update 변환 테스트와 score estimate effect runner 테스트를 추가했고, `GameSessionControllerTest`와 함께 관련 application 테스트가 통과했다.

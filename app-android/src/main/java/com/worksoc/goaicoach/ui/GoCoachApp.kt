@@ -82,6 +82,7 @@ import com.worksoc.goaicoach.application.GameSessionResetPlan
 import com.worksoc.goaicoach.application.GameSessionAnalysisState
 import com.worksoc.goaicoach.application.GameSessionControllerState
 import com.worksoc.goaicoach.application.GameSessionCoreState
+import com.worksoc.goaicoach.application.GameSessionEffect
 import com.worksoc.goaicoach.application.GameSessionMoveReviewState
 import com.worksoc.goaicoach.application.GameSessionRuntimeState
 import com.worksoc.goaicoach.application.GameSessionScoreState
@@ -104,7 +105,7 @@ import com.worksoc.goaicoach.application.ScoringRuleChangePlan
 import com.worksoc.goaicoach.application.runAutoAiEndgameDisplayPlan
 import com.worksoc.goaicoach.application.runRestoredGameSyncDisplayPlan
 import com.worksoc.goaicoach.application.runAutoAiTurnDisplayPlan
-import com.worksoc.goaicoach.application.runScoreEstimateDisplayPlan
+import com.worksoc.goaicoach.application.runScoreEstimateEffect
 import com.worksoc.goaicoach.application.runScoringRuleSyncDisplayPlan
 import com.worksoc.goaicoach.application.runtimeAiTurnBeginLog
 import com.worksoc.goaicoach.application.runtimeAiTurnCompleteLog
@@ -135,6 +136,7 @@ import com.worksoc.goaicoach.application.ShowTopMovesPlan
 import com.worksoc.goaicoach.application.ScoreEstimateDisplayPlan
 import com.worksoc.goaicoach.application.ScoreEstimateRequestPlan
 import com.worksoc.goaicoach.application.scoreEstimateOperationToken
+import com.worksoc.goaicoach.application.toScoreEstimateLaunchStateUpdate
 import com.worksoc.goaicoach.application.SavedGameRestorePlan
 import com.worksoc.goaicoach.application.SavedGameRestoreRequestPlan
 import com.worksoc.goaicoach.application.SavedGamePersistencePlan
@@ -1143,14 +1145,15 @@ private fun GoCoachScreen(
         }
     }
 
-    fun requestEngineScoreEstimate(plan: ScoreEstimateRequestPlan.RequestEngineEstimate) {
-        val operationToken = scoreEstimateOperationToken(plan)
+    fun requestEngineScoreEstimate(effect: GameSessionEffect.RunScoreEstimate) {
+        val request = effect.request
+        val operationToken = scoreEstimateOperationToken(request)
         scope.launch {
             isEngineBusy = true
             runCatching {
                 withContext(Dispatchers.IO) {
-                    engineClient.runScoreEstimateDisplayPlan(
-                        request = plan,
+                    engineClient.runScoreEstimateEffect(
+                        effect = effect,
                         previousSnapshots = scoreState.scoreSnapshots,
                     )
                 }
@@ -1190,17 +1193,10 @@ private fun GoCoachScreen(
             matchMode = matchMode,
             engineProfile = runtimeState.engineProfile,
         )
-        when (plan) {
-            is ScoreEstimateRequestPlan.ShowMessage -> {
-                engineMessage = plan.message
-            }
-            is ScoreEstimateRequestPlan.ShowLocalEstimate -> {
-                applyScoreEstimateDisplayPlan(plan.display)
-            }
-            is ScoreEstimateRequestPlan.RequestEngineEstimate -> {
-                requestEngineScoreEstimate(plan)
-            }
-        }
+        val launch = plan.toScoreEstimateLaunchStateUpdate()
+        launch.engineMessage?.let { message -> engineMessage = message }
+        launch.display?.let(::applyScoreEstimateDisplayPlan)
+        launch.effect?.let(::requestEngineScoreEstimate)
     }
 
     fun startEngineBackedNewGame(plan: StartConfiguredGamePlan.StartEngineGame) {

@@ -49,6 +49,12 @@ internal sealed class ScoreEstimateRequestPlan {
     ) : ScoreEstimateRequestPlan()
 }
 
+internal data class ScoreEstimateLaunchStateUpdate(
+    val engineMessage: String? = null,
+    val display: ScoreEstimateDisplayPlan? = null,
+    val effect: GameSessionEffect.RunScoreEstimate? = null,
+)
+
 internal data class ScoreEstimateOperationToken(
     val position: PositionScopedOperationToken,
 )
@@ -110,6 +116,16 @@ internal fun buildScoreEstimateRequestPlan(
     )
 }
 
+internal fun ScoreEstimateRequestPlan.toScoreEstimateLaunchStateUpdate(): ScoreEstimateLaunchStateUpdate =
+    when (this) {
+        is ScoreEstimateRequestPlan.ShowMessage ->
+            ScoreEstimateLaunchStateUpdate(engineMessage = message)
+        is ScoreEstimateRequestPlan.ShowLocalEstimate ->
+            ScoreEstimateLaunchStateUpdate(display = display)
+        is ScoreEstimateRequestPlan.RequestEngineEstimate ->
+            ScoreEstimateLaunchStateUpdate(effect = GameSessionEffect.RunScoreEstimate(this))
+    }
+
 internal fun buildEngineEstimateDisplayPlan(
     state: GameState,
     estimate: ScoreEstimate,
@@ -148,6 +164,15 @@ internal suspend fun EngineSessionClient.runScoreEstimateDisplayPlan(
         previousSnapshots = previousSnapshots,
     )
 }
+
+internal suspend fun EngineSessionClient.runScoreEstimateEffect(
+    effect: GameSessionEffect.RunScoreEstimate,
+    previousSnapshots: List<ScoreSnapshot>,
+): ScoreEstimateDisplayPlan =
+    runScoreEstimateDisplayPlan(
+        request = effect.request,
+        previousSnapshots = previousSnapshots,
+    )
 
 internal suspend fun EngineSessionClient.runScoringRuleSyncDisplayPlan(
     state: GameState,

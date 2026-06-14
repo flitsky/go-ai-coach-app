@@ -97,6 +97,31 @@ class ScoreDisplayApplicationTest {
     }
 
     @Test
+    fun scoreEstimateLaunchStateUpdateWrapsRequestAsDisplayMessageOrEffect() {
+        val state = GameState.empty()
+        val request = ScoreEstimateRequestPlan.RequestEngineEstimate(
+            state = state,
+            profile = EngineProfile(),
+            syncFirst = false,
+        )
+        val display = buildLocalScoreEstimateDisplayPlan(
+            state = state,
+            previousSnapshots = emptyList(),
+            engineMessage = "local",
+        )
+
+        val messageUpdate = ScoreEstimateRequestPlan.ShowMessage("busy")
+            .toScoreEstimateLaunchStateUpdate()
+        val displayUpdate = ScoreEstimateRequestPlan.ShowLocalEstimate(display)
+            .toScoreEstimateLaunchStateUpdate()
+        val effectUpdate = request.toScoreEstimateLaunchStateUpdate()
+
+        assertEquals("busy", messageUpdate.engineMessage)
+        assertEquals(display, displayUpdate.display)
+        assertEquals(request, effectUpdate.effect?.request)
+    }
+
+    @Test
     fun scoreEstimateResultGuardRejectsChangedPosition() {
         val state = GameState.empty()
             .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
@@ -161,6 +186,29 @@ class ScoreDisplayApplicationTest {
 
         val plan = client.runScoreEstimateDisplayPlan(
             request = request,
+            previousSnapshots = emptyList(),
+        )
+
+        assertEquals(state, client.estimatedState)
+        assertEquals(profile, client.estimatedProfile)
+        assertEquals(true, client.estimatedSyncFirst)
+        assertEquals("estimated", plan.engineMessage)
+        assertEquals(ScoreSnapshotSource.EngineEstimate, plan.scoreSnapshots.single().source)
+    }
+
+    @Test
+    fun scoreEstimateEffectRunnerRequestsEngineAndBuildsPlan() = runBlocking {
+        val state = GameState.empty()
+        val profile = EngineProfile()
+        val client = FakeScoreEngineSessionClient()
+        val request = ScoreEstimateRequestPlan.RequestEngineEstimate(
+            state = state,
+            profile = profile,
+            syncFirst = true,
+        )
+
+        val plan = client.runScoreEstimateEffect(
+            effect = GameSessionEffect.RunScoreEstimate(request),
             previousSnapshots = emptyList(),
         )
 
