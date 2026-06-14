@@ -71,6 +71,7 @@ import com.worksoc.goaicoach.application.EngineBenchmarkStorePort
 import com.worksoc.goaicoach.application.ClipboardPort
 import com.worksoc.goaicoach.application.applyTopMoveAnalysisLaunchPlan
 import com.worksoc.goaicoach.application.completeAutoAiTurnRun
+import com.worksoc.goaicoach.application.engineOperationDiscardedDiagnosticEvent
 import com.worksoc.goaicoach.application.evaluateEngineBenchmarkGate
 import com.worksoc.goaicoach.application.evaluateAutoAiEndgameResultGuard
 import com.worksoc.goaicoach.application.evaluateAutoAiTurnResultGuard
@@ -410,6 +411,12 @@ private fun GoCoachScreen(
             runtimeEngineOperationDiscardedLog(
                 context = currentRuntimeLogContext(),
                 discard = discard,
+            ),
+        )
+        diagnosticEventLog.append(
+            engineOperationDiscardedDiagnosticEvent(
+                discard = discard,
+                currentState = gameState,
             ),
         )
     }

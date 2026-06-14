@@ -1,5 +1,10 @@
 package com.worksoc.goaicoach.application
 
+import com.worksoc.goaicoach.shared.BoardCoordinate
+import com.worksoc.goaicoach.shared.BoardSize
+import com.worksoc.goaicoach.shared.GameState
+import com.worksoc.goaicoach.shared.Move
+import com.worksoc.goaicoach.shared.StoneColor
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -63,5 +68,63 @@ class DiagnosticEventApplicationTest {
         assertTrue(summary.contains("severity=critical"))
         assertTrue(summary.contains("message=Final score problem"))
         assertTrue(summary.contains("engineFinalScore=W+2,localScore=B+10"))
+    }
+
+    @Test
+    fun slowOperationDiagnosticWarnsOnlyAboveThreshold() {
+        assertNull(
+            engineOperationSlowDiagnosticEvent(
+                operation = "position_analysis",
+                elapsedMillis = 900L,
+                thresholdMillis = 1_000L,
+            ),
+        )
+
+        val event = requireNotNull(
+            engineOperationSlowDiagnosticEvent(
+                operation = "position_analysis",
+                elapsedMillis = 1_500L,
+                thresholdMillis = 1_000L,
+                positionFingerprint = "fp",
+            ),
+        )
+
+        assertEquals(DiagnosticSeverity.Warning, event.severity)
+        assertEquals("engine.operation.slow", event.code)
+        assertEquals("position_analysis", event.context["operation"])
+        assertEquals("1500", event.context["elapsedMillis"])
+        assertEquals("1000", event.context["thresholdMillis"])
+        assertEquals("fp", event.context["positionFingerprint"])
+    }
+
+    @Test
+    fun timeoutDiagnosticIsCritical() {
+        val event = engineOperationTimeoutDiagnosticEvent(
+            operation = "final_score",
+            timeoutMillis = 5_000L,
+            positionFingerprint = "fp",
+        )
+
+        assertEquals(DiagnosticSeverity.Critical, event.severity)
+        assertEquals("engine.operation.timeout", event.code)
+        assertEquals("final_score", event.context["operation"])
+        assertEquals("5000", event.context["timeoutMillis"])
+        assertEquals("fp", event.context["positionFingerprint"])
+    }
+
+    @Test
+    fun discardedOperationDiagnosticCapturesCurrentPosition() {
+        val state = GameState.empty()
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+        val event = engineOperationDiscardedDiagnosticEvent(
+            discard = EngineOperationResultGuard.Discard("position result is stale"),
+            currentState = state,
+        )
+
+        assertEquals(DiagnosticSeverity.Info, event.severity)
+        assertEquals("engine.operation.discarded", event.code)
+        assertEquals("position result is stale", event.context["reason"])
+        assertEquals("1", event.context["currentMoveCount"])
+        assertTrue(event.context["positionFingerprint"].orEmpty().isNotBlank())
     }
 }

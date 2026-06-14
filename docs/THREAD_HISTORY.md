@@ -1242,3 +1242,6 @@
 - 사용자가 폰 설치와 함께, 리팩토링 완성도 약 94점 시점에 다른 개발자가 작성한 구조 평가/로드맵 의견의 현재 유효성을 검토해달라고 요청했다.
 - 무선 ADB로 연결된 `SM-S908N(192.168.35.47:41809)`에 `make install-dev-engine`을 실행해 최신 debug APK 설치, KataGo model/config seed, 앱 cold launch를 완료했다. launch `TotalTime=597ms`.
 - 외부 검토 의견은 방향성상 타당하지만 현재 코드에는 이후 effect runner, pending reducer, follow-up request helper 등이 추가되어 일부 지적은 이미 보완된 상태로 판단했다. 현재 내부 평가는 95점보다 높은 98/100 수준이며, 남은 로드맵은 구조화 진단 이벤트, middleware 물리 모듈 격리, 원격 engine driver spike 순서가 적절하다고 정리했다.
+- 사용자가 다음 추천 순서인 구조화 진단 이벤트, middleware 물리 경계 정리, remote position analysis spike를 모두 단계별로 진행하고 리팩토링 척도/권장 항목을 제안해달라고 요청했다.
+- 1단계로 구조화 진단 이벤트를 보강했다. `engine.operation.slow`, `engine.operation.timeout`, `engine.operation.discarded` 이벤트 생성 함수를 추가했고, stale engine result discard 시 runtime log뿐 아니라 `diagnostic_events.jsonl`에도 `engine.operation.discarded`가 기록되도록 연결했다.
+- `DiagnosticEventApplicationTest`를 보강했고 JDK 17/Android SDK 환경에서 관련 diagnostic 테스트가 통과했다.

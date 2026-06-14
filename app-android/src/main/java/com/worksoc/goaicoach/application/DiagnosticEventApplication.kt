@@ -1,5 +1,8 @@
 package com.worksoc.goaicoach.application
 
+import com.worksoc.goaicoach.shared.GameState
+import com.worksoc.goaicoach.shared.analysisFingerprint
+
 internal enum class DiagnosticSeverity(
     val label: String,
 ) {
@@ -86,6 +89,68 @@ internal fun scoreDisagreementDiagnosticEvent(
             "engineFinalScore" to engineFinalScore,
             "localScore" to localScore,
             "source" to source,
+        ),
+    )
+
+internal fun engineOperationSlowDiagnosticEvent(
+    operation: String,
+    elapsedMillis: Long,
+    thresholdMillis: Long,
+    positionFingerprint: String? = null,
+): DiagnosticEvent? {
+    require(operation.isNotBlank()) { "operation must not be blank" }
+    require(elapsedMillis >= 0L) { "elapsedMillis must not be negative" }
+    require(thresholdMillis > 0L) { "thresholdMillis must be positive" }
+
+    if (elapsedMillis <= thresholdMillis) {
+        return null
+    }
+
+    return DiagnosticEvent(
+        severity = DiagnosticSeverity.Warning,
+        code = "engine.operation.slow",
+        message = "Engine operation exceeded the expected latency threshold.",
+        context = buildMap {
+            put("operation", operation)
+            put("elapsedMillis", elapsedMillis.toString())
+            put("thresholdMillis", thresholdMillis.toString())
+            positionFingerprint?.let { put("positionFingerprint", it) }
+        },
+    )
+}
+
+internal fun engineOperationTimeoutDiagnosticEvent(
+    operation: String,
+    timeoutMillis: Long,
+    positionFingerprint: String? = null,
+): DiagnosticEvent {
+    require(operation.isNotBlank()) { "operation must not be blank" }
+    require(timeoutMillis > 0L) { "timeoutMillis must be positive" }
+
+    return DiagnosticEvent(
+        severity = DiagnosticSeverity.Critical,
+        code = "engine.operation.timeout",
+        message = "Engine operation timed out.",
+        context = buildMap {
+            put("operation", operation)
+            put("timeoutMillis", timeoutMillis.toString())
+            positionFingerprint?.let { put("positionFingerprint", it) }
+        },
+    )
+}
+
+internal fun engineOperationDiscardedDiagnosticEvent(
+    discard: EngineOperationResultGuard.Discard,
+    currentState: GameState,
+): DiagnosticEvent =
+    DiagnosticEvent(
+        severity = DiagnosticSeverity.Info,
+        code = "engine.operation.discarded",
+        message = "Late engine operation result was discarded.",
+        context = mapOf(
+            "reason" to discard.reason,
+            "currentMoveCount" to currentState.moves.size.toString(),
+            "positionFingerprint" to currentState.analysisFingerprint(),
         ),
     )
 
