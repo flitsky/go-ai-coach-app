@@ -1,6 +1,8 @@
 package com.worksoc.goaicoach.application
 
 import com.worksoc.goaicoach.match.MatchReferee
+import com.worksoc.goaicoach.shared.CandidateMove
+import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.FinalScoreResult
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
@@ -34,6 +36,13 @@ internal data class HumanEngineSyncFailurePlan(
     val scoreSnapshots: List<ScoreSnapshot>,
     val candidateText: String,
     val engineMessage: String,
+)
+
+internal data class HumanEngineSyncRunPlan(
+    val afterMove: GameState,
+    val profile: EngineProfile,
+    val move: Move,
+    val previousReviewCandidates: List<CandidateMove>,
 )
 
 internal fun applyHumanMoveLocally(
@@ -106,3 +115,15 @@ internal fun buildHumanEngineSyncFailurePlan(
         candidateText = localMove.capturedText,
         engineMessage = errorMessage ?: "Human move accepted, but engine sync failed.",
     )
+
+internal suspend fun EngineSessionClient.runHumanEngineSyncEffect(
+    effect: GameSessionEffect.SyncHumanMove,
+): LocalEngineMoveResult {
+    val plan = effect.plan
+    return syncAfterHumanMove(
+        afterMove = plan.afterMove,
+        profile = plan.profile,
+        move = plan.move,
+        previousReviewCandidates = plan.previousReviewCandidates,
+    )
+}

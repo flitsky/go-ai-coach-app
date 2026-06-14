@@ -86,6 +86,7 @@ import com.worksoc.goaicoach.application.GameSessionScoreState
 import com.worksoc.goaicoach.application.GameSessionTurnTimeState
 import com.worksoc.goaicoach.application.HumanEngineSyncFailurePlan
 import com.worksoc.goaicoach.application.HumanEngineSyncDisplayPlan
+import com.worksoc.goaicoach.application.HumanEngineSyncRunPlan
 import com.worksoc.goaicoach.application.EngineStartupDisplayPlan
 import com.worksoc.goaicoach.application.PlayerSetupChangePlan
 import com.worksoc.goaicoach.application.PositionAnalysisCacheOptimizationUiState
@@ -103,6 +104,7 @@ import com.worksoc.goaicoach.application.runAutoAiEndgameDisplayPlan
 import com.worksoc.goaicoach.application.RestoredGameSyncExecutionContext
 import com.worksoc.goaicoach.application.runRestoredGameSyncEffect
 import com.worksoc.goaicoach.application.runAutoAiTurnDisplayPlan
+import com.worksoc.goaicoach.application.runHumanEngineSyncEffect
 import com.worksoc.goaicoach.application.runPositionAnalysisCacheOptimizationEffect
 import com.worksoc.goaicoach.application.runScoreEstimateEffect
 import com.worksoc.goaicoach.application.runStartupBenchmarkEffect
@@ -1584,11 +1586,15 @@ private fun GoCoachScreen(
             val syncStartMillis = System.currentTimeMillis()
             runCatching {
                 withContext(Dispatchers.IO) {
-                    engineClient.syncAfterHumanMove(
-                        afterMove = afterMove,
-                        profile = runtimeState.engineProfile,
-                        move = move,
-                        previousReviewCandidates = previousReviewCandidates,
+                    engineClient.runHumanEngineSyncEffect(
+                        GameSessionEffect.SyncHumanMove(
+                            HumanEngineSyncRunPlan(
+                                afterMove = afterMove,
+                                profile = runtimeState.engineProfile,
+                                move = move,
+                                previousReviewCandidates = previousReviewCandidates,
+                            ),
+                        ),
                     )
                 }
             }.onSuccess { result ->

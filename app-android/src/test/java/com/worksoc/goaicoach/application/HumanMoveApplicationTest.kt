@@ -1,18 +1,26 @@
 package com.worksoc.goaicoach.application
 
+import com.worksoc.goaicoach.shared.AnalysisLimit
+import com.worksoc.goaicoach.shared.AnalysisResult
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.DeadStoneCleanupResult
 import com.worksoc.goaicoach.shared.EndgameScoreSource
+import com.worksoc.goaicoach.shared.EngineProfile
+import com.worksoc.goaicoach.shared.EngineSearchMode
 import com.worksoc.goaicoach.shared.EngineStatus
 import com.worksoc.goaicoach.shared.FinalScoreResult
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
+import com.worksoc.goaicoach.shared.PlayLevelSetting
+import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.ScoreSnapshotSource
 import com.worksoc.goaicoach.shared.StoneColor
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -184,4 +192,145 @@ class HumanMoveApplicationTest {
         assertEquals("sync failed", plan.engineMessage)
         assertEquals(ScoreSnapshotSource.LocalAreaEstimate, plan.scoreSnapshots.single().source)
     }
+
+    @Test
+    fun humanEngineSyncEffectRunnerDelegatesPlanToEngineClient() = runBlocking {
+        val afterMove = GameState.empty()
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+        val move = afterMove.moves.single()
+        val profile = EngineProfile(name = "human-sync")
+        val previousCandidate = CandidateMove(move = move, pointLoss = 0.0)
+        val estimate = ScoreEstimate(
+            status = EngineStatus.ready("estimated"),
+            whiteScoreLead = 0.0,
+            whiteWinRate = 0.5,
+            summary = "estimate",
+        )
+        val expected = LocalEngineMoveResult(estimate = estimate)
+        val client = FakeHumanEngineSessionClient(expected)
+        val plan = HumanEngineSyncRunPlan(
+            afterMove = afterMove,
+            profile = profile,
+            move = move,
+            previousReviewCandidates = listOf(previousCandidate),
+        )
+
+        val actual = client.runHumanEngineSyncEffect(GameSessionEffect.SyncHumanMove(plan))
+
+        assertEquals(expected, actual)
+        assertEquals(afterMove, client.afterMove)
+        assertEquals(profile, client.profile)
+        assertEquals(move, client.move)
+        assertEquals(listOf(previousCandidate), client.previousReviewCandidates)
+    }
+}
+
+private class FakeHumanEngineSessionClient(
+    private val result: LocalEngineMoveResult,
+) : EngineSessionClient {
+    var afterMove: GameState? = null
+        private set
+    var profile: EngineProfile? = null
+        private set
+    var move: Move? = null
+        private set
+    var previousReviewCandidates: List<CandidateMove>? = null
+        private set
+
+    override val capabilities: EngineSessionCapabilities =
+        EngineSessionCapabilities(supportsDeviceBenchmark = false)
+
+    override fun positionAnalysisCacheStatsText(nowMillis: Long): String =
+        "disabled"
+
+    override fun positionAnalysisCacheQualityFor(
+        state: GameState,
+        limit: AnalysisLimit,
+        searchMode: EngineSearchMode,
+        nowMillis: Long,
+    ): PositionAnalysisCacheQuality? = null
+
+    override suspend fun startSession(
+        profile: EngineProfile,
+        state: GameState,
+    ): EngineStartupResult =
+        error("not used")
+
+    override suspend fun startNewGame(
+        profile: EngineProfile,
+        boardSize: BoardSize,
+        ruleset: Ruleset,
+    ): EngineStartupResult =
+        error("not used")
+
+    override suspend fun analyzePosition(
+        state: GameState,
+        limit: AnalysisLimit,
+        searchMode: EngineSearchMode,
+    ): AnalysisResult =
+        error("not used")
+
+    override suspend fun optimizePositionAnalysisCache(
+        plan: PositionAnalysisCacheOptimizationPlan,
+    ): PositionAnalysisCacheOptimizationResult =
+        error("not used")
+
+    override suspend fun syncAndEstimateGraphScore(
+        state: GameState,
+        profile: EngineProfile,
+    ): ScoreEstimate =
+        error("not used")
+
+    override suspend fun configureSyncAndEstimateGraphScore(
+        state: GameState,
+        profile: EngineProfile,
+    ): ScoreEstimate =
+        error("not used")
+
+    override suspend fun runAutoAiTurn(
+        currentState: GameState,
+        playLevel: PlayLevelSetting,
+        currentProfile: EngineProfile,
+        searchTimeSettings: SearchTimeSettings,
+        searchMode: EngineSearchMode,
+        isolateSearchCache: Boolean,
+    ): AutoAiTurnResult =
+        error("not used")
+
+    override suspend fun syncAfterHumanMove(
+        afterMove: GameState,
+        profile: EngineProfile,
+        move: Move,
+        previousReviewCandidates: List<CandidateMove>,
+    ): LocalEngineMoveResult {
+        this.afterMove = afterMove
+        this.profile = profile
+        this.move = move
+        this.previousReviewCandidates = previousReviewCandidates
+        return result
+    }
+
+    override suspend fun estimateScoreForState(
+        state: GameState,
+        profile: EngineProfile,
+        syncFirst: Boolean,
+    ): ScoreEstimate =
+        error("not used")
+
+    override suspend fun resolveEndgameForState(
+        state: GameState,
+        profile: EngineProfile,
+        prePassCandidates: List<CandidateMove>,
+    ): AiEndgameResolution =
+        error("not used")
+
+    override suspend fun undoMove(): EngineStatus =
+        error("not used")
+
+    override suspend fun runStartupBenchmark(
+        restoreState: GameState,
+        nowMillis: Long,
+        onProgress: suspend (EngineBenchmarkProgress) -> Unit,
+    ): EngineBenchmarkProfile =
+        error("not used")
 }
