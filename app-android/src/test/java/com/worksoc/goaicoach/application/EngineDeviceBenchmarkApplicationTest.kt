@@ -196,6 +196,30 @@ class EngineDeviceBenchmarkApplicationTest {
         assertEquals(Ruleset.Chinese, engine.state.ruleset)
         assertEquals(true, engine.newGameRulesets.dropLast(1).all { ruleset -> ruleset == Ruleset.Japanese })
     }
+
+    @Test
+    fun startupBenchmarkEffectRunnerDelegatesToEngineSessionClient() = runBlocking {
+        val engine = RecordingBenchmarkEngineAdapter()
+        val client = LocalEngineSessionClient(engine)
+        val progressEvents = mutableListOf<EngineBenchmarkProgress>()
+        val restoreState = GameState.empty(ruleset = Ruleset.Chinese)
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+
+        val profile = client.runStartupBenchmarkEffect(
+            effect = GameSessionEffect.RunStartupBenchmark,
+            context = StartupBenchmarkExecutionContext(
+                restoreState = restoreState,
+                nowMillis = 456L,
+            ),
+            onProgress = { progress -> progressEvents += progress },
+        )
+
+        assertEquals(456L, profile.createdAtMillis)
+        assertEquals(listOf(16, 32, 64), profile.metrics.map { metric -> metric.visits })
+        assertEquals(true, progressEvents.isNotEmpty())
+        assertEquals(restoreState.moves, engine.state.moves)
+        assertEquals(Ruleset.Chinese, engine.state.ruleset)
+    }
 }
 
 private class RecordingBenchmarkEngineAdapter : EngineAdapter {

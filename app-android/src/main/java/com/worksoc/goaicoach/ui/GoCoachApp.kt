@@ -107,6 +107,7 @@ import com.worksoc.goaicoach.application.runRestoredGameSyncDisplayPlan
 import com.worksoc.goaicoach.application.runAutoAiTurnDisplayPlan
 import com.worksoc.goaicoach.application.runPositionAnalysisCacheOptimizationEffect
 import com.worksoc.goaicoach.application.runScoreEstimateEffect
+import com.worksoc.goaicoach.application.runStartupBenchmarkEffect
 import com.worksoc.goaicoach.application.runScoringRuleSyncDisplayPlan
 import com.worksoc.goaicoach.application.runtimeAiTurnBeginLog
 import com.worksoc.goaicoach.application.runtimeAiTurnCompleteLog
@@ -128,6 +129,7 @@ import com.worksoc.goaicoach.application.runtimeHumanEngineSyncFailureLog
 import com.worksoc.goaicoach.application.runtimeHumanEngineSyncSuccessLog
 import com.worksoc.goaicoach.application.runtimeHumanMoveAcceptedLog
 import com.worksoc.goaicoach.application.RuntimeLogContext
+import com.worksoc.goaicoach.application.StartupBenchmarkExecutionContext
 import com.worksoc.goaicoach.application.toDebugReportSnapshot
 import com.worksoc.goaicoach.application.toAutoAiTurnRequestPlan
 import com.worksoc.goaicoach.application.toAutoAiTurnScheduleValidationPlan
@@ -481,9 +483,12 @@ private fun GoCoachScreen(
         runCatching {
             withContext(Dispatchers.IO) {
                 engineClient
-                    .runStartupBenchmark(
-                        restoreState = gameState,
-                        nowMillis = System.currentTimeMillis(),
+                    .runStartupBenchmarkEffect(
+                        effect = GameSessionEffect.RunStartupBenchmark,
+                        context = StartupBenchmarkExecutionContext(
+                            restoreState = gameState,
+                            nowMillis = System.currentTimeMillis(),
+                        ),
                         onProgress = { progress ->
                             withContext(Dispatchers.Main) {
                                 benchmarkUiState = benchmarkUiState.updateProgress(progress)

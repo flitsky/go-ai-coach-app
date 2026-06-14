@@ -166,6 +166,23 @@ internal data class EngineBenchmarkUiState(
     }
 }
 
+internal data class StartupBenchmarkExecutionContext(
+    val restoreState: GameState,
+    val nowMillis: Long,
+)
+
+internal suspend fun EngineSessionClient.runStartupBenchmarkEffect(
+    effect: GameSessionEffect.RunStartupBenchmark,
+    context: StartupBenchmarkExecutionContext,
+    onProgress: suspend (EngineBenchmarkProgress) -> Unit = {},
+): EngineBenchmarkProfile {
+    return runStartupBenchmark(
+        restoreState = context.restoreState,
+        nowMillis = context.nowMillis,
+        onProgress = onProgress,
+    )
+}
+
 private data class EngineBenchmarkPosition(
     val state: GameState,
     val name: String,
