@@ -1080,3 +1080,7 @@
 - 5단계로 middleware/cache 경계를 점진적으로 분리했다. `com.worksoc.goaicoach.middleware.PositionAnalysisCacheResolver`를 추가해 local cache store와 trusted cache provider 중 재사용할 entry를 고르는 책임을 `LocalEngineSessionClient`에서 분리했다.
 - `LocalEngineSessionClient`는 cache stats, quality lookup, reusable entry lookup, local put을 resolver에 위임한다. 대량 패키지 이동 대신 cache 선택 정책을 먼저 middleware helper로 분리했다.
 - `PositionAnalysisCacheResolverTest`, `EngineSessionTest`, `make test`를 모두 통과했다.
+- 5단계 완료 후 무선 ADB `SM-S908N(192.168.35.166:42037)`에 최신 APK와 KataGo model/config를 설치했고 cold launch `TotalTime=496ms`를 확인했다.
+- 6단계로 Player Setup presentation DTO를 도입했다. `PlayerSetupUiState`와 `PlayerSetupSideUiState`를 추가해 seat label, controller label, AI 단계 label, engine label, visits detail, 자동대국 delay 표시 여부, summary text를 presentation 계층에서 계산하게 했다.
+- `GameScreenState`는 원본 `PlayerSetup`과 함께 `playerSetupUi`를 제공하고, `PlayerSetupPanel`은 표시 문자열을 직접 계산하지 않고 DTO를 렌더링한다. 기존 이벤트는 여전히 `PlayerSetup`을 반환하므로 설정 변경 동작은 유지했다.
+- `PlayerSetupUiStateTest`, `GameScreenStateTest`, `make test`를 모두 통과했다.

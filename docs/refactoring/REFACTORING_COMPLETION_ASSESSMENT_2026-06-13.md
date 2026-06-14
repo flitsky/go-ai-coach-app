@@ -174,3 +174,18 @@ POC를 계속 고도화하는 관점에서는 이미 충분히 좋은 상태다.
 
 - `PositionAnalysisCacheResolverTest`, `EngineSessionTest` 통과.
 - `make test` 통과.
+
+## 6단계 추가 리팩토링 결과
+
+2026-06-14에 Player Setup presentation DTO를 도입했다.
+
+- `PlayerSetupUiState`와 `PlayerSetupSideUiState`를 presentation 계층에 추가했다.
+- `buildPlayerSetupUiState()`가 seat label, controller label, AI 단계 label, engine label, visits detail, 자동대국 delay 표시 여부, summary text를 계산한다.
+- `GameScreenState`는 원본 `PlayerSetup`과 함께 `playerSetupUi`를 제공한다.
+- `PlayerSetupPanel`은 표시 문자열을 직접 계산하지 않고 `PlayerSetupUiState`를 렌더링한다.
+- 기존 이벤트는 여전히 `PlayerSetup`을 반환하므로 설정 변경 동작은 유지했다.
+
+검증:
+
+- `PlayerSetupUiStateTest`, `GameScreenStateTest` 통과.
+- `make test` 통과.

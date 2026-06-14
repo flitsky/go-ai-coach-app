@@ -28,6 +28,8 @@ import com.worksoc.goaicoach.match.HumanGameType
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.match.SidePlayerSetup
+import com.worksoc.goaicoach.presentation.PlayerSetupSideUiState
+import com.worksoc.goaicoach.presentation.PlayerSetupUiState
 import com.worksoc.goaicoach.shared.PlayLevelGroup
 import com.worksoc.goaicoach.shared.SearchTimeProfile
 import com.worksoc.goaicoach.shared.SearchTimeSettings
@@ -35,9 +37,7 @@ import com.worksoc.goaicoach.shared.StoneColor
 
 @Composable
 internal fun PlayerSetupPanel(
-    playerSetup: PlayerSetup,
-    autoPlayDelaySetting: AutoPlayDelaySetting,
-    engineName: String,
+    state: PlayerSetupUiState,
     enabled: Boolean,
     onPlayerSetupChange: (PlayerSetup) -> Unit,
     onAutoPlayDelayChange: (AutoPlayDelaySetting) -> Unit,
@@ -54,27 +54,23 @@ internal fun PlayerSetupPanel(
         ) {
             Text("Player Setup", fontWeight = FontWeight.SemiBold)
             PlayerSetupSideRow(
-                color = StoneColor.Black,
-                side = playerSetup.black,
-                engineName = engineName,
+                state = state.black,
                 enabled = enabled,
-                onSideChange = { side -> onPlayerSetupChange(playerSetup.updateSide(StoneColor.Black, side)) },
+                onSideChange = { side -> onPlayerSetupChange(state.setup.updateSide(StoneColor.Black, side)) },
             )
             PlayerSetupSideRow(
-                color = StoneColor.White,
-                side = playerSetup.white,
-                engineName = engineName,
+                state = state.white,
                 enabled = enabled,
-                onSideChange = { side -> onPlayerSetupChange(playerSetup.updateSide(StoneColor.White, side)) },
+                onSideChange = { side -> onPlayerSetupChange(state.setup.updateSide(StoneColor.White, side)) },
             )
-            if (playerSetup.isAutoPlay()) {
+            if (state.showAutoPlayDelay) {
                 AutoPlayDelayRow(
-                    selected = autoPlayDelaySetting,
+                    selected = state.autoPlayDelaySetting,
                     onSelected = onAutoPlayDelayChange,
                 )
             }
             Text(
-                text = playerSetup.summary(engineName),
+                text = state.summaryText,
                 color = MaterialTheme.colorScheme.secondary,
                 style = MaterialTheme.typography.bodySmall,
             )
@@ -233,12 +229,11 @@ private fun Long.toSecondsLabel(): String {
 
 @Composable
 private fun PlayerSetupSideRow(
-    color: StoneColor,
-    side: SidePlayerSetup,
-    engineName: String,
+    state: PlayerSetupSideUiState,
     enabled: Boolean,
     onSideChange: (SidePlayerSetup) -> Unit,
 ) {
+    val side = state.side
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -246,12 +241,12 @@ private fun PlayerSetupSideRow(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = if (color == StoneColor.Black) "흑" else "백",
+                text = state.seatLabel,
                 modifier = Modifier.weight(0.38f),
                 fontWeight = FontWeight.SemiBold,
             )
             SetupDropdown(
-                selectedText = side.controller.label,
+                selectedText = state.controllerLabel,
                 enabled = enabled,
                 modifier = Modifier.weight(1f),
                 options = SeatController.entries,
@@ -263,7 +258,7 @@ private fun PlayerSetupSideRow(
             when (side.controller) {
                 SeatController.Human -> {
                     SetupDropdown(
-                        selectedText = side.humanGameType.label,
+                        selectedText = state.humanGameTypeLabel,
                         enabled = enabled,
                         modifier = Modifier.weight(1.08f),
                         options = HumanGameType.entries,
@@ -280,7 +275,7 @@ private fun PlayerSetupSideRow(
 
                 SeatController.Ai -> {
                     SetupDropdown(
-                        selectedText = side.playLevel.group.label,
+                        selectedText = state.aiLevelGroupLabel,
                         enabled = enabled,
                         modifier = Modifier.weight(1.08f),
                         options = PlayLevelGroup.entries,
@@ -290,7 +285,7 @@ private fun PlayerSetupSideRow(
                         },
                     )
                     SetupDropdown(
-                        selectedText = "${side.playLevel.safeLevel}단계",
+                        selectedText = state.aiLevelLabel,
                         enabled = enabled,
                         modifier = Modifier.weight(0.8f),
                         options = (1..side.playLevel.group.maxLevel).toList(),
@@ -315,7 +310,7 @@ private fun PlayerSetupSideRow(
                     style = MaterialTheme.typography.bodySmall,
                 )
                 SetupDropdown(
-                    selectedText = side.aiEngine.label.ifBlank { engineName },
+                    selectedText = state.aiEngineLabel,
                     enabled = enabled,
                     modifier = Modifier.weight(1f),
                     options = AiEngineChoice.entries,
@@ -325,7 +320,7 @@ private fun PlayerSetupSideRow(
                     },
                 )
                 Text(
-                    text = "${side.playLevel.group.difficulty.label} / ${side.playLevel.group.visits} visits",
+                    text = state.aiDetailText,
                     modifier = Modifier.weight(1.88f),
                     color = MaterialTheme.colorScheme.secondary,
                     style = MaterialTheme.typography.bodySmall,
