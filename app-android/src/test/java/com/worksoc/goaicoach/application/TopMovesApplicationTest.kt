@@ -175,6 +175,77 @@ class TopMovesApplicationTest {
     }
 
     @Test
+    fun topMoveAnalysisCompletionPlanAppliesSuccessFailureOrDiscard() {
+        val state = GameState.empty()
+        val changedState = state
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+        val candidate = CandidateMove(
+            move = Move.Play(
+                player = StoneColor.Black,
+                coordinate = BoardCoordinate.fromLabel("E5", BoardSize.Nine),
+            ),
+            pointLoss = 0.0,
+        )
+        val plan = buildTopMoveAnalysisPlan(
+            targetState = state,
+            engineProfile = EngineProfile(),
+            analysisPreset = AnalysisPreset.Lite,
+            deep = false,
+        )
+        val token = topMoveAnalysisOperationToken(
+            targetState = state,
+            plan = plan,
+            sessionGeneration = 3L,
+        )
+        val update = buildCompletedTopMoveAnalysisUpdate(
+            targetState = state,
+            result = AnalysisResult(
+                status = EngineStatus.ready("complete"),
+                candidates = listOf(candidate),
+                rootVisits = plan.analysisLimit.visits,
+                summary = "complete",
+            ),
+            rawCandidateText = "complete text",
+            engineProfile = EngineProfile(),
+            analysisPreset = AnalysisPreset.Lite,
+            plan = plan,
+            deep = false,
+            topMovesEnabled = true,
+        )
+
+        val success = buildTopMoveAnalysisSuccessCompletionPlan(
+            token = token,
+            currentState = state,
+            currentAnalysisKey = plan.analysisKey,
+            currentSessionGeneration = 3L,
+            update = update,
+        )
+        val failure = buildTopMoveAnalysisFailureCompletionPlan(
+            token = token,
+            currentState = state,
+            currentAnalysisKey = plan.analysisKey,
+            currentSessionGeneration = 3L,
+            targetState = state,
+            error = IllegalStateException("analysis failed"),
+            topMovesEnabled = true,
+        )
+        val discarded = buildTopMoveAnalysisSuccessCompletionPlan(
+            token = token,
+            currentState = changedState,
+            currentAnalysisKey = plan.analysisKey,
+            currentSessionGeneration = 3L,
+            update = update,
+        )
+
+        assertTrue(success is TopMoveAnalysisCompletionPlan.ApplySuccess)
+        assertEquals(update, (success as TopMoveAnalysisCompletionPlan.ApplySuccess).update)
+        assertEquals(plan.analysisKey, success.analysisKey)
+        assertTrue(failure is TopMoveAnalysisCompletionPlan.ApplyFailure)
+        assertEquals("analysis failed", (failure as TopMoveAnalysisCompletionPlan.ApplyFailure).display.engineMessage)
+        assertTrue(discarded is TopMoveAnalysisCompletionPlan.Discard)
+    }
+
+    @Test
     fun runTopMoveAnalysisDelegatesExplicitStateToEngineClient() = runBlocking {
         val state = GameState.empty()
             .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))

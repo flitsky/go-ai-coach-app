@@ -29,6 +29,21 @@ internal data class TopMoveAnalysisUpdate(
     val undoRestoreResult: CachedAnalysisResult? = null,
 )
 
+internal sealed class TopMoveAnalysisCompletionPlan {
+    data class ApplySuccess(
+        val update: TopMoveAnalysisUpdate,
+        val analysisKey: AnalysisCacheKey,
+    ) : TopMoveAnalysisCompletionPlan()
+
+    data class ApplyFailure(
+        val display: TopMoveAnalysisFailureDisplayPlan,
+    ) : TopMoveAnalysisCompletionPlan()
+
+    data class Discard(
+        val discard: EngineOperationResultGuard.Discard,
+    ) : TopMoveAnalysisCompletionPlan()
+}
+
 internal data class TopMoveAnalysisExecutionContext(
     val targetState: GameState,
     val engineProfile: EngineProfile,
@@ -139,6 +154,31 @@ internal fun evaluateTopMoveAnalysisResultGuard(
     }
 }
 
+internal fun buildTopMoveAnalysisSuccessCompletionPlan(
+    token: TopMoveAnalysisOperationToken,
+    currentState: GameState,
+    currentAnalysisKey: AnalysisCacheKey?,
+    currentSessionGeneration: Long,
+    update: TopMoveAnalysisUpdate,
+): TopMoveAnalysisCompletionPlan =
+    when (
+        val guard = evaluateTopMoveAnalysisResultGuard(
+            token = token,
+            currentState = currentState,
+            currentAnalysisKey = currentAnalysisKey,
+            currentSessionGeneration = currentSessionGeneration,
+        )
+    ) {
+        EngineOperationResultGuard.Apply ->
+            TopMoveAnalysisCompletionPlan.ApplySuccess(
+                update = update,
+                analysisKey = token.analysisKey,
+            )
+
+        is EngineOperationResultGuard.Discard ->
+            TopMoveAnalysisCompletionPlan.Discard(guard)
+    }
+
 internal fun buildTopMoveAnalysisFailureDisplayPlan(
     targetState: GameState,
     error: Throwable,
@@ -150,6 +190,36 @@ internal fun buildTopMoveAnalysisFailureDisplayPlan(
         clearDisplayedTopMoves = topMovesEnabled,
         candidateText = "Top Moves analysis failed.".takeIf { topMovesEnabled },
     )
+
+internal fun buildTopMoveAnalysisFailureCompletionPlan(
+    token: TopMoveAnalysisOperationToken,
+    currentState: GameState,
+    currentAnalysisKey: AnalysisCacheKey?,
+    currentSessionGeneration: Long,
+    targetState: GameState,
+    error: Throwable,
+    topMovesEnabled: Boolean,
+): TopMoveAnalysisCompletionPlan =
+    when (
+        val guard = evaluateTopMoveAnalysisResultGuard(
+            token = token,
+            currentState = currentState,
+            currentAnalysisKey = currentAnalysisKey,
+            currentSessionGeneration = currentSessionGeneration,
+        )
+    ) {
+        EngineOperationResultGuard.Apply ->
+            TopMoveAnalysisCompletionPlan.ApplyFailure(
+                buildTopMoveAnalysisFailureDisplayPlan(
+                    targetState = targetState,
+                    error = error,
+                    topMovesEnabled = topMovesEnabled,
+                ),
+            )
+
+        is EngineOperationResultGuard.Discard ->
+            TopMoveAnalysisCompletionPlan.Discard(guard)
+    }
 
 internal fun GameSessionAnalysisState.applyTopMoveAnalysisLaunchPlan(
     launchPlan: TopMoveAnalysisLaunchPlan,

@@ -6,6 +6,7 @@
 ## 현재 지표
 
 - `GoCoachApp.kt`: 2,211줄
+- `GoCoachApp.kt` 5차 배치 후: 2,232줄
 - `AutoAiPolicyApplication.kt`: 243줄
 - `AutoAiRunnerApplication.kt`: 268줄
 - `AutoAiCompletionApplication.kt`: 161줄
@@ -13,6 +14,7 @@
 - `ScoreEstimateRunnerApplication.kt`: 119줄
 - `ScoreSyncCompletionApplication.kt`: 101줄
 - `TopMovesApplication.kt`: 437줄
+- `TopMovesApplication.kt` 5차 배치 후: 507줄
 - `DiagnosticEventApplication.kt`: 172줄
 - `DiagnosticEventModel.kt`: 109줄
 - `DiagnosticEventObserverApplication.kt`: 46줄
@@ -149,3 +151,17 @@
 - `ScoreSyncCompletionApplication.kt`와 `ScoreEstimateRunnerApplication.kt`를 추가해 score sync completion guard와 score estimate/scoring/restored runner를 `ScoreDisplayApplication.kt`에서 분리했다.
 - `TopMoveAnalysisLaunchRequest`를 추가해 Top Moves launch 판단 입력을 하나의 request object로 묶었다. 아직 engine run workflow는 UI에 남아 있지만 다음 runner 추출의 입력 경계가 생겼다.
 - `LayeringContractTest`에 신규 application 파일들을 추가해 Android/UI/persistence/engine runtime 의존이 들어오지 못하도록 고정했다.
+
+## 2026-06-15 5차 리팩토링 반영 사항
+
+- `TopMoveAnalysisCompletionPlan`을 추가해 Top Moves success/failure/stale 처리를 application completion 패턴으로 통일했다.
+- `GoCoachApp.kt`의 score sync 중복 실행부를 `runScoreSyncCompletion()` helper로 축소했다.
+- 자동 AI success/failure/endgame state apply를 `applyAutoAiTurnSuccessCompletion()`, `applyAutoAiTurnFailureCompletion()`, `applyAutoAiEndgamePlan()` local helper로 분리했다.
+- 현재 UI-local workflow ownership metric:
+  - Top Moves: 82줄, `runCatching` 1, `withContext` 1
+  - Score Sync: 175줄, `runCatching` 0, `withContext` 0
+  - Auto AI: 126줄, `runCatching` 1, `withContext` 1
+- KMP 이동 우선 후보:
+  - 1순위: `DiagnosticEventModel.kt`, `AutoAiCompletionApplication.kt`, `ScoreSyncCompletionApplication.kt`
+  - 2순위: `AutoAiPolicyApplication.kt`, `TopMovesApplication.kt`의 순수 plan/build 부분
+  - 보류: `AutoAiRunnerApplication.kt`, `ScoreEstimateRunnerApplication.kt`, `DiagnosticEventObserverApplication.kt`는 engine/coroutine runner 성격이 강해 app-service layer로 유지한다.

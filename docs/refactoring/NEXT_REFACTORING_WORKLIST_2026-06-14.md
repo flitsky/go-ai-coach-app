@@ -544,3 +544,39 @@
 
 5. `GoCoachApp.kt` workflow ownership metric 추가
    - 줄 수만 보지 말고 Top Moves/Auto AI/Score Sync 별 UI-owned branch 수를 문서화한다.
+
+## 2026-06-15 추가 진행 로그: UI Workflow Completion Helper 정리
+
+- 2026-06-15: `TopMoveAnalysisCompletionPlan`을 추가했다. Top Moves success/failure/stale 결과가 application completion plan을 통과하며, UI는 cache update, undo restore update, failure display, discard log 적용만 담당한다.
+- 2026-06-15: `TopMovesApplicationTest`에 completion plan 테스트를 추가했다. 성공 결과는 update와 analysis key를 반환하고, 실패는 failure display plan을 만들며, 보드가 바뀐 stale 결과는 discard로 가는 것을 검증한다.
+- 2026-06-15: `GoCoachApp.kt`에 `runScoreSyncCompletion()` local helper를 추가했다. post-undo/scoring-rule/restored-game sync의 `runCatching + Dispatchers.IO + success/failure completion apply` 반복을 한 곳으로 줄였다.
+- 2026-06-15: `GoCoachApp.kt`의 자동 AI 적용부를 `applyAutoAiTurnSuccessCompletion()`, `applyAutoAiTurnFailureCompletion()`, `applyAutoAiEndgamePlan()` local helper로 분리했다. Compose state mutation은 아직 UI에 남기되 success/endgame/failure 분기 중첩은 줄였다.
+- 2026-06-15: KMP/물리 이동 후보 재평가 결과, `DiagnosticEventModel.kt`, `AutoAiCompletionApplication.kt`, `ScoreSyncCompletionApplication.kt`는 가장 먼저 이동 가능한 정책 파일이고, `AutoAiRunnerApplication.kt`, `ScoreEstimateRunnerApplication.kt`, `DiagnosticEventObserverApplication.kt`는 coroutine/engine client 의존을 가진 app-service 후보로 분류했다.
+- 2026-06-15: `GoCoachApp.kt` workflow ownership metric을 측정했다. 현재 UI-local 주요 workflow는 Top Moves 82줄(`runCatching` 1, `withContext` 1), Score Sync 175줄(`runCatching` 0, `withContext` 0), Auto AI 126줄(`runCatching` 1, `withContext` 1)이다.
+- 검증: `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest --tests 'com.worksoc.goaicoach.application.TopMovesApplicationTest' --tests 'com.worksoc.goaicoach.application.ScoreDisplayApplicationTest' --tests 'com.worksoc.goaicoach.application.GameAutomationApplicationTest'` 통과. 최종 통합 검증으로 `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test`도 통과.
+
+## 현재 리팩토링 완성도 평가
+
+- 주관 점수: 98.6/100.
+- 상향 요인: Top Moves도 completion plan 패턴에 들어와 score sync/auto AI와 stale result 처리 방식이 더 균일해졌다. Score sync는 UI-local 실행 helper로 중복이 줄었고, Auto AI의 중첩 success/endgame/failure 적용부도 helper 경계로 나뉘었다.
+- 남은 감점 요인: `GoCoachApp.kt`는 아직 2,232줄이고, Top Moves/Auto AI는 여전히 UI coroutine 안에서 engine call을 직접 시작한다. 다음 단계에서는 callback runner나 workflow class로 실행 소유권을 더 옮겨야 한다.
+
+## 다음 추천 리팩토링 항목
+
+1. Top Moves workflow runner class 도입
+   - `requestTopMoveAnalysisForState()`의 launch/update/failure/discard 흐름을 `TopMoveAnalysisWorkflow` 성격의 helper로 옮긴다.
+   - cache write callback과 display apply callback을 명시적으로 주입한다.
+
+2. Auto AI workflow callbacks 도입
+   - 현재 local helper로 쪼갠 success/failure/endgame apply를 `AutoAiWorkflowCallbacks` 형태로 묶는다.
+   - 그 다음 engine call orchestration을 application runner로 이동한다.
+
+3. Score sync workflow helper를 application 파일로 승격
+   - 현재 UI-local `runScoreSyncCompletion()`을 `ScoreSyncWorkflowApplication.kt`로 옮길 수 있는지 검토한다.
+   - UI state mutation callback을 받는 형태가 적절하다.
+
+4. KMP 이동 1차 스파이크
+   - `DiagnosticEventModel.kt` 또는 `ScoreSyncCompletionApplication.kt` 중 하나를 shared/middleware 후보로 실제 이동 가능한지 작은 Gradle spike로 검토한다.
+
+5. UI import/handler 정리
+   - `GoCoachApp.kt` import가 많아지고 있으므로 workflow별 facade import 또는 `ui/workflow` package로 정리할 후보를 선정한다.
