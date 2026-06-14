@@ -442,6 +442,39 @@ class GameAutomationApplicationTest {
     }
 
     @Test
+    fun autoAiTurnEndgamePlanResolvesOnlyForConsecutivePasses() {
+        val continuingState = GameState.empty()
+            .play(Move.Pass(StoneColor.Black))
+        val endedState = continuingState
+            .play(Move.Pass(StoneColor.White))
+        val passCandidate = CandidateMove(Move.Pass(StoneColor.White), pointLoss = 0.0)
+
+        val continuing = buildAutoAiTurnEndgamePlan(
+            buildAutoAiTurnDisplayPlan(
+                result = autoAiTurnResult(continuingState, estimate = null),
+                previousSnapshots = emptyList(),
+                previousReviewCandidates = emptyList(),
+            ),
+        )
+        val ended = buildAutoAiTurnEndgamePlan(
+            buildAutoAiTurnDisplayPlan(
+                result = autoAiTurnResult(endedState, estimate = null),
+                previousSnapshots = emptyList(),
+                previousReviewCandidates = listOf(passCandidate),
+            ),
+        )
+
+        assertEquals(AutoAiTurnEndgamePlan.None, continuing)
+        assertTrue(ended is AutoAiTurnEndgamePlan.Resolve)
+        val resolve = ended as AutoAiTurnEndgamePlan.Resolve
+        assertEquals(endedState, resolve.state)
+        assertEquals(listOf(passCandidate), resolve.prePassCandidates)
+        assertEquals("engine text", resolve.engineMessagePrefix)
+        assertEquals("auto-ai-engine-dead-stone-cleanup", resolve.successSource)
+        assertEquals("auto-ai-engine-final-score-failed", resolve.failureSource)
+    }
+
+    @Test
     fun autoAiTurnDisplayRunnerDelegatesToEngineSessionAndBuildsDisplayPlan() = runBlocking {
         val initialState = GameState.empty()
         val nextState = initialState.play(Move.Pass(StoneColor.Black))

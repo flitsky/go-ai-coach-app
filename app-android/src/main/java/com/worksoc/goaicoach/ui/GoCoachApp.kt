@@ -21,11 +21,13 @@ import androidx.compose.ui.platform.LocalContext
 import com.worksoc.goaicoach.application.AnalysisCacheKey
 import com.worksoc.goaicoach.application.AnalysisResultCache
 import com.worksoc.goaicoach.application.AutoAiTurnDisplayPlan
+import com.worksoc.goaicoach.application.AutoAiTurnEndgamePlan
 import com.worksoc.goaicoach.application.AutoAiTurnFollowUpPlan
 import com.worksoc.goaicoach.application.AutoAiTurnRequestPlan
 import com.worksoc.goaicoach.application.AutoAiTurnScheduleValidationPlan
 import com.worksoc.goaicoach.application.AutoAiTurnUiState
 import com.worksoc.goaicoach.application.buildAutoAiTurnFailureDisplayPlan
+import com.worksoc.goaicoach.application.buildAutoAiTurnEndgamePlan
 import com.worksoc.goaicoach.application.buildAutoAiTurnFollowUpPlan
 import com.worksoc.goaicoach.application.buildDebugReportCopyPlan
 import com.worksoc.goaicoach.application.buildEndgameFailureDisplayPlan
@@ -1281,53 +1283,56 @@ private fun GoCoachScreen(
                         )
                         turnTimeState = turnTimeUpdate.after
                         followUpPlan = applyAutoAiTurnDisplayPlan(display)
-                        if (display.shouldResolveEndgame) {
-                            isGameEnded = true
-                            runtimeEventLog.append(
-                                runtimeAiTurnEndgameDetectedLog(
-                                    context = currentRuntimeLogContext(),
-                                    state = display.gameState,
-                                ),
-                            )
-                            runCatching {
-                                withContext(Dispatchers.IO) {
-                                    engineClient.resolveEndgameForState(
-                                        state = display.gameState,
-                                        profile = display.profile,
-                                        prePassCandidates = display.endgamePrePassCandidates,
+                        when (val endgamePlan = buildAutoAiTurnEndgamePlan(display)) {
+                            AutoAiTurnEndgamePlan.None -> Unit
+                            is AutoAiTurnEndgamePlan.Resolve -> {
+                                isGameEnded = true
+                                runtimeEventLog.append(
+                                    runtimeAiTurnEndgameDetectedLog(
+                                        context = currentRuntimeLogContext(),
+                                        state = endgamePlan.state,
+                                    ),
+                                )
+                                runCatching {
+                                    withContext(Dispatchers.IO) {
+                                        engineClient.resolveEndgameForState(
+                                            state = endgamePlan.state,
+                                            profile = endgamePlan.profile,
+                                            prePassCandidates = endgamePlan.prePassCandidates,
+                                        )
+                                    }
+                                }.onSuccess { endgame ->
+                                    runtimeEventLog.append(
+                                        runtimeAiTurnEndgameSuccessLog(
+                                            context = currentRuntimeLogContext(),
+                                            state = endgamePlan.state,
+                                            endgame = endgame,
+                                        ),
                                     )
+                                    val final = buildResolvedEndgameDisplayPlan(
+                                        source = endgamePlan.successSource,
+                                        originalState = endgamePlan.state,
+                                        resolution = endgame,
+                                        previousSnapshots = scoreState.scoreSnapshots,
+                                        engineMessagePrefix = endgamePlan.engineMessagePrefix,
+                                    )
+                                    applyFinalScoreDisplayPlan(final)
+                                }.onFailure { error ->
+                                    runtimeEventLog.append(
+                                        runtimeAiTurnEndgameFailureLog(
+                                            context = currentRuntimeLogContext(),
+                                            state = endgamePlan.state,
+                                            error = error,
+                                        ),
+                                    )
+                                    val failure = buildEndgameFailureDisplayPlan(
+                                        source = endgamePlan.failureSource,
+                                        state = endgamePlan.state,
+                                        errorMessage = error.message ?: "Unknown error",
+                                        engineMessagePrefix = endgamePlan.engineMessagePrefix,
+                                    )
+                                    applyEndgameFailureDisplayPlan(failure)
                                 }
-                            }.onSuccess { endgame ->
-                                runtimeEventLog.append(
-                                    runtimeAiTurnEndgameSuccessLog(
-                                        context = currentRuntimeLogContext(),
-                                        state = display.gameState,
-                                        endgame = endgame,
-                                    ),
-                                )
-                                val final = buildResolvedEndgameDisplayPlan(
-                                    source = "auto-ai-engine-dead-stone-cleanup",
-                                    originalState = display.gameState,
-                                    resolution = endgame,
-                                    previousSnapshots = scoreState.scoreSnapshots,
-                                    engineMessagePrefix = display.turnEngineMessage,
-                                )
-                                applyFinalScoreDisplayPlan(final)
-                            }.onFailure { error ->
-                                runtimeEventLog.append(
-                                    runtimeAiTurnEndgameFailureLog(
-                                        context = currentRuntimeLogContext(),
-                                        state = display.gameState,
-                                        error = error,
-                                    ),
-                                )
-                                val failure = buildEndgameFailureDisplayPlan(
-                                    source = "auto-ai-engine-final-score-failed",
-                                    state = display.gameState,
-                                    errorMessage = error.message ?: "Unknown error",
-                                    engineMessagePrefix = display.turnEngineMessage,
-                                )
-                                applyEndgameFailureDisplayPlan(failure)
                             }
                         }
                     }.onFailure { error ->

@@ -205,6 +205,30 @@ internal fun buildAutoAiTurnFollowUpPlan(display: AutoAiTurnDisplayPlan): AutoAi
         AutoAiTurnFollowUpPlan.RequestTopMoveAnalysis(state)
     } ?: AutoAiTurnFollowUpPlan.None
 
+internal sealed class AutoAiTurnEndgamePlan {
+    data object None : AutoAiTurnEndgamePlan()
+    data class Resolve(
+        val state: GameState,
+        val profile: EngineProfile,
+        val prePassCandidates: List<CandidateMove>,
+        val engineMessagePrefix: String,
+        val successSource: String = "auto-ai-engine-dead-stone-cleanup",
+        val failureSource: String = "auto-ai-engine-final-score-failed",
+    ) : AutoAiTurnEndgamePlan()
+}
+
+internal fun buildAutoAiTurnEndgamePlan(display: AutoAiTurnDisplayPlan): AutoAiTurnEndgamePlan =
+    if (display.shouldResolveEndgame) {
+        AutoAiTurnEndgamePlan.Resolve(
+            state = display.gameState,
+            profile = display.profile,
+            prePassCandidates = display.endgamePrePassCandidates,
+            engineMessagePrefix = display.turnEngineMessage,
+        )
+    } else {
+        AutoAiTurnEndgamePlan.None
+    }
+
 internal data class AutoAiTurnFailureDisplayPlan(
     val engineMessage: String,
     val candidateText: String,

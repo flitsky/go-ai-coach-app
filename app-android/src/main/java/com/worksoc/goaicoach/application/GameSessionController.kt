@@ -96,6 +96,10 @@ internal sealed interface GameSessionEffect {
         val plan: AutoAiTurnRunPlan,
     ) : GameSessionEffect
 
+    data class ResolveAutoAiEndgame(
+        val plan: AutoAiTurnEndgamePlan.Resolve,
+    ) : GameSessionEffect
+
     data class RunScoreEstimate(
         val request: ScoreEstimateRequestPlan.RequestEngineEstimate,
     ) : GameSessionEffect

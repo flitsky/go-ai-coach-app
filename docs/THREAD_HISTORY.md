@@ -1148,3 +1148,6 @@
 - 문서 반영 후 다음 리팩토링으로 자동 AI 턴 성공 후 후속 분석 판단을 application plan으로 분리했다.
 - `AutoAiTurnFollowUpPlan`과 `buildAutoAiTurnFollowUpPlan()`을 추가했다. `GoCoachApp.kt`는 더 이상 `display.nextAnalysisState` nullable 값을 직접 해석하지 않고, `None` 또는 `RequestTopMoveAnalysis` plan만 처리한다.
 - `GameAutomationApplicationTest`에 일반 진행 상태는 Top Moves 후속 분석을 요청하고, 양패스 종국 상태는 후속 분석을 요청하지 않는 테스트를 추가했다. `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest`가 통과했다.
+- 사용자가 다음 리팩토링을 요청했고, 결과 보고 시 현재 리팩토링 완성도 표현도 요청했다.
+- 자동 AI 턴 성공 후 종국 resolve 입력 조립을 `AutoAiTurnEndgamePlan`으로 분리했다. `GoCoachApp.kt`는 더 이상 `display.shouldResolveEndgame`와 display 내부 필드를 직접 조합하지 않고, `None` 또는 `Resolve` plan을 처리한다.
+- `GameSessionEffect.ResolveAutoAiEndgame`을 추가해 다음 단계에서 종국 resolve coroutine을 effect runner로 이동할 수 있게 했다. `GameAutomationApplicationTest`와 `GameSessionControllerTest`를 보강했고 `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest`가 통과했다.

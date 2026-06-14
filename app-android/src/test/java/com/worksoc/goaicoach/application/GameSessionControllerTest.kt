@@ -180,6 +180,12 @@ class GameSessionControllerTest {
             delayMillis = 500L,
             context = autoAiContext,
         )
+        val autoAiEndgamePlan = AutoAiTurnEndgamePlan.Resolve(
+            state = gameState,
+            profile = EngineProfile(),
+            prePassCandidates = emptyList(),
+            engineMessagePrefix = "AI selected pass.",
+        )
 
         val topMoveEffect = GameSessionEffect.RunTopMoveAnalysis(
             plan = topMovePlan,
@@ -187,6 +193,7 @@ class GameSessionControllerTest {
             automatic = true,
         )
         val autoAiEffect = GameSessionEffect.RunAutoAiTurn(autoAiRunPlan)
+        val autoAiEndgameEffect = GameSessionEffect.ResolveAutoAiEndgame(autoAiEndgamePlan)
         val restoredEffect = GameSessionEffect.SyncRestoredGame(gameState)
         val debugReportPlan = DebugReportCopyPlan(
             clipboardLabel = "label",
@@ -200,6 +207,7 @@ class GameSessionControllerTest {
         assertEquals(true, topMoveEffect.automatic)
         assertSame(autoAiRunPlan, autoAiEffect.plan)
         assertSame(autoAiContext, autoAiEffect.plan.context)
+        assertSame(autoAiEndgamePlan, autoAiEndgameEffect.plan)
         assertSame(gameState, restoredEffect.gameState)
         assertSame(debugReportPlan, debugReportEffect.plan)
     }
