@@ -135,6 +135,7 @@ import com.worksoc.goaicoach.application.toGameSessionSettingsState
 import com.worksoc.goaicoach.application.toRuntimeLogContext
 import com.worksoc.goaicoach.application.undoEngineInterventionQuietUntilMillis
 import com.worksoc.goaicoach.application.undoEngineInterventionRemainingDelayMillis
+import com.worksoc.goaicoach.application.UndoAnalysisRestoreCache
 import com.worksoc.goaicoach.application.UndoRequestPlan
 import com.worksoc.goaicoach.application.UndoLocalStatePlan
 import com.worksoc.goaicoach.application.UserPreferencesStorePort
@@ -286,6 +287,7 @@ private fun GoCoachScreen(
     val searchTimeSettings = settingsState.searchTimeSettings
     val topMovesEnabled = settingsState.topMovesEnabled
     val analysisCache = remember { AnalysisResultCache(maxEntries = 96) }
+    val undoAnalysisRestoreCache = remember { UndoAnalysisRestoreCache(maxEntries = 96) }
     var uxOptions by remember { mutableStateOf(initialPreferences.toKaTrainUxOptions()) }
     var isDisplayMenuExpanded by remember { mutableStateOf(false) }
     var isScoreGraphExpanded by remember { mutableStateOf(false) }
@@ -371,7 +373,7 @@ private fun GoCoachScreen(
             engineDiagnostic = engineDiagnostic,
             isEngineReady = isEngineReady,
             isEngineBusy = isEngineBusy,
-            analysisCacheStats = analysisCache.statsText(),
+            analysisCacheStats = "${analysisCache.statsText()}, ${undoAnalysisRestoreCache.statsText()}",
             turnTimeText = turnTimeState.runtimeText(),
         )
     }
@@ -690,6 +692,7 @@ private fun GoCoachScreen(
 
     fun applyGameSessionResetPlan(reset: GameSessionResetPlan) {
         clearUndoEngineInterventionQuietWindow()
+        undoAnalysisRestoreCache.clear()
         positionCacheOptimizationState = positionCacheOptimizationState.clearPrompt()
         applyCoreSessionState(currentCoreSessionState().applyGameSessionResetPlan(reset))
         turnTimeState = GameSessionTurnTimeState.reset(
@@ -706,6 +709,7 @@ private fun GoCoachScreen(
 
     fun applySavedGameRestorePlan(restore: SavedGameRestorePlan) {
         clearUndoEngineInterventionQuietWindow()
+        undoAnalysisRestoreCache.clear()
         positionCacheOptimizationState = positionCacheOptimizationState.clearPrompt()
         settingsState = settingsState.applySavedGameRestore(
             restoredSetup = restore.playerSetup,
@@ -803,7 +807,9 @@ private fun GoCoachScreen(
             targetState = targetState,
             deep = deep,
             automatic = automatic,
-            cachedResultFor = analysisCache::get,
+            cachedResultFor = { key ->
+                undoAnalysisRestoreCache.get(key) ?: analysisCache.get(key)
+            },
         )
         val launchUpdate = analysisState.applyTopMoveAnalysisLaunchPlan(launchPlan) ?: return
         analysisState = launchUpdate.analysisState
@@ -826,6 +832,9 @@ private fun GoCoachScreen(
                 }
             }.onSuccess { update ->
                 applyTopMoveAnalysisUpdate(update, plan.analysisKey)
+                update.undoRestoreResult?.let { cached ->
+                    undoAnalysisRestoreCache.put(plan.analysisKey, cached)
+                }
                 update.cachedResult?.let { cached ->
                     analysisCache.put(plan.analysisKey, cached)
                 }
@@ -1608,7 +1617,7 @@ private fun GoCoachScreen(
             currentControllerSessionState().toDebugReportSnapshot(
                 engineName = engineName,
                 engineDiagnostic = engineDiagnostic,
-                analysisCacheStats = analysisCache.statsText(),
+                analysisCacheStats = "${analysisCache.statsText()}, ${undoAnalysisRestoreCache.statsText()}",
                 positionAnalysisCacheStats = engineClient.positionAnalysisCacheStatsText(System.currentTimeMillis()),
                 isEngineReady = isEngineReady,
                 isEngineBusy = isEngineBusy,
@@ -1726,7 +1735,7 @@ private fun GoCoachScreen(
             engineDiagnostic = engineDiagnostic,
             isEngineReady = isEngineReady,
             isEngineBusy = isEngineBusy,
-            analysisCacheStats = analysisCache.statsText(),
+            analysisCacheStats = "${analysisCache.statsText()}, ${undoAnalysisRestoreCache.statsText()}",
             isScoreGraphExpanded = isScoreGraphExpanded,
             turnTimeText = turnTimeState.summaryText(),
             hasCompletedEngineStartup = hasCompletedEngineStartup,

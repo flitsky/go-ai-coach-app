@@ -21,6 +21,7 @@ internal data class TopMoveAnalysisUpdate(
     val candidateText: String,
     val engineMessage: String,
     val cachedResult: CachedAnalysisResult?,
+    val undoRestoreResult: CachedAnalysisResult? = null,
 )
 
 internal sealed class ShowTopMovesPlan {
@@ -182,6 +183,7 @@ internal fun buildCachedTopMoveAnalysisUpdate(
             "Move review analysis cache hit for ${targetState.nextPlayer.label}: ${snapshot.scoredPlayCount}/${snapshot.legalPlayCount} legal spot(s) scored."
         },
         cachedResult = null,
+        undoRestoreResult = null,
     )
 }
 
@@ -211,6 +213,12 @@ internal fun buildCompletedTopMoveAnalysisUpdate(
     } else {
         "Analysis cache disabled: fresh ${analysisPreset.label} result."
     }
+    val quality = result.cacheQualityFor(plan.analysisLimit)
+    val restorableResult = CachedAnalysisResult(
+        snapshot = snapshot,
+        candidateText = analysisText,
+        quality = quality,
+    )
     return TopMoveAnalysisUpdate(
         snapshot = snapshot,
         reviewCandidateMoves = snapshot.candidatesForReview(),
@@ -222,13 +230,11 @@ internal fun buildCompletedTopMoveAnalysisUpdate(
             "Move review analysis ready for ${targetState.nextPlayer.label}: ${snapshot.scoredPlayCount}/${snapshot.legalPlayCount} legal spot(s) scored."
         },
         cachedResult = if (cacheEnabled) {
-            CachedAnalysisResult(
-                snapshot = snapshot,
-                candidateText = analysisText,
-            )
+            restorableResult
         } else {
             null
         },
+        undoRestoreResult = restorableResult.takeIf { it.canRestoreAfterUndo },
     )
 }
 

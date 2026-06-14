@@ -50,6 +50,12 @@ class TopMovesApplicationTest {
     fun completedAnalysisUpdateBuildsSnapshotAndCachePayload() {
         val state = GameState.empty()
         val coordinate = BoardCoordinate.fromLabel("E5", BoardSize.Nine)
+        val plan = buildTopMoveAnalysisPlan(
+            targetState = state,
+            engineProfile = EngineProfile(),
+            analysisPreset = AnalysisPreset.Lite,
+            deep = false,
+        )
         val result = AnalysisResult(
             status = EngineStatus.ready("analysis complete"),
             candidates = listOf(
@@ -58,13 +64,8 @@ class TopMovesApplicationTest {
                     pointLoss = 0.0,
                 ),
             ),
+            rootVisits = plan.analysisLimit.visits,
             summary = "raw",
-        )
-        val plan = buildTopMoveAnalysisPlan(
-            targetState = state,
-            engineProfile = EngineProfile(),
-            analysisPreset = AnalysisPreset.Lite,
-            deep = false,
         )
 
         val update = buildCompletedTopMoveAnalysisUpdate(
@@ -83,21 +84,23 @@ class TopMovesApplicationTest {
         assertTrue(update.candidateText.contains("Analysis cache miss"))
         assertEquals("analysis complete", update.engineMessage)
         assertNotNull(update.cachedResult)
+        assertNotNull(update.undoRestoreResult)
     }
 
     @Test
     fun completedAnalysisUpdateDoesNotStorePayloadWhenCacheDisabled() {
         val state = GameState.empty()
-        val result = AnalysisResult(
-            status = EngineStatus.ready("analysis complete"),
-            candidates = emptyList(),
-            summary = "raw",
-        )
         val plan = buildTopMoveAnalysisPlan(
             targetState = state,
             engineProfile = EngineProfile(),
             analysisPreset = AnalysisPreset.Lite,
             deep = false,
+        )
+        val result = AnalysisResult(
+            status = EngineStatus.ready("analysis complete"),
+            candidates = emptyList(),
+            rootVisits = plan.analysisLimit.visits,
+            summary = "raw",
         )
 
         val update = buildCompletedTopMoveAnalysisUpdate(
@@ -114,6 +117,61 @@ class TopMovesApplicationTest {
 
         assertTrue(update.candidateText.contains("Analysis cache disabled"))
         assertNull(update.cachedResult)
+        assertNull(update.undoRestoreResult)
+    }
+
+    @Test
+    fun completedAnalysisUpdateRestoresAfterUndoOnlyWhenRootVisitsAreComplete() {
+        val state = GameState.empty()
+        val candidate = CandidateMove(
+            move = Move.Play(
+                player = StoneColor.Black,
+                coordinate = BoardCoordinate.fromLabel("E5", BoardSize.Nine),
+            ),
+            pointLoss = 0.0,
+        )
+        val plan = buildTopMoveAnalysisPlan(
+            targetState = state,
+            engineProfile = EngineProfile(),
+            analysisPreset = AnalysisPreset.Lite,
+            deep = false,
+        )
+
+        val complete = buildCompletedTopMoveAnalysisUpdate(
+            targetState = state,
+            result = AnalysisResult(
+                status = EngineStatus.ready("complete"),
+                candidates = listOf(candidate),
+                rootVisits = plan.analysisLimit.visits,
+                summary = "complete",
+            ),
+            rawCandidateText = "complete text",
+            engineProfile = EngineProfile(),
+            analysisPreset = AnalysisPreset.Lite,
+            plan = plan,
+            deep = false,
+            topMovesEnabled = false,
+            cacheEnabled = false,
+        )
+        val short = buildCompletedTopMoveAnalysisUpdate(
+            targetState = state,
+            result = AnalysisResult(
+                status = EngineStatus.ready("short"),
+                candidates = listOf(candidate),
+                rootVisits = plan.analysisLimit.visits - 1,
+                summary = "short",
+            ),
+            rawCandidateText = "short text",
+            engineProfile = EngineProfile(),
+            analysisPreset = AnalysisPreset.Lite,
+            plan = plan,
+            deep = false,
+            topMovesEnabled = false,
+            cacheEnabled = false,
+        )
+
+        assertNotNull(complete.undoRestoreResult)
+        assertNull(short.undoRestoreResult)
     }
 
     @Test
@@ -311,6 +369,54 @@ class TopMovesApplicationTest {
         assertTrue(launchPlan is TopMoveAnalysisLaunchPlan.UseCached)
         assertEquals(plan.analysisKey, (launchPlan as TopMoveAnalysisLaunchPlan.UseCached).analysisKey)
         assertEquals(1, launchPlan.update.candidateMoves.size)
+    }
+
+    @Test
+    fun undoAnalysisRestoreCacheStoresOnlyCompleteRootVisitResults() {
+        val state = GameState.empty()
+        val candidate = CandidateMove(
+            move = Move.Play(
+                player = StoneColor.Black,
+                coordinate = BoardCoordinate.fromLabel("E5", BoardSize.Nine),
+            ),
+            pointLoss = 0.0,
+        )
+        val snapshot = MoveAnalysisSnapshot.from(state = state, candidates = listOf(candidate))
+        val plan = buildTopMoveAnalysisPlan(
+            targetState = state,
+            engineProfile = EngineProfile(),
+            analysisPreset = AnalysisPreset.Lite,
+            deep = false,
+        )
+        val cache = UndoAnalysisRestoreCache(maxEntries = 4)
+
+        cache.put(
+            key = plan.analysisKey,
+            result = CachedAnalysisResult(
+                snapshot = snapshot,
+                candidateText = "partial",
+                quality = PositionAnalysisCacheQuality.from(
+                    rootVisits = plan.analysisLimit.visits - 1,
+                    requestedRootVisits = plan.analysisLimit.visits,
+                ),
+            ),
+        )
+        assertNull(cache.get(plan.analysisKey))
+
+        cache.put(
+            key = plan.analysisKey,
+            result = CachedAnalysisResult(
+                snapshot = snapshot,
+                candidateText = "complete",
+                quality = PositionAnalysisCacheQuality.from(
+                    rootVisits = plan.analysisLimit.visits,
+                    requestedRootVisits = plan.analysisLimit.visits,
+                ),
+            ),
+        )
+
+        assertEquals("complete", cache.get(plan.analysisKey)?.candidateText)
+        assertTrue(cache.statsText().contains("undoRestoreEntries=1"))
     }
 
     @Test

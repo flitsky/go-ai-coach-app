@@ -23,7 +23,11 @@ internal data class AnalysisCacheKey(
 internal data class CachedAnalysisResult(
     val snapshot: MoveAnalysisSnapshot,
     val candidateText: String,
-)
+    val quality: PositionAnalysisCacheQuality? = null,
+) {
+    val canRestoreAfterUndo: Boolean
+        get() = snapshot.hasEngineCandidates && quality?.isComplete == true
+}
 
 // Disabled by default until cache reuse has quality gates such as repeated stable engine results,
 // sufficient root visits, probabilistic reuse, and loss-triggered invalidation.
@@ -77,6 +81,45 @@ internal class AnalysisResultCache(
         } else {
             "disabled, entries=0, hits=0, misses=0"
         }
+}
+
+/**
+ * Short-lived in-session cache for undo navigation.
+ *
+ * General Top Moves caching remains disabled by default because it can hide
+ * fresh engine variation during normal play. Undo is narrower: returning to a
+ * just-seen position should reuse the exact same completed analysis snapshot
+ * instead of asking the engine again. This cache only accepts snapshots whose
+ * root visits filled the requested analysis budget, and it is cleared when a
+ * game/session boundary changes.
+ */
+internal class UndoAnalysisRestoreCache(
+    private val maxEntries: Int,
+) {
+    private val entries = object : LinkedHashMap<AnalysisCacheKey, CachedAnalysisResult>(16, 0.75f, true) {
+        override fun removeEldestEntry(
+            eldest: MutableMap.MutableEntry<AnalysisCacheKey, CachedAnalysisResult>?,
+        ): Boolean = size > maxEntries
+    }
+
+    fun get(key: AnalysisCacheKey): CachedAnalysisResult? =
+        entries[key]
+
+    fun put(
+        key: AnalysisCacheKey,
+        result: CachedAnalysisResult,
+    ) {
+        if (result.canRestoreAfterUndo) {
+            entries[key] = result
+        }
+    }
+
+    fun clear() {
+        entries.clear()
+    }
+
+    fun statsText(): String =
+        "undoRestoreEntries=${entries.size}"
 }
 
 internal fun analysisKeyFor(

@@ -1161,3 +1161,8 @@
 - 자동 AI pass/pass 종국 처리의 실제 엔진 호출과 성공/실패 표시 계획 생성을 UI에서 application 계층으로 이동했다. `AutoAiTurnEndgameDisplayPlan`과 `EngineSessionClient.runAutoAiEndgameDisplayPlan()`을 추가했고, `GoCoachApp.kt`는 반환된 display plan 적용과 runtime log 기록만 담당하게 했다.
 - `GameAutomationApplicationTest`에 자동 AI 종국 runner 성공/실패 테스트를 추가했다. 성공 케이스는 `AiEndgameResolution`을 `FinalScoreDisplayPlan`으로 변환하는지 확인하고, 실패 케이스는 예외를 `EndgameFailureDisplayPlan`으로 변환하는지 확인한다.
 - `docs/refactoring/NEXT_REFACTORING_WORKLIST_2026-06-14.md`와 `docs/refactoring/ARCHITECTURE_LAYERS_REVIEW_2026-06-14.md`에 진행 상태를 업데이트했다. 이번 단계로 종국 resolve 호출은 UI 밖으로 이동했지만, operation id/session generation/timeout policy 기반의 완전한 effect runner는 다음 리팩토링 항목으로 남겨두었다.
+- 사용자가 “늦게 도착한 엔진 결과를 안전하게 폐기한다”는 표현의 의미를 질문했다. 이 표현은 유효한 엔진 결과를 무시한다는 뜻이 아니라, 무르기/새 게임/복원/설정 변경 등으로 현재 대국 상태가 바뀐 뒤 이전 상태 기준으로 늦게 도착한 엔진 응답이 현재 화면과 상태를 덮어쓰지 못하게 막는 stale result guard를 뜻한다고 정리했다.
+- 사용자가 현재 대국에서 무르기로 돌아간 국면은 이미 분석된 값이 있을 가능성이 높으므로 root visits가 충족된 경우 엔진 호출 없이 cache hit로 처리할 수 있는지 질문했고, 이를 포함해 다음 리팩토링을 요청했다.
+- 기존 상태를 확인한 결과 JSON position analysis cache는 이미 root visits 품질 기반으로 재사용되지만, 과거 Top Moves용 `AnalysisResultCache`는 반복/고착 우려로 기본 비활성이고, undo 플랜은 분석 snapshot을 비워버려 “undo 전용 복원 cache” 의도가 명확하지 않았다.
+- `UndoAnalysisRestoreCache`를 추가했다. 일반 분석 cache는 계속 기본 비활성으로 두되, 같은 앱 세션에서 root visits가 requested visits를 충족한 complete 분석 snapshot만 undo 복원 cache에 저장한다. Top Moves launch는 undo 복원 cache를 먼저 확인하고, 정확한 `AnalysisCacheKey`가 있으면 엔진 호출 없이 cached update를 적용한다.
+- `TopMovesApplicationTest`에 complete root visits 결과만 undo 복원 payload/cache에 들어가고, short root visits 결과는 들어가지 않는 테스트를 추가했다. 디버그/런타임 로그의 analysis cache stats에는 undo restore entry 수도 함께 표시되도록 했다.
