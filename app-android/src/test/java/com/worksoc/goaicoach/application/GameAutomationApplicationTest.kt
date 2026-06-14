@@ -10,9 +10,12 @@ import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.AnalysisResult
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.CandidateMove
+import com.worksoc.goaicoach.shared.DeadStoneCleanupResult
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.EngineSearchMode
 import com.worksoc.goaicoach.shared.EngineStatus
+import com.worksoc.goaicoach.shared.EndgameScoreSource
+import com.worksoc.goaicoach.shared.FinalScoreResult
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.PlayLevelGroup
@@ -511,6 +514,67 @@ class GameAutomationApplicationTest {
         assertEquals("estimate ready", display.scoreDisplay.engineMessage)
     }
 
+    @Test
+    fun autoAiEndgameDisplayRunnerBuildsResolvedDisplayPlan() = runBlocking {
+        val state = GameState.empty()
+            .play(Move.Pass(StoneColor.Black))
+            .play(Move.Pass(StoneColor.White))
+        val resolution = aiEndgameResolution(state)
+        val client = FakeAutoAiEngineSessionClient(
+            result = autoAiTurnResult(state, estimate = null),
+            endgameResolution = resolution,
+        )
+        val plan = AutoAiTurnEndgamePlan.Resolve(
+            state = state,
+            profile = EngineProfile(name = "KataGo"),
+            prePassCandidates = emptyList(),
+            engineMessagePrefix = "pass/pass",
+        )
+
+        val display = client.runAutoAiEndgameDisplayPlan(
+            plan = plan,
+            previousSnapshots = emptyList(),
+        )
+
+        assertTrue(display is AutoAiTurnEndgameDisplayPlan.Resolved)
+        val resolved = display as AutoAiTurnEndgameDisplayPlan.Resolved
+        assertEquals(resolution, resolved.resolution)
+        assertEquals(state, client.resolvedEndgameState)
+        assertEquals("KataGo", client.resolvedEndgameProfile?.name)
+        assertTrue(resolved.display.scoreText.contains("Final: B+0.5"))
+        assertTrue(resolved.display.endgameLog.contains("source=auto-ai-engine-dead-stone-cleanup"))
+        assertTrue(resolved.display.engineMessage.startsWith("pass/pass\n"))
+    }
+
+    @Test
+    fun autoAiEndgameDisplayRunnerBuildsFailureDisplayPlan() = runBlocking {
+        val state = GameState.empty()
+            .play(Move.Pass(StoneColor.Black))
+            .play(Move.Pass(StoneColor.White))
+        val client = FakeAutoAiEngineSessionClient(
+            result = autoAiTurnResult(state, estimate = null),
+            endgameError = IllegalStateException("engine timeout"),
+        )
+        val plan = AutoAiTurnEndgamePlan.Resolve(
+            state = state,
+            profile = EngineProfile(),
+            prePassCandidates = emptyList(),
+            engineMessagePrefix = "pass/pass",
+        )
+
+        val display = client.runAutoAiEndgameDisplayPlan(
+            plan = plan,
+            previousSnapshots = emptyList(),
+        )
+
+        assertTrue(display is AutoAiTurnEndgameDisplayPlan.Failed)
+        val failed = display as AutoAiTurnEndgameDisplayPlan.Failed
+        assertEquals("engine timeout", failed.error.message)
+        assertTrue(failed.display.endgameLog.contains("source=auto-ai-engine-final-score-failed"))
+        assertTrue(failed.display.engineMessage.contains("Final score failed: engine timeout"))
+        assertTrue(failed.display.candidateText.contains("final score failed"))
+    }
+
     private fun autoAiTurnResult(
         state: GameState,
         estimate: ScoreEstimate?,
@@ -526,6 +590,30 @@ class GameAutomationApplicationTest {
             profile = EngineProfile(),
             playLevel = PlayLevelSetting(),
         )
+
+    private fun aiEndgameResolution(state: GameState): AiEndgameResolution {
+        val finalScore = FinalScoreResult(
+            status = EngineStatus.ready("Final score"),
+            rawScore = "B+0.5",
+            winner = StoneColor.Black,
+            margin = 0.5,
+            summary = "Final score",
+        )
+        return AiEndgameResolution(
+            cleanup = DeadStoneCleanupResult(state = state, removedStones = emptyList()),
+            finalScore = finalScore,
+            scoreSource = EndgameScoreSource.CleanedLocalArea,
+            localFinalScore = finalScore,
+            deadStonesResult = null,
+            deadStonesError = null,
+            locallyInferredDeadStones = emptyList(),
+            engineScoreEstimate = null,
+            engineScoreEstimateError = null,
+            engineFinalScore = null,
+            engineFinalScoreError = null,
+            prePassCandidates = emptyList(),
+        )
+    }
 }
 
 private fun automationControllerState(
@@ -577,6 +665,8 @@ private fun automationControllerState(
 
 private class FakeAutoAiEngineSessionClient(
     private val result: AutoAiTurnResult,
+    private val endgameResolution: AiEndgameResolution? = null,
+    private val endgameError: Throwable? = null,
 ) : EngineSessionClient {
     var currentState: GameState? = null
         private set
@@ -585,6 +675,12 @@ private class FakeAutoAiEngineSessionClient(
     var isolateSearchCache: Boolean? = null
         private set
     var searchMode: EngineSearchMode? = null
+        private set
+    var resolvedEndgameState: GameState? = null
+        private set
+    var resolvedEndgameProfile: EngineProfile? = null
+        private set
+    var resolvedEndgamePrePassCandidates: List<CandidateMove>? = null
         private set
 
     override val capabilities: EngineSessionCapabilities =
@@ -671,8 +767,13 @@ private class FakeAutoAiEngineSessionClient(
         state: GameState,
         profile: EngineProfile,
         prePassCandidates: List<CandidateMove>,
-    ): AiEndgameResolution =
-        error("not used")
+    ): AiEndgameResolution {
+        resolvedEndgameState = state
+        resolvedEndgameProfile = profile
+        resolvedEndgamePrePassCandidates = prePassCandidates
+        endgameError?.let { throw it }
+        return endgameResolution ?: error("not used")
+    }
 
     override suspend fun undoMove(): EngineStatus =
         error("not used")

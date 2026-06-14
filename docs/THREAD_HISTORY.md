@@ -1157,3 +1157,7 @@
 - `docs/refactoring/ARCHITECTURE_LAYERS_REVIEW_2026-06-14.md`를 새로 작성했다. 원문 초안은 raw context로 보존하고, 정제본에는 7계층 수용 원칙, 현재 구현 과장 지점, engine operation/failover/structured diagnostic 보강 방향, 문서 운영 정책을 정리했다.
 - `docs/DOCS_INDEX.md`의 세부 설계 문서 섹션에 위 정제 검토본을 추가했다.
 - 최상위 활성 문서 10개 이내 원칙을 유지하기 위해 `ARCHITECTURE_LAYERS_ANALYSIS.md` 원문 초안은 활성 문서에서 제외하고 `검토 초안/스냅샷` 섹션으로 분리했다.
+- 사용자가 다음 리팩토링 진행 후 경과 보고를 요청했다.
+- 자동 AI pass/pass 종국 처리의 실제 엔진 호출과 성공/실패 표시 계획 생성을 UI에서 application 계층으로 이동했다. `AutoAiTurnEndgameDisplayPlan`과 `EngineSessionClient.runAutoAiEndgameDisplayPlan()`을 추가했고, `GoCoachApp.kt`는 반환된 display plan 적용과 runtime log 기록만 담당하게 했다.
+- `GameAutomationApplicationTest`에 자동 AI 종국 runner 성공/실패 테스트를 추가했다. 성공 케이스는 `AiEndgameResolution`을 `FinalScoreDisplayPlan`으로 변환하는지 확인하고, 실패 케이스는 예외를 `EndgameFailureDisplayPlan`으로 변환하는지 확인한다.
+- `docs/refactoring/NEXT_REFACTORING_WORKLIST_2026-06-14.md`와 `docs/refactoring/ARCHITECTURE_LAYERS_REVIEW_2026-06-14.md`에 진행 상태를 업데이트했다. 이번 단계로 종국 resolve 호출은 UI 밖으로 이동했지만, operation id/session generation/timeout policy 기반의 완전한 effect runner는 다음 리팩토링 항목으로 남겨두었다.

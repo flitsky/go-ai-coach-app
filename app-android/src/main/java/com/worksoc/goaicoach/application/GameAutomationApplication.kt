@@ -229,6 +229,18 @@ internal fun buildAutoAiTurnEndgamePlan(display: AutoAiTurnDisplayPlan): AutoAiT
         AutoAiTurnEndgamePlan.None
     }
 
+internal sealed class AutoAiTurnEndgameDisplayPlan {
+    data class Resolved(
+        val resolution: AiEndgameResolution,
+        val display: FinalScoreDisplayPlan,
+    ) : AutoAiTurnEndgameDisplayPlan()
+
+    data class Failed(
+        val error: Throwable,
+        val display: EndgameFailureDisplayPlan,
+    ) : AutoAiTurnEndgameDisplayPlan()
+}
+
 internal data class AutoAiTurnFailureDisplayPlan(
     val engineMessage: String,
     val candidateText: String,
@@ -357,3 +369,35 @@ internal suspend fun EngineSessionClient.runAutoAiTurnDisplayPlan(
         previousReviewCandidates = previousReviewCandidates,
     )
 }
+
+internal suspend fun EngineSessionClient.runAutoAiEndgameDisplayPlan(
+    plan: AutoAiTurnEndgamePlan.Resolve,
+    previousSnapshots: List<ScoreSnapshot>,
+): AutoAiTurnEndgameDisplayPlan =
+    runCatching {
+        val resolution = resolveEndgameForState(
+            state = plan.state,
+            profile = plan.profile,
+            prePassCandidates = plan.prePassCandidates,
+        )
+        AutoAiTurnEndgameDisplayPlan.Resolved(
+            resolution = resolution,
+            display = buildResolvedEndgameDisplayPlan(
+                source = plan.successSource,
+                originalState = plan.state,
+                resolution = resolution,
+                previousSnapshots = previousSnapshots,
+                engineMessagePrefix = plan.engineMessagePrefix,
+            ),
+        )
+    }.getOrElse { error ->
+        AutoAiTurnEndgameDisplayPlan.Failed(
+            error = error,
+            display = buildEndgameFailureDisplayPlan(
+                source = plan.failureSource,
+                state = plan.state,
+                errorMessage = error.message ?: "Unknown error",
+                engineMessagePrefix = plan.engineMessagePrefix,
+            ),
+        )
+    }

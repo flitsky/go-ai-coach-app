@@ -239,6 +239,8 @@ data class EngineOperationRequest(
 
 현재 `AutoAiTurnEndgamePlan`과 `GameSessionEffect.ResolveAutoAiEndgame`은 도입되었다. 다음 단계는 실제 coroutine 실행을 UI에서 빼는 것이다.
 
+2026-06-14 진행 상태: `runAutoAiEndgameDisplayPlan()`을 추가해 자동 AI 종국 resolve 호출과 성공/실패 표시 계획 생성은 application 계층으로 이동했다. 다만 operation id, session generation 기반 결과 폐기, 명시적 timeout/fallback policy는 아직 남아 있다.
+
 목표:
 
 - UI는 effect를 실행하거나 dispatcher에 전달한다.

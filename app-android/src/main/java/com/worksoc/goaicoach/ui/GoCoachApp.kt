@@ -21,6 +21,7 @@ import androidx.compose.ui.platform.LocalContext
 import com.worksoc.goaicoach.application.AnalysisCacheKey
 import com.worksoc.goaicoach.application.AnalysisResultCache
 import com.worksoc.goaicoach.application.AutoAiTurnDisplayPlan
+import com.worksoc.goaicoach.application.AutoAiTurnEndgameDisplayPlan
 import com.worksoc.goaicoach.application.AutoAiTurnEndgamePlan
 import com.worksoc.goaicoach.application.AutoAiTurnFollowUpPlan
 import com.worksoc.goaicoach.application.AutoAiTurnRequestPlan
@@ -30,7 +31,6 @@ import com.worksoc.goaicoach.application.buildAutoAiTurnFailureDisplayPlan
 import com.worksoc.goaicoach.application.buildAutoAiTurnEndgamePlan
 import com.worksoc.goaicoach.application.buildAutoAiTurnFollowUpPlan
 import com.worksoc.goaicoach.application.buildDebugReportCopyPlan
-import com.worksoc.goaicoach.application.buildEndgameFailureDisplayPlan
 import com.worksoc.goaicoach.application.buildEngineEstimateDisplayPlan
 import com.worksoc.goaicoach.application.buildEngineStartupFailureDisplayPlan
 import com.worksoc.goaicoach.application.buildEngineStartupSuccessDisplayPlan
@@ -41,7 +41,6 @@ import com.worksoc.goaicoach.application.buildLocalFinalScoreDisplayPlan
 import com.worksoc.goaicoach.application.buildLocalTwoPlayerUndoPlan
 import com.worksoc.goaicoach.application.buildUndoRequestPlan
 import com.worksoc.goaicoach.application.buildNewLocalGameSessionPlan
-import com.worksoc.goaicoach.application.buildResolvedEndgameDisplayPlan
 import com.worksoc.goaicoach.application.buildSavedGameRestoreRequestPlan
 import com.worksoc.goaicoach.application.buildSavedSessionCheckPlan
 import com.worksoc.goaicoach.application.buildScoreEstimateRequestPlan
@@ -92,6 +91,7 @@ import com.worksoc.goaicoach.application.RuntimePlayLevelSelection
 import com.worksoc.goaicoach.application.RuntimeEventLogPort
 import com.worksoc.goaicoach.application.runTopMoveAnalysis
 import com.worksoc.goaicoach.application.ScoringRuleChangePlan
+import com.worksoc.goaicoach.application.runAutoAiEndgameDisplayPlan
 import com.worksoc.goaicoach.application.runRestoredGameSyncDisplayPlan
 import com.worksoc.goaicoach.application.runAutoAiTurnDisplayPlan
 import com.worksoc.goaicoach.application.runScoreEstimateDisplayPlan
@@ -1293,45 +1293,35 @@ private fun GoCoachScreen(
                                         state = endgamePlan.state,
                                     ),
                                 )
-                                runCatching {
-                                    withContext(Dispatchers.IO) {
-                                        engineClient.resolveEndgameForState(
-                                            state = endgamePlan.state,
-                                            profile = endgamePlan.profile,
-                                            prePassCandidates = endgamePlan.prePassCandidates,
+                                when (
+                                    val endgameDisplay = withContext(Dispatchers.IO) {
+                                        engineClient.runAutoAiEndgameDisplayPlan(
+                                            plan = endgamePlan,
+                                            previousSnapshots = scoreState.scoreSnapshots,
                                         )
                                     }
-                                }.onSuccess { endgame ->
-                                    runtimeEventLog.append(
-                                        runtimeAiTurnEndgameSuccessLog(
-                                            context = currentRuntimeLogContext(),
-                                            state = endgamePlan.state,
-                                            endgame = endgame,
-                                        ),
-                                    )
-                                    val final = buildResolvedEndgameDisplayPlan(
-                                        source = endgamePlan.successSource,
-                                        originalState = endgamePlan.state,
-                                        resolution = endgame,
-                                        previousSnapshots = scoreState.scoreSnapshots,
-                                        engineMessagePrefix = endgamePlan.engineMessagePrefix,
-                                    )
-                                    applyFinalScoreDisplayPlan(final)
-                                }.onFailure { error ->
-                                    runtimeEventLog.append(
-                                        runtimeAiTurnEndgameFailureLog(
-                                            context = currentRuntimeLogContext(),
-                                            state = endgamePlan.state,
-                                            error = error,
-                                        ),
-                                    )
-                                    val failure = buildEndgameFailureDisplayPlan(
-                                        source = endgamePlan.failureSource,
-                                        state = endgamePlan.state,
-                                        errorMessage = error.message ?: "Unknown error",
-                                        engineMessagePrefix = endgamePlan.engineMessagePrefix,
-                                    )
-                                    applyEndgameFailureDisplayPlan(failure)
+                                ) {
+                                    is AutoAiTurnEndgameDisplayPlan.Resolved -> {
+                                        runtimeEventLog.append(
+                                            runtimeAiTurnEndgameSuccessLog(
+                                                context = currentRuntimeLogContext(),
+                                                state = endgamePlan.state,
+                                                endgame = endgameDisplay.resolution,
+                                            ),
+                                        )
+                                        applyFinalScoreDisplayPlan(endgameDisplay.display)
+                                    }
+
+                                    is AutoAiTurnEndgameDisplayPlan.Failed -> {
+                                        runtimeEventLog.append(
+                                            runtimeAiTurnEndgameFailureLog(
+                                                context = currentRuntimeLogContext(),
+                                                state = endgamePlan.state,
+                                                error = endgameDisplay.error,
+                                            ),
+                                        )
+                                        applyEndgameFailureDisplayPlan(endgameDisplay.display)
+                                    }
                                 }
                             }
                         }
