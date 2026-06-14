@@ -1139,3 +1139,5 @@
 - `AutoAiTurnRunPlan`은 자동 AI 턴의 `delayMillis`와 `AutoAiTurnExecutionContext`를 함께 운반한다. `AutoAiTurnScheduleValidationPlan.Continue`는 이제 context 대신 run plan을 반환하며, `GameSessionEffect.RunAutoAiTurn`도 run plan을 받는다.
 - `GoCoachApp.kt`는 delay 후 validation에서 `runPlan`을 받아 begin log에 동일 delay 값을 사용한다. 이번 변경은 실행 coroutine 전체를 옮기기 전, runner/effect 입력 단위를 안정화하는 작업이다.
 - `GameAutomationApplicationTest`와 `GameSessionControllerTest`를 갱신했고, `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest`가 통과했다.
+- 이어서 자동 AI 턴 실패 반영을 application reducer로 옮겼다. `AutoAiTurnFailureDisplayPlan`과 `GameSessionCoreState.applyAutoAiTurnFailureDisplayPlan()`을 추가해 실패 시 UI가 `engineMessage`/`candidateText`를 직접 수정하지 않게 했다.
+- 실패 reducer는 현재 보드와 점수 상태를 유지하고 실패 메시지만 반영하도록 테스트를 추가했다. `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest`가 통과했다.

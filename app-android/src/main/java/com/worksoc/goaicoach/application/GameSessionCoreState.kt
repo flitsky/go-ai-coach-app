@@ -135,6 +135,12 @@ internal data class GameSessionCoreState(
             engineMessage = display.scoreDisplay.engineMessage,
         )
 
+    fun applyAutoAiTurnFailureDisplayPlan(failure: AutoAiTurnFailureDisplayPlan): GameSessionCoreState =
+        copy(
+            analysisState = analysisState.copy(candidateText = failure.candidateText),
+            engineMessage = failure.engineMessage,
+        )
+
     fun applyHumanMoveLocalResult(result: HumanMoveLocalResult): GameSessionCoreState =
         copy(
             gameState = result.afterMove,

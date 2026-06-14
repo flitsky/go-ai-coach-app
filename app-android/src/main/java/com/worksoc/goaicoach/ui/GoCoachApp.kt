@@ -24,6 +24,7 @@ import com.worksoc.goaicoach.application.AutoAiTurnDisplayPlan
 import com.worksoc.goaicoach.application.AutoAiTurnRequestPlan
 import com.worksoc.goaicoach.application.AutoAiTurnScheduleValidationPlan
 import com.worksoc.goaicoach.application.AutoAiTurnUiState
+import com.worksoc.goaicoach.application.buildAutoAiTurnFailureDisplayPlan
 import com.worksoc.goaicoach.application.buildDebugReportCopyPlan
 import com.worksoc.goaicoach.application.buildEndgameFailureDisplayPlan
 import com.worksoc.goaicoach.application.buildEngineEstimateDisplayPlan
@@ -655,6 +656,14 @@ private fun GoCoachScreen(
     fun applyAutoAiTurnDisplayPlan(display: AutoAiTurnDisplayPlan): GameState? {
         applyCoreSessionState(currentCoreSessionState().applyAutoAiTurnDisplayPlan(display))
         return display.nextAnalysisState
+    }
+
+    fun applyAutoAiTurnFailureDisplayPlan(error: Throwable) {
+        applyCoreSessionState(
+            currentCoreSessionState().applyAutoAiTurnFailureDisplayPlan(
+                buildAutoAiTurnFailureDisplayPlan(error),
+            ),
+        )
     }
 
     fun applyHumanEngineSyncDisplayPlan(sync: HumanEngineSyncDisplayPlan): GameState? =
@@ -1329,10 +1338,7 @@ private fun GoCoachScreen(
                                 error = error,
                             ),
                         )
-                        engineMessage = error.message ?: "AI turn failed."
-                        analysisState = analysisState.copy(
-                            candidateText = "AI turn failed. Current board state was not changed.",
-                        )
+                        applyAutoAiTurnFailureDisplayPlan(error)
                     }
                     isEngineBusy = false
                     autoAiTurnUiState = autoAiTurnUiState.clearPending()

@@ -86,6 +86,28 @@ class GameSessionCoreStateTest {
     }
 
     @Test
+    fun applyAutoAiTurnFailureDisplayPlanKeepsBoardAndScoreState() {
+        val before = baseCoreState(
+            analysisState = GameSessionAnalysisState.empty(
+                state = GameState.empty(),
+                candidateText = "previous candidates",
+            ),
+            engineMessage = "previous engine message",
+        )
+        val failure = buildAutoAiTurnFailureDisplayPlan(IllegalStateException("engine unavailable"))
+
+        val next = before.applyAutoAiTurnFailureDisplayPlan(failure)
+
+        assertEquals(before.gameState, next.gameState)
+        assertEquals(before.scoreState, next.scoreState)
+        assertEquals("engine unavailable", next.engineMessage)
+        assertEquals(
+            "AI turn failed. Current board state was not changed.",
+            next.analysisState.candidateText,
+        )
+    }
+
+    @Test
     fun applyHumanMoveLocalResultClearsDisplayedTopMovesAndRefreshesReview() {
         val coordinate = BoardCoordinate.fromLabel("E5", BoardSize.Nine)
         val beforeMove = GameState.empty()

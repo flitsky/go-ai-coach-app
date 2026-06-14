@@ -193,6 +193,17 @@ internal data class AutoAiTurnDisplayPlan(
     val nextAnalysisState: GameState?,
 )
 
+internal data class AutoAiTurnFailureDisplayPlan(
+    val engineMessage: String,
+    val candidateText: String,
+)
+
+internal fun buildAutoAiTurnFailureDisplayPlan(error: Throwable): AutoAiTurnFailureDisplayPlan =
+    AutoAiTurnFailureDisplayPlan(
+        engineMessage = error.message ?: "AI turn failed.",
+        candidateText = "AI turn failed. Current board state was not changed.",
+    )
+
 internal data class AutoAiTurnRunPlan(
     val delayMillis: Long,
     val context: AutoAiTurnExecutionContext,
