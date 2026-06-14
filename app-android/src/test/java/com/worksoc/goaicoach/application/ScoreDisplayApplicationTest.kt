@@ -212,6 +212,47 @@ class ScoreDisplayApplicationTest {
     }
 
     @Test
+    fun scoreSyncWorkflowCompletionPlanWrapsRunnerResult() = runBlocking {
+        val state = GameState.empty()
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+        val operation = engineOperationRequest(
+            kind = EngineOperationKind.PostUndoSync,
+            state = state,
+            sessionGeneration = 4L,
+            fallbackPolicy = EngineFallbackPolicy.LocalRules,
+        )
+        val display = buildLocalScoreEstimateDisplayPlan(
+            state = state,
+            previousSnapshots = emptyList(),
+            engineMessage = "synced",
+        )
+
+        val success = runScoreSyncWorkflowCompletionPlan(
+            operation = operation,
+            currentState = state,
+            currentSessionGeneration = 4L,
+            followUpAnalysisState = state,
+            fallbackMessage = "fallback",
+        ) {
+            display
+        }
+        val failure = runScoreSyncWorkflowCompletionPlan(
+            operation = operation,
+            currentState = state,
+            currentSessionGeneration = 4L,
+            followUpAnalysisState = state,
+            fallbackMessage = "fallback",
+        ) {
+            throw IllegalStateException("sync failed")
+        }
+
+        assertTrue(success is ScoreSyncCompletionPlan.ApplySuccess)
+        assertEquals(display, (success as ScoreSyncCompletionPlan.ApplySuccess).display)
+        assertTrue(failure is ScoreSyncCompletionPlan.ApplyFailure)
+        assertEquals("sync failed", (failure as ScoreSyncCompletionPlan.ApplyFailure).engineMessage)
+    }
+
+    @Test
     fun engineEstimateDisplayPlanRecordsScoreSnapshotAndMessage() {
         val state = GameState.empty()
         val estimate = ScoreEstimate(

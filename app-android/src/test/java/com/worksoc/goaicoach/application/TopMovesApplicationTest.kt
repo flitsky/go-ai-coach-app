@@ -330,6 +330,49 @@ class TopMovesApplicationTest {
     }
 
     @Test
+    fun runTopMoveAnalysisWorkflowResultWrapsSuccessAndFailure() = runBlocking {
+        val state = GameState.empty()
+        val candidate = CandidateMove(
+            move = Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)),
+            pointLoss = 0.0,
+        )
+        val plan = buildTopMoveAnalysisPlan(
+            targetState = state,
+            engineProfile = EngineProfile(),
+            analysisPreset = AnalysisPreset.Lite,
+            deep = false,
+        )
+        val effect = GameSessionEffect.RunTopMoveAnalysis(
+            plan = plan,
+            deep = false,
+            automatic = true,
+        )
+        val context = TopMoveAnalysisExecutionContext(
+            targetState = state,
+            engineProfile = EngineProfile(),
+            analysisPreset = AnalysisPreset.Lite,
+            topMovesEnabled = true,
+            cacheEnabled = true,
+        )
+
+        val success = FakeTopMoveEngineSessionClient(
+            result = AnalysisResult(
+                status = EngineStatus.ready("analysis ready"),
+                candidates = listOf(candidate),
+                summary = "summary",
+            ),
+        ).runTopMoveAnalysisWorkflowResult(effect, context)
+        val failure = FakeTopMoveEngineSessionClient(
+            failure = IllegalStateException("engine failed"),
+        ).runTopMoveAnalysisWorkflowResult(effect, context)
+
+        assertTrue(success is TopMoveAnalysisWorkflowResult.Success)
+        assertEquals("analysis ready", (success as TopMoveAnalysisWorkflowResult.Success).update.engineMessage)
+        assertTrue(failure is TopMoveAnalysisWorkflowResult.Failure)
+        assertEquals("engine failed", (failure as TopMoveAnalysisWorkflowResult.Failure).error.message)
+    }
+
+    @Test
     fun cachedAnalysisUpdateKeepsDisplayMovesOnlyWhenTopMovesEnabled() {
         val state = GameState.empty()
         val snapshot = MoveAnalysisSnapshot.from(
@@ -875,7 +918,8 @@ private fun topMoveControllerState(
     )
 
 private class FakeTopMoveEngineSessionClient(
-    private val result: AnalysisResult,
+    private val result: AnalysisResult? = null,
+    private val failure: Throwable? = null,
 ) : EngineSessionClient {
     var analyzedState: GameState? = null
         private set
@@ -915,7 +959,8 @@ private class FakeTopMoveEngineSessionClient(
     ): AnalysisResult {
         analyzedState = state
         analyzedLimit = limit
-        return result
+        failure?.let { throw it }
+        return result ?: error("not used")
     }
 
     override suspend fun optimizePositionAnalysisCache(

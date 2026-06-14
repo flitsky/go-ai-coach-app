@@ -580,3 +580,40 @@
 
 5. UI import/handler 정리
    - `GoCoachApp.kt` import가 많아지고 있으므로 workflow별 facade import 또는 `ui/workflow` package로 정리할 후보를 선정한다.
+
+## 2026-06-15 추가 진행 로그: Workflow Result Runner 정리
+
+- 2026-06-15: `TopMoveAnalysisWorkflowResult`와 `runTopMoveAnalysisWorkflowResult()`를 추가했다. Top Moves engine call의 성공/실패 포장은 application runner가 담당하고, UI는 `buildTopMoveAnalysisCompletionPlan()` 결과를 적용한다.
+- 2026-06-15: `runScoreSyncWorkflowCompletionPlan()`을 `ScoreSyncCompletionApplication.kt`에 추가했다. post-undo/scoring-rule/restored-game sync의 success/failure/discard completion 생성 책임이 UI-local helper에서 application 함수로 이동했다.
+- 2026-06-15: `AutoAiTurnWorkflowResult`, `buildAutoAiTurnCompletionPlan()`, `runAutoAiTurnWorkflowResult()`를 추가했다. Auto AI 자동 착수 coroutine에서 직접 `runCatching`으로 success/failure builder를 고르는 흐름을 제거했다.
+- 2026-06-15: `TopMovesApplicationTest`, `ScoreDisplayApplicationTest`, `GameAutomationApplicationTest`에 workflow result/runner 테스트를 추가했다.
+- 2026-06-15: `GoCoachApp.kt`는 2,232줄에서 2,166줄로 줄었다. Top Moves와 Auto AI 자동 착수의 UI-local `runCatching`은 application workflow result로 이동했다.
+- 검증: `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest --tests 'com.worksoc.goaicoach.application.TopMovesApplicationTest' --tests 'com.worksoc.goaicoach.application.ScoreDisplayApplicationTest' --tests 'com.worksoc.goaicoach.application.GameAutomationApplicationTest'` 통과. 최종 통합 검증으로 `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test`도 통과.
+
+## 현재 리팩토링 완성도 평가
+
+- 주관 점수: 98.8/100.
+- 상향 요인: Top Moves, Score Sync, Auto AI의 engine call 결과 포장과 completion 선택이 application 계층으로 더 이동했다. UI는 아직 coroutine 실행과 state mutation을 소유하지만, success/failure/stale 분기 판단은 점점 정책 함수로 수렴하고 있다.
+- 남은 감점 요인: `GoCoachApp.kt`는 여전히 2,166줄이며 startup/new game, human move sync, benchmark, cache optimization 쪽에는 UI-local `runCatching`이 남아 있다. KMP 물리 이동은 문서 후보만 있고 실제 Gradle 모듈 경계는 아직 app-android 안이다.
+
+## 다음 추천 리팩토링 항목
+
+1. Human move engine sync workflow result 도입
+   - 사람 착수 후 local engine sync의 success/failure/discard 포장을 application result로 이동한다.
+   - runtime success/failure log 생성과 display apply 경계를 더 분리한다.
+
+2. Engine startup/new-game workflow result 도입
+   - startup/new-game/restore 초기화 흐름의 `runCatching`을 application runner result로 통일한다.
+   - resume prompt와 benchmark prompt가 engine startup completion과 섞이지 않도록 입력/출력 plan을 명확히 한다.
+
+3. Benchmark/cache optimization workflow result 도입
+   - benchmark와 position cache optimization의 장시간 작업 result 포장을 application 계층으로 이동한다.
+   - user notice/prompt는 UI callback만 남긴다.
+
+4. `ui/workflow` facade 패키지 검토
+   - `GoCoachApp.kt` import/handler가 계속 커지는 문제를 줄이기 위해 UI-local apply callback 묶음을 별도 파일로 분리한다.
+   - 단, Compose state mutation 소유권이 흩어지지 않도록 callback boundary부터 작게 시작한다.
+
+5. KMP 이동 1차 실제 spike
+   - `DiagnosticEventModel.kt` 또는 `ScoreSyncCompletionApplication.kt`를 shared/common 후보로 옮길 때 필요한 Gradle/패키지 제약을 실제로 확인한다.
+   - 즉시 이동보다 “이동 가능/불가 이유”를 테스트 가능한 형태로 먼저 고정한다.

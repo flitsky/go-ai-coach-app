@@ -44,6 +44,16 @@ internal sealed class TopMoveAnalysisCompletionPlan {
     ) : TopMoveAnalysisCompletionPlan()
 }
 
+internal sealed class TopMoveAnalysisWorkflowResult {
+    data class Success(
+        val update: TopMoveAnalysisUpdate,
+    ) : TopMoveAnalysisWorkflowResult()
+
+    data class Failure(
+        val error: Throwable,
+    ) : TopMoveAnalysisWorkflowResult()
+}
+
 internal data class TopMoveAnalysisExecutionContext(
     val targetState: GameState,
     val engineProfile: EngineProfile,
@@ -219,6 +229,37 @@ internal fun buildTopMoveAnalysisFailureCompletionPlan(
 
         is EngineOperationResultGuard.Discard ->
             TopMoveAnalysisCompletionPlan.Discard(guard)
+    }
+
+internal fun buildTopMoveAnalysisCompletionPlan(
+    result: TopMoveAnalysisWorkflowResult,
+    token: TopMoveAnalysisOperationToken,
+    currentState: GameState,
+    currentAnalysisKey: AnalysisCacheKey?,
+    currentSessionGeneration: Long,
+    targetState: GameState,
+    topMovesEnabled: Boolean,
+): TopMoveAnalysisCompletionPlan =
+    when (result) {
+        is TopMoveAnalysisWorkflowResult.Success ->
+            buildTopMoveAnalysisSuccessCompletionPlan(
+                token = token,
+                currentState = currentState,
+                currentAnalysisKey = currentAnalysisKey,
+                currentSessionGeneration = currentSessionGeneration,
+                update = result.update,
+            )
+
+        is TopMoveAnalysisWorkflowResult.Failure ->
+            buildTopMoveAnalysisFailureCompletionPlan(
+                token = token,
+                currentState = currentState,
+                currentAnalysisKey = currentAnalysisKey,
+                currentSessionGeneration = currentSessionGeneration,
+                targetState = targetState,
+                error = result.error,
+                topMovesEnabled = topMovesEnabled,
+            )
     }
 
 internal fun GameSessionAnalysisState.applyTopMoveAnalysisLaunchPlan(
@@ -464,6 +505,20 @@ internal suspend fun EngineSessionClient.runTopMoveAnalysisEffect(
         deep = effect.deep,
         topMovesEnabled = context.topMovesEnabled,
         cacheEnabled = context.cacheEnabled,
+    )
+
+internal suspend fun EngineSessionClient.runTopMoveAnalysisWorkflowResult(
+    effect: GameSessionEffect.RunTopMoveAnalysis,
+    context: TopMoveAnalysisExecutionContext,
+): TopMoveAnalysisWorkflowResult =
+    runCatching {
+        runTopMoveAnalysisEffect(
+            effect = effect,
+            context = context,
+        )
+    }.fold(
+        onSuccess = { update -> TopMoveAnalysisWorkflowResult.Success(update) },
+        onFailure = { error -> TopMoveAnalysisWorkflowResult.Failure(error) },
     )
 
 internal fun planShowTopMoves(

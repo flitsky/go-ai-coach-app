@@ -215,6 +215,24 @@ internal suspend fun EngineSessionClient.runAutoAiTurnEffect(
     )
 }
 
+internal suspend fun EngineSessionClient.runAutoAiTurnWorkflowResult(
+    effect: GameSessionEffect.RunAutoAiTurn,
+    executionContext: AutoAiTurnRunExecutionContext,
+    operationRequest: EngineOperationRequest? = null,
+    diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
+): AutoAiTurnWorkflowResult =
+    runCatching {
+        runAutoAiTurnEffect(
+            effect = effect,
+            executionContext = executionContext,
+            operationRequest = operationRequest,
+            diagnosticEventLog = diagnosticEventLog,
+        )
+    }.fold(
+        onSuccess = { display -> AutoAiTurnWorkflowResult.Success(display) },
+        onFailure = { error -> AutoAiTurnWorkflowResult.Failure(error) },
+    )
+
 internal suspend fun EngineSessionClient.runAutoAiEndgameDisplayPlan(
     plan: AutoAiTurnEndgamePlan.Resolve,
     previousSnapshots: List<ScoreSnapshot>,

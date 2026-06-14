@@ -784,6 +784,57 @@ class GameAutomationApplicationTest {
     }
 
     @Test
+    fun autoAiTurnWorkflowResultWrapsSuccessAndFailure() = runBlocking {
+        val initialState = GameState.empty()
+        val nextState = initialState.play(Move.Pass(StoneColor.Black))
+        val playLevel = PlayLevelSetting(group = PlayLevelGroup.Beginner, level = 7)
+        val searchTimeSettings = SearchTimeSettings()
+        val runPlan = AutoAiTurnRunPlan(
+            delayMillis = 0L,
+            context = AutoAiTurnExecutionContext(
+                turnState = initialState,
+                aiPlayer = StoneColor.Black,
+                playLevel = playLevel,
+                analysisLimit = playLevel.aiMoveAnalysisLimitWith(searchTimeSettings),
+                searchMode = EngineSearchMode.GtpStatefulFast,
+                isolateSearchCache = false,
+                previousReviewCandidates = emptyList(),
+            ),
+        )
+        val effect = GameSessionEffect.RunAutoAiTurn(runPlan)
+        val executionContext = AutoAiTurnRunExecutionContext(
+            currentProfile = EngineProfile(),
+            searchTimeSettings = searchTimeSettings,
+            previousSnapshots = emptyList(),
+        )
+
+        val success = FakeAutoAiEngineSessionClient(
+            result = autoAiTurnResult(state = nextState, estimate = null),
+        ).runAutoAiTurnWorkflowResult(
+            effect = effect,
+            executionContext = executionContext,
+        )
+        val failure = FakeAutoAiEngineSessionClient(
+            result = autoAiTurnResult(state = nextState, estimate = null),
+            turnError = IllegalStateException("turn failed"),
+        ).runAutoAiTurnWorkflowResult(
+            effect = effect,
+            executionContext = executionContext,
+        )
+        val completion = buildAutoAiTurnCompletionPlan(
+            result = success,
+            token = autoAiTurnOperationToken(runPlan, sessionGeneration = 2L),
+            currentState = initialState,
+            currentSessionGeneration = 2L,
+        )
+
+        assertTrue(success is AutoAiTurnWorkflowResult.Success)
+        assertTrue(completion is AutoAiTurnCompletionPlan.ApplySuccess)
+        assertTrue(failure is AutoAiTurnWorkflowResult.Failure)
+        assertEquals("turn failed", (failure as AutoAiTurnWorkflowResult.Failure).error.message)
+    }
+
+    @Test
     fun autoAiEndgameDisplayRunnerBuildsResolvedDisplayPlan() = runBlocking {
         val state = GameState.empty()
             .play(Move.Pass(StoneColor.Black))
@@ -963,6 +1014,7 @@ private class FakeAutoAiEngineSessionClient(
     private val result: AutoAiTurnResult,
     private val endgameResolution: AiEndgameResolution? = null,
     private val endgameError: Throwable? = null,
+    private val turnError: Throwable? = null,
 ) : EngineSessionClient {
     var currentState: GameState? = null
         private set
@@ -1047,6 +1099,7 @@ private class FakeAutoAiEngineSessionClient(
         this.searchTimeSettings = searchTimeSettings
         this.searchMode = searchMode
         this.isolateSearchCache = isolateSearchCache
+        turnError?.let { throw it }
         return result
     }
 

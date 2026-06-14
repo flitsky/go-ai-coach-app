@@ -28,11 +28,10 @@ import com.worksoc.goaicoach.application.AutoAiTurnScheduleValidationPlan
 import com.worksoc.goaicoach.application.AutoAiTurnUiState
 import com.worksoc.goaicoach.application.autoAiEndgameOperationToken
 import com.worksoc.goaicoach.application.autoAiTurnOperationToken
+import com.worksoc.goaicoach.application.buildAutoAiTurnCompletionPlan
 import com.worksoc.goaicoach.application.buildAutoAiTurnFailureDisplayPlan
 import com.worksoc.goaicoach.application.buildAutoAiTurnEndgamePlan
 import com.worksoc.goaicoach.application.buildAutoAiTurnFollowUpPlan
-import com.worksoc.goaicoach.application.buildAutoAiTurnFailureCompletionPlan
-import com.worksoc.goaicoach.application.buildAutoAiTurnSuccessCompletionPlan
 import com.worksoc.goaicoach.application.buildAutoAiEndgameCompletionPlan
 import com.worksoc.goaicoach.application.buildDebugReportCopyPlan
 import com.worksoc.goaicoach.application.buildEngineStartupFailureDisplayPlan
@@ -49,16 +48,13 @@ import com.worksoc.goaicoach.application.buildSavedSessionCheckPlan
 import com.worksoc.goaicoach.application.buildScoreEstimateFailureDisplayPlan
 import com.worksoc.goaicoach.application.buildScoreEstimateRequestPlan
 import com.worksoc.goaicoach.application.buildScoringRuleChangePlan
-import com.worksoc.goaicoach.application.buildScoreSyncFailureCompletionPlan
-import com.worksoc.goaicoach.application.buildScoreSyncSuccessCompletionPlan
 import com.worksoc.goaicoach.application.buildStartConfiguredGamePlan
 import com.worksoc.goaicoach.application.buildInitialUserPreferencesPlan
 import com.worksoc.goaicoach.application.buildPlayerSetupChangePlan
 import com.worksoc.goaicoach.application.buildPositionAnalysisCacheOptimizationPlan
 import com.worksoc.goaicoach.application.buildPositionAnalysisCacheOptimizationPrompt
 import com.worksoc.goaicoach.application.buildGameSessionControllerState
-import com.worksoc.goaicoach.application.buildTopMoveAnalysisFailureCompletionPlan
-import com.worksoc.goaicoach.application.buildTopMoveAnalysisSuccessCompletionPlan
+import com.worksoc.goaicoach.application.buildTopMoveAnalysisCompletionPlan
 import com.worksoc.goaicoach.application.buildUserPreferencesSnapshot
 import com.worksoc.goaicoach.application.EndgameFailureDisplayPlan
 import com.worksoc.goaicoach.application.EngineBenchmarkDefaultSamplesPerVisit
@@ -119,12 +115,12 @@ import com.worksoc.goaicoach.application.RuntimeEventLogPort
 import com.worksoc.goaicoach.application.TopMoveAnalysisExecutionContext
 import com.worksoc.goaicoach.application.TopMoveAnalysisCompletionPlan
 import com.worksoc.goaicoach.application.TopMoveAnalysisFailureDisplayPlan
-import com.worksoc.goaicoach.application.runTopMoveAnalysisEffect
+import com.worksoc.goaicoach.application.runTopMoveAnalysisWorkflowResult
 import com.worksoc.goaicoach.application.ScoringRuleChangePlan
 import com.worksoc.goaicoach.application.runAutoAiEndgameEffect
 import com.worksoc.goaicoach.application.RestoredGameSyncExecutionContext
 import com.worksoc.goaicoach.application.runRestoredGameSyncEffect
-import com.worksoc.goaicoach.application.runAutoAiTurnEffect
+import com.worksoc.goaicoach.application.runAutoAiTurnWorkflowResult
 import com.worksoc.goaicoach.application.runEngineBackedNewGameEffect
 import com.worksoc.goaicoach.application.runEngineOperationInScope
 import com.worksoc.goaicoach.application.runEngineStartupEffect
@@ -167,7 +163,7 @@ import com.worksoc.goaicoach.application.ShowTopMovesPlan
 import com.worksoc.goaicoach.application.ScoreEstimateDisplayPlan
 import com.worksoc.goaicoach.application.ScoreEstimateRequestPlan
 import com.worksoc.goaicoach.application.ScoreSyncCompletionPlan
-import com.worksoc.goaicoach.application.ScoreSyncCompletionRequest
+import com.worksoc.goaicoach.application.runScoreSyncWorkflowCompletionPlan
 import com.worksoc.goaicoach.application.scoreEstimateOperationToken
 import com.worksoc.goaicoach.application.toScoreEstimateLaunchStateUpdate
 import com.worksoc.goaicoach.application.SavedGameRestorePlan
@@ -841,76 +837,25 @@ private fun GoCoachScreen(
             }
         }
 
-    fun scoreSyncCompletionRequest(
-        operation: EngineOperationRequest,
-        followUpAnalysisState: GameState,
-    ): ScoreSyncCompletionRequest =
-        ScoreSyncCompletionRequest(
-            operation = operation,
-            currentState = gameState,
-            currentSessionGeneration = runtimeState.sessionGeneration,
-            followUpAnalysisState = followUpAnalysisState,
-        )
-
-    fun applyScoreSyncSuccessCompletion(
-        operation: EngineOperationRequest,
-        display: ScoreEstimateDisplayPlan,
-        followUpAnalysisState: GameState,
-    ): GameState? =
-        applyScoreSyncCompletionPlan(
-            buildScoreSyncSuccessCompletionPlan(
-                request = scoreSyncCompletionRequest(
-                    operation = operation,
-                    followUpAnalysisState = followUpAnalysisState,
-                ),
-                display = display,
-            ),
-        )
-
-    fun applyScoreSyncFailureCompletion(
-        operation: EngineOperationRequest,
-        error: Throwable,
-        fallbackMessage: String,
-        followUpAnalysisState: GameState,
-    ): GameState? =
-        applyScoreSyncCompletionPlan(
-            buildScoreSyncFailureCompletionPlan(
-                request = scoreSyncCompletionRequest(
-                    operation = operation,
-                    followUpAnalysisState = followUpAnalysisState,
-                ),
-                error = error,
-                fallbackMessage = fallbackMessage,
-            ),
-        )
-
     suspend fun runScoreSyncCompletion(
         operation: EngineOperationRequest,
         followUpAnalysisState: GameState,
         fallbackMessage: String,
         block: suspend () -> ScoreEstimateDisplayPlan,
-    ): GameState? {
-        var followUpState: GameState? = null
-        runCatching {
-            withContext(Dispatchers.IO) {
-                block()
-            }
-        }.onSuccess { display ->
-            followUpState = applyScoreSyncSuccessCompletion(
+    ): GameState? =
+        applyScoreSyncCompletionPlan(
+            runScoreSyncWorkflowCompletionPlan(
                 operation = operation,
-                display = display,
+                currentState = gameState,
+                currentSessionGeneration = runtimeState.sessionGeneration,
                 followUpAnalysisState = followUpAnalysisState,
-            )
-        }.onFailure { error ->
-            followUpState = applyScoreSyncFailureCompletion(
-                operation = operation,
-                error = error,
                 fallbackMessage = fallbackMessage,
-                followUpAnalysisState = followUpAnalysisState,
-            )
-        }
-        return followUpState
-    }
+            ) {
+                withContext(Dispatchers.IO) {
+                    block()
+                }
+            },
+        )
 
     fun applyScoreEstimateFailureDisplayPlan(error: Throwable) {
         applyCoreSessionState(
@@ -1103,9 +1048,9 @@ private fun GoCoachScreen(
         )
 
         launchTrackedEngineOperation(operationToken.operation) {
-            runCatching {
+            val result =
                 withContext(Dispatchers.IO) {
-                    engineClient.runTopMoveAnalysisEffect(
+                    engineClient.runTopMoveAnalysisWorkflowResult(
                         effect = effect,
                         context = TopMoveAnalysisExecutionContext(
                             targetState = targetState,
@@ -1116,29 +1061,17 @@ private fun GoCoachScreen(
                         ),
                     )
                 }
-            }.onSuccess { update ->
-                applyTopMoveAnalysisCompletionPlan(
-                    buildTopMoveAnalysisSuccessCompletionPlan(
-                        token = operationToken,
-                        currentState = gameState,
-                        currentAnalysisKey = analysisState.lastAnalysisKey,
-                        currentSessionGeneration = runtimeState.sessionGeneration,
-                        update = update,
-                    )
-                )
-            }.onFailure { error ->
-                applyTopMoveAnalysisCompletionPlan(
-                    buildTopMoveAnalysisFailureCompletionPlan(
-                        token = operationToken,
-                        currentState = gameState,
-                        currentAnalysisKey = analysisState.lastAnalysisKey,
-                        currentSessionGeneration = runtimeState.sessionGeneration,
-                        targetState = targetState,
-                        error = error,
-                        topMovesEnabled = currentTopMovesEnabled,
-                    )
-                )
-            }
+            applyTopMoveAnalysisCompletionPlan(
+                buildTopMoveAnalysisCompletionPlan(
+                    result = result,
+                    token = operationToken,
+                    currentState = gameState,
+                    currentAnalysisKey = analysisState.lastAnalysisKey,
+                    currentSessionGeneration = runtimeState.sessionGeneration,
+                    targetState = targetState,
+                    topMovesEnabled = currentTopMovesEnabled,
+                ),
+            )
         }
     }
 
@@ -1726,9 +1659,9 @@ private fun GoCoachScreen(
                     )
                     markEngineOperationStarted(turnOperationToken.operation.operationId)
                     var followUpPlan: AutoAiTurnFollowUpPlan = AutoAiTurnFollowUpPlan.None
-                    runCatching {
+                    val turnResult =
                         withContext(Dispatchers.IO) {
-                            engineClient.runAutoAiTurnEffect(
+                            engineClient.runAutoAiTurnWorkflowResult(
                                 effect = GameSessionEffect.RunAutoAiTurn(turnRunPlan),
                                 executionContext = AutoAiTurnRunExecutionContext(
                                     currentProfile = runtimeState.engineProfile,
@@ -1739,28 +1672,29 @@ private fun GoCoachScreen(
                                 diagnosticEventLog = diagnosticEventLog,
                             )
                         }
-                    }.onSuccess { display ->
-                        followUpPlan = applyAutoAiTurnSuccessCompletion(
-                            buildAutoAiTurnSuccessCompletionPlan(
-                                token = turnOperationToken,
-                                currentState = gameState,
-                                currentSessionGeneration = runtimeState.sessionGeneration,
-                                display = display,
-                            ),
-                            turnContext = turnContext,
-                            turnStartMillis = turnStartMillis,
-                        )
-                    }.onFailure { error ->
-                        applyAutoAiTurnFailureCompletion(
-                            buildAutoAiTurnFailureCompletionPlan(
-                                token = turnOperationToken,
-                                currentState = gameState,
-                                currentSessionGeneration = runtimeState.sessionGeneration,
-                                error = error,
-                            ),
-                            turnContext = turnContext,
-                            turnStartMillis = turnStartMillis,
-                        )
+                    val turnCompletion = buildAutoAiTurnCompletionPlan(
+                        result = turnResult,
+                        token = turnOperationToken,
+                        currentState = gameState,
+                        currentSessionGeneration = runtimeState.sessionGeneration,
+                    )
+                    followUpPlan = when (turnCompletion) {
+                        is AutoAiTurnCompletionPlan.ApplySuccess ->
+                            applyAutoAiTurnSuccessCompletion(
+                                completion = turnCompletion,
+                                turnContext = turnContext,
+                                turnStartMillis = turnStartMillis,
+                            )
+
+                        is AutoAiTurnCompletionPlan.ApplyFailure,
+                        is AutoAiTurnCompletionPlan.Discard -> {
+                            applyAutoAiTurnFailureCompletion(
+                                completion = turnCompletion,
+                                turnContext = turnContext,
+                                turnStartMillis = turnStartMillis,
+                            )
+                            AutoAiTurnFollowUpPlan.None
+                        }
                     }
                     markEngineOperationCompleted(turnOperationToken.operation.operationId)
                     autoAiTurnUiState = autoAiTurnUiState.completeAutoAiTurnRun()

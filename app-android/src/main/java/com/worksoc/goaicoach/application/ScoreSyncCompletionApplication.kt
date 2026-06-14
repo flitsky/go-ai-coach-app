@@ -99,3 +99,35 @@ internal fun buildScoreSyncFailureCompletionPlan(
         is EngineOperationApplyPlan.Discard ->
             ScoreSyncCompletionPlan.Discard(applyPlan.discard)
     }
+
+internal suspend fun runScoreSyncWorkflowCompletionPlan(
+    operation: EngineOperationRequest,
+    currentState: GameState,
+    currentSessionGeneration: Long,
+    followUpAnalysisState: GameState,
+    fallbackMessage: String,
+    runDisplay: suspend () -> ScoreEstimateDisplayPlan,
+): ScoreSyncCompletionPlan =
+    runCatching {
+        runDisplay()
+    }.fold(
+        onSuccess = { display ->
+            buildScoreSyncSuccessCompletionPlan(
+                operation = operation,
+                currentState = currentState,
+                currentSessionGeneration = currentSessionGeneration,
+                display = display,
+                followUpAnalysisState = followUpAnalysisState,
+            )
+        },
+        onFailure = { error ->
+            buildScoreSyncFailureCompletionPlan(
+                operation = operation,
+                currentState = currentState,
+                currentSessionGeneration = currentSessionGeneration,
+                error = error,
+                fallbackMessage = fallbackMessage,
+                followUpAnalysisState = followUpAnalysisState,
+            )
+        },
+    )

@@ -48,6 +48,16 @@ internal sealed class AutoAiTurnCompletionPlan {
     ) : AutoAiTurnCompletionPlan()
 }
 
+internal sealed class AutoAiTurnWorkflowResult {
+    data class Success(
+        val display: AutoAiTurnDisplayPlan,
+    ) : AutoAiTurnWorkflowResult()
+
+    data class Failure(
+        val error: Throwable,
+    ) : AutoAiTurnWorkflowResult()
+}
+
 internal fun buildAutoAiTurnSuccessCompletionPlan(
     token: AutoAiTurnOperationToken,
     currentState: GameState,
@@ -86,6 +96,30 @@ internal fun buildAutoAiTurnFailureCompletionPlan(
 
         is EngineOperationResultGuard.Discard ->
             AutoAiTurnCompletionPlan.Discard(guard)
+    }
+
+internal fun buildAutoAiTurnCompletionPlan(
+    result: AutoAiTurnWorkflowResult,
+    token: AutoAiTurnOperationToken,
+    currentState: GameState,
+    currentSessionGeneration: Long,
+): AutoAiTurnCompletionPlan =
+    when (result) {
+        is AutoAiTurnWorkflowResult.Success ->
+            buildAutoAiTurnSuccessCompletionPlan(
+                token = token,
+                currentState = currentState,
+                currentSessionGeneration = currentSessionGeneration,
+                display = result.display,
+            )
+
+        is AutoAiTurnWorkflowResult.Failure ->
+            buildAutoAiTurnFailureCompletionPlan(
+                token = token,
+                currentState = currentState,
+                currentSessionGeneration = currentSessionGeneration,
+                error = result.error,
+            )
     }
 
 internal data class AutoAiEndgameOperationToken(

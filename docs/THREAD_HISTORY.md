@@ -1340,3 +1340,6 @@
 - 자동 AI success/failure/endgame 적용부를 `applyAutoAiTurnSuccessCompletion()`, `applyAutoAiTurnFailureCompletion()`, `applyAutoAiEndgamePlan()`으로 나눴다. UI state mutation은 유지하지만 긴 중첩 분기는 줄었다.
 - KMP 이동 후보를 재평가했고 `DiagnosticEventModel.kt`, `AutoAiCompletionApplication.kt`, `ScoreSyncCompletionApplication.kt`를 1순위 정책 파일로 분류했다. 현재 UI-local workflow metric은 Top Moves 82줄, Score Sync 175줄, Auto AI 126줄로 기록했다.
 - 이번 5차 리팩토링 배치의 최종 검증으로 `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test`를 실행했고 통과했다.
+- 다음 6차 리팩토링으로 `TopMoveAnalysisWorkflowResult`/`runTopMoveAnalysisWorkflowResult()`, `runScoreSyncWorkflowCompletionPlan()`, `AutoAiTurnWorkflowResult`/`runAutoAiTurnWorkflowResult()`를 추가했다. Top Moves, Score Sync, Auto AI 자동 착수의 success/failure result 포장과 completion 선택이 application 계층으로 더 이동했다.
+- `TopMovesApplicationTest`, `ScoreDisplayApplicationTest`, `GameAutomationApplicationTest`에 workflow result/runner 테스트를 추가했다. `GoCoachApp.kt`는 2,232줄에서 2,166줄로 줄었고, Top Moves/Auto AI 자동 착수 경로의 UI-local `runCatching`이 제거됐다.
+- 이번 6차 리팩토링 배치의 targeted 검증과 최종 `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test`가 모두 통과했다. 현재 리팩토링 완성도는 98.8/100으로 평가했다.

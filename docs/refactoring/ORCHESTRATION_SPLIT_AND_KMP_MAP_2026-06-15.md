@@ -165,3 +165,18 @@
   - 1순위: `DiagnosticEventModel.kt`, `AutoAiCompletionApplication.kt`, `ScoreSyncCompletionApplication.kt`
   - 2순위: `AutoAiPolicyApplication.kt`, `TopMovesApplication.kt`의 순수 plan/build 부분
   - 보류: `AutoAiRunnerApplication.kt`, `ScoreEstimateRunnerApplication.kt`, `DiagnosticEventObserverApplication.kt`는 engine/coroutine runner 성격이 강해 app-service layer로 유지한다.
+
+## 2026-06-15 6차 리팩토링 반영 사항
+
+- `TopMoveAnalysisWorkflowResult`와 `runTopMoveAnalysisWorkflowResult()`를 추가해 Top Moves engine call 성공/실패 포장을 application runner로 이동했다.
+- `runScoreSyncWorkflowCompletionPlan()`을 추가해 score sync success/failure/discard completion 생성 책임을 application 함수로 승격했다.
+- `AutoAiTurnWorkflowResult`, `buildAutoAiTurnCompletionPlan()`, `runAutoAiTurnWorkflowResult()`를 추가해 Auto AI 자동 착수 결과 포장과 completion 선택을 UI 밖으로 이동했다.
+- `GoCoachApp.kt`는 2,232줄에서 2,166줄로 줄었고, Top Moves/Auto AI 자동 착수 경로의 UI-local `runCatching`이 제거됐다.
+- 현재 UI-local workflow ownership metric:
+  - Top Moves: engine call result 포장은 application, UI는 `withContext` 실행과 completion apply만 담당
+  - Score Sync: completion 생성은 application, UI는 IO 실행 block과 state apply만 담당
+  - Auto AI: turn result 포장과 completion 선택은 application, UI는 runtime log/state apply/endgame follow-up만 담당
+- 다음 KMP 관점:
+  - 실제 이동 1순위는 여전히 `DiagnosticEventModel.kt`, `ScoreSyncCompletionApplication.kt`다.
+  - `TopMovesApplication.kt`와 `AutoAiCompletionApplication.kt`는 engine client를 직접 참조하지 않는 completion/result policy 일부부터 잘라낼 수 있다.
+  - `AutoAiRunnerApplication.kt`와 `TopMovesApplication.kt`의 runner 함수는 `EngineSessionClient` 의존이 있으므로 app-service 또는 middleware-service로 남기는 편이 현재는 더 안전하다.
