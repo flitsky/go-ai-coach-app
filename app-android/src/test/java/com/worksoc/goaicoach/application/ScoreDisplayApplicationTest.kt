@@ -255,6 +255,23 @@ class ScoreDisplayApplicationTest {
     }
 
     @Test
+    fun restoredGameSyncEffectRunnerUsesEffectStateAndContextProfile() = runBlocking {
+        val state = GameState.empty()
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+        val profile = EngineProfile(name = "restored")
+        val client = FakeScoreEngineSessionClient()
+
+        val plan = client.runRestoredGameSyncEffect(
+            effect = GameSessionEffect.SyncRestoredGame(state),
+            context = RestoredGameSyncExecutionContext(profile = profile),
+        )
+
+        assertEquals(state, client.configuredSyncState)
+        assertEquals(profile, client.configuredSyncProfile)
+        assertEquals("Previous game restored and engine state synchronized.", plan.engineMessage)
+    }
+
+    @Test
     fun localScoreEstimateDisplayPlanClearsEngineEstimateAndRecordsLocalSnapshot() {
         val state = GameState.empty()
 
@@ -324,6 +341,8 @@ private class FakeScoreEngineSessionClient : EngineSessionClient {
         private set
     var configuredSyncState: GameState? = null
         private set
+    var configuredSyncProfile: EngineProfile? = null
+        private set
 
     override val capabilities: EngineSessionCapabilities =
         EngineSessionCapabilities(supportsDeviceBenchmark = false)
@@ -376,6 +395,7 @@ private class FakeScoreEngineSessionClient : EngineSessionClient {
         profile: EngineProfile,
     ): ScoreEstimate {
         configuredSyncState = state
+        configuredSyncProfile = profile
         return testEstimate()
     }
 

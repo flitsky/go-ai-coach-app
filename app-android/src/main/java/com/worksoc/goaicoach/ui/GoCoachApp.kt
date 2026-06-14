@@ -103,7 +103,8 @@ import com.worksoc.goaicoach.application.TopMoveAnalysisExecutionContext
 import com.worksoc.goaicoach.application.runTopMoveAnalysisEffect
 import com.worksoc.goaicoach.application.ScoringRuleChangePlan
 import com.worksoc.goaicoach.application.runAutoAiEndgameDisplayPlan
-import com.worksoc.goaicoach.application.runRestoredGameSyncDisplayPlan
+import com.worksoc.goaicoach.application.RestoredGameSyncExecutionContext
+import com.worksoc.goaicoach.application.runRestoredGameSyncEffect
 import com.worksoc.goaicoach.application.runAutoAiTurnDisplayPlan
 import com.worksoc.goaicoach.application.runPositionAnalysisCacheOptimizationEffect
 import com.worksoc.goaicoach.application.runScoreEstimateEffect
@@ -1133,9 +1134,11 @@ private fun GoCoachScreen(
         scope.launch {
             runCatching {
                 withContext(Dispatchers.IO) {
-                    engineClient.runRestoredGameSyncDisplayPlan(
-                        state = restoredState,
-                        profile = restoredProfile,
+                    engineClient.runRestoredGameSyncEffect(
+                        effect = GameSessionEffect.SyncRestoredGame(restoredState),
+                        context = RestoredGameSyncExecutionContext(
+                            profile = restoredProfile,
+                        ),
                     )
                 }
             }.onSuccess { score ->

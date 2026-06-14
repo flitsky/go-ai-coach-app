@@ -203,6 +203,19 @@ internal suspend fun EngineSessionClient.runRestoredGameSyncDisplayPlan(
     )
 }
 
+internal data class RestoredGameSyncExecutionContext(
+    val profile: EngineProfile,
+)
+
+internal suspend fun EngineSessionClient.runRestoredGameSyncEffect(
+    effect: GameSessionEffect.SyncRestoredGame,
+    context: RestoredGameSyncExecutionContext,
+): ScoreEstimateDisplayPlan =
+    runRestoredGameSyncDisplayPlan(
+        state = effect.gameState,
+        profile = context.profile,
+    )
+
 internal fun buildLocalScoreEstimateDisplayPlan(
     state: GameState,
     previousSnapshots: List<ScoreSnapshot>,

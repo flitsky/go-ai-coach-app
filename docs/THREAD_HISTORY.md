@@ -1221,3 +1221,6 @@
 - 사용자가 같은 형식으로 다음 리팩토링 진행과 보고를 요청했다.
 - 다음 리팩토링으로 startup benchmark 실행부를 `GameSessionEffect.RunStartupBenchmark` runner로 연결했다. `StartupBenchmarkExecutionContext`와 `EngineSessionClient.runStartupBenchmarkEffect()`를 추가해 UI가 raw `runStartupBenchmark(...)`를 직접 호출하지 않도록 했다. UI는 여전히 gate, settle delay, progress 표시, 저장소 save 같은 앱서비스 조율을 담당하지만 엔진 호출 경계는 application effect 패턴으로 정리됐다.
 - `EngineDeviceBenchmarkApplicationTest`에 startup benchmark effect runner 위임 테스트를 추가했고, `GameSessionControllerTest`와 함께 관련 application 테스트가 통과했다.
+- 사용자가 다음 리팩토링 진행과 결과 보고 시 현재 리팩토링 완성도 표현을 요청했다.
+- 다음 리팩토링으로 saved game restore sync 실행부를 `GameSessionEffect.SyncRestoredGame` runner로 연결했다. `RestoredGameSyncExecutionContext`와 `EngineSessionClient.runRestoredGameSyncEffect()`를 추가해 UI가 raw `runRestoredGameSyncDisplayPlan(...)`을 직접 호출하지 않도록 했다.
+- `ScoreDisplayApplicationTest`에 restore sync effect runner가 effect의 `gameState`와 context의 `profile`을 그대로 engine session client에 위임하는 테스트를 추가했고, 관련 application 테스트가 통과했다.
