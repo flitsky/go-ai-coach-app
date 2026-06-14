@@ -272,10 +272,44 @@ class HumanMoveApplicationTest {
         assertEquals(move, client.move)
         assertEquals(listOf(previousCandidate), client.previousReviewCandidates)
     }
+
+    @Test
+    fun humanEngineSyncWorkflowResultWrapsSuccessAndFailure() = runBlocking {
+        val afterMove = GameState.empty()
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+        val move = afterMove.moves.single()
+        val plan = HumanEngineSyncRunPlan(
+            afterMove = afterMove,
+            profile = EngineProfile(name = "human-sync"),
+            move = move,
+            previousReviewCandidates = emptyList(),
+        )
+        val expected = LocalEngineMoveResult(
+            estimate = ScoreEstimate(
+                status = EngineStatus.ready("estimated"),
+                whiteScoreLead = 0.0,
+                whiteWinRate = 0.5,
+                summary = "estimate",
+            ),
+        )
+
+        val success = FakeHumanEngineSessionClient(expected)
+            .runHumanEngineSyncWorkflowResult(GameSessionEffect.SyncHumanMove(plan))
+        val failure = FakeHumanEngineSessionClient(
+            result = expected,
+            failure = IllegalStateException("sync failed"),
+        ).runHumanEngineSyncWorkflowResult(GameSessionEffect.SyncHumanMove(plan))
+
+        assertTrue(success is HumanEngineSyncWorkflowResult.Success)
+        assertEquals(expected, (success as HumanEngineSyncWorkflowResult.Success).result)
+        assertTrue(failure is HumanEngineSyncWorkflowResult.Failure)
+        assertEquals("sync failed", (failure as HumanEngineSyncWorkflowResult.Failure).error.message)
+    }
 }
 
 private class FakeHumanEngineSessionClient(
     private val result: LocalEngineMoveResult,
+    private val failure: Throwable? = null,
 ) : EngineSessionClient {
     var afterMove: GameState? = null
         private set
@@ -356,6 +390,7 @@ private class FakeHumanEngineSessionClient(
         this.profile = profile
         this.move = move
         this.previousReviewCandidates = previousReviewCandidates
+        failure?.let { throw it }
         return result
     }
 

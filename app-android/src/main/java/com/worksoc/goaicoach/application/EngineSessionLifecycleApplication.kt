@@ -2,6 +2,11 @@ package com.worksoc.goaicoach.application
 
 import com.worksoc.goaicoach.shared.EngineStatus
 
+internal sealed class EngineStartupWorkflowResult {
+    data class Success(val result: EngineStartupResult) : EngineStartupWorkflowResult()
+    data class Failure(val error: Throwable) : EngineStartupWorkflowResult()
+}
+
 internal suspend fun EngineSessionClient.runEngineStartupEffect(
     effect: GameSessionEffect.StartEngineSession,
     operationRequest: EngineOperationRequest? = null,
@@ -23,6 +28,22 @@ internal suspend fun EngineSessionClient.runEngineStartupEffect(
             state = effect.state,
         )
     }
+
+internal suspend fun EngineSessionClient.runEngineStartupWorkflowResult(
+    effect: GameSessionEffect.StartEngineSession,
+    operationRequest: EngineOperationRequest? = null,
+    diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
+): EngineStartupWorkflowResult =
+    runCatching {
+        runEngineStartupEffect(
+            effect = effect,
+            operationRequest = operationRequest,
+            diagnosticEventLog = diagnosticEventLog,
+        )
+    }.fold(
+        onSuccess = { result -> EngineStartupWorkflowResult.Success(result) },
+        onFailure = { error -> EngineStartupWorkflowResult.Failure(error) },
+    )
 
 internal suspend fun EngineSessionClient.runEngineBackedNewGameEffect(
     effect: GameSessionEffect.StartEngineBackedGame,
@@ -46,6 +67,22 @@ internal suspend fun EngineSessionClient.runEngineBackedNewGameEffect(
             ruleset = effect.ruleset,
         )
     }
+
+internal suspend fun EngineSessionClient.runEngineBackedNewGameWorkflowResult(
+    effect: GameSessionEffect.StartEngineBackedGame,
+    operationRequest: EngineOperationRequest? = null,
+    diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
+): EngineStartupWorkflowResult =
+    runCatching {
+        runEngineBackedNewGameEffect(
+            effect = effect,
+            operationRequest = operationRequest,
+            diagnosticEventLog = diagnosticEventLog,
+        )
+    }.fold(
+        onSuccess = { result -> EngineStartupWorkflowResult.Success(result) },
+        onFailure = { error -> EngineStartupWorkflowResult.Failure(error) },
+    )
 
 internal suspend fun EngineSessionClient.runEngineUndoEffect(
     effect: GameSessionEffect.UndoEngineMoves,

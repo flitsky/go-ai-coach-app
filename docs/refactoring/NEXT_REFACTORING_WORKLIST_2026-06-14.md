@@ -617,3 +617,40 @@
 5. KMP 이동 1차 실제 spike
    - `DiagnosticEventModel.kt` 또는 `ScoreSyncCompletionApplication.kt`를 shared/common 후보로 옮길 때 필요한 Gradle/패키지 제약을 실제로 확인한다.
    - 즉시 이동보다 “이동 가능/불가 이유”를 테스트 가능한 형태로 먼저 고정한다.
+
+## 2026-06-15 추가 진행 로그: Peripheral Workflow Result 정리
+
+- 2026-06-15: `HumanEngineSyncWorkflowResult`, `buildHumanEngineSyncCompletionPlan()`, `runHumanEngineSyncWorkflowResult()`를 추가했다. 사람 착수 후 엔진 동기화의 success/failure/discard 포장이 application 계층으로 이동했다.
+- 2026-06-15: `EngineStartupWorkflowResult`, `runEngineStartupWorkflowResult()`, `runEngineBackedNewGameWorkflowResult()`, `buildEngineStartupDisplayPlan()`을 추가했다. 엔진 초기화와 새 AI 대국 시작 흐름의 예외 포장이 application runner로 통일됐다.
+- 2026-06-15: `StartupBenchmarkWorkflowResult`와 `runStartupBenchmarkWorkflowResult()`를 추가했다. 벤치마크 측정 실패/성공 포장은 application runner가 담당하고, UI는 저장소 반영과 표시만 담당한다.
+- 2026-06-15: `PositionAnalysisCacheOptimizationWorkflowResult`와 `runPositionAnalysisCacheOptimizationWorkflowResult()`를 추가했다. post-game cache optimization의 성공/실패 포장도 application 계층으로 이동했다.
+- 2026-06-15: KMP 이동 1차 spike 결과를 `docs/refactoring/KMP_MOVE_SPIKE_2026-06-15.md`에 정리했다. `LayeringContractTest`의 platform-free 후보군에 `EngineDeviceBenchmarkApplication.kt`, `EngineSessionLifecycleApplication.kt`, `EngineStartupApplication.kt`, `HumanMoveApplication.kt`, `PositionAnalysisCacheOptimization.kt`를 추가했다.
+- 2026-06-15: `ui/workflow` facade는 실제 파일 분리 대신 보류했다. 이유는 Compose local state mutation을 성급히 여러 파일로 흩으면 오히려 소유권 추적이 어려워지기 때문이다. 다음 단계에서 state holder 또는 controller boundary와 함께 분리하는 것이 낫다.
+- 2026-06-15: `GoCoachApp.kt`는 2,166줄에서 2,161줄로 소폭 줄었다. 줄 수보다 중요한 변화는 startup/new game, human sync, benchmark/cache optimization에서 UI-local `runCatching`이 제거된 점이다.
+- 검증: `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest --tests 'com.worksoc.goaicoach.application.HumanMoveApplicationTest' --tests 'com.worksoc.goaicoach.application.EngineSessionLifecycleApplicationTest' --tests 'com.worksoc.goaicoach.application.EngineStartupApplicationTest' --tests 'com.worksoc.goaicoach.application.EngineDeviceBenchmarkApplicationTest' --tests 'com.worksoc.goaicoach.application.PositionAnalysisCacheOptimizationTest' --tests 'com.worksoc.goaicoach.architecture.LayeringContractTest'` 통과. 최종 통합 검증으로 `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test`도 통과.
+
+## 현재 리팩토링 완성도 평가
+
+- 주관 점수: 99.0/100.
+- 상향 요인: 핵심 엔진 호출군뿐 아니라 주변 workflow(startup/new game, human sync, benchmark/cache optimization)의 success/failure 포장도 application 계층으로 통일됐다. KMP 후보군은 문서뿐 아니라 `LayeringContractTest`로 platform-free 상태를 자동 확인한다.
+- 남은 감점 요인: `GoCoachApp.kt`는 여전히 2,161줄이고, engine undo/score estimate/human engine sync runtime log apply 등 몇몇 화면 상태 mutation은 UI-local이다. 실제 Gradle 모듈 이동은 아직 수행하지 않았다.
+
+## 다음 추천 리팩토링 항목
+
+1. Engine undo workflow result 도입
+   - `undoEngineBackedTurn()`의 UI-local `runCatching`을 application result로 이동한다.
+   - undo success/failure display plan을 추가해 엔진 undo도 다른 workflow와 동일한 completion 패턴을 쓰게 한다.
+
+2. Score estimate workflow result 도입
+   - `requestEngineScoreEstimate()`의 직접 `runCatching`과 stale guard 분기를 application result/completion으로 이동한다.
+   - score estimate, score sync, restored sync 사이의 completion naming을 정리한다.
+
+3. Human engine sync runtime log plan 분리
+   - 현재 success/failure runtime log 생성은 UI에서 수행한다. display apply와 log append를 분리하되, log payload 생성은 application plan으로 이동한다.
+
+4. UI controller/state holder 경계 설계
+   - `ui/workflow` facade를 바로 만들기보다 `GoCoachApp.kt`의 local state set을 묶는 controller/state holder 경계를 먼저 설계한다.
+   - 이 작업 이후 callback facade를 분리해야 state mutation 소유권이 선명하다.
+
+5. KMP 물리 이동 1차
+   - `EngineStartupApplication.kt` 또는 `ScoreSyncCompletionApplication.kt` 중 하나를 실제 shared/common 후보로 이동하는 작은 PR 단위 작업을 수행한다.

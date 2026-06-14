@@ -218,6 +218,46 @@ class PositionAnalysisCacheOptimizationTest {
         assertEquals(expected, actual)
     }
 
+    @Test
+    fun cacheOptimizationWorkflowResultWrapsSuccessAndFailure() = runBlocking {
+        val finalState = GameState.empty()
+        val plan = PositionAnalysisCacheOptimizationPlan(
+            gameFingerprint = "game",
+            finalState = finalState,
+            finalMoveCount = 2,
+            targets = emptyList(),
+        )
+        val expected = PositionAnalysisCacheOptimizationResult(
+            requestedTargets = 0,
+            analyzedTargets = 0,
+            reusableTargets = 0,
+            completeTargets = 0,
+            summaries = listOf("done"),
+        )
+
+        val success = FakeCacheOptimizationEngineSessionClient(expected)
+            .runPositionAnalysisCacheOptimizationWorkflowResult(
+                GameSessionEffect.RunPositionCacheOptimization(plan),
+            )
+        val failure = FakeCacheOptimizationEngineSessionClient(
+            result = expected,
+            failure = IllegalStateException("optimization failed"),
+        ).runPositionAnalysisCacheOptimizationWorkflowResult(
+            GameSessionEffect.RunPositionCacheOptimization(plan),
+        )
+
+        assertTrue(success is PositionAnalysisCacheOptimizationWorkflowResult.Success)
+        assertEquals(
+            expected,
+            (success as PositionAnalysisCacheOptimizationWorkflowResult.Success).result,
+        )
+        assertTrue(failure is PositionAnalysisCacheOptimizationWorkflowResult.Failure)
+        assertEquals(
+            "optimization failed",
+            (failure as PositionAnalysisCacheOptimizationWorkflowResult.Failure).error.message,
+        )
+    }
+
     private fun shortFinishedGame(): GameState =
         GameState.empty()
             .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
@@ -256,6 +296,7 @@ class PositionAnalysisCacheOptimizationTest {
 
 private class FakeCacheOptimizationEngineSessionClient(
     private val result: PositionAnalysisCacheOptimizationResult,
+    private val failure: Throwable? = null,
 ) : EngineSessionClient {
     var optimizedPlan: PositionAnalysisCacheOptimizationPlan? = null
         private set
@@ -297,6 +338,7 @@ private class FakeCacheOptimizationEngineSessionClient(
         plan: PositionAnalysisCacheOptimizationPlan,
     ): PositionAnalysisCacheOptimizationResult {
         optimizedPlan = plan
+        failure?.let { throw it }
         return result
     }
 

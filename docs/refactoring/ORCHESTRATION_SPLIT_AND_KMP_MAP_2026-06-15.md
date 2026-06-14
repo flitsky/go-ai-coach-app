@@ -180,3 +180,19 @@
   - 실제 이동 1순위는 여전히 `DiagnosticEventModel.kt`, `ScoreSyncCompletionApplication.kt`다.
   - `TopMovesApplication.kt`와 `AutoAiCompletionApplication.kt`는 engine client를 직접 참조하지 않는 completion/result policy 일부부터 잘라낼 수 있다.
   - `AutoAiRunnerApplication.kt`와 `TopMovesApplication.kt`의 runner 함수는 `EngineSessionClient` 의존이 있으므로 app-service 또는 middleware-service로 남기는 편이 현재는 더 안전하다.
+
+## 2026-06-15 7차 리팩토링 반영 사항
+
+- `HumanEngineSyncWorkflowResult`, `buildHumanEngineSyncCompletionPlan()`, `runHumanEngineSyncWorkflowResult()`를 추가해 사람 착수 후 엔진 동기화 success/failure/discard 포장을 application 계층으로 이동했다.
+- `EngineStartupWorkflowResult`, `runEngineStartupWorkflowResult()`, `runEngineBackedNewGameWorkflowResult()`, `buildEngineStartupDisplayPlan()`을 추가해 startup/new-game result 포장을 application runner로 통일했다.
+- `StartupBenchmarkWorkflowResult`, `runStartupBenchmarkWorkflowResult()`를 추가해 device benchmark 실행 결과 포장을 application runner로 이동했다.
+- `PositionAnalysisCacheOptimizationWorkflowResult`, `runPositionAnalysisCacheOptimizationWorkflowResult()`를 추가해 post-game cache optimization 결과 포장을 application runner로 이동했다.
+- `LayeringContractTest`의 platform-free 후보군에 peripheral workflow 파일들을 추가했다. 이는 실제 KMP 물리 이동 전, Android/UI/persistence/runtime import가 섞이지 못하게 막는 1차 자동화 spike다.
+- 현재 UI-local workflow ownership metric:
+  - Startup/new-game: engine call result 포장은 application, UI는 runtime log와 reset/apply 담당
+  - Human move sync: result 포장과 completion 선택은 application, UI는 log append와 display apply 담당
+  - Benchmark/cache optimization: result 포장은 application, UI는 progress/store/message apply 담당
+- 다음 KMP 관점:
+  - `EngineStartupApplication.kt`와 `ScoreSyncCompletionApplication.kt`가 실제 이동 1차 후보로 가장 작다.
+  - `HumanMoveApplication.kt`와 `PositionAnalysisCacheOptimization.kt`는 match/shared 의존은 허용 가능하지만, app module 내부 type들과 함께 이동 순서를 맞춰야 한다.
+  - `EngineDeviceBenchmarkApplication.kt`는 clock abstraction이 필요하므로 물리 이동 전 `ClockPort` 또는 elapsed measurement helper가 필요하다.

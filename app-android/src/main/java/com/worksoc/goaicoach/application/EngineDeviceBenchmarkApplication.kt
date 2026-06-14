@@ -171,6 +171,11 @@ internal data class StartupBenchmarkExecutionContext(
     val nowMillis: Long,
 )
 
+internal sealed class StartupBenchmarkWorkflowResult {
+    data class Success(val profile: EngineBenchmarkProfile) : StartupBenchmarkWorkflowResult()
+    data class Failure(val error: Throwable) : StartupBenchmarkWorkflowResult()
+}
+
 internal suspend fun EngineSessionClient.runStartupBenchmarkEffect(
     effect: GameSessionEffect.RunStartupBenchmark,
     context: StartupBenchmarkExecutionContext,
@@ -195,6 +200,26 @@ internal suspend fun EngineSessionClient.runStartupBenchmarkEffect(
         )
     }
 }
+
+internal suspend fun EngineSessionClient.runStartupBenchmarkWorkflowResult(
+    effect: GameSessionEffect.RunStartupBenchmark,
+    context: StartupBenchmarkExecutionContext,
+    operationRequest: EngineOperationRequest? = null,
+    diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
+    onProgress: suspend (EngineBenchmarkProgress) -> Unit = {},
+): StartupBenchmarkWorkflowResult =
+    runCatching {
+        runStartupBenchmarkEffect(
+            effect = effect,
+            context = context,
+            operationRequest = operationRequest,
+            diagnosticEventLog = diagnosticEventLog,
+            onProgress = onProgress,
+        )
+    }.fold(
+        onSuccess = { profile -> StartupBenchmarkWorkflowResult.Success(profile) },
+        onFailure = { error -> StartupBenchmarkWorkflowResult.Failure(error) },
+    )
 
 private data class EngineBenchmarkPosition(
     val state: GameState,

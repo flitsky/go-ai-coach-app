@@ -51,6 +51,11 @@ internal sealed class HumanEngineSyncCompletionPlan {
     data class Discard(val discard: EngineOperationResultGuard.Discard) : HumanEngineSyncCompletionPlan()
 }
 
+internal sealed class HumanEngineSyncWorkflowResult {
+    data class Success(val result: LocalEngineMoveResult) : HumanEngineSyncWorkflowResult()
+    data class Failure(val error: Throwable) : HumanEngineSyncWorkflowResult()
+}
+
 internal fun applyHumanMoveLocally(
     beforeMove: GameState,
     move: Move,
@@ -182,6 +187,40 @@ internal fun buildHumanEngineSyncFailureCompletionPlan(
             HumanEngineSyncCompletionPlan.Discard(applyPlan.discard)
     }
 
+internal fun buildHumanEngineSyncCompletionPlan(
+    result: HumanEngineSyncWorkflowResult,
+    operation: EngineOperationRequest,
+    currentState: GameState,
+    currentSessionGeneration: Long,
+    afterMove: GameState,
+    moveDescription: String,
+    localMove: HumanMoveLocalResult,
+    previousSnapshots: List<ScoreSnapshot>,
+): HumanEngineSyncCompletionPlan =
+    when (result) {
+        is HumanEngineSyncWorkflowResult.Success ->
+            buildHumanEngineSyncSuccessCompletionPlan(
+                operation = operation,
+                currentState = currentState,
+                currentSessionGeneration = currentSessionGeneration,
+                afterMove = afterMove,
+                moveDescription = moveDescription,
+                result = result.result,
+                localMove = localMove,
+                previousSnapshots = previousSnapshots,
+            )
+
+        is HumanEngineSyncWorkflowResult.Failure ->
+            buildHumanEngineSyncFailureCompletionPlan(
+                operation = operation,
+                currentState = currentState,
+                currentSessionGeneration = currentSessionGeneration,
+                localMove = localMove,
+                previousSnapshots = previousSnapshots,
+                errorMessage = result.error.message,
+            )
+    }
+
 internal suspend fun EngineSessionClient.runHumanEngineSyncEffect(
     effect: GameSessionEffect.SyncHumanMove,
     operationRequest: EngineOperationRequest? = null,
@@ -209,3 +248,19 @@ internal suspend fun EngineSessionClient.runHumanEngineSyncEffect(
         )
     }
 }
+
+internal suspend fun EngineSessionClient.runHumanEngineSyncWorkflowResult(
+    effect: GameSessionEffect.SyncHumanMove,
+    operationRequest: EngineOperationRequest? = null,
+    diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
+): HumanEngineSyncWorkflowResult =
+    runCatching {
+        runHumanEngineSyncEffect(
+            effect = effect,
+            operationRequest = operationRequest,
+            diagnosticEventLog = diagnosticEventLog,
+        )
+    }.fold(
+        onSuccess = { result -> HumanEngineSyncWorkflowResult.Success(result) },
+        onFailure = { error -> HumanEngineSyncWorkflowResult.Failure(error) },
+    )

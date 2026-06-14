@@ -31,3 +31,22 @@ internal fun buildEngineStartupFailureDisplayPlan(
         engineMessage = "Engine initialization failed.\n${errorMessage ?: "Unknown error"}",
         candidateText = "2P test mode is still available.\n$engineDiagnostic",
     )
+
+internal fun buildEngineStartupDisplayPlan(
+    state: GameState,
+    result: EngineStartupWorkflowResult,
+    engineDiagnostic: String,
+): EngineStartupDisplayPlan =
+    when (result) {
+        is EngineStartupWorkflowResult.Success ->
+            buildEngineStartupSuccessDisplayPlan(
+                state = state,
+                result = result.result,
+            )
+
+        is EngineStartupWorkflowResult.Failure ->
+            buildEngineStartupFailureDisplayPlan(
+                errorMessage = result.error.message,
+                engineDiagnostic = engineDiagnostic,
+            )
+    }

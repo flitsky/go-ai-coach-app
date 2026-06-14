@@ -65,6 +65,16 @@ internal data class PositionAnalysisCacheOptimizationResult(
         }
 }
 
+internal sealed class PositionAnalysisCacheOptimizationWorkflowResult {
+    data class Success(
+        val result: PositionAnalysisCacheOptimizationResult,
+    ) : PositionAnalysisCacheOptimizationWorkflowResult()
+
+    data class Failure(
+        val error: Throwable,
+    ) : PositionAnalysisCacheOptimizationWorkflowResult()
+}
+
 internal suspend fun EngineSessionClient.runPositionAnalysisCacheOptimizationEffect(
     effect: GameSessionEffect.RunPositionCacheOptimization,
     operationRequest: EngineOperationRequest? = null,
@@ -82,6 +92,22 @@ internal suspend fun EngineSessionClient.runPositionAnalysisCacheOptimizationEff
     ) {
         optimizePositionAnalysisCache(effect.plan)
     }
+
+internal suspend fun EngineSessionClient.runPositionAnalysisCacheOptimizationWorkflowResult(
+    effect: GameSessionEffect.RunPositionCacheOptimization,
+    operationRequest: EngineOperationRequest? = null,
+    diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
+): PositionAnalysisCacheOptimizationWorkflowResult =
+    runCatching {
+        runPositionAnalysisCacheOptimizationEffect(
+            effect = effect,
+            operationRequest = operationRequest,
+            diagnosticEventLog = diagnosticEventLog,
+        )
+    }.fold(
+        onSuccess = { result -> PositionAnalysisCacheOptimizationWorkflowResult.Success(result) },
+        onFailure = { error -> PositionAnalysisCacheOptimizationWorkflowResult.Failure(error) },
+    )
 
 internal data class PositionAnalysisCacheOptimizationUiState(
     val prompt: PositionAnalysisCacheOptimizationPrompt? = null,

@@ -16,6 +16,7 @@ import com.worksoc.goaicoach.shared.ScoreEstimate
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class EngineSessionLifecycleApplicationTest {
@@ -66,6 +67,45 @@ class EngineSessionLifecycleApplicationTest {
     }
 
     @Test
+    fun startupAndNewGameWorkflowResultsWrapSuccessAndFailure() = runBlocking {
+        val state = GameState.empty()
+        val profile = EngineProfile(name = "Workflow")
+
+        val startupSuccess = RecordingLifecycleEngineSessionClient()
+            .runEngineStartupWorkflowResult(
+                effect = GameSessionEffect.StartEngineSession(
+                    state = state,
+                    profile = profile,
+                ),
+            )
+        val startupFailure = RecordingLifecycleEngineSessionClient(
+            startupError = IllegalStateException("startup failed"),
+        ).runEngineStartupWorkflowResult(
+            effect = GameSessionEffect.StartEngineSession(
+                state = state,
+                profile = profile,
+            ),
+        )
+        val newGameFailure = RecordingLifecycleEngineSessionClient(
+            newGameError = IllegalStateException("new game failed"),
+        ).runEngineBackedNewGameWorkflowResult(
+            effect = GameSessionEffect.StartEngineBackedGame(
+                currentState = state,
+                profile = profile,
+                boardSize = BoardSize.Nine,
+                ruleset = Ruleset.Chinese,
+            ),
+        )
+
+        assertTrue(startupSuccess is EngineStartupWorkflowResult.Success)
+        assertEquals("startup", (startupSuccess as EngineStartupWorkflowResult.Success).result.message)
+        assertTrue(startupFailure is EngineStartupWorkflowResult.Failure)
+        assertEquals("startup failed", (startupFailure as EngineStartupWorkflowResult.Failure).error.message)
+        assertTrue(newGameFailure is EngineStartupWorkflowResult.Failure)
+        assertEquals("new game failed", (newGameFailure as EngineStartupWorkflowResult.Failure).error.message)
+    }
+
+    @Test
     fun undoRunnerRepeatsRequestedUndoCountAndReturnsLastStatus() = runBlocking {
         val client = RecordingLifecycleEngineSessionClient()
 
@@ -111,7 +151,10 @@ class EngineSessionLifecycleApplicationTest {
     }
 }
 
-private class RecordingLifecycleEngineSessionClient : EngineSessionClient {
+private class RecordingLifecycleEngineSessionClient(
+    private val startupError: Throwable? = null,
+    private val newGameError: Throwable? = null,
+) : EngineSessionClient {
     override val capabilities: EngineSessionCapabilities = EngineSessionCapabilities(
         supportsDeviceBenchmark = true,
     )
@@ -138,6 +181,7 @@ private class RecordingLifecycleEngineSessionClient : EngineSessionClient {
     ): EngineStartupResult {
         startedProfile = profile
         startedState = state
+        startupError?.let { throw it }
         return EngineStartupResult(
             message = "startup",
             scoreSnapshot = localScoreSnapshot(state),
@@ -152,6 +196,7 @@ private class RecordingLifecycleEngineSessionClient : EngineSessionClient {
         newGameProfile = profile
         newGameBoardSize = boardSize
         newGameRuleset = ruleset
+        newGameError?.let { throw it }
         return EngineStartupResult(
             message = "new-game",
             scoreSnapshot = localScoreSnapshot(GameState.empty(boardSize = boardSize, ruleset = ruleset)),

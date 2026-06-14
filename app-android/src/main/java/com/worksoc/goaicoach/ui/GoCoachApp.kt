@@ -34,11 +34,9 @@ import com.worksoc.goaicoach.application.buildAutoAiTurnEndgamePlan
 import com.worksoc.goaicoach.application.buildAutoAiTurnFollowUpPlan
 import com.worksoc.goaicoach.application.buildAutoAiEndgameCompletionPlan
 import com.worksoc.goaicoach.application.buildDebugReportCopyPlan
-import com.worksoc.goaicoach.application.buildEngineStartupFailureDisplayPlan
-import com.worksoc.goaicoach.application.buildEngineStartupSuccessDisplayPlan
+import com.worksoc.goaicoach.application.buildEngineStartupDisplayPlan
 import com.worksoc.goaicoach.application.buildEngineUndoPlan
-import com.worksoc.goaicoach.application.buildHumanEngineSyncFailureCompletionPlan
-import com.worksoc.goaicoach.application.buildHumanEngineSyncSuccessCompletionPlan
+import com.worksoc.goaicoach.application.buildHumanEngineSyncCompletionPlan
 import com.worksoc.goaicoach.application.buildLocalFinalScoreDisplayPlan
 import com.worksoc.goaicoach.application.buildLocalTwoPlayerUndoPlan
 import com.worksoc.goaicoach.application.buildUndoRequestPlan
@@ -101,8 +99,10 @@ import com.worksoc.goaicoach.application.HumanEngineSyncFailurePlan
 import com.worksoc.goaicoach.application.HumanEngineSyncDisplayPlan
 import com.worksoc.goaicoach.application.HumanEngineSyncCompletionPlan
 import com.worksoc.goaicoach.application.HumanEngineSyncRunPlan
+import com.worksoc.goaicoach.application.EngineStartupWorkflowResult
 import com.worksoc.goaicoach.application.EngineStartupDisplayPlan
 import com.worksoc.goaicoach.application.PlayerSetupChangePlan
+import com.worksoc.goaicoach.application.PositionAnalysisCacheOptimizationWorkflowResult
 import com.worksoc.goaicoach.application.PositionAnalysisCacheOptimizationUiState
 import com.worksoc.goaicoach.application.PostGamePositionAnalysisCacheOptimizationPromptEnabled
 import com.worksoc.goaicoach.application.recordEngineOperationDiscardLog
@@ -121,14 +121,14 @@ import com.worksoc.goaicoach.application.runAutoAiEndgameEffect
 import com.worksoc.goaicoach.application.RestoredGameSyncExecutionContext
 import com.worksoc.goaicoach.application.runRestoredGameSyncEffect
 import com.worksoc.goaicoach.application.runAutoAiTurnWorkflowResult
-import com.worksoc.goaicoach.application.runEngineBackedNewGameEffect
+import com.worksoc.goaicoach.application.runEngineBackedNewGameWorkflowResult
 import com.worksoc.goaicoach.application.runEngineOperationInScope
-import com.worksoc.goaicoach.application.runEngineStartupEffect
+import com.worksoc.goaicoach.application.runEngineStartupWorkflowResult
 import com.worksoc.goaicoach.application.runEngineUndoEffect
-import com.worksoc.goaicoach.application.runHumanEngineSyncEffect
-import com.worksoc.goaicoach.application.runPositionAnalysisCacheOptimizationEffect
+import com.worksoc.goaicoach.application.runHumanEngineSyncWorkflowResult
+import com.worksoc.goaicoach.application.runPositionAnalysisCacheOptimizationWorkflowResult
 import com.worksoc.goaicoach.application.runScoreEstimateEffect
-import com.worksoc.goaicoach.application.runStartupBenchmarkEffect
+import com.worksoc.goaicoach.application.runStartupBenchmarkWorkflowResult
 import com.worksoc.goaicoach.application.runScoringRuleSyncDisplayPlan
 import com.worksoc.goaicoach.application.runtimeAiTurnBeginLog
 import com.worksoc.goaicoach.application.runtimeAiTurnCompleteLog
@@ -151,6 +151,7 @@ import com.worksoc.goaicoach.application.runtimeHumanEngineSyncFailureLog
 import com.worksoc.goaicoach.application.runtimeHumanEngineSyncSuccessLog
 import com.worksoc.goaicoach.application.runtimeHumanMoveAcceptedLog
 import com.worksoc.goaicoach.application.RuntimeLogContext
+import com.worksoc.goaicoach.application.StartupBenchmarkWorkflowResult
 import com.worksoc.goaicoach.application.StartupBenchmarkExecutionContext
 import com.worksoc.goaicoach.application.toDebugReportSnapshot
 import com.worksoc.goaicoach.application.runDebugReportCopyEffect
@@ -522,40 +523,34 @@ private fun GoCoachScreen(
 
     LaunchedEffect(engineClient) {
         hasCompletedEngineStartup = false
+        val startupState = gameState
+        val startupProfile = runtimeState.engineProfile
         val operation = engineOperationRequest(
             kind = EngineOperationKind.EngineStartup,
-            state = gameState,
+            state = startupState,
             sessionGeneration = runtimeState.sessionGeneration,
             timeoutPolicy = EngineTimeoutPolicy(label = "engine-startup"),
             fallbackPolicy = EngineFallbackPolicy.None,
         )
         runTrackedEngineOperation(operation) {
-            runCatching {
+            val result =
                 withContext(Dispatchers.IO) {
-                    engineClient.runEngineStartupEffect(
+                    engineClient.runEngineStartupWorkflowResult(
                         effect = GameSessionEffect.StartEngineSession(
-                            state = gameState,
-                            profile = runtimeState.engineProfile,
+                            state = startupState,
+                            profile = startupProfile,
                         ),
                         operationRequest = operation,
                         diagnosticEventLog = diagnosticEventLog,
                     )
                 }
-            }.onSuccess { result ->
-                applyEngineStartupDisplayPlan(
-                    buildEngineStartupSuccessDisplayPlan(
-                        state = gameState,
-                        result = result,
-                    ),
-                )
-            }.onFailure { error ->
-                applyEngineStartupDisplayPlan(
-                    buildEngineStartupFailureDisplayPlan(
-                        errorMessage = error.message,
-                        engineDiagnostic = engineDiagnostic,
-                    ),
-                )
-            }
+            applyEngineStartupDisplayPlan(
+                buildEngineStartupDisplayPlan(
+                    state = startupState,
+                    result = result,
+                    engineDiagnostic = engineDiagnostic,
+                ),
+            )
         }
         hasCompletedEngineStartup = true
     }
@@ -599,10 +594,10 @@ private fun GoCoachScreen(
             analysisState = analysisState.copy(
                 candidateText = "Engine benchmark running: B16/B32/B64, ${EngineBenchmarkDefaultSamplesPerVisit} samples each.",
             )
-            runCatching {
+            val benchmarkResult =
                 withContext(Dispatchers.IO) {
                     engineClient
-                        .runStartupBenchmarkEffect(
+                        .runStartupBenchmarkWorkflowResult(
                             effect = GameSessionEffect.RunStartupBenchmark,
                             context = StartupBenchmarkExecutionContext(
                                 restoreState = gameState,
@@ -620,19 +615,24 @@ private fun GoCoachScreen(
                                 }
                             }
                         )
-                        .also { profile -> benchmarkStore.save(profile) }
                 }
-            }.onSuccess { profile ->
-                benchmarkUiState = benchmarkUiState.completeWithProfile(
-                    benchmarkText = benchmarkStore.loadText(),
-                    profile = profile,
-                )
-                engineMessage = "Engine benchmark saved to ${benchmarkStore.path()}."
-                analysisState = analysisState.copy(candidateText = "Engine benchmark complete.\n${profile.toSummaryText()}")
-            }.onFailure { error ->
-                engineMessage = "Engine benchmark failed: ${error.message ?: "unknown error"}"
-                analysisState = analysisState.copy(candidateText = "Engine benchmark failed. The app will continue with built-in defaults.")
-                benchmarkUiState = benchmarkUiState.failWithoutProfile()
+            when (benchmarkResult) {
+                is StartupBenchmarkWorkflowResult.Success -> {
+                    val profile = benchmarkResult.profile
+                    benchmarkStore.save(profile)
+                    benchmarkUiState = benchmarkUiState.completeWithProfile(
+                        benchmarkText = benchmarkStore.loadText(),
+                        profile = profile,
+                    )
+                    engineMessage = "Engine benchmark saved to ${benchmarkStore.path()}."
+                    analysisState = analysisState.copy(candidateText = "Engine benchmark complete.\n${profile.toSummaryText()}")
+                }
+
+                is StartupBenchmarkWorkflowResult.Failure -> {
+                    engineMessage = "Engine benchmark failed: ${benchmarkResult.error.message ?: "unknown error"}"
+                    analysisState = analysisState.copy(candidateText = "Engine benchmark failed. The app will continue with built-in defaults.")
+                    benchmarkUiState = benchmarkUiState.failWithoutProfile()
+                }
             }
         }
     }
@@ -1392,9 +1392,9 @@ private fun GoCoachScreen(
         launchTrackedEngineOperation(operation) {
             var nextAnalysisState: GameState? = null
             val startMillis = System.currentTimeMillis()
-            runCatching {
+            val result =
                 withContext(Dispatchers.IO) {
-                    engineClient.runEngineBackedNewGameEffect(
+                    engineClient.runEngineBackedNewGameWorkflowResult(
                         effect = GameSessionEffect.StartEngineBackedGame(
                             currentState = gameState,
                             profile = runtime.engineProfile,
@@ -1405,26 +1405,30 @@ private fun GoCoachScreen(
                         diagnosticEventLog = diagnosticEventLog,
                     )
                 }
-            }.onSuccess { result ->
-                runtimeEventLog.append(
-                    runtimeEngineGameStartSuccessLog(
-                        context = currentRuntimeLogContext(),
-                        elapsedMs = System.currentTimeMillis() - startMillis,
-                        message = result.message,
-                    ),
-                )
-                resetLocalGame(result.message, targetRuleset)
-                scoreState = scoreState.replaceSnapshots(listOf(result.scoreSnapshot ?: localScoreSnapshot(gameState)))
-                nextAnalysisState = gameState
-            }.onFailure { error ->
-                runtimeEventLog.append(
-                    runtimeEngineGameStartFailureLog(
-                        context = currentRuntimeLogContext(),
-                        elapsedMs = System.currentTimeMillis() - startMillis,
-                        error = error,
-                    ),
-                )
-                resetLocalGame(error.message ?: "New AI game failed.", targetRuleset)
+            when (result) {
+                is EngineStartupWorkflowResult.Success -> {
+                    runtimeEventLog.append(
+                        runtimeEngineGameStartSuccessLog(
+                            context = currentRuntimeLogContext(),
+                            elapsedMs = System.currentTimeMillis() - startMillis,
+                            message = result.result.message,
+                        ),
+                    )
+                    resetLocalGame(result.result.message, targetRuleset)
+                    scoreState = scoreState.replaceSnapshots(listOf(result.result.scoreSnapshot ?: localScoreSnapshot(gameState)))
+                    nextAnalysisState = gameState
+                }
+
+                is EngineStartupWorkflowResult.Failure -> {
+                    runtimeEventLog.append(
+                        runtimeEngineGameStartFailureLog(
+                            context = currentRuntimeLogContext(),
+                            elapsedMs = System.currentTimeMillis() - startMillis,
+                            error = result.error,
+                        ),
+                    )
+                    resetLocalGame(result.error.message ?: "New AI game failed.", targetRuleset)
+                }
             }
             requestTopMoveAnalysisForState(
                 targetState = nextAnalysisState ?: gameState,
@@ -1797,9 +1801,9 @@ private fun GoCoachScreen(
         launchTrackedEngineOperation(humanSyncOperation) {
             var nextAnalysisState: GameState? = null
             val syncStartMillis = System.currentTimeMillis()
-            runCatching {
+            val syncResult =
                 withContext(Dispatchers.IO) {
-                    engineClient.runHumanEngineSyncEffect(
+                    engineClient.runHumanEngineSyncWorkflowResult(
                         GameSessionEffect.SyncHumanMove(
                             HumanEngineSyncRunPlan(
                                 afterMove = afterMove,
@@ -1812,52 +1816,39 @@ private fun GoCoachScreen(
                         diagnosticEventLog = diagnosticEventLog,
                     )
                 }
-            }.onSuccess { result ->
-                when (val completion = buildHumanEngineSyncSuccessCompletionPlan(
-                    operation = humanSyncOperation,
-                    currentState = gameState,
-                    currentSessionGeneration = runtimeState.sessionGeneration,
-                    afterMove = afterMove,
-                    moveDescription = move.describe(beforeMove.boardSize),
-                    result = result,
-                    localMove = localMove,
-                    previousSnapshots = scoreState.scoreSnapshots,
-                )) {
-                    is HumanEngineSyncCompletionPlan.ApplySuccess -> {
-                        runtimeEventLog.append(
-                            runtimeHumanEngineSyncSuccessLog(
-                                context = currentRuntimeLogContext(),
-                                sync = completion.display,
-                                elapsedMs = System.currentTimeMillis() - syncStartMillis,
-                            ),
-                        )
-                        nextAnalysisState = applyHumanEngineSyncDisplayPlan(completion.display)
-                    }
-                    is HumanEngineSyncCompletionPlan.ApplyFailure -> Unit
-                    is HumanEngineSyncCompletionPlan.Discard -> appendEngineOperationDiscardLog(completion.discard)
+            when (val completion = buildHumanEngineSyncCompletionPlan(
+                result = syncResult,
+                operation = humanSyncOperation,
+                currentState = gameState,
+                currentSessionGeneration = runtimeState.sessionGeneration,
+                afterMove = afterMove,
+                moveDescription = move.describe(beforeMove.boardSize),
+                localMove = localMove,
+                previousSnapshots = scoreState.scoreSnapshots,
+            )) {
+                is HumanEngineSyncCompletionPlan.ApplySuccess -> {
+                    runtimeEventLog.append(
+                        runtimeHumanEngineSyncSuccessLog(
+                            context = currentRuntimeLogContext(),
+                            sync = completion.display,
+                            elapsedMs = System.currentTimeMillis() - syncStartMillis,
+                        ),
+                    )
+                    nextAnalysisState = applyHumanEngineSyncDisplayPlan(completion.display)
                 }
-            }.onFailure { error ->
-                when (val completion = buildHumanEngineSyncFailureCompletionPlan(
-                    operation = humanSyncOperation,
-                    currentState = gameState,
-                    currentSessionGeneration = runtimeState.sessionGeneration,
-                    localMove = localMove,
-                    previousSnapshots = scoreState.scoreSnapshots,
-                    errorMessage = error.message,
-                )) {
-                    is HumanEngineSyncCompletionPlan.ApplySuccess -> Unit
-                    is HumanEngineSyncCompletionPlan.ApplyFailure -> {
-                        runtimeEventLog.append(
-                            runtimeHumanEngineSyncFailureLog(
-                                context = currentRuntimeLogContext(),
-                                failure = completion.failure,
-                                elapsedMs = System.currentTimeMillis() - syncStartMillis,
-                            ),
-                        )
-                        applyHumanEngineSyncFailurePlan(completion.failure)
-                    }
-                    is HumanEngineSyncCompletionPlan.Discard -> appendEngineOperationDiscardLog(completion.discard)
+
+                is HumanEngineSyncCompletionPlan.ApplyFailure -> {
+                    runtimeEventLog.append(
+                        runtimeHumanEngineSyncFailureLog(
+                            context = currentRuntimeLogContext(),
+                            failure = completion.failure,
+                            elapsedMs = System.currentTimeMillis() - syncStartMillis,
+                        ),
+                    )
+                    applyHumanEngineSyncFailurePlan(completion.failure)
                 }
+
+                is HumanEngineSyncCompletionPlan.Discard -> appendEngineOperationDiscardLog(completion.discard)
             }
             nextAnalysisState?.let { state ->
                 requestTopMoveAnalysisForState(
@@ -1991,19 +1982,23 @@ private fun GoCoachScreen(
         val effect = GameSessionEffect.RunPositionCacheOptimization(plan)
         scope.launch {
             runTrackedEngineOperation(operation) {
-                runCatching {
+                val result =
                     withContext(Dispatchers.IO) {
-                        engineClient.runPositionAnalysisCacheOptimizationEffect(
+                        engineClient.runPositionAnalysisCacheOptimizationWorkflowResult(
                             effect = effect,
                             operationRequest = operation,
                             diagnosticEventLog = diagnosticEventLog,
                         )
                     }
-                }.onSuccess { result ->
-                    engineMessage = result.messageText()
-                    analysisState = analysisState.copy(candidateText = result.messageText())
-                }.onFailure { error ->
-                    engineMessage = error.message ?: "Post-game cache optimization failed."
+                when (result) {
+                    is PositionAnalysisCacheOptimizationWorkflowResult.Success -> {
+                        engineMessage = result.result.messageText()
+                        analysisState = analysisState.copy(candidateText = result.result.messageText())
+                    }
+
+                    is PositionAnalysisCacheOptimizationWorkflowResult.Failure -> {
+                        engineMessage = result.error.message ?: "Post-game cache optimization failed."
+                    }
                 }
                 positionCacheOptimizationState = positionCacheOptimizationState.finishRunning()
             }

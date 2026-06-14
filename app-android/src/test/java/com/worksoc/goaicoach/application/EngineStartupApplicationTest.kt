@@ -59,4 +59,32 @@ class EngineStartupApplicationTest {
         assertEquals("Engine initialization failed.\nmissing model", plan.engineMessage)
         assertEquals("2P test mode is still available.\ndiagnostic", plan.candidateText)
     }
+
+    @Test
+    fun startupWorkflowResultBuildsDisplayPlan() {
+        val state = GameState.empty()
+
+        val success = buildEngineStartupDisplayPlan(
+            state = state,
+            result = EngineStartupWorkflowResult.Success(
+                EngineStartupResult(
+                    message = "ready",
+                    scoreSnapshot = null,
+                ),
+            ),
+            engineDiagnostic = "diagnostic",
+        )
+        val failure = buildEngineStartupDisplayPlan(
+            state = state,
+            result = EngineStartupWorkflowResult.Failure(
+                IllegalStateException("startup failed"),
+            ),
+            engineDiagnostic = "diagnostic",
+        )
+
+        assertTrue(success.isEngineReady)
+        assertEquals("ready", success.engineMessage)
+        assertFalse(failure.isEngineReady)
+        assertEquals("Engine initialization failed.\nstartup failed", failure.engineMessage)
+    }
 }

@@ -18,6 +18,7 @@ import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.StoneColor
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class EngineDeviceBenchmarkApplicationTest {
@@ -220,9 +221,39 @@ class EngineDeviceBenchmarkApplicationTest {
         assertEquals(restoreState.moves, engine.state.moves)
         assertEquals(Ruleset.Chinese, engine.state.ruleset)
     }
+
+    @Test
+    fun startupBenchmarkWorkflowResultWrapsSuccessAndFailure() = runBlocking {
+        val restoreState = GameState.empty(ruleset = Ruleset.Chinese)
+
+        val success = LocalEngineSessionClient(RecordingBenchmarkEngineAdapter())
+            .runStartupBenchmarkWorkflowResult(
+                effect = GameSessionEffect.RunStartupBenchmark,
+                context = StartupBenchmarkExecutionContext(
+                    restoreState = restoreState,
+                    nowMillis = 456L,
+                ),
+            )
+        val failure = LocalEngineSessionClient(
+            RecordingBenchmarkEngineAdapter(analyzeError = IllegalStateException("benchmark failed")),
+        ).runStartupBenchmarkWorkflowResult(
+            effect = GameSessionEffect.RunStartupBenchmark,
+            context = StartupBenchmarkExecutionContext(
+                restoreState = restoreState,
+                nowMillis = 456L,
+            ),
+        )
+
+        assertTrue(success is StartupBenchmarkWorkflowResult.Success)
+        assertEquals(456L, (success as StartupBenchmarkWorkflowResult.Success).profile.createdAtMillis)
+        assertTrue(failure is StartupBenchmarkWorkflowResult.Failure)
+        assertEquals("benchmark failed", (failure as StartupBenchmarkWorkflowResult.Failure).error.message)
+    }
 }
 
-private class RecordingBenchmarkEngineAdapter : EngineAdapter {
+private class RecordingBenchmarkEngineAdapter(
+    private val analyzeError: Throwable? = null,
+) : EngineAdapter {
     val analyzeVisits = mutableListOf<Int>()
     val newGameRulesets = mutableListOf<Ruleset>()
     var state = GameState.empty()
@@ -260,6 +291,7 @@ private class RecordingBenchmarkEngineAdapter : EngineAdapter {
 
     override suspend fun analyze(limit: AnalysisLimit): AnalysisResult {
         analyzeVisits += limit.visits
+        analyzeError?.let { throw it }
         return AnalysisResult(
             status = EngineStatus.ready("analyzed"),
             candidates = listOfNotNull(state.nextBenchmarkCandidate()),
