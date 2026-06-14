@@ -210,8 +210,28 @@ internal class LocalEngineSessionClient(
                 .reusableEntryFor(cacheKey, nowMillis)
                 ?.let { entry -> return entry.result.withCacheHitSummary(entry) }
         }
-        coreApi.syncToGameState(state)
-        val result = coreApi.analyze(effectiveLimit)
+        val operationRequest = engineOperationRequest(
+            kind = EngineOperationKind.PositionAnalysis,
+            state = state,
+            sessionGeneration = 0L,
+            timeoutPolicy = EngineTimeoutPolicy(
+                timeoutMillis = effectiveLimit.timeMillis,
+                label = "${searchMode.name}:${effectiveLimit.visits}v",
+            ),
+            fallbackPolicy = if (searchMode == EngineSearchMode.JsonPositionAnalysis) {
+                EngineFallbackPolicy.CachedAnalysis
+            } else {
+                EngineFallbackPolicy.None
+            },
+            backendId = capabilities.backend.label,
+        )
+        val result = runObservedEngineOperation(
+            request = operationRequest,
+            diagnosticEventLog = diagnosticEventLog,
+        ) {
+            coreApi.syncToGameState(state)
+            coreApi.analyze(effectiveLimit)
+        }
         recordAnalysisDiagnosticEvent(
             state = state,
             requestedVisits = cacheLimit.visits,

@@ -2,6 +2,7 @@ package com.worksoc.goaicoach.application
 
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.analysisFingerprint
+import kotlinx.coroutines.TimeoutCancellationException
 
 internal enum class DiagnosticSeverity(
     val label: String,
@@ -119,6 +120,29 @@ internal fun engineOperationSlowDiagnosticEvent(
     )
 }
 
+internal fun engineOperationSlowDiagnosticEvent(
+    request: EngineOperationRequest,
+    elapsedMillis: Long,
+    thresholdMillis: Long,
+): DiagnosticEvent? {
+    require(elapsedMillis >= 0L) { "elapsedMillis must not be negative" }
+    require(thresholdMillis > 0L) { "thresholdMillis must be positive" }
+
+    if (elapsedMillis <= thresholdMillis) {
+        return null
+    }
+
+    return DiagnosticEvent(
+        severity = DiagnosticSeverity.Warning,
+        code = "engine.operation.slow",
+        message = "Engine operation exceeded the expected latency threshold.",
+        context = request.operationContext() + mapOf(
+            "elapsedMillis" to elapsedMillis.toString(),
+            "thresholdMillis" to thresholdMillis.toString(),
+        ),
+    )
+}
+
 internal fun engineOperationTimeoutDiagnosticEvent(
     operation: String,
     timeoutMillis: Long,
@@ -139,6 +163,20 @@ internal fun engineOperationTimeoutDiagnosticEvent(
     )
 }
 
+internal fun engineOperationTimeoutDiagnosticEvent(
+    request: EngineOperationRequest,
+): DiagnosticEvent? {
+    val timeoutMillis = request.timeoutPolicy.timeoutMillis ?: return null
+    return DiagnosticEvent(
+        severity = DiagnosticSeverity.Critical,
+        code = "engine.operation.timeout",
+        message = "Engine operation timed out.",
+        context = request.operationContext() + mapOf(
+            "timeoutMillis" to timeoutMillis.toString(),
+        ),
+    )
+}
+
 internal fun engineOperationDiscardedDiagnosticEvent(
     discard: EngineOperationResultGuard.Discard,
     currentState: GameState,
@@ -153,6 +191,37 @@ internal fun engineOperationDiscardedDiagnosticEvent(
             "positionFingerprint" to currentState.analysisFingerprint(),
         ),
     )
+
+internal suspend fun <T> runObservedEngineOperation(
+    request: EngineOperationRequest,
+    diagnosticEventLog: DiagnosticEventLogPort,
+    slowThresholdMillis: Long = request.timeoutPolicy.timeoutMillis ?: 5_000L,
+    currentTimeMillis: () -> Long = System::currentTimeMillis,
+    block: suspend () -> T,
+): T {
+    require(slowThresholdMillis > 0L) { "slowThresholdMillis must be positive" }
+
+    val startedAtMillis = currentTimeMillis()
+    var timeoutRecorded = false
+    try {
+        return block()
+    } catch (error: TimeoutCancellationException) {
+        engineOperationTimeoutDiagnosticEvent(request)?.let { event ->
+            diagnosticEventLog.append(event)
+            timeoutRecorded = true
+        }
+        throw error
+    } finally {
+        val elapsedMillis = (currentTimeMillis() - startedAtMillis).coerceAtLeast(0L)
+        if (!timeoutRecorded) {
+            engineOperationSlowDiagnosticEvent(
+                request = request,
+                elapsedMillis = elapsedMillis,
+                thresholdMillis = slowThresholdMillis,
+            )?.let { event -> diagnosticEventLog.append(event) }
+        }
+    }
+}
 
 internal object NoopDiagnosticEventLog : DiagnosticEventLogPort {
     override fun append(
@@ -172,3 +241,15 @@ private fun String.oneLineValue(): String =
         .replace(Regex("\\s+"), " ")
         .trim()
         .take(240)
+
+private fun EngineOperationRequest.operationContext(): Map<String, String> =
+    mapOf(
+        "operation" to kind.code,
+        "operationId" to operationId,
+        "sessionGeneration" to sessionGeneration.toString(),
+        "positionFingerprint" to boardFingerprint,
+        "moveCount" to moveCount.toString(),
+        "backendId" to backendId,
+        "timeoutPolicy" to timeoutPolicy.label,
+        "fallbackPolicy" to fallbackPolicy.label,
+    )

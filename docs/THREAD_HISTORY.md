@@ -1260,3 +1260,6 @@
 - 2단계로 공통 `EngineOperationRequest` 모델을 도입했다. operation id, operation kind, session generation, board fingerprint, move count, timeout policy, fallback policy, backend id를 한 객체로 묶어 로컬 process와 향후 remote server 호출을 같은 실패/지연 모델로 다룰 수 있게 했다.
 - 기존 `PositionScopedOperationToken`과 호환되도록 `EngineOperationRequest.toPositionScopedOperationToken()` 및 `evaluateEngineOperationResultGuard()`를 추가했다. 이제 generation mismatch와 board fingerprint mismatch를 같은 result guard 계층에서 폐기할 수 있다.
 - `EngineOperationPolicyTest`에 operation metadata 생성, generation mismatch discard, same generation/same position apply 테스트를 추가했고 관련 application 테스트가 통과했다.
+- 3단계로 structured diagnostic 자동 계측을 연결했다. `runObservedEngineOperation()`을 추가해 `EngineOperationRequest` 단위로 elapsed time을 측정하고, threshold 초과 시 `engine.operation.slow`, coroutine timeout 시 `engine.operation.timeout` 이벤트를 `DiagnosticEventLogPort`에 기록한다.
+- `LocalEngineSessionClient.analyzePositionWithCache()`의 `syncToGameState + analyze` 구간을 observer로 감쌌다. 일반 빠른 분석은 기존 로그 동작을 유지하고, 실제 엔진 분석이 time cap/threshold를 넘기는 경우에만 slow diagnostic이 추가된다.
+- `DiagnosticEventApplicationTest`에 slow/timeout observer 테스트를 추가했고, `EngineSessionTest`와 함께 관련 application 테스트가 통과했다.

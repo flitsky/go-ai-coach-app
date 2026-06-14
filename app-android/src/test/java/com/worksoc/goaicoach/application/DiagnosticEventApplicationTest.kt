@@ -5,9 +5,14 @@ import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.StoneColor
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Test
 
 class DiagnosticEventApplicationTest {
@@ -113,6 +118,75 @@ class DiagnosticEventApplicationTest {
     }
 
     @Test
+    fun observedEngineOperationRecordsSlowEventWithOperationMetadata() = runBlocking {
+        val state = GameState.empty()
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+        val request = engineOperationRequest(
+            kind = EngineOperationKind.PositionAnalysis,
+            state = state,
+            sessionGeneration = 2,
+            timeoutPolicy = EngineTimeoutPolicy(timeoutMillis = 1_000L, label = "json:32v"),
+            fallbackPolicy = EngineFallbackPolicy.CachedAnalysis,
+            backendId = "local-engine",
+        )
+        val log = RecordingDiagnosticEventLogForDiagnostics()
+        var nowMillis = 10_000L
+
+        val result = runObservedEngineOperation(
+            request = request,
+            diagnosticEventLog = log,
+            currentTimeMillis = { nowMillis },
+        ) {
+            nowMillis = 11_501L
+            "ok"
+        }
+
+        assertEquals("ok", result)
+        assertEquals(1, log.events.size)
+        val event = log.events.single()
+        assertEquals("engine.operation.slow", event.code)
+        assertEquals("position_analysis", event.context["operation"])
+        assertEquals(request.operationId, event.context["operationId"])
+        assertEquals("2", event.context["sessionGeneration"])
+        assertEquals("1501", event.context["elapsedMillis"])
+        assertEquals("1000", event.context["thresholdMillis"])
+        assertEquals("cached-analysis", event.context["fallbackPolicy"])
+    }
+
+    @Test
+    fun observedEngineOperationRecordsTimeoutEvent() = runBlocking {
+        val request = engineOperationRequest(
+            kind = EngineOperationKind.ScoreEstimate,
+            state = GameState.empty(),
+            sessionGeneration = 1,
+            timeoutPolicy = EngineTimeoutPolicy(timeoutMillis = 10L),
+            fallbackPolicy = EngineFallbackPolicy.LocalRules,
+        )
+        val log = RecordingDiagnosticEventLogForDiagnostics()
+
+        try {
+            withTimeout(10L) {
+                runObservedEngineOperation(
+                    request = request,
+                    diagnosticEventLog = log,
+                ) {
+                    delay(1_000L)
+                }
+            }
+            fail("Timeout should be rethrown after diagnostic logging.")
+        } catch (_: TimeoutCancellationException) {
+            // Expected.
+        }
+
+        assertEquals(1, log.events.size)
+        val event = log.events.single()
+        assertEquals("engine.operation.timeout", event.code)
+        assertEquals("score_estimate", event.context["operation"])
+        assertEquals("10", event.context["timeoutMillis"])
+        assertEquals("local-rules", event.context["fallbackPolicy"])
+    }
+
+    @Test
     fun discardedOperationDiagnosticCapturesCurrentPosition() {
         val state = GameState.empty()
             .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
@@ -126,5 +200,23 @@ class DiagnosticEventApplicationTest {
         assertEquals("position result is stale", event.context["reason"])
         assertEquals("1", event.context["currentMoveCount"])
         assertTrue(event.context["positionFingerprint"].orEmpty().isNotBlank())
+    }
+}
+
+private class RecordingDiagnosticEventLogForDiagnostics : DiagnosticEventLogPort {
+    val events = mutableListOf<DiagnosticEvent>()
+
+    override fun append(
+        event: DiagnosticEvent,
+        nowMillis: Long,
+    ) {
+        events += event
+    }
+
+    override fun readText(): String =
+        events.joinToString("\n") { event -> event.summary() }
+
+    override fun clear() {
+        events.clear()
     }
 }

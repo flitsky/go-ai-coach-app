@@ -19,6 +19,7 @@ internal data class PositionScopedOperationToken(
 internal enum class EngineOperationKind(
     val code: String,
 ) {
+    PositionAnalysis("position_analysis"),
     TopMoves("top_moves"),
     ScoreEstimate("score_estimate"),
     AutoAiTurn("auto_ai_turn"),
