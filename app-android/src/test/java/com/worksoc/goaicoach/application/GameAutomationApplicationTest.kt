@@ -8,6 +8,7 @@ import com.worksoc.goaicoach.match.TurnOutcome
 import com.worksoc.goaicoach.shared.AnalysisPreset
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.AnalysisResult
+import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.DeadStoneCleanupResult
@@ -213,6 +214,53 @@ class GameAutomationApplicationTest {
         assertEquals(4_000L, context.analysisLimit.timeMillis)
         assertEquals(EngineSearchMode.JsonPositionAnalysis, context.searchMode)
         assertEquals(listOf(reviewCandidate), context.previousReviewCandidates)
+    }
+
+    @Test
+    fun autoAiTurnResultGuardAppliesOnlyToRequestedPosition() {
+        val state = GameState.empty()
+        val changedState = state
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+        val runPlan = AutoAiTurnRunPlan(
+            delayMillis = 0L,
+            context = buildAutoAiTurnExecutionContext(
+                gameState = state,
+                playerSetup = PlayerSetup(
+                    black = SidePlayerSetup(controller = SeatController.Ai),
+                    white = SidePlayerSetup(controller = SeatController.Human),
+                ),
+                searchTimeSettings = SearchTimeSettings(),
+                reviewCandidateMoves = emptyList(),
+            ),
+        )
+        val token = autoAiTurnOperationToken(runPlan)
+
+        assertEquals(
+            EngineOperationResultGuard.Apply,
+            evaluateAutoAiTurnResultGuard(token, state),
+        )
+        assertTrue(evaluateAutoAiTurnResultGuard(token, changedState) is EngineOperationResultGuard.Discard)
+    }
+
+    @Test
+    fun autoAiEndgameResultGuardAppliesOnlyToRequestedPosition() {
+        val state = GameState.empty()
+            .play(Move.Pass(StoneColor.Black))
+            .play(Move.Pass(StoneColor.White))
+        val changedState = GameState.empty()
+        val plan = AutoAiTurnEndgamePlan.Resolve(
+            state = state,
+            profile = EngineProfile(),
+            prePassCandidates = emptyList(),
+            engineMessagePrefix = "pass/pass",
+        )
+        val token = autoAiEndgameOperationToken(plan)
+
+        assertEquals(
+            EngineOperationResultGuard.Apply,
+            evaluateAutoAiEndgameResultGuard(token, state),
+        )
+        assertTrue(evaluateAutoAiEndgameResultGuard(token, changedState) is EngineOperationResultGuard.Discard)
     }
 
     @Test

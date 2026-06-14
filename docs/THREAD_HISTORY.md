@@ -1182,3 +1182,8 @@
 - 사용자가 `scoreFinal()` 생략 판단의 근거를 질문했고, `deadStones()` 2초 + `scoreFinal()` 1초, 총 3초 제한으로 둘 다 호출하는 정책을 요청했다.
 - 판단 근거는 5초 cap을 두 raw 명령에 각각 적용하면 체감 10초가 될 수 있다는 UX 우려였다고 설명했다. 이후 기본 종국 정책을 사용자 요청에 맞춰 단계별 cap으로 변경했다.
 - 사람 pass/pass와 AI 자동대국 pass/pass 모두 `deadStones()` 직전 `timeMillis=2000`, `scoreFinal()` 직전 `timeMillis=1000`으로 `configure()`를 다시 호출한다. `scoreFinal()`은 다시 기본 빠른 종국에서 실행되며, debug log에는 `assistantJudgeDeadStonesTimeCapMs=2000`, `assistantJudgeFinalScoreTimeCapMs=1000`, `assistantJudgeTotalTimeCapMs=3000`, `diagnosticKataGoFinalScore=...`를 남긴다.
+- 사용자가 다음 리팩토링 진행 후 경과 보고를 요청했다.
+- 남은 stale result guard 후보 중 자동 AI 턴과 자동 AI 종국 처리 경로를 선택했다. 기존에는 delay 후 실행 전 검증은 있었지만, 엔진 호출이 시작된 뒤 결과가 늦게 돌아오는 경우를 application token으로 직접 보호하지는 않았다.
+- `AutoAiTurnOperationToken`, `AutoAiEndgameOperationToken`을 추가했다. 요청 당시 board fingerprint를 저장하고, 결과 도착 시 현재 `gameState`와 비교해 같을 때만 AI 착수 결과, 실패 메시지, 자동 종국 결과를 화면에 반영한다.
+- `GoCoachApp.kt`의 자동 AI 턴 success/failure와 pass/pass endgame success/failure 반영 지점에 guard를 적용했다. stale 결과는 상태/메시지/점수/기보를 바꾸지 않고 폐기된다.
+- `GameAutomationApplicationTest`에 자동 AI 턴과 자동 종국 guard 테스트를 추가했고, 대상 테스트 `GameAutomationApplicationTest`, `EngineOperationPolicyTest`가 통과했다.

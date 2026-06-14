@@ -257,6 +257,52 @@ internal data class AutoAiTurnRunPlan(
     val context: AutoAiTurnExecutionContext,
 )
 
+internal data class AutoAiTurnOperationToken(
+    val position: PositionScopedOperationToken,
+)
+
+internal fun autoAiTurnOperationToken(
+    runPlan: AutoAiTurnRunPlan,
+): AutoAiTurnOperationToken =
+    AutoAiTurnOperationToken(
+        position = positionScopedOperationToken(
+            kind = "auto_ai_turn",
+            state = runPlan.context.turnState,
+        ),
+    )
+
+internal fun evaluateAutoAiTurnResultGuard(
+    token: AutoAiTurnOperationToken,
+    currentState: GameState,
+): EngineOperationResultGuard =
+    evaluatePositionScopedResultGuard(
+        token = token.position,
+        currentState = currentState,
+    )
+
+internal data class AutoAiEndgameOperationToken(
+    val position: PositionScopedOperationToken,
+)
+
+internal fun autoAiEndgameOperationToken(
+    plan: AutoAiTurnEndgamePlan.Resolve,
+): AutoAiEndgameOperationToken =
+    AutoAiEndgameOperationToken(
+        position = positionScopedOperationToken(
+            kind = "auto_ai_endgame",
+            state = plan.state,
+        ),
+    )
+
+internal fun evaluateAutoAiEndgameResultGuard(
+    token: AutoAiEndgameOperationToken,
+    currentState: GameState,
+): EngineOperationResultGuard =
+    evaluatePositionScopedResultGuard(
+        token = token.position,
+        currentState = currentState,
+    )
+
 internal data class AutoAiTurnExecutionContext(
     val turnState: GameState,
     val aiPlayer: StoneColor,
