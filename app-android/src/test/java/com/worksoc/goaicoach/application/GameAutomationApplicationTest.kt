@@ -413,6 +413,35 @@ class GameAutomationApplicationTest {
     }
 
     @Test
+    fun autoAiTurnFollowUpPlanRequestsTopMoveAnalysisOnlyForContinuingGame() {
+        val continuingState = GameState.empty()
+            .play(Move.Pass(StoneColor.Black))
+        val endedState = continuingState
+            .play(Move.Pass(StoneColor.White))
+
+        val continuing = buildAutoAiTurnFollowUpPlan(
+            buildAutoAiTurnDisplayPlan(
+                result = autoAiTurnResult(continuingState, estimate = null),
+                previousSnapshots = emptyList(),
+                previousReviewCandidates = emptyList(),
+            ),
+        )
+        val ended = buildAutoAiTurnFollowUpPlan(
+            buildAutoAiTurnDisplayPlan(
+                result = autoAiTurnResult(endedState, estimate = null),
+                previousSnapshots = emptyList(),
+                previousReviewCandidates = emptyList(),
+            ),
+        )
+
+        assertEquals(
+            AutoAiTurnFollowUpPlan.RequestTopMoveAnalysis(continuingState),
+            continuing,
+        )
+        assertEquals(AutoAiTurnFollowUpPlan.None, ended)
+    }
+
+    @Test
     fun autoAiTurnDisplayRunnerDelegatesToEngineSessionAndBuildsDisplayPlan() = runBlocking {
         val initialState = GameState.empty()
         val nextState = initialState.play(Move.Pass(StoneColor.Black))

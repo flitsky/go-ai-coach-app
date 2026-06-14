@@ -1145,3 +1145,6 @@
 - `FUTURE_ARCHITECTURE_VISION.md`에는 `exact-hit` 기본 정책과 향후 `compatible-hit` 도입 방향, 그리고 부심 결과를 주심 결과로 조용히 덮어쓰지 않는다는 원칙을 반영했다.
 - `ENGINE_API_CALL_POLICY.md`에는 JSON position analysis cache의 `exact-hit`, `compatible-hit`, `diagnostic-hit` 구분을 추가했다. 초기 자동 의사결정은 exact-hit만 사용하고, compatible-hit은 rootVisits 범위 정규화와 신뢰 등급 정책이 준비된 뒤 도입하는 방향으로 정리했다.
 - `SCORE_AND_ENDGAME_DECISION.md`에는 주심/부심 불일치 UX 원칙을 추가했다. 빠른 계가와 정밀 계가를 모두 보존하고, critical disagreement를 기록하며, 최종 기보 결과는 사용자가 선택하도록 정리했다.
+- 문서 반영 후 다음 리팩토링으로 자동 AI 턴 성공 후 후속 분석 판단을 application plan으로 분리했다.
+- `AutoAiTurnFollowUpPlan`과 `buildAutoAiTurnFollowUpPlan()`을 추가했다. `GoCoachApp.kt`는 더 이상 `display.nextAnalysisState` nullable 값을 직접 해석하지 않고, `None` 또는 `RequestTopMoveAnalysis` plan만 처리한다.
+- `GameAutomationApplicationTest`에 일반 진행 상태는 Top Moves 후속 분석을 요청하고, 양패스 종국 상태는 후속 분석을 요청하지 않는 테스트를 추가했다. `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest`가 통과했다.

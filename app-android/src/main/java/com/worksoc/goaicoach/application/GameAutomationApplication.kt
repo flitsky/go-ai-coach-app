@@ -193,6 +193,18 @@ internal data class AutoAiTurnDisplayPlan(
     val nextAnalysisState: GameState?,
 )
 
+internal sealed class AutoAiTurnFollowUpPlan {
+    data object None : AutoAiTurnFollowUpPlan()
+    data class RequestTopMoveAnalysis(
+        val targetState: GameState,
+    ) : AutoAiTurnFollowUpPlan()
+}
+
+internal fun buildAutoAiTurnFollowUpPlan(display: AutoAiTurnDisplayPlan): AutoAiTurnFollowUpPlan =
+    display.nextAnalysisState?.let { state ->
+        AutoAiTurnFollowUpPlan.RequestTopMoveAnalysis(state)
+    } ?: AutoAiTurnFollowUpPlan.None
+
 internal data class AutoAiTurnFailureDisplayPlan(
     val engineMessage: String,
     val candidateText: String,

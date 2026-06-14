@@ -21,10 +21,12 @@ import androidx.compose.ui.platform.LocalContext
 import com.worksoc.goaicoach.application.AnalysisCacheKey
 import com.worksoc.goaicoach.application.AnalysisResultCache
 import com.worksoc.goaicoach.application.AutoAiTurnDisplayPlan
+import com.worksoc.goaicoach.application.AutoAiTurnFollowUpPlan
 import com.worksoc.goaicoach.application.AutoAiTurnRequestPlan
 import com.worksoc.goaicoach.application.AutoAiTurnScheduleValidationPlan
 import com.worksoc.goaicoach.application.AutoAiTurnUiState
 import com.worksoc.goaicoach.application.buildAutoAiTurnFailureDisplayPlan
+import com.worksoc.goaicoach.application.buildAutoAiTurnFollowUpPlan
 import com.worksoc.goaicoach.application.buildDebugReportCopyPlan
 import com.worksoc.goaicoach.application.buildEndgameFailureDisplayPlan
 import com.worksoc.goaicoach.application.buildEngineEstimateDisplayPlan
@@ -653,9 +655,9 @@ private fun GoCoachScreen(
         applyRuntimeSessionState(currentRuntimeSessionState().applySelection(selection))
     }
 
-    fun applyAutoAiTurnDisplayPlan(display: AutoAiTurnDisplayPlan): GameState? {
+    fun applyAutoAiTurnDisplayPlan(display: AutoAiTurnDisplayPlan): AutoAiTurnFollowUpPlan {
         applyCoreSessionState(currentCoreSessionState().applyAutoAiTurnDisplayPlan(display))
-        return display.nextAnalysisState
+        return buildAutoAiTurnFollowUpPlan(display)
     }
 
     fun applyAutoAiTurnFailureDisplayPlan(error: Throwable) {
@@ -1247,7 +1249,7 @@ private fun GoCoachScreen(
                         ),
                     )
                     isEngineBusy = true
-                    var nextAnalysisState: GameState? = null
+                    var followUpPlan: AutoAiTurnFollowUpPlan = AutoAiTurnFollowUpPlan.None
                     runCatching {
                         withContext(Dispatchers.IO) {
                             engineClient.runAutoAiTurnDisplayPlan(
@@ -1278,7 +1280,7 @@ private fun GoCoachScreen(
                             ),
                         )
                         turnTimeState = turnTimeUpdate.after
-                        nextAnalysisState = applyAutoAiTurnDisplayPlan(display)
+                        followUpPlan = applyAutoAiTurnDisplayPlan(display)
                         if (display.shouldResolveEndgame) {
                             isGameEnded = true
                             runtimeEventLog.append(
@@ -1350,11 +1352,14 @@ private fun GoCoachScreen(
                             isAutoAiTurnPending = isAutoAiTurnPending,
                         ),
                     )
-                    nextAnalysisState?.let { state ->
-                        requestTopMoveAnalysisForState(
-                            targetState = state,
-                            automatic = true,
-                        )
+                    when (val plan = followUpPlan) {
+                        AutoAiTurnFollowUpPlan.None -> Unit
+                        is AutoAiTurnFollowUpPlan.RequestTopMoveAnalysis -> {
+                            requestTopMoveAnalysisForState(
+                                targetState = plan.targetState,
+                                automatic = true,
+                            )
+                        }
                     }
                 }
             }
