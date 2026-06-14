@@ -1257,3 +1257,6 @@
 - 1단계로 HTTP `RemotePositionAnalysisTransport` spike를 구현했다. `RemotePositionAnalysisHttpConfig`는 `enabled=false` 기본값을 갖고, `HttpRemotePositionAnalysisTransport`는 명시적으로 활성화된 경우에만 읽기 전용 position analysis JSON을 POST한다.
 - remote HTTP spike는 `GameState`, `AnalysisLimit`, `EngineSearchMode`, `positionFingerprint`를 요청 JSON으로 직렬화하고, response의 `AnalysisResult` 후보수/방문수/진단 문구를 파싱한다. production wiring은 아직 없으므로 일반 앱 실행은 계속 로컬 엔진 경로만 사용한다.
 - `RemotePositionAnalysisGatewayTest`에 HTTP transport 비활성 기본값 테스트와 fake `HttpURLConnection` 기반 request/response 테스트를 추가했고, JDK 17/Android SDK 환경에서 관련 middleware 테스트가 통과했다.
+- 2단계로 공통 `EngineOperationRequest` 모델을 도입했다. operation id, operation kind, session generation, board fingerprint, move count, timeout policy, fallback policy, backend id를 한 객체로 묶어 로컬 process와 향후 remote server 호출을 같은 실패/지연 모델로 다룰 수 있게 했다.
+- 기존 `PositionScopedOperationToken`과 호환되도록 `EngineOperationRequest.toPositionScopedOperationToken()` 및 `evaluateEngineOperationResultGuard()`를 추가했다. 이제 generation mismatch와 board fingerprint mismatch를 같은 result guard 계층에서 폐기할 수 있다.
+- `EngineOperationPolicyTest`에 operation metadata 생성, generation mismatch discard, same generation/same position apply 테스트를 추가했고 관련 application 테스트가 통과했다.
