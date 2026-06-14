@@ -1108,3 +1108,4 @@
 - `EndgameResolutionTimings`를 추가해 `syncReplayMs`, `deadStonesMs`, `localDeadStoneDetectionMs`, `localCleanupScoringMs`, `engineEstimateMs`, `scoreSelectionMs`, `diagnosticFinalScoreMs`, `resolverTotalMs`, `totalWithSyncReplayMs`를 기록한다.
 - `syncAfterHumanMove()`는 `syncToGameState()` replay 시간을 재서 `resolveAiEndgame()`에 전달한다. `toLogDetail()`은 debug report `[EndgameLog]`에 각 timing line을 출력하고, `runtimeHumanEngineSyncSuccessLog()`의 `result=final_score` summary에도 timing summary를 포함한다.
 - `EndgameResolverTest`에 timing log 검증을 추가했고, `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest` 및 `make test`를 실행해 모두 통과했다.
+- 커밋 `0046983 Log endgame resolution step timings`를 `origin/main`에 푸시했고, 무선 ADB `SM-S908N(192.168.35.166:42037)`에 `make install-dev-engine`로 계측 포함 debug APK와 KataGo model/config를 설치했다. 앱 cold launch `TotalTime=554ms`를 확인했다.
