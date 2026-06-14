@@ -134,6 +134,9 @@ class ScoreDisplayApplicationTest {
         )
         val token = scoreEstimateOperationToken(request)
 
+        assertEquals(EngineOperationKind.ScoreEstimate, token.operation.kind)
+        assertEquals(EngineFallbackPolicy.LocalRules, token.operation.fallbackPolicy)
+        assertEquals(request.profile.analysisLimit.timeMillis, token.operation.timeoutPolicy.timeoutMillis)
         assertEquals(
             EngineOperationResultGuard.Apply,
             evaluateScoreEstimateResultGuard(token, state),

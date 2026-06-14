@@ -56,16 +56,22 @@ internal data class ScoreEstimateLaunchStateUpdate(
 )
 
 internal data class ScoreEstimateOperationToken(
-    val position: PositionScopedOperationToken,
+    val operation: EngineOperationRequest,
 )
 
 internal fun scoreEstimateOperationToken(
     request: ScoreEstimateRequestPlan.RequestEngineEstimate,
 ): ScoreEstimateOperationToken =
     ScoreEstimateOperationToken(
-        position = positionScopedOperationToken(
-            kind = "score_estimate",
+        operation = engineOperationRequest(
+            kind = EngineOperationKind.ScoreEstimate,
             state = request.state,
+            sessionGeneration = 0L,
+            timeoutPolicy = EngineTimeoutPolicy(
+                timeoutMillis = request.profile.analysisLimit.timeMillis,
+                label = "${request.profile.difficulty.label}:${request.profile.analysisLimit.visits}v",
+            ),
+            fallbackPolicy = EngineFallbackPolicy.LocalRules,
         ),
     )
 
@@ -73,9 +79,10 @@ internal fun evaluateScoreEstimateResultGuard(
     token: ScoreEstimateOperationToken,
     currentState: GameState,
 ): EngineOperationResultGuard =
-    evaluatePositionScopedResultGuard(
-        token = token.position,
+    evaluateEngineOperationResultGuard(
+        request = token.operation,
         currentState = currentState,
+        currentSessionGeneration = 0L,
     )
 
 internal fun buildScoreEstimateFailureDisplayPlan(error: Throwable): ScoreEstimateFailureDisplayPlan =

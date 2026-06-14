@@ -1270,3 +1270,6 @@
 - `KataGoProcessEngineAdapter`는 process lifecycle, command send/receive, board state replay용 query id 생성, low-level primitive 호출에 집중하고, 후보수 조합/정책 fallback/refine/summary 생성은 각 protocol client가 담당한다.
 - `:engine-android:testDebugUnitTest`를 실행해 engine 모듈 테스트가 통과했다.
 - 5개 권장 리팩토링 전체 완료 후 통합 검증으로 `make test`를 실행했고 통과했다. 이후 무선 ADB로 연결된 `SM-S908N(192.168.35.47:41809)`에 `make install-dev-engine`을 실행해 최신 debug APK 설치, KataGo model/config seed, 앱 cold launch를 완료했다. launch `TotalTime=561ms`.
+- 사용자가 다음 리팩토링 진행과 결과 보고 시 현재 리팩토링 완성도 및 다음 추천 작업 리스트업을 요청했다.
+- 다음 안전 단위로 Top Moves와 score estimate의 stale result guard token을 `PositionScopedOperationToken` 직접 사용에서 공통 `EngineOperationRequest` 기반으로 전환했다. Top Moves는 `EngineOperationKind.TopMoves`, `CachedAnalysis` fallback, analysis limit time cap metadata를 기록하고, score estimate는 `EngineOperationKind.ScoreEstimate`, `LocalRules` fallback, profile analysis limit metadata를 기록한다.
+- 기존 position fingerprint 기반 stale discard와 Top Moves analysis key mismatch discard 동작은 유지했다. 대상 테스트 `TopMovesApplicationTest`, `ScoreDisplayApplicationTest`, `EngineOperationPolicyTest`와 최종 `make test`가 통과했다.

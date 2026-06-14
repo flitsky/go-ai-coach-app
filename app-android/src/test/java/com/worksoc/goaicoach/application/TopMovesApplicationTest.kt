@@ -607,6 +607,10 @@ class TopMovesApplicationTest {
             plan = plan,
         )
 
+        assertEquals(EngineOperationKind.TopMoves, token.operation.kind)
+        assertEquals(EngineFallbackPolicy.CachedAnalysis, token.operation.fallbackPolicy)
+        assertEquals(plan.analysisLimit.timeMillis, token.operation.timeoutPolicy.timeoutMillis)
+        assertEquals("local-engine", token.operation.backendId)
         assertEquals(
             EngineOperationResultGuard.Apply,
             evaluateTopMoveAnalysisResultGuard(

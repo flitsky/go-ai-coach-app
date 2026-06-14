@@ -15,7 +15,7 @@ internal data class TopMoveAnalysisPlan(
 )
 
 internal data class TopMoveAnalysisOperationToken(
-    val position: PositionScopedOperationToken,
+    val operation: EngineOperationRequest,
     val analysisKey: AnalysisCacheKey,
 )
 
@@ -87,9 +87,15 @@ internal fun topMoveAnalysisOperationToken(
     plan: TopMoveAnalysisPlan,
 ): TopMoveAnalysisOperationToken =
     TopMoveAnalysisOperationToken(
-        position = positionScopedOperationToken(
-            kind = "top_moves_analysis",
+        operation = engineOperationRequest(
+            kind = EngineOperationKind.TopMoves,
             state = targetState,
+            sessionGeneration = 0L,
+            timeoutPolicy = EngineTimeoutPolicy(
+                timeoutMillis = plan.analysisLimit.timeMillis,
+                label = "${plan.analysisKey.preset.label}:${plan.analysisLimit.visits}v",
+            ),
+            fallbackPolicy = EngineFallbackPolicy.CachedAnalysis,
         ),
         analysisKey = plan.analysisKey,
     )
@@ -99,9 +105,10 @@ internal fun evaluateTopMoveAnalysisResultGuard(
     currentState: GameState,
     currentAnalysisKey: AnalysisCacheKey?,
 ): EngineOperationResultGuard {
-    val positionGuard = evaluatePositionScopedResultGuard(
-        token = token.position,
+    val positionGuard = evaluateEngineOperationResultGuard(
+        request = token.operation,
         currentState = currentState,
+        currentSessionGeneration = 0L,
     )
     if (positionGuard is EngineOperationResultGuard.Discard) {
         return positionGuard
