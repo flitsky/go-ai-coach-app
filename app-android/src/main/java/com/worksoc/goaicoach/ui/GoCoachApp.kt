@@ -98,7 +98,8 @@ import com.worksoc.goaicoach.application.shouldRequestTopMoveAnalysis
 import com.worksoc.goaicoach.application.planSavedGamePersistence
 import com.worksoc.goaicoach.application.RuntimePlayLevelSelection
 import com.worksoc.goaicoach.application.RuntimeEventLogPort
-import com.worksoc.goaicoach.application.runTopMoveAnalysis
+import com.worksoc.goaicoach.application.TopMoveAnalysisExecutionContext
+import com.worksoc.goaicoach.application.runTopMoveAnalysisEffect
 import com.worksoc.goaicoach.application.ScoringRuleChangePlan
 import com.worksoc.goaicoach.application.runAutoAiEndgameDisplayPlan
 import com.worksoc.goaicoach.application.runRestoredGameSyncDisplayPlan
@@ -870,14 +871,15 @@ private fun GoCoachScreen(
             isEngineBusy = true
             runCatching {
                 withContext(Dispatchers.IO) {
-                    engineClient.runTopMoveAnalysis(
-                        targetState = targetState,
-                        engineProfile = runtimeState.engineProfile,
-                        analysisPreset = runtimeState.analysisPreset,
-                        plan = plan,
-                        deep = effect.deep,
-                        topMovesEnabled = currentTopMovesEnabled,
-                        cacheEnabled = analysisCache.isEnabled,
+                    engineClient.runTopMoveAnalysisEffect(
+                        effect = effect,
+                        context = TopMoveAnalysisExecutionContext(
+                            targetState = targetState,
+                            engineProfile = runtimeState.engineProfile,
+                            analysisPreset = runtimeState.analysisPreset,
+                            topMovesEnabled = currentTopMovesEnabled,
+                            cacheEnabled = analysisCache.isEnabled,
+                        ),
                     )
                 }
             }.onSuccess { update ->

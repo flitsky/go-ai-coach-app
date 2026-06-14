@@ -214,6 +214,51 @@ class TopMovesApplicationTest {
     }
 
     @Test
+    fun runTopMoveAnalysisEffectUsesEffectAndExecutionContext() = runBlocking {
+        val state = GameState.empty()
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+        val candidate = CandidateMove(
+            move = Move.Play(StoneColor.White, BoardCoordinate.fromLabel("D4", BoardSize.Nine)),
+            pointLoss = 0.0,
+        )
+        val client = FakeTopMoveEngineSessionClient(
+            result = AnalysisResult(
+                status = EngineStatus.ready("analysis ready"),
+                candidates = listOf(candidate),
+                summary = "engine summary",
+            ),
+        )
+        val plan = buildTopMoveAnalysisPlan(
+            targetState = state,
+            engineProfile = EngineProfile(),
+            analysisPreset = AnalysisPreset.Balanced,
+            deep = true,
+        )
+        val effect = GameSessionEffect.RunTopMoveAnalysis(
+            plan = plan,
+            deep = true,
+            automatic = true,
+        )
+
+        val update = client.runTopMoveAnalysisEffect(
+            effect = effect,
+            context = TopMoveAnalysisExecutionContext(
+                targetState = state,
+                engineProfile = EngineProfile(),
+                analysisPreset = AnalysisPreset.Balanced,
+                topMovesEnabled = false,
+                cacheEnabled = true,
+            ),
+        )
+
+        assertEquals(state, client.analyzedState)
+        assertEquals(plan.analysisLimit, client.analyzedLimit)
+        assertTrue(update.engineMessage.startsWith("Move review analysis ready"))
+        assertEquals(0, update.candidateMoves.size)
+        assertNotNull(update.cachedResult)
+    }
+
+    @Test
     fun cachedAnalysisUpdateKeepsDisplayMovesOnlyWhenTopMovesEnabled() {
         val state = GameState.empty()
         val snapshot = MoveAnalysisSnapshot.from(

@@ -29,6 +29,14 @@ internal data class TopMoveAnalysisUpdate(
     val undoRestoreResult: CachedAnalysisResult? = null,
 )
 
+internal data class TopMoveAnalysisExecutionContext(
+    val targetState: GameState,
+    val engineProfile: EngineProfile,
+    val analysisPreset: AnalysisPreset,
+    val topMovesEnabled: Boolean,
+    val cacheEnabled: Boolean,
+)
+
 internal data class TopMoveAnalysisFailureDisplayPlan(
     val targetState: GameState,
     val engineMessage: String,
@@ -330,6 +338,20 @@ internal suspend fun EngineSessionClient.runTopMoveAnalysis(
         cacheEnabled = cacheEnabled,
     )
 }
+
+internal suspend fun EngineSessionClient.runTopMoveAnalysisEffect(
+    effect: GameSessionEffect.RunTopMoveAnalysis,
+    context: TopMoveAnalysisExecutionContext,
+): TopMoveAnalysisUpdate =
+    runTopMoveAnalysis(
+        targetState = context.targetState,
+        engineProfile = context.engineProfile,
+        analysisPreset = context.analysisPreset,
+        plan = effect.plan,
+        deep = effect.deep,
+        topMovesEnabled = context.topMovesEnabled,
+        cacheEnabled = context.cacheEnabled,
+    )
 
 internal fun planShowTopMoves(
     reviewAnalysis: MoveAnalysisSnapshot,

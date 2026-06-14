@@ -1208,3 +1208,6 @@
 - 사용자가 같은 형식으로 다음 리팩토링 진행과 보고를 요청했다.
 - 다음 안전 단위로 Top Moves launch update가 raw `TopMoveAnalysisPlan` 대신 `GameSessionEffect.RunTopMoveAnalysis`를 반환하도록 연결했다. `TopMoveAnalysisLaunchPlan.RunEngine`은 `plan`, `deep`, `automatic`을 함께 보존하고, `GameSessionAnalysisState.applyTopMoveAnalysisLaunchPlan()`은 pending analysis key와 실행 effect를 함께 만든다. `GoCoachApp.kt`는 이제 launch 결과의 effect를 실행한다.
 - `TopMovesApplicationTest`와 `GameSessionControllerTest`를 보강했고 관련 application 테스트가 통과했다. 리팩토링 완성도는 2026-06-14 현재 **89/100**으로 재평가했다. 다음 핵심은 Top Moves effect 실행 coroutine 자체를 별도 runner 함수로 분리하거나, Score Estimate 실행부도 같은 effect 흐름으로 연결하는 것이다.
+- 사용자가 Git GC 경고가 무엇인지, 해결 난이도가 있는지 질문했고, 먼저 해결한 뒤 다음 리팩토링을 진행해 달라고 요청했다.
+- `.git/gc.log`를 확인한 결과 경고는 코드/커밋 문제가 아니라 unreachable loose object가 많이 쌓인 로컬 Git 저장소 housekeeping 문제였다. `git prune`과 `.git/gc.log` 제거 후 loose object 수가 7788개/40.81MiB에서 1145개/10.17MiB로 줄었고, `git gc --auto` 재확인에서도 경고가 사라졌다.
+- 다음 리팩토링으로 Top Moves effect 실행 세부 인자 조립을 application runner로 이동했다. `TopMoveAnalysisExecutionContext`와 `EngineSessionClient.runTopMoveAnalysisEffect()`를 추가해 UI가 `GameSessionEffect.RunTopMoveAnalysis`를 실행할 때 raw plan/deep/cache 표시 세부 조합을 덜 알도록 했다. `TopMovesApplicationTest`에 effect runner 테스트를 추가했고 관련 application 테스트가 통과했다.
