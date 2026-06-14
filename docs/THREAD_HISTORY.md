@@ -1114,3 +1114,7 @@
 - 하위 단계별 timing은 `syncReplayMs=25`, `deadStonesMs=17873`, `localDetectMs=4`, `localCleanupScoreMs=2`, `estimateMs=214`, `scoreSelectMs=1`, `finalScoreMs=28845`, `resolverTotalMs=46939`였다.
 - 분석 결론: 46.9초 지연의 병목은 앱 로컬 replay/사석 탐지/계가가 아니라 KataGo GTP 종국 명령인 `final_status_list dead`와 `final_score`에 있다. 특히 `final_status_list dead`가 약 17.9초, `final_score`가 약 28.8초를 차지했다.
 - 다음 개선 방향은 마지막 `pass/pass` UX에서 두 종국 GTP 명령을 동기 실행하지 않고, 빠른 로컬 계가를 먼저 표시한 뒤 정밀 엔진 사석/계가는 백그라운드 또는 명시적 “정밀 계가” 액션으로 분리하는 것이다. 추가로 `engine.endgame_step_slow` warning diagnostic event와 endgame 전용 timeout/프로세스 재동기화 정책을 검토한다.
+- 사용자가 일반 착수 분석은 2초 내로 충분히 동작했는데 `Time cap OFF`에서 종국만 1분 가까이 걸리는 것은 UX/상식 측면에서 납득하기 어렵다고 지적했고, 부심 10초 판정과 주심 무제한 판정을 분리하는 2심판 구조를 제안했다.
+- 검토 결과 이 방향을 권장안으로 정리했다. `Search Time = OFF`는 AI 착수 품질 설정이지 종국 화면 대기를 무제한 허용한다는 의미가 아니므로, 종국 판정은 별도 SLA를 둔다.
+- `SCORE_AND_ENDGAME_DECISION.md`에 부심/주심 구조를 추가했다. 부심은 로컬 사석 fallback, 기존 Top Moves/NN estimate, 짧은 제한 엔진 사석 판정 등을 조합해 2~10초 안에 화면 결과를 표시하고, 주심은 백그라운드 정밀 검증으로 돌린다. 두 결과가 크게 다르면 `critical` diagnostic event로 기록한다.
+- `ENGINE_API_CALL_POLICY.md`의 `deadStones()+scoreFinal()` 비용 설명을 실기기 계측값에 맞춰 수정했다. GTP 종국 명령은 일반 분석 time cap과 별도이며 수십 초까지 늘 수 있고, 강제 timeout을 넣을 경우 늦게 도착한 GTP 응답이 process stream을 오염시킬 수 있으므로 process restart 또는 명시적 재동기화 정책과 함께 구현해야 한다고 명시했다.

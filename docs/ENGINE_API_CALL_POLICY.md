@@ -193,7 +193,7 @@ JSON analysis path도 B16/B32/B64 같은 visit 레벨 설정을 그대로 표현
 | 1 | `playMove()` / `newGame()` / `syncToGameState()` | 매우 낮음 | 항상 사용 | 엔진 상태 동기화. 분석 정보 없음 |
 | 2 | `analyze(fastCandidateAnalysis)` | 낮음 | 기본 대국 경로 | AI best move 확보, 사람 착수 리뷰, Top Moves 표시 |
 | 3 | `estimateScore(scoreGraphAnalysisLimit)` | 낮음-중간 | 그래프/Eval | Score / Win Rate / ownership 추정 |
-| 4 | `deadStones()` + `scoreFinal()` | 중간 | 종국 pass/pass | 사석 정리와 최종 계가 |
+| 4 | `deadStones()` + `scoreFinal()` | 낮음~매우 높음 | 종국 pass/pass | 사석 정리와 최종 계가. GTP 종국 명령은 일반 분석 time cap과 별도라 실기기에서 수십 초까지 늘 수 있음 |
 | 5 | JSON broad analysis, `includePolicy=true` | 높음 | 기본 경로 비활성 | 여러 후보/정책 후보 확보 |
 | 6 | policy refine / sweep / deep fallback | 매우 높음 | 기본 경로 비활성 | 모든 합법 착점 평가, 복기/학습 모드 |
 
@@ -212,6 +212,18 @@ EngineAdapter.analyze(
 ```
 
 KataGo process adapter에서는 이 조건일 때 JSON analysis process를 피하고 GTP `kata-search_analyze` 빠른 경로를 우선 사용한다.
+
+## 종국 GTP 호출 정책
+
+`deadStones()`와 `scoreFinal()`은 엔진 코어 API로는 원시 기능을 그대로 노출하되, 앱 UX에서는 그대로 동기 실행하지 않는다. 2026-06-14 실기기 계측에서 `Time cap OFF` 상태의 같은 종국 국면이 `deadStonesMs=17873`, `finalScoreMs=28845`, `totalWithSyncMs=46964`를 기록했다.
+
+운영 정책은 다음과 같다.
+
+- 대국 중 `Search Time = OFF`라도 종국 판정은 별도 SLA를 가진다.
+- 화면에는 부심 판정, 즉 빠른 로컬/짧은 제한 엔진 조합 결과를 먼저 보여준다.
+- 무제한 또는 긴 제한의 주심 판정은 백그라운드 검증으로 돌리고, 화면 blocking의 근거로 쓰지 않는다.
+- 부심과 주심이 서로 다른 승패 또는 큰 점수 차이를 내면 `critical` diagnostic event로 기록한다.
+- GTP 명령 timeout을 강제로 끊는 경우, 늦게 도착한 응답이 process stream을 오염시킬 수 있으므로 process restart 또는 명시적 재동기화 정책과 함께 구현한다.
 
 ## `candidateCount` 의미
 
