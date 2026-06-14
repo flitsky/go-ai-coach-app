@@ -93,6 +93,11 @@ internal sealed class EngineOperationResultGuard {
     ) : EngineOperationResultGuard()
 }
 
+internal sealed class EngineOperationApplyPlan {
+    data object Apply : EngineOperationApplyPlan()
+    data class Discard(val discard: EngineOperationResultGuard.Discard) : EngineOperationApplyPlan()
+}
+
 internal fun positionScopedOperationToken(
     kind: String,
     state: GameState,
@@ -178,6 +183,22 @@ private fun defaultEngineOperationId(
     sessionGeneration: Long,
 ): String =
     "${kind.code}:g$sessionGeneration:m${state.moves.size}:${state.analysisFingerprint().take(12)}"
+
+internal fun buildEngineOperationApplyPlan(
+    request: EngineOperationRequest,
+    currentState: GameState,
+    currentSessionGeneration: Long,
+): EngineOperationApplyPlan =
+    when (
+        val guard = evaluateEngineOperationResultGuard(
+            request = request,
+            currentState = currentState,
+            currentSessionGeneration = currentSessionGeneration,
+        )
+    ) {
+        EngineOperationResultGuard.Apply -> EngineOperationApplyPlan.Apply
+        is EngineOperationResultGuard.Discard -> EngineOperationApplyPlan.Discard(guard)
+    }
 
 internal fun evaluateEngineBenchmarkGate(
     isEngineReady: Boolean,

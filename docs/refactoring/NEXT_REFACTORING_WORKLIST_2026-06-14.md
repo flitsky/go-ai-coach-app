@@ -252,7 +252,7 @@
 - 2026-06-15: `PositionAnalysisCacheOptimizationPlan`이 최종 `GameState`를 보존하도록 보강했다. post-game cache optimization도 표준 operation request가 요구하는 board fingerprint를 같은 방식으로 생성할 수 있다.
 - 2026-06-15: `DiagnosticEventApplicationTest`에 schema contract test를 추가했다. `engine.operation.slow`, `engine.operation.timeout`, `engine.operation.discarded`가 문서화된 필수 context key를 유지하는지 검증한다.
 - 2026-06-15: `RuntimeEventApplicationTest`에 operation started/completed 로그 테스트를 추가했다.
-- 검증: `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest` 통과.
+- 검증: `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest` 통과, `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test` 통과.
 
 ## 현재 리팩토링 완성도 평가
 
@@ -319,3 +319,39 @@
 5. Middleware KMP 이동 후보 2차 정리
    - `EngineOperationPolicy`, `DiagnosticEventApplication`, position analysis gateway 중 Android-free 파일을 물리 이동 후보로 분류한다.
    - 이동 전 package dependency test를 먼저 강화한다.
+
+## 2026-06-15 추가 진행 로그: Sync Apply Plan 정리
+
+- 2026-06-15: `EngineOperationApplyPlan`을 추가해 엔진 결과를 화면에 적용할지, 늦은 결과로 폐기할지를 application 계층의 plan으로 표현하게 했다. `GoCoachApp.kt`의 local helper는 이제 guard 판단 자체를 직접 수행하지 않고 plan을 받아 runtime/diagnostic discard log만 연결한다.
+- 2026-06-15: `HumanEngineSyncCompletionPlan`을 추가했다. human move 이후 엔진 sync 성공/실패 결과는 먼저 session generation과 board fingerprint guard를 통과해야 하며, stale result이면 success/failure display plan과 runtime success/failure log가 생성되지 않는다.
+- 2026-06-15: `runEngineOperationInScope()` helper를 추가해 UI가 `EngineOperationScope`를 직접 생성하지 않도록 정리했다. 아직 lifecycle callback 구현은 UI에 남아 있지만, scope 생성과 complete 보장 계약은 application 함수로 이동했다.
+- 2026-06-15: `EngineOperationPolicyTest`, `HumanMoveApplicationTest`, `EngineSessionLifecycleApplicationTest`를 보강해 apply/discard plan wrapping, stale human sync discard, scoped engine operation 실패 시 complete 보장을 검증했다.
+- 검증: `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest` 통과.
+
+## 현재 리팩토링 완성도 평가
+
+- 주관 점수: 97/100.
+- 상향 요인: UI가 엔진 결과의 신선도 판정과 human sync success/failure plan 조합을 직접 소유하던 비율이 더 줄었다. 특히 늦게 도착한 human sync 결과가 success/failure 로그를 남기지 않는 정책이 application test로 고정됐다.
+- 남은 감점 요인: `GoCoachApp.kt`에는 아직 `shouldApplyEngineOperationResult()`라는 UI-local side effect helper와 post-undo/scoring/restored sync의 apply/discard 분기가 남아 있다. lifecycle callback 구현도 앱서비스 계층에서 완전히 빠진 것은 아니므로, 다음 단계에서는 operation result handler와 sync completion plan을 더 넓은 경로로 확대하는 것이 적절하다.
+
+## 다음 추천 리팩토링 항목
+
+1. Operation result handler 분리
+   - 현재 `shouldApplyEngineOperationResult()`는 application plan을 사용하지만 discard runtime/diagnostic log side effect는 UI helper에 남아 있다.
+   - `EngineOperationApplyPlan`을 runtime event plan 또는 diagnostic append command로 바꾸는 작은 adapter를 만들어 UI local helper를 줄인다.
+
+2. Post-undo/scoring/restored sync completion plan 도입
+   - human sync처럼 post-undo sync, scoring rule sync, restored game sync에도 success/failure/discard completion plan을 만든다.
+   - 목표는 sync 계열 작업이 모두 같은 stale result 폐기 규칙과 로그 생성 순서를 따르게 하는 것이다.
+
+3. Human sync runtime log plan 이동
+   - `runtimeHumanEngineSyncSuccessLog()`/`FailureLog()` 호출 시점은 아직 UI에 있다.
+   - elapsed time과 display/failure plan을 받아 runtime log event를 만드는 application-level plan으로 이동하면 UI는 append만 담당한다.
+
+4. Engine operation lifecycle callback provider 축소
+   - lifecycle started/completed callback 구현이 `GoCoachApp.kt`에 남아 있다.
+   - runtime state와 event log port를 받는 앱서비스 helper로 이전할 수 있는지 검토한다. 단, Compose state mutation이 직접 필요하므로 무리한 추상화는 피한다.
+
+5. KMP 이동 후보 의존성 고정 테스트 확대
+   - `EngineOperationPolicy`, `HumanMoveApplication`, `DiagnosticEventApplication` 중 Android-free 파일을 물리 이동 후보로 분류한다.
+   - 이동 전 import 금지 테스트를 강화해 Android/UI/persistence 의존성이 다시 들어오지 않게 한다.

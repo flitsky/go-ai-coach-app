@@ -1305,3 +1305,7 @@
 - post-undo sync, scoring rule sync, restored game sync, human move sync 결과에 `evaluateEngineOperationResultGuard()`를 적용했다. 요청 이후 세대나 보드가 바뀐 경우 늦은 sync 결과는 화면에 반영하지 않고 discard log만 남긴다.
 - `EngineSessionLifecycleApplicationTest`를 추가해 startup/new-game/undo runner 위임과 scope complete 보장을 검증했고, `GameSessionControllerTest`는 새 effect 타입을 포함하도록 보강했다.
 - 검증으로 `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest`를 실행했고 통과했다.
+- 다음 리팩토링으로 engine result apply/discard 판단을 application plan으로 한 단계 더 올렸다. `EngineOperationApplyPlan`이 공통 guard 결과를 감싸고, UI는 discard 로그 연결만 담당한다.
+- human move 이후 engine sync 성공/실패는 `HumanEngineSyncCompletionPlan`을 통과하도록 정리했다. session generation 또는 board fingerprint가 달라진 stale result이면 success/failure display plan과 runtime success/failure log를 만들지 않는다.
+- `runEngineOperationInScope()` helper를 추가해 `GoCoachApp.kt`가 `EngineOperationScope`를 직접 생성하지 않도록 했다. scope 생성과 complete 보장 계약은 application 함수에 있고, UI는 lifecycle callback만 주입한다.
+- `EngineOperationPolicyTest`, `HumanMoveApplicationTest`, `EngineSessionLifecycleApplicationTest`를 보강했고 `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest`와 `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test`가 통과했다.

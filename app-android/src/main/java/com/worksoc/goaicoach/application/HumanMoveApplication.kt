@@ -45,6 +45,12 @@ internal data class HumanEngineSyncRunPlan(
     val previousReviewCandidates: List<CandidateMove>,
 )
 
+internal sealed class HumanEngineSyncCompletionPlan {
+    data class ApplySuccess(val display: HumanEngineSyncDisplayPlan) : HumanEngineSyncCompletionPlan()
+    data class ApplyFailure(val failure: HumanEngineSyncFailurePlan) : HumanEngineSyncCompletionPlan()
+    data class Discard(val discard: EngineOperationResultGuard.Discard) : HumanEngineSyncCompletionPlan()
+}
+
 internal fun applyHumanMoveLocally(
     beforeMove: GameState,
     move: Move,
@@ -115,6 +121,66 @@ internal fun buildHumanEngineSyncFailurePlan(
         candidateText = localMove.capturedText,
         engineMessage = errorMessage ?: "Human move accepted, but engine sync failed.",
     )
+
+internal fun buildHumanEngineSyncSuccessCompletionPlan(
+    operation: EngineOperationRequest,
+    currentState: GameState,
+    currentSessionGeneration: Long,
+    afterMove: GameState,
+    moveDescription: String,
+    result: LocalEngineMoveResult,
+    localMove: HumanMoveLocalResult,
+    previousSnapshots: List<ScoreSnapshot>,
+): HumanEngineSyncCompletionPlan =
+    when (
+        val applyPlan = buildEngineOperationApplyPlan(
+            request = operation,
+            currentState = currentState,
+            currentSessionGeneration = currentSessionGeneration,
+        )
+    ) {
+        EngineOperationApplyPlan.Apply ->
+            HumanEngineSyncCompletionPlan.ApplySuccess(
+                buildHumanEngineSyncSuccessPlan(
+                    afterMove = afterMove,
+                    moveDescription = moveDescription,
+                    result = result,
+                    localMove = localMove,
+                    previousSnapshots = previousSnapshots,
+                ),
+            )
+
+        is EngineOperationApplyPlan.Discard ->
+            HumanEngineSyncCompletionPlan.Discard(applyPlan.discard)
+    }
+
+internal fun buildHumanEngineSyncFailureCompletionPlan(
+    operation: EngineOperationRequest,
+    currentState: GameState,
+    currentSessionGeneration: Long,
+    localMove: HumanMoveLocalResult,
+    previousSnapshots: List<ScoreSnapshot>,
+    errorMessage: String?,
+): HumanEngineSyncCompletionPlan =
+    when (
+        val applyPlan = buildEngineOperationApplyPlan(
+            request = operation,
+            currentState = currentState,
+            currentSessionGeneration = currentSessionGeneration,
+        )
+    ) {
+        EngineOperationApplyPlan.Apply ->
+            HumanEngineSyncCompletionPlan.ApplyFailure(
+                buildHumanEngineSyncFailurePlan(
+                    localMove = localMove,
+                    previousSnapshots = previousSnapshots,
+                    errorMessage = errorMessage,
+                ),
+            )
+
+        is EngineOperationApplyPlan.Discard ->
+            HumanEngineSyncCompletionPlan.Discard(applyPlan.discard)
+    }
 
 internal suspend fun EngineSessionClient.runHumanEngineSyncEffect(
     effect: GameSessionEffect.SyncHumanMove,

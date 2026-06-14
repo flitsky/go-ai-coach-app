@@ -194,6 +194,55 @@ class HumanMoveApplicationTest {
     }
 
     @Test
+    fun humanEngineSyncCompletionPlanAppliesOnlyForCurrentOperationState() {
+        val beforeMove = GameState.empty()
+        val move = Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine))
+        val localMove = applyHumanMoveLocally(
+            beforeMove = beforeMove,
+            move = move,
+            reviewAnalysis = MoveAnalysisSnapshot.empty(beforeMove),
+            previousMoveReviews = emptyList(),
+        ).getOrThrow()
+        val operation = engineOperationRequest(
+            kind = EngineOperationKind.HumanMoveSync,
+            state = localMove.afterMove,
+            sessionGeneration = 2,
+        )
+        val estimate = ScoreEstimate(
+            status = EngineStatus.ready("estimated"),
+            whiteScoreLead = 0.0,
+            whiteWinRate = 0.5,
+            summary = "estimate",
+        )
+
+        val apply = buildHumanEngineSyncSuccessCompletionPlan(
+            operation = operation,
+            currentState = localMove.afterMove,
+            currentSessionGeneration = 2,
+            afterMove = localMove.afterMove,
+            moveDescription = localMove.lastMoveText,
+            result = LocalEngineMoveResult(estimate = estimate),
+            localMove = localMove,
+            previousSnapshots = emptyList(),
+        )
+        val discard = buildHumanEngineSyncFailureCompletionPlan(
+            operation = operation,
+            currentState = localMove.afterMove.play(Move.Pass(StoneColor.White)),
+            currentSessionGeneration = 2,
+            localMove = localMove,
+            previousSnapshots = emptyList(),
+            errorMessage = "late failure",
+        )
+
+        assertTrue(apply is HumanEngineSyncCompletionPlan.ApplySuccess)
+        assertTrue(discard is HumanEngineSyncCompletionPlan.Discard)
+        assertEquals(
+            "human_move_sync",
+            (discard as HumanEngineSyncCompletionPlan.Discard).discard.operation,
+        )
+    }
+
+    @Test
     fun humanEngineSyncEffectRunnerDelegatesPlanToEngineClient() = runBlocking {
         val afterMove = GameState.empty()
             .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))

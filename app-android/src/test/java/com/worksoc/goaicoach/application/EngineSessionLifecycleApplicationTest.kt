@@ -81,23 +81,22 @@ class EngineSessionLifecycleApplicationTest {
     }
 
     @Test
-    fun engineOperationScopeCompletesLifecycleOnFailure() = runBlocking {
+    fun scopedEngineOperationHelperCompletesLifecycleOnFailure() = runBlocking {
         val request = engineOperationRequest(
             kind = EngineOperationKind.EngineUndo,
             state = GameState.empty(),
             sessionGeneration = 1,
         )
         val events = mutableListOf<String>()
-        val scope = EngineOperationScope(
-            request = request,
-            callbacks = EngineOperationLifecycleCallbacks(
-                onStarted = { events += "started:${it.operationId}" },
-                onCompleted = { events += "completed:${it.operationId}" },
-            ),
-        )
 
         runCatching {
-            scope.run<Unit> {
+            runEngineOperationInScope(
+                request = request,
+                callbacks = EngineOperationLifecycleCallbacks(
+                    onStarted = { events += "started:${it.operationId}" },
+                    onCompleted = { events += "completed:${it.operationId}" },
+                ),
+            ) {
                 error("boom")
             }
         }

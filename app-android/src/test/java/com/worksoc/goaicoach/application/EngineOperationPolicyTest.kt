@@ -105,6 +105,37 @@ class EngineOperationPolicyTest {
     }
 
     @Test
+    fun engineOperationApplyPlanWrapsGuardForUiApplicationBoundary() {
+        val requestedState = GameState.empty()
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+        val changedState = requestedState
+            .play(Move.Play(StoneColor.White, BoardCoordinate.fromLabel("D5", BoardSize.Nine)))
+        val request = engineOperationRequest(
+            kind = EngineOperationKind.HumanMoveSync,
+            state = requestedState,
+            sessionGeneration = 5,
+        )
+
+        assertEquals(
+            EngineOperationApplyPlan.Apply,
+            buildEngineOperationApplyPlan(
+                request = request,
+                currentState = requestedState,
+                currentSessionGeneration = 5,
+            ),
+        )
+
+        val discarded = buildEngineOperationApplyPlan(
+            request = request,
+            currentState = changedState,
+            currentSessionGeneration = 5,
+        )
+
+        assertTrue(discarded is EngineOperationApplyPlan.Discard)
+        assertEquals("human_move_sync", (discarded as EngineOperationApplyPlan.Discard).discard.operation)
+    }
+
+    @Test
     fun benchmarkGateRequiresReadyLocalIdleEngine() {
         assertEquals(
             EngineOperationGate.Block("Engine benchmark requires a ready local engine."),
