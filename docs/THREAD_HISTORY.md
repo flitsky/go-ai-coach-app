@@ -1109,3 +1109,8 @@
 - `syncAfterHumanMove()`는 `syncToGameState()` replay 시간을 재서 `resolveAiEndgame()`에 전달한다. `toLogDetail()`은 debug report `[EndgameLog]`에 각 timing line을 출력하고, `runtimeHumanEngineSyncSuccessLog()`의 `result=final_score` summary에도 timing summary를 포함한다.
 - `EndgameResolverTest`에 timing log 검증을 추가했고, `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest` 및 `make test`를 실행해 모두 통과했다.
 - 커밋 `0046983 Log endgame resolution step timings`를 `origin/main`에 푸시했고, 무선 ADB `SM-S908N(192.168.35.166:42037)`에 `make install-dev-engine`로 계측 포함 debug APK와 KataGo model/config를 설치했다. 앱 cold launch `TotalTime=554ms`를 확인했다.
+- 사용자가 계측 포함 APK에서 같은 종국 패스 상황을 재현했고, `run-as`로 최신 로그를 `/tmp/go-ai-coach-device-logs/timed`에 수집했다. 핵심 로그는 `runtime_event_log.txt`의 `human_move_accepted` line 726과 `human_engine_sync_success` line 727이다.
+- 새 재현도 동일한 board fingerprint `fp=1c2d0d95`, `moves=61`, `stones=53/81`, `captures=B4/W2`, `ruleset=Japanese`, `search=Time cap OFF`, `timeMs=none` 조건이었다. 총 종국 처리 시간은 `elapsedMs=46972`, `totalWithSyncMs=46964`로 확인됐다.
+- 하위 단계별 timing은 `syncReplayMs=25`, `deadStonesMs=17873`, `localDetectMs=4`, `localCleanupScoreMs=2`, `estimateMs=214`, `scoreSelectMs=1`, `finalScoreMs=28845`, `resolverTotalMs=46939`였다.
+- 분석 결론: 46.9초 지연의 병목은 앱 로컬 replay/사석 탐지/계가가 아니라 KataGo GTP 종국 명령인 `final_status_list dead`와 `final_score`에 있다. 특히 `final_status_list dead`가 약 17.9초, `final_score`가 약 28.8초를 차지했다.
+- 다음 개선 방향은 마지막 `pass/pass` UX에서 두 종국 GTP 명령을 동기 실행하지 않고, 빠른 로컬 계가를 먼저 표시한 뒤 정밀 엔진 사석/계가는 백그라운드 또는 명시적 “정밀 계가” 액션으로 분리하는 것이다. 추가로 `engine.endgame_step_slow` warning diagnostic event와 endgame 전용 timeout/프로세스 재동기화 정책을 검토한다.
