@@ -57,7 +57,8 @@ interface EngineCoreApi {
      * Product UX must not call this as an unbounded blocking operation during
      * default pass/pass scoring. The current endgame policy is:
      *
-     * - assistant judge: show a result within a 5s endgame SLA, even when the
+     * - assistant judge: apply short per-command caps, currently 2s for
+     *   dead-stone status and 1s for diagnostic final score, even when the
      *   normal search-time cap is off;
      * - chief judge: run unbounded or long analysis only after an explicit user
      *   objection, isolated by match/session generation or a separate worker.

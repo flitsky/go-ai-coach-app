@@ -9,6 +9,7 @@ import com.worksoc.goaicoach.shared.DeadStoneCleanupResult
 import com.worksoc.goaicoach.shared.DeadStoneDetector
 import com.worksoc.goaicoach.shared.DeadStonesResult
 import com.worksoc.goaicoach.shared.EngineCoreApi
+import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.EndgameScoreSelector
 import com.worksoc.goaicoach.shared.EndgameScoreSource
 import com.worksoc.goaicoach.shared.FinalScoreResult
@@ -72,7 +73,9 @@ internal data class AiEndgameResolution(
         buildString {
             appendLine("lastMove=${originalState.moves.lastOrNull()?.describe(originalState.boardSize) ?: "None"}")
             appendLine("timingSummary=${timings.summary()}")
-            appendLine("assistantJudgeTimeCapMs=${timings.assistantJudgeTimeCapMs ?: "none"}")
+            appendLine("assistantJudgeDeadStonesTimeCapMs=${timings.assistantJudgeDeadStonesTimeCapMs ?: "none"}")
+            appendLine("assistantJudgeFinalScoreTimeCapMs=${timings.assistantJudgeFinalScoreTimeCapMs ?: "none"}")
+            appendLine("assistantJudgeTotalTimeCapMs=${timings.assistantJudgeTotalTimeCapMs ?: "none"}")
             appendLine("syncReplayMs=${timings.syncReplayMs ?: "unknown"}")
             appendLine("deadStonesMs=${timings.deadStonesMs}")
             appendLine("localDeadStoneDetectionMs=${timings.localDeadStoneDetectionMs}")
@@ -101,7 +104,8 @@ internal data class AiEndgameResolution(
 }
 
 internal data class EndgameResolutionTimings(
-    val assistantJudgeTimeCapMs: Long? = null,
+    val assistantJudgeDeadStonesTimeCapMs: Long? = null,
+    val assistantJudgeFinalScoreTimeCapMs: Long? = null,
     val syncReplayMs: Long? = null,
     val deadStonesMs: Long = 0L,
     val localDeadStoneDetectionMs: Long = 0L,
@@ -114,8 +118,16 @@ internal data class EndgameResolutionTimings(
     val totalWithSyncReplayMs: Long?
         get() = syncReplayMs?.let { it + resolverTotalMs }
 
+    val assistantJudgeTotalTimeCapMs: Long?
+        get() = listOfNotNull(
+            assistantJudgeDeadStonesTimeCapMs,
+            assistantJudgeFinalScoreTimeCapMs,
+        ).takeIf { caps -> caps.isNotEmpty() }?.sum()
+
     fun summary(): String =
-        "assistantJudgeTimeCapMs=${assistantJudgeTimeCapMs ?: "none"} " +
+        "assistantJudgeDeadStonesTimeCapMs=${assistantJudgeDeadStonesTimeCapMs ?: "none"} " +
+            "assistantJudgeFinalScoreTimeCapMs=${assistantJudgeFinalScoreTimeCapMs ?: "none"} " +
+            "assistantJudgeTotalTimeCapMs=${assistantJudgeTotalTimeCapMs ?: "none"} " +
             "syncReplayMs=${syncReplayMs ?: "unknown"} " +
             "deadStonesMs=$deadStonesMs " +
             "localDetectMs=$localDeadStoneDetectionMs " +
@@ -133,20 +145,22 @@ internal suspend fun resolveAiEndgame(
     estimateLimit: AnalysisLimit,
     prePassCandidates: List<CandidateMove> = emptyList(),
     syncReplayMs: Long? = null,
-    assistantJudgeTimeCapMs: Long? = null,
+    assistantJudgeDeadStonesProfile: EngineProfile? = null,
+    assistantJudgeFinalScoreProfile: EngineProfile? = null,
     runDiagnosticFinalScore: Boolean = true,
 ): AiEndgameResolution {
     // This resolver composes raw engine primitives and local scoring. It is not
     // the product SLA boundary by itself. Default pass/pass UX should call this
-    // through the assistant-judge policy: show a result within 5s even if the
-    // user's normal search-time cap is off. Unbounded chief-judge analysis is
-    // allowed only after an explicit user objection, isolated by match/session
-    // generation or a separate engine worker so New Game/Undo cannot receive a
-    // stale result.
+    // through the assistant-judge policy: short caps per raw endgame command
+    // even if the user's normal search-time cap is off. Unbounded chief-judge
+    // analysis is allowed only after an explicit user objection, isolated by
+    // match/session generation or a separate engine worker so New Game/Undo
+    // cannot receive a stale result.
     val resolverStartMillis = System.currentTimeMillis()
     var deadStonesResult: DeadStonesResult? = null
     var deadStonesError: String? = null
     val deadStonesStartMillis = System.currentTimeMillis()
+    assistantJudgeDeadStonesProfile?.let { profile -> engineAdapter.configure(profile) }
     runCatching { engineAdapter.deadStones() }
         .onSuccess { deadStonesResult = it }
         .onFailure { deadStonesError = it.message ?: "Unknown error" }
@@ -186,6 +200,7 @@ internal suspend fun resolveAiEndgame(
     var engineFinalScoreSkippedReason: String? = null
     val finalScoreStartMillis = System.currentTimeMillis()
     if (runDiagnosticFinalScore) {
+        assistantJudgeFinalScoreProfile?.let { profile -> engineAdapter.configure(profile) }
         runCatching { engineAdapter.scoreFinal() }
             .onSuccess { engineFinalScore = it }
             .onFailure { engineFinalScoreError = it.message ?: "Unknown error" }
@@ -195,7 +210,8 @@ internal suspend fun resolveAiEndgame(
     val diagnosticFinalScoreMs = System.currentTimeMillis() - finalScoreStartMillis
 
     val timings = EndgameResolutionTimings(
-        assistantJudgeTimeCapMs = assistantJudgeTimeCapMs,
+        assistantJudgeDeadStonesTimeCapMs = assistantJudgeDeadStonesProfile?.analysisLimit?.timeMillis,
+        assistantJudgeFinalScoreTimeCapMs = assistantJudgeFinalScoreProfile?.analysisLimit?.timeMillis,
         syncReplayMs = syncReplayMs,
         deadStonesMs = deadStonesMs,
         localDeadStoneDetectionMs = localDeadStoneDetectionMs,

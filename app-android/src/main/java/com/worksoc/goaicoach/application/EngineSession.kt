@@ -40,11 +40,19 @@ internal data class LocalEngineMoveResult(
     val endgame: AiEndgameResolution? = null,
 )
 
-internal const val AssistantJudgeEndgameTimeCapMillis: Long = 5_000L
+internal const val AssistantJudgeDeadStonesTimeCapMillis: Long = 2_000L
+internal const val AssistantJudgeFinalScoreTimeCapMillis: Long = 1_000L
+internal const val AssistantJudgeEndgameTotalTimeCapMillis: Long =
+    AssistantJudgeDeadStonesTimeCapMillis + AssistantJudgeFinalScoreTimeCapMillis
 
-internal fun EngineProfile.withAssistantJudgeEndgameTimeCap(): EngineProfile =
+internal fun EngineProfile.withAssistantJudgeDeadStonesTimeCap(): EngineProfile =
     copy(
-        analysisLimit = analysisLimit.copy(timeMillis = AssistantJudgeEndgameTimeCapMillis),
+        analysisLimit = analysisLimit.copy(timeMillis = AssistantJudgeDeadStonesTimeCapMillis),
+    )
+
+internal fun EngineProfile.withAssistantJudgeFinalScoreTimeCap(): EngineProfile =
+    copy(
+        analysisLimit = analysisLimit.copy(timeMillis = AssistantJudgeFinalScoreTimeCapMillis),
     )
 
 internal suspend fun EngineCoreApi.startEngineSession(
@@ -148,21 +156,21 @@ internal suspend fun EngineCoreApi.syncAfterHumanMove(
     syncToGameState(afterMove)
     val syncReplayMs = System.currentTimeMillis() - syncReplayStartMillis
     return if (MatchReferee.shouldResolveEndgame(afterMove)) {
-        val assistantJudgeProfile = profile.withAssistantJudgeEndgameTimeCap()
-        configure(assistantJudgeProfile)
+        val deadStonesProfile = profile.withAssistantJudgeDeadStonesTimeCap()
+        val finalScoreProfile = profile.withAssistantJudgeFinalScoreTimeCap()
         LocalEngineMoveResult(
             endgame = resolveAiEndgame(
                 engineAdapter = this,
                 originalState = afterMove,
-                estimateLimit = scoreGraphAnalysisLimit(assistantJudgeProfile),
+                estimateLimit = scoreGraphAnalysisLimit(deadStonesProfile),
                 prePassCandidates = if (move is Move.Pass) {
                     previousReviewCandidates
                 } else {
                     emptyList()
                 },
                 syncReplayMs = syncReplayMs,
-                assistantJudgeTimeCapMs = AssistantJudgeEndgameTimeCapMillis,
-                runDiagnosticFinalScore = false,
+                assistantJudgeDeadStonesProfile = deadStonesProfile,
+                assistantJudgeFinalScoreProfile = finalScoreProfile,
             ),
         )
     } else {
@@ -188,15 +196,15 @@ internal suspend fun EngineCoreApi.resolveEndgameForState(
     profile: EngineProfile,
     prePassCandidates: List<CandidateMove>,
 ): AiEndgameResolution {
-    val assistantJudgeProfile = profile.withAssistantJudgeEndgameTimeCap()
-    configure(assistantJudgeProfile)
+    val deadStonesProfile = profile.withAssistantJudgeDeadStonesTimeCap()
+    val finalScoreProfile = profile.withAssistantJudgeFinalScoreTimeCap()
     return resolveAiEndgame(
         engineAdapter = this,
         originalState = state,
-        estimateLimit = scoreGraphAnalysisLimit(assistantJudgeProfile),
+        estimateLimit = scoreGraphAnalysisLimit(deadStonesProfile),
         prePassCandidates = prePassCandidates,
-        assistantJudgeTimeCapMs = AssistantJudgeEndgameTimeCapMillis,
-        runDiagnosticFinalScore = false,
+        assistantJudgeDeadStonesProfile = deadStonesProfile,
+        assistantJudgeFinalScoreProfile = finalScoreProfile,
     )
 }
 

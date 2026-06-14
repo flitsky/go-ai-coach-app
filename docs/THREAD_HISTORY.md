@@ -1179,3 +1179,6 @@
 - 기본 빠른 종국 경로를 수정했다. 사람 pass/pass의 `syncAfterHumanMove()`와 AI 자동대국 pass/pass의 `resolveEndgameForState()`는 종국 직전에 `EngineProfile.analysisLimit.timeMillis=5000`으로 `configure()`를 다시 호출한다.
 - 기본 빠른 종국에서는 진단용 `scoreFinal()` raw 호출을 생략하도록 했다. 화면 점수는 `deadStones()` + 로컬 사석 fallback + 로컬 계가 + 기존 NN/Top Moves 추정 조합으로 만들고, debug log에는 `assistantJudgeTimeCapMs=5000`, `diagnosticKataGoFinalScoreSkipped=skipped-by-assistant-judge-sla`를 남긴다.
 - 이의신청/정밀 계가 기능은 후속으로 남겼고, `ENGINE_API_CALL_POLICY.md`와 `SCORE_AND_ENDGAME_DECISION.md`를 현재 구현 기준으로 업데이트했다.
+- 사용자가 `scoreFinal()` 생략 판단의 근거를 질문했고, `deadStones()` 2초 + `scoreFinal()` 1초, 총 3초 제한으로 둘 다 호출하는 정책을 요청했다.
+- 판단 근거는 5초 cap을 두 raw 명령에 각각 적용하면 체감 10초가 될 수 있다는 UX 우려였다고 설명했다. 이후 기본 종국 정책을 사용자 요청에 맞춰 단계별 cap으로 변경했다.
+- 사람 pass/pass와 AI 자동대국 pass/pass 모두 `deadStones()` 직전 `timeMillis=2000`, `scoreFinal()` 직전 `timeMillis=1000`으로 `configure()`를 다시 호출한다. `scoreFinal()`은 다시 기본 빠른 종국에서 실행되며, debug log에는 `assistantJudgeDeadStonesTimeCapMs=2000`, `assistantJudgeFinalScoreTimeCapMs=1000`, `assistantJudgeTotalTimeCapMs=3000`, `diagnosticKataGoFinalScore=...`를 남긴다.

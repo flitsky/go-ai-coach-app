@@ -11,7 +11,7 @@
 - 양쪽이 연속으로 `pass`하면 `EngineAdapter.deadStones()`로 엔진이 판단한 사석을 먼저 받아 앱 `GameState`에서 제거한다.
 - 화면 최종 계가는 사석 정리 후 `shared`의 `BoardScorer`가 현재 ruleset에 맞춰 계산한다.
 - 단, 엔진 dead list가 비어 있거나 사석 정리가 불완전해 로컬 area final과 엔진/Top Moves 형세 추정이 크게 충돌하면, KaTrain처럼 `?`가 붙은 불확정 추정 점수를 우선 표시한다.
-- `EngineAdapter.scoreFinal()`의 원문 결과는 엔진 코어 API로 유지하되, 기본 빠른 종국에서는 호출하지 않는다. 향후 `이의 제기: 주심 분석 요구` 같은 정밀 계가 경로에서만 사용한다.
+- `EngineAdapter.scoreFinal()`의 원문 결과는 기본 빠른 종국에서도 1초 cap으로 시도해 진단 로그에 함께 남긴다. 향후 `이의 제기: 주심 분석 요구`는 별도 정밀 계가 경로로 고도화한다.
 - 엔진이 없는 `2P 테스트` 모드는 `shared`의 현재 ruleset 로컬 scoring projection을 사용한다.
 
 ## 종국 판정 SLA 정책
@@ -22,13 +22,13 @@
 
 따라서 종국 UX는 다음 2심판 구조를 목표로 한다.
 
-- 부심 판정: 기본 종국 처리다. 엔진 타임 제약 옵션이 꺼져 있어도 pass/pass 종국 직전에 엔진 profile을 5초 cap으로 재설정한다. 로컬 사석 fallback, 이미 확보된 Top Moves/NN estimate, 짧은 제한의 엔진 사석 판정을 조합해 화면 결과를 빠르게 표시한다. 기본 경로에서는 5초 cap이 두 번 누적되지 않도록 진단용 `scoreFinal()`을 호출하지 않고, debug log에 `diagnosticKataGoFinalScoreSkipped=skipped-by-assistant-judge-sla`를 남긴다.
+- 부심 판정: 기본 종국 처리다. 엔진 타임 제약 옵션이 꺼져 있어도 pass/pass 종국에서 `deadStones()` 직전 2초 cap, `scoreFinal()` 직전 1초 cap으로 엔진 profile을 단계별 재설정한다. 로컬 사석 fallback, 이미 확보된 Top Moves/NN estimate, 짧은 제한의 엔진 사석 판정을 조합해 화면 결과를 빠르게 표시하고, KataGo `final_score` 원문은 1초 제한 진단값으로 함께 남긴다.
 - 주심 판정: 사용자가 명시적으로 `이의 제기: 주심 분석 요구`를 눌렀을 때만 실행한다. 시간 제한 없이 또는 더 긴 제한으로 실행하는 정밀 검증이며, 기본 대국 엔진 process에서 몰래 백그라운드 작업으로 돌리지 않는다. 별도 engine worker/process 또는 session snapshot 기반 작업으로 분리할 수 있을 때 활성화한다.
 - 부심과 주심 결과가 의미 있게 다르면 `critical` diagnostic event로 기록한다. 개발 중에는 Copy Log/run-as 수집 대상으로 삼고, 출시 후에는 사용자 동의 기반 오류 전송 후보로 다룬다.
 - `Search Time = OFF`는 대국 중 AI 착수 품질을 위한 설정이지, 종국 화면 대기를 무제한으로 허용한다는 의미가 아니다. 종국에는 별도 안전 정책을 둔다.
 - 사용자가 새 게임, 무르기, 앱 종료, ruleset 변경을 수행하면 진행 중인 주심 판정은 취소하거나 현재 대국에 반영하지 않는다. 작업에는 match/session generation id를 붙이고, generation이 달라진 결과는 폐기한다. 같은 GTP process를 쓰는 작업을 timeout으로 끊었다면 process stream 오염 가능성이 있으므로 process restart 후 재동기화한다.
 
-이 정책의 핵심은 사용자가 보는 최종 화면을 5초 안에 안정화하고, 긴 엔진 검증은 사용자가 원할 때만 수행하는 명시적 이의 제기 흐름으로 분리하는 것이다.
+이 정책의 핵심은 기본 종국 raw 엔진 호출을 총 3초 수준의 짧은 cap으로 제한하고, 긴 엔진 검증은 사용자가 원할 때만 수행하는 명시적 이의 제기 흐름으로 분리하는 것이다.
 
 ### 주심/부심 불일치 UX
 
@@ -117,7 +117,7 @@ Android UI는 `ScoreSnapshot` 목록을 받아 그래프를 그리기만 한다.
   - 화면 최종 점수는 정리된 `GameState`를 `BoardScorer`로 계산한 결과를 표시한다.
   - 사석 제거가 없고 로컬 area final과 엔진 NN estimate의 White lead 차이가 10집 이상이면 `EndgameScoreSelector`가 불확정 엔진 추정 점수를 선택한다.
   - 사용자가 pass로 양패스를 만들기 직전 Top Moves 후보가 있고, 최선 continuation과 로컬 final의 White lead 차이가 10집 이상이면 `EndgameScoreSelector`가 불확정 pre-pass Top Moves 추정 점수를 선택한다.
-  - KataGo `final_score` 원문은 기본 빠른 종국에서는 호출하지 않는다. 정밀 계가/이의신청 경로가 도입되면 `diagnosticKataGoFinalScore`로 남긴다.
+  - KataGo `final_score` 원문은 1초 cap으로 호출해 endgame debug log에 `diagnosticKataGoFinalScore`로 남긴다. 정밀 계가/이의신청 경로가 도입되면 더 긴 제한 또는 무제한 주심 판정 결과를 별도 기록한다.
 - 2P 테스트 모드
   - 로컬 `BoardScorer`로 현재 계가 방식의 estimate를 계산한다.
   - 엔진 상태와 동기화되지 않으므로 자동 사석 제거는 아직 적용하지 않는다.

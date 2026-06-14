@@ -428,7 +428,7 @@ class EngineSessionTest {
     }
 
     @Test
-    fun syncAfterHumanMoveAppliesFiveSecondAssistantJudgeCapForPassPassEndgame() = runBlocking {
+    fun syncAfterHumanMoveAppliesAssistantJudgeCapsForPassPassEndgame() = runBlocking {
         val engine = RecordingEngineAdapter()
         val state = GameState.empty()
             .play(Move.Pass(StoneColor.Black))
@@ -444,17 +444,27 @@ class EngineSessionTest {
             previousReviewCandidates = emptyList(),
         )
 
-        assertEquals(AssistantJudgeEndgameTimeCapMillis, engine.configuredProfiles.single().analysisLimit.timeMillis)
-        assertEquals(32, engine.configuredProfiles.single().analysisLimit.visits)
-        assertEquals(AssistantJudgeEndgameTimeCapMillis, result.endgame?.timings?.assistantJudgeTimeCapMs)
-        assertEquals(0, engine.scoreFinalCalls)
-        assertEquals("skipped-by-assistant-judge-sla", result.endgame?.engineFinalScoreSkippedReason)
-        assertTrue(result.endgame?.toLogDetail(state)?.contains("assistantJudgeTimeCapMs=5000") == true)
-        assertTrue(result.endgame?.toLogDetail(state)?.contains("diagnosticKataGoFinalScoreSkipped=skipped-by-assistant-judge-sla") == true)
+        assertEquals(
+            listOf(
+                AssistantJudgeDeadStonesTimeCapMillis,
+                AssistantJudgeFinalScoreTimeCapMillis,
+            ),
+            engine.configuredProfiles.map { profile -> profile.analysisLimit.timeMillis },
+        )
+        assertEquals(listOf(32, 32), engine.configuredProfiles.map { profile -> profile.analysisLimit.visits })
+        assertEquals(AssistantJudgeDeadStonesTimeCapMillis, result.endgame?.timings?.assistantJudgeDeadStonesTimeCapMs)
+        assertEquals(AssistantJudgeFinalScoreTimeCapMillis, result.endgame?.timings?.assistantJudgeFinalScoreTimeCapMs)
+        assertEquals(AssistantJudgeEndgameTotalTimeCapMillis, result.endgame?.timings?.assistantJudgeTotalTimeCapMs)
+        assertEquals(1, engine.scoreFinalCalls)
+        assertEquals(null, result.endgame?.engineFinalScoreSkippedReason)
+        assertTrue(result.endgame?.toLogDetail(state)?.contains("assistantJudgeDeadStonesTimeCapMs=2000") == true)
+        assertTrue(result.endgame?.toLogDetail(state)?.contains("assistantJudgeFinalScoreTimeCapMs=1000") == true)
+        assertTrue(result.endgame?.toLogDetail(state)?.contains("assistantJudgeTotalTimeCapMs=3000") == true)
+        assertTrue(result.endgame?.toLogDetail(state)?.contains("diagnosticKataGoFinalScore=B+0.5") == true)
     }
 
     @Test
-    fun resolveEndgameForStateAppliesFiveSecondAssistantJudgeCap() = runBlocking {
+    fun resolveEndgameForStateAppliesAssistantJudgeCaps() = runBlocking {
         val engine = RecordingEngineAdapter()
         val state = GameState.empty()
             .play(Move.Pass(StoneColor.Black))
@@ -469,12 +479,22 @@ class EngineSessionTest {
             prePassCandidates = emptyList(),
         )
 
-        assertEquals(AssistantJudgeEndgameTimeCapMillis, engine.configuredProfiles.single().analysisLimit.timeMillis)
-        assertEquals(64, engine.configuredProfiles.single().analysisLimit.visits)
-        assertEquals(AssistantJudgeEndgameTimeCapMillis, resolution.timings.assistantJudgeTimeCapMs)
-        assertEquals(0, engine.scoreFinalCalls)
-        assertEquals("skipped-by-assistant-judge-sla", resolution.engineFinalScoreSkippedReason)
-        assertTrue(resolution.toLogDetail(state).contains("assistantJudgeTimeCapMs=5000"))
+        assertEquals(
+            listOf(
+                AssistantJudgeDeadStonesTimeCapMillis,
+                AssistantJudgeFinalScoreTimeCapMillis,
+            ),
+            engine.configuredProfiles.map { configured -> configured.analysisLimit.timeMillis },
+        )
+        assertEquals(listOf(64, 64), engine.configuredProfiles.map { configured -> configured.analysisLimit.visits })
+        assertEquals(AssistantJudgeDeadStonesTimeCapMillis, resolution.timings.assistantJudgeDeadStonesTimeCapMs)
+        assertEquals(AssistantJudgeFinalScoreTimeCapMillis, resolution.timings.assistantJudgeFinalScoreTimeCapMs)
+        assertEquals(AssistantJudgeEndgameTotalTimeCapMillis, resolution.timings.assistantJudgeTotalTimeCapMs)
+        assertEquals(1, engine.scoreFinalCalls)
+        assertEquals(null, resolution.engineFinalScoreSkippedReason)
+        assertTrue(resolution.toLogDetail(state).contains("assistantJudgeDeadStonesTimeCapMs=2000"))
+        assertTrue(resolution.toLogDetail(state).contains("assistantJudgeFinalScoreTimeCapMs=1000"))
+        assertTrue(resolution.toLogDetail(state).contains("assistantJudgeTotalTimeCapMs=3000"))
     }
 }
 
