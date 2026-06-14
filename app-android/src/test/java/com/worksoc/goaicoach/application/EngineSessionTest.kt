@@ -426,12 +426,65 @@ class EngineSessionTest {
             engine.calls,
         )
     }
+
+    @Test
+    fun syncAfterHumanMoveAppliesFiveSecondAssistantJudgeCapForPassPassEndgame() = runBlocking {
+        val engine = RecordingEngineAdapter()
+        val state = GameState.empty()
+            .play(Move.Pass(StoneColor.Black))
+            .play(Move.Pass(StoneColor.White))
+        val profile = EngineProfile(
+            analysisLimit = AnalysisLimit(visits = 32, timeMillis = null, candidateCount = 8),
+        )
+
+        val result = engine.syncAfterHumanMove(
+            afterMove = state,
+            profile = profile,
+            move = Move.Pass(StoneColor.White),
+            previousReviewCandidates = emptyList(),
+        )
+
+        assertEquals(AssistantJudgeEndgameTimeCapMillis, engine.configuredProfiles.single().analysisLimit.timeMillis)
+        assertEquals(32, engine.configuredProfiles.single().analysisLimit.visits)
+        assertEquals(AssistantJudgeEndgameTimeCapMillis, result.endgame?.timings?.assistantJudgeTimeCapMs)
+        assertEquals(0, engine.scoreFinalCalls)
+        assertEquals("skipped-by-assistant-judge-sla", result.endgame?.engineFinalScoreSkippedReason)
+        assertTrue(result.endgame?.toLogDetail(state)?.contains("assistantJudgeTimeCapMs=5000") == true)
+        assertTrue(result.endgame?.toLogDetail(state)?.contains("diagnosticKataGoFinalScoreSkipped=skipped-by-assistant-judge-sla") == true)
+    }
+
+    @Test
+    fun resolveEndgameForStateAppliesFiveSecondAssistantJudgeCap() = runBlocking {
+        val engine = RecordingEngineAdapter()
+        val state = GameState.empty()
+            .play(Move.Pass(StoneColor.Black))
+            .play(Move.Pass(StoneColor.White))
+        val profile = EngineProfile(
+            analysisLimit = AnalysisLimit(visits = 64, timeMillis = null, candidateCount = 8),
+        )
+
+        val resolution = engine.resolveEndgameForState(
+            state = state,
+            profile = profile,
+            prePassCandidates = emptyList(),
+        )
+
+        assertEquals(AssistantJudgeEndgameTimeCapMillis, engine.configuredProfiles.single().analysisLimit.timeMillis)
+        assertEquals(64, engine.configuredProfiles.single().analysisLimit.visits)
+        assertEquals(AssistantJudgeEndgameTimeCapMillis, resolution.timings.assistantJudgeTimeCapMs)
+        assertEquals(0, engine.scoreFinalCalls)
+        assertEquals("skipped-by-assistant-judge-sla", resolution.engineFinalScoreSkippedReason)
+        assertTrue(resolution.toLogDetail(state).contains("assistantJudgeTimeCapMs=5000"))
+    }
 }
 
 private class RecordingEngineAdapter(
     private val analyzedRootVisits: (AnalysisLimit) -> Int? = { limit -> limit.visits },
 ) : EngineAdapter {
     val calls = mutableListOf<String>()
+    val configuredProfiles = mutableListOf<EngineProfile>()
+    var scoreFinalCalls: Int = 0
+        private set
 
     override suspend fun initialize(profile: EngineProfile): EngineStatus {
         calls += "initialize:${profile.analysisLimit.visits}"
@@ -439,6 +492,7 @@ private class RecordingEngineAdapter(
     }
 
     override suspend fun configure(profile: EngineProfile): EngineStatus {
+        configuredProfiles += profile
         calls += "configure:${profile.analysisLimit.visits}"
         return EngineStatus.ready("configured")
     }
@@ -508,12 +562,14 @@ private class RecordingEngineAdapter(
             summary = "dead stones",
         )
 
-    override suspend fun scoreFinal(): FinalScoreResult =
-        FinalScoreResult(
+    override suspend fun scoreFinal(): FinalScoreResult {
+        scoreFinalCalls += 1
+        return FinalScoreResult(
             status = EngineStatus.ready("final"),
             rawScore = "B+0.5",
             summary = "final",
         )
+    }
 
     override suspend fun stop(): EngineStatus =
         EngineStatus.stopped("stopped").also {

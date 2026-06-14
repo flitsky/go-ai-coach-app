@@ -29,6 +29,7 @@ internal data class AiEndgameResolution(
     val engineScoreEstimateError: String?,
     val engineFinalScore: FinalScoreResult?,
     val engineFinalScoreError: String?,
+    val engineFinalScoreSkippedReason: String? = null,
     val prePassCandidates: List<CandidateMove>,
     val timings: EndgameResolutionTimings = EndgameResolutionTimings(),
 ) {
@@ -71,6 +72,7 @@ internal data class AiEndgameResolution(
         buildString {
             appendLine("lastMove=${originalState.moves.lastOrNull()?.describe(originalState.boardSize) ?: "None"}")
             appendLine("timingSummary=${timings.summary()}")
+            appendLine("assistantJudgeTimeCapMs=${timings.assistantJudgeTimeCapMs ?: "none"}")
             appendLine("syncReplayMs=${timings.syncReplayMs ?: "unknown"}")
             appendLine("deadStonesMs=${timings.deadStonesMs}")
             appendLine("localDeadStoneDetectionMs=${timings.localDeadStoneDetectionMs}")
@@ -94,10 +96,12 @@ internal data class AiEndgameResolution(
             appendLine("engineEstimateError=${engineScoreEstimateError ?: "none"}")
             appendLine("diagnosticKataGoFinalScore=${engineFinalScore?.rawScore ?: "none"}")
             appendLine("diagnosticKataGoFinalScoreError=${engineFinalScoreError ?: "none"}")
+            appendLine("diagnosticKataGoFinalScoreSkipped=${engineFinalScoreSkippedReason ?: "none"}")
         }.trim()
 }
 
 internal data class EndgameResolutionTimings(
+    val assistantJudgeTimeCapMs: Long? = null,
     val syncReplayMs: Long? = null,
     val deadStonesMs: Long = 0L,
     val localDeadStoneDetectionMs: Long = 0L,
@@ -111,7 +115,8 @@ internal data class EndgameResolutionTimings(
         get() = syncReplayMs?.let { it + resolverTotalMs }
 
     fun summary(): String =
-        "syncReplayMs=${syncReplayMs ?: "unknown"} " +
+        "assistantJudgeTimeCapMs=${assistantJudgeTimeCapMs ?: "none"} " +
+            "syncReplayMs=${syncReplayMs ?: "unknown"} " +
             "deadStonesMs=$deadStonesMs " +
             "localDetectMs=$localDeadStoneDetectionMs " +
             "localCleanupScoreMs=$localCleanupScoringMs " +
@@ -128,6 +133,8 @@ internal suspend fun resolveAiEndgame(
     estimateLimit: AnalysisLimit,
     prePassCandidates: List<CandidateMove> = emptyList(),
     syncReplayMs: Long? = null,
+    assistantJudgeTimeCapMs: Long? = null,
+    runDiagnosticFinalScore: Boolean = true,
 ): AiEndgameResolution {
     // This resolver composes raw engine primitives and local scoring. It is not
     // the product SLA boundary by itself. Default pass/pass UX should call this
@@ -176,13 +183,19 @@ internal suspend fun resolveAiEndgame(
 
     var engineFinalScore: FinalScoreResult? = null
     var engineFinalScoreError: String? = null
+    var engineFinalScoreSkippedReason: String? = null
     val finalScoreStartMillis = System.currentTimeMillis()
-    runCatching { engineAdapter.scoreFinal() }
-        .onSuccess { engineFinalScore = it }
-        .onFailure { engineFinalScoreError = it.message ?: "Unknown error" }
+    if (runDiagnosticFinalScore) {
+        runCatching { engineAdapter.scoreFinal() }
+            .onSuccess { engineFinalScore = it }
+            .onFailure { engineFinalScoreError = it.message ?: "Unknown error" }
+    } else {
+        engineFinalScoreSkippedReason = "skipped-by-assistant-judge-sla"
+    }
     val diagnosticFinalScoreMs = System.currentTimeMillis() - finalScoreStartMillis
 
     val timings = EndgameResolutionTimings(
+        assistantJudgeTimeCapMs = assistantJudgeTimeCapMs,
         syncReplayMs = syncReplayMs,
         deadStonesMs = deadStonesMs,
         localDeadStoneDetectionMs = localDeadStoneDetectionMs,
@@ -205,6 +218,7 @@ internal suspend fun resolveAiEndgame(
         engineScoreEstimateError = engineScoreEstimateError,
         engineFinalScore = engineFinalScore,
         engineFinalScoreError = engineFinalScoreError,
+        engineFinalScoreSkippedReason = engineFinalScoreSkippedReason,
         prePassCandidates = prePassCandidates,
         timings = timings,
     )

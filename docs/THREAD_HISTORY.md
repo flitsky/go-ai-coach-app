@@ -1175,3 +1175,7 @@
 - 이어서 stale result guard를 수동 score estimate 경로로 확장했다. `ScoreEstimateOperationToken`과 `evaluateScoreEstimateResultGuard()`를 추가해 점수 추정 요청 당시 position fingerprint와 현재 국면이 일치할 때만 점수 그래프/텍스트를 갱신한다.
 - `GoCoachApp.kt`의 `requestEngineScoreEstimate()` 성공/실패 경로 모두 guard를 통과하도록 바꿨다. 무르기/새 게임/복원 등으로 현재 국면이 바뀐 뒤 도착한 과거 score estimate 성공/실패는 화면에 반영하지 않는다.
 - `ScoreDisplayApplicationTest`에 score estimate result guard 테스트를 추가했고, `:app-android:testDebugUnitTest`가 통과했다.
+- 사용자가 종국 처리가 여전히 약 10초로 보이며 5초 빠른 판정이 적용되지 않은 것 같다고 지적했다. 코드 확인 결과 5초 정책은 문서/KDoc에는 있었지만, 실제 pass/pass 경로에서 `configure()`로 5초 cap을 주입하지 않았고, `deadStones()`와 진단용 `scoreFinal()`을 모두 호출하면 5초 cap이 각각 적용되어 체감 10초가 될 수 있음을 확인했다.
+- 기본 빠른 종국 경로를 수정했다. 사람 pass/pass의 `syncAfterHumanMove()`와 AI 자동대국 pass/pass의 `resolveEndgameForState()`는 종국 직전에 `EngineProfile.analysisLimit.timeMillis=5000`으로 `configure()`를 다시 호출한다.
+- 기본 빠른 종국에서는 진단용 `scoreFinal()` raw 호출을 생략하도록 했다. 화면 점수는 `deadStones()` + 로컬 사석 fallback + 로컬 계가 + 기존 NN/Top Moves 추정 조합으로 만들고, debug log에는 `assistantJudgeTimeCapMs=5000`, `diagnosticKataGoFinalScoreSkipped=skipped-by-assistant-judge-sla`를 남긴다.
+- 이의신청/정밀 계가 기능은 후속으로 남겼고, `ENGINE_API_CALL_POLICY.md`와 `SCORE_AND_ENDGAME_DECISION.md`를 현재 구현 기준으로 업데이트했다.

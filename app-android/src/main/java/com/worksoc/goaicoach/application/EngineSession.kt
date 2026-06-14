@@ -40,6 +40,13 @@ internal data class LocalEngineMoveResult(
     val endgame: AiEndgameResolution? = null,
 )
 
+internal const val AssistantJudgeEndgameTimeCapMillis: Long = 5_000L
+
+internal fun EngineProfile.withAssistantJudgeEndgameTimeCap(): EngineProfile =
+    copy(
+        analysisLimit = analysisLimit.copy(timeMillis = AssistantJudgeEndgameTimeCapMillis),
+    )
+
 internal suspend fun EngineCoreApi.startEngineSession(
     profile: EngineProfile,
     state: GameState,
@@ -141,17 +148,21 @@ internal suspend fun EngineCoreApi.syncAfterHumanMove(
     syncToGameState(afterMove)
     val syncReplayMs = System.currentTimeMillis() - syncReplayStartMillis
     return if (MatchReferee.shouldResolveEndgame(afterMove)) {
+        val assistantJudgeProfile = profile.withAssistantJudgeEndgameTimeCap()
+        configure(assistantJudgeProfile)
         LocalEngineMoveResult(
             endgame = resolveAiEndgame(
                 engineAdapter = this,
                 originalState = afterMove,
-                estimateLimit = scoreGraphAnalysisLimit(profile),
+                estimateLimit = scoreGraphAnalysisLimit(assistantJudgeProfile),
                 prePassCandidates = if (move is Move.Pass) {
                     previousReviewCandidates
                 } else {
                     emptyList()
                 },
                 syncReplayMs = syncReplayMs,
+                assistantJudgeTimeCapMs = AssistantJudgeEndgameTimeCapMillis,
+                runDiagnosticFinalScore = false,
             ),
         )
     } else {
@@ -176,13 +187,18 @@ internal suspend fun EngineCoreApi.resolveEndgameForState(
     state: GameState,
     profile: EngineProfile,
     prePassCandidates: List<CandidateMove>,
-): AiEndgameResolution =
-    resolveAiEndgame(
+): AiEndgameResolution {
+    val assistantJudgeProfile = profile.withAssistantJudgeEndgameTimeCap()
+    configure(assistantJudgeProfile)
+    return resolveAiEndgame(
         engineAdapter = this,
         originalState = state,
-        estimateLimit = scoreGraphAnalysisLimit(profile),
+        estimateLimit = scoreGraphAnalysisLimit(assistantJudgeProfile),
         prePassCandidates = prePassCandidates,
+        assistantJudgeTimeCapMs = AssistantJudgeEndgameTimeCapMillis,
+        runDiagnosticFinalScore = false,
     )
+}
 
 internal fun scoreGraphAnalysisLimit(profile: EngineProfile): AnalysisLimit =
     profile.turnAnalysisLimitFor(TurnAnalysisPurpose.ScoreGraph)
