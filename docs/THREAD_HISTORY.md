@@ -1205,3 +1205,6 @@
 - 사용자가 같은 형식으로 다음 리팩토링 진행과 보고를 요청했다.
 - 다음 안전 단위로 Top Moves 실패 경로를 application display plan/reducer로 이동했다. `TopMoveAnalysisFailureDisplayPlan`과 `buildTopMoveAnalysisFailureDisplayPlan()`을 추가했고, `GameSessionAnalysisState`/`GameSessionCoreState`가 실패 시 review snapshot, analysis key, 표시 후보, engine message 반영을 담당한다. `GoCoachApp.kt`는 Top Moves 실패에서 더 이상 `engineMessage`, review analysis, displayed spots를 직접 조합하지 않는다.
 - `TopMovesApplicationTest`, `GameSessionAnalysisStateTest`, `GameSessionCoreStateTest`를 보강했고 관련 application 테스트가 통과했다. 리팩토링 완성도는 2026-06-14 현재 **88/100**으로 재평가했다. 다음 핵심은 Top Moves/Score Estimate 실행부를 `GameSessionEffect` runner로 더 얇게 옮기는 것이다.
+- 사용자가 같은 형식으로 다음 리팩토링 진행과 보고를 요청했다.
+- 다음 안전 단위로 Top Moves launch update가 raw `TopMoveAnalysisPlan` 대신 `GameSessionEffect.RunTopMoveAnalysis`를 반환하도록 연결했다. `TopMoveAnalysisLaunchPlan.RunEngine`은 `plan`, `deep`, `automatic`을 함께 보존하고, `GameSessionAnalysisState.applyTopMoveAnalysisLaunchPlan()`은 pending analysis key와 실행 effect를 함께 만든다. `GoCoachApp.kt`는 이제 launch 결과의 effect를 실행한다.
+- `TopMovesApplicationTest`와 `GameSessionControllerTest`를 보강했고 관련 application 테스트가 통과했다. 리팩토링 완성도는 2026-06-14 현재 **89/100**으로 재평가했다. 다음 핵심은 Top Moves effect 실행 coroutine 자체를 별도 runner 함수로 분리하거나, Score Estimate 실행부도 같은 effect 흐름으로 연결하는 것이다.

@@ -455,11 +455,11 @@ class TopMovesApplicationTest {
         assertEquals(plan.analysisKey, stateUpdate?.analysisState?.lastAnalysisKey)
         assertEquals(1, stateUpdate?.analysisState?.candidateMoves?.size)
         assertEquals(update.engineMessage, stateUpdate?.engineMessage)
-        assertNull(stateUpdate?.runEnginePlan)
+        assertNull(stateUpdate?.effect)
     }
 
     @Test
-    fun launchStateUpdateMarksRunEnginePlanAsPendingAnalysisKey() {
+    fun launchStateUpdateBuildsRunTopMoveEffectAndMarksPendingAnalysisKey() {
         val state = GameState.empty()
         val plan = buildTopMoveAnalysisPlan(
             targetState = state,
@@ -469,10 +469,18 @@ class TopMovesApplicationTest {
         )
 
         val stateUpdate = GameSessionAnalysisState.empty(state)
-            .applyTopMoveAnalysisLaunchPlan(TopMoveAnalysisLaunchPlan.RunEngine(plan))
+            .applyTopMoveAnalysisLaunchPlan(
+                TopMoveAnalysisLaunchPlan.RunEngine(
+                    plan = plan,
+                    deep = true,
+                    automatic = true,
+                ),
+            )
 
         assertEquals(plan.analysisKey, stateUpdate?.analysisState?.lastAnalysisKey)
-        assertEquals(plan, stateUpdate?.runEnginePlan)
+        assertEquals(plan, stateUpdate?.effect?.plan)
+        assertEquals(true, stateUpdate?.effect?.deep)
+        assertEquals(true, stateUpdate?.effect?.automatic)
         assertNull(stateUpdate?.engineMessage)
     }
 
@@ -500,7 +508,10 @@ class TopMovesApplicationTest {
         )
 
         assertTrue(launchPlan is TopMoveAnalysisLaunchPlan.RunEngine)
-        assertEquals(expected, (launchPlan as TopMoveAnalysisLaunchPlan.RunEngine).plan)
+        val run = launchPlan as TopMoveAnalysisLaunchPlan.RunEngine
+        assertEquals(expected, run.plan)
+        assertEquals(false, run.deep)
+        assertEquals(false, run.automatic)
     }
 
     @Test
@@ -522,7 +533,10 @@ class TopMovesApplicationTest {
         )
 
         assertTrue(launchPlan is TopMoveAnalysisLaunchPlan.RunEngine)
-        assertEquals(expected, (launchPlan as TopMoveAnalysisLaunchPlan.RunEngine).plan)
+        val run = launchPlan as TopMoveAnalysisLaunchPlan.RunEngine
+        assertEquals(expected, run.plan)
+        assertEquals(false, run.deep)
+        assertEquals(false, run.automatic)
     }
 
     @Test

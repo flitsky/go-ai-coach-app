@@ -63,13 +63,15 @@ internal sealed class TopMoveAnalysisLaunchPlan {
 
     data class RunEngine(
         val plan: TopMoveAnalysisPlan,
+        val deep: Boolean,
+        val automatic: Boolean,
     ) : TopMoveAnalysisLaunchPlan()
 }
 
 internal data class TopMoveAnalysisLaunchStateUpdate(
     val analysisState: GameSessionAnalysisState,
     val engineMessage: String? = null,
-    val runEnginePlan: TopMoveAnalysisPlan? = null,
+    val effect: GameSessionEffect.RunTopMoveAnalysis? = null,
 )
 
 internal fun topMoveAnalysisOperationToken(
@@ -137,7 +139,11 @@ internal fun GameSessionAnalysisState.applyTopMoveAnalysisLaunchPlan(
         is TopMoveAnalysisLaunchPlan.RunEngine ->
             TopMoveAnalysisLaunchStateUpdate(
                 analysisState = copy(lastAnalysisKey = launchPlan.plan.analysisKey),
-                runEnginePlan = launchPlan.plan,
+                effect = GameSessionEffect.RunTopMoveAnalysis(
+                    plan = launchPlan.plan,
+                    deep = launchPlan.deep,
+                    automatic = launchPlan.automatic,
+                ),
             )
     }
 
@@ -200,7 +206,11 @@ internal fun buildTopMoveAnalysisLaunchPlan(
         )
     }
 
-    return TopMoveAnalysisLaunchPlan.RunEngine(plan)
+    return TopMoveAnalysisLaunchPlan.RunEngine(
+        plan = plan,
+        deep = deep,
+        automatic = automatic,
+    )
 }
 
 internal fun GameSessionControllerState.toTopMoveAnalysisLaunchPlan(

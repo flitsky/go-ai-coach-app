@@ -859,7 +859,8 @@ private fun GoCoachScreen(
         val launchUpdate = analysisState.applyTopMoveAnalysisLaunchPlan(launchPlan) ?: return
         analysisState = launchUpdate.analysisState
         launchUpdate.engineMessage?.let { message -> engineMessage = message }
-        val plan = launchUpdate.runEnginePlan ?: return
+        val effect = launchUpdate.effect ?: return
+        val plan = effect.plan
         val operationToken = topMoveAnalysisOperationToken(
             targetState = targetState,
             plan = plan,
@@ -874,7 +875,7 @@ private fun GoCoachScreen(
                         engineProfile = runtimeState.engineProfile,
                         analysisPreset = runtimeState.analysisPreset,
                         plan = plan,
-                        deep = deep,
+                        deep = effect.deep,
                         topMovesEnabled = currentTopMovesEnabled,
                         cacheEnabled = analysisCache.isEnabled,
                     )
