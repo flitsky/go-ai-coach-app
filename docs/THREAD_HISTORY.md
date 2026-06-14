@@ -1266,3 +1266,6 @@
 - 4단계로 middleware KMP 이동 준비를 진행했다. 1단계에서 추가한 HTTP transport/JSON codec이 `RemotePositionAnalysisGateway.kt`에 함께 들어가 KMP-ready gateway 계약을 오염시킬 수 있음을 확인하고, `HttpRemotePositionAnalysisTransport.kt`로 분리했다.
 - `RemotePositionAnalysisGateway.kt`는 다시 shared DTO와 `analysisFingerprint`만 의존하는 읽기 전용 gateway/transport 계약 파일이 되었다. HTTP 구현은 의도적으로 Android/JVM-bound 파일에 남겨 향후 Ktor/OkHttp/remote server client로 교체 가능한 transport detail로 취급한다.
 - `LayeringContractTest`를 강화해 `PositionAnalysisGateway.kt`와 `RemotePositionAnalysisGateway.kt` 모두 `android`, `androidx`, `java`, `org.json`, application/UI/persistence/engine runtime import를 금지했다. 관련 architecture/middleware 테스트가 통과했다.
+- 5단계로 KataGo GTP/JSON protocol client를 추가 분리했다. `KataGoAnalysisContext`를 추가하고, GTP fast 분석 조합은 `KataGoGtpAnalysisClient`, JSON position analysis 조합은 `KataGoJsonPositionAnalysisClient`로 이동했다.
+- `KataGoProcessEngineAdapter`는 process lifecycle, command send/receive, board state replay용 query id 생성, low-level primitive 호출에 집중하고, 후보수 조합/정책 fallback/refine/summary 생성은 각 protocol client가 담당한다.
+- `:engine-android:testDebugUnitTest`를 실행해 engine 모듈 테스트가 통과했다.

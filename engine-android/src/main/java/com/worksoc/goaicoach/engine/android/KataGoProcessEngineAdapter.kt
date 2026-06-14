@@ -4,22 +4,17 @@ import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.AnalysisResult
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
-import com.worksoc.goaicoach.shared.CandidateMove
-import com.worksoc.goaicoach.shared.CandidateMoveSource
 import com.worksoc.goaicoach.shared.DeadStonesResult
 import com.worksoc.goaicoach.shared.EngineCoreApi
 import com.worksoc.goaicoach.shared.EngineMode
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.EngineStatus
 import com.worksoc.goaicoach.shared.FinalScoreResult
-import com.worksoc.goaicoach.shared.GameStateReplayer
-import com.worksoc.goaicoach.shared.LegalMoveGenerator
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.MoveResult
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.StoneColor
-import com.worksoc.goaicoach.shared.allCoordinates
 import com.worksoc.goaicoach.shared.describe
 import java.io.BufferedReader
 import java.io.BufferedWriter
@@ -118,299 +113,18 @@ class KataGoProcessEngineAdapter(
         val effectiveLimit = limit.effectiveAnalysisLimit()
         if (effectiveLimit.needsJsonAnalysis()) {
             runCatching {
-                analyzeWithJson(effectiveLimit, limit.candidateCount)
+                val analysisConfigPath = processConfig.resolveAnalysisConfigPath() ?: return@runCatching null
+                ensureAnalysisProcessStarted(analysisConfigPath)
+                jsonPositionAnalysisClient().analyze(effectiveLimit, limit.candidateCount)
             }.getOrNull()?.let { jsonResult ->
                 return jsonResult
             }
         }
 
-        val gtpResult = analyzeWithGtp(effectiveLimit, limit)
-        val candidates = gtpResult.candidates
-        val policyFallbackCount = candidates.count { it.visits == null && it.policyPrior != null }
-        val legalFallbackCount = candidates.count { it.visits == null && it.policyPrior == null }
-        val scoredCount = candidates.count { it.pointLoss != null }
-        return AnalysisResult(
-            status = EngineStatus.ready(
-                "KataGo analysis complete for ${nextPlayer.label}: $scoredCount scored / ${limit.candidateCount} requested candidate(s)",
-            ),
-            candidates = candidates,
-            summary = buildAnalysisSummary(
-                requestedLimit = limit,
-                effectiveLimit = effectiveLimit,
-                candidateCount = candidates.size,
-                scoredCount = scoredCount,
-                policyFallbackCount = policyFallbackCount,
-                legalFallbackCount = legalFallbackCount,
-                rootVisits = gtpResult.rootVisits,
-                elapsedMs = gtpResult.elapsedMs,
-            ),
-            rootVisits = gtpResult.rootVisits,
-            elapsedMillis = gtpResult.elapsedMs,
+        return gtpAnalysisClient().analyze(
+            effectiveLimit = effectiveLimit,
+            requestedLimit = limit,
         )
-    }
-
-    private fun analyzeWithJson(
-        effectiveLimit: AnalysisLimit,
-        candidateCount: Int,
-    ): AnalysisResult? {
-        val analysisConfigPath = processConfig.resolveAnalysisConfigPath() ?: return null
-        ensureAnalysisProcessStarted(analysisConfigPath)
-        val startNanos = System.nanoTime()
-        val response = sendAnalysisQuery(effectiveLimit.toJsonAnalysisQuery())
-        val elapsedMs = (System.nanoTime() - startNanos) / 1_000_000
-        val rootVisits = KataGoJsonAnalysisParser.parseRootVisits(response)
-        val searchedCandidates = KataGoJsonAnalysisParser.parseCandidates(
-            response = response,
-            player = nextPlayer,
-            boardSize = boardSize,
-            maxCandidates = candidateCount,
-        )
-        val currentState = GameStateReplayer
-            .replay(boardSize = boardSize, ruleset = ruleset, moves = playedMoves)
-        val legalCoordinates = LegalMoveGenerator
-            .legalPlayCoordinates(currentState, nextPlayer)
-            .toSet()
-        val illegalCoordinates = boardSize.allCoordinates().toSet() - legalCoordinates
-        val searchedCoordinates = searchedCandidates.playCoordinates()
-        val policyCandidates = if (effectiveLimit.includePolicy) {
-            KataGoJsonAnalysisParser.parsePolicyCandidates(
-                response = response,
-                player = nextPlayer,
-                boardSize = boardSize,
-                maxCandidates = candidateCount,
-                excludedCoordinates = searchedCoordinates + illegalCoordinates,
-            )
-        } else {
-            emptyList()
-        }
-        val referenceScoreLead = KataGoJsonAnalysisParser.parseRootWhiteScoreLead(response)
-        val refinedCandidates = if (referenceScoreLead == null || effectiveLimit.refinePolicyMoves <= 0) {
-            emptyList()
-        } else {
-            refineJsonPolicyCandidates(
-                policyCandidates = policyCandidates,
-                referenceScoreLead = referenceScoreLead,
-                maxCandidates = candidateCount,
-                refineBudget = effectiveLimit.refinePolicyMoves,
-            )
-        }
-        val refinedCoordinates = refinedCandidates.playCoordinates()
-        val candidates = (
-            searchedCandidates +
-                refinedCandidates +
-                policyCandidates.filterNot { candidate ->
-                    (candidate.move as? Move.Play)?.coordinate in refinedCoordinates
-                }
-            )
-            .take(candidateCount)
-        val scoredCount = candidates.count { it.pointLoss != null }
-        val policyOnlyCount = candidates.count { it.pointLoss == null && it.policyPrior != null }
-        return AnalysisResult(
-            status = EngineStatus.ready(
-                "KataGo JSON analysis complete for ${nextPlayer.label}: $scoredCount/$candidateCount scored candidate(s)",
-            ),
-            candidates = candidates,
-            summary = buildJsonAnalysisSummary(
-                effectiveLimit = effectiveLimit,
-                rootVisits = rootVisits,
-                elapsedMs = elapsedMs,
-                scoredCount = scoredCount,
-                policyOnlyCount = policyOnlyCount,
-                refinedCount = refinedCandidates.size,
-            ),
-            rootVisits = rootVisits,
-            elapsedMillis = elapsedMs,
-        )
-    }
-
-    private fun buildJsonAnalysisSummary(
-        effectiveLimit: AnalysisLimit,
-        rootVisits: Int?,
-        elapsedMs: Long,
-        scoredCount: Int,
-        policyOnlyCount: Int,
-        refinedCount: Int,
-    ): String {
-        val fillStatus = when {
-            rootVisits == null -> "UNKNOWN"
-            rootVisits < effectiveLimit.visits -> "SHORT"
-            else -> "OK"
-        }
-        return buildString {
-            append("KataGo JSON analysis with ${effectiveLimit.visits} visits / ${effectiveLimit.timeMillis ?: 0}ms.")
-            append(" Visit diagnostics: request=${effectiveLimit.visits}, root=${rootVisits ?: "none"}, elapsedMs=$elapsedMs, timeCapMs=${effectiveLimit.timeMillis ?: "none"}, fill=$fillStatus.")
-            append(" Returned $scoredCount scored, $policyOnlyCount policy-only candidate(s); refined $refinedCount/${effectiveLimit.refinePolicyMoves} policy move(s).")
-        }
-    }
-
-    private fun refineJsonPolicyCandidates(
-        policyCandidates: List<CandidateMove>,
-        referenceScoreLead: Double,
-        maxCandidates: Int,
-        refineBudget: Int,
-    ): List<CandidateMove> {
-        val refineCount = (maxCandidates / JsonRefineCandidateDivisor)
-            .coerceIn(0, refineBudget)
-        if (refineCount <= 0) {
-            return emptyList()
-        }
-
-        return policyCandidates
-            .asSequence()
-            .mapNotNull { candidate ->
-                val move = candidate.move as? Move.Play ?: return@mapNotNull null
-                move to candidate.policyPrior
-            }
-            .take(refineCount)
-            .mapNotNull { (move, policyPrior) ->
-                runCatching {
-                    val response = sendAnalysisQuery(
-                        JsonRefineLimit.toJsonAnalysisQuery(
-                            refineMove = move,
-                            includePolicyOverride = false,
-                        ),
-                    )
-                    KataGoJsonAnalysisParser.parseRefinedCandidate(
-                        response = response,
-                        player = nextPlayer,
-                        move = move,
-                        referenceScoreLead = referenceScoreLead,
-                        policyPrior = policyPrior,
-                    )
-                }.getOrNull()
-            }
-            .toList()
-    }
-
-    private fun analyzeWithGtp(
-        effectiveLimit: AnalysisLimit,
-        limit: AnalysisLimit,
-    ): GtpAnalysisResult =
-        try {
-            applySearchLimit(effectiveLimit)
-            val startNanos = System.nanoTime()
-            val response = sendCommand(KataGoProtocolCommands.searchAnalyze(nextPlayer, effectiveLimit))
-            val elapsedMs = (System.nanoTime() - startNanos) / 1_000_000
-            val candidates = KataGoAnalysisParser.attachPointLoss(
-                candidates = KataGoAnalysisParser.parseCandidates(
-                    response = response,
-                    player = nextPlayer,
-                    boardSize = boardSize,
-                    maxCandidates = limit.candidateCount,
-                ),
-            ).fillFromPolicyIfNeeded(limit)
-            GtpAnalysisResult(
-                candidates = candidates,
-                rootVisits = KataGoAnalysisParser.parseRootVisitsEstimate(response),
-                elapsedMs = elapsedMs,
-            )
-        } finally {
-            applySearchLimit(profile.analysisLimit)
-        }
-
-    private data class GtpAnalysisResult(
-        val candidates: List<CandidateMove>,
-        val rootVisits: Int?,
-        val elapsedMs: Long,
-    )
-
-    private fun List<CandidateMove>.fillFromPolicyIfNeeded(
-        limit: AnalysisLimit,
-    ): List<CandidateMove> {
-        val remaining = limit.candidateCount - size
-        if (remaining <= 0) {
-            return take(limit.candidateCount)
-        }
-
-        val currentState = GameStateReplayer
-            .replay(boardSize = boardSize, ruleset = ruleset, moves = playedMoves)
-        val legalCoordinates = LegalMoveGenerator
-            .legalPlayCoordinates(currentState, nextPlayer)
-            .toSet()
-        val illegalCoordinates = boardSize.allCoordinates().toSet() - legalCoordinates
-        val occupiedCoordinates = currentState
-            .stones
-            .keys
-        val searchCoordinates = mapNotNull { candidate ->
-            (candidate.move as? Move.Play)?.coordinate
-        }
-        val policyCandidates = if (limit.includePolicy) {
-            val policyResponse = sendCommand(KataGoProtocolCommands.rawNn())
-            KataGoAnalysisParser.parsePolicyCandidates(
-                response = policyResponse,
-                player = nextPlayer,
-                boardSize = boardSize,
-                maxCandidates = remaining,
-                excludedCoordinates = occupiedCoordinates + illegalCoordinates + searchCoordinates,
-            )
-        } else {
-            emptyList()
-        }
-        val usedCoordinates = occupiedCoordinates + illegalCoordinates + searchCoordinates +
-            policyCandidates.mapNotNull { candidate -> (candidate.move as? Move.Play)?.coordinate }
-        val legalFallbackCandidates = boardSize.allCoordinates()
-            .filter { coordinate -> coordinate in legalCoordinates && coordinate !in usedCoordinates }
-            .take(remaining - policyCandidates.size)
-            .mapIndexed { index, coordinate ->
-                CandidateMove(
-                    move = Move.Play(nextPlayer, coordinate),
-                    source = CandidateMoveSource.LegalFallback,
-                    note = "Legal fallback ${index + 1}",
-                )
-            }
-            .toList()
-
-        return (this + policyCandidates + legalFallbackCandidates).take(limit.candidateCount)
-    }
-
-    private fun List<CandidateMove>.playCoordinates(): Set<BoardCoordinate> =
-        mapNotNull { candidate -> (candidate.move as? Move.Play)?.coordinate }
-            .toSet()
-
-    private fun buildAnalysisSummary(
-        requestedLimit: AnalysisLimit,
-        effectiveLimit: AnalysisLimit,
-        candidateCount: Int,
-        scoredCount: Int,
-        policyFallbackCount: Int,
-        legalFallbackCount: Int,
-        rootVisits: Int?,
-        elapsedMs: Long,
-    ): String {
-        val searchText = if (
-            effectiveLimit.visits != requestedLimit.visits ||
-            effectiveLimit.timeMillis != requestedLimit.timeMillis
-        ) {
-            "KataGo search analysis raised search to ${effectiveLimit.visits} visits / ${effectiveLimit.timeMillis ?: 0}ms for ${requestedLimit.candidateCount} candidate(s)."
-        } else {
-            "KataGo search analysis with ${effectiveLimit.visits} visits / ${effectiveLimit.timeMillis ?: 0}ms."
-        }
-        val searchedCount = candidateCount - policyFallbackCount - legalFallbackCount
-        val fillStatus = when {
-            rootVisits == null -> "UNKNOWN"
-            rootVisits < effectiveLimit.visits -> "SHORT"
-            else -> "OK"
-        }
-        val diagnosticsText =
-            " Visit diagnostics: request=${effectiveLimit.visits}, root=${rootVisits ?: "none"}, elapsedMs=$elapsedMs, timeCapMs=${effectiveLimit.timeMillis ?: "none"}, fill=$fillStatus."
-        return if (policyFallbackCount > 0 || legalFallbackCount > 0) {
-            buildString {
-                append(searchText)
-                append(diagnosticsText)
-                append(" Returned $searchedCount searched candidate(s)")
-                if (policyFallbackCount > 0) {
-                    append("; kept $policyFallbackCount raw NN policy fallback candidate(s) for logs only")
-                }
-                if (legalFallbackCount > 0) {
-                    append("; kept $legalFallbackCount legal fallback candidate(s) for logs only")
-                }
-                append(". ")
-                append("Showing $scoredCount scored spot(s) on the board")
-                append(".")
-            }
-        } else {
-            "$searchText$diagnosticsText Showing $scoredCount/${requestedLimit.candidateCount} scored spot(s)."
-        }
     }
 
     override suspend fun estimateScore(limit: AnalysisLimit): ScoreEstimate {
@@ -549,6 +263,34 @@ class KataGoProcessEngineAdapter(
         }
     }
 
+    private fun gtpAnalysisClient(): KataGoGtpAnalysisClient =
+        KataGoGtpAnalysisClient(
+            sendCommand = ::sendCommand,
+            applySearchLimit = ::applySearchLimit,
+            restoreSearchLimit = { profile.analysisLimit },
+            contextProvider = ::analysisContext,
+        )
+
+    private fun jsonPositionAnalysisClient(): KataGoJsonPositionAnalysisClient =
+        KataGoJsonPositionAnalysisClient(
+            sendAnalysisQuery = ::sendAnalysisQuery,
+            buildAnalysisQuery = { limit, refineMove, includePolicyOverride ->
+                limit.toJsonAnalysisQuery(
+                    refineMove = refineMove,
+                    includePolicyOverride = includePolicyOverride,
+                )
+            },
+            contextProvider = ::analysisContext,
+        )
+
+    private fun analysisContext(): KataGoAnalysisContext =
+        KataGoAnalysisContext(
+            boardSize = boardSize,
+            ruleset = ruleset,
+            nextPlayer = nextPlayer,
+            playedMoves = playedMoves.toList(),
+        )
+
     private fun applySearchLimit(limit: AnalysisLimit) {
         sendCommand(KataGoProtocolCommands.setMaxVisits(limit.visits))
         // KataGo GTP maxTime is process-global. When timeMillis is null we
@@ -608,13 +350,5 @@ class KataGoProcessEngineAdapter(
 
     private companion object {
         private const val AnalysisSearchThreads = 4
-        private const val JsonRefineCandidateDivisor = 4
-        private val JsonRefineLimit = AnalysisLimit(
-            visits = 8,
-            includePolicy = false,
-            refinePolicyMoves = 0,
-            minVisitsPerCandidate = 0,
-            minTimeMillis = null,
-        )
     }
 }
