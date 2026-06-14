@@ -699,6 +699,33 @@ class GameAutomationApplicationTest {
     }
 
     @Test
+    fun autoAiEndgameEffectRunnerUsesEffectPlan() = runBlocking {
+        val state = GameState.empty()
+            .play(Move.Pass(StoneColor.Black))
+            .play(Move.Pass(StoneColor.White))
+        val resolution = aiEndgameResolution(state)
+        val client = FakeAutoAiEngineSessionClient(
+            result = autoAiTurnResult(state, estimate = null),
+            endgameResolution = resolution,
+        )
+        val plan = AutoAiTurnEndgamePlan.Resolve(
+            state = state,
+            profile = EngineProfile(name = "EffectProfile"),
+            prePassCandidates = emptyList(),
+            engineMessagePrefix = "effect pass/pass",
+        )
+
+        val display = client.runAutoAiEndgameEffect(
+            effect = GameSessionEffect.ResolveAutoAiEndgame(plan),
+            previousSnapshots = emptyList(),
+        )
+
+        assertTrue(display is AutoAiTurnEndgameDisplayPlan.Resolved)
+        assertEquals(state, client.resolvedEndgameState)
+        assertEquals("EffectProfile", client.resolvedEndgameProfile?.name)
+    }
+
+    @Test
     fun autoAiEndgameDisplayRunnerBuildsFailureDisplayPlan() = runBlocking {
         val state = GameState.empty()
             .play(Move.Pass(StoneColor.Black))

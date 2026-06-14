@@ -216,3 +216,29 @@
 4. `GoCoachApp.kt` coroutine runner 추가 축소
    - startup/new-game/human-sync/undo/cache optimization 경로의 started/completed/failure 패턴을 공통 runner로 묶을 수 있는지 검토한다.
    - 단, UX state 변경이 섞인 구간은 무리하게 추상화하지 않고 operation 경계가 명확한 곳부터 진행한다.
+
+## 2026-06-14 추가 진행 로그: Effect/Lifecycle/Diagnostic Schema
+
+- 2026-06-14: `GameSessionEffect.ResolveAutoAiEndgame`을 실제 UI 실행 경로에 연결했다. `EngineSessionClient.runAutoAiEndgameEffect()`를 추가해 auto AI main turn과 endgame resolve가 같은 effect runner 구조를 갖게 됐다.
+- 2026-06-14: `EngineOperationLifecycleState`를 도입해 engine busy lifecycle이 active operation id set을 관리하도록 확장했다. 현재 UI는 helper에서 `isEngineBusy` 즉시값도 함께 갱신하므로 기존 UX 동작은 유지된다.
+- 2026-06-14: `GoCoachApp.kt`의 engine operation start/complete helper가 operation id를 받도록 변경했다. 공통 operation request가 있는 Top Moves, Score Estimate, Auto AI는 request의 operation id를 쓰고, startup/undo/cache 등은 UI-local id를 발급한다.
+- 2026-06-14: `launchTrackedEngineOperation()` helper를 추가해 Top Moves와 Score Estimate coroutine의 started/finally-completed 패턴을 축소했다. startup/new-game/human-sync/undo/cache optimization은 UX state 조율이 섞여 있어 다음 안전 단위로 남겼다.
+- 2026-06-14: `DIAGNOSTIC_EVENT_SCHEMA.md`를 추가해 structured diagnostic event envelope, engine operation slow/timeout/discarded, visit fill, final score disagreement event schema를 문서화했다.
+- 검증: `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest` 통과, `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test` 통과.
+
+## 다음 추천 리팩토링 항목
+
+1. Engine operation lifecycle을 runtime/diagnostic event와 더 직접 연결
+   - `engine.operation.started/completed` 이벤트를 추가할지 검토한다.
+   - 너무 많은 로그가 생기지 않도록 debug build 또는 warning/critical 중심 정책을 먼저 정한다.
+
+2. Remaining coroutine runner 축소
+   - startup, new game, restored sync, human sync, undo, cache optimization 중 operation 경계가 명확한 것부터 `launchTrackedEngineOperation()`으로 이동한다.
+   - UI state 조율이 복잡한 경로는 작은 display plan/reducer를 먼저 만든다.
+
+3. Engine operation request 확대
+   - human move sync, restored game sync, scoring rule sync, startup benchmark도 `EngineOperationRequest` 또는 별도 request model을 갖게 해 diagnostic metadata를 통일한다.
+
+4. Diagnostic event schema 테스트
+   - 문서화된 필수 context key가 누락되지 않도록 schema contract test를 추가한다.
+   - 향후 Firebase/Sentry/MQ adapter 도입 전에 이벤트 품질을 고정한다.

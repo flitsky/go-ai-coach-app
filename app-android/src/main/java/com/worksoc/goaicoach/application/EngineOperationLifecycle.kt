@@ -1,23 +1,42 @@
 package com.worksoc.goaicoach.application
 
-internal enum class EngineOperationLifecycleTransition {
-    Started,
-    Completed,
+internal data class EngineOperationLifecycleState(
+    val activeOperationIds: Set<String> = emptySet(),
+) {
+    val isEngineBusy: Boolean
+        get() = activeOperationIds.isNotEmpty()
+}
+
+internal sealed class EngineOperationLifecycleTransition {
+    data class Started(
+        val operationId: String,
+    ) : EngineOperationLifecycleTransition()
+
+    data class Completed(
+        val operationId: String,
+    ) : EngineOperationLifecycleTransition()
+
+    data object Reset : EngineOperationLifecycleTransition()
 }
 
 /**
  * Single reducer for UI-visible engine busy transitions.
  *
- * It is intentionally small today. Keeping the transition behind an
- * application-layer reducer gives us one place to evolve toward operation-id
- * scoped busy stacks or concurrent operation counters when remote engine
- * drivers arrive.
+ * Keeping operation ids in the lifecycle model lets local and future remote
+ * engine calls overlap without one late completion incorrectly hiding another
+ * active engine operation.
  */
 internal fun applyEngineOperationLifecycleTransition(
-    isEngineBusy: Boolean,
+    state: EngineOperationLifecycleState,
     transition: EngineOperationLifecycleTransition,
-): Boolean =
+): EngineOperationLifecycleState =
     when (transition) {
-        EngineOperationLifecycleTransition.Started -> true
-        EngineOperationLifecycleTransition.Completed -> false
+        is EngineOperationLifecycleTransition.Started ->
+            state.copy(activeOperationIds = state.activeOperationIds + transition.operationId)
+
+        is EngineOperationLifecycleTransition.Completed ->
+            state.copy(activeOperationIds = state.activeOperationIds - transition.operationId)
+
+        EngineOperationLifecycleTransition.Reset ->
+            EngineOperationLifecycleState()
     }

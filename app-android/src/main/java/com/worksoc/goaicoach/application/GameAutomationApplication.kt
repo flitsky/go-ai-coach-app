@@ -552,3 +552,16 @@ internal suspend fun EngineSessionClient.runAutoAiEndgameDisplayPlan(
             ),
         )
     }
+
+internal suspend fun EngineSessionClient.runAutoAiEndgameEffect(
+    effect: GameSessionEffect.ResolveAutoAiEndgame,
+    previousSnapshots: List<ScoreSnapshot>,
+    operationRequest: EngineOperationRequest? = null,
+    diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
+): AutoAiTurnEndgameDisplayPlan =
+    runAutoAiEndgameDisplayPlan(
+        plan = effect.plan,
+        previousSnapshots = previousSnapshots,
+        operationRequest = operationRequest,
+        diagnosticEventLog = diagnosticEventLog,
+    )

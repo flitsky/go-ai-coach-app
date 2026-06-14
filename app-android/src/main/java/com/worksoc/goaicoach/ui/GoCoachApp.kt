@@ -60,6 +60,7 @@ import com.worksoc.goaicoach.application.EngineBenchmarkDefaultVisits
 import com.worksoc.goaicoach.application.EngineBenchmarkMeasurementVersion
 import com.worksoc.goaicoach.application.EngineBenchmarkUiState
 import com.worksoc.goaicoach.application.EngineOperationGate
+import com.worksoc.goaicoach.application.EngineOperationLifecycleState
 import com.worksoc.goaicoach.application.EngineOperationLifecycleTransition
 import com.worksoc.goaicoach.application.EngineOperationResultGuard
 import com.worksoc.goaicoach.application.EngineSessionClient
@@ -107,7 +108,7 @@ import com.worksoc.goaicoach.application.RuntimeEventLogPort
 import com.worksoc.goaicoach.application.TopMoveAnalysisExecutionContext
 import com.worksoc.goaicoach.application.runTopMoveAnalysisEffect
 import com.worksoc.goaicoach.application.ScoringRuleChangePlan
-import com.worksoc.goaicoach.application.runAutoAiEndgameDisplayPlan
+import com.worksoc.goaicoach.application.runAutoAiEndgameEffect
 import com.worksoc.goaicoach.application.RestoredGameSyncExecutionContext
 import com.worksoc.goaicoach.application.runRestoredGameSyncEffect
 import com.worksoc.goaicoach.application.runAutoAiTurnEffect
@@ -297,7 +298,9 @@ private fun GoCoachScreen(
             ),
         )
     }
-    var isEngineBusy by remember { mutableStateOf(false) }
+    var engineOperationLifecycleState by remember { mutableStateOf(EngineOperationLifecycleState()) }
+    var isEngineBusy by remember { mutableStateOf(engineOperationLifecycleState.isEngineBusy) }
+    var engineOperationSequence by remember { mutableStateOf(0L) }
     var isEngineReady by remember { mutableStateOf(false) }
     var runtimeState by remember {
         mutableStateOf(
@@ -354,19 +357,42 @@ private fun GoCoachScreen(
     var pendingPostUndoEngineSync by remember { mutableStateOf<PendingPostUndoEngineSync?>(null) }
     var pendingPostUndoEngineSyncJob by remember { mutableStateOf<Job?>(null) }
 
-    fun markEngineOperationStarted() {
-        isEngineBusy = applyEngineOperationLifecycleTransition(
-            isEngineBusy = isEngineBusy,
-            transition = EngineOperationLifecycleTransition.Started,
+    fun markEngineOperationStarted(operationId: String) {
+        engineOperationLifecycleState = applyEngineOperationLifecycleTransition(
+            state = engineOperationLifecycleState,
+            transition = EngineOperationLifecycleTransition.Started(operationId),
         )
+        isEngineBusy = engineOperationLifecycleState.isEngineBusy
     }
 
-    fun markEngineOperationCompleted() {
-        isEngineBusy = applyEngineOperationLifecycleTransition(
-            isEngineBusy = isEngineBusy,
-            transition = EngineOperationLifecycleTransition.Completed,
+    fun markEngineOperationCompleted(operationId: String) {
+        engineOperationLifecycleState = applyEngineOperationLifecycleTransition(
+            state = engineOperationLifecycleState,
+            transition = EngineOperationLifecycleTransition.Completed(operationId),
         )
+        isEngineBusy = engineOperationLifecycleState.isEngineBusy
     }
+
+    fun nextUiEngineOperationId(
+        kind: String,
+        state: GameState = gameState,
+    ): String {
+        engineOperationSequence += 1
+        return "ui.$kind:g${runtimeState.sessionGeneration}:m${state.moves.size}:$engineOperationSequence"
+    }
+
+    fun launchTrackedEngineOperation(
+        operationId: String,
+        block: suspend () -> Unit,
+    ): Job =
+        scope.launch {
+            markEngineOperationStarted(operationId)
+            try {
+                block()
+            } finally {
+                markEngineOperationCompleted(operationId)
+            }
+        }
 
     fun markUndoEngineInterventionQuiet(): Long {
         val quietUntil = undoEngineInterventionQuietUntilMillis(System.currentTimeMillis())
@@ -456,7 +482,8 @@ private fun GoCoachScreen(
 
     LaunchedEffect(engineClient) {
         hasCompletedEngineStartup = false
-        markEngineOperationStarted()
+        val operationId = nextUiEngineOperationId("engine_startup")
+        markEngineOperationStarted(operationId)
         runCatching {
             withContext(Dispatchers.IO) {
                 engineClient.startSession(runtimeState.engineProfile, gameState)
@@ -476,7 +503,7 @@ private fun GoCoachScreen(
                 ),
             )
         }
-        markEngineOperationCompleted()
+        markEngineOperationCompleted(operationId)
         hasCompletedEngineStartup = true
     }
 
@@ -502,7 +529,8 @@ private fun GoCoachScreen(
         }
 
         benchmarkUiState = benchmarkUiState.clearResult()
-        markEngineOperationStarted()
+        val operationId = nextUiEngineOperationId("startup_benchmark")
+        markEngineOperationStarted(operationId)
         engineMessage = "엔진 벤치마크 시작 전 안정화 대기 중입니다."
         benchmarkUiState = benchmarkUiState.startWaitingForEngineSettle()
         analysisState = analysisState.copy(candidateText = "Engine benchmark waiting for startup settle delay.")
@@ -545,7 +573,7 @@ private fun GoCoachScreen(
             analysisState = analysisState.copy(candidateText = "Engine benchmark failed. The app will continue with built-in defaults.")
             benchmarkUiState = benchmarkUiState.failWithoutProfile()
         }
-        markEngineOperationCompleted()
+        markEngineOperationCompleted(operationId)
     }
 
     fun showEngineBenchmarkResult() {
@@ -908,8 +936,7 @@ private fun GoCoachScreen(
             sessionGeneration = runtimeState.sessionGeneration,
         )
 
-        scope.launch {
-            markEngineOperationStarted()
+        launchTrackedEngineOperation(operationToken.operation.operationId) {
             runCatching {
                 withContext(Dispatchers.IO) {
                     engineClient.runTopMoveAnalysisEffect(
@@ -962,7 +989,6 @@ private fun GoCoachScreen(
                     is EngineOperationResultGuard.Discard -> appendEngineOperationDiscardLog(guard)
                 }
             }
-            markEngineOperationCompleted()
         }
     }
 
@@ -998,7 +1024,8 @@ private fun GoCoachScreen(
                 return@launch
             }
 
-            markEngineOperationStarted()
+            val operationId = nextUiEngineOperationId("post_undo_sync", pending.targetState)
+            markEngineOperationStarted(operationId)
             runCatching {
                 withContext(Dispatchers.IO) {
                     engineClient.syncAndEstimateGraphScore(pending.targetState, runtimeState.engineProfile)
@@ -1018,7 +1045,7 @@ private fun GoCoachScreen(
                     engineMessage = error.message ?: "Local undo engine sync failed."
                 }
             }
-            markEngineOperationCompleted()
+            markEngineOperationCompleted(operationId)
             if (pendingPostUndoEngineSync == pending) {
                 pendingPostUndoEngineSync = null
             }
@@ -1106,8 +1133,9 @@ private fun GoCoachScreen(
             return
         }
 
+        val ruleSyncOperationId = nextUiEngineOperationId("scoring_rule_sync", nextState)
         scope.launch {
-            markEngineOperationStarted()
+            markEngineOperationStarted(ruleSyncOperationId)
             runCatching {
                 withContext(Dispatchers.IO) {
                     engineClient.runScoringRuleSyncDisplayPlan(
@@ -1122,7 +1150,7 @@ private fun GoCoachScreen(
             }.onFailure { error ->
                 engineMessage = error.message ?: "Scoring rule changed, but engine rule sync failed."
             }
-            markEngineOperationCompleted()
+            markEngineOperationCompleted(ruleSyncOperationId)
             requestTopMoveAnalysisForState(
                 targetState = gameState,
                 automatic = true,
@@ -1155,8 +1183,9 @@ private fun GoCoachScreen(
         val restore = restoreRequest.restore
         val restoredState = restore.gameState
         val restoredProfile = restore.runtime.engineProfile
+        val restoreOperationId = nextUiEngineOperationId("restore_sync", restoredState)
         if (restoreRequest.syncEngineAfterRestore) {
-            markEngineOperationStarted()
+            markEngineOperationStarted(restoreOperationId)
         }
 
         applySavedGameRestorePlan(restore)
@@ -1180,7 +1209,7 @@ private fun GoCoachScreen(
             }.onFailure { error ->
                 engineMessage = error.message ?: "Saved game restored locally, but engine sync failed."
             }
-            markEngineOperationCompleted()
+            markEngineOperationCompleted(restoreOperationId)
             requestTopMoveAnalysisForState(
                 targetState = restoredState,
                 automatic = true,
@@ -1194,8 +1223,7 @@ private fun GoCoachScreen(
             request,
             sessionGeneration = runtimeState.sessionGeneration,
         )
-        scope.launch {
-            markEngineOperationStarted()
+        launchTrackedEngineOperation(operationToken.operation.operationId) {
             runCatching {
                 withContext(Dispatchers.IO) {
                     engineClient.runScoreEstimateEffect(
@@ -1230,7 +1258,6 @@ private fun GoCoachScreen(
                     is EngineOperationResultGuard.Discard -> appendEngineOperationDiscardLog(guard)
                 }
             }
-            markEngineOperationCompleted()
         }
     }
 
@@ -1260,8 +1287,9 @@ private fun GoCoachScreen(
                 runtime = runtime,
             ),
         )
+        val operationId = nextUiEngineOperationId("start_new_game")
         scope.launch {
-            markEngineOperationStarted()
+            markEngineOperationStarted(operationId)
             var nextAnalysisState: GameState? = null
             val startMillis = System.currentTimeMillis()
             runCatching {
@@ -1289,7 +1317,7 @@ private fun GoCoachScreen(
                 )
                 resetLocalGame(error.message ?: "New AI game failed.", targetRuleset)
             }
-            markEngineOperationCompleted()
+            markEngineOperationCompleted(operationId)
             requestTopMoveAnalysisForState(
                 targetState = nextAnalysisState ?: gameState,
                 automatic = true,
@@ -1401,7 +1429,7 @@ private fun GoCoachScreen(
                             isolateSearchCache = turnContext.isolateSearchCache,
                         ),
                     )
-                    markEngineOperationStarted()
+                    markEngineOperationStarted(turnOperationToken.operation.operationId)
                     var followUpPlan: AutoAiTurnFollowUpPlan = AutoAiTurnFollowUpPlan.None
                     runCatching {
                         withContext(Dispatchers.IO) {
@@ -1458,8 +1486,8 @@ private fun GoCoachScreen(
                                         )
                                         when (
                                             val endgameDisplay = withContext(Dispatchers.IO) {
-                                                engineClient.runAutoAiEndgameDisplayPlan(
-                                                    plan = endgamePlan,
+                                                engineClient.runAutoAiEndgameEffect(
+                                                    effect = GameSessionEffect.ResolveAutoAiEndgame(endgamePlan),
                                                     previousSnapshots = scoreState.scoreSnapshots,
                                                     operationRequest = endgameOperationToken.operation,
                                                     diagnosticEventLog = diagnosticEventLog,
@@ -1538,7 +1566,7 @@ private fun GoCoachScreen(
                             is EngineOperationResultGuard.Discard -> appendEngineOperationDiscardLog(guard)
                         }
                     }
-                    markEngineOperationCompleted()
+                    markEngineOperationCompleted(turnOperationToken.operation.operationId)
                     autoAiTurnUiState = autoAiTurnUiState.completeAutoAiTurnRun()
                     runtimeEventLog.append(
                         runtimeAiTurnCompleteLog(
@@ -1629,7 +1657,8 @@ private fun GoCoachScreen(
             return
         }
 
-        markEngineOperationStarted()
+        val humanSyncOperationId = nextUiEngineOperationId("human_move_sync", afterMove)
+        markEngineOperationStarted(humanSyncOperationId)
         scope.launch {
             var nextAnalysisState: GameState? = null
             val syncStartMillis = System.currentTimeMillis()
@@ -1677,7 +1706,7 @@ private fun GoCoachScreen(
                 )
                 applyHumanEngineSyncFailurePlan(failure)
             }
-            markEngineOperationCompleted()
+            markEngineOperationCompleted(humanSyncOperationId)
             nextAnalysisState?.let { state ->
                 requestTopMoveAnalysisForState(
                     targetState = state,
@@ -1709,8 +1738,9 @@ private fun GoCoachScreen(
 
     fun undoEngineBackedTurn(plan: UndoRequestPlan.EngineUndo) {
         val undoCount = plan.undoCount
+        val operationId = nextUiEngineOperationId("engine_undo")
         scope.launch {
-            markEngineOperationStarted()
+            markEngineOperationStarted(operationId)
             runCatching {
                 withContext(Dispatchers.IO) {
                     repeat(undoCount) {
@@ -1732,7 +1762,7 @@ private fun GoCoachScreen(
             }.onFailure { error ->
                 engineMessage = error.message ?: "Undo failed."
             }
-            markEngineOperationCompleted()
+            markEngineOperationCompleted(operationId)
         }
     }
 
@@ -1789,7 +1819,8 @@ private fun GoCoachScreen(
             return
         }
         positionCacheOptimizationState = positionCacheOptimizationState.startRunning()
-        markEngineOperationStarted()
+        val operationId = nextUiEngineOperationId("position_cache_optimization")
+        markEngineOperationStarted(operationId)
         engineMessage = "Post-game cache optimization started: ${plan.targets.size} JSON position(s)."
         val effect = GameSessionEffect.RunPositionCacheOptimization(plan)
         scope.launch {
@@ -1804,7 +1835,7 @@ private fun GoCoachScreen(
                 engineMessage = error.message ?: "Post-game cache optimization failed."
             }
             positionCacheOptimizationState = positionCacheOptimizationState.finishRunning()
-            markEngineOperationCompleted()
+            markEngineOperationCompleted(operationId)
         }
     }
 
