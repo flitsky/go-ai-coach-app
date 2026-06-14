@@ -154,6 +154,42 @@ class DiagnosticEventApplicationTest {
     }
 
     @Test
+    fun engineOperationDiagnosticSchemaIncludesRequiredContextKeys() {
+        val request = engineOperationRequest(
+            kind = EngineOperationKind.HumanMoveSync,
+            state = GameState.empty()
+                .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine))),
+            sessionGeneration = 3,
+            timeoutPolicy = EngineTimeoutPolicy(timeoutMillis = 2_000L, label = "beginner:16v"),
+            fallbackPolicy = EngineFallbackPolicy.LocalRules,
+            backendId = "local-engine",
+        )
+        val slow = requireNotNull(
+            engineOperationSlowDiagnosticEvent(
+                request = request,
+                elapsedMillis = 2_500L,
+                thresholdMillis = 2_000L,
+            ),
+        )
+        val timeout = requireNotNull(engineOperationTimeoutDiagnosticEvent(request))
+        val requiredOperationKeys = setOf(
+            "operation",
+            "operationId",
+            "sessionGeneration",
+            "positionFingerprint",
+            "moveCount",
+            "backendId",
+            "timeoutPolicy",
+            "fallbackPolicy",
+        )
+
+        assertTrue(slow.context.keys.containsAll(requiredOperationKeys + setOf("elapsedMillis", "thresholdMillis")))
+        assertTrue(timeout.context.keys.containsAll(requiredOperationKeys + setOf("timeoutMillis")))
+        assertEquals("human_move_sync", slow.context["operation"])
+        assertEquals("human_move_sync", timeout.context["operation"])
+    }
+
+    @Test
     fun observedEngineOperationRecordsTimeoutEvent() = runBlocking {
         val request = engineOperationRequest(
             kind = EngineOperationKind.ScoreEstimate,
@@ -208,6 +244,34 @@ class DiagnosticEventApplicationTest {
         assertEquals("2", event.context["sessionGeneration"])
         assertEquals("1", event.context["currentMoveCount"])
         assertTrue(event.context["positionFingerprint"].orEmpty().isNotBlank())
+    }
+
+    @Test
+    fun discardedDiagnosticSchemaIncludesRequiredAndRecommendedKeys() {
+        val state = GameState.empty()
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+        val event = engineOperationDiscardedDiagnosticEvent(
+            discard = EngineOperationResultGuard.Discard(
+                reason = "result is stale",
+                operation = "score_estimate",
+                operationId = "score_estimate:g1:m0:abc",
+                sessionGeneration = 1L,
+            ),
+            currentState = state,
+        )
+
+        assertTrue(
+            event.context.keys.containsAll(
+                setOf(
+                    "reason",
+                    "currentMoveCount",
+                    "positionFingerprint",
+                    "operation",
+                    "operationId",
+                    "sessionGeneration",
+                ),
+            ),
+        )
     }
 }
 

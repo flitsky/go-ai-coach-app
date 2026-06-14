@@ -242,3 +242,42 @@
 4. Diagnostic event schema 테스트
    - 문서화된 필수 context key가 누락되지 않도록 schema contract test를 추가한다.
    - 향후 Firebase/Sentry/MQ adapter 도입 전에 이벤트 품질을 고정한다.
+
+## 2026-06-15 추가 진행 로그: Operation Request Coverage/Runtime Lifecycle
+
+- 2026-06-15: engine operation lifecycle을 runtime event log에 직접 연결했다. 이제 engine-facing 작업 시작/완료 시 `engine_operation_started`, `engine_operation_completed` 로그가 operation id와 active operation count를 남긴다. 정상 흐름에서 빈번히 발생하는 이벤트라 `diagnostic_events.jsonl`이 아닌 runtime event log에만 기록한다.
+- 2026-06-15: `EngineOperationKind` 범위를 넓혔다. `engine_startup`, `engine_new_game`, `scoring_rule_sync`, `post_undo_sync`, `engine_undo`를 추가해 UI-local 문자열 id 생성을 제거하고 `engineOperationRequest(...)`가 operation id의 중심이 되게 했다.
+- 2026-06-15: human move sync, restored game sync, scoring rule sync, startup benchmark, position cache optimization runner가 `EngineOperationRequest`와 `DiagnosticEventLogPort`를 선택적으로 받도록 확장했다. UI는 실제 실행 시 현재 session generation, board fingerprint, timeout/fallback policy를 명시해 전달한다.
+- 2026-06-15: startup, new game, undo, cache optimization, scoring rule sync, post-undo sync 일부 경로를 `launchTrackedEngineOperation()` 또는 `runTrackedEngineOperation()`으로 정리했다. 작업 완료 시 `finally`에서 lifecycle complete가 호출되므로 실패/취소 시 busy 상태가 남을 위험을 줄였다.
+- 2026-06-15: `PositionAnalysisCacheOptimizationPlan`이 최종 `GameState`를 보존하도록 보강했다. post-game cache optimization도 표준 operation request가 요구하는 board fingerprint를 같은 방식으로 생성할 수 있다.
+- 2026-06-15: `DiagnosticEventApplicationTest`에 schema contract test를 추가했다. `engine.operation.slow`, `engine.operation.timeout`, `engine.operation.discarded`가 문서화된 필수 context key를 유지하는지 검증한다.
+- 2026-06-15: `RuntimeEventApplicationTest`에 operation started/completed 로그 테스트를 추가했다.
+- 검증: `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest` 통과.
+
+## 현재 리팩토링 완성도 평가
+
+- 주관 점수: 96/100.
+- 상향 요인: UI가 직접 엔진 low-level 호출 인자를 조합하는 구간이 계속 줄고 있으며, stale result, lifecycle, slow/timeout/discarded 관측성이 같은 operation metadata로 정렬되고 있다.
+- 남은 감점 요인: `GoCoachApp.kt`가 아직 coroutine orchestration의 중심이다. operation metadata는 application 정책으로 통일됐지만 startup/new-game/undo의 실행 runner 자체는 아직 앱서비스 계층에 남아 있다. 또한 diagnostic JSONL은 schema contract가 생겼지만 원격 전송 adapter나 sampling 정책은 없다.
+
+## 다음 추천 리팩토링 항목
+
+1. Engine session lifecycle runner 분리
+   - startup, engine-backed new game, engine undo를 `EngineSessionClient` extension runner로 옮긴다.
+   - 목표는 `GoCoachApp.kt`가 `startSession`, `startNewGame`, `undoMove`를 직접 호출하지 않게 하는 것이다.
+
+2. `EngineOperationScope` 도입
+   - `operationRequest + runObservedEngineOperation + lifecycle start/complete`를 하나의 실행 계약으로 묶는다.
+   - UI는 lifecycle callback만 주입하고, operation execution은 application runner에 위임한다.
+
+3. Result guard 범위 재검토
+   - scoring rule sync, restored sync, post-undo sync에도 generation/position guard를 적용할 수 있는지 검토한다.
+   - 단, restore처럼 operation 생성 시점과 apply 시점의 generation이 다른 경로는 별도 테스트가 필요하다.
+
+4. Runtime event log sampling/rotation 정책 정리
+   - started/completed 로그가 늘었으므로 runtime log 1MB ring buffer 정책이 실제로 충분한지 확인한다.
+   - warning/critical 로그와 일반 lifecycle 로그를 분리 저장할지 검토한다.
+
+5. Middleware KMP 이동 후보 파일 2차 분류
+   - Android-free application/middleware 파일을 추려 `shared` 또는 별도 KMP middleware 모듈로 이동 가능한 순서를 만든다.
+   - 먼저 architecture test를 강화하고, 물리 이동은 작은 단위로 수행한다.

@@ -1288,3 +1288,13 @@
 - `launchTrackedEngineOperation()` helper를 추가해 Top Moves와 Score Estimate의 coroutine start/finally-complete 반복 패턴을 줄였다. UX state 변경이 많이 섞인 나머지 경로는 이번 배치에서 무리하게 추상화하지 않고 operation-id 연결만 적용했다.
 - `DIAGNOSTIC_EVENT_SCHEMA.md`를 추가해 `diagnostic_events.jsonl` envelope, `engine.operation.slow`, `engine.operation.timeout`, `engine.operation.discarded`, visit fill, final score disagreement 이벤트의 필수/권장 context key와 해석 원칙을 문서화했다.
 - 검증으로 `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest`와 `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test`를 실행했고 모두 통과했다.
+- 사용자가 다음 리팩토링 추천 항목을 단계별로 모두 진행하고, 결과 보고 시 현재 리팩토링 완성도와 다음 추천 작업 리스트업을 요청했다.
+- 다음 리팩토링으로 engine operation lifecycle started/completed를 runtime event log에 연결했다. `engine_operation_started`, `engine_operation_completed`는 operation id와 active operation count를 남긴다. 정상 흐름에서 빈번히 발생하므로 JSONL diagnostic에는 남기지 않고 runtime log에만 기록한다.
+- `EngineOperationKind`에 `engine_startup`, `engine_new_game`, `scoring_rule_sync`, `post_undo_sync`, `engine_undo`를 추가했다. `GoCoachApp.kt`의 UI-local 문자열 operation id 생성기를 제거하고, operation id 생성 중심을 `engineOperationRequest(...)`로 모았다.
+- human move sync, restored game sync, scoring rule sync, startup benchmark, position cache optimization effect runner가 `EngineOperationRequest`와 `DiagnosticEventLogPort`를 받도록 확장됐다. UI는 현재 session generation, board fingerprint, timeout/fallback policy를 명시해 전달한다.
+- startup, benchmark, new game, scoring rule sync, post-undo sync, human sync, engine undo, cache optimization 경로의 lifecycle start/complete 반복을 `launchTrackedEngineOperation()` 또는 `runTrackedEngineOperation()`으로 더 정리했다. 실패/취소 시 busy complete 누락 가능성을 줄이는 것이 목적이다.
+- `PositionAnalysisCacheOptimizationPlan`이 최종 `GameState`를 보존하도록 변경했다. post-game cache optimization도 표준 operation request의 board fingerprint를 동일한 방식으로 만들 수 있게 됐다.
+- `DiagnosticEventApplicationTest`에 structured diagnostic schema contract test를 추가해 `engine.operation.slow`, `engine.operation.timeout`, `engine.operation.discarded` 필수 context key를 고정했다.
+- `RuntimeEventApplicationTest`에 operation started/completed runtime log 테스트를 추가했다.
+- `docs/DIAGNOSTIC_EVENT_SCHEMA.md`와 `docs/refactoring/NEXT_REFACTORING_WORKLIST_2026-06-14.md`를 갱신해 started/completed는 runtime log, slow/timeout/discarded는 diagnostic JSONL로 분리하는 정책을 기록했다.
+- 검증으로 `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest`를 실행했고 통과했다.

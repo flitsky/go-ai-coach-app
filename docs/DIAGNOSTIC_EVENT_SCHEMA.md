@@ -23,6 +23,8 @@
 
 ## Engine Operation Events
 
+참고: `engine_operation_started`, `engine_operation_completed`는 현재 `diagnostic_events.jsonl`이 아니라 runtime event log에 남긴다. 이 두 이벤트는 정상 흐름에서도 매우 자주 발생하므로 운영 진단 JSONL에는 slow/timeout/discarded처럼 분석 가치가 높은 이벤트만 구조화해 저장한다.
+
 ### `engine.operation.slow`
 
 엔진 operation이 기대 latency threshold를 초과했지만 실패하지는 않았을 때 기록한다.
@@ -141,4 +143,4 @@
 
 - 원격 엔진 전환 시 `backendId=remote-server`, transport status, HTTP status, retry count를 추가한다.
 - MQ/Firebase/Sentry 전송 adapter는 이 문서의 `code`와 필수 context를 그대로 유지한다.
-- operation-id busy stack이 UI에도 완전히 연결되면 `engine.operation.started/completed` 이벤트 추가를 검토한다.
+- operation-id busy stack은 UI runtime log에 연결됐다. JSONL diagnostic으로도 started/completed를 남길지는 로그량과 운영 분석 필요성을 보고 별도 결정한다.

@@ -199,8 +199,24 @@ internal suspend fun EngineSessionClient.runScoringRuleSyncDisplayPlan(
     profile: EngineProfile,
     previousSnapshots: List<ScoreSnapshot>,
     engineMessage: String,
+    operationRequest: EngineOperationRequest? = null,
+    diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
 ): ScoreEstimateDisplayPlan {
-    val estimate = syncAndEstimateGraphScore(state, profile)
+    val estimate = runObservedEngineOperation(
+        request = operationRequest ?: engineOperationRequest(
+            kind = EngineOperationKind.ScoringRuleSync,
+            state = state,
+            sessionGeneration = 0L,
+            timeoutPolicy = EngineTimeoutPolicy(
+                timeoutMillis = profile.analysisLimit.timeMillis,
+                label = "${profile.difficulty.label}:${profile.analysisLimit.visits}v",
+            ),
+            fallbackPolicy = EngineFallbackPolicy.LocalRules,
+        ),
+        diagnosticEventLog = diagnosticEventLog,
+    ) {
+        syncAndEstimateGraphScore(state, profile)
+    }
     return buildEngineEstimateDisplayPlan(
         state = state,
         estimate = estimate,
@@ -213,8 +229,24 @@ internal suspend fun EngineSessionClient.runScoringRuleSyncDisplayPlan(
 internal suspend fun EngineSessionClient.runRestoredGameSyncDisplayPlan(
     state: GameState,
     profile: EngineProfile,
+    operationRequest: EngineOperationRequest? = null,
+    diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
 ): ScoreEstimateDisplayPlan {
-    val estimate = configureSyncAndEstimateGraphScore(state, profile)
+    val estimate = runObservedEngineOperation(
+        request = operationRequest ?: engineOperationRequest(
+            kind = EngineOperationKind.RestoredGameSync,
+            state = state,
+            sessionGeneration = 0L,
+            timeoutPolicy = EngineTimeoutPolicy(
+                timeoutMillis = profile.analysisLimit.timeMillis,
+                label = "${profile.difficulty.label}:${profile.analysisLimit.visits}v",
+            ),
+            fallbackPolicy = EngineFallbackPolicy.LocalRules,
+        ),
+        diagnosticEventLog = diagnosticEventLog,
+    ) {
+        configureSyncAndEstimateGraphScore(state, profile)
+    }
     return buildEngineEstimateDisplayPlan(
         state = state,
         estimate = estimate,
@@ -230,10 +262,14 @@ internal data class RestoredGameSyncExecutionContext(
 internal suspend fun EngineSessionClient.runRestoredGameSyncEffect(
     effect: GameSessionEffect.SyncRestoredGame,
     context: RestoredGameSyncExecutionContext,
+    operationRequest: EngineOperationRequest? = null,
+    diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
 ): ScoreEstimateDisplayPlan =
     runRestoredGameSyncDisplayPlan(
         state = effect.gameState,
         profile = context.profile,
+        operationRequest = operationRequest,
+        diagnosticEventLog = diagnosticEventLog,
     )
 
 internal fun buildLocalScoreEstimateDisplayPlan(

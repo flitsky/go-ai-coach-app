@@ -323,6 +323,32 @@ internal fun runtimeAiTurnCompleteLog(
             "engineBusy=$isEngineBusy pending=$isAutoAiTurnPending fp=${gameState.runtimeShortFingerprint()}",
     )
 
+internal fun runtimeEngineOperationStartedLog(
+    context: RuntimeLogContext,
+    operationId: String,
+    activeOperationCount: Int,
+): String =
+    context.event(
+        name = "engine_operation_started",
+        phase = "engine_operation",
+        transition = "engine_busy_keep_current_state",
+        detail = "operationId=${operationId.runtimeLogSnippet(160)} activeOperationCount=$activeOperationCount " +
+            "current=${context.gameState.runtimeBoardSummary()}",
+    )
+
+internal fun runtimeEngineOperationCompletedLog(
+    context: RuntimeLogContext,
+    operationId: String,
+    activeOperationCount: Int,
+): String =
+    context.event(
+        name = "engine_operation_completed",
+        phase = "engine_operation",
+        transition = contextTransitionAfter(context.gameState, context),
+        detail = "operationId=${operationId.runtimeLogSnippet(160)} activeOperationCount=$activeOperationCount " +
+            "current=${context.gameState.runtimeBoardSummary()}",
+    )
+
 internal fun runtimeEngineOperationDiscardedLog(
     context: RuntimeLogContext,
     discard: EngineOperationResultGuard.Discard,

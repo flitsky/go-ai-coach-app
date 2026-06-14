@@ -194,8 +194,10 @@ class PositionAnalysisCacheOptimizationTest {
 
     @Test
     fun cacheOptimizationEffectRunnerDelegatesPlanToEngineClient() = runBlocking {
+        val finalState = GameState.empty()
         val plan = PositionAnalysisCacheOptimizationPlan(
             gameFingerprint = "game",
+            finalState = finalState,
             finalMoveCount = 2,
             targets = emptyList(),
         )

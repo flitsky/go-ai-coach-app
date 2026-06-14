@@ -174,13 +174,26 @@ internal data class StartupBenchmarkExecutionContext(
 internal suspend fun EngineSessionClient.runStartupBenchmarkEffect(
     effect: GameSessionEffect.RunStartupBenchmark,
     context: StartupBenchmarkExecutionContext,
+    operationRequest: EngineOperationRequest? = null,
+    diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
     onProgress: suspend (EngineBenchmarkProgress) -> Unit = {},
 ): EngineBenchmarkProfile {
-    return runStartupBenchmark(
-        restoreState = context.restoreState,
-        nowMillis = context.nowMillis,
-        onProgress = onProgress,
-    )
+    return runObservedEngineOperation(
+        request = operationRequest ?: engineOperationRequest(
+            kind = EngineOperationKind.StartupBenchmark,
+            state = context.restoreState,
+            sessionGeneration = 0L,
+            timeoutPolicy = EngineTimeoutPolicy(label = "startup-benchmark"),
+            fallbackPolicy = EngineFallbackPolicy.None,
+        ),
+        diagnosticEventLog = diagnosticEventLog,
+    ) {
+        runStartupBenchmark(
+            restoreState = context.restoreState,
+            nowMillis = context.nowMillis,
+            onProgress = onProgress,
+        )
+    }
 }
 
 private data class EngineBenchmarkPosition(

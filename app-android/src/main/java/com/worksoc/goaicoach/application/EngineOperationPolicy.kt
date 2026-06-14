@@ -19,13 +19,18 @@ internal data class PositionScopedOperationToken(
 internal enum class EngineOperationKind(
     val code: String,
 ) {
+    EngineStartup("engine_startup"),
+    EngineNewGame("engine_new_game"),
     PositionAnalysis("position_analysis"),
     TopMoves("top_moves"),
     ScoreEstimate("score_estimate"),
+    ScoringRuleSync("scoring_rule_sync"),
     AutoAiTurn("auto_ai_turn"),
     AutoAiEndgame("auto_ai_endgame"),
     HumanMoveSync("human_move_sync"),
     RestoredGameSync("restored_game_sync"),
+    PostUndoSync("post_undo_sync"),
+    EngineUndo("engine_undo"),
     StartupBenchmark("startup_benchmark"),
     PositionCacheOptimization("position_cache_optimization"),
     RemotePositionAnalysis("remote_position_analysis"),

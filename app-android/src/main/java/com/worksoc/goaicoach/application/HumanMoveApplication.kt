@@ -118,12 +118,28 @@ internal fun buildHumanEngineSyncFailurePlan(
 
 internal suspend fun EngineSessionClient.runHumanEngineSyncEffect(
     effect: GameSessionEffect.SyncHumanMove,
+    operationRequest: EngineOperationRequest? = null,
+    diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
 ): LocalEngineMoveResult {
     val plan = effect.plan
-    return syncAfterHumanMove(
-        afterMove = plan.afterMove,
-        profile = plan.profile,
-        move = plan.move,
-        previousReviewCandidates = plan.previousReviewCandidates,
-    )
+    return runObservedEngineOperation(
+        request = operationRequest ?: engineOperationRequest(
+            kind = EngineOperationKind.HumanMoveSync,
+            state = plan.afterMove,
+            sessionGeneration = 0L,
+            timeoutPolicy = EngineTimeoutPolicy(
+                timeoutMillis = plan.profile.analysisLimit.timeMillis,
+                label = "${plan.profile.difficulty.label}:${plan.profile.analysisLimit.visits}v",
+            ),
+            fallbackPolicy = EngineFallbackPolicy.LocalRules,
+        ),
+        diagnosticEventLog = diagnosticEventLog,
+    ) {
+        syncAfterHumanMove(
+            afterMove = plan.afterMove,
+            profile = plan.profile,
+            move = plan.move,
+            previousReviewCandidates = plan.previousReviewCandidates,
+        )
+    }
 }

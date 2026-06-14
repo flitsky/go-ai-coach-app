@@ -385,6 +385,7 @@ class EngineSessionTest {
         )
         val plan = PositionAnalysisCacheOptimizationPlan(
             gameFingerprint = state.analysisFingerprint(),
+            finalState = state,
             finalMoveCount = state.moves.size,
             targets = listOf(
                 PositionAnalysisCacheOptimizationTarget(

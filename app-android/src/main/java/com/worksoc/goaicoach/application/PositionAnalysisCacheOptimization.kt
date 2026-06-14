@@ -39,6 +39,7 @@ internal data class PositionAnalysisCacheOptimizationTarget(
 
 internal data class PositionAnalysisCacheOptimizationPlan(
     val gameFingerprint: String,
+    val finalState: GameState,
     val finalMoveCount: Int,
     val targets: List<PositionAnalysisCacheOptimizationTarget>,
 ) {
@@ -66,8 +67,21 @@ internal data class PositionAnalysisCacheOptimizationResult(
 
 internal suspend fun EngineSessionClient.runPositionAnalysisCacheOptimizationEffect(
     effect: GameSessionEffect.RunPositionCacheOptimization,
+    operationRequest: EngineOperationRequest? = null,
+    diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
 ): PositionAnalysisCacheOptimizationResult =
-    optimizePositionAnalysisCache(effect.plan)
+    runObservedEngineOperation(
+        request = operationRequest ?: engineOperationRequest(
+            kind = EngineOperationKind.PositionCacheOptimization,
+            state = effect.plan.finalState,
+            sessionGeneration = 0L,
+            timeoutPolicy = EngineTimeoutPolicy(label = "position-cache-optimization"),
+            fallbackPolicy = EngineFallbackPolicy.CachedAnalysis,
+        ),
+        diagnosticEventLog = diagnosticEventLog,
+    ) {
+        optimizePositionAnalysisCache(effect.plan)
+    }
 
 internal data class PositionAnalysisCacheOptimizationUiState(
     val prompt: PositionAnalysisCacheOptimizationPrompt? = null,
@@ -115,6 +129,7 @@ internal fun buildPositionAnalysisCacheOptimizationPlan(
     if (levels.isEmpty() || finalState.moves.isEmpty()) {
         return PositionAnalysisCacheOptimizationPlan(
             gameFingerprint = finalState.analysisFingerprint(),
+            finalState = finalState,
             finalMoveCount = finalState.moves.size,
             targets = emptyList(),
         )
@@ -143,6 +158,7 @@ internal fun buildPositionAnalysisCacheOptimizationPlan(
 
     return PositionAnalysisCacheOptimizationPlan(
         gameFingerprint = finalState.analysisFingerprint(),
+        finalState = finalState,
         finalMoveCount = finalState.moves.size,
         targets = targets,
     )

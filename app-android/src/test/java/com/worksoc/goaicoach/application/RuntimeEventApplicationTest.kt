@@ -111,6 +111,31 @@ class RuntimeEventApplicationTest {
     }
 
     @Test
+    fun engineOperationStartedAndCompletedLogsIncludeLifecycleCounts() {
+        val context = runtimeContext(isEngineReady = true)
+
+        val started = runtimeEngineOperationStartedLog(
+            context = context.copy(isEngineBusy = true),
+            operationId = "position_analysis:g1:m0:abc",
+            activeOperationCount = 1,
+        )
+        val completed = runtimeEngineOperationCompletedLog(
+            context = context.copy(isEngineBusy = false),
+            operationId = "position_analysis:g1:m0:abc",
+            activeOperationCount = 0,
+        )
+
+        assertTrue(started.startsWith("event=engine_operation_started phase=engine_operation"))
+        assertTrue(started.contains("operationId=position_analysis:g1:m0:abc"))
+        assertTrue(started.contains("activeOperationCount=1"))
+        assertTrue(started.contains("transition=\"engine_busy_keep_current_state\""))
+        assertTrue(completed.startsWith("event=engine_operation_completed phase=engine_operation"))
+        assertTrue(completed.contains("operationId=position_analysis:g1:m0:abc"))
+        assertTrue(completed.contains("activeOperationCount=0"))
+        assertTrue(completed.contains("transition=\"await_human_move\""))
+    }
+
+    @Test
     fun humanMoveAcceptedLogExplainsMoveAndNextTransition() {
         val beforeMove = GameState.empty()
         val result = applyHumanMoveLocally(
