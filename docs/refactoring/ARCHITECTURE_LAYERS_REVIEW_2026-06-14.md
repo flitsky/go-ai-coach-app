@@ -261,6 +261,13 @@ data class EngineOperationRequest(
 - `engine.cache.compatible_hit`
 - `endgame.judge.disagreement`
 
+2026-06-14 진행 상태:
+
+- `engine.operation.slow`, `engine.operation.timeout`, `engine.operation.discarded` 이벤트 생성 함수는 구현됐다.
+- stale engine result가 폐기되는 경우에는 runtime log와 함께 `diagnostic_events.jsonl`에도 `engine.operation.discarded`가 남는다.
+- 아직 `engine.fallback.used`, `engine.cache.compatible_hit`, `endgame.judge.disagreement`는 제품 동작과 직접 연결되지 않았다.
+- slow/timeout 이벤트도 생성 함수는 있지만, 모든 engine operation runner에 자동 계측으로 붙은 상태는 아니다.
+
 ### 4순위: Middleware module boundary 정리
 
 현재 middleware 일부는 `app-android/application`에 있고 일부는 `app-android/middleware`에 있다. 장기적으로는 다음 중 하나를 선택한다.
@@ -269,6 +276,25 @@ data class EngineOperationRequest(
 - `shared` 또는 별도 KMP middleware module로 이동한다.
 
 당장은 대규모 이동보다 contract와 테스트를 먼저 고정한다.
+
+2026-06-14 진행 상태:
+
+- `PositionAnalysisGateway`를 `middleware` 패키지에 추가했다.
+- gateway 계약은 `GameState`, `AnalysisLimit`, `EngineSearchMode`, `AnalysisResult` 같은 shared DTO만 의존한다.
+- `LayeringContractTest`가 gateway 계약에 Android/UI/application/persistence/engine runtime import가 들어가지 않도록 막는다.
+- 물리적인 KMP 모듈 이동은 아직 하지 않았다. 다음 단계에서는 이 계약을 기준으로 source set 이동 후보를 선별한다.
+
+### 5순위: Remote position analysis read-only spike
+
+원격 엔진은 처음부터 모든 대국 권한을 가져가면 위험하다. 첫 단계는 읽기 전용 position analysis로 제한한다.
+
+2026-06-14 진행 상태:
+
+- `RemotePositionAnalysisGateway`와 `RemotePositionAnalysisTransport`를 추가했다.
+- remote 요청은 명시적 `GameState`, `AnalysisLimit`, `EngineSearchMode`, `positionFingerprint`를 포함한다.
+- remote 응답은 `PositionAnalysisBackend.Remote`로 식별된다.
+- 이 spike는 `genmove`, `play`, `undo`, match ownership을 포함하지 않는다. 로컬 대국 진행과 원격 분석을 분리하기 위한 의도적인 제한이다.
+- 아직 HTTP 구현, feature flag, local fallback 정책은 없다.
 
 ## 문서 운영 정책
 

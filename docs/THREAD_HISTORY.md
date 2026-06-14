@@ -1249,3 +1249,7 @@
 - `LayeringContractTest`에 `PositionAnalysisGateway`가 Android/application/UI/persistence/engine runtime을 import하지 못하도록 회귀 방지 테스트를 추가했고 관련 architecture 테스트가 통과했다.
 - 3단계로 읽기 전용 remote position analysis spike를 추가했다. `RemotePositionAnalysisGateway`, `RemotePositionAnalysisTransport`, `RemotePositionAnalysisRequest/Response`를 middleware 패키지에 추가해 원격 분석이 명시적 `GameState + AnalysisLimit + EngineSearchMode` 요청만 처리하도록 했다. genmove/play/undo는 포함하지 않아 offline local play와 분리된다.
 - `RemotePositionAnalysisGatewayTest`를 추가해 remote gateway가 position fingerprint를 포함한 명시적 요청을 transport로 전달하고 `PositionAnalysisBackend.Remote` 응답으로 변환하는 것을 검증했다. 관련 middleware 테스트가 통과했다.
+- 사용자가 다음 추천 순서를 모두 단계별로 순차 진행하고 리팩토링 척도 평가와 다음 권장 항목 제안을 요청했다.
+- 이미 완료한 1~3단계 결과를 문서에 반영했다. `REFACTORING_COMPLETION_ASSESSMENT_2026-06-13.md`의 현재 평가는 98.5/100으로 갱신했고, structured diagnostics, KMP-ready `PositionAnalysisGateway`, read-only `RemotePositionAnalysisGateway`를 최신 강점으로 반영했다.
+- `NEXT_REFACTORING_WORKLIST_2026-06-14.md`에는 이번 요청의 세 단계 완료 로그와 다음 추천 항목을 추가했다. 다음 권장 순서는 HTTP `RemotePositionAnalysisTransport` spike, 공통 `EngineOperationRequest`, structured diagnostic 자동 계측, middleware KMP 물리 이동 준비다.
+- `ARCHITECTURE_LAYERS_REVIEW_2026-06-14.md`에는 계획 항목 중 이미 구현된 부분과 아직 남은 부분을 구분했다. remote spike는 읽기 전용 position analysis에만 한정되며, production wiring과 HTTP fallback은 후속 단계로 남겼다.

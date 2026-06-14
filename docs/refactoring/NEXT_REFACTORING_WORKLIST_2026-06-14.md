@@ -161,3 +161,30 @@
 - 2026-06-14: Auto AI turn 주 실행부를 `GameSessionEffect.RunAutoAiTurn` runner로 실제 연결했다. `AutoAiTurnRunExecutionContext`와 `EngineSessionClient.runAutoAiTurnEffect()`를 추가해 `GoCoachApp.kt`가 raw `runAutoAiTurnDisplayPlan(...)` 인자를 직접 조합하지 않도록 했다. 자동 AI 턴 성공/실패, stale guard, pass/pass 종국 resolve, 후속 Top Moves 요청 순서는 기존과 동일하게 유지했다. `GameAutomationApplicationTest`를 보강했고 JDK 17/Android SDK 환경에서 관련 application 테스트가 통과했다.
 - 2026-06-14: Auto AI turn pending 상태 전이를 `AutoAiTurnUiState` reducer로 정리했다. `applyAutoAiTurnRequestPlan()`, `applyAutoAiTurnScheduleValidationPlan()`, `completeAutoAiTurnRun()`을 추가해 `GoCoachApp.kt`가 자동 AI schedule/cancel/complete 지점에서 raw `markScheduled()`/`clearPending()`을 직접 호출하지 않도록 했다. `GameAutomationApplicationTest`에 상태 전이 테스트를 추가했고 JDK 17/Android SDK 환경에서 관련 application 테스트가 통과했다.
 - 2026-06-14: Auto AI turn 완료 후 후속 Top Moves 요청 분기를 nullable request helper로 정리했다. `AutoAiTurnFollowUpRequest`와 `AutoAiTurnFollowUpPlan.toAutoAiTurnFollowUpRequest()`를 추가해 `GoCoachApp.kt`가 follow-up sealed subtype을 직접 분기하지 않도록 했다. continuing game은 automatic Top Moves request를 반환하고, 종국/none은 null을 반환한다. `GameAutomationApplicationTest`를 보강했고 JDK 17/Android SDK 환경에서 관련 application 테스트가 통과했다.
+- 2026-06-14: 외부 검토 의견의 1순위였던 structured diagnostic event 고도화를 진행했다. `engine.operation.slow`, `engine.operation.timeout`, `engine.operation.discarded` 이벤트 생성 함수를 추가했고, stale engine result discard 경로가 `diagnostic_events.jsonl`에도 구조화 이벤트를 남기도록 연결했다. `DiagnosticEventApplicationTest`와 `DiagnosticEventLogTest`가 통과했다.
+- 2026-06-14: middleware 물리 경계 정리의 첫 안전 단위로 `PositionAnalysisGateway` 계약을 추가했다. 이 계약은 `GameState`, `AnalysisLimit`, `EngineSearchMode`, `AnalysisResult` 같은 shared DTO만 의존하며, `LayeringContractTest`가 Android/UI/application/persistence/engine runtime import를 막는다.
+- 2026-06-14: remote engine driver spike의 최소 단위로 `RemotePositionAnalysisGateway`와 `RemotePositionAnalysisTransport`를 추가했다. 범위는 읽기 전용 position analysis로 제한했고, `genmove/play/undo`나 match ownership은 포함하지 않았다. `RemotePositionAnalysisGatewayTest`로 요청 전달, fingerprint 포함, `PositionAnalysisBackend.Remote` 변환을 검증했다.
+
+## 현재 완료 기준 재정의
+
+- 이번 요청의 추천 순서 3개는 모두 코드와 테스트로 반영됐다.
+- remote gateway는 아직 production wiring이 아니다. 다음 단계에서 feature flag 뒤의 HTTP transport 구현과 offline fallback 검증이 필요하다.
+- middleware gateway 계약은 KMP-ready로 고정했지만, 물리적 KMP 모듈 이동은 아직 하지 않았다. 이동 전에 현재 architecture test를 더 확장하는 것이 안전하다.
+
+## 다음 추천 리팩토링 항목
+
+1. HTTP `RemotePositionAnalysisTransport` spike
+   - 읽기 전용 `/position-analysis` 형태의 transport를 만들고 feature flag 기본 off로 둔다.
+   - timeout/failure 시 local engine으로 fallback되는지 테스트한다.
+
+2. `EngineOperationRequest` 공통 모델
+   - operation id, session generation, board fingerprint, timeout, fallback, backend id를 묶는다.
+   - Top Moves, score estimate, auto AI, endgame resolve의 stale discard/diagnostic/timeout 정책을 통합한다.
+
+3. Structured diagnostic 자동 계측
+   - 현재 이벤트 생성 함수는 준비됐지만 slow/timeout은 실제 operation runner 전체에 자동 연결되어 있지 않다.
+   - elapsed, timeout, backend, requested/root visits를 일관되게 남기는 helper를 둔다.
+
+4. Middleware KMP 물리 이동 준비
+   - `PositionAnalysisGateway`, remote transport contract, cache resolver 중 Android-free 파일을 후보로 분류한다.
+   - import churn을 줄이기 위해 architecture test를 먼저 확장한 뒤 작은 단위로 옮긴다.
