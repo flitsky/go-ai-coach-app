@@ -1088,3 +1088,4 @@
 - 7단계로 KataGo GTP/JSON protocol 생성 경계를 분리했다. `KataGoProtocolCommands`를 추가해 board setup, move, genmove, search analyze, raw NN, final score/status, maintenance command 문자열 생성을 한 곳으로 모았다.
 - `KataGoJsonAnalysisQueryFactory`를 추가해 JSON position analysis query 생성을 `KataGoProcessEngineAdapter`에서 분리했다. 어댑터는 process lifecycle, send/receive, state replay, parser 조합에 더 집중하게 했다.
 - `KataGoProtocolCommandsTest`, `KataGoJsonAnalysisQueryFactoryTest`를 추가했고, JDK 17과 Android SDK를 명시해 `:engine-android:testDebugUnitTest`와 `make test`를 실행해 모두 통과했다.
+- 7단계 완료 후 무선 ADB `SM-S908N(192.168.35.166:42037)`에 최신 APK와 KataGo model/config를 설치했고 cold launch `TotalTime=628ms`를 확인했다.
