@@ -1094,3 +1094,9 @@
 - 2인용 모드의 엔진 동기화 무르기는 즉시 `syncAndEstimateGraphScore()`를 호출하지 않고, 마지막 무르기 후 1초 뒤 현재 보드가 그대로일 때만 엔진 동기화/score estimate/Top Moves 분석을 수행하도록 예약 방식으로 바꿨다. 새 착수, 새 게임, 복원, player setup/search time 변경 시에는 pending post-undo sync를 취소한다.
 - `UndoApplicationTest`에 quiet-window 계산 테스트를 추가했고, JDK 17과 Android SDK를 명시해 `UndoApplicationTest`와 `make test`를 실행해 모두 통과했다.
 - 커밋 `d915f6c Delay engine intervention after undo`를 `origin/main`에 푸시했고, 무선 ADB `SM-S908N(192.168.35.166:42037)`에 최신 APK와 KataGo model/config를 설치했다. 앱 cold launch `TotalTime=581ms`를 확인했다.
+- 사용자가 마지막 패스 후 엔진 분석 시간이 유독 오래 걸린 현상을 제보했다. 무선 ADB `SM-S908N(192.168.35.166:42037)`에서 `run-as com.worksoc.goaicoach`로 `runtime_event_log.txt`, `diagnostic_events.jsonl`, `last_debug_report.txt`, `json_position_analysis_cache.json`, `engine_benchmark_profile.json`을 `/tmp/go-ai-coach-device-logs`로 수집했다.
+- 로그상 `White pass` AI 턴은 `turnElapsedMs=2336`, `elapsedMs=2056`, `timeCapMs=none`, `fill=SHORT`였고, 이어 사용자가 `Black pass`를 두면서 `pass2=true` 종국 처리로 진입했다. 이 마지막 패스는 `human_move_accepted t=1781396775826`에서 시작해 `human_engine_sync_success t=1781396831619`에 완료되어 `elapsedMs=55782`가 걸렸다.
+- 당시 설정은 `빠른 초급 3단계`, `visits=16`, `timeMs=none`, `search=Time cap OFF`, `Top Moves=true`, `analysis cache=disabled`였다. 이전 동일 계열 종국 로그에서는 `search=B16 500ms / B32 1000ms / B64 3000ms`일 때 `elapsedMs=2996`, `3681` 사례가 있어, 이번 지연의 가장 큰 차이는 시간 제한 OFF 상태로 판단했다.
+- 코드 대조 결과 마지막 `pass/pass`는 일반 착수 후 `estimateScore` 경로가 아니라 `syncToGameState(61수 replay)` 후 `resolveAiEndgame()`으로 들어가며, 이 안에서 `final_status_list dead`, 로컬 사석 정리/계가, `kata-raw-nn`, `final_score`를 순차 호출한다.
+- 현재 runtime log는 종국 처리 전체 시간만 기록하고 하위 단계별 시간은 기록하지 않는다. 따라서 55.8초가 `deadStones`, `rawNn`, `final_score`, 또는 state replay 중 어느 단계에 몰렸는지는 추가 계측 없이는 확정할 수 없다.
+- 다음 개선 후보는 종국 처리 sub-step timing 로그 추가, 일정 시간 이상 걸리는 `engine.endgame_step_slow` warning event 기록, 마지막 패스 UX에서 빠른 로컬 계가를 먼저 보여주고 정밀 엔진 계가/사석 판정은 비동기 또는 명시 버튼으로 분리하는 방식이다.
