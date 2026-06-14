@@ -104,6 +104,39 @@ class LayeringContractTest {
         )
     }
 
+    @Test
+    fun engineOperationApplicationPoliciesStayPortable() {
+        val applicationRoot = repoRoot()
+            .resolve("app-android/src/main/java/com/worksoc/goaicoach/application")
+        val portableCandidates = listOf(
+            applicationRoot.resolve("EngineOperationPolicy.kt"),
+            applicationRoot.resolve("EngineOperationResultApplication.kt"),
+            applicationRoot.resolve("DiagnosticEventApplication.kt"),
+        )
+        val forbiddenImports = listOf(
+            "import android.",
+            "import androidx.",
+            "import java.",
+            "import org.json.",
+            "import com.worksoc.goaicoach.ui.",
+            "import com.worksoc.goaicoach.persistence.",
+            "import com.worksoc.goaicoach.engine.",
+        )
+
+        val offenders = portableCandidates.flatMap { candidate ->
+            candidate
+                .readLines()
+                .filter { line -> forbiddenImports.any { forbidden -> line.startsWith(forbidden) } }
+                .map { line -> "${candidate.relativeTo(repoRoot()).path}: $line" }
+        }
+
+        assertTrue(
+            "Engine operation policy files are middleware/KMP move candidates and must stay platform-free:\n" +
+                offenders.joinToString("\n"),
+            offenders.isEmpty(),
+        )
+    }
+
     private fun repoRoot(): File {
         var current = File(".").canonicalFile
         while (true) {

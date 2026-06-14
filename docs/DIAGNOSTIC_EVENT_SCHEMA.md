@@ -21,6 +21,18 @@
 - `context` key는 추가 가능하지만 기존 key의 의미를 바꾸면 안 된다.
 - engine-facing operation은 가능하면 `EngineOperationRequest`에서 나온 `operation`, `operationId`, `sessionGeneration`, `positionFingerprint`, `moveCount`, `backendId`, `timeoutPolicy`, `fallbackPolicy`를 포함한다.
 
+## 저장과 외부 수집 정책
+
+현재 앱은 `DiagnosticEventLogPort`를 통해 로컬 JSONL 파일에 diagnostic event를 저장한다. 이 port는 “로컬 보존” 책임만 가진다.
+
+향후 Firebase, MQ, 자체 서버, Sentry 같은 외부 수집 채널을 붙일 때는 같은 event schema를 재사용하되, 다음 원칙을 따른다.
+
+- 외부 전송은 별도 sink/transport port로 분리한다. 로컬 JSONL 저장 구현에 네트워크 전송을 섞지 않는다.
+- 사용자가 직접 오류 전송에 동의한 경우에는 최근 diagnostic event와 debug report를 함께 묶어 보낸다.
+- warning/critical 자동 수집을 도입하더라도 개인정보와 기보 전송 범위를 명확히 고지한다.
+- 정상 lifecycle event(`engine_operation_started`, `engine_operation_completed`)는 기본 외부 전송 대상이 아니다. slow/timeout/discarded/final disagreement처럼 분석 가치가 높은 이벤트부터 수집한다.
+- 외부 전송 실패는 대국 흐름을 막지 않는다. 전송 실패 자체는 별도 local warning으로 남길 수 있지만, 재귀적으로 무한 전송하지 않는다.
+
 ## Engine Operation Events
 
 참고: `engine_operation_started`, `engine_operation_completed`는 현재 `diagnostic_events.jsonl`이 아니라 runtime event log에 남긴다. 이 두 이벤트는 정상 흐름에서도 매우 자주 발생하므로 운영 진단 JSONL에는 slow/timeout/discarded처럼 분석 가치가 높은 이벤트만 구조화해 저장한다.

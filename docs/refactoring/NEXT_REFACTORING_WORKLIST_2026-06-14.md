@@ -355,3 +355,42 @@
 5. KMP 이동 후보 의존성 고정 테스트 확대
    - `EngineOperationPolicy`, `HumanMoveApplication`, `DiagnosticEventApplication` 중 Android-free 파일을 물리 이동 후보로 분류한다.
    - 이동 전 import 금지 테스트를 강화해 Android/UI/persistence 의존성이 다시 들어오지 않게 한다.
+
+## 2026-06-15 추가 진행 로그: 외부 리뷰 반영/Discard Handler
+
+- 2026-06-15: 외부 개발자 검토 의견을 `EXTERNAL_REVIEW_2026-06-15_PROJECT_EVALUATION.md`로 원문 보존했다. 외부 평가는 91/100으로, 운영 플랫폼 관점에서 `GoCoachApp.kt` 경량화, middleware 물리 분리, 운영 자동 계측 연결을 핵심 과제로 제시했다.
+- 2026-06-15: 외부 의견에 대한 내부 재검토 문서 `INTERNAL_REVIEW_OF_EXTERNAL_FEEDBACK_2026-06-15.md`를 추가했다. 결론은 “방향은 수용하되, 단기에는 무리한 1,000줄 목표보다 UI orchestration 책임 제거와 계층 회귀 방지 테스트를 우선한다”이다.
+- 2026-06-15: `EngineOperationDiscardLogPlan`과 `buildEngineOperationDiscardLogPlan()`을 추가했다. `GoCoachApp.kt`는 더 이상 `runtimeEngineOperationDiscardedLog()`와 `engineOperationDiscardedDiagnosticEvent()`를 직접 호출하지 않고, application plan이 만든 runtime log와 diagnostic event를 append만 한다.
+- 2026-06-15: `LayeringContractTest`를 강화했다. `EngineOperationPolicy.kt`, `EngineOperationResultApplication.kt`, `DiagnosticEventApplication.kt`가 Android/UI/persistence/engine runtime 의존을 갖지 못하도록 고정해 KMP 또는 middleware 물리 이동 후보의 경계를 보호한다.
+- 2026-06-15: `DIAGNOSTIC_EVENT_SCHEMA.md`에 로컬 JSONL 저장과 향후 외부 수집 sink를 분리하는 정책을 추가했다. 외부 전송은 대국 흐름을 막지 않고, 정상 lifecycle log보다 slow/timeout/discarded/final disagreement 같은 분석 가치가 높은 이벤트를 우선 대상으로 삼는다.
+- `GoCoachApp.kt` 라인 수는 2,166줄에서 2,160줄로 소폭 감소했다. 이번 단계의 핵심 성과는 라인 수 감소보다 discard event 생성 책임이 UI에서 application plan으로 이동한 것이다.
+- 검증: `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest --tests 'com.worksoc.goaicoach.architecture.LayeringContractTest' --tests 'com.worksoc.goaicoach.application.RuntimeEventApplicationTest' --tests 'com.worksoc.goaicoach.application.DiagnosticEventApplicationTest'` 통과, `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test` 통과.
+
+## 현재 리팩토링 완성도 평가
+
+- 주관 점수: 97.2/100.
+- 외부 운영 플랫폼 관점 점수는 91/100을 수용한다. 이 점수는 실제 출시 이후 원격 엔진, 외부 진단 수집, KMP 물리 모듈 분리까지 포함한 보수적 평가로 해석한다.
+- 내부 리팩토링 진행도는 97.2/100으로 본다. engine result discard event 생성이 UI에서 빠졌고, KMP 이동 후보 경계가 architecture test로 보강됐다.
+- 남은 감점 요인은 여전히 `GoCoachApp.kt`의 큰 orchestration 책임, sync 계열 completion plan의 불균일성, 외부 diagnostic sink 미구현이다.
+
+## 다음 추천 리팩토링 항목
+
+1. Post-undo/scoring/restored sync completion plan 확장
+   - human sync와 같은 `ApplySuccess`/`ApplyFailure`/`Discard` completion plan을 만든다.
+   - stale result이면 success/failure runtime log와 후속 Top Moves 요청을 만들지 않는 규칙을 테스트로 고정한다.
+
+2. Engine operation result handler port화
+   - 현재 UI는 application plan을 append하지만 append 호출 자체는 UI helper에 남아 있다.
+   - runtime event log port와 diagnostic event log port를 받는 작은 app-service handler로 이동할 수 있는지 검토한다.
+
+3. Diagnostic external sink port 설계
+   - 즉시 네트워크 전송을 붙이지 않고, 로컬 JSONL과 외부 전송 sink를 분리하는 port 계약부터 설계한다.
+   - 사용자 동의 기반 오류 전송과 운영자용 warning/critical 수집은 별도 policy로 둔다.
+
+4. `GoCoachApp.kt` coroutine orchestration 2차 축소
+   - post-undo sync, scoring rule sync, restored sync의 runCatching/onSuccess/onFailure 반복을 runner/helper로 묶는다.
+   - UX state 변경이 많은 구간은 reducer를 먼저 만들고 실행부 이동은 나중에 한다.
+
+5. Middleware 물리 모듈 이동 준비 목록 확정
+   - architecture test가 보호하는 파일부터 `shared` 또는 별도 KMP middleware 모듈로 이동 가능한지 dependency map을 작성한다.
+   - 바로 이동하기보다 CI에서 import boundary를 더 촘촘히 고정한 뒤 작은 파일 단위로 옮긴다.

@@ -111,6 +111,32 @@ class RuntimeEventApplicationTest {
     }
 
     @Test
+    fun engineOperationDiscardLogPlanIncludesRuntimeAndDiagnosticEntries() {
+        val currentState = GameState.empty()
+            .play(Move.Pass(StoneColor.Black))
+        val plan = buildEngineOperationDiscardLogPlan(
+            context = runtimeContext(gameState = currentState),
+            currentState = currentState,
+            discard = EngineOperationResultGuard.Discard(
+                reason = "score_estimate result is stale",
+                operation = "score_estimate",
+                operationId = "score_estimate:g3:m0:def",
+                sessionGeneration = 3L,
+            ),
+        )
+
+        assertTrue(plan.runtimeLog.startsWith("event=engine_operation_discarded phase=engine_operation"))
+        assertTrue(plan.runtimeLog.contains("operation=score_estimate"))
+        assertEquals(DiagnosticSeverity.Info, plan.diagnosticEvent.severity)
+        assertEquals("engine.operation.discarded", plan.diagnosticEvent.code)
+        assertEquals("score_estimate result is stale", plan.diagnosticEvent.context["reason"])
+        assertEquals("score_estimate", plan.diagnosticEvent.context["operation"])
+        assertEquals("score_estimate:g3:m0:def", plan.diagnosticEvent.context["operationId"])
+        assertEquals("3", plan.diagnosticEvent.context["sessionGeneration"])
+        assertEquals("1", plan.diagnosticEvent.context["currentMoveCount"])
+    }
+
+    @Test
     fun engineOperationStartedAndCompletedLogsIncludeLifecycleCounts() {
         val context = runtimeContext(isEngineReady = true)
 

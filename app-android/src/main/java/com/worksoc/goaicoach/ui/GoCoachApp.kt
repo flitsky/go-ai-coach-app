@@ -30,6 +30,7 @@ import com.worksoc.goaicoach.application.buildAutoAiTurnFailureDisplayPlan
 import com.worksoc.goaicoach.application.buildAutoAiTurnEndgamePlan
 import com.worksoc.goaicoach.application.buildAutoAiTurnFollowUpPlan
 import com.worksoc.goaicoach.application.buildDebugReportCopyPlan
+import com.worksoc.goaicoach.application.buildEngineOperationDiscardLogPlan
 import com.worksoc.goaicoach.application.buildEngineStartupFailureDisplayPlan
 import com.worksoc.goaicoach.application.buildEngineStartupSuccessDisplayPlan
 import com.worksoc.goaicoach.application.buildEngineUndoPlan
@@ -81,7 +82,6 @@ import com.worksoc.goaicoach.application.ClipboardPort
 import com.worksoc.goaicoach.application.applyTopMoveAnalysisLaunchPlan
 import com.worksoc.goaicoach.application.completeAutoAiTurnRun
 import com.worksoc.goaicoach.application.engineOperationRequest
-import com.worksoc.goaicoach.application.engineOperationDiscardedDiagnosticEvent
 import com.worksoc.goaicoach.application.evaluateEngineBenchmarkGate
 import com.worksoc.goaicoach.application.evaluateAutoAiEndgameResultGuard
 import com.worksoc.goaicoach.application.evaluateAutoAiTurnResultGuard
@@ -144,7 +144,6 @@ import com.worksoc.goaicoach.application.runtimeEngineGameStartFailureLog
 import com.worksoc.goaicoach.application.runtimeEngineGameStartRequestLog
 import com.worksoc.goaicoach.application.runtimeEngineGameStartSuccessLog
 import com.worksoc.goaicoach.application.runtimeEngineOperationCompletedLog
-import com.worksoc.goaicoach.application.runtimeEngineOperationDiscardedLog
 import com.worksoc.goaicoach.application.runtimeEngineOperationStartedLog
 import com.worksoc.goaicoach.application.runtimeGameResetLog
 import com.worksoc.goaicoach.application.runtimeHumanEngineSyncFailureLog
@@ -492,18 +491,13 @@ private fun GoCoachScreen(
     }
 
     fun appendEngineOperationDiscardLog(discard: EngineOperationResultGuard.Discard) {
-        runtimeEventLog.append(
-            runtimeEngineOperationDiscardedLog(
-                context = currentRuntimeLogContext(),
-                discard = discard,
-            ),
+        val plan = buildEngineOperationDiscardLogPlan(
+            context = currentRuntimeLogContext(),
+            discard = discard,
+            currentState = gameState,
         )
-        diagnosticEventLog.append(
-            engineOperationDiscardedDiagnosticEvent(
-                discard = discard,
-                currentState = gameState,
-            ),
-        )
+        runtimeEventLog.append(plan.runtimeLog)
+        diagnosticEventLog.append(plan.diagnosticEvent)
     }
 
     fun shouldApplyEngineOperationResult(operation: EngineOperationRequest): Boolean =
