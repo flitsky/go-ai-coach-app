@@ -26,6 +26,7 @@ internal data class FinalScoreDisplayPlan(
     val endgameLog: String,
     val engineMessage: String,
     val candidateText: String,
+    val endgameTimingSummary: String? = null,
 )
 
 internal data class EndgameFailureDisplayPlan(
@@ -220,6 +221,7 @@ internal fun buildResolvedEndgameDisplayPlan(
         ),
         engineMessage = listOfNotNull(engineMessagePrefix, resolvedMessage).joinToString("\n"),
         candidateText = resolution.toCandidateText(),
+        endgameTimingSummary = resolution.timings.summary(),
     )
 }
 

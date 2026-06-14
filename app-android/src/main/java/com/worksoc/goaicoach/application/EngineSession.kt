@@ -137,7 +137,9 @@ internal suspend fun EngineCoreApi.syncAfterHumanMove(
     move: Move,
     previousReviewCandidates: List<CandidateMove>,
 ): LocalEngineMoveResult {
+    val syncReplayStartMillis = System.currentTimeMillis()
     syncToGameState(afterMove)
+    val syncReplayMs = System.currentTimeMillis() - syncReplayStartMillis
     return if (MatchReferee.shouldResolveEndgame(afterMove)) {
         LocalEngineMoveResult(
             endgame = resolveAiEndgame(
@@ -149,6 +151,7 @@ internal suspend fun EngineCoreApi.syncAfterHumanMove(
                 } else {
                     emptyList()
                 },
+                syncReplayMs = syncReplayMs,
             ),
         )
     } else {

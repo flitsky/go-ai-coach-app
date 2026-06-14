@@ -51,6 +51,10 @@ class EndgameResolverTest {
         assertTrue(resolution.toCandidateText().contains("Removed 1"))
         assertTrue(resolution.toEngineMessage().contains("Dead-stone cleanup removed 1"))
         assertTrue(resolution.toLogDetail(state).contains("removedStones=D4=White"))
+        assertTrue(resolution.toLogDetail(state).contains("timingSummary="))
+        assertTrue(resolution.toLogDetail(state).contains("deadStonesMs="))
+        assertTrue(resolution.toLogDetail(state).contains("diagnosticFinalScoreMs="))
+        assertTrue(resolution.timings.resolverTotalMs >= 0L)
     }
 }
 

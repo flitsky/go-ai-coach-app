@@ -377,7 +377,8 @@ internal fun runtimeHumanEngineSyncFailureLog(
 private fun HumanEngineSyncDisplayPlan.runtimeSyncSummary(): String =
     when (this) {
         is HumanEngineSyncDisplayPlan.FinalScore ->
-            "final_score score=${display.scoreText.runtimeLogSnippet(160)}"
+            "final_score timings=${display.endgameTimingSummary ?: "none"} " +
+                "score=${display.scoreText.runtimeLogSnippet(160)}"
         is HumanEngineSyncDisplayPlan.ScoreEstimate ->
             "score_estimate nextFp=${nextAnalysisState.runtimeShortFingerprint()} score=${display.scoreText.runtimeLogSnippet(160)}"
         HumanEngineSyncDisplayPlan.NoUpdate ->

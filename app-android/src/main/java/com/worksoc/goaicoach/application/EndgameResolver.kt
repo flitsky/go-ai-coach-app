@@ -30,6 +30,7 @@ internal data class AiEndgameResolution(
     val engineFinalScore: FinalScoreResult?,
     val engineFinalScoreError: String?,
     val prePassCandidates: List<CandidateMove>,
+    val timings: EndgameResolutionTimings = EndgameResolutionTimings(),
 ) {
     fun toEngineMessage(): String =
         buildString {
@@ -69,6 +70,16 @@ internal data class AiEndgameResolution(
     fun toLogDetail(originalState: GameState): String =
         buildString {
             appendLine("lastMove=${originalState.moves.lastOrNull()?.describe(originalState.boardSize) ?: "None"}")
+            appendLine("timingSummary=${timings.summary()}")
+            appendLine("syncReplayMs=${timings.syncReplayMs ?: "unknown"}")
+            appendLine("deadStonesMs=${timings.deadStonesMs}")
+            appendLine("localDeadStoneDetectionMs=${timings.localDeadStoneDetectionMs}")
+            appendLine("localCleanupScoringMs=${timings.localCleanupScoringMs}")
+            appendLine("engineEstimateMs=${timings.engineEstimateMs}")
+            appendLine("scoreSelectionMs=${timings.scoreSelectionMs}")
+            appendLine("diagnosticFinalScoreMs=${timings.diagnosticFinalScoreMs}")
+            appendLine("resolverTotalMs=${timings.resolverTotalMs}")
+            appendLine("totalWithSyncReplayMs=${timings.totalWithSyncReplayMs ?: "unknown"}")
             appendLine("originalStoneCount=${originalState.stones.size}")
             appendLine("cleanedStoneCount=${cleanup.state.stones.size}")
             appendLine("deadStoneStatus=${deadStonesResult?.summary ?: "failed"}")
@@ -86,42 +97,94 @@ internal data class AiEndgameResolution(
         }.trim()
 }
 
+internal data class EndgameResolutionTimings(
+    val syncReplayMs: Long? = null,
+    val deadStonesMs: Long = 0L,
+    val localDeadStoneDetectionMs: Long = 0L,
+    val localCleanupScoringMs: Long = 0L,
+    val engineEstimateMs: Long = 0L,
+    val scoreSelectionMs: Long = 0L,
+    val diagnosticFinalScoreMs: Long = 0L,
+    val resolverTotalMs: Long = 0L,
+) {
+    val totalWithSyncReplayMs: Long?
+        get() = syncReplayMs?.let { it + resolverTotalMs }
+
+    fun summary(): String =
+        "syncReplayMs=${syncReplayMs ?: "unknown"} " +
+            "deadStonesMs=$deadStonesMs " +
+            "localDetectMs=$localDeadStoneDetectionMs " +
+            "localCleanupScoreMs=$localCleanupScoringMs " +
+            "estimateMs=$engineEstimateMs " +
+            "scoreSelectMs=$scoreSelectionMs " +
+            "finalScoreMs=$diagnosticFinalScoreMs " +
+            "resolverTotalMs=$resolverTotalMs " +
+            "totalWithSyncMs=${totalWithSyncReplayMs ?: "unknown"}"
+}
+
 internal suspend fun resolveAiEndgame(
     engineAdapter: EngineCoreApi,
     originalState: GameState,
     estimateLimit: AnalysisLimit,
     prePassCandidates: List<CandidateMove> = emptyList(),
+    syncReplayMs: Long? = null,
 ): AiEndgameResolution {
+    val resolverStartMillis = System.currentTimeMillis()
     var deadStonesResult: DeadStonesResult? = null
     var deadStonesError: String? = null
+    val deadStonesStartMillis = System.currentTimeMillis()
     runCatching { engineAdapter.deadStones() }
         .onSuccess { deadStonesResult = it }
         .onFailure { deadStonesError = it.message ?: "Unknown error" }
+    val deadStonesMs = System.currentTimeMillis() - deadStonesStartMillis
 
+    val localDetectStartMillis = System.currentTimeMillis()
     val locallyInferredDeadStones = DeadStoneDetector.capturableDeadStones(originalState)
+    val localDeadStoneDetectionMs = System.currentTimeMillis() - localDetectStartMillis
+
+    val localCleanupStartMillis = System.currentTimeMillis()
     val cleanup = DeadStoneCleaner.apply(
         state = originalState,
         deadStoneCoordinates = deadStonesResult?.coordinates.orEmpty() + locallyInferredDeadStones,
     )
     val localFinalScore = BoardScorer.score(cleanup.state)
+    val localCleanupScoringMs = System.currentTimeMillis() - localCleanupStartMillis
 
     var engineScoreEstimate: ScoreEstimate? = null
     var engineScoreEstimateError: String? = null
+    val engineEstimateStartMillis = System.currentTimeMillis()
     runCatching { engineAdapter.estimateScore(estimateLimit) }
         .onSuccess { engineScoreEstimate = it }
         .onFailure { engineScoreEstimateError = it.message ?: "Unknown error" }
+    val engineEstimateMs = System.currentTimeMillis() - engineEstimateStartMillis
+
+    val scoreSelectionStartMillis = System.currentTimeMillis()
     val scoreSelection = EndgameScoreSelector.selectDisplayScore(
         cleanup = cleanup,
         localScore = localFinalScore,
         engineEstimate = engineScoreEstimate,
         prePassCandidates = prePassCandidates,
     )
+    val scoreSelectionMs = System.currentTimeMillis() - scoreSelectionStartMillis
 
     var engineFinalScore: FinalScoreResult? = null
     var engineFinalScoreError: String? = null
+    val finalScoreStartMillis = System.currentTimeMillis()
     runCatching { engineAdapter.scoreFinal() }
         .onSuccess { engineFinalScore = it }
         .onFailure { engineFinalScoreError = it.message ?: "Unknown error" }
+    val diagnosticFinalScoreMs = System.currentTimeMillis() - finalScoreStartMillis
+
+    val timings = EndgameResolutionTimings(
+        syncReplayMs = syncReplayMs,
+        deadStonesMs = deadStonesMs,
+        localDeadStoneDetectionMs = localDeadStoneDetectionMs,
+        localCleanupScoringMs = localCleanupScoringMs,
+        engineEstimateMs = engineEstimateMs,
+        scoreSelectionMs = scoreSelectionMs,
+        diagnosticFinalScoreMs = diagnosticFinalScoreMs,
+        resolverTotalMs = System.currentTimeMillis() - resolverStartMillis,
+    )
 
     return AiEndgameResolution(
         cleanup = cleanup,
@@ -136,5 +199,6 @@ internal suspend fun resolveAiEndgame(
         engineFinalScore = engineFinalScore,
         engineFinalScoreError = engineFinalScoreError,
         prePassCandidates = prePassCandidates,
+        timings = timings,
     )
 }

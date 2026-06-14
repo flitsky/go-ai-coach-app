@@ -1104,3 +1104,7 @@
 - 사용자가 같은 상황에서 패스 후 대국 종료를 재현했고, `run-as`로 최신 로그를 `/tmp/go-ai-coach-device-logs/latest`에 다시 수집했다. 새 종국 이벤트는 `human_move_accepted t=1781397320764`에서 `pass2=true`로 진입하고 `human_engine_sync_success t=1781397377827`에서 완료되어 `elapsedMs=57039`가 걸렸다.
 - 이전 지연 이벤트와 새 이벤트는 모두 동일한 board fingerprint `fp=1c2d0d95`, `moves=61`, `stones=53/81`, `captures=B4/W2`, `ruleset=Japanese`, `search=Time cap OFF`, `timeMs=none` 조건이었다. 재현 시간이 `55.8초`와 `57.0초`로 거의 같아, 일회성 디바이스 부하보다 해당 종국 국면에서 KataGo 종국 GTP 호출 묶음이 길어지는 현상으로 판단했다.
 - 새 로그에서도 현재 앱은 종국 하위 단계별 타이밍을 기록하지 않으므로, 다음 코드 작업은 `resolveAiEndgame()` 내부 `deadStones`, local cleanup/scoring, `estimateScore`, `scoreFinal` 단계별 elapsedMs와 slow diagnostic event를 추가하는 것이 우선이다.
+- 사용자가 재현 테스트 전 "로그 추가 된 앱이 폰에 설치되었는지" 확인했다. 이전 설치본에는 계측 코드가 없었음을 답하고, 바로 종국 하위 단계별 timing 계측을 구현했다.
+- `EndgameResolutionTimings`를 추가해 `syncReplayMs`, `deadStonesMs`, `localDeadStoneDetectionMs`, `localCleanupScoringMs`, `engineEstimateMs`, `scoreSelectionMs`, `diagnosticFinalScoreMs`, `resolverTotalMs`, `totalWithSyncReplayMs`를 기록한다.
+- `syncAfterHumanMove()`는 `syncToGameState()` replay 시간을 재서 `resolveAiEndgame()`에 전달한다. `toLogDetail()`은 debug report `[EndgameLog]`에 각 timing line을 출력하고, `runtimeHumanEngineSyncSuccessLog()`의 `result=final_score` summary에도 timing summary를 포함한다.
+- `EndgameResolverTest`에 timing log 검증을 추가했고, `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest` 및 `make test`를 실행해 모두 통과했다.
