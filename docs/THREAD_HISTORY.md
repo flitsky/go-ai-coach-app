@@ -1100,3 +1100,4 @@
 - 코드 대조 결과 마지막 `pass/pass`는 일반 착수 후 `estimateScore` 경로가 아니라 `syncToGameState(61수 replay)` 후 `resolveAiEndgame()`으로 들어가며, 이 안에서 `final_status_list dead`, 로컬 사석 정리/계가, `kata-raw-nn`, `final_score`를 순차 호출한다.
 - 현재 runtime log는 종국 처리 전체 시간만 기록하고 하위 단계별 시간은 기록하지 않는다. 따라서 55.8초가 `deadStones`, `rawNn`, `final_score`, 또는 state replay 중 어느 단계에 몰렸는지는 추가 계측 없이는 확정할 수 없다.
 - 다음 개선 후보는 종국 처리 sub-step timing 로그 추가, 일정 시간 이상 걸리는 `engine.endgame_step_slow` warning event 기록, 마지막 패스 UX에서 빠른 로컬 계가를 먼저 보여주고 정밀 엔진 계가/사석 판정은 비동기 또는 명시 버튼으로 분리하는 방식이다.
+- 사용자가 동일 상황에서 패스만 해 로그를 추가 확보하기 위해 최신 앱 설치를 요청했다. 무선 ADB `SM-S908N(192.168.35.166:42037)`에 `make install-dev-engine`로 debug APK를 설치하고 KataGo model/config를 앱 내부 저장소에 시드했으며, 앱 cold launch `TotalTime=547ms`를 확인했다.
