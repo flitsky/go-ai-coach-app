@@ -35,6 +35,17 @@ internal data class GameSessionAnalysisState(
             lastAnalysisKey = analysisKey,
         )
 
+    fun applyTopMoveAnalysisFailureDisplayPlan(
+        failure: TopMoveAnalysisFailureDisplayPlan,
+    ): GameSessionAnalysisState =
+        copy(
+            candidateMoves = if (failure.clearDisplayedTopMoves) emptyList() else candidateMoves,
+            candidateText = failure.candidateText ?: candidateText,
+            reviewAnalysis = MoveAnalysisSnapshot.empty(failure.targetState),
+            reviewCandidateMoves = emptyList(),
+            lastAnalysisKey = null,
+        )
+
     companion object {
         fun empty(
             state: GameState,

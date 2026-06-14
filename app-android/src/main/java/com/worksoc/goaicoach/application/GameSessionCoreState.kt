@@ -26,6 +26,14 @@ internal data class GameSessionCoreState(
             engineMessage = failure.engineMessage,
         )
 
+    fun applyTopMoveAnalysisFailureDisplayPlan(
+        failure: TopMoveAnalysisFailureDisplayPlan,
+    ): GameSessionCoreState =
+        copy(
+            analysisState = analysisState.applyTopMoveAnalysisFailureDisplayPlan(failure),
+            engineMessage = failure.engineMessage,
+        )
+
     fun applyFinalScoreDisplayPlan(final: FinalScoreDisplayPlan): GameSessionCoreState =
         copy(
             gameState = final.gameState,

@@ -29,6 +29,13 @@ internal data class TopMoveAnalysisUpdate(
     val undoRestoreResult: CachedAnalysisResult? = null,
 )
 
+internal data class TopMoveAnalysisFailureDisplayPlan(
+    val targetState: GameState,
+    val engineMessage: String,
+    val clearDisplayedTopMoves: Boolean,
+    val candidateText: String? = null,
+)
+
 internal sealed class ShowTopMovesPlan {
     data class ShowCached(
         val candidateMoves: List<CandidateMove>,
@@ -97,6 +104,18 @@ internal fun evaluateTopMoveAnalysisResultGuard(
         )
     }
 }
+
+internal fun buildTopMoveAnalysisFailureDisplayPlan(
+    targetState: GameState,
+    error: Throwable,
+    topMovesEnabled: Boolean,
+): TopMoveAnalysisFailureDisplayPlan =
+    TopMoveAnalysisFailureDisplayPlan(
+        targetState = targetState,
+        engineMessage = error.message ?: "Top Moves analysis failed.",
+        clearDisplayedTopMoves = topMovesEnabled,
+        candidateText = "Top Moves analysis failed.".takeIf { topMovesEnabled },
+    )
 
 internal fun GameSessionAnalysisState.applyTopMoveAnalysisLaunchPlan(
     launchPlan: TopMoveAnalysisLaunchPlan,

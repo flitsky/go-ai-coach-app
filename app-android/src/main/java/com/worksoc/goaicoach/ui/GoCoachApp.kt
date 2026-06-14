@@ -54,6 +54,7 @@ import com.worksoc.goaicoach.application.buildPlayerSetupChangePlan
 import com.worksoc.goaicoach.application.buildPositionAnalysisCacheOptimizationPlan
 import com.worksoc.goaicoach.application.buildPositionAnalysisCacheOptimizationPrompt
 import com.worksoc.goaicoach.application.buildGameSessionControllerState
+import com.worksoc.goaicoach.application.buildTopMoveAnalysisFailureDisplayPlan
 import com.worksoc.goaicoach.application.buildUserPreferencesSnapshot
 import com.worksoc.goaicoach.application.EndgameFailureDisplayPlan
 import com.worksoc.goaicoach.application.EngineBenchmarkDefaultSamplesPerVisit
@@ -656,6 +657,22 @@ private fun GoCoachScreen(
         }
     }
 
+    fun applyTopMoveAnalysisFailureDisplayPlan(
+        targetState: GameState,
+        error: Throwable,
+        topMovesEnabled: Boolean,
+    ) {
+        applyCoreSessionState(
+            currentCoreSessionState().applyTopMoveAnalysisFailureDisplayPlan(
+                buildTopMoveAnalysisFailureDisplayPlan(
+                    targetState = targetState,
+                    error = error,
+                    topMovesEnabled = topMovesEnabled,
+                ),
+            ),
+        )
+    }
+
     fun applyScoreEstimateDisplayPlan(score: ScoreEstimateDisplayPlan) {
         applyCoreSessionState(currentCoreSessionState().applyScoreEstimateDisplayPlan(score))
     }
@@ -890,11 +907,11 @@ private fun GoCoachScreen(
                     )
                 ) {
                     EngineOperationResultGuard.Apply -> {
-                        engineMessage = error.message ?: "Top Moves analysis failed."
-                        clearReviewAnalysis(targetState)
-                        if (currentTopMovesEnabled) {
-                            clearTopMoveSpots("Top Moves analysis failed.")
-                        }
+                        applyTopMoveAnalysisFailureDisplayPlan(
+                            targetState = targetState,
+                            error = error,
+                            topMovesEnabled = currentTopMovesEnabled,
+                        )
                     }
                     is EngineOperationResultGuard.Discard -> appendEngineOperationDiscardLog(guard)
                 }

@@ -143,6 +143,52 @@ class GameSessionCoreStateTest {
     }
 
     @Test
+    fun applyTopMoveAnalysisFailureDisplayPlanClearsReviewAndMessage() {
+        val beforeState = GameState.empty()
+        val targetState = beforeState.play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+        val candidate = CandidateMove(
+            move = Move.Play(
+                player = StoneColor.Black,
+                coordinate = BoardCoordinate.fromLabel("D4", BoardSize.Nine),
+            ),
+            pointLoss = 0.0,
+        )
+        val before = baseCoreState(
+            gameState = beforeState,
+            analysisState = GameSessionAnalysisState(
+                candidateMoves = listOf(candidate),
+                candidateText = "previous candidates",
+                reviewAnalysis = MoveAnalysisSnapshot.from(beforeState, listOf(candidate)),
+                reviewCandidateMoves = listOf(candidate),
+                lastAnalysisKey = analysisKeyFor(
+                    state = beforeState,
+                    preset = AnalysisPreset.Lite,
+                    limit = EngineProfile().analysisLimit,
+                    deep = false,
+                ),
+            ),
+            engineMessage = "previous message",
+        )
+
+        val next = before.applyTopMoveAnalysisFailureDisplayPlan(
+            TopMoveAnalysisFailureDisplayPlan(
+                targetState = targetState,
+                engineMessage = "top moves failed",
+                clearDisplayedTopMoves = true,
+                candidateText = "Top Moves analysis failed.",
+            ),
+        )
+
+        assertEquals(before.gameState, next.gameState)
+        assertEquals(emptyList<CandidateMove>(), next.analysisState.candidateMoves)
+        assertEquals("Top Moves analysis failed.", next.analysisState.candidateText)
+        assertEquals(emptyList<CandidateMove>(), next.analysisState.reviewCandidateMoves)
+        assertFalse(next.analysisState.reviewAnalysis.hasEngineCandidates)
+        assertNull(next.analysisState.lastAnalysisKey)
+        assertEquals("top moves failed", next.engineMessage)
+    }
+
+    @Test
     fun applyHumanMoveLocalResultClearsDisplayedTopMovesAndRefreshesReview() {
         val coordinate = BoardCoordinate.fromLabel("E5", BoardSize.Nine)
         val beforeMove = GameState.empty()

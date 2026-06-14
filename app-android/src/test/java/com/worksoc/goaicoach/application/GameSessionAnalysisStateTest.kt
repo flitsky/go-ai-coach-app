@@ -124,4 +124,59 @@ class GameSessionAnalysisStateTest {
         assertEquals("updated text", applied.candidateText)
         assertEquals(plan.analysisKey, applied.lastAnalysisKey)
     }
+
+    @Test
+    fun applyTopMoveAnalysisFailureClearsReviewAndOptionallyDisplayedMoves() {
+        val state = GameState.empty()
+        val targetState = state.play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+        val candidate = CandidateMove(
+            move = Move.Play(
+                player = StoneColor.Black,
+                coordinate = BoardCoordinate.fromLabel("D4", BoardSize.Nine),
+            ),
+            pointLoss = 0.0,
+        )
+        val analysisKey = analysisKeyFor(
+            state = state,
+            preset = AnalysisPreset.Lite,
+            limit = EngineProfile().analysisLimit,
+            deep = false,
+        )
+        val original = GameSessionAnalysisState(
+            candidateMoves = listOf(candidate),
+            candidateText = "previous text",
+            reviewAnalysis = MoveAnalysisSnapshot.from(state, listOf(candidate)),
+            reviewCandidateMoves = listOf(candidate),
+            lastAnalysisKey = analysisKey,
+        )
+
+        val hidden = original.applyTopMoveAnalysisFailureDisplayPlan(
+            TopMoveAnalysisFailureDisplayPlan(
+                targetState = targetState,
+                engineMessage = "failed",
+                clearDisplayedTopMoves = false,
+            ),
+        )
+        val shown = original.applyTopMoveAnalysisFailureDisplayPlan(
+            TopMoveAnalysisFailureDisplayPlan(
+                targetState = targetState,
+                engineMessage = "failed",
+                clearDisplayedTopMoves = true,
+                candidateText = "Top Moves analysis failed.",
+            ),
+        )
+
+        assertEquals(listOf(candidate), hidden.candidateMoves)
+        assertEquals("previous text", hidden.candidateText)
+        assertEquals(emptyList<CandidateMove>(), hidden.reviewCandidateMoves)
+        assertFalse(hidden.reviewAnalysis.hasEngineCandidates)
+        assertNull(hidden.lastAnalysisKey)
+        assertEquals(StoneColor.White, hidden.reviewAnalysis.player)
+
+        assertEquals(emptyList<CandidateMove>(), shown.candidateMoves)
+        assertEquals("Top Moves analysis failed.", shown.candidateText)
+        assertEquals(emptyList<CandidateMove>(), shown.reviewCandidateMoves)
+        assertFalse(shown.reviewAnalysis.hasEngineCandidates)
+        assertNull(shown.lastAnalysisKey)
+    }
 }

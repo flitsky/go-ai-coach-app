@@ -1202,3 +1202,6 @@
 - 사용자가 다음 리팩토링 진행 후 리팩토링 완성도와 다음 추천 항목 요약 보고를 요청했다.
 - 다음 안전 단위로 score estimate 실패 경로를 application display plan/reducer로 이동했다. `ScoreEstimateFailureDisplayPlan`과 `buildScoreEstimateFailureDisplayPlan()`을 추가했고, `GameSessionScoreState`/`GameSessionCoreState`가 실패 시 현재 estimate 제거와 engine message 반영을 담당한다. `GoCoachApp.kt`는 score estimate 실패에서 더 이상 `engineMessage`와 `scoreState`를 직접 수정하지 않는다.
 - `ScoreDisplayApplicationTest`, `GameSessionScoreStateTest`, `GameSessionCoreStateTest`를 보강했고 관련 application 테스트가 통과했다. 리팩토링 완성도는 2026-06-14 현재 **87/100**으로 재평가했다. 기반 분리는 탄탄해졌지만 `GoCoachApp.kt`의 coroutine/effect 실행 책임이 남아 있어 effect runner 분리가 다음 핵심이다.
+- 사용자가 같은 형식으로 다음 리팩토링 진행과 보고를 요청했다.
+- 다음 안전 단위로 Top Moves 실패 경로를 application display plan/reducer로 이동했다. `TopMoveAnalysisFailureDisplayPlan`과 `buildTopMoveAnalysisFailureDisplayPlan()`을 추가했고, `GameSessionAnalysisState`/`GameSessionCoreState`가 실패 시 review snapshot, analysis key, 표시 후보, engine message 반영을 담당한다. `GoCoachApp.kt`는 Top Moves 실패에서 더 이상 `engineMessage`, review analysis, displayed spots를 직접 조합하지 않는다.
+- `TopMovesApplicationTest`, `GameSessionAnalysisStateTest`, `GameSessionCoreStateTest`를 보강했고 관련 application 테스트가 통과했다. 리팩토링 완성도는 2026-06-14 현재 **88/100**으로 재평가했다. 다음 핵심은 Top Moves/Score Estimate 실행부를 `GameSessionEffect` runner로 더 얇게 옮기는 것이다.

@@ -573,6 +573,29 @@ class TopMovesApplicationTest {
     }
 
     @Test
+    fun topMoveAnalysisFailureDisplayPlanPreservesHiddenTopMovesText() {
+        val state = GameState.empty()
+
+        val hidden = buildTopMoveAnalysisFailureDisplayPlan(
+            targetState = state,
+            error = IllegalStateException("engine failed"),
+            topMovesEnabled = false,
+        )
+        val shown = buildTopMoveAnalysisFailureDisplayPlan(
+            targetState = state,
+            error = Throwable(),
+            topMovesEnabled = true,
+        )
+
+        assertEquals("engine failed", hidden.engineMessage)
+        assertEquals(false, hidden.clearDisplayedTopMoves)
+        assertNull(hidden.candidateText)
+        assertEquals("Top Moves analysis failed.", shown.engineMessage)
+        assertEquals(true, shown.clearDisplayedTopMoves)
+        assertEquals("Top Moves analysis failed.", shown.candidateText)
+    }
+
+    @Test
     fun planShowTopMovesUsesCachedBestMoveWithoutDeepFallback() {
         val state = GameState.empty()
         val snapshot = MoveAnalysisSnapshot.from(
