@@ -16,6 +16,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import com.worksoc.goaicoach.application.AnalysisCacheKey
 import com.worksoc.goaicoach.application.AnalysisResultCache
+import com.worksoc.goaicoach.application.AutoAiEndgameCompletionPlan
+import com.worksoc.goaicoach.application.AutoAiTurnCompletionPlan
 import com.worksoc.goaicoach.application.AutoAiTurnDisplayPlan
 import com.worksoc.goaicoach.application.AutoAiTurnEndgameDisplayPlan
 import com.worksoc.goaicoach.application.AutoAiTurnEndgamePlan
@@ -29,6 +31,9 @@ import com.worksoc.goaicoach.application.autoAiTurnOperationToken
 import com.worksoc.goaicoach.application.buildAutoAiTurnFailureDisplayPlan
 import com.worksoc.goaicoach.application.buildAutoAiTurnEndgamePlan
 import com.worksoc.goaicoach.application.buildAutoAiTurnFollowUpPlan
+import com.worksoc.goaicoach.application.buildAutoAiTurnFailureCompletionPlan
+import com.worksoc.goaicoach.application.buildAutoAiTurnSuccessCompletionPlan
+import com.worksoc.goaicoach.application.buildAutoAiEndgameCompletionPlan
 import com.worksoc.goaicoach.application.buildDebugReportCopyPlan
 import com.worksoc.goaicoach.application.buildEngineStartupFailureDisplayPlan
 import com.worksoc.goaicoach.application.buildEngineStartupSuccessDisplayPlan
@@ -82,8 +87,6 @@ import com.worksoc.goaicoach.application.applyTopMoveAnalysisLaunchPlan
 import com.worksoc.goaicoach.application.completeAutoAiTurnRun
 import com.worksoc.goaicoach.application.engineOperationRequest
 import com.worksoc.goaicoach.application.evaluateEngineBenchmarkGate
-import com.worksoc.goaicoach.application.evaluateAutoAiEndgameResultGuard
-import com.worksoc.goaicoach.application.evaluateAutoAiTurnResultGuard
 import com.worksoc.goaicoach.application.evaluateScoringRuleChangeGate
 import com.worksoc.goaicoach.application.evaluateSearchTimeChangeGate
 import com.worksoc.goaicoach.application.evaluateScoreEstimateResultGuard
@@ -1614,32 +1617,34 @@ private fun GoCoachScreen(
                             )
                         }
                     }.onSuccess { display ->
-                        when (val guard =
-                            evaluateAutoAiTurnResultGuard(
+                        when (val completion =
+                            buildAutoAiTurnSuccessCompletionPlan(
                                 token = turnOperationToken,
                                 currentState = gameState,
                                 currentSessionGeneration = runtimeState.sessionGeneration,
+                                display = display,
                             )
                         ) {
-                            EngineOperationResultGuard.Apply -> {
+                            is AutoAiTurnCompletionPlan.ApplySuccess -> {
+                                val appliedDisplay = completion.display
                                 val turnTimeUpdate = turnTimeState.recordMove(
                                     player = turnContext.aiPlayer,
                                     nowMillis = System.currentTimeMillis(),
-                                    nextPlayer = display.gameState.nextPlayer,
+                                    nextPlayer = appliedDisplay.gameState.nextPlayer,
                                 )
                                 runtimeEventLog.append(
                                     runtimeAiTurnSuccessLog(
                                         context = currentRuntimeLogContext(),
                                         turnState = turnContext.turnState,
                                         aiPlayer = turnContext.aiPlayer,
-                                        display = display,
+                                        display = appliedDisplay,
                                         turnElapsedMs = System.currentTimeMillis() - turnStartMillis,
                                         turnTimeUpdate = turnTimeUpdate,
                                     ),
                                 )
                                 turnTimeState = turnTimeUpdate.after
-                                followUpPlan = applyAutoAiTurnDisplayPlan(display)
-                                when (val endgamePlan = buildAutoAiTurnEndgamePlan(display)) {
+                                followUpPlan = applyAutoAiTurnDisplayPlan(appliedDisplay)
+                                when (val endgamePlan = buildAutoAiTurnEndgamePlan(appliedDisplay)) {
                                     AutoAiTurnEndgamePlan.None -> Unit
                                     is AutoAiTurnEndgamePlan.Resolve -> {
                                         val endgameOperationToken = autoAiEndgameOperationToken(
@@ -1653,86 +1658,75 @@ private fun GoCoachScreen(
                                                 state = endgamePlan.state,
                                             ),
                                         )
-                                        when (
-                                            val endgameDisplay = withContext(Dispatchers.IO) {
-                                                engineClient.runAutoAiEndgameEffect(
-                                                    effect = GameSessionEffect.ResolveAutoAiEndgame(endgamePlan),
-                                                    previousSnapshots = scoreState.scoreSnapshots,
-                                                    operationRequest = endgameOperationToken.operation,
-                                                    diagnosticEventLog = diagnosticEventLog,
+                                        val endgameDisplay = withContext(Dispatchers.IO) {
+                                            engineClient.runAutoAiEndgameEffect(
+                                                effect = GameSessionEffect.ResolveAutoAiEndgame(endgamePlan),
+                                                previousSnapshots = scoreState.scoreSnapshots,
+                                                operationRequest = endgameOperationToken.operation,
+                                                diagnosticEventLog = diagnosticEventLog,
+                                            )
+                                        }
+                                        val endgameCompletion = buildAutoAiEndgameCompletionPlan(
+                                            token = endgameOperationToken,
+                                            currentState = gameState,
+                                            currentSessionGeneration = runtimeState.sessionGeneration,
+                                            display = endgameDisplay,
+                                        )
+                                        when (endgameCompletion) {
+                                            is AutoAiEndgameCompletionPlan.ApplyResolved -> {
+                                                runtimeEventLog.append(
+                                                    runtimeAiTurnEndgameSuccessLog(
+                                                        context = currentRuntimeLogContext(),
+                                                        state = endgamePlan.state,
+                                                        endgame = endgameCompletion.display.resolution,
+                                                    ),
                                                 )
-                                            }
-                                        ) {
-                                            is AutoAiTurnEndgameDisplayPlan.Resolved -> {
-                                                when (val guard =
-                                                    evaluateAutoAiEndgameResultGuard(
-                                                        token = endgameOperationToken,
-                                                        currentState = gameState,
-                                                        currentSessionGeneration = runtimeState.sessionGeneration,
-                                                    )
-                                                ) {
-                                                    EngineOperationResultGuard.Apply -> {
-                                                        runtimeEventLog.append(
-                                                            runtimeAiTurnEndgameSuccessLog(
-                                                                context = currentRuntimeLogContext(),
-                                                                state = endgamePlan.state,
-                                                                endgame = endgameDisplay.resolution,
-                                                            ),
-                                                        )
-                                                        applyFinalScoreDisplayPlan(endgameDisplay.display)
-                                                    }
-                                                    is EngineOperationResultGuard.Discard -> appendEngineOperationDiscardLog(guard)
-                                                }
+                                                applyFinalScoreDisplayPlan(endgameCompletion.display.display)
                                             }
 
-                                            is AutoAiTurnEndgameDisplayPlan.Failed -> {
-                                                when (val guard =
-                                                    evaluateAutoAiEndgameResultGuard(
-                                                        token = endgameOperationToken,
-                                                        currentState = gameState,
-                                                        currentSessionGeneration = runtimeState.sessionGeneration,
-                                                    )
-                                                ) {
-                                                    EngineOperationResultGuard.Apply -> {
-                                                        runtimeEventLog.append(
-                                                            runtimeAiTurnEndgameFailureLog(
-                                                                context = currentRuntimeLogContext(),
-                                                                state = endgamePlan.state,
-                                                                error = endgameDisplay.error,
-                                                            ),
-                                                        )
-                                                        applyEndgameFailureDisplayPlan(endgameDisplay.display)
-                                                    }
-                                                    is EngineOperationResultGuard.Discard -> appendEngineOperationDiscardLog(guard)
-                                                }
+                                            is AutoAiEndgameCompletionPlan.ApplyFailed -> {
+                                                runtimeEventLog.append(
+                                                    runtimeAiTurnEndgameFailureLog(
+                                                        context = currentRuntimeLogContext(),
+                                                        state = endgamePlan.state,
+                                                        error = endgameCompletion.display.error,
+                                                    ),
+                                                )
+                                                applyEndgameFailureDisplayPlan(endgameCompletion.display.display)
                                             }
+
+                                            is AutoAiEndgameCompletionPlan.Discard ->
+                                                appendEngineOperationDiscardLog(endgameCompletion.discard)
                                         }
                                     }
                                 }
                             }
-                            is EngineOperationResultGuard.Discard -> appendEngineOperationDiscardLog(guard)
+                            is AutoAiTurnCompletionPlan.ApplyFailure -> Unit
+                            is AutoAiTurnCompletionPlan.Discard -> appendEngineOperationDiscardLog(completion.discard)
                         }
                     }.onFailure { error ->
-                        when (val guard =
-                            evaluateAutoAiTurnResultGuard(
+                        when (val completion =
+                            buildAutoAiTurnFailureCompletionPlan(
                                 token = turnOperationToken,
                                 currentState = gameState,
                                 currentSessionGeneration = runtimeState.sessionGeneration,
+                                error = error,
                             )
                         ) {
-                            EngineOperationResultGuard.Apply -> {
+                            is AutoAiTurnCompletionPlan.ApplySuccess -> Unit
+                            is AutoAiTurnCompletionPlan.ApplyFailure -> {
                                 runtimeEventLog.append(
                                     runtimeAiTurnFailureLog(
                                         context = currentRuntimeLogContext(),
                                         turnState = turnContext.turnState,
                                         aiPlayer = turnContext.aiPlayer,
                                         turnElapsedMs = System.currentTimeMillis() - turnStartMillis,
-                                        error = error,
+                                        error = completion.error,
                                     ),
                                 )
-                                applyAutoAiTurnFailureDisplayPlan(error)
+                                applyAutoAiTurnFailureDisplayPlan(completion.error)
                             }
-                            is EngineOperationResultGuard.Discard -> appendEngineOperationDiscardLog(guard)
+                            is AutoAiTurnCompletionPlan.Discard -> appendEngineOperationDiscardLog(completion.discard)
                         }
                     }
                     markEngineOperationCompleted(turnOperationToken.operation.operationId)

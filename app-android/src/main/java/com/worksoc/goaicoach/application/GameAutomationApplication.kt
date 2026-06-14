@@ -331,6 +331,60 @@ internal fun evaluateAutoAiTurnResultGuard(
         currentSessionGeneration = currentSessionGeneration,
     )
 
+internal sealed class AutoAiTurnCompletionPlan {
+    data class ApplySuccess(
+        val display: AutoAiTurnDisplayPlan,
+    ) : AutoAiTurnCompletionPlan()
+
+    data class ApplyFailure(
+        val error: Throwable,
+    ) : AutoAiTurnCompletionPlan()
+
+    data class Discard(
+        val discard: EngineOperationResultGuard.Discard,
+    ) : AutoAiTurnCompletionPlan()
+}
+
+internal fun buildAutoAiTurnSuccessCompletionPlan(
+    token: AutoAiTurnOperationToken,
+    currentState: GameState,
+    currentSessionGeneration: Long,
+    display: AutoAiTurnDisplayPlan,
+): AutoAiTurnCompletionPlan =
+    when (
+        val guard = evaluateAutoAiTurnResultGuard(
+            token = token,
+            currentState = currentState,
+            currentSessionGeneration = currentSessionGeneration,
+        )
+    ) {
+        EngineOperationResultGuard.Apply ->
+            AutoAiTurnCompletionPlan.ApplySuccess(display)
+
+        is EngineOperationResultGuard.Discard ->
+            AutoAiTurnCompletionPlan.Discard(guard)
+    }
+
+internal fun buildAutoAiTurnFailureCompletionPlan(
+    token: AutoAiTurnOperationToken,
+    currentState: GameState,
+    currentSessionGeneration: Long,
+    error: Throwable,
+): AutoAiTurnCompletionPlan =
+    when (
+        val guard = evaluateAutoAiTurnResultGuard(
+            token = token,
+            currentState = currentState,
+            currentSessionGeneration = currentSessionGeneration,
+        )
+    ) {
+        EngineOperationResultGuard.Apply ->
+            AutoAiTurnCompletionPlan.ApplyFailure(error)
+
+        is EngineOperationResultGuard.Discard ->
+            AutoAiTurnCompletionPlan.Discard(guard)
+    }
+
 internal data class AutoAiEndgameOperationToken(
     val operation: EngineOperationRequest,
 )
@@ -362,6 +416,46 @@ internal fun evaluateAutoAiEndgameResultGuard(
         currentState = currentState,
         currentSessionGeneration = currentSessionGeneration,
     )
+
+internal sealed class AutoAiEndgameCompletionPlan {
+    data class ApplyResolved(
+        val display: AutoAiTurnEndgameDisplayPlan.Resolved,
+    ) : AutoAiEndgameCompletionPlan()
+
+    data class ApplyFailed(
+        val display: AutoAiTurnEndgameDisplayPlan.Failed,
+    ) : AutoAiEndgameCompletionPlan()
+
+    data class Discard(
+        val discard: EngineOperationResultGuard.Discard,
+    ) : AutoAiEndgameCompletionPlan()
+}
+
+internal fun buildAutoAiEndgameCompletionPlan(
+    token: AutoAiEndgameOperationToken,
+    currentState: GameState,
+    currentSessionGeneration: Long,
+    display: AutoAiTurnEndgameDisplayPlan,
+): AutoAiEndgameCompletionPlan =
+    when (
+        val guard = evaluateAutoAiEndgameResultGuard(
+            token = token,
+            currentState = currentState,
+            currentSessionGeneration = currentSessionGeneration,
+        )
+    ) {
+        EngineOperationResultGuard.Apply ->
+            when (display) {
+                is AutoAiTurnEndgameDisplayPlan.Resolved ->
+                    AutoAiEndgameCompletionPlan.ApplyResolved(display)
+
+                is AutoAiTurnEndgameDisplayPlan.Failed ->
+                    AutoAiEndgameCompletionPlan.ApplyFailed(display)
+            }
+
+        is EngineOperationResultGuard.Discard ->
+            AutoAiEndgameCompletionPlan.Discard(guard)
+    }
 
 internal data class AutoAiTurnExecutionContext(
     val turnState: GameState,

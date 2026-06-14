@@ -39,7 +39,7 @@
 - `warning`: `EligibleForUserConsentExport`. 성능/품질 분석 목적으로 사용자 동의 후 전송할 수 있다.
 - `critical`: `EligibleForUserConsentExport`. 계가 불일치나 timeout처럼 정확성 문제가 의심되는 경우 사용자 동의 후 전송할 수 있다.
 
-이 정책은 외부 네트워크 transport가 붙기 전에도 테스트 가능한 순수 application 정책으로 유지한다.
+이 정책은 외부 네트워크 transport가 붙기 전에도 테스트 가능한 순수 application 정책으로 유지한다. `buildDiagnosticEventExternalSinkPlan()`은 `userConsented=true`일 때만 `DiagnosticEventExternalExportPayload`를 만들며, 실제 전송은 `DiagnosticEventExternalSinkPort` 구현체가 담당한다.
 
 ## Engine Operation Events
 

@@ -1320,3 +1320,7 @@
 - `recordEngineOperationDiscardLog()`를 추가해 stale result discard 기록을 runtime/diagnostic port에 쓰는 순서를 application helper로 이동했다.
 - `planDiagnosticEventExternalExport()`를 추가해 diagnostic event 외부 전송 후보 판단을 순수 정책으로 분리했다. `info`는 local only, `warning`/`critical`은 사용자 동의 기반 export 후보로 분류한다.
 - `DIAGNOSTIC_EVENT_SCHEMA.md`와 refactoring worklist를 갱신했고, 관련 targeted test와 `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test`가 통과했다.
+- 다음 리팩토링으로 `AutoAiTurnCompletionPlan`과 `AutoAiEndgameCompletionPlan`을 추가했다. auto AI turn/endgame success/failure/stale 결과가 application completion plan을 통과하며, UI는 runtime log와 state apply만 담당한다.
+- `DiagnosticEventExternalSinkPort`, `DiagnosticEventExternalExportPayload`, `DiagnosticEventExternalSinkPlan`을 추가해 사용자 동의 기반 warning/critical diagnostic event 외부 전송 계약을 얇게 정의했다. 실제 Android/Firebase transport 구현은 아직 없다.
+- `docs/refactoring/ORCHESTRATION_SPLIT_AND_KMP_MAP_2026-06-15.md`를 추가해 `GoCoachApp.kt` workflow 분리 우선순위와 KMP 이동 후보/조건부 후보를 정리했다.
+- 관련 검증으로 `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest --tests 'com.worksoc.goaicoach.application.GameAutomationApplicationTest' --tests 'com.worksoc.goaicoach.application.DiagnosticEventApplicationTest'`와 `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test`가 통과했다.

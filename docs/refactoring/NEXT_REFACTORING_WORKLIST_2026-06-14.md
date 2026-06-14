@@ -433,3 +433,39 @@
 5. Middleware/KMP 이동 dependency map 작성
    - `EngineOperationPolicy`, `EngineOperationResultApplication`, `DiagnosticEventApplication`, `ScoreDisplayApplication`의 import graph를 정리한다.
    - shared 또는 별도 middleware KMP 모듈로 옮기려면 어떤 shared DTO가 추가로 필요한지 확인한다.
+
+## 2026-06-15 추가 진행 로그: Auto AI Completion/External Sink/분리 맵
+
+- 2026-06-15: `AutoAiTurnCompletionPlan`을 추가했다. auto AI turn 성공/실패/stale 결과가 application completion plan을 통과하며, UI는 더 이상 `evaluateAutoAiTurnResultGuard()`를 직접 호출하지 않는다.
+- 2026-06-15: `AutoAiEndgameCompletionPlan`을 추가했다. auto AI pass/pass 종국 resolve의 resolved/failed/stale 결과도 application completion plan으로 정리했다.
+- 2026-06-15: `GoCoachApp.kt`의 auto AI block은 completion plan을 받아 runtime log와 state apply만 수행한다. 여전히 coroutine orchestration은 UI에 남아 있으므로 다음 단계 runner 분리 대상이다.
+- 2026-06-15: `DiagnosticEventExternalSinkPort`, `DiagnosticEventExternalExportPayload`, `DiagnosticEventExternalSinkPlan`을 추가했다. 사용자 동의가 들어왔을 때 warning/critical diagnostic event와 debug report text를 외부 sink로 넘길 수 있는 계약만 정의했고, Android/Firebase 구현은 붙이지 않았다.
+- 2026-06-15: `ORCHESTRATION_SPLIT_AND_KMP_MAP_2026-06-15.md`를 추가했다. 다음 분리 우선순위는 auto AI workflow runner, score sync workflow runner, Top Moves workflow runner, saved session/startup workflow 순서로 정리했다.
+- 2026-06-15: KMP 이동 후보는 `EngineOperationPolicy.kt`, `EngineOperationResultApplication.kt`, `PositionAnalysisGateway.kt`, `RemotePositionAnalysisGateway.kt`를 즉시 후보로 보고, `DiagnosticEventApplication.kt`, `ScoreDisplayApplication.kt`, `GameAutomationApplication.kt`는 파일 내부 책임 분리 후 조건부 이동 후보로 분류했다.
+- 검증: `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest --tests 'com.worksoc.goaicoach.application.GameAutomationApplicationTest' --tests 'com.worksoc.goaicoach.application.DiagnosticEventApplicationTest'` 통과, `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test` 통과.
+
+## 현재 리팩토링 완성도 평가
+
+- 주관 점수: 97.8/100.
+- 상향 요인: auto AI turn/endgame도 score sync와 같은 completion plan 패턴으로 들어왔다. diagnostic external sink는 구현체 없이도 정책과 port 계약이 생겼고, orchestration/KMP 이동 맵이 문서로 고정됐다.
+- 남은 감점 요인: `GoCoachApp.kt`는 2,199줄로 여전히 크며, auto AI coroutine orchestration은 아직 UI 내부에 남아 있다. KMP 이동도 dependency map 단계이지 물리적 Gradle 모듈 이동은 아니다.
+
+## 다음 추천 리팩토링 항목
+
+1. Auto AI workflow runner helper 도입
+   - `requestAiTurnForCurrentState()`의 schedule/delay/run/completion/endgame/follow-up 흐름을 `AutoAiWorkflowRunner` 성격의 app-service helper로 분리한다.
+   - Compose state mutation은 callback으로 주입하고, engine call orchestration만 먼저 옮긴다.
+
+2. Score sync execution helper 도입
+   - post-undo/scoring/restored sync의 공통 `runCatching + completion + follow-up` 실행부를 `ScoreSyncWorkflow` helper로 묶는다.
+   - post-undo quiet delay와 pending cancellation은 별도 유지한다.
+
+3. Diagnostic external sink fake implementation/test
+   - production transport는 보류하고, test fake sink와 export bundle builder를 추가해 사용자 동의 기반 전송 UX를 붙일 준비를 한다.
+
+4. Diagnostic event model/observer 파일 분리
+   - `DiagnosticEventApplication.kt`를 event model/export policy와 coroutine observer로 나눈다.
+   - KMP 이동 후보를 더 명확히 하기 위한 선행 작업이다.
+
+5. `GameAutomationApplication.kt` 파일 분리
+   - request/schedule policy, completion plan, engine runner를 별도 파일로 나눠 KMP 이동 가능성과 리뷰 단위를 개선한다.

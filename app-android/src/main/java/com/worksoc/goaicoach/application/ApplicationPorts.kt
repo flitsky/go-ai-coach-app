@@ -50,6 +50,10 @@ internal interface DiagnosticEventLogPort {
     fun clear()
 }
 
+internal interface DiagnosticEventExternalSinkPort {
+    fun send(payload: DiagnosticEventExternalExportPayload): Result<Unit>
+}
+
 internal interface DebugReportMirrorPort {
     fun save(report: String)
 }

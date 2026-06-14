@@ -49,6 +49,21 @@ internal data class DiagnosticEventExternalExportPlan(
     val reason: String,
 )
 
+internal data class DiagnosticEventExternalExportPayload(
+    val event: DiagnosticEvent,
+    val debugReportText: String? = null,
+)
+
+internal sealed class DiagnosticEventExternalSinkPlan {
+    data class Skip(
+        val reason: String,
+    ) : DiagnosticEventExternalSinkPlan()
+
+    data class Send(
+        val payload: DiagnosticEventExternalExportPayload,
+    ) : DiagnosticEventExternalSinkPlan()
+}
+
 internal fun planDiagnosticEventExternalExport(event: DiagnosticEvent): DiagnosticEventExternalExportPlan =
     when (event.severity) {
         DiagnosticSeverity.Info ->
@@ -69,6 +84,26 @@ internal fun planDiagnosticEventExternalExport(event: DiagnosticEvent): Diagnost
                 reason = "Critical diagnostic events can be exported with user consent for correctness analysis.",
             )
     }
+
+internal fun buildDiagnosticEventExternalSinkPlan(
+    event: DiagnosticEvent,
+    userConsented: Boolean,
+    debugReportText: String? = null,
+): DiagnosticEventExternalSinkPlan {
+    val export = planDiagnosticEventExternalExport(event)
+    if (export.decision == DiagnosticEventExternalExportDecision.LocalOnly) {
+        return DiagnosticEventExternalSinkPlan.Skip(export.reason)
+    }
+    if (!userConsented) {
+        return DiagnosticEventExternalSinkPlan.Skip("User consent is required before exporting diagnostic events.")
+    }
+    return DiagnosticEventExternalSinkPlan.Send(
+        DiagnosticEventExternalExportPayload(
+            event = event,
+            debugReportText = debugReportText,
+        ),
+    )
+}
 
 internal fun engineVisitFillDiagnosticEvent(
     requestedVisits: Int,

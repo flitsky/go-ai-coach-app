@@ -107,6 +107,44 @@ class DiagnosticEventApplicationTest {
     }
 
     @Test
+    fun diagnosticExternalSinkPlanRequiresEligibilityAndUserConsent() {
+        val info = DiagnosticEvent(
+            severity = DiagnosticSeverity.Info,
+            code = "engine.operation.discarded",
+            message = "discarded",
+        )
+        val warning = DiagnosticEvent(
+            severity = DiagnosticSeverity.Warning,
+            code = "engine.operation.slow",
+            message = "slow",
+        )
+
+        val localOnly = buildDiagnosticEventExternalSinkPlan(
+            event = info,
+            userConsented = true,
+            debugReportText = "debug",
+        )
+        val withoutConsent = buildDiagnosticEventExternalSinkPlan(
+            event = warning,
+            userConsented = false,
+            debugReportText = "debug",
+        )
+        val withConsent = buildDiagnosticEventExternalSinkPlan(
+            event = warning,
+            userConsented = true,
+            debugReportText = "debug",
+        )
+
+        assertTrue(localOnly is DiagnosticEventExternalSinkPlan.Skip)
+        assertTrue((localOnly as DiagnosticEventExternalSinkPlan.Skip).reason.contains("locally"))
+        assertTrue(withoutConsent is DiagnosticEventExternalSinkPlan.Skip)
+        assertTrue((withoutConsent as DiagnosticEventExternalSinkPlan.Skip).reason.contains("consent"))
+        assertTrue(withConsent is DiagnosticEventExternalSinkPlan.Send)
+        assertEquals(warning, (withConsent as DiagnosticEventExternalSinkPlan.Send).payload.event)
+        assertEquals("debug", withConsent.payload.debugReportText)
+    }
+
+    @Test
     fun slowOperationDiagnosticWarnsOnlyAboveThreshold() {
         assertNull(
             engineOperationSlowDiagnosticEvent(

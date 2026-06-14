@@ -305,6 +305,123 @@ class GameAutomationApplicationTest {
     }
 
     @Test
+    fun autoAiTurnCompletionPlanAppliesOnlyForCurrentOperationState() {
+        val state = GameState.empty()
+        val changedState = state
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+        val runPlan = AutoAiTurnRunPlan(
+            delayMillis = 0L,
+            context = buildAutoAiTurnExecutionContext(
+                gameState = state,
+                playerSetup = PlayerSetup(
+                    black = SidePlayerSetup(controller = SeatController.Ai),
+                    white = SidePlayerSetup(controller = SeatController.Human),
+                ),
+                searchTimeSettings = SearchTimeSettings(),
+                reviewCandidateMoves = emptyList(),
+            ),
+        )
+        val token = autoAiTurnOperationToken(runPlan, sessionGeneration = 2L)
+        val display = buildAutoAiTurnDisplayPlan(
+            result = autoAiTurnResult(
+                state = changedState,
+                estimate = null,
+            ),
+            previousSnapshots = emptyList(),
+            previousReviewCandidates = emptyList(),
+        )
+
+        val success = buildAutoAiTurnSuccessCompletionPlan(
+            token = token,
+            currentState = state,
+            currentSessionGeneration = 2L,
+            display = display,
+        )
+        val failure = buildAutoAiTurnFailureCompletionPlan(
+            token = token,
+            currentState = state,
+            currentSessionGeneration = 2L,
+            error = IllegalStateException("turn failed"),
+        )
+        val stalePosition = buildAutoAiTurnSuccessCompletionPlan(
+            token = token,
+            currentState = changedState,
+            currentSessionGeneration = 2L,
+            display = display,
+        )
+        val staleGeneration = buildAutoAiTurnFailureCompletionPlan(
+            token = token,
+            currentState = state,
+            currentSessionGeneration = 3L,
+            error = IllegalStateException("turn failed"),
+        )
+
+        assertTrue(success is AutoAiTurnCompletionPlan.ApplySuccess)
+        assertEquals(display, (success as AutoAiTurnCompletionPlan.ApplySuccess).display)
+        assertTrue(failure is AutoAiTurnCompletionPlan.ApplyFailure)
+        assertEquals("turn failed", (failure as AutoAiTurnCompletionPlan.ApplyFailure).error.message)
+        assertTrue(stalePosition is AutoAiTurnCompletionPlan.Discard)
+        assertTrue(staleGeneration is AutoAiTurnCompletionPlan.Discard)
+    }
+
+    @Test
+    fun autoAiEndgameCompletionPlanAppliesResolvedFailedOrDiscardedResult() {
+        val state = GameState.empty()
+            .play(Move.Pass(StoneColor.Black))
+            .play(Move.Pass(StoneColor.White))
+        val changedState = GameState.empty()
+        val plan = AutoAiTurnEndgamePlan.Resolve(
+            state = state,
+            profile = EngineProfile(),
+            prePassCandidates = emptyList(),
+            engineMessagePrefix = "pass/pass",
+        )
+        val token = autoAiEndgameOperationToken(plan, sessionGeneration = 2L)
+        val resolved = AutoAiTurnEndgameDisplayPlan.Resolved(
+            resolution = aiEndgameResolution(state),
+            display = buildResolvedEndgameDisplayPlan(
+                source = plan.successSource,
+                originalState = state,
+                resolution = aiEndgameResolution(state),
+                previousSnapshots = emptyList(),
+                engineMessagePrefix = plan.engineMessagePrefix,
+            ),
+        )
+        val failed = AutoAiTurnEndgameDisplayPlan.Failed(
+            error = IllegalStateException("final failed"),
+            display = buildEndgameFailureDisplayPlan(
+                source = plan.failureSource,
+                state = state,
+                errorMessage = "final failed",
+                engineMessagePrefix = plan.engineMessagePrefix,
+            ),
+        )
+
+        val resolvedCompletion = buildAutoAiEndgameCompletionPlan(
+            token = token,
+            currentState = state,
+            currentSessionGeneration = 2L,
+            display = resolved,
+        )
+        val failedCompletion = buildAutoAiEndgameCompletionPlan(
+            token = token,
+            currentState = state,
+            currentSessionGeneration = 2L,
+            display = failed,
+        )
+        val discarded = buildAutoAiEndgameCompletionPlan(
+            token = token,
+            currentState = changedState,
+            currentSessionGeneration = 2L,
+            display = resolved,
+        )
+
+        assertTrue(resolvedCompletion is AutoAiEndgameCompletionPlan.ApplyResolved)
+        assertTrue(failedCompletion is AutoAiEndgameCompletionPlan.ApplyFailed)
+        assertTrue(discarded is AutoAiEndgameCompletionPlan.Discard)
+    }
+
+    @Test
     fun controllerStateValidatesScheduledAutoAiTurnAndBuildsContext() {
         val whiteLevel = PlayLevelSetting(PlayLevelGroup.Beginner, level = 7)
         val setup = PlayerSetup(
