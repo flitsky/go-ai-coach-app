@@ -65,9 +65,12 @@ import com.worksoc.goaicoach.application.EngineSessionClient
 import com.worksoc.goaicoach.application.DebugReportMirrorPort
 import com.worksoc.goaicoach.application.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.applyHumanMoveLocally
+import com.worksoc.goaicoach.application.applyAutoAiTurnRequestPlan
+import com.worksoc.goaicoach.application.applyAutoAiTurnScheduleValidationPlan
 import com.worksoc.goaicoach.application.EngineBenchmarkStorePort
 import com.worksoc.goaicoach.application.ClipboardPort
 import com.worksoc.goaicoach.application.applyTopMoveAnalysisLaunchPlan
+import com.worksoc.goaicoach.application.completeAutoAiTurnRun
 import com.worksoc.goaicoach.application.evaluateEngineBenchmarkGate
 import com.worksoc.goaicoach.application.evaluateAutoAiEndgameResultGuard
 import com.worksoc.goaicoach.application.evaluateAutoAiTurnResultGuard
@@ -1309,7 +1312,7 @@ private fun GoCoachScreen(
         ) {
             AutoAiTurnRequestPlan.Skip -> return
             is AutoAiTurnRequestPlan.Schedule -> {
-                autoAiTurnUiState = autoAiTurnUiState.markScheduled()
+                autoAiTurnUiState = autoAiTurnUiState.applyAutoAiTurnRequestPlan(request)
                 runtimeEventLog.append(
                     runtimeAiTurnScheduleLog(
                         context = currentRuntimeLogContext(),
@@ -1341,7 +1344,7 @@ private fun GoCoachScreen(
                                     shouldShowResumePrompt = shouldShowResumePrompt,
                                 ),
                             )
-                            autoAiTurnUiState = autoAiTurnUiState.clearPending()
+                            autoAiTurnUiState = autoAiTurnUiState.applyAutoAiTurnScheduleValidationPlan(validation)
                             return@launch
                         }
                         is AutoAiTurnScheduleValidationPlan.Continue -> validation.runPlan
@@ -1488,7 +1491,7 @@ private fun GoCoachScreen(
                         }
                     }
                     isEngineBusy = false
-                    autoAiTurnUiState = autoAiTurnUiState.clearPending()
+                    autoAiTurnUiState = autoAiTurnUiState.completeAutoAiTurnRun()
                     runtimeEventLog.append(
                         runtimeAiTurnCompleteLog(
                             context = currentRuntimeLogContext(),

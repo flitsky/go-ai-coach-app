@@ -79,6 +79,25 @@ internal data class AutoAiTurnUiState(
         copy(isPending = false)
 }
 
+internal fun AutoAiTurnUiState.applyAutoAiTurnRequestPlan(
+    plan: AutoAiTurnRequestPlan,
+): AutoAiTurnUiState =
+    when (plan) {
+        AutoAiTurnRequestPlan.Skip -> this
+        is AutoAiTurnRequestPlan.Schedule -> markScheduled()
+    }
+
+internal fun AutoAiTurnUiState.applyAutoAiTurnScheduleValidationPlan(
+    plan: AutoAiTurnScheduleValidationPlan,
+): AutoAiTurnUiState =
+    when (plan) {
+        AutoAiTurnScheduleValidationPlan.Cancel -> clearPending()
+        is AutoAiTurnScheduleValidationPlan.Continue -> this
+    }
+
+internal fun AutoAiTurnUiState.completeAutoAiTurnRun(): AutoAiTurnUiState =
+    clearPending()
+
 internal fun buildAutoAiTurnRequestPlan(
     isGameEnded: Boolean,
     isEngineReady: Boolean,

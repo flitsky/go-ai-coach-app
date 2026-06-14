@@ -124,6 +124,40 @@ class GameAutomationApplicationTest {
     }
 
     @Test
+    fun autoAiTurnUiStateAppliesRequestValidationAndCompletionPlans() {
+        val initial = AutoAiTurnUiState()
+        val scheduled = initial.applyAutoAiTurnRequestPlan(
+            AutoAiTurnRequestPlan.Schedule(delayMillis = 500L),
+        )
+        val runPlan = AutoAiTurnRunPlan(
+            delayMillis = 500L,
+            context = buildAutoAiTurnExecutionContext(
+                gameState = GameState.empty(),
+                playerSetup = PlayerSetup(
+                    black = SidePlayerSetup(controller = SeatController.Ai),
+                    white = SidePlayerSetup(controller = SeatController.Human),
+                ),
+                searchTimeSettings = SearchTimeSettings(),
+                reviewCandidateMoves = emptyList(),
+            ),
+        )
+
+        assertFalse(initial.applyAutoAiTurnRequestPlan(AutoAiTurnRequestPlan.Skip).isPending)
+        assertTrue(scheduled.isPending)
+        assertTrue(
+            scheduled
+                .applyAutoAiTurnScheduleValidationPlan(AutoAiTurnScheduleValidationPlan.Continue(runPlan))
+                .isPending,
+        )
+        assertFalse(
+            scheduled
+                .applyAutoAiTurnScheduleValidationPlan(AutoAiTurnScheduleValidationPlan.Cancel)
+                .isPending,
+        )
+        assertFalse(scheduled.completeAutoAiTurnRun().isPending)
+    }
+
+    @Test
     fun autoAiTurnRequestPlanSkipsWhenAlreadyPending() {
         val plan = buildAutoAiTurnRequestPlan(
             isGameEnded = false,
