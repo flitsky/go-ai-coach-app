@@ -1122,3 +1122,7 @@
 - 코드 재검토 결과 `kata-set-param maxTime`은 process 전역 파라미터이고, 현재 adapter의 `applySearchLimit()`은 `timeMillis=null`일 때 `maxTime`을 명시적으로 해제하지 않는다. 따라서 time cap ON/OFF가 종국 GTP 명령에 간접 영향을 줬을 가능성이 있으며, 이 부분은 같은 board에서 `maxTime` 값을 바꿔가며 추가 검증해야 한다.
 - 맥북 KataGo 1.16.4에서 한 debug report 수순을 재생하고 `maxTime=0.5/2/10/미설정`으로 `final_status_list dead`와 `final_score`를 비교했다. 해당 수순에서는 모두 약 1~3초대라 폰의 47초 지연은 재현되지 않았다. 다만 폰의 특정 국면/기기/엔진 상태 조합에서는 여전히 장시간 종국 명령이 발생하므로 앱 UX는 별도 안전장치가 필요하다.
 - 최종 절충안은 “기본 종국은 5초 SLA의 부심 판정, 무제한 주심 분석은 사용자가 `이의 제기: 주심 분석 요구`를 누를 때만 실행”으로 정리했다. 몰래 백그라운드 주심은 두지 않는다. 주심 작업에는 match/session generation id를 붙이고 새 게임/무르기/ruleset 변경/앱 종료 시 취소하거나 결과를 폐기한다.
+- 사용자가 위 논의가 문서에만 남지 않고 엔진부 추가 튜닝 시 코드 인터페이스 구간에서도 바로 보이게 해달라고 요청했다.
+- `EngineCoreApi.configure()` KDoc에 KataGo GTP의 `maxTime`이 process 전역 파라미터이며 `timeMillis=null` 처리는 adapter가 명시적으로 검토해야 한다고 남겼다. `deadStones()`와 `scoreFinal()` KDoc에는 raw 엔진 primitive는 유지하되 기본 pass/pass UX에서는 5초 부심 SLA로 감싸고, 무제한 주심 분석은 사용자 이의 제기와 session generation 격리 뒤에서만 실행해야 한다고 명시했다.
+- `AnalysisLimit.timeMillis`에는 최대 시간 cap이지 최소 사고시간 보장이 아니며, stateful engine의 process-global time 설정은 별도 reset/documentation이 필요하다고 주석을 추가했다.
+- `KataGoProcessEngineAdapter.applySearchLimit()`에는 `timeMillis=null`일 때 `maxTime` replacement command를 보내지 않는 현재 구현의 확인 과제를 적었다. `EndgameResolver`와 `EngineSessionClient.resolveEndgameForState()`에도 raw 종국 조합 경로를 기본 UI에 무제한으로 연결하지 말고 5초 부심/명시적 주심 정책 뒤에 두라는 주석을 추가했다.

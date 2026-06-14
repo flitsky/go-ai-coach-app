@@ -551,6 +551,13 @@ class KataGoProcessEngineAdapter(
 
     private fun applySearchLimit(limit: AnalysisLimit) {
         sendCommand(KataGoProtocolCommands.setMaxVisits(limit.visits))
+        // KataGo GTP maxTime is process-global. When timeMillis is null we
+        // intentionally do not send a replacement command here, so engine
+        // tuning work must verify whether the previous maxTime remains active,
+        // whether KataGo treats the missing value as uncapped for the next
+        // command, and how that affects final_status_list/final_score. Default
+        // pass/pass UX must be wrapped by the application endgame SLA instead
+        // of relying on this low-level state.
         limit.timeMillis?.let { timeMillis ->
             sendCommand(KataGoProtocolCommands.setMaxTime(timeMillis))
         }

@@ -18,6 +18,16 @@ package com.worksoc.goaicoach.shared
  */
 interface EngineCoreApi {
     suspend fun initialize(profile: EngineProfile): EngineStatus
+
+    /**
+     * Applies runtime engine profile settings.
+     *
+     * KataGo GTP maps `analysisLimit.timeMillis` to process-global `maxTime`,
+     * not just to a single analysis call. Treat `timeMillis = null` as a
+     * policy decision that requires explicit implementation review: it may
+     * leave prior engine-global time settings in place unless the concrete
+     * adapter actively resets them.
+     */
     suspend fun configure(profile: EngineProfile): EngineStatus
     suspend fun newGame(boardSize: BoardSize, ruleset: Ruleset): EngineStatus
     suspend fun playMove(move: Move): EngineStatus
@@ -40,7 +50,30 @@ interface EngineCoreApi {
         EngineStatus.ready("Engine search cache unchanged.")
     suspend fun analyze(limit: AnalysisLimit): AnalysisResult
     suspend fun estimateScore(limit: AnalysisLimit): ScoreEstimate
+
+    /**
+     * Raw engine dead-stone primitive.
+     *
+     * Product UX must not call this as an unbounded blocking operation during
+     * default pass/pass scoring. The current endgame policy is:
+     *
+     * - assistant judge: show a result within a 5s endgame SLA, even when the
+     *   normal search-time cap is off;
+     * - chief judge: run unbounded or long analysis only after an explicit user
+     *   objection, isolated by match/session generation or a separate worker.
+     *
+     * If a GTP command is timed out, restart or resync the process before
+     * reusing it because a late response can corrupt the command stream.
+     */
     suspend fun deadStones(): DeadStonesResult
+
+    /**
+     * Raw engine final-score primitive.
+     *
+     * Keep this as diagnostic/core API, but apply the same assistant/chief
+     * judge policy described on [deadStones] before using it in user-facing
+     * pass/pass scoring.
+     */
     suspend fun scoreFinal(): FinalScoreResult
     suspend fun stop(): EngineStatus
 }
@@ -121,6 +154,14 @@ enum class EngineState {
 
 data class AnalysisLimit(
     val visits: Int = 64,
+    /**
+     * Maximum search time in milliseconds.
+     *
+     * This is a cap, not a minimum thinking-time guarantee. `null` means the
+     * app policy is requesting no cap for the analysis operation, but stateful
+     * engines may also have process-global time settings that must be reset or
+     * documented explicitly.
+     */
     val timeMillis: Long? = null,
     val candidateCount: Int = 5,
     val includePolicy: Boolean = true,

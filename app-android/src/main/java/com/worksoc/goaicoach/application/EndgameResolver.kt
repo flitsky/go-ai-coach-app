@@ -129,6 +129,13 @@ internal suspend fun resolveAiEndgame(
     prePassCandidates: List<CandidateMove> = emptyList(),
     syncReplayMs: Long? = null,
 ): AiEndgameResolution {
+    // This resolver composes raw engine primitives and local scoring. It is not
+    // the product SLA boundary by itself. Default pass/pass UX should call this
+    // through the assistant-judge policy: show a result within 5s even if the
+    // user's normal search-time cap is off. Unbounded chief-judge analysis is
+    // allowed only after an explicit user objection, isolated by match/session
+    // generation or a separate engine worker so New Game/Undo cannot receive a
+    // stale result.
     val resolverStartMillis = System.currentTimeMillis()
     var deadStonesResult: DeadStonesResult? = null
     var deadStonesError: String? = null

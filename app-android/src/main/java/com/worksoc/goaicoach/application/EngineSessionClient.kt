@@ -103,6 +103,14 @@ internal interface EngineSessionClient {
         syncFirst: Boolean,
     ): ScoreEstimate
 
+    /**
+     * Raw endgame composition entry point for a prepared game snapshot.
+     *
+     * Do not wire this directly to default pass/pass UI as an unbounded call.
+     * Default scoring should go through the 5s assistant-judge SLA. Unbounded
+     * chief-judge scoring belongs behind an explicit user objection and must
+     * discard results when the match/session generation changes.
+     */
     suspend fun resolveEndgameForState(
         state: GameState,
         profile: EngineProfile,
