@@ -417,6 +417,45 @@ class TopMovesApplicationTest {
     }
 
     @Test
+    fun launchRequestBuildsTheSameCachedAnalysisPlanAsExpandedArguments() {
+        val state = GameState.empty()
+        val candidate = CandidateMove(
+            move = Move.Play(
+                player = StoneColor.Black,
+                coordinate = BoardCoordinate.fromLabel("E5", BoardSize.Nine),
+            ),
+            pointLoss = 0.0,
+        )
+        val snapshot = MoveAnalysisSnapshot.from(state = state, candidates = listOf(candidate))
+        val plan = buildTopMoveAnalysisPlan(
+            targetState = state,
+            engineProfile = EngineProfile(),
+            analysisPreset = AnalysisPreset.Lite,
+            deep = false,
+        )
+        val cached = CachedAnalysisResult(snapshot = snapshot, candidateText = "cached text")
+
+        val launchPlan = buildTopMoveAnalysisLaunchPlan(
+            request = TopMoveAnalysisLaunchRequest(
+                targetState = state,
+                engineProfile = EngineProfile(),
+                analysisPreset = AnalysisPreset.Lite,
+                deep = false,
+                automatic = false,
+                topMovesEnabled = true,
+                currentCandidateMoves = emptyList(),
+                reviewAnalysis = MoveAnalysisSnapshot.empty(state),
+                lastAnalysisKey = null,
+            ),
+            cachedResultFor = { key -> cached.takeIf { key == plan.analysisKey } },
+        )
+
+        assertTrue(launchPlan is TopMoveAnalysisLaunchPlan.UseCached)
+        assertEquals(plan.analysisKey, (launchPlan as TopMoveAnalysisLaunchPlan.UseCached).analysisKey)
+        assertEquals(1, launchPlan.update.candidateMoves.size)
+    }
+
+    @Test
     fun undoAnalysisRestoreCacheStoresOnlyCompleteRootVisitResults() {
         val state = GameState.empty()
         val candidate = CandidateMove(

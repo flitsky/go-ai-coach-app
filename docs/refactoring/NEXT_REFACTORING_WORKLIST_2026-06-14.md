@@ -508,3 +508,39 @@
 5. Top Moves workflow runner 준비
    - Top Moves 분석 경로도 operation request, cache hit, engine run, stale discard, review update가 한 곳에 몰려 있다.
    - 바로 이동하기 전에 cache policy와 UI display update 입력을 request object로 묶는다.
+
+## 2026-06-15 추가 진행 로그: Observer/Policy/Runner 파일 분리
+
+- 2026-06-15: `DiagnosticEventObserverApplication.kt`를 추가했다. `runObservedEngineOperation()`과 `NoopDiagnosticEventLog`는 observer 파일로 이동했고, `DiagnosticEventApplication.kt`는 diagnostic event builder만 담당한다.
+- 2026-06-15: `GameAutomationApplication.kt`를 제거했다. 자동 AI는 `AutoAiPolicyApplication.kt`(request/schedule/execution context), `AutoAiRunnerApplication.kt`(display/engine runner/endgame runner), `AutoAiCompletionApplication.kt`(operation token/stale completion)로 분리됐다.
+- 2026-06-15: `ScoreSyncCompletionApplication.kt`를 추가해 score sync completion guard를 display 파일에서 분리했다.
+- 2026-06-15: `ScoreEstimateRunnerApplication.kt`를 추가해 score estimate, scoring rule sync, restored game sync runner를 display 파일에서 분리했다.
+- 2026-06-15: `TopMoveAnalysisLaunchRequest`를 추가했다. Top Moves launch 판단의 흩어진 입력을 하나의 request object로 묶어 다음 workflow runner 분리의 입력 경계를 만들었다.
+- 2026-06-15: `LayeringContractTest`에 `AutoAiPolicyApplication.kt`, `AutoAiRunnerApplication.kt`, `DiagnosticEventObserverApplication.kt`, `ScoreEstimateRunnerApplication.kt`, `ScoreSyncCompletionApplication.kt`, `TopMovesApplication.kt`를 추가했다.
+- 검증: `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest --tests 'com.worksoc.goaicoach.application.DiagnosticEventApplicationTest' --tests 'com.worksoc.goaicoach.application.GameAutomationApplicationTest' --tests 'com.worksoc.goaicoach.application.ScoreDisplayApplicationTest' --tests 'com.worksoc.goaicoach.application.TopMovesApplicationTest' --tests 'com.worksoc.goaicoach.architecture.LayeringContractTest'` 통과, `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test` 통과.
+
+## 현재 리팩토링 완성도 평가
+
+- 주관 점수: 98.4/100.
+- 상향 요인: application 계층 파일 경계가 실제 workflow 책임 단위로 훨씬 선명해졌다. 특히 자동 AI는 기존 단일 파일에서 policy/runner/completion 3분할로 정리됐고, score display도 display/runner/completion으로 나뉘었다.
+- 남은 감점 요인: `GoCoachApp.kt`의 auto AI coroutine block, Top Moves engine run/failure/stale apply, score sync execution apply helper가 아직 UI-local이다. 파일 분리는 좋아졌지만 “실행 orchestration” 자체는 한 단계 더 옮겨야 한다.
+
+## 다음 추천 리팩토링 항목
+
+1. Auto AI workflow local helper 추출
+   - `GoCoachApp.kt`의 auto AI success/failure/endgame completion apply 블록을 local helper 함수로 먼저 쪼갠다.
+   - callback class runner로 바로 이동하기 전에 state mutation 경계를 안정화한다.
+
+2. Top Moves completion plan 도입
+   - Top Moves success/failure/stale 결과도 `TopMoveAnalysisCompletionPlan`으로 통일한다.
+   - cache update, undo restore update, displayed candidate update 적용 순서를 application test로 고정한다.
+
+3. Score sync execution helper 도입
+   - `ScoreSyncCompletionRequest`를 입력으로 삼아 post-undo/scoring/restored sync의 success/failure/discard apply 반복을 줄인다.
+   - post-undo quiet delay는 별도 유지한다.
+
+4. Application 파일 KMP 이동 가능성 재평가
+   - `AutoAiCompletionApplication.kt`, `ScoreSyncCompletionApplication.kt`, `DiagnosticEventModel.kt`는 shared/middleware 물리 이동 후보로 다시 평가한다.
+
+5. `GoCoachApp.kt` workflow ownership metric 추가
+   - 줄 수만 보지 말고 Top Moves/Auto AI/Score Sync 별 UI-owned branch 수를 문서화한다.

@@ -82,6 +82,18 @@ internal data class TopMoveAnalysisLaunchStateUpdate(
     val effect: GameSessionEffect.RunTopMoveAnalysis? = null,
 )
 
+internal data class TopMoveAnalysisLaunchRequest(
+    val targetState: GameState,
+    val engineProfile: EngineProfile,
+    val analysisPreset: AnalysisPreset,
+    val deep: Boolean,
+    val automatic: Boolean,
+    val topMovesEnabled: Boolean,
+    val currentCandidateMoves: List<CandidateMove>,
+    val reviewAnalysis: MoveAnalysisSnapshot,
+    val lastAnalysisKey: AnalysisCacheKey?,
+)
+
 internal fun topMoveAnalysisOperationToken(
     targetState: GameState,
     plan: TopMoveAnalysisPlan,
@@ -187,6 +199,23 @@ internal fun buildTopMoveAnalysisPlan(
 }
 
 internal fun buildTopMoveAnalysisLaunchPlan(
+    request: TopMoveAnalysisLaunchRequest,
+    cachedResultFor: (AnalysisCacheKey) -> CachedAnalysisResult?,
+): TopMoveAnalysisLaunchPlan =
+    buildTopMoveAnalysisLaunchPlan(
+        targetState = request.targetState,
+        engineProfile = request.engineProfile,
+        analysisPreset = request.analysisPreset,
+        deep = request.deep,
+        automatic = request.automatic,
+        topMovesEnabled = request.topMovesEnabled,
+        currentCandidateMoves = request.currentCandidateMoves,
+        reviewAnalysis = request.reviewAnalysis,
+        lastAnalysisKey = request.lastAnalysisKey,
+        cachedResultFor = cachedResultFor,
+    )
+
+internal fun buildTopMoveAnalysisLaunchPlan(
     targetState: GameState,
     engineProfile: EngineProfile,
     analysisPreset: AnalysisPreset,
@@ -240,15 +269,17 @@ internal fun GameSessionControllerState.toTopMoveAnalysisLaunchPlan(
     cachedResultFor: (AnalysisCacheKey) -> CachedAnalysisResult?,
 ): TopMoveAnalysisLaunchPlan =
     buildTopMoveAnalysisLaunchPlan(
-        targetState = targetState,
-        engineProfile = core.runtimeState.engineProfile,
-        analysisPreset = core.runtimeState.analysisPreset,
-        deep = deep,
-        automatic = automatic,
-        topMovesEnabled = settings.topMovesEnabled,
-        currentCandidateMoves = core.analysisState.candidateMoves,
-        reviewAnalysis = core.analysisState.reviewAnalysis,
-        lastAnalysisKey = core.analysisState.lastAnalysisKey,
+        request = TopMoveAnalysisLaunchRequest(
+            targetState = targetState,
+            engineProfile = core.runtimeState.engineProfile,
+            analysisPreset = core.runtimeState.analysisPreset,
+            deep = deep,
+            automatic = automatic,
+            topMovesEnabled = settings.topMovesEnabled,
+            currentCandidateMoves = core.analysisState.candidateMoves,
+            reviewAnalysis = core.analysisState.reviewAnalysis,
+            lastAnalysisKey = core.analysisState.lastAnalysisKey,
+        ),
         cachedResultFor = cachedResultFor,
     )
 

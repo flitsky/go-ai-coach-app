@@ -6,11 +6,16 @@
 ## 현재 지표
 
 - `GoCoachApp.kt`: 2,211줄
-- `GameAutomationApplication.kt`: 503줄
+- `AutoAiPolicyApplication.kt`: 243줄
+- `AutoAiRunnerApplication.kt`: 268줄
 - `AutoAiCompletionApplication.kt`: 161줄
-- `ScoreDisplayApplication.kt`: 469줄
-- `DiagnosticEventApplication.kt`: 216줄
+- `ScoreDisplayApplication.kt`: 257줄
+- `ScoreEstimateRunnerApplication.kt`: 119줄
+- `ScoreSyncCompletionApplication.kt`: 101줄
+- `TopMovesApplication.kt`: 437줄
+- `DiagnosticEventApplication.kt`: 172줄
 - `DiagnosticEventModel.kt`: 109줄
+- `DiagnosticEventObserverApplication.kt`: 46줄
 
 `GoCoachApp.kt` 줄 수는 아직 크다. 하지만 현재 가장 중요한 평가지표는 단순 줄 수가 아니라, UI 파일이 engine operation의 성공/실패/stale 정책을 직접 판단하는 비율이다.
 
@@ -106,9 +111,14 @@
 | 파일 | 제약 | 선행 작업 |
 | --- | --- | --- |
 | `DiagnosticEventModel.kt` | application model only | 2026-06-15 분리 완료. severity/event/export policy/sink plan은 coroutine 의존 없이 관리된다. |
-| `DiagnosticEventApplication.kt` | `kotlinx.coroutines.TimeoutCancellationException` 의존 | observer와 diagnostic event builder만 남았다. 다음 단계에서 observer만 별도 runner 파일로 분리 가능하다. |
-| `ScoreDisplayApplication.kt` | `match.MatchMode`, `BoardScorer`, `ScoreTimeline` 의존 | score display model과 engine runner를 분리한다. runner는 app-service, display math는 shared/middleware 후보. |
-| `GameAutomationApplication.kt` | `match`, `shared`, score display, engine runner 의존이 섞임 | completion plan은 `AutoAiCompletionApplication.kt`로 분리 완료. 남은 request/schedule/display runner를 추가 분리한다. |
+| `DiagnosticEventApplication.kt` | diagnostic builder only | 2026-06-15 observer 분리 완료. event builder 파일로 축소됐다. |
+| `DiagnosticEventObserverApplication.kt` | `kotlinx.coroutines.TimeoutCancellationException` 의존 | observer 책임만 보유한다. coroutine 정책이 허용되는 middleware/app-service 후보로 분류한다. |
+| `ScoreDisplayApplication.kt` | `match.MatchMode`, `BoardScorer`, `ScoreTimeline` 의존 | score request/display/local/final score display 중심으로 축소됐다. |
+| `ScoreEstimateRunnerApplication.kt` | engine session client 의존 | engine call orchestration만 보유한다. app-service runner 후보로 유지한다. |
+| `ScoreSyncCompletionApplication.kt` | engine operation guard 의존 | sync result completion guard만 보유한다. KMP 이동 후보에 가깝다. |
+| `AutoAiPolicyApplication.kt` | `match`, `shared` 의존 | auto AI request/schedule/execution context policy로 분리 완료. |
+| `AutoAiRunnerApplication.kt` | engine session client, score display 의존 | auto AI engine call/display runner로 분리 완료. app-service runner 후보로 유지한다. |
+| `AutoAiCompletionApplication.kt` | engine operation guard 의존 | auto AI result completion guard만 보유한다. KMP 이동 후보에 가깝다. |
 
 ### 이동 보류 후보
 
@@ -119,11 +129,11 @@
 
 ## 다음 작업 제안
 
-1. `GameAutomationApplication.kt`를 `AutoAiTurnPolicy`와 `AutoAiTurnRunner` 성격으로 추가 분리한다.
-2. `DiagnosticEventApplication.kt`에서 coroutine observer(`runObservedEngineOperation`, noop log)를 별도 파일로 분리한다.
-3. `ScoreDisplayApplication.kt`에서 score sync completion plan과 runner effect를 분리한다.
-4. `GoCoachApp.kt`에 남은 workflow별 local helper를 `ui/workflow` 또는 application app-service helper로 이동할 후보를 확정한다.
-5. 위 분리 후 KMP 이동 후보 파일에 architecture test를 추가한다.
+1. `GoCoachApp.kt` auto AI coroutine block에서 completion apply/endgame apply/follow-up request local helper를 추출한다.
+2. Top Moves workflow의 engine run/failure/stale apply도 completion plan 패턴으로 정리한다.
+3. Score sync workflow는 `ScoreSyncCompletionRequest`를 입력으로 받는 execution helper를 추가한다.
+4. 새 application 파일들을 shared/KMP 또는 middleware module로 물리 이동할 후보를 다시 평가한다.
+5. `GoCoachApp.kt` 줄 수보다 workflow ownership을 기준으로 UI-local helper를 계속 줄인다.
 
 ## 2026-06-15 리팩토링 반영 사항
 
@@ -131,3 +141,11 @@
 - `AutoAiCompletionApplication.kt`를 추가해 auto AI turn/endgame operation token, stale guard, completion plan을 `GameAutomationApplication.kt`에서 분리했다.
 - `ScoreSyncCompletionRequest`를 추가해 score sync success/failure completion 입력을 하나의 request object로 묶었다. 다음 score sync runner 추출 시 이 객체가 application 경계 입력이 된다.
 - test fake `DiagnosticEventExternalSinkPort`를 추가해 사용자 동의 기반 외부 전송 경로를 실제 transport 없이 검증할 수 있게 했다.
+
+## 2026-06-15 4차 리팩토링 반영 사항
+
+- `DiagnosticEventObserverApplication.kt`를 추가해 `runObservedEngineOperation()`과 `NoopDiagnosticEventLog`를 diagnostic event builder에서 분리했다.
+- `GameAutomationApplication.kt`를 제거하고 `AutoAiPolicyApplication.kt`, `AutoAiRunnerApplication.kt`, `AutoAiCompletionApplication.kt` 3개 책임 파일로 재구성했다.
+- `ScoreSyncCompletionApplication.kt`와 `ScoreEstimateRunnerApplication.kt`를 추가해 score sync completion guard와 score estimate/scoring/restored runner를 `ScoreDisplayApplication.kt`에서 분리했다.
+- `TopMoveAnalysisLaunchRequest`를 추가해 Top Moves launch 판단 입력을 하나의 request object로 묶었다. 아직 engine run workflow는 UI에 남아 있지만 다음 runner 추출의 입력 경계가 생겼다.
+- `LayeringContractTest`에 신규 application 파일들을 추가해 Android/UI/persistence/engine runtime 의존이 들어오지 못하도록 고정했다.
