@@ -1247,3 +1247,5 @@
 - `DiagnosticEventApplicationTest`를 보강했고 JDK 17/Android SDK 환경에서 관련 diagnostic 테스트가 통과했다.
 - 2단계로 middleware 물리 경계 정리를 진행했다. `middleware/PositionAnalysisGateway.kt`를 추가해 read-only position analysis 요청/응답/gateway 계약을 `shared` DTO만 의존하는 KMP-ready 경계로 정의했다.
 - `LayeringContractTest`에 `PositionAnalysisGateway`가 Android/application/UI/persistence/engine runtime을 import하지 못하도록 회귀 방지 테스트를 추가했고 관련 architecture 테스트가 통과했다.
+- 3단계로 읽기 전용 remote position analysis spike를 추가했다. `RemotePositionAnalysisGateway`, `RemotePositionAnalysisTransport`, `RemotePositionAnalysisRequest/Response`를 middleware 패키지에 추가해 원격 분석이 명시적 `GameState + AnalysisLimit + EngineSearchMode` 요청만 처리하도록 했다. genmove/play/undo는 포함하지 않아 offline local play와 분리된다.
+- `RemotePositionAnalysisGatewayTest`를 추가해 remote gateway가 position fingerprint를 포함한 명시적 요청을 transport로 전달하고 `PositionAnalysisBackend.Remote` 응답으로 변환하는 것을 검증했다. 관련 middleware 테스트가 통과했다.
