@@ -117,6 +117,7 @@ import com.worksoc.goaicoach.application.runtimeAutoPlayDelayChangeLog
 import com.worksoc.goaicoach.application.runtimeEngineGameStartFailureLog
 import com.worksoc.goaicoach.application.runtimeEngineGameStartRequestLog
 import com.worksoc.goaicoach.application.runtimeEngineGameStartSuccessLog
+import com.worksoc.goaicoach.application.runtimeEngineOperationDiscardedLog
 import com.worksoc.goaicoach.application.runtimeGameResetLog
 import com.worksoc.goaicoach.application.runtimeHumanEngineSyncFailureLog
 import com.worksoc.goaicoach.application.runtimeHumanEngineSyncSuccessLog
@@ -384,6 +385,15 @@ private fun GoCoachScreen(
             isEngineBusy = isEngineBusy,
             analysisCacheStats = "${analysisCache.statsText()}, ${undoAnalysisRestoreCache.statsText()}",
             turnTimeText = turnTimeState.runtimeText(),
+        )
+    }
+
+    fun appendEngineOperationDiscardLog(discard: EngineOperationResultGuard.Discard) {
+        runtimeEventLog.append(
+            runtimeEngineOperationDiscardedLog(
+                context = currentRuntimeLogContext(),
+                discard = discard,
+            ),
         )
     }
 
@@ -844,7 +854,7 @@ private fun GoCoachScreen(
                     )
                 }
             }.onSuccess { update ->
-                when (
+                when (val guard =
                     evaluateTopMoveAnalysisResultGuard(
                         token = operationToken,
                         currentState = gameState,
@@ -860,10 +870,10 @@ private fun GoCoachScreen(
                             analysisCache.put(plan.analysisKey, cached)
                         }
                     }
-                    is EngineOperationResultGuard.Discard -> Unit
+                    is EngineOperationResultGuard.Discard -> appendEngineOperationDiscardLog(guard)
                 }
             }.onFailure { error ->
-                when (
+                when (val guard =
                     evaluateTopMoveAnalysisResultGuard(
                         token = operationToken,
                         currentState = gameState,
@@ -877,7 +887,7 @@ private fun GoCoachScreen(
                             clearTopMoveSpots("Top Moves analysis failed.")
                         }
                     }
-                    is EngineOperationResultGuard.Discard -> Unit
+                    is EngineOperationResultGuard.Discard -> appendEngineOperationDiscardLog(guard)
                 }
             }
             isEngineBusy = false
@@ -1116,17 +1126,17 @@ private fun GoCoachScreen(
                     )
                 }
             }.onSuccess { score ->
-                when (
+                when (val guard =
                     evaluateScoreEstimateResultGuard(
                         token = operationToken,
                         currentState = gameState,
                     )
                 ) {
                     EngineOperationResultGuard.Apply -> applyScoreEstimateDisplayPlan(score)
-                    is EngineOperationResultGuard.Discard -> Unit
+                    is EngineOperationResultGuard.Discard -> appendEngineOperationDiscardLog(guard)
                 }
             }.onFailure { error ->
-                when (
+                when (val guard =
                     evaluateScoreEstimateResultGuard(
                         token = operationToken,
                         currentState = gameState,
@@ -1136,7 +1146,7 @@ private fun GoCoachScreen(
                         engineMessage = error.message ?: "Score estimate failed."
                         scoreState = scoreState.copy(scoreEstimate = null)
                     }
-                    is EngineOperationResultGuard.Discard -> Unit
+                    is EngineOperationResultGuard.Discard -> appendEngineOperationDiscardLog(guard)
                 }
             }
             isEngineBusy = false
@@ -1330,7 +1340,7 @@ private fun GoCoachScreen(
                             )
                         }
                     }.onSuccess { display ->
-                        when (
+                        when (val guard =
                             evaluateAutoAiTurnResultGuard(
                                 token = turnOperationToken,
                                 currentState = gameState,
@@ -1374,7 +1384,7 @@ private fun GoCoachScreen(
                                             }
                                         ) {
                                             is AutoAiTurnEndgameDisplayPlan.Resolved -> {
-                                                when (
+                                                when (val guard =
                                                     evaluateAutoAiEndgameResultGuard(
                                                         token = endgameOperationToken,
                                                         currentState = gameState,
@@ -1390,12 +1400,12 @@ private fun GoCoachScreen(
                                                         )
                                                         applyFinalScoreDisplayPlan(endgameDisplay.display)
                                                     }
-                                                    is EngineOperationResultGuard.Discard -> Unit
+                                                    is EngineOperationResultGuard.Discard -> appendEngineOperationDiscardLog(guard)
                                                 }
                                             }
 
                                             is AutoAiTurnEndgameDisplayPlan.Failed -> {
-                                                when (
+                                                when (val guard =
                                                     evaluateAutoAiEndgameResultGuard(
                                                         token = endgameOperationToken,
                                                         currentState = gameState,
@@ -1411,17 +1421,17 @@ private fun GoCoachScreen(
                                                         )
                                                         applyEndgameFailureDisplayPlan(endgameDisplay.display)
                                                     }
-                                                    is EngineOperationResultGuard.Discard -> Unit
+                                                    is EngineOperationResultGuard.Discard -> appendEngineOperationDiscardLog(guard)
                                                 }
                                             }
                                         }
                                     }
                                 }
                             }
-                            is EngineOperationResultGuard.Discard -> Unit
+                            is EngineOperationResultGuard.Discard -> appendEngineOperationDiscardLog(guard)
                         }
                     }.onFailure { error ->
-                        when (
+                        when (val guard =
                             evaluateAutoAiTurnResultGuard(
                                 token = turnOperationToken,
                                 currentState = gameState,
@@ -1439,7 +1449,7 @@ private fun GoCoachScreen(
                                 )
                                 applyAutoAiTurnFailureDisplayPlan(error)
                             }
-                            is EngineOperationResultGuard.Discard -> Unit
+                            is EngineOperationResultGuard.Discard -> appendEngineOperationDiscardLog(guard)
                         }
                     }
                     isEngineBusy = false

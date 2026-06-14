@@ -1195,3 +1195,7 @@
 - 사용자가 학습용 힌트 때문에 앱이 과도하게 무거워져서는 안 되며, 한 엔진을 공유하면서 cache/tree 초기화를 반복하는 대신 엔진을 2개 띄워 각자 관심사와 engine-side cache를 유지하는 방식이 어떤지 질문했다.
 - 현재 코드의 한계는 AI-vs-AI가 한 GTP 프로세스를 공유하기 때문에 B16/B32/B64 공정성 검증 시 `clearSearchCache()`가 필요하다는 점이다. 반면 사람-vs-AI에서는 같은 AI의 이전 탐색 재사용이 속도와 강도 면에서 이득이므로 유지하는 것이 맞다.
 - `ENGINE_API_CALL_POLICY.md`에 역할별 다중 엔진 인스턴스 검토를 추가했다. `PlayEngine`은 빠른 대국과 AI 착수를 담당하고, `CoachEngine`은 사용자가 학습 분석을 켠 경우에만 lazy start하여 후보수/착수 리뷰/eval을 담당하는 방향이다. 다만 모바일 기본값으로 항상 2개를 띄우는 것은 메모리, 초기화 지연, CPU contention, 발열 비용 때문에 권장하지 않는다.
+- 사용자가 엔진 다중화 논의는 나중에 다시 하기로 하고 다음 리팩토링을 먼저 진행해 달라고 요청했다.
+- `ENGINE_API_CALL_POLICY.md`에 다중 엔진/CoachEngine/원격 coach analysis 전환은 지금 구현하지 않고, Top Moves를 학습용 JSON coach 경로로 전환하는 시점에 재논의한다고 명시했다.
+- 다음 리팩토링으로 stale result discard 관측성을 보강했다. `runtimeEngineOperationDiscardedLog()`를 추가하고, `GoCoachApp.kt`의 Top Moves, score estimate, 자동 AI 턴, 자동 AI 종국 stale discard 분기를 공통 로그 helper로 연결했다. 이제 늦게 도착한 엔진 결과가 폐기될 때 화면은 바꾸지 않지만 runtime event에는 원인과 현재 board summary가 남는다.
+- `RuntimeEventApplicationTest`에 stale discard 로그 테스트를 추가했고, 관련 application 테스트를 JDK 17/Android SDK 환경에서 실행해 통과했다.

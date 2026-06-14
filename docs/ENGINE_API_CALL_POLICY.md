@@ -125,6 +125,8 @@ JSON 기반 운영의 목표는 다음과 같다.
 
 즉 다중 엔진은 좋은 방향이지만 “항상 켜지는 기본값”이 아니라 “학습/검증 모드에서 켜지는 역할별 resource policy”로 설계한다.
 
+2026-06-14 운영 결정: 다중 엔진 인스턴스, CoachEngine, 원격 coach analysis 전환은 지금 바로 구현하지 않는다. 현재 우선순위는 session/controller/effect/diagnostic 리팩토링을 더 안정화하는 것이다. 이 주제는 Top Moves를 학습용 JSON coach 경로로 전환하는 시점에 다시 논의한다.
+
 ## 현재 구현 범위
 
 2026-06-13 현재 모바일 기본 구현은 성능을 우선하되, B16/B32/B64 time cap은 사용자가 `Search Time` 메뉴에서 조정할 수 있다. 또한 `Time cap Off`를 선택하면 `AnalysisLimit.timeMillis=null`로 내려가 응답시간 제한 없이 요청 visits 충족을 우선한다.

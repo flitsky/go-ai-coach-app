@@ -235,7 +235,7 @@ data class EngineOperationRequest(
 
 첫 구현은 거창할 필요 없다. 최소한 자동 AI 턴과 종국 resolve에 operation id와 generation을 붙이는 것부터 시작한다.
 
-2026-06-14 진행 상태: 공통 `PositionScopedOperationToken`과 `EngineOperationResultGuard`를 추가했고, Top Moves 분석 결과 적용 경로에 먼저 연결했다. 아직 자동 AI 턴, 종국 resolve, score estimate에는 동일한 guard가 적용되지 않았다.
+2026-06-14 진행 상태: 공통 `PositionScopedOperationToken`과 `EngineOperationResultGuard`를 추가했고, Top Moves, score estimate, 자동 AI 턴, 자동 AI pass/pass 종국 경로에 적용했다. stale 결과는 화면 상태를 덮어쓰지 않으며, 이후 `runtimeEngineOperationDiscardedLog()`로 runtime event에도 남긴다. 아직 operation id, session generation, 명시적 timeout/fallback policy를 가진 완전한 `EngineOperationRequest` 모델은 남아 있다.
 
 ### 2순위: ResolveAutoAiEndgame effect runner 분리
 

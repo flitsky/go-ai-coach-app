@@ -86,6 +86,25 @@ class RuntimeEventApplicationTest {
     }
 
     @Test
+    fun engineOperationDiscardedLogExplainsStaleResultReason() {
+        val currentState = GameState.empty()
+            .play(Move.Pass(StoneColor.Black))
+        val log = runtimeEngineOperationDiscardedLog(
+            context = runtimeContext(gameState = currentState),
+            discard = EngineOperationResultGuard.Discard(
+                reason = "top_moves_analysis result is stale: requested move=0, current move=1.",
+            ),
+        )
+
+        assertTrue(log.startsWith("event=engine_operation_discarded phase=engine_operation"))
+        assertTrue(log.contains("discardReason=top_moves_analysis result is stale"))
+        assertTrue(log.contains("requested move=0"))
+        assertTrue(log.contains("current move=1"))
+        assertTrue(log.contains("current=size=9 ruleset=Japanese moves=1 next=White"))
+        assertTrue(log.contains("transition="))
+    }
+
+    @Test
     fun humanMoveAcceptedLogExplainsMoveAndNextTransition() {
         val beforeMove = GameState.empty()
         val result = applyHumanMoveLocally(
