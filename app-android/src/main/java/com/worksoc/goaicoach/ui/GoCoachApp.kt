@@ -69,6 +69,7 @@ import com.worksoc.goaicoach.application.applyTopMoveAnalysisLaunchPlan
 import com.worksoc.goaicoach.application.evaluateEngineBenchmarkGate
 import com.worksoc.goaicoach.application.evaluateScoringRuleChangeGate
 import com.worksoc.goaicoach.application.evaluateSearchTimeChangeGate
+import com.worksoc.goaicoach.application.evaluateScoreEstimateResultGuard
 import com.worksoc.goaicoach.application.evaluateTopMoveAnalysisResultGuard
 import com.worksoc.goaicoach.application.FinalScoreDisplayPlan
 import com.worksoc.goaicoach.application.GameSessionResetPlan
@@ -125,6 +126,7 @@ import com.worksoc.goaicoach.application.toTopMoveAnalysisLaunchPlan
 import com.worksoc.goaicoach.application.ShowTopMovesPlan
 import com.worksoc.goaicoach.application.ScoreEstimateDisplayPlan
 import com.worksoc.goaicoach.application.ScoreEstimateRequestPlan
+import com.worksoc.goaicoach.application.scoreEstimateOperationToken
 import com.worksoc.goaicoach.application.SavedGameRestorePlan
 import com.worksoc.goaicoach.application.SavedGameRestoreRequestPlan
 import com.worksoc.goaicoach.application.SavedGamePersistencePlan
@@ -1099,6 +1101,7 @@ private fun GoCoachScreen(
     }
 
     fun requestEngineScoreEstimate(plan: ScoreEstimateRequestPlan.RequestEngineEstimate) {
+        val operationToken = scoreEstimateOperationToken(plan)
         scope.launch {
             isEngineBusy = true
             runCatching {
@@ -1109,10 +1112,28 @@ private fun GoCoachScreen(
                     )
                 }
             }.onSuccess { score ->
-                applyScoreEstimateDisplayPlan(score)
+                when (
+                    evaluateScoreEstimateResultGuard(
+                        token = operationToken,
+                        currentState = gameState,
+                    )
+                ) {
+                    EngineOperationResultGuard.Apply -> applyScoreEstimateDisplayPlan(score)
+                    is EngineOperationResultGuard.Discard -> Unit
+                }
             }.onFailure { error ->
-                engineMessage = error.message ?: "Score estimate failed."
-                scoreState = scoreState.copy(scoreEstimate = null)
+                when (
+                    evaluateScoreEstimateResultGuard(
+                        token = operationToken,
+                        currentState = gameState,
+                    )
+                ) {
+                    EngineOperationResultGuard.Apply -> {
+                        engineMessage = error.message ?: "Score estimate failed."
+                        scoreState = scoreState.copy(scoreEstimate = null)
+                    }
+                    is EngineOperationResultGuard.Discard -> Unit
+                }
             }
             isEngineBusy = false
         }

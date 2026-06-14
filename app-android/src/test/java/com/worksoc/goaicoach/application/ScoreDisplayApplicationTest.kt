@@ -3,6 +3,7 @@ package com.worksoc.goaicoach.application
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.AnalysisResult
+import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.DeadStoneCleanupResult
@@ -93,6 +94,26 @@ class ScoreDisplayApplicationTest {
         assertEquals(state, request.state)
         assertEquals(profile, request.profile)
         assertTrue(request.syncFirst)
+    }
+
+    @Test
+    fun scoreEstimateResultGuardRejectsChangedPosition() {
+        val state = GameState.empty()
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+        val changedState = state
+            .play(Move.Play(StoneColor.White, BoardCoordinate.fromLabel("D5", BoardSize.Nine)))
+        val request = ScoreEstimateRequestPlan.RequestEngineEstimate(
+            state = state,
+            profile = EngineProfile(),
+            syncFirst = false,
+        )
+        val token = scoreEstimateOperationToken(request)
+
+        assertEquals(
+            EngineOperationResultGuard.Apply,
+            evaluateScoreEstimateResultGuard(token, state),
+        )
+        assertTrue(evaluateScoreEstimateResultGuard(token, changedState) is EngineOperationResultGuard.Discard)
     }
 
     @Test

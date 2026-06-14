@@ -45,6 +45,29 @@ internal sealed class ScoreEstimateRequestPlan {
     ) : ScoreEstimateRequestPlan()
 }
 
+internal data class ScoreEstimateOperationToken(
+    val position: PositionScopedOperationToken,
+)
+
+internal fun scoreEstimateOperationToken(
+    request: ScoreEstimateRequestPlan.RequestEngineEstimate,
+): ScoreEstimateOperationToken =
+    ScoreEstimateOperationToken(
+        position = positionScopedOperationToken(
+            kind = "score_estimate",
+            state = request.state,
+        ),
+    )
+
+internal fun evaluateScoreEstimateResultGuard(
+    token: ScoreEstimateOperationToken,
+    currentState: GameState,
+): EngineOperationResultGuard =
+    evaluatePositionScopedResultGuard(
+        token = token.position,
+        currentState = currentState,
+    )
+
 internal fun buildScoreEstimateRequestPlan(
     state: GameState,
     previousSnapshots: List<ScoreSnapshot>,

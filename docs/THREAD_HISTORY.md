@@ -1170,3 +1170,8 @@
 - stale result guard 1차 리팩토링을 진행했다. `PositionScopedOperationToken`과 `EngineOperationResultGuard`를 추가해 엔진 요청 당시의 position fingerprint/move count를 보관하고, 응답 도착 시 현재 국면과 비교할 수 있게 했다.
 - Top Moves 분석 실행 경로에 `TopMoveAnalysisOperationToken`을 적용했다. 요청 당시 `AnalysisCacheKey`와 현재 `analysisState.lastAnalysisKey`가 일치하고, board fingerprint도 같은 경우에만 성공/실패 결과를 화면에 반영한다. 무르기, 새 게임, 복원, search time 변경 등으로 현재 상태가 바뀐 경우 과거 Top Moves 응답은 적용하지 않는다.
 - `EngineOperationPolicyTest`와 `TopMovesApplicationTest`를 보강했고, `:app-android:testDebugUnitTest`가 통과했다. 이번 단계는 Top Moves 경로에 먼저 적용한 안전 단위이며, 자동 AI 턴/종국 resolve/score estimate의 operation guard는 다음 단계 후보로 남았다.
+- 사용자가 폰에 설치한 뒤 다음 리팩토링 진행을 요청했다.
+- 무선 ADB `SM-S908N(192.168.35.166:42037)` 연결이 살아 있음을 확인했고, `make install-dev-engine`으로 최신 debug APK를 설치했다. KataGo model/config를 앱 내부 저장소에 seed했고 cold launch `TotalTime=596ms`를 확인했다.
+- 이어서 stale result guard를 수동 score estimate 경로로 확장했다. `ScoreEstimateOperationToken`과 `evaluateScoreEstimateResultGuard()`를 추가해 점수 추정 요청 당시 position fingerprint와 현재 국면이 일치할 때만 점수 그래프/텍스트를 갱신한다.
+- `GoCoachApp.kt`의 `requestEngineScoreEstimate()` 성공/실패 경로 모두 guard를 통과하도록 바꿨다. 무르기/새 게임/복원 등으로 현재 국면이 바뀐 뒤 도착한 과거 score estimate 성공/실패는 화면에 반영하지 않는다.
+- `ScoreDisplayApplicationTest`에 score estimate result guard 테스트를 추가했고, `:app-android:testDebugUnitTest`가 통과했다.
