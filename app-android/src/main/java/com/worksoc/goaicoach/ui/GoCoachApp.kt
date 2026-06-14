@@ -21,6 +21,7 @@ import com.worksoc.goaicoach.application.AutoAiTurnEndgameDisplayPlan
 import com.worksoc.goaicoach.application.AutoAiTurnEndgamePlan
 import com.worksoc.goaicoach.application.AutoAiTurnFollowUpPlan
 import com.worksoc.goaicoach.application.AutoAiTurnRequestPlan
+import com.worksoc.goaicoach.application.AutoAiTurnRunExecutionContext
 import com.worksoc.goaicoach.application.AutoAiTurnScheduleValidationPlan
 import com.worksoc.goaicoach.application.AutoAiTurnUiState
 import com.worksoc.goaicoach.application.autoAiEndgameOperationToken
@@ -103,7 +104,7 @@ import com.worksoc.goaicoach.application.ScoringRuleChangePlan
 import com.worksoc.goaicoach.application.runAutoAiEndgameDisplayPlan
 import com.worksoc.goaicoach.application.RestoredGameSyncExecutionContext
 import com.worksoc.goaicoach.application.runRestoredGameSyncEffect
-import com.worksoc.goaicoach.application.runAutoAiTurnDisplayPlan
+import com.worksoc.goaicoach.application.runAutoAiTurnEffect
 import com.worksoc.goaicoach.application.runHumanEngineSyncEffect
 import com.worksoc.goaicoach.application.runPositionAnalysisCacheOptimizationEffect
 import com.worksoc.goaicoach.application.runScoreEstimateEffect
@@ -1364,15 +1365,13 @@ private fun GoCoachScreen(
                     var followUpPlan: AutoAiTurnFollowUpPlan = AutoAiTurnFollowUpPlan.None
                     runCatching {
                         withContext(Dispatchers.IO) {
-                            engineClient.runAutoAiTurnDisplayPlan(
-                                currentState = turnContext.turnState,
-                                playLevel = turnContext.playLevel,
-                                currentProfile = runtimeState.engineProfile,
-                                searchTimeSettings = searchTimeSettings,
-                                searchMode = turnContext.searchMode,
-                                isolateSearchCache = turnContext.isolateSearchCache,
-                                previousSnapshots = scoreState.scoreSnapshots,
-                                previousReviewCandidates = turnContext.previousReviewCandidates,
+                            engineClient.runAutoAiTurnEffect(
+                                effect = GameSessionEffect.RunAutoAiTurn(turnRunPlan),
+                                executionContext = AutoAiTurnRunExecutionContext(
+                                    currentProfile = runtimeState.engineProfile,
+                                    searchTimeSettings = searchTimeSettings,
+                                    previousSnapshots = scoreState.scoreSnapshots,
+                                ),
                             )
                         }
                     }.onSuccess { display ->

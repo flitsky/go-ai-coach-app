@@ -11,9 +11,9 @@ POC를 계속 고도화하는 관점에서는 이미 충분히 좋은 상태다.
 
 다만 첫 마켓 릴리즈 이후 원격 서버 엔진, 공식 캐시 공급, 원격 유저 대국, warning/critical 로그 수집까지 확장하는 관점에서는 아직 **앱 서비스 orchestration과 진단/미들웨어 경계가 덜 분리**되어 있다. 특히 `GoCoachApp.kt`가 1,654줄로 남아 있어 UI가 아직 여러 effect 실행 순서를 직접 알고 있다.
 
-2026-06-14 현재 재평가: **96/100**.
+2026-06-14 현재 재평가: **97/100**.
 
-이후 `GameSessionControllerState`, application port, prompt priority, Top Moves/score/auto-AI stale guard, runtime discard log, undo restore cache, 자동 AI 종국 display runner, score estimate failure reducer, Top Moves failure reducer, Top Moves launch effect 연결, Top Moves effect runner, Score Estimate effect runner, Position Analysis Cache Optimization effect runner, Startup Benchmark effect runner, Saved Game Restore Sync effect runner, Debug Report Copy platform effect port, Human Move Sync effect runner가 추가되어 App Service 계층의 판단 책임은 더 선명해졌다. 다만 `GoCoachApp.kt`는 기능 증가와 함께 약 1,900줄 규모로 남아 있고, coroutine 실행 순서와 일부 앱서비스 조율은 여전히 UI 파일에 있다. 따라서 “도메인 분리 기반은 상당히 탄탄하지만, UI orchestration 축소는 아직 진행 중”으로 본다.
+이후 `GameSessionControllerState`, application port, prompt priority, Top Moves/score/auto-AI stale guard, runtime discard log, undo restore cache, 자동 AI 종국 display runner, score estimate failure reducer, Top Moves failure reducer, Top Moves launch effect 연결, Top Moves effect runner, Score Estimate effect runner, Position Analysis Cache Optimization effect runner, Startup Benchmark effect runner, Saved Game Restore Sync effect runner, Debug Report Copy platform effect port, Human Move Sync effect runner, Auto AI Turn effect runner가 추가되어 App Service 계층의 판단 책임은 더 선명해졌다. 다만 `GoCoachApp.kt`는 기능 증가와 함께 약 1,900줄 규모로 남아 있고, coroutine scheduling, stale guard 적용, 후속 effect 연결 같은 일부 앱서비스 조율은 여전히 UI 파일에 있다. 따라서 “도메인 분리 기반은 상당히 탄탄하지만, UI orchestration 축소는 아직 마무리 단계”로 본다.
 
 ## 계층별 평가
 

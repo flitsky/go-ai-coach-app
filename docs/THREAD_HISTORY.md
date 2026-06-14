@@ -1230,3 +1230,6 @@
 - 사용자가 다음 리팩토링 진행과 결과 보고 시 현재 리팩토링 완성도 표현을 요청했다.
 - 다음 리팩토링으로 human move 이후 engine sync 실행부를 `GameSessionEffect.SyncHumanMove` runner로 연결했다. `HumanEngineSyncRunPlan`과 `EngineSessionClient.runHumanEngineSyncEffect()`를 추가해 UI가 raw `syncAfterHumanMove(...)`를 직접 호출하지 않도록 했다. 성공/실패 display plan과 runtime log 기록은 기존 흐름을 유지했다.
 - `HumanMoveApplicationTest`에 sync effect runner 위임 테스트를 추가하고, `GameSessionControllerTest`에 새 effect 운반 테스트를 보강했다. 관련 application 테스트가 통과했다.
+- 사용자가 다음 리팩토링 진행과 결과 보고 시 현재 리팩토링 완성도 표현을 요청했다.
+- 다음 리팩토링으로 자동 AI 턴 주 실행부를 `GameSessionEffect.RunAutoAiTurn` runner에 실제 연결했다. `AutoAiTurnRunExecutionContext`와 `EngineSessionClient.runAutoAiTurnEffect()`를 추가해 `GoCoachApp.kt`가 raw `runAutoAiTurnDisplayPlan(...)` 인자를 직접 조합하지 않도록 했다. 자동 AI 턴 성공/실패, stale guard, 종국 resolve, 후속 Top Moves 요청 순서는 기존 흐름을 유지했다.
+- `GameAutomationApplicationTest`에 effect runner가 run plan과 execution context를 engine session client로 정확히 위임하는 테스트를 추가했고, 관련 application 테스트가 통과했다.

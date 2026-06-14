@@ -257,6 +257,12 @@ internal data class AutoAiTurnRunPlan(
     val context: AutoAiTurnExecutionContext,
 )
 
+internal data class AutoAiTurnRunExecutionContext(
+    val currentProfile: EngineProfile,
+    val searchTimeSettings: SearchTimeSettings,
+    val previousSnapshots: List<ScoreSnapshot>,
+)
+
 internal data class AutoAiTurnOperationToken(
     val position: PositionScopedOperationToken,
 )
@@ -413,6 +419,23 @@ internal suspend fun EngineSessionClient.runAutoAiTurnDisplayPlan(
         result = result,
         previousSnapshots = previousSnapshots,
         previousReviewCandidates = previousReviewCandidates,
+    )
+}
+
+internal suspend fun EngineSessionClient.runAutoAiTurnEffect(
+    effect: GameSessionEffect.RunAutoAiTurn,
+    executionContext: AutoAiTurnRunExecutionContext,
+): AutoAiTurnDisplayPlan {
+    val turnContext = effect.plan.context
+    return runAutoAiTurnDisplayPlan(
+        currentState = turnContext.turnState,
+        playLevel = turnContext.playLevel,
+        currentProfile = executionContext.currentProfile,
+        searchTimeSettings = executionContext.searchTimeSettings,
+        searchMode = turnContext.searchMode,
+        isolateSearchCache = turnContext.isolateSearchCache,
+        previousSnapshots = executionContext.previousSnapshots,
+        previousReviewCandidates = turnContext.previousReviewCandidates,
     )
 }
 

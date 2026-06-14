@@ -26,6 +26,7 @@ import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.ScoreSnapshotSource
 import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.aiMoveAnalysisLimitWith
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -563,6 +564,55 @@ class GameAutomationApplicationTest {
     }
 
     @Test
+    fun autoAiTurnEffectRunnerDelegatesEffectPlanAndExecutionContext() = runBlocking {
+        val initialState = GameState.empty()
+        val nextState = initialState.play(Move.Pass(StoneColor.Black))
+        val previousCandidate = CandidateMove(
+            move = Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)),
+            pointLoss = 0.0,
+        )
+        val playLevel = PlayLevelSetting(group = PlayLevelGroup.Beginner, level = 7)
+        val searchTimeSettings = SearchTimeSettings(
+            b16Millis = 1_000,
+            b32Millis = 2_000,
+            b64Millis = 3_000,
+        )
+        val profile = EngineProfile(name = "effect-profile")
+        val client = FakeAutoAiEngineSessionClient(
+            result = autoAiTurnResult(state = nextState, estimate = null),
+        )
+        val runPlan = AutoAiTurnRunPlan(
+            delayMillis = 250L,
+            context = AutoAiTurnExecutionContext(
+                turnState = initialState,
+                aiPlayer = StoneColor.Black,
+                playLevel = playLevel,
+                analysisLimit = playLevel.aiMoveAnalysisLimitWith(searchTimeSettings),
+                searchMode = EngineSearchMode.JsonPositionAnalysis,
+                isolateSearchCache = true,
+                previousReviewCandidates = listOf(previousCandidate),
+            ),
+        )
+
+        val display = client.runAutoAiTurnEffect(
+            effect = GameSessionEffect.RunAutoAiTurn(runPlan),
+            executionContext = AutoAiTurnRunExecutionContext(
+                currentProfile = profile,
+                searchTimeSettings = searchTimeSettings,
+                previousSnapshots = emptyList(),
+            ),
+        )
+
+        assertEquals(nextState, display.gameState)
+        assertEquals(initialState, client.currentState)
+        assertEquals(playLevel, client.playLevel)
+        assertEquals(profile, client.currentProfile)
+        assertEquals(searchTimeSettings, client.searchTimeSettings)
+        assertEquals(EngineSearchMode.JsonPositionAnalysis, client.searchMode)
+        assertEquals(true, client.isolateSearchCache)
+    }
+
+    @Test
     fun autoAiEndgameDisplayRunnerBuildsResolvedDisplayPlan() = runBlocking {
         val state = GameState.empty()
             .play(Move.Pass(StoneColor.Black))
@@ -720,6 +770,10 @@ private class FakeAutoAiEngineSessionClient(
         private set
     var playLevel: PlayLevelSetting? = null
         private set
+    var currentProfile: EngineProfile? = null
+        private set
+    var searchTimeSettings: SearchTimeSettings? = null
+        private set
     var isolateSearchCache: Boolean? = null
         private set
     var searchMode: EngineSearchMode? = null
@@ -791,6 +845,8 @@ private class FakeAutoAiEngineSessionClient(
     ): AutoAiTurnResult {
         this.currentState = currentState
         this.playLevel = playLevel
+        this.currentProfile = currentProfile
+        this.searchTimeSettings = searchTimeSettings
         this.searchMode = searchMode
         this.isolateSearchCache = isolateSearchCache
         return result
