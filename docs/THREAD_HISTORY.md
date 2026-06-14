@@ -1151,3 +1151,9 @@
 - 사용자가 다음 리팩토링을 요청했고, 결과 보고 시 현재 리팩토링 완성도 표현도 요청했다.
 - 자동 AI 턴 성공 후 종국 resolve 입력 조립을 `AutoAiTurnEndgamePlan`으로 분리했다. `GoCoachApp.kt`는 더 이상 `display.shouldResolveEndgame`와 display 내부 필드를 직접 조합하지 않고, `None` 또는 `Resolve` plan을 처리한다.
 - `GameSessionEffect.ResolveAutoAiEndgame`을 추가해 다음 단계에서 종국 resolve coroutine을 effect runner로 이동할 수 있게 했다. `GameAutomationApplicationTest`와 `GameSessionControllerTest`를 보강했고 `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest`가 통과했다.
+- 사용자가 `ARCHITECTURE_LAYERS_ANALYSIS.md`를 20년차 구글 아키텍터 관점으로 냉철하게 분석하고, 대규모 플랫폼/AI Agent 업무 분담/엔진-미들웨어 failover/지연 로깅 관점에서 수용할 점과 보완할 점을 요청했다.
+- 문서와 실제 코드(`GameSessionControllerState`, `GoCoachApp.kt`, `EngineSessionClient`, `PositionAnalysisCacheResolver`)를 대조했다. 7계층 방향성, Engine Core API와 Middleware 분리, cache quality resolver, Seat abstraction, 부심/주심 정책은 수용 가치가 크지만, 현재 `GameSessionController`는 아직 완전한 SSOT/effect runner가 아니며 자동 AI/종국 coroutine이 UI에 남아 있어 문서 표현이 일부 과장되어 있음을 확인했다.
+- 사용자가 정제 검토본을 오늘 날짜가 붙은 파일명으로 저장하고, 향후 dated review가 많아지면 archive 또는 git history로 정리하는 운영 방식을 제안했다.
+- `docs/refactoring/ARCHITECTURE_LAYERS_REVIEW_2026-06-14.md`를 새로 작성했다. 원문 초안은 raw context로 보존하고, 정제본에는 7계층 수용 원칙, 현재 구현 과장 지점, engine operation/failover/structured diagnostic 보강 방향, 문서 운영 정책을 정리했다.
+- `docs/DOCS_INDEX.md`의 세부 설계 문서 섹션에 위 정제 검토본을 추가했다.
+- 최상위 활성 문서 10개 이내 원칙을 유지하기 위해 `ARCHITECTURE_LAYERS_ANALYSIS.md` 원문 초안은 활성 문서에서 제외하고 `검토 초안/스냅샷` 섹션으로 분리했다.

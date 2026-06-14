@@ -52,3 +52,12 @@
 | `refactoring/SESSION_STATE_REFACTORING_WORKLIST_2026-06-13.md` | reducer state holder를 단일 source of truth로 승격하는 작업 리스트와 진행 로그 |
 | `refactoring/ENGINE_SEARCH_MODE_ROADMAP_2026-06-13.md` | GTP stateful fast path와 JSON position analysis를 정책으로 분리하고 단계적으로 실험하는 로드맵 |
 | `refactoring/REFACTORING_COMPLETION_ASSESSMENT_2026-06-13.md` | 현재 계층 분리 완성도 평가, 남은 리스크, 다음 리팩토링 추천 순서 |
+| `refactoring/ARCHITECTURE_LAYERS_REVIEW_2026-06-14.md` | 7계층 아키텍처 초안에 대한 비판적 정제 검토와 수용/보완 원칙 |
+
+## 검토 초안/스냅샷
+
+정제 전 원문이나 특정 시점의 검토 흔적은 보존하되, 최상위 활성 문서로 세지 않는다. dated review가 많아지면 `archive/`로 이동하거나 git history에만 남기고 canonical 문서만 유지한다.
+
+| 위치 | 용도 |
+| --- | --- |
+| `ARCHITECTURE_LAYERS_ANALYSIS.md` | 2026-06-14 7계층 아키텍처 구조 분석 원문 초안 |
