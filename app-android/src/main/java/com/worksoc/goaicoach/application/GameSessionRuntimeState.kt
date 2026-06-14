@@ -8,6 +8,7 @@ internal data class GameSessionRuntimeState(
     val playLevel: PlayLevelSetting,
     val engineProfile: EngineProfile,
     val analysisPreset: AnalysisPreset,
+    val sessionGeneration: Long = 0L,
 ) {
     fun applySelection(selection: RuntimePlayLevelSelection): GameSessionRuntimeState =
         copy(
@@ -22,4 +23,7 @@ internal data class GameSessionRuntimeState(
             engineProfile = display.profile,
             analysisPreset = display.analysisPreset,
         )
+
+    fun nextSessionGeneration(): GameSessionRuntimeState =
+        copy(sessionGeneration = sessionGeneration + 1)
 }

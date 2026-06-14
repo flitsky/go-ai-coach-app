@@ -188,3 +188,31 @@
 4. Middleware KMP 물리 이동 준비
    - `PositionAnalysisGateway`, remote transport contract, cache resolver 중 Android-free 파일을 후보로 분류한다.
    - import churn을 줄이기 위해 architecture test를 먼저 확장한 뒤 작은 단위로 옮긴다.
+
+## 2026-06-14 추가 진행 로그: Engine Operation Lifecycle/Generation
+
+- 2026-06-14: auto AI turn과 auto AI endgame stale guard를 공통 `EngineOperationRequest`로 전환했다. 이제 Top Moves, score estimate, auto AI turn, auto AI endgame의 engine-facing operation이 동일한 operation id, generation, timeout, fallback metadata를 갖는다.
+- 2026-06-14: `GameSessionRuntimeState.sessionGeneration`을 추가하고 새 게임, 저장 복원, 무르기 전환 시 세대를 증가시켰다. 늦게 도착한 engine result는 현재 세대와 요청 세대가 다르면 적용하지 않는다.
+- 2026-06-14: stale discard runtime/diagnostic log에 operation kind, operation id, session generation을 추가했다. 원격 엔진 또는 다중 엔진 도입 후에도 로그만으로 어떤 요청 결과가 폐기됐는지 추적할 수 있게 됐다.
+- 2026-06-14: `runObservedEngineOperation()`을 score estimate, auto AI turn, auto AI endgame effect runner에도 적용했다. slow/timeout diagnostic event가 position analysis뿐 아니라 주요 engine operation에 공통으로 기록된다.
+- 2026-06-14: `EngineOperationLifecycleTransition` reducer를 추가하고 `GoCoachApp.kt`의 raw busy Boolean 전이를 helper 호출로 치환했다. 현재 동작은 동일하지만 향후 operation id 기반 busy stack 또는 concurrent operation counter로 바꿀 때 수정 지점이 작아졌다.
+- 검증: 기본 Java 25는 Gradle Kotlin DSL이 `IllegalArgumentException: 25`로 실패하므로 JDK 17을 명시했다. `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest` 통과.
+- 최종 통합 검증: `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test` 통과.
+
+## 다음 추천 리팩토링 항목
+
+1. `GameSessionEffect.ResolveAutoAiEndgame` 실제 연결
+   - 현재 endgame runner는 application 함수로 분리됐지만, UI coroutine은 아직 `runAutoAiEndgameDisplayPlan()`을 직접 호출한다.
+   - effect 타입을 실제 실행 경로에 연결하면 auto AI main turn과 endgame resolve의 effect 구조가 완전히 대칭이 된다.
+
+2. Engine operation lifecycle의 operation-id stack화 준비
+   - 지금은 Boolean reducer지만, remote/coach engine 병렬 작업을 고려하면 operation id별 started/completed tracking이 필요해질 수 있다.
+   - 우선 data model과 테스트만 추가하고 UI 적용은 작은 단위로 진행한다.
+
+3. Structured diagnostic event schema 문서화
+   - `engine.operation.slow`, `timeout`, `discarded`의 필수 context key를 문서화한다.
+   - 향후 MQ/Firebase/Sentry 전송 adapter가 들어와도 이벤트 schema가 흔들리지 않게 한다.
+
+4. `GoCoachApp.kt` coroutine runner 추가 축소
+   - startup/new-game/human-sync/undo/cache optimization 경로의 started/completed/failure 패턴을 공통 runner로 묶을 수 있는지 검토한다.
+   - 단, UX state 변경이 섞인 구간은 무리하게 추상화하지 않고 operation 경계가 명확한 곳부터 진행한다.

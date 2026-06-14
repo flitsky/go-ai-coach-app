@@ -331,7 +331,10 @@ internal fun runtimeEngineOperationDiscardedLog(
         name = "engine_operation_discarded",
         phase = "engine_operation",
         transition = contextTransitionAfter(context.gameState, context),
-        detail = "discardReason=${discard.reason.runtimeLogSnippet(500)} " +
+        detail = "operation=${discard.operation ?: "unknown"} " +
+            "operationId=${discard.operationId ?: "none"} " +
+            "sessionGeneration=${discard.sessionGeneration?.toString() ?: "none"} " +
+            "discardReason=${discard.reason.runtimeLogSnippet(500)} " +
             "current=${context.gameState.runtimeBoardSummary()}",
     )
 

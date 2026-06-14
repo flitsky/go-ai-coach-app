@@ -300,49 +300,67 @@ internal data class AutoAiTurnRunExecutionContext(
 )
 
 internal data class AutoAiTurnOperationToken(
-    val position: PositionScopedOperationToken,
+    val operation: EngineOperationRequest,
 )
 
 internal fun autoAiTurnOperationToken(
     runPlan: AutoAiTurnRunPlan,
+    sessionGeneration: Long = 0L,
 ): AutoAiTurnOperationToken =
     AutoAiTurnOperationToken(
-        position = positionScopedOperationToken(
-            kind = "auto_ai_turn",
+        operation = engineOperationRequest(
+            kind = EngineOperationKind.AutoAiTurn,
             state = runPlan.context.turnState,
+            sessionGeneration = sessionGeneration,
+            timeoutPolicy = EngineTimeoutPolicy(
+                timeoutMillis = runPlan.context.analysisLimit.timeMillis,
+                label = "${runPlan.context.searchMode.name}:${runPlan.context.analysisLimit.visits}v",
+            ),
+            fallbackPolicy = EngineFallbackPolicy.None,
         ),
     )
 
 internal fun evaluateAutoAiTurnResultGuard(
     token: AutoAiTurnOperationToken,
     currentState: GameState,
+    currentSessionGeneration: Long = 0L,
 ): EngineOperationResultGuard =
-    evaluatePositionScopedResultGuard(
-        token = token.position,
+    evaluateEngineOperationResultGuard(
+        request = token.operation,
         currentState = currentState,
+        currentSessionGeneration = currentSessionGeneration,
     )
 
 internal data class AutoAiEndgameOperationToken(
-    val position: PositionScopedOperationToken,
+    val operation: EngineOperationRequest,
 )
 
 internal fun autoAiEndgameOperationToken(
     plan: AutoAiTurnEndgamePlan.Resolve,
+    sessionGeneration: Long = 0L,
 ): AutoAiEndgameOperationToken =
     AutoAiEndgameOperationToken(
-        position = positionScopedOperationToken(
-            kind = "auto_ai_endgame",
+        operation = engineOperationRequest(
+            kind = EngineOperationKind.AutoAiEndgame,
             state = plan.state,
+            sessionGeneration = sessionGeneration,
+            timeoutPolicy = EngineTimeoutPolicy(
+                timeoutMillis = plan.profile.analysisLimit.timeMillis,
+                label = "endgame:${plan.profile.analysisLimit.visits}v",
+            ),
+            fallbackPolicy = EngineFallbackPolicy.LocalRules,
         ),
     )
 
 internal fun evaluateAutoAiEndgameResultGuard(
     token: AutoAiEndgameOperationToken,
     currentState: GameState,
+    currentSessionGeneration: Long = 0L,
 ): EngineOperationResultGuard =
-    evaluatePositionScopedResultGuard(
-        token = token.position,
+    evaluateEngineOperationResultGuard(
+        request = token.operation,
         currentState = currentState,
+        currentSessionGeneration = currentSessionGeneration,
     )
 
 internal data class AutoAiTurnExecutionContext(
@@ -442,15 +460,32 @@ internal suspend fun EngineSessionClient.runAutoAiTurnDisplayPlan(
     isolateSearchCache: Boolean,
     previousSnapshots: List<ScoreSnapshot>,
     previousReviewCandidates: List<CandidateMove>,
+    operationRequest: EngineOperationRequest? = null,
+    diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
 ): AutoAiTurnDisplayPlan {
-    val result = runAutoAiTurn(
-        currentState = currentState,
-        playLevel = playLevel,
-        currentProfile = currentProfile,
-        searchTimeSettings = searchTimeSettings,
-        searchMode = searchMode,
-        isolateSearchCache = isolateSearchCache,
-    )
+    val analysisLimit = playLevel.aiMoveAnalysisLimitWith(searchTimeSettings)
+    val result = runObservedEngineOperation(
+        request = operationRequest ?: engineOperationRequest(
+            kind = EngineOperationKind.AutoAiTurn,
+            state = currentState,
+            sessionGeneration = 0L,
+            timeoutPolicy = EngineTimeoutPolicy(
+                timeoutMillis = analysisLimit.timeMillis,
+                label = "${searchMode.name}:${analysisLimit.visits}v",
+            ),
+            fallbackPolicy = EngineFallbackPolicy.None,
+        ),
+        diagnosticEventLog = diagnosticEventLog,
+    ) {
+        runAutoAiTurn(
+            currentState = currentState,
+            playLevel = playLevel,
+            currentProfile = currentProfile,
+            searchTimeSettings = searchTimeSettings,
+            searchMode = searchMode,
+            isolateSearchCache = isolateSearchCache,
+        )
+    }
     return buildAutoAiTurnDisplayPlan(
         result = result,
         previousSnapshots = previousSnapshots,
@@ -461,6 +496,8 @@ internal suspend fun EngineSessionClient.runAutoAiTurnDisplayPlan(
 internal suspend fun EngineSessionClient.runAutoAiTurnEffect(
     effect: GameSessionEffect.RunAutoAiTurn,
     executionContext: AutoAiTurnRunExecutionContext,
+    operationRequest: EngineOperationRequest? = null,
+    diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
 ): AutoAiTurnDisplayPlan {
     val turnContext = effect.plan.context
     return runAutoAiTurnDisplayPlan(
@@ -472,19 +509,28 @@ internal suspend fun EngineSessionClient.runAutoAiTurnEffect(
         isolateSearchCache = turnContext.isolateSearchCache,
         previousSnapshots = executionContext.previousSnapshots,
         previousReviewCandidates = turnContext.previousReviewCandidates,
+        operationRequest = operationRequest,
+        diagnosticEventLog = diagnosticEventLog,
     )
 }
 
 internal suspend fun EngineSessionClient.runAutoAiEndgameDisplayPlan(
     plan: AutoAiTurnEndgamePlan.Resolve,
     previousSnapshots: List<ScoreSnapshot>,
+    operationRequest: EngineOperationRequest? = null,
+    diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
 ): AutoAiTurnEndgameDisplayPlan =
     runCatching {
-        val resolution = resolveEndgameForState(
-            state = plan.state,
-            profile = plan.profile,
-            prePassCandidates = plan.prePassCandidates,
-        )
+        val resolution = runObservedEngineOperation(
+            request = operationRequest ?: autoAiEndgameOperationToken(plan).operation,
+            diagnosticEventLog = diagnosticEventLog,
+        ) {
+            resolveEndgameForState(
+                state = plan.state,
+                profile = plan.profile,
+                prePassCandidates = plan.prePassCandidates,
+            )
+        }
         AutoAiTurnEndgameDisplayPlan.Resolved(
             resolution = resolution,
             display = buildResolvedEndgameDisplayPlan(

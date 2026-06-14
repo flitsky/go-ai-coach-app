@@ -85,12 +85,13 @@ internal data class TopMoveAnalysisLaunchStateUpdate(
 internal fun topMoveAnalysisOperationToken(
     targetState: GameState,
     plan: TopMoveAnalysisPlan,
+    sessionGeneration: Long = 0L,
 ): TopMoveAnalysisOperationToken =
     TopMoveAnalysisOperationToken(
         operation = engineOperationRequest(
             kind = EngineOperationKind.TopMoves,
             state = targetState,
-            sessionGeneration = 0L,
+            sessionGeneration = sessionGeneration,
             timeoutPolicy = EngineTimeoutPolicy(
                 timeoutMillis = plan.analysisLimit.timeMillis,
                 label = "${plan.analysisKey.preset.label}:${plan.analysisLimit.visits}v",
@@ -104,11 +105,12 @@ internal fun evaluateTopMoveAnalysisResultGuard(
     token: TopMoveAnalysisOperationToken,
     currentState: GameState,
     currentAnalysisKey: AnalysisCacheKey?,
+    currentSessionGeneration: Long = 0L,
 ): EngineOperationResultGuard {
     val positionGuard = evaluateEngineOperationResultGuard(
         request = token.operation,
         currentState = currentState,
-        currentSessionGeneration = 0L,
+        currentSessionGeneration = currentSessionGeneration,
     )
     if (positionGuard is EngineOperationResultGuard.Discard) {
         return positionGuard
@@ -118,6 +120,9 @@ internal fun evaluateTopMoveAnalysisResultGuard(
     } else {
         EngineOperationResultGuard.Discard(
             reason = "top_moves_analysis result is stale: analysis key changed before result arrived.",
+            operation = token.operation.kind.code,
+            operationId = token.operation.operationId,
+            sessionGeneration = token.operation.sessionGeneration,
         )
     }
 }

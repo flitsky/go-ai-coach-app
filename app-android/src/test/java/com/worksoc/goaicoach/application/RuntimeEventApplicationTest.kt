@@ -93,10 +93,16 @@ class RuntimeEventApplicationTest {
             context = runtimeContext(gameState = currentState),
             discard = EngineOperationResultGuard.Discard(
                 reason = "top_moves_analysis result is stale: requested move=0, current move=1.",
+                operation = "top_moves",
+                operationId = "top_moves:g2:m0:abc",
+                sessionGeneration = 2L,
             ),
         )
 
         assertTrue(log.startsWith("event=engine_operation_discarded phase=engine_operation"))
+        assertTrue(log.contains("operation=top_moves"))
+        assertTrue(log.contains("operationId=top_moves:g2:m0:abc"))
+        assertTrue(log.contains("sessionGeneration=2"))
         assertTrue(log.contains("discardReason=top_moves_analysis result is stale"))
         assertTrue(log.contains("requested move=0"))
         assertTrue(log.contains("current move=1"))

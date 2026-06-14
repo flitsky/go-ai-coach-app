@@ -31,6 +31,7 @@ class GameSessionRuntimeStateTest {
         assertEquals(nextLevel, next.playLevel)
         assertEquals(nextProfile, next.engineProfile)
         assertEquals(nextLevel.analysisPreset, next.analysisPreset)
+        assertEquals(original.sessionGeneration, next.sessionGeneration)
     }
 
     @Test
@@ -66,5 +67,23 @@ class GameSessionRuntimeStateTest {
         assertEquals(turnLevel, next.playLevel)
         assertEquals(turnProfile, next.engineProfile)
         assertEquals(turnLevel.analysisPreset, next.analysisPreset)
+        assertEquals(original.sessionGeneration, next.sessionGeneration)
+    }
+
+    @Test
+    fun nextSessionGenerationOnlyAdvancesGenerationCounter() {
+        val original = GameSessionRuntimeState(
+            playLevel = PlayLevelSetting(group = PlayLevelGroup.Beginner, level = 3),
+            engineProfile = EngineProfile(),
+            analysisPreset = AnalysisPreset.Balanced,
+            sessionGeneration = 4L,
+        )
+
+        val next = original.nextSessionGeneration()
+
+        assertEquals(original.playLevel, next.playLevel)
+        assertEquals(original.engineProfile, next.engineProfile)
+        assertEquals(original.analysisPreset, next.analysisPreset)
+        assertEquals(5L, next.sessionGeneration)
     }
 }

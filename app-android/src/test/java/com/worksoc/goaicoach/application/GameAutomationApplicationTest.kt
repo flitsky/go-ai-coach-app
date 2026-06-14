@@ -270,6 +270,9 @@ class GameAutomationApplicationTest {
         )
         val token = autoAiTurnOperationToken(runPlan)
 
+        assertEquals(EngineOperationKind.AutoAiTurn, token.operation.kind)
+        assertEquals(EngineFallbackPolicy.None, token.operation.fallbackPolicy)
+        assertEquals(runPlan.context.analysisLimit.timeMillis, token.operation.timeoutPolicy.timeoutMillis)
         assertEquals(
             EngineOperationResultGuard.Apply,
             evaluateAutoAiTurnResultGuard(token, state),
@@ -291,6 +294,9 @@ class GameAutomationApplicationTest {
         )
         val token = autoAiEndgameOperationToken(plan)
 
+        assertEquals(EngineOperationKind.AutoAiEndgame, token.operation.kind)
+        assertEquals(EngineFallbackPolicy.LocalRules, token.operation.fallbackPolicy)
+        assertEquals(plan.profile.analysisLimit.timeMillis, token.operation.timeoutPolicy.timeoutMillis)
         assertEquals(
             EngineOperationResultGuard.Apply,
             evaluateAutoAiEndgameResultGuard(token, state),

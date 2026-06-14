@@ -191,13 +191,21 @@ class DiagnosticEventApplicationTest {
         val state = GameState.empty()
             .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
         val event = engineOperationDiscardedDiagnosticEvent(
-            discard = EngineOperationResultGuard.Discard("position result is stale"),
+            discard = EngineOperationResultGuard.Discard(
+                reason = "position result is stale",
+                operation = "top_moves",
+                operationId = "top_moves:g2:m0:abc",
+                sessionGeneration = 2L,
+            ),
             currentState = state,
         )
 
         assertEquals(DiagnosticSeverity.Info, event.severity)
         assertEquals("engine.operation.discarded", event.code)
         assertEquals("position result is stale", event.context["reason"])
+        assertEquals("top_moves", event.context["operation"])
+        assertEquals("top_moves:g2:m0:abc", event.context["operationId"])
+        assertEquals("2", event.context["sessionGeneration"])
         assertEquals("1", event.context["currentMoveCount"])
         assertTrue(event.context["positionFingerprint"].orEmpty().isNotBlank())
     }

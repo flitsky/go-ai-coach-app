@@ -48,6 +48,7 @@ class GameSessionCoreStateTest {
         assertEquals("No move review yet.", next.moveReviewState.moveReviewText)
         assertEquals("None", next.moveReviewState.lastMoveText)
         assertEquals(emptyList<MoveReviewMarker>(), next.moveReviewState.moveReviews)
+        assertEquals(1L, next.runtimeState.sessionGeneration)
         assertEquals("New game started.", next.engineMessage)
     }
 
@@ -269,6 +270,7 @@ class GameSessionCoreStateTest {
         assertEquals("Score estimate not current.", next.scoreState.scoreText)
         assertEquals("Move review cleared by undo.", next.moveReviewState.moveReviewText)
         assertEquals(listOf(marker), next.moveReviewState.moveReviews)
+        assertEquals(1L, next.runtimeState.sessionGeneration)
         assertEquals("previous message", next.engineMessage)
     }
 

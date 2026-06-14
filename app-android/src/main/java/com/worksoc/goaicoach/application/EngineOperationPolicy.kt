@@ -82,6 +82,9 @@ internal sealed class EngineOperationResultGuard {
     data object Apply : EngineOperationResultGuard()
     data class Discard(
         val reason: String,
+        val operation: String? = null,
+        val operationId: String? = null,
+        val sessionGeneration: Long? = null,
     ) : EngineOperationResultGuard()
 }
 
@@ -144,12 +147,24 @@ internal fun evaluateEngineOperationResultGuard(
     if (currentSessionGeneration != request.sessionGeneration) {
         return EngineOperationResultGuard.Discard(
             reason = "${request.kind.code} result is stale: requested generation=${request.sessionGeneration}, current generation=$currentSessionGeneration.",
+            operation = request.kind.code,
+            operationId = request.operationId,
+            sessionGeneration = request.sessionGeneration,
         )
     }
-    return evaluatePositionScopedResultGuard(
-        token = request.toPositionScopedOperationToken(),
-        currentState = currentState,
-    )
+    return when (
+        val guard = evaluatePositionScopedResultGuard(
+            token = request.toPositionScopedOperationToken(),
+            currentState = currentState,
+        )
+    ) {
+        EngineOperationResultGuard.Apply -> EngineOperationResultGuard.Apply
+        is EngineOperationResultGuard.Discard -> guard.copy(
+            operation = request.kind.code,
+            operationId = request.operationId,
+            sessionGeneration = request.sessionGeneration,
+        )
+    }
 }
 
 private fun defaultEngineOperationId(

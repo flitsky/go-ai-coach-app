@@ -1273,3 +1273,11 @@
 - 사용자가 다음 리팩토링 진행과 결과 보고 시 현재 리팩토링 완성도 및 다음 추천 작업 리스트업을 요청했다.
 - 다음 안전 단위로 Top Moves와 score estimate의 stale result guard token을 `PositionScopedOperationToken` 직접 사용에서 공통 `EngineOperationRequest` 기반으로 전환했다. Top Moves는 `EngineOperationKind.TopMoves`, `CachedAnalysis` fallback, analysis limit time cap metadata를 기록하고, score estimate는 `EngineOperationKind.ScoreEstimate`, `LocalRules` fallback, profile analysis limit metadata를 기록한다.
 - 기존 position fingerprint 기반 stale discard와 Top Moves analysis key mismatch discard 동작은 유지했다. 대상 테스트 `TopMovesApplicationTest`, `ScoreDisplayApplicationTest`, `EngineOperationPolicyTest`와 최종 `make test`가 통과했다.
+- 사용자가 다음 추천 리팩토링 항목을 단계별로 모두 진행하고, 결과 보고 시 현재 리팩토링 완성도와 다음 추천 작업을 리스트업해달라고 요청했다.
+- 다음 리팩토링으로 auto AI turn과 auto AI endgame guard도 공통 `EngineOperationRequest` 기반으로 전환했다. `AutoAiTurnOperationToken`/`AutoAiEndgameOperationToken`은 operation kind, session generation, timeout policy, fallback policy를 함께 운반한다.
+- `GameSessionRuntimeState.sessionGeneration`을 추가하고 새 게임 reset, 저장 게임 복원, 무르기 적용 시 generation을 증가시키도록 했다. Top Moves, score estimate, auto AI turn, auto AI endgame 결과 guard는 이제 현재 session generation과 요청 generation이 다르면 결과를 적용하지 않는다.
+- stale result discard runtime/diagnostic log에 `operation`, `operationId`, `sessionGeneration`을 추가해 늦게 도착한 엔진 결과가 어떤 operation에서 폐기됐는지 추적 가능하게 했다.
+- `runObservedEngineOperation()`을 score estimate, auto AI turn, auto AI endgame effect runner에도 연결했다. UI는 operation token에서 만든 request를 runner에 전달하고, runner는 slow/timeout diagnostic event를 공통 형식으로 남긴다.
+- `EngineOperationLifecycleTransition` reducer를 추가해 `GoCoachApp.kt`의 raw `isEngineBusy = true/false` 대입을 `markEngineOperationStarted()`/`markEngineOperationCompleted()` helper로 정리했다. 현재는 Boolean 전이지만 향후 operation-id scoped busy stack으로 확장할 단일 지점이 생겼다.
+- 검증 중 기본 Java 25에서는 Gradle Kotlin DSL이 `IllegalArgumentException: 25`로 실패함을 다시 확인했다. JDK 17과 Android SDK를 명시해 `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest`를 실행했고 통과했다.
+- 최종 통합 검증으로 `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test`를 실행했고 통과했다.

@@ -185,11 +185,14 @@ internal fun engineOperationDiscardedDiagnosticEvent(
         severity = DiagnosticSeverity.Info,
         code = "engine.operation.discarded",
         message = "Late engine operation result was discarded.",
-        context = mapOf(
-            "reason" to discard.reason,
-            "currentMoveCount" to currentState.moves.size.toString(),
-            "positionFingerprint" to currentState.analysisFingerprint(),
-        ),
+        context = buildMap {
+            put("reason", discard.reason)
+            discard.operation?.let { put("operation", it) }
+            discard.operationId?.let { put("operationId", it) }
+            discard.sessionGeneration?.let { put("sessionGeneration", it.toString()) }
+            put("currentMoveCount", currentState.moves.size.toString())
+            put("positionFingerprint", currentState.analysisFingerprint())
+        },
     )
 
 internal suspend fun <T> runObservedEngineOperation(

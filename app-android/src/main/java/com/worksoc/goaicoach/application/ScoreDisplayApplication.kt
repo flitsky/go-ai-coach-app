@@ -61,12 +61,13 @@ internal data class ScoreEstimateOperationToken(
 
 internal fun scoreEstimateOperationToken(
     request: ScoreEstimateRequestPlan.RequestEngineEstimate,
+    sessionGeneration: Long = 0L,
 ): ScoreEstimateOperationToken =
     ScoreEstimateOperationToken(
         operation = engineOperationRequest(
             kind = EngineOperationKind.ScoreEstimate,
             state = request.state,
-            sessionGeneration = 0L,
+            sessionGeneration = sessionGeneration,
             timeoutPolicy = EngineTimeoutPolicy(
                 timeoutMillis = request.profile.analysisLimit.timeMillis,
                 label = "${request.profile.difficulty.label}:${request.profile.analysisLimit.visits}v",
@@ -78,11 +79,12 @@ internal fun scoreEstimateOperationToken(
 internal fun evaluateScoreEstimateResultGuard(
     token: ScoreEstimateOperationToken,
     currentState: GameState,
+    currentSessionGeneration: Long = 0L,
 ): EngineOperationResultGuard =
     evaluateEngineOperationResultGuard(
         request = token.operation,
         currentState = currentState,
-        currentSessionGeneration = 0L,
+        currentSessionGeneration = currentSessionGeneration,
     )
 
 internal fun buildScoreEstimateFailureDisplayPlan(error: Throwable): ScoreEstimateFailureDisplayPlan =
@@ -159,12 +161,19 @@ internal fun buildEngineEstimateDisplayPlan(
 internal suspend fun EngineSessionClient.runScoreEstimateDisplayPlan(
     request: ScoreEstimateRequestPlan.RequestEngineEstimate,
     previousSnapshots: List<ScoreSnapshot>,
+    operationRequest: EngineOperationRequest? = null,
+    diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
 ): ScoreEstimateDisplayPlan {
-    val estimate = estimateScoreForState(
-        state = request.state,
-        profile = request.profile,
-        syncFirst = request.syncFirst,
-    )
+    val estimate = runObservedEngineOperation(
+        request = operationRequest ?: scoreEstimateOperationToken(request).operation,
+        diagnosticEventLog = diagnosticEventLog,
+    ) {
+        estimateScoreForState(
+            state = request.state,
+            profile = request.profile,
+            syncFirst = request.syncFirst,
+        )
+    }
     return buildEngineEstimateDisplayPlan(
         state = request.state,
         estimate = estimate,
@@ -175,10 +184,14 @@ internal suspend fun EngineSessionClient.runScoreEstimateDisplayPlan(
 internal suspend fun EngineSessionClient.runScoreEstimateEffect(
     effect: GameSessionEffect.RunScoreEstimate,
     previousSnapshots: List<ScoreSnapshot>,
+    operationRequest: EngineOperationRequest? = null,
+    diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
 ): ScoreEstimateDisplayPlan =
     runScoreEstimateDisplayPlan(
         request = effect.request,
         previousSnapshots = previousSnapshots,
+        operationRequest = operationRequest,
+        diagnosticEventLog = diagnosticEventLog,
     )
 
 internal suspend fun EngineSessionClient.runScoringRuleSyncDisplayPlan(
