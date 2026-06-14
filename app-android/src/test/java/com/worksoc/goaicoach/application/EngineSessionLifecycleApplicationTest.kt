@@ -121,6 +121,30 @@ class EngineSessionLifecycleApplicationTest {
     }
 
     @Test
+    fun undoWorkflowResultWrapsSuccessAndFailure() = runBlocking {
+        val success = RecordingLifecycleEngineSessionClient()
+            .runEngineUndoWorkflowResult(
+                effect = GameSessionEffect.UndoEngineMoves(
+                    state = GameState.empty(),
+                    undoCount = 2,
+                ),
+            )
+        val failure = RecordingLifecycleEngineSessionClient(
+            undoError = IllegalStateException("undo failed"),
+        ).runEngineUndoWorkflowResult(
+            effect = GameSessionEffect.UndoEngineMoves(
+                state = GameState.empty(),
+                undoCount = 2,
+            ),
+        )
+
+        assertTrue(success is EngineUndoWorkflowResult.Success)
+        assertEquals("undo-2", (success as EngineUndoWorkflowResult.Success).status.message)
+        assertTrue(failure is EngineUndoWorkflowResult.Failure)
+        assertEquals("undo failed", (failure as EngineUndoWorkflowResult.Failure).error.message)
+    }
+
+    @Test
     fun scopedEngineOperationHelperCompletesLifecycleOnFailure() = runBlocking {
         val request = engineOperationRequest(
             kind = EngineOperationKind.EngineUndo,
@@ -154,6 +178,7 @@ class EngineSessionLifecycleApplicationTest {
 private class RecordingLifecycleEngineSessionClient(
     private val startupError: Throwable? = null,
     private val newGameError: Throwable? = null,
+    private val undoError: Throwable? = null,
 ) : EngineSessionClient {
     override val capabilities: EngineSessionCapabilities = EngineSessionCapabilities(
         supportsDeviceBenchmark = true,
@@ -264,6 +289,7 @@ private class RecordingLifecycleEngineSessionClient(
         error("unused")
 
     override suspend fun undoMove(): EngineStatus {
+        undoError?.let { throw it }
         undoCalls += 1
         return EngineStatus.ready("undo-$undoCalls")
     }

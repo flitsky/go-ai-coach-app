@@ -40,6 +40,24 @@ internal suspend fun EngineSessionClient.runScoreEstimateEffect(
         diagnosticEventLog = diagnosticEventLog,
     )
 
+internal suspend fun EngineSessionClient.runScoreEstimateWorkflowResult(
+    effect: GameSessionEffect.RunScoreEstimate,
+    previousSnapshots: List<ScoreSnapshot>,
+    operationRequest: EngineOperationRequest? = null,
+    diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
+): ScoreEstimateWorkflowResult =
+    runCatching {
+        runScoreEstimateEffect(
+            effect = effect,
+            previousSnapshots = previousSnapshots,
+            operationRequest = operationRequest,
+            diagnosticEventLog = diagnosticEventLog,
+        )
+    }.fold(
+        onSuccess = { display -> ScoreEstimateWorkflowResult.Success(display) },
+        onFailure = { error -> ScoreEstimateWorkflowResult.Failure(error) },
+    )
+
 internal suspend fun EngineSessionClient.runScoringRuleSyncDisplayPlan(
     state: GameState,
     profile: EngineProfile,

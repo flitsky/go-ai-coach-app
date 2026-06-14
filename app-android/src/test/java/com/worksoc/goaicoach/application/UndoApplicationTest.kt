@@ -3,6 +3,7 @@ package com.worksoc.goaicoach.application
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
+import com.worksoc.goaicoach.shared.EngineStatus
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.ScoreSnapshot
@@ -10,6 +11,7 @@ import com.worksoc.goaicoach.shared.ScoreSnapshotSource
 import com.worksoc.goaicoach.shared.StoneColor
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class UndoApplicationTest {
@@ -153,5 +155,53 @@ class UndoApplicationTest {
         assertEquals(listOf(markers.first()), plan.moveReviews)
         assertEquals(1, plan.scoreSnapshots.single().moveNumber)
         assertFalse(plan.reviewAnalysis.hasEngineCandidates)
+    }
+
+    @Test
+    fun engineUndoCompletionPlanAppliesSuccessFailureOrDiscard() {
+        val state = GameState.empty()
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+            .play(Move.Play(StoneColor.White, BoardCoordinate.fromLabel("D5", BoardSize.Nine)))
+        val changedState = state.play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("F5", BoardSize.Nine)))
+        val operation = engineOperationRequest(
+            kind = EngineOperationKind.EngineUndo,
+            state = state,
+            sessionGeneration = 9L,
+        )
+
+        val success = buildEngineUndoCompletionPlan(
+            result = EngineUndoWorkflowResult.Success(EngineStatus.ready("undo complete")),
+            operation = operation,
+            currentState = state,
+            currentSessionGeneration = 9L,
+            undoCount = 1,
+            previousMoveReviews = emptyList(),
+            scoreSnapshots = emptyList(),
+        )
+        val failure = buildEngineUndoCompletionPlan(
+            result = EngineUndoWorkflowResult.Failure(IllegalStateException("undo failed")),
+            operation = operation,
+            currentState = state,
+            currentSessionGeneration = 9L,
+            undoCount = 1,
+            previousMoveReviews = emptyList(),
+            scoreSnapshots = emptyList(),
+        )
+        val discard = buildEngineUndoCompletionPlan(
+            result = EngineUndoWorkflowResult.Success(EngineStatus.ready("undo complete")),
+            operation = operation,
+            currentState = changedState,
+            currentSessionGeneration = 9L,
+            undoCount = 1,
+            previousMoveReviews = emptyList(),
+            scoreSnapshots = emptyList(),
+        )
+
+        assertTrue(success is EngineUndoCompletionPlan.ApplySuccess)
+        assertEquals(1, (success as EngineUndoCompletionPlan.ApplySuccess).undo.gameState.moves.size)
+        assertEquals("Undid 1 move(s) in local state and engine state.", success.engineMessage)
+        assertTrue(failure is EngineUndoCompletionPlan.ApplyFailure)
+        assertEquals("undo failed", (failure as EngineUndoCompletionPlan.ApplyFailure).engineMessage)
+        assertTrue(discard is EngineUndoCompletionPlan.Discard)
     }
 }

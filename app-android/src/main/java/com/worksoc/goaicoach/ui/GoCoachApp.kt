@@ -35,7 +35,7 @@ import com.worksoc.goaicoach.application.buildAutoAiTurnFollowUpPlan
 import com.worksoc.goaicoach.application.buildAutoAiEndgameCompletionPlan
 import com.worksoc.goaicoach.application.buildDebugReportCopyPlan
 import com.worksoc.goaicoach.application.buildEngineStartupDisplayPlan
-import com.worksoc.goaicoach.application.buildEngineUndoPlan
+import com.worksoc.goaicoach.application.buildEngineUndoCompletionPlan
 import com.worksoc.goaicoach.application.buildHumanEngineSyncCompletionPlan
 import com.worksoc.goaicoach.application.buildLocalFinalScoreDisplayPlan
 import com.worksoc.goaicoach.application.buildLocalTwoPlayerUndoPlan
@@ -44,6 +44,7 @@ import com.worksoc.goaicoach.application.buildNewLocalGameSessionPlan
 import com.worksoc.goaicoach.application.buildSavedGameRestoreRequestPlan
 import com.worksoc.goaicoach.application.buildSavedSessionCheckPlan
 import com.worksoc.goaicoach.application.buildScoreEstimateFailureDisplayPlan
+import com.worksoc.goaicoach.application.buildScoreEstimateCompletionPlan
 import com.worksoc.goaicoach.application.buildScoreEstimateRequestPlan
 import com.worksoc.goaicoach.application.buildScoringRuleChangePlan
 import com.worksoc.goaicoach.application.buildStartConfiguredGamePlan
@@ -84,8 +85,8 @@ import com.worksoc.goaicoach.application.engineOperationRequest
 import com.worksoc.goaicoach.application.evaluateEngineBenchmarkGate
 import com.worksoc.goaicoach.application.evaluateScoringRuleChangeGate
 import com.worksoc.goaicoach.application.evaluateSearchTimeChangeGate
-import com.worksoc.goaicoach.application.evaluateScoreEstimateResultGuard
 import com.worksoc.goaicoach.application.FinalScoreDisplayPlan
+import com.worksoc.goaicoach.application.EngineUndoCompletionPlan
 import com.worksoc.goaicoach.application.GameSessionResetPlan
 import com.worksoc.goaicoach.application.GameSessionAnalysisState
 import com.worksoc.goaicoach.application.GameSessionControllerState
@@ -98,6 +99,7 @@ import com.worksoc.goaicoach.application.GameSessionTurnTimeState
 import com.worksoc.goaicoach.application.HumanEngineSyncFailurePlan
 import com.worksoc.goaicoach.application.HumanEngineSyncDisplayPlan
 import com.worksoc.goaicoach.application.HumanEngineSyncCompletionPlan
+import com.worksoc.goaicoach.application.HumanEngineSyncRuntimeLogPlan
 import com.worksoc.goaicoach.application.HumanEngineSyncRunPlan
 import com.worksoc.goaicoach.application.EngineStartupWorkflowResult
 import com.worksoc.goaicoach.application.EngineStartupDisplayPlan
@@ -124,10 +126,10 @@ import com.worksoc.goaicoach.application.runAutoAiTurnWorkflowResult
 import com.worksoc.goaicoach.application.runEngineBackedNewGameWorkflowResult
 import com.worksoc.goaicoach.application.runEngineOperationInScope
 import com.worksoc.goaicoach.application.runEngineStartupWorkflowResult
-import com.worksoc.goaicoach.application.runEngineUndoEffect
+import com.worksoc.goaicoach.application.runEngineUndoWorkflowResult
 import com.worksoc.goaicoach.application.runHumanEngineSyncWorkflowResult
 import com.worksoc.goaicoach.application.runPositionAnalysisCacheOptimizationWorkflowResult
-import com.worksoc.goaicoach.application.runScoreEstimateEffect
+import com.worksoc.goaicoach.application.runScoreEstimateWorkflowResult
 import com.worksoc.goaicoach.application.runStartupBenchmarkWorkflowResult
 import com.worksoc.goaicoach.application.runScoringRuleSyncDisplayPlan
 import com.worksoc.goaicoach.application.runtimeAiTurnBeginLog
@@ -162,6 +164,7 @@ import com.worksoc.goaicoach.application.toShowTopMovesPlan
 import com.worksoc.goaicoach.application.toTopMoveAnalysisLaunchPlan
 import com.worksoc.goaicoach.application.ShowTopMovesPlan
 import com.worksoc.goaicoach.application.ScoreEstimateDisplayPlan
+import com.worksoc.goaicoach.application.ScoreEstimateCompletionPlan
 import com.worksoc.goaicoach.application.ScoreEstimateRequestPlan
 import com.worksoc.goaicoach.application.ScoreSyncCompletionPlan
 import com.worksoc.goaicoach.application.runScoreSyncWorkflowCompletionPlan
@@ -177,6 +180,7 @@ import com.worksoc.goaicoach.application.StartConfiguredGamePlan
 import com.worksoc.goaicoach.application.TopMoveAnalysisUpdate
 import com.worksoc.goaicoach.application.topMoveAnalysisOperationToken
 import com.worksoc.goaicoach.application.toGameSessionSettingsState
+import com.worksoc.goaicoach.application.toRuntimeLogPlan
 import com.worksoc.goaicoach.application.toRuntimeLogContext
 import com.worksoc.goaicoach.application.undoEngineInterventionQuietUntilMillis
 import com.worksoc.goaicoach.application.undoEngineInterventionRemainingDelayMillis
@@ -915,6 +919,33 @@ private fun GoCoachScreen(
         applyCoreSessionState(currentCoreSessionState().applyHumanEngineSyncFailurePlan(failure))
     }
 
+    fun appendHumanEngineSyncRuntimeLog(
+        logPlan: HumanEngineSyncRuntimeLogPlan,
+        elapsedMs: Long,
+    ) {
+        when (logPlan) {
+            is HumanEngineSyncRuntimeLogPlan.Success ->
+                runtimeEventLog.append(
+                    runtimeHumanEngineSyncSuccessLog(
+                        context = currentRuntimeLogContext(),
+                        sync = logPlan.display,
+                        elapsedMs = elapsedMs,
+                    ),
+                )
+
+            is HumanEngineSyncRuntimeLogPlan.Failure ->
+                runtimeEventLog.append(
+                    runtimeHumanEngineSyncFailureLog(
+                        context = currentRuntimeLogContext(),
+                        failure = logPlan.failure,
+                        elapsedMs = elapsedMs,
+                    ),
+                )
+
+            HumanEngineSyncRuntimeLogPlan.None -> Unit
+        }
+    }
+
     fun applyGameSessionResetPlan(reset: GameSessionResetPlan) {
         clearUndoEngineInterventionQuietWindow()
         undoAnalysisRestoreCache.clear()
@@ -1319,39 +1350,31 @@ private fun GoCoachScreen(
             sessionGeneration = runtimeState.sessionGeneration,
         )
         launchTrackedEngineOperation(operationToken.operation) {
-            runCatching {
+            val result =
                 withContext(Dispatchers.IO) {
-                    engineClient.runScoreEstimateEffect(
+                    engineClient.runScoreEstimateWorkflowResult(
                         effect = effect,
                         previousSnapshots = scoreState.scoreSnapshots,
                         operationRequest = operationToken.operation,
                         diagnosticEventLog = diagnosticEventLog,
                     )
                 }
-            }.onSuccess { score ->
-                when (val guard =
-                    evaluateScoreEstimateResultGuard(
-                        token = operationToken,
-                        currentState = gameState,
-                        currentSessionGeneration = runtimeState.sessionGeneration,
+            when (val completion = buildScoreEstimateCompletionPlan(
+                result = result,
+                token = operationToken,
+                currentState = gameState,
+                currentSessionGeneration = runtimeState.sessionGeneration,
+            )) {
+                is ScoreEstimateCompletionPlan.ApplySuccess ->
+                    applyScoreEstimateDisplayPlan(completion.display)
+
+                is ScoreEstimateCompletionPlan.ApplyFailure ->
+                    applyCoreSessionState(
+                        currentCoreSessionState().applyScoreEstimateFailureDisplayPlan(completion.failure),
                     )
-                ) {
-                    EngineOperationResultGuard.Apply -> applyScoreEstimateDisplayPlan(score)
-                    is EngineOperationResultGuard.Discard -> appendEngineOperationDiscardLog(guard)
-                }
-            }.onFailure { error ->
-                when (val guard =
-                    evaluateScoreEstimateResultGuard(
-                        token = operationToken,
-                        currentState = gameState,
-                        currentSessionGeneration = runtimeState.sessionGeneration,
-                    )
-                ) {
-                    EngineOperationResultGuard.Apply -> {
-                        applyScoreEstimateFailureDisplayPlan(error)
-                    }
-                    is EngineOperationResultGuard.Discard -> appendEngineOperationDiscardLog(guard)
-                }
+
+                is ScoreEstimateCompletionPlan.Discard ->
+                    appendEngineOperationDiscardLog(completion.discard)
             }
         }
     }
@@ -1827,28 +1850,28 @@ private fun GoCoachScreen(
                 previousSnapshots = scoreState.scoreSnapshots,
             )) {
                 is HumanEngineSyncCompletionPlan.ApplySuccess -> {
-                    runtimeEventLog.append(
-                        runtimeHumanEngineSyncSuccessLog(
-                            context = currentRuntimeLogContext(),
-                            sync = completion.display,
-                            elapsedMs = System.currentTimeMillis() - syncStartMillis,
-                        ),
+                    appendHumanEngineSyncRuntimeLog(
+                        logPlan = completion.toRuntimeLogPlan(),
+                        elapsedMs = System.currentTimeMillis() - syncStartMillis,
                     )
                     nextAnalysisState = applyHumanEngineSyncDisplayPlan(completion.display)
                 }
 
                 is HumanEngineSyncCompletionPlan.ApplyFailure -> {
-                    runtimeEventLog.append(
-                        runtimeHumanEngineSyncFailureLog(
-                            context = currentRuntimeLogContext(),
-                            failure = completion.failure,
-                            elapsedMs = System.currentTimeMillis() - syncStartMillis,
-                        ),
+                    appendHumanEngineSyncRuntimeLog(
+                        logPlan = completion.toRuntimeLogPlan(),
+                        elapsedMs = System.currentTimeMillis() - syncStartMillis,
                     )
                     applyHumanEngineSyncFailurePlan(completion.failure)
                 }
 
-                is HumanEngineSyncCompletionPlan.Discard -> appendEngineOperationDiscardLog(completion.discard)
+                is HumanEngineSyncCompletionPlan.Discard -> {
+                    appendHumanEngineSyncRuntimeLog(
+                        logPlan = completion.toRuntimeLogPlan(),
+                        elapsedMs = System.currentTimeMillis() - syncStartMillis,
+                    )
+                    appendEngineOperationDiscardLog(completion.discard)
+                }
             }
             nextAnalysisState?.let { state ->
                 requestTopMoveAnalysisForState(
@@ -1889,9 +1912,9 @@ private fun GoCoachScreen(
             fallbackPolicy = EngineFallbackPolicy.LocalEngine,
         )
         launchTrackedEngineOperation(operation) {
-            runCatching {
+            val result =
                 withContext(Dispatchers.IO) {
-                    engineClient.runEngineUndoEffect(
+                    engineClient.runEngineUndoWorkflowResult(
                         effect = GameSessionEffect.UndoEngineMoves(
                             state = gameState,
                             undoCount = undoCount,
@@ -1900,20 +1923,28 @@ private fun GoCoachScreen(
                         diagnosticEventLog = diagnosticEventLog,
                     )
                 }
-            }.onSuccess {
-                val undo = buildEngineUndoPlan(
-                    currentState = gameState,
-                    undoCount = undoCount,
-                    previousMoveReviews = moveReviewState.moveReviews,
-                    scoreSnapshots = scoreState.scoreSnapshots,
-                )
-                val nextState = undo.gameState
-                applyUndoLocalStatePlan(undo)
-                engineMessage = "Undid $undoCount move(s) in local state and engine state."
-                markUndoEngineInterventionQuiet()
-                cancelPendingPostUndoEngineSync()
-            }.onFailure { error ->
-                engineMessage = error.message ?: "Undo failed."
+            when (val completion = buildEngineUndoCompletionPlan(
+                result = result,
+                operation = operation,
+                currentState = gameState,
+                currentSessionGeneration = runtimeState.sessionGeneration,
+                undoCount = undoCount,
+                previousMoveReviews = moveReviewState.moveReviews,
+                scoreSnapshots = scoreState.scoreSnapshots,
+            )) {
+                is EngineUndoCompletionPlan.ApplySuccess -> {
+                    applyUndoLocalStatePlan(completion.undo)
+                    engineMessage = completion.engineMessage
+                    markUndoEngineInterventionQuiet()
+                    cancelPendingPostUndoEngineSync()
+                }
+
+                is EngineUndoCompletionPlan.ApplyFailure -> {
+                    engineMessage = completion.engineMessage
+                }
+
+                is EngineUndoCompletionPlan.Discard ->
+                    appendEngineOperationDiscardLog(completion.discard)
             }
         }
     }

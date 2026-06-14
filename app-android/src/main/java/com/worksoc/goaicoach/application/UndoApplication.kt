@@ -27,6 +27,21 @@ internal sealed class UndoRequestPlan {
     data class EngineUndo(val undoCount: Int) : UndoRequestPlan()
 }
 
+internal sealed class EngineUndoCompletionPlan {
+    data class ApplySuccess(
+        val undo: UndoLocalStatePlan,
+        val engineMessage: String,
+    ) : EngineUndoCompletionPlan()
+
+    data class ApplyFailure(
+        val engineMessage: String,
+    ) : EngineUndoCompletionPlan()
+
+    data class Discard(
+        val discard: EngineOperationResultGuard.Discard,
+    ) : EngineUndoCompletionPlan()
+}
+
 internal const val UndoEngineInterventionDelayMillis = 1_000L
 
 internal fun undoEngineInterventionQuietUntilMillis(
@@ -115,3 +130,42 @@ internal fun buildEngineUndoPlan(
         endgameLog = "Endgame log cleared by undo.",
     )
 }
+
+internal fun buildEngineUndoCompletionPlan(
+    result: EngineUndoWorkflowResult,
+    operation: EngineOperationRequest,
+    currentState: GameState,
+    currentSessionGeneration: Long,
+    undoCount: Int,
+    previousMoveReviews: List<MoveReviewMarker>,
+    scoreSnapshots: List<ScoreSnapshot>,
+): EngineUndoCompletionPlan =
+    when (
+        val applyPlan = buildEngineOperationApplyPlan(
+            request = operation,
+            currentState = currentState,
+            currentSessionGeneration = currentSessionGeneration,
+        )
+    ) {
+        EngineOperationApplyPlan.Apply ->
+            when (result) {
+                is EngineUndoWorkflowResult.Success ->
+                    EngineUndoCompletionPlan.ApplySuccess(
+                        undo = buildEngineUndoPlan(
+                            currentState = currentState,
+                            undoCount = undoCount,
+                            previousMoveReviews = previousMoveReviews,
+                            scoreSnapshots = scoreSnapshots,
+                        ),
+                        engineMessage = "Undid $undoCount move(s) in local state and engine state.",
+                    )
+
+                is EngineUndoWorkflowResult.Failure ->
+                    EngineUndoCompletionPlan.ApplyFailure(
+                        engineMessage = result.error.message ?: "Undo failed.",
+                    )
+            }
+
+        is EngineOperationApplyPlan.Discard ->
+            EngineUndoCompletionPlan.Discard(applyPlan.discard)
+    }

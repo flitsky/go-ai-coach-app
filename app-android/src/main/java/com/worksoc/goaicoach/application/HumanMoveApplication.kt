@@ -51,6 +51,12 @@ internal sealed class HumanEngineSyncCompletionPlan {
     data class Discard(val discard: EngineOperationResultGuard.Discard) : HumanEngineSyncCompletionPlan()
 }
 
+internal sealed class HumanEngineSyncRuntimeLogPlan {
+    data class Success(val display: HumanEngineSyncDisplayPlan) : HumanEngineSyncRuntimeLogPlan()
+    data class Failure(val failure: HumanEngineSyncFailurePlan) : HumanEngineSyncRuntimeLogPlan()
+    data object None : HumanEngineSyncRuntimeLogPlan()
+}
+
 internal sealed class HumanEngineSyncWorkflowResult {
     data class Success(val result: LocalEngineMoveResult) : HumanEngineSyncWorkflowResult()
     data class Failure(val error: Throwable) : HumanEngineSyncWorkflowResult()
@@ -219,6 +225,18 @@ internal fun buildHumanEngineSyncCompletionPlan(
                 previousSnapshots = previousSnapshots,
                 errorMessage = result.error.message,
             )
+    }
+
+internal fun HumanEngineSyncCompletionPlan.toRuntimeLogPlan(): HumanEngineSyncRuntimeLogPlan =
+    when (this) {
+        is HumanEngineSyncCompletionPlan.ApplySuccess ->
+            HumanEngineSyncRuntimeLogPlan.Success(display)
+
+        is HumanEngineSyncCompletionPlan.ApplyFailure ->
+            HumanEngineSyncRuntimeLogPlan.Failure(failure)
+
+        is HumanEngineSyncCompletionPlan.Discard ->
+            HumanEngineSyncRuntimeLogPlan.None
     }
 
 internal suspend fun EngineSessionClient.runHumanEngineSyncEffect(

@@ -654,3 +654,41 @@
 
 5. KMP 물리 이동 1차
    - `EngineStartupApplication.kt` 또는 `ScoreSyncCompletionApplication.kt` 중 하나를 실제 shared/common 후보로 이동하는 작은 PR 단위 작업을 수행한다.
+
+## 2026-06-15 추가 진행 로그: Workflow Completion Plan 8차 정리
+
+- 2026-06-15: `EngineUndoWorkflowResult`, `runEngineUndoWorkflowResult()`, `EngineUndoCompletionPlan`, `buildEngineUndoCompletionPlan()`을 추가했다. 엔진 undo의 성공/실패/늦은 결과 폐기 판단이 `GoCoachApp.kt`의 직접 분기에서 application completion plan으로 이동했다.
+- 2026-06-15: `ScoreEstimateWorkflowResult`, `runScoreEstimateWorkflowResult()`, `ScoreEstimateCompletionPlan`, `buildScoreEstimateCompletionPlan()`을 추가했다. score estimate도 다른 engine workflow와 동일하게 result wrapping과 stale guard를 application 계층에서 처리한다.
+- 2026-06-15: `HumanEngineSyncRuntimeLogPlan`과 `toRuntimeLogPlan()`을 추가했다. 사람 착수 후 엔진 동기화 결과의 display apply와 runtime log payload 선택을 분리했다.
+- 2026-06-15: `LayeringContractTest`의 platform-free 후보에 `ScoreDisplayApplication.kt`, `UndoApplication.kt`를 추가했다. 두 파일 모두 Android/UI/persistence/runtime 구현 import 없이 유지되어야 한다.
+- 2026-06-15: `docs/refactoring/UI_STATE_HOLDER_BOUNDARY_2026-06-15.md`를 생성했다. `GoCoachApp.kt`의 다음 분리 방향을 state holder, effect launcher, UI controller 순서로 고정했다.
+- 2026-06-15: `docs/refactoring/KMP_MOVE_SPIKE_2026-06-15.md`에 score/undo 후보를 추가했다. `UndoApplication.kt`는 조건부 이동 후보, `ScoreDisplayApplication.kt`는 display 문구 분리 후 이동 후보로 분류했다.
+- 검증: `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest --tests 'com.worksoc.goaicoach.application.UndoApplicationTest' --tests 'com.worksoc.goaicoach.application.ScoreDisplayApplicationTest' --tests 'com.worksoc.goaicoach.application.EngineSessionLifecycleApplicationTest' --tests 'com.worksoc.goaicoach.application.HumanMoveApplicationTest' --tests 'com.worksoc.goaicoach.architecture.LayeringContractTest'` 통과. 최종 통합 검증으로 `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test`도 통과.
+
+## 현재 리팩토링 완성도 평가
+
+- 주관 점수: 99.2/100.
+- 상향 요인: engine undo와 score estimate까지 workflow result/completion plan 패턴에 들어왔다. Human sync runtime log도 application plan을 거치므로 UI는 점점 "결과 적용"만 담당하는 방향으로 수렴 중이다.
+- 남은 감점 요인: `GoCoachApp.kt`는 아직 2,192줄이며 `withContext(Dispatchers.IO)` 호출이 UI 파일 안에 남아 있다. 실제 Gradle/KMP 모듈 물리 이동도 아직 수행하지 않았다. 다음 단계는 state holder/effect launcher를 작게 도입해 UI 소유 실행 흐름을 더 줄이는 것이다.
+
+## 다음 추천 리팩토링 항목
+
+1. Score estimate effect launcher 추출
+   - 입력/출력 범위가 작아 `GameSessionEffectLauncher` 첫 적용 후보로 적합하다.
+   - UI는 launch와 apply만 담당하고 engine call은 launcher가 담당하게 한다.
+
+2. Undo workflow apply helper 정리
+   - engine undo completion apply와 local undo apply의 공통 상태 갱신을 state holder 후보 함수로 묶는다.
+   - post-undo quiet delay는 현재 정책을 유지한다.
+
+3. Score display 문구와 도메인 결과 분리
+   - `ScoreDisplayApplication.kt`를 KMP 이동하려면 display text formatting과 domain score result를 분리해야 한다.
+   - local/engine/final score 결과 DTO를 먼저 추출한다.
+
+4. `GameSessionUiStateHolder` 1차 도입
+   - `applyScoreEstimateDisplayPlan`, `applyFinalScoreDisplayPlan`, `applyUndoLocalStatePlan`부터 작은 holder로 묶는다.
+   - Compose state mutation 소유권이 흩어지지 않도록 한 파일 또는 한 class에서 시작한다.
+
+5. KMP 물리 이동 준비 PR
+   - `UndoApplication.kt` 또는 `ScoreSyncCompletionApplication.kt`를 실제 shared/common 후보로 옮길 때 필요한 port 의존을 정리한다.
+   - 바로 이동하지 않더라도 Gradle 제약과 package dependency를 테스트로 고정한다.

@@ -145,6 +145,53 @@ class ScoreDisplayApplicationTest {
     }
 
     @Test
+    fun scoreEstimateCompletionPlanAppliesSuccessFailureOrDiscard() {
+        val state = GameState.empty()
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+        val changedState = state
+            .play(Move.Play(StoneColor.White, BoardCoordinate.fromLabel("D5", BoardSize.Nine)))
+        val request = ScoreEstimateRequestPlan.RequestEngineEstimate(
+            state = state,
+            profile = EngineProfile(),
+            syncFirst = false,
+        )
+        val token = scoreEstimateOperationToken(
+            request = request,
+            sessionGeneration = 7L,
+        )
+        val display = buildLocalScoreEstimateDisplayPlan(
+            state = state,
+            previousSnapshots = emptyList(),
+            engineMessage = "estimated",
+        )
+
+        val success = buildScoreEstimateCompletionPlan(
+            result = ScoreEstimateWorkflowResult.Success(display),
+            token = token,
+            currentState = state,
+            currentSessionGeneration = 7L,
+        )
+        val failure = buildScoreEstimateCompletionPlan(
+            result = ScoreEstimateWorkflowResult.Failure(IllegalStateException("estimate failed")),
+            token = token,
+            currentState = state,
+            currentSessionGeneration = 7L,
+        )
+        val discard = buildScoreEstimateCompletionPlan(
+            result = ScoreEstimateWorkflowResult.Success(display),
+            token = token,
+            currentState = changedState,
+            currentSessionGeneration = 7L,
+        )
+
+        assertTrue(success is ScoreEstimateCompletionPlan.ApplySuccess)
+        assertEquals(display, (success as ScoreEstimateCompletionPlan.ApplySuccess).display)
+        assertTrue(failure is ScoreEstimateCompletionPlan.ApplyFailure)
+        assertEquals("estimate failed", (failure as ScoreEstimateCompletionPlan.ApplyFailure).failure.engineMessage)
+        assertTrue(discard is ScoreEstimateCompletionPlan.Discard)
+    }
+
+    @Test
     fun scoreEstimateFailureDisplayPlanUsesErrorMessageOrDefault() {
         val withMessage = buildScoreEstimateFailureDisplayPlan(IllegalStateException("engine stalled"))
         val withoutMessage = buildScoreEstimateFailureDisplayPlan(Throwable())
@@ -322,6 +369,33 @@ class ScoreDisplayApplicationTest {
     }
 
     @Test
+    fun scoreEstimateWorkflowResultWrapsSuccessAndFailure() = runBlocking {
+        val state = GameState.empty()
+        val request = ScoreEstimateRequestPlan.RequestEngineEstimate(
+            state = state,
+            profile = EngineProfile(),
+            syncFirst = true,
+        )
+
+        val success = FakeScoreEngineSessionClient()
+            .runScoreEstimateWorkflowResult(
+                effect = GameSessionEffect.RunScoreEstimate(request),
+                previousSnapshots = emptyList(),
+            )
+        val failure = FakeScoreEngineSessionClient(
+            estimateError = IllegalStateException("estimate failed"),
+        ).runScoreEstimateWorkflowResult(
+            effect = GameSessionEffect.RunScoreEstimate(request),
+            previousSnapshots = emptyList(),
+        )
+
+        assertTrue(success is ScoreEstimateWorkflowResult.Success)
+        assertEquals("estimated", (success as ScoreEstimateWorkflowResult.Success).display.engineMessage)
+        assertTrue(failure is ScoreEstimateWorkflowResult.Failure)
+        assertEquals("estimate failed", (failure as ScoreEstimateWorkflowResult.Failure).error.message)
+    }
+
+    @Test
     fun scoringRuleSyncRunnerBuildsTrimmedEngineEstimatePlan() = runBlocking {
         val state = GameState.empty()
         val client = FakeScoreEngineSessionClient()
@@ -432,7 +506,9 @@ class ScoreDisplayApplicationTest {
     }
 }
 
-private class FakeScoreEngineSessionClient : EngineSessionClient {
+private class FakeScoreEngineSessionClient(
+    private val estimateError: Throwable? = null,
+) : EngineSessionClient {
     var estimatedState: GameState? = null
         private set
     var estimatedProfile: EngineProfile? = null
@@ -527,6 +603,7 @@ private class FakeScoreEngineSessionClient : EngineSessionClient {
         estimatedState = state
         estimatedProfile = profile
         estimatedSyncFirst = syncFirst
+        estimateError?.let { throw it }
         return testEstimate()
     }
 

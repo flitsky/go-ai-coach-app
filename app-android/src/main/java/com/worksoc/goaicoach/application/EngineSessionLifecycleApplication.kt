@@ -106,3 +106,24 @@ internal suspend fun EngineSessionClient.runEngineUndoEffect(
         }
         requireNotNull(lastStatus) { "undoCount must be positive" }
     }
+
+internal sealed class EngineUndoWorkflowResult {
+    data class Success(val status: EngineStatus) : EngineUndoWorkflowResult()
+    data class Failure(val error: Throwable) : EngineUndoWorkflowResult()
+}
+
+internal suspend fun EngineSessionClient.runEngineUndoWorkflowResult(
+    effect: GameSessionEffect.UndoEngineMoves,
+    operationRequest: EngineOperationRequest? = null,
+    diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
+): EngineUndoWorkflowResult =
+    runCatching {
+        runEngineUndoEffect(
+            effect = effect,
+            operationRequest = operationRequest,
+            diagnosticEventLog = diagnosticEventLog,
+        )
+    }.fold(
+        onSuccess = { status -> EngineUndoWorkflowResult.Success(status) },
+        onFailure = { error -> EngineUndoWorkflowResult.Failure(error) },
+    )

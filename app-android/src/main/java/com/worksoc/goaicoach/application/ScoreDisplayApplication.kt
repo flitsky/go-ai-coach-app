@@ -59,6 +59,17 @@ internal data class ScoreEstimateOperationToken(
     val operation: EngineOperationRequest,
 )
 
+internal sealed class ScoreEstimateWorkflowResult {
+    data class Success(val display: ScoreEstimateDisplayPlan) : ScoreEstimateWorkflowResult()
+    data class Failure(val error: Throwable) : ScoreEstimateWorkflowResult()
+}
+
+internal sealed class ScoreEstimateCompletionPlan {
+    data class ApplySuccess(val display: ScoreEstimateDisplayPlan) : ScoreEstimateCompletionPlan()
+    data class ApplyFailure(val failure: ScoreEstimateFailureDisplayPlan) : ScoreEstimateCompletionPlan()
+    data class Discard(val discard: EngineOperationResultGuard.Discard) : ScoreEstimateCompletionPlan()
+}
+
 internal fun scoreEstimateOperationToken(
     request: ScoreEstimateRequestPlan.RequestEngineEstimate,
     sessionGeneration: Long = 0L,
@@ -91,6 +102,34 @@ internal fun buildScoreEstimateFailureDisplayPlan(error: Throwable): ScoreEstima
     ScoreEstimateFailureDisplayPlan(
         engineMessage = error.message ?: "Score estimate failed.",
     )
+
+internal fun buildScoreEstimateCompletionPlan(
+    result: ScoreEstimateWorkflowResult,
+    token: ScoreEstimateOperationToken,
+    currentState: GameState,
+    currentSessionGeneration: Long,
+): ScoreEstimateCompletionPlan =
+    when (
+        val guard = evaluateScoreEstimateResultGuard(
+            token = token,
+            currentState = currentState,
+            currentSessionGeneration = currentSessionGeneration,
+        )
+    ) {
+        EngineOperationResultGuard.Apply ->
+            when (result) {
+                is ScoreEstimateWorkflowResult.Success ->
+                    ScoreEstimateCompletionPlan.ApplySuccess(result.display)
+
+                is ScoreEstimateWorkflowResult.Failure ->
+                    ScoreEstimateCompletionPlan.ApplyFailure(
+                        buildScoreEstimateFailureDisplayPlan(result.error),
+                    )
+            }
+
+        is EngineOperationResultGuard.Discard ->
+            ScoreEstimateCompletionPlan.Discard(guard)
+    }
 
 internal fun buildScoreEstimateRequestPlan(
     state: GameState,

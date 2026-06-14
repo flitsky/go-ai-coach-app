@@ -122,9 +122,11 @@ class LayeringContractTest {
             applicationRoot.resolve("EngineStartupApplication.kt"),
             applicationRoot.resolve("HumanMoveApplication.kt"),
             applicationRoot.resolve("PositionAnalysisCacheOptimization.kt"),
+            applicationRoot.resolve("ScoreDisplayApplication.kt"),
             applicationRoot.resolve("ScoreEstimateRunnerApplication.kt"),
             applicationRoot.resolve("ScoreSyncCompletionApplication.kt"),
             applicationRoot.resolve("TopMovesApplication.kt"),
+            applicationRoot.resolve("UndoApplication.kt"),
         )
         val forbiddenImports = listOf(
             "import android.",
