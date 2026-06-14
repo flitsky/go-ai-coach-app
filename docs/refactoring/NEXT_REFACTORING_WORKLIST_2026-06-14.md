@@ -800,3 +800,40 @@
 
 5. Effect launcher metric 축소
    - 남은 `withContext(Dispatchers.IO)` 지점을 workflow별로 분류해 13개에서 10개 이하로 줄이는 작은 batch를 잡는다.
+
+## 2026-06-15 추가 진행 로그: Formatter Split / Human Sync Request new 2 정리
+
+- 2026-06-15: `ScoreDisplayFormatterApplication.kt`를 추가해 `FinalScoreDisplayText`, `buildLocalFinalScoreDisplayText()`, `buildResolvedEndgameDisplayText()`를 `ScoreDisplayApplication.kt`에서 분리했다. `ScoreDisplayApplication.kt`는 score/final state result와 display plan 조립 중심으로 더 좁아졌다.
+- 2026-06-15: `HumanEngineSyncEffectLaunchRequest`를 추가했다. 사람 착수 후 engine sync도 effect와 operation request를 하나의 launch request로 넘기며, engine call 입력 경계가 명시화됐다.
+- 2026-06-15: `HumanEngineSyncCompletionRequest`를 추가했다. completion plan 조립은 완료 시점의 최신 `GameState`와 session generation을 받아 late result discard guard를 유지한다.
+- 2026-06-15: `GoCoachApp.kt`의 human sync 경로는 긴 인자 목록 대신 `HumanEngineSyncEffectLaunchRequest`와 `HumanEngineSyncCompletionRequest`를 조립한다. engine call은 IO에서 실행하지만, completion request는 IO 이후 최신 UI state 기준으로 만든다.
+- 2026-06-15: `HumanMoveApplicationTest`에 launch request runner 테스트와 completion request stale discard 테스트를 추가했다.
+- 2026-06-15: `LayeringContractTest`의 platform-free 후보에 `ScoreDisplayFormatterApplication.kt`를 추가했다.
+- 현재 metric: `GoCoachApp.kt`는 2,183줄이며, UI 파일 안의 `withContext(Dispatchers.IO)`/`runCatching` 직접 지점은 13개다. 줄 수는 request 객체 조립으로 소폭 증가했지만, human sync 입력/완료 경계는 더 명시적이다.
+- 검증: `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest --tests 'com.worksoc.goaicoach.application.ScoreDisplayApplicationTest' --tests 'com.worksoc.goaicoach.application.HumanMoveApplicationTest' --tests 'com.worksoc.goaicoach.architecture.LayeringContractTest'` 통과. 최종 통합 검증으로 `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test`도 통과.
+
+## 현재 리팩토링 완성도 평가
+
+- 주관 점수: 99.55/100.
+- 상향 요인: final/endgame formatter가 파일 단위로 분리되어 `ScoreDisplayApplication.kt`의 KMP 이동 전제 조건이 더 좋아졌다. human sync는 launch request와 completion request가 나뉘어 engine call 입력과 최신 state 기반 result guard가 분명해졌다.
+- 남은 감점 요인: `GoCoachApp.kt`의 Compose state 소유권과 effect launch는 여전히 UI 파일에 있다. human sync completion 적용, runtime log append, 후속 Top Moves scheduling은 아직 UI/controller 책임이다. 실제 KMP 물리 이동은 아직 시작하지 않았다.
+
+## 다음 추천 리팩토링 항목
+
+1. Human sync completion apply helper 정리
+   - `ApplySuccess`/`ApplyFailure`/`Discard` 분기를 작은 helper로 분리한다.
+   - runtime log append와 display apply 순서를 application plan 또는 controller helper로 고정한다.
+
+2. UI state holder lifetime 고정
+   - 현재 `uiStateHolder()`는 local helper로 매번 wrapper를 만든다.
+   - `remember` 또는 명시 controller wrapper로 생성 위치를 고정해 state mutation 경계를 더 명확히 한다.
+
+3. Score display domain/formatter 파일 추가 분리
+   - `EndgameFailureDisplayPlan`의 문구 조립도 formatter 쪽으로 옮길지 검토한다.
+   - `ScoreDisplayApplication.kt`를 score state/result DTO 중심으로 더 줄인다.
+
+4. KMP 물리 이동 준비 1차
+   - `DiagnosticEventModel.kt` 또는 `ScoreDisplayFormatterApplication.kt`처럼 의존이 얇은 파일부터 shared/common 이동 가능성을 실제 Gradle 관점에서 검토한다.
+
+5. Effect launcher metric 축소
+   - Top Moves, score estimate, human sync 중 남은 IO launch 지점을 분류하고 13개에서 10개 이하로 줄일 batch를 선정한다.

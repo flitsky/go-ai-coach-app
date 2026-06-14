@@ -98,6 +98,8 @@ import com.worksoc.goaicoach.application.HumanEngineSyncFailurePlan
 import com.worksoc.goaicoach.application.HumanEngineSyncDisplayPlan
 import com.worksoc.goaicoach.application.HumanEngineSyncCompletionPlan
 import com.worksoc.goaicoach.application.HumanEngineSyncRuntimeLogPlan
+import com.worksoc.goaicoach.application.HumanEngineSyncCompletionRequest
+import com.worksoc.goaicoach.application.HumanEngineSyncEffectLaunchRequest
 import com.worksoc.goaicoach.application.HumanEngineSyncRunPlan
 import com.worksoc.goaicoach.application.EngineStartupWorkflowResult
 import com.worksoc.goaicoach.application.EngineStartupDisplayPlan
@@ -1808,30 +1810,35 @@ private fun GoCoachScreen(
         launchTrackedEngineOperation(humanSyncOperation) {
             var nextAnalysisState: GameState? = null
             val syncStartMillis = System.currentTimeMillis()
+            val syncEffect = GameSessionEffect.SyncHumanMove(
+                HumanEngineSyncRunPlan(
+                    afterMove = afterMove,
+                    profile = runtimeState.engineProfile,
+                    move = move,
+                    previousReviewCandidates = previousReviewCandidates,
+                ),
+            )
             val syncResult =
                 withContext(Dispatchers.IO) {
                     engineClient.runHumanEngineSyncWorkflowResult(
-                        GameSessionEffect.SyncHumanMove(
-                            HumanEngineSyncRunPlan(
-                                afterMove = afterMove,
-                                profile = runtimeState.engineProfile,
-                                move = move,
-                                previousReviewCandidates = previousReviewCandidates,
-                            ),
+                        HumanEngineSyncEffectLaunchRequest(
+                            effect = syncEffect,
+                            operation = humanSyncOperation,
                         ),
-                        operationRequest = humanSyncOperation,
                         diagnosticEventLog = diagnosticEventLog,
                     )
                 }
             when (val completion = buildHumanEngineSyncCompletionPlan(
-                result = syncResult,
-                operation = humanSyncOperation,
-                currentState = gameState,
-                currentSessionGeneration = runtimeState.sessionGeneration,
-                afterMove = afterMove,
-                moveDescription = move.describe(beforeMove.boardSize),
-                localMove = localMove,
-                previousSnapshots = scoreState.scoreSnapshots,
+                HumanEngineSyncCompletionRequest(
+                    result = syncResult,
+                    operation = humanSyncOperation,
+                    currentState = gameState,
+                    currentSessionGeneration = runtimeState.sessionGeneration,
+                    afterMove = afterMove,
+                    moveDescription = move.describe(beforeMove.boardSize),
+                    localMove = localMove,
+                    previousSnapshots = scoreState.scoreSnapshots,
+                ),
             )) {
                 is HumanEngineSyncCompletionPlan.ApplySuccess -> {
                     appendHumanEngineSyncRuntimeLog(

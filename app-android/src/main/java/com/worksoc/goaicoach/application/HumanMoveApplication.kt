@@ -45,6 +45,22 @@ internal data class HumanEngineSyncRunPlan(
     val previousReviewCandidates: List<CandidateMove>,
 )
 
+internal data class HumanEngineSyncEffectLaunchRequest(
+    val effect: GameSessionEffect.SyncHumanMove,
+    val operation: EngineOperationRequest,
+)
+
+internal data class HumanEngineSyncCompletionRequest(
+    val result: HumanEngineSyncWorkflowResult,
+    val operation: EngineOperationRequest,
+    val currentState: GameState,
+    val currentSessionGeneration: Long,
+    val afterMove: GameState,
+    val moveDescription: String,
+    val localMove: HumanMoveLocalResult,
+    val previousSnapshots: List<ScoreSnapshot>,
+)
+
 internal sealed class HumanEngineSyncCompletionPlan {
     data class ApplySuccess(val display: HumanEngineSyncDisplayPlan) : HumanEngineSyncCompletionPlan()
     data class ApplyFailure(val failure: HumanEngineSyncFailurePlan) : HumanEngineSyncCompletionPlan()
@@ -227,6 +243,20 @@ internal fun buildHumanEngineSyncCompletionPlan(
             )
     }
 
+internal fun buildHumanEngineSyncCompletionPlan(
+    request: HumanEngineSyncCompletionRequest,
+): HumanEngineSyncCompletionPlan =
+    buildHumanEngineSyncCompletionPlan(
+        result = request.result,
+        operation = request.operation,
+        currentState = request.currentState,
+        currentSessionGeneration = request.currentSessionGeneration,
+        afterMove = request.afterMove,
+        moveDescription = request.moveDescription,
+        localMove = request.localMove,
+        previousSnapshots = request.previousSnapshots,
+    )
+
 internal fun HumanEngineSyncCompletionPlan.toRuntimeLogPlan(): HumanEngineSyncRuntimeLogPlan =
     when (this) {
         is HumanEngineSyncCompletionPlan.ApplySuccess ->
@@ -281,4 +311,14 @@ internal suspend fun EngineSessionClient.runHumanEngineSyncWorkflowResult(
     }.fold(
         onSuccess = { result -> HumanEngineSyncWorkflowResult.Success(result) },
         onFailure = { error -> HumanEngineSyncWorkflowResult.Failure(error) },
+    )
+
+internal suspend fun EngineSessionClient.runHumanEngineSyncWorkflowResult(
+    request: HumanEngineSyncEffectLaunchRequest,
+    diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
+): HumanEngineSyncWorkflowResult =
+    runHumanEngineSyncWorkflowResult(
+        effect = request.effect,
+        operationRequest = request.operation,
+        diagnosticEventLog = diagnosticEventLog,
     )

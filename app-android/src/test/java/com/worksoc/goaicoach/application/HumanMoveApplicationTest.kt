@@ -360,6 +360,87 @@ class HumanMoveApplicationTest {
         assertTrue(failure is HumanEngineSyncWorkflowResult.Failure)
         assertEquals("sync failed", (failure as HumanEngineSyncWorkflowResult.Failure).error.message)
     }
+
+    @Test
+    fun humanEngineSyncWorkflowResultCanRunFromLaunchRequest() = runBlocking {
+        val afterMove = GameState.empty()
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+        val move = afterMove.moves.single()
+        val plan = HumanEngineSyncRunPlan(
+            afterMove = afterMove,
+            profile = EngineProfile(name = "human-sync"),
+            move = move,
+            previousReviewCandidates = emptyList(),
+        )
+        val expected = LocalEngineMoveResult(
+            estimate = ScoreEstimate(
+                status = EngineStatus.ready("estimated"),
+                whiteScoreLead = 0.0,
+                whiteWinRate = 0.5,
+                summary = "estimate",
+            ),
+        )
+        val request = HumanEngineSyncEffectLaunchRequest(
+            effect = GameSessionEffect.SyncHumanMove(plan),
+            operation = engineOperationRequest(
+                kind = EngineOperationKind.HumanMoveSync,
+                state = afterMove,
+                sessionGeneration = 3,
+            ),
+        )
+
+        val success = FakeHumanEngineSessionClient(expected)
+            .runHumanEngineSyncWorkflowResult(request)
+
+        assertTrue(success is HumanEngineSyncWorkflowResult.Success)
+        assertEquals(expected, (success as HumanEngineSyncWorkflowResult.Success).result)
+    }
+
+    @Test
+    fun humanEngineSyncCompletionRequestKeepsLateResultDiscardGuard() {
+        val beforeMove = GameState.empty()
+        val move = Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine))
+        val localMove = applyHumanMoveLocally(
+            beforeMove = beforeMove,
+            move = move,
+            reviewAnalysis = MoveAnalysisSnapshot.empty(beforeMove),
+            previousMoveReviews = emptyList(),
+        ).getOrThrow()
+        val operation = engineOperationRequest(
+            kind = EngineOperationKind.HumanMoveSync,
+            state = localMove.afterMove,
+            sessionGeneration = 3,
+        )
+        val result = HumanEngineSyncWorkflowResult.Success(
+            LocalEngineMoveResult(
+                estimate = ScoreEstimate(
+                    status = EngineStatus.ready("estimated"),
+                    whiteScoreLead = 0.0,
+                    whiteWinRate = 0.5,
+                    summary = "estimate",
+                ),
+            ),
+        )
+        val request = HumanEngineSyncCompletionRequest(
+            result = result,
+            operation = operation,
+            currentState = localMove.afterMove,
+            currentSessionGeneration = 3,
+            afterMove = localMove.afterMove,
+            moveDescription = localMove.lastMoveText,
+            localMove = localMove,
+            previousSnapshots = emptyList(),
+        )
+        val stale = request.copy(
+            currentState = localMove.afterMove.play(Move.Pass(StoneColor.White)),
+        )
+
+        val apply = buildHumanEngineSyncCompletionPlan(request)
+        val discard = buildHumanEngineSyncCompletionPlan(stale)
+
+        assertTrue(apply is HumanEngineSyncCompletionPlan.ApplySuccess)
+        assertTrue(discard is HumanEngineSyncCompletionPlan.Discard)
+    }
 }
 
 private class FakeHumanEngineSessionClient(
