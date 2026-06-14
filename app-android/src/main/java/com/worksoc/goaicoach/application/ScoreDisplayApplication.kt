@@ -18,6 +18,10 @@ internal data class ScoreEstimateDisplayPlan(
     val engineMessage: String,
 )
 
+internal data class ScoreEstimateFailureDisplayPlan(
+    val engineMessage: String,
+)
+
 internal data class FinalScoreDisplayPlan(
     val gameState: GameState,
     val scoreText: String,
@@ -66,6 +70,11 @@ internal fun evaluateScoreEstimateResultGuard(
     evaluatePositionScopedResultGuard(
         token = token.position,
         currentState = currentState,
+    )
+
+internal fun buildScoreEstimateFailureDisplayPlan(error: Throwable): ScoreEstimateFailureDisplayPlan =
+    ScoreEstimateFailureDisplayPlan(
+        engineMessage = error.message ?: "Score estimate failed.",
     )
 
 internal fun buildScoreEstimateRequestPlan(

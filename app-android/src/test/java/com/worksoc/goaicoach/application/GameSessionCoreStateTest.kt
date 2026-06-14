@@ -6,12 +6,16 @@ import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.EngineProfile
+import com.worksoc.goaicoach.shared.EngineStatus
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
 import com.worksoc.goaicoach.shared.PlayLevelGroup
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.SearchTimeSettings
+import com.worksoc.goaicoach.shared.ScoreEstimate
+import com.worksoc.goaicoach.shared.ScoreSnapshot
+import com.worksoc.goaicoach.shared.ScoreSnapshotSource
 import com.worksoc.goaicoach.shared.StoneColor
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -105,6 +109,37 @@ class GameSessionCoreStateTest {
             "AI turn failed. Current board state was not changed.",
             next.analysisState.candidateText,
         )
+    }
+
+    @Test
+    fun applyScoreEstimateFailureDisplayPlanClearsEstimateAndKeepsBoard() {
+        val estimate = ScoreEstimate(
+            status = EngineStatus.ready("estimated"),
+            whiteScoreLead = 0.5,
+            whiteWinRate = 0.55,
+            summary = "estimate",
+        )
+        val snapshot = ScoreSnapshot(moveNumber = 2, source = ScoreSnapshotSource.EngineEstimate)
+        val before = baseCoreState(
+            scoreState = GameSessionScoreState(
+                scoreText = "existing score",
+                scoreEstimate = estimate,
+                scoreSnapshots = listOf(snapshot),
+                endgameLog = "existing log",
+            ),
+            engineMessage = "previous message",
+        )
+
+        val next = before.applyScoreEstimateFailureDisplayPlan(
+            ScoreEstimateFailureDisplayPlan(engineMessage = "score failed"),
+        )
+
+        assertEquals(before.gameState, next.gameState)
+        assertEquals("existing score", next.scoreState.scoreText)
+        assertNull(next.scoreState.scoreEstimate)
+        assertEquals(listOf(snapshot), next.scoreState.scoreSnapshots)
+        assertEquals("existing log", next.scoreState.endgameLog)
+        assertEquals("score failed", next.engineMessage)
     }
 
     @Test

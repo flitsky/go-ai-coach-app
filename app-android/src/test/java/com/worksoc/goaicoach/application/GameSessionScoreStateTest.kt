@@ -57,6 +57,32 @@ class GameSessionScoreStateTest {
     }
 
     @Test
+    fun scoreEstimateFailureDisplayPlanClearsOnlyCurrentEstimate() {
+        val estimate = ScoreEstimate(
+            status = EngineStatus.ready("estimated"),
+            whiteScoreLead = 1.0,
+            whiteWinRate = 0.55,
+            summary = "estimate",
+        )
+        val snapshot = ScoreSnapshot(moveNumber = 3, source = ScoreSnapshotSource.EngineEstimate)
+        val original = GameSessionScoreState(
+            scoreText = "old score text",
+            scoreEstimate = estimate,
+            scoreSnapshots = listOf(snapshot),
+            endgameLog = "kept log",
+        )
+
+        val next = original.applyScoreEstimateFailureDisplayPlan(
+            ScoreEstimateFailureDisplayPlan(engineMessage = "failed"),
+        )
+
+        assertEquals("old score text", next.scoreText)
+        assertNull(next.scoreEstimate)
+        assertEquals(listOf(snapshot), next.scoreSnapshots)
+        assertEquals("kept log", next.endgameLog)
+    }
+
+    @Test
     fun finalScoreDisplayPlanUpdatesScoreAndEndgameLog() {
         val snapshot = ScoreSnapshot(moveNumber = 10, source = ScoreSnapshotSource.FinalScore)
         val original = GameSessionScoreState.reset(

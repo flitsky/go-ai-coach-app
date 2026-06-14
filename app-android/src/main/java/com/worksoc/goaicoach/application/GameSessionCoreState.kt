@@ -18,6 +18,14 @@ internal data class GameSessionCoreState(
             engineMessage = score.engineMessage,
         )
 
+    fun applyScoreEstimateFailureDisplayPlan(
+        failure: ScoreEstimateFailureDisplayPlan,
+    ): GameSessionCoreState =
+        copy(
+            scoreState = scoreState.applyScoreEstimateFailureDisplayPlan(failure),
+            engineMessage = failure.engineMessage,
+        )
+
     fun applyFinalScoreDisplayPlan(final: FinalScoreDisplayPlan): GameSessionCoreState =
         copy(
             gameState = final.gameState,

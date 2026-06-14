@@ -45,6 +45,7 @@ import com.worksoc.goaicoach.application.buildUndoRequestPlan
 import com.worksoc.goaicoach.application.buildNewLocalGameSessionPlan
 import com.worksoc.goaicoach.application.buildSavedGameRestoreRequestPlan
 import com.worksoc.goaicoach.application.buildSavedSessionCheckPlan
+import com.worksoc.goaicoach.application.buildScoreEstimateFailureDisplayPlan
 import com.worksoc.goaicoach.application.buildScoreEstimateRequestPlan
 import com.worksoc.goaicoach.application.buildScoringRuleChangePlan
 import com.worksoc.goaicoach.application.buildStartConfiguredGamePlan
@@ -659,6 +660,14 @@ private fun GoCoachScreen(
         applyCoreSessionState(currentCoreSessionState().applyScoreEstimateDisplayPlan(score))
     }
 
+    fun applyScoreEstimateFailureDisplayPlan(error: Throwable) {
+        applyCoreSessionState(
+            currentCoreSessionState().applyScoreEstimateFailureDisplayPlan(
+                buildScoreEstimateFailureDisplayPlan(error),
+            ),
+        )
+    }
+
     fun applyFinalScoreDisplayPlan(final: FinalScoreDisplayPlan) {
         applyCoreSessionState(currentCoreSessionState().applyFinalScoreDisplayPlan(final))
     }
@@ -1143,8 +1152,7 @@ private fun GoCoachScreen(
                     )
                 ) {
                     EngineOperationResultGuard.Apply -> {
-                        engineMessage = error.message ?: "Score estimate failed."
-                        scoreState = scoreState.copy(scoreEstimate = null)
+                        applyScoreEstimateFailureDisplayPlan(error)
                     }
                     is EngineOperationResultGuard.Discard -> appendEngineOperationDiscardLog(guard)
                 }

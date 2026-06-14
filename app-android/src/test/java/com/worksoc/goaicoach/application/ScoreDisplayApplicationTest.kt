@@ -117,6 +117,15 @@ class ScoreDisplayApplicationTest {
     }
 
     @Test
+    fun scoreEstimateFailureDisplayPlanUsesErrorMessageOrDefault() {
+        val withMessage = buildScoreEstimateFailureDisplayPlan(IllegalStateException("engine stalled"))
+        val withoutMessage = buildScoreEstimateFailureDisplayPlan(Throwable())
+
+        assertEquals("engine stalled", withMessage.engineMessage)
+        assertEquals("Score estimate failed.", withoutMessage.engineMessage)
+    }
+
+    @Test
     fun engineEstimateDisplayPlanRecordsScoreSnapshotAndMessage() {
         val state = GameState.empty()
         val estimate = ScoreEstimate(

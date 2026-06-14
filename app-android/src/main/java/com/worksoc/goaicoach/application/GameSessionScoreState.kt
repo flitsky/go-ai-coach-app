@@ -16,6 +16,11 @@ internal data class GameSessionScoreState(
             scoreSnapshots = score.scoreSnapshots,
         )
 
+    fun applyScoreEstimateFailureDisplayPlan(
+        @Suppress("UNUSED_PARAMETER") failure: ScoreEstimateFailureDisplayPlan,
+    ): GameSessionScoreState =
+        copy(scoreEstimate = null)
+
     fun applyFinalScoreDisplayPlan(final: FinalScoreDisplayPlan): GameSessionScoreState =
         copy(
             scoreText = final.scoreText,

@@ -1199,3 +1199,6 @@
 - `ENGINE_API_CALL_POLICY.md`에 다중 엔진/CoachEngine/원격 coach analysis 전환은 지금 구현하지 않고, Top Moves를 학습용 JSON coach 경로로 전환하는 시점에 재논의한다고 명시했다.
 - 다음 리팩토링으로 stale result discard 관측성을 보강했다. `runtimeEngineOperationDiscardedLog()`를 추가하고, `GoCoachApp.kt`의 Top Moves, score estimate, 자동 AI 턴, 자동 AI 종국 stale discard 분기를 공통 로그 helper로 연결했다. 이제 늦게 도착한 엔진 결과가 폐기될 때 화면은 바꾸지 않지만 runtime event에는 원인과 현재 board summary가 남는다.
 - `RuntimeEventApplicationTest`에 stale discard 로그 테스트를 추가했고, 관련 application 테스트를 JDK 17/Android SDK 환경에서 실행해 통과했다.
+- 사용자가 다음 리팩토링 진행 후 리팩토링 완성도와 다음 추천 항목 요약 보고를 요청했다.
+- 다음 안전 단위로 score estimate 실패 경로를 application display plan/reducer로 이동했다. `ScoreEstimateFailureDisplayPlan`과 `buildScoreEstimateFailureDisplayPlan()`을 추가했고, `GameSessionScoreState`/`GameSessionCoreState`가 실패 시 현재 estimate 제거와 engine message 반영을 담당한다. `GoCoachApp.kt`는 score estimate 실패에서 더 이상 `engineMessage`와 `scoreState`를 직접 수정하지 않는다.
+- `ScoreDisplayApplicationTest`, `GameSessionScoreStateTest`, `GameSessionCoreStateTest`를 보강했고 관련 application 테스트가 통과했다. 리팩토링 완성도는 2026-06-14 현재 **87/100**으로 재평가했다. 기반 분리는 탄탄해졌지만 `GoCoachApp.kt`의 coroutine/effect 실행 책임이 남아 있어 effect runner 분리가 다음 핵심이다.
