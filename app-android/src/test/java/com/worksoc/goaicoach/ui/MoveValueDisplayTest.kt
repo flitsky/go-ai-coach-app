@@ -1,8 +1,8 @@
 package com.worksoc.goaicoach.ui
 
-import com.worksoc.goaicoach.application.pointLossLabel
+import com.worksoc.goaicoach.application.movereview.pointLossLabel
 import com.worksoc.goaicoach.application.analysis.toCandidateText
-import com.worksoc.goaicoach.application.topMoveDeltaScoreLabel
+import com.worksoc.goaicoach.application.movereview.topMoveDeltaScoreLabel
 import com.worksoc.goaicoach.shared.AnalysisResult
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize

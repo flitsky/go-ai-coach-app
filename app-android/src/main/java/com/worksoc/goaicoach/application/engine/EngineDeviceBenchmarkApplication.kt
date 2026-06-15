@@ -3,11 +3,11 @@ package com.worksoc.goaicoach.application.engine
 import com.worksoc.goaicoach.application.EngineFallbackPolicy
 import com.worksoc.goaicoach.application.EngineOperationKind
 import com.worksoc.goaicoach.application.EngineOperationRequest
-import com.worksoc.goaicoach.application.EngineSessionClient
+import com.worksoc.goaicoach.application.engine.EngineSessionClient
 import com.worksoc.goaicoach.application.EngineTimeoutPolicy
 import com.worksoc.goaicoach.application.engineOperationRequest
 import com.worksoc.goaicoach.application.session.GameSessionEffect
-import com.worksoc.goaicoach.application.syncToGameState
+import com.worksoc.goaicoach.application.engine.syncToGameState
 
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.diagnostic.NoopDiagnosticEventLog

@@ -1,7 +1,7 @@
 package com.worksoc.goaicoach.persistence
 
 import android.content.Context
-import com.worksoc.goaicoach.application.DebugReportMirrorPort
+import com.worksoc.goaicoach.application.debugreport.DebugReportMirrorPort
 
 internal class DebugReportMirrorStore(
     context: Context,

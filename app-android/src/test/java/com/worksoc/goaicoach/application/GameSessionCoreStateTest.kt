@@ -11,6 +11,8 @@ import com.worksoc.goaicoach.application.session.*
 
 import com.worksoc.goaicoach.application.autoai.*
 
+import com.worksoc.goaicoach.application.engine.localScoreSnapshot
+import com.worksoc.goaicoach.application.movereview.*
 import com.worksoc.goaicoach.application.score.*
 
 import com.worksoc.goaicoach.application.topmoves.*

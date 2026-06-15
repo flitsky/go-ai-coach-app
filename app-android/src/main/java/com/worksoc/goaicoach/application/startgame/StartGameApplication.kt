@@ -1,7 +1,7 @@
 package com.worksoc.goaicoach.application.startgame
 
 import com.worksoc.goaicoach.application.RuntimePlayLevelSelection
-import com.worksoc.goaicoach.application.localScoreSnapshot
+import com.worksoc.goaicoach.application.engine.localScoreSnapshot
 import com.worksoc.goaicoach.application.selectRuntimePlayLevel
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup

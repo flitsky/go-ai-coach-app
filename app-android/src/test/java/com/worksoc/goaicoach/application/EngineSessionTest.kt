@@ -4,6 +4,7 @@ import com.worksoc.goaicoach.application.analysis.*
 import com.worksoc.goaicoach.application.autoai.*
 
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
+import com.worksoc.goaicoach.application.engine.*
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.AnalysisResult
 import com.worksoc.goaicoach.shared.BoardCoordinate

@@ -8,7 +8,7 @@ import com.worksoc.goaicoach.application.EngineFallbackPolicy
 import com.worksoc.goaicoach.application.EngineOperationKind
 import com.worksoc.goaicoach.application.EngineOperationRequest
 import com.worksoc.goaicoach.application.EngineOperationResultGuard
-import com.worksoc.goaicoach.application.EngineSessionClient
+import com.worksoc.goaicoach.application.engine.EngineSessionClient
 import com.worksoc.goaicoach.application.EngineTimeoutPolicy
 import com.worksoc.goaicoach.application.session.GameSessionAnalysisState
 import com.worksoc.goaicoach.application.session.GameSessionControllerState

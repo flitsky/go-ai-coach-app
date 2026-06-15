@@ -1,6 +1,6 @@
 package com.worksoc.goaicoach.application.analysis
 
-import com.worksoc.goaicoach.application.pointLossLabel
+import com.worksoc.goaicoach.application.movereview.pointLossLabel
 import com.worksoc.goaicoach.shared.AnalysisResult
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.FinalScoreResult

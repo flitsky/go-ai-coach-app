@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.application
+package com.worksoc.goaicoach.application.movereview
 
 import com.worksoc.goaicoach.shared.CandidateMove
 import kotlin.math.abs

@@ -1,10 +1,10 @@
 package com.worksoc.goaicoach.application.autoai
 
 import com.worksoc.goaicoach.application.endgame.AiEndgameResolution
-import com.worksoc.goaicoach.application.AutoAiTurnResult
-import com.worksoc.goaicoach.application.EngineSessionClient
+import com.worksoc.goaicoach.application.engine.AutoAiTurnResult
+import com.worksoc.goaicoach.application.engine.EngineSessionClient
 import com.worksoc.goaicoach.application.session.GameSessionEffect
-import com.worksoc.goaicoach.application.localScoreSnapshot
+import com.worksoc.goaicoach.application.engine.localScoreSnapshot
 import com.worksoc.goaicoach.application.score.*
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.diagnostic.NoopDiagnosticEventLog

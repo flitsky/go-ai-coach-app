@@ -10,7 +10,7 @@ import com.worksoc.goaicoach.application.endgame.AiEndgameResolution
 import com.worksoc.goaicoach.application.endgame.buildEndgameLog
 import com.worksoc.goaicoach.shared.engine.engineOperationRequest
 import com.worksoc.goaicoach.application.evaluateEngineOperationResultGuard
-import com.worksoc.goaicoach.application.localScoreSnapshot
+import com.worksoc.goaicoach.application.engine.localScoreSnapshot
 import com.worksoc.goaicoach.application.analysis.toDisplayText
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.shared.FinalScoreResult

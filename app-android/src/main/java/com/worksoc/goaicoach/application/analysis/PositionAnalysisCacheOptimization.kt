@@ -2,7 +2,7 @@ package com.worksoc.goaicoach.application.analysis
 
 import com.worksoc.goaicoach.application.session.*
 
-import com.worksoc.goaicoach.application.EngineSessionClient
+import com.worksoc.goaicoach.application.engine.EngineSessionClient
 import com.worksoc.goaicoach.shared.engine.EngineFallbackPolicy
 import com.worksoc.goaicoach.shared.engine.EngineOperationKind
 import com.worksoc.goaicoach.shared.engine.EngineOperationRequest

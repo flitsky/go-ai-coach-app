@@ -2,7 +2,7 @@ package com.worksoc.goaicoach.presentation
 
 import com.worksoc.goaicoach.application.session.*
 
-import com.worksoc.goaicoach.application.MoveReviewMarker
+import com.worksoc.goaicoach.application.movereview.MoveReviewMarker
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationPrompt
 import com.worksoc.goaicoach.application.decidePromptVisibility
 import com.worksoc.goaicoach.application.session.GameSessionControllerState

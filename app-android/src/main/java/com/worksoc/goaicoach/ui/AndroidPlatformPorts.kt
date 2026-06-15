@@ -4,8 +4,8 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.widget.Toast
-import com.worksoc.goaicoach.application.ClipboardPort
-import com.worksoc.goaicoach.application.UserNoticePort
+import com.worksoc.goaicoach.application.debugreport.ClipboardPort
+import com.worksoc.goaicoach.application.debugreport.UserNoticePort
 
 internal class AndroidClipboardPort(
     context: Context,

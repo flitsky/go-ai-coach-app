@@ -26,11 +26,11 @@ import com.worksoc.goaicoach.application.analysis.AnalysisCacheKey
 import com.worksoc.goaicoach.application.analysis.AnalysisResultCache
 import com.worksoc.goaicoach.application.debugreport.buildDebugReportCopyPlan
 import com.worksoc.goaicoach.application.buildScoringRuleChangePlan
-import com.worksoc.goaicoach.application.buildInitialUserPreferencesPlan
+import com.worksoc.goaicoach.application.preferences.buildInitialUserPreferencesPlan
 import com.worksoc.goaicoach.application.buildPlayerSetupChangePlan
 import com.worksoc.goaicoach.application.analysis.buildPositionAnalysisCacheOptimizationPlan
 import com.worksoc.goaicoach.application.analysis.buildPositionAnalysisCacheOptimizationPrompt
-import com.worksoc.goaicoach.application.buildUserPreferencesSnapshot
+import com.worksoc.goaicoach.application.preferences.buildUserPreferencesSnapshot
 import com.worksoc.goaicoach.application.EngineFallbackPolicy
 import com.worksoc.goaicoach.application.EngineOperationGate
 import com.worksoc.goaicoach.application.EngineOperationKind
@@ -39,9 +39,9 @@ import com.worksoc.goaicoach.application.EngineOperationLifecycleTransition
 import com.worksoc.goaicoach.application.EngineOperationLifecycleCallbacks
 import com.worksoc.goaicoach.application.EngineOperationResultGuard
 import com.worksoc.goaicoach.application.EngineOperationRequest
-import com.worksoc.goaicoach.application.EngineSessionClient
+import com.worksoc.goaicoach.application.engine.EngineSessionClient
 import com.worksoc.goaicoach.application.EngineTimeoutPolicy
-import com.worksoc.goaicoach.application.DebugReportMirrorPort
+import com.worksoc.goaicoach.application.debugreport.DebugReportMirrorPort
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.humanmove.HumanEngineSyncCompletionApplyPlan
 import com.worksoc.goaicoach.application.humanmove.HumanEngineSyncCompletionRequest
@@ -55,7 +55,7 @@ import com.worksoc.goaicoach.application.humanmove.buildHumanEngineSyncCompletio
 import com.worksoc.goaicoach.application.humanmove.runHumanEngineSyncWorkflowResult
 import com.worksoc.goaicoach.application.humanmove.toApplyPlan
 import com.worksoc.goaicoach.application.applyEngineOperationLifecycleTransition
-import com.worksoc.goaicoach.application.ClipboardPort
+import com.worksoc.goaicoach.application.debugreport.ClipboardPort
 import com.worksoc.goaicoach.application.engineOperationRequest
 import com.worksoc.goaicoach.application.evaluateEngineBenchmarkGate
 import com.worksoc.goaicoach.application.evaluateScoringRuleChangeGate
@@ -65,7 +65,7 @@ import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizat
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationUiState
 import com.worksoc.goaicoach.application.analysis.PostGamePositionAnalysisCacheOptimizationPromptEnabled
 import com.worksoc.goaicoach.application.recordEngineOperationDiscardLog
-import com.worksoc.goaicoach.application.localScoreSnapshot
+import com.worksoc.goaicoach.application.engine.localScoreSnapshot
 import com.worksoc.goaicoach.application.selectRuntimePlayLevel
 import com.worksoc.goaicoach.application.RuntimePlayLevelSelection
 import com.worksoc.goaicoach.application.ScoringRuleChangePlan
@@ -85,7 +85,7 @@ import com.worksoc.goaicoach.application.startgame.buildNewLocalGameSessionPlan
 import com.worksoc.goaicoach.application.startgame.buildStartConfiguredGamePlan
 import com.worksoc.goaicoach.application.debugreport.toDebugReportSnapshot
 import com.worksoc.goaicoach.application.debugreport.runDebugReportCopyEffect
-import com.worksoc.goaicoach.application.SavedGameStorePort
+import com.worksoc.goaicoach.application.savedgame.SavedGameStorePort
 import com.worksoc.goaicoach.application.analysis.UndoAnalysisRestoreCache
 import com.worksoc.goaicoach.application.undo.EngineUndoCompletionPlan
 import com.worksoc.goaicoach.application.undo.UndoLocalStatePlan
@@ -95,8 +95,8 @@ import com.worksoc.goaicoach.application.undo.buildLocalTwoPlayerUndoPlan
 import com.worksoc.goaicoach.application.undo.buildUndoRequestPlan
 import com.worksoc.goaicoach.application.undo.undoEngineInterventionQuietUntilMillis
 import com.worksoc.goaicoach.application.undo.undoEngineInterventionRemainingDelayMillis
-import com.worksoc.goaicoach.application.UserPreferencesStorePort
-import com.worksoc.goaicoach.application.UserNoticePort
+import com.worksoc.goaicoach.application.preferences.UserPreferencesStorePort
+import com.worksoc.goaicoach.application.debugreport.UserNoticePort
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup

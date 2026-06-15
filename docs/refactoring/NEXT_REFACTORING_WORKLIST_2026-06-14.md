@@ -1368,3 +1368,49 @@
 5. `GoCoachApp.kt` app-service orchestration 추가 분리
    - debug report copy, post-game cache optimization, start-game/resume/undo action binding 중 하나를 controller/action object로 이동한다.
    - acceptance: `GoCoachApp.kt` 줄 수와 import fan-in이 모두 감소하고, UI는 action bridge를 호출하는 형태로 단순화된다.
+
+## 2026-06-15 추가 진행 로그: ext.10 ports/preferences/movereview/engine session package 분리
+
+- 2026-06-15: root `ApplicationPorts.kt`를 제거했다. 저장/설정/debug report 관련 port가 모두 각 도메인 package 소유로 이동했다.
+  - `SavedGameStorePort` -> `application/savedgame/SavedGamePorts.kt`
+  - `UserPreferencesStorePort` -> `application/preferences/UserPreferencesPorts.kt`
+  - `DebugReportMirrorPort`, `ClipboardPort`, `UserNoticePort` -> `application/debugreport/DebugReportPorts.kt`
+- 2026-06-15: `UserPreferencesApplication.kt`를 `application/preferences/`로 이동했다. 초기 설정 복원, `GameSettings`, preferences snapshot 생성 책임이 preferences 도메인에 모였다.
+- 2026-06-15: `MoveReview.kt`, `MoveValueDisplay.kt`를 `application/movereview/`로 이동했다. 착수 평가 marker/tone/label 정책이 UI board나 generic application root가 아닌 move review 도메인에서 제공된다.
+- 2026-06-15: `EngineSession.kt`, `EngineSessionClient.kt`를 `application/engine/`으로 이동했다. session interface, local implementation, assistant-judge time cap, local scoring helper가 engine application package에 모였다.
+- 2026-06-15: `LayeringContractTest`는 새로 이동한 debugreport ports, savedgame ports, move review/value display 파일을 platform-free 후보로 감시한다. `EngineSessionClient`는 아직 local implementation과 cache resolver, time source가 한 파일에 있어 KMP-ready 후보에는 넣지 않았다.
+- 현재 metric: `GoCoachApp.kt`는 2,088줄, UI 파일 안의 `scope.launch`/`withContext`/`Dispatchers`/`runCatching` 직접 지점은 0개다. application import fan-in은 82개이며, application root package 파일 수는 14개에서 8개로 감소했다.
+- 검증:
+  - `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:compileDebugKotlin :app-android:compileDebugUnitTestKotlin` 통과.
+  - `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest --tests 'com.worksoc.goaicoach.application.UserPreferencesApplicationTest' --tests 'com.worksoc.goaicoach.application.MoveReviewTest' --tests 'com.worksoc.goaicoach.ui.MoveValueDisplayTest' --tests 'com.worksoc.goaicoach.application.EngineSessionTest' --tests 'com.worksoc.goaicoach.application.EngineSessionLifecycleApplicationTest' --tests 'com.worksoc.goaicoach.application.DebugReportBuilderTest' --tests 'com.worksoc.goaicoach.architecture.LayeringContractTest'` 통과.
+  - `git diff --check` 통과.
+  - `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test` 통과.
+
+## 현재 리팩토링/아키텍처 완성도 평가
+
+- 리팩토링 배치 진행도: 99.992/100.
+- 외부 평가 기준 플랫폼 아키텍처 완성도: 99.0/100.
+- 상향 요인: root application package가 8개로 줄었고, 더 이상 `ApplicationPorts.kt` 같은 잡다한 port 집합 파일이 없다. preferences, move review, debug report port, savedgame port, engine session이 각자의 package에 위치한다.
+- 남은 감점 요인: `GoCoachApp.kt`는 여전히 2,088줄이며 app-service action binding이 크다. `EngineSessionClient.kt`는 interface와 local implementation, cache, time source가 한 파일에 남아 있다. `UserPreferencesApplication.kt`는 아직 `persistence.UserPreferencesSnapshot`을 참조하므로 preferences DTO 소유권이 완전히 정리되지는 않았다.
+
+## 다음 추천 리팩토링 항목 - ext.11
+
+1. `UserPreferencesSnapshot` 소유권 정리
+   - 현재 preferences application이 persistence DTO를 직접 참조한다. `UserPreferencesSnapshot`을 `application/preferences` 또는 shared/common 후보로 이동하고, persistence는 serialize/deserialize adapter로만 남긴다.
+   - acceptance: preferences package가 `com.worksoc.goaicoach.persistence`를 import하지 않는다.
+
+2. `EngineSessionClient.kt` interface/local implementation 분리
+   - `EngineSessionClient` contract, `LocalEngineSessionClient`, cache resolver wiring, assistant judge constants/helper를 파일 단위로 분리한다.
+   - acceptance: remote engine driver spike가 local implementation 파일을 건드리지 않고 contract를 구현할 수 있다.
+
+3. `EngineSession.kt` 시간 source/assistant judge 정책 분리
+   - `System.currentTimeMillis()` 사용 구간을 clock port 또는 application runner 경계로 이동하고, assistant judge SLA 상수를 endgame/engine policy 파일로 분리한다.
+   - acceptance: engine session helper 일부를 KMP/platform-free 후보로 올릴 수 있다.
+
+4. `AnalysisSession.kt` KMP-ready화
+   - `java.util.LinkedHashMap` 기반 LRU cache를 Kotlin-only 구현 또는 port-backed cache로 교체한다.
+   - acceptance: `AnalysisSession.kt`를 `LayeringContractTest` platform-free 후보에 추가한다.
+
+5. `GoCoachApp.kt` action binding 추가 축소
+   - debug report copy, start/resume/new-game/undo action group 중 하나를 app-service action binder로 이동한다.
+   - acceptance: `GoCoachApp.kt` 줄 수와 application import fan-in이 동시에 감소한다.
