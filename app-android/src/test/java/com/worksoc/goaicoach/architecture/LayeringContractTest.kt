@@ -331,6 +331,49 @@ class LayeringContractTest {
     }
 
     @Test
+    fun scoreSyncRunnersStaySplitByTriggerDomain() {
+        val repoRoot = repoRoot()
+        val scoreRoot = repoRoot
+            .resolve("app-android/src/main/java/com/worksoc/goaicoach/application/score")
+        val common = scoreRoot.resolve("ScoreSyncRunnerApplication.kt")
+        val expectedSplitFiles = listOf(
+            scoreRoot.resolve("ScoringRuleScoreSyncRunnerApplication.kt"),
+            scoreRoot.resolve("PostUndoScoreSyncRunnerApplication.kt"),
+            scoreRoot.resolve("RestoredGameScoreSyncRunnerApplication.kt"),
+        )
+        val offenders = mutableListOf<String>()
+
+        expectedSplitFiles
+            .filterNot { file -> file.exists() }
+            .forEach { file -> offenders += "${file.relativeTo(repoRoot).path}: missing score sync split file" }
+
+        val commonText = common.readText()
+        val forbiddenCommonFragments = listOf(
+            "ScoringRuleSyncEffectLaunchRequest",
+            "PostUndoScoreSyncEffectLaunchRequest",
+            "RestoredGameSyncEffectLaunchRequest",
+            "runScoringRuleSyncApplication(",
+            "runPostUndoScoreSyncApplication(",
+            "runRestoredGameSyncApplication(",
+        ).filter { fragment -> fragment in commonText }
+        forbiddenCommonFragments.forEach { fragment ->
+            offenders += "${common.relativeTo(repoRoot).path}: common runner still owns $fragment"
+        }
+        if (common.readLines().size > 90) {
+            offenders += "${common.relativeTo(repoRoot).path}: common score sync helper grew past 90 lines"
+        }
+        expectedSplitFiles
+            .filter { file -> file.exists() && file.readLines().size > 180 }
+            .forEach { file -> offenders += "${file.relativeTo(repoRoot).path}: split runner grew past 180 lines" }
+
+        assertTrue(
+            "Score sync runners must stay split by trigger domain so restored/post-undo/scoring-rule policies can evolve independently:\n" +
+                offenders.joinToString("\n"),
+            offenders.isEmpty(),
+        )
+    }
+
+    @Test
     fun positionAnalysisGatewayContractStaysKmpReady() {
         val middlewareRoot = repoRoot()
             .resolve("app-android/src/main/java/com/worksoc/goaicoach/middleware")

@@ -1559,3 +1559,8 @@
 - `EngineDeviceBenchmarkApplication.kt`는 478줄에서 161줄로 줄었다. startup benchmark 실행 gate, operation scope, observed engine workflow result 조립만 남겨 model/display 변화와 workflow 변화를 독립적으로 다루기 쉬워졌다.
 - `LayeringContractTest`의 benchmark guard를 보강했다. model/display split 파일 존재와 workflow shell 220줄 이하를 확인해, benchmark application 파일이 다시 비대해지는 회귀를 막는다.
 - 검증으로 compile, `EngineDeviceBenchmarkApplicationTest`, `LayeringContractTest`를 실행했고 모두 통과했다.
+- 사용자가 `14.` 다음 리팩토링 추천 항목을 단계별로 모두 진행하고, 결과 보고 시 현재 완성도와 다음 추천 작업을 정리해달라고 요청했다.
+- `ScoreSyncRunnerApplication.kt`를 공통 display helper shell로 축소하고, trigger domain별 runner를 `ScoringRuleScoreSyncRunnerApplication.kt`, `PostUndoScoreSyncRunnerApplication.kt`, `RestoredGameScoreSyncRunnerApplication.kt`로 분리했다.
+- `ScoreSyncRunnerApplication.kt`는 365줄에서 46줄로 줄었다. scoring-rule, post-undo, restored-game sync의 operation 생성, effect launch request, completion/apply, follow-up analysis 요청 정책을 각각 별도 파일에서 관리한다.
+- `LayeringContractTest`에 `scoreSyncRunnersStaySplitByTriggerDomain()`을 추가했다. split 파일 존재, common helper 90줄 이하, 각 runner 180줄 이하, common helper가 domain-specific request/application을 다시 소유하지 않는지를 검증한다.
+- 검증으로 compile, `ScoreDisplayApplicationTest`, `LayeringContractTest`를 실행했고 모두 통과했다.
