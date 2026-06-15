@@ -540,9 +540,19 @@ class LayeringContractTest {
                     """.trimIndent(),
                 )
             }
+            // e) Negative: the forbidden path appears only inside a string literal
+            //    (e.g. a diagnostic/doc message), which is not a real reference.
+            val stringMention = File(tempDir, "StringMention.kt").apply {
+                writeText(
+                    """
+                    package sample
+                    fun describe() = "see com.worksoc.goaicoach.shared.EngineCoreApi for details"
+                    """.trimIndent(),
+                )
+            }
 
             val offenders = forbiddenReferenceOffenders(
-                files = listOf(wildcardOffender, inlineOffender, aliasedOffender, clean),
+                files = listOf(wildcardOffender, inlineOffender, aliasedOffender, clean, stringMention),
                 forbiddenImports = listOf("import com.worksoc.goaicoach.shared.EngineCoreApi"),
             )
 
@@ -561,6 +571,10 @@ class LayeringContractTest {
             assertTrue(
                 "A prose-only mention must not be flagged:\n${offenders.joinToString("\n")}",
                 offenders.none { it.contains("Clean.kt") },
+            )
+            assertTrue(
+                "A path inside a string literal must not be flagged:\n${offenders.joinToString("\n")}",
+                offenders.none { it.contains("StringMention.kt") },
             )
         } finally {
             tempDir.deleteRecursively()
@@ -610,6 +624,11 @@ class LayeringContractTest {
                 trimmed.startsWith("//") || trimmed.startsWith("*") || trimmed.startsWith("/*")
         }
 
+        // String literals and trailing comments are not real references; strip
+        // them so a diagnostic/doc message that merely mentions a forbidden path
+        // is not flagged.
+        val scanLines = codeLines.map { line -> stripStringsAndTrailingComment(line) }
+
         // 1) Direct import. Covers exact types, package prefixes, and `... as Alias`.
         importLines.firstOrNull { line -> line.trimStart().startsWith(forbidden) }
             ?.let { line -> results += "forbidden import -> ${line.trim()}" }
@@ -623,7 +642,7 @@ class LayeringContractTest {
             val hasWildcardImport = importLines.any { line -> line.trim() == "import $packageName.*" }
             if (hasWildcardImport) {
                 val bareUse = Regex("(?<![\\w.])${Regex.escape(simpleName)}(?![\\w])")
-                if (codeLines.any { line -> bareUse.containsMatchIn(line) }) {
+                if (scanLines.any { line -> bareUse.containsMatchIn(line) }) {
                     results += "wildcard import `$packageName.*` with bare use of `$simpleName`"
                 }
             }
@@ -635,12 +654,25 @@ class LayeringContractTest {
         } else {
             Regex("(?<![\\w.])${Regex.escape(path)}(?![\\w])")
         }
-        if (codeLines.any { line -> inlineUse.containsMatchIn(line) }) {
+        if (scanLines.any { line -> inlineUse.containsMatchIn(line) }) {
             results += "fully-qualified reference -> $path"
         }
 
         return results.distinct()
     }
+
+    /**
+     * Blanks out string-literal contents and a trailing line comment so that
+     * forbidden-reference detection looks only at actual code. Multi-line raw
+     * strings spanning lines are out of scope (not used for path-like text in
+     * the checked layers); triple- and double-quoted single-line strings are
+     * handled.
+     */
+    private fun stripStringsAndTrailingComment(line: String): String =
+        line
+            .replace(Regex("\"\"\".*?\"\"\""), "\"\"")
+            .replace(Regex("\"(\\\\.|[^\"\\\\])*\""), "\"\"")
+            .substringBefore("//")
 
     private fun repoRoot(): File {
         var current = File(".").canonicalFile
