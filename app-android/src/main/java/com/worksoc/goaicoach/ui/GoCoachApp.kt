@@ -1263,57 +1263,22 @@ private fun GoCoachScreen(
     }
 
     suspend fun applyAutoAiEndgamePlan(endgamePlan: AutoAiTurnEndgamePlan.Resolve) {
-        val endgameOperationToken = autoAiEndgameOperationToken(
-            endgamePlan,
-            sessionGeneration = runtimeState.sessionGeneration,
-        )
-        isGameEnded = true
-        runtimeEventLog.append(
-            runtimeAiTurnEndgameDetectedLog(
-                context = currentRuntimeLogContext(),
-                state = endgamePlan.state,
+        runAutoAiEndgameApplication(
+            AutoAiEndgameRunRequest(
+                endgamePlan = endgamePlan,
+                engineClient = engineClient,
+                previousSnapshotsProvider = { scoreState.scoreSnapshots },
+                currentStateProvider = { gameState },
+                currentSessionGenerationProvider = { runtimeState.sessionGeneration },
+                runtimeContextProvider = ::currentRuntimeLogContext,
+                runtimeEventLog = runtimeEventLog,
+                diagnosticEventLog = diagnosticEventLog,
+                markGameEnded = { isGameEnded = true },
+                applyResolvedDisplay = ::applyFinalScoreDisplayPlan,
+                applyFailureDisplay = ::applyEndgameFailureDisplayPlan,
+                appendEngineOperationDiscardLog = ::appendEngineOperationDiscardLog,
             ),
         )
-        val endgameDisplay = runEngineIo {
-            engineClient.runAutoAiEndgameEffect(
-                effect = GameSessionEffect.ResolveAutoAiEndgame(endgamePlan),
-                previousSnapshots = scoreState.scoreSnapshots,
-                operationRequest = endgameOperationToken.operation,
-                diagnosticEventLog = diagnosticEventLog,
-            )
-        }
-        val endgameCompletion = buildAutoAiEndgameCompletionPlan(
-            token = endgameOperationToken,
-            currentState = gameState,
-            currentSessionGeneration = runtimeState.sessionGeneration,
-            display = endgameDisplay,
-        )
-        when (endgameCompletion) {
-            is AutoAiEndgameCompletionPlan.ApplyResolved -> {
-                runtimeEventLog.append(
-                    runtimeAiTurnEndgameSuccessLog(
-                        context = currentRuntimeLogContext(),
-                        state = endgamePlan.state,
-                        endgame = endgameCompletion.display.resolution,
-                    ),
-                )
-                applyFinalScoreDisplayPlan(endgameCompletion.display.display)
-            }
-
-            is AutoAiEndgameCompletionPlan.ApplyFailed -> {
-                runtimeEventLog.append(
-                    runtimeAiTurnEndgameFailureLog(
-                        context = currentRuntimeLogContext(),
-                        state = endgamePlan.state,
-                        error = endgameCompletion.display.error,
-                    ),
-                )
-                applyEndgameFailureDisplayPlan(endgameCompletion.display.display)
-            }
-
-            is AutoAiEndgameCompletionPlan.Discard ->
-                appendEngineOperationDiscardLog(endgameCompletion.discard)
-        }
     }
 
     fun requestAiTurnForCurrentState() {

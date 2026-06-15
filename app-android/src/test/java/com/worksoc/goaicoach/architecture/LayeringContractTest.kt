@@ -411,6 +411,35 @@ class LayeringContractTest {
     }
 
     @Test
+    fun goCoachAppDoesNotOwnAutoAiEndgameResolveWorkflowBody() {
+        val goCoachApp = repoRoot()
+            .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
+        val text = goCoachApp.readText()
+        val forbiddenFragments = listOf(
+            "autoAiEndgameOperationToken(",
+            "GameSessionEffect.ResolveAutoAiEndgame(",
+            "runAutoAiEndgameEffect(",
+            "buildAutoAiEndgameCompletionPlan(",
+            "AutoAiEndgameCompletionPlan.",
+            "runtimeAiTurnEndgameDetectedLog(",
+            "runtimeAiTurnEndgameSuccessLog(",
+            "runtimeAiTurnEndgameFailureLog(",
+        )
+            .filter { fragment -> fragment in text }
+        val requiredFragments = listOf(
+            "runAutoAiEndgameApplication(",
+            "AutoAiEndgameRunRequest(",
+        )
+            .filterNot { fragment -> fragment in text }
+
+        assertTrue(
+            "GoCoachApp should resolve Auto-AI pass/pass endgame through autoai application runner, not own token/effect/completion/log details:\n" +
+                "forbidden:\n${forbiddenFragments.joinToString("\n")}\nmissing:\n${requiredFragments.joinToString("\n")}",
+            forbiddenFragments.isEmpty() && requiredFragments.isEmpty(),
+        )
+    }
+
+    @Test
     fun goCoachAppDoesNotOwnScoreEstimateWorkflowBody() {
         val goCoachApp = repoRoot()
             .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")

@@ -1610,3 +1610,8 @@
 - `GoCoachApp.kt`는 더 이상 `buildGameScreenStateInput()`/`buildGameScreenState()`를 직접 호출하지 않고 `GoCoachScreenStateAssembler.assemble()`만 호출한다. 화면 렌더 직전의 긴 state 조립 인자와 builder 의존을 UI shell에서 한 단계 밀어냈다.
 - `GameScreenStateTest`에 assembler 테스트를 추가해 controller/runtime snapshot이 기존 screen state 필드로 정상 매핑되는지 검증했다.
 - `LayeringContractTest.goCoachAppUsesScreenStateAssemblerInsteadOfDirectScreenStateBuilders()`를 추가했다. UI가 screen state builder를 직접 호출하는 회귀를 막는다.
+- 사용자가 `9.` 다음 리팩토링 추천 항목을 단계별로 모두 진행하고, 결과 보고 시 현재 완성도와 다음 추천 작업을 정리해달라고 요청했다.
+- `AutoAiEndgameRunnerApplication.kt`를 추가했다. Auto-AI pass/pass 종국 처리의 operation token 생성, game-ended marking, runtime detected/success/failure log, engine endgame display 실행, completion guard, resolved/failed/discard 적용을 autoai application runner가 소유한다.
+- `GoCoachApp.kt`의 `applyAutoAiEndgamePlan()`은 `runAutoAiEndgameApplication(AutoAiEndgameRunRequest)` 호출로 축소했다. UI는 final score display, endgame failure display, discard log 콜백만 제공한다.
+- `AutoAiEndgameRunnerTest`를 추가했다. 종국 성공, 엔진 실패, 늦게 도착한 stale 결과 폐기 경로를 검증한다.
+- `LayeringContractTest.goCoachAppDoesNotOwnAutoAiEndgameResolveWorkflowBody()`를 추가했다. UI가 Auto-AI 종국 token/effect/completion/runtime log 세부를 다시 소유하지 못하도록 회귀를 막는다.

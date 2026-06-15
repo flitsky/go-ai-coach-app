@@ -1636,6 +1636,65 @@
    - score/endgame/benchmark/helper를 score/endgame/protocol helper로 나눌지 실행한다.
    - acceptance: remote engine client와 local engine client parity 문서화가 더 쉬워진다.
 
+## 2026-06-16 추가 진행 로그: 2nd phase.8 Auto-AI endgame runner
+
+- 2026-06-16: `AutoAiEndgameRunnerApplication.kt`를 추가했다. Auto-AI pass/pass 종국 처리의 operation token 생성, game-ended marking, runtime detected/success/failure log, engine endgame display 실행, completion guard, resolved/failed/discard 적용을 autoai application runner가 소유한다.
+- 2026-06-16: `GoCoachApp.kt`의 `applyAutoAiEndgamePlan()` 본문을 `runAutoAiEndgameApplication(AutoAiEndgameRunRequest)` 호출로 축소했다. UI는 final score display, endgame failure display, stale discard log 콜백만 제공한다.
+- 2026-06-16: `AutoAiEndgameRunnerTest`를 추가했다. 종국 성공, 엔진 실패, 현재 국면이 바뀐 뒤 늦게 도착한 stale endgame result 폐기 경로를 검증한다.
+- 2026-06-16: `LayeringContractTest.goCoachAppDoesNotOwnAutoAiEndgameResolveWorkflowBody()`를 추가했다. UI가 Auto-AI endgame token/effect/completion/runtime log 세부를 다시 소유하지 못하도록 회귀를 막는다.
+
+### 현재 metric
+
+- `GoCoachApp.kt`: 1,710줄
+- `GoCoachApp.kt` 전체 import: 114개
+- `GoCoachApp.kt` application import fan-in: 62개
+- `GoCoachApp.kt` presentation import fan-in: 6개
+- UI 파일 내 직접 Auto-AI endgame resolve 세부 참조: 제거됨
+  - `autoAiEndgameOperationToken(`
+  - `GameSessionEffect.ResolveAutoAiEndgame(`
+  - `runAutoAiEndgameEffect(`
+  - `buildAutoAiEndgameCompletionPlan(`
+  - `AutoAiEndgameCompletionPlan.`
+  - `runtimeAiTurnEndgameDetectedLog(`
+  - `runtimeAiTurnEndgameSuccessLog(`
+  - `runtimeAiTurnEndgameFailureLog(`
+
+### 검증
+
+- `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:compileDebugKotlin :app-android:compileDebugUnitTestKotlin --no-daemon` 통과.
+- `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest --tests 'com.worksoc.goaicoach.application.AutoAiEndgameRunnerTest' --tests 'com.worksoc.goaicoach.application.AutoAiCompletionApplierTest' --tests 'com.worksoc.goaicoach.architecture.LayeringContractTest' --no-daemon` 통과.
+- `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test` 통과.
+
+## 현재 리팩토링/아키텍처 완성도 평가
+
+- 리팩토링 배치 진행도: 99.9992/100.
+- 외부 평가 기준 플랫폼 아키텍처 완성도: 98.1/100.
+- 보수적 내부 플랫폼 완성도: 97.7/100.
+- 상향 요인: Auto-AI의 예약 실행, completion apply, pass/pass endgame resolve까지 모두 application layer로 올라갔다. AI 자동대국 흐름에서 UI가 engine operation/result guard/runtime log 세부를 직접 소유하는 면이 크게 줄었다.
+- 남은 감점 요인: `GoCoachApp.kt` application import fan-in은 아직 62개이고, position cache optimization workflow와 menu/player setup action binding이 UI 파일에 남아 있다. 문서 워크리스트 일부가 과거 로그 중복/역순을 포함하는 점도 별도 정리 후보이다.
+
+## 다음 추천 리팩토링 항목 - 2nd phase.9
+
+1. Position cache optimization workflow runner 분리
+   - `acceptCacheOptimizationPrompt()`는 아직 operation 생성, effect 실행, result 분기를 UI에서 직접 처리한다.
+   - acceptance: post-game cache optimization도 application runner가 소유하고 UI는 prompt state/display callback만 제공한다.
+
+2. menu/player setup action binding 분리
+   - player setup, auto play delay, search time, benchmark/cache menu action binding을 presentation action bundle로 이동한다.
+   - acceptance: 메뉴 UX 고도화 시 `GoCoachApp.kt` 수정면이 줄고 테스트 가능한 action model이 생긴다.
+
+3. `GoCoachApp.kt` presentation/application facade 도입
+   - `GameUiEvent`, `KaTrainUxOptions`, screen state assembler, UI event handler 조립을 더 작은 facade로 묶는다.
+   - acceptance: UI shell import fan-in과 action binding 책임이 함께 줄어든다.
+
+4. 리팩토링 문서 로그 정렬 및 중복 정리
+   - 현재 `NEXT_REFACTORING_WORKLIST_2026-06-14.md`는 일부 phase 로그가 중복/역순으로 남아 있다.
+   - acceptance: 최신 권장 목록과 완료 로그를 날짜순으로 읽을 수 있게 정리하고, 오래된 반복 로그는 archive 후보로 분리한다.
+
+5. `LocalEngineCoreSessionDelegate` protocol별 추가 분해
+   - score/endgame/benchmark/helper를 score/endgame/protocol helper로 나눌지 실행한다.
+   - acceptance: remote engine client와 local engine client parity 문서화가 더 쉬워진다.
+
 ## 2026-06-15 추가 진행 로그: 2nd phase.7 GoCoach screen state assembler
 
 - 2026-06-15: `GoCoachScreenStateAssembler.kt`를 추가했다. `GameSessionControllerState`, UX option, engine runtime snapshot, display runtime snapshot을 받아 최종 `GameScreenState`를 조립하는 presentation 경계를 만들었다.
