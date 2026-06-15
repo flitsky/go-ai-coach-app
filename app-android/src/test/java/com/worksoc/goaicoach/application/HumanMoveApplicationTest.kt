@@ -3,6 +3,7 @@ package com.worksoc.goaicoach.application
 import com.worksoc.goaicoach.application.engine.operation.*
 
 import com.worksoc.goaicoach.application.analysis.*
+import com.worksoc.goaicoach.application.diagnostic.NoopDiagnosticEventLog
 import com.worksoc.goaicoach.application.humanmove.*
 
 import com.worksoc.goaicoach.application.endgame.*
@@ -498,6 +499,82 @@ class HumanMoveApplicationTest {
 
         assertTrue(apply is HumanEngineSyncCompletionPlan.ApplySuccess)
         assertTrue(discard is HumanEngineSyncCompletionPlan.Discard)
+    }
+
+    @Test
+    fun runHumanEngineSyncApplicationLaunchesOperationAndRequestsFollowUpAnalysis() = runBlocking {
+        val beforeMove = GameState.empty()
+        val move = Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine))
+        val localMove = applyHumanMoveLocally(
+            beforeMove = beforeMove,
+            move = move,
+            reviewAnalysis = MoveAnalysisSnapshot.empty(beforeMove),
+            previousMoveReviews = emptyList(),
+        ).getOrThrow()
+        val engineResult = LocalEngineMoveResult(
+            estimate = ScoreEstimate(
+                status = EngineStatus.ready("human sync estimated"),
+                whiteScoreLead = 0.0,
+                whiteWinRate = 0.5,
+                summary = "estimate",
+            ),
+        )
+        val client = FakeHumanEngineSessionClient(engineResult)
+        var launchedKind: EngineOperationKind? = null
+        var launchedMoveCount: Int? = null
+        var appliedPlan: HumanEngineSyncCompletionApplyPlan? = null
+        var appliedElapsedMs: Long? = null
+        var followUpState: GameState? = null
+        var clock = 1_000L
+
+        runHumanEngineSyncApplication(
+            HumanEngineSyncRunRequest(
+                engineClient = client,
+                afterMove = localMove.afterMove,
+                profile = EngineProfile(name = "human-sync"),
+                move = move,
+                previousReviewCandidates = emptyList(),
+                localMove = localMove,
+                previousSnapshots = emptyList(),
+                moveDescription = localMove.lastMoveText,
+                sessionGeneration = 7L,
+                timeoutPolicy = EngineTimeoutPolicy(timeoutMillis = 250L, label = "test"),
+                diagnosticEventLog = NoopDiagnosticEventLog,
+                currentState = { localMove.afterMove },
+                currentSessionGeneration = { 7L },
+                launchEngineOperation = { operation, block ->
+                    launchedKind = operation.kind
+                    launchedMoveCount = operation.moveCount
+                    runBlocking { block() }
+                },
+                runEngineWork = { block -> block() },
+                applyCompletion = { plan, elapsedMs ->
+                    appliedPlan = plan
+                    appliedElapsedMs = elapsedMs
+                    when (plan) {
+                        is HumanEngineSyncCompletionApplyPlan.ApplySuccess ->
+                            (plan.display as? HumanEngineSyncDisplayPlan.ScoreEstimate)?.nextAnalysisState
+
+                        is HumanEngineSyncCompletionApplyPlan.ApplyFailure,
+                        is HumanEngineSyncCompletionApplyPlan.Discard -> null
+                    }
+                },
+                requestFollowUpAnalysis = { state -> followUpState = state },
+                nowMillis = {
+                    val current = clock
+                    clock += 25L
+                    current
+                },
+            ),
+        )
+
+        assertEquals(EngineOperationKind.HumanMoveSync, launchedKind)
+        assertEquals(localMove.afterMove.moves.size, launchedMoveCount)
+        assertEquals(localMove.afterMove, client.afterMove)
+        assertEquals(move, client.move)
+        assertTrue(appliedPlan is HumanEngineSyncCompletionApplyPlan.ApplySuccess)
+        assertEquals(25L, appliedElapsedMs)
+        assertEquals(localMove.afterMove, followUpState)
     }
 }
 

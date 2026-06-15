@@ -1524,3 +1524,8 @@
 - `GoCoachApp.kt`의 `showTopMovesForCurrentState()` 본문을 application runner 호출로 축소했다. UI는 settings/analysis/message 적용과 후속 `requestTopMoveAnalysisForState()` 연결만 담당한다.
 - `TopMovesApplicationTest`에 Top Moves 표시 runner 테스트를 추가했다. cached 후보 표시, fresh 분석 요청, engine busy 차단 시 숨김 처리, runner의 update-before-request 계약을 검증한다.
 - `LayeringContractTest`의 Top Moves 회귀 가드에 `shouldRequestTopMoveAnalysis`, `toShowTopMovesPlan`, `ShowTopMovesPlan` 직접 소유 금지를 추가했다.
+- 사용자가 `7.` 다음 리팩토링 추천 항목을 단계별로 모두 진행하고, 결과 보고 시 현재 완성도와 다음 추천 작업을 정리해달라고 요청했다.
+- `HumanEngineSyncRunRequest`와 `runHumanEngineSyncApplication()`을 추가했다. 사람 착수 후 엔진 sync operation 생성, effect/request 조립, observed engine call, completion apply plan 생성, 후속 Top Moves 분석 요청 연결을 humanmove application runner가 소유한다.
+- `GoCoachApp.kt`의 `submitHumanMove()` 엔진 sync 블록을 application runner 호출로 축소했다. UI는 로컬 착수 적용, completion apply 콜백, 후속 분석 요청 콜백만 담당한다.
+- `HumanMoveApplicationTest`에 human move sync runner 테스트를 추가했다. operation kind/state, engine client 호출 인자, completion apply plan, elapsed 전달, 후속 분석 요청 계약을 검증한다.
+- `LayeringContractTest`에 `goCoachAppDoesNotOwnHumanMoveSyncWorkflowBody()`를 추가했다. UI가 human move sync launch/effect/completion 세부를 다시 소유하지 못하도록 회귀를 막는다.

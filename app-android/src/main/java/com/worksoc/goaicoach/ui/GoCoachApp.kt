@@ -44,16 +44,12 @@ import com.worksoc.goaicoach.shared.engine.EngineTimeoutPolicy
 import com.worksoc.goaicoach.application.debugreport.DebugReportMirrorPort
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.humanmove.HumanEngineSyncCompletionApplyPlan
-import com.worksoc.goaicoach.application.humanmove.HumanEngineSyncCompletionRequest
 import com.worksoc.goaicoach.application.humanmove.HumanEngineSyncDisplayPlan
-import com.worksoc.goaicoach.application.humanmove.HumanEngineSyncEffectLaunchRequest
 import com.worksoc.goaicoach.application.humanmove.HumanEngineSyncFailurePlan
-import com.worksoc.goaicoach.application.humanmove.HumanEngineSyncRunPlan
+import com.worksoc.goaicoach.application.humanmove.HumanEngineSyncRunRequest
 import com.worksoc.goaicoach.application.humanmove.HumanEngineSyncRuntimeLogPlan
 import com.worksoc.goaicoach.application.humanmove.applyHumanMoveLocally
-import com.worksoc.goaicoach.application.humanmove.buildHumanEngineSyncCompletionPlan
-import com.worksoc.goaicoach.application.humanmove.runHumanEngineSyncWorkflowResult
-import com.worksoc.goaicoach.application.humanmove.toApplyPlan
+import com.worksoc.goaicoach.application.humanmove.runHumanEngineSyncApplication
 import com.worksoc.goaicoach.application.engine.operation.applyEngineOperationLifecycleTransition
 import com.worksoc.goaicoach.application.debugreport.ClipboardPort
 import com.worksoc.goaicoach.shared.engine.engineOperationRequest
@@ -1595,57 +1591,35 @@ private fun GoCoachScreen(
             return
         }
 
-        val humanSyncOperation = engineOperationRequest(
-            kind = EngineOperationKind.HumanMoveSync,
-            state = afterMove,
-            sessionGeneration = runtimeState.sessionGeneration,
-            timeoutPolicy = engineProfileTimeoutPolicy(runtimeState.engineProfile),
-            fallbackPolicy = EngineFallbackPolicy.LocalRules,
-        )
-        launchTrackedEngineOperation(humanSyncOperation) {
-            var nextAnalysisState: GameState? = null
-            val syncStartMillis = System.currentTimeMillis()
-            val syncEffect = GameSessionEffect.SyncHumanMove(
-                HumanEngineSyncRunPlan(
-                    afterMove = afterMove,
-                    profile = runtimeState.engineProfile,
-                    move = move,
-                    previousReviewCandidates = previousReviewCandidates,
-                ),
-            )
-            val syncResult =
-                runEngineIo {
-                    engineClient.runHumanEngineSyncWorkflowResult(
-                        HumanEngineSyncEffectLaunchRequest(
-                            effect = syncEffect,
-                            operation = humanSyncOperation,
-                        ),
-                        diagnosticEventLog = diagnosticEventLog,
+        runHumanEngineSyncApplication(
+            HumanEngineSyncRunRequest(
+                engineClient = engineClient,
+                afterMove = afterMove,
+                profile = runtimeState.engineProfile,
+                move = move,
+                previousReviewCandidates = previousReviewCandidates,
+                localMove = localMove,
+                previousSnapshots = scoreState.scoreSnapshots,
+                moveDescription = move.describe(beforeMove.boardSize),
+                sessionGeneration = runtimeState.sessionGeneration,
+                timeoutPolicy = engineProfileTimeoutPolicy(runtimeState.engineProfile),
+                diagnosticEventLog = diagnosticEventLog,
+                currentState = { gameState },
+                currentSessionGeneration = { runtimeState.sessionGeneration },
+                launchEngineOperation = { operation, block ->
+                    launchTrackedEngineOperation(operation) {
+                        block()
+                    }
+                },
+                applyCompletion = ::applyHumanEngineSyncCompletionApplyPlan,
+                requestFollowUpAnalysis = { state ->
+                    requestTopMoveAnalysisForState(
+                        targetState = state,
+                        automatic = true,
                     )
-                }
-            val completion = buildHumanEngineSyncCompletionPlan(
-                HumanEngineSyncCompletionRequest(
-                    result = syncResult,
-                    operation = humanSyncOperation,
-                    currentState = gameState,
-                    currentSessionGeneration = runtimeState.sessionGeneration,
-                    afterMove = afterMove,
-                    moveDescription = move.describe(beforeMove.boardSize),
-                    localMove = localMove,
-                    previousSnapshots = scoreState.scoreSnapshots,
-                ),
-            )
-            nextAnalysisState = applyHumanEngineSyncCompletionApplyPlan(
-                applyPlan = completion.toApplyPlan(),
-                elapsedMs = System.currentTimeMillis() - syncStartMillis,
-            )
-            nextAnalysisState?.let { state ->
-                requestTopMoveAnalysisForState(
-                    targetState = state,
-                    automatic = true,
-                )
-            }
-        }
+                },
+            ),
+        )
     }
 
     fun undoLocalTwoPlayerTurn(plan: UndoRequestPlan.LocalTwoPlayerUndo) {

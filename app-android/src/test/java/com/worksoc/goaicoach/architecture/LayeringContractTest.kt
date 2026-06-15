@@ -187,6 +187,28 @@ class LayeringContractTest {
     }
 
     @Test
+    fun goCoachAppDoesNotOwnHumanMoveSyncWorkflowBody() {
+        val goCoachApp = repoRoot()
+            .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
+        val text = goCoachApp.readText()
+        val forbiddenFragments = listOf(
+            "HumanEngineSyncCompletionRequest(",
+            "HumanEngineSyncEffectLaunchRequest(",
+            "HumanEngineSyncRunPlan(",
+            "buildHumanEngineSyncCompletionPlan(",
+            "runHumanEngineSyncWorkflowResult(",
+            "EngineOperationKind.HumanMoveSync",
+        )
+            .filter { fragment -> fragment in text }
+
+        assertTrue(
+            "GoCoachApp should run human move engine sync through runHumanEngineSyncApplication, not own launch/effect/completion details:\n" +
+                forbiddenFragments.joinToString("\n"),
+            forbiddenFragments.isEmpty(),
+        )
+    }
+
+    @Test
     fun scoreRunnersUseEngineSessionClientContractOnly() {
         val scoreRoot = repoRoot()
             .resolve("app-android/src/main/java/com/worksoc/goaicoach/application/score")

@@ -10,6 +10,7 @@ import com.worksoc.goaicoach.shared.engine.EngineOperationKind
 import com.worksoc.goaicoach.shared.engine.EngineOperationRequest
 import com.worksoc.goaicoach.application.engine.operation.EngineOperationResultGuard
 import com.worksoc.goaicoach.application.engine.EngineSessionClient
+import com.worksoc.goaicoach.application.engine.runEngineIo
 import com.worksoc.goaicoach.shared.engine.EngineTimeoutPolicy
 import com.worksoc.goaicoach.application.engine.LocalEngineMoveResult
 import com.worksoc.goaicoach.application.movereview.MoveReviewMarker
@@ -81,6 +82,28 @@ internal data class HumanEngineSyncCompletionRequest(
     val moveDescription: String,
     val localMove: HumanMoveLocalResult,
     val previousSnapshots: List<ScoreSnapshot>,
+)
+
+internal data class HumanEngineSyncRunRequest(
+    val engineClient: EngineSessionClient,
+    val afterMove: GameState,
+    val profile: EngineProfile,
+    val move: Move,
+    val previousReviewCandidates: List<CandidateMove>,
+    val localMove: HumanMoveLocalResult,
+    val previousSnapshots: List<ScoreSnapshot>,
+    val moveDescription: String,
+    val sessionGeneration: Long,
+    val timeoutPolicy: EngineTimeoutPolicy,
+    val diagnosticEventLog: DiagnosticEventLogPort,
+    val currentState: () -> GameState,
+    val currentSessionGeneration: () -> Long,
+    val launchEngineOperation: (EngineOperationRequest, suspend () -> Unit) -> Unit,
+    val runEngineWork: suspend (suspend () -> HumanEngineSyncWorkflowResult) -> HumanEngineSyncWorkflowResult =
+        { block -> runEngineIo { block() } },
+    val applyCompletion: (HumanEngineSyncCompletionApplyPlan, Long) -> GameState?,
+    val requestFollowUpAnalysis: (GameState) -> Unit,
+    val nowMillis: () -> Long = { System.currentTimeMillis() },
 )
 
 internal sealed class HumanEngineSyncCompletionPlan {
@@ -384,3 +407,51 @@ internal suspend fun EngineSessionClient.runHumanEngineSyncWorkflowResult(
         operationRequest = request.operation,
         diagnosticEventLog = diagnosticEventLog,
     )
+
+internal fun runHumanEngineSyncApplication(request: HumanEngineSyncRunRequest) {
+    val operation = engineOperationRequest(
+        kind = EngineOperationKind.HumanMoveSync,
+        state = request.afterMove,
+        sessionGeneration = request.sessionGeneration,
+        timeoutPolicy = request.timeoutPolicy,
+        fallbackPolicy = EngineFallbackPolicy.LocalRules,
+    )
+    val syncEffect = GameSessionEffect.SyncHumanMove(
+        HumanEngineSyncRunPlan(
+            afterMove = request.afterMove,
+            profile = request.profile,
+            move = request.move,
+            previousReviewCandidates = request.previousReviewCandidates,
+        ),
+    )
+
+    request.launchEngineOperation(operation) {
+        val syncStartMillis = request.nowMillis()
+        val syncResult = request.runEngineWork {
+            request.engineClient.runHumanEngineSyncWorkflowResult(
+                HumanEngineSyncEffectLaunchRequest(
+                    effect = syncEffect,
+                    operation = operation,
+                ),
+                diagnosticEventLog = request.diagnosticEventLog,
+            )
+        }
+        val completion = buildHumanEngineSyncCompletionPlan(
+            HumanEngineSyncCompletionRequest(
+                result = syncResult,
+                operation = operation,
+                currentState = request.currentState(),
+                currentSessionGeneration = request.currentSessionGeneration(),
+                afterMove = request.afterMove,
+                moveDescription = request.moveDescription,
+                localMove = request.localMove,
+                previousSnapshots = request.previousSnapshots,
+            ),
+        )
+        val nextAnalysisState = request.applyCompletion(
+            completion.toApplyPlan(),
+            request.nowMillis() - syncStartMillis,
+        )
+        nextAnalysisState?.let(request.requestFollowUpAnalysis)
+    }
+}
