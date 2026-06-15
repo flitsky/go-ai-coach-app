@@ -1615,3 +1615,8 @@
 - `GoCoachApp.kt`의 `applyAutoAiEndgamePlan()`은 `runAutoAiEndgameApplication(AutoAiEndgameRunRequest)` 호출로 축소했다. UI는 final score display, endgame failure display, discard log 콜백만 제공한다.
 - `AutoAiEndgameRunnerTest`를 추가했다. 종국 성공, 엔진 실패, 늦게 도착한 stale 결과 폐기 경로를 검증한다.
 - `LayeringContractTest.goCoachAppDoesNotOwnAutoAiEndgameResolveWorkflowBody()`를 추가했다. UI가 Auto-AI 종국 token/effect/completion/runtime log 세부를 다시 소유하지 못하도록 회귀를 막는다.
+- 사용자가 `10.` 다음 리팩토링 추천 항목을 단계별로 모두 진행하고, 결과 보고 시 현재 완성도와 다음 추천 작업을 정리해달라고 요청했다.
+- `PositionAnalysisCacheOptimizationRunnerApplication.kt`를 추가했다. post-game position cache optimization 수락, prompt dismiss, running flag, operation 생성, engine workflow 실행, 성공/실패 display 적용을 analysis application runner가 소유한다.
+- `GoCoachApp.kt`의 `acceptCacheOptimizationPrompt()`는 `runPositionAnalysisCacheOptimizationApplication(PositionAnalysisCacheOptimizationRunRequest)` 호출로 축소했다. UI는 현재 plan/state provider와 engine/candidate message 콜백만 제공한다.
+- `PositionAnalysisCacheOptimizationTest`에 application runner 테스트를 추가했다. 성공 실행, engine busy skip, 실패 메시지와 running flag 정리 경로를 검증한다.
+- `LayeringContractTest.goCoachAppDoesNotOwnPositionCacheOptimizationWorkflowBody()`를 추가했다. UI가 position cache optimization operation/effect/result 세부를 다시 소유하지 못하도록 회귀를 막는다.

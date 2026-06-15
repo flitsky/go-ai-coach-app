@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.application
 
 import com.worksoc.goaicoach.application.analysis.*
+import com.worksoc.goaicoach.application.diagnostic.NoopDiagnosticEventLog
 import com.worksoc.goaicoach.application.endgame.*
 import com.worksoc.goaicoach.application.engine.*
 import com.worksoc.goaicoach.application.session.*
@@ -26,6 +27,10 @@ import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.analysisFingerprint
+import com.worksoc.goaicoach.shared.engine.EngineFallbackPolicy
+import com.worksoc.goaicoach.shared.engine.EngineOperationKind
+import com.worksoc.goaicoach.shared.engine.EngineOperationRequest
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -265,12 +270,166 @@ class PositionAnalysisCacheOptimizationTest {
         )
     }
 
+    @Test
+    fun cacheOptimizationApplicationAcceptsPromptRunsEngineAndUpdatesDisplay() {
+        val finalState = shortFinishedGame()
+        val plan = oneTargetOptimizationPlan(finalState)
+        val expected = PositionAnalysisCacheOptimizationResult(
+            requestedTargets = 1,
+            analyzedTargets = 1,
+            reusableTargets = 1,
+            completeTargets = 1,
+            summaries = listOf("m1 Beginner complete"),
+        )
+        val client = FakeCacheOptimizationEngineSessionClient(expected)
+        var uiState = PositionAnalysisCacheOptimizationUiState().withPrompt(
+            PositionAnalysisCacheOptimizationPrompt(
+                gameFingerprint = plan.gameFingerprint,
+                moveCount = plan.finalMoveCount,
+                targetCount = plan.targets.size,
+            ),
+        )
+        var launchedOperation: EngineOperationRequest? = null
+        var engineMessage = ""
+        var candidateText = ""
+
+        runPositionAnalysisCacheOptimizationApplication(
+            PositionAnalysisCacheOptimizationRunRequest(
+                plan = plan,
+                uiState = uiState,
+                isEngineBusy = false,
+                sessionGeneration = 12L,
+                engineClient = client,
+                diagnosticEventLog = NoopDiagnosticEventLog,
+                currentUiStateProvider = { uiState },
+                applyUiState = { state -> uiState = state },
+                applyEngineMessage = { message -> engineMessage = message },
+                applyCandidateText = { message -> candidateText = message },
+                launchEngineOperation = { operation, block ->
+                    launchedOperation = operation
+                    runBlocking { block() }
+                },
+                runEngineWork = { block -> block() },
+            ),
+        )
+
+        assertEquals(plan, client.optimizedPlan)
+        assertEquals(EngineOperationKind.PositionCacheOptimization, launchedOperation?.kind)
+        assertEquals(EngineFallbackPolicy.CachedAnalysis, launchedOperation?.fallbackPolicy)
+        assertEquals(12L, launchedOperation?.sessionGeneration)
+        assertFalse(uiState.isRunning)
+        assertNull(uiState.prompt)
+        assertEquals(plan.gameFingerprint, uiState.dismissedGameFingerprint)
+        assertTrue(engineMessage.contains("Post-game cache optimization complete"))
+        assertEquals(engineMessage, candidateText)
+    }
+
+    @Test
+    fun cacheOptimizationApplicationAcceptsButDoesNotRunWhenEngineBusy() {
+        val finalState = shortFinishedGame()
+        val plan = oneTargetOptimizationPlan(finalState)
+        val client = FakeCacheOptimizationEngineSessionClient(
+            PositionAnalysisCacheOptimizationResult(
+                requestedTargets = 1,
+                analyzedTargets = 1,
+                reusableTargets = 1,
+                completeTargets = 1,
+                summaries = emptyList(),
+            ),
+        )
+        var uiState = PositionAnalysisCacheOptimizationUiState().withPrompt(
+            PositionAnalysisCacheOptimizationPrompt(
+                gameFingerprint = plan.gameFingerprint,
+                moveCount = plan.finalMoveCount,
+                targetCount = plan.targets.size,
+            ),
+        )
+        var launched = false
+
+        runPositionAnalysisCacheOptimizationApplication(
+            PositionAnalysisCacheOptimizationRunRequest(
+                plan = plan,
+                uiState = uiState,
+                isEngineBusy = true,
+                sessionGeneration = 1L,
+                engineClient = client,
+                diagnosticEventLog = NoopDiagnosticEventLog,
+                currentUiStateProvider = { uiState },
+                applyUiState = { state -> uiState = state },
+                applyEngineMessage = {},
+                applyCandidateText = {},
+                launchEngineOperation = { _, _ -> launched = true },
+                runEngineWork = { block -> block() },
+            ),
+        )
+
+        assertFalse(launched)
+        assertNull(client.optimizedPlan)
+        assertNull(uiState.prompt)
+        assertEquals(plan.gameFingerprint, uiState.dismissedGameFingerprint)
+        assertFalse(uiState.isRunning)
+    }
+
+    @Test
+    fun cacheOptimizationApplicationFinishesRunningAndShowsFailureMessage() {
+        val finalState = shortFinishedGame()
+        val plan = oneTargetOptimizationPlan(finalState)
+        val client = FakeCacheOptimizationEngineSessionClient(
+            result = PositionAnalysisCacheOptimizationResult(
+                requestedTargets = 1,
+                analyzedTargets = 0,
+                reusableTargets = 0,
+                completeTargets = 0,
+                summaries = emptyList(),
+            ),
+            failure = IllegalStateException("optimization failed"),
+        )
+        var uiState = PositionAnalysisCacheOptimizationUiState()
+        var engineMessage = ""
+
+        runPositionAnalysisCacheOptimizationApplication(
+            PositionAnalysisCacheOptimizationRunRequest(
+                plan = plan,
+                uiState = uiState,
+                isEngineBusy = false,
+                sessionGeneration = 1L,
+                engineClient = client,
+                diagnosticEventLog = NoopDiagnosticEventLog,
+                currentUiStateProvider = { uiState },
+                applyUiState = { state -> uiState = state },
+                applyEngineMessage = { message -> engineMessage = message },
+                applyCandidateText = {},
+                launchEngineOperation = { _, block -> runBlocking { block() } },
+                runEngineWork = { block -> block() },
+            ),
+        )
+
+        assertFalse(uiState.isRunning)
+        assertEquals("optimization failed", engineMessage)
+    }
+
     private fun shortFinishedGame(): GameState =
         GameState.empty()
             .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
             .play(Move.Play(StoneColor.White, BoardCoordinate.fromLabel("C5", BoardSize.Nine)))
             .play(Move.Pass(StoneColor.Black))
             .play(Move.Pass(StoneColor.White))
+
+    private fun oneTargetOptimizationPlan(finalState: GameState): PositionAnalysisCacheOptimizationPlan =
+        PositionAnalysisCacheOptimizationPlan(
+            gameFingerprint = finalState.analysisFingerprint(),
+            finalState = finalState,
+            finalMoveCount = finalState.moves.size,
+            targets = listOf(
+                PositionAnalysisCacheOptimizationTarget(
+                    state = finalState,
+                    moveNumber = finalState.moves.size,
+                    levelLabel = "Beginner",
+                    cacheLimit = AnalysisLimit(visits = 32, timeMillis = 2_000L, candidateCount = 10),
+                    executionLimit = AnalysisLimit(visits = 32, timeMillis = null, candidateCount = 10),
+                ),
+            ),
+        )
 
     private fun beginnerAiSetup(): PlayerSetup =
         PlayerSetup(

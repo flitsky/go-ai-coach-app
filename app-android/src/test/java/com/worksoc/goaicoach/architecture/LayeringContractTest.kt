@@ -486,6 +486,33 @@ class LayeringContractTest {
     }
 
     @Test
+    fun goCoachAppDoesNotOwnPositionCacheOptimizationWorkflowBody() {
+        val goCoachApp = repoRoot()
+            .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
+        val text = goCoachApp.readText()
+        val forbiddenFragments = listOf(
+            "GameSessionEffect.RunPositionCacheOptimization(",
+            "PositionAnalysisCacheOptimizationWorkflowResult.",
+            "runPositionAnalysisCacheOptimizationWorkflowResult(",
+            "EngineOperationKind.PositionCacheOptimization",
+            "EngineFallbackPolicy.CachedAnalysis",
+            "position-cache-optimization",
+        )
+            .filter { fragment -> fragment in text }
+        val requiredFragments = listOf(
+            "runPositionAnalysisCacheOptimizationApplication(",
+            "PositionAnalysisCacheOptimizationRunRequest(",
+        )
+            .filterNot { fragment -> fragment in text }
+
+        assertTrue(
+            "GoCoachApp should run post-game position cache optimization through analysis application runner, not own operation/effect/result details:\n" +
+                "forbidden:\n${forbiddenFragments.joinToString("\n")}\nmissing:\n${requiredFragments.joinToString("\n")}",
+            forbiddenFragments.isEmpty() && requiredFragments.isEmpty(),
+        )
+    }
+
+    @Test
     fun goCoachAppUsesScreenStateAssemblerInsteadOfDirectScreenStateBuilders() {
         val goCoachApp = repoRoot()
             .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")

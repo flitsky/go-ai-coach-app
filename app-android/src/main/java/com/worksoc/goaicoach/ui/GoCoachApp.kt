@@ -32,11 +32,10 @@ import com.worksoc.goaicoach.application.debugreport.runDebugReportCopyApplicati
 import com.worksoc.goaicoach.application.preferences.buildInitialUserPreferencesPlan
 import com.worksoc.goaicoach.application.analysis.buildPositionAnalysisCacheOptimizationPlan
 import com.worksoc.goaicoach.application.analysis.refreshPositionAnalysisCacheOptimizationPrompt
+import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationRunRequest
 import com.worksoc.goaicoach.application.preferences.UserPreferencesAutosaveRequest
 import com.worksoc.goaicoach.application.preferences.runUserPreferencesAutosave
-import com.worksoc.goaicoach.shared.engine.EngineFallbackPolicy
 import com.worksoc.goaicoach.application.engine.operation.EngineOperationGate
-import com.worksoc.goaicoach.shared.engine.EngineOperationKind
 import com.worksoc.goaicoach.application.engine.operation.EngineOperationLifecycleState
 import com.worksoc.goaicoach.application.engine.operation.EngineOperationLifecycleTransition
 import com.worksoc.goaicoach.application.engine.operation.EngineOperationLifecycleCallbacks
@@ -55,16 +54,14 @@ import com.worksoc.goaicoach.application.humanmove.applyHumanMoveLocally
 import com.worksoc.goaicoach.application.humanmove.runHumanEngineSyncApplication
 import com.worksoc.goaicoach.application.engine.operation.applyEngineOperationLifecycleTransition
 import com.worksoc.goaicoach.application.debugreport.ClipboardPort
-import com.worksoc.goaicoach.shared.engine.engineOperationRequest
 import com.worksoc.goaicoach.application.engine.operation.evaluateScoringRuleChangeGate
 import com.worksoc.goaicoach.application.engine.operation.evaluateSearchTimeChangeGate
-import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationWorkflowResult
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationUiState
 import com.worksoc.goaicoach.application.analysis.PostGamePositionAnalysisCacheOptimizationPromptEnabled
 import com.worksoc.goaicoach.application.engine.operation.recordEngineOperationDiscardLog
 import com.worksoc.goaicoach.application.engine.localScoreSnapshot
 import com.worksoc.goaicoach.application.engine.operation.runEngineOperationInScope
-import com.worksoc.goaicoach.application.analysis.runPositionAnalysisCacheOptimizationWorkflowResult
+import com.worksoc.goaicoach.application.analysis.runPositionAnalysisCacheOptimizationApplication
 import com.worksoc.goaicoach.application.savedgame.SavedGamePersistenceRunRequest
 import com.worksoc.goaicoach.application.savedgame.SavedGameRestorePlan
 import com.worksoc.goaicoach.application.savedgame.SavedGameRestoreRunRequest
@@ -1533,45 +1530,27 @@ private fun GoCoachScreen(
     }
 
     fun acceptCacheOptimizationPrompt() {
-        val plan = currentCacheOptimizationPlan()
-        val wasRunning = positionCacheOptimizationState.isRunning
-        positionCacheOptimizationState = positionCacheOptimizationState.accept(plan)
-        if (plan.isEmpty || isEngineBusy || wasRunning) {
-            return
-        }
-        positionCacheOptimizationState = positionCacheOptimizationState.startRunning()
-        val operation = engineOperationRequest(
-            kind = EngineOperationKind.PositionCacheOptimization,
-            state = plan.finalState,
-            sessionGeneration = runtimeState.sessionGeneration,
-            timeoutPolicy = EngineTimeoutPolicy(label = "position-cache-optimization"),
-            fallbackPolicy = EngineFallbackPolicy.CachedAnalysis,
+        runPositionAnalysisCacheOptimizationApplication(
+            PositionAnalysisCacheOptimizationRunRequest(
+                plan = currentCacheOptimizationPlan(),
+                uiState = positionCacheOptimizationState,
+                isEngineBusy = isEngineBusy,
+                sessionGeneration = runtimeState.sessionGeneration,
+                engineClient = engineClient,
+                diagnosticEventLog = diagnosticEventLog,
+                currentUiStateProvider = { positionCacheOptimizationState },
+                applyUiState = { state -> positionCacheOptimizationState = state },
+                applyEngineMessage = { message -> engineMessage = message },
+                applyCandidateText = { message ->
+                    analysisState = analysisState.copy(candidateText = message)
+                },
+                launchEngineOperation = { operation, block ->
+                    launchTrackedEngineOperation(operation) {
+                        block()
+                    }
+                },
+            ),
         )
-        engineMessage = "Post-game cache optimization started: ${plan.targets.size} JSON position(s)."
-        val effect = GameSessionEffect.RunPositionCacheOptimization(plan)
-        launchUiEffect(scope) {
-            runTrackedEngineOperation(operation) {
-                val result =
-                    runEngineIo {
-                        engineClient.runPositionAnalysisCacheOptimizationWorkflowResult(
-                            effect = effect,
-                            operationRequest = operation,
-                            diagnosticEventLog = diagnosticEventLog,
-                        )
-                    }
-                when (result) {
-                    is PositionAnalysisCacheOptimizationWorkflowResult.Success -> {
-                        engineMessage = result.result.messageText()
-                        analysisState = analysisState.copy(candidateText = result.result.messageText())
-                    }
-
-                    is PositionAnalysisCacheOptimizationWorkflowResult.Failure -> {
-                        engineMessage = result.error.message ?: "Post-game cache optimization failed."
-                    }
-                }
-                positionCacheOptimizationState = positionCacheOptimizationState.finishRunning()
-            }
-        }
     }
 
     fun copyDebugReport() {
