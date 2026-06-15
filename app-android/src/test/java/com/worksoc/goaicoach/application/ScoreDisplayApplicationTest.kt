@@ -744,6 +744,49 @@ class ScoreDisplayApplicationTest {
     }
 
     @Test
+    fun scoringRuleSyncApplicationRunnerLaunchesOperationAndRequestsFollowUpAnalysis() = runBlocking {
+        val state = GameState.empty()
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+        val client = FakeScoreEngineSessionClient()
+        var launchedKind: EngineOperationKind? = null
+        var launchedMoveCount: Int? = null
+        var applied: ScoreSyncCompletionApplyPlan? = null
+        var followUpState: GameState? = null
+
+        runScoringRuleSyncApplication(
+            ScoringRuleSyncRunRequest(
+                engineClient = client,
+                state = state,
+                profile = EngineProfile(name = "rules"),
+                previousSnapshots = emptyList(),
+                sessionGeneration = 4L,
+                timeoutPolicy = EngineTimeoutPolicy(timeoutMillis = 250L, label = "test"),
+                diagnosticEventLog = NoopDiagnosticEventLog,
+                engineMessage = "rules synced",
+                currentState = { state },
+                currentSessionGeneration = { 4L },
+                runEngineOperation = { operation, block ->
+                    launchedKind = operation.kind
+                    launchedMoveCount = operation.moveCount
+                    runBlocking { block() }
+                },
+                runEngineWork = { block -> block() },
+                applyCompletion = { plan ->
+                    applied = plan
+                    (plan as? ScoreSyncCompletionApplyPlan.ApplySuccess)?.followUpAnalysisState
+                },
+                requestFollowUpAnalysis = { nextState -> followUpState = nextState },
+            ),
+        )
+
+        assertEquals(EngineOperationKind.ScoringRuleSync, launchedKind)
+        assertEquals(state.moves.size, launchedMoveCount)
+        assertEquals(state, client.syncedState)
+        assertTrue(applied is ScoreSyncCompletionApplyPlan.ApplySuccess)
+        assertEquals(state, followUpState)
+    }
+
+    @Test
     fun postUndoScoreSyncCompletionRunnerBuildsCompletionPlan() = runBlocking {
         val state = GameState.empty()
             .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))

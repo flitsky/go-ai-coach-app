@@ -1021,39 +1021,32 @@ private fun GoCoachScreen(
             return
         }
 
-        val ruleSyncOperation = engineOperationRequest(
-            kind = EngineOperationKind.ScoringRuleSync,
-            state = nextState,
-            sessionGeneration = runtimeState.sessionGeneration,
-            timeoutPolicy = engineProfileTimeoutPolicy(runtimeState.engineProfile),
-            fallbackPolicy = EngineFallbackPolicy.LocalRules,
-        )
-        launchTrackedEngineOperation(ruleSyncOperation) {
-            val followUpAnalysisState = applyScoreSyncCompletionApplyPlan(
-                runEngineIo {
-                    engineClient.runScoringRuleSyncApplyPlan(
-                        request = ScoringRuleSyncEffectLaunchRequest(
-                            state = nextState,
-                            profile = runtimeState.engineProfile,
-                            previousSnapshots = scoreState.scoreSnapshots,
-                            engineMessage = "Scoring rule changed to ${nextRuleset.scoringLabel}; engine rules synchronized.",
-                            operation = ruleSyncOperation,
-                            currentState = gameState,
-                            currentSessionGeneration = runtimeState.sessionGeneration,
-                            followUpAnalysisState = nextState,
-                            fallbackMessage = "Scoring rule changed, but engine rule sync failed.",
-                        ),
-                        diagnosticEventLog = diagnosticEventLog,
+        runScoringRuleSyncApplication(
+            ScoringRuleSyncRunRequest(
+                engineClient = engineClient,
+                state = nextState,
+                profile = runtimeState.engineProfile,
+                previousSnapshots = scoreState.scoreSnapshots,
+                sessionGeneration = runtimeState.sessionGeneration,
+                timeoutPolicy = engineProfileTimeoutPolicy(runtimeState.engineProfile),
+                diagnosticEventLog = diagnosticEventLog,
+                engineMessage = "Scoring rule changed to ${nextRuleset.scoringLabel}; engine rules synchronized.",
+                currentState = { gameState },
+                currentSessionGeneration = { runtimeState.sessionGeneration },
+                runEngineOperation = { operation, block ->
+                    launchTrackedEngineOperation(operation) {
+                        block()
+                    }
+                },
+                applyCompletion = ::applyScoreSyncCompletionApplyPlan,
+                requestFollowUpAnalysis = { state ->
+                    requestTopMoveAnalysisForState(
+                        targetState = state,
+                        automatic = true,
                     )
                 },
-            )
-            followUpAnalysisState?.let { state ->
-                requestTopMoveAnalysisForState(
-                    targetState = state,
-                    automatic = true,
-                )
-            }
-        }
+            ),
+        )
     }
 
     fun resetLocalGame(

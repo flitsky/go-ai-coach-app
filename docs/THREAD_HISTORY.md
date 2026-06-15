@@ -1534,3 +1534,8 @@
 - `GoCoachApp.kt`의 `schedulePostUndoLocalEngineSync()` 엔진 sync 본문을 application runner 호출로 축소했다. UI는 지연/취소/대기 조건과 pending 상태 정리만 담당한다.
 - `ScoreDisplayApplicationTest`에 post-undo score sync runner 테스트를 추가했다. operation kind/moveCount, engine client sync state, completion apply plan, follow-up analysis 요청을 검증한다.
 - `LayeringContractTest`에 `goCoachAppDoesNotOwnPostUndoScoreSyncWorkflowBody()`를 추가했다. UI가 post-undo operation/effect/apply 세부를 다시 소유하지 못하도록 회귀를 막는다.
+- 사용자가 `9.` 다음 리팩토링 추천 항목을 단계별로 모두 진행하고, 결과 보고 시 현재 완성도와 다음 추천 작업을 정리해달라고 요청했다.
+- `ScoringRuleSyncRunRequest`와 `runScoringRuleSyncApplication()`을 추가했다. 점수 룰 변경 후 scoring-rule score sync operation 생성, engine work 실행, completion apply plan 적용, 후속 Top Moves 요청 연결을 score application runner가 소유한다.
+- `GoCoachApp.kt`의 `changeScoringRule()` 엔진 sync 본문을 application runner 호출로 축소했다. UI는 scoring rule change gate, local state 적용, completion/follow-up 콜백 연결만 담당한다.
+- `ScoreDisplayApplicationTest`에 scoring-rule score sync runner 테스트를 추가했다. operation kind/moveCount, engine client sync state, completion apply plan, follow-up analysis 요청을 검증한다.
+- `LayeringContractTest`에 `goCoachAppDoesNotOwnScoringRuleSyncWorkflowBody()`를 추가했다. UI가 scoring-rule operation/effect/apply 세부를 다시 소유하지 못하도록 회귀를 막는다.
