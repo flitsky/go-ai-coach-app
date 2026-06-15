@@ -959,6 +959,12 @@ private fun GoCoachScreen(
         }
     }
 
+    fun applyShowTopMovesStateUpdate(update: ShowTopMovesStateUpdate) {
+        settingsState = update.settingsState
+        analysisState = update.analysisState
+        update.engineMessage?.let { message -> engineMessage = message }
+    }
+
     fun showTopMovesForCurrentState() {
         runShowTopMovesApplication(
             ShowTopMovesRunRequest(
@@ -968,11 +974,7 @@ private fun GoCoachScreen(
                 isEngineBusy = isEngineBusy,
                 shouldShowResumePrompt = shouldShowResumePrompt,
                 playerSetup = playerSetup,
-                applyUpdate = { update ->
-                    settingsState = update.settingsState
-                    analysisState = update.analysisState
-                    update.engineMessage?.let { message -> engineMessage = message }
-                },
+                applyUpdate = ::applyShowTopMovesStateUpdate,
                 requestAnalysis = { analysisRequest ->
                     requestTopMoveAnalysisForState(
                         targetState = analysisRequest.targetState,
@@ -985,9 +987,12 @@ private fun GoCoachScreen(
     }
 
     fun hideTopMoves() {
-        settingsState = settingsState.hideTopMoves()
-        clearTopMoveSpots()
-        engineMessage = "Top Moves hidden. Background move review keeps using fast best-1 analysis."
+        runHideTopMovesApplication(
+            HideTopMovesRunRequest(
+                controllerState = currentControllerSessionState(),
+                applyUpdate = ::applyShowTopMovesStateUpdate,
+            ),
+        )
     }
 
     fun changeScoringRule(nextRuleset: Ruleset) {

@@ -1175,6 +1175,36 @@ class TopMovesApplicationTest {
         assertEquals(state, requested?.targetState)
         assertEquals(false, requested?.deep)
     }
+
+    @Test
+    fun runHideTopMovesApplicationDisablesSettingAndClearsDisplayedCandidates() {
+        val state = GameState.empty()
+        val candidate = CandidateMove(
+            move = Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)),
+            pointLoss = 0.0,
+        )
+        val controller = topMoveControllerState(
+            state = state,
+            topMovesEnabled = true,
+            analysisState = GameSessionAnalysisState.empty(state)
+                .copy(candidateMoves = listOf(candidate)),
+        )
+        var applied: ShowTopMovesStateUpdate? = null
+
+        runHideTopMovesApplication(
+            HideTopMovesRunRequest(
+                controllerState = controller,
+                applyUpdate = { update -> applied = update },
+            ),
+        )
+
+        assertEquals(false, applied?.settingsState?.topMovesEnabled)
+        assertTrue(applied?.analysisState?.candidateMoves.orEmpty().isEmpty())
+        assertEquals(
+            "Top Moves hidden. Background move review keeps using fast best-1 analysis.",
+            applied?.engineMessage,
+        )
+    }
 }
 
 private fun topMoveControllerState(

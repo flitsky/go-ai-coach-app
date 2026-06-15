@@ -1549,3 +1549,8 @@
 - `GoCoachApp.kt`의 `requestScoreEstimate()` 본문을 application runner 호출로 축소하고 기존 `requestEngineScoreEstimate()` helper를 제거했다. UI는 engine readiness/session state/current state provider와 launch/completion 적용 콜백만 전달한다.
 - `ScoreDisplayApplicationTest`에 score estimate application runner 테스트를 추가했다. operation kind/sessionGeneration/moveCount, engine client 호출 state/profile/syncFirst, completion apply plan을 검증한다.
 - `LayeringContractTest`에 `goCoachAppDoesNotOwnScoreEstimateWorkflowBody()`를 추가했다. UI가 score estimate operation/effect/completion 세부를 다시 소유하지 못하도록 회귀를 막는다.
+- 사용자가 `12.` 다음 리팩토링 추천 항목을 단계별로 모두 진행하고, 결과 보고 시 현재 완성도와 다음 추천 작업을 정리해달라고 요청했다.
+- `HideTopMovesRunRequest`와 `runHideTopMovesApplication()`을 추가했다. Top Moves 숨김 시 설정 off, 후보 spot 제거, 안내 메시지 생성을 topmoves application runner가 소유한다.
+- `GoCoachApp.kt`의 `hideTopMoves()` 본문을 application runner 호출로 축소했다. UI는 `ShowTopMovesStateUpdate` 적용 콜백만 담당하며, show/hide 모두 같은 update 경로를 사용한다.
+- `TopMovesApplicationTest`에 hide runner 테스트를 추가했다. topMovesEnabled 비활성화, candidateMoves 제거, 안내 메시지를 검증한다.
+- `LayeringContractTest`의 Top Moves workflow guard를 확장했다. UI가 `settingsState.hideTopMoves()`나 Top Moves 숨김 메시지를 직접 소유하지 못하도록 회귀를 막는다.

@@ -186,6 +186,11 @@ internal data class ShowTopMovesRunRequest(
     val requestAnalysis: (ShowTopMovesAnalysisRequest) -> Unit,
 )
 
+internal data class HideTopMovesRunRequest(
+    val controllerState: GameSessionControllerState,
+    val applyUpdate: (ShowTopMovesStateUpdate) -> Unit,
+)
+
 internal sealed class TopMoveAnalysisLaunchPlan {
     data object Skip : TopMoveAnalysisLaunchPlan()
 
@@ -813,6 +818,17 @@ internal fun runShowTopMovesApplication(request: ShowTopMovesRunRequest) {
     )
     request.applyUpdate(plan.update)
     plan.analysisRequest?.let(request.requestAnalysis)
+}
+
+internal fun GameSessionControllerState.toHideTopMovesStateUpdate(): ShowTopMovesStateUpdate =
+    ShowTopMovesStateUpdate(
+        settingsState = settings.hideTopMoves(),
+        analysisState = core.analysisState.clearTopMoveSpots(),
+        engineMessage = "Top Moves hidden. Background move review keeps using fast best-1 analysis.",
+    )
+
+internal fun runHideTopMovesApplication(request: HideTopMovesRunRequest) {
+    request.applyUpdate(request.controllerState.toHideTopMovesStateUpdate())
 }
 
 private fun List<CandidateMove>.scoredCandidateCount(): Int =

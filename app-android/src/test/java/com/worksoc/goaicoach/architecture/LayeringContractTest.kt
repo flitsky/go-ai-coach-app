@@ -176,6 +176,8 @@ class LayeringContractTest {
             "shouldRequestTopMoveAnalysis(",
             "toShowTopMovesPlan(",
             "ShowTopMovesPlan.",
+            "settingsState = settingsState.hideTopMoves()",
+            "Top Moves hidden. Background move review keeps using fast best-1 analysis.",
         )
             .filter { fragment -> fragment in text }
 
