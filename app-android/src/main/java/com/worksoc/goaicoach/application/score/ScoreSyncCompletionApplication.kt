@@ -1,9 +1,9 @@
 package com.worksoc.goaicoach.application.score
 
-import com.worksoc.goaicoach.application.EngineOperationApplyPlan
+import com.worksoc.goaicoach.application.engine.operation.EngineOperationApplyPlan
 import com.worksoc.goaicoach.shared.engine.EngineOperationRequest
-import com.worksoc.goaicoach.application.EngineOperationResultGuard
-import com.worksoc.goaicoach.application.buildEngineOperationApplyPlan
+import com.worksoc.goaicoach.application.engine.operation.EngineOperationResultGuard
+import com.worksoc.goaicoach.application.engine.operation.buildEngineOperationApplyPlan
 import com.worksoc.goaicoach.shared.GameState
 
 internal sealed class ScoreSyncCompletionPlan {

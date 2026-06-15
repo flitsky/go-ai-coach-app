@@ -4,19 +4,19 @@ import com.worksoc.goaicoach.application.session.*
 
 import com.worksoc.goaicoach.application.score.*
 
-import com.worksoc.goaicoach.application.EngineFallbackPolicy
-import com.worksoc.goaicoach.application.EngineOperationApplyPlan
-import com.worksoc.goaicoach.application.EngineOperationKind
-import com.worksoc.goaicoach.application.EngineOperationRequest
-import com.worksoc.goaicoach.application.EngineOperationResultGuard
+import com.worksoc.goaicoach.application.engine.operation.EngineFallbackPolicy
+import com.worksoc.goaicoach.application.engine.operation.EngineOperationApplyPlan
+import com.worksoc.goaicoach.application.engine.operation.EngineOperationKind
+import com.worksoc.goaicoach.application.engine.operation.EngineOperationRequest
+import com.worksoc.goaicoach.application.engine.operation.EngineOperationResultGuard
 import com.worksoc.goaicoach.application.engine.EngineSessionClient
-import com.worksoc.goaicoach.application.EngineTimeoutPolicy
+import com.worksoc.goaicoach.application.engine.operation.EngineTimeoutPolicy
 import com.worksoc.goaicoach.application.engine.LocalEngineMoveResult
 import com.worksoc.goaicoach.application.movereview.MoveReviewMarker
 import com.worksoc.goaicoach.application.movereview.MoveReviewResult
-import com.worksoc.goaicoach.application.buildEngineOperationApplyPlan
+import com.worksoc.goaicoach.application.engine.operation.buildEngineOperationApplyPlan
 import com.worksoc.goaicoach.application.movereview.buildMoveReview
-import com.worksoc.goaicoach.application.engineOperationRequest
+import com.worksoc.goaicoach.application.engine.operation.engineOperationRequest
 import com.worksoc.goaicoach.application.engine.localScoreSnapshot
 import com.worksoc.goaicoach.application.movereview.withReviewMarker
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort

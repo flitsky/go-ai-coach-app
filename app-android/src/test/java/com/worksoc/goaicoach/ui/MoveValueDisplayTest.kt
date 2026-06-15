@@ -1,8 +1,6 @@
 package com.worksoc.goaicoach.ui
 
-import com.worksoc.goaicoach.application.movereview.pointLossLabel
 import com.worksoc.goaicoach.application.analysis.toCandidateText
-import com.worksoc.goaicoach.application.movereview.topMoveDeltaScoreLabel
 import com.worksoc.goaicoach.shared.AnalysisResult
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
@@ -10,6 +8,8 @@ import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.EngineStatus
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.pointLossLabel
+import com.worksoc.goaicoach.shared.topMoveDeltaScoreLabel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

@@ -13,6 +13,12 @@ POC를 계속 고도화하는 관점에서는 이미 충분히 좋은 상태다.
 
 2026-06-14 현재 재평가: **98.5/100**.
 
+2026-06-15 현재 재평가: **96.6/100(보수적 플랫폼 완성도)**, **99.997/100(현재 리팩토링 배치 진행도)**.
+
+두 점수를 분리한다. 96.6점은 외부 평가 관점의 장기 플랫폼 아키텍처 완성도이며, 아직 `GoCoachApp.kt`가 2천 줄 이상이고 Compose lifecycle trigger가 남아 있다는 점을 반영한다. 99.997점은 최근 리팩토링 배치에서 약속한 root application package 제거, engine operation facade 위치 정리, KMP 물리 이동 추가 실행의 완료도를 뜻한다.
+
+이번 재평가에서 의미 있는 변화는 root application package production 파일 수가 0개가 된 점이다. 또한 `LocalEngineSessionClient.kt`는 local core sync, position analysis cache, diagnostic 기록을 각각 delegate/helper로 분리해 remote engine client가 같은 `EngineSessionClient` 계약을 구현하기 쉬운 구조가 됐다. `MoveValueDisplay.kt`는 shared/commonMain으로 이동해 Android/application 의존 없는 후보수 표시 정책이 KMP 영역에 들어갔다.
+
 이후 `GameSessionControllerState`, application port, prompt priority, Top Moves/score/auto-AI stale guard, runtime discard log, undo restore cache, 자동 AI 종국 display runner, score estimate failure reducer, Top Moves failure reducer, Top Moves launch effect 연결, Top Moves effect runner, Score Estimate effect runner, Position Analysis Cache Optimization effect runner, Startup Benchmark effect runner, Saved Game Restore Sync effect runner, Debug Report Copy platform effect port, Human Move Sync effect runner, Auto AI Turn effect runner, Auto AI pending state reducer, Auto AI follow-up request helper가 추가되어 App Service 계층의 판단 책임은 더 선명해졌다.
 
 추가로 `engine.operation.slow`, `engine.operation.timeout`, `engine.operation.discarded` 구조화 진단 이벤트가 생겼고, `PositionAnalysisGateway`가 KMP-ready middleware 계약으로 추가되었으며, `RemotePositionAnalysisGateway` 읽기 전용 spike가 들어왔다. 이제 원격 서버 분석으로 확장할 때 UI나 게임 도메인이 직접 흔들리지 않을 기반은 상당히 갖춰졌다.

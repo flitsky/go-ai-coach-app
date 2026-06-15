@@ -1,26 +1,20 @@
 package com.worksoc.goaicoach.application.engine
 
-import com.worksoc.goaicoach.application.EngineFallbackPolicy
-import com.worksoc.goaicoach.application.EngineOperationKind
-import com.worksoc.goaicoach.application.EngineTimeoutPolicy
+import com.worksoc.goaicoach.application.engine.operation.EngineFallbackPolicy
+import com.worksoc.goaicoach.application.engine.operation.EngineOperationKind
+import com.worksoc.goaicoach.application.engine.operation.EngineTimeoutPolicy
 import com.worksoc.goaicoach.application.analysis.NoopPositionAnalysisCacheStore
-import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheEntry
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationPlan
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationResult
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheQuality
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheStore
 import com.worksoc.goaicoach.application.analysis.TrustedPositionAnalysisCacheProvider
 import com.worksoc.goaicoach.application.analysis.cacheQualityFor
-import com.worksoc.goaicoach.application.analysis.isStorablePositionAnalysisFor
-import com.worksoc.goaicoach.application.analysis.positionAnalysisCacheKeyFor
-import com.worksoc.goaicoach.application.analysis.withCacheHitSummary
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.diagnostic.NoopDiagnosticEventLog
-import com.worksoc.goaicoach.application.diagnostic.engineVisitFillDiagnosticEvent
 import com.worksoc.goaicoach.application.diagnostic.runObservedEngineOperation
 import com.worksoc.goaicoach.application.endgame.AiEndgameResolution
-import com.worksoc.goaicoach.application.engineOperationRequest
-import com.worksoc.goaicoach.middleware.PositionAnalysisCacheResolver
+import com.worksoc.goaicoach.application.engine.operation.engineOperationRequest
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.AnalysisResult
 import com.worksoc.goaicoach.shared.BoardSize
@@ -35,8 +29,6 @@ import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.ScoreEstimate
-import com.worksoc.goaicoach.shared.analysisFingerprint
-import com.worksoc.goaicoach.shared.forcedJsonPositionAnalysis
 
 internal class LocalEngineSessionClient(
     private val coreApi: EngineCoreApi,
@@ -48,44 +40,46 @@ internal class LocalEngineSessionClient(
     private val diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
     private val clock: EngineClock = SystemEngineClock,
 ) : EngineSessionClient {
-    private val positionAnalysisCacheResolver = PositionAnalysisCacheResolver(
+    private val coreSession = LocalEngineCoreSessionDelegate(
+        coreApi = coreApi,
+        clock = clock,
+    )
+    private val positionAnalysisCache = LocalPositionAnalysisCacheCoordinator(
         localStore = positionAnalysisCacheStore,
         trustedProviders = trustedPositionAnalysisCacheProviders,
     )
+    private val analysisDiagnostics = EngineAnalysisDiagnosticRecorder(
+        diagnosticEventLog = diagnosticEventLog,
+    )
 
     override fun positionAnalysisCacheStatsText(nowMillis: Long): String =
-        positionAnalysisCacheResolver.statsText(nowMillis)
+        positionAnalysisCache.statsText(nowMillis)
 
     override fun positionAnalysisCacheQualityFor(
         state: GameState,
         limit: AnalysisLimit,
         searchMode: EngineSearchMode,
         nowMillis: Long,
-    ): PositionAnalysisCacheQuality? {
-        val effectiveLimit = when (searchMode) {
-            EngineSearchMode.GtpStatefulFast -> limit
-            EngineSearchMode.JsonPositionAnalysis -> limit.forcedJsonPositionAnalysis()
-        }
-        val key = positionAnalysisCacheKeyFor(
+    ): PositionAnalysisCacheQuality? =
+        positionAnalysisCache.qualityFor(
             state = state,
+            limit = limit,
             searchMode = searchMode,
-            limit = effectiveLimit,
+            nowMillis = nowMillis,
         )
-        return positionAnalysisCacheResolver.qualityFor(key = key, nowMillis = nowMillis)
-    }
 
     override suspend fun startSession(
         profile: EngineProfile,
         state: GameState,
     ): EngineStartupResult =
-        coreApi.startEngineSession(profile, state)
+        coreSession.startSession(profile, state)
 
     override suspend fun startNewGame(
         profile: EngineProfile,
         boardSize: BoardSize,
         ruleset: Ruleset,
     ): EngineStartupResult =
-        coreApi.startNewEngineGame(profile, boardSize, ruleset)
+        coreSession.startNewGame(profile, boardSize, ruleset)
 
     override suspend fun analyzePosition(
         state: GameState,
@@ -105,31 +99,26 @@ internal class LocalEngineSessionClient(
         readCache: Boolean = true,
         cacheLimitOverride: AnalysisLimit? = null,
     ): AnalysisResult {
-        val effectiveLimit = when (searchMode) {
-            EngineSearchMode.GtpStatefulFast -> limit
-            EngineSearchMode.JsonPositionAnalysis -> limit.forcedJsonPositionAnalysis()
-        }
-        val cacheLimit = cacheLimitOverride
-            ?.forcedJsonPositionAnalysis()
-            ?: effectiveLimit
-        val nowMillis = System.currentTimeMillis()
-        val cacheKey = positionAnalysisCacheKeyFor(
+        val context = positionAnalysisCache.contextFor(
             state = state,
+            limit = limit,
             searchMode = searchMode,
-            limit = cacheLimit,
+            cacheLimitOverride = cacheLimitOverride,
         )
-        if (searchMode == EngineSearchMode.JsonPositionAnalysis && readCache) {
-            positionAnalysisCacheResolver
-                .reusableEntryFor(cacheKey, nowMillis)
-                ?.let { entry -> return entry.result.withCacheHitSummary(entry) }
-        }
+        val nowMillis = clock.currentTimeMillis()
+        positionAnalysisCache.reusableResultFor(
+            context = context,
+            readCache = readCache,
+            nowMillis = nowMillis,
+        )?.let { result -> return result }
+
         val operationRequest = engineOperationRequest(
             kind = EngineOperationKind.PositionAnalysis,
             state = state,
             sessionGeneration = 0L,
             timeoutPolicy = EngineTimeoutPolicy(
-                timeoutMillis = effectiveLimit.timeMillis,
-                label = "${searchMode.name}:${effectiveLimit.visits}v",
+                timeoutMillis = context.effectiveLimit.timeMillis,
+                label = "${searchMode.name}:${context.effectiveLimit.visits}v",
             ),
             fallbackPolicy = if (searchMode == EngineSearchMode.JsonPositionAnalysis) {
                 EngineFallbackPolicy.CachedAnalysis
@@ -141,50 +130,25 @@ internal class LocalEngineSessionClient(
         val result = runObservedEngineOperation(
             request = operationRequest,
             diagnosticEventLog = diagnosticEventLog,
+            currentTimeMillis = clock::currentTimeMillis,
         ) {
-            coreApi.syncToGameState(state)
-            coreApi.analyze(effectiveLimit)
+            coreSession.syncAndAnalyzePosition(
+                state = state,
+                limit = context.effectiveLimit,
+            )
         }
-        recordAnalysisDiagnosticEvent(
+        analysisDiagnostics.recordVisitFill(
             state = state,
-            requestedVisits = cacheLimit.visits,
+            requestedVisits = context.cacheLimit.visits,
             rootVisits = result.rootVisits,
             searchMode = searchMode,
         )
-        if (
-            searchMode == EngineSearchMode.JsonPositionAnalysis &&
-            result.isStorablePositionAnalysisFor(cacheLimit)
-        ) {
-            val rootVisits = result.rootVisits
-            if (rootVisits != null) {
-                positionAnalysisCacheResolver.putLocal(
-                    entry = PositionAnalysisCacheEntry(
-                        key = cacheKey,
-                        result = result,
-                        createdAtMillis = nowMillis,
-                        requestedRootVisits = cacheLimit.visits,
-                        rootVisits = rootVisits,
-                    ),
-                    nowMillis = nowMillis,
-                )
-            }
-        }
+        positionAnalysisCache.storeIfEligible(
+            context = context,
+            result = result,
+            nowMillis = nowMillis,
+        )
         return result
-    }
-
-    private fun recordAnalysisDiagnosticEvent(
-        state: GameState,
-        requestedVisits: Int,
-        rootVisits: Int?,
-        searchMode: EngineSearchMode,
-    ) {
-        val event = engineVisitFillDiagnosticEvent(
-            requestedVisits = requestedVisits,
-            rootVisits = rootVisits,
-            searchMode = searchMode.name,
-            positionFingerprint = state.analysisFingerprint(),
-        ) ?: return
-        diagnosticEventLog.append(event)
     }
 
     override suspend fun optimizePositionAnalysisCache(
@@ -225,13 +189,13 @@ internal class LocalEngineSessionClient(
         state: GameState,
         profile: EngineProfile,
     ): ScoreEstimate =
-        coreApi.syncAndEstimateGraphScore(state, profile)
+        coreSession.syncAndEstimateGraphScore(state, profile)
 
     override suspend fun configureSyncAndEstimateGraphScore(
         state: GameState,
         profile: EngineProfile,
     ): ScoreEstimate =
-        coreApi.configureSyncAndEstimateGraphScore(state, profile)
+        coreSession.configureSyncAndEstimateGraphScore(state, profile)
 
     override suspend fun runAutoAiTurn(
         currentState: GameState,
@@ -240,16 +204,11 @@ internal class LocalEngineSessionClient(
         searchTimeSettings: SearchTimeSettings,
         searchMode: EngineSearchMode,
         isolateSearchCache: Boolean,
-    ): AutoAiTurnResult {
-        val aiPlayer = currentState.nextPlayer
-        val turnProfile = playLevel.toEngineProfile(currentProfile, searchTimeSettings)
-        coreApi.configure(turnProfile)
-        coreApi.syncToGameState(currentState)
-        val outcome = com.worksoc.goaicoach.match.applyAiTurn(
-            engineAdapter = coreApi,
+    ): AutoAiTurnResult =
+        coreSession.runAutoAiTurn(
             currentState = currentState,
-            aiPlayer = aiPlayer,
             playLevel = playLevel,
+            currentProfile = currentProfile,
             searchTimeSettings = searchTimeSettings,
             searchMode = searchMode,
             isolateSearchCache = isolateSearchCache,
@@ -261,16 +220,6 @@ internal class LocalEngineSessionClient(
                 )
             },
         )
-        val estimate = runCatching {
-            coreApi.estimateScore(scoreGraphAnalysisLimit(turnProfile))
-        }.getOrNull()
-        return AutoAiTurnResult(
-            turnOutcome = outcome,
-            scoreEstimate = estimate,
-            profile = turnProfile,
-            playLevel = playLevel,
-        )
-    }
 
     override suspend fun syncAfterHumanMove(
         afterMove: GameState,
@@ -278,12 +227,11 @@ internal class LocalEngineSessionClient(
         move: Move,
         previousReviewCandidates: List<CandidateMove>,
     ): LocalEngineMoveResult =
-        coreApi.syncAfterHumanMove(
+        coreSession.syncAfterHumanMove(
             afterMove = afterMove,
             profile = profile,
             move = move,
             previousReviewCandidates = previousReviewCandidates,
-            clock = clock,
         )
 
     override suspend fun estimateScoreForState(
@@ -291,7 +239,7 @@ internal class LocalEngineSessionClient(
         profile: EngineProfile,
         syncFirst: Boolean,
     ): ScoreEstimate =
-        coreApi.estimateScoreForState(
+        coreSession.estimateScoreForState(
             state = state,
             profile = profile,
             syncFirst = syncFirst,
@@ -302,21 +250,21 @@ internal class LocalEngineSessionClient(
         profile: EngineProfile,
         prePassCandidates: List<CandidateMove>,
     ): AiEndgameResolution =
-        coreApi.resolveEndgameForState(
+        coreSession.resolveEndgameForState(
             state = state,
             profile = profile,
             prePassCandidates = prePassCandidates,
         )
 
     override suspend fun undoMove(): EngineStatus =
-        coreApi.undoMove()
+        coreSession.undoMove()
 
     override suspend fun runStartupBenchmark(
         restoreState: GameState,
         nowMillis: Long,
         onProgress: suspend (EngineBenchmarkProgress) -> Unit,
     ): EngineBenchmarkProfile =
-        coreApi.runStartupEngineBenchmark(
+        coreSession.runStartupBenchmark(
             restoreState = restoreState,
             nowMillis = nowMillis,
             onProgress = onProgress,

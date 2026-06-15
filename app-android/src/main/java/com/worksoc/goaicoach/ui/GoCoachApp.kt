@@ -30,16 +30,16 @@ import com.worksoc.goaicoach.application.preferences.buildInitialUserPreferences
 import com.worksoc.goaicoach.application.analysis.buildPositionAnalysisCacheOptimizationPlan
 import com.worksoc.goaicoach.application.analysis.buildPositionAnalysisCacheOptimizationPrompt
 import com.worksoc.goaicoach.application.preferences.buildUserPreferencesSnapshot
-import com.worksoc.goaicoach.application.EngineFallbackPolicy
-import com.worksoc.goaicoach.application.EngineOperationGate
-import com.worksoc.goaicoach.application.EngineOperationKind
-import com.worksoc.goaicoach.application.EngineOperationLifecycleState
-import com.worksoc.goaicoach.application.EngineOperationLifecycleTransition
-import com.worksoc.goaicoach.application.EngineOperationLifecycleCallbacks
-import com.worksoc.goaicoach.application.EngineOperationResultGuard
-import com.worksoc.goaicoach.application.EngineOperationRequest
+import com.worksoc.goaicoach.application.engine.operation.EngineFallbackPolicy
+import com.worksoc.goaicoach.application.engine.operation.EngineOperationGate
+import com.worksoc.goaicoach.application.engine.operation.EngineOperationKind
+import com.worksoc.goaicoach.application.engine.operation.EngineOperationLifecycleState
+import com.worksoc.goaicoach.application.engine.operation.EngineOperationLifecycleTransition
+import com.worksoc.goaicoach.application.engine.operation.EngineOperationLifecycleCallbacks
+import com.worksoc.goaicoach.application.engine.operation.EngineOperationResultGuard
+import com.worksoc.goaicoach.application.engine.operation.EngineOperationRequest
 import com.worksoc.goaicoach.application.engine.EngineSessionClient
-import com.worksoc.goaicoach.application.EngineTimeoutPolicy
+import com.worksoc.goaicoach.application.engine.operation.EngineTimeoutPolicy
 import com.worksoc.goaicoach.application.debugreport.DebugReportMirrorPort
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.humanmove.HumanEngineSyncCompletionApplyPlan
@@ -53,18 +53,18 @@ import com.worksoc.goaicoach.application.humanmove.applyHumanMoveLocally
 import com.worksoc.goaicoach.application.humanmove.buildHumanEngineSyncCompletionPlan
 import com.worksoc.goaicoach.application.humanmove.runHumanEngineSyncWorkflowResult
 import com.worksoc.goaicoach.application.humanmove.toApplyPlan
-import com.worksoc.goaicoach.application.applyEngineOperationLifecycleTransition
+import com.worksoc.goaicoach.application.engine.operation.applyEngineOperationLifecycleTransition
 import com.worksoc.goaicoach.application.debugreport.ClipboardPort
-import com.worksoc.goaicoach.application.engineOperationRequest
-import com.worksoc.goaicoach.application.evaluateEngineBenchmarkGate
-import com.worksoc.goaicoach.application.evaluateScoringRuleChangeGate
-import com.worksoc.goaicoach.application.evaluateSearchTimeChangeGate
+import com.worksoc.goaicoach.application.engine.operation.engineOperationRequest
+import com.worksoc.goaicoach.application.engine.operation.evaluateEngineBenchmarkGate
+import com.worksoc.goaicoach.application.engine.operation.evaluateScoringRuleChangeGate
+import com.worksoc.goaicoach.application.engine.operation.evaluateSearchTimeChangeGate
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationWorkflowResult
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationUiState
 import com.worksoc.goaicoach.application.analysis.PostGamePositionAnalysisCacheOptimizationPromptEnabled
-import com.worksoc.goaicoach.application.recordEngineOperationDiscardLog
+import com.worksoc.goaicoach.application.engine.operation.recordEngineOperationDiscardLog
 import com.worksoc.goaicoach.application.engine.localScoreSnapshot
-import com.worksoc.goaicoach.application.runEngineOperationInScope
+import com.worksoc.goaicoach.application.engine.operation.runEngineOperationInScope
 import com.worksoc.goaicoach.application.analysis.runPositionAnalysisCacheOptimizationWorkflowResult
 import com.worksoc.goaicoach.application.savedgame.SavedGamePersistencePlan
 import com.worksoc.goaicoach.application.savedgame.SavedGameRestorePlan
@@ -102,10 +102,10 @@ import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
 import com.worksoc.goaicoach.application.preferences.UserPreferencesSnapshot
 import com.worksoc.goaicoach.persistence.UserPreferencesStore
 import com.worksoc.goaicoach.presentation.GameUiEvent
-import com.worksoc.goaicoach.presentation.GameUiEventHandlers
 import com.worksoc.goaicoach.presentation.KaTrainUxOptions
 import com.worksoc.goaicoach.presentation.buildGameScreenStateInput
 import com.worksoc.goaicoach.presentation.buildGameScreenState
+import com.worksoc.goaicoach.presentation.buildGameUiEventHandlers
 import com.worksoc.goaicoach.presentation.dispatchGameUiEvent
 import com.worksoc.goaicoach.shared.AnalysisPreset
 import com.worksoc.goaicoach.shared.BoardCoordinate
@@ -1951,7 +1951,7 @@ private fun GoCoachScreen(
     fun dispatch(event: GameUiEvent) {
         dispatchGameUiEvent(
             event = event,
-            handlers = GameUiEventHandlers(
+            handlers = buildGameUiEventHandlers(
                 currentPlayer = { gameState.nextPlayer },
                 isTopMovesEnabled = { topMovesEnabled },
                 startConfiguredGame = ::startConfiguredGame,

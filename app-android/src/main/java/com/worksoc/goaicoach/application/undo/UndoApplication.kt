@@ -1,11 +1,11 @@
 package com.worksoc.goaicoach.application.undo
 
 import com.worksoc.goaicoach.application.engine.EngineUndoWorkflowResult
-import com.worksoc.goaicoach.application.EngineOperationApplyPlan
-import com.worksoc.goaicoach.application.EngineOperationRequest
-import com.worksoc.goaicoach.application.EngineOperationResultGuard
+import com.worksoc.goaicoach.application.engine.operation.EngineOperationApplyPlan
+import com.worksoc.goaicoach.application.engine.operation.EngineOperationRequest
+import com.worksoc.goaicoach.application.engine.operation.EngineOperationResultGuard
 import com.worksoc.goaicoach.application.movereview.MoveReviewMarker
-import com.worksoc.goaicoach.application.buildEngineOperationApplyPlan
+import com.worksoc.goaicoach.application.engine.operation.buildEngineOperationApplyPlan
 import com.worksoc.goaicoach.application.engine.localScoreSnapshot
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.shared.GameState

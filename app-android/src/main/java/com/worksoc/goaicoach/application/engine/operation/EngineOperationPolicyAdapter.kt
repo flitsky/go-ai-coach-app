@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.application
+package com.worksoc.goaicoach.application.engine.operation
 
 internal fun com.worksoc.goaicoach.shared.engine.EngineOperationGate.toApplicationGate(): EngineOperationGate =
     when (this) {

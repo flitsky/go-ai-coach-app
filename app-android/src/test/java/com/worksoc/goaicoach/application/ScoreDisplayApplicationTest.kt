@@ -1,5 +1,7 @@
 package com.worksoc.goaicoach.application
 
+import com.worksoc.goaicoach.application.engine.operation.*
+
 import com.worksoc.goaicoach.application.analysis.*
 import com.worksoc.goaicoach.application.endgame.*
 import com.worksoc.goaicoach.application.engine.*

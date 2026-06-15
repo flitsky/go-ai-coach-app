@@ -4,19 +4,19 @@ import com.worksoc.goaicoach.application.session.*
 
 import com.worksoc.goaicoach.application.analysis.AnalysisCacheKey
 import com.worksoc.goaicoach.application.analysis.CachedAnalysisResult
-import com.worksoc.goaicoach.application.EngineFallbackPolicy
-import com.worksoc.goaicoach.application.EngineOperationKind
-import com.worksoc.goaicoach.application.EngineOperationRequest
-import com.worksoc.goaicoach.application.EngineOperationResultGuard
+import com.worksoc.goaicoach.application.engine.operation.EngineFallbackPolicy
+import com.worksoc.goaicoach.application.engine.operation.EngineOperationKind
+import com.worksoc.goaicoach.application.engine.operation.EngineOperationRequest
+import com.worksoc.goaicoach.application.engine.operation.EngineOperationResultGuard
 import com.worksoc.goaicoach.application.engine.EngineSessionClient
-import com.worksoc.goaicoach.application.EngineTimeoutPolicy
+import com.worksoc.goaicoach.application.engine.operation.EngineTimeoutPolicy
 import com.worksoc.goaicoach.application.session.GameSessionAnalysisState
 import com.worksoc.goaicoach.application.session.GameSessionControllerState
 import com.worksoc.goaicoach.application.session.GameSessionEffect
 import com.worksoc.goaicoach.application.analysis.analysisKeyFor
 import com.worksoc.goaicoach.application.analysis.deepTopMovesAnalysisLimitFor
-import com.worksoc.goaicoach.application.engineOperationRequest
-import com.worksoc.goaicoach.application.evaluateEngineOperationResultGuard
+import com.worksoc.goaicoach.application.engine.operation.engineOperationRequest
+import com.worksoc.goaicoach.application.engine.operation.evaluateEngineOperationResultGuard
 import com.worksoc.goaicoach.application.analysis.cacheQualityFor
 import com.worksoc.goaicoach.application.analysis.topMoveCandidateCountFor
 import com.worksoc.goaicoach.application.analysis.topMovesAnalysisLimitFor

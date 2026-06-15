@@ -1476,3 +1476,10 @@
 - `LayeringContractTest`에 새 위치의 scoring/prompt/session 파일을 platform-free 후보로 추가해 Android/UI/persistence/runtime 구현 의존이 다시 들어오지 않도록 했다.
 - 현재 metric은 root application package 파일 수 5개, `GoCoachApp.kt` 2,080줄, `GoCoachApp.kt` application import fan-in 76개, shared commonTest 파일 수 10개다.
 - 검증으로 `:shared:check`, `:app-android:compileDebugKotlin`, `:app-android:testDebugUnitTest`를 JDK 17/Android SDK 환경에서 실행했고 모두 통과했다.
+- 사용자가 `2nd phase.2` 다음 리팩토링 추천 항목을 단계별로 수행하고 결과 보고 시 완성도와 다음 추천 작업을 정리해달라고 요청했다.
+- `LocalEngineSessionClient.kt` 내부 책임을 3개 helper/delegate로 분리했다. `LocalEngineCoreSessionDelegate`는 local `EngineCoreApi` sync/score/endgame/undo/benchmark 실행을 담당하고, `LocalPositionAnalysisCacheCoordinator`는 JSON position analysis cache key/context/read/write를 담당하며, `EngineAnalysisDiagnosticRecorder`는 root visits fill warning 기록을 담당한다. `LocalEngineSessionClient.kt`는 278줄의 orchestration shell로 축소됐다.
+- root application package에 남아 있던 engine operation facade 5개 파일을 `application/engine/operation/`으로 이동했다. 결과적으로 `app-android/src/main/java/com/worksoc/goaicoach/application` 바로 아래 production `.kt` 파일 수는 0개가 됐다.
+- `docs/refactoring/LAUNCHED_EFFECT_INVENTORY_2026-06-15.md`를 추가했다. Compose `LaunchedEffect` 11개 실행 지점을 startup, restore, benchmark, autosave, auto AI, Top Moves, post-game prompt 책임으로 분류하고 다음 effect launcher 이동 우선순위를 기록했다.
+- `GameUiEventHandlers` 생성은 `buildGameUiEventHandlers()` factory를 통과하도록 변경했다. UI는 action dispatch에 필요한 lambda를 주입하지만, presentation action table 생성자는 presentation 계층이 소유하게 됐다.
+- `MoveValueDisplay.kt`를 `shared/commonMain`으로 실제 이동했다. 후보수 `pointLossLabel()`, `topMoveDeltaScoreLabel()`, `toOneDecimalLabel()`은 Android/application 의존이 없는 shared 표시 규칙으로 승격했고, `LayeringContractTest`가 shared KMP-ready 후보로 감시한다.
+- 현재 metric은 root application package 파일 수 0개, `GoCoachApp.kt` 2,080줄, `GoCoachApp.kt` application import fan-in 76개, `LocalEngineSessionClient.kt` 278줄, engine operation facade package 파일 수 5개다.

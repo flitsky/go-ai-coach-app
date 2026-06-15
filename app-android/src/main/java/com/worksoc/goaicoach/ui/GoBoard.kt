@@ -33,7 +33,6 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.movereview.MoveReviewMarker
 import com.worksoc.goaicoach.application.movereview.MoveReviewTone
-import com.worksoc.goaicoach.application.movereview.topMoveDeltaScoreLabel
 import com.worksoc.goaicoach.application.movereview.topMoveDisplayToneFor
 import com.worksoc.goaicoach.presentation.KaTrainUxOptions
 import com.worksoc.goaicoach.shared.BoardCoordinate
@@ -43,6 +42,7 @@ import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.OwnershipEstimate
 import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.topMoveDeltaScoreLabel
 import kotlinx.coroutines.delay
 import kotlin.math.abs
 import kotlin.math.min

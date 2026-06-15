@@ -139,7 +139,7 @@ class GameUiEventDispatchTest {
         changeScoringRule: (Ruleset) -> Unit = {},
         changeUxOptions: (KaTrainUxOptions) -> Unit = {},
     ): GameUiEventHandlers =
-        GameUiEventHandlers(
+        buildGameUiEventHandlers(
             currentPlayer = currentPlayer,
             isTopMovesEnabled = isTopMovesEnabled,
             startConfiguredGame = startConfiguredGame,

@@ -1,11 +1,11 @@
 package com.worksoc.goaicoach.application.engine
 
-import com.worksoc.goaicoach.application.EngineFallbackPolicy
-import com.worksoc.goaicoach.application.EngineOperationKind
-import com.worksoc.goaicoach.application.EngineOperationRequest
+import com.worksoc.goaicoach.application.engine.operation.EngineFallbackPolicy
+import com.worksoc.goaicoach.application.engine.operation.EngineOperationKind
+import com.worksoc.goaicoach.application.engine.operation.EngineOperationRequest
 import com.worksoc.goaicoach.application.engine.EngineSessionClient
-import com.worksoc.goaicoach.application.EngineTimeoutPolicy
-import com.worksoc.goaicoach.application.engineOperationRequest
+import com.worksoc.goaicoach.application.engine.operation.EngineTimeoutPolicy
+import com.worksoc.goaicoach.application.engine.operation.engineOperationRequest
 import com.worksoc.goaicoach.application.session.GameSessionEffect
 import com.worksoc.goaicoach.application.engine.syncToGameState
 

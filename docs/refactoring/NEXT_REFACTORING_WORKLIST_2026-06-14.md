@@ -1514,3 +1514,65 @@
 5. KMP 물리 이동 2차 spike
    - `MoveReview`/`MoveValueDisplay`, `AnalysisSession`, preferences snapshot 중 다음 후보 1개를 shared/common 또는 별도 KMP 모듈로 이동 가능한지 실행한다.
    - acceptance: 문서 후보가 아니라 실제 물리 이동 1건을 더 만든다.
+
+## 2026-06-15 추가 진행 로그: 2nd phase.2 engine operation/package zero-root 정리
+
+- 2026-06-15: `LocalEngineSessionClient.kt` 내부 책임을 다음 helper/delegate로 분리했다.
+  - `LocalEngineCoreSessionDelegate`: local `EngineCoreApi` 기반 startup/new-game/sync/score/endgame/undo/benchmark 실행.
+  - `LocalPositionAnalysisCacheCoordinator`: JSON position analysis cache context/key/read/write/store eligibility 판단.
+  - `EngineAnalysisDiagnosticRecorder`: root visits fill diagnostic event 기록.
+- 2026-06-15: root application package의 engine operation facade 5개 파일을 `application/engine/operation`으로 이동했다.
+  - `EngineOperationPolicy.kt`
+  - `EngineOperationPolicyAdapter.kt`
+  - `EngineOperationResultApplication.kt`
+  - `EngineOperationLifecycle.kt`
+  - `EngineOperationScope.kt`
+- 2026-06-15: `docs/refactoring/LAUNCHED_EFFECT_INVENTORY_2026-06-15.md`를 생성했다. UI에 남은 Compose effect를 제거 대상이 아니라 책임별 lifecycle bridge로 분류했고, auto-AI/Top-Moves/autosave를 다음 이동 우선순위로 잡았다.
+- 2026-06-15: `GameUiEventHandlers` 직접 생성 대신 `buildGameUiEventHandlers()` factory를 추가했다. 작은 변화지만 UI action binding 생성 책임을 presentation 계층에 둔다.
+- 2026-06-15: `MoveValueDisplay.kt`를 `shared/commonMain`으로 이동했다. 후보수 loss/delta 표시 규칙은 Android나 application 상태에 의존하지 않으므로 shared 표시 정책으로 관리한다.
+- 2026-06-15: `LayeringContractTest`는 새 `application/engine/operation` 위치와 shared `MoveValueDisplay.kt`를 platform-free/KMP-ready 후보로 감시하도록 갱신했다.
+
+### 현재 metric
+
+- root application package 파일 수: 5개 -> 0개
+- `LocalEngineSessionClient.kt`: 436줄 상당의 혼합 책임 -> 278줄 orchestration shell
+- `GoCoachApp.kt`: 2,080줄 유지
+- `GoCoachApp.kt` application import fan-in: 76개 유지
+- UI 파일 내 직접 `scope.launch`/`withContext`/`Dispatchers`/`runCatching`: 0개 유지
+- KMP 물리 이동 누적: diagnostic model, engine policy model, `MoveValueDisplay.kt`
+
+### 검증
+
+- `ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk JAVA_HOME=$(/usr/libexec/java_home -v 17) ./gradlew :shared:check :app-android:compileDebugKotlin :app-android:compileDebugUnitTestKotlin` 통과.
+- `ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk JAVA_HOME=$(/usr/libexec/java_home -v 17) ./gradlew :app-android:testDebugUnitTest` 통과.
+- `ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk JAVA_HOME=$(/usr/libexec/java_home -v 17) make test` 통과.
+
+## 현재 리팩토링/아키텍처 완성도 평가
+
+- 리팩토링 배치 진행도: 99.997/100.
+- 외부 평가 기준 플랫폼 아키텍처 완성도: 97.1/100.
+- 보수적 내부 플랫폼 완성도: 96.6/100.
+- 상향 요인: root application package가 비었고, engine operation facade가 engine 도메인 하위로 들어갔다. local engine session client도 cache/diagnostic/core sync 책임이 분리되어 remote engine client 추가 비용이 낮아졌다.
+- 남은 감점 요인: `GoCoachApp.kt`는 아직 2천 줄 이상이고 Compose `LaunchedEffect` trigger가 11개 남아 있다. operation facade는 위치는 정리됐지만 아직 shared engine 타입 직접 참조로 완전히 수렴하지 않았다.
+
+## 다음 추천 리팩토링 항목 - 2nd phase.3
+
+1. Auto AI / Top Moves effect launcher 분리
+   - `GoCoachApp.kt`의 자동 AI 턴과 Top Moves 자동 분석 `LaunchedEffect`를 각각 application runner 입력 객체로 옮긴다.
+   - acceptance: UI effect는 state snapshot과 callback만 넘기고, scheduling/quiet-window/guard 판단은 application 함수가 소유한다.
+
+2. autosave runner 분리
+   - 사용자 설정 autosave와 진행 중 대국 autosave/clear effect를 persistence runner로 이동한다.
+   - acceptance: `GoCoachApp.kt`의 persistence write trigger가 얇아지고 저장 실패/skip 정책을 테스트할 수 있다.
+
+3. engine operation facade 직접 shared 수렴 1차
+   - app facade 타입이 반드시 필요한 곳과 shared engine 타입을 직접 써도 되는 곳을 분리한다.
+   - acceptance: `application/engine/operation` facade가 adapter/compatibility 역할만 남고 정책 호출부는 shared 타입에 더 가까워진다.
+
+4. `LocalEngineCoreSessionDelegate` 추가 분해 검토
+   - GTP stateful fast, JSON position analysis, score/endgame helper를 더 나눌지 검토한다.
+   - acceptance: local process engine과 remote server engine parity 문서화가 쉬워진다.
+
+5. presentation/menu DTO 후속 정리
+   - Player setup, engine search time, benchmark/cache menu 상태를 presentation DTO 중심으로 더 정리한다.
+   - acceptance: `GoCoachApp.kt` import fan-in과 action binding lambda 수를 함께 줄인다.

@@ -4,6 +4,7 @@ import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
+import com.worksoc.goaicoach.shared.pointLossLabel
 
 internal data class MoveReviewMarker(
     val coordinate: BoardCoordinate,

@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.application
+package com.worksoc.goaicoach.application.engine.operation
 
 internal data class EngineOperationLifecycleCallbacks(
     val onStarted: (EngineOperationRequest) -> Unit = {},
