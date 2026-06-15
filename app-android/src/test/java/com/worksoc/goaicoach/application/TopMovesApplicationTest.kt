@@ -1060,11 +1060,127 @@ class TopMovesApplicationTest {
         assertTrue(showPlan is ShowTopMovesPlan.ShowCached)
         assertEquals(1, (showPlan as ShowTopMovesPlan.ShowCached).candidateMoves.size)
     }
+
+    @Test
+    fun showTopMovesApplicationPlanShowsCachedCandidatesAndEnablesSetting() {
+        val state = GameState.empty()
+        val candidate = CandidateMove(
+            move = Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)),
+            pointLoss = 0.0,
+        )
+        val snapshot = MoveAnalysisSnapshot.from(state = state, candidates = listOf(candidate))
+        val currentPlan = buildTopMoveAnalysisPlan(
+            targetState = state,
+            engineProfile = EngineProfile(),
+            analysisPreset = AnalysisPreset.Lite,
+            deep = false,
+        )
+        val controller = topMoveControllerState(
+            state = state,
+            topMovesEnabled = false,
+            analysisState = GameSessionAnalysisState.reset(
+                candidateText = "cached analysis",
+                reviewAnalysis = snapshot,
+            ).copy(lastAnalysisKey = currentPlan.analysisKey),
+        )
+
+        val plan = controller.toShowTopMovesApplicationPlan(
+            isGameEnded = false,
+            isEngineReady = true,
+            isEngineBusy = false,
+            shouldShowResumePrompt = false,
+            playerSetup = PlayerSetup(),
+        )
+
+        assertTrue(plan.update.settingsState.topMovesEnabled)
+        assertEquals(1, plan.update.analysisState.candidateMoves.size)
+        assertTrue(plan.update.engineMessage.orEmpty().contains("Showing 1 scored best move"))
+        assertNull(plan.analysisRequest)
+    }
+
+    @Test
+    fun showTopMovesApplicationPlanRequestsAnalysisWhenCurrentSnapshotIsMissing() {
+        val state = GameState.empty()
+        val controller = topMoveControllerState(
+            state = state,
+            topMovesEnabled = false,
+        )
+
+        val plan = controller.toShowTopMovesApplicationPlan(
+            isGameEnded = false,
+            isEngineReady = true,
+            isEngineBusy = false,
+            shouldShowResumePrompt = false,
+            playerSetup = PlayerSetup(),
+        )
+
+        assertTrue(plan.update.settingsState.topMovesEnabled)
+        assertTrue(plan.update.analysisState.candidateMoves.isEmpty())
+        assertEquals(state, plan.analysisRequest?.targetState)
+        assertEquals(false, plan.analysisRequest?.deep)
+    }
+
+    @Test
+    fun showTopMovesApplicationPlanHidesCandidatesWhenRequestIsBlocked() {
+        val state = GameState.empty()
+        val candidate = CandidateMove(
+            move = Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)),
+            pointLoss = 0.0,
+        )
+        val controller = topMoveControllerState(
+            state = state,
+            topMovesEnabled = true,
+            analysisState = GameSessionAnalysisState.empty(state)
+                .copy(candidateMoves = listOf(candidate)),
+        )
+
+        val plan = controller.toShowTopMovesApplicationPlan(
+            isGameEnded = false,
+            isEngineReady = true,
+            isEngineBusy = true,
+            shouldShowResumePrompt = false,
+            playerSetup = PlayerSetup(),
+        )
+
+        assertFalse(plan.update.settingsState.topMovesEnabled)
+        assertTrue(plan.update.analysisState.candidateMoves.isEmpty())
+        assertEquals("Top Moves is available only on human turns.", plan.update.engineMessage)
+        assertNull(plan.analysisRequest)
+    }
+
+    @Test
+    fun runShowTopMovesApplicationAppliesUpdateBeforeRequestingAnalysis() {
+        val state = GameState.empty()
+        val controller = topMoveControllerState(
+            state = state,
+            topMovesEnabled = false,
+        )
+        var applied: ShowTopMovesStateUpdate? = null
+        var requested: ShowTopMovesAnalysisRequest? = null
+
+        runShowTopMovesApplication(
+            ShowTopMovesRunRequest(
+                controllerState = controller,
+                isGameEnded = false,
+                isEngineReady = true,
+                isEngineBusy = false,
+                shouldShowResumePrompt = false,
+                playerSetup = PlayerSetup(),
+                applyUpdate = { update -> applied = update },
+                requestAnalysis = { request -> requested = request },
+            ),
+        )
+
+        assertTrue(applied?.settingsState?.topMovesEnabled == true)
+        assertEquals(state, requested?.targetState)
+        assertEquals(false, requested?.deep)
+    }
 }
 
 private fun topMoveControllerState(
     state: GameState,
     analysisState: GameSessionAnalysisState = GameSessionAnalysisState.empty(state),
+    topMovesEnabled: Boolean = true,
 ): GameSessionControllerState =
     GameSessionControllerState(
         core = GameSessionCoreState(
@@ -1091,7 +1207,7 @@ private fun topMoveControllerState(
             playerSetup = PlayerSetup(),
             autoPlayDelaySetting = AutoPlayDelaySetting.Default,
             searchTimeSettings = SearchTimeSettings(),
-            topMovesEnabled = true,
+            topMovesEnabled = topMovesEnabled,
         ),
         benchmark = EngineBenchmarkUiState.initial(
             benchmarkText = "benchmark",

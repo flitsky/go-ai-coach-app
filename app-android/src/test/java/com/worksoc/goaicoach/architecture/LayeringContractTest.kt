@@ -173,6 +173,9 @@ class LayeringContractTest {
             "TopMoveAnalysisExecutionContext(",
             "toTopMoveAnalysisLaunchPlan(",
             "applyTopMoveAnalysisLaunchPlan(",
+            "shouldRequestTopMoveAnalysis(",
+            "toShowTopMovesPlan(",
+            "ShowTopMovesPlan.",
         )
             .filter { fragment -> fragment in text }
 

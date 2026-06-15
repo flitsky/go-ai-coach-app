@@ -973,41 +973,28 @@ private fun GoCoachScreen(
     }
 
     fun showTopMovesForCurrentState() {
-        if (
-            !shouldRequestTopMoveAnalysis(
+        runShowTopMovesApplication(
+            ShowTopMovesRunRequest(
+                controllerState = currentControllerSessionState(),
                 isGameEnded = isGameEnded,
                 isEngineReady = isEngineReady,
                 isEngineBusy = isEngineBusy,
                 shouldShowResumePrompt = shouldShowResumePrompt,
                 playerSetup = playerSetup,
-                targetState = gameState,
-            )
-        ) {
-            settingsState = settingsState.hideTopMoves()
-            clearTopMoveSpots()
-            engineMessage = "Top Moves is available only on human turns."
-            return
-        }
-        settingsState = settingsState.showTopMoves()
-        when (
-            val plan = currentControllerSessionState().toShowTopMovesPlan(
-                isEngineBusy = isEngineBusy,
-            )
-        ) {
-            is ShowTopMovesPlan.ShowCached -> {
-                analysisState = analysisState.copy(candidateMoves = plan.candidateMoves)
-                engineMessage = plan.engineMessage
-            }
-            is ShowTopMovesPlan.RequestAnalysis -> {
-                analysisState = analysisState.copy(candidateMoves = plan.candidateMoves)
-                plan.engineMessage?.let { message -> engineMessage = message }
-                requestTopMoveAnalysisForState(
-                    targetState = gameState,
-                    automatic = false,
-                    deep = plan.deep,
-                )
-            }
-        }
+                applyUpdate = { update ->
+                    settingsState = update.settingsState
+                    analysisState = update.analysisState
+                    update.engineMessage?.let { message -> engineMessage = message }
+                },
+                requestAnalysis = { analysisRequest ->
+                    requestTopMoveAnalysisForState(
+                        targetState = analysisRequest.targetState,
+                        automatic = false,
+                        deep = analysisRequest.deep,
+                    )
+                },
+            ),
+        )
     }
 
     fun hideTopMoves() {

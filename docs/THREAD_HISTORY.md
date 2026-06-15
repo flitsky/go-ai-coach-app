@@ -1519,3 +1519,8 @@
 - `GoCoachApp.kt`의 `requestTopMoveAnalysisForState()` 본문을 application runner 호출로 축소했다. UI는 현재 상태/캐시 조회/operation launch/상태 적용 콜백만 넘기고, token/effect/context 조립은 더 이상 직접 하지 않는다.
 - `TopMovesApplicationTest`에 runner 통합 테스트를 추가했다. runner가 operation을 launch하고, launch update로 analysis key를 고정한 뒤, engine 결과를 completion apply plan으로 넘기는 계약을 검증한다.
 - `LayeringContractTest`에 `goCoachAppDoesNotOwnTopMovesWorkflowBody()`를 추가했다. `GoCoachApp.kt`가 `topMoveAnalysisOperationToken`, `runTopMoveAnalysisEffectApplyPlan`, `TopMoveAnalysisEffectLaunchRequest`, `TopMoveAnalysisExecutionContext`, launch plan 적용 세부를 다시 소유하지 못하도록 회귀를 막는다.
+- 사용자가 `6.` 다음 리팩토링 추천 항목을 단계별로 모두 진행하고, 결과 보고 시 현재 완성도와 다음 추천 작업을 정리해달라고 요청했다.
+- `ShowTopMovesApplicationPlan`, `ShowTopMovesRunRequest`, `runShowTopMovesApplication()`을 추가했다. Top Moves 버튼을 눌렀을 때의 request gate, 설정 on/off, 후보 표시/삭제, 후속 분석 요청 여부 판단을 topmoves application runner가 소유한다.
+- `GoCoachApp.kt`의 `showTopMovesForCurrentState()` 본문을 application runner 호출로 축소했다. UI는 settings/analysis/message 적용과 후속 `requestTopMoveAnalysisForState()` 연결만 담당한다.
+- `TopMovesApplicationTest`에 Top Moves 표시 runner 테스트를 추가했다. cached 후보 표시, fresh 분석 요청, engine busy 차단 시 숨김 처리, runner의 update-before-request 계약을 검증한다.
+- `LayeringContractTest`의 Top Moves 회귀 가드에 `shouldRequestTopMoveAnalysis`, `toShowTopMovesPlan`, `ShowTopMovesPlan` 직접 소유 금지를 추가했다.
