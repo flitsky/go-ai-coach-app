@@ -1,6 +1,6 @@
 package com.worksoc.goaicoach.persistence
 
-import com.worksoc.goaicoach.application.DiagnosticEvent
+import com.worksoc.goaicoach.shared.diagnostic.DiagnosticEvent
 import com.worksoc.goaicoach.application.DiagnosticEventLogPort
 import java.io.File
 import kotlin.math.min

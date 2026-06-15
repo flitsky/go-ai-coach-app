@@ -1,5 +1,7 @@
 package com.worksoc.goaicoach.application
 
+import com.worksoc.goaicoach.application.diagnostic.NoopDiagnosticEventLog
+import com.worksoc.goaicoach.application.diagnostic.runObservedEngineOperation
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.ScoreSnapshot
 

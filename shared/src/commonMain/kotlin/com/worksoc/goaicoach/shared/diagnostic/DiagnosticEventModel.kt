@@ -1,6 +1,6 @@
-package com.worksoc.goaicoach.application
+package com.worksoc.goaicoach.shared.diagnostic
 
-internal enum class DiagnosticSeverity(
+enum class DiagnosticSeverity(
     val label: String,
 ) {
     Info("info"),
@@ -8,7 +8,7 @@ internal enum class DiagnosticSeverity(
     Critical("critical"),
 }
 
-internal data class DiagnosticEvent(
+data class DiagnosticEvent(
     val severity: DiagnosticSeverity,
     val code: String,
     val message: String,
@@ -35,22 +35,22 @@ internal data class DiagnosticEvent(
         }
 }
 
-internal enum class DiagnosticEventExternalExportDecision {
+enum class DiagnosticEventExternalExportDecision {
     LocalOnly,
     EligibleForUserConsentExport,
 }
 
-internal data class DiagnosticEventExternalExportPlan(
+data class DiagnosticEventExternalExportPlan(
     val decision: DiagnosticEventExternalExportDecision,
     val reason: String,
 )
 
-internal data class DiagnosticEventExternalExportPayload(
+data class DiagnosticEventExternalExportPayload(
     val event: DiagnosticEvent,
     val debugReportText: String? = null,
 )
 
-internal sealed class DiagnosticEventExternalSinkPlan {
+sealed class DiagnosticEventExternalSinkPlan {
     data class Skip(
         val reason: String,
     ) : DiagnosticEventExternalSinkPlan()
@@ -60,7 +60,7 @@ internal sealed class DiagnosticEventExternalSinkPlan {
     ) : DiagnosticEventExternalSinkPlan()
 }
 
-internal fun planDiagnosticEventExternalExport(event: DiagnosticEvent): DiagnosticEventExternalExportPlan =
+fun planDiagnosticEventExternalExport(event: DiagnosticEvent): DiagnosticEventExternalExportPlan =
     when (event.severity) {
         DiagnosticSeverity.Info ->
             DiagnosticEventExternalExportPlan(
@@ -81,7 +81,7 @@ internal fun planDiagnosticEventExternalExport(event: DiagnosticEvent): Diagnost
             )
     }
 
-internal fun buildDiagnosticEventExternalSinkPlan(
+fun buildDiagnosticEventExternalSinkPlan(
     event: DiagnosticEvent,
     userConsented: Boolean,
     debugReportText: String? = null,

@@ -114,9 +114,9 @@ class LayeringContractTest {
             applicationRoot.resolve("AutoAiRunnerApplication.kt"),
             applicationRoot.resolve("EngineOperationPolicy.kt"),
             applicationRoot.resolve("EngineOperationResultApplication.kt"),
-            applicationRoot.resolve("DiagnosticEventApplication.kt"),
-            applicationRoot.resolve("DiagnosticEventModel.kt"),
-            applicationRoot.resolve("DiagnosticEventObserverApplication.kt"),
+            applicationRoot.resolve("diagnostic/DiagnosticEventApplication.kt"),
+            applicationRoot.resolve("diagnostic/DiagnosticEventObserverApplication.kt"),
+            applicationRoot.resolve("engine/EngineEffectLauncherApplication.kt"),
             applicationRoot.resolve("EngineDeviceBenchmarkApplication.kt"),
             applicationRoot.resolve("EngineSessionLifecycleApplication.kt"),
             applicationRoot.resolve("EngineStartupApplication.kt"),
@@ -151,6 +151,37 @@ class LayeringContractTest {
         assertTrue(
             "Engine operation policy files are middleware/KMP move candidates and must stay platform-free:\n" +
                 offenders.joinToString("\n"),
+            offenders.isEmpty(),
+        )
+    }
+
+    @Test
+    fun sharedDiagnosticModelStaysKmpReady() {
+        val sharedRoot = repoRoot()
+            .resolve("shared/src/commonMain/kotlin/com/worksoc/goaicoach/shared")
+        val candidates = listOf(
+            sharedRoot.resolve("diagnostic/DiagnosticEventModel.kt"),
+        )
+        val forbiddenImports = listOf(
+            "import android.",
+            "import androidx.",
+            "import java.",
+            "import org.json.",
+            "import com.worksoc.goaicoach.application.",
+            "import com.worksoc.goaicoach.ui.",
+            "import com.worksoc.goaicoach.persistence.",
+            "import com.worksoc.goaicoach.engine.",
+        )
+
+        val offenders = candidates.flatMap { candidate ->
+            candidate
+                .readLines()
+                .filter { line -> forbiddenImports.any { forbidden -> line.startsWith(forbidden) } }
+                .map { line -> "${candidate.relativeTo(repoRoot()).path}: $line" }
+        }
+
+        assertTrue(
+            "Shared diagnostic model must remain KMP-ready:\n${offenders.joinToString("\n")}",
             offenders.isEmpty(),
         )
     }

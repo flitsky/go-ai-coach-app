@@ -976,3 +976,42 @@
 
 5. worklist 상태 라벨 도입
    - 각 리팩토링 항목에 `문서화됨`, `코드 반영`, `테스트됨`, `물리 이동`, `운영 adapter` 상태를 구분한다.
+
+## 2026-06-15 추가 진행 로그: 외부 93점 즉시 적용 1차 실행
+
+- 2026-06-15: 외부 93점 평가의 즉시 적용 항목 중 EffectLauncher 미니 도입, application 하위 package 1차 이동, KMP 물리 이동 1차 스파이크를 수행했다.
+- 2026-06-15: `application/engine/EngineEffectLauncherApplication.kt`를 추가했다. `GoCoachApp.kt` local helper였던 `runEngineIo()`를 app-service helper로 이동해 engine IO dispatcher 선택을 UI entry point 밖으로 뺐다.
+- 2026-06-15: `DiagnosticEventApplication.kt`와 `DiagnosticEventObserverApplication.kt`를 `application/diagnostic/` 하위 package로 이동했다. application 루트 package 밀집 해소의 첫 실행이다.
+- 2026-06-15: `DiagnosticEventModel.kt`를 `shared/commonMain`의 `com.worksoc.goaicoach.shared.diagnostic` package로 이동했다. KMP 후보 문서화만 있던 상태에서 실제 물리 이동 1건을 완료했다.
+- 2026-06-15: `LayeringContractTest`에 shared diagnostic model KMP-ready 검사를 추가했다. application diagnostic 하위 package와 engine effect launcher도 platform-free 후보 검사에 포함했다.
+- 현재 metric: `GoCoachApp.kt`는 2,191줄이며, UI 파일 안의 `withContext(Dispatchers.IO)`/`runCatching` 직접 지점은 8개다. `scope.launch`는 아직 6개다.
+- 검증: `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest --tests 'com.worksoc.goaicoach.application.DiagnosticEventApplicationTest' --tests 'com.worksoc.goaicoach.application.RuntimeEventApplicationTest' --tests 'com.worksoc.goaicoach.application.EngineSessionTest' --tests 'com.worksoc.goaicoach.architecture.LayeringContractTest'` 통과. 최종 통합 검증으로 `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test`도 통과했다.
+
+## 현재 리팩토링/아키텍처 완성도 평가
+
+- 리팩토링 배치 진행도: 99.78/100.
+- 외부 평가 기준 플랫폼 아키텍처 완성도: 94.2/100.
+- 상향 요인: 실제 KMP 물리 이동이 0건에서 1건으로 바뀌었고, application 하위 package 분리도 시작됐다. EffectLauncher helper도 UI 밖으로 이동해 외부 리뷰의 "설계했으나 실행하지 않은 것" 중 일부가 코드로 전환됐다.
+- 남은 감점 요인: `GoCoachApp.kt`는 여전히 2천 줄 이상이고, application import fan-in은 크다. `scope.launch` 6개와 endgame/startup/benchmark/cache optimization IO 경로는 아직 UI orchestration에 남아 있다. 운영 diagnostic 외부 adapter도 아직 없다.
+
+## 다음 추천 리팩토링 항목 - 즉시 적용 2차
+
+1. diagnostic package 이동 후속 정리
+   - `ApplicationPorts.kt`의 diagnostic port를 `application/diagnostic` 또는 별도 port package로 옮길지 검토한다.
+   - acceptance: `DiagnosticEventLogPort`, `DiagnosticEventExternalSinkPort`의 위치가 모델/observer와 더 잘 맞는다.
+
+2. 두 번째 KMP 물리 이동 후보 검토
+   - `EngineOperationPolicy.kt` 또는 `ScoreSyncCompletionApplication.kt`를 대상으로 실제 이동 가능성을 검증한다.
+   - acceptance: 이동 성공 또는 차단 의존성 목록 문서화.
+
+3. EffectLauncher 적용 범위 확대
+   - startup, benchmark, cache optimization, endgame 중 하나의 `withContext(Dispatchers.IO)`를 app-service helper로 이동한다.
+   - acceptance: UI 직접 IO 지점 8개를 7개 이하로 축소한다.
+
+4. application package 분리 2차
+   - `score` 또는 `engine` package에 기존 파일 2~3개를 이동한다.
+   - acceptance: package boundary test와 targeted test 통과.
+
+5. GoCoachApp import fan-in 축소
+   - application import 180개를 책임별 facade/controller boundary로 줄이는 실험을 시작한다.
+   - acceptance: import 수 또는 local helper 수가 실질적으로 감소한다.

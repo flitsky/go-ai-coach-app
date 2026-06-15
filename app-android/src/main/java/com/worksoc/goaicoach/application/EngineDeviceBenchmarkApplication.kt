@@ -1,5 +1,7 @@
 package com.worksoc.goaicoach.application
 
+import com.worksoc.goaicoach.application.diagnostic.NoopDiagnosticEventLog
+import com.worksoc.goaicoach.application.diagnostic.runObservedEngineOperation
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.CandidateMove

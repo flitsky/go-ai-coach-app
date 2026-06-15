@@ -193,6 +193,7 @@ import com.worksoc.goaicoach.application.UndoRequestPlan
 import com.worksoc.goaicoach.application.UndoLocalStatePlan
 import com.worksoc.goaicoach.application.UserPreferencesStorePort
 import com.worksoc.goaicoach.application.UserNoticePort
+import com.worksoc.goaicoach.application.engine.runEngineIo
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
@@ -801,11 +802,6 @@ private fun GoCoachScreen(
             applyCoreState = ::applyCoreSessionState,
         )
     }
-
-    suspend fun <T> runEngineIo(block: suspend () -> T): T =
-        withContext(Dispatchers.IO) {
-            block()
-        }
 
     fun applyTopMoveAnalysisFailureDisplayPlan(
         failure: TopMoveAnalysisFailureDisplayPlan,

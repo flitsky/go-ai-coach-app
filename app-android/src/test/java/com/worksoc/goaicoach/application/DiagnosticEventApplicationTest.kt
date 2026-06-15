@@ -1,10 +1,22 @@
 package com.worksoc.goaicoach.application
 
+import com.worksoc.goaicoach.application.diagnostic.engineOperationDiscardedDiagnosticEvent
+import com.worksoc.goaicoach.application.diagnostic.engineOperationSlowDiagnosticEvent
+import com.worksoc.goaicoach.application.diagnostic.engineOperationTimeoutDiagnosticEvent
+import com.worksoc.goaicoach.application.diagnostic.engineVisitFillDiagnosticEvent
+import com.worksoc.goaicoach.application.diagnostic.runObservedEngineOperation
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.diagnostic.DiagnosticEvent
+import com.worksoc.goaicoach.shared.diagnostic.DiagnosticEventExternalExportDecision
+import com.worksoc.goaicoach.shared.diagnostic.DiagnosticEventExternalExportPayload
+import com.worksoc.goaicoach.shared.diagnostic.DiagnosticEventExternalSinkPlan
+import com.worksoc.goaicoach.shared.diagnostic.DiagnosticSeverity
+import com.worksoc.goaicoach.shared.diagnostic.buildDiagnosticEventExternalSinkPlan
+import com.worksoc.goaicoach.shared.diagnostic.planDiagnosticEventExternalExport
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking

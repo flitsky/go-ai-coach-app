@@ -1,7 +1,7 @@
 package com.worksoc.goaicoach.persistence
 
-import com.worksoc.goaicoach.application.DiagnosticEvent
-import com.worksoc.goaicoach.application.DiagnosticSeverity
+import com.worksoc.goaicoach.shared.diagnostic.DiagnosticEvent
+import com.worksoc.goaicoach.shared.diagnostic.DiagnosticSeverity
 import java.io.File
 import kotlin.io.path.createTempDirectory
 import org.junit.Assert.assertFalse

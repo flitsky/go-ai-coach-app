@@ -1393,3 +1393,8 @@
 - 외부 평가 원문 취지를 `docs/refactoring/EXTERNAL_REVIEW_2026-06-15_ARCHITECTURE_SCORE_93.md`에 저장했다. 핵심 지적은 `GoCoachApp.kt` 줄 수/import 증가, application 루트 package 밀집, KMP 물리 이동 0건, 외부 수집 adapter 0건이다.
 - 내부 아키텍처 리뷰를 `docs/refactoring/INTERNAL_ARCHITECT_REVIEW_OF_SCORE_93_FEEDBACK_2026-06-15.md`에 작성했다. 결론은 외부 93점 평가를 플랫폼 아키텍처 완성도 관점에서 수용하되, 기존 99.72점은 최근 리팩토링 배치 목표 달성도로 분리 해석하는 것이다.
 - 내부 판정으로 즉시 적용 항목은 EffectLauncher 미니 도입, application 하위 package 1차 이동, KMP 물리 이동 1차 스파이크로 정리했다. 로드맵 항목은 diagnostic 외부 adapter, 원격 엔진 driver spike, 1,000줄 이하 장기 목표로 분리했고, 단순 파일 수 증가 비판과 점수 목적 KMP 이동은 폐기 또는 보류로 분류했다.
+- 사용자가 외부 평가 기준 93점에 동의하는지 확인했고, 100점을 목표로 즉시 적용 항목부터 단계별 수행을 요청했다. 답변 관점으로는 93점은 플랫폼 아키텍처 완성도 기준으로 동의하고, 99점대는 최근 리팩토링 배치 달성도 기준이라고 분리했다.
+- `DiagnosticEventModel.kt`를 `shared/commonMain`의 `com.worksoc.goaicoach.shared.diagnostic` package로 실제 이동했다. 이로써 KMP 후보 문서화만 있던 상태에서 실제 물리 이동 1건을 완료했다.
+- `DiagnosticEventApplication.kt`와 `DiagnosticEventObserverApplication.kt`를 `application/diagnostic/` 하위 package로 이동했다. application 루트 package 밀집을 줄이기 위한 첫 package 분리 실행이다.
+- `application/engine/EngineEffectLauncherApplication.kt`를 추가하고 `runEngineIo()`를 `GoCoachApp.kt` local helper에서 이동했다. UI 파일의 직접 `withContext(Dispatchers.IO)`/`runCatching` 지점은 8개로 줄었고, `GoCoachApp.kt`는 2,191줄이다.
+- `LayeringContractTest`에 shared diagnostic model KMP-ready 검사를 추가했고, application diagnostic/engine 하위 package도 platform-free 후보 검사에 포함했다. 관련 targeted 검증과 최종 `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test`가 통과했다. 현재 외부 평가 기준 플랫폼 아키텍처 완성도는 94.2/100, 리팩토링 배치 진행도는 99.78/100으로 평가했다.

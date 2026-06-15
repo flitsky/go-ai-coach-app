@@ -2,6 +2,8 @@ package com.worksoc.goaicoach.application
 
 import com.worksoc.goaicoach.persistence.SavedGameSnapshot
 import com.worksoc.goaicoach.persistence.UserPreferencesSnapshot
+import com.worksoc.goaicoach.shared.diagnostic.DiagnosticEvent
+import com.worksoc.goaicoach.shared.diagnostic.DiagnosticEventExternalExportPayload
 
 internal interface SavedGameStorePort {
     fun save(snapshot: SavedGameSnapshot)

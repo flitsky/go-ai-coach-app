@@ -1,7 +1,11 @@
-package com.worksoc.goaicoach.application
+package com.worksoc.goaicoach.application.diagnostic
 
+import com.worksoc.goaicoach.application.EngineOperationRequest
+import com.worksoc.goaicoach.application.EngineOperationResultGuard
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.analysisFingerprint
+import com.worksoc.goaicoach.shared.diagnostic.DiagnosticEvent
+import com.worksoc.goaicoach.shared.diagnostic.DiagnosticSeverity
 
 internal fun engineVisitFillDiagnosticEvent(
     requestedVisits: Int,

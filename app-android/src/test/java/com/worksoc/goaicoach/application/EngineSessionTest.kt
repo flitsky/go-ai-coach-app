@@ -20,6 +20,7 @@ import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.StoneColor
 import com.worksoc.goaicoach.shared.analysisFingerprint
 import com.worksoc.goaicoach.shared.describe
+import com.worksoc.goaicoach.shared.diagnostic.DiagnosticEvent
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
