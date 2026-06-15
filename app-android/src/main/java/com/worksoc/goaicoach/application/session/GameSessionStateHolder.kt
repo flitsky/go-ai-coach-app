@@ -3,6 +3,7 @@ package com.worksoc.goaicoach.application.session
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 
 /**
  * Platform-independent owner of [GameSessionControllerState].
@@ -25,13 +26,18 @@ internal class GameSessionStateHolder(initial: GameSessionControllerState) {
     val current: GameSessionControllerState
         get() = _state.value
 
-    /** Replaces the whole controller state. */
+    /**
+     * Replaces the whole controller state atomically.
+     *
+     * [transform] must be pure: under contention it can be invoked more than
+     * once (compare-and-set retry), so it must not carry side effects.
+     */
     fun update(transform: (GameSessionControllerState) -> GameSessionControllerState) {
-        _state.value = transform(_state.value)
+        _state.update(transform)
     }
 
-    /** Updates only the [GameSessionCoreState] slice, preserving the rest. */
+    /** Atomically updates only the [GameSessionCoreState] slice, preserving the rest. */
     fun updateCore(transform: (GameSessionCoreState) -> GameSessionCoreState) {
-        _state.value = _state.value.withCore(transform(_state.value.core))
+        _state.update { current -> current.withCore(transform(current.core)) }
     }
 }
