@@ -211,4 +211,46 @@ class EngineOperationPolicyTest {
             ),
         )
     }
+
+    @Test
+    fun sharedGateAdapterPreservesApplicationFacadeShape() {
+        assertEquals(
+            EngineOperationGate.Allow,
+            com.worksoc.goaicoach.shared.engine.EngineOperationGate.Allow.toApplicationGate(),
+        )
+        assertEquals(
+            EngineOperationGate.NoOp,
+            com.worksoc.goaicoach.shared.engine.EngineOperationGate.NoOp.toApplicationGate(),
+        )
+        assertEquals(
+            EngineOperationGate.Block("busy"),
+            com.worksoc.goaicoach.shared.engine.EngineOperationGate.Block("busy").toApplicationGate(),
+        )
+    }
+
+    @Test
+    fun sharedGuardAndApplyPlanAdaptersPreserveDiscardMetadata() {
+        val sharedDiscard = com.worksoc.goaicoach.shared.engine.EngineOperationResultGuard.Discard(
+            reason = "stale",
+            operation = "top_moves",
+            operationId = "top_moves:g1:m2:test",
+            sessionGeneration = 1,
+        )
+
+        val appGuard = sharedDiscard.toApplicationGuard()
+        assertTrue(appGuard is EngineOperationResultGuard.Discard)
+        appGuard as EngineOperationResultGuard.Discard
+        assertEquals("stale", appGuard.reason)
+        assertEquals("top_moves", appGuard.operation)
+        assertEquals("top_moves:g1:m2:test", appGuard.operationId)
+        assertEquals(1L, appGuard.sessionGeneration)
+
+        val appPlan =
+            com.worksoc.goaicoach.shared.engine.EngineOperationApplyPlan.Discard(sharedDiscard)
+                .toApplicationApplyPlan()
+        assertTrue(appPlan is EngineOperationApplyPlan.Discard)
+        appPlan as EngineOperationApplyPlan.Discard
+        assertEquals("stale", appPlan.discard.reason)
+        assertEquals("top_moves", appPlan.discard.operation)
+    }
 }

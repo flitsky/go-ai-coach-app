@@ -1,9 +1,9 @@
 package com.worksoc.goaicoach.application.session
 
-import com.worksoc.goaicoach.application.*
-
-import com.worksoc.goaicoach.application.score.*
-
+import com.worksoc.goaicoach.application.score.EndgameFailureDisplayPlan
+import com.worksoc.goaicoach.application.score.FinalScoreDisplayPlan
+import com.worksoc.goaicoach.application.score.ScoreEstimateDisplayPlan
+import com.worksoc.goaicoach.application.score.ScoreEstimateFailureDisplayPlan
 import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.ScoreSnapshot
 

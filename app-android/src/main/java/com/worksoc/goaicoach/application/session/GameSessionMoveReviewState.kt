@@ -1,8 +1,9 @@
 package com.worksoc.goaicoach.application.session
 
-import com.worksoc.goaicoach.application.*
-
-import com.worksoc.goaicoach.application.autoai.*
+import com.worksoc.goaicoach.application.HumanMoveLocalResult
+import com.worksoc.goaicoach.application.MoveReviewMarker
+import com.worksoc.goaicoach.application.UndoLocalStatePlan
+import com.worksoc.goaicoach.application.autoai.AutoAiTurnDisplayPlan
 
 internal data class GameSessionMoveReviewState(
     val moveReviewText: String,

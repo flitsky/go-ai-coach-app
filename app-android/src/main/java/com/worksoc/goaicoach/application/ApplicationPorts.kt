@@ -30,16 +30,6 @@ internal interface EngineBenchmarkStorePort {
     fun path(): String
 }
 
-internal interface RuntimeEventLogPort {
-    fun append(
-        event: String,
-        nowMillis: Long = System.currentTimeMillis(),
-    )
-
-    fun readText(): String
-    fun clear()
-}
-
 internal interface DebugReportMirrorPort {
     fun save(report: String)
 }

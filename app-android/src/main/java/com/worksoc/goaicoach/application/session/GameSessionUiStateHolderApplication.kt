@@ -1,11 +1,17 @@
 package com.worksoc.goaicoach.application.session
 
-import com.worksoc.goaicoach.application.*
-
-import com.worksoc.goaicoach.application.autoai.*
-
-import com.worksoc.goaicoach.application.score.*
-
+import com.worksoc.goaicoach.application.HumanEngineSyncFailurePlan
+import com.worksoc.goaicoach.application.HumanMoveLocalResult
+import com.worksoc.goaicoach.application.EngineStartupDisplayPlan
+import com.worksoc.goaicoach.application.UndoLocalStatePlan
+import com.worksoc.goaicoach.application.autoai.AutoAiTurnDisplayPlan
+import com.worksoc.goaicoach.application.autoai.AutoAiTurnFailureDisplayPlan
+import com.worksoc.goaicoach.application.autoai.AutoAiTurnFollowUpPlan
+import com.worksoc.goaicoach.application.autoai.buildAutoAiTurnFollowUpPlan
+import com.worksoc.goaicoach.application.score.EndgameFailureDisplayPlan
+import com.worksoc.goaicoach.application.score.FinalScoreDisplayPlan
+import com.worksoc.goaicoach.application.score.ScoreEstimateDisplayPlan
+import com.worksoc.goaicoach.application.score.ScoreEstimateFailureDisplayPlan
 import com.worksoc.goaicoach.application.topmoves.TopMoveAnalysisFailureDisplayPlan
 
 internal class GameSessionUiStateHolder(
@@ -22,6 +28,10 @@ internal class GameSessionUiStateHolder(
 
     fun applyTopMoveAnalysisFailureDisplayPlan(failure: TopMoveAnalysisFailureDisplayPlan) {
         applyCoreState(currentCoreState().applyTopMoveAnalysisFailureDisplayPlan(failure))
+    }
+
+    fun applyEngineStartupDisplayPlan(startup: EngineStartupDisplayPlan) {
+        applyCoreState(currentCoreState().applyEngineStartupDisplayPlan(startup))
     }
 
     fun applyFinalScoreDisplayPlan(final: FinalScoreDisplayPlan) {

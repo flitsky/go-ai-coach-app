@@ -5,6 +5,7 @@ import com.worksoc.goaicoach.application.session.*
 import com.worksoc.goaicoach.application.autoai.*
 import com.worksoc.goaicoach.application.runtime.*
 import com.worksoc.goaicoach.application.score.*
+import com.worksoc.goaicoach.application.topmoves.*
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
@@ -37,7 +38,6 @@ import com.worksoc.goaicoach.application.buildInitialUserPreferencesPlan
 import com.worksoc.goaicoach.application.buildPlayerSetupChangePlan
 import com.worksoc.goaicoach.application.buildPositionAnalysisCacheOptimizationPlan
 import com.worksoc.goaicoach.application.buildPositionAnalysisCacheOptimizationPrompt
-import com.worksoc.goaicoach.application.session.buildGameSessionControllerState
 import com.worksoc.goaicoach.application.buildUserPreferencesSnapshot
 import com.worksoc.goaicoach.application.EngineBenchmarkDefaultSamplesPerVisit
 import com.worksoc.goaicoach.application.EngineBenchmarkDefaultTimeCapMs
@@ -60,22 +60,12 @@ import com.worksoc.goaicoach.application.applyHumanMoveLocally
 import com.worksoc.goaicoach.application.applyEngineOperationLifecycleTransition
 import com.worksoc.goaicoach.application.EngineBenchmarkStorePort
 import com.worksoc.goaicoach.application.ClipboardPort
-import com.worksoc.goaicoach.application.topmoves.applyTopMoveAnalysisLaunchPlan
 import com.worksoc.goaicoach.application.engineOperationRequest
 import com.worksoc.goaicoach.application.evaluateEngineBenchmarkGate
 import com.worksoc.goaicoach.application.evaluateScoringRuleChangeGate
 import com.worksoc.goaicoach.application.evaluateSearchTimeChangeGate
 import com.worksoc.goaicoach.application.EngineUndoCompletionPlan
 import com.worksoc.goaicoach.application.GameSessionResetPlan
-import com.worksoc.goaicoach.application.session.GameSessionAnalysisState
-import com.worksoc.goaicoach.application.session.GameSessionControllerState
-import com.worksoc.goaicoach.application.session.GameSessionCoreState
-import com.worksoc.goaicoach.application.session.GameSessionEffect
-import com.worksoc.goaicoach.application.session.GameSessionMoveReviewState
-import com.worksoc.goaicoach.application.session.GameSessionRuntimeState
-import com.worksoc.goaicoach.application.session.GameSessionScoreState
-import com.worksoc.goaicoach.application.session.GameSessionTurnTimeState
-import com.worksoc.goaicoach.application.session.GameSessionUiStateHolder
 import com.worksoc.goaicoach.application.HumanEngineSyncFailurePlan
 import com.worksoc.goaicoach.application.HumanEngineSyncDisplayPlan
 import com.worksoc.goaicoach.application.HumanEngineSyncCompletionApplyPlan
@@ -94,12 +84,6 @@ import com.worksoc.goaicoach.application.localScoreSnapshot
 import com.worksoc.goaicoach.application.selectRuntimePlayLevel
 import com.worksoc.goaicoach.application.planSavedGamePersistence
 import com.worksoc.goaicoach.application.RuntimePlayLevelSelection
-import com.worksoc.goaicoach.application.RuntimeEventLogPort
-import com.worksoc.goaicoach.application.topmoves.TopMoveAnalysisExecutionContext
-import com.worksoc.goaicoach.application.topmoves.TopMoveAnalysisEffectLaunchRequest
-import com.worksoc.goaicoach.application.topmoves.TopMoveAnalysisCompletionApplyPlan
-import com.worksoc.goaicoach.application.topmoves.TopMoveAnalysisFailureDisplayPlan
-import com.worksoc.goaicoach.application.topmoves.runTopMoveAnalysisEffectApplyPlan
 import com.worksoc.goaicoach.application.ScoringRuleChangePlan
 import com.worksoc.goaicoach.application.runEngineBackedNewGameWorkflowResult
 import com.worksoc.goaicoach.application.runEngineOperationInScope
@@ -112,9 +96,6 @@ import com.worksoc.goaicoach.application.StartupBenchmarkWorkflowResult
 import com.worksoc.goaicoach.application.StartupBenchmarkExecutionContext
 import com.worksoc.goaicoach.application.toDebugReportSnapshot
 import com.worksoc.goaicoach.application.runDebugReportCopyEffect
-import com.worksoc.goaicoach.application.topmoves.toShowTopMovesPlan
-import com.worksoc.goaicoach.application.topmoves.toTopMoveAnalysisLaunchPlan
-import com.worksoc.goaicoach.application.topmoves.ShowTopMovesPlan
 import com.worksoc.goaicoach.application.toApplyPlan
 import com.worksoc.goaicoach.application.SavedGameRestorePlan
 import com.worksoc.goaicoach.application.SavedGameRestoreRequestPlan
@@ -123,9 +104,6 @@ import com.worksoc.goaicoach.application.SavedGameStorePort
 import com.worksoc.goaicoach.application.SavedSessionPromptPlan
 import com.worksoc.goaicoach.application.SavedSessionUiState
 import com.worksoc.goaicoach.application.StartConfiguredGamePlan
-import com.worksoc.goaicoach.application.topmoves.TopMoveAnalysisUpdate
-import com.worksoc.goaicoach.application.topmoves.topMoveAnalysisOperationToken
-import com.worksoc.goaicoach.application.session.toGameSessionSettingsState
 import com.worksoc.goaicoach.application.undoEngineInterventionQuietUntilMillis
 import com.worksoc.goaicoach.application.undoEngineInterventionRemainingDelayMillis
 import com.worksoc.goaicoach.application.UndoAnalysisRestoreCache
@@ -377,6 +355,29 @@ private fun GoCoachScreen(
         )
     }
 
+    fun currentCoreSessionState(): GameSessionCoreState =
+        currentControllerSessionState().core
+
+    fun applyCoreSessionState(core: GameSessionCoreState) {
+        gameState = core.gameState
+        isGameEnded = core.isGameEnded
+        analysisState = core.analysisState
+        scoreState = core.scoreState
+        runtimeState = core.runtimeState
+        moveReviewState = core.moveReviewState
+        engineMessage = core.engineMessage
+        if (!core.isGameEnded) {
+            positionCacheOptimizationState = positionCacheOptimizationState.clearPrompt()
+        }
+    }
+
+    val uiStateHolder = remember {
+        GameSessionUiStateHolder(
+            currentCoreState = ::currentCoreSessionState,
+            applyCoreState = ::applyCoreSessionState,
+        )
+    }
+
     fun markEngineOperationStarted(operationId: String) {
         engineOperationLifecycleState = applyEngineOperationLifecycleTransition(
             state = engineOperationLifecycleState,
@@ -460,11 +461,7 @@ private fun GoCoachScreen(
 
     fun applyEngineStartupDisplayPlan(startup: EngineStartupDisplayPlan) {
         isEngineReady = startup.isEngineReady
-        if (startup.scoreSnapshots.isNotEmpty()) {
-            scoreState = scoreState.replaceSnapshots(startup.scoreSnapshots)
-        }
-        engineMessage = startup.engineMessage
-        startup.candidateText?.let { text -> analysisState = analysisState.copy(candidateText = text) }
+        uiStateHolder.applyEngineStartupDisplayPlan(startup)
     }
 
     fun applySavedSessionPromptPlan(prompt: SavedSessionPromptPlan) {
@@ -719,29 +716,6 @@ private fun GoCoachScreen(
     ) {
         applyAnalysisSessionState(currentAnalysisSessionState().applyTopMoveAnalysisUpdate(update, analysisKey))
         engineMessage = update.engineMessage
-    }
-
-    fun currentCoreSessionState(): GameSessionCoreState =
-        currentControllerSessionState().core
-
-    fun applyCoreSessionState(core: GameSessionCoreState) {
-        gameState = core.gameState
-        isGameEnded = core.isGameEnded
-        analysisState = core.analysisState
-        scoreState = core.scoreState
-        runtimeState = core.runtimeState
-        moveReviewState = core.moveReviewState
-        engineMessage = core.engineMessage
-        if (!core.isGameEnded) {
-            positionCacheOptimizationState = positionCacheOptimizationState.clearPrompt()
-        }
-    }
-
-    val uiStateHolder = remember {
-        GameSessionUiStateHolder(
-            currentCoreState = ::currentCoreSessionState,
-            applyCoreState = ::applyCoreSessionState,
-        )
     }
 
     fun applyTopMoveAnalysisFailureDisplayPlan(

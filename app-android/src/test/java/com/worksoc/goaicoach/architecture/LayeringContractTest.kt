@@ -135,6 +135,7 @@ class LayeringContractTest {
             applicationRoot.resolve("HumanMoveApplication.kt"),
             applicationRoot.resolve("PositionAnalysisCacheOptimization.kt"),
             applicationRoot.resolve("runtime/RuntimeEventApplication.kt"),
+            applicationRoot.resolve("runtime/RuntimeEventPorts.kt"),
             applicationRoot.resolve("score/ScoreDisplayApplication.kt"),
             applicationRoot.resolve("score/ScoreDisplayFormatterApplication.kt"),
             applicationRoot.resolve("score/ScoreEstimateRunnerApplication.kt"),

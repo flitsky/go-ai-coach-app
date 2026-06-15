@@ -1425,3 +1425,10 @@
 - `GameSessionTurnTimeState.kt`의 `java.util.Locale`/`String.format` 의존을 제거하고 common-friendly tenths formatter로 바꿨다. session package가 KMP portable 후보로 남을 수 있도록 JVM formatting 의존을 제거한 것이다.
 - `EngineOperationPolicyAdapter.kt`를 추가해 shared engine policy 결과를 application facade 타입으로 변환하는 mapping을 별도 파일로 분리했다. `EngineOperationPolicy.kt` facade 유지 이유와 shared 직접 참조 확장 시 충돌 지점이 더 명확해졌다.
 - `LocalFileDiagnosticEventExternalSink`를 추가해 사용자 동의 후 warning/critical diagnostic export payload를 로컬 JSONL 파일로 저장할 수 있는 JVM/Android-bound adapter를 마련했다. 원격 transport 도입 전에도 수집 payload를 파일로 검증할 수 있다.
+- 사용자가 `ext.6` 다음 리팩토링 추천 항목을 단계별로 모두 진행하고, 결과 보고 시 현재 리팩토링 완성도 및 다음 추천 작업 리스트업을 요청했다.
+- `session` package 내부의 `application.*`, `autoai.*`, `score.*` wildcard import를 제거하고 필요한 타입만 명시 import로 전환했다. session package가 실제로 어떤 root application plan/result에 의존하는지 코드상 드러나게 했다.
+- `RuntimeEventLogPort`를 root `ApplicationPorts.kt`에서 `application/runtime/RuntimeEventPorts.kt`로 이동했다. runtime log port가 runtime 도메인 package에 위치하게 되어 app-service observability 경계가 선명해졌다.
+- `RuntimeEventApplication.kt`의 root application wildcard import를 제거하고 runtime log builder가 실제로 쓰는 session/autoai/application 타입만 명시 import로 좁혔다.
+- `GameSessionCoreState`와 `GameSessionUiStateHolder`에 `EngineStartupDisplayPlan` 적용 함수를 추가했다. engine startup 결과 중 core display state(score snapshot, candidate text, engine message)는 holder 경계를 통과하고, `isEngineReady` 같은 app-service 상태만 UI에 남겼다.
+- `EngineOperationPolicyTest`에 shared engine policy adapter 테스트를 추가해 shared guard/gate/apply plan이 application facade shape로 보존되는 계약을 고정했다.
+- `GoCoachApp.kt` import를 정리해 application import fan-in을 120개에서 98개로 줄였다. `GoCoachApp.kt`는 2,106줄이며, UI 파일의 직접 `scope.launch`/`withContext(Dispatchers.IO)`/`runCatching` 지점은 0개로 유지됐다.

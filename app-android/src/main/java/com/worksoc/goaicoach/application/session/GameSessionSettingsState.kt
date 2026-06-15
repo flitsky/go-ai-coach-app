@@ -1,7 +1,6 @@
 package com.worksoc.goaicoach.application.session
 
-import com.worksoc.goaicoach.application.*
-
+import com.worksoc.goaicoach.application.InitialUserPreferencesPlan
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup

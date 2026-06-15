@@ -1207,3 +1207,43 @@
 5. diagnostic local export wiring 후보 정리
    - `LocalFileDiagnosticEventExternalSink`를 메뉴/디버그 로그 수집 UX에 연결할지, 우선 개발자-only export adapter로 둘지 결정한다.
    - acceptance: 외부 수집 전 단계의 local export 운영 원칙이 문서화된다.
+
+## 2026-06-15 추가 진행 로그: ext.6 session/runtime dependency narrowing / startup holder / runtime port
+
+- 2026-06-15: `session` package 내부의 root `application.*`, `autoai.*`, `score.*` wildcard import를 제거했다. `GameSessionAnalysisState`, `GameSessionCoreState`, `GameSessionController`, `GameSessionMoveReviewState`, `GameSessionRuntimeState`, `GameSessionScoreState`, `GameSessionSettingsState`, `GameSessionTurnTimeState`, `GameSessionUiStateHolderApplication`이 필요한 타입만 명시 import한다.
+- 2026-06-15: `RuntimeEventLogPort`를 root `ApplicationPorts.kt`에서 `application/runtime/RuntimeEventPorts.kt`로 이동했다. runtime event log port가 runtime package 소유가 되면서 runtime observability boundary가 더 분명해졌다.
+- 2026-06-15: `RuntimeEventApplication.kt`의 root application wildcard import를 제거했다. runtime log builder는 `GameSessionControllerState`, `GameSessionRuntimeState`, `TurnTimeMoveUpdate`, `AutoAiTurnDisplayPlan`, human sync/endgame 관련 display plan 등 실제 필요한 타입만 본다.
+- 2026-06-15: `GameSessionCoreState.applyEngineStartupDisplayPlan()`과 `GameSessionUiStateHolder.applyEngineStartupDisplayPlan()`을 추가했다. engine startup 결과 중 score snapshot, candidate text, engine message는 holder/reducer 경계를 통과하며, `isEngineReady` 같은 app-service 상태만 UI에 남았다.
+- 2026-06-15: `EngineOperationPolicyTest`에 shared-to-application adapter 테스트를 추가했다. shared `EngineOperationGate`, `EngineOperationResultGuard`, `EngineOperationApplyPlan`이 application facade 타입으로 변환될 때 metadata가 보존되는지 검증한다.
+- 2026-06-15: `GoCoachApp.kt` import를 정리했다. `session`, `runtime`, `score`, `topmoves`, `autoai`는 grouped import를 사용하고 중복 explicit import를 제거했다.
+- 현재 metric: `GoCoachApp.kt`는 2,106줄, UI 파일 안의 `scope.launch`/`withContext(Dispatchers.IO)`/`runCatching` 직접 지점은 0개다. application import fan-in은 98개이며, `session`/`runtime` package 내부 root application wildcard import는 0개다.
+- 검증: `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest --tests 'com.worksoc.goaicoach.application.GameSessionControllerTest' --tests 'com.worksoc.goaicoach.application.GameSessionCoreStateTest' --tests 'com.worksoc.goaicoach.application.GameSessionUiStateHolderApplicationTest' --tests 'com.worksoc.goaicoach.application.RuntimeEventApplicationTest' --tests 'com.worksoc.goaicoach.application.EngineOperationPolicyTest' --tests 'com.worksoc.goaicoach.architecture.LayeringContractTest'` 통과.
+
+## 현재 리팩토링/아키텍처 완성도 평가
+
+- 리팩토링 배치 진행도: 99.97/100.
+- 외부 평가 기준 플랫폼 아키텍처 완성도: 97.8/100.
+- 상향 요인: session/runtime package가 단순 물리 분리가 아니라 의존 방향까지 정리되기 시작했다. runtime port가 도메인 package로 이동했고, startup display state mutation도 holder/reducer 경계를 통과한다.
+- 남은 감점 요인: `GoCoachApp.kt`는 여전히 2천 줄 이상이다. root application package에는 benchmark, saved-session, undo, human sync, cache optimization, start-game 관련 파일이 남아 있다. `EngineOperationPolicy` facade도 adapter 테스트로 안전장치를 만들었지만 아직 제거 단계는 아니다.
+
+## 다음 추천 리팩토링 항목 - ext.7
+
+1. `lifecycle` 또는 `startup` package 분리
+   - `EngineStartupApplication.kt`, `EngineSessionLifecycleApplication.kt`, `EngineDeviceBenchmarkApplication.kt`를 한 번에 옮길지, startup/benchmark로 나눌지 결정한다.
+   - acceptance: engine startup/undo/benchmark targeted test와 `LayeringContractTest` 통과.
+
+2. benchmark display state holder 적용
+   - benchmark progress/result/failure 표시 중 일부를 UI 직접 mutation에서 application state helper로 이동한다.
+   - acceptance: benchmark path의 `engineMessage`/`candidateText` 직접 변경 지점 감소.
+
+3. `SavedSessionPromptApplication.kt` package 분리
+   - saved-session prompt state/plan을 `application/session`에 둘지 `application/persistence` 성격으로 둘지 결정한다.
+   - acceptance: session root state와 persistence prompt의 소유 경계가 명확해진다.
+
+4. `EngineOperationPolicy` facade 축소 4차
+   - adapter 테스트를 기반으로 새 package에서 shared result guard 직접 참조를 제한적으로 시도한다.
+   - acceptance: facade가 필요한 nested sealed 타입과 제거 가능한 request/policy 타입의 경계가 더 좁아진다.
+
+5. diagnostic local export 운영 원칙 문서화
+   - local file export를 개발자 전용 수집 경로로 둘지, 앱 메뉴의 "로그 내보내기" UX 후보로 연결할지 정리한다.
+   - acceptance: warning/critical local export와 debug report copy의 관계가 문서화된다.

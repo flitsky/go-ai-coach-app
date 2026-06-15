@@ -164,3 +164,12 @@
 - 원격 엔진 전환 시 `backendId=remote-server`, transport status, HTTP status, retry count를 추가한다.
 - MQ/Firebase/Sentry 전송 adapter는 이 문서의 `code`와 필수 context를 그대로 유지한다.
 - operation-id busy stack은 UI runtime log에 연결됐다. JSONL diagnostic으로도 started/completed를 남길지는 로그량과 운영 분석 필요성을 보고 별도 결정한다.
+
+## Local Export Adapter
+
+2026-06-15 기준 `LocalFileDiagnosticEventExternalSink`가 추가됐다.
+
+- 역할: 사용자 동의 후 warning/critical diagnostic export payload를 로컬 JSONL 파일로 저장하는 Android/JVM-bound adapter.
+- 위치: `application/diagnostic`의 `DiagnosticEventExternalSinkPort` 뒤에 붙는 platform adapter다. shared/common 이동 후보가 아니다.
+- 용도: Firebase/Sentry/MQ 같은 원격 수집 전 단계에서 payload shape를 검증하고, 개발자가 재현 로그를 파일로 회수할 수 있게 하는 것이다.
+- 정책: 기본 UX에 즉시 노출하지 않는다. debug report copy와 중복되는 영역이 있으므로, ext.7 이후 "로그 내보내기" 또는 개발자-only 메뉴로 연결할지 별도 결정한다.

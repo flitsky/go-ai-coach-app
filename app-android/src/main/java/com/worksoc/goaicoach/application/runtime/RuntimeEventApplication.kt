@@ -1,11 +1,17 @@
 package com.worksoc.goaicoach.application.runtime
 
-import com.worksoc.goaicoach.application.*
-import com.worksoc.goaicoach.application.RuntimeEventLogPort
-import com.worksoc.goaicoach.application.session.*
-
-import com.worksoc.goaicoach.application.autoai.*
-
+import com.worksoc.goaicoach.application.AiEndgameResolution
+import com.worksoc.goaicoach.application.GameSessionResetPlan
+import com.worksoc.goaicoach.application.HumanEngineSyncDisplayPlan
+import com.worksoc.goaicoach.application.HumanEngineSyncFailurePlan
+import com.worksoc.goaicoach.application.HumanMoveLocalResult
+import com.worksoc.goaicoach.application.RuntimePlayLevelSelection
+import com.worksoc.goaicoach.application.autoai.AutoAiTurnDisplayPlan
+import com.worksoc.goaicoach.application.session.GameSessionControllerState
+import com.worksoc.goaicoach.application.session.GameSessionRuntimeState
+import com.worksoc.goaicoach.application.session.TurnTimeMoveUpdate
+import com.worksoc.goaicoach.application.session.toSecondsText
+import com.worksoc.goaicoach.application.EngineOperationResultGuard
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.summary

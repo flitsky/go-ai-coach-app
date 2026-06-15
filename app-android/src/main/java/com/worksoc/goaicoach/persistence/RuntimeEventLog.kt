@@ -1,6 +1,6 @@
 package com.worksoc.goaicoach.persistence
 
-import com.worksoc.goaicoach.application.RuntimeEventLogPort
+import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
 import java.io.File
 import kotlin.math.min
 

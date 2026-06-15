@@ -1,11 +1,19 @@
 package com.worksoc.goaicoach.application.session
 
-import com.worksoc.goaicoach.application.*
-
-import com.worksoc.goaicoach.application.autoai.*
-
-import com.worksoc.goaicoach.application.score.*
-
+import com.worksoc.goaicoach.application.GameSessionResetPlan
+import com.worksoc.goaicoach.application.HumanEngineSyncFailurePlan
+import com.worksoc.goaicoach.application.HumanMoveLocalResult
+import com.worksoc.goaicoach.application.EngineStartupDisplayPlan
+import com.worksoc.goaicoach.application.PlayerSetupChangePlan
+import com.worksoc.goaicoach.application.SavedGameRestorePlan
+import com.worksoc.goaicoach.application.ScoringRuleChangePlan
+import com.worksoc.goaicoach.application.UndoLocalStatePlan
+import com.worksoc.goaicoach.application.autoai.AutoAiTurnDisplayPlan
+import com.worksoc.goaicoach.application.autoai.AutoAiTurnFailureDisplayPlan
+import com.worksoc.goaicoach.application.score.EndgameFailureDisplayPlan
+import com.worksoc.goaicoach.application.score.FinalScoreDisplayPlan
+import com.worksoc.goaicoach.application.score.ScoreEstimateDisplayPlan
+import com.worksoc.goaicoach.application.score.ScoreEstimateFailureDisplayPlan
 import com.worksoc.goaicoach.application.topmoves.TopMoveAnalysisFailureDisplayPlan
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
@@ -39,6 +47,19 @@ internal data class GameSessionCoreState(
         copy(
             analysisState = analysisState.applyTopMoveAnalysisFailureDisplayPlan(failure),
             engineMessage = failure.engineMessage,
+        )
+
+    fun applyEngineStartupDisplayPlan(startup: EngineStartupDisplayPlan): GameSessionCoreState =
+        copy(
+            scoreState = if (startup.scoreSnapshots.isNotEmpty()) {
+                scoreState.replaceSnapshots(startup.scoreSnapshots)
+            } else {
+                scoreState
+            },
+            analysisState = startup.candidateText?.let { text ->
+                analysisState.copy(candidateText = text)
+            } ?: analysisState,
+            engineMessage = startup.engineMessage,
         )
 
     fun applyFinalScoreDisplayPlan(final: FinalScoreDisplayPlan): GameSessionCoreState =

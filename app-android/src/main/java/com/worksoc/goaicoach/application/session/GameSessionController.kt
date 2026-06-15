@@ -1,13 +1,15 @@
 package com.worksoc.goaicoach.application.session
 
-import com.worksoc.goaicoach.application.session.*
-
-import com.worksoc.goaicoach.application.*
-
-import com.worksoc.goaicoach.application.autoai.*
-
-import com.worksoc.goaicoach.application.score.*
-
+import com.worksoc.goaicoach.application.DebugReportCopyPlan
+import com.worksoc.goaicoach.application.EngineBenchmarkUiState
+import com.worksoc.goaicoach.application.HumanEngineSyncRunPlan
+import com.worksoc.goaicoach.application.PositionAnalysisCacheOptimizationPlan
+import com.worksoc.goaicoach.application.PositionAnalysisCacheOptimizationUiState
+import com.worksoc.goaicoach.application.SavedSessionUiState
+import com.worksoc.goaicoach.application.autoai.AutoAiTurnEndgamePlan
+import com.worksoc.goaicoach.application.autoai.AutoAiTurnRunPlan
+import com.worksoc.goaicoach.application.autoai.AutoAiTurnUiState
+import com.worksoc.goaicoach.application.score.ScoreEstimateRequestPlan
 import com.worksoc.goaicoach.application.topmoves.TopMoveAnalysisPlan
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup

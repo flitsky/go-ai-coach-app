@@ -134,6 +134,30 @@ class GameSessionUiStateHolderApplicationTest {
     }
 
     @Test
+    fun holderAppliesEngineStartupDisplayPlan() {
+        val state = GameState.empty()
+        var core = baseCoreState(gameState = state)
+        val holder = GameSessionUiStateHolder(
+            currentCoreState = { core },
+            applyCoreState = { next -> core = next },
+        )
+        val snapshot = localScoreSnapshot(state)
+
+        holder.applyEngineStartupDisplayPlan(
+            EngineStartupDisplayPlan(
+                isEngineReady = true,
+                scoreSnapshots = listOf(snapshot),
+                engineMessage = "Engine ready.",
+                candidateText = "Startup candidate text.",
+            ),
+        )
+
+        assertEquals("Engine ready.", core.engineMessage)
+        assertEquals("Startup candidate text.", core.analysisState.candidateText)
+        assertEquals(listOf(snapshot), core.scoreState.scoreSnapshots)
+    }
+
+    @Test
     fun holderAppliesHumanMoveLocalResult() {
         val move = Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine))
         var core = baseCoreState()
