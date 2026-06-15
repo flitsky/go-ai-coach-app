@@ -191,6 +191,8 @@ class LayeringContractTest {
             "ShowTopMovesPlan.",
             "settingsState = settingsState.hideTopMoves()",
             "Top Moves hidden. Background move review keeps using fast best-1 analysis.",
+            "clearTopMoveSpots(",
+            "Search time changed. Analysis cache will rebuild with the new time cap.",
         )
             .filter { fragment -> fragment in text }
 

@@ -1564,3 +1564,8 @@
 - `ScoreSyncRunnerApplication.kt`는 365줄에서 46줄로 줄었다. scoring-rule, post-undo, restored-game sync의 operation 생성, effect launch request, completion/apply, follow-up analysis 요청 정책을 각각 별도 파일에서 관리한다.
 - `LayeringContractTest`에 `scoreSyncRunnersStaySplitByTriggerDomain()`을 추가했다. split 파일 존재, common helper 90줄 이하, 각 runner 180줄 이하, common helper가 domain-specific request/application을 다시 소유하지 않는지를 검증한다.
 - 검증으로 compile, `ScoreDisplayApplicationTest`, `LayeringContractTest`를 실행했고 모두 통과했다.
+- 사용자가 `15.` 다음 리팩토링 추천 항목을 단계별로 모두 진행하고, 결과 보고 시 현재 완성도와 다음 추천 작업을 정리해달라고 요청했다.
+- 검색 시간 변경 시 기존 Top Moves 후보/리뷰 분석을 정리하는 흐름을 `SearchTimeTopMovesResetRunRequest`와 `runSearchTimeTopMovesResetApplication()`으로 이동했다.
+- `GoCoachApp.kt`의 `changeSearchTimeSettings()`는 더 이상 `clearTopMoveSpots()`와 `clearReviewAnalysis()`를 직접 조합하지 않고, application runner에 현재 analysis state와 game state를 넘긴다. 사용되지 않게 된 UI local `clearTopMoveSpots()` helper도 제거했다.
+- `TopMovesApplicationTest`에 search-time reset runner 테스트를 추가했다. 후보 spot, review candidate, review snapshot, last analysis key가 정리되고 안내 문구가 남는지 검증한다.
+- `LayeringContractTest`의 Top Moves workflow guard를 확장했다. UI가 `clearTopMoveSpots()`나 검색 시간 변경 안내 문구를 직접 소유하지 못하도록 회귀를 막는다.

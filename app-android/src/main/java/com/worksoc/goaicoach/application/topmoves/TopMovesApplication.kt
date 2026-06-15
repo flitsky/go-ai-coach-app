@@ -191,6 +191,12 @@ internal data class HideTopMovesRunRequest(
     val applyUpdate: (ShowTopMovesStateUpdate) -> Unit,
 )
 
+internal data class SearchTimeTopMovesResetRunRequest(
+    val analysisState: GameSessionAnalysisState,
+    val state: GameState,
+    val applyAnalysisState: (GameSessionAnalysisState) -> Unit,
+)
+
 internal sealed class TopMoveAnalysisLaunchPlan {
     data object Skip : TopMoveAnalysisLaunchPlan()
 
@@ -829,6 +835,17 @@ internal fun GameSessionControllerState.toHideTopMovesStateUpdate(): ShowTopMove
 
 internal fun runHideTopMovesApplication(request: HideTopMovesRunRequest) {
     request.applyUpdate(request.controllerState.toHideTopMovesStateUpdate())
+}
+
+internal fun GameSessionAnalysisState.toSearchTimeTopMovesResetState(state: GameState): GameSessionAnalysisState =
+    clearTopMoveSpots("Search time changed. Analysis cache will rebuild with the new time cap.")
+        .clearReviewAnalysis(state)
+        .copy(lastAnalysisKey = null)
+
+internal fun runSearchTimeTopMovesResetApplication(request: SearchTimeTopMovesResetRunRequest) {
+    request.applyAnalysisState(
+        request.analysisState.toSearchTimeTopMovesResetState(request.state),
+    )
 }
 
 private fun List<CandidateMove>.scoredCandidateCount(): Int =

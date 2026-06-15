@@ -587,10 +587,6 @@ private fun GoCoachScreen(
         )
     }
 
-    fun clearTopMoveSpots(message: String? = null) {
-        applyAnalysisSessionState(currentAnalysisSessionState().clearTopMoveSpots(message))
-    }
-
     fun clearReviewAnalysis(state: GameState = gameState) {
         applyAnalysisSessionState(
             currentAnalysisSessionState()
@@ -853,8 +849,13 @@ private fun GoCoachScreen(
                 searchTimeSettings = normalized,
             ),
         )
-        clearTopMoveSpots("Search time changed. Analysis cache will rebuild with the new time cap.")
-        clearReviewAnalysis(gameState)
+        runSearchTimeTopMovesResetApplication(
+            SearchTimeTopMovesResetRunRequest(
+                analysisState = currentAnalysisSessionState(),
+                state = gameState,
+                applyAnalysisState = ::applyAnalysisSessionState,
+            ),
+        )
     }
 
     fun requestTopMoveAnalysisForState(

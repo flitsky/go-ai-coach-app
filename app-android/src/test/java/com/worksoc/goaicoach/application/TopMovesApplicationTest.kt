@@ -1205,6 +1205,48 @@ class TopMovesApplicationTest {
             applied?.engineMessage,
         )
     }
+
+    @Test
+    fun runSearchTimeTopMovesResetApplicationClearsDisplayedAndReviewAnalysis() {
+        val state = GameState.empty()
+        val candidate = CandidateMove(
+            move = Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)),
+            pointLoss = 0.0,
+        )
+        val snapshot = MoveAnalysisSnapshot.from(state = state, candidates = listOf(candidate))
+        val key = buildTopMoveAnalysisPlan(
+            targetState = state,
+            engineProfile = EngineProfile(),
+            analysisPreset = AnalysisPreset.Lite,
+            deep = false,
+        ).analysisKey
+        val original = GameSessionAnalysisState.reset(
+            candidateText = "cached analysis",
+            reviewAnalysis = snapshot,
+        ).copy(
+            candidateMoves = listOf(candidate),
+            reviewCandidateMoves = listOf(candidate),
+            lastAnalysisKey = key,
+        )
+        var applied: GameSessionAnalysisState? = null
+
+        runSearchTimeTopMovesResetApplication(
+            SearchTimeTopMovesResetRunRequest(
+                analysisState = original,
+                state = state,
+                applyAnalysisState = { analysis -> applied = analysis },
+            ),
+        )
+
+        assertTrue(applied?.candidateMoves.orEmpty().isEmpty())
+        assertTrue(applied?.reviewCandidateMoves.orEmpty().isEmpty())
+        assertEquals(0, applied?.reviewAnalysis?.scoredPlayCount)
+        assertNull(applied?.lastAnalysisKey)
+        assertEquals(
+            "Search time changed. Analysis cache will rebuild with the new time cap.",
+            applied?.candidateText,
+        )
+    }
 }
 
 private fun topMoveControllerState(
