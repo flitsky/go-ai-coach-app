@@ -517,79 +517,33 @@ private fun GoCoachScreen(
         )
     }
 
-    suspend fun runEngineBenchmark() {
-        runEngineBenchmarkApplication(
-            EngineBenchmarkRunRequest(
-                engineClient = engineClient,
-                store = benchmarkStore,
-                state = gameState,
-                sessionGeneration = runtimeState.sessionGeneration,
-                isEngineReady = isEngineReady,
-                isEngineBusy = isEngineBusy,
-                benchmarkUiState = benchmarkUiState,
-                diagnosticEventLog = diagnosticEventLog,
-                lifecycleCallbacks = engineOperationLifecycleCallbacks(),
-                onBlocked = { message -> engineMessage = message },
-                onBenchmarkUiState = { state -> benchmarkUiState = state },
-                onDisplayPlan = { plan -> displayStateApplier.applyEngineBenchmarkDisplayPlan(plan) },
-                onProgress = { progress, displayPlan ->
-                    launchUiEffect(scope) {
-                        benchmarkUiState = benchmarkUiState.updateProgress(progress)
-                        displayStateApplier.applyEngineBenchmarkDisplayPlan(displayPlan)
-                    }
-                    Unit
-                },
-            ),
-        )
-    }
-
-    fun showEngineBenchmarkResult() {
-        benchmarkStore.load()?.let { profile ->
-            benchmarkUiState = benchmarkUiState.showResult(profile)
-            return
-        }
-        launchUiEffect(scope) {
-            runEngineBenchmark()
-        }
-    }
-
-    fun rerunEngineBenchmark() {
-        benchmarkUiState = benchmarkUiState.clearResult()
-        launchUiEffect(scope) {
-            runEngineBenchmark()
-        }
-    }
+    val benchmarkController = EngineBenchmarkController(
+        scope = scope,
+        engineClient = engineClient,
+        store = benchmarkStore,
+        diagnosticEventLog = diagnosticEventLog,
+        lifecycleCallbacks = ::engineOperationLifecycleCallbacks,
+        currentState = { gameState },
+        sessionGeneration = { runtimeState.sessionGeneration },
+        isEngineReady = { isEngineReady },
+        isEngineBusy = { isEngineBusy },
+        currentBenchmarkUiState = { benchmarkUiState },
+        onBenchmarkUiState = { state -> benchmarkUiState = state },
+        onEngineMessage = { message -> engineMessage = message },
+        onDisplayPlan = { plan -> displayStateApplier.applyEngineBenchmarkDisplayPlan(plan) },
+        onChecked = { hasCheckedEngineBenchmark = true },
+    )
 
     LaunchedEffect(
         hasCompletedEngineStartup,
         isEngineReady,
     ) {
-        if (
-            !hasCompletedEngineStartup ||
-            !isEngineReady ||
-            !engineClient.capabilities.supportsDeviceBenchmark ||
-            hasCheckedEngineBenchmark
-        ) {
-            return@LaunchedEffect
-        }
-        if (
-            benchmarkStore.hasUsableProfile(
-                samplesPerVisit = EngineBenchmarkDefaultSamplesPerVisit,
-                timeCapMs = EngineBenchmarkDefaultTimeCapMs,
-                measurementVersion = EngineBenchmarkMeasurementVersion,
-                visitsTargets = EngineBenchmarkDefaultVisits,
-            )
-        ) {
-            hasCheckedEngineBenchmark = true
-            benchmarkUiState = benchmarkUiState.applyStoredProfile(
-                benchmarkText = benchmarkStore.loadText(),
-                profile = benchmarkStore.load(),
-            )
-            return@LaunchedEffect
-        }
-
-        hasCheckedEngineBenchmark = true
-        runEngineBenchmark()
+        benchmarkController.runStartupCheckIfNeeded(
+            hasCompletedStartup = hasCompletedEngineStartup,
+            engineReady = isEngineReady,
+            supportsDeviceBenchmark = engineClient.capabilities.supportsDeviceBenchmark,
+            hasCheckedBenchmark = hasCheckedEngineBenchmark,
+        )
     }
 
     LaunchedEffect(
@@ -1587,7 +1541,7 @@ private fun GoCoachScreen(
                 isTopMovesEnabled = { topMovesEnabled },
                 startConfiguredGame = ::startConfiguredGame,
                 copyDebugReport = ::copyDebugReport,
-                showEngineBenchmark = ::showEngineBenchmarkResult,
+                showEngineBenchmark = benchmarkController::showResult,
                 requestScoreEstimate = ::requestScoreEstimate,
                 showTopMoves = ::showTopMovesForCurrentState,
                 hideTopMoves = ::hideTopMoves,
@@ -1680,7 +1634,7 @@ private fun GoCoachScreen(
         benchmarkProgress = benchmarkUiState.progress,
         benchmarkResult = benchmarkUiState.resultToConfirm,
         onBenchmarkResultConfirmed = { benchmarkUiState = benchmarkUiState.clearConfirmedResult() },
-        onBenchmarkRerun = ::rerunEngineBenchmark,
+        onBenchmarkRerun = benchmarkController::rerun,
         isDisplayMenuExpanded = isDisplayMenuExpanded,
         onDisplayMenuExpandedChange = { expanded -> isDisplayMenuExpanded = expanded },
         onScoreGraphExpandedChange = { expanded -> isScoreGraphExpanded = expanded },
