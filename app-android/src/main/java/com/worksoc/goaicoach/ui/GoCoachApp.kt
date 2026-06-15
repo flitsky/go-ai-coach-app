@@ -57,7 +57,6 @@ import com.worksoc.goaicoach.application.humanmove.toApplyPlan
 import com.worksoc.goaicoach.application.engine.operation.applyEngineOperationLifecycleTransition
 import com.worksoc.goaicoach.application.debugreport.ClipboardPort
 import com.worksoc.goaicoach.shared.engine.engineOperationRequest
-import com.worksoc.goaicoach.application.engine.operation.evaluateEngineBenchmarkGate
 import com.worksoc.goaicoach.application.engine.operation.evaluateScoringRuleChangeGate
 import com.worksoc.goaicoach.application.engine.operation.evaluateSearchTimeChangeGate
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationWorkflowResult
@@ -455,82 +454,29 @@ private fun GoCoachScreen(
     }
 
     suspend fun runEngineBenchmark() {
-        when (
-            val gate = evaluateEngineBenchmarkGate(
+        runEngineBenchmarkApplication(
+            EngineBenchmarkRunRequest(
+                engineClient = engineClient,
+                store = benchmarkStore,
+                state = gameState,
+                sessionGeneration = runtimeState.sessionGeneration,
                 isEngineReady = isEngineReady,
-                supportsDeviceBenchmark = engineClient.capabilities.supportsDeviceBenchmark,
                 isEngineBusy = isEngineBusy,
-                isBenchmarkRunning = benchmarkUiState.isRunning,
-            )
-        ) {
-            EngineOperationGate.Allow -> Unit
-            EngineOperationGate.NoOp -> return
-            is EngineOperationGate.Block -> {
-                engineMessage = gate.message
-                return
-            }
-        }
-
-        benchmarkUiState = benchmarkUiState.clearResult()
-        val operation = engineOperationRequest(
-            kind = EngineOperationKind.StartupBenchmark,
-            state = gameState,
-            sessionGeneration = runtimeState.sessionGeneration,
-            timeoutPolicy = EngineTimeoutPolicy(label = "startup-benchmark"),
-            fallbackPolicy = EngineFallbackPolicy.None,
+                benchmarkUiState = benchmarkUiState,
+                diagnosticEventLog = diagnosticEventLog,
+                lifecycleCallbacks = engineOperationLifecycleCallbacks(),
+                onBlocked = { message -> engineMessage = message },
+                onBenchmarkUiState = { state -> benchmarkUiState = state },
+                onDisplayPlan = { plan -> uiStateHolder.applyEngineBenchmarkDisplayPlan(plan) },
+                onProgress = { progress, displayPlan ->
+                    launchUiEffect(scope) {
+                        benchmarkUiState = benchmarkUiState.updateProgress(progress)
+                        uiStateHolder.applyEngineBenchmarkDisplayPlan(displayPlan)
+                    }
+                    Unit
+                },
+            ),
         )
-        runTrackedEngineOperation(operation) {
-            benchmarkUiState = benchmarkUiState.startWaitingForEngineSettle()
-            uiStateHolder.applyEngineBenchmarkDisplayPlan(engineBenchmarkWaitingDisplayPlan())
-            delay(EngineBenchmarkStartupSettleDelayMillis)
-
-            uiStateHolder.applyEngineBenchmarkDisplayPlan(engineBenchmarkRunningDisplayPlan())
-            val benchmarkResult =
-                runEngineIo {
-                    engineClient
-                        .runStartupBenchmarkWorkflowResult(
-                            effect = GameSessionEffect.RunStartupBenchmark,
-                            context = StartupBenchmarkExecutionContext(
-                                restoreState = gameState,
-                                nowMillis = System.currentTimeMillis(),
-                            ),
-                            operationRequest = operation,
-                            diagnosticEventLog = diagnosticEventLog,
-                            onProgress = { progress ->
-                                launchUiEffect(scope) {
-                                    benchmarkUiState = benchmarkUiState.updateProgress(progress)
-                                    uiStateHolder.applyEngineBenchmarkDisplayPlan(
-                                        progress.toEngineBenchmarkDisplayPlan(),
-                                    )
-                                }
-                                Unit
-                            }
-                        )
-                }
-            when (benchmarkResult) {
-                is StartupBenchmarkWorkflowResult.Success -> {
-                    val profile = benchmarkResult.profile
-                    benchmarkStore.save(profile)
-                    benchmarkUiState = benchmarkUiState.completeWithProfile(
-                        benchmarkText = benchmarkStore.loadText(),
-                        profile = profile,
-                    )
-                    uiStateHolder.applyEngineBenchmarkDisplayPlan(
-                        engineBenchmarkCompletedDisplayPlan(
-                            profile = profile,
-                            storePath = benchmarkStore.path(),
-                        ),
-                    )
-                }
-
-                is StartupBenchmarkWorkflowResult.Failure -> {
-                    uiStateHolder.applyEngineBenchmarkDisplayPlan(
-                        engineBenchmarkFailureDisplayPlan(benchmarkResult.error),
-                    )
-                    benchmarkUiState = benchmarkUiState.failWithoutProfile()
-                }
-            }
-        }
     }
 
     fun showEngineBenchmarkResult() {
@@ -2024,5 +1970,3 @@ private fun GoCoachScreen(
         onEvent = ::dispatch,
     )
 }
-
-private const val EngineBenchmarkStartupSettleDelayMillis = 1_500L

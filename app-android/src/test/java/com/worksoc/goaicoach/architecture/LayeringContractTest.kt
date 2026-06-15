@@ -139,6 +139,29 @@ class LayeringContractTest {
     }
 
     @Test
+    fun goCoachAppDoesNotOwnBenchmarkWorkflowBody() {
+        val goCoachApp = repoRoot()
+            .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
+        val text = goCoachApp.readText()
+        val forbiddenFragments = listOf(
+            "runStartupBenchmarkWorkflowResult(",
+            "engineBenchmarkWaitingDisplayPlan(",
+            "engineBenchmarkRunningDisplayPlan(",
+            "engineBenchmarkCompletedDisplayPlan(",
+            "engineBenchmarkFailureDisplayPlan(",
+            "EngineBenchmarkStartupSettleDelayMillis",
+            "evaluateEngineBenchmarkGate(",
+        )
+            .filter { fragment -> fragment in text }
+
+        assertTrue(
+            "GoCoachApp should request benchmark execution through runEngineBenchmarkApplication, not own benchmark workflow details:\n" +
+                forbiddenFragments.joinToString("\n"),
+            forbiddenFragments.isEmpty(),
+        )
+    }
+
+    @Test
     fun scoreRunnersUseEngineSessionClientContractOnly() {
         val scoreRoot = repoRoot()
             .resolve("app-android/src/main/java/com/worksoc/goaicoach/application/score")

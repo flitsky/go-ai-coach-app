@@ -1509,3 +1509,8 @@
 - `EngineDeviceBenchmarkApplication.kt`에 남아 있던 local-only raw `EngineCoreApi` 벤치마크 실행 확장 함수를 `LocalEngineBenchmarkDelegate`로 분리했다. application 파일은 benchmark display/workflow/result model 중심으로 남고, 실제 로컬 엔진 sync/analyze/restore 실행은 local delegate가 소유한다.
 - `LocalEngineCoreSessionDelegate`는 `LocalEngineBenchmarkDelegate`를 통해 startup benchmark를 실행하도록 변경했다. `EngineDeviceBenchmarkApplicationTest`도 delegate 경계 기준으로 갱신했다.
 - `LayeringContractTest`에 `localEngineBenchmarkDelegateOwnsRawBenchmarkExecution()`을 추가했다. benchmark application 파일이 다시 raw `EngineCoreApi` import나 `EngineCoreApi.runStartupEngineBenchmark` extension을 소유하지 못하도록 회귀를 막는다.
+- 사용자가 `4.` 다음 리팩토링 추천 항목을 단계별로 모두 진행하고, 결과 보고 시 현재 완성도와 다음 추천 작업을 정리해달라고 요청했다.
+- `EngineBenchmarkRunRequest`와 `runEngineBenchmarkApplication()`을 추가했다. engine ready/capability/busy/running gate, benchmark operation request, lifecycle scope, startup settle delay, IO execution, progress display plan, store save, success/failure display plan 생성을 application runner가 소유한다.
+- `GoCoachApp.kt`의 `runEngineBenchmark()` 본문을 application runner 호출로 축소했다. UI는 benchmark 상태 적용, display plan 적용, progress callback을 UI coroutine으로 되돌리는 일만 맡는다.
+- `EngineDeviceBenchmarkApplicationTest`에 benchmark runner 통합 테스트를 추가했다. profile 저장, progress 전달, lifecycle callback, waiting/running/completed display plan 순서를 고정했다.
+- `LayeringContractTest`에 `goCoachAppDoesNotOwnBenchmarkWorkflowBody()`를 추가했다. `GoCoachApp.kt`가 `runStartupBenchmarkWorkflowResult`, benchmark display plan builder, startup settle 상수, benchmark gate를 직접 소유하지 못하도록 회귀를 막는다.

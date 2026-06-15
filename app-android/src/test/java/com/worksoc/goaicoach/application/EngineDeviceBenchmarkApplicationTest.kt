@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.application
 
 import com.worksoc.goaicoach.application.engine.*
+import com.worksoc.goaicoach.application.engine.operation.EngineOperationLifecycleCallbacks
 import com.worksoc.goaicoach.application.session.*
 
 import com.worksoc.goaicoach.shared.AnalysisLimit
@@ -295,6 +296,94 @@ class EngineDeviceBenchmarkApplicationTest {
         assertTrue(failure is StartupBenchmarkWorkflowResult.Failure)
         assertEquals("benchmark failed", (failure as StartupBenchmarkWorkflowResult.Failure).error.message)
     }
+
+    @Test
+    fun startupBenchmarkApplicationRunnerStoresProfileAndEmitsDisplayPlans() = runBlocking {
+        val engine = RecordingBenchmarkEngineAdapter()
+        val client = LocalEngineSessionClient(
+            coreApi = engine,
+            capabilities = EngineSessionCapabilities(supportsDeviceBenchmark = true),
+        )
+        val store = RecordingEngineBenchmarkStore()
+        var benchmarkUiState = EngineBenchmarkUiState.initial(
+            benchmarkText = "no benchmark",
+            profile = null,
+        )
+        val displayPlans = mutableListOf<EngineBenchmarkDisplayPlan>()
+        val progressEvents = mutableListOf<EngineBenchmarkProgress>()
+        val lifecycleEvents = mutableListOf<String>()
+
+        runEngineBenchmarkApplication(
+            EngineBenchmarkRunRequest(
+                engineClient = client,
+                store = store,
+                state = GameState.empty(ruleset = Ruleset.Chinese),
+                sessionGeneration = 3L,
+                isEngineReady = true,
+                isEngineBusy = false,
+                benchmarkUiState = benchmarkUiState,
+                lifecycleCallbacks = EngineOperationLifecycleCallbacks(
+                    onStarted = { request -> lifecycleEvents += "start:${request.kind.code}" },
+                    onCompleted = { request -> lifecycleEvents += "done:${request.kind.code}" },
+                ),
+                nowMillis = { 789L },
+                delayMillis = {},
+                runEngineWork = { block -> block() },
+                onBenchmarkUiState = { state -> benchmarkUiState = state },
+                onDisplayPlan = { plan -> displayPlans += plan },
+                onProgress = { progress, _ ->
+                    progressEvents += progress
+                    benchmarkUiState = benchmarkUiState.updateProgress(progress)
+                },
+            ),
+        )
+
+        assertEquals(789L, store.savedProfile?.createdAtMillis)
+        assertEquals(store.savedProfile, benchmarkUiState.resultToConfirm)
+        assertEquals(false, benchmarkUiState.isRunning)
+        assertEquals(true, progressEvents.isNotEmpty())
+        assertEquals(
+            listOf(
+                "Engine benchmark waiting for startup settle delay.",
+                "Engine benchmark running: B16/B32/B64, 5 samples each.",
+                "Engine benchmark complete.\n${store.savedProfile!!.toSummaryText()}",
+            ),
+            displayPlans.map { plan -> plan.candidateText },
+        )
+        assertEquals(
+            listOf("start:startup_benchmark", "done:startup_benchmark"),
+            lifecycleEvents,
+        )
+    }
+}
+
+private class RecordingEngineBenchmarkStore : EngineBenchmarkStorePort {
+    var savedProfile: EngineBenchmarkProfile? = null
+        private set
+
+    override fun exists(): Boolean =
+        savedProfile != null
+
+    override fun hasUsableProfile(
+        samplesPerVisit: Int,
+        timeCapMs: Long,
+        measurementVersion: Int,
+        visitsTargets: List<Int>,
+    ): Boolean =
+        false
+
+    override fun save(profile: EngineBenchmarkProfile) {
+        savedProfile = profile
+    }
+
+    override fun load(): EngineBenchmarkProfile? =
+        savedProfile
+
+    override fun loadText(): String =
+        savedProfile?.toSummaryText() ?: "no benchmark"
+
+    override fun path(): String =
+        "/tmp/engine-benchmark.json"
 }
 
 private class RecordingBenchmarkEngineAdapter(
