@@ -24,6 +24,8 @@ internal class LocalEngineCoreSessionDelegate(
     private val coreApi: EngineCoreApi,
     private val clock: EngineClock = SystemEngineClock,
 ) {
+    private val benchmarkDelegate = LocalEngineBenchmarkDelegate(coreApi)
+
     suspend fun startSession(
         profile: EngineProfile,
         state: GameState,
@@ -188,7 +190,7 @@ internal class LocalEngineCoreSessionDelegate(
         nowMillis: Long,
         onProgress: suspend (EngineBenchmarkProgress) -> Unit,
     ): EngineBenchmarkProfile =
-        coreApi.runStartupEngineBenchmark(
+        benchmarkDelegate.runStartupBenchmark(
             restoreState = restoreState,
             nowMillis = nowMillis,
             onProgress = onProgress,

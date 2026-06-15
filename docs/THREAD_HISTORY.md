@@ -1504,3 +1504,8 @@
 - `ScoreEstimateRunnerApplication.kt`와 `ScoreSyncRunnerApplication.kt`가 로컬 엔진 확장 함수 import에 기대지 않고 `EngineSessionClient` 계약의 member function을 호출하도록 정리했다. 원격 엔진 client가 들어와도 score runner는 같은 application-facing interface를 사용할 수 있다.
 - `EngineSessionTest`를 `LocalEngineCoreSessionDelegate` 기준으로 갱신했다. 기존 extension 테스트는 delegate boundary 테스트로 바뀌어 앱 실제 호출 구조와 테스트 구조가 더 가까워졌다.
 - `LayeringContractTest`에 `localEngineSessionDelegateOwnsSessionOrchestration()`과 `scoreRunnersUseEngineSessionClientContractOnly()`를 추가했다. 세션 오케스트레이션 확장 함수 회귀와 score runner의 raw local helper import 회귀를 자동으로 막는다.
+- 사용자가 폰 원격 설치 후 다음 리팩토링 추천 항목을 단계별로 진행하고, 결과 보고 시 현재 완성도와 다음 추천 작업을 정리해달라고 요청했다.
+- 무선 디버깅은 제공된 pairing 포트 대신 mDNS에서 발견된 `192.168.0.3:38183` connect 포트로 연결했고, 기존 debug APK 설치에 성공했다.
+- `EngineDeviceBenchmarkApplication.kt`에 남아 있던 local-only raw `EngineCoreApi` 벤치마크 실행 확장 함수를 `LocalEngineBenchmarkDelegate`로 분리했다. application 파일은 benchmark display/workflow/result model 중심으로 남고, 실제 로컬 엔진 sync/analyze/restore 실행은 local delegate가 소유한다.
+- `LocalEngineCoreSessionDelegate`는 `LocalEngineBenchmarkDelegate`를 통해 startup benchmark를 실행하도록 변경했다. `EngineDeviceBenchmarkApplicationTest`도 delegate 경계 기준으로 갱신했다.
+- `LayeringContractTest`에 `localEngineBenchmarkDelegateOwnsRawBenchmarkExecution()`을 추가했다. benchmark application 파일이 다시 raw `EngineCoreApi` import나 `EngineCoreApi.runStartupEngineBenchmark` extension을 소유하지 못하도록 회귀를 막는다.

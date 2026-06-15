@@ -111,6 +111,34 @@ class LayeringContractTest {
     }
 
     @Test
+    fun localEngineBenchmarkDelegateOwnsRawBenchmarkExecution() {
+        val repoRoot = repoRoot()
+        val benchmarkApplication = repoRoot
+            .resolve("app-android/src/main/java/com/worksoc/goaicoach/application/engine/EngineDeviceBenchmarkApplication.kt")
+        val benchmarkDelegate = repoRoot
+            .resolve("app-android/src/main/java/com/worksoc/goaicoach/application/engine/LocalEngineBenchmarkDelegate.kt")
+        val applicationText = benchmarkApplication.readText()
+        val delegateText = benchmarkDelegate.readText()
+
+        val offenders = mutableListOf<String>()
+        if ("import com.worksoc.goaicoach.shared.EngineCoreApi" in applicationText) {
+            offenders += "${benchmarkApplication.relativeTo(repoRoot).path}: raw EngineCoreApi import"
+        }
+        if ("fun EngineCoreApi.runStartupEngineBenchmark" in applicationText) {
+            offenders += "${benchmarkApplication.relativeTo(repoRoot).path}: raw startup benchmark extension"
+        }
+        if ("class LocalEngineBenchmarkDelegate" !in delegateText) {
+            offenders += "${benchmarkDelegate.relativeTo(repoRoot).path}: missing local benchmark delegate"
+        }
+
+        assertTrue(
+            "Benchmark UI/workflow policy must stay separate from local EngineCoreApi benchmark execution:\n" +
+                offenders.joinToString("\n"),
+            offenders.isEmpty(),
+        )
+    }
+
+    @Test
     fun scoreRunnersUseEngineSessionClientContractOnly() {
         val scoreRoot = repoRoot()
             .resolve("app-android/src/main/java/com/worksoc/goaicoach/application/score")

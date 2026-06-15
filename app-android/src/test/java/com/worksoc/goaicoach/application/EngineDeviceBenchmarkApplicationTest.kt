@@ -201,8 +201,9 @@ class EngineDeviceBenchmarkApplicationTest {
     @Test
     fun startupBenchmarkInterleavesVisitTargetsBySampleRound() = runBlocking {
         val engine = RecordingBenchmarkEngineAdapter()
+        val benchmarkDelegate = LocalEngineBenchmarkDelegate(engine)
 
-        val profile = engine.runStartupEngineBenchmark(
+        val profile = benchmarkDelegate.runStartupBenchmark(
             restoreState = GameState.empty(ruleset = Ruleset.Japanese),
             nowMillis = 123L,
             samplesPerVisit = 2,
@@ -224,10 +225,11 @@ class EngineDeviceBenchmarkApplicationTest {
     @Test
     fun startupBenchmarkUsesFixedRulesetAndRestoresUserStateAfterMeasurement() = runBlocking {
         val engine = RecordingBenchmarkEngineAdapter()
+        val benchmarkDelegate = LocalEngineBenchmarkDelegate(engine)
         val restoreState = GameState.empty(ruleset = Ruleset.Chinese)
             .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
 
-        val profile = engine.runStartupEngineBenchmark(
+        val profile = benchmarkDelegate.runStartupBenchmark(
             restoreState = restoreState,
             nowMillis = 123L,
             samplesPerVisit = 1,
