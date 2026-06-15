@@ -1093,3 +1093,40 @@
 5. GoCoachApp import fan-in 축소
    - topmoves/score/diagnostic package import를 작은 facade 또는 grouped controller로 정리한다.
    - acceptance: application import 수 감소 또는 import ownership 문서화.
+
+## 2026-06-15 추가 진행 로그: ext.3 score package / shared-engine slice / launchUiEffect
+
+- 2026-06-15: `ScoreDisplayApplication.kt`, `ScoreDisplayFormatterApplication.kt`, `ScoreEstimateRunnerApplication.kt`, `ScoreSyncCompletionApplication.kt`, `ScoreSyncRunnerApplication.kt`를 `application/score/` 하위 package로 이동했다. score 표시, score estimate, score sync completion/runner 책임이 application 루트 package에서 분리됐다.
+- 2026-06-15: 새 `score` package에서 `EngineOperationRequest`, `EngineOperationKind`, `EngineTimeoutPolicy`, `EngineFallbackPolicy`, `engineOperationRequest`를 `shared.engine`에서 직접 참조하도록 바꿨다. nested sealed/apply facade가 필요한 `EngineOperationResultGuard`, `EngineOperationApplyPlan`, `buildEngineOperationApplyPlan`, `evaluateEngineOperationResultGuard`는 application facade를 유지한다.
+- 2026-06-15: `EngineEffectLauncherApplication.kt`에 `launchUiEffect()`를 추가했다. `GoCoachApp.kt`의 `scope.launch` 직접 호출은 모두 `launchUiEffect(scope)`를 통과하며, UI 파일 내 `scope.launch`, `withContext(Dispatchers.IO)`, `runCatching` 직접 지점은 0개가 됐다.
+- 2026-06-15: `NoopDiagnosticEventExternalSink`를 `application/diagnostic/DiagnosticEventPorts.kt`에 추가했다. 실제 Firebase/remote transport가 없는 상태에서도 diagnostic external sink runner를 명시적인 no-op adapter로 조합할 수 있다.
+- 현재 metric: `GoCoachApp.kt`는 2,174줄, UI 파일 안의 `scope.launch`/`withContext(Dispatchers.IO)`/`runCatching` 직접 지점은 0개다. application import fan-in은 163개이며, `score` package의 shared engine 직접 import는 12개다.
+
+## 현재 리팩토링/아키텍처 완성도 평가
+
+- 리팩토링 배치 진행도: 99.90/100.
+- 외부 평가 기준 플랫폼 아키텍처 완성도: 96.3/100.
+- 상향 요인: `topmoves`에 이어 `score` 도메인도 하위 package로 물리 분리됐다. UI entry point가 engine IO뿐 아니라 launch scheduling도 직접 소유하지 않게 됐고, 새 package 일부가 shared engine policy를 직접 참조하기 시작했다.
+- 남은 감점 요인: `GoCoachApp.kt`는 여전히 2천 줄 이상이고 application import fan-in 163개는 높다. `EngineOperationPolicy` application facade와 nested sealed 타입 의존이 남아 있으며, `autoai`, `session/controller`, `settings` package 분리는 아직 남아 있다.
+
+## 다음 추천 리팩토링 항목 - ext.4
+
+1. `autoai` package 분리
+   - `AutoAiPolicyApplication.kt`, `AutoAiRunnerApplication.kt`, `AutoAiCompletionApplication.kt`를 `application/autoai` 하위 package로 이동한다.
+   - acceptance: 자동 AI 관련 targeted test와 `LayeringContractTest` 통과.
+
+2. `EngineOperationPolicy` facade 축소 2차
+   - `autoai` 또는 `score` package에서 shared engine 타입 직접 참조 범위를 한 단계 더 넓힌다.
+   - acceptance: facade 참조 파일 수가 줄거나, facade 유지가 필요한 nested sealed 타입 경계가 더 명확해진다.
+
+3. GoCoachApp import fan-in 축소
+   - `score`/`topmoves` wildcard import를 유지할지, package-level facade 또는 controller import로 묶을지 결정한다.
+   - acceptance: import ownership 기준이 문서화되거나 application import 수가 추가 감소한다.
+
+4. operation-specific effect runner 분리
+   - `launchUiEffect()`를 단순 wrapper로 유지하되, startup/undo/autoAI/topmoves 등 목적별 runner로 추가 분리할 위치를 잡는다.
+   - acceptance: UI가 launch timing과 cancellation reason을 직접 판단하는 구간이 줄어든다.
+
+5. diagnostic sink adapter 고도화
+   - no-op adapter 다음 단계로 recording adapter 또는 local file export adapter를 추가한다.
+   - acceptance: warning/critical event가 external sink port를 통해 수집 가능한 형태로 테스트된다.

@@ -1,5 +1,7 @@
 package com.worksoc.goaicoach.application
 
+import com.worksoc.goaicoach.application.score.*
+
 import com.worksoc.goaicoach.application.topmoves.TopMoveAnalysisFailureDisplayPlan
 
 internal class GameSessionUiStateHolder(

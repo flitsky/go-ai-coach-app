@@ -1,5 +1,7 @@
 package com.worksoc.goaicoach.application
 
+import com.worksoc.goaicoach.application.score.*
+
 import com.worksoc.goaicoach.shared.EngineStatus
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.ScoreEstimate

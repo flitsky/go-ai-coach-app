@@ -3,6 +3,7 @@ package com.worksoc.goaicoach.application
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventExternalSinkPort
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventExternalSinkResult
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
+import com.worksoc.goaicoach.application.diagnostic.NoopDiagnosticEventExternalSink
 import com.worksoc.goaicoach.application.diagnostic.engineOperationDiscardedDiagnosticEvent
 import com.worksoc.goaicoach.application.diagnostic.engineOperationSlowDiagnosticEvent
 import com.worksoc.goaicoach.application.diagnostic.engineOperationTimeoutDiagnosticEvent
@@ -219,6 +220,24 @@ class DiagnosticEventApplicationTest {
         assertEquals("debug report", sent.payload.debugReportText)
         assertTrue(failed is DiagnosticEventExternalSinkResult.Failed)
         assertEquals("transport unavailable", (failed as DiagnosticEventExternalSinkResult.Failed).error.message)
+    }
+
+    @Test
+    fun noopDiagnosticExternalSinkCanBeUsedBeforeRealTransportExists() {
+        val event = DiagnosticEvent(
+            severity = DiagnosticSeverity.Warning,
+            code = "engine.operation.slow",
+            message = "slow",
+        )
+
+        val result = runDiagnosticEventExternalSinkPlan(
+            event = event,
+            userConsented = true,
+            debugReportText = "debug report",
+            sink = NoopDiagnosticEventExternalSink,
+        )
+
+        assertTrue(result is DiagnosticEventExternalSinkResult.Sent)
     }
 
     @Test

@@ -16,3 +16,8 @@ internal interface DiagnosticEventLogPort {
 internal interface DiagnosticEventExternalSinkPort {
     fun send(payload: DiagnosticEventExternalExportPayload): Result<Unit>
 }
+
+internal object NoopDiagnosticEventExternalSink : DiagnosticEventExternalSinkPort {
+    override fun send(payload: DiagnosticEventExternalExportPayload): Result<Unit> =
+        Result.success(Unit)
+}

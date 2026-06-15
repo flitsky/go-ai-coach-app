@@ -1408,3 +1408,8 @@
 - `GoCoachApp.kt`의 남은 직접 `withContext(Dispatchers.IO)` 6개를 모두 `application/engine/EngineEffectLauncherApplication.runEngineIo()`로 전환했다. UI 파일은 더 이상 engine IO dispatcher를 직접 선택하지 않는다.
 - `DiagnosticEventExternalSinkApplication.kt`를 추가해 warning/critical diagnostic event를 사용자 동의 기반으로 `DiagnosticEventExternalSinkPort`에 전달하는 runner 계약을 만들었다. 실제 Firebase/원격 transport는 아직 없지만 skip/send/failure 결과가 테스트 가능해졌다.
 - `EngineOperationPolicy` facade는 즉시 제거하지 않기로 판단했다. 현재 앱 내부 참조가 많고 nested sealed 타입을 facade 타입으로 매핑하고 있어, 도메인 package 이동 후 점진적으로 shared engine 타입 직접 참조를 늘리는 것이 안전하다.
+- 사용자가 `ext.3` 다음 리팩토링 추천 항목을 단계별로 모두 진행하고, 결과 보고 시 현재 리팩토링 완성도 및 다음 추천 작업 리스트업을 요청했다.
+- `ScoreDisplayApplication.kt`, `ScoreDisplayFormatterApplication.kt`, `ScoreEstimateRunnerApplication.kt`, `ScoreSyncCompletionApplication.kt`, `ScoreSyncRunnerApplication.kt`를 `application/score/` 하위 package로 이동했다. score 표시, score estimate, score sync completion/runner가 application 루트 package에서 분리됐다.
+- 새 `score` package는 `EngineOperationRequest`, `EngineOperationKind`, `EngineTimeoutPolicy`, `EngineFallbackPolicy`, `engineOperationRequest`를 `shared.engine`에서 직접 참조하도록 변경했다. 단, `EngineOperationResultGuard`와 `EngineOperationApplyPlan`은 nested sealed facade 호환 때문에 application facade를 유지했다.
+- `EngineEffectLauncherApplication.kt`에 `launchUiEffect()`를 추가하고 `GoCoachApp.kt`의 `scope.launch` 직접 호출을 모두 제거했다. UI 파일 내 `scope.launch`, `withContext(Dispatchers.IO)`, `runCatching` 직접 지점은 0개가 됐다.
+- `NoopDiagnosticEventExternalSink`를 추가해 실제 외부 transport가 없어도 diagnostic external sink runner를 production/test 양쪽에서 안전하게 조합할 수 있게 했다.

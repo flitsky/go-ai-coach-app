@@ -1,5 +1,8 @@
-package com.worksoc.goaicoach.application
+package com.worksoc.goaicoach.application.score
 
+import com.worksoc.goaicoach.application.AiEndgameResolution
+import com.worksoc.goaicoach.application.toCandidateText
+import com.worksoc.goaicoach.application.toDisplayText
 import com.worksoc.goaicoach.shared.FinalScoreResult
 
 internal data class FinalScoreDisplayText(
