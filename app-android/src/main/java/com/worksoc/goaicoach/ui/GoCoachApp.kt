@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.ui
 
+import com.worksoc.goaicoach.application.autoai.*
 import com.worksoc.goaicoach.application.score.*
 
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,22 +19,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import com.worksoc.goaicoach.application.AnalysisCacheKey
 import com.worksoc.goaicoach.application.AnalysisResultCache
-import com.worksoc.goaicoach.application.AutoAiEndgameCompletionPlan
-import com.worksoc.goaicoach.application.AutoAiTurnCompletionPlan
-import com.worksoc.goaicoach.application.AutoAiTurnDisplayPlan
-import com.worksoc.goaicoach.application.AutoAiTurnEndgamePlan
-import com.worksoc.goaicoach.application.AutoAiTurnExecutionContext
-import com.worksoc.goaicoach.application.AutoAiTurnFollowUpPlan
-import com.worksoc.goaicoach.application.AutoAiTurnRequestPlan
-import com.worksoc.goaicoach.application.AutoAiTurnRunExecutionContext
-import com.worksoc.goaicoach.application.AutoAiTurnScheduleValidationPlan
-import com.worksoc.goaicoach.application.AutoAiTurnUiState
-import com.worksoc.goaicoach.application.autoAiEndgameOperationToken
-import com.worksoc.goaicoach.application.autoAiTurnOperationToken
-import com.worksoc.goaicoach.application.buildAutoAiTurnCompletionPlan
-import com.worksoc.goaicoach.application.buildAutoAiTurnFailureDisplayPlan
-import com.worksoc.goaicoach.application.buildAutoAiTurnEndgamePlan
-import com.worksoc.goaicoach.application.buildAutoAiEndgameCompletionPlan
 import com.worksoc.goaicoach.application.buildDebugReportCopyPlan
 import com.worksoc.goaicoach.application.buildEngineStartupDisplayPlan
 import com.worksoc.goaicoach.application.buildEngineUndoCompletionPlan
@@ -69,13 +54,10 @@ import com.worksoc.goaicoach.application.EngineTimeoutPolicy
 import com.worksoc.goaicoach.application.DebugReportMirrorPort
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.applyHumanMoveLocally
-import com.worksoc.goaicoach.application.applyAutoAiTurnRequestPlan
-import com.worksoc.goaicoach.application.applyAutoAiTurnScheduleValidationPlan
 import com.worksoc.goaicoach.application.applyEngineOperationLifecycleTransition
 import com.worksoc.goaicoach.application.EngineBenchmarkStorePort
 import com.worksoc.goaicoach.application.ClipboardPort
 import com.worksoc.goaicoach.application.topmoves.applyTopMoveAnalysisLaunchPlan
-import com.worksoc.goaicoach.application.completeAutoAiTurnRun
 import com.worksoc.goaicoach.application.engineOperationRequest
 import com.worksoc.goaicoach.application.evaluateEngineBenchmarkGate
 import com.worksoc.goaicoach.application.evaluateScoringRuleChangeGate
@@ -107,7 +89,6 @@ import com.worksoc.goaicoach.application.PostGamePositionAnalysisCacheOptimizati
 import com.worksoc.goaicoach.application.recordEngineOperationDiscardLog
 import com.worksoc.goaicoach.application.localScoreSnapshot
 import com.worksoc.goaicoach.application.selectRuntimePlayLevel
-import com.worksoc.goaicoach.application.shouldRequestTopMoveAnalysis
 import com.worksoc.goaicoach.application.planSavedGamePersistence
 import com.worksoc.goaicoach.application.RuntimePlayLevelSelection
 import com.worksoc.goaicoach.application.RuntimeEventLogPort
@@ -117,8 +98,6 @@ import com.worksoc.goaicoach.application.topmoves.TopMoveAnalysisCompletionApply
 import com.worksoc.goaicoach.application.topmoves.TopMoveAnalysisFailureDisplayPlan
 import com.worksoc.goaicoach.application.topmoves.runTopMoveAnalysisEffectApplyPlan
 import com.worksoc.goaicoach.application.ScoringRuleChangePlan
-import com.worksoc.goaicoach.application.runAutoAiEndgameEffect
-import com.worksoc.goaicoach.application.runAutoAiTurnWorkflowResult
 import com.worksoc.goaicoach.application.runEngineBackedNewGameWorkflowResult
 import com.worksoc.goaicoach.application.runEngineOperationInScope
 import com.worksoc.goaicoach.application.runEngineStartupWorkflowResult
@@ -151,9 +130,6 @@ import com.worksoc.goaicoach.application.StartupBenchmarkWorkflowResult
 import com.worksoc.goaicoach.application.StartupBenchmarkExecutionContext
 import com.worksoc.goaicoach.application.toDebugReportSnapshot
 import com.worksoc.goaicoach.application.runDebugReportCopyEffect
-import com.worksoc.goaicoach.application.toAutoAiTurnRequestPlan
-import com.worksoc.goaicoach.application.toAutoAiTurnScheduleValidationPlan
-import com.worksoc.goaicoach.application.toAutoAiTurnFollowUpRequest
 import com.worksoc.goaicoach.application.topmoves.toShowTopMovesPlan
 import com.worksoc.goaicoach.application.topmoves.toTopMoveAnalysisLaunchPlan
 import com.worksoc.goaicoach.application.topmoves.ShowTopMovesPlan
@@ -176,6 +152,7 @@ import com.worksoc.goaicoach.application.UndoRequestPlan
 import com.worksoc.goaicoach.application.UndoLocalStatePlan
 import com.worksoc.goaicoach.application.UserPreferencesStorePort
 import com.worksoc.goaicoach.application.UserNoticePort
+import com.worksoc.goaicoach.application.engine.launchAutoAiEffect
 import com.worksoc.goaicoach.application.engine.launchUiEffect
 import com.worksoc.goaicoach.application.engine.runEngineIo
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
@@ -1636,7 +1613,7 @@ private fun GoCoachScreen(
                         isEngineBusy = isEngineBusy,
                     ),
                 )
-                launchUiEffect(scope) {
+                launchAutoAiEffect(scope) {
                     if (request.delayMillis > 0L) {
                         delay(request.delayMillis)
                     }
@@ -1659,7 +1636,7 @@ private fun GoCoachScreen(
                                 ),
                             )
                             autoAiTurnUiState = autoAiTurnUiState.applyAutoAiTurnScheduleValidationPlan(validation)
-                            return@launchUiEffect
+                            return@launchAutoAiEffect
                         }
                         is AutoAiTurnScheduleValidationPlan.Continue -> validation.runPlan
                     }

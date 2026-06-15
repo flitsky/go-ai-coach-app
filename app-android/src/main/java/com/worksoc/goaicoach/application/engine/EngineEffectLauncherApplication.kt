@@ -23,3 +23,12 @@ internal fun launchUiEffect(
     block: suspend CoroutineScope.() -> Unit,
 ): Job =
     scope.launch(block = block)
+
+internal fun launchAutoAiEffect(
+    scope: CoroutineScope,
+    block: suspend CoroutineScope.() -> Unit,
+): Job =
+    launchUiEffect(
+        scope = scope,
+        block = block,
+    )

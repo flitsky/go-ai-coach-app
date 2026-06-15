@@ -1,7 +1,11 @@
-package com.worksoc.goaicoach.application
+package com.worksoc.goaicoach.application.autoai
 
+import com.worksoc.goaicoach.application.AiEndgameResolution
+import com.worksoc.goaicoach.application.AutoAiTurnResult
+import com.worksoc.goaicoach.application.EngineSessionClient
+import com.worksoc.goaicoach.application.GameSessionEffect
+import com.worksoc.goaicoach.application.localScoreSnapshot
 import com.worksoc.goaicoach.application.score.*
-
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.diagnostic.NoopDiagnosticEventLog
 import com.worksoc.goaicoach.application.diagnostic.runObservedEngineOperation
@@ -17,6 +21,11 @@ import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.ScoreSnapshot
 import com.worksoc.goaicoach.shared.ScoreTimeline
 import com.worksoc.goaicoach.shared.aiMoveAnalysisLimitWith
+import com.worksoc.goaicoach.shared.engine.EngineFallbackPolicy
+import com.worksoc.goaicoach.shared.engine.EngineOperationKind
+import com.worksoc.goaicoach.shared.engine.EngineOperationRequest
+import com.worksoc.goaicoach.shared.engine.EngineTimeoutPolicy
+import com.worksoc.goaicoach.shared.engine.engineOperationRequest
 
 internal data class AutoAiTurnDisplayPlan(
     val playLevel: PlayLevelSetting,

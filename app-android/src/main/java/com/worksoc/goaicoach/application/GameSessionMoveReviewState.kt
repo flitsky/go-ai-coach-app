@@ -1,5 +1,7 @@
 package com.worksoc.goaicoach.application
 
+import com.worksoc.goaicoach.application.autoai.*
+
 internal data class GameSessionMoveReviewState(
     val moveReviewText: String,
     val moveReviews: List<MoveReviewMarker>,

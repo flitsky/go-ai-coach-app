@@ -4,6 +4,7 @@ import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventExternalSinkP
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventExternalSinkResult
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.diagnostic.NoopDiagnosticEventExternalSink
+import com.worksoc.goaicoach.application.diagnostic.RecordingDiagnosticEventExternalSink
 import com.worksoc.goaicoach.application.diagnostic.engineOperationDiscardedDiagnosticEvent
 import com.worksoc.goaicoach.application.diagnostic.engineOperationSlowDiagnosticEvent
 import com.worksoc.goaicoach.application.diagnostic.engineOperationTimeoutDiagnosticEvent
@@ -172,7 +173,7 @@ class DiagnosticEventApplicationTest {
             event = event,
             debugReportText = "debug report",
         )
-        val sink = RecordingDiagnosticEventExternalSinkForDiagnostics()
+        val sink = RecordingDiagnosticEventExternalSink()
 
         val success = sink.send(payload)
         sink.failure = IllegalStateException("transport unavailable")
@@ -191,7 +192,7 @@ class DiagnosticEventApplicationTest {
             code = "engine.operation.slow",
             message = "slow",
         )
-        val sink = RecordingDiagnosticEventExternalSinkForDiagnostics()
+        val sink = RecordingDiagnosticEventExternalSink()
 
         val skipped = runDiagnosticEventExternalSinkPlan(
             event = event,
@@ -455,16 +456,5 @@ private class RecordingDiagnosticEventLogForDiagnostics : DiagnosticEventLogPort
 
     override fun clear() {
         events.clear()
-    }
-}
-
-private class RecordingDiagnosticEventExternalSinkForDiagnostics : DiagnosticEventExternalSinkPort {
-    val payloads = mutableListOf<DiagnosticEventExternalExportPayload>()
-    var failure: Throwable? = null
-
-    override fun send(payload: DiagnosticEventExternalExportPayload): Result<Unit> {
-        failure?.let { return Result.failure(it) }
-        payloads += payload
-        return Result.success(Unit)
     }
 }

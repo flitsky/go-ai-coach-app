@@ -1413,3 +1413,9 @@
 - 새 `score` package는 `EngineOperationRequest`, `EngineOperationKind`, `EngineTimeoutPolicy`, `EngineFallbackPolicy`, `engineOperationRequest`를 `shared.engine`에서 직접 참조하도록 변경했다. 단, `EngineOperationResultGuard`와 `EngineOperationApplyPlan`은 nested sealed facade 호환 때문에 application facade를 유지했다.
 - `EngineEffectLauncherApplication.kt`에 `launchUiEffect()`를 추가하고 `GoCoachApp.kt`의 `scope.launch` 직접 호출을 모두 제거했다. UI 파일 내 `scope.launch`, `withContext(Dispatchers.IO)`, `runCatching` 직접 지점은 0개가 됐다.
 - `NoopDiagnosticEventExternalSink`를 추가해 실제 외부 transport가 없어도 diagnostic external sink runner를 production/test 양쪽에서 안전하게 조합할 수 있게 했다.
+- 사용자가 `ext.4` 다음 리팩토링 추천 항목을 단계별로 모두 진행하고, 결과 보고 시 현재 리팩토링 완성도 및 다음 추천 작업 리스트업을 요청했다.
+- `AutoAiPolicyApplication.kt`, `AutoAiRunnerApplication.kt`, `AutoAiCompletionApplication.kt`를 `application/autoai/` 하위 package로 이동했다. 자동 AI scheduling, runner, completion guard가 application 루트 package에서 분리됐다.
+- 새 `autoai` package도 `EngineOperationRequest`, `EngineOperationKind`, `EngineTimeoutPolicy`, `EngineFallbackPolicy`, `engineOperationRequest`를 `shared.engine`에서 직접 참조한다. `EngineOperationResultGuard`는 기존 application facade와 UI discard log 타입 호환 때문에 유지했다.
+- `GoCoachApp.kt`의 autoai 개별 import를 `application.autoai.*`로 묶어 application import fan-in을 163개에서 140개로 줄였다. UI 파일의 `scope.launch`, `withContext(Dispatchers.IO)`, `runCatching` 직접 지점은 계속 0개다.
+- `launchAutoAiEffect()`를 추가해 자동 AI 루프가 일반 UI effect launch가 아니라 자동 AI 전용 effect boundary를 통과하도록 했다.
+- `RecordingDiagnosticEventExternalSink`를 application diagnostic port 구현으로 추가했다. 경고/크리티컬 diagnostic export flow를 실제 원격 transport 전에도 port 단위로 수집/검증할 수 있게 했다.

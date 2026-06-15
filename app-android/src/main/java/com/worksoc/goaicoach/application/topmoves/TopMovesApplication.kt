@@ -1,7 +1,6 @@
 package com.worksoc.goaicoach.application.topmoves
 
 import com.worksoc.goaicoach.application.AnalysisCacheKey
-import com.worksoc.goaicoach.application.AutoAiTurnRunPlan
 import com.worksoc.goaicoach.application.CachedAnalysisResult
 import com.worksoc.goaicoach.application.EngineFallbackPolicy
 import com.worksoc.goaicoach.application.EngineOperationKind
@@ -22,6 +21,7 @@ import com.worksoc.goaicoach.application.topMovesAnalysisLimitFor
 import com.worksoc.goaicoach.application.toCandidateText
 import com.worksoc.goaicoach.application.withTopMovesStrengthHeader
 import com.worksoc.goaicoach.application.withAnalysisCoverage
+import com.worksoc.goaicoach.application.autoai.AutoAiTurnRunPlan
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.AnalysisPreset
 import com.worksoc.goaicoach.shared.AnalysisResult

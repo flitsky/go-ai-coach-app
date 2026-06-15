@@ -3,7 +3,7 @@ package com.worksoc.goaicoach.presentation
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
-import com.worksoc.goaicoach.application.AutoAiTurnUiState
+import com.worksoc.goaicoach.application.autoai.AutoAiTurnUiState
 import com.worksoc.goaicoach.application.EngineBenchmarkUiState
 import com.worksoc.goaicoach.application.GameSessionAnalysisState
 import com.worksoc.goaicoach.application.GameSessionControllerState

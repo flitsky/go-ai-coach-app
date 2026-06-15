@@ -109,9 +109,9 @@ class LayeringContractTest {
         val applicationRoot = repoRoot()
             .resolve("app-android/src/main/java/com/worksoc/goaicoach/application")
         val portableCandidates = listOf(
-            applicationRoot.resolve("AutoAiCompletionApplication.kt"),
-            applicationRoot.resolve("AutoAiPolicyApplication.kt"),
-            applicationRoot.resolve("AutoAiRunnerApplication.kt"),
+            applicationRoot.resolve("autoai/AutoAiCompletionApplication.kt"),
+            applicationRoot.resolve("autoai/AutoAiPolicyApplication.kt"),
+            applicationRoot.resolve("autoai/AutoAiRunnerApplication.kt"),
             applicationRoot.resolve("EngineOperationPolicy.kt"),
             applicationRoot.resolve("EngineOperationResultApplication.kt"),
             applicationRoot.resolve("diagnostic/DiagnosticEventApplication.kt"),

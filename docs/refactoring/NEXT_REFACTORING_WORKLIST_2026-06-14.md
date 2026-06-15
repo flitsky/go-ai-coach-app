@@ -1130,3 +1130,42 @@
 5. diagnostic sink adapter 고도화
    - no-op adapter 다음 단계로 recording adapter 또는 local file export adapter를 추가한다.
    - acceptance: warning/critical event가 external sink port를 통해 수집 가능한 형태로 테스트된다.
+
+## 2026-06-15 추가 진행 로그: ext.4 autoai package / recording sink / autoAI launcher
+
+- 2026-06-15: `AutoAiPolicyApplication.kt`, `AutoAiRunnerApplication.kt`, `AutoAiCompletionApplication.kt`를 `application/autoai/` 하위 package로 이동했다. 자동 AI scheduling, execution runner, completion guard가 application 루트 package에서 분리됐다.
+- 2026-06-15: 새 `autoai` package에서 `EngineOperationRequest`, `EngineOperationKind`, `EngineTimeoutPolicy`, `EngineFallbackPolicy`, `engineOperationRequest`를 `shared.engine`에서 직접 참조하도록 했다. `EngineOperationResultGuard`는 UI discard log와 application facade 타입 호환 때문에 유지한다.
+- 2026-06-15: `GoCoachApp.kt`의 autoai 개별 import를 `application.autoai.*`로 묶었다. application import fan-in은 163개에서 140개로 감소했다.
+- 2026-06-15: `EngineEffectLauncherApplication.kt`에 `launchAutoAiEffect()`를 추가했다. 자동 AI 루프가 일반 `launchUiEffect()` 직접 호출이 아니라 자동 AI 전용 launch boundary를 통과한다.
+- 2026-06-15: `RecordingDiagnosticEventExternalSink`를 `application/diagnostic/DiagnosticEventPorts.kt`에 추가했다. 기존 테스트 전용 fixture를 application port 구현으로 승격해 warning/critical export flow를 실제 transport 전에도 수집/검증할 수 있다.
+- 현재 metric: `GoCoachApp.kt`는 2,151줄, UI 파일 안의 `scope.launch`/`withContext(Dispatchers.IO)`/`runCatching` 직접 지점은 0개다. application import fan-in은 140개이며, `score`+`autoai` package의 shared engine 직접 import는 22개다.
+- 검증: `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest --tests 'com.worksoc.goaicoach.application.GameAutomationApplicationTest' --tests 'com.worksoc.goaicoach.application.DiagnosticEventApplicationTest' --tests 'com.worksoc.goaicoach.application.GameSessionControllerTest' --tests 'com.worksoc.goaicoach.application.GameSessionCoreStateTest' --tests 'com.worksoc.goaicoach.application.GameSessionUiStateHolderApplicationTest' --tests 'com.worksoc.goaicoach.application.TopMovesApplicationTest' --tests 'com.worksoc.goaicoach.architecture.LayeringContractTest'` 통과.
+
+## 현재 리팩토링/아키텍처 완성도 평가
+
+- 리팩토링 배치 진행도: 99.93/100.
+- 외부 평가 기준 플랫폼 아키텍처 완성도: 96.8/100.
+- 상향 요인: `topmoves`, `score`, `autoai`가 모두 하위 package로 분리됐다. UI의 engine IO/launch primitive 직접 소유가 0개로 유지되고, 자동 AI 루프도 전용 launch boundary를 갖게 됐다. diagnostic external sink는 no-op에서 recording adapter까지 확장됐다.
+- 남은 감점 요인: `GoCoachApp.kt`는 아직 2천 줄 이상이고 application import fan-in 140개가 남아 있다. `GameSessionControllerState`, `GameSessionCoreState`, `GameSessionUiStateHolder` 같은 session/controller 축은 여전히 application 루트 package에 있다. `EngineOperationPolicy` facade의 nested sealed 타입 경계도 아직 정리 대상이다.
+
+## 다음 추천 리팩토링 항목 - ext.5
+
+1. `session` 또는 `game` package 분리
+   - `GameSessionController.kt`, `GameSessionCoreState.kt`, `GameSessionRuntimeState.kt`, `GameSessionMoveReviewState.kt`, `GameSessionScoreState.kt`, `GameSessionSettingsState.kt`, `GameSessionUiStateHolderApplication.kt` 중 안정적인 묶음을 하위 package로 이동한다.
+   - acceptance: session 관련 targeted test와 `LayeringContractTest` 통과.
+
+2. `RuntimeEventApplication.kt` package 분리
+   - runtime log/event 생성 책임을 `application/runtime` 하위 package로 이동한다.
+   - acceptance: runtime event test 통과 및 UI import fan-in 감소.
+
+3. `EngineOperationPolicy` facade adapter 명시화
+   - application facade의 shared-to-application guard/apply 매핑을 별도 adapter 파일로 분리한다.
+   - acceptance: facade 유지 이유가 코드 구조에서 명확해지고, shared direct import 확대 시 충돌 지점이 줄어든다.
+
+4. diagnostic sink local export adapter
+   - recording adapter 다음 단계로 local file/jsonl export adapter를 port 뒤에 추가한다.
+   - acceptance: warning/critical diagnostic payload가 사용자 동의 후 local export adapter로 저장되는 테스트 추가.
+
+5. `GoCoachApp.kt` state holder 적용 확대
+   - 자동 AI success/failure, benchmark, startup 중 하나를 `GameSessionUiStateHolder` 또는 session reducer 경계로 더 이동한다.
+   - acceptance: UI local helper 수와 직접 state mutation 지점 감소.
