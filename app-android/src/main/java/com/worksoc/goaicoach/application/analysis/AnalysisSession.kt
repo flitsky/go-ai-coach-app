@@ -9,7 +9,6 @@ import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
 import com.worksoc.goaicoach.shared.TurnAnalysisPurpose
 import com.worksoc.goaicoach.shared.analysisFingerprint
 import com.worksoc.goaicoach.shared.turnAnalysisLimitFor
-import java.util.LinkedHashMap
 
 internal const val LightweightTopMoveCandidateCount = 1
 
@@ -40,11 +39,7 @@ internal class AnalysisResultCache(
     private val maxEntries: Int,
     val mode: AnalysisCacheMode = AnalysisCacheMode.Disabled,
 ) {
-    private val entries = object : LinkedHashMap<AnalysisCacheKey, CachedAnalysisResult>(16, 0.75f, true) {
-        override fun removeEldestEntry(
-            eldest: MutableMap.MutableEntry<AnalysisCacheKey, CachedAnalysisResult>?,
-        ): Boolean = size > maxEntries
-    }
+    private val entries = AccessOrderedCache<AnalysisCacheKey, CachedAnalysisResult>(maxEntries)
 
     private var hits: Int = 0
     private var misses: Int = 0
@@ -56,7 +51,7 @@ internal class AnalysisResultCache(
         if (!isEnabled) {
             return null
         }
-        val value = entries[key]
+        val value = entries.get(key)
         if (value == null) {
             misses += 1
         } else {
@@ -72,7 +67,7 @@ internal class AnalysisResultCache(
         if (!isEnabled) {
             return
         }
-        entries[key] = result
+        entries.put(key, result)
     }
 
     fun statsText(): String =
@@ -96,21 +91,17 @@ internal class AnalysisResultCache(
 internal class UndoAnalysisRestoreCache(
     private val maxEntries: Int,
 ) {
-    private val entries = object : LinkedHashMap<AnalysisCacheKey, CachedAnalysisResult>(16, 0.75f, true) {
-        override fun removeEldestEntry(
-            eldest: MutableMap.MutableEntry<AnalysisCacheKey, CachedAnalysisResult>?,
-        ): Boolean = size > maxEntries
-    }
+    private val entries = AccessOrderedCache<AnalysisCacheKey, CachedAnalysisResult>(maxEntries)
 
     fun get(key: AnalysisCacheKey): CachedAnalysisResult? =
-        entries[key]
+        entries.get(key)
 
     fun put(
         key: AnalysisCacheKey,
         result: CachedAnalysisResult,
     ) {
         if (result.canRestoreAfterUndo) {
-            entries[key] = result
+            entries.put(key, result)
         }
     }
 
@@ -120,6 +111,52 @@ internal class UndoAnalysisRestoreCache(
 
     fun statsText(): String =
         "undoRestoreEntries=${entries.size}"
+}
+
+private class AccessOrderedCache<K, V>(
+    maxEntries: Int,
+) {
+    private val maxEntries = maxEntries.coerceAtLeast(0)
+    private val values = mutableMapOf<K, V>()
+    private val accessOrder = mutableListOf<K>()
+
+    val size: Int
+        get() = values.size
+
+    fun get(key: K): V? {
+        val value = values[key] ?: return null
+        touch(key)
+        return value
+    }
+
+    fun put(
+        key: K,
+        value: V,
+    ) {
+        if (maxEntries == 0) {
+            return
+        }
+        values[key] = value
+        touch(key)
+        trimToSize()
+    }
+
+    fun clear() {
+        values.clear()
+        accessOrder.clear()
+    }
+
+    private fun touch(key: K) {
+        accessOrder.remove(key)
+        accessOrder += key
+    }
+
+    private fun trimToSize() {
+        while (values.size > maxEntries) {
+            val eldest = accessOrder.removeAt(0)
+            values.remove(eldest)
+        }
+    }
 }
 
 internal fun analysisKeyFor(

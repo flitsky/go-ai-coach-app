@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.persistence
 
+import com.worksoc.goaicoach.application.preferences.UserPreferencesSnapshot
 import com.worksoc.goaicoach.match.HumanGameType
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.PlayerSetup

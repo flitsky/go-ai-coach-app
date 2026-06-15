@@ -150,6 +150,48 @@ internal data class DebugReportCopyResult(
     val engineMessage: String,
 )
 
+internal data class DebugReportCopyActionRequest(
+    val controllerState: GameSessionControllerState,
+    val engineName: String,
+    val engineDiagnostic: String,
+    val analysisCacheStats: String,
+    val positionAnalysisCacheStats: String,
+    val isEngineReady: Boolean,
+    val isEngineBusy: Boolean,
+    val turnTimeText: String,
+    val turnTimeDebugText: String,
+    val runtimeEventLogText: String,
+    val diagnosticEventLogText: String,
+)
+
+internal fun runDebugReportCopyAction(
+    request: DebugReportCopyActionRequest,
+    clipboard: ClipboardPort,
+    mirror: DebugReportMirrorPort,
+    userNotice: UserNoticePort,
+): DebugReportCopyResult {
+    val plan = buildDebugReportCopyPlan(
+        request.controllerState.toDebugReportSnapshot(
+            engineName = request.engineName,
+            engineDiagnostic = request.engineDiagnostic,
+            analysisCacheStats = request.analysisCacheStats,
+            positionAnalysisCacheStats = request.positionAnalysisCacheStats,
+            isEngineReady = request.isEngineReady,
+            isEngineBusy = request.isEngineBusy,
+            turnTimeText = request.turnTimeText,
+            turnTimeDebugText = request.turnTimeDebugText,
+            runtimeEventLogText = request.runtimeEventLogText,
+            diagnosticEventLogText = request.diagnosticEventLogText,
+        ),
+    )
+    return runDebugReportCopyEffect(
+        effect = GameSessionEffect.CopyDebugReport(plan),
+        clipboard = clipboard,
+        mirror = mirror,
+        userNotice = userNotice,
+    )
+}
+
 internal fun runDebugReportCopyEffect(
     effect: GameSessionEffect.CopyDebugReport,
     clipboard: ClipboardPort,

@@ -1,26 +1,14 @@
 package com.worksoc.goaicoach.persistence
 
 import android.content.Context
+import com.worksoc.goaicoach.application.preferences.UserPreferencesSnapshot
 import com.worksoc.goaicoach.application.preferences.UserPreferencesStorePort
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
-import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.persistence.PlayerSetupJsonCodec.decodePlayerSetup
 import com.worksoc.goaicoach.persistence.PlayerSetupJsonCodec.encodePlayerSetup
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import org.json.JSONObject
-
-internal data class UserPreferencesSnapshot(
-    val playerSetup: PlayerSetup = PlayerSetup(),
-    val ruleset: Ruleset = Ruleset.Japanese,
-    val topMovesEnabled: Boolean = false,
-    val showCoordinates: Boolean = true,
-    val showMoveNumbers: Boolean = false,
-    val showLastMoveRing: Boolean = true,
-    val showOwnershipOverlay: Boolean = true,
-    val autoPlayDelayMillis: Long = AutoPlayDelaySetting.Default.millis,
-    val searchTimeSettings: SearchTimeSettings = SearchTimeSettings(),
-)
 
 internal class UserPreferencesStore(context: Context) : UserPreferencesStorePort {
     private val prefs = context.applicationContext.getSharedPreferences(PrefsName, Context.MODE_PRIVATE)

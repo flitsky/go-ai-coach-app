@@ -6,7 +6,6 @@ import com.worksoc.goaicoach.application.selectRuntimePlayLevel
 
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.PlayerSetup
-import com.worksoc.goaicoach.persistence.UserPreferencesSnapshot
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.GameState

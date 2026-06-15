@@ -7,7 +7,6 @@ import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.match.SidePlayerSetup
-import com.worksoc.goaicoach.persistence.UserPreferencesSnapshot
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.PlayLevelGroup
 import com.worksoc.goaicoach.shared.PlayLevelSetting

@@ -24,7 +24,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import com.worksoc.goaicoach.application.analysis.AnalysisCacheKey
 import com.worksoc.goaicoach.application.analysis.AnalysisResultCache
-import com.worksoc.goaicoach.application.debugreport.buildDebugReportCopyPlan
+import com.worksoc.goaicoach.application.debugreport.DebugReportCopyActionRequest
+import com.worksoc.goaicoach.application.debugreport.runDebugReportCopyAction
 import com.worksoc.goaicoach.application.buildScoringRuleChangePlan
 import com.worksoc.goaicoach.application.preferences.buildInitialUserPreferencesPlan
 import com.worksoc.goaicoach.application.buildPlayerSetupChangePlan
@@ -83,8 +84,6 @@ import com.worksoc.goaicoach.application.startgame.GameSessionResetPlan
 import com.worksoc.goaicoach.application.startgame.StartConfiguredGamePlan
 import com.worksoc.goaicoach.application.startgame.buildNewLocalGameSessionPlan
 import com.worksoc.goaicoach.application.startgame.buildStartConfiguredGamePlan
-import com.worksoc.goaicoach.application.debugreport.toDebugReportSnapshot
-import com.worksoc.goaicoach.application.debugreport.runDebugReportCopyEffect
 import com.worksoc.goaicoach.application.savedgame.SavedGameStorePort
 import com.worksoc.goaicoach.application.analysis.UndoAnalysisRestoreCache
 import com.worksoc.goaicoach.application.undo.EngineUndoCompletionPlan
@@ -106,7 +105,7 @@ import com.worksoc.goaicoach.persistence.EngineBenchmarkStore
 import com.worksoc.goaicoach.persistence.DebugReportMirrorStore
 import com.worksoc.goaicoach.persistence.RuntimeEventLog
 import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
-import com.worksoc.goaicoach.persistence.UserPreferencesSnapshot
+import com.worksoc.goaicoach.application.preferences.UserPreferencesSnapshot
 import com.worksoc.goaicoach.persistence.UserPreferencesStore
 import com.worksoc.goaicoach.presentation.GameUiEvent
 import com.worksoc.goaicoach.presentation.GameUiEventHandlers
@@ -1933,22 +1932,21 @@ private fun GoCoachScreen(
     }
 
     fun copyDebugReport() {
-        val plan = buildDebugReportCopyPlan(
-            currentControllerSessionState().toDebugReportSnapshot(
+        val nowMillis = System.currentTimeMillis()
+        val result = runDebugReportCopyAction(
+            request = DebugReportCopyActionRequest(
+                controllerState = currentControllerSessionState(),
                 engineName = engineName,
                 engineDiagnostic = engineDiagnostic,
                 analysisCacheStats = "${analysisCache.statsText()}, ${undoAnalysisRestoreCache.statsText()}",
-                positionAnalysisCacheStats = engineClient.positionAnalysisCacheStatsText(System.currentTimeMillis()),
+                positionAnalysisCacheStats = engineClient.positionAnalysisCacheStatsText(nowMillis),
                 isEngineReady = isEngineReady,
                 isEngineBusy = isEngineBusy,
                 turnTimeText = turnTimeState.summaryText(),
-                turnTimeDebugText = turnTimeState.debugText(System.currentTimeMillis()),
+                turnTimeDebugText = turnTimeState.debugText(nowMillis),
                 runtimeEventLogText = runtimeEventLog.readText(),
                 diagnosticEventLogText = diagnosticEventLog.readText(),
             ),
-        )
-        val result = runDebugReportCopyEffect(
-            effect = GameSessionEffect.CopyDebugReport(plan),
             clipboard = clipboardPort,
             mirror = debugReportMirror,
             userNotice = userNoticePort,
