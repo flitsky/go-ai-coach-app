@@ -23,6 +23,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import kotlin.properties.ReadWriteProperty
+import kotlin.reflect.KProperty
 import com.worksoc.goaicoach.application.analysis.AnalysisCacheKey
 import com.worksoc.goaicoach.application.analysis.AnalysisResultCache
 import com.worksoc.goaicoach.application.debugreport.DebugReportCopyActionRequest
@@ -118,6 +120,23 @@ private data class PendingPostUndoEngineSync(
     val quietUntilMillis: Long,
 )
 
+/**
+ * Bridges a Compose `var` to an off-Compose owner.
+ *
+ * Reads come from [get] (a Compose-observed snapshot, so recomposition still
+ * works); writes go through [set] (which updates the platform-independent
+ * [GameSessionStateHolder] and re-syncs the snapshot synchronously, preserving
+ * read-your-writes semantics within a single callback). This lets the session
+ * state move out of the composable without rewriting any call site.
+ */
+private class HolderBackedState<T>(
+    private val get: () -> T,
+    private val set: (T) -> Unit,
+) : ReadWriteProperty<Any?, T> {
+    override fun getValue(thisRef: Any?, property: KProperty<*>): T = get()
+    override fun setValue(thisRef: Any?, property: KProperty<*>, value: T) = set(value)
+}
+
 @Composable
 internal fun GoCoachApp(
     engineClient: EngineSessionClient,
@@ -171,33 +190,106 @@ private fun GoCoachScreen(
             currentProfile = EngineProfile(),
         )
     }
-    var gameState by remember { mutableStateOf(initialPlan.gameState) }
-    var engineMessage by remember { mutableStateOf("Engine not initialized.") }
-    var analysisState by remember {
-        mutableStateOf(
-            GameSessionAnalysisState.empty(
-                state = initialPlan.gameState,
-                candidateText = engineDiagnostic,
+    // Session domain state is owned by a platform-independent holder. The
+    // composable keeps a Compose snapshot mirror so reads still drive
+    // recomposition; the delegated vars below read the mirror and write through
+    // the holder, so existing call sites are unchanged.
+    val sessionHolder = remember {
+        GameSessionStateHolder(
+            buildGameSessionControllerState(
+                gameState = initialPlan.gameState,
+                isGameEnded = false,
+                analysisState = GameSessionAnalysisState.empty(
+                    state = initialPlan.gameState,
+                    candidateText = engineDiagnostic,
+                ),
+                scoreState = GameSessionScoreState.reset(
+                    scoreText = "No score estimate yet.",
+                    scoreSnapshots = listOf(localScoreSnapshot(initialPlan.gameState)),
+                    endgameLog = "No endgame result recorded.",
+                ),
+                runtimeState = GameSessionRuntimeState(
+                    playLevel = initialPlan.runtime.playLevel,
+                    engineProfile = initialPlan.runtime.engineProfile,
+                    analysisPreset = initialPlan.runtime.analysisPreset,
+                ),
+                moveReviewState = GameSessionMoveReviewState.reset(
+                    moveReviewText = "No move review yet.",
+                    lastMoveText = "None",
+                ),
+                engineMessage = "Engine not initialized.",
+                settings = initialPlan.toGameSessionSettingsState(),
+                benchmark = EngineBenchmarkUiState.initial(
+                    benchmarkText = benchmarkStore.loadText(),
+                    profile = benchmarkStore.load(),
+                ),
+                savedSession = SavedSessionUiState(),
+                autoAiTurn = AutoAiTurnUiState(),
+                positionCacheOptimization = PositionAnalysisCacheOptimizationUiState(),
             ),
         )
     }
-    var scoreState by remember {
-        mutableStateOf(
-            GameSessionScoreState.reset(
-                scoreText = "No score estimate yet.",
-                scoreSnapshots = listOf(localScoreSnapshot(initialPlan.gameState)),
-                endgameLog = "No endgame result recorded.",
-            ),
-        )
+    var sessionSnapshot by remember { mutableStateOf(sessionHolder.current) }
+
+    fun mutateSession(transform: (GameSessionControllerState) -> GameSessionControllerState) {
+        sessionHolder.update(transform)
+        sessionSnapshot = sessionHolder.current
     }
-    var moveReviewState by remember {
-        mutableStateOf(
-            GameSessionMoveReviewState.reset(
-                moveReviewText = "No move review yet.",
-                lastMoveText = "None",
-            ),
-        )
+
+    fun mutateCore(transform: (GameSessionCoreState) -> GameSessionCoreState) {
+        sessionHolder.updateCore(transform)
+        sessionSnapshot = sessionHolder.current
     }
+
+    var gameState by HolderBackedState(
+        { sessionSnapshot.gameState },
+        { value -> mutateCore { it.copy(gameState = value) } },
+    )
+    var engineMessage by HolderBackedState(
+        { sessionSnapshot.engineMessage },
+        { value -> mutateCore { it.copy(engineMessage = value) } },
+    )
+    var analysisState by HolderBackedState(
+        { sessionSnapshot.core.analysisState },
+        { value -> mutateCore { it.copy(analysisState = value) } },
+    )
+    var scoreState by HolderBackedState(
+        { sessionSnapshot.core.scoreState },
+        { value -> mutateCore { it.copy(scoreState = value) } },
+    )
+    var moveReviewState by HolderBackedState(
+        { sessionSnapshot.core.moveReviewState },
+        { value -> mutateCore { it.copy(moveReviewState = value) } },
+    )
+    var runtimeState by HolderBackedState(
+        { sessionSnapshot.core.runtimeState },
+        { value -> mutateCore { it.copy(runtimeState = value) } },
+    )
+    var isGameEnded by HolderBackedState(
+        { sessionSnapshot.isGameEnded },
+        { value -> mutateCore { it.copy(isGameEnded = value) } },
+    )
+    var settingsState by HolderBackedState(
+        { sessionSnapshot.settings },
+        { value -> mutateSession { it.withSettings(value) } },
+    )
+    var benchmarkUiState by HolderBackedState(
+        { sessionSnapshot.benchmark },
+        { value -> mutateSession { it.withBenchmark(value) } },
+    )
+    var savedSessionUiState by HolderBackedState(
+        { sessionSnapshot.savedSession },
+        { value -> mutateSession { it.withSavedSession(value) } },
+    )
+    var autoAiTurnUiState by HolderBackedState(
+        { sessionSnapshot.autoAiTurn },
+        { value -> mutateSession { it.withAutoAiTurn(value) } },
+    )
+    var positionCacheOptimizationState by HolderBackedState(
+        { sessionSnapshot.positionCacheOptimization },
+        { value -> mutateSession { it.withPositionCacheOptimization(value) } },
+    )
+
     var turnTimeState by remember {
         mutableStateOf(
             GameSessionTurnTimeState.reset(
@@ -209,34 +301,12 @@ private fun GoCoachScreen(
     var engineOperationLifecycleState by remember { mutableStateOf(EngineOperationLifecycleState()) }
     var isEngineBusy by remember { mutableStateOf(engineOperationLifecycleState.isEngineBusy) }
     var isEngineReady by remember { mutableStateOf(false) }
-    var runtimeState by remember {
-        mutableStateOf(
-            GameSessionRuntimeState(
-                playLevel = initialPlan.runtime.playLevel,
-                engineProfile = initialPlan.runtime.engineProfile,
-                analysisPreset = initialPlan.runtime.analysisPreset,
-            ),
-        )
-    }
-    var settingsState by remember {
-        mutableStateOf(initialPlan.toGameSessionSettingsState())
-    }
-    val playerSetup = settingsState.playerSetup
-    val matchMode = settingsState.matchMode
-    val autoPlayDelaySetting = settingsState.autoPlayDelaySetting
-    val searchTimeSettings = settingsState.searchTimeSettings
-    val topMovesEnabled = settingsState.topMovesEnabled
     val analysisCache = remember { AnalysisResultCache(maxEntries = 96) }
     val undoAnalysisRestoreCache = remember { UndoAnalysisRestoreCache(maxEntries = 96) }
     var uxOptions by remember { mutableStateOf(initialPreferences.toKaTrainUxOptions()) }
     var isDisplayMenuExpanded by remember { mutableStateOf(false) }
     var isScoreGraphExpanded by remember { mutableStateOf(false) }
-    var isGameEnded by remember { mutableStateOf(false) }
     var hasCompletedEngineStartup by remember { mutableStateOf(false) }
-    var savedSessionUiState by remember { mutableStateOf(SavedSessionUiState()) }
-    val pendingSavedSession = savedSessionUiState.pendingSavedSession
-    val shouldShowResumePrompt = savedSessionUiState.shouldShowResumePrompt
-    val hasCheckedSavedSession = savedSessionUiState.hasCheckedSavedSession
     var hasCheckedEngineBenchmark by remember {
         mutableStateOf(
             benchmarkStore.hasUsableProfile(
@@ -247,19 +317,16 @@ private fun GoCoachScreen(
             ),
         )
     }
-    var benchmarkUiState by remember {
-        mutableStateOf(
-            EngineBenchmarkUiState.initial(
-                benchmarkText = benchmarkStore.loadText(),
-                profile = benchmarkStore.load(),
-            ),
-        )
-    }
-    var autoAiTurnUiState by remember { mutableStateOf(AutoAiTurnUiState()) }
+
+    val playerSetup = settingsState.playerSetup
+    val matchMode = settingsState.matchMode
+    val autoPlayDelaySetting = settingsState.autoPlayDelaySetting
+    val searchTimeSettings = settingsState.searchTimeSettings
+    val topMovesEnabled = settingsState.topMovesEnabled
+    val pendingSavedSession = savedSessionUiState.pendingSavedSession
+    val shouldShowResumePrompt = savedSessionUiState.shouldShowResumePrompt
+    val hasCheckedSavedSession = savedSessionUiState.hasCheckedSavedSession
     val isAutoAiTurnPending = autoAiTurnUiState.isPending
-    var positionCacheOptimizationState by remember {
-        mutableStateOf(PositionAnalysisCacheOptimizationUiState())
-    }
     var undoEngineInterventionQuietUntil by remember { mutableStateOf(0L) }
     var pendingPostUndoEngineSync by remember { mutableStateOf<PendingPostUndoEngineSync?>(null) }
     var pendingPostUndoEngineSyncJob by remember { mutableStateOf<Job?>(null) }
