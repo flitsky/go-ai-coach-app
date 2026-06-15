@@ -1404,119 +1404,51 @@ private fun GoCoachScreen(
         ) {
             AutoAiTurnRequestPlan.Skip -> return
             is AutoAiTurnRequestPlan.Schedule -> {
-                autoAiTurnUiState = autoAiTurnUiState.applyAutoAiTurnRequestPlan(request)
-                runtimeEventLog.append(
-                    runtimeAiTurnScheduleLog(
-                        context = currentRuntimeLogContext(),
-                        gameState = gameState,
-                        delayMillis = request.delayMillis,
-                        autoPlayDelaySetting = autoPlayDelaySetting,
-                        isEngineBusy = isEngineBusy,
+                runScheduledAutoAiTurnApplication(
+                    AutoAiScheduledTurnRunRequest(
+                        schedule = request,
+                        controllerStateProvider = ::currentControllerSessionState,
+                        engineClient = engineClient,
+                        runtimeStateProvider = { runtimeState },
+                        searchTimeSettingsProvider = { searchTimeSettings },
+                        scoreSnapshotsProvider = { scoreState.scoreSnapshots },
+                        isEngineReady = { isEngineReady },
+                        isEngineBusy = { isEngineBusy },
+                        isGameEnded = { isGameEnded },
+                        shouldShowResumePrompt = { shouldShowResumePrompt },
+                        runtimeContextProvider = ::currentRuntimeLogContext,
+                        runtimeEventLog = runtimeEventLog,
+                        diagnosticEventLog = diagnosticEventLog,
+                        delayMillis = { millis -> delay(millis) },
+                        launchAutoAiEffect = { block ->
+                            launchAutoAiEffect(scope) {
+                                block()
+                            }
+                        },
+                        applyScheduled = { schedule ->
+                            autoAiTurnUiState = autoAiTurnUiState.applyAutoAiTurnRequestPlan(schedule)
+                        },
+                        applyCancelled = { cancel ->
+                            autoAiTurnUiState = autoAiTurnUiState.applyAutoAiTurnScheduleValidationPlan(cancel)
+                        },
+                        markEngineOperationStarted = ::markEngineOperationStarted,
+                        markEngineOperationCompleted = ::markEngineOperationCompleted,
+                        applySuccessCompletion = ::applyAutoAiTurnSuccessCompletion,
+                        applyFailureCompletion = ::applyAutoAiTurnFailureCompletion,
+                        completeAutoAiTurnRun = {
+                            autoAiTurnUiState = autoAiTurnUiState.completeAutoAiTurnRun()
+                        },
+                        requestFollowUpAnalysis = { followUp ->
+                            requestTopMoveAnalysisForState(
+                                targetState = followUp.targetState,
+                                automatic = followUp.automatic,
+                                deep = followUp.deep,
+                            )
+                        },
+                        currentStateProvider = { gameState },
+                        currentSessionGenerationProvider = { runtimeState.sessionGeneration },
                     ),
                 )
-                launchAutoAiEffect(scope) {
-                    if (request.delayMillis > 0L) {
-                        delay(request.delayMillis)
-                    }
-                    val turnRunPlan = when (
-                        val validation = currentControllerSessionState().toAutoAiTurnScheduleValidationPlan(
-                            isEngineReady = isEngineReady,
-                            isEngineBusy = isEngineBusy,
-                            scheduledDelayMillis = request.delayMillis,
-                        )
-                    ) {
-                        AutoAiTurnScheduleValidationPlan.Cancel -> {
-                            runtimeEventLog.append(
-                                runtimeAiTurnScheduleCancelledLog(
-                                    context = currentRuntimeLogContext(),
-                                    gameState = gameState,
-                                    isEngineReady = isEngineReady,
-                                    isEngineBusy = isEngineBusy,
-                                    isGameEnded = isGameEnded,
-                                    shouldShowResumePrompt = shouldShowResumePrompt,
-                                ),
-                            )
-                            autoAiTurnUiState = autoAiTurnUiState.applyAutoAiTurnScheduleValidationPlan(validation)
-                            return@launchAutoAiEffect
-                        }
-                        is AutoAiTurnScheduleValidationPlan.Continue -> validation.runPlan
-                    }
-                    val turnContext = turnRunPlan.context
-                    val turnOperationToken = autoAiTurnOperationToken(
-                        turnRunPlan,
-                        sessionGeneration = runtimeState.sessionGeneration,
-                    )
-                    val turnStartMillis = System.currentTimeMillis()
-                    runtimeEventLog.append(
-                        runtimeAiTurnBeginLog(
-                            context = currentRuntimeLogContext(),
-                            turnState = turnContext.turnState,
-                            aiPlayer = turnContext.aiPlayer,
-                            playLevel = turnContext.playLevel,
-                            analysisLimit = turnContext.analysisLimit,
-                            searchMode = turnContext.searchMode,
-                            delayMillis = turnRunPlan.delayMillis,
-                            isolateSearchCache = turnContext.isolateSearchCache,
-                        ),
-                    )
-                    markEngineOperationStarted(turnOperationToken.operation.operationId)
-                    var followUpPlan: AutoAiTurnFollowUpPlan = AutoAiTurnFollowUpPlan.None
-                    val turnResult =
-                        runEngineIo {
-                            engineClient.runAutoAiTurnWorkflowResult(
-                                effect = GameSessionEffect.RunAutoAiTurn(turnRunPlan),
-                                executionContext = AutoAiTurnRunExecutionContext(
-                                    currentProfile = runtimeState.engineProfile,
-                                    searchTimeSettings = searchTimeSettings,
-                                    previousSnapshots = scoreState.scoreSnapshots,
-                                ),
-                                operationRequest = turnOperationToken.operation,
-                                diagnosticEventLog = diagnosticEventLog,
-                            )
-                        }
-                    val turnCompletion = buildAutoAiTurnCompletionPlan(
-                        result = turnResult,
-                        token = turnOperationToken,
-                        currentState = gameState,
-                        currentSessionGeneration = runtimeState.sessionGeneration,
-                    )
-                    followUpPlan = when (turnCompletion) {
-                        is AutoAiTurnCompletionPlan.ApplySuccess ->
-                            applyAutoAiTurnSuccessCompletion(
-                                completion = turnCompletion,
-                                turnContext = turnContext,
-                                turnStartMillis = turnStartMillis,
-                            )
-
-                        is AutoAiTurnCompletionPlan.ApplyFailure,
-                        is AutoAiTurnCompletionPlan.Discard -> {
-                            applyAutoAiTurnFailureCompletion(
-                                completion = turnCompletion,
-                                turnContext = turnContext,
-                                turnStartMillis = turnStartMillis,
-                            )
-                            AutoAiTurnFollowUpPlan.None
-                        }
-                    }
-                    markEngineOperationCompleted(turnOperationToken.operation.operationId)
-                    autoAiTurnUiState = autoAiTurnUiState.completeAutoAiTurnRun()
-                    runtimeEventLog.append(
-                        runtimeAiTurnCompleteLog(
-                            context = currentRuntimeLogContext(),
-                            gameState = gameState,
-                            isEngineBusy = isEngineBusy,
-                            isAutoAiTurnPending = isAutoAiTurnPending,
-                        ),
-                    )
-                    followUpPlan.toAutoAiTurnFollowUpRequest()
-                        ?.let { request ->
-                            requestTopMoveAnalysisForState(
-                                targetState = request.targetState,
-                                automatic = request.automatic,
-                                deep = request.deep,
-                            )
-                        }
-                }
             }
         }
     }

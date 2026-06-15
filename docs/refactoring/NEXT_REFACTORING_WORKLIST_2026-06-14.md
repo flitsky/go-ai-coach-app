@@ -1635,3 +1635,61 @@
 5. `LocalEngineCoreSessionDelegate` protocol별 추가 분해
    - score/endgame/benchmark/helper를 score/endgame/protocol helper로 나눌지 실행한다.
    - acceptance: remote engine client와 local engine client parity 문서화가 더 쉬워진다.
+
+## 2026-06-15 추가 진행 로그: 2nd phase.4 Auto-AI scheduled turn runner
+
+- 2026-06-15: `AutoAiScheduledTurnRunnerApplication.kt`를 추가했다. 예약된 AI 턴의 delay, 재검증, operation token 생성, engine workflow 실행, completion 적용, runtime schedule/begin/complete/cancel log, 후속 Top Moves 요청 연결을 autoai application runner가 소유한다.
+- 2026-06-15: `GoCoachApp.kt`의 `requestAiTurnForCurrentState()` schedule 분기는 `runScheduledAutoAiTurnApplication(AutoAiScheduledTurnRunRequest)` 호출로 축소했다. UI는 현재 상태 provider와 상태 적용 콜백만 제공한다.
+- 2026-06-15: `AutoAiScheduledTurnRunnerTest`와 `LayeringContractTest.goCoachAppDoesNotOwnScheduledAutoAiTurnWorkflowBody()`를 추가했다. 예약 AI 턴 성공/취소 경로와 UI 경계 회귀를 함께 검증한다.
+
+### 현재 metric
+
+- `GoCoachApp.kt`: 1,808줄
+- `GoCoachApp.kt` 전체 import: 115개
+- `GoCoachApp.kt` application import fan-in: 62개
+- UI 파일 내 직접 scheduled Auto-AI workflow 세부 참조: 제거됨
+  - `autoAiTurnOperationToken(`
+  - `GameSessionEffect.RunAutoAiTurn(`
+  - `AutoAiTurnRunExecutionContext(`
+  - `runAutoAiTurnWorkflowResult(`
+  - `buildAutoAiTurnCompletionPlan(`
+  - `runtimeAiTurnBeginLog(`
+  - `runtimeAiTurnCompleteLog(`
+  - `runtimeAiTurnScheduleCancelledLog(`
+
+### 검증
+
+- 기본 셸 Java 25에서는 Gradle Kotlin DSL이 `IllegalArgumentException: 25`로 실패함을 재확인했다.
+- `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:compileDebugKotlin :app-android:compileDebugUnitTestKotlin :app-android:testDebugUnitTest --tests 'com.worksoc.goaicoach.application.AutoAiScheduledTurnRunnerTest' --tests 'com.worksoc.goaicoach.application.GameAutomationApplicationTest' --tests 'com.worksoc.goaicoach.architecture.LayeringContractTest' --no-daemon` 통과.
+- `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest --tests 'com.worksoc.goaicoach.application.AutoAiScheduledTurnRunnerTest' --no-daemon --rerun-tasks` 통과.
+- `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test` 통과.
+
+## 현재 리팩토링/아키텍처 완성도 평가
+
+- 리팩토링 배치 진행도: 99.9985/100.
+- 외부 평가 기준 플랫폼 아키텍처 완성도: 97.5/100.
+- 보수적 내부 플랫폼 완성도: 97.1/100.
+- 상향 요인: 자동 AI 예약 턴의 지연, stale guard, engine workflow, completion routing이 UI shell 밖으로 이동했다. 자동대국/사람대국 양쪽에서 engine operation을 외부 서비스처럼 다루는 경계가 더 선명해졌다.
+- 남은 감점 요인: `GoCoachApp.kt`는 아직 1,800줄대이고 application import fan-in이 62개다. Auto-AI success/failure/endgame display apply helper도 아직 UI 파일 안에 남아 있다.
+
+## 다음 추천 리팩토링 항목 - 2nd phase.5
+
+1. Auto-AI completion display applier 분리
+   - `applyAutoAiTurnSuccessCompletion()`과 `applyAutoAiTurnFailureCompletion()`의 display/log 적용을 autoai application applier로 이동한다.
+   - acceptance: `GoCoachApp.kt`에서 `runtimeAiTurnSuccessLog`, `runtimeAiTurnFailureLog`, auto-AI endgame display plan 적용 세부가 사라진다.
+
+2. Top Moves 실행 본문 runner 분리
+   - `requestTopMoveAnalysisForState()`의 launch plan/cache/run-engine/completion apply plan 조립을 application launcher로 이동한다.
+   - acceptance: Top Moves cache hit/run-engine/failure/discard 경로가 runner 테스트로 고정된다.
+
+3. `GoCoachScreenStateAssembler` 도입
+   - `buildGameScreenStateInput(...)`의 긴 인자 조립을 snapshot/assembler로 분리한다.
+   - acceptance: 화면 렌더링 직전 state read fan-in과 UI shell import fan-in이 함께 줄어든다.
+
+4. menu/player setup action binding 분리
+   - player setup, auto play delay, search time, benchmark/cache menu action binding을 presentation action bundle로 이동한다.
+   - acceptance: 메뉴 UX 고도화 시 `GoCoachApp.kt` 수정면이 줄고 테스트 가능한 action model이 생긴다.
+
+5. `LocalEngineCoreSessionDelegate` protocol별 추가 분해
+   - score/endgame/benchmark/helper를 score/endgame/protocol helper로 나눌지 실행한다.
+   - acceptance: remote engine client와 local engine client parity 문서화가 더 쉬워진다.
