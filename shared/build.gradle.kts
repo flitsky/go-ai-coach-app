@@ -3,11 +3,21 @@ plugins {
     alias(libs.plugins.android.library)
 }
 
+val enableIosTargets = providers.gradleProperty("enableIosTargets")
+    .map(String::toBoolean)
+    .getOrElse(false)
+
 kotlin {
     androidTarget {
         compilerOptions {
             jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
         }
+    }
+
+    if (enableIosTargets) {
+        iosX64()
+        iosArm64()
+        iosSimulatorArm64()
     }
 
     jvmToolchain(17)
@@ -27,4 +37,3 @@ android {
         minSdk = 26
     }
 }
-
