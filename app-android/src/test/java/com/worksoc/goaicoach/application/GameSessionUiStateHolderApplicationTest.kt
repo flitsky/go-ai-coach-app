@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.application
 
+import com.worksoc.goaicoach.application.engine.*
 import com.worksoc.goaicoach.application.session.*
 
 import com.worksoc.goaicoach.application.autoai.*
@@ -155,6 +156,25 @@ class GameSessionUiStateHolderApplicationTest {
         assertEquals("Engine ready.", core.engineMessage)
         assertEquals("Startup candidate text.", core.analysisState.candidateText)
         assertEquals(listOf(snapshot), core.scoreState.scoreSnapshots)
+    }
+
+    @Test
+    fun holderAppliesEngineBenchmarkDisplayPlan() {
+        var core = baseCoreState()
+        val holder = GameSessionUiStateHolder(
+            currentCoreState = { core },
+            applyCoreState = { next -> core = next },
+        )
+
+        holder.applyEngineBenchmarkDisplayPlan(
+            EngineBenchmarkDisplayPlan(
+                engineMessage = "benchmark running",
+                candidateText = "benchmark candidate text",
+            ),
+        )
+
+        assertEquals("benchmark running", core.engineMessage)
+        assertEquals("benchmark candidate text", core.analysisState.candidateText)
     }
 
     @Test

@@ -2,7 +2,8 @@ package com.worksoc.goaicoach.application.session
 
 import com.worksoc.goaicoach.application.HumanEngineSyncFailurePlan
 import com.worksoc.goaicoach.application.HumanMoveLocalResult
-import com.worksoc.goaicoach.application.EngineStartupDisplayPlan
+import com.worksoc.goaicoach.application.engine.EngineBenchmarkDisplayPlan
+import com.worksoc.goaicoach.application.engine.EngineStartupDisplayPlan
 import com.worksoc.goaicoach.application.UndoLocalStatePlan
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnDisplayPlan
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnFailureDisplayPlan
@@ -32,6 +33,10 @@ internal class GameSessionUiStateHolder(
 
     fun applyEngineStartupDisplayPlan(startup: EngineStartupDisplayPlan) {
         applyCoreState(currentCoreState().applyEngineStartupDisplayPlan(startup))
+    }
+
+    fun applyEngineBenchmarkDisplayPlan(benchmark: EngineBenchmarkDisplayPlan) {
+        applyCoreState(currentCoreState().applyEngineBenchmarkDisplayPlan(benchmark))
     }
 
     fun applyFinalScoreDisplayPlan(final: FinalScoreDisplayPlan) {

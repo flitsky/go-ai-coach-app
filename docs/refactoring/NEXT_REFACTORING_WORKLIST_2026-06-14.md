@@ -1247,3 +1247,42 @@
 5. diagnostic local export 운영 원칙 문서화
    - local file export를 개발자 전용 수집 경로로 둘지, 앱 메뉴의 "로그 내보내기" UX 후보로 연결할지 정리한다.
    - acceptance: warning/critical local export와 debug report copy의 관계가 문서화된다.
+
+## 2026-06-15 추가 진행 로그: ext.7 engine package / benchmark display holder
+
+- 2026-06-15: `EngineStartupApplication.kt`, `EngineSessionLifecycleApplication.kt`, `EngineDeviceBenchmarkApplication.kt`를 `application/engine/` 하위 package로 이동했다. engine startup, engine-backed new game, engine undo, startup benchmark runner/display policy가 application root package에서 분리됐다.
+- 2026-06-15: `EngineBenchmarkStorePort`를 root `ApplicationPorts.kt`에서 `application/engine/EngineBenchmarkPorts.kt`로 이동했다. benchmark persistence port도 benchmark 도메인 package가 소유한다.
+- 2026-06-15: `EngineBenchmarkDisplayPlan`과 `engineBenchmarkWaitingDisplayPlan()`, `engineBenchmarkRunningDisplayPlan()`, `EngineBenchmarkProgress.toEngineBenchmarkDisplayPlan()`, `engineBenchmarkCompletedDisplayPlan()`, `engineBenchmarkFailureDisplayPlan()`을 추가했다. benchmark 진행/완료/실패 화면 문구 정책이 Compose에서 engine application layer로 이동했다.
+- 2026-06-15: `GameSessionCoreState.applyEngineBenchmarkDisplayPlan()`과 `GameSessionUiStateHolder.applyEngineBenchmarkDisplayPlan()`을 추가했다. benchmark 중 core display state 변경은 holder/reducer 경계를 통과한다.
+- 2026-06-15: `GoCoachApp.kt`는 benchmark 진행 중 `engineMessage`/`analysisState.candidateText`를 직접 조립하지 않고, typed display plan을 적용한다.
+- 현재 metric: `GoCoachApp.kt`는 2,089줄, UI 파일 안의 `scope.launch`/`withContext(Dispatchers.IO)`/`runCatching` 직접 지점은 0개다. application import fan-in은 81개이며, application root package 파일 수는 25개다.
+- 검증: `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest --tests 'com.worksoc.goaicoach.application.EngineStartupApplicationTest' --tests 'com.worksoc.goaicoach.application.EngineSessionLifecycleApplicationTest' --tests 'com.worksoc.goaicoach.application.EngineDeviceBenchmarkApplicationTest' --tests 'com.worksoc.goaicoach.application.GameSessionUiStateHolderApplicationTest' --tests 'com.worksoc.goaicoach.application.GameSessionControllerTest' --tests 'com.worksoc.goaicoach.architecture.LayeringContractTest'` 통과.
+
+## 현재 리팩토링/아키텍처 완성도 평가
+
+- 리팩토링 배치 진행도: 99.98/100.
+- 외부 평가 기준 플랫폼 아키텍처 완성도: 98.1/100.
+- 상향 요인: engine lifecycle/startup/benchmark가 `application/engine`으로 물리 분리됐고, benchmark store port까지 도메인 package로 이동했다. benchmark display mutation도 holder/reducer 경계를 통과하기 시작했다.
+- 남은 감점 요인: `GoCoachApp.kt`는 아직 2천 줄 이상이고, root application package에는 saved session, start-game, undo, human move, cache optimization, debug report, endgame resolver가 남아 있다. engine package 내부도 startup/benchmark/launcher가 한 package에 섞여 있으므로, 장기적으로 `engine/session`, `engine/benchmark`, `engine/lifecycle` 세부 분리 여지가 있다.
+
+## 다음 추천 리팩토링 항목 - ext.8
+
+1. saved session / persistence plan package 분리
+   - `SavedSessionPromptApplication.kt`, `SavedGamePersistence.kt`, 관련 prompt state를 `application/persistence` 또는 `application/session` 하위로 이동한다.
+   - acceptance: saved-session prompt/persistence targeted test와 `LayeringContractTest` 통과.
+
+2. `StartGameApplication.kt` package 분리
+   - start configured game, new local game, engine-backed new game request plan의 위치를 정리한다.
+   - acceptance: new game/start game flow가 session reset plan과 engine effect를 명확히 분리한다.
+
+3. undo package 분리
+   - `UndoApplication.kt`를 `application/undo` 하위 package로 이동하고, engine undo result dependency를 `application.engine`으로 명시한다.
+   - acceptance: undo targeted test와 post-undo sync flow compile/test 통과.
+
+4. benchmark progress callback boundary 개선
+   - 현재 `withContext(Dispatchers.Main)`이 benchmark progress callback 안에 남아 있다. 이를 engine effect runner 또는 UI effect bridge로 더 분리할지 검토한다.
+   - acceptance: UI가 dispatcher 전환을 직접 선택하는 마지막 특수 지점을 줄인다.
+
+5. root application package 파일 수 감축 목표 설정
+   - 다음 2~3회 리팩토링에서 root application 파일 수를 25개에서 18개 이하로 낮춘다.
+   - acceptance: root package가 공통 port/facade/legacy compatibility만 담도록 수렴한다.

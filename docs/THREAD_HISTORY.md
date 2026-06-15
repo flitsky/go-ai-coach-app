@@ -1432,3 +1432,9 @@
 - `GameSessionCoreState`와 `GameSessionUiStateHolder`에 `EngineStartupDisplayPlan` 적용 함수를 추가했다. engine startup 결과 중 core display state(score snapshot, candidate text, engine message)는 holder 경계를 통과하고, `isEngineReady` 같은 app-service 상태만 UI에 남겼다.
 - `EngineOperationPolicyTest`에 shared engine policy adapter 테스트를 추가해 shared guard/gate/apply plan이 application facade shape로 보존되는 계약을 고정했다.
 - `GoCoachApp.kt` import를 정리해 application import fan-in을 120개에서 98개로 줄였다. `GoCoachApp.kt`는 2,106줄이며, UI 파일의 직접 `scope.launch`/`withContext(Dispatchers.IO)`/`runCatching` 지점은 0개로 유지됐다.
+- 사용자가 `ext.7` 다음 리팩토링 추천 항목을 단계별로 모두 진행하고, 결과 보고 시 현재 리팩토링 완성도 및 다음 추천 작업 리스트업을 요청했다.
+- `EngineStartupApplication.kt`, `EngineSessionLifecycleApplication.kt`, `EngineDeviceBenchmarkApplication.kt`를 `application/engine/` 하위 package로 이동했다. engine startup/new-game/undo/benchmark runner와 표시 정책이 root application package에서 분리됐다.
+- `EngineBenchmarkStorePort`를 root `ApplicationPorts.kt`에서 `application/engine/EngineBenchmarkPorts.kt`로 이동했다. benchmark persistence port도 engine application package 소유로 정리됐다.
+- `EngineBenchmarkDisplayPlan`과 waiting/running/progress/completed/failure display plan builder를 추가했다. benchmark 진행 메시지/candidate text 정책이 Compose가 아니라 engine application layer에 위치하게 됐다.
+- `GameSessionCoreState`와 `GameSessionUiStateHolder`가 `EngineBenchmarkDisplayPlan`을 적용하도록 확장했다. benchmark 진행 중 engine message/candidate text 변경은 holder/reducer 경계를 통과한다.
+- 관련 import를 갱신하며 `GoCoachApp.kt` application import fan-in을 98개에서 81개로 줄였다. `GoCoachApp.kt`는 2,089줄이며, UI 파일의 직접 coroutine/IO primitive 지점은 계속 0개다.

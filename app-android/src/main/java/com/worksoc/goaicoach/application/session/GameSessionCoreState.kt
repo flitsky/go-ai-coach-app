@@ -3,7 +3,8 @@ package com.worksoc.goaicoach.application.session
 import com.worksoc.goaicoach.application.GameSessionResetPlan
 import com.worksoc.goaicoach.application.HumanEngineSyncFailurePlan
 import com.worksoc.goaicoach.application.HumanMoveLocalResult
-import com.worksoc.goaicoach.application.EngineStartupDisplayPlan
+import com.worksoc.goaicoach.application.engine.EngineBenchmarkDisplayPlan
+import com.worksoc.goaicoach.application.engine.EngineStartupDisplayPlan
 import com.worksoc.goaicoach.application.PlayerSetupChangePlan
 import com.worksoc.goaicoach.application.SavedGameRestorePlan
 import com.worksoc.goaicoach.application.ScoringRuleChangePlan
@@ -60,6 +61,12 @@ internal data class GameSessionCoreState(
                 analysisState.copy(candidateText = text)
             } ?: analysisState,
             engineMessage = startup.engineMessage,
+        )
+
+    fun applyEngineBenchmarkDisplayPlan(benchmark: EngineBenchmarkDisplayPlan): GameSessionCoreState =
+        copy(
+            analysisState = analysisState.copy(candidateText = benchmark.candidateText),
+            engineMessage = benchmark.engineMessage,
         )
 
     fun applyFinalScoreDisplayPlan(final: FinalScoreDisplayPlan): GameSessionCoreState =

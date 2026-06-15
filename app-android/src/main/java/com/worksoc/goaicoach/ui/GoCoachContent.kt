@@ -18,10 +18,10 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.worksoc.goaicoach.application.EngineBenchmarkProfile
-import com.worksoc.goaicoach.application.EngineBenchmarkProgress
-import com.worksoc.goaicoach.application.fillSummaryText
-import com.worksoc.goaicoach.application.rootSummaryText
+import com.worksoc.goaicoach.application.engine.EngineBenchmarkProfile
+import com.worksoc.goaicoach.application.engine.EngineBenchmarkProgress
+import com.worksoc.goaicoach.application.engine.fillSummaryText
+import com.worksoc.goaicoach.application.engine.rootSummaryText
 import com.worksoc.goaicoach.match.summary
 import com.worksoc.goaicoach.persistence.SavedGameSnapshot
 import com.worksoc.goaicoach.presentation.GameScreenState

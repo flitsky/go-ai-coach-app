@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.application
 
+import com.worksoc.goaicoach.application.engine.*
 import com.worksoc.goaicoach.application.session.*
 
 import com.worksoc.goaicoach.shared.AnalysisLimit
@@ -74,6 +75,47 @@ class EngineDeviceBenchmarkApplicationTest {
         assertEquals("샘플 2 / 5", progress.sampleText)
         assertEquals("전체 진행률 6 / 15", progress.progressText)
         assertEquals(0.4f, progress.fraction, 0.000001f)
+    }
+
+    @Test
+    fun benchmarkDisplayPlansKeepUiTextPolicyOutOfCompose() {
+        val progress = EngineBenchmarkProgress(
+            currentVisits = 64,
+            currentSample = 3,
+            samplesPerVisit = 5,
+            completedCalls = 13,
+            totalCalls = 15,
+        )
+        val profile = EngineBenchmarkProfile(
+            createdAtMillis = 123L,
+            samplesPerVisit = 5,
+            timeCapMs = 5_000L,
+            metrics = listOf(
+                EngineBenchmarkMetric(visits = 16, samples = 5, minMs = 1.0, avgMs = 2.0, maxMs = 3.0),
+            ),
+        )
+
+        assertEquals(
+            "Engine benchmark waiting for startup settle delay.",
+            engineBenchmarkWaitingDisplayPlan().candidateText,
+        )
+        assertEquals(
+            "Engine benchmark running: B16/B32/B64, 5 samples each.",
+            engineBenchmarkRunningDisplayPlan(samplesPerVisit = 5).candidateText,
+        )
+        assertEquals("B64 실행시간 확보 중...", progress.toEngineBenchmarkDisplayPlan().engineMessage)
+        assertEquals(
+            "Engine benchmark running: 전체 진행률 13 / 15, 샘플 3 / 5.",
+            progress.toEngineBenchmarkDisplayPlan().candidateText,
+        )
+        assertEquals(
+            "Engine benchmark saved to /tmp/benchmark.json.",
+            engineBenchmarkCompletedDisplayPlan(profile, "/tmp/benchmark.json").engineMessage,
+        )
+        assertEquals(
+            "Engine benchmark failed: timeout",
+            engineBenchmarkFailureDisplayPlan(IllegalStateException("timeout")).engineMessage,
+        )
     }
 
     @Test

@@ -1,7 +1,7 @@
 package com.worksoc.goaicoach.application.session
 
 import com.worksoc.goaicoach.application.DebugReportCopyPlan
-import com.worksoc.goaicoach.application.EngineBenchmarkUiState
+import com.worksoc.goaicoach.application.engine.EngineBenchmarkUiState
 import com.worksoc.goaicoach.application.HumanEngineSyncRunPlan
 import com.worksoc.goaicoach.application.PositionAnalysisCacheOptimizationPlan
 import com.worksoc.goaicoach.application.PositionAnalysisCacheOptimizationUiState

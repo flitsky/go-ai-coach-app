@@ -3,6 +3,7 @@ package com.worksoc.goaicoach.ui
 import com.worksoc.goaicoach.application.session.*
 
 import com.worksoc.goaicoach.application.autoai.*
+import com.worksoc.goaicoach.application.engine.*
 import com.worksoc.goaicoach.application.runtime.*
 import com.worksoc.goaicoach.application.score.*
 import com.worksoc.goaicoach.application.topmoves.*
@@ -24,7 +25,6 @@ import androidx.compose.ui.platform.LocalContext
 import com.worksoc.goaicoach.application.AnalysisCacheKey
 import com.worksoc.goaicoach.application.AnalysisResultCache
 import com.worksoc.goaicoach.application.buildDebugReportCopyPlan
-import com.worksoc.goaicoach.application.buildEngineStartupDisplayPlan
 import com.worksoc.goaicoach.application.buildEngineUndoCompletionPlan
 import com.worksoc.goaicoach.application.buildHumanEngineSyncCompletionPlan
 import com.worksoc.goaicoach.application.buildLocalTwoPlayerUndoPlan
@@ -39,11 +39,6 @@ import com.worksoc.goaicoach.application.buildPlayerSetupChangePlan
 import com.worksoc.goaicoach.application.buildPositionAnalysisCacheOptimizationPlan
 import com.worksoc.goaicoach.application.buildPositionAnalysisCacheOptimizationPrompt
 import com.worksoc.goaicoach.application.buildUserPreferencesSnapshot
-import com.worksoc.goaicoach.application.EngineBenchmarkDefaultSamplesPerVisit
-import com.worksoc.goaicoach.application.EngineBenchmarkDefaultTimeCapMs
-import com.worksoc.goaicoach.application.EngineBenchmarkDefaultVisits
-import com.worksoc.goaicoach.application.EngineBenchmarkMeasurementVersion
-import com.worksoc.goaicoach.application.EngineBenchmarkUiState
 import com.worksoc.goaicoach.application.EngineFallbackPolicy
 import com.worksoc.goaicoach.application.EngineOperationGate
 import com.worksoc.goaicoach.application.EngineOperationKind
@@ -58,7 +53,6 @@ import com.worksoc.goaicoach.application.DebugReportMirrorPort
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.applyHumanMoveLocally
 import com.worksoc.goaicoach.application.applyEngineOperationLifecycleTransition
-import com.worksoc.goaicoach.application.EngineBenchmarkStorePort
 import com.worksoc.goaicoach.application.ClipboardPort
 import com.worksoc.goaicoach.application.engineOperationRequest
 import com.worksoc.goaicoach.application.evaluateEngineBenchmarkGate
@@ -73,8 +67,6 @@ import com.worksoc.goaicoach.application.HumanEngineSyncRuntimeLogPlan
 import com.worksoc.goaicoach.application.HumanEngineSyncCompletionRequest
 import com.worksoc.goaicoach.application.HumanEngineSyncEffectLaunchRequest
 import com.worksoc.goaicoach.application.HumanEngineSyncRunPlan
-import com.worksoc.goaicoach.application.EngineStartupWorkflowResult
-import com.worksoc.goaicoach.application.EngineStartupDisplayPlan
 import com.worksoc.goaicoach.application.PlayerSetupChangePlan
 import com.worksoc.goaicoach.application.PositionAnalysisCacheOptimizationWorkflowResult
 import com.worksoc.goaicoach.application.PositionAnalysisCacheOptimizationUiState
@@ -85,15 +77,9 @@ import com.worksoc.goaicoach.application.selectRuntimePlayLevel
 import com.worksoc.goaicoach.application.planSavedGamePersistence
 import com.worksoc.goaicoach.application.RuntimePlayLevelSelection
 import com.worksoc.goaicoach.application.ScoringRuleChangePlan
-import com.worksoc.goaicoach.application.runEngineBackedNewGameWorkflowResult
 import com.worksoc.goaicoach.application.runEngineOperationInScope
-import com.worksoc.goaicoach.application.runEngineStartupWorkflowResult
-import com.worksoc.goaicoach.application.runEngineUndoWorkflowResult
 import com.worksoc.goaicoach.application.runHumanEngineSyncWorkflowResult
 import com.worksoc.goaicoach.application.runPositionAnalysisCacheOptimizationWorkflowResult
-import com.worksoc.goaicoach.application.runStartupBenchmarkWorkflowResult
-import com.worksoc.goaicoach.application.StartupBenchmarkWorkflowResult
-import com.worksoc.goaicoach.application.StartupBenchmarkExecutionContext
 import com.worksoc.goaicoach.application.toDebugReportSnapshot
 import com.worksoc.goaicoach.application.runDebugReportCopyEffect
 import com.worksoc.goaicoach.application.toApplyPlan
@@ -111,9 +97,6 @@ import com.worksoc.goaicoach.application.UndoRequestPlan
 import com.worksoc.goaicoach.application.UndoLocalStatePlan
 import com.worksoc.goaicoach.application.UserPreferencesStorePort
 import com.worksoc.goaicoach.application.UserNoticePort
-import com.worksoc.goaicoach.application.engine.launchAutoAiEffect
-import com.worksoc.goaicoach.application.engine.launchUiEffect
-import com.worksoc.goaicoach.application.engine.runEngineIo
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
@@ -532,15 +515,11 @@ private fun GoCoachScreen(
             fallbackPolicy = EngineFallbackPolicy.None,
         )
         runTrackedEngineOperation(operation) {
-            engineMessage = "엔진 벤치마크 시작 전 안정화 대기 중입니다."
             benchmarkUiState = benchmarkUiState.startWaitingForEngineSettle()
-            analysisState = analysisState.copy(candidateText = "Engine benchmark waiting for startup settle delay.")
+            uiStateHolder.applyEngineBenchmarkDisplayPlan(engineBenchmarkWaitingDisplayPlan())
             delay(EngineBenchmarkStartupSettleDelayMillis)
 
-            engineMessage = "최초 실행환경에서 최적 플레이를 위해 벤치마크 테스트가 진행중입니다."
-            analysisState = analysisState.copy(
-                candidateText = "Engine benchmark running: B16/B32/B64, ${EngineBenchmarkDefaultSamplesPerVisit} samples each.",
-            )
+            uiStateHolder.applyEngineBenchmarkDisplayPlan(engineBenchmarkRunningDisplayPlan())
             val benchmarkResult =
                 runEngineIo {
                     engineClient
@@ -555,9 +534,8 @@ private fun GoCoachScreen(
                             onProgress = { progress ->
                                 withContext(Dispatchers.Main) {
                                     benchmarkUiState = benchmarkUiState.updateProgress(progress)
-                                    engineMessage = progress.stageText
-                                    analysisState = analysisState.copy(
-                                        candidateText = "Engine benchmark running: ${progress.progressText}, ${progress.sampleText}.",
+                                    uiStateHolder.applyEngineBenchmarkDisplayPlan(
+                                        progress.toEngineBenchmarkDisplayPlan(),
                                     )
                                 }
                             }
@@ -571,13 +549,18 @@ private fun GoCoachScreen(
                         benchmarkText = benchmarkStore.loadText(),
                         profile = profile,
                     )
-                    engineMessage = "Engine benchmark saved to ${benchmarkStore.path()}."
-                    analysisState = analysisState.copy(candidateText = "Engine benchmark complete.\n${profile.toSummaryText()}")
+                    uiStateHolder.applyEngineBenchmarkDisplayPlan(
+                        engineBenchmarkCompletedDisplayPlan(
+                            profile = profile,
+                            storePath = benchmarkStore.path(),
+                        ),
+                    )
                 }
 
                 is StartupBenchmarkWorkflowResult.Failure -> {
-                    engineMessage = "Engine benchmark failed: ${benchmarkResult.error.message ?: "unknown error"}"
-                    analysisState = analysisState.copy(candidateText = "Engine benchmark failed. The app will continue with built-in defaults.")
+                    uiStateHolder.applyEngineBenchmarkDisplayPlan(
+                        engineBenchmarkFailureDisplayPlan(benchmarkResult.error),
+                    )
                     benchmarkUiState = benchmarkUiState.failWithoutProfile()
                 }
             }

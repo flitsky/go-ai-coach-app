@@ -4,6 +4,9 @@ import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.diagnostic.NoopDiagnosticEventLog
 import com.worksoc.goaicoach.application.diagnostic.engineVisitFillDiagnosticEvent
 import com.worksoc.goaicoach.application.diagnostic.runObservedEngineOperation
+import com.worksoc.goaicoach.application.engine.EngineBenchmarkProfile
+import com.worksoc.goaicoach.application.engine.EngineBenchmarkProgress
+import com.worksoc.goaicoach.application.engine.runStartupEngineBenchmark
 import com.worksoc.goaicoach.middleware.PositionAnalysisCacheResolver
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.AnalysisResult

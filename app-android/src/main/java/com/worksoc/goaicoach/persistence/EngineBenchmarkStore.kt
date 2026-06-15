@@ -1,11 +1,11 @@
 package com.worksoc.goaicoach.persistence
 
 import android.content.Context
-import com.worksoc.goaicoach.application.EngineBenchmarkMetric
-import com.worksoc.goaicoach.application.EngineBenchmarkProfile
-import com.worksoc.goaicoach.application.EngineBenchmarkRuleset
-import com.worksoc.goaicoach.application.EngineBenchmarkSample
-import com.worksoc.goaicoach.application.EngineBenchmarkStorePort
+import com.worksoc.goaicoach.application.engine.EngineBenchmarkMetric
+import com.worksoc.goaicoach.application.engine.EngineBenchmarkProfile
+import com.worksoc.goaicoach.application.engine.EngineBenchmarkRuleset
+import com.worksoc.goaicoach.application.engine.EngineBenchmarkSample
+import com.worksoc.goaicoach.application.engine.EngineBenchmarkStorePort
 import com.worksoc.goaicoach.shared.Ruleset
 import java.io.File
 import org.json.JSONArray

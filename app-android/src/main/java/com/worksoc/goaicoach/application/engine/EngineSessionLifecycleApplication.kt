@@ -1,6 +1,13 @@
-package com.worksoc.goaicoach.application
+package com.worksoc.goaicoach.application.engine
 
-import com.worksoc.goaicoach.application.session.*
+import com.worksoc.goaicoach.application.EngineFallbackPolicy
+import com.worksoc.goaicoach.application.EngineOperationKind
+import com.worksoc.goaicoach.application.EngineOperationRequest
+import com.worksoc.goaicoach.application.EngineSessionClient
+import com.worksoc.goaicoach.application.EngineStartupResult
+import com.worksoc.goaicoach.application.EngineTimeoutPolicy
+import com.worksoc.goaicoach.application.engineOperationRequest
+import com.worksoc.goaicoach.application.session.GameSessionEffect
 
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.diagnostic.NoopDiagnosticEventLog

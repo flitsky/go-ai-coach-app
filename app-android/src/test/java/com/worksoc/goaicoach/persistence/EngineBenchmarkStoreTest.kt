@@ -1,7 +1,7 @@
 package com.worksoc.goaicoach.persistence
 
-import com.worksoc.goaicoach.application.EngineBenchmarkMetric
-import com.worksoc.goaicoach.application.EngineBenchmarkProfile
+import com.worksoc.goaicoach.application.engine.EngineBenchmarkMetric
+import com.worksoc.goaicoach.application.engine.EngineBenchmarkProfile
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
