@@ -19,13 +19,10 @@ class LayeringContractTest {
             "import com.worksoc.goaicoach.engine.android",
         )
 
-        val offenders = checkedDirs
-            .flatMap { dir -> dir.walkTopDown().filter { file -> file.extension == "kt" }.toList() }
-            .flatMap { file ->
-                file.readLines()
-                    .filter { line -> forbiddenImports.any { forbidden -> line.startsWith(forbidden) } }
-                    .map { line -> "${file.relativeTo(repoRoot()).path}: $line" }
-            }
+        val offenders = forbiddenReferenceOffenders(
+            files = ktFilesIn(*checkedDirs.toTypedArray()),
+            forbiddenImports = forbiddenImports,
+        )
 
         assertTrue(
             "UI/presentation must call middleware APIs instead of raw engine APIs:\n${offenders.joinToString("\n")}",
@@ -46,13 +43,10 @@ class LayeringContractTest {
             "import com.worksoc.goaicoach.engine.android",
         )
 
-        val offenders = checkedDirs
-            .flatMap { dir -> dir.walkTopDown().filter { file -> file.extension == "kt" }.toList() }
-            .flatMap { file ->
-                file.readLines()
-                    .filter { line -> forbiddenImports.any { forbidden -> line.startsWith(forbidden) } }
-                    .map { line -> "${file.relativeTo(repoRoot()).path}: $line" }
-            }
+        val offenders = forbiddenReferenceOffenders(
+            files = ktFilesIn(*checkedDirs.toTypedArray()),
+            forbiddenImports = forbiddenImports,
+        )
 
         assertTrue(
             "Application/match must depend on EngineCoreApi or middleware ports, not compatibility aliases/runtime implementations:\n${offenders.joinToString("\n")}",
@@ -68,15 +62,10 @@ class LayeringContractTest {
             "import com.worksoc.goaicoach.shared.EngineCoreApi",
         )
 
-        val offenders = matchRoot
-            .walkTopDown()
-            .filter { file -> file.extension == "kt" }
-            .flatMap { file ->
-                file.readLines()
-                    .filter { line -> forbiddenImports.any { forbidden -> line.startsWith(forbidden) } }
-                    .map { line -> "${file.relativeTo(repoRoot()).path}: $line" }
-            }
-            .toList()
+        val offenders = forbiddenReferenceOffenders(
+            files = ktFilesIn(matchRoot),
+            forbiddenImports = forbiddenImports,
+        )
 
         assertTrue(
             "Match policies must depend on small middleware gateways, not raw EngineCoreApi:\n" +
@@ -337,15 +326,10 @@ class LayeringContractTest {
             "import com.worksoc.goaicoach.application.engine.estimateScoreForState",
         )
 
-        val offenders = scoreRoot
-            .walkTopDown()
-            .filter { file -> file.extension == "kt" }
-            .flatMap { file ->
-                file.readLines()
-                    .filter { line -> forbiddenImports.any { forbidden -> line.startsWith(forbidden) } }
-                    .map { line -> "${file.relativeTo(repoRoot()).path}: $line" }
-            }
-            .toList()
+        val offenders = forbiddenReferenceOffenders(
+            files = ktFilesIn(scoreRoot),
+            forbiddenImports = forbiddenImports,
+        )
 
         assertTrue(
             "Score runners should call EngineSessionClient members, not local EngineCoreApi extension helpers:\n" +
@@ -416,12 +400,10 @@ class LayeringContractTest {
             "import com.worksoc.goaicoach.engine.",
         )
 
-        val offenders = contracts.flatMap { contract ->
-            contract
-                .readLines()
-                .filter { line -> forbiddenImports.any { forbidden -> line.startsWith(forbidden) } }
-                .map { line -> "${contract.relativeTo(repoRoot()).path}: $line" }
-        }
+        val offenders = forbiddenReferenceOffenders(
+            files = contracts,
+            forbiddenImports = forbiddenImports,
+        )
 
         assertTrue(
             "Position analysis middleware gateway contracts must remain KMP-ready:\n${offenders.joinToString("\n")}",
@@ -471,12 +453,10 @@ class LayeringContractTest {
             missingPlatformBoundAdapters.isEmpty(),
         )
 
-        val offenders = portableCandidates.flatMap { candidate ->
-            candidate
-                .readLines()
-                .filter { line -> forbiddenImports.any { forbidden -> line.startsWith(forbidden) } }
-                .map { line -> "${candidate.relativeTo(repoRoot()).path}: $line" }
-        }
+        val offenders = forbiddenReferenceOffenders(
+            files = portableCandidates,
+            forbiddenImports = forbiddenImports,
+        )
 
         assertTrue(
             "Application files are middleware/KMP move candidates by default. Add only explicit adapter exceptions for platform-bound files:\n" +
@@ -505,17 +485,161 @@ class LayeringContractTest {
             "import com.worksoc.goaicoach.engine.",
         )
 
-        val offenders = candidates.flatMap { candidate ->
-            candidate
-                .readLines()
-                .filter { line -> forbiddenImports.any { forbidden -> line.startsWith(forbidden) } }
-                .map { line -> "${candidate.relativeTo(repoRoot()).path}: $line" }
-        }
+        val offenders = forbiddenReferenceOffenders(
+            files = candidates,
+            forbiddenImports = forbiddenImports,
+        )
 
         assertTrue(
             "Shared diagnostic/engine policy models must remain KMP-ready:\n${offenders.joinToString("\n")}",
             offenders.isEmpty(),
         )
+    }
+
+    @Test
+    fun detectionCatchesViolationsThatPlainImportStringWouldMiss() {
+        val tempDir = java.nio.file.Files.createTempDirectory("layering-contract").toFile()
+        try {
+            // a) Wildcard import of the package + bare use of the forbidden type.
+            val wildcardOffender = File(tempDir, "WildcardOffender.kt").apply {
+                writeText(
+                    """
+                    package sample
+                    import com.worksoc.goaicoach.shared.*
+                    fun build(api: EngineCoreApi) = api
+                    """.trimIndent(),
+                )
+            }
+            // b) Fully-qualified reference inline, with no import at all.
+            val inlineOffender = File(tempDir, "InlineOffender.kt").apply {
+                writeText(
+                    """
+                    package sample
+                    fun build(api: com.worksoc.goaicoach.shared.EngineCoreApi) = api
+                    """.trimIndent(),
+                )
+            }
+            // c) Aliased import still resolves to the forbidden type.
+            val aliasedOffender = File(tempDir, "AliasedOffender.kt").apply {
+                writeText(
+                    """
+                    package sample
+                    import com.worksoc.goaicoach.shared.EngineCoreApi as Engine
+                    fun build(api: Engine) = api
+                    """.trimIndent(),
+                )
+            }
+            // d) Negative: only a prose comment mentions it; unrelated wildcard import.
+            val clean = File(tempDir, "Clean.kt").apply {
+                writeText(
+                    """
+                    package sample
+                    import com.worksoc.goaicoach.middleware.*
+                    // EngineCoreApi is intentionally not referenced here.
+                    fun build() = 1
+                    """.trimIndent(),
+                )
+            }
+
+            val offenders = forbiddenReferenceOffenders(
+                files = listOf(wildcardOffender, inlineOffender, aliasedOffender, clean),
+                forbiddenImports = listOf("import com.worksoc.goaicoach.shared.EngineCoreApi"),
+            )
+
+            assertTrue(
+                "Wildcard-import + bare-use violation must be detected:\n${offenders.joinToString("\n")}",
+                offenders.any { it.contains("WildcardOffender.kt") },
+            )
+            assertTrue(
+                "Inline fully-qualified violation must be detected:\n${offenders.joinToString("\n")}",
+                offenders.any { it.contains("InlineOffender.kt") },
+            )
+            assertTrue(
+                "Aliased import violation must be detected:\n${offenders.joinToString("\n")}",
+                offenders.any { it.contains("AliasedOffender.kt") },
+            )
+            assertTrue(
+                "A prose-only mention must not be flagged:\n${offenders.joinToString("\n")}",
+                offenders.none { it.contains("Clean.kt") },
+            )
+        } finally {
+            tempDir.deleteRecursively()
+        }
+    }
+
+    private fun ktFilesIn(vararg dirs: File): List<File> =
+        dirs.flatMap { dir ->
+            if (dir.exists()) {
+                dir.walkTopDown().filter { file -> file.extension == "kt" }.toList()
+            } else {
+                emptyList()
+            }
+        }
+
+    /**
+     * Reports forbidden references in [files].
+     *
+     * Each [forbiddenImports] entry is written the way an import statement reads
+     * (e.g. `import com.worksoc.goaicoach.shared.EngineCoreApi` for an exact type,
+     * or `import android.` for a package prefix). Detection is stronger than a raw
+     * `startsWith` on import lines: it also catches the two ways the plain
+     * import-string check used to miss a violation —
+     *  - a wildcard import of the type's package plus a bare use of the type name, and
+     *  - a fully-qualified reference used inline in code with no import at all.
+     */
+    private fun forbiddenReferenceOffenders(
+        files: List<File>,
+        forbiddenImports: List<String>,
+    ): List<String> =
+        files.flatMap { file ->
+            val lines = file.readLines()
+            forbiddenImports.flatMap { forbidden ->
+                detectForbiddenReference(lines, forbidden)
+                    .map { reason -> "${file.relativeTo(repoRoot()).path}: $reason" }
+            }
+        }
+
+    private fun detectForbiddenReference(lines: List<String>, forbidden: String): List<String> {
+        val path = forbidden.removePrefix("import ").trim()
+        val results = mutableListOf<String>()
+
+        val importLines = lines.filter { line -> line.trimStart().startsWith("import ") }
+        val codeLines = lines.filterNot { raw ->
+            val trimmed = raw.trimStart()
+            trimmed.startsWith("import ") || trimmed.startsWith("package ") ||
+                trimmed.startsWith("//") || trimmed.startsWith("*") || trimmed.startsWith("/*")
+        }
+
+        // 1) Direct import. Covers exact types, package prefixes, and `... as Alias`.
+        importLines.firstOrNull { line -> line.trimStart().startsWith(forbidden) }
+            ?.let { line -> results += "forbidden import -> ${line.trim()}" }
+
+        // 2) Wildcard import of an exact type's package + a bare use of its simple name.
+        val isExactType = !path.endsWith(".") &&
+            path.substringAfterLast('.').firstOrNull()?.isUpperCase() == true
+        if (isExactType) {
+            val simpleName = path.substringAfterLast('.')
+            val packageName = path.substringBeforeLast('.')
+            val hasWildcardImport = importLines.any { line -> line.trim() == "import $packageName.*" }
+            if (hasWildcardImport) {
+                val bareUse = Regex("(?<![\\w.])${Regex.escape(simpleName)}(?![\\w])")
+                if (codeLines.any { line -> bareUse.containsMatchIn(line) }) {
+                    results += "wildcard import `$packageName.*` with bare use of `$simpleName`"
+                }
+            }
+        }
+
+        // 3) Fully-qualified reference used inline in code (no import required).
+        val inlineUse = if (path.endsWith(".")) {
+            Regex("(?<![\\w.])${Regex.escape(path)}[A-Za-z_]")
+        } else {
+            Regex("(?<![\\w.])${Regex.escape(path)}(?![\\w])")
+        }
+        if (codeLines.any { line -> inlineUse.containsMatchIn(line) }) {
+            results += "fully-qualified reference -> $path"
+        }
+
+        return results.distinct()
     }
 
     private fun repoRoot(): File {
