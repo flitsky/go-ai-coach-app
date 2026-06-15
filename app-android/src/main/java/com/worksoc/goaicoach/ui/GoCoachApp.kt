@@ -928,42 +928,33 @@ private fun GoCoachScreen(
                 return@launchUiEffect
             }
 
-            val operation = engineOperationRequest(
-                kind = EngineOperationKind.PostUndoSync,
-                state = pending.targetState,
-                sessionGeneration = runtimeState.sessionGeneration,
-                timeoutPolicy = engineProfileTimeoutPolicy(runtimeState.engineProfile),
-                fallbackPolicy = EngineFallbackPolicy.LocalRules,
-            )
-            var followUpAnalysisState: GameState? = null
-            runTrackedEngineOperation(operation) {
-                followUpAnalysisState = applyScoreSyncCompletionApplyPlan(
-                    runEngineIo {
-                        engineClient.runPostUndoScoreSyncApplyPlan(
-                            request = PostUndoScoreSyncEffectLaunchRequest(
-                                state = pending.targetState,
-                                profile = runtimeState.engineProfile,
-                                previousSnapshots = scoreState.scoreSnapshots,
-                                engineMessage = "Local undo settled; engine analysis synced.",
-                                operation = operation,
-                                currentState = gameState,
-                                currentSessionGeneration = runtimeState.sessionGeneration,
-                                followUpAnalysisState = pending.targetState,
-                                fallbackMessage = "Local undo engine sync failed.",
-                            ),
-                            diagnosticEventLog = diagnosticEventLog,
+            runPostUndoScoreSyncApplication(
+                PostUndoScoreSyncRunRequest(
+                    engineClient = engineClient,
+                    state = pending.targetState,
+                    profile = runtimeState.engineProfile,
+                    previousSnapshots = scoreState.scoreSnapshots,
+                    sessionGeneration = runtimeState.sessionGeneration,
+                    timeoutPolicy = engineProfileTimeoutPolicy(runtimeState.engineProfile),
+                    diagnosticEventLog = diagnosticEventLog,
+                    currentState = { gameState },
+                    currentSessionGeneration = { runtimeState.sessionGeneration },
+                    runEngineOperation = { operation, block ->
+                        runTrackedEngineOperation(operation) {
+                            block()
+                        }
+                    },
+                    applyCompletion = ::applyScoreSyncCompletionApplyPlan,
+                    requestFollowUpAnalysis = { state ->
+                        requestTopMoveAnalysisForState(
+                            targetState = state,
+                            automatic = true,
                         )
                     },
-                )
-            }
+                ),
+            )
             if (pendingPostUndoEngineSync == pending) {
                 pendingPostUndoEngineSync = null
-            }
-            followUpAnalysisState?.let { state ->
-                requestTopMoveAnalysisForState(
-                    targetState = state,
-                    automatic = true,
-                )
             }
         }
     }

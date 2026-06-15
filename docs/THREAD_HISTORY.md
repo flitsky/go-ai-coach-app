@@ -1529,3 +1529,8 @@
 - `GoCoachApp.kt`의 `submitHumanMove()` 엔진 sync 블록을 application runner 호출로 축소했다. UI는 로컬 착수 적용, completion apply 콜백, 후속 분석 요청 콜백만 담당한다.
 - `HumanMoveApplicationTest`에 human move sync runner 테스트를 추가했다. operation kind/state, engine client 호출 인자, completion apply plan, elapsed 전달, 후속 분석 요청 계약을 검증한다.
 - `LayeringContractTest`에 `goCoachAppDoesNotOwnHumanMoveSyncWorkflowBody()`를 추가했다. UI가 human move sync launch/effect/completion 세부를 다시 소유하지 못하도록 회귀를 막는다.
+- 사용자가 `8.` 다음 리팩토링 추천 항목을 단계별로 모두 진행하고, 결과 보고 시 현재 완성도와 다음 추천 작업을 정리해달라고 요청했다.
+- `PostUndoScoreSyncRunRequest`와 `runPostUndoScoreSyncApplication()`을 추가했다. 무르기 후 quiet-window가 끝난 뒤의 post-undo score sync operation 생성, engine work 실행, completion apply plan 적용, 후속 Top Moves 요청 연결을 score application runner가 소유한다.
+- `GoCoachApp.kt`의 `schedulePostUndoLocalEngineSync()` 엔진 sync 본문을 application runner 호출로 축소했다. UI는 지연/취소/대기 조건과 pending 상태 정리만 담당한다.
+- `ScoreDisplayApplicationTest`에 post-undo score sync runner 테스트를 추가했다. operation kind/moveCount, engine client sync state, completion apply plan, follow-up analysis 요청을 검증한다.
+- `LayeringContractTest`에 `goCoachAppDoesNotOwnPostUndoScoreSyncWorkflowBody()`를 추가했다. UI가 post-undo operation/effect/apply 세부를 다시 소유하지 못하도록 회귀를 막는다.

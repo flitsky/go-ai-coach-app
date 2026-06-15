@@ -3,6 +3,7 @@ package com.worksoc.goaicoach.application
 import com.worksoc.goaicoach.application.engine.operation.*
 
 import com.worksoc.goaicoach.application.analysis.*
+import com.worksoc.goaicoach.application.diagnostic.NoopDiagnosticEventLog
 import com.worksoc.goaicoach.application.endgame.*
 import com.worksoc.goaicoach.application.engine.*
 import com.worksoc.goaicoach.application.session.*
@@ -774,6 +775,48 @@ class ScoreDisplayApplicationTest {
         assertEquals("undo synced", (success as ScoreSyncCompletionPlan.ApplySuccess).display.engineMessage)
         assertTrue(failure is ScoreSyncCompletionPlan.ApplyFailure)
         assertEquals("post undo failed", (failure as ScoreSyncCompletionPlan.ApplyFailure).engineMessage)
+    }
+
+    @Test
+    fun postUndoScoreSyncApplicationRunnerLaunchesOperationAndRequestsFollowUpAnalysis() = runBlocking {
+        val state = GameState.empty()
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+        val client = FakeScoreEngineSessionClient()
+        var launchedKind: EngineOperationKind? = null
+        var launchedMoveCount: Int? = null
+        var applied: ScoreSyncCompletionApplyPlan? = null
+        var followUpState: GameState? = null
+
+        runPostUndoScoreSyncApplication(
+            PostUndoScoreSyncRunRequest(
+                engineClient = client,
+                state = state,
+                profile = EngineProfile(name = "post-undo"),
+                previousSnapshots = emptyList(),
+                sessionGeneration = 4L,
+                timeoutPolicy = EngineTimeoutPolicy(timeoutMillis = 250L, label = "test"),
+                diagnosticEventLog = NoopDiagnosticEventLog,
+                currentState = { state },
+                currentSessionGeneration = { 4L },
+                runEngineOperation = { operation, block ->
+                    launchedKind = operation.kind
+                    launchedMoveCount = operation.moveCount
+                    block()
+                },
+                runEngineWork = { block -> block() },
+                applyCompletion = { plan ->
+                    applied = plan
+                    (plan as? ScoreSyncCompletionApplyPlan.ApplySuccess)?.followUpAnalysisState
+                },
+                requestFollowUpAnalysis = { nextState -> followUpState = nextState },
+            ),
+        )
+
+        assertEquals(EngineOperationKind.PostUndoSync, launchedKind)
+        assertEquals(state.moves.size, launchedMoveCount)
+        assertEquals(state, client.syncedState)
+        assertTrue(applied is ScoreSyncCompletionApplyPlan.ApplySuccess)
+        assertEquals(state, followUpState)
     }
 
     @Test
