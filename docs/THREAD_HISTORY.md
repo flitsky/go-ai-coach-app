@@ -1490,3 +1490,6 @@
 - `UserPreferencesSnapshot.toKaTrainUxOptions()` mapping을 `presentation/KaTrainUxOptionsMapper.kt`로 이동했다. `GoCoachApp.kt` 하단 helper를 제거해 presentation DTO 변환 책임을 presentation 계층에 둔다.
 - `docs/refactoring/GO_COACH_APP_SPLIT_PLAN_2026-06-15.md`를 추가했다. 결론은 `GoCoachApp.kt` 2천 줄 이상은 최종적으로 괜찮지 않으며, 지금까지는 안전장치 구축 단계였고 이제 2nd phase.4부터 Auto AI 실행 본문 분리로 1,900줄대 진입을 목표로 한다는 것이다.
 - 현재 metric은 `GoCoachApp.kt` 2,068줄, application import fan-in 71개, 직접 coroutine/IO primitive 0개, root application package 파일 수 0개다.
+- 사용자가 완전히 다른 개발자의 바둑 앱 관점 외부 분석을 제공했고, 원문 보존과 내부 방향성 검토를 요청했다.
+- 원문은 `docs/refactoring/EXTERNAL_REVIEW_2026-06-15_GO_APP_PRODUCT_PERSPECTIVE_RAW.md`에 저장했다. 외부 핵심 지적은 `EngineCoreApi` 경계는 강하지만 `GoCoachApp.kt` orchestration hub, iOS target 부재, raw `EngineCoreApi` 도메인 누수, 약한 layering test가 남아 있다는 것이다.
+- 내부 검토는 `docs/refactoring/INTERNAL_GO_APP_PRODUCT_REVIEW_2026-06-15.md`에 작성했다. 결론은 외부 리뷰를 대체로 수용하되, 즉시 방향은 아키텍처 점수 경쟁보다 바둑 규칙/종국 정확성, 단방향 engine orchestration, Android-first 제품 안정성을 우선하는 것으로 정리했다.

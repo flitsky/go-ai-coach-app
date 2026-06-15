@@ -53,6 +53,7 @@
 | `refactoring/ENGINE_SEARCH_MODE_ROADMAP_2026-06-13.md` | GTP stateful fast path와 JSON position analysis를 정책으로 분리하고 단계적으로 실험하는 로드맵 |
 | `refactoring/REFACTORING_COMPLETION_ASSESSMENT_2026-06-13.md` | 현재 계층 분리 완성도 평가, 남은 리스크, 다음 리팩토링 추천 순서 |
 | `refactoring/ARCHITECTURE_LAYERS_REVIEW_2026-06-14.md` | 7계층 아키텍처 초안에 대한 비판적 정제 검토와 수용/보완 원칙 |
+| `refactoring/INTERNAL_GO_APP_PRODUCT_REVIEW_2026-06-15.md` | 외부 바둑 앱 관점 리뷰를 제품 정확성, 엔진 오케스트레이션, KMP 확장성 기준으로 재검토한 내부 판단 |
 
 ## 검토 초안/스냅샷
 
@@ -61,3 +62,4 @@
 | 위치 | 용도 |
 | --- | --- |
 | `ARCHITECTURE_LAYERS_ANALYSIS.md` | 2026-06-14 7계층 아키텍처 구조 분석 원문 초안 |
+| `refactoring/EXTERNAL_REVIEW_2026-06-15_GO_APP_PRODUCT_PERSPECTIVE_RAW.md` | 2026-06-15 외부 바둑 앱 관점 리뷰 원문 보존 |
