@@ -1499,3 +1499,8 @@
 - 다음 리팩토링에서 Auto AI와 Top Moves의 자동 트리거 `LaunchedEffect`를 `runTurnAutomationTriggerEffect()`로 통합했다. undo quiet-window delay는 한 번만 계산하고, AI 요청 후 캡처된 보드 상태 기준 Top Moves 분석을 요청하도록 테스트로 고정했다.
 - `match` 정책의 AI 착수 선택 경계를 `AiMoveEngineGateway`로 축소했다. `MatchPolicy`는 더 이상 raw `EngineCoreApi` 전체를 직접 알지 않고, local engine 구현만 `LocalAiMoveEngineGateway`에서 raw core API를 감싼다.
 - 종국 처리도 `EndgameJudgeGateway`로 축소했다. `EndgameResolver`는 `deadStones`, `estimateScore`, `scoreFinal`, `configure`만 알고, local engine raw core 호출은 `LocalEndgameJudgeGateway`가 감싼다.
+- 사용자가 다음 리팩토링 추천 항목을 단계별로 모두 진행하고, 결과 보고 시 현재 완성도와 다음 추천 작업을 정리해달라고 요청했다.
+- `EngineSession.kt`에 남아 있던 세션 오케스트레이션용 `EngineCoreApi` 확장 함수들을 제거하고 `LocalEngineCoreSessionDelegate` 내부 구현으로 흡수했다. 이제 `EngineSession.kt`는 low-level `syncToGameState()`와 공통 helper/data model만 남기고, start/new-game/auto-ai/human-sync/endgame/score estimate 실행 소유권은 delegate가 가진다.
+- `ScoreEstimateRunnerApplication.kt`와 `ScoreSyncRunnerApplication.kt`가 로컬 엔진 확장 함수 import에 기대지 않고 `EngineSessionClient` 계약의 member function을 호출하도록 정리했다. 원격 엔진 client가 들어와도 score runner는 같은 application-facing interface를 사용할 수 있다.
+- `EngineSessionTest`를 `LocalEngineCoreSessionDelegate` 기준으로 갱신했다. 기존 extension 테스트는 delegate boundary 테스트로 바뀌어 앱 실제 호출 구조와 테스트 구조가 더 가까워졌다.
+- `LayeringContractTest`에 `localEngineSessionDelegateOwnsSessionOrchestration()`과 `scoreRunnersUseEngineSessionClientContractOnly()`를 추가했다. 세션 오케스트레이션 확장 함수 회귀와 score runner의 raw local helper import 회귀를 자동으로 막는다.

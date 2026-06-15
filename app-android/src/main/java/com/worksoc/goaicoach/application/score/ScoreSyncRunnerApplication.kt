@@ -6,12 +6,10 @@ import com.worksoc.goaicoach.shared.engine.EngineOperationRequest
 import com.worksoc.goaicoach.application.engine.EngineSessionClient
 import com.worksoc.goaicoach.shared.engine.EngineTimeoutPolicy
 import com.worksoc.goaicoach.application.session.GameSessionEffect
-import com.worksoc.goaicoach.application.engine.configureSyncAndEstimateGraphScore
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.diagnostic.NoopDiagnosticEventLog
 import com.worksoc.goaicoach.application.diagnostic.runObservedEngineOperation
 import com.worksoc.goaicoach.shared.engine.engineOperationRequest
-import com.worksoc.goaicoach.application.engine.syncAndEstimateGraphScore
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.ScoreSnapshot

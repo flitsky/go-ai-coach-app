@@ -1,6 +1,8 @@
 package com.worksoc.goaicoach.application.engine
 
 import com.worksoc.goaicoach.application.endgame.AiEndgameResolution
+import com.worksoc.goaicoach.application.endgame.resolveAiEndgame
+import com.worksoc.goaicoach.match.MatchReferee
 import com.worksoc.goaicoach.match.applyAiTurn
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.AnalysisResult
@@ -16,6 +18,7 @@ import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.ScoreEstimate
+import com.worksoc.goaicoach.shared.ScoreTimeline
 
 internal class LocalEngineCoreSessionDelegate(
     private val coreApi: EngineCoreApi,
@@ -24,15 +27,37 @@ internal class LocalEngineCoreSessionDelegate(
     suspend fun startSession(
         profile: EngineProfile,
         state: GameState,
-    ): EngineStartupResult =
-        coreApi.startEngineSession(profile, state)
+    ): EngineStartupResult {
+        val init = coreApi.initialize(profile)
+        val newGame = coreApi.newGame(state.boardSize, state.ruleset)
+        val estimate = runCatching {
+            coreApi.estimateScore(scoreGraphAnalysisLimit(profile))
+        }.getOrNull()
+        return EngineStartupResult(
+            message = "Ready for ${state.boardSize.value}x${state.boardSize.value} match.\n${init.message}\n${newGame.message}",
+            scoreSnapshot = estimate?.let { ScoreTimeline.fromEstimate(state.moves.size, it) },
+        )
+    }
 
     suspend fun startNewGame(
         profile: EngineProfile,
         boardSize: BoardSize,
         ruleset: Ruleset,
-    ): EngineStartupResult =
-        coreApi.startNewEngineGame(profile, boardSize, ruleset)
+    ): EngineStartupResult {
+        // A fresh process is intentional here. KataGo's GTP search tree can
+        // survive clear_board across repeated games, causing the next game to
+        // replay nearly instantly from retained search data.
+        coreApi.stop()
+        coreApi.initialize(profile)
+        val status = coreApi.newGame(boardSize, ruleset)
+        val estimate = runCatching {
+            coreApi.estimateScore(scoreGraphAnalysisLimit(profile))
+        }.getOrNull()
+        return EngineStartupResult(
+            message = status.message,
+            scoreSnapshot = estimate?.let { ScoreTimeline.fromEstimate(0, it) },
+        )
+    }
 
     suspend fun syncAndAnalyzePosition(
         state: GameState,
@@ -45,14 +70,18 @@ internal class LocalEngineCoreSessionDelegate(
     suspend fun syncAndEstimateGraphScore(
         state: GameState,
         profile: EngineProfile,
-    ): ScoreEstimate =
-        coreApi.syncAndEstimateGraphScore(state, profile)
+    ): ScoreEstimate {
+        coreApi.syncToGameState(state)
+        return coreApi.estimateScore(scoreGraphAnalysisLimit(profile))
+    }
 
     suspend fun configureSyncAndEstimateGraphScore(
         state: GameState,
         profile: EngineProfile,
-    ): ScoreEstimate =
-        coreApi.configureSyncAndEstimateGraphScore(state, profile)
+    ): ScoreEstimate {
+        coreApi.configure(profile)
+        return syncAndEstimateGraphScore(state, profile)
+    }
 
     suspend fun runAutoAiTurn(
         currentState: GameState,
@@ -94,36 +123,62 @@ internal class LocalEngineCoreSessionDelegate(
         profile: EngineProfile,
         move: Move,
         previousReviewCandidates: List<CandidateMove>,
-    ): LocalEngineMoveResult =
-        coreApi.syncAfterHumanMove(
-            afterMove = afterMove,
-            profile = profile,
-            move = move,
-            previousReviewCandidates = previousReviewCandidates,
-            clock = clock,
-        )
+    ): LocalEngineMoveResult {
+        val syncReplayStartMillis = clock.currentTimeMillis()
+        coreApi.syncToGameState(afterMove)
+        val syncReplayMs = clock.currentTimeMillis() - syncReplayStartMillis
+        return if (MatchReferee.shouldResolveEndgame(afterMove)) {
+            val deadStonesProfile = profile.withAssistantJudgeDeadStonesTimeCap()
+            val finalScoreProfile = profile.withAssistantJudgeFinalScoreTimeCap()
+            LocalEngineMoveResult(
+                endgame = resolveAiEndgame(
+                    judgeGateway = LocalEndgameJudgeGateway(coreApi),
+                    originalState = afterMove,
+                    estimateLimit = scoreGraphAnalysisLimit(deadStonesProfile),
+                    prePassCandidates = if (move is Move.Pass) {
+                        previousReviewCandidates
+                    } else {
+                        emptyList()
+                    },
+                    syncReplayMs = syncReplayMs,
+                    assistantJudgeDeadStonesProfile = deadStonesProfile,
+                    assistantJudgeFinalScoreProfile = finalScoreProfile,
+                ),
+            )
+        } else {
+            LocalEngineMoveResult(
+                estimate = coreApi.estimateScore(scoreGraphAnalysisLimit(profile)),
+            )
+        }
+    }
 
     suspend fun estimateScoreForState(
         state: GameState,
         profile: EngineProfile,
         syncFirst: Boolean,
-    ): ScoreEstimate =
-        coreApi.estimateScoreForState(
-            state = state,
-            profile = profile,
-            syncFirst = syncFirst,
-        )
+    ): ScoreEstimate {
+        if (syncFirst) {
+            coreApi.syncToGameState(state)
+        }
+        return coreApi.estimateScore(profile.analysisLimit)
+    }
 
     suspend fun resolveEndgameForState(
         state: GameState,
         profile: EngineProfile,
         prePassCandidates: List<CandidateMove>,
-    ): AiEndgameResolution =
-        coreApi.resolveEndgameForState(
-            state = state,
-            profile = profile,
+    ): AiEndgameResolution {
+        val deadStonesProfile = profile.withAssistantJudgeDeadStonesTimeCap()
+        val finalScoreProfile = profile.withAssistantJudgeFinalScoreTimeCap()
+        return resolveAiEndgame(
+            judgeGateway = LocalEndgameJudgeGateway(coreApi),
+            originalState = state,
+            estimateLimit = scoreGraphAnalysisLimit(deadStonesProfile),
             prePassCandidates = prePassCandidates,
+            assistantJudgeDeadStonesProfile = deadStonesProfile,
+            assistantJudgeFinalScoreProfile = finalScoreProfile,
         )
+    }
 
     suspend fun undoMove(): EngineStatus =
         coreApi.undoMove()

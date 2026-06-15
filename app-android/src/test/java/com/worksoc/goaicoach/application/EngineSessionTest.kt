@@ -21,6 +21,7 @@ import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.MoveResult
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.StoneColor
 import com.worksoc.goaicoach.shared.analysisFingerprint
@@ -54,11 +55,12 @@ class EngineSessionTest {
     @Test
     fun startNewEngineGameConfiguresProfileAndReturnsInitialEstimateSnapshot() = runBlocking {
         val engine = RecordingEngineAdapter()
+        val session = LocalEngineCoreSessionDelegate(engine)
         val profile = EngineProfile(
             analysisLimit = AnalysisLimit(visits = 32, timeMillis = 500, candidateCount = 8),
         )
 
-        val result = engine.startNewEngineGame(profile, BoardSize.Nine, Ruleset.Japanese)
+        val result = session.startNewGame(profile, BoardSize.Nine, Ruleset.Japanese)
 
         assertEquals(
             listOf(
@@ -87,13 +89,18 @@ class EngineSessionTest {
     @Test
     fun runAutoAiTurnConfiguresSyncsSelectsMoveAndEstimatesScore() = runBlocking {
         val engine = RecordingEngineAdapter()
+        val session = LocalEngineCoreSessionDelegate(engine)
         val state = GameState.empty()
         val playLevel = PlayLevelSetting()
 
-        val result = engine.runAutoAiTurn(
+        val result = session.runAutoAiTurn(
             currentState = state,
             playLevel = playLevel,
             currentProfile = EngineProfile(),
+            searchTimeSettings = SearchTimeSettings(),
+            searchMode = EngineSearchMode.GtpStatefulFast,
+            isolateSearchCache = false,
+            analysisProvider = { limit -> engine.analyze(limit) },
         )
 
         assertEquals(
@@ -114,12 +121,16 @@ class EngineSessionTest {
     @Test
     fun runAutoAiTurnClearsSearchCacheOnlyWhenIsolationIsRequested() = runBlocking {
         val engine = RecordingEngineAdapter()
+        val session = LocalEngineCoreSessionDelegate(engine)
 
-        engine.runAutoAiTurn(
+        session.runAutoAiTurn(
             currentState = GameState.empty(),
             playLevel = PlayLevelSetting(),
             currentProfile = EngineProfile(),
+            searchTimeSettings = SearchTimeSettings(),
+            searchMode = EngineSearchMode.GtpStatefulFast,
             isolateSearchCache = true,
+            analysisProvider = { limit -> engine.analyze(limit) },
         )
 
         assertEquals(
@@ -415,10 +426,11 @@ class EngineSessionTest {
     @Test
     fun estimateScoreForStateOptionallySyncsBoardBeforeEstimating() = runBlocking {
         val engine = RecordingEngineAdapter()
+        val session = LocalEngineCoreSessionDelegate(engine)
         val state = GameState.empty()
             .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
 
-        engine.estimateScoreForState(
+        session.estimateScoreForState(
             state = state,
             profile = EngineProfile(),
             syncFirst = true,
@@ -437,6 +449,7 @@ class EngineSessionTest {
     @Test
     fun syncAfterHumanMoveAppliesAssistantJudgeCapsForPassPassEndgame() = runBlocking {
         val engine = RecordingEngineAdapter()
+        val session = LocalEngineCoreSessionDelegate(engine)
         val state = GameState.empty()
             .play(Move.Pass(StoneColor.Black))
             .play(Move.Pass(StoneColor.White))
@@ -444,7 +457,7 @@ class EngineSessionTest {
             analysisLimit = AnalysisLimit(visits = 32, timeMillis = null, candidateCount = 8),
         )
 
-        val result = engine.syncAfterHumanMove(
+        val result = session.syncAfterHumanMove(
             afterMove = state,
             profile = profile,
             move = Move.Pass(StoneColor.White),
@@ -473,6 +486,7 @@ class EngineSessionTest {
     @Test
     fun resolveEndgameForStateAppliesAssistantJudgeCaps() = runBlocking {
         val engine = RecordingEngineAdapter()
+        val session = LocalEngineCoreSessionDelegate(engine)
         val state = GameState.empty()
             .play(Move.Pass(StoneColor.Black))
             .play(Move.Pass(StoneColor.White))
@@ -480,7 +494,7 @@ class EngineSessionTest {
             analysisLimit = AnalysisLimit(visits = 64, timeMillis = null, candidateCount = 8),
         )
 
-        val resolution = engine.resolveEndgameForState(
+        val resolution = session.resolveEndgameForState(
             state = state,
             profile = profile,
             prePassCandidates = emptyList(),

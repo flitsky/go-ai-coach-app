@@ -86,6 +86,58 @@ class LayeringContractTest {
     }
 
     @Test
+    fun localEngineSessionDelegateOwnsSessionOrchestration() {
+        val repoRoot = repoRoot()
+        val engineSession = repoRoot
+            .resolve("app-android/src/main/java/com/worksoc/goaicoach/application/engine/EngineSession.kt")
+        val sessionText = engineSession.readText()
+        val forbiddenCoreExtensions = listOf(
+            "startEngineSession",
+            "startNewEngineGame",
+            "syncAndEstimateGraphScore",
+            "configureSyncAndEstimateGraphScore",
+            "runAutoAiTurn",
+            "syncAfterHumanMove",
+            "estimateScoreForState",
+            "resolveEndgameForState",
+        )
+            .filter { name -> "fun EngineCoreApi.$name" in sessionText }
+
+        assertTrue(
+            "LocalEngineCoreSessionDelegate should own session orchestration; EngineSession.kt should keep only low-level sync/helpers:\n" +
+                forbiddenCoreExtensions.joinToString("\n"),
+            forbiddenCoreExtensions.isEmpty(),
+        )
+    }
+
+    @Test
+    fun scoreRunnersUseEngineSessionClientContractOnly() {
+        val scoreRoot = repoRoot()
+            .resolve("app-android/src/main/java/com/worksoc/goaicoach/application/score")
+        val forbiddenImports = listOf(
+            "import com.worksoc.goaicoach.application.engine.syncAndEstimateGraphScore",
+            "import com.worksoc.goaicoach.application.engine.configureSyncAndEstimateGraphScore",
+            "import com.worksoc.goaicoach.application.engine.estimateScoreForState",
+        )
+
+        val offenders = scoreRoot
+            .walkTopDown()
+            .filter { file -> file.extension == "kt" }
+            .flatMap { file ->
+                file.readLines()
+                    .filter { line -> forbiddenImports.any { forbidden -> line.startsWith(forbidden) } }
+                    .map { line -> "${file.relativeTo(repoRoot()).path}: $line" }
+            }
+            .toList()
+
+        assertTrue(
+            "Score runners should call EngineSessionClient members, not local EngineCoreApi extension helpers:\n" +
+                offenders.joinToString("\n"),
+            offenders.isEmpty(),
+        )
+    }
+
+    @Test
     fun positionAnalysisGatewayContractStaysKmpReady() {
         val middlewareRoot = repoRoot()
             .resolve("app-android/src/main/java/com/worksoc/goaicoach/middleware")
