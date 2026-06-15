@@ -1438,3 +1438,9 @@
 - `EngineBenchmarkDisplayPlan`과 waiting/running/progress/completed/failure display plan builder를 추가했다. benchmark 진행 메시지/candidate text 정책이 Compose가 아니라 engine application layer에 위치하게 됐다.
 - `GameSessionCoreState`와 `GameSessionUiStateHolder`가 `EngineBenchmarkDisplayPlan`을 적용하도록 확장했다. benchmark 진행 중 engine message/candidate text 변경은 holder/reducer 경계를 통과한다.
 - 관련 import를 갱신하며 `GoCoachApp.kt` application import fan-in을 98개에서 81개로 줄였다. `GoCoachApp.kt`는 2,089줄이며, UI 파일의 직접 coroutine/IO primitive 지점은 계속 0개다.
+- 사용자가 `ext.8` 다음 리팩토링 추천 항목을 단계별로 모두 진행하고, 결과 보고 시 현재 리팩토링 완성도 및 다음 추천 작업 리스트업을 요청했다.
+- `SavedGamePersistence.kt`, `SavedSessionPromptApplication.kt`, `SavedGameRestoreApplication.kt`, `SavedGameSnapshot.kt`를 `application/savedgame/` 하위 package로 정리했다. 특히 `SavedGameSnapshot`을 persistence adapter에서 application savedgame 도메인으로 올려 application 계층이 Android persistence package를 역참조하지 않게 했다.
+- `StartGameApplication.kt`를 `application/startgame/` 하위 package로 이동하고, `GameSessionResetPlan`과 `buildNewLocalGameSessionPlan()`도 start-game 도메인이 소유하도록 정리했다.
+- `UndoApplication.kt`를 `application/undo/` 하위 package로 이동했다. undo request/local state/completion plan과 연속 무르기 quiet-window 정책이 undo 도메인에 모였다.
+- benchmark progress callback에서 직접 `withContext(Dispatchers.Main)`을 호출하던 특수 지점을 제거하고, 기존 `launchUiEffect(scope)` bridge를 통과하도록 변경했다. `GoCoachApp.kt`는 더 이상 `Dispatchers`/`withContext`를 직접 import하지 않는다.
+- `LayeringContractTest`에 `savedgame`, `startgame`, `undo` 하위 package를 KMP/platform-free 후보로 추가했다. 현재 `GoCoachApp.kt`는 2,088줄, application import fan-in은 82개, root application package 파일 수는 21개다.

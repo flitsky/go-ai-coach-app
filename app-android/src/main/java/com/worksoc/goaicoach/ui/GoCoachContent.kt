@@ -23,7 +23,7 @@ import com.worksoc.goaicoach.application.engine.EngineBenchmarkProgress
 import com.worksoc.goaicoach.application.engine.fillSummaryText
 import com.worksoc.goaicoach.application.engine.rootSummaryText
 import com.worksoc.goaicoach.match.summary
-import com.worksoc.goaicoach.persistence.SavedGameSnapshot
+import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
 import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.presentation.GameUiEvent
 import com.worksoc.goaicoach.presentation.shouldCollapseMenuAfterEvent

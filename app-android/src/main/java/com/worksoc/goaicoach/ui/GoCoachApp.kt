@@ -25,15 +25,8 @@ import androidx.compose.ui.platform.LocalContext
 import com.worksoc.goaicoach.application.AnalysisCacheKey
 import com.worksoc.goaicoach.application.AnalysisResultCache
 import com.worksoc.goaicoach.application.buildDebugReportCopyPlan
-import com.worksoc.goaicoach.application.buildEngineUndoCompletionPlan
 import com.worksoc.goaicoach.application.buildHumanEngineSyncCompletionPlan
-import com.worksoc.goaicoach.application.buildLocalTwoPlayerUndoPlan
-import com.worksoc.goaicoach.application.buildUndoRequestPlan
-import com.worksoc.goaicoach.application.buildNewLocalGameSessionPlan
-import com.worksoc.goaicoach.application.buildSavedGameRestoreRequestPlan
-import com.worksoc.goaicoach.application.buildSavedSessionCheckPlan
 import com.worksoc.goaicoach.application.buildScoringRuleChangePlan
-import com.worksoc.goaicoach.application.buildStartConfiguredGamePlan
 import com.worksoc.goaicoach.application.buildInitialUserPreferencesPlan
 import com.worksoc.goaicoach.application.buildPlayerSetupChangePlan
 import com.worksoc.goaicoach.application.buildPositionAnalysisCacheOptimizationPlan
@@ -58,8 +51,6 @@ import com.worksoc.goaicoach.application.engineOperationRequest
 import com.worksoc.goaicoach.application.evaluateEngineBenchmarkGate
 import com.worksoc.goaicoach.application.evaluateScoringRuleChangeGate
 import com.worksoc.goaicoach.application.evaluateSearchTimeChangeGate
-import com.worksoc.goaicoach.application.EngineUndoCompletionPlan
-import com.worksoc.goaicoach.application.GameSessionResetPlan
 import com.worksoc.goaicoach.application.HumanEngineSyncFailurePlan
 import com.worksoc.goaicoach.application.HumanEngineSyncDisplayPlan
 import com.worksoc.goaicoach.application.HumanEngineSyncCompletionApplyPlan
@@ -74,27 +65,36 @@ import com.worksoc.goaicoach.application.PostGamePositionAnalysisCacheOptimizati
 import com.worksoc.goaicoach.application.recordEngineOperationDiscardLog
 import com.worksoc.goaicoach.application.localScoreSnapshot
 import com.worksoc.goaicoach.application.selectRuntimePlayLevel
-import com.worksoc.goaicoach.application.planSavedGamePersistence
 import com.worksoc.goaicoach.application.RuntimePlayLevelSelection
 import com.worksoc.goaicoach.application.ScoringRuleChangePlan
 import com.worksoc.goaicoach.application.runEngineOperationInScope
 import com.worksoc.goaicoach.application.runHumanEngineSyncWorkflowResult
 import com.worksoc.goaicoach.application.runPositionAnalysisCacheOptimizationWorkflowResult
+import com.worksoc.goaicoach.application.savedgame.SavedGamePersistencePlan
+import com.worksoc.goaicoach.application.savedgame.SavedGameRestorePlan
+import com.worksoc.goaicoach.application.savedgame.SavedGameRestoreRequestPlan
+import com.worksoc.goaicoach.application.savedgame.SavedSessionPromptPlan
+import com.worksoc.goaicoach.application.savedgame.SavedSessionUiState
+import com.worksoc.goaicoach.application.savedgame.buildSavedGameRestoreRequestPlan
+import com.worksoc.goaicoach.application.savedgame.buildSavedSessionCheckPlan
+import com.worksoc.goaicoach.application.savedgame.planSavedGamePersistence
+import com.worksoc.goaicoach.application.startgame.GameSessionResetPlan
+import com.worksoc.goaicoach.application.startgame.StartConfiguredGamePlan
+import com.worksoc.goaicoach.application.startgame.buildNewLocalGameSessionPlan
+import com.worksoc.goaicoach.application.startgame.buildStartConfiguredGamePlan
 import com.worksoc.goaicoach.application.toDebugReportSnapshot
 import com.worksoc.goaicoach.application.runDebugReportCopyEffect
 import com.worksoc.goaicoach.application.toApplyPlan
-import com.worksoc.goaicoach.application.SavedGameRestorePlan
-import com.worksoc.goaicoach.application.SavedGameRestoreRequestPlan
-import com.worksoc.goaicoach.application.SavedGamePersistencePlan
 import com.worksoc.goaicoach.application.SavedGameStorePort
-import com.worksoc.goaicoach.application.SavedSessionPromptPlan
-import com.worksoc.goaicoach.application.SavedSessionUiState
-import com.worksoc.goaicoach.application.StartConfiguredGamePlan
-import com.worksoc.goaicoach.application.undoEngineInterventionQuietUntilMillis
-import com.worksoc.goaicoach.application.undoEngineInterventionRemainingDelayMillis
 import com.worksoc.goaicoach.application.UndoAnalysisRestoreCache
-import com.worksoc.goaicoach.application.UndoRequestPlan
-import com.worksoc.goaicoach.application.UndoLocalStatePlan
+import com.worksoc.goaicoach.application.undo.EngineUndoCompletionPlan
+import com.worksoc.goaicoach.application.undo.UndoLocalStatePlan
+import com.worksoc.goaicoach.application.undo.UndoRequestPlan
+import com.worksoc.goaicoach.application.undo.buildEngineUndoCompletionPlan
+import com.worksoc.goaicoach.application.undo.buildLocalTwoPlayerUndoPlan
+import com.worksoc.goaicoach.application.undo.buildUndoRequestPlan
+import com.worksoc.goaicoach.application.undo.undoEngineInterventionQuietUntilMillis
+import com.worksoc.goaicoach.application.undo.undoEngineInterventionRemainingDelayMillis
 import com.worksoc.goaicoach.application.UserPreferencesStorePort
 import com.worksoc.goaicoach.application.UserNoticePort
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
@@ -105,7 +105,7 @@ import com.worksoc.goaicoach.persistence.GameSessionStore
 import com.worksoc.goaicoach.persistence.EngineBenchmarkStore
 import com.worksoc.goaicoach.persistence.DebugReportMirrorStore
 import com.worksoc.goaicoach.persistence.RuntimeEventLog
-import com.worksoc.goaicoach.persistence.SavedGameSnapshot
+import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
 import com.worksoc.goaicoach.persistence.UserPreferencesSnapshot
 import com.worksoc.goaicoach.persistence.UserPreferencesStore
 import com.worksoc.goaicoach.presentation.GameUiEvent
@@ -127,10 +127,8 @@ import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.ScoreTimeline
 import com.worksoc.goaicoach.shared.describe
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.withContext
 import java.io.File
 
 private data class PendingPostUndoEngineSync(
@@ -532,12 +530,13 @@ private fun GoCoachScreen(
                             operationRequest = operation,
                             diagnosticEventLog = diagnosticEventLog,
                             onProgress = { progress ->
-                                withContext(Dispatchers.Main) {
+                                launchUiEffect(scope) {
                                     benchmarkUiState = benchmarkUiState.updateProgress(progress)
                                     uiStateHolder.applyEngineBenchmarkDisplayPlan(
                                         progress.toEngineBenchmarkDisplayPlan(),
                                     )
                                 }
+                                Unit
                             }
                         )
                 }

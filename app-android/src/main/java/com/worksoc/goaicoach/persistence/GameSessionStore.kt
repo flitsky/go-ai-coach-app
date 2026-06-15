@@ -2,6 +2,7 @@ package com.worksoc.goaicoach.persistence
 
 import android.content.Context
 import com.worksoc.goaicoach.application.SavedGameStorePort
+import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.persistence.PlayerSetupJsonCodec.decodePlayerSetup
 import com.worksoc.goaicoach.persistence.PlayerSetupJsonCodec.decodePlayLevel
@@ -12,22 +13,10 @@ import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.GameStateReplayer
 import com.worksoc.goaicoach.shared.Move
-import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.StoneColor
 import org.json.JSONArray
 import org.json.JSONObject
-
-internal data class SavedGameSnapshot(
-    val gameState: GameState,
-    val playerSetup: PlayerSetup,
-    val playLevel: PlayLevelSetting,
-    val topMovesEnabled: Boolean,
-    val savedAtMillis: Long,
-) {
-    val isResumable: Boolean =
-        gameState.moves.isNotEmpty() && !gameState.hasConsecutivePasses() && !gameState.isBoardFull()
-}
 
 internal class GameSessionStore(context: Context) : SavedGameStorePort {
     private val prefs = context.applicationContext.getSharedPreferences(PrefsName, Context.MODE_PRIVATE)

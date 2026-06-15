@@ -11,7 +11,7 @@ import com.worksoc.goaicoach.match.MatchSeatSnapshot
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.turnStatusText
-import com.worksoc.goaicoach.persistence.SavedGameSnapshot
+import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
 import com.worksoc.goaicoach.shared.AnalysisPreset
 import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.EngineProfile

@@ -4,7 +4,6 @@ import com.worksoc.goaicoach.application.HumanEngineSyncFailurePlan
 import com.worksoc.goaicoach.application.HumanMoveLocalResult
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkDisplayPlan
 import com.worksoc.goaicoach.application.engine.EngineStartupDisplayPlan
-import com.worksoc.goaicoach.application.UndoLocalStatePlan
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnDisplayPlan
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnFailureDisplayPlan
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnFollowUpPlan
@@ -14,6 +13,7 @@ import com.worksoc.goaicoach.application.score.FinalScoreDisplayPlan
 import com.worksoc.goaicoach.application.score.ScoreEstimateDisplayPlan
 import com.worksoc.goaicoach.application.score.ScoreEstimateFailureDisplayPlan
 import com.worksoc.goaicoach.application.topmoves.TopMoveAnalysisFailureDisplayPlan
+import com.worksoc.goaicoach.application.undo.UndoLocalStatePlan
 
 internal class GameSessionUiStateHolder(
     private val currentCoreState: () -> GameSessionCoreState,

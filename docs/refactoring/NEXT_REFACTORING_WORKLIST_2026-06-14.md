@@ -1286,3 +1286,42 @@
 5. root application package 파일 수 감축 목표 설정
    - 다음 2~3회 리팩토링에서 root application 파일 수를 25개에서 18개 이하로 낮춘다.
    - acceptance: root package가 공통 port/facade/legacy compatibility만 담도록 수렴한다.
+
+## 2026-06-15 추가 진행 로그: ext.8 savedgame/startgame/undo package 분리
+
+- 2026-06-15: `SavedGamePersistence.kt`, `SavedSessionPromptApplication.kt`, `SavedGameRestoreApplication.kt`, `SavedGameSnapshot.kt`를 `application/savedgame/` 하위 package로 정리했다. 저장/복원 prompt, 자동 저장 plan, 복원 plan, 저장 snapshot DTO가 같은 도메인에 모였다.
+- `SavedGameSnapshot`을 `persistence` package에서 `application/savedgame`으로 이동했다. 이는 savedgame application logic이 Android persistence adapter를 역참조하던 계층 위반을 제거하기 위한 변경이며, `GameSessionStore`와 `SavedGameSessionCodec`은 application snapshot을 serialize/deserialize하는 adapter 역할만 맡는다.
+- `StartGameApplication.kt`를 `application/startgame/` 하위 package로 이동했다. `GameSessionResetPlan`과 `buildNewLocalGameSessionPlan()`도 start-game 도메인으로 이동해 새 게임 reset display policy가 root application package에서 빠졌다.
+- `UndoApplication.kt`를 `application/undo/` 하위 package로 이동했다. undo request plan, local undo display plan, engine undo completion plan, quiet-window delay policy가 undo 도메인에 모였다.
+- benchmark progress callback에서 직접 `withContext(Dispatchers.Main)`을 호출하던 지점을 제거하고, 기존 `launchUiEffect(scope)` bridge를 통해 UI state update를 예약하게 했다. `GoCoachApp.kt`는 더 이상 `Dispatchers`/`withContext`를 직접 import하지 않는다.
+- `LayeringContractTest`에 `savedgame`, `startgame`, `undo` package를 platform-free 후보로 추가했다. 이 과정에서 savedgame의 persistence 역참조가 드러났고, snapshot DTO 이동으로 해결했다.
+- 현재 metric: `GoCoachApp.kt`는 2,088줄, UI 파일 안의 `scope.launch`/`withContext`/`Dispatchers`/`runCatching` 직접 지점은 0개다. application import fan-in은 82개이며, root application package 파일 수는 21개다.
+
+## 현재 리팩토링/아키텍처 완성도 평가
+
+- 리팩토링 배치 진행도: 99.985/100.
+- 외부 평가 기준 플랫폼 아키텍처 완성도: 98.4/100.
+- 상향 요인: root application package가 25개에서 21개로 줄었고, savedgame/startgame/undo가 각각 독립 package로 분리됐다. 저장 snapshot DTO가 persistence에서 application 도메인으로 이동하면서 KMP 후보 계층의 방향성이 더 정확해졌다.
+- 남은 감점 요인: root application package에는 human move, cache optimization, debug report, endgame resolver, engine operation facade/adapter, analysis cache/formatter가 남아 있다. `GoCoachApp.kt`도 여전히 2천 줄 이상이며 import fan-in은 snapshot 도메인 이동 영향으로 81개에서 82개가 됐다.
+
+## 다음 추천 리팩토링 항목 - ext.9
+
+1. `humanmove` package 분리
+   - `HumanMoveApplication.kt`를 `application/humanmove` 하위 package로 이동한다.
+   - acceptance: human move targeted test와 session reducer compile/test 통과.
+
+2. `cache` 또는 `analysiscache` package 분리
+   - `AnalysisSession.kt`, `PositionAnalysisCache.kt`, `PositionAnalysisCacheOptimization.kt`의 책임을 analysis cache/session cache/optimization으로 나눈다.
+   - acceptance: Top Moves/cache optimization tests 통과, undo restore cache 위치 재검토.
+
+3. `debugreport` package 분리
+   - `DebugReportBuilder.kt`와 debug report copy plan/effect를 `application/debugreport`로 이동한다.
+   - acceptance: debug report snapshot/build/copy tests 통과.
+
+4. `endgame` package 분리
+   - `EndgameResolver.kt`를 `application/endgame`으로 이동하고 score package와의 의존 방향을 확인한다.
+   - acceptance: final score/endgame targeted tests와 architecture contract 통과.
+
+5. root `ApplicationPorts.kt` 추가 축소
+   - 남은 store/clipboard/notice/debug mirror port를 각 도메인 package로 이동할 수 있는지 검토한다.
+   - acceptance: root application package가 compatibility facade와 cross-domain model 중심으로 줄어든다.

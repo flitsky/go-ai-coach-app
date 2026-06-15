@@ -1,14 +1,13 @@
 package com.worksoc.goaicoach.application.session
 
-import com.worksoc.goaicoach.application.GameSessionResetPlan
 import com.worksoc.goaicoach.application.HumanEngineSyncFailurePlan
 import com.worksoc.goaicoach.application.HumanMoveLocalResult
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkDisplayPlan
 import com.worksoc.goaicoach.application.engine.EngineStartupDisplayPlan
 import com.worksoc.goaicoach.application.PlayerSetupChangePlan
-import com.worksoc.goaicoach.application.SavedGameRestorePlan
+import com.worksoc.goaicoach.application.savedgame.SavedGameRestorePlan
 import com.worksoc.goaicoach.application.ScoringRuleChangePlan
-import com.worksoc.goaicoach.application.UndoLocalStatePlan
+import com.worksoc.goaicoach.application.startgame.GameSessionResetPlan
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnDisplayPlan
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnFailureDisplayPlan
 import com.worksoc.goaicoach.application.score.EndgameFailureDisplayPlan
@@ -16,6 +15,7 @@ import com.worksoc.goaicoach.application.score.FinalScoreDisplayPlan
 import com.worksoc.goaicoach.application.score.ScoreEstimateDisplayPlan
 import com.worksoc.goaicoach.application.score.ScoreEstimateFailureDisplayPlan
 import com.worksoc.goaicoach.application.topmoves.TopMoveAnalysisFailureDisplayPlan
+import com.worksoc.goaicoach.application.undo.UndoLocalStatePlan
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
 

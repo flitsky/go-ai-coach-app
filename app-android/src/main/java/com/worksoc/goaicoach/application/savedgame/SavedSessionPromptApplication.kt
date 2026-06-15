@@ -1,6 +1,4 @@
-package com.worksoc.goaicoach.application
-
-import com.worksoc.goaicoach.persistence.SavedGameSnapshot
+package com.worksoc.goaicoach.application.savedgame
 
 internal data class SavedSessionPromptPlan(
     val pendingSavedSession: SavedGameSnapshot?,

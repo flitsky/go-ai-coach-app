@@ -5,7 +5,7 @@ import com.worksoc.goaicoach.application.engine.EngineBenchmarkUiState
 import com.worksoc.goaicoach.application.HumanEngineSyncRunPlan
 import com.worksoc.goaicoach.application.PositionAnalysisCacheOptimizationPlan
 import com.worksoc.goaicoach.application.PositionAnalysisCacheOptimizationUiState
-import com.worksoc.goaicoach.application.SavedSessionUiState
+import com.worksoc.goaicoach.application.savedgame.SavedSessionUiState
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnEndgamePlan
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnRunPlan
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnUiState

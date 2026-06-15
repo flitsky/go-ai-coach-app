@@ -1,7 +1,6 @@
-package com.worksoc.goaicoach.application
+package com.worksoc.goaicoach.application.savedgame
 
 import com.worksoc.goaicoach.match.PlayerSetup
-import com.worksoc.goaicoach.persistence.SavedGameSnapshot
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 

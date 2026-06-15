@@ -1,7 +1,9 @@
 package com.worksoc.goaicoach.application
 
+import com.worksoc.goaicoach.application.savedgame.*
+
 import com.worksoc.goaicoach.match.PlayerSetup
-import com.worksoc.goaicoach.persistence.SavedGameSnapshot
+import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.GameState

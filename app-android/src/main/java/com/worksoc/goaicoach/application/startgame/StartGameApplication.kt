@@ -1,12 +1,31 @@
-package com.worksoc.goaicoach.application
+package com.worksoc.goaicoach.application.startgame
 
+import com.worksoc.goaicoach.application.RuntimePlayLevelSelection
+import com.worksoc.goaicoach.application.localScoreSnapshot
+import com.worksoc.goaicoach.application.selectRuntimePlayLevel
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
+import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.EngineProfile
+import com.worksoc.goaicoach.shared.GameState
+import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.SearchTimeSettings
+import com.worksoc.goaicoach.shared.ScoreSnapshot
 import com.worksoc.goaicoach.shared.StoneColor
+
+internal data class GameSessionResetPlan(
+    val gameState: GameState,
+    val candidateText: String,
+    val reviewAnalysis: MoveAnalysisSnapshot,
+    val scoreText: String,
+    val scoreSnapshots: List<ScoreSnapshot>,
+    val moveReviewText: String,
+    val lastMoveText: String,
+    val endgameLog: String,
+    val engineMessage: String,
+)
 
 internal sealed class StartConfiguredGamePlan {
     data class ShowMessage(val message: String) : StartConfiguredGamePlan()
@@ -18,6 +37,24 @@ internal sealed class StartConfiguredGamePlan {
         val ruleset: Ruleset,
         val runtime: RuntimePlayLevelSelection,
     ) : StartConfiguredGamePlan()
+}
+
+internal fun buildNewLocalGameSessionPlan(
+    message: String,
+    ruleset: Ruleset,
+): GameSessionResetPlan {
+    val state = GameState.empty(BoardSize.Nine, ruleset)
+    return GameSessionResetPlan(
+        gameState = state,
+        candidateText = "No analysis yet.",
+        reviewAnalysis = MoveAnalysisSnapshot.empty(state),
+        scoreText = "No score estimate yet.",
+        scoreSnapshots = listOf(localScoreSnapshot(state)),
+        moveReviewText = "No move review yet.",
+        lastMoveText = "None",
+        endgameLog = "No endgame result recorded.",
+        engineMessage = message,
+    )
 }
 
 internal fun buildStartConfiguredGamePlan(

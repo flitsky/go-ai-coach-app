@@ -1,6 +1,6 @@
 package com.worksoc.goaicoach.application
 
-import com.worksoc.goaicoach.persistence.SavedGameSnapshot
+import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
 import com.worksoc.goaicoach.persistence.UserPreferencesSnapshot
 
 internal interface SavedGameStorePort {

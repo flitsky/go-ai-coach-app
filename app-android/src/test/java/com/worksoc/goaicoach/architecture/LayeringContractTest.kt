@@ -137,13 +137,17 @@ class LayeringContractTest {
             applicationRoot.resolve("PositionAnalysisCacheOptimization.kt"),
             applicationRoot.resolve("runtime/RuntimeEventApplication.kt"),
             applicationRoot.resolve("runtime/RuntimeEventPorts.kt"),
+            applicationRoot.resolve("savedgame/SavedGamePersistence.kt"),
+            applicationRoot.resolve("savedgame/SavedGameRestoreApplication.kt"),
+            applicationRoot.resolve("savedgame/SavedSessionPromptApplication.kt"),
             applicationRoot.resolve("score/ScoreDisplayApplication.kt"),
             applicationRoot.resolve("score/ScoreDisplayFormatterApplication.kt"),
             applicationRoot.resolve("score/ScoreEstimateRunnerApplication.kt"),
             applicationRoot.resolve("score/ScoreSyncRunnerApplication.kt"),
             applicationRoot.resolve("score/ScoreSyncCompletionApplication.kt"),
+            applicationRoot.resolve("startgame/StartGameApplication.kt"),
             applicationRoot.resolve("topmoves/TopMovesApplication.kt"),
-            applicationRoot.resolve("UndoApplication.kt"),
+            applicationRoot.resolve("undo/UndoApplication.kt"),
         )
         val forbiddenImports = listOf(
             "import android.",
