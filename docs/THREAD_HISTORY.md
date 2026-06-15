@@ -1466,3 +1466,6 @@
 - debug report copy 흐름에 `DebugReportCopyActionRequest`와 `runDebugReportCopyAction()`을 추가했다. `GoCoachApp.kt`는 debug report snapshot/plan/effect 조립을 직접 하지 않고 action request를 넘기는 형태로 단순화됐다.
 - `LayeringContractTest`는 preferences snapshot/application/ports, `AnalysisSession.kt`, `EngineSessionClient.kt`, `EngineAssistantJudgePolicy.kt`를 platform-free 후보로 추가했다.
 - 검증으로 compile, targeted unit test 묶음, `git diff --check`, `make test`를 실행했고 모두 통과했다. 현재 metric은 `GoCoachApp.kt` 2,086줄, UI 파일 내 직접 coroutine/IO primitive 0개, application import fan-in 82개, root application package 파일 수 8개다.
+- 사용자가 ext.11 이후 다른 개발자의 2차 평가 피드백을 제공했고, 원문 저장 및 내부 냉정 분석 문서 생성을 요청했다.
+- 원문은 `docs/refactoring/EXTERNAL_REVIEW_2026-06-15_ARCHITECTURE_SCORE_96_RAW.md`에 저장했다. 핵심 외부 평가는 96/100, application 하위 package 16개, `GoCoachApp.kt` import 127개, `withContext`/`scope.launch` 0개, KMP 물리 이동 2건, external sink adapter 구현 완료라는 판정이다.
+- 내부 검토는 `docs/refactoring/INTERNAL_ARCHITECT_REVIEW_OF_SCORE_96_FEEDBACK_2026-06-15.md`에 작성했다. 결론은 96점을 조건부 수용하되, 네트워크 diagnostic sink와 import 40개대 목표는 즉시 구현보다 로드맵으로 두고, shared/commonTest 보강과 shared 바둑 규칙 regression, `LaunchedEffect` 책임 분류를 다음 실질 작업으로 삼는 것이다.
