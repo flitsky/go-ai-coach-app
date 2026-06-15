@@ -1554,3 +1554,8 @@
 - `GoCoachApp.kt`의 `hideTopMoves()` 본문을 application runner 호출로 축소했다. UI는 `ShowTopMovesStateUpdate` 적용 콜백만 담당하며, show/hide 모두 같은 update 경로를 사용한다.
 - `TopMovesApplicationTest`에 hide runner 테스트를 추가했다. topMovesEnabled 비활성화, candidateMoves 제거, 안내 메시지를 검증한다.
 - `LayeringContractTest`의 Top Moves workflow guard를 확장했다. UI가 `settingsState.hideTopMoves()`나 Top Moves 숨김 메시지를 직접 소유하지 못하도록 회귀를 막는다.
+- 사용자가 `13.` 다음 리팩토링 추천 항목을 단계별로 모두 진행하고, 결과 보고 시 현재 완성도와 다음 추천 작업을 정리해달라고 요청했다.
+- `EngineDeviceBenchmarkApplication.kt`를 benchmark workflow shell로 축소하고, 벤치마크 data/model/constant/helper는 `EngineBenchmarkModels.kt`, display text/display plan은 `EngineBenchmarkDisplayApplication.kt`로 분리했다.
+- `EngineDeviceBenchmarkApplication.kt`는 478줄에서 161줄로 줄었다. startup benchmark 실행 gate, operation scope, observed engine workflow result 조립만 남겨 model/display 변화와 workflow 변화를 독립적으로 다루기 쉬워졌다.
+- `LayeringContractTest`의 benchmark guard를 보강했다. model/display split 파일 존재와 workflow shell 220줄 이하를 확인해, benchmark application 파일이 다시 비대해지는 회귀를 막는다.
+- 검증으로 compile, `EngineDeviceBenchmarkApplicationTest`, `LayeringContractTest`를 실행했고 모두 통과했다.

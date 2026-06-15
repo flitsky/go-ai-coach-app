@@ -115,6 +115,10 @@ class LayeringContractTest {
         val repoRoot = repoRoot()
         val benchmarkApplication = repoRoot
             .resolve("app-android/src/main/java/com/worksoc/goaicoach/application/engine/EngineDeviceBenchmarkApplication.kt")
+        val benchmarkModels = repoRoot
+            .resolve("app-android/src/main/java/com/worksoc/goaicoach/application/engine/EngineBenchmarkModels.kt")
+        val benchmarkDisplay = repoRoot
+            .resolve("app-android/src/main/java/com/worksoc/goaicoach/application/engine/EngineBenchmarkDisplayApplication.kt")
         val benchmarkDelegate = repoRoot
             .resolve("app-android/src/main/java/com/worksoc/goaicoach/application/engine/LocalEngineBenchmarkDelegate.kt")
         val applicationText = benchmarkApplication.readText()
@@ -130,9 +134,18 @@ class LayeringContractTest {
         if ("class LocalEngineBenchmarkDelegate" !in delegateText) {
             offenders += "${benchmarkDelegate.relativeTo(repoRoot).path}: missing local benchmark delegate"
         }
+        if (!benchmarkModels.exists()) {
+            offenders += "${benchmarkModels.relativeTo(repoRoot).path}: missing benchmark model split"
+        }
+        if (!benchmarkDisplay.exists()) {
+            offenders += "${benchmarkDisplay.relativeTo(repoRoot).path}: missing benchmark display split"
+        }
+        if (benchmarkApplication.readLines().size > 220) {
+            offenders += "${benchmarkApplication.relativeTo(repoRoot).path}: workflow shell grew past 220 lines"
+        }
 
         assertTrue(
-            "Benchmark UI/workflow policy must stay separate from local EngineCoreApi benchmark execution:\n" +
+            "Benchmark model/display/workflow policy must stay split from local EngineCoreApi benchmark execution:\n" +
                 offenders.joinToString("\n"),
             offenders.isEmpty(),
         )
