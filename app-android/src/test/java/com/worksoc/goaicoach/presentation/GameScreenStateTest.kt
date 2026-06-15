@@ -194,6 +194,74 @@ class GameScreenStateTest {
         assertTrue(input.uxOptions.showMoveNumbers)
     }
 
+    @Test
+    fun goCoachScreenStateAssemblerBuildsScreenStateFromRuntimeSnapshots() {
+        val gameState = GameState.empty(nextPlayer = StoneColor.White)
+        val controller = GameSessionControllerState(
+            core = GameSessionCoreState(
+                gameState = gameState,
+                isGameEnded = false,
+                analysisState = GameSessionAnalysisState.empty(gameState, candidateText = "analysis"),
+                scoreState = GameSessionScoreState.reset(
+                    scoreText = "score",
+                    scoreSnapshots = listOf(localScoreSnapshot(gameState)),
+                    endgameLog = "endgame",
+                ),
+                runtimeState = GameSessionRuntimeState(
+                    playLevel = PlayLevelSetting(level = 2),
+                    engineProfile = EngineProfile(name = "Assembler"),
+                    analysisPreset = AnalysisPreset.Lite,
+                ),
+                moveReviewState = GameSessionMoveReviewState.reset(
+                    moveReviewText = "review",
+                    lastMoveText = "White pass",
+                ),
+                engineMessage = "engine",
+            ),
+            settings = GameSessionSettingsState(
+                playerSetup = PlayerSetup(),
+                autoPlayDelaySetting = AutoPlayDelaySetting.Normal,
+                searchTimeSettings = SearchTimeSettings(b16Millis = 1_000L),
+                topMovesEnabled = true,
+            ),
+            benchmark = EngineBenchmarkUiState(
+                benchmarkText = "bench",
+                searchTimeBenchmarkAverages = mapOf(16 to 950.0),
+            ),
+            savedSession = SavedSessionUiState(),
+            autoAiTurn = AutoAiTurnUiState(),
+            positionCacheOptimization = PositionAnalysisCacheOptimizationUiState(),
+        )
+
+        val screenState = GoCoachScreenStateAssembler.assemble(
+            GoCoachScreenStateAssembler.Input(
+                controller = controller,
+                uxOptions = KaTrainUxOptions(showMoveNumbers = true),
+                engineRuntime = GoCoachScreenStateAssembler.EngineRuntime(
+                    name = "KataGo",
+                    diagnostic = "ready",
+                    isReady = true,
+                    isBusy = false,
+                    hasCompletedStartup = true,
+                ),
+                displayRuntime = GoCoachScreenStateAssembler.DisplayRuntime(
+                    analysisCacheStats = "entries=1",
+                    isScoreGraphExpanded = true,
+                    turnTimeText = "Time B 0.0s / W 0.0s",
+                ),
+            ),
+        )
+
+        assertEquals(gameState, screenState.gameState)
+        assertEquals("KataGo", screenState.engine.name)
+        assertEquals("ready", screenState.engine.diagnostic)
+        assertEquals("entries=1", screenState.analysis.cacheStats)
+        assertEquals("score", screenState.score.text)
+        assertTrue(screenState.score.isGraphExpanded)
+        assertTrue(screenState.uxOptions.showMoveNumbers)
+        assertEquals("Time B 0.0s / W 0.0s", screenState.turnTimeText)
+    }
+
     private fun defaultInput(
         gameState: GameState = GameState.empty(),
         pendingSavedSession: SavedGameSnapshot? = null,

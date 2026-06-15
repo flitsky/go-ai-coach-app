@@ -457,6 +457,29 @@ class LayeringContractTest {
     }
 
     @Test
+    fun goCoachAppUsesScreenStateAssemblerInsteadOfDirectScreenStateBuilders() {
+        val goCoachApp = repoRoot()
+            .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
+        val text = goCoachApp.readText()
+        val forbiddenFragments = listOf(
+            "buildGameScreenStateInput(",
+            "buildGameScreenState(",
+        )
+            .filter { fragment -> fragment in text }
+        val requiredFragments = listOf(
+            "GoCoachScreenStateAssembler.assemble(",
+            "GoCoachScreenStateAssembler.Input(",
+        )
+            .filterNot { fragment -> fragment in text }
+
+        assertTrue(
+            "GoCoachApp should assemble final screen state through GoCoachScreenStateAssembler, not call presentation builders directly:\n" +
+                "forbidden:\n${forbiddenFragments.joinToString("\n")}\nmissing:\n${requiredFragments.joinToString("\n")}",
+            forbiddenFragments.isEmpty() && requiredFragments.isEmpty(),
+        )
+    }
+
+    @Test
     fun goCoachAppCollectsSessionStateHolderAndUsesDisplayApplierNaming() {
         val goCoachApp = repoRoot()
             .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")

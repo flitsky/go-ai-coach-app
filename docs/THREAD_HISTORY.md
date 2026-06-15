@@ -1605,3 +1605,8 @@
 - `TopMoveAnalysisRunRequest`는 더 이상 `applyCompletion` 콜백으로 completion plan을 UI에 넘기지 않는다. 대신 `applyTopMoveAnalysisUpdate`, `putUndoRestoreCache`, `putAnalysisCache`, `applyFailureDisplay`, `appendEngineOperationDiscardLog` 콜백을 받아 runner 내부에서 applier를 호출한다.
 - `GoCoachApp.kt`의 `applyTopMoveAnalysisCompletionApplyPlan()` helper를 제거했다. UI는 Top Moves completion 분기를 직접 판단하지 않고, 작은 상태/cache/display 콜백만 제공한다.
 - `TopMovesApplicationTest`와 `LayeringContractTest.goCoachAppDoesNotOwnTopMovesWorkflowBody()`를 보강했다. runner가 engine work 완료 후 application applier를 통해 상태/cache callback을 호출하는지와 UI가 `TopMoveAnalysisCompletionApplyPlan` 분기를 다시 소유하지 않는지를 검증한다.
+- 사용자가 `8.` 다음 리팩토링 추천 항목을 단계별로 모두 진행하고, 결과 보고 시 현재 리팩토링 완성도와 다음 추천 작업을 정리해달라고 요청했다.
+- `GoCoachScreenStateAssembler.kt`를 추가했다. `GameSessionControllerState`, UX option, engine runtime snapshot, display runtime snapshot을 받아 `GameScreenState`를 조립하는 presentation 경계를 만들었다.
+- `GoCoachApp.kt`는 더 이상 `buildGameScreenStateInput()`/`buildGameScreenState()`를 직접 호출하지 않고 `GoCoachScreenStateAssembler.assemble()`만 호출한다. 화면 렌더 직전의 긴 state 조립 인자와 builder 의존을 UI shell에서 한 단계 밀어냈다.
+- `GameScreenStateTest`에 assembler 테스트를 추가해 controller/runtime snapshot이 기존 screen state 필드로 정상 매핑되는지 검증했다.
+- `LayeringContractTest.goCoachAppUsesScreenStateAssemblerInsteadOfDirectScreenStateBuilders()`를 추가했다. UI가 screen state builder를 직접 호출하는 회귀를 막는다.

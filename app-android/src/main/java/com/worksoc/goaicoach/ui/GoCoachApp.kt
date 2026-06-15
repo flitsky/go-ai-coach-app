@@ -95,9 +95,8 @@ import com.worksoc.goaicoach.persistence.RuntimeEventLog
 import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
 import com.worksoc.goaicoach.persistence.UserPreferencesStore
 import com.worksoc.goaicoach.presentation.GameUiEvent
+import com.worksoc.goaicoach.presentation.GoCoachScreenStateAssembler
 import com.worksoc.goaicoach.presentation.KaTrainUxOptions
-import com.worksoc.goaicoach.presentation.buildGameScreenStateInput
-import com.worksoc.goaicoach.presentation.buildGameScreenState
 import com.worksoc.goaicoach.presentation.buildGameUiEventHandlers
 import com.worksoc.goaicoach.presentation.dispatchGameUiEvent
 import com.worksoc.goaicoach.presentation.toKaTrainUxOptions
@@ -1713,18 +1712,22 @@ private fun GoCoachScreen(
     }
 
     val controllerState = currentControllerSessionState()
-    val screenState = buildGameScreenState(
-        buildGameScreenStateInput(
+    val screenState = GoCoachScreenStateAssembler.assemble(
+        GoCoachScreenStateAssembler.Input(
             controller = controllerState,
             uxOptions = uxOptions,
-            engineName = engineName,
-            engineDiagnostic = engineDiagnostic,
-            isEngineReady = isEngineReady,
-            isEngineBusy = isEngineBusy,
-            analysisCacheStats = "${analysisCache.statsText()}, ${undoAnalysisRestoreCache.statsText()}",
-            isScoreGraphExpanded = isScoreGraphExpanded,
-            turnTimeText = turnTimeState.summaryText(),
-            hasCompletedEngineStartup = hasCompletedEngineStartup,
+            engineRuntime = GoCoachScreenStateAssembler.EngineRuntime(
+                name = engineName,
+                diagnostic = engineDiagnostic,
+                isReady = isEngineReady,
+                isBusy = isEngineBusy,
+                hasCompletedStartup = hasCompletedEngineStartup,
+            ),
+            displayRuntime = GoCoachScreenStateAssembler.DisplayRuntime(
+                analysisCacheStats = "${analysisCache.statsText()}, ${undoAnalysisRestoreCache.statsText()}",
+                isScoreGraphExpanded = isScoreGraphExpanded,
+                turnTimeText = turnTimeState.summaryText(),
+            ),
         ),
     )
 

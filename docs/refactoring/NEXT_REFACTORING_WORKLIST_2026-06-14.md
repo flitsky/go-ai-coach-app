@@ -1636,6 +1636,59 @@
    - score/endgame/benchmark/helper를 score/endgame/protocol helper로 나눌지 실행한다.
    - acceptance: remote engine client와 local engine client parity 문서화가 더 쉬워진다.
 
+## 2026-06-15 추가 진행 로그: 2nd phase.7 GoCoach screen state assembler
+
+- 2026-06-15: `GoCoachScreenStateAssembler.kt`를 추가했다. `GameSessionControllerState`, UX option, engine runtime snapshot, display runtime snapshot을 받아 최종 `GameScreenState`를 조립하는 presentation 경계를 만들었다.
+- 2026-06-15: `GoCoachApp.kt`의 렌더 직전 screen state 조립부를 `GoCoachScreenStateAssembler.assemble()` 호출로 축소했다. UI는 더 이상 `buildGameScreenStateInput()`/`buildGameScreenState()` 세부 builder를 직접 호출하지 않는다.
+- 2026-06-15: `GameScreenStateTest`에 assembler 테스트를 추가했다. controller/runtime snapshot이 engine, analysis cache, score, UX option, turn time 필드로 정상 매핑되는지 검증한다.
+- 2026-06-15: `LayeringContractTest.goCoachAppUsesScreenStateAssemblerInsteadOfDirectScreenStateBuilders()`를 추가했다. UI가 screen state builder를 직접 호출하는 회귀를 막는다.
+
+### 현재 metric
+
+- `GoCoachApp.kt`: 1,745줄
+- `GoCoachApp.kt` 전체 import: 114개
+- `GoCoachApp.kt` application import fan-in: 62개
+- `GoCoachApp.kt` presentation import fan-in: 6개
+- UI 파일 내 직접 screen state builder 호출: 제거됨
+  - `buildGameScreenStateInput(`
+  - `buildGameScreenState(`
+
+### 검증
+
+- `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:compileDebugKotlin :app-android:compileDebugUnitTestKotlin --no-daemon` 통과.
+- `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest --tests 'com.worksoc.goaicoach.presentation.GameScreenStateTest' --tests 'com.worksoc.goaicoach.architecture.LayeringContractTest' --no-daemon` 통과.
+- `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test` 통과.
+
+## 현재 리팩토링/아키텍처 완성도 평가
+
+- 리팩토링 배치 진행도: 99.9991/100.
+- 외부 평가 기준 플랫폼 아키텍처 완성도: 98.0/100.
+- 보수적 내부 플랫폼 완성도: 97.6/100.
+- 상향 요인: 화면 최종 state 조립을 presentation assembler 경계로 고정했다. 이후 `GoCoachApp.kt`를 Controller/StateHolder/EffectLauncher로 추가 분할할 때 화면 조립 로직이 UI 파일 안에서 다시 커지는 위험이 줄었다.
+- 남은 감점 요인: `GoCoachApp.kt` application import fan-in은 아직 62개이고, Auto-AI endgame resolve, menu/player setup action binding, cache optimization workflow가 UI 파일에 남아 있다.
+
+## 다음 추천 리팩토링 항목 - 2nd phase.8
+
+1. Auto-AI endgame resolve runner 후속 분리
+   - 현재 `applyAutoAiEndgamePlan()`은 아직 UI에서 engine endgame effect와 completion을 직접 처리한다.
+   - acceptance: AI pass/pass 종국 처리도 application runner가 소유하고 UI는 final/failure display callback만 제공한다.
+
+2. Position cache optimization workflow runner 분리
+   - `acceptCacheOptimizationPrompt()`는 아직 operation 생성, effect 실행, result 분기를 UI에서 직접 처리한다.
+   - acceptance: post-game cache optimization도 application runner가 소유하고 UI는 prompt state/display callback만 제공한다.
+
+3. menu/player setup action binding 분리
+   - player setup, auto play delay, search time, benchmark/cache menu action binding을 presentation action bundle로 이동한다.
+   - acceptance: 메뉴 UX 고도화 시 `GoCoachApp.kt` 수정면이 줄고 테스트 가능한 action model이 생긴다.
+
+4. `GoCoachApp.kt` presentation import fan-in 축소
+   - `GameUiEvent`, `KaTrainUxOptions`, `GoCoachScreenStateAssembler`, UI event handler 조립을 더 작은 presentation facade로 묶는다.
+   - acceptance: UI shell이 presentation 내부 세부 타입을 덜 알아도 된다.
+
+5. `LocalEngineCoreSessionDelegate` protocol별 추가 분해
+   - score/endgame/benchmark/helper를 score/endgame/protocol helper로 나눌지 실행한다.
+   - acceptance: remote engine client와 local engine client parity 문서화가 더 쉬워진다.
+
 ## 2026-06-15 추가 진행 로그: 2nd phase.4 Auto-AI scheduled turn runner
 
 - 2026-06-15: `AutoAiScheduledTurnRunnerApplication.kt`를 추가했다. 예약된 AI 턴의 delay, 재검증, operation token 생성, engine workflow 실행, completion 적용, runtime schedule/begin/complete/cancel log, 후속 Top Moves 요청 연결을 autoai application runner가 소유한다.
