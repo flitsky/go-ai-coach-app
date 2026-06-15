@@ -24,6 +24,8 @@ import com.worksoc.goaicoach.application.analysis.toCandidateText
 import com.worksoc.goaicoach.application.analysis.withTopMovesStrengthHeader
 import com.worksoc.goaicoach.application.analysis.withAnalysisCoverage
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnRunPlan
+import com.worksoc.goaicoach.application.autoai.shouldRequestTopMoveAnalysis
+import com.worksoc.goaicoach.application.engine.runEngineIo
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.AnalysisPreset
 import com.worksoc.goaicoach.shared.AnalysisResult
@@ -31,6 +33,7 @@ import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
+import com.worksoc.goaicoach.match.PlayerSetup
 
 internal data class TopMoveAnalysisPlan(
     val candidateCount: Int,
@@ -110,6 +113,30 @@ internal data class TopMoveAnalysisEffectLaunchRequest(
     val currentSessionGeneration: Long,
     val targetState: GameState,
     val topMovesEnabled: Boolean,
+)
+
+internal data class TopMoveAnalysisRunRequest(
+    val engineClient: EngineSessionClient,
+    val controllerState: GameSessionControllerState,
+    val targetState: GameState,
+    val deep: Boolean,
+    val automatic: Boolean,
+    val pendingPostUndoEngineSync: Boolean,
+    val isGameEnded: Boolean,
+    val isEngineReady: Boolean,
+    val isEngineBusy: Boolean,
+    val shouldShowResumePrompt: Boolean,
+    val playerSetup: PlayerSetup,
+    val analysisCacheEnabled: Boolean,
+    val cachedResultFor: (AnalysisCacheKey) -> CachedAnalysisResult?,
+    val currentState: () -> GameState,
+    val currentAnalysisKey: () -> AnalysisCacheKey?,
+    val currentSessionGeneration: () -> Long,
+    val launchEngineOperation: (EngineOperationRequest, suspend () -> Unit) -> Unit,
+    val runEngineWork: suspend (suspend () -> TopMoveAnalysisCompletionApplyPlan) -> TopMoveAnalysisCompletionApplyPlan =
+        { block -> runEngineIo { block() } },
+    val applyLaunchUpdate: (TopMoveAnalysisLaunchStateUpdate) -> Unit,
+    val applyCompletion: (TopMoveAnalysisCompletionApplyPlan) -> Unit,
 )
 
 internal data class TopMoveAnalysisFailureDisplayPlan(
@@ -458,6 +485,65 @@ internal fun GameSessionControllerState.toTopMoveAnalysisLaunchPlan(
         ),
         cachedResultFor = cachedResultFor,
     )
+
+internal fun runTopMoveAnalysisApplication(request: TopMoveAnalysisRunRequest) {
+    if (request.automatic && request.pendingPostUndoEngineSync) {
+        return
+    }
+    if (
+        !shouldRequestTopMoveAnalysis(
+            isGameEnded = request.isGameEnded,
+            isEngineReady = request.isEngineReady,
+            isEngineBusy = request.isEngineBusy,
+            shouldShowResumePrompt = request.shouldShowResumePrompt,
+            playerSetup = request.playerSetup,
+            targetState = request.targetState,
+        )
+    ) {
+        return
+    }
+
+    val launchPlan = request.controllerState.toTopMoveAnalysisLaunchPlan(
+        targetState = request.targetState,
+        deep = request.deep,
+        automatic = request.automatic,
+        cachedResultFor = request.cachedResultFor,
+    )
+    val launchUpdate = request.controllerState.core.analysisState
+        .applyTopMoveAnalysisLaunchPlan(launchPlan)
+        ?: return
+    request.applyLaunchUpdate(launchUpdate)
+    val effect = launchUpdate.effect ?: return
+    val operationToken = topMoveAnalysisOperationToken(
+        targetState = request.targetState,
+        plan = effect.plan,
+        sessionGeneration = request.currentSessionGeneration(),
+    )
+
+    request.launchEngineOperation(operationToken.operation) {
+        val applyPlan = request.runEngineWork {
+            request.engineClient.runTopMoveAnalysisEffectApplyPlan(
+                request = TopMoveAnalysisEffectLaunchRequest(
+                    effect = effect,
+                    context = TopMoveAnalysisExecutionContext(
+                        targetState = request.targetState,
+                        engineProfile = request.controllerState.core.runtimeState.engineProfile,
+                        analysisPreset = request.controllerState.core.runtimeState.analysisPreset,
+                        topMovesEnabled = request.controllerState.settings.topMovesEnabled,
+                        cacheEnabled = request.analysisCacheEnabled,
+                    ),
+                    token = operationToken,
+                    currentState = request.currentState(),
+                    currentAnalysisKey = request.currentAnalysisKey(),
+                    currentSessionGeneration = request.currentSessionGeneration(),
+                    targetState = request.targetState,
+                    topMovesEnabled = request.controllerState.settings.topMovesEnabled,
+                ),
+            )
+        }
+        request.applyCompletion(applyPlan)
+    }
+}
 
 internal fun buildCachedTopMoveAnalysisUpdate(
     targetState: GameState,

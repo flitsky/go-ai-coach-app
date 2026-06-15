@@ -862,6 +862,67 @@ class TopMovesApplicationTest {
     }
 
     @Test
+    fun topMoveAnalysisApplicationRunnerLaunchesEngineWorkAndAppliesCompletion() = runBlocking {
+        val state = GameState.empty()
+        val coordinate = BoardCoordinate.fromLabel("E5", BoardSize.Nine)
+        var analysisState = GameSessionAnalysisState.empty(state)
+        var completionApplyPlan: TopMoveAnalysisCompletionApplyPlan? = null
+        val operations = mutableListOf<EngineOperationKind>()
+        val client = FakeTopMoveEngineSessionClient(
+            result = AnalysisResult(
+                status = EngineStatus.ready("analysis complete"),
+                candidates = listOf(
+                    CandidateMove(
+                        move = Move.Play(StoneColor.Black, coordinate),
+                        pointLoss = 0.0,
+                    ),
+                ),
+                summary = "raw",
+            ),
+        )
+
+        runTopMoveAnalysisApplication(
+            TopMoveAnalysisRunRequest(
+                engineClient = client,
+                controllerState = topMoveControllerState(state = state, analysisState = analysisState),
+                targetState = state,
+                deep = false,
+                automatic = false,
+                pendingPostUndoEngineSync = false,
+                isGameEnded = false,
+                isEngineReady = true,
+                isEngineBusy = false,
+                shouldShowResumePrompt = false,
+                playerSetup = PlayerSetup(),
+                analysisCacheEnabled = false,
+                cachedResultFor = { null },
+                currentState = { state },
+                currentAnalysisKey = { analysisState.lastAnalysisKey },
+                currentSessionGeneration = { 7L },
+                launchEngineOperation = { operation, block ->
+                    operations += operation.kind
+                    runBlocking { block() }
+                },
+                runEngineWork = { block -> block() },
+                applyLaunchUpdate = { update ->
+                    analysisState = update.analysisState
+                },
+                applyCompletion = { plan ->
+                    completionApplyPlan = plan
+                },
+            ),
+        )
+
+        assertEquals(listOf(EngineOperationKind.TopMoves), operations)
+        assertEquals(state, client.analyzedState)
+        assertNotNull(analysisState.lastAnalysisKey)
+        assertTrue(completionApplyPlan is TopMoveAnalysisCompletionApplyPlan.ApplySuccess)
+        val success = completionApplyPlan as TopMoveAnalysisCompletionApplyPlan.ApplySuccess
+        assertEquals(1, success.update.candidateMoves.size)
+        assertNull(success.update.cachedResult)
+    }
+
+    @Test
     fun topMoveAnalysisResultGuardRejectsChangedPositionOrAnalysisKey() {
         val state = GameState.empty()
             .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))

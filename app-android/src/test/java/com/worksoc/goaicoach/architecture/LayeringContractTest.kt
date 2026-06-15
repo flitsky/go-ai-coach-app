@@ -162,6 +162,28 @@ class LayeringContractTest {
     }
 
     @Test
+    fun goCoachAppDoesNotOwnTopMovesWorkflowBody() {
+        val goCoachApp = repoRoot()
+            .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
+        val text = goCoachApp.readText()
+        val forbiddenFragments = listOf(
+            "topMoveAnalysisOperationToken(",
+            "runTopMoveAnalysisEffectApplyPlan(",
+            "TopMoveAnalysisEffectLaunchRequest(",
+            "TopMoveAnalysisExecutionContext(",
+            "toTopMoveAnalysisLaunchPlan(",
+            "applyTopMoveAnalysisLaunchPlan(",
+        )
+            .filter { fragment -> fragment in text }
+
+        assertTrue(
+            "GoCoachApp should request Top Moves through runTopMoveAnalysisApplication, not own launch/token/effect details:\n" +
+                forbiddenFragments.joinToString("\n"),
+            forbiddenFragments.isEmpty(),
+        )
+    }
+
+    @Test
     fun scoreRunnersUseEngineSessionClientContractOnly() {
         val scoreRoot = repoRoot()
             .resolve("app-android/src/main/java/com/worksoc/goaicoach/application/score")

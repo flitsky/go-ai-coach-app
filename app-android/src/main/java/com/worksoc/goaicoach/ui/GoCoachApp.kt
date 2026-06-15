@@ -866,66 +866,38 @@ private fun GoCoachScreen(
         automatic: Boolean,
         deep: Boolean = false,
     ) {
-        if (automatic && pendingPostUndoEngineSync != null) {
-            return
-        }
-        val currentTopMovesEnabled = settingsState.topMovesEnabled
-        if (
-            !shouldRequestTopMoveAnalysis(
+        runTopMoveAnalysisApplication(
+            TopMoveAnalysisRunRequest(
+                engineClient = engineClient,
+                controllerState = currentControllerSessionState(),
+                targetState = targetState,
+                deep = deep,
+                automatic = automatic,
+                pendingPostUndoEngineSync = pendingPostUndoEngineSync != null,
                 isGameEnded = isGameEnded,
                 isEngineReady = isEngineReady,
                 isEngineBusy = isEngineBusy,
                 shouldShowResumePrompt = shouldShowResumePrompt,
                 playerSetup = playerSetup,
-                targetState = targetState,
-            )
-        ) {
-            return
-        }
-
-        val launchPlan = currentControllerSessionState().toTopMoveAnalysisLaunchPlan(
-            targetState = targetState,
-            deep = deep,
-            automatic = automatic,
-            cachedResultFor = { key ->
-                undoAnalysisRestoreCache.get(key) ?: analysisCache.get(key)
-            },
+                analysisCacheEnabled = analysisCache.isEnabled,
+                cachedResultFor = { key ->
+                    undoAnalysisRestoreCache.get(key) ?: analysisCache.get(key)
+                },
+                currentState = { gameState },
+                currentAnalysisKey = { analysisState.lastAnalysisKey },
+                currentSessionGeneration = { runtimeState.sessionGeneration },
+                launchEngineOperation = { operation, block ->
+                    launchTrackedEngineOperation(operation) {
+                        block()
+                    }
+                },
+                applyLaunchUpdate = { launchUpdate ->
+                    analysisState = launchUpdate.analysisState
+                    launchUpdate.engineMessage?.let { message -> engineMessage = message }
+                },
+                applyCompletion = ::applyTopMoveAnalysisCompletionApplyPlan,
+            ),
         )
-        val launchUpdate = analysisState.applyTopMoveAnalysisLaunchPlan(launchPlan) ?: return
-        analysisState = launchUpdate.analysisState
-        launchUpdate.engineMessage?.let { message -> engineMessage = message }
-        val effect = launchUpdate.effect ?: return
-        val plan = effect.plan
-        val operationToken = topMoveAnalysisOperationToken(
-            targetState = targetState,
-            plan = plan,
-            sessionGeneration = runtimeState.sessionGeneration,
-        )
-
-        launchTrackedEngineOperation(operationToken.operation) {
-            val applyPlan =
-                runEngineIo {
-                    engineClient.runTopMoveAnalysisEffectApplyPlan(
-                        request = TopMoveAnalysisEffectLaunchRequest(
-                            effect = effect,
-                            context = TopMoveAnalysisExecutionContext(
-                                targetState = targetState,
-                                engineProfile = runtimeState.engineProfile,
-                                analysisPreset = runtimeState.analysisPreset,
-                                topMovesEnabled = currentTopMovesEnabled,
-                                cacheEnabled = analysisCache.isEnabled,
-                            ),
-                            token = operationToken,
-                            currentState = gameState,
-                            currentAnalysisKey = analysisState.lastAnalysisKey,
-                            currentSessionGeneration = runtimeState.sessionGeneration,
-                            targetState = targetState,
-                            topMovesEnabled = currentTopMovesEnabled,
-                        ),
-                    )
-                }
-            applyTopMoveAnalysisCompletionApplyPlan(applyPlan)
-        }
     }
 
     fun schedulePostUndoLocalEngineSync(
