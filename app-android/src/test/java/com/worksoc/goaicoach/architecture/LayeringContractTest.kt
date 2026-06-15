@@ -108,72 +108,15 @@ class LayeringContractTest {
     fun engineOperationApplicationPoliciesStayPortable() {
         val applicationRoot = repoRoot()
             .resolve("app-android/src/main/java/com/worksoc/goaicoach/application")
-        val portableCandidates = listOf(
-            applicationRoot.resolve("autoai/AutoAiCompletionApplication.kt"),
-            applicationRoot.resolve("autoai/AutoAiEffectLauncherApplication.kt"),
-            applicationRoot.resolve("autoai/AutoAiPolicyApplication.kt"),
-            applicationRoot.resolve("autoai/AutoAiRunnerApplication.kt"),
-            applicationRoot.resolve("engine/operation/EngineOperationLifecycle.kt"),
-            applicationRoot.resolve("engine/operation/EngineOperationPolicyAdapter.kt"),
-            applicationRoot.resolve("engine/operation/EngineOperationPolicy.kt"),
-            applicationRoot.resolve("engine/operation/EngineOperationResultApplication.kt"),
-            applicationRoot.resolve("engine/operation/EngineOperationScope.kt"),
-            applicationRoot.resolve("diagnostic/DiagnosticEventApplication.kt"),
-            applicationRoot.resolve("diagnostic/DiagnosticEventExternalSinkApplication.kt"),
-            applicationRoot.resolve("diagnostic/DiagnosticEventObserverApplication.kt"),
-            applicationRoot.resolve("diagnostic/DiagnosticEventPorts.kt"),
-            applicationRoot.resolve("prompt/PromptPriorityApplication.kt"),
-            applicationRoot.resolve("engine/EngineAssistantJudgePolicy.kt"),
-            applicationRoot.resolve("engine/EngineDeviceBenchmarkApplication.kt"),
-            applicationRoot.resolve("engine/EngineBenchmarkPorts.kt"),
-            applicationRoot.resolve("engine/EngineEffectLauncherApplication.kt"),
-            applicationRoot.resolve("engine/EngineAnalysisDiagnosticRecorder.kt"),
-            applicationRoot.resolve("engine/EngineSessionClient.kt"),
-            applicationRoot.resolve("engine/EngineSessionLifecycleApplication.kt"),
-            applicationRoot.resolve("engine/EngineStartupApplication.kt"),
-            applicationRoot.resolve("engine/LocalPositionAnalysisCacheCoordinator.kt"),
-            applicationRoot.resolve("analysis/AnalysisSession.kt"),
-            applicationRoot.resolve("analysis/AnalysisFormatter.kt"),
-            applicationRoot.resolve("analysis/PositionAnalysisCache.kt"),
-            applicationRoot.resolve("analysis/PositionAnalysisCacheOptimization.kt"),
-            applicationRoot.resolve("debugreport/DebugReportBuilder.kt"),
-            applicationRoot.resolve("debugreport/DebugReportPorts.kt"),
-            applicationRoot.resolve("endgame/EndgameLogFormatter.kt"),
-            applicationRoot.resolve("endgame/EndgameResolver.kt"),
-            applicationRoot.resolve("movereview/MoveReview.kt"),
-            applicationRoot.resolve("preferences/UserPreferencesApplication.kt"),
-            applicationRoot.resolve("preferences/UserPreferencesAutosaveApplication.kt"),
-            applicationRoot.resolve("preferences/UserPreferencesPorts.kt"),
-            applicationRoot.resolve("preferences/UserPreferencesSnapshot.kt"),
-            applicationRoot.resolve("session/GameSessionAnalysisState.kt"),
-            applicationRoot.resolve("session/GameSessionController.kt"),
-            applicationRoot.resolve("session/GameSessionCoreState.kt"),
-            applicationRoot.resolve("session/GameSessionMoveReviewState.kt"),
-            applicationRoot.resolve("session/GameSessionRuntimeState.kt"),
-            applicationRoot.resolve("session/GameSessionScoreState.kt"),
-            applicationRoot.resolve("session/GameSessionSettingsState.kt"),
-            applicationRoot.resolve("session/GameSessionTurnTimeState.kt"),
-            applicationRoot.resolve("session/GameSessionUiStateHolderApplication.kt"),
-            applicationRoot.resolve("session/GameSessionApplication.kt"),
-            applicationRoot.resolve("humanmove/HumanMoveApplication.kt"),
-            applicationRoot.resolve("runtime/RuntimeEventApplication.kt"),
-            applicationRoot.resolve("runtime/RuntimeEventPorts.kt"),
-            applicationRoot.resolve("savedgame/SavedGamePorts.kt"),
-            applicationRoot.resolve("savedgame/SavedGamePersistence.kt"),
-            applicationRoot.resolve("savedgame/SavedGamePersistenceRunner.kt"),
-            applicationRoot.resolve("savedgame/SavedGameRestoreApplication.kt"),
-            applicationRoot.resolve("savedgame/SavedSessionPromptApplication.kt"),
-            applicationRoot.resolve("score/ScoreDisplayApplication.kt"),
-            applicationRoot.resolve("score/ScoreDisplayFormatterApplication.kt"),
-            applicationRoot.resolve("score/ScoreEstimateRunnerApplication.kt"),
-            applicationRoot.resolve("score/ScoreSyncRunnerApplication.kt"),
-            applicationRoot.resolve("score/ScoreSyncCompletionApplication.kt"),
-            applicationRoot.resolve("score/ScoringRuleApplication.kt"),
-            applicationRoot.resolve("startgame/StartGameApplication.kt"),
-            applicationRoot.resolve("topmoves/TopMovesEffectLauncherApplication.kt"),
-            applicationRoot.resolve("topmoves/TopMovesApplication.kt"),
-            applicationRoot.resolve("undo/UndoApplication.kt"),
+        val platformBoundAdapters = setOf(
+            applicationRoot.resolve("diagnostic/LocalFileDiagnosticEventExternalSink.kt").canonicalFile,
         )
+        val portableCandidates = applicationRoot
+            .walkTopDown()
+            .filter { file -> file.extension == "kt" }
+            .map { file -> file.canonicalFile }
+            .filterNot { file -> file in platformBoundAdapters }
+            .toList()
         val forbiddenImports = listOf(
             "import android.",
             "import androidx.",
@@ -184,6 +127,13 @@ class LayeringContractTest {
             "import com.worksoc.goaicoach.engine.",
         )
 
+        val missingPlatformBoundAdapters = platformBoundAdapters.filterNot { file -> file.exists() }
+        assertTrue(
+            "Platform-bound application adapters must be explicit and existing:\n" +
+                missingPlatformBoundAdapters.joinToString("\n") { file -> file.path },
+            missingPlatformBoundAdapters.isEmpty(),
+        )
+
         val offenders = portableCandidates.flatMap { candidate ->
             candidate
                 .readLines()
@@ -192,7 +142,7 @@ class LayeringContractTest {
         }
 
         assertTrue(
-            "Engine operation policy files are middleware/KMP move candidates and must stay platform-free:\n" +
+            "Application files are middleware/KMP move candidates by default. Add only explicit adapter exceptions for platform-bound files:\n" +
                 offenders.joinToString("\n"),
             offenders.isEmpty(),
         )

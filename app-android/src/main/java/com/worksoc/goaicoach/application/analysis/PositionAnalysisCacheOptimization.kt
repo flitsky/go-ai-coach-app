@@ -228,6 +228,30 @@ internal fun buildPositionAnalysisCacheOptimizationPrompt(
     )
 }
 
+internal fun refreshPositionAnalysisCacheOptimizationPrompt(
+    currentState: PositionAnalysisCacheOptimizationUiState,
+    isGameEnded: Boolean,
+    isEngineReady: Boolean,
+    isEngineBusy: Boolean,
+    plan: PositionAnalysisCacheOptimizationPlan,
+    isPromptEnabled: Boolean = PostGamePositionAnalysisCacheOptimizationPromptEnabled,
+): PositionAnalysisCacheOptimizationUiState {
+    if (!isPromptEnabled) {
+        return currentState.clearPrompt()
+    }
+    return currentState.withPrompt(
+        buildPositionAnalysisCacheOptimizationPrompt(
+            isGameEnded = isGameEnded,
+            isEngineReady = isEngineReady,
+            isEngineBusy = isEngineBusy,
+            isOptimizationRunning = currentState.isRunning,
+            dismissedGameFingerprint = currentState.dismissedGameFingerprint,
+            plan = plan,
+            isPromptEnabled = isPromptEnabled,
+        ),
+    )
+}
+
 private fun selectProgressiveOpeningOptimizationStates(
     finalState: GameState,
     maxStates: Int,

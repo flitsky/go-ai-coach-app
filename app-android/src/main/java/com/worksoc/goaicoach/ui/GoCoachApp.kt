@@ -28,7 +28,7 @@ import com.worksoc.goaicoach.application.debugreport.DebugReportCopyActionReques
 import com.worksoc.goaicoach.application.debugreport.runDebugReportCopyAction
 import com.worksoc.goaicoach.application.preferences.buildInitialUserPreferencesPlan
 import com.worksoc.goaicoach.application.analysis.buildPositionAnalysisCacheOptimizationPlan
-import com.worksoc.goaicoach.application.analysis.buildPositionAnalysisCacheOptimizationPrompt
+import com.worksoc.goaicoach.application.analysis.refreshPositionAnalysisCacheOptimizationPrompt
 import com.worksoc.goaicoach.application.preferences.UserPreferencesAutosaveRequest
 import com.worksoc.goaicoach.application.preferences.runUserPreferencesAutosave
 import com.worksoc.goaicoach.shared.engine.EngineFallbackPolicy
@@ -73,7 +73,7 @@ import com.worksoc.goaicoach.application.savedgame.SavedGameRestoreRequestPlan
 import com.worksoc.goaicoach.application.savedgame.SavedSessionPromptPlan
 import com.worksoc.goaicoach.application.savedgame.SavedSessionUiState
 import com.worksoc.goaicoach.application.savedgame.buildSavedGameRestoreRequestPlan
-import com.worksoc.goaicoach.application.savedgame.buildSavedSessionCheckPlan
+import com.worksoc.goaicoach.application.savedgame.loadSavedSessionPromptPlan
 import com.worksoc.goaicoach.application.savedgame.runSavedGamePersistence
 import com.worksoc.goaicoach.application.startgame.GameSessionResetPlan
 import com.worksoc.goaicoach.application.startgame.StartConfiguredGamePlan
@@ -435,40 +435,23 @@ private fun GoCoachScreen(
 
     LaunchedEffect(engineClient) {
         hasCompletedEngineStartup = false
-        val startupState = gameState
-        val startupProfile = runtimeState.engineProfile
-        val operation = engineOperationRequest(
-            kind = EngineOperationKind.EngineStartup,
-            state = startupState,
-            sessionGeneration = runtimeState.sessionGeneration,
-            timeoutPolicy = EngineTimeoutPolicy(label = "engine-startup"),
-            fallbackPolicy = EngineFallbackPolicy.None,
-        )
-        runTrackedEngineOperation(operation) {
-            val result =
-                runEngineIo {
-                    engineClient.runEngineStartupWorkflowResult(
-                        effect = GameSessionEffect.StartEngineSession(
-                            state = startupState,
-                            profile = startupProfile,
-                        ),
-                        operationRequest = operation,
-                        diagnosticEventLog = diagnosticEventLog,
-                    )
-                }
-            applyEngineStartupDisplayPlan(
-                buildEngineStartupDisplayPlan(
-                    state = startupState,
-                    result = result,
+        applyEngineStartupDisplayPlan(
+            engineClient.runEngineStartupApplication(
+                EngineStartupRunRequest(
+                    state = gameState,
+                    profile = runtimeState.engineProfile,
+                    sessionGeneration = runtimeState.sessionGeneration,
                     engineDiagnostic = engineDiagnostic,
+                    diagnosticEventLog = diagnosticEventLog,
+                    lifecycleCallbacks = engineOperationLifecycleCallbacks(),
                 ),
-            )
-        }
+            ),
+        )
         hasCompletedEngineStartup = true
     }
 
     LaunchedEffect(sessionStore) {
-        applySavedSessionPromptPlan(buildSavedSessionCheckPlan(sessionStore.load()))
+        applySavedSessionPromptPlan(loadSavedSessionPromptPlan(sessionStore))
     }
 
     suspend fun runEngineBenchmark() {
@@ -2020,20 +2003,14 @@ private fun GoCoachScreen(
         searchTimeSettings,
         gameState.moves.size,
     ) {
-        if (!PostGamePositionAnalysisCacheOptimizationPromptEnabled) {
-            positionCacheOptimizationState = positionCacheOptimizationState.clearPrompt()
-            return@LaunchedEffect
-        }
-        val plan = currentCacheOptimizationPlan()
-        val prompt = buildPositionAnalysisCacheOptimizationPrompt(
+        positionCacheOptimizationState = refreshPositionAnalysisCacheOptimizationPrompt(
+            currentState = positionCacheOptimizationState,
             isGameEnded = isGameEnded,
             isEngineReady = isEngineReady,
             isEngineBusy = isEngineBusy,
-            isOptimizationRunning = positionCacheOptimizationState.isRunning,
-            dismissedGameFingerprint = positionCacheOptimizationState.dismissedGameFingerprint,
-            plan = plan,
+            plan = currentCacheOptimizationPlan(),
+            isPromptEnabled = PostGamePositionAnalysisCacheOptimizationPromptEnabled,
         )
-        positionCacheOptimizationState = positionCacheOptimizationState.withPrompt(prompt)
     }
 
     val controllerState = currentControllerSessionState()

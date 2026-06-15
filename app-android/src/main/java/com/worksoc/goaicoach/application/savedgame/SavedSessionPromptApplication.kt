@@ -31,6 +31,11 @@ internal fun buildSavedSessionCheckPlan(
         hasCheckedSavedSession = true,
     )
 
+internal fun loadSavedSessionPromptPlan(
+    store: SavedGameStorePort,
+): SavedSessionPromptPlan =
+    buildSavedSessionCheckPlan(store.load())
+
 internal fun buildSavedSessionDismissPlan(): SavedSessionPromptPlan =
     SavedSessionPromptPlan(
         pendingSavedSession = null,

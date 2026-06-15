@@ -1493,3 +1493,6 @@
 - 사용자가 완전히 다른 개발자의 바둑 앱 관점 외부 분석을 제공했고, 원문 보존과 내부 방향성 검토를 요청했다.
 - 원문은 `docs/refactoring/EXTERNAL_REVIEW_2026-06-15_GO_APP_PRODUCT_PERSPECTIVE_RAW.md`에 저장했다. 외부 핵심 지적은 `EngineCoreApi` 경계는 강하지만 `GoCoachApp.kt` orchestration hub, iOS target 부재, raw `EngineCoreApi` 도메인 누수, 약한 layering test가 남아 있다는 것이다.
 - 내부 검토는 `docs/refactoring/INTERNAL_GO_APP_PRODUCT_REVIEW_2026-06-15.md`에 작성했다. 결론은 외부 리뷰를 대체로 수용하되, 즉시 방향은 아키텍처 점수 경쟁보다 바둑 규칙/종국 정확성, 단방향 engine orchestration, Android-first 제품 안정성을 우선하는 것으로 정리했다.
+- 조정된 리팩토링 방향에 맞춰 startup orchestration 일부를 `EngineSessionClient.runEngineStartupApplication()` runner로 이동했다. `GoCoachApp.kt`는 startup operation request/workflow result 조립을 직접 하지 않고 display plan만 적용한다.
+- post-game position cache optimization prompt 갱신은 `refreshPositionAnalysisCacheOptimizationPrompt()`로 옮겼고, saved-session prompt loading도 `loadSavedSessionPromptPlan()`으로 감쌌다.
+- `LayeringContractTest`의 portable application 후보를 하드코딩 목록에서 application package 자동 스캔 기반으로 바꿨다. 이제 새 application 파일은 기본적으로 KMP/platform-free 후보가 되며, platform-bound 파일은 명시적 adapter 예외에 추가해야 한다.
