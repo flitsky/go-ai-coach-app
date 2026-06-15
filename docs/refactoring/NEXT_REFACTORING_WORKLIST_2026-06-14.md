@@ -942,3 +942,37 @@
 
 5. 남은 IO 지점 9개 분류
    - startup/benchmark/endgame/cache optimization 등 남은 IO 지점을 operation kind별로 나누고, 다음 목표를 9개에서 7개 이하로 잡는다.
+
+## 2026-06-15 외부 93점 평가 반영 메모
+
+- 2026-06-15: 외부 개발자의 93/100 아키텍처 평가를 `EXTERNAL_REVIEW_2026-06-15_ARCHITECTURE_SCORE_93.md`에 보존했다.
+- 2026-06-15: 내부 판정은 `INTERNAL_ARCHITECT_REVIEW_OF_SCORE_93_FEEDBACK_2026-06-15.md`에 정리했다. 핵심 결론은 "리팩토링 배치 진행도 99.72점"과 "플랫폼 아키텍처 완성도 93점"을 분리해서 관리하는 것이다.
+- 즉시 반영할 방향은 다음 세 가지다.
+  1. `GoCoachApp.kt` 줄 수 자체보다 orchestration ownership 제거를 우선한다.
+  2. application 루트 package 밀집을 줄이기 위해 `diagnostic`, `engine`, `score`, `topmoves`, `autoai`, `session` 하위 package 도입을 시작한다.
+  3. KMP 후보 문서화에 그치지 않고 최소 1개 파일의 물리 이동 스파이크를 수행한다.
+- 보류/폐기한 방향은 다음 세 가지다.
+  1. 파일 수 증가 자체를 실패로 보지 않는다. package ownership 부재가 문제다.
+  2. 점수 확보용 KMP 2파일 이동은 하지 않는다. 최소 1개 파일로 실제 비용을 검증한 뒤 확대한다.
+  3. `GoCoachApp.kt` 1,000줄 이하를 단기 목표로 강제하지 않는다. 먼저 effect launch/state ownership을 분리한다.
+
+## 다음 추천 리팩토링 항목 - 외부 93점 평가 반영 후
+
+1. EffectLauncher 미니 도입
+   - `runEngineIo()`와 남은 engine operation launch 중 하나를 UI 밖으로 이동한다.
+   - acceptance: `GoCoachApp.kt`의 직접 `withContext` 또는 `scope.launch` 책임이 줄고, 관련 테스트가 통과한다.
+
+2. application 하위 package 1차 이동
+   - `diagnostic` 또는 `score` 중 하나만 먼저 이동한다.
+   - acceptance: `LayeringContractTest`가 새 package 경계를 검증한다.
+
+3. KMP 물리 이동 1차 스파이크
+   - `DiagnosticEventModel.kt` 또는 `EngineOperationPolicy.kt` 중 하나를 실제 common 후보 위치로 이동해 본다.
+   - acceptance: Gradle/test 통과 또는 차단 의존성 목록 문서화.
+
+4. GoCoachApp import fan-in 축소
+   - application import 179개를 줄이기 위한 facade/controller boundary를 검토한다.
+   - acceptance: import 수 감소 또는 책임별 import 그룹이 분리된다.
+
+5. worklist 상태 라벨 도입
+   - 각 리팩토링 항목에 `문서화됨`, `코드 반영`, `테스트됨`, `물리 이동`, `운영 adapter` 상태를 구분한다.
