@@ -173,6 +173,8 @@ class LayeringContractTest {
             "runTopMoveAnalysisEffectApplyPlan(",
             "TopMoveAnalysisEffectLaunchRequest(",
             "TopMoveAnalysisExecutionContext(",
+            "applyTopMoveAnalysisCompletionApplyPlan(",
+            "TopMoveAnalysisCompletionApplyPlan.",
             "toTopMoveAnalysisLaunchPlan(",
             "applyTopMoveAnalysisLaunchPlan(",
             "shouldRequestTopMoveAnalysis(",

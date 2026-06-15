@@ -866,7 +866,12 @@ class TopMovesApplicationTest {
         val state = GameState.empty()
         val coordinate = BoardCoordinate.fromLabel("E5", BoardSize.Nine)
         var analysisState = GameSessionAnalysisState.empty(state)
-        var completionApplyPlan: TopMoveAnalysisCompletionApplyPlan? = null
+        var appliedUpdate: TopMoveAnalysisUpdate? = null
+        var appliedKey: AnalysisCacheKey? = null
+        var cachedAnalysis: CachedAnalysisResult? = null
+        var undoCachedAnalysis: CachedAnalysisResult? = null
+        var failureDisplay: TopMoveAnalysisFailureDisplayPlan? = null
+        var discardLog: EngineOperationResultGuard.Discard? = null
         val operations = mutableListOf<EngineOperationKind>()
         val client = FakeTopMoveEngineSessionClient(
             result = AnalysisResult(
@@ -907,19 +912,107 @@ class TopMovesApplicationTest {
                 applyLaunchUpdate = { update ->
                     analysisState = update.analysisState
                 },
-                applyCompletion = { plan ->
-                    completionApplyPlan = plan
+                applyTopMoveAnalysisUpdate = { update, key ->
+                    appliedUpdate = update
+                    appliedKey = key
                 },
+                putUndoRestoreCache = { _, cached -> undoCachedAnalysis = cached },
+                putAnalysisCache = { _, cached -> cachedAnalysis = cached },
+                applyFailureDisplay = { failureDisplay = it },
+                appendEngineOperationDiscardLog = { discardLog = it },
             ),
         )
 
         assertEquals(listOf(EngineOperationKind.TopMoves), operations)
         assertEquals(state, client.analyzedState)
         assertNotNull(analysisState.lastAnalysisKey)
-        assertTrue(completionApplyPlan is TopMoveAnalysisCompletionApplyPlan.ApplySuccess)
-        val success = completionApplyPlan as TopMoveAnalysisCompletionApplyPlan.ApplySuccess
-        assertEquals(1, success.update.candidateMoves.size)
-        assertNull(success.update.cachedResult)
+        assertEquals(analysisState.lastAnalysisKey, appliedKey)
+        assertEquals(1, appliedUpdate?.candidateMoves?.size)
+        assertNull(appliedUpdate?.cachedResult)
+        assertNull(cachedAnalysis)
+        assertNull(undoCachedAnalysis)
+        assertNull(failureDisplay)
+        assertNull(discardLog)
+    }
+
+    @Test
+    fun topMoveAnalysisCompletionApplierAppliesSuccessFailureAndDiscard() {
+        val state = GameState.empty()
+        val key = analysisKeyFor(
+            state = state,
+            preset = AnalysisPreset.Lite,
+            limit = AnalysisLimit(visits = 16, timeMillis = 250, candidateCount = 1),
+            deep = false,
+        )
+        val snapshot = MoveAnalysisSnapshot.from(
+            state,
+            listOf(
+                CandidateMove(
+                    move = Move.Play(
+                        StoneColor.Black,
+                        BoardCoordinate.fromLabel("E5", BoardSize.Nine),
+                    ),
+                    pointLoss = 0.0,
+                ),
+            ),
+        )
+        val cached = CachedAnalysisResult(
+            snapshot = snapshot,
+            candidateText = "cached",
+            quality = PositionAnalysisCacheQuality(
+                tier = PositionAnalysisCacheQualityTier.Complete,
+                rootVisits = 16,
+                requestedRootVisits = 16,
+            ),
+        )
+        val update = TopMoveAnalysisUpdate(
+            snapshot = snapshot,
+            reviewCandidateMoves = snapshot.candidatesForReview(),
+            candidateMoves = snapshot.candidatesForDisplay(),
+            candidateText = "candidate",
+            engineMessage = "engine",
+            cachedResult = cached,
+            undoRestoreResult = cached,
+        )
+        val failure = TopMoveAnalysisFailureDisplayPlan(
+            targetState = state,
+            engineMessage = "failed",
+            clearDisplayedTopMoves = true,
+        )
+        val discard = EngineOperationResultGuard.Discard(reason = "stale")
+        var appliedUpdate: TopMoveAnalysisUpdate? = null
+        var appliedKey: AnalysisCacheKey? = null
+        var undoCache: CachedAnalysisResult? = null
+        var analysisCache: CachedAnalysisResult? = null
+        var appliedFailure: TopMoveAnalysisFailureDisplayPlan? = null
+        var appendedDiscard: EngineOperationResultGuard.Discard? = null
+
+        fun apply(plan: TopMoveAnalysisCompletionApplyPlan) {
+            applyTopMoveAnalysisCompletionApplication(
+                TopMoveAnalysisCompletionApplyRunRequest(
+                    applyPlan = plan,
+                    applyTopMoveAnalysisUpdate = { nextUpdate, nextKey ->
+                        appliedUpdate = nextUpdate
+                        appliedKey = nextKey
+                    },
+                    putUndoRestoreCache = { _, value -> undoCache = value },
+                    putAnalysisCache = { _, value -> analysisCache = value },
+                    applyFailureDisplay = { appliedFailure = it },
+                    appendEngineOperationDiscardLog = { appendedDiscard = it },
+                ),
+            )
+        }
+
+        apply(TopMoveAnalysisCompletionApplyPlan.ApplySuccess(update, key))
+        apply(TopMoveAnalysisCompletionApplyPlan.ApplyFailure(failure))
+        apply(TopMoveAnalysisCompletionApplyPlan.Discard(discard))
+
+        assertEquals(update, appliedUpdate)
+        assertEquals(key, appliedKey)
+        assertEquals(cached, undoCache)
+        assertEquals(cached, analysisCache)
+        assertEquals(failure, appliedFailure)
+        assertEquals(discard, appendedDiscard)
     }
 
     @Test

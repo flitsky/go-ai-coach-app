@@ -119,7 +119,20 @@ internal data class TopMoveAnalysisRunRequest(
     val runEngineWork: suspend (suspend () -> TopMoveAnalysisCompletionApplyPlan) -> TopMoveAnalysisCompletionApplyPlan =
         { block -> runEngineIo { block() } },
     val applyLaunchUpdate: (TopMoveAnalysisLaunchStateUpdate) -> Unit,
-    val applyCompletion: (TopMoveAnalysisCompletionApplyPlan) -> Unit,
+    val applyTopMoveAnalysisUpdate: (TopMoveAnalysisUpdate, AnalysisCacheKey) -> Unit,
+    val putUndoRestoreCache: (AnalysisCacheKey, CachedAnalysisResult) -> Unit,
+    val putAnalysisCache: (AnalysisCacheKey, CachedAnalysisResult) -> Unit,
+    val applyFailureDisplay: (TopMoveAnalysisFailureDisplayPlan) -> Unit,
+    val appendEngineOperationDiscardLog: (EngineOperationResultGuard.Discard) -> Unit,
+)
+
+internal data class TopMoveAnalysisCompletionApplyRunRequest(
+    val applyPlan: TopMoveAnalysisCompletionApplyPlan,
+    val applyTopMoveAnalysisUpdate: (TopMoveAnalysisUpdate, AnalysisCacheKey) -> Unit,
+    val putUndoRestoreCache: (AnalysisCacheKey, CachedAnalysisResult) -> Unit,
+    val putAnalysisCache: (AnalysisCacheKey, CachedAnalysisResult) -> Unit,
+    val applyFailureDisplay: (TopMoveAnalysisFailureDisplayPlan) -> Unit,
+    val appendEngineOperationDiscardLog: (EngineOperationResultGuard.Discard) -> Unit,
 )
 
 internal data class TopMoveAnalysisFailureDisplayPlan(

@@ -1600,3 +1600,8 @@
 - `GoCoachApp.kt`의 `applyAutoAiTurnSuccessCompletion()`/`applyAutoAiTurnFailureCompletion()` helper를 제거했다. UI는 `recordTurnMove`, `applyTurnTimeUpdate`, `applyTurnDisplay`, `resolveEndgame`, `applyTurnFailureDisplay`, `appendEngineOperationDiscardLog` 콜백만 scheduled runner에 제공한다.
 - `AutoAiCompletionApplierTest`와 `LayeringContractTest.goCoachAppDoesNotOwnAutoAiTurnCompletionApplyBody()`를 추가했다. success/failure/discard 경로와 UI가 completion display/log/endgame 판단을 다시 소유하지 않는지를 검증한다.
 - 리팩토링 반영 후 최종 APK 재설치를 재시도했으나 `adb devices`가 빈 목록을 반환해 `:app-android:installDebug`가 `No connected devices`로 실패했다. `adb kill-server/start-server` 후에도 장치가 재인식되지 않았다.
+- 사용자가 `7.` 다음 리팩토링 추천 항목을 단계별로 진행하고, 결과 보고 시 현재 리팩토링 완성도와 다음 추천 작업을 정리해달라고 요청했다.
+- `TopMoveAnalysisApplierApplication.kt`를 추가했다. Top Moves 분석 completion apply plan의 success/failure/discard 분기, 분석 상태 적용, undo restore cache 저장, analysis cache 저장, failure display, discard log 위임을 topmoves application applier가 소유한다.
+- `TopMoveAnalysisRunRequest`는 더 이상 `applyCompletion` 콜백으로 completion plan을 UI에 넘기지 않는다. 대신 `applyTopMoveAnalysisUpdate`, `putUndoRestoreCache`, `putAnalysisCache`, `applyFailureDisplay`, `appendEngineOperationDiscardLog` 콜백을 받아 runner 내부에서 applier를 호출한다.
+- `GoCoachApp.kt`의 `applyTopMoveAnalysisCompletionApplyPlan()` helper를 제거했다. UI는 Top Moves completion 분기를 직접 판단하지 않고, 작은 상태/cache/display 콜백만 제공한다.
+- `TopMovesApplicationTest`와 `LayeringContractTest.goCoachAppDoesNotOwnTopMovesWorkflowBody()`를 보강했다. runner가 engine work 완료 후 application applier를 통해 상태/cache callback을 호출하는지와 UI가 `TopMoveAnalysisCompletionApplyPlan` 분기를 다시 소유하지 않는지를 검증한다.

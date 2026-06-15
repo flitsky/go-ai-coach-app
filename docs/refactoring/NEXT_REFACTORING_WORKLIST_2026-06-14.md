@@ -1748,3 +1748,57 @@
 5. `LocalEngineCoreSessionDelegate` protocol별 추가 분해
    - score/endgame/benchmark/helper를 score/endgame/protocol helper로 나눌지 실행한다.
    - acceptance: remote engine client와 local engine client parity 문서화가 더 쉬워진다.
+
+## 2026-06-15 추가 진행 로그: 2nd phase.6 Top Moves completion applier
+
+- 2026-06-15: `TopMoveAnalysisApplierApplication.kt`를 추가했다. Top Moves 분석 completion apply plan의 success/failure/discard 분기, 분석 상태 적용, undo restore cache 저장, analysis cache 저장, failure display, discard log 위임을 topmoves application applier가 소유한다.
+- 2026-06-15: `TopMoveAnalysisRunRequest`는 더 이상 `applyCompletion` 콜백으로 completion plan을 UI에 넘기지 않는다. 대신 상태/cache/display/discard 콜백을 받아 runner 내부에서 `applyTopMoveAnalysisCompletionApplication()`을 호출한다.
+- 2026-06-15: `GoCoachApp.kt`의 `applyTopMoveAnalysisCompletionApplyPlan()` helper를 제거했다. UI는 Top Moves completion 분기를 직접 판단하지 않고 작은 콜백만 제공한다.
+- 2026-06-15: `TopMovesApplicationTest`와 `LayeringContractTest.goCoachAppDoesNotOwnTopMovesWorkflowBody()`를 보강했다. runner가 engine work 완료 후 applier를 통해 상태/cache callback을 호출하는지와 UI 경계 회귀를 함께 검증한다.
+
+### 현재 metric
+
+- `GoCoachApp.kt`: 1,742줄
+- `GoCoachApp.kt` 전체 import: 115개
+- `GoCoachApp.kt` application import fan-in: 62개
+- UI 파일 내 직접 Top Moves completion apply 세부 참조: 제거됨
+  - `applyTopMoveAnalysisCompletionApplyPlan(`
+  - `TopMoveAnalysisCompletionApplyPlan.`
+  - `runTopMoveAnalysisEffectApplyPlan(`
+  - `TopMoveAnalysisEffectLaunchRequest(`
+  - `TopMoveAnalysisExecutionContext(`
+
+### 검증
+
+- `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:compileDebugKotlin :app-android:compileDebugUnitTestKotlin --no-daemon` 통과.
+- `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest --tests 'com.worksoc.goaicoach.application.TopMovesApplicationTest' --tests 'com.worksoc.goaicoach.architecture.LayeringContractTest' --no-daemon` 통과.
+
+## 현재 리팩토링/아키텍처 완성도 평가
+
+- 리팩토링 배치 진행도: 99.9990/100.
+- 외부 평가 기준 플랫폼 아키텍처 완성도: 97.9/100.
+- 보수적 내부 플랫폼 완성도: 97.5/100.
+- 상향 요인: Auto-AI에 이어 Top Moves completion apply도 application layer로 올라갔다. UI shell은 engine 결과 분기보다 화면 상태 적용 콜백만 맡는 방향으로 더 수렴했다.
+- 남은 감점 요인: `GoCoachApp.kt` import fan-in은 아직 62개이고, 화면 state 조립/메뉴 action binding/Auto-AI endgame resolve는 여전히 UI 파일의 주요 책임으로 남아 있다.
+
+## 다음 추천 리팩토링 항목 - 2nd phase.7
+
+1. `GoCoachScreenStateAssembler` 도입
+   - `buildGameScreenStateInput(...)`의 긴 인자 조립을 snapshot/assembler로 분리한다.
+   - acceptance: 화면 렌더링 직전 state read fan-in과 UI shell import fan-in이 함께 줄어든다.
+
+2. Auto-AI endgame resolve runner 후속 분리
+   - 현재 `applyAutoAiEndgamePlan()`은 아직 UI에서 engine endgame effect와 completion을 직접 처리한다.
+   - acceptance: AI pass/pass 종국 처리도 application runner가 소유하고 UI는 final/failure display callback만 제공한다.
+
+3. menu/player setup action binding 분리
+   - player setup, auto play delay, search time, benchmark/cache menu action binding을 presentation action bundle로 이동한다.
+   - acceptance: 메뉴 UX 고도화 시 `GoCoachApp.kt` 수정면이 줄고 테스트 가능한 action model이 생긴다.
+
+4. Position cache optimization workflow runner 분리
+   - `acceptCacheOptimizationPrompt()`는 아직 operation 생성, effect 실행, result 분기를 UI에서 직접 처리한다.
+   - acceptance: post-game cache optimization도 application runner가 소유하고 UI는 prompt state/display callback만 제공한다.
+
+5. `LocalEngineCoreSessionDelegate` protocol별 추가 분해
+   - score/endgame/benchmark/helper를 score/endgame/protocol helper로 나눌지 실행한다.
+   - acceptance: remote engine client와 local engine client parity 문서화가 더 쉬워진다.

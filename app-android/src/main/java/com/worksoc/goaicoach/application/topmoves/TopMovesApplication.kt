@@ -203,6 +203,15 @@ internal fun runTopMoveAnalysisApplication(request: TopMoveAnalysisRunRequest) {
                 ),
             )
         }
-        request.applyCompletion(applyPlan)
+        applyTopMoveAnalysisCompletionApplication(
+            TopMoveAnalysisCompletionApplyRunRequest(
+                applyPlan = applyPlan,
+                applyTopMoveAnalysisUpdate = request.applyTopMoveAnalysisUpdate,
+                putUndoRestoreCache = request.putUndoRestoreCache,
+                putAnalysisCache = request.putAnalysisCache,
+                applyFailureDisplay = request.applyFailureDisplay,
+                appendEngineOperationDiscardLog = request.appendEngineOperationDiscardLog,
+            ),
+        )
     }
 }

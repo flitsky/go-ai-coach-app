@@ -681,26 +681,6 @@ private fun GoCoachScreen(
         displayStateApplier.applyTopMoveAnalysisFailureDisplayPlan(failure)
     }
 
-    fun applyTopMoveAnalysisCompletionApplyPlan(applyPlan: TopMoveAnalysisCompletionApplyPlan) {
-        when (applyPlan) {
-            is TopMoveAnalysisCompletionApplyPlan.ApplySuccess -> {
-                applyTopMoveAnalysisUpdate(applyPlan.update, applyPlan.analysisKey)
-                applyPlan.update.undoRestoreResult?.let { cached ->
-                    undoAnalysisRestoreCache.put(applyPlan.analysisKey, cached)
-                }
-                applyPlan.update.cachedResult?.let { cached ->
-                    analysisCache.put(applyPlan.analysisKey, cached)
-                }
-            }
-
-            is TopMoveAnalysisCompletionApplyPlan.ApplyFailure ->
-                applyTopMoveAnalysisFailureDisplayPlan(applyPlan.display)
-
-            is TopMoveAnalysisCompletionApplyPlan.Discard ->
-                appendEngineOperationDiscardLog(applyPlan.discard)
-        }
-    }
-
     fun applyScoreEstimateDisplayPlan(score: ScoreEstimateDisplayPlan) {
         displayStateApplier.applyScoreEstimateDisplayPlan(score)
     }
@@ -964,7 +944,15 @@ private fun GoCoachScreen(
                     analysisState = launchUpdate.analysisState
                     launchUpdate.engineMessage?.let { message -> engineMessage = message }
                 },
-                applyCompletion = ::applyTopMoveAnalysisCompletionApplyPlan,
+                applyTopMoveAnalysisUpdate = ::applyTopMoveAnalysisUpdate,
+                putUndoRestoreCache = { key, cached ->
+                    undoAnalysisRestoreCache.put(key, cached)
+                },
+                putAnalysisCache = { key, cached ->
+                    analysisCache.put(key, cached)
+                },
+                applyFailureDisplay = ::applyTopMoveAnalysisFailureDisplayPlan,
+                appendEngineOperationDiscardLog = ::appendEngineOperationDiscardLog,
             ),
         )
     }
