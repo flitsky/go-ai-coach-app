@@ -2,6 +2,7 @@ package com.worksoc.goaicoach.application.autoai
 
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.engine.EngineSessionClient
+import com.worksoc.goaicoach.application.engine.operation.EngineOperationResultGuard
 import com.worksoc.goaicoach.application.engine.runEngineIo
 import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
 import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
@@ -12,9 +13,11 @@ import com.worksoc.goaicoach.application.runtime.runtimeAiTurnScheduleLog
 import com.worksoc.goaicoach.application.session.GameSessionControllerState
 import com.worksoc.goaicoach.application.session.GameSessionEffect
 import com.worksoc.goaicoach.application.session.GameSessionRuntimeState
+import com.worksoc.goaicoach.application.session.TurnTimeMoveUpdate
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.ScoreSnapshot
+import com.worksoc.goaicoach.shared.StoneColor
 import com.worksoc.goaicoach.shared.engine.EngineOperationRequest
 
 internal data class AutoAiScheduledTurnRunRequest(
@@ -37,16 +40,16 @@ internal data class AutoAiScheduledTurnRunRequest(
     val applyCancelled: (AutoAiTurnScheduleValidationPlan) -> Unit,
     val markEngineOperationStarted: (String) -> Unit,
     val markEngineOperationCompleted: (String) -> Unit,
-    val applySuccessCompletion: suspend (
-        AutoAiTurnCompletionPlan,
-        AutoAiTurnExecutionContext,
-        Long,
-    ) -> AutoAiTurnFollowUpPlan,
-    val applyFailureCompletion: (
-        AutoAiTurnCompletionPlan,
-        AutoAiTurnExecutionContext,
-        Long,
-    ) -> Unit,
+    val recordTurnMove: (
+        player: StoneColor,
+        nowMillis: Long,
+        nextPlayer: StoneColor,
+    ) -> TurnTimeMoveUpdate,
+    val applyTurnTimeUpdate: (TurnTimeMoveUpdate) -> Unit,
+    val applyTurnDisplay: (AutoAiTurnDisplayPlan) -> AutoAiTurnFollowUpPlan,
+    val resolveEndgame: suspend (AutoAiTurnEndgamePlan.Resolve) -> Unit,
+    val applyTurnFailureDisplay: (Throwable) -> Unit,
+    val appendEngineOperationDiscardLog: (EngineOperationResultGuard.Discard) -> Unit,
     val completeAutoAiTurnRun: () -> Unit,
     val requestFollowUpAnalysis: (AutoAiTurnFollowUpRequest) -> Unit,
     val currentStateProvider: () -> GameState,
@@ -121,24 +124,22 @@ internal fun runScheduledAutoAiTurnApplication(
             turnRunPlan = turnRunPlan,
             operation = turnOperationToken.operation,
         )
-        val followUpPlan = when (turnCompletion) {
-            is AutoAiTurnCompletionPlan.ApplySuccess ->
-                request.applySuccessCompletion(
-                    turnCompletion,
-                    turnContext,
-                    turnStartMillis,
-                )
-
-            is AutoAiTurnCompletionPlan.ApplyFailure,
-            is AutoAiTurnCompletionPlan.Discard -> {
-                request.applyFailureCompletion(
-                    turnCompletion,
-                    turnContext,
-                    turnStartMillis,
-                )
-                AutoAiTurnFollowUpPlan.None
-            }
-        }
+        val followUpPlan = applyAutoAiTurnCompletionApplication(
+            AutoAiTurnCompletionApplyRunRequest(
+                completion = turnCompletion,
+                turnContext = turnContext,
+                turnStartMillis = turnStartMillis,
+                runtimeContextProvider = request.runtimeContextProvider,
+                runtimeEventLog = request.runtimeEventLog,
+                nowMillis = request.nowMillis,
+                recordTurnMove = request.recordTurnMove,
+                applyTurnTimeUpdate = request.applyTurnTimeUpdate,
+                applyTurnDisplay = request.applyTurnDisplay,
+                resolveEndgame = request.resolveEndgame,
+                applyTurnFailureDisplay = request.applyTurnFailureDisplay,
+                appendEngineOperationDiscardLog = request.appendEngineOperationDiscardLog,
+            ),
+        )
         request.markEngineOperationCompleted(turnOperationToken.operation.operationId)
         request.completeAutoAiTurnRun()
         request.runtimeEventLog.append(

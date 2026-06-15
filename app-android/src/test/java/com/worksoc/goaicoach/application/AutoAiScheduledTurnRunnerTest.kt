@@ -5,8 +5,6 @@ import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizat
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheQuality
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationUiState
 import com.worksoc.goaicoach.application.autoai.AutoAiScheduledTurnRunRequest
-import com.worksoc.goaicoach.application.autoai.AutoAiTurnCompletionPlan
-import com.worksoc.goaicoach.application.autoai.AutoAiTurnExecutionContext
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnFollowUpPlan
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnFollowUpRequest
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnRequestPlan
@@ -37,6 +35,8 @@ import com.worksoc.goaicoach.application.session.GameSessionMoveReviewState
 import com.worksoc.goaicoach.application.session.GameSessionRuntimeState
 import com.worksoc.goaicoach.application.session.GameSessionScoreState
 import com.worksoc.goaicoach.application.session.GameSessionSettingsState
+import com.worksoc.goaicoach.application.session.GameSessionTurnTimeState
+import com.worksoc.goaicoach.application.session.TurnTimeMoveUpdate
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
@@ -101,8 +101,8 @@ class AutoAiScheduledTurnRunnerTest {
         val runtimeLog = ScheduledRunnerRuntimeEventLog()
         val startedIds = mutableListOf<String>()
         val completedIds = mutableListOf<String>()
-        var successContext: AutoAiTurnExecutionContext? = null
         var followUp: AutoAiTurnFollowUpRequest? = null
+        var turnTimeUpdate: TurnTimeMoveUpdate? = null
 
         runScheduledAutoAiTurnApplication(
             baseRequest(
@@ -122,10 +122,15 @@ class AutoAiScheduledTurnRunnerTest {
                 applyScheduled = { schedule ->
                     autoAiState = autoAiState.applyAutoAiTurnRequestPlan(schedule)
                 },
-                applySuccessCompletion = { completion, context, _ ->
-                    assertTrue(completion is AutoAiTurnCompletionPlan.ApplySuccess)
-                    successContext = context
-                    val display = (completion as AutoAiTurnCompletionPlan.ApplySuccess).display
+                recordTurnMove = { player, nowMillis, nextPlayer ->
+                    assertEquals(StoneColor.Black, player)
+                    GameSessionTurnTimeState.reset(before, 900L)
+                        .recordMove(player, nowMillis, nextPlayer)
+                },
+                applyTurnTimeUpdate = { update ->
+                    turnTimeUpdate = update
+                },
+                applyTurnDisplay = { display ->
                     currentState = display.gameState
                     AutoAiTurnFollowUpPlan.RequestTopMoveAnalysis(display.gameState)
                 },
@@ -141,7 +146,7 @@ class AutoAiScheduledTurnRunnerTest {
         assertEquals(runtimeState.engineProfile, client.currentProfile)
         assertEquals(SearchTimeSettings(), client.searchTimeSettings)
         assertEquals(after, currentState)
-        assertEquals(StoneColor.Black, successContext?.aiPlayer)
+        assertEquals(StoneColor.Black, turnTimeUpdate?.player)
         assertEquals(false, autoAiState.isPending)
         assertEquals(1, startedIds.size)
         assertEquals(startedIds, completedIds)
@@ -225,16 +230,22 @@ class AutoAiScheduledTurnRunnerTest {
         applyCancelled: (AutoAiTurnScheduleValidationPlan) -> Unit = {},
         markStarted: (String) -> Unit = {},
         markCompleted: (String) -> Unit = {},
-        applySuccessCompletion: suspend (
-            AutoAiTurnCompletionPlan,
-            AutoAiTurnExecutionContext,
+        recordTurnMove: (
+            StoneColor,
             Long,
-        ) -> AutoAiTurnFollowUpPlan = { _, _, _ -> AutoAiTurnFollowUpPlan.None },
-        applyFailureCompletion: (
-            AutoAiTurnCompletionPlan,
-            AutoAiTurnExecutionContext,
-            Long,
-        ) -> Unit = { _, _, _ -> },
+            StoneColor,
+        ) -> TurnTimeMoveUpdate = { player, nowMillis, nextPlayer ->
+            GameSessionTurnTimeState.reset(stateProvider(), nowMillis)
+                .recordMove(player, nowMillis, nextPlayer)
+        },
+        applyTurnTimeUpdate: (TurnTimeMoveUpdate) -> Unit = {},
+        applyTurnDisplay: (com.worksoc.goaicoach.application.autoai.AutoAiTurnDisplayPlan) -> AutoAiTurnFollowUpPlan =
+            { AutoAiTurnFollowUpPlan.None },
+        resolveEndgame: suspend (com.worksoc.goaicoach.application.autoai.AutoAiTurnEndgamePlan.Resolve) -> Unit = {},
+        applyTurnFailureDisplay: (Throwable) -> Unit = {},
+        appendEngineOperationDiscardLog: (
+            com.worksoc.goaicoach.application.engine.operation.EngineOperationResultGuard.Discard,
+        ) -> Unit = {},
         completeRun: () -> Unit = {},
         requestFollowUp: (AutoAiTurnFollowUpRequest) -> Unit = {},
     ): AutoAiScheduledTurnRunRequest =
@@ -264,8 +275,12 @@ class AutoAiScheduledTurnRunnerTest {
             applyCancelled = applyCancelled,
             markEngineOperationStarted = markStarted,
             markEngineOperationCompleted = markCompleted,
-            applySuccessCompletion = applySuccessCompletion,
-            applyFailureCompletion = applyFailureCompletion,
+            recordTurnMove = recordTurnMove,
+            applyTurnTimeUpdate = applyTurnTimeUpdate,
+            applyTurnDisplay = applyTurnDisplay,
+            resolveEndgame = resolveEndgame,
+            applyTurnFailureDisplay = applyTurnFailureDisplay,
+            appendEngineOperationDiscardLog = appendEngineOperationDiscardLog,
             completeAutoAiTurnRun = completeRun,
             requestFollowUpAnalysis = requestFollowUp,
             currentStateProvider = stateProvider,

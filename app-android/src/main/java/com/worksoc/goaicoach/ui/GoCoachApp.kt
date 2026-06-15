@@ -1329,72 +1329,6 @@ private fun GoCoachScreen(
         }
     }
 
-    suspend fun applyAutoAiTurnSuccessCompletion(
-        completion: AutoAiTurnCompletionPlan,
-        turnContext: AutoAiTurnExecutionContext,
-        turnStartMillis: Long,
-    ): AutoAiTurnFollowUpPlan =
-        when (completion) {
-            is AutoAiTurnCompletionPlan.ApplySuccess -> {
-                val appliedDisplay = completion.display
-                val turnTimeUpdate = turnTimeState.recordMove(
-                    player = turnContext.aiPlayer,
-                    nowMillis = System.currentTimeMillis(),
-                    nextPlayer = appliedDisplay.gameState.nextPlayer,
-                )
-                runtimeEventLog.append(
-                    runtimeAiTurnSuccessLog(
-                        context = currentRuntimeLogContext(),
-                        turnState = turnContext.turnState,
-                        aiPlayer = turnContext.aiPlayer,
-                        display = appliedDisplay,
-                        turnElapsedMs = System.currentTimeMillis() - turnStartMillis,
-                        turnTimeUpdate = turnTimeUpdate,
-                    ),
-                )
-                turnTimeState = turnTimeUpdate.after
-                val followUpPlan = applyAutoAiTurnDisplayPlan(appliedDisplay)
-                when (val endgamePlan = buildAutoAiTurnEndgamePlan(appliedDisplay)) {
-                    AutoAiTurnEndgamePlan.None -> Unit
-                    is AutoAiTurnEndgamePlan.Resolve -> applyAutoAiEndgamePlan(endgamePlan)
-                }
-                followUpPlan
-            }
-
-            is AutoAiTurnCompletionPlan.ApplyFailure ->
-                AutoAiTurnFollowUpPlan.None
-
-            is AutoAiTurnCompletionPlan.Discard -> {
-                appendEngineOperationDiscardLog(completion.discard)
-                AutoAiTurnFollowUpPlan.None
-            }
-        }
-
-    fun applyAutoAiTurnFailureCompletion(
-        completion: AutoAiTurnCompletionPlan,
-        turnContext: AutoAiTurnExecutionContext,
-        turnStartMillis: Long,
-    ) {
-        when (completion) {
-            is AutoAiTurnCompletionPlan.ApplySuccess -> Unit
-            is AutoAiTurnCompletionPlan.ApplyFailure -> {
-                runtimeEventLog.append(
-                    runtimeAiTurnFailureLog(
-                        context = currentRuntimeLogContext(),
-                        turnState = turnContext.turnState,
-                        aiPlayer = turnContext.aiPlayer,
-                        turnElapsedMs = System.currentTimeMillis() - turnStartMillis,
-                        error = completion.error,
-                    ),
-                )
-                applyAutoAiTurnFailureDisplayPlan(completion.error)
-            }
-
-            is AutoAiTurnCompletionPlan.Discard ->
-                appendEngineOperationDiscardLog(completion.discard)
-        }
-    }
-
     fun requestAiTurnForCurrentState() {
         when (
             val request = currentControllerSessionState().toAutoAiTurnRequestPlan(
@@ -1433,8 +1367,20 @@ private fun GoCoachScreen(
                         },
                         markEngineOperationStarted = ::markEngineOperationStarted,
                         markEngineOperationCompleted = ::markEngineOperationCompleted,
-                        applySuccessCompletion = ::applyAutoAiTurnSuccessCompletion,
-                        applyFailureCompletion = ::applyAutoAiTurnFailureCompletion,
+                        recordTurnMove = { player, nowMillis, nextPlayer ->
+                            turnTimeState.recordMove(
+                                player = player,
+                                nowMillis = nowMillis,
+                                nextPlayer = nextPlayer,
+                            )
+                        },
+                        applyTurnTimeUpdate = { update ->
+                            turnTimeState = update.after
+                        },
+                        applyTurnDisplay = ::applyAutoAiTurnDisplayPlan,
+                        resolveEndgame = ::applyAutoAiEndgamePlan,
+                        applyTurnFailureDisplay = ::applyAutoAiTurnFailureDisplayPlan,
+                        appendEngineOperationDiscardLog = ::appendEngineOperationDiscardLog,
                         completeAutoAiTurnRun = {
                             autoAiTurnUiState = autoAiTurnUiState.completeAutoAiTurnRun()
                         },

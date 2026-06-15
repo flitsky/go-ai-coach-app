@@ -381,6 +381,34 @@ class LayeringContractTest {
     }
 
     @Test
+    fun goCoachAppDoesNotOwnAutoAiTurnCompletionApplyBody() {
+        val goCoachApp = repoRoot()
+            .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
+        val text = goCoachApp.readText()
+        val forbiddenFragments = listOf(
+            "fun applyAutoAiTurnSuccessCompletion(",
+            "fun applyAutoAiTurnFailureCompletion(",
+            "runtimeAiTurnSuccessLog(",
+            "runtimeAiTurnFailureLog(",
+            "buildAutoAiTurnEndgamePlan(",
+        )
+            .filter { fragment -> fragment in text }
+        val requiredFragments = listOf(
+            "recordTurnMove =",
+            "applyTurnDisplay =",
+            "resolveEndgame =",
+            "applyTurnFailureDisplay =",
+        )
+            .filterNot { fragment -> fragment in text }
+
+        assertTrue(
+            "GoCoachApp should delegate Auto-AI completion display/log/endgame decision to autoai application applier:\n" +
+                "forbidden:\n${forbiddenFragments.joinToString("\n")}\nmissing:\n${requiredFragments.joinToString("\n")}",
+            forbiddenFragments.isEmpty() && requiredFragments.isEmpty(),
+        )
+    }
+
+    @Test
     fun goCoachAppDoesNotOwnScoreEstimateWorkflowBody() {
         val goCoachApp = repoRoot()
             .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")

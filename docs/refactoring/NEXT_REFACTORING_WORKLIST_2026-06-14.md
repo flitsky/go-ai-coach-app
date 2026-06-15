@@ -1693,3 +1693,58 @@
 5. `LocalEngineCoreSessionDelegate` protocol별 추가 분해
    - score/endgame/benchmark/helper를 score/endgame/protocol helper로 나눌지 실행한다.
    - acceptance: remote engine client와 local engine client parity 문서화가 더 쉬워진다.
+
+## 2026-06-15 추가 진행 로그: 2nd phase.5 Auto-AI completion applier
+
+- 2026-06-15: `SM-S908N` USB 연결 상태에서 `make install-dev-engine`로 최신 debug APK 설치, KataGo model/config seed, cold launch를 완료했다. cold launch `TotalTime=611ms`.
+- 2026-06-15: `AutoAiCompletionApplierApplication.kt`를 추가했다. Auto-AI turn completion의 success/failure/discard 분기, success/failure runtime log, 턴 시간 update, display 적용, endgame resolve trigger, discard log 위임을 autoai application applier가 소유한다.
+- 2026-06-15: `GoCoachApp.kt`의 `applyAutoAiTurnSuccessCompletion()`/`applyAutoAiTurnFailureCompletion()` helper를 제거했다. UI는 scheduled runner 요청에 작은 상태 적용 콜백만 제공한다.
+- 2026-06-15: `AutoAiCompletionApplierTest`와 `LayeringContractTest.goCoachAppDoesNotOwnAutoAiTurnCompletionApplyBody()`를 추가했다. success/failure/discard 경로와 UI 경계 회귀를 함께 검증한다.
+
+### 현재 metric
+
+- `GoCoachApp.kt`: 1,754줄
+- `GoCoachApp.kt` 전체 import: 115개
+- `GoCoachApp.kt` application import fan-in: 62개
+- UI 파일 내 직접 Auto-AI completion apply 세부 참조: 제거됨
+  - `fun applyAutoAiTurnSuccessCompletion(`
+  - `fun applyAutoAiTurnFailureCompletion(`
+  - `runtimeAiTurnSuccessLog(`
+  - `runtimeAiTurnFailureLog(`
+  - `buildAutoAiTurnEndgamePlan(`
+
+### 검증
+
+- `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:compileDebugKotlin :app-android:compileDebugUnitTestKotlin :app-android:testDebugUnitTest --tests 'com.worksoc.goaicoach.application.AutoAiCompletionApplierTest' --tests 'com.worksoc.goaicoach.application.AutoAiScheduledTurnRunnerTest' --tests 'com.worksoc.goaicoach.application.GameAutomationApplicationTest' --tests 'com.worksoc.goaicoach.architecture.LayeringContractTest' --no-daemon` 통과.
+- `JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test` 통과.
+- 리팩토링 반영 후 최종 APK 재설치를 재시도했으나 `adb devices`가 빈 목록을 반환해 `:app-android:installDebug`가 `No connected devices`로 실패했다. `adb kill-server/start-server` 후에도 장치가 재인식되지 않았다.
+
+## 현재 리팩토링/아키텍처 완성도 평가
+
+- 리팩토링 배치 진행도: 99.9988/100.
+- 외부 평가 기준 플랫폼 아키텍처 완성도: 97.7/100.
+- 보수적 내부 플랫폼 완성도: 97.3/100.
+- 상향 요인: Auto-AI turn workflow와 completion apply가 모두 application layer로 올라갔다. UI shell은 이제 자동 AI 턴의 세부 분기보다 상태 적용 콜백과 화면 조립에 더 집중한다.
+- 남은 감점 요인: `GoCoachApp.kt`의 import fan-in은 아직 62개로 크고, Top Moves 실행 본문이 다음으로 큰 engine workflow 덩어리다.
+
+## 다음 추천 리팩토링 항목 - 2nd phase.6
+
+1. Top Moves 실행 본문 runner 분리
+   - `requestTopMoveAnalysisForState()`의 launch plan/cache/run-engine/completion apply plan 조립을 application launcher로 이동한다.
+   - acceptance: Top Moves cache hit/run-engine/failure/discard 경로가 runner 테스트로 고정되고 UI에서 Top Moves operation/effect/completion 세부가 사라진다.
+
+2. `GoCoachScreenStateAssembler` 도입
+   - `buildGameScreenStateInput(...)`의 긴 인자 조립을 snapshot/assembler로 분리한다.
+   - acceptance: 화면 렌더링 직전 state read fan-in과 UI shell import fan-in이 함께 줄어든다.
+
+3. menu/player setup action binding 분리
+   - player setup, auto play delay, search time, benchmark/cache menu action binding을 presentation action bundle로 이동한다.
+   - acceptance: 메뉴 UX 고도화 시 `GoCoachApp.kt` 수정면이 줄고 테스트 가능한 action model이 생긴다.
+
+4. Auto-AI endgame resolve runner 후속 분리
+   - 현재 `applyAutoAiEndgamePlan()`은 아직 UI에서 engine endgame effect와 completion을 직접 처리한다.
+   - acceptance: AI pass/pass 종국 처리도 application runner가 소유하고 UI는 final/failure display callback만 제공한다.
+
+5. `LocalEngineCoreSessionDelegate` protocol별 추가 분해
+   - score/endgame/benchmark/helper를 score/endgame/protocol helper로 나눌지 실행한다.
+   - acceptance: remote engine client와 local engine client parity 문서화가 더 쉬워진다.
