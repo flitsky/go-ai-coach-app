@@ -1074,13 +1074,6 @@ private fun GoCoachScreen(
         val restore = restoreRequest.restore
         val restoredState = restore.gameState
         val restoredProfile = restore.runtime.engineProfile
-        val restoreOperation = engineOperationRequest(
-            kind = EngineOperationKind.RestoredGameSync,
-            state = restoredState,
-            sessionGeneration = runtimeState.sessionGeneration + 1L,
-            timeoutPolicy = engineProfileTimeoutPolicy(restoredProfile),
-            fallbackPolicy = EngineFallbackPolicy.LocalRules,
-        )
 
         applySavedGameRestorePlan(restore)
 
@@ -1088,32 +1081,30 @@ private fun GoCoachScreen(
             return
         }
 
-        launchTrackedEngineOperation(restoreOperation) {
-            val followUpAnalysisState = applyScoreSyncCompletionApplyPlan(
-                runEngineIo {
-                    engineClient.runRestoredGameSyncApplyPlan(
-                        request = RestoredGameSyncEffectLaunchRequest(
-                            effect = GameSessionEffect.SyncRestoredGame(restoredState),
-                            context = RestoredGameSyncExecutionContext(
-                                profile = restoredProfile,
-                            ),
-                            operation = restoreOperation,
-                            currentState = gameState,
-                            currentSessionGeneration = runtimeState.sessionGeneration,
-                            followUpAnalysisState = restoredState,
-                            fallbackMessage = "Saved game restored locally, but engine sync failed.",
-                        ),
-                        diagnosticEventLog = diagnosticEventLog,
+        runRestoredGameSyncApplication(
+            RestoredGameSyncRunRequest(
+                engineClient = engineClient,
+                state = restoredState,
+                profile = restoredProfile,
+                sessionGeneration = runtimeState.sessionGeneration + 1L,
+                timeoutPolicy = engineProfileTimeoutPolicy(restoredProfile),
+                diagnosticEventLog = diagnosticEventLog,
+                currentState = { gameState },
+                currentSessionGeneration = { runtimeState.sessionGeneration },
+                runEngineOperation = { operation, block ->
+                    launchTrackedEngineOperation(operation) {
+                        block()
+                    }
+                },
+                applyCompletion = ::applyScoreSyncCompletionApplyPlan,
+                requestFollowUpAnalysis = { state ->
+                    requestTopMoveAnalysisForState(
+                        targetState = state,
+                        automatic = true,
                     )
                 },
-            )
-            followUpAnalysisState?.let { state ->
-                requestTopMoveAnalysisForState(
-                    targetState = state,
-                    automatic = true,
-                )
-            }
-        }
+            ),
+        )
     }
 
     fun requestEngineScoreEstimate(effect: GameSessionEffect.RunScoreEstimate) {

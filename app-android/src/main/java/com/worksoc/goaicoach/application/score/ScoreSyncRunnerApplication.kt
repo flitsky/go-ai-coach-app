@@ -275,6 +275,23 @@ internal data class RestoredGameSyncEffectLaunchRequest(
     val fallbackMessage: String,
 )
 
+internal data class RestoredGameSyncRunRequest(
+    val engineClient: EngineSessionClient,
+    val state: GameState,
+    val profile: EngineProfile,
+    val sessionGeneration: Long,
+    val timeoutPolicy: EngineTimeoutPolicy,
+    val diagnosticEventLog: DiagnosticEventLogPort,
+    val currentState: () -> GameState,
+    val currentSessionGeneration: () -> Long,
+    val runEngineOperation: (EngineOperationRequest, suspend () -> Unit) -> Unit,
+    val runEngineWork: suspend (suspend () -> ScoreSyncCompletionApplyPlan) -> ScoreSyncCompletionApplyPlan =
+        { block -> runEngineIo { block() } },
+    val applyCompletion: (ScoreSyncCompletionApplyPlan) -> GameState?,
+    val requestFollowUpAnalysis: (GameState) -> Unit,
+    val fallbackMessage: String = "Saved game restored locally, but engine sync failed.",
+)
+
 internal suspend fun EngineSessionClient.runRestoredGameSyncEffect(
     effect: GameSessionEffect.SyncRestoredGame,
     context: RestoredGameSyncExecutionContext,
@@ -315,3 +332,34 @@ internal suspend fun EngineSessionClient.runRestoredGameSyncApplyPlan(
         request = request,
         diagnosticEventLog = diagnosticEventLog,
     ).toApplyPlan()
+
+internal fun runRestoredGameSyncApplication(request: RestoredGameSyncRunRequest) {
+    val operation = engineOperationRequest(
+        kind = EngineOperationKind.RestoredGameSync,
+        state = request.state,
+        sessionGeneration = request.sessionGeneration,
+        timeoutPolicy = request.timeoutPolicy,
+        fallbackPolicy = EngineFallbackPolicy.LocalRules,
+    )
+    request.runEngineOperation(operation) {
+        val followUpAnalysisState = request.applyCompletion(
+            request.runEngineWork {
+                request.engineClient.runRestoredGameSyncApplyPlan(
+                    request = RestoredGameSyncEffectLaunchRequest(
+                        effect = GameSessionEffect.SyncRestoredGame(request.state),
+                        context = RestoredGameSyncExecutionContext(
+                            profile = request.profile,
+                        ),
+                        operation = operation,
+                        currentState = request.currentState(),
+                        currentSessionGeneration = request.currentSessionGeneration(),
+                        followUpAnalysisState = request.state,
+                        fallbackMessage = request.fallbackMessage,
+                    ),
+                    diagnosticEventLog = request.diagnosticEventLog,
+                )
+            },
+        )
+        followUpAnalysisState?.let(request.requestFollowUpAnalysis)
+    }
+}

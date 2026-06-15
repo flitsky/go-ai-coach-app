@@ -914,6 +914,52 @@ class ScoreDisplayApplicationTest {
     }
 
     @Test
+    fun restoredGameSyncApplicationRunnerLaunchesOperationAndRequestsFollowUpAnalysis() = runBlocking {
+        val state = GameState.empty()
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+        val profile = EngineProfile(name = "restored")
+        val client = FakeScoreEngineSessionClient()
+        var launchedKind: EngineOperationKind? = null
+        var launchedGeneration: Long? = null
+        var launchedMoveCount: Int? = null
+        var applied: ScoreSyncCompletionApplyPlan? = null
+        var followUpState: GameState? = null
+
+        runRestoredGameSyncApplication(
+            RestoredGameSyncRunRequest(
+                engineClient = client,
+                state = state,
+                profile = profile,
+                sessionGeneration = 6L,
+                timeoutPolicy = EngineTimeoutPolicy(timeoutMillis = 250L, label = "test"),
+                diagnosticEventLog = NoopDiagnosticEventLog,
+                currentState = { state },
+                currentSessionGeneration = { 6L },
+                runEngineOperation = { operation, block ->
+                    launchedKind = operation.kind
+                    launchedGeneration = operation.sessionGeneration
+                    launchedMoveCount = operation.moveCount
+                    runBlocking { block() }
+                },
+                runEngineWork = { block -> block() },
+                applyCompletion = { plan ->
+                    applied = plan
+                    (plan as? ScoreSyncCompletionApplyPlan.ApplySuccess)?.followUpAnalysisState
+                },
+                requestFollowUpAnalysis = { nextState -> followUpState = nextState },
+            ),
+        )
+
+        assertEquals(EngineOperationKind.RestoredGameSync, launchedKind)
+        assertEquals(6L, launchedGeneration)
+        assertEquals(state.moves.size, launchedMoveCount)
+        assertEquals(state, client.configuredSyncState)
+        assertEquals(profile, client.configuredSyncProfile)
+        assertTrue(applied is ScoreSyncCompletionApplyPlan.ApplySuccess)
+        assertEquals(state, followUpState)
+    }
+
+    @Test
     fun restoredGameSyncEffectRunnerUsesEffectStateAndContextProfile() = runBlocking {
         val state = GameState.empty()
             .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))

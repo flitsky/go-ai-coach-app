@@ -247,6 +247,27 @@ class LayeringContractTest {
     }
 
     @Test
+    fun goCoachAppDoesNotOwnRestoredGameSyncWorkflowBody() {
+        val goCoachApp = repoRoot()
+            .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
+        val text = goCoachApp.readText()
+        val forbiddenFragments = listOf(
+            "RestoredGameSyncEffectLaunchRequest(",
+            "RestoredGameSyncExecutionContext(",
+            "runRestoredGameSyncApplyPlan(",
+            "GameSessionEffect.SyncRestoredGame(",
+            "EngineOperationKind.RestoredGameSync",
+        )
+            .filter { fragment -> fragment in text }
+
+        assertTrue(
+            "GoCoachApp should run restored-game score sync through runRestoredGameSyncApplication, not own operation/effect details:\n" +
+                forbiddenFragments.joinToString("\n"),
+            forbiddenFragments.isEmpty(),
+        )
+    }
+
+    @Test
     fun scoreRunnersUseEngineSessionClientContractOnly() {
         val scoreRoot = repoRoot()
             .resolve("app-android/src/main/java/com/worksoc/goaicoach/application/score")
