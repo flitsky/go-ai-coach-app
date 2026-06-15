@@ -7,6 +7,7 @@ import com.worksoc.goaicoach.application.engine.*
 import com.worksoc.goaicoach.application.runtime.*
 import com.worksoc.goaicoach.application.score.*
 import com.worksoc.goaicoach.application.topmoves.*
+import com.worksoc.goaicoach.application.undo.*
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
@@ -76,14 +77,6 @@ import com.worksoc.goaicoach.application.startgame.buildNewLocalGameSessionPlan
 import com.worksoc.goaicoach.application.startgame.buildStartConfiguredGamePlan
 import com.worksoc.goaicoach.application.savedgame.SavedGameStorePort
 import com.worksoc.goaicoach.application.analysis.UndoAnalysisRestoreCache
-import com.worksoc.goaicoach.application.undo.EngineUndoCompletionPlan
-import com.worksoc.goaicoach.application.undo.UndoLocalStatePlan
-import com.worksoc.goaicoach.application.undo.UndoRequestPlan
-import com.worksoc.goaicoach.application.undo.buildEngineUndoCompletionPlan
-import com.worksoc.goaicoach.application.undo.buildLocalTwoPlayerUndoPlan
-import com.worksoc.goaicoach.application.undo.buildUndoRequestPlan
-import com.worksoc.goaicoach.application.undo.undoEngineInterventionQuietUntilMillis
-import com.worksoc.goaicoach.application.undo.undoEngineInterventionRemainingDelayMillis
 import com.worksoc.goaicoach.application.preferences.UserPreferencesStorePort
 import com.worksoc.goaicoach.application.debugreport.UserNoticePort
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
@@ -1593,94 +1586,64 @@ private fun GoCoachScreen(
     }
 
     fun undoLocalTwoPlayerTurn(plan: UndoRequestPlan.LocalTwoPlayerUndo) {
-        val undo = buildLocalTwoPlayerUndoPlan(
-            currentState = gameState,
-            scoreSnapshots = scoreState.scoreSnapshots,
-        )
-        val nextState = undo.gameState
-        applyUndoLocalStatePlan(undo)
-        val quietUntilMillis = markUndoEngineInterventionQuiet()
-        if (!plan.syncEngineAfterUndo) {
-            engineMessage = "Local undo completed without engine sync."
-            cancelPendingPostUndoEngineSync()
-            return
-        }
-        engineMessage = "Local undo completed. Engine analysis will resume after undo input settles."
-        schedulePostUndoLocalEngineSync(
-            targetState = nextState,
-            quietUntilMillis = quietUntilMillis,
+        runLocalTwoPlayerUndoApplication(
+            LocalTwoPlayerUndoRunRequest(
+                plan = plan,
+                currentState = gameState,
+                scoreSnapshots = scoreState.scoreSnapshots,
+                applyUndo = ::applyUndoLocalStatePlan,
+                markQuiet = ::markUndoEngineInterventionQuiet,
+                setEngineMessage = { message -> engineMessage = message },
+                cancelPendingPostUndoSync = ::cancelPendingPostUndoEngineSync,
+                schedulePostUndoSync = { targetState, quietUntilMillis ->
+                    schedulePostUndoLocalEngineSync(
+                        targetState = targetState,
+                        quietUntilMillis = quietUntilMillis,
+                    )
+                },
+            ),
         )
     }
 
     fun undoEngineBackedTurn(plan: UndoRequestPlan.EngineUndo) {
-        val undoCount = plan.undoCount
-        val operation = engineOperationRequest(
-            kind = EngineOperationKind.EngineUndo,
-            state = gameState,
-            sessionGeneration = runtimeState.sessionGeneration,
-            timeoutPolicy = EngineTimeoutPolicy(label = "engine-undo"),
-            fallbackPolicy = EngineFallbackPolicy.LocalEngine,
-        )
-        launchTrackedEngineOperation(operation) {
-            val result =
-                runEngineIo {
-                    engineClient.runEngineUndoWorkflowResult(
-                        effect = GameSessionEffect.UndoEngineMoves(
-                            state = gameState,
-                            undoCount = undoCount,
-                        ),
-                        operationRequest = operation,
-                        diagnosticEventLog = diagnosticEventLog,
-                    )
-                }
-            when (val completion = buildEngineUndoCompletionPlan(
-                result = result,
-                operation = operation,
+        runEngineUndoApplication(
+            EngineUndoRunRequest(
+                engineClient = engineClient,
+                plan = plan,
                 currentState = gameState,
-                currentSessionGeneration = runtimeState.sessionGeneration,
-                undoCount = undoCount,
+                sessionGeneration = runtimeState.sessionGeneration,
                 previousMoveReviews = moveReviewState.moveReviews,
                 scoreSnapshots = scoreState.scoreSnapshots,
-            )) {
-                is EngineUndoCompletionPlan.ApplySuccess -> {
-                    applyUndoLocalStatePlan(completion.undo)
-                    engineMessage = completion.engineMessage
-                    markUndoEngineInterventionQuiet()
-                    cancelPendingPostUndoEngineSync()
-                }
-
-                is EngineUndoCompletionPlan.ApplyFailure -> {
-                    engineMessage = completion.engineMessage
-                }
-
-                is EngineUndoCompletionPlan.Discard ->
-                    appendEngineOperationDiscardLog(completion.discard)
-            }
-        }
+                diagnosticEventLog = diagnosticEventLog,
+                launchEngineOperation = { operation, block ->
+                    launchTrackedEngineOperation(operation) {
+                        block()
+                    }
+                },
+                currentStateProvider = { gameState },
+                currentSessionGenerationProvider = { runtimeState.sessionGeneration },
+                applyUndo = ::applyUndoLocalStatePlan,
+                setEngineMessage = { message -> engineMessage = message },
+                markQuiet = ::markUndoEngineInterventionQuiet,
+                cancelPendingPostUndoSync = ::cancelPendingPostUndoEngineSync,
+                appendDiscardLog = ::appendEngineOperationDiscardLog,
+            ),
+        )
     }
 
     fun undoLastTurn() {
-        when (
-            val plan = buildUndoRequestPlan(
+        runUndoLastTurnApplication(
+            UndoLastTurnRunRequest(
                 currentState = gameState,
                 matchMode = matchMode,
                 isEngineReady = isEngineReady,
                 isEngineBusy = isEngineBusy,
                 humanSeatCount = playerSetup.humanSeatCount(),
-            )
-        ) {
-            is UndoRequestPlan.ShowMessage -> {
-                engineMessage = plan.message
-                return
-            }
-            is UndoRequestPlan.LocalTwoPlayerUndo -> {
-                undoLocalTwoPlayerTurn(plan)
-                return
-            }
-            is UndoRequestPlan.EngineUndo -> {
-                undoEngineBackedTurn(plan)
-            }
-        }
+                showMessage = { message -> engineMessage = message },
+                runLocalTwoPlayerUndo = ::undoLocalTwoPlayerTurn,
+                runEngineUndo = ::undoEngineBackedTurn,
+            ),
+        )
     }
 
     fun currentCacheOptimizationPlan() =

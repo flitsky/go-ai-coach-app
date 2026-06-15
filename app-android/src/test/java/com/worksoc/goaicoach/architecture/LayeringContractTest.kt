@@ -245,6 +245,28 @@ class LayeringContractTest {
     }
 
     @Test
+    fun goCoachAppDoesNotOwnUndoWorkflowBody() {
+        val goCoachApp = repoRoot()
+            .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
+        val text = goCoachApp.readText()
+        val forbiddenFragments = listOf(
+            "buildUndoRequestPlan(",
+            "buildLocalTwoPlayerUndoPlan(",
+            "buildEngineUndoCompletionPlan(",
+            "GameSessionEffect.UndoEngineMoves(",
+            "EngineUndoCompletionPlan.",
+            "EngineOperationKind.EngineUndo",
+        )
+            .filter { fragment -> fragment in text }
+
+        assertTrue(
+            "GoCoachApp should run undo through runUndoLastTurnApplication/runEngineUndoApplication, not own engine undo workflow details:\n" +
+                forbiddenFragments.joinToString("\n"),
+            forbiddenFragments.isEmpty(),
+        )
+    }
+
+    @Test
     fun goCoachAppDoesNotOwnScoringRuleSyncWorkflowBody() {
         val goCoachApp = repoRoot()
             .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")

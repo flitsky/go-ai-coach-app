@@ -1569,3 +1569,7 @@
 - `GoCoachApp.kt`의 `changeSearchTimeSettings()`는 더 이상 `clearTopMoveSpots()`와 `clearReviewAnalysis()`를 직접 조합하지 않고, application runner에 현재 analysis state와 game state를 넘긴다. 사용되지 않게 된 UI local `clearTopMoveSpots()` helper도 제거했다.
 - `TopMovesApplicationTest`에 search-time reset runner 테스트를 추가했다. 후보 spot, review candidate, review snapshot, last analysis key가 정리되고 안내 문구가 남는지 검증한다.
 - `LayeringContractTest`의 Top Moves workflow guard를 확장했다. UI가 `clearTopMoveSpots()`나 검색 시간 변경 안내 문구를 직접 소유하지 못하도록 회귀를 막는다.
+- 사용자가 `16.` 다음 리팩토링 추천 항목을 단계별로 모두 진행하고, 결과 보고 시 현재 완성도와 다음 추천 작업을 정리해달라고 요청했다.
+- 무르기 요청/로컬 2인 무르기/엔진 backing 무르기 흐름을 `UndoRunnerApplication.kt`로 이동했다. `GoCoachApp.kt`는 이제 undo plan dispatch, local undo 후 post-undo sync 예약, engine undo operation 생성/완료/폐기 판단을 직접 소유하지 않고 application runner에 콜백을 넘긴다.
+- `UndoApplicationTest`에 runner 테스트를 추가했다. local two-player sync 예약, offline sync 취소, engine undo 성공 적용, 변경된 국면에 도착한 late completion 폐기 경로를 검증한다.
+- `LayeringContractTest`에 `goCoachAppDoesNotOwnUndoWorkflowBody()`를 추가했다. UI가 `buildUndoRequestPlan`, `buildLocalTwoPlayerUndoPlan`, `buildEngineUndoCompletionPlan`, `GameSessionEffect.UndoEngineMoves`, `EngineOperationKind.EngineUndo` 세부를 다시 소유하지 못하도록 회귀를 막는다.

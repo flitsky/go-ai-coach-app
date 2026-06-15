@@ -4,6 +4,7 @@ import com.worksoc.goaicoach.application.engine.operation.*
 
 import com.worksoc.goaicoach.application.undo.*
 
+import com.worksoc.goaicoach.application.diagnostic.NoopDiagnosticEventLog
 import com.worksoc.goaicoach.application.engine.EngineUndoWorkflowResult
 import com.worksoc.goaicoach.application.movereview.MoveReviewMarker
 import com.worksoc.goaicoach.application.movereview.MoveReviewTone
@@ -20,6 +21,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import kotlinx.coroutines.runBlocking
 
 class UndoApplicationTest {
     @Test
@@ -210,5 +212,173 @@ class UndoApplicationTest {
         assertTrue(failure is EngineUndoCompletionPlan.ApplyFailure)
         assertEquals("undo failed", (failure as EngineUndoCompletionPlan.ApplyFailure).engineMessage)
         assertTrue(discard is EngineUndoCompletionPlan.Discard)
+    }
+
+    @Test
+    fun undoLastTurnRunnerDispatchesLocalTwoPlayerUndoPlan() {
+        val state = GameState.empty()
+            .play(Move.Pass(StoneColor.Black))
+        var message: String? = null
+        var localPlan: UndoRequestPlan.LocalTwoPlayerUndo? = null
+        var engineUndoCalled = false
+
+        runUndoLastTurnApplication(
+            UndoLastTurnRunRequest(
+                currentState = state,
+                matchMode = MatchMode.LocalTwoPlayer,
+                isEngineReady = true,
+                isEngineBusy = false,
+                humanSeatCount = 2,
+                showMessage = { value -> message = value },
+                runLocalTwoPlayerUndo = { plan -> localPlan = plan },
+                runEngineUndo = { engineUndoCalled = true },
+            ),
+        )
+
+        assertEquals(null, message)
+        assertEquals(UndoRequestPlan.LocalTwoPlayerUndo(syncEngineAfterUndo = true), localPlan)
+        assertFalse(engineUndoCalled)
+    }
+
+    @Test
+    fun localTwoPlayerUndoRunnerAppliesUndoAndSchedulesSettledEngineSync() {
+        val state = GameState.empty()
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+            .play(Move.Play(StoneColor.White, BoardCoordinate.fromLabel("D5", BoardSize.Nine)))
+        var applied: UndoLocalStatePlan? = null
+        var engineMessage: String? = null
+        var cancelCalled = false
+        var scheduledState: GameState? = null
+        var scheduledQuietUntilMillis: Long? = null
+
+        runLocalTwoPlayerUndoApplication(
+            LocalTwoPlayerUndoRunRequest(
+                plan = UndoRequestPlan.LocalTwoPlayerUndo(syncEngineAfterUndo = true),
+                currentState = state,
+                scoreSnapshots = emptyList(),
+                applyUndo = { undo -> applied = undo },
+                markQuiet = { 2_000L },
+                setEngineMessage = { message -> engineMessage = message },
+                cancelPendingPostUndoSync = { cancelCalled = true },
+                schedulePostUndoSync = { targetState, quietUntilMillis ->
+                    scheduledState = targetState
+                    scheduledQuietUntilMillis = quietUntilMillis
+                },
+            ),
+        )
+
+        assertEquals(1, applied?.gameState?.moves?.size)
+        assertEquals(applied?.gameState, scheduledState)
+        assertEquals(2_000L, scheduledQuietUntilMillis)
+        assertEquals("Local undo completed. Engine analysis will resume after undo input settles.", engineMessage)
+        assertFalse(cancelCalled)
+    }
+
+    @Test
+    fun localTwoPlayerUndoRunnerCancelsEngineSyncWhenOffline() {
+        val state = GameState.empty()
+            .play(Move.Pass(StoneColor.Black))
+        var applied: UndoLocalStatePlan? = null
+        var engineMessage: String? = null
+        var cancelCalled = false
+        var scheduleCalled = false
+
+        runLocalTwoPlayerUndoApplication(
+            LocalTwoPlayerUndoRunRequest(
+                plan = UndoRequestPlan.LocalTwoPlayerUndo(syncEngineAfterUndo = false),
+                currentState = state,
+                scoreSnapshots = emptyList(),
+                applyUndo = { undo -> applied = undo },
+                markQuiet = { 2_000L },
+                setEngineMessage = { message -> engineMessage = message },
+                cancelPendingPostUndoSync = { cancelCalled = true },
+                schedulePostUndoSync = { _, _ -> scheduleCalled = true },
+            ),
+        )
+
+        assertEquals(0, applied?.gameState?.moves?.size)
+        assertEquals("Local undo completed without engine sync.", engineMessage)
+        assertTrue(cancelCalled)
+        assertFalse(scheduleCalled)
+    }
+
+    @Test
+    fun engineUndoRunnerLaunchesOperationAndAppliesSuccessfulCompletion() {
+        val state = GameState.empty()
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+            .play(Move.Play(StoneColor.White, BoardCoordinate.fromLabel("D5", BoardSize.Nine)))
+        var launchedOperation: EngineOperationRequest? = null
+        var applied: UndoLocalStatePlan? = null
+        var engineMessage: String? = null
+        var quietMarked = false
+        var cancelCalled = false
+        var discardCalled = false
+
+        runEngineUndoApplication(
+            EngineUndoRunRequest(
+                plan = UndoRequestPlan.EngineUndo(undoCount = 1),
+                currentState = state,
+                sessionGeneration = 7L,
+                previousMoveReviews = emptyList(),
+                scoreSnapshots = emptyList(),
+                diagnosticEventLog = NoopDiagnosticEventLog,
+                launchEngineOperation = { operation, block ->
+                    launchedOperation = operation
+                    runBlocking { block() }
+                },
+                currentStateProvider = { state },
+                currentSessionGenerationProvider = { 7L },
+                applyUndo = { undo -> applied = undo },
+                setEngineMessage = { message -> engineMessage = message },
+                markQuiet = {
+                    quietMarked = true
+                    2_000L
+                },
+                cancelPendingPostUndoSync = { cancelCalled = true },
+                appendDiscardLog = { discardCalled = true },
+                runEngineWork = { _, _ -> EngineUndoWorkflowResult.Success(EngineStatus.ready("undo complete")) },
+            ),
+        )
+
+        assertEquals(EngineOperationKind.EngineUndo, launchedOperation?.kind)
+        assertEquals("engine-undo", launchedOperation?.timeoutPolicy?.label)
+        assertEquals(1, applied?.gameState?.moves?.size)
+        assertEquals("Undid 1 move(s) in local state and engine state.", engineMessage)
+        assertTrue(quietMarked)
+        assertTrue(cancelCalled)
+        assertFalse(discardCalled)
+    }
+
+    @Test
+    fun engineUndoRunnerDiscardsLateCompletionForChangedPosition() {
+        val state = GameState.empty()
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+            .play(Move.Play(StoneColor.White, BoardCoordinate.fromLabel("D5", BoardSize.Nine)))
+        val changedState = state.play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("F5", BoardSize.Nine)))
+        var applied = false
+        var discardCalled = false
+
+        runEngineUndoApplication(
+            EngineUndoRunRequest(
+                plan = UndoRequestPlan.EngineUndo(undoCount = 1),
+                currentState = state,
+                sessionGeneration = 7L,
+                previousMoveReviews = emptyList(),
+                scoreSnapshots = emptyList(),
+                diagnosticEventLog = NoopDiagnosticEventLog,
+                launchEngineOperation = { _, block -> runBlocking { block() } },
+                currentStateProvider = { changedState },
+                currentSessionGenerationProvider = { 7L },
+                applyUndo = { applied = true },
+                setEngineMessage = {},
+                markQuiet = { 2_000L },
+                cancelPendingPostUndoSync = {},
+                appendDiscardLog = { discardCalled = true },
+                runEngineWork = { _, _ -> EngineUndoWorkflowResult.Success(EngineStatus.ready("undo complete")) },
+            ),
+        )
+
+        assertFalse(applied)
+        assertTrue(discardCalled)
     }
 }
