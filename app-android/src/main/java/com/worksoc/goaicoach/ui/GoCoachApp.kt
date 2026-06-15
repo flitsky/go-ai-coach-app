@@ -75,7 +75,7 @@ import com.worksoc.goaicoach.application.applyAutoAiTurnScheduleValidationPlan
 import com.worksoc.goaicoach.application.applyEngineOperationLifecycleTransition
 import com.worksoc.goaicoach.application.EngineBenchmarkStorePort
 import com.worksoc.goaicoach.application.ClipboardPort
-import com.worksoc.goaicoach.application.applyTopMoveAnalysisLaunchPlan
+import com.worksoc.goaicoach.application.topmoves.applyTopMoveAnalysisLaunchPlan
 import com.worksoc.goaicoach.application.completeAutoAiTurnRun
 import com.worksoc.goaicoach.application.engineOperationRequest
 import com.worksoc.goaicoach.application.evaluateEngineBenchmarkGate
@@ -114,11 +114,11 @@ import com.worksoc.goaicoach.application.shouldRequestTopMoveAnalysis
 import com.worksoc.goaicoach.application.planSavedGamePersistence
 import com.worksoc.goaicoach.application.RuntimePlayLevelSelection
 import com.worksoc.goaicoach.application.RuntimeEventLogPort
-import com.worksoc.goaicoach.application.TopMoveAnalysisExecutionContext
-import com.worksoc.goaicoach.application.TopMoveAnalysisEffectLaunchRequest
-import com.worksoc.goaicoach.application.TopMoveAnalysisCompletionApplyPlan
-import com.worksoc.goaicoach.application.TopMoveAnalysisFailureDisplayPlan
-import com.worksoc.goaicoach.application.runTopMoveAnalysisEffectApplyPlan
+import com.worksoc.goaicoach.application.topmoves.TopMoveAnalysisExecutionContext
+import com.worksoc.goaicoach.application.topmoves.TopMoveAnalysisEffectLaunchRequest
+import com.worksoc.goaicoach.application.topmoves.TopMoveAnalysisCompletionApplyPlan
+import com.worksoc.goaicoach.application.topmoves.TopMoveAnalysisFailureDisplayPlan
+import com.worksoc.goaicoach.application.topmoves.runTopMoveAnalysisEffectApplyPlan
 import com.worksoc.goaicoach.application.ScoringRuleChangePlan
 import com.worksoc.goaicoach.application.ScoringRuleSyncEffectLaunchRequest
 import com.worksoc.goaicoach.application.runAutoAiEndgameEffect
@@ -164,9 +164,9 @@ import com.worksoc.goaicoach.application.runDebugReportCopyEffect
 import com.worksoc.goaicoach.application.toAutoAiTurnRequestPlan
 import com.worksoc.goaicoach.application.toAutoAiTurnScheduleValidationPlan
 import com.worksoc.goaicoach.application.toAutoAiTurnFollowUpRequest
-import com.worksoc.goaicoach.application.toShowTopMovesPlan
-import com.worksoc.goaicoach.application.toTopMoveAnalysisLaunchPlan
-import com.worksoc.goaicoach.application.ShowTopMovesPlan
+import com.worksoc.goaicoach.application.topmoves.toShowTopMovesPlan
+import com.worksoc.goaicoach.application.topmoves.toTopMoveAnalysisLaunchPlan
+import com.worksoc.goaicoach.application.topmoves.ShowTopMovesPlan
 import com.worksoc.goaicoach.application.toApplyPlan
 import com.worksoc.goaicoach.application.ScoreEstimateDisplayPlan
 import com.worksoc.goaicoach.application.ScoreEstimateCompletionApplyPlan
@@ -182,8 +182,8 @@ import com.worksoc.goaicoach.application.SavedGameStorePort
 import com.worksoc.goaicoach.application.SavedSessionPromptPlan
 import com.worksoc.goaicoach.application.SavedSessionUiState
 import com.worksoc.goaicoach.application.StartConfiguredGamePlan
-import com.worksoc.goaicoach.application.TopMoveAnalysisUpdate
-import com.worksoc.goaicoach.application.topMoveAnalysisOperationToken
+import com.worksoc.goaicoach.application.topmoves.TopMoveAnalysisUpdate
+import com.worksoc.goaicoach.application.topmoves.topMoveAnalysisOperationToken
 import com.worksoc.goaicoach.application.toGameSessionSettingsState
 import com.worksoc.goaicoach.application.toRuntimeLogContext
 import com.worksoc.goaicoach.application.undoEngineInterventionQuietUntilMillis
@@ -543,7 +543,7 @@ private fun GoCoachScreen(
         )
         runTrackedEngineOperation(operation) {
             val result =
-                withContext(Dispatchers.IO) {
+                runEngineIo {
                     engineClient.runEngineStartupWorkflowResult(
                         effect = GameSessionEffect.StartEngineSession(
                             state = startupState,
@@ -604,7 +604,7 @@ private fun GoCoachScreen(
                 candidateText = "Engine benchmark running: B16/B32/B64, ${EngineBenchmarkDefaultSamplesPerVisit} samples each.",
             )
             val benchmarkResult =
-                withContext(Dispatchers.IO) {
+                runEngineIo {
                     engineClient
                         .runStartupBenchmarkWorkflowResult(
                             effect = GameSessionEffect.RunStartupBenchmark,
@@ -1526,7 +1526,7 @@ private fun GoCoachScreen(
                 state = endgamePlan.state,
             ),
         )
-        val endgameDisplay = withContext(Dispatchers.IO) {
+        val endgameDisplay = runEngineIo {
             engineClient.runAutoAiEndgameEffect(
                 effect = GameSessionEffect.ResolveAutoAiEndgame(endgamePlan),
                 previousSnapshots = scoreState.scoreSnapshots,
@@ -1701,7 +1701,7 @@ private fun GoCoachScreen(
                     markEngineOperationStarted(turnOperationToken.operation.operationId)
                     var followUpPlan: AutoAiTurnFollowUpPlan = AutoAiTurnFollowUpPlan.None
                     val turnResult =
-                        withContext(Dispatchers.IO) {
+                        runEngineIo {
                             engineClient.runAutoAiTurnWorkflowResult(
                                 effect = GameSessionEffect.RunAutoAiTurn(turnRunPlan),
                                 executionContext = AutoAiTurnRunExecutionContext(
@@ -1847,7 +1847,7 @@ private fun GoCoachScreen(
                 ),
             )
             val syncResult =
-                withContext(Dispatchers.IO) {
+                runEngineIo {
                     engineClient.runHumanEngineSyncWorkflowResult(
                         HumanEngineSyncEffectLaunchRequest(
                             effect = syncEffect,
@@ -1912,7 +1912,7 @@ private fun GoCoachScreen(
         )
         launchTrackedEngineOperation(operation) {
             val result =
-                withContext(Dispatchers.IO) {
+                runEngineIo {
                     engineClient.runEngineUndoWorkflowResult(
                         effect = GameSessionEffect.UndoEngineMoves(
                             state = gameState,

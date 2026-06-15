@@ -1403,3 +1403,8 @@
 - `EngineOperationPolicy.kt`의 실제 정책 구현을 `shared/commonMain`의 `com.worksoc.goaicoach.shared.engine` package로 이동했다. 앱 쪽에는 기존 호출부 호환을 위한 얇은 facade를 남겼고, 중첩 sealed 타입(`Apply`, `Discard`, `Allow`, `Block`)은 앱 facade 타입으로 명시 매핑한다.
 - `GoCoachApp.kt`의 engine-backed new game 및 post-game cache optimization IO 실행도 `application/engine/EngineEffectLauncherApplication.runEngineIo()`를 통과하도록 변경했다. UI 파일 안의 직접 `withContext(Dispatchers.IO)`/`runCatching` 지점은 6개까지 줄었다.
 - `LayeringContractTest`는 shared diagnostic/engine policy 모델을 함께 KMP-ready 대상으로 검사하도록 정리했다. 표적 검증으로 `EngineOperationPolicyTest`, `DiagnosticEventApplicationTest`, `EngineSessionTest`, `LayeringContractTest`가 통과했다.
+- 사용자가 `ext.2` 다음 리팩토링 추천 항목을 단계별로 모두 진행하고, 결과 보고 시 현재 리팩토링 완성도 및 다음 추천 작업 리스트업을 요청했다.
+- `TopMovesApplication.kt`를 `application/topmoves/` 하위 package로 이동했다. Top Moves 도메인의 analysis plan, launch plan, completion/apply plan, engine runner가 application 루트에서 분리되었고, 관련 state/controller/UI/test import를 명시화했다.
+- `GoCoachApp.kt`의 남은 직접 `withContext(Dispatchers.IO)` 6개를 모두 `application/engine/EngineEffectLauncherApplication.runEngineIo()`로 전환했다. UI 파일은 더 이상 engine IO dispatcher를 직접 선택하지 않는다.
+- `DiagnosticEventExternalSinkApplication.kt`를 추가해 warning/critical diagnostic event를 사용자 동의 기반으로 `DiagnosticEventExternalSinkPort`에 전달하는 runner 계약을 만들었다. 실제 Firebase/원격 transport는 아직 없지만 skip/send/failure 결과가 테스트 가능해졌다.
+- `EngineOperationPolicy` facade는 즉시 제거하지 않기로 판단했다. 현재 앱 내부 참조가 많고 nested sealed 타입을 facade 타입으로 매핑하고 있어, 도메인 package 이동 후 점진적으로 shared engine 타입 직접 참조를 늘리는 것이 안전하다.

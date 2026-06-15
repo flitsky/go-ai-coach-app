@@ -1053,3 +1053,43 @@
 5. structured diagnostic adapter spike
    - 현재 JSONL 파일 기반 diagnostic event를 외부 수집 port에 연결하기 위한 noop/recording adapter를 추가한다.
    - acceptance: warning/critical export candidate가 adapter port까지 전달되는 테스트를 추가한다.
+
+## 2026-06-15 추가 진행 로그: ext.2 topmoves package / EffectLauncher / diagnostic sink runner
+
+- 2026-06-15: `TopMovesApplication.kt`를 `application/topmoves/TopMovesApplication.kt`로 이동했다. Top Moves analysis plan, launch plan, completion/apply plan, engine runner가 application 루트 package에서 분리됐다.
+- 2026-06-15: Top Moves package 이동에 따라 `GameSessionAnalysisState`, `GameSessionCoreState`, `GameSessionController`, `GameSessionUiStateHolder`, `GoCoachApp.kt`, 관련 테스트의 import를 명시화했다. `LayeringContractTest`도 새 package 경로를 검사한다.
+- 2026-06-15: `GoCoachApp.kt`에 남아 있던 `withContext(Dispatchers.IO)` 6개를 모두 `application/engine/EngineEffectLauncherApplication.runEngineIo()` 호출로 교체했다. UI 파일은 더 이상 engine IO dispatcher를 직접 선택하지 않는다.
+- 2026-06-15: `DiagnosticEventExternalSinkApplication.kt`를 추가했다. shared diagnostic export plan을 application `DiagnosticEventExternalSinkPort` 실행 결과로 연결하며, `Skipped`, `Sent`, `Failed` 결과를 명시한다.
+- 2026-06-15: `DiagnosticEventApplicationTest`에 diagnostic external sink runner 테스트를 추가했다. 사용자 동의 없음, 전송 성공, transport 실패를 모두 검증한다.
+- 2026-06-15: `EngineOperationPolicy` facade 제거 가능성을 검토했다. 현재 앱 내부에서 관련 타입/함수 참조가 365개이고, 특히 `EngineOperationResultGuard.Discard`, `EngineOperationGate.Allow/Block` 같은 nested sealed 타입이 넓게 쓰인다. ext.1에서 확인한 것처럼 typealias만으로는 기존 호출부 호환이 깨지므로, 즉시 제거보다 도메인 package 단위 이동 후 shared engine 타입 직접 참조를 점진적으로 늘리는 방향이 안전하다.
+- 현재 metric: `GoCoachApp.kt`는 2,191줄, UI 파일 안의 `withContext(Dispatchers.IO)`/`runCatching` 직접 지점은 0개, `scope.launch`는 6개다. application import fan-in은 아직 180개다.
+- 검증: `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest --tests 'com.worksoc.goaicoach.application.TopMovesApplicationTest' --tests 'com.worksoc.goaicoach.application.DiagnosticEventApplicationTest' --tests 'com.worksoc.goaicoach.application.GameSessionAnalysisStateTest' --tests 'com.worksoc.goaicoach.application.GameSessionControllerTest' --tests 'com.worksoc.goaicoach.application.GameSessionCoreStateTest' --tests 'com.worksoc.goaicoach.application.GameSessionUiStateHolderApplicationTest' --tests 'com.worksoc.goaicoach.architecture.LayeringContractTest'` 통과.
+
+## 현재 리팩토링/아키텍처 완성도 평가
+
+- 리팩토링 배치 진행도: 99.86/100.
+- 외부 평가 기준 플랫폼 아키텍처 완성도: 95.7/100.
+- 상향 요인: `topmoves` 하위 package가 실제로 생겼고, UI의 engine IO dispatcher 직접 소유가 0개가 됐다. diagnostic external sink도 transport 없는 테스트 가능한 adapter runner로 연결됐다.
+- 남은 감점 요인: `GoCoachApp.kt` 줄 수와 application import fan-in은 아직 높다. `scope.launch` 6개는 UI effect orchestration으로 남아 있고, `EngineOperationPolicy` facade는 nested sealed 타입 호환 때문에 아직 필요하다. `score`, `autoai`, `session` package 분리는 아직 남아 있다.
+
+## 다음 추천 리팩토링 항목 - ext.3
+
+1. `score` package 분리
+   - `ScoreDisplayApplication.kt`, `ScoreDisplayFormatterApplication.kt`, `ScoreEstimateRunnerApplication.kt`, `ScoreSyncCompletionApplication.kt`, `ScoreSyncRunnerApplication.kt`를 `application/score` 하위 package로 이동할 수 있는지 검토한다.
+   - acceptance: score 관련 targeted test와 `LayeringContractTest` 통과.
+
+2. `EngineOperationPolicy` shared 직접 참조 vertical slice
+   - 새로 분리한 `topmoves` 또는 다음 `score` package 중 하나에서 shared engine 타입 직접 참조를 시도한다.
+   - acceptance: facade 타입과 shared 타입 혼용으로 인한 경계 문제가 없거나, 필요한 adapter 위치가 명확해진다.
+
+3. `scope.launch` effect launcher 분리
+   - `launchTrackedEngineOperation` 또는 post-undo delayed sync 중 하나를 UI 밖 helper/controller로 이동한다.
+   - acceptance: UI `scope.launch` 직접 지점 6개를 5개 이하로 줄인다.
+
+4. diagnostic external sink transport spike
+   - 실제 네트워크 구현은 보류하되, noop/recording adapter를 production/test fixture로 분리한다.
+   - acceptance: warning/critical export flow가 port adapter까지 연결되는 더 명확한 테스트 추가.
+
+5. GoCoachApp import fan-in 축소
+   - topmoves/score/diagnostic package import를 작은 facade 또는 grouped controller로 정리한다.
+   - acceptance: application import 수 감소 또는 import ownership 문서화.

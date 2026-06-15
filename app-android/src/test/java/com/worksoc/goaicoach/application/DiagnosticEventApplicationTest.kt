@@ -1,11 +1,13 @@
 package com.worksoc.goaicoach.application
 
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventExternalSinkPort
+import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventExternalSinkResult
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.diagnostic.engineOperationDiscardedDiagnosticEvent
 import com.worksoc.goaicoach.application.diagnostic.engineOperationSlowDiagnosticEvent
 import com.worksoc.goaicoach.application.diagnostic.engineOperationTimeoutDiagnosticEvent
 import com.worksoc.goaicoach.application.diagnostic.engineVisitFillDiagnosticEvent
+import com.worksoc.goaicoach.application.diagnostic.runDiagnosticEventExternalSinkPlan
 import com.worksoc.goaicoach.application.diagnostic.runObservedEngineOperation
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
@@ -179,6 +181,44 @@ class DiagnosticEventApplicationTest {
         assertEquals(listOf(payload), sink.payloads)
         assertTrue(failure.isFailure)
         assertEquals("transport unavailable", failure.exceptionOrNull()?.message)
+    }
+
+    @Test
+    fun diagnosticExternalSinkRunnerSkipsSendsAndReportsTransportFailure() {
+        val event = DiagnosticEvent(
+            severity = DiagnosticSeverity.Warning,
+            code = "engine.operation.slow",
+            message = "slow",
+        )
+        val sink = RecordingDiagnosticEventExternalSinkForDiagnostics()
+
+        val skipped = runDiagnosticEventExternalSinkPlan(
+            event = event,
+            userConsented = false,
+            debugReportText = "debug report",
+            sink = sink,
+        )
+        val sent = runDiagnosticEventExternalSinkPlan(
+            event = event,
+            userConsented = true,
+            debugReportText = "debug report",
+            sink = sink,
+        )
+        sink.failure = IllegalStateException("transport unavailable")
+        val failed = runDiagnosticEventExternalSinkPlan(
+            event = event,
+            userConsented = true,
+            debugReportText = "debug report",
+            sink = sink,
+        )
+
+        assertTrue(skipped is DiagnosticEventExternalSinkResult.Skipped)
+        assertTrue((skipped as DiagnosticEventExternalSinkResult.Skipped).reason.contains("consent"))
+        assertTrue(sent is DiagnosticEventExternalSinkResult.Sent)
+        assertEquals(event, (sent as DiagnosticEventExternalSinkResult.Sent).payload.event)
+        assertEquals("debug report", sent.payload.debugReportText)
+        assertTrue(failed is DiagnosticEventExternalSinkResult.Failed)
+        assertEquals("transport unavailable", (failed as DiagnosticEventExternalSinkResult.Failed).error.message)
     }
 
     @Test

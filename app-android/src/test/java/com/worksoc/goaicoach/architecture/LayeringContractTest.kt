@@ -115,6 +115,7 @@ class LayeringContractTest {
             applicationRoot.resolve("EngineOperationPolicy.kt"),
             applicationRoot.resolve("EngineOperationResultApplication.kt"),
             applicationRoot.resolve("diagnostic/DiagnosticEventApplication.kt"),
+            applicationRoot.resolve("diagnostic/DiagnosticEventExternalSinkApplication.kt"),
             applicationRoot.resolve("diagnostic/DiagnosticEventObserverApplication.kt"),
             applicationRoot.resolve("diagnostic/DiagnosticEventPorts.kt"),
             applicationRoot.resolve("engine/EngineEffectLauncherApplication.kt"),
@@ -129,7 +130,7 @@ class LayeringContractTest {
             applicationRoot.resolve("ScoreEstimateRunnerApplication.kt"),
             applicationRoot.resolve("ScoreSyncRunnerApplication.kt"),
             applicationRoot.resolve("ScoreSyncCompletionApplication.kt"),
-            applicationRoot.resolve("TopMovesApplication.kt"),
+            applicationRoot.resolve("topmoves/TopMovesApplication.kt"),
             applicationRoot.resolve("UndoApplication.kt"),
         )
         val forbiddenImports = listOf(

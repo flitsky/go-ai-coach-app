@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.application
 
+import com.worksoc.goaicoach.application.topmoves.TopMoveAnalysisFailureDisplayPlan
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
 

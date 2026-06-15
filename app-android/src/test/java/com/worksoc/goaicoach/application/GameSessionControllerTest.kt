@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.application
 
+import com.worksoc.goaicoach.application.topmoves.*
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
