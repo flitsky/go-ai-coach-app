@@ -27,8 +27,8 @@ import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 import com.worksoc.goaicoach.application.analysis.AnalysisCacheKey
 import com.worksoc.goaicoach.application.analysis.AnalysisResultCache
-import com.worksoc.goaicoach.application.debugreport.DebugReportCopyActionRequest
-import com.worksoc.goaicoach.application.debugreport.runDebugReportCopyAction
+import com.worksoc.goaicoach.application.debugreport.DebugReportCopyRunRequest
+import com.worksoc.goaicoach.application.debugreport.runDebugReportCopyApplication
 import com.worksoc.goaicoach.application.preferences.buildInitialUserPreferencesPlan
 import com.worksoc.goaicoach.application.analysis.buildPositionAnalysisCacheOptimizationPlan
 import com.worksoc.goaicoach.application.analysis.refreshPositionAnalysisCacheOptimizationPrompt
@@ -1779,26 +1779,29 @@ private fun GoCoachScreen(
     }
 
     fun copyDebugReport() {
-        val nowMillis = System.currentTimeMillis()
-        val result = runDebugReportCopyAction(
-            request = DebugReportCopyActionRequest(
+        runDebugReportCopyApplication(
+            DebugReportCopyRunRequest(
                 controllerState = currentControllerSessionState(),
                 engineName = engineName,
                 engineDiagnostic = engineDiagnostic,
-                analysisCacheStats = "${analysisCache.statsText()}, ${undoAnalysisRestoreCache.statsText()}",
-                positionAnalysisCacheStats = engineClient.positionAnalysisCacheStatsText(nowMillis),
+                analysisCacheStatsText = {
+                    "${analysisCache.statsText()}, ${undoAnalysisRestoreCache.statsText()}"
+                },
+                positionAnalysisCacheStatsText = { nowMillis ->
+                    engineClient.positionAnalysisCacheStatsText(nowMillis)
+                },
                 isEngineReady = isEngineReady,
                 isEngineBusy = isEngineBusy,
-                turnTimeText = turnTimeState.summaryText(),
-                turnTimeDebugText = turnTimeState.debugText(nowMillis),
-                runtimeEventLogText = runtimeEventLog.readText(),
-                diagnosticEventLogText = diagnosticEventLog.readText(),
+                turnTimeText = { turnTimeState.summaryText() },
+                turnTimeDebugText = { nowMillis -> turnTimeState.debugText(nowMillis) },
+                runtimeEventLog = runtimeEventLog,
+                diagnosticEventLog = diagnosticEventLog,
+                clipboard = clipboardPort,
+                mirror = debugReportMirror,
+                userNotice = userNoticePort,
+                applyEngineMessage = { message -> engineMessage = message },
             ),
-            clipboard = clipboardPort,
-            mirror = debugReportMirror,
-            userNotice = userNoticePort,
         )
-        engineMessage = result.engineMessage
     }
 
     fun dispatch(event: GameUiEvent) {

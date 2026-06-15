@@ -1581,3 +1581,7 @@
 - `SavedGameApplicationRunner.kt`를 추가했다. 저장된 대국 prompt load, 자동저장 persistence, 저장 대국 restore request 분기를 application runner 뒤로 이동해 `GoCoachApp.kt`가 saved-game request/plan 세부 타입을 직접 조립하지 않게 했다.
 - `GoCoachApp.kt`의 saved-game 관련 호출부를 `runSavedSessionPromptApplication`, `runSavedGamePersistenceApplication`, `runSavedGameRestoreApplication`으로 축소했다. UI는 저장소, 현재 상태, 메시지/복원 콜백만 넘기고 저장/복원 분기 정책은 application layer가 소유한다.
 - `SavedGameApplicationRunnerTest`와 `LayeringContractTest.goCoachAppDoesNotOwnSavedGameWorkflowBody()`를 추가했다. runner 동작과 UI 경계 회귀를 함께 검증해 saved-game 세부 workflow가 다시 composable로 되돌아오지 않도록 막는다.
+- 사용자가 `3.` 다음 리팩토링 추천 항목을 단계별로 모두 진행하고, 결과 보고 시 현재 리팩토링 완성도와 다음 추천 작업을 정리해달라고 요청했다.
+- `DebugReportApplicationRunner.kt`를 추가했다. Copy Log 실행 시 `nowMillis` 기준의 analysis cache stats, position analysis cache stats, 턴 시간, runtime event log, diagnostic event log 수집과 `DebugReportCopyActionRequest` 조립을 application runner가 소유하게 했다.
+- `GoCoachApp.kt`의 `copyDebugReport()`는 `runDebugReportCopyApplication(DebugReportCopyRunRequest)` 호출로 축소했다. UI는 현재 controller state와 platform ports, 필요한 provider 콜백만 넘기고 로그 읽기/복사 결과 메시지 적용은 runner가 관장한다.
+- `DebugReportApplicationRunnerTest`와 `LayeringContractTest.goCoachAppDoesNotOwnDebugReportCopyWorkflowBody()`를 추가했다. Copy Log runner가 수집 데이터를 debug report에 반영하는지와 UI가 `DebugReportCopyActionRequest`, raw log read를 다시 소유하지 않는지를 검증한다.
