@@ -65,14 +65,15 @@ import com.worksoc.goaicoach.application.engine.operation.recordEngineOperationD
 import com.worksoc.goaicoach.application.engine.localScoreSnapshot
 import com.worksoc.goaicoach.application.engine.operation.runEngineOperationInScope
 import com.worksoc.goaicoach.application.analysis.runPositionAnalysisCacheOptimizationWorkflowResult
-import com.worksoc.goaicoach.application.savedgame.SavedGamePersistenceRequest
+import com.worksoc.goaicoach.application.savedgame.SavedGamePersistenceRunRequest
 import com.worksoc.goaicoach.application.savedgame.SavedGameRestorePlan
-import com.worksoc.goaicoach.application.savedgame.SavedGameRestoreRequestPlan
-import com.worksoc.goaicoach.application.savedgame.SavedSessionPromptPlan
+import com.worksoc.goaicoach.application.savedgame.SavedGameRestoreRunRequest
+import com.worksoc.goaicoach.application.savedgame.SavedGameRestoreRunResult
 import com.worksoc.goaicoach.application.savedgame.SavedSessionUiState
-import com.worksoc.goaicoach.application.savedgame.buildSavedGameRestoreRequestPlan
-import com.worksoc.goaicoach.application.savedgame.loadSavedSessionPromptPlan
-import com.worksoc.goaicoach.application.savedgame.runSavedGamePersistence
+import com.worksoc.goaicoach.application.savedgame.SavedSessionPromptRunRequest
+import com.worksoc.goaicoach.application.savedgame.runSavedGamePersistenceApplication
+import com.worksoc.goaicoach.application.savedgame.runSavedGameRestoreApplication
+import com.worksoc.goaicoach.application.savedgame.runSavedSessionPromptApplication
 import com.worksoc.goaicoach.application.startgame.GameSessionResetPlan
 import com.worksoc.goaicoach.application.startgame.StartConfiguredGamePlan
 import com.worksoc.goaicoach.application.startgame.buildNewLocalGameSessionPlan
@@ -490,10 +491,6 @@ private fun GoCoachScreen(
         displayStateApplier.applyEngineStartupDisplayPlan(startup)
     }
 
-    fun applySavedSessionPromptPlan(prompt: SavedSessionPromptPlan) {
-        savedSessionUiState = savedSessionUiState.applyPrompt(prompt)
-    }
-
     LaunchedEffect(engineClient) {
         hasCompletedEngineStartup = false
         applyEngineStartupDisplayPlan(
@@ -512,7 +509,14 @@ private fun GoCoachScreen(
     }
 
     LaunchedEffect(sessionStore) {
-        applySavedSessionPromptPlan(loadSavedSessionPromptPlan(sessionStore))
+        runSavedSessionPromptApplication(
+            SavedSessionPromptRunRequest(
+                store = sessionStore,
+                applyPrompt = { prompt ->
+                    savedSessionUiState = savedSessionUiState.applyPrompt(prompt)
+                },
+            ),
+        )
     }
 
     suspend fun runEngineBenchmark() {
@@ -621,8 +625,8 @@ private fun GoCoachScreen(
         runtimeState.playLevel,
         topMovesEnabled,
     ) {
-        runSavedGamePersistence(
-            request = SavedGamePersistenceRequest(
+        runSavedGamePersistenceApplication(
+            SavedGamePersistenceRunRequest(
                 savedSessionUiState = savedSessionUiState,
                 isGameEnded = isGameEnded,
                 gameState = gameState,
@@ -630,8 +634,8 @@ private fun GoCoachScreen(
                 playLevel = runtimeState.playLevel,
                 topMovesEnabled = topMovesEnabled,
                 nowMillis = System.currentTimeMillis(),
+                store = sessionStore,
             ),
-            store = sessionStore,
         )
     }
 
@@ -1129,37 +1133,29 @@ private fun GoCoachScreen(
     }
 
     fun restoreSavedSession(snapshot: SavedGameSnapshot) {
-        val request = buildSavedGameRestoreRequestPlan(
-            snapshot = snapshot,
-            currentProfile = runtimeState.engineProfile,
-            defaultPlayLevel = defaultPlayLevel,
-            isEngineBusy = isEngineBusy,
-            isEngineReady = isEngineReady,
-            searchTimeSettings = searchTimeSettings,
+        val result = runSavedGameRestoreApplication(
+            SavedGameRestoreRunRequest(
+                snapshot = snapshot,
+                currentProfile = runtimeState.engineProfile,
+                defaultPlayLevel = defaultPlayLevel,
+                isEngineBusy = isEngineBusy,
+                isEngineReady = isEngineReady,
+                searchTimeSettings = searchTimeSettings,
+                showMessage = { message -> engineMessage = message },
+                applyRestore = ::applySavedGameRestorePlan,
+            ),
         )
-        if (request is SavedGameRestoreRequestPlan.ShowMessage) {
-            engineMessage = request.message
-            return
-        }
-
-        val restoreRequest = request as SavedGameRestoreRequestPlan.Restore
-        val restore = restoreRequest.restore
-        val restoredState = restore.gameState
-        val restoredProfile = restore.runtime.engineProfile
-
-        applySavedGameRestorePlan(restore)
-
-        if (!restoreRequest.syncEngineAfterRestore) {
+        if (result !is SavedGameRestoreRunResult.Restored || !result.syncEngineAfterRestore) {
             return
         }
 
         runRestoredGameSyncApplication(
             RestoredGameSyncRunRequest(
                 engineClient = engineClient,
-                state = restoredState,
-                profile = restoredProfile,
+                state = result.gameState,
+                profile = result.engineProfile,
                 sessionGeneration = runtimeState.sessionGeneration + 1L,
-                timeoutPolicy = engineProfileTimeoutPolicy(restoredProfile),
+                timeoutPolicy = engineProfileTimeoutPolicy(result.engineProfile),
                 diagnosticEventLog = diagnosticEventLog,
                 currentState = { gameState },
                 currentSessionGeneration = { runtimeState.sessionGeneration },

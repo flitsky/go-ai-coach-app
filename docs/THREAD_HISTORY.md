@@ -1577,3 +1577,7 @@
 - `GoCoachApp.kt`가 `GameSessionStateHolder.state`를 `LaunchedEffect`에서 수집하도록 보강했다. 기존 수동 mirror는 유지해 같은 콜백 안의 read-after-write 동작을 보존하면서, 향후 외부 runner가 holder를 직접 갱신해도 Compose snapshot이 업데이트된다.
 - 기존 `GameSessionUiStateHolder`를 `GameSessionDisplayStateApplier`로 개명했다. 이 클래스는 state owner가 아니라 display/failure/result plan을 core session state에 적용하는 applier임을 이름으로 드러내도록 정리했다.
 - `LayeringContractTest`에 session holder 수집과 display applier naming 회귀 가드를 추가하고, forbidden-reference detector가 문자열 리터럴뿐 아니라 한 줄 block comment의 경로 언급도 실제 코드 참조로 오인하지 않도록 보강했다.
+- 사용자가 다음 리팩토링 추천 항목을 단계별로 진행하고, 결과 보고 시 현재 리팩토링 완성도와 다음 추천 작업을 정리해달라고 요청했다.
+- `SavedGameApplicationRunner.kt`를 추가했다. 저장된 대국 prompt load, 자동저장 persistence, 저장 대국 restore request 분기를 application runner 뒤로 이동해 `GoCoachApp.kt`가 saved-game request/plan 세부 타입을 직접 조립하지 않게 했다.
+- `GoCoachApp.kt`의 saved-game 관련 호출부를 `runSavedSessionPromptApplication`, `runSavedGamePersistenceApplication`, `runSavedGameRestoreApplication`으로 축소했다. UI는 저장소, 현재 상태, 메시지/복원 콜백만 넘기고 저장/복원 분기 정책은 application layer가 소유한다.
+- `SavedGameApplicationRunnerTest`와 `LayeringContractTest.goCoachAppDoesNotOwnSavedGameWorkflowBody()`를 추가했다. runner 동작과 UI 경계 회귀를 함께 검증해 saved-game 세부 workflow가 다시 composable로 되돌아오지 않도록 막는다.

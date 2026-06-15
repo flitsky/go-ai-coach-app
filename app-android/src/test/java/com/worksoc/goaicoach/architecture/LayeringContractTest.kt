@@ -296,6 +296,34 @@ class LayeringContractTest {
     }
 
     @Test
+    fun goCoachAppDoesNotOwnSavedGameWorkflowBody() {
+        val goCoachApp = repoRoot()
+            .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
+        val text = goCoachApp.readText()
+        val forbiddenFragments = listOf(
+            "SavedGamePersistenceRequest(",
+            "SavedGameRestoreRequestPlan",
+            "SavedSessionPromptPlan",
+            "loadSavedSessionPromptPlan(",
+            "buildSavedGameRestoreRequestPlan(",
+            "runSavedGamePersistence(",
+        )
+            .filter { fragment -> fragment in text }
+        val requiredFragments = listOf(
+            "runSavedSessionPromptApplication(",
+            "runSavedGamePersistenceApplication(",
+            "runSavedGameRestoreApplication(",
+        )
+            .filterNot { fragment -> fragment in text }
+
+        assertTrue(
+            "GoCoachApp should run saved-game prompt/persistence/restore through application runners, not own saved-game request-plan details:\n" +
+                "forbidden:\n${forbiddenFragments.joinToString("\n")}\nmissing:\n${requiredFragments.joinToString("\n")}",
+            forbiddenFragments.isEmpty() && requiredFragments.isEmpty(),
+        )
+    }
+
+    @Test
     fun goCoachAppDoesNotOwnScoreEstimateWorkflowBody() {
         val goCoachApp = repoRoot()
             .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
