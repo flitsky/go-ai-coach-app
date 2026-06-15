@@ -26,9 +26,7 @@ import com.worksoc.goaicoach.application.analysis.AnalysisCacheKey
 import com.worksoc.goaicoach.application.analysis.AnalysisResultCache
 import com.worksoc.goaicoach.application.debugreport.DebugReportCopyActionRequest
 import com.worksoc.goaicoach.application.debugreport.runDebugReportCopyAction
-import com.worksoc.goaicoach.application.buildScoringRuleChangePlan
 import com.worksoc.goaicoach.application.preferences.buildInitialUserPreferencesPlan
-import com.worksoc.goaicoach.application.buildPlayerSetupChangePlan
 import com.worksoc.goaicoach.application.analysis.buildPositionAnalysisCacheOptimizationPlan
 import com.worksoc.goaicoach.application.analysis.buildPositionAnalysisCacheOptimizationPrompt
 import com.worksoc.goaicoach.application.preferences.buildUserPreferencesSnapshot
@@ -61,15 +59,11 @@ import com.worksoc.goaicoach.application.engineOperationRequest
 import com.worksoc.goaicoach.application.evaluateEngineBenchmarkGate
 import com.worksoc.goaicoach.application.evaluateScoringRuleChangeGate
 import com.worksoc.goaicoach.application.evaluateSearchTimeChangeGate
-import com.worksoc.goaicoach.application.PlayerSetupChangePlan
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationWorkflowResult
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationUiState
 import com.worksoc.goaicoach.application.analysis.PostGamePositionAnalysisCacheOptimizationPromptEnabled
 import com.worksoc.goaicoach.application.recordEngineOperationDiscardLog
 import com.worksoc.goaicoach.application.engine.localScoreSnapshot
-import com.worksoc.goaicoach.application.selectRuntimePlayLevel
-import com.worksoc.goaicoach.application.RuntimePlayLevelSelection
-import com.worksoc.goaicoach.application.ScoringRuleChangePlan
 import com.worksoc.goaicoach.application.runEngineOperationInScope
 import com.worksoc.goaicoach.application.analysis.runPositionAnalysisCacheOptimizationWorkflowResult
 import com.worksoc.goaicoach.application.savedgame.SavedGamePersistencePlan

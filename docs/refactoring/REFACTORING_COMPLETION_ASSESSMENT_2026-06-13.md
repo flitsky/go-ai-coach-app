@@ -225,3 +225,27 @@ POC를 계속 고도화하는 관점에서는 이미 충분히 좋은 상태다.
 - `LayeringContractTest` 통과.
 - `RemotePositionAnalysisGatewayTest`를 포함한 middleware 테스트 통과.
 - 최종 통합 검증은 이 문서 갱신 후 `make test`로 수행한다.
+
+## 2026-06-15 2nd phase.1 재평가
+
+2nd phase.1에서는 외부 96점 리뷰 이후 즉시 적용하기로 한 shared/commonTest 보강과 root application package 잔여 이동을 완료했다.
+
+주요 변화:
+
+- shared diagnostic/engine policy 모델에 직접 commonTest가 추가됐다.
+- 바둑 규칙 projection의 ko/pass/capture/dead-stone cleanup 회귀 테스트가 보강됐다.
+- `ScoringRuleApplication.kt`, `PromptPriorityApplication.kt`, `GameSessionApplication.kt`가 각각 `score`, `prompt`, `session` package로 이동했다.
+- root application package 파일 수가 8개에서 5개로 줄었다.
+- `GoCoachApp.kt`는 2,080줄이며 application import fan-in은 76개다.
+
+현재 평가:
+
+- 리팩토링 배치 진행도: **99.996/100**
+- 외부 평가 기준 플랫폼 아키텍처 완성도: **96.8/100**
+- 보수적 내부 플랫폼 완성도: **96.2/100**
+
+해석:
+
+- 점수 상승의 핵심은 “문서상 후보”였던 shared 모델과 root application 정리를 테스트와 물리 이동으로 실제 실행했다는 점이다.
+- 아직 남은 큰 축은 `LocalEngineSessionClient` 내부 delegate 분리, root engine operation facade 축소, `GoCoachApp.kt` action binding 축소다.
+- 따라서 100점 목표에 근접했지만, 실제 대규모 플랫폼 관점에서는 엔진 세션/operation facade와 UI action bridge가 다음 병목이다.

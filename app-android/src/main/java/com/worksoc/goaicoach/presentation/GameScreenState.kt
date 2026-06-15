@@ -4,7 +4,7 @@ import com.worksoc.goaicoach.application.session.*
 
 import com.worksoc.goaicoach.application.movereview.MoveReviewMarker
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationPrompt
-import com.worksoc.goaicoach.application.decidePromptVisibility
+import com.worksoc.goaicoach.application.prompt.decidePromptVisibility
 import com.worksoc.goaicoach.application.session.GameSessionControllerState
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.MatchSeatSnapshot

@@ -1460,3 +1460,57 @@
 5. KMP 이동 2차 후보 실행
    - platform-free로 감시 중인 preferences snapshot, move review, analysis session 중 하나를 shared/common 또는 별도 middleware module로 실제 이동하는 spike를 수행한다.
    - acceptance: 문서상 후보가 아니라 실제 물리 이동 1건을 더 만든다.
+
+## 2026-06-15 추가 진행 로그: 2nd phase.1 shared 테스트와 root application 잔여 이동
+
+- 2026-06-15: 외부 96점 리뷰의 즉시 적용 항목 중 shared/commonTest 보강을 먼저 수행했다.
+  - `shared/diagnostic/DiagnosticEventModelTest`를 추가해 severity summary, context 정렬/one-line normalization, warning/critical 사용자 동의 export 정책을 고정했다.
+  - `shared/engine/EngineOperationPolicyTest`를 추가해 operation id/session generation/fingerprint/timeout/fallback/backend metadata, stale generation/position discard, gate 정책, timeout validation을 commonTest에서 검증한다.
+- 2026-06-15: shared 바둑 규칙 회귀 테스트를 보강했다.
+  - pass 이후 ko 제한이 해제되고 이후 재탈환이 가능한지 확인한다.
+  - 한 수로 서로 다른 인접 그룹 2개를 동시에 따내는 케이스를 고정했다.
+  - dead-stone cleanup에서 흑 사석 제거 시 백 prisoner가 증가하는 방향도 회귀 테스트로 고정했다.
+- 2026-06-15: root application package에 남아 있던 잔여 도메인 파일 3개를 하위 package로 이동했다.
+  - `ScoringRuleApplication.kt` -> `application/score/ScoringRuleApplication.kt`
+  - `PromptPriorityApplication.kt` -> `application/prompt/PromptPriorityApplication.kt`
+  - `GameSessionApplication.kt` -> `application/session/GameSessionApplication.kt`
+- 2026-06-15: `LayeringContractTest`에 새 위치의 scoring/prompt/session 파일을 platform-free 후보로 추가했다. 이 파일들이 Android/UI/persistence/runtime 구현에 다시 붙지 않도록 회귀 방지한다.
+- 현재 metric:
+  - root application package 파일 수: 8개 -> 5개
+  - `GoCoachApp.kt`: 2,086줄 -> 2,080줄
+  - `GoCoachApp.kt` application import fan-in: 82개 -> 76개
+  - shared commonTest 파일 수: 8개 -> 10개
+- 검증:
+  - `ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk JAVA_HOME=$(/usr/libexec/java_home -v 17) ./gradlew :shared:check` 통과.
+  - `ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk JAVA_HOME=$(/usr/libexec/java_home -v 17) ./gradlew :app-android:compileDebugKotlin` 통과.
+  - `ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk JAVA_HOME=$(/usr/libexec/java_home -v 17) ./gradlew :app-android:testDebugUnitTest` 통과.
+
+## 현재 리팩토링/아키텍처 완성도 평가
+
+- 리팩토링 배치 진행도: 99.996/100.
+- 외부 평가 기준 플랫폼 아키텍처 완성도: 96.8/100.
+- 보수적 내부 플랫폼 완성도: 96.2/100.
+- 상향 요인: shared로 이동된 diagnostic/engine policy 모델에 공통 테스트가 생겼고, root application package가 5개로 줄었다. scoring/prompt/session 정책이 각 도메인 package에 위치해 AI Agent가 특정 도메인 단위로 작업하기 더 쉬워졌다.
+- 남은 감점 요인: root application package에는 engine operation facade 계열 5개가 남아 있다. `LocalEngineSessionClient.kt`는 여전히 cache resolver, diagnostic observation, local process sync, engine sync delegation을 함께 가진다. `GoCoachApp.kt`도 2천 줄 이상이라 action binding 분리는 계속 필요하다.
+
+## 다음 추천 리팩토링 항목 - 2nd phase.2
+
+1. `LocalEngineSessionClient.kt` 내부 delegate 분리
+   - position analysis cache read/write, diagnostic event recording, local engine sync delegation을 별도 helper로 분리한다.
+   - acceptance: local client는 orchestration shell이 되고, cache/diagnostic/sync 정책이 각각 테스트 가능한 파일로 이동한다.
+
+2. root engine operation facade 축소
+   - root application package의 `EngineOperationPolicy.kt`, `EngineOperationPolicyAdapter.kt`, `EngineOperationResultApplication.kt`, `EngineOperationLifecycle.kt`, `EngineOperationScope.kt`를 `application/engine/operation` 또는 shared 직접 참조로 정리한다.
+   - acceptance: root application package 파일 수 5개 이하 유지 또는 0개에 근접한다.
+
+3. `LaunchedEffect` inventory와 UI lifecycle bridge 분류
+   - 남겨도 되는 Compose lifecycle bridge와 application effect로 옮겨야 하는 domain side-effect를 문서화한다.
+   - acceptance: 무조건 제거가 아니라 책임 기준이 생긴다.
+
+4. `GoCoachApp.kt` action binding 추가 축소
+   - start/new/resume/undo/action buttons 중 하나를 app-service action object로 이동한다.
+   - acceptance: 줄 수와 application import fan-in이 동시에 감소한다.
+
+5. KMP 물리 이동 2차 spike
+   - `MoveReview`/`MoveValueDisplay`, `AnalysisSession`, preferences snapshot 중 다음 후보 1개를 shared/common 또는 별도 KMP 모듈로 이동 가능한지 실행한다.
+   - acceptance: 문서 후보가 아니라 실제 물리 이동 1건을 더 만든다.

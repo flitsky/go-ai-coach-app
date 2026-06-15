@@ -170,6 +170,54 @@ class GameStateTest {
     }
 
     @Test
+    fun passClearsKoRestrictionAndAllowsLaterRecapture() {
+        val afterCapture = GameState.empty().copy(
+            nextPlayer = StoneColor.Black,
+            stones = mapOf(
+                point("D5") to StoneColor.White,
+                point("E4") to StoneColor.White,
+                point("E6") to StoneColor.White,
+                point("F5") to StoneColor.White,
+                point("C5") to StoneColor.Black,
+                point("D4") to StoneColor.Black,
+                point("D6") to StoneColor.Black,
+            ),
+        ).play(play(StoneColor.Black, "E5"))
+
+        val afterTwoPasses = afterCapture
+            .play(Move.Pass(StoneColor.White))
+            .play(Move.Pass(StoneColor.Black))
+        val recaptured = afterTwoPasses.play(play(StoneColor.White, "D5"))
+
+        assertEquals(null, afterTwoPasses.koPoint)
+        assertEquals(null, afterTwoPasses.koForbiddenFor)
+        assertEquals(StoneColor.White, recaptured.stoneAt(point("D5")))
+        assertEquals(null, recaptured.stoneAt(point("E5")))
+    }
+
+    @Test
+    fun singleMoveCanCaptureMultipleAdjacentGroups() {
+        val state = GameState.empty().copy(
+            nextPlayer = StoneColor.Black,
+            stones = mapOf(
+                point("D5") to StoneColor.White,
+                point("F5") to StoneColor.White,
+                point("C5") to StoneColor.Black,
+                point("D4") to StoneColor.Black,
+                point("D6") to StoneColor.Black,
+                point("F4") to StoneColor.Black,
+                point("F6") to StoneColor.Black,
+                point("G5") to StoneColor.Black,
+            ),
+        ).play(play(StoneColor.Black, "E5"))
+
+        assertEquals(StoneColor.Black, state.stoneAt(point("E5")))
+        assertEquals(null, state.stoneAt(point("D5")))
+        assertEquals(null, state.stoneAt(point("F5")))
+        assertEquals(2, state.capturedBy(StoneColor.Black))
+    }
+
+    @Test
     fun replayWithoutLastMoveRestoresCapturedStone() {
         val beforeCapture = GameState.empty()
             .play(play(StoneColor.Black, "D5"))
@@ -293,6 +341,29 @@ class GameStateTest {
         assertEquals(1, cleanup.state.capturedBy(StoneColor.White))
         assertEquals(null, cleanup.state.koPoint)
         assertEquals(null, cleanup.state.koForbiddenFor)
+    }
+
+    @Test
+    fun deadStoneCleanerRemovingBlackStonesCreditsWhitePrisoners() {
+        val state = GameState.empty().copy(
+            stones = mapOf(
+                point("D5") to StoneColor.Black,
+                point("E5") to StoneColor.White,
+            ),
+            capturedByBlack = 1,
+            capturedByWhite = 2,
+        )
+
+        val cleanup = DeadStoneCleaner.apply(
+            state = state,
+            deadStoneCoordinates = listOf(point("D5")),
+        )
+
+        assertEquals(1, cleanup.removedCount)
+        assertEquals(null, cleanup.state.stoneAt(point("D5")))
+        assertEquals(StoneColor.White, cleanup.state.stoneAt(point("E5")))
+        assertEquals(1, cleanup.state.capturedBy(StoneColor.Black))
+        assertEquals(3, cleanup.state.capturedBy(StoneColor.White))
     }
 
     private fun play(

@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.application
+package com.worksoc.goaicoach.application.session
 
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.shared.AnalysisPreset

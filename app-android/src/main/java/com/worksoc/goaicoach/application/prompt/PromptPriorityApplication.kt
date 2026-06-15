@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.application
+package com.worksoc.goaicoach.application.prompt
 
 internal data class PromptVisibilityDecision(
     val showResumePrompt: Boolean,

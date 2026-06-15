@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.application
 
+import com.worksoc.goaicoach.application.prompt.decidePromptVisibility
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test

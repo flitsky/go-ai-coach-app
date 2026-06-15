@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.application
 
+import com.worksoc.goaicoach.application.score.buildScoringRuleChangePlan
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize

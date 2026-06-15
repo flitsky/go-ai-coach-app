@@ -1,9 +1,6 @@
 package com.worksoc.goaicoach.application.preferences
 
-import com.worksoc.goaicoach.application.RuntimePlayLevelSelection
 import com.worksoc.goaicoach.application.session.*
-import com.worksoc.goaicoach.application.selectRuntimePlayLevel
-
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.shared.BoardSize

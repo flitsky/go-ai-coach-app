@@ -1469,3 +1469,10 @@
 - 사용자가 ext.11 이후 다른 개발자의 2차 평가 피드백을 제공했고, 원문 저장 및 내부 냉정 분석 문서 생성을 요청했다.
 - 원문은 `docs/refactoring/EXTERNAL_REVIEW_2026-06-15_ARCHITECTURE_SCORE_96_RAW.md`에 저장했다. 핵심 외부 평가는 96/100, application 하위 package 16개, `GoCoachApp.kt` import 127개, `withContext`/`scope.launch` 0개, KMP 물리 이동 2건, external sink adapter 구현 완료라는 판정이다.
 - 내부 검토는 `docs/refactoring/INTERNAL_ARCHITECT_REVIEW_OF_SCORE_96_FEEDBACK_2026-06-15.md`에 작성했다. 결론은 96점을 조건부 수용하되, 네트워크 diagnostic sink와 import 40개대 목표는 즉시 구현보다 로드맵으로 두고, shared/commonTest 보강과 shared 바둑 규칙 regression, `LaunchedEffect` 책임 분류를 다음 실질 작업으로 삼는 것이다.
+- 사용자가 `2nd phase.1` 다음 리팩토링 추천 항목을 단계별로 수행하고 결과 보고 시 완성도와 다음 추천 작업을 정리해달라고 요청했다.
+- shared/commonTest를 보강했다. `DiagnosticEventModelTest`는 diagnostic summary와 user-consent export 정책을 검증하고, `EngineOperationPolicyTest`는 operation request metadata, stale result discard, gate/timeout 정책을 commonTest에서 검증한다.
+- shared 바둑 규칙 회귀 테스트를 보강했다. pass 후 ko 해제/재탈환, 한 수로 두 인접 그룹 동시 포획, 흑 사석 cleanup 시 백 prisoner 증가를 테스트로 고정했다.
+- root application package에 남아 있던 `ScoringRuleApplication.kt`, `PromptPriorityApplication.kt`, `GameSessionApplication.kt`를 각각 `application/score`, `application/prompt`, `application/session`으로 이동했다.
+- `LayeringContractTest`에 새 위치의 scoring/prompt/session 파일을 platform-free 후보로 추가해 Android/UI/persistence/runtime 구현 의존이 다시 들어오지 않도록 했다.
+- 현재 metric은 root application package 파일 수 5개, `GoCoachApp.kt` 2,080줄, `GoCoachApp.kt` application import fan-in 76개, shared commonTest 파일 수 10개다.
+- 검증으로 `:shared:check`, `:app-android:compileDebugKotlin`, `:app-android:testDebugUnitTest`를 JDK 17/Android SDK 환경에서 실행했고 모두 통과했다.

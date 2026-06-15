@@ -4,9 +4,8 @@ import com.worksoc.goaicoach.application.humanmove.HumanEngineSyncFailurePlan
 import com.worksoc.goaicoach.application.humanmove.HumanMoveLocalResult
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkDisplayPlan
 import com.worksoc.goaicoach.application.engine.EngineStartupDisplayPlan
-import com.worksoc.goaicoach.application.PlayerSetupChangePlan
 import com.worksoc.goaicoach.application.savedgame.SavedGameRestorePlan
-import com.worksoc.goaicoach.application.ScoringRuleChangePlan
+import com.worksoc.goaicoach.application.score.ScoringRuleChangePlan
 import com.worksoc.goaicoach.application.startgame.GameSessionResetPlan
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnDisplayPlan
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnFailureDisplayPlan
