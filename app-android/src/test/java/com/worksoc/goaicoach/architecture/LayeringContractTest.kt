@@ -324,6 +324,34 @@ class LayeringContractTest {
     }
 
     @Test
+    fun goCoachAppDoesNotOwnEngineBackedNewGameWorkflowBody() {
+        val goCoachApp = repoRoot()
+            .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
+        val text = goCoachApp.readText()
+        val forbiddenFragments = listOf(
+            "GameSessionEffect.StartEngineBackedGame(",
+            "runEngineBackedNewGameWorkflowResult(",
+            "EngineStartupWorkflowResult.Success",
+            "EngineStartupWorkflowResult.Failure",
+            "EngineOperationKind.EngineNewGame",
+            "runtimeEngineGameStartSuccessLog(",
+            "runtimeEngineGameStartFailureLog(",
+        )
+            .filter { fragment -> fragment in text }
+        val requiredFragments = listOf(
+            "runStartEngineBackedGameApplication(",
+            "StartEngineBackedGameRunRequest(",
+        )
+            .filterNot { fragment -> fragment in text }
+
+        assertTrue(
+            "GoCoachApp should run engine-backed new game through startgame application runner, not own engine operation/effect/workflow details:\n" +
+                "forbidden:\n${forbiddenFragments.joinToString("\n")}\nmissing:\n${requiredFragments.joinToString("\n")}",
+            forbiddenFragments.isEmpty() && requiredFragments.isEmpty(),
+        )
+    }
+
+    @Test
     fun goCoachAppDoesNotOwnScoreEstimateWorkflowBody() {
         val goCoachApp = repoRoot()
             .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")

@@ -1585,3 +1585,7 @@
 - `DebugReportApplicationRunner.kt`를 추가했다. Copy Log 실행 시 `nowMillis` 기준의 analysis cache stats, position analysis cache stats, 턴 시간, runtime event log, diagnostic event log 수집과 `DebugReportCopyActionRequest` 조립을 application runner가 소유하게 했다.
 - `GoCoachApp.kt`의 `copyDebugReport()`는 `runDebugReportCopyApplication(DebugReportCopyRunRequest)` 호출로 축소했다. UI는 현재 controller state와 platform ports, 필요한 provider 콜백만 넘기고 로그 읽기/복사 결과 메시지 적용은 runner가 관장한다.
 - `DebugReportApplicationRunnerTest`와 `LayeringContractTest.goCoachAppDoesNotOwnDebugReportCopyWorkflowBody()`를 추가했다. Copy Log runner가 수집 데이터를 debug report에 반영하는지와 UI가 `DebugReportCopyActionRequest`, raw log read를 다시 소유하지 않는지를 검증한다.
+- 사용자가 `4.` 다음 리팩토링 추천 항목을 단계별로 모두 진행하고, 결과 보고 시 현재 리팩토링 완성도와 다음 추천 작업을 정리해달라고 요청했다.
+- `StartEngineBackedGameRunnerApplication.kt`를 추가했다. AI 포함 새 대국 시작 시 runtime 적용, engine new-game operation 생성, observed workflow 실행, 성공/실패 runtime log, local reset, score snapshot 교체, 후속 Top Moves 요청 연결을 startgame runner가 소유한다.
+- `GoCoachApp.kt`의 `startEngineBackedNewGame()`는 `runStartEngineBackedGameApplication(StartEngineBackedGameRunRequest)` 호출로 축소했다. UI는 현재 상태 provider, reset/score 적용 콜백, engine operation launch 콜백만 제공한다.
+- `StartEngineBackedGameRunnerTest`와 `LayeringContractTest.goCoachAppDoesNotOwnEngineBackedNewGameWorkflowBody()`를 추가했다. runner 성공/실패 경로와 UI가 `GameSessionEffect.StartEngineBackedGame`, `EngineOperationKind.EngineNewGame`, engine workflow 결과 분기를 다시 소유하지 않는지를 검증한다.

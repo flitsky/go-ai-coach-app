@@ -75,9 +75,11 @@ import com.worksoc.goaicoach.application.savedgame.runSavedGamePersistenceApplic
 import com.worksoc.goaicoach.application.savedgame.runSavedGameRestoreApplication
 import com.worksoc.goaicoach.application.savedgame.runSavedSessionPromptApplication
 import com.worksoc.goaicoach.application.startgame.GameSessionResetPlan
+import com.worksoc.goaicoach.application.startgame.StartEngineBackedGameRunRequest
 import com.worksoc.goaicoach.application.startgame.StartConfiguredGamePlan
 import com.worksoc.goaicoach.application.startgame.buildNewLocalGameSessionPlan
 import com.worksoc.goaicoach.application.startgame.buildStartConfiguredGamePlan
+import com.worksoc.goaicoach.application.startgame.runStartEngineBackedGameApplication
 import com.worksoc.goaicoach.application.savedgame.SavedGameStorePort
 import com.worksoc.goaicoach.application.analysis.UndoAnalysisRestoreCache
 import com.worksoc.goaicoach.application.preferences.UserPreferencesStorePort
@@ -1204,69 +1206,33 @@ private fun GoCoachScreen(
     }
 
     fun startEngineBackedNewGame(plan: StartConfiguredGamePlan.StartEngineGame) {
-        val targetRuleset = plan.ruleset
-        val runtime = plan.runtime
-        applyRuntimePlayLevelSelection(runtime)
-        runtimeEventLog.append(
-            runtimeEngineGameStartRequestLog(
-                context = currentRuntimeLogContext(),
-                ruleset = targetRuleset,
-                runtime = runtime,
+        runStartEngineBackedGameApplication(
+            StartEngineBackedGameRunRequest(
+                plan = plan,
+                engineClient = engineClient,
+                currentState = gameState,
+                sessionGeneration = runtimeState.sessionGeneration,
+                runtimeContextProvider = ::currentRuntimeLogContext,
+                runtimeEventLog = runtimeEventLog,
+                diagnosticEventLog = diagnosticEventLog,
+                applyRuntime = ::applyRuntimePlayLevelSelection,
+                launchEngineOperation = { operation, block ->
+                    launchTrackedEngineOperation(operation) {
+                        block()
+                    }
+                },
+                resetLocalGame = ::resetLocalGame,
+                currentScoreStateProvider = { scoreState },
+                replaceScoreState = { state -> scoreState = state },
+                currentStateProvider = { gameState },
+                requestFollowUpAnalysis = { state ->
+                    requestTopMoveAnalysisForState(
+                        targetState = state,
+                        automatic = true,
+                    )
+                },
             ),
         )
-        val operation = engineOperationRequest(
-            kind = EngineOperationKind.EngineNewGame,
-            state = gameState,
-            sessionGeneration = runtimeState.sessionGeneration,
-            timeoutPolicy = EngineTimeoutPolicy(label = "engine-new-game"),
-            fallbackPolicy = EngineFallbackPolicy.LocalEngine,
-        )
-        launchTrackedEngineOperation(operation) {
-            var nextAnalysisState: GameState? = null
-            val startMillis = System.currentTimeMillis()
-            val result =
-                runEngineIo {
-                    engineClient.runEngineBackedNewGameWorkflowResult(
-                        effect = GameSessionEffect.StartEngineBackedGame(
-                            currentState = gameState,
-                            profile = runtime.engineProfile,
-                            boardSize = BoardSize.Nine,
-                            ruleset = targetRuleset,
-                        ),
-                        operationRequest = operation,
-                        diagnosticEventLog = diagnosticEventLog,
-                    )
-                }
-            when (result) {
-                is EngineStartupWorkflowResult.Success -> {
-                    runtimeEventLog.append(
-                        runtimeEngineGameStartSuccessLog(
-                            context = currentRuntimeLogContext(),
-                            elapsedMs = System.currentTimeMillis() - startMillis,
-                            message = result.result.message,
-                        ),
-                    )
-                    resetLocalGame(result.result.message, targetRuleset)
-                    scoreState = scoreState.replaceSnapshots(listOf(result.result.scoreSnapshot ?: localScoreSnapshot(gameState)))
-                    nextAnalysisState = gameState
-                }
-
-                is EngineStartupWorkflowResult.Failure -> {
-                    runtimeEventLog.append(
-                        runtimeEngineGameStartFailureLog(
-                            context = currentRuntimeLogContext(),
-                            elapsedMs = System.currentTimeMillis() - startMillis,
-                            error = result.error,
-                        ),
-                    )
-                    resetLocalGame(result.error.message ?: "New AI game failed.", targetRuleset)
-                }
-            }
-            requestTopMoveAnalysisForState(
-                targetState = nextAnalysisState ?: gameState,
-                automatic = true,
-            )
-        }
     }
 
     fun startConfiguredGame() {
