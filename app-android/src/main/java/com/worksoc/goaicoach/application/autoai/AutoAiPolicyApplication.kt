@@ -1,6 +1,8 @@
 package com.worksoc.goaicoach.application.autoai
 
-import com.worksoc.goaicoach.application.GameSessionControllerState
+import com.worksoc.goaicoach.application.session.*
+
+import com.worksoc.goaicoach.application.session.GameSessionControllerState
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.shared.AnalysisLimit

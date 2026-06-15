@@ -3,6 +3,7 @@ package com.worksoc.goaicoach.application
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventExternalSinkPort
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventExternalSinkResult
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
+import com.worksoc.goaicoach.application.diagnostic.LocalFileDiagnosticEventExternalSink
 import com.worksoc.goaicoach.application.diagnostic.NoopDiagnosticEventExternalSink
 import com.worksoc.goaicoach.application.diagnostic.RecordingDiagnosticEventExternalSink
 import com.worksoc.goaicoach.application.diagnostic.engineOperationDiscardedDiagnosticEvent
@@ -27,6 +28,7 @@ import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import kotlin.io.path.createTempDirectory
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -239,6 +241,38 @@ class DiagnosticEventApplicationTest {
         )
 
         assertTrue(result is DiagnosticEventExternalSinkResult.Sent)
+    }
+
+    @Test
+    fun localFileDiagnosticExternalSinkAppendsJsonLine() {
+        val file = createTempDirectory("go-coach-diagnostic-export")
+            .toFile()
+            .resolve("diagnostic-export.jsonl")
+        val event = DiagnosticEvent(
+            severity = DiagnosticSeverity.Critical,
+            code = "score.final_disagreement",
+            message = "score mismatch",
+            context = mapOf("engineFinalScore" to "W+2", "localScore" to "B+10"),
+        )
+        val sink = LocalFileDiagnosticEventExternalSink(
+            file = file,
+            currentTimeMillis = { 12_345L },
+        )
+
+        val result = sink.send(
+            DiagnosticEventExternalExportPayload(
+                event = event,
+                debugReportText = "debug\nreport",
+            ),
+        )
+
+        assertTrue(result.isSuccess)
+        val text = file.readText()
+        assertTrue(text.contains("\"createdAtMillis\":12345"))
+        assertTrue(text.contains("\"severity\":\"critical\""))
+        assertTrue(text.contains("\"code\":\"score.final_disagreement\""))
+        assertTrue(text.contains("\"localScore\":\"B+10\""))
+        assertTrue(text.contains("\"debugReportText\":\"debug\\nreport\""))
     }
 
     @Test

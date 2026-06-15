@@ -1419,3 +1419,9 @@
 - `GoCoachApp.kt`의 autoai 개별 import를 `application.autoai.*`로 묶어 application import fan-in을 163개에서 140개로 줄였다. UI 파일의 `scope.launch`, `withContext(Dispatchers.IO)`, `runCatching` 직접 지점은 계속 0개다.
 - `launchAutoAiEffect()`를 추가해 자동 AI 루프가 일반 UI effect launch가 아니라 자동 AI 전용 effect boundary를 통과하도록 했다.
 - `RecordingDiagnosticEventExternalSink`를 application diagnostic port 구현으로 추가했다. 경고/크리티컬 diagnostic export flow를 실제 원격 transport 전에도 port 단위로 수집/검증할 수 있게 했다.
+- 사용자가 `ext.5` 다음 리팩토링 추천 항목을 단계별로 모두 진행하고, 결과 보고 시 현재 리팩토링 완성도 및 다음 추천 작업 리스트업을 요청했다.
+- `GameSessionAnalysisState.kt`, `GameSessionController.kt`, `GameSessionCoreState.kt`, `GameSessionMoveReviewState.kt`, `GameSessionRuntimeState.kt`, `GameSessionScoreState.kt`, `GameSessionSettingsState.kt`, `GameSessionTurnTimeState.kt`, `GameSessionUiStateHolderApplication.kt`를 `application/session/` 하위 package로 이동했다. session 상태/컨트롤러/reducer 경계가 application 루트 package에서 분리됐다.
+- `RuntimeEventApplication.kt`를 `application/runtime/` 하위 package로 이동했다. runtime log/event 생성 책임이 별도 package로 분리되어 structured diagnostic/remote log adapter와 연결하기 쉬운 위치가 됐다.
+- `GameSessionTurnTimeState.kt`의 `java.util.Locale`/`String.format` 의존을 제거하고 common-friendly tenths formatter로 바꿨다. session package가 KMP portable 후보로 남을 수 있도록 JVM formatting 의존을 제거한 것이다.
+- `EngineOperationPolicyAdapter.kt`를 추가해 shared engine policy 결과를 application facade 타입으로 변환하는 mapping을 별도 파일로 분리했다. `EngineOperationPolicy.kt` facade 유지 이유와 shared 직접 참조 확장 시 충돌 지점이 더 명확해졌다.
+- `LocalFileDiagnosticEventExternalSink`를 추가해 사용자 동의 후 warning/critical diagnostic export payload를 로컬 JSONL 파일로 저장할 수 있는 JVM/Android-bound adapter를 마련했다. 원격 transport 도입 전에도 수집 payload를 파일로 검증할 수 있다.

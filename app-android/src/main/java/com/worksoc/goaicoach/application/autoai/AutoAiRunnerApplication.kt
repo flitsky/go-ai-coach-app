@@ -3,7 +3,7 @@ package com.worksoc.goaicoach.application.autoai
 import com.worksoc.goaicoach.application.AiEndgameResolution
 import com.worksoc.goaicoach.application.AutoAiTurnResult
 import com.worksoc.goaicoach.application.EngineSessionClient
-import com.worksoc.goaicoach.application.GameSessionEffect
+import com.worksoc.goaicoach.application.session.GameSessionEffect
 import com.worksoc.goaicoach.application.localScoreSnapshot
 import com.worksoc.goaicoach.application.score.*
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort

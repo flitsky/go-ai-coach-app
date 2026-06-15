@@ -1,5 +1,7 @@
 package com.worksoc.goaicoach.application.topmoves
 
+import com.worksoc.goaicoach.application.session.*
+
 import com.worksoc.goaicoach.application.AnalysisCacheKey
 import com.worksoc.goaicoach.application.CachedAnalysisResult
 import com.worksoc.goaicoach.application.EngineFallbackPolicy
@@ -8,9 +10,9 @@ import com.worksoc.goaicoach.application.EngineOperationRequest
 import com.worksoc.goaicoach.application.EngineOperationResultGuard
 import com.worksoc.goaicoach.application.EngineSessionClient
 import com.worksoc.goaicoach.application.EngineTimeoutPolicy
-import com.worksoc.goaicoach.application.GameSessionAnalysisState
-import com.worksoc.goaicoach.application.GameSessionControllerState
-import com.worksoc.goaicoach.application.GameSessionEffect
+import com.worksoc.goaicoach.application.session.GameSessionAnalysisState
+import com.worksoc.goaicoach.application.session.GameSessionControllerState
+import com.worksoc.goaicoach.application.session.GameSessionEffect
 import com.worksoc.goaicoach.application.analysisKeyFor
 import com.worksoc.goaicoach.application.deepTopMovesAnalysisLimitFor
 import com.worksoc.goaicoach.application.engineOperationRequest

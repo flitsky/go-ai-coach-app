@@ -1,17 +1,19 @@
 package com.worksoc.goaicoach.presentation
 
+import com.worksoc.goaicoach.application.session.*
+
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnUiState
 import com.worksoc.goaicoach.application.EngineBenchmarkUiState
-import com.worksoc.goaicoach.application.GameSessionAnalysisState
-import com.worksoc.goaicoach.application.GameSessionControllerState
-import com.worksoc.goaicoach.application.GameSessionCoreState
-import com.worksoc.goaicoach.application.GameSessionMoveReviewState
-import com.worksoc.goaicoach.application.GameSessionRuntimeState
-import com.worksoc.goaicoach.application.GameSessionScoreState
-import com.worksoc.goaicoach.application.GameSessionSettingsState
+import com.worksoc.goaicoach.application.session.GameSessionAnalysisState
+import com.worksoc.goaicoach.application.session.GameSessionControllerState
+import com.worksoc.goaicoach.application.session.GameSessionCoreState
+import com.worksoc.goaicoach.application.session.GameSessionMoveReviewState
+import com.worksoc.goaicoach.application.session.GameSessionRuntimeState
+import com.worksoc.goaicoach.application.session.GameSessionScoreState
+import com.worksoc.goaicoach.application.session.GameSessionSettingsState
 import com.worksoc.goaicoach.application.PositionAnalysisCacheOptimizationUiState
 import com.worksoc.goaicoach.application.SavedSessionUiState
 import com.worksoc.goaicoach.application.localScoreSnapshot

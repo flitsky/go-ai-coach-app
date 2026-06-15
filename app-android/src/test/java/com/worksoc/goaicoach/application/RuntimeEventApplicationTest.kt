@@ -1,5 +1,8 @@
 package com.worksoc.goaicoach.application
 
+import com.worksoc.goaicoach.application.session.*
+import com.worksoc.goaicoach.application.runtime.*
+
 import com.worksoc.goaicoach.application.autoai.*
 
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort

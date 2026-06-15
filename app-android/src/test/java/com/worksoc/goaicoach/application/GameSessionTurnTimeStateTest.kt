@@ -1,5 +1,7 @@
 package com.worksoc.goaicoach.application
 
+import com.worksoc.goaicoach.application.session.*
+
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.StoneColor
 import org.junit.Assert.assertEquals

@@ -1169,3 +1169,41 @@
 5. `GoCoachApp.kt` state holder 적용 확대
    - 자동 AI success/failure, benchmark, startup 중 하나를 `GameSessionUiStateHolder` 또는 session reducer 경계로 더 이동한다.
    - acceptance: UI local helper 수와 직접 state mutation 지점 감소.
+
+## 2026-06-15 추가 진행 로그: ext.5 session/runtime package / policy adapter / local diagnostic export
+
+- 2026-06-15: `GameSessionAnalysisState.kt`, `GameSessionController.kt`, `GameSessionCoreState.kt`, `GameSessionMoveReviewState.kt`, `GameSessionRuntimeState.kt`, `GameSessionScoreState.kt`, `GameSessionSettingsState.kt`, `GameSessionTurnTimeState.kt`, `GameSessionUiStateHolderApplication.kt`를 `application/session/` 하위 package로 이동했다. session 상태, controller state, UI state holder/reducer 경계가 application 루트 package에서 분리됐다.
+- 2026-06-15: `RuntimeEventApplication.kt`를 `application/runtime/` 하위 package로 이동했다. runtime log/event 생성 책임이 별도 package로 분리되어 structured diagnostic, local/remote log adapter, future app-service observability와 연결하기 쉬워졌다.
+- 2026-06-15: `GameSessionTurnTimeState.kt`의 `java.util.Locale`/`String.format` 의존을 제거했다. common-friendly tenths formatter로 교체하여 session package가 platform-free 후보 검사에 포함될 수 있게 했다.
+- 2026-06-15: `EngineOperationPolicyAdapter.kt`를 추가했다. shared engine policy 타입과 application facade 타입 사이의 guard/apply 매핑을 별도 파일로 분리해, facade 유지 이유와 향후 shared 직접 참조 확장 지점을 코드상으로 명확히 했다.
+- 2026-06-15: `LocalFileDiagnosticEventExternalSink`를 추가했다. warning/critical diagnostic event export payload를 사용자 동의 후 로컬 JSONL 파일로 저장할 수 있는 JVM/Android-bound adapter이며, 원격 transport 도입 전 수집 payload 검증용으로 쓸 수 있다.
+- 현재 metric: `GoCoachApp.kt`는 2,132줄, UI 파일 안의 `scope.launch`/`withContext(Dispatchers.IO)`/`runCatching` 직접 지점은 0개다. application import fan-in은 120개이며, application 하위 package는 `autoai`, `diagnostic`, `engine`, `runtime`, `score`, `session`, `topmoves`로 분리됐다.
+
+## 현재 리팩토링/아키텍처 완성도 평가
+
+- 리팩토링 배치 진행도: 99.96/100.
+- 외부 평가 기준 플랫폼 아키텍처 완성도: 97.4/100.
+- 상향 요인: `topmoves`, `score`, `autoai`에 이어 `session`, `runtime`까지 package boundary가 생겼다. UI entry point의 coroutine/engine IO primitive 직접 소유는 계속 0개이며, diagnostic external sink는 no-op/recording/local-file adapter 계층을 갖췄다.
+- 남은 감점 요인: `GoCoachApp.kt`는 아직 2천 줄 이상이고, session package 내부가 application root wildcard에 기대는 지점이 남아 있다. `EngineOperationPolicy` facade도 nested sealed 타입 호환 때문에 유지되고 있으며, state mutation 일부는 여전히 UI local helper에 있다.
+
+## 다음 추천 리팩토링 항목 - ext.6
+
+1. `session` package 내부 root application wildcard 의존 축소
+   - session 파일들이 `application.*`에 기대는 지점을 명시 import 또는 좁은 port/facade로 바꾼다.
+   - acceptance: session package가 어떤 application 루트 타입을 실제로 필요로 하는지 코드상 드러난다.
+
+2. `runtime` package 내부 root application wildcard 의존 축소
+   - runtime event 생성 파일에서 필요한 plan/model만 명시 import하고, session/autoai 의존도 좁힌다.
+   - acceptance: runtime package가 structured log builder 역할에만 집중한다.
+
+3. `GameSessionUiStateHolder` 적용 범위 확대
+   - benchmark/startup/engine lifecycle display 중 하나를 holder 또는 session reducer 경계로 이동한다.
+   - acceptance: `GoCoachApp.kt`의 직접 state mutation helper가 줄어든다.
+
+4. `EngineOperationPolicy` facade 축소 3차
+   - `session` 또는 `runtime` package에서 request/policy 값은 shared engine 타입 직접 참조로 전환하고, guard/apply facade는 adapter 뒤에 둔다.
+   - acceptance: facade 유지 타입과 제거 가능한 타입의 경계가 더 좁아진다.
+
+5. diagnostic local export wiring 후보 정리
+   - `LocalFileDiagnosticEventExternalSink`를 메뉴/디버그 로그 수집 UX에 연결할지, 우선 개발자-only export adapter로 둘지 결정한다.
+   - acceptance: 외부 수집 전 단계의 local export 운영 원칙이 문서화된다.

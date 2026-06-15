@@ -5,7 +5,7 @@ import com.worksoc.goaicoach.shared.engine.EngineOperationKind
 import com.worksoc.goaicoach.shared.engine.EngineOperationRequest
 import com.worksoc.goaicoach.application.EngineOperationResultGuard
 import com.worksoc.goaicoach.shared.engine.EngineTimeoutPolicy
-import com.worksoc.goaicoach.application.GameSessionEffect
+import com.worksoc.goaicoach.application.session.GameSessionEffect
 import com.worksoc.goaicoach.application.AiEndgameResolution
 import com.worksoc.goaicoach.application.buildEndgameLog
 import com.worksoc.goaicoach.shared.engine.engineOperationRequest

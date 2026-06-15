@@ -1,4 +1,6 @@
-package com.worksoc.goaicoach.application
+package com.worksoc.goaicoach.application.session
+
+import com.worksoc.goaicoach.application.*
 
 import com.worksoc.goaicoach.application.autoai.*
 

@@ -1,9 +1,11 @@
 package com.worksoc.goaicoach.presentation
 
+import com.worksoc.goaicoach.application.session.*
+
 import com.worksoc.goaicoach.application.MoveReviewMarker
 import com.worksoc.goaicoach.application.PositionAnalysisCacheOptimizationPrompt
 import com.worksoc.goaicoach.application.decidePromptVisibility
-import com.worksoc.goaicoach.application.GameSessionControllerState
+import com.worksoc.goaicoach.application.session.GameSessionControllerState
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.MatchSeatSnapshot
 import com.worksoc.goaicoach.match.MatchMode

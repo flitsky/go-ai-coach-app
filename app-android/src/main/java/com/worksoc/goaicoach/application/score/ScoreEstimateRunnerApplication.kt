@@ -2,7 +2,7 @@ package com.worksoc.goaicoach.application.score
 
 import com.worksoc.goaicoach.shared.engine.EngineOperationRequest
 import com.worksoc.goaicoach.application.EngineSessionClient
-import com.worksoc.goaicoach.application.GameSessionEffect
+import com.worksoc.goaicoach.application.session.GameSessionEffect
 import com.worksoc.goaicoach.application.estimateScoreForState
 import com.worksoc.goaicoach.application.diagnostic.NoopDiagnosticEventLog
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort

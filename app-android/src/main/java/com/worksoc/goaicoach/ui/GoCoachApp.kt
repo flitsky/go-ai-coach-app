@@ -1,6 +1,9 @@
 package com.worksoc.goaicoach.ui
 
+import com.worksoc.goaicoach.application.session.*
+
 import com.worksoc.goaicoach.application.autoai.*
+import com.worksoc.goaicoach.application.runtime.*
 import com.worksoc.goaicoach.application.score.*
 
 import androidx.compose.foundation.layout.fillMaxSize
@@ -34,7 +37,7 @@ import com.worksoc.goaicoach.application.buildInitialUserPreferencesPlan
 import com.worksoc.goaicoach.application.buildPlayerSetupChangePlan
 import com.worksoc.goaicoach.application.buildPositionAnalysisCacheOptimizationPlan
 import com.worksoc.goaicoach.application.buildPositionAnalysisCacheOptimizationPrompt
-import com.worksoc.goaicoach.application.buildGameSessionControllerState
+import com.worksoc.goaicoach.application.session.buildGameSessionControllerState
 import com.worksoc.goaicoach.application.buildUserPreferencesSnapshot
 import com.worksoc.goaicoach.application.EngineBenchmarkDefaultSamplesPerVisit
 import com.worksoc.goaicoach.application.EngineBenchmarkDefaultTimeCapMs
@@ -64,15 +67,15 @@ import com.worksoc.goaicoach.application.evaluateScoringRuleChangeGate
 import com.worksoc.goaicoach.application.evaluateSearchTimeChangeGate
 import com.worksoc.goaicoach.application.EngineUndoCompletionPlan
 import com.worksoc.goaicoach.application.GameSessionResetPlan
-import com.worksoc.goaicoach.application.GameSessionAnalysisState
-import com.worksoc.goaicoach.application.GameSessionControllerState
-import com.worksoc.goaicoach.application.GameSessionCoreState
-import com.worksoc.goaicoach.application.GameSessionEffect
-import com.worksoc.goaicoach.application.GameSessionMoveReviewState
-import com.worksoc.goaicoach.application.GameSessionRuntimeState
-import com.worksoc.goaicoach.application.GameSessionScoreState
-import com.worksoc.goaicoach.application.GameSessionTurnTimeState
-import com.worksoc.goaicoach.application.GameSessionUiStateHolder
+import com.worksoc.goaicoach.application.session.GameSessionAnalysisState
+import com.worksoc.goaicoach.application.session.GameSessionControllerState
+import com.worksoc.goaicoach.application.session.GameSessionCoreState
+import com.worksoc.goaicoach.application.session.GameSessionEffect
+import com.worksoc.goaicoach.application.session.GameSessionMoveReviewState
+import com.worksoc.goaicoach.application.session.GameSessionRuntimeState
+import com.worksoc.goaicoach.application.session.GameSessionScoreState
+import com.worksoc.goaicoach.application.session.GameSessionTurnTimeState
+import com.worksoc.goaicoach.application.session.GameSessionUiStateHolder
 import com.worksoc.goaicoach.application.HumanEngineSyncFailurePlan
 import com.worksoc.goaicoach.application.HumanEngineSyncDisplayPlan
 import com.worksoc.goaicoach.application.HumanEngineSyncCompletionApplyPlan
@@ -105,27 +108,6 @@ import com.worksoc.goaicoach.application.runEngineUndoWorkflowResult
 import com.worksoc.goaicoach.application.runHumanEngineSyncWorkflowResult
 import com.worksoc.goaicoach.application.runPositionAnalysisCacheOptimizationWorkflowResult
 import com.worksoc.goaicoach.application.runStartupBenchmarkWorkflowResult
-import com.worksoc.goaicoach.application.runtimeAiTurnBeginLog
-import com.worksoc.goaicoach.application.runtimeAiTurnCompleteLog
-import com.worksoc.goaicoach.application.runtimeAiTurnEndgameDetectedLog
-import com.worksoc.goaicoach.application.runtimeAiTurnEndgameFailureLog
-import com.worksoc.goaicoach.application.runtimeAiTurnEndgameSuccessLog
-import com.worksoc.goaicoach.application.runtimeAiTurnFailureLog
-import com.worksoc.goaicoach.application.runtimeAiTurnScheduleCancelledLog
-import com.worksoc.goaicoach.application.runtimeAiTurnScheduleLog
-import com.worksoc.goaicoach.application.runtimeAiTurnSuccessLog
-import com.worksoc.goaicoach.application.runtimeAppStartLog
-import com.worksoc.goaicoach.application.runtimeAutoPlayDelayChangeLog
-import com.worksoc.goaicoach.application.runtimeEngineGameStartFailureLog
-import com.worksoc.goaicoach.application.runtimeEngineGameStartRequestLog
-import com.worksoc.goaicoach.application.runtimeEngineGameStartSuccessLog
-import com.worksoc.goaicoach.application.runtimeEngineOperationCompletedLog
-import com.worksoc.goaicoach.application.runtimeEngineOperationStartedLog
-import com.worksoc.goaicoach.application.runtimeGameResetLog
-import com.worksoc.goaicoach.application.runtimeHumanEngineSyncFailureLog
-import com.worksoc.goaicoach.application.runtimeHumanEngineSyncSuccessLog
-import com.worksoc.goaicoach.application.runtimeHumanMoveAcceptedLog
-import com.worksoc.goaicoach.application.RuntimeLogContext
 import com.worksoc.goaicoach.application.StartupBenchmarkWorkflowResult
 import com.worksoc.goaicoach.application.StartupBenchmarkExecutionContext
 import com.worksoc.goaicoach.application.toDebugReportSnapshot
@@ -143,8 +125,7 @@ import com.worksoc.goaicoach.application.SavedSessionUiState
 import com.worksoc.goaicoach.application.StartConfiguredGamePlan
 import com.worksoc.goaicoach.application.topmoves.TopMoveAnalysisUpdate
 import com.worksoc.goaicoach.application.topmoves.topMoveAnalysisOperationToken
-import com.worksoc.goaicoach.application.toGameSessionSettingsState
-import com.worksoc.goaicoach.application.toRuntimeLogContext
+import com.worksoc.goaicoach.application.session.toGameSessionSettingsState
 import com.worksoc.goaicoach.application.undoEngineInterventionQuietUntilMillis
 import com.worksoc.goaicoach.application.undoEngineInterventionRemainingDelayMillis
 import com.worksoc.goaicoach.application.UndoAnalysisRestoreCache

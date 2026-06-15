@@ -1,8 +1,9 @@
-package com.worksoc.goaicoach.application
+package com.worksoc.goaicoach.application.session
+
+import com.worksoc.goaicoach.application.*
 
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.StoneColor
-import java.util.Locale
 
 internal data class GameSessionTurnTimeState(
     val currentTurnPlayer: StoneColor,
@@ -72,4 +73,11 @@ internal data class TurnTimeMoveUpdate(
 }
 
 internal fun Long.toSecondsText(): String =
-    String.format(Locale.US, "%.1fs", this / 1000.0)
+    toRoundedTenthsText(suffix = "s")
+
+private fun Long.toRoundedTenthsText(suffix: String): String {
+    val sign = if (this < 0L) "-" else ""
+    val absoluteMillis = if (this < 0L) -this else this
+    val roundedTenths = (absoluteMillis + 50L) / 100L
+    return "$sign${roundedTenths / 10L}.${roundedTenths % 10L}$suffix"
+}
