@@ -1,9 +1,24 @@
-package com.worksoc.goaicoach.application
+package com.worksoc.goaicoach.application.humanmove
 
 import com.worksoc.goaicoach.application.session.*
 
 import com.worksoc.goaicoach.application.score.*
 
+import com.worksoc.goaicoach.application.EngineFallbackPolicy
+import com.worksoc.goaicoach.application.EngineOperationApplyPlan
+import com.worksoc.goaicoach.application.EngineOperationKind
+import com.worksoc.goaicoach.application.EngineOperationRequest
+import com.worksoc.goaicoach.application.EngineOperationResultGuard
+import com.worksoc.goaicoach.application.EngineSessionClient
+import com.worksoc.goaicoach.application.EngineTimeoutPolicy
+import com.worksoc.goaicoach.application.LocalEngineMoveResult
+import com.worksoc.goaicoach.application.MoveReviewMarker
+import com.worksoc.goaicoach.application.MoveReviewResult
+import com.worksoc.goaicoach.application.buildEngineOperationApplyPlan
+import com.worksoc.goaicoach.application.buildMoveReview
+import com.worksoc.goaicoach.application.engineOperationRequest
+import com.worksoc.goaicoach.application.localScoreSnapshot
+import com.worksoc.goaicoach.application.withReviewMarker
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.diagnostic.NoopDiagnosticEventLog
 import com.worksoc.goaicoach.application.diagnostic.runObservedEngineOperation

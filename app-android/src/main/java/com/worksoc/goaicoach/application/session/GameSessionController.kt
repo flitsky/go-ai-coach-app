@@ -1,10 +1,10 @@
 package com.worksoc.goaicoach.application.session
 
-import com.worksoc.goaicoach.application.DebugReportCopyPlan
+import com.worksoc.goaicoach.application.debugreport.DebugReportCopyPlan
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkUiState
-import com.worksoc.goaicoach.application.HumanEngineSyncRunPlan
-import com.worksoc.goaicoach.application.PositionAnalysisCacheOptimizationPlan
-import com.worksoc.goaicoach.application.PositionAnalysisCacheOptimizationUiState
+import com.worksoc.goaicoach.application.humanmove.HumanEngineSyncRunPlan
+import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationPlan
+import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationUiState
 import com.worksoc.goaicoach.application.savedgame.SavedSessionUiState
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnEndgamePlan
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnRunPlan

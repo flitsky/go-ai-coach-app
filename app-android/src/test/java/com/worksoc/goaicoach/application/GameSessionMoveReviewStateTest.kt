@@ -1,5 +1,7 @@
 package com.worksoc.goaicoach.application
 
+import com.worksoc.goaicoach.application.humanmove.*
+
 import com.worksoc.goaicoach.application.undo.*
 
 import com.worksoc.goaicoach.application.session.*

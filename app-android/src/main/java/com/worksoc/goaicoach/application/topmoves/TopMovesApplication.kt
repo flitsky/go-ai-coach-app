@@ -2,8 +2,8 @@ package com.worksoc.goaicoach.application.topmoves
 
 import com.worksoc.goaicoach.application.session.*
 
-import com.worksoc.goaicoach.application.AnalysisCacheKey
-import com.worksoc.goaicoach.application.CachedAnalysisResult
+import com.worksoc.goaicoach.application.analysis.AnalysisCacheKey
+import com.worksoc.goaicoach.application.analysis.CachedAnalysisResult
 import com.worksoc.goaicoach.application.EngineFallbackPolicy
 import com.worksoc.goaicoach.application.EngineOperationKind
 import com.worksoc.goaicoach.application.EngineOperationRequest
@@ -13,16 +13,16 @@ import com.worksoc.goaicoach.application.EngineTimeoutPolicy
 import com.worksoc.goaicoach.application.session.GameSessionAnalysisState
 import com.worksoc.goaicoach.application.session.GameSessionControllerState
 import com.worksoc.goaicoach.application.session.GameSessionEffect
-import com.worksoc.goaicoach.application.analysisKeyFor
-import com.worksoc.goaicoach.application.deepTopMovesAnalysisLimitFor
+import com.worksoc.goaicoach.application.analysis.analysisKeyFor
+import com.worksoc.goaicoach.application.analysis.deepTopMovesAnalysisLimitFor
 import com.worksoc.goaicoach.application.engineOperationRequest
 import com.worksoc.goaicoach.application.evaluateEngineOperationResultGuard
-import com.worksoc.goaicoach.application.cacheQualityFor
-import com.worksoc.goaicoach.application.topMoveCandidateCountFor
-import com.worksoc.goaicoach.application.topMovesAnalysisLimitFor
-import com.worksoc.goaicoach.application.toCandidateText
-import com.worksoc.goaicoach.application.withTopMovesStrengthHeader
-import com.worksoc.goaicoach.application.withAnalysisCoverage
+import com.worksoc.goaicoach.application.analysis.cacheQualityFor
+import com.worksoc.goaicoach.application.analysis.topMoveCandidateCountFor
+import com.worksoc.goaicoach.application.analysis.topMovesAnalysisLimitFor
+import com.worksoc.goaicoach.application.analysis.toCandidateText
+import com.worksoc.goaicoach.application.analysis.withTopMovesStrengthHeader
+import com.worksoc.goaicoach.application.analysis.withAnalysisCoverage
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnRunPlan
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.AnalysisPreset

@@ -1,9 +1,9 @@
 package com.worksoc.goaicoach.application.runtime
 
-import com.worksoc.goaicoach.application.AiEndgameResolution
-import com.worksoc.goaicoach.application.HumanEngineSyncDisplayPlan
-import com.worksoc.goaicoach.application.HumanEngineSyncFailurePlan
-import com.worksoc.goaicoach.application.HumanMoveLocalResult
+import com.worksoc.goaicoach.application.endgame.AiEndgameResolution
+import com.worksoc.goaicoach.application.humanmove.HumanEngineSyncDisplayPlan
+import com.worksoc.goaicoach.application.humanmove.HumanEngineSyncFailurePlan
+import com.worksoc.goaicoach.application.humanmove.HumanMoveLocalResult
 import com.worksoc.goaicoach.application.RuntimePlayLevelSelection
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnDisplayPlan
 import com.worksoc.goaicoach.application.session.GameSessionControllerState

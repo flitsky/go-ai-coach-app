@@ -6,12 +6,12 @@ import com.worksoc.goaicoach.shared.engine.EngineOperationRequest
 import com.worksoc.goaicoach.application.EngineOperationResultGuard
 import com.worksoc.goaicoach.shared.engine.EngineTimeoutPolicy
 import com.worksoc.goaicoach.application.session.GameSessionEffect
-import com.worksoc.goaicoach.application.AiEndgameResolution
-import com.worksoc.goaicoach.application.buildEndgameLog
+import com.worksoc.goaicoach.application.endgame.AiEndgameResolution
+import com.worksoc.goaicoach.application.endgame.buildEndgameLog
 import com.worksoc.goaicoach.shared.engine.engineOperationRequest
 import com.worksoc.goaicoach.application.evaluateEngineOperationResultGuard
 import com.worksoc.goaicoach.application.localScoreSnapshot
-import com.worksoc.goaicoach.application.toDisplayText
+import com.worksoc.goaicoach.application.analysis.toDisplayText
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.shared.FinalScoreResult
 import com.worksoc.goaicoach.shared.GameState

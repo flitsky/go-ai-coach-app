@@ -1325,3 +1325,46 @@
 5. root `ApplicationPorts.kt` 추가 축소
    - 남은 store/clipboard/notice/debug mirror port를 각 도메인 package로 이동할 수 있는지 검토한다.
    - acceptance: root application package가 compatibility facade와 cross-domain model 중심으로 줄어든다.
+
+## 2026-06-15 추가 진행 로그: ext.9 humanmove/debugreport/endgame/analysis package 분리
+
+- 2026-06-15: `HumanMoveApplication.kt`를 `application/humanmove/` 하위 package로 이동했다. 사람 착수 로컬 적용, sync completion/apply plan, runtime log plan이 human move 도메인에 모였다.
+- 2026-06-15: `DebugReportBuilder.kt`를 `application/debugreport/` 하위 package로 이동했다. debug report snapshot, report builder, copy plan/effect가 독립 package에 위치한다.
+- 2026-06-15: `DebugReportBuilder` 안에 섞여 있던 종국 로그 formatter를 `application/endgame/EndgameLogFormatter.kt`로 분리했다. debug report가 종국 로그 생성 책임을 소유하지 않도록 방향을 바로잡았다.
+- 2026-06-15: `EndgameResolver.kt`를 `application/endgame/` 하위 package로 이동했다. `AiEndgameResolution`, `EndgameResolutionTimings`, `resolveAiEndgame()`이 score/autoai/engine session에서 명시 import되는 endgame 도메인이 됐다.
+- 2026-06-15: `AnalysisFormatter.kt`, `AnalysisSession.kt`, `PositionAnalysisCache.kt`, `PositionAnalysisCacheOptimization.kt`를 `application/analysis/` 하위 package로 이동했다. Top Moves 분석 세션, undo restore cache, JSON position analysis cache, post-game cache optimization 정책이 root application package에서 빠졌다.
+- 2026-06-15: `LayeringContractTest`에 `analysis`, `debugreport`, `endgame`, `humanmove` package 위치를 반영했다. `AnalysisSession.kt`는 아직 `java.util.LinkedHashMap`을 사용하므로 KMP-ready 후보 검사에서는 제외했다.
+- 현재 metric: `GoCoachApp.kt`는 2,088줄, UI 파일 안의 `scope.launch`/`withContext`/`Dispatchers`/`runCatching` 직접 지점은 0개다. application import fan-in은 82개이며, application root package 파일 수는 14개다.
+- 검증:
+  - `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest --tests 'com.worksoc.goaicoach.application.DebugReportBuilderTest' --tests 'com.worksoc.goaicoach.application.EndgameResolverTest' --tests 'com.worksoc.goaicoach.application.ScoreDisplayApplicationTest' --tests 'com.worksoc.goaicoach.application.GameAutomationApplicationTest' --tests 'com.worksoc.goaicoach.application.EngineSessionLifecycleApplicationTest' --tests 'com.worksoc.goaicoach.application.GameSessionControllerTest'` 통과.
+  - `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest --tests 'com.worksoc.goaicoach.application.AnalysisSessionTest' --tests 'com.worksoc.goaicoach.application.PositionAnalysisCachePolicyTest' --tests 'com.worksoc.goaicoach.application.PositionAnalysisCacheOptimizationTest' --tests 'com.worksoc.goaicoach.application.TopMovesApplicationTest' --tests 'com.worksoc.goaicoach.application.EngineSessionTest' --tests 'com.worksoc.goaicoach.architecture.LayeringContractTest'` 통과.
+  - `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test` 통과.
+
+## 현재 리팩토링/아키텍처 완성도 평가
+
+- 리팩토링 배치 진행도: 99.99/100.
+- 외부 평가 기준 플랫폼 아키텍처 완성도: 98.8/100.
+- 상향 요인: root application package 파일 수가 21개에서 14개로 줄었다. human move, debug report, endgame, analysis/cache optimization이 각각 package 경계를 갖게 되어 AI Agent가 특정 도메인 단위로 작업하기 쉬워졌다.
+- 남은 감점 요인: `GoCoachApp.kt`는 아직 2,088줄이며 app-service orchestration이 크다. root application package에는 `ApplicationPorts`, `EngineSession/EngineSessionClient`, engine operation facade, move review/value display, preference/scoring/prompt 공통 정책이 남아 있다. `AnalysisSession.kt`의 `java.util.LinkedHashMap`도 KMP 후보성을 낮춘다.
+
+## 다음 추천 리팩토링 항목 - ext.10
+
+1. `ApplicationPorts.kt` 도메인별 이동
+   - `ClipboardPort`, `UserNoticePort`, `DebugReportMirrorPort`를 `debugreport` 또는 `platformports` 성격으로 분리하고, `SavedGameStorePort`/`UserPreferencesStorePort`의 위치도 재검토한다.
+   - acceptance: root `ApplicationPorts.kt`가 사라지거나 cross-domain compatibility 최소 파일로 축소된다.
+
+2. `MoveReview.kt` / `MoveValueDisplay.kt` package 분리
+   - 후보수 loss/color/spot tone/리뷰 marker 정책을 `application/movereview` 또는 `application/analysis/review`로 이동한다.
+   - acceptance: analysis formatter와 UI board가 move value display 정책을 명시 package에서 가져온다.
+
+3. `EngineSession.kt` / `EngineSessionClient.kt` 내부 경계 분할
+   - session client contract, local implementation, assistant-judge constants, startup helpers를 각각 `application/engine/session`, `application/engine/endgame`, `application/engine/client`로 나눌지 검토한다.
+   - acceptance: engine session 파일이 remote driver spike와 local process driver를 동시에 담기 쉬운 구조가 된다.
+
+4. `AnalysisSession.kt` KMP-ready화
+   - `java.util.LinkedHashMap` 기반 LRU cache를 port/adapter로 분리하거나 Kotlin-only 구현으로 교체한다.
+   - acceptance: `AnalysisSession.kt`를 `LayeringContractTest`의 platform-free 후보에 추가할 수 있다.
+
+5. `GoCoachApp.kt` app-service orchestration 추가 분리
+   - debug report copy, post-game cache optimization, start-game/resume/undo action binding 중 하나를 controller/action object로 이동한다.
+   - acceptance: `GoCoachApp.kt` 줄 수와 import fan-in이 모두 감소하고, UI는 action bridge를 호출하는 형태로 단순화된다.

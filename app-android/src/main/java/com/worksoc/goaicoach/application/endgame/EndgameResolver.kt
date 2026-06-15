@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.application
+package com.worksoc.goaicoach.application.endgame
 
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.BoardCoordinate

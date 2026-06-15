@@ -1,13 +1,13 @@
 package com.worksoc.goaicoach.persistence
 
 import android.content.Context
-import com.worksoc.goaicoach.application.JsonPositionAnalysisCacheMaxEntries
-import com.worksoc.goaicoach.application.JsonPositionAnalysisCacheTtlMillis
-import com.worksoc.goaicoach.application.PositionAnalysisCacheEntry
-import com.worksoc.goaicoach.application.PositionAnalysisCacheKey
-import com.worksoc.goaicoach.application.PositionAnalysisCacheOrigin
-import com.worksoc.goaicoach.application.PositionAnalysisCacheStore
-import com.worksoc.goaicoach.application.shouldReplacePositionAnalysisCacheEntry
+import com.worksoc.goaicoach.application.analysis.JsonPositionAnalysisCacheMaxEntries
+import com.worksoc.goaicoach.application.analysis.JsonPositionAnalysisCacheTtlMillis
+import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheEntry
+import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheKey
+import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOrigin
+import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheStore
+import com.worksoc.goaicoach.application.analysis.shouldReplacePositionAnalysisCacheEntry
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.AnalysisResult
 import com.worksoc.goaicoach.shared.BoardCoordinate

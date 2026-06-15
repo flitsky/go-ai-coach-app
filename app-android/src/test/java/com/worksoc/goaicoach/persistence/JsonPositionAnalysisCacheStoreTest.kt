@@ -1,8 +1,8 @@
 package com.worksoc.goaicoach.persistence
 
-import com.worksoc.goaicoach.application.PositionAnalysisCacheEntry
-import com.worksoc.goaicoach.application.PositionAnalysisCacheKey
-import com.worksoc.goaicoach.application.PositionAnalysisCacheOrigin
+import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheEntry
+import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheKey
+import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOrigin
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.AnalysisResult
 import com.worksoc.goaicoach.shared.BoardCoordinate

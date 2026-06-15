@@ -1,13 +1,13 @@
 package com.worksoc.goaicoach.application.session
 
-import com.worksoc.goaicoach.application.HumanEngineSyncFailurePlan
-import com.worksoc.goaicoach.application.HumanMoveLocalResult
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkDisplayPlan
 import com.worksoc.goaicoach.application.engine.EngineStartupDisplayPlan
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnDisplayPlan
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnFailureDisplayPlan
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnFollowUpPlan
 import com.worksoc.goaicoach.application.autoai.buildAutoAiTurnFollowUpPlan
+import com.worksoc.goaicoach.application.humanmove.HumanEngineSyncFailurePlan
+import com.worksoc.goaicoach.application.humanmove.HumanMoveLocalResult
 import com.worksoc.goaicoach.application.score.EndgameFailureDisplayPlan
 import com.worksoc.goaicoach.application.score.FinalScoreDisplayPlan
 import com.worksoc.goaicoach.application.score.ScoreEstimateDisplayPlan

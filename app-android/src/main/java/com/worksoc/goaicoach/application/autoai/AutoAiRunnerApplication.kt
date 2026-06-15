@@ -1,6 +1,6 @@
 package com.worksoc.goaicoach.application.autoai
 
-import com.worksoc.goaicoach.application.AiEndgameResolution
+import com.worksoc.goaicoach.application.endgame.AiEndgameResolution
 import com.worksoc.goaicoach.application.AutoAiTurnResult
 import com.worksoc.goaicoach.application.EngineSessionClient
 import com.worksoc.goaicoach.application.session.GameSessionEffect

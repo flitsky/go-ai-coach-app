@@ -1444,3 +1444,10 @@
 - `UndoApplication.kt`를 `application/undo/` 하위 package로 이동했다. undo request/local state/completion plan과 연속 무르기 quiet-window 정책이 undo 도메인에 모였다.
 - benchmark progress callback에서 직접 `withContext(Dispatchers.Main)`을 호출하던 특수 지점을 제거하고, 기존 `launchUiEffect(scope)` bridge를 통과하도록 변경했다. `GoCoachApp.kt`는 더 이상 `Dispatchers`/`withContext`를 직접 import하지 않는다.
 - `LayeringContractTest`에 `savedgame`, `startgame`, `undo` 하위 package를 KMP/platform-free 후보로 추가했다. 현재 `GoCoachApp.kt`는 2,088줄, application import fan-in은 82개, root application package 파일 수는 21개다.
+- 사용자가 `ext.9` 다음 리팩토링 추천 항목을 단계별로 모두 진행하고, 결과 보고 시 현재 리팩토링 완성도 및 다음 추천 작업 리스트업을 요청했다.
+- `HumanMoveApplication.kt`를 `application/humanmove/` 하위 package로 이동했다. 사람 착수 로컬 적용, 사람 착수 후 엔진 동기화 completion/apply plan, 리뷰 marker 조립이 human move 도메인으로 묶였다.
+- `DebugReportBuilder.kt`를 `application/debugreport/` 하위 package로 이동했다. 디버그 리포트 snapshot/build/copy effect가 debug report 도메인에 모였고, clipboard/debug mirror/user notice port 의존은 명시 import로 드러났다.
+- `EndgameResolver.kt`를 `application/endgame/` 하위 package로 이동하고 `EndgameLogFormatter.kt`를 분리했다. 종국 판정 결과, 종국 타이밍, 사석/후보수 로그 formatter가 endgame 도메인 소유가 됐다.
+- `AnalysisFormatter.kt`, `AnalysisSession.kt`, `PositionAnalysisCache.kt`, `PositionAnalysisCacheOptimization.kt`를 `application/analysis/` 하위 package로 이동했다. Top Moves session cache, undo restore cache, JSON position analysis cache, post-game cache optimization 정책이 analysis 도메인으로 물리 분리됐다.
+- `LayeringContractTest`는 `analysis`, `debugreport`, `endgame`, `humanmove` 하위 package를 platform-free 후보 검사에 반영했다. 단, `AnalysisSession.kt`는 아직 `java.util.LinkedHashMap`을 사용하므로 KMP-ready 검사 대상에서는 제외하고 다음 후보로 남겼다.
+- 현재 metric: `GoCoachApp.kt`는 2,088줄, UI 파일 안의 `scope.launch`/`withContext`/`Dispatchers`/`runCatching` 직접 지점은 0개다. application import fan-in은 82개이며, root application package 파일 수는 21개에서 14개로 감소했다.

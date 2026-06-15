@@ -1,12 +1,12 @@
 package com.worksoc.goaicoach.middleware
 
-import com.worksoc.goaicoach.application.NoopPositionAnalysisCacheStore
-import com.worksoc.goaicoach.application.PositionAnalysisCacheEntry
-import com.worksoc.goaicoach.application.PositionAnalysisCacheKey
-import com.worksoc.goaicoach.application.PositionAnalysisCacheQuality
-import com.worksoc.goaicoach.application.PositionAnalysisCacheStore
-import com.worksoc.goaicoach.application.TrustedPositionAnalysisCacheProvider
-import com.worksoc.goaicoach.application.bestPositionAnalysisCacheEntry
+import com.worksoc.goaicoach.application.analysis.NoopPositionAnalysisCacheStore
+import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheEntry
+import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheKey
+import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheQuality
+import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheStore
+import com.worksoc.goaicoach.application.analysis.TrustedPositionAnalysisCacheProvider
+import com.worksoc.goaicoach.application.analysis.bestPositionAnalysisCacheEntry
 
 internal class PositionAnalysisCacheResolver(
     private val localStore: PositionAnalysisCacheStore = NoopPositionAnalysisCacheStore,

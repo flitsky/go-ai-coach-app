@@ -1,10 +1,16 @@
-package com.worksoc.goaicoach.application
+package com.worksoc.goaicoach.application.analysis
 
 import com.worksoc.goaicoach.application.session.*
 
+import com.worksoc.goaicoach.application.EngineSessionClient
+import com.worksoc.goaicoach.shared.engine.EngineFallbackPolicy
+import com.worksoc.goaicoach.shared.engine.EngineOperationKind
+import com.worksoc.goaicoach.shared.engine.EngineOperationRequest
+import com.worksoc.goaicoach.shared.engine.EngineTimeoutPolicy
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.diagnostic.NoopDiagnosticEventLog
 import com.worksoc.goaicoach.application.diagnostic.runObservedEngineOperation
+import com.worksoc.goaicoach.shared.engine.engineOperationRequest
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.EngineSearchMode

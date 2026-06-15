@@ -1,5 +1,7 @@
 package com.worksoc.goaicoach.application
 
+import com.worksoc.goaicoach.application.endgame.AiEndgameResolution
+import com.worksoc.goaicoach.application.endgame.resolveAiEndgame
 import com.worksoc.goaicoach.match.TurnOutcome
 import com.worksoc.goaicoach.match.MatchReferee
 import com.worksoc.goaicoach.match.applyAiTurn

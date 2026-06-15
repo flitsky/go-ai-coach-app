@@ -1,11 +1,11 @@
 package com.worksoc.goaicoach.middleware
 
-import com.worksoc.goaicoach.application.PositionAnalysisCacheEntry
-import com.worksoc.goaicoach.application.PositionAnalysisCacheKey
-import com.worksoc.goaicoach.application.PositionAnalysisCacheOrigin
-import com.worksoc.goaicoach.application.PositionAnalysisCacheStore
-import com.worksoc.goaicoach.application.TrustedPositionAnalysisCacheProvider
-import com.worksoc.goaicoach.application.shouldReplacePositionAnalysisCacheEntry
+import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheEntry
+import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheKey
+import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOrigin
+import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheStore
+import com.worksoc.goaicoach.application.analysis.TrustedPositionAnalysisCacheProvider
+import com.worksoc.goaicoach.application.analysis.shouldReplacePositionAnalysisCacheEntry
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.AnalysisResult
 import com.worksoc.goaicoach.shared.EngineSearchMode

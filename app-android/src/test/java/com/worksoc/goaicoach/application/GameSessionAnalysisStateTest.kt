@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.application
 
+import com.worksoc.goaicoach.application.analysis.*
 import com.worksoc.goaicoach.application.session.*
 
 import com.worksoc.goaicoach.application.topmoves.*

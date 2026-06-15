@@ -14,7 +14,7 @@ import com.worksoc.goaicoach.application.session.GameSessionMoveReviewState
 import com.worksoc.goaicoach.application.session.GameSessionRuntimeState
 import com.worksoc.goaicoach.application.session.GameSessionScoreState
 import com.worksoc.goaicoach.application.session.GameSessionSettingsState
-import com.worksoc.goaicoach.application.PositionAnalysisCacheOptimizationUiState
+import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationUiState
 import com.worksoc.goaicoach.application.savedgame.SavedSessionUiState
 import com.worksoc.goaicoach.application.localScoreSnapshot
 import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
