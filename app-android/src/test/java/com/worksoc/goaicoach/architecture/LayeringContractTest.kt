@@ -845,6 +845,36 @@ class LayeringContractTest {
         }
     }
 
+    @Test
+    fun goCoachAppStaysWithinShrinkingUiShellBudget() {
+        // Downward ratchet: GoCoachApp is being reduced from a workflow-owning
+        // god file to a thin UI shell. These budgets only ever move down — when
+        // a refactor lowers them, tighten the numbers here in the same change.
+        val lineBudget = 1700
+        val stateHookBudget = 45
+
+        val goCoachApp = repoRoot()
+            .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
+        val lines = goCoachApp.readLines()
+        val stateHookRegex = Regex("\\b(remember|mutableStateOf|LaunchedEffect)\\b")
+        val stateHookCount = lines.count { line -> stateHookRegex.containsMatchIn(line) }
+
+        val offenders = mutableListOf<String>()
+        if (lines.size > lineBudget) {
+            offenders += "GoCoachApp.kt grew to ${lines.size} lines (budget $lineBudget): " +
+                "hoist wiring into a screen presenter, do not regrow the shell."
+        }
+        if (stateHookCount > stateHookBudget) {
+            offenders += "GoCoachApp.kt holds $stateHookCount Compose state hooks (budget $stateHookBudget): " +
+                "move state ownership out of the composable."
+        }
+
+        assertTrue(
+            "GoCoachApp must keep shrinking toward a thin UI shell:\n${offenders.joinToString("\n")}",
+            offenders.isEmpty(),
+        )
+    }
+
     private fun ktFilesIn(vararg dirs: File): List<File> =
         dirs.flatMap { dir ->
             if (dir.exists()) {
