@@ -268,6 +268,27 @@ class LayeringContractTest {
     }
 
     @Test
+    fun goCoachAppDoesNotOwnScoreEstimateWorkflowBody() {
+        val goCoachApp = repoRoot()
+            .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
+        val text = goCoachApp.readText()
+        val forbiddenFragments = listOf(
+            "scoreEstimateOperationToken(",
+            "ScoreEstimateEffectLaunchRequest(",
+            "runScoreEstimateEffectApplyPlan(",
+            "GameSessionEffect.RunScoreEstimate(",
+            "toScoreEstimateLaunchStateUpdate(",
+        )
+            .filter { fragment -> fragment in text }
+
+        assertTrue(
+            "GoCoachApp should run score estimate through runScoreEstimateApplication, not own operation/effect/completion details:\n" +
+                forbiddenFragments.joinToString("\n"),
+            forbiddenFragments.isEmpty(),
+        )
+    }
+
+    @Test
     fun scoreRunnersUseEngineSessionClientContractOnly() {
         val scoreRoot = repoRoot()
             .resolve("app-android/src/main/java/com/worksoc/goaicoach/application/score")

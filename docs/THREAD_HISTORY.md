@@ -1544,3 +1544,8 @@
 - `GoCoachApp.kt`의 `restoreSavedSession()` 엔진 sync 본문을 application runner 호출로 축소했다. UI는 복원 가능성 판단, local restore 적용, completion/follow-up 콜백 연결만 담당한다.
 - `ScoreDisplayApplicationTest`에 restored-game score sync runner 테스트를 추가했다. operation kind/sessionGeneration/moveCount, engine client configure sync state/profile, completion apply plan, follow-up analysis 요청을 검증한다.
 - `LayeringContractTest`에 `goCoachAppDoesNotOwnRestoredGameSyncWorkflowBody()`를 추가했다. UI가 restored-game operation/effect/context/apply 세부를 다시 소유하지 못하도록 회귀를 막는다.
+- 사용자가 `11.` 다음 리팩토링 추천 항목을 단계별로 모두 진행하고, 결과 보고 시 현재 완성도와 다음 추천 작업을 정리해달라고 요청했다.
+- `ScoreEstimateRunRequest`와 `runScoreEstimateApplication()`을 추가했다. 점수 추정 버튼 실행 시 request gate, launch update, operation token 생성, engine work 실행, completion apply plan 적용을 score application runner가 소유한다.
+- `GoCoachApp.kt`의 `requestScoreEstimate()` 본문을 application runner 호출로 축소하고 기존 `requestEngineScoreEstimate()` helper를 제거했다. UI는 engine readiness/session state/current state provider와 launch/completion 적용 콜백만 전달한다.
+- `ScoreDisplayApplicationTest`에 score estimate application runner 테스트를 추가했다. operation kind/sessionGeneration/moveCount, engine client 호출 state/profile/syncFirst, completion apply plan을 검증한다.
+- `LayeringContractTest`에 `goCoachAppDoesNotOwnScoreEstimateWorkflowBody()`를 추가했다. UI가 score estimate operation/effect/completion 세부를 다시 소유하지 못하도록 회귀를 막는다.

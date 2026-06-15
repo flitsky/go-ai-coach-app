@@ -658,6 +658,53 @@ class ScoreDisplayApplicationTest {
     }
 
     @Test
+    fun scoreEstimateApplicationRunnerLaunchesOperationAndAppliesCompletion() = runBlocking {
+        val state = GameState.empty()
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+        val profile = EngineProfile(name = "estimate")
+        val client = FakeScoreEngineSessionClient()
+        var launchedKind: EngineOperationKind? = null
+        var launchedGeneration: Long? = null
+        var launchedMoveCount: Int? = null
+        var launchUpdate: ScoreEstimateLaunchStateUpdate? = null
+        var completion: ScoreEstimateCompletionApplyPlan? = null
+
+        runScoreEstimateApplication(
+            ScoreEstimateRunRequest(
+                engineClient = client,
+                state = state,
+                previousSnapshots = emptyList(),
+                isEngineReady = true,
+                isEngineBusy = false,
+                matchMode = MatchMode.HumanVsAi,
+                engineProfile = profile,
+                sessionGeneration = 9L,
+                diagnosticEventLog = NoopDiagnosticEventLog,
+                currentState = { state },
+                currentSessionGeneration = { 9L },
+                launchEngineOperation = { operation, block ->
+                    launchedKind = operation.kind
+                    launchedGeneration = operation.sessionGeneration
+                    launchedMoveCount = operation.moveCount
+                    runBlocking { block() }
+                },
+                runEngineWork = { block -> block() },
+                applyLaunchUpdate = { update -> launchUpdate = update },
+                applyCompletion = { applyPlan -> completion = applyPlan },
+            ),
+        )
+
+        assertTrue(launchUpdate?.effect is GameSessionEffect.RunScoreEstimate)
+        assertEquals(EngineOperationKind.ScoreEstimate, launchedKind)
+        assertEquals(9L, launchedGeneration)
+        assertEquals(state.moves.size, launchedMoveCount)
+        assertEquals(state, client.estimatedState)
+        assertEquals(profile, client.estimatedProfile)
+        assertEquals(false, client.estimatedSyncFirst)
+        assertTrue(completion is ScoreEstimateCompletionApplyPlan.ApplySuccess)
+    }
+
+    @Test
     fun scoringRuleSyncRunnerBuildsTrimmedEngineEstimatePlan() = runBlocking {
         val state = GameState.empty()
         val client = FakeScoreEngineSessionClient()

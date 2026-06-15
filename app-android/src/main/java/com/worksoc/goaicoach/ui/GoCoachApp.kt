@@ -1107,43 +1107,32 @@ private fun GoCoachScreen(
         )
     }
 
-    fun requestEngineScoreEstimate(effect: GameSessionEffect.RunScoreEstimate) {
-        val request = effect.request
-        val operationToken = scoreEstimateOperationToken(
-            request,
-            sessionGeneration = runtimeState.sessionGeneration,
-        )
-        launchTrackedEngineOperation(operationToken.operation) {
-            val completion =
-                runEngineIo {
-                    engineClient.runScoreEstimateEffectApplyPlan(
-                        request = ScoreEstimateEffectLaunchRequest(
-                            effect = effect,
-                            previousSnapshots = scoreState.scoreSnapshots,
-                            token = operationToken,
-                            currentState = gameState,
-                            currentSessionGeneration = runtimeState.sessionGeneration,
-                        ),
-                        diagnosticEventLog = diagnosticEventLog,
-                    )
-                }
-            applyScoreEstimateCompletionApplyPlan(completion)
-        }
-    }
-
     fun requestScoreEstimate() {
-        val plan = buildScoreEstimateRequestPlan(
-            state = gameState,
-            previousSnapshots = scoreState.scoreSnapshots,
-            isEngineReady = isEngineReady,
-            isEngineBusy = isEngineBusy,
-            matchMode = matchMode,
-            engineProfile = runtimeState.engineProfile,
+        runScoreEstimateApplication(
+            ScoreEstimateRunRequest(
+                engineClient = engineClient,
+                state = gameState,
+                previousSnapshots = scoreState.scoreSnapshots,
+                isEngineReady = isEngineReady,
+                isEngineBusy = isEngineBusy,
+                matchMode = matchMode,
+                engineProfile = runtimeState.engineProfile,
+                sessionGeneration = runtimeState.sessionGeneration,
+                diagnosticEventLog = diagnosticEventLog,
+                currentState = { gameState },
+                currentSessionGeneration = { runtimeState.sessionGeneration },
+                launchEngineOperation = { operation, block ->
+                    launchTrackedEngineOperation(operation) {
+                        block()
+                    }
+                },
+                applyLaunchUpdate = { launch ->
+                    launch.engineMessage?.let { message -> engineMessage = message }
+                    launch.display?.let(::applyScoreEstimateDisplayPlan)
+                },
+                applyCompletion = ::applyScoreEstimateCompletionApplyPlan,
+            ),
         )
-        val launch = plan.toScoreEstimateLaunchStateUpdate()
-        launch.engineMessage?.let { message -> engineMessage = message }
-        launch.display?.let(::applyScoreEstimateDisplayPlan)
-        launch.effect?.let(::requestEngineScoreEstimate)
     }
 
     fun startEngineBackedNewGame(plan: StartConfiguredGamePlan.StartEngineGame) {
