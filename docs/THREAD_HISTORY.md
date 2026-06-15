@@ -1483,3 +1483,10 @@
 - `GameUiEventHandlers` 생성은 `buildGameUiEventHandlers()` factory를 통과하도록 변경했다. UI는 action dispatch에 필요한 lambda를 주입하지만, presentation action table 생성자는 presentation 계층이 소유하게 됐다.
 - `MoveValueDisplay.kt`를 `shared/commonMain`으로 실제 이동했다. 후보수 `pointLossLabel()`, `topMoveDeltaScoreLabel()`, `toOneDecimalLabel()`은 Android/application 의존이 없는 shared 표시 규칙으로 승격했고, `LayeringContractTest`가 shared KMP-ready 후보로 감시한다.
 - 현재 metric은 root application package 파일 수 0개, `GoCoachApp.kt` 2,080줄, `GoCoachApp.kt` application import fan-in 76개, `LocalEngineSessionClient.kt` 278줄, engine operation facade package 파일 수 5개다.
+- 사용자가 `2nd phase.3` 다음 리팩토링 추천 항목을 단계별로 수행하고, 특히 `GoCoachApp.kt`가 언제 관심사 분리되고 줄어드는지 확인 요청했다.
+- `runAutoAiTurnTriggerEffect()`와 `runTopMoveAnalysisTriggerEffect()`를 추가했다. 자동 AI와 Top Moves `LaunchedEffect`는 undo quiet-window delay 계산을 직접 하지 않고 application trigger helper를 호출한다.
+- `runUserPreferencesAutosave()`와 `runSavedGamePersistence()` runner를 추가했다. `GoCoachApp.kt`는 사용자 설정 snapshot 생성과 saved-game persistence plan 분기를 직접 알지 않고 request/store만 넘긴다.
+- `EngineOperationRequest`, `EngineOperationKind`, `EngineTimeoutPolicy`, `EngineFallbackPolicy`, `engineOperationRequest` 단순 metadata import 일부를 `application/engine/operation` facade에서 `shared.engine` 직접 참조로 전환했다. app facade는 app-specific guard/adapter 중심으로 좁혀가는 중이다.
+- `UserPreferencesSnapshot.toKaTrainUxOptions()` mapping을 `presentation/KaTrainUxOptionsMapper.kt`로 이동했다. `GoCoachApp.kt` 하단 helper를 제거해 presentation DTO 변환 책임을 presentation 계층에 둔다.
+- `docs/refactoring/GO_COACH_APP_SPLIT_PLAN_2026-06-15.md`를 추가했다. 결론은 `GoCoachApp.kt` 2천 줄 이상은 최종적으로 괜찮지 않으며, 지금까지는 안전장치 구축 단계였고 이제 2nd phase.4부터 Auto AI 실행 본문 분리로 1,900줄대 진입을 목표로 한다는 것이다.
+- 현재 metric은 `GoCoachApp.kt` 2,068줄, application import fan-in 71개, 직접 coroutine/IO primitive 0개, root application package 파일 수 0개다.

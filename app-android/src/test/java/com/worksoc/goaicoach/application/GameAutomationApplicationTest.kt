@@ -10,6 +10,7 @@ import com.worksoc.goaicoach.application.engine.*
 import com.worksoc.goaicoach.application.session.*
 
 import com.worksoc.goaicoach.application.autoai.*
+import com.worksoc.goaicoach.application.topmoves.*
 
 import com.worksoc.goaicoach.application.score.*
 
@@ -231,6 +232,38 @@ class GameAutomationApplicationTest {
             AutoAiTurnRequestPlan.Schedule(AutoPlayDelaySetting.Slow.millis),
             plan,
         )
+    }
+
+    @Test
+    fun autoAiTriggerEffectWaitsForUndoQuietWindowBeforeRequestingTurn() = runBlocking {
+        val delays = mutableListOf<Long>()
+        val calls = mutableListOf<String>()
+
+        runAutoAiTurnTriggerEffect(
+            quietUntilMillis = 1_500L,
+            nowMillis = { 1_000L },
+            delayMillis = { millis -> delays += millis },
+            requestAiTurn = { calls += "request-ai" },
+        )
+
+        assertEquals(listOf(500L), delays)
+        assertEquals(listOf("request-ai"), calls)
+    }
+
+    @Test
+    fun topMovesTriggerEffectRunsImmediatelyAfterQuietWindow() = runBlocking {
+        val delays = mutableListOf<Long>()
+        val calls = mutableListOf<String>()
+
+        runTopMoveAnalysisTriggerEffect(
+            quietUntilMillis = 1_000L,
+            nowMillis = { 1_500L },
+            delayMillis = { millis -> delays += millis },
+            requestTopMoveAnalysis = { calls += "request-top-moves" },
+        )
+
+        assertTrue(delays.isEmpty())
+        assertEquals(listOf("request-top-moves"), calls)
     }
 
     @Test

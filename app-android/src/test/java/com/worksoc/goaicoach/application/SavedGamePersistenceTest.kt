@@ -118,6 +118,66 @@ class SavedGamePersistenceTest {
         assertEquals(state, (plan as SavedGamePersistencePlan.Save).snapshot.gameState)
     }
 
+    @Test
+    fun persistenceRunnerAppliesSaveAndClearPlansToStore() {
+        val store = RecordingSavedGameStore()
+        val state = playableState()
+
+        runSavedGamePersistence(
+            request = SavedGamePersistenceRequest(
+                savedSessionUiState = SavedSessionUiState(
+                    hasCheckedSavedSession = true,
+                    shouldShowResumePrompt = false,
+                ),
+                isGameEnded = false,
+                gameState = state,
+                playerSetup = PlayerSetup(),
+                playLevel = PlayLevelSetting(level = 3),
+                topMovesEnabled = true,
+                nowMillis = 777L,
+            ),
+            store = store,
+        )
+
+        assertEquals(listOf("save:777"), store.calls)
+        assertEquals(state, store.snapshot?.gameState)
+
+        runSavedGamePersistence(
+            request = SavedGamePersistenceRequest(
+                savedSessionUiState = SavedSessionUiState(
+                    hasCheckedSavedSession = true,
+                    shouldShowResumePrompt = false,
+                ),
+                isGameEnded = true,
+                gameState = state,
+                playerSetup = PlayerSetup(),
+                playLevel = PlayLevelSetting(),
+                topMovesEnabled = false,
+                nowMillis = 778L,
+            ),
+            store = store,
+        )
+
+        assertEquals(listOf("save:777", "clear"), store.calls)
+    }
+
+    private class RecordingSavedGameStore : SavedGameStorePort {
+        val calls = mutableListOf<String>()
+        var snapshot: SavedGameSnapshot? = null
+
+        override fun save(snapshot: SavedGameSnapshot) {
+            this.snapshot = snapshot
+            calls += "save:${snapshot.savedAtMillis}"
+        }
+
+        override fun load(): SavedGameSnapshot? = snapshot
+
+        override fun clear() {
+            snapshot = null
+            calls += "clear"
+        }
+    }
+
     private fun playableState(): GameState =
         GameState.empty()
             .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))

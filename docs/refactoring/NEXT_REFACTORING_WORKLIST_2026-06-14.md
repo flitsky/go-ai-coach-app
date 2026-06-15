@@ -1576,3 +1576,62 @@
 5. presentation/menu DTO 후속 정리
    - Player setup, engine search time, benchmark/cache menu 상태를 presentation DTO 중심으로 더 정리한다.
    - acceptance: `GoCoachApp.kt` import fan-in과 action binding lambda 수를 함께 줄인다.
+
+## 2026-06-15 추가 진행 로그: 2nd phase.3 GoCoachApp 축소 시작
+
+- 2026-06-15: `runAutoAiTurnTriggerEffect()`와 `runTopMoveAnalysisTriggerEffect()`를 추가했다. 자동 AI/Top Moves `LaunchedEffect`가 undo quiet-window delay 계산을 직접 들고 있지 않게 했다.
+- 2026-06-15: `runUserPreferencesAutosave()`와 `runSavedGamePersistence()`를 추가했다. 사용자 설정 저장과 진행 중 대국 저장은 application runner가 plan/snapshot/store 적용을 담당한다.
+- 2026-06-15: operation metadata 계열 import 일부를 `shared.engine` 직접 참조로 전환했다. app facade는 `EngineOperationResultGuard`, lifecycle reducer, discard log 같은 application-specific 경계에 집중하도록 좁혀가는 중이다.
+- 2026-06-15: `UserPreferencesSnapshot.toKaTrainUxOptions()`를 `presentation/KaTrainUxOptionsMapper.kt`로 이동했다. preferences snapshot -> UX option 변환은 UI shell이 아니라 presentation DTO mapping으로 관리한다.
+- 2026-06-15: `docs/refactoring/GO_COACH_APP_SPLIT_PLAN_2026-06-15.md`를 추가했다. `GoCoachApp.kt`가 아직 큰 이유, 지금까지 급하게 줄이지 않은 이유, 다음 단계별 줄 수 축소 목표를 명시했다.
+- 2026-06-15: `LayeringContractTest`에 새 autosave/trigger runner를 platform-free 후보로 추가했다.
+
+### 현재 metric
+
+- `GoCoachApp.kt`: 2,080줄 -> 2,068줄
+- `GoCoachApp.kt` application import fan-in: 76개 -> 71개
+- root application package 파일 수: 0개 유지
+- UI 파일 내 직접 `scope.launch`/`withContext`/`Dispatchers`/`runCatching`: 0개 유지
+- `LaunchedEffect` trigger는 아직 남아 있으나, autosave/auto-AI/Top-Moves trigger 내부 판단 일부가 application runner로 이동했다.
+
+### 검증
+
+- `ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk JAVA_HOME=$(/usr/libexec/java_home -v 17) ./gradlew :app-android:testDebugUnitTest` 통과.
+- `git diff --check` 통과.
+- `ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk JAVA_HOME=$(/usr/libexec/java_home -v 17) make test` 통과.
+
+### GoCoachApp에 대한 판단
+
+- 2천 줄 이상 상태는 최종적으로 괜찮지 않다.
+- 다만 지금까지는 파일을 먼저 쪼개기보다 stale result guard, operation lifecycle, diagnostic, runner, domain package split을 먼저 깔았다. 이 순서는 합리적이었다.
+- 이제는 안전장치가 충분히 생겼으므로 2nd phase.4부터 `requestAiTurnForCurrentState()`와 `requestTopMoveAnalysisForState()` 실행 본문을 runner로 옮겨 줄 수를 직접 줄이는 단계가 맞다.
+
+## 현재 리팩토링/아키텍처 완성도 평가
+
+- 리팩토링 배치 진행도: 99.998/100.
+- 외부 평가 기준 플랫폼 아키텍처 완성도: 97.3/100.
+- 보수적 내부 플랫폼 완성도: 96.9/100.
+- 상향 요인: root application zero-file 상태를 유지하면서 autosave/trigger/presentation mapping이 UI 밖으로 이동했다. operation metadata도 shared 직접 참조로 일부 수렴했다.
+- 남은 감점 요인: `GoCoachApp.kt`는 여전히 2천 줄 이상이고, Auto AI/Top Moves 실행 본문 자체는 아직 UI shell 안에 있다.
+
+## 다음 추천 리팩토링 항목 - 2nd phase.4
+
+1. Auto AI 실행 본문 runner 분리
+   - `requestAiTurnForCurrentState()`의 schedule validation 이후 operation token 생성, begin/complete log, engine call, completion plan 생성을 application launcher로 이동한다.
+   - acceptance: `GoCoachApp.kt`에서 80~140줄 감소, 자동대국 동작 테스트 유지.
+
+2. Top Moves 실행 본문 runner 분리
+   - `requestTopMoveAnalysisForState()`의 launch plan/cache/run-engine/completion apply plan 조립을 application launcher로 이동한다.
+   - acceptance: Top Moves cache hit/run-engine/failure/discard 경로가 runner 테스트로 고정된다.
+
+3. post-undo engine sync runner 분리
+   - 현재 `schedulePostUndoLocalEngineSync()`는 delay, busy polling, stale check, score sync를 모두 가진다.
+   - acceptance: post-undo quiet-window와 engine sync 재시도 판단을 application helper로 이동한다.
+
+4. `GoCoachScreenStateAssembler` 도입
+   - `buildGameScreenStateInput(...)`의 긴 인자 조립을 snapshot/assembler로 분리한다.
+   - acceptance: 화면 렌더링 직전 state read fan-in이 줄어든다.
+
+5. `LocalEngineCoreSessionDelegate` protocol별 추가 분해
+   - score/endgame/benchmark/helper를 score/endgame/protocol helper로 나눌지 실행한다.
+   - acceptance: remote engine client와 local engine client parity 문서화가 더 쉬워진다.

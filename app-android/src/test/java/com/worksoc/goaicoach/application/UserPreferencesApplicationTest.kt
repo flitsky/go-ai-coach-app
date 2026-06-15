@@ -121,4 +121,56 @@ class UserPreferencesApplicationTest {
         assertTrue(snapshot.showLastMoveRing)
         assertFalse(snapshot.showOwnershipOverlay)
     }
+
+    @Test
+    fun autosaveRunnerWritesCurrentPreferencesSnapshot() {
+        val setup = PlayerSetup(
+            black = SidePlayerSetup(controller = SeatController.Human),
+            white = SidePlayerSetup(
+                controller = SeatController.Ai,
+                playLevel = PlayLevelSetting(PlayLevelGroup.Beginner, level = 4),
+            ),
+        )
+        val settingsState = GameSessionSettingsState(
+            playerSetup = setup,
+            autoPlayDelaySetting = AutoPlayDelaySetting.Short,
+            searchTimeSettings = SearchTimeSettings(b16Millis = 1_000L),
+            topMovesEnabled = true,
+        )
+        val store = RecordingUserPreferencesStore()
+
+        runUserPreferencesAutosave(
+            request = UserPreferencesAutosaveRequest(
+                settingsState = settingsState,
+                ruleset = Ruleset.Japanese,
+                showCoordinates = true,
+                showMoveNumbers = false,
+                showLastMoveRing = true,
+                showOwnershipOverlay = true,
+            ),
+            store = store,
+        )
+
+        val saved = store.saved
+        assertEquals(setup, saved.playerSetup)
+        assertEquals(Ruleset.Japanese, saved.ruleset)
+        assertTrue(saved.topMovesEnabled)
+        assertEquals(AutoPlayDelaySetting.Short.millis, saved.autoPlayDelayMillis)
+        assertEquals(SearchTimeSettings(b16Millis = 1_000L), saved.searchTimeSettings)
+        assertTrue(saved.showCoordinates)
+        assertFalse(saved.showMoveNumbers)
+        assertTrue(saved.showLastMoveRing)
+        assertTrue(saved.showOwnershipOverlay)
+    }
+
+    private class RecordingUserPreferencesStore : UserPreferencesStorePort {
+        lateinit var saved: UserPreferencesSnapshot
+
+        override fun save(snapshot: UserPreferencesSnapshot) {
+            saved = snapshot
+        }
+
+        override fun load(): UserPreferencesSnapshot =
+            if (::saved.isInitialized) saved else UserPreferencesSnapshot()
+    }
 }

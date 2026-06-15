@@ -110,6 +110,7 @@ class LayeringContractTest {
             .resolve("app-android/src/main/java/com/worksoc/goaicoach/application")
         val portableCandidates = listOf(
             applicationRoot.resolve("autoai/AutoAiCompletionApplication.kt"),
+            applicationRoot.resolve("autoai/AutoAiEffectLauncherApplication.kt"),
             applicationRoot.resolve("autoai/AutoAiPolicyApplication.kt"),
             applicationRoot.resolve("autoai/AutoAiRunnerApplication.kt"),
             applicationRoot.resolve("engine/operation/EngineOperationLifecycle.kt"),
@@ -141,6 +142,7 @@ class LayeringContractTest {
             applicationRoot.resolve("endgame/EndgameResolver.kt"),
             applicationRoot.resolve("movereview/MoveReview.kt"),
             applicationRoot.resolve("preferences/UserPreferencesApplication.kt"),
+            applicationRoot.resolve("preferences/UserPreferencesAutosaveApplication.kt"),
             applicationRoot.resolve("preferences/UserPreferencesPorts.kt"),
             applicationRoot.resolve("preferences/UserPreferencesSnapshot.kt"),
             applicationRoot.resolve("session/GameSessionAnalysisState.kt"),
@@ -158,6 +160,7 @@ class LayeringContractTest {
             applicationRoot.resolve("runtime/RuntimeEventPorts.kt"),
             applicationRoot.resolve("savedgame/SavedGamePorts.kt"),
             applicationRoot.resolve("savedgame/SavedGamePersistence.kt"),
+            applicationRoot.resolve("savedgame/SavedGamePersistenceRunner.kt"),
             applicationRoot.resolve("savedgame/SavedGameRestoreApplication.kt"),
             applicationRoot.resolve("savedgame/SavedSessionPromptApplication.kt"),
             applicationRoot.resolve("score/ScoreDisplayApplication.kt"),
@@ -167,6 +170,7 @@ class LayeringContractTest {
             applicationRoot.resolve("score/ScoreSyncCompletionApplication.kt"),
             applicationRoot.resolve("score/ScoringRuleApplication.kt"),
             applicationRoot.resolve("startgame/StartGameApplication.kt"),
+            applicationRoot.resolve("topmoves/TopMovesEffectLauncherApplication.kt"),
             applicationRoot.resolve("topmoves/TopMovesApplication.kt"),
             applicationRoot.resolve("undo/UndoApplication.kt"),
         )

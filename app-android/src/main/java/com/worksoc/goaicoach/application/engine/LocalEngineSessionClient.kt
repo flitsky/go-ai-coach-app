@@ -1,8 +1,8 @@
 package com.worksoc.goaicoach.application.engine
 
-import com.worksoc.goaicoach.application.engine.operation.EngineFallbackPolicy
-import com.worksoc.goaicoach.application.engine.operation.EngineOperationKind
-import com.worksoc.goaicoach.application.engine.operation.EngineTimeoutPolicy
+import com.worksoc.goaicoach.shared.engine.EngineFallbackPolicy
+import com.worksoc.goaicoach.shared.engine.EngineOperationKind
+import com.worksoc.goaicoach.shared.engine.EngineTimeoutPolicy
 import com.worksoc.goaicoach.application.analysis.NoopPositionAnalysisCacheStore
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationPlan
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationResult
@@ -14,7 +14,7 @@ import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.diagnostic.NoopDiagnosticEventLog
 import com.worksoc.goaicoach.application.diagnostic.runObservedEngineOperation
 import com.worksoc.goaicoach.application.endgame.AiEndgameResolution
-import com.worksoc.goaicoach.application.engine.operation.engineOperationRequest
+import com.worksoc.goaicoach.shared.engine.engineOperationRequest
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.AnalysisResult
 import com.worksoc.goaicoach.shared.BoardSize

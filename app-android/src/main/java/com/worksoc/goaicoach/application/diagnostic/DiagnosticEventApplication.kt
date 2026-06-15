@@ -1,6 +1,6 @@
 package com.worksoc.goaicoach.application.diagnostic
 
-import com.worksoc.goaicoach.application.engine.operation.EngineOperationRequest
+import com.worksoc.goaicoach.shared.engine.EngineOperationRequest
 import com.worksoc.goaicoach.application.engine.operation.EngineOperationResultGuard
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.analysisFingerprint

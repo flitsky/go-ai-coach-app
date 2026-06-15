@@ -12,10 +12,10 @@
 | `app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt:445` | 엔진 startup workflow 실행 | 이미 tracked operation 경계가 있으나 trigger는 UI에 남아 있다 | `EngineStartupEffectLauncher` |
 | `app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt:479` | 저장 세션 확인 및 이어하기 prompt 준비 | persistence/app-service 책임 | `SavedSessionRestoreEffectLauncher` |
 | `app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt:579` | 최초 benchmark 자동 실행 gate | benchmark application 책임 | `EngineBenchmarkEffectLauncher` |
-| `app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt:611` | 사용자 설정 autosave | persistence effect 책임 | `UserPreferencesAutosaveRunner` |
-| `app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt:632` | 진행 중 대국 autosave/clear | persistence effect 책임 | `SavedGameAutosaveRunner` |
-| `app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt:1984` | 자동 AI 턴 scheduling | match/application orchestration 책임 | `AutoAiTurnEffectLauncher` |
-| `app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt:2000` | 사용자 턴 Top Moves 자동 분석 scheduling | analysis/application orchestration 책임 | `TopMovesEffectLauncher` |
+| `app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt:611` | 사용자 설정 autosave trigger | persistence effect 책임 | 2nd phase.3에서 `runUserPreferencesAutosave()` 도입 완료. 다음은 trigger 자체 분리 |
+| `app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt:632` | 진행 중 대국 autosave/clear trigger | persistence effect 책임 | 2nd phase.3에서 `runSavedGamePersistence()` 도입 완료. 다음은 trigger 자체 분리 |
+| `app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt:1984` | 자동 AI 턴 scheduling trigger | match/application orchestration 책임 | 2nd phase.3에서 `runAutoAiTurnTriggerEffect()` 도입 완료. 다음은 실행 본문 분리 |
+| `app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt:2000` | 사용자 턴 Top Moves 자동 분석 scheduling trigger | analysis/application orchestration 책임 | 2nd phase.3에서 `runTopMoveAnalysisTriggerEffect()` 도입 완료. 다음은 실행 본문 분리 |
 | `app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt:2018` | 종국 후 cache optimization prompt 계산 | prompt/application 책임 | `PostGameCachePromptEffectLauncher` |
 
 ## 우선순위

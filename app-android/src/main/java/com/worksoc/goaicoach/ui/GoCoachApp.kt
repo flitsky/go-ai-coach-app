@@ -29,17 +29,18 @@ import com.worksoc.goaicoach.application.debugreport.runDebugReportCopyAction
 import com.worksoc.goaicoach.application.preferences.buildInitialUserPreferencesPlan
 import com.worksoc.goaicoach.application.analysis.buildPositionAnalysisCacheOptimizationPlan
 import com.worksoc.goaicoach.application.analysis.buildPositionAnalysisCacheOptimizationPrompt
-import com.worksoc.goaicoach.application.preferences.buildUserPreferencesSnapshot
-import com.worksoc.goaicoach.application.engine.operation.EngineFallbackPolicy
+import com.worksoc.goaicoach.application.preferences.UserPreferencesAutosaveRequest
+import com.worksoc.goaicoach.application.preferences.runUserPreferencesAutosave
+import com.worksoc.goaicoach.shared.engine.EngineFallbackPolicy
 import com.worksoc.goaicoach.application.engine.operation.EngineOperationGate
-import com.worksoc.goaicoach.application.engine.operation.EngineOperationKind
+import com.worksoc.goaicoach.shared.engine.EngineOperationKind
 import com.worksoc.goaicoach.application.engine.operation.EngineOperationLifecycleState
 import com.worksoc.goaicoach.application.engine.operation.EngineOperationLifecycleTransition
 import com.worksoc.goaicoach.application.engine.operation.EngineOperationLifecycleCallbacks
 import com.worksoc.goaicoach.application.engine.operation.EngineOperationResultGuard
-import com.worksoc.goaicoach.application.engine.operation.EngineOperationRequest
+import com.worksoc.goaicoach.shared.engine.EngineOperationRequest
 import com.worksoc.goaicoach.application.engine.EngineSessionClient
-import com.worksoc.goaicoach.application.engine.operation.EngineTimeoutPolicy
+import com.worksoc.goaicoach.shared.engine.EngineTimeoutPolicy
 import com.worksoc.goaicoach.application.debugreport.DebugReportMirrorPort
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.humanmove.HumanEngineSyncCompletionApplyPlan
@@ -55,7 +56,7 @@ import com.worksoc.goaicoach.application.humanmove.runHumanEngineSyncWorkflowRes
 import com.worksoc.goaicoach.application.humanmove.toApplyPlan
 import com.worksoc.goaicoach.application.engine.operation.applyEngineOperationLifecycleTransition
 import com.worksoc.goaicoach.application.debugreport.ClipboardPort
-import com.worksoc.goaicoach.application.engine.operation.engineOperationRequest
+import com.worksoc.goaicoach.shared.engine.engineOperationRequest
 import com.worksoc.goaicoach.application.engine.operation.evaluateEngineBenchmarkGate
 import com.worksoc.goaicoach.application.engine.operation.evaluateScoringRuleChangeGate
 import com.worksoc.goaicoach.application.engine.operation.evaluateSearchTimeChangeGate
@@ -66,14 +67,14 @@ import com.worksoc.goaicoach.application.engine.operation.recordEngineOperationD
 import com.worksoc.goaicoach.application.engine.localScoreSnapshot
 import com.worksoc.goaicoach.application.engine.operation.runEngineOperationInScope
 import com.worksoc.goaicoach.application.analysis.runPositionAnalysisCacheOptimizationWorkflowResult
-import com.worksoc.goaicoach.application.savedgame.SavedGamePersistencePlan
+import com.worksoc.goaicoach.application.savedgame.SavedGamePersistenceRequest
 import com.worksoc.goaicoach.application.savedgame.SavedGameRestorePlan
 import com.worksoc.goaicoach.application.savedgame.SavedGameRestoreRequestPlan
 import com.worksoc.goaicoach.application.savedgame.SavedSessionPromptPlan
 import com.worksoc.goaicoach.application.savedgame.SavedSessionUiState
 import com.worksoc.goaicoach.application.savedgame.buildSavedGameRestoreRequestPlan
 import com.worksoc.goaicoach.application.savedgame.buildSavedSessionCheckPlan
-import com.worksoc.goaicoach.application.savedgame.planSavedGamePersistence
+import com.worksoc.goaicoach.application.savedgame.runSavedGamePersistence
 import com.worksoc.goaicoach.application.startgame.GameSessionResetPlan
 import com.worksoc.goaicoach.application.startgame.StartConfiguredGamePlan
 import com.worksoc.goaicoach.application.startgame.buildNewLocalGameSessionPlan
@@ -99,7 +100,6 @@ import com.worksoc.goaicoach.persistence.EngineBenchmarkStore
 import com.worksoc.goaicoach.persistence.DebugReportMirrorStore
 import com.worksoc.goaicoach.persistence.RuntimeEventLog
 import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
-import com.worksoc.goaicoach.application.preferences.UserPreferencesSnapshot
 import com.worksoc.goaicoach.persistence.UserPreferencesStore
 import com.worksoc.goaicoach.presentation.GameUiEvent
 import com.worksoc.goaicoach.presentation.KaTrainUxOptions
@@ -107,6 +107,7 @@ import com.worksoc.goaicoach.presentation.buildGameScreenStateInput
 import com.worksoc.goaicoach.presentation.buildGameScreenState
 import com.worksoc.goaicoach.presentation.buildGameUiEventHandlers
 import com.worksoc.goaicoach.presentation.dispatchGameUiEvent
+import com.worksoc.goaicoach.presentation.toKaTrainUxOptions
 import com.worksoc.goaicoach.shared.AnalysisPreset
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
@@ -279,16 +280,6 @@ private fun GoCoachScreen(
         val quietUntil = undoEngineInterventionQuietUntilMillis(System.currentTimeMillis())
         undoEngineInterventionQuietUntil = quietUntil
         return quietUntil
-    }
-
-    suspend fun waitForUndoEngineInterventionQuietWindow() {
-        val delayMillis = undoEngineInterventionRemainingDelayMillis(
-            nowMillis = System.currentTimeMillis(),
-            quietUntilMillis = undoEngineInterventionQuietUntil,
-        )
-        if (delayMillis > 0L) {
-            delay(delayMillis)
-        }
     }
 
     fun cancelPendingPostUndoEngineSync() {
@@ -617,8 +608,8 @@ private fun GoCoachScreen(
         uxOptions,
         gameState.ruleset,
     ) {
-        preferencesStore.save(
-            buildUserPreferencesSnapshot(
+        runUserPreferencesAutosave(
+            request = UserPreferencesAutosaveRequest(
                 settingsState = settingsState,
                 ruleset = gameState.ruleset,
                 showCoordinates = uxOptions.showCoordinates,
@@ -626,6 +617,7 @@ private fun GoCoachScreen(
                 showLastMoveRing = uxOptions.showLastMoveRing,
                 showOwnershipOverlay = uxOptions.showOwnershipOverlay,
             ),
+            store = preferencesStore,
         )
     }
 
@@ -638,8 +630,8 @@ private fun GoCoachScreen(
         runtimeState.playLevel,
         topMovesEnabled,
     ) {
-        when (
-            val plan = planSavedGamePersistence(
+        runSavedGamePersistence(
+            request = SavedGamePersistenceRequest(
                 savedSessionUiState = savedSessionUiState,
                 isGameEnded = isGameEnded,
                 gameState = gameState,
@@ -647,12 +639,9 @@ private fun GoCoachScreen(
                 playLevel = runtimeState.playLevel,
                 topMovesEnabled = topMovesEnabled,
                 nowMillis = System.currentTimeMillis(),
-            )
-        ) {
-            SavedGamePersistencePlan.Skip -> Unit
-            SavedGamePersistencePlan.Clear -> sessionStore.clear()
-            is SavedGamePersistencePlan.Save -> sessionStore.save(plan.snapshot)
-        }
+            ),
+            store = sessionStore,
+        )
     }
 
     fun currentAnalysisSessionState(): GameSessionAnalysisState = analysisState
@@ -1993,8 +1982,10 @@ private fun GoCoachScreen(
         gameState.nextPlayer,
         gameState.moves.size,
     ) {
-        waitForUndoEngineInterventionQuietWindow()
-        requestAiTurnForCurrentState()
+        runAutoAiTurnTriggerEffect(
+            quietUntilMillis = undoEngineInterventionQuietUntil,
+            requestAiTurn = ::requestAiTurnForCurrentState,
+        )
     }
 
     LaunchedEffect(
@@ -2008,10 +1999,15 @@ private fun GoCoachScreen(
         gameState.nextPlayer,
         gameState.moves.size,
     ) {
-        waitForUndoEngineInterventionQuietWindow()
-        requestTopMoveAnalysisForState(
-            targetState = gameState,
-            automatic = true,
+        val targetState = gameState
+        runTopMoveAnalysisTriggerEffect(
+            quietUntilMillis = undoEngineInterventionQuietUntil,
+            requestTopMoveAnalysis = {
+                requestTopMoveAnalysisForState(
+                    targetState = targetState,
+                    automatic = true,
+                )
+            },
         )
     }
 
@@ -2068,13 +2064,5 @@ private fun GoCoachScreen(
         onEvent = ::dispatch,
     )
 }
-
-private fun UserPreferencesSnapshot.toKaTrainUxOptions(): KaTrainUxOptions =
-    KaTrainUxOptions(
-        showCoordinates = showCoordinates,
-        showMoveNumbers = showMoveNumbers,
-        showLastMoveRing = showLastMoveRing,
-        showOwnershipOverlay = showOwnershipOverlay,
-    )
 
 private const val EngineBenchmarkStartupSettleDelayMillis = 1_500L
