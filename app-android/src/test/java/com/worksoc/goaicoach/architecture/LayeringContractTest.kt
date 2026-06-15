@@ -116,6 +116,7 @@ class LayeringContractTest {
             applicationRoot.resolve("EngineOperationResultApplication.kt"),
             applicationRoot.resolve("diagnostic/DiagnosticEventApplication.kt"),
             applicationRoot.resolve("diagnostic/DiagnosticEventObserverApplication.kt"),
+            applicationRoot.resolve("diagnostic/DiagnosticEventPorts.kt"),
             applicationRoot.resolve("engine/EngineEffectLauncherApplication.kt"),
             applicationRoot.resolve("EngineDeviceBenchmarkApplication.kt"),
             applicationRoot.resolve("EngineSessionLifecycleApplication.kt"),
@@ -156,11 +157,12 @@ class LayeringContractTest {
     }
 
     @Test
-    fun sharedDiagnosticModelStaysKmpReady() {
+    fun sharedPolicyModelsStayKmpReady() {
         val sharedRoot = repoRoot()
             .resolve("shared/src/commonMain/kotlin/com/worksoc/goaicoach/shared")
         val candidates = listOf(
             sharedRoot.resolve("diagnostic/DiagnosticEventModel.kt"),
+            sharedRoot.resolve("engine/EngineOperationPolicy.kt"),
         )
         val forbiddenImports = listOf(
             "import android.",
@@ -181,7 +183,7 @@ class LayeringContractTest {
         }
 
         assertTrue(
-            "Shared diagnostic model must remain KMP-ready:\n${offenders.joinToString("\n")}",
+            "Shared diagnostic/engine policy models must remain KMP-ready:\n${offenders.joinToString("\n")}",
             offenders.isEmpty(),
         )
     }

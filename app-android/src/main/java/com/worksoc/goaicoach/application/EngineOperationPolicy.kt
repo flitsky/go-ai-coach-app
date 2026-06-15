@@ -1,86 +1,17 @@
 package com.worksoc.goaicoach.application
 
 import com.worksoc.goaicoach.shared.GameState
-import com.worksoc.goaicoach.shared.Ruleset
-import com.worksoc.goaicoach.shared.analysisFingerprint
+
+internal typealias EngineFallbackPolicy = com.worksoc.goaicoach.shared.engine.EngineFallbackPolicy
+internal typealias EngineOperationKind = com.worksoc.goaicoach.shared.engine.EngineOperationKind
+internal typealias EngineOperationRequest = com.worksoc.goaicoach.shared.engine.EngineOperationRequest
+internal typealias EngineTimeoutPolicy = com.worksoc.goaicoach.shared.engine.EngineTimeoutPolicy
+internal typealias PositionScopedOperationToken = com.worksoc.goaicoach.shared.engine.PositionScopedOperationToken
 
 internal sealed class EngineOperationGate {
     data object Allow : EngineOperationGate()
     data object NoOp : EngineOperationGate()
     data class Block(val message: String) : EngineOperationGate()
-}
-
-internal data class PositionScopedOperationToken(
-    val kind: String,
-    val positionFingerprint: String,
-    val moveCount: Int,
-)
-
-internal enum class EngineOperationKind(
-    val code: String,
-) {
-    EngineStartup("engine_startup"),
-    EngineNewGame("engine_new_game"),
-    PositionAnalysis("position_analysis"),
-    TopMoves("top_moves"),
-    ScoreEstimate("score_estimate"),
-    ScoringRuleSync("scoring_rule_sync"),
-    AutoAiTurn("auto_ai_turn"),
-    AutoAiEndgame("auto_ai_endgame"),
-    HumanMoveSync("human_move_sync"),
-    RestoredGameSync("restored_game_sync"),
-    PostUndoSync("post_undo_sync"),
-    EngineUndo("engine_undo"),
-    StartupBenchmark("startup_benchmark"),
-    PositionCacheOptimization("position_cache_optimization"),
-    RemotePositionAnalysis("remote_position_analysis"),
-}
-
-internal data class EngineTimeoutPolicy(
-    val timeoutMillis: Long? = null,
-    val label: String = if (timeoutMillis == null) "uncapped" else "cap:${timeoutMillis}ms",
-) {
-    init {
-        require(timeoutMillis == null || timeoutMillis > 0) { "timeoutMillis must be positive when set" }
-        require(label.isNotBlank()) { "label must not be blank" }
-    }
-}
-
-internal enum class EngineFallbackPolicy(
-    val label: String,
-) {
-    None("none"),
-    LocalEngine("local-engine"),
-    LocalRules("local-rules"),
-    CachedAnalysis("cached-analysis"),
-    IgnoreStaleResult("ignore-stale-result"),
-}
-
-/**
- * Common metadata for any engine-facing operation.
- *
- * Local process calls and future remote-server calls share the same failure
- * model: results can be late, fail, or belong to an older match generation.
- * This request object makes those assumptions explicit before we move more
- * operation runners out of UI code.
- */
-internal data class EngineOperationRequest(
-    val operationId: String,
-    val kind: EngineOperationKind,
-    val sessionGeneration: Long,
-    val boardFingerprint: String,
-    val moveCount: Int,
-    val timeoutPolicy: EngineTimeoutPolicy,
-    val fallbackPolicy: EngineFallbackPolicy,
-    val backendId: String,
-) {
-    init {
-        require(operationId.isNotBlank()) { "operationId must not be blank" }
-        require(sessionGeneration >= 0) { "sessionGeneration must be zero or greater" }
-        require(boardFingerprint.isNotBlank()) { "boardFingerprint must not be blank" }
-        require(moveCount >= 0) { "moveCount must be zero or greater" }
-        require(backendId.isNotBlank()) { "backendId must not be blank" }
-    }
 }
 
 internal sealed class EngineOperationResultGuard {
@@ -102,11 +33,7 @@ internal fun positionScopedOperationToken(
     kind: String,
     state: GameState,
 ): PositionScopedOperationToken =
-    PositionScopedOperationToken(
-        kind = kind,
-        positionFingerprint = state.analysisFingerprint(),
-        moveCount = state.moves.size,
-    )
+    com.worksoc.goaicoach.shared.engine.positionScopedOperationToken(kind, state)
 
 internal fun engineOperationRequest(
     kind: EngineOperationKind,
@@ -115,14 +42,11 @@ internal fun engineOperationRequest(
     timeoutPolicy: EngineTimeoutPolicy = EngineTimeoutPolicy(),
     fallbackPolicy: EngineFallbackPolicy = EngineFallbackPolicy.IgnoreStaleResult,
     backendId: String = "local-engine",
-    operationId: String = defaultEngineOperationId(kind, state, sessionGeneration),
 ): EngineOperationRequest =
-    EngineOperationRequest(
-        operationId = operationId,
+    com.worksoc.goaicoach.shared.engine.engineOperationRequest(
         kind = kind,
+        state = state,
         sessionGeneration = sessionGeneration,
-        boardFingerprint = state.analysisFingerprint(),
-        moveCount = state.moves.size,
         timeoutPolicy = timeoutPolicy,
         fallbackPolicy = fallbackPolicy,
         backendId = backendId,
@@ -138,67 +62,32 @@ internal fun EngineOperationRequest.toPositionScopedOperationToken(): PositionSc
 internal fun evaluatePositionScopedResultGuard(
     token: PositionScopedOperationToken,
     currentState: GameState,
-): EngineOperationResultGuard {
-    val currentFingerprint = currentState.analysisFingerprint()
-    return if (currentFingerprint == token.positionFingerprint) {
-        EngineOperationResultGuard.Apply
-    } else {
-        EngineOperationResultGuard.Discard(
-            reason = "${token.kind} result is stale: requested move=${token.moveCount}, current move=${currentState.moves.size}.",
-        )
-    }
-}
+): EngineOperationResultGuard =
+    com.worksoc.goaicoach.shared.engine
+        .evaluatePositionScopedResultGuard(token, currentState)
+        .toApplicationGuard()
 
 internal fun evaluateEngineOperationResultGuard(
     request: EngineOperationRequest,
     currentState: GameState,
     currentSessionGeneration: Long,
-): EngineOperationResultGuard {
-    if (currentSessionGeneration != request.sessionGeneration) {
-        return EngineOperationResultGuard.Discard(
-            reason = "${request.kind.code} result is stale: requested generation=${request.sessionGeneration}, current generation=$currentSessionGeneration.",
-            operation = request.kind.code,
-            operationId = request.operationId,
-            sessionGeneration = request.sessionGeneration,
-        )
-    }
-    return when (
-        val guard = evaluatePositionScopedResultGuard(
-            token = request.toPositionScopedOperationToken(),
-            currentState = currentState,
-        )
-    ) {
-        EngineOperationResultGuard.Apply -> EngineOperationResultGuard.Apply
-        is EngineOperationResultGuard.Discard -> guard.copy(
-            operation = request.kind.code,
-            operationId = request.operationId,
-            sessionGeneration = request.sessionGeneration,
-        )
-    }
-}
-
-private fun defaultEngineOperationId(
-    kind: EngineOperationKind,
-    state: GameState,
-    sessionGeneration: Long,
-): String =
-    "${kind.code}:g$sessionGeneration:m${state.moves.size}:${state.analysisFingerprint().take(12)}"
+): EngineOperationResultGuard =
+    com.worksoc.goaicoach.shared.engine.evaluateEngineOperationResultGuard(
+        request = request,
+        currentState = currentState,
+        currentSessionGeneration = currentSessionGeneration,
+    ).toApplicationGuard()
 
 internal fun buildEngineOperationApplyPlan(
     request: EngineOperationRequest,
     currentState: GameState,
     currentSessionGeneration: Long,
 ): EngineOperationApplyPlan =
-    when (
-        val guard = evaluateEngineOperationResultGuard(
-            request = request,
-            currentState = currentState,
-            currentSessionGeneration = currentSessionGeneration,
-        )
-    ) {
-        EngineOperationResultGuard.Apply -> EngineOperationApplyPlan.Apply
-        is EngineOperationResultGuard.Discard -> EngineOperationApplyPlan.Discard(guard)
-    }
+    com.worksoc.goaicoach.shared.engine.buildEngineOperationApplyPlan(
+        request = request,
+        currentState = currentState,
+        currentSessionGeneration = currentSessionGeneration,
+    ).toApplicationApplyPlan()
 
 internal fun evaluateEngineBenchmarkGate(
     isEngineReady: Boolean,
@@ -206,33 +95,67 @@ internal fun evaluateEngineBenchmarkGate(
     isEngineBusy: Boolean,
     isBenchmarkRunning: Boolean,
 ): EngineOperationGate =
-    when {
-        !isEngineReady ->
-            EngineOperationGate.Block("Engine benchmark requires a ready local engine.")
+    com.worksoc.goaicoach.shared.engine.evaluateEngineBenchmarkGate(
+        isEngineReady = isEngineReady,
+        supportsDeviceBenchmark = supportsDeviceBenchmark,
+        isEngineBusy = isEngineBusy,
+        isBenchmarkRunning = isBenchmarkRunning,
+    ).toApplicationGate()
 
-        !supportsDeviceBenchmark ->
-            EngineOperationGate.Block("Engine benchmark is available only for the local KataGo process engine.")
-
-        isEngineBusy || isBenchmarkRunning ->
-            EngineOperationGate.Block("Engine is busy. Run benchmark after the current response.")
-
-        else -> EngineOperationGate.Allow
-    }
-
-internal fun evaluateSearchTimeChangeGate(isEngineBusy: Boolean): EngineOperationGate =
-    if (isEngineBusy) {
-        EngineOperationGate.Block("Engine is busy. Change search time after the current action.")
-    } else {
-        EngineOperationGate.Allow
-    }
-
-internal fun evaluateScoringRuleChangeGate(
-    currentRuleset: Ruleset,
-    nextRuleset: Ruleset,
+internal fun evaluateSearchTimeChangeGate(
     isEngineBusy: Boolean,
 ): EngineOperationGate =
-    when {
-        nextRuleset == currentRuleset -> EngineOperationGate.NoOp
-        isEngineBusy -> EngineOperationGate.Block("Engine is busy. Change scoring rule after the current response.")
-        else -> EngineOperationGate.Allow
+    com.worksoc.goaicoach.shared.engine
+        .evaluateSearchTimeChangeGate(isEngineBusy)
+        .toApplicationGate()
+
+internal fun evaluateScoringRuleChangeGate(
+    currentRuleset: com.worksoc.goaicoach.shared.Ruleset,
+    nextRuleset: com.worksoc.goaicoach.shared.Ruleset,
+    isEngineBusy: Boolean,
+): EngineOperationGate =
+    com.worksoc.goaicoach.shared.engine.evaluateScoringRuleChangeGate(
+        currentRuleset = currentRuleset,
+        nextRuleset = nextRuleset,
+        isEngineBusy = isEngineBusy,
+    ).toApplicationGate()
+
+private fun com.worksoc.goaicoach.shared.engine.EngineOperationGate.toApplicationGate(): EngineOperationGate =
+    when (this) {
+        com.worksoc.goaicoach.shared.engine.EngineOperationGate.Allow -> EngineOperationGate.Allow
+        com.worksoc.goaicoach.shared.engine.EngineOperationGate.NoOp -> EngineOperationGate.NoOp
+        is com.worksoc.goaicoach.shared.engine.EngineOperationGate.Block ->
+            EngineOperationGate.Block(message)
     }
+
+private fun com.worksoc.goaicoach.shared.engine.EngineOperationResultGuard.toApplicationGuard(): EngineOperationResultGuard =
+    when (this) {
+        com.worksoc.goaicoach.shared.engine.EngineOperationResultGuard.Apply ->
+            EngineOperationResultGuard.Apply
+
+        is com.worksoc.goaicoach.shared.engine.EngineOperationResultGuard.Discard ->
+            EngineOperationResultGuard.Discard(
+                reason = reason,
+                operation = operation,
+                operationId = operationId,
+                sessionGeneration = sessionGeneration,
+            )
+    }
+
+private fun com.worksoc.goaicoach.shared.engine.EngineOperationApplyPlan.toApplicationApplyPlan(): EngineOperationApplyPlan =
+    when (this) {
+        com.worksoc.goaicoach.shared.engine.EngineOperationApplyPlan.Apply ->
+            EngineOperationApplyPlan.Apply
+
+        is com.worksoc.goaicoach.shared.engine.EngineOperationApplyPlan.Discard ->
+            EngineOperationApplyPlan.Discard(discard.toApplicationDiscard())
+    }
+
+private fun com.worksoc.goaicoach.shared.engine.EngineOperationResultGuard.Discard.toApplicationDiscard():
+    EngineOperationResultGuard.Discard =
+    EngineOperationResultGuard.Discard(
+        reason = reason,
+        operation = operation,
+        operationId = operationId,
+        sessionGeneration = sessionGeneration,
+    )

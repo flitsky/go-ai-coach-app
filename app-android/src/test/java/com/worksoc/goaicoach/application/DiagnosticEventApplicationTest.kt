@@ -1,5 +1,7 @@
 package com.worksoc.goaicoach.application
 
+import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventExternalSinkPort
+import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.diagnostic.engineOperationDiscardedDiagnosticEvent
 import com.worksoc.goaicoach.application.diagnostic.engineOperationSlowDiagnosticEvent
 import com.worksoc.goaicoach.application.diagnostic.engineOperationTimeoutDiagnosticEvent

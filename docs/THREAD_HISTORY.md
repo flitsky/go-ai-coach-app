@@ -1398,3 +1398,8 @@
 - `DiagnosticEventApplication.kt`와 `DiagnosticEventObserverApplication.kt`를 `application/diagnostic/` 하위 package로 이동했다. application 루트 package 밀집을 줄이기 위한 첫 package 분리 실행이다.
 - `application/engine/EngineEffectLauncherApplication.kt`를 추가하고 `runEngineIo()`를 `GoCoachApp.kt` local helper에서 이동했다. UI 파일의 직접 `withContext(Dispatchers.IO)`/`runCatching` 지점은 8개로 줄었고, `GoCoachApp.kt`는 2,191줄이다.
 - `LayeringContractTest`에 shared diagnostic model KMP-ready 검사를 추가했고, application diagnostic/engine 하위 package도 platform-free 후보 검사에 포함했다. 관련 targeted 검증과 최종 `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk make test`가 통과했다. 현재 외부 평가 기준 플랫폼 아키텍처 완성도는 94.2/100, 리팩토링 배치 진행도는 99.78/100으로 평가했다.
+- 사용자가 `ext.1` 다음 리팩토링 추천 항목을 단계별로 모두 진행하고, 결과 보고 시 현재 리팩토링 완성도 및 다음 추천 작업 리스트업을 요청했다.
+- `DiagnosticEventLogPort`와 `DiagnosticEventExternalSinkPort`를 `ApplicationPorts.kt`에서 `application/diagnostic/DiagnosticEventPorts.kt`로 이동했다. diagnostic 모델/observer/port가 같은 하위 package에 모여 application 루트 package 밀집을 줄였다.
+- `EngineOperationPolicy.kt`의 실제 정책 구현을 `shared/commonMain`의 `com.worksoc.goaicoach.shared.engine` package로 이동했다. 앱 쪽에는 기존 호출부 호환을 위한 얇은 facade를 남겼고, 중첩 sealed 타입(`Apply`, `Discard`, `Allow`, `Block`)은 앱 facade 타입으로 명시 매핑한다.
+- `GoCoachApp.kt`의 engine-backed new game 및 post-game cache optimization IO 실행도 `application/engine/EngineEffectLauncherApplication.runEngineIo()`를 통과하도록 변경했다. UI 파일 안의 직접 `withContext(Dispatchers.IO)`/`runCatching` 지점은 6개까지 줄었다.
+- `LayeringContractTest`는 shared diagnostic/engine policy 모델을 함께 KMP-ready 대상으로 검사하도록 정리했다. 표적 검증으로 `EngineOperationPolicyTest`, `DiagnosticEventApplicationTest`, `EngineSessionTest`, `LayeringContractTest`가 통과했다.

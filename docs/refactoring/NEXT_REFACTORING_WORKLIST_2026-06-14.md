@@ -1015,3 +1015,41 @@
 5. GoCoachApp import fan-in 축소
    - application import 180개를 책임별 facade/controller boundary로 줄이는 실험을 시작한다.
    - acceptance: import 수 또는 local helper 수가 실질적으로 감소한다.
+
+## 2026-06-15 추가 진행 로그: ext.1 package/KMP/EffectLauncher 2차
+
+- 2026-06-15: `DiagnosticEventLogPort`, `DiagnosticEventExternalSinkPort`를 `ApplicationPorts.kt`에서 `application/diagnostic/DiagnosticEventPorts.kt`로 이동했다. diagnostic event model, observer, port가 같은 diagnostic 하위 package에 위치한다.
+- 2026-06-15: `EngineOperationPolicy.kt`의 실제 구현을 `shared/src/commonMain/kotlin/com/worksoc/goaicoach/shared/engine/EngineOperationPolicy.kt`로 이동했다. 이는 `DiagnosticEventModel.kt`에 이은 두 번째 실제 KMP 물리 이동이다.
+- 2026-06-15: 앱 쪽 `application/EngineOperationPolicy.kt`는 기존 호출부를 보존하는 facade로 남겼다. Kotlin typealias가 sealed class 중첩 타입 접근을 충분히 보존하지 못하므로 `EngineOperationGate`, `EngineOperationResultGuard`, `EngineOperationApplyPlan`은 앱 facade 타입으로 명시 매핑한다.
+- 2026-06-15: `GoCoachApp.kt`의 engine-backed new game, post-game cache optimization IO 실행도 `application/engine/EngineEffectLauncherApplication.runEngineIo()`를 통과하도록 정리했다.
+- 현재 metric: `GoCoachApp.kt`는 2,191줄, UI 파일 안의 `withContext(Dispatchers.IO)`/`runCatching` 직접 지점은 6개, `scope.launch`는 6개다. application import fan-in은 아직 180개로 크다.
+- 검증: `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :app-android:testDebugUnitTest --tests 'com.worksoc.goaicoach.application.EngineOperationPolicyTest' --tests 'com.worksoc.goaicoach.application.DiagnosticEventApplicationTest' --tests 'com.worksoc.goaicoach.application.EngineSessionTest' --tests 'com.worksoc.goaicoach.architecture.LayeringContractTest'` 통과.
+
+## 현재 리팩토링/아키텍처 완성도 평가
+
+- 리팩토링 배치 진행도: 99.82/100.
+- 외부 평가 기준 플랫폼 아키텍처 완성도: 95.0/100.
+- 상향 요인: 실제 KMP 물리 이동이 2건으로 늘었고, diagnostic port가 application root에서 하위 package로 이동했다. UI가 직접 소유하던 engine IO 실행 지점도 6개까지 줄어 effect launcher 경계가 더 넓어졌다.
+- 남은 감점 요인: `GoCoachApp.kt`는 여전히 2천 줄 이상이고 application import fan-in이 180개다. `EngineOperationPolicy` 앱 facade가 남아 있어 shared policy를 직접 쓰는 구조로 완전히 전환된 것은 아니다. score/topmoves/autoai package 물리 분리도 아직 1차 실행 전이다.
+
+## 다음 추천 리팩토링 항목 - ext.2
+
+1. `EngineOperationPolicy` facade 제거 준비
+   - application 내부 호출부 일부를 `shared.engine` 직접 import로 전환할 수 있는지 검토한다.
+   - acceptance: facade 의존 파일 수가 줄거나, 제거를 막는 Kotlin/package 이유가 문서화된다.
+
+2. application package 분리 2차
+   - `score`, `topmoves`, `autoai`, `session` 중 하나를 실제 하위 package로 이동한다.
+   - acceptance: package boundary test와 targeted test 통과.
+
+3. EffectLauncher 적용 범위 3차
+   - startup, benchmark, endgame 중 하나 이상의 남은 IO 경로를 `runEngineIo()` 또는 operation-specific launcher로 통과시킨다.
+   - acceptance: UI 직접 IO/runCatching 지점 6개를 5개 이하로 줄인다.
+
+4. GoCoachApp import fan-in 축소 실험
+   - 여러 application import를 하나의 controller/facade import로 묶는 작은 vertical slice를 만든다.
+   - acceptance: import 수 감소 또는 controller 경계가 테스트로 고정된다.
+
+5. structured diagnostic adapter spike
+   - 현재 JSONL 파일 기반 diagnostic event를 외부 수집 port에 연결하기 위한 noop/recording adapter를 추가한다.
+   - acceptance: warning/critical export candidate가 adapter port까지 전달되는 테스트를 추가한다.

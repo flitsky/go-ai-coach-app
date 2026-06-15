@@ -68,7 +68,7 @@ import com.worksoc.goaicoach.application.EngineOperationRequest
 import com.worksoc.goaicoach.application.EngineSessionClient
 import com.worksoc.goaicoach.application.EngineTimeoutPolicy
 import com.worksoc.goaicoach.application.DebugReportMirrorPort
-import com.worksoc.goaicoach.application.DiagnosticEventLogPort
+import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.applyHumanMoveLocally
 import com.worksoc.goaicoach.application.applyAutoAiTurnRequestPlan
 import com.worksoc.goaicoach.application.applyAutoAiTurnScheduleValidationPlan
@@ -1430,7 +1430,7 @@ private fun GoCoachScreen(
             var nextAnalysisState: GameState? = null
             val startMillis = System.currentTimeMillis()
             val result =
-                withContext(Dispatchers.IO) {
+                runEngineIo {
                     engineClient.runEngineBackedNewGameWorkflowResult(
                         effect = GameSessionEffect.StartEngineBackedGame(
                             currentState = gameState,
@@ -2013,7 +2013,7 @@ private fun GoCoachScreen(
         scope.launch {
             runTrackedEngineOperation(operation) {
                 val result =
-                    withContext(Dispatchers.IO) {
+                    runEngineIo {
                         engineClient.runPositionAnalysisCacheOptimizationWorkflowResult(
                             effect = effect,
                             operationRequest = operation,
