@@ -4,17 +4,14 @@ import com.worksoc.goaicoach.application.analysis.*
 import com.worksoc.goaicoach.application.endgame.*
 
 import com.worksoc.goaicoach.shared.AnalysisLimit
-import com.worksoc.goaicoach.shared.AnalysisResult
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.DeadStonesResult
-import com.worksoc.goaicoach.shared.EngineAdapter
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.EngineStatus
 import com.worksoc.goaicoach.shared.FinalScoreResult
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
-import com.worksoc.goaicoach.shared.MoveResult
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.StoneColor
@@ -39,10 +36,10 @@ class EndgameResolverTest {
                     Move.Pass(StoneColor.White),
                 ),
             )
-        val engine = FakeEndgameEngineAdapter(deadStones = listOf(deadWhite))
+        val engine = FakeEndgameJudgeGateway(deadStones = listOf(deadWhite))
 
         val resolution = resolveAiEndgame(
-            engineAdapter = engine,
+            judgeGateway = engine,
             originalState = state,
             estimateLimit = AnalysisLimit(visits = 16, timeMillis = 250, candidateCount = 8),
         )
@@ -61,40 +58,11 @@ class EndgameResolverTest {
     }
 }
 
-private class FakeEndgameEngineAdapter(
+private class FakeEndgameJudgeGateway(
     private val deadStones: List<BoardCoordinate>,
-) : EngineAdapter {
-    override suspend fun initialize(profile: EngineProfile): EngineStatus =
-        EngineStatus.ready("initialized")
-
+) : EndgameJudgeGateway {
     override suspend fun configure(profile: EngineProfile): EngineStatus =
         EngineStatus.ready("configured")
-
-    override suspend fun newGame(
-        boardSize: BoardSize,
-        ruleset: Ruleset,
-    ): EngineStatus =
-        EngineStatus.ready("new game")
-
-    override suspend fun playMove(move: Move): EngineStatus =
-        EngineStatus.ready("played")
-
-    override suspend fun genMove(player: StoneColor): MoveResult =
-        MoveResult(
-            status = EngineStatus.ready("generated"),
-            move = Move.Pass(player),
-            summary = "fake pass",
-        )
-
-    override suspend fun undoMove(): EngineStatus =
-        EngineStatus.ready("undone")
-
-    override suspend fun analyze(limit: AnalysisLimit): AnalysisResult =
-        AnalysisResult(
-            status = EngineStatus.ready("analyzed"),
-            candidates = emptyList(),
-            summary = "fake analysis",
-        )
 
     override suspend fun estimateScore(limit: AnalysisLimit): ScoreEstimate =
         ScoreEstimate(
@@ -119,7 +87,4 @@ private class FakeEndgameEngineAdapter(
             margin = 5.5,
             summary = "fake final",
         )
-
-    override suspend fun stop(): EngineStatus =
-        EngineStatus.stopped("stopped")
 }

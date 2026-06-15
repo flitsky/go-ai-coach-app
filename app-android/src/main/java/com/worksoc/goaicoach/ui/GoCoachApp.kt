@@ -1956,36 +1956,19 @@ private fun GoCoachScreen(
     LaunchedEffect(
         isEngineReady,
         isEngineBusy,
+        playerSetup,
+        searchTimeSettings,
         isGameEnded,
         shouldShowResumePrompt,
-        playerSetup,
-        autoPlayDelaySetting,
-        searchTimeSettings,
         undoEngineInterventionQuietUntil,
         gameState.nextPlayer,
         gameState.moves.size,
     ) {
-        runAutoAiTurnTriggerEffect(
+        runTurnAutomationTriggerEffect(
             quietUntilMillis = undoEngineInterventionQuietUntil,
+            topMoveTargetState = gameState,
             requestAiTurn = ::requestAiTurnForCurrentState,
-        )
-    }
-
-    LaunchedEffect(
-        isEngineReady,
-        isEngineBusy,
-        playerSetup,
-        searchTimeSettings,
-        isGameEnded,
-        shouldShowResumePrompt,
-        undoEngineInterventionQuietUntil,
-        gameState.nextPlayer,
-        gameState.moves.size,
-    ) {
-        val targetState = gameState
-        runTopMoveAnalysisTriggerEffect(
-            quietUntilMillis = undoEngineInterventionQuietUntil,
-            requestTopMoveAnalysis = {
+            requestTopMoveAnalysis = { targetState ->
                 requestTopMoveAnalysisForState(
                     targetState = targetState,
                     automatic = true,

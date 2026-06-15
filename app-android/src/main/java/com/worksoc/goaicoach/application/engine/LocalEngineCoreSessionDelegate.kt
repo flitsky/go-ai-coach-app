@@ -67,8 +67,9 @@ internal class LocalEngineCoreSessionDelegate(
         val turnProfile = playLevel.toEngineProfile(currentProfile, searchTimeSettings)
         coreApi.configure(turnProfile)
         coreApi.syncToGameState(currentState)
+        val aiMoveGateway = LocalAiMoveEngineGateway(coreApi)
         val outcome = applyAiTurn(
-            engineAdapter = coreApi,
+            engineAdapter = aiMoveGateway,
             currentState = currentState,
             aiPlayer = aiPlayer,
             playLevel = playLevel,

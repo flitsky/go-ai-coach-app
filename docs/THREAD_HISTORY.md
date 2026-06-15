@@ -1496,3 +1496,6 @@
 - 조정된 리팩토링 방향에 맞춰 startup orchestration 일부를 `EngineSessionClient.runEngineStartupApplication()` runner로 이동했다. `GoCoachApp.kt`는 startup operation request/workflow result 조립을 직접 하지 않고 display plan만 적용한다.
 - post-game position cache optimization prompt 갱신은 `refreshPositionAnalysisCacheOptimizationPrompt()`로 옮겼고, saved-session prompt loading도 `loadSavedSessionPromptPlan()`으로 감쌌다.
 - `LayeringContractTest`의 portable application 후보를 하드코딩 목록에서 application package 자동 스캔 기반으로 바꿨다. 이제 새 application 파일은 기본적으로 KMP/platform-free 후보가 되며, platform-bound 파일은 명시적 adapter 예외에 추가해야 한다.
+- 다음 리팩토링에서 Auto AI와 Top Moves의 자동 트리거 `LaunchedEffect`를 `runTurnAutomationTriggerEffect()`로 통합했다. undo quiet-window delay는 한 번만 계산하고, AI 요청 후 캡처된 보드 상태 기준 Top Moves 분석을 요청하도록 테스트로 고정했다.
+- `match` 정책의 AI 착수 선택 경계를 `AiMoveEngineGateway`로 축소했다. `MatchPolicy`는 더 이상 raw `EngineCoreApi` 전체를 직접 알지 않고, local engine 구현만 `LocalAiMoveEngineGateway`에서 raw core API를 감싼다.
+- 종국 처리도 `EndgameJudgeGateway`로 축소했다. `EndgameResolver`는 `deadStones`, `estimateScore`, `scoreFinal`, `configure`만 알고, local engine raw core 호출은 `LocalEndgameJudgeGateway`가 감싼다.

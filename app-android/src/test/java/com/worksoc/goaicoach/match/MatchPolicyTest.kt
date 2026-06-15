@@ -5,18 +5,12 @@ import com.worksoc.goaicoach.shared.AnalysisResult
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.CandidateMove
-import com.worksoc.goaicoach.shared.DeadStonesResult
-import com.worksoc.goaicoach.shared.EngineAdapter
-import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.EngineStatus
-import com.worksoc.goaicoach.shared.FinalScoreResult
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.MoveResult
 import com.worksoc.goaicoach.shared.PlayLevelGroup
 import com.worksoc.goaicoach.shared.PlayLevelSetting
-import com.worksoc.goaicoach.shared.Ruleset
-import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.StoneColor
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -160,7 +154,7 @@ class MatchPolicyTest {
     @Test
     fun applyAiTurnSelectsCandidateForRequestedAiColor() = runBlocking {
         val blackMove = Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine))
-        val adapter = FakeEngineAdapter(
+        val adapter = FakeAiMoveGateway(
             analysisCandidates = listOf(
                 CandidateMove(
                     move = Move.Play(StoneColor.White, BoardCoordinate.fromLabel("D4", BoardSize.Nine)),
@@ -190,7 +184,7 @@ class MatchPolicyTest {
         val humanMove = Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine))
         val stateAfterHuman = GameState.empty().play(humanMove)
         val aiMove = Move.Play(StoneColor.White, BoardCoordinate.fromLabel("D4", BoardSize.Nine))
-        val adapter = FakeEngineAdapter(
+        val adapter = FakeAiMoveGateway(
             analysisCandidates = listOf(
                 CandidateMove(
                     move = aiMove,
@@ -212,7 +206,7 @@ class MatchPolicyTest {
     @Test
     fun isolatedAiTurnClearsSearchCacheBeforeAnalysis() = runBlocking {
         val blackMove = Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine))
-        val adapter = FakeEngineAdapter(
+        val adapter = FakeAiMoveGateway(
             analysisCandidates = listOf(
                 CandidateMove(
                     move = blackMove,
@@ -238,7 +232,7 @@ class MatchPolicyTest {
         val humanMove = Move.Play(StoneColor.Black, BoardCoordinate(row = 4, column = 4))
         val stateAfterHuman = GameState.empty().play(humanMove)
         val pass = Move.Pass(StoneColor.White)
-        val adapter = FakeEngineAdapter(
+        val adapter = FakeAiMoveGateway(
             analysisCandidates = listOf(
                 CandidateMove(
                     move = pass,
@@ -269,7 +263,7 @@ class MatchPolicyTest {
         val humanMove = Move.Play(StoneColor.Black, BoardCoordinate(row = 4, column = 4))
         val stateAfterHuman = GameState.empty().play(humanMove)
         val bestPlay = Move.Play(StoneColor.White, BoardCoordinate(row = 0, column = 0))
-        val adapter = FakeEngineAdapter(
+        val adapter = FakeAiMoveGateway(
             analysisCandidates = listOf(
                 CandidateMove(
                     move = bestPlay,
@@ -300,7 +294,7 @@ class MatchPolicyTest {
         val stateAfterHuman = GameState.empty().play(humanMove)
         val engineFirst = Move.Play(StoneColor.White, BoardCoordinate.fromLabel("F5", BoardSize.Nine))
         val lowerPointLoss = Move.Play(StoneColor.White, BoardCoordinate.fromLabel("B3", BoardSize.Nine))
-        val adapter = FakeEngineAdapter(
+        val adapter = FakeAiMoveGateway(
             analysisCandidates = listOf(
                 CandidateMove(
                     move = engineFirst,
@@ -329,7 +323,7 @@ class MatchPolicyTest {
     @Test
     fun beginnerAiTurnUsesJsonAnalysisBudgetForLeveling() = runBlocking {
         val blackMove = Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine))
-        val adapter = FakeEngineAdapter(
+        val adapter = FakeAiMoveGateway(
             analysisCandidates = listOf(
                 CandidateMove(
                     move = blackMove,
@@ -357,7 +351,7 @@ class MatchPolicyTest {
     @Test
     fun intermediateAiTurnUsesJsonAnalysisBudgetWithoutTopMovesRefinement() = runBlocking {
         val blackMove = Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine))
-        val adapter = FakeEngineAdapter(
+        val adapter = FakeAiMoveGateway(
             analysisCandidates = listOf(
                 CandidateMove(
                     move = blackMove,
@@ -383,25 +377,13 @@ class MatchPolicyTest {
     }
 }
 
-private class FakeEngineAdapter(
+private class FakeAiMoveGateway(
     private val analysisCandidates: List<CandidateMove>,
-) : EngineAdapter {
+) : AiMoveEngineGateway {
     val playedMoves = mutableListOf<Move>()
     val analysisLimits = mutableListOf<AnalysisLimit>()
     var clearSearchCacheCount = 0
     var genMoveCalled = false
-
-    override suspend fun initialize(profile: EngineProfile): EngineStatus =
-        EngineStatus.ready("initialized")
-
-    override suspend fun configure(profile: EngineProfile): EngineStatus =
-        EngineStatus.ready("configured")
-
-    override suspend fun newGame(
-        boardSize: BoardSize,
-        ruleset: Ruleset,
-    ): EngineStatus =
-        EngineStatus.ready("new game")
 
     override suspend fun playMove(move: Move): EngineStatus {
         playedMoves += move
@@ -418,9 +400,6 @@ private class FakeEngineAdapter(
         )
     }
 
-    override suspend fun undoMove(): EngineStatus =
-        EngineStatus.ready("undone")
-
     override suspend fun clearSearchCache(): EngineStatus {
         clearSearchCacheCount += 1
         return EngineStatus.ready("cache cleared")
@@ -434,27 +413,4 @@ private class FakeEngineAdapter(
             summary = "fake analysis",
         )
     }
-
-    override suspend fun estimateScore(limit: AnalysisLimit): ScoreEstimate =
-        ScoreEstimate(
-            status = EngineStatus.ready("estimated"),
-            summary = "fake estimate",
-        )
-
-    override suspend fun deadStones(): DeadStonesResult =
-        DeadStonesResult(
-            status = EngineStatus.ready("dead stones"),
-            coordinates = emptyList(),
-            summary = "fake dead stones",
-        )
-
-    override suspend fun scoreFinal(): FinalScoreResult =
-        FinalScoreResult(
-            status = EngineStatus.ready("final"),
-            rawScore = "0",
-            summary = "fake final",
-        )
-
-    override suspend fun stop(): EngineStatus =
-        EngineStatus.stopped("stopped")
 }

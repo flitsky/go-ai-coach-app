@@ -113,8 +113,9 @@ internal suspend fun EngineCoreApi.runAutoAiTurn(
     val turnProfile = playLevel.toEngineProfile(currentProfile, searchTimeSettings)
     configure(turnProfile)
     syncToGameState(currentState)
+    val aiMoveGateway = LocalAiMoveEngineGateway(this)
     val outcome = applyAiTurn(
-        engineAdapter = this,
+        engineAdapter = aiMoveGateway,
         currentState = currentState,
         aiPlayer = aiPlayer,
         playLevel = playLevel,
@@ -148,7 +149,7 @@ internal suspend fun EngineCoreApi.syncAfterHumanMove(
         val finalScoreProfile = profile.withAssistantJudgeFinalScoreTimeCap()
         LocalEngineMoveResult(
             endgame = resolveAiEndgame(
-                engineAdapter = this,
+                judgeGateway = LocalEndgameJudgeGateway(this),
                 originalState = afterMove,
                 estimateLimit = scoreGraphAnalysisLimit(deadStonesProfile),
                 prePassCandidates = if (move is Move.Pass) {
@@ -187,7 +188,7 @@ internal suspend fun EngineCoreApi.resolveEndgameForState(
     val deadStonesProfile = profile.withAssistantJudgeDeadStonesTimeCap()
     val finalScoreProfile = profile.withAssistantJudgeFinalScoreTimeCap()
     return resolveAiEndgame(
-        engineAdapter = this,
+        judgeGateway = LocalEndgameJudgeGateway(this),
         originalState = state,
         estimateLimit = scoreGraphAnalysisLimit(deadStonesProfile),
         prePassCandidates = prePassCandidates,

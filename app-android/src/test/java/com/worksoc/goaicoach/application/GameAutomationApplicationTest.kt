@@ -267,6 +267,26 @@ class GameAutomationApplicationTest {
     }
 
     @Test
+    fun turnAutomationTriggerWaitsOnceAndRunsAiBeforeTopMovesForCapturedState() = runBlocking {
+        val delays = mutableListOf<Long>()
+        val calls = mutableListOf<String>()
+        val targetState = GameState.empty()
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+
+        runTurnAutomationTriggerEffect(
+            quietUntilMillis = 2_000L,
+            topMoveTargetState = targetState,
+            nowMillis = { 1_250L },
+            delayMillis = { millis -> delays += millis },
+            requestAiTurn = { calls += "request-ai" },
+            requestTopMoveAnalysis = { state -> calls += "top-moves:${state.moves.size}" },
+        )
+
+        assertEquals(listOf(750L), delays)
+        assertEquals(listOf("request-ai", "top-moves:1"), calls)
+    }
+
+    @Test
     fun controllerStateBuildsAutoAiTurnExecutionContext() {
         val whiteLevel = PlayLevelSetting(PlayLevelGroup.Beginner, level = 7)
         val setup = PlayerSetup(

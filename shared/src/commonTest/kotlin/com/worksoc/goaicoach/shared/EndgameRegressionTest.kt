@@ -41,6 +41,36 @@ class EndgameRegressionTest {
     }
 
     @Test
+    fun cleanupAfterPassPassPreservesFinishedMoveHistoryAndClearsKo() {
+        val deadWhite = point("D4")
+        val state = GameState.empty()
+            .copy(
+                stones = mapOf(
+                    deadWhite to StoneColor.White,
+                    point("C4") to StoneColor.Black,
+                ),
+                moves = listOf(
+                    Move.Pass(StoneColor.Black),
+                    Move.Pass(StoneColor.White),
+                ),
+                koPoint = point("A1"),
+                koForbiddenFor = StoneColor.Black,
+            )
+
+        val cleanup = DeadStoneCleaner.apply(
+            state = state,
+            deadStoneCoordinates = listOf(deadWhite),
+        )
+
+        assertTrue(cleanup.state.hasConsecutivePasses())
+        assertEquals(state.moves, cleanup.state.moves)
+        assertEquals(null, cleanup.state.koPoint)
+        assertEquals(null, cleanup.state.koForbiddenFor)
+        assertEquals(null, cleanup.state.stoneAt(deadWhite))
+        assertEquals(1, cleanup.state.capturedBy(StoneColor.Black))
+    }
+
+    @Test
     fun passBeforeCleanupUsesPrePassTopMoveWhenLocalFinalFlipsWinner() {
         val finalState = passBeforeCleanupDebugState()
             .play(Move.Pass(StoneColor.Black))

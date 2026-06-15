@@ -2,10 +2,11 @@ package com.worksoc.goaicoach.match
 
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.AnalysisResult
-import com.worksoc.goaicoach.shared.EngineCoreApi
 import com.worksoc.goaicoach.shared.EngineSearchMode
+import com.worksoc.goaicoach.shared.EngineStatus
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
+import com.worksoc.goaicoach.shared.MoveResult
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.StoneColor
@@ -246,8 +247,15 @@ internal data class TurnOutcome(
     val lastMoveText: String,
 )
 
+internal interface AiMoveEngineGateway {
+    suspend fun playMove(move: Move): EngineStatus
+    suspend fun genMove(player: StoneColor): MoveResult
+    suspend fun clearSearchCache(): EngineStatus
+    suspend fun analyze(limit: AnalysisLimit): AnalysisResult
+}
+
 internal suspend fun applyAiResponseAfterHumanTurn(
-    engineAdapter: EngineCoreApi,
+    engineAdapter: AiMoveEngineGateway,
     stateAfterHuman: GameState,
     humanMove: Move,
     playLevel: PlayLevelSetting,
@@ -304,7 +312,7 @@ internal suspend fun applyAiResponseAfterHumanTurn(
 }
 
 internal suspend fun applyAiTurn(
-    engineAdapter: EngineCoreApi,
+    engineAdapter: AiMoveEngineGateway,
     currentState: GameState,
     aiPlayer: StoneColor,
     playLevel: PlayLevelSetting,
@@ -406,7 +414,7 @@ internal fun modeSummary(
         MatchMode.LocalTwoPlayer -> "9x9 local two-player rules test"
     }
 
-private suspend fun EngineCoreApi.selectAiMoveFromAnalysis(
+private suspend fun AiMoveEngineGateway.selectAiMoveFromAnalysis(
     currentState: GameState,
     aiPlayer: StoneColor,
     playLevel: PlayLevelSetting,

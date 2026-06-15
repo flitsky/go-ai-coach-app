@@ -8,8 +8,8 @@ import com.worksoc.goaicoach.shared.DeadStoneCleaner
 import com.worksoc.goaicoach.shared.DeadStoneCleanupResult
 import com.worksoc.goaicoach.shared.DeadStoneDetector
 import com.worksoc.goaicoach.shared.DeadStonesResult
-import com.worksoc.goaicoach.shared.EngineCoreApi
 import com.worksoc.goaicoach.shared.EngineProfile
+import com.worksoc.goaicoach.shared.EngineStatus
 import com.worksoc.goaicoach.shared.EndgameScoreSelector
 import com.worksoc.goaicoach.shared.EndgameScoreSource
 import com.worksoc.goaicoach.shared.FinalScoreResult
@@ -17,6 +17,13 @@ import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.describe
+
+internal interface EndgameJudgeGateway {
+    suspend fun configure(profile: EngineProfile): EngineStatus
+    suspend fun deadStones(): DeadStonesResult
+    suspend fun estimateScore(limit: AnalysisLimit): ScoreEstimate
+    suspend fun scoreFinal(): FinalScoreResult
+}
 
 internal data class AiEndgameResolution(
     val cleanup: DeadStoneCleanupResult,
@@ -140,7 +147,7 @@ internal data class EndgameResolutionTimings(
 }
 
 internal suspend fun resolveAiEndgame(
-    engineAdapter: EngineCoreApi,
+    judgeGateway: EndgameJudgeGateway,
     originalState: GameState,
     estimateLimit: AnalysisLimit,
     prePassCandidates: List<CandidateMove> = emptyList(),
@@ -160,8 +167,8 @@ internal suspend fun resolveAiEndgame(
     var deadStonesResult: DeadStonesResult? = null
     var deadStonesError: String? = null
     val deadStonesStartMillis = System.currentTimeMillis()
-    assistantJudgeDeadStonesProfile?.let { profile -> engineAdapter.configure(profile) }
-    runCatching { engineAdapter.deadStones() }
+    assistantJudgeDeadStonesProfile?.let { profile -> judgeGateway.configure(profile) }
+    runCatching { judgeGateway.deadStones() }
         .onSuccess { deadStonesResult = it }
         .onFailure { deadStonesError = it.message ?: "Unknown error" }
     val deadStonesMs = System.currentTimeMillis() - deadStonesStartMillis
@@ -181,7 +188,7 @@ internal suspend fun resolveAiEndgame(
     var engineScoreEstimate: ScoreEstimate? = null
     var engineScoreEstimateError: String? = null
     val engineEstimateStartMillis = System.currentTimeMillis()
-    runCatching { engineAdapter.estimateScore(estimateLimit) }
+    runCatching { judgeGateway.estimateScore(estimateLimit) }
         .onSuccess { engineScoreEstimate = it }
         .onFailure { engineScoreEstimateError = it.message ?: "Unknown error" }
     val engineEstimateMs = System.currentTimeMillis() - engineEstimateStartMillis
@@ -200,8 +207,8 @@ internal suspend fun resolveAiEndgame(
     var engineFinalScoreSkippedReason: String? = null
     val finalScoreStartMillis = System.currentTimeMillis()
     if (runDiagnosticFinalScore) {
-        assistantJudgeFinalScoreProfile?.let { profile -> engineAdapter.configure(profile) }
-        runCatching { engineAdapter.scoreFinal() }
+        assistantJudgeFinalScoreProfile?.let { profile -> judgeGateway.configure(profile) }
+        runCatching { judgeGateway.scoreFinal() }
             .onSuccess { engineFinalScore = it }
             .onFailure { engineFinalScoreError = it.message ?: "Unknown error" }
     } else {

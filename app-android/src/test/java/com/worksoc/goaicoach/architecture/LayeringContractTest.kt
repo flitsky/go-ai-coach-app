@@ -61,6 +61,31 @@ class LayeringContractTest {
     }
 
     @Test
+    fun matchPoliciesDoNotImportRawEngineCoreApi() {
+        val matchRoot = repoRoot()
+            .resolve("app-android/src/main/java/com/worksoc/goaicoach/match")
+        val forbiddenImports = listOf(
+            "import com.worksoc.goaicoach.shared.EngineCoreApi",
+        )
+
+        val offenders = matchRoot
+            .walkTopDown()
+            .filter { file -> file.extension == "kt" }
+            .flatMap { file ->
+                file.readLines()
+                    .filter { line -> forbiddenImports.any { forbidden -> line.startsWith(forbidden) } }
+                    .map { line -> "${file.relativeTo(repoRoot()).path}: $line" }
+            }
+            .toList()
+
+        assertTrue(
+            "Match policies must depend on small middleware gateways, not raw EngineCoreApi:\n" +
+                offenders.joinToString("\n"),
+            offenders.isEmpty(),
+        )
+    }
+
+    @Test
     fun positionAnalysisGatewayContractStaysKmpReady() {
         val middlewareRoot = repoRoot()
             .resolve("app-android/src/main/java/com/worksoc/goaicoach/middleware")
