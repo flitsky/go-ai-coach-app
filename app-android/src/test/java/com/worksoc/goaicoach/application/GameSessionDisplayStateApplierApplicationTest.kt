@@ -31,11 +31,11 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-class GameSessionUiStateHolderApplicationTest {
+class GameSessionDisplayStateApplierApplicationTest {
     @Test
     fun holderAppliesScoreEstimateWithoutOwningPlatformState() {
         var core = baseCoreState()
-        val holder = GameSessionUiStateHolder(
+        val holder = GameSessionDisplayStateApplier(
             currentCoreState = { core },
             applyCoreState = { next -> core = next },
         )
@@ -66,7 +66,7 @@ class GameSessionUiStateHolderApplicationTest {
             .play(blackMove)
             .play(whiteMove)
         var core = baseCoreState(gameState = state)
-        val holder = GameSessionUiStateHolder(
+        val holder = GameSessionDisplayStateApplier(
             currentCoreState = { core },
             applyCoreState = { next -> core = next },
         )
@@ -107,7 +107,7 @@ class GameSessionUiStateHolderApplicationTest {
     fun holderAppliesAnalysisAndAiFailurePlans() {
         val state = GameState.empty()
         var core = baseCoreState(gameState = state)
-        val holder = GameSessionUiStateHolder(
+        val holder = GameSessionDisplayStateApplier(
             currentCoreState = { core },
             applyCoreState = { next -> core = next },
         )
@@ -142,7 +142,7 @@ class GameSessionUiStateHolderApplicationTest {
     fun holderAppliesEngineStartupDisplayPlan() {
         val state = GameState.empty()
         var core = baseCoreState(gameState = state)
-        val holder = GameSessionUiStateHolder(
+        val holder = GameSessionDisplayStateApplier(
             currentCoreState = { core },
             applyCoreState = { next -> core = next },
         )
@@ -165,7 +165,7 @@ class GameSessionUiStateHolderApplicationTest {
     @Test
     fun holderAppliesEngineBenchmarkDisplayPlan() {
         var core = baseCoreState()
-        val holder = GameSessionUiStateHolder(
+        val holder = GameSessionDisplayStateApplier(
             currentCoreState = { core },
             applyCoreState = { next -> core = next },
         )
@@ -185,7 +185,7 @@ class GameSessionUiStateHolderApplicationTest {
     fun holderAppliesHumanMoveLocalResult() {
         val move = Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine))
         var core = baseCoreState()
-        val holder = GameSessionUiStateHolder(
+        val holder = GameSessionDisplayStateApplier(
             currentCoreState = { core },
             applyCoreState = { next -> core = next },
         )

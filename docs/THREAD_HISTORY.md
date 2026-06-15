@@ -1573,3 +1573,7 @@
 - 무르기 요청/로컬 2인 무르기/엔진 backing 무르기 흐름을 `UndoRunnerApplication.kt`로 이동했다. `GoCoachApp.kt`는 이제 undo plan dispatch, local undo 후 post-undo sync 예약, engine undo operation 생성/완료/폐기 판단을 직접 소유하지 않고 application runner에 콜백을 넘긴다.
 - `UndoApplicationTest`에 runner 테스트를 추가했다. local two-player sync 예약, offline sync 취소, engine undo 성공 적용, 변경된 국면에 도착한 late completion 폐기 경로를 검증한다.
 - `LayeringContractTest`에 `goCoachAppDoesNotOwnUndoWorkflowBody()`를 추가했다. UI가 `buildUndoRequestPlan`, `buildLocalTwoPlayerUndoPlan`, `buildEngineUndoCompletionPlan`, `GameSessionEffect.UndoEngineMoves`, `EngineOperationKind.EngineUndo` 세부를 다시 소유하지 못하도록 회귀를 막는다.
+- 사용자가 다음 리팩토링 추천 항목을 단계별로 진행하고, 결과 보고 시 현재 리팩토링 완성도와 다음 추천 작업을 정리해달라고 요청했다.
+- `GoCoachApp.kt`가 `GameSessionStateHolder.state`를 `LaunchedEffect`에서 수집하도록 보강했다. 기존 수동 mirror는 유지해 같은 콜백 안의 read-after-write 동작을 보존하면서, 향후 외부 runner가 holder를 직접 갱신해도 Compose snapshot이 업데이트된다.
+- 기존 `GameSessionUiStateHolder`를 `GameSessionDisplayStateApplier`로 개명했다. 이 클래스는 state owner가 아니라 display/failure/result plan을 core session state에 적용하는 applier임을 이름으로 드러내도록 정리했다.
+- `LayeringContractTest`에 session holder 수집과 display applier naming 회귀 가드를 추가하고, forbidden-reference detector가 문자열 리터럴뿐 아니라 한 줄 block comment의 경로 언급도 실제 코드 참조로 오인하지 않도록 보강했다.

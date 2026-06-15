@@ -15,7 +15,7 @@ import com.worksoc.goaicoach.application.score.ScoreEstimateFailureDisplayPlan
 import com.worksoc.goaicoach.application.topmoves.TopMoveAnalysisFailureDisplayPlan
 import com.worksoc.goaicoach.application.undo.UndoLocalStatePlan
 
-internal class GameSessionUiStateHolder(
+internal class GameSessionDisplayStateApplier(
     private val currentCoreState: () -> GameSessionCoreState,
     private val applyCoreState: (GameSessionCoreState) -> Unit,
 ) {

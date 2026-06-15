@@ -317,6 +317,31 @@ class LayeringContractTest {
     }
 
     @Test
+    fun goCoachAppCollectsSessionStateHolderAndUsesDisplayApplierNaming() {
+        val goCoachApp = repoRoot()
+            .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
+        val text = goCoachApp.readText()
+        val forbiddenFragments = listOf(
+            "GameSessionUiStateHolder",
+            "uiStateHolder",
+        )
+            .filter { fragment -> fragment in text }
+        val requiredFragments = listOf(
+            "sessionHolder.state.collect",
+            "sessionSnapshot = snapshot",
+            "GameSessionDisplayStateApplier",
+            "displayStateApplier",
+        )
+            .filterNot { fragment -> fragment in text }
+
+        assertTrue(
+            "GoCoachApp should observe GameSessionStateHolder changes and reserve display-applier naming for display-plan application:\n" +
+                "forbidden:\n${forbiddenFragments.joinToString("\n")}\nmissing:\n${requiredFragments.joinToString("\n")}",
+            forbiddenFragments.isEmpty() && requiredFragments.isEmpty(),
+        )
+    }
+
+    @Test
     fun scoreRunnersUseEngineSessionClientContractOnly() {
         val scoreRoot = repoRoot()
             .resolve("app-android/src/main/java/com/worksoc/goaicoach/application/score")
@@ -550,9 +575,25 @@ class LayeringContractTest {
                     """.trimIndent(),
                 )
             }
+            // f) Negative: a single-line block comment mentions the path.
+            val blockCommentMention = File(tempDir, "BlockCommentMention.kt").apply {
+                writeText(
+                    """
+                    package sample
+                    fun build() = 1 /* com.worksoc.goaicoach.shared.EngineCoreApi */
+                    """.trimIndent(),
+                )
+            }
 
             val offenders = forbiddenReferenceOffenders(
-                files = listOf(wildcardOffender, inlineOffender, aliasedOffender, clean, stringMention),
+                files = listOf(
+                    wildcardOffender,
+                    inlineOffender,
+                    aliasedOffender,
+                    clean,
+                    stringMention,
+                    blockCommentMention,
+                ),
                 forbiddenImports = listOf("import com.worksoc.goaicoach.shared.EngineCoreApi"),
             )
 
@@ -575,6 +616,10 @@ class LayeringContractTest {
             assertTrue(
                 "A path inside a string literal must not be flagged:\n${offenders.joinToString("\n")}",
                 offenders.none { it.contains("StringMention.kt") },
+            )
+            assertTrue(
+                "A path inside a block comment must not be flagged:\n${offenders.joinToString("\n")}",
+                offenders.none { it.contains("BlockCommentMention.kt") },
             )
         } finally {
             tempDir.deleteRecursively()
@@ -662,16 +707,16 @@ class LayeringContractTest {
     }
 
     /**
-     * Blanks out string-literal contents and a trailing line comment so that
-     * forbidden-reference detection looks only at actual code. Multi-line raw
-     * strings spanning lines are out of scope (not used for path-like text in
-     * the checked layers); triple- and double-quoted single-line strings are
-     * handled.
+     * Blanks out string-literal and single-line block-comment contents, plus a
+     * trailing line comment, so forbidden-reference detection looks only at
+     * actual code. Multi-line raw strings/comments spanning lines are out of
+     * scope; triple- and double-quoted single-line strings are handled.
      */
     private fun stripStringsAndTrailingComment(line: String): String =
         line
             .replace(Regex("\"\"\".*?\"\"\""), "\"\"")
             .replace(Regex("\"(\\\\.|[^\"\\\\])*\""), "\"\"")
+            .replace(Regex("/\\*.*?\\*/"), "")
             .substringBefore("//")
 
     private fun repoRoot(): File {

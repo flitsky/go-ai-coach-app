@@ -123,11 +123,11 @@ private data class PendingPostUndoEngineSync(
 /**
  * Bridges a Compose `var` to an off-Compose owner.
  *
- * Reads come from [get] (a Compose-observed snapshot, so recomposition still
- * works); writes go through [set] (which updates the platform-independent
- * [GameSessionStateHolder] and re-syncs the snapshot synchronously, preserving
- * read-your-writes semantics within a single callback). This lets the session
- * state move out of the composable without rewriting any call site.
+ * Reads come from [get] (the current Compose mirror); writes go through [set]
+ * (which updates the platform-independent [GameSessionStateHolder] and re-syncs
+ * the mirror synchronously, preserving read-your-writes semantics within a
+ * single callback). This lets the session state move out of the composable
+ * without rewriting every call site at once.
  */
 private class HolderBackedState<T>(
     private val get: () -> T,
@@ -230,6 +230,12 @@ private fun GoCoachScreen(
         )
     }
     var sessionSnapshot by remember { mutableStateOf(sessionHolder.current) }
+
+    LaunchedEffect(sessionHolder) {
+        sessionHolder.state.collect { snapshot ->
+            sessionSnapshot = snapshot
+        }
+    }
 
     fun mutateSession(transform: (GameSessionControllerState) -> GameSessionControllerState) {
         sessionHolder.update(transform)
@@ -391,8 +397,8 @@ private fun GoCoachScreen(
         }
     }
 
-    val uiStateHolder = remember {
-        GameSessionUiStateHolder(
+    val displayStateApplier = remember {
+        GameSessionDisplayStateApplier(
             currentCoreState = ::currentCoreSessionState,
             applyCoreState = ::applyCoreSessionState,
         )
@@ -481,7 +487,7 @@ private fun GoCoachScreen(
 
     fun applyEngineStartupDisplayPlan(startup: EngineStartupDisplayPlan) {
         isEngineReady = startup.isEngineReady
-        uiStateHolder.applyEngineStartupDisplayPlan(startup)
+        displayStateApplier.applyEngineStartupDisplayPlan(startup)
     }
 
     fun applySavedSessionPromptPlan(prompt: SavedSessionPromptPlan) {
@@ -523,11 +529,11 @@ private fun GoCoachScreen(
                 lifecycleCallbacks = engineOperationLifecycleCallbacks(),
                 onBlocked = { message -> engineMessage = message },
                 onBenchmarkUiState = { state -> benchmarkUiState = state },
-                onDisplayPlan = { plan -> uiStateHolder.applyEngineBenchmarkDisplayPlan(plan) },
+                onDisplayPlan = { plan -> displayStateApplier.applyEngineBenchmarkDisplayPlan(plan) },
                 onProgress = { progress, displayPlan ->
                     launchUiEffect(scope) {
                         benchmarkUiState = benchmarkUiState.updateProgress(progress)
-                        uiStateHolder.applyEngineBenchmarkDisplayPlan(displayPlan)
+                        displayStateApplier.applyEngineBenchmarkDisplayPlan(displayPlan)
                     }
                     Unit
                 },
@@ -666,7 +672,7 @@ private fun GoCoachScreen(
     fun applyTopMoveAnalysisFailureDisplayPlan(
         failure: TopMoveAnalysisFailureDisplayPlan,
     ) {
-        uiStateHolder.applyTopMoveAnalysisFailureDisplayPlan(failure)
+        displayStateApplier.applyTopMoveAnalysisFailureDisplayPlan(failure)
     }
 
     fun applyTopMoveAnalysisCompletionApplyPlan(applyPlan: TopMoveAnalysisCompletionApplyPlan) {
@@ -690,7 +696,7 @@ private fun GoCoachScreen(
     }
 
     fun applyScoreEstimateDisplayPlan(score: ScoreEstimateDisplayPlan) {
-        uiStateHolder.applyScoreEstimateDisplayPlan(score)
+        displayStateApplier.applyScoreEstimateDisplayPlan(score)
     }
 
     fun applyScoreEstimateCompletionApplyPlan(applyPlan: ScoreEstimateCompletionApplyPlan) {
@@ -699,7 +705,7 @@ private fun GoCoachScreen(
                 applyScoreEstimateDisplayPlan(applyPlan.display)
 
             is ScoreEstimateCompletionApplyPlan.ApplyFailure ->
-                uiStateHolder.applyScoreEstimateFailureDisplayPlan(applyPlan.failure)
+                displayStateApplier.applyScoreEstimateFailureDisplayPlan(applyPlan.failure)
 
             is ScoreEstimateCompletionApplyPlan.Discard ->
                 appendEngineOperationDiscardLog(applyPlan.discard)
@@ -725,11 +731,11 @@ private fun GoCoachScreen(
         }
 
     fun applyFinalScoreDisplayPlan(final: FinalScoreDisplayPlan) {
-        uiStateHolder.applyFinalScoreDisplayPlan(final)
+        displayStateApplier.applyFinalScoreDisplayPlan(final)
     }
 
     fun applyEndgameFailureDisplayPlan(failure: EndgameFailureDisplayPlan) {
-        uiStateHolder.applyEndgameFailureDisplayPlan(failure)
+        displayStateApplier.applyEndgameFailureDisplayPlan(failure)
     }
 
     fun currentRuntimeSessionState(): GameSessionRuntimeState =
@@ -744,11 +750,11 @@ private fun GoCoachScreen(
     }
 
     fun applyAutoAiTurnDisplayPlan(display: AutoAiTurnDisplayPlan): AutoAiTurnFollowUpPlan {
-        return uiStateHolder.applyAutoAiTurnDisplayPlan(display)
+        return displayStateApplier.applyAutoAiTurnDisplayPlan(display)
     }
 
     fun applyAutoAiTurnFailureDisplayPlan(error: Throwable) {
-        uiStateHolder.applyAutoAiTurnFailureDisplayPlan(
+        displayStateApplier.applyAutoAiTurnFailureDisplayPlan(
             buildAutoAiTurnFailureDisplayPlan(error),
         )
     }
@@ -768,7 +774,7 @@ private fun GoCoachScreen(
     }
 
     fun applyHumanEngineSyncFailurePlan(failure: HumanEngineSyncFailurePlan) {
-        uiStateHolder.applyHumanEngineSyncFailurePlan(failure)
+        displayStateApplier.applyHumanEngineSyncFailurePlan(failure)
     }
 
     fun appendHumanEngineSyncRuntimeLog(
@@ -855,7 +861,7 @@ private fun GoCoachScreen(
     }
 
     fun applyUndoLocalStatePlan(undo: UndoLocalStatePlan) {
-        uiStateHolder.applyUndoLocalStatePlan(undo)
+        displayStateApplier.applyUndoLocalStatePlan(undo)
         turnTimeState = turnTimeState.restartCurrentTurn(
             state = undo.gameState,
             nowMillis = System.currentTimeMillis(),
@@ -1597,7 +1603,7 @@ private fun GoCoachScreen(
             ),
         )
         turnTimeState = turnTimeUpdate.after
-        uiStateHolder.applyHumanMoveLocalResult(localMove)
+        displayStateApplier.applyHumanMoveLocalResult(localMove)
 
         if (!isEngineReady) {
             val updatedSnapshots = ScoreTimeline.record(scoreState.scoreSnapshots, localMove.localScoreSnapshot)
