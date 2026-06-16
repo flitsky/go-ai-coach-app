@@ -20,8 +20,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import kotlin.properties.ReadWriteProperty
-import kotlin.reflect.KProperty
 import com.worksoc.goaicoach.application.analysis.AnalysisCacheKey
 import com.worksoc.goaicoach.application.analysis.AnalysisResultCache
 import com.worksoc.goaicoach.application.debugreport.DebugReportController
@@ -43,10 +41,7 @@ import com.worksoc.goaicoach.application.debugreport.DebugReportMirrorPort
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.humanmove.HumanMoveController
 import com.worksoc.goaicoach.application.debugreport.ClipboardPort
-import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationUiState
-import com.worksoc.goaicoach.application.engine.localScoreSnapshot
 import com.worksoc.goaicoach.application.savedgame.SavedGamePersistenceRunRequest
-import com.worksoc.goaicoach.application.savedgame.SavedSessionUiState
 import com.worksoc.goaicoach.application.savedgame.SavedSessionPromptRunRequest
 import com.worksoc.goaicoach.application.savedgame.runSavedGamePersistenceApplication
 import com.worksoc.goaicoach.application.savedgame.runSavedSessionPromptApplication
@@ -78,23 +73,6 @@ import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import kotlinx.coroutines.Job
 import java.io.File
-
-/**
- * Bridges a Compose `var` to an off-Compose owner.
- *
- * Reads come from [get] (the current Compose mirror); writes go through [set]
- * (which updates the platform-independent [GameSessionStateHolder] and re-syncs
- * the mirror synchronously, preserving read-your-writes semantics within a
- * single callback). This lets the session state move out of the composable
- * without rewriting every call site at once.
- */
-private class HolderBackedState<T>(
-    private val get: () -> T,
-    private val set: (T) -> Unit,
-) : ReadWriteProperty<Any?, T> {
-    override fun getValue(thisRef: Any?, property: KProperty<*>): T = get()
-    override fun setValue(thisRef: Any?, property: KProperty<*>, value: T) = set(value)
-}
 
 @Composable
 internal fun GoCoachApp(
@@ -155,36 +133,10 @@ private fun GoCoachScreen(
     // the holder, so existing call sites are unchanged.
     val sessionHolder = remember {
         GameSessionStateHolder(
-            buildGameSessionControllerState(
-                gameState = initialPlan.gameState,
-                isGameEnded = false,
-                analysisState = GameSessionAnalysisState.empty(
-                    state = initialPlan.gameState,
-                    candidateText = engineDiagnostic,
-                ),
-                scoreState = GameSessionScoreState.reset(
-                    scoreText = "No score estimate yet.",
-                    scoreSnapshots = listOf(localScoreSnapshot(initialPlan.gameState)),
-                    endgameLog = "No endgame result recorded.",
-                ),
-                runtimeState = GameSessionRuntimeState(
-                    playLevel = initialPlan.runtime.playLevel,
-                    engineProfile = initialPlan.runtime.engineProfile,
-                    analysisPreset = initialPlan.runtime.analysisPreset,
-                ),
-                moveReviewState = GameSessionMoveReviewState.reset(
-                    moveReviewText = "No move review yet.",
-                    lastMoveText = "None",
-                ),
-                engineMessage = "Engine not initialized.",
-                settings = initialPlan.toGameSessionSettingsState(),
-                benchmark = EngineBenchmarkUiState.initial(
-                    benchmarkText = benchmarkStore.loadText(),
-                    profile = benchmarkStore.load(),
-                ),
-                savedSession = SavedSessionUiState(),
-                autoAiTurn = AutoAiTurnUiState(),
-                positionCacheOptimization = PositionAnalysisCacheOptimizationUiState(),
+            buildInitialSessionState(
+                initialPlan = initialPlan,
+                engineDiagnostic = engineDiagnostic,
+                benchmarkStore = benchmarkStore,
             ),
         )
     }
@@ -287,10 +239,7 @@ private fun GoCoachScreen(
     val autoPlayDelaySetting = settingsState.autoPlayDelaySetting
     val searchTimeSettings = settingsState.searchTimeSettings
     val topMovesEnabled = settingsState.topMovesEnabled
-    val pendingSavedSession = savedSessionUiState.pendingSavedSession
     val shouldShowResumePrompt = savedSessionUiState.shouldShowResumePrompt
-    val hasCheckedSavedSession = savedSessionUiState.hasCheckedSavedSession
-    val isAutoAiTurnPending = autoAiTurnUiState.isPending
     var undoEngineInterventionQuietUntil by remember { mutableStateOf(0L) }
     var isPendingUndoSync by remember { mutableStateOf(false) }
     var cancelUndoSync: () -> Unit = {}
@@ -312,13 +261,7 @@ private fun GoCoachScreen(
     }
 
     fun applyCoreSessionState(core: GameSessionCoreState) {
-        gameState = core.gameState
-        isGameEnded = core.isGameEnded
-        analysisState = core.analysisState
-        scoreState = core.scoreState
-        runtimeState = core.runtimeState
-        moveReviewState = core.moveReviewState
-        engineMessage = core.engineMessage
+        mutateCore { core }
         if (!core.isGameEnded) {
             positionCacheOptimizationState = positionCacheOptimizationState.clearPrompt()
         }
@@ -818,10 +761,9 @@ private fun GoCoachScreen(
         )
     }
 
-    val controllerState = sessionSnapshot
     val screenState = GoCoachScreenStateAssembler.assemble(
         GoCoachScreenStateAssembler.Input(
-            controller = controllerState,
+            controller = sessionSnapshot,
             uxOptions = uxOptions,
             engineRuntime = GoCoachScreenStateAssembler.EngineRuntime(
                 name = engineName,
