@@ -1,14 +1,11 @@
 package com.worksoc.goaicoach.ui
-
 import com.worksoc.goaicoach.application.session.*
-
 import com.worksoc.goaicoach.application.autoai.*
 import com.worksoc.goaicoach.application.engine.*
 import com.worksoc.goaicoach.application.runtime.*
 import com.worksoc.goaicoach.application.score.*
 import com.worksoc.goaicoach.application.topmoves.*
 import com.worksoc.goaicoach.application.undo.*
-
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -27,10 +24,12 @@ import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 import com.worksoc.goaicoach.application.analysis.AnalysisCacheKey
 import com.worksoc.goaicoach.application.analysis.AnalysisResultCache
-import com.worksoc.goaicoach.application.debugreport.DebugReportCopyRunRequest
-import com.worksoc.goaicoach.application.debugreport.runDebugReportCopyApplication
+import com.worksoc.goaicoach.application.debugreport.DebugReportController
 import com.worksoc.goaicoach.application.preferences.buildInitialUserPreferencesPlan
 import com.worksoc.goaicoach.application.analysis.PositionCacheOptimizationController
+import com.worksoc.goaicoach.application.savedgame.SavedSessionController
+import com.worksoc.goaicoach.application.startgame.NewGameController
+import com.worksoc.goaicoach.application.undo.UndoController
 import com.worksoc.goaicoach.application.preferences.UserPreferencesAutosaveRequest
 import com.worksoc.goaicoach.application.preferences.runUserPreferencesAutosave
 import com.worksoc.goaicoach.application.engine.operation.EngineOperationGate
@@ -42,32 +41,15 @@ import com.worksoc.goaicoach.application.engine.EngineSessionClient
 import com.worksoc.goaicoach.shared.engine.EngineTimeoutPolicy
 import com.worksoc.goaicoach.application.debugreport.DebugReportMirrorPort
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
-import com.worksoc.goaicoach.application.humanmove.HumanEngineSyncCompletionApplyPlan
-import com.worksoc.goaicoach.application.humanmove.HumanEngineSyncDisplayPlan
-import com.worksoc.goaicoach.application.humanmove.HumanEngineSyncFailurePlan
-import com.worksoc.goaicoach.application.humanmove.HumanEngineSyncRunRequest
-import com.worksoc.goaicoach.application.humanmove.HumanEngineSyncRuntimeLogPlan
-import com.worksoc.goaicoach.application.humanmove.applyHumanMoveLocally
-import com.worksoc.goaicoach.application.humanmove.runHumanEngineSyncApplication
+import com.worksoc.goaicoach.application.humanmove.HumanMoveController
 import com.worksoc.goaicoach.application.debugreport.ClipboardPort
-
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationUiState
 import com.worksoc.goaicoach.application.engine.localScoreSnapshot
 import com.worksoc.goaicoach.application.savedgame.SavedGamePersistenceRunRequest
-import com.worksoc.goaicoach.application.savedgame.SavedGameRestorePlan
-import com.worksoc.goaicoach.application.savedgame.SavedGameRestoreRunRequest
-import com.worksoc.goaicoach.application.savedgame.SavedGameRestoreRunResult
 import com.worksoc.goaicoach.application.savedgame.SavedSessionUiState
 import com.worksoc.goaicoach.application.savedgame.SavedSessionPromptRunRequest
 import com.worksoc.goaicoach.application.savedgame.runSavedGamePersistenceApplication
-import com.worksoc.goaicoach.application.savedgame.runSavedGameRestoreApplication
 import com.worksoc.goaicoach.application.savedgame.runSavedSessionPromptApplication
-import com.worksoc.goaicoach.application.startgame.GameSessionResetPlan
-import com.worksoc.goaicoach.application.startgame.StartEngineBackedGameRunRequest
-import com.worksoc.goaicoach.application.startgame.StartConfiguredGamePlan
-import com.worksoc.goaicoach.application.startgame.buildNewLocalGameSessionPlan
-import com.worksoc.goaicoach.application.startgame.buildStartConfiguredGamePlan
-import com.worksoc.goaicoach.application.startgame.runStartEngineBackedGameApplication
 import com.worksoc.goaicoach.application.savedgame.SavedGameStorePort
 import com.worksoc.goaicoach.application.analysis.UndoAnalysisRestoreCache
 import com.worksoc.goaicoach.application.preferences.UserPreferencesStorePort
@@ -75,7 +57,6 @@ import com.worksoc.goaicoach.application.debugreport.UserNoticePort
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
-import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.persistence.GameSessionStore
 import com.worksoc.goaicoach.persistence.EngineBenchmarkStore
 import com.worksoc.goaicoach.persistence.DebugReportMirrorStore
@@ -93,21 +74,10 @@ import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.GameState
-import com.worksoc.goaicoach.shared.Move
-import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
 import com.worksoc.goaicoach.shared.PlayLevelSetting
-import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.SearchTimeSettings
-import com.worksoc.goaicoach.shared.ScoreTimeline
-import com.worksoc.goaicoach.shared.describe
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.Job
 import java.io.File
-
-private data class PendingPostUndoEngineSync(
-    val targetState: GameState,
-    val quietUntilMillis: Long,
-)
 
 /**
  * Bridges a Compose `var` to an off-Compose owner.
@@ -322,44 +292,16 @@ private fun GoCoachScreen(
     val hasCheckedSavedSession = savedSessionUiState.hasCheckedSavedSession
     val isAutoAiTurnPending = autoAiTurnUiState.isPending
     var undoEngineInterventionQuietUntil by remember { mutableStateOf(0L) }
-    var pendingPostUndoEngineSync by remember { mutableStateOf<PendingPostUndoEngineSync?>(null) }
-    var pendingPostUndoEngineSyncJob by remember { mutableStateOf<Job?>(null) }
-
-    fun markUndoEngineInterventionQuiet(): Long {
-        val quietUntil = undoEngineInterventionQuietUntilMillis(System.currentTimeMillis())
-        undoEngineInterventionQuietUntil = quietUntil
-        return quietUntil
-    }
-
-    fun cancelPendingPostUndoEngineSync() {
-        pendingPostUndoEngineSyncJob?.cancel()
-        pendingPostUndoEngineSyncJob = null
-        pendingPostUndoEngineSync = null
-    }
+    var isPendingUndoSync by remember { mutableStateOf(false) }
+    var cancelUndoSync: () -> Unit = {}
 
     fun clearUndoEngineInterventionQuietWindow() {
         undoEngineInterventionQuietUntil = 0L
-        cancelPendingPostUndoEngineSync()
+        cancelUndoSync()
     }
 
-    fun currentControllerSessionState(): GameSessionControllerState =
-        buildGameSessionControllerState(
-            gameState = gameState,
-            isGameEnded = isGameEnded,
-            analysisState = analysisState,
-            scoreState = scoreState,
-            runtimeState = runtimeState,
-            moveReviewState = moveReviewState,
-            engineMessage = engineMessage,
-            settings = settingsState,
-            benchmark = benchmarkUiState,
-            savedSession = savedSessionUiState,
-            autoAiTurn = autoAiTurnUiState,
-            positionCacheOptimization = positionCacheOptimizationState,
-        )
-
     fun currentRuntimeLogContext(): RuntimeLogContext {
-        return currentControllerSessionState().toRuntimeLogContext(
+        return sessionSnapshot.toRuntimeLogContext(
             engineName = engineName,
             engineDiagnostic = engineDiagnostic,
             isEngineReady = isEngineReady,
@@ -368,9 +310,6 @@ private fun GoCoachScreen(
             turnTimeText = turnTimeState.runtimeText(),
         )
     }
-
-    fun currentCoreSessionState(): GameSessionCoreState =
-        currentControllerSessionState().core
 
     fun applyCoreSessionState(core: GameSessionCoreState) {
         gameState = core.gameState
@@ -383,13 +322,6 @@ private fun GoCoachScreen(
         if (!core.isGameEnded) {
             positionCacheOptimizationState = positionCacheOptimizationState.clearPrompt()
         }
-    }
-
-    val displayStateApplier = remember {
-        GameSessionDisplayStateApplier(
-            currentCoreState = ::currentCoreSessionState,
-            applyCoreState = ::applyCoreSessionState,
-        )
     }
 
     // Remembered: the controller owns the single shared engine-operation
@@ -413,45 +345,32 @@ private fun GoCoachScreen(
             label = "${profile.difficulty.label}:${profile.analysisLimit.visits}v",
         )
 
-    fun engineOperationLifecycleCallbacks(): EngineOperationLifecycleCallbacks =
-        lifecycleController.callbacks()
-
-    fun launchTrackedEngineOperation(
-        operation: EngineOperationRequest,
-        block: suspend () -> Unit,
-    ): Job = lifecycleController.launchTracked(operation, block)
-
-    suspend fun runTrackedEngineOperation(
-        operation: EngineOperationRequest,
-        block: suspend () -> Unit,
-    ) = lifecycleController.runTracked(operation, block)
-
-    fun appendEngineOperationDiscardLog(discard: EngineOperationResultGuard.Discard) =
-        lifecycleController.appendDiscardLog(discard)
+    val displayStateApplier = remember {
+        GameSessionDisplayStateApplier(
+            currentCoreState = { sessionSnapshot.core },
+            applyCoreState = ::applyCoreSessionState,
+            appendEngineOperationDiscardLog = lifecycleController::appendDiscardLog,
+        )
+    }
 
     LaunchedEffect(Unit) {
         runtimeEventLog.append(runtimeAppStartLog(currentRuntimeLogContext()))
     }
 
-    fun applyEngineStartupDisplayPlan(startup: EngineStartupDisplayPlan) {
-        isEngineReady = startup.isEngineReady
-        displayStateApplier.applyEngineStartupDisplayPlan(startup)
-    }
-
     LaunchedEffect(engineClient) {
         hasCompletedEngineStartup = false
-        applyEngineStartupDisplayPlan(
-            engineClient.runEngineStartupApplication(
-                EngineStartupRunRequest(
-                    state = gameState,
-                    profile = runtimeState.engineProfile,
-                    sessionGeneration = runtimeState.sessionGeneration,
-                    engineDiagnostic = engineDiagnostic,
-                    diagnosticEventLog = diagnosticEventLog,
-                    lifecycleCallbacks = engineOperationLifecycleCallbacks(),
-                ),
+        val startup = engineClient.runEngineStartupApplication(
+            EngineStartupRunRequest(
+                state = gameState,
+                profile = runtimeState.engineProfile,
+                sessionGeneration = runtimeState.sessionGeneration,
+                engineDiagnostic = engineDiagnostic,
+                diagnosticEventLog = diagnosticEventLog,
+                lifecycleCallbacks = lifecycleController.callbacks(),
             ),
         )
+        isEngineReady = startup.isEngineReady
+        displayStateApplier.applyEngineStartupDisplayPlan(startup)
         hasCompletedEngineStartup = true
     }
 
@@ -471,7 +390,7 @@ private fun GoCoachScreen(
         engineClient = engineClient,
         store = benchmarkStore,
         diagnosticEventLog = diagnosticEventLog,
-        lifecycleCallbacks = ::engineOperationLifecycleCallbacks,
+        lifecycleCallbacks = { lifecycleController.callbacks() },
         currentState = { gameState },
         sessionGeneration = { runtimeState.sessionGeneration },
         isEngineReady = { isEngineReady },
@@ -540,699 +459,205 @@ private fun GoCoachScreen(
         )
     }
 
-    fun currentAnalysisSessionState(): GameSessionAnalysisState = analysisState
+    val topMovesController = TopMovesController(
+        engineClient = engineClient,
+        currentControllerState = { sessionSnapshot },
+        isGameEnded = { isGameEnded },
+        isEngineReady = { isEngineReady },
+        isEngineBusy = { isEngineBusy },
+        shouldShowResumePrompt = { shouldShowResumePrompt },
+        currentPlayerSetup = { playerSetup },
+        pendingPostUndoEngineSync = { isPendingUndoSync },
+        analysisCacheEnabled = { analysisCache.isEnabled },
+        cachedResultFor = { key -> undoAnalysisRestoreCache.get(key) ?: analysisCache.get(key) },
+        currentGameState = { gameState },
+        currentAnalysisKey = { analysisState.lastAnalysisKey },
+        currentSessionGeneration = { runtimeState.sessionGeneration },
+        launchEngineOperation = { operation, block -> lifecycleController.launchTracked(operation) { block() } },
+        applyLaunchUpdate = { launchUpdate ->
+            analysisState = launchUpdate.analysisState
+            launchUpdate.engineMessage?.let { message -> engineMessage = message }
+        },
+        applyTopMoveAnalysisUpdate = { update, analysisKey ->
+            analysisState = analysisState.applyTopMoveAnalysisUpdate(update, analysisKey)
+            engineMessage = update.engineMessage
+        },
+        putUndoRestoreCache = { key, cached -> undoAnalysisRestoreCache.put(key, cached) },
+        putAnalysisCache = { key, cached -> analysisCache.put(key, cached) },
+        applyFailureDisplay = displayStateApplier::applyTopMoveAnalysisFailureDisplayPlan,
+        appendEngineOperationDiscardLog = lifecycleController::appendDiscardLog,
+        applyShowTopMovesStateUpdate = { update ->
+            settingsState = update.settingsState
+            analysisState = update.analysisState
+            update.engineMessage?.let { message -> engineMessage = message }
+        },
+    )
 
-    fun applyAnalysisSessionState(analysis: GameSessionAnalysisState) {
-        analysisState = analysis
-    }
-
-    fun resetAnalysisSessionState(
-        candidateText: String,
-        reviewAnalysis: MoveAnalysisSnapshot,
-    ) {
-        applyAnalysisSessionState(
-            GameSessionAnalysisState.reset(
-                candidateText = candidateText,
-                reviewAnalysis = reviewAnalysis,
-            ),
-        )
-    }
-
-    fun clearReviewAnalysis(state: GameState = gameState) {
-        applyAnalysisSessionState(
-            currentAnalysisSessionState()
-                .clearReviewAnalysis(state)
-                .copy(lastAnalysisKey = null),
-        )
-    }
-
-    fun applyTopMoveAnalysisUpdate(
-        update: TopMoveAnalysisUpdate,
-        analysisKey: AnalysisCacheKey,
-    ) {
-        applyAnalysisSessionState(currentAnalysisSessionState().applyTopMoveAnalysisUpdate(update, analysisKey))
-        engineMessage = update.engineMessage
-    }
-
-    fun applyScoreSyncCompletionApplyPlan(applyPlan: ScoreSyncCompletionApplyPlan): GameState? =
-        when (applyPlan) {
-            is ScoreSyncCompletionApplyPlan.ApplySuccess -> {
-                displayStateApplier.applyScoreEstimateDisplayPlan(applyPlan.display)
-                applyPlan.followUpAnalysisState
-            }
-
-            is ScoreSyncCompletionApplyPlan.ApplyFailure -> {
-                engineMessage = applyPlan.engineMessage
-                applyPlan.followUpAnalysisState
-            }
-
-            is ScoreSyncCompletionApplyPlan.Discard -> {
-                appendEngineOperationDiscardLog(applyPlan.discard)
-                null
-            }
-        }
-
-    fun currentRuntimeSessionState(): GameSessionRuntimeState =
-        runtimeState
-
-    fun applyRuntimeSessionState(runtime: GameSessionRuntimeState) {
-        runtimeState = runtime
-    }
-
-    fun applyRuntimePlayLevelSelection(selection: RuntimePlayLevelSelection) {
-        applyRuntimeSessionState(currentRuntimeSessionState().applySelection(selection))
-    }
-
-    fun applyAutoAiTurnFailureDisplayPlan(error: Throwable) {
-        displayStateApplier.applyAutoAiTurnFailureDisplayPlan(
-            buildAutoAiTurnFailureDisplayPlan(error),
-        )
-    }
-
-    fun applyHumanEngineSyncDisplayPlan(sync: HumanEngineSyncDisplayPlan): GameState? =
-        when (sync) {
-            is HumanEngineSyncDisplayPlan.FinalScore -> {
-                displayStateApplier.applyFinalScoreDisplayPlan(sync.display)
-                null
-            }
-            is HumanEngineSyncDisplayPlan.ScoreEstimate -> {
-                displayStateApplier.applyScoreEstimateDisplayPlan(sync.display)
-                analysisState = analysisState.copy(candidateText = sync.candidateText)
-                sync.nextAnalysisState
-            }
-            HumanEngineSyncDisplayPlan.NoUpdate -> null
-    }
-
-    fun appendHumanEngineSyncRuntimeLog(
-        logPlan: HumanEngineSyncRuntimeLogPlan,
-        elapsedMs: Long,
-    ) {
-        when (logPlan) {
-            is HumanEngineSyncRuntimeLogPlan.Success ->
-                runtimeEventLog.append(
-                    runtimeHumanEngineSyncSuccessLog(
-                        context = currentRuntimeLogContext(),
-                        sync = logPlan.display,
-                        elapsedMs = elapsedMs,
-                    ),
+    val undoController = remember {
+        UndoController(
+            scope = scope,
+            engineClient = engineClient,
+            diagnosticEventLog = diagnosticEventLog,
+            currentGameState = { gameState },
+            currentScoreSnapshots = { scoreState.scoreSnapshots },
+            currentMoveReviews = { moveReviewState.moveReviews },
+            currentMatchMode = { matchMode },
+            currentPlayerSetup = { playerSetup },
+            currentSessionGeneration = { runtimeState.sessionGeneration },
+            currentEngineProfile = { runtimeState.engineProfile },
+            timeoutPolicy = ::engineProfileTimeoutPolicy,
+            isEngineReady = { isEngineReady },
+            isEngineBusy = { isEngineBusy },
+            onEngineMessage = { message -> engineMessage = message },
+            onQuietUntil = { quietUntil -> undoEngineInterventionQuietUntil = quietUntil },
+            onPendingSyncChanged = { pending -> isPendingUndoSync = pending },
+            launchEngineOperation = { operation, block -> lifecycleController.launchTracked(operation) { block() } },
+            runEngineOperation = { operation, block -> lifecycleController.runTracked(operation) { block() } },
+            applyUndo = { undo ->
+                displayStateApplier.applyUndoLocalStatePlan(undo)
+                turnTimeState = turnTimeState.restartCurrentTurn(
+                    state = undo.gameState,
+                    nowMillis = System.currentTimeMillis(),
                 )
-
-            is HumanEngineSyncRuntimeLogPlan.Failure ->
-                runtimeEventLog.append(
-                    runtimeHumanEngineSyncFailureLog(
-                        context = currentRuntimeLogContext(),
-                        failure = logPlan.failure,
-                        elapsedMs = elapsedMs,
-                    ),
-                )
-
-            HumanEngineSyncRuntimeLogPlan.None -> Unit
-        }
-    }
-
-    fun applyHumanEngineSyncCompletionApplyPlan(
-        applyPlan: HumanEngineSyncCompletionApplyPlan,
-        elapsedMs: Long,
-    ): GameState? {
-        appendHumanEngineSyncRuntimeLog(
-            logPlan = applyPlan.runtimeLogPlan,
-            elapsedMs = elapsedMs,
-        )
-        return when (applyPlan) {
-            is HumanEngineSyncCompletionApplyPlan.ApplySuccess ->
-                applyHumanEngineSyncDisplayPlan(applyPlan.display)
-
-            is HumanEngineSyncCompletionApplyPlan.ApplyFailure -> {
-                displayStateApplier.applyHumanEngineSyncFailurePlan(applyPlan.failure)
-                null
-            }
-
-            is HumanEngineSyncCompletionApplyPlan.Discard -> {
-                appendEngineOperationDiscardLog(applyPlan.discard)
-                null
-            }
-        }
-    }
-
-    fun applyGameSessionResetPlan(reset: GameSessionResetPlan) {
-        clearUndoEngineInterventionQuietWindow()
-        undoAnalysisRestoreCache.clear()
-        positionCacheOptimizationState = positionCacheOptimizationState.clearPrompt()
-        applyCoreSessionState(currentCoreSessionState().applyGameSessionResetPlan(reset))
-        turnTimeState = GameSessionTurnTimeState.reset(
-            state = reset.gameState,
-            nowMillis = System.currentTimeMillis(),
-        )
-        runtimeEventLog.append(
-            runtimeGameResetLog(
-                context = currentRuntimeLogContext(),
-                reset = reset,
-            ),
+            },
+            applyScoreSyncCompletion = displayStateApplier::applyScoreSyncCompletion,
+            requestFollowUpAnalysis = { state -> topMovesController.requestAnalysis(state, automatic = true) },
+            appendDiscardLog = lifecycleController::appendDiscardLog,
         )
     }
 
-    fun applySavedGameRestorePlan(restore: SavedGameRestorePlan) {
-        clearUndoEngineInterventionQuietWindow()
-        undoAnalysisRestoreCache.clear()
-        positionCacheOptimizationState = positionCacheOptimizationState.clearPrompt()
-        settingsState = settingsState.applySavedGameRestore(
-            restoredSetup = restore.playerSetup,
-            restoredTopMovesEnabled = restore.topMovesEnabled,
-        )
-        applyCoreSessionState(currentCoreSessionState().applySavedGameRestorePlan(restore))
-        turnTimeState = GameSessionTurnTimeState.reset(
-            state = restore.gameState,
-            nowMillis = System.currentTimeMillis(),
-        )
-    }
+    cancelUndoSync = undoController::cancelPendingSync
 
-    fun applyUndoLocalStatePlan(undo: UndoLocalStatePlan) {
-        displayStateApplier.applyUndoLocalStatePlan(undo)
-        turnTimeState = turnTimeState.restartCurrentTurn(
-            state = undo.gameState,
-            nowMillis = System.currentTimeMillis(),
-        )
-    }
+    val autoAiTurnController = AutoAiTurnController(
+        scope = scope,
+        engineClient = engineClient,
+        diagnosticEventLog = diagnosticEventLog,
+        runtimeEventLog = runtimeEventLog,
+        currentControllerState = { sessionSnapshot },
+        currentRuntimeState = { runtimeState },
+        currentSearchTimeSettings = { searchTimeSettings },
+        currentScoreSnapshots = { scoreState.scoreSnapshots },
+        isEngineReady = { isEngineReady },
+        isEngineBusy = { isEngineBusy },
+        isGameEnded = { isGameEnded },
+        shouldShowResumePrompt = { shouldShowResumePrompt },
+        currentRuntimeLogContext = ::currentRuntimeLogContext,
+        currentGameState = { gameState },
+        currentSessionGeneration = { runtimeState.sessionGeneration },
+        markEngineOperationStarted = lifecycleController::markStarted,
+        markEngineOperationCompleted = lifecycleController::markCompleted,
+        applyAutoAiTurnScheduled = { schedule -> autoAiTurnUiState = autoAiTurnUiState.applyAutoAiTurnRequestPlan(schedule) },
+        applyAutoAiTurnCancelled = { cancel -> autoAiTurnUiState = autoAiTurnUiState.applyAutoAiTurnScheduleValidationPlan(cancel) },
+        recordTurnMove = { player, nowMillis, nextPlayer -> turnTimeState.recordMove(player = player, nowMillis = nowMillis, nextPlayer = nextPlayer) },
+        applyTurnTimeUpdate = { update -> turnTimeState = update.after },
+        applyTurnDisplay = displayStateApplier::applyAutoAiTurnDisplayPlan,
+        applyTurnFailureDisplay = { error -> displayStateApplier.applyAutoAiTurnFailureDisplayPlan(buildAutoAiTurnFailureDisplayPlan(error)) },
+        completeAutoAiTurnRun = { autoAiTurnUiState = autoAiTurnUiState.completeAutoAiTurnRun() },
+        appendEngineOperationDiscardLog = lifecycleController::appendDiscardLog,
+        requestFollowUpAnalysis = { followUp -> topMovesController.requestAnalysis(followUp.targetState, automatic = followUp.automatic, deep = followUp.deep) },
+        markGameEnded = { isGameEnded = true },
+        applyFinalScoreDisplayPlan = displayStateApplier::applyFinalScoreDisplayPlan,
+        applyEndgameFailureDisplayPlan = displayStateApplier::applyEndgameFailureDisplayPlan,
+    )
 
-    // applyScoringRuleChangePlan is now internal to ScoringRuleController.
-    // changePlayerSetup, changeSearchTimeSettings, changeScoringRule, changeAutoPlayDelay
-    // are delegated to their respective controllers below.
+    val humanMoveController = HumanMoveController(
+        engineClient = engineClient,
+        diagnosticEventLog = diagnosticEventLog,
+        runtimeEventLog = runtimeEventLog,
+        currentGameState = { gameState },
+        currentPlayerSetup = { playerSetup },
+        currentAnalysisState = { analysisState },
+        currentMoveReviewState = { moveReviewState },
+        currentScoreSnapshots = { scoreState.scoreSnapshots },
+        currentScoreState = { scoreState },
+        currentSessionGeneration = { runtimeState.sessionGeneration },
+        currentEngineProfile = { runtimeState.engineProfile },
+        currentRuntimeLogContext = ::currentRuntimeLogContext,
+        isEngineReady = { isEngineReady },
+        isEngineBusy = { isEngineBusy },
+        onEngineMessage = { message -> engineMessage = message },
+        clearUndoEngineInterventionQuietWindow = ::clearUndoEngineInterventionQuietWindow,
+        recordTurnMove = { player, nowMillis, nextPlayer -> turnTimeState.recordMove(player = player, nowMillis = nowMillis, nextPlayer = nextPlayer) },
+        applyTurnTimeUpdate = { update -> turnTimeState = update.after },
+        applyHumanMoveLocalResult = displayStateApplier::applyHumanMoveLocalResult,
+        replaceScoreState = { state -> scoreState = state },
+        setAnalysisCandidateText = { text -> analysisState = analysisState.copy(candidateText = text) },
+        applyFinalScoreDisplayPlan = displayStateApplier::applyFinalScoreDisplayPlan,
+        applyScoreEstimateDisplayPlan = displayStateApplier::applyScoreEstimateDisplayPlan,
+        applyHumanEngineSyncFailurePlan = displayStateApplier::applyHumanEngineSyncFailurePlan,
+        appendEngineOperationDiscardLog = lifecycleController::appendDiscardLog,
+        timeoutPolicy = ::engineProfileTimeoutPolicy,
+        launchEngineOperation = { operation, block -> lifecycleController.launchTracked(operation) { block() } },
+        requestFollowUpAnalysis = { state -> topMovesController.requestAnalysis(state, automatic = true) },
+    )
 
-    fun requestTopMoveAnalysisForState(
-        targetState: GameState,
-        automatic: Boolean,
-        deep: Boolean = false,
-    ) {
-        runTopMoveAnalysisApplication(
-            TopMoveAnalysisRunRequest(
-                engineClient = engineClient,
-                controllerState = currentControllerSessionState(),
-                targetState = targetState,
-                deep = deep,
-                automatic = automatic,
-                pendingPostUndoEngineSync = pendingPostUndoEngineSync != null,
-                isGameEnded = isGameEnded,
-                isEngineReady = isEngineReady,
-                isEngineBusy = isEngineBusy,
-                shouldShowResumePrompt = shouldShowResumePrompt,
-                playerSetup = playerSetup,
-                analysisCacheEnabled = analysisCache.isEnabled,
-                cachedResultFor = { key ->
-                    undoAnalysisRestoreCache.get(key) ?: analysisCache.get(key)
-                },
-                currentState = { gameState },
-                currentAnalysisKey = { analysisState.lastAnalysisKey },
-                currentSessionGeneration = { runtimeState.sessionGeneration },
-                launchEngineOperation = { operation, block ->
-                    launchTrackedEngineOperation(operation) {
-                        block()
-                    }
-                },
-                applyLaunchUpdate = { launchUpdate ->
-                    analysisState = launchUpdate.analysisState
-                    launchUpdate.engineMessage?.let { message -> engineMessage = message }
-                },
-                applyTopMoveAnalysisUpdate = ::applyTopMoveAnalysisUpdate,
-                putUndoRestoreCache = { key, cached ->
-                    undoAnalysisRestoreCache.put(key, cached)
-                },
-                putAnalysisCache = { key, cached ->
-                    analysisCache.put(key, cached)
-                },
-                applyFailureDisplay = displayStateApplier::applyTopMoveAnalysisFailureDisplayPlan,
-                appendEngineOperationDiscardLog = ::appendEngineOperationDiscardLog,
-            ),
-        )
-    }
-
-    fun schedulePostUndoLocalEngineSync(
-        targetState: GameState,
-        quietUntilMillis: Long,
-    ) {
-        val pending = PendingPostUndoEngineSync(
-            targetState = targetState,
-            quietUntilMillis = quietUntilMillis,
-        )
-        pendingPostUndoEngineSync = pending
-        pendingPostUndoEngineSyncJob?.cancel()
-        pendingPostUndoEngineSyncJob = launchUiEffect(scope) {
-            val delayMillis = undoEngineInterventionRemainingDelayMillis(
+    val newGameController = NewGameController(
+        engineClient = engineClient,
+        diagnosticEventLog = diagnosticEventLog,
+        runtimeEventLog = runtimeEventLog,
+        defaultPlayLevel = defaultPlayLevel,
+        isEngineReady = { isEngineReady },
+        isEngineBusy = { isEngineBusy },
+        currentGameState = { gameState },
+        currentPlayerSetup = { playerSetup },
+        currentEngineProfile = { runtimeState.engineProfile },
+        currentSearchTimeSettings = { searchTimeSettings },
+        currentSessionGeneration = { runtimeState.sessionGeneration },
+        currentScoreState = { scoreState },
+        currentRuntimeLogContext = ::currentRuntimeLogContext,
+        launchEngineOperation = { operation, block -> lifecycleController.launchTracked(operation) { block() } },
+        applyGameSessionResetPlan = { reset ->
+            clearUndoEngineInterventionQuietWindow()
+            undoAnalysisRestoreCache.clear()
+            positionCacheOptimizationState = positionCacheOptimizationState.clearPrompt()
+            applyCoreSessionState(sessionSnapshot.core.applyGameSessionResetPlan(reset))
+            turnTimeState = GameSessionTurnTimeState.reset(
+                state = reset.gameState,
                 nowMillis = System.currentTimeMillis(),
-                quietUntilMillis = pending.quietUntilMillis,
             )
-            if (delayMillis > 0L) {
-                delay(delayMillis)
-            }
-            while (pendingPostUndoEngineSync == pending && gameState == pending.targetState && isEngineBusy) {
-                delay(100L)
-            }
-            if (
-                pendingPostUndoEngineSync != pending ||
-                gameState != pending.targetState ||
-                !isEngineReady
-            ) {
-                if (pendingPostUndoEngineSync == pending) {
-                    pendingPostUndoEngineSync = null
-                }
-                return@launchUiEffect
-            }
-
-            runPostUndoScoreSyncApplication(
-                PostUndoScoreSyncRunRequest(
-                    engineClient = engineClient,
-                    state = pending.targetState,
-                    profile = runtimeState.engineProfile,
-                    previousSnapshots = scoreState.scoreSnapshots,
-                    sessionGeneration = runtimeState.sessionGeneration,
-                    timeoutPolicy = engineProfileTimeoutPolicy(runtimeState.engineProfile),
-                    diagnosticEventLog = diagnosticEventLog,
-                    currentState = { gameState },
-                    currentSessionGeneration = { runtimeState.sessionGeneration },
-                    runEngineOperation = { operation, block ->
-                        runTrackedEngineOperation(operation) {
-                            block()
-                        }
-                    },
-                    applyCompletion = ::applyScoreSyncCompletionApplyPlan,
-                    requestFollowUpAnalysis = { state ->
-                        requestTopMoveAnalysisForState(
-                            targetState = state,
-                            automatic = true,
-                        )
-                    },
+            runtimeEventLog.append(
+                runtimeGameResetLog(
+                    context = currentRuntimeLogContext(),
+                    reset = reset,
                 ),
             )
-            if (pendingPostUndoEngineSync == pending) {
-                pendingPostUndoEngineSync = null
-            }
-        }
-    }
+        },
+        applyRuntimePlayLevelSelection = { selection -> runtimeState = runtimeState.applySelection(selection) },
+        replaceScoreState = { state -> scoreState = state },
+        requestFollowUpAnalysis = { state -> topMovesController.requestAnalysis(state, automatic = true) },
+        onEngineMessage = { message -> engineMessage = message },
+    )
 
-    fun applyShowTopMovesStateUpdate(update: ShowTopMovesStateUpdate) {
-        settingsState = update.settingsState
-        analysisState = update.analysisState
-        update.engineMessage?.let { message -> engineMessage = message }
-    }
-
-    fun showTopMovesForCurrentState() {
-        runShowTopMovesApplication(
-            ShowTopMovesRunRequest(
-                controllerState = currentControllerSessionState(),
-                isGameEnded = isGameEnded,
-                isEngineReady = isEngineReady,
-                isEngineBusy = isEngineBusy,
-                shouldShowResumePrompt = shouldShowResumePrompt,
-                playerSetup = playerSetup,
-                applyUpdate = ::applyShowTopMovesStateUpdate,
-                requestAnalysis = { analysisRequest ->
-                    requestTopMoveAnalysisForState(
-                        targetState = analysisRequest.targetState,
-                        automatic = false,
-                        deep = analysisRequest.deep,
-                    )
-                },
-            ),
-        )
-    }
-
-    fun hideTopMoves() {
-        runHideTopMovesApplication(
-            HideTopMovesRunRequest(
-                controllerState = currentControllerSessionState(),
-                applyUpdate = ::applyShowTopMovesStateUpdate,
-            ),
-        )
-    }
-
-
-
-    fun resetLocalGame(
-        message: String,
-        ruleset: Ruleset = gameState.ruleset,
-    ) {
-        applyGameSessionResetPlan(buildNewLocalGameSessionPlan(message, ruleset))
-    }
-
-    fun restoreSavedSession(snapshot: SavedGameSnapshot) {
-        val result = runSavedGameRestoreApplication(
-            SavedGameRestoreRunRequest(
-                snapshot = snapshot,
-                currentProfile = runtimeState.engineProfile,
-                defaultPlayLevel = defaultPlayLevel,
-                isEngineBusy = isEngineBusy,
-                isEngineReady = isEngineReady,
-                searchTimeSettings = searchTimeSettings,
-                showMessage = { message -> engineMessage = message },
-                applyRestore = ::applySavedGameRestorePlan,
-            ),
-        )
-        if (result !is SavedGameRestoreRunResult.Restored || !result.syncEngineAfterRestore) {
-            return
-        }
-
-        runRestoredGameSyncApplication(
-            RestoredGameSyncRunRequest(
-                engineClient = engineClient,
-                state = result.gameState,
-                profile = result.engineProfile,
-                sessionGeneration = runtimeState.sessionGeneration + 1L,
-                timeoutPolicy = engineProfileTimeoutPolicy(result.engineProfile),
-                diagnosticEventLog = diagnosticEventLog,
-                currentState = { gameState },
-                currentSessionGeneration = { runtimeState.sessionGeneration },
-                runEngineOperation = { operation, block ->
-                    launchTrackedEngineOperation(operation) {
-                        block()
-                    }
-                },
-                applyCompletion = ::applyScoreSyncCompletionApplyPlan,
-                requestFollowUpAnalysis = { state ->
-                    requestTopMoveAnalysisForState(
-                        targetState = state,
-                        automatic = true,
-                    )
-                },
-            ),
-        )
-    }
-
-    fun startEngineBackedNewGame(plan: StartConfiguredGamePlan.StartEngineGame) {
-        runStartEngineBackedGameApplication(
-            StartEngineBackedGameRunRequest(
-                plan = plan,
-                engineClient = engineClient,
-                currentState = gameState,
-                sessionGeneration = runtimeState.sessionGeneration,
-                runtimeContextProvider = ::currentRuntimeLogContext,
-                runtimeEventLog = runtimeEventLog,
-                diagnosticEventLog = diagnosticEventLog,
-                applyRuntime = ::applyRuntimePlayLevelSelection,
-                launchEngineOperation = { operation, block ->
-                    launchTrackedEngineOperation(operation) {
-                        block()
-                    }
-                },
-                resetLocalGame = ::resetLocalGame,
-                currentScoreStateProvider = { scoreState },
-                replaceScoreState = { state -> scoreState = state },
-                currentStateProvider = { gameState },
-                requestFollowUpAnalysis = { state ->
-                    requestTopMoveAnalysisForState(
-                        targetState = state,
-                        automatic = true,
-                    )
-                },
-            ),
-        )
-    }
-
-    fun startConfiguredGame() {
-        val targetRuleset = gameState.ruleset
-        val targetSetup = playerSetup
-        when (
-            val plan = buildStartConfiguredGamePlan(
-                setup = targetSetup,
-                ruleset = targetRuleset,
-                nextPlayer = gameState.nextPlayer,
-                isEngineReady = isEngineReady,
-                isEngineBusy = isEngineBusy,
-                currentProfile = runtimeState.engineProfile,
-                defaultPlayLevel = defaultPlayLevel,
-                searchTimeSettings = searchTimeSettings,
+    val savedSessionController = SavedSessionController(
+        engineClient = engineClient,
+        diagnosticEventLog = diagnosticEventLog,
+        defaultPlayLevel = defaultPlayLevel,
+        isEngineBusy = { isEngineBusy },
+        isEngineReady = { isEngineReady },
+        currentSearchTimeSettings = { searchTimeSettings },
+        currentEngineProfile = { runtimeState.engineProfile },
+        currentSessionGeneration = { runtimeState.sessionGeneration },
+        timeoutPolicy = ::engineProfileTimeoutPolicy,
+        currentGameState = { gameState },
+        onEngineMessage = { message -> engineMessage = message },
+        applySavedGameRestorePlan = { restore ->
+            clearUndoEngineInterventionQuietWindow()
+            undoAnalysisRestoreCache.clear()
+            positionCacheOptimizationState = positionCacheOptimizationState.clearPrompt()
+            settingsState = settingsState.applySavedGameRestore(
+                restoredSetup = restore.playerSetup,
+                restoredTopMovesEnabled = restore.topMovesEnabled,
             )
-        ) {
-            is StartConfiguredGamePlan.ShowMessage -> {
-                engineMessage = plan.message
-                return
-            }
-            is StartConfiguredGamePlan.ResetLocalGame -> {
-                resetLocalGame(plan.message, plan.ruleset)
-                return
-            }
-            is StartConfiguredGamePlan.StartEngineGame -> {
-                startEngineBackedNewGame(plan)
-            }
-        }
-    }
-
-
-
-    suspend fun applyAutoAiEndgamePlan(endgamePlan: AutoAiTurnEndgamePlan.Resolve) {
-        runAutoAiEndgameApplication(
-            AutoAiEndgameRunRequest(
-                endgamePlan = endgamePlan,
-                engineClient = engineClient,
-                previousSnapshotsProvider = { scoreState.scoreSnapshots },
-                currentStateProvider = { gameState },
-                currentSessionGenerationProvider = { runtimeState.sessionGeneration },
-                runtimeContextProvider = ::currentRuntimeLogContext,
-                runtimeEventLog = runtimeEventLog,
-                diagnosticEventLog = diagnosticEventLog,
-                markGameEnded = { isGameEnded = true },
-                applyResolvedDisplay = displayStateApplier::applyFinalScoreDisplayPlan,
-                applyFailureDisplay = displayStateApplier::applyEndgameFailureDisplayPlan,
-                appendEngineOperationDiscardLog = ::appendEngineOperationDiscardLog,
-            ),
-        )
-    }
-
-    // REFACTORING BOUNDARY: This function delegates entirely to runScheduledAutoAiTurnApplication()
-    // via callback injection. All engine I/O, session generation checking, stale result guard,
-    // and completion apply logic live in the application layer. Further extraction into a
-    // controller is deferred until androidTest smoke coverage is added for AI turn flows.
-    fun requestAiTurnForCurrentState() {
-        when (
-            val request = currentControllerSessionState().toAutoAiTurnRequestPlan(
-                isEngineReady = isEngineReady,
-                isEngineBusy = isEngineBusy,
+            applyCoreSessionState(sessionSnapshot.core.applySavedGameRestorePlan(restore))
+            turnTimeState = GameSessionTurnTimeState.reset(
+                state = restore.gameState,
+                nowMillis = System.currentTimeMillis(),
             )
-        ) {
-            AutoAiTurnRequestPlan.Skip -> return
-            is AutoAiTurnRequestPlan.Schedule -> {
-                runScheduledAutoAiTurnApplication(
-                    AutoAiScheduledTurnRunRequest(
-                        schedule = request,
-                        controllerStateProvider = ::currentControllerSessionState,
-                        engineClient = engineClient,
-                        runtimeStateProvider = { runtimeState },
-                        searchTimeSettingsProvider = { searchTimeSettings },
-                        scoreSnapshotsProvider = { scoreState.scoreSnapshots },
-                        isEngineReady = { isEngineReady },
-                        isEngineBusy = { isEngineBusy },
-                        isGameEnded = { isGameEnded },
-                        shouldShowResumePrompt = { shouldShowResumePrompt },
-                        runtimeContextProvider = ::currentRuntimeLogContext,
-                        runtimeEventLog = runtimeEventLog,
-                        diagnosticEventLog = diagnosticEventLog,
-                        delayMillis = { millis -> delay(millis) },
-                        launchAutoAiEffect = { block ->
-                            launchAutoAiEffect(scope) {
-                                block()
-                            }
-                        },
-                        applyScheduled = { schedule ->
-                            autoAiTurnUiState = autoAiTurnUiState.applyAutoAiTurnRequestPlan(schedule)
-                        },
-                        applyCancelled = { cancel ->
-                            autoAiTurnUiState = autoAiTurnUiState.applyAutoAiTurnScheduleValidationPlan(cancel)
-                        },
-                        markEngineOperationStarted = lifecycleController::markStarted,
-                        markEngineOperationCompleted = lifecycleController::markCompleted,
-                        recordTurnMove = { player, nowMillis, nextPlayer ->
-                            turnTimeState.recordMove(
-                                player = player,
-                                nowMillis = nowMillis,
-                                nextPlayer = nextPlayer,
-                            )
-                        },
-                        applyTurnTimeUpdate = { update ->
-                            turnTimeState = update.after
-                        },
-                        applyTurnDisplay = displayStateApplier::applyAutoAiTurnDisplayPlan,
-                        resolveEndgame = ::applyAutoAiEndgamePlan,
-                        applyTurnFailureDisplay = ::applyAutoAiTurnFailureDisplayPlan,
-                        appendEngineOperationDiscardLog = ::appendEngineOperationDiscardLog,
-                        completeAutoAiTurnRun = {
-                            autoAiTurnUiState = autoAiTurnUiState.completeAutoAiTurnRun()
-                        },
-                        requestFollowUpAnalysis = { followUp ->
-                            requestTopMoveAnalysisForState(
-                                targetState = followUp.targetState,
-                                automatic = followUp.automatic,
-                                deep = followUp.deep,
-                            )
-                        },
-                        currentStateProvider = { gameState },
-                        currentSessionGenerationProvider = { runtimeState.sessionGeneration },
-                    ),
-                )
-            }
-        }
-    }
-
-    // REFACTORING BOUNDARY: This function delegates entirely to runHumanEngineSyncApplication()
-    // via callback injection. Local move validation, turn time recording, and engine sync
-    // completion apply logic are handled in the application layer. Further extraction into a
-    // controller is deferred until androidTest smoke coverage is added for human move flows.
-    fun submitHumanMove(move: Move) {
-        if (playerSetup.sideFor(gameState.nextPlayer).controller != SeatController.Human) {
-            engineMessage = "It is not a human player's turn."
-            return
-        }
-        if (move.player != gameState.nextPlayer) {
-            engineMessage = "Move player does not match the current turn."
-            return
-        }
-        if (isEngineBusy) {
-            engineMessage = "Engine is busy. Wait for the current analysis."
-            return
-        }
-        clearUndoEngineInterventionQuietWindow()
-
-        val beforeMove = gameState
-        val previousReviewCandidates = analysisState.reviewCandidateMoves
-        val localMove = applyHumanMoveLocally(
-            beforeMove = beforeMove,
-            move = move,
-            reviewAnalysis = analysisState.reviewAnalysis,
-            previousMoveReviews = moveReviewState.moveReviews,
-        )
-            .onFailure { error ->
-                engineMessage = error.message ?: "Illegal move."
-            }
-            .getOrNull()
-            ?: return
-        val afterMove = localMove.afterMove
-        val turnTimeUpdate = turnTimeState.recordMove(
-            player = move.player,
-            nowMillis = System.currentTimeMillis(),
-            nextPlayer = afterMove.nextPlayer,
-        )
-
-        runtimeEventLog.append(
-            runtimeHumanMoveAcceptedLog(
-                context = currentRuntimeLogContext(),
-                beforeMove = beforeMove,
-                localMove = localMove,
-                turnTimeUpdate = turnTimeUpdate,
-            ),
-        )
-        turnTimeState = turnTimeUpdate.after
-        displayStateApplier.applyHumanMoveLocalResult(localMove)
-
-        if (!isEngineReady) {
-            val updatedSnapshots = ScoreTimeline.record(scoreState.scoreSnapshots, localMove.localScoreSnapshot)
-            scoreState = scoreState.replaceSnapshots(updatedSnapshots)
-            val localFinalScore = localMove.localFinalScore
-            if (localFinalScore != null) {
-                val final = buildLocalFinalScoreDisplayPlan(
-                    source = "local-human-consecutive-pass",
-                    state = afterMove,
-                    finalScore = localFinalScore,
-                    previousSnapshots = updatedSnapshots,
-                    detail = "triggerMove=${move.describe(beforeMove.boardSize)}",
-                    engineMessage = "Local game ended after two passes. ${localFinalScore.status.message}",
-                    candidateText = "Game ended after two passes.",
-                )
-                displayStateApplier.applyFinalScoreDisplayPlan(final)
-            } else {
-                analysisState = analysisState.copy(candidateText = localMove.capturedText)
-                engineMessage = "Local move accepted without engine sync: ${move.describe(beforeMove.boardSize)}."
-            }
-            return
-        }
-
-        runHumanEngineSyncApplication(
-            HumanEngineSyncRunRequest(
-                engineClient = engineClient,
-                afterMove = afterMove,
-                profile = runtimeState.engineProfile,
-                move = move,
-                previousReviewCandidates = previousReviewCandidates,
-                localMove = localMove,
-                previousSnapshots = scoreState.scoreSnapshots,
-                moveDescription = move.describe(beforeMove.boardSize),
-                sessionGeneration = runtimeState.sessionGeneration,
-                timeoutPolicy = engineProfileTimeoutPolicy(runtimeState.engineProfile),
-                diagnosticEventLog = diagnosticEventLog,
-                currentState = { gameState },
-                currentSessionGeneration = { runtimeState.sessionGeneration },
-                launchEngineOperation = { operation, block ->
-                    launchTrackedEngineOperation(operation) {
-                        block()
-                    }
-                },
-                applyCompletion = ::applyHumanEngineSyncCompletionApplyPlan,
-                requestFollowUpAnalysis = { state ->
-                    requestTopMoveAnalysisForState(
-                        targetState = state,
-                        automatic = true,
-                    )
-                },
-            ),
-        )
-    }
-
-    fun undoLocalTwoPlayerTurn(plan: UndoRequestPlan.LocalTwoPlayerUndo) {
-        runLocalTwoPlayerUndoApplication(
-            LocalTwoPlayerUndoRunRequest(
-                plan = plan,
-                currentState = gameState,
-                scoreSnapshots = scoreState.scoreSnapshots,
-                applyUndo = ::applyUndoLocalStatePlan,
-                markQuiet = ::markUndoEngineInterventionQuiet,
-                setEngineMessage = { message -> engineMessage = message },
-                cancelPendingPostUndoSync = ::cancelPendingPostUndoEngineSync,
-                schedulePostUndoSync = { targetState, quietUntilMillis ->
-                    schedulePostUndoLocalEngineSync(
-                        targetState = targetState,
-                        quietUntilMillis = quietUntilMillis,
-                    )
-                },
-            ),
-        )
-    }
-
-    fun undoEngineBackedTurn(plan: UndoRequestPlan.EngineUndo) {
-        runEngineUndoApplication(
-            EngineUndoRunRequest(
-                engineClient = engineClient,
-                plan = plan,
-                currentState = gameState,
-                sessionGeneration = runtimeState.sessionGeneration,
-                previousMoveReviews = moveReviewState.moveReviews,
-                scoreSnapshots = scoreState.scoreSnapshots,
-                diagnosticEventLog = diagnosticEventLog,
-                launchEngineOperation = { operation, block ->
-                    launchTrackedEngineOperation(operation) {
-                        block()
-                    }
-                },
-                currentStateProvider = { gameState },
-                currentSessionGenerationProvider = { runtimeState.sessionGeneration },
-                applyUndo = ::applyUndoLocalStatePlan,
-                setEngineMessage = { message -> engineMessage = message },
-                markQuiet = ::markUndoEngineInterventionQuiet,
-                cancelPendingPostUndoSync = ::cancelPendingPostUndoEngineSync,
-                appendDiscardLog = ::appendEngineOperationDiscardLog,
-            ),
-        )
-    }
-
-    fun undoLastTurn() {
-        runUndoLastTurnApplication(
-            UndoLastTurnRunRequest(
-                currentState = gameState,
-                matchMode = matchMode,
-                isEngineReady = isEngineReady,
-                isEngineBusy = isEngineBusy,
-                humanSeatCount = playerSetup.humanSeatCount(),
-                showMessage = { message -> engineMessage = message },
-                runLocalTwoPlayerUndo = ::undoLocalTwoPlayerTurn,
-                runEngineUndo = ::undoEngineBackedTurn,
-            ),
-        )
-    }
+        },
+        launchEngineOperation = { operation, block -> lifecycleController.launchTracked(operation) { block() } },
+        applyScoreSyncCompletion = displayStateApplier::applyScoreSyncCompletion,
+        requestFollowUpAnalysis = { state -> topMovesController.requestAnalysis(state, automatic = true) },
+    )
 
     val cacheOptController = PositionCacheOptimizationController(
         engineClient = engineClient,
@@ -1246,7 +671,7 @@ private fun GoCoachScreen(
         onUiState = { state -> positionCacheOptimizationState = state },
         onEngineMessage = { message -> engineMessage = message },
         onAnalysisCandidateText = { message -> analysisState = analysisState.copy(candidateText = message) },
-        launchEngineOperation = { operation, block -> launchTrackedEngineOperation(operation) { block() } },
+        launchEngineOperation = { operation, block -> lifecycleController.launchTracked(operation) { block() } },
     )
 
     val scoreEstimateController = ScoreEstimateController(
@@ -1259,11 +684,11 @@ private fun GoCoachScreen(
         currentMatchMode = { matchMode },
         currentEngineProfile = { runtimeState.engineProfile },
         currentSessionGeneration = { runtimeState.sessionGeneration },
-        launchEngineOperation = { operation, block -> launchTrackedEngineOperation(operation) { block() } },
+        launchEngineOperation = { operation, block -> lifecycleController.launchTracked(operation) { block() } },
         onEngineMessage = { message -> engineMessage = message },
         onScoreEstimateDisplayPlan = displayStateApplier::applyScoreEstimateDisplayPlan,
         onScoreEstimateFailureDisplayPlan = displayStateApplier::applyScoreEstimateFailureDisplayPlan,
-        appendDiscardLog = ::appendEngineOperationDiscardLog,
+        appendDiscardLog = lifecycleController::appendDiscardLog,
     )
 
     val scoringRuleController = ScoringRuleController(
@@ -1279,14 +704,12 @@ private fun GoCoachScreen(
         timeoutPolicy = ::engineProfileTimeoutPolicy,
         onEngineMessage = { message -> engineMessage = message },
         applyScoringRuleChangePlan = { ruleChange ->
-            applyCoreSessionState(currentCoreSessionState().applyScoringRuleChangePlan(ruleChange))
+            applyCoreSessionState(sessionSnapshot.core.applyScoringRuleChangePlan(ruleChange))
         },
-        applyScoreSyncCompletionApplyPlan = ::applyScoreSyncCompletionApplyPlan,
-        requestFollowUpAnalysis = { state ->
-            requestTopMoveAnalysisForState(targetState = state, automatic = true)
-        },
-        launchEngineOperation = { operation, block -> launchTrackedEngineOperation(operation) { block() } },
-        appendDiscardLog = ::appendEngineOperationDiscardLog,
+        applyScoreSyncCompletionApplyPlan = displayStateApplier::applyScoreSyncCompletion,
+        requestFollowUpAnalysis = { state -> topMovesController.requestAnalysis(state, automatic = true) },
+        launchEngineOperation = { operation, block -> lifecycleController.launchTracked(operation) { block() } },
+        appendDiscardLog = lifecycleController::appendDiscardLog,
     )
 
     val settingsController = GameSettingsController(
@@ -1294,7 +717,7 @@ private fun GoCoachScreen(
         currentPlayerSetup = { playerSetup },
         currentEngineProfile = { runtimeState.engineProfile },
         currentSearchTimeSettings = { searchTimeSettings },
-        currentAnalysisState = ::currentAnalysisSessionState,
+        currentAnalysisState = { analysisState },
         currentAutoPlayDelaySetting = { autoPlayDelaySetting },
         defaultPlayLevel = defaultPlayLevel,
         isEngineBusy = { isEngineBusy },
@@ -1303,38 +726,30 @@ private fun GoCoachScreen(
         onEngineMessage = { message -> engineMessage = message },
         applyPlayerSetup = { setup -> settingsState = settingsState.applyPlayerSetup(setup) },
         applyCoreSessionState = ::applyCoreSessionState,
-        currentCoreSessionState = ::currentCoreSessionState,
-        applyRuntimePlayLevelSelection = ::applyRuntimePlayLevelSelection,
-        applyAnalysisState = ::applyAnalysisSessionState,
+        currentCoreSessionState = { sessionSnapshot.core },
+        applyRuntimePlayLevelSelection = { selection -> runtimeState = runtimeState.applySelection(selection) },
+        applyAnalysisState = { analysis -> analysisState = analysis },
         applySettingsAutoPlayDelay = { setting -> settingsState = settingsState.applyAutoPlayDelay(setting) },
-        clearUndoEngineInterventionQuietWindow = ::clearUndoEngineInterventionQuietWindow,
+        applySettingsSearchTimeSettings = { settings -> settingsState = settingsState.applySearchTimeSettings(settings) },
+        clearUndoEngineInterventionQuietWindow = undoController::clearQuietWindow,
     )
-
-    fun copyDebugReport() {
-        runDebugReportCopyApplication(
-            DebugReportCopyRunRequest(
-                controllerState = currentControllerSessionState(),
-                engineName = engineName,
-                engineDiagnostic = engineDiagnostic,
-                analysisCacheStatsText = {
-                    "${analysisCache.statsText()}, ${undoAnalysisRestoreCache.statsText()}"
-                },
-                positionAnalysisCacheStatsText = { nowMillis ->
-                    engineClient.positionAnalysisCacheStatsText(nowMillis)
-                },
-                isEngineReady = isEngineReady,
-                isEngineBusy = isEngineBusy,
-                turnTimeText = { turnTimeState.summaryText() },
-                turnTimeDebugText = { nowMillis -> turnTimeState.debugText(nowMillis) },
-                runtimeEventLog = runtimeEventLog,
-                diagnosticEventLog = diagnosticEventLog,
-                clipboard = clipboardPort,
-                mirror = debugReportMirror,
-                userNotice = userNoticePort,
-                applyEngineMessage = { message -> engineMessage = message },
-            ),
-        )
-    }
+    val debugReportController = DebugReportController(
+        engineName = engineName,
+        engineDiagnostic = engineDiagnostic,
+        runtimeEventLog = runtimeEventLog,
+        diagnosticEventLog = diagnosticEventLog,
+        clipboard = clipboardPort,
+        mirror = debugReportMirror,
+        userNotice = userNoticePort,
+        currentControllerState = { sessionSnapshot },
+        isEngineReady = { isEngineReady },
+        isEngineBusy = { isEngineBusy },
+        analysisCacheStatsText = { "${analysisCache.statsText()}, ${undoAnalysisRestoreCache.statsText()}" },
+        positionAnalysisCacheStatsText = engineClient::positionAnalysisCacheStatsText,
+        turnTimeText = { turnTimeState.summaryText() },
+        turnTimeDebugText = { nowMillis -> turnTimeState.debugText(nowMillis) },
+        onEngineMessage = { message -> engineMessage = message },
+    )
 
     fun dispatch(event: GameUiEvent) {
         dispatchGameUiEvent(
@@ -1342,24 +757,23 @@ private fun GoCoachScreen(
             handlers = buildGameUiEventHandlers(
                 currentPlayer = { gameState.nextPlayer },
                 isTopMovesEnabled = { topMovesEnabled },
-                startConfiguredGame = ::startConfiguredGame,
-                copyDebugReport = ::copyDebugReport,
+                startConfiguredGame = newGameController::startConfiguredGame,
+                copyDebugReport = debugReportController::copy,
                 showEngineBenchmark = benchmarkController::showResult,
                 requestScoreEstimate = scoreEstimateController::request,
-                showTopMoves = ::showTopMovesForCurrentState,
-                hideTopMoves = ::hideTopMoves,
-                undoLastTurn = ::undoLastTurn,
-                submitMove = ::submitHumanMove,
-                dismissResumePrompt = {
-                    sessionStore.clear()
-                    savedSessionUiState = savedSessionUiState.dismiss()
+                toggleEvalWithGradient = {
+                    val nextVal = !uxOptions.showOwnershipOverlay
+                    uxOptions = uxOptions.copy(showOwnershipOverlay = nextVal)
+                    if (nextVal) scoreEstimateController.request()
                 },
+                showTopMoves = topMovesController::showForCurrentState,
+                hideTopMoves = topMovesController::hide,
+                undoLastTurn = undoController::undoLastTurn,
+                submitMove = humanMoveController::submitMove,
+                dismissResumePrompt = { sessionStore.clear(); savedSessionUiState = savedSessionUiState.dismiss() },
                 acceptCacheOptimizationPrompt = cacheOptController::accept,
                 dismissCacheOptimizationPrompt = cacheOptController::dismiss,
-                restoreSavedSession = { snapshot ->
-                    savedSessionUiState = savedSessionUiState.dismiss()
-                    restoreSavedSession(snapshot)
-                },
+                restoreSavedSession = { snap -> savedSessionUiState = savedSessionUiState.dismiss(); savedSessionController.restore(snap) },
                 changePlayerSetup = settingsController::changePlayerSetup,
                 changeAutoPlayDelay = settingsController::changeAutoPlayDelay,
                 changeSearchTimeSettings = settingsController::changeSearchTimeSettings,
@@ -1383,13 +797,8 @@ private fun GoCoachScreen(
         runTurnAutomationTriggerEffect(
             quietUntilMillis = undoEngineInterventionQuietUntil,
             topMoveTargetState = gameState,
-            requestAiTurn = ::requestAiTurnForCurrentState,
-            requestTopMoveAnalysis = { targetState ->
-                requestTopMoveAnalysisForState(
-                    targetState = targetState,
-                    automatic = true,
-                )
-            },
+            requestAiTurn = autoAiTurnController::requestAiTurn,
+            requestTopMoveAnalysis = { targetState -> topMovesController.requestAnalysis(targetState, automatic = true) },
         )
     }
 
@@ -1409,7 +818,7 @@ private fun GoCoachScreen(
         )
     }
 
-    val controllerState = currentControllerSessionState()
+    val controllerState = sessionSnapshot
     val screenState = GoCoachScreenStateAssembler.assemble(
         GoCoachScreenStateAssembler.Input(
             controller = controllerState,

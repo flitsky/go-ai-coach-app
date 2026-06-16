@@ -184,13 +184,23 @@ class LayeringContractTest {
             "Top Moves hidden. Background move review keeps using fast best-1 analysis.",
             "clearTopMoveSpots(",
             "Search time changed. Analysis cache will rebuild with the new time cap.",
+            "runTopMoveAnalysisApplication(",
+            "TopMoveAnalysisRunRequest(",
+            "runShowTopMovesApplication(",
+            "ShowTopMovesRunRequest(",
+            "runHideTopMovesApplication(",
+            "HideTopMovesRunRequest(",
         )
             .filter { fragment -> fragment in text }
+        val requiredFragments = listOf(
+            "TopMovesController(",
+        )
+            .filterNot { fragment -> fragment in text }
 
         assertTrue(
-            "GoCoachApp should request Top Moves through runTopMoveAnalysisApplication, not own launch/token/effect details:\n" +
-                forbiddenFragments.joinToString("\n"),
-            forbiddenFragments.isEmpty(),
+            "GoCoachApp should delegate Top Moves to TopMovesController, not own launch/token/effect/runner details:\n" +
+                "forbidden:\n${forbiddenFragments.joinToString("\n")}\nmissing:\n${requiredFragments.joinToString("\n")}",
+            forbiddenFragments.isEmpty() && requiredFragments.isEmpty(),
         )
     }
 
@@ -309,19 +319,37 @@ class LayeringContractTest {
             "loadSavedSessionPromptPlan(",
             "buildSavedGameRestoreRequestPlan(",
             "runSavedGamePersistence(",
+            "runSavedGameRestoreApplication(",
         )
             .filter { fragment -> fragment in text }
         val requiredFragments = listOf(
             "runSavedSessionPromptApplication(",
             "runSavedGamePersistenceApplication(",
-            "runSavedGameRestoreApplication(",
+            "savedSessionController.restore(",
         )
             .filterNot { fragment -> fragment in text }
 
         assertTrue(
-            "GoCoachApp should run saved-game prompt/persistence/restore through application runners, not own saved-game request-plan details:\n" +
+            "GoCoachApp should run saved-game prompt/persistence through application runners and restore through SavedSessionController:\n" +
                 "forbidden:\n${forbiddenFragments.joinToString("\n")}\nmissing:\n${requiredFragments.joinToString("\n")}",
             forbiddenFragments.isEmpty() && requiredFragments.isEmpty(),
+        )
+    }
+
+    @Test
+    fun savedSessionControllerDelegatesToApplicationRunners() {
+        val controller = repoRoot()
+            .resolve("app-android/src/main/java/com/worksoc/goaicoach/application/savedgame/SavedSessionController.kt")
+        val text = controller.readText()
+        val requiredFragments = listOf(
+            "runSavedGameRestoreApplication(",
+            "runRestoredGameSyncApplication(",
+        )
+            .filterNot { fragment -> fragment in text }
+
+        assertTrue(
+            "SavedSessionController should delegate to application runners:\nmissing:\n${requiredFragments.joinToString("\n")}",
+            requiredFragments.isEmpty(),
         )
     }
 
@@ -338,18 +366,37 @@ class LayeringContractTest {
             "EngineOperationKind.EngineNewGame",
             "runtimeEngineGameStartSuccessLog(",
             "runtimeEngineGameStartFailureLog(",
+            "runStartEngineBackedGameApplication(",
+            "StartEngineBackedGameRunRequest(",
         )
             .filter { fragment -> fragment in text }
         val requiredFragments = listOf(
-            "runStartEngineBackedGameApplication(",
-            "StartEngineBackedGameRunRequest(",
+            "newGameController::startConfiguredGame",
         )
             .filterNot { fragment -> fragment in text }
 
         assertTrue(
-            "GoCoachApp should run engine-backed new game through startgame application runner, not own engine operation/effect/workflow details:\n" +
+            "GoCoachApp should delegate new-game to NewGameController, not own engine operation/effect/workflow details:\n" +
                 "forbidden:\n${forbiddenFragments.joinToString("\n")}\nmissing:\n${requiredFragments.joinToString("\n")}",
             forbiddenFragments.isEmpty() && requiredFragments.isEmpty(),
+        )
+    }
+
+    @Test
+    fun newGameControllerDelegatesToApplicationRunners() {
+        val controller = repoRoot()
+            .resolve("app-android/src/main/java/com/worksoc/goaicoach/application/startgame/NewGameController.kt")
+        val text = controller.readText()
+        val requiredFragments = listOf(
+            "runStartEngineBackedGameApplication(",
+            "buildStartConfiguredGamePlan(",
+            "buildNewLocalGameSessionPlan(",
+        )
+            .filterNot { fragment -> fragment in text }
+
+        assertTrue(
+            "NewGameController should delegate to application runners:\nmissing:\n${requiredFragments.joinToString("\n")}",
+            requiredFragments.isEmpty(),
         )
     }
 
@@ -367,16 +414,17 @@ class LayeringContractTest {
             "runtimeAiTurnBeginLog(",
             "runtimeAiTurnCompleteLog(",
             "runtimeAiTurnScheduleCancelledLog(",
+            "runScheduledAutoAiTurnApplication(",
+            "AutoAiScheduledTurnRunRequest(",
         )
             .filter { fragment -> fragment in text }
         val requiredFragments = listOf(
-            "runScheduledAutoAiTurnApplication(",
-            "AutoAiScheduledTurnRunRequest(",
+            "autoAiTurnController::requestAiTurn",
         )
             .filterNot { fragment -> fragment in text }
 
         assertTrue(
-            "GoCoachApp should run scheduled Auto-AI turns through autoai application runner, not own operation/workflow/completion details:\n" +
+            "GoCoachApp should delegate scheduled Auto-AI turns to AutoAiTurnController, not own operation/workflow/completion details:\n" +
                 "forbidden:\n${forbiddenFragments.joinToString("\n")}\nmissing:\n${requiredFragments.joinToString("\n")}",
             forbiddenFragments.isEmpty() && requiredFragments.isEmpty(),
         )
@@ -398,13 +446,13 @@ class LayeringContractTest {
         val requiredFragments = listOf(
             "recordTurnMove =",
             "applyTurnDisplay =",
-            "resolveEndgame =",
             "applyTurnFailureDisplay =",
+            "AutoAiTurnController(",
         )
             .filterNot { fragment -> fragment in text }
 
         assertTrue(
-            "GoCoachApp should delegate Auto-AI completion display/log/endgame decision to autoai application applier:\n" +
+            "GoCoachApp should delegate Auto-AI completion display/log/endgame decision to AutoAiTurnController:\n" +
                 "forbidden:\n${forbiddenFragments.joinToString("\n")}\nmissing:\n${requiredFragments.joinToString("\n")}",
             forbiddenFragments.isEmpty() && requiredFragments.isEmpty(),
         )
@@ -424,18 +472,77 @@ class LayeringContractTest {
             "runtimeAiTurnEndgameDetectedLog(",
             "runtimeAiTurnEndgameSuccessLog(",
             "runtimeAiTurnEndgameFailureLog(",
+            "runAutoAiEndgameApplication(",
+            "AutoAiEndgameRunRequest(",
         )
             .filter { fragment -> fragment in text }
         val requiredFragments = listOf(
+            "AutoAiTurnController(",
+        )
+            .filterNot { fragment -> fragment in text }
+
+        assertTrue(
+            "GoCoachApp should resolve Auto-AI pass/pass endgame through AutoAiTurnController, not own token/effect/completion/log details:\n" +
+                "forbidden:\n${forbiddenFragments.joinToString("\n")}\nmissing:\n${requiredFragments.joinToString("\n")}",
+            forbiddenFragments.isEmpty() && requiredFragments.isEmpty(),
+        )
+    }
+
+    @Test
+    fun autoAiTurnControllerDelegatesToApplicationRunners() {
+        val controller = repoRoot()
+            .resolve("app-android/src/main/java/com/worksoc/goaicoach/application/autoai/AutoAiTurnController.kt")
+        val text = controller.readText()
+        val requiredFragments = listOf(
+            "runScheduledAutoAiTurnApplication(",
+            "AutoAiScheduledTurnRunRequest(",
             "runAutoAiEndgameApplication(",
             "AutoAiEndgameRunRequest(",
         )
             .filterNot { fragment -> fragment in text }
 
         assertTrue(
-            "GoCoachApp should resolve Auto-AI pass/pass endgame through autoai application runner, not own token/effect/completion/log details:\n" +
-                "forbidden:\n${forbiddenFragments.joinToString("\n")}\nmissing:\n${requiredFragments.joinToString("\n")}",
-            forbiddenFragments.isEmpty() && requiredFragments.isEmpty(),
+            "AutoAiTurnController must delegate to application runners:\nmissing:\n${requiredFragments.joinToString("\n")}",
+            requiredFragments.isEmpty(),
+        )
+    }
+
+    @Test
+    fun humanMoveControllerDelegatesToApplicationRunners() {
+        val controller = repoRoot()
+            .resolve("app-android/src/main/java/com/worksoc/goaicoach/application/humanmove/HumanMoveController.kt")
+        val text = controller.readText()
+        val requiredFragments = listOf(
+            "applyHumanMoveLocally(",
+            "runHumanEngineSyncApplication(",
+            "HumanEngineSyncRunRequest(",
+        )
+            .filterNot { fragment -> fragment in text }
+
+        assertTrue(
+            "HumanMoveController must delegate to application runners:\nmissing:\n${requiredFragments.joinToString("\n")}",
+            requiredFragments.isEmpty(),
+        )
+    }
+
+    @Test
+    fun topMovesControllerDelegatesToApplicationRunners() {
+        val controller = repoRoot()
+            .resolve("app-android/src/main/java/com/worksoc/goaicoach/application/topmoves/TopMovesController.kt")
+        val text = controller.readText()
+        val requiredFragments = listOf(
+            "runTopMoveAnalysisApplication(",
+            "TopMoveAnalysisRunRequest(",
+            "runShowTopMovesApplication(",
+            "ShowTopMovesRunRequest(",
+            "runHideTopMovesApplication(",
+            "HideTopMovesRunRequest(",
+        )
+            .filterNot { fragment -> fragment in text }
+
+        assertTrue(
+            "TopMovesController must delegate to application runners:\nmissing:\n${requiredFragments.joinToString("\n")}",
+            requiredFragments.isEmpty(),
         )
     }
 
@@ -493,8 +600,27 @@ class LayeringContractTest {
             "runDebugReportCopyAction(",
             "runtimeEventLog.readText()",
             "diagnosticEventLog.readText()",
+            "runDebugReportCopyApplication(",
+            "DebugReportCopyRunRequest(",
         )
             .filter { fragment -> fragment in text }
+        val requiredFragments = listOf(
+            "DebugReportController(",
+        )
+            .filterNot { fragment -> fragment in text }
+
+        assertTrue(
+            "GoCoachApp should delegate debug report copy to DebugReportController, not own runner details:\n" +
+                "forbidden:\n${forbiddenFragments.joinToString("\n")}\nmissing:\n${requiredFragments.joinToString("\n")}",
+            forbiddenFragments.isEmpty() && requiredFragments.isEmpty(),
+        )
+    }
+
+    @Test
+    fun debugReportControllerDelegatesToApplicationRunner() {
+        val controller = repoRoot()
+            .resolve("app-android/src/main/java/com/worksoc/goaicoach/application/debugreport/DebugReportController.kt")
+        val text = controller.readText()
         val requiredFragments = listOf(
             "runDebugReportCopyApplication(",
             "DebugReportCopyRunRequest(",
@@ -502,9 +628,8 @@ class LayeringContractTest {
             .filterNot { fragment -> fragment in text }
 
         assertTrue(
-            "GoCoachApp should run Copy Log through debug-report application runner, not own report request/log-read details:\n" +
-                "forbidden:\n${forbiddenFragments.joinToString("\n")}\nmissing:\n${requiredFragments.joinToString("\n")}",
-            forbiddenFragments.isEmpty() && requiredFragments.isEmpty(),
+            "DebugReportController must delegate to runDebugReportCopyApplication:\nmissing:\n${requiredFragments.joinToString("\n")}",
+            requiredFragments.isEmpty(),
         )
     }
 
@@ -940,8 +1065,8 @@ class LayeringContractTest {
         // Downward ratchet: GoCoachApp is being reduced from a workflow-owning
         // god file to a thin UI shell. These budgets only ever move down — when
         // a refactor lowers them, tighten the numbers here in the same change.
-        val lineBudget = 1443
-        val stateHookBudget = 44
+        val lineBudget = 852
+        val stateHookBudget = 41
 
         val goCoachApp = repoRoot()
             .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")

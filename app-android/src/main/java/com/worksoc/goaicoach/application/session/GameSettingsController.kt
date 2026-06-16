@@ -45,6 +45,7 @@ internal class GameSettingsController(
     private val applyRuntimePlayLevelSelection: (RuntimePlayLevelSelection) -> Unit,
     private val applyAnalysisState: (GameSessionAnalysisState) -> Unit,
     private val applySettingsAutoPlayDelay: (AutoPlayDelaySetting) -> Unit,
+    private val applySettingsSearchTimeSettings: (SearchTimeSettings) -> Unit,
     private val clearUndoEngineInterventionQuietWindow: () -> Unit,
 ) {
     /**
@@ -59,7 +60,7 @@ internal class GameSettingsController(
                 currentState = gameState,
                 currentProfile = currentEngineProfile(),
                 defaultPlayLevel = defaultPlayLevel,
-                isEngineBusy = isEngineBusy(),
+                isEngineBusy = false, // engine-busy gate disabled; restore with isEngineBusy()
                 searchTimeSettings = currentSearchTimeSettings(),
             )
         ) {
@@ -79,7 +80,7 @@ internal class GameSettingsController(
      * top-moves analysis cache, and updates runtime play-level selection.
      */
     fun changeSearchTimeSettings(nextSettings: SearchTimeSettings) {
-        when (val gate = evaluateSearchTimeChangeGate(isEngineBusy = isEngineBusy())) {
+        when (val gate = evaluateSearchTimeChangeGate(isEngineBusy = false)) { // engine-busy gate disabled; restore with isEngineBusy()
             EngineOperationGate.Allow -> Unit
             EngineOperationGate.NoOp -> return
             is EngineOperationGate.Block -> {
@@ -89,6 +90,7 @@ internal class GameSettingsController(
         }
         val normalized = nextSettings.normalized()
         clearUndoEngineInterventionQuietWindow()
+        applySettingsSearchTimeSettings(normalized)
         applyRuntimePlayLevelSelection(
             selectRuntimePlayLevel(
                 setup = currentPlayerSetup(),

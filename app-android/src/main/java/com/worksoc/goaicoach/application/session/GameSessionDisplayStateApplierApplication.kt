@@ -13,11 +13,15 @@ import com.worksoc.goaicoach.application.score.FinalScoreDisplayPlan
 import com.worksoc.goaicoach.application.score.ScoreEstimateDisplayPlan
 import com.worksoc.goaicoach.application.score.ScoreEstimateFailureDisplayPlan
 import com.worksoc.goaicoach.application.topmoves.TopMoveAnalysisFailureDisplayPlan
+import com.worksoc.goaicoach.application.engine.operation.EngineOperationResultGuard
+import com.worksoc.goaicoach.application.score.ScoreSyncCompletionApplyPlan
 import com.worksoc.goaicoach.application.undo.UndoLocalStatePlan
+import com.worksoc.goaicoach.shared.GameState
 
 internal class GameSessionDisplayStateApplier(
     private val currentCoreState: () -> GameSessionCoreState,
     private val applyCoreState: (GameSessionCoreState) -> Unit,
+    private val appendEngineOperationDiscardLog: (EngineOperationResultGuard.Discard) -> Unit = {},
 ) {
     fun applyScoreEstimateDisplayPlan(score: ScoreEstimateDisplayPlan) {
         applyCoreState(currentCoreState().applyScoreEstimateDisplayPlan(score))
@@ -67,4 +71,20 @@ internal class GameSessionDisplayStateApplier(
     fun applyAutoAiTurnFailureDisplayPlan(failure: AutoAiTurnFailureDisplayPlan) {
         applyCoreState(currentCoreState().applyAutoAiTurnFailureDisplayPlan(failure))
     }
+
+    fun applyScoreSyncCompletion(applyPlan: ScoreSyncCompletionApplyPlan): GameState? =
+        when (applyPlan) {
+            is ScoreSyncCompletionApplyPlan.ApplySuccess -> {
+                applyScoreEstimateDisplayPlan(applyPlan.display)
+                applyPlan.followUpAnalysisState
+            }
+            is ScoreSyncCompletionApplyPlan.ApplyFailure -> {
+                applyCoreState(currentCoreState().copy(engineMessage = applyPlan.engineMessage))
+                applyPlan.followUpAnalysisState
+            }
+            is ScoreSyncCompletionApplyPlan.Discard -> {
+                appendEngineOperationDiscardLog(applyPlan.discard)
+                null
+            }
+        }
 }
