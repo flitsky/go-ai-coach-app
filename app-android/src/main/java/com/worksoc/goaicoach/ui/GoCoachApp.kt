@@ -50,8 +50,7 @@ import com.worksoc.goaicoach.application.humanmove.HumanEngineSyncRuntimeLogPlan
 import com.worksoc.goaicoach.application.humanmove.applyHumanMoveLocally
 import com.worksoc.goaicoach.application.humanmove.runHumanEngineSyncApplication
 import com.worksoc.goaicoach.application.debugreport.ClipboardPort
-import com.worksoc.goaicoach.application.engine.operation.evaluateScoringRuleChangeGate
-import com.worksoc.goaicoach.application.engine.operation.evaluateSearchTimeChangeGate
+
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationUiState
 import com.worksoc.goaicoach.application.engine.localScoreSnapshot
 import com.worksoc.goaicoach.application.savedgame.SavedGamePersistenceRunRequest
@@ -715,61 +714,9 @@ private fun GoCoachScreen(
         )
     }
 
-    fun applyScoringRuleChangePlan(ruleChange: ScoringRuleChangePlan) {
-        applyCoreSessionState(currentCoreSessionState().applyScoringRuleChangePlan(ruleChange))
-    }
-
-    fun changePlayerSetup(nextSetup: PlayerSetup) {
-        when (
-            val plan = buildPlayerSetupChangePlan(
-                nextSetup = nextSetup,
-                currentState = gameState,
-                currentProfile = runtimeState.engineProfile,
-                defaultPlayLevel = defaultPlayLevel,
-                isEngineBusy = isEngineBusy,
-                searchTimeSettings = searchTimeSettings,
-            )
-        ) {
-            is PlayerSetupChangePlan.ShowMessage -> {
-                engineMessage = plan.message
-            }
-            is PlayerSetupChangePlan.Apply -> {
-                clearUndoEngineInterventionQuietWindow()
-                settingsState = settingsState.applyPlayerSetup(plan.playerSetup)
-                applyCoreSessionState(currentCoreSessionState().applyPlayerSetupChangePlan(plan))
-            }
-        }
-    }
-
-    fun changeSearchTimeSettings(nextSettings: SearchTimeSettings) {
-        when (val gate = evaluateSearchTimeChangeGate(isEngineBusy = isEngineBusy)) {
-            EngineOperationGate.Allow -> Unit
-            EngineOperationGate.NoOp -> return
-            is EngineOperationGate.Block -> {
-                engineMessage = gate.message
-                return
-            }
-        }
-        val normalized = nextSettings.normalized()
-        clearUndoEngineInterventionQuietWindow()
-        settingsState = settingsState.applySearchTimeSettings(normalized)
-        applyRuntimePlayLevelSelection(
-            selectRuntimePlayLevel(
-                setup = playerSetup,
-                nextPlayer = gameState.nextPlayer,
-                currentProfile = runtimeState.engineProfile,
-                defaultPlayLevel = defaultPlayLevel,
-                searchTimeSettings = normalized,
-            ),
-        )
-        runSearchTimeTopMovesResetApplication(
-            SearchTimeTopMovesResetRunRequest(
-                analysisState = currentAnalysisSessionState(),
-                state = gameState,
-                applyAnalysisState = ::applyAnalysisSessionState,
-            ),
-        )
-    }
+    // applyScoringRuleChangePlan is now internal to ScoringRuleController.
+    // changePlayerSetup, changeSearchTimeSettings, changeScoringRule, changeAutoPlayDelay
+    // are delegated to their respective controllers below.
 
     fun requestTopMoveAnalysisForState(
         targetState: GameState,
@@ -917,64 +864,7 @@ private fun GoCoachScreen(
         )
     }
 
-    fun changeScoringRule(nextRuleset: Ruleset) {
-        when (
-            val gate = evaluateScoringRuleChangeGate(
-                currentRuleset = gameState.ruleset,
-                nextRuleset = nextRuleset,
-                isEngineBusy = isEngineBusy,
-            )
-        ) {
-            EngineOperationGate.Allow -> Unit
-            EngineOperationGate.NoOp -> return
-            is EngineOperationGate.Block -> {
-                engineMessage = gate.message
-                return
-            }
-        }
 
-        val ruleChange = buildScoringRuleChangePlan(
-            currentState = gameState,
-            nextRuleset = nextRuleset,
-            isGameEnded = isGameEnded,
-            matchMode = matchMode,
-            isEngineReady = isEngineReady,
-            previousSnapshots = scoreState.scoreSnapshots,
-        )
-        val nextState = ruleChange.gameState
-        applyScoringRuleChangePlan(ruleChange)
-
-        if (!ruleChange.requiresEngineSync) {
-            return
-        }
-
-        runScoringRuleSyncApplication(
-            ScoringRuleSyncRunRequest(
-                engineClient = engineClient,
-                state = nextState,
-                profile = runtimeState.engineProfile,
-                previousSnapshots = scoreState.scoreSnapshots,
-                sessionGeneration = runtimeState.sessionGeneration,
-                timeoutPolicy = engineProfileTimeoutPolicy(runtimeState.engineProfile),
-                diagnosticEventLog = diagnosticEventLog,
-                engineMessage = "Scoring rule changed to ${nextRuleset.scoringLabel}; engine rules synchronized.",
-                currentState = { gameState },
-                currentSessionGeneration = { runtimeState.sessionGeneration },
-                runEngineOperation = { operation, block ->
-                    launchTrackedEngineOperation(operation) {
-                        block()
-                    }
-                },
-                applyCompletion = ::applyScoreSyncCompletionApplyPlan,
-                requestFollowUpAnalysis = { state ->
-                    requestTopMoveAnalysisForState(
-                        targetState = state,
-                        automatic = true,
-                    )
-                },
-            ),
-        )
-    }
 
     fun resetLocalGame(
         message: String,
@@ -1085,16 +975,7 @@ private fun GoCoachScreen(
         }
     }
 
-    fun changeAutoPlayDelay(setting: AutoPlayDelaySetting) {
-        runtimeEventLog.append(
-            runtimeAutoPlayDelayChangeLog(
-                context = currentRuntimeLogContext(),
-                from = autoPlayDelaySetting,
-                to = setting,
-            ),
-        )
-        settingsState = settingsState.applyAutoPlayDelay(setting)
-    }
+
 
     suspend fun applyAutoAiEndgamePlan(endgamePlan: AutoAiTurnEndgamePlan.Resolve) {
         runAutoAiEndgameApplication(
@@ -1115,6 +996,10 @@ private fun GoCoachScreen(
         )
     }
 
+    // REFACTORING BOUNDARY: This function delegates entirely to runScheduledAutoAiTurnApplication()
+    // via callback injection. All engine I/O, session generation checking, stale result guard,
+    // and completion apply logic live in the application layer. Further extraction into a
+    // controller is deferred until androidTest smoke coverage is added for AI turn flows.
     fun requestAiTurnForCurrentState() {
         when (
             val request = currentControllerSessionState().toAutoAiTurnRequestPlan(
@@ -1185,6 +1070,10 @@ private fun GoCoachScreen(
         }
     }
 
+    // REFACTORING BOUNDARY: This function delegates entirely to runHumanEngineSyncApplication()
+    // via callback injection. Local move validation, turn time recording, and engine sync
+    // completion apply logic are handled in the application layer. Further extraction into a
+    // controller is deferred until androidTest smoke coverage is added for human move flows.
     fun submitHumanMove(move: Move) {
         if (playerSetup.sideFor(gameState.nextPlayer).controller != SeatController.Human) {
             engineMessage = "It is not a human player's turn."
@@ -1377,6 +1266,50 @@ private fun GoCoachScreen(
         appendDiscardLog = ::appendEngineOperationDiscardLog,
     )
 
+    val scoringRuleController = ScoringRuleController(
+        engineClient = engineClient,
+        diagnosticEventLog = diagnosticEventLog,
+        currentGameState = { gameState },
+        currentMatchMode = { matchMode },
+        isEngineReady = { isEngineReady },
+        isEngineBusy = { isEngineBusy },
+        currentScoreSnapshots = { scoreState.scoreSnapshots },
+        currentEngineProfile = { runtimeState.engineProfile },
+        currentSessionGeneration = { runtimeState.sessionGeneration },
+        timeoutPolicy = ::engineProfileTimeoutPolicy,
+        onEngineMessage = { message -> engineMessage = message },
+        applyScoringRuleChangePlan = { ruleChange ->
+            applyCoreSessionState(currentCoreSessionState().applyScoringRuleChangePlan(ruleChange))
+        },
+        applyScoreSyncCompletionApplyPlan = ::applyScoreSyncCompletionApplyPlan,
+        requestFollowUpAnalysis = { state ->
+            requestTopMoveAnalysisForState(targetState = state, automatic = true)
+        },
+        launchEngineOperation = { operation, block -> launchTrackedEngineOperation(operation) { block() } },
+        appendDiscardLog = ::appendEngineOperationDiscardLog,
+    )
+
+    val settingsController = GameSettingsController(
+        currentGameState = { gameState },
+        currentPlayerSetup = { playerSetup },
+        currentEngineProfile = { runtimeState.engineProfile },
+        currentSearchTimeSettings = { searchTimeSettings },
+        currentAnalysisState = ::currentAnalysisSessionState,
+        currentAutoPlayDelaySetting = { autoPlayDelaySetting },
+        defaultPlayLevel = defaultPlayLevel,
+        isEngineBusy = { isEngineBusy },
+        runtimeEventLog = runtimeEventLog,
+        currentRuntimeLogContext = ::currentRuntimeLogContext,
+        onEngineMessage = { message -> engineMessage = message },
+        applyPlayerSetup = { setup -> settingsState = settingsState.applyPlayerSetup(setup) },
+        applyCoreSessionState = ::applyCoreSessionState,
+        currentCoreSessionState = ::currentCoreSessionState,
+        applyRuntimePlayLevelSelection = ::applyRuntimePlayLevelSelection,
+        applyAnalysisState = ::applyAnalysisSessionState,
+        applySettingsAutoPlayDelay = { setting -> settingsState = settingsState.applyAutoPlayDelay(setting) },
+        clearUndoEngineInterventionQuietWindow = ::clearUndoEngineInterventionQuietWindow,
+    )
+
     fun copyDebugReport() {
         runDebugReportCopyApplication(
             DebugReportCopyRunRequest(
@@ -1427,10 +1360,10 @@ private fun GoCoachScreen(
                     savedSessionUiState = savedSessionUiState.dismiss()
                     restoreSavedSession(snapshot)
                 },
-                changePlayerSetup = ::changePlayerSetup,
-                changeAutoPlayDelay = ::changeAutoPlayDelay,
-                changeSearchTimeSettings = ::changeSearchTimeSettings,
-                changeScoringRule = ::changeScoringRule,
+                changePlayerSetup = settingsController::changePlayerSetup,
+                changeAutoPlayDelay = settingsController::changeAutoPlayDelay,
+                changeSearchTimeSettings = settingsController::changeSearchTimeSettings,
+                changeScoringRule = scoringRuleController::change,
                 changeUxOptions = { options -> uxOptions = options },
             ),
         )
