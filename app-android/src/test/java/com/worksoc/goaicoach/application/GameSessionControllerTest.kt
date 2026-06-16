@@ -227,7 +227,8 @@ class GameSessionControllerTest {
         val restoredEffect = GameSessionEffect.SyncRestoredGame(gameState)
         val debugReportPlan = DebugReportCopyPlan(
             clipboardLabel = "label",
-            report = "report",
+            clipboardReport = "clipboard report",
+            fileReport = "file report",
             engineMessage = "message",
             toastMessage = "toast",
         )

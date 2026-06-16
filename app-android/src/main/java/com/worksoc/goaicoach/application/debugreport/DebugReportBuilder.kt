@@ -52,6 +52,7 @@ internal data class DebugReportSnapshot(
     val runtimeEventLogText: String = "Runtime event log not loaded.",
     val diagnosticEventLogText: String = "Diagnostic event log not loaded.",
     val searchTimeSettings: SearchTimeSettings = SearchTimeSettings(),
+    val createdAtMillis: Long = System.currentTimeMillis(),
 )
 
 internal fun GameSessionControllerState.toDebugReportSnapshot(
@@ -129,22 +130,40 @@ internal fun buildDebugReport(snapshot: DebugReportSnapshot): String =
         runtimeEventLogText = snapshot.runtimeEventLogText,
         diagnosticEventLogText = snapshot.diagnosticEventLogText,
         searchTimeSettings = snapshot.searchTimeSettings,
+        createdAtMillis = snapshot.createdAtMillis,
     )
+
+internal fun String.truncateToRecent(maxChars: Int): String {
+    if (length <= maxChars) return this
+    val marker = "... [trimmed to recent $maxChars characters for clipboard compatibility] ...\n"
+    return marker + substring(length - maxChars)
+}
 
 internal data class DebugReportCopyPlan(
     val clipboardLabel: String,
-    val report: String,
+    val clipboardReport: String,
+    val fileReport: String,
     val engineMessage: String,
     val toastMessage: String,
+    val failureToastMessage: String = "Debug report saved to file, but failed to copy to clipboard",
 )
 
-internal fun buildDebugReportCopyPlan(snapshot: DebugReportSnapshot): DebugReportCopyPlan =
-    DebugReportCopyPlan(
+internal fun buildDebugReportCopyPlan(snapshot: DebugReportSnapshot): DebugReportCopyPlan {
+    val fileReport = buildDebugReport(snapshot)
+    val clipboardSnapshot = snapshot.copy(
+        runtimeEventLogText = snapshot.runtimeEventLogText.truncateToRecent(50000),
+        diagnosticEventLogText = snapshot.diagnosticEventLogText.truncateToRecent(50000),
+    )
+    val clipboardReport = buildDebugReport(clipboardSnapshot)
+
+    return DebugReportCopyPlan(
         clipboardLabel = "Go AI Coach debug report",
-        report = buildDebugReport(snapshot),
+        clipboardReport = clipboardReport,
+        fileReport = fileReport,
         engineMessage = "Debug report copied to clipboard. Paste it into chat for review.",
         toastMessage = "Debug report copied",
     )
+}
 
 internal data class DebugReportCopyResult(
     val engineMessage: String,
@@ -199,9 +218,13 @@ internal fun runDebugReportCopyEffect(
     userNotice: UserNoticePort,
 ): DebugReportCopyResult {
     val plan = effect.plan
-    clipboard.setText(plan.clipboardLabel, plan.report)
-    runCatching { mirror.save(plan.report) }
-    userNotice.showShort(plan.toastMessage)
+    val copySuccess = clipboard.setText(plan.clipboardLabel, plan.clipboardReport)
+    runCatching { mirror.save(plan.fileReport) }
+    if (copySuccess) {
+        userNotice.showShort(plan.toastMessage)
+    } else {
+        userNotice.showShort(plan.failureToastMessage)
+    }
     return DebugReportCopyResult(engineMessage = plan.engineMessage)
 }
 
@@ -235,12 +258,13 @@ internal fun buildDebugReport(
     runtimeEventLogText: String = "Runtime event log not loaded.",
     diagnosticEventLogText: String = "Diagnostic event log not loaded.",
     searchTimeSettings: SearchTimeSettings = SearchTimeSettings(),
+    createdAtMillis: Long = System.currentTimeMillis(),
 ): String {
     val localScoreText = BoardScorer.score(gameState).toDisplayText()
 
     return buildString {
         appendLine("Go AI Coach debug report")
-        appendLine("createdAtMillis=${System.currentTimeMillis()}")
+        appendLine("createdAtMillis=$createdAtMillis")
         appendLine()
         appendLine("[Runtime]")
         appendLine("mode=$mode")

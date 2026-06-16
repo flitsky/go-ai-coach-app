@@ -56,9 +56,6 @@ internal fun KaTrainUxMenuPanel(
             OptionSwitchRow("Last ring", options.showLastMoveRing) {
                 onOptionsChange(options.copy(showLastMoveRing = it))
             }
-            OptionSwitchRow("Eval gradient", options.showOwnershipOverlay) {
-                onOptionsChange(options.copy(showOwnershipOverlay = it))
-            }
         }
     }
 }

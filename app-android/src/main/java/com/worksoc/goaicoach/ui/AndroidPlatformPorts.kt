@@ -12,9 +12,15 @@ internal class AndroidClipboardPort(
 ) : ClipboardPort {
     private val appContext = context.applicationContext
 
-    override fun setText(label: String, text: String) {
-        val clipboard = appContext.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        clipboard.setPrimaryClip(ClipData.newPlainText(label, text))
+    override fun setText(label: String, text: String): Boolean {
+        return try {
+            val clipboard = appContext.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            clipboard.setPrimaryClip(ClipData.newPlainText(label, text))
+            true
+        } catch (e: Throwable) {
+            System.err.println("Failed to copy text to clipboard: ${e.message}")
+            false
+        }
     }
 }
 

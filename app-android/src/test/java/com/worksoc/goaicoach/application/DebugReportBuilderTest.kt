@@ -198,14 +198,65 @@ class DebugReportBuilderTest {
         assertEquals("Go AI Coach debug report", plan.clipboardLabel)
         assertEquals("Debug report copied", plan.toastMessage)
         assertTrue(plan.engineMessage.contains("clipboard"))
-        assertTrue(plan.report.contains("[DiagnosticEventLog]"))
+        assertTrue(plan.clipboardReport.contains("[DiagnosticEventLog]"))
+        assertTrue(plan.fileReport.contains("[DiagnosticEventLog]"))
+    }
+
+    @Test
+    fun debugReportCopyPlanTruncatesLargeLogs() {
+        val state = GameState.empty()
+        val largeRuntimeLog = "R".repeat(60000)
+        val largeDiagnosticLog = "D".repeat(60000)
+
+        val plan = buildDebugReportCopyPlan(
+            DebugReportSnapshot(
+                mode = MatchMode.HumanVsAi,
+                playerSetup = PlayerSetup(),
+                engineName = "KataGo",
+                engineDiagnostic = "diagnostic ok",
+                engineProfile = EngineProfile(),
+                playLevel = PlayLevelSetting(),
+                analysisPreset = AnalysisPreset.Lite,
+                analysisCacheStats = "entries=0",
+                isEngineReady = true,
+                isEngineBusy = false,
+                isGameEnded = false,
+                topMovesEnabled = true,
+                topMoveCandidateCount = 0,
+                moveAnalysisCoverage = "none",
+                gameState = state,
+                engineMessage = "engine",
+                candidateText = "candidate",
+                scoreText = "score",
+                scoreSnapshots = emptyList(),
+                moveReviewText = "review",
+                lastMoveText = "None",
+                endgameLog = "No endgame result recorded.",
+                engineBenchmarkText = "benchmark",
+                runtimeEventLogText = largeRuntimeLog,
+                diagnosticEventLogText = largeDiagnosticLog,
+            ),
+        )
+
+        // Clipboard report should be truncated
+        assertTrue(plan.clipboardReport.contains("trimmed to recent 50000 characters"))
+        val expectedClipboardRuntime = "R".repeat(50000)
+        assertTrue(plan.clipboardReport.contains(expectedClipboardRuntime))
+        // Verify it doesn't contain the full 60000 characters (which would be 60000 'R's)
+        assertTrue(!plan.clipboardReport.contains("R".repeat(50001)))
+
+        // File report should contain full logs without truncation
+        assertTrue(!plan.fileReport.contains("trimmed to recent 50000 characters"))
+        assertTrue(plan.fileReport.contains(largeRuntimeLog))
+        assertTrue(plan.fileReport.contains(largeDiagnosticLog))
     }
 
     @Test
     fun debugReportCopyEffectUsesPlatformPortsAndReturnsDisplayMessage() {
         val plan = DebugReportCopyPlan(
             clipboardLabel = "label",
-            report = "report",
+            clipboardReport = "clipboard report",
+            fileReport = "file report",
             engineMessage = "copied",
             toastMessage = "toast",
         )
@@ -221,8 +272,8 @@ class DebugReportBuilderTest {
         )
 
         assertEquals("label", clipboard.label)
-        assertEquals("report", clipboard.text)
-        assertEquals("report", mirror.report)
+        assertEquals("clipboard report", clipboard.text)
+        assertEquals("file report", mirror.report)
         assertEquals("toast", userNotice.message)
         assertEquals("copied", result.engineMessage)
     }
@@ -233,10 +284,12 @@ private class FakeClipboardPort : ClipboardPort {
         private set
     var text: String? = null
         private set
+    var nextResult: Boolean = true
 
-    override fun setText(label: String, text: String) {
+    override fun setText(label: String, text: String): Boolean {
         this.label = label
         this.text = text
+        return nextResult
     }
 }
 

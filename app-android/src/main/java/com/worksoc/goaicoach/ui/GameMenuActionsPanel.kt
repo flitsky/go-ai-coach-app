@@ -69,46 +69,15 @@ internal fun GameMenuActionsPanel(
                 color = MaterialTheme.colorScheme.secondary,
                 style = MaterialTheme.typography.bodySmall,
             )
-            Text("Scoring rule: Area | Territory", fontWeight = FontWeight.SemiBold)
-            Row(
+            Text("Scoring rule", fontWeight = FontWeight.SemiBold)
+            SetupDropdown(
+                selectedText = ruleset.scoringLabel,
+                enabled = canChangeRuleset,
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                if (ruleset == Ruleset.Chinese) {
-                    Button(
-                        onClick = { onRulesetChange(Ruleset.Chinese) },
-                        enabled = canChangeRuleset,
-                        modifier = Modifier.weight(1f),
-                    ) {
-                        Text("Area")
-                    }
-                } else {
-                    OutlinedButton(
-                        onClick = { onRulesetChange(Ruleset.Chinese) },
-                        enabled = canChangeRuleset,
-                        modifier = Modifier.weight(1f),
-                    ) {
-                        Text("Area")
-                    }
-                }
-                if (ruleset == Ruleset.Japanese) {
-                    Button(
-                        onClick = { onRulesetChange(Ruleset.Japanese) },
-                        enabled = canChangeRuleset,
-                        modifier = Modifier.weight(1f),
-                    ) {
-                        Text("Territory")
-                    }
-                } else {
-                    OutlinedButton(
-                        onClick = { onRulesetChange(Ruleset.Japanese) },
-                        enabled = canChangeRuleset,
-                        modifier = Modifier.weight(1f),
-                    ) {
-                        Text("Territory")
-                    }
-                }
-            }
+                options = Ruleset.entries,
+                optionLabel = { it.scoringLabel },
+                onSelected = onRulesetChange,
+            )
             Text(
                 text = "Scoring rule: ${ruleset.scoringLabel}",
                 color = MaterialTheme.colorScheme.secondary,

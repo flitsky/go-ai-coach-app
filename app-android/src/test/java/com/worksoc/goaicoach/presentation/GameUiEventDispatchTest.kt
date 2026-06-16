@@ -118,6 +118,18 @@ class GameUiEventDispatchTest {
         assertEquals(listOf("benchmark"), calls)
     }
 
+    @Test
+    fun dispatchToggleEvalWithGradientRoutesToHandler() {
+        val calls = mutableListOf<String>()
+        val handlers = handlers(
+            toggleEvalWithGradient = { calls += "evalWithGradient" },
+        )
+
+        dispatchGameUiEvent(GameUiEvent.ToggleEvalWithGradient, handlers)
+
+        assertEquals(listOf("evalWithGradient"), calls)
+    }
+
     private fun handlers(
         currentPlayer: () -> StoneColor = { StoneColor.Black },
         isTopMovesEnabled: () -> Boolean = { false },
@@ -125,6 +137,7 @@ class GameUiEventDispatchTest {
         copyDebugReport: () -> Unit = {},
         showEngineBenchmark: () -> Unit = {},
         requestScoreEstimate: () -> Unit = {},
+        toggleEvalWithGradient: () -> Unit = {},
         showTopMoves: () -> Unit = {},
         hideTopMoves: () -> Unit = {},
         undoLastTurn: () -> Unit = {},
@@ -146,6 +159,7 @@ class GameUiEventDispatchTest {
             copyDebugReport = copyDebugReport,
             showEngineBenchmark = showEngineBenchmark,
             requestScoreEstimate = requestScoreEstimate,
+            toggleEvalWithGradient = toggleEvalWithGradient,
             showTopMoves = showTopMoves,
             hideTopMoves = hideTopMoves,
             undoLastTurn = undoLastTurn,

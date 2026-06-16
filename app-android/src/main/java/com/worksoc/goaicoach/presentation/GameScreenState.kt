@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.presentation
 
+import com.worksoc.goaicoach.application.analysis.translateScoreText
 import com.worksoc.goaicoach.application.session.*
 
 import com.worksoc.goaicoach.application.movereview.MoveReviewMarker
@@ -187,7 +188,7 @@ internal fun buildGameScreenState(input: GameScreenStateInput): GameScreenState 
             lastMoveText = input.lastMoveText,
         ),
         score = ScoreUiState(
-            text = input.scoreText,
+            text = translateScoreText(input.scoreText),
             estimate = input.scoreEstimate,
             snapshots = input.scoreSnapshots,
             isGraphExpanded = input.isScoreGraphExpanded,
@@ -279,7 +280,7 @@ internal fun buildGameActionButtonStates(input: GameScreenStateInput): List<Game
         ),
         GameActionButtonState(
             role = GameActionButtonRole.TopMoves,
-            label = "Top Moves",
+            label = "Best",
             event = GameUiEvent.ToggleTopMoves,
             enabled = topMovesButtonEnabled,
             isFilled = input.topMovesEnabled,
@@ -287,10 +288,10 @@ internal fun buildGameActionButtonStates(input: GameScreenStateInput): List<Game
         GameActionButtonState(
             role = GameActionButtonRole.Eval,
             label = "Eval",
-            event = GameUiEvent.RequestScoreEstimate,
+            event = GameUiEvent.ToggleEvalWithGradient,
             enabled = !input.isEngineBusy &&
                 (input.isEngineReady || input.matchMode == MatchMode.LocalTwoPlayer),
-            isFilled = false,
+            isFilled = input.uxOptions.showOwnershipOverlay,
         ),
     )
 }

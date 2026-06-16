@@ -55,7 +55,7 @@ internal fun ExpandedGameMenuSection(
 ) {
     PlayerSetupPanel(
         state = screenState.playerSetupUi,
-        enabled = !screenState.engine.isBusy,
+        enabled = true, // engine-busy gate disabled; restore with !screenState.engine.isBusy
         onPlayerSetupChange = { setup -> onEvent(GameUiEvent.ChangePlayerSetup(setup)) },
         onAutoPlayDelayChange = { setting -> onEvent(GameUiEvent.ChangeAutoPlayDelay(setting)) },
     )
@@ -63,16 +63,15 @@ internal fun ExpandedGameMenuSection(
     SearchTimeSettingsPanel(
         settings = screenState.searchTimeSettings,
         benchmarkAverages = screenState.searchTimeBenchmarkAverages,
-        enabled = !screenState.engine.isBusy,
+        enabled = true, // engine-busy gate disabled; restore with !screenState.engine.isBusy
         onSettingsChange = { settings -> onEvent(GameUiEvent.ChangeSearchTimeSettings(settings)) },
     )
 
     GameMenuActionsPanel(
         mode = screenState.matchMode,
         ruleset = screenState.gameState.ruleset,
-        canStartNew = !screenState.engine.isBusy &&
-            (screenState.matchMode == MatchMode.LocalTwoPlayer || screenState.engine.isReady),
-        canChangeRuleset = !screenState.engine.isBusy,
+        canStartNew = screenState.matchMode == MatchMode.LocalTwoPlayer || screenState.engine.isReady, // engine-busy gate disabled; restore with !screenState.engine.isBusy &&
+        canChangeRuleset = true, // engine-busy gate disabled; restore with !screenState.engine.isBusy
         onNewGame = { onEvent(GameUiEvent.StartConfiguredGame) },
         onCopyLog = { onEvent(GameUiEvent.CopyDebugReport) },
         onBenchmark = { onEvent(GameUiEvent.ShowEngineBenchmark) },

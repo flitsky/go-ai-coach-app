@@ -71,6 +71,39 @@ class DebugReportApplicationRunnerTest {
         assertTrue(clipboard.text.orEmpty().contains("diagnostic log"))
     }
 
+    @Test
+    fun copyRunnerHandlesClipboardFailureGracefully() {
+        val clipboard = RunnerFakeClipboardPort().apply { nextResult = false }
+        val mirror = RunnerFakeDebugReportMirrorPort()
+        val notice = RunnerFakeUserNoticePort()
+        var appliedMessage: String? = null
+
+        runDebugReportCopyApplication(
+            DebugReportCopyRunRequest(
+                controllerState = controllerState(),
+                engineName = "KataGo",
+                engineDiagnostic = "diagnostic ok",
+                analysisCacheStatsText = { "analysis entries=1" },
+                positionAnalysisCacheStatsText = { nowMillis -> "position now=$nowMillis" },
+                isEngineReady = true,
+                isEngineBusy = false,
+                turnTimeText = { "Time B 1.0s / W 2.0s" },
+                turnTimeDebugText = { nowMillis -> "debug now=$nowMillis" },
+                runtimeEventLog = FakeRuntimeEventLogPort("runtime log"),
+                diagnosticEventLog = FakeDiagnosticEventLogPort("diagnostic log"),
+                clipboard = clipboard,
+                mirror = mirror,
+                userNotice = notice,
+                nowMillis = { 321L },
+                applyEngineMessage = { message -> appliedMessage = message },
+            ),
+        )
+
+        assertEquals("Go AI Coach debug report", clipboard.label)
+        assertEquals("Debug report saved to file, but failed to copy to clipboard", notice.message)
+        assertEquals(clipboard.text, mirror.report) // 로그가 짧으므로 둘의 텍스트가 일치함
+    }
+
     private fun controllerState(): GameSessionControllerState {
         val state = GameState.empty()
         return GameSessionControllerState(
@@ -142,10 +175,12 @@ private class RunnerFakeClipboardPort : ClipboardPort {
         private set
     var text: String? = null
         private set
+    var nextResult: Boolean = true
 
-    override fun setText(label: String, text: String) {
+    override fun setText(label: String, text: String): Boolean {
         this.label = label
         this.text = text
+        return nextResult
     }
 }
 

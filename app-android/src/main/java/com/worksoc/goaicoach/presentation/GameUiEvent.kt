@@ -15,6 +15,7 @@ internal sealed interface GameUiEvent {
     data object ShowEngineBenchmark : GameUiEvent
     data object RequestScoreEstimate : GameUiEvent
     data object ToggleTopMoves : GameUiEvent
+    data object ToggleEvalWithGradient : GameUiEvent
     data object UndoLastTurn : GameUiEvent
     data object Pass : GameUiEvent
     data object DismissResumePrompt : GameUiEvent
@@ -61,6 +62,7 @@ internal data class GameUiEventHandlers(
     val copyDebugReport: () -> Unit,
     val showEngineBenchmark: () -> Unit,
     val requestScoreEstimate: () -> Unit,
+    val toggleEvalWithGradient: () -> Unit,
     val showTopMoves: () -> Unit,
     val hideTopMoves: () -> Unit,
     val undoLastTurn: () -> Unit,
@@ -83,6 +85,7 @@ internal fun buildGameUiEventHandlers(
     copyDebugReport: () -> Unit,
     showEngineBenchmark: () -> Unit,
     requestScoreEstimate: () -> Unit,
+    toggleEvalWithGradient: () -> Unit,
     showTopMoves: () -> Unit,
     hideTopMoves: () -> Unit,
     undoLastTurn: () -> Unit,
@@ -104,6 +107,7 @@ internal fun buildGameUiEventHandlers(
         copyDebugReport = copyDebugReport,
         showEngineBenchmark = showEngineBenchmark,
         requestScoreEstimate = requestScoreEstimate,
+        toggleEvalWithGradient = toggleEvalWithGradient,
         showTopMoves = showTopMoves,
         hideTopMoves = hideTopMoves,
         undoLastTurn = undoLastTurn,
@@ -128,6 +132,7 @@ internal fun dispatchGameUiEvent(
         GameUiEvent.CopyDebugReport -> handlers.copyDebugReport()
         GameUiEvent.ShowEngineBenchmark -> handlers.showEngineBenchmark()
         GameUiEvent.RequestScoreEstimate -> handlers.requestScoreEstimate()
+        GameUiEvent.ToggleEvalWithGradient -> handlers.toggleEvalWithGradient()
         GameUiEvent.ToggleTopMoves -> {
             if (handlers.isTopMovesEnabled()) {
                 handlers.hideTopMoves()

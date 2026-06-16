@@ -257,15 +257,9 @@ private fun PlayerSetupSideRow(
             )
             when (side.controller) {
                 SeatController.Human -> {
-                    SetupDropdown(
-                        selectedText = state.humanGameTypeLabel,
-                        enabled = enabled,
+                    SetupStaticBox(
+                        text = "일반",
                         modifier = Modifier.weight(1.08f),
-                        options = HumanGameType.entries,
-                        optionLabel = { it.label },
-                        onSelected = { gameType ->
-                            onSideChange(side.copy(humanGameType = gameType))
-                        },
                     )
                     SetupStaticBox(
                         text = "-",
@@ -331,7 +325,7 @@ private fun PlayerSetupSideRow(
 }
 
 @Composable
-private fun <T> SetupDropdown(
+internal fun <T> SetupDropdown(
     selectedText: String,
     enabled: Boolean,
     modifier: Modifier,
