@@ -34,9 +34,8 @@ import com.worksoc.goaicoach.application.analysis.PositionCacheOptimizationContr
 import com.worksoc.goaicoach.application.preferences.UserPreferencesAutosaveRequest
 import com.worksoc.goaicoach.application.preferences.runUserPreferencesAutosave
 import com.worksoc.goaicoach.application.engine.operation.EngineOperationGate
-import com.worksoc.goaicoach.application.engine.operation.EngineOperationLifecycleState
-import com.worksoc.goaicoach.application.engine.operation.EngineOperationLifecycleTransition
 import com.worksoc.goaicoach.application.engine.operation.EngineOperationLifecycleCallbacks
+import com.worksoc.goaicoach.application.engine.operation.EngineOperationLifecycleController
 import com.worksoc.goaicoach.application.engine.operation.EngineOperationResultGuard
 import com.worksoc.goaicoach.shared.engine.EngineOperationRequest
 import com.worksoc.goaicoach.application.engine.EngineSessionClient
@@ -50,14 +49,11 @@ import com.worksoc.goaicoach.application.humanmove.HumanEngineSyncRunRequest
 import com.worksoc.goaicoach.application.humanmove.HumanEngineSyncRuntimeLogPlan
 import com.worksoc.goaicoach.application.humanmove.applyHumanMoveLocally
 import com.worksoc.goaicoach.application.humanmove.runHumanEngineSyncApplication
-import com.worksoc.goaicoach.application.engine.operation.applyEngineOperationLifecycleTransition
 import com.worksoc.goaicoach.application.debugreport.ClipboardPort
 import com.worksoc.goaicoach.application.engine.operation.evaluateScoringRuleChangeGate
 import com.worksoc.goaicoach.application.engine.operation.evaluateSearchTimeChangeGate
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationUiState
-import com.worksoc.goaicoach.application.engine.operation.recordEngineOperationDiscardLog
 import com.worksoc.goaicoach.application.engine.localScoreSnapshot
-import com.worksoc.goaicoach.application.engine.operation.runEngineOperationInScope
 import com.worksoc.goaicoach.application.savedgame.SavedGamePersistenceRunRequest
 import com.worksoc.goaicoach.application.savedgame.SavedGameRestorePlan
 import com.worksoc.goaicoach.application.savedgame.SavedGameRestoreRunRequest
@@ -298,8 +294,7 @@ private fun GoCoachScreen(
             ),
         )
     }
-    var engineOperationLifecycleState by remember { mutableStateOf(EngineOperationLifecycleState()) }
-    var isEngineBusy by remember { mutableStateOf(engineOperationLifecycleState.isEngineBusy) }
+    var isEngineBusy by remember { mutableStateOf(false) }
     var isEngineReady by remember { mutableStateOf(false) }
     val analysisCache = remember { AnalysisResultCache(maxEntries = 96) }
     val undoAnalysisRestoreCache = remember { UndoAnalysisRestoreCache(maxEntries = 96) }
@@ -398,33 +393,18 @@ private fun GoCoachScreen(
         )
     }
 
-    fun markEngineOperationStarted(operationId: String) {
-        engineOperationLifecycleState = applyEngineOperationLifecycleTransition(
-            state = engineOperationLifecycleState,
-            transition = EngineOperationLifecycleTransition.Started(operationId),
-        )
-        isEngineBusy = engineOperationLifecycleState.isEngineBusy
-        runtimeEventLog.append(
-            runtimeEngineOperationStartedLog(
-                context = currentRuntimeLogContext(),
-                operationId = operationId,
-                activeOperationCount = engineOperationLifecycleState.activeOperationIds.size,
-            ),
-        )
-    }
-
-    fun markEngineOperationCompleted(operationId: String) {
-        engineOperationLifecycleState = applyEngineOperationLifecycleTransition(
-            state = engineOperationLifecycleState,
-            transition = EngineOperationLifecycleTransition.Completed(operationId),
-        )
-        isEngineBusy = engineOperationLifecycleState.isEngineBusy
-        runtimeEventLog.append(
-            runtimeEngineOperationCompletedLog(
-                context = currentRuntimeLogContext(),
-                operationId = operationId,
-                activeOperationCount = engineOperationLifecycleState.activeOperationIds.size,
-            ),
+    // Remembered: the controller owns the single shared engine-operation
+    // lifecycle state, so it must survive recomposition to track concurrent
+    // operations correctly. Its closures read through stable remembered backing
+    // stores, so they observe current values without re-keying.
+    val lifecycleController = remember {
+        EngineOperationLifecycleController(
+            scope = scope,
+            runtimeEventLog = runtimeEventLog,
+            diagnosticEventLog = diagnosticEventLog,
+            currentRuntimeLogContext = { currentRuntimeLogContext() },
+            currentState = { gameState },
+            onBusyChanged = { busy -> isEngineBusy = busy },
         )
     }
 
@@ -435,45 +415,20 @@ private fun GoCoachScreen(
         )
 
     fun engineOperationLifecycleCallbacks(): EngineOperationLifecycleCallbacks =
-        EngineOperationLifecycleCallbacks(
-            onStarted = { request -> markEngineOperationStarted(request.operationId) },
-            onCompleted = { request -> markEngineOperationCompleted(request.operationId) },
-        )
+        lifecycleController.callbacks()
 
     fun launchTrackedEngineOperation(
         operation: EngineOperationRequest,
         block: suspend () -> Unit,
-    ): Job =
-        launchUiEffect(scope) {
-            runEngineOperationInScope(
-                request = operation,
-                callbacks = engineOperationLifecycleCallbacks(),
-            ) {
-                block()
-            }
-        }
+    ): Job = lifecycleController.launchTracked(operation, block)
 
     suspend fun runTrackedEngineOperation(
         operation: EngineOperationRequest,
         block: suspend () -> Unit,
-    ) {
-        runEngineOperationInScope(
-            request = operation,
-            callbacks = engineOperationLifecycleCallbacks(),
-        ) {
-            block()
-        }
-    }
+    ) = lifecycleController.runTracked(operation, block)
 
-    fun appendEngineOperationDiscardLog(discard: EngineOperationResultGuard.Discard) {
-        recordEngineOperationDiscardLog(
-            context = currentRuntimeLogContext(),
-            discard = discard,
-            currentState = gameState,
-            runtimeEventLog = runtimeEventLog,
-            diagnosticEventLog = diagnosticEventLog,
-        )
-    }
+    fun appendEngineOperationDiscardLog(discard: EngineOperationResultGuard.Discard) =
+        lifecycleController.appendDiscardLog(discard)
 
     LaunchedEffect(Unit) {
         runtimeEventLog.append(runtimeAppStartLog(currentRuntimeLogContext()))
@@ -1263,8 +1218,8 @@ private fun GoCoachScreen(
                         applyCancelled = { cancel ->
                             autoAiTurnUiState = autoAiTurnUiState.applyAutoAiTurnScheduleValidationPlan(cancel)
                         },
-                        markEngineOperationStarted = ::markEngineOperationStarted,
-                        markEngineOperationCompleted = ::markEngineOperationCompleted,
+                        markEngineOperationStarted = lifecycleController::markStarted,
+                        markEngineOperationCompleted = lifecycleController::markCompleted,
                         recordTurnMove = { player, nowMillis, nextPlayer ->
                             turnTimeState.recordMove(
                                 player = player,

@@ -535,6 +535,51 @@ class LayeringContractTest {
     }
 
     @Test
+    fun goCoachAppDoesNotOwnEngineOperationLifecycleBody() {
+        val goCoachApp = repoRoot()
+            .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
+        val text = goCoachApp.readText()
+        val forbiddenFragments = listOf(
+            "applyEngineOperationLifecycleTransition(",
+            "EngineOperationLifecycleTransition.",
+            "EngineOperationLifecycleState(",
+            "runEngineOperationInScope(",
+            "recordEngineOperationDiscardLog(",
+            "runtimeEngineOperationStartedLog(",
+            "runtimeEngineOperationCompletedLog(",
+        )
+            .filter { fragment -> fragment in text }
+        val requiredFragments = listOf(
+            "EngineOperationLifecycleController(",
+        )
+            .filterNot { fragment -> fragment in text }
+
+        assertTrue(
+            "GoCoachApp should delegate engine-operation lifecycle tracking to EngineOperationLifecycleController, not own transition/scope/log details:\n" +
+                "forbidden:\n${forbiddenFragments.joinToString("\n")}\nmissing:\n${requiredFragments.joinToString("\n")}",
+            forbiddenFragments.isEmpty() && requiredFragments.isEmpty(),
+        )
+    }
+
+    @Test
+    fun engineOperationLifecycleControllerOwnsTransitionAndScope() {
+        val controller = repoRoot()
+            .resolve("app-android/src/main/java/com/worksoc/goaicoach/application/engine/operation/EngineOperationLifecycleController.kt")
+        val text = controller.readText()
+        val requiredFragments = listOf(
+            "applyEngineOperationLifecycleTransition(",
+            "runEngineOperationInScope(",
+            "recordEngineOperationDiscardLog(",
+        )
+            .filterNot { fragment -> fragment in text }
+
+        assertTrue(
+            "EngineOperationLifecycleController must own the lifecycle transition/scope/discard wiring, missing:\n${requiredFragments.joinToString("\n")}",
+            requiredFragments.isEmpty(),
+        )
+    }
+
+    @Test
     fun goCoachAppUsesScreenStateAssemblerInsteadOfDirectScreenStateBuilders() {
         val goCoachApp = repoRoot()
             .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
@@ -872,7 +917,7 @@ class LayeringContractTest {
         // Downward ratchet: GoCoachApp is being reduced from a workflow-owning
         // god file to a thin UI shell. These budgets only ever move down — when
         // a refactor lowers them, tighten the numbers here in the same change.
-        val lineBudget = 1605
+        val lineBudget = 1560
         val stateHookBudget = 41
 
         val goCoachApp = repoRoot()
