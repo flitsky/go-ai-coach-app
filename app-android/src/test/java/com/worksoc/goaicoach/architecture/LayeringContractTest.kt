@@ -450,13 +450,36 @@ class LayeringContractTest {
             "runScoreEstimateEffectApplyPlan(",
             "GameSessionEffect.RunScoreEstimate(",
             "toScoreEstimateLaunchStateUpdate(",
+            "runScoreEstimateApplication(",
+            "ScoreEstimateRunRequest(",
         )
             .filter { fragment -> fragment in text }
+        val requiredFragments = listOf(
+            "ScoreEstimateController(",
+        )
+            .filterNot { fragment -> fragment in text }
 
         assertTrue(
-            "GoCoachApp should run score estimate through runScoreEstimateApplication, not own operation/effect/completion details:\n" +
-                forbiddenFragments.joinToString("\n"),
-            forbiddenFragments.isEmpty(),
+            "GoCoachApp should delegate score estimate to ScoreEstimateController, not own operation/effect/completion details:\n" +
+                "forbidden:\n${forbiddenFragments.joinToString("\n")}\nmissing:\n${requiredFragments.joinToString("\n")}",
+            forbiddenFragments.isEmpty() && requiredFragments.isEmpty(),
+        )
+    }
+
+    @Test
+    fun scoreEstimateControllerDelegatesToApplicationRunner() {
+        val controller = repoRoot()
+            .resolve("app-android/src/main/java/com/worksoc/goaicoach/application/score/ScoreEstimateController.kt")
+        val text = controller.readText()
+        val requiredFragments = listOf(
+            "runScoreEstimateApplication(",
+            "ScoreEstimateRunRequest(",
+        )
+            .filterNot { fragment -> fragment in text }
+
+        assertTrue(
+            "ScoreEstimateController must delegate to runScoreEstimateApplication, missing:\n${requiredFragments.joinToString("\n")}",
+            requiredFragments.isEmpty(),
         )
     }
 
@@ -917,7 +940,7 @@ class LayeringContractTest {
         // Downward ratchet: GoCoachApp is being reduced from a workflow-owning
         // god file to a thin UI shell. These budgets only ever move down — when
         // a refactor lowers them, tighten the numbers here in the same change.
-        val lineBudget = 1534
+        val lineBudget = 1510
         val stateHookBudget = 41
 
         val goCoachApp = repoRoot()

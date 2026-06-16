@@ -575,19 +575,6 @@ private fun GoCoachScreen(
         engineMessage = update.engineMessage
     }
 
-    fun applyScoreEstimateCompletionApplyPlan(applyPlan: ScoreEstimateCompletionApplyPlan) {
-        when (applyPlan) {
-            is ScoreEstimateCompletionApplyPlan.ApplySuccess ->
-                displayStateApplier.applyScoreEstimateDisplayPlan(applyPlan.display)
-
-            is ScoreEstimateCompletionApplyPlan.ApplyFailure ->
-                displayStateApplier.applyScoreEstimateFailureDisplayPlan(applyPlan.failure)
-
-            is ScoreEstimateCompletionApplyPlan.Discard ->
-                appendEngineOperationDiscardLog(applyPlan.discard)
-        }
-    }
-
     fun applyScoreSyncCompletionApplyPlan(applyPlan: ScoreSyncCompletionApplyPlan): GameState? =
         when (applyPlan) {
             is ScoreSyncCompletionApplyPlan.ApplySuccess -> {
@@ -1039,34 +1026,6 @@ private fun GoCoachScreen(
         )
     }
 
-    fun requestScoreEstimate() {
-        runScoreEstimateApplication(
-            ScoreEstimateRunRequest(
-                engineClient = engineClient,
-                state = gameState,
-                previousSnapshots = scoreState.scoreSnapshots,
-                isEngineReady = isEngineReady,
-                isEngineBusy = isEngineBusy,
-                matchMode = matchMode,
-                engineProfile = runtimeState.engineProfile,
-                sessionGeneration = runtimeState.sessionGeneration,
-                diagnosticEventLog = diagnosticEventLog,
-                currentState = { gameState },
-                currentSessionGeneration = { runtimeState.sessionGeneration },
-                launchEngineOperation = { operation, block ->
-                    launchTrackedEngineOperation(operation) {
-                        block()
-                    }
-                },
-                applyLaunchUpdate = { launch ->
-                    launch.engineMessage?.let { message -> engineMessage = message }
-                    launch.display?.let(displayStateApplier::applyScoreEstimateDisplayPlan)
-                },
-                applyCompletion = ::applyScoreEstimateCompletionApplyPlan,
-            ),
-        )
-    }
-
     fun startEngineBackedNewGame(plan: StartConfiguredGamePlan.StartEngineGame) {
         runStartEngineBackedGameApplication(
             StartEngineBackedGameRunRequest(
@@ -1401,6 +1360,23 @@ private fun GoCoachScreen(
         launchEngineOperation = { operation, block -> launchTrackedEngineOperation(operation) { block() } },
     )
 
+    val scoreEstimateController = ScoreEstimateController(
+        engineClient = engineClient,
+        diagnosticEventLog = diagnosticEventLog,
+        currentGameState = { gameState },
+        currentScoreSnapshots = { scoreState.scoreSnapshots },
+        isEngineReady = { isEngineReady },
+        isEngineBusy = { isEngineBusy },
+        currentMatchMode = { matchMode },
+        currentEngineProfile = { runtimeState.engineProfile },
+        currentSessionGeneration = { runtimeState.sessionGeneration },
+        launchEngineOperation = { operation, block -> launchTrackedEngineOperation(operation) { block() } },
+        onEngineMessage = { message -> engineMessage = message },
+        onScoreEstimateDisplayPlan = displayStateApplier::applyScoreEstimateDisplayPlan,
+        onScoreEstimateFailureDisplayPlan = displayStateApplier::applyScoreEstimateFailureDisplayPlan,
+        appendDiscardLog = ::appendEngineOperationDiscardLog,
+    )
+
     fun copyDebugReport() {
         runDebugReportCopyApplication(
             DebugReportCopyRunRequest(
@@ -1436,7 +1412,7 @@ private fun GoCoachScreen(
                 startConfiguredGame = ::startConfiguredGame,
                 copyDebugReport = ::copyDebugReport,
                 showEngineBenchmark = benchmarkController::showResult,
-                requestScoreEstimate = ::requestScoreEstimate,
+                requestScoreEstimate = scoreEstimateController::request,
                 showTopMoves = ::showTopMovesForCurrentState,
                 hideTopMoves = ::hideTopMoves,
                 undoLastTurn = ::undoLastTurn,
