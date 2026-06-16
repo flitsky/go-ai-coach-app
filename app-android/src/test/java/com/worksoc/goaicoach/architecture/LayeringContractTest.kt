@@ -497,18 +497,40 @@ class LayeringContractTest {
             "EngineOperationKind.PositionCacheOptimization",
             "EngineFallbackPolicy.CachedAnalysis",
             "position-cache-optimization",
+            "runPositionAnalysisCacheOptimizationApplication(",
+            "PositionAnalysisCacheOptimizationRunRequest(",
+            "buildPositionAnalysisCacheOptimizationPlan(",
+            "refreshPositionAnalysisCacheOptimizationPrompt(",
         )
             .filter { fragment -> fragment in text }
         val requiredFragments = listOf(
-            "runPositionAnalysisCacheOptimizationApplication(",
-            "PositionAnalysisCacheOptimizationRunRequest(",
+            "PositionCacheOptimizationController(",
         )
             .filterNot { fragment -> fragment in text }
 
         assertTrue(
-            "GoCoachApp should run post-game position cache optimization through analysis application runner, not own operation/effect/result details:\n" +
+            "GoCoachApp should delegate position-cache-optimization to PositionCacheOptimizationController, not own plan/runner/prompt details:\n" +
                 "forbidden:\n${forbiddenFragments.joinToString("\n")}\nmissing:\n${requiredFragments.joinToString("\n")}",
             forbiddenFragments.isEmpty() && requiredFragments.isEmpty(),
+        )
+    }
+
+    @Test
+    fun positionCacheOptimizationControllerDelegatesToApplicationRunner() {
+        val controller = repoRoot()
+            .resolve("app-android/src/main/java/com/worksoc/goaicoach/application/analysis/PositionCacheOptimizationController.kt")
+        val text = controller.readText()
+        val requiredFragments = listOf(
+            "runPositionAnalysisCacheOptimizationApplication(",
+            "PositionAnalysisCacheOptimizationRunRequest(",
+            "buildPositionAnalysisCacheOptimizationPlan(",
+            "refreshPositionAnalysisCacheOptimizationPrompt(",
+        )
+            .filterNot { fragment -> fragment in text }
+
+        assertTrue(
+            "PositionCacheOptimizationController must delegate to the application runner, missing:\n${requiredFragments.joinToString("\n")}",
+            requiredFragments.isEmpty(),
         )
     }
 
@@ -850,8 +872,8 @@ class LayeringContractTest {
         // Downward ratchet: GoCoachApp is being reduced from a workflow-owning
         // god file to a thin UI shell. These budgets only ever move down — when
         // a refactor lowers them, tighten the numbers here in the same change.
-        val lineBudget = 1650
-        val stateHookBudget = 43
+        val lineBudget = 1605
+        val stateHookBudget = 41
 
         val goCoachApp = repoRoot()
             .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
