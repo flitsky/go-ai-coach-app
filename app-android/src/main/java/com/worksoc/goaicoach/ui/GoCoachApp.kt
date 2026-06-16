@@ -575,20 +575,10 @@ private fun GoCoachScreen(
         engineMessage = update.engineMessage
     }
 
-    fun applyTopMoveAnalysisFailureDisplayPlan(
-        failure: TopMoveAnalysisFailureDisplayPlan,
-    ) {
-        displayStateApplier.applyTopMoveAnalysisFailureDisplayPlan(failure)
-    }
-
-    fun applyScoreEstimateDisplayPlan(score: ScoreEstimateDisplayPlan) {
-        displayStateApplier.applyScoreEstimateDisplayPlan(score)
-    }
-
     fun applyScoreEstimateCompletionApplyPlan(applyPlan: ScoreEstimateCompletionApplyPlan) {
         when (applyPlan) {
             is ScoreEstimateCompletionApplyPlan.ApplySuccess ->
-                applyScoreEstimateDisplayPlan(applyPlan.display)
+                displayStateApplier.applyScoreEstimateDisplayPlan(applyPlan.display)
 
             is ScoreEstimateCompletionApplyPlan.ApplyFailure ->
                 displayStateApplier.applyScoreEstimateFailureDisplayPlan(applyPlan.failure)
@@ -601,7 +591,7 @@ private fun GoCoachScreen(
     fun applyScoreSyncCompletionApplyPlan(applyPlan: ScoreSyncCompletionApplyPlan): GameState? =
         when (applyPlan) {
             is ScoreSyncCompletionApplyPlan.ApplySuccess -> {
-                applyScoreEstimateDisplayPlan(applyPlan.display)
+                displayStateApplier.applyScoreEstimateDisplayPlan(applyPlan.display)
                 applyPlan.followUpAnalysisState
             }
 
@@ -616,14 +606,6 @@ private fun GoCoachScreen(
             }
         }
 
-    fun applyFinalScoreDisplayPlan(final: FinalScoreDisplayPlan) {
-        displayStateApplier.applyFinalScoreDisplayPlan(final)
-    }
-
-    fun applyEndgameFailureDisplayPlan(failure: EndgameFailureDisplayPlan) {
-        displayStateApplier.applyEndgameFailureDisplayPlan(failure)
-    }
-
     fun currentRuntimeSessionState(): GameSessionRuntimeState =
         runtimeState
 
@@ -635,10 +617,6 @@ private fun GoCoachScreen(
         applyRuntimeSessionState(currentRuntimeSessionState().applySelection(selection))
     }
 
-    fun applyAutoAiTurnDisplayPlan(display: AutoAiTurnDisplayPlan): AutoAiTurnFollowUpPlan {
-        return displayStateApplier.applyAutoAiTurnDisplayPlan(display)
-    }
-
     fun applyAutoAiTurnFailureDisplayPlan(error: Throwable) {
         displayStateApplier.applyAutoAiTurnFailureDisplayPlan(
             buildAutoAiTurnFailureDisplayPlan(error),
@@ -648,19 +626,15 @@ private fun GoCoachScreen(
     fun applyHumanEngineSyncDisplayPlan(sync: HumanEngineSyncDisplayPlan): GameState? =
         when (sync) {
             is HumanEngineSyncDisplayPlan.FinalScore -> {
-                applyFinalScoreDisplayPlan(sync.display)
+                displayStateApplier.applyFinalScoreDisplayPlan(sync.display)
                 null
             }
             is HumanEngineSyncDisplayPlan.ScoreEstimate -> {
-                applyScoreEstimateDisplayPlan(sync.display)
+                displayStateApplier.applyScoreEstimateDisplayPlan(sync.display)
                 analysisState = analysisState.copy(candidateText = sync.candidateText)
                 sync.nextAnalysisState
             }
             HumanEngineSyncDisplayPlan.NoUpdate -> null
-    }
-
-    fun applyHumanEngineSyncFailurePlan(failure: HumanEngineSyncFailurePlan) {
-        displayStateApplier.applyHumanEngineSyncFailurePlan(failure)
     }
 
     fun appendHumanEngineSyncRuntimeLog(
@@ -703,7 +677,7 @@ private fun GoCoachScreen(
                 applyHumanEngineSyncDisplayPlan(applyPlan.display)
 
             is HumanEngineSyncCompletionApplyPlan.ApplyFailure -> {
-                applyHumanEngineSyncFailurePlan(applyPlan.failure)
+                displayStateApplier.applyHumanEngineSyncFailurePlan(applyPlan.failure)
                 null
             }
 
@@ -851,7 +825,7 @@ private fun GoCoachScreen(
                 putAnalysisCache = { key, cached ->
                     analysisCache.put(key, cached)
                 },
-                applyFailureDisplay = ::applyTopMoveAnalysisFailureDisplayPlan,
+                applyFailureDisplay = displayStateApplier::applyTopMoveAnalysisFailureDisplayPlan,
                 appendEngineOperationDiscardLog = ::appendEngineOperationDiscardLog,
             ),
         )
@@ -1086,7 +1060,7 @@ private fun GoCoachScreen(
                 },
                 applyLaunchUpdate = { launch ->
                     launch.engineMessage?.let { message -> engineMessage = message }
-                    launch.display?.let(::applyScoreEstimateDisplayPlan)
+                    launch.display?.let(displayStateApplier::applyScoreEstimateDisplayPlan)
                 },
                 applyCompletion = ::applyScoreEstimateCompletionApplyPlan,
             ),
@@ -1175,8 +1149,8 @@ private fun GoCoachScreen(
                 runtimeEventLog = runtimeEventLog,
                 diagnosticEventLog = diagnosticEventLog,
                 markGameEnded = { isGameEnded = true },
-                applyResolvedDisplay = ::applyFinalScoreDisplayPlan,
-                applyFailureDisplay = ::applyEndgameFailureDisplayPlan,
+                applyResolvedDisplay = displayStateApplier::applyFinalScoreDisplayPlan,
+                applyFailureDisplay = displayStateApplier::applyEndgameFailureDisplayPlan,
                 appendEngineOperationDiscardLog = ::appendEngineOperationDiscardLog,
             ),
         )
@@ -1230,7 +1204,7 @@ private fun GoCoachScreen(
                         applyTurnTimeUpdate = { update ->
                             turnTimeState = update.after
                         },
-                        applyTurnDisplay = ::applyAutoAiTurnDisplayPlan,
+                        applyTurnDisplay = displayStateApplier::applyAutoAiTurnDisplayPlan,
                         resolveEndgame = ::applyAutoAiEndgamePlan,
                         applyTurnFailureDisplay = ::applyAutoAiTurnFailureDisplayPlan,
                         appendEngineOperationDiscardLog = ::appendEngineOperationDiscardLog,
@@ -1312,7 +1286,7 @@ private fun GoCoachScreen(
                     engineMessage = "Local game ended after two passes. ${localFinalScore.status.message}",
                     candidateText = "Game ended after two passes.",
                 )
-                applyFinalScoreDisplayPlan(final)
+                displayStateApplier.applyFinalScoreDisplayPlan(final)
             } else {
                 analysisState = analysisState.copy(candidateText = localMove.capturedText)
                 engineMessage = "Local move accepted without engine sync: ${move.describe(beforeMove.boardSize)}."
