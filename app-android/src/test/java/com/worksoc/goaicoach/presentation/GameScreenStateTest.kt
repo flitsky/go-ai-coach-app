@@ -40,7 +40,7 @@ class GameScreenStateTest {
         val screenState = buildGameScreenState(defaultInput(gameState = gameState))
 
         assertEquals(StoneColor.White, screenState.nextPlayer)
-        assertTrue(screenState.uxOptions.showCoordinates)
+        assertFalse(screenState.uxOptions.showCoordinates)
         assertTrue(screenState.uxOptions.showLastMoveRing)
         assertTrue(screenState.uxOptions.showOwnershipOverlay)
         assertFalse(screenState.uxOptions.showMoveNumbers)

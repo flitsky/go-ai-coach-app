@@ -66,7 +66,7 @@ class UserPreferencesCodecTest {
         assertEquals(PlayerSetup(), restored?.playerSetup)
         assertEquals(Ruleset.Japanese, restored?.ruleset)
         assertFalse(restored?.topMovesEnabled ?: true)
-        assertTrue(restored?.showCoordinates ?: false)
+        assertFalse(restored?.showCoordinates ?: true)
         assertFalse(restored?.showMoveNumbers ?: true)
         assertTrue(restored?.showLastMoveRing ?: false)
         assertTrue(restored?.showOwnershipOverlay ?: false)

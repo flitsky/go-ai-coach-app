@@ -297,7 +297,7 @@ internal fun buildGameActionButtonStates(input: GameScreenStateInput): List<Game
 }
 
 internal data class KaTrainUxOptions(
-    val showCoordinates: Boolean = true,
+    val showCoordinates: Boolean = false,
     val showMoveNumbers: Boolean = false,
     val showLastMoveRing: Boolean = true,
     val showOwnershipOverlay: Boolean = true,

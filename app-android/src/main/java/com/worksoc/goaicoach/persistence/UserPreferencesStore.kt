@@ -60,7 +60,7 @@ internal object UserPreferencesCodec {
                 playerSetup = decodePlayerSetup(json.optJSONObject("playerSetup")),
                 ruleset = enumOrDefault(json.optString("ruleset"), Ruleset.Japanese),
                 topMovesEnabled = json.optBoolean("topMovesEnabled", false),
-                showCoordinates = json.optBoolean("showCoordinates", true),
+                showCoordinates = json.optBoolean("showCoordinates", false),
                 showMoveNumbers = json.optBoolean("showMoveNumbers", false),
                 showLastMoveRing = json.optBoolean("showLastMoveRing", true),
                 showOwnershipOverlay = json.optBoolean("showOwnershipOverlay", true),
