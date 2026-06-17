@@ -75,24 +75,24 @@ internal fun GoBoard(
         modifier = modifier
             .background(Color(0xFFD7A85E), RoundedCornerShape(8.dp))
             .border(1.dp, Color(0xFF7A4D20), RoundedCornerShape(8.dp))
-            .padding(10.dp),
+            .padding(3.dp),
         contentAlignment = Alignment.Center,
     ) {
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
                 .onSizeChanged { canvasSize = it }
-                .pointerInput(gameState.boardSize, inputEnabled) {
+                .pointerInput(gameState.boardSize, inputEnabled, uxOptions.showCoordinates) {
                     detectTapGestures { offset ->
                         if (!inputEnabled) {
                             return@detectTapGestures
                         }
-                        coordinateFromTap(offset, canvasSize, gameState.boardSize)
+                        coordinateFromTap(offset, canvasSize, gameState.boardSize, uxOptions.showCoordinates)
                             ?.let(onCoordinateTap)
                     }
                 },
         ) {
-            val geometry = BoardGeometry.from(size, gameState.boardSize)
+            val geometry = BoardGeometry.from(size, gameState.boardSize, uxOptions.showCoordinates)
             drawBoardGrid(geometry, gameState.boardSize)
             if (uxOptions.showCoordinates) {
                 drawBoardCoordinates(geometry, gameState.boardSize)
@@ -501,9 +501,13 @@ private data class BoardGeometry(
         )
 
     companion object {
-        fun from(size: Size, boardSize: BoardSize): BoardGeometry {
+        fun from(size: Size, boardSize: BoardSize, showCoordinates: Boolean): BoardGeometry {
             val side = min(size.width, size.height)
-            val boardPadding = side * 0.08f
+            val boardPadding = if (showCoordinates) {
+                (side * 0.5f) / boardSize.value
+            } else {
+                side * 0.027f
+            }
             val origin = Offset(
                 x = (size.width - side) / 2f + boardPadding,
                 y = (size.height - side) / 2f + boardPadding,
@@ -520,6 +524,7 @@ private fun coordinateFromTap(
     offset: Offset,
     canvasSize: IntSize,
     boardSize: BoardSize,
+    showCoordinates: Boolean,
 ): BoardCoordinate? {
     if (canvasSize.width == 0 || canvasSize.height == 0) {
         return null
@@ -527,6 +532,7 @@ private fun coordinateFromTap(
     val geometry = BoardGeometry.from(
         size = Size(canvasSize.width.toFloat(), canvasSize.height.toFloat()),
         boardSize = boardSize,
+        showCoordinates = showCoordinates,
     )
     val column = ((offset.x - geometry.origin.x) / geometry.spacing).roundToInt()
     val row = ((offset.y - geometry.origin.y) / geometry.spacing).roundToInt()
