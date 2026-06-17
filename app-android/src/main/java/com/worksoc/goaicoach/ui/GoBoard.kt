@@ -200,15 +200,15 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawBoardCoordinate
         val bottomPoint = geometry.pointFor(BoardCoordinate(boardSize.value - 1, index))
         drawBoardLabel(
             label = columnLabels[index].toString(),
-            center = Offset(bottomPoint.x, bottomPoint.y + geometry.spacing * 0.43f),
+            center = Offset(bottomPoint.x, bottomPoint.y + geometry.boardPadding / 2f),
             textSize = textSize,
         )
 
         val rowLabel = (boardSize.value - index).toString()
-        val leftPoint = geometry.pointFor(BoardCoordinate(index, 0))
+        val rightPoint = geometry.pointFor(BoardCoordinate(index, boardSize.value - 1))
         drawBoardLabel(
             label = rowLabel,
-            center = Offset(geometry.origin.x - geometry.spacing * 0.43f, leftPoint.y),
+            center = Offset(rightPoint.x + geometry.boardPadding / 2f, rightPoint.y),
             textSize = textSize,
         )
     }
@@ -493,6 +493,7 @@ private fun stoneEdgeColor(stone: StoneColor): Color =
 private data class BoardGeometry(
     val origin: Offset,
     val spacing: Float,
+    val boardPadding: Float,
 ) {
     fun pointFor(coordinate: BoardCoordinate): Offset =
         Offset(
@@ -515,6 +516,7 @@ private data class BoardGeometry(
             return BoardGeometry(
                 origin = origin,
                 spacing = (side - boardPadding * 2f) / (boardSize.value - 1),
+                boardPadding = boardPadding,
             )
         }
     }
