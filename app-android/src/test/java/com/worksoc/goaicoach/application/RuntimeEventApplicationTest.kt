@@ -65,6 +65,7 @@ class RuntimeEventApplicationTest {
         val reset = buildNewLocalGameSessionPlan(
             message = "new game\nstarted",
             ruleset = Ruleset.Japanese,
+            boardSize = BoardSize.Nine,
         )
 
         val log = runtimeGameResetLog(
@@ -273,6 +274,7 @@ class RuntimeEventApplicationTest {
                 autoPlayDelaySetting = AutoPlayDelaySetting.Slow,
                 searchTimeSettings = SearchTimeSettings(b16Millis = 1_500L),
                 topMovesEnabled = true,
+                boardSize = BoardSize.Nine,
             ),
             benchmark = EngineBenchmarkUiState.initial("none", null),
             savedSession = SavedSessionUiState(shouldShowResumePrompt = true),

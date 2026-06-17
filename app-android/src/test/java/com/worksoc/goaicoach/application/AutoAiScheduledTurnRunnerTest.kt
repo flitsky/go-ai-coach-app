@@ -316,6 +316,7 @@ class AutoAiScheduledTurnRunnerTest {
                 autoPlayDelaySetting = AutoPlayDelaySetting.None,
                 searchTimeSettings = SearchTimeSettings(),
                 topMovesEnabled = true,
+                boardSize = BoardSize.Nine,
             ),
             benchmark = EngineBenchmarkUiState.initial(
                 benchmarkText = "benchmark",

@@ -270,7 +270,7 @@ class DiagnosticEventApplicationTest {
 
         assertTrue(result.isSuccess)
         val text = file.readText()
-        assertTrue(text.contains("\"createdAtMillis\":12345"))
+        assertTrue(text.contains("\"t\":12345"))
         assertTrue(text.contains("\"severity\":\"critical\""))
         assertTrue(text.contains("\"code\":\"score.final_disagreement\""))
         assertTrue(text.contains("\"localScore\":\"B+10\""))

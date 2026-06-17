@@ -11,6 +11,7 @@ import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 
 internal data class GameSettings(
+    val boardSize: BoardSize,
     val ruleset: Ruleset,
     val topMovesEnabled: Boolean,
     val autoPlayDelaySetting: AutoPlayDelaySetting,
@@ -36,7 +37,7 @@ internal fun buildInitialUserPreferencesPlan(
     currentProfile: EngineProfile,
 ): InitialUserPreferencesPlan {
     val settings = preferences.toGameSettings()
-    val state = GameState.empty(BoardSize.Nine, settings.ruleset)
+    val state = GameState.empty(preferences.boardSize, settings.ruleset)
     return InitialUserPreferencesPlan(
         gameState = state,
         playerSetup = preferences.playerSetup,
@@ -53,6 +54,7 @@ internal fun buildInitialUserPreferencesPlan(
 
 internal fun buildUserPreferencesSnapshot(
     playerSetup: PlayerSetup,
+    boardSize: BoardSize,
     ruleset: Ruleset,
     topMovesEnabled: Boolean,
     showCoordinates: Boolean,
@@ -63,6 +65,7 @@ internal fun buildUserPreferencesSnapshot(
     searchTimeSettings: SearchTimeSettings = SearchTimeSettings(),
 ): UserPreferencesSnapshot =
     buildGameSettings(
+        boardSize = boardSize,
         ruleset = ruleset,
         topMovesEnabled = topMovesEnabled,
         autoPlayDelaySetting = autoPlayDelaySetting,
@@ -85,6 +88,7 @@ internal fun buildUserPreferencesSnapshot(
 ): UserPreferencesSnapshot =
     buildUserPreferencesSnapshot(
         playerSetup = settingsState.playerSetup,
+        boardSize = settingsState.boardSize,
         ruleset = ruleset,
         topMovesEnabled = settingsState.topMovesEnabled,
         showCoordinates = showCoordinates,
@@ -96,12 +100,14 @@ internal fun buildUserPreferencesSnapshot(
     )
 
 internal fun buildGameSettings(
+    boardSize: BoardSize,
     ruleset: Ruleset,
     topMovesEnabled: Boolean,
     autoPlayDelaySetting: AutoPlayDelaySetting,
     searchTimeSettings: SearchTimeSettings = SearchTimeSettings(),
 ): GameSettings =
     GameSettings(
+        boardSize = boardSize,
         ruleset = ruleset,
         topMovesEnabled = topMovesEnabled,
         autoPlayDelaySetting = autoPlayDelaySetting,
@@ -110,6 +116,7 @@ internal fun buildGameSettings(
 
 private fun UserPreferencesSnapshot.toGameSettings(): GameSettings =
     buildGameSettings(
+        boardSize = boardSize,
         ruleset = ruleset,
         topMovesEnabled = topMovesEnabled,
         autoPlayDelaySetting = AutoPlayDelaySetting.fromMillis(autoPlayDelayMillis),
@@ -124,6 +131,7 @@ private fun GameSettings.toUserPreferencesSnapshot(
     showOwnershipOverlay: Boolean,
 ): UserPreferencesSnapshot =
     UserPreferencesSnapshot(
+        boardSize = boardSize,
         playerSetup = playerSetup,
         ruleset = ruleset,
         topMovesEnabled = topMovesEnabled,

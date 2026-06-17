@@ -6,6 +6,7 @@ import com.worksoc.goaicoach.application.preferences.UserPreferencesStorePort
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.persistence.PlayerSetupJsonCodec.decodePlayerSetup
 import com.worksoc.goaicoach.persistence.PlayerSetupJsonCodec.encodePlayerSetup
+import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import org.json.JSONObject
@@ -36,6 +37,7 @@ internal object UserPreferencesCodec {
     fun encode(snapshot: UserPreferencesSnapshot): String =
         JSONObject()
             .put("schema", SchemaVersion)
+            .put("boardSize", snapshot.boardSize.value)
             .put("playerSetup", encodePlayerSetup(snapshot.playerSetup))
             .put("ruleset", snapshot.ruleset.name)
             .put("topMovesEnabled", snapshot.topMovesEnabled)
@@ -54,6 +56,7 @@ internal object UserPreferencesCodec {
                 return@runCatching null
             }
             UserPreferencesSnapshot(
+                boardSize = BoardSize(json.optInt("boardSize", BoardSize.Nine.value)),
                 playerSetup = decodePlayerSetup(json.optJSONObject("playerSetup")),
                 ruleset = enumOrDefault(json.optString("ruleset"), Ruleset.Japanese),
                 topMovesEnabled = json.optBoolean("topMovesEnabled", false),

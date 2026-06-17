@@ -17,6 +17,9 @@ import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.describe
+import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
+import com.worksoc.goaicoach.application.diagnostic.NoopDiagnosticEventLog
+import com.worksoc.goaicoach.application.diagnostic.scoreDisagreementDiagnosticEvent
 
 internal interface EndgameJudgeGateway {
     suspend fun configure(profile: EngineProfile): EngineStatus
@@ -155,6 +158,7 @@ internal suspend fun resolveAiEndgame(
     assistantJudgeDeadStonesProfile: EngineProfile? = null,
     assistantJudgeFinalScoreProfile: EngineProfile? = null,
     runDiagnosticFinalScore: Boolean = true,
+    diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
 ): AiEndgameResolution {
     // This resolver composes raw engine primitives and local scoring. It is not
     // the product SLA boundary by itself. Default pass/pass UX should call this
@@ -228,6 +232,19 @@ internal suspend fun resolveAiEndgame(
         diagnosticFinalScoreMs = diagnosticFinalScoreMs,
         resolverTotalMs = System.currentTimeMillis() - resolverStartMillis,
     )
+
+    val engineScore = engineFinalScore
+    if (engineScore != null) {
+        if (localFinalScore.rawScore != engineScore.rawScore) {
+            diagnosticEventLog.append(
+                scoreDisagreementDiagnosticEvent(
+                    engineFinalScore = engineScore.rawScore,
+                    localScore = localFinalScore.rawScore,
+                    source = scoreSelection.source.name,
+                )
+            )
+        }
+    }
 
     return AiEndgameResolution(
         cleanup = cleanup,

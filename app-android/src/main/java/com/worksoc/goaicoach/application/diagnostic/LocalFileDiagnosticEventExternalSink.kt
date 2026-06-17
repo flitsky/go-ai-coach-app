@@ -11,16 +11,16 @@ internal class LocalFileDiagnosticEventExternalSink(
         runCatching {
             file.parentFile?.mkdirs()
             file.appendText(
-                text = payload.toJsonLine(createdAtMillis = currentTimeMillis()) + "\n",
+                text = payload.toJsonLine(t = currentTimeMillis()) + "\n",
                 charset = Charsets.UTF_8,
             )
         }
 }
 
-private fun DiagnosticEventExternalExportPayload.toJsonLine(createdAtMillis: Long): String =
+private fun DiagnosticEventExternalExportPayload.toJsonLine(t: Long): String =
     buildString {
         append("{")
-        append("\"createdAtMillis\":$createdAtMillis")
+        append("\"t\":$t")
         append(",\"severity\":${event.severity.label.jsonString()}")
         append(",\"code\":${event.code.jsonString()}")
         append(",\"message\":${event.message.jsonString()}")

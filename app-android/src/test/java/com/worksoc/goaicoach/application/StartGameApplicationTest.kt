@@ -5,6 +5,7 @@ import com.worksoc.goaicoach.application.startgame.*
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.match.SidePlayerSetup
+import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.PlayLevelGroup
 import com.worksoc.goaicoach.shared.PlayLevelSetting
@@ -22,6 +23,7 @@ class StartGameApplicationTest {
                 black = SidePlayerSetup(controller = SeatController.Human),
                 white = SidePlayerSetup(controller = SeatController.Ai),
             ),
+            boardSize = BoardSize.Nine,
             ruleset = Ruleset.Japanese,
             nextPlayer = StoneColor.Black,
             isEngineReady = false,
@@ -34,6 +36,7 @@ class StartGameApplicationTest {
             StartConfiguredGamePlan.ResetLocalGame(
                 message = "Player Setup includes AI, but engine is not ready.",
                 ruleset = Ruleset.Japanese,
+                boardSize = BoardSize.Nine,
             ),
             plan,
         )
@@ -46,6 +49,7 @@ class StartGameApplicationTest {
                 black = SidePlayerSetup(controller = SeatController.Human),
                 white = SidePlayerSetup(controller = SeatController.Ai),
             ),
+            boardSize = BoardSize.Nine,
             ruleset = Ruleset.Chinese,
             nextPlayer = StoneColor.Black,
             isEngineReady = true,
@@ -69,6 +73,7 @@ class StartGameApplicationTest {
                 black = SidePlayerSetup(controller = SeatController.Human),
                 white = SidePlayerSetup(controller = SeatController.Human),
             ),
+            boardSize = BoardSize.Nine,
             ruleset = Ruleset.Chinese,
             nextPlayer = StoneColor.Black,
             isEngineReady = false,
@@ -81,6 +86,7 @@ class StartGameApplicationTest {
             StartConfiguredGamePlan.ResetLocalGame(
                 message = "Local two-player game. Engine analysis is not connected.",
                 ruleset = Ruleset.Chinese,
+                boardSize = BoardSize.Nine,
             ),
             plan,
         )
@@ -94,6 +100,7 @@ class StartGameApplicationTest {
                 black = SidePlayerSetup(controller = SeatController.Human),
                 white = SidePlayerSetup(controller = SeatController.Ai, playLevel = aiLevel),
             ),
+            boardSize = BoardSize.Nine,
             ruleset = Ruleset.Japanese,
             nextPlayer = StoneColor.White,
             isEngineReady = true,

@@ -1066,6 +1066,7 @@ private fun automationControllerState(
             autoPlayDelaySetting = autoPlayDelaySetting,
             searchTimeSettings = searchTimeSettings,
             topMovesEnabled = false,
+            boardSize = BoardSize.Nine,
         ),
         benchmark = EngineBenchmarkUiState.initial(
             benchmarkText = "benchmark",

@@ -33,7 +33,7 @@ internal data class StartEngineBackedGameRunRequest(
     val diagnosticEventLog: DiagnosticEventLogPort,
     val applyRuntime: (RuntimePlayLevelSelection) -> Unit,
     val launchEngineOperation: (EngineOperationRequest, suspend () -> Unit) -> Unit,
-    val resetLocalGame: (message: String, ruleset: Ruleset) -> Unit,
+    val resetLocalGame: (message: String, ruleset: Ruleset, boardSize: BoardSize) -> Unit,
     val currentScoreStateProvider: () -> GameSessionScoreState,
     val replaceScoreState: (GameSessionScoreState) -> Unit,
     val currentStateProvider: () -> GameState,
@@ -69,7 +69,7 @@ internal fun runStartEngineBackedGameApplication(
                     effect = GameSessionEffect.StartEngineBackedGame(
                         currentState = request.currentStateProvider(),
                         profile = runtime.engineProfile,
-                        boardSize = BoardSize.Nine,
+                        boardSize = request.plan.boardSize,
                         ruleset = targetRuleset,
                     ),
                     operationRequest = operation,
@@ -85,7 +85,7 @@ internal fun runStartEngineBackedGameApplication(
                         message = result.result.message,
                     ),
                 )
-                request.resetLocalGame(result.result.message, targetRuleset)
+                request.resetLocalGame(result.result.message, targetRuleset, request.plan.boardSize)
                 val resetState = request.currentStateProvider()
                 request.replaceScoreState(
                     request.currentScoreStateProvider().replaceSnapshots(
@@ -103,7 +103,7 @@ internal fun runStartEngineBackedGameApplication(
                         error = result.error,
                     ),
                 )
-                request.resetLocalGame(result.error.message ?: "New AI game failed.", targetRuleset)
+                request.resetLocalGame(result.error.message ?: "New AI game failed.", targetRuleset, request.plan.boardSize)
                 request.currentStateProvider()
             }
         }

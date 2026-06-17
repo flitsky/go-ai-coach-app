@@ -137,6 +137,7 @@ class GameSessionApplicationTest {
         val plan = buildNewLocalGameSessionPlan(
             message = "New game",
             ruleset = Ruleset.Japanese,
+            boardSize = BoardSize.Nine,
         )
 
         assertEquals(0, plan.gameState.moves.size)

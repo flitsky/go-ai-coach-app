@@ -7,6 +7,7 @@ import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.match.SidePlayerSetup
+import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.PlayLevelGroup
 import com.worksoc.goaicoach.shared.PlayLevelSetting
@@ -34,6 +35,7 @@ class UserPreferencesApplicationTest {
             topMovesEnabled = false,
             autoPlayDelayMillis = AutoPlayDelaySetting.Study.millis,
             searchTimeSettings = SearchTimeSettings(b32Millis = 4_000L),
+            boardSize = BoardSize.Nine,
         )
 
         val plan = buildInitialUserPreferencesPlan(
@@ -55,6 +57,7 @@ class UserPreferencesApplicationTest {
                 topMovesEnabled = false,
                 autoPlayDelaySetting = AutoPlayDelaySetting.Study,
                 searchTimeSettings = SearchTimeSettings(b32Millis = 4_000L),
+                boardSize = BoardSize.Nine,
             ),
             plan.settings,
         )
@@ -66,6 +69,7 @@ class UserPreferencesApplicationTest {
 
         val snapshot = buildUserPreferencesSnapshot(
             playerSetup = setup,
+            boardSize = BoardSize.Nine,
             ruleset = Ruleset.Chinese,
             topMovesEnabled = false,
             showCoordinates = false,
@@ -100,6 +104,7 @@ class UserPreferencesApplicationTest {
             autoPlayDelaySetting = AutoPlayDelaySetting.Study,
             searchTimeSettings = SearchTimeSettings(timeCapEnabled = false),
             topMovesEnabled = true,
+            boardSize = BoardSize.Nine,
         )
 
         val snapshot = buildUserPreferencesSnapshot(
@@ -136,6 +141,7 @@ class UserPreferencesApplicationTest {
             autoPlayDelaySetting = AutoPlayDelaySetting.Short,
             searchTimeSettings = SearchTimeSettings(b16Millis = 1_000L),
             topMovesEnabled = true,
+            boardSize = BoardSize.Nine,
         )
         val store = RecordingUserPreferencesStore()
 

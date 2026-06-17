@@ -232,6 +232,7 @@ internal class LocalEngineSessionClient(
             profile = profile,
             move = move,
             previousReviewCandidates = previousReviewCandidates,
+            diagnosticEventLog = diagnosticEventLog,
         )
 
     override suspend fun estimateScoreForState(
@@ -254,6 +255,7 @@ internal class LocalEngineSessionClient(
             state = state,
             profile = profile,
             prePassCandidates = prePassCandidates,
+            diagnosticEventLog = diagnosticEventLog,
         )
 
     override suspend fun undoMove(): EngineStatus =

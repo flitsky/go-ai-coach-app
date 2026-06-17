@@ -10,6 +10,7 @@ import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.PlayLevelSetting
+import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.engine.EngineOperationRequest
@@ -25,6 +26,7 @@ internal class NewGameController(
     private val currentPlayerSetup: () -> PlayerSetup,
     private val currentEngineProfile: () -> EngineProfile,
     private val currentSearchTimeSettings: () -> SearchTimeSettings,
+    private val currentBoardSize: () -> BoardSize,
     private val currentSessionGeneration: () -> Long,
     private val currentScoreState: () -> GameSessionScoreState,
     private val currentRuntimeLogContext: () -> RuntimeLogContext,
@@ -35,8 +37,8 @@ internal class NewGameController(
     private val requestFollowUpAnalysis: (GameState) -> Unit,
     private val onEngineMessage: (String) -> Unit,
 ) {
-    fun resetLocalGame(message: String, ruleset: Ruleset) {
-        applyGameSessionResetPlan(buildNewLocalGameSessionPlan(message, ruleset))
+    fun resetLocalGame(message: String, ruleset: Ruleset, boardSize: BoardSize) {
+        applyGameSessionResetPlan(buildNewLocalGameSessionPlan(message, ruleset, boardSize))
     }
 
     fun startEngineBackedNewGame(plan: StartConfiguredGamePlan.StartEngineGame) {
@@ -65,6 +67,7 @@ internal class NewGameController(
         when (
             val plan = buildStartConfiguredGamePlan(
                 setup = currentPlayerSetup(),
+                boardSize = currentBoardSize(),
                 ruleset = gameState.ruleset,
                 nextPlayer = gameState.nextPlayer,
                 isEngineReady = isEngineReady(),
@@ -75,7 +78,7 @@ internal class NewGameController(
             )
         ) {
             is StartConfiguredGamePlan.ShowMessage -> onEngineMessage(plan.message)
-            is StartConfiguredGamePlan.ResetLocalGame -> resetLocalGame(plan.message, plan.ruleset)
+            is StartConfiguredGamePlan.ResetLocalGame -> resetLocalGame(plan.message, plan.ruleset, plan.boardSize)
             is StartConfiguredGamePlan.StartEngineGame -> startEngineBackedNewGame(plan)
         }
     }

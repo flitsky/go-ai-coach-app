@@ -20,6 +20,7 @@ import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.SearchTimeSettings
+import com.worksoc.goaicoach.shared.BoardSize
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
 import org.junit.Test
@@ -80,6 +81,7 @@ class GameSessionStateHolderTest {
                 autoPlayDelaySetting = AutoPlayDelaySetting.Default,
                 searchTimeSettings = SearchTimeSettings(),
                 topMovesEnabled = false,
+                boardSize = BoardSize.Nine,
             ),
             benchmark = EngineBenchmarkUiState.initial(
                 benchmarkText = "No benchmark yet.",

@@ -79,12 +79,14 @@ internal fun ExpandedGameMenuSection(
     GameMenuActionsPanel(
         mode = screenState.matchMode,
         ruleset = screenState.gameState.ruleset,
+        boardSize = screenState.gameState.boardSize,
         canStartNew = screenState.matchMode == MatchMode.LocalTwoPlayer || screenState.engine.isReady, // engine-busy gate disabled; restore with !screenState.engine.isBusy &&
         canChangeRuleset = true, // engine-busy gate disabled; restore with !screenState.engine.isBusy
         onNewGame = { onEvent(GameUiEvent.StartConfiguredGame) },
         onCopyLog = { onEvent(GameUiEvent.CopyDebugReport) },
         onBenchmark = { onEvent(GameUiEvent.ShowEngineBenchmark) },
         onRulesetChange = { ruleset -> onEvent(GameUiEvent.ChangeScoringRule(ruleset)) },
+        onBoardSizeChange = { size -> onEvent(GameUiEvent.ChangeBoardSize(size)) },
     )
 
     KaTrainUxMenuPanel(

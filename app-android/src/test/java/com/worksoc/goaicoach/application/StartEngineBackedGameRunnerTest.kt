@@ -70,6 +70,7 @@ class StartEngineBackedGameRunnerTest {
             StartEngineBackedGameRunRequest(
                 plan = StartConfiguredGamePlan.StartEngineGame(
                     ruleset = Ruleset.Chinese,
+                    boardSize = BoardSize.Nine,
                     runtime = runtime,
                 ),
                 engineClient = client,
@@ -83,9 +84,10 @@ class StartEngineBackedGameRunnerTest {
                     launchedOperation = operation
                     runBlocking { block() }
                 },
-                resetLocalGame = { message, ruleset ->
+                resetLocalGame = { message, ruleset, size ->
                     assertEquals("new-game", message)
-                    currentState = GameState.empty(BoardSize.Nine, ruleset)
+                    assertEquals(BoardSize.Nine, size)
+                    currentState = GameState.empty(size, ruleset)
                     scoreState = GameSessionScoreState.reset(
                         scoreText = "reset score",
                         scoreSnapshots = listOf(localScoreSnapshot(currentState)),
@@ -136,6 +138,7 @@ class StartEngineBackedGameRunnerTest {
             StartEngineBackedGameRunRequest(
                 plan = StartConfiguredGamePlan.StartEngineGame(
                     ruleset = Ruleset.Japanese,
+                    boardSize = BoardSize.Nine,
                     runtime = runtime,
                 ),
                 engineClient = client,
@@ -146,9 +149,10 @@ class StartEngineBackedGameRunnerTest {
                 diagnosticEventLog = RunnerNoopDiagnosticEventLog,
                 applyRuntime = {},
                 launchEngineOperation = { _, block -> runBlocking { block() } },
-                resetLocalGame = { message, ruleset ->
+                resetLocalGame = { message, ruleset, size ->
                     resetMessage = message
-                    currentState = GameState.empty(BoardSize.Nine, ruleset)
+                    assertEquals(BoardSize.Nine, size)
+                    currentState = GameState.empty(size, ruleset)
                     scoreState = GameSessionScoreState.reset(
                         scoreText = "reset failure score",
                         scoreSnapshots = listOf(localScoreSnapshot(currentState)),

@@ -1373,6 +1373,7 @@ private fun topMoveControllerState(
             autoPlayDelaySetting = AutoPlayDelaySetting.Default,
             searchTimeSettings = SearchTimeSettings(),
             topMovesEnabled = topMovesEnabled,
+            boardSize = BoardSize.Nine,
         ),
         benchmark = EngineBenchmarkUiState.initial(
             benchmarkText = "benchmark",

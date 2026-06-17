@@ -278,6 +278,7 @@ class GameSessionControllerTest {
             autoPlayDelaySetting = AutoPlayDelaySetting.Default,
             searchTimeSettings = SearchTimeSettings(),
             topMovesEnabled = false,
+            boardSize = BoardSize.Nine,
         )
 
     private fun coreState(

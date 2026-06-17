@@ -4,9 +4,11 @@ import com.worksoc.goaicoach.application.preferences.InitialUserPreferencesPlan
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
+import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 
 internal data class GameSessionSettingsState(
+    val boardSize: BoardSize,
     val playerSetup: PlayerSetup,
     val autoPlayDelaySetting: AutoPlayDelaySetting,
     val searchTimeSettings: SearchTimeSettings,
@@ -17,6 +19,9 @@ internal data class GameSessionSettingsState(
 
     fun applyPlayerSetup(nextSetup: PlayerSetup): GameSessionSettingsState =
         copy(playerSetup = nextSetup)
+
+    fun applyBoardSize(size: BoardSize): GameSessionSettingsState =
+        copy(boardSize = size)
 
     fun applySavedGameRestore(
         restoredSetup: PlayerSetup,
@@ -42,6 +47,7 @@ internal data class GameSessionSettingsState(
 
 internal fun InitialUserPreferencesPlan.toGameSessionSettingsState(): GameSessionSettingsState =
     GameSessionSettingsState(
+        boardSize = settings.boardSize,
         playerSetup = playerSetup,
         autoPlayDelaySetting = settings.autoPlayDelaySetting,
         searchTimeSettings = settings.searchTimeSettings.normalized(),

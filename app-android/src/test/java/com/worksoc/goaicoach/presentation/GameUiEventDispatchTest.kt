@@ -130,6 +130,18 @@ class GameUiEventDispatchTest {
         assertEquals(listOf("evalWithGradient"), calls)
     }
 
+    @Test
+    fun dispatchChangeBoardSizeRoutesToHandler() {
+        var selected = BoardSize.Nine
+        val handlers = handlers(
+            changeBoardSize = { boardSize -> selected = boardSize },
+        )
+
+        dispatchGameUiEvent(GameUiEvent.ChangeBoardSize(BoardSize.Thirteen), handlers)
+
+        assertEquals(BoardSize.Thirteen, selected)
+    }
+
     private fun handlers(
         currentPlayer: () -> StoneColor = { StoneColor.Black },
         isTopMovesEnabled: () -> Boolean = { false },
@@ -149,6 +161,7 @@ class GameUiEventDispatchTest {
         changePlayerSetup: (PlayerSetup) -> Unit = {},
         changeAutoPlayDelay: (AutoPlayDelaySetting) -> Unit = {},
         changeSearchTimeSettings: (SearchTimeSettings) -> Unit = {},
+        changeBoardSize: (BoardSize) -> Unit = {},
         changeScoringRule: (Ruleset) -> Unit = {},
         changeUxOptions: (KaTrainUxOptions) -> Unit = {},
     ): GameUiEventHandlers =
@@ -171,6 +184,7 @@ class GameUiEventDispatchTest {
             changePlayerSetup = changePlayerSetup,
             changeAutoPlayDelay = changeAutoPlayDelay,
             changeSearchTimeSettings = changeSearchTimeSettings,
+            changeBoardSize = changeBoardSize,
             changeScoringRule = changeScoringRule,
             changeUxOptions = changeUxOptions,
         )

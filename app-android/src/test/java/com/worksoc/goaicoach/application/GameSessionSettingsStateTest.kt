@@ -8,6 +8,7 @@ import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.match.SidePlayerSetup
 import com.worksoc.goaicoach.shared.SearchTimeSettings
+import com.worksoc.goaicoach.shared.BoardSize
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -24,6 +25,7 @@ class GameSessionSettingsStateTest {
             autoPlayDelaySetting = AutoPlayDelaySetting.Default,
             searchTimeSettings = SearchTimeSettings(),
             topMovesEnabled = false,
+            boardSize = BoardSize.Nine,
         )
 
         assertEquals(MatchMode.AiVsAi, state.matchMode)
@@ -36,6 +38,7 @@ class GameSessionSettingsStateTest {
             autoPlayDelaySetting = AutoPlayDelaySetting.Default,
             searchTimeSettings = SearchTimeSettings(),
             topMovesEnabled = false,
+            boardSize = BoardSize.Nine,
         )
 
         val updated = state.applySearchTimeSettings(
@@ -58,6 +61,7 @@ class GameSessionSettingsStateTest {
             autoPlayDelaySetting = AutoPlayDelaySetting.Slow,
             searchTimeSettings = SearchTimeSettings(timeCapEnabled = false),
             topMovesEnabled = false,
+            boardSize = BoardSize.Nine,
         )
 
         val shown = state.showTopMoves()
@@ -76,6 +80,7 @@ class GameSessionSettingsStateTest {
             autoPlayDelaySetting = AutoPlayDelaySetting.Default,
             searchTimeSettings = SearchTimeSettings(timeCapEnabled = false),
             topMovesEnabled = false,
+            boardSize = BoardSize.Nine,
         )
         val restoredSetup = PlayerSetup(
             black = SidePlayerSetup(controller = SeatController.Ai),

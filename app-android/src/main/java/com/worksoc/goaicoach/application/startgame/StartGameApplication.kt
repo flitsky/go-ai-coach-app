@@ -32,9 +32,11 @@ internal sealed class StartConfiguredGamePlan {
     data class ResetLocalGame(
         val message: String,
         val ruleset: Ruleset,
+        val boardSize: BoardSize,
     ) : StartConfiguredGamePlan()
     data class StartEngineGame(
         val ruleset: Ruleset,
+        val boardSize: BoardSize,
         val runtime: RuntimePlayLevelSelection,
     ) : StartConfiguredGamePlan()
 }
@@ -42,8 +44,9 @@ internal sealed class StartConfiguredGamePlan {
 internal fun buildNewLocalGameSessionPlan(
     message: String,
     ruleset: Ruleset,
+    boardSize: BoardSize,
 ): GameSessionResetPlan {
-    val state = GameState.empty(BoardSize.Nine, ruleset)
+    val state = GameState.empty(boardSize, ruleset)
     return GameSessionResetPlan(
         gameState = state,
         candidateText = "No analysis yet.",
@@ -59,6 +62,7 @@ internal fun buildNewLocalGameSessionPlan(
 
 internal fun buildStartConfiguredGamePlan(
     setup: PlayerSetup,
+    boardSize: BoardSize,
     ruleset: Ruleset,
     nextPlayer: StoneColor,
     isEngineReady: Boolean,
@@ -72,6 +76,7 @@ internal fun buildStartConfiguredGamePlan(
         return StartConfiguredGamePlan.ResetLocalGame(
             message = "Player Setup includes AI, but engine is not ready.",
             ruleset = ruleset,
+            boardSize = boardSize,
         )
     }
     if (isEngineBusy) {
@@ -81,11 +86,13 @@ internal fun buildStartConfiguredGamePlan(
         return StartConfiguredGamePlan.ResetLocalGame(
             message = "Local two-player game. Engine analysis is not connected.",
             ruleset = ruleset,
+            boardSize = boardSize,
         )
     }
 
     return StartConfiguredGamePlan.StartEngineGame(
         ruleset = ruleset,
+        boardSize = boardSize,
         runtime = selectRuntimePlayLevel(
             setup = setup,
             nextPlayer = nextPlayer,

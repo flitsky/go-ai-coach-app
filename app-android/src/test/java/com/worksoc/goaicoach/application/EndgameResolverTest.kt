@@ -2,6 +2,7 @@ package com.worksoc.goaicoach.application
 
 import com.worksoc.goaicoach.application.analysis.*
 import com.worksoc.goaicoach.application.endgame.*
+import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.BoardCoordinate
@@ -56,10 +57,53 @@ class EndgameResolverTest {
         assertTrue(resolution.toLogDetail(state).contains("diagnosticFinalScoreMs="))
         assertTrue(resolution.timings.resolverTotalMs >= 0L)
     }
+
+    @Test
+    fun resolveAiEndgameLogsDiagnosticEventOnScoreDisagreement() = runBlocking {
+        val state = GameState.empty(ruleset = Ruleset.Japanese)
+            .copy(
+                stones = mapOf(
+                    BoardCoordinate.fromLabel("C4", BoardSize.Nine) to StoneColor.Black,
+                ),
+                moves = listOf(
+                    Move.Pass(StoneColor.Black),
+                    Move.Pass(StoneColor.White),
+                ),
+            )
+        val log = FakeDiagnosticEventLog()
+        val engine = FakeEndgameJudgeGateway(finalScoreRaw = "W+100.5")
+
+        val resolution = resolveAiEndgame(
+            judgeGateway = engine,
+            originalState = state,
+            estimateLimit = AnalysisLimit(visits = 16, timeMillis = 250, candidateCount = 8),
+            diagnosticEventLog = log,
+        )
+
+        val localRaw = resolution.localFinalScore.rawScore
+        val engineRaw = resolution.engineFinalScore?.rawScore
+        assertTrue(localRaw != engineRaw)
+
+        assertEquals(1, log.events.size)
+        val event = log.events.first()
+        assertEquals("score.final_disagreement", event.code)
+        assertEquals("W+100.5", event.context["engineFinalScore"])
+        assertEquals(localRaw, event.context["localScore"])
+    }
+}
+
+private class FakeDiagnosticEventLog : DiagnosticEventLogPort {
+    val events = mutableListOf<com.worksoc.goaicoach.shared.diagnostic.DiagnosticEvent>()
+    override fun append(event: com.worksoc.goaicoach.shared.diagnostic.DiagnosticEvent, nowMillis: Long) {
+        events.add(event)
+    }
+    override fun readText(): String = ""
+    override fun clear() { events.clear() }
 }
 
 private class FakeEndgameJudgeGateway(
-    private val deadStones: List<BoardCoordinate>,
+    private val deadStones: List<BoardCoordinate> = emptyList(),
+    private val finalScoreRaw: String = "B+5.5",
 ) : EndgameJudgeGateway {
     override suspend fun configure(profile: EngineProfile): EngineStatus =
         EngineStatus.ready("configured")
@@ -82,8 +126,8 @@ private class FakeEndgameJudgeGateway(
     override suspend fun scoreFinal(): FinalScoreResult =
         FinalScoreResult(
             status = EngineStatus.ready("final"),
-            rawScore = "B+5.5",
-            winner = StoneColor.Black,
+            rawScore = finalScoreRaw,
+            winner = if (finalScoreRaw.startsWith("B")) StoneColor.Black else StoneColor.White,
             margin = 5.5,
             summary = "fake final",
         )

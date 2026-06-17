@@ -4,6 +4,7 @@ import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
 import com.worksoc.goaicoach.shared.BoardCoordinate
+import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.SearchTimeSettings
@@ -46,6 +47,10 @@ internal sealed interface GameUiEvent {
         val settings: SearchTimeSettings,
     ) : GameUiEvent
 
+    data class ChangeBoardSize(
+        val boardSize: BoardSize,
+    ) : GameUiEvent
+
     data class ChangeScoringRule(
         val ruleset: Ruleset,
     ) : GameUiEvent
@@ -74,6 +79,7 @@ internal data class GameUiEventHandlers(
     val changePlayerSetup: (PlayerSetup) -> Unit,
     val changeAutoPlayDelay: (AutoPlayDelaySetting) -> Unit,
     val changeSearchTimeSettings: (SearchTimeSettings) -> Unit,
+    val changeBoardSize: (BoardSize) -> Unit,
     val changeScoringRule: (Ruleset) -> Unit,
     val changeUxOptions: (KaTrainUxOptions) -> Unit,
 )
@@ -97,6 +103,7 @@ internal fun buildGameUiEventHandlers(
     changePlayerSetup: (PlayerSetup) -> Unit,
     changeAutoPlayDelay: (AutoPlayDelaySetting) -> Unit,
     changeSearchTimeSettings: (SearchTimeSettings) -> Unit,
+    changeBoardSize: (BoardSize) -> Unit,
     changeScoringRule: (Ruleset) -> Unit,
     changeUxOptions: (KaTrainUxOptions) -> Unit,
 ): GameUiEventHandlers =
@@ -119,6 +126,7 @@ internal fun buildGameUiEventHandlers(
         changePlayerSetup = changePlayerSetup,
         changeAutoPlayDelay = changeAutoPlayDelay,
         changeSearchTimeSettings = changeSearchTimeSettings,
+        changeBoardSize = changeBoardSize,
         changeScoringRule = changeScoringRule,
         changeUxOptions = changeUxOptions,
     )
@@ -151,6 +159,7 @@ internal fun dispatchGameUiEvent(
         is GameUiEvent.ChangePlayerSetup -> handlers.changePlayerSetup(event.setup)
         is GameUiEvent.ChangeAutoPlayDelay -> handlers.changeAutoPlayDelay(event.setting)
         is GameUiEvent.ChangeSearchTimeSettings -> handlers.changeSearchTimeSettings(event.settings)
+        is GameUiEvent.ChangeBoardSize -> handlers.changeBoardSize(event.boardSize)
         is GameUiEvent.ChangeScoringRule -> handlers.changeScoringRule(event.ruleset)
         is GameUiEvent.ChangeUxOptions -> handlers.changeUxOptions(event.options)
     }

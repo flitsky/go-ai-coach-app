@@ -126,6 +126,7 @@ class DebugReportBuilderTest {
                 autoPlayDelaySetting = AutoPlayDelaySetting.Default,
                 searchTimeSettings = searchTimeSettings,
                 topMovesEnabled = true,
+                boardSize = BoardSize.Nine,
             ),
             benchmark = EngineBenchmarkUiState(
                 benchmarkText = "benchmark text",

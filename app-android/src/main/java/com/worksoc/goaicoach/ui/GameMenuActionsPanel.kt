@@ -17,17 +17,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.BoardSize
 
 @Composable
 internal fun GameMenuActionsPanel(
     mode: MatchMode,
     ruleset: Ruleset,
+    boardSize: BoardSize,
     canStartNew: Boolean,
     canChangeRuleset: Boolean,
     onNewGame: () -> Unit,
     onCopyLog: () -> Unit,
     onBenchmark: () -> Unit,
     onRulesetChange: (Ruleset) -> Unit,
+    onBoardSizeChange: (BoardSize) -> Unit,
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -82,6 +85,15 @@ internal fun GameMenuActionsPanel(
                 text = "Scoring rule: ${ruleset.scoringLabel}",
                 color = MaterialTheme.colorScheme.secondary,
                 style = MaterialTheme.typography.bodySmall,
+            )
+            Text("Board size", fontWeight = FontWeight.SemiBold)
+            SetupDropdown(
+                selectedText = "${boardSize.value}x${boardSize.value}",
+                enabled = canChangeRuleset,
+                modifier = Modifier.fillMaxWidth(),
+                options = listOf(BoardSize.Nine, BoardSize.Thirteen, BoardSize.Nineteen),
+                optionLabel = { "${it.value}x${it.value}" },
+                onSelected = onBoardSizeChange,
             )
         }
     }

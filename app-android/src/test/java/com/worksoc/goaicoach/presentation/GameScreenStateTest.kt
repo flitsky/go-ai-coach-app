@@ -19,6 +19,7 @@ import com.worksoc.goaicoach.application.savedgame.SavedSessionUiState
 import com.worksoc.goaicoach.application.engine.localScoreSnapshot
 import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
 import com.worksoc.goaicoach.shared.AnalysisPreset
+import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
@@ -159,6 +160,7 @@ class GameScreenStateTest {
                 autoPlayDelaySetting = AutoPlayDelaySetting.Slow,
                 searchTimeSettings = SearchTimeSettings(b16Millis = 1_500L),
                 topMovesEnabled = true,
+                boardSize = BoardSize.Nine,
             ),
             benchmark = EngineBenchmarkUiState(
                 benchmarkText = "bench",
@@ -223,6 +225,7 @@ class GameScreenStateTest {
                 autoPlayDelaySetting = AutoPlayDelaySetting.Normal,
                 searchTimeSettings = SearchTimeSettings(b16Millis = 1_000L),
                 topMovesEnabled = true,
+                boardSize = BoardSize.Nine,
             ),
             benchmark = EngineBenchmarkUiState(
                 benchmarkText = "bench",
