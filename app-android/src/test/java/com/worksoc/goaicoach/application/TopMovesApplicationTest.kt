@@ -52,8 +52,8 @@ class TopMovesApplicationTest {
             deep = false,
         )
 
-        assertEquals(1, plan.candidateCount)
-        assertEquals(1, plan.analysisLimit.candidateCount)
+        assertEquals(5, plan.candidateCount)
+        assertEquals(5, plan.analysisLimit.candidateCount)
         assertEquals(AnalysisPreset.Lite, plan.analysisKey.preset)
         assertEquals(false, plan.analysisKey.deep)
     }

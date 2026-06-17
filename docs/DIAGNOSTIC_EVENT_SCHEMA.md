@@ -7,9 +7,9 @@
 
 각 줄은 하나의 JSON event다. 현재 Android 저장소 구현은 append-only JSONL 파일로 관리한다.
 
-공통 필드:
+공통 필드 (실제 코드 기준, `persistence/DiagnosticEventLog.kt`의 `DiagnosticEventLogCodec.encodeLine()`):
 
-- `createdAtMillis`: 이벤트 생성 시각.
+- `t`: 이벤트 생성 시각(epoch millis). **주의**: 사용자 동의 후 외부 전송용 payload를 만드는 `LocalFileDiagnosticEventExternalSink`(아래 "Local Export Adapter" 섹션)만 별도로 `createdAtMillis`라는 다른 키를 쓴다. 로컬 `diagnostic_events.jsonl` 본선 로그는 `t`이고, export adapter의 출력만 `createdAtMillis`다. 두 writer가 같은 의미의 필드에 다른 키를 쓰는 상태이므로, 로그를 파싱할 때는 어느 파일인지 먼저 확인해야 한다.
 - `severity`: `info`, `warning`, `critical`.
 - `code`: 이벤트 종류. 예: `engine.operation.slow`.
 - `message`: 사람이 읽는 한 줄 설명.
@@ -146,18 +146,67 @@
 
 ### `score.final_disagreement`
 
-엔진 최종 계가와 local score가 불일치할 때 기록한다.
+엔진 최종 계가와 local score가 불일치할 때 기록하도록 설계된 이벤트다.
 
-필수 context:
+필수 context (설계상):
 
 - `engineFinalScore`
 - `localScore`
 - `source`
 
-해석:
+**현재 상태(2026-06-17): 죽은 코드다.** `scoreDisagreementDiagnosticEvent()`(`application/diagnostic/DiagnosticEventApplication.kt`)가 정의되어 있지만 호출하는 곳이 코드베이스 어디에도 없다. 종국 판정(`deadStones`/`scoreFinal` 부심·주심 판정)에서 점수 불일치를 실제로 비교하는 로직이 아직 이 이벤트를 발행하는 지점까지 연결되지 않았다.
+
+해석(연결되면):
 
 - dead-stone cleanup, ruleset, komi, local scorer 전제 차이를 우선 확인한다.
 - 사용자가 향후 "이의 제기" 또는 오류 전송을 선택하는 경우 최우선 수집 대상이다.
+
+## Runtime Event Log — 별도 시스템
+
+`diagnostic_events.jsonl`과 별개로, 앱은 `runtime_events.log`에 대국 흐름 전체를 narrative 형태로 계속 기록한다. 이 둘은 목적과 형식이 다르다.
+
+| | `diagnostic_events.jsonl` | `runtime_events.log` |
+| --- | --- | --- |
+| 목적 | slow/timeout/discarded/fill-short처럼 분석 가치가 높은 이상 신호만 | 정상 흐름을 포함한 모든 주요 전환을 순서대로 기록 |
+| 형식 | JSON, 한 줄에 하나의 event 객체 | 평문 `key=value` 공백 구분, 한 줄에 하나의 event |
+| 코드 | `application/diagnostic/DiagnosticEventApplication.kt`, writer는 `persistence/DiagnosticEventLog.kt` | `application/runtime/RuntimeEventApplication.kt`, writer는 `persistence/RuntimeEventLog.kt` |
+| 빈도 | 이상 상황에서만 | 거의 모든 턴/엔진 호출마다 |
+
+`RuntimeLogContext.event()`가 만드는 한 줄의 형태는 다음과 같다(필드는 고정 순서):
+
+```text
+event=ai_turn_begin phase=ai_turn app="Go AI Coach" purpose="..." mode=AiVsHuman setup="..." board="..." engine=KataGo engineReady=true engineBusy=true runtime="..." analysis="topMoves=true cache=... coverage=..." score="..." turnTime="Time B 12.3s / W 8.1s" flags="..." transition=await_human_move detail="..."
+```
+
+`event` 필드가 이벤트 종류(아래 20개), `phase`가 상위 단계 분류, `transition`이 다음 예상 상태, `detail`이 자유 설명이다. 나머지는 매 이벤트마다 공통으로 찍히는 현재 스냅샷(보드, 엔진 상태, 분석 캐시 통계, 플래그)이다.
+
+### 현재 정의된 20개 runtime event
+
+| event | phase | 의미 |
+| --- | --- | --- |
+| `app_start` | startup | 앱 프로세스 시작 |
+| `game_reset` | game_setup | 새 대국 시작 |
+| `engine_game_start_request` | game_setup | 엔진에 새 게임 시작 요청 |
+| `engine_game_start_success` | game_setup | 엔진 새 게임 시작 성공 |
+| `engine_game_start_failure` | game_setup | 엔진 새 게임 시작 실패 |
+| `auto_play_delay_change` | settings | 자동대국 딜레이 변경 |
+| `ai_turn_schedule` | ai_turn | AI 턴 예약 |
+| `ai_turn_schedule_cancelled` | ai_turn | 예약된 AI 턴 취소 |
+| `ai_turn_begin` | ai_turn | AI 턴 분석/착수 시작 |
+| `ai_turn_success` | ai_turn | AI 턴 착수 성공 |
+| `ai_turn_endgame_detected` | ai_turn | AI 턴 중 종국 조건 감지 |
+| `ai_turn_endgame_success` | ai_turn | 종국 처리 성공 |
+| `ai_turn_endgame_failure` | ai_turn | 종국 처리 실패 |
+| `ai_turn_failure` | ai_turn | AI 턴 실패 |
+| `ai_turn_complete` | ai_turn | AI 턴 종료(성공/실패 무관 마무리) |
+| `engine_operation_started` | engine_operation | 엔진 operation 시작 (참고: 위 "Engine Operation Events" 섹션의 slow/timeout/discarded와 짝이지만, started/completed 자체는 diagnostic JSONL이 아니라 여기 남는다) |
+| `engine_operation_completed` | engine_operation | 엔진 operation 완료 |
+| `engine_operation_discarded` | engine_operation | 늦게 도착한 결과 폐기 |
+| `human_move_accepted` | human_move | 사람 착수 로컬 반영 |
+| `human_engine_sync_success` | human_move | 사람 착수의 엔진 동기화 성공 |
+| `human_engine_sync_failure` | human_move | 사람 착수의 엔진 동기화 실패 |
+
+이 표는 `RuntimeEventApplication.kt`의 함수 목록과 1:1로 대응한다. 새 runtime event를 추가하면 이 표도 같이 갱신한다.
 
 ## 확장 예정
 

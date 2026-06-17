@@ -27,14 +27,14 @@
 - `Pass`: 현재 차례 플레이어가 패스한다. 양 진영이 연속 패스하면 최종 계가 흐름으로 들어간다.
 - `Undo`: 마지막 착수를 되돌린다. AI 대국에서는 사람 착수와 AI 응수를 한 턴 단위로 되돌린다.
 - `Top Moves`: 사용자가 누른 시점의 현재 차례 최적 후보를 빠르게 분석하고 보드 위에 표시한다.
-  - 사람 차례가 오면 앱은 착수 리뷰를 위해 백그라운드 fast best-1 분석을 수행한다.
+  - 사람 차례가 오면 앱은 착수 리뷰를 위해 백그라운드 fast best-5 분석을 수행한다.
   - `Top Moves`가 꺼져 있으면 이 분석 결과를 보드에 표시하지 않고, 사용자가 착수한 뒤 best/green/yellow/orange/red/unknown 판정에만 사용한다.
-- `Top Moves`를 켜면 이미 확보된 snapshot을 표시하거나, 같은 국면의 cache가 없을 때 현재 차례 best-1 분석을 요청한다.
-- 현재 모바일 기본 분석은 best-1 경량 요청이다. 현재 Player Setup의 visits/time을 그대로 쓰고, 후보수는 1개, `policy=false`, `refine=0`, deep fallback 없음으로 호출한다.
+- `Top Moves`를 켜면 이미 확보된 snapshot을 표시하거나, 같은 국면의 cache가 없을 때 현재 차례 best-5 분석을 요청한다.
+- 현재 모바일 기본 분석은 best-5 경량 요청이다. 현재 Player Setup의 visits/time을 그대로 쓰고, 후보수는 최대 5개, `policy=false`, `refine=0`, deep fallback 없음으로 호출한다.
 - `Top Moves` 버튼은 현재 차례가 사람인 경우에만 표시 분석을 요청한다. AI 차례의 착수 선택은 별도 AI turn analysis 경로에서 같은 엔진 후보 모델을 사용한다.
 - 이전 국면의 `AnalysisResultCache` 재사용은 현재 기본 비활성이다. 같은 턴에서 이미 확보된 분석 snapshot을 표시하는 것은 유지하지만, fingerprint가 같다는 이유만으로 과거 분석을 재사용하지 않는다.
   - 경량 요청은 KataGo JSON analysis process를 거치지 않고 기존 대국 GTP process의 `kata-search_analyze` 빠른 경로를 우선 사용한다.
-  - 버튼은 표시 토글처럼 동작한다. 켜면 현재 국면의 best-1 분석을 요청하거나 cache가 있으면 즉시 표시하고, 끄면 표시만 지운다. 백그라운드 착수 리뷰 분석은 계속 fast best-1로 유지된다.
+  - 버튼은 표시 토글처럼 동작한다. 켜면 현재 국면의 best-5 분석을 요청하거나 cache가 있으면 즉시 표시하고, 끄면 표시만 지운다. 백그라운드 착수 리뷰 분석은 계속 fast best-5로 유지된다.
   - 후보 순위, 점수 손실, 예상 리드, visits 같은 상세 텍스트는 화면 하단의 약 10줄 스크롤 박스와 `Copy Log`로 확인한다.
   - AI 착수 분석 강도는 메뉴의 `Player Setup`에서 각 AI 진영에 지정한 플레이 레벨에 의해 자동 결정된다. 화면에는 `Lite`, `Balanced`, `Deep` raw preset을 직접 노출하지 않는다.
   - `빠른 초급`은 느린 폰/에뮬레이터용 빠른 대국 모드이며, B16 GTP fast 경로에서 최적수 1개만 요청해 둔다.
@@ -46,12 +46,14 @@
   - 대국 종료 후 “이번 판을 추가 분석해 cache를 최적화할까요?” prompt는 기본 비활성이다. 모바일 대국 경험을 방해하지 않기 위해, 앱은 대국 중 필수 엔진 분석에서 얻은 값만 로컬 cache로 활용한다.
   - 공식 opening cache는 향후 맥북/서버에서 생성한 `bundled-trusted` 또는 `operator-trusted` 데이터로 앱에 탑재/업데이트하는 방향으로 운영한다.
   - KaTrain식 전체 합법 착점 snapshot, policy 후보 보존, refine sweep, deep fallback은 향후 학습/복기 모드로 분리한다. 현재 모바일 대국 기본 경로에는 붙이지 않는다.
-- `Eval`: 현재 판의 점수 추정과 ownership 정보를 요청한다.
+- `Eval`: 현재 판의 점수 추정과 ownership 정보를 요청하는 단일 액션 버튼이다. 과거 문서에 별도 `Eval gradient` 표시 옵션이 `Display menu` 안에 있는 것처럼 적혀 있었지만, 실제로는 이 버튼 하나가 켜짐/꺼짐과 ownership gradient 요청을 모두 담당한다. 별도 스위치는 존재하지 않는다.
+  - 버튼을 켜면(`showOwnershipOverlay`가 꺼짐 → 켜짐으로 바뀌면) `scoreEstimateController.request()`를 호출해 새 score/ownership estimate를 요청한다. 이 호출은 `KaTrainUxOptions.applyEvalActivation(onEvalGradientActivated = ...)`라는 별도 함수로 분리되어 있어(`presentation/KaTrainUxOptionsMapper.kt`), 나중에 "Eval 켜짐/꺼짐"과 "ownership gradient 표시"를 서로 다른 토글로 분리하고 싶을 때 이 함수의 호출부만 바꾸면 된다.
   - 엔진이 준비된 AI/2P 모드에서는 KataGo estimate를 사용한다.
   - 2P 모드에서 엔진이 준비되지 않은 경우에는 현재 선택된 계가 방식의 로컬 estimate로 fallback한다.
   - ownership 값이 포함된 estimate를 받으면 별도 메뉴 없이 보드 위에 영향권 overlay를 바로 표시한다.
   - ownership overlay는 교차점별 값을 사각형으로 칠하지 않고, 흑/백 영향권이 자연스럽게 퍼지는 반투명 gradient로 표현한다.
   - KaTrain의 `analysis:territory`에 해당하는 기능은 별도 `Ownership` 메뉴 없이 `Eval`의 기본 표현으로 통합한다.
+  - `showOwnershipOverlay` 값은 사용자 설정으로 영구 저장된다(기본값 켜짐). 앱을 재실행해도 마지막으로 선택한 `Eval` 상태를 유지한다.
 
 ### 엔진 진행 상태
 
@@ -62,24 +64,24 @@
 ### 후보/착수 평가 색상
 
 - 진한 초록은 최선에 가까운 수, 연한 초록은 좋은 수, 노랑은 약간 아쉬운 수, 주황은 실수, 빨강은 큰 손실이 있는 수를 뜻한다.
-- 현재 모바일 기본 `Top Moves`는 best-1만 표시하므로, 후보 표시에서는 보통 최선 후보 1개만 보인다. 여러 색상의 후보 분포는 broad study analysis를 별도 학습/복기 모드로 켤 때 확장한다.
+- 현재 모바일 기본 `Top Moves`는 best-5까지 표시하므로, 후보 표시에서는 보통 최선 후보부터 5순위까지 보인다. 1순위는 큰 원, 2~5순위는 작은 원으로 그린다. 더 넓은 색상의 후보 분포는 broad study analysis를 별도 학습/복기 모드로 켤 때 확장한다.
 - 색상 기준은 후보의 절대 예상 리드가 아니라 엔진 분석 기준점 대비 점수 손실(`pointLoss`)이다. 현재 기준은 `0.5`, `1.5`, `3.0`, `6.0`집 구간이다.
 - KataGo 분석은 후보별 `scoreLead`, `winrate`, `visits`, `prior` 등을 제공할 수 있다. `pointLoss`는 KataGo가 직접 주는 필드가 아니라 앱이 기준 score와 후보 score를 비교해 계산한 값이다. KaTrain도 같은 개념을 `pointsLost`로 계산해 사용한다.
 - `pointLoss`는 앱 내부에서 0 이상 손실값으로 유지한다. raw 계산 중 후보가 root보다 좋게 나와 음수 손실이 생기더라도 앱은 이를 `0.0`으로 정규화한다.
 - 보드 위 후보수 숫자는 `scoreLead`가 아니라 KaTrain 기본 UX처럼 현재 착수자 기준 손실값의 델타(`-pointLoss`)를 표시한다. 예를 들어 `-0.2`는 “이 후보를 두면 현재 분석 기준 대비 0.2집 손실”을 뜻하고, `0.0`은 손실이 없는 후보를 뜻한다.
 - 후보 상세 텍스트도 기본적으로 `lead` 대신 `loss`를 표시한다. `scoreLead`는 그래프, 점수 추정, 엔진 진단용 내부 값으로 유지한다.
-- `+1.5`처럼 이득을 표시해야 하는 기능은 `pointLoss`가 아니라 별도 signed 평가 필드를 추가한 뒤 구현한다. 과거 상세 기준은 `docs/archive/2026-06-docs-consolidation/TOP_MOVES_VALUE_GUIDE.md`에 남겨 둔다.
-- KataGo `moveInfos.order`와 `pointLoss` 순위는 저예산 분석에서 어긋날 수 있다. Top Moves의 순위와 큰 강조점은 엔진이 반환한 `order`를 우선한다. `pointLoss`는 색상과 숫자 annotation으로 사용해 “이 order 후보가 현재 root 기준으로 몇 집 손실인지”를 설명한다. 과거 상세 기준은 `docs/archive/2026-06-docs-consolidation/ENGINE_ANALYSIS_CONSISTENCY_REVIEW.md`에 남겨 둔다.
+- `+1.5`처럼 이득을 표시해야 하는 기능은 `pointLoss`가 아니라 별도 signed 평가 필드를 추가한 뒤 구현한다. 과거 상세 기준은 `archive/2026-06-docs-consolidation/TOP_MOVES_VALUE_GUIDE.md`에 남겨 둔다.
+- KataGo `moveInfos.order`와 `pointLoss` 순위는 저예산 분석에서 어긋날 수 있다. Top Moves의 순위와 큰 강조점은 엔진이 반환한 `order`를 우선한다. `pointLoss`는 색상과 숫자 annotation으로 사용해 “이 order 후보가 현재 root 기준으로 몇 집 손실인지”를 설명한다. 과거 상세 기준은 `archive/2026-06-docs-consolidation/ENGINE_ANALYSIS_CONSISTENCY_REVIEW.md`에 남겨 둔다.
 - 예를 들어 흑이 어떤 후보를 두면 여전히 `B+20`으로 크게 앞서더라도, 현재 root/best 기준으로는 `B+25`가 가능한 국면이면 그 후보는 `5집 손실`로 주황 계열이 될 수 있다.
 - 즉 스팟 색상은 “이 수를 두면 누가 이기는가”가 아니라 “현재 국면에서 이 수가 얼마나 손해인가”를 보여준다.
 - JSON study analysis에 `rootInfo`가 있으면 root score 기준으로 `pointLoss`를 계산한다. 현재 GTP fast path처럼 root score가 없는 경량 경로에서는 order 0 후보 대비 손실로 계산한다.
 - 엔진 점수 손실 정보가 없는 policy 또는 legal fallback 후보는 보드 위에 표시하지 않는다.
-- 착수 리뷰는 현재 메모리에 남아 있는 분석 snapshot에서 실제 착수 좌표를 조회한다. 모바일 경량 모드에서는 사람 차례마다 fast best-1 snapshot만 자동 생성하므로, 사용자가 최상위 후보가 아닌 수를 두면 해당 착점이 snapshot에 없어 `unknown` 또는 회색 계열로 남을 수 있다.
+- 착수 리뷰는 현재 메모리에 남아 있는 분석 snapshot에서 실제 착수 좌표를 조회한다. 모바일 경량 모드에서는 사람 차례마다 fast best-5 snapshot만 자동 생성하므로, 사용자가 이 5개 후보 안에 없는 수를 두면 해당 착점이 snapshot에 없어 `unknown` 또는 회색 계열로 남을 수 있다.
 - `Top Moves` 후보 표시와 착수 후 돌 중앙에 남는 평가 점은 색상 정책이 다르다.
   - 착수 후 평가 점은 실제로 둔 수에 대한 학습 피드백이므로 항상 절대 `pointLoss` 기준을 유지한다.
-  - 다중 후보 모드를 다시 켤 경우, 표시된 점수 후보 전체가 큰 손실로 잡히는 희소/저예산 분석 상황에서는 후보끼리 상대 보정을 적용할 수 있다. 현재 best-1 기본 경로에서는 이 보정이 사실상 발생하지 않는다.
+  - 더 넓은 후보 모드(broad study analysis)를 켤 경우, 표시된 점수 후보 전체가 큰 손실로 잡히는 희소/저예산 분석 상황에서는 후보끼리 상대 보정을 적용할 수 있다. 현재 best-5 기본 경로에서는 이 보정이 사실상 발생하지 않는다.
 - 앱 화면 안의 별도 `Spot legend` 패널은 제거했다. 색상 의미는 이 매뉴얼/도움말 문서로 안내한다.
-- 최신 엔진 호출 정책은 `docs/ENGINE_API_CALL_POLICY.md`를 기준으로 한다. KaTrain 기반 초기 분석 문서는 `docs/archive/2026-06-engine-policy-superseded/KATRAIN_TOP_MOVES_ANALYSIS.md`로 아카이브했다.
+- 최신 엔진 호출 정책은 `ENGINE_API_CALL_POLICY.md`를 기준으로 한다. KaTrain 기반 초기 분석 문서는 `archive/2026-06-engine-policy-superseded/KATRAIN_TOP_MOVES_ANALYSIS.md`로 아카이브했다.
 
 ## Menu 안의 설정
 
@@ -154,7 +156,7 @@
 - 돌 배치를 직접 신뢰하지 않고 저장된 수순을 `GameStateReplayer`로 다시 재생해 보드 상태를 복원한다. 따라서 사석 제거, 포획, 패 같은 도메인 룰은 기존 게임 로직과 같은 경로를 탄다.
 - 앱이 재실행되었을 때 미완료 대국 snapshot이 있으면 `이전 대국 이어하기` 다이얼로그를 표시한다.
 - 이어하기 다이얼로그는 엔진의 기본 시작 절차인 `initialize`, `newGame`, 초기 score estimate가 끝난 뒤 표시한다. 이 대기 중에는 착수 리뷰 분석이나 AI 자동 착수를 시작하지 않는다.
-- `예`를 누르면 보드가 마지막 수순 상태로 복원되고, 엔진이 준비된 경우 저장된 수순을 KataGo에 다시 동기화한다. 이후 현재 차례가 사람이라면 fast best-1 착수 리뷰 분석을 백그라운드로 수행하고, 사용자가 `Top Moves`를 켠 경우에만 보드에 표시한다.
+- `예`를 누르면 보드가 마지막 수순 상태로 복원되고, 엔진이 준비된 경우 저장된 수순을 KataGo에 다시 동기화한다. 이후 현재 차례가 사람이라면 fast best-5 착수 리뷰 분석을 백그라운드로 수행하고, 사용자가 `Top Moves`를 켠 경우에만 보드에 표시한다.
 - `아니오` 또는 다이얼로그 바깥 dismiss를 선택하면 저장된 snapshot은 삭제되고 새 대국 화면으로 진행한다.
 - 양 진영이 연속 pass했거나 보드가 가득 찬 종료 대국은 이어하기 대상으로 저장하지 않는다.
 
@@ -163,13 +165,13 @@
 - 진행 중 대국 snapshot과 별도로, 메뉴에서 선택한 사용자 설정은 앱 재실행 후에도 유지한다.
 - 저장되는 설정은 Player Setup, Search Time, AI 자동 대국 딜레이, 계가 규칙, `Top Moves` 토글, `Display menu` 표시 옵션이다.
 - 예를 들어 사용자가 `초급 3단계`로 바꾼 뒤 앱을 종료하면 다음 실행에도 같은 Player Setup으로 시작한다.
-- `Top Moves`는 첫 설치/초기 상태에서 기본 꺼짐이다. 사용자가 켜거나 끄면 다음 실행에서도 그 상태를 유지한다. 단, 이 토글은 표시 여부만 제어하며 사람 차례 fast best-1 착수 리뷰 분석은 계속 수행한다.
-- `Eval gradient`도 첫 설치/초기 상태에서 기본 켜짐이다. 사용자가 끄면 ownership/영역 그라데이션 overlay를 숨기고, 다음 실행에서도 그 선택을 유지한다.
+- `Top Moves`는 첫 설치/초기 상태에서 기본 꺼짐이다. 사용자가 켜거나 끄면 다음 실행에서도 그 상태를 유지한다. 단, 이 토글은 표시 여부만 제어하며 사람 차례 fast best-5 착수 리뷰 분석은 계속 수행한다.
+- `Eval` 버튼 상태(`showOwnershipOverlay`)도 첫 설치/초기 상태에서 기본 켜짐이다. 사용자가 끄면 ownership/영역 그라데이션 overlay를 숨기고, 다음 실행에서도 그 선택을 유지한다. 자세한 동작은 위 "대국 액션 버튼"의 `Eval` 항목을 따른다.
 - 이어하기를 선택하면 저장된 대국 snapshot의 당시 Player Setup과 `Top Moves` 상태를 우선 복원한다.
 
 ## Menu 안의 표시 옵션
 
-`Display menu` 영역의 옵션들은 보조 표시 성격이 강한 설정이다. 현재 항목은 `Coords`, `Move nums`, `Last ring`, `Eval gradient`이다.
+`Display menu` 영역의 옵션들은 보조 표시 성격이 강한 설정이다. 현재 항목은 `Coords`, `Move nums`, `Last ring`이다. ownership gradient 표시는 이 메뉴가 아니라 플레이 화면의 `Eval` 액션 버튼이 담당한다 (위 "대국 액션 버튼" 참고).
 
 ### Coords
 
@@ -189,17 +191,11 @@
 - 꺼져 있을 때도 기존 최소 표시 dot은 유지되어 마지막 수를 완전히 잃지 않도록 한다.
 - 기본값은 켜짐이다.
 
-### Eval gradient
-
-- `Eval` 또는 백그라운드 score estimate가 ownership 값을 제공할 때, 보드 위에 흑/백 영향권을 반투명 그라데이션으로 표시한다.
-- 기본값은 켜짐이다.
-- 끄면 엔진 점수 추정과 그래프는 유지하고, 보드 위 영역 그라데이션만 숨긴다.
-
 ## 현재 제한사항
 
 - 이 문서는 POC 기준이며, 최종 앱 사용자 매뉴얼은 화면 구조와 용어가 안정된 뒤 다시 정리한다.
 - 현재 대국 기본 계가는 한국/일본식 Territory scoring이다. 메뉴에서 중국식 Area scoring으로 전환할 수 있다.
-- 계가 방식 옵션화 과거 상세 결정은 `docs/archive/2026-06-docs-consolidation/RULESET_SCORING_DECISION.md`에 기록되어 있다.
+- 계가 방식 옵션화 과거 상세 결정은 `archive/2026-06-docs-consolidation/RULESET_SCORING_DECISION.md`에 기록되어 있다.
 - ownership overlay는 엔진 분석 결과에 의존하므로, stub 모드나 분석 실패 상태에서는 의미 있는 값이 없을 수 있다.
 - AI 대국에서 양쪽이 연속 pass하면 KataGo `final_status_list dead` 결과로 사석을 정리한 뒤 최종 점수를 표시한다.
 - 엔진 사석 목록 외에도, 한 활로짜리로 즉시 따이는 그룹은 로컬 fallback으로 사석 후보에 포함한다.

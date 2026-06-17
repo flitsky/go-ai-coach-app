@@ -59,6 +59,7 @@ import com.worksoc.goaicoach.persistence.RuntimeEventLog
 import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
 import com.worksoc.goaicoach.persistence.UserPreferencesStore
 import com.worksoc.goaicoach.presentation.GameUiEvent
+import com.worksoc.goaicoach.presentation.applyEvalActivation
 import com.worksoc.goaicoach.presentation.GoCoachScreenStateAssembler
 import com.worksoc.goaicoach.presentation.KaTrainUxOptions
 import com.worksoc.goaicoach.presentation.buildGameUiEventHandlers
@@ -704,11 +705,7 @@ private fun GoCoachScreen(
                 copyDebugReport = debugReportController::copy,
                 showEngineBenchmark = benchmarkController::showResult,
                 requestScoreEstimate = scoreEstimateController::request,
-                toggleEvalWithGradient = {
-                    val nextVal = !uxOptions.showOwnershipOverlay
-                    uxOptions = uxOptions.copy(showOwnershipOverlay = nextVal)
-                    if (nextVal) scoreEstimateController.request()
-                },
+                toggleEvalWithGradient = { uxOptions = uxOptions.applyEvalActivation(onEvalGradientActivated = scoreEstimateController::request) },
                 showTopMoves = topMovesController::showForCurrentState,
                 hideTopMoves = topMovesController::hide,
                 undoLastTurn = undoController::undoLastTurn,

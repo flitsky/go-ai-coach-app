@@ -21,7 +21,7 @@ import org.junit.Test
 
 class AnalysisSessionTest {
     @Test
-    fun topMoveCandidateCountUsesLightweightBestOnlyPolicy() {
+    fun topMoveCandidateCountUsesLightweightFiveCandidatePolicy() {
         val empty = GameState.empty()
         val nearlyFull = empty.copy(
             stones = buildMap {
@@ -36,9 +36,9 @@ class AnalysisSessionTest {
             },
         )
 
-        assertEquals(1, topMoveCandidateCountFor(empty, AnalysisPreset.Lite))
-        assertEquals(1, topMoveCandidateCountFor(empty, AnalysisPreset.Deep))
-        assertEquals(1, topMoveCandidateCountFor(nearlyFull, AnalysisPreset.Deep))
+        assertEquals(5, topMoveCandidateCountFor(empty, AnalysisPreset.Lite))
+        assertEquals(5, topMoveCandidateCountFor(empty, AnalysisPreset.Deep))
+        assertEquals(5, topMoveCandidateCountFor(nearlyFull, AnalysisPreset.Deep))
     }
 
     @Test

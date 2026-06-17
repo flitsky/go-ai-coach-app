@@ -10,7 +10,7 @@ import com.worksoc.goaicoach.shared.TurnAnalysisPurpose
 import com.worksoc.goaicoach.shared.analysisFingerprint
 import com.worksoc.goaicoach.shared.turnAnalysisLimitFor
 
-internal const val LightweightTopMoveCandidateCount = 1
+internal const val LightweightTopMoveCandidateCount = 5
 
 internal data class AnalysisCacheKey(
     val positionFingerprint: String,

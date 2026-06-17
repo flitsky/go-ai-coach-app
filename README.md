@@ -6,33 +6,33 @@ This repository is separate from `/Users/ryan9kim/worksoc/katago`, which remains
 
 ## Current Phase
 
-Phase 1: Android KMP skeleton with stub engine. Phase 2 process-adapter spike is now partially verified on emulator.
+Playable local AI Go coaching app, 9x9, with a full local KataGo engine path (not a stub-only spike anymore).
 
-Implemented POC baseline:
+Implemented baseline:
 
-1. Minimal Android app shell.
-2. `shared` Kotlin Multiplatform module for board state and engine DTO/interface.
-3. `engine-android` module with stub and KataGo process `EngineAdapter` implementations.
-4. Simple 9x9 Jetpack Compose board.
-5. Engine response, candidate display area, and simple engine tuning controls.
-6. Android `arm64-v8a` KataGo Eigen(CPU) build/run smoke test.
+1. Android Compose UI: board, player setup, search-time controls, score/win-rate graph, top-moves display, debug report copy, saved-game resume.
+2. `shared` Kotlin Multiplatform module: board rules, scoring (Area/Territory), engine core API contract, analysis policy, two engine search modes.
+3. `engine-android`: local KataGo process adapter (`libkatago.so`) supporting both GTP stateful-fast and JSON position-analysis paths, plus a stub adapter for engine-free UI work.
+4. `app-android/application/`: 17 feature-domain packages (session, autoai, undo, humanmove, startgame, savedgame, topmoves, engine, analysis, ...), each following a small `XxxController` + `XxxApplication.kt` pure-function pattern. `GoCoachApp.kt` is now a thin ~790-line composition root (was 1838 lines before the 2026-06 refactor).
+5. Four AI level groups (Fast Beginner / Beginner / Intermediate / Advanced — UI labels are in Korean) mapped to different visits/time/search-mode policy. See [docs/ENGINE.md](./docs/ENGINE.md).
+6. Device benchmarking, diagnostic event logging, and a remote-engine-ready cache/gateway scaffold (not yet a full remote `EngineSessionClient`).
 
 Next goal:
 
-1. Harden the local KataGo process adapter with timeouts, stderr capture, and lifecycle cleanup.
-2. Turn the current debug-only KataGo build/seed flow into a repeatable Gradle or developer workflow.
-3. Keep JNI/native-library and remote fallback decisions open until packaging and device compatibility are better understood.
+1. Move `GameSessionStateHolder` into the `shared` module for cross-platform reuse.
+2. Add androidTest/Robolectric coverage (currently JVM unit tests only).
+3. Decide on JNI/native-library packaging and remote-engine fallback once a `RemoteEngineSessionClient` is built.
 
-## Key Documents
+## Documentation
 
-- [PRD.md](./PRD.md): app product requirements and roadmap
-- [docs/DOCS_INDEX.md](./docs/DOCS_INDEX.md): current documentation map and archive policy
-- [docs/STACK_DECISION.md](./docs/STACK_DECISION.md): KMP vs Flutter final opinion
-- [docs/ENGINE_API_CALL_POLICY.md](./docs/ENGINE_API_CALL_POLICY.md): canonical engine analysis call policy
-- [docs/ENGINE_LEVEL_STRENGTH_REVIEW_2026-06-10.md](./docs/ENGINE_LEVEL_STRENGTH_REVIEW_2026-06-10.md): B16/B32/B64 level validation results
-- [docs/SCORE_AND_ENDGAME_DECISION.md](./docs/SCORE_AND_ENDGAME_DECISION.md): score estimate and endgame scoring decision
-- [docs/USER_OPTION_MANUAL.md](./docs/USER_OPTION_MANUAL.md): current Android option manual draft
-- [docs/REFACTORING_STRATEGY_2026-06-08.md](./docs/REFACTORING_STRATEGY_2026-06-08.md): refactoring status and next structural candidates
+All product/architecture documentation is written in Korean and lives under [`docs/`](./docs). Start at [`docs/DOCS_INDEX.md`](./docs/DOCS_INDEX.md) — it explains what each document and subfolder under `docs/` is for.
+
+Quick links to the main documents:
+
+- [`docs/PRD.md`](./docs/PRD.md) — product requirements, target end state, roadmap
+- [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — the 7-layer structure and current package map
+- [`docs/ENGINE.md`](./docs/ENGINE.md) — the two engine search modes, level→mode mapping, benchmark results
+- [`docs/OPERATIONS.md`](./docs/OPERATIONS.md) — stack decision, score/endgame policy, current menu/options, diagnostic + runtime logging
 
 ## Working Decision
 
