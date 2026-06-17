@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.worksoc.goaicoach.BuildConfig
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.modeSummary
 import com.worksoc.goaicoach.presentation.GameScreenState
@@ -41,10 +42,18 @@ internal fun GameHeaderSection(
             )
         }
 
-        KaTrainUxMenuButton(
-            menuExpanded = isDisplayMenuExpanded,
-            onMenuExpandedChange = onDisplayMenuExpandedChange,
-        )
+        Column(horizontalAlignment = Alignment.End) {
+            Text(
+                text = BuildConfig.BUILD_TIME,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.secondary,
+            )
+
+            KaTrainUxMenuButton(
+                menuExpanded = isDisplayMenuExpanded,
+                onMenuExpandedChange = onDisplayMenuExpandedChange,
+            )
+        }
     }
 }
 
