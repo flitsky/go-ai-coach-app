@@ -586,7 +586,7 @@ class GameAutomationApplicationTest {
         val setup = PlayerSetup(
             black = SidePlayerSetup(
                 controller = SeatController.Ai,
-                playLevel = PlayLevelSetting(PlayLevelGroup.FastBeginner, level = 2),
+                playLevel = PlayLevelSetting(PlayLevelGroup.FastBeginner, level = 3),
             ),
             white = SidePlayerSetup(controller = SeatController.Human),
         )

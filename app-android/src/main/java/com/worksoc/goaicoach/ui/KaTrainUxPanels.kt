@@ -47,6 +47,9 @@ internal fun KaTrainUxMenuPanel(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text("Display menu", fontWeight = FontWeight.SemiBold)
+            OptionSwitchRow("바로 착수", options.isDirectPlayEnabled) {
+                onOptionsChange(options.copy(isDirectPlayEnabled = it))
+            }
             OptionSwitchRow("Coords", options.showCoordinates) {
                 onOptionsChange(options.copy(showCoordinates = it))
             }

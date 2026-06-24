@@ -153,6 +153,7 @@ class UserPreferencesApplicationTest {
                 showMoveNumbers = false,
                 showLastMoveRing = true,
                 showOwnershipOverlay = true,
+                isDirectPlayEnabled = true,
             ),
             store = store,
         )
@@ -167,6 +168,7 @@ class UserPreferencesApplicationTest {
         assertFalse(saved.showMoveNumbers)
         assertTrue(saved.showLastMoveRing)
         assertTrue(saved.showOwnershipOverlay)
+        assertTrue(saved.isDirectPlayEnabled)
     }
 
     private class RecordingUserPreferencesStore : UserPreferencesStorePort {

@@ -30,7 +30,7 @@ class PlayerSetupUiStateTest {
 
         assertEquals(setup, state.setup)
         assertEquals("흑", state.black.seatLabel)
-        assertEquals("플레이어", state.black.controllerLabel)
+        assertEquals("Player", state.black.controllerLabel)
         assertEquals("백", state.white.seatLabel)
         assertEquals("AI", state.white.controllerLabel)
         assertEquals("초급", state.white.aiLevelGroupLabel)

@@ -66,7 +66,6 @@ import com.worksoc.goaicoach.presentation.buildGameUiEventHandlers
 import com.worksoc.goaicoach.presentation.dispatchGameUiEvent
 import com.worksoc.goaicoach.presentation.toKaTrainUxOptions
 import com.worksoc.goaicoach.shared.AnalysisPreset
-import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.GameState
@@ -208,14 +207,13 @@ private fun GoCoachScreen(
         { value -> mutateSession { it.withPositionCacheOptimization(value) } },
     )
 
-    var turnTimeState by remember {
-        mutableStateOf(
-            GameSessionTurnTimeState.reset(
-                state = initialPlan.gameState,
-                nowMillis = System.currentTimeMillis(),
-            ),
-        )
-    }
+    var turnTimeState by HolderBackedState(
+        { sessionSnapshot.core.turnTimeState },
+        { value -> mutateCore { it.copy(turnTimeState = value) } },
+    )
+
+    ObserveTimerLifecycle(turnTimeState) { turnTimeState = it }
+
     var isEngineBusy by remember { mutableStateOf(false) }
     var isEngineReady by remember { mutableStateOf(false) }
     val analysisCache = remember { AnalysisResultCache(maxEntries = 96) }
@@ -375,6 +373,7 @@ private fun GoCoachScreen(
                 showMoveNumbers = uxOptions.showMoveNumbers,
                 showLastMoveRing = uxOptions.showLastMoveRing,
                 showOwnershipOverlay = uxOptions.showOwnershipOverlay,
+                isDirectPlayEnabled = uxOptions.isDirectPlayEnabled,
             ),
             store = preferencesStore,
         )
@@ -785,6 +784,7 @@ private fun GoCoachScreen(
         isDisplayMenuExpanded = isDisplayMenuExpanded,
         onDisplayMenuExpandedChange = { expanded -> isDisplayMenuExpanded = expanded },
         onScoreGraphExpandedChange = { expanded -> isScoreGraphExpanded = expanded },
+        turnTimeState = turnTimeState,
         onEvent = ::dispatch,
     )
 }

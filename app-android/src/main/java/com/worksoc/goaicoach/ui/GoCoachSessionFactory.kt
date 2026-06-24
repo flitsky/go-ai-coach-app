@@ -35,6 +35,10 @@ internal fun buildInitialSessionState(
         lastMoveText = "None",
     ),
     engineMessage = "Engine not initialized.",
+    turnTimeState = GameSessionTurnTimeState.reset(
+        state = initialPlan.gameState,
+        nowMillis = System.currentTimeMillis(),
+    ),
     settings = initialPlan.toGameSessionSettingsState(),
     benchmark = EngineBenchmarkUiState.initial(
         benchmarkText = benchmarkStore.loadText(),

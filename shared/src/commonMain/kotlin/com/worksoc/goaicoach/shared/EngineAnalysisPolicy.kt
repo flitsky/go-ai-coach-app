@@ -55,8 +55,10 @@ fun PlayLevelSetting.aiMoveAnalysisLimitWith(
 ): AnalysisLimit {
     val base = analysisLimitWith(searchTimeSettings)
     return when (aiMoveSearchMode()) {
-        EngineSearchMode.GtpStatefulFast ->
-            base.fastCandidateAnalysis(candidateCount = 1)
+        EngineSearchMode.GtpStatefulFast -> {
+            val count = if (selectionPolicy is MoveSelectionPolicy.BestOnly) 1 else base.candidateCount
+            base.fastCandidateAnalysis(candidateCount = count)
+        }
         EngineSearchMode.JsonPositionAnalysis ->
             base.copy(
                 includePolicy = true,

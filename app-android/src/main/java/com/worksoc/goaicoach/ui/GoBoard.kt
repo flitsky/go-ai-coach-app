@@ -2,13 +2,16 @@ package com.worksoc.goaicoach.ui
 
 import android.graphics.Paint
 import android.graphics.Typeface
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -58,6 +61,7 @@ internal fun GoBoard(
     inputEnabled: Boolean,
     engineBusy: Boolean,
     modifier: Modifier = Modifier,
+    tentativeMove: BoardCoordinate? = null,
     onCoordinateTap: (BoardCoordinate) -> Unit,
 ) {
     var canvasSize by remember { mutableStateOf(IntSize.Zero) }
@@ -71,75 +75,102 @@ internal fun GoBoard(
         }
     }
 
-    Box(
-        modifier = modifier
-            .background(Color(0xFFD7A85E), RoundedCornerShape(8.dp))
-            .border(1.dp, Color(0xFF7A4D20), RoundedCornerShape(8.dp))
-            .padding(3.dp),
-        contentAlignment = Alignment.Center,
+    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
+    val ghostAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.35f,
+        targetValue = 0.65f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 800, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "ghostAlpha"
+    )
+
+    BoxWithConstraints(
+        modifier = modifier,
+        contentAlignment = Alignment.Center
     ) {
-        Canvas(
+        val boardSide = if (maxWidth < maxHeight) maxWidth else maxHeight
+        Box(
             modifier = Modifier
-                .fillMaxSize()
-                .onSizeChanged { canvasSize = it }
-                .pointerInput(gameState.boardSize, inputEnabled, uxOptions.showCoordinates) {
-                    detectTapGestures { offset ->
-                        if (!inputEnabled) {
-                            return@detectTapGestures
-                        }
-                        coordinateFromTap(offset, canvasSize, gameState.boardSize, uxOptions.showCoordinates)
-                            ?.let(onCoordinateTap)
-                    }
-                },
+                .size(boardSide)
+                .background(Color(0xFFD7A85E), RoundedCornerShape(8.dp))
+                .border(1.dp, Color(0xFF7A4D20), RoundedCornerShape(8.dp))
+                .padding(3.dp),
+            contentAlignment = Alignment.Center,
         ) {
-            val geometry = BoardGeometry.from(size, gameState.boardSize, uxOptions.showCoordinates)
-            drawBoardGrid(geometry, gameState.boardSize)
-            if (uxOptions.showCoordinates) {
-                drawBoardCoordinates(geometry, gameState.boardSize)
-            }
-            if (ownershipEstimate != null) {
-                drawOwnershipOverlay(geometry, gameState, ownershipEstimate)
-            }
-            drawCandidateMoves(geometry, gameState, candidateMoves)
+            Canvas(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .onSizeChanged { canvasSize = it }
+                    .pointerInput(gameState.boardSize, inputEnabled, uxOptions.showCoordinates) {
+                        detectTapGestures { offset ->
+                            if (!inputEnabled) {
+                                return@detectTapGestures
+                            }
+                            coordinateFromTap(offset, canvasSize, gameState.boardSize, uxOptions.showCoordinates)
+                                ?.let(onCoordinateTap)
+                        }
+                    },
+            ) {
+                val geometry = BoardGeometry.from(size, gameState.boardSize, uxOptions.showCoordinates)
+                drawBoardGrid(geometry, gameState.boardSize)
+                if (uxOptions.showCoordinates) {
+                    drawBoardCoordinates(geometry, gameState.boardSize)
+                }
+                if (ownershipEstimate != null) {
+                    drawOwnershipOverlay(geometry, gameState, ownershipEstimate)
+                }
+                drawCandidateMoves(geometry, gameState, candidateMoves)
 
-            for ((coordinate, stone) in gameState.stones) {
-                drawStone(geometry.pointFor(coordinate), geometry.spacing * 0.42f, stone)
+                for ((coordinate, stone) in gameState.stones) {
+                    drawStone(geometry.pointFor(coordinate), geometry.spacing * 0.42f, stone)
+                }
+
+                if (tentativeMove != null) {
+                    drawGhostStone(
+                        center = geometry.pointFor(tentativeMove),
+                        radius = geometry.spacing * 0.42f,
+                        stone = gameState.nextPlayer,
+                        alpha = ghostAlpha
+                    )
+                }
+
+                val lastMove = gameState.moves.lastOrNull() as? Move.Play
+                if (lastMove != null && uxOptions.showLastMoveRing) {
+                    drawCircle(
+                        color = Color(0xFFE53935),
+                        radius = geometry.spacing * 0.48f,
+                        center = geometry.pointFor(lastMove.coordinate),
+                        style = Stroke(width = 3.5f),
+                    )
+                }
+                if (lastMove != null && !uxOptions.showMoveNumbers) {
+                    drawCircle(
+                        color = Color(0xFFE53935),
+                        radius = geometry.spacing * 0.12f,
+                        center = geometry.pointFor(lastMove.coordinate),
+                    )
+                }
+
+                drawMoveReviews(geometry, gameState, moveReviews)
+                if (uxOptions.showMoveNumbers) {
+                    drawMoveNumbers(geometry, gameState)
+                }
             }
 
-            val lastMove = gameState.moves.lastOrNull() as? Move.Play
-            if (lastMove != null && uxOptions.showLastMoveRing) {
-                drawCircle(
-                    color = Color(0xFFE53935),
-                    radius = geometry.spacing * 0.48f,
-                    center = geometry.pointFor(lastMove.coordinate),
-                    style = Stroke(width = 3.5f),
-                )
-            }
-            if (lastMove != null && !uxOptions.showMoveNumbers) {
-                drawCircle(
-                    color = Color(0xFFE53935),
-                    radius = geometry.spacing * 0.12f,
-                    center = geometry.pointFor(lastMove.coordinate),
-                )
-            }
-
-            drawMoveReviews(geometry, gameState, moveReviews)
-            if (uxOptions.showMoveNumbers) {
-                drawMoveNumbers(geometry, gameState)
-            }
-        }
-
-        if (engineBusy) {
-            val thinkingText = ThinkingFrames[thinkingFrame]
-            if (thinkingText.isNotEmpty()) {
-                Text(
-                    text = thinkingText,
-                    modifier = Modifier
-                        .align(Alignment.TopCenter)
-                        .padding(top = 2.dp),
-                    color = Color(0xFF3F2612),
-                    style = MaterialTheme.typography.labelMedium,
-                )
+            if (engineBusy) {
+                val thinkingText = ThinkingFrames[thinkingFrame]
+                if (thinkingText.isNotEmpty()) {
+                    Text(
+                        text = thinkingText,
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .padding(top = 2.dp),
+                        color = Color(0xFF3F2612),
+                        style = MaterialTheme.typography.labelMedium,
+                    )
+                }
             }
         }
     }
@@ -170,10 +201,10 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawOwnershipOverla
         val baseColor = if (point.value < 0.0) {
             Color(0xFF1F2327)
         } else {
-            Color(0xFFFFF8E6)
+            Color(0xFFFFFFFF)
         }
         val radius = geometry.spacing * (0.68f + strength * 0.42f)
-        val centerAlpha = 0.10f + strength * 0.32f
+        val centerAlpha = 0.22f + strength * 0.38f
         drawCircle(
             brush = Brush.radialGradient(
                 colors = listOf(
@@ -415,16 +446,29 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawBoardGrid(
     boardSize: BoardSize,
 ) {
     val lineColor = Color(0xFF4A2F17)
+
+    // 1. 내부 격자선 그리기 (굵기 1.5f)
     for (index in 0 until boardSize.value) {
         val startHorizontal = geometry.pointFor(BoardCoordinate(index, 0))
         val endHorizontal = geometry.pointFor(BoardCoordinate(index, boardSize.value - 1))
-        drawLine(lineColor, startHorizontal, endHorizontal, strokeWidth = 2f)
+        drawLine(lineColor, startHorizontal, endHorizontal, strokeWidth = 1.5f)
 
         val startVertical = geometry.pointFor(BoardCoordinate(0, index))
         val endVertical = geometry.pointFor(BoardCoordinate(boardSize.value - 1, index))
-        drawLine(lineColor, startVertical, endVertical, strokeWidth = 2f)
+        drawLine(lineColor, startVertical, endVertical, strokeWidth = 1.5f)
     }
 
+    // 2. 바둑판 최외곽 테두리 사각형 선 그리기 (굵기 3.5f) - 바둑돌보다 아래 레이어
+    val topLeft = geometry.pointFor(BoardCoordinate(0, 0))
+    val bottomRight = geometry.pointFor(BoardCoordinate(boardSize.value - 1, boardSize.value - 1))
+    drawRect(
+        color = lineColor,
+        topLeft = topLeft,
+        size = Size(bottomRight.x - topLeft.x, bottomRight.y - topLeft.y),
+        style = Stroke(width = 3.5f)
+    )
+
+    // 3. 화점(Star Points) 그리기
     for (starPoint in starPoints(boardSize)) {
         drawCircle(
             color = lineColor,
@@ -504,10 +548,15 @@ private data class BoardGeometry(
     companion object {
         fun from(size: Size, boardSize: BoardSize, showCoordinates: Boolean): BoardGeometry {
             val side = min(size.width, size.height)
-            val boardPadding = if (showCoordinates) {
-                (side * 0.5f) / boardSize.value
+            val spacing = if (showCoordinates) {
+                side / (boardSize.value + 1f)
             } else {
-                side * 0.027f
+                side / boardSize.value
+            }
+            val boardPadding = if (showCoordinates) {
+                spacing * 1.0f
+            } else {
+                spacing * 0.5f
             }
             val origin = Offset(
                 x = (size.width - side) / 2f + boardPadding,
@@ -515,7 +564,7 @@ private data class BoardGeometry(
             )
             return BoardGeometry(
                 origin = origin,
-                spacing = (side - boardPadding * 2f) / (boardSize.value - 1),
+                spacing = spacing,
                 boardPadding = boardPadding,
             )
         }
@@ -586,3 +635,46 @@ private fun starPoints(boardSize: BoardSize): List<BoardCoordinate> =
 
         else -> emptyList()
     }
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawGhostStone(
+    center: Offset,
+    radius: Float,
+    stone: StoneColor,
+    alpha: Float,
+) {
+    drawCircle(
+        color = Color(0x11000000).copy(alpha = 0.11f * (alpha / 0.65f)),
+        radius = radius * 1.03f,
+        center = Offset(center.x + radius * 0.05f, center.y + radius * 0.07f),
+    )
+    val baseColors = when (stone) {
+        StoneColor.Black -> listOf(
+            Color(0xFF646464),
+            Color(0xFF303030),
+            Color(0xFF101010),
+            Color(0xFF030303),
+        )
+        StoneColor.White -> listOf(
+            Color(0xFFFFFFFF),
+            Color(0xFFF3F1EA),
+            Color(0xFFE0DDD3),
+            Color(0xFFC7C2B6),
+        )
+    }
+    val mappedColors = baseColors.map { it.copy(alpha = alpha) }
+    drawCircle(
+        brush = Brush.radialGradient(
+            colors = mappedColors,
+            center = center,
+            radius = radius,
+        ),
+        radius = radius,
+        center = center,
+    )
+    drawCircle(
+        color = stoneEdgeColor(stone).copy(alpha = alpha * 0.9f),
+        radius = radius,
+        center = center,
+        style = Stroke(width = 2.2f),
+    )
+}

@@ -22,11 +22,13 @@ import com.worksoc.goaicoach.application.engine.EngineBenchmarkProfile
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkProgress
 import com.worksoc.goaicoach.application.engine.fillSummaryText
 import com.worksoc.goaicoach.application.engine.rootSummaryText
+import com.worksoc.goaicoach.application.session.GameSessionTurnTimeState
 import com.worksoc.goaicoach.match.summary
 import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
 import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.presentation.GameUiEvent
 import com.worksoc.goaicoach.presentation.shouldCollapseMenuAfterEvent
+import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.describe
 
 @Composable
@@ -39,6 +41,7 @@ internal fun GoCoachContent(
     isDisplayMenuExpanded: Boolean,
     onDisplayMenuExpandedChange: (Boolean) -> Unit,
     onScoreGraphExpandedChange: (Boolean) -> Unit,
+    turnTimeState: GameSessionTurnTimeState,
     onEvent: (GameUiEvent) -> Unit,
 ) {
     val savedSessionToPrompt = if (benchmarkProgress == null && benchmarkResult == null) {
@@ -109,6 +112,7 @@ internal fun GoCoachContent(
         GamePlaySection(
             screenState = screenState,
             onScoreGraphExpandedChange = onScoreGraphExpandedChange,
+            turnTimeState = turnTimeState,
             onEvent = onEvent,
         )
     }

@@ -5,6 +5,7 @@ import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.EngineSearchMode
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
+import com.worksoc.goaicoach.shared.MoveSelectionPolicy
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.StoneColor
@@ -28,13 +29,8 @@ internal object AiMoveSelectionPolicy {
         when (searchMode) {
             EngineSearchMode.GtpStatefulFast -> {
                 val baseLimit = playLevel.analysisLimitWith(searchTimeSettings)
-                baseLimit.fastCandidateAnalysis(
-                    candidateCount = if (playLevel.aiMoveSearchMode() == EngineSearchMode.GtpStatefulFast) {
-                        1
-                    } else {
-                        baseLimit.candidateCount
-                    },
-                )
+                val count = if (playLevel.selectionPolicy is MoveSelectionPolicy.BestOnly) 1 else baseLimit.candidateCount
+                baseLimit.fastCandidateAnalysis(candidateCount = count)
             }
             EngineSearchMode.JsonPositionAnalysis ->
                 playLevel.aiMoveAnalysisLimitWith(searchTimeSettings)

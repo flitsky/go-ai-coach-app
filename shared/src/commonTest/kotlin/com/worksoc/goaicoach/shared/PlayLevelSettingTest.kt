@@ -134,22 +134,33 @@ class PlayLevelSettingTest {
 
     @Test
     fun fastBeginnerAlwaysUsesGtpBestOnlyForFastPlay() {
+        // level = 3은 여전히 BestOnly 임을 검증
         val policy = PlayLevelSetting(
             group = PlayLevelGroup.FastBeginner,
-            level = 2,
+            level = 3,
         ).selectionPolicy
         val limit = PlayLevelSetting(
             group = PlayLevelGroup.FastBeginner,
-            level = 2,
+            level = 3,
         ).aiMoveAnalysisLimitWith(SearchTimeSettings())
 
         assertEquals(MoveSelectionPolicy.BestOnly, policy)
-        assertEquals(EngineSearchMode.GtpStatefulFast, PlayLevelSetting(PlayLevelGroup.FastBeginner, level = 2).aiMoveSearchMode())
+        assertEquals(EngineSearchMode.GtpStatefulFast, PlayLevelSetting(PlayLevelGroup.FastBeginner, level = 3).aiMoveSearchMode())
         assertEquals(16, limit.visits)
         assertEquals(1, limit.candidateCount)
         assertEquals(false, limit.includePolicy)
         assertEquals(0..0, policy.candidateIndexRange(candidateCount = 1))
         assertEquals(0..0, policy.candidateIndexRange(candidateCount = 10))
+
+        // level = 1, 2는 각각 하위권/중위권 정책 및 candidateCount = 8 임을 검증
+        val level1 = PlayLevelSetting(PlayLevelGroup.FastBeginner, level = 1)
+        val level2 = PlayLevelSetting(PlayLevelGroup.FastBeginner, level = 2)
+
+        assertEquals(MoveSelectionPolicy.PercentileRange(70, 100, "탐색 후보 최하위 30%"), level1.selectionPolicy)
+        assertEquals(8, level1.aiMoveAnalysisLimitWith(SearchTimeSettings()).candidateCount)
+
+        assertEquals(MoveSelectionPolicy.PercentileRange(40, 70, "탐색 후보 중위 40~70%"), level2.selectionPolicy)
+        assertEquals(8, level2.aiMoveAnalysisLimitWith(SearchTimeSettings()).candidateCount)
     }
 
     @Test

@@ -75,4 +75,24 @@ class GameSessionTurnTimeStateTest {
         assertEquals(2_000L, restarted.blackAccumulatedMillis)
         assertEquals(3_000L, restarted.whiteAccumulatedMillis)
     }
+
+    @Test
+    fun pauseAndResumeCalculatesCorrectStartMillisOffset() {
+        val timer = GameSessionTurnTimeState.reset(GameState.empty(), nowMillis = 1_000L)
+
+        val paused = timer.pause(nowMillis = 4_000L)
+        assertEquals(true, paused.isPaused)
+        assertEquals(4_000L, paused.pausedAtMillis)
+
+        val pausedAgain = paused.pause(nowMillis = 5_000L)
+        assertEquals(4_000L, pausedAgain.pausedAtMillis)
+
+        val resumed = paused.resume(nowMillis = 14_000L)
+        assertEquals(false, resumed.isPaused)
+        assertEquals(0L, resumed.pausedAtMillis)
+        assertEquals(11_000L, resumed.currentTurnStartedAtMillis)
+
+        val resumeNoOp = resumed.resume(nowMillis = 15_000L)
+        assertEquals(11_000L, resumeNoOp.currentTurnStartedAtMillis)
+    }
 }

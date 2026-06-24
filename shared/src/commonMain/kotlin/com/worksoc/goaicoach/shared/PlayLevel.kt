@@ -69,7 +69,11 @@ enum class PlayLevelGroup(
     fun selectionPolicy(level: Int): MoveSelectionPolicy {
         val safeLevel = level.coerceIn(1, maxLevel)
         return when (this) {
-            FastBeginner -> MoveSelectionPolicy.BestOnly
+            FastBeginner -> when (safeLevel) {
+                1 -> MoveSelectionPolicy.PercentileRange(70, 100, "탐색 후보 최하위 30%")
+                2 -> MoveSelectionPolicy.PercentileRange(40, 70, "탐색 후보 중위 40~70%")
+                else -> MoveSelectionPolicy.BestOnly
+            }
             Beginner -> when (safeLevel) {
                 1 -> MoveSelectionPolicy.PercentileRange(70, 100, "탐색 후보 최하위 30%")
                 2 -> MoveSelectionPolicy.PercentileRange(50, 100, "탐색 후보 하위 50%")

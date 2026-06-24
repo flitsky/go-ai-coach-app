@@ -301,4 +301,5 @@ internal data class KaTrainUxOptions(
     val showMoveNumbers: Boolean = false,
     val showLastMoveRing: Boolean = true,
     val showOwnershipOverlay: Boolean = true,
+    val isDirectPlayEnabled: Boolean = true,
 )

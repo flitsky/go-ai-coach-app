@@ -24,7 +24,7 @@ internal enum class MatchMode(val label: String) {
 }
 
 internal enum class SeatController(val label: String) {
-    Human("플레이어"),
+    Human("Player"),
     Ai("AI"),
 }
 

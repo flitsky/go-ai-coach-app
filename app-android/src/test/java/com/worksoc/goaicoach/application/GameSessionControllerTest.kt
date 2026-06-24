@@ -68,6 +68,7 @@ class GameSessionControllerTest {
             runtimeState = runtime,
             moveReviewState = review,
             engineMessage = "engine",
+            turnTimeState = GameSessionTurnTimeState.reset(gameState, 1_000L),
             settings = settings,
             benchmark = benchmark,
             savedSession = saved,

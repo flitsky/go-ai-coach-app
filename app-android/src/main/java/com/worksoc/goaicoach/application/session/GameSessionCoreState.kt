@@ -26,6 +26,7 @@ internal data class GameSessionCoreState(
     val runtimeState: GameSessionRuntimeState,
     val moveReviewState: GameSessionMoveReviewState,
     val engineMessage: String,
+    val turnTimeState: GameSessionTurnTimeState = GameSessionTurnTimeState.reset(gameState, 0L),
 ) {
     fun applyScoreEstimateDisplayPlan(score: ScoreEstimateDisplayPlan): GameSessionCoreState =
         copy(
@@ -103,6 +104,10 @@ internal data class GameSessionCoreState(
                 lastMoveText = reset.lastMoveText,
             ),
             engineMessage = reset.engineMessage,
+            turnTimeState = GameSessionTurnTimeState.reset(
+                state = reset.gameState,
+                nowMillis = System.currentTimeMillis(),
+            ),
         )
 
     fun applySavedGameRestorePlan(restore: SavedGameRestorePlan): GameSessionCoreState =
@@ -124,6 +129,10 @@ internal data class GameSessionCoreState(
                 lastMoveText = restore.lastMoveText,
             ),
             engineMessage = restore.engineMessage,
+            turnTimeState = GameSessionTurnTimeState.reset(
+                state = restore.gameState,
+                nowMillis = System.currentTimeMillis(),
+            ),
         )
 
     fun applyUndoLocalStatePlan(undo: UndoLocalStatePlan): GameSessionCoreState =
@@ -141,6 +150,10 @@ internal data class GameSessionCoreState(
                 endgameLog = undo.endgameLog,
             ),
             moveReviewState = moveReviewState.applyUndoLocalStatePlan(undo),
+            turnTimeState = turnTimeState.restartCurrentTurn(
+                state = undo.gameState,
+                nowMillis = System.currentTimeMillis(),
+            ),
         )
 
     fun applyScoringRuleChangePlan(ruleChange: ScoringRuleChangePlan): GameSessionCoreState =

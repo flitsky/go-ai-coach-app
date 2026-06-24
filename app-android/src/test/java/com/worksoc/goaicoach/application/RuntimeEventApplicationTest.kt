@@ -75,7 +75,7 @@ class RuntimeEventApplicationTest {
 
         assertTrue(log.startsWith("event=game_reset phase=game_setup"))
         assertTrue(log.contains("board=\"size=9 ruleset=Japanese moves=0 next=Black"))
-        assertTrue(log.contains("setup=\"Black: 플레이어 일반 / White: KataGo 빠른 초급 1단계\""))
+        assertTrue(log.contains("setup=\"Black: Player 일반 / White: KataGo 빠른 초급 1단계\""))
         assertTrue(log.contains("autoDelay=1초/1000ms"))
         assertTrue(log.contains("search=B16 2000ms / B32 2000ms / B64 3000ms"))
         assertTrue(log.contains("detail=\"New local board prepared. message=new game started\""))

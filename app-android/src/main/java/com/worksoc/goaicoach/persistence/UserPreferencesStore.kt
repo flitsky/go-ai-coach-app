@@ -47,6 +47,7 @@ internal object UserPreferencesCodec {
             .put("showOwnershipOverlay", snapshot.showOwnershipOverlay)
             .put("autoPlayDelayMillis", snapshot.autoPlayDelayMillis)
             .put("searchTimeSettings", encodeSearchTimeSettings(snapshot.searchTimeSettings))
+            .put("isDirectPlayEnabled", snapshot.isDirectPlayEnabled)
             .toString()
 
     fun decode(raw: String): UserPreferencesSnapshot? =
@@ -68,6 +69,7 @@ internal object UserPreferencesCodec {
                     .fromMillis(json.optLong("autoPlayDelayMillis", AutoPlayDelaySetting.Default.millis))
                     .millis,
                 searchTimeSettings = decodeSearchTimeSettings(json.optJSONObject("searchTimeSettings")),
+                isDirectPlayEnabled = json.optBoolean("isDirectPlayEnabled", true),
             )
         }.getOrNull()
 

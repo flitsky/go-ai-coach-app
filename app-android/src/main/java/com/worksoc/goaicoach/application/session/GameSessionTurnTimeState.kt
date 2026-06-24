@@ -8,7 +8,27 @@ internal data class GameSessionTurnTimeState(
     val currentTurnStartedAtMillis: Long,
     val blackAccumulatedMillis: Long = 0L,
     val whiteAccumulatedMillis: Long = 0L,
+    val isPaused: Boolean = false,
+    val pausedAtMillis: Long = 0L,
 ) {
+    fun pause(nowMillis: Long): GameSessionTurnTimeState {
+        if (isPaused) return this
+        return copy(
+            isPaused = true,
+            pausedAtMillis = nowMillis
+        )
+    }
+
+    fun resume(nowMillis: Long): GameSessionTurnTimeState {
+        if (!isPaused) return this
+        val elapsedBeforePause = (pausedAtMillis - currentTurnStartedAtMillis).coerceAtLeast(0L)
+        return copy(
+            isPaused = false,
+            pausedAtMillis = 0L,
+            currentTurnStartedAtMillis = nowMillis - elapsedBeforePause
+        )
+    }
+
     fun recordMove(
         player: StoneColor,
         nowMillis: Long,
