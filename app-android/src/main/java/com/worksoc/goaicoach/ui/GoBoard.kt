@@ -103,7 +103,12 @@ internal fun GoBoard(
                 modifier = Modifier
                     .fillMaxSize()
                     .onSizeChanged { canvasSize = it }
-                    .pointerInput(gameState.boardSize, inputEnabled, uxOptions.showCoordinates) {
+                    .pointerInput(
+                        gameState.boardSize,
+                        inputEnabled,
+                        uxOptions.showCoordinates,
+                        uxOptions.isDirectPlayEnabled,
+                    ) {
                         detectTapGestures { offset ->
                             if (!inputEnabled) {
                                 return@detectTapGestures
