@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.ui.Modifier
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -35,12 +36,14 @@ internal fun GameHeaderSection(
                 text = strings.appTitle,
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
             )
 
             Text(
                 text = strings.setupSummary(screenState.playerSetup, screenState.engine.name),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.secondary,
+                maxLines = 2,
             )
         }
 
@@ -54,7 +57,7 @@ internal fun GameHeaderSection(
             SetupDropdown(
                 selectedText = selectedLanguage.menuLabel,
                 enabled = true,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.widthIn(min = 96.dp, max = 132.dp),
                 options = UiLanguage.entries,
                 optionLabel = { language -> language.menuLabel },
                 onSelected = onLanguageChange,
