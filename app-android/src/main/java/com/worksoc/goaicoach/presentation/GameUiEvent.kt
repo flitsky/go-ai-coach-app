@@ -19,6 +19,7 @@ internal sealed interface GameUiEvent {
     data object ToggleEvalWithGradient : GameUiEvent
     data object UndoLastTurn : GameUiEvent
     data object Pass : GameUiEvent
+    data object ResignCurrentGame : GameUiEvent
     data object DismissResumePrompt : GameUiEvent
     data object AcceptCacheOptimizationPrompt : GameUiEvent
     data object DismissCacheOptimizationPrompt : GameUiEvent
@@ -72,6 +73,7 @@ internal data class GameUiEventHandlers(
     val hideTopMoves: () -> Unit,
     val undoLastTurn: () -> Unit,
     val submitMove: (Move) -> Unit,
+    val resignCurrentGame: () -> Unit,
     val dismissResumePrompt: () -> Unit,
     val acceptCacheOptimizationPrompt: () -> Unit,
     val dismissCacheOptimizationPrompt: () -> Unit,
@@ -96,6 +98,7 @@ internal fun buildGameUiEventHandlers(
     hideTopMoves: () -> Unit,
     undoLastTurn: () -> Unit,
     submitMove: (Move) -> Unit,
+    resignCurrentGame: () -> Unit,
     dismissResumePrompt: () -> Unit,
     acceptCacheOptimizationPrompt: () -> Unit,
     dismissCacheOptimizationPrompt: () -> Unit,
@@ -119,6 +122,7 @@ internal fun buildGameUiEventHandlers(
         hideTopMoves = hideTopMoves,
         undoLastTurn = undoLastTurn,
         submitMove = submitMove,
+        resignCurrentGame = resignCurrentGame,
         dismissResumePrompt = dismissResumePrompt,
         acceptCacheOptimizationPrompt = acceptCacheOptimizationPrompt,
         dismissCacheOptimizationPrompt = dismissCacheOptimizationPrompt,
@@ -150,6 +154,7 @@ internal fun dispatchGameUiEvent(
         }
         GameUiEvent.UndoLastTurn -> handlers.undoLastTurn()
         GameUiEvent.Pass -> handlers.submitMove(Move.Pass(handlers.currentPlayer()))
+        GameUiEvent.ResignCurrentGame -> handlers.resignCurrentGame()
         GameUiEvent.DismissResumePrompt -> handlers.dismissResumePrompt()
         GameUiEvent.AcceptCacheOptimizationPrompt -> handlers.acceptCacheOptimizationPrompt()
         GameUiEvent.DismissCacheOptimizationPrompt -> handlers.dismissCacheOptimizationPrompt()

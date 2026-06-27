@@ -1,6 +1,5 @@
 package com.worksoc.goaicoach.ui
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,7 +9,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -28,16 +26,10 @@ import com.worksoc.goaicoach.shared.StoneColor
 @Composable
 internal fun EngineResponsePanel(
     screenState: GameScreenState,
-    blackTotalMillis: Long,
-    whiteTotalMillis: Long,
     turnStatusText: String,
     moveCount: Int,
-    capturedByBlack: Int,
-    capturedByWhite: Int,
-    lastMoveText: String,
     engineMessage: String,
     candidateText: String,
-    scoreText: String,
     moveReviewText: String,
 ) {
     val strings = LocalUiStrings.current
@@ -67,130 +59,6 @@ internal fun EngineResponsePanel(
             ) {
                 Text(turnStatusText, fontWeight = FontWeight.SemiBold)
                 Text("${strings.moveCountPrefix}: $moveCount${strings.moveCountSuffix}", color = MaterialTheme.colorScheme.secondary)
-            }
-
-            // 최근 착수 표시
-            if (lastMoveText.isNotEmpty()) {
-                Text(
-                    text = "${strings.lastMove}: $lastMoveText",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.secondary,
-                )
-            }
-
-            // 2분할 흑/백 진영 정보 레이아웃
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                // 흑진영 카드
-                val isBlackTurn = screenState.gameState.nextPlayer == StoneColor.Black && !screenState.isGameEnded
-                val blackBgColor = if (isBlackTurn) Color(0xFFE8F5E9) else MaterialTheme.colorScheme.surface
-                val blackBorderStroke = if (isBlackTurn) BorderStroke(1.5.dp, Color(0xFF2F6B4F)) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-
-                Surface(
-                    modifier = Modifier.weight(1f),
-                    color = blackBgColor,
-                    border = blackBorderStroke,
-                    shape = RoundedCornerShape(6.dp)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Text(
-                            text = strings.sideLabel(screenState.playerSetup.black, StoneColor.Black),
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF1F1F1F)
-                        )
-                        Text(
-                            text = "${strings.time}: ${formatMillis(blackTotalMillis)}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = "${strings.captures}: $capturedByBlack${strings.stoneCountSuffix}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-
-                        val lastMovePlayer = screenState.gameState.moves.lastOrNull()?.player
-                        if (lastMovePlayer == StoneColor.Black && moveReviewText.isNotEmpty()) {
-                            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp), color = MaterialTheme.colorScheme.outlineVariant)
-                            Text(
-                                text = moveReviewText,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color(0xFF2F6B4F),
-                                fontFamily = FontFamily.Monospace
-                            )
-                        }
-                    }
-                }
-
-                // 백진영 카드
-                val isWhiteTurn = screenState.gameState.nextPlayer == StoneColor.White && !screenState.isGameEnded
-                val whiteBgColor = if (isWhiteTurn) Color(0xFFE8F5E9) else MaterialTheme.colorScheme.surface
-                val whiteBorderStroke = if (isWhiteTurn) BorderStroke(1.5.dp, Color(0xFF2F6B4F)) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-
-                Surface(
-                    modifier = Modifier.weight(1f),
-                    color = whiteBgColor,
-                    border = whiteBorderStroke,
-                    shape = RoundedCornerShape(6.dp)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Text(
-                            text = strings.sideLabel(screenState.playerSetup.white, StoneColor.White),
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF1F1F1F)
-                        )
-                        Text(
-                            text = "${strings.time}: ${formatMillis(whiteTotalMillis)}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = "${strings.captures}: $capturedByWhite${strings.stoneCountSuffix}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-
-                        val lastMovePlayer = screenState.gameState.moves.lastOrNull()?.player
-                        if (lastMovePlayer == StoneColor.White && moveReviewText.isNotEmpty()) {
-                            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp), color = MaterialTheme.colorScheme.outlineVariant)
-                            Text(
-                                text = moveReviewText,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color(0xFF2F6B4F),
-                                fontFamily = FontFamily.Monospace
-                            )
-                        }
-                    }
-                }
-            }
-
-            // 실시간 분석 정보 (scoreText 등)
-            if (scoreText.isNotEmpty()) {
-                Text(
-                    text = scoreText,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.secondary,
-                    fontFamily = FontFamily.Monospace,
-                )
-            }
-
-            // 엔진 상세 메시지 (디버그성 메시지)
-            if (engineMessage.isNotEmpty()) {
-                Text(
-                    text = engineMessage,
-                    style = MaterialTheme.typography.bodySmall,
-                    fontFamily = FontFamily.Monospace,
-                )
             }
 
             if (analysisDebug.hasAnyContent) {
@@ -368,10 +236,3 @@ private fun String.toStoneColorOrNull(): StoneColor? =
         "White" -> StoneColor.White
         else -> null
     }
-
-private fun formatMillis(millis: Long): String {
-    val seconds = (millis + 50L) / 1000L
-    val minutes = seconds / 60
-    val remainingSeconds = seconds % 60
-    return String.format("%02d:%02d", minutes, remainingSeconds)
-}

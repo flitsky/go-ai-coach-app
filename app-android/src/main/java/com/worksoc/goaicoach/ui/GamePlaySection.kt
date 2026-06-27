@@ -14,10 +14,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -125,16 +127,10 @@ internal fun GamePlaySection(
 
     EngineResponsePanel(
         screenState = screenState,
-        blackTotalMillis = blackTotalMillis,
-        whiteTotalMillis = whiteTotalMillis,
         turnStatusText = screenState.turnStatusText,
         moveCount = screenState.gameState.moves.size,
-        capturedByBlack = screenState.gameState.capturedBy(StoneColor.Black),
-        capturedByWhite = screenState.gameState.capturedBy(StoneColor.White),
-        lastMoveText = screenState.analysis.lastMoveText,
         engineMessage = screenState.engine.message,
         candidateText = screenState.analysis.candidateText,
-        scoreText = if (screenState.uxOptions.showOwnershipOverlay) screenState.score.text else "",
         moveReviewText = screenState.analysis.moveReviewText,
     )
 }
@@ -145,36 +141,81 @@ private fun GameActionButtons(
     onEvent: (GameUiEvent) -> Unit,
 ) {
     val strings = LocalUiStrings.current
-    Row(
+    var showResignConfirm by remember { mutableStateOf(false) }
+
+    if (showResignConfirm) {
+        AlertDialog(
+            onDismissRequest = { showResignConfirm = false },
+            title = { Text(strings.resignConfirmTitle) },
+            text = { Text(strings.resignConfirmMessage) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showResignConfirm = false
+                        onEvent(GameUiEvent.ResignCurrentGame)
+                    },
+                ) {
+                    Text(strings.resign)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showResignConfirm = false }) {
+                    Text(strings.cancel)
+                }
+            },
+        )
+    }
+
+    Column(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        screenState.actionButtons.forEach { action ->
-            val label = when (action.role) {
-                GameActionButtonRole.Pass -> strings.pass
-                GameActionButtonRole.Undo -> strings.undo
-                GameActionButtonRole.TopMoves -> strings.topMoves
-                GameActionButtonRole.Eval -> strings.eval
-            }
-            if (action.isFilled) {
-                Button(
-                    onClick = { onEvent(action.event) },
-                    enabled = action.enabled,
-                    modifier = Modifier.weight(1f),
-                    contentPadding = ActionButtonContentPadding,
-                ) {
-                    ActionButtonText(label)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            screenState.actionButtons.forEach { action ->
+                val label = when (action.role) {
+                    GameActionButtonRole.Pass -> strings.pass
+                    GameActionButtonRole.Undo -> strings.undo
+                    GameActionButtonRole.TopMoves -> strings.topMoves
+                    GameActionButtonRole.Eval -> strings.eval
                 }
-            } else {
-                OutlinedButton(
-                    onClick = { onEvent(action.event) },
-                    enabled = action.enabled,
-                    modifier = Modifier.weight(1f),
-                    contentPadding = ActionButtonContentPadding,
-                ) {
-                    ActionButtonText(label)
+                if (action.isFilled) {
+                    Button(
+                        onClick = { onEvent(action.event) },
+                        enabled = action.enabled,
+                        modifier = Modifier.weight(1f),
+                        contentPadding = ActionButtonContentPadding,
+                    ) {
+                        ActionButtonText(label)
+                    }
+                } else {
+                    OutlinedButton(
+                        onClick = { onEvent(action.event) },
+                        enabled = action.enabled,
+                        modifier = Modifier.weight(1f),
+                        contentPadding = ActionButtonContentPadding,
+                    ) {
+                        ActionButtonText(label)
+                    }
                 }
             }
+        }
+
+        OutlinedButton(
+            onClick = {
+                if (screenState.isGameEnded) {
+                    onEvent(GameUiEvent.StartConfiguredGame)
+                } else {
+                    showResignConfirm = true
+                }
+            },
+            enabled = screenState.isGameEnded || (!screenState.engine.isBusy && screenState.matchSeats.current.canAcceptBoardInput),
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = ActionButtonContentPadding,
+        ) {
+            ActionButtonText(if (screenState.isGameEnded) strings.newGameAction else strings.resign)
         }
     }
 }

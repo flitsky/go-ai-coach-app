@@ -691,7 +691,6 @@ private fun GoCoachScreen(
         turnTimeDebugText = { nowMillis -> turnTimeState.debugText(nowMillis) },
         onEngineMessage = { message -> engineMessage = message },
     )
-
     fun dispatch(event: GameUiEvent) {
         dispatchGameUiEvent(
             event = event,
@@ -707,6 +706,7 @@ private fun GoCoachScreen(
                 hideTopMoves = topMovesController::hide,
                 undoLastTurn = undoController::undoLastTurn,
                 submitMove = humanMoveController::submitMove,
+                resignCurrentGame = { resignCurrentGameIfAllowed(isGameEnded, isEngineBusy, gameState.nextPlayer, humanMoveController::submitMove) { isGameEnded = true } },
                 dismissResumePrompt = { sessionStore.clear(); savedSessionUiState = savedSessionUiState.dismiss() },
                 acceptCacheOptimizationPrompt = cacheOptController::accept,
                 dismissCacheOptimizationPrompt = cacheOptController::dismiss,

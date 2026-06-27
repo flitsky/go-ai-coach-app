@@ -24,14 +24,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.session.GameSessionTurnTimeState
-import com.worksoc.goaicoach.match.SeatController
-import com.worksoc.goaicoach.match.SidePlayerSetup
-import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.presentation.GameUiEvent
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.StoneColor
+import kotlin.math.floor
 import kotlin.math.roundToInt
 
 @Composable
@@ -54,9 +52,6 @@ internal fun GameStatusPanel(
     val whiteWinRate = estimate?.whiteWinRate
     val whiteScoreLead = estimate?.whiteScoreLead
 
-    val blackWinRateText = if (whiteWinRate != null) "${((1.0 - whiteWinRate) * 100).roundToInt()}%" else "--"
-    val whiteWinRateText = if (whiteWinRate != null) "${(whiteWinRate * 100).roundToInt()}%" else "--"
-
     val blackScoreLeadText = if (whiteScoreLead != null) {
         val lead = -whiteScoreLead
         if (lead > 0) String.format("+%.1f집", lead) else String.format("%.1f집", lead)
@@ -70,13 +65,25 @@ internal fun GameStatusPanel(
         "--"
     }
 
-    Row(
+    Column(
         modifier = modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+        verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
+        WinRateScoreBar(
+            blackScoreLeadText = blackScoreLeadText,
+            whiteScoreLeadText = whiteScoreLeadText,
+            blackWinRatePercent = whiteWinRate?.let { ((1.0 - it) * 100).roundToInt() },
+            whiteWinRatePercent = whiteWinRate?.let { (it * 100).roundToInt() },
+            strings = strings,
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
         // 좌측: 흑진영
         val isBlackTurn = currentTurnPlayer == StoneColor.Black && !screenState.isGameEnded
         val blackBg = if (isBlackTurn) Color(0xFFE8F5E9) else Color(0xFFF7F4EC)
@@ -114,18 +121,6 @@ internal fun GameStatusPanel(
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                Text(
-                    text = "${strings.scoreLead}: ${blackScoreLeadText}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFF455A64)
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = "${strings.winRate}: ${blackWinRateText}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFF455A64)
-                )
-                Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = "${strings.captures}: ${capturedByBlack}",
                     style = MaterialTheme.typography.bodySmall,
@@ -203,24 +198,87 @@ internal fun GameStatusPanel(
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
-                    text = "${strings.scoreLead}: ${whiteScoreLeadText}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFF455A64)
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = "${strings.winRate}: ${whiteWinRateText}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFF455A64)
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
                     text = "${strings.captures}: ${capturedByWhite}",
                     style = MaterialTheme.typography.bodySmall,
                     color = Color(0xFF455A64)
                 )
             }
         }
+        }
+    }
+}
+
+@Composable
+private fun WinRateScoreBar(
+    blackScoreLeadText: String,
+    whiteScoreLeadText: String,
+    blackWinRatePercent: Int?,
+    whiteWinRatePercent: Int?,
+    strings: UiStrings,
+) {
+    val blackPercentText = blackWinRatePercent?.let { "$it%" } ?: "--"
+    val whitePercentText = whiteWinRatePercent?.let { "$it%" } ?: "--"
+    val blackStoneCount = winRateStoneCount(
+        blackWinRatePercent = blackWinRatePercent,
+        whiteWinRatePercent = whiteWinRatePercent,
+    )
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(8.dp),
+        tonalElevation = 1.dp,
+        shadowElevation = 0.dp,
+        color = MaterialTheme.colorScheme.surface,
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = "${strings.colorLabel(StoneColor.Black)} $blackScoreLeadText",
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                text = blackPercentText,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.secondary,
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(1.dp)) {
+                repeat(10) { index ->
+                    Text(
+                        text = if (index < blackStoneCount) "●" else "○",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (index < blackStoneCount) Color.Black else Color.Gray,
+                    )
+                }
+            }
+            Text(
+                text = whitePercentText,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.secondary,
+            )
+            Text(
+                text = "${strings.colorLabel(StoneColor.White)} $whiteScoreLeadText",
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.SemiBold,
+            )
+        }
+    }
+}
+
+private fun winRateStoneCount(
+    blackWinRatePercent: Int?,
+    whiteWinRatePercent: Int?,
+): Int {
+    if (blackWinRatePercent == null || whiteWinRatePercent == null) {
+        return 5
+    }
+    return if (blackWinRatePercent >= whiteWinRatePercent) {
+        floor(blackWinRatePercent / 10.0).toInt().coerceIn(0, 10)
+    } else {
+        10 - floor(whiteWinRatePercent / 10.0).toInt().coerceIn(0, 10)
     }
 }
 

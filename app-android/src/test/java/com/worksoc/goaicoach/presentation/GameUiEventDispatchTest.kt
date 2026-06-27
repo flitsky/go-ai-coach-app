@@ -59,6 +59,18 @@ class GameUiEventDispatchTest {
     }
 
     @Test
+    fun dispatchResignRoutesToResignHandler() {
+        val calls = mutableListOf<String>()
+        val handlers = handlers(
+            resignCurrentGame = { calls += "resign" },
+        )
+
+        dispatchGameUiEvent(GameUiEvent.ResignCurrentGame, handlers)
+
+        assertEquals(listOf("resign"), calls)
+    }
+
+    @Test
     fun dispatchResumeAndDismissRouteToResumePromptHandlers() {
         val calls = mutableListOf<String>()
         val snapshot = SavedGameSnapshot(
@@ -154,6 +166,7 @@ class GameUiEventDispatchTest {
         hideTopMoves: () -> Unit = {},
         undoLastTurn: () -> Unit = {},
         submitMove: (Move) -> Unit = {},
+        resignCurrentGame: () -> Unit = {},
         dismissResumePrompt: () -> Unit = {},
         acceptCacheOptimizationPrompt: () -> Unit = {},
         dismissCacheOptimizationPrompt: () -> Unit = {},
@@ -177,6 +190,7 @@ class GameUiEventDispatchTest {
             hideTopMoves = hideTopMoves,
             undoLastTurn = undoLastTurn,
             submitMove = submitMove,
+            resignCurrentGame = resignCurrentGame,
             dismissResumePrompt = dismissResumePrompt,
             acceptCacheOptimizationPrompt = acceptCacheOptimizationPrompt,
             dismissCacheOptimizationPrompt = dismissCacheOptimizationPrompt,
