@@ -42,6 +42,7 @@ internal fun PlayerSetupPanel(
     onPlayerSetupChange: (PlayerSetup) -> Unit,
     onAutoPlayDelayChange: (AutoPlayDelaySetting) -> Unit,
 ) {
+    val strings = LocalUiStrings.current
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
@@ -52,7 +53,7 @@ internal fun PlayerSetupPanel(
             modifier = Modifier.padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Text("Player Setup", fontWeight = FontWeight.SemiBold)
+            Text(strings.playerSetup, fontWeight = FontWeight.SemiBold)
             PlayerSetupSideRow(
                 state = state.black,
                 enabled = enabled,
@@ -70,7 +71,7 @@ internal fun PlayerSetupPanel(
                 )
             }
             Text(
-                text = state.summaryText,
+                text = strings.setupSummary(state.setup, state.black.aiEngineLabel),
                 color = MaterialTheme.colorScheme.secondary,
                 style = MaterialTheme.typography.bodySmall,
             )
@@ -85,6 +86,7 @@ internal fun SearchTimeSettingsPanel(
     enabled: Boolean,
     onSettingsChange: (SearchTimeSettings) -> Unit,
 ) {
+    val strings = LocalUiStrings.current
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
@@ -95,7 +97,7 @@ internal fun SearchTimeSettingsPanel(
             modifier = Modifier.padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Text("Search Time", fontWeight = FontWeight.SemiBold)
+            Text(strings.searchTime, fontWeight = FontWeight.SemiBold)
             SearchTimeCapRow(
                 timeCapEnabled = settings.timeCapEnabled,
                 enabled = enabled,
@@ -124,18 +126,19 @@ private fun SearchTimeCapRow(
     enabled: Boolean,
     onSelected: (Boolean) -> Unit,
 ) {
+    val strings = LocalUiStrings.current
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = "Time cap",
+            text = strings.timeCap,
             modifier = Modifier.weight(0.52f),
             fontWeight = FontWeight.SemiBold,
         )
         Text(
-            text = if (timeCapEnabled) "응답시간 제한 적용" else "visits 충족 우선",
+            text = if (timeCapEnabled) strings.timeCapOn else strings.timeCapOff,
             modifier = Modifier.weight(1.12f),
             color = MaterialTheme.colorScheme.secondary,
             style = MaterialTheme.typography.bodySmall,
@@ -159,28 +162,29 @@ private fun SearchTimeRow(
     enabled: Boolean,
     onSelectedMillis: (Long) -> Unit,
 ) {
+    val strings = LocalUiStrings.current
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = "B${profile.displayLabel}",
+            text = strings.searchProfileLabel(profile),
             modifier = Modifier.weight(0.52f),
             fontWeight = FontWeight.SemiBold,
         )
         Text(
-            text = "추천[${recommendedAverageMs.toTimeRecommendationLabel()}]",
+            text = "${strings.recommendedPrefix}[${strings.timeRecommendationLabel(recommendedAverageMs)}]",
             modifier = Modifier.weight(1.12f),
             color = MaterialTheme.colorScheme.secondary,
             style = MaterialTheme.typography.bodySmall,
         )
         SetupDropdown(
-            selectedText = selectedMillis.toSecondsLabel(),
+            selectedText = strings.secondsLabel(selectedMillis),
             enabled = enabled,
             modifier = Modifier.weight(0.9f),
             options = profile.optionMillis,
-            optionLabel = { millis -> millis.toSecondsLabel() },
+            optionLabel = { millis -> strings.secondsLabel(millis) },
             onSelected = onSelectedMillis,
         )
     }
@@ -191,39 +195,26 @@ private fun AutoPlayDelayRow(
     selected: AutoPlayDelaySetting,
     onSelected: (AutoPlayDelaySetting) -> Unit,
 ) {
+    val strings = LocalUiStrings.current
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = "Auto delay",
+            text = strings.autoDelay,
             modifier = Modifier.weight(1f),
             color = MaterialTheme.colorScheme.secondary,
             style = MaterialTheme.typography.bodySmall,
         )
         SetupDropdown(
-            selectedText = selected.label,
+            selectedText = strings.autoPlayDelayLabel(selected),
             enabled = true,
             modifier = Modifier.weight(1f),
             options = AutoPlayDelaySetting.entries,
-            optionLabel = { setting -> setting.label },
+            optionLabel = { setting -> strings.autoPlayDelayLabel(setting) },
             onSelected = onSelected,
         )
-    }
-}
-
-private fun Double?.toTimeRecommendationLabel(): String =
-    this
-        ?.let { millis -> (kotlin.math.round(millis / 100.0) * 100).toLong().toSecondsLabel() }
-        ?: "없음"
-
-private fun Long.toSecondsLabel(): String {
-    val seconds = this / 1_000.0
-    return if (this % 1_000L == 0L) {
-        "${seconds.toInt()}초"
-    } else {
-        "${((seconds * 10.0).toInt() / 10.0)}초"
     }
 }
 
@@ -233,6 +224,7 @@ private fun PlayerSetupSideRow(
     enabled: Boolean,
     onSideChange: (SidePlayerSetup) -> Unit,
 ) {
+    val strings = LocalUiStrings.current
     val side = state.side
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Row(
@@ -241,16 +233,16 @@ private fun PlayerSetupSideRow(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = state.seatLabel,
+                text = strings.colorLabel(state.color),
                 modifier = Modifier.weight(0.38f),
                 fontWeight = FontWeight.SemiBold,
             )
             SetupDropdown(
-                selectedText = state.controllerLabel,
+                selectedText = strings.controllerLabel(side.controller),
                 enabled = enabled,
                 modifier = Modifier.weight(1f),
                 options = SeatController.entries,
-                optionLabel = { it.label },
+                optionLabel = { controller -> strings.controllerLabel(controller) },
                 onSelected = { controller ->
                     onSideChange(side.copy(controller = controller))
                 },
@@ -258,7 +250,7 @@ private fun PlayerSetupSideRow(
             when (side.controller) {
                 SeatController.Human -> {
                     SetupStaticBox(
-                        text = "일반",
+                        text = strings.controllerLabel(SeatController.Human),
                         modifier = Modifier.weight(1.08f),
                     )
                     SetupStaticBox(
@@ -269,21 +261,21 @@ private fun PlayerSetupSideRow(
 
                 SeatController.Ai -> {
                     SetupDropdown(
-                        selectedText = state.aiLevelGroupLabel,
+                        selectedText = strings.playLevelGroupLabel(side.playLevel.group),
                         enabled = enabled,
                         modifier = Modifier.weight(1.08f),
                         options = PlayLevelGroup.entries,
-                        optionLabel = { it.label },
+                        optionLabel = { group -> strings.playLevelGroupLabel(group) },
                         onSelected = { group ->
                             onSideChange(side.copy(playLevel = side.playLevel.withGroup(group)))
                         },
                     )
                     SetupDropdown(
-                        selectedText = state.aiLevelLabel,
+                        selectedText = strings.levelLabel(side.playLevel.safeLevel),
                         enabled = enabled,
                         modifier = Modifier.weight(0.8f),
                         options = (1..side.playLevel.group.maxLevel).toList(),
-                        optionLabel = { "${it}단계" },
+                        optionLabel = { level -> strings.levelLabel(level) },
                         onSelected = { level ->
                             onSideChange(side.copy(playLevel = side.playLevel.withLevel(level)))
                         },
@@ -298,7 +290,7 @@ private fun PlayerSetupSideRow(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "엔진",
+                    text = strings.engine,
                     modifier = Modifier.weight(0.38f),
                     color = MaterialTheme.colorScheme.secondary,
                     style = MaterialTheme.typography.bodySmall,

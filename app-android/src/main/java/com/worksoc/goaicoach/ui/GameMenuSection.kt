@@ -4,16 +4,15 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.ui.Modifier
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.BuildConfig
 import com.worksoc.goaicoach.match.MatchMode
-import com.worksoc.goaicoach.match.modeSummary
 import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.presentation.GameUiEvent
 
@@ -22,7 +21,10 @@ internal fun GameHeaderSection(
     screenState: GameScreenState,
     isDisplayMenuExpanded: Boolean,
     onDisplayMenuExpandedChange: (Boolean) -> Unit,
+    selectedLanguage: UiLanguage,
+    onLanguageChange: (UiLanguage) -> Unit,
 ) {
+    val strings = LocalUiStrings.current
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -30,13 +32,13 @@ internal fun GameHeaderSection(
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = "Go AI Coach POC",
+                text = strings.appTitle,
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.SemiBold,
             )
 
             Text(
-                text = modeSummary(screenState.playerSetup, screenState.engine.name),
+                text = strings.setupSummary(screenState.playerSetup, screenState.engine.name),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.secondary,
             )
@@ -47,6 +49,15 @@ internal fun GameHeaderSection(
                 text = BuildConfig.BUILD_TIME,
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.secondary,
+            )
+
+            SetupDropdown(
+                selectedText = selectedLanguage.menuLabel,
+                enabled = true,
+                modifier = Modifier.fillMaxWidth(),
+                options = UiLanguage.entries,
+                optionLabel = { language -> language.menuLabel },
+                onSelected = onLanguageChange,
             )
 
             KaTrainUxMenuButton(

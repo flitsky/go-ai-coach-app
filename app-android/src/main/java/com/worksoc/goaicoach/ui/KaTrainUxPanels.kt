@@ -24,10 +24,11 @@ internal fun KaTrainUxMenuButton(
     menuExpanded: Boolean,
     onMenuExpandedChange: (Boolean) -> Unit,
 ) {
+    val strings = LocalUiStrings.current
     OutlinedButton(
         onClick = { onMenuExpandedChange(!menuExpanded) },
     ) {
-        Text(if (menuExpanded) "Close" else "\u2630")
+        Text(if (menuExpanded) strings.close else "\u2630")
     }
 }
 
@@ -36,6 +37,7 @@ internal fun KaTrainUxMenuPanel(
     options: KaTrainUxOptions,
     onOptionsChange: (KaTrainUxOptions) -> Unit,
 ) {
+    val strings = LocalUiStrings.current
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
@@ -46,17 +48,17 @@ internal fun KaTrainUxMenuPanel(
             modifier = Modifier.padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Text("Display menu", fontWeight = FontWeight.SemiBold)
-            OptionSwitchRow("바로 착수", options.isDirectPlayEnabled) {
+            Text(strings.displayMenu, fontWeight = FontWeight.SemiBold)
+            OptionSwitchRow(strings.directPlay, options.isDirectPlayEnabled) {
                 onOptionsChange(options.copy(isDirectPlayEnabled = it))
             }
-            OptionSwitchRow("Coords", options.showCoordinates) {
+            OptionSwitchRow(strings.coordinates, options.showCoordinates) {
                 onOptionsChange(options.copy(showCoordinates = it))
             }
-            OptionSwitchRow("Move nums", options.showMoveNumbers) {
+            OptionSwitchRow(strings.moveNumbers, options.showMoveNumbers) {
                 onOptionsChange(options.copy(showMoveNumbers = it))
             }
-            OptionSwitchRow("Last ring", options.showLastMoveRing) {
+            OptionSwitchRow(strings.lastMoveRing, options.showLastMoveRing) {
                 onOptionsChange(options.copy(showLastMoveRing = it))
             }
         }
@@ -87,6 +89,7 @@ internal fun GameStatusStrip(
     capturedByWhite: Int,
     lastMoveText: String,
 ) {
+    val strings = LocalUiStrings.current
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
@@ -101,15 +104,15 @@ internal fun GameStatusStrip(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Text("Turn ${nextPlayer.label}", fontWeight = FontWeight.SemiBold)
-                Text("Moves $moveCount", color = MaterialTheme.colorScheme.secondary)
+                Text("${strings.turnPrefix} ${strings.colorLabel(nextPlayer)}", fontWeight = FontWeight.SemiBold)
+                Text("${strings.movesPrefix} $moveCount", color = MaterialTheme.colorScheme.secondary)
             }
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Text("Captures B $capturedByBlack / W $capturedByWhite")
-                Text("Last $lastMoveText", color = MaterialTheme.colorScheme.secondary)
+                Text("${strings.capturesPrefix} ${strings.colorLabel(StoneColor.Black)} $capturedByBlack / ${strings.colorLabel(StoneColor.White)} $capturedByWhite")
+                Text("${strings.lastPrefix} $lastMoveText", color = MaterialTheme.colorScheme.secondary)
             }
         }
     }

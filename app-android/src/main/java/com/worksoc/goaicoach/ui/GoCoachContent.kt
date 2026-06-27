@@ -23,7 +23,6 @@ import com.worksoc.goaicoach.application.engine.EngineBenchmarkProgress
 import com.worksoc.goaicoach.application.engine.fillSummaryText
 import com.worksoc.goaicoach.application.engine.rootSummaryText
 import com.worksoc.goaicoach.application.session.GameSessionTurnTimeState
-import com.worksoc.goaicoach.match.summary
 import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
 import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.presentation.GameUiEvent
@@ -41,9 +40,12 @@ internal fun GoCoachContent(
     isDisplayMenuExpanded: Boolean,
     onDisplayMenuExpandedChange: (Boolean) -> Unit,
     onScoreGraphExpandedChange: (Boolean) -> Unit,
+    selectedLanguage: UiLanguage,
+    onLanguageChange: (UiLanguage) -> Unit,
     turnTimeState: GameSessionTurnTimeState,
     onEvent: (GameUiEvent) -> Unit,
 ) {
+    val strings = LocalUiStrings.current
     val savedSessionToPrompt = if (benchmarkProgress == null && benchmarkResult == null) {
         screenState.resumePrompt?.snapshot
     } else {
@@ -66,6 +68,7 @@ internal fun GoCoachContent(
     } else if (benchmarkResult != null) {
         EngineBenchmarkResultDialog(
             profile = benchmarkResult,
+            strings = strings,
             onConfirm = onBenchmarkResultConfirmed,
             onRerun = onBenchmarkRerun,
         )
@@ -75,6 +78,7 @@ internal fun GoCoachContent(
         ResumeSavedSessionDialog(
             snapshot = savedSessionToPrompt,
             engineName = screenState.engine.name,
+            strings = strings,
             onResume = { onEvent(GameUiEvent.ResumeSavedSession(savedSessionToPrompt)) },
             onDismiss = { onEvent(GameUiEvent.DismissResumePrompt) },
         )
@@ -82,6 +86,7 @@ internal fun GoCoachContent(
         CacheOptimizationPromptDialog(
             title = cacheOptimizationPrompt.title,
             message = cacheOptimizationPrompt.message,
+            strings = strings,
             onAccept = { onEvent(GameUiEvent.AcceptCacheOptimizationPrompt) },
             onDismiss = { onEvent(GameUiEvent.DismissCacheOptimizationPrompt) },
         )
@@ -100,6 +105,8 @@ internal fun GoCoachContent(
             screenState = screenState,
             isDisplayMenuExpanded = isDisplayMenuExpanded,
             onDisplayMenuExpandedChange = onDisplayMenuExpandedChange,
+            selectedLanguage = selectedLanguage,
+            onLanguageChange = onLanguageChange,
         )
 
         if (isDisplayMenuExpanded) {
@@ -122,6 +129,7 @@ internal fun GoCoachContent(
 private fun CacheOptimizationPromptDialog(
     title: String,
     message: String,
+    strings: UiStrings,
     onAccept: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -131,12 +139,12 @@ private fun CacheOptimizationPromptDialog(
         text = { Text(message) },
         confirmButton = {
             TextButton(onClick = onAccept) {
-                Text("분석하기")
+                Text(strings.analyze)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("나중에")
+                Text(strings.later)
             }
         },
     )
@@ -145,23 +153,24 @@ private fun CacheOptimizationPromptDialog(
 @Composable
 private fun EngineBenchmarkResultDialog(
     profile: EngineBenchmarkProfile,
+    strings: UiStrings,
     onConfirm: () -> Unit,
     onRerun: () -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = {},
-        title = { Text("엔진 벤치마크 완료") },
+        title = { Text(strings.benchmarkDoneTitle) },
         text = {
-            Text(profile.toResultDialogText())
+            Text(profile.toResultDialogText(strings))
         },
         confirmButton = {
             TextButton(onClick = onConfirm) {
-                Text("확인")
+                Text(strings.confirm)
             }
         },
         dismissButton = {
             TextButton(onClick = onRerun) {
-                Text("다시 체크해보기")
+                Text(strings.rerunBenchmark)
             }
         },
     )
@@ -169,16 +178,17 @@ private fun EngineBenchmarkResultDialog(
 
 @Composable
 private fun EngineBenchmarkProgressDialog(progress: EngineBenchmarkProgress) {
+    val strings = LocalUiStrings.current
     AlertDialog(
         onDismissRequest = {},
-        title = { Text("엔진 벤치마크 진행 중") },
+        title = { Text(strings.benchmarkRunningTitle) },
         text = {
             Column {
-                Text("사용자 개입 없이 진행됩니다. 느린 기기에서는 1~3분 정도 소요될 수 있습니다.")
+                Text(strings.benchmarkRunningBody)
                 Spacer(modifier = Modifier.height(12.dp))
-                Text(progress.stageText)
-                Text("${progress.sampleText} · ${progress.progressText}")
-                progress.lastResultText?.let { text ->
+                Text(progress.localizedStageText(strings))
+                Text("${progress.localizedSampleText(strings)} · ${progress.localizedProgressText(strings)}")
+                progress.localizedLastResultText(strings)?.let { text ->
                     Text(text)
                 }
                 Spacer(modifier = Modifier.height(12.dp))
@@ -192,12 +202,12 @@ private fun EngineBenchmarkProgressDialog(progress: EngineBenchmarkProgress) {
     )
 }
 
-private fun EngineBenchmarkProfile.toResultDialogText(): String =
+private fun EngineBenchmarkProfile.toResultDialogText(strings: UiStrings): String =
     buildString {
-        appendLine("측정 샘플: B16/B32/B64 각각 ${samplesPerVisit}회")
-        appendLine("측정 상한: ${timeCapMs}ms")
-        appendLine("측정 포지션: $benchmarkPositionName")
-        appendLine("포지션 수순: ${benchmarkPositionMoves.ifEmpty { listOf("none") }.joinToString(", ")}")
+        appendLine("${strings.benchmarkSamples}: B16/B32/B64 x $samplesPerVisit")
+        appendLine("${strings.benchmarkTimeCap}: ${timeCapMs}ms")
+        appendLine("${strings.benchmarkPosition}: $benchmarkPositionName")
+        appendLine("${strings.benchmarkPositionMoves}: ${benchmarkPositionMoves.ifEmpty { listOf(strings.none) }.joinToString(", ")}")
         appendLine()
         metrics.sortedBy { metric -> metric.visits }.forEach { metric ->
             appendLine(
@@ -206,45 +216,68 @@ private fun EngineBenchmarkProfile.toResultDialogText(): String =
             appendLine("  root ${metric.rootSummaryText()} / fill ${metric.fillSummaryText()}")
         }
         appendLine()
-        appendLine("상세 sampleDetails는 메뉴의 Copy Log에 포함됩니다.")
+        appendLine(strings.benchmarkDetailsIncluded)
     }.trim()
+
+private fun EngineBenchmarkProgress.localizedStageText(strings: UiStrings): String =
+    if (stageOverride != null) {
+        strings.benchmarkEngineSettling
+    } else {
+        "B$currentVisits ${strings.benchmarkSecuringRuntime}"
+    }
+
+private fun EngineBenchmarkProgress.localizedSampleText(strings: UiStrings): String =
+    if (currentSample <= 0) {
+        strings.benchmarkPreparing
+    } else {
+        "${strings.benchmarkSample} $currentSample / $samplesPerVisit"
+    }
+
+private fun EngineBenchmarkProgress.localizedProgressText(strings: UiStrings): String =
+    "${strings.benchmarkTotalProgress} $completedCalls / $totalCalls"
+
+private fun EngineBenchmarkProgress.localizedLastResultText(strings: UiStrings): String? =
+    lastFillStatus?.let { fill ->
+        "${strings.benchmarkLastResult} root=${lastRootVisits ?: strings.none}, elapsed=${lastElapsedMs ?: strings.none}ms, fill=$fill"
+    }
 
 @Composable
 private fun ResumeSavedSessionDialog(
     snapshot: SavedGameSnapshot,
     engineName: String,
+    strings: UiStrings,
     onResume: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("이전 대국 이어하기") },
+        title = { Text(strings.resumeTitle) },
         text = {
             Text(
                 text = buildString {
-                    appendLine("진행 중이던 ${snapshot.gameState.moves.size}수 대국이 있습니다.")
-                    appendLine("이어 진행하시겠습니까?")
+                    appendLine("${strings.resumeMoveCountPrefix} ${snapshot.gameState.moves.size}${strings.resumeMoveCountSuffix}")
+                    appendLine(strings.resumeQuestion)
                     appendLine()
-                    append("마지막 수: ")
+                    append("${strings.lastMovePrefix}: ")
                     append(
                         snapshot.gameState.moves
                             .lastOrNull()
                             ?.describe(snapshot.gameState.boardSize)
-                            ?: "None",
+                            ?: strings.none,
                     )
                     appendLine()
-                    append(snapshot.playerSetup.summary(engineName))
+                    append(strings.setupSummary(snapshot.playerSetup, engineName))
                 },
             )
         },
         confirmButton = {
             TextButton(onClick = onResume) {
-                Text("예")
+                Text(strings.yes)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("아니오")
+                Text(strings.no)
             }
         },
     )

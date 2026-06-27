@@ -89,13 +89,10 @@ internal fun GoCoachApp(
             surface = Color(0xFFFFFCF4),
         ),
     ) {
-        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-            GoCoachScreen(
-                engineClient = engineClient,
-                engineName = engineName,
-                engineDiagnostic = engineDiagnostic,
-                diagnosticEventLog = diagnosticEventLog,
-            )
+        ProvideUiLanguage { selectedLanguage, onLanguageChange ->
+            Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+                GoCoachScreen(engineClient, engineName, engineDiagnostic, diagnosticEventLog, selectedLanguage, onLanguageChange)
+            }
         }
     }
 }
@@ -106,6 +103,8 @@ private fun GoCoachScreen(
     engineName: String,
     engineDiagnostic: String,
     diagnosticEventLog: DiagnosticEventLogPort,
+    selectedLanguage: UiLanguage,
+    onLanguageChange: (UiLanguage) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -784,6 +783,8 @@ private fun GoCoachScreen(
         isDisplayMenuExpanded = isDisplayMenuExpanded,
         onDisplayMenuExpandedChange = { expanded -> isDisplayMenuExpanded = expanded },
         onScoreGraphExpandedChange = { expanded -> isScoreGraphExpanded = expanded },
+        selectedLanguage = selectedLanguage,
+        onLanguageChange = onLanguageChange,
         turnTimeState = turnTimeState,
         onEvent = ::dispatch,
     )

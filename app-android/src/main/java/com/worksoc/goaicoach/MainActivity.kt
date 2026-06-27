@@ -108,13 +108,13 @@ private fun PreparingEngineScreen() {
                     fontWeight = FontWeight.Bold,
                 )
                 Text(
-                    text = "Preparing KataGo engine assets...",
+                    text = "KataGo 엔진 파일을 준비하는 중...",
                     color = MaterialTheme.colorScheme.secondary,
                     style = MaterialTheme.typography.bodyLarge,
                     modifier = Modifier.padding(top = 12.dp),
                 )
                 Text(
-                    text = "First launch can take a moment when the bundled model is copied.",
+                    text = "첫 실행에서는 포함된 모델을 복사하므로 잠시 시간이 걸릴 수 있습니다.",
                     color = MaterialTheme.colorScheme.secondary,
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(top = 8.dp),

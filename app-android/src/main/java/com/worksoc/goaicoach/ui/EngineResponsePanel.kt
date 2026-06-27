@@ -21,8 +21,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.worksoc.goaicoach.match.SeatController
-import com.worksoc.goaicoach.match.SidePlayerSetup
 import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.StoneColor
@@ -42,6 +40,7 @@ internal fun EngineResponsePanel(
     scoreText: String,
     moveReviewText: String,
 ) {
+    val strings = LocalUiStrings.current
     val analysisDebug = buildSideAnalysisDebugState(
         screenState = screenState,
         candidateText = candidateText,
@@ -67,13 +66,13 @@ internal fun EngineResponsePanel(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(turnStatusText, fontWeight = FontWeight.SemiBold)
-                Text("수순: ${moveCount}수", color = MaterialTheme.colorScheme.secondary)
+                Text("${strings.moveCountPrefix}: $moveCount${strings.moveCountSuffix}", color = MaterialTheme.colorScheme.secondary)
             }
 
             // 최근 착수 표시
             if (lastMoveText.isNotEmpty()) {
                 Text(
-                    text = "최근 착수: $lastMoveText",
+                    text = "${strings.lastMove}: $lastMoveText",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.secondary,
                 )
@@ -100,18 +99,18 @@ internal fun EngineResponsePanel(
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Text(
-                            text = sideLabel(screenState.playerSetup.black, StoneColor.Black),
+                            text = strings.sideLabel(screenState.playerSetup.black, StoneColor.Black),
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF1F1F1F)
                         )
                         Text(
-                            text = "시간: ${formatMillis(blackTotalMillis)}",
+                            text = "${strings.time}: ${formatMillis(blackTotalMillis)}",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            text = "사석: ${capturedByBlack}개",
+                            text = "${strings.captures}: $capturedByBlack${strings.stoneCountSuffix}",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -145,18 +144,18 @@ internal fun EngineResponsePanel(
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Text(
-                            text = sideLabel(screenState.playerSetup.white, StoneColor.White),
+                            text = strings.sideLabel(screenState.playerSetup.white, StoneColor.White),
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF1F1F1F)
                         )
                         Text(
-                            text = "시간: ${formatMillis(whiteTotalMillis)}",
+                            text = "${strings.time}: ${formatMillis(whiteTotalMillis)}",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            text = "사석: ${capturedByWhite}개",
+                            text = "${strings.captures}: $capturedByWhite${strings.stoneCountSuffix}",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -196,7 +195,7 @@ internal fun EngineResponsePanel(
 
             if (analysisDebug.hasAnyContent) {
                 Text(
-                    text = "KataGo analysis",
+                    text = strings.kataGoAnalysis,
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.SemiBold,
                 )
@@ -205,12 +204,14 @@ internal fun EngineResponsePanel(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     SideAnalysisDebugCard(
-                        title = "흑 분석",
+                        title = strings.blackAnalysis,
+                        strings = strings,
                         state = analysisDebug.black,
                         modifier = Modifier.weight(1f),
                     )
                     SideAnalysisDebugCard(
-                        title = "백 분석",
+                        title = strings.whiteAnalysis,
+                        strings = strings,
                         state = analysisDebug.white,
                         modifier = Modifier.weight(1f),
                     )
@@ -225,6 +226,7 @@ private val AnalysisLogMaxHeight = 180.dp
 @Composable
 private fun SideAnalysisDebugCard(
     title: String,
+    strings: UiStrings,
     state: SideAnalysisDebugText,
     modifier: Modifier = Modifier,
 ) {
@@ -249,7 +251,7 @@ private fun SideAnalysisDebugCard(
             )
             if (state.selectedMoveText != null) {
                 Text(
-                    text = "선택: ${state.selectedMoveText}",
+                    text = "${strings.selected}: ${state.selectedMoveText}",
                     style = MaterialTheme.typography.bodySmall,
                     color = Color(0xFF2F6B4F),
                     fontFamily = FontFamily.Monospace,
@@ -264,7 +266,7 @@ private fun SideAnalysisDebugCard(
                 )
             }
             Text(
-                text = state.candidateText ?: "아직 표시할 분석 정보가 없습니다.",
+                text = state.candidateText ?: strings.noAnalysisInfo,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.secondary,
                 fontFamily = FontFamily.Monospace,
@@ -372,13 +374,4 @@ private fun formatMillis(millis: Long): String {
     val minutes = seconds / 60
     val remainingSeconds = seconds % 60
     return String.format("%02d:%02d", minutes, remainingSeconds)
-}
-
-private fun sideLabel(setup: SidePlayerSetup, color: StoneColor): String {
-    val colorPrefix = if (color == StoneColor.Black) "흑" else "백"
-    val controllerLabel = when (setup.controller) {
-        SeatController.Human -> "유저"
-        SeatController.Ai -> "AI"
-    }
-    return "$colorPrefix ($controllerLabel)"
 }

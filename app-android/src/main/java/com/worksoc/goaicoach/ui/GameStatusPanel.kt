@@ -44,6 +44,7 @@ internal fun GameStatusPanel(
     onEvent: (GameUiEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val strings = LocalUiStrings.current
     val currentTurnPlayer = turnTimeState.currentTurnPlayer
     val capturedByBlack = screenState.gameState.capturedBy(StoneColor.Black)
     val capturedByWhite = screenState.gameState.capturedBy(StoneColor.White)
@@ -98,7 +99,7 @@ internal fun GameStatusPanel(
                     Text("●", style = MaterialTheme.typography.titleMedium, color = Color.Black)
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = sideLabel(screenState.playerSetup.black, StoneColor.Black),
+                        text = strings.sideLabel(screenState.playerSetup.black, StoneColor.Black),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF1F1F1F),
@@ -114,19 +115,19 @@ internal fun GameStatusPanel(
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
-                    text = "집차: ${blackScoreLeadText}",
+                    text = "${strings.scoreLead}: ${blackScoreLeadText}",
                     style = MaterialTheme.typography.bodySmall,
                     color = Color(0xFF455A64)
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = "승률: ${blackWinRateText}",
+                    text = "${strings.winRate}: ${blackWinRateText}",
                     style = MaterialTheme.typography.bodySmall,
                     color = Color(0xFF455A64)
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = "사석: ${capturedByBlack}",
+                    text = "${strings.captures}: ${capturedByBlack}",
                     style = MaterialTheme.typography.bodySmall,
                     color = Color(0xFF455A64)
                 )
@@ -159,7 +160,7 @@ internal fun GameStatusPanel(
                 shape = RoundedCornerShape(24.dp),
                 contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)
             ) {
-                Text("착수", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text(strings.playMove, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             }
         }
 
@@ -184,7 +185,7 @@ internal fun GameStatusPanel(
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(
-                        text = sideLabel(screenState.playerSetup.white, StoneColor.White),
+                        text = strings.sideLabel(screenState.playerSetup.white, StoneColor.White),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF1F1F1F),
@@ -202,19 +203,19 @@ internal fun GameStatusPanel(
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
-                    text = "집차: ${whiteScoreLeadText}",
+                    text = "${strings.scoreLead}: ${whiteScoreLeadText}",
                     style = MaterialTheme.typography.bodySmall,
                     color = Color(0xFF455A64)
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = "승률: ${whiteWinRateText}",
+                    text = "${strings.winRate}: ${whiteWinRateText}",
                     style = MaterialTheme.typography.bodySmall,
                     color = Color(0xFF455A64)
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = "사석: ${capturedByWhite}",
+                    text = "${strings.captures}: ${capturedByWhite}",
                     style = MaterialTheme.typography.bodySmall,
                     color = Color(0xFF455A64)
                 )
@@ -228,13 +229,4 @@ private fun formatMillis(millis: Long): String {
     val minutes = seconds / 60
     val remainingSeconds = seconds % 60
     return String.format("%02d:%02d", minutes, remainingSeconds)
-}
-
-private fun sideLabel(setup: SidePlayerSetup, color: StoneColor): String {
-    val colorPrefix = if (color == StoneColor.Black) "흑" else "백"
-    val controllerLabel = when (setup.controller) {
-        SeatController.Human -> "유저"
-        SeatController.Ai -> "AI"
-    }
-    return "$colorPrefix ($controllerLabel)"
 }

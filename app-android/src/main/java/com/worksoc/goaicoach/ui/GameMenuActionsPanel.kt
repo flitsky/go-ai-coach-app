@@ -32,6 +32,7 @@ internal fun GameMenuActionsPanel(
     onRulesetChange: (Ruleset) -> Unit,
     onBoardSizeChange: (BoardSize) -> Unit,
 ) {
+    val strings = LocalUiStrings.current
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
@@ -42,7 +43,7 @@ internal fun GameMenuActionsPanel(
             modifier = Modifier.padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Text("Game", fontWeight = FontWeight.SemiBold)
+            Text(strings.gameSection, fontWeight = FontWeight.SemiBold)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -52,41 +53,41 @@ internal fun GameMenuActionsPanel(
                     enabled = canStartNew,
                     modifier = Modifier.weight(1f),
                 ) {
-                    Text("New")
+                    Text(strings.newGame)
                 }
                 OutlinedButton(
                     onClick = onCopyLog,
                     modifier = Modifier.weight(1f),
                 ) {
-                    Text("Copy Log")
+                    Text(strings.copyLog)
                 }
                 OutlinedButton(
                     onClick = onBenchmark,
                     modifier = Modifier.weight(1f),
                 ) {
-                    Text("Benchmark")
+                    Text(strings.benchmark)
                 }
             }
             Text(
-                text = "Current mode: ${mode.label}",
+                text = "${strings.currentModePrefix}: ${strings.matchModeLabel(mode)}",
                 color = MaterialTheme.colorScheme.secondary,
                 style = MaterialTheme.typography.bodySmall,
             )
-            Text("Scoring rule", fontWeight = FontWeight.SemiBold)
+            Text(strings.scoringRule, fontWeight = FontWeight.SemiBold)
             SetupDropdown(
-                selectedText = ruleset.scoringLabel,
+                selectedText = strings.rulesetLabel(ruleset),
                 enabled = canChangeRuleset,
                 modifier = Modifier.fillMaxWidth(),
                 options = Ruleset.entries,
-                optionLabel = { it.scoringLabel },
+                optionLabel = { rule -> strings.rulesetLabel(rule) },
                 onSelected = onRulesetChange,
             )
             Text(
-                text = "Scoring rule: ${ruleset.scoringLabel}",
+                text = "${strings.scoringRule}: ${strings.rulesetLabel(ruleset)}",
                 color = MaterialTheme.colorScheme.secondary,
                 style = MaterialTheme.typography.bodySmall,
             )
-            Text("Board size", fontWeight = FontWeight.SemiBold)
+            Text(strings.boardSize, fontWeight = FontWeight.SemiBold)
             SetupDropdown(
                 selectedText = "${boardSize.value}x${boardSize.value}",
                 enabled = canChangeRuleset,

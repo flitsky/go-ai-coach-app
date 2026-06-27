@@ -30,6 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.shared.ScoreSnapshot
 import com.worksoc.goaicoach.shared.ScoreSnapshotSource
+import com.worksoc.goaicoach.shared.StoneColor
 import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.roundToInt
@@ -42,6 +43,7 @@ internal fun ScoreGraphPanel(
     isExpanded: Boolean,
     onExpandedChange: (Boolean) -> Unit,
 ) {
+    val strings = LocalUiStrings.current
     val graphSnapshots = snapshots.filter { it.hasScoreData }
     val latest = graphSnapshots.lastOrNull()
     Surface(
@@ -66,11 +68,11 @@ internal fun ScoreGraphPanel(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    GraphLegendDot(ScoreLineColor, "Score")
-                    GraphLegendDot(WinRateLineColor, "Win Rate")
+                    GraphLegendDot(ScoreLineColor, strings.scoreLead)
+                    GraphLegendDot(WinRateLineColor, strings.winRate)
                 }
                 Text(
-                    text = latest?.toHeadline() ?: "M? waiting",
+                    text = latest?.toHeadline(strings) ?: "${strings.movesPrefix}? ${strings.none}",
                     color = MaterialTheme.colorScheme.secondary,
                     style = MaterialTheme.typography.bodySmall,
                 )
@@ -79,7 +81,7 @@ internal fun ScoreGraphPanel(
             if (isExpanded) {
                 if (graphSnapshots.isEmpty()) {
                     Text(
-                        text = "Score snapshots will appear after the first estimate.",
+                        text = strings.scoreSnapshotsEmpty,
                         color = MaterialTheme.colorScheme.secondary,
                         style = MaterialTheme.typography.bodySmall,
                     )
@@ -87,7 +89,7 @@ internal fun ScoreGraphPanel(
                     ScoreGraphCanvas(graphSnapshots)
                 }
                 Text(
-                    text = "Captures B $capturedByBlack / W $capturedByWhite",
+                    text = "${strings.capturesPrefix} ${strings.colorLabel(StoneColor.Black)} $capturedByBlack / ${strings.colorLabel(StoneColor.White)} $capturedByWhite",
                     color = MaterialTheme.colorScheme.secondary,
                     style = MaterialTheme.typography.bodySmall,
                 )
@@ -238,11 +240,11 @@ private fun List<Double>.scaleFor(granularity: Double): Double {
     return ceil(maxMagnitude / granularity) * granularity
 }
 
-private fun ScoreSnapshot.toHeadline(): String =
-    "M$moveNumber ${formatScoreLead()}${whiteWinRate?.let { " / ${formatWinRate(it)}" } ?: ""}"
+private fun ScoreSnapshot.toHeadline(strings: UiStrings): String =
+    "${strings.movesPrefix} $moveNumber ${formatScoreLead(strings)}${whiteWinRate?.let { " / ${formatWinRate(it)}" } ?: ""}"
 
-private fun ScoreSnapshot.formatScoreLead(): String {
-    val lead = whiteScoreLead ?: return source.label
+private fun ScoreSnapshot.formatScoreLead(strings: UiStrings): String {
+    val lead = whiteScoreLead ?: return source.label(strings)
     val rounded = ((abs(lead) * 10).roundToInt() / 10.0).toString()
     return if (lead >= 0.0) "W+$rounded" else "B+$rounded"
 }
@@ -254,11 +256,11 @@ private fun formatWinRate(whiteWinRate: Double): String {
     return "$leader $leaderPercent%"
 }
 
-private val ScoreSnapshotSource.label: String
-    get() = when (this) {
-        ScoreSnapshotSource.EngineEstimate -> "engine"
-        ScoreSnapshotSource.LocalAreaEstimate -> "local"
-        ScoreSnapshotSource.FinalScore -> "final"
+private fun ScoreSnapshotSource.label(strings: UiStrings): String =
+    when (this) {
+        ScoreSnapshotSource.EngineEstimate -> strings.engineSource
+        ScoreSnapshotSource.LocalAreaEstimate -> strings.localSource
+        ScoreSnapshotSource.FinalScore -> strings.finalScoreSource
     }
 
 private const val MinimumGraphSlots = 15

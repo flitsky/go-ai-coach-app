@@ -144,16 +144,17 @@ private fun GameActionButtons(
     screenState: GameScreenState,
     onEvent: (GameUiEvent) -> Unit,
 ) {
+    val strings = LocalUiStrings.current
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         screenState.actionButtons.forEach { action ->
             val label = when (action.role) {
-                GameActionButtonRole.Pass -> "통과"
-                GameActionButtonRole.Undo -> "무르기"
-                GameActionButtonRole.TopMoves -> "추천수"
-                GameActionButtonRole.Eval -> "형세판단"
+                GameActionButtonRole.Pass -> strings.pass
+                GameActionButtonRole.Undo -> strings.undo
+                GameActionButtonRole.TopMoves -> strings.topMoves
+                GameActionButtonRole.Eval -> strings.eval
             }
             if (action.isFilled) {
                 Button(
