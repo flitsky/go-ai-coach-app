@@ -2,7 +2,6 @@ package com.worksoc.goaicoach.ui
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -29,8 +28,6 @@ import com.worksoc.goaicoach.presentation.GameUiEvent
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.StoneColor
-import kotlin.math.floor
-import kotlin.math.roundToInt
 
 @Composable
 internal fun GameStatusPanel(
@@ -47,43 +44,13 @@ internal fun GameStatusPanel(
     val capturedByBlack = screenState.gameState.capturedBy(StoneColor.Black)
     val capturedByWhite = screenState.gameState.capturedBy(StoneColor.White)
 
-    // 실시간 AI 분석 정보 추출 (승률 및 집 차이)
-    val estimate = screenState.score.estimate
-    val whiteWinRate = estimate?.whiteWinRate
-    val whiteScoreLead = estimate?.whiteScoreLead
-
-    val blackScoreLeadText = if (whiteScoreLead != null) {
-        val lead = -whiteScoreLead
-        if (lead > 0) String.format("+%.1f집", lead) else String.format("%.1f집", lead)
-    } else {
-        "--"
-    }
-    val whiteScoreLeadText = if (whiteScoreLead != null) {
-        val lead = whiteScoreLead
-        if (lead > 0) String.format("+%.1f집", lead) else String.format("%.1f집", lead)
-    } else {
-        "--"
-    }
-
-    Column(
+    Row(
         modifier = modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        WinRateScoreBar(
-            blackScoreLeadText = blackScoreLeadText,
-            whiteScoreLeadText = whiteScoreLeadText,
-            blackWinRatePercent = whiteWinRate?.let { ((1.0 - it) * 100).roundToInt() },
-            whiteWinRatePercent = whiteWinRate?.let { (it * 100).roundToInt() },
-            strings = strings,
-        )
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
         // 좌측: 흑진영
         val isBlackTurn = currentTurnPlayer == StoneColor.Black && !screenState.isGameEnded
         val blackBg = if (isBlackTurn) Color(0xFFE8F5E9) else Color(0xFFF7F4EC)
@@ -130,12 +97,18 @@ internal fun GameStatusPanel(
         }
 
         // 중앙: [착수] 버튼
-        Box(
+        Column(
             modifier = Modifier
                 .weight(1f)
                 .padding(horizontal = 4.dp),
-            contentAlignment = Alignment.Center
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
+            Text(
+                text = "${strings.moveCountPrefix} ${screenState.gameState.moves.size}${strings.moveCountSuffix}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.secondary,
+            )
             Button(
                 onClick = {
                     tentativeMove?.let {
@@ -204,81 +177,6 @@ internal fun GameStatusPanel(
                 )
             }
         }
-        }
-    }
-}
-
-@Composable
-private fun WinRateScoreBar(
-    blackScoreLeadText: String,
-    whiteScoreLeadText: String,
-    blackWinRatePercent: Int?,
-    whiteWinRatePercent: Int?,
-    strings: UiStrings,
-) {
-    val blackPercentText = blackWinRatePercent?.let { "$it%" } ?: "--"
-    val whitePercentText = whiteWinRatePercent?.let { "$it%" } ?: "--"
-    val blackStoneCount = winRateStoneCount(
-        blackWinRatePercent = blackWinRatePercent,
-        whiteWinRatePercent = whiteWinRatePercent,
-    )
-
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
-        tonalElevation = 1.dp,
-        shadowElevation = 0.dp,
-        color = MaterialTheme.colorScheme.surface,
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = "${strings.colorLabel(StoneColor.Black)} $blackScoreLeadText",
-                style = MaterialTheme.typography.bodySmall,
-                fontWeight = FontWeight.SemiBold,
-            )
-            Text(
-                text = blackPercentText,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.secondary,
-            )
-            Row(horizontalArrangement = Arrangement.spacedBy(1.dp)) {
-                repeat(10) { index ->
-                    Text(
-                        text = if (index < blackStoneCount) "●" else "○",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = if (index < blackStoneCount) Color.Black else Color.Gray,
-                    )
-                }
-            }
-            Text(
-                text = whitePercentText,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.secondary,
-            )
-            Text(
-                text = "${strings.colorLabel(StoneColor.White)} $whiteScoreLeadText",
-                style = MaterialTheme.typography.bodySmall,
-                fontWeight = FontWeight.SemiBold,
-            )
-        }
-    }
-}
-
-private fun winRateStoneCount(
-    blackWinRatePercent: Int?,
-    whiteWinRatePercent: Int?,
-): Int {
-    if (blackWinRatePercent == null || whiteWinRatePercent == null) {
-        return 5
-    }
-    return if (blackWinRatePercent >= whiteWinRatePercent) {
-        floor(blackWinRatePercent / 10.0).toInt().coerceIn(0, 10)
-    } else {
-        10 - floor(whiteWinRatePercent / 10.0).toInt().coerceIn(0, 10)
     }
 }
 

@@ -127,8 +127,6 @@ internal fun GamePlaySection(
 
     EngineResponsePanel(
         screenState = screenState,
-        turnStatusText = screenState.turnStatusText,
-        moveCount = screenState.gameState.moves.size,
         engineMessage = screenState.engine.message,
         candidateText = screenState.analysis.candidateText,
         moveReviewText = screenState.analysis.moveReviewText,
