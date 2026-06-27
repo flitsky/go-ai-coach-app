@@ -13,15 +13,19 @@ import com.worksoc.goaicoach.application.engine.operation.evaluateEngineOperatio
 import com.worksoc.goaicoach.application.engine.localScoreSnapshot
 import com.worksoc.goaicoach.application.analysis.toDisplayText
 import com.worksoc.goaicoach.match.MatchMode
+import com.worksoc.goaicoach.shared.DeadStoneCleanupResult
 import com.worksoc.goaicoach.shared.FinalScoreResult
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.BoardScorer
 import com.worksoc.goaicoach.shared.EngineProfile
+import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.ScoreSnapshot
 import com.worksoc.goaicoach.shared.ScoreSnapshotSource
 import com.worksoc.goaicoach.shared.ScoreTimeline
+import com.worksoc.goaicoach.shared.StoneColor
 import com.worksoc.goaicoach.shared.describe
+import kotlin.math.roundToInt
 
 internal data class ScoreEstimateDisplayPlan(
     val scoreText: String,
@@ -48,6 +52,7 @@ internal data class FinalScoreDisplayPlan(
     val engineMessage: String,
     val candidateText: String,
     val endgameTimingSummary: String? = null,
+    val judgement: FinalScoreJudgement? = null,
 )
 
 internal data class FinalScoreStateResult(
@@ -56,6 +61,16 @@ internal data class FinalScoreStateResult(
     val scoreSnapshots: List<ScoreSnapshot>,
     val endgameLog: String,
     val endgameTimingSummary: String? = null,
+    val judgement: FinalScoreJudgement? = null,
+)
+
+internal data class FinalScoreJudgement(
+    val resultText: String,
+    val blackLine: String?,
+    val whiteLine: String?,
+    val removedStonesLine: String,
+    val scoringRuleLine: String,
+    val note: String? = null,
 )
 
 internal data class EndgameFailureDisplayPlan(
@@ -310,6 +325,7 @@ internal fun FinalScoreStateResult.toFinalScoreDisplayPlan(
         engineMessage = engineMessage,
         candidateText = candidateText,
         endgameTimingSummary = endgameTimingSummary,
+        judgement = judgement,
     )
 
 internal fun buildLocalFinalScoreStateResult(
@@ -336,6 +352,12 @@ internal fun buildLocalFinalScoreStateResult(
             state = state,
             finalScoreText = finalScoreText,
             detail = detail,
+        ),
+        judgement = buildFinalScoreJudgement(
+            state = state,
+            displayScore = finalScore,
+            localScore = finalScore,
+            cleanup = DeadStoneCleanupResult(state = state, removedStones = emptyList()),
         ),
     )
 }
@@ -373,7 +395,7 @@ internal fun buildResolvedEndgameStateResult(
     val finalScoreText = resolution.finalScore.toDisplayText()
     return FinalScoreStateResult(
         gameState = cleanupState,
-        scoreEstimate = null,
+        scoreEstimate = resolution.engineScoreEstimate,
         scoreSnapshots = ScoreTimeline.record(
             previousSnapshots,
             ScoreTimeline.fromFinalScore(
@@ -389,7 +411,85 @@ internal fun buildResolvedEndgameStateResult(
             detail = resolution.toLogDetail(originalState),
         ),
         endgameTimingSummary = resolution.timings.summary(),
+        judgement = buildFinalScoreJudgement(
+            state = cleanupState,
+            displayScore = resolution.finalScore,
+            localScore = resolution.localFinalScore,
+            cleanup = resolution.cleanup,
+        ),
     )
+}
+
+private fun buildFinalScoreJudgement(
+    state: GameState,
+    displayScore: FinalScoreResult,
+    localScore: FinalScoreResult,
+    cleanup: DeadStoneCleanupResult,
+): FinalScoreJudgement {
+    val removedBlack = cleanup.removedStones.count { it.color == StoneColor.Black }
+    val removedWhite = cleanup.removedStones.count { it.color == StoneColor.White }
+    val isEstimatedDisplay = displayScore.rawScore.endsWith("?")
+    return FinalScoreJudgement(
+        resultText = displayScore.toJudgementResultText(),
+        blackLine = localScore.blackJudgementLine(state),
+        whiteLine = localScore.whiteJudgementLine(state),
+        removedStonesLine = "사석 제거: 흑 ${removedBlack}개, 백 ${removedWhite}개",
+        scoringRuleLine = "계가 방식: ${state.ruleset.koreanScoringLabel()}",
+        note = if (isEstimatedDisplay) {
+            "참고 판정입니다. 현재 국면이 불명확해 엔진 추정치를 우선 표시했습니다."
+        } else {
+            null
+        },
+    )
+}
+
+private fun FinalScoreResult.toJudgementResultText(): String =
+    when (winner) {
+        StoneColor.Black -> "흑 + ${(margin ?: 0.0).formatScoreNumber()}집 승"
+        StoneColor.White -> "백 + ${(margin ?: 0.0).formatScoreNumber()}집 승"
+        null -> "무승부"
+    }
+
+private fun FinalScoreResult.blackJudgementLine(state: GameState): String? {
+    val blackScore = blackArea ?: return null
+    return when (state.ruleset) {
+        Ruleset.Japanese -> {
+            val prisoners = state.capturedBy(StoneColor.Black).toDouble()
+            val territory = blackScore - prisoners
+            "흑: 집 ${territory.formatScoreNumber()} + 사석 ${prisoners.formatScoreNumber()} = ${blackScore.formatScoreNumber()}집"
+        }
+        Ruleset.Chinese ->
+            "흑: 돌 + 집 = ${blackScore.formatScoreNumber()}집"
+    }
+}
+
+private fun FinalScoreResult.whiteJudgementLine(state: GameState): String? {
+    val whiteWithKomi = whiteAreaWithKomi ?: return null
+    val komiValue = komi ?: 0.0
+    return when (state.ruleset) {
+        Ruleset.Japanese -> {
+            val prisoners = state.capturedBy(StoneColor.White).toDouble()
+            val territory = whiteWithKomi - prisoners - komiValue
+            "백: 집 ${territory.formatScoreNumber()} + 사석 ${prisoners.formatScoreNumber()} + 덤 ${komiValue.formatScoreNumber()} = ${whiteWithKomi.formatScoreNumber()}집"
+        }
+        Ruleset.Chinese ->
+            "백: 돌 + 집 + 덤 ${komiValue.formatScoreNumber()} = ${whiteWithKomi.formatScoreNumber()}집"
+    }
+}
+
+private fun Ruleset.koreanScoringLabel(): String =
+    when (this) {
+        Ruleset.Japanese -> "집계가"
+        Ruleset.Chinese -> "면적계가"
+    }
+
+private fun Number.formatScoreNumber(): String {
+    val roundedTenth = (toDouble() * 10.0).roundToInt()
+    return if (roundedTenth % 10 == 0) {
+        (roundedTenth / 10).toString()
+    } else {
+        (roundedTenth / 10.0).toString()
+    }
 }
 
 internal fun buildResolvedEndgameDisplayPlan(

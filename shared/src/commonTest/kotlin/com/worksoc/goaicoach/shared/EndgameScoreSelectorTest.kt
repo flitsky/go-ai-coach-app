@@ -164,4 +164,51 @@ class EndgameScoreSelectorTest {
         assertEquals(EndgameScoreSource.CleanedLocalArea, selection.source)
         assertEquals("B+31.5", selection.displayScore.rawScore)
     }
+
+    @Test
+    fun keepsCleanedLocalAreaWhenBlackGtpPrePassLeadAgreesWithBlackFinal() {
+        val localScore = FinalScoreResult(
+            status = EngineStatus.ready("Local score"),
+            rawScore = "B+39.5",
+            winner = StoneColor.Black,
+            margin = 39.5,
+            blackArea = 49.0,
+            whiteAreaWithKomi = 9.5,
+            komi = 6.5,
+            summary = "Local territory",
+        )
+        val cleanup = DeadStoneCleanupResult(
+            state = GameState.empty(ruleset = Ruleset.Japanese),
+            removedStones = listOf(
+                DeadStoneRemoval(
+                    coordinate = BoardCoordinate.fromLabel("C9", BoardSize.Nine),
+                    color = StoneColor.White,
+                ),
+            ),
+        )
+        val prePassCandidates = listOf(
+            CandidateMove(
+                move = Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("B9", BoardSize.Nine)),
+                scoreLead = 39.5561,
+            ),
+            CandidateMove(
+                move = Move.Pass(StoneColor.Black),
+                scoreLead = 39.5,
+            ),
+        )
+
+        val selection = EndgameScoreSelector.selectDisplayScore(
+            cleanup = cleanup,
+            localScore = localScore,
+            engineEstimate = ScoreEstimate(
+                status = EngineStatus.ready("Estimate"),
+                whiteScoreLead = -40.953,
+                summary = "Post-pass estimate",
+            ),
+            prePassCandidates = prePassCandidates,
+        )
+
+        assertEquals(EndgameScoreSource.CleanedLocalArea, selection.source)
+        assertEquals("B+39.5", selection.displayScore.rawScore)
+    }
 }

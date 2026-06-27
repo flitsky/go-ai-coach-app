@@ -2,6 +2,7 @@ package com.worksoc.goaicoach.application.session
 
 import com.worksoc.goaicoach.application.score.EndgameFailureDisplayPlan
 import com.worksoc.goaicoach.application.score.FinalScoreDisplayPlan
+import com.worksoc.goaicoach.application.score.FinalScoreJudgement
 import com.worksoc.goaicoach.application.score.ScoreEstimateDisplayPlan
 import com.worksoc.goaicoach.application.score.ScoreEstimateFailureDisplayPlan
 import com.worksoc.goaicoach.shared.ScoreEstimate
@@ -12,12 +13,14 @@ internal data class GameSessionScoreState(
     val scoreEstimate: ScoreEstimate?,
     val scoreSnapshots: List<ScoreSnapshot>,
     val endgameLog: String,
+    val finalScoreJudgement: FinalScoreJudgement? = null,
 ) {
     fun applyScoreEstimateDisplayPlan(score: ScoreEstimateDisplayPlan): GameSessionScoreState =
         copy(
             scoreText = score.scoreText,
             scoreEstimate = score.scoreEstimate,
             scoreSnapshots = score.scoreSnapshots,
+            finalScoreJudgement = null,
         )
 
     fun applyScoreEstimateFailureDisplayPlan(
@@ -31,6 +34,7 @@ internal data class GameSessionScoreState(
             scoreEstimate = final.scoreEstimate,
             scoreSnapshots = final.scoreSnapshots,
             endgameLog = final.endgameLog,
+            finalScoreJudgement = final.judgement,
         )
 
     fun applyEndgameFailureDisplayPlan(failure: EndgameFailureDisplayPlan): GameSessionScoreState =
@@ -50,6 +54,7 @@ internal data class GameSessionScoreState(
                 scoreEstimate = null,
                 scoreSnapshots = scoreSnapshots,
                 endgameLog = endgameLog,
+                finalScoreJudgement = null,
             )
     }
 }

@@ -241,11 +241,8 @@ private fun GoCoachScreen(
     var undoEngineInterventionQuietUntil by remember { mutableStateOf(0L) }
     var isPendingUndoSync by remember { mutableStateOf(false) }
     var cancelUndoSync: () -> Unit = {}
-
-    fun clearUndoEngineInterventionQuietWindow() {
-        undoEngineInterventionQuietUntil = 0L
-        cancelUndoSync()
-    }
+    fun clearUndoEngineInterventionQuietWindow() { undoEngineInterventionQuietUntil = 0L; cancelUndoSync() }
+    fun activateEndgameJudgementReview() { uxOptions = uxOptions.copy(showOwnershipOverlay = true) }
 
     fun currentRuntimeLogContext(): RuntimeLogContext {
         return sessionSnapshot.toRuntimeLogContext(
@@ -293,6 +290,8 @@ private fun GoCoachScreen(
             appendEngineOperationDiscardLog = lifecycleController::appendDiscardLog,
         )
     }
+
+    fun applyFinalScoreWithJudgement(final: FinalScoreDisplayPlan) { activateEndgameJudgementReview(); displayStateApplier.applyFinalScoreDisplayPlan(final) }
 
     LaunchedEffect(Unit) {
         runtimeEventLog.append(runtimeAppStartLog(currentRuntimeLogContext()))
@@ -492,13 +491,13 @@ private fun GoCoachScreen(
         applyAutoAiTurnCancelled = { cancel -> autoAiTurnUiState = autoAiTurnUiState.applyAutoAiTurnScheduleValidationPlan(cancel) },
         recordTurnMove = { player, nowMillis, nextPlayer -> turnTimeState.recordMove(player = player, nowMillis = nowMillis, nextPlayer = nextPlayer) },
         applyTurnTimeUpdate = { update -> turnTimeState = update.after },
-        applyTurnDisplay = displayStateApplier::applyAutoAiTurnDisplayPlan,
+        applyTurnDisplay = { display -> if (display.shouldResolveEndgame) activateEndgameJudgementReview(); displayStateApplier.applyAutoAiTurnDisplayPlan(display) },
         applyTurnFailureDisplay = { error -> displayStateApplier.applyAutoAiTurnFailureDisplayPlan(buildAutoAiTurnFailureDisplayPlan(error)) },
         completeAutoAiTurnRun = { autoAiTurnUiState = autoAiTurnUiState.completeAutoAiTurnRun() },
         appendEngineOperationDiscardLog = lifecycleController::appendDiscardLog,
         requestFollowUpAnalysis = { followUp -> topMovesController.requestAnalysis(followUp.targetState, automatic = followUp.automatic, deep = followUp.deep) },
-        markGameEnded = { isGameEnded = true },
-        applyFinalScoreDisplayPlan = displayStateApplier::applyFinalScoreDisplayPlan,
+        markGameEnded = { activateEndgameJudgementReview(); isGameEnded = true },
+        applyFinalScoreDisplayPlan = ::applyFinalScoreWithJudgement,
         applyEndgameFailureDisplayPlan = displayStateApplier::applyEndgameFailureDisplayPlan,
     )
 
@@ -518,13 +517,14 @@ private fun GoCoachScreen(
         isEngineReady = { isEngineReady },
         isEngineBusy = { isEngineBusy },
         onEngineMessage = { message -> engineMessage = message },
+        onConsecutivePassesDetected = ::activateEndgameJudgementReview,
         clearUndoEngineInterventionQuietWindow = ::clearUndoEngineInterventionQuietWindow,
         recordTurnMove = { player, nowMillis, nextPlayer -> turnTimeState.recordMove(player = player, nowMillis = nowMillis, nextPlayer = nextPlayer) },
         applyTurnTimeUpdate = { update -> turnTimeState = update.after },
         applyHumanMoveLocalResult = displayStateApplier::applyHumanMoveLocalResult,
         replaceScoreState = { state -> scoreState = state },
         setAnalysisCandidateText = { text -> analysisState = analysisState.copy(candidateText = text) },
-        applyFinalScoreDisplayPlan = displayStateApplier::applyFinalScoreDisplayPlan,
+        applyFinalScoreDisplayPlan = ::applyFinalScoreWithJudgement,
         applyScoreEstimateDisplayPlan = displayStateApplier::applyScoreEstimateDisplayPlan,
         applyHumanEngineSyncFailurePlan = displayStateApplier::applyHumanEngineSyncFailurePlan,
         appendEngineOperationDiscardLog = lifecycleController::appendDiscardLog,
@@ -773,7 +773,6 @@ private fun GoCoachScreen(
             ),
         ),
     )
-
     GoCoachContent(
         screenState = screenState,
         benchmarkProgress = benchmarkUiState.progress,
@@ -783,6 +782,7 @@ private fun GoCoachScreen(
         isDisplayMenuExpanded = isDisplayMenuExpanded,
         onDisplayMenuExpandedChange = { expanded -> isDisplayMenuExpanded = expanded },
         onScoreGraphExpandedChange = { expanded -> isScoreGraphExpanded = expanded },
+        onFinalJudgementReview = ::activateEndgameJudgementReview,
         selectedLanguage = selectedLanguage,
         onLanguageChange = onLanguageChange,
         turnTimeState = turnTimeState,

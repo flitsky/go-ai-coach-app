@@ -43,6 +43,7 @@ internal class HumanMoveController(
     private val isEngineReady: () -> Boolean,
     private val isEngineBusy: () -> Boolean,
     private val onEngineMessage: (String) -> Unit,
+    private val onConsecutivePassesDetected: () -> Unit,
     private val clearUndoEngineInterventionQuietWindow: () -> Unit,
     private val recordTurnMove: (player: StoneColor, nowMillis: Long, nextPlayer: StoneColor) -> TurnTimeMoveUpdate,
     private val applyTurnTimeUpdate: (TurnTimeMoveUpdate) -> Unit,
@@ -141,6 +142,9 @@ internal class HumanMoveController(
             .getOrNull()
             ?: return
         val afterMove = localMove.afterMove
+        if (afterMove.hasConsecutivePasses()) {
+            onConsecutivePassesDetected()
+        }
         val turnTimeUpdate = recordTurnMove(move.player, System.currentTimeMillis(), afterMove.nextPlayer)
 
         runtimeEventLog.append(

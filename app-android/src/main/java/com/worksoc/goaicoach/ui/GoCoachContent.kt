@@ -16,12 +16,17 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkProfile
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkProgress
 import com.worksoc.goaicoach.application.engine.fillSummaryText
 import com.worksoc.goaicoach.application.engine.rootSummaryText
+import com.worksoc.goaicoach.application.score.FinalScoreJudgement
 import com.worksoc.goaicoach.application.session.GameSessionTurnTimeState
 import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
 import com.worksoc.goaicoach.presentation.GameScreenState
@@ -40,6 +45,7 @@ internal fun GoCoachContent(
     isDisplayMenuExpanded: Boolean,
     onDisplayMenuExpandedChange: (Boolean) -> Unit,
     onScoreGraphExpandedChange: (Boolean) -> Unit,
+    onFinalJudgementReview: () -> Unit,
     selectedLanguage: UiLanguage,
     onLanguageChange: (UiLanguage) -> Unit,
     turnTimeState: GameSessionTurnTimeState,
@@ -62,6 +68,11 @@ internal fun GoCoachContent(
             onDisplayMenuExpandedChange(false)
         }
     }
+    var dismissedFinalJudgementKey by remember { mutableStateOf<String?>(null) }
+    val finalJudgementKey = screenState.finalScoreJudgement?.dialogKey(screenState.gameState.moves.size)
+    val finalJudgementToShow = screenState.finalScoreJudgement
+        ?.takeIf { finalJudgementKey != null && dismissedFinalJudgementKey != finalJudgementKey }
+    val dismissFinalJudgement = { dismissedFinalJudgementKey = finalJudgementKey }
 
     if (benchmarkProgress != null) {
         EngineBenchmarkProgressDialog(progress = benchmarkProgress)
@@ -89,6 +100,22 @@ internal fun GoCoachContent(
             strings = strings,
             onAccept = { onEvent(GameUiEvent.AcceptCacheOptimizationPrompt) },
             onDismiss = { onEvent(GameUiEvent.DismissCacheOptimizationPrompt) },
+        )
+    }
+
+    if (finalJudgementToShow != null && benchmarkProgress == null && benchmarkResult == null) {
+        FinalJudgementDialog(
+            judgement = finalJudgementToShow,
+            strings = strings,
+            onDismiss = dismissFinalJudgement,
+            onReview = {
+                onFinalJudgementReview()
+                dismissFinalJudgement()
+            },
+            onNewGame = {
+                dismissFinalJudgement()
+                onEvent(GameUiEvent.StartConfiguredGame)
+            },
         )
     }
 
@@ -123,6 +150,50 @@ internal fun GoCoachContent(
             onEvent = onEvent,
         )
     }
+}
+
+private fun FinalScoreJudgement.dialogKey(moveCount: Int): String =
+    listOf(
+        moveCount.toString(),
+        resultText,
+        blackLine.orEmpty(),
+        whiteLine.orEmpty(),
+        removedStonesLine,
+        scoringRuleLine,
+    ).joinToString("|")
+
+@Composable
+private fun FinalJudgementDialog(
+    judgement: FinalScoreJudgement,
+    strings: UiStrings,
+    onDismiss: () -> Unit,
+    onReview: () -> Unit,
+    onNewGame: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(strings.finalJudgementTitle) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(judgement.resultText)
+                judgement.blackLine?.let { Text(it) }
+                judgement.whiteLine?.let { Text(it) }
+                Text(judgement.removedStonesLine)
+                Text(judgement.scoringRuleLine)
+                judgement.note?.let { Text(it) }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onReview) {
+                Text(strings.reviewJudgement)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onNewGame) {
+                Text(strings.newGameAction)
+            }
+        },
+    )
 }
 
 @Composable

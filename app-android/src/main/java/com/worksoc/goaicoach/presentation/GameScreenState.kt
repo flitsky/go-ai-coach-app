@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.presentation
 
 import com.worksoc.goaicoach.application.analysis.translateScoreText
+import com.worksoc.goaicoach.application.score.FinalScoreJudgement
 import com.worksoc.goaicoach.application.session.*
 
 import com.worksoc.goaicoach.application.movereview.MoveReviewMarker
@@ -45,6 +46,7 @@ internal data class GameScreenState(
     val cacheOptimizationPrompt: PositionAnalysisCacheOptimizationPrompt?,
     val isGameEnded: Boolean,
     val endgameLog: String,
+    val finalScoreJudgement: FinalScoreJudgement?,
 ) {
     val nextPlayer: StoneColor
         get() = gameState.nextPlayer
@@ -88,6 +90,7 @@ internal data class GameScreenStateInput(
     val hasCompletedEngineStartup: Boolean,
     val isGameEnded: Boolean,
     val endgameLog: String,
+    val finalScoreJudgement: FinalScoreJudgement? = null,
 )
 
 internal fun buildGameScreenStateInput(
@@ -144,6 +147,7 @@ internal fun buildGameScreenStateInput(
         hasCompletedEngineStartup = hasCompletedEngineStartup,
         isGameEnded = controller.isGameEnded,
         endgameLog = controller.core.scoreState.endgameLog,
+        finalScoreJudgement = controller.core.scoreState.finalScoreJudgement,
     )
 
 internal fun buildGameScreenState(input: GameScreenStateInput): GameScreenState {
@@ -206,6 +210,7 @@ internal fun buildGameScreenState(input: GameScreenStateInput): GameScreenState 
             ?.takeIf { promptVisibility.showCacheOptimizationPrompt },
         isGameEnded = input.isGameEnded,
         endgameLog = input.endgameLog,
+        finalScoreJudgement = input.finalScoreJudgement,
     )
 }
 

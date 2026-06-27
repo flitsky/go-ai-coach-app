@@ -499,6 +499,39 @@ class ScoreDisplayApplicationTest {
     }
 
     @Test
+    fun finalScoreJudgementOmitsDecimalForWholeNumbers() {
+        val state = GameState.empty(ruleset = Ruleset.Japanese)
+            .copy(capturedByBlack = 5, capturedByWhite = 2)
+            .play(Move.Pass(StoneColor.Black))
+            .play(Move.Pass(StoneColor.White))
+        val finalScore = FinalScoreResult(
+            status = EngineStatus.ready("W+1.5"),
+            rawScore = "W+1.5",
+            winner = StoneColor.White,
+            margin = 1.5,
+            blackArea = 20.0,
+            whiteAreaWithKomi = 21.5,
+            komi = 6.5,
+            summary = "final",
+        )
+
+        val plan = buildLocalFinalScoreDisplayPlan(
+            source = "test-final",
+            state = state,
+            finalScore = finalScore,
+            previousSnapshots = emptyList(),
+            detail = "test",
+            engineMessage = "final",
+            candidateText = "ended",
+        )
+
+        val judgement = plan.judgement ?: error("missing judgement")
+        assertEquals("백 + 1.5집 승", judgement.resultText)
+        assertEquals("흑: 집 15 + 사석 5 = 20집", judgement.blackLine)
+        assertEquals("백: 집 13 + 사석 2 + 덤 6.5 = 21.5집", judgement.whiteLine)
+    }
+
+    @Test
     fun endgameFailureDisplayTextWrapsFailureMessageAndCandidateText() {
         val text = buildEndgameFailureDisplayText(
             errorMessage = "timeout",

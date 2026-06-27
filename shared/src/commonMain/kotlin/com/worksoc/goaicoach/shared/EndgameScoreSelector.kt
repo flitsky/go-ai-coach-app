@@ -23,13 +23,16 @@ object EndgameScoreSelector {
         disagreementThreshold: Double = DefaultDisagreementThreshold,
     ): EndgameScoreSelection {
         val localLead = localScore.whiteScoreLead()
-        val prePassLead = prePassCandidates.bestScoredPlayableLead()
+        val engineLead = engineEstimate?.whiteScoreLead
+        val prePassLead = prePassCandidates.bestScoredPlayableLead(
+            localWhiteLead = localLead,
+            engineWhiteLead = engineLead,
+        )
         val prePassScore = prePassLead?.toUnsettledFinalScore(
             localScore = localScore,
             statusMessage = "Pre-pass Top Moves estimate complete.",
             summaryPrefix = "KataGo pre-pass Top Moves estimate",
         )
-        val engineLead = engineEstimate?.whiteScoreLead
         val engineScore = engineLead?.toUnsettledFinalScore(
             localScore = localScore,
             statusMessage = "KataGo NN endgame estimate complete.",
@@ -66,10 +69,35 @@ object EndgameScoreSelector {
         }
     }
 
-    private fun List<CandidateMove>.bestScoredPlayableLead(): Double? =
+    private fun List<CandidateMove>.bestScoredPlayableLead(
+        localWhiteLead: Double?,
+        engineWhiteLead: Double?,
+    ): Double? =
         firstOrNull { candidate ->
             candidate.scoreLead != null && candidate.move is Move.Play
-        }?.scoreLead
+        }?.normalizedPrePassWhiteLead(
+            localWhiteLead = localWhiteLead,
+            engineWhiteLead = engineWhiteLead,
+        )
+
+    private fun CandidateMove.normalizedPrePassWhiteLead(
+        localWhiteLead: Double?,
+        engineWhiteLead: Double?,
+    ): Double? {
+        val lead = scoreLead ?: return null
+        val movePlayer = move.player
+        val referenceLead = engineWhiteLead ?: localWhiteLead
+        return if (
+            movePlayer == StoneColor.Black &&
+            lead > 0.0 &&
+            referenceLead != null &&
+            referenceLead < 0.0
+        ) {
+            -lead
+        } else {
+            lead
+        }
+    }
 
     private fun List<CandidateMove>.hasScoredPassCandidate(): Boolean =
         any { candidate ->
