@@ -4,9 +4,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.Modifier
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -22,8 +24,6 @@ internal fun GameHeaderSection(
     screenState: GameScreenState,
     isDisplayMenuExpanded: Boolean,
     onDisplayMenuExpandedChange: (Boolean) -> Unit,
-    selectedLanguage: UiLanguage,
-    onLanguageChange: (UiLanguage) -> Unit,
 ) {
     val strings = LocalUiStrings.current
     Row(
@@ -54,15 +54,6 @@ internal fun GameHeaderSection(
                 color = MaterialTheme.colorScheme.secondary,
             )
 
-            SetupDropdown(
-                selectedText = selectedLanguage.menuLabel,
-                enabled = true,
-                modifier = Modifier.widthIn(min = 96.dp, max = 132.dp),
-                options = UiLanguage.entries,
-                optionLabel = { language -> language.menuLabel },
-                onSelected = onLanguageChange,
-            )
-
             KaTrainUxMenuButton(
                 menuExpanded = isDisplayMenuExpanded,
                 onMenuExpandedChange = onDisplayMenuExpandedChange,
@@ -74,8 +65,15 @@ internal fun GameHeaderSection(
 @Composable
 internal fun ExpandedGameMenuSection(
     screenState: GameScreenState,
+    selectedLanguage: UiLanguage,
+    onLanguageChange: (UiLanguage) -> Unit,
     onEvent: (GameUiEvent) -> Unit,
 ) {
+    LanguageSettingsPanel(
+        selectedLanguage = selectedLanguage,
+        onLanguageChange = onLanguageChange,
+    )
+
     PlayerSetupPanel(
         state = screenState.playerSetupUi,
         enabled = true, // engine-busy gate disabled; restore with !screenState.engine.isBusy
@@ -107,4 +105,35 @@ internal fun ExpandedGameMenuSection(
         options = screenState.uxOptions,
         onOptionsChange = { nextOptions -> onEvent(GameUiEvent.ChangeUxOptions(nextOptions)) },
     )
+}
+
+@Composable
+private fun LanguageSettingsPanel(
+    selectedLanguage: UiLanguage,
+    onLanguageChange: (UiLanguage) -> Unit,
+) {
+    val strings = LocalUiStrings.current
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(8.dp),
+        tonalElevation = 1.dp,
+        shadowElevation = 0.dp,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(strings.languageLabel, fontWeight = FontWeight.SemiBold)
+            SetupDropdown(
+                selectedText = selectedLanguage.menuLabel,
+                enabled = true,
+                modifier = Modifier.fillMaxWidth(),
+                options = UiLanguage.entries,
+                optionLabel = { language -> language.menuLabel },
+                onSelected = onLanguageChange,
+            )
+        }
+    }
 }

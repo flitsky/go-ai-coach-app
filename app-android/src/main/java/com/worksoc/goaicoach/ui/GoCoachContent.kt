@@ -105,13 +105,13 @@ internal fun GoCoachContent(
             screenState = screenState,
             isDisplayMenuExpanded = isDisplayMenuExpanded,
             onDisplayMenuExpandedChange = onDisplayMenuExpandedChange,
-            selectedLanguage = selectedLanguage,
-            onLanguageChange = onLanguageChange,
         )
 
         if (isDisplayMenuExpanded) {
             ExpandedGameMenuSection(
                 screenState = screenState,
+                selectedLanguage = selectedLanguage,
+                onLanguageChange = onLanguageChange,
                 onEvent = onMenuEvent,
             )
         }
