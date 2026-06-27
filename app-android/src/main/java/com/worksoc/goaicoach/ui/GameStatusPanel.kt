@@ -90,32 +90,29 @@ internal fun GameStatusPanel(
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
                 horizontalAlignment = Alignment.Start
             ) {
-                // 상단 행: ● 사용자/AI  시간
+                // 상단: 진영 표시와 대국 시간을 분리해 좁은 카드에서도 읽기 쉽게 유지한다.
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("●", style = MaterialTheme.typography.titleMedium, color = Color.Black)
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = sideLabel(screenState.playerSetup.black, StoneColor.Black),
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF1F1F1F)
-                        )
-                    }
+                    Text("●", style = MaterialTheme.typography.titleMedium, color = Color.Black)
+                    Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = formatMillis(blackTotalMillis),
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = if (isBlackTurn) FontWeight.Bold else FontWeight.Normal,
-                        color = if (isBlackTurn) Color(0xFF2F6B4F) else Color(0xFF78909C)
+                        text = sideLabel(screenState.playerSetup.black, StoneColor.Black),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF1F1F1F),
                     )
                 }
-                
+                Text(
+                    text = formatMillis(blackTotalMillis),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = if (isBlackTurn) FontWeight.Bold else FontWeight.Normal,
+                    color = if (isBlackTurn) Color(0xFF2F6B4F) else Color(0xFF78909C),
+                )
+
                 Spacer(modifier = Modifier.height(4.dp))
-                
+
                 Text(
                     text = "집차: ${blackScoreLeadText}",
                     style = MaterialTheme.typography.bodySmall,
@@ -180,32 +177,30 @@ internal fun GameStatusPanel(
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
                 horizontalAlignment = Alignment.End
             ) {
-                // 상단 행: 시간  AI/사용자 ○
+                // 상단: 진영 표시와 대국 시간을 분리해 좁은 카드에서도 읽기 쉽게 유지한다.
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxWidth()
+                    horizontalArrangement = Arrangement.End,
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(
-                        text = formatMillis(whiteTotalMillis),
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = if (isWhiteTurn) FontWeight.Bold else FontWeight.Normal,
-                        color = if (isWhiteTurn) Color(0xFF2F6B4F) else Color(0xFF78909C)
+                        text = sideLabel(screenState.playerSetup.white, StoneColor.White),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF1F1F1F),
                     )
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = sideLabel(screenState.playerSetup.white, StoneColor.White),
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF1F1F1F)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("○", style = MaterialTheme.typography.titleMedium, color = Color.Gray)
-                    }
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("○", style = MaterialTheme.typography.titleMedium, color = Color.Gray)
                 }
-                
+                Text(
+                    text = formatMillis(whiteTotalMillis),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = if (isWhiteTurn) FontWeight.Bold else FontWeight.Normal,
+                    color = if (isWhiteTurn) Color(0xFF2F6B4F) else Color(0xFF78909C),
+                )
+
                 Spacer(modifier = Modifier.height(4.dp))
-                
+
                 Text(
                     text = "집차: ${whiteScoreLeadText}",
                     style = MaterialTheme.typography.bodySmall,

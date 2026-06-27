@@ -100,6 +100,7 @@ class GameSessionCoreStateTest {
         assertEquals(profile, next.runtimeState.engineProfile)
         assertEquals(playLevel.analysisPreset, next.runtimeState.analysisPreset)
         assertEquals("candidate reset", next.analysisState.candidateText)
+        assertEquals("candidate reset", next.analysisState.sideAnalysisTexts[StoneColor.Black])
         assertFalse(next.analysisState.reviewAnalysis.hasEngineCandidates)
         assertEquals("Score updated.", next.scoreState.scoreText)
         assertEquals("Black E5", next.moveReviewState.lastMoveText)

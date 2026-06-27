@@ -191,10 +191,22 @@ internal data class GameSessionCoreState(
         copy(
             gameState = display.gameState,
             runtimeState = runtimeState.applyAutoAiTurnDisplayPlan(display),
-            analysisState = GameSessionAnalysisState.reset(
-                candidateText = display.candidateText,
-                reviewAnalysis = MoveAnalysisSnapshot.empty(display.gameState),
-            ),
+            analysisState = analysisState
+                .copy(
+                    candidateMoves = emptyList(),
+                    candidateText = display.candidateText,
+                    reviewAnalysis = MoveAnalysisSnapshot.empty(display.gameState),
+                    reviewCandidateMoves = emptyList(),
+                    lastAnalysisKey = null,
+                )
+                .let { next ->
+                    display.gameState.moves.lastOrNull()?.let { move ->
+                        next.recordSideAnalysisText(
+                            player = move.player,
+                            text = display.candidateText,
+                        )
+                    } ?: next
+                },
             scoreState = scoreState.applyScoreEstimateDisplayPlan(display.scoreDisplay),
             moveReviewState = moveReviewState.applyAutoAiTurnDisplayPlan(display),
             engineMessage = display.scoreDisplay.engineMessage,

@@ -6,6 +6,7 @@ import com.worksoc.goaicoach.application.topmoves.TopMoveAnalysisUpdate
 import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
+import com.worksoc.goaicoach.shared.StoneColor
 
 internal data class GameSessionAnalysisState(
     val candidateMoves: List<CandidateMove>,
@@ -13,6 +14,7 @@ internal data class GameSessionAnalysisState(
     val reviewAnalysis: MoveAnalysisSnapshot,
     val reviewCandidateMoves: List<CandidateMove>,
     val lastAnalysisKey: AnalysisCacheKey?,
+    val sideAnalysisTexts: Map<StoneColor, String> = emptyMap(),
 ) {
     fun clearTopMoveSpots(message: String? = null): GameSessionAnalysisState =
         copy(
@@ -36,6 +38,10 @@ internal data class GameSessionAnalysisState(
             candidateText = update.candidateText,
             candidateMoves = update.candidateMoves,
             lastAnalysisKey = analysisKey,
+            sideAnalysisTexts = sideAnalysisTexts.withAnalysisText(
+                player = update.snapshot.player,
+                text = update.candidateText,
+            ),
         )
 
     fun applyTopMoveAnalysisFailureDisplayPlan(
@@ -48,6 +54,12 @@ internal data class GameSessionAnalysisState(
             reviewCandidateMoves = emptyList(),
             lastAnalysisKey = null,
         )
+
+    fun recordSideAnalysisText(
+        player: StoneColor,
+        text: String,
+    ): GameSessionAnalysisState =
+        copy(sideAnalysisTexts = sideAnalysisTexts.withAnalysisText(player, text))
 
     companion object {
         fun empty(
@@ -69,6 +81,17 @@ internal data class GameSessionAnalysisState(
                 reviewAnalysis = reviewAnalysis,
                 reviewCandidateMoves = emptyList(),
                 lastAnalysisKey = null,
+                sideAnalysisTexts = emptyMap(),
             )
     }
 }
+
+private fun Map<StoneColor, String>.withAnalysisText(
+    player: StoneColor,
+    text: String,
+): Map<StoneColor, String> =
+    if (text.isBlank()) {
+        this
+    } else {
+        this + (player to text)
+    }

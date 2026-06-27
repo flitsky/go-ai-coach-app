@@ -29,6 +29,7 @@ class GameSessionAnalysisStateTest {
         assertEquals(emptyList<CandidateMove>(), analysis.reviewCandidateMoves)
         assertFalse(analysis.reviewAnalysis.hasEngineCandidates)
         assertNull(analysis.lastAnalysisKey)
+        assertEquals(emptyMap<StoneColor, String>(), analysis.sideAnalysisTexts)
     }
 
     @Test
@@ -127,6 +128,7 @@ class GameSessionAnalysisStateTest {
         assertEquals(snapshot.candidatesForDisplay(), applied.candidateMoves)
         assertEquals("updated text", applied.candidateText)
         assertEquals(plan.analysisKey, applied.lastAnalysisKey)
+        assertEquals("updated text", applied.sideAnalysisTexts[StoneColor.Black])
     }
 
     @Test

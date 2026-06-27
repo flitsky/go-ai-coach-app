@@ -64,6 +64,8 @@ class AiMoveSelectionPolicyTest {
 
         assertEquals(pass, selected?.move)
         assertTrue(selected?.summary?.contains("endgame pass override") == true)
+        assertTrue(selected?.summary?.contains("AI candidates:") == true)
+        assertTrue(selected?.summary?.contains("1. White pass loss=0.0 [selected]") == true)
     }
 
     @Test
@@ -88,6 +90,8 @@ class AiMoveSelectionPolicyTest {
 
         assertEquals(blackMove, selected?.move)
         assertTrue(selected?.summary?.contains("rank 1/1") == true)
+        assertTrue(selected?.summary?.contains("AI candidates:") == true)
+        assertTrue(selected?.summary?.contains("1. Black E5 loss=0.2 [selected]") == true)
     }
 
     @Test

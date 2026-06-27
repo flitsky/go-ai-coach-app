@@ -57,6 +57,11 @@ internal object AiMoveSelectionPolicy {
                 summary = buildString {
                     appendLine("AI level: ${playLevel.displayLabel}, endgame pass override.")
                     appendLine("AI selected pass because KataGo ranked pass as the best scored candidate.")
+                    appendAiCandidateList(
+                        currentState = currentState,
+                        candidates = scoredCandidates,
+                        selectedMove = bestCandidate.move,
+                    )
                     appendLine(analysisSummary)
                 }.trim(),
             )
@@ -79,9 +84,34 @@ internal object AiMoveSelectionPolicy {
                 appendLine("AI level: ${playLevel.displayLabel}, ${playLevel.selectionPolicy.description}.")
                 appendLine("Search mode: ${searchMode.label}.")
                 appendLine("AI selected rank $selectedRank/${scoredPlayCandidates.size}: ${selected.describeForSelection(currentState)}.")
+                appendAiCandidateList(
+                    currentState = currentState,
+                    candidates = scoredCandidates,
+                    selectedMove = selected.move,
+                )
                 appendLine(analysisSummary)
             }.trim(),
         )
+    }
+}
+
+private fun StringBuilder.appendAiCandidateList(
+    currentState: GameState,
+    candidates: List<CandidateMove>,
+    selectedMove: Move,
+) {
+    if (candidates.isEmpty()) {
+        return
+    }
+    appendLine("AI candidates:")
+    candidates.forEachIndexed { index, candidate ->
+        append(index + 1)
+        append(". ")
+        append(candidate.describeForSelection(currentState))
+        if (candidate.move == selectedMove) {
+            append(" [selected]")
+        }
+        appendLine()
     }
 }
 
@@ -98,4 +128,3 @@ private fun Double.formatOneDecimal(): String =
     (kotlin.math.round(this * 10.0) / 10.0)
         .let { if (kotlin.math.abs(it) < 0.05) 0.0 else it }
         .toString()
-
