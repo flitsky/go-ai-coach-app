@@ -59,14 +59,6 @@ internal fun GamePlaySection(
         tentativeMove = null
     }
 
-    ScoreGraphPanel(
-        snapshots = screenState.score.snapshots,
-        capturedByBlack = screenState.gameState.capturedBy(StoneColor.Black),
-        capturedByWhite = screenState.gameState.capturedBy(StoneColor.White),
-        isExpanded = screenState.score.isGraphExpanded,
-        onExpandedChange = onScoreGraphExpandedChange,
-    )
-
     GoBoard(
         gameState = screenState.gameState,
         candidateMoves = screenState.analysis.candidateMoves,
