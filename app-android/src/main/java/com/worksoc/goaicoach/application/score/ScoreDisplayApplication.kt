@@ -2,7 +2,6 @@ package com.worksoc.goaicoach.application.score
 
 import com.worksoc.goaicoach.shared.engine.EngineFallbackPolicy
 import com.worksoc.goaicoach.shared.engine.EngineOperationKind
-import com.worksoc.goaicoach.shared.engine.EngineOperationRequest
 import com.worksoc.goaicoach.application.engine.operation.EngineOperationResultGuard
 import com.worksoc.goaicoach.shared.engine.EngineTimeoutPolicy
 import com.worksoc.goaicoach.application.session.GameSessionEffect
@@ -27,95 +26,6 @@ import com.worksoc.goaicoach.shared.StoneColor
 import com.worksoc.goaicoach.shared.describe
 import kotlin.math.roundToInt
 
-internal data class ScoreEstimateDisplayPlan(
-    val scoreText: String,
-    val scoreEstimate: ScoreEstimate?,
-    val scoreSnapshots: List<ScoreSnapshot>,
-    val engineMessage: String,
-)
-
-internal data class ScoreEstimateStateResult(
-    val scoreEstimate: ScoreEstimate?,
-    val scoreSnapshots: List<ScoreSnapshot>,
-)
-
-internal data class ScoreEstimateFailureDisplayPlan(
-    val engineMessage: String,
-)
-
-internal data class FinalScoreDisplayPlan(
-    val gameState: GameState,
-    val scoreText: String,
-    val scoreEstimate: ScoreEstimate?,
-    val scoreSnapshots: List<ScoreSnapshot>,
-    val endgameLog: String,
-    val engineMessage: String,
-    val candidateText: String,
-    val endgameTimingSummary: String? = null,
-    val judgement: FinalScoreJudgement? = null,
-)
-
-internal data class FinalScoreStateResult(
-    val gameState: GameState,
-    val scoreEstimate: ScoreEstimate?,
-    val scoreSnapshots: List<ScoreSnapshot>,
-    val endgameLog: String,
-    val endgameTimingSummary: String? = null,
-    val judgement: FinalScoreJudgement? = null,
-)
-
-internal data class FinalScoreJudgement(
-    val resultText: String,
-    val blackLine: String?,
-    val whiteLine: String?,
-    val removedStonesLine: String,
-    val scoringRuleLine: String,
-    val note: String? = null,
-)
-
-internal data class EndgameFailureDisplayPlan(
-    val endgameLog: String,
-    val engineMessage: String,
-    val candidateText: String,
-)
-
-internal sealed class ScoreEstimateRequestPlan {
-    data class ShowMessage(val message: String) : ScoreEstimateRequestPlan()
-    data class ShowLocalEstimate(val display: ScoreEstimateDisplayPlan) : ScoreEstimateRequestPlan()
-    data class RequestEngineEstimate(
-        val state: GameState,
-        val profile: EngineProfile,
-        val syncFirst: Boolean,
-    ) : ScoreEstimateRequestPlan()
-}
-
-internal data class ScoreEstimateLaunchStateUpdate(
-    val engineMessage: String? = null,
-    val display: ScoreEstimateDisplayPlan? = null,
-    val effect: GameSessionEffect.RunScoreEstimate? = null,
-)
-
-internal data class ScoreEstimateOperationToken(
-    val operation: EngineOperationRequest,
-)
-
-internal sealed class ScoreEstimateWorkflowResult {
-    data class Success(val display: ScoreEstimateDisplayPlan) : ScoreEstimateWorkflowResult()
-    data class Failure(val error: Throwable) : ScoreEstimateWorkflowResult()
-}
-
-internal sealed class ScoreEstimateCompletionPlan {
-    data class ApplySuccess(val display: ScoreEstimateDisplayPlan) : ScoreEstimateCompletionPlan()
-    data class ApplyFailure(val failure: ScoreEstimateFailureDisplayPlan) : ScoreEstimateCompletionPlan()
-    data class Discard(val discard: EngineOperationResultGuard.Discard) : ScoreEstimateCompletionPlan()
-}
-
-internal sealed class ScoreEstimateCompletionApplyPlan {
-    data class ApplySuccess(val display: ScoreEstimateDisplayPlan) : ScoreEstimateCompletionApplyPlan()
-    data class ApplyFailure(val failure: ScoreEstimateFailureDisplayPlan) : ScoreEstimateCompletionApplyPlan()
-    data class Discard(val discard: EngineOperationResultGuard.Discard) : ScoreEstimateCompletionApplyPlan()
-}
-
 internal fun scoreEstimateOperationToken(
     request: ScoreEstimateRequestPlan.RequestEngineEstimate,
     sessionGeneration: Long = 0L,
@@ -132,7 +42,6 @@ internal fun scoreEstimateOperationToken(
             fallbackPolicy = EngineFallbackPolicy.LocalRules,
         ),
     )
-
 internal fun evaluateScoreEstimateResultGuard(
     token: ScoreEstimateOperationToken,
     currentState: GameState,
@@ -143,12 +52,10 @@ internal fun evaluateScoreEstimateResultGuard(
         currentState = currentState,
         currentSessionGeneration = currentSessionGeneration,
     )
-
 internal fun buildScoreEstimateFailureDisplayPlan(error: Throwable): ScoreEstimateFailureDisplayPlan =
     ScoreEstimateFailureDisplayPlan(
         engineMessage = error.message ?: "Score estimate failed.",
     )
-
 internal fun buildScoreEstimateCompletionPlan(
     result: ScoreEstimateWorkflowResult,
     token: ScoreEstimateOperationToken,
@@ -176,7 +83,6 @@ internal fun buildScoreEstimateCompletionPlan(
         is EngineOperationResultGuard.Discard ->
             ScoreEstimateCompletionPlan.Discard(guard)
     }
-
 internal fun ScoreEstimateCompletionPlan.toApplyPlan(): ScoreEstimateCompletionApplyPlan =
     when (this) {
         is ScoreEstimateCompletionPlan.ApplySuccess ->
@@ -188,7 +94,6 @@ internal fun ScoreEstimateCompletionPlan.toApplyPlan(): ScoreEstimateCompletionA
         is ScoreEstimateCompletionPlan.Discard ->
             ScoreEstimateCompletionApplyPlan.Discard(discard)
     }
-
 internal fun buildScoreEstimateRequestPlan(
     state: GameState,
     previousSnapshots: List<ScoreSnapshot>,
@@ -221,7 +126,6 @@ internal fun buildScoreEstimateRequestPlan(
         syncFirst = matchMode == MatchMode.LocalTwoPlayer,
     )
 }
-
 internal fun ScoreEstimateRequestPlan.toScoreEstimateLaunchStateUpdate(): ScoreEstimateLaunchStateUpdate =
     when (this) {
         is ScoreEstimateRequestPlan.ShowMessage ->
@@ -231,7 +135,6 @@ internal fun ScoreEstimateRequestPlan.toScoreEstimateLaunchStateUpdate(): ScoreE
         is ScoreEstimateRequestPlan.RequestEngineEstimate ->
             ScoreEstimateLaunchStateUpdate(effect = GameSessionEffect.RunScoreEstimate(this))
     }
-
 internal fun buildEngineScoreEstimateStateResult(
     state: GameState,
     estimate: ScoreEstimate,
@@ -251,7 +154,6 @@ internal fun buildEngineScoreEstimateStateResult(
         ),
     )
 }
-
 internal fun buildLocalScoreEstimateStateResult(
     state: GameState,
     previousSnapshots: List<ScoreSnapshot>,
@@ -260,7 +162,6 @@ internal fun buildLocalScoreEstimateStateResult(
         scoreEstimate = null,
         scoreSnapshots = ScoreTimeline.record(previousSnapshots, localScoreSnapshot(state)),
     )
-
 internal fun ScoreEstimateStateResult.toScoreEstimateDisplayPlan(
     scoreText: String,
     engineMessage: String,
