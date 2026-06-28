@@ -864,7 +864,8 @@ class LayeringContractTest {
     }
 
     @Test
-    fun positionAnalysisGatewayContractStaysKmpReady() {
+    fun positionAnalysisGatewayContractsStayKmpReadyAndTransportFree() {
+        val repoRoot = repoRoot()
         val middlewareRoot = repoRoot()
             .resolve("app-android/src/main/java/com/worksoc/goaicoach/middleware")
         val contracts = listOf(
@@ -874,6 +875,7 @@ class LayeringContractTest {
         val forbiddenImports = listOf(
             "import android.",
             "import androidx.",
+            "import javax.",
             "import java.",
             "import org.json.",
             "import com.worksoc.goaicoach.application.",
@@ -881,14 +883,39 @@ class LayeringContractTest {
             "import com.worksoc.goaicoach.persistence.",
             "import com.worksoc.goaicoach.engine.",
         )
+        val forbiddenTransportFragments = listOf(
+            "HttpRemotePositionAnalysisTransport",
+            "RemotePositionAnalysisHttpConfig",
+            "RemotePositionAnalysisHttpConnectionFactory",
+            "HttpURLConnection",
+            "JSONObject",
+            "JSONArray",
+            "java.net.URL",
+        )
 
-        val offenders = forbiddenReferenceOffenders(
+        val missingContracts = contracts.filterNot { file -> file.exists() }
+        assertTrue(
+            "KMP-ready position analysis gateway contract files must exist before the middleware module split:\n" +
+                missingContracts.joinToString("\n") { file -> file.relativeTo(repoRoot).path },
+            missingContracts.isEmpty(),
+        )
+
+        val importOffenders = forbiddenReferenceOffenders(
             files = contracts,
             forbiddenImports = forbiddenImports,
         )
+        val transportOffenders = contracts.flatMap { file ->
+            val text = file.readText()
+            forbiddenTransportFragments
+                .filter { fragment -> fragment in text }
+                .map { fragment -> "${file.relativeTo(repoRoot).path}: transport detail -> $fragment" }
+        }
+        val offenders = importOffenders + transportOffenders
 
         assertTrue(
-            "Position analysis middleware gateway contracts must remain KMP-ready:\n${offenders.joinToString("\n")}",
+            "Position analysis gateway contract files are the KMP move candidates. " +
+                "Keep them limited to shared DTOs/coroutines and leave HTTP/JVM JSON transport in HttpRemotePositionAnalysisTransport.kt:\n" +
+                offenders.joinToString("\n"),
             offenders.isEmpty(),
         )
     }
