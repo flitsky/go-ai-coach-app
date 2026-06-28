@@ -776,6 +776,29 @@ class LayeringContractTest {
     }
 
     @Test
+    fun gameSessionStateHolderStaysPlatformFreeForSharedMove() {
+        val holder = repoRoot()
+            .resolve("app-android/src/main/java/com/worksoc/goaicoach/application/session/GameSessionStateHolder.kt")
+        val forbiddenImports = listOf(
+            "import android.",
+            "import androidx.compose.",
+            "import java.",
+            "import org.json.",
+        )
+
+        val offenders = forbiddenReferenceOffenders(
+            files = listOf(holder),
+            forbiddenImports = forbiddenImports,
+        )
+
+        assertTrue(
+            "GameSessionStateHolder must stay free of Android/Compose/JVM JSON imports before moving to shared:\n" +
+                offenders.joinToString("\n"),
+            offenders.isEmpty(),
+        )
+    }
+
+    @Test
     fun scoreRunnersUseEngineSessionClientContractOnly() {
         val scoreRoot = repoRoot()
             .resolve("app-android/src/main/java/com/worksoc/goaicoach/application/score")
