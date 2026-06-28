@@ -557,27 +557,86 @@ private data class BoardGeometry(
 
     companion object {
         fun from(size: Size, boardSize: BoardSize, showCoordinates: Boolean): BoardGeometry {
-            val side = min(size.width, size.height)
-            val spacing = if (showCoordinates) {
-                side / (boardSize.value + 1f)
-            } else {
-                side / boardSize.value
-            }
-            val boardPadding = if (showCoordinates) {
-                spacing * 1.0f
-            } else {
-                spacing * 0.5f
-            }
-            val origin = Offset(
-                x = (size.width - side) / 2f + boardPadding,
-                y = (size.height - side) / 2f + boardPadding,
-            )
+            val tapGeometry = boardTapGeometry(
+                canvasWidth = size.width,
+                canvasHeight = size.height,
+                boardSize = boardSize,
+                showCoordinates = showCoordinates,
+            ) ?: BoardTapGeometry(originX = 0f, originY = 0f, spacing = 0f, boardPadding = 0f)
             return BoardGeometry(
-                origin = origin,
-                spacing = spacing,
-                boardPadding = boardPadding,
+                origin = Offset(tapGeometry.originX, tapGeometry.originY),
+                spacing = tapGeometry.spacing,
+                boardPadding = tapGeometry.boardPadding,
             )
         }
+    }
+}
+
+internal data class BoardTapGeometry(
+    val originX: Float,
+    val originY: Float,
+    val spacing: Float,
+    val boardPadding: Float,
+)
+
+internal fun boardTapGeometry(
+    canvasWidth: Float,
+    canvasHeight: Float,
+    boardSize: BoardSize,
+    showCoordinates: Boolean,
+): BoardTapGeometry? {
+    if (canvasWidth == 0f || canvasHeight == 0f) {
+        return null
+    }
+    val side = min(canvasWidth, canvasHeight)
+    val spacing = if (showCoordinates) {
+        side / (boardSize.value + 1f)
+    } else {
+        side / boardSize.value
+    }
+    val boardPadding = if (showCoordinates) {
+        spacing * 1.0f
+    } else {
+        spacing * 0.5f
+    }
+    return BoardTapGeometry(
+        originX = (canvasWidth - side) / 2f + boardPadding,
+        originY = (canvasHeight - side) / 2f + boardPadding,
+        spacing = spacing,
+        boardPadding = boardPadding,
+    )
+}
+
+internal fun boardCoordinateFromTap(
+    tapX: Float,
+    tapY: Float,
+    canvasWidth: Float,
+    canvasHeight: Float,
+    boardSize: BoardSize,
+    showCoordinates: Boolean,
+): BoardCoordinate? {
+    val geometry = boardTapGeometry(
+        canvasWidth = canvasWidth,
+        canvasHeight = canvasHeight,
+        boardSize = boardSize,
+        showCoordinates = showCoordinates,
+    ) ?: return null
+    val column = ((tapX - geometry.originX) / geometry.spacing).roundToInt()
+    val row = ((tapY - geometry.originY) / geometry.spacing).roundToInt()
+    val coordinate = BoardCoordinate(
+        row = row.coerceAtLeast(0),
+        column = column.coerceAtLeast(0),
+    )
+    if (!coordinate.isInside(boardSize)) {
+        return null
+    }
+    val snappedX = geometry.originX + coordinate.column * geometry.spacing
+    val snappedY = geometry.originY + coordinate.row * geometry.spacing
+    val tolerance = geometry.spacing * 0.45f
+    return if (abs(tapX - snappedX) <= tolerance && abs(tapY - snappedY) <= tolerance) {
+        coordinate
+    } else {
+        null
     }
 }
 
@@ -587,30 +646,14 @@ private fun coordinateFromTap(
     boardSize: BoardSize,
     showCoordinates: Boolean,
 ): BoardCoordinate? {
-    if (canvasSize.width == 0 || canvasSize.height == 0) {
-        return null
-    }
-    val geometry = BoardGeometry.from(
-        size = Size(canvasSize.width.toFloat(), canvasSize.height.toFloat()),
+    return boardCoordinateFromTap(
+        tapX = offset.x,
+        tapY = offset.y,
+        canvasWidth = canvasSize.width.toFloat(),
+        canvasHeight = canvasSize.height.toFloat(),
         boardSize = boardSize,
         showCoordinates = showCoordinates,
     )
-    val column = ((offset.x - geometry.origin.x) / geometry.spacing).roundToInt()
-    val row = ((offset.y - geometry.origin.y) / geometry.spacing).roundToInt()
-    val coordinate = BoardCoordinate(
-        row = row.coerceAtLeast(0),
-        column = column.coerceAtLeast(0),
-    )
-    if (!coordinate.isInside(boardSize)) {
-        return null
-    }
-    val snapped = geometry.pointFor(coordinate)
-    val tolerance = geometry.spacing * 0.45f
-    return if (abs(offset.x - snapped.x) <= tolerance && abs(offset.y - snapped.y) <= tolerance) {
-        coordinate
-    } else {
-        null
-    }
 }
 
 private fun starPoints(boardSize: BoardSize): List<BoardCoordinate> =
