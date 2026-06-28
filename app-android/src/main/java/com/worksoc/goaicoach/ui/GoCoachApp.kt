@@ -48,7 +48,6 @@ import com.worksoc.goaicoach.application.runtime.runtimeGameResetLog
 import com.worksoc.goaicoach.application.runtime.toRuntimeLogContext
 import com.worksoc.goaicoach.application.savedgame.SavedSessionController
 import com.worksoc.goaicoach.application.startgame.NewGameController
-import com.worksoc.goaicoach.application.score.ScoreEstimateController
 import com.worksoc.goaicoach.application.score.ScoringRuleController
 import com.worksoc.goaicoach.application.score.FinalScoreDisplayPlan
 import com.worksoc.goaicoach.application.undo.UndoController
@@ -606,21 +605,9 @@ private fun GoCoachScreen(
         launchEngineOperation = { operation, block -> lifecycleController.launchTracked(operation) { block() } },
     )
 
-    val scoreEstimateController = ScoreEstimateController(
-        engineClient = engineClient,
-        diagnosticEventLog = diagnosticEventLog,
-        currentGameState = { gameState },
-        currentScoreSnapshots = { scoreState.scoreSnapshots },
-        isEngineReady = { isEngineReady },
-        isEngineBusy = { isEngineBusy },
-        currentMatchMode = { matchMode },
-        currentEngineProfile = { runtimeState.engineProfile },
-        currentSessionGeneration = { runtimeState.sessionGeneration },
-        launchEngineOperation = { operation, block -> lifecycleController.launchTracked(operation) { block() } },
-        onEngineMessage = { message -> engineMessage = message },
-        onScoreEstimateDisplayPlan = displayStateApplier::applyScoreEstimateDisplayPlan,
-        onScoreEstimateFailureDisplayPlan = displayStateApplier::applyScoreEstimateFailureDisplayPlan,
-        appendDiscardLog = lifecycleController::appendDiscardLog,
+    val scoreEstimateController = buildScoreEstimateController(
+        engineClient, diagnosticEventLog, { gameState }, { scoreState.scoreSnapshots }, { isEngineReady }, { isEngineBusy }, { matchMode }, { runtimeState.engineProfile }, { runtimeState.sessionGeneration },
+        { operation, block -> lifecycleController.launchTracked(operation) { block() } }, { message -> engineMessage = message }, displayStateApplier, lifecycleController::appendDiscardLog,
     )
 
     val scoringRuleController = ScoringRuleController(
