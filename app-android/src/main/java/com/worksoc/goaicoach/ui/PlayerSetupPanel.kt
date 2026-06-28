@@ -70,11 +70,6 @@ internal fun PlayerSetupPanel(
                     onSelected = onAutoPlayDelayChange,
                 )
             }
-            Text(
-                text = strings.setupSummary(state.setup, state.black.aiEngineLabel),
-                color = MaterialTheme.colorScheme.secondary,
-                style = MaterialTheme.typography.bodySmall,
-            )
         }
     }
 }
@@ -250,7 +245,7 @@ private fun PlayerSetupSideRow(
             when (side.controller) {
                 SeatController.Human -> {
                     SetupStaticBox(
-                        text = strings.controllerLabel(SeatController.Human),
+                        text = "-",
                         modifier = Modifier.weight(1.08f),
                     )
                     SetupStaticBox(
@@ -348,6 +343,36 @@ internal fun <T> SetupDropdown(
                 )
             }
         }
+    }
+}
+
+@Composable
+internal fun <T> SettingDropdownRow(
+    label: String,
+    selectedText: String,
+    enabled: Boolean,
+    options: List<T>,
+    optionLabel: (T) -> String,
+    onSelected: (T) -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = label,
+            modifier = Modifier.weight(0.8f),
+            fontWeight = FontWeight.SemiBold,
+        )
+        SetupDropdown(
+            selectedText = selectedText,
+            enabled = enabled,
+            modifier = Modifier.weight(1.4f),
+            options = options,
+            optionLabel = optionLabel,
+            onSelected = onSelected,
+        )
     }
 }
 

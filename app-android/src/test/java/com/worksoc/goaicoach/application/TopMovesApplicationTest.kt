@@ -339,6 +339,7 @@ class TopMovesApplicationTest {
 
         assertEquals(state, client.analyzedState)
         assertEquals(plan.analysisLimit, client.analyzedLimit)
+        assertEquals(EngineSearchMode.JsonPositionAnalysis, client.analyzedSearchMode)
         assertEquals("analysis ready", update.engineMessage)
         assertEquals(1, update.candidateMoves.size)
         assertNull(update.cachedResult)
@@ -1392,6 +1393,8 @@ private class FakeTopMoveEngineSessionClient(
         private set
     var analyzedLimit: AnalysisLimit? = null
         private set
+    var analyzedSearchMode: EngineSearchMode? = null
+        private set
 
     override val capabilities: EngineSessionCapabilities =
         EngineSessionCapabilities(supportsDeviceBenchmark = false)
@@ -1426,6 +1429,7 @@ private class FakeTopMoveEngineSessionClient(
     ): AnalysisResult {
         analyzedState = state
         analyzedLimit = limit
+        analyzedSearchMode = searchMode
         failure?.let { throw it }
         return result ?: error("not used")
     }

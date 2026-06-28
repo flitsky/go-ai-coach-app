@@ -15,7 +15,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.BuildConfig
-import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.presentation.GameUiEvent
 
@@ -69,42 +68,47 @@ internal fun ExpandedGameMenuSection(
     onLanguageChange: (UiLanguage) -> Unit,
     onEvent: (GameUiEvent) -> Unit,
 ) {
-    LanguageSettingsPanel(
-        selectedLanguage = selectedLanguage,
-        onLanguageChange = onLanguageChange,
-    )
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        PlayerSetupPanel(
+            state = screenState.playerSetupUi,
+            enabled = true, // engine-busy gate disabled; restore with !screenState.engine.isBusy
+            onPlayerSetupChange = { setup -> onEvent(GameUiEvent.ChangePlayerSetup(setup)) },
+            onAutoPlayDelayChange = { setting -> onEvent(GameUiEvent.ChangeAutoPlayDelay(setting)) },
+        )
 
-    PlayerSetupPanel(
-        state = screenState.playerSetupUi,
-        enabled = true, // engine-busy gate disabled; restore with !screenState.engine.isBusy
-        onPlayerSetupChange = { setup -> onEvent(GameUiEvent.ChangePlayerSetup(setup)) },
-        onAutoPlayDelayChange = { setting -> onEvent(GameUiEvent.ChangeAutoPlayDelay(setting)) },
-    )
+        ScoringAndBoardSettingsPanel(
+            ruleset = screenState.gameState.ruleset,
+            boardSize = screenState.gameState.boardSize,
+            canChangeRuleset = true, // engine-busy gate disabled; restore with !screenState.engine.isBusy
+            onRulesetChange = { ruleset -> onEvent(GameUiEvent.ChangeScoringRule(ruleset)) },
+            onBoardSizeChange = { size -> onEvent(GameUiEvent.ChangeBoardSize(size)) },
+        )
 
-    SearchTimeSettingsPanel(
-        settings = screenState.searchTimeSettings,
-        benchmarkAverages = screenState.searchTimeBenchmarkAverages,
-        enabled = true, // engine-busy gate disabled; restore with !screenState.engine.isBusy
-        onSettingsChange = { settings -> onEvent(GameUiEvent.ChangeSearchTimeSettings(settings)) },
-    )
+        LanguageSettingsPanel(
+            selectedLanguage = selectedLanguage,
+            onLanguageChange = onLanguageChange,
+        )
 
-    GameMenuActionsPanel(
-        mode = screenState.matchMode,
-        ruleset = screenState.gameState.ruleset,
-        boardSize = screenState.gameState.boardSize,
-        canStartNew = screenState.matchMode == MatchMode.LocalTwoPlayer || screenState.engine.isReady, // engine-busy gate disabled; restore with !screenState.engine.isBusy &&
-        canChangeRuleset = true, // engine-busy gate disabled; restore with !screenState.engine.isBusy
-        onNewGame = { onEvent(GameUiEvent.StartConfiguredGame) },
-        onCopyLog = { onEvent(GameUiEvent.CopyDebugReport) },
-        onBenchmark = { onEvent(GameUiEvent.ShowEngineBenchmark) },
-        onRulesetChange = { ruleset -> onEvent(GameUiEvent.ChangeScoringRule(ruleset)) },
-        onBoardSizeChange = { size -> onEvent(GameUiEvent.ChangeBoardSize(size)) },
-    )
+        KaTrainUxMenuPanel(
+            options = screenState.uxOptions,
+            onOptionsChange = { nextOptions -> onEvent(GameUiEvent.ChangeUxOptions(nextOptions)) },
+        )
 
-    KaTrainUxMenuPanel(
-        options = screenState.uxOptions,
-        onOptionsChange = { nextOptions -> onEvent(GameUiEvent.ChangeUxOptions(nextOptions)) },
-    )
+        GameMenuActionsPanel(
+            onCopyLog = { onEvent(GameUiEvent.CopyDebugReport) },
+            onBenchmark = { onEvent(GameUiEvent.ShowEngineBenchmark) },
+        )
+
+        SearchTimeSettingsPanel(
+            settings = screenState.searchTimeSettings,
+            benchmarkAverages = screenState.searchTimeBenchmarkAverages,
+            enabled = true, // engine-busy gate disabled; restore with !screenState.engine.isBusy
+            onSettingsChange = { settings -> onEvent(GameUiEvent.ChangeSearchTimeSettings(settings)) },
+        )
+    }
 }
 
 @Composable
@@ -125,11 +129,10 @@ private fun LanguageSettingsPanel(
                 .padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Text(strings.languageLabel, fontWeight = FontWeight.SemiBold)
-            SetupDropdown(
+            SettingDropdownRow(
+                label = strings.languageLabel,
                 selectedText = selectedLanguage.menuLabel,
                 enabled = true,
-                modifier = Modifier.fillMaxWidth(),
                 options = UiLanguage.entries,
                 optionLabel = { language -> language.menuLabel },
                 onSelected = onLanguageChange,

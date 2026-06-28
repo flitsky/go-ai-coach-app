@@ -52,14 +52,14 @@ internal fun KaTrainUxMenuPanel(
             OptionSwitchRow(strings.directPlay, options.isDirectPlayEnabled) {
                 onOptionsChange(options.copy(isDirectPlayEnabled = it))
             }
-            OptionSwitchRow(strings.coordinates, options.showCoordinates) {
-                onOptionsChange(options.copy(showCoordinates = it))
+            OptionSwitchRow(strings.lastMoveRing, options.showLastMoveRing) {
+                onOptionsChange(options.copy(showLastMoveRing = it))
             }
             OptionSwitchRow(strings.moveNumbers, options.showMoveNumbers) {
                 onOptionsChange(options.copy(showMoveNumbers = it))
             }
-            OptionSwitchRow(strings.lastMoveRing, options.showLastMoveRing) {
-                onOptionsChange(options.copy(showLastMoveRing = it))
+            OptionSwitchRow(strings.coordinates, options.showCoordinates) {
+                onOptionsChange(options.copy(showCoordinates = it))
             }
         }
     }

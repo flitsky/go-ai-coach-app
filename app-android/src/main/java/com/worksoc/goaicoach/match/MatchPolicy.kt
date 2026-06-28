@@ -20,7 +20,7 @@ internal enum class MatchMode(val label: String) {
     HumanVsAi("AI 대국"),
     AiVsHuman("AI 선공"),
     AiVsAi("AI 자동 대국"),
-    LocalTwoPlayer("2P 테스트"),
+    LocalTwoPlayer("2인 대국"),
 }
 
 internal enum class SeatController(val label: String) {

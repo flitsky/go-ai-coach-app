@@ -479,8 +479,8 @@ private fun FinalScoreResult.whiteJudgementLine(state: GameState): String? {
 
 private fun Ruleset.koreanScoringLabel(): String =
     when (this) {
-        Ruleset.Japanese -> "집계가"
-        Ruleset.Chinese -> "면적계가"
+        Ruleset.Japanese -> "집 계가 (영역 계가)"
+        Ruleset.Chinese -> "면적 계가 (영역+돌 계가)"
     }
 
 private fun Number.formatScoreNumber(): String {

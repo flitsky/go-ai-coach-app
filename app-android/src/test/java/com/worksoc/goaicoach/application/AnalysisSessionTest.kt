@@ -42,7 +42,7 @@ class AnalysisSessionTest {
     }
 
     @Test
-    fun topMovesLimitUsesCurrentProfileBestOnlyBudget() {
+    fun topMovesLimitPromotesFastBeginnerB16ToUncappedB32Budget() {
         val profile = EngineProfile(
             difficulty = DifficultyProfile.Beginner,
             analysisLimit = AnalysisLimit(visits = 16, timeMillis = 250, candidateCount = 8),
@@ -51,15 +51,38 @@ class AnalysisSessionTest {
         val lite = topMovesAnalysisLimitFor(profile, AnalysisPreset.Lite, candidateCount = 1)
         val balanced = topMovesAnalysisLimitFor(profile, AnalysisPreset.Balanced, candidateCount = 1)
 
-        assertEquals(16, lite.visits)
-        assertEquals(250L, lite.timeMillis)
+        assertEquals(32, lite.visits)
+        assertNull(lite.timeMillis)
         assertEquals(1, lite.candidateCount)
         assertEquals(0, lite.refinePolicyMoves)
 
-        assertEquals(16, balanced.visits)
-        assertEquals(250L, balanced.timeMillis)
+        assertEquals(32, balanced.visits)
+        assertNull(balanced.timeMillis)
         assertEquals(1, balanced.candidateCount)
         assertEquals(0, balanced.refinePolicyMoves)
+    }
+
+    @Test
+    fun topMovesLimitKeepsB32AndHigherVisitsWithoutTimeCap() {
+        val beginnerProfile = EngineProfile(
+            difficulty = DifficultyProfile.Beginner,
+            analysisLimit = AnalysisLimit(visits = 32, timeMillis = 4_000, candidateCount = 16),
+        )
+        val intermediateProfile = EngineProfile(
+            difficulty = DifficultyProfile.Casual,
+            analysisLimit = AnalysisLimit(visits = 64, timeMillis = 7_500, candidateCount = 20),
+        )
+
+        val beginner = topMovesAnalysisLimitFor(beginnerProfile, AnalysisPreset.Learning, candidateCount = 1)
+        val intermediate = topMovesAnalysisLimitFor(intermediateProfile, AnalysisPreset.Balanced, candidateCount = 1)
+
+        assertEquals(32, beginner.visits)
+        assertNull(beginner.timeMillis)
+        assertEquals(1, beginner.candidateCount)
+
+        assertEquals(64, intermediate.visits)
+        assertNull(intermediate.timeMillis)
+        assertEquals(1, intermediate.candidateCount)
     }
 
     @Test

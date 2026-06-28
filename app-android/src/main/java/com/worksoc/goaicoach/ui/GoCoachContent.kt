@@ -176,10 +176,10 @@ private fun FinalJudgementDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(judgement.resultText)
+                Text(judgement.scoringRuleLine)
+                Text(judgement.removedStonesLine)
                 judgement.blackLine?.let { Text(it) }
                 judgement.whiteLine?.let { Text(it) }
-                Text(judgement.removedStonesLine)
-                Text(judgement.scoringRuleLine)
                 judgement.note?.let { Text(it) }
             }
         },

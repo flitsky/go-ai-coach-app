@@ -168,7 +168,7 @@ internal data class UiStrings(
                 UiLanguage.ChineseSimplified -> "AI 自动对局"
             }
             MatchMode.LocalTwoPlayer -> when (language) {
-                UiLanguage.Korean -> "2P 테스트"
+                UiLanguage.Korean -> "2인 대국"
                 UiLanguage.English -> "2P test"
                 UiLanguage.Japanese -> "2Pテスト"
                 UiLanguage.ChineseSimplified -> "双人测试"
@@ -206,16 +206,16 @@ internal data class UiStrings(
     fun rulesetLabel(ruleset: Ruleset): String =
         when (ruleset) {
             Ruleset.Japanese -> when (language) {
-                UiLanguage.Korean -> "일본식"
-                UiLanguage.English -> "Japanese"
-                UiLanguage.Japanese -> "日本式"
-                UiLanguage.ChineseSimplified -> "日式"
+                UiLanguage.Korean -> "집 계가 (영역 계가)"
+                UiLanguage.English -> "Territory Scoring"
+                UiLanguage.Japanese -> "地合計算"
+                UiLanguage.ChineseSimplified -> "数目计分"
             }
             Ruleset.Chinese -> when (language) {
-                UiLanguage.Korean -> "중국식"
-                UiLanguage.English -> "Chinese"
-                UiLanguage.Japanese -> "中国式"
-                UiLanguage.ChineseSimplified -> "中式"
+                UiLanguage.Korean -> "면적 계가 (영역+돌 계가)"
+                UiLanguage.English -> "Area Scoring"
+                UiLanguage.Japanese -> "面積計算"
+                UiLanguage.ChineseSimplified -> "数子计分"
             }
         }
 
@@ -262,8 +262,8 @@ internal data class UiStrings(
             close = "닫기",
             gameSection = "게임",
             newGame = "새 대국",
-            copyLog = "로그 복사",
-            benchmark = "벤치마크",
+            copyLog = "진단 로그 복사",
+            benchmark = "엔진 성능 측정",
             currentModePrefix = "현재 모드",
             scoringRule = "계가 방식",
             boardSize = "바둑판 크기",
@@ -271,10 +271,10 @@ internal data class UiStrings(
             searchTime = "탐색 시간",
             timeCap = "시간 제한",
             timeCapOn = "응답시간 제한 적용",
-            timeCapOff = "visits 충족 우선",
+            timeCapOff = "탐색 수 우선",
             recommendedPrefix = "추천",
             none = "없음",
-            autoDelay = "자동 지연",
+            autoDelay = "AI 착수 지연",
             engine = "엔진",
             displayMenu = "표시 메뉴",
             directPlay = "바로 착수",
@@ -291,8 +291,8 @@ internal data class UiStrings(
             playMove = "착수",
             pass = "통과",
             undo = "무르기",
-            topMoves = "추천수",
-            eval = "형세판단",
+            topMoves = "추천 수",
+            eval = "형세 보기",
             resign = "기권",
             newGameAction = "새 게임",
             resignConfirmTitle = "기권 확인",
@@ -331,7 +331,7 @@ internal data class UiStrings(
             benchmarkTimeCap = "측정 상한",
             benchmarkPosition = "측정 포지션",
             benchmarkPositionMoves = "포지션 수순",
-            benchmarkDetailsIncluded = "상세 sampleDetails는 메뉴의 로그 복사에 포함됩니다.",
+            benchmarkDetailsIncluded = "상세 sampleDetails는 메뉴의 진단 로그 복사에 포함됩니다.",
             resumeTitle = "이전 대국 이어하기",
             resumeMoveCountPrefix = "진행 중이던",
             resumeMoveCountSuffix = "수 대국이 있습니다.",

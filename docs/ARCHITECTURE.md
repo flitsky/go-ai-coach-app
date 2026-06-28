@@ -1,7 +1,9 @@
 # Architecture
 
-작성일: 2026-06-17
-성격: `go-ai-coach`의 7계층 구조를 현재 코드베이스 기준으로 새로 작성한 canonical 문서. 과거 `archive/2026-06-17-architecture-docs-rewrite/ARCHITECTURE_LAYERS_ANALYSIS.md` 초안과 `refactoring/ARCHITECTURE_LAYERS_REVIEW_2026-06-14.md` 검토본은 이 문서로 대체한다 (7계층 방향 자체는 그대로 채택, 파일 경로와 구현 현황만 전면 갱신).
+작성일: 2026-06-17  
+갱신: 2026-06-27 — 코드 기준선을 다시 확인했다. `GoCoachApp.kt`는 791줄, `app-android/application`은 17개 하위 패키지/107개 production Kotlin 파일, `shared/commonMain`은 21개 production Kotlin 파일, `engine-android`는 10개 production Kotlin 파일이다. `make test`는 2026-06-27 기준 통과했다.
+
+성격: `go-ai-coach`의 7계층 구조를 현재 코드베이스 기준으로 유지하는 canonical 문서. 과거 `archive/2026-06-17-architecture-docs-rewrite/ARCHITECTURE_LAYERS_ANALYSIS.md` 초안과 `refactoring/ARCHITECTURE_LAYERS_REVIEW_2026-06-14.md` 검토본은 이 문서로 대체한다 (7계층 방향 자체는 그대로 채택, 파일 경로와 구현 현황만 전면 갱신).
 
 ## 큰 그림
 
@@ -70,7 +72,7 @@ Core Rules Domain    Engine Core API Domain
 
 **책임**: 2계층의 원시 API를 유스케이스로 조합해 "분석 세션"을 제공하고, 로컬/원격 캐시 라우팅·신뢰도 정책을 조율한다.
 
-**위치**: `app-android/src/main/java/com/worksoc/goaicoach/application/engine/` (21개 파일), `application/analysis/`, `middleware/`
+**위치**: `app-android/src/main/java/com/worksoc/goaicoach/application/engine/` (2026-06-27 기준 20개 파일), `application/analysis/`, `middleware/`
 
 | 파일/패키지 | 역할 |
 | --- | --- |
@@ -79,7 +81,7 @@ Core Rules Domain    Engine Core API Domain
 | `application/engine/operation/` | `EngineOperationLifecycleController` 등 — 동시 엔진 호출 추적, 늦게 도착한 결과 폐기(stale guard), busy 상태 관리 |
 | `application/analysis/PositionAnalysisCache.kt`, `PositionAnalysisCacheOptimization*.kt` | JSON position analysis 결과를 품질(`complete`/`partial`/`diagnostic`)과 origin(`local-user`/`bundled-trusted`/`operator-trusted`/`peer-shared`)별로 저장하는 디스크 캐시 |
 | `middleware/PositionAnalysisCacheResolver.kt` | 신뢰도 등급에 따라 캐시 hit을 평가/서빙 |
-| `middleware/PositionAnalysisGateway.kt`, `RemotePositionAnalysisGateway.kt`, `HttpRemotePositionAnalysisTransport.kt` | 원격 분석 서버로 전환할 때를 대비한 게이트웨이/transport 추상화. **아직 `RemoteEngineSessionClient` 구현체는 없음** — 현재는 position-analysis 단위의 원격 전환 골격만 존재 |
+| `middleware/PositionAnalysisGateway.kt`, `RemotePositionAnalysisGateway.kt`, `HttpRemotePositionAnalysisTransport.kt` | 원격 분석 서버로 전환할 때를 대비한 게이트웨이/transport 추상화. read-only position-analysis HTTP transport spike는 존재하며 기본값은 off다. **아직 `RemoteEngineSessionClient` 구현체는 없음** — 현재는 position-analysis 단위 원격 호출까지만 분리되어 있다 |
 
 캐시 정책, 품질 등급, origin 계층의 상세 운영 규칙은 [ENGINE.md](./ENGINE.md) → `ENGINE_API_CALL_POLICY.md`를 따른다.
 
@@ -111,7 +113,7 @@ KataGo 프로세스 명령을 직접 호출하지 않고, 4계층 `EngineSession
   - `XxxApplication.kt` — 순수 함수: plan 빌드, 상태 적용. 부작용 없음, 단위 테스트 용이.
   - `XxxController.kt` — `internal class`. 람다로 의존성을 주입받고(`currentXxx: () -> T`, `applyXxx: (T) -> Unit`), Compose 상태를 직접 들지 않음.
   - 필요 시 `XxxModels.kt` — plan/result 데이터 클래스.
-- **`ui/GoCoachApp.kt`**가 이 모든 컨트롤러를 생성하고 람다로 서로 연결하는 합성 루트(composition root) 역할을 한다. 2026-06-17 기준 794줄(과거 1838줄)까지 줄었고, `app-android/src/test/.../LayeringContractTest.kt`가 이 줄 수와 Compose state hook 개수를 하향 ratchet으로 강제한다.
+- **`ui/GoCoachApp.kt`**가 이 모든 컨트롤러를 생성하고 람다로 서로 연결하는 합성 루트(composition root) 역할을 한다. 2026-06-27 기준 791줄(과거 1838줄 이상)까지 줄었고, `app-android/src/test/.../LayeringContractTest.kt`가 workflow ownership과 계층 의존 금지를 회귀 방지한다.
 
 ## 7계층: Presentation / Game UX
 
@@ -133,9 +135,10 @@ KataGo 프로세스 명령을 직접 호출하지 않고, 4계층 `EngineSession
 ## 알려진 갭 / 다음 단계
 
 - `GameSessionStateHolder`는 여전히 `app-android`에 있다. KMP `shared`로 옮기는 작업은 아직 안 함.
-- `RemoteEngineSessionClient`는 없다. `middleware/Remote*`는 position-analysis 단위의 골격만 있고, 4계층 전체를 원격으로 라우팅하는 구현체는 후속 작업이다.
+- `RemoteEngineSessionClient`는 없다. `middleware/Remote*`와 `HttpRemotePositionAnalysisTransport`는 read-only position-analysis 단위까지만 원격 호출을 다룬다. 4계층 전체를 원격으로 라우팅하는 구현체는 후속 작업이다.
 - AI vs AI 자동대국의 search tree 격리는 `EngineSearchMode.GtpStatefulFast`일 때만 `clearSearchCache()`로 처리한다. `JsonPositionAnalysis` 레벨(초급 이상)은 position-scoped라 격리가 불필요하다.
 - androidTest(Robolectric/계측) 커버리지가 아직 없다. 현재는 컴파일+JVM 단위 테스트로만 검증된다.
+- 다음 리팩토링 기준선과 작은 작업 단위는 [refactoring/ARCHITECTURE_IMPLEMENTATION_REVIEW_2026-06-27.md](./refactoring/ARCHITECTURE_IMPLEMENTATION_REVIEW_2026-06-27.md)를 따른다.
 
 ## 더 깊은 문서
 

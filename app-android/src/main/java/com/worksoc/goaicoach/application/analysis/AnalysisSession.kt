@@ -6,6 +6,7 @@ import com.worksoc.goaicoach.shared.DifficultyProfile
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
+import com.worksoc.goaicoach.shared.SearchTimeProfile
 import com.worksoc.goaicoach.shared.TurnAnalysisPurpose
 import com.worksoc.goaicoach.shared.analysisFingerprint
 import com.worksoc.goaicoach.shared.turnAnalysisLimitFor
@@ -185,6 +186,12 @@ internal fun topMovesAnalysisLimitFor(
     profile.turnAnalysisLimitFor(
         purpose = TurnAnalysisPurpose.TopMovesDisplay,
         candidateCount = candidateCount,
+    ).forUncappedTopMovesSearch()
+
+private fun AnalysisLimit.forUncappedTopMovesSearch(): AnalysisLimit =
+    copy(
+        visits = visits.coerceAtLeast(SearchTimeProfile.B32.visits),
+        timeMillis = null,
     )
 
 internal fun deepTopMovesAnalysisLimitFor(
