@@ -2,8 +2,6 @@ package com.worksoc.goaicoach.presentation
 
 import com.worksoc.goaicoach.application.analysis.translateScoreText
 import com.worksoc.goaicoach.application.score.FinalScoreJudgement
-import com.worksoc.goaicoach.application.session.*
-
 import com.worksoc.goaicoach.application.movereview.MoveReviewMarker
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationPrompt
 import com.worksoc.goaicoach.application.prompt.decidePromptVisibility

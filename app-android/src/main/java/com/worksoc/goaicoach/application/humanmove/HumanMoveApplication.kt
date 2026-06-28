@@ -1,9 +1,5 @@
 package com.worksoc.goaicoach.application.humanmove
 
-import com.worksoc.goaicoach.application.session.*
-
-import com.worksoc.goaicoach.application.score.*
-
 import com.worksoc.goaicoach.shared.engine.EngineFallbackPolicy
 import com.worksoc.goaicoach.application.engine.operation.EngineOperationApplyPlan
 import com.worksoc.goaicoach.shared.engine.EngineOperationKind
@@ -23,6 +19,11 @@ import com.worksoc.goaicoach.application.movereview.withReviewMarker
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.diagnostic.NoopDiagnosticEventLog
 import com.worksoc.goaicoach.application.diagnostic.runObservedEngineOperation
+import com.worksoc.goaicoach.application.score.FinalScoreDisplayPlan
+import com.worksoc.goaicoach.application.score.ScoreEstimateDisplayPlan
+import com.worksoc.goaicoach.application.score.buildEngineEstimateDisplayPlan
+import com.worksoc.goaicoach.application.score.buildResolvedEndgameDisplayPlan
+import com.worksoc.goaicoach.application.session.GameSessionEffect
 import com.worksoc.goaicoach.match.MatchReferee
 import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.EngineProfile

@@ -1,11 +1,5 @@
 package com.worksoc.goaicoach.ui
-import com.worksoc.goaicoach.application.session.*
-import com.worksoc.goaicoach.application.autoai.*
-import com.worksoc.goaicoach.application.engine.*
-import com.worksoc.goaicoach.application.runtime.*
-import com.worksoc.goaicoach.application.score.*
-import com.worksoc.goaicoach.application.topmoves.*
-import com.worksoc.goaicoach.application.undo.*
+
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -22,33 +16,61 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import com.worksoc.goaicoach.application.analysis.AnalysisCacheKey
 import com.worksoc.goaicoach.application.analysis.AnalysisResultCache
-import com.worksoc.goaicoach.application.debugreport.DebugReportController
-import com.worksoc.goaicoach.application.preferences.buildInitialUserPreferencesPlan
 import com.worksoc.goaicoach.application.analysis.PositionCacheOptimizationController
+import com.worksoc.goaicoach.application.analysis.UndoAnalysisRestoreCache
+import com.worksoc.goaicoach.application.autoai.AutoAiTurnController
+import com.worksoc.goaicoach.application.autoai.applyAutoAiTurnRequestPlan
+import com.worksoc.goaicoach.application.autoai.applyAutoAiTurnScheduleValidationPlan
+import com.worksoc.goaicoach.application.autoai.buildAutoAiTurnFailureDisplayPlan
+import com.worksoc.goaicoach.application.autoai.completeAutoAiTurnRun
+import com.worksoc.goaicoach.application.debugreport.DebugReportController
+import com.worksoc.goaicoach.application.debugreport.ClipboardPort
+import com.worksoc.goaicoach.application.debugreport.DebugReportMirrorPort
+import com.worksoc.goaicoach.application.debugreport.UserNoticePort
+import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
+import com.worksoc.goaicoach.application.engine.EngineBenchmarkController
+import com.worksoc.goaicoach.application.engine.EngineBenchmarkDefaultSamplesPerVisit
+import com.worksoc.goaicoach.application.engine.EngineBenchmarkDefaultTimeCapMs
+import com.worksoc.goaicoach.application.engine.EngineBenchmarkDefaultVisits
+import com.worksoc.goaicoach.application.engine.EngineBenchmarkMeasurementVersion
+import com.worksoc.goaicoach.application.engine.EngineBenchmarkStorePort
+import com.worksoc.goaicoach.application.engine.EngineSessionClient
+import com.worksoc.goaicoach.application.engine.EngineStartupRunRequest
+import com.worksoc.goaicoach.application.engine.runEngineStartupApplication
+import com.worksoc.goaicoach.application.preferences.buildInitialUserPreferencesPlan
+import com.worksoc.goaicoach.application.preferences.UserPreferencesAutosaveRequest
+import com.worksoc.goaicoach.application.preferences.UserPreferencesStorePort
+import com.worksoc.goaicoach.application.preferences.runUserPreferencesAutosave
+import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
+import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
+import com.worksoc.goaicoach.application.runtime.runtimeAppStartLog
+import com.worksoc.goaicoach.application.runtime.runtimeGameResetLog
+import com.worksoc.goaicoach.application.runtime.toRuntimeLogContext
 import com.worksoc.goaicoach.application.savedgame.SavedSessionController
 import com.worksoc.goaicoach.application.startgame.NewGameController
+import com.worksoc.goaicoach.application.score.ScoreEstimateController
+import com.worksoc.goaicoach.application.score.ScoringRuleController
+import com.worksoc.goaicoach.application.score.FinalScoreDisplayPlan
 import com.worksoc.goaicoach.application.undo.UndoController
-import com.worksoc.goaicoach.application.preferences.UserPreferencesAutosaveRequest
-import com.worksoc.goaicoach.application.preferences.runUserPreferencesAutosave
 import com.worksoc.goaicoach.application.engine.operation.EngineOperationGate
 import com.worksoc.goaicoach.application.engine.operation.EngineOperationLifecycleCallbacks
 import com.worksoc.goaicoach.application.engine.operation.EngineOperationLifecycleController
 import com.worksoc.goaicoach.application.engine.operation.EngineOperationResultGuard
-import com.worksoc.goaicoach.shared.engine.EngineOperationRequest
-import com.worksoc.goaicoach.application.engine.EngineSessionClient
-import com.worksoc.goaicoach.shared.engine.EngineTimeoutPolicy
-import com.worksoc.goaicoach.application.debugreport.DebugReportMirrorPort
-import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.humanmove.HumanMoveController
-import com.worksoc.goaicoach.application.debugreport.ClipboardPort
 import com.worksoc.goaicoach.application.savedgame.SavedGamePersistenceRunRequest
+import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
+import com.worksoc.goaicoach.application.savedgame.SavedGameStorePort
 import com.worksoc.goaicoach.application.savedgame.SavedSessionPromptRunRequest
 import com.worksoc.goaicoach.application.savedgame.runSavedGamePersistenceApplication
 import com.worksoc.goaicoach.application.savedgame.runSavedSessionPromptApplication
-import com.worksoc.goaicoach.application.savedgame.SavedGameStorePort
-import com.worksoc.goaicoach.application.analysis.UndoAnalysisRestoreCache
-import com.worksoc.goaicoach.application.preferences.UserPreferencesStorePort
-import com.worksoc.goaicoach.application.debugreport.UserNoticePort
+import com.worksoc.goaicoach.application.session.GameSessionControllerState
+import com.worksoc.goaicoach.application.session.GameSessionCoreState
+import com.worksoc.goaicoach.application.session.GameSessionDisplayStateApplier
+import com.worksoc.goaicoach.application.session.GameSessionStateHolder
+import com.worksoc.goaicoach.application.session.GameSessionTurnTimeState
+import com.worksoc.goaicoach.application.session.GameSettingsController
+import com.worksoc.goaicoach.application.session.runTurnAutomationTriggerEffect
+import com.worksoc.goaicoach.application.topmoves.TopMovesController
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
@@ -56,12 +78,11 @@ import com.worksoc.goaicoach.persistence.GameSessionStore
 import com.worksoc.goaicoach.persistence.EngineBenchmarkStore
 import com.worksoc.goaicoach.persistence.DebugReportMirrorStore
 import com.worksoc.goaicoach.persistence.RuntimeEventLog
-import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
 import com.worksoc.goaicoach.persistence.UserPreferencesStore
 import com.worksoc.goaicoach.presentation.GameUiEvent
-import com.worksoc.goaicoach.presentation.applyEvalActivation
 import com.worksoc.goaicoach.presentation.GoCoachScreenStateAssembler
 import com.worksoc.goaicoach.presentation.KaTrainUxOptions
+import com.worksoc.goaicoach.presentation.applyEvalActivation
 import com.worksoc.goaicoach.presentation.buildGameUiEventHandlers
 import com.worksoc.goaicoach.presentation.dispatchGameUiEvent
 import com.worksoc.goaicoach.presentation.toKaTrainUxOptions
@@ -71,6 +92,8 @@ import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.SearchTimeSettings
+import com.worksoc.goaicoach.shared.engine.EngineOperationRequest
+import com.worksoc.goaicoach.shared.engine.EngineTimeoutPolicy
 import kotlinx.coroutines.Job
 import java.io.File
 
@@ -126,10 +149,6 @@ private fun GoCoachScreen(
             currentProfile = EngineProfile(),
         )
     }
-    // Session domain state is owned by a platform-independent holder. The
-    // composable keeps a Compose snapshot mirror so reads still drive
-    // recomposition; the delegated vars below read the mirror and write through
-    // the holder, so existing call sites are unchanged.
     val sessionHolder = remember {
         GameSessionStateHolder(
             buildInitialSessionState(
@@ -205,14 +224,11 @@ private fun GoCoachScreen(
         { sessionSnapshot.positionCacheOptimization },
         { value -> mutateSession { it.withPositionCacheOptimization(value) } },
     )
-
     var turnTimeState by HolderBackedState(
         { sessionSnapshot.core.turnTimeState },
         { value -> mutateCore { it.copy(turnTimeState = value) } },
     )
-
     ObserveTimerLifecycle(turnTimeState) { turnTimeState = it }
-
     var isEngineBusy by remember { mutableStateOf(false) }
     var isEngineReady by remember { mutableStateOf(false) }
     val analysisCache = remember { AnalysisResultCache(maxEntries = 96) }
@@ -243,7 +259,6 @@ private fun GoCoachScreen(
     var cancelUndoSync: () -> Unit = {}
     fun clearUndoEngineInterventionQuietWindow() { undoEngineInterventionQuietUntil = 0L; cancelUndoSync() }
     fun activateEndgameJudgementReview() { uxOptions = uxOptions.copy(showOwnershipOverlay = true) }
-
     fun currentRuntimeLogContext(): RuntimeLogContext {
         return sessionSnapshot.toRuntimeLogContext(
             engineName = engineName,
@@ -254,18 +269,12 @@ private fun GoCoachScreen(
             turnTimeText = turnTimeState.runtimeText(),
         )
     }
-
     fun applyCoreSessionState(core: GameSessionCoreState) {
         mutateCore { core }
         if (!core.isGameEnded) {
             positionCacheOptimizationState = positionCacheOptimizationState.clearPrompt()
         }
     }
-
-    // Remembered: the controller owns the single shared engine-operation
-    // lifecycle state, so it must survive recomposition to track concurrent
-    // operations correctly. Its closures read through stable remembered backing
-    // stores, so they observe current values without re-keying.
     val lifecycleController = remember {
         EngineOperationLifecycleController(
             scope = scope,
@@ -276,13 +285,11 @@ private fun GoCoachScreen(
             onBusyChanged = { busy -> isEngineBusy = busy },
         )
     }
-
     fun engineProfileTimeoutPolicy(profile: EngineProfile): EngineTimeoutPolicy =
         EngineTimeoutPolicy(
             timeoutMillis = profile.analysisLimit.timeMillis,
             label = "${profile.difficulty.label}:${profile.analysisLimit.visits}v",
         )
-
     val displayStateApplier = remember {
         GameSessionDisplayStateApplier(
             currentCoreState = { sessionSnapshot.core },
@@ -290,13 +297,10 @@ private fun GoCoachScreen(
             appendEngineOperationDiscardLog = lifecycleController::appendDiscardLog,
         )
     }
-
     fun applyFinalScoreWithJudgement(final: FinalScoreDisplayPlan) { activateEndgameJudgementReview(); displayStateApplier.applyFinalScoreDisplayPlan(final) }
-
     LaunchedEffect(Unit) {
         runtimeEventLog.append(runtimeAppStartLog(currentRuntimeLogContext()))
     }
-
     LaunchedEffect(engineClient) {
         hasCompletedEngineStartup = false
         val startup = engineClient.runEngineStartupApplication(
@@ -313,7 +317,6 @@ private fun GoCoachScreen(
         displayStateApplier.applyEngineStartupDisplayPlan(startup)
         hasCompletedEngineStartup = true
     }
-
     LaunchedEffect(sessionStore) {
         runSavedSessionPromptApplication(
             SavedSessionPromptRunRequest(
@@ -324,7 +327,6 @@ private fun GoCoachScreen(
             ),
         )
     }
-
     val benchmarkController = EngineBenchmarkController(
         scope = scope,
         engineClient = engineClient,
@@ -341,7 +343,6 @@ private fun GoCoachScreen(
         onDisplayPlan = { plan -> displayStateApplier.applyEngineBenchmarkDisplayPlan(plan) },
         onChecked = { hasCheckedEngineBenchmark = true },
     )
-
     LaunchedEffect(
         hasCompletedEngineStartup,
         isEngineReady,
@@ -353,7 +354,6 @@ private fun GoCoachScreen(
             hasCheckedBenchmark = hasCheckedEngineBenchmark,
         )
     }
-
     LaunchedEffect(
         preferencesStore,
         playerSetup,
@@ -376,7 +376,6 @@ private fun GoCoachScreen(
             store = preferencesStore,
         )
     }
-
     LaunchedEffect(
         savedSessionUiState,
         isGameEnded,
@@ -399,7 +398,6 @@ private fun GoCoachScreen(
             ),
         )
     }
-
     val topMovesController = TopMovesController(
         engineClient = engineClient,
         currentControllerState = { sessionSnapshot },
@@ -433,7 +431,6 @@ private fun GoCoachScreen(
             update.engineMessage?.let { message -> engineMessage = message }
         },
     )
-
     val undoController = remember {
         UndoController(
             scope = scope,
@@ -466,9 +463,7 @@ private fun GoCoachScreen(
             appendDiscardLog = lifecycleController::appendDiscardLog,
         )
     }
-
     cancelUndoSync = undoController::cancelPendingSync
-
     val autoAiTurnController = AutoAiTurnController(
         scope = scope,
         engineClient = engineClient,
@@ -500,7 +495,6 @@ private fun GoCoachScreen(
         applyFinalScoreDisplayPlan = ::applyFinalScoreWithJudgement,
         applyEndgameFailureDisplayPlan = displayStateApplier::applyEndgameFailureDisplayPlan,
     )
-
     val humanMoveController = HumanMoveController(
         engineClient = engineClient,
         diagnosticEventLog = diagnosticEventLog,
@@ -532,7 +526,6 @@ private fun GoCoachScreen(
         launchEngineOperation = { operation, block -> lifecycleController.launchTracked(operation) { block() } },
         requestFollowUpAnalysis = { state -> topMovesController.requestAnalysis(state, automatic = true) },
     )
-
     val newGameController = NewGameController(
         engineClient = engineClient,
         diagnosticEventLog = diagnosticEventLog,
@@ -568,7 +561,6 @@ private fun GoCoachScreen(
         requestFollowUpAnalysis = { state -> topMovesController.requestAnalysis(state, automatic = true) },
         onEngineMessage = { message -> engineMessage = message },
     )
-
     val savedSessionController = SavedSessionController(
         engineClient = engineClient,
         diagnosticEventLog = diagnosticEventLog,
@@ -599,7 +591,6 @@ private fun GoCoachScreen(
         applyScoreSyncCompletion = displayStateApplier::applyScoreSyncCompletion,
         requestFollowUpAnalysis = { state -> topMovesController.requestAnalysis(state, automatic = true) },
     )
-
     val cacheOptController = PositionCacheOptimizationController(
         engineClient = engineClient,
         diagnosticEventLog = diagnosticEventLog,

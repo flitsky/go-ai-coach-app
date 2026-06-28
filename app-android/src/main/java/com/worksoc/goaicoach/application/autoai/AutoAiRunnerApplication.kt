@@ -5,7 +5,12 @@ import com.worksoc.goaicoach.application.engine.AutoAiTurnResult
 import com.worksoc.goaicoach.application.engine.EngineSessionClient
 import com.worksoc.goaicoach.application.session.GameSessionEffect
 import com.worksoc.goaicoach.application.engine.localScoreSnapshot
-import com.worksoc.goaicoach.application.score.*
+import com.worksoc.goaicoach.application.score.EndgameFailureDisplayPlan
+import com.worksoc.goaicoach.application.score.FinalScoreDisplayPlan
+import com.worksoc.goaicoach.application.score.ScoreEstimateDisplayPlan
+import com.worksoc.goaicoach.application.score.buildEndgameFailureDisplayPlan
+import com.worksoc.goaicoach.application.score.buildEngineEstimateDisplayPlan
+import com.worksoc.goaicoach.application.score.buildResolvedEndgameDisplayPlan
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.diagnostic.NoopDiagnosticEventLog
 import com.worksoc.goaicoach.application.diagnostic.runObservedEngineOperation
