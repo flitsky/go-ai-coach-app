@@ -24,8 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkProfile
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkProgress
-import com.worksoc.goaicoach.application.engine.fillSummaryText
-import com.worksoc.goaicoach.application.engine.rootSummaryText
+import com.worksoc.goaicoach.application.engine.toResultSummary
 import com.worksoc.goaicoach.application.score.FinalScoreJudgement
 import com.worksoc.goaicoach.application.session.GameSessionTurnTimeState
 import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
@@ -257,11 +256,7 @@ private fun EngineBenchmarkProgressDialog(progress: EngineBenchmarkProgress) {
             Column {
                 Text(strings.benchmarkRunningBody)
                 Spacer(modifier = Modifier.height(12.dp))
-                Text(progress.localizedStageText(strings))
-                Text("${progress.localizedSampleText(strings)} · ${progress.localizedProgressText(strings)}")
-                progress.localizedLastResultText(strings)?.let { text ->
-                    Text(text)
-                }
+                Text("${strings.benchmarkProgress}: ${progress.completedCalls} / ${progress.totalCalls}")
                 Spacer(modifier = Modifier.height(12.dp))
                 LinearProgressIndicator(
                     progress = { progress.fraction },
@@ -274,42 +269,14 @@ private fun EngineBenchmarkProgressDialog(progress: EngineBenchmarkProgress) {
 }
 
 private fun EngineBenchmarkProfile.toResultDialogText(strings: UiStrings): String =
-    buildString {
-        appendLine("${strings.benchmarkSamples}: B16/B32/B64 x $samplesPerVisit")
-        appendLine("${strings.benchmarkTimeCap}: ${timeCapMs}ms")
-        appendLine("${strings.benchmarkPosition}: $benchmarkPositionName")
-        appendLine("${strings.benchmarkPositionMoves}: ${benchmarkPositionMoves.ifEmpty { listOf(strings.none) }.joinToString(", ")}")
-        appendLine()
-        metrics.sortedBy { metric -> metric.visits }.forEach { metric ->
-            appendLine(
-                "B${metric.visits}: min ${metric.minMs}ms / max ${metric.maxMs}ms / avg ${metric.avgMs}ms",
-            )
-            appendLine("  root ${metric.rootSummaryText()} / fill ${metric.fillSummaryText()}")
-        }
-        appendLine()
-        appendLine(strings.benchmarkDetailsIncluded)
-    }.trim()
-
-private fun EngineBenchmarkProgress.localizedStageText(strings: UiStrings): String =
-    if (stageOverride != null) {
-        strings.benchmarkEngineSettling
-    } else {
-        "B$currentVisits ${strings.benchmarkSecuringRuntime}"
-    }
-
-private fun EngineBenchmarkProgress.localizedSampleText(strings: UiStrings): String =
-    if (currentSample <= 0) {
-        strings.benchmarkPreparing
-    } else {
-        "${strings.benchmarkSample} $currentSample / $samplesPerVisit"
-    }
-
-private fun EngineBenchmarkProgress.localizedProgressText(strings: UiStrings): String =
-    "${strings.benchmarkTotalProgress} $completedCalls / $totalCalls"
-
-private fun EngineBenchmarkProgress.localizedLastResultText(strings: UiStrings): String? =
-    lastFillStatus?.let { fill ->
-        "${strings.benchmarkLastResult} root=${lastRootVisits ?: strings.none}, elapsed=${lastElapsedMs ?: strings.none}ms, fill=$fill"
+    toResultSummary().let { summary ->
+        buildList {
+            add(strings.benchmarkReadyMessage)
+            add("${strings.recommendedMaximumSearchTime}: ${strings.searchTimeLimitLabel(summary.recommendedSearchTimeLimit)}")
+            if (summary.isCautious) {
+                add(strings.benchmarkCautiousMessage)
+            }
+        }.joinToString(separator = "\n")
     }
 
 @Composable

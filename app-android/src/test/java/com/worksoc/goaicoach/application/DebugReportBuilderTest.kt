@@ -22,6 +22,7 @@ import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.ScoreSnapshot
 import com.worksoc.goaicoach.shared.ScoreSnapshotSource
 import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.SearchTimeLimit
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -99,7 +100,7 @@ class DebugReportBuilderTest {
     fun controllerStateBuildsDebugReportSnapshot() {
         val state = GameState.empty()
             .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
-        val searchTimeSettings = SearchTimeSettings(b16Millis = 1_500L)
+        val searchTimeSettings = SearchTimeSettings(SearchTimeLimit.WithinThreeSeconds)
         val controller = GameSessionControllerState(
             core = GameSessionCoreState(
                 gameState = state,
@@ -128,10 +129,7 @@ class DebugReportBuilderTest {
                 topMovesEnabled = true,
                 boardSize = BoardSize.Nine,
             ),
-            benchmark = EngineBenchmarkUiState(
-                benchmarkText = "benchmark text",
-                searchTimeBenchmarkAverages = mapOf(16 to 1_250.0),
-            ),
+            benchmark = EngineBenchmarkUiState(benchmarkText = "benchmark text"),
             savedSession = SavedSessionUiState(),
             autoAiTurn = AutoAiTurnUiState(),
             positionCacheOptimization = PositionAnalysisCacheOptimizationUiState(),

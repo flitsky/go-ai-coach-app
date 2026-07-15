@@ -89,7 +89,10 @@ class GameSessionCoreStateTest {
         val afterMove = GameState.empty()
             .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
         val playLevel = PlayLevelSetting(group = PlayLevelGroup.Beginner, level = 7)
-        val profile = playLevel.toEngineProfile(EngineProfile(), SearchTimeSettings(b32Millis = 2_000L))
+        val profile = playLevel.toEngineProfile(
+            EngineProfile(),
+            SearchTimeSettings(com.worksoc.goaicoach.shared.SearchTimeLimit.WithinThreeSeconds),
+        )
         val display = AutoAiTurnDisplayPlan(
             playLevel = playLevel,
             profile = profile,
@@ -310,7 +313,7 @@ class GameSessionCoreStateTest {
     @Test
     fun applyPlayerSetupChangePlanUpdatesRuntimeAndAnalysisTogether() {
         val playLevel = PlayLevelSetting(group = PlayLevelGroup.Intermediate, level = 5)
-        val searchTimeSettings = SearchTimeSettings(b64Millis = 3_000L)
+        val searchTimeSettings = SearchTimeSettings(com.worksoc.goaicoach.shared.SearchTimeLimit.WithinThreeSeconds)
         val profile = playLevel.toEngineProfile(EngineProfile(), searchTimeSettings)
         val runtime = RuntimePlayLevelSelection(
             playLevel = playLevel,

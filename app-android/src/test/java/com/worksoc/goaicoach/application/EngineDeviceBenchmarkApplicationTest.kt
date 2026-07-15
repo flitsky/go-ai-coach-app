@@ -19,6 +19,7 @@ import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.MoveResult
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.ScoreEstimate
+import com.worksoc.goaicoach.shared.SearchTimeLimit
 import com.worksoc.goaicoach.shared.StoneColor
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -60,6 +61,133 @@ class EngineDeviceBenchmarkApplicationTest {
             """.trimIndent(),
             profile.toSummaryText(),
         )
+    }
+
+    @Test
+    fun resultSummaryUsesB32AverageAndRoundsUpToSupportedTimeLimit() {
+        val profile = benchmarkProfile(
+            EngineBenchmarkMetric(visits = 16, samples = 5, minMs = 100.0, avgMs = 900.0, maxMs = 1_000.0),
+            EngineBenchmarkMetric(visits = 32, samples = 5, minMs = 2_900.0, avgMs = 3_000.1, maxMs = 3_100.0),
+            EngineBenchmarkMetric(visits = 64, samples = 5, minMs = 6_000.0, avgMs = 7_000.0, maxMs = 8_000.0),
+        )
+
+        val summary = profile.toResultSummary()
+
+        assertEquals(32, summary.representativeVisits)
+        assertEquals(3_000.1, summary.representativeAverageMs!!, 0.000001)
+        assertEquals(SearchTimeLimit.WithinFiveSeconds, summary.recommendedSearchTimeLimit)
+        assertEquals(EngineBenchmarkResultConfidence.Confirmed, summary.confidence)
+        assertEquals(false, summary.isCautious)
+    }
+
+    @Test
+    fun resultSummaryRoundsMeasuredAverageUpToEachSupportedLimit() {
+        val expectedLimits = listOf(
+            1_000.0 to SearchTimeLimit.WithinOneSecond,
+            1_000.1 to SearchTimeLimit.WithinThreeSeconds,
+            3_000.1 to SearchTimeLimit.WithinFiveSeconds,
+            5_000.1 to SearchTimeLimit.WithinTenSeconds,
+            20_000.0 to SearchTimeLimit.WithinTenSeconds,
+        )
+
+        expectedLimits.forEach { (averageMs, expectedLimit) ->
+            val summary = benchmarkProfile(
+                EngineBenchmarkMetric(
+                    visits = 32,
+                    samples = 1,
+                    minMs = averageMs,
+                    avgMs = averageMs,
+                    maxMs = averageMs,
+                ),
+            ).toResultSummary()
+
+            assertEquals(expectedLimit, summary.recommendedSearchTimeLimit)
+        }
+    }
+
+    @Test
+    fun resultSummaryUsesUpperMiddleMetricAsConservativeFallbackWhenB32IsMissing() {
+        val summary = benchmarkProfile(
+            EngineBenchmarkMetric(visits = 16, samples = 5, minMs = 900.0, avgMs = 1_000.0, maxMs = 1_100.0),
+            EngineBenchmarkMetric(visits = 64, samples = 5, minMs = 3_000.0, avgMs = 3_001.0, maxMs = 3_100.0),
+        ).toResultSummary()
+
+        assertEquals(64, summary.representativeVisits)
+        assertEquals(3_001.0, summary.representativeAverageMs!!, 0.000001)
+        assertEquals(SearchTimeLimit.WithinFiveSeconds, summary.recommendedSearchTimeLimit)
+        assertEquals(EngineBenchmarkResultConfidence.Cautious, summary.confidence)
+    }
+
+    @Test
+    fun resultSummaryUsesCautiousDefaultWhenNoUsableMetricExists() {
+        val summary = benchmarkProfile(
+            EngineBenchmarkMetric(
+                visits = 32,
+                samples = 0,
+                minMs = 0.0,
+                avgMs = Double.NaN,
+                maxMs = 0.0,
+            ),
+        ).toResultSummary()
+
+        assertEquals(null, summary.representativeVisits)
+        assertEquals(null, summary.representativeAverageMs)
+        assertEquals(SearchTimeLimit.WithinThreeSeconds, summary.recommendedSearchTimeLimit)
+        assertEquals(EngineBenchmarkResultConfidence.Cautious, summary.confidence)
+        assertEquals(true, summary.isCautious)
+    }
+
+    @Test
+    fun resultSummaryTreatsShortAndUnknownFillsAsCautiousAndRecommendsOneLongerLimit() {
+        listOf(
+            EngineBenchmarkMetric(
+                visits = 32,
+                samples = 5,
+                minMs = 900.0,
+                avgMs = 1_000.0,
+                maxMs = 1_100.0,
+                fillShort = 1,
+            ),
+            EngineBenchmarkMetric(
+                visits = 32,
+                samples = 5,
+                minMs = 900.0,
+                avgMs = 1_000.0,
+                maxMs = 1_100.0,
+                fillUnknown = 1,
+            ),
+        ).forEach { incompleteMetric ->
+            val summary = benchmarkProfile(incompleteMetric).toResultSummary()
+
+            assertEquals(SearchTimeLimit.WithinThreeSeconds, summary.recommendedSearchTimeLimit)
+            assertEquals(EngineBenchmarkResultConfidence.Cautious, summary.confidence)
+            assertEquals(true, summary.isCautious)
+        }
+    }
+
+    @Test
+    fun resultSummaryConsidersIncompleteSamplesOutsideTheRepresentativeBudget() {
+        val summary = benchmarkProfile(
+            EngineBenchmarkMetric(
+                visits = 16,
+                samples = 5,
+                minMs = 900.0,
+                avgMs = 1_000.0,
+                maxMs = 1_100.0,
+                fillUnknown = 1,
+            ),
+            EngineBenchmarkMetric(
+                visits = 32,
+                samples = 5,
+                minMs = 900.0,
+                avgMs = 1_000.0,
+                maxMs = 1_100.0,
+            ),
+        ).toResultSummary()
+
+        assertEquals(32, summary.representativeVisits)
+        assertEquals(SearchTimeLimit.WithinThreeSeconds, summary.recommendedSearchTimeLimit)
+        assertEquals(EngineBenchmarkResultConfidence.Cautious, summary.confidence)
     }
 
     @Test
@@ -145,7 +273,6 @@ class EngineDeviceBenchmarkApplicationTest {
         assertEquals("엔진 안정화 대기 중...", waiting.progress?.stageText)
         assertEquals(false, completed.isRunning)
         assertEquals("stored benchmark", completed.benchmarkText)
-        assertEquals(mapOf(16 to 2.0), completed.searchTimeBenchmarkAverages)
         assertEquals(profile, completed.resultToConfirm)
         assertEquals(null, confirmed.resultToConfirm)
     }
@@ -356,6 +483,14 @@ class EngineDeviceBenchmarkApplicationTest {
         )
     }
 }
+
+private fun benchmarkProfile(vararg metrics: EngineBenchmarkMetric): EngineBenchmarkProfile =
+    EngineBenchmarkProfile(
+        createdAtMillis = 123L,
+        samplesPerVisit = 5,
+        timeCapMs = 5_000L,
+        metrics = metrics.toList(),
+    )
 
 private class RecordingEngineBenchmarkStore : EngineBenchmarkStorePort {
     var savedProfile: EngineBenchmarkProfile? = null

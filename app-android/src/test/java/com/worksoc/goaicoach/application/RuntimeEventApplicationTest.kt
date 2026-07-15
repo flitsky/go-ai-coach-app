@@ -31,6 +31,7 @@ import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
 import com.worksoc.goaicoach.shared.PlayLevelGroup
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.SearchTimeLimit
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.StoneColor
 import com.worksoc.goaicoach.shared.diagnostic.DiagnosticEvent
@@ -69,7 +70,7 @@ class RuntimeEventApplicationTest {
         )
 
         val log = runtimeGameResetLog(
-            context = runtimeContext(searchTimeSettings = SearchTimeSettings(b16Millis = 2_000L)),
+            context = runtimeContext(searchTimeSettings = SearchTimeSettings(SearchTimeLimit.WithinThreeSeconds)),
             reset = reset,
         )
 
@@ -77,7 +78,7 @@ class RuntimeEventApplicationTest {
         assertTrue(log.contains("board=\"size=9 ruleset=Japanese moves=0 next=Black"))
         assertTrue(log.contains("setup=\"Black: Player 일반 / White: KataGo 빠른 초급 1단계\""))
         assertTrue(log.contains("autoDelay=1초/1000ms"))
-        assertTrue(log.contains("search=B16 2000ms / B32 2000ms / B64 3000ms"))
+        assertTrue(log.contains("search=Time limit 3000ms"))
         assertTrue(log.contains("detail=\"New local board prepared. message=new game started\""))
         assertTrue(log.contains("fp="))
     }
@@ -272,7 +273,7 @@ class RuntimeEventApplicationTest {
             settings = GameSessionSettingsState(
                 playerSetup = playerSetup,
                 autoPlayDelaySetting = AutoPlayDelaySetting.Slow,
-                searchTimeSettings = SearchTimeSettings(b16Millis = 1_500L),
+                searchTimeSettings = SearchTimeSettings(SearchTimeLimit.WithinThreeSeconds),
                 topMovesEnabled = true,
                 boardSize = BoardSize.Nine,
             ),

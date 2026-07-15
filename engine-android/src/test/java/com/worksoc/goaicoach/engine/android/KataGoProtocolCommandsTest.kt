@@ -50,6 +50,25 @@ class KataGoProtocolCommandsTest {
         )
         assertEquals("kata-set-param maxVisits 32", KataGoProtocolCommands.setMaxVisits(32))
         assertEquals("kata-set-param maxTime 0.5", KataGoProtocolCommands.setMaxTime(500))
+        assertEquals("kata-set-param maxTime", KataGoProtocolCommands.clearMaxTime())
+    }
+
+    @Test
+    fun clearsPreviousProcessGlobalTimeCapWhenLimitTurnsOff() {
+        assertEquals(
+            listOf(
+                "kata-set-param maxVisits 32",
+                "kata-set-param maxTime 3.0",
+            ),
+            KataGoProtocolCommands.searchLimitCommands(AnalysisLimit(visits = 32, timeMillis = 3_000L)),
+        )
+        assertEquals(
+            listOf(
+                "kata-set-param maxVisits 32",
+                "kata-set-param maxTime",
+            ),
+            KataGoProtocolCommands.searchLimitCommands(AnalysisLimit(visits = 32, timeMillis = null)),
+        )
     }
 
     @Test

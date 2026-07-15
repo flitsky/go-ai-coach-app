@@ -52,10 +52,7 @@ class GameSessionControllerTest {
             lastMoveText = "White pass",
         )
         val settings = settingsState().showTopMoves()
-        val benchmark = EngineBenchmarkUiState(
-            benchmarkText = "benchmark",
-            searchTimeBenchmarkAverages = mapOf(16 to 1_000.0),
-        )
+        val benchmark = EngineBenchmarkUiState(benchmarkText = "benchmark")
         val saved = SavedSessionUiState(hasCheckedSavedSession = true)
         val autoAiTurn = AutoAiTurnUiState().markScheduled()
         val cacheOptimization = PositionAnalysisCacheOptimizationUiState().startRunning()

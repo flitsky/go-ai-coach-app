@@ -46,12 +46,21 @@ internal object KataGoProtocolCommands {
         return "kata-set-param maxTime $seconds"
     }
 
+    /** KataGo clears a dynamic config override when kata-set-param has no value. */
+    fun clearMaxTime(): String = "kata-set-param maxTime"
+
     fun finalScore(): String = "final_score"
 
     fun finalStatusList(status: String): String = "final_status_list $status"
 
     fun quit(): String = "quit"
 }
+
+internal fun KataGoProtocolCommands.searchLimitCommands(limit: AnalysisLimit): List<String> =
+    listOf(
+        setMaxVisits(limit.visits),
+        limit.timeMillis?.let(::setMaxTime) ?: clearMaxTime(),
+    )
 
 internal fun StoneColor.toGtpColor(): String =
     when (this) {

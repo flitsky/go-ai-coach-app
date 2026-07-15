@@ -36,6 +36,7 @@ import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.PlayLevelGroup
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.SearchTimeLimit
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.ScoreSnapshotSource
@@ -302,7 +303,7 @@ class GameAutomationApplicationTest {
         val controller = automationControllerState(
             gameState = state,
             playerSetup = setup,
-            searchTimeSettings = SearchTimeSettings(b32Millis = 4_000L),
+            searchTimeSettings = SearchTimeSettings(SearchTimeLimit.WithinFiveSeconds),
             reviewCandidateMoves = listOf(reviewCandidate),
         )
 
@@ -312,7 +313,7 @@ class GameAutomationApplicationTest {
         assertEquals(StoneColor.White, context.aiPlayer)
         assertEquals(whiteLevel, context.playLevel)
         assertEquals(32, context.analysisLimit.visits)
-        assertEquals(4_000L, context.analysisLimit.timeMillis)
+        assertEquals(5_000L, context.analysisLimit.timeMillis)
         assertEquals(EngineSearchMode.JsonPositionAnalysis, context.searchMode)
         assertEquals(listOf(reviewCandidate), context.previousReviewCandidates)
     }
@@ -503,7 +504,7 @@ class GameAutomationApplicationTest {
         val controller = automationControllerState(
             gameState = state,
             playerSetup = setup,
-            searchTimeSettings = SearchTimeSettings(b32Millis = 4_000L),
+            searchTimeSettings = SearchTimeSettings(SearchTimeLimit.WithinFiveSeconds),
             reviewCandidateMoves = listOf(reviewCandidate),
         )
 
@@ -521,7 +522,7 @@ class GameAutomationApplicationTest {
         assertEquals(StoneColor.White, context.aiPlayer)
         assertEquals(whiteLevel, context.playLevel)
         assertEquals(32, context.analysisLimit.visits)
-        assertEquals(4_000L, context.analysisLimit.timeMillis)
+        assertEquals(5_000L, context.analysisLimit.timeMillis)
         assertEquals(listOf(reviewCandidate), context.previousReviewCandidates)
     }
 
@@ -566,7 +567,7 @@ class GameAutomationApplicationTest {
         val context = buildAutoAiTurnExecutionContext(
             gameState = state,
             playerSetup = setup,
-            searchTimeSettings = SearchTimeSettings(b32Millis = 4_000L),
+            searchTimeSettings = SearchTimeSettings(SearchTimeLimit.WithinFiveSeconds),
             reviewCandidateMoves = listOf(reviewCandidate),
         )
 
@@ -574,7 +575,7 @@ class GameAutomationApplicationTest {
         assertEquals(StoneColor.White, context.aiPlayer)
         assertEquals(whiteLevel, context.playLevel)
         assertEquals(32, context.analysisLimit.visits)
-        assertEquals(4_000L, context.analysisLimit.timeMillis)
+        assertEquals(5_000L, context.analysisLimit.timeMillis)
         assertEquals(true, context.analysisLimit.includePolicy)
         assertEquals(EngineSearchMode.JsonPositionAnalysis, context.searchMode)
         assertFalse(context.isolateSearchCache)
@@ -594,13 +595,13 @@ class GameAutomationApplicationTest {
         val context = buildAutoAiTurnExecutionContext(
             gameState = GameState.empty(),
             playerSetup = setup,
-            searchTimeSettings = SearchTimeSettings(b16Millis = 1_500L),
+            searchTimeSettings = SearchTimeSettings(SearchTimeLimit.WithinThreeSeconds),
             reviewCandidateMoves = emptyList(),
         )
 
         assertEquals(EngineSearchMode.GtpStatefulFast, context.searchMode)
         assertEquals(16, context.analysisLimit.visits)
-        assertEquals(1_500L, context.analysisLimit.timeMillis)
+        assertEquals(3_000L, context.analysisLimit.timeMillis)
         assertEquals(1, context.analysisLimit.candidateCount)
         assertEquals(false, context.analysisLimit.includePolicy)
     }
@@ -809,11 +810,7 @@ class GameAutomationApplicationTest {
             pointLoss = 0.0,
         )
         val playLevel = PlayLevelSetting(group = PlayLevelGroup.Beginner, level = 7)
-        val searchTimeSettings = SearchTimeSettings(
-            b16Millis = 1_000,
-            b32Millis = 2_000,
-            b64Millis = 3_000,
-        )
+        val searchTimeSettings = SearchTimeSettings(SearchTimeLimit.WithinThreeSeconds)
         val profile = EngineProfile(name = "effect-profile")
         val client = FakeAutoAiEngineSessionClient(
             result = autoAiTurnResult(state = nextState, estimate = null),

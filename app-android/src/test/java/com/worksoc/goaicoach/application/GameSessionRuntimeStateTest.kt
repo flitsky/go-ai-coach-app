@@ -12,6 +12,7 @@ import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.PlayLevelGroup
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.SearchTimeSettings
+import com.worksoc.goaicoach.shared.SearchTimeLimit
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -24,12 +25,12 @@ class GameSessionRuntimeStateTest {
             analysisPreset = AnalysisPreset.Lite,
         )
         val nextLevel = PlayLevelSetting(group = PlayLevelGroup.Beginner, level = 7)
-        val nextProfile = nextLevel.toEngineProfile(EngineProfile(), SearchTimeSettings(b32Millis = 2_000L))
+        val nextProfile = nextLevel.toEngineProfile(EngineProfile(), SearchTimeSettings(SearchTimeLimit.WithinThreeSeconds))
         val selection = RuntimePlayLevelSelection(
             playLevel = nextLevel,
             engineProfile = nextProfile,
             analysisPreset = nextLevel.analysisPreset,
-            searchTimeSettings = SearchTimeSettings(b32Millis = 2_000L),
+            searchTimeSettings = SearchTimeSettings(SearchTimeLimit.WithinThreeSeconds),
         )
 
         val next = original.applySelection(selection)
@@ -48,7 +49,7 @@ class GameSessionRuntimeStateTest {
             analysisPreset = AnalysisPreset.Lite,
         )
         val turnLevel = PlayLevelSetting(group = PlayLevelGroup.Intermediate, level = 3)
-        val turnProfile = turnLevel.toEngineProfile(EngineProfile(), SearchTimeSettings(b64Millis = 3_000L))
+        val turnProfile = turnLevel.toEngineProfile(EngineProfile(), SearchTimeSettings(SearchTimeLimit.WithinThreeSeconds))
         val display = AutoAiTurnDisplayPlan(
             playLevel = turnLevel,
             profile = turnProfile,

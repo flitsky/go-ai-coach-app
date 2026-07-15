@@ -3,6 +3,8 @@ package com.worksoc.goaicoach.application.engine
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.SearchTimeLimit
+import kotlin.math.ceil
 
 internal data class EngineBenchmarkMetric(
     val visits: Int,
@@ -55,6 +57,82 @@ internal data class EngineBenchmarkProfile(
         }.trim()
 }
 
+/**
+ * Small, user-facing interpretation of a technical benchmark profile.
+ *
+ * The profile remains the source of truth for diagnostics and persistence. This
+ * summary deliberately carries only the data a screen needs to explain the
+ * result and suggest one of the supported search-time choices.
+ */
+internal data class EngineBenchmarkResultSummary(
+    val representativeVisits: Int?,
+    val representativeAverageMs: Double?,
+    val recommendedSearchTimeLimit: SearchTimeLimit,
+    val confidence: EngineBenchmarkResultConfidence,
+) {
+    val isCautious: Boolean
+        get() = confidence == EngineBenchmarkResultConfidence.Cautious
+}
+
+/** Whether the benchmark can be presented as a normal recommendation. */
+internal enum class EngineBenchmarkResultConfidence {
+    Confirmed,
+    Cautious,
+}
+
+/**
+ * Produces a stable, conservative recommendation without exposing visit-budget
+ * details to the UI. B32 is the representative normal-search budget. When an
+ * older or partial profile has no usable B32 sample, use the upper middle
+ * available budget so an even-sized set never selects the shorter option.
+ */
+internal fun EngineBenchmarkProfile.toResultSummary(): EngineBenchmarkResultSummary {
+    val representative = metrics.representativeMetricOrNull()
+    val baseRecommendation = representative
+        ?.avgMs
+        ?.toSupportedSearchTimeLimit()
+        ?: SearchTimeLimit.WithinThreeSeconds
+    val hasIncompleteFill = metrics.any { metric ->
+        metric.fillShort > 0 || metric.fillUnknown > 0
+    }
+    val usesFallbackMetric = representative?.visits != EngineBenchmarkRepresentativeVisits
+    val isCautious = representative == null || usesFallbackMetric || hasIncompleteFill
+
+    return EngineBenchmarkResultSummary(
+        representativeVisits = representative?.visits,
+        representativeAverageMs = representative?.avgMs,
+        recommendedSearchTimeLimit = if (hasIncompleteFill) {
+            baseRecommendation.nextLonger()
+        } else {
+            baseRecommendation
+        },
+        confidence = if (isCautious) {
+            EngineBenchmarkResultConfidence.Cautious
+        } else {
+            EngineBenchmarkResultConfidence.Confirmed
+        },
+    )
+}
+
+private fun List<EngineBenchmarkMetric>.representativeMetricOrNull(): EngineBenchmarkMetric? {
+    val usableMetrics = filter(EngineBenchmarkMetric::hasUsableAverage)
+        .sortedBy { metric -> metric.visits }
+    return usableMetrics.firstOrNull { metric ->
+        metric.visits == EngineBenchmarkRepresentativeVisits
+    } ?: usableMetrics.getOrNull(usableMetrics.size / 2)
+}
+
+private fun EngineBenchmarkMetric.hasUsableAverage(): Boolean =
+    samples > 0 && avgMs.isFinite() && avgMs >= 0.0
+
+private fun Double.toSupportedSearchTimeLimit(): SearchTimeLimit =
+    SearchTimeLimit.ceilingFor(
+        ceil(this)
+            .coerceAtMost(Long.MAX_VALUE.toDouble())
+            .toLong()
+            .coerceAtLeast(1L),
+    )
+
 internal data class EngineBenchmarkProgress(
     val currentVisits: Int,
     val currentSample: Int,
@@ -94,7 +172,6 @@ internal data class EngineBenchmarkProgress(
 
 internal data class EngineBenchmarkUiState(
     val benchmarkText: String,
-    val searchTimeBenchmarkAverages: Map<Int, Double>,
     val progress: EngineBenchmarkProgress? = null,
     val resultToConfirm: EngineBenchmarkProfile? = null,
 ) {
@@ -120,22 +197,12 @@ internal data class EngineBenchmarkUiState(
     fun updateProgress(progress: EngineBenchmarkProgress): EngineBenchmarkUiState =
         copy(progress = progress)
 
-    fun applyStoredProfile(
-        benchmarkText: String,
-        profile: EngineBenchmarkProfile?,
-    ): EngineBenchmarkUiState =
-        copy(
-            benchmarkText = benchmarkText,
-            searchTimeBenchmarkAverages = profile?.averageMillisByVisits().orEmpty(),
-        )
-
     fun completeWithProfile(
         benchmarkText: String,
         profile: EngineBenchmarkProfile,
     ): EngineBenchmarkUiState =
         copy(
             benchmarkText = benchmarkText,
-            searchTimeBenchmarkAverages = profile.averageMillisByVisits(),
             progress = null,
             resultToConfirm = profile,
         )
@@ -156,7 +223,6 @@ internal data class EngineBenchmarkUiState(
         ): EngineBenchmarkUiState =
             EngineBenchmarkUiState(
                 benchmarkText = benchmarkText,
-                searchTimeBenchmarkAverages = profile?.averageMillisByVisits().orEmpty(),
             )
     }
 }
@@ -235,9 +301,6 @@ internal fun EngineBenchmarkMetric.rootSummaryText(): String =
 internal fun EngineBenchmarkMetric.fillSummaryText(): String =
     "OK=$fillOk, SHORT=$fillShort, UNKNOWN=$fillUnknown"
 
-internal fun EngineBenchmarkProfile.averageMillisByVisits(): Map<Int, Double> =
-    metrics.associate { metric -> metric.visits to metric.avgMs }
-
 internal fun benchmarkAnalysisLimit(
     visits: Int,
     timeCapMs: Long,
@@ -256,6 +319,7 @@ internal fun Double.roundMillis(): Double =
     kotlin.math.round(this * 1_000.0) / 1_000.0
 
 internal val EngineBenchmarkDefaultVisits = listOf(16, 32, 64)
+internal const val EngineBenchmarkRepresentativeVisits = 32
 internal val EngineBenchmarkRuleset = Ruleset.Japanese
 internal const val EngineBenchmarkDefaultSamplesPerVisit = 5
 internal const val EngineBenchmarkDefaultTimeCapMs = 5_000L

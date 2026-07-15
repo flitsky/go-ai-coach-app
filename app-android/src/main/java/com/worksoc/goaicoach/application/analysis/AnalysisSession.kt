@@ -186,37 +186,29 @@ internal fun topMovesAnalysisLimitFor(
     profile.turnAnalysisLimitFor(
         purpose = TurnAnalysisPurpose.TopMovesDisplay,
         candidateCount = candidateCount,
-    ).forUncappedTopMovesSearch()
-
-private fun AnalysisLimit.forUncappedTopMovesSearch(): AnalysisLimit =
-    copy(
-        visits = visits.coerceAtLeast(SearchTimeProfile.B32.visits),
-        timeMillis = null,
-    )
+    ).let { limit ->
+        limit.copy(visits = limit.visits.coerceAtLeast(SearchTimeProfile.B32.visits))
+    }
 
 internal fun deepTopMovesAnalysisLimitFor(
     profile: EngineProfile,
     candidateCount: Int,
 ): AnalysisLimit {
     val full = DifficultyProfile.FullAnalysis.defaultAnalysisLimit()
-    val fullTimeMillis = full.timeMillis
-        ?: profile.analysisLimit.timeMillis
-        ?: 5_000L
     return profile.analysisLimit.copy(
         visits = maxOf(profile.analysisLimit.visits, full.visits),
-        timeMillis = strongerTopMovesTimeMillis(profile.analysisLimit.timeMillis, fullTimeMillis),
+        // The user-selected limit is a maximum for every Top Moves request,
+        // including the manual deep variant. Never promote it to a longer cap.
+        timeMillis = profile.analysisLimit.timeMillis,
         candidateCount = candidateCount,
         includePolicy = AnalysisPreset.Deep.includePolicy,
         refinePolicyMoves = AnalysisPreset.Deep.refinePolicyMoves,
         minVisitsPerCandidate = AnalysisPreset.Deep.minVisitsPerCandidate,
-        minTimeMillis = AnalysisPreset.Deep.minTimeMillis,
+        minTimeMillis = profile.analysisLimit.timeMillis?.let { selectedMaximum ->
+            AnalysisPreset.Deep.minTimeMillis?.coerceAtMost(selectedMaximum)
+        },
     )
 }
-
-private fun strongerTopMovesTimeMillis(
-    current: Long?,
-    promoted: Long,
-): Long = current?.coerceAtLeast(promoted) ?: promoted
 
 internal fun String.withTopMovesStrengthHeader(
     profile: EngineProfile,

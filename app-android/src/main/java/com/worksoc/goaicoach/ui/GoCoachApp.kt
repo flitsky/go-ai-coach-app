@@ -29,10 +29,6 @@ import com.worksoc.goaicoach.application.debugreport.DebugReportMirrorPort
 import com.worksoc.goaicoach.application.debugreport.UserNoticePort
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkController
-import com.worksoc.goaicoach.application.engine.EngineBenchmarkDefaultSamplesPerVisit
-import com.worksoc.goaicoach.application.engine.EngineBenchmarkDefaultTimeCapMs
-import com.worksoc.goaicoach.application.engine.EngineBenchmarkDefaultVisits
-import com.worksoc.goaicoach.application.engine.EngineBenchmarkMeasurementVersion
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkStorePort
 import com.worksoc.goaicoach.application.engine.EngineSessionClient
 import com.worksoc.goaicoach.application.engine.EngineStartupRunRequest
@@ -237,16 +233,6 @@ private fun GoCoachScreen(
     var isDisplayMenuExpanded by remember { mutableStateOf(false) }
     var isScoreGraphExpanded by remember { mutableStateOf(false) }
     var hasCompletedEngineStartup by remember { mutableStateOf(false) }
-    var hasCheckedEngineBenchmark by remember {
-        mutableStateOf(
-            benchmarkStore.hasUsableProfile(
-                samplesPerVisit = EngineBenchmarkDefaultSamplesPerVisit,
-                timeCapMs = EngineBenchmarkDefaultTimeCapMs,
-                measurementVersion = EngineBenchmarkMeasurementVersion,
-                visitsTargets = EngineBenchmarkDefaultVisits,
-            ),
-        )
-    }
 
     val playerSetup = settingsState.playerSetup
     val matchMode = settingsState.matchMode
@@ -351,19 +337,7 @@ private fun GoCoachScreen(
         onBenchmarkUiState = { state -> benchmarkUiState = state },
         onEngineMessage = { message -> engineMessage = message },
         onDisplayPlan = { plan -> displayStateApplier.applyEngineBenchmarkDisplayPlan(plan) },
-        onChecked = { hasCheckedEngineBenchmark = true },
     )
-    LaunchedEffect(
-        hasCompletedEngineStartup,
-        isEngineReady,
-    ) {
-        benchmarkController.runStartupCheckIfNeeded(
-            hasCompletedStartup = hasCompletedEngineStartup,
-            engineReady = isEngineReady,
-            supportsDeviceBenchmark = engineClient.capabilities.supportsDeviceBenchmark,
-            hasCheckedBenchmark = hasCheckedEngineBenchmark,
-        )
-    }
     LaunchedEffect(
         preferencesStore,
         settingsState,

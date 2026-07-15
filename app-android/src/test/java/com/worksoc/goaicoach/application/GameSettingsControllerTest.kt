@@ -8,6 +8,7 @@ import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.SearchTimeSettings
+import com.worksoc.goaicoach.shared.SearchTimeLimit
 import com.worksoc.goaicoach.shared.EngineProfile
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -75,12 +76,12 @@ class GameSettingsControllerTest {
             clearUndoEngineInterventionQuietWindow = { clearedQuietWindow = true }
         )
 
-        val nextSettings = SearchTimeSettings(b16Millis = 2000L)
+        val nextSettings = SearchTimeSettings(SearchTimeLimit.WithinThreeSeconds)
         controller.changeSearchTimeSettings(nextSettings)
 
         // Verify applied search time settings
         assertNotNull(appliedSettings)
-        assertEquals(2000L, appliedSettings?.b16Millis)
+        assertEquals(SearchTimeLimit.WithinThreeSeconds, appliedSettings?.limit)
         assertTrue(clearedQuietWindow)
         assertNotNull(playLevelSelection)
         assertTrue(analysisStateUpdated)
@@ -146,7 +147,7 @@ class GameSettingsControllerTest {
             clearUndoEngineInterventionQuietWindow = {}
         )
 
-        val nextSettings = SearchTimeSettings(b16Millis = 2000L)
+        val nextSettings = SearchTimeSettings(SearchTimeLimit.WithinThreeSeconds)
         controller.changeSearchTimeSettings(nextSettings)
 
         assertNotNull(appliedSettings)

@@ -31,7 +31,7 @@ import com.worksoc.goaicoach.match.SidePlayerSetup
 import com.worksoc.goaicoach.presentation.PlayerSetupSideUiState
 import com.worksoc.goaicoach.presentation.PlayerSetupUiState
 import com.worksoc.goaicoach.shared.PlayLevelGroup
-import com.worksoc.goaicoach.shared.SearchTimeProfile
+import com.worksoc.goaicoach.shared.SearchTimeLimit
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.StoneColor
 
@@ -77,7 +77,6 @@ internal fun PlayerSetupPanel(
 @Composable
 internal fun SearchTimeSettingsPanel(
     settings: SearchTimeSettings,
-    benchmarkAverages: Map<Int, Double>,
     enabled: Boolean,
     onSettingsChange: (SearchTimeSettings) -> Unit,
 ) {
@@ -93,33 +92,20 @@ internal fun SearchTimeSettingsPanel(
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Text(strings.searchTime, fontWeight = FontWeight.SemiBold)
-            SearchTimeCapRow(
-                timeCapEnabled = settings.timeCapEnabled,
+            MaximumSearchTimeLimitRow(
+                selected = settings.limit,
                 enabled = enabled,
-                onSelected = { timeCapEnabled ->
-                    onSettingsChange(settings.withTimeCapEnabled(timeCapEnabled))
-                },
+                onSelected = { limit -> onSettingsChange(settings.withLimit(limit)) },
             )
-            SearchTimeProfile.entries.forEach { profile ->
-                SearchTimeRow(
-                    profile = profile,
-                    selectedMillis = settings.millisFor(profile),
-                    recommendedAverageMs = benchmarkAverages[profile.visits],
-                    enabled = enabled && settings.timeCapEnabled,
-                    onSelectedMillis = { millis ->
-                        onSettingsChange(settings.withMillis(profile, millis))
-                    },
-                )
-            }
         }
     }
 }
 
 @Composable
-private fun SearchTimeCapRow(
-    timeCapEnabled: Boolean,
+private fun MaximumSearchTimeLimitRow(
+    selected: SearchTimeLimit,
     enabled: Boolean,
-    onSelected: (Boolean) -> Unit,
+    onSelected: (SearchTimeLimit) -> Unit,
 ) {
     val strings = LocalUiStrings.current
     Row(
@@ -128,59 +114,17 @@ private fun SearchTimeCapRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = strings.timeCap,
-            modifier = Modifier.weight(0.52f),
+            text = strings.maximumSearchTimeLimit,
+            modifier = Modifier.weight(1f),
             fontWeight = FontWeight.SemiBold,
         )
-        Text(
-            text = if (timeCapEnabled) strings.timeCapOn else strings.timeCapOff,
-            modifier = Modifier.weight(1.12f),
-            color = MaterialTheme.colorScheme.secondary,
-            style = MaterialTheme.typography.bodySmall,
-        )
         SetupDropdown(
-            selectedText = if (timeCapEnabled) "On" else "Off",
+            selectedText = strings.searchTimeLimitLabel(selected),
             enabled = enabled,
-            modifier = Modifier.weight(0.9f),
-            options = listOf(true, false),
-            optionLabel = { selected -> if (selected) "On" else "Off" },
+            modifier = Modifier.weight(1f),
+            options = SearchTimeLimit.entries,
+            optionLabel = strings::searchTimeLimitLabel,
             onSelected = onSelected,
-        )
-    }
-}
-
-@Composable
-private fun SearchTimeRow(
-    profile: SearchTimeProfile,
-    selectedMillis: Long,
-    recommendedAverageMs: Double?,
-    enabled: Boolean,
-    onSelectedMillis: (Long) -> Unit,
-) {
-    val strings = LocalUiStrings.current
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = strings.searchProfileLabel(profile),
-            modifier = Modifier.weight(0.52f),
-            fontWeight = FontWeight.SemiBold,
-        )
-        Text(
-            text = "${strings.recommendedPrefix}[${strings.timeRecommendationLabel(recommendedAverageMs)}]",
-            modifier = Modifier.weight(1.12f),
-            color = MaterialTheme.colorScheme.secondary,
-            style = MaterialTheme.typography.bodySmall,
-        )
-        SetupDropdown(
-            selectedText = strings.secondsLabel(selectedMillis),
-            enabled = enabled,
-            modifier = Modifier.weight(0.9f),
-            options = profile.optionMillis,
-            optionLabel = { millis -> strings.secondsLabel(millis) },
-            onSelected = onSelectedMillis,
         )
     }
 }

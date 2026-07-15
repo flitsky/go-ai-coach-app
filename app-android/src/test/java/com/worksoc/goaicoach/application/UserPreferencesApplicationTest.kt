@@ -13,6 +13,7 @@ import com.worksoc.goaicoach.shared.PlayLevelGroup
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.SearchTimeSettings
+import com.worksoc.goaicoach.shared.SearchTimeLimit
 import com.worksoc.goaicoach.shared.StoneColor
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -34,7 +35,7 @@ class UserPreferencesApplicationTest {
             ruleset = Ruleset.Chinese,
             topMovesEnabled = false,
             autoPlayDelayMillis = AutoPlayDelaySetting.Study.millis,
-            searchTimeSettings = SearchTimeSettings(b32Millis = 4_000L),
+            searchTimeSettings = SearchTimeSettings(SearchTimeLimit.WithinFiveSeconds),
             boardSize = BoardSize.Nine,
         )
 
@@ -48,7 +49,7 @@ class UserPreferencesApplicationTest {
         assertEquals(StoneColor.Black, plan.gameState.nextPlayer)
         assertEquals(setup, plan.playerSetup)
         assertEquals(PlayLevelSetting(PlayLevelGroup.Beginner, level = 3), plan.runtime.playLevel)
-        assertEquals(4_000L, plan.runtime.engineProfile.analysisLimit.timeMillis)
+        assertEquals(5_000L, plan.runtime.engineProfile.analysisLimit.timeMillis)
         assertEquals(false, plan.topMovesEnabled)
         assertEquals(AutoPlayDelaySetting.Study, plan.autoPlayDelaySetting)
         assertEquals(
@@ -56,7 +57,7 @@ class UserPreferencesApplicationTest {
                 ruleset = Ruleset.Chinese,
                 topMovesEnabled = false,
                 autoPlayDelaySetting = AutoPlayDelaySetting.Study,
-                searchTimeSettings = SearchTimeSettings(b32Millis = 4_000L),
+                searchTimeSettings = SearchTimeSettings(SearchTimeLimit.WithinFiveSeconds),
                 boardSize = BoardSize.Nine,
                 handicapCount = 0,
             ),
@@ -79,7 +80,7 @@ class UserPreferencesApplicationTest {
             showLastMoveRing = false,
             showOwnershipOverlay = false,
             autoPlayDelaySetting = AutoPlayDelaySetting.Short,
-            searchTimeSettings = SearchTimeSettings(b16Millis = 1_500L),
+            searchTimeSettings = SearchTimeSettings(SearchTimeLimit.WithinThreeSeconds),
         )
 
         assertEquals(setup, snapshot.playerSetup)
@@ -91,7 +92,7 @@ class UserPreferencesApplicationTest {
         assertFalse(snapshot.showLastMoveRing)
         assertFalse(snapshot.showOwnershipOverlay)
         assertEquals(AutoPlayDelaySetting.Short.millis, snapshot.autoPlayDelayMillis)
-        assertEquals(SearchTimeSettings(b16Millis = 1_500L), snapshot.searchTimeSettings)
+        assertEquals(SearchTimeSettings(SearchTimeLimit.WithinThreeSeconds), snapshot.searchTimeSettings)
     }
 
     @Test
@@ -105,7 +106,7 @@ class UserPreferencesApplicationTest {
         val settingsState = GameSessionSettingsState(
             playerSetup = setup,
             autoPlayDelaySetting = AutoPlayDelaySetting.Study,
-            searchTimeSettings = SearchTimeSettings(timeCapEnabled = false),
+            searchTimeSettings = SearchTimeSettings(SearchTimeLimit.Off),
             topMovesEnabled = true,
             boardSize = BoardSize.Nine,
             handicapCount = 5,
@@ -125,7 +126,7 @@ class UserPreferencesApplicationTest {
         assertEquals(5, snapshot.handicapCount)
         assertTrue(snapshot.topMovesEnabled)
         assertEquals(AutoPlayDelaySetting.Study.millis, snapshot.autoPlayDelayMillis)
-        assertEquals(SearchTimeSettings(timeCapEnabled = false), snapshot.searchTimeSettings)
+        assertEquals(SearchTimeSettings(SearchTimeLimit.Off), snapshot.searchTimeSettings)
         assertTrue(snapshot.showCoordinates)
         assertFalse(snapshot.showMoveNumbers)
         assertTrue(snapshot.showLastMoveRing)
@@ -144,7 +145,7 @@ class UserPreferencesApplicationTest {
         val settingsState = GameSessionSettingsState(
             playerSetup = setup,
             autoPlayDelaySetting = AutoPlayDelaySetting.Short,
-            searchTimeSettings = SearchTimeSettings(b16Millis = 1_000L),
+            searchTimeSettings = SearchTimeSettings(SearchTimeLimit.WithinOneSecond),
             topMovesEnabled = true,
             boardSize = BoardSize.Nine,
             handicapCount = 3,
@@ -170,7 +171,7 @@ class UserPreferencesApplicationTest {
         assertEquals(3, saved.handicapCount)
         assertTrue(saved.topMovesEnabled)
         assertEquals(AutoPlayDelaySetting.Short.millis, saved.autoPlayDelayMillis)
-        assertEquals(SearchTimeSettings(b16Millis = 1_000L), saved.searchTimeSettings)
+        assertEquals(SearchTimeSettings(SearchTimeLimit.WithinOneSecond), saved.searchTimeSettings)
         assertTrue(saved.showCoordinates)
         assertFalse(saved.showMoveNumbers)
         assertTrue(saved.showLastMoveRing)

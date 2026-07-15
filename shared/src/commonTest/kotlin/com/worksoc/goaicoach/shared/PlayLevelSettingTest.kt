@@ -12,7 +12,7 @@ class PlayLevelSettingTest {
 
         assertEquals(DifficultyProfile.Beginner, profile.difficulty)
         assertEquals(16, profile.analysisLimit.visits)
-        assertEquals(1_000L, profile.analysisLimit.timeMillis)
+        assertEquals(3_000L, profile.analysisLimit.timeMillis)
         assertEquals(8, profile.analysisLimit.candidateCount)
         assertEquals(AnalysisPreset.Lite, setting.analysisPreset)
     }
@@ -24,7 +24,7 @@ class PlayLevelSettingTest {
 
         assertEquals(DifficultyProfile.Beginner, profile.difficulty)
         assertEquals(32, profile.analysisLimit.visits)
-        assertEquals(2_000L, profile.analysisLimit.timeMillis)
+        assertEquals(3_000L, profile.analysisLimit.timeMillis)
         assertEquals(16, profile.analysisLimit.candidateCount)
         assertEquals(AnalysisPreset.Learning, setting.analysisPreset)
     }
@@ -52,7 +52,7 @@ class PlayLevelSettingTest {
         val limit = levelSeven.aiMoveAnalysisLimitWith(SearchTimeSettings())
 
         assertEquals(32, limit.visits)
-        assertEquals(2_000L, limit.timeMillis)
+        assertEquals(3_000L, limit.timeMillis)
         assertEquals(16, limit.candidateCount)
         assertEquals(true, limit.includePolicy)
         assertEquals(0, limit.refinePolicyMoves)
@@ -78,32 +78,23 @@ class PlayLevelSettingTest {
     }
 
     @Test
-    fun searchTimeSettingsOverrideTrackedVisitTypesOnly() {
-        val settings = SearchTimeSettings(
-            b16Millis = 1_500L,
-            b32Millis = 4_000L,
-            b64Millis = 7_500L,
-        )
+    fun searchTimeSettingsApplyOneLimitToEveryAiStrength() {
+        val settings = SearchTimeSettings(SearchTimeLimit.WithinFiveSeconds)
 
         val fast = PlayLevelSetting(PlayLevelGroup.FastBeginner, level = 1)
         val beginner = PlayLevelSetting(PlayLevelGroup.Beginner, level = 1)
         val intermediate = PlayLevelSetting(PlayLevelGroup.Intermediate, level = 1)
         val advanced = PlayLevelSetting(PlayLevelGroup.Advanced, level = 1)
 
-        assertEquals(1_500L, fast.analysisLimitWith(settings).timeMillis)
-        assertEquals(4_000L, beginner.analysisLimitWith(settings).timeMillis)
-        assertEquals(7_500L, intermediate.analysisLimitWith(settings).timeMillis)
-        assertEquals(1_000L, advanced.analysisLimitWith(settings).timeMillis)
+        assertEquals(5_000L, fast.analysisLimitWith(settings).timeMillis)
+        assertEquals(5_000L, beginner.analysisLimitWith(settings).timeMillis)
+        assertEquals(5_000L, intermediate.analysisLimitWith(settings).timeMillis)
+        assertEquals(5_000L, advanced.analysisLimitWith(settings).timeMillis)
     }
 
     @Test
-    fun searchTimeSettingsCanDisableTimeCapsForUncappedVisits() {
-        val settings = SearchTimeSettings(
-            b16Millis = 1_500L,
-            b32Millis = 4_000L,
-            b64Millis = 7_500L,
-            timeCapEnabled = false,
-        )
+    fun searchTimeSettingsOffRemovesTimeCapsForEveryAiStrength() {
+        val settings = SearchTimeSettings(SearchTimeLimit.Off)
         val fast = PlayLevelSetting(PlayLevelGroup.FastBeginner, level = 1)
         val beginner = PlayLevelSetting(PlayLevelGroup.Beginner, level = 1)
         val intermediate = PlayLevelSetting(PlayLevelGroup.Intermediate, level = 1)
@@ -113,7 +104,16 @@ class PlayLevelSettingTest {
         assertNull(beginner.analysisLimitWith(settings).timeMillis)
         assertNull(intermediate.analysisLimitWith(settings).timeMillis)
         assertNull(advanced.analysisLimitWith(settings).timeMillis)
-        assertEquals("Time cap OFF", settings.summaryText())
+        assertEquals("Time limit OFF", settings.summaryText())
+    }
+
+    @Test
+    fun supportedSearchTimeLimitsRoundLegacyAndMeasuredValuesUpSafely() {
+        assertEquals(SearchTimeLimit.WithinOneSecond, SearchTimeLimit.ceilingFor(1_000L))
+        assertEquals(SearchTimeLimit.WithinThreeSeconds, SearchTimeLimit.ceilingFor(1_001L))
+        assertEquals(SearchTimeLimit.WithinFiveSeconds, SearchTimeLimit.ceilingFor(3_001L))
+        assertEquals(SearchTimeLimit.WithinTenSeconds, SearchTimeLimit.ceilingFor(5_001L))
+        assertEquals(SearchTimeLimit.WithinTenSeconds, SearchTimeLimit.ceilingFor(20_000L))
     }
 
     @Test

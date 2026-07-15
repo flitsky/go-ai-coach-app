@@ -42,7 +42,7 @@ class AnalysisSessionTest {
     }
 
     @Test
-    fun topMovesLimitPromotesFastBeginnerB16ToUncappedB32Budget() {
+    fun topMovesLimitPromotesFastBeginnerB16WhileKeepingSelectedTimeLimit() {
         val profile = EngineProfile(
             difficulty = DifficultyProfile.Beginner,
             analysisLimit = AnalysisLimit(visits = 16, timeMillis = 250, candidateCount = 8),
@@ -52,18 +52,18 @@ class AnalysisSessionTest {
         val balanced = topMovesAnalysisLimitFor(profile, AnalysisPreset.Balanced, candidateCount = 1)
 
         assertEquals(32, lite.visits)
-        assertNull(lite.timeMillis)
+        assertEquals(250L, lite.timeMillis)
         assertEquals(1, lite.candidateCount)
         assertEquals(0, lite.refinePolicyMoves)
 
         assertEquals(32, balanced.visits)
-        assertNull(balanced.timeMillis)
+        assertEquals(250L, balanced.timeMillis)
         assertEquals(1, balanced.candidateCount)
         assertEquals(0, balanced.refinePolicyMoves)
     }
 
     @Test
-    fun topMovesLimitKeepsB32AndHigherVisitsWithoutTimeCap() {
+    fun topMovesLimitKeepsProfileTimeLimitForEveryVisitBudget() {
         val beginnerProfile = EngineProfile(
             difficulty = DifficultyProfile.Beginner,
             analysisLimit = AnalysisLimit(visits = 32, timeMillis = 4_000, candidateCount = 16),
@@ -77,16 +77,16 @@ class AnalysisSessionTest {
         val intermediate = topMovesAnalysisLimitFor(intermediateProfile, AnalysisPreset.Balanced, candidateCount = 1)
 
         assertEquals(32, beginner.visits)
-        assertNull(beginner.timeMillis)
+        assertEquals(4_000L, beginner.timeMillis)
         assertEquals(1, beginner.candidateCount)
 
         assertEquals(64, intermediate.visits)
-        assertNull(intermediate.timeMillis)
+        assertEquals(7_500L, intermediate.timeMillis)
         assertEquals(1, intermediate.candidateCount)
     }
 
     @Test
-    fun deepTopMovesLimitUsesFullAnalysisBudget() {
+    fun deepTopMovesLimitUsesFullAnalysisVisitsWithoutExceedingSelectedTimeLimit() {
         val profile = EngineProfile(
             difficulty = DifficultyProfile.Beginner,
             analysisLimit = AnalysisLimit(visits = 16, timeMillis = 250, candidateCount = 8),
@@ -95,9 +95,22 @@ class AnalysisSessionTest {
         val limit = deepTopMovesAnalysisLimitFor(profile, candidateCount = 81)
 
         assertEquals(1_000, limit.visits)
-        assertEquals(5_000L, limit.timeMillis)
+        assertEquals(250L, limit.timeMillis)
         assertEquals(81, limit.candidateCount)
         assertEquals(AnalysisPreset.Deep.refinePolicyMoves, limit.refinePolicyMoves)
+        assertEquals(250L, limit.minTimeMillis)
+    }
+
+    @Test
+    fun deepTopMovesOffKeepsTimeUncapped() {
+        val profile = EngineProfile(
+            analysisLimit = AnalysisLimit(visits = 64, timeMillis = null, candidateCount = 20),
+        )
+
+        val limit = deepTopMovesAnalysisLimitFor(profile, candidateCount = 5)
+
+        assertNull(limit.timeMillis)
+        assertNull(limit.minTimeMillis)
     }
 
     @Test

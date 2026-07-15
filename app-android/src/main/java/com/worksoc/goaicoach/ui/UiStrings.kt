@@ -14,9 +14,8 @@ import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.match.SidePlayerSetup
 import com.worksoc.goaicoach.shared.PlayLevelGroup
 import com.worksoc.goaicoach.shared.Ruleset
-import com.worksoc.goaicoach.shared.SearchTimeProfile
+import com.worksoc.goaicoach.shared.SearchTimeLimit
 import com.worksoc.goaicoach.shared.StoneColor
-import kotlin.math.round
 
 internal enum class UiLanguage(
     val menuLabel: String,
@@ -54,6 +53,7 @@ internal data class UiStrings(
     val boardSize: String,
     val playerSetup: String,
     val searchTime: String,
+    val maximumSearchTimeLimit: String,
     val timeCap: String,
     val timeCapOn: String,
     val timeCapOff: String,
@@ -106,6 +106,10 @@ internal data class UiStrings(
     val benchmarkDoneTitle: String,
     val benchmarkRunningTitle: String,
     val benchmarkRunningBody: String,
+    val benchmarkReadyMessage: String,
+    val recommendedMaximumSearchTime: String,
+    val benchmarkCautiousMessage: String,
+    val benchmarkProgress: String,
     val benchmarkEngineSettling: String,
     val benchmarkSecuringRuntime: String,
     val benchmarkPreparing: String,
@@ -257,13 +261,37 @@ internal data class UiStrings(
         }
     }
 
-    fun timeRecommendationLabel(averageMs: Double?): String =
-        averageMs
-            ?.let { millis -> secondsLabel((round(millis / 100.0) * 100).toLong()) }
-            ?: none
-
-    fun searchProfileLabel(profile: SearchTimeProfile): String =
-        "B${profile.displayLabel}"
+    fun searchTimeLimitLabel(limit: SearchTimeLimit): String =
+        when (language) {
+            UiLanguage.Korean -> when (limit) {
+                SearchTimeLimit.Off -> "사용 안 함"
+                SearchTimeLimit.WithinOneSecond -> "1초 이내"
+                SearchTimeLimit.WithinThreeSeconds -> "3초 이내"
+                SearchTimeLimit.WithinFiveSeconds -> "5초 이내"
+                SearchTimeLimit.WithinTenSeconds -> "10초 이내"
+            }
+            UiLanguage.English -> when (limit) {
+                SearchTimeLimit.Off -> "Off"
+                SearchTimeLimit.WithinOneSecond -> "Within 1 second"
+                SearchTimeLimit.WithinThreeSeconds -> "Within 3 seconds"
+                SearchTimeLimit.WithinFiveSeconds -> "Within 5 seconds"
+                SearchTimeLimit.WithinTenSeconds -> "Within 10 seconds"
+            }
+            UiLanguage.Japanese -> when (limit) {
+                SearchTimeLimit.Off -> "オフ"
+                SearchTimeLimit.WithinOneSecond -> "1秒以内"
+                SearchTimeLimit.WithinThreeSeconds -> "3秒以内"
+                SearchTimeLimit.WithinFiveSeconds -> "5秒以内"
+                SearchTimeLimit.WithinTenSeconds -> "10秒以内"
+            }
+            UiLanguage.ChineseSimplified -> when (limit) {
+                SearchTimeLimit.Off -> "关闭"
+                SearchTimeLimit.WithinOneSecond -> "1 秒以内"
+                SearchTimeLimit.WithinThreeSeconds -> "3 秒以内"
+                SearchTimeLimit.WithinFiveSeconds -> "5 秒以内"
+                SearchTimeLimit.WithinTenSeconds -> "10 秒以内"
+            }
+        }
 
     companion object {
         val Korean = UiStrings(
@@ -280,6 +308,7 @@ internal data class UiStrings(
             boardSize = "바둑판 크기",
             playerSetup = "플레이어 설정",
             searchTime = "탐색 시간",
+            maximumSearchTimeLimit = "최대 탐색 시간 제한",
             timeCap = "시간 제한",
             timeCapOn = "응답시간 제한 적용",
             timeCapOff = "탐색 수 우선",
@@ -305,7 +334,7 @@ internal data class UiStrings(
             topMoves = "추천 수",
             eval = "형세 보기",
             resign = "기권",
-            newGameAction = "새 게임",
+            newGameAction = "대국 시작",
             resignConfirmTitle = "기권 확인",
             resignConfirmMessage = "정말 기권하시겠습니까?",
             cancel = "취소",
@@ -328,10 +357,14 @@ internal data class UiStrings(
             analyze = "분석하기",
             later = "나중에",
             confirm = "확인",
-            rerunBenchmark = "다시 체크해보기",
-            benchmarkDoneTitle = "엔진 벤치마크 완료",
-            benchmarkRunningTitle = "엔진 벤치마크 진행 중",
-            benchmarkRunningBody = "사용자 개입 없이 진행됩니다. 느린 기기에서는 1~3분 정도 소요될 수 있습니다.",
+            rerunBenchmark = "다시 측정",
+            benchmarkDoneTitle = "기기 성능 확인 완료",
+            benchmarkRunningTitle = "기기 성능 확인 중",
+            benchmarkRunningBody = "AI가 생각하는 시간을 확인하고 있습니다. 1~3분 정도 걸릴 수 있습니다.",
+            benchmarkReadyMessage = "AI 분석 준비가 완료되었습니다.",
+            recommendedMaximumSearchTime = "권장 최대 탐색 시간",
+            benchmarkCautiousMessage = "측정값이 충분하지 않아 여유 있게 권장합니다.",
+            benchmarkProgress = "진행",
             benchmarkEngineSettling = "엔진 안정화 대기 중...",
             benchmarkSecuringRuntime = "실행시간 확보 중...",
             benchmarkPreparing = "준비 중",
@@ -367,6 +400,7 @@ internal data class UiStrings(
             boardSize = "Board size",
             playerSetup = "Player Setup",
             searchTime = "Search Time",
+            maximumSearchTimeLimit = "Maximum search time limit",
             timeCap = "Time cap",
             timeCapOn = "Limit response time",
             timeCapOff = "Prefer full visits",
@@ -392,7 +426,7 @@ internal data class UiStrings(
             topMoves = "Top moves",
             eval = "Eval",
             resign = "Resign",
-            newGameAction = "New game",
+            newGameAction = "Start Game",
             resignConfirmTitle = "Confirm resignation",
             resignConfirmMessage = "Are you sure you want to resign?",
             cancel = "Cancel",
@@ -415,10 +449,14 @@ internal data class UiStrings(
             analyze = "Analyze",
             later = "Later",
             confirm = "OK",
-            rerunBenchmark = "Check again",
-            benchmarkDoneTitle = "Engine benchmark complete",
-            benchmarkRunningTitle = "Engine benchmark running",
-            benchmarkRunningBody = "This runs without user input. Slower devices may take 1 to 3 minutes.",
+            rerunBenchmark = "Measure again",
+            benchmarkDoneTitle = "Device check complete",
+            benchmarkRunningTitle = "Checking device performance",
+            benchmarkRunningBody = "Checking how long AI analysis takes. This may take 1 to 3 minutes.",
+            benchmarkReadyMessage = "AI analysis is ready.",
+            recommendedMaximumSearchTime = "Recommended maximum search time",
+            benchmarkCautiousMessage = "The measurement was incomplete, so this is a conservative recommendation.",
+            benchmarkProgress = "Progress",
             benchmarkEngineSettling = "Waiting for engine to settle...",
             benchmarkSecuringRuntime = "securing runtime...",
             benchmarkPreparing = "Preparing",
@@ -454,6 +492,7 @@ internal data class UiStrings(
             boardSize = "盤サイズ",
             playerSetup = "プレイヤー設定",
             searchTime = "探索時間",
+            maximumSearchTimeLimit = "最大探索時間制限",
             timeCap = "時間制限",
             timeCapOn = "応答時間を制限",
             timeCapOff = "visits優先",
@@ -479,7 +518,7 @@ internal data class UiStrings(
             topMoves = "候補手",
             eval = "形勢判断",
             resign = "投了",
-            newGameAction = "新しい対局",
+            newGameAction = "対局開始",
             resignConfirmTitle = "投了の確認",
             resignConfirmMessage = "本当に投了しますか？",
             cancel = "キャンセル",
@@ -500,10 +539,14 @@ internal data class UiStrings(
             analyze = "解析する",
             later = "後で",
             confirm = "確認",
-            rerunBenchmark = "再チェック",
-            benchmarkDoneTitle = "エンジンベンチマーク完了",
-            benchmarkRunningTitle = "エンジンベンチマーク中",
-            benchmarkRunningBody = "ユーザー操作なしで進行します。遅い端末では1〜3分ほどかかる場合があります。",
+            rerunBenchmark = "再測定",
+            benchmarkDoneTitle = "端末性能の確認完了",
+            benchmarkRunningTitle = "端末性能を確認中",
+            benchmarkRunningBody = "AIの考える時間を確認しています。1〜3分ほどかかる場合があります。",
+            benchmarkReadyMessage = "AI解析の準備ができました。",
+            recommendedMaximumSearchTime = "推奨最大探索時間",
+            benchmarkCautiousMessage = "測定値が十分でないため、余裕を持った推奨です。",
+            benchmarkProgress = "進行",
             benchmarkEngineSettling = "エンジンの安定化を待機中...",
             benchmarkSecuringRuntime = "実行時間を確保中...",
             benchmarkPreparing = "準備中",
@@ -539,6 +582,7 @@ internal data class UiStrings(
             boardSize = "棋盘大小",
             playerSetup = "玩家设置",
             searchTime = "搜索时间",
+            maximumSearchTimeLimit = "最大搜索时间限制",
             timeCap = "时间限制",
             timeCapOn = "限制响应时间",
             timeCapOff = "优先满足 visits",
@@ -564,7 +608,7 @@ internal data class UiStrings(
             topMoves = "推荐手",
             eval = "形势判断",
             resign = "认输",
-            newGameAction = "新游戏",
+            newGameAction = "开始对局",
             resignConfirmTitle = "确认认输",
             resignConfirmMessage = "确定要认输吗？",
             cancel = "取消",
@@ -585,10 +629,14 @@ internal data class UiStrings(
             analyze = "分析",
             later = "稍后",
             confirm = "确定",
-            rerunBenchmark = "重新检查",
-            benchmarkDoneTitle = "引擎基准测试完成",
-            benchmarkRunningTitle = "引擎基准测试进行中",
-            benchmarkRunningBody = "无需用户操作。较慢设备可能需要 1 到 3 分钟。",
+            rerunBenchmark = "重新测量",
+            benchmarkDoneTitle = "设备性能检查完成",
+            benchmarkRunningTitle = "正在检查设备性能",
+            benchmarkRunningBody = "正在检查 AI 思考所需的时间，可能需要 1 到 3 分钟。",
+            benchmarkReadyMessage = "AI 分析已准备就绪。",
+            recommendedMaximumSearchTime = "推荐最大搜索时间",
+            benchmarkCautiousMessage = "测量数据不完整，因此给出较保守的建议。",
+            benchmarkProgress = "进度",
             benchmarkEngineSettling = "等待引擎稳定...",
             benchmarkSecuringRuntime = "正在确保运行时间...",
             benchmarkPreparing = "准备中",

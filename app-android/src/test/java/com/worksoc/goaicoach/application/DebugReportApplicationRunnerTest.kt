@@ -135,10 +135,7 @@ class DebugReportApplicationRunnerTest {
                 topMovesEnabled = true,
                 boardSize = BoardSize.Nine,
             ),
-            benchmark = EngineBenchmarkUiState(
-                benchmarkText = "benchmark",
-                searchTimeBenchmarkAverages = emptyMap(),
-            ),
+            benchmark = EngineBenchmarkUiState(benchmarkText = "benchmark"),
             savedSession = SavedSessionUiState(),
             autoAiTurn = AutoAiTurnUiState(),
             positionCacheOptimization = PositionAnalysisCacheOptimizationUiState(),

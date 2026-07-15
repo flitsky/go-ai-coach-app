@@ -6,13 +6,12 @@ import com.worksoc.goaicoach.shared.GameState
 import kotlinx.coroutines.CoroutineScope
 
 /**
- * Owns the device-benchmark UI flow (startup auto-check, manual show, rerun) so
- * the screen entry point does not wire it inline.
+ * Owns the user-initiated device-benchmark UI flow (show, rerun) so the screen
+ * entry point does not wire it inline.
  *
  * State the rest of the screen also reads (the benchmark UI state, engine
  * message) stays in the caller and is reached through the accessors below; only
- * the benchmark-specific orchestration and the "have we auto-checked yet" flag
- * live here.
+ * the benchmark-specific orchestration lives here.
  */
 internal class EngineBenchmarkController(
     private val scope: CoroutineScope,
@@ -28,7 +27,6 @@ internal class EngineBenchmarkController(
     private val onBenchmarkUiState: (EngineBenchmarkUiState) -> Unit,
     private val onEngineMessage: (String) -> Unit,
     private val onDisplayPlan: (EngineBenchmarkDisplayPlan) -> Unit,
-    private val onChecked: () -> Unit,
 ) {
     suspend fun run() {
         runEngineBenchmarkApplication(
@@ -67,44 +65,5 @@ internal class EngineBenchmarkController(
     fun rerun() {
         onBenchmarkUiState(currentBenchmarkUiState().clearResult())
         launchUiEffect(scope) { run() }
-    }
-
-    suspend fun runStartupCheckIfNeeded(
-        hasCompletedStartup: Boolean,
-        engineReady: Boolean,
-        supportsDeviceBenchmark: Boolean,
-        hasCheckedBenchmark: Boolean,
-    ) {
-        when (
-            startupBenchmarkAction(
-                hasCompletedStartup = hasCompletedStartup,
-                isEngineReady = engineReady,
-                supportsDeviceBenchmark = supportsDeviceBenchmark,
-                hasCheckedBenchmark = hasCheckedBenchmark,
-                hasUsableProfile = {
-                    store.hasUsableProfile(
-                        samplesPerVisit = EngineBenchmarkDefaultSamplesPerVisit,
-                        timeCapMs = EngineBenchmarkDefaultTimeCapMs,
-                        measurementVersion = EngineBenchmarkMeasurementVersion,
-                        visitsTargets = EngineBenchmarkDefaultVisits,
-                    )
-                },
-            )
-        ) {
-            StartupBenchmarkAction.Skip -> Unit
-            StartupBenchmarkAction.ApplyStoredProfile -> {
-                onChecked()
-                onBenchmarkUiState(
-                    currentBenchmarkUiState().applyStoredProfile(
-                        benchmarkText = store.loadText(),
-                        profile = store.load(),
-                    ),
-                )
-            }
-            StartupBenchmarkAction.RunBenchmark -> {
-                onChecked()
-                run()
-            }
-        }
     }
 }

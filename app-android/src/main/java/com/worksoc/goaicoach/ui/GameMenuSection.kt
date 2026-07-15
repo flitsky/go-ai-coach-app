@@ -108,7 +108,6 @@ internal fun ExpandedGameMenuSection(
 
         SearchTimeSettingsPanel(
             settings = screenState.searchTimeSettings,
-            benchmarkAverages = screenState.searchTimeBenchmarkAverages,
             enabled = true, // engine-busy gate disabled; restore with !screenState.engine.isBusy
             onSettingsChange = { settings -> onEvent(GameUiEvent.ChangeSearchTimeSettings(settings)) },
         )

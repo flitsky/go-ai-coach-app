@@ -26,6 +26,7 @@ import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.SearchTimeSettings
+import com.worksoc.goaicoach.shared.SearchTimeLimit
 import com.worksoc.goaicoach.shared.StoneColor
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -159,14 +160,11 @@ class GameScreenStateTest {
             settings = GameSessionSettingsState(
                 playerSetup = PlayerSetup(),
                 autoPlayDelaySetting = AutoPlayDelaySetting.Slow,
-                searchTimeSettings = SearchTimeSettings(b16Millis = 1_500L),
+                searchTimeSettings = SearchTimeSettings(SearchTimeLimit.WithinThreeSeconds),
                 topMovesEnabled = true,
                 boardSize = BoardSize.Nine,
             ),
-            benchmark = EngineBenchmarkUiState(
-                benchmarkText = "bench",
-                searchTimeBenchmarkAverages = mapOf(16 to 1_200.0),
-            ),
+            benchmark = EngineBenchmarkUiState(benchmarkText = "bench"),
             savedSession = SavedSessionUiState(),
             autoAiTurn = AutoAiTurnUiState(),
             positionCacheOptimization = PositionAnalysisCacheOptimizationUiState(),
@@ -188,7 +186,6 @@ class GameScreenStateTest {
 
         assertEquals(gameState, input.gameState)
         assertEquals(AutoPlayDelaySetting.Slow, input.autoPlayDelaySetting)
-        assertEquals(mapOf(16 to 1_200.0), input.searchTimeBenchmarkAverages)
         assertEquals(PlayLevelSetting(level = 3), input.playLevel)
         assertEquals(StoneColor.White, input.matchSeats.current.player)
         assertTrue(input.topMovesEnabled)
@@ -225,14 +222,11 @@ class GameScreenStateTest {
             settings = GameSessionSettingsState(
                 playerSetup = PlayerSetup(),
                 autoPlayDelaySetting = AutoPlayDelaySetting.Normal,
-                searchTimeSettings = SearchTimeSettings(b16Millis = 1_000L),
+                searchTimeSettings = SearchTimeSettings(SearchTimeLimit.WithinOneSecond),
                 topMovesEnabled = true,
                 boardSize = BoardSize.Nine,
             ),
-            benchmark = EngineBenchmarkUiState(
-                benchmarkText = "bench",
-                searchTimeBenchmarkAverages = mapOf(16 to 950.0),
-            ),
+            benchmark = EngineBenchmarkUiState(benchmarkText = "bench"),
             savedSession = SavedSessionUiState(),
             autoAiTurn = AutoAiTurnUiState(),
             positionCacheOptimization = PositionAnalysisCacheOptimizationUiState(),
@@ -283,7 +277,6 @@ class GameScreenStateTest {
             playerSetup = PlayerSetup(),
             autoPlayDelaySetting = AutoPlayDelaySetting.Default,
             searchTimeSettings = SearchTimeSettings(),
-            searchTimeBenchmarkAverages = emptyMap(),
             playLevel = PlayLevelSetting(),
             matchSeats = PlayerSetup().seatSnapshot(
                 nextPlayer = gameState.nextPlayer,

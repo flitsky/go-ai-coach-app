@@ -7,6 +7,7 @@ import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.match.SidePlayerSetup
+import com.worksoc.goaicoach.shared.SearchTimeLimit
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.BoardSize
 import org.junit.Assert.assertEquals
@@ -41,17 +42,10 @@ class GameSessionSettingsStateTest {
             boardSize = BoardSize.Nine,
         )
 
-        val updated = state.applySearchTimeSettings(
-            SearchTimeSettings(
-                b16Millis = 123L,
-                b32Millis = 999L,
-                b64Millis = 42L,
-                timeCapEnabled = false,
-            ),
-        )
+        val updated = state.applySearchTimeSettings(SearchTimeSettings(SearchTimeLimit.Off))
 
-        assertEquals(SearchTimeSettings(timeCapEnabled = false), updated.searchTimeSettings)
-        assertFalse(updated.searchTimeSettings.timeCapEnabled)
+        assertEquals(SearchTimeSettings(SearchTimeLimit.Off), updated.searchTimeSettings)
+        assertEquals(SearchTimeLimit.Off, updated.searchTimeSettings.limit)
     }
 
     @Test
@@ -59,7 +53,7 @@ class GameSessionSettingsStateTest {
         val state = GameSessionSettingsState(
             playerSetup = PlayerSetup(),
             autoPlayDelaySetting = AutoPlayDelaySetting.Slow,
-            searchTimeSettings = SearchTimeSettings(timeCapEnabled = false),
+            searchTimeSettings = SearchTimeSettings(SearchTimeLimit.Off),
             topMovesEnabled = false,
             boardSize = BoardSize.Nine,
         )
@@ -70,7 +64,7 @@ class GameSessionSettingsStateTest {
         assertTrue(shown.topMovesEnabled)
         assertFalse(hidden.topMovesEnabled)
         assertEquals(AutoPlayDelaySetting.Slow, hidden.autoPlayDelaySetting)
-        assertEquals(SearchTimeSettings(timeCapEnabled = false), hidden.searchTimeSettings)
+        assertEquals(SearchTimeSettings(SearchTimeLimit.Off), hidden.searchTimeSettings)
     }
 
     @Test
@@ -78,7 +72,7 @@ class GameSessionSettingsStateTest {
         val state = GameSessionSettingsState(
             playerSetup = PlayerSetup(),
             autoPlayDelaySetting = AutoPlayDelaySetting.Default,
-            searchTimeSettings = SearchTimeSettings(timeCapEnabled = false),
+            searchTimeSettings = SearchTimeSettings(SearchTimeLimit.Off),
             topMovesEnabled = false,
             boardSize = BoardSize.Nine,
         )
@@ -94,6 +88,6 @@ class GameSessionSettingsStateTest {
 
         assertEquals(restoredSetup, restored.playerSetup)
         assertTrue(restored.topMovesEnabled)
-        assertEquals(SearchTimeSettings(timeCapEnabled = false), restored.searchTimeSettings)
+        assertEquals(SearchTimeSettings(SearchTimeLimit.Off), restored.searchTimeSettings)
     }
 }

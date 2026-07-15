@@ -9,7 +9,9 @@ import com.worksoc.goaicoach.match.SidePlayerSetup
 import com.worksoc.goaicoach.shared.PlayLevelGroup
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.SearchTimeLimit
 import com.worksoc.goaicoach.shared.SearchTimeSettings
+import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -38,15 +40,12 @@ class UserPreferencesCodecTest {
             showLastMoveRing = false,
             showOwnershipOverlay = false,
             autoPlayDelayMillis = AutoPlayDelaySetting.Slow.millis,
-            searchTimeSettings = SearchTimeSettings(
-                b16Millis = 1_500L,
-                b32Millis = 4_000L,
-                b64Millis = 7_500L,
-                timeCapEnabled = false,
-            ),
+            searchTimeSettings = SearchTimeSettings(SearchTimeLimit.WithinFiveSeconds),
         )
 
-        val restored = UserPreferencesCodec.decode(UserPreferencesCodec.encode(snapshot))
+        val encoded = UserPreferencesCodec.encode(snapshot)
+        val encodedJson = JSONObject(encoded)
+        val restored = UserPreferencesCodec.decode(encoded)
 
         assertEquals(setup, restored?.playerSetup)
         assertEquals(Ruleset.Chinese, restored?.ruleset)
@@ -56,7 +55,14 @@ class UserPreferencesCodecTest {
         assertEquals(false, restored?.showLastMoveRing)
         assertEquals(false, restored?.showOwnershipOverlay)
         assertEquals(AutoPlayDelaySetting.Slow.millis, restored?.autoPlayDelayMillis)
-        assertEquals(SearchTimeSettings(1_500L, 4_000L, 7_500L, timeCapEnabled = false), restored?.searchTimeSettings)
+        assertEquals(SearchTimeSettings(SearchTimeLimit.WithinFiveSeconds), restored?.searchTimeSettings)
+        assertEquals(2, encodedJson.getInt("schema"))
+        val encodedSearchTime = encodedJson.getJSONObject("searchTimeSettings")
+        assertEquals(SearchTimeLimit.WithinFiveSeconds.name, encodedSearchTime.getString("limit"))
+        assertFalse(encodedSearchTime.has("timeCapEnabled"))
+        assertFalse(encodedSearchTime.has("b16Millis"))
+        assertFalse(encodedSearchTime.has("b32Millis"))
+        assertFalse(encodedSearchTime.has("b64Millis"))
     }
 
     @Test
@@ -72,6 +78,74 @@ class UserPreferencesCodecTest {
         assertTrue(restored?.showOwnershipOverlay ?: false)
         assertEquals(AutoPlayDelaySetting.Default.millis, restored?.autoPlayDelayMillis)
         assertEquals(SearchTimeSettings(), restored?.searchTimeSettings)
+    }
+
+    @Test
+    fun schemaOneMigratesLegacyOffToOff() {
+        val restored = UserPreferencesCodec.decode(
+            """
+            {
+              "schema": 1,
+              "searchTimeSettings": {
+                "timeCapEnabled": false,
+                "b16Millis": 1500,
+                "b32Millis": 4000,
+                "b64Millis": 7500
+              }
+            }
+            """.trimIndent(),
+        )
+
+        assertEquals(SearchTimeSettings(SearchTimeLimit.Off), restored?.searchTimeSettings)
+    }
+
+    @Test
+    fun schemaOneMigratesLargestLegacyCapToSupportedCeiling() {
+        val restored = UserPreferencesCodec.decode(
+            """
+            {
+              "schema": 1,
+              "searchTimeSettings": {
+                "timeCapEnabled": true,
+                "b16Millis": 1500,
+                "b32Millis": 4000,
+                "b64Millis": 7500
+              }
+            }
+            """.trimIndent(),
+        )
+
+        assertEquals(SearchTimeSettings(SearchTimeLimit.WithinTenSeconds), restored?.searchTimeSettings)
+    }
+
+    @Test
+    fun malformedLegacyLimitValuesFallBackToSafeDefaults() {
+        val restored = UserPreferencesCodec.decode(
+            """
+            {
+              "schema": 1,
+              "searchTimeSettings": {
+                "timeCapEnabled": true,
+                "b16Millis": -1,
+                "b32Millis": "invalid",
+                "b64Millis": 0
+              }
+            }
+            """.trimIndent(),
+        )
+
+        assertEquals(SearchTimeSettings(SearchTimeLimit.WithinThreeSeconds), restored?.searchTimeSettings)
+    }
+
+    @Test
+    fun malformedOrMissingSchemaTwoLimitUsesSafeDefault() {
+        val malformed = UserPreferencesCodec.decode(
+            """{"schema":2,"searchTimeSettings":{"limit":"invalid"}}""",
+        )
+        val missing = UserPreferencesCodec.decode("""{"schema":2}""")
+
+        assertEquals(SearchTimeSettings(), malformed?.searchTimeSettings)
+        assertEquals(SearchTimeSettings(), missing?.searchTimeSettings)
     }
 
     @Test

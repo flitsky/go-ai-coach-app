@@ -16,6 +16,7 @@ import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.PlayLevelGroup
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.SearchTimeLimit
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.StoneColor
 import org.junit.Assert.assertEquals
@@ -107,11 +108,11 @@ class GameSessionApplicationTest {
             nextPlayer = StoneColor.White,
             currentProfile = EngineProfile(),
             defaultPlayLevel = PlayLevelSetting(),
-            searchTimeSettings = SearchTimeSettings(b32Millis = 4_000L),
+            searchTimeSettings = SearchTimeSettings(SearchTimeLimit.WithinFiveSeconds),
         )
 
         assertEquals(32, runtime.engineProfile.analysisLimit.visits)
-        assertEquals(4_000L, runtime.engineProfile.analysisLimit.timeMillis)
+        assertEquals(5_000L, runtime.engineProfile.analysisLimit.timeMillis)
     }
 
     @Test

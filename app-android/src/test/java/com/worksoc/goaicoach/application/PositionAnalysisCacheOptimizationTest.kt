@@ -25,6 +25,7 @@ import com.worksoc.goaicoach.shared.PlayLevelGroup
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.SearchTimeSettings
+import com.worksoc.goaicoach.shared.SearchTimeLimit
 import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.StoneColor
 import com.worksoc.goaicoach.shared.analysisFingerprint
@@ -58,7 +59,7 @@ class PositionAnalysisCacheOptimizationTest {
 
     @Test
     fun planBuildsJsonTargetsForLearningLevelAndKeepsGameplayCacheLimit() {
-        val settings = SearchTimeSettings(b32Millis = 2_000L)
+        val settings = SearchTimeSettings(SearchTimeLimit.WithinThreeSeconds)
         val plan = buildPositionAnalysisCacheOptimizationPlan(
             finalState = shortFinishedGame(),
             playerSetup = PlayerSetup(
@@ -76,7 +77,7 @@ class PositionAnalysisCacheOptimizationTest {
         assertEquals(3, plan.targets.size)
         plan.targets.forEach { target ->
             assertEquals(32, target.cacheLimit.visits)
-            assertEquals(2_000L, target.cacheLimit.timeMillis)
+            assertEquals(3_000L, target.cacheLimit.timeMillis)
             assertNull(target.executionLimit.timeMillis)
         }
     }

@@ -9,9 +9,11 @@ import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.SearchTimeLimit
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.StoneColor
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class GameUiEventDispatchTest {
@@ -108,7 +110,7 @@ class GameUiEventDispatchTest {
     @Test
     fun dispatchChangeSearchTimeSettingsRoutesToHandler() {
         var selected = SearchTimeSettings()
-        val next = SearchTimeSettings(b16Millis = 1_500L)
+        val next = SearchTimeSettings(SearchTimeLimit.WithinThreeSeconds)
         val handlers = handlers(
             changeSearchTimeSettings = { settings -> selected = settings },
         )
@@ -119,12 +121,13 @@ class GameUiEventDispatchTest {
     }
 
     @Test
-    fun dispatchShowEngineBenchmarkRoutesToHandler() {
+    fun manualBenchmarkMenuEventRoutesToHandler() {
         val calls = mutableListOf<String>()
         val handlers = handlers(
             showEngineBenchmark = { calls += "benchmark" },
         )
 
+        assertTrue(calls.isEmpty())
         dispatchGameUiEvent(GameUiEvent.ShowEngineBenchmark, handlers)
 
         assertEquals(listOf("benchmark"), calls)

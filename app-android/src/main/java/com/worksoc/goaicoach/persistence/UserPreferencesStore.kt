@@ -8,6 +8,7 @@ import com.worksoc.goaicoach.persistence.PlayerSetupJsonCodec.decodePlayerSetup
 import com.worksoc.goaicoach.persistence.PlayerSetupJsonCodec.encodePlayerSetup
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.SearchTimeLimit
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import org.json.JSONObject
 
@@ -32,11 +33,12 @@ internal class UserPreferencesStore(context: Context) : UserPreferencesStorePort
 }
 
 internal object UserPreferencesCodec {
-    private const val SchemaVersion = 1
+    private const val CurrentSchemaVersion = 2
+    private const val LegacySchemaVersion = 1
 
     fun encode(snapshot: UserPreferencesSnapshot): String =
         JSONObject()
-            .put("schema", SchemaVersion)
+            .put("schema", CurrentSchemaVersion)
             .put("boardSize", snapshot.boardSize.value)
             .put("playerSetup", encodePlayerSetup(snapshot.playerSetup))
             .put("ruleset", snapshot.ruleset.name)
@@ -54,8 +56,15 @@ internal object UserPreferencesCodec {
     fun decode(raw: String): UserPreferencesSnapshot? =
         runCatching {
             val json = JSONObject(raw)
-            if (json.optInt("schema", SchemaVersion) != SchemaVersion) {
-                return@runCatching null
+            val schema = if (json.has("schema")) {
+                json.optInt("schema", -1)
+            } else {
+                LegacySchemaVersion
+            }
+            val searchTimeSettings = when (schema) {
+                CurrentSchemaVersion -> decodeSearchTimeSettings(json.optJSONObject("searchTimeSettings"))
+                LegacySchemaVersion -> decodeLegacySearchTimeSettings(json.optJSONObject("searchTimeSettings"))
+                else -> return@runCatching null
             }
             UserPreferencesSnapshot(
                 boardSize = BoardSize(json.optInt("boardSize", BoardSize.Nine.value)),
@@ -70,7 +79,7 @@ internal object UserPreferencesCodec {
                 autoPlayDelayMillis = AutoPlayDelaySetting
                     .fromMillis(json.optLong("autoPlayDelayMillis", AutoPlayDelaySetting.Default.millis))
                     .millis,
-                searchTimeSettings = decodeSearchTimeSettings(json.optJSONObject("searchTimeSettings")),
+                searchTimeSettings = searchTimeSettings,
                 isDirectPlayEnabled = json.optBoolean("isDirectPlayEnabled", true),
             )
         }.getOrNull()
@@ -78,20 +87,39 @@ internal object UserPreferencesCodec {
     private fun encodeSearchTimeSettings(settings: SearchTimeSettings): JSONObject {
         val normalized = settings.normalized()
         return JSONObject()
-            .put("timeCapEnabled", normalized.timeCapEnabled)
-            .put("b16Millis", normalized.b16Millis)
-            .put("b32Millis", normalized.b32Millis)
-            .put("b64Millis", normalized.b64Millis)
+            .put("limit", normalized.limit.name)
     }
 
     private fun decodeSearchTimeSettings(json: JSONObject?): SearchTimeSettings {
-        val defaults = SearchTimeSettings()
-        return SearchTimeSettings(
-            b16Millis = json?.optLong("b16Millis", defaults.b16Millis) ?: defaults.b16Millis,
-            b32Millis = json?.optLong("b32Millis", defaults.b32Millis) ?: defaults.b32Millis,
-            b64Millis = json?.optLong("b64Millis", defaults.b64Millis) ?: defaults.b64Millis,
-            timeCapEnabled = json?.optBoolean("timeCapEnabled", defaults.timeCapEnabled)
-                ?: defaults.timeCapEnabled,
-        ).normalized()
+        val storedLimit = json
+            ?.takeIf { it.has("limit") }
+            ?.optString("limit")
+        val limit = SearchTimeLimit.fromStoredName(storedLimit)
+        return SearchTimeSettings(limit).normalized()
     }
+
+    private fun decodeLegacySearchTimeSettings(json: JSONObject?): SearchTimeSettings {
+        if (json == null) {
+            return SearchTimeSettings()
+        }
+        if (!json.optBoolean("timeCapEnabled", true)) {
+            return SearchTimeSettings(SearchTimeLimit.Off)
+        }
+
+        val maximumLegacyMillis = listOf(
+            legacyMillis(json, "b16Millis", 1_000L),
+            legacyMillis(json, "b32Millis", 2_000L),
+            legacyMillis(json, "b64Millis", 3_000L),
+        ).maxOrNull() ?: 3_000L
+        return SearchTimeSettings(SearchTimeLimit.ceilingFor(maximumLegacyMillis))
+    }
+
+    private fun legacyMillis(
+        json: JSONObject,
+        key: String,
+        default: Long,
+    ): Long =
+        json.optLong(key, default)
+            .takeIf { millis -> millis > 0L }
+            ?: default
 }
