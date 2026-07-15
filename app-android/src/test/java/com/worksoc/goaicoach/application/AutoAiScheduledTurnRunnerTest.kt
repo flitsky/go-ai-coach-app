@@ -385,6 +385,7 @@ private class ScheduledRunnerFakeEngineClient(
         profile: EngineProfile,
         boardSize: BoardSize,
         ruleset: Ruleset,
+        handicapCount: Int,
     ): EngineStartupResult = error("not used")
 
     override suspend fun analyzePosition(

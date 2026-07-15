@@ -34,6 +34,23 @@ import org.junit.Test
 
 class EngineSessionTest {
     @Test
+    fun startSessionInitializesEngineWithoutStartingAGame() = runBlocking {
+        val engine = RecordingEngineAdapter()
+        val session = LocalEngineCoreSessionDelegate(engine)
+        val profile = EngineProfile(
+            analysisLimit = AnalysisLimit(visits = 32, timeMillis = 500, candidateCount = 8),
+        )
+
+        val result = session.startSession(
+            profile = profile,
+            state = GameState.withHandicap(BoardSize.Nine, Ruleset.Japanese, handicapCount = 5),
+        )
+
+        assertEquals(listOf("initialize:32"), engine.calls)
+        assertEquals(null, result.scoreSnapshot)
+    }
+
+    @Test
     fun syncToGameStateStartsNewGameAndReplaysAllMoves() = runBlocking {
         val engine = RecordingEngineAdapter()
         val state = GameState.empty()
@@ -541,6 +558,7 @@ private class RecordingEngineAdapter(
     override suspend fun newGame(
         boardSize: BoardSize,
         ruleset: Ruleset,
+        handicapCount: Int,
     ): EngineStatus {
         calls += "newGame:${boardSize.value}:${ruleset.katagoName}"
         return EngineStatus.ready("new game")

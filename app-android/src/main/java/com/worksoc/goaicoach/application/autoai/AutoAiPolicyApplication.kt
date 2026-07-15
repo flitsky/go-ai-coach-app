@@ -34,12 +34,14 @@ internal fun shouldRequestTopMoveAnalysis(
     shouldShowResumePrompt: Boolean,
     playerSetup: PlayerSetup,
     targetState: GameState,
+    topMovesEnabled: Boolean = true,
 ): Boolean =
     !isGameEnded &&
         isEngineReady &&
         !isEngineBusy &&
         !shouldShowResumePrompt &&
-        playerSetup.seatFor(targetState.nextPlayer).isHuman
+        playerSetup.seatFor(targetState.nextPlayer).isHuman &&
+        topMovesEnabled
 
 internal fun autoAiTurnDelayMillis(
     playerSetup: PlayerSetup,

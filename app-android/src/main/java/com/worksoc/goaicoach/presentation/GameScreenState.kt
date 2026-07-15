@@ -45,6 +45,7 @@ internal data class GameScreenState(
     val isGameEnded: Boolean,
     val endgameLog: String,
     val finalScoreJudgement: FinalScoreJudgement?,
+    val handicapCount: Int = 0,
 ) {
     val nextPlayer: StoneColor
         get() = gameState.nextPlayer
@@ -89,6 +90,8 @@ internal data class GameScreenStateInput(
     val isGameEnded: Boolean,
     val endgameLog: String,
     val finalScoreJudgement: FinalScoreJudgement? = null,
+    val handicapCount: Int = 0,
+    val isEngineBlockingBusy: Boolean = false,
 )
 
 internal fun buildGameScreenStateInput(
@@ -98,6 +101,7 @@ internal fun buildGameScreenStateInput(
     engineDiagnostic: String,
     isEngineReady: Boolean,
     isEngineBusy: Boolean,
+    isEngineBlockingBusy: Boolean,
     analysisCacheStats: String,
     isScoreGraphExpanded: Boolean,
     turnTimeText: String,
@@ -114,7 +118,7 @@ internal fun buildGameScreenStateInput(
         matchSeats = controller.playerSetup.seatSnapshot(
             nextPlayer = controller.gameState.nextPlayer,
             isEngineReady = isEngineReady,
-            isEngineBusy = isEngineBusy,
+            isEngineBlockingBusy = isEngineBlockingBusy,
         ),
         uxOptions = uxOptions,
         engineName = engineName,
@@ -146,6 +150,8 @@ internal fun buildGameScreenStateInput(
         isGameEnded = controller.isGameEnded,
         endgameLog = controller.core.scoreState.endgameLog,
         finalScoreJudgement = controller.core.scoreState.finalScoreJudgement,
+        handicapCount = controller.settings.handicapCount,
+        isEngineBlockingBusy = isEngineBlockingBusy,
     )
 
 internal fun buildGameScreenState(input: GameScreenStateInput): GameScreenState {
@@ -177,6 +183,7 @@ internal fun buildGameScreenState(input: GameScreenStateInput): GameScreenState 
             profile = input.engineProfile,
             isReady = input.isEngineReady,
             isBusy = input.isEngineBusy,
+            isBlockingBusy = input.isEngineBlockingBusy,
             message = input.engineMessage,
         ),
         analysis = AnalysisUiState(
@@ -209,6 +216,7 @@ internal fun buildGameScreenState(input: GameScreenStateInput): GameScreenState 
         isGameEnded = input.isGameEnded,
         endgameLog = input.endgameLog,
         finalScoreJudgement = input.finalScoreJudgement,
+        handicapCount = input.handicapCount,
     )
 }
 
@@ -218,6 +226,7 @@ internal data class EngineUiState(
     val profile: EngineProfile,
     val isReady: Boolean,
     val isBusy: Boolean,
+    val isBlockingBusy: Boolean,
     val message: String,
 )
 

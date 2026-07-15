@@ -52,16 +52,20 @@ class KataGoProcessEngineAdapter(
         return EngineStatus.ready("KataGo process configured: ${this.profile.describe()}")
     }
 
-    override suspend fun newGame(boardSize: BoardSize, ruleset: Ruleset): EngineStatus {
+    override suspend fun newGame(boardSize: BoardSize, ruleset: Ruleset, handicapCount: Int): EngineStatus {
         ensureProcessStarted()
         this.boardSize = boardSize
         this.ruleset = ruleset
-        nextPlayer = StoneColor.Black
+        nextPlayer = if (handicapCount > 0) StoneColor.White else StoneColor.Black
         playedMoves.clear()
         sendCommand(KataGoProtocolCommands.boardSize(boardSize))
         sendCommand(KataGoProtocolCommands.komi())
         sendCommand(KataGoProtocolCommands.rules(ruleset))
         sendCommand(KataGoProtocolCommands.clearBoard())
+        if (handicapCount > 0) {
+            val positions = boardSize.handicapStonePositions(handicapCount)
+            sendCommand(KataGoProtocolCommands.setFreeHandicap(positions, boardSize))
+        }
         return EngineStatus.ready("KataGo new ${boardSize.value}x${boardSize.value} ${ruleset.scoringLabel} game")
     }
 

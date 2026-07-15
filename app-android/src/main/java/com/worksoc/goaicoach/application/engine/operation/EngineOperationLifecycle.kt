@@ -1,15 +1,26 @@
 package com.worksoc.goaicoach.application.engine.operation
 
 internal data class EngineOperationLifecycleState(
-    val activeOperationIds: Set<String> = emptySet(),
+    val activeOperations: Map<String, EngineOperationRequest> = emptyMap(),
 ) {
     val isEngineBusy: Boolean
-        get() = activeOperationIds.isNotEmpty()
+        get() = activeOperations.isNotEmpty()
+
+    val isBlockingBusy: Boolean
+        get() = activeOperations.values.any { it.kind.isBlocking }
 }
+
+internal val EngineOperationKind.isBlocking: Boolean
+    get() = when (this) {
+        EngineOperationKind.TopMoves,
+        EngineOperationKind.ScoreEstimate,
+        EngineOperationKind.PositionCacheOptimization -> false
+        else -> true
+    }
 
 internal sealed class EngineOperationLifecycleTransition {
     data class Started(
-        val operationId: String,
+        val request: EngineOperationRequest,
     ) : EngineOperationLifecycleTransition()
 
     data class Completed(
@@ -32,10 +43,10 @@ internal fun applyEngineOperationLifecycleTransition(
 ): EngineOperationLifecycleState =
     when (transition) {
         is EngineOperationLifecycleTransition.Started ->
-            state.copy(activeOperationIds = state.activeOperationIds + transition.operationId)
+            state.copy(activeOperations = state.activeOperations + (transition.request.operationId to transition.request))
 
         is EngineOperationLifecycleTransition.Completed ->
-            state.copy(activeOperationIds = state.activeOperationIds - transition.operationId)
+            state.copy(activeOperations = state.activeOperations - transition.operationId)
 
         EngineOperationLifecycleTransition.Reset ->
             EngineOperationLifecycleState()

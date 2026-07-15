@@ -8,8 +8,14 @@ import com.worksoc.goaicoach.application.runtime.runtimeEngineOperationCompleted
 import com.worksoc.goaicoach.application.runtime.runtimeEngineOperationStartedLog
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.engine.EngineOperationRequest
+import com.worksoc.goaicoach.shared.engine.EngineOperationKind
+import com.worksoc.goaicoach.shared.engine.EngineTimeoutPolicy
+import com.worksoc.goaicoach.shared.engine.EngineFallbackPolicy
+import com.worksoc.goaicoach.shared.diagnostic.DiagnosticEvent
+import com.worksoc.goaicoach.shared.diagnostic.DiagnosticSeverity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+
 
 /**
  * Owns engine-operation lifecycle tracking: active-operation bookkeeping, the
@@ -27,23 +33,41 @@ internal class EngineOperationLifecycleController(
     private val diagnosticEventLog: DiagnosticEventLogPort,
     private val currentRuntimeLogContext: () -> RuntimeLogContext,
     private val currentState: () -> GameState,
-    private val onBusyChanged: (Boolean) -> Unit,
+    private val onBusyChanged: (Boolean, Boolean) -> Unit, // (isBusy, isBlockingBusy)
 ) {
     private var lifecycleState = EngineOperationLifecycleState()
+    private val activeJobs = mutableMapOf<String, Job>()
 
     val isEngineBusy: Boolean get() = lifecycleState.isEngineBusy
+    val isBlockingBusy: Boolean get() = lifecycleState.isBlockingBusy
 
     fun markStarted(operationId: String) {
+        val kind = EngineOperationKind.entries.firstOrNull { operationId.startsWith(it.code) }
+            ?: EngineOperationKind.EngineStartup
+        val dummyRequest = EngineOperationRequest(
+            operationId = operationId,
+            kind = kind,
+            sessionGeneration = 0L,
+            boardFingerprint = "dummy",
+            moveCount = 0,
+            timeoutPolicy = EngineTimeoutPolicy(),
+            fallbackPolicy = EngineFallbackPolicy.None,
+            backendId = "local-engine"
+        )
+        markStarted(dummyRequest)
+    }
+
+    fun markStarted(request: EngineOperationRequest) {
         lifecycleState = applyEngineOperationLifecycleTransition(
             state = lifecycleState,
-            transition = EngineOperationLifecycleTransition.Started(operationId),
+            transition = EngineOperationLifecycleTransition.Started(request),
         )
-        onBusyChanged(lifecycleState.isEngineBusy)
+        onBusyChanged(lifecycleState.isEngineBusy, lifecycleState.isBlockingBusy)
         runtimeEventLog.append(
             runtimeEngineOperationStartedLog(
                 context = currentRuntimeLogContext(),
-                operationId = operationId,
-                activeOperationCount = lifecycleState.activeOperationIds.size,
+                operationId = request.operationId,
+                activeOperationCount = lifecycleState.activeOperations.size,
             ),
         )
     }
@@ -53,27 +77,27 @@ internal class EngineOperationLifecycleController(
             state = lifecycleState,
             transition = EngineOperationLifecycleTransition.Completed(operationId),
         )
-        onBusyChanged(lifecycleState.isEngineBusy)
+        onBusyChanged(lifecycleState.isEngineBusy, lifecycleState.isBlockingBusy)
         runtimeEventLog.append(
             runtimeEngineOperationCompletedLog(
                 context = currentRuntimeLogContext(),
                 operationId = operationId,
-                activeOperationCount = lifecycleState.activeOperationIds.size,
+                activeOperationCount = lifecycleState.activeOperations.size,
             ),
         )
     }
 
     fun callbacks(): EngineOperationLifecycleCallbacks =
         EngineOperationLifecycleCallbacks(
-            onStarted = { request -> markStarted(request.operationId) },
+            onStarted = { request -> markStarted(request) },
             onCompleted = { request -> markCompleted(request.operationId) },
         )
 
     fun launchTracked(
         operation: EngineOperationRequest,
         block: suspend () -> Unit,
-    ): Job =
-        launchUiEffect(scope) {
+    ): Job {
+        val job = launchUiEffect(scope) {
             runEngineOperationInScope(
                 request = operation,
                 callbacks = callbacks(),
@@ -81,6 +105,16 @@ internal class EngineOperationLifecycleController(
                 block()
             }
         }
+        synchronized(activeJobs) {
+            activeJobs[operation.operationId] = job
+        }
+        job.invokeOnCompletion {
+            synchronized(activeJobs) {
+                activeJobs.remove(operation.operationId)
+            }
+        }
+        return job
+    }
 
     suspend fun runTracked(
         operation: EngineOperationRequest,
@@ -91,6 +125,23 @@ internal class EngineOperationLifecycleController(
             callbacks = callbacks(),
         ) {
             block()
+        }
+    }
+
+    fun cancelBackgroundOperations() {
+        val targets = lifecycleState.activeOperations.values.filter { !it.kind.isBlocking }
+        targets.forEach { req ->
+            val job = synchronized(activeJobs) { activeJobs[req.operationId] }
+            if (job != null && job.isActive) {
+                job.cancel()
+                diagnosticEventLog.append(
+                    DiagnosticEvent(
+                        severity = DiagnosticSeverity.Info,
+                        code = "engine_operation_cancelled",
+                        message = "Cancelled background operation: ${req.operationId}"
+                    )
+                )
+            }
         }
     }
 

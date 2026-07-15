@@ -120,6 +120,7 @@ class GameScreenStateTest {
         val screenState = buildGameScreenState(
             defaultInput(
                 isEngineBusy = true,
+                isEngineBlockingBusy = true,
                 topMovesEnabled = true,
             ),
         )
@@ -178,6 +179,7 @@ class GameScreenStateTest {
             engineDiagnostic = "ready",
             isEngineReady = true,
             isEngineBusy = false,
+            isEngineBlockingBusy = false,
             analysisCacheStats = "entries=1",
             isScoreGraphExpanded = true,
             turnTimeText = "Time B 0.0s / W 0.0s",
@@ -245,6 +247,7 @@ class GameScreenStateTest {
                     diagnostic = "ready",
                     isReady = true,
                     isBusy = false,
+                    isBlockingBusy = false,
                     hasCompletedStartup = true,
                 ),
                 displayRuntime = GoCoachScreenStateAssembler.DisplayRuntime(
@@ -271,6 +274,7 @@ class GameScreenStateTest {
         shouldShowResumePrompt: Boolean = false,
         hasCompletedEngineStartup: Boolean = true,
         isEngineBusy: Boolean = false,
+        isEngineBlockingBusy: Boolean = false,
         topMovesEnabled: Boolean = false,
     ): GameScreenStateInput =
         GameScreenStateInput(
@@ -284,7 +288,7 @@ class GameScreenStateTest {
             matchSeats = PlayerSetup().seatSnapshot(
                 nextPlayer = gameState.nextPlayer,
                 isEngineReady = true,
-                isEngineBusy = isEngineBusy,
+                isEngineBlockingBusy = isEngineBlockingBusy,
             ),
             uxOptions = KaTrainUxOptions(),
             engineName = "KataGo",
@@ -314,5 +318,6 @@ class GameScreenStateTest {
             hasCompletedEngineStartup = hasCompletedEngineStartup,
             isGameEnded = false,
             endgameLog = "No endgame result recorded.",
+            isEngineBlockingBusy = isEngineBlockingBusy,
         )
 }

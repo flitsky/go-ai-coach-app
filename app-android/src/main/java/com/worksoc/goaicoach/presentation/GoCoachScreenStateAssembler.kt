@@ -15,6 +15,7 @@ internal object GoCoachScreenStateAssembler {
         val diagnostic: String,
         val isReady: Boolean,
         val isBusy: Boolean,
+        val isBlockingBusy: Boolean,
         val hasCompletedStartup: Boolean,
     )
 
@@ -33,6 +34,7 @@ internal object GoCoachScreenStateAssembler {
                 engineDiagnostic = input.engineRuntime.diagnostic,
                 isEngineReady = input.engineRuntime.isReady,
                 isEngineBusy = input.engineRuntime.isBusy,
+                isEngineBlockingBusy = input.engineRuntime.isBlockingBusy,
                 analysisCacheStats = input.displayRuntime.analysisCacheStats,
                 isScoreGraphExpanded = input.displayRuntime.isScoreGraphExpanded,
                 turnTimeText = input.displayRuntime.turnTimeText,

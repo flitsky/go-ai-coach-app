@@ -229,6 +229,7 @@ private fun GoCoachScreen(
     )
     ObserveTimerLifecycle(turnTimeState) { turnTimeState = it }
     var isEngineBusy by remember { mutableStateOf(false) }
+    var isEngineBlockingBusy by remember { mutableStateOf(false) }
     var isEngineReady by remember { mutableStateOf(false) }
     val analysisCache = remember { AnalysisResultCache(maxEntries = 96) }
     val undoAnalysisRestoreCache = remember { UndoAnalysisRestoreCache(maxEntries = 96) }
@@ -274,6 +275,13 @@ private fun GoCoachScreen(
             positionCacheOptimizationState = positionCacheOptimizationState.clearPrompt()
         }
     }
+    fun refreshNewGamePreview() = applyCoreSessionState(
+        sessionSnapshot.core.applyGameSetupPreview(
+            ruleset = gameState.ruleset,
+            boardSize = settingsState.boardSize,
+            handicapCount = settingsState.handicapCount,
+        ),
+    )
     val lifecycleController = remember {
         EngineOperationLifecycleController(
             scope = scope,
@@ -281,7 +289,10 @@ private fun GoCoachScreen(
             diagnosticEventLog = diagnosticEventLog,
             currentRuntimeLogContext = { currentRuntimeLogContext() },
             currentState = { gameState },
-            onBusyChanged = { busy -> isEngineBusy = busy },
+            onBusyChanged = { busy, blocking ->
+                isEngineBusy = busy
+                isEngineBlockingBusy = blocking
+            },
         )
     }
     fun engineProfileTimeoutPolicy(profile: EngineProfile): EngineTimeoutPolicy =
@@ -355,10 +366,7 @@ private fun GoCoachScreen(
     }
     LaunchedEffect(
         preferencesStore,
-        playerSetup,
-        autoPlayDelaySetting,
-        searchTimeSettings,
-        topMovesEnabled,
+        settingsState,
         uxOptions,
         gameState.ruleset,
     ) {
@@ -508,7 +516,8 @@ private fun GoCoachScreen(
         currentEngineProfile = { runtimeState.engineProfile },
         currentRuntimeLogContext = ::currentRuntimeLogContext,
         isEngineReady = { isEngineReady },
-        isEngineBusy = { isEngineBusy },
+        isEngineBlockingBusy = { isEngineBlockingBusy },
+        cancelBackgroundOperations = lifecycleController::cancelBackgroundOperations,
         onEngineMessage = { message -> engineMessage = message },
         onConsecutivePassesDetected = ::activateEndgameJudgementReview,
         clearUndoEngineInterventionQuietWindow = ::clearUndoEngineInterventionQuietWindow,
@@ -535,6 +544,7 @@ private fun GoCoachScreen(
         currentGameState = { gameState },
         currentPlayerSetup = { playerSetup },
         currentEngineProfile = { runtimeState.engineProfile }, currentSearchTimeSettings = { searchTimeSettings }, currentBoardSize = { settingsState.boardSize },
+        currentHandicapCount = { settingsState.handicapCount },
         currentSessionGeneration = { runtimeState.sessionGeneration },
         currentScoreState = { scoreState },
         currentRuntimeLogContext = ::currentRuntimeLogContext,
@@ -691,9 +701,20 @@ private fun GoCoachScreen(
                 restoreSavedSession = { snap -> savedSessionUiState = savedSessionUiState.dismiss(); savedSessionController.restore(snap) },
                 changePlayerSetup = settingsController::changePlayerSetup, changeAutoPlayDelay = settingsController::changeAutoPlayDelay,
                 changeSearchTimeSettings = settingsController::changeSearchTimeSettings,
-                changeBoardSize = { size -> settingsState = settingsState.applyBoardSize(size); newGameController.startConfiguredGame() },
+                changeBoardSize = { size ->
+                    if (isGameEnded) {
+                        settingsState = settingsState.applyBoardSize(size)
+                        refreshNewGamePreview()
+                    }
+                },
                 changeScoringRule = scoringRuleController::change,
                 changeUxOptions = { options -> uxOptions = options },
+                changeHandicapCount = { count ->
+                    if (isGameEnded) {
+                        settingsState = settingsState.applyHandicap(count)
+                        refreshNewGamePreview()
+                    }
+                },
             ),
         )
     }
@@ -742,6 +763,7 @@ private fun GoCoachScreen(
                 diagnostic = engineDiagnostic,
                 isReady = isEngineReady,
                 isBusy = isEngineBusy,
+                isBlockingBusy = isEngineBlockingBusy,
                 hasCompletedStartup = hasCompletedEngineStartup,
             ),
             displayRuntime = GoCoachScreenStateAssembler.DisplayRuntime(

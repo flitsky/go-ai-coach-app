@@ -29,7 +29,7 @@ interface EngineCoreApi {
      * adapter actively resets them.
      */
     suspend fun configure(profile: EngineProfile): EngineStatus
-    suspend fun newGame(boardSize: BoardSize, ruleset: Ruleset): EngineStatus
+    suspend fun newGame(boardSize: BoardSize, ruleset: Ruleset, handicapCount: Int = 0): EngineStatus
     suspend fun playMove(move: Move): EngineStatus
     suspend fun genMove(player: StoneColor): MoveResult
     suspend fun undoMove(): EngineStatus

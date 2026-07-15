@@ -7,6 +7,57 @@ data class BoardSize(val value: Int) {
         require(value in SUPPORTED_SIZES) { "Unsupported board size: $value" }
     }
 
+    /** 이 바둑판에서 접바둑으로 설정 가능한 최대 돌 개수 */
+    val maxHandicapCount: Int
+        get() = when (value) {
+            19 -> 9
+            else -> 5 // 9x9, 13x13
+        }
+
+    /**
+     * 접바둑 돌을 화점 기준으로 배치할 좌표 목록을 반환합니다.
+     * 순서: 우상귀 → 좌하귀 → 우하귀 → 좌상귀 → 천원 → (19x19) 좌변 → 우변 → 하변 → 상변
+     *
+     * @param count 접바둑 돌 개수 (2~maxHandicapCount)
+     */
+    fun handicapStonePositions(count: Int): List<BoardCoordinate> {
+        require(count in 0..maxHandicapCount) {
+            "접바둑 개수 $count 은 이 바둑판(${value}x${value})에서 지원하지 않습니다."
+        }
+        if (count == 0) return emptyList()
+
+        // 화점의 오프셋: 9x9=2, 13x13=3, 19x19=3
+        val near = when (value) {
+            9 -> 2
+            else -> 3
+        }
+        val far = value - 1 - near
+        val mid = value / 2
+
+        // 19x19 변 가운데 좌표 (6~9점용)
+        val sidePositions: List<BoardCoordinate> = if (value == 19) {
+            listOf(
+                BoardCoordinate(mid, near),  // 좌변 가운데
+                BoardCoordinate(mid, far),   // 우변 가운데
+                BoardCoordinate(far, mid),   // 하변 가운데
+                BoardCoordinate(near, mid),  // 상변 가운데
+            )
+        } else {
+            emptyList()
+        }
+
+        // 순서: 우상귀, 좌하귀, 우하귀, 좌상귀, 천원, 변 가운데들
+        val allPositions = listOf(
+            BoardCoordinate(near, far),  // 우상귀
+            BoardCoordinate(far, near),  // 좌하귀
+            BoardCoordinate(far, far),   // 우하귀
+            BoardCoordinate(near, near), // 좌상귀
+            BoardCoordinate(mid, mid),   // 천원 (정 가운데)
+        ) + sidePositions
+
+        return allPositions.take(count)
+    }
+
     companion object {
         private val SUPPORTED_SIZES = setOf(9, 13, 19)
 
@@ -126,6 +177,7 @@ data class GameState(
     val capturedByWhite: Int = 0,
     val koPoint: BoardCoordinate? = null,
     val koForbiddenFor: StoneColor? = null,
+    val handicapCount: Int = 0,
 ) {
     fun stoneAt(coordinate: BoardCoordinate): StoneColor? = stones[coordinate]
 
@@ -156,7 +208,35 @@ data class GameState(
                 nextPlayer = nextPlayer,
                 stones = emptyMap(),
                 moves = emptyList(),
+                handicapCount = 0,
             )
+
+        /**
+         * 접바둑 초기 상태를 생성합니다.
+         * - handicapCount == 0: 일반 대국 (흑 선착)
+         * - handicapCount >= 2: 흑돌을 화점에 미리 배치하고 백이 먼저 둠
+         *
+         * @param handicapCount 접바둑 돌 개수 (0 또는 2~maxHandicapCount)
+         */
+        fun withHandicap(
+            boardSize: BoardSize,
+            ruleset: Ruleset,
+            handicapCount: Int,
+        ): GameState {
+            if (handicapCount <= 0) return empty(boardSize, ruleset)
+
+            val positions = boardSize.handicapStonePositions(handicapCount)
+            val stones = positions.associateWith { StoneColor.Black }
+            // 접바둑에서는 흑이 미리 놓고 백이 먼저 둠
+            return GameState(
+                boardSize = boardSize,
+                ruleset = ruleset,
+                nextPlayer = StoneColor.White,
+                stones = stones,
+                moves = emptyList(),
+                handicapCount = handicapCount,
+            )
+        }
     }
 }
 

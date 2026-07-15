@@ -82,7 +82,7 @@ class MatchPolicyTest {
         val snapshot = setup.seatSnapshot(
             nextPlayer = StoneColor.White,
             isEngineReady = true,
-            isEngineBusy = false,
+            isEngineBlockingBusy = false,
         )
 
         assertEquals(MatchMode.AiVsHuman, snapshot.mode)
@@ -95,7 +95,7 @@ class MatchPolicyTest {
         val busySnapshot = setup.seatSnapshot(
             nextPlayer = StoneColor.White,
             isEngineReady = true,
-            isEngineBusy = true,
+            isEngineBlockingBusy = true,
         )
         assertFalse(busySnapshot.current.canAcceptBoardInput)
     }
@@ -110,7 +110,7 @@ class MatchPolicyTest {
         val snapshot = setup.seatSnapshot(
             nextPlayer = StoneColor.Black,
             isEngineReady = false,
-            isEngineBusy = false,
+            isEngineBlockingBusy = false,
         )
 
         assertEquals(MatchMode.LocalTwoPlayer, snapshot.mode)
@@ -129,7 +129,7 @@ class MatchPolicyTest {
             boardInputEnabled(
                 playerSetup = setup,
                 isEngineReady = true,
-                isEngineBusy = false,
+                isEngineBlockingBusy = false,
                 nextPlayer = StoneColor.Black,
             ),
         )
@@ -137,7 +137,7 @@ class MatchPolicyTest {
             boardInputEnabled(
                 playerSetup = setup,
                 isEngineReady = true,
-                isEngineBusy = false,
+                isEngineBlockingBusy = false,
                 nextPlayer = StoneColor.White,
             ),
         )
@@ -145,7 +145,7 @@ class MatchPolicyTest {
             boardInputEnabled(
                 playerSetup = setup,
                 isEngineReady = true,
-                isEngineBusy = true,
+                isEngineBlockingBusy = true,
                 nextPlayer = StoneColor.White,
             ),
         )

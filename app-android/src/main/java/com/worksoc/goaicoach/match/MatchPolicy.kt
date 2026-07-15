@@ -107,9 +107,9 @@ internal data class MatchSeatSnapshot(
         }
 }
 
-internal fun MatchSeatSnapshot.turnStatusText(isEngineBusy: Boolean): String =
+internal fun MatchSeatSnapshot.turnStatusText(isEngineBlockingBusy: Boolean): String =
     when {
-        isEngineBusy -> "AI thinking"
+        isEngineBlockingBusy -> "AI thinking"
         current.isHuman -> "Your turn: ${current.player.label}"
         else -> "AI turn: ${current.player.label}"
     }
@@ -210,7 +210,7 @@ internal data class PlayerSetup(
     fun seatSnapshot(
         nextPlayer: StoneColor,
         isEngineReady: Boolean,
-        isEngineBusy: Boolean,
+        isEngineBlockingBusy: Boolean,
     ): MatchSeatSnapshot {
         val mode = matchMode()
         fun runtimeState(id: SeatId): MatchSeatRuntimeState {
@@ -219,7 +219,7 @@ internal data class PlayerSetup(
             return MatchSeatRuntimeState(
                 assignment = assignment,
                 isCurrentTurn = isCurrentTurn,
-                canAcceptBoardInput = !isEngineBusy &&
+                canAcceptBoardInput = !isEngineBlockingBusy &&
                     isCurrentTurn &&
                     assignment.isHuman &&
                     (isEngineReady || mode == MatchMode.LocalTwoPlayer),
@@ -375,30 +375,30 @@ internal fun activePlayer(
 internal fun boardInputEnabled(
     playerSetup: PlayerSetup,
     isEngineReady: Boolean,
-    isEngineBusy: Boolean,
+    isEngineBlockingBusy: Boolean,
     nextPlayer: StoneColor,
 ): Boolean =
     playerSetup
         .seatSnapshot(
             nextPlayer = nextPlayer,
             isEngineReady = isEngineReady,
-            isEngineBusy = isEngineBusy,
+            isEngineBlockingBusy = isEngineBlockingBusy,
         )
         .current
         .canAcceptBoardInput
 
 internal fun turnStatus(
     nextPlayer: StoneColor,
-    isEngineBusy: Boolean,
+    isEngineBlockingBusy: Boolean,
     playerSetup: PlayerSetup,
 ): String {
     val snapshot = playerSetup
         .seatSnapshot(
             nextPlayer = nextPlayer,
             isEngineReady = true,
-            isEngineBusy = isEngineBusy,
+            isEngineBlockingBusy = isEngineBlockingBusy,
         )
-    return snapshot.turnStatusText(isEngineBusy)
+    return snapshot.turnStatusText(isEngineBlockingBusy)
 }
 
 internal fun modeSummary(

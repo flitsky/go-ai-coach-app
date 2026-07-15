@@ -13,6 +13,7 @@ internal data class GameSessionSettingsState(
     val autoPlayDelaySetting: AutoPlayDelaySetting,
     val searchTimeSettings: SearchTimeSettings,
     val topMovesEnabled: Boolean,
+    val handicapCount: Int = 0,
 ) {
     val matchMode: MatchMode
         get() = playerSetup.matchMode()
@@ -21,7 +22,14 @@ internal data class GameSessionSettingsState(
         copy(playerSetup = nextSetup)
 
     fun applyBoardSize(size: BoardSize): GameSessionSettingsState =
-        copy(boardSize = size)
+        copy(
+            boardSize = size,
+            // 바둑판 크기 변경 시 접바둑 수가 새 바둑판의 최대값을 초과하면 클램프
+            handicapCount = handicapCount.coerceAtMost(size.maxHandicapCount),
+        )
+
+    fun applyHandicap(count: Int): GameSessionSettingsState =
+        copy(handicapCount = count.coerceIn(0, boardSize.maxHandicapCount))
 
     fun applySavedGameRestore(
         restoredSetup: PlayerSetup,
@@ -52,4 +60,5 @@ internal fun InitialUserPreferencesPlan.toGameSessionSettingsState(): GameSessio
         autoPlayDelaySetting = settings.autoPlayDelaySetting,
         searchTimeSettings = settings.searchTimeSettings.normalized(),
         topMovesEnabled = settings.topMovesEnabled,
+        handicapCount = settings.handicapCount,
     )

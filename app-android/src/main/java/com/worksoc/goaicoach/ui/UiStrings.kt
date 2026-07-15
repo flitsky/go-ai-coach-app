@@ -124,7 +124,18 @@ internal data class UiStrings(
     val lastMovePrefix: String,
     val yes: String,
     val no: String,
+    val handicap: String,
+    val handicapNone: String,
 ) {
+    /** 접바둑 N점 레이블 (예: 한국어 "접바둑 3점", 영어 "Handicap 3") */
+    fun handicapLabel(count: Int): String =
+        when (language) {
+            UiLanguage.Korean -> "$handicap ${count}점"
+            UiLanguage.English -> "$handicap $count"
+            UiLanguage.Japanese -> "$handicap ${count}子"
+            UiLanguage.ChineseSimplified -> "$handicap ${count}子"
+        }
+
     fun colorLabel(color: StoneColor): String =
         when (language) {
             UiLanguage.Korean -> if (color == StoneColor.Black) "흑" else "백"
@@ -339,6 +350,8 @@ internal data class UiStrings(
             lastMovePrefix = "마지막 수",
             yes = "예",
             no = "아니오",
+            handicap = "접바둑",
+            handicapNone = "접바둑 없음",
         )
 
         val English = Korean.copy(
@@ -424,6 +437,8 @@ internal data class UiStrings(
             lastMovePrefix = "Last move",
             yes = "Yes",
             no = "No",
+            handicap = "Handicap",
+            handicapNone = "No handicap",
         )
 
         val Japanese = Korean.copy(
@@ -507,6 +522,8 @@ internal data class UiStrings(
             lastMovePrefix = "最後の手",
             yes = "はい",
             no = "いいえ",
+            handicap = "置き石",
+            handicapNone = "置き石なし",
         )
 
         val ChineseSimplified = Korean.copy(
@@ -590,6 +607,8 @@ internal data class UiStrings(
             lastMovePrefix = "最后一手",
             yes = "是",
             no = "否",
+            handicap = "让子",
+            handicapNone = "无让子",
         )
 
         fun forLanguage(language: UiLanguage): UiStrings =

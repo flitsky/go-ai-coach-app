@@ -253,6 +253,7 @@ private class RunnerFakeStartGameEngineClient(
         profile: EngineProfile,
         boardSize: BoardSize,
         ruleset: Ruleset,
+        handicapCount: Int,
     ): EngineStartupResult {
         newGameProfile = profile
         newGameBoardSize = boardSize

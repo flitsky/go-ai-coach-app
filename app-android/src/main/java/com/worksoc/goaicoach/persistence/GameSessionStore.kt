@@ -61,6 +61,7 @@ internal object SavedGameSessionCodec {
             .put("savedAtMillis", snapshot.savedAtMillis)
             .put("boardSize", snapshot.gameState.boardSize.value)
             .put("ruleset", snapshot.gameState.ruleset.name)
+            .put("handicapCount", snapshot.gameState.handicapCount)
             .put("moves", encodeMoves(snapshot.gameState.moves, snapshot.gameState.boardSize))
             .put("playerSetup", encodePlayerSetup(snapshot.playerSetup))
             .put("playLevel", encodePlayLevel(snapshot.playLevel))
@@ -75,11 +76,13 @@ internal object SavedGameSessionCodec {
             }
             val boardSize = BoardSize(json.optInt("boardSize", BoardSize.Nine.value))
             val ruleset = enumOrDefault(json.optString("ruleset"), Ruleset.Japanese)
+            val handicapCount = json.optInt("handicapCount", 0)
             val moves = decodeMoves(json.optJSONArray("moves") ?: JSONArray(), boardSize)
             val gameState = GameStateReplayer.replay(
                 boardSize = boardSize,
                 ruleset = ruleset,
                 moves = moves,
+                handicapCount = handicapCount,
             )
             SavedGameSnapshot(
                 gameState = gameState,

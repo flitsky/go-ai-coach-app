@@ -28,6 +28,7 @@ import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
 import com.worksoc.goaicoach.shared.PlayLevelGroup
 import com.worksoc.goaicoach.shared.PlayLevelSetting
+import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.ScoreSnapshot
@@ -36,9 +37,24 @@ import com.worksoc.goaicoach.shared.StoneColor
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class GameSessionCoreStateTest {
+    @Test
+    fun applyGameSetupPreviewShowsConfiguredHandicapWithoutStartingTheGame() {
+        val next = baseCoreState(isGameEnded = false).applyGameSetupPreview(
+            ruleset = Ruleset.Japanese,
+            boardSize = BoardSize.Nine,
+            handicapCount = 5,
+        )
+
+        assertTrue(next.isGameEnded)
+        assertEquals(5, next.gameState.handicapCount)
+        assertEquals(5, next.gameState.stones.size)
+        assertEquals("Ready to start a new game.", next.engineMessage)
+    }
+
     @Test
     fun applyGameSessionResetPlanRebuildsCoreDisplayState() {
         val reset = GameSessionResetPlan(

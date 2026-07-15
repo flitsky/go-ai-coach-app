@@ -59,6 +59,10 @@ internal sealed interface GameUiEvent {
     data class ChangeUxOptions(
         val options: KaTrainUxOptions,
     ) : GameUiEvent
+
+    data class ChangeHandicapCount(
+        val count: Int,
+    ) : GameUiEvent
 }
 
 internal data class GameUiEventHandlers(
@@ -84,6 +88,7 @@ internal data class GameUiEventHandlers(
     val changeBoardSize: (BoardSize) -> Unit,
     val changeScoringRule: (Ruleset) -> Unit,
     val changeUxOptions: (KaTrainUxOptions) -> Unit,
+    val changeHandicapCount: (Int) -> Unit,
 )
 
 internal fun buildGameUiEventHandlers(
@@ -109,6 +114,7 @@ internal fun buildGameUiEventHandlers(
     changeBoardSize: (BoardSize) -> Unit,
     changeScoringRule: (Ruleset) -> Unit,
     changeUxOptions: (KaTrainUxOptions) -> Unit,
+    changeHandicapCount: (Int) -> Unit,
 ): GameUiEventHandlers =
     GameUiEventHandlers(
         currentPlayer = currentPlayer,
@@ -133,6 +139,7 @@ internal fun buildGameUiEventHandlers(
         changeBoardSize = changeBoardSize,
         changeScoringRule = changeScoringRule,
         changeUxOptions = changeUxOptions,
+        changeHandicapCount = changeHandicapCount,
     )
 
 internal fun dispatchGameUiEvent(
@@ -167,5 +174,6 @@ internal fun dispatchGameUiEvent(
         is GameUiEvent.ChangeBoardSize -> handlers.changeBoardSize(event.boardSize)
         is GameUiEvent.ChangeScoringRule -> handlers.changeScoringRule(event.ruleset)
         is GameUiEvent.ChangeUxOptions -> handlers.changeUxOptions(event.options)
+        is GameUiEvent.ChangeHandicapCount -> handlers.changeHandicapCount(event.count)
     }
 }

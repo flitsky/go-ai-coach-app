@@ -238,6 +238,7 @@ private class EndgameRunnerFakeEngineClient(
         profile: EngineProfile,
         boardSize: BoardSize,
         ruleset: Ruleset,
+        handicapCount: Int,
     ): EngineStartupResult =
         error("not used")
 

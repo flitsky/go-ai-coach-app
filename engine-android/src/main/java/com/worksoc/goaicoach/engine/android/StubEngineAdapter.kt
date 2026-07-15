@@ -26,6 +26,7 @@ class StubEngineAdapter : EngineCoreApi {
     private var boardSize: BoardSize = BoardSize.Nine
     private var ruleset: Ruleset = Ruleset.Japanese
     private var initialized: Boolean = false
+    private var handicapCount: Int = 0
     private var nextPlayer: StoneColor = StoneColor.Black
     private var profile: EngineProfile = EngineProfile()
     private val occupied = linkedSetOf<BoardCoordinate>()
@@ -45,13 +46,18 @@ class StubEngineAdapter : EngineCoreApi {
         return EngineStatus.ready("Stub engine configured: ${profile.describe()}")
     }
 
-    override suspend fun newGame(boardSize: BoardSize, ruleset: Ruleset): EngineStatus {
+    override suspend fun newGame(boardSize: BoardSize, ruleset: Ruleset, handicapCount: Int): EngineStatus {
         ensureInitialized()
         this.boardSize = boardSize
         this.ruleset = ruleset
-        nextPlayer = StoneColor.Black
+        this.handicapCount = handicapCount
+        nextPlayer = if (handicapCount > 0) StoneColor.White else StoneColor.Black
         occupied.clear()
         playedMoves.clear()
+        if (handicapCount > 0) {
+            val positions = boardSize.handicapStonePositions(handicapCount)
+            occupied += positions
+        }
         return EngineStatus.ready("New ${boardSize.value}x${boardSize.value} ${ruleset.scoringLabel} game")
     }
 
@@ -172,6 +178,9 @@ class StubEngineAdapter : EngineCoreApi {
 
     private fun rebuildOccupiedFromHistory() {
         occupied.clear()
+        if (handicapCount > 0) {
+            occupied += boardSize.handicapStonePositions(handicapCount)
+        }
         for (move in playedMoves) {
             if (move is Move.Play) {
                 occupied += move.coordinate
@@ -185,6 +194,7 @@ class StubEngineAdapter : EngineCoreApi {
                 boardSize = boardSize,
                 ruleset = ruleset,
                 moves = playedMoves,
+                handicapCount = handicapCount,
             ),
         )
 

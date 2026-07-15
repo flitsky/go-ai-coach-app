@@ -58,6 +58,7 @@ class UserPreferencesApplicationTest {
                 autoPlayDelaySetting = AutoPlayDelaySetting.Study,
                 searchTimeSettings = SearchTimeSettings(b32Millis = 4_000L),
                 boardSize = BoardSize.Nine,
+                handicapCount = 0,
             ),
             plan.settings,
         )
@@ -71,6 +72,7 @@ class UserPreferencesApplicationTest {
             playerSetup = setup,
             boardSize = BoardSize.Nine,
             ruleset = Ruleset.Chinese,
+            handicapCount = 5,
             topMovesEnabled = false,
             showCoordinates = false,
             showMoveNumbers = true,
@@ -82,6 +84,7 @@ class UserPreferencesApplicationTest {
 
         assertEquals(setup, snapshot.playerSetup)
         assertEquals(Ruleset.Chinese, snapshot.ruleset)
+        assertEquals(5, snapshot.handicapCount)
         assertFalse(snapshot.topMovesEnabled)
         assertFalse(snapshot.showCoordinates)
         assertTrue(snapshot.showMoveNumbers)
@@ -105,6 +108,7 @@ class UserPreferencesApplicationTest {
             searchTimeSettings = SearchTimeSettings(timeCapEnabled = false),
             topMovesEnabled = true,
             boardSize = BoardSize.Nine,
+            handicapCount = 5,
         )
 
         val snapshot = buildUserPreferencesSnapshot(
@@ -118,6 +122,7 @@ class UserPreferencesApplicationTest {
 
         assertEquals(setup, snapshot.playerSetup)
         assertEquals(Ruleset.Chinese, snapshot.ruleset)
+        assertEquals(5, snapshot.handicapCount)
         assertTrue(snapshot.topMovesEnabled)
         assertEquals(AutoPlayDelaySetting.Study.millis, snapshot.autoPlayDelayMillis)
         assertEquals(SearchTimeSettings(timeCapEnabled = false), snapshot.searchTimeSettings)
@@ -142,6 +147,7 @@ class UserPreferencesApplicationTest {
             searchTimeSettings = SearchTimeSettings(b16Millis = 1_000L),
             topMovesEnabled = true,
             boardSize = BoardSize.Nine,
+            handicapCount = 3,
         )
         val store = RecordingUserPreferencesStore()
 
@@ -161,6 +167,7 @@ class UserPreferencesApplicationTest {
         val saved = store.saved
         assertEquals(setup, saved.playerSetup)
         assertEquals(Ruleset.Japanese, saved.ruleset)
+        assertEquals(3, saved.handicapCount)
         assertTrue(saved.topMovesEnabled)
         assertEquals(AutoPlayDelaySetting.Short.millis, saved.autoPlayDelayMillis)
         assertEquals(SearchTimeSettings(b16Millis = 1_000L), saved.searchTimeSettings)

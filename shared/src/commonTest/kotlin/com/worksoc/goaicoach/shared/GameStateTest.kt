@@ -366,6 +366,51 @@ class GameStateTest {
         assertEquals(3, cleanup.state.capturedBy(StoneColor.White))
     }
 
+    @Test
+    fun handicapGameReplayPreservesHandicapStonesAndWhiteTurn() {
+        val boardSize = BoardSize.Nine
+        val ruleset = Ruleset.Japanese
+        val handicapCount = 5
+
+        // 접바둑 5점 시작
+        val initial = GameState.withHandicap(boardSize, ruleset, handicapCount)
+        assertEquals(5, initial.stones.size)
+        assertEquals(StoneColor.White, initial.nextPlayer)
+
+        // 백 1수 착수 (화점 C3 피해서 D3에 착수)
+        val state = initial.play(Move.Play(StoneColor.White, point("D3")))
+        assertEquals(6, state.stones.size)
+        assertEquals(StoneColor.Black, state.nextPlayer)
+
+        // 1수 무르기
+        val replayed = state.replayWithoutLastMoves(1)
+        assertEquals(handicapCount, replayed.handicapCount)
+        assertEquals(5, replayed.stones.size)
+        assertEquals(StoneColor.White, replayed.nextPlayer)
+    }
+
+    @Test
+    fun handicapGameReplayPreservesHandicapStonesWhenMultipleMovesPlayed() {
+        val boardSize = BoardSize.Nine
+        val ruleset = Ruleset.Japanese
+        val handicapCount = 5
+
+        // 접바둑 5점 시작 -> 백 1수 착수 -> 흑 1수 착수 (화점 피해 D3, F3에 착수)
+        val state = GameState.withHandicap(boardSize, ruleset, handicapCount)
+            .play(Move.Play(StoneColor.White, point("D3")))
+            .play(Move.Play(StoneColor.Black, point("F3")))
+
+        assertEquals(7, state.stones.size)
+        assertEquals(2, state.moves.size)
+
+        // 2수 무르기
+        val replayed = state.replayWithoutLastMoves(2)
+        assertEquals(handicapCount, replayed.handicapCount)
+        assertEquals(5, replayed.stones.size)
+        assertEquals(StoneColor.White, replayed.nextPlayer)
+        assertEquals(0, replayed.moves.size)
+    }
+
     private fun play(
         player: StoneColor,
         label: String,

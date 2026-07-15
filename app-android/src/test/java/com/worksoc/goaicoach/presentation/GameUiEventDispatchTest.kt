@@ -201,5 +201,6 @@ class GameUiEventDispatchTest {
             changeBoardSize = changeBoardSize,
             changeScoringRule = changeScoringRule,
             changeUxOptions = changeUxOptions,
+            changeHandicapCount = {},
         )
 }

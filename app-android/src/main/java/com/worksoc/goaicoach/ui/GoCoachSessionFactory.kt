@@ -22,7 +22,9 @@ internal fun buildInitialSessionState(
     benchmarkStore: EngineBenchmarkStorePort,
 ): GameSessionControllerState = buildGameSessionControllerState(
     gameState = initialPlan.gameState,
-    isGameEnded = false,
+    // 앱 시작은 대국 전 설정/미리보기 상태다. 사용자가 "새 게임"을 눌러야
+    // 실제 대국과 자동 턴 처리가 시작된다.
+    isGameEnded = true,
     analysisState = GameSessionAnalysisState.empty(
         state = initialPlan.gameState,
         candidateText = engineDiagnostic,
@@ -41,7 +43,7 @@ internal fun buildInitialSessionState(
         moveReviewText = "No move review yet.",
         lastMoveText = "None",
     ),
-    engineMessage = "Engine not initialized.",
+    engineMessage = "Ready to start a new game.",
     turnTimeState = GameSessionTurnTimeState.reset(
         state = initialPlan.gameState,
         nowMillis = System.currentTimeMillis(),

@@ -160,6 +160,7 @@ internal fun runTopMoveAnalysisApplication(request: TopMoveAnalysisRunRequest) {
             shouldShowResumePrompt = request.shouldShowResumePrompt,
             playerSetup = request.playerSetup,
             targetState = request.targetState,
+            topMovesEnabled = request.controllerState.settings.topMovesEnabled,
         )
     ) {
         return

@@ -40,6 +40,7 @@ internal object UserPreferencesCodec {
             .put("boardSize", snapshot.boardSize.value)
             .put("playerSetup", encodePlayerSetup(snapshot.playerSetup))
             .put("ruleset", snapshot.ruleset.name)
+            .put("handicapCount", snapshot.handicapCount)
             .put("topMovesEnabled", snapshot.topMovesEnabled)
             .put("showCoordinates", snapshot.showCoordinates)
             .put("showMoveNumbers", snapshot.showMoveNumbers)
@@ -60,6 +61,7 @@ internal object UserPreferencesCodec {
                 boardSize = BoardSize(json.optInt("boardSize", BoardSize.Nine.value)),
                 playerSetup = decodePlayerSetup(json.optJSONObject("playerSetup")),
                 ruleset = enumOrDefault(json.optString("ruleset"), Ruleset.Japanese),
+                handicapCount = json.optInt("handicapCount", 0),
                 topMovesEnabled = json.optBoolean("topMovesEnabled", false),
                 showCoordinates = json.optBoolean("showCoordinates", false),
                 showMoveNumbers = json.optBoolean("showMoveNumbers", false),

@@ -68,7 +68,7 @@ internal fun GamePlaySection(
         uxOptions = screenState.uxOptions,
         inputEnabled = !screenState.isGameEnded &&
             screenState.matchSeats.current.canAcceptBoardInput,
-        engineBusy = screenState.engine.isBusy,
+        engineBusy = screenState.engine.isBlockingBusy,
         modifier = Modifier.fillMaxWidth(),
         tentativeMove = tentativeMove,
         onCoordinateTap = { coordinate ->
@@ -201,7 +201,7 @@ private fun GameActionButtons(
                     showResignConfirm = true
                 }
             },
-            enabled = screenState.isGameEnded || (!screenState.engine.isBusy && screenState.matchSeats.current.canAcceptBoardInput),
+            enabled = screenState.isGameEnded || (!screenState.engine.isBlockingBusy && screenState.matchSeats.current.canAcceptBoardInput),
             modifier = Modifier.fillMaxWidth(),
             contentPadding = ActionButtonContentPadding,
         ) {

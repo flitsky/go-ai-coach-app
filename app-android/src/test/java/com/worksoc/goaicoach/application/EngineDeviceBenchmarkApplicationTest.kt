@@ -403,9 +403,10 @@ private class RecordingBenchmarkEngineAdapter(
     override suspend fun newGame(
         boardSize: BoardSize,
         ruleset: Ruleset,
+        handicapCount: Int,
     ): EngineStatus {
         newGameRulesets += ruleset
-        state = GameState.empty(boardSize = boardSize, ruleset = ruleset)
+        state = GameState.empty(boardSize = boardSize, ruleset = ruleset).copy(handicapCount = handicapCount)
         return EngineStatus.ready("new game")
     }
 

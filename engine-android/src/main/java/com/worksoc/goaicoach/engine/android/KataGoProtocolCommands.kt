@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.engine.android
 
 import com.worksoc.goaicoach.shared.AnalysisLimit
+import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.DefaultKomi
 import com.worksoc.goaicoach.shared.Move
@@ -15,6 +16,11 @@ internal object KataGoProtocolCommands {
     fun rules(ruleset: Ruleset): String = "kata-set-rules ${ruleset.katagoName}"
 
     fun clearBoard(): String = "clear_board"
+
+    fun setFreeHandicap(positions: List<BoardCoordinate>, boardSize: BoardSize): String {
+        val vertices = positions.joinToString(" ") { it.label(boardSize) }
+        return "set_free_handicap $vertices"
+    }
 
     fun play(move: Move, boardSize: BoardSize): String =
         "play ${move.player.toGtpColor()} ${move.toGtpVertex(boardSize)}"

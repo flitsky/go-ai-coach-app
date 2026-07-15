@@ -41,7 +41,8 @@ internal class HumanMoveController(
     private val currentEngineProfile: () -> EngineProfile,
     private val currentRuntimeLogContext: () -> RuntimeLogContext,
     private val isEngineReady: () -> Boolean,
-    private val isEngineBusy: () -> Boolean,
+    private val isEngineBlockingBusy: () -> Boolean,
+    private val cancelBackgroundOperations: () -> Unit,
     private val onEngineMessage: (String) -> Unit,
     private val onConsecutivePassesDetected: () -> Unit,
     private val clearUndoEngineInterventionQuietWindow: () -> Unit,
@@ -121,10 +122,11 @@ internal class HumanMoveController(
             onEngineMessage("Move player does not match the current turn.")
             return
         }
-        if (isEngineBusy()) {
-            onEngineMessage("Engine is busy. Wait for the current analysis.")
+        if (isEngineBlockingBusy()) {
+            onEngineMessage("Engine is busy. Wait for the current action.")
             return
         }
+        cancelBackgroundOperations()
         clearUndoEngineInterventionQuietWindow()
 
         val beforeMove = gameState

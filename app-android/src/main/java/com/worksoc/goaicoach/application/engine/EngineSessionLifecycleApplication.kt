@@ -120,6 +120,7 @@ internal suspend fun EngineSessionClient.runEngineBackedNewGameEffect(
             profile = effect.profile,
             boardSize = effect.boardSize,
             ruleset = effect.ruleset,
+            handicapCount = effect.currentState.handicapCount,
         )
     }
 

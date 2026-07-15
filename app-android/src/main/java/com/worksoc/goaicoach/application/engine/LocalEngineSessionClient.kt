@@ -78,8 +78,9 @@ internal class LocalEngineSessionClient(
         profile: EngineProfile,
         boardSize: BoardSize,
         ruleset: Ruleset,
+        handicapCount: Int,
     ): EngineStartupResult =
-        coreSession.startNewGame(profile, boardSize, ruleset)
+        coreSession.startNewGame(profile, boardSize, ruleset, handicapCount)
 
     override suspend fun analyzePosition(
         state: GameState,

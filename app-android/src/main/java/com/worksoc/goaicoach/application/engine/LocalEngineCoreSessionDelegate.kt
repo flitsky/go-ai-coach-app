@@ -33,13 +33,11 @@ internal class LocalEngineCoreSessionDelegate(
         state: GameState,
     ): EngineStartupResult {
         val init = coreApi.initialize(profile)
-        val newGame = coreApi.newGame(state.boardSize, state.ruleset)
-        val estimate = runCatching {
-            coreApi.estimateScore(scoreGraphAnalysisLimit(profile))
-        }.getOrNull()
         return EngineStartupResult(
-            message = "Ready for ${state.boardSize.value}x${state.boardSize.value} match.\n${init.message}\n${newGame.message}",
-            scoreSnapshot = estimate?.let { ScoreTimeline.fromEstimate(state.moves.size, it) },
+            // 앱 시작은 엔진 준비만 수행한다. 실제 대국 보드 초기화는 사용자가
+            // "새 게임"을 누른 뒤 startNewGame에서 실행한다.
+            message = "Engine initialized. Select settings, then start a new game.\n${init.message}",
+            scoreSnapshot = null,
         )
     }
 
@@ -47,13 +45,14 @@ internal class LocalEngineCoreSessionDelegate(
         profile: EngineProfile,
         boardSize: BoardSize,
         ruleset: Ruleset,
+        handicapCount: Int = 0,
     ): EngineStartupResult {
         // A fresh process is intentional here. KataGo's GTP search tree can
         // survive clear_board across repeated games, causing the next game to
         // replay nearly instantly from retained search data.
         coreApi.stop()
         coreApi.initialize(profile)
-        val status = coreApi.newGame(boardSize, ruleset)
+        val status = coreApi.newGame(boardSize, ruleset, handicapCount)
         val estimate = runCatching {
             coreApi.estimateScore(scoreGraphAnalysisLimit(profile))
         }.getOrNull()

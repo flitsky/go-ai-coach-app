@@ -227,6 +227,7 @@ private class RecordingLifecycleEngineSessionClient(
         profile: EngineProfile,
         boardSize: BoardSize,
         ruleset: Ruleset,
+        handicapCount: Int,
     ): EngineStartupResult {
         newGameProfile = profile
         newGameBoardSize = boardSize

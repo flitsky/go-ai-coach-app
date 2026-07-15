@@ -10,6 +10,7 @@ internal data class UserPreferencesSnapshot(
     val boardSize: BoardSize = BoardSize.Nine,
     val playerSetup: PlayerSetup = PlayerSetup(),
     val ruleset: Ruleset = Ruleset.Japanese,
+    val handicapCount: Int = 0,
     val topMovesEnabled: Boolean = false,
     val showCoordinates: Boolean = false,
     val showMoveNumbers: Boolean = false,

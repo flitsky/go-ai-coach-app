@@ -82,9 +82,13 @@ internal fun ExpandedGameMenuSection(
         ScoringAndBoardSettingsPanel(
             ruleset = screenState.gameState.ruleset,
             boardSize = screenState.gameState.boardSize,
-            canChangeRuleset = true, // engine-busy gate disabled; restore with !screenState.engine.isBusy
+            handicapCount = screenState.handicapCount,
+            canChangeRuleset = true,
+            canChangeBoardSize = screenState.isGameEnded,
+            canChangeHandicap = screenState.isGameEnded,
             onRulesetChange = { ruleset -> onEvent(GameUiEvent.ChangeScoringRule(ruleset)) },
             onBoardSizeChange = { size -> onEvent(GameUiEvent.ChangeBoardSize(size)) },
+            onHandicapCountChange = { count -> onEvent(GameUiEvent.ChangeHandicapCount(count)) },
         )
 
         LanguageSettingsPanel(

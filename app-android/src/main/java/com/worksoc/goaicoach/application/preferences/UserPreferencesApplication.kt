@@ -15,6 +15,7 @@ import com.worksoc.goaicoach.shared.SearchTimeSettings
 internal data class GameSettings(
     val boardSize: BoardSize,
     val ruleset: Ruleset,
+    val handicapCount: Int,
     val topMovesEnabled: Boolean,
     val autoPlayDelaySetting: AutoPlayDelaySetting,
     val searchTimeSettings: SearchTimeSettings,
@@ -39,7 +40,7 @@ internal fun buildInitialUserPreferencesPlan(
     currentProfile: EngineProfile,
 ): InitialUserPreferencesPlan {
     val settings = preferences.toGameSettings()
-    val state = GameState.empty(preferences.boardSize, settings.ruleset)
+    val state = GameState.withHandicap(preferences.boardSize, settings.ruleset, preferences.handicapCount)
     return InitialUserPreferencesPlan(
         gameState = state,
         playerSetup = preferences.playerSetup,
@@ -58,6 +59,7 @@ internal fun buildUserPreferencesSnapshot(
     playerSetup: PlayerSetup,
     boardSize: BoardSize,
     ruleset: Ruleset,
+    handicapCount: Int,
     topMovesEnabled: Boolean,
     showCoordinates: Boolean,
     showMoveNumbers: Boolean,
@@ -70,6 +72,7 @@ internal fun buildUserPreferencesSnapshot(
     buildGameSettings(
         boardSize = boardSize,
         ruleset = ruleset,
+        handicapCount = handicapCount,
         topMovesEnabled = topMovesEnabled,
         autoPlayDelaySetting = autoPlayDelaySetting,
         searchTimeSettings = searchTimeSettings,
@@ -95,6 +98,7 @@ internal fun buildUserPreferencesSnapshot(
         playerSetup = settingsState.playerSetup,
         boardSize = settingsState.boardSize,
         ruleset = ruleset,
+        handicapCount = settingsState.handicapCount,
         topMovesEnabled = settingsState.topMovesEnabled,
         showCoordinates = showCoordinates,
         showMoveNumbers = showMoveNumbers,
@@ -108,6 +112,7 @@ internal fun buildUserPreferencesSnapshot(
 internal fun buildGameSettings(
     boardSize: BoardSize,
     ruleset: Ruleset,
+    handicapCount: Int,
     topMovesEnabled: Boolean,
     autoPlayDelaySetting: AutoPlayDelaySetting,
     searchTimeSettings: SearchTimeSettings = SearchTimeSettings(),
@@ -115,6 +120,7 @@ internal fun buildGameSettings(
     GameSettings(
         boardSize = boardSize,
         ruleset = ruleset,
+        handicapCount = handicapCount,
         topMovesEnabled = topMovesEnabled,
         autoPlayDelaySetting = autoPlayDelaySetting,
         searchTimeSettings = searchTimeSettings.normalized(),
@@ -124,6 +130,7 @@ private fun UserPreferencesSnapshot.toGameSettings(): GameSettings =
     buildGameSettings(
         boardSize = boardSize,
         ruleset = ruleset,
+        handicapCount = handicapCount,
         topMovesEnabled = topMovesEnabled,
         autoPlayDelaySetting = AutoPlayDelaySetting.fromMillis(autoPlayDelayMillis),
         searchTimeSettings = searchTimeSettings,
@@ -141,6 +148,7 @@ private fun GameSettings.toUserPreferencesSnapshot(
         boardSize = boardSize,
         playerSetup = playerSetup,
         ruleset = ruleset,
+        handicapCount = handicapCount,
         topMovesEnabled = topMovesEnabled,
         showCoordinates = showCoordinates,
         showMoveNumbers = showMoveNumbers,

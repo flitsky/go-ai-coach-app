@@ -33,11 +33,13 @@ internal sealed class StartConfiguredGamePlan {
         val message: String,
         val ruleset: Ruleset,
         val boardSize: BoardSize,
+        val handicapCount: Int = 0,
     ) : StartConfiguredGamePlan()
     data class StartEngineGame(
         val ruleset: Ruleset,
         val boardSize: BoardSize,
         val runtime: RuntimePlayLevelSelection,
+        val handicapCount: Int = 0,
     ) : StartConfiguredGamePlan()
 }
 
@@ -45,8 +47,9 @@ internal fun buildNewLocalGameSessionPlan(
     message: String,
     ruleset: Ruleset,
     boardSize: BoardSize,
+    handicapCount: Int = 0,
 ): GameSessionResetPlan {
-    val state = GameState.empty(boardSize, ruleset)
+    val state = GameState.withHandicap(boardSize, ruleset, handicapCount)
     return GameSessionResetPlan(
         gameState = state,
         candidateText = "No analysis yet.",
@@ -70,6 +73,7 @@ internal fun buildStartConfiguredGamePlan(
     currentProfile: EngineProfile,
     defaultPlayLevel: PlayLevelSetting,
     searchTimeSettings: SearchTimeSettings = SearchTimeSettings(),
+    handicapCount: Int = 0,
 ): StartConfiguredGamePlan {
     val targetMode = setup.matchMode()
     if (!isEngineReady && targetMode != MatchMode.LocalTwoPlayer) {
@@ -77,6 +81,7 @@ internal fun buildStartConfiguredGamePlan(
             message = "Player Setup includes AI, but engine is not ready.",
             ruleset = ruleset,
             boardSize = boardSize,
+            handicapCount = handicapCount,
         )
     }
     if (isEngineBusy) {
@@ -87,6 +92,7 @@ internal fun buildStartConfiguredGamePlan(
             message = "Local two-player game. Engine analysis is not connected.",
             ruleset = ruleset,
             boardSize = boardSize,
+            handicapCount = handicapCount,
         )
     }
 
@@ -100,5 +106,6 @@ internal fun buildStartConfiguredGamePlan(
             defaultPlayLevel = defaultPlayLevel,
             searchTimeSettings = searchTimeSettings,
         ),
+        handicapCount = handicapCount,
     )
 }

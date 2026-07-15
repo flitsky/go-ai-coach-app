@@ -59,6 +59,7 @@ internal interface EngineSessionClient {
         profile: EngineProfile,
         boardSize: BoardSize,
         ruleset: Ruleset,
+        handicapCount: Int = 0,
     ): EngineStartupResult
 
     suspend fun analyzePosition(

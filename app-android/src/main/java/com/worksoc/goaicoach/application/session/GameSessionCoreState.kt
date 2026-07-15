@@ -7,6 +7,7 @@ import com.worksoc.goaicoach.application.engine.EngineStartupDisplayPlan
 import com.worksoc.goaicoach.application.savedgame.SavedGameRestorePlan
 import com.worksoc.goaicoach.application.score.ScoringRuleChangePlan
 import com.worksoc.goaicoach.application.startgame.GameSessionResetPlan
+import com.worksoc.goaicoach.application.startgame.buildNewLocalGameSessionPlan
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnDisplayPlan
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnFailureDisplayPlan
 import com.worksoc.goaicoach.application.score.EndgameFailureDisplayPlan
@@ -15,8 +16,10 @@ import com.worksoc.goaicoach.application.score.ScoreEstimateDisplayPlan
 import com.worksoc.goaicoach.application.score.ScoreEstimateFailureDisplayPlan
 import com.worksoc.goaicoach.application.topmoves.TopMoveAnalysisFailureDisplayPlan
 import com.worksoc.goaicoach.application.undo.UndoLocalStatePlan
+import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
+import com.worksoc.goaicoach.shared.Ruleset
 
 internal data class GameSessionCoreState(
     val gameState: GameState,
@@ -109,6 +112,21 @@ internal data class GameSessionCoreState(
                 nowMillis = System.currentTimeMillis(),
             ),
         )
+
+    /** Previews the configured opening while keeping the session outside an active game. */
+    fun applyGameSetupPreview(
+        ruleset: Ruleset,
+        boardSize: BoardSize,
+        handicapCount: Int,
+    ): GameSessionCoreState =
+        applyGameSessionResetPlan(
+            buildNewLocalGameSessionPlan(
+                message = "Ready to start a new game.",
+                ruleset = ruleset,
+                boardSize = boardSize,
+                handicapCount = handicapCount,
+            ),
+        ).copy(isGameEnded = true)
 
     fun applySavedGameRestorePlan(restore: SavedGameRestorePlan): GameSessionCoreState =
         copy(
