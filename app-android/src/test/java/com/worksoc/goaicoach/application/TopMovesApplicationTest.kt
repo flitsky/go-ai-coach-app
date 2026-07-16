@@ -339,10 +339,59 @@ class TopMovesApplicationTest {
 
         assertEquals(state, client.analyzedState)
         assertEquals(plan.analysisLimit, client.analyzedLimit)
-        assertEquals(EngineSearchMode.JsonPositionAnalysis, client.analyzedSearchMode)
+        assertEquals(EngineSearchMode.GtpStatefulFast, client.analyzedSearchMode)
         assertEquals("analysis ready", update.engineMessage)
         assertEquals(1, update.candidateMoves.size)
         assertNull(update.cachedResult)
+    }
+
+    @Test
+    fun topMovesReturnCandidatesWithinOneAndThreeSecondLimitsUsingFastSearch() = runBlocking {
+        val state = GameState.empty()
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+        val candidate = CandidateMove(
+            move = Move.Play(StoneColor.White, BoardCoordinate.fromLabel("D4", BoardSize.Nine)),
+            pointLoss = 0.0,
+        )
+
+        listOf(1_000L, 3_000L).forEach { maximumMillis ->
+            val client = FakeTopMoveEngineSessionClient(
+                result = AnalysisResult(
+                    status = EngineStatus.ready("analysis ready"),
+                    candidates = listOf(candidate),
+                    summary = "engine summary",
+                ),
+            )
+            val plan = buildTopMoveAnalysisPlan(
+                targetState = state,
+                engineProfile = EngineProfile(
+                    analysisLimit = AnalysisLimit(
+                        visits = 64,
+                        timeMillis = maximumMillis,
+                        candidateCount = 5,
+                    ),
+                ),
+                analysisPreset = AnalysisPreset.Balanced,
+                deep = false,
+            )
+
+            val update = client.runTopMoveAnalysis(
+                targetState = state,
+                engineProfile = EngineProfile(),
+                analysisPreset = AnalysisPreset.Balanced,
+                plan = plan,
+                deep = false,
+                topMovesEnabled = true,
+                cacheEnabled = true,
+            )
+
+            assertEquals(maximumMillis, client.analyzedLimit?.timeMillis)
+            assertEquals(16, client.analyzedLimit?.visits)
+            assertEquals(EngineSearchMode.GtpStatefulFast, client.analyzedSearchMode)
+            assertEquals(EngineSearchMode.GtpStatefulFast, plan.analysisKey.searchMode)
+            assertTrue(update.candidateMoves.isNotEmpty())
+            assertNotNull(update.cachedResult)
+        }
     }
 
     @Test
@@ -385,6 +434,7 @@ class TopMovesApplicationTest {
 
         assertEquals(state, client.analyzedState)
         assertEquals(plan.analysisLimit, client.analyzedLimit)
+        assertEquals(EngineSearchMode.GtpStatefulFast, client.analyzedSearchMode)
         assertTrue(update.engineMessage.startsWith("Move review analysis ready"))
         assertEquals(0, update.candidateMoves.size)
         assertNotNull(update.cachedResult)

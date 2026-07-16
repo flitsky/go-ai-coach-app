@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.presentation
 
 import com.worksoc.goaicoach.application.analysis.translateScoreText
+import com.worksoc.goaicoach.application.engine.operation.EngineActivityIndicator
 import com.worksoc.goaicoach.application.score.FinalScoreJudgement
 import com.worksoc.goaicoach.application.movereview.MoveReviewMarker
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationPrompt
@@ -90,6 +91,7 @@ internal data class GameScreenStateInput(
     val finalScoreJudgement: FinalScoreJudgement? = null,
     val handicapCount: Int = 0,
     val isEngineBlockingBusy: Boolean = false,
+    val engineActivityIndicator: EngineActivityIndicator? = null,
 )
 
 internal fun buildGameScreenStateInput(
@@ -100,6 +102,7 @@ internal fun buildGameScreenStateInput(
     isEngineReady: Boolean,
     isEngineBusy: Boolean,
     isEngineBlockingBusy: Boolean,
+    engineActivityIndicator: EngineActivityIndicator? = null,
     analysisCacheStats: String,
     isScoreGraphExpanded: Boolean,
     turnTimeText: String,
@@ -149,6 +152,7 @@ internal fun buildGameScreenStateInput(
         finalScoreJudgement = controller.core.scoreState.finalScoreJudgement,
         handicapCount = controller.settings.handicapCount,
         isEngineBlockingBusy = isEngineBlockingBusy,
+        engineActivityIndicator = engineActivityIndicator,
     )
 
 internal fun buildGameScreenState(input: GameScreenStateInput): GameScreenState {
@@ -180,6 +184,7 @@ internal fun buildGameScreenState(input: GameScreenStateInput): GameScreenState 
             isReady = input.isEngineReady,
             isBusy = input.isEngineBusy,
             isBlockingBusy = input.isEngineBlockingBusy,
+            activityIndicator = input.engineActivityIndicator,
             message = input.engineMessage,
         ),
         analysis = AnalysisUiState(
@@ -201,7 +206,7 @@ internal fun buildGameScreenState(input: GameScreenStateInput): GameScreenState 
             snapshots = input.scoreSnapshots,
             isGraphExpanded = input.isScoreGraphExpanded,
         ),
-        turnStatusText = input.matchSeats.turnStatusText(input.isEngineBusy),
+        turnStatusText = input.matchSeats.turnStatusText(input.isEngineBlockingBusy),
         turnTimeText = input.turnTimeText,
         actionButtons = buildGameActionButtonStates(input),
         resumePrompt = input.pendingSavedSession
@@ -223,6 +228,7 @@ internal data class EngineUiState(
     val isReady: Boolean,
     val isBusy: Boolean,
     val isBlockingBusy: Boolean,
+    val activityIndicator: EngineActivityIndicator?,
     val message: String,
 )
 
@@ -269,9 +275,10 @@ internal data class GameActionButtonState(
 internal fun buildGameActionButtonStates(input: GameScreenStateInput): List<GameActionButtonState> {
     val canPlayOnBoard = !input.isGameEnded &&
         input.matchSeats.current.canAcceptBoardInput
+    val isBlockingBusy = input.isEngineBlockingBusy
     val topMovesButtonEnabled = !input.isGameEnded &&
         input.isEngineReady &&
-        (!input.isEngineBusy || input.topMovesEnabled)
+        (!isBlockingBusy || input.topMovesEnabled)
 
     return listOf(
         GameActionButtonState(
@@ -285,7 +292,7 @@ internal fun buildGameActionButtonStates(input: GameScreenStateInput): List<Game
             role = GameActionButtonRole.Undo,
             label = "Undo",
             event = GameUiEvent.UndoLastTurn,
-            enabled = !input.isEngineBusy &&
+            enabled = !isBlockingBusy &&
                 input.gameState.moves.isNotEmpty() &&
                 (input.isEngineReady || input.matchMode == MatchMode.LocalTwoPlayer),
             isFilled = false,
@@ -301,7 +308,7 @@ internal fun buildGameActionButtonStates(input: GameScreenStateInput): List<Game
             role = GameActionButtonRole.Eval,
             label = "Eval",
             event = GameUiEvent.ToggleEvalWithGradient,
-            enabled = !input.isEngineBusy &&
+            enabled = !isBlockingBusy &&
                 (input.isEngineReady || input.matchMode == MatchMode.LocalTwoPlayer),
             isFilled = input.uxOptions.showOwnershipOverlay,
         ),

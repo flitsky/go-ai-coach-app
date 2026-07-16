@@ -8,6 +8,7 @@ import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.DifficultyProfile
 import com.worksoc.goaicoach.shared.EngineProfile
+import com.worksoc.goaicoach.shared.EngineSearchMode
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
@@ -42,7 +43,7 @@ class AnalysisSessionTest {
     }
 
     @Test
-    fun topMovesLimitPromotesFastBeginnerB16WhileKeepingSelectedTimeLimit() {
+    fun topMovesLimitUsesFixedB16BudgetWhileKeepingSelectedTimeLimit() {
         val profile = EngineProfile(
             difficulty = DifficultyProfile.Beginner,
             analysisLimit = AnalysisLimit(visits = 16, timeMillis = 250, candidateCount = 8),
@@ -51,19 +52,19 @@ class AnalysisSessionTest {
         val lite = topMovesAnalysisLimitFor(profile, AnalysisPreset.Lite, candidateCount = 1)
         val balanced = topMovesAnalysisLimitFor(profile, AnalysisPreset.Balanced, candidateCount = 1)
 
-        assertEquals(32, lite.visits)
+        assertEquals(16, lite.visits)
         assertEquals(250L, lite.timeMillis)
         assertEquals(1, lite.candidateCount)
         assertEquals(0, lite.refinePolicyMoves)
 
-        assertEquals(32, balanced.visits)
+        assertEquals(16, balanced.visits)
         assertEquals(250L, balanced.timeMillis)
         assertEquals(1, balanced.candidateCount)
         assertEquals(0, balanced.refinePolicyMoves)
     }
 
     @Test
-    fun topMovesLimitKeepsProfileTimeLimitForEveryVisitBudget() {
+    fun topMovesLimitUsesB16WithEveryProfileTimeLimit() {
         val beginnerProfile = EngineProfile(
             difficulty = DifficultyProfile.Beginner,
             analysisLimit = AnalysisLimit(visits = 32, timeMillis = 4_000, candidateCount = 16),
@@ -76,17 +77,17 @@ class AnalysisSessionTest {
         val beginner = topMovesAnalysisLimitFor(beginnerProfile, AnalysisPreset.Learning, candidateCount = 1)
         val intermediate = topMovesAnalysisLimitFor(intermediateProfile, AnalysisPreset.Balanced, candidateCount = 1)
 
-        assertEquals(32, beginner.visits)
+        assertEquals(16, beginner.visits)
         assertEquals(4_000L, beginner.timeMillis)
         assertEquals(1, beginner.candidateCount)
 
-        assertEquals(64, intermediate.visits)
+        assertEquals(16, intermediate.visits)
         assertEquals(7_500L, intermediate.timeMillis)
         assertEquals(1, intermediate.candidateCount)
     }
 
     @Test
-    fun deepTopMovesLimitUsesFullAnalysisVisitsWithoutExceedingSelectedTimeLimit() {
+    fun deepTopMovesLimitUsesFastGtpBudgetWithoutExceedingSelectedTimeLimit() {
         val profile = EngineProfile(
             difficulty = DifficultyProfile.Beginner,
             analysisLimit = AnalysisLimit(visits = 16, timeMillis = 250, candidateCount = 8),
@@ -97,8 +98,9 @@ class AnalysisSessionTest {
         assertEquals(1_000, limit.visits)
         assertEquals(250L, limit.timeMillis)
         assertEquals(81, limit.candidateCount)
-        assertEquals(AnalysisPreset.Deep.refinePolicyMoves, limit.refinePolicyMoves)
-        assertEquals(250L, limit.minTimeMillis)
+        assertEquals(false, limit.includePolicy)
+        assertEquals(0, limit.refinePolicyMoves)
+        assertNull(limit.minTimeMillis)
     }
 
     @Test
@@ -166,6 +168,29 @@ class AnalysisSessionTest {
 
         assertNull(cache.get(key))
         assertEquals("disabled, entries=0, hits=0, misses=0", cache.statsText())
+    }
+
+    @Test
+    fun analysisCacheKeySeparatesGtpAndJsonResults() {
+        val state = GameState.empty()
+        val limit = AnalysisLimit(visits = 32, timeMillis = 1_000, candidateCount = 5)
+
+        val fast = analysisKeyFor(
+            state = state,
+            preset = AnalysisPreset.Lite,
+            limit = limit,
+            deep = false,
+            searchMode = EngineSearchMode.GtpStatefulFast,
+        )
+        val json = analysisKeyFor(
+            state = state,
+            preset = AnalysisPreset.Lite,
+            limit = limit,
+            deep = false,
+            searchMode = EngineSearchMode.JsonPositionAnalysis,
+        )
+
+        assertNotEquals(fast, json)
     }
 
     @Test

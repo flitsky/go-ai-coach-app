@@ -14,6 +14,7 @@ import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.AnalysisPreset
 import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.EngineProfile
+import com.worksoc.goaicoach.shared.EngineSearchMode
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
 import com.worksoc.goaicoach.match.PlayerSetup
@@ -22,7 +23,12 @@ internal data class TopMoveAnalysisPlan(
     val candidateCount: Int,
     val analysisLimit: AnalysisLimit,
     val analysisKey: AnalysisCacheKey,
+    val searchMode: EngineSearchMode,
 )
+
+// Top Moves is a lightweight, in-session suggestion feature. It must retain
+// the GTP engine tree and avoid the separate JSON analysis process.
+internal val TopMovesSearchMode = EngineSearchMode.GtpStatefulFast
 
 internal data class TopMoveAnalysisOperationToken(
     val operation: EngineOperationRequest,

@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.presentation
 
 import com.worksoc.goaicoach.application.session.GameSessionControllerState
+import com.worksoc.goaicoach.application.engine.operation.EngineActivityIndicator
 
 internal object GoCoachScreenStateAssembler {
     data class Input(
@@ -16,6 +17,7 @@ internal object GoCoachScreenStateAssembler {
         val isReady: Boolean,
         val isBusy: Boolean,
         val isBlockingBusy: Boolean,
+        val activityIndicator: EngineActivityIndicator? = null,
         val hasCompletedStartup: Boolean,
     )
 
@@ -35,6 +37,7 @@ internal object GoCoachScreenStateAssembler {
                 isEngineReady = input.engineRuntime.isReady,
                 isEngineBusy = input.engineRuntime.isBusy,
                 isEngineBlockingBusy = input.engineRuntime.isBlockingBusy,
+                engineActivityIndicator = input.engineRuntime.activityIndicator,
                 analysisCacheStats = input.displayRuntime.analysisCacheStats,
                 isScoreGraphExpanded = input.displayRuntime.isScoreGraphExpanded,
                 turnTimeText = input.displayRuntime.turnTimeText,

@@ -52,6 +52,28 @@ class GameScreenStateTest {
     }
 
     @Test
+    fun nonBlockingTopMoveSearchDoesNotDisableUndoOrEval() {
+        val gameState = GameState.empty()
+            .play(
+                Move.Play(
+                    StoneColor.Black,
+                    com.worksoc.goaicoach.shared.BoardCoordinate.fromLabel("E5", BoardSize.Nine),
+                ),
+            )
+        val screenState = buildGameScreenState(
+            defaultInput(
+                gameState = gameState,
+                isEngineBusy = true,
+                isEngineBlockingBusy = false,
+            ),
+        )
+
+        val actions = screenState.actionButtons.associateBy { it.role }
+        assertTrue(requireNotNull(actions[GameActionButtonRole.Undo]).enabled)
+        assertTrue(requireNotNull(actions[GameActionButtonRole.Eval]).enabled)
+    }
+
+    @Test
     fun buildGameScreenStateShowsResumePromptOnlyAfterStartupAndIdle() {
         val resumableState = GameState.empty()
             .play(Move.Pass(StoneColor.Black))

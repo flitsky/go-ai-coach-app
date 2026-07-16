@@ -8,7 +8,34 @@ internal data class EngineOperationLifecycleState(
 
     val isBlockingBusy: Boolean
         get() = activeOperations.values.any { it.kind.isBlocking }
+
+    val activityIndicator: EngineActivityIndicator?
+        get() = when {
+            activeOperations.values.any { it.kind in PreparingOperationKinds } -> EngineActivityIndicator.Preparing
+            activeOperations.values.any { it.kind == EngineOperationKind.AutoAiTurn } -> EngineActivityIndicator.Thinking
+            activeOperations.values.any { it.kind == EngineOperationKind.TopMoves } -> EngineActivityIndicator.Recommending
+            else -> null
+        }
 }
+
+internal enum class EngineActivityIndicator(
+    val baseText: String,
+) {
+    Preparing("Preparing"),
+    Recommending("Recommending"),
+    Thinking("Thinking"),
+    ;
+
+    fun animatedText(frame: Int): String =
+        baseText + ActivityIndicatorDots[frame.mod(ActivityIndicatorDots.size)]
+}
+
+private val ActivityIndicatorDots = listOf("", " .", " ..", " ...")
+
+private val PreparingOperationKinds = setOf(
+    EngineOperationKind.EngineStartup,
+    EngineOperationKind.EngineNewGame,
+)
 
 internal val EngineOperationKind.isBlocking: Boolean
     get() = when (this) {

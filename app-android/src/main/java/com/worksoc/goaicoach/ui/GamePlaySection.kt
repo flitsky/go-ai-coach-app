@@ -68,7 +68,7 @@ internal fun GamePlaySection(
         uxOptions = screenState.uxOptions,
         inputEnabled = !screenState.isGameEnded &&
             screenState.matchSeats.current.canAcceptBoardInput,
-        engineBusy = screenState.engine.isBlockingBusy,
+        engineActivityIndicator = screenState.engine.activityIndicator,
         modifier = Modifier.fillMaxWidth(),
         tentativeMove = tentativeMove,
         onCoordinateTap = { coordinate ->
@@ -82,7 +82,7 @@ internal fun GamePlaySection(
 
     // 대국 현황 패널 & 실시간 타이머 계산
     var now by remember { mutableStateOf(System.currentTimeMillis()) }
-    LaunchedEffect(turnTimeState.currentTurnPlayer, screenState.isGameEnded, screenState.engine.isBusy) {
+    LaunchedEffect(turnTimeState.currentTurnPlayer, screenState.isGameEnded, screenState.engine.isBlockingBusy) {
         while (!screenState.isGameEnded) {
             delay(100)
             now = System.currentTimeMillis()
@@ -90,7 +90,7 @@ internal fun GamePlaySection(
     }
 
     val currentTurnPlayer = turnTimeState.currentTurnPlayer
-    val elapsedSinceTurnStart = if (!screenState.isGameEnded && !screenState.engine.isBusy) {
+    val elapsedSinceTurnStart = if (!screenState.isGameEnded && !screenState.engine.isBlockingBusy) {
         if (turnTimeState.isPaused) {
             (turnTimeState.pausedAtMillis - turnTimeState.currentTurnStartedAtMillis).coerceAtLeast(0L)
         } else {

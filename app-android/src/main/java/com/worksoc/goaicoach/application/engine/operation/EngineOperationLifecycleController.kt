@@ -33,7 +33,7 @@ internal class EngineOperationLifecycleController(
     private val diagnosticEventLog: DiagnosticEventLogPort,
     private val currentRuntimeLogContext: () -> RuntimeLogContext,
     private val currentState: () -> GameState,
-    private val onBusyChanged: (Boolean, Boolean) -> Unit, // (isBusy, isBlockingBusy)
+    private val onBusyChanged: (Boolean, Boolean, EngineActivityIndicator?) -> Unit,
 ) {
     private var lifecycleState = EngineOperationLifecycleState()
     private val activeJobs = mutableMapOf<String, Job>()
@@ -62,7 +62,11 @@ internal class EngineOperationLifecycleController(
             state = lifecycleState,
             transition = EngineOperationLifecycleTransition.Started(request),
         )
-        onBusyChanged(lifecycleState.isEngineBusy, lifecycleState.isBlockingBusy)
+        onBusyChanged(
+            lifecycleState.isEngineBusy,
+            lifecycleState.isBlockingBusy,
+            lifecycleState.activityIndicator,
+        )
         runtimeEventLog.append(
             runtimeEngineOperationStartedLog(
                 context = currentRuntimeLogContext(),
@@ -77,7 +81,11 @@ internal class EngineOperationLifecycleController(
             state = lifecycleState,
             transition = EngineOperationLifecycleTransition.Completed(operationId),
         )
-        onBusyChanged(lifecycleState.isEngineBusy, lifecycleState.isBlockingBusy)
+        onBusyChanged(
+            lifecycleState.isEngineBusy,
+            lifecycleState.isBlockingBusy,
+            lifecycleState.activityIndicator,
+        )
         runtimeEventLog.append(
             runtimeEngineOperationCompletedLog(
                 context = currentRuntimeLogContext(),

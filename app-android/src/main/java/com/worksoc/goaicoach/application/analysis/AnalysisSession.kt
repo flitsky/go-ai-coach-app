@@ -4,11 +4,13 @@ import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.AnalysisPreset
 import com.worksoc.goaicoach.shared.DifficultyProfile
 import com.worksoc.goaicoach.shared.EngineProfile
+import com.worksoc.goaicoach.shared.EngineSearchMode
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
 import com.worksoc.goaicoach.shared.SearchTimeProfile
 import com.worksoc.goaicoach.shared.TurnAnalysisPurpose
 import com.worksoc.goaicoach.shared.analysisFingerprint
+import com.worksoc.goaicoach.shared.fastCandidateAnalysis
 import com.worksoc.goaicoach.shared.turnAnalysisLimitFor
 
 internal const val LightweightTopMoveCandidateCount = 5
@@ -18,6 +20,9 @@ internal data class AnalysisCacheKey(
     val preset: AnalysisPreset,
     val limit: AnalysisLimit,
     val deep: Boolean,
+    // Analysis results from the JSON process and the stateful GTP process are
+    // not interchangeable. Keep their short-lived UI cache entries separate.
+    val searchMode: EngineSearchMode = EngineSearchMode.GtpStatefulFast,
 )
 
 internal data class CachedAnalysisResult(
@@ -165,12 +170,14 @@ internal fun analysisKeyFor(
     preset: AnalysisPreset,
     limit: AnalysisLimit,
     deep: Boolean,
+    searchMode: EngineSearchMode = EngineSearchMode.GtpStatefulFast,
 ): AnalysisCacheKey =
     AnalysisCacheKey(
         positionFingerprint = state.analysisFingerprint(),
         preset = preset,
         limit = limit,
         deep = deep,
+        searchMode = searchMode,
     )
 
 internal fun topMoveCandidateCountFor(
@@ -186,9 +193,7 @@ internal fun topMovesAnalysisLimitFor(
     profile.turnAnalysisLimitFor(
         purpose = TurnAnalysisPurpose.TopMovesDisplay,
         candidateCount = candidateCount,
-    ).let { limit ->
-        limit.copy(visits = limit.visits.coerceAtLeast(SearchTimeProfile.B32.visits))
-    }
+    ).copy(visits = SearchTimeProfile.B16.visits)
 
 internal fun deepTopMovesAnalysisLimitFor(
     profile: EngineProfile,
@@ -201,13 +206,7 @@ internal fun deepTopMovesAnalysisLimitFor(
         // including the manual deep variant. Never promote it to a longer cap.
         timeMillis = profile.analysisLimit.timeMillis,
         candidateCount = candidateCount,
-        includePolicy = AnalysisPreset.Deep.includePolicy,
-        refinePolicyMoves = AnalysisPreset.Deep.refinePolicyMoves,
-        minVisitsPerCandidate = AnalysisPreset.Deep.minVisitsPerCandidate,
-        minTimeMillis = profile.analysisLimit.timeMillis?.let { selectedMaximum ->
-            AnalysisPreset.Deep.minTimeMillis?.coerceAtMost(selectedMaximum)
-        },
-    )
+    ).fastCandidateAnalysis(candidateCount)
 }
 
 internal fun String.withTopMovesStrengthHeader(

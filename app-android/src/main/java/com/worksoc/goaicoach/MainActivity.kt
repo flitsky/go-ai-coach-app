@@ -108,7 +108,7 @@ private fun PreparingEngineScreen() {
                     fontWeight = FontWeight.Bold,
                 )
                 Text(
-                    text = "KataGo 엔진 파일을 준비하는 중...",
+                    text = "Preparing ...",
                     color = MaterialTheme.colorScheme.secondary,
                     style = MaterialTheme.typography.bodyLarge,
                     modifier = Modifier.padding(top = 12.dp),

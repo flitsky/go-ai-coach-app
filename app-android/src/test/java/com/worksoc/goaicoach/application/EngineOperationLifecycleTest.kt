@@ -6,6 +6,7 @@ import com.worksoc.goaicoach.shared.engine.EngineOperationKind
 import com.worksoc.goaicoach.shared.engine.EngineTimeoutPolicy
 import com.worksoc.goaicoach.shared.engine.EngineFallbackPolicy
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -71,5 +72,26 @@ class EngineOperationLifecycleTest {
 
         assertFalse(next.isEngineBusy)
         assertTrue(next.activeOperations.isEmpty())
+    }
+
+    @Test
+    fun activityIndicatorDistinguishesPreparingRecommendingAndThinking() {
+        fun indicatorFor(kind: EngineOperationKind) =
+            EngineOperationLifecycleState(
+                activeOperations = mapOf("${kind.code}:g1" to createRequest("${kind.code}:g1", kind)),
+            ).activityIndicator
+
+        assertEquals(EngineActivityIndicator.Preparing, indicatorFor(EngineOperationKind.EngineStartup))
+        assertEquals(EngineActivityIndicator.Recommending, indicatorFor(EngineOperationKind.TopMoves))
+        assertEquals(EngineActivityIndicator.Thinking, indicatorFor(EngineOperationKind.AutoAiTurn))
+    }
+
+    @Test
+    fun activityIndicatorCyclesDotAnimationFrames() {
+        assertEquals("Thinking", EngineActivityIndicator.Thinking.animatedText(0))
+        assertEquals("Thinking .", EngineActivityIndicator.Thinking.animatedText(1))
+        assertEquals("Thinking ..", EngineActivityIndicator.Thinking.animatedText(2))
+        assertEquals("Thinking ...", EngineActivityIndicator.Thinking.animatedText(3))
+        assertEquals("Thinking", EngineActivityIndicator.Thinking.animatedText(4))
     }
 }

@@ -11,7 +11,6 @@ import com.worksoc.goaicoach.application.session.GameSessionEffect
 import com.worksoc.goaicoach.shared.AnalysisPreset
 import com.worksoc.goaicoach.shared.AnalysisResult
 import com.worksoc.goaicoach.shared.EngineProfile
-import com.worksoc.goaicoach.shared.EngineSearchMode
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
 
@@ -100,7 +99,7 @@ internal suspend fun EngineSessionClient.runTopMoveAnalysis(
     val result = analyzePosition(
         state = targetState,
         limit = plan.analysisLimit,
-        searchMode = EngineSearchMode.JsonPositionAnalysis,
+        searchMode = plan.searchMode,
     )
     return buildCompletedTopMoveAnalysisUpdate(
         targetState = targetState,

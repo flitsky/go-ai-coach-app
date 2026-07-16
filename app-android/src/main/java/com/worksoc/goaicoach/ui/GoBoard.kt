@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.movereview.MoveReviewMarker
 import com.worksoc.goaicoach.application.movereview.MoveReviewTone
 import com.worksoc.goaicoach.application.movereview.topMoveDisplayToneFor
+import com.worksoc.goaicoach.application.engine.operation.EngineActivityIndicator
 import com.worksoc.goaicoach.presentation.KaTrainUxOptions
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
@@ -64,19 +65,19 @@ internal fun GoBoard(
     ownershipEstimate: OwnershipEstimate?,
     uxOptions: KaTrainUxOptions,
     inputEnabled: Boolean,
-    engineBusy: Boolean,
+    engineActivityIndicator: EngineActivityIndicator?,
     modifier: Modifier = Modifier,
     tentativeMove: BoardCoordinate? = null,
     onCoordinateTap: (BoardCoordinate) -> Unit,
 ) {
     var canvasSize by remember { mutableStateOf(IntSize.Zero) }
-    var thinkingFrame by remember { mutableStateOf(0) }
+    var activityFrame by remember { mutableStateOf(0) }
 
-    LaunchedEffect(engineBusy) {
-        thinkingFrame = 0
-        while (engineBusy) {
-            delay(200)
-            thinkingFrame = (thinkingFrame + 1) % ThinkingFrames.size
+    LaunchedEffect(engineActivityIndicator) {
+        activityFrame = 0
+        while (engineActivityIndicator != null) {
+            delay(1_000L)
+            activityFrame += 1
         }
     }
 
@@ -169,30 +170,19 @@ internal fun GoBoard(
                 }
             }
 
-            if (engineBusy) {
-                val thinkingText = ThinkingFrames[thinkingFrame]
-                if (thinkingText.isNotEmpty()) {
-                    Text(
-                        text = thinkingText,
-                        modifier = Modifier
-                            .align(Alignment.TopCenter)
-                            .padding(top = 2.dp),
-                        color = Color(0xFF3F2612),
-                        style = MaterialTheme.typography.labelMedium,
-                    )
-                }
+            engineActivityIndicator?.let { indicator ->
+                Text(
+                    text = indicator.animatedText(activityFrame),
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(top = 2.dp),
+                    color = Color(0xFF3F2612),
+                    style = MaterialTheme.typography.labelMedium,
+                )
             }
         }
     }
 }
-
-private val ThinkingFrames = listOf(
-    "Thinking",
-    "Thinking .",
-    "Thinking ..",
-    "Thinking ...",
-    "",
-)
 
 private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawOwnershipOverlay(
     geometry: BoardGeometry,

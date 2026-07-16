@@ -33,6 +33,7 @@ import com.worksoc.goaicoach.application.engine.EngineBenchmarkStorePort
 import com.worksoc.goaicoach.application.engine.EngineSessionClient
 import com.worksoc.goaicoach.application.engine.EngineStartupRunRequest
 import com.worksoc.goaicoach.application.engine.runEngineStartupApplication
+import com.worksoc.goaicoach.application.engine.operation.EngineActivityIndicator
 import com.worksoc.goaicoach.application.preferences.buildInitialUserPreferencesPlan
 import com.worksoc.goaicoach.application.preferences.UserPreferencesAutosaveRequest
 import com.worksoc.goaicoach.application.preferences.UserPreferencesStorePort
@@ -226,6 +227,7 @@ private fun GoCoachScreen(
     ObserveTimerLifecycle(turnTimeState) { turnTimeState = it }
     var isEngineBusy by remember { mutableStateOf(false) }
     var isEngineBlockingBusy by remember { mutableStateOf(false) }
+    var engineActivityIndicator by remember { mutableStateOf<EngineActivityIndicator?>(EngineActivityIndicator.Preparing) }
     var isEngineReady by remember { mutableStateOf(false) }
     val analysisCache = remember { AnalysisResultCache(maxEntries = 96) }
     val undoAnalysisRestoreCache = remember { UndoAnalysisRestoreCache(maxEntries = 96) }
@@ -275,9 +277,10 @@ private fun GoCoachScreen(
             diagnosticEventLog = diagnosticEventLog,
             currentRuntimeLogContext = { currentRuntimeLogContext() },
             currentState = { gameState },
-            onBusyChanged = { busy, blocking ->
+            onBusyChanged = { busy, blocking, activityIndicator ->
                 isEngineBusy = busy
                 isEngineBlockingBusy = blocking
+                engineActivityIndicator = activityIndicator
             },
         )
     }
@@ -738,6 +741,7 @@ private fun GoCoachScreen(
                 isReady = isEngineReady,
                 isBusy = isEngineBusy,
                 isBlockingBusy = isEngineBlockingBusy,
+                activityIndicator = engineActivityIndicator,
                 hasCompletedStartup = hasCompletedEngineStartup,
             ),
             displayRuntime = GoCoachScreenStateAssembler.DisplayRuntime(

@@ -59,7 +59,14 @@ internal fun buildTopMoveAnalysisPlan(
     return TopMoveAnalysisPlan(
         candidateCount = candidateCount,
         analysisLimit = analysisLimit,
-        analysisKey = analysisKeyFor(targetState, analysisPreset, analysisLimit, deep),
+        analysisKey = analysisKeyFor(
+            state = targetState,
+            preset = analysisPreset,
+            limit = analysisLimit,
+            deep = deep,
+            searchMode = TopMovesSearchMode,
+        ),
+        searchMode = TopMovesSearchMode,
     )
 }
 
