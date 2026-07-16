@@ -5,6 +5,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -130,6 +133,7 @@ private fun GoCoachScreen(
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     var currentDestination by remember { mutableStateOf(ScreenDestination.Home) }
+    var showResignConfirmFromBack by remember { mutableStateOf(false) }
     val sessionStore: SavedGameStorePort = remember(context) { GameSessionStore(context) }
     val preferencesStore: UserPreferencesStorePort = remember(context) { UserPreferencesStore(context) }
     val benchmarkStore: EngineBenchmarkStorePort = remember(context) { EngineBenchmarkStore(context) }
@@ -273,6 +277,11 @@ private fun GoCoachScreen(
             handicapCount = settingsState.handicapCount,
         ),
     )
+    val exitToHome = {
+        isGameEnded = true
+        refreshNewGamePreview()
+        currentDestination = ScreenDestination.Home
+    }
     val lifecycleController = remember {
         EngineOperationLifecycleController(
             scope = scope,
@@ -779,7 +788,36 @@ private fun GoCoachScreen(
     }
 
     BackHandler(enabled = currentDestination != ScreenDestination.Home) {
-        currentDestination = ScreenDestination.Home
+        if (currentDestination == ScreenDestination.InGame && !isGameEnded) {
+            showResignConfirmFromBack = true
+        } else {
+            exitToHome()
+        }
+    }
+
+    if (showResignConfirmFromBack) {
+        val strings = LocalUiStrings.current
+        AlertDialog(
+            onDismissRequest = { showResignConfirmFromBack = false },
+            title = { Text(strings.resignConfirmTitle) },
+            text = { Text(strings.resignConfirmMessage) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showResignConfirmFromBack = false
+                        dispatch(GameUiEvent.ResignCurrentGame)
+                        exitToHome()
+                    },
+                ) {
+                    Text(strings.resign)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showResignConfirmFromBack = false }) {
+                    Text(strings.cancel)
+                }
+            }
+        )
     }
 
     when (currentDestination) {
@@ -792,7 +830,7 @@ private fun GoCoachScreen(
             GameSetupLobby(
                 screenState = screenState,
                 onEvent = ::dispatch,
-                onBackClick = { currentDestination = ScreenDestination.Home },
+                onBackClick = exitToHome,
                 onStartMatch = { currentDestination = ScreenDestination.InGame }
             )
         }
