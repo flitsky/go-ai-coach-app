@@ -91,7 +91,6 @@ internal fun SearchTimeSettingsPanel(
             modifier = Modifier.padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Text(strings.searchTime, fontWeight = FontWeight.SemiBold)
             MaximumSearchTimeLimitRow(
                 selected = settings.limit,
                 enabled = enabled,

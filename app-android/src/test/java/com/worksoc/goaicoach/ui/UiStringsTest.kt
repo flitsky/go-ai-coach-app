@@ -24,4 +24,12 @@ class UiStringsTest {
         assertEquals("사용 안 함", UiStrings.Korean.searchTimeLimitLabel(SearchTimeLimit.Off))
         assertEquals("10초 이내", UiStrings.Korean.searchTimeLimitLabel(SearchTimeLimit.WithinTenSeconds))
     }
+
+    @Test
+    fun compactDisplayLabelsUseShortLocalizedCopy() {
+        assertEquals("착수 표시", UiStrings.Korean.lastMoveRing)
+        assertEquals("Move mark", UiStrings.English.lastMoveRing)
+        assertEquals("着手表示", UiStrings.Japanese.lastMoveRing)
+        assertEquals("落子标记", UiStrings.ChineseSimplified.lastMoveRing)
+    }
 }
