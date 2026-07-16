@@ -67,29 +67,32 @@ internal fun ExpandedGameMenuSection(
     selectedLanguage: UiLanguage,
     onLanguageChange: (UiLanguage) -> Unit,
     onEvent: (GameUiEvent) -> Unit,
+    showSettings: Boolean = false,
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        PlayerSetupPanel(
-            state = screenState.playerSetupUi,
-            enabled = true, // engine-busy gate disabled; restore with !screenState.engine.isBusy
-            onPlayerSetupChange = { setup -> onEvent(GameUiEvent.ChangePlayerSetup(setup)) },
-            onAutoPlayDelayChange = { setting -> onEvent(GameUiEvent.ChangeAutoPlayDelay(setting)) },
-        )
+        if (showSettings) {
+            PlayerSetupPanel(
+                state = screenState.playerSetupUi,
+                enabled = true, // engine-busy gate disabled; restore with !screenState.engine.isBusy
+                onPlayerSetupChange = { setup -> onEvent(GameUiEvent.ChangePlayerSetup(setup)) },
+                onAutoPlayDelayChange = { setting -> onEvent(GameUiEvent.ChangeAutoPlayDelay(setting)) },
+            )
 
-        ScoringAndBoardSettingsPanel(
-            ruleset = screenState.gameState.ruleset,
-            boardSize = screenState.gameState.boardSize,
-            handicapCount = screenState.handicapCount,
-            canChangeRuleset = true,
-            canChangeBoardSize = screenState.isGameEnded,
-            canChangeHandicap = screenState.isGameEnded,
-            onRulesetChange = { ruleset -> onEvent(GameUiEvent.ChangeScoringRule(ruleset)) },
-            onBoardSizeChange = { size -> onEvent(GameUiEvent.ChangeBoardSize(size)) },
-            onHandicapCountChange = { count -> onEvent(GameUiEvent.ChangeHandicapCount(count)) },
-        )
+            ScoringAndBoardSettingsPanel(
+                ruleset = screenState.gameState.ruleset,
+                boardSize = screenState.gameState.boardSize,
+                handicapCount = screenState.handicapCount,
+                canChangeRuleset = true,
+                canChangeBoardSize = screenState.isGameEnded,
+                canChangeHandicap = screenState.isGameEnded,
+                onRulesetChange = { ruleset -> onEvent(GameUiEvent.ChangeScoringRule(ruleset)) },
+                onBoardSizeChange = { size -> onEvent(GameUiEvent.ChangeBoardSize(size)) },
+                onHandicapCountChange = { count -> onEvent(GameUiEvent.ChangeHandicapCount(count)) },
+            )
+        }
 
         LanguageSettingsPanel(
             selectedLanguage = selectedLanguage,

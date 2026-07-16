@@ -3,12 +3,13 @@
 작성일: 2026-06-14
 갱신: 2026-06-17 — `docs/` 최상위를 현재 제품 운영에 바로 쓰는 핵심 문서 9개로 정리했다. 저장소 루트에는 영문 GitHub 소개 파일인 `README.md`만 남기고, `PRD.md`/`ARCHITECTURE.md`/`ENGINE.md`/`OPERATIONS.md`를 포함한 모든 제품/아키텍처 문서는 `docs/` 아래 한글로 둔다. 리팩토링 전략/진행 로그, 엔진 검증 리뷰, 프로젝트 히스토리, 초기 의사결정 문서는 각각 전용 하위 폴더로 분리했다.  
 갱신: 2026-06-27 — 현재 코드 기준선과 `make test` 결과를 반영해 `ARCHITECTURE.md`를 갱신하고, 오늘 기준 리팩토링 평가/계획 문서 `refactoring/ARCHITECTURE_IMPLEMENTATION_REVIEW_2026-06-27.md`를 추가했다.
+갱신: 2026-06-28 — 줄 수, 패키지 수, remote transport 구현 상태처럼 자주 낡는 현재 지표는 기준일을 붙인 문장으로만 적도록 운영 원칙을 추가했다.
 
 ## 하위 폴더 한눈에 보기
 
 | 폴더 | 존재 목적 |
 | --- | --- |
-| `docs/` (최상위) | 지금 제품을 이해/운영하는 데 바로 필요한 9개 핵심 문서만 |
+| `docs/` (최상위) | 2026-06-28 기준, 지금 제품을 이해/운영하는 데 바로 필요한 9개 핵심 문서만 |
 | `docs/refactoring/` | 구조 리팩토링 전략과 날짜별 작업 로그. 끝난 작업도 지우지 않고 이력으로 쌓아둔다 |
 | `docs/engine-research/` | 엔진 강도·search tree 정책 검증 실험 리뷰. 결론은 핵심 문서에 반영됐지만 근거 원본으로 보존 |
 | `docs/history/` | 프로젝트 대화/작업 히스토리 누적 기록. 계속 append되는 진행 중인 로그 (archive와 달리 "끝난" 문서가 아니다) |
@@ -16,7 +17,7 @@
 | `docs/engine-match-logs/`, `docs/engine-benchmark-logs/` | KataGo 레벨 매트릭스·기기 성능 측정 raw/summary 로그 |
 | `docs/error-cases/` | 계가/사석/패스 관련 버그 재현 케이스 |
 
-## docs/ 최상위 핵심 문서 (9개)
+## docs/ 최상위 핵심 문서 (2026-06-28 기준 9개)
 
 | 문서 | 역할 |
 | --- | --- |
@@ -27,14 +28,16 @@
 | `OPERATIONS.md` | 스택/계가 결정, 현재 옵션 화면, 진단/런타임 로그 요약 |
 | `ENGINE_API_CALL_POLICY.md` | 엔진 호출 정책, 턴 분석, 캐시, 후보수 처리 기준 — `ENGINE.md`의 딥다이브 |
 | `USER_OPTION_MANUAL.md` | 현재 앱 옵션과 사용자 조작 설명 — `OPERATIONS.md`의 딥다이브 |
-| `DIAGNOSTIC_EVENT_SCHEMA.md` | 진단 이벤트 JSONL 스키마 + 런타임 이벤트 로그 20종 — `OPERATIONS.md`의 딥다이브 |
+| `DIAGNOSTIC_EVENT_SCHEMA.md` | 2026-06-28 기준 진단 이벤트 JSONL 스키마 + 런타임 이벤트 로그 20종 — `OPERATIONS.md`의 딥다이브 |
 | `SCORE_AND_ENDGAME_DECISION.md` | 중간 형세, 사석 정리, 종국 계가 정책, 부심/주심 SLA — `OPERATIONS.md`의 딥다이브 |
 
-`PRD`/`ARCHITECTURE`/`ENGINE`/`OPERATIONS` 4개는 압축된 요약 문서이고, 나머지(`ENGINE_API_CALL_POLICY`/`USER_OPTION_MANUAL`/`DIAGNOSTIC_EVENT_SCHEMA`/`SCORE_AND_ENDGAME_DECISION`)는 그 요약이 가리키는 상세 운영 규칙 문서다.
+2026-06-28 기준 `PRD`/`ARCHITECTURE`/`ENGINE`/`OPERATIONS` 4개는 압축된 요약 문서이고, 나머지(`ENGINE_API_CALL_POLICY`/`USER_OPTION_MANUAL`/`DIAGNOSTIC_EVENT_SCHEMA`/`SCORE_AND_ENDGAME_DECISION`)는 그 요약이 가리키는 상세 운영 규칙 문서다.
 
 ## 운영 원칙
 
-`docs/` 최상위에는 **현재 제품에서 바로 참고해야 하는 핵심 문서만** 둔다. 새 문서가 위 9개 범주(요약 4개 + 딥다이브 4개 + 이 인덱스)에 들지 않으면, 아래 중 맞는 폴더로 분류한다.
+`docs/` 최상위에는 **현재 제품에서 바로 참고해야 하는 핵심 문서만** 둔다. 새 문서가 2026-06-28 기준 위 9개 범주(요약 4개 + 딥다이브 4개 + 이 인덱스)에 들지 않으면, 아래 중 맞는 폴더로 분류한다.
+
+현재 코드의 줄 수, 패키지/파일 수, remote transport 구현 상태, 테스트 통과 여부처럼 자주 낡는 지표는 반드시 "YYYY-MM-DD 기준"을 붙인 문장으로만 쓴다. 날짜가 붙은 refactoring 로그와 archive 문서의 historical 수치는 이 규칙을 이유로 덮어쓰지 않는다.
 
 - 리팩토링 전략·작업 로그 → `docs/refactoring/`
 - 엔진 강도/검증 실험 리뷰 → `docs/engine-research/`

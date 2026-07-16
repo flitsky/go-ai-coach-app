@@ -128,6 +128,12 @@ internal data class UiStrings(
     val no: String,
     val handicap: String,
     val handicapNone: String,
+    val startMatch: String,
+    val study: String,
+    val matchSetup: String,
+    val startMatchAction: String,
+    val backToHome: String,
+    val notImplementedMessage: String,
 ) {
     /** 접바둑 N점 레이블 (예: 한국어 "접바둑 3점", 영어 "Handicap 3") */
     fun handicapLabel(count: Int): String =
@@ -381,6 +387,12 @@ internal data class UiStrings(
             no = "아니오",
             handicap = "접바둑",
             handicapNone = "접바둑 없음",
+            startMatch = "대국 하기",
+            study = "학습 하기",
+            matchSetup = "대국 설정",
+            startMatchAction = "대국 시작하기",
+            backToHome = "메인으로",
+            notImplementedMessage = "아직 준비 중인 기능입니다.",
         )
 
         val English = Korean.copy(
@@ -471,6 +483,12 @@ internal data class UiStrings(
             no = "No",
             handicap = "Handicap",
             handicapNone = "No handicap",
+            startMatch = "Start Match",
+            study = "Study Mode",
+            matchSetup = "Match Setup",
+            startMatchAction = "Start Match Now",
+            backToHome = "Main Menu",
+            notImplementedMessage = "This feature is currently under development.",
         )
 
         val Japanese = Korean.copy(
@@ -559,6 +577,12 @@ internal data class UiStrings(
             no = "いいえ",
             handicap = "置き石",
             handicapNone = "置き石なし",
+            startMatch = "対局する",
+            study = "学習する",
+            matchSetup = "対局設定",
+            startMatchAction = "対局開始",
+            backToHome = "メインメニューへ",
+            notImplementedMessage = "この機能は現在準備中です。",
         )
 
         val ChineseSimplified = Korean.copy(
@@ -647,6 +671,12 @@ internal data class UiStrings(
             no = "否",
             handicap = "让子",
             handicapNone = "无让子",
+            startMatch = "进行对局",
+            study = "进行学习",
+            matchSetup = "对局设置",
+            startMatchAction = "开始对局",
+            backToHome = "返回主菜单",
+            notImplementedMessage = "此功能目前正在准备中。",
         )
 
         fun forLanguage(language: UiLanguage): UiStrings =

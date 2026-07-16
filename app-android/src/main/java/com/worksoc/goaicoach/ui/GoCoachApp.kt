@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -128,6 +129,7 @@ private fun GoCoachScreen(
 ) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+    var currentDestination by remember { mutableStateOf(ScreenDestination.Home) }
     val sessionStore: SavedGameStorePort = remember(context) { GameSessionStore(context) }
     val preferencesStore: UserPreferencesStorePort = remember(context) { UserPreferencesStore(context) }
     val benchmarkStore: EngineBenchmarkStorePort = remember(context) { EngineBenchmarkStore(context) }
@@ -678,7 +680,11 @@ private fun GoCoachScreen(
                 dismissResumePrompt = { sessionStore.clear(); savedSessionUiState = savedSessionUiState.dismiss() },
                 acceptCacheOptimizationPrompt = cacheOptController::accept,
                 dismissCacheOptimizationPrompt = cacheOptController::dismiss,
-                restoreSavedSession = { snap -> savedSessionUiState = savedSessionUiState.dismiss(); savedSessionController.restore(snap) },
+                restoreSavedSession = { snap ->
+                    savedSessionUiState = savedSessionUiState.dismiss()
+                    savedSessionController.restore(snap)
+                    currentDestination = ScreenDestination.InGame
+                },
                 changePlayerSetup = settingsController::changePlayerSetup, changeAutoPlayDelay = settingsController::changeAutoPlayDelay,
                 changeSearchTimeSettings = settingsController::changeSearchTimeSettings,
                 changeBoardSize = { size ->
@@ -755,19 +761,46 @@ private fun GoCoachScreen(
             ),
         ),
     )
-    GoCoachContent(
-        screenState = screenState,
-        benchmarkProgress = benchmarkUiState.progress,
-        benchmarkResult = benchmarkUiState.resultToConfirm,
-        onBenchmarkResultConfirmed = { benchmarkUiState = benchmarkUiState.clearConfirmedResult() },
-        onBenchmarkRerun = benchmarkController::rerun,
-        isDisplayMenuExpanded = isDisplayMenuExpanded,
-        onDisplayMenuExpandedChange = { expanded -> isDisplayMenuExpanded = expanded },
-        onScoreGraphExpandedChange = { expanded -> isScoreGraphExpanded = expanded },
-        onFinalJudgementReview = ::activateEndgameJudgementReview,
-        selectedLanguage = selectedLanguage,
-        onLanguageChange = onLanguageChange,
-        turnTimeState = turnTimeState,
-        onEvent = ::dispatch,
-    )
+    BackHandler(enabled = currentDestination != ScreenDestination.Home) {
+        currentDestination = ScreenDestination.Home
+    }
+
+    when (currentDestination) {
+        ScreenDestination.Home -> {
+            GoCoachHomeScreen(
+                onStartMatchClick = { currentDestination = ScreenDestination.GameSetup }
+            )
+        }
+        ScreenDestination.GameSetup -> {
+            GameSetupLobby(
+                screenState = screenState,
+                onEvent = ::dispatch,
+                onBackClick = { currentDestination = ScreenDestination.Home },
+                onStartMatch = { currentDestination = ScreenDestination.InGame }
+            )
+        }
+        ScreenDestination.InGame -> {
+            GoCoachContent(
+                screenState = screenState,
+                benchmarkProgress = benchmarkUiState.progress,
+                benchmarkResult = benchmarkUiState.resultToConfirm,
+                onBenchmarkResultConfirmed = { benchmarkUiState = benchmarkUiState.clearConfirmedResult() },
+                onBenchmarkRerun = benchmarkController::rerun,
+                isDisplayMenuExpanded = isDisplayMenuExpanded,
+                onDisplayMenuExpandedChange = { expanded -> isDisplayMenuExpanded = expanded },
+                onScoreGraphExpandedChange = { expanded -> isScoreGraphExpanded = expanded },
+                onFinalJudgementReview = ::activateEndgameJudgementReview,
+                selectedLanguage = selectedLanguage,
+                onLanguageChange = onLanguageChange,
+                turnTimeState = turnTimeState,
+                onEvent = ::dispatch,
+            )
+        }
+    }
+}
+
+internal enum class ScreenDestination {
+    Home,
+    GameSetup,
+    InGame
 }

@@ -6,21 +6,21 @@ This repository is separate from `/Users/ryan9kim/worksoc/katago`, which remains
 
 ## Current Phase
 
-Playable local AI Go coaching app, 9x9, with a full local KataGo engine path (not a stub-only spike anymore).
+As of 2026-06-28, this is a playable local AI Go coaching app, 9x9, with a full local KataGo engine path (not a stub-only spike anymore).
 
-Implemented baseline:
+Implemented baseline as of 2026-06-28:
 
 1. Android Compose UI: board, player setup, search-time controls, score/win-rate graph, top-moves display, debug report copy, saved-game resume.
 2. `shared` Kotlin Multiplatform module: board rules, scoring (Area/Territory), engine core API contract, analysis policy, two engine search modes.
 3. `engine-android`: local KataGo process adapter (`libkatago.so`) supporting both GTP stateful-fast and JSON position-analysis paths, plus a stub adapter for engine-free UI work.
-4. `app-android/application/`: 17 feature-domain packages (session, autoai, undo, humanmove, startgame, savedgame, topmoves, engine, analysis, ...), each following a small `XxxController` + `XxxApplication.kt` pure-function pattern. `GoCoachApp.kt` is now a thin ~790-line composition root (was 1838 lines before the 2026-06 refactor).
+4. As of 2026-06-28, `app-android/application/` has 17 feature-domain packages (session, autoai, undo, humanmove, startgame, savedgame, topmoves, engine, analysis, ...), each following a small `XxxController` + `XxxApplication.kt` pure-function pattern. As of 2026-06-28, `GoCoachApp.kt` is a 769-line composition root (was 1838 lines before the 2026-06 refactor).
 5. Four AI level groups (Fast Beginner / Beginner / Intermediate / Advanced — UI labels are in Korean) mapped to different visits/time/search-mode policy. See [docs/ENGINE.md](./docs/ENGINE.md).
-6. Device benchmarking, diagnostic event logging, and a remote-engine-ready cache/gateway scaffold (not yet a full remote `EngineSessionClient`).
+6. Device benchmarking, diagnostic event logging, and, as of 2026-06-28, a remote-engine-ready cache/gateway scaffold without a full remote `EngineSessionClient`.
 
 Next goal:
 
 1. Move `GameSessionStateHolder` into the `shared` module for cross-platform reuse.
-2. Add androidTest/Robolectric coverage (currently JVM unit tests only).
+2. Add androidTest/Robolectric coverage. As of 2026-06-28, default verification uses JVM unit tests only.
 3. Decide on JNI/native-library packaging and remote-engine fallback once a `RemoteEngineSessionClient` is built.
 
 ## Documentation
@@ -30,7 +30,7 @@ All product/architecture documentation is written in Korean and lives under [`do
 Quick links to the main documents:
 
 - [`docs/PRD.md`](./docs/PRD.md) — product requirements, target end state, roadmap
-- [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — the 7-layer structure and current package map
+- [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — the 7-layer structure and current package map, with dated current-code metrics
 - [`docs/ENGINE.md`](./docs/ENGINE.md) — the two engine search modes, level→mode mapping, benchmark results
 - [`docs/OPERATIONS.md`](./docs/OPERATIONS.md) — stack decision, score/endgame policy, current menu/options, diagnostic + runtime logging
 
