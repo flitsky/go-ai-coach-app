@@ -51,11 +51,6 @@ internal fun GoCoachContent(
     onEvent: (GameUiEvent) -> Unit,
 ) {
     val strings = LocalUiStrings.current
-    val savedSessionToPrompt = if (benchmarkProgress == null && benchmarkResult == null) {
-        screenState.resumePrompt?.snapshot
-    } else {
-        null
-    }
     val cacheOptimizationPrompt = if (benchmarkProgress == null && benchmarkResult == null) {
         screenState.cacheOptimizationPrompt
     } else {
@@ -84,15 +79,7 @@ internal fun GoCoachContent(
         )
     }
 
-    if (savedSessionToPrompt != null) {
-        ResumeSavedSessionDialog(
-            snapshot = savedSessionToPrompt,
-            engineName = screenState.engine.name,
-            strings = strings,
-            onResume = { onEvent(GameUiEvent.ResumeSavedSession(savedSessionToPrompt)) },
-            onDismiss = { onEvent(GameUiEvent.DismissResumePrompt) },
-        )
-    } else if (cacheOptimizationPrompt != null) {
+    if (cacheOptimizationPrompt != null) {
         CacheOptimizationPromptDialog(
             title = cacheOptimizationPrompt.title,
             message = cacheOptimizationPrompt.message,
@@ -280,7 +267,7 @@ private fun EngineBenchmarkProfile.toResultDialogText(strings: UiStrings): Strin
     }
 
 @Composable
-private fun ResumeSavedSessionDialog(
+internal fun ResumeSavedSessionDialog(
     snapshot: SavedGameSnapshot,
     engineName: String,
     strings: UiStrings,

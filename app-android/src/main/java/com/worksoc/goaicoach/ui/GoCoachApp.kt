@@ -761,6 +761,23 @@ private fun GoCoachScreen(
             ),
         ),
     )
+
+    val savedSessionToPrompt = if (benchmarkUiState.progress == null && benchmarkUiState.resultToConfirm == null) {
+        screenState.resumePrompt?.snapshot
+    } else {
+        null
+    }
+
+    if (savedSessionToPrompt != null) {
+        ResumeSavedSessionDialog(
+            snapshot = savedSessionToPrompt,
+            engineName = screenState.engine.name,
+            strings = LocalUiStrings.current,
+            onResume = { dispatch(GameUiEvent.ResumeSavedSession(savedSessionToPrompt)) },
+            onDismiss = { dispatch(GameUiEvent.DismissResumePrompt) },
+        )
+    }
+
     BackHandler(enabled = currentDestination != ScreenDestination.Home) {
         currentDestination = ScreenDestination.Home
     }
