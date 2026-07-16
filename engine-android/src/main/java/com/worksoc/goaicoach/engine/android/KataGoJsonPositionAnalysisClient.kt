@@ -5,7 +5,6 @@ import com.worksoc.goaicoach.shared.AnalysisResult
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.EngineStatus
-import com.worksoc.goaicoach.shared.GameStateReplayer
 import com.worksoc.goaicoach.shared.LegalMoveGenerator
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.allCoordinates
@@ -35,8 +34,7 @@ internal class KataGoJsonPositionAnalysisClient(
             boardSize = context.boardSize,
             maxCandidates = candidateCount,
         )
-        val currentState = GameStateReplayer
-            .replay(boardSize = context.boardSize, ruleset = context.ruleset, moves = context.playedMoves)
+        val currentState = context.replayState()
         val legalCoordinates = LegalMoveGenerator
             .legalPlayCoordinates(currentState, context.nextPlayer)
             .toSet()

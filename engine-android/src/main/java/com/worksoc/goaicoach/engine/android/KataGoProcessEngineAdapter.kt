@@ -28,6 +28,7 @@ class KataGoProcessEngineAdapter(
     private var profile: EngineProfile = EngineProfile(mode = EngineMode.LocalProcess)
     private var boardSize: BoardSize = BoardSize.Nine
     private var ruleset: Ruleset = Ruleset.Japanese
+    private var handicapCount: Int = 0
     private var nextPlayer: StoneColor = StoneColor.Black
     private var process: Process? = null
     private var input: BufferedWriter? = null
@@ -56,6 +57,7 @@ class KataGoProcessEngineAdapter(
         ensureProcessStarted()
         this.boardSize = boardSize
         this.ruleset = ruleset
+        this.handicapCount = handicapCount
         nextPlayer = if (handicapCount > 0) StoneColor.White else StoneColor.Black
         playedMoves.clear()
         sendCommand(KataGoProtocolCommands.boardSize(boardSize))
@@ -293,6 +295,7 @@ class KataGoProcessEngineAdapter(
             ruleset = ruleset,
             nextPlayer = nextPlayer,
             playedMoves = playedMoves.toList(),
+            handicapCount = handicapCount,
         )
 
     private fun applySearchLimit(limit: AnalysisLimit) {
