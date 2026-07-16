@@ -277,9 +277,13 @@ private fun selectProgressiveOpeningOptimizationStates(
 
 private fun buildOpeningStates(finalState: GameState): List<GameState> =
     buildList {
-        var state = GameState.empty(
+        // The move history of a handicap game starts with White. Replay from
+        // the same initial handicap position rather than an empty Black-to-play
+        // board, otherwise the first White move violates the game rules.
+        var state = GameState.withHandicap(
             boardSize = finalState.boardSize,
             ruleset = finalState.ruleset,
+            handicapCount = finalState.handicapCount,
         )
         finalState.moves.forEach { move ->
             state = state.play(move)

@@ -69,6 +69,13 @@ internal class PositionCacheOptimizationController(
         isEngineReady: Boolean,
         isEngineBusy: Boolean,
     ) {
+        // This post-game experiment is disabled in the mobile flow. Avoid
+        // reconstructing opening states on every screen update when no prompt
+        // can be shown.
+        if (!PostGamePositionAnalysisCacheOptimizationPromptEnabled) {
+            onUiState(currentUiState().clearPrompt())
+            return
+        }
         onUiState(
             refreshPositionAnalysisCacheOptimizationPrompt(
                 currentState = currentUiState(),
@@ -76,7 +83,7 @@ internal class PositionCacheOptimizationController(
                 isEngineReady = isEngineReady,
                 isEngineBusy = isEngineBusy,
                 plan = buildPlan(),
-                isPromptEnabled = PostGamePositionAnalysisCacheOptimizationPromptEnabled,
+                isPromptEnabled = true,
             ),
         )
     }

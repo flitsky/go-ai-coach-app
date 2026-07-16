@@ -83,6 +83,39 @@ class PositionAnalysisCacheOptimizationTest {
     }
 
     @Test
+    fun planReplaysHandicapGamesForEveryNonFastAiLevel() {
+        val finalState = handicapOpeningGame()
+
+        listOf(
+            PlayLevelGroup.Beginner,
+            PlayLevelGroup.Intermediate,
+            PlayLevelGroup.Advanced,
+        ).forEach { group ->
+            val plan = buildPositionAnalysisCacheOptimizationPlan(
+                finalState = finalState,
+                playerSetup = PlayerSetup(
+                    black = SidePlayerSetup(controller = SeatController.Human),
+                    white = SidePlayerSetup(
+                        controller = SeatController.Ai,
+                        playLevel = PlayLevelSetting(group, 1),
+                    ),
+                ),
+                searchTimeSettings = SearchTimeSettings(),
+                maxTargets = 3,
+            )
+
+            assertEquals(3, plan.targets.size)
+            plan.targets.forEach { target ->
+                assertEquals(2, target.state.handicapCount)
+                assertEquals(
+                    finalState.moves.take(target.moveNumber),
+                    target.state.moves,
+                )
+            }
+        }
+    }
+
+    @Test
     fun planPrioritizesFirstTenOpeningMovesBeforeLaterMoves() {
         val plan = buildPositionAnalysisCacheOptimizationPlan(
             finalState = openingGame(moveCount = 20),
@@ -415,6 +448,23 @@ class PositionAnalysisCacheOptimizationTest {
             .play(Move.Play(StoneColor.White, BoardCoordinate.fromLabel("C5", BoardSize.Nine)))
             .play(Move.Pass(StoneColor.Black))
             .play(Move.Pass(StoneColor.White))
+
+    private fun handicapOpeningGame(): GameState =
+        listOf("E5", "C5", "E4")
+            .fold(
+                GameState.withHandicap(
+                    boardSize = BoardSize.Nine,
+                    ruleset = Ruleset.Japanese,
+                    handicapCount = 2,
+                ),
+            ) { state, label ->
+                state.play(
+                    Move.Play(
+                        player = state.nextPlayer,
+                        coordinate = BoardCoordinate.fromLabel(label, BoardSize.Nine),
+                    ),
+                )
+            }
 
     private fun oneTargetOptimizationPlan(finalState: GameState): PositionAnalysisCacheOptimizationPlan =
         PositionAnalysisCacheOptimizationPlan(
