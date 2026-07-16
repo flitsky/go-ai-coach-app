@@ -16,6 +16,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -63,6 +64,11 @@ internal fun GoCoachContent(
         }
     }
     var dismissedFinalJudgementKey by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(screenState.isGameEnded) {
+        if (!screenState.isGameEnded) {
+            dismissedFinalJudgementKey = null
+        }
+    }
     val finalJudgementKey = screenState.finalScoreJudgement?.dialogKey(screenState.gameState.moves.size)
     val finalJudgementToShow = screenState.finalScoreJudgement
         ?.takeIf { finalJudgementKey != null && dismissedFinalJudgementKey != finalJudgementKey }

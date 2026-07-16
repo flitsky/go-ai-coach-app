@@ -197,7 +197,7 @@ internal fun GoBoard(
                 )
             }
 
-            if (isGameEnded && gameState.hasConsecutivePasses()) {
+            if (isGameEnded && gameState.hasConsecutivePasses() && engineActivityIndicator != null) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
