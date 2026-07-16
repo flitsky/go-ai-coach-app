@@ -76,6 +76,7 @@ internal fun GoBoard(
     tentativeMove: BoardCoordinate? = null,
     onCoordinateTap: (BoardCoordinate) -> Unit,
     isGameEnded: Boolean = false,
+    isEngineBusy: Boolean = false,
 ) {
     var canvasSize by remember { mutableStateOf(IntSize.Zero) }
     var activityFrame by remember { mutableStateOf(0) }
@@ -197,7 +198,7 @@ internal fun GoBoard(
                 )
             }
 
-            if (isGameEnded && gameState.hasConsecutivePasses() && engineActivityIndicator != null) {
+            if (isGameEnded && gameState.hasConsecutivePasses() && isEngineBusy) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()

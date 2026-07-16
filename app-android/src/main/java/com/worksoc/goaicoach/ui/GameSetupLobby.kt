@@ -133,7 +133,8 @@ internal fun GameSetupLobby(
                         modifier = Modifier.fillMaxWidth(),
                         tentativeMove = null,
                         onCoordinateTap = {}, // 빈 람다
-                        isGameEnded = false
+                        isGameEnded = false,
+                        isEngineBusy = false
                     )
                 }
             }

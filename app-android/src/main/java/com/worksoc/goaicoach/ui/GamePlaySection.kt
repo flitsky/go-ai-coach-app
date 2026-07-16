@@ -79,6 +79,7 @@ internal fun GamePlaySection(
             }
         },
         isGameEnded = screenState.isGameEnded,
+        isEngineBusy = screenState.engine.isBusy,
     )
 
     // 대국 현황 패널 & 실시간 타이머 계산
