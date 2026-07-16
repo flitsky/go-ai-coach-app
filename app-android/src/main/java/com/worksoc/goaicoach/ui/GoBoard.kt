@@ -69,6 +69,7 @@ internal fun GoBoard(
     modifier: Modifier = Modifier,
     tentativeMove: BoardCoordinate? = null,
     onCoordinateTap: (BoardCoordinate) -> Unit,
+    isGameEnded: Boolean = false,
 ) {
     var canvasSize by remember { mutableStateOf(IntSize.Zero) }
     var activityFrame by remember { mutableStateOf(0) }
@@ -100,7 +101,7 @@ internal fun GoBoard(
         Box(
             modifier = Modifier
                 .size(boardSide)
-                .background(Color(0xFFD7A85E), RoundedCornerShape(8.dp))
+                .background(if (isGameEnded) Color(0xFFAC864B) else Color(0xFFD7A85E), RoundedCornerShape(8.dp))
                 .border(1.dp, Color(0xFF7A4D20), RoundedCornerShape(8.dp))
                 .padding(3.dp),
             contentAlignment = Alignment.Center,
@@ -135,7 +136,7 @@ internal fun GoBoard(
                 drawCandidateMoves(geometry, gameState, candidateMoves)
 
                 for ((coordinate, stone) in gameState.stones) {
-                    drawStone(geometry.pointFor(coordinate), geometry.spacing * 0.42f, stone)
+                    drawStone(geometry.pointFor(coordinate), geometry.spacing * 0.42f, stone, isGameEnded)
                 }
 
                 if (tentativeMove != null) {
@@ -482,6 +483,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawStone(
     center: Offset,
     radius: Float,
     stone: StoneColor,
+    isGameEnded: Boolean,
 ) {
     drawCircle(
         color = Color(0x33000000),
@@ -489,12 +491,12 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawStone(
         center = Offset(center.x + radius * 0.05f, center.y + radius * 0.07f),
     )
     drawCircle(
-        brush = stoneBrush(stone, center, radius),
+        brush = stoneBrush(stone, center, radius, isGameEnded),
         radius = radius,
         center = center,
     )
     drawCircle(
-        color = stoneEdgeColor(stone),
+        color = stoneEdgeColor(stone, isGameEnded),
         radius = radius,
         center = center,
         style = Stroke(width = 2.2f),
@@ -505,21 +507,40 @@ private fun stoneBrush(
     stone: StoneColor,
     center: Offset,
     radius: Float,
+    isGameEnded: Boolean,
 ): Brush {
     val colors = when (stone) {
-        StoneColor.Black -> listOf(
-            Color(0xFF646464),
-            Color(0xFF303030),
-            Color(0xFF101010),
-            Color(0xFF030303),
-        )
+        StoneColor.Black -> if (isGameEnded) {
+            listOf(
+                Color(0xFF787878),
+                Color(0xFF393939),
+                Color(0xFF131313),
+                Color(0xFF030303),
+            )
+        } else {
+            listOf(
+                Color(0xFF646464),
+                Color(0xFF303030),
+                Color(0xFF101010),
+                Color(0xFF030303),
+            )
+        }
 
-        StoneColor.White -> listOf(
-            Color(0xFFFFFFFF),
-            Color(0xFFF3F1EA),
-            Color(0xFFE0DDD3),
-            Color(0xFFC7C2B6),
-        )
+        StoneColor.White -> if (isGameEnded) {
+            listOf(
+                Color(0xFFCCCCCC),
+                Color(0xFFC2C0BB),
+                Color(0xFFB3B0A8),
+                Color(0xFF9F9B91),
+            )
+        } else {
+            listOf(
+                Color(0xFFFFFFFF),
+                Color(0xFFF3F1EA),
+                Color(0xFFE0DDD3),
+                Color(0xFFC7C2B6),
+            )
+        }
     }
     return Brush.radialGradient(
         colors = colors,
@@ -528,10 +549,10 @@ private fun stoneBrush(
     )
 }
 
-private fun stoneEdgeColor(stone: StoneColor): Color =
+private fun stoneEdgeColor(stone: StoneColor, isGameEnded: Boolean): Color =
     when (stone) {
-        StoneColor.Black -> Color(0xFF5E5E5E)
-        StoneColor.White -> Color(0xFF8F8A7C)
+        StoneColor.Black -> if (isGameEnded) Color(0xFF707070) else Color(0xFF5E5E5E)
+        StoneColor.White -> if (isGameEnded) Color(0xFF726E63) else Color(0xFF8F8A7C)
     }
 
 private data class BoardGeometry(
@@ -715,7 +736,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawGhostStone(
         center = center,
     )
     drawCircle(
-        color = stoneEdgeColor(stone).copy(alpha = alpha * 0.9f),
+        color = stoneEdgeColor(stone, isGameEnded = false).copy(alpha = alpha * 0.9f),
         radius = radius,
         center = center,
         style = Stroke(width = 2.2f),
