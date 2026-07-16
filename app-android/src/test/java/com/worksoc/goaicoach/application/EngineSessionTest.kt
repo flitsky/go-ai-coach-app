@@ -70,6 +70,17 @@ class EngineSessionTest {
     }
 
     @Test
+    fun syncToGameStatePreservesHandicapAndWhiteToPlay() = runBlocking {
+        val engine = RecordingEngineAdapter()
+        val state = GameState.withHandicap(BoardSize.Nine, Ruleset.Japanese, handicapCount = 2)
+
+        engine.syncToGameState(state)
+
+        assertEquals(StoneColor.White, state.nextPlayer)
+        assertEquals(2, engine.lastNewGameHandicapCount)
+    }
+
+    @Test
     fun startNewEngineGameConfiguresProfileAndReturnsInitialEstimateSnapshot() = runBlocking {
         val engine = RecordingEngineAdapter()
         val session = LocalEngineCoreSessionDelegate(engine)
@@ -543,6 +554,8 @@ private class RecordingEngineAdapter(
     val configuredProfiles = mutableListOf<EngineProfile>()
     var scoreFinalCalls: Int = 0
         private set
+    var lastNewGameHandicapCount: Int? = null
+        private set
 
     override suspend fun initialize(profile: EngineProfile): EngineStatus {
         calls += "initialize:${profile.analysisLimit.visits}"
@@ -560,6 +573,7 @@ private class RecordingEngineAdapter(
         ruleset: Ruleset,
         handicapCount: Int,
     ): EngineStatus {
+        lastNewGameHandicapCount = handicapCount
         calls += "newGame:${boardSize.value}:${ruleset.katagoName}"
         return EngineStatus.ready("new game")
     }

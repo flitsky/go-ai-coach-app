@@ -67,6 +67,7 @@ import com.worksoc.goaicoach.application.session.GameSessionTurnTimeState
 import com.worksoc.goaicoach.application.session.GameSettingsController
 import com.worksoc.goaicoach.application.session.runTurnAutomationTriggerEffect
 import com.worksoc.goaicoach.application.topmoves.TopMovesController
+import com.worksoc.goaicoach.application.topmoves.TopMoveAnalysisDeferral
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
@@ -382,6 +383,7 @@ private fun GoCoachScreen(
             ),
         )
     }
+    val deferredTopMoveAnalysis = remember { TopMoveAnalysisDeferral() }
     val topMovesController = TopMovesController(
         engineClient = engineClient,
         currentControllerState = { sessionSnapshot },
@@ -414,6 +416,7 @@ private fun GoCoachScreen(
             analysisState = update.analysisState
             update.engineMessage?.let { message -> engineMessage = message }
         },
+        deferredAutomaticAnalysis = deferredTopMoveAnalysis,
     )
     val undoController = remember {
         UndoController(
@@ -707,6 +710,7 @@ private fun GoCoachScreen(
         gameState.nextPlayer,
         gameState.moves.size,
     ) {
+        topMovesController.resumeDeferredAnalysisIfIdle()
         runTurnAutomationTriggerEffect(
             quietUntilMillis = undoEngineInterventionQuietUntil,
             topMoveTargetState = gameState,

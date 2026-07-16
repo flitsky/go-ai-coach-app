@@ -31,8 +31,16 @@ internal class TopMovesController(
     private val applyFailureDisplay: (TopMoveAnalysisFailureDisplayPlan) -> Unit,
     private val appendEngineOperationDiscardLog: (EngineOperationResultGuard.Discard) -> Unit,
     private val applyShowTopMovesStateUpdate: (ShowTopMovesStateUpdate) -> Unit,
+    private val deferredAutomaticAnalysis: TopMoveAnalysisDeferral,
 ) {
     fun requestAnalysis(targetState: GameState, automatic: Boolean, deep: Boolean = false) {
+        if (automatic && isEngineBusy()) {
+            deferredAutomaticAnalysis.defer(
+                targetState = targetState,
+                deep = deep,
+            )
+            return
+        }
         runTopMoveAnalysisApplication(
             TopMoveAnalysisRunRequest(
                 engineClient = engineClient,
@@ -62,6 +70,16 @@ internal class TopMovesController(
         )
     }
 
+    fun resumeDeferredAnalysisIfIdle(): Boolean {
+        val request = deferredAutomaticAnalysis.takeWhenIdle(isEngineBusy()) ?: return false
+        requestAnalysis(
+            targetState = request.targetState,
+            automatic = true,
+            deep = request.deep,
+        )
+        return true
+    }
+
     fun showForCurrentState() {
         runShowTopMovesApplication(
             ShowTopMovesRunRequest(
@@ -84,6 +102,7 @@ internal class TopMovesController(
     }
 
     fun hide() {
+        deferredAutomaticAnalysis.clear()
         runHideTopMovesApplication(
             HideTopMovesRunRequest(
                 controllerState = currentControllerState(),

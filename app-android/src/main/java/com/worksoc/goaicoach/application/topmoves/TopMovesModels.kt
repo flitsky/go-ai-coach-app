@@ -30,6 +30,36 @@ internal data class TopMoveAnalysisPlan(
 // the GTP engine tree and avoid the separate JSON analysis process.
 internal val TopMovesSearchMode = EngineSearchMode.GtpStatefulFast
 
+/**
+ * A follow-up request can be produced while the preceding engine operation is
+ * still completing. Keep only the newest automatic request and run it once
+ * the engine lifecycle returns to idle.
+ */
+internal data class DeferredTopMoveAnalysisRequest(
+    val targetState: GameState,
+    val deep: Boolean,
+)
+
+internal class TopMoveAnalysisDeferral {
+    private var pending: DeferredTopMoveAnalysisRequest? = null
+
+    fun defer(
+        targetState: GameState,
+        deep: Boolean,
+    ) {
+        pending = DeferredTopMoveAnalysisRequest(targetState, deep)
+    }
+
+    fun takeWhenIdle(isEngineBusy: Boolean): DeferredTopMoveAnalysisRequest? {
+        if (isEngineBusy) return null
+        return pending.also { pending = null }
+    }
+
+    fun clear() {
+        pending = null
+    }
+}
+
 internal data class TopMoveAnalysisOperationToken(
     val operation: EngineOperationRequest,
     val analysisKey: AnalysisCacheKey,

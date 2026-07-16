@@ -14,6 +14,8 @@ import com.worksoc.goaicoach.application.autoai.*
 import com.worksoc.goaicoach.application.topmoves.*
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.PlayerSetup
+import com.worksoc.goaicoach.match.SeatController
+import com.worksoc.goaicoach.match.SidePlayerSetup
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.AnalysisPreset
 import com.worksoc.goaicoach.shared.AnalysisResult
@@ -40,6 +42,22 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class TopMovesApplicationTest {
+    @Test
+    fun deferredTopMoveRequestWaitsForEngineIdleAndKeepsLatestPosition() {
+        val deferral = TopMoveAnalysisDeferral()
+        val first = GameState.empty()
+        val latest = first.play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+
+        deferral.defer(first, deep = false)
+        deferral.defer(latest, deep = true)
+
+        assertNull(deferral.takeWhenIdle(isEngineBusy = true))
+        assertEquals(
+            DeferredTopMoveAnalysisRequest(targetState = latest, deep = true),
+            deferral.takeWhenIdle(isEngineBusy = false),
+        )
+        assertNull(deferral.takeWhenIdle(isEngineBusy = false))
+    }
     @Test
     fun buildTopMoveAnalysisPlanCreatesBoundedLimitAndCacheKey() {
         val state = GameState.empty()
@@ -913,8 +931,12 @@ class TopMovesApplicationTest {
     }
 
     @Test
-    fun topMoveAnalysisApplicationRunnerLaunchesEngineWorkAndAppliesCompletion() = runBlocking {
-        val state = GameState.empty()
+    fun topMoveAnalysisApplicationRunnerLaunchesEngineWorkForHandicapWhiteTurn() = runBlocking {
+        val state = GameState.withHandicap(
+            boardSize = BoardSize.Nine,
+            ruleset = Ruleset.Japanese,
+            handicapCount = 2,
+        )
         val coordinate = BoardCoordinate.fromLabel("E5", BoardSize.Nine)
         var analysisState = GameSessionAnalysisState.empty(state)
         var appliedUpdate: TopMoveAnalysisUpdate? = null
@@ -929,7 +951,7 @@ class TopMovesApplicationTest {
                 status = EngineStatus.ready("analysis complete"),
                 candidates = listOf(
                     CandidateMove(
-                        move = Move.Play(StoneColor.Black, coordinate),
+                        move = Move.Play(StoneColor.White, coordinate),
                         pointLoss = 0.0,
                     ),
                 ),
@@ -949,7 +971,9 @@ class TopMovesApplicationTest {
                 isEngineReady = true,
                 isEngineBusy = false,
                 shouldShowResumePrompt = false,
-                playerSetup = PlayerSetup(),
+                playerSetup = PlayerSetup(
+                    white = SidePlayerSetup(controller = SeatController.Human),
+                ),
                 analysisCacheEnabled = false,
                 cachedResultFor = { null },
                 currentState = { state },
