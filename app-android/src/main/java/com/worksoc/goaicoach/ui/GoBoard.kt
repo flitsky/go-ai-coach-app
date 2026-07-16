@@ -198,7 +198,7 @@ internal fun GoBoard(
                 )
             }
 
-            if (isGameEnded && gameState.hasConsecutivePasses() && isEngineBusy) {
+            if (gameState.hasConsecutivePasses() && isEngineBusy) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
