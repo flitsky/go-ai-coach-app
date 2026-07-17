@@ -90,6 +90,16 @@ import com.worksoc.goaicoach.presentation.dispatchGameUiEvent
 import com.worksoc.goaicoach.presentation.toKaTrainUxOptions
 import com.worksoc.goaicoach.shared.AnalysisPreset
 import com.worksoc.goaicoach.shared.BoardSize
+import com.worksoc.goaicoach.application.session.GameSessionScoreState
+import com.worksoc.goaicoach.application.session.GameSessionMoveReviewState
+import com.worksoc.goaicoach.application.session.GameSessionRuntimeState
+import com.worksoc.goaicoach.application.session.GameSessionSettingsState
+import com.worksoc.goaicoach.application.session.GameSessionAnalysisState
+import com.worksoc.goaicoach.application.autoai.AutoAiTurnUiState
+import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationUiState
+import com.worksoc.goaicoach.application.engine.EngineBenchmarkUiState
+import com.worksoc.goaicoach.application.savedgame.SavedSessionUiState
+import kotlinx.coroutines.CoroutineScope
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.PlayLevelSetting
@@ -398,315 +408,131 @@ private fun GoCoachScreen(
         )
     }
     val deferredTopMoveAnalysis = remember { TopMoveAnalysisDeferral() }
-    val topMovesController = TopMovesController(
-        engineClient = engineClient,
-        currentControllerState = { sessionSnapshot },
-        isGameEnded = { isGameEnded },
-        isEngineReady = { isEngineReady },
-        isEngineBusy = { isEngineBusy },
-        shouldShowResumePrompt = { shouldShowResumePrompt },
-        currentPlayerSetup = { playerSetup },
-        pendingPostUndoEngineSync = { isPendingUndoSync },
-        analysisCacheEnabled = { analysisCache.isEnabled },
-        cachedResultFor = { key -> undoAnalysisRestoreCache.get(key) ?: analysisCache.get(key) },
-        currentGameState = { gameState },
-        currentAnalysisKey = { analysisState.lastAnalysisKey },
-        currentSessionGeneration = { runtimeState.sessionGeneration },
-        launchEngineOperation = { operation, block -> lifecycleController.launchTracked(operation) { block() } },
-        applyLaunchUpdate = { launchUpdate ->
-            analysisState = launchUpdate.analysisState
-            launchUpdate.engineMessage?.let { message -> engineMessage = message }
-        },
-        applyTopMoveAnalysisUpdate = { update, analysisKey ->
-            analysisState = analysisState.applyTopMoveAnalysisUpdate(update, analysisKey)
-            engineMessage = update.engineMessage
-        },
-        putUndoRestoreCache = { key, cached -> undoAnalysisRestoreCache.put(key, cached) },
-        putAnalysisCache = { key, cached -> analysisCache.put(key, cached) },
-        applyFailureDisplay = displayStateApplier::applyTopMoveAnalysisFailureDisplayPlan,
-        appendEngineOperationDiscardLog = lifecycleController::appendDiscardLog,
-        applyShowTopMovesStateUpdate = { update ->
-            settingsState = update.settingsState
-            analysisState = update.analysisState
-            update.engineMessage?.let { message -> engineMessage = message }
-        },
-        deferredAutomaticAnalysis = deferredTopMoveAnalysis,
-    )
-    val undoController = remember {
-        UndoController(
-            scope = scope,
-            engineClient = engineClient,
-            diagnosticEventLog = diagnosticEventLog,
-            currentGameState = { gameState },
-            currentScoreSnapshots = { scoreState.scoreSnapshots },
-            currentMoveReviews = { moveReviewState.moveReviews },
-            currentMatchMode = { matchMode },
-            currentPlayerSetup = { playerSetup },
-            currentSessionGeneration = { runtimeState.sessionGeneration },
-            currentEngineProfile = { runtimeState.engineProfile },
-            timeoutPolicy = ::engineProfileTimeoutPolicy,
-            isEngineReady = { isEngineReady },
-            isEngineBusy = { isEngineBusy },
-            onEngineMessage = { message -> engineMessage = message },
-            onQuietUntil = { quietUntil -> undoEngineInterventionQuietUntil = quietUntil },
-            onPendingSyncChanged = { pending -> isPendingUndoSync = pending },
-            launchEngineOperation = { operation, block -> lifecycleController.launchTracked(operation) { block() } },
-            runEngineOperation = { operation, block -> lifecycleController.runTracked(operation) { block() } },
-            applyUndo = { undo ->
-                displayStateApplier.applyUndoLocalStatePlan(undo)
-                turnTimeState = turnTimeState.restartCurrentTurn(
-                    state = undo.gameState,
-                    nowMillis = System.currentTimeMillis(),
-                )
-            },
-            applyScoreSyncCompletion = displayStateApplier::applyScoreSyncCompletion,
-            requestFollowUpAnalysis = { state -> topMovesController.requestAnalysis(state, automatic = true) },
-            appendDiscardLog = lifecycleController::appendDiscardLog,
-        )
+    val wiringContext = remember(
+        sessionSnapshot,
+        gameState,
+        settingsState,
+        scoreState,
+        moveReviewState,
+        runtimeState,
+        autoAiTurnUiState,
+        positionCacheOptimizationState,
+        benchmarkUiState,
+        savedSessionUiState,
+        turnTimeState,
+        undoEngineInterventionQuietUntil,
+        isPendingUndoSync,
+        isEngineReady,
+        isEngineBusy,
+        isEngineBlockingBusy,
+        isGameEnded,
+        uxOptions
+    ) {
+        object : GoCoachAppWiringContext {
+            override val scope: CoroutineScope = scope
+            override val engineClient: EngineSessionClient = engineClient
+            override val diagnosticEventLog: DiagnosticEventLogPort = diagnosticEventLog
+            override val runtimeEventLog: RuntimeEventLogPort = runtimeEventLog
+            override val sessionStore: SavedGameStorePort = sessionStore
+            override val preferencesStore: UserPreferencesStorePort = preferencesStore
+            override val benchmarkStore: EngineBenchmarkStorePort = benchmarkStore
+            override val debugReportMirror: DebugReportMirrorPort = debugReportMirror
+            override val clipboardPort: ClipboardPort = clipboardPort
+            override val userNoticePort: UserNoticePort = userNoticePort
+            override val lifecycleController: EngineOperationLifecycleController = lifecycleController
+            override val displayStateApplier: GameSessionDisplayStateApplier = displayStateApplier
+            override val defaultPlayLevel: PlayLevelSetting = defaultPlayLevel
+            override val analysisCache: AnalysisResultCache = analysisCache
+            override val undoAnalysisRestoreCache: UndoAnalysisRestoreCache = undoAnalysisRestoreCache
+            override val deferredTopMoveAnalysis: TopMoveAnalysisDeferral = deferredTopMoveAnalysis
+
+            override fun sessionSnapshot(): GameSessionControllerState = sessionSnapshot
+            override fun gameState(): GameState = gameState
+            override fun playerSetup(): PlayerSetup = playerSetup
+            override fun analysisState(): GameSessionAnalysisState = analysisState
+            override fun scoreState(): GameSessionScoreState = scoreState
+            override fun moveReviewState(): GameSessionMoveReviewState = moveReviewState
+            override fun runtimeState(): GameSessionRuntimeState = runtimeState
+            override fun settingsState(): GameSessionSettingsState = settingsState
+            override fun autoAiTurnUiState(): AutoAiTurnUiState = autoAiTurnUiState
+            override fun positionCacheOptimizationState(): PositionAnalysisCacheOptimizationUiState = positionCacheOptimizationState
+            override fun benchmarkUiState(): EngineBenchmarkUiState = benchmarkUiState
+            override fun savedSessionUiState(): SavedSessionUiState = savedSessionUiState
+            override fun turnTimeState(): GameSessionTurnTimeState = turnTimeState
+            override fun undoEngineInterventionQuietUntil(): Long = undoEngineInterventionQuietUntil
+            override fun isPendingUndoSync(): Boolean = isPendingUndoSync
+            override fun isEngineReady(): Boolean = isEngineReady
+            override fun isEngineBusy(): Boolean = isEngineBusy
+            override fun isEngineBlockingBusy(): Boolean = isEngineBlockingBusy
+            override fun isGameEnded(): Boolean = isGameEnded
+            override fun shouldShowResumePrompt(): Boolean = shouldShowResumePrompt
+            override fun matchMode(): MatchMode = matchMode
+            override fun topMovesEnabled(): Boolean = topMovesEnabled
+            override fun currentRuntimeLogContext(): RuntimeLogContext = currentRuntimeLogContext()
+            override fun engineName(): String = engineName
+            override fun engineDiagnostic(): String = engineDiagnostic
+
+            override fun setGameState(value: GameState) { gameState = value }
+            override fun setEngineMessage(value: String) { engineMessage = value }
+            override fun setAnalysisState(value: GameSessionAnalysisState) { analysisState = value }
+            override fun setScoreState(value: GameSessionScoreState) { scoreState = value }
+            override fun setMoveReviewState(value: GameSessionMoveReviewState) { moveReviewState = value }
+            override fun setRuntimeState(value: GameSessionRuntimeState) { runtimeState = value }
+            override fun setSettingsState(value: GameSessionSettingsState) { settingsState = value }
+            override fun setAutoAiTurnUiState(value: AutoAiTurnUiState) { autoAiTurnUiState = value }
+            override fun setPositionCacheOptimizationState(value: PositionAnalysisCacheOptimizationUiState) { positionCacheOptimizationState = value }
+            override fun setBenchmarkUiState(value: EngineBenchmarkUiState) { benchmarkUiState = value }
+            override fun setSavedSessionUiState(value: SavedSessionUiState) { savedSessionUiState = value }
+            override fun setTurnTimeState(value: GameSessionTurnTimeState) { turnTimeState = value }
+            override fun setUndoEngineInterventionQuietUntil(value: Long) { undoEngineInterventionQuietUntil = value }
+            override fun setPendingUndoSync(value: Boolean) { isPendingUndoSync = value }
+            override fun setEngineReady(value: Boolean) { isEngineReady = value }
+            override fun setIsGameEnded(value: Boolean) { isGameEnded = value }
+
+            override fun applyCoreSessionState(next: GameSessionCoreState) = applyCoreSessionState(next)
+            override fun applyCoreState(next: GameSessionCoreState) = applyCoreSessionState(next)
+            override fun activateEndgameJudgementReview() = activateEndgameJudgementReview()
+            override fun clearUndoEngineInterventionQuietWindow() = clearUndoEngineInterventionQuietWindow()
+            override fun engineProfileTimeoutPolicy(profile: EngineProfile): EngineTimeoutPolicy = engineProfileTimeoutPolicy(profile)
+            override fun applyFinalScoreWithJudgement(final: FinalScoreDisplayPlan) = applyFinalScoreWithJudgement(final)
+        }
     }
-    cancelUndoSync = undoController::cancelPendingSync
-    val autoAiTurnController = AutoAiTurnController(
-        scope = scope,
-        engineClient = engineClient,
-        diagnosticEventLog = diagnosticEventLog,
-        runtimeEventLog = runtimeEventLog,
-        currentControllerState = { sessionSnapshot },
-        currentRuntimeState = { runtimeState },
-        currentSearchTimeSettings = { searchTimeSettings },
-        currentScoreSnapshots = { scoreState.scoreSnapshots },
-        isEngineReady = { isEngineReady },
-        isEngineBusy = { isEngineBusy },
-        isGameEnded = { isGameEnded },
-        shouldShowResumePrompt = { shouldShowResumePrompt },
-        currentRuntimeLogContext = ::currentRuntimeLogContext,
-        currentGameState = { gameState },
-        currentSessionGeneration = { runtimeState.sessionGeneration },
-        markEngineOperationStarted = lifecycleController::markStarted,
-        markEngineOperationCompleted = lifecycleController::markCompleted,
-        applyAutoAiTurnScheduled = { schedule -> autoAiTurnUiState = autoAiTurnUiState.applyAutoAiTurnRequestPlan(schedule) },
-        applyAutoAiTurnCancelled = { cancel -> autoAiTurnUiState = autoAiTurnUiState.applyAutoAiTurnScheduleValidationPlan(cancel) },
-        recordTurnMove = { player, nowMillis, nextPlayer -> turnTimeState.recordMove(player = player, nowMillis = nowMillis, nextPlayer = nextPlayer) },
-        applyTurnTimeUpdate = { update -> turnTimeState = update.after },
-        applyTurnDisplay = { display -> if (display.shouldResolveEndgame) activateEndgameJudgementReview(); displayStateApplier.applyAutoAiTurnDisplayPlan(display) },
-        applyTurnFailureDisplay = { error -> displayStateApplier.applyAutoAiTurnFailureDisplayPlan(buildAutoAiTurnFailureDisplayPlan(error)) },
-        completeAutoAiTurnRun = { autoAiTurnUiState = autoAiTurnUiState.completeAutoAiTurnRun() },
-        appendEngineOperationDiscardLog = lifecycleController::appendDiscardLog,
-        requestFollowUpAnalysis = { followUp -> topMovesController.requestAnalysis(followUp.targetState, automatic = followUp.automatic, deep = followUp.deep) },
-        markGameEnded = { activateEndgameJudgementReview(); isGameEnded = true },
-        applyFinalScoreDisplayPlan = ::applyFinalScoreWithJudgement,
-        applyEndgameFailureDisplayPlan = displayStateApplier::applyEndgameFailureDisplayPlan,
-    )
-    val humanMoveController = HumanMoveController(
-        engineClient = engineClient,
-        diagnosticEventLog = diagnosticEventLog,
-        runtimeEventLog = runtimeEventLog,
-        currentGameState = { gameState },
-        currentPlayerSetup = { playerSetup },
-        currentAnalysisState = { analysisState },
-        currentMoveReviewState = { moveReviewState },
-        currentScoreSnapshots = { scoreState.scoreSnapshots },
-        currentScoreState = { scoreState },
-        currentSessionGeneration = { runtimeState.sessionGeneration },
-        currentEngineProfile = { runtimeState.engineProfile },
-        currentRuntimeLogContext = ::currentRuntimeLogContext,
-        isEngineReady = { isEngineReady },
-        isEngineBlockingBusy = { isEngineBlockingBusy },
-        cancelBackgroundOperations = lifecycleController::cancelBackgroundOperations,
-        onEngineMessage = { message -> engineMessage = message },
-        onConsecutivePassesDetected = ::activateEndgameJudgementReview,
-        clearUndoEngineInterventionQuietWindow = ::clearUndoEngineInterventionQuietWindow,
-        recordTurnMove = { player, nowMillis, nextPlayer -> turnTimeState.recordMove(player = player, nowMillis = nowMillis, nextPlayer = nextPlayer) },
-        applyTurnTimeUpdate = { update -> turnTimeState = update.after },
-        applyHumanMoveLocalResult = displayStateApplier::applyHumanMoveLocalResult,
-        replaceScoreState = { state -> scoreState = state },
-        setAnalysisCandidateText = { text -> analysisState = analysisState.copy(candidateText = text) },
-        applyFinalScoreDisplayPlan = ::applyFinalScoreWithJudgement,
-        applyScoreEstimateDisplayPlan = displayStateApplier::applyScoreEstimateDisplayPlan,
-        applyHumanEngineSyncFailurePlan = displayStateApplier::applyHumanEngineSyncFailurePlan,
-        appendEngineOperationDiscardLog = lifecycleController::appendDiscardLog,
-        timeoutPolicy = ::engineProfileTimeoutPolicy,
-        launchEngineOperation = { operation, block -> lifecycleController.launchTracked(operation) { block() } },
-        requestFollowUpAnalysis = { state -> topMovesController.requestAnalysis(state, automatic = true) },
-    )
-    val newGameController = NewGameController(
-        engineClient = engineClient,
-        diagnosticEventLog = diagnosticEventLog,
-        runtimeEventLog = runtimeEventLog,
-        defaultPlayLevel = defaultPlayLevel,
-        isEngineReady = { isEngineReady },
-        isEngineBusy = { isEngineBusy },
-        currentGameState = { gameState },
-        currentPlayerSetup = { playerSetup },
-        currentEngineProfile = { runtimeState.engineProfile }, currentSearchTimeSettings = { searchTimeSettings }, currentBoardSize = { settingsState.boardSize },
-        currentHandicapCount = { settingsState.handicapCount },
-        currentSessionGeneration = { runtimeState.sessionGeneration },
-        currentScoreState = { scoreState },
-        currentRuntimeLogContext = ::currentRuntimeLogContext,
-        launchEngineOperation = { operation, block -> lifecycleController.launchTracked(operation) { block() } },
-        applyGameSessionResetPlan = { reset ->
-            clearUndoEngineInterventionQuietWindow()
-            undoAnalysisRestoreCache.clear()
-            positionCacheOptimizationState = positionCacheOptimizationState.clearPrompt()
-            applyCoreSessionState(sessionSnapshot.core.applyGameSessionResetPlan(reset))
-            turnTimeState = GameSessionTurnTimeState.reset(
-                state = reset.gameState,
-                nowMillis = System.currentTimeMillis(),
-            )
-            runtimeEventLog.append(
-                runtimeGameResetLog(
-                    context = currentRuntimeLogContext(),
-                    reset = reset,
-                ),
-            )
-        },
-        applyRuntimePlayLevelSelection = { selection -> runtimeState = runtimeState.applySelection(selection) },
-        replaceScoreState = { state -> scoreState = state },
-        requestFollowUpAnalysis = { state -> topMovesController.requestAnalysis(state, automatic = true) },
-        onEngineMessage = { message -> engineMessage = message },
-    )
-    val savedSessionController = SavedSessionController(
-        engineClient = engineClient,
-        diagnosticEventLog = diagnosticEventLog,
-        defaultPlayLevel = defaultPlayLevel,
-        isEngineBusy = { isEngineBusy },
-        isEngineReady = { isEngineReady },
-        currentSearchTimeSettings = { searchTimeSettings },
-        currentEngineProfile = { runtimeState.engineProfile },
-        currentSessionGeneration = { runtimeState.sessionGeneration },
-        timeoutPolicy = ::engineProfileTimeoutPolicy,
-        currentGameState = { gameState },
-        onEngineMessage = { message -> engineMessage = message },
-        applySavedGameRestorePlan = { restore ->
-            clearUndoEngineInterventionQuietWindow()
-            undoAnalysisRestoreCache.clear()
-            positionCacheOptimizationState = positionCacheOptimizationState.clearPrompt()
-            settingsState = settingsState.applySavedGameRestore(
-                restoredSetup = restore.playerSetup,
-                restoredTopMovesEnabled = restore.topMovesEnabled,
-            )
-            applyCoreSessionState(sessionSnapshot.core.applySavedGameRestorePlan(restore))
-            turnTimeState = GameSessionTurnTimeState.reset(
-                state = restore.gameState,
-                nowMillis = System.currentTimeMillis(),
-            )
-        },
-        launchEngineOperation = { operation, block -> lifecycleController.launchTracked(operation) { block() } },
-        applyScoreSyncCompletion = displayStateApplier::applyScoreSyncCompletion,
-        requestFollowUpAnalysis = { state -> topMovesController.requestAnalysis(state, automatic = true) },
-    )
-    val cacheOptController = PositionCacheOptimizationController(
-        engineClient = engineClient,
-        diagnosticEventLog = diagnosticEventLog,
-        currentGameState = { gameState },
-        currentPlayerSetup = { playerSetup },
-        currentSearchTimeSettings = { searchTimeSettings },
-        isEngineBusy = { isEngineBusy },
-        currentSessionGeneration = { runtimeState.sessionGeneration },
-        currentUiState = { positionCacheOptimizationState },
-        onUiState = { state -> positionCacheOptimizationState = state },
-        onEngineMessage = { message -> engineMessage = message },
-        onAnalysisCandidateText = { message -> analysisState = analysisState.copy(candidateText = message) },
-        launchEngineOperation = { operation, block -> lifecycleController.launchTracked(operation) { block() } },
-    )
 
-    val scoreEstimateController = buildScoreEstimateController(
-        engineClient, diagnosticEventLog, { gameState }, { scoreState.scoreSnapshots }, { isEngineReady }, { isEngineBusy }, { matchMode }, { runtimeState.engineProfile }, { runtimeState.sessionGeneration },
-        { operation, block -> lifecycleController.launchTracked(operation) { block() } }, { message -> engineMessage = message }, displayStateApplier, lifecycleController::appendDiscardLog,
-    )
-
-    val scoringRuleController = ScoringRuleController(
-        engineClient = engineClient,
-        diagnosticEventLog = diagnosticEventLog,
-        currentGameState = { gameState },
-        currentMatchMode = { matchMode },
-        isEngineReady = { isEngineReady },
-        isEngineBusy = { isEngineBusy },
-        currentScoreSnapshots = { scoreState.scoreSnapshots },
-        currentEngineProfile = { runtimeState.engineProfile },
-        currentSessionGeneration = { runtimeState.sessionGeneration },
-        timeoutPolicy = ::engineProfileTimeoutPolicy,
-        onEngineMessage = { message -> engineMessage = message },
-        applyScoringRuleChangePlan = { ruleChange ->
-            applyCoreSessionState(sessionSnapshot.core.applyScoringRuleChangePlan(ruleChange))
-        },
-        applyScoreSyncCompletionApplyPlan = displayStateApplier::applyScoreSyncCompletion,
-        requestFollowUpAnalysis = { state -> topMovesController.requestAnalysis(state, automatic = true) },
-        launchEngineOperation = { operation, block -> lifecycleController.launchTracked(operation) { block() } },
-        appendDiscardLog = lifecycleController::appendDiscardLog,
-    )
-
-    val settingsController = GameSettingsController(
-        currentGameState = { gameState },
-        currentPlayerSetup = { playerSetup },
-        currentEngineProfile = { runtimeState.engineProfile },
-        currentSearchTimeSettings = { searchTimeSettings },
-        currentAnalysisState = { analysisState },
-        currentAutoPlayDelaySetting = { autoPlayDelaySetting },
-        defaultPlayLevel = defaultPlayLevel,
-        isEngineBusy = { isEngineBusy },
-        runtimeEventLog = runtimeEventLog,
-        currentRuntimeLogContext = ::currentRuntimeLogContext,
-        onEngineMessage = { message -> engineMessage = message },
-        applyPlayerSetup = { setup -> settingsState = settingsState.applyPlayerSetup(setup) },
-        applyCoreSessionState = ::applyCoreSessionState,
-        currentCoreSessionState = { sessionSnapshot.core },
-        applyRuntimePlayLevelSelection = { selection -> runtimeState = runtimeState.applySelection(selection) },
-        applyAnalysisState = { analysis -> analysisState = analysis },
-        applySettingsAutoPlayDelay = { setting -> settingsState = settingsState.applyAutoPlayDelay(setting) },
-        applySettingsSearchTimeSettings = { settings -> settingsState = settingsState.applySearchTimeSettings(settings) },
-        clearUndoEngineInterventionQuietWindow = undoController::clearQuietWindow,
-    )
-    val debugReportController = DebugReportController(
-        engineName = engineName,
-        engineDiagnostic = engineDiagnostic,
-        runtimeEventLog = runtimeEventLog,
-        diagnosticEventLog = diagnosticEventLog,
-        clipboard = clipboardPort,
-        mirror = debugReportMirror,
-        userNotice = userNoticePort,
-        currentControllerState = { sessionSnapshot },
-        isEngineReady = { isEngineReady },
-        isEngineBusy = { isEngineBusy },
-        analysisCacheStatsText = { "${analysisCache.statsText()}, ${undoAnalysisRestoreCache.statsText()}" },
-        positionAnalysisCacheStatsText = engineClient::positionAnalysisCacheStatsText,
-        turnTimeText = { turnTimeState.summaryText() },
-        turnTimeDebugText = { nowMillis -> turnTimeState.debugText(nowMillis) },
-        onEngineMessage = { message -> engineMessage = message },
-        currentSavedSessionJson = { sessionStore.readRawJson() },
-    )
+    val controllers = remember(wiringContext) { wireGoCoachControllers(wiringContext) }
+    cancelUndoSync = controllers.undoController::cancelPendingSync
     fun dispatch(event: GameUiEvent) {
         dispatchGameUiEvent(
             event = event,
             handlers = buildGameUiEventHandlers(
                 currentPlayer = { gameState.nextPlayer },
                 isTopMovesEnabled = { topMovesEnabled },
-                startConfiguredGame = newGameController::startConfiguredGame,
-                copyDebugReport = debugReportController::copy,
-                showEngineBenchmark = benchmarkController::showResult,
-                requestScoreEstimate = scoreEstimateController::request,
-                toggleEvalWithGradient = { uxOptions = uxOptions.applyEvalActivation(onEvalGradientActivated = scoreEstimateController::request) },
-                showTopMoves = topMovesController::showForCurrentState,
-                hideTopMoves = topMovesController::hide,
-                undoLastTurn = undoController::undoLastTurn,
-                submitMove = humanMoveController::submitMove,
-                resignCurrentGame = { resignCurrentGameIfAllowed(isGameEnded, isEngineBusy, gameState.nextPlayer, humanMoveController::submitMove) { isGameEnded = true } },
+                startConfiguredGame = controllers.newGameController::startConfiguredGame,
+                copyDebugReport = controllers.debugReportController::copy,
+                showEngineBenchmark = controllers.benchmarkController::showResult,
+                requestScoreEstimate = controllers.scoreEstimateController::request,
+                toggleEvalWithGradient = { uxOptions = uxOptions.applyEvalActivation(onEvalGradientActivated = controllers.scoreEstimateController::request) },
+                showTopMoves = controllers.topMovesController::showForCurrentState,
+                hideTopMoves = controllers.topMovesController::hide,
+                undoLastTurn = controllers.undoController::undoLastTurn,
+                submitMove = controllers.humanMoveController::submitMove,
+                resignCurrentGame = { resignCurrentGameIfAllowed(isGameEnded, isEngineBusy, gameState.nextPlayer, controllers.humanMoveController::submitMove) { isGameEnded = true } },
                 dismissResumePrompt = { sessionStore.clear(); savedSessionUiState = savedSessionUiState.dismiss() },
-                acceptCacheOptimizationPrompt = cacheOptController::accept,
-                dismissCacheOptimizationPrompt = cacheOptController::dismiss,
+                acceptCacheOptimizationPrompt = controllers.cacheOptController::accept,
+                dismissCacheOptimizationPrompt = controllers.cacheOptController::dismiss,
                 restoreSavedSession = { snap ->
-                    savedSessionController.restore(snap)
+                    controllers.savedSessionController.restore(snap)
                     savedSessionUiState = savedSessionUiState.dismiss()
                     currentDestination = ScreenDestination.InGame
                 },
-                changePlayerSetup = settingsController::changePlayerSetup, changeAutoPlayDelay = settingsController::changeAutoPlayDelay,
-                changeSearchTimeSettings = settingsController::changeSearchTimeSettings,
+                changePlayerSetup = controllers.settingsController::changePlayerSetup, changeAutoPlayDelay = controllers.settingsController::changeAutoPlayDelay,
+                changeSearchTimeSettings = controllers.settingsController::changeSearchTimeSettings,
                 changeBoardSize = { size ->
                     if (isGameEnded) {
                         settingsState = settingsState.applyBoardSize(size)
                         refreshNewGamePreview()
                     }
                 },
-                changeScoringRule = scoringRuleController::change,
+                changeScoringRule = controllers.scoringRuleController::change,
                 changeUxOptions = { options -> uxOptions = options },
                 changeHandicapCount = { count ->
                     if (isGameEnded) {
@@ -729,12 +555,12 @@ private fun GoCoachScreen(
         gameState.nextPlayer,
         gameState.moves.size,
     ) {
-        topMovesController.resumeDeferredAnalysisIfIdle()
+        controllers.topMovesController.resumeDeferredAnalysisIfIdle()
         runTurnAutomationTriggerEffect(
             quietUntilMillis = undoEngineInterventionQuietUntil,
             topMoveTargetState = gameState,
-            requestAiTurn = autoAiTurnController::requestAiTurn,
-            requestTopMoveAnalysis = { targetState -> topMovesController.requestAnalysis(targetState, automatic = true) },
+            requestAiTurn = controllers.autoAiTurnController::requestAiTurn,
+            requestTopMoveAnalysis = { targetState -> controllers.topMovesController.requestAnalysis(targetState, automatic = true) },
         )
     }
 
@@ -747,7 +573,7 @@ private fun GoCoachScreen(
         searchTimeSettings,
         gameState.moves.size,
     ) {
-        cacheOptController.refreshPromptIfNeeded(
+        controllers.cacheOptController.refreshPromptIfNeeded(
             isGameEnded = isGameEnded,
             isEngineReady = isEngineReady,
             isEngineBusy = isEngineBusy,
@@ -850,7 +676,7 @@ private fun GoCoachScreen(
                 benchmarkProgress = benchmarkUiState.progress,
                 benchmarkResult = benchmarkUiState.resultToConfirm,
                 onBenchmarkResultConfirmed = { benchmarkUiState = benchmarkUiState.clearConfirmedResult() },
-                onBenchmarkRerun = benchmarkController::rerun,
+                onBenchmarkRerun = controllers.benchmarkController::rerun,
                 isDisplayMenuExpanded = isDisplayMenuExpanded,
                 onDisplayMenuExpandedChange = { expanded -> isDisplayMenuExpanded = expanded },
                 onScoreGraphExpandedChange = { expanded -> isScoreGraphExpanded = expanded },

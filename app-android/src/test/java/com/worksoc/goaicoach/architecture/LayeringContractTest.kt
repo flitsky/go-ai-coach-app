@@ -167,7 +167,9 @@ class LayeringContractTest {
     fun goCoachAppDoesNotOwnTopMovesWorkflowBody() {
         val goCoachApp = repoRoot()
             .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
-        val text = goCoachApp.readText()
+        val wiring = repoRoot()
+            .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachControllerWiring.kt")
+        val text = goCoachApp.readText() + "\n" + wiring.readText()
         val forbiddenFragments = listOf(
             "topMoveAnalysisOperationToken(",
             "runTopMoveAnalysisEffectApplyPlan(",
@@ -404,7 +406,9 @@ class LayeringContractTest {
     fun goCoachAppDoesNotOwnScheduledAutoAiTurnWorkflowBody() {
         val goCoachApp = repoRoot()
             .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
-        val text = goCoachApp.readText()
+        val wiring = repoRoot()
+            .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachControllerWiring.kt")
+        val text = goCoachApp.readText() + "\n" + wiring.readText()
         val forbiddenFragments = listOf(
             "autoAiTurnOperationToken(",
             "GameSessionEffect.RunAutoAiTurn(",
@@ -434,7 +438,9 @@ class LayeringContractTest {
     fun goCoachAppDoesNotOwnAutoAiTurnCompletionApplyBody() {
         val goCoachApp = repoRoot()
             .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
-        val text = goCoachApp.readText()
+        val wiring = repoRoot()
+            .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachControllerWiring.kt")
+        val text = goCoachApp.readText() + "\n" + wiring.readText()
         val forbiddenFragments = listOf(
             "fun applyAutoAiTurnSuccessCompletion(",
             "fun applyAutoAiTurnFailureCompletion(",
@@ -462,7 +468,9 @@ class LayeringContractTest {
     fun goCoachAppDoesNotOwnAutoAiEndgameResolveWorkflowBody() {
         val goCoachApp = repoRoot()
             .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
-        val text = goCoachApp.readText()
+        val wiring = repoRoot()
+            .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachControllerWiring.kt")
+        val text = goCoachApp.readText() + "\n" + wiring.readText()
         val forbiddenFragments = listOf(
             "autoAiEndgameOperationToken(",
             "GameSessionEffect.ResolveAutoAiEndgame(",
@@ -550,7 +558,9 @@ class LayeringContractTest {
     fun goCoachAppDoesNotOwnScoreEstimateWorkflowBody() {
         val goCoachApp = repoRoot()
             .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
-        val text = goCoachApp.readText()
+        val wiring = repoRoot()
+            .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachControllerWiring.kt")
+        val text = goCoachApp.readText() + "\n" + wiring.readText()
         val forbiddenFragments = listOf(
             "scoreEstimateOperationToken(",
             "ScoreEstimateEffectLaunchRequest(",
@@ -594,7 +604,9 @@ class LayeringContractTest {
     fun goCoachAppDoesNotOwnDebugReportCopyWorkflowBody() {
         val goCoachApp = repoRoot()
             .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
-        val text = goCoachApp.readText()
+        val wiring = repoRoot()
+            .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachControllerWiring.kt")
+        val text = goCoachApp.readText() + "\n" + wiring.readText()
         val forbiddenFragments = listOf(
             "DebugReportCopyActionRequest(",
             "runDebugReportCopyAction(",
@@ -637,7 +649,9 @@ class LayeringContractTest {
     fun goCoachAppDoesNotOwnPositionCacheOptimizationWorkflowBody() {
         val goCoachApp = repoRoot()
             .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
-        val text = goCoachApp.readText()
+        val wiring = repoRoot()
+            .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachControllerWiring.kt")
+        val text = goCoachApp.readText() + "\n" + wiring.readText()
         val forbiddenFragments = listOf(
             "GameSessionEffect.RunPositionCacheOptimization(",
             "PositionAnalysisCacheOptimizationWorkflowResult.",
