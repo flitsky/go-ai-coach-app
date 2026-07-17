@@ -3,10 +3,8 @@ package com.worksoc.goaicoach.ui
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.MaterialTheme
@@ -18,7 +16,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.presentation.KaTrainUxOptions
 import com.worksoc.goaicoach.shared.StoneColor
@@ -42,7 +39,6 @@ internal fun KaTrainUxMenuPanel(
     onOptionsChange: (KaTrainUxOptions) -> Unit,
 ) {
     val strings = LocalUiStrings.current
-    val columnGap = (LocalConfiguration.current.screenWidthDp * 0.2f).dp
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
@@ -53,40 +49,26 @@ internal fun KaTrainUxMenuPanel(
             modifier = Modifier.padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                OptionSwitchCell(
-                    label = strings.directPlay,
-                    checked = options.isDirectPlayEnabled,
-                    modifier = Modifier.weight(1f),
-                    onCheckedChange = { onOptionsChange(options.copy(isDirectPlayEnabled = it)) },
-                )
-                Spacer(modifier = Modifier.width(columnGap))
-                OptionSwitchCell(
-                    label = strings.lastMoveRing,
-                    checked = options.showLastMoveRing,
-                    modifier = Modifier.weight(1f),
-                    onCheckedChange = { onOptionsChange(options.copy(showLastMoveRing = it)) },
-                )
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                OptionSwitchCell(
-                    label = strings.moveNumbers,
-                    checked = options.showMoveNumbers,
-                    modifier = Modifier.weight(1f),
-                    onCheckedChange = { onOptionsChange(options.copy(showMoveNumbers = it)) },
-                )
-                Spacer(modifier = Modifier.width(columnGap))
-                OptionSwitchCell(
-                    label = strings.coordinates,
-                    checked = options.showCoordinates,
-                    modifier = Modifier.weight(1f),
-                    onCheckedChange = { onOptionsChange(options.copy(showCoordinates = it)) },
-                )
-            }
+            OptionSwitchCell(
+                label = strings.directPlay,
+                checked = options.isDirectPlayEnabled,
+                onCheckedChange = { onOptionsChange(options.copy(isDirectPlayEnabled = it)) },
+            )
+            OptionSwitchCell(
+                label = strings.lastMoveRing,
+                checked = options.showLastMoveRing,
+                onCheckedChange = { onOptionsChange(options.copy(showLastMoveRing = it)) },
+            )
+            OptionSwitchCell(
+                label = strings.moveNumbers,
+                checked = options.showMoveNumbers,
+                onCheckedChange = { onOptionsChange(options.copy(showMoveNumbers = it)) },
+            )
+            OptionSwitchCell(
+                label = strings.coordinates,
+                checked = options.showCoordinates,
+                onCheckedChange = { onOptionsChange(options.copy(showCoordinates = it)) },
+            )
         }
     }
 }
@@ -99,16 +81,15 @@ private fun OptionSwitchCell(
     onCheckedChange: (Boolean) -> Unit,
 ) {
     Row(
-        modifier = modifier,
+        modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = label,
-            modifier = Modifier.weight(1f),
             style = MaterialTheme.typography.bodyMedium,
-            maxLines = 1,
-            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.Start,
         )
         Switch(checked = checked, onCheckedChange = onCheckedChange)
     }
