@@ -12,9 +12,11 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -127,11 +129,35 @@ internal fun GoCoachContent(
         )
 
         if (isDisplayMenuExpanded) {
-            ExpandedGameMenuSection(
-                screenState = screenState,
-                selectedLanguage = selectedLanguage,
-                onLanguageChange = onLanguageChange,
-                onEvent = onMenuEvent,
+            AlertDialog(
+                onDismissRequest = { onDisplayMenuExpandedChange(false) },
+                title = {
+                    Text(
+                        text = strings.matchSetup,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                text = {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        ExpandedGameMenuSection(
+                            screenState = screenState,
+                            selectedLanguage = selectedLanguage,
+                            onLanguageChange = onLanguageChange,
+                            onEvent = onMenuEvent,
+                        )
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { onDisplayMenuExpandedChange(false) }) {
+                        Text(strings.close)
+                    }
+                }
             )
         }
 
