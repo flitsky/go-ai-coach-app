@@ -68,6 +68,8 @@ internal fun GamePlaySection(
 
     ScoreTimelineGraph(
         snapshots = screenState.score.snapshots,
+        isExpanded = screenState.score.isGraphExpanded,
+        onExpandedChange = onScoreGraphExpandedChange,
         modifier = Modifier.fillMaxWidth()
     )
 
