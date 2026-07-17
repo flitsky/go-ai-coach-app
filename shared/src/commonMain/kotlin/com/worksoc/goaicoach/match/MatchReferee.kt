@@ -12,7 +12,7 @@ import com.worksoc.goaicoach.shared.Move
  * entry point here lets human, AI, and future remote-user moves share the same
  * legality/endgame path without making UX code know where those checks live.
  */
-internal object MatchReferee {
+object MatchReferee {
     fun play(
         state: GameState,
         move: Move,

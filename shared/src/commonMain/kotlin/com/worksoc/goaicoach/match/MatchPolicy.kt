@@ -13,31 +13,31 @@ import com.worksoc.goaicoach.shared.StoneColor
 import com.worksoc.goaicoach.shared.aiMoveSearchMode
 import com.worksoc.goaicoach.shared.describe
 
-internal val HumanPlayer = StoneColor.Black
-internal val AiPlayer = StoneColor.White
+val HumanPlayer = StoneColor.Black
+val AiPlayer = StoneColor.White
 
-internal enum class MatchMode(val label: String) {
+enum class MatchMode(val label: String) {
     HumanVsAi("AI 대국"),
     AiVsHuman("AI 선공"),
     AiVsAi("AI 자동 대국"),
     LocalTwoPlayer("2인 대국"),
 }
 
-internal enum class SeatController(val label: String) {
+enum class SeatController(val label: String) {
     Human("Player"),
     Ai("AI"),
 }
 
-internal enum class HumanGameType(val label: String) {
+enum class HumanGameType(val label: String) {
     Normal("일반"),
     Teaching("티칭 모드"),
 }
 
-internal enum class AiEngineChoice(val label: String) {
+enum class AiEngineChoice(val label: String) {
     KataGo("KataGo"),
 }
 
-internal enum class SeatId(
+enum class SeatId(
     val player: StoneColor,
     val label: String,
     val debugLabel: String,
@@ -55,7 +55,7 @@ internal enum class SeatId(
     }
 }
 
-internal data class AiCharacterProfile(
+data class AiCharacterProfile(
     val engine: AiEngineChoice,
     val playLevel: PlayLevelSetting,
 ) {
@@ -63,7 +63,7 @@ internal data class AiCharacterProfile(
     val selectionDescription: String = playLevel.selectionPolicy.description
 }
 
-internal data class SeatAssignment(
+data class SeatAssignment(
     val id: SeatId,
     val setup: SidePlayerSetup,
 ) {
@@ -77,7 +77,7 @@ internal data class SeatAssignment(
         "${id.debugLabel}: ${setup.summary(engineName)}"
 }
 
-internal data class MatchSeatRuntimeState(
+data class MatchSeatRuntimeState(
     val assignment: SeatAssignment,
     val isCurrentTurn: Boolean,
     val canAcceptBoardInput: Boolean,
@@ -89,7 +89,7 @@ internal data class MatchSeatRuntimeState(
     val aiCharacter: AiCharacterProfile? = assignment.aiCharacter
 }
 
-internal data class MatchSeatSnapshot(
+data class MatchSeatSnapshot(
     val mode: MatchMode,
     val black: MatchSeatRuntimeState,
     val white: MatchSeatRuntimeState,
@@ -107,14 +107,14 @@ internal data class MatchSeatSnapshot(
         }
 }
 
-internal fun MatchSeatSnapshot.turnStatusText(isEngineBlockingBusy: Boolean): String =
+fun MatchSeatSnapshot.turnStatusText(isEngineBlockingBusy: Boolean): String =
     when {
         isEngineBlockingBusy -> "AI thinking"
         current.isHuman -> "Your turn: ${current.player.label}"
         else -> "AI turn: ${current.player.label}"
     }
 
-internal enum class AutoPlayDelaySetting(
+enum class AutoPlayDelaySetting(
     val millis: Long,
     val label: String,
 ) {
@@ -133,14 +133,14 @@ internal enum class AutoPlayDelaySetting(
     }
 }
 
-internal data class SidePlayerSetup(
+data class SidePlayerSetup(
     val controller: SeatController,
     val humanGameType: HumanGameType = HumanGameType.Normal,
     val aiEngine: AiEngineChoice = AiEngineChoice.KataGo,
     val playLevel: PlayLevelSetting = PlayLevelSetting(),
 )
 
-internal fun SidePlayerSetup.aiCharacterProfile(): AiCharacterProfile? =
+fun SidePlayerSetup.aiCharacterProfile(): AiCharacterProfile? =
     if (controller == SeatController.Ai) {
         AiCharacterProfile(
             engine = aiEngine,
@@ -150,7 +150,7 @@ internal fun SidePlayerSetup.aiCharacterProfile(): AiCharacterProfile? =
         null
     }
 
-internal data class PlayerSetup(
+data class PlayerSetup(
     val black: SidePlayerSetup = SidePlayerSetup(controller = SeatController.Human),
     val white: SidePlayerSetup = SidePlayerSetup(controller = SeatController.Ai),
 ) {
@@ -234,27 +234,27 @@ internal data class PlayerSetup(
     }
 }
 
-internal fun SidePlayerSetup.summary(engineName: String): String =
+fun SidePlayerSetup.summary(engineName: String): String =
     when (controller) {
         SeatController.Human -> "${controller.label} ${humanGameType.label}"
         SeatController.Ai -> "$engineName ${playLevel.displayLabel}"
     }
 
-internal data class TurnOutcome(
+data class TurnOutcome(
     val gameState: GameState,
     val engineMessage: String,
     val candidateText: String,
     val lastMoveText: String,
 )
 
-internal interface AiMoveEngineGateway {
+interface AiMoveEngineGateway {
     suspend fun playMove(move: Move): EngineStatus
     suspend fun genMove(player: StoneColor): MoveResult
     suspend fun clearSearchCache(): EngineStatus
     suspend fun analyze(limit: AnalysisLimit): AnalysisResult
 }
 
-internal suspend fun applyAiResponseAfterHumanTurn(
+suspend fun applyAiResponseAfterHumanTurn(
     engineAdapter: AiMoveEngineGateway,
     stateAfterHuman: GameState,
     humanMove: Move,
@@ -311,7 +311,7 @@ internal suspend fun applyAiResponseAfterHumanTurn(
     )
 }
 
-internal suspend fun applyAiTurn(
+suspend fun applyAiTurn(
     engineAdapter: AiMoveEngineGateway,
     currentState: GameState,
     aiPlayer: StoneColor,
@@ -361,7 +361,7 @@ internal suspend fun applyAiTurn(
     )
 }
 
-internal fun activePlayer(
+fun activePlayer(
     mode: MatchMode,
     gameState: GameState,
 ): StoneColor =
@@ -372,7 +372,7 @@ internal fun activePlayer(
         MatchMode.LocalTwoPlayer -> gameState.nextPlayer
     }
 
-internal fun boardInputEnabled(
+fun boardInputEnabled(
     playerSetup: PlayerSetup,
     isEngineReady: Boolean,
     isEngineBlockingBusy: Boolean,
@@ -387,7 +387,7 @@ internal fun boardInputEnabled(
         .current
         .canAcceptBoardInput
 
-internal fun turnStatus(
+fun turnStatus(
     nextPlayer: StoneColor,
     isEngineBlockingBusy: Boolean,
     playerSetup: PlayerSetup,
@@ -401,7 +401,7 @@ internal fun turnStatus(
     return snapshot.turnStatusText(isEngineBlockingBusy)
 }
 
-internal fun modeSummary(
+fun modeSummary(
     playerSetup: PlayerSetup,
     engineName: String,
 ): String =

@@ -15,12 +15,12 @@ import com.worksoc.goaicoach.shared.describe
 import com.worksoc.goaicoach.shared.fastCandidateAnalysis
 import kotlin.random.Random
 
-internal data class SelectedAiMove(
+data class SelectedAiMove(
     val move: Move,
     val summary: String,
 )
 
-internal object AiMoveSelectionPolicy {
+object AiMoveSelectionPolicy {
     fun analysisLimitFor(
         playLevel: PlayLevelSetting,
         searchTimeSettings: SearchTimeSettings,
