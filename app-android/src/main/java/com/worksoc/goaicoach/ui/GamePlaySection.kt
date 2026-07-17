@@ -34,7 +34,9 @@ import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.session.GameSessionTurnTimeState
 import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.match.SidePlayerSetup
+import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.presentation.GameActionButtonRole
+import com.worksoc.goaicoach.presentation.GameActionButtonState
 import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.presentation.GameUiEvent
 import kotlin.math.roundToInt
@@ -114,22 +116,46 @@ internal fun GamePlaySection(
         onEvent = onEvent,
     )
 
+    var showAnalysisDialog by remember { mutableStateOf(false) }
+    val strings = LocalUiStrings.current
+
     GameActionButtons(
         screenState = screenState,
+        onAnalysisClick = { showAnalysisDialog = true },
         onEvent = onEvent,
     )
 
-    EngineResponsePanel(
-        screenState = screenState,
-        engineMessage = screenState.engine.message,
-        candidateText = screenState.analysis.candidateText,
-        moveReviewText = screenState.analysis.moveReviewText,
-    )
+    if (showAnalysisDialog) {
+        AlertDialog(
+            onDismissRequest = { showAnalysisDialog = false },
+            title = {
+                Text(
+                    text = strings.kataGoAnalysis,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                EngineResponsePanel(
+                    screenState = screenState,
+                    engineMessage = screenState.engine.message,
+                    candidateText = screenState.analysis.candidateText,
+                    moveReviewText = screenState.analysis.moveReviewText,
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { showAnalysisDialog = false }) {
+                    Text(strings.close)
+                }
+            }
+        )
+    }
 }
 
 @Composable
 private fun GameActionButtons(
     screenState: GameScreenState,
+    onAnalysisClick: () -> Unit,
     onEvent: (GameUiEvent) -> Unit,
 ) {
     val strings = LocalUiStrings.current
@@ -162,52 +188,120 @@ private fun GameActionButtons(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        // [1열] "분석", 형세보기(Eval), 추천수(Top Moves), 무르기(Undo)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            screenState.actionButtons.forEach { action ->
-                val label = when (action.role) {
-                    GameActionButtonRole.Pass -> strings.pass
-                    GameActionButtonRole.Undo -> strings.undo
-                    GameActionButtonRole.TopMoves -> strings.topMoves
-                    GameActionButtonRole.Eval -> strings.eval
-                }
-                if (action.isFilled) {
-                    Button(
-                        onClick = { onEvent(action.event) },
-                        enabled = action.enabled,
-                        modifier = Modifier.weight(1f),
-                        contentPadding = ActionButtonContentPadding,
-                    ) {
-                        ActionButtonText(label)
-                    }
-                } else {
-                    OutlinedButton(
-                        onClick = { onEvent(action.event) },
-                        enabled = action.enabled,
-                        modifier = Modifier.weight(1f),
-                        contentPadding = ActionButtonContentPadding,
-                    ) {
-                        ActionButtonText(label)
-                    }
-                }
+            val isBlockingBusy = screenState.engine.isBlockingBusy
+            val engineReady = screenState.engine.isReady
+            val isLocalTwoPlayer = screenState.matchMode == MatchMode.LocalTwoPlayer
+
+            // 1. "분석" 버튼 (신규 추가)
+            val analysisEnabled = !isBlockingBusy && (engineReady || isLocalTwoPlayer)
+            OutlinedButton(
+                onClick = onAnalysisClick,
+                enabled = analysisEnabled,
+                modifier = Modifier.weight(1f),
+                contentPadding = ActionButtonContentPadding,
+            ) {
+                ActionButtonText(strings.analysis)
+            }
+
+            // 2. 형세보기 (Eval) 버튼
+            val evalAction = screenState.actionButtons.firstOrNull { it.role == GameActionButtonRole.Eval }
+            if (evalAction != null) {
+                ActionButtonWrapper(
+                    action = evalAction,
+                    label = strings.eval,
+                    onEvent = onEvent,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            // 3. 추천수 (Top Moves) 버튼
+            val topMovesAction = screenState.actionButtons.firstOrNull { it.role == GameActionButtonRole.TopMoves }
+            if (topMovesAction != null) {
+                ActionButtonWrapper(
+                    action = topMovesAction,
+                    label = strings.topMoves,
+                    onEvent = onEvent,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            // 4. 무르기 (Undo) 버튼
+            val undoAction = screenState.actionButtons.firstOrNull { it.role == GameActionButtonRole.Undo }
+            if (undoAction != null) {
+                ActionButtonWrapper(
+                    action = undoAction,
+                    label = strings.undo,
+                    onEvent = onEvent,
+                    modifier = Modifier.weight(1f)
+                )
             }
         }
 
-        OutlinedButton(
-            onClick = {
-                if (screenState.isGameEnded) {
-                    onEvent(GameUiEvent.StartConfiguredGame)
-                } else {
-                    showResignConfirm = true
-                }
-            },
-            enabled = screenState.isGameEnded || (!screenState.engine.isBlockingBusy && screenState.matchSeats.current.canAcceptBoardInput),
+        // [2열] 기권(Resign/New Game), 통과(Pass)
+        Row(
             modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            // 1. 기권 / 새 게임 버튼 (좌측)
+            val resignEnabled = screenState.isGameEnded || (!screenState.engine.isBlockingBusy && screenState.matchSeats.current.canAcceptBoardInput)
+            OutlinedButton(
+                onClick = {
+                    if (screenState.isGameEnded) {
+                        onEvent(GameUiEvent.StartConfiguredGame)
+                    } else {
+                        showResignConfirm = true
+                    }
+                },
+                enabled = resignEnabled,
+                modifier = Modifier.weight(1f),
+                contentPadding = ActionButtonContentPadding,
+            ) {
+                ActionButtonText(if (screenState.isGameEnded) strings.newGameAction else strings.resign)
+            }
+
+            // 2. 통과 (Pass) 버튼 (우측)
+            val passAction = screenState.actionButtons.firstOrNull { it.role == GameActionButtonRole.Pass }
+            if (passAction != null) {
+                ActionButtonWrapper(
+                    action = passAction,
+                    label = strings.pass,
+                    onEvent = onEvent,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ActionButtonWrapper(
+    action: GameActionButtonState,
+    label: String,
+    onEvent: (GameUiEvent) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    if (action.isFilled) {
+        Button(
+            onClick = { onEvent(action.event) },
+            enabled = action.enabled,
+            modifier = modifier,
             contentPadding = ActionButtonContentPadding,
         ) {
-            ActionButtonText(if (screenState.isGameEnded) strings.newGameAction else strings.resign)
+            ActionButtonText(label)
+        }
+    } else {
+        OutlinedButton(
+            onClick = { onEvent(action.event) },
+            enabled = action.enabled,
+            modifier = modifier,
+            contentPadding = ActionButtonContentPadding,
+        ) {
+            ActionButtonText(label)
         }
     }
 }
