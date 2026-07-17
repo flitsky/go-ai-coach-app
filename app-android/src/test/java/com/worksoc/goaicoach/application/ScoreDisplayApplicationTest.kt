@@ -975,6 +975,7 @@ class ScoreDisplayApplicationTest {
             currentState = state,
             currentSessionGeneration = 5L,
             followUpAnalysisState = state,
+            scoreSnapshots = emptyList(),
             fallbackMessage = "restore failed",
         )
 
@@ -1027,6 +1028,7 @@ class ScoreDisplayApplicationTest {
                     (plan as? ScoreSyncCompletionApplyPlan.ApplySuccess)?.followUpAnalysisState
                 },
                 requestFollowUpAnalysis = { nextState -> followUpState = nextState },
+                scoreSnapshots = emptyList(),
             ),
         )
 

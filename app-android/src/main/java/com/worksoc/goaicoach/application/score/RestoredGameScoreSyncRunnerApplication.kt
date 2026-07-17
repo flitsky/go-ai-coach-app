@@ -8,6 +8,7 @@ import com.worksoc.goaicoach.application.engine.runEngineIo
 import com.worksoc.goaicoach.application.session.GameSessionEffect
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.GameState
+import com.worksoc.goaicoach.shared.ScoreSnapshot
 import com.worksoc.goaicoach.shared.engine.EngineFallbackPolicy
 import com.worksoc.goaicoach.shared.engine.EngineOperationKind
 import com.worksoc.goaicoach.shared.engine.EngineOperationRequest
@@ -18,6 +19,7 @@ internal suspend fun EngineSessionClient.runRestoredGameSyncDisplayPlan(
     state: GameState,
     profile: EngineProfile,
     operationRequest: EngineOperationRequest? = null,
+    scoreSnapshots: List<ScoreSnapshot> = emptyList(),
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
 ): ScoreEstimateDisplayPlan {
     val estimate = runObservedEngineOperation(
@@ -38,7 +40,7 @@ internal suspend fun EngineSessionClient.runRestoredGameSyncDisplayPlan(
     return buildEngineEstimateDisplayPlan(
         state = state,
         estimate = estimate,
-        previousSnapshots = emptyList(),
+        previousSnapshots = scoreSnapshots,
         engineMessage = "Previous game restored and engine state synchronized.",
     )
 }
@@ -54,6 +56,7 @@ internal data class RestoredGameSyncEffectLaunchRequest(
     val currentState: GameState,
     val currentSessionGeneration: Long,
     val followUpAnalysisState: GameState,
+    val scoreSnapshots: List<ScoreSnapshot>,
     val fallbackMessage: String,
 )
 
@@ -71,6 +74,7 @@ internal data class RestoredGameSyncRunRequest(
         { block -> runEngineIo { block() } },
     val applyCompletion: (ScoreSyncCompletionApplyPlan) -> GameState?,
     val requestFollowUpAnalysis: (GameState) -> Unit,
+    val scoreSnapshots: List<ScoreSnapshot>,
     val fallbackMessage: String = "Saved game restored locally, but engine sync failed.",
 )
 
@@ -78,12 +82,14 @@ internal suspend fun EngineSessionClient.runRestoredGameSyncEffect(
     effect: GameSessionEffect.SyncRestoredGame,
     context: RestoredGameSyncExecutionContext,
     operationRequest: EngineOperationRequest? = null,
+    scoreSnapshots: List<ScoreSnapshot> = emptyList(),
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
 ): ScoreEstimateDisplayPlan =
     runRestoredGameSyncDisplayPlan(
         state = effect.gameState,
         profile = context.profile,
         operationRequest = operationRequest,
+        scoreSnapshots = scoreSnapshots,
         diagnosticEventLog = diagnosticEventLog,
     )
 
@@ -102,6 +108,7 @@ internal suspend fun EngineSessionClient.runRestoredGameSyncCompletionPlan(
             effect = request.effect,
             context = request.context,
             operationRequest = request.operation,
+            scoreSnapshots = request.scoreSnapshots,
             diagnosticEventLog = diagnosticEventLog,
         )
     }
@@ -136,6 +143,7 @@ internal fun runRestoredGameSyncApplication(request: RestoredGameSyncRunRequest)
                         currentState = request.currentState(),
                         currentSessionGeneration = request.currentSessionGeneration(),
                         followUpAnalysisState = request.state,
+                        scoreSnapshots = request.scoreSnapshots,
                         fallbackMessage = request.fallbackMessage,
                     ),
                     diagnosticEventLog = request.diagnosticEventLog,

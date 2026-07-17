@@ -66,6 +66,7 @@ internal sealed class SavedGameRestoreRunResult {
         val gameState: GameState,
         val engineProfile: EngineProfile,
         val syncEngineAfterRestore: Boolean,
+        val scoreSnapshots: List<ScoreSnapshot>,
     ) : SavedGameRestoreRunResult()
 }
 
@@ -94,6 +95,7 @@ internal fun runSavedGameRestoreApplication(
                 gameState = restore.gameState,
                 engineProfile = restore.runtime.engineProfile,
                 syncEngineAfterRestore = plan.syncEngineAfterRestore,
+                scoreSnapshots = restore.scoreSnapshots,
             )
         }
     }

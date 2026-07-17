@@ -59,6 +59,7 @@ internal class SavedSessionController(
                 runEngineOperation = launchEngineOperation,
                 applyCompletion = applyScoreSyncCompletion,
                 requestFollowUpAnalysis = requestFollowUpAnalysis,
+                scoreSnapshots = result.scoreSnapshots,
             ),
         )
     }
