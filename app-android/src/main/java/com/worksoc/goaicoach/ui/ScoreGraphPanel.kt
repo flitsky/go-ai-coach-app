@@ -303,6 +303,36 @@ internal fun ScoreTimelineGraph(
     val scoreLineColor = Color(0xFF3B82F6) // 선명하고 시원한 꺾은선 블루
     val activeDotColor = Color(0xFFEF4444) // 화사한 붉은색 끝 점
     val jigoLineColor = Color(0xFF94A3B8) // 명확한 비김 기준선 그레이
+
+    // 데이터 가공 및 캐싱: Composable 레벨에서 계산하여 Canvas 프레임 오버헤드 방지
+    val points = androidx.compose.runtime.remember(snapshots) {
+        val list = mutableListOf<Double>()
+        list.add(0.0)
+        snapshots.filter { it.hasScoreData }
+            .sortedBy { it.moveNumber }
+            .forEach {
+                it.whiteScoreLead?.let { whiteLead ->
+                    list.add(-whiteLead) // 흑 우세 기준
+                }
+            }
+        list
+    }
+
+    val maxScale = androidx.compose.runtime.remember(points) {
+        val maxAbsLead = points.maxOfOrNull { abs(it) } ?: 0.0
+        maxOf(ceil(maxAbsLead / 5.0) * 5.0, 5.0)
+    }
+
+    val currentScoreLabel = androidx.compose.runtime.remember(points) {
+        val latestLead = if (points.size > 1) points.last() else 0.0
+        val latestAbs = abs(latestLead)
+        val roundedLatest = ((latestAbs * 10).roundToInt() / 10.0).toString()
+        when {
+            latestLead > 0.0 -> "B +$roundedLatest"
+            latestLead < 0.0 -> "W +$roundedLatest"
+            else -> "0.0"
+        }
+    }
     
     Surface(
         modifier = modifier
@@ -344,19 +374,6 @@ internal fun ScoreTimelineGraph(
                     val chartWidth = chartRight - chartLeft
                     val centerY = chartTop + chartHeight / 2f
                     
-                    // 데이터 수집: 첫 시작점은 0수 0점으로 세팅
-                    val points = mutableListOf<Double>()
-                    points.add(0.0)
-                    snapshots.filter { it.hasScoreData }.sortedBy { it.moveNumber }.forEach {
-                        it.whiteScoreLead?.let { whiteLead ->
-                            points.add(-whiteLead) // 흑 우세 기준
-                        }
-                    }
-                    
-                    // 반응형 최대 진폭: 5의 배수 단위로 올림 (최소 5.0)
-                    val maxAbsLead = points.maxOfOrNull { abs(it) } ?: 0.0
-                    val maxScale = maxOf(ceil(maxAbsLead / 5.0) * 5.0, 5.0)
-                    
                     // Y좌표 매핑 함수 (흑 우세는 위쪽, 백 우세는 아래쪽)
                     val yForLead = { lead: Double ->
                         centerY - (lead.toFloat() / maxScale.toFloat()) * (chartHeight / 2f)
@@ -386,15 +403,6 @@ internal fun ScoreTimelineGraph(
                     // 우측 라벨 텍스트 그리기
                     val labelX = chartRight + 8.dp.toPx()
                     val formattedScale = maxScale.toInt().toString()
-                    
-                    val latestLead = if (points.size > 1) points.last() else 0.0
-                    val latestAbs = abs(latestLead)
-                    val roundedLatest = ((latestAbs * 10).roundToInt() / 10.0).toString()
-                    val currentScoreLabel = when {
-                        latestLead > 0.0 -> "B +$roundedLatest"
-                        latestLead < 0.0 -> "W +$roundedLatest"
-                        else -> "0.0"
-                    }
                     
                     drawAxisText(label = "B +$formattedScale", center = Offset(labelX, chartTop), color = textBlueColor)
                     drawAxisText(label = "W +$formattedScale", center = Offset(labelX, chartBottom), color = textBlueColor)
