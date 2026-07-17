@@ -136,15 +136,15 @@ internal fun ExpandedGameMenuSection(
             onOptionsChange = { nextOptions -> onEvent(GameUiEvent.ChangeUxOptions(nextOptions)) },
         )
 
-        GameMenuActionsPanel(
-            onCopyLog = { onEvent(GameUiEvent.CopyDebugReport) },
-            onBenchmark = { onEvent(GameUiEvent.ShowEngineBenchmark) },
-        )
-
         SearchTimeSettingsPanel(
             settings = screenState.searchTimeSettings,
             enabled = true, // engine-busy gate disabled; restore with !screenState.engine.isBusy
             onSettingsChange = { settings -> onEvent(GameUiEvent.ChangeSearchTimeSettings(settings)) },
+        )
+
+        GameMenuActionsPanel(
+            onCopyLog = { onEvent(GameUiEvent.CopyDebugReport) },
+            onBenchmark = { onEvent(GameUiEvent.ShowEngineBenchmark) },
         )
     }
 }

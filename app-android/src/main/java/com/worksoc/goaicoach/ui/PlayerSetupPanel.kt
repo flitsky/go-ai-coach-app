@@ -116,6 +116,7 @@ private fun MaximumSearchTimeLimitRow(
             text = strings.maximumSearchTimeLimit,
             modifier = Modifier.weight(1f),
             fontWeight = FontWeight.SemiBold,
+            style = MaterialTheme.typography.bodySmall,
         )
         SetupDropdown(
             selectedText = strings.searchTimeLimitLabel(selected),
@@ -270,7 +271,7 @@ internal fun <T> SetupDropdown(
             enabled = enabled,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text(selectedText, maxLines = 1)
+            Text(selectedText, maxLines = 1, style = MaterialTheme.typography.bodySmall)
         }
         DropdownMenu(
             expanded = expanded,
@@ -278,7 +279,7 @@ internal fun <T> SetupDropdown(
         ) {
             options.forEach { option ->
                 DropdownMenuItem(
-                    text = { Text(optionLabel(option)) },
+                    text = { Text(optionLabel(option), style = MaterialTheme.typography.bodySmall) },
                     onClick = {
                         expanded = false
                         onSelected(option)
@@ -307,6 +308,7 @@ internal fun <T> SettingDropdownRow(
             text = label,
             modifier = Modifier.weight(0.8f),
             fontWeight = FontWeight.SemiBold,
+            style = MaterialTheme.typography.bodySmall,
         )
         SetupDropdown(
             selectedText = selectedText,

@@ -192,13 +192,13 @@ internal fun GameMenuActionsPanel(
                     onClick = onCopyLog,
                     modifier = Modifier.weight(1f),
                 ) {
-                    Text(strings.copyLog)
+                    Text(strings.copyLog, style = MaterialTheme.typography.bodySmall)
                 }
                 OutlinedButton(
                     onClick = onBenchmark,
                     modifier = Modifier.weight(1f),
                 ) {
-                    Text(strings.benchmark)
+                    Text(strings.benchmark, style = MaterialTheme.typography.bodySmall)
                 }
             }
         }

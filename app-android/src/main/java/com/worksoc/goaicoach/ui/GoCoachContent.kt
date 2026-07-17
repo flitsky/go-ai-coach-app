@@ -17,6 +17,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -131,6 +132,8 @@ internal fun GoCoachContent(
         if (isDisplayMenuExpanded) {
             AlertDialog(
                 onDismissRequest = { onDisplayMenuExpandedChange(false) },
+                properties = DialogProperties(usePlatformDefaultWidth = false),
+                modifier = Modifier.fillMaxWidth(0.9f),
                 title = {
                     Text(
                         text = strings.matchSetup,
