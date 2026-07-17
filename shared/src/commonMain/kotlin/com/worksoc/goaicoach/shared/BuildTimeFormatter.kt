@@ -1,6 +1,6 @@
-package com.worksoc.goaicoach.ui
+package com.worksoc.goaicoach.shared
 
-internal fun formatBuildTime(rawBuildTime: String): String {
+fun formatBuildTime(rawBuildTime: String): String {
     return try {
         val parts = rawBuildTime.split(" ")
         if (parts.size == 2) {

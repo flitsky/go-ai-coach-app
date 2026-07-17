@@ -1,29 +1,28 @@
-package com.worksoc.goaicoach.ui
+package com.worksoc.goaicoach.shared
 
-import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.StoneColor
 import kotlin.math.roundToInt
 
-internal fun Double.formatOneDecimal(): String =
+fun Double.formatOneDecimal(): String =
     ((this * 10).roundToInt() / 10.0).toString()
 
-internal fun extractScoreLead(text: String): Double? {
+fun extractScoreLead(text: String): Double? {
     val regex = Regex("""scoreLead=([-\d.]+)""")
     return regex.find(text)?.groupValues?.getOrNull(1)?.toDoubleOrNull()
 }
 
-internal fun extractAiSelectedRank(text: String): String? {
+fun extractAiSelectedRank(text: String): String? {
     val regex = Regex("""AI\s+[sS]elected\s+rank\s+(\d+/\d+)""")
     return regex.find(text)?.groupValues?.getOrNull(1)
 }
 
-internal fun extractVisitDiagnostics(text: String): String? {
+fun extractVisitDiagnostics(text: String): String? {
     val regex = Regex("""Visit diagnostics:\s*(request=\d+,\s*root=[^,]+,\s*elapsedMs=\d+,\s*timeCapMs=[^,]+,\s*fill=[A-Z]+)""")
     return regex.find(text)?.groupValues?.getOrNull(1)
 }
 
-internal fun extractSearchedCount(rawText: String, candidateText: String?): Int {
+fun extractSearchedCount(rawText: String, candidateText: String?): Int {
     val returnedRegex = Regex("""Returned (\d+) searched candidate""")
     returnedRegex.find(rawText)?.groupValues?.getOrNull(1)?.toIntOrNull()?.let { return it }
 
@@ -37,7 +36,7 @@ internal fun extractSearchedCount(rawText: String, candidateText: String?): Int 
     return 4
 }
 
-internal fun formatCandidateLineCompact(line: String): String {
+fun formatCandidateLineCompact(line: String): String {
     var formatted = line.trim()
     formatted = formatted.replace(Regex("""\s+visits=\d+"""), "")
     formatted = formatted.replace(Regex("""\s+prior=\d+%"""), "")
@@ -48,7 +47,7 @@ internal fun formatCandidateLineCompact(line: String): String {
     return formatted
 }
 
-internal data class SideAnalysisDebugState(
+data class SideAnalysisDebugState(
     val black: SideAnalysisDebugText,
     val white: SideAnalysisDebugText,
 ) {
@@ -56,7 +55,7 @@ internal data class SideAnalysisDebugState(
         get() = black.hasContent || white.hasContent
 }
 
-internal data class SideAnalysisDebugText(
+data class SideAnalysisDebugText(
     val candidateText: String? = null,
     val selectedMoveText: String? = null,
     val moveReviewText: String? = null,
@@ -65,8 +64,8 @@ internal data class SideAnalysisDebugText(
         get() = candidateText != null || selectedMoveText != null || moveReviewText != null
 }
 
-internal fun buildSideAnalysisDebugState(
-    screenState: GameScreenState,
+fun buildSideAnalysisDebugState(
+    moves: List<Move>,
     candidateText: String,
     engineMessage: String,
     moveReviewText: String,
@@ -83,11 +82,11 @@ internal fun buildSideAnalysisDebugState(
         listOf(engineMessage, candidateText).joinToString("\n"),
     )
     val selectedOwner = selectedMoveText?.let {
-        candidateOwner ?: lastMovePlayer(screenState)
+        candidateOwner ?: lastMovePlayer(moves)
     }
     val reviewOwner = moveReviewText
         .takeIf { it.isNotBlank() }
-        ?.let { lastMovePlayer(screenState) }
+        ?.let { lastMovePlayer(moves) }
 
     fun stateFor(player: StoneColor): SideAnalysisDebugText {
         val sideText = analysisTextsByPlayer[player]
@@ -106,7 +105,7 @@ internal fun buildSideAnalysisDebugState(
     )
 }
 
-internal fun inferAnalysisOwner(candidateText: String): StoneColor? {
+fun inferAnalysisOwner(candidateText: String): StoneColor? {
     val explicit = Regex("""\bfor\s+(Black|White)\b""")
         .find(candidateText)
         ?.groupValues
@@ -121,21 +120,21 @@ internal fun inferAnalysisOwner(candidateText: String): StoneColor? {
         ?.toStoneColorOrNull()
 }
 
-internal fun extractAiSelectedLine(engineMessage: String): String? =
+fun extractAiSelectedLine(engineMessage: String): String? =
     engineMessage
         .lines()
         .firstOrNull { line -> line.contains("AI selected") }
         ?.trim()
 
-internal fun lastMovePlayer(screenState: GameScreenState): StoneColor? =
-    when (val lastMove = screenState.gameState.moves.lastOrNull()) {
+fun lastMovePlayer(moves: List<Move>): StoneColor? =
+    when (val lastMove = moves.lastOrNull()) {
         is Move.Play -> lastMove.player
         is Move.Pass -> lastMove.player
         is Move.Resign -> lastMove.player
         null -> null
     }
 
-internal fun String.toStoneColorOrNull(): StoneColor? =
+fun String.toStoneColorOrNull(): StoneColor? =
     when (this) {
         "Black" -> StoneColor.Black
         "White" -> StoneColor.White

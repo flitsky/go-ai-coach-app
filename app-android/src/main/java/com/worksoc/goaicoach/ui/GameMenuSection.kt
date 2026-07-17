@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.BuildConfig
 import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.presentation.GameUiEvent
+import com.worksoc.goaicoach.shared.formatBuildTime
 
 
 

@@ -18,7 +18,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.presentation.GameScreenState
-import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.*
 import com.worksoc.goaicoach.match.SeatController
 
 @Composable
@@ -30,7 +30,7 @@ internal fun EngineResponsePanel(
 ) {
     val strings = LocalUiStrings.current
     val analysisDebug = buildSideAnalysisDebugState(
-        screenState = screenState,
+        moves = screenState.gameState.moves,
         candidateText = candidateText,
         engineMessage = engineMessage,
         moveReviewText = moveReviewText,

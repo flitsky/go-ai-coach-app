@@ -1,10 +1,9 @@
-package com.worksoc.goaicoach.ui
+package com.worksoc.goaicoach.shared
 
-import com.worksoc.goaicoach.shared.StoneColor
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
-import org.junit.Test
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 
 class EngineResponseParserTest {
 
@@ -72,7 +71,6 @@ class EngineResponseParserTest {
     @Test
     fun testFormatCandidateLineCompact() {
         val originalLine = "  C4 visits=100 prior=80% - 1.5 points loss"
-        // visits=100 prior=80% 과 - 이탈
         assertEquals("C4", formatCandidateLineCompact(originalLine))
 
         val simpleLine = "D10 visits=50 prior=12%"
