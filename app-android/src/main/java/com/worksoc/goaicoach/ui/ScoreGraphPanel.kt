@@ -2,6 +2,7 @@ package com.worksoc.goaicoach.ui
 
 import android.graphics.Paint
 import android.graphics.Typeface
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -281,19 +282,22 @@ internal fun ScoreTimelineGraph(
     val configuration = LocalConfiguration.current
     val heightDp = configuration.screenWidthDp.dp / 4
     
-    // 짙은 세련된 네이비 블루 배경 (#1C2436)
-    val backgroundBlue = Color(0xFF1C2436)
-    val gridLineColor = Color(0x22FFFFFF) // 아주 희미한 흰색 점선
-    val textBlueColor = Color(0xFF4FC3F7) // 라이트 블루 텍스트
-    val scoreLineColor = Color(0xFF03A9F4) // 라이트 블루 실선
-    val activeDotColor = Color(0xFFFF5252) // 활성 상태의 붉은색 끝 점
+    // 밝고 연한 프리미엄 슬레이트/스카이 블루 톤 구성
+    val backgroundLight = Color(0xFFF8FAFC) // 연한 그레이빛 화이트
+    val borderLightColor = Color(0xFFE2E8F0) // 연한 보더
+    val gridLineColor = Color(0xFFE2E8F0) // 연한 가이드선 그레이
+    val textBlueColor = Color(0xFF64748B) // 차분한 슬레이트 블루그레이 텍스트
+    val scoreLineColor = Color(0xFF3B82F6) // 선명하고 시원한 꺾은선 블루
+    val activeDotColor = Color(0xFFEF4444) // 화사한 붉은색 끝 점
+    val jigoLineColor = Color(0xFF94A3B8) // 명확한 비김 기준선 그레이
     
     Surface(
         modifier = modifier
             .fillMaxWidth()
             .height(heightDp),
-        color = backgroundBlue,
+        color = backgroundLight,
         shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, borderLightColor),
         tonalElevation = 0.dp,
         shadowElevation = 0.dp,
     ) {
@@ -319,9 +323,9 @@ internal fun ScoreTimelineGraph(
                 }
             }
             
-            // 반응형 최대 진폭 (최소 5.0)
+            // 반응형 최대 진폭: 5의 배수 단위로 올림 (최소 5.0)
             val maxAbsLead = points.maxOfOrNull { abs(it) } ?: 0.0
-            val maxScale = maxOf(maxAbsLead, 5.0)
+            val maxScale = maxOf(ceil(maxAbsLead / 5.0) * 5.0, 5.0)
             
             // Y좌표 매핑 함수 (흑 우세는 위쪽, 백 우세는 아래쪽)
             val yForLead = { lead: Double ->
@@ -341,7 +345,7 @@ internal fun ScoreTimelineGraph(
             )
             gridYs.forEachIndexed { idx, y ->
                 drawLine(
-                    color = if (idx == 2) Color(0x44FFFFFF) else gridLineColor,
+                    color = if (idx == 2) jigoLineColor else gridLineColor,
                     start = Offset(chartLeft, y),
                     end = Offset(chartRight, y),
                     strokeWidth = 1.dp.toPx(),
@@ -351,10 +355,10 @@ internal fun ScoreTimelineGraph(
             
             // 우측 라벨 텍스트 그리기
             val labelX = chartRight + 8.dp.toPx()
-            val formattedScale = ((maxScale * 10).roundToInt() / 10.0).toString()
-            drawAxisText(label = "B+$formattedScale", center = Offset(labelX, chartTop), color = textBlueColor)
+            val formattedScale = maxScale.toInt().toString()
+            drawAxisText(label = "B +$formattedScale", center = Offset(labelX, chartTop), color = textBlueColor)
             drawAxisText(label = "-Jigo", center = Offset(labelX, centerY), color = textBlueColor)
-            drawAxisText(label = "W+$formattedScale", center = Offset(labelX, chartBottom), color = textBlueColor)
+            drawAxisText(label = "W +$formattedScale", center = Offset(labelX, chartBottom), color = textBlueColor)
             
             // 꺾은선 그리기
             val denominator = maxOf(points.size - 1, 15) // 최소 15개 슬롯 제공
