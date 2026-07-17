@@ -188,17 +188,16 @@ private fun GameActionButtons(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        // [1열] "분석", 형세보기(Eval), 추천수(Top Moves), 무르기(Undo)
+        // [1열] 분석, 형세보기(Eval), 추천수(Top Moves)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            val isBlockingBusy = screenState.engine.isBlockingBusy
             val engineReady = screenState.engine.isReady
             val isLocalTwoPlayer = screenState.matchMode == MatchMode.LocalTwoPlayer
 
-            // 1. "분석" 버튼 (신규 추가)
-            val analysisEnabled = !isBlockingBusy && (engineReady || isLocalTwoPlayer)
+            // 1. "분석" 버튼
+            val analysisEnabled = engineReady || isLocalTwoPlayer
             OutlinedButton(
                 onClick = onAnalysisClick,
                 enabled = analysisEnabled,
@@ -229,20 +228,9 @@ private fun GameActionButtons(
                     modifier = Modifier.weight(1f)
                 )
             }
-
-            // 4. 무르기 (Undo) 버튼
-            val undoAction = screenState.actionButtons.firstOrNull { it.role == GameActionButtonRole.Undo }
-            if (undoAction != null) {
-                ActionButtonWrapper(
-                    action = undoAction,
-                    label = strings.undo,
-                    onEvent = onEvent,
-                    modifier = Modifier.weight(1f)
-                )
-            }
         }
 
-        // [2열] 기권(Resign/New Game), 통과(Pass)
+        // [2열] 기권(Resign/New Game), 통과(Pass), 무르기(Undo)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -264,12 +252,23 @@ private fun GameActionButtons(
                 ActionButtonText(if (screenState.isGameEnded) strings.newGameAction else strings.resign)
             }
 
-            // 2. 통과 (Pass) 버튼 (우측)
+            // 2. 통과 (Pass) 버튼 (중앙)
             val passAction = screenState.actionButtons.firstOrNull { it.role == GameActionButtonRole.Pass }
             if (passAction != null) {
                 ActionButtonWrapper(
                     action = passAction,
                     label = strings.pass,
+                    onEvent = onEvent,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            // 3. 무르기 (Undo) 버튼 (우측)
+            val undoAction = screenState.actionButtons.firstOrNull { it.role == GameActionButtonRole.Undo }
+            if (undoAction != null) {
+                ActionButtonWrapper(
+                    action = undoAction,
+                    label = strings.undo,
                     onEvent = onEvent,
                     modifier = Modifier.weight(1f)
                 )

@@ -152,7 +152,7 @@ class GameScreenStateTest {
         assertTrue(topMoves.enabled)
         assertTrue(topMoves.isFilled)
         assertFalse(screenState.actionButtons.first { it.role == GameActionButtonRole.Pass }.enabled)
-        assertFalse(screenState.actionButtons.first { it.role == GameActionButtonRole.Eval }.enabled)
+        assertTrue(screenState.actionButtons.first { it.role == GameActionButtonRole.Eval }.enabled)
     }
 
     @Test

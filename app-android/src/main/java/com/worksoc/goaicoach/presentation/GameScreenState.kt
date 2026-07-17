@@ -277,8 +277,7 @@ internal fun buildGameActionButtonStates(input: GameScreenStateInput): List<Game
         input.matchSeats.current.canAcceptBoardInput
     val isBlockingBusy = input.isEngineBlockingBusy
     val topMovesButtonEnabled = !input.isGameEnded &&
-        input.isEngineReady &&
-        (!isBlockingBusy || input.topMovesEnabled)
+        input.isEngineReady
 
     return listOf(
         GameActionButtonState(
@@ -308,8 +307,7 @@ internal fun buildGameActionButtonStates(input: GameScreenStateInput): List<Game
             role = GameActionButtonRole.Eval,
             label = "Eval",
             event = GameUiEvent.ToggleEvalWithGradient,
-            enabled = !isBlockingBusy &&
-                (input.isEngineReady || input.matchMode == MatchMode.LocalTwoPlayer),
+            enabled = (input.isEngineReady || input.matchMode == MatchMode.LocalTwoPlayer),
             isFilled = input.uxOptions.showOwnershipOverlay,
         ),
     )
