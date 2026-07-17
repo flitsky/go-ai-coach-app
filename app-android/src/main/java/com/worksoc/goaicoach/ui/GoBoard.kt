@@ -77,6 +77,7 @@ internal fun GoBoard(
     onCoordinateTap: (BoardCoordinate) -> Unit,
     isGameEnded: Boolean = false,
     isEngineBusy: Boolean = false,
+    colors: GoBoardColors = GoBoardColors.Default,
 ) {
     var canvasSize by remember { mutableStateOf(IntSize.Zero) }
     var activityFrame by remember { mutableStateOf(0) }
@@ -117,8 +118,8 @@ internal fun GoBoard(
         Box(
             modifier = Modifier
                 .size(boardSide)
-                .background(if (isGameEnded) Color(0xFFAC864B) else Color(0xFFD7A85E), RoundedCornerShape(8.dp))
-                .border(1.dp, Color(0xFF7A4D20), RoundedCornerShape(8.dp))
+                .background(if (isGameEnded) colors.boardBackgroundEnded else colors.boardBackgroundActive, RoundedCornerShape(8.dp))
+                .border(1.dp, colors.boardBorder, RoundedCornerShape(8.dp))
                 .padding(3.dp),
             contentAlignment = Alignment.Center,
         ) {
@@ -142,7 +143,7 @@ internal fun GoBoard(
                     },
             ) {
                 val geometry = BoardGeometry.from(size, gameState.boardSize, uxOptions.showCoordinates)
-                drawBoardGrid(geometry, gameState.boardSize)
+                drawBoardGrid(geometry, gameState.boardSize, colors.gridLine)
                 if (uxOptions.showCoordinates) {
                     drawBoardCoordinates(geometry, gameState.boardSize)
                 }
@@ -167,7 +168,7 @@ internal fun GoBoard(
                 val lastMove = gameState.moves.lastOrNull() as? Move.Play
                 if (lastMove != null && uxOptions.showLastMoveRing) {
                     drawCircle(
-                        color = Color(0xFFE53935),
+                        color = colors.lastMoveMark,
                         radius = geometry.spacing * 0.48f,
                         center = geometry.pointFor(lastMove.coordinate),
                         style = Stroke(width = 3.5f),
@@ -175,7 +176,7 @@ internal fun GoBoard(
                 }
                 if (lastMove != null && !uxOptions.showMoveNumbers) {
                     drawCircle(
-                        color = Color(0xFFE53935),
+                        color = colors.lastMoveMark,
                         radius = geometry.spacing * 0.12f,
                         center = geometry.pointFor(lastMove.coordinate),
                     )
@@ -193,7 +194,7 @@ internal fun GoBoard(
                     modifier = Modifier
                         .align(Alignment.TopCenter)
                         .padding(top = 2.dp),
-                    color = Color(0xFF3F2612),
+                    color = colors.engineActivityText,
                     style = MaterialTheme.typography.labelMedium,
                 )
             }
@@ -489,8 +490,8 @@ private fun GameState.currentMoveNumberAt(coordinate: BoardCoordinate): Int? {
 private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawBoardGrid(
     geometry: BoardGeometry,
     boardSize: BoardSize,
+    lineColor: Color,
 ) {
-    val lineColor = Color(0xFF4A2F17)
 
     // 1. 내부 격자선 그리기 (굵기 1.5f)
     for (index in 0 until boardSize.value) {
