@@ -367,7 +367,6 @@ internal fun ScoreTimelineGraph(
             }
             
             drawAxisText(label = "B +$formattedScale", center = Offset(labelX, chartTop), color = textBlueColor)
-            drawAxisText(label = currentScoreLabel, center = Offset(labelX, centerY), color = scoreLineColor)
             drawAxisText(label = "W +$formattedScale", center = Offset(labelX, chartBottom), color = textBlueColor)
             
             // 꺾은선 그리기
@@ -399,6 +398,21 @@ internal fun ScoreTimelineGraph(
                         radius = 4.dp.toPx(),
                         center = current
                     )
+                    
+                    // 최신 스코어 텍스트를 빨간색 활성 점 옆에 그립니다
+                    val isNearRightEdge = current.x > (chartLeft + chartWidth * 0.85f)
+                    val textX = if (isNearRightEdge) {
+                        current.x - 8.dp.toPx()
+                    } else {
+                        current.x + 8.dp.toPx()
+                    }
+                    val textAlign = if (isNearRightEdge) Paint.Align.RIGHT else Paint.Align.LEFT
+                    drawAxisText(
+                        label = currentScoreLabel,
+                        center = Offset(textX, current.y),
+                        color = activeDotColor, // 빨간색 점과 일체감을 주는 색상
+                        align = textAlign
+                    )
                 } else {
                     drawCircle(
                         color = scoreLineColor,
@@ -417,11 +431,12 @@ private fun DrawScope.drawAxisText(
     label: String,
     center: Offset,
     color: Color,
+    align: Paint.Align = Paint.Align.LEFT,
 ) {
     drawIntoCanvas { canvas ->
         val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             this.color = color.toArgb()
-            textAlign = Paint.Align.LEFT
+            textAlign = align
             textSize = 9.dp.toPx()
             typeface = Typeface.DEFAULT_BOLD
         }
