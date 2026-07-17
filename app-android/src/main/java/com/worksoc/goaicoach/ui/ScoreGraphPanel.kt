@@ -410,8 +410,9 @@ internal fun ScoreTimelineGraph(
                     drawAxisText(
                         label = currentScoreLabel,
                         center = Offset(textX, current.y),
-                        color = activeDotColor, // 빨간색 점과 일체감을 주는 색상
-                        align = textAlign
+                        color = Color(0xFF1E293B), // 차분하고 진한 검회색 (Slate 800)
+                        align = textAlign,
+                        sizeDp = 11 // 한 사이즈 키움 (9 -> 11)
                     )
                 } else {
                     drawCircle(
@@ -432,12 +433,13 @@ private fun DrawScope.drawAxisText(
     center: Offset,
     color: Color,
     align: Paint.Align = Paint.Align.LEFT,
+    sizeDp: Int = 9,
 ) {
     drawIntoCanvas { canvas ->
         val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             this.color = color.toArgb()
             textAlign = align
-            textSize = 9.dp.toPx()
+            textSize = sizeDp.dp.toPx()
             typeface = Typeface.DEFAULT_BOLD
         }
         val baseline = center.y - (paint.ascent() + paint.descent()) / 2f
