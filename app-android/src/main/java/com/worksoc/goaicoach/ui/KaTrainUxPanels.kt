@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.presentation.KaTrainUxOptions
 import com.worksoc.goaicoach.shared.StoneColor
@@ -41,7 +42,7 @@ internal fun KaTrainUxMenuPanel(
     onOptionsChange: (KaTrainUxOptions) -> Unit,
 ) {
     val strings = LocalUiStrings.current
-    val columnGap = 12.dp
+    val columnGap = (LocalConfiguration.current.screenWidthDp * 0.05f).dp
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
@@ -107,7 +108,7 @@ private fun OptionSwitchCell(
             modifier = Modifier.weight(1f),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurface,
-            textAlign = TextAlign.Start,
+            textAlign = TextAlign.Center,
             maxLines = 2,
         )
         Switch(checked = checked, onCheckedChange = onCheckedChange)
