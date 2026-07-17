@@ -210,7 +210,7 @@ private fun GameActionButtons(
             // 2. 형세보기 (Eval) 버튼
             val evalAction = screenState.actionButtons.firstOrNull { it.role == GameActionButtonRole.Eval }
             if (evalAction != null) {
-                ActionButtonWrapper(
+                ToggleActionButton(
                     action = evalAction,
                     label = strings.eval,
                     onEvent = onEvent,
@@ -221,7 +221,7 @@ private fun GameActionButtons(
             // 3. 추천수 (Top Moves) 버튼
             val topMovesAction = screenState.actionButtons.firstOrNull { it.role == GameActionButtonRole.TopMoves }
             if (topMovesAction != null) {
-                ActionButtonWrapper(
+                ToggleActionButton(
                     action = topMovesAction,
                     label = strings.topMoves,
                     onEvent = onEvent,
@@ -255,7 +255,7 @@ private fun GameActionButtons(
             // 2. 통과 (Pass) 버튼 (중앙)
             val passAction = screenState.actionButtons.firstOrNull { it.role == GameActionButtonRole.Pass }
             if (passAction != null) {
-                ActionButtonWrapper(
+                SingleActionButton(
                     action = passAction,
                     label = strings.pass,
                     onEvent = onEvent,
@@ -266,7 +266,7 @@ private fun GameActionButtons(
             // 3. 무르기 (Undo) 버튼 (우측)
             val undoAction = screenState.actionButtons.firstOrNull { it.role == GameActionButtonRole.Undo }
             if (undoAction != null) {
-                ActionButtonWrapper(
+                SingleActionButton(
                     action = undoAction,
                     label = strings.undo,
                     onEvent = onEvent,
@@ -278,7 +278,7 @@ private fun GameActionButtons(
 }
 
 @Composable
-private fun ActionButtonWrapper(
+private fun ToggleActionButton(
     action: GameActionButtonState,
     label: String,
     onEvent: (GameUiEvent) -> Unit,
@@ -290,8 +290,12 @@ private fun ActionButtonWrapper(
             enabled = action.enabled,
             modifier = modifier,
             contentPadding = ActionButtonContentPadding,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            )
         ) {
-            ActionButtonText(label)
+            ActionButtonText("🟢 $label")
         }
     } else {
         OutlinedButton(
@@ -300,8 +304,25 @@ private fun ActionButtonWrapper(
             modifier = modifier,
             contentPadding = ActionButtonContentPadding,
         ) {
-            ActionButtonText(label)
+            ActionButtonText("⚪ $label")
         }
+    }
+}
+
+@Composable
+private fun SingleActionButton(
+    action: GameActionButtonState,
+    label: String,
+    onEvent: (GameUiEvent) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    OutlinedButton(
+        onClick = { onEvent(action.event) },
+        enabled = action.enabled,
+        modifier = modifier,
+        contentPadding = ActionButtonContentPadding,
+    ) {
+        ActionButtonText(label)
     }
 }
 
