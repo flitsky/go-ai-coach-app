@@ -3,6 +3,7 @@ package com.worksoc.goaicoach.application.savedgame
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.PlayLevelSetting
+import com.worksoc.goaicoach.shared.ScoreSnapshot
 
 internal data class SavedGamePersistenceRequest(
     val savedSessionUiState: SavedSessionUiState,
@@ -11,6 +12,7 @@ internal data class SavedGamePersistenceRequest(
     val playerSetup: PlayerSetup,
     val playLevel: PlayLevelSetting,
     val topMovesEnabled: Boolean,
+    val scoreSnapshots: List<ScoreSnapshot>,
     val nowMillis: Long,
 )
 
@@ -24,6 +26,7 @@ internal fun buildSavedGamePersistencePlan(
         playerSetup = request.playerSetup,
         playLevel = request.playLevel,
         topMovesEnabled = request.topMovesEnabled,
+        scoreSnapshots = request.scoreSnapshots,
         nowMillis = request.nowMillis,
     )
 

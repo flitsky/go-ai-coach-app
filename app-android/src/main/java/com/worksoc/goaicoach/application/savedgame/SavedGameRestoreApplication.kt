@@ -57,7 +57,7 @@ internal fun buildSavedGameRestorePlan(
         candidateText = "Restored previous game. Analysis cache will rebuild.",
         reviewAnalysis = MoveAnalysisSnapshot.empty(state),
         scoreText = "Score estimate not current.",
-        scoreSnapshots = listOf(localScoreSnapshot(state)),
+        scoreSnapshots = snapshot.scoreSnapshots.takeIf { it.isNotEmpty() } ?: listOf(localScoreSnapshot(state)),
         moveReviewText = "Move review restored after app restart; pre-move analysis cache will rebuild.",
         lastMoveText = state.moves.lastOrNull()?.describe(state.boardSize) ?: "None",
         endgameLog = "No endgame result recorded after restore.",

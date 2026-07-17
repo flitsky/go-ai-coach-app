@@ -52,6 +52,7 @@ class SavedGameApplicationRunnerTest {
                 playerSetup = PlayerSetup(),
                 playLevel = PlayLevelSetting(level = 4),
                 topMovesEnabled = true,
+                scoreSnapshots = emptyList(),
                 nowMillis = 456L,
                 store = store,
             ),

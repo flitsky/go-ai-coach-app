@@ -381,6 +381,7 @@ private fun GoCoachScreen(
         playerSetup,
         runtimeState.playLevel,
         topMovesEnabled,
+        scoreState.scoreSnapshots,
     ) {
         runSavedGamePersistenceApplication(
             SavedGamePersistenceRunRequest(
@@ -390,6 +391,7 @@ private fun GoCoachScreen(
                 playerSetup = playerSetup,
                 playLevel = runtimeState.playLevel,
                 topMovesEnabled = topMovesEnabled,
+                scoreSnapshots = scoreState.scoreSnapshots,
                 nowMillis = System.currentTimeMillis(),
                 store = sessionStore,
             ),

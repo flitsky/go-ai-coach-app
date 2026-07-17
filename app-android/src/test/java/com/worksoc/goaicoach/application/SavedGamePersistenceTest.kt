@@ -24,6 +24,7 @@ class SavedGamePersistenceTest {
             playerSetup = PlayerSetup(),
             playLevel = PlayLevelSetting(),
             topMovesEnabled = false,
+            scoreSnapshots = emptyList(),
             nowMillis = 10L,
         )
 
@@ -40,6 +41,7 @@ class SavedGamePersistenceTest {
             playerSetup = PlayerSetup(),
             playLevel = PlayLevelSetting(),
             topMovesEnabled = false,
+            scoreSnapshots = emptyList(),
             nowMillis = 10L,
         )
 
@@ -56,6 +58,7 @@ class SavedGamePersistenceTest {
             playerSetup = PlayerSetup(),
             playLevel = PlayLevelSetting(),
             topMovesEnabled = false,
+            scoreSnapshots = emptyList(),
             nowMillis = 10L,
         )
         val emptyPlan = planSavedGamePersistence(
@@ -66,6 +69,7 @@ class SavedGamePersistenceTest {
             playerSetup = PlayerSetup(),
             playLevel = PlayLevelSetting(),
             topMovesEnabled = false,
+            scoreSnapshots = emptyList(),
             nowMillis = 10L,
         )
 
@@ -85,6 +89,7 @@ class SavedGamePersistenceTest {
             playerSetup = PlayerSetup(),
             playLevel = level,
             topMovesEnabled = true,
+            scoreSnapshots = emptyList(),
             nowMillis = 99L,
         )
 
@@ -111,6 +116,7 @@ class SavedGamePersistenceTest {
             playerSetup = PlayerSetup(),
             playLevel = PlayLevelSetting(),
             topMovesEnabled = true,
+            scoreSnapshots = emptyList(),
             nowMillis = 123L,
         )
 
@@ -134,6 +140,7 @@ class SavedGamePersistenceTest {
                 playerSetup = PlayerSetup(),
                 playLevel = PlayLevelSetting(level = 3),
                 topMovesEnabled = true,
+                scoreSnapshots = emptyList(),
                 nowMillis = 777L,
             ),
             store = store,
@@ -153,6 +160,7 @@ class SavedGamePersistenceTest {
                 playerSetup = PlayerSetup(),
                 playLevel = PlayLevelSetting(),
                 topMovesEnabled = false,
+                scoreSnapshots = emptyList(),
                 nowMillis = 778L,
             ),
             store = store,

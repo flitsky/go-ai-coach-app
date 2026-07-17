@@ -5,6 +5,7 @@ import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.SearchTimeSettings
+import com.worksoc.goaicoach.shared.ScoreSnapshot
 
 internal data class SavedSessionPromptRunRequest(
     val store: SavedGameStorePort,
@@ -24,6 +25,7 @@ internal data class SavedGamePersistenceRunRequest(
     val playerSetup: PlayerSetup,
     val playLevel: PlayLevelSetting,
     val topMovesEnabled: Boolean,
+    val scoreSnapshots: List<ScoreSnapshot>,
     val nowMillis: Long,
     val store: SavedGameStorePort,
 )
@@ -39,6 +41,7 @@ internal fun runSavedGamePersistenceApplication(
             playerSetup = request.playerSetup,
             playLevel = request.playLevel,
             topMovesEnabled = request.topMovesEnabled,
+            scoreSnapshots = request.scoreSnapshots,
             nowMillis = request.nowMillis,
         ),
         store = request.store,

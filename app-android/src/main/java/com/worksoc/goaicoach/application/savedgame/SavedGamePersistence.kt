@@ -3,6 +3,7 @@ package com.worksoc.goaicoach.application.savedgame
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.PlayLevelSetting
+import com.worksoc.goaicoach.shared.ScoreSnapshot
 
 internal sealed class SavedGamePersistencePlan {
     data object Skip : SavedGamePersistencePlan()
@@ -17,6 +18,7 @@ internal fun planSavedGamePersistence(
     playerSetup: PlayerSetup,
     playLevel: PlayLevelSetting,
     topMovesEnabled: Boolean,
+    scoreSnapshots: List<ScoreSnapshot>,
     nowMillis: Long,
 ): SavedGamePersistencePlan =
     planSavedGamePersistence(
@@ -27,6 +29,7 @@ internal fun planSavedGamePersistence(
         playerSetup = playerSetup,
         playLevel = playLevel,
         topMovesEnabled = topMovesEnabled,
+        scoreSnapshots = scoreSnapshots,
         nowMillis = nowMillis,
     )
 
@@ -38,6 +41,7 @@ internal fun planSavedGamePersistence(
     playerSetup: PlayerSetup,
     playLevel: PlayLevelSetting,
     topMovesEnabled: Boolean,
+    scoreSnapshots: List<ScoreSnapshot>,
     nowMillis: Long,
 ): SavedGamePersistencePlan {
     if (!hasCheckedSavedSession || shouldShowResumePrompt) {
@@ -50,6 +54,7 @@ internal fun planSavedGamePersistence(
         playLevel = playLevel,
         topMovesEnabled = topMovesEnabled,
         savedAtMillis = nowMillis,
+        scoreSnapshots = scoreSnapshots,
     )
 
     return if (isGameEnded || !snapshot.isResumable) {

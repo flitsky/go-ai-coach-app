@@ -15,6 +15,8 @@ import com.worksoc.goaicoach.shared.GameStateReplayer
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.ScoreSnapshot
+import com.worksoc.goaicoach.shared.ScoreSnapshotSource
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -66,6 +68,7 @@ internal object SavedGameSessionCodec {
             .put("playerSetup", encodePlayerSetup(snapshot.playerSetup))
             .put("playLevel", encodePlayLevel(snapshot.playLevel))
             .put("topMovesEnabled", snapshot.topMovesEnabled)
+            .put("scoreSnapshots", encodeScoreSnapshots(snapshot.scoreSnapshots))
             .toString()
 
     fun decode(raw: String): SavedGameSnapshot? =
@@ -84,14 +87,44 @@ internal object SavedGameSessionCodec {
                 moves = moves,
                 handicapCount = handicapCount,
             )
+            val scoreSnapshots = decodeScoreSnapshots(json.optJSONArray("scoreSnapshots") ?: JSONArray())
             SavedGameSnapshot(
                 gameState = gameState,
                 playerSetup = decodePlayerSetup(json.optJSONObject("playerSetup")),
                 playLevel = decodePlayLevel(json.optJSONObject("playLevel")),
                 topMovesEnabled = json.optBoolean("topMovesEnabled", false),
                 savedAtMillis = json.optLong("savedAtMillis", 0L),
+                scoreSnapshots = scoreSnapshots,
             )
         }.getOrNull()
+
+    private fun encodeScoreSnapshots(snapshots: List<ScoreSnapshot>): JSONArray =
+        JSONArray().also { array ->
+            snapshots.forEach { snapshot ->
+                array.put(
+                    JSONObject()
+                        .put("moveNumber", snapshot.moveNumber)
+                        .put("whiteScoreLead", snapshot.whiteScoreLead ?: JSONObject.NULL)
+                        .put("whiteWinRate", snapshot.whiteWinRate ?: JSONObject.NULL)
+                        .put("source", snapshot.source.name)
+                )
+            }
+        }
+
+    private fun decodeScoreSnapshots(json: JSONArray): List<ScoreSnapshot> =
+        List(json.length()) { index ->
+            val item = json.getJSONObject(index)
+            val moveNumber = item.getInt("moveNumber")
+            val whiteScoreLead = if (item.isNull("whiteScoreLead")) null else item.getDouble("whiteScoreLead")
+            val whiteWinRate = if (item.isNull("whiteWinRate")) null else item.getDouble("whiteWinRate")
+            val source = enumOrDefault(item.optString("source"), ScoreSnapshotSource.EngineEstimate)
+            ScoreSnapshot(
+                moveNumber = moveNumber,
+                whiteScoreLead = whiteScoreLead,
+                whiteWinRate = whiteWinRate,
+                source = source
+            )
+        }
 
     private fun encodeMoves(
         moves: List<Move>,
