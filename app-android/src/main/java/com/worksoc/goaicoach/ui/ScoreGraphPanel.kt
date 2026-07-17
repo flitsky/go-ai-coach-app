@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -23,9 +24,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.shared.ScoreSnapshot
@@ -268,3 +272,146 @@ private val ScoreLineColor = Color(0xFF1565C0)
 private val WinRateLineColor = Color(0xFF2E7D32)
 private val AxisColor = Color(0xFF8D8A80)
 private val GridColor = Color(0x338D8A80)
+
+@Composable
+internal fun ScoreTimelineGraph(
+    snapshots: List<ScoreSnapshot>,
+    modifier: Modifier = Modifier,
+) {
+    val configuration = LocalConfiguration.current
+    val heightDp = configuration.screenWidthDp.dp / 4
+    
+    // 짙은 세련된 네이비 블루 배경 (#1C2436)
+    val backgroundBlue = Color(0xFF1C2436)
+    val gridLineColor = Color(0x22FFFFFF) // 아주 희미한 흰색 점선
+    val textBlueColor = Color(0xFF4FC3F7) // 라이트 블루 텍스트
+    val scoreLineColor = Color(0xFF03A9F4) // 라이트 블루 실선
+    val activeDotColor = Color(0xFFFF5252) // 활성 상태의 붉은색 끝 점
+    
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(heightDp),
+        color = backgroundBlue,
+        shape = RoundedCornerShape(8.dp),
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp,
+    ) {
+        Canvas(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(vertical = 8.dp)
+        ) {
+            val chartLeft = 16.dp.toPx()
+            val chartRight = size.width - 60.dp.toPx()
+            val chartTop = 12.dp.toPx()
+            val chartBottom = size.height - 12.dp.toPx()
+            val chartHeight = chartBottom - chartTop
+            val chartWidth = chartRight - chartLeft
+            val centerY = chartTop + chartHeight / 2f
+            
+            // 데이터 수집: 첫 시작점은 0수 0점으로 세팅
+            val points = mutableListOf<Double>()
+            points.add(0.0)
+            snapshots.filter { it.hasScoreData }.sortedBy { it.moveNumber }.forEach {
+                it.whiteScoreLead?.let { whiteLead ->
+                    points.add(-whiteLead) // 흑 우세 기준
+                }
+            }
+            
+            // 반응형 최대 진폭 (최소 5.0)
+            val maxAbsLead = points.maxOfOrNull { abs(it) } ?: 0.0
+            val maxScale = maxOf(maxAbsLead, 5.0)
+            
+            // Y좌표 매핑 함수 (흑 우세는 위쪽, 백 우세는 아래쪽)
+            val yForLead = { lead: Double ->
+                centerY - (lead.toFloat() / maxScale.toFloat()) * (chartHeight / 2f)
+            }
+            
+            // 점선 PathEffect 정의 (10px 실선, 10px 공백)
+            val dashEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
+            
+            // 수평 눈금선 5개 그리기
+            val gridYs = floatArrayOf(
+                chartTop,
+                chartTop + chartHeight * 0.25f,
+                centerY,
+                chartTop + chartHeight * 0.75f,
+                chartBottom
+            )
+            gridYs.forEachIndexed { idx, y ->
+                drawLine(
+                    color = if (idx == 2) Color(0x44FFFFFF) else gridLineColor,
+                    start = Offset(chartLeft, y),
+                    end = Offset(chartRight, y),
+                    strokeWidth = 1.dp.toPx(),
+                    pathEffect = dashEffect
+                )
+            }
+            
+            // 우측 라벨 텍스트 그리기
+            val labelX = chartRight + 8.dp.toPx()
+            val formattedScale = ((maxScale * 10).roundToInt() / 10.0).toString()
+            drawAxisText(label = "B+$formattedScale", center = Offset(labelX, chartTop), color = textBlueColor)
+            drawAxisText(label = "-Jigo", center = Offset(labelX, centerY), color = textBlueColor)
+            drawAxisText(label = "W+$formattedScale", center = Offset(labelX, chartBottom), color = textBlueColor)
+            
+            // 꺾은선 그리기
+            val denominator = maxOf(points.size - 1, 15) // 최소 15개 슬롯 제공
+            val xForIndex = { index: Int ->
+                chartLeft + chartWidth * (index.toFloat() / denominator.toFloat())
+            }
+            
+            var previous: Offset? = null
+            points.forEachIndexed { idx, lead ->
+                val x = xForIndex(idx)
+                val y = yForLead(lead).coerceIn(chartTop, chartBottom)
+                val current = Offset(x, y)
+                
+                // 선 그리기
+                previous?.let { prev ->
+                    drawLine(
+                        color = scoreLineColor,
+                        start = prev,
+                        end = current,
+                        strokeWidth = 2.dp.toPx()
+                    )
+                }
+                
+                // 도트 그리기
+                if (idx == points.size - 1) {
+                    drawCircle(
+                        color = activeDotColor,
+                        radius = 4.dp.toPx(),
+                        center = current
+                    )
+                } else {
+                    drawCircle(
+                        color = scoreLineColor,
+                        radius = 1.5.dp.toPx(),
+                        center = current
+                    )
+                }
+                
+                previous = current
+            }
+        }
+    }
+}
+
+private fun DrawScope.drawAxisText(
+    label: String,
+    center: Offset,
+    color: Color,
+) {
+    drawIntoCanvas { canvas ->
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            this.color = color.toArgb()
+            textAlign = Paint.Align.LEFT
+            textSize = 9.dp.toPx()
+            typeface = Typeface.DEFAULT_BOLD
+        }
+        val baseline = center.y - (paint.ascent() + paint.descent()) / 2f
+        canvas.nativeCanvas.drawText(label, center.x, baseline, paint)
+    }
+}

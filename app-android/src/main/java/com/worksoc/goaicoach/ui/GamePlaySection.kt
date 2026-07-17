@@ -66,6 +66,13 @@ internal fun GamePlaySection(
         tentativeMove = null
     }
 
+    ScoreTimelineGraph(
+        snapshots = screenState.score.snapshots,
+        modifier = Modifier.fillMaxWidth()
+    )
+
+    Spacer(modifier = Modifier.height(8.dp))
+
     GoBoard(
         gameState = screenState.gameState,
         candidateMoves = screenState.analysis.candidateMoves,
