@@ -285,6 +285,7 @@ internal fun ScoreTimelineGraph(
     onExpandedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val strings = LocalUiStrings.current
     val configuration = LocalConfiguration.current
     val targetHeight = if (isExpanded) (configuration.screenWidthDp.dp / 4) else 36.dp
     
@@ -352,7 +353,7 @@ internal fun ScoreTimelineGraph(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "스코어 그래프 보기",
+                    text = strings.showScoreGraph,
                     color = textBlueColor,
                     style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Bold

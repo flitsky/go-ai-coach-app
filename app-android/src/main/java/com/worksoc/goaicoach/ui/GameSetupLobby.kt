@@ -113,7 +113,7 @@ internal fun GameSetupLobby(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "보드 미리보기 (Board Preview)",
+                    text = strings.boardPreview,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.secondary,

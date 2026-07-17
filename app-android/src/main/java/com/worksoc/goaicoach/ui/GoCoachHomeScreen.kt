@@ -78,7 +78,7 @@ internal fun GoCoachHomeScreen(
         // "대국 하기" (Start Match) 카드
         MenuCard(
             title = strings.startMatch,
-            subtitle = "AI 혹은 로컬 플레이어와 대국을 설정하고 시작합니다.",
+            subtitle = strings.homeStartMatchSubtitle,
             gradientColors = listOf(Color(0xFF388E3C), Color(0xFF2E7D32)),
             onClick = onStartMatchClick
         )
@@ -88,7 +88,7 @@ internal fun GoCoachHomeScreen(
         // "학습 하기" (Study Mode) 카드
         MenuCard(
             title = strings.study,
-            subtitle = "기보 복기, 사활 퀴즈 등 바둑 실력을 고도화합니다.",
+            subtitle = strings.homeStudySubtitle,
             gradientColors = listOf(Color(0xFF78909C), Color(0xFF546E7A)),
             onClick = {
                 Toast.makeText(context, strings.notImplementedMessage, Toast.LENGTH_SHORT).show()

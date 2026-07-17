@@ -20,16 +20,16 @@ class UiStringsTest {
 
             assertEquals(5, SearchTimeLimit.entries.map(strings::searchTimeLimitLabel).distinct().size)
         }
-        assertEquals("최대 탐색 시간 제한", UiStrings.Korean.maximumSearchTimeLimit)
-        assertEquals("사용 안 함", UiStrings.Korean.searchTimeLimitLabel(SearchTimeLimit.Off))
-        assertEquals("10초 이내", UiStrings.Korean.searchTimeLimitLabel(SearchTimeLimit.WithinTenSeconds))
+        assertEquals("최대 탐색 시간 제한", UiStringsKorean.maximumSearchTimeLimit)
+        assertEquals("사용 안 함", UiStringsKorean.searchTimeLimitLabel(SearchTimeLimit.Off))
+        assertEquals("10초 이내", UiStringsKorean.searchTimeLimitLabel(SearchTimeLimit.WithinTenSeconds))
     }
 
     @Test
     fun compactDisplayLabelsUseShortLocalizedCopy() {
-        assertEquals("착수 표시", UiStrings.Korean.lastMoveRing)
-        assertEquals("Move mark", UiStrings.English.lastMoveRing)
-        assertEquals("着手表示", UiStrings.Japanese.lastMoveRing)
-        assertEquals("落子标记", UiStrings.ChineseSimplified.lastMoveRing)
+        assertEquals("착수 표시", UiStringsKorean.lastMoveRing)
+        assertEquals("Move mark", UiStringsEnglish.lastMoveRing)
+        assertEquals("着手表示", UiStringsJapanese.lastMoveRing)
+        assertEquals("落子标记", UiStringsChineseSimplified.lastMoveRing)
     }
 }
