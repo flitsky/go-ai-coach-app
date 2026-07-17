@@ -128,6 +128,8 @@ class SavedGameApplicationRunnerTest {
             snapshot = null
             calls += "clear"
         }
+
+        override fun readRawJson(): String? = null
     }
 
     private fun savedGameSnapshot(): SavedGameSnapshot =

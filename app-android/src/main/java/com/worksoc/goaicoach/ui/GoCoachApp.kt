@@ -672,6 +672,7 @@ private fun GoCoachScreen(
         turnTimeText = { turnTimeState.summaryText() },
         turnTimeDebugText = { nowMillis -> turnTimeState.debugText(nowMillis) },
         onEngineMessage = { message -> engineMessage = message },
+        currentSavedSessionJson = { sessionStore.readRawJson() },
     )
     fun dispatch(event: GameUiEvent) {
         dispatchGameUiEvent(
@@ -693,8 +694,8 @@ private fun GoCoachScreen(
                 acceptCacheOptimizationPrompt = cacheOptController::accept,
                 dismissCacheOptimizationPrompt = cacheOptController::dismiss,
                 restoreSavedSession = { snap ->
-                    savedSessionUiState = savedSessionUiState.dismiss()
                     savedSessionController.restore(snap)
+                    savedSessionUiState = savedSessionUiState.dismiss()
                     currentDestination = ScreenDestination.InGame
                 },
                 changePlayerSetup = settingsController::changePlayerSetup, changeAutoPlayDelay = settingsController::changeAutoPlayDelay,

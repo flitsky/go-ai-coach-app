@@ -57,9 +57,13 @@ internal fun planSavedGamePersistence(
         scoreSnapshots = scoreSnapshots,
     )
 
-    return if (isGameEnded || !snapshot.isResumable) {
-        SavedGamePersistencePlan.Clear
-    } else {
-        SavedGamePersistencePlan.Save(snapshot)
+    if (isGameEnded) {
+        return SavedGamePersistencePlan.Clear
     }
+
+    if (!snapshot.isResumable) {
+        return SavedGamePersistencePlan.Skip
+    }
+
+    return SavedGamePersistencePlan.Save(snapshot)
 }

@@ -46,6 +46,7 @@ internal data class DebugReportSnapshot(
     val runtimeEventLogText: String = "Runtime event log not loaded.",
     val diagnosticEventLogText: String = "Diagnostic event log not loaded.",
     val searchTimeSettings: SearchTimeSettings = SearchTimeSettings(),
+    val savedSessionJson: String? = null,
     val createdAtMillis: Long = System.currentTimeMillis(),
 )
 
@@ -60,6 +61,7 @@ internal fun GameSessionControllerState.toDebugReportSnapshot(
     turnTimeDebugText: String = "blackMillis=0, whiteMillis=0, currentTurn=Black, currentElapsedMillis=0",
     runtimeEventLogText: String = "Runtime event log not loaded.",
     diagnosticEventLogText: String = "Diagnostic event log not loaded.",
+    savedSessionJson: String? = null,
 ): DebugReportSnapshot =
     DebugReportSnapshot(
         mode = matchMode,
@@ -91,6 +93,7 @@ internal fun GameSessionControllerState.toDebugReportSnapshot(
         runtimeEventLogText = runtimeEventLogText,
         diagnosticEventLogText = diagnosticEventLogText,
         searchTimeSettings = settings.searchTimeSettings,
+        savedSessionJson = savedSessionJson,
     )
 
 internal fun buildDebugReport(snapshot: DebugReportSnapshot): String =
@@ -124,6 +127,7 @@ internal fun buildDebugReport(snapshot: DebugReportSnapshot): String =
         runtimeEventLogText = snapshot.runtimeEventLogText,
         diagnosticEventLogText = snapshot.diagnosticEventLogText,
         searchTimeSettings = snapshot.searchTimeSettings,
+        savedSessionJson = snapshot.savedSessionJson,
         createdAtMillis = snapshot.createdAtMillis,
     )
 
@@ -175,6 +179,7 @@ internal data class DebugReportCopyActionRequest(
     val turnTimeDebugText: String,
     val runtimeEventLogText: String,
     val diagnosticEventLogText: String,
+    val savedSessionJson: String?,
 )
 
 internal fun runDebugReportCopyAction(
@@ -195,6 +200,7 @@ internal fun runDebugReportCopyAction(
             turnTimeDebugText = request.turnTimeDebugText,
             runtimeEventLogText = request.runtimeEventLogText,
             diagnosticEventLogText = request.diagnosticEventLogText,
+            savedSessionJson = request.savedSessionJson,
         ),
     )
     return runDebugReportCopyEffect(
@@ -252,6 +258,7 @@ internal fun buildDebugReport(
     runtimeEventLogText: String = "Runtime event log not loaded.",
     diagnosticEventLogText: String = "Diagnostic event log not loaded.",
     searchTimeSettings: SearchTimeSettings = SearchTimeSettings(),
+    savedSessionJson: String? = null,
     createdAtMillis: Long = System.currentTimeMillis(),
 ): String {
     val localScoreText = BoardScorer.score(gameState).toDisplayText()
@@ -289,6 +296,7 @@ internal fun buildDebugReport(
             moveReviewText = moveReviewText,
             candidateText = candidateText,
         )
+        appendNamedTextSection("SavedSessionJson", savedSessionJson ?: "none")
         appendNamedTextSection("EngineDiagnostic", engineDiagnostic)
         appendNamedTextSection("EngineBenchmark", engineBenchmarkText)
         appendNamedTextSection("RuntimeEventLog", runtimeEventLogText)

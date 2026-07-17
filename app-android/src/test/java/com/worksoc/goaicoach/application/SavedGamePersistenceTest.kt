@@ -1,7 +1,9 @@
 package com.worksoc.goaicoach.application
 
 import com.worksoc.goaicoach.application.savedgame.*
-
+import com.worksoc.goaicoach.persistence.SavedGameSessionCodec
+import com.worksoc.goaicoach.shared.ScoreSnapshot
+import com.worksoc.goaicoach.shared.ScoreSnapshotSource
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
@@ -49,7 +51,7 @@ class SavedGamePersistenceTest {
     }
 
     @Test
-    fun clearsWhenGameIsEndedOrNotResumable() {
+    fun clearsWhenGameIsEnded() {
         val endedPlan = planSavedGamePersistence(
             hasCheckedSavedSession = true,
             shouldShowResumePrompt = false,
@@ -61,6 +63,12 @@ class SavedGamePersistenceTest {
             scoreSnapshots = emptyList(),
             nowMillis = 10L,
         )
+
+        assertEquals(SavedGamePersistencePlan.Clear, endedPlan)
+    }
+
+    @Test
+    fun skipsWhenNotResumable() {
         val emptyPlan = planSavedGamePersistence(
             hasCheckedSavedSession = true,
             shouldShowResumePrompt = false,
@@ -73,8 +81,7 @@ class SavedGamePersistenceTest {
             nowMillis = 10L,
         )
 
-        assertEquals(SavedGamePersistencePlan.Clear, endedPlan)
-        assertEquals(SavedGamePersistencePlan.Clear, emptyPlan)
+        assertEquals(SavedGamePersistencePlan.Skip, emptyPlan)
     }
 
     @Test
@@ -122,6 +129,37 @@ class SavedGamePersistenceTest {
 
         assertTrue(plan is SavedGamePersistencePlan.Save)
         assertEquals(state, (plan as SavedGamePersistencePlan.Save).snapshot.gameState)
+    }
+
+    @Test
+    fun savedGameSessionCodecSerializesAndDeserializesScoreSnapshots() {
+        val state = playableState()
+        val scoreSnapshots = listOf(
+            ScoreSnapshot(moveNumber = 1, whiteScoreLead = -4.5, whiteWinRate = 0.85, source = ScoreSnapshotSource.EngineEstimate),
+            ScoreSnapshot(moveNumber = 2, whiteScoreLead = -2.1, whiteWinRate = 0.52, source = ScoreSnapshotSource.LocalAreaEstimate)
+        )
+        val snapshot = SavedGameSnapshot(
+            gameState = state,
+            playerSetup = PlayerSetup(),
+            playLevel = PlayLevelSetting(),
+            topMovesEnabled = true,
+            savedAtMillis = 999L,
+            scoreSnapshots = scoreSnapshots
+        )
+        val encoded = SavedGameSessionCodec.encode(snapshot)
+        val decoded = SavedGameSessionCodec.decode(encoded)
+
+        assertTrue(decoded != null)
+        assertEquals(scoreSnapshots.size, decoded!!.scoreSnapshots.size)
+        assertEquals(1, decoded.scoreSnapshots[0].moveNumber)
+        assertEquals(-4.5, decoded.scoreSnapshots[0].whiteScoreLead!!, 0.001)
+        assertEquals(0.85, decoded.scoreSnapshots[0].whiteWinRate!!, 0.001)
+        assertEquals(ScoreSnapshotSource.EngineEstimate, decoded.scoreSnapshots[0].source)
+
+        assertEquals(2, decoded.scoreSnapshots[1].moveNumber)
+        assertEquals(-2.1, decoded.scoreSnapshots[1].whiteScoreLead!!, 0.001)
+        assertEquals(0.52, decoded.scoreSnapshots[1].whiteWinRate!!, 0.001)
+        assertEquals(ScoreSnapshotSource.LocalAreaEstimate, decoded.scoreSnapshots[1].source)
     }
 
     @Test
@@ -184,6 +222,8 @@ class SavedGamePersistenceTest {
             snapshot = null
             calls += "clear"
         }
+
+        override fun readRawJson(): String? = null
     }
 
     private fun playableState(): GameState =

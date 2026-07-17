@@ -19,6 +19,7 @@ internal data class DebugReportCopyRunRequest(
     val clipboard: ClipboardPort,
     val mirror: DebugReportMirrorPort,
     val userNotice: UserNoticePort,
+    val savedSessionJson: String?,
     val nowMillis: () -> Long = { System.currentTimeMillis() },
     val applyEngineMessage: (String) -> Unit,
 )
@@ -40,6 +41,7 @@ internal fun runDebugReportCopyApplication(
             turnTimeDebugText = request.turnTimeDebugText(nowMillis),
             runtimeEventLogText = request.runtimeEventLog.readText(),
             diagnosticEventLogText = request.diagnosticEventLog.readText(),
+            savedSessionJson = request.savedSessionJson,
         ),
         clipboard = request.clipboard,
         mirror = request.mirror,

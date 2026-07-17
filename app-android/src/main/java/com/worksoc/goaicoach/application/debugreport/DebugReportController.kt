@@ -20,6 +20,7 @@ internal class DebugReportController(
     private val turnTimeText: () -> String,
     private val turnTimeDebugText: (Long) -> String,
     private val onEngineMessage: (String) -> Unit,
+    private val currentSavedSessionJson: () -> String?,
 ) {
     fun copy() {
         runDebugReportCopyApplication(
@@ -39,6 +40,7 @@ internal class DebugReportController(
                 mirror = mirror,
                 userNotice = userNotice,
                 applyEngineMessage = onEngineMessage,
+                savedSessionJson = currentSavedSessionJson(),
             ),
         )
     }

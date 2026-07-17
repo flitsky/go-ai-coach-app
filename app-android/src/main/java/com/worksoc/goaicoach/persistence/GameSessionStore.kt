@@ -48,6 +48,10 @@ internal class GameSessionStore(context: Context) : SavedGameStorePort {
         prefs.edit().remove(SessionKey).apply()
     }
 
+    override fun readRawJson(): String? {
+        return prefs.getString(SessionKey, null)
+    }
+
     private companion object {
         const val PrefsName = "go_ai_coach_session"
         const val SessionKey = "active_game_snapshot"
