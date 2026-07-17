@@ -88,7 +88,6 @@ private fun HandicapSettingRow(
     onHandicapCountChange: (Int) -> Unit,
 ) {
     val strings = LocalUiStrings.current
-    var dropdownExpanded by remember { mutableStateOf(false) }
     val maxHandicap = boardSize.maxHandicapCount
 
     // 접바둑 0점 = "없음", 그 외 N점 표시
@@ -126,30 +125,14 @@ private fun HandicapSettingRow(
         }
 
         // 중앙 드롭다운 버튼
-        Box(modifier = Modifier.weight(1.4f)) {
-            OutlinedButton(
-                onClick = { dropdownExpanded = true },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = enabled,
-            ) {
-                Text(displayText, maxLines = 1, style = MaterialTheme.typography.bodySmall)
-            }
-            DropdownMenu(
-                expanded = dropdownExpanded,
-                onDismissRequest = { dropdownExpanded = false },
-            ) {
-                options.forEach { option ->
-                    val optionText = if (option == 0) strings.handicapNone else strings.handicapLabel(option)
-                    DropdownMenuItem(
-                        text = { Text(optionText) },
-                        onClick = {
-                            dropdownExpanded = false
-                            onHandicapCountChange(option)
-                        },
-                    )
-                }
-            }
-        }
+        SetupDropdown(
+            selectedText = displayText,
+            enabled = enabled,
+            modifier = Modifier.weight(1.4f),
+            options = options,
+            optionLabel = { option -> if (option == 0) strings.handicapNone else strings.handicapLabel(option) },
+            onSelected = onHandicapCountChange,
+        )
 
         // + 버튼
         OutlinedButton(
