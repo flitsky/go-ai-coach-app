@@ -51,7 +51,7 @@ internal class SavedSessionController(
                 engineClient = engineClient,
                 state = result.gameState,
                 profile = result.engineProfile,
-                sessionGeneration = currentSessionGeneration() + 1L,
+                sessionGeneration = currentSessionGeneration(),
                 timeoutPolicy = timeoutPolicy(result.engineProfile),
                 diagnosticEventLog = diagnosticEventLog,
                 currentState = currentGameState,
