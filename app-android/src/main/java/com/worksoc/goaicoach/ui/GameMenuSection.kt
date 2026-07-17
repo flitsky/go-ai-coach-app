@@ -5,7 +5,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.Modifier
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -18,6 +20,27 @@ import com.worksoc.goaicoach.BuildConfig
 import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.presentation.GameUiEvent
 
+private fun formatBuildTime(rawBuildTime: String): String {
+    return try {
+        val parts = rawBuildTime.split(" ")
+        if (parts.size == 2) {
+            val dateParts = parts[0].split("-")
+            if (dateParts.size == 3) {
+                val yy = dateParts[0].takeLast(2)
+                val mm = dateParts[1]
+                val dd = dateParts[2]
+                "[$yy$mm$dd ${parts[1]}]"
+            } else {
+                "[$rawBuildTime]"
+            }
+        } else {
+            "[$rawBuildTime]"
+        }
+    } catch (e: Exception) {
+        "[$rawBuildTime]"
+    }
+}
+
 @Composable
 internal fun GameHeaderSection(
     screenState: GameScreenState,
@@ -27,32 +50,40 @@ internal fun GameHeaderSection(
     val strings = LocalUiStrings.current
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(modifier = Modifier.weight(1f)) {
+        // [1] 좌측 끝: 빌드타임 [260717 15:33]
+        Box(
+            modifier = Modifier.weight(1f),
+            contentAlignment = Alignment.CenterStart
+        ) {
             Text(
-                text = strings.appTitle,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
+                text = formatBuildTime(BuildConfig.BUILD_TIME),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.secondary,
+                maxLines = 1
             )
+        }
 
+        // [2] 가운데 정렬: [흑 백 플레이어 정보]
+        Box(
+            modifier = Modifier.weight(2f),
+            contentAlignment = Alignment.Center
+        ) {
             Text(
                 text = strings.setupSummary(screenState.playerSetup, screenState.engine.name),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.secondary,
                 maxLines = 2,
+                textAlign = TextAlign.Center
             )
         }
 
-        Column(horizontalAlignment = Alignment.End) {
-            Text(
-                text = BuildConfig.BUILD_TIME,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.secondary,
-            )
-
+        // [3] 우측 끝: [메뉴 버튼]
+        Box(
+            modifier = Modifier.weight(1f),
+            contentAlignment = Alignment.CenterEnd
+        ) {
             KaTrainUxMenuButton(
                 menuExpanded = isDisplayMenuExpanded,
                 onMenuExpandedChange = onDisplayMenuExpandedChange,
