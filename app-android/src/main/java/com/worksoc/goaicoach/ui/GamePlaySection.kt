@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -29,6 +30,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.session.GameSessionTurnTimeState
@@ -198,14 +203,12 @@ private fun GameActionButtons(
 
             // 1. "분석" 버튼
             val analysisEnabled = engineReady || isLocalTwoPlayer
-            OutlinedButton(
+            ActionButton(
                 onClick = onAnalysisClick,
                 enabled = analysisEnabled,
                 modifier = Modifier.weight(1f),
-                contentPadding = ActionButtonContentPadding,
-            ) {
-                ActionButtonText(strings.analysis)
-            }
+                label = strings.analysis,
+            )
 
             // 2. 형세보기 (Eval) 버튼
             val evalAction = screenState.actionButtons.firstOrNull { it.role == GameActionButtonRole.Eval }
@@ -237,7 +240,7 @@ private fun GameActionButtons(
         ) {
             // 1. 기권 / 새 게임 버튼 (좌측)
             val resignEnabled = screenState.isGameEnded || (!screenState.engine.isBlockingBusy && screenState.matchSeats.current.canAcceptBoardInput)
-            OutlinedButton(
+            ActionButton(
                 onClick = {
                     if (screenState.isGameEnded) {
                         onEvent(GameUiEvent.StartConfiguredGame)
@@ -247,10 +250,8 @@ private fun GameActionButtons(
                 },
                 enabled = resignEnabled,
                 modifier = Modifier.weight(1f),
-                contentPadding = ActionButtonContentPadding,
-            ) {
-                ActionButtonText(if (screenState.isGameEnded) strings.newGameAction else strings.resign)
-            }
+                label = if (screenState.isGameEnded) strings.newGameAction else strings.resign,
+            )
 
             // 2. 통과 (Pass) 버튼 (중앙)
             val passAction = screenState.actionButtons.firstOrNull { it.role == GameActionButtonRole.Pass }
@@ -259,7 +260,7 @@ private fun GameActionButtons(
                     action = passAction,
                     label = strings.pass,
                     onEvent = onEvent,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 )
             }
 
@@ -270,7 +271,7 @@ private fun GameActionButtons(
                     action = undoAction,
                     label = strings.undo,
                     onEvent = onEvent,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 )
             }
         }
@@ -284,27 +285,38 @@ private fun ToggleActionButton(
     onEvent: (GameUiEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val isOn = action.isFilled
+    val toggleModifier = modifier
+        .height(ActionButtonMinHeight)
+        .semantics(mergeDescendants = true) {
+            role = Role.Switch
+            stateDescription = if (isOn) "ON" else "OFF"
+        }
+
     if (action.isFilled) {
         Button(
             onClick = { onEvent(action.event) },
             enabled = action.enabled,
-            modifier = modifier,
+            modifier = toggleModifier,
+            shape = ActionButtonShape,
             contentPadding = ActionButtonContentPadding,
             colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
             )
         ) {
-            ActionButtonText("🟢 $label")
+            ToggleActionButtonContent(label = label, isOn = true)
         }
     } else {
         OutlinedButton(
             onClick = { onEvent(action.event) },
             enabled = action.enabled,
-            modifier = modifier,
+            modifier = toggleModifier,
+            shape = ActionButtonShape,
             contentPadding = ActionButtonContentPadding,
+            border = ActionButtonBorder,
         ) {
-            ActionButtonText("⚪ $label")
+            ToggleActionButtonContent(label = label, isOn = false)
         }
     }
 }
@@ -314,15 +326,76 @@ private fun SingleActionButton(
     action: GameActionButtonState,
     label: String,
     onEvent: (GameUiEvent) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
-    OutlinedButton(
+    ActionButton(
         onClick = { onEvent(action.event) },
         enabled = action.enabled,
         modifier = modifier,
+        label = label,
+    )
+}
+
+@Composable
+private fun ActionButton(
+    label: String,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    FilledTonalButton(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = modifier.height(ActionButtonMinHeight),
+        shape = ActionButtonShape,
         contentPadding = ActionButtonContentPadding,
+        colors = ButtonDefaults.filledTonalButtonColors(
+            containerColor = ActionButtonContainerColor,
+            contentColor = ActionButtonContentColor,
+        ),
     ) {
         ActionButtonText(label)
+    }
+}
+
+@Composable
+private fun ToggleActionButtonContent(
+    label: String,
+    isOn: Boolean,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        ActionButtonText(label)
+        ToggleStateBadge(isOn = isOn)
+    }
+}
+
+@Composable
+private fun ToggleStateBadge(isOn: Boolean) {
+    val containerColor = if (isOn) {
+        MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.18f)
+    } else {
+        MaterialTheme.colorScheme.surfaceVariant
+    }
+    val contentColor = if (isOn) {
+        MaterialTheme.colorScheme.onPrimary
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
+    Surface(
+        color = containerColor,
+        contentColor = contentColor,
+        shape = RoundedCornerShape(50),
+    ) {
+        Text(
+            text = if (isOn) "ON" else "OFF",
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+        )
     }
 }
 
@@ -333,7 +406,14 @@ private fun ActionButtonText(label: String) {
         maxLines = 1,
         softWrap = false,
         style = MaterialTheme.typography.labelSmall,
+        fontWeight = FontWeight.SemiBold,
     )
 }
 
-private val ActionButtonContentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp)
+private val ActionButtonMinHeight = 48.dp
+private val ActionButtonShape = RoundedCornerShape(16.dp)
+private val ActionButtonBorder
+    @Composable get() = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+private val ActionButtonContentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)
+private val ActionButtonContainerColor = Color(0xFFE2F0E7)
+private val ActionButtonContentColor = Color(0xFF205B3E)

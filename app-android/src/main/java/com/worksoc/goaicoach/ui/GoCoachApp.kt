@@ -8,6 +8,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -819,6 +820,12 @@ private fun GoCoachScreen(
             }
         )
     }
+
+    DirectPlayRecommendationDialog(
+        boardSize = settingsState.boardSize,
+        isDirectPlayEnabled = uxOptions.isDirectPlayEnabled,
+        onConfirm = { enabled -> uxOptions = uxOptions.copy(isDirectPlayEnabled = enabled) }
+    )
 
     when (currentDestination) {
         ScreenDestination.Home -> {
