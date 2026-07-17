@@ -356,8 +356,18 @@ internal fun ScoreTimelineGraph(
             // 우측 라벨 텍스트 그리기
             val labelX = chartRight + 8.dp.toPx()
             val formattedScale = maxScale.toInt().toString()
+            
+            val latestLead = if (points.size > 1) points.last() else 0.0
+            val latestAbs = abs(latestLead)
+            val roundedLatest = ((latestAbs * 10).roundToInt() / 10.0).toString()
+            val currentScoreLabel = when {
+                latestLead > 0.0 -> "B +$roundedLatest"
+                latestLead < 0.0 -> "W +$roundedLatest"
+                else -> "0.0"
+            }
+            
             drawAxisText(label = "B +$formattedScale", center = Offset(labelX, chartTop), color = textBlueColor)
-            drawAxisText(label = "-Jigo", center = Offset(labelX, centerY), color = textBlueColor)
+            drawAxisText(label = currentScoreLabel, center = Offset(labelX, centerY), color = scoreLineColor)
             drawAxisText(label = "W +$formattedScale", center = Offset(labelX, chartBottom), color = textBlueColor)
             
             // 꺾은선 그리기
