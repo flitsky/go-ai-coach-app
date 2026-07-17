@@ -29,15 +29,16 @@ private fun formatBuildTime(rawBuildTime: String): String {
                 val yy = dateParts[0].takeLast(2)
                 val mm = dateParts[1]
                 val dd = dateParts[2]
-                "[$yy$mm$dd ${parts[1]}]"
+                val time = parts[1].replace(":", "")
+                "v$yy$mm$dd.$time"
             } else {
-                "[$rawBuildTime]"
+                "v$rawBuildTime"
             }
         } else {
-            "[$rawBuildTime]"
+            "v$rawBuildTime"
         }
     } catch (e: Exception) {
-        "[$rawBuildTime]"
+        "v$rawBuildTime"
     }
 }
 

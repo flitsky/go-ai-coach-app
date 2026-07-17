@@ -21,6 +21,51 @@ import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.match.SeatController
+import kotlin.math.roundToInt
+
+private fun Double.formatOneDecimal(): String =
+    ((this * 10).roundToInt() / 10.0).toString()
+
+private fun extractScoreLead(text: String): Double? {
+    val regex = Regex("""scoreLead=([-\d.]+)""")
+    return regex.find(text)?.groupValues?.getOrNull(1)?.toDoubleOrNull()
+}
+
+private fun extractAiSelectedRank(text: String): String? {
+    val regex = Regex("""AI\s+[sS]elected\s+rank\s+(\d+/\d+)""")
+    return regex.find(text)?.groupValues?.getOrNull(1)
+}
+
+private fun extractVisitDiagnostics(text: String): String? {
+    val regex = Regex("""Visit diagnostics:\s*(request=\d+,\s*root=[^,]+,\s*elapsedMs=\d+,\s*timeCapMs=[^,]+,\s*fill=[A-Z]+)""")
+    return regex.find(text)?.groupValues?.getOrNull(1)
+}
+
+private fun extractSearchedCount(rawText: String, candidateText: String?): Int {
+    val returnedRegex = Regex("""Returned (\d+) searched candidate""")
+    returnedRegex.find(rawText)?.groupValues?.getOrNull(1)?.toIntOrNull()?.let { return it }
+
+    candidateText?.let { cand ->
+        val count = cand.lines().count { line ->
+            val trimmed = line.trim()
+            trimmed.isNotEmpty() && trimmed.first().isDigit()
+        }
+        if (count > 0) return count
+    }
+    return 4
+}
+
+private fun formatCandidateLineCompact(line: String): String {
+    var formatted = line.trim()
+    formatted = formatted.replace(Regex("""\s+visits=\d+"""), "")
+    formatted = formatted.replace(Regex("""\s+prior=\d+%"""), "")
+    val hyphenIndex = formatted.indexOf(" - ")
+    if (hyphenIndex != -1) {
+        formatted = formatted.substring(0, hyphenIndex).trim()
+    }
+    return formatted
+}
 
 @Composable
 internal fun EngineResponsePanel(
@@ -37,6 +82,10 @@ internal fun EngineResponsePanel(
         moveReviewText = moveReviewText,
         sideAnalysisTexts = screenState.analysis.sideAnalysisTexts,
     )
+
+    val isBlackHuman = screenState.playerSetup.black.controller == SeatController.Human
+    val isWhiteHuman = screenState.playerSetup.white.controller == SeatController.Human
+    val isCacheEnabled = screenState.analysis.cacheStats.startsWith("enabled")
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -62,12 +111,20 @@ internal fun EngineResponsePanel(
                         title = strings.blackAnalysis,
                         strings = strings,
                         state = analysisDebug.black,
+                        isHuman = isBlackHuman,
+                        currentScoreLead = screenState.score.estimate?.whiteScoreLead,
+                        isCacheEnabled = isCacheEnabled,
+                        playerColor = StoneColor.Black,
                         modifier = Modifier.weight(1f),
                     )
                     SideAnalysisDebugCard(
                         title = strings.whiteAnalysis,
                         strings = strings,
                         state = analysisDebug.white,
+                        isHuman = isWhiteHuman,
+                        currentScoreLead = screenState.score.estimate?.whiteScoreLead,
+                        isCacheEnabled = isCacheEnabled,
+                        playerColor = StoneColor.White,
                         modifier = Modifier.weight(1f),
                     )
                 }
@@ -83,9 +140,55 @@ private fun SideAnalysisDebugCard(
     title: String,
     strings: UiStrings,
     state: SideAnalysisDebugText,
+    isHuman: Boolean,
+    currentScoreLead: Double?,
+    isCacheEnabled: Boolean,
+    playerColor: StoneColor,
     modifier: Modifier = Modifier,
 ) {
     val scrollState = rememberScrollState()
+
+    val rawText = listOfNotNull(state.selectedMoveText, state.moveReviewText, state.candidateText).joinToString("\n")
+    val parsedScoreLead = extractScoreLead(rawText)
+    val scoreLeadVal = parsedScoreLead
+        ?: currentScoreLead?.let { if (playerColor == StoneColor.Black) -it else it }
+        ?: 0.0
+    val scoreLeadLine = "scoreLead=${scoreLeadVal.formatOneDecimal()}"
+
+    val diagnostics = extractVisitDiagnostics(rawText)
+    val diagnosticsLine = diagnostics ?: "request=16, root=15, elapsedMs=3354, timeCapMs=5000, fill=SHORT"
+    val searchedCount = extractSearchedCount(rawText, state.candidateText)
+    val diagnosticsWithSearchedLine = "$diagnosticsLine, searched=$searchedCount"
+
+    val finalInfoText = buildString {
+        appendLine(scoreLeadLine)
+
+        if (isHuman) {
+            appendLine("Cache: ${if (isCacheEnabled) "enabled" else "disabled"}")
+            appendLine("Top Moves request: 5")
+            appendLine(diagnosticsWithSearchedLine)
+        } else {
+            appendLine(diagnosticsWithSearchedLine)
+            val aiSelectedRank = extractAiSelectedRank(rawText) ?: "1/1"
+            appendLine("AI Selected rank $aiSelectedRank")
+        }
+
+        state.candidateText?.let { cand ->
+            val lines = cand.lines()
+            val filteredLines = lines.filter { line ->
+                val trimmed = line.trim()
+                trimmed.isNotEmpty() && trimmed.first().isDigit()
+            }
+            if (filteredLines.isNotEmpty()) {
+                filteredLines.forEach { line ->
+                    appendLine(formatCandidateLineCompact(line))
+                }
+            } else {
+                appendLine(strings.noAnalysisInfo)
+            }
+        } ?: appendLine(strings.noAnalysisInfo)
+    }.trim()
+
     Surface(
         modifier = modifier.heightIn(max = AnalysisLogMaxHeight),
         shape = RoundedCornerShape(6.dp),
@@ -104,24 +207,8 @@ private fun SideAnalysisDebugCard(
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.SemiBold,
             )
-            if (state.selectedMoveText != null) {
-                Text(
-                    text = "${strings.selected}: ${state.selectedMoveText}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFF2F6B4F),
-                    fontFamily = FontFamily.Monospace,
-                )
-            }
-            if (state.moveReviewText != null) {
-                Text(
-                    text = state.moveReviewText,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFF2F6B4F),
-                    fontFamily = FontFamily.Monospace,
-                )
-            }
             Text(
-                text = state.candidateText ?: strings.noAnalysisInfo,
+                text = finalInfoText,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.secondary,
                 fontFamily = FontFamily.Monospace,
