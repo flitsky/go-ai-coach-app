@@ -28,6 +28,7 @@ import com.worksoc.goaicoach.application.engine.LocalEngineSessionClient
 import com.worksoc.goaicoach.engine.EngineBootstrap
 import com.worksoc.goaicoach.engine.createEngineBootstrap
 import com.worksoc.goaicoach.persistence.DiagnosticEventLog
+import com.worksoc.goaicoach.ui.LocalUiStrings
 import com.worksoc.goaicoach.persistence.JsonPositionAnalysisCacheStore
 import com.worksoc.goaicoach.shared.EngineMode
 import com.worksoc.goaicoach.ui.GoCoachApp
@@ -114,7 +115,7 @@ private fun PreparingEngineScreen() {
                     modifier = Modifier.padding(top = 12.dp),
                 )
                 Text(
-                    text = "첫 실행에서는 포함된 모델을 복사하므로 잠시 시간이 걸릴 수 있습니다.",
+                    text = LocalUiStrings.current.engineCopyNotice,
                     color = MaterialTheme.colorScheme.secondary,
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(top = 8.dp),

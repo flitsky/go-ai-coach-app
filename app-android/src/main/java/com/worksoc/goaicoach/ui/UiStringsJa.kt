@@ -99,5 +99,10 @@ internal val UiStringsJapanese = UiStringsKorean.copy(
     showScoreGraph = "スコアグラフ表示",
     boardPreview = "盤面プレビュー",
     homeStartMatchSubtitle = "AIやローカルプレイヤーとの対局を設定して開始します。",
-    homeStudySubtitle = "棋譜並べや詰碁クイズなどで囲碁の実力を高めます。"
+    homeStudySubtitle = "棋譜並べや詰碁クイズなどで囲碁の実力を高めます。",
+    engineCopyNotice = "初回実行時はモデルのコピーを行うため、少し時間がかかる場合があります。",
+    cacheOptTitle = "この対局の最適化",
+    cacheOptTargetLabel = "対象",
+    scoreEstimateNotice = "目安の判定です。現在の盤面が不明確なため、エンジンの推測値を優先して表示しています。",
+    drawLabel = "持碁(引き分け)"
 )

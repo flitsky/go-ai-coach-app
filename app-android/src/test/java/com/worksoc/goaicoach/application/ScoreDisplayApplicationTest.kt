@@ -11,6 +11,9 @@ import com.worksoc.goaicoach.application.session.*
 import com.worksoc.goaicoach.application.autoai.*
 
 import com.worksoc.goaicoach.application.score.*
+import com.worksoc.goaicoach.ui.resultText
+import com.worksoc.goaicoach.ui.blackLine
+import com.worksoc.goaicoach.ui.whiteLine
 
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.shared.AnalysisLimit
@@ -525,10 +528,11 @@ class ScoreDisplayApplicationTest {
             candidateText = "ended",
         )
 
+        val strings = com.worksoc.goaicoach.ui.UiStringsKorean
         val judgement = plan.judgement ?: error("missing judgement")
-        assertEquals("백 + 1.5집 승", judgement.resultText)
-        assertEquals("흑: 집 15 + 사석 5 = 20집", judgement.blackLine)
-        assertEquals("백: 집 13 + 사석 2 + 덤 6.5 = 21.5집", judgement.whiteLine)
+        assertEquals("백 + 1.5집 승", judgement.resultText(strings))
+        assertEquals("흑: 집 15 + 사석 5 = 20집", judgement.blackLine(strings))
+        assertEquals("백: 집 13 + 사석 2 + 덤 6.5 = 21.5집", judgement.whiteLine(strings))
     }
 
     @Test

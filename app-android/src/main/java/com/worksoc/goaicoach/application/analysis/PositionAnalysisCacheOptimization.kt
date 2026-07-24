@@ -30,14 +30,7 @@ internal data class PositionAnalysisCacheOptimizationPrompt(
     val gameFingerprint: String,
     val moveCount: Int,
     val targetCount: Int,
-) {
-    val title: String = "이번 판 분석 최적화"
-    val message: String =
-        "이번 판의 주요 국면을 분석 캐시에 저장해도 될까요?\n" +
-            "다음 플레이에서 같은 흐름이 나오면 더 쾌적하게 응수할 수 있습니다.\n\n" +
-            "우선 초반 ${JsonPositionAnalysisCacheOpeningInitialMoveCount}수를 확보하고, 안정화되면 ${JsonPositionAnalysisCacheOpeningMaxMoveCount}수까지 확장합니다.\n" +
-            "대상: ${moveCount}수 대국 중 최대 ${targetCount}개 JSON 분석"
-}
+)
 
 internal data class PositionAnalysisCacheOptimizationTarget(
     val state: GameState,

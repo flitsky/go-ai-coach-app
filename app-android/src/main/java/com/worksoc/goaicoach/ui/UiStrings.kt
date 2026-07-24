@@ -16,6 +16,7 @@ import com.worksoc.goaicoach.shared.PlayLevelGroup
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.SearchTimeLimit
 import com.worksoc.goaicoach.shared.StoneColor
+import kotlin.math.roundToInt
 
 internal enum class UiLanguage(
     val menuLabel: String,
@@ -141,7 +142,108 @@ internal data class UiStrings(
     val boardPreview: String,
     val homeStartMatchSubtitle: String,
     val homeStudySubtitle: String,
+    val engineCopyNotice: String,
+    val cacheOptTitle: String,
+    val cacheOptTargetLabel: String,
+    val scoreEstimateNotice: String,
+    val drawLabel: String,
 ) {
+    fun cacheOptBody(initialCount: Int, maxCount: Int, moveCount: Int, targetCount: Int): String =
+        when (language) {
+            UiLanguage.Korean -> "이번 판의 주요 국면을 분석 캐시에 저장해도 될까요?\n다음 플레이에서 같은 흐름이 나오면 더 쾌적하게 응수할 수 있습니다.\n\n우선 초반 ${initialCount}수를 확보하고, 안정화되면 ${maxCount}수까지 확장합니다.\n대상: ${moveCount}수 대국 중 최대 ${targetCount}개 JSON 분석"
+            UiLanguage.English -> "Would you like to optimize this match using local cache?\nStoring key positions helps responsiveness in future play.\n\nInitially secures the first $initialCount moves, expanding to $maxCount moves later.\nTarget: Up to $targetCount JSON analysis records out of $moveCount moves."
+            UiLanguage.Japanese -> "この対局の主要な局面を分析キャッシュに保存しますか？\n次回プレイで同じ流れになった際、より素早く応答できます。\n\nまず序盤${initialCount}手を確保し、安定すれば${maxCount}手まで拡張します。\n対象：${moveCount}手の対局中、最大${targetCount}個のJSON分析"
+            UiLanguage.ChineseSimplified -> "是否在分析缓存中优化本局？\n存储关键局面有利于在以后的对局中提高响应速度。\n\n初始时保存前 $initialCount 手，稳定后可扩展到 $maxCount 手。\n目标：从 $moveCount 手对局中提取最多 $targetCount 个 JSON  分析记录。"
+        }
+
+    fun removedStonesLabel(black: Int, white: Int): String =
+        when (language) {
+            UiLanguage.Korean -> "사석 제거: 흑 ${black}개, 백 ${white}개"
+            UiLanguage.English -> "Captured stones: Black $black, White $white"
+            UiLanguage.Japanese -> "アゲハマ除去: 黒 ${black}子, 白 ${white}子"
+            UiLanguage.ChineseSimplified -> "提子：黑 ${black}子，白 ${white}子"
+        }
+
+    fun scoringRuleLabel(ruleLabel: String): String =
+        when (language) {
+            UiLanguage.Korean -> "계가 방식: $ruleLabel"
+            UiLanguage.English -> "Scoring rule: $ruleLabel"
+            UiLanguage.Japanese -> "整地方式: $ruleLabel"
+            UiLanguage.ChineseSimplified -> "计分方式: $ruleLabel"
+        }
+
+    fun winnerMarginLabel(colorLabel: String, margin: Double): String {
+        val marginText = margin.formatScoreNumber()
+        return when (language) {
+            UiLanguage.Korean -> "$colorLabel + ${marginText}집 승"
+            UiLanguage.English -> "$colorLabel + ${marginText} points win"
+            UiLanguage.Japanese -> "$colorLabel + ${marginText}目勝ち"
+            UiLanguage.ChineseSimplified -> "$colorLabel + ${marginText}目胜"
+        }
+    }
+
+    fun winnerWithoutMarginLabel(colorLabel: String): String =
+        when (language) {
+            UiLanguage.Korean -> "$colorLabel 승"
+            UiLanguage.English -> "$colorLabel win"
+            UiLanguage.Japanese -> "$colorLabel 勝ち"
+            UiLanguage.ChineseSimplified -> "$colorLabel 胜"
+        }
+
+    fun scoreTextDetailTerritory(colorLabel: String, territory: Double, prisoners: Double, total: Double): String {
+        val tVal = territory.formatScoreNumber()
+        val pVal = prisoners.formatScoreNumber()
+        val tot = total.formatScoreNumber()
+        return when (language) {
+            UiLanguage.Korean -> "$colorLabel: 집 $tVal + 사석 $pVal = ${tot}집"
+            UiLanguage.English -> "$colorLabel: Territory $tVal + Prisoners $pVal = ${tot} points"
+            UiLanguage.Japanese -> "$colorLabel: 地合 $tVal + アゲハマ $pVal = ${tot}目"
+            UiLanguage.ChineseSimplified -> "$colorLabel: 目数 $tVal + 提子 $pVal = ${tot}目"
+        }
+    }
+
+    fun scoreTextDetailArea(colorLabel: String, total: Double): String {
+        val tot = total.formatScoreNumber()
+        return when (language) {
+            UiLanguage.Korean -> "$colorLabel: 돌 + 집 = ${tot}집"
+            UiLanguage.English -> "$colorLabel: Stone + Territory = ${tot} points"
+            UiLanguage.Japanese -> "$colorLabel: 石 + 地合 = ${tot}目"
+            UiLanguage.ChineseSimplified -> "$colorLabel: 子数 + 目数 = ${tot}目"
+        }
+    }
+
+    fun scoreTextDetailTerritoryKomi(territory: Double, prisoners: Double, komi: Double, total: Double): String {
+        val tVal = territory.formatScoreNumber()
+        val pVal = prisoners.formatScoreNumber()
+        val kVal = komi.formatScoreNumber()
+        val tot = total.formatScoreNumber()
+        return when (language) {
+            UiLanguage.Korean -> "백: 집 $tVal + 사석 $pVal + 덤 $kVal = ${tot}집"
+            UiLanguage.English -> "White: Territory $tVal + Prisoners $pVal + Komi $kVal = ${tot} points"
+            UiLanguage.Japanese -> "白: 地合 $tVal + アゲハマ $pVal + コミ $kVal = ${tot}目"
+            UiLanguage.ChineseSimplified -> "白: 目数 $tVal + 提子 $pVal + 贴目 $kVal = ${tot}目"
+        }
+    }
+
+    fun scoreTextDetailAreaKomi(komi: Double, total: Double): String {
+        val kVal = komi.formatScoreNumber()
+        val tot = total.formatScoreNumber()
+        return when (language) {
+            UiLanguage.Korean -> "백: 돌 + 집 + 덤 $kVal = ${tot}집"
+            UiLanguage.English -> "White: Stone + Territory + Komi $kVal = ${tot} points"
+            UiLanguage.Japanese -> "白: 石 + 地合 + コミ $kVal = ${tot}目"
+            UiLanguage.ChineseSimplified -> "白: 子数 + 目数 + 贴目 $kVal = ${tot}目"
+        }
+    }
+
+    private fun Double.formatScoreNumber(): String {
+        val roundedTenth = (this * 10.0).roundToInt()
+        return if (roundedTenth % 10 == 0) {
+            (roundedTenth / 10).toString()
+        } else {
+            (roundedTenth / 10.0).toString()
+        }
+    }
     /** 접바둑 N점 레이블 (예: 한국어 "접바둑 3점", 영어 "Handicap 3") */
     fun handicapLabel(count: Int): String =
         when (language) {

@@ -7,6 +7,8 @@ import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.ScoreSnapshot
 import com.worksoc.goaicoach.shared.engine.EngineOperationRequest
+import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.StoneColor
 
 internal data class ScoreEstimateDisplayPlan(
     val scoreText: String,
@@ -46,12 +48,17 @@ internal data class FinalScoreStateResult(
 )
 
 internal data class FinalScoreJudgement(
-    val resultText: String,
-    val blackLine: String?,
-    val whiteLine: String?,
-    val removedStonesLine: String,
-    val scoringRuleLine: String,
-    val note: String? = null,
+    val winner: StoneColor?,
+    val margin: Double?,
+    val ruleset: Ruleset,
+    val isEstimatedDisplay: Boolean,
+    val removedBlack: Int,
+    val removedWhite: Int,
+    val blackArea: Double?,
+    val whiteAreaWithKomi: Double?,
+    val capturedByBlack: Int,
+    val capturedByWhite: Int,
+    val komi: Double?,
 )
 
 internal data class EndgameFailureDisplayPlan(

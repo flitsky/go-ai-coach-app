@@ -98,9 +98,13 @@ internal val UiStringsKorean = UiStrings(
     startMatchAction = "대국 시작하기",
     backToHome = "메인으로",
     notImplementedMessage = "아직 준비 중인 기능입니다.",
-    // 신규 로컬라이징 필드
     showScoreGraph = "스코어 그래프 보기",
     boardPreview = "보드 미리보기",
     homeStartMatchSubtitle = "AI 혹은 로컬 플레이어와 대국을 설정하고 시작합니다.",
-    homeStudySubtitle = "기보 복기, 사활 퀴즈 등 바둑 실력을 고도화합니다."
+    homeStudySubtitle = "기보 복기, 사활 퀴즈 등 바둑 실력을 고도화합니다.",
+    engineCopyNotice = "첫 실행에서는 포함된 모델을 복사하므로 잠시 시간이 걸릴 수 있습니다.",
+    cacheOptTitle = "이번 판 분석 최적화",
+    cacheOptTargetLabel = "대상",
+    scoreEstimateNotice = "참고 판정입니다. 현재 국면이 불명확해 엔진 추정치를 우선 표시했습니다.",
+    drawLabel = "무승부"
 )

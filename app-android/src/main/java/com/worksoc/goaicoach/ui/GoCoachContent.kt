@@ -28,6 +28,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkProfile
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkProgress
+import com.worksoc.goaicoach.application.analysis.JsonPositionAnalysisCacheOpeningInitialMoveCount
+import com.worksoc.goaicoach.application.analysis.JsonPositionAnalysisCacheOpeningMaxMoveCount
 import com.worksoc.goaicoach.application.engine.toResultSummary
 import com.worksoc.goaicoach.application.score.FinalScoreJudgement
 import com.worksoc.goaicoach.application.session.GameSessionTurnTimeState
@@ -37,6 +39,8 @@ import com.worksoc.goaicoach.presentation.GameUiEvent
 import com.worksoc.goaicoach.presentation.shouldCollapseMenuAfterEvent
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.describe
+import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.StoneColor
 
 @Composable
 internal fun GoCoachContent(
@@ -90,8 +94,13 @@ internal fun GoCoachContent(
 
     if (cacheOptimizationPrompt != null) {
         CacheOptimizationPromptDialog(
-            title = cacheOptimizationPrompt.title,
-            message = cacheOptimizationPrompt.message,
+            title = strings.cacheOptTitle,
+            message = strings.cacheOptBody(
+                initialCount = JsonPositionAnalysisCacheOpeningInitialMoveCount,
+                maxCount = JsonPositionAnalysisCacheOpeningMaxMoveCount,
+                moveCount = cacheOptimizationPrompt.moveCount,
+                targetCount = cacheOptimizationPrompt.targetCount,
+            ),
             strings = strings,
             onAccept = { onEvent(GameUiEvent.AcceptCacheOptimizationPrompt) },
             onDismiss = { onEvent(GameUiEvent.DismissCacheOptimizationPrompt) },
@@ -176,11 +185,12 @@ internal fun GoCoachContent(
 private fun FinalScoreJudgement.dialogKey(moveCount: Int): String =
     listOf(
         moveCount.toString(),
-        resultText,
-        blackLine.orEmpty(),
-        whiteLine.orEmpty(),
-        removedStonesLine,
-        scoringRuleLine,
+        winner?.name.orEmpty(),
+        margin?.toString().orEmpty(),
+        ruleset.name,
+        isEstimatedDisplay.toString(),
+        removedBlack.toString(),
+        removedWhite.toString(),
     ).joinToString("|")
 
 @Composable
@@ -196,12 +206,12 @@ private fun FinalJudgementDialog(
         title = { Text(strings.finalJudgementTitle) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(judgement.resultText)
-                Text(judgement.scoringRuleLine)
-                Text(judgement.removedStonesLine)
-                judgement.blackLine?.let { Text(it) }
-                judgement.whiteLine?.let { Text(it) }
-                judgement.note?.let { Text(it) }
+                Text(judgement.resultText(strings))
+                Text(judgement.scoringRuleLine(strings))
+                Text(judgement.removedStonesLine(strings))
+                judgement.blackLine(strings)?.let { Text(it) }
+                judgement.whiteLine(strings)?.let { Text(it) }
+                judgement.note(strings)?.let { Text(it) }
             }
         },
         confirmButton = {
@@ -342,3 +352,6 @@ internal fun ResumeSavedSessionDialog(
         },
     )
 }
+
+
+

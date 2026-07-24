@@ -97,9 +97,13 @@ internal val UiStringsEnglish = UiStringsKorean.copy(
     startMatchAction = "Start Match Now",
     backToHome = "Main Menu",
     notImplementedMessage = "This feature is currently under development.",
-    // 신규 로컬라이징 필드
     showScoreGraph = "Show Score Graph",
     boardPreview = "Board Preview",
     homeStartMatchSubtitle = "Configure and start a match with AI or local players.",
-    homeStudySubtitle = "Enhance your Go skills with game reviews, tsumego quizzes, and more."
+    homeStudySubtitle = "Enhance your Go skills with game reviews, tsumego quizzes, and more.",
+    engineCopyNotice = "First run copies internal models, which may take a few moments.",
+    cacheOptTitle = "Optimize this match",
+    cacheOptTargetLabel = "Target",
+    scoreEstimateNotice = "Estimate only. Displaying engine prediction due to unclear board status.",
+    drawLabel = "Draw"
 )

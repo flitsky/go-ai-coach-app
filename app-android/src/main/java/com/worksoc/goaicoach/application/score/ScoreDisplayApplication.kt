@@ -331,66 +331,18 @@ private fun buildFinalScoreJudgement(
     val removedWhite = cleanup.removedStones.count { it.color == StoneColor.White }
     val isEstimatedDisplay = displayScore.rawScore.endsWith("?")
     return FinalScoreJudgement(
-        resultText = displayScore.toJudgementResultText(),
-        blackLine = localScore.blackJudgementLine(state),
-        whiteLine = localScore.whiteJudgementLine(state),
-        removedStonesLine = "사석 제거: 흑 ${removedBlack}개, 백 ${removedWhite}개",
-        scoringRuleLine = "계가 방식: ${state.ruleset.koreanScoringLabel()}",
-        note = if (isEstimatedDisplay) {
-            "참고 판정입니다. 현재 국면이 불명확해 엔진 추정치를 우선 표시했습니다."
-        } else {
-            null
-        },
+        winner = displayScore.winner,
+        margin = displayScore.margin,
+        ruleset = state.ruleset,
+        isEstimatedDisplay = isEstimatedDisplay,
+        removedBlack = removedBlack,
+        removedWhite = removedWhite,
+        blackArea = localScore.blackArea,
+        whiteAreaWithKomi = localScore.whiteAreaWithKomi,
+        capturedByBlack = state.capturedBy(StoneColor.Black),
+        capturedByWhite = state.capturedBy(StoneColor.White),
+        komi = localScore.komi,
     )
-}
-
-private fun FinalScoreResult.toJudgementResultText(): String =
-    when (winner) {
-        StoneColor.Black -> "흑 + ${(margin ?: 0.0).formatScoreNumber()}집 승"
-        StoneColor.White -> "백 + ${(margin ?: 0.0).formatScoreNumber()}집 승"
-        null -> "무승부"
-    }
-
-private fun FinalScoreResult.blackJudgementLine(state: GameState): String? {
-    val blackScore = blackArea ?: return null
-    return when (state.ruleset) {
-        Ruleset.Japanese -> {
-            val prisoners = state.capturedBy(StoneColor.Black).toDouble()
-            val territory = blackScore - prisoners
-            "흑: 집 ${territory.formatScoreNumber()} + 사석 ${prisoners.formatScoreNumber()} = ${blackScore.formatScoreNumber()}집"
-        }
-        Ruleset.Chinese ->
-            "흑: 돌 + 집 = ${blackScore.formatScoreNumber()}집"
-    }
-}
-
-private fun FinalScoreResult.whiteJudgementLine(state: GameState): String? {
-    val whiteWithKomi = whiteAreaWithKomi ?: return null
-    val komiValue = komi ?: 0.0
-    return when (state.ruleset) {
-        Ruleset.Japanese -> {
-            val prisoners = state.capturedBy(StoneColor.White).toDouble()
-            val territory = whiteWithKomi - prisoners - komiValue
-            "백: 집 ${territory.formatScoreNumber()} + 사석 ${prisoners.formatScoreNumber()} + 덤 ${komiValue.formatScoreNumber()} = ${whiteWithKomi.formatScoreNumber()}집"
-        }
-        Ruleset.Chinese ->
-            "백: 돌 + 집 + 덤 ${komiValue.formatScoreNumber()} = ${whiteWithKomi.formatScoreNumber()}집"
-    }
-}
-
-private fun Ruleset.koreanScoringLabel(): String =
-    when (this) {
-        Ruleset.Japanese -> "집 계가 (영역 계가)"
-        Ruleset.Chinese -> "면적 계가 (영역+돌 계가)"
-    }
-
-private fun Number.formatScoreNumber(): String {
-    val roundedTenth = (toDouble() * 10.0).roundToInt()
-    return if (roundedTenth % 10 == 0) {
-        (roundedTenth / 10).toString()
-    } else {
-        (roundedTenth / 10.0).toString()
-    }
 }
 
 internal fun buildResolvedEndgameDisplayPlan(

@@ -95,9 +95,13 @@ internal val UiStringsChineseSimplified = UiStringsKorean.copy(
     startMatchAction = "开始对局",
     backToHome = "返回主菜单",
     notImplementedMessage = "此功能目前正在准备中。",
-    // 신규 로컬라이징 필드
     showScoreGraph = "显示得分图",
     boardPreview = "棋盘预览",
     homeStartMatchSubtitle = "设置并开始与 AI 或本地玩家的对局。",
-    homeStudySubtitle = "通过棋谱复盘、死活题测试等提升围棋水平。"
+    homeStudySubtitle = "通过棋谱复盘、死活题测试等提升围棋水平。",
+    engineCopyNotice = "首次运行将复制内置模型，这可能需要一点时间。",
+    cacheOptTitle = "优化本局分析",
+    cacheOptTargetLabel = "目标",
+    scoreEstimateNotice = "仅供参考。由于盘面状况不明确，优先显示引擎估值。",
+    drawLabel = "无胜负(和棋)"
 )
