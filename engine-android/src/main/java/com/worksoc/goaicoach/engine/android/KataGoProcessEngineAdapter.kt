@@ -5,6 +5,7 @@ import com.worksoc.goaicoach.shared.AnalysisResult
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.DeadStonesResult
+import com.worksoc.goaicoach.shared.DefaultKomi
 import com.worksoc.goaicoach.shared.EngineCoreApi
 import com.worksoc.goaicoach.shared.EngineMode
 import com.worksoc.goaicoach.shared.EngineProfile
@@ -29,6 +30,7 @@ class KataGoProcessEngineAdapter(
     private var boardSize: BoardSize = BoardSize.Nine
     private var ruleset: Ruleset = Ruleset.Japanese
     private var handicapCount: Int = 0
+    private var komi: Double = DefaultKomi
     private var nextPlayer: StoneColor = StoneColor.Black
     private var process: Process? = null
     private var input: BufferedWriter? = null
@@ -53,15 +55,21 @@ class KataGoProcessEngineAdapter(
         return EngineStatus.ready("KataGo process configured: ${this.profile.describe()}")
     }
 
-    override suspend fun newGame(boardSize: BoardSize, ruleset: Ruleset, handicapCount: Int): EngineStatus {
+    override suspend fun newGame(
+        boardSize: BoardSize,
+        ruleset: Ruleset,
+        handicapCount: Int,
+        komi: Double,
+    ): EngineStatus {
         ensureProcessStarted()
         this.boardSize = boardSize
         this.ruleset = ruleset
         this.handicapCount = handicapCount
+        this.komi = komi
         nextPlayer = if (handicapCount > 0) StoneColor.White else StoneColor.Black
         playedMoves.clear()
         sendCommand(KataGoProtocolCommands.boardSize(boardSize))
-        sendCommand(KataGoProtocolCommands.komi())
+        sendCommand(KataGoProtocolCommands.komi(komi))
         sendCommand(KataGoProtocolCommands.rules(ruleset))
         sendCommand(KataGoProtocolCommands.clearBoard())
         if (handicapCount > 0) {
@@ -332,6 +340,7 @@ class KataGoProcessEngineAdapter(
             limit = this,
             refineMove = refineMove,
             includePolicyOverride = includePolicyOverride,
+            komi = komi,
         )
     }
 

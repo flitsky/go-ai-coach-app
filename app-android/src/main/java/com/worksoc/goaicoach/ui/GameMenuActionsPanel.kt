@@ -31,12 +31,15 @@ internal fun ScoringAndBoardSettingsPanel(
     ruleset: Ruleset,
     boardSize: BoardSize,
     handicapCount: Int,
-    canChangeRuleset: Boolean,
-    canChangeBoardSize: Boolean,
-    canChangeHandicap: Boolean,
+    komi: Double = com.worksoc.goaicoach.shared.DefaultKomi,
+    canChangeRuleset: Boolean = true,
+    canChangeBoardSize: Boolean = true,
+    canChangeHandicap: Boolean = true,
+    canChangeKomi: Boolean = true,
     onRulesetChange: (Ruleset) -> Unit,
     onBoardSizeChange: (BoardSize) -> Unit,
     onHandicapCountChange: (Int) -> Unit,
+    onKomiChange: (Double) -> Unit = {},
 ) {
     val strings = LocalUiStrings.current
     Surface(
@@ -56,6 +59,14 @@ internal fun ScoringAndBoardSettingsPanel(
                 options = Ruleset.entries,
                 optionLabel = { rule -> strings.rulesetLabel(rule) },
                 onSelected = onRulesetChange,
+            )
+            SettingDropdownRow(
+                label = strings.komi,
+                selectedText = strings.komiValueLabel(komi),
+                enabled = canChangeKomi,
+                options = com.worksoc.goaicoach.shared.KomiOptions,
+                optionLabel = { k -> strings.komiValueLabel(k) },
+                onSelected = onKomiChange,
             )
             SettingDropdownRow(
                 label = strings.boardSize,

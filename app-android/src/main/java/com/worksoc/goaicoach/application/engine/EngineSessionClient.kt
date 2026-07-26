@@ -60,6 +60,7 @@ internal interface EngineSessionClient {
         boardSize: BoardSize,
         ruleset: Ruleset,
         handicapCount: Int = 0,
+        komi: Double = com.worksoc.goaicoach.shared.DefaultKomi,
     ): EngineStartupResult
 
     suspend fun analyzePosition(

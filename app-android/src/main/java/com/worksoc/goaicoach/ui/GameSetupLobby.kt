@@ -99,12 +99,15 @@ internal fun GameSetupLobby(
                 ruleset = screenState.gameState.ruleset,
                 boardSize = screenState.gameState.boardSize,
                 handicapCount = screenState.handicapCount,
+                komi = screenState.gameState.komi,
                 canChangeRuleset = true,
                 canChangeBoardSize = true,
                 canChangeHandicap = true,
+                canChangeKomi = true,
                 onRulesetChange = { ruleset -> onEvent(GameUiEvent.ChangeScoringRule(ruleset)) },
                 onBoardSizeChange = { size -> onEvent(GameUiEvent.ChangeBoardSize(size)) },
                 onHandicapCountChange = { count -> onEvent(GameUiEvent.ChangeHandicapCount(count)) },
+                onKomiChange = { komi -> onEvent(GameUiEvent.ChangeKomi(komi)) },
             )
 
             // [3] 50% 비율 축소 실시간 바둑판 프리뷰

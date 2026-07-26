@@ -539,6 +539,7 @@ private class RecordingBenchmarkEngineAdapter(
         boardSize: BoardSize,
         ruleset: Ruleset,
         handicapCount: Int,
+        komi: Double,
     ): EngineStatus {
         newGameRulesets += ruleset
         state = GameState.empty(boardSize = boardSize, ruleset = ruleset).copy(handicapCount = handicapCount)

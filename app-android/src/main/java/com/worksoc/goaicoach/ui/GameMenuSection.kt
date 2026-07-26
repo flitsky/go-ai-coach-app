@@ -98,12 +98,15 @@ internal fun ExpandedGameMenuSection(
                 ruleset = screenState.gameState.ruleset,
                 boardSize = screenState.gameState.boardSize,
                 handicapCount = screenState.handicapCount,
+                komi = screenState.gameState.komi,
                 canChangeRuleset = true,
                 canChangeBoardSize = screenState.isGameEnded,
                 canChangeHandicap = screenState.isGameEnded,
+                canChangeKomi = true,
                 onRulesetChange = { ruleset -> onEvent(GameUiEvent.ChangeScoringRule(ruleset)) },
                 onBoardSizeChange = { size -> onEvent(GameUiEvent.ChangeBoardSize(size)) },
                 onHandicapCountChange = { count -> onEvent(GameUiEvent.ChangeHandicapCount(count)) },
+                onKomiChange = { komi -> onEvent(GameUiEvent.ChangeKomi(komi)) },
             )
         }
 

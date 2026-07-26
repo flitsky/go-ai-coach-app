@@ -46,13 +46,14 @@ internal class LocalEngineCoreSessionDelegate(
         boardSize: BoardSize,
         ruleset: Ruleset,
         handicapCount: Int = 0,
+        komi: Double = com.worksoc.goaicoach.shared.DefaultKomi,
     ): EngineStartupResult {
         // A fresh process is intentional here. KataGo's GTP search tree can
         // survive clear_board across repeated games, causing the next game to
         // replay nearly instantly from retained search data.
         coreApi.stop()
         coreApi.initialize(profile)
-        val status = coreApi.newGame(boardSize, ruleset, handicapCount)
+        val status = coreApi.newGame(boardSize, ruleset, handicapCount, komi)
         val estimate = runCatching {
             coreApi.estimateScore(scoreGraphAnalysisLimit(profile))
         }.getOrNull()

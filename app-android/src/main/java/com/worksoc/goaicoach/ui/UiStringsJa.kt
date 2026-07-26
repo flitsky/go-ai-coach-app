@@ -10,6 +10,7 @@ internal val UiStringsJapanese = UiStringsKorean.copy(
     benchmark = "ベンチマーク",
     currentModePrefix = "現在のモード",
     scoringRule = "計算方式",
+    komi = "込み",
     boardSize = "盤サイズ",
     playerSetup = "プレイヤー設定",
     maximumSearchTimeLimit = "最大探索時間制限",

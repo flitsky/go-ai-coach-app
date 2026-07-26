@@ -23,6 +23,7 @@ import com.worksoc.goaicoach.application.analysis.AnalysisCacheKey
 import com.worksoc.goaicoach.application.analysis.AnalysisResultCache
 import com.worksoc.goaicoach.application.analysis.PositionCacheOptimizationController
 import com.worksoc.goaicoach.application.analysis.UndoAnalysisRestoreCache
+import com.worksoc.goaicoach.application.analysis.toDisplayText
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnController
 import com.worksoc.goaicoach.application.autoai.applyAutoAiTurnRequestPlan
 import com.worksoc.goaicoach.application.autoai.applyAutoAiTurnScheduleValidationPlan
@@ -286,6 +287,7 @@ private fun GoCoachScreen(
             ruleset = gameState.ruleset,
             boardSize = settingsState.boardSize,
             handicapCount = settingsState.handicapCount,
+            komi = settingsState.komi,
         ),
     )
     val exitToHome = {
@@ -533,6 +535,22 @@ private fun GoCoachScreen(
                     }
                 },
                 changeScoringRule = controllers.scoringRuleController::change,
+                changeKomi = { komi ->
+                    settingsState = settingsState.applyKomi(komi)
+                    val updatedState = sessionSnapshot.gameState.copy(komi = komi)
+                    if (isGameEnded) {
+                        refreshNewGamePreview()
+                    } else {
+                        applyCoreSessionState(
+                            sessionSnapshot.core.copy(
+                                gameState = updatedState,
+                                scoreState = sessionSnapshot.core.scoreState.copy(
+                                    scoreText = com.worksoc.goaicoach.shared.BoardScorer.score(updatedState).toDisplayText(),
+                                )
+                            )
+                        )
+                    }
+                },
                 changeUxOptions = { options -> uxOptions = options },
                 changeHandicapCount = { count ->
                     if (isGameEnded) {

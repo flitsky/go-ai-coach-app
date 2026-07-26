@@ -1163,6 +1163,7 @@ private class FakeScoreEngineSessionClient(
         boardSize: BoardSize,
         ruleset: Ruleset,
         handicapCount: Int,
+        komi: Double,
     ): EngineStartupResult =
         error("not used")
 

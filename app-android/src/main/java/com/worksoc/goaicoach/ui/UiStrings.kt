@@ -51,6 +51,7 @@ internal data class UiStrings(
     val benchmark: String,
     val currentModePrefix: String,
     val scoringRule: String,
+    val komi: String,
     val boardSize: String,
     val playerSetup: String,
     val maximumSearchTimeLimit: String,
@@ -330,6 +331,16 @@ internal data class UiStrings(
             UiLanguage.Japanese -> group.label
             UiLanguage.ChineseSimplified -> group.label
         }
+
+    fun komiValueLabel(komi: Double): String {
+        val valueStr = komi.formatScoreNumber()
+        return when (language) {
+            UiLanguage.Korean -> "${valueStr}집"
+            UiLanguage.English -> "$valueStr pts"
+            UiLanguage.Japanese -> "${valueStr}目"
+            UiLanguage.ChineseSimplified -> "${valueStr}目"
+        }
+    }
 
     fun rulesetLabel(ruleset: Ruleset): String =
         when (ruleset) {

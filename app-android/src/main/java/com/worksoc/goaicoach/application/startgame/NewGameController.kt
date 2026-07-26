@@ -38,8 +38,14 @@ internal class NewGameController(
     private val requestFollowUpAnalysis: (GameState) -> Unit,
     private val onEngineMessage: (String) -> Unit,
 ) {
-    fun resetLocalGame(message: String, ruleset: Ruleset, boardSize: BoardSize, handicapCount: Int = 0) {
-        applyGameSessionResetPlan(buildNewLocalGameSessionPlan(message, ruleset, boardSize, handicapCount))
+    fun resetLocalGame(
+        message: String,
+        ruleset: Ruleset,
+        boardSize: BoardSize,
+        handicapCount: Int = 0,
+        komi: Double = com.worksoc.goaicoach.shared.DefaultKomi,
+    ) {
+        applyGameSessionResetPlan(buildNewLocalGameSessionPlan(message, ruleset, boardSize, handicapCount, komi))
     }
 
     fun startEngineBackedNewGame(plan: StartConfiguredGamePlan.StartEngineGame) {
@@ -47,6 +53,7 @@ internal class NewGameController(
             boardSize = plan.boardSize,
             ruleset = plan.ruleset,
             handicapCount = plan.handicapCount,
+            komi = plan.komi,
         )
         runStartEngineBackedGameApplication(
             StartEngineBackedGameRunRequest(
@@ -59,7 +66,7 @@ internal class NewGameController(
                 diagnosticEventLog = diagnosticEventLog,
                 applyRuntime = applyRuntimePlayLevelSelection,
                 launchEngineOperation = launchEngineOperation,
-                resetLocalGame = { msg, ruleset, boardSize -> resetLocalGame(msg, ruleset, boardSize, plan.handicapCount) },
+                resetLocalGame = { msg, ruleset, boardSize -> resetLocalGame(msg, ruleset, boardSize, plan.handicapCount, plan.komi) },
                 currentScoreStateProvider = currentScoreState,
                 replaceScoreState = replaceScoreState,
                 currentStateProvider = { targetState },
@@ -74,6 +81,7 @@ internal class NewGameController(
             boardSize = currentBoardSize(),
             ruleset = gameState.ruleset,
             handicapCount = currentHandicapCount(),
+            komi = gameState.komi,
         )
         when (
             val plan = buildStartConfiguredGamePlan(
@@ -87,10 +95,11 @@ internal class NewGameController(
                 defaultPlayLevel = defaultPlayLevel,
                 searchTimeSettings = currentSearchTimeSettings(),
                 handicapCount = targetState.handicapCount,
+                komi = targetState.komi,
             )
         ) {
             is StartConfiguredGamePlan.ShowMessage -> onEngineMessage(plan.message)
-            is StartConfiguredGamePlan.ResetLocalGame -> resetLocalGame(plan.message, plan.ruleset, plan.boardSize, plan.handicapCount)
+            is StartConfiguredGamePlan.ResetLocalGame -> resetLocalGame(plan.message, plan.ruleset, plan.boardSize, plan.handicapCount, plan.komi)
             is StartConfiguredGamePlan.StartEngineGame -> startEngineBackedNewGame(plan)
         }
     }

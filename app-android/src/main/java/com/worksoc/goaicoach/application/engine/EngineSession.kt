@@ -34,7 +34,7 @@ internal data class LocalEngineMoveResult(
 )
 
 internal suspend fun EngineCoreApi.syncToGameState(state: GameState): EngineStatus {
-    val status = newGame(state.boardSize, state.ruleset, state.handicapCount)
+    val status = newGame(state.boardSize, state.ruleset, state.handicapCount, state.komi)
     state.moves.forEach { move ->
         playMove(move)
     }

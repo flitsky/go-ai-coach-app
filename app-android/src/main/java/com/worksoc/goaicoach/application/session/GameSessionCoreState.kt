@@ -118,6 +118,7 @@ internal data class GameSessionCoreState(
         ruleset: Ruleset,
         boardSize: BoardSize,
         handicapCount: Int,
+        komi: Double = com.worksoc.goaicoach.shared.DefaultKomi,
     ): GameSessionCoreState =
         applyGameSessionResetPlan(
             buildNewLocalGameSessionPlan(
@@ -125,6 +126,7 @@ internal data class GameSessionCoreState(
                 ruleset = ruleset,
                 boardSize = boardSize,
                 handicapCount = handicapCount,
+                komi = komi,
             ),
         ).copy(isGameEnded = true)
 

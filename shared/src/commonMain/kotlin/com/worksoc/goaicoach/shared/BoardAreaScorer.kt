@@ -3,7 +3,7 @@ package com.worksoc.goaicoach.shared
 object BoardAreaScorer {
     fun score(
         state: GameState,
-        komi: Double = DefaultKomi,
+        komi: Double = state.komi,
     ): FinalScoreResult {
         val ownership = areaOwnership(state)
         val blackArea = state.stones.count { it.value == StoneColor.Black } + ownership.blackTerritory

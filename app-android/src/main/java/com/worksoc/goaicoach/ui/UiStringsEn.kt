@@ -10,6 +10,7 @@ internal val UiStringsEnglish = UiStringsKorean.copy(
     benchmark = "Benchmark",
     currentModePrefix = "Current mode",
     scoringRule = "Scoring rule",
+    komi = "Komi",
     boardSize = "Board size",
     playerSetup = "Player Setup",
     maximumSearchTimeLimit = "Maximum search time limit",

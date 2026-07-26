@@ -11,6 +11,7 @@ internal val UiStringsKorean = UiStrings(
     benchmark = "엔진 성능 측정",
     currentModePrefix = "현재 모드",
     scoringRule = "계가 방식",
+    komi = "덤",
     boardSize = "바둑판 크기",
     playerSetup = "플레이어 설정",
     maximumSearchTimeLimit = "최대 탐색 시간 제한",

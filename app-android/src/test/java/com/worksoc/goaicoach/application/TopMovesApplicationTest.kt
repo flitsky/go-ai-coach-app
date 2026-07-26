@@ -1494,6 +1494,7 @@ private class FakeTopMoveEngineSessionClient(
         boardSize: BoardSize,
         ruleset: Ruleset,
         handicapCount: Int,
+        komi: Double,
     ): EngineStartupResult =
         error("not used")
 

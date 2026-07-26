@@ -14,6 +14,7 @@ internal data class GameSessionSettingsState(
     val searchTimeSettings: SearchTimeSettings,
     val topMovesEnabled: Boolean,
     val handicapCount: Int = 0,
+    val komi: Double = com.worksoc.goaicoach.shared.DefaultKomi,
 ) {
     val matchMode: MatchMode
         get() = playerSetup.matchMode()
@@ -30,6 +31,9 @@ internal data class GameSessionSettingsState(
 
     fun applyHandicap(count: Int): GameSessionSettingsState =
         copy(handicapCount = count.coerceIn(0, boardSize.maxHandicapCount))
+
+    fun applyKomi(nextKomi: Double): GameSessionSettingsState =
+        copy(komi = nextKomi)
 
     fun applySavedGameRestore(
         restoredSetup: PlayerSetup,

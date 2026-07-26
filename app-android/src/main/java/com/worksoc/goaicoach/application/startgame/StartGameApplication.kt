@@ -34,12 +34,14 @@ internal sealed class StartConfiguredGamePlan {
         val ruleset: Ruleset,
         val boardSize: BoardSize,
         val handicapCount: Int = 0,
+        val komi: Double = com.worksoc.goaicoach.shared.DefaultKomi,
     ) : StartConfiguredGamePlan()
     data class StartEngineGame(
         val ruleset: Ruleset,
         val boardSize: BoardSize,
         val runtime: RuntimePlayLevelSelection,
         val handicapCount: Int = 0,
+        val komi: Double = com.worksoc.goaicoach.shared.DefaultKomi,
     ) : StartConfiguredGamePlan()
 }
 
@@ -48,8 +50,9 @@ internal fun buildNewLocalGameSessionPlan(
     ruleset: Ruleset,
     boardSize: BoardSize,
     handicapCount: Int = 0,
+    komi: Double = com.worksoc.goaicoach.shared.DefaultKomi,
 ): GameSessionResetPlan {
-    val state = GameState.withHandicap(boardSize, ruleset, handicapCount)
+    val state = GameState.withHandicap(boardSize, ruleset, handicapCount, komi = komi)
     return GameSessionResetPlan(
         gameState = state,
         candidateText = "No analysis yet.",
@@ -74,6 +77,7 @@ internal fun buildStartConfiguredGamePlan(
     defaultPlayLevel: PlayLevelSetting,
     searchTimeSettings: SearchTimeSettings = SearchTimeSettings(),
     handicapCount: Int = 0,
+    komi: Double = com.worksoc.goaicoach.shared.DefaultKomi,
 ): StartConfiguredGamePlan {
     val targetMode = setup.matchMode()
     if (!isEngineReady && targetMode != MatchMode.LocalTwoPlayer) {
@@ -82,6 +86,7 @@ internal fun buildStartConfiguredGamePlan(
             ruleset = ruleset,
             boardSize = boardSize,
             handicapCount = handicapCount,
+            komi = komi,
         )
     }
     if (isEngineBusy) {
@@ -93,6 +98,7 @@ internal fun buildStartConfiguredGamePlan(
             ruleset = ruleset,
             boardSize = boardSize,
             handicapCount = handicapCount,
+            komi = komi,
         )
     }
 
@@ -107,5 +113,6 @@ internal fun buildStartConfiguredGamePlan(
             searchTimeSettings = searchTimeSettings,
         ),
         handicapCount = handicapCount,
+        komi = komi,
     )
 }

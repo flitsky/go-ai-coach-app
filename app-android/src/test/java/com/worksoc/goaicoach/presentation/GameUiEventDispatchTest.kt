@@ -179,6 +179,7 @@ class GameUiEventDispatchTest {
         changeSearchTimeSettings: (SearchTimeSettings) -> Unit = {},
         changeBoardSize: (BoardSize) -> Unit = {},
         changeScoringRule: (Ruleset) -> Unit = {},
+        changeKomi: (Double) -> Unit = {},
         changeUxOptions: (KaTrainUxOptions) -> Unit = {},
     ): GameUiEventHandlers =
         buildGameUiEventHandlers(
@@ -203,6 +204,7 @@ class GameUiEventDispatchTest {
             changeSearchTimeSettings = changeSearchTimeSettings,
             changeBoardSize = changeBoardSize,
             changeScoringRule = changeScoringRule,
+            changeKomi = changeKomi,
             changeUxOptions = changeUxOptions,
             changeHandicapCount = {},
         )

@@ -572,6 +572,7 @@ private class RecordingEngineAdapter(
         boardSize: BoardSize,
         ruleset: Ruleset,
         handicapCount: Int,
+        komi: Double,
     ): EngineStatus {
         lastNewGameHandicapCount = handicapCount
         calls += "newGame:${boardSize.value}:${ruleset.katagoName}"

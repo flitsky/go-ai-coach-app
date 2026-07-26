@@ -3,7 +3,7 @@ package com.worksoc.goaicoach.shared
 object BoardTerritoryScorer {
     fun score(
         state: GameState,
-        komi: Double = DefaultKomi,
+        komi: Double = state.komi,
     ): FinalScoreResult {
         val territory = territoryOwnership(state)
         val blackScore = territory.blackTerritory + state.capturedBy(StoneColor.Black)

@@ -7,14 +7,16 @@ object GameStateReplayer {
         moves: List<Move>,
         handicapCount: Int = 0,
         firstPlayer: StoneColor = StoneColor.Black,
+        komi: Double = DefaultKomi,
     ): GameState {
         var state = if (handicapCount > 0) {
-            GameState.withHandicap(boardSize, ruleset, handicapCount)
+            GameState.withHandicap(boardSize, ruleset, handicapCount, komi = komi)
         } else {
             GameState.empty(
                 boardSize = boardSize,
                 ruleset = ruleset,
                 nextPlayer = firstPlayer,
+                komi = komi,
             )
         }
         for (move in moves) {
@@ -31,5 +33,6 @@ fun GameState.replayWithoutLastMoves(count: Int): GameState {
         ruleset = ruleset,
         moves = moves.dropLast(count.coerceAtMost(moves.size)),
         handicapCount = handicapCount,
+        komi = komi,
     )
 }

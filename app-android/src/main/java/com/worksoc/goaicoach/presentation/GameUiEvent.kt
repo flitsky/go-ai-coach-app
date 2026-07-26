@@ -56,6 +56,10 @@ internal sealed interface GameUiEvent {
         val ruleset: Ruleset,
     ) : GameUiEvent
 
+    data class ChangeKomi(
+        val komi: Double,
+    ) : GameUiEvent
+
     data class ChangeUxOptions(
         val options: KaTrainUxOptions,
     ) : GameUiEvent
@@ -87,6 +91,7 @@ internal data class GameUiEventHandlers(
     val changeSearchTimeSettings: (SearchTimeSettings) -> Unit,
     val changeBoardSize: (BoardSize) -> Unit,
     val changeScoringRule: (Ruleset) -> Unit,
+    val changeKomi: (Double) -> Unit,
     val changeUxOptions: (KaTrainUxOptions) -> Unit,
     val changeHandicapCount: (Int) -> Unit,
 )
@@ -113,6 +118,7 @@ internal fun buildGameUiEventHandlers(
     changeSearchTimeSettings: (SearchTimeSettings) -> Unit,
     changeBoardSize: (BoardSize) -> Unit,
     changeScoringRule: (Ruleset) -> Unit,
+    changeKomi: (Double) -> Unit,
     changeUxOptions: (KaTrainUxOptions) -> Unit,
     changeHandicapCount: (Int) -> Unit,
 ): GameUiEventHandlers =
@@ -138,6 +144,7 @@ internal fun buildGameUiEventHandlers(
         changeSearchTimeSettings = changeSearchTimeSettings,
         changeBoardSize = changeBoardSize,
         changeScoringRule = changeScoringRule,
+        changeKomi = changeKomi,
         changeUxOptions = changeUxOptions,
         changeHandicapCount = changeHandicapCount,
     )
@@ -173,6 +180,7 @@ internal fun dispatchGameUiEvent(
         is GameUiEvent.ChangeSearchTimeSettings -> handlers.changeSearchTimeSettings(event.settings)
         is GameUiEvent.ChangeBoardSize -> handlers.changeBoardSize(event.boardSize)
         is GameUiEvent.ChangeScoringRule -> handlers.changeScoringRule(event.ruleset)
+        is GameUiEvent.ChangeKomi -> handlers.changeKomi(event.komi)
         is GameUiEvent.ChangeUxOptions -> handlers.changeUxOptions(event.options)
         is GameUiEvent.ChangeHandicapCount -> handlers.changeHandicapCount(event.count)
     }

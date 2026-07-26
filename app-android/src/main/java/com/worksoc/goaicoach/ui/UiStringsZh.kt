@@ -10,6 +10,7 @@ internal val UiStringsChineseSimplified = UiStringsKorean.copy(
     benchmark = "基准测试",
     currentModePrefix = "当前模式",
     scoringRule = "数目规则",
+    komi = "贴目",
     boardSize = "棋盘大小",
     playerSetup = "玩家设置",
     maximumSearchTimeLimit = "最大搜索时间限制",

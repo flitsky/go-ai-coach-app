@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.shared
 
 const val DefaultKomi = 6.5
+val KomiOptions = listOf(0.5, 6.5, 7.5)
 
 data class BoardSize(val value: Int) {
     init {
@@ -178,6 +179,7 @@ data class GameState(
     val koPoint: BoardCoordinate? = null,
     val koForbiddenFor: StoneColor? = null,
     val handicapCount: Int = 0,
+    val komi: Double = DefaultKomi,
 ) {
     fun stoneAt(coordinate: BoardCoordinate): StoneColor? = stones[coordinate]
 
@@ -201,6 +203,7 @@ data class GameState(
             boardSize: BoardSize = BoardSize.Nine,
             ruleset: Ruleset = Ruleset.Japanese,
             nextPlayer: StoneColor = StoneColor.Black,
+            komi: Double = DefaultKomi,
         ): GameState =
             GameState(
                 boardSize = boardSize,
@@ -209,6 +212,7 @@ data class GameState(
                 stones = emptyMap(),
                 moves = emptyList(),
                 handicapCount = 0,
+                komi = komi,
             )
 
         /**
@@ -222,8 +226,9 @@ data class GameState(
             boardSize: BoardSize,
             ruleset: Ruleset,
             handicapCount: Int,
+            komi: Double = DefaultKomi,
         ): GameState {
-            if (handicapCount <= 0) return empty(boardSize, ruleset)
+            if (handicapCount <= 0) return empty(boardSize, ruleset, komi = komi)
 
             val positions = boardSize.handicapStonePositions(handicapCount)
             val stones = positions.associateWith { StoneColor.Black }
@@ -235,6 +240,7 @@ data class GameState(
                 stones = stones,
                 moves = emptyList(),
                 handicapCount = handicapCount,
+                komi = komi,
             )
         }
     }

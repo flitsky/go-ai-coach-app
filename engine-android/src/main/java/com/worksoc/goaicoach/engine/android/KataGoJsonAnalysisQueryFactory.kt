@@ -17,6 +17,7 @@ internal object KataGoJsonAnalysisQueryFactory {
         limit: AnalysisLimit,
         refineMove: Move.Play? = null,
         includePolicyOverride: Boolean? = null,
+        komi: Double = DefaultKomi,
     ): JSONObject {
         val overrideSettings = JSONObject()
         limit.timeMillis?.let { overrideSettings.put("maxTime", it / 1_000.0) }
@@ -29,7 +30,7 @@ internal object KataGoJsonAnalysisQueryFactory {
         return JSONObject()
             .put("id", id)
             .put("rules", ruleset.katagoName)
-            .put("komi", DefaultKomi)
+            .put("komi", komi)
             .put("boardXSize", boardSize.value)
             .put("boardYSize", boardSize.value)
             .put("initialPlayer", "B")

@@ -315,6 +315,23 @@ class GameStateTest {
     }
 
     @Test
+    fun boardScorerRespectsCustomKomiSettings() {
+        val baseState = GameState.empty(boardSize = BoardSize.Nine, ruleset = Ruleset.Japanese)
+
+        val score05 = BoardScorer.score(baseState.copy(komi = 0.5))
+        assertEquals(0.5, score05.komi)
+        assertEquals("W+0.5", score05.rawScore)
+
+        val score65 = BoardScorer.score(baseState.copy(komi = 6.5))
+        assertEquals(6.5, score65.komi)
+        assertEquals("W+6.5", score65.rawScore)
+
+        val score75 = BoardScorer.score(baseState.copy(komi = 7.5))
+        assertEquals(7.5, score75.komi)
+        assertEquals("W+7.5", score75.rawScore)
+    }
+
+    @Test
     fun deadStoneCleanerRemovesEngineMarkedStonesAndUpdatesPrisoners() {
         val state = GameState.empty().copy(
             stones = mapOf(

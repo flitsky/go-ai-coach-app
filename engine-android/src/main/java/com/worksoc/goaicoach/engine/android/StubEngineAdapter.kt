@@ -27,6 +27,7 @@ class StubEngineAdapter : EngineCoreApi {
     private var ruleset: Ruleset = Ruleset.Japanese
     private var initialized: Boolean = false
     private var handicapCount: Int = 0
+    private var komi: Double = 6.5
     private var nextPlayer: StoneColor = StoneColor.Black
     private var profile: EngineProfile = EngineProfile()
     private val occupied = linkedSetOf<BoardCoordinate>()
@@ -46,11 +47,17 @@ class StubEngineAdapter : EngineCoreApi {
         return EngineStatus.ready("Stub engine configured: ${profile.describe()}")
     }
 
-    override suspend fun newGame(boardSize: BoardSize, ruleset: Ruleset, handicapCount: Int): EngineStatus {
+    override suspend fun newGame(
+        boardSize: BoardSize,
+        ruleset: Ruleset,
+        handicapCount: Int,
+        komi: Double,
+    ): EngineStatus {
         ensureInitialized()
         this.boardSize = boardSize
         this.ruleset = ruleset
         this.handicapCount = handicapCount
+        this.komi = komi
         nextPlayer = if (handicapCount > 0) StoneColor.White else StoneColor.Black
         occupied.clear()
         playedMoves.clear()
