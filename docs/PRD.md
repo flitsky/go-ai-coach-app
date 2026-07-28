@@ -132,13 +132,15 @@ MVP 학습 UX:
 
 앱은 1~8절에서 설명한 POC 단계를 한참 지났다. 현재 상태:
 
-- 완전한 9x9 플레이 루프: 합법수, 패/자충 규칙, 따냄, 양패스 종국 감지, Area/Territory 계가, 무르기, 새 게임, 저장된 대국 이어하기.
+- 완전한 9x9, 13x13, 19x19 대국 셋업 및 플레이 루프: 합법수, 패/자충 규칙, 따냄, 양패스 종국 감지, Area(중국식)/Territory(한국·일본식) 계가, 덤(Komi: 0.5, 6.5, 7.5집) 설정, 접바둑(Handicap: 2~9점 화점 배치), 무르기, 새 게임, 저장된 대국 이어하기.
+- 대국 셋업 로비(`GameSetupLobby`): 대국 시작 전 바둑판 크기, 계가 방식, 덤, 접바둑, 플레이어/AI 조합을 설정하고 50% 축소 렌더링된 실시간 보드 프리뷰를 제공.
+- 다국어 지원: 한국어, 영어, 일어, 중국어(간체) 4개 국어 UI 및 용어 완벽 연동.
 - 로컬 KataGo 엔진(`libkatago.so`)이 **두 가지** 탐색 orchestration 모드(`GtpStatefulFast`, `JsonPositionAnalysis`)를 지원한다 — [ENGINE.md](./ENGINE.md) 참고. 엔진 없이 UI 작업을 할 수 있는 stub 어댑터도 그대로 사용 가능하다.
 - AI 난이도 4그룹(`빠른 초급`/`초급`/`중급`/`고급`), 각각 고유한 visits/time-cap/candidate-count 정책과 탐색 모드를 가진다.
 - Top Moves 보드 표시(최대 5개 후보, 1순위는 큰 원), 착수 후 복기 색상(green/yellow/orange/red/unknown), 점수/승률 그래프, 기기 벤치마킹, 디버그 리포트 복사, 진단/런타임 이벤트 로깅.
 - `app-android/application/`은 17개 기능 도메인 패키지로 분해되어 있고, 각각 작은 컨트롤러 + 순수함수 application 패턴을 따른다 — 전체 계층 지도는 [ARCHITECTURE.md](./ARCHITECTURE.md) 참고.
 - `shared` 모듈: 보드 규칙, 계가, 엔진 코어 API 계약, 분석 정책. 여전히 Android 우선이며 iOS/기타 KMP 타겟은 아직 검증되지 않았다.
-- 13x13/19x19, SGF 가져오기/내보내기, 서버 엔진 fallback(2절의 목표 최종 상태)은 **아직 구현되지 않았다**.
+- SGF 가져오기/내보내기, 서버 엔진 fallback(2절의 목표 최종 상태)은 **아직 구현되지 않았다**.
 
 ## 10. 로드맵 (2026-06-17 상태 갱신)
 
