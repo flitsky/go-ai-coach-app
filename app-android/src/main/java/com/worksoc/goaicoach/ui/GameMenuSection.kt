@@ -151,11 +151,11 @@ private fun LanguageSettingsPanel(
                 .padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            SettingDropdownRow(
+            SettingChoiceRow(
                 label = strings.languageLabel,
-                selectedText = selectedLanguage.menuLabel,
-                enabled = true,
                 options = UiLanguage.entries,
+                selected = selectedLanguage,
+                enabled = true,
                 optionLabel = { language -> language.menuLabel },
                 onSelected = onLanguageChange,
             )

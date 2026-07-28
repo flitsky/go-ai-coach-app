@@ -105,5 +105,12 @@ internal val UiStringsChineseSimplified = UiStringsKorean.copy(
     cacheOptTitle = "优化本局分析",
     cacheOptTargetLabel = "目标",
     scoreEstimateNotice = "仅供参考。由于盘面状况不明确，优先显示引擎估值。",
-    drawLabel = "无胜负(和棋)"
+    drawLabel = "无胜负(和棋)",
+    overwriteWarningTitle = "开始新对局",
+    overwriteWarningMessage = "存在已保存的前局。开始新对局可能会覆盖之前的进度。是否前往对局设置？",
+    legendBest = "最佳",
+    legendGood = "好",
+    legendInaccuracy = "欠佳",
+    legendMistake = "失误",
+    legendBlunder = "严重失误",
 )

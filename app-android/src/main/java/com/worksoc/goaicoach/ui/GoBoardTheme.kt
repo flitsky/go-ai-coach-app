@@ -12,10 +12,10 @@ internal data class GoBoardColors(
 ) {
     companion object {
         val Default = GoBoardColors(
-            boardBackgroundActive = Color(0xFFD7A85E),
-            boardBackgroundEnded = Color(0xFFAC864B),
+            boardBackgroundActive = Color(0xFFE8C674),
+            boardBackgroundEnded = Color(0xFFD2A248),
             boardBorder = Color(0xFF7A4D20),
-            gridLine = Color(0xFF4A2F17),
+            gridLine = Color(0x8C281C0A),
             lastMoveMark = Color(0xFFE53935),
             engineActivityText = Color(0xFF3F2612),
         )

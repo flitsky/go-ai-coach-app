@@ -51,50 +51,17 @@ internal fun GameStatusPanel(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // 좌측: 흑진영
-        val isBlackTurn = currentTurnPlayer == StoneColor.Black && !screenState.isGameEnded
-        val blackBg = if (isBlackTurn) Color(0xFFE8F5E9) else Color(0xFFF7F4EC)
-        val blackBorder = if (isBlackTurn) BorderStroke(1.5.dp, Color(0xFF2F6B4F)) else BorderStroke(1.dp, Color(0xFFCFD8DC))
-        Surface(
+        PlayerSeatCard(
             modifier = Modifier.weight(1.3f),
-            color = blackBg,
-            border = blackBorder,
-            shape = RoundedCornerShape(8.dp)
-        ) {
-            Column(
-                modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
-                horizontalAlignment = Alignment.Start
-            ) {
-                // 상단: 진영 표시와 대국 시간을 분리해 좁은 카드에서도 읽기 쉽게 유지한다.
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text("●", style = MaterialTheme.typography.titleMedium, color = Color.Black)
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = strings.sideLabel(screenState.playerSetup.black, StoneColor.Black),
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF1F1F1F),
-                    )
-                }
-                Text(
-                    text = formatMillis(blackTotalMillis),
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = if (isBlackTurn) FontWeight.Bold else FontWeight.Normal,
-                    color = if (isBlackTurn) Color(0xFF2F6B4F) else Color(0xFF78909C),
-                )
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Text(
-                    text = "${strings.captures}: ${capturedByBlack}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFF455A64)
-                )
-            }
-        }
+            isActiveTurn = currentTurnPlayer == StoneColor.Black && !screenState.isGameEnded,
+            stoneGlyph = "●",
+            stoneGlyphColor = Color.Black,
+            label = strings.sideLabel(screenState.playerSetup.black, StoneColor.Black),
+            elapsedMillisText = formatMillis(blackTotalMillis),
+            capturedCount = capturedByBlack,
+            capturesLabel = strings.captures,
+            alignEnd = false,
+        )
 
         // 중앙: [착수] 버튼
         Column(
@@ -120,7 +87,7 @@ internal fun GameStatusPanel(
                     .fillMaxWidth()
                     .height(48.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF2F6B4F),
+                    containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = Color.White,
                     disabledContainerColor = Color(0xFFECEFF1),
                     disabledContentColor = Color(0xFFB0BEC5)
@@ -132,50 +99,92 @@ internal fun GameStatusPanel(
             }
         }
 
-        // 우측: 백진영
-        val isWhiteTurn = currentTurnPlayer == StoneColor.White && !screenState.isGameEnded
-        val whiteBg = if (isWhiteTurn) Color(0xFFE8F5E9) else Color(0xFFF7F4EC)
-        val whiteBorder = if (isWhiteTurn) BorderStroke(1.5.dp, Color(0xFF2F6B4F)) else BorderStroke(1.dp, Color(0xFFCFD8DC))
-        Surface(
+        PlayerSeatCard(
             modifier = Modifier.weight(1.3f),
-            color = whiteBg,
-            border = whiteBorder,
-            shape = RoundedCornerShape(8.dp)
+            isActiveTurn = currentTurnPlayer == StoneColor.White && !screenState.isGameEnded,
+            stoneGlyph = "○",
+            stoneGlyphColor = Color.Gray,
+            label = strings.sideLabel(screenState.playerSetup.white, StoneColor.White),
+            elapsedMillisText = formatMillis(whiteTotalMillis),
+            capturedCount = capturedByWhite,
+            capturesLabel = strings.captures,
+            alignEnd = true,
+        )
+    }
+}
+
+/**
+ * 흑/백 진영 정보 카드. 대국 차례일 때 프라이머리 색으로 강조된다.
+ */
+@Composable
+private fun PlayerSeatCard(
+    modifier: Modifier,
+    isActiveTurn: Boolean,
+    stoneGlyph: String,
+    stoneGlyphColor: Color,
+    label: String,
+    elapsedMillisText: String,
+    capturedCount: Int,
+    capturesLabel: String,
+    alignEnd: Boolean,
+) {
+    val bg = if (isActiveTurn) {
+        MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+    } else {
+        MaterialTheme.colorScheme.surfaceVariant
+    }
+    val border = if (isActiveTurn) {
+        BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary)
+    } else {
+        BorderStroke(1.dp, Color(0xFFCFD8DC))
+    }
+    val timeColor = if (isActiveTurn) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
+
+    Surface(
+        modifier = modifier,
+        color = bg,
+        border = border,
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+            horizontalAlignment = if (alignEnd) Alignment.End else Alignment.Start
         ) {
-            Column(
-                modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
-                horizontalAlignment = Alignment.End
+            // 상단: 진영 표시와 대국 시간을 분리해 좁은 카드에서도 읽기 쉽게 유지한다.
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = if (alignEnd) Arrangement.End else Arrangement.Start,
+                modifier = Modifier.fillMaxWidth(),
             ) {
-                // 상단: 진영 표시와 대국 시간을 분리해 좁은 카드에서도 읽기 쉽게 유지한다.
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.End,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(
-                        text = strings.sideLabel(screenState.playerSetup.white, StoneColor.White),
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF1F1F1F),
-                    )
+                if (!alignEnd) {
+                    Text(stoneGlyph, style = MaterialTheme.typography.titleMedium, color = stoneGlyphColor)
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("○", style = MaterialTheme.typography.titleMedium, color = Color.Gray)
                 }
                 Text(
-                    text = formatMillis(whiteTotalMillis),
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = if (isWhiteTurn) FontWeight.Bold else FontWeight.Normal,
-                    color = if (isWhiteTurn) Color(0xFF2F6B4F) else Color(0xFF78909C),
+                    text = label,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF1F1F1F),
                 )
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Text(
-                    text = "${strings.captures}: ${capturedByWhite}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFF455A64)
-                )
+                if (alignEnd) {
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(stoneGlyph, style = MaterialTheme.typography.titleMedium, color = stoneGlyphColor)
+                }
             }
+            Text(
+                text = elapsedMillisText,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = if (isActiveTurn) FontWeight.Bold else FontWeight.Normal,
+                color = timeColor,
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                text = "$capturesLabel: $capturedCount",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }

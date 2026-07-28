@@ -107,5 +107,12 @@ internal val UiStringsEnglish = UiStringsKorean.copy(
     cacheOptTitle = "Optimize this match",
     cacheOptTargetLabel = "Target",
     scoreEstimateNotice = "Estimate only. Displaying engine prediction due to unclear board status.",
-    drawLabel = "Draw"
+    drawLabel = "Draw",
+    overwriteWarningTitle = "Start New Match",
+    overwriteWarningMessage = "A saved match exists. Starting a new match may overwrite your previous progress. Proceed to match setup?",
+    legendBest = "Best",
+    legendGood = "Good",
+    legendInaccuracy = "Inaccuracy",
+    legendMistake = "Mistake",
+    legendBlunder = "Blunder",
 )

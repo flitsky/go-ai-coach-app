@@ -149,6 +149,13 @@ internal data class UiStrings(
     val cacheOptTargetLabel: String,
     val scoreEstimateNotice: String,
     val drawLabel: String,
+    val overwriteWarningTitle: String,
+    val overwriteWarningMessage: String,
+    val legendBest: String,
+    val legendGood: String,
+    val legendInaccuracy: String,
+    val legendMistake: String,
+    val legendBlunder: String,
 ) {
     fun cacheOptBody(initialCount: Int, maxCount: Int, moveCount: Int, targetCount: Int): String =
         when (language) {

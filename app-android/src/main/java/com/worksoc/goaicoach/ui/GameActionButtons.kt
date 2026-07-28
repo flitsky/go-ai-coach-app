@@ -32,8 +32,10 @@ internal val ActionButtonShape = RoundedCornerShape(16.dp)
 internal val ActionButtonBorder
     @Composable get() = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
 internal val ActionButtonContentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)
-internal val ActionButtonContainerColor = Color(0xFFE2F0E7)
-internal val ActionButtonContentColor = Color(0xFF205B3E)
+internal val ActionButtonContainerColor
+    @Composable get() = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+internal val ActionButtonContentColor
+    @Composable get() = MaterialTheme.colorScheme.primary
 
 @Composable
 internal fun ToggleActionButton(

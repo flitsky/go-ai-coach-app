@@ -106,5 +106,12 @@ internal val UiStringsJapanese = UiStringsKorean.copy(
     cacheOptTitle = "この対局の最適化",
     cacheOptTargetLabel = "対象",
     scoreEstimateNotice = "目安の判定です。現在の盤面が不明確なため、エンジンの推測値を優先して表示しています。",
-    drawLabel = "持碁(引き分け)"
+    drawLabel = "持碁(引き分け)",
+    overwriteWarningTitle = "新しい対局を開始",
+    overwriteWarningMessage = "保存された前回の対局が存在します。新しい対局を開始すると前回の対局データが上書きされる可能性があります。対局設定に進みますか？",
+    legendBest = "最善",
+    legendGood = "良い",
+    legendInaccuracy = "不正確",
+    legendMistake = "悪手",
+    legendBlunder = "大悪手",
 )

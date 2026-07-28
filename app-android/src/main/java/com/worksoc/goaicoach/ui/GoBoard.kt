@@ -449,7 +449,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawMoveNumberLabel
     }
 }
 
-private fun candidateToneColor(tone: MoveReviewTone): Color =
+internal fun candidateToneColor(tone: MoveReviewTone): Color =
     when (tone) {
         MoveReviewTone.Excellent -> Color(0xFF2E7D32)
         MoveReviewTone.Good -> Color(0xFF8BC34A)

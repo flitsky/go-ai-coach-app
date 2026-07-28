@@ -32,4 +32,12 @@ class UiStringsTest {
         assertEquals("着手表示", UiStringsJapanese.lastMoveRing)
         assertEquals("落子标记", UiStringsChineseSimplified.lastMoveRing)
     }
+
+    @Test
+    fun overwriteWarningStringsUseLocalizedCopyInEverySupportedLanguage() {
+        assertEquals("새 대국 시작", UiStrings.forLanguage(UiLanguage.Korean).overwriteWarningTitle)
+        assertEquals("Start New Match", UiStrings.forLanguage(UiLanguage.English).overwriteWarningTitle)
+        assertEquals("新しい対局を開始", UiStrings.forLanguage(UiLanguage.Japanese).overwriteWarningTitle)
+        assertEquals("开始新对局", UiStrings.forLanguage(UiLanguage.ChineseSimplified).overwriteWarningTitle)
+    }
 }

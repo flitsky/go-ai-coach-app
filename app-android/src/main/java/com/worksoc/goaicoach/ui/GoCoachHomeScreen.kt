@@ -1,7 +1,14 @@
 package com.worksoc.goaicoach.ui
 
 import android.widget.Toast
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,18 +21,28 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -36,6 +53,7 @@ import androidx.compose.ui.unit.sp
  * 0 Depth: 홈 화면 (Home Screen)
  * - 사용자가 앱 진입 시 최초로 마주하는 엔트리 화면입니다.
  * - "대국 하기" (대국 설정 로비로 이동) 및 "학습 하기" (준비 중 토스트 피드백) 메뉴를 제공합니다.
+ * - 시스템 샌드위치/소프트키 및 상단 상태바 영역 침범 방지 적용.
  */
 @Composable
 internal fun GoCoachHomeScreen(
@@ -48,11 +66,13 @@ internal fun GoCoachHomeScreen(
 ) {
     val strings = LocalUiStrings.current
     val context = LocalContext.current
+    var showOverwriteWarningDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            .systemBarsPadding()
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -60,7 +80,7 @@ internal fun GoCoachHomeScreen(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.End,
         ) {
-            HomeLanguageQuickToggle(
+            HomeLanguageSelector(
                 selectedLanguage = selectedLanguage,
                 onLanguageChange = onLanguageChange,
             )
@@ -93,28 +113,53 @@ internal fun GoCoachHomeScreen(
             )
         }
 
-        // 저장된 대국이 있을 때만 노출되는 인라인 "이전 대국 이어하기" 링크
+        // 저장된 대국이 있을 때 노출되는 확대 및 깜빡이는 "이전 대국 이어하기" 버튼
         if (hasResumableSession) {
-            Text(
-                text = strings.resumeTitle,
-                color = MaterialTheme.colorScheme.primary,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .padding(bottom = 12.dp)
-                    .clickable(onClick = onResumeClick),
+            val infiniteTransition = rememberInfiniteTransition(label = "resumeBlink")
+            val blinkingAlpha by infiniteTransition.animateFloat(
+                initialValue = 0.35f,
+                targetValue = 1.0f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(durationMillis = 800, easing = LinearEasing),
+                    repeatMode = RepeatMode.Reverse,
+                ),
+                label = "blinkingAlpha",
             )
+
+            Box(
+                modifier = Modifier
+                    .padding(bottom = 16.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
+                    .clickable(onClick = onResumeClick)
+                    .padding(horizontal = 18.dp, vertical = 10.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = "▶ " + strings.resumeTitle,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.graphicsLayer { alpha = blinkingAlpha },
+                )
+            }
         }
 
-        // "대국 하기" (Start Match) 카드
+        // "대국 하기" (Start Match) 카드 — 이전 대국 존재 시 확인 팝업 분기
         MenuCard(
             title = strings.startMatch,
             subtitle = strings.homeStartMatchSubtitle,
             containerColor = MaterialTheme.colorScheme.primary,
             titleColor = Color.White,
             subtitleColor = Color.White.copy(alpha = 0.85f),
-            onClick = onStartMatchClick,
+            onClick = {
+                if (hasResumableSession) {
+                    showOverwriteWarningDialog = true
+                } else {
+                    onStartMatchClick()
+                }
+            },
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -131,51 +176,86 @@ internal fun GoCoachHomeScreen(
             },
         )
     }
-}
 
-@Composable
-private fun HomeLanguageQuickToggle(
-    selectedLanguage: UiLanguage,
-    onLanguageChange: (UiLanguage) -> Unit,
-) {
-    Row(
-        modifier = Modifier
-            .clip(RoundedCornerShape(18.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant),
-    ) {
-        HomeLanguageQuickToggleOption(
-            label = "KO",
-            selected = selectedLanguage == UiLanguage.Korean,
-            onClick = { onLanguageChange(UiLanguage.Korean) },
-        )
-        HomeLanguageQuickToggleOption(
-            label = "EN",
-            selected = selectedLanguage == UiLanguage.English,
-            onClick = { onLanguageChange(UiLanguage.English) },
+    // 이전 대국 존재 상태에서 새 대국 하기 선택 시 확인 경고 팝업
+    if (showOverwriteWarningDialog) {
+        AlertDialog(
+            onDismissRequest = { showOverwriteWarningDialog = false },
+            title = { Text(strings.overwriteWarningTitle, fontWeight = FontWeight.Bold) },
+            text = { Text(strings.overwriteWarningMessage) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showOverwriteWarningDialog = false
+                        onStartMatchClick()
+                    },
+                ) {
+                    Text(strings.confirm)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showOverwriteWarningDialog = false }) {
+                    Text(strings.cancel)
+                }
+            },
         )
     }
 }
 
+/**
+ * 4개 국어(한국어, English, 日本語, 简体中文) 지원 언어 선택 드롭다운
+ */
 @Composable
-private fun HomeLanguageQuickToggleOption(
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit,
+private fun HomeLanguageSelector(
+    selectedLanguage: UiLanguage,
+    onLanguageChange: (UiLanguage) -> Unit,
 ) {
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(18.dp))
-            .background(if (selected) MaterialTheme.colorScheme.primary else Color.Transparent)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = label,
-            color = if (selected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Bold,
-        )
+    var expanded by remember { mutableStateOf(false) }
+
+    Box {
+        Row(
+            modifier = Modifier
+                .clip(RoundedCornerShape(18.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .clickable { expanded = true }
+                .padding(horizontal = 14.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(
+                text = "🌐 ${selectedLanguage.menuLabel}",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                text = "▾",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+            )
+        }
+
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+        ) {
+            UiLanguage.entries.forEach { lang ->
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            text = lang.menuLabel,
+                            fontWeight = if (lang == selectedLanguage) FontWeight.Bold else FontWeight.Normal,
+                            color = if (lang == selectedLanguage) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                        )
+                    },
+                    onClick = {
+                        expanded = false
+                        onLanguageChange(lang)
+                    },
+                )
+            }
+        }
     }
 }
 
@@ -183,22 +263,54 @@ private fun HomeLanguageQuickToggleOption(
 private fun GoStoneLogoBadge() {
     Box(
         modifier = Modifier
-            .size(96.dp)
-            .shadow(elevation = 6.dp, shape = CircleShape)
-            .background(Color.White, CircleShape),
+            .size(104.dp)
+            .shadow(elevation = 8.dp, shape = CircleShape, clip = false)
+            .background(Color(0xFFF5F0E6), CircleShape)
+            .border(1.dp, Color(0xFFE5DDD0), CircleShape),
         contentAlignment = Alignment.Center,
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+        ) {
+            // 흑돌 (Black Stone) with 3D Radial Gradient & Shadow
             Box(
                 modifier = Modifier
-                    .size(42.dp)
-                    .background(Color(0xFF1A1A1A), CircleShape),
+                    .size(46.dp)
+                    .shadow(elevation = 4.dp, shape = CircleShape)
+                    .background(
+                        brush = androidx.compose.ui.graphics.Brush.radialGradient(
+                            colors = listOf(
+                                Color(0xFF5A5A5A),
+                                Color(0xFF222222),
+                                Color(0xFF0A0A0A),
+                            ),
+                            center = androidx.compose.ui.geometry.Offset(14f, 14f),
+                            radius = 50f,
+                        ),
+                        shape = CircleShape,
+                    ),
             )
+
+            // 백돌 (White Stone) with 3D Radial Gradient, Border & Shadow
             Box(
                 modifier = Modifier
-                    .offset(x = (-14).dp)
-                    .size(42.dp)
-                    .background(Color.White, CircleShape),
+                    .offset(x = (-12).dp)
+                    .size(46.dp)
+                    .shadow(elevation = 4.dp, shape = CircleShape)
+                    .border(1.dp, Color(0xFFD3C9B8), CircleShape)
+                    .background(
+                        brush = androidx.compose.ui.graphics.Brush.radialGradient(
+                            colors = listOf(
+                                Color(0xFFFFFFFF),
+                                Color(0xFFF7F3EB),
+                                Color(0xFFD6CCC0),
+                            ),
+                            center = androidx.compose.ui.geometry.Offset(14f, 14f),
+                            radius = 50f,
+                        ),
+                        shape = CircleShape,
+                    ),
             )
         }
     }
@@ -220,23 +332,23 @@ private fun MenuCard(
             .fillMaxWidth()
             .height(120.dp)
             .clip(RoundedCornerShape(14.dp))
-            .clickable(onClick = onClick)
+            .clickable(onClick = onClick),
     ) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(containerColor)
-                .padding(24.dp)
+                .padding(24.dp),
         ) {
             Column(
                 modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.Center
+                verticalArrangement = Arrangement.Center,
             ) {
                 Text(
                     text = title,
                     color = titleColor,
                     fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
                 )
 
                 Spacer(modifier = Modifier.height(4.dp))
@@ -245,7 +357,7 @@ private fun MenuCard(
                     text = subtitle,
                     color = subtitleColor,
                     fontSize = 13.sp,
-                    fontWeight = FontWeight.Normal
+                    fontWeight = FontWeight.Normal,
                 )
             }
         }

@@ -108,5 +108,12 @@ internal val UiStringsKorean = UiStrings(
     cacheOptTitle = "이번 판 분석 최적화",
     cacheOptTargetLabel = "대상",
     scoreEstimateNotice = "참고 판정입니다. 현재 국면이 불명확해 엔진 추정치를 우선 표시했습니다.",
-    drawLabel = "무승부"
+    drawLabel = "무승부",
+    overwriteWarningTitle = "새 대국 시작",
+    overwriteWarningMessage = "저장된 이전 대국이 존재합니다. 새 대국을 시작하면 이전 대국을 이어받을 수 없게 됩니다. 대국 설정으로 이동하시겠습니까?",
+    legendBest = "최선",
+    legendGood = "좋음",
+    legendInaccuracy = "아쉬움",
+    legendMistake = "실수",
+    legendBlunder = "큰 실수",
 )

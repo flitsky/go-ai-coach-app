@@ -510,7 +510,11 @@ private fun GoCoachScreen(
             handlers = buildGameUiEventHandlers(
                 currentPlayer = { gameState.nextPlayer },
                 isTopMovesEnabled = { topMovesEnabled },
-                startConfiguredGame = controllers.newGameController::startConfiguredGame,
+                startConfiguredGame = {
+                    sessionStore.clear()
+                    savedSessionUiState = savedSessionUiState.dismiss()
+                    controllers.newGameController::startConfiguredGame.invoke()
+                },
                 copyDebugReport = controllers.debugReportController::copy,
                 showEngineBenchmark = controllers.benchmarkController::showResult,
                 requestScoreEstimate = controllers.scoreEstimateController::request,
@@ -685,7 +689,10 @@ private fun GoCoachScreen(
     when (currentDestination) {
         ScreenDestination.Home -> {
             GoCoachHomeScreen(
-                onStartMatchClick = { currentDestination = ScreenDestination.GameSetup },
+                onStartMatchClick = {
+                    dispatch(GameUiEvent.DismissResumePrompt)
+                    currentDestination = ScreenDestination.GameSetup
+                },
                 selectedLanguage = selectedLanguage,
                 onLanguageChange = onLanguageChange,
                 hasResumableSession = savedSessionToPrompt != null,

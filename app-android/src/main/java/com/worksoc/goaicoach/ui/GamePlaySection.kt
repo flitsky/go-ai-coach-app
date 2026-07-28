@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.ui
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,8 +11,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import com.worksoc.goaicoach.application.movereview.MoveReviewTone
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.AlertDialog
@@ -98,17 +102,24 @@ internal fun GamePlaySection(
         isEngineBusy = screenState.engine.isBusy,
     )
 
-    // 대국 현황 패널 & 실시간 타이머 계산
+    val isEvalOn = screenState.actionButtons.firstOrNull { it.role == GameActionButtonRole.Eval }?.isFilled == true
+    val isTopMovesOn = screenState.actionButtons.firstOrNull { it.role == GameActionButtonRole.TopMoves }?.isFilled == true
+    if (isEvalOn || isTopMovesOn) {
+        Spacer(modifier = Modifier.height(4.dp))
+        MoveQualityLegend()
+    }
+
+    // 대국 현황 패널 & 실시간 타이머 계산 (AI 차례 포함 실시간 티킹)
     var now by remember { mutableStateOf(System.currentTimeMillis()) }
-    LaunchedEffect(turnTimeState.currentTurnPlayer, screenState.isGameEnded, screenState.engine.isBlockingBusy) {
-        while (!screenState.isGameEnded) {
-            delay(100)
+    LaunchedEffect(turnTimeState.currentTurnStartedAtMillis, turnTimeState.isPaused, screenState.isGameEnded) {
+        while (!screenState.isGameEnded && !turnTimeState.isPaused) {
+            delay(200)
             now = System.currentTimeMillis()
         }
     }
 
     val currentTurnPlayer = turnTimeState.currentTurnPlayer
-    val elapsedSinceTurnStart = if (!screenState.isGameEnded && !screenState.engine.isBlockingBusy) {
+    val elapsedSinceTurnStart = if (!screenState.isGameEnded) {
         if (turnTimeState.isPaused) {
             (turnTimeState.pausedAtMillis - turnTimeState.currentTurnStartedAtMillis).coerceAtLeast(0L)
         } else {
@@ -163,6 +174,44 @@ internal fun GamePlaySection(
                 }
             }
         )
+    }
+}
+
+/**
+ * 추천수(Top Moves) 또는 형세보기(Eval) 오버레이가 켜져 있을 때 노출되는
+ * 착수 품질 색상 범례. GoBoard의 candidateToneColor와 동일한 색상을 사용한다.
+ */
+@Composable
+private fun MoveQualityLegend() {
+    val strings = LocalUiStrings.current
+    val items = listOf(
+        MoveReviewTone.Excellent to strings.legendBest,
+        MoveReviewTone.Good to strings.legendGood,
+        MoveReviewTone.Inaccuracy to strings.legendInaccuracy,
+        MoveReviewTone.Mistake to strings.legendMistake,
+        MoveReviewTone.Blunder to strings.legendBlunder,
+    )
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+    ) {
+        items.forEach { (tone, label) ->
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(8.dp)
+                        .background(candidateToneColor(tone), CircleShape),
+                )
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.secondary,
+                )
+            }
+        }
     }
 }
 
