@@ -89,8 +89,9 @@ private fun PreparingEngineScreen() {
         colorScheme = lightColorScheme(
             primary = Color(0xFF0E8C72),
             secondary = Color(0xFF6B6459),
-            background = Color(0xFFE7E3DA),
-            surface = Color(0xFFF0EAD9),
+            background = Color(0xFFF6F1E7),
+            surface = Color(0xFFFFFFFF),
+            surfaceVariant = Color(0xFFF0EAD9),
         ),
     ) {
         Surface(

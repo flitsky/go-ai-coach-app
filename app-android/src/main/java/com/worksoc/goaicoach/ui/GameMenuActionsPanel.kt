@@ -1,12 +1,15 @@
 package com.worksoc.goaicoach.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -50,29 +53,29 @@ internal fun ScoringAndBoardSettingsPanel(
     ) {
         Column(
             modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            SettingDropdownRow(
+            SettingChoiceRow(
                 label = strings.scoringRule,
-                selectedText = strings.rulesetLabel(ruleset),
-                enabled = canChangeRuleset,
                 options = Ruleset.entries,
+                selected = ruleset,
+                enabled = canChangeRuleset,
                 optionLabel = { rule -> strings.rulesetLabel(rule) },
                 onSelected = onRulesetChange,
             )
-            SettingDropdownRow(
+            SettingChoiceRow(
                 label = strings.komi,
-                selectedText = strings.komiValueLabel(komi),
-                enabled = canChangeKomi,
                 options = com.worksoc.goaicoach.shared.KomiOptions,
+                selected = komi,
+                enabled = canChangeKomi,
                 optionLabel = { k -> strings.komiValueLabel(k) },
                 onSelected = onKomiChange,
             )
-            SettingDropdownRow(
+            SettingChoiceRow(
                 label = strings.boardSize,
-                selectedText = "${boardSize.value}x${boardSize.value}",
-                enabled = canChangeBoardSize,
                 options = listOf(BoardSize.Nine, BoardSize.Thirteen, BoardSize.Nineteen),
+                selected = boardSize,
+                enabled = canChangeBoardSize,
                 optionLabel = { "${it.value}x${it.value}" },
                 onSelected = onBoardSizeChange,
             )
@@ -124,16 +127,14 @@ private fun HandicapSettingRow(
         )
 
         // - 버튼
-        OutlinedButton(
+        HandicapStepButton(
+            symbol = "−",
+            enabled = enabled && handicapCount > 0,
             onClick = {
                 val prev = if (handicapCount <= 2) 0 else handicapCount - 1
                 onHandicapCountChange(prev)
             },
-            modifier = Modifier.width(42.dp),
-            enabled = enabled && handicapCount > 0,
-        ) {
-            Text("−", style = MaterialTheme.typography.titleMedium)
-        }
+        )
 
         // 중앙 드롭다운 버튼
         SetupDropdown(
@@ -146,16 +147,35 @@ private fun HandicapSettingRow(
         )
 
         // + 버튼
-        OutlinedButton(
+        HandicapStepButton(
+            symbol = "+",
+            enabled = enabled && handicapCount < maxHandicap,
             onClick = {
                 val next = if (handicapCount == 0) 2 else handicapCount + 1
                 onHandicapCountChange(next.coerceAtMost(maxHandicap))
             },
-            modifier = Modifier.width(42.dp),
-            enabled = enabled && handicapCount < maxHandicap,
-        ) {
-            Text("+", style = MaterialTheme.typography.titleMedium)
-        }
+        )
+    }
+}
+
+@Composable
+private fun HandicapStepButton(
+    symbol: String,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .size(36.dp)
+            .background(MaterialTheme.colorScheme.surface, CircleShape)
+            .clickable(enabled = enabled, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = symbol,
+            style = MaterialTheme.typography.titleMedium,
+            color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+        )
     }
 }
 

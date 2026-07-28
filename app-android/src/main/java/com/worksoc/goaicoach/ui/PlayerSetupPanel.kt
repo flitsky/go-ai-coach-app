@@ -1,11 +1,15 @@
 package com.worksoc.goaicoach.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -20,9 +24,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.worksoc.goaicoach.match.AiEngineChoice
+import androidx.compose.ui.unit.sp
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.HumanGameType
 import com.worksoc.goaicoach.match.PlayerSetup
@@ -165,7 +171,7 @@ private fun PlayerSetupSideRow(
 ) {
     val strings = LocalUiStrings.current
     val side = state.side
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -176,82 +182,76 @@ private fun PlayerSetupSideRow(
                 modifier = Modifier.weight(0.38f),
                 fontWeight = FontWeight.SemiBold,
             )
-            SetupDropdown(
-                selectedText = strings.controllerLabel(side.controller),
+            SeatControllerPill(
+                label = strings.controllerLabel(SeatController.Human),
+                selected = side.controller == SeatController.Human,
                 enabled = enabled,
                 modifier = Modifier.weight(1f),
-                options = SeatController.entries,
-                optionLabel = { controller -> strings.controllerLabel(controller) },
-                onSelected = { controller ->
-                    onSideChange(side.copy(controller = controller))
-                },
+                onClick = { onSideChange(side.copy(controller = SeatController.Human)) },
             )
-            when (side.controller) {
-                SeatController.Human -> {
-                    SetupStaticBox(
-                        text = "-",
-                        modifier = Modifier.weight(1.08f),
-                    )
-                    SetupStaticBox(
-                        text = "-",
-                        modifier = Modifier.weight(0.8f),
-                    )
-                }
-
-                SeatController.Ai -> {
-                    SetupDropdown(
-                        selectedText = strings.playLevelGroupLabel(side.playLevel.group),
-                        enabled = enabled,
-                        modifier = Modifier.weight(1.08f),
-                        options = PlayLevelGroup.entries,
-                        optionLabel = { group -> strings.playLevelGroupLabel(group) },
-                        onSelected = { group ->
-                            onSideChange(side.copy(playLevel = side.playLevel.withGroup(group)))
-                        },
-                    )
-                    SetupDropdown(
-                        selectedText = strings.levelLabel(side.playLevel.safeLevel),
-                        enabled = enabled,
-                        modifier = Modifier.weight(0.8f),
-                        options = (1..side.playLevel.group.maxLevel).toList(),
-                        optionLabel = { level -> strings.levelLabel(level) },
-                        onSelected = { level ->
-                            onSideChange(side.copy(playLevel = side.playLevel.withLevel(level)))
-                        },
-                    )
-                }
-            }
+            SeatControllerPill(
+                label = strings.controllerLabel(SeatController.Ai),
+                selected = side.controller == SeatController.Ai,
+                enabled = enabled,
+                modifier = Modifier.weight(1f),
+                onClick = { onSideChange(side.copy(controller = SeatController.Ai)) },
+            )
         }
+        // AI 선택 시에만 노출되는 하위 메뉴 — "AI" 버튼 아래쪽에서 파생된 것처럼 우측 정렬
         if (side.controller == SeatController.Ai) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    text = strings.engine,
-                    modifier = Modifier.weight(0.38f),
-                    color = MaterialTheme.colorScheme.secondary,
-                    style = MaterialTheme.typography.bodySmall,
-                )
+                Spacer(modifier = Modifier.weight(1f))
                 SetupDropdown(
-                    selectedText = state.aiEngineLabel,
+                    selectedText = strings.playLevelGroupLabel(side.playLevel.group),
                     enabled = enabled,
-                    modifier = Modifier.weight(1f),
-                    options = AiEngineChoice.entries,
-                    optionLabel = { it.label },
-                    onSelected = { engineChoice ->
-                        onSideChange(side.copy(aiEngine = engineChoice))
+                    modifier = Modifier.width(112.dp),
+                    options = PlayLevelGroup.entries,
+                    optionLabel = { group -> strings.playLevelGroupLabel(group) },
+                    onSelected = { group ->
+                        onSideChange(side.copy(playLevel = side.playLevel.withGroup(group)))
                     },
                 )
-                Text(
-                    text = state.aiDetailText,
-                    modifier = Modifier.weight(1.88f),
-                    color = MaterialTheme.colorScheme.secondary,
-                    style = MaterialTheme.typography.bodySmall,
+                Spacer(modifier = Modifier.width(8.dp))
+                SetupDropdown(
+                    selectedText = strings.levelLabel(side.playLevel.safeLevel),
+                    enabled = enabled,
+                    modifier = Modifier.width(84.dp),
+                    options = (1..side.playLevel.group.maxLevel).toList(),
+                    optionLabel = { level -> strings.levelLabel(level) },
+                    onSelected = { level ->
+                        onSideChange(side.copy(playLevel = side.playLevel.withLevel(level)))
+                    },
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun SeatControllerPill(
+    label: String,
+    selected: Boolean,
+    enabled: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(18.dp))
+            .background(if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant)
+            .clickable(enabled = enabled, onClick = onClick)
+            .padding(vertical = 10.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = label,
+            color = if (selected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+            fontWeight = FontWeight.Bold,
+            fontSize = 13.sp,
+        )
     }
 }
 

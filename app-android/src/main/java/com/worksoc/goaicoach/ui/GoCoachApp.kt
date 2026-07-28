@@ -121,8 +121,9 @@ internal fun GoCoachApp(
         colorScheme = lightColorScheme(
             primary = Color(0xFF0E8C72),
             secondary = Color(0xFF6B6459),
-            background = Color(0xFFE7E3DA),
-            surface = Color(0xFFF0EAD9),
+            background = Color(0xFFF6F1E7),
+            surface = Color(0xFFFFFFFF),
+            surfaceVariant = Color(0xFFF0EAD9),
         ),
     ) {
         ProvideUiLanguage { selectedLanguage, onLanguageChange ->
@@ -146,6 +147,7 @@ private fun GoCoachScreen(
     val context = LocalContext.current
     var currentDestination by remember { mutableStateOf(ScreenDestination.Home) }
     var showResignConfirmFromBack by remember { mutableStateOf(false) }
+    var showResumeDialog by remember { mutableStateOf(false) }
     val sessionStore: SavedGameStorePort = remember(context) { GameSessionStore(context) }
     val preferencesStore: UserPreferencesStorePort = remember(context) { UserPreferencesStore(context) }
     val benchmarkStore: EngineBenchmarkStorePort = remember(context) { EngineBenchmarkStore(context) }
@@ -625,13 +627,19 @@ private fun GoCoachScreen(
         null
     }
 
-    if (savedSessionToPrompt != null) {
+    if (showResumeDialog && savedSessionToPrompt != null) {
         ResumeSavedSessionDialog(
             snapshot = savedSessionToPrompt,
             engineName = screenState.engine.name,
             strings = LocalUiStrings.current,
-            onResume = { dispatch(GameUiEvent.ResumeSavedSession(savedSessionToPrompt)) },
-            onDismiss = { dispatch(GameUiEvent.DismissResumePrompt) },
+            onResume = {
+                showResumeDialog = false
+                dispatch(GameUiEvent.ResumeSavedSession(savedSessionToPrompt))
+            },
+            onDismiss = {
+                showResumeDialog = false
+                dispatch(GameUiEvent.DismissResumePrompt)
+            },
         )
     }
 
@@ -680,6 +688,8 @@ private fun GoCoachScreen(
                 onStartMatchClick = { currentDestination = ScreenDestination.GameSetup },
                 selectedLanguage = selectedLanguage,
                 onLanguageChange = onLanguageChange,
+                hasResumableSession = savedSessionToPrompt != null,
+                onResumeClick = { showResumeDialog = true },
             )
         }
         ScreenDestination.GameSetup -> {

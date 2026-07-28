@@ -42,6 +42,8 @@ internal fun GoCoachHomeScreen(
     onStartMatchClick: () -> Unit,
     selectedLanguage: UiLanguage,
     onLanguageChange: (UiLanguage) -> Unit,
+    hasResumableSession: Boolean,
+    onResumeClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val strings = LocalUiStrings.current
@@ -91,6 +93,20 @@ internal fun GoCoachHomeScreen(
             )
         }
 
+        // 저장된 대국이 있을 때만 노출되는 인라인 "이전 대국 이어하기" 링크
+        if (hasResumableSession) {
+            Text(
+                text = strings.resumeTitle,
+                color = MaterialTheme.colorScheme.primary,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .padding(bottom = 12.dp)
+                    .clickable(onClick = onResumeClick),
+            )
+        }
+
         // "대국 하기" (Start Match) 카드
         MenuCard(
             title = strings.startMatch,
@@ -107,8 +123,8 @@ internal fun GoCoachHomeScreen(
         MenuCard(
             title = strings.study,
             subtitle = strings.homeStudySubtitle,
-            containerColor = MaterialTheme.colorScheme.surface,
-            titleColor = MaterialTheme.colorScheme.onSurface,
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            titleColor = MaterialTheme.colorScheme.onSurfaceVariant,
             subtitleColor = MaterialTheme.colorScheme.secondary,
             onClick = {
                 Toast.makeText(context, strings.notImplementedMessage, Toast.LENGTH_SHORT).show()
@@ -125,7 +141,7 @@ private fun HomeLanguageQuickToggle(
     Row(
         modifier = Modifier
             .clip(RoundedCornerShape(18.dp))
-            .background(MaterialTheme.colorScheme.surface),
+            .background(MaterialTheme.colorScheme.surfaceVariant),
     ) {
         HomeLanguageQuickToggleOption(
             label = "KO",
@@ -156,7 +172,7 @@ private fun HomeLanguageQuickToggleOption(
     ) {
         Text(
             text = label,
-            color = if (selected) Color.White else MaterialTheme.colorScheme.onSurface,
+            color = if (selected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
         )
