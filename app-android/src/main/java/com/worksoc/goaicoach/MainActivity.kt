@@ -87,10 +87,10 @@ class MainActivity : ComponentActivity() {
 private fun PreparingEngineScreen() {
     MaterialTheme(
         colorScheme = lightColorScheme(
-            primary = Color(0xFF2F6B4F),
-            secondary = Color(0xFF546E7A),
-            background = Color(0xFFF7F4EC),
-            surface = Color(0xFFFFFCF4),
+            primary = Color(0xFF0E8C72),
+            secondary = Color(0xFF6B6459),
+            background = Color(0xFFE7E3DA),
+            surface = Color(0xFFF0EAD9),
         ),
     ) {
         Surface(

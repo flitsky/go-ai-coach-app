@@ -43,6 +43,7 @@ internal fun ProvideUiLanguage(
 internal data class UiStrings(
     val language: UiLanguage,
     val appTitle: String,
+    val homeTagline: String,
     val languageLabel: String,
     val close: String,
     val gameSection: String,
