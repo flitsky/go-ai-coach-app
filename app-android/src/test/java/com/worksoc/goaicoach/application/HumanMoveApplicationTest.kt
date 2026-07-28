@@ -17,6 +17,7 @@ import com.worksoc.goaicoach.shared.AnalysisResult
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.CandidateMove
+import com.worksoc.goaicoach.shared.CandidateMoveSource
 import com.worksoc.goaicoach.shared.DeadStoneCleanupResult
 import com.worksoc.goaicoach.shared.EndgameScoreSource
 import com.worksoc.goaicoach.shared.EngineProfile
@@ -50,6 +51,7 @@ class HumanMoveApplicationTest {
                 CandidateMove(
                     move = Move.Play(StoneColor.Black, coordinate),
                     pointLoss = 0.0,
+                    source = CandidateMoveSource.EngineSearch,
                 ),
             ),
         )

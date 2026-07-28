@@ -2,6 +2,7 @@ package com.worksoc.goaicoach.application.movereview
 
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
+import com.worksoc.goaicoach.shared.CandidateMoveSource
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
 import com.worksoc.goaicoach.shared.pointLossLabel
@@ -48,12 +49,18 @@ internal fun buildMoveReview(
     val matchedCandidate = analysis.candidateAt(play.coordinate)
     if (matchedCandidate == null) {
         return MoveReviewResult(
-            marker = MoveReviewMarker(
-                coordinate = play.coordinate,
-                moveNumber = moveNumber,
-                tone = MoveReviewTone.Unknown,
-            ),
+            marker = null,
             text = "Move review: ${play.coordinate.label(boardSize)} was not legal in the pre-move analysis snapshot.",
+        )
+    }
+
+    // 정책망 추정치(PolicyOnly/PolicyRefine)나 미평가(LegalFallback) 후보는 점수 손실 값이
+    // 불안정하거나 아예 없어, 착수 품질을 오도할 수 있다. 실제 엔진 탐색(EngineSearch) 결과가
+    // 있을 때만 색상 마커를 표시하고, 그렇지 않으면 아무 표시도 하지 않는다.
+    if (matchedCandidate.source != CandidateMoveSource.EngineSearch || matchedCandidate.pointLoss == null) {
+        return MoveReviewResult(
+            marker = null,
+            text = "Move review: ${play.coordinate.label(boardSize)} has no reliable engine evaluation yet.",
         )
     }
 
