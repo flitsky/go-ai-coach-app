@@ -115,4 +115,6 @@ internal val UiStringsJapanese = UiStringsKorean.copy(
     legendInaccuracy = "不正確",
     legendMistake = "悪手",
     legendBlunder = "大悪手",
+    premiumUpsellTitle = "プレミアム機能を有効化",
+    premiumUpsellMessage = "広告を視聴して、今回の対局でプレミアム機能(分析、形勢判断、候補手、待った、着手評価)を利用しますか?",
 )

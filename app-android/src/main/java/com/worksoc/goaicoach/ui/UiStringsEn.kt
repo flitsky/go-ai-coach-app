@@ -116,4 +116,6 @@ internal val UiStringsEnglish = UiStringsKorean.copy(
     legendInaccuracy = "Inaccuracy",
     legendMistake = "Mistake",
     legendBlunder = "Blunder",
+    premiumUpsellTitle = "Activate Premium",
+    premiumUpsellMessage = "Watch an ad to unlock premium features (Analyze, Eval, Top Moves, Undo, Move Review) for this match?",
 )

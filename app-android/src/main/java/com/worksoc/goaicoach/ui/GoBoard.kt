@@ -79,6 +79,7 @@ internal fun GoBoard(
     isEngineBusy: Boolean = false,
     colors: GoBoardColors = GoBoardColors.Default,
 ) {
+    val premium = LocalPremiumUiState.current
     var canvasSize by remember { mutableStateOf(IntSize.Zero) }
     var activityFrame by remember { mutableStateOf(0) }
 
@@ -175,7 +176,7 @@ internal fun GoBoard(
                     )
                 }
 
-                if (uxOptions.showMoveReview) {
+                if (uxOptions.showMoveReview && premium.isActive) {
                     drawMoveReviews(geometry, gameState, moveReviews)
                 }
                 if (uxOptions.showMoveNumbers) {

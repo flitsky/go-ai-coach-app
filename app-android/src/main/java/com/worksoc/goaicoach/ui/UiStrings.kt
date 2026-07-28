@@ -157,6 +157,8 @@ internal data class UiStrings(
     val legendInaccuracy: String,
     val legendMistake: String,
     val legendBlunder: String,
+    val premiumUpsellTitle: String,
+    val premiumUpsellMessage: String,
 ) {
     fun cacheOptBody(initialCount: Int, maxCount: Int, moveCount: Int, targetCount: Int): String =
         when (language) {
@@ -354,7 +356,7 @@ internal data class UiStrings(
     fun rulesetLabel(ruleset: Ruleset): String =
         when (ruleset) {
             Ruleset.Japanese -> when (language) {
-                UiLanguage.Korean -> "집 계가 (영역 계가)"
+                UiLanguage.Korean -> "집 계가 (영역+사석 계가)"
                 UiLanguage.English -> "Territory Scoring"
                 UiLanguage.Japanese -> "地合計算"
                 UiLanguage.ChineseSimplified -> "数目计分"

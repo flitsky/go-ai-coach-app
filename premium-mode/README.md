@@ -131,9 +131,15 @@
 
 | 단계 | 작업 내용 | 상태 |
 | --- | --- | --- |
-| Step 1 | 프리미엄 상태값 관리 인프라 | 대기 |
-| Step 2 | 대국 시작 팝업 (스텁, 광고 없음) | 대기 |
+| Step 1 | 프리미엄 상태값 관리 인프라 | ✅ 완료 (2026-07-28) — `application/premium/PremiumState.kt` + 단위 테스트 |
+| Step 2 | 대국 시작 팝업 (스텁, 광고 없음) | ✅ 완료 (2026-07-28) — 홈 화면 팝업 + 인게임 잠긴 버튼 업셀까지 포함, `make test` 통과 |
 | Step 3 | 광고 노출 기능 연동 (Google) | 대기 |
 | Step 4 | 프리미엄 영구 활성화 아이템 (Google) | 대기 |
+
+### Step 1+2 구현 메모 (2026-07-28)
+- `LocalPremiumUiState`(CompositionLocal, `LocalUiStrings`와 동일 패턴)로 화면 트리 전역에 `isActive`/`activateForMatch`를 공급 — 각 게이팅 지점에 별도 파라미터를 추가하지 않고 `LocalPremiumUiState.current`만 읽으면 되도록 함.
+- 게이팅 대상(분석/형세보기/추천수/무르기/착수평가)은 프리미엄 비활성 시 반투명(alpha 0.5)으로 표시하고, 탭하면 실제 동작 대신 공용 `PremiumUpsellDialog`를 띄움 (기권/통과는 게이팅 없음).
+- `sessionGeneration`(기존 `GameSessionRuntimeState` 필드)을 대국 식별자로 재사용해 "해당 판 1회" 조건을 구현. 1시간 만료는 30초 주기 tick으로 재평가.
+- 아직 구매/광고 SDK가 없으므로 홈 팝업 "예"는 광고 시청 없이 즉시 `PremiumState.adGranted(...)`를 부여하는 스텁 상태.
 
 이 문서는 각 단계 착수/완료 시점마다 위 마일스톤 표의 상태와 관련 섹션을 갱신하며, 완료된 단계도 지우지 않고 이력으로 남깁니다.

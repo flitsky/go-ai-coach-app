@@ -33,6 +33,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
@@ -102,9 +103,10 @@ internal fun GamePlaySection(
         isEngineBusy = screenState.engine.isBusy,
     )
 
-    // 범례는 보드에 실제로 착수 품질 색이 그려지는 조건(GoBoard.kt의 showMoveReview 게이팅)과
-    // 정확히 일치시킨다 — 추천수/형세 활성 여부와는 무관하게 이 토글 하나로만 결정한다.
-    if (screenState.uxOptions.showMoveReview) {
+    // 범례는 보드에 실제로 착수 품질 색이 그려지는 조건(GoBoard.kt의 showMoveReview + 프리미엄
+    // 게이팅)과 정확히 일치시킨다 — 추천수/형세 활성 여부와는 무관하다.
+    val premiumForLegend = LocalPremiumUiState.current
+    if (screenState.uxOptions.showMoveReview && premiumForLegend.isActive) {
         Spacer(modifier = Modifier.height(4.dp))
         MoveQualityLegend()
     }
@@ -222,7 +224,26 @@ private fun GameActionButtons(
     onEvent: (GameUiEvent) -> Unit,
 ) {
     val strings = LocalUiStrings.current
+    val premium = LocalPremiumUiState.current
     var showResignConfirm by remember { mutableStateOf(false) }
+    var showPremiumUpsellDialog by remember { mutableStateOf(false) }
+    val lockedAlpha = if (premium.isActive) 1f else 0.5f
+
+    // 분석/형세보기/추천수/무르기는 프리미엄 전용. 비활성 상태에서는 흐리게 표시하고,
+    // 탭하면 실제 동작 대신 업셀 팝업을 띄운다 (기권/통과는 게이팅 대상이 아님).
+    fun premiumGated(action: () -> Unit) {
+        if (premium.isActive) action() else showPremiumUpsellDialog = true
+    }
+
+    if (showPremiumUpsellDialog) {
+        PremiumUpsellDialog(
+            onConfirm = {
+                showPremiumUpsellDialog = false
+                premium.activateForMatch()
+            },
+            onDismiss = { showPremiumUpsellDialog = false },
+        )
+    }
 
     if (showResignConfirm) {
         AlertDialog(
@@ -259,34 +280,34 @@ private fun GameActionButtons(
             val engineReady = screenState.engine.isReady
             val isLocalTwoPlayer = screenState.matchMode == MatchMode.LocalTwoPlayer
 
-            // 1. "분석" 버튼
+            // 1. "분석" 버튼 (프리미엄 전용)
             val analysisEnabled = engineReady || isLocalTwoPlayer
             ActionButton(
-                onClick = onAnalysisClick,
+                onClick = { premiumGated(onAnalysisClick) },
                 enabled = analysisEnabled,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f).alpha(lockedAlpha),
                 label = strings.analysis,
             )
 
-            // 2. 형세보기 (Eval) 버튼
+            // 2. 형세보기 (Eval) 버튼 (프리미엄 전용)
             val evalAction = screenState.actionButtons.firstOrNull { it.role == GameActionButtonRole.Eval }
             if (evalAction != null) {
                 ToggleActionButton(
                     action = evalAction,
                     label = strings.eval,
-                    onEvent = onEvent,
-                    modifier = Modifier.weight(1f)
+                    onEvent = { event -> premiumGated { onEvent(event) } },
+                    modifier = Modifier.weight(1f).alpha(lockedAlpha)
                 )
             }
 
-            // 3. 추천수 (Top Moves) 버튼
+            // 3. 추천수 (Top Moves) 버튼 (프리미엄 전용)
             val topMovesAction = screenState.actionButtons.firstOrNull { it.role == GameActionButtonRole.TopMoves }
             if (topMovesAction != null) {
                 ToggleActionButton(
                     action = topMovesAction,
                     label = strings.topMoves,
-                    onEvent = onEvent,
-                    modifier = Modifier.weight(1f)
+                    onEvent = { event -> premiumGated { onEvent(event) } },
+                    modifier = Modifier.weight(1f).alpha(lockedAlpha)
                 )
             }
         }
@@ -322,14 +343,14 @@ private fun GameActionButtons(
                 )
             }
 
-            // 3. 무르기 (Undo) 버튼 (우측)
+            // 3. 무르기 (Undo) 버튼 (우측, 프리미엄 전용)
             val undoAction = screenState.actionButtons.firstOrNull { it.role == GameActionButtonRole.Undo }
             if (undoAction != null) {
                 SingleActionButton(
                     action = undoAction,
                     label = strings.undo,
-                    onEvent = onEvent,
-                    modifier = Modifier.weight(1f),
+                    onEvent = { event -> premiumGated { onEvent(event) } },
+                    modifier = Modifier.weight(1f).alpha(lockedAlpha),
                 )
             }
         }

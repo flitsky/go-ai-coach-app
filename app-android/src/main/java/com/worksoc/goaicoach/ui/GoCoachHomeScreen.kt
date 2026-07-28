@@ -66,7 +66,19 @@ internal fun GoCoachHomeScreen(
 ) {
     val strings = LocalUiStrings.current
     val context = LocalContext.current
+    val premium = LocalPremiumUiState.current
     var showOverwriteWarningDialog by remember { mutableStateOf(false) }
+    var showPremiumUpsellDialog by remember { mutableStateOf(false) }
+
+    // 이전 대국 덮어쓰기 확인(있다면) 이후 이 함수를 거쳐야 실제로 대국 설정으로 이동한다.
+    // 이미 프리미엄이면 바로 진행, 아니면 프리미엄 활성화 팝업(Step 2)을 먼저 보여준다.
+    fun proceedToStartMatch() {
+        if (premium.isActive) {
+            onStartMatchClick()
+        } else {
+            showPremiumUpsellDialog = true
+        }
+    }
 
     Column(
         modifier = modifier
@@ -157,7 +169,7 @@ internal fun GoCoachHomeScreen(
                 if (hasResumableSession) {
                     showOverwriteWarningDialog = true
                 } else {
-                    onStartMatchClick()
+                    proceedToStartMatch()
                 }
             },
         )
@@ -187,7 +199,7 @@ internal fun GoCoachHomeScreen(
                 TextButton(
                     onClick = {
                         showOverwriteWarningDialog = false
-                        onStartMatchClick()
+                        proceedToStartMatch()
                     },
                 ) {
                     Text(strings.confirm)
@@ -197,6 +209,22 @@ internal fun GoCoachHomeScreen(
                 TextButton(onClick = { showOverwriteWarningDialog = false }) {
                     Text(strings.cancel)
                 }
+            },
+        )
+    }
+
+    // 프리미엄 미활성 상태에서 대국 시작 시 뜨는 업셀 팝업(Step 2). "예"/"아니오" 모두
+    // 대국 설정으로는 그대로 진행하고, "예"일 때만 이번 대국 한정으로 프리미엄을 활성화한다.
+    if (showPremiumUpsellDialog) {
+        PremiumUpsellDialog(
+            onConfirm = {
+                showPremiumUpsellDialog = false
+                premium.activateForMatch()
+                onStartMatchClick()
+            },
+            onDismiss = {
+                showPremiumUpsellDialog = false
+                onStartMatchClick()
             },
         )
     }

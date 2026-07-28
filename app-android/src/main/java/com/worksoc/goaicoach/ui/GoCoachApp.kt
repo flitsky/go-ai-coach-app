@@ -10,6 +10,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -18,6 +19,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import com.worksoc.goaicoach.application.premium.PremiumState
+import kotlinx.coroutines.delay
 import androidx.compose.ui.platform.LocalContext
 import com.worksoc.goaicoach.application.analysis.AnalysisCacheKey
 import com.worksoc.goaicoach.application.analysis.AnalysisResultCache
@@ -148,6 +151,15 @@ private fun GoCoachScreen(
     var currentDestination by remember { mutableStateOf(ScreenDestination.Home) }
     var showResignConfirmFromBack by remember { mutableStateOf(false) }
     var showResumeDialog by remember { mutableStateOf(false) }
+    var premiumState by remember { mutableStateOf(PremiumState()) }
+    // 1시간 만료 판정을 대국 중에도 주기적으로 재평가하기 위한 tick (30초 간격이면 충분).
+    var premiumClockTickMillis by remember { mutableStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(30_000L)
+            premiumClockTickMillis = System.currentTimeMillis()
+        }
+    }
     val sessionStore: SavedGameStorePort = remember(context) { GameSessionStore(context) }
     val preferencesStore: UserPreferencesStorePort = remember(context) { UserPreferencesStore(context) }
     val benchmarkStore: EngineBenchmarkStorePort = remember(context) { EngineBenchmarkStore(context) }
@@ -687,6 +699,20 @@ private fun GoCoachScreen(
         onConfirm = { enabled -> uxOptions = uxOptions.copy(isDirectPlayEnabled = enabled) }
     )
 
+    val premiumUiState = PremiumUiState(
+        isActive = premiumState.isActive(
+            currentSessionGeneration = runtimeState.sessionGeneration,
+            nowMillis = premiumClockTickMillis,
+        ),
+        activateForMatch = {
+            premiumState = PremiumState.adGranted(
+                sessionGeneration = runtimeState.sessionGeneration,
+                nowMillis = System.currentTimeMillis(),
+            )
+        },
+    )
+
+    CompositionLocalProvider(LocalPremiumUiState provides premiumUiState) {
     when (currentDestination) {
         ScreenDestination.Home -> {
             GoCoachHomeScreen(
@@ -725,6 +751,7 @@ private fun GoCoachScreen(
                 onEvent = ::dispatch,
             )
         }
+    }
     }
 }
 

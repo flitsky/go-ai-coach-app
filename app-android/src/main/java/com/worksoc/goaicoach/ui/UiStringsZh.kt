@@ -114,4 +114,6 @@ internal val UiStringsChineseSimplified = UiStringsKorean.copy(
     legendInaccuracy = "欠佳",
     legendMistake = "失误",
     legendBlunder = "严重失误",
+    premiumUpsellTitle = "启用高级功能",
+    premiumUpsellMessage = "观看广告以在本局中解锁高级功能(分析、形势判断、推荐手、悔棋、着法评价)吗?",
 )

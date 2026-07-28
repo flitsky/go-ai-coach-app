@@ -117,4 +117,6 @@ internal val UiStringsKorean = UiStrings(
     legendInaccuracy = "아쉬움",
     legendMistake = "실수",
     legendBlunder = "큰 실수",
+    premiumUpsellTitle = "프리미엄 기능 활성화",
+    premiumUpsellMessage = "광고를 시청하고 이번 대국에서 프리미엄 기능(분석, 형세 보기, 추천 수, 무르기, 착수 평가)을 사용하시겠습니까?",
 )

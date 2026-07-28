@@ -14,8 +14,13 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.platform.LocalConfiguration
@@ -42,7 +47,20 @@ internal fun KaTrainUxMenuPanel(
     onOptionsChange: (KaTrainUxOptions) -> Unit,
 ) {
     val strings = LocalUiStrings.current
+    val premium = LocalPremiumUiState.current
+    var showPremiumUpsellDialog by remember { mutableStateOf(false) }
     val columnGap = (LocalConfiguration.current.screenWidthDp * 0.05f).dp
+
+    if (showPremiumUpsellDialog) {
+        PremiumUpsellDialog(
+            onConfirm = {
+                showPremiumUpsellDialog = false
+                premium.activateForMatch()
+            },
+            onDismiss = { showPremiumUpsellDialog = false },
+        )
+    }
+
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
@@ -82,11 +100,18 @@ internal fun KaTrainUxMenuPanel(
                 Spacer(modifier = Modifier.width(columnGap))
                 // 착수 평가: 착수한 돌의 품질 색상 표시 여부. 기본 꺼짐 — 사용자가 의도적으로
                 // 켤 때만 노출한다. 향후 평가 신뢰도/방식이 점진적으로 고도화될 예정인 기능.
+                // 프리미엄 전용 — 비활성 상태에서는 흐리게 표시하고 탭하면 업셀 팝업을 띄운다.
                 OptionSwitchCell(
                     label = strings.moveReviewToggle,
-                    checked = options.showMoveReview,
-                    modifier = Modifier.weight(1f),
-                    onCheckedChange = { onOptionsChange(options.copy(showMoveReview = it)) },
+                    checked = options.showMoveReview && premium.isActive,
+                    modifier = Modifier.weight(1f).alpha(if (premium.isActive) 1f else 0.5f),
+                    onCheckedChange = {
+                        if (premium.isActive) {
+                            onOptionsChange(options.copy(showMoveReview = it))
+                        } else {
+                            showPremiumUpsellDialog = true
+                        }
+                    },
                 )
             }
             Row(
