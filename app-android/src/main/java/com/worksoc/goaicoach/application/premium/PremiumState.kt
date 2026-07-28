@@ -37,10 +37,29 @@ internal data class PremiumState(
             PremiumSource.None -> false
         }
 
+    /**
+     * 아직 세션에 묶이지 않은(홈 화면에서 활성화된) [AdGrant]를, 실제로 대국이 시작되어
+     * 배정된 [sessionGeneration]으로 확정한다. 이미 세션이 배정돼 있으면 그대로 둔다
+     * (이 경우 새 대국이 또 시작된 것이므로, 굳이 덮어쓰지 않아도 세션 불일치로 자연히 만료된다).
+     */
+    fun bindToSessionIfPending(sessionGeneration: Long): PremiumState =
+        if (source == PremiumSource.AdGrant && adGrantSessionGeneration == null) {
+            copy(adGrantSessionGeneration = sessionGeneration)
+        } else {
+            this
+        }
+
     companion object {
         const val AdGrantDurationMillis: Long = 60L * 60L * 1000L
 
-        fun adGranted(sessionGeneration: Long, nowMillis: Long): PremiumState =
+        /**
+         * [sessionGeneration]이 `null`이면 "아직 어느 대국에도 묶이지 않음"을 뜻한다 (예: 대국이
+         * 시작되기 전 홈 화면에서 활성화한 경우). 이 경우 [isActive]는 항상 false를 반환하다가,
+         * 실제 대국이 시작되어 세션이 배정되는 시점에 상위 레이어(GoCoachApp)가 그 세션 번호로
+         * 다시 바인딩해야 한다 — 그렇지 않으면 활성화 시점의 stale한 세션 번호에 묶여 정작
+         * 시작된 대국에서는 무효 판정될 수 있다.
+         */
+        fun adGranted(sessionGeneration: Long?, nowMillis: Long): PremiumState =
             PremiumState(
                 source = PremiumSource.AdGrant,
                 adGrantSessionGeneration = sessionGeneration,

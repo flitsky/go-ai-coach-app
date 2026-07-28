@@ -139,7 +139,13 @@
 ### Step 1+2 구현 메모 (2026-07-28)
 - `LocalPremiumUiState`(CompositionLocal, `LocalUiStrings`와 동일 패턴)로 화면 트리 전역에 `isActive`/`activateForMatch`를 공급 — 각 게이팅 지점에 별도 파라미터를 추가하지 않고 `LocalPremiumUiState.current`만 읽으면 되도록 함.
 - 게이팅 대상(분석/형세보기/추천수/무르기/착수평가)은 프리미엄 비활성 시 반투명(alpha 0.5)으로 표시하고, 탭하면 실제 동작 대신 공용 `PremiumUpsellDialog`를 띄움 (기권/통과는 게이팅 없음).
-- `sessionGeneration`(기존 `GameSessionRuntimeState` 필드)을 대국 식별자로 재사용해 "해당 판 1회" 조건을 구현. 1시간 만료는 30초 주기 tick으로 재평가.
+- `sessionGeneration`(기존 `GameSessionRuntimeState` 필드)을 대국 식별자로 재사용해 "해당 판 1회" 조건을 구현.
 - 아직 구매/광고 SDK가 없으므로 홈 팝업 "예"는 광고 시청 없이 즉시 `PremiumState.adGranted(...)`를 부여하는 스텁 상태.
+
+### 버그 수정: 홈 화면 활성화가 인게임에 반영되지 않던 문제 (2026-07-28)
+- **증상**: 홈 화면 "대국 하기" 팝업에서 프리미엄을 활성화해도, 실제 대국 화면에 진입하면 프리미엄 버튼들이 계속 비활성 상태로 보임.
+- **원인**: `activateForMatch()`가 팝업 시점(아직 대국 시작 전)의 `sessionGeneration`을 즉시 캡처했는데, 실제 대국은 `GameSetupLobby`의 "대국 시작하기" 버튼이 `GameUiEvent.StartConfiguredGame`을 디스패치할 때 비로소 `sessionGeneration`이 증가하며 시작됨 — 그 결과 홈에서 부여받은 프리미엄이 다른(예전) 세션 번호에 묶여, 정작 시작된 대국에서는 즉시 무효 판정되고 있었음.
+- **수정**: `PremiumState.adGranted(sessionGeneration: Long?, ...)`가 세션을 `null`(미확정)로도 받을 수 있게 하고, `bindToSessionIfPending(sessionGeneration)`으로 나중에 확정하는 2단계 바인딩을 도입. `activateForMatch`는 이미 인게임(잠긴 버튼에서 활성화한 경우)이면 현재 세션에 즉시 묶고, 아직 홈 화면(대국 시작 전)이면 세션을 `null`로 남겨둠. `GoCoachApp.kt`에 추가한 `LaunchedEffect(runtimeState.sessionGeneration) { premiumState = premiumState.bindToSessionIfPending(...) }`가 실제 대국이 시작되어 세션이 배정되는 순간 그 번호로 확정.
+- **부수 변경**: 이 수정으로 `GoCoachApp.kt`의 Compose 상태 훅 개수가 `LayeringContractTest`의 `stateHookBudget`(47) 한도를 넘어서게 되어, 기존의 30초 주기 tick(`premiumClockTickMillis` + 전용 `LaunchedEffect`)을 제거하고 `isActive` 판정 시각을 매 재구성 시점의 `System.currentTimeMillis()`로 직접 평가하도록 변경. 대국 중에는 착수/AI 응답 등으로 재구성이 충분히 자주 일어나 1시간 만료 판정에 실질적 지장은 없으나, 전용 타이머 대비 "정확히 몇 초 이내 재평가"라는 보장은 없어짐 — 트레이드오프로 남겨둠.
 
 이 문서는 각 단계 착수/완료 시점마다 위 마일스톤 표의 상태와 관련 섹션을 갱신하며, 완료된 단계도 지우지 않고 이력으로 남깁니다.

@@ -20,7 +20,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.worksoc.goaicoach.application.premium.PremiumState
-import kotlinx.coroutines.delay
 import androidx.compose.ui.platform.LocalContext
 import com.worksoc.goaicoach.application.analysis.AnalysisCacheKey
 import com.worksoc.goaicoach.application.analysis.AnalysisResultCache
@@ -152,14 +151,6 @@ private fun GoCoachScreen(
     var showResignConfirmFromBack by remember { mutableStateOf(false) }
     var showResumeDialog by remember { mutableStateOf(false) }
     var premiumState by remember { mutableStateOf(PremiumState()) }
-    // 1시간 만료 판정을 대국 중에도 주기적으로 재평가하기 위한 tick (30초 간격이면 충분).
-    var premiumClockTickMillis by remember { mutableStateOf(System.currentTimeMillis()) }
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(30_000L)
-            premiumClockTickMillis = System.currentTimeMillis()
-        }
-    }
     val sessionStore: SavedGameStorePort = remember(context) { GameSessionStore(context) }
     val preferencesStore: UserPreferencesStorePort = remember(context) { UserPreferencesStore(context) }
     val benchmarkStore: EngineBenchmarkStorePort = remember(context) { EngineBenchmarkStore(context) }
@@ -702,15 +693,42 @@ private fun GoCoachScreen(
     val premiumUiState = PremiumUiState(
         isActive = premiumState.isActive(
             currentSessionGeneration = runtimeState.sessionGeneration,
-            nowMillis = premiumClockTickMillis,
+            // 별도 tick 없이 재구성될 때마다 현재 시각으로 평가한다 — 대국 중에는 착수/AI
+            // 응답 등으로 이 컴포저블이 충분히 자주 재구성되므로 1시간 만료 판정에 문제없다.
+            nowMillis = System.currentTimeMillis(),
         ),
         activateForMatch = {
+            // 이미 대국 중(인게임 잠긴 버튼에서 활성화)이면 현재 세션에 바로 묶고,
+            // 아직 대국 시작 전(홈 화면 팝업)이면 어느 세션에도 묶지 않은 채로 둔다 —
+            // 실제 대국이 시작되는 시점(sessionGeneration 변경)에 아래 effect가
+            // 그때 배정된 세션 번호로 확정한다. 홈 화면에서 바로 현재 sessionGeneration에
+            // 묶어버리면, 그 뒤에 실제로 시작되는 대국은 다른(증가된) 세션 번호를 받아서
+            // 방금 활성화한 프리미엄이 곧바로 무효 판정되는 문제가 있었다.
             premiumState = PremiumState.adGranted(
-                sessionGeneration = runtimeState.sessionGeneration,
+                sessionGeneration = if (currentDestination == ScreenDestination.InGame) {
+                    runtimeState.sessionGeneration
+                } else {
+                    null
+                },
                 nowMillis = System.currentTimeMillis(),
             )
         },
     )
+
+    // 홈 화면에서 활성화되어 아직 세션에 묶이지 않은 프리미엄을, 실제 대국이 시작되어
+    // sessionGeneration이 배정/변경되는 시점에 그 세션으로 확정한다.
+    LaunchedEffect(runtimeState.sessionGeneration) {
+        premiumState = premiumState.bindToSessionIfPending(runtimeState.sessionGeneration)
+    }
+
+    // 프리미엄이 비활성 상태가 될 때(활성화 안 함 선택, 만료, 새 대국 등) 형세보기/추천수의
+    // "켜짐" 상태값 자체를 꺼서, 버튼만 잠기고 기능은 이전 값대로 계속 동작하는 걸 방지한다.
+    LaunchedEffect(premiumUiState.isActive) {
+        if (!premiumUiState.isActive) {
+            uxOptions = uxOptions.copy(showOwnershipOverlay = false)
+            controllers.topMovesController.hide()
+        }
+    }
 
     CompositionLocalProvider(LocalPremiumUiState provides premiumUiState) {
     when (currentDestination) {

@@ -148,10 +148,12 @@ internal fun GoBoard(
                 if (uxOptions.showCoordinates) {
                     drawBoardCoordinates(geometry, gameState.boardSize)
                 }
-                if (ownershipEstimate != null) {
+                if (ownershipEstimate != null && premium.isActive) {
                     drawOwnershipOverlay(geometry, gameState, ownershipEstimate)
                 }
-                drawCandidateMoves(geometry, gameState, candidateMoves)
+                if (premium.isActive) {
+                    drawCandidateMoves(geometry, gameState, candidateMoves)
+                }
 
                 for ((coordinate, stone) in gameState.stones) {
                     drawStone(geometry.pointFor(coordinate), geometry.spacing * 0.42f, stone, isGameEnded)
