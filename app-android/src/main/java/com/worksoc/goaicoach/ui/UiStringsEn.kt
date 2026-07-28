@@ -26,6 +26,7 @@ internal val UiStringsEnglish = UiStringsKorean.copy(
     coordinates = "Coords",
     moveNumbers = "Move nums",
     lastMoveRing = "Move mark",
+    moveReviewToggle = "Move review",
     turnPrefix = "Turn",
     movesPrefix = "Moves",
     capturesPrefix = "Captures",

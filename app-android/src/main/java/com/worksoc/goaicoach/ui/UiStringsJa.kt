@@ -26,6 +26,7 @@ internal val UiStringsJapanese = UiStringsKorean.copy(
     coordinates = "座標",
     moveNumbers = "手数番号",
     lastMoveRing = "着手表示",
+    moveReviewToggle = "着手評価",
     turnPrefix = "手番",
     movesPrefix = "手数",
     capturesPrefix = "アゲハマ",

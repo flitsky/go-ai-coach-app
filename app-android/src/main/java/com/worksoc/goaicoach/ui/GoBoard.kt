@@ -174,15 +174,10 @@ internal fun GoBoard(
                         style = Stroke(width = 3.5f),
                     )
                 }
-                if (lastMove != null && !uxOptions.showMoveNumbers) {
-                    drawCircle(
-                        color = colors.lastMoveMark,
-                        radius = geometry.spacing * 0.12f,
-                        center = geometry.pointFor(lastMove.coordinate),
-                    )
-                }
 
-                drawMoveReviews(geometry, gameState, moveReviews)
+                if (uxOptions.showMoveReview) {
+                    drawMoveReviews(geometry, gameState, moveReviews)
+                }
                 if (uxOptions.showMoveNumbers) {
                     drawMoveNumbers(geometry, gameState)
                 }

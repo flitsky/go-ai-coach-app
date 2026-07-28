@@ -9,6 +9,7 @@ internal fun UserPreferencesSnapshot.toKaTrainUxOptions(): KaTrainUxOptions =
         showLastMoveRing = showLastMoveRing,
         showOwnershipOverlay = showOwnershipOverlay,
         isDirectPlayEnabled = isDirectPlayEnabled,
+        showMoveReview = showMoveReview,
     )
 
 /**

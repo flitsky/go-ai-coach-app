@@ -68,6 +68,7 @@ internal fun buildUserPreferencesSnapshot(
     autoPlayDelaySetting: AutoPlayDelaySetting,
     searchTimeSettings: SearchTimeSettings = SearchTimeSettings(),
     isDirectPlayEnabled: Boolean = true,
+    showMoveReview: Boolean = false,
 ): UserPreferencesSnapshot =
     buildGameSettings(
         boardSize = boardSize,
@@ -83,6 +84,7 @@ internal fun buildUserPreferencesSnapshot(
         showLastMoveRing = showLastMoveRing,
         showOwnershipOverlay = showOwnershipOverlay,
         isDirectPlayEnabled = isDirectPlayEnabled,
+        showMoveReview = showMoveReview,
     )
 
 internal fun buildUserPreferencesSnapshot(
@@ -93,6 +95,7 @@ internal fun buildUserPreferencesSnapshot(
     showLastMoveRing: Boolean,
     showOwnershipOverlay: Boolean,
     isDirectPlayEnabled: Boolean = true,
+    showMoveReview: Boolean = false,
 ): UserPreferencesSnapshot =
     buildUserPreferencesSnapshot(
         playerSetup = settingsState.playerSetup,
@@ -107,6 +110,7 @@ internal fun buildUserPreferencesSnapshot(
         autoPlayDelaySetting = settingsState.autoPlayDelaySetting,
         searchTimeSettings = settingsState.searchTimeSettings,
         isDirectPlayEnabled = isDirectPlayEnabled,
+        showMoveReview = showMoveReview,
     )
 
 internal fun buildGameSettings(
@@ -143,6 +147,7 @@ private fun GameSettings.toUserPreferencesSnapshot(
     showLastMoveRing: Boolean,
     showOwnershipOverlay: Boolean,
     isDirectPlayEnabled: Boolean,
+    showMoveReview: Boolean,
 ): UserPreferencesSnapshot =
     UserPreferencesSnapshot(
         boardSize = boardSize,
@@ -157,4 +162,5 @@ private fun GameSettings.toUserPreferencesSnapshot(
         autoPlayDelayMillis = autoPlayDelaySetting.millis,
         searchTimeSettings = searchTimeSettings,
         isDirectPlayEnabled = isDirectPlayEnabled,
+        showMoveReview = showMoveReview,
     )

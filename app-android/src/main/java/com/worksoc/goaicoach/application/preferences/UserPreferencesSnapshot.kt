@@ -19,4 +19,5 @@ internal data class UserPreferencesSnapshot(
     val autoPlayDelayMillis: Long = AutoPlayDelaySetting.Default.millis,
     val searchTimeSettings: SearchTimeSettings = SearchTimeSettings(),
     val isDirectPlayEnabled: Boolean = true,
+    val showMoveReview: Boolean = false,
 )

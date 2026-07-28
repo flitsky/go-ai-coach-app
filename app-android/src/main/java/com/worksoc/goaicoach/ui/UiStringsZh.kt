@@ -26,6 +26,7 @@ internal val UiStringsChineseSimplified = UiStringsKorean.copy(
     coordinates = "坐标",
     moveNumbers = "手数编号",
     lastMoveRing = "落子标记",
+    moveReviewToggle = "着法评价",
     turnPrefix = "轮到",
     movesPrefix = "手数",
     capturesPrefix = "提子",

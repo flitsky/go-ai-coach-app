@@ -383,6 +383,7 @@ private fun GoCoachScreen(
                 showLastMoveRing = uxOptions.showLastMoveRing,
                 showOwnershipOverlay = uxOptions.showOwnershipOverlay,
                 isDirectPlayEnabled = uxOptions.isDirectPlayEnabled,
+                showMoveReview = uxOptions.showMoveReview,
             ),
             store = preferencesStore,
         )

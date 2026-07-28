@@ -41,6 +41,7 @@ class UserPreferencesCodecTest {
             showOwnershipOverlay = false,
             autoPlayDelayMillis = AutoPlayDelaySetting.Slow.millis,
             searchTimeSettings = SearchTimeSettings(SearchTimeLimit.WithinFiveSeconds),
+            showMoveReview = true,
         )
 
         val encoded = UserPreferencesCodec.encode(snapshot)
@@ -54,6 +55,7 @@ class UserPreferencesCodecTest {
         assertEquals(true, restored?.showMoveNumbers)
         assertEquals(false, restored?.showLastMoveRing)
         assertEquals(false, restored?.showOwnershipOverlay)
+        assertEquals(true, restored?.showMoveReview)
         assertEquals(AutoPlayDelaySetting.Slow.millis, restored?.autoPlayDelayMillis)
         assertEquals(SearchTimeSettings(SearchTimeLimit.WithinFiveSeconds), restored?.searchTimeSettings)
         assertEquals(2, encodedJson.getInt("schema"))
@@ -76,6 +78,7 @@ class UserPreferencesCodecTest {
         assertFalse(restored?.showMoveNumbers ?: true)
         assertTrue(restored?.showLastMoveRing ?: false)
         assertTrue(restored?.showOwnershipOverlay ?: false)
+        assertFalse(restored?.showMoveReview ?: true)
         assertEquals(AutoPlayDelaySetting.Default.millis, restored?.autoPlayDelayMillis)
         assertEquals(SearchTimeSettings(), restored?.searchTimeSettings)
     }

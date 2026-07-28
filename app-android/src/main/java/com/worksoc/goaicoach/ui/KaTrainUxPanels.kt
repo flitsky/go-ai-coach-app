@@ -80,12 +80,26 @@ internal fun KaTrainUxMenuPanel(
                     onCheckedChange = { onOptionsChange(options.copy(showMoveNumbers = it)) },
                 )
                 Spacer(modifier = Modifier.width(columnGap))
+                // 착수 평가: 착수한 돌의 품질 색상 표시 여부. 기본 꺼짐 — 사용자가 의도적으로
+                // 켤 때만 노출한다. 향후 평가 신뢰도/방식이 점진적으로 고도화될 예정인 기능.
+                OptionSwitchCell(
+                    label = strings.moveReviewToggle,
+                    checked = options.showMoveReview,
+                    modifier = Modifier.weight(1f),
+                    onCheckedChange = { onOptionsChange(options.copy(showMoveReview = it)) },
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+            ) {
                 OptionSwitchCell(
                     label = strings.coordinates,
                     checked = options.showCoordinates,
                     modifier = Modifier.weight(1f),
                     onCheckedChange = { onOptionsChange(options.copy(showCoordinates = it)) },
                 )
+                Spacer(modifier = Modifier.width(columnGap))
+                Spacer(modifier = Modifier.weight(1f))
             }
         }
     }

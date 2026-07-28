@@ -27,6 +27,7 @@ internal val UiStringsKorean = UiStrings(
     coordinates = "좌표",
     moveNumbers = "수순 번호",
     lastMoveRing = "착수 표시",
+    moveReviewToggle = "착수 평가",
     turnPrefix = "차례",
     movesPrefix = "수순",
     capturesPrefix = "사석",

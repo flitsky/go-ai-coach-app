@@ -11,6 +11,7 @@ internal data class UserPreferencesAutosaveRequest(
     val showLastMoveRing: Boolean,
     val showOwnershipOverlay: Boolean,
     val isDirectPlayEnabled: Boolean,
+    val showMoveReview: Boolean = false,
 )
 
 internal fun buildUserPreferencesAutosaveSnapshot(
@@ -24,6 +25,7 @@ internal fun buildUserPreferencesAutosaveSnapshot(
         showLastMoveRing = request.showLastMoveRing,
         showOwnershipOverlay = request.showOwnershipOverlay,
         isDirectPlayEnabled = request.isDirectPlayEnabled,
+        showMoveReview = request.showMoveReview,
     )
 
 internal fun runUserPreferencesAutosave(

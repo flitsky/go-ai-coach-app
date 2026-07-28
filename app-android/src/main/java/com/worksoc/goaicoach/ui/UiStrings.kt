@@ -67,6 +67,7 @@ internal data class UiStrings(
     val coordinates: String,
     val moveNumbers: String,
     val lastMoveRing: String,
+    val moveReviewToggle: String,
     val turnPrefix: String,
     val movesPrefix: String,
     val capturesPrefix: String,

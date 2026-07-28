@@ -102,9 +102,9 @@ internal fun GamePlaySection(
         isEngineBusy = screenState.engine.isBusy,
     )
 
-    val isEvalOn = screenState.actionButtons.firstOrNull { it.role == GameActionButtonRole.Eval }?.isFilled == true
-    val isTopMovesOn = screenState.actionButtons.firstOrNull { it.role == GameActionButtonRole.TopMoves }?.isFilled == true
-    if (isEvalOn || isTopMovesOn) {
+    // 범례는 보드에 실제로 착수 품질 색이 그려지는 조건(GoBoard.kt의 showMoveReview 게이팅)과
+    // 정확히 일치시킨다 — 추천수/형세 활성 여부와는 무관하게 이 토글 하나로만 결정한다.
+    if (screenState.uxOptions.showMoveReview) {
         Spacer(modifier = Modifier.height(4.dp))
         MoveQualityLegend()
     }
