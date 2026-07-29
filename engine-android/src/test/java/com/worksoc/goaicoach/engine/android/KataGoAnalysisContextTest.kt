@@ -6,6 +6,7 @@ import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.StoneColor
+import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -46,7 +47,7 @@ class KataGoAnalysisContextTest {
     }
 
     @Test
-    fun gtpCandidateFallbackUsesWhiteTurnForHandicapOpening() {
+    fun gtpCandidateFallbackUsesWhiteTurnForHandicapOpening() = runBlocking {
         val context = KataGoAnalysisContext(
             boardSize = BoardSize.Thirteen,
             ruleset = Ruleset.Japanese,
@@ -55,7 +56,7 @@ class KataGoAnalysisContextTest {
             handicapCount = 2,
         )
         val client = KataGoGtpAnalysisClient(
-            sendCommand = { "" },
+            sendCommand = { _, _ -> "" },
             applySearchLimit = {},
             restoreSearchLimit = { AnalysisLimit() },
             contextProvider = { context },

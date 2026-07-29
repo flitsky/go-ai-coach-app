@@ -11,12 +11,12 @@ import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.allCoordinates
 
 internal class KataGoGtpAnalysisClient(
-    private val sendCommand: (String) -> String,
-    private val applySearchLimit: (AnalysisLimit) -> Unit,
+    private val sendCommand: suspend (command: String, timeoutMillis: Long) -> String,
+    private val applySearchLimit: suspend (AnalysisLimit) -> Unit,
     private val restoreSearchLimit: () -> AnalysisLimit,
     private val contextProvider: () -> KataGoAnalysisContext,
 ) {
-    fun analyze(
+    suspend fun analyze(
         effectiveLimit: AnalysisLimit,
         requestedLimit: AnalysisLimit,
     ): AnalysisResult {
@@ -46,7 +46,7 @@ internal class KataGoGtpAnalysisClient(
         )
     }
 
-    private fun analyzeWithGtp(
+    private suspend fun analyzeWithGtp(
         effectiveLimit: AnalysisLimit,
         requestedLimit: AnalysisLimit,
     ): GtpAnalysisResult =
@@ -54,7 +54,10 @@ internal class KataGoGtpAnalysisClient(
             applySearchLimit(effectiveLimit)
             val context = contextProvider()
             val startNanos = System.nanoTime()
-            val response = sendCommand(KataGoProtocolCommands.searchAnalyze(context.nextPlayer, effectiveLimit))
+            val response = sendCommand(
+                KataGoProtocolCommands.searchAnalyze(context.nextPlayer, effectiveLimit),
+                searchTimeoutMillisFor(effectiveLimit.timeMillis),
+            )
             val elapsedMs = (System.nanoTime() - startNanos) / 1_000_000
             val candidates = KataGoAnalysisParser.attachPointLoss(
                 candidates = KataGoAnalysisParser.parseCandidates(
@@ -73,7 +76,7 @@ internal class KataGoGtpAnalysisClient(
             applySearchLimit(restoreSearchLimit())
         }
 
-    private fun List<CandidateMove>.fillFromPolicyIfNeeded(
+    private suspend fun List<CandidateMove>.fillFromPolicyIfNeeded(
         limit: AnalysisLimit,
     ): List<CandidateMove> {
         val remaining = limit.candidateCount - size
@@ -94,7 +97,7 @@ internal class KataGoGtpAnalysisClient(
             (candidate.move as? Move.Play)?.coordinate
         }
         val policyCandidates = if (limit.includePolicy) {
-            val policyResponse = sendCommand(KataGoProtocolCommands.rawNn())
+            val policyResponse = sendCommand(KataGoProtocolCommands.rawNn(), DefaultCommandTimeoutMillis)
             KataGoAnalysisParser.parsePolicyCandidates(
                 response = policyResponse,
                 player = context.nextPlayer,

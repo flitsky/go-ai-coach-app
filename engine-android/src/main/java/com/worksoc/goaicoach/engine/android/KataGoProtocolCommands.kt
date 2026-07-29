@@ -74,3 +74,16 @@ internal fun Move.toGtpVertex(boardSize: BoardSize): String =
         is Move.Pass -> "pass"
         is Move.Resign -> "resign"
     }
+
+/** Generous ceiling for GTP commands that carry no search-time budget of their own (e.g. play, undo, komi). */
+internal const val DefaultCommandTimeoutMillis: Long = 30_000L
+
+/** Overhead allowance added on top of a configured search-time cap, to absorb KataGo's own bookkeeping beyond its internal cap. */
+private const val SearchTimeoutSlackMillis: Long = 20_000L
+
+/** Ceiling used when the user has chosen an uncapped ("Off") search time, since KataGo is still bounded by maxVisits in that mode. */
+private const val UnboundedSearchTimeoutMillis: Long = 120_000L
+
+/** Derives the client-side wait deadline for a search-bound GTP/JSON call from its configured time cap, if any. */
+internal fun searchTimeoutMillisFor(timeMillis: Long?): Long =
+    timeMillis?.let { it + SearchTimeoutSlackMillis } ?: UnboundedSearchTimeoutMillis

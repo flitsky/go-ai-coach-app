@@ -11,7 +11,7 @@ import com.worksoc.goaicoach.shared.allCoordinates
 import org.json.JSONObject
 
 internal class KataGoJsonPositionAnalysisClient(
-    private val sendAnalysisQuery: (JSONObject) -> String,
+    private val sendAnalysisQuery: suspend (query: JSONObject, timeoutMillis: Long) -> String,
     private val buildAnalysisQuery: (
         limit: AnalysisLimit,
         refineMove: Move.Play?,
@@ -19,13 +19,16 @@ internal class KataGoJsonPositionAnalysisClient(
     ) -> JSONObject,
     private val contextProvider: () -> KataGoAnalysisContext,
 ) {
-    fun analyze(
+    suspend fun analyze(
         effectiveLimit: AnalysisLimit,
         candidateCount: Int,
     ): AnalysisResult {
         val context = contextProvider()
         val startNanos = System.nanoTime()
-        val response = sendAnalysisQuery(buildAnalysisQuery(effectiveLimit, null, null))
+        val response = sendAnalysisQuery(
+            buildAnalysisQuery(effectiveLimit, null, null),
+            searchTimeoutMillisFor(effectiveLimit.timeMillis),
+        )
         val elapsedMs = (System.nanoTime() - startNanos) / 1_000_000
         val rootVisits = KataGoJsonAnalysisParser.parseRootVisits(response)
         val searchedCandidates = KataGoJsonAnalysisParser.parseCandidates(
@@ -91,7 +94,7 @@ internal class KataGoJsonPositionAnalysisClient(
         )
     }
 
-    private fun refineJsonPolicyCandidates(
+    private suspend fun refineJsonPolicyCandidates(
         policyCandidates: List<CandidateMove>,
         referenceScoreLead: Double,
         maxCandidates: Int,
@@ -111,10 +114,12 @@ internal class KataGoJsonPositionAnalysisClient(
                 move to candidate.policyPrior
             }
             .take(refineCount)
+            .toList()
             .mapNotNull { (move, policyPrior) ->
                 runCatching {
                     val response = sendAnalysisQuery(
                         buildAnalysisQuery(JsonRefineLimit, move, false),
+                        searchTimeoutMillisFor(JsonRefineLimit.timeMillis),
                     )
                     KataGoJsonAnalysisParser.parseRefinedCandidate(
                         response = response,
@@ -125,7 +130,6 @@ internal class KataGoJsonPositionAnalysisClient(
                     )
                 }.getOrNull()
             }
-            .toList()
     }
 
     private fun List<CandidateMove>.playCoordinates(): Set<BoardCoordinate> =

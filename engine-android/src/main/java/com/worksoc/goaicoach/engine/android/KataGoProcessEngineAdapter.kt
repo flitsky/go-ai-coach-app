@@ -21,6 +21,12 @@ import java.io.BufferedReader
 import java.io.BufferedWriter
 import java.io.InputStreamReader
 import java.io.OutputStreamWriter
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.runInterruptible
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withTimeout
 import org.json.JSONObject
 
 class KataGoProcessEngineAdapter(
@@ -40,6 +46,13 @@ class KataGoProcessEngineAdapter(
     private var analysisOutput: BufferedReader? = null
     private var analysisQueryCounter: Int = 0
     private val playedMoves = mutableListOf<Move>()
+
+    // Serializes access to each process's stdin/stdout so two concurrent engine
+    // operations (e.g. a background analysis and a human-move sync) can never
+    // interleave reads/writes on the same shared stream and steal each other's
+    // response lines.
+    private val commandMutex = Mutex()
+    private val analysisQueryMutex = Mutex()
 
     override suspend fun initialize(profile: EngineProfile): EngineStatus {
         this.profile = profile.copy(mode = EngineMode.LocalProcess)
@@ -91,7 +104,10 @@ class KataGoProcessEngineAdapter(
 
     override suspend fun genMove(player: StoneColor): MoveResult {
         ensureProcessStarted()
-        val response = sendCommand(KataGoProtocolCommands.genMove(player))
+        val response = sendCommand(
+            command = KataGoProtocolCommands.genMove(player),
+            timeoutMillis = searchTimeoutMillisFor(profile.analysisLimit.timeMillis),
+        )
         val move = response.toMove(player, boardSize)
         playedMoves += move
         if (move is Move.Play || move is Move.Pass) {
@@ -217,7 +233,24 @@ class KataGoProcessEngineAdapter(
         analysisOutput = BufferedReader(InputStreamReader(analysisProcess!!.inputStream))
     }
 
-    private fun sendCommand(command: String): String {
+    private suspend fun sendCommand(
+        command: String,
+        timeoutMillis: Long = DefaultCommandTimeoutMillis,
+    ): String =
+        commandMutex.withLock {
+            try {
+                withTimeout(timeoutMillis) {
+                    runInterruptible(Dispatchers.IO) {
+                        sendCommandBlocking(command)
+                    }
+                }
+            } catch (timeout: TimeoutCancellationException) {
+                restartProcessAfterTimeout()
+                throw timeout
+            }
+        }
+
+    private fun sendCommandBlocking(command: String): String {
         val writer = requireNotNull(input) { "KataGo process input is not initialized" }
         val reader = requireNotNull(output) { "KataGo process output is not initialized" }
         writer.write(command)
@@ -246,7 +279,24 @@ class KataGoProcessEngineAdapter(
             .trim()
     }
 
-    private fun sendAnalysisQuery(query: JSONObject): String {
+    private suspend fun sendAnalysisQuery(
+        query: JSONObject,
+        timeoutMillis: Long = DefaultCommandTimeoutMillis,
+    ): String =
+        analysisQueryMutex.withLock {
+            try {
+                withTimeout(timeoutMillis) {
+                    runInterruptible(Dispatchers.IO) {
+                        sendAnalysisQueryBlocking(query)
+                    }
+                }
+            } catch (timeout: TimeoutCancellationException) {
+                restartAnalysisProcessAfterTimeout()
+                throw timeout
+            }
+        }
+
+    private fun sendAnalysisQueryBlocking(query: JSONObject): String {
         val writer = requireNotNull(analysisInput) { "KataGo analysis process input is not initialized" }
         val reader = requireNotNull(analysisOutput) { "KataGo analysis process output is not initialized" }
         writer.write(query.toString())
@@ -277,17 +327,37 @@ class KataGoProcessEngineAdapter(
         }
     }
 
+    // A GTP round-trip that misses its deadline is treated as a wedged process:
+    // the underlying blocking read is not guaranteed to unblock on coroutine
+    // cancellation alone (java.io streams ignore thread interrupts), so the
+    // stuck reader thread could otherwise keep consuming responses meant for
+    // whatever command runs next. Tearing the process down guarantees the next
+    // sendCommand() starts from a clean process and streams.
+    private fun restartProcessAfterTimeout() {
+        runCatching { process?.destroy() }
+        process = null
+        input = null
+        output = null
+    }
+
+    private fun restartAnalysisProcessAfterTimeout() {
+        runCatching { analysisProcess?.destroy() }
+        analysisProcess = null
+        analysisInput = null
+        analysisOutput = null
+    }
+
     private fun gtpAnalysisClient(): KataGoGtpAnalysisClient =
         KataGoGtpAnalysisClient(
-            sendCommand = ::sendCommand,
-            applySearchLimit = ::applySearchLimit,
+            sendCommand = { command, timeoutMillis -> sendCommand(command, timeoutMillis) },
+            applySearchLimit = { limit -> applySearchLimit(limit) },
             restoreSearchLimit = { profile.analysisLimit },
             contextProvider = ::analysisContext,
         )
 
     private fun jsonPositionAnalysisClient(): KataGoJsonPositionAnalysisClient =
         KataGoJsonPositionAnalysisClient(
-            sendAnalysisQuery = ::sendAnalysisQuery,
+            sendAnalysisQuery = { query, timeoutMillis -> sendAnalysisQuery(query, timeoutMillis) },
             buildAnalysisQuery = { limit, refineMove, includePolicyOverride ->
                 limit.toJsonAnalysisQuery(
                     refineMove = refineMove,
@@ -306,11 +376,11 @@ class KataGoProcessEngineAdapter(
             handicapCount = handicapCount,
         )
 
-    private fun applySearchLimit(limit: AnalysisLimit) {
+    private suspend fun applySearchLimit(limit: AnalysisLimit) {
         // maxTime is process-global in GTP. Passing only the parameter name is
         // KataGo's supported way to remove a prior dynamic override, so an
         // in-app switch from a capped value to Off cannot inherit the old cap.
-        KataGoProtocolCommands.searchLimitCommands(limit).forEach(::sendCommand)
+        KataGoProtocolCommands.searchLimitCommands(limit).forEach { command -> sendCommand(command) }
     }
 
     private fun AnalysisLimit.effectiveAnalysisLimit(): AnalysisLimit {

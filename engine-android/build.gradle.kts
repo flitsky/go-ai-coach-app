@@ -23,6 +23,7 @@ kotlin {
 
 dependencies {
     implementation(project(":shared"))
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
 
     testImplementation(kotlin("test"))
     testImplementation("org.json:json:20240303")
