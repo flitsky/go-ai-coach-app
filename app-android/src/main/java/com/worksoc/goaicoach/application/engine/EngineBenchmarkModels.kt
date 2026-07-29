@@ -242,8 +242,8 @@ internal fun List<Double>.toBenchmarkMetric(visits: Int): EngineBenchmarkMetric 
     return EngineBenchmarkMetric(
         visits = visits,
         samples = size,
-        minMs = minOrNull()!!.roundMillis(),
-        maxMs = maxOrNull()!!.roundMillis(),
+        minMs = min().roundMillis(),
+        maxMs = max().roundMillis(),
         avgMs = average().roundMillis(),
     )
 }

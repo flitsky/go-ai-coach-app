@@ -4,7 +4,6 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
@@ -18,7 +17,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import com.worksoc.goaicoach.application.premium.PremiumState
 import androidx.compose.ui.platform.LocalContext
 import com.worksoc.goaicoach.application.analysis.AnalysisCacheKey
@@ -120,13 +118,7 @@ internal fun GoCoachApp(
     diagnosticEventLog: DiagnosticEventLogPort,
 ) {
     MaterialTheme(
-        colorScheme = lightColorScheme(
-            primary = Color(0xFF0E8C72),
-            secondary = Color(0xFF6B6459),
-            background = Color(0xFFF6F1E7),
-            surface = Color(0xFFFFFFFF),
-            surfaceVariant = Color(0xFFF0EAD9),
-        ),
+        colorScheme = AppLightColorScheme,
     ) {
         ProvideUiLanguage { selectedLanguage, onLanguageChange ->
             Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {

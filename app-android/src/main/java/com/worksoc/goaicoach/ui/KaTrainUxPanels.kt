@@ -21,12 +21,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.presentation.KaTrainUxOptions
-import com.worksoc.goaicoach.shared.StoneColor
 
 @Composable
 internal fun KaTrainUxMenuButton(
@@ -154,39 +152,3 @@ private fun OptionSwitchCell(
     }
 }
 
-@Composable
-internal fun GameStatusStrip(
-    nextPlayer: StoneColor,
-    moveCount: Int,
-    capturedByBlack: Int,
-    capturedByWhite: Int,
-    lastMoveText: String,
-) {
-    val strings = LocalUiStrings.current
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
-        tonalElevation = 1.dp,
-        shadowElevation = 0.dp,
-    ) {
-        Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Text("${strings.turnPrefix} ${strings.colorLabel(nextPlayer)}", fontWeight = FontWeight.SemiBold)
-                Text("${strings.movesPrefix} $moveCount", color = MaterialTheme.colorScheme.secondary)
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Text("${strings.capturesPrefix} ${strings.colorLabel(StoneColor.Black)} $capturedByBlack / ${strings.colorLabel(StoneColor.White)} $capturedByWhite")
-                Text("${strings.lastPrefix} $lastMoveText", color = MaterialTheme.colorScheme.secondary)
-            }
-        }
-    }
-}

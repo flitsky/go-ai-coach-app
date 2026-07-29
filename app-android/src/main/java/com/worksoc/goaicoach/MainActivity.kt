@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -18,7 +17,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
@@ -28,6 +26,7 @@ import com.worksoc.goaicoach.application.engine.LocalEngineSessionClient
 import com.worksoc.goaicoach.engine.EngineBootstrap
 import com.worksoc.goaicoach.engine.createEngineBootstrap
 import com.worksoc.goaicoach.persistence.DiagnosticEventLog
+import com.worksoc.goaicoach.ui.AppLightColorScheme
 import com.worksoc.goaicoach.ui.LocalUiStrings
 import com.worksoc.goaicoach.persistence.JsonPositionAnalysisCacheStore
 import com.worksoc.goaicoach.shared.EngineMode
@@ -86,13 +85,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun PreparingEngineScreen() {
     MaterialTheme(
-        colorScheme = lightColorScheme(
-            primary = Color(0xFF0E8C72),
-            secondary = Color(0xFF6B6459),
-            background = Color(0xFFF6F1E7),
-            surface = Color(0xFFFFFFFF),
-            surfaceVariant = Color(0xFFF0EAD9),
-        ),
+        colorScheme = AppLightColorScheme,
     ) {
         Surface(
             modifier = Modifier.fillMaxSize(),

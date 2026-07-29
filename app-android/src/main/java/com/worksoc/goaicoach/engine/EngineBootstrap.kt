@@ -154,7 +154,8 @@ private fun seedAssetIfMissing(
             temp.delete()
         }
         "Seeded bundled asset $assetPath."
-    } catch (_: IOException) {
+    } catch (e: IOException) {
+        System.err.println("Failed to seed bundled asset $assetPath: ${e.message}")
         null
     }
 }
