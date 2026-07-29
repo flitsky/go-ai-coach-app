@@ -18,12 +18,14 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.worksoc.goaicoach.application.premium.PremiumState
+import com.worksoc.goaicoach.application.premium.PremiumStateStorePort
 import androidx.compose.ui.platform.LocalContext
 import com.worksoc.goaicoach.application.analysis.AnalysisCacheKey
 import com.worksoc.goaicoach.application.analysis.AnalysisResultCache
 import com.worksoc.goaicoach.application.analysis.PositionCacheOptimizationController
 import com.worksoc.goaicoach.application.analysis.UndoAnalysisRestoreCache
 import com.worksoc.goaicoach.application.analysis.toDisplayText
+import com.worksoc.goaicoach.application.auth.AuthClientPort
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnController
 import com.worksoc.goaicoach.application.autoai.applyAutoAiTurnRequestPlan
 import com.worksoc.goaicoach.application.autoai.applyAutoAiTurnScheduleValidationPlan
@@ -82,6 +84,7 @@ import com.worksoc.goaicoach.persistence.EngineBenchmarkStore
 import com.worksoc.goaicoach.persistence.DebugReportMirrorStore
 import com.worksoc.goaicoach.persistence.RuntimeEventLog
 import com.worksoc.goaicoach.persistence.UserPreferencesStore
+import com.worksoc.goaicoach.persistence.PremiumStateStore
 import com.worksoc.goaicoach.presentation.GameUiEvent
 import com.worksoc.goaicoach.presentation.GoCoachScreenStateAssembler
 import com.worksoc.goaicoach.presentation.KaTrainUxOptions
@@ -139,12 +142,25 @@ private fun GoCoachScreen(
 ) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
-    var currentDestination by remember { mutableStateOf(ScreenDestination.Home) }
+    val preferencesStore: UserPreferencesStorePort = remember(context) { UserPreferencesStore(context) }
+    val initialPreferences = remember(preferencesStore) { preferencesStore.load() }
+    // AndroidAuthClient는 내부 상태가 없는 얇은 래퍼라 재구성마다 새로 만들어도 비용/동작
+    // 차이가 없다 — 별도로 캐시해 두지 않고 그대로 둬서 상태 훅 예산을 아낀다.
+    val authClient: AuthClientPort = AndroidAuthClient()
+    // 온보딩을 이미 본 사용자는 바로 홈으로, 아니면 온보딩 화면부터 시작한다 — 별도 훅을
+    // 새로 추가하지 않고 이 초기값 계산식에만 반영한다(이 파일의 상태 훅 예산이 거의
+    // 소진돼 있어, 새 컴포즈 상태 훅을 추가하지 않는 쪽을 우선한다).
+    var currentDestination by remember {
+        mutableStateOf(if (initialPreferences.hasSeenOnboarding) ScreenDestination.Home else ScreenDestination.Onboarding)
+    }
     var showResignConfirmFromBack by remember { mutableStateOf(false) }
     var showResumeDialog by remember { mutableStateOf(false) }
-    var premiumState by remember { mutableStateOf(PremiumState()) }
+    // PremiumStateStore도 AndroidAuthClient와 같은 이유로 remember하지 않는다(내부 상태
+    // 없는 얇은 래퍼, 상태 훅 예산 절약). 백그라운드에서 시스템이 프로세스를 종료했다 재시작해도
+    // (사용자의 명시적 강제 종료와 구분 불가) 활성화 상태가 사라지지 않도록 저장소에서 복원한다.
+    val premiumStateStore: PremiumStateStorePort = PremiumStateStore(context)
+    var premiumState by remember { mutableStateOf(premiumStateStore.load()) }
     val sessionStore: SavedGameStorePort = remember(context) { GameSessionStore(context) }
-    val preferencesStore: UserPreferencesStorePort = remember(context) { UserPreferencesStore(context) }
     val benchmarkStore: EngineBenchmarkStorePort = remember(context) { EngineBenchmarkStore(context) }
     val debugReportMirror: DebugReportMirrorPort = remember(context) { DebugReportMirrorStore(context) }
     val clipboardPort: ClipboardPort = remember(context) { AndroidClipboardPort(context) }
@@ -152,7 +168,6 @@ private fun GoCoachScreen(
     val runtimeEventLog: RuntimeEventLogPort = remember(context) {
         RuntimeEventLog(File(context.filesDir, RuntimeEventLog.FileName))
     }
-    val initialPreferences = remember(preferencesStore) { preferencesStore.load() }
     val defaultPlayLevel = remember { PlayLevelSetting() }
     val initialPlan = remember(initialPreferences, defaultPlayLevel) {
         buildInitialUserPreferencesPlan(
@@ -643,7 +658,7 @@ private fun GoCoachScreen(
         )
     }
 
-    BackHandler(enabled = currentDestination != ScreenDestination.Home) {
+    BackHandler(enabled = currentDestination != ScreenDestination.Home && currentDestination != ScreenDestination.Onboarding) {
         if (currentDestination == ScreenDestination.InGame && !isGameEnded) {
             showResignConfirmFromBack = true
         } else {
@@ -704,6 +719,7 @@ private fun GoCoachScreen(
                 },
                 nowMillis = System.currentTimeMillis(),
             )
+            premiumStateStore.save(premiumState)
         },
     )
 
@@ -711,6 +727,7 @@ private fun GoCoachScreen(
     // sessionGeneration이 배정/변경되는 시점에 그 세션으로 확정한다.
     LaunchedEffect(runtimeState.sessionGeneration) {
         premiumState = premiumState.bindToSessionIfPending(runtimeState.sessionGeneration)
+        premiumStateStore.save(premiumState)
     }
 
     // 프리미엄이 비활성 상태가 될 때(활성화 안 함 선택, 만료, 새 대국 등) 형세보기/추천수의
@@ -724,6 +741,17 @@ private fun GoCoachScreen(
 
     CompositionLocalProvider(LocalPremiumUiState provides premiumUiState) {
     when (currentDestination) {
+        ScreenDestination.Onboarding -> {
+            OnboardingScreen(
+                authClient = authClient,
+                onOnboardingComplete = { didSignIn ->
+                    if (didSignIn) {
+                        preferencesStore.save(initialPreferences.copy(hasSeenOnboarding = true))
+                    }
+                    currentDestination = ScreenDestination.Home
+                },
+            )
+        }
         ScreenDestination.Home -> {
             GoCoachHomeScreen(
                 onStartMatchClick = {
@@ -766,6 +794,7 @@ private fun GoCoachScreen(
 }
 
 internal enum class ScreenDestination {
+    Onboarding,
     Home,
     GameSetup,
     InGame

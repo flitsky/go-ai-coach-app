@@ -159,6 +159,12 @@ internal data class UiStrings(
     val legendBlunder: String,
     val premiumUpsellTitle: String,
     val premiumUpsellMessage: String,
+    val onboardingTitle: String,
+    val onboardingSubtitle: String,
+    val continueWithGoogle: String,
+    val continueWithEmail: String,
+    val continueWithoutAccount: String,
+    val guestConnectionFailedMessage: String,
 ) {
     fun cacheOptBody(initialCount: Int, maxCount: Int, moveCount: Int, targetCount: Int): String =
         when (language) {

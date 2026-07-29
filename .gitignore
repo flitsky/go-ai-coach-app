@@ -17,6 +17,9 @@ captures/
 *.apk
 *.aab
 
+# Firebase — project-specific config, not shared across devices/CI
+app-android/google-services.json
+
 # Native / engine artifacts
 artifacts/engine/
 app-android/src/debug/assets/katago/

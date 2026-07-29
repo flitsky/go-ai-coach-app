@@ -116,4 +116,10 @@ internal val UiStringsChineseSimplified = UiStringsKorean.copy(
     legendBlunder = "严重失误",
     premiumUpsellTitle = "启用高级功能",
     premiumUpsellMessage = "观看广告以在本局中解锁高级功能(分析、形势判断、推荐手、悔棋、着法评价)吗?",
+    onboardingTitle = "欢迎使用 Go AI Coach",
+    onboardingSubtitle = "登录后可在其他设备上继续游玩，也可以现在直接开始。",
+    continueWithGoogle = "使用 Google 继续",
+    continueWithEmail = "使用邮箱继续",
+    continueWithoutAccount = "不使用账号开始",
+    guestConnectionFailedMessage = "连接服务器失败，将以离线模式开始。",
 )

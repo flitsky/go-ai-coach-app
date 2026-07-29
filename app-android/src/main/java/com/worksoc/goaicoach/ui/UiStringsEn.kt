@@ -118,4 +118,10 @@ internal val UiStringsEnglish = UiStringsKorean.copy(
     legendBlunder = "Blunder",
     premiumUpsellTitle = "Activate Premium",
     premiumUpsellMessage = "Watch an ad to unlock premium features (Analyze, Eval, Top Moves, Undo, Move Review) for this match?",
+    onboardingTitle = "Welcome to Go AI Coach",
+    onboardingSubtitle = "Sign in to continue on other devices later, or start right away.",
+    continueWithGoogle = "Continue with Google",
+    continueWithEmail = "Continue with Email",
+    continueWithoutAccount = "Start without an account",
+    guestConnectionFailedMessage = "Couldn't connect to the server. Starting offline.",
 )

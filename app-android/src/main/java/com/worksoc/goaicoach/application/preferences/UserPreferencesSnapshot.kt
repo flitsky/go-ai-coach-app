@@ -20,4 +20,5 @@ internal data class UserPreferencesSnapshot(
     val searchTimeSettings: SearchTimeSettings = SearchTimeSettings(),
     val isDirectPlayEnabled: Boolean = true,
     val showMoveReview: Boolean = false,
+    val hasSeenOnboarding: Boolean = false,
 )

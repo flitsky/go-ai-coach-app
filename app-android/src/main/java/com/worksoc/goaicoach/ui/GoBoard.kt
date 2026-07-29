@@ -110,6 +110,16 @@ internal fun GoBoard(
         ),
         label = "textAlpha"
     )
+    // 마지막 착수 링이 눈에 잘 띄도록 -20%(어둡게)~+20%(밝게)를 0.5초 간격으로 오가는 박동 효과.
+    val lastMovePulse by infiniteTransition.animateFloat(
+        initialValue = -1f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 500, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "lastMovePulse"
+    )
 
     BoxWithConstraints(
         modifier = modifier,
@@ -179,11 +189,25 @@ internal fun GoBoard(
                     } else {
                         null
                     }
+                    // 흑돌 위에서는 어두운 돌 색 때문에 링이 묻혀 보이므로, 흑 착수일 때 기본
+                    // 색 자체를 더 크게 밝힌다. 백돌 위에서도 중립색이 상대적으로 어둡게(검게)
+                    // 도드라져 보여, 흑만큼은 아니지만 소폭 밝혀 대비를 완화한다.
+                    val neutralOrToneColor = reviewTone?.let(::candidateToneColor) ?: colors.lastMoveNeutral
+                    val baseRingColor = if (lastMove.player == StoneColor.Black) {
+                        neutralOrToneColor.brighten(0.68f)
+                    } else {
+                        neutralOrToneColor.brighten(0.15f)
+                    }
+                    val pulsedRingColor = if (lastMovePulse >= 0f) {
+                        baseRingColor.brighten(lastMovePulse * 0.2f)
+                    } else {
+                        baseRingColor.darken(-lastMovePulse * 0.2f)
+                    }
                     drawCircle(
-                        color = reviewTone?.let(::candidateToneColor) ?: colors.lastMoveNeutral,
+                        color = pulsedRingColor,
                         radius = geometry.spacing * 0.48f,
                         center = geometry.pointFor(lastMove.coordinate),
-                        style = Stroke(width = 3.5f),
+                        style = Stroke(width = 5f),
                     )
                 }
 
@@ -471,6 +495,24 @@ private fun Color.darken(): Color =
         red = red * 0.62f,
         green = green * 0.62f,
         blue = blue * 0.62f,
+        alpha = alpha,
+    )
+
+/** [fraction]만큼 흰색 쪽으로 섞어 밝게 만든다 (0f = 원래 색, 1f = 흰색). */
+private fun Color.brighten(fraction: Float): Color =
+    Color(
+        red = red + (1f - red) * fraction,
+        green = green + (1f - green) * fraction,
+        blue = blue + (1f - blue) * fraction,
+        alpha = alpha,
+    )
+
+/** [fraction]만큼 어둡게 만든다 (0f = 원래 색, 1f = 검정). */
+private fun Color.darken(fraction: Float): Color =
+    Color(
+        red = red * (1f - fraction),
+        green = green * (1f - fraction),
+        blue = blue * (1f - fraction),
         alpha = alpha,
     )
 

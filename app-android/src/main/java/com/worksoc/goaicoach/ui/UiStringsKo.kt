@@ -119,4 +119,10 @@ internal val UiStringsKorean = UiStrings(
     legendBlunder = "큰 실수",
     premiumUpsellTitle = "프리미엄 기능 활성화",
     premiumUpsellMessage = "광고를 시청하고 이번 대국에서 프리미엄 기능(분석, 형세 보기, 추천 수, 무르기, 착수 평가)을 사용하시겠습니까?",
+    onboardingTitle = "Go AI Coach에 오신 것을 환영합니다",
+    onboardingSubtitle = "로그인하면 나중에 다른 기기에서도 이어볼 수 있어요. 지금 바로 시작할 수도 있습니다.",
+    continueWithGoogle = "Google로 계속하기",
+    continueWithEmail = "이메일로 계속하기",
+    continueWithoutAccount = "계정 없이 시작하기",
+    guestConnectionFailedMessage = "서버 연결에 실패해 오프라인으로 시작합니다.",
 )

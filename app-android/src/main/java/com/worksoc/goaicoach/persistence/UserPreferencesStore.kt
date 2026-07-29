@@ -52,6 +52,7 @@ internal object UserPreferencesCodec {
             .put("searchTimeSettings", encodeSearchTimeSettings(snapshot.searchTimeSettings))
             .put("isDirectPlayEnabled", snapshot.isDirectPlayEnabled)
             .put("showMoveReview", snapshot.showMoveReview)
+            .put("hasSeenOnboarding", snapshot.hasSeenOnboarding)
             .toString()
 
     fun decode(raw: String): UserPreferencesSnapshot? =
@@ -83,6 +84,7 @@ internal object UserPreferencesCodec {
                 searchTimeSettings = searchTimeSettings,
                 isDirectPlayEnabled = json.optBoolean("isDirectPlayEnabled", true),
                 showMoveReview = json.optBoolean("showMoveReview", false),
+                hasSeenOnboarding = json.optBoolean("hasSeenOnboarding", false),
             )
         }.getOrNull()
 

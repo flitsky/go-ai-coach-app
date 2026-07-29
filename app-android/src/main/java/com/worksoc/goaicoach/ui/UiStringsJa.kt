@@ -117,4 +117,10 @@ internal val UiStringsJapanese = UiStringsKorean.copy(
     legendBlunder = "大悪手",
     premiumUpsellTitle = "プレミアム機能を有効化",
     premiumUpsellMessage = "広告を視聴して、今回の対局でプレミアム機能(分析、形勢判断、候補手、待った、着手評価)を利用しますか?",
+    onboardingTitle = "Go AI Coachへようこそ",
+    onboardingSubtitle = "ログインすると、後で別の端末でも続きから再開できます。今すぐ始めることもできます。",
+    continueWithGoogle = "Googleで続ける",
+    continueWithEmail = "メールで続ける",
+    continueWithoutAccount = "アカウントなしで始める",
+    guestConnectionFailedMessage = "サーバーへの接続に失敗したため、オフラインで開始します。",
 )
