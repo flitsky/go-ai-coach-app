@@ -189,8 +189,29 @@ Core Rules Domain    Engine Core API Domain     (3계층, 2계층)
 - **260729 23h42m** — H-10 완료. `EngineResponsePanel.kt`의 남은 wildcard import(`com.worksoc.goaicoach.shared.*`)를 실제 사용 중인 9개 심볼(`SideAnalysisDebugText`, `StoneColor`, `buildSideAnalysisDebugState`, `extractAiSelectedRank`, `extractScoreLead`, `extractSearchedCount`, `extractVisitDiagnostics`, `formatCandidateLineCompact`, `formatOneDecimal`)의 명시 import로 교체했다. 로직 변경 없음. `rg "import .*\.\*"`가 production 코드 전체에서 0건, `make test` 통과 확인.
 - **260729 23h58m** — H-11 완료. `LayeringContractTest.kt`에 `authAndPremiumApplicationPackagesStayPlatformFree` 테스트를 추가 — `application/auth`·`application/premium`이 `android.`/`androidx.`/`java.`/`org.json.`/`ui.`/`persistence.`/`engine.`를 import하지 않는지 `forbiddenReferenceOffenders`(와일드카드+bare 사용, 정규화된 인라인 참조까지 잡는 기존 탐지기)로 검증한다. `uiAndPresentationDoNotImportRawEngineCoreApi`와 대구를 이루는 스타일로 작성. `make test` 통과(신규 테스트 포함).
 - **260730 00h03m** — M-09 첫 Codex(low) 단위 완료. `premium-mode/README.md`(Step 3~4)와 `auth-onboarding/README.md`(Step 2~4)에 "계층 배치 참고" 표를 추가해, 각 Step의 새 코드가 포트/원시 계층(엔진 2계층 대응)·Middleware 성격(4계층 대응)·App Service(6계층) 중 어디에 속하는지 미리 정리했다. 두 문서의 "결제/데이터 조율" Step(프리미엄 Step 4, 온보딩 Step 4)이 서로 같은 기능을 가리키므로 계층 분류도 일치시켰다. 코드 변경 없음.
+- **260730 00h05m** — M-03 첫 Codex(low) 단위 완료. 9절에 `EngineSessionClient`의 14개 메서드 전체를 원격화 난이도(🟢/🟡/🔴/⚫)로 분류한 체크리스트를 추가했다. 핵심 결론: `startSession`/`startNewGame`의 세션 수명 모델(stateful vs stateless) 결정이 나머지 어려운 항목들의 선행 조건이므로, 다음 단계는 코드가 아니라 그 결정 문서가 되어야 한다고 권고했다. 코드 변경 없음.
+- **M-01/M-02 관련 참고**: 두 항목의 "첫 Codex low 단위"(계약 테스트)는 5절에서 확인했듯 이미 이전에 완료되어 있었다 — 이번 배치에서 새로 한 작업은 없다. 남은 전체 목표(물리적 모듈 이전)는 8.2절의 소규모 배치 원칙에 맞지 않는 더 큰 작업이라, 사용자에게 별도로 확인 후 진행 여부를 결정한다(대화 로그 참고).
 
-## 9. 참고 — 이번 문서가 답하지 않는 것
+## 9. M-03 부록 — `RemoteEngineSessionClient` 메서드 체크리스트 (첫 Codex low 단위)
+
+`EngineSessionClient`(`application/engine/EngineSessionClient.kt`)의 전체 14개 메서드를 원격 구현 난이도 기준으로 분류한다. 기존 `RemotePositionAnalysisGateway`의 설계 원칙("read-only 분석만 원격화하고 genmove/play/undo는 로컬을 그대로 둔다" — 파일 상단 doc comment 원문)을 그대로 승계한다.
+
+| 메서드 | 원격화 난이도 | 판단 근거 |
+| --- | --- | --- |
+| `analyzePosition` | 🟢 이미 구현됨 | `RemotePositionAnalysisGateway`가 정확히 이 메서드에 대응하는 read-only 스파이크. |
+| `positionAnalysisCacheStatsText`, `positionAnalysisCacheQualityFor` | 🟢 쉬움 | 순수 조회/판정 함수, 부작용 없음. 로컬 캐시 상태만 참조하면 원격 세션과 무관하게 동작 가능. |
+| `estimateScoreForState` | 🟡 중간 | 상태를 명시적으로 받는 stateless 호출이라 remote 위임 자체는 어렵지 않지만, `syncFirst` 파라미터가 로컬 엔진 프로세스의 최신 상태 동기화를 전제로 함 — remote에서 "동기화"가 뭘 의미하는지 재정의 필요. |
+| `syncAndEstimateGraphScore`, `configureSyncAndEstimateGraphScore` | 🟡 중간 | 위와 유사 + `EngineProfile`(난이도/탐색 설정) 반영. remote 서버가 세션별 프로필을 어떻게 유지할지 결정 필요. |
+| `startSession`, `startNewGame` | 🔴 어려움 | **세션 수명 관리**의 시작점. remote 서버가 이 세션을 계속 유지해야 하는지(stateful) 매 호출마다 전체 `GameState`를 보내 재구성할지(stateless) 아키텍처 결정이 선행되어야 한다. |
+| `runAutoAiTurn` | 🔴 어려움 | `isolateSearchCache`(탐색 트리 격리) 파라미터가 로컬 프로세스의 `clearSearchCache()` 개념을 전제 — remote에서 이 격리를 어떻게 보장할지 별도 설계 필요. 네트워크 지연 시 AI 턴 타임아웃 정책도 로컬과 다르게 설계해야 한다. |
+| `syncAfterHumanMove` | 🔴 어려움 | 사람 착수 직후 최신성이 중요한 호출 — 네트워크 왕복 지연이 체감 반응성에 직접 영향. `EngineOperationLifecycleController`의 stale-guard가 remote 지연 시나리오까지 커버하는지 재검증 필요. |
+| `resolveEndgameForState` | 🔴 어려움 | doc comment가 이미 "unbounded chief-judge scoring은 명시적 사용자 동의 뒤에서만" 실행하라고 경고 — remote에서는 네트워크 실패/타임아웃 시 종국 판정이 아예 안 나올 수 있어 폴백 설계가 필수. |
+| `undoMove` | 🟡 중간 | 호출 자체는 단순하지만, remote 세션이 `startSession`/`startNewGame`에서 정한 세션 수명 모델에 종속적이라 그 결정이 먼저 나야 설계 가능. |
+| `runStartupBenchmark` | ⚫ 원격화 대상 아님 | **기기 성능 측정**이 목적이므로 remote로 보내면 측정 의미 자체가 없어진다. `EngineSessionCapabilities.supportsDeviceBenchmark`로 이미 로컬/원격을 분기하는 캐패빌리티 플래그가 있음 — remote 구현체는 이 캐패빌리티를 `false`로 두면 된다. |
+
+**결론 및 권장 착수 순서**: `startSession`/`startNewGame`의 세션 수명 모델(stateful vs stateless) 결정이 나머지 🔴 항목 전부의 선행 조건이다. 따라서 M-03의 다음 단계(이 checklist 이후)는 코드가 아니라 "세션 수명 모델 결정 문서" 하나가 되어야 하며, 그 결정이 나기 전까지는 🟢/🟡 항목(캐시 조회, 점수 추정)조차 실제 구현에 착수하지 않는 것을 권장한다 — 세션 모델이 바뀌면 이미 짠 코드의 시그니처가 흔들릴 수 있기 때문이다.
+
+## 10. 참고 — 이번 문서가 답하지 않는 것
 
 - M-01(shared 이전)·M-02(middleware 물리 분리)·M-03(RemoteEngineSessionClient)의 전체 구현은 이번 배치 범위 밖이다. 이 문서는 그 항목들의 **진행 상황만 재확인**했다(5절) — 실제 착수는 별도의, 더 큰 착수 계획서가 필요하다(그때도 이 문서의 타임스탬프 관례를 따른다).
 - 엔진 프로토콜 어댑터 추가 분해(M-06), 캐시/원격 정책 고도화(M-07), release 패키징(M-08)은 이번 재검토에서 우선순위가 낮다고 판단해 다음 배치로 미뤘다.
