@@ -18,7 +18,15 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.presentation.GameScreenState
-import com.worksoc.goaicoach.shared.*
+import com.worksoc.goaicoach.shared.SideAnalysisDebugText
+import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.buildSideAnalysisDebugState
+import com.worksoc.goaicoach.shared.extractAiSelectedRank
+import com.worksoc.goaicoach.shared.extractScoreLead
+import com.worksoc.goaicoach.shared.extractSearchedCount
+import com.worksoc.goaicoach.shared.extractVisitDiagnostics
+import com.worksoc.goaicoach.shared.formatCandidateLineCompact
+import com.worksoc.goaicoach.shared.formatOneDecimal
 import com.worksoc.goaicoach.match.SeatController
 
 @Composable

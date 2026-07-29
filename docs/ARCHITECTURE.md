@@ -95,6 +95,13 @@ Core Rules Domain    Engine Core API Domain
 
 `LayeringContractTest.engineOperationApplicationPoliciesStayPortable`은 `application/` 하위를 재귀적으로 검사하므로, 새로 추가되는 도메인 패키지(`auth`, `premium` 등)도 별도 설정 없이 이 규칙의 적용을 받는다. 즉 "엔진 코어 API처럼 만들어라"는 개별 사례가 아니라, 이 저장소에서 새 외부 연동(결제, 로그인, 알림 등)을 추가할 때 따라야 할 기본 규칙이다.
 
+**어댑터 구현체를 어느 파일에 둘지 정하는 기준**: 위 원칙에 따라 어댑터(구현체)는 `ui/` 또는 `persistence/`에 두지만, 그 안에서도 파일을 나누는 기준이 있다.
+
+- **가벼운 플랫폼 포트**(클립보드 복사, 토스트 알림처럼 외부 SDK 없이 Android 표준 API만 쓰는 것)는 공용 파일 `ui/AndroidPlatformPorts.kt`에 함께 둔다. 예: `AndroidClipboardPort`, `AndroidUserNoticePort`.
+- **외부 SDK에 의존하는 포트**(Firebase, Google Sign-In, Play Billing 등 별도 라이브러리를 끌어오는 것)는 **전용 파일**로 분리한다. 예: `ui/AndroidAuthClient.kt`(Firebase Auth). 이렇게 하면 그 SDK를 쓰지 않는 다른 가벼운 포트 파일까지 무거운 의존성을 끌고 오지 않는다.
+
+향후 Google 로그인, Play Billing 어댑터를 추가할 때도 이 기준(SDK 의존 여부)으로 새 파일을 만들지 `AndroidPlatformPorts.kt`에 합칠지 판단한다.
+
 ## 5계층: Game Domain
 
 **책임**: 대국 자체의 흐름, 참여 주체(흑/백 seat), 턴 권한, AI 캐릭터 레벨링 같은 경기 정책.

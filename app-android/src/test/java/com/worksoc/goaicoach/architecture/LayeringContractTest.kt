@@ -55,6 +55,40 @@ class LayeringContractTest {
     }
 
     @Test
+    fun authAndPremiumApplicationPackagesStayPlatformFree() {
+        // application/auth and application/premium follow the same port/adapter split as the
+        // engine layers (EngineCoreApi vs KataGoProcessEngineAdapter): the port interfaces
+        // (AuthClientPort, PremiumStateStorePort) must stay pure Kotlin, while the real
+        // Android/Firebase/SharedPreferences-backed adapters live in ui/ or persistence/.
+        val sourceRoot = repoRoot()
+            .resolve("app-android/src/main/java/com/worksoc/goaicoach")
+        val checkedDirs = listOf(
+            sourceRoot.resolve("application/auth"),
+            sourceRoot.resolve("application/premium"),
+        )
+        val forbiddenImports = listOf(
+            "import android.",
+            "import androidx.",
+            "import java.",
+            "import org.json.",
+            "import com.worksoc.goaicoach.ui.",
+            "import com.worksoc.goaicoach.persistence.",
+            "import com.worksoc.goaicoach.engine.",
+        )
+
+        val offenders = forbiddenReferenceOffenders(
+            files = ktFilesIn(*checkedDirs.toTypedArray()),
+            forbiddenImports = forbiddenImports,
+        )
+
+        assertTrue(
+            "application/auth and application/premium must stay platform-free ports; " +
+                "put Android/Firebase-specific adapters in ui/ or persistence/ instead:\n${offenders.joinToString("\n")}",
+            offenders.isEmpty(),
+        )
+    }
+
+    @Test
     fun matchPoliciesDoNotImportRawEngineCoreApi() {
         val matchRoot = repoRoot()
             .resolve("app-android/src/main/java/com/worksoc/goaicoach/match")
