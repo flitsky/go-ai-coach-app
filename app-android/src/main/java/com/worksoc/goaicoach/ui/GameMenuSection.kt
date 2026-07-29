@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.worksoc.goaicoach.BuildConfig
 import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.presentation.GameUiEvent
@@ -34,20 +35,20 @@ internal fun GameHeaderSection(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // [1] 좌측 끝: 빌드타임 [260717 15:33]
+        // [1] 좌측 끝: 빌드타임 [260717 15:33] — 개발/QA용 정보라 시각적 비중은 낮춘다.
         Box(
             modifier = Modifier.weight(1f),
             contentAlignment = Alignment.CenterStart
         ) {
             Text(
                 text = formatBuildTime(BuildConfig.BUILD_TIME),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.secondary,
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.6f),
                 maxLines = 1
             )
         }
 
-        // [2] 가운데 정렬: [흑 백 플레이어 정보]
+        // [2] 가운데 정렬: [흑 백 플레이어 정보] — 엔진이 실제로 연산 중일 때 primary 색으로 강조한다.
         Box(
             modifier = Modifier.weight(2f),
             contentAlignment = Alignment.Center
@@ -55,7 +56,11 @@ internal fun GameHeaderSection(
             Text(
                 text = strings.setupSummary(screenState.playerSetup, screenState.engine.name),
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.secondary,
+                color = if (screenState.engine.isBusy) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.secondary
+                },
                 maxLines = 2,
                 textAlign = TextAlign.Center
             )

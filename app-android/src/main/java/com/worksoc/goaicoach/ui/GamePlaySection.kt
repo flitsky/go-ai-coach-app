@@ -73,6 +73,8 @@ internal fun GamePlaySection(
 
     ScoreTimelineGraph(
         snapshots = screenState.score.snapshots,
+        capturedByBlack = screenState.gameState.capturedBy(StoneColor.Black),
+        capturedByWhite = screenState.gameState.capturedBy(StoneColor.White),
         isExpanded = screenState.score.isGraphExpanded,
         onExpandedChange = onScoreGraphExpandedChange,
         modifier = Modifier.fillMaxWidth()

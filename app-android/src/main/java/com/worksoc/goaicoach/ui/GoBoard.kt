@@ -170,8 +170,17 @@ internal fun GoBoard(
 
                 val lastMove = gameState.moves.lastOrNull() as? Move.Play
                 if (lastMove != null && uxOptions.showLastMoveRing) {
+                    // 착수 평가가 켜져 있으면 실제 품질 색으로, 그렇지 않으면 중립색으로 그린다 —
+                    // 항상 고정된 빨강이면 모든 마지막 착수가 나쁜 수처럼 보이는 문제가 있었다.
+                    val reviewTone = if (uxOptions.showMoveReview && premium.isActive) {
+                        moveReviews.firstOrNull { marker ->
+                            marker.coordinate == lastMove.coordinate && gameState.hasCurrentStoneFor(marker)
+                        }?.tone
+                    } else {
+                        null
+                    }
                     drawCircle(
-                        color = colors.lastMoveMark,
+                        color = reviewTone?.let(::candidateToneColor) ?: colors.lastMoveNeutral,
                         radius = geometry.spacing * 0.48f,
                         center = geometry.pointFor(lastMove.coordinate),
                         style = Stroke(width = 3.5f),

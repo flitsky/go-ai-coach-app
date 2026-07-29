@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
@@ -41,9 +40,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -289,9 +291,16 @@ private fun HomeLanguageSelector(
 
 @Composable
 private fun GoStoneLogoBadge() {
+    val stoneSizeDp = 51.dp
+    // 광원 위치/반경을 실제 픽셀 기준으로 계산해, 하드코딩된 px 값이 스톤 크기와 어긋나
+    // 그라데이션이 중앙의 작은 얼룩으로만 보이던 문제(특히 흑돌에서 두드러짐)를 없앤다.
+    val stoneSizePx = with(LocalDensity.current) { stoneSizeDp.toPx() }
+    val highlightCenter = Offset(stoneSizePx * 0.32f, stoneSizePx * 0.28f)
+    val highlightRadius = stoneSizePx * 0.85f
+
     Box(
         modifier = Modifier
-            .size(104.dp)
+            .size(125.dp)
             .shadow(elevation = 8.dp, shape = CircleShape, clip = false)
             .background(Color(0xFFF5F0E6), CircleShape)
             .border(1.dp, Color(0xFFE5DDD0), CircleShape),
@@ -299,22 +308,27 @@ private fun GoStoneLogoBadge() {
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center,
+            // 겹침은 offset()이 아니라 spacedBy(음수)로 표현한다 — offset()은 레이아웃 크기에는
+            // 반영되지 않고 그리기 위치만 바꾸므로, 부모 Box의 가운데 정렬 계산이 겹친 만큼을
+            // 반영하지 못해 전체가 살짝 왼쪽으로 치우쳐 보이는 문제가 있었다.
+            horizontalArrangement = Arrangement.spacedBy((-13).dp),
         ) {
-            // 흑돌 (Black Stone) with 3D Radial Gradient & Shadow
+            // 흑돌 (Black Stone) — 백돌과 동일한 광원 위치에 밝은 하이라이트를 두어
+            // 같은 수준의 입체감/광택이 느껴지도록 4단계 그라데이션을 사용한다.
             Box(
                 modifier = Modifier
-                    .size(46.dp)
+                    .size(stoneSizeDp)
                     .shadow(elevation = 4.dp, shape = CircleShape)
                     .background(
-                        brush = androidx.compose.ui.graphics.Brush.radialGradient(
+                        brush = Brush.radialGradient(
                             colors = listOf(
-                                Color(0xFF5A5A5A),
-                                Color(0xFF222222),
-                                Color(0xFF0A0A0A),
+                                Color(0xFF7A7A7A),
+                                Color(0xFF3D3D3D),
+                                Color(0xFF161616),
+                                Color(0xFF000000),
                             ),
-                            center = androidx.compose.ui.geometry.Offset(14f, 14f),
-                            radius = 50f,
+                            center = highlightCenter,
+                            radius = highlightRadius,
                         ),
                         shape = CircleShape,
                     ),
@@ -323,19 +337,18 @@ private fun GoStoneLogoBadge() {
             // 백돌 (White Stone) with 3D Radial Gradient, Border & Shadow
             Box(
                 modifier = Modifier
-                    .offset(x = (-12).dp)
-                    .size(46.dp)
+                    .size(stoneSizeDp)
                     .shadow(elevation = 4.dp, shape = CircleShape)
                     .border(1.dp, Color(0xFFD3C9B8), CircleShape)
                     .background(
-                        brush = androidx.compose.ui.graphics.Brush.radialGradient(
+                        brush = Brush.radialGradient(
                             colors = listOf(
                                 Color(0xFFFFFFFF),
                                 Color(0xFFF7F3EB),
                                 Color(0xFFD6CCC0),
                             ),
-                            center = androidx.compose.ui.geometry.Offset(14f, 14f),
-                            radius = 50f,
+                            center = highlightCenter,
+                            radius = highlightRadius,
                         ),
                         shape = CircleShape,
                     ),

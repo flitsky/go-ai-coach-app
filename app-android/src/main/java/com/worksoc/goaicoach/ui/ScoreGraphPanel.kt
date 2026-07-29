@@ -5,7 +5,9 @@ import android.graphics.Typeface
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -32,6 +34,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.shared.ScoreSnapshot
+import com.worksoc.goaicoach.shared.StoneColor
 import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.roundToInt
@@ -39,6 +42,8 @@ import kotlin.math.roundToInt
 @Composable
 internal fun ScoreTimelineGraph(
     snapshots: List<ScoreSnapshot>,
+    capturedByBlack: Int,
+    capturedByWhite: Int,
     isExpanded: Boolean,
     onExpandedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
@@ -105,16 +110,29 @@ internal fun ScoreTimelineGraph(
         shadowElevation = 0.dp,
     ) {
         if (heightDp <= 40.dp) {
-            // 접힌 상태: 정중앙에 "스코어 그래프 보기"
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
+            // 접힌 상태: 흑/백 사석 수 + 현재 스코어차를 한눈에 보여준다.
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = strings.showScoreGraph,
+                    text = "${strings.colorLabel(StoneColor.Black)} ${strings.capturesPrefix} $capturedByBlack",
+                    color = textBlueColor,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                Text(
+                    text = currentScoreLabel,
                     color = textBlueColor,
                     style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "${strings.colorLabel(StoneColor.White)} ${strings.capturesPrefix} $capturedByWhite",
+                    color = textBlueColor,
+                    style = MaterialTheme.typography.bodySmall,
                 )
             }
         } else {
