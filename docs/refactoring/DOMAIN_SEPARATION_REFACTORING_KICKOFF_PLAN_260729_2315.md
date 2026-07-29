@@ -190,7 +190,8 @@ Core Rules Domain    Engine Core API Domain     (3계층, 2계층)
 - **260729 23h58m** — H-11 완료. `LayeringContractTest.kt`에 `authAndPremiumApplicationPackagesStayPlatformFree` 테스트를 추가 — `application/auth`·`application/premium`이 `android.`/`androidx.`/`java.`/`org.json.`/`ui.`/`persistence.`/`engine.`를 import하지 않는지 `forbiddenReferenceOffenders`(와일드카드+bare 사용, 정규화된 인라인 참조까지 잡는 기존 탐지기)로 검증한다. `uiAndPresentationDoNotImportRawEngineCoreApi`와 대구를 이루는 스타일로 작성. `make test` 통과(신규 테스트 포함).
 - **260730 00h03m** — M-09 첫 Codex(low) 단위 완료. `premium-mode/README.md`(Step 3~4)와 `auth-onboarding/README.md`(Step 2~4)에 "계층 배치 참고" 표를 추가해, 각 Step의 새 코드가 포트/원시 계층(엔진 2계층 대응)·Middleware 성격(4계층 대응)·App Service(6계층) 중 어디에 속하는지 미리 정리했다. 두 문서의 "결제/데이터 조율" Step(프리미엄 Step 4, 온보딩 Step 4)이 서로 같은 기능을 가리키므로 계층 분류도 일치시켰다. 코드 변경 없음.
 - **260730 00h05m** — M-03 첫 Codex(low) 단위 완료. 9절에 `EngineSessionClient`의 14개 메서드 전체를 원격화 난이도(🟢/🟡/🔴/⚫)로 분류한 체크리스트를 추가했다. 핵심 결론: `startSession`/`startNewGame`의 세션 수명 모델(stateful vs stateless) 결정이 나머지 어려운 항목들의 선행 조건이므로, 다음 단계는 코드가 아니라 그 결정 문서가 되어야 한다고 권고했다. 코드 변경 없음.
-- **M-01/M-02 관련 참고**: 두 항목의 "첫 Codex low 단위"(계약 테스트)는 5절에서 확인했듯 이미 이전에 완료되어 있었다 — 이번 배치에서 새로 한 작업은 없다. 남은 전체 목표(물리적 모듈 이전)는 8.2절의 소규모 배치 원칙에 맞지 않는 더 큰 작업이라, 사용자에게 별도로 확인 후 진행 여부를 결정한다(대화 로그 참고).
+- **M-01/M-02 관련 참고**: 두 항목의 "첫 Codex low 단위"(계약 테스트)는 5절에서 확인했듯 이미 이전에 완료되어 있었다 — 이번 배치에서 새로 한 작업은 없다. 남은 전체 목표(물리적 모듈 이전)는 8.2절의 소규모 배치 원칙에 맞지 않는 더 큰 작업이라 사용자에게 확인했다.
+- **260730 00h08m** — **사용자 결정: M-01/M-02 물리적 이전은 이번 배치에서 보류.** `GameSessionStateHolder`가 앱 전체 세션 상태의 단일 source of truth라 잘못 옮기면 대국 전체가 깨질 위험이 있다는 점, middleware KMP 분리도 여러 파일에 걸친 실제 모듈 구조 변경이라는 점을 고려해 지금은 진행하지 않기로 했다. **이번 배치(260729 23h15m 착수)는 여기서 종료한다** — H-08~H-11, M-09 첫 단위, M-03 첫 단위 완료. M-01/M-02 전체 이전은 iOS/KMP 착수가 실제로 필요해질 때 별도 착수 계획서(이 문서의 타임스탬프 관례를 따르는)로 다시 다룬다.
 
 ## 9. M-03 부록 — `RemoteEngineSessionClient` 메서드 체크리스트 (첫 Codex low 단위)
 
