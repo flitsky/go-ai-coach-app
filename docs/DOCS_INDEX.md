@@ -4,6 +4,7 @@
 갱신: 2026-06-17 — `docs/` 최상위를 현재 제품 운영에 바로 쓰는 핵심 문서 9개로 정리했다. 저장소 루트에는 영문 GitHub 소개 파일인 `README.md`만 남기고, `PRD.md`/`ARCHITECTURE.md`/`ENGINE.md`/`OPERATIONS.md`를 포함한 모든 제품/아키텍처 문서는 `docs/` 아래 한글로 둔다. 리팩토링 전략/진행 로그, 엔진 검증 리뷰, 프로젝트 히스토리, 초기 의사결정 문서는 각각 전용 하위 폴더로 분리했다.  
 갱신: 2026-06-27 — 현재 코드 기준선과 `make test` 결과를 반영해 `ARCHITECTURE.md`를 갱신하고, 오늘 기준 리팩토링 평가/계획 문서 `refactoring/ARCHITECTURE_IMPLEMENTATION_REVIEW_2026-06-27.md`를 추가했다.
 갱신: 2026-06-28 — 줄 수, 패키지 수, remote transport 구현 상태처럼 자주 낡는 현재 지표는 기준일을 붙인 문장으로만 적도록 운영 원칙을 추가했다.
+갱신: 2026-07-29 23:15 — 도메인 분리(엔진 브릿지 vs 조합 레이어) 재검토 착수 계획서 `refactoring/DOMAIN_SEPARATION_REFACTORING_KICKOFF_PLAN_260729_2315.md`를 추가했다. 이 문서부터 "착수 계획서" 유형은 `YYMMDD HHhMMm` 시분 단위 타임스탬프를 파일명에 붙이는 관례를 시작한다(기존 날짜만 붙이는 작업 로그류와 구분).
 
 ## 하위 폴더 한눈에 보기
 
@@ -59,6 +60,7 @@
 | `refactoring/ENGINE_SEARCH_MODE_ROADMAP_2026-06-13.md` | GTP stateful fast path와 JSON position analysis 정책 분리 로드맵, 맥북/폰 벤치마크 원본 데이터 |
 | `refactoring/REFACTORING_COMPLETION_ASSESSMENT_2026-06-13.md` | 계층 분리 완성도 평가, 남은 리스크, 다음 리팩토링 추천 순서 |
 | `refactoring/ARCHITECTURE_IMPLEMENTATION_REVIEW_2026-06-27.md` | 2026-06-27 현재 코드/문서 기준선, 구현 상태 평가, Codex (low)도 수행 가능한 시급/중장기 리팩토링 계획 |
+| `refactoring/DOMAIN_SEPARATION_REFACTORING_KICKOFF_PLAN_260729_2315.md` | 2026-06-27 계획의 H-*/M-* 항목 완료 여부 재확인, 엔진 브릿지(Engine Core API)/조합(Middleware) 계층 구분 재검토, 신규 auth/premium 도메인의 계층 적합성 검증, 다음 배치(H-08~) 계획. "착수 계획서" 시분 타임스탬프 관례의 첫 문서 |
 | `refactoring/ARCHITECTURE_LAYERS_REVIEW_2026-06-14.md` | 7계층 모델 채택 검토본. 원문 초안은 `archive/2026-06-17-architecture-docs-rewrite/`로, 현재 canonical 요약은 `ARCHITECTURE.md` |
 | `refactoring/INTERNAL_GO_APP_PRODUCT_REVIEW_2026-06-15.md` | 외부 바둑 앱 관점 리뷰를 제품 정확성, 엔진 오케스트레이션, KMP 확장성 기준으로 재검토한 내부 판단 |
 | `refactoring/EXTERNAL_REVIEW_*`, `INTERNAL_*_REVIEW_*`, `INTERNAL_ARCHITECT_REVIEW_*` (2026-06-15) | 외부 아키텍처 점수 리뷰 원문과 내부 대응 판단 |

@@ -86,6 +86,15 @@ Core Rules Domain    Engine Core API Domain
 
 캐시 정책, 품질 등급, origin 계층의 상세 운영 규칙은 [ENGINE.md](./ENGINE.md) → `ENGINE_API_CALL_POLICY.md`를 따른다.
 
+### 포트/어댑터 분리 원칙은 엔진에만 적용되지 않는다
+
+2계층(`EngineCoreApi`)과 1계층(`KataGoProcessEngineAdapter` 등 실제 구현체)의 분리, 그리고 4계층(`EngineSessionClient`)이 그 원시 API를 조합하는 구조는 "엔진이라서" 특별히 그렇게 설계한 게 아니라, 이 저장소가 `application/` 전체에 적용하는 표준 패턴이다: **순수 인터페이스(포트)는 `application/<도메인>/`에, 플랫폼 SDK에 의존하는 실제 구현체(어댑터)는 `ui/` 또는 `persistence/`에** 둔다. 예:
+
+- `application/auth/AuthClientPort.kt`(순수 인터페이스, Android/Compose import 없음) ↔ `ui/AndroidAuthClient.kt`(Firebase Auth SDK 구현체)
+- `application/premium/PremiumStatePorts.kt`(순수 인터페이스) ↔ `persistence/PremiumStateStore.kt`(SharedPreferences 구현체)
+
+`LayeringContractTest.engineOperationApplicationPoliciesStayPortable`은 `application/` 하위를 재귀적으로 검사하므로, 새로 추가되는 도메인 패키지(`auth`, `premium` 등)도 별도 설정 없이 이 규칙의 적용을 받는다. 즉 "엔진 코어 API처럼 만들어라"는 개별 사례가 아니라, 이 저장소에서 새 외부 연동(결제, 로그인, 알림 등)을 추가할 때 따라야 할 기본 규칙이다.
+
 ## 5계층: Game Domain
 
 **책임**: 대국 자체의 흐름, 참여 주체(흑/백 seat), 턴 권한, AI 캐릭터 레벨링 같은 경기 정책.
