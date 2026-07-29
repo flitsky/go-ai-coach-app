@@ -49,6 +49,18 @@
 ### (별도 후순위) Apple 로그인
 - iOS 대응 시점에 맞춰 별도 과제로 진행. 이번 문서의 Step 1~4는 모두 Android/Firebase 우선이지만, `AuthState`/`AuthClientPort` 설계 자체는 플랫폼 비종속으로 만들어 두었다 (`premium-mode/README.md`의 `PremiumState` 설계 원칙과 동일).
 
+### 계층 배치 참고 (`docs/ARCHITECTURE.md`의 7계층 기준, 2026-07-29 정리)
+
+Step 1(익명 인증)은 이미 이 배치를 따르고 있다 — `AuthClientPort`가 포트, `AndroidAuthClient`가 어댑터, `GoCoachApp.kt`/`OnboardingScreen.kt`가 App Service 오케스트레이션. Step 2~4의 새 코드도 착수 전에 같은 기준으로 미리 배치한다.
+
+| Step | 작업 | 계층 | 근거 |
+| --- | --- | --- | --- |
+| Step 2 | Google Credential Manager/One Tap SDK 호출(`signInWithGoogle`) | **포트/원시 계층** (엔진 2계층 `EngineCoreApi`에 대응) | `AuthClientPort`에 메서드 추가 + `AndroidAuthClient`(또는 SDK 의존이 무거우면 전용 파일, `docs/ARCHITECTURE.md`의 어댑터 파일 분리 기준 참고)가 실제 SDK를 감싼다. |
+| Step 2 | 익명 UID → 실계정 `linkWithCredential` 승격 판단 | **App Service / Session Orchestration** (6계층) | "언제 승격할지, 승격 후 어느 화면으로 갈지"는 유스케이스 조합이지 원시 SDK 기능이 아니다. |
+| Step 3 | Firebase Email/Password·Email Link SDK 호출 | **포트/원시 계층** | Step 2의 Google 로그인과 동일한 성격 — `AuthClientPort`에 메서드만 추가. |
+| Step 4 | Play Billing `queryPurchases()` 복원 + Firestore 엔타이틀먼트 조율 | **Middleware / Cache Domain 성격** (4계층에 대응) | `premium-mode/README.md`의 Step 4와 동일한 판단(원시 응답을 그대로 믿지 않고 검증/캐시/신뢰도를 조율) — 실제로는 같은 기능이므로 두 문서가 가리키는 계층도 일치해야 한다. |
+| Step 4 | Firestore 기보/설정 동기화(`users/{uid}` 문서 읽기/쓰기) | **Middleware / Cache Domain 성격** | 로컬/원격 데이터 조율이라는 점에서 `PositionAnalysisCacheResolver`와 같은 역할군. `application/` 안에 전용 파일(예: `application/sync/` 신설)로 분리하되 물리적으로 엔진 `middleware/`와는 합치지 않는다. |
+
 ---
 
 ## 3. 사용자가 직접 해야 하는 Firebase 콘솔 설정

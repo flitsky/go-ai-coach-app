@@ -188,6 +188,7 @@ Core Rules Domain    Engine Core API Domain     (3계층, 2계층)
 - **260729 23h31m** — H-09 완료. 같은 절 바로 아래에 "어댑터 구현체를 어느 파일에 둘지 정하는 기준"을 추가 — 가벼운 플랫폼 포트는 `ui/AndroidPlatformPorts.kt`에, 외부 SDK 의존 포트(`AndroidAuthClient.kt` 등)는 전용 파일로 분리한다는 규칙을 명문화했다. 코드 변경 없음.
 - **260729 23h42m** — H-10 완료. `EngineResponsePanel.kt`의 남은 wildcard import(`com.worksoc.goaicoach.shared.*`)를 실제 사용 중인 9개 심볼(`SideAnalysisDebugText`, `StoneColor`, `buildSideAnalysisDebugState`, `extractAiSelectedRank`, `extractScoreLead`, `extractSearchedCount`, `extractVisitDiagnostics`, `formatCandidateLineCompact`, `formatOneDecimal`)의 명시 import로 교체했다. 로직 변경 없음. `rg "import .*\.\*"`가 production 코드 전체에서 0건, `make test` 통과 확인.
 - **260729 23h58m** — H-11 완료. `LayeringContractTest.kt`에 `authAndPremiumApplicationPackagesStayPlatformFree` 테스트를 추가 — `application/auth`·`application/premium`이 `android.`/`androidx.`/`java.`/`org.json.`/`ui.`/`persistence.`/`engine.`를 import하지 않는지 `forbiddenReferenceOffenders`(와일드카드+bare 사용, 정규화된 인라인 참조까지 잡는 기존 탐지기)로 검증한다. `uiAndPresentationDoNotImportRawEngineCoreApi`와 대구를 이루는 스타일로 작성. `make test` 통과(신규 테스트 포함).
+- **260730 00h03m** — M-09 첫 Codex(low) 단위 완료. `premium-mode/README.md`(Step 3~4)와 `auth-onboarding/README.md`(Step 2~4)에 "계층 배치 참고" 표를 추가해, 각 Step의 새 코드가 포트/원시 계층(엔진 2계층 대응)·Middleware 성격(4계층 대응)·App Service(6계층) 중 어디에 속하는지 미리 정리했다. 두 문서의 "결제/데이터 조율" Step(프리미엄 Step 4, 온보딩 Step 4)이 서로 같은 기능을 가리키므로 계층 분류도 일치시켰다. 코드 변경 없음.
 
 ## 9. 참고 — 이번 문서가 답하지 않는 것
 

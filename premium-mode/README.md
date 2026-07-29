@@ -91,6 +91,17 @@
 - **산출물**: 실제 결제 연동. iOS(App Store 결제)는 이번 범위 밖이지만, 마찬가지로 Step 1의 공급자 인터페이스를 따르도록 구현한다.
 - **상태**: 대기
 
+### 계층 배치 참고 (`docs/ARCHITECTURE.md`의 7계층 기준, 2026-07-29 정리)
+
+Step 1~2는 이미 구현됐고(`application/premium/PremiumState.kt`가 순수 포트, `ui/GoCoachApp.kt`가 App Service 오케스트레이션) 이 원칙 그대로다. Step 3~4를 실제로 구현할 때 새 코드가 어느 계층에 속하는지 미리 정리해, 착수 시점에 위치를 재논의하지 않도록 한다.
+
+| Step | 작업 | 계층 | 근거 |
+| --- | --- | --- | --- |
+| Step 3 | AdMob 리워드 광고 SDK 호출 + 시청완료 콜백 판정 | **포트/원시 계층** (엔진의 2계층 `EngineCoreApi`에 대응) | "SDK를 그대로 노출"하는 얇은 경계. `AuthClientPort`와 같은 자리 — `application/premium`에 순수 인터페이스, 실제 AdMob SDK 구현체는 `ui/` 또는 전용 파일. |
+| Step 3 | "광고 시청 완료 → `PremiumState.adGranted(...)` 활성화" 판단 | **App Service / Session Orchestration** (6계층) | 이미 존재하는 `activateForMatch` 람다와 동일한 성격 — UI 유스케이스 조합, 새 계층 아님. |
+| Step 4 | Play Billing 구매 토큰 서버 검증(Play Developer API) + 결과 신뢰도/캐시 정책 | **Middleware / Cache Domain 성격** (4계층에 대응) | 원시 SDK 응답을 그대로 믿지 않고 서버 검증·캐시·신뢰도 등급을 조율한다는 점이 4계층의 `PositionAnalysisCacheResolver`와 같은 역할이다. 다만 물리적으로는 엔진의 `middleware/` 패키지와 합치지 않고 `application/premium/` 안에 별도 파일(예: `PurchaseVerificationGateway`)로 둔다 — 도메인이 다르므로 파일은 분리하되 "역할"만 같은 계층으로 분류한다. |
+| Step 4 | 구매 완료/복원 시 `PremiumState`를 영구 소스로 반영, 팝업 재노출 억제 | **App Service / Session Orchestration** (6계층) | Step 3의 활성화 판단과 동일한 성격. |
+
 ---
 
 ## 5. 기능 게이팅 적용 예상 지점 (참고용 — 실제 구현은 각 단계 진행 시 확정)
