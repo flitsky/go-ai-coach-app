@@ -30,7 +30,8 @@ All product/architecture documentation is written in Korean and lives under [`do
 Quick links to the main documents:
 
 - [`docs/PRD.md`](./docs/PRD.md) — product requirements, target end state, roadmap
-- [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — the 7-layer structure and current package map, with dated current-code metrics
+- [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — the 7-layer (compressible to 4) architecture principles, app-agnostic
+- [`docs/GO_AI_COACH_ARCHITECTURE_ROADMAP.md`](./docs/GO_AI_COACH_ARCHITECTURE_ROADMAP.md) — the current package map for each layer, gaps, and roadmap, with dated current-code metrics
 - [`docs/ENGINE.md`](./docs/ENGINE.md) — the two engine search modes, level→mode mapping, benchmark results
 - [`docs/OPERATIONS.md`](./docs/OPERATIONS.md) — stack decision, score/endgame policy, current menu/options, diagnostic + runtime logging
 

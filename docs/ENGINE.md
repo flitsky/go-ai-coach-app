@@ -5,7 +5,7 @@
 
 ## 한 줄 결론
 
-대국 중 모든 판단(AI 착수, 사람 착수 리뷰, Top Moves 표시)은 같은 개념의 `TurnAnalysis`를 쓴다. UI는 엔진을 직접 호출하지 않고, [ARCHITECTURE.md](./ARCHITECTURE.md)의 4계층(Middleware)이 목적별 분석 예산을 정해 `EngineSessionClient.analyzePosition(state, limit, searchMode)` 뒤로 숨긴다.
+대국 중 모든 판단(AI 착수, 사람 착수 리뷰, Top Moves 표시)은 같은 개념의 `TurnAnalysis`를 쓴다. UI는 엔진을 직접 호출하지 않고, [ARCHITECTURE.md](./ARCHITECTURE.md)의 3계층(Extended API/Service — `EngineSessionClient`가 위치한 계층. 2026-07-30 재정의 이전에는 "4계층 Middleware"로 불렸다)이 목적별 분석 예산을 정해 `EngineSessionClient.analyzePosition(state, limit, searchMode)` 뒤로 숨긴다.
 
 ## 엔진 탐색 방식 2가지
 

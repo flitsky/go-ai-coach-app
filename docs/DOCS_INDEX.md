@@ -5,6 +5,7 @@
 갱신: 2026-06-27 — 현재 코드 기준선과 `make test` 결과를 반영해 `ARCHITECTURE.md`를 갱신하고, 오늘 기준 리팩토링 평가/계획 문서 `refactoring/ARCHITECTURE_IMPLEMENTATION_REVIEW_2026-06-27.md`를 추가했다.
 갱신: 2026-06-28 — 줄 수, 패키지 수, remote transport 구현 상태처럼 자주 낡는 현재 지표는 기준일을 붙인 문장으로만 적도록 운영 원칙을 추가했다.
 갱신: 2026-07-29 23:15 — 도메인 분리(엔진 브릿지 vs 조합 레이어) 재검토 착수 계획서 `refactoring/DOMAIN_SEPARATION_REFACTORING_KICKOFF_PLAN_260729_2315.md`를 추가했다. 이 문서부터 "착수 계획서" 유형은 `YYMMDD HHhMMm` 시분 단위 타임스탬프를 파일명에 붙이는 관례를 시작한다(기존 날짜만 붙이는 작업 로그류와 구분).
+갱신: 2026-07-30 — `ARCHITECTURE.md`를 앱 비종속 원칙 문서로 전면 재작성하고, go-ai-coach 구체 매핑·로드맵을 담은 `GO_AI_COACH_ARCHITECTURE_ROADMAP.md`를 신설했다(핵심 문서 9개 → 10개). `premium-mode/`, `auth-onboarding/`, `ux-improvement/`, `docs/baas_solutions_comparison.md`, `docs/baduk_app_architecture_recommendation.md`를 이 인덱스에 편입했다. 상세는 "문서 이력" 절 참고.
 
 ## 하위 폴더 한눈에 보기
 
@@ -18,14 +19,15 @@
 | `docs/engine-match-logs/`, `docs/engine-benchmark-logs/` | KataGo 레벨 매트릭스·기기 성능 측정 raw/summary 로그 |
 | `docs/error-cases/` | 계가/사석/패스 관련 버그 재현 케이스 |
 
-## docs/ 최상위 핵심 문서 (2026-06-28 기준 9개)
+## docs/ 최상위 핵심 문서 (2026-07-30 기준 10개)
 
 | 문서 | 역할 |
 | --- | --- |
 | `DOCS_INDEX.md` | 이 파일. `docs/` 전체 지도 |
 | `PRD.md` | 제품 요구명세, 목표 최종 상태, 로드맵 |
 | `APP_IA_AND_UI_SPEC.md` | 앱 정보 구조(IA), 화면별 UI/UX 명세 및 다국어 용어 표준 표기 가이드 |
-| `ARCHITECTURE.md` | 7계층 구조 한 장 요약, 계층별 현재 패키지 지도 |
+| `ARCHITECTURE.md` | 7계층(4계층 압축 가능) 원칙 문서 — **앱 비종속**, 특정 제품의 파일/패키지를 담지 않는다 |
+| `GO_AI_COACH_ARCHITECTURE_ROADMAP.md` | `ARCHITECTURE.md`의 원칙을 go-ai-coach에 적용한 파생 문서 — 계층별 현재 파일/패키지 매핑, 갭, 고도화 로드맵 |
 | `ENGINE.md` | 엔진 탐색 모드 2가지·레벨 정책·벤치마크 결론 요약 |
 | `OPERATIONS.md` | 스택/계가 결정, 현재 옵션 화면, 진단/런타임 로그 요약 |
 | `ENGINE_API_CALL_POLICY.md` | 엔진 호출 정책, 턴 분석, 캐시, 후보수 처리 기준 — `ENGINE.md`의 딥다이브 |
@@ -33,11 +35,32 @@
 | `DIAGNOSTIC_EVENT_SCHEMA.md` | 2026-06-28 기준 진단 이벤트 JSONL 스키마 + 런타임 이벤트 로그 20종 — `OPERATIONS.md`의 딥다이브 |
 | `SCORE_AND_ENDGAME_DECISION.md` | 중간 형세, 사석 정리, 종국 계가 정책, 부심/주심 SLA — `OPERATIONS.md`의 딥다이브 |
 
-2026-06-28 기준 `PRD`/`ARCHITECTURE`/`ENGINE`/`OPERATIONS` 4개는 압축된 요약 문서이고, 나머지(`ENGINE_API_CALL_POLICY`/`USER_OPTION_MANUAL`/`DIAGNOSTIC_EVENT_SCHEMA`/`SCORE_AND_ENDGAME_DECISION`)는 그 요약이 가리키는 상세 운영 규칙 문서다.
+2026-07-30 기준 `PRD`/`ARCHITECTURE`/`ENGINE`/`OPERATIONS` 4개는 압축된 요약 문서이고, `GO_AI_COACH_ARCHITECTURE_ROADMAP`은 `ARCHITECTURE`의 파생 문서이며, 나머지(`ENGINE_API_CALL_POLICY`/`USER_OPTION_MANUAL`/`DIAGNOSTIC_EVENT_SCHEMA`/`SCORE_AND_ENDGAME_DECISION`)는 그 요약이 가리키는 상세 운영 규칙 문서다.
+
+### 문서 이력
+
+| 날짜 | 변경 | 이전 내용은 어디서 |
+| --- | --- | --- |
+| 2026-07-30 | `ARCHITECTURE.md`에서 go-ai-coach 파일/패키지 매핑 표를 걷어내고 원칙만 남김 | 이전 버전(계층별 구체 매핑 포함)은 `git log -p -- docs/ARCHITECTURE.md`로 확인. 매핑 내용 자체는 신설된 `GO_AI_COACH_ARCHITECTURE_ROADMAP.md`로 이전(그대로 복사가 아니라 새 7계층 경계에 맞게 재정리) |
+
+이런 식으로 문서를 "재작성"할 때마다(내용을 들어내거나 구조를 바꿀 때) 이 표에 한 줄을 추가한다 — 파일을 지우지 않는다는 원칙과 같은 이유로, git 히스토리를 찾아볼 최소한의 단서(무엇이 언제 어디로 갔는지)를 남기기 위함이다.
+
+## 저장소 루트의 마스터플랜 폴더 (docs/ 밖)
+
+`docs/` 상위 규율(요약/딥다이브 구분, 날짜 표기)과 별개로, 기능별로 계속 갱신되는 "마스터플랜" 문서가 저장소 루트에 따로 있다. 지금까지 `DOCS_INDEX.md`가 이들을 인덱싱하지 않아 파편화의 한 원인이었다 — 2026-07-30부터 여기 편입한다.
+
+| 위치 | 용도 |
+| --- | --- |
+| `premium-mode/README.md` | 프리미엄/수익화 모드 마스터플랜(광고 1시간 활성화, 영구 결제). Step별 진행 로그가 계속 append됨 |
+| `auth-onboarding/README.md` | 최초 실행 온보딩 + 계정 시스템(Firebase 익명/Google/이메일 인증) 마스터플랜. [ARCHITECTURE.md](./ARCHITECTURE.md) 6계층(세션/연속성)의 실행 문서 |
+| `ux-improvement/README.md` | UX 개편(보드 스케일링, 패널, 직접 착수 흐름) 마스터플랜 |
+| `ux-improvement/wireframes/v1_wireframe.md` | 위 마스터플랜의 v1.0.0 와이어프레임 스펙 |
+| `docs/baas_solutions_comparison.md` | Firebase/Supabase/PocketBase/Appwrite/Convex BaaS 비교 조사 — Firebase 채택 근거 원본. 결론은 `auth-onboarding/README.md`에 반영됨 |
+| `docs/baduk_app_architecture_recommendation.md` | 백엔드+AdMob 전략 추천 조사 — 결론은 `premium-mode/README.md`/`auth-onboarding/README.md`에 반영됨 |
 
 ## 운영 원칙
 
-`docs/` 최상위에는 **현재 제품에서 바로 참고해야 하는 핵심 문서만** 둔다. 새 문서가 2026-06-28 기준 위 9개 범주(요약 4개 + 딥다이브 4개 + 이 인덱스)에 들지 않으면, 아래 중 맞는 폴더로 분류한다.
+`docs/` 최상위에는 **현재 제품에서 바로 참고해야 하는 핵심 문서만** 둔다. 새 문서가 2026-07-30 기준 위 10개 범주(요약 4개 + 딥다이브 4개 + 파생 로드맵 1개 + 이 인덱스)에 들지 않으면, 아래 중 맞는 폴더로 분류한다. 특정 기능이 계속 갱신되는 마스터플랜 성격이면 `docs/` 밖 전용 폴더(위 표)에 두는 것도 허용한다 — 단 반드시 이 인덱스에 등록한다.
 
 현재 코드의 줄 수, 패키지/파일 수, remote transport 구현 상태, 테스트 통과 여부처럼 자주 낡는 지표는 반드시 "YYYY-MM-DD 기준"을 붙인 문장으로만 쓴다. 날짜가 붙은 refactoring 로그와 archive 문서의 historical 수치는 이 규칙을 이유로 덮어쓰지 않는다.
 

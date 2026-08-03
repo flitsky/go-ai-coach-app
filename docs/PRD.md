@@ -1,6 +1,6 @@
 # Go AI Coach PRD
 
-최종 수정: 2026-06-17 (9/10절 현황은 현재 코드 기준으로 갱신함. 1~8절은 POC 시절 원본 제품 결정이며 역사적 기록으로 그대로 둔다 — 실제로 무엇이 구현됐는지는 [ARCHITECTURE.md](./ARCHITECTURE.md), [ENGINE.md](./ENGINE.md)를 따른다)
+최종 수정: 2026-06-17 (9/10절 현황은 현재 코드 기준으로 갱신함. 1~8절은 POC 시절 원본 제품 결정이며 역사적 기록으로 그대로 둔다 — 실제로 무엇이 구현됐는지는 [GO_AI_COACH_ARCHITECTURE_ROADMAP.md](./GO_AI_COACH_ARCHITECTURE_ROADMAP.md), [ENGINE.md](./ENGINE.md)를 따른다)
 
 ## 1. 목표
 
@@ -138,7 +138,7 @@ MVP 학습 UX:
 - 로컬 KataGo 엔진(`libkatago.so`)이 **두 가지** 탐색 orchestration 모드(`GtpStatefulFast`, `JsonPositionAnalysis`)를 지원한다 — [ENGINE.md](./ENGINE.md) 참고. 엔진 없이 UI 작업을 할 수 있는 stub 어댑터도 그대로 사용 가능하다.
 - AI 난이도 4그룹(`빠른 초급`/`초급`/`중급`/`고급`), 각각 고유한 visits/time-cap/candidate-count 정책과 탐색 모드를 가진다.
 - Top Moves 보드 표시(최대 5개 후보, 1순위는 큰 원), 착수 후 복기 색상(green/yellow/orange/red/unknown), 점수/승률 그래프, 기기 벤치마킹, 디버그 리포트 복사, 진단/런타임 이벤트 로깅.
-- `app-android/application/`은 17개 기능 도메인 패키지로 분해되어 있고, 각각 작은 컨트롤러 + 순수함수 application 패턴을 따른다 — 전체 계층 지도는 [ARCHITECTURE.md](./ARCHITECTURE.md) 참고.
+- `app-android/application/`은 17개 기능 도메인 패키지로 분해되어 있고, 각각 작은 컨트롤러 + 순수함수 application 패턴을 따른다 — 계층 원칙은 [ARCHITECTURE.md](./ARCHITECTURE.md), go-ai-coach 전체 계층 지도는 [GO_AI_COACH_ARCHITECTURE_ROADMAP.md](./GO_AI_COACH_ARCHITECTURE_ROADMAP.md) 참고.
 - `shared` 모듈: 보드 규칙, 계가, 엔진 코어 API 계약, 분석 정책. 여전히 Android 우선이며 iOS/기타 KMP 타겟은 아직 검증되지 않았다.
 - SGF 가져오기/내보내기, 서버 엔진 fallback(2절의 목표 최종 상태)은 **아직 구현되지 않았다**.
 
@@ -156,7 +156,7 @@ Phase 4: 13x13, 19x19 지원. **착수 전.**
 
 Phase 5: KaTrain에서 영감을 받은 복기 UX. **일부 완료.** Top Moves 표시, 착수 복기 색상, 점수/승률 그래프는 존재한다. 넓은 다중 후보 학습 모드와 SGF 주석은 아직 만들지 않았다.
 
-Phase 6: 선택적 서버 fallback. **착수 전.** 원격 position-analysis 게이트웨이/캐시 골격(`middleware/Remote*`)은 있지만 아직 `RemoteEngineSessionClient`는 없다 — ARCHITECTURE.md의 "알려진 갭" 참고.
+Phase 6: 선택적 서버 fallback. **착수 전.** 원격 position-analysis 게이트웨이/캐시 골격(`middleware/Remote*`)은 있지만 아직 `RemoteEngineSessionClient`는 없다 — GO_AI_COACH_ARCHITECTURE_ROADMAP.md의 "알려진 갭" 참고.
 
 ## 11. 열린 리스크
 
