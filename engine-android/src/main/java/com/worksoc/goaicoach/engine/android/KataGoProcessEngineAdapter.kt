@@ -29,7 +29,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeout
 import org.json.JSONObject
 
-class KataGoProcessEngineAdapter(
+internal class KataGoProcessEngineAdapter(
     private val processConfig: KataGoProcessConfig,
 ) : EngineCoreApi {
     private var profile: EngineProfile = EngineProfile(mode = EngineMode.LocalProcess)

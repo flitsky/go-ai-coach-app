@@ -22,7 +22,7 @@ import com.worksoc.goaicoach.shared.StoneColor
 import com.worksoc.goaicoach.shared.allCoordinates
 import com.worksoc.goaicoach.shared.describe
 
-class StubEngineAdapter : EngineCoreApi {
+internal class StubEngineAdapter : EngineCoreApi {
     private var boardSize: BoardSize = BoardSize.Nine
     private var ruleset: Ruleset = Ruleset.Japanese
     private var initialized: Boolean = false

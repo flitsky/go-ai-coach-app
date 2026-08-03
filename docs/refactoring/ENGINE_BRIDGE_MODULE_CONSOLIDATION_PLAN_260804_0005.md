@@ -61,8 +61,9 @@ grep 기반 `LayeringContractTest`로만 막던 경계가 Gradle 모듈 경계 +
 
 ## 4. 이번 범위 밖(후속 과제로 명시)
 
-- `KataGoProcessEngineAdapter`/`StubEngineAdapter`를 `internal`로 낮추고 팩토리 함수만 공개 —
-  app-android 컴포지션 루트 배선을 건드리는 별도 작업이라 이번엔 하지 않음.
+- ~~`KataGoProcessEngineAdapter`/`StubEngineAdapter`를 `internal`로 낮추고 팩토리 함수만 공개~~ —
+  260804에 완료(§5 진행 로그). `EngineCoreApiFactory`(engine-android, public)가 유일한 생성
+  지점이고, app-android는 이제 구현 클래스 이름조차 컴파일 타임에 볼 수 없다.
 - `:engine-android` 모듈 이름을 `:engine-bridge` 등으로 변경 — 순수 명명 변경이라 리스크 대비
   효용이 낮아 보류. 이름이 실제로 헷갈리기 시작하면 그때 별도로.
 - Stage E(`RemoteEngineSessionClient`, 원격 후보 선택/신뢰도 판단)/Stage F(실제 물리 분산·DePIN) —
@@ -81,3 +82,4 @@ grep 기반 `LayeringContractTest`로만 막던 경계가 Gradle 모듈 경계 +
   - `GO_AI_COACH_ARCHITECTURE_ROADMAP.md`의 2계층 위치/재편여부/핵심 갭, "알려진 갭", "고도화 로드맵" 1번을 새 상태로 갱신(이 문서는 "지금 무엇이 어디 있는가"를 담는 문서라 물리적 이동을 반영해야 함).
   - `make test` 전체 통과 확인(BUILD SUCCESSFUL) — `shared`/`engine-android`(신규 테스트 12개 포함)/`app-android`(LayeringContractTest 42개 포함) 전부.
   - 이번 범위에서 하지 않은 것(§4 그대로 유효): 가시성 강화(internal + 팩토리), 모듈 이름 변경, Stage E/F.
+- 260804 — 가시성 강화 완료(§4 후속 과제 중 첫 번째). `KataGoProcessEngineAdapter`/`StubEngineAdapter`를 `internal class`로 낮추고, 신규 `engine-android/.../engine/android/EngineCoreApiFactory.kt`(public object, `local(config)`/`stub()` 두 함수)를 유일한 생성 지점으로 노출. `KataGoProcessConfig`(순수 설정 DTO, 파일 경로/오버라이드만 담음)는 public으로 유지 — app-android가 asset 탐색으로 얻은 경로를 여전히 전달해야 하므로 숨길 이유가 없다. app-android의 `EngineBootstrap.kt`(엔진 부트스트랩 판단: 에셋 없으면 stub, 있으면 local)가 `KataGoProcessEngineAdapter(...)`/`StubEngineAdapter()` 직접 호출 대신 `EngineCoreApiFactory.local(...)`/`.stub()` 호출로 교체 — 이제 이 두 클래스 이름은 Kotlin 컴파일러 차원에서 app-android에 아예 안 보인다(grep 테스트가 아니라 컴파일 에러로 강제). `LayeringContractTest.engineCoreApiConcreteAdaptersStayInternalBehindFactory` 신설 — internal modifier가 실수로 지워지지 않았는지, `EngineCoreApiFactory`가 실제로 public한지, `EngineBootstrap.kt`가 팩토리만 쓰는지 소스 레벨로도 확인. `RemoteEngineCoreApiAdapter`는 Stage D부터 이미 internal이었고 아직 배선 전이라 추가 변경 없음. `make test` 통과 확인(BUILD SUCCESSFUL, `LayeringContractTest` 43개).

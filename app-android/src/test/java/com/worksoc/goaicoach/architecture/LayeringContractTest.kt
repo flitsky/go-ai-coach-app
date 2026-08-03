@@ -1006,6 +1006,45 @@ class LayeringContractTest {
     }
 
     @Test
+    fun engineCoreApiConcreteAdaptersStayInternalBehindFactory() {
+        // 260804 가시성 강화: KataGoProcessEngineAdapter/StubEngineAdapter는 engine-android
+        // 모듈 밖(app-android 포함)에서 이름조차 보이면 안 된다 — Kotlin `internal`이 컴파일
+        // 타임에 강제하지만, 이 테스트는 그 modifier가 실수로 지워지지 않았는지 소스 레벨에서도
+        // 확인하고, app-android가 실제로 EngineCoreApiFactory(공개 생성 지점)만 쓰는지 본다.
+        val repoRoot = repoRoot()
+        val engineAndroidRoot = repoRoot
+            .resolve("engine-android/src/main/java/com/worksoc/goaicoach/engine/android")
+        val concreteAdapters = mapOf(
+            engineAndroidRoot.resolve("KataGoProcessEngineAdapter.kt") to "internal class KataGoProcessEngineAdapter(",
+            engineAndroidRoot.resolve("StubEngineAdapter.kt") to "internal class StubEngineAdapter",
+        )
+
+        val notInternal = concreteAdapters.filterNot { (file, marker) -> file.readText().contains(marker) }
+        assertTrue(
+            "EngineCoreApi concrete adapters must stay internal to engine-android:\n" +
+                notInternal.keys.joinToString("\n") { file -> file.relativeTo(repoRoot).path },
+            notInternal.isEmpty(),
+        )
+
+        val factoryText = engineAndroidRoot.resolve("EngineCoreApiFactory.kt").readText()
+        assertTrue(
+            "engine-android must expose EngineCoreApiFactory as the only public construction seam.",
+            factoryText.contains("object EngineCoreApiFactory") && !factoryText.trimStart().startsWith("internal"),
+        )
+
+        val bootstrap = repoRoot
+            .resolve("app-android/src/main/java/com/worksoc/goaicoach/engine/EngineBootstrap.kt")
+        val bootstrapText = bootstrap.readText()
+        val forbiddenDirectConstruction = listOf("KataGoProcessEngineAdapter(", "StubEngineAdapter(")
+            .filter { fragment -> fragment in bootstrapText }
+        assertTrue(
+            "EngineBootstrap must construct engines through EngineCoreApiFactory, not the concrete classes directly:\n" +
+                forbiddenDirectConstruction.joinToString("\n"),
+            forbiddenDirectConstruction.isEmpty() && bootstrapText.contains("EngineCoreApiFactory."),
+        )
+    }
+
+    @Test
     fun engineOperationApplicationPoliciesStayPortable() {
         val applicationRoot = repoRoot()
             .resolve("app-android/src/main/java/com/worksoc/goaicoach/application")
