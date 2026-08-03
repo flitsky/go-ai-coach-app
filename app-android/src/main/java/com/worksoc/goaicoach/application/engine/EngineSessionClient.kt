@@ -31,12 +31,12 @@ internal data class EngineSessionCapabilities(
 )
 
 /**
- * Application-facing engine session boundary.
+ * 3계층(Extended API) — application-facing engine session boundary.
  *
- * UI code depends on this contract instead of the low-level EngineCoreApi.
- * Local and future remote-server engines should implement this interface
- * without exposing process sync, cache isolation, or transport details to
- * Compose/app-service orchestration.
+ * UI code depends on this contract instead of the low-level EngineCoreApi
+ * (2계층). Local and future remote-server engines should implement this
+ * interface without exposing process sync, cache isolation, or transport
+ * details to Compose/app-service orchestration (5계층).
  */
 internal interface EngineSessionClient {
     val capabilities: EngineSessionCapabilities

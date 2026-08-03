@@ -12,8 +12,11 @@ internal enum class PremiumSource {
 }
 
 /**
- * 프리미엄 모드 상태. 플랫폼(Google Play 결제/광고 SDK)에 의존하지 않는 순수 로직으로
- * 설계해, 추후 iOS 쪽 활성화 소스를 추가할 때 이 타입 자체는 재사용할 수 있게 한다.
+ * 6계층(Session & Continuity) — 프리미엄 모드 상태. 플랫폼(Google Play 결제/광고 SDK)에
+ * 의존하지 않는 순수 로직으로 설계해, 추후 iOS 쪽 활성화 소스를 추가할 때 이 타입 자체는
+ * 재사용할 수 있게 한다. [PremiumStateStorePort]와 같은 패키지에 있지만 계층이 다르다 —
+ * 이 타입은 "지금 유효한 프리미엄 상태가 무엇인가"를 나타내는 상태(6계층)이고,
+ * [PremiumStateStorePort]는 그 상태를 저장/복원하는 외부 저장소 포트(4계층)다.
  */
 internal data class PremiumState(
     val source: PremiumSource = PremiumSource.None,

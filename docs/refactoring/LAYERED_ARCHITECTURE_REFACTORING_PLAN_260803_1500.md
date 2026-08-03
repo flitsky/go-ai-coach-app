@@ -59,6 +59,8 @@
 ## 5. 진행 로그
 
 - 260803 15h00m — 계획서 최초 작성. 아직 착수 항목 없음.
+- 260803 — A-1 완료: `LayeringContractTest.kt` 전수 감사. `계층`/`Layer`/`layer` 및 2026-06-27판 옛 계층 이름(`Engine Runtime/Transport`, `Engine Core API Domain`, `Core Rules Domain`, `Middleware/Cache Domain`, `Game Domain`, `App Service/Session Orchestration`, `Presentation/Game UX`)을 grep했으나 이 파일 어디에도 옛 계층 번호/이름 텍스트가 없음을 확인 — 모든 테스트가 처음부터 패키지/클래스명(`application/auth`, `EngineCoreApi`, `middleware` 등)으로 경계를 표현하고 있어 번호에 결합돼 있지 않았다. 문구 정리 대상 없음(코드 변경 없음). `make test` 통과 확인(BUILD SUCCESSFUL). 단, 로드맵의 실제 갭(2/3계층 로컬-원격 계약 대등화 등)은 테스트 "로직" 자체가 아직 새 경계를 강제하지 않는다는 뜻이며, 이는 Stage A 범위가 아니라 Stage D 이후에서 다룬다.
+- 260803 — A-2 완료: 계층 경계가 헷갈리기 쉬운 대표 파일 5개의 KDoc에 "N계층" 라벨 추가(코드 이동/로직 변경 없음). `application/engine/EngineSessionClient.kt`(3계층 진입점), `application/auth/AuthClientPort.kt`(4계층 α 포트) vs `AuthState.kt`(6계층 상태) — 같은 패키지에서 계층이 갈리는 지점을 서로 참조하도록 명시, `application/premium/PremiumStatePorts.kt`(4계층 α) vs `PremiumState.kt`(6계층)도 동일하게 처리. `make test` 통과 확인(BUILD SUCCESSFUL).
 
 ## 6. 관련 문서
 
