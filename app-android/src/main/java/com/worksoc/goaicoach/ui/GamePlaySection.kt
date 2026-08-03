@@ -354,6 +354,7 @@ private fun GameActionButtons(
                 enabled = analysisEnabled,
                 modifier = Modifier.weight(1f).alpha(lockedAlpha),
                 label = strings.analysis,
+                premiumLocked = !premium.isActive,
             )
 
             // 2. 형세보기 (Eval) 버튼 (프리미엄 전용)
@@ -363,7 +364,8 @@ private fun GameActionButtons(
                     action = evalAction,
                     label = strings.eval,
                     onEvent = { event -> premiumGated { onEvent(event) } },
-                    modifier = Modifier.weight(1f).alpha(lockedAlpha)
+                    modifier = Modifier.weight(1f).alpha(lockedAlpha),
+                    premiumLocked = !premium.isActive,
                 )
             }
 
@@ -374,7 +376,8 @@ private fun GameActionButtons(
                     action = topMovesAction,
                     label = strings.topMoves,
                     onEvent = { event -> premiumGated { onEvent(event) } },
-                    modifier = Modifier.weight(1f).alpha(lockedAlpha)
+                    modifier = Modifier.weight(1f).alpha(lockedAlpha),
+                    premiumLocked = !premium.isActive,
                 )
             }
         }
@@ -418,6 +421,7 @@ private fun GameActionButtons(
                     label = strings.undo,
                     onEvent = { event -> premiumGated { onEvent(event) } },
                     modifier = Modifier.weight(1f).alpha(lockedAlpha),
+                    premiumLocked = !premium.isActive,
                 )
             }
         }

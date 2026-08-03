@@ -42,7 +42,8 @@ internal fun ToggleActionButton(
     action: GameActionButtonState,
     label: String,
     onEvent: (GameUiEvent) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    premiumLocked: Boolean = false,
 ) {
     val isOn = action.isFilled
     val toggleModifier = modifier
@@ -73,7 +74,7 @@ internal fun ToggleActionButton(
             modifier = toggleModifier,
             shape = ActionButtonShape,
             contentPadding = ActionButtonContentPadding,
-            border = ActionButtonBorder,
+            border = if (premiumLocked) PremiumLockedBorder else ActionButtonBorder,
         ) {
             ToggleActionButtonContent(label = label, isOn = false)
         }
@@ -86,12 +87,14 @@ internal fun SingleActionButton(
     label: String,
     onEvent: (GameUiEvent) -> Unit,
     modifier: Modifier = Modifier,
+    premiumLocked: Boolean = false,
 ) {
     ActionButton(
         onClick = { onEvent(action.event) },
         enabled = action.enabled,
         modifier = modifier,
         label = label,
+        premiumLocked = premiumLocked,
     )
 }
 
@@ -101,6 +104,7 @@ internal fun ActionButton(
     enabled: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    premiumLocked: Boolean = false,
 ) {
     FilledTonalButton(
         onClick = onClick,
@@ -112,6 +116,7 @@ internal fun ActionButton(
             containerColor = ActionButtonContainerColor,
             contentColor = ActionButtonContentColor,
         ),
+        border = if (premiumLocked) PremiumLockedBorder else null,
     ) {
         ActionButtonText(label)
     }

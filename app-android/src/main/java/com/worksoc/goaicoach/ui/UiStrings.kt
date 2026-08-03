@@ -168,14 +168,16 @@ internal data class UiStrings(
     val onboardingTitle: String,
     val onboardingSubtitle: String,
     val continueWithGoogle: String,
+    val continueWithApple: String,
     val continueWithEmail: String,
-    val getStarted: String,
+    val continueWithoutAccount: String,
+    val guestStartedToastMessage: String,
     val settingsTitle: String,
     val settingsAccountSectionTitle: String,
     val settingsGuestStatusMessage: String,
-    val premiumModeTitle: String,
-    val premiumModeActiveSubtitle: String,
-    val premiumModeInactiveSubtitle: String,
+    val premiumModeTitleInactive: String,
+    val premiumModeTitleActive: String,
+    val premiumModeFeatureList: String,
 ) {
     fun cacheOptBody(initialCount: Int, maxCount: Int, moveCount: Int, targetCount: Int): String =
         when (language) {

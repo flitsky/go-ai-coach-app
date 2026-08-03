@@ -58,3 +58,45 @@
 - UiStrings 4개 언어 파일(Ko/En/Ja/Zh)에 `getStarted`/`settingsTitle`/`settingsAccountSectionTitle`/`settingsGuestStatusMessage`/`premiumModeTitle`/`premiumModeActiveSubtitle`/`premiumModeInactiveSubtitle` 추가, 더 이상 쓰이지 않는 `continueWithoutAccount`/`guestConnectionFailedMessage` 제거.
 - `auth-onboarding/README.md`, `premium-mode/README.md`에 이번 개편에 맞춰 개정 이력 섹션 추가(각 문서의 "완료 단계도 지우지 않고 이력으로 남긴다" 관례를 따름).
 - `make test` (`:shared:check :engine-android:testDebugUnitTest :app-android:assembleDebug :app-android:testDebugUnitTest`) 전체 통과 확인 (`LayeringContractTest`의 `GoCoachApp.kt` 라인/상태 훅 예산 포함).
+- 커밋/푸시 완료 (5fa83f0).
+
+## 2차 개정 (사용자 피드백 반영, 2026-08-04)
+
+1차 구현 이후 사용자 리뷰를 받아 온보딩/프리미엄 카드 방향을 일부 재조정했다.
+
+- **온보딩**: "설치 후 첫 화면은 로그인 화면이어야 한다, 그냥 패스시키는 건 의미 없다"는 피드백에 따라 `OnboardingScreen.kt`를 다시 Google/Apple/이메일/게스트 4버튼("얕은 허들") 구성으로 되돌림. Apple 버튼은 이번에 UI 스텁으로 신규 추가(iOS 대응 시 App Store 정책상 Apple 로그인이 사실상 필수라는 점 고려). 반복 온보딩 버그 수정(로컬 `DeviceIdentityStore` 기반 게스트 완료 조건)은 유지. 게스트 선택 시 별도 확인 팝업은 추가하지 않고, 홈 진입 직후 가벼운 토스트 1회만 안내(사용자와 상의 후 결정).
+- **SettingsScreen**: Google/Apple/이메일 3버튼으로 온보딩과 맞춤.
+- **프리미엄 카드**: `ui/PremiumTheme.kt` 신규(금색 계열 상수 — `PremiumGold`/`PremiumGoldLight`/`PremiumGoldDeep`/`PremiumGoldGradient`/`PremiumCardShape`/`PremiumLockedBorder`). `GameSetupLobby.kt`의 프리미엄 카드를 금색 그라디언트 디자인으로 고급화하고, 스크롤 영역에서 하단 고정 바("대국 시작하기" 버튼 바로 위)로 이동.
+- **인게임 버튼**: `GameActionButtons.kt`의 `ActionButton`/`SingleActionButton`/`ToggleActionButton`에 `premiumLocked` 파라미터 추가, `GamePlaySection.kt`의 4개 게이팅 지점(분석/형세보기/추천수/무르기)에 스레딩 — 잠긴 상태일 때 `PremiumLockedBorder`(금색 테두리)로 "프리미엄 버튼"임을 시각적으로 표시.
+- `auth-onboarding/README.md`/`premium-mode/README.md`에 "재개정"/"추가 개정" 섹션으로 이력 추가.
+- `make test` 재통과 확인.
+
+## 3차 개정 (로그인 버튼 브랜드 아이덴티티, 2026-08-04)
+
+사용자와 "브랜드 컬러를 버튼에 입힐지" 토론 후 결론: Google/Apple 모두 실제로는 버튼 전체를
+브랜드색으로 채우는 걸 권장하지 않는다(Google은 무채색 배경 + 멀티컬러 로고, Apple은 흑/백만
+허용) — 그래서 배경은 계속 무채색(OutlinedButton)으로 통일하고, 브랜드 구분은 왼쪽 아이콘
+글리프 색상에만 두기로 결정.
+
+- `ui/SocialLoginButton.kt` 신규 — Google/Apple/이메일 로그인 버튼 공통 컴포저블. 왼쪽에
+  고정폭 글리프(placeholder — 실제 벡터 로고 에셋 없음), 오른쪽에 라벨. `GoogleBrandBlue`
+  상수(단색 근사치)를 Google 글리프에만 적용, Apple/이메일은 기본 색 유지.
+  - Google: "G" (파란색), Apple: 🍎, 이메일: ✉ — 모두 텍스트/이모지 기반 placeholder다.
+    실제 SDK 연동(Step 2/3) 시 공식 벡터 에셋으로 교체 필요.
+- **게스트 버튼 무채색화**: "계정 없이 시작하기"가 진한 배경(Button, primary color)이라
+  마치 권장 경로처럼 보인다는 피드백 → 다른 3개 버튼과 동일하게 `SocialLoginButton`(=
+  OutlinedButton) 사용으로 변경. 얕은 허들이라는 취지에 맞게 4개 버튼이 동일한 시각적
+  무게를 갖도록 함.
+- `OnboardingScreen.kt`/`SettingsScreen.kt` 양쪽 모두 `SocialLoginButton`으로 통일.
+- `make test` 재통과 확인.
+
+## 4차 개정 (프리미엄 카드 텍스트 간결화, 2026-08-04)
+
+프리미엄 카드의 부제가 길어 2줄로 줄바꿈되며 하단 고정 영역이 세로로 커지는 문제 피드백.
+`premiumModeTitle`(공용) + `premiumModeActiveSubtitle`/`premiumModeInactiveSubtitle`(긴 안내문)
+3개 필드를 `premiumModeTitleInactive`/`premiumModeTitleActive`(상태를 담은 짧은 제목) +
+`premiumModeFeatureList`(상태 무관, "분석·형세보기·추천수·무르기"만 나열하는 공용 부제) 3개로
+재구성 — 상태(활성화하기/활성화됨)는 제목이 담당하고 부제는 순수 기능 나열만 하도록 역할을
+분리해 텍스트를 줄였다. `GameSetupLobby.kt`의 `PremiumModeCard`에도 `maxLines = 1` +
+`TextOverflow.Ellipsis`를 제목/부제 모두에 추가해, 기기 폭이나 폰트 배율이 작아도 카드가
+3줄 이상으로 늘어나지 않도록 안전장치를 뒀다. `make test` 재통과 확인 후 커밋/푸시.

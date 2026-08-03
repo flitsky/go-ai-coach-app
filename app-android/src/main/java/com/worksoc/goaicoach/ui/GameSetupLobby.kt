@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -28,10 +30,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.worksoc.goaicoach.presentation.GameScreenState
@@ -125,15 +127,7 @@ internal fun GameSetupLobby(
                 onKomiChange = { komi -> onEvent(GameUiEvent.ChangeKomi(komi)) },
             )
 
-            // [3] 프리미엄 모드 카드 — 비활성 상태면 탭해서 업셀 팝업(광고/결제/닫기)을 연다.
-            // 여기서 활성화를 깜빡하고 넘어가도, 인게임에서 잠긴 버튼을 탭하면 같은 팝업이
-            // 다시 뜨는 폴백이 있다(GamePlaySection/KaTrainUxPanels).
-            PremiumModeCard(
-                isActive = premium.isActive,
-                onClick = { if (!premium.isActive) showPremiumUpsellDialog = true },
-            )
-
-            // [4] 50% 비율 축소 실시간 바둑판 프리뷰
+            // [3] 50% 비율 축소 실시간 바둑판 프리뷰
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -171,15 +165,25 @@ internal fun GameSetupLobby(
             Spacer(modifier = Modifier.height(16.dp))
         }
 
-        // [5] 하단 대국 시작하기 버튼 영역
+        // [4] 하단 고정 영역 — 프리미엄 모드 카드 + 대국 시작하기 버튼. 스크롤에 묻히지 않고
+        // 시작 버튼 바로 위에 항상 보이도록 고정 영역에 배치한다("체크아웃 직전 업셀"과 같은 자리).
+        // 비활성 상태면 탭해서 업셀 팝업(광고/결제/닫기)을 연다. 여기서 활성화를 깜빡하고
+        // 넘어가도, 인게임에서 잠긴 버튼을 탭하면 같은 팝업이 다시 뜨는 폴백이 있다
+        // (GamePlaySection/KaTrainUxPanels).
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(MaterialTheme.colorScheme.surface)
                 .navigationBarsPadding()
                 .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            PremiumModeCard(
+                isActive = premium.isActive,
+                onClick = { if (!premium.isActive) showPremiumUpsellDialog = true },
+            )
+
             Button(
                 onClick = {
                     onEvent(GameUiEvent.StartConfiguredGame)
@@ -205,47 +209,59 @@ internal fun GameSetupLobby(
 }
 
 /**
- * 대국 설정 화면에서 프리미엄 모드를 선택할 수 있는 카드. 활성화된 상태에서는 안내만
- * 표시하고(비활성화는 지원하지 않음 — [PremiumUiState]에 해제 API가 없다), 비활성 상태에서는
- * 탭하면 [onClick]으로 업셀 팝업을 연다.
+ * 대국 설정 화면 하단에 고정 노출되는 프리미엄 모드 카드 — 금색 그라디언트로 일반 설정
+ * 항목들과 확실히 구분되는 시각적 아이덴티티를 준다([PremiumGoldGradient] 등 참고).
+ * 활성화된 상태에서는 안내만 표시하고(비활성화는 지원하지 않음 — [PremiumUiState]에 해제
+ * API가 없다), 비활성 상태에서는 탭하면 [onClick]으로 업셀 팝업을 연다.
  */
 @Composable
 private fun PremiumModeCard(isActive: Boolean, onClick: () -> Unit) {
     val strings = LocalUiStrings.current
 
+    val cardModifier = if (isActive) {
+        Modifier.background(PremiumGoldGradient, PremiumCardShape)
+    } else {
+        Modifier
+            .background(PremiumGoldLight.copy(alpha = 0.18f), PremiumCardShape)
+            .border(1.5.dp, PremiumGoldGradient, PremiumCardShape)
+            .clickable(onClick = onClick)
+    }
+
+    // 제목에 활성/비활성 상태(동사)를 담고, 부제는 기능 나열만 하는 짧은 문구로 분리해
+    // 카드가 항상 한 줄씩 2줄로만 표시되게 한다. maxLines/ellipsis는 그래도 기기 폭이나
+    // 폰트 배율이 작을 때 3번째 줄로 밀리는 걸 막는 안전장치.
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(
-                if (isActive) {
-                    MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                } else {
-                    MaterialTheme.colorScheme.surfaceVariant
-                }
-            )
-            .let { rowModifier -> if (isActive) rowModifier else rowModifier.clickable(onClick = onClick) }
-            .padding(16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
+            .then(cardModifier)
+            .padding(horizontal = 18.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column {
+        Text(text = "👑", fontSize = 22.sp)
+        Spacer(modifier = Modifier.width(10.dp))
+        Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = strings.premiumModeTitle,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                text = if (isActive) strings.premiumModeTitleActive else strings.premiumModeTitleInactive,
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 15.sp,
+                color = if (isActive) Color.White else PremiumGoldDeep,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
             Text(
-                text = if (isActive) strings.premiumModeActiveSubtitle else strings.premiumModeInactiveSubtitle,
+                text = strings.premiumModeFeatureList,
                 fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.secondary,
+                color = if (isActive) Color.White.copy(alpha = 0.88f) else MaterialTheme.colorScheme.secondary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
         }
+        Spacer(modifier = Modifier.width(8.dp))
         Text(
             text = if (isActive) "✓" else "›",
-            color = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
+            color = if (isActive) Color.White else PremiumGold,
             fontWeight = FontWeight.Bold,
-            fontSize = 18.sp,
+            fontSize = 20.sp,
         )
     }
 }
