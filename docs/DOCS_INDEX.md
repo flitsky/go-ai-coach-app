@@ -84,6 +84,7 @@
 | `refactoring/REFACTORING_COMPLETION_ASSESSMENT_2026-06-13.md` | 계층 분리 완성도 평가, 남은 리스크, 다음 리팩토링 추천 순서 |
 | `refactoring/ARCHITECTURE_IMPLEMENTATION_REVIEW_2026-06-27.md` | 2026-06-27 현재 코드/문서 기준선, 구현 상태 평가, Codex (low)도 수행 가능한 시급/중장기 리팩토링 계획 |
 | `refactoring/DOMAIN_SEPARATION_REFACTORING_KICKOFF_PLAN_260729_2315.md` | 2026-06-27 계획의 H-*/M-* 항목 완료 여부 재확인, 엔진 브릿지(Engine Core API)/조합(Middleware) 계층 구분 재검토, 신규 auth/premium 도메인의 계층 적합성 검증, 다음 배치(H-08~) 계획. "착수 계획서" 시분 타임스탬프 관례의 첫 문서 |
+| `refactoring/LAYERED_ARCHITECTURE_REFACTORING_PLAN_260803_1500.md` | 2026-07-30 재정립한 7계층 모델(`ARCHITECTURE.md`/`GO_AI_COACH_ARCHITECTURE_ROADMAP.md`)을 실제 코드에 단계적으로 반영하는 착수 계획서. Stage A(테스트 정합성)~F(물리적 분산·다른 기기 연산)까지 안전도 순 로드맵, 진행 로그 누적 중 |
 | `refactoring/ARCHITECTURE_LAYERS_REVIEW_2026-06-14.md` | 7계층 모델 채택 검토본. 원문 초안은 `archive/2026-06-17-architecture-docs-rewrite/`로, 현재 canonical 요약은 `ARCHITECTURE.md` |
 | `refactoring/INTERNAL_GO_APP_PRODUCT_REVIEW_2026-06-15.md` | 외부 바둑 앱 관점 리뷰를 제품 정확성, 엔진 오케스트레이션, KMP 확장성 기준으로 재검토한 내부 판단 |
 | `refactoring/EXTERNAL_REVIEW_*`, `INTERNAL_*_REVIEW_*`, `INTERNAL_ARCHITECT_REVIEW_*` (2026-06-15) | 외부 아키텍처 점수 리뷰 원문과 내부 대응 판단 |
