@@ -27,6 +27,8 @@ import com.worksoc.goaicoach.application.analysis.PositionCacheOptimizationContr
 import com.worksoc.goaicoach.application.analysis.UndoAnalysisRestoreCache
 import com.worksoc.goaicoach.application.analysis.toDisplayText
 import com.worksoc.goaicoach.application.auth.AuthClientPort
+import com.worksoc.goaicoach.application.device.DeviceIdentityStorePort
+import com.worksoc.goaicoach.persistence.DeviceIdentityStore
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnController
 import com.worksoc.goaicoach.application.autoai.applyAutoAiTurnRequestPlan
 import com.worksoc.goaicoach.application.autoai.applyAutoAiTurnScheduleValidationPlan
@@ -150,6 +152,8 @@ private fun GoCoachScreen(
     // AndroidAuthClient는 내부 상태가 없는 얇은 래퍼라 재구성마다 새로 만들어도 비용/동작
     // 차이가 없다 — 별도로 캐시해 두지 않고 그대로 둬서 상태 훅 예산을 아낀다.
     val authClient: AuthClientPort = AndroidAuthClient()
+    // DeviceIdentityStore도 authClient와 같은 이유로 캐시해 두지 않는다(내부 상태 없는 얇은 래퍼).
+    val deviceIdentityStore: DeviceIdentityStorePort = DeviceIdentityStore(context)
     // 온보딩을 이미 본 사용자는 바로 홈으로, 아니면 온보딩 화면부터 시작한다 — 별도 훅을
     // 새로 추가하지 않고 이 초기값 계산식에만 반영한다(이 파일의 상태 훅 예산이 거의
     // 소진돼 있어, 새 컴포즈 상태 훅을 추가하지 않는 쪽을 우선한다).
@@ -803,10 +807,9 @@ private fun GoCoachScreen(
         ScreenDestination.Onboarding -> {
             OnboardingScreen(
                 authClient = authClient,
-                onOnboardingComplete = { didSignIn ->
-                    if (didSignIn) {
-                        preferencesStore.save(initialPreferences.copy(hasSeenOnboarding = true))
-                    }
+                deviceIdentityStore = deviceIdentityStore,
+                onOnboardingComplete = {
+                    preferencesStore.save(initialPreferences.copy(hasSeenOnboarding = true))
                     currentDestination = ScreenDestination.Home
                 },
             )
@@ -817,10 +820,17 @@ private fun GoCoachScreen(
                     dispatch(GameUiEvent.DismissResumePrompt)
                     currentDestination = ScreenDestination.GameSetup
                 },
+                onSettingsClick = { currentDestination = ScreenDestination.Settings },
                 selectedLanguage = selectedLanguage,
                 onLanguageChange = onLanguageChange,
                 hasResumableSession = savedSessionToPrompt != null,
                 onResumeClick = { showResumeDialog = true },
+            )
+        }
+        ScreenDestination.Settings -> {
+            SettingsScreen(
+                authClient = authClient,
+                onBackClick = { currentDestination = ScreenDestination.Home },
             )
         }
         ScreenDestination.GameSetup -> {
@@ -855,6 +865,7 @@ private fun GoCoachScreen(
 internal enum class ScreenDestination {
     Onboarding,
     Home,
+    Settings,
     GameSetup,
     InGame
 }

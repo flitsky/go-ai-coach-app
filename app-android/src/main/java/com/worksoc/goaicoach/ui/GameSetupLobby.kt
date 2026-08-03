@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -21,8 +22,13 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -48,6 +54,15 @@ internal fun GameSetupLobby(
 ) {
     val strings = LocalUiStrings.current
     val scrollState = rememberScrollState()
+    val premium = LocalPremiumUiState.current
+    var showPremiumUpsellDialog by remember { mutableStateOf(false) }
+
+    // 홈 화면에서는 더 이상 이 팝업을 강제로 띄우지 않는다 — 여기 대국 설정 화면에서
+    // 사용자가 원할 때(아래 프리미엄 모드 카드 탭) 직접 열도록 한다.
+    PremiumUpsellDialogHost(
+        visible = showPremiumUpsellDialog,
+        onDismiss = { showPremiumUpsellDialog = false },
+    )
 
     Column(
         modifier = modifier
@@ -110,7 +125,15 @@ internal fun GameSetupLobby(
                 onKomiChange = { komi -> onEvent(GameUiEvent.ChangeKomi(komi)) },
             )
 
-            // [3] 50% 비율 축소 실시간 바둑판 프리뷰
+            // [3] 프리미엄 모드 카드 — 비활성 상태면 탭해서 업셀 팝업(광고/결제/닫기)을 연다.
+            // 여기서 활성화를 깜빡하고 넘어가도, 인게임에서 잠긴 버튼을 탭하면 같은 팝업이
+            // 다시 뜨는 폴백이 있다(GamePlaySection/KaTrainUxPanels).
+            PremiumModeCard(
+                isActive = premium.isActive,
+                onClick = { if (!premium.isActive) showPremiumUpsellDialog = true },
+            )
+
+            // [4] 50% 비율 축소 실시간 바둑판 프리뷰
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -148,7 +171,7 @@ internal fun GameSetupLobby(
             Spacer(modifier = Modifier.height(16.dp))
         }
 
-        // [4] 하단 대국 시작하기 버튼 영역
+        // [5] 하단 대국 시작하기 버튼 영역
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -178,5 +201,51 @@ internal fun GameSetupLobby(
                 )
             }
         }
+    }
+}
+
+/**
+ * 대국 설정 화면에서 프리미엄 모드를 선택할 수 있는 카드. 활성화된 상태에서는 안내만
+ * 표시하고(비활성화는 지원하지 않음 — [PremiumUiState]에 해제 API가 없다), 비활성 상태에서는
+ * 탭하면 [onClick]으로 업셀 팝업을 연다.
+ */
+@Composable
+private fun PremiumModeCard(isActive: Boolean, onClick: () -> Unit) {
+    val strings = LocalUiStrings.current
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(
+                if (isActive) {
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                } else {
+                    MaterialTheme.colorScheme.surfaceVariant
+                }
+            )
+            .let { rowModifier -> if (isActive) rowModifier else rowModifier.clickable(onClick = onClick) }
+            .padding(16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column {
+            Text(
+                text = strings.premiumModeTitle,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = if (isActive) strings.premiumModeActiveSubtitle else strings.premiumModeInactiveSubtitle,
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.secondary,
+            )
+        }
+        Text(
+            text = if (isActive) "✓" else "›",
+            color = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
+            fontWeight = FontWeight.Bold,
+            fontSize = 18.sp,
+        )
     }
 }

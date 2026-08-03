@@ -1,6 +1,5 @@
 package com.worksoc.goaicoach.ui
 
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -13,47 +12,39 @@ import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.worksoc.goaicoach.application.auth.AuthClientPort
+import com.worksoc.goaicoach.application.device.DeviceIdentityStorePort
 import kotlinx.coroutines.launch
 
 /**
- * 최초 실행 시 한 번만 뜨는 온보딩 화면. Google/이메일 로그인은 버튼만 배치돼 있고 아직
- * 연동되지 않았다("준비 중" 토스트만 표시) — 실제로 동작하는 건 "계정 없이 시작하기"
- * (Firebase 익명 인증)뿐이다.
+ * 최초 실행 시 한 번만 뜨는 온보딩 화면. 완료 조건은 [DeviceIdentityStorePort.loadOrCreate]뿐이다
+ * — 네트워크 없이 항상 즉시 성공하므로, 이 화면은 다시 뜨지 않는다(반복 온보딩 없음).
  *
- * "계정 없이 시작하기"는 익명 로그인이 실패해도(예: google-services.json 미설정) 앱
- * 사용 자체를 막지 않는다 — 실패 시 안내만 띄우고 그대로 홈으로 진입시킨다.
- * [onOnboardingComplete]의 `didSignIn`이 false면 호출부(GoCoachApp.kt)는 "온보딩을
- * 봤다" 플래그를 저장하지 않으므로, 다음 실행 때 이 화면이 다시 뜨며 조용히 재시도된다.
+ * Firebase 익명 로그인([authClient])은 여전히 시도하지만 fire-and-forget이다: 화면은 결과를
+ * 기다리지도, 실패를 알리지도 않는다 — google-services.json이 없는 현재는 조용히 실패하고,
+ * 나중에 추가되면 이 코드 변경 없이 조용히 성공하기 시작한다. Google/이메일 로그인은 더 이상
+ * 이 화면에 노출하지 않는다 — 원하는 사용자는 홈 화면의 설정에서 강화할 수 있다([SettingsScreen]).
  */
 @Composable
 internal fun OnboardingScreen(
     authClient: AuthClientPort,
-    onOnboardingComplete: (didSignIn: Boolean) -> Unit,
+    deviceIdentityStore: DeviceIdentityStorePort,
+    onOnboardingComplete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val strings = LocalUiStrings.current
-    val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var isSigningIn by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier
@@ -92,41 +83,12 @@ internal fun OnboardingScreen(
 
         Spacer(modifier = Modifier.height(40.dp))
 
-        OutlinedButton(
-            onClick = { Toast.makeText(context, strings.notImplementedMessage, Toast.LENGTH_SHORT).show() },
-            modifier = Modifier.fillMaxWidth().height(48.dp),
-            shape = RoundedCornerShape(24.dp),
-        ) {
-            Text(strings.continueWithGoogle)
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        OutlinedButton(
-            onClick = { Toast.makeText(context, strings.notImplementedMessage, Toast.LENGTH_SHORT).show() },
-            modifier = Modifier.fillMaxWidth().height(48.dp),
-            shape = RoundedCornerShape(24.dp),
-        ) {
-            Text(strings.continueWithEmail)
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
         Button(
             onClick = {
-                if (!isSigningIn) {
-                    isSigningIn = true
-                    scope.launch {
-                        val outcome = authClient.signInAnonymously()
-                        isSigningIn = false
-                        if (outcome.isFailure) {
-                            Toast.makeText(context, strings.guestConnectionFailedMessage, Toast.LENGTH_SHORT).show()
-                        }
-                        onOnboardingComplete(outcome.isSuccess)
-                    }
-                }
+                deviceIdentityStore.loadOrCreate()
+                scope.launch { authClient.signInAnonymously() }
+                onOnboardingComplete()
             },
-            enabled = !isSigningIn,
             modifier = Modifier.fillMaxWidth().height(48.dp),
             shape = RoundedCornerShape(24.dp),
             colors = ButtonDefaults.buttonColors(
@@ -134,11 +96,7 @@ internal fun OnboardingScreen(
                 contentColor = Color.White,
             ),
         ) {
-            if (isSigningIn) {
-                CircularProgressIndicator(modifier = Modifier.height(20.dp), color = Color.White)
-            } else {
-                Text(strings.continueWithoutAccount, fontWeight = FontWeight.Bold)
-            }
+            Text(strings.getStarted, fontWeight = FontWeight.Bold)
         }
     }
 }

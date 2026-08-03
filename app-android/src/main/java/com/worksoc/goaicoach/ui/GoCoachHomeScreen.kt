@@ -60,6 +60,7 @@ import androidx.compose.ui.unit.sp
 @Composable
 internal fun GoCoachHomeScreen(
     onStartMatchClick: () -> Unit,
+    onSettingsClick: () -> Unit,
     selectedLanguage: UiLanguage,
     onLanguageChange: (UiLanguage) -> Unit,
     hasResumableSession: Boolean,
@@ -68,19 +69,7 @@ internal fun GoCoachHomeScreen(
 ) {
     val strings = LocalUiStrings.current
     val context = LocalContext.current
-    val premium = LocalPremiumUiState.current
     var showOverwriteWarningDialog by remember { mutableStateOf(false) }
-    var showPremiumUpsellDialog by remember { mutableStateOf(false) }
-
-    // 이전 대국 덮어쓰기 확인(있다면) 이후 이 함수를 거쳐야 실제로 대국 설정으로 이동한다.
-    // 이미 프리미엄이면 바로 진행, 아니면 프리미엄 활성화 팝업(Step 2)을 먼저 보여준다.
-    fun proceedToStartMatch() {
-        if (premium.isActive) {
-            onStartMatchClick()
-        } else {
-            showPremiumUpsellDialog = true
-        }
-    }
 
     Column(
         modifier = modifier
@@ -92,8 +81,9 @@ internal fun GoCoachHomeScreen(
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End,
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
+            HomeSettingsButton(onClick = onSettingsClick)
             HomeLanguageSelector(
                 selectedLanguage = selectedLanguage,
                 onLanguageChange = onLanguageChange,
@@ -171,7 +161,7 @@ internal fun GoCoachHomeScreen(
                 if (hasResumableSession) {
                     showOverwriteWarningDialog = true
                 } else {
-                    proceedToStartMatch()
+                    onStartMatchClick()
                 }
             },
         )
@@ -201,7 +191,7 @@ internal fun GoCoachHomeScreen(
                 TextButton(
                     onClick = {
                         showOverwriteWarningDialog = false
-                        proceedToStartMatch()
+                        onStartMatchClick()
                     },
                 ) {
                     Text(strings.confirm)
@@ -214,14 +204,6 @@ internal fun GoCoachHomeScreen(
             },
         )
     }
-
-    // 프리미엄 미활성 상태에서 대국 시작 시 뜨는 업셀 팝업(Step 2). 3가지 선택지 중
-    // 무엇을 고르든 대국 설정으로는 그대로 진행한다.
-    PremiumUpsellDialogHost(
-        visible = showPremiumUpsellDialog,
-        onDismiss = { showPremiumUpsellDialog = false },
-        onAnyChoice = onStartMatchClick,
-    )
 }
 
 /**
@@ -278,6 +260,31 @@ private fun HomeLanguageSelector(
                 )
             }
         }
+    }
+}
+
+/**
+ * 홈 화면 상단 좌측의 설정 진입점. 여기서 로그인 강화([SettingsScreen])로 이동한다.
+ */
+@Composable
+private fun HomeSettingsButton(onClick: () -> Unit) {
+    val strings = LocalUiStrings.current
+
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(18.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Text(
+            text = "⚙ ${strings.settingsTitle}",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
+        )
     }
 }
 
