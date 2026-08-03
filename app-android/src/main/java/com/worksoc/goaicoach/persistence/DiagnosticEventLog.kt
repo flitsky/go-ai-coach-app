@@ -3,57 +3,29 @@ package com.worksoc.goaicoach.persistence
 import com.worksoc.goaicoach.shared.diagnostic.DiagnosticEvent
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import java.io.File
-import kotlin.math.min
 import org.json.JSONObject
 
 internal class DiagnosticEventLog(
-    private val file: File,
-    private val maxBytes: Int = DefaultMaxBytes,
-    private val trimToBytes: Int = DefaultTrimToBytes,
-) : DiagnosticEventLogPort {
-    @Synchronized
+    file: File,
+    maxBytes: Int = TrimmedAppendOnlyLog.DefaultMaxBytes,
+    trimToBytes: Int = TrimmedAppendOnlyLog.DefaultTrimToBytes,
+) : TrimmedAppendOnlyLog(
+    file = file,
+    maxBytes = maxBytes,
+    trimToBytes = trimToBytes,
+    trimMarker = DiagnosticLogTrimMarker,
+    emptyMessage = "No diagnostic event log recorded.",
+),
+    DiagnosticEventLogPort {
     override fun append(
         event: DiagnosticEvent,
         nowMillis: Long,
     ) {
-        file.parentFile?.mkdirs()
-        file.appendText("${DiagnosticEventLogCodec.encodeLine(event, nowMillis)}\n", Charsets.UTF_8)
-        trimIfNeeded()
-    }
-
-    @Synchronized
-    override fun readText(): String =
-        if (file.isFile) {
-            file.readText(Charsets.UTF_8)
-        } else {
-            "No diagnostic event log recorded."
-        }
-
-    @Synchronized
-    override fun clear() {
-        if (file.isFile) {
-            file.delete()
-        }
-    }
-
-    private fun trimIfNeeded() {
-        if (!file.isFile || file.length() <= maxBytes) {
-            return
-        }
-
-        val bytes = file.readBytes()
-        val marker = DiagnosticLogTrimMarker.toByteArray(Charsets.UTF_8)
-        val keepLength = min((trimToBytes - marker.size).coerceAtLeast(0), bytes.size)
-        file.outputStream().use { output ->
-            output.write(marker)
-            output.write(bytes, bytes.size - keepLength, keepLength)
-        }
+        appendAndTrim(DiagnosticEventLogCodec.encodeLine(event, nowMillis))
     }
 
     companion object {
         const val FileName: String = "diagnostic_events.jsonl"
-        const val DefaultMaxBytes: Int = 1_048_576
-        private const val DefaultTrimToBytes: Int = 921_600
         private const val DiagnosticLogTrimMarker = """{"trimmed":true,"message":"diagnostic log trimmed to recent events"}""" + "\n"
     }
 }

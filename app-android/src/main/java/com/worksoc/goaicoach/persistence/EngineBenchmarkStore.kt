@@ -6,6 +6,9 @@ import com.worksoc.goaicoach.application.engine.EngineBenchmarkProfile
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkRuleset
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkSample
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkStorePort
+import com.worksoc.goaicoach.middleware.optNullableDouble
+import com.worksoc.goaicoach.middleware.optNullableInt
+import com.worksoc.goaicoach.middleware.optNullableLong
 import com.worksoc.goaicoach.shared.Ruleset
 import java.io.File
 import org.json.JSONArray
@@ -181,12 +184,3 @@ internal object EngineBenchmarkCodec {
             )
         }.getOrNull()
 }
-
-private fun JSONObject.optNullableInt(name: String): Int? =
-    if (has(name) && !isNull(name)) optInt(name) else null
-
-private fun JSONObject.optNullableLong(name: String): Long? =
-    if (has(name) && !isNull(name)) optLong(name) else null
-
-private fun JSONObject.optNullableDouble(name: String): Double? =
-    if (has(name) && !isNull(name)) optDouble(name) else null

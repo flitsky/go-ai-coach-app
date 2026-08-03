@@ -63,6 +63,8 @@ import kotlin.math.abs
 import kotlin.math.min
 import kotlin.math.roundToInt
 
+private const val EngineActivityFrameIntervalMillis = 1_000L
+
 @Composable
 internal fun GoBoard(
     gameState: GameState,
@@ -86,7 +88,7 @@ internal fun GoBoard(
     LaunchedEffect(engineActivityIndicator) {
         activityFrame = 0
         while (engineActivityIndicator != null) {
-            delay(1_000L)
+            delay(EngineActivityFrameIntervalMillis)
             activityFrame += 1
         }
     }
@@ -597,6 +599,25 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawStone(
     )
 }
 
+// 대국 중(진행 중) 돌의 그라디언트 — 반투명 "고스트" 미리보기(drawGhostStone)가 같은 색을
+// alpha만 낮춰 재사용한다. 색을 바꿀 땐 두 곳이 아니라 여기 한 곳만 고치면 된다.
+private fun activeStoneGradientColors(stone: StoneColor): List<Color> =
+    when (stone) {
+        StoneColor.Black -> listOf(
+            Color(0xFF646464),
+            Color(0xFF303030),
+            Color(0xFF101010),
+            Color(0xFF030303),
+        )
+
+        StoneColor.White -> listOf(
+            Color(0xFFFFFFFF),
+            Color(0xFFF3F1EA),
+            Color(0xFFE0DDD3),
+            Color(0xFFC7C2B6),
+        )
+    }
+
 private fun stoneBrush(
     stone: StoneColor,
     center: Offset,
@@ -612,12 +633,7 @@ private fun stoneBrush(
                 Color(0xFF030303),
             )
         } else {
-            listOf(
-                Color(0xFF646464),
-                Color(0xFF303030),
-                Color(0xFF101010),
-                Color(0xFF030303),
-            )
+            activeStoneGradientColors(stone)
         }
 
         StoneColor.White -> if (isGameEnded) {
@@ -628,12 +644,7 @@ private fun stoneBrush(
                 Color(0xFF9F9B91),
             )
         } else {
-            listOf(
-                Color(0xFFFFFFFF),
-                Color(0xFFF3F1EA),
-                Color(0xFFE0DDD3),
-                Color(0xFFC7C2B6),
-            )
+            activeStoneGradientColors(stone)
         }
     }
     return Brush.radialGradient(
@@ -661,21 +672,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawGhostStone(
         radius = radius * 1.03f,
         center = Offset(center.x + radius * 0.05f, center.y + radius * 0.07f),
     )
-    val baseColors = when (stone) {
-        StoneColor.Black -> listOf(
-            Color(0xFF646464),
-            Color(0xFF303030),
-            Color(0xFF101010),
-            Color(0xFF030303),
-        )
-        StoneColor.White -> listOf(
-            Color(0xFFFFFFFF),
-            Color(0xFFF3F1EA),
-            Color(0xFFE0DDD3),
-            Color(0xFFC7C2B6),
-        )
-    }
-    val mappedColors = baseColors.map { it.copy(alpha = alpha) }
+    val mappedColors = activeStoneGradientColors(stone).map { it.copy(alpha = alpha) }
     drawCircle(
         brush = Brush.radialGradient(
             colors = mappedColors,

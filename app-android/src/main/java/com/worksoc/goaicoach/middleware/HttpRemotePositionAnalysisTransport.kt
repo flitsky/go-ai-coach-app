@@ -213,19 +213,3 @@ internal object RemotePositionAnalysisJsonCodec {
     }
 }
 
-// 파일 최상위(top-level)로 둬 RemoteEngineCoreApiAdapter의 JSON 코덱에서도 `with(...)` 없이
-// 바로 재사용한다.
-internal fun JSONObject.putNullable(
-    name: String,
-    value: Any?,
-): JSONObject =
-    put(name, value ?: JSONObject.NULL)
-
-internal fun JSONObject.optNullableString(name: String): String? =
-    if (isNull(name)) null else optString(name)
-
-internal fun JSONObject.optNullableInt(name: String): Int? =
-    if (isNull(name) || !has(name)) null else optInt(name)
-
-internal fun JSONObject.optNullableDouble(name: String): Double? =
-    if (isNull(name) || !has(name)) null else optDouble(name)

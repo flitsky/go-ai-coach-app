@@ -88,7 +88,7 @@ internal class UndoController(
                 delay(delayMillis)
             }
             while (pendingSync == pending && currentGameState() == pending.targetState && isEngineBusy()) {
-                delay(100L)
+                delay(UndoEngineBusyPollIntervalMillis)
             }
             if (
                 pendingSync != pending ||

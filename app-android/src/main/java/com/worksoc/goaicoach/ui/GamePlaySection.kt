@@ -57,6 +57,8 @@ import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.StoneColor
 import kotlinx.coroutines.delay
 
+private const val TurnTimerTickIntervalMillis = 200L
+
 @Composable
 internal fun GamePlaySection(
     screenState: GameScreenState,
@@ -127,7 +129,7 @@ internal fun GamePlaySection(
         // 리셋되므로 별도 remember 없이 이 지역 변수 하나로 "이번 차례에 이미 보고했는지"를 추적한다.
         var watchdogReported = false
         while (!screenState.isGameEnded && !turnTimeState.isPaused) {
-            delay(200)
+            delay(TurnTimerTickIntervalMillis)
             now = System.currentTimeMillis()
             if (!watchdogReported) {
                 val elapsedSinceTurnStartMillis = (now - turnTimeState.currentTurnStartedAtMillis).coerceAtLeast(0L)

@@ -2,54 +2,28 @@ package com.worksoc.goaicoach.persistence
 
 import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
 import java.io.File
-import kotlin.math.min
 
 internal class RuntimeEventLog(
-    private val file: File,
-    private val maxBytes: Int = DefaultMaxBytes,
-    private val trimToBytes: Int = DefaultTrimToBytes,
-) : RuntimeEventLogPort {
-    @Synchronized
+    file: File,
+    maxBytes: Int = TrimmedAppendOnlyLog.DefaultMaxBytes,
+    trimToBytes: Int = TrimmedAppendOnlyLog.DefaultTrimToBytes,
+) : TrimmedAppendOnlyLog(
+    file = file,
+    maxBytes = maxBytes,
+    trimToBytes = trimToBytes,
+    trimMarker = RuntimeLogTrimMarker,
+    emptyMessage = "No runtime event log recorded.",
+),
+    RuntimeEventLogPort {
     override fun append(
         event: String,
         nowMillis: Long,
     ) {
-        file.parentFile?.mkdirs()
-        file.appendText("t=$nowMillis ${event.oneLine()}\n", Charsets.UTF_8)
-        trimIfNeeded()
+        appendAndTrim("t=$nowMillis ${event.oneLine()}")
     }
 
     fun append(event: String) {
         append(event, System.currentTimeMillis())
-    }
-
-    @Synchronized
-    override fun readText(): String =
-        if (file.isFile) {
-            file.readText(Charsets.UTF_8)
-        } else {
-            "No runtime event log recorded."
-        }
-
-    @Synchronized
-    override fun clear() {
-        if (file.isFile) {
-            file.delete()
-        }
-    }
-
-    private fun trimIfNeeded() {
-        if (!file.isFile || file.length() <= maxBytes) {
-            return
-        }
-
-        val bytes = file.readBytes()
-        val marker = RuntimeLogTrimMarker.toByteArray(Charsets.UTF_8)
-        val keepLength = min((trimToBytes - marker.size).coerceAtLeast(0), bytes.size)
-        file.outputStream().use { output ->
-            output.write(marker)
-            output.write(bytes, bytes.size - keepLength, keepLength)
-        }
     }
 
     private fun String.oneLine(): String =
@@ -60,8 +34,6 @@ internal class RuntimeEventLog(
 
     companion object {
         const val FileName: String = "runtime_event_log.txt"
-        const val DefaultMaxBytes: Int = 1_048_576
-        private const val DefaultTrimToBytes: Int = 921_600
         private const val RuntimeLogTrimMarker = "... runtime log trimmed to recent events ...\n"
     }
 }

@@ -50,6 +50,7 @@ internal sealed class EngineUndoCompletionPlan {
 }
 
 internal const val UndoEngineInterventionDelayMillis = 1_000L
+internal const val UndoEngineBusyPollIntervalMillis = 100L
 
 internal fun undoEngineInterventionQuietUntilMillis(
     nowMillis: Long,

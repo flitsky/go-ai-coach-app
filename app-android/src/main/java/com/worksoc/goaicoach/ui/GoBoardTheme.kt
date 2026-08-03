@@ -18,8 +18,8 @@ internal data class GoBoardColors(
             boardBorder = Color(0xFF7A4D20),
             gridLine = Color(0x8C281C0A),
             lastMoveMark = Color(0xFFE53935),
-            lastMoveNeutral = Color(0xFF6B6459),
-            engineActivityText = Color(0xFF0E8C72),
+            lastMoveNeutral = BrandSecondaryColor,
+            engineActivityText = BrandPrimaryColor,
         )
 
         // 향후 추가 확장 가능한 모던/다크 테마 예시 토큰

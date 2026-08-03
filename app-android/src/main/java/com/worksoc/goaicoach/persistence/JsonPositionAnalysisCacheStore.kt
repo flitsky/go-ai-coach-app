@@ -8,6 +8,10 @@ import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheKey
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOrigin
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheStore
 import com.worksoc.goaicoach.application.analysis.shouldReplacePositionAnalysisCacheEntry
+import com.worksoc.goaicoach.middleware.optNullableDouble
+import com.worksoc.goaicoach.middleware.optNullableInt
+import com.worksoc.goaicoach.middleware.optNullableLong
+import com.worksoc.goaicoach.middleware.optNullableString
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.AnalysisResult
 import com.worksoc.goaicoach.shared.BoardCoordinate
@@ -282,15 +286,3 @@ internal object JsonPositionAnalysisCacheCodec {
             is Move.Resign -> "resign"
         }
 }
-
-private fun JSONObject.optNullableInt(name: String): Int? =
-    if (has(name) && !isNull(name)) optInt(name) else null
-
-private fun JSONObject.optNullableLong(name: String): Long? =
-    if (has(name) && !isNull(name)) optLong(name) else null
-
-private fun JSONObject.optNullableDouble(name: String): Double? =
-    if (has(name) && !isNull(name)) optDouble(name) else null
-
-private fun JSONObject.optNullableString(name: String): String? =
-    if (has(name) && !isNull(name)) optString(name) else null

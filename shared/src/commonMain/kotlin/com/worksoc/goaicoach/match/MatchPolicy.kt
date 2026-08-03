@@ -401,19 +401,6 @@ fun turnStatus(
     return snapshot.turnStatusText(isEngineBlockingBusy)
 }
 
-fun modeSummary(
-    playerSetup: PlayerSetup,
-    engineName: String,
-): String =
-    when (playerSetup.matchMode()) {
-        MatchMode.HumanVsAi,
-        MatchMode.AiVsHuman,
-        MatchMode.AiVsAi,
-        -> "9x9 ${playerSetup.summary(engineName)}"
-
-        MatchMode.LocalTwoPlayer -> "9x9 local two-player rules test"
-    }
-
 private suspend fun AiMoveEngineGateway.selectAiMoveFromAnalysis(
     currentState: GameState,
     aiPlayer: StoneColor,
