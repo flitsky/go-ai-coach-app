@@ -208,7 +208,12 @@ internal class RemoteEngineCoreApiAdapter(
         "${difficulty.label}, visits=${analysisLimit.visits}, time=${analysisLimit.timeMillis ?: "none"}ms"
 }
 
-internal data class RemoteEngineHttpConfig(
+/**
+ * 원격 엔진 후보 1개를 가리키는 설정 — app-android가 여러 후보를 조립해 (3계층)
+ * `RemoteEngineSessionClient`에 넘긴다. [KataGoProcessConfig]와 같은 이유로 public이다:
+ * app-android가 알아야 하는 값(엔드포인트, 타임아웃)이지 engine-android 내부 구현이 아니다.
+ */
+data class RemoteEngineHttpConfig(
     val endpointUrl: String,
     val enabled: Boolean = false,
     val connectTimeoutMillis: Int = 3_000,

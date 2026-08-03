@@ -31,7 +31,7 @@
 
 **재편 여부**: 기존 2계층(Engine Core API Domain, 계약 정의만)에 기존 4계층(Middleware/Cache Domain)의 **전송** 절반(원격 게이트웨이/트랜스포트)을 합쳤다. "계약을 정의하는 것"과 "그 계약을 실제로 어떻게 도달시키는가(로컬 stdio냐 원격 HTTP냐)"가 개념적으로 같은 책임이라고 보기 때문이다. **260804 정리**: `EngineCoreApi`의 로컬/원격 구현체를 전부 `engine-android` 모듈로 물리적으로 모았다(그 전엔 원격 구현체가 app-android/middleware에 있었음) — app-android(3~7계층) 작업 시 엔진 내부 구현을 아예 안 봐도 되도록, 그리고 향후 원격/DePIN 확장의 물리적 근간이 되도록. 이 이동을 가능케 하려고 `RemotePositionAnalysisTransport`/`Request`/`Response`(전부 `:shared`-safe 타입만 사용)도 `:shared`로 옮겼다 — app-android(Gateway)와 engine-android(Http 구현체)가 순환 의존 없이 같은 계약을 공유하기 위함.
 
-**핵심 갭(해소됨, 260803 Stage D)**: `KataGoProcessEngineAdapter`(로컬)와 `RemoteEngineCoreApiAdapter`(원격)가 이제 `EngineCoreApi` 전체에 대해 대등한 계약을 만족한다(계약 테스트로 검증). 다만 `RemoteEngineSessionClient`(3계층, 여러 원격 후보 선택/신뢰도 판단)는 아직 없고, 이 원격 구현체는 아직 앱에 실제 배선(DI)되지 않았다 — Stage E 영역, 별도 승인 필요.
+**핵심 갭(해소됨, 260803 Stage D)**: `KataGoProcessEngineAdapter`(로컬)와 `RemoteEngineCoreApiAdapter`(원격)가 이제 `EngineCoreApi` 전체에 대해 대등한 계약을 만족한다(계약 테스트로 검증). 3계층의 후보 선택/신뢰도 판단(`selectRemoteEngineCandidate`)도 260804 Stage E-1/E-2에서 마련됐다 — 아래 3계층 절 참고. 다만 이 원격 경로는 아직 앱 실제 컴포지션(MainActivity/GoCoachApp)에 배선되지 않았다(가리킬 실제 원격 서버가 없음) — Stage F(실제 물리 분산) 영역, 별도 승인 필요.
 
 ### 3계층 — Extended API (엔진 서비스)
 
@@ -42,10 +42,12 @@
 - `application/safety/EngineTurnWatchdog.kt` — AI 턴이 설정된 응답 시간(×1.2+3초, 무제한이면 60초)을 넘기면 감지하는 순수 판정 로직. 2026-07-30 신설
 - `application/analysis/PositionAnalysisCache.kt`, `PositionAnalysisCacheOptimization*.kt` — JSON position analysis 결과를 품질/origin별로 저장하는 디스크 캐시
 - `application/middleware/PositionAnalysisCacheResolver.kt` — 신뢰도 등급에 따라 캐시 hit을 평가/서빙
+- `application/engine/RemoteEngineCandidate.kt` — DePIN 준비(260804 Stage E-1). 원격 후보 표현(`RemoteEngineCandidate`)과 선택/신뢰도 판단(`selectRemoteEngineCandidate`). `engine-android`를 import하지 않는 순수 3계층 판단 — 실제 `EngineCoreApi` 배선은 `engine/RemoteEngineSessionBootstrap.kt`(아래 참고)가 담당
+- `engine/EngineBootstrap.kt`, `engine/RemoteEngineSessionBootstrap.kt` — `application/`이 아닌 별도 패키지(`com.worksoc.goaicoach.engine`)에 있는 composition-root 인접 배선 파일들. `application/`은 `engine.android`를 import할 수 없다는 기존 경계(`LayeringContractTest`) 때문에, "engine-android 구현을 실제로 생성"하는 코드는 전부 여기 산다 — 로컬은 `EngineBootstrap.createEngineBootstrap`, 원격은 `RemoteEngineSessionBootstrap.createRemoteEngineSessionClient`
 
 **재편 여부**: 기존 4계층(Middleware/Cache Domain)에서 전송(2계층으로 이동)을 뺀 나머지 — 캐시, 신뢰도 라우팅, 동시성 lifecycle, 이번 세션에 추가된 엔진 턴 와치독까지 전부 여기.
 
-**DePIN 관점에서의 역할**: 1계층이 여러 피어로 흩어지면, "지금 어느 피어를 쓸지 선택하고 그 결과를 얼마나 신뢰할지 판단"하는 책임이 이 계층으로 들어와야 한다. 현재는 이 판단 로직 자체가 없다 — `RemoteEngineSessionClient` 구현체 부재가 정확히 이 갭이다.
+**DePIN 관점에서의 역할(부분 착수, 260804 Stage E-1)**: 1계층이 여러 피어로 흩어지면, "지금 어느 피어를 쓸지 선택하고 그 결과를 얼마나 신뢰할지 판단"하는 책임이 이 계층으로 들어와야 한다. `selectRemoteEngineCandidate`가 그 자리를 잡았지만, 지금은 후보가 항상 최대 1개라 판단이 "활성화돼 있는가/엔드포인트가 유효한가"만큼만 있다 — 여러 후보의 응답 시간·성공률을 비교하는 진짜 신뢰도 판단은 실제로 후보가 2개 이상 생기는 시점(Stage F, DePIN 확장)에 채워야 한다.
 
 ### 4계층 — External Integration (외부 연동)
 
@@ -89,7 +91,7 @@
 ## 알려진 갭 (2026-07-30 기준)
 
 - `GameSessionStateHolder`(5계층)는 여전히 `app-android`에 있다. `shared`로 옮기는 KMP 이식은 아직 안 함.
-- `RemoteEngineSessionClient`(3계층, 여러 원격 후보 중 선택·신뢰도 판단)가 없다. `RemoteEngineCoreApiAdapter`(원격 `EngineCoreApi` 구현체 자체, 260803 Stage D)는 있지만 아직 앱에 배선(DI)되지 않았고, "고정된 원격 서버 1대"조차 실제로 쓰이고 있지 않다.
+- ~~`RemoteEngineSessionClient`(3계층, 여러 원격 후보 중 선택·신뢰도 판단)가 없다~~ — 260804 Stage E-1/E-2에서 최소 형태로 해소(`selectRemoteEngineCandidate`+`RemoteEngineSessionBootstrap.createRemoteEngineSessionClient`). `RemoteEngineCoreApiAdapter`(원격 `EngineCoreApi` 구현체 자체, 260803 Stage D)와 함께 이제 준비돼 있지만, 아직 앱 실제 컴포지션(MainActivity/GoCoachApp)에 배선되지 않았고 "고정된 원격 서버 1대"조차 가리킬 실제 서버가 없어 실제로 쓰이고 있지 않다 — Stage F 영역.
 - ~~2계층의 로컬/원격 구현체가 대등하지 않다~~ — 260803 Stage D에서 해소(위 2계층 절 참고). 260804에 물리적으로도 `engine-android` 한 모듈로 모았다.
 - 4계층(외부 연동)이 포트(α)만 있고 안정화 서비스 본체가 얇다.
 - 6계층(세션/연속성)이 auth/premium 각자의 필요만 채우고 있고, 범용 개념이 없다.
@@ -101,7 +103,7 @@
 우선순위 순서가 아니라 계층별로 정리한 것이며, 착수 순서는 별도 착수 계획서(`refactoring/`에 `YYMMDD HHhMMm` 타임스탬프 관례로 추가)에서 정한다.
 
 1. ~~**2계층 — 로컬/원격 계약 대등화**~~ — 완료(260803 Stage D, 260804 물리적 모듈 통합). `RemoteEngineCoreApiAdapter`가 `EngineCoreApi` 전체를 구현하고, 로컬(`KataGoProcessEngineAdapter`)과 실패/타임아웃/재시도 신뢰도가 동등함을 계약 테스트로 검증했으며, 둘 다 `engine-android` 모듈에 물리적으로 함께 있다.
-2. **3계층 — `RemoteEngineSessionClient` 도입**: 여러 원격/피어 후보 중 선택·신뢰도 판단을 흡수. DePIN 방향이라면 여기에 "피어 평판/정산 기록"의 자리가 생긴다.
+2. ~~**3계층 — `RemoteEngineSessionClient` 도입**~~ — 최소 형태 완료(260804 Stage E-1/E-2). 여러 원격/피어 후보 중 선택·신뢰도 판단을 흡수하는 자리(`selectRemoteEngineCandidate`)는 마련됐지만, 지금은 후보가 1개뿐이라 판단이 얕다. 후보가 실제로 여러 개가 되는 시점(DePIN 방향)에 응답시간/성공률 비교, "피어 평판/정산 기록"의 자리를 채워야 한다.
 3. **1계층 — 물리 실행 환경 추상화**: 지금은 `KataGoProcessRuntime`이 "이 기기에서 프로세스 실행"만 가정한다. 원격 서버/피어 기기라는 "다른 물리 위치"를 1계층 개념에 맞게 명시적으로 표현할 방법을 정의(예: 실행 위치를 나타내는 값 타입).
 4. **4계층 — 외부 연동 서비스 본체 두껍게 하기**: `premium-mode/README.md` Step 3(실제 광고)/Step 4(실제 결제), `auth-onboarding/README.md` Step 2~3(Google/이메일 로그인)을 구현하며, 포트(α)뿐 아니라 3계층 수준의 재시도/캐시/신뢰도 판단을 갖춘 서비스 본체로 채운다.
 5. **6계층 — 세션/연속성 공식화**: `auth-onboarding/README.md` Step 4(익명→실계정 승격, Firestore 동기화)를 이 계층의 정식 구현으로 진행. 기기 식별자 기반 다중 기기 정책도 이 단계에서 결정.
