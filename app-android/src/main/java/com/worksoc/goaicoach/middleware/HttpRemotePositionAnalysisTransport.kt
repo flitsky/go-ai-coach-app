@@ -78,6 +78,12 @@ internal object DefaultRemotePositionAnalysisHttpConnectionFactory : RemotePosit
         url.openConnection() as HttpURLConnection
 }
 
+/**
+ * 2계층 — remote position-analysis 스파이크의 JSON 코덱. 여기 있는 상태/한도 인코딩과
+ * 후보수/상태 디코딩 헬퍼는 [RemoteEngineCoreApiAdapter]가 `EngineCoreApi` 전체를 원격으로
+ * 확장할 때도 동일한 국면 표현이 필요해 `internal`로 공개해 재사용한다 — 같은 국면을 두 번
+ * 다르게 직렬화하면 로컬/원격 대등성이 오히려 깨진다.
+ */
 internal object RemotePositionAnalysisJsonCodec {
     fun encodeRequest(request: RemotePositionAnalysisRequest): JSONObject =
         JSONObject()
@@ -100,7 +106,7 @@ internal object RemotePositionAnalysisJsonCodec {
         )
     }
 
-    private fun encodeLimit(limit: AnalysisLimit): JSONObject =
+    internal fun encodeLimit(limit: AnalysisLimit): JSONObject =
         JSONObject()
             .put("visits", limit.visits)
             .putNullable("timeMillis", limit.timeMillis)
@@ -110,7 +116,7 @@ internal object RemotePositionAnalysisJsonCodec {
             .put("minVisitsPerCandidate", limit.minVisitsPerCandidate)
             .putNullable("minTimeMillis", limit.minTimeMillis)
 
-    private fun encodeState(state: GameState): JSONObject =
+    internal fun encodeState(state: GameState): JSONObject =
         JSONObject()
             .put("boardSize", state.boardSize.value)
             .put("ruleset", state.ruleset.name)
@@ -140,7 +146,7 @@ internal object RemotePositionAnalysisJsonCodec {
                 },
             )
 
-    private fun encodeMove(
+    internal fun encodeMove(
         move: Move,
         boardSize: BoardSize,
     ): JSONObject {
@@ -155,7 +161,7 @@ internal object RemotePositionAnalysisJsonCodec {
         }
     }
 
-    private fun decodeStatus(status: JSONObject?): EngineStatus {
+    internal fun decodeStatus(status: JSONObject?): EngineStatus {
         if (status == null) {
             return EngineStatus.ready("Remote position analysis complete.")
         }
@@ -167,7 +173,7 @@ internal object RemotePositionAnalysisJsonCodec {
         )
     }
 
-    private fun decodeCandidates(candidates: JSONArray?): List<CandidateMove> {
+    internal fun decodeCandidates(candidates: JSONArray?): List<CandidateMove> {
         if (candidates == null) return emptyList()
         return buildList {
             for (index in 0 until candidates.length()) {
@@ -191,7 +197,7 @@ internal object RemotePositionAnalysisJsonCodec {
         }
     }
 
-    private fun decodeMove(candidate: JSONObject): Move {
+    internal fun decodeMove(candidate: JSONObject): Move {
         val player = StoneColor.valueOf(candidate.optString("player", StoneColor.Black.name))
         return when (candidate.optString("type", "play")) {
             "pass" -> Move.Pass(player)
@@ -205,19 +211,21 @@ internal object RemotePositionAnalysisJsonCodec {
             }
         }
     }
-
-    private fun JSONObject.putNullable(
-        name: String,
-        value: Any?,
-    ): JSONObject =
-        put(name, value ?: JSONObject.NULL)
-
-    private fun JSONObject.optNullableString(name: String): String? =
-        if (isNull(name)) null else optString(name)
-
-    private fun JSONObject.optNullableInt(name: String): Int? =
-        if (isNull(name) || !has(name)) null else optInt(name)
-
-    private fun JSONObject.optNullableDouble(name: String): Double? =
-        if (isNull(name) || !has(name)) null else optDouble(name)
 }
+
+// 파일 최상위(top-level)로 둬 RemoteEngineCoreApiAdapter의 JSON 코덱에서도 `with(...)` 없이
+// 바로 재사용한다.
+internal fun JSONObject.putNullable(
+    name: String,
+    value: Any?,
+): JSONObject =
+    put(name, value ?: JSONObject.NULL)
+
+internal fun JSONObject.optNullableString(name: String): String? =
+    if (isNull(name)) null else optString(name)
+
+internal fun JSONObject.optNullableInt(name: String): Int? =
+    if (isNull(name) || !has(name)) null else optInt(name)
+
+internal fun JSONObject.optNullableDouble(name: String): Double? =
+    if (isNull(name) || !has(name)) null else optDouble(name)

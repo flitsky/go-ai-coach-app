@@ -98,4 +98,29 @@ class PremiumStateTest {
         assertFalse(result.isActive(currentMatchGeneration = 6L, nowMillis = grantedAt))
         assertTrue(result.isActive(currentMatchGeneration = 5L, nowMillis = grantedAt))
     }
+
+    @Test
+    fun defaultAndPurchasedStatesAreAlwaysClockPlausible() {
+        assertTrue(PremiumState().isClockPlausibleAt(nowMillis = 0L))
+        assertTrue(PremiumState.purchased().isClockPlausibleAt(nowMillis = 0L))
+    }
+
+    @Test
+    fun adGrantedStateIsClockPlausibleWhenStartedAtOrBeforeNow() {
+        val grantedAt = 1_000_000L
+        val state = PremiumState.adGranted(matchGeneration = 5L, nowMillis = grantedAt)
+
+        assertTrue(state.isClockPlausibleAt(nowMillis = grantedAt))
+        assertTrue(state.isClockPlausibleAt(nowMillis = grantedAt + 1))
+    }
+
+    @Test
+    fun adGrantedStateIsNotClockPlausibleWhenStartedInTheFuture() {
+        val grantedAt = 1_000_000L
+        val state = PremiumState.adGranted(matchGeneration = 5L, nowMillis = grantedAt)
+
+        // 저장소에서 읽어온 시점의 now가 부여 시각보다 과거라면(기기 시계 되돌림/손상),
+        // isActive의 경과시간 계산이 음수가 되어 영영 만료되지 않는 오판을 막아야 한다.
+        assertFalse(state.isClockPlausibleAt(nowMillis = grantedAt - 1))
+    }
 }

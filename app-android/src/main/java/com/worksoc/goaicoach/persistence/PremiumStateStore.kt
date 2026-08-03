@@ -6,6 +6,12 @@ import com.worksoc.goaicoach.application.premium.PremiumState
 import com.worksoc.goaicoach.application.premium.PremiumStateStorePort
 import org.json.JSONObject
 
+/**
+ * 4계층(External Integration) Extended API 본체 — [PremiumStateStorePort]를 실제
+ * SharedPreferences에 연결하는 어댑터. `docs/ARCHITECTURE.md` 2계층 설명대로, 저장된 값을
+ * 그대로 상위에 흘려보내지 않고 [PremiumState.isClockPlausibleAt]로 신뢰도를 판정한 뒤
+ * 신뢰할 수 없는 값(파싱 실패 포함)은 기본 상태로 폴백한다.
+ */
 internal class PremiumStateStore(context: Context) : PremiumStateStorePort {
     private val prefs = context.applicationContext.getSharedPreferences(PrefsName, Context.MODE_PRIVATE)
 
@@ -17,7 +23,8 @@ internal class PremiumStateStore(context: Context) : PremiumStateStorePort {
 
     override fun load(): PremiumState {
         val raw = prefs.getString(StateKey, null) ?: return PremiumState()
-        return PremiumStateCodec.decode(raw) ?: PremiumState()
+        val decoded = PremiumStateCodec.decode(raw) ?: return PremiumState()
+        return decoded.takeIf { state -> state.isClockPlausibleAt(System.currentTimeMillis()) } ?: PremiumState()
     }
 
     private companion object {

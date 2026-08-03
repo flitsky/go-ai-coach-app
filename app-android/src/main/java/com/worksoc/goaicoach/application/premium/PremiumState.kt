@@ -43,6 +43,20 @@ internal data class PremiumState(
         }
 
     /**
+     * 저장소에서 막 읽어온 상태를 신뢰해도 되는지 판정한다. [PremiumSource.AdGrant]의 시작
+     * 시각이 현재보다 미래라면(기기 시계 되돌림, 디스크 손상 등) 신뢰할 수 없다는 신호다 —
+     * 그런 값을 그대로 믿으면 [isActive]의 경과시간 계산(`nowMillis - adGrantStartedAtMillis`)이
+     * 음수가 되어 영영 만료되지 않는 프리미엄으로 오판된다. 저장소 어댑터(4계층,
+     * `persistence/PremiumStateStore.kt`)가 [load] 시점에 이 판정을 거쳐 신뢰할 수 없는 값은
+     * 기본 상태로 폴백해야 한다.
+     */
+    fun isClockPlausibleAt(nowMillis: Long): Boolean =
+        when (source) {
+            PremiumSource.AdGrant -> adGrantStartedAtMillis?.let { startedAt -> startedAt <= nowMillis } ?: false
+            PremiumSource.Purchase, PremiumSource.None -> true
+        }
+
+    /**
      * 아직 매치에 묶이지 않은(홈 화면에서 활성화된) [AdGrant]를, 실제로 대국이 시작되어
      * 배정된 [matchGeneration]으로 확정한다. 이미 매치가 배정돼 있으면 그대로 둔다
      * (이 경우 새 대국이 또 시작된 것이므로, 굳이 덮어쓰지 않아도 매치 불일치로 자연히 만료된다).
