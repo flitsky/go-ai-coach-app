@@ -6,14 +6,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.ui.text.font.FontWeight
@@ -30,17 +27,10 @@ import com.worksoc.goaicoach.application.engine.EngineBenchmarkProfile
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkProgress
 import com.worksoc.goaicoach.application.analysis.JsonPositionAnalysisCacheOpeningInitialMoveCount
 import com.worksoc.goaicoach.application.analysis.JsonPositionAnalysisCacheOpeningMaxMoveCount
-import com.worksoc.goaicoach.application.engine.toResultSummary
-import com.worksoc.goaicoach.application.score.FinalScoreJudgement
 import com.worksoc.goaicoach.application.session.GameSessionTurnTimeState
-import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
 import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.presentation.GameUiEvent
 import com.worksoc.goaicoach.presentation.shouldCollapseMenuAfterEvent
-import com.worksoc.goaicoach.shared.BoardCoordinate
-import com.worksoc.goaicoach.shared.describe
-import com.worksoc.goaicoach.shared.Ruleset
-import com.worksoc.goaicoach.shared.StoneColor
 
 @Composable
 internal fun GoCoachContent(
@@ -181,177 +171,3 @@ internal fun GoCoachContent(
         )
     }
 }
-
-private fun FinalScoreJudgement.dialogKey(moveCount: Int): String =
-    listOf(
-        moveCount.toString(),
-        winner?.name.orEmpty(),
-        margin?.toString().orEmpty(),
-        ruleset.name,
-        isEstimatedDisplay.toString(),
-        removedBlack.toString(),
-        removedWhite.toString(),
-    ).joinToString("|")
-
-@Composable
-private fun FinalJudgementDialog(
-    judgement: FinalScoreJudgement,
-    strings: UiStrings,
-    onDismiss: () -> Unit,
-    onReview: () -> Unit,
-    onNewGame: () -> Unit,
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(strings.finalJudgementTitle) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(judgement.resultText(strings))
-                Text(judgement.scoringRuleLine(strings))
-                Text(judgement.removedStonesLine(strings))
-                judgement.blackLine(strings)?.let { Text(it) }
-                judgement.whiteLine(strings)?.let { Text(it) }
-                judgement.note(strings)?.let { Text(it) }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onReview) {
-                Text(strings.reviewJudgement)
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onNewGame) {
-                Text(strings.newGameAction)
-            }
-        },
-    )
-}
-
-@Composable
-private fun CacheOptimizationPromptDialog(
-    title: String,
-    message: String,
-    strings: UiStrings,
-    onAccept: () -> Unit,
-    onDismiss: () -> Unit,
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(title) },
-        text = { Text(message) },
-        confirmButton = {
-            TextButton(onClick = onAccept) {
-                Text(strings.analyze)
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(strings.later)
-            }
-        },
-    )
-}
-
-@Composable
-private fun EngineBenchmarkResultDialog(
-    profile: EngineBenchmarkProfile,
-    strings: UiStrings,
-    onConfirm: () -> Unit,
-    onRerun: () -> Unit,
-) {
-    AlertDialog(
-        onDismissRequest = {},
-        title = { Text(strings.benchmarkDoneTitle) },
-        text = {
-            Text(profile.toResultDialogText(strings))
-        },
-        confirmButton = {
-            TextButton(onClick = onConfirm) {
-                Text(strings.confirm)
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onRerun) {
-                Text(strings.rerunBenchmark)
-            }
-        },
-    )
-}
-
-@Composable
-private fun EngineBenchmarkProgressDialog(progress: EngineBenchmarkProgress) {
-    val strings = LocalUiStrings.current
-    AlertDialog(
-        onDismissRequest = {},
-        title = { Text(strings.benchmarkRunningTitle) },
-        text = {
-            Column {
-                Text(strings.benchmarkRunningBody)
-                Spacer(modifier = Modifier.height(12.dp))
-                Text("${strings.benchmarkProgress}: ${progress.completedCalls} / ${progress.totalCalls}")
-                Spacer(modifier = Modifier.height(12.dp))
-                LinearProgressIndicator(
-                    progress = { progress.fraction },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-        },
-        confirmButton = {},
-    )
-}
-
-private fun EngineBenchmarkProfile.toResultDialogText(strings: UiStrings): String =
-    toResultSummary().let { summary ->
-        buildList {
-            add(strings.benchmarkReadyMessage)
-            add("${strings.recommendedMaximumSearchTime}: ${strings.searchTimeLimitLabel(summary.recommendedSearchTimeLimit)}")
-            if (summary.isCautious) {
-                add(strings.benchmarkCautiousMessage)
-            }
-        }.joinToString(separator = "\n")
-    }
-
-@Composable
-internal fun ResumeSavedSessionDialog(
-    snapshot: SavedGameSnapshot,
-    engineName: String,
-    strings: UiStrings,
-    onResume: () -> Unit,
-    onDismiss: () -> Unit,
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(strings.resumeTitle) },
-        text = {
-            Text(
-                text = buildString {
-                    appendLine("${strings.resumeMoveCountPrefix} ${snapshot.gameState.moves.size}${strings.resumeMoveCountSuffix}")
-                    appendLine(strings.resumeQuestion)
-                    appendLine()
-                    append("${strings.lastMovePrefix}: ")
-                    append(
-                        snapshot.gameState.moves
-                            .lastOrNull()
-                            ?.describe(snapshot.gameState.boardSize)
-                            ?: strings.none,
-                    )
-                    appendLine()
-                    append(strings.setupSummary(snapshot.playerSetup, engineName))
-                },
-            )
-        },
-        confirmButton = {
-            TextButton(onClick = onResume) {
-                Text(strings.yes)
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(strings.no)
-            }
-        },
-    )
-}
-
-
-

@@ -18,8 +18,8 @@ Explore 조사(260803)로 4개 카테고리에서 구체적인 후보를 확보�
 ## 2. 완료 정의
 
 - [x] Stage A(상수화) 항목 전부 반영, `make test` 통과 (260803)
-- [ ] Stage B(공통 코드 추출) 항목 전부 반영, 기존 테스트 회귀 없음 — B-2(로그 공통 베이스)는 완료(260803), B-1/B-3/B-4/B-5 남음
-- [ ] Stage C(도메인 분리 — 파일 분리, 로직 불변) 항목 전부 반영
+- [x] Stage B(공통 코드 추출) — B-1/B-2/B-5 완료(260803). B-3/B-4는 재검토 후 기각(260804, §진행 로그) — 더 진행할 항목 없음
+- [ ] Stage C(도메인 분리 — 파일 분리, 로직 불변) — C-1/C-2 완료(260804), C-3~C-6 남음
 - [ ] Stage D(모듈화 — 대형 파일 분리)는 각 항목별로 실제 가치 재검토 후 선택 진행
 
 ## 3. 단계별 작업
@@ -98,7 +98,14 @@ Explore 조사(260803)로 4개 카테고리에서 구체적인 후보를 확보�
   - `make test` 통과 확인(BUILD SUCCESSFUL, `shared`/`engine-android`/`app-android` 전체).
 - 260803 — B-1 완료(부분— 모듈 경계 존중): `JSONObject.optNullable{Int,Long,Double,String}`/`putNullable`을 신규 `middleware/JsonNullableExtensions.kt`로 통합(값이 `has(name) && !isNull(name)` 방식과 `isNull(name) || !has(name)` 방식으로 표현만 다르고 논리적으로 동일함을 확인). `persistence/EngineBenchmarkStore.kt`(Int/Long/Double 사용)와 `persistence/JsonPositionAnalysisCacheStore.kt`(Int/Long/Double/String 전부 사용)의 로컬 중복 정의 제거 후 import로 교체 — `persistence`가 `middleware`를 참조하는 방향은 기존 `LayeringContractTest`의 어떤 제약과도 충돌하지 않음(반대 방향, middleware→persistence만 금지돼 있음을 확인). `engine-android/.../KataGoJsonAnalysisParser.kt`의 동일 헬퍼는 **의도적으로 그대로 둠** — `engine-android`는 `shared`에만 의존하고 `app-android`(middleware가 속한 모듈)에는 의존하지 않아, 공유하려면 `shared`에 새 `androidMain` 소스셋을 만들어야 하는데(현재 `commonMain`만 존재) 2줄짜리 헬퍼 하나 때문에 빌드 구성을 늘리는 건 과함. `EngineBenchmarkStoreTest`/`JsonPositionAnalysisCacheStoreTest` 회귀 없이 통과.
 - 260803 — B-5 완료: `ui/GoBoard.kt`의 `stoneBrush()`(진행 중 그라디언트)와 `drawGhostStone()`(반투명 미리보기)에 완전히 동일한 흑/백 4단 그라디언트 hex 리스트가 각각 박혀 있던 것을 확인, `activeStoneGradientColors(stone)` 함수로 추출해 두 곳이 공유하도록 통합(색상 값 변경 없음, 리스트 내용 동일함을 diff로 확인 후 추출). Compose UI라 시각적 확인은 이 세션에 Android 에뮬레이터 도구가 없어 못했음 — 다만 순수 값 이동이라 회귀 위험은 낮다고 판단.
-- B-3(스키마 있는 JSON 코덱 envelope 통합)/B-4(Move JSON 인코딩 통합)은 4개 스토어(`GameSessionStore`/`JsonPositionAnalysisCacheStore`/`EngineBenchmarkStore`/`UserPreferencesStore`)의 사용자 데이터 영속화 포맷과 직결돼 신중한 개별 비교가 필요 — 이번 배치에서는 보류, 별도로 진행 예정.
+- 260804 — B-3/B-4 재검토 후 기각(진행하지 않기로 결정): 4개 스토어를 실제로 나란히 읽어보니 애초 Explore 조사가 표면적 코드 모양만 보고 후보로 올렸던 것으로 드러났다.
+  - B-3(스키마 envelope 통합): `GameSessionStore`/`JsonPositionAnalysisCacheStore`/`EngineBenchmarkStore` 3곳은 "스키마 불일치 시 거부"(`optInt("schema", Current) != Current → null`)지만, `UserPreferencesStore`만 "스키마 필드가 없으면 레거시 v1로 간주하고 실제 마이그레이션 경로(`decodeLegacySearchTimeSettings`)를 탄다" — 정책 자체가 다르다. 공유 가능한 코드는 사실상 2줄(`put("schema", N)` / `optInt(...) != N` 체크)뿐이라 공통 추출의 가치가 없고, 억지로 추출하면 오히려 각 스토어의 실제 마이그레이션 의도를 가리는 간접 계층만 추가된다.
+  - B-4(Move JSON 인코딩 통합): `GameSessionStore`는 좌표를 GTP 라벨 문자열로(`coordinate: "D4"`, 디코딩 시 `boardSize` 필요), `JsonPositionAnalysisCacheStore`는 row/column 정수로(`row`/`column` 필드, `boardSize` 불필요) 각각 인코딩한다 — 포맷 자체가 다르다. 통일하면 둘 중 한쪽의 기존 저장 데이터(사용자의 저장된 대국 또는 포지션 분석 캐시)와 호환이 깨진다.
+  - 결론: 두 항목 모두 진행하지 않는다. 계획서의 "Stage B 완료 정의" 원칙("동작을 바꾸지 않는 리팩토링")과 실제로 상충하는 후보였다.
+- 260804 — C-1 완료: `ui/GoCoachContent.kt`(347줄)에서 서로 무관한 다이얼로그 4종을 도메인별 파일로 분리 — `FinalJudgementDialog.kt`(종국판정 + `dialogKey()`), `CacheOptimizationPromptDialog.kt`, `EngineBenchmarkDialogs.kt`(결과+진행 다이얼로그 + `toResultDialogText()`, 벤치마크라는 한 도메인이라 한 파일로 묶음), `ResumeSavedSessionDialog.kt`(원래도 `internal`이라 `GoCoachApp.kt`에서 직접 호출 중이던 것 확인). `GoCoachContent.kt`는 173줄로 축소, 오케스트레이터(`GoCoachContent` composable)만 남음. 로직/동작 변경 없음(순수 이동), `make test` 통과.
+- 260804 — C-2 완료: `ui/GoCoachControllerWiring.kt`(494줄)의 12개 컨트롤러 조립을 도메인별 4개 파일로 분리 — `TurnFlowControllerWiring.kt`(TopMoves/Undo/AutoAiTurn/HumanMove), `GameLifecycleControllerWiring.kt`(NewGame/SavedSession), `ScoringControllerWiring.kt`(CacheOpt/ScoreEstimate/ScoringRule), `SettingsAndDiagnosticsControllerWiring.kt`(Settings/DebugReport/Benchmark). 착수 전 확인한 실제 제약: 6개 컨트롤러가 `topMovesController`를(후속 분석 트리거로), `settingsController`가 `undoController`를 생성 시점에 참조해 순서가 고정돼 있음 — 이 교차참조를 암묵적 클로저 대신 **명시적 함수 매개변수**로 만들어 분리했다(예: `wireScoringRuleController(context, topMovesController)`). `GoCoachControllerWiring.kt`는 데이터 클래스/인터페이스/오케스트레이터(`wireGoCoachControllers`, 의존 순서대로 12개 `wireXxx` 호출 후 조립)만 남아 149줄로 축소.
+  - 발견한 테스트 결함: `LayeringContractTest`의 7개 `goCoachAppDoesNotOwn*WorkflowBody` 테스트가 `GoCoachApp.kt`+`GoCoachControllerWiring.kt` 두 파일만 하드코딩해서 합쳐 읽고 있었다 — 분리 후 일부는 `wireTopMovesController(` 같은 새 함수 이름이 우연히 필요 문자열(`"TopMovesController("`)을 부분 문자열로 포함해 **우연히** 통과했고, 2개(`goCoachAppDoesNotOwnPositionCacheOptimizationWorkflowBody`, `goCoachAppDoesNotOwnAutoAiTurnCompletionApplyBody`)는 진짜로 실패했다. 7개 테스트 전부를 새 wiring 파일 5개를 합쳐 읽도록 고쳐 이 우연성을 제거했다.
+  - `make test` 통과 확인(BUILD SUCCESSFUL, `LayeringContractTest` 43개 전부).
 
 ## 6. 관련 문서
 
