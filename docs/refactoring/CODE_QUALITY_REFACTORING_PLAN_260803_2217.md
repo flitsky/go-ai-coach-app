@@ -19,7 +19,7 @@ Explore 조사(260803)로 4개 카테고리에서 구체적인 후보를 확보�
 
 - [x] Stage A(상수화) 항목 전부 반영, `make test` 통과 (260803)
 - [x] Stage B(공통 코드 추출) — B-1/B-2/B-5 완료(260803). B-3/B-4는 재검토 후 기각(260804, §진행 로그) — 더 진행할 항목 없음
-- [ ] Stage C(도메인 분리 — 파일 분리, 로직 불변) — C-1/C-2 완료(260804), C-3~C-6 남음
+- [x] Stage C(도메인 분리 — 파일 분리, 로직 불변) 전부 완료(260804)
 - [ ] Stage D(모듈화 — 대형 파일 분리)는 각 항목별로 실제 가치 재검토 후 선택 진행
 
 ## 3. 단계별 작업
@@ -106,6 +106,11 @@ Explore 조사(260803)로 4개 카테고리에서 구체적인 후보를 확보�
 - 260804 — C-2 완료: `ui/GoCoachControllerWiring.kt`(494줄)의 12개 컨트롤러 조립을 도메인별 4개 파일로 분리 — `TurnFlowControllerWiring.kt`(TopMoves/Undo/AutoAiTurn/HumanMove), `GameLifecycleControllerWiring.kt`(NewGame/SavedSession), `ScoringControllerWiring.kt`(CacheOpt/ScoreEstimate/ScoringRule), `SettingsAndDiagnosticsControllerWiring.kt`(Settings/DebugReport/Benchmark). 착수 전 확인한 실제 제약: 6개 컨트롤러가 `topMovesController`를(후속 분석 트리거로), `settingsController`가 `undoController`를 생성 시점에 참조해 순서가 고정돼 있음 — 이 교차참조를 암묵적 클로저 대신 **명시적 함수 매개변수**로 만들어 분리했다(예: `wireScoringRuleController(context, topMovesController)`). `GoCoachControllerWiring.kt`는 데이터 클래스/인터페이스/오케스트레이터(`wireGoCoachControllers`, 의존 순서대로 12개 `wireXxx` 호출 후 조립)만 남아 149줄로 축소.
   - 발견한 테스트 결함: `LayeringContractTest`의 7개 `goCoachAppDoesNotOwn*WorkflowBody` 테스트가 `GoCoachApp.kt`+`GoCoachControllerWiring.kt` 두 파일만 하드코딩해서 합쳐 읽고 있었다 — 분리 후 일부는 `wireTopMovesController(` 같은 새 함수 이름이 우연히 필요 문자열(`"TopMovesController("`)을 부분 문자열로 포함해 **우연히** 통과했고, 2개(`goCoachAppDoesNotOwnPositionCacheOptimizationWorkflowBody`, `goCoachAppDoesNotOwnAutoAiTurnCompletionApplyBody`)는 진짜로 실패했다. 7개 테스트 전부를 새 wiring 파일 5개를 합쳐 읽도록 고쳐 이 우연성을 제거했다.
   - `make test` 통과 확인(BUILD SUCCESSFUL, `LayeringContractTest` 43개 전부).
+- 260804 — C-3 완료: `shared/.../match/MatchPolicy.kt`(431줄)를 모델과 오케스트레이션으로 분리. `MatchPolicy.kt`(226줄, 좌석/플레이어 데이터 모델: `MatchMode`/`SeatId`/`SeatAssignment`/`MatchSeatSnapshot`/`PlayerSetup`/`SidePlayerSetup` 등)와 신규 `MatchTurnOrchestration.kt`(턴 진행: `TurnOutcome`/`AiMoveEngineGateway`/`applyAiTurn`/`applyAiResponseAfterHumanTurn`/`activePlayer`/`boardInputEnabled`/`turnStatus`). KMP `commonMain`이라 import 분리만으로 클린 컴파일(shared/engine-android/app-android 3개 모듈 전부 첫 시도에 통과).
+- 260804 — C-4 완료: `presentation/GameScreenState.kt`(325줄)에서 `KaTrainUxOptions`(영구 저장 UX 토글 번들, 화면 상태 도출과 무관한 별도 축)를 `presentation/KaTrainUxOptions.kt`로 분리.
+- 260804 — C-5 완료: `ui/GameMenuActionsPanel.kt`에서 `ScoringAndBoardSettingsPanel`(+ 접바둑 관련 헬퍼 `HandicapSettingRow`/`HandicapStepButton`)을 신규 `ui/ScoringAndBoardSettingsPanel.kt`로 분리, `GameMenuActionsPanel.kt`는 로그/벤치마크 트리거 패널만 남김.
+- 260804 — C-6 완료: `application/score/ScoreDisplayApplication.kt`(387줄)를 형세판단과 종국/엔드게임으로 분리. 신규 `ScoreEstimateApplication.kt`(형세판단 워크플로우 전체)로 이동, `ScoreDisplayApplication.kt`(198줄)는 종국/엔드게임 워크플로우만 남김. 부수 발견: 원본 파일에 `Ruleset`/`kotlin.math.roundToInt` 미사용 import가 있었음 — 어차피 모든 import를 재배치해야 해서 이번에 같이 제거(순수 이동 원칙에서 벗어나지 않는 범위의 정리). `ScoreDisplayApplicationTest.kt`는 `application.score.*` 와일드카드 import라 영향 없음 확인.
+- 260804 — Stage C(C-1~C-6) 전부 완료. `make test` 전체 통과 확인(BUILD SUCCESSFUL, 3개 모듈).
 
 ## 6. 관련 문서
 
