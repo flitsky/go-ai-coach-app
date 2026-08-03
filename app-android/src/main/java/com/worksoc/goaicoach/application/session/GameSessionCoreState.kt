@@ -92,7 +92,7 @@ internal data class GameSessionCoreState(
         copy(
             gameState = reset.gameState,
             isGameEnded = false,
-            runtimeState = runtimeState.nextSessionGeneration(),
+            runtimeState = runtimeState.nextSessionGeneration().nextMatchGeneration(),
             analysisState = GameSessionAnalysisState.reset(
                 candidateText = reset.candidateText,
                 reviewAnalysis = reset.reviewAnalysis,
@@ -143,7 +143,7 @@ internal data class GameSessionCoreState(
                 scoreSnapshots = restore.scoreSnapshots,
                 endgameLog = restore.endgameLog,
             ),
-            runtimeState = runtimeState.applySelection(restore.runtime).nextSessionGeneration(),
+            runtimeState = runtimeState.applySelection(restore.runtime).nextSessionGeneration().nextMatchGeneration(),
             moveReviewState = GameSessionMoveReviewState.reset(
                 moveReviewText = restore.moveReviewText,
                 lastMoveText = restore.lastMoveText,

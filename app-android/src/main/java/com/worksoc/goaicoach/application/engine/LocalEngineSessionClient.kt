@@ -263,6 +263,8 @@ internal class LocalEngineSessionClient(
     override suspend fun undoMove(): EngineStatus =
         coreSession.undoMove()
 
+    override fun forceResetEngine() = coreApi.forceReset()
+
     override suspend fun runStartupBenchmark(
         restoreState: GameState,
         nowMillis: Long,

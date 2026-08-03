@@ -67,6 +67,13 @@ internal sealed interface GameUiEvent {
     data class ChangeHandicapCount(
         val count: Int,
     ) : GameUiEvent
+
+    data class ReportEngineTurnWatchdogTriggered(
+        val elapsedMillis: Long,
+        val thresholdMillis: Long,
+    ) : GameUiEvent
+
+    data object ForceResetEngine : GameUiEvent
 }
 
 internal data class GameUiEventHandlers(
@@ -94,6 +101,8 @@ internal data class GameUiEventHandlers(
     val changeKomi: (Double) -> Unit,
     val changeUxOptions: (KaTrainUxOptions) -> Unit,
     val changeHandicapCount: (Int) -> Unit,
+    val reportEngineTurnWatchdogTriggered: (elapsedMillis: Long, thresholdMillis: Long) -> Unit,
+    val forceResetEngine: () -> Unit,
 )
 
 internal fun buildGameUiEventHandlers(
@@ -121,6 +130,8 @@ internal fun buildGameUiEventHandlers(
     changeKomi: (Double) -> Unit,
     changeUxOptions: (KaTrainUxOptions) -> Unit,
     changeHandicapCount: (Int) -> Unit,
+    reportEngineTurnWatchdogTriggered: (elapsedMillis: Long, thresholdMillis: Long) -> Unit,
+    forceResetEngine: () -> Unit,
 ): GameUiEventHandlers =
     GameUiEventHandlers(
         currentPlayer = currentPlayer,
@@ -147,6 +158,8 @@ internal fun buildGameUiEventHandlers(
         changeKomi = changeKomi,
         changeUxOptions = changeUxOptions,
         changeHandicapCount = changeHandicapCount,
+        reportEngineTurnWatchdogTriggered = reportEngineTurnWatchdogTriggered,
+        forceResetEngine = forceResetEngine,
     )
 
 internal fun dispatchGameUiEvent(
@@ -183,5 +196,8 @@ internal fun dispatchGameUiEvent(
         is GameUiEvent.ChangeKomi -> handlers.changeKomi(event.komi)
         is GameUiEvent.ChangeUxOptions -> handlers.changeUxOptions(event.options)
         is GameUiEvent.ChangeHandicapCount -> handlers.changeHandicapCount(event.count)
+        is GameUiEvent.ReportEngineTurnWatchdogTriggered ->
+            handlers.reportEngineTurnWatchdogTriggered(event.elapsedMillis, event.thresholdMillis)
+        GameUiEvent.ForceResetEngine -> handlers.forceResetEngine()
     }
 }

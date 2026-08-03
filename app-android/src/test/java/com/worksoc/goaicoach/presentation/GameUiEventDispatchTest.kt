@@ -207,5 +207,7 @@ class GameUiEventDispatchTest {
             changeKomi = changeKomi,
             changeUxOptions = changeUxOptions,
             changeHandicapCount = {},
+            reportEngineTurnWatchdogTriggered = { _, _ -> },
+            forceResetEngine = {},
         )
 }

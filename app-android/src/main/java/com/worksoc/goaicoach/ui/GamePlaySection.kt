@@ -41,6 +41,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.worksoc.goaicoach.application.safety.engineTurnWatchdogTimeoutMillisFor
+import com.worksoc.goaicoach.application.safety.isEngineTurnWatchdogTriggered
 import com.worksoc.goaicoach.application.session.GameSessionTurnTimeState
 import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.match.SidePlayerSetup
@@ -115,11 +117,77 @@ internal fun GamePlaySection(
 
     // 대국 현황 패널 & 실시간 타이머 계산 (AI 차례 포함 실시간 티킹)
     var now by remember { mutableStateOf(System.currentTimeMillis()) }
+    // 와치독 발동 시 뜨는 복구 팝업의 표시 여부. 새 차례가 시작될 때마다(키가 바뀔 때마다)
+    // remember가 자동으로 false로 되돌리므로, 다음 차례에는 다시 정상적으로 감지 가능하다.
+    var showEngineStuckDialog by remember(turnTimeState.currentTurnStartedAtMillis) { mutableStateOf(false) }
+    var engineStuckElapsedMillis by remember(turnTimeState.currentTurnStartedAtMillis) { mutableStateOf(0L) }
+    var engineStuckThresholdMillis by remember(turnTimeState.currentTurnStartedAtMillis) { mutableStateOf(0L) }
     LaunchedEffect(turnTimeState.currentTurnStartedAtMillis, turnTimeState.isPaused, screenState.isGameEnded) {
+        // 안전 관리(레프리) 도메인 와치독: 새 차례가 시작될 때마다(이 effect가 재시작될 때마다)
+        // 리셋되므로 별도 remember 없이 이 지역 변수 하나로 "이번 차례에 이미 보고했는지"를 추적한다.
+        var watchdogReported = false
         while (!screenState.isGameEnded && !turnTimeState.isPaused) {
             delay(200)
             now = System.currentTimeMillis()
+            if (!watchdogReported) {
+                val elapsedSinceTurnStartMillis = (now - turnTimeState.currentTurnStartedAtMillis).coerceAtLeast(0L)
+                val isAiTurn = when (turnTimeState.currentTurnPlayer) {
+                    StoneColor.Black -> screenState.playerSetup.black.controller == SeatController.Ai
+                    StoneColor.White -> screenState.playerSetup.white.controller == SeatController.Ai
+                }
+                val searchTimeLimit = screenState.searchTimeSettings.limit
+                if (isEngineTurnWatchdogTriggered(isAiTurn, elapsedSinceTurnStartMillis, searchTimeLimit)) {
+                    watchdogReported = true
+                    val thresholdMillis = engineTurnWatchdogTimeoutMillisFor(searchTimeLimit)
+                    onEvent(
+                        GameUiEvent.ReportEngineTurnWatchdogTriggered(
+                            elapsedMillis = elapsedSinceTurnStartMillis,
+                            thresholdMillis = thresholdMillis,
+                        ),
+                    )
+                    // 감지에 그치지 않고 사용자가 인식하고 직접 복구할 수 있도록 팝업을 띄운다.
+                    // 자동 복구는 이번 범위에 포함하지 않음 — 개발 단계에서는 사용자가 직접
+                    // 확인 후 판단하도록 한다.
+                    engineStuckElapsedMillis = elapsedSinceTurnStartMillis
+                    engineStuckThresholdMillis = thresholdMillis
+                    showEngineStuckDialog = true
+                }
+            }
         }
+    }
+
+    if (showEngineStuckDialog) {
+        val strings = LocalUiStrings.current
+        AlertDialog(
+            onDismissRequest = { showEngineStuckDialog = false },
+            title = { Text(strings.engineStuckDialogTitle) },
+            text = {
+                Column {
+                    Text(strings.engineStuckDialogMessage)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "elapsed=${engineStuckElapsedMillis / 1000}s / threshold=${engineStuckThresholdMillis / 1000}s",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.secondary,
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showEngineStuckDialog = false
+                        onEvent(GameUiEvent.ForceResetEngine)
+                    },
+                ) {
+                    Text(strings.engineStuckDialogResetAction)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEngineStuckDialog = false }) {
+                    Text(strings.engineStuckDialogWaitAction)
+                }
+            },
+        )
     }
 
     val currentTurnPlayer = turnTimeState.currentTurnPlayer
@@ -237,15 +305,10 @@ private fun GameActionButtons(
         if (premium.isActive) action() else showPremiumUpsellDialog = true
     }
 
-    if (showPremiumUpsellDialog) {
-        PremiumUpsellDialog(
-            onConfirm = {
-                showPremiumUpsellDialog = false
-                premium.activateForMatch()
-            },
-            onDismiss = { showPremiumUpsellDialog = false },
-        )
-    }
+    PremiumUpsellDialogHost(
+        visible = showPremiumUpsellDialog,
+        onDismiss = { showPremiumUpsellDialog = false },
+    )
 
     if (showResignConfirm) {
         AlertDialog(

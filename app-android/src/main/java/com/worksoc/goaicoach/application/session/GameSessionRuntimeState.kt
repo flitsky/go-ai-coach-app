@@ -10,6 +10,11 @@ internal data class GameSessionRuntimeState(
     val engineProfile: EngineProfile,
     val analysisPreset: AnalysisPreset,
     val sessionGeneration: Long = 0L,
+    // Identifies the current match for concerns that must survive an in-match
+    // undo (e.g. premium activation binding). Unlike sessionGeneration — which
+    // bumps on undo too, to invalidate stale async engine results — this only
+    // bumps when a genuinely new match starts.
+    val matchGeneration: Long = 0L,
 ) {
     fun applySelection(selection: RuntimePlayLevelSelection): GameSessionRuntimeState =
         copy(
@@ -27,4 +32,7 @@ internal data class GameSessionRuntimeState(
 
     fun nextSessionGeneration(): GameSessionRuntimeState =
         copy(sessionGeneration = sessionGeneration + 1)
+
+    fun nextMatchGeneration(): GameSessionRuntimeState =
+        copy(matchGeneration = matchGeneration + 1)
 }

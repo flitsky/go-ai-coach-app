@@ -201,6 +201,19 @@ class KataGoProcessEngineAdapter(
         return EngineStatus.stopped("KataGo process stopped")
     }
 
+    // Deliberately does not acquire commandMutex/analysisQueryMutex: if a call is
+    // genuinely stuck holding one, waiting for it here would defeat the entire
+    // purpose of a manual "unstick this now" recovery action. destroy() closes the
+    // process's underlying pipes, which is what actually unblocks a thread stuck in
+    // a blocking read (a plain Thread.interrupt() would not — see sendCommand/
+    // sendAnalysisQuery). The stuck call then errors out on its own and releases
+    // its mutex normally; the next sendCommand/sendAnalysisQuery call sees process
+    // == null and starts a fresh one via ensureProcessStarted()/ensureAnalysisProcessStarted().
+    override fun forceReset() {
+        restartProcessAfterTimeout()
+        restartAnalysisProcessAfterTimeout()
+    }
+
     private fun ensureProcessStarted() {
         if (process?.isAlive == true) {
             return

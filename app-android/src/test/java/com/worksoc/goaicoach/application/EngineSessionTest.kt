@@ -649,6 +649,10 @@ private class RecordingEngineAdapter(
         EngineStatus.stopped("stopped").also {
             calls += "stop"
         }
+
+    override fun forceReset() {
+        calls += "forceReset"
+    }
 }
 
 private class InMemoryPositionAnalysisCacheStore : PositionAnalysisCacheStore {

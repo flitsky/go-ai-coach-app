@@ -82,6 +82,19 @@ interface EngineCoreApi {
      */
     suspend fun scoreFinal(): FinalScoreResult
     suspend fun stop(): EngineStatus
+
+    /**
+     * Forcibly abandons the current engine process/connection without waiting
+     * for any in-flight command to finish, for manual last-resort recovery
+     * (e.g. an engine-turn watchdog fires because a command appears
+     * permanently stuck). This is deliberately not a graceful [stop] — it
+     * does not send a quit command, since a wedged transport cannot be
+     * trusted to accept one — and it must not suspend or block. The next
+     * call automatically starts a fresh process; callers are responsible for
+     * resyncing game state onto it (existing turn/analysis call paths already
+     * do this unconditionally).
+     */
+    fun forceReset()
 }
 
 /**

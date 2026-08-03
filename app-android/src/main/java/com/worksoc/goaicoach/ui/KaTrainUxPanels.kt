@@ -49,15 +49,10 @@ internal fun KaTrainUxMenuPanel(
     var showPremiumUpsellDialog by remember { mutableStateOf(false) }
     val columnGap = (LocalConfiguration.current.screenWidthDp * 0.05f).dp
 
-    if (showPremiumUpsellDialog) {
-        PremiumUpsellDialog(
-            onConfirm = {
-                showPremiumUpsellDialog = false
-                premium.activateForMatch()
-            },
-            onDismiss = { showPremiumUpsellDialog = false },
-        )
-    }
+    PremiumUpsellDialogHost(
+        visible = showPremiumUpsellDialog,
+        onDismiss = { showPremiumUpsellDialog = false },
+    )
 
     Surface(
         modifier = Modifier.fillMaxWidth(),

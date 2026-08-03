@@ -596,6 +596,8 @@ private class RecordingBenchmarkEngineAdapter(
     override suspend fun stop(): EngineStatus =
         EngineStatus.stopped("stopped")
 
+    override fun forceReset() = Unit
+
     private fun GameState.nextBenchmarkCandidate(): CandidateMove? {
         val labels = listOf("E5", "C5", "G6", "F3", "C6", "D4")
         val label = labels.getOrNull(moves.size) ?: return null

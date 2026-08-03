@@ -3,6 +3,8 @@ package com.worksoc.goaicoach.application
 import com.worksoc.goaicoach.application.analysis.*
 import com.worksoc.goaicoach.application.humanmove.*
 
+import com.worksoc.goaicoach.application.savedgame.SavedGameRestorePlan
+
 import com.worksoc.goaicoach.application.undo.*
 
 import com.worksoc.goaicoach.application.startgame.*
@@ -81,6 +83,8 @@ class GameSessionCoreStateTest {
         assertEquals("None", next.moveReviewState.lastMoveText)
         assertEquals(emptyList<MoveReviewMarker>(), next.moveReviewState.moveReviews)
         assertEquals(1L, next.runtimeState.sessionGeneration)
+        // 새 대국 시작은 프리미엄 매치 바인딩용 matchGeneration도 함께 증가시켜야 한다.
+        assertEquals(1L, next.runtimeState.matchGeneration)
         assertEquals("New game started.", next.engineMessage)
     }
 
@@ -307,7 +311,43 @@ class GameSessionCoreStateTest {
         assertEquals("Move review cleared by undo.", next.moveReviewState.moveReviewText)
         assertEquals(listOf(marker), next.moveReviewState.moveReviews)
         assertEquals(1L, next.runtimeState.sessionGeneration)
+        // 회귀 방지: 무르기는 엔진 오퍼레이션 무효화용 sessionGeneration은 올리지만,
+        // 프리미엄 매치 바인딩용 matchGeneration은 건드리지 않아야 한다 — 그렇지 않으면
+        // 프리미엄이 활성화된 상태에서 무르기를 누르는 순간 프리미엄이 풀려버린다.
+        assertEquals(0L, next.runtimeState.matchGeneration)
         assertEquals("previous message", next.engineMessage)
+    }
+
+    @Test
+    fun applySavedGameRestorePlanBumpsBothSessionAndMatchGeneration() {
+        val playLevel = PlayLevelSetting(group = PlayLevelGroup.Intermediate, level = 5)
+        val searchTimeSettings = SearchTimeSettings(com.worksoc.goaicoach.shared.SearchTimeLimit.WithinThreeSeconds)
+        val profile = playLevel.toEngineProfile(EngineProfile(), searchTimeSettings)
+        val restore = SavedGameRestorePlan(
+            gameState = GameState.empty(),
+            playerSetup = PlayerSetup(),
+            runtime = RuntimePlayLevelSelection(
+                playLevel = playLevel,
+                engineProfile = profile,
+                analysisPreset = playLevel.analysisPreset,
+                searchTimeSettings = searchTimeSettings,
+            ),
+            topMovesEnabled = false,
+            candidateText = "restored candidates",
+            reviewAnalysis = MoveAnalysisSnapshot.empty(GameState.empty()),
+            scoreText = "restored score",
+            scoreSnapshots = emptyList(),
+            moveReviewText = "restored move review",
+            lastMoveText = "None",
+            endgameLog = "restored endgame log",
+            engineMessage = "Saved game restored.",
+        )
+
+        val next = baseCoreState(isGameEnded = true).applySavedGameRestorePlan(restore)
+
+        assertEquals(1L, next.runtimeState.sessionGeneration)
+        // 저장된 대국 로드는 새 매치를 여는 것과 동등하므로 matchGeneration도 함께 증가한다.
+        assertEquals(1L, next.runtimeState.matchGeneration)
     }
 
     @Test

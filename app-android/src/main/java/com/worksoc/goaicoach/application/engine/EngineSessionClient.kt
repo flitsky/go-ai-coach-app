@@ -121,6 +121,13 @@ internal interface EngineSessionClient {
 
     suspend fun undoMove(): EngineStatus
 
+    /**
+     * Manual last-resort recovery for a wedged engine (e.g. the engine turn
+     * watchdog fires). Must not suspend or block — see [com.worksoc.goaicoach.shared.EngineCoreApi.forceReset].
+     * Defaults to a no-op since not every backend has a real transport to reset.
+     */
+    fun forceResetEngine() {}
+
     suspend fun runStartupBenchmark(
         restoreState: GameState,
         nowMillis: Long,

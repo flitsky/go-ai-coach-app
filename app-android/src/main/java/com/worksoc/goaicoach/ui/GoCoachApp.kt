@@ -17,6 +17,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.worksoc.goaicoach.application.premium.PremiumSource
 import com.worksoc.goaicoach.application.premium.PremiumState
 import com.worksoc.goaicoach.application.premium.PremiumStateStorePort
 import androidx.compose.ui.platform.LocalContext
@@ -36,6 +37,8 @@ import com.worksoc.goaicoach.application.debugreport.ClipboardPort
 import com.worksoc.goaicoach.application.debugreport.DebugReportMirrorPort
 import com.worksoc.goaicoach.application.debugreport.UserNoticePort
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
+import com.worksoc.goaicoach.shared.diagnostic.DiagnosticEvent
+import com.worksoc.goaicoach.shared.diagnostic.DiagnosticSeverity
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkController
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkStorePort
 import com.worksoc.goaicoach.application.engine.EngineSessionClient
@@ -575,6 +578,30 @@ private fun GoCoachScreen(
                         refreshNewGamePreview()
                     }
                 },
+                reportEngineTurnWatchdogTriggered = { elapsedMillis, thresholdMillis ->
+                    diagnosticEventLog.append(
+                        DiagnosticEvent(
+                            severity = DiagnosticSeverity.Warning,
+                            code = "engine_turn_watchdog_triggered",
+                            message = "AI turn exceeded the watchdog threshold without responding.",
+                            context = mapOf(
+                                "elapsedMillis" to elapsedMillis.toString(),
+                                "thresholdMillis" to thresholdMillis.toString(),
+                                "player" to gameState.nextPlayer.name,
+                            ),
+                        ),
+                    )
+                },
+                forceResetEngine = {
+                    diagnosticEventLog.append(
+                        DiagnosticEvent(
+                            severity = DiagnosticSeverity.Warning,
+                            code = "engine_force_reset_requested",
+                            message = "User manually requested engine reset after watchdog warning.",
+                        ),
+                    )
+                    engineClient.forceResetEngine()
+                },
             ),
         )
     }
@@ -699,34 +726,48 @@ private fun GoCoachScreen(
 
     val premiumUiState = PremiumUiState(
         isActive = premiumState.isActive(
-            currentSessionGeneration = runtimeState.sessionGeneration,
+            currentMatchGeneration = runtimeState.matchGeneration,
             // 별도 tick 없이 재구성될 때마다 현재 시각으로 평가한다 — 대국 중에는 착수/AI
             // 응답 등으로 이 컴포저블이 충분히 자주 재구성되므로 1시간 만료 판정에 문제없다.
             nowMillis = System.currentTimeMillis(),
         ),
         activateForMatch = {
-            // 이미 대국 중(인게임 잠긴 버튼에서 활성화)이면 현재 세션에 바로 묶고,
-            // 아직 대국 시작 전(홈 화면 팝업)이면 어느 세션에도 묶지 않은 채로 둔다 —
-            // 실제 대국이 시작되는 시점(sessionGeneration 변경)에 아래 effect가
-            // 그때 배정된 세션 번호로 확정한다. 홈 화면에서 바로 현재 sessionGeneration에
-            // 묶어버리면, 그 뒤에 실제로 시작되는 대국은 다른(증가된) 세션 번호를 받아서
+            // 이미 대국 중(인게임 잠긴 버튼에서 활성화)이면 현재 매치에 바로 묶고,
+            // 아직 대국 시작 전(홈 화면 팝업)이면 어느 매치에도 묶지 않은 채로 둔다 —
+            // 실제 대국이 시작되는 시점(matchGeneration 변경)에 아래 effect가
+            // 그때 배정된 매치 번호로 확정한다. 홈 화면에서 바로 현재 matchGeneration에
+            // 묶어버리면, 그 뒤에 실제로 시작되는 대국은 다른(증가된) 매치 번호를 받아서
             // 방금 활성화한 프리미엄이 곧바로 무효 판정되는 문제가 있었다.
+            // matchGeneration은 무르기(undo)로는 바뀌지 않는다 — sessionGeneration(엔진
+            // 오퍼레이션 무효화용)과 분리된 별도 카운터라서, 무르기 한 번에 프리미엄이
+            // 풀리는 문제가 없다.
             premiumState = PremiumState.adGranted(
-                sessionGeneration = if (currentDestination == ScreenDestination.InGame) {
-                    runtimeState.sessionGeneration
+                matchGeneration = if (currentDestination == ScreenDestination.InGame) {
+                    runtimeState.matchGeneration
                 } else {
                     null
                 },
                 nowMillis = System.currentTimeMillis(),
             )
             premiumStateStore.save(premiumState)
+            diagnosticEventLog.append(
+                DiagnosticEvent(
+                    severity = DiagnosticSeverity.Info,
+                    code = "premium_ad_grant_activated",
+                    message = "Premium ad grant activated.",
+                    context = mapOf(
+                        "adGrantMatchGeneration" to (premiumState.adGrantMatchGeneration?.toString() ?: "pending"),
+                        "currentMatchGeneration" to runtimeState.matchGeneration.toString(),
+                    ),
+                ),
+            )
         },
     )
 
-    // 홈 화면에서 활성화되어 아직 세션에 묶이지 않은 프리미엄을, 실제 대국이 시작되어
-    // sessionGeneration이 배정/변경되는 시점에 그 세션으로 확정한다.
-    LaunchedEffect(runtimeState.sessionGeneration) {
-        premiumState = premiumState.bindToSessionIfPending(runtimeState.sessionGeneration)
+    // 홈 화면에서 활성화되어 아직 매치에 묶이지 않은 프리미엄을, 실제 대국이 시작되어
+    // matchGeneration이 배정/변경되는 시점에 그 매치로 확정한다.
+    LaunchedEffect(runtimeState.matchGeneration) {
+        premiumState = premiumState.bindToMatchIfPending(runtimeState.matchGeneration)
         premiumStateStore.save(premiumState)
     }
 
@@ -736,6 +777,24 @@ private fun GoCoachScreen(
         if (!premiumUiState.isActive) {
             uxOptions = uxOptions.copy(showOwnershipOverlay = false)
             controllers.topMovesController.hide()
+            // source가 None이면 애초에 활성화된 적이 없으므로(예: 앱 최초 실행) 로그하지 않는다
+            // — 실제로 활성 상태였다가 꺼진 경우(매치 불일치/만료/명시적 비활성화)만 남긴다.
+            if (premiumState.source != PremiumSource.None) {
+                diagnosticEventLog.append(
+                    DiagnosticEvent(
+                        severity = DiagnosticSeverity.Info,
+                        code = "premium_deactivated",
+                        message = "Premium is no longer active.",
+                        context = mapOf(
+                            "source" to premiumState.source.name,
+                            "adGrantMatchGeneration" to (premiumState.adGrantMatchGeneration?.toString() ?: "null"),
+                            "currentMatchGeneration" to runtimeState.matchGeneration.toString(),
+                            "adGrantStartedAtMillis" to (premiumState.adGrantStartedAtMillis?.toString() ?: "null"),
+                            "nowMillis" to System.currentTimeMillis().toString(),
+                        ),
+                    ),
+                )
+            }
         }
     }
 

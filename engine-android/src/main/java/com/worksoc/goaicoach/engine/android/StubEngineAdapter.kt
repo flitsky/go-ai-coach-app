@@ -174,6 +174,10 @@ class StubEngineAdapter : EngineCoreApi {
         return EngineStatus.stopped("Stub engine stopped")
     }
 
+    // Purely in-memory and single-threaded — there is no process/transport that
+    // can wedge, so manual recovery has nothing to do here.
+    override fun forceReset() = Unit
+
     private fun ensureInitialized() {
         check(initialized) { "EngineCoreApi must be initialized before use" }
     }

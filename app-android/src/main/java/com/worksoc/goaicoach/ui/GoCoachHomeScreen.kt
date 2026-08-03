@@ -215,21 +215,13 @@ internal fun GoCoachHomeScreen(
         )
     }
 
-    // 프리미엄 미활성 상태에서 대국 시작 시 뜨는 업셀 팝업(Step 2). "예"/"아니오" 모두
-    // 대국 설정으로는 그대로 진행하고, "예"일 때만 이번 대국 한정으로 프리미엄을 활성화한다.
-    if (showPremiumUpsellDialog) {
-        PremiumUpsellDialog(
-            onConfirm = {
-                showPremiumUpsellDialog = false
-                premium.activateForMatch()
-                onStartMatchClick()
-            },
-            onDismiss = {
-                showPremiumUpsellDialog = false
-                onStartMatchClick()
-            },
-        )
-    }
+    // 프리미엄 미활성 상태에서 대국 시작 시 뜨는 업셀 팝업(Step 2). 3가지 선택지 중
+    // 무엇을 고르든 대국 설정으로는 그대로 진행한다.
+    PremiumUpsellDialogHost(
+        visible = showPremiumUpsellDialog,
+        onDismiss = { showPremiumUpsellDialog = false },
+        onAnyChoice = onStartMatchClick,
+    )
 }
 
 /**
