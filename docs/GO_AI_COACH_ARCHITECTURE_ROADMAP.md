@@ -22,14 +22,16 @@
 ### 2계층 — Middleware / Bridge
 
 **위치**:
-- `shared/src/commonMain/kotlin/com/worksoc/goaicoach/shared/EngineModels.kt` — `EngineCoreApi` 인터페이스(1:1 원시 계약: `initialize`, `configure`, `playMove`, `analyze`, `estimateScore`, `deadStones`, `scoreFinal`, `clearSearchCache`, `stop`, `forceReset` 등), `AnalysisLimit`/`EngineProfile`/`CandidateMove` 등 순수 데이터 모델
+- `shared/src/commonMain/kotlin/com/worksoc/goaicoach/shared/EngineModels.kt` — `EngineCoreApi` 인터페이스(1:1 원시 계약: `initialize`, `configure`, `playMove`, `analyze`, `estimateScore`, `deadStones`, `scoreFinal`, `clearSearchCache`, `stop`, `forceReset` 등), `AnalysisLimit`/`EngineProfile`/`CandidateMove` 등 순수 데이터 모델. `RemotePositionAnalysisTransport.kt` — position-analysis 단위 원격 호출 계약(`RemotePositionAnalysisTransport`/`Request`/`Response`, 260804 이전엔 app-android에 있었음, §재편 여부 참고)
 - `engine-android/.../KataGoProcessEngineAdapter.kt` — `EngineCoreApi`의 **로컬** 구현체. GTP(`KataGoGtpAnalysisClient.kt`, `KataGoProtocolCommands.kt`)와 JSON(`KataGoJsonPositionAnalysisClient.kt`, `KataGoJsonAnalysisQueryFactory.kt`, `KataGoJsonAnalysisParser.kt`) 두 경로를 조율. 두 경로 공통 파싱은 `KataGoAnalysisParser.kt`/`KataGoAnalysisContext.kt`
 - `engine-android/.../StubEngineAdapter.kt` — `EngineCoreApi`의 **스텁** 구현체(엔진 없이 UI/도메인 검증용)
-- `application/middleware/HttpRemotePositionAnalysisTransport.kt`, `RemotePositionAnalysisGateway.kt` — `EngineCoreApi`와 동일한 계약을 **원격**으로 도달시키기 위한 read-only position-analysis 단위 트랜스포트 스파이크(2026-06-28 기준 기본값 off)
+- `engine-android/.../RemoteEngineCoreApiAdapter.kt` — `EngineCoreApi`의 **원격** 구현체(13개 메서드 전체, 260803 Stage D). 상태변경 호출은 로컬에서 `GameState`를 추적하고, `genMove`/`analyze`/`estimateScore`/`deadStones`/`scoreFinal`만 원격 전송하는 상태 비저장 설계. `HttpRemoteEngineOperationTransport`가 HTTP 구현체
+- `engine-android/.../HttpRemotePositionAnalysisTransport.kt` — `RemotePositionAnalysisTransport`의 read-only position-analysis 단위 트랜스포트 스파이크 구현체(2026-06-28 기준 기본값 off)
+- `app-android/.../middleware/RemotePositionAnalysisGateway.kt` — 위 트랜스포트를 3계층 `PositionAnalysisGateway` 계약으로 감싸는 어댑터(app-android에 잔류, `:shared`의 `RemotePositionAnalysisTransport`만 알고 실제 구현체 이름은 모름)
 
-**재편 여부**: 기존 2계층(Engine Core API Domain, 계약 정의만)에 기존 4계층(Middleware/Cache Domain)의 **전송** 절반(원격 게이트웨이/트랜스포트)을 합쳤다. "계약을 정의하는 것"과 "그 계약을 실제로 어떻게 도달시키는가(로컬 stdio냐 원격 HTTP냐)"가 개념적으로 같은 책임이라고 보기 때문이다.
+**재편 여부**: 기존 2계층(Engine Core API Domain, 계약 정의만)에 기존 4계층(Middleware/Cache Domain)의 **전송** 절반(원격 게이트웨이/트랜스포트)을 합쳤다. "계약을 정의하는 것"과 "그 계약을 실제로 어떻게 도달시키는가(로컬 stdio냐 원격 HTTP냐)"가 개념적으로 같은 책임이라고 보기 때문이다. **260804 정리**: `EngineCoreApi`의 로컬/원격 구현체를 전부 `engine-android` 모듈로 물리적으로 모았다(그 전엔 원격 구현체가 app-android/middleware에 있었음) — app-android(3~7계층) 작업 시 엔진 내부 구현을 아예 안 봐도 되도록, 그리고 향후 원격/DePIN 확장의 물리적 근간이 되도록. 이 이동을 가능케 하려고 `RemotePositionAnalysisTransport`/`Request`/`Response`(전부 `:shared`-safe 타입만 사용)도 `:shared`로 옮겼다 — app-android(Gateway)와 engine-android(Http 구현체)가 순환 의존 없이 같은 계약을 공유하기 위함.
 
-**핵심 갭**: `KataGoProcessEngineAdapter`(로컬)와 `HttpRemotePositionAnalysisTransport`(원격)는 아직 **같은 인터페이스의 대등한 두 구현체가 아니다** — 원격 트랜스포트는 position-analysis 한 종류의 호출만 다루고, `EngineCoreApi` 전체를 구현하지 않는다. "로컬이든 원격이든 완전히 동일한 계약"이라는 2계층의 설계 요구사항은 아직 충족되지 않은 상태다.
+**핵심 갭(해소됨, 260803 Stage D)**: `KataGoProcessEngineAdapter`(로컬)와 `RemoteEngineCoreApiAdapter`(원격)가 이제 `EngineCoreApi` 전체에 대해 대등한 계약을 만족한다(계약 테스트로 검증). 다만 `RemoteEngineSessionClient`(3계층, 여러 원격 후보 선택/신뢰도 판단)는 아직 없고, 이 원격 구현체는 아직 앱에 실제 배선(DI)되지 않았다 — Stage E 영역, 별도 승인 필요.
 
 ### 3계층 — Extended API (엔진 서비스)
 
@@ -87,8 +89,8 @@
 ## 알려진 갭 (2026-07-30 기준)
 
 - `GameSessionStateHolder`(5계층)는 여전히 `app-android`에 있다. `shared`로 옮기는 KMP 이식은 아직 안 함.
-- `RemoteEngineSessionClient`(3계층) 구현체가 없다. `middleware/Remote*`와 `HttpRemotePositionAnalysisTransport`는 read-only position-analysis 단위까지만 원격 호출을 다룬다.
-- 2계층의 로컬/원격 구현체가 대등하지 않다 (위 2계층 절 참고).
+- `RemoteEngineSessionClient`(3계층, 여러 원격 후보 중 선택·신뢰도 판단)가 없다. `RemoteEngineCoreApiAdapter`(원격 `EngineCoreApi` 구현체 자체, 260803 Stage D)는 있지만 아직 앱에 배선(DI)되지 않았고, "고정된 원격 서버 1대"조차 실제로 쓰이고 있지 않다.
+- ~~2계층의 로컬/원격 구현체가 대등하지 않다~~ — 260803 Stage D에서 해소(위 2계층 절 참고). 260804에 물리적으로도 `engine-android` 한 모듈로 모았다.
 - 4계층(외부 연동)이 포트(α)만 있고 안정화 서비스 본체가 얇다.
 - 6계층(세션/연속성)이 auth/premium 각자의 필요만 채우고 있고, 범용 개념이 없다.
 - `LayeringContractTest.kt`는 아직 2026-06-27판 경계(옛 1~7계층 이름) 기준으로 작성돼 있다. 이번 재정의(2/3계층 재편, 4/6계층 신설, 5/7 번호 이동)를 반영하지 않았다.
@@ -98,7 +100,7 @@
 
 우선순위 순서가 아니라 계층별로 정리한 것이며, 착수 순서는 별도 착수 계획서(`refactoring/`에 `YYMMDD HHhMMm` 타임스탬프 관례로 추가)에서 정한다.
 
-1. **2계층 — 로컬/원격 계약 대등화**: `HttpRemotePositionAnalysisTransport`가 `EngineCoreApi` 전체(또는 그에 준하는 상위 계약)를 구현하도록 확장. 실패/타임아웃/재시도가 로컬 구현체와 동일한 방식으로 상위에 보이는지 검증.
+1. ~~**2계층 — 로컬/원격 계약 대등화**~~ — 완료(260803 Stage D, 260804 물리적 모듈 통합). `RemoteEngineCoreApiAdapter`가 `EngineCoreApi` 전체를 구현하고, 로컬(`KataGoProcessEngineAdapter`)과 실패/타임아웃/재시도 신뢰도가 동등함을 계약 테스트로 검증했으며, 둘 다 `engine-android` 모듈에 물리적으로 함께 있다.
 2. **3계층 — `RemoteEngineSessionClient` 도입**: 여러 원격/피어 후보 중 선택·신뢰도 판단을 흡수. DePIN 방향이라면 여기에 "피어 평판/정산 기록"의 자리가 생긴다.
 3. **1계층 — 물리 실행 환경 추상화**: 지금은 `KataGoProcessRuntime`이 "이 기기에서 프로세스 실행"만 가정한다. 원격 서버/피어 기기라는 "다른 물리 위치"를 1계층 개념에 맞게 명시적으로 표현할 방법을 정의(예: 실행 위치를 나타내는 값 타입).
 4. **4계층 — 외부 연동 서비스 본체 두껍게 하기**: `premium-mode/README.md` Step 3(실제 광고)/Step 4(실제 결제), `auth-onboarding/README.md` Step 2~3(Google/이메일 로그인)을 구현하며, 포트(α)뿐 아니라 3계층 수준의 재시도/캐시/신뢰도 판단을 갖춘 서비스 본체로 채운다.

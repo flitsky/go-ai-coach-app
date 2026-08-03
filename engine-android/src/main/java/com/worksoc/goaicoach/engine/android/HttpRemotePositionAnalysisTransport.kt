@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.middleware
+package com.worksoc.goaicoach.engine.android
 
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.AnalysisResult
@@ -10,6 +10,9 @@ import com.worksoc.goaicoach.shared.EngineState
 import com.worksoc.goaicoach.shared.EngineStatus
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
+import com.worksoc.goaicoach.shared.RemotePositionAnalysisRequest
+import com.worksoc.goaicoach.shared.RemotePositionAnalysisResponse
+import com.worksoc.goaicoach.shared.RemotePositionAnalysisTransport
 import com.worksoc.goaicoach.shared.StoneColor
 import org.json.JSONArray
 import org.json.JSONObject
@@ -27,9 +30,11 @@ internal data class RemotePositionAnalysisHttpConfig(
 /**
  * Android/JVM-bound HTTP spike for read-only remote analysis.
  *
- * Keep this implementation outside the KMP-ready gateway contract. It depends
- * on `HttpURLConnection` and `org.json`, so it is a transport detail that can
- * later be replaced by Ktor, OkHttp, or a server-to-server client.
+ * Keep this implementation outside the KMP-ready gateway contract
+ * ([RemotePositionAnalysisTransport], `:shared`). It depends on `HttpURLConnection` and
+ * `org.json`, so it is a transport detail that can later be replaced by Ktor, OkHttp, or a
+ * server-to-server client. Physically living in `engine-android` (260804 정리) keeps every
+ * `EngineCoreApi` implementation — local and remote — in one module.
  */
 internal class HttpRemotePositionAnalysisTransport(
     private val config: RemotePositionAnalysisHttpConfig,
@@ -212,4 +217,3 @@ internal object RemotePositionAnalysisJsonCodec {
         }
     }
 }
-

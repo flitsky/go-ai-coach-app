@@ -972,14 +972,36 @@ class LayeringContractTest {
     }
 
     @Test
-    fun httpRemoteAnalysisTransportStaysOutOfKmpReadyGatewayContracts() {
-        val transport = repoRoot()
-            .resolve("app-android/src/main/java/com/worksoc/goaicoach/middleware/HttpRemotePositionAnalysisTransport.kt")
-        val text = transport.readText()
+    fun engineImplementationsLiveInEngineAndroidNotAppAndroid() {
+        // 260804 정리: EngineCoreApi의 로컬/원격 구현체를 전부 engine-android 모듈로 물리적으로
+        // 모았다 — app-android(3~7계층) 작업 시 엔진 내부를 아예 안 봐도 되게 하고, 실수로도
+        // app-android 쪽에 엔진 구현 세부사항이 다시 새어 들어오지 않았는지 기계적으로 보장한다.
+        val repoRoot = repoRoot()
+        val movedFiles = listOf(
+            "engine-android/src/main/java/com/worksoc/goaicoach/engine/android/HttpRemotePositionAnalysisTransport.kt",
+            "engine-android/src/main/java/com/worksoc/goaicoach/engine/android/RemoteEngineCoreApiAdapter.kt",
+        )
+        val staleAppAndroidPaths = listOf(
+            "app-android/src/main/java/com/worksoc/goaicoach/middleware/HttpRemotePositionAnalysisTransport.kt",
+            "app-android/src/main/java/com/worksoc/goaicoach/middleware/RemoteEngineCoreApiAdapter.kt",
+        )
+
+        val missing = movedFiles.filterNot { path -> repoRoot.resolve(path).exists() }
+        val stillInAppAndroid = staleAppAndroidPaths.filter { path -> repoRoot.resolve(path).exists() }
 
         assertTrue(
+            "EngineCoreApi implementations must live in engine-android:\n" +
+                "missing:\n${missing.joinToString("\n")}\n" +
+                "still present in app-android (should have moved):\n${stillInAppAndroid.joinToString("\n")}",
+            missing.isEmpty() && stillInAppAndroid.isEmpty(),
+        )
+
+        val transportText = repoRoot
+            .resolve("engine-android/src/main/java/com/worksoc/goaicoach/engine/android/HttpRemotePositionAnalysisTransport.kt")
+            .readText()
+        assertTrue(
             "HTTP transport is intentionally JVM/Android-bound and should remain in its own file.",
-            text.contains("java.net.HttpURLConnection") && text.contains("org.json.JSONObject"),
+            transportText.contains("java.net.HttpURLConnection") && transportText.contains("org.json.JSONObject"),
         )
     }
 

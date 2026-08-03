@@ -86,6 +86,7 @@
 | `refactoring/DOMAIN_SEPARATION_REFACTORING_KICKOFF_PLAN_260729_2315.md` | 2026-06-27 계획의 H-*/M-* 항목 완료 여부 재확인, 엔진 브릿지(Engine Core API)/조합(Middleware) 계층 구분 재검토, 신규 auth/premium 도메인의 계층 적합성 검증, 다음 배치(H-08~) 계획. "착수 계획서" 시분 타임스탬프 관례의 첫 문서 |
 | `refactoring/LAYERED_ARCHITECTURE_REFACTORING_PLAN_260803_1500.md` | 2026-07-30 재정립한 7계층 모델(`ARCHITECTURE.md`/`GO_AI_COACH_ARCHITECTURE_ROADMAP.md`)을 실제 코드에 단계적으로 반영하는 착수 계획서. Stage A(테스트 정합성)~F(물리적 분산·다른 기기 연산)까지 안전도 순 로드맵, 진행 로그 누적 중 |
 | `refactoring/CODE_QUALITY_REFACTORING_PLAN_260803_2217.md` | 계층 경계와 무관한 일반 코드 품질 리팩토링 착수 계획서(위 문서와 별개, 일시 병행). 상수화/공통 코드 추출/도메인 분리/모듈화 4개 카테고리를 Stage A~D 안전도 순으로 정리, 진행 로그 누적 중 |
+| `refactoring/ENGINE_BRIDGE_MODULE_CONSOLIDATION_PLAN_260804_0005.md` | `EngineCoreApi`의 로컬/원격 구현체를 `engine-android` 모듈 하나로 물리적으로 통합(완료) — 향후 원격 서버/DePIN 확장의 근간. `RemotePositionAnalysisTransport` 계약을 `:shared`로 이동해 순환 의존 없이 로컬/원격이 같은 계약 공유 |
 | `refactoring/ARCHITECTURE_LAYERS_REVIEW_2026-06-14.md` | 7계층 모델 채택 검토본. 원문 초안은 `archive/2026-06-17-architecture-docs-rewrite/`로, 현재 canonical 요약은 `ARCHITECTURE.md` |
 | `refactoring/INTERNAL_GO_APP_PRODUCT_REVIEW_2026-06-15.md` | 외부 바둑 앱 관점 리뷰를 제품 정확성, 엔진 오케스트레이션, KMP 확장성 기준으로 재검토한 내부 판단 |
 | `refactoring/EXTERNAL_REVIEW_*`, `INTERNAL_*_REVIEW_*`, `INTERNAL_ARCHITECT_REVIEW_*` (2026-06-15) | 외부 아키텍처 점수 리뷰 원문과 내부 대응 판단 |
