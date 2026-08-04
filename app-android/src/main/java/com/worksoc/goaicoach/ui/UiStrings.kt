@@ -12,6 +12,7 @@ import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.match.SidePlayerSetup
+import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.PlayLevelGroup
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.SearchTimeLimit
@@ -178,9 +179,13 @@ internal data class UiStrings(
     val settingsDevSectionTitle: String,
     val settingsDevPremiumToggleTitle: String,
     val settingsDevPremiumToggleSubtitle: String,
+    val settingsDevGameSetupUxToggleTitle: String,
+    val settingsDevGameSetupUxToggleSubtitle: String,
     val premiumModeTitle: String,
     val premiumModeFeatureList: String,
     val premiumPurchaseStubActivatedMessage: String,
+    val handicapEvenGameLabel: String,
+    val boardSizeShortLabel: String,
 ) {
     fun cacheOptBody(initialCount: Int, maxCount: Int, moveCount: Int, targetCount: Int): String =
         when (language) {
@@ -285,6 +290,53 @@ internal data class UiStrings(
             UiLanguage.English -> "$handicap $count"
             UiLanguage.Japanese -> "$handicap ${count}子"
             UiLanguage.ChineseSimplified -> "$handicap ${count}子"
+        }
+
+    /**
+     * 대국 설정 콤팩트 화면 전용 — [handicapLabel]과 달리 "접바둑" 접두어 없이 값만
+     * 표시한다(셀 자체의 작은 라벨이 이미 "접바둑"을 보여주므로 중복 표기를 피함).
+     * 0점(호선)은 [handicapEvenGameLabel]로 별도 표시한다.
+     */
+    fun compactHandicapValueLabel(count: Int): String =
+        if (count == 0) {
+            handicapEvenGameLabel
+        } else {
+            when (language) {
+                UiLanguage.Korean -> "${count}점"
+                UiLanguage.English -> "$count"
+                UiLanguage.Japanese -> "${count}子"
+                UiLanguage.ChineseSimplified -> "${count}子"
+            }
+        }
+
+    /**
+     * 대국 설정 콤팩트 화면 버튼 전용 — 셀 위 라벨 텍스트 없이 버튼 하나로 "무엇을,
+     * 어떤 값으로" 설정했는지 알 수 있도록 "라벨 (값)" 형태로 합친 표기.
+     */
+    fun compactKomiLabel(komiValue: Double): String = "$komi (${komiValueLabel(komiValue)})"
+
+    fun compactBoardSizeLabel(size: BoardSize): String =
+        "$boardSizeShortLabel (${size.value}x${size.value})"
+
+    fun compactHandicapLabel(count: Int): String = "$handicap (${compactHandicapValueLabel(count)})"
+
+    /**
+     * 대국 설정 콤팩트 화면 전용 — [rulesetLabel]의 괄호 부연 설명을 뺀 짧은 표기.
+     */
+    fun compactRulesetLabel(ruleset: Ruleset): String =
+        when (ruleset) {
+            Ruleset.Japanese -> when (language) {
+                UiLanguage.Korean -> "집계가"
+                UiLanguage.English -> "Territory"
+                UiLanguage.Japanese -> "地合"
+                UiLanguage.ChineseSimplified -> "数目"
+            }
+            Ruleset.Chinese -> when (language) {
+                UiLanguage.Korean -> "면적계가"
+                UiLanguage.English -> "Area"
+                UiLanguage.Japanese -> "面積"
+                UiLanguage.ChineseSimplified -> "数子"
+            }
         }
 
     fun colorLabel(color: StoneColor): String =

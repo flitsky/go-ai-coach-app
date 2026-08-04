@@ -74,6 +74,7 @@ class UserPreferencesApplicationTest {
             boardSize = BoardSize.Nine,
             ruleset = Ruleset.Chinese,
             handicapCount = 5,
+            komi = 0.5,
             topMovesEnabled = false,
             showCoordinates = false,
             showMoveNumbers = true,
@@ -86,6 +87,7 @@ class UserPreferencesApplicationTest {
         assertEquals(setup, snapshot.playerSetup)
         assertEquals(Ruleset.Chinese, snapshot.ruleset)
         assertEquals(5, snapshot.handicapCount)
+        assertEquals(0.5, snapshot.komi, 0.0001)
         assertFalse(snapshot.topMovesEnabled)
         assertFalse(snapshot.showCoordinates)
         assertTrue(snapshot.showMoveNumbers)
@@ -115,6 +117,7 @@ class UserPreferencesApplicationTest {
         val snapshot = buildUserPreferencesSnapshot(
             settingsState = settingsState,
             ruleset = Ruleset.Chinese,
+            komi = 7.5,
             showCoordinates = true,
             showMoveNumbers = false,
             showLastMoveRing = true,
@@ -124,6 +127,7 @@ class UserPreferencesApplicationTest {
         assertEquals(setup, snapshot.playerSetup)
         assertEquals(Ruleset.Chinese, snapshot.ruleset)
         assertEquals(5, snapshot.handicapCount)
+        assertEquals(7.5, snapshot.komi, 0.0001)
         assertTrue(snapshot.topMovesEnabled)
         assertEquals(AutoPlayDelaySetting.Study.millis, snapshot.autoPlayDelayMillis)
         assertEquals(SearchTimeSettings(SearchTimeLimit.Off), snapshot.searchTimeSettings)
@@ -156,6 +160,7 @@ class UserPreferencesApplicationTest {
             request = UserPreferencesAutosaveRequest(
                 settingsState = settingsState,
                 ruleset = Ruleset.Japanese,
+                komi = 6.5,
                 showCoordinates = true,
                 showMoveNumbers = false,
                 showLastMoveRing = true,
@@ -169,6 +174,7 @@ class UserPreferencesApplicationTest {
         assertEquals(setup, saved.playerSetup)
         assertEquals(Ruleset.Japanese, saved.ruleset)
         assertEquals(3, saved.handicapCount)
+        assertEquals(6.5, saved.komi, 0.0001)
         assertTrue(saved.topMovesEnabled)
         assertEquals(AutoPlayDelaySetting.Short.millis, saved.autoPlayDelayMillis)
         assertEquals(SearchTimeSettings(SearchTimeLimit.WithinOneSecond), saved.searchTimeSettings)
@@ -177,6 +183,44 @@ class UserPreferencesApplicationTest {
         assertTrue(saved.showLastMoveRing)
         assertTrue(saved.showOwnershipOverlay)
         assertTrue(saved.isDirectPlayEnabled)
+    }
+
+    @Test
+    fun autosaveRunnerPreservesFieldsItDoesNotManage() {
+        // 회귀 방지: 오토세이브는 대국 설정(계가/덤/바둑판 등)만 관리한다. 온보딩 완료 여부나
+        // 대국설정 UX 모드처럼 오토세이브가 모르는 필드는, 매번 데이터 클래스 기본값으로
+        // 덮어쓰지 않고 store에 이미 저장된 현재 값을 그대로 보존해야 한다.
+        val store = RecordingUserPreferencesStore()
+        store.save(
+            UserPreferencesSnapshot(
+                hasSeenOnboarding = true,
+                gameSetupUxMode = GameSetupUxMode.Simple,
+            ),
+        )
+
+        runUserPreferencesAutosave(
+            request = UserPreferencesAutosaveRequest(
+                settingsState = GameSessionSettingsState(
+                    playerSetup = PlayerSetup(),
+                    autoPlayDelaySetting = AutoPlayDelaySetting.Default,
+                    searchTimeSettings = SearchTimeSettings(),
+                    topMovesEnabled = false,
+                    boardSize = BoardSize.Thirteen,
+                    handicapCount = 0,
+                ),
+                ruleset = Ruleset.Japanese,
+                komi = 6.5,
+                showCoordinates = false,
+                showMoveNumbers = false,
+                showLastMoveRing = true,
+                showOwnershipOverlay = true,
+                isDirectPlayEnabled = true,
+            ),
+            store = store,
+        )
+
+        assertTrue(store.saved.hasSeenOnboarding)
+        assertEquals(GameSetupUxMode.Simple, store.saved.gameSetupUxMode)
     }
 
     private class RecordingUserPreferencesStore : UserPreferencesStorePort {

@@ -6,6 +6,7 @@ import com.worksoc.goaicoach.shared.Ruleset
 internal data class UserPreferencesAutosaveRequest(
     val settingsState: GameSessionSettingsState,
     val ruleset: Ruleset,
+    val komi: Double,
     val showCoordinates: Boolean,
     val showMoveNumbers: Boolean,
     val showLastMoveRing: Boolean,
@@ -14,23 +15,37 @@ internal data class UserPreferencesAutosaveRequest(
     val showMoveReview: Boolean = false,
 )
 
+/**
+ * [current]에서 읽어온, 이 오토세이브가 관리하지 않는 필드([UserPreferencesSnapshot
+ * .hasSeenOnboarding], [UserPreferencesSnapshot.gameSetupUxMode])를 그대로 보존한다.
+ * 그렇지 않으면(과거 실제 버그였음) 매 오토세이브마다 데이터 클래스 기본값으로 덮어써져,
+ * 예를 들어 온보딩을 이미 마친 사용자가 대국 설정을 한 번만 바꿔도 다음 실행 때 온보딩
+ * 화면이 다시 뜨는 회귀가 생긴다 — 설정 화면의 개발자 토글로 바꾼 대국설정 UX 모드도
+ * 마찬가지로 다음 오토세이브에 조용히 되돌아갈 수 있었다.
+ */
 internal fun buildUserPreferencesAutosaveSnapshot(
     request: UserPreferencesAutosaveRequest,
+    current: UserPreferencesSnapshot,
 ): UserPreferencesSnapshot =
     buildUserPreferencesSnapshot(
         settingsState = request.settingsState,
         ruleset = request.ruleset,
+        komi = request.komi,
         showCoordinates = request.showCoordinates,
         showMoveNumbers = request.showMoveNumbers,
         showLastMoveRing = request.showLastMoveRing,
         showOwnershipOverlay = request.showOwnershipOverlay,
         isDirectPlayEnabled = request.isDirectPlayEnabled,
         showMoveReview = request.showMoveReview,
+    ).copy(
+        hasSeenOnboarding = current.hasSeenOnboarding,
+        gameSetupUxMode = current.gameSetupUxMode,
     )
 
 internal fun runUserPreferencesAutosave(
     request: UserPreferencesAutosaveRequest,
     store: UserPreferencesStorePort,
 ) {
-    store.save(buildUserPreferencesAutosaveSnapshot(request))
+    val current = store.load()
+    store.save(buildUserPreferencesAutosaveSnapshot(request, current))
 }

@@ -23,6 +23,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -31,6 +35,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.worksoc.goaicoach.BuildConfig
 import com.worksoc.goaicoach.application.auth.AuthClientPort
+import com.worksoc.goaicoach.application.preferences.GameSetupUxMode
+import com.worksoc.goaicoach.persistence.UserPreferencesStore
 
 /**
  * 홈 화면 상단의 설정 진입점에서 열리는 화면. 게스트(로컬 기기 ID) 상태를 안내하고,
@@ -55,6 +61,8 @@ internal fun SettingsScreen(
     val strings = LocalUiStrings.current
     val context = LocalContext.current
     val premium = LocalPremiumUiState.current
+    val preferencesStore = remember(context) { UserPreferencesStore(context) }
+    var gameSetupUxMode by remember { mutableStateOf(preferencesStore.load().gameSetupUxMode) }
 
     Column(
         modifier = modifier
@@ -159,6 +167,34 @@ internal fun SettingsScreen(
                     Switch(
                         checked = premium.isPurchased,
                         onCheckedChange = { checked -> premium.setPurchased(checked) },
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = strings.settingsDevGameSetupUxToggleTitle,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                        Text(
+                            text = strings.settingsDevGameSetupUxToggleSubtitle,
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.secondary,
+                        )
+                    }
+                    Switch(
+                        checked = gameSetupUxMode == GameSetupUxMode.Compact,
+                        onCheckedChange = { checked ->
+                            gameSetupUxMode = if (checked) GameSetupUxMode.Compact else GameSetupUxMode.Simple
+                            preferencesStore.save(preferencesStore.load().copy(gameSetupUxMode = gameSetupUxMode))
+                        },
                     )
                 }
 

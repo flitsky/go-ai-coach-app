@@ -137,7 +137,11 @@ internal val UiStringsEnglish = UiStringsKorean.copy(
     settingsDevSectionTitle = "Developer Testing",
     settingsDevPremiumToggleTitle = "Premium Purchase Status",
     settingsDevPremiumToggleSubtitle = "Toggle permanent activation without real payment (testing only).",
+    settingsDevGameSetupUxToggleTitle = "Game Setup UX: Compact",
+    settingsDevGameSetupUxToggleSubtitle = "When on, scoring/komi/board size/handicap collapse into a 2x2 dropdown grid with no scrolling.",
     premiumModeTitle = "Activate Premium Mode",
     premiumModeFeatureList = "Analysis · Eval · Top Moves · Undo",
     premiumPurchaseStubActivatedMessage = "Premium permanently activated. (test stub)",
+    handicapEvenGameLabel = "Even",
+    boardSizeShortLabel = "Board",
 )

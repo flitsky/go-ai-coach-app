@@ -135,7 +135,11 @@ internal val UiStringsChineseSimplified = UiStringsKorean.copy(
     settingsDevSectionTitle = "开发者测试",
     settingsDevPremiumToggleTitle = "高级模式购买完成状态",
     settingsDevPremiumToggleSubtitle = "无需实际付款即可开关永久激活(仅测试用)。",
+    settingsDevGameSetupUxToggleTitle = "对局设置 UX: 紧凑",
+    settingsDevGameSetupUxToggleSubtitle = "开启后将数目规则・贴目・棋盘尺寸・让子压缩为 2x2 下拉网格，无需滚动。",
     premiumModeTitle = "激活高级模式",
     premiumModeFeatureList = "分析・形势判断・推荐着法・悔棋",
     premiumPurchaseStubActivatedMessage = "高级模式已永久激活。(测试用即时处理)",
+    handicapEvenGameLabel = "分先",
+    boardSizeShortLabel = "棋盘",
 )

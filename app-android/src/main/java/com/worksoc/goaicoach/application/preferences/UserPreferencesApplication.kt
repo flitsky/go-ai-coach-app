@@ -40,7 +40,12 @@ internal fun buildInitialUserPreferencesPlan(
     currentProfile: EngineProfile,
 ): InitialUserPreferencesPlan {
     val settings = preferences.toGameSettings()
-    val state = GameState.withHandicap(preferences.boardSize, settings.ruleset, preferences.handicapCount)
+    val state = GameState.withHandicap(
+        preferences.boardSize,
+        settings.ruleset,
+        preferences.handicapCount,
+        komi = preferences.komi,
+    )
     return InitialUserPreferencesPlan(
         gameState = state,
         playerSetup = preferences.playerSetup,
@@ -69,6 +74,7 @@ internal fun buildUserPreferencesSnapshot(
     searchTimeSettings: SearchTimeSettings = SearchTimeSettings(),
     isDirectPlayEnabled: Boolean = true,
     showMoveReview: Boolean = false,
+    komi: Double = com.worksoc.goaicoach.shared.DefaultKomi,
 ): UserPreferencesSnapshot =
     buildGameSettings(
         boardSize = boardSize,
@@ -79,6 +85,7 @@ internal fun buildUserPreferencesSnapshot(
         searchTimeSettings = searchTimeSettings,
     ).toUserPreferencesSnapshot(
         playerSetup = playerSetup,
+        komi = komi,
         showCoordinates = showCoordinates,
         showMoveNumbers = showMoveNumbers,
         showLastMoveRing = showLastMoveRing,
@@ -96,6 +103,7 @@ internal fun buildUserPreferencesSnapshot(
     showOwnershipOverlay: Boolean,
     isDirectPlayEnabled: Boolean = true,
     showMoveReview: Boolean = false,
+    komi: Double = com.worksoc.goaicoach.shared.DefaultKomi,
 ): UserPreferencesSnapshot =
     buildUserPreferencesSnapshot(
         playerSetup = settingsState.playerSetup,
@@ -111,6 +119,7 @@ internal fun buildUserPreferencesSnapshot(
         searchTimeSettings = settingsState.searchTimeSettings,
         isDirectPlayEnabled = isDirectPlayEnabled,
         showMoveReview = showMoveReview,
+        komi = komi,
     )
 
 internal fun buildGameSettings(
@@ -142,6 +151,7 @@ private fun UserPreferencesSnapshot.toGameSettings(): GameSettings =
 
 private fun GameSettings.toUserPreferencesSnapshot(
     playerSetup: PlayerSetup,
+    komi: Double,
     showCoordinates: Boolean,
     showMoveNumbers: Boolean,
     showLastMoveRing: Boolean,
@@ -154,6 +164,7 @@ private fun GameSettings.toUserPreferencesSnapshot(
         playerSetup = playerSetup,
         ruleset = ruleset,
         handicapCount = handicapCount,
+        komi = komi,
         topMovesEnabled = topMovesEnabled,
         showCoordinates = showCoordinates,
         showMoveNumbers = showMoveNumbers,

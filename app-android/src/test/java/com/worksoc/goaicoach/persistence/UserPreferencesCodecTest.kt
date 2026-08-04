@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.persistence
 
+import com.worksoc.goaicoach.application.preferences.GameSetupUxMode
 import com.worksoc.goaicoach.application.preferences.UserPreferencesSnapshot
 import com.worksoc.goaicoach.match.HumanGameType
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
@@ -35,6 +36,7 @@ class UserPreferencesCodecTest {
             playerSetup = setup,
             ruleset = Ruleset.Chinese,
             topMovesEnabled = false,
+            komi = 0.5,
             showCoordinates = false,
             showMoveNumbers = true,
             showLastMoveRing = false,
@@ -42,6 +44,7 @@ class UserPreferencesCodecTest {
             autoPlayDelayMillis = AutoPlayDelaySetting.Slow.millis,
             searchTimeSettings = SearchTimeSettings(SearchTimeLimit.WithinFiveSeconds),
             showMoveReview = true,
+            gameSetupUxMode = GameSetupUxMode.Simple,
         )
 
         val encoded = UserPreferencesCodec.encode(snapshot)
@@ -51,6 +54,8 @@ class UserPreferencesCodecTest {
         assertEquals(setup, restored?.playerSetup)
         assertEquals(Ruleset.Chinese, restored?.ruleset)
         assertEquals(false, restored?.topMovesEnabled)
+        assertEquals(0.5, restored?.komi ?: -1.0, 0.0001)
+        assertEquals(GameSetupUxMode.Simple, restored?.gameSetupUxMode)
         assertEquals(false, restored?.showCoordinates)
         assertEquals(true, restored?.showMoveNumbers)
         assertEquals(false, restored?.showLastMoveRing)
@@ -81,6 +86,8 @@ class UserPreferencesCodecTest {
         assertFalse(restored?.showMoveReview ?: true)
         assertEquals(AutoPlayDelaySetting.Default.millis, restored?.autoPlayDelayMillis)
         assertEquals(SearchTimeSettings(), restored?.searchTimeSettings)
+        assertEquals(com.worksoc.goaicoach.shared.DefaultKomi, restored?.komi ?: -1.0, 0.0001)
+        assertEquals(GameSetupUxMode.Compact, restored?.gameSetupUxMode)
     }
 
     @Test

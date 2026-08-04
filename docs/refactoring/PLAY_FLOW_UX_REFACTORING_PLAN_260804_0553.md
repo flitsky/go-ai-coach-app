@@ -221,3 +221,30 @@
   패딩(24dp 가로/14dp 세로)으로 접근성 최소 권장 크기(48dp) 이상 확보. 위 3개 로그인
   버튼과의 구분선은 유지.
 - `make test` 통과 확인.
+
+## 12차 개정 (첫 설치 기본값 + 대국설정 심플/콤팩트 UX, 2026-08-04)
+
+- **첫 설치 기본값 변경**: `UserPreferencesSnapshot.boardSize` 기본값 Nine→Thirteen.
+  플레이어 설정(흑=유저/백=AI 빠른초급1단계)·계가(집계가)·접바둑(0)은 이미 기존 기본값과
+  일치해 변경 불필요했음(사용자 확인받음).
+- **덤 영속화**: `UserPreferencesSnapshot`에 `komi: Double` 필드 신규 — 기존엔 덤이 전혀
+  저장되지 않아(`GameState.withHandicap`의 기본 파라미터에만 의존) 매번 6.5집으로
+  되돌아갔다. 코덱/`buildInitialUserPreferencesPlan`/오토세이브 경로 전체에 배선.
+- **부수 버그 수정**: 오토세이브(`GameSettings.toUserPreferencesSnapshot`)가
+  `hasSeenOnboarding`을 명시하지 않아 매 오토세이브마다 데이터클래스 기본값(`false`)으로
+  덮어쓰고 있었다 — 즉 온보딩을 마친 사용자도 대국 설정을 한 번만 바꾸면 다음 실행 때
+  온보딩이 다시 뜨는 실제 회귀가 있었다. `runUserPreferencesAutosave`가 `store.load()`로
+  현재 값을 읽어 `hasSeenOnboarding`/`gameSetupUxMode`를 보존하도록 수정. 회귀 테스트 추가.
+- **대국설정 심플/콤팩트 두 화면 체계**: `GameSetupUxMode` enum(Simple/Compact, 기본
+  Compact) 신규. `CompactScoringAndBoardSettingsPanel.kt` 신규 — 계가/덤/바둑판크기/접바둑을
+  2x2 드롭다운 그리드로 압축(스크롤 없이 한 화면). 접바둑 0은 "호선"으로 표기(기존
+  "없음" 대신, 콤팩트 전용 `compactHandicapValueLabel`). 계가는 "집계가"/"면적계가" 짧은
+  표기(`compactRulesetLabel`). `GameSetupLobby.kt`가 저장된 모드에 따라 기존
+  `ScoringAndBoardSettingsPanel`(심플)/`CompactScoringAndBoardSettingsPanel`(콤팩트) 중
+  하나만 그린다 — 둘 다 동일한 GameUiEvent를 그대로 재사용해 기능은 완전히 동일.
+  `SettingsScreen.kt`의 "개발자 테스트" 섹션에 토글 추가(기존 프리미엄 토글과 동일 패턴).
+- **에뮬레이터로 end-to-end 시각 검증**: `make reinstall-dev-engine`으로 완전 초기화 후
+  스크린샷 확인 — 플레이어 설정/계가/덤/바둑판/접바둑 기본값 전부 일치, 콤팩트 그리드
+  정상 렌더링, 드롭다운 정상 동작, 설정 화면 토글로 심플⇄콤팩트 전환 정상 동작(양쪽 다
+  스크린샷 확인) 모두 확인.
+- `make test` 통과 확인.

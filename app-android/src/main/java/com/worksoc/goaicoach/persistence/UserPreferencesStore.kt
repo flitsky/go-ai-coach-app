@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.persistence
 
 import android.content.Context
+import com.worksoc.goaicoach.application.preferences.GameSetupUxMode
 import com.worksoc.goaicoach.application.preferences.UserPreferencesSnapshot
 import com.worksoc.goaicoach.application.preferences.UserPreferencesStorePort
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
@@ -43,6 +44,7 @@ internal object UserPreferencesCodec {
             .put("playerSetup", encodePlayerSetup(snapshot.playerSetup))
             .put("ruleset", snapshot.ruleset.name)
             .put("handicapCount", snapshot.handicapCount)
+            .put("komi", snapshot.komi)
             .put("topMovesEnabled", snapshot.topMovesEnabled)
             .put("showCoordinates", snapshot.showCoordinates)
             .put("showMoveNumbers", snapshot.showMoveNumbers)
@@ -53,6 +55,7 @@ internal object UserPreferencesCodec {
             .put("isDirectPlayEnabled", snapshot.isDirectPlayEnabled)
             .put("showMoveReview", snapshot.showMoveReview)
             .put("hasSeenOnboarding", snapshot.hasSeenOnboarding)
+            .put("gameSetupUxMode", snapshot.gameSetupUxMode.name)
             .toString()
 
     fun decode(raw: String): UserPreferencesSnapshot? =
@@ -69,10 +72,11 @@ internal object UserPreferencesCodec {
                 else -> return@runCatching null
             }
             UserPreferencesSnapshot(
-                boardSize = BoardSize(json.optInt("boardSize", BoardSize.Nine.value)),
+                boardSize = BoardSize(json.optInt("boardSize", BoardSize.Thirteen.value)),
                 playerSetup = decodePlayerSetup(json.optJSONObject("playerSetup")),
                 ruleset = enumOrDefault(json.optString("ruleset"), Ruleset.Japanese),
                 handicapCount = json.optInt("handicapCount", 0),
+                komi = json.optDouble("komi", com.worksoc.goaicoach.shared.DefaultKomi),
                 topMovesEnabled = json.optBoolean("topMovesEnabled", false),
                 showCoordinates = json.optBoolean("showCoordinates", false),
                 showMoveNumbers = json.optBoolean("showMoveNumbers", false),
@@ -85,6 +89,7 @@ internal object UserPreferencesCodec {
                 isDirectPlayEnabled = json.optBoolean("isDirectPlayEnabled", true),
                 showMoveReview = json.optBoolean("showMoveReview", false),
                 hasSeenOnboarding = json.optBoolean("hasSeenOnboarding", false),
+                gameSetupUxMode = enumOrDefault(json.optString("gameSetupUxMode"), GameSetupUxMode.Compact),
             )
         }.getOrNull()
 

@@ -138,7 +138,11 @@ internal val UiStringsKorean = UiStrings(
     settingsDevSectionTitle = "개발자 테스트",
     settingsDevPremiumToggleTitle = "프리미엄 모드 구매 완료 상태",
     settingsDevPremiumToggleSubtitle = "실제 결제 없이 영구 활성화를 켜고 끕니다 (테스트용).",
+    settingsDevGameSetupUxToggleTitle = "대국설정 UX: 콤팩트",
+    settingsDevGameSetupUxToggleSubtitle = "켜면 계가·덤·바둑판·접바둑을 2x2 드롭다운으로 압축해 스크롤 없이 보여줍니다.",
     premiumModeTitle = "프리미엄 모드 활성화하기",
     premiumModeFeatureList = "분석·형세보기·추천수·무르기",
     premiumPurchaseStubActivatedMessage = "프리미엄이 영구 활성화되었습니다. (테스트용 즉시 처리)",
+    handicapEvenGameLabel = "호선",
+    boardSizeShortLabel = "바둑판",
 )

@@ -136,7 +136,11 @@ internal val UiStringsJapanese = UiStringsKorean.copy(
     settingsDevSectionTitle = "開発者テスト",
     settingsDevPremiumToggleTitle = "プレミアム購入完了状態",
     settingsDevPremiumToggleSubtitle = "実際の決済なしで永久有効化をオン/オフします(テスト用)。",
+    settingsDevGameSetupUxToggleTitle = "対局設定UX: コンパクト",
+    settingsDevGameSetupUxToggleSubtitle = "オンにすると計算方式・コミ・盤面サイズ・置石を2x2のドロップダウンにまとめ、スクロール不要にします。",
     premiumModeTitle = "プレミアムモードを有効化",
     premiumModeFeatureList = "分析・形勢判断・推奨手・待った",
     premiumPurchaseStubActivatedMessage = "プレミアムが永久有効化されました。(テスト用の即時処理)",
+    handicapEvenGameLabel = "互先",
+    boardSizeShortLabel = "碁盤",
 )

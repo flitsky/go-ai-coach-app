@@ -3,14 +3,16 @@ package com.worksoc.goaicoach.application.preferences
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.shared.BoardSize
+import com.worksoc.goaicoach.shared.DefaultKomi
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 
 internal data class UserPreferencesSnapshot(
-    val boardSize: BoardSize = BoardSize.Nine,
+    val boardSize: BoardSize = BoardSize.Thirteen,
     val playerSetup: PlayerSetup = PlayerSetup(),
     val ruleset: Ruleset = Ruleset.Japanese,
     val handicapCount: Int = 0,
+    val komi: Double = DefaultKomi,
     val topMovesEnabled: Boolean = false,
     val showCoordinates: Boolean = false,
     val showMoveNumbers: Boolean = false,
@@ -21,4 +23,5 @@ internal data class UserPreferencesSnapshot(
     val isDirectPlayEnabled: Boolean = true,
     val showMoveReview: Boolean = false,
     val hasSeenOnboarding: Boolean = false,
+    val gameSetupUxMode: GameSetupUxMode = GameSetupUxMode.Compact,
 )

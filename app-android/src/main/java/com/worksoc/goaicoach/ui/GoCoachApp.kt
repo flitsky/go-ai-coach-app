@@ -390,11 +390,13 @@ private fun GoCoachScreen(
         settingsState,
         uxOptions,
         gameState.ruleset,
+        gameState.komi,
     ) {
         runUserPreferencesAutosave(
             request = UserPreferencesAutosaveRequest(
                 settingsState = settingsState,
                 ruleset = gameState.ruleset,
+                komi = gameState.komi,
                 showCoordinates = uxOptions.showCoordinates,
                 showMoveNumbers = uxOptions.showMoveNumbers,
                 showLastMoveRing = uxOptions.showLastMoveRing,
