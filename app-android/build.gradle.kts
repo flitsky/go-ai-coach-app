@@ -23,7 +23,10 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.worksoc.goaicoach"
+        // Firebase 콘솔에 등록된 패키지명(google-services.json의 android_client_info)과
+        // 정확히 일치해야 한다 — namespace(Kotlin 패키지/R·BuildConfig 생성 위치)는
+        // 이 값과 독립적이라 com.worksoc.goaicoach로 그대로 둔다.
+        applicationId = "com.zenit9hub.ai.baduk"
         minSdk = 26
         targetSdk = 35
         versionCode = 1
@@ -84,6 +87,7 @@ dependencies {
 
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
+    implementation(libs.firebase.analytics)
 
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)

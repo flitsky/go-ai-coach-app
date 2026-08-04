@@ -78,11 +78,19 @@ Step 1(익명 인증)은 이미 이 배치를 따르고 있다 — `AuthClientPo
 
 ## 3. 사용자가 직접 해야 하는 Firebase 콘솔 설정
 
-1. https://console.firebase.google.com 에서 장기 앱과 별도인 새 프로젝트 생성 (예: `go-ai-coach-prod`).
-2. Android 앱 추가 — 패키지명 `com.worksoc.goaicoach` (`app-android/build.gradle.kts`의 `applicationId`와 정확히 일치).
-3. **Authentication → Sign-in method → 익명(Anonymous)** 활성화 (Step 1에 필요, SHA-1 불필요).
-4. `google-services.json` 다운로드 → `app-android/google-services.json`에 저장 (`.gitignore`에 등록되어 있어 커밋되지 않음).
-5. (Step 2 착수 시) Google 로그인용 SHA-1 인증서 지문 등록.
+1. ✅ https://console.firebase.google.com 에서 장기 앱과 별도인 새 프로젝트 생성 (`project-baduk-hanpan`, 2026-08-04).
+2. ✅ Android 앱 추가 — 패키지명 `com.zenit9hub.ai.baduk` (2026-08-04에 등록됨). **주의**: 이 문서 작성 당시 예정했던 `com.worksoc.goaicoach`가 아니라 `com.zenit9hub.ai.baduk`로 등록됐다 — 그래서 `app-android/build.gradle.kts`의 `applicationId`도 이 값으로 맞춰 변경했다(아래 "Step 1 개정 2" 참고). `namespace`(Kotlin 패키지/R·BuildConfig 생성 위치)는 `com.worksoc.goaicoach`로 그대로 둠 — Firebase 매칭은 `applicationId`만 본다.
+3. ⬜ **Authentication → Sign-in method → 익명(Anonymous)** 활성화 (Step 1에 필요, SHA-1 불필요) — 아직 확인 안 됨, 활성화 전에는 `signInAnonymously()`가 계속 실패하지만 fire-and-forget이라 앱 사용에는 지장 없음.
+4. ✅ `google-services.json` 다운로드 → `app-android/google-services.json`에 저장 (`.gitignore`에 등록되어 있어 커밋되지 않음).
+5. ⬜ (Step 2 착수 시) Google 로그인용 SHA-1 인증서 지문 등록.
+
+### Step 1 개정 2 — 실제 Firebase 프로젝트 연결 (2026-08-04)
+- google-services.json을 받아 `app-android/google-services.json`에 배치하고, 루트 `build.gradle.kts`(`google-services` 플러그인 버전 4.4.4 → 4.5.0), `gradle/libs.versions.toml`(`firebaseBom` 34.16.0 → 34.17.0, `firebase-analytics` 라이브러리 항목 추가), `app-android/build.gradle.kts`(`implementation(libs.firebase.analytics)`)를 갱신했다.
+- **패키지명 불일치 발견 및 해결**: 받은 google-services.json의 `package_name`이 `com.zenit9hub.ai.baduk`였는데 당시 앱의 `applicationId`는 `com.worksoc.goaicoach`였다 — 사용자에게 확인 후 `applicationId`를 `com.zenit9hub.ai.baduk`로 변경(2번 참고). `:app-android:processDebugGoogleServices` 태스크가 정상 통과함을 `make test`로 확인.
+- `namespace`는 변경하지 않았다 — Kotlin 소스의 `package com.worksoc.goaicoach.*` 선언, `R`/`BuildConfig` 참조 등은 전혀 건드릴 필요가 없었다(namespace와 applicationId는 독립적인 값).
+- **부수 버그 발견 및 수정**: applicationId 변경 직후 "이전 버전은 엔진이 되는데 새 패키지명 앱은 스텁으로 동작한다"는 리포트를 받음 — 원인은 `.so` 실행 파일이 아니라(APK에 번들되어 있어 무관), KataGo 모델/설정 파일(`model.bin.gz`, `gtp_learning.cfg`, `analysis_learning.cfg`)을 개발용으로 로컬 Mac에서 `adb shell run-as <package> cp ...`로 주입하는 `scripts/seed-katago-model-to-app.sh`와 `Makefile`(`reinstall-dev-engine`/`launch`)이 옛 패키지명 `com.worksoc.goaicoach`를 하드코딩하고 있던 것 — 새 패키지(`com.zenit9hub.ai.baduk`)는 앱 전용 저장소가 완전히 별개라(Android는 applicationId 단위로 파일 격리) 이 파일들이 하나도 주입되지 않은 상태였다. `EngineBootstrap.kt`가 이 파일들의 존재 여부만으로 실제 엔진(`LocalProcess`)/스텁(`Stub`)을 조용히 가른다(예외 처리 없이 단순 파일 체크).
+  - `scripts/seed-katago-model-to-app.sh`의 `PACKAGE` 기본값과 `Makefile`의 3곳(`reinstall-dev-engine`의 `adb uninstall`, `launch`의 `force-stop`/`am start`)을 `app-android/build.gradle.kts`에서 `grep`으로 직접 읽어오는 `APP_PACKAGE`/`APP_NAMESPACE` 변수로 교체 — 이제 applicationId가 또 바뀌어도 하드코딩이 조용히 어긋나지 않는다. `MainActivity`의 adb 컴포넌트명은 `<APP_PACKAGE>/<APP_NAMESPACE>.MainActivity`로 구성해야 한다는 점도 확인(activity 클래스명은 namespace 기준, 설치 패키지는 applicationId 기준으로 서로 다른 값을 쓴다).
+  - 실제 폰(`R5CT22WTVXP`)에 `make seed-engine` 재실행 → `files/katago/`에 세 파일 생성 확인, `make launch` 재실행 → 새 KataGo 로그 파일 2개 생성 확인(엔진 정상 기동).
 
 ---
 

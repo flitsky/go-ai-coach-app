@@ -3,7 +3,7 @@ set -euo pipefail
 
 ANDROID_SDK_ROOT="${ANDROID_HOME:-$HOME/Library/Android/sdk}"
 ADB="$ANDROID_SDK_ROOT/platform-tools/adb"
-PACKAGE="${PACKAGE:-com.worksoc.goaicoach}"
+PACKAGE="${PACKAGE:-com.zenit9hub.ai.baduk}"
 SEED_DIR="/data/local/tmp/go-ai-coach-katago-seed"
 MODEL_PATH="${MODEL_PATH:-/opt/homebrew/Cellar/katago/1.16.4/share/katago/kata1-b18c384nbt-s9996604416-d4316597426.bin.gz}"
 CONFIG_PATH="${CONFIG_PATH:-/Users/ryan9kim/worksoc/katago/config/katago/gtp_learning.cfg}"

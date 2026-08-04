@@ -4,6 +4,13 @@ ANDROID_HOME ?= /Users/ryan9kim/Library/Android/sdk
 JAVA_HOME ?= $(shell /usr/libexec/java_home -v 17 2>/dev/null)
 GRADLEW := ./gradlew
 
+# app-android/build.gradle.kts에서 직접 읽어온다 — 하드코딩하면 applicationId가 바뀔 때마다
+# (예: Firebase 패키지명 정정) adb 타겟이 옛 패키지를 계속 가리키는 채로 조용히 어긋난다.
+# MainActivity 컴포넌트명은 namespace 기준이다 — applicationId(설치 패키지)와
+# namespace(Kotlin 패키지/R·BuildConfig 생성 위치)가 서로 다를 수 있기 때문에 둘 다 필요하다.
+APP_PACKAGE := $(shell grep -m1 'applicationId = ' app-android/build.gradle.kts | sed -E 's/.*"([^"]+)".*/\1/')
+APP_NAMESPACE := $(shell grep -m1 'namespace = ' app-android/build.gradle.kts | sed -E 's/.*"([^"]+)".*/\1/')
+
 ENGINE_ABI ?= arm64-v8a
 DEBUG_ENGINE_BINARY := app-android/src/debug/jniLibs/$(ENGINE_ABI)/libkatago.so
 RELEASE_ENGINE_BINARY := app-android/src/main/jniLibs/$(ENGINE_ABI)/libkatago.so
@@ -56,17 +63,17 @@ install-dev: dev
 install-dev-engine: install-dev seed-engine launch
 
 reinstall-dev-engine: doctor ensure-debug-engine
-	-$(ANDROID_HOME)/platform-tools/adb uninstall com.worksoc.goaicoach
+	-$(ANDROID_HOME)/platform-tools/adb uninstall $(APP_PACKAGE)
 	$(GRADLEW) :app-android:installDebug
 	$(MAKE) seed-engine
 	$(MAKE) launch
 
 seed-engine: doctor
-	ANDROID_HOME="$(ANDROID_HOME)" ./scripts/seed-katago-model-to-app.sh
+	PACKAGE="$(APP_PACKAGE)" ANDROID_HOME="$(ANDROID_HOME)" ./scripts/seed-katago-model-to-app.sh
 
 launch: doctor
-	$(ANDROID_HOME)/platform-tools/adb shell am force-stop com.worksoc.goaicoach
-	$(ANDROID_HOME)/platform-tools/adb shell am start -W -n com.worksoc.goaicoach/.MainActivity
+	$(ANDROID_HOME)/platform-tools/adb shell am force-stop $(APP_PACKAGE)
+	$(ANDROID_HOME)/platform-tools/adb shell am start -W -n $(APP_PACKAGE)/$(APP_NAMESPACE).MainActivity
 
 friend-apk: doctor ensure-debug-engine prepare-friend-assets
 	$(GRADLEW) :app-android:assembleFriend
