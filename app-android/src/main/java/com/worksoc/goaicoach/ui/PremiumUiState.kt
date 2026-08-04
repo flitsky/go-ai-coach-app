@@ -23,12 +23,31 @@ import androidx.compose.ui.window.Dialog
  * 화면 트리 전역에서 읽는 프리미엄 상태. [LocalUiStrings]와 동일한 방식으로
  * `CompositionLocalProvider`를 통해 공급되며, 개별 화면/버튼은 이 값만 읽으면 된다.
  *
- * [activateForMatch]는 현재는 실제 광고 시청 없이 즉시 활성화하는 스텁이다
- * (premium-mode/README.md Step 3에서 실제 리워드 광고로 교체 예정).
+ * [isActive]는 [isPurchased](영구)이거나 만료 전 광고 시청 부여(부여 시점부터 1시간,
+ * [activateAdGrant]) 상태일 때 true다 — 실제 게이팅 판정은 항상 이 값을 쓴다. 광고 시청
+ * 활성화는 특정 대국(매치)에 묶이지 않는다 — 그 1시간 동안 대국을 몇 판을 새로 시작하든
+ * 시간이 남아 있으면 계속 유효하다. [isPurchased]는 그중 "영구 구매" 소스인지만 별도로
+ * 구분한다(설정 화면의 개발자 테스트 토글 표시용).
+ *
+ * [activateAdGrant]는 현재는 실제 광고 시청 없이 즉시 활성화하는 스텁이다
+ * (premium-mode/README.md Step 3에서 실제 리워드 광고로 교체 예정). [setPurchased]도
+ * 마찬가지로 실제 결제 없이 영구 활성화 상태를 즉시 켜고 끄는 스텁이다(Step 4 대기 중) —
+ * "구매하기" 선택지와 설정 화면의 개발자 테스트 토글이 이 함수 하나를 공유해서, 둘 중
+ * 어느 쪽에서 바꾸든 같은 전역 상태에 반영된다.
+ *
+ * [adGrantExpiresAtMillis]는 광고 시청 기반 활성화(AdGrant)일 때만 만료 시각(부여 시각 +
+ * 1시간)을 담고, 영구 구매거나 비활성 상태면 `null`이다 — 화면에서 "남은 시간" 카운트다운을
+ * 표시할지, 아니면(영구) 별도 표식을 쓸지 이 값의 null 여부만으로 분기할 수 있게 한다.
+ * 실제 카운트다운(초 단위 재계산)은 이 값을 읽는 화면(예: [GameSetupLobby]) 쪽에서
+ * 자체적으로 tick을 돌며 계산한다 — `GoCoachApp.kt`는 상태 훅 예산이 빠듯해 여기서는
+ * 만료 시각만 그대로 넘겨준다.
  */
 internal data class PremiumUiState(
     val isActive: Boolean = false,
-    val activateForMatch: () -> Unit = {},
+    val isPurchased: Boolean = false,
+    val adGrantExpiresAtMillis: Long? = null,
+    val activateAdGrant: () -> Unit = {},
+    val setPurchased: (Boolean) -> Unit = {},
 )
 
 internal val LocalPremiumUiState = staticCompositionLocalOf { PremiumUiState() }
@@ -103,14 +122,16 @@ internal fun PremiumUpsellDialogHost(
     PremiumUpsellDialog(
         onSelectPurchase = {
             onDismiss()
-            // Play Billing 연동은 premium-mode/README.md Step 4 대기 중 — 로그인 버튼과
-            // 동일한 "준비 중" 스텁으로 처리해, 실제 결제 없이 영구 활성화가 부여되지 않게 한다.
-            Toast.makeText(context, strings.notImplementedMessage, Toast.LENGTH_SHORT).show()
+            // Play Billing 연동은 premium-mode/README.md Step 4 대기 중 — 실제 결제 없이
+            // 즉시 영구 활성화로 전환하는 스텁이다. 설정 화면의 개발자 테스트 토글과 같은
+            // premium.setPurchased를 공유하므로, 여기서 켠 상태를 그 토글에서도 그대로 보고 끌 수 있다.
+            premium.setPurchased(true)
+            Toast.makeText(context, strings.premiumPurchaseStubActivatedMessage, Toast.LENGTH_SHORT).show()
             onAnyChoice()
         },
         onSelectAdGrant = {
             onDismiss()
-            premium.activateForMatch()
+            premium.activateAdGrant()
             onAnyChoice()
         },
         onDismiss = {

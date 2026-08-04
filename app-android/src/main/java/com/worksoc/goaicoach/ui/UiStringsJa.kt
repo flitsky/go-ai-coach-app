@@ -133,7 +133,10 @@ internal val UiStringsJapanese = UiStringsKorean.copy(
     settingsTitle = "設定",
     settingsAccountSectionTitle = "アカウント",
     settingsGuestStatusMessage = "ゲストとして利用中です(端末ローカルID)。ログインすると他の端末でも続きから再開できます。",
-    premiumModeTitleInactive = "プレミアムモードを有効化",
-    premiumModeTitleActive = "プレミアムモード有効中",
+    settingsDevSectionTitle = "開発者テスト",
+    settingsDevPremiumToggleTitle = "プレミアム購入完了状態",
+    settingsDevPremiumToggleSubtitle = "実際の決済なしで永久有効化をオン/オフします(テスト用)。",
+    premiumModeTitle = "プレミアムモードを有効化",
     premiumModeFeatureList = "分析・形勢判断・推奨手・待った",
+    premiumPurchaseStubActivatedMessage = "プレミアムが永久有効化されました。(テスト用の即時処理)",
 )

@@ -58,6 +58,27 @@ class GameSessionCoreStateTest {
     }
 
     @Test
+    fun applyGameSetupPreviewDoesNotAdvanceMatchGeneration() {
+        // 회귀 방지: 홈 화면으로 돌아가거나(exitToHome) 대국 종료 후 설정을 바꾸는 것은
+        // 실제로 새 대국을 시작하는 것이 아니므로, 프리미엄 매치 바인딩용 matchGeneration을
+        // 건드리면 안 된다 — 그렇지 않으면 광고 시청으로 받은 프리미엄(1시간 한도)이 대국을
+        // 새로 시작하지도 않았는데 시간이 한참 남은 채로 무효 판정되는 문제가 생긴다.
+        val runtimeState = GameSessionRuntimeState(
+            playLevel = PlayLevelSetting(),
+            engineProfile = EngineProfile(),
+            analysisPreset = AnalysisPreset.Lite,
+            matchGeneration = 3L,
+        )
+        val next = baseCoreState(isGameEnded = true, runtimeState = runtimeState).applyGameSetupPreview(
+            ruleset = Ruleset.Japanese,
+            boardSize = BoardSize.Nine,
+            handicapCount = 0,
+        )
+
+        assertEquals(3L, next.runtimeState.matchGeneration)
+    }
+
+    @Test
     fun applyGameSessionResetPlanRebuildsCoreDisplayState() {
         val reset = GameSessionResetPlan(
             gameState = GameState.empty(),

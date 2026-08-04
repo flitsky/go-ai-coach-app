@@ -175,9 +175,12 @@ internal data class UiStrings(
     val settingsTitle: String,
     val settingsAccountSectionTitle: String,
     val settingsGuestStatusMessage: String,
-    val premiumModeTitleInactive: String,
-    val premiumModeTitleActive: String,
+    val settingsDevSectionTitle: String,
+    val settingsDevPremiumToggleTitle: String,
+    val settingsDevPremiumToggleSubtitle: String,
+    val premiumModeTitle: String,
     val premiumModeFeatureList: String,
+    val premiumPurchaseStubActivatedMessage: String,
 ) {
     fun cacheOptBody(initialCount: Int, maxCount: Int, moveCount: Int, targetCount: Int): String =
         when (language) {

@@ -100,3 +100,97 @@
 분리해 텍스트를 줄였다. `GameSetupLobby.kt`의 `PremiumModeCard`에도 `maxLines = 1` +
 `TextOverflow.Ellipsis`를 제목/부제 모두에 추가해, 기기 폭이나 폰트 배율이 작아도 카드가
 3줄 이상으로 늘어나지 않도록 안전장치를 뒀다. `make test` 재통과 확인 후 커밋/푸시.
+
+## 5차 개정 (실구매 유저 대비 개발자 테스트 인프라, 2026-08-04)
+
+프리미엄을 이미 구매한 유저 케이스를 테스트하고 향후 여러 설정값을 주입할 수 있는 토대를
+마련해 달라는 요청. 상세 배경/설계는 `premium-mode/README.md`의 "2026-08-04 개발자 테스트
+인프라 추가" 절 참고. 요약:
+
+- `PremiumUiState.isPurchased`/`setPurchased` 신규 — 업셀 팝업 "구매하기" 버튼과 설정
+  화면의 새 "개발자 테스트" 섹션 토글이 이 함수 하나를 공유.
+- `SettingsScreen.kt`에 개발자 테스트 섹션 추가, `BuildConfig.DEBUG`로 게이팅(릴리스 유출
+  방지 — 중요 안전장치).
+- `GameSetupLobby.kt`: `premium.isActive`가 true면 프리미엄 카드를 없애고 "대국 시작하기"
+  버튼을 금색+👑로 표현. `PremiumModeCard`는 이제 비활성 상태 하나만 표현하도록 단순화
+  (`isActive` 파라미터 제거) — 활성 브랜치가 더 이상 호출되지 않아 죽은 코드가 되는 것을
+  방지.
+- `GoCoachApp.kt` 상태 훅 예산(추가 훅 없이 기존 `premiumState` 재사용) 및 라인 예산(880줄
+  중 876줄 사용, 여유 4줄) 모두 준수.
+- `make test` 통과 확인.
+
+## 6차 개정 (광고 시청 활성화 버그 수정, 2026-08-04)
+
+사용자 리포트: 대국 설정 화면에서 "광고 시청으로 1시간 활성화"를 눌러도 아무 반응이 없음.
+
+- **원인**: `PremiumState.adGranted(matchGeneration, ...)`는 아직 매치가 배정되지 않은
+  경우(대국 시작 전) `adGrantMatchGeneration = null`("pending")로 저장하고, 실제 대국이
+  시작되는 시점에 `bindToMatchIfPending`이 그 매치 번호로 확정하는 2단계 설계다. 기존
+  `isActive()`는 이 pending 상태를 항상 `false`로 판정했는데, 이 설계는 "활성화가 항상
+  홈 화면에서 일어나고, 그 직후 곧바로 대국 설정→대국 시작까지 진행되어 사용자가 이
+  간극(pending인 채 false인 구간)을 볼 일이 없다"는 **2차 개정 이전의 흐름을 전제**로 한
+  것이었다. 2차 개정에서 활성화 트리거를 대국 설정 화면으로 옮기면서, 사용자가 대국을
+  시작하지 않고 그 화면에 머무는 동안(보드 설정 등) 이 간극이 그대로 노출돼 "눌러도
+  반응 없음"으로 보이는 회귀가 생겼다.
+- **수정**: `PremiumState.isActive()`가 `adGrantMatchGeneration == null`(아직 매치 미배정)
+  인 경우도 즉시 유효로 판정하도록 변경 — 시간 조건(1시간 이내)은 그대로 유지된다. 실제
+  매치가 시작되면 여전히 `bindToMatchIfPending`이 그 매치 번호로 확정해, 이후에는 그 한
+  판에만 유효한 범위로 좁아진다("대국 1판 한정"이라는 기존 정책은 그대로 유지됨).
+  `PremiumStateTest.kt`의 `adGrantedStateWithNullMatchIsNotActiveUntilBound`를
+  `adGrantedStateWithNullMatchIsActiveBeforeBinding`(+ 1시간 만료 케이스 분리)로 갱신해
+  새 의도를 명시.
+- `make test` 통과 확인.
+
+## 7차 개정 ("대국 시작하기" 버튼에 프리미엄 상태 표시, 2026-08-04)
+
+프리미엄 활성화 상태(영구 구매 vs 광고 시청 시간 기반)를 버튼에서 구분해서 보여 달라는 요청.
+
+- `PremiumUiState.adGrantExpiresAtMillis` 신규 — AdGrant일 때만 만료 시각(부여 시각+1시간)을
+  담고, 영구 구매/비활성이면 `null`. `GoCoachApp.kt`는 이 값을 그대로 전달만 하고(1줄 추가,
+  라인 예산 877/880), 실제 카운트다운 tick은 예산 제약이 없는 `GameSetupLobby.kt`에서
+  1초 주기 `LaunchedEffect`로 자체 처리.
+- "대국 시작하기" 버튼 오른쪽 끝에 작은 뱃지 추가: 광고 시청 기반이면 "12:34" 형식의
+  mm:ss 카운트다운(언어 무관 표기라 번역 문자열 불필요), 영구 구매면 "∞"로 시간 해제와
+  구분되게 표시.
+- `make test` 통과 확인.
+
+## 8차 개정 (홈 복귀 시 프리미엄이 조기 만료되던 버그 수정, 2026-08-04)
+
+사용자 리포트: 광고 시청으로 활성화하고 대국 시작 → 대국 종료 후, 시간이 충분히 남았는데도
+프리미엄이 사라짐. Explore 서브에이전트로 원인 추적.
+
+- **원인**: `GoCoachApp.kt`의 `exitToHome()`이 항상 `refreshNewGamePreview()` →
+  `GameSessionCoreState.applyGameSetupPreview(...)` → `applyGameSessionResetPlan(...)`을
+  거치는데, 이 함수가 (실제 "새 대국 시작"과 동일하게) `runtimeState.nextMatchGeneration()`을
+  호출하고 있었다. 즉 **실제로 새 대국을 시작하지 않고 단순히 홈으로 돌아가기만 해도**
+  매치 제너레이션이 올라가, 그 번호에 묶인 프리미엄 광고 시청 활성화가 무효 판정됐다.
+  `exitToHome()`은 대국 종료 후 뒤로가기(`BackHandler`), 기권 후 뒤로가기, `GameSetupLobby`
+  뒤로가기 3곳 모두에서 호출되므로 어느 경로로 홈에 돌아가도 재현되는 문제였다.
+- **수정**: `GameSessionCoreState.applyGameSessionResetPlan`에 `advanceMatchGeneration:
+  Boolean = true` 파라미터를 추가하고, `applyGameSetupPreview`(미리보기 전용, 실제 대국
+  시작 아님)만 `false`로 호출하도록 변경. 실제 "새 대국 시작" 경로
+  (`GameLifecycleControllerWiring.kt` → `NewGameController`)는 기본값 `true`를 그대로
+  써서 기존 "대국 1판 한정" 정책은 유지된다.
+- `GameSessionCoreStateTest.kt`에 `applyGameSetupPreviewDoesNotAdvanceMatchGeneration`
+  회귀 테스트 추가.
+- `make test` 통과 확인.
+
+## 9차 개정 (광고 시청 프리미엄 정책을 순수 1시간 타이머로 변경, 2026-08-04)
+
+8차 개정으로 "홈 복귀 시 조기 만료" 버그는 고쳤지만, 사용자의 실제 의도는 "새 대국을
+시작해도 1시간이 남아 있으면 계속 프리미엄으로 동작해야 한다"는 것이었다 — 이는
+2026-07-28에 확정했던 "대국 1판 한정" 정책 자체를 뒤집는 요청. 상세 배경/설계는
+`premium-mode/README.md`의 "결정 번복: '대국 1판 한정' 정책을 순수 1시간 타이머로 변경"
+절 참고. 요약:
+
+- `PremiumState`에서 `adGrantMatchGeneration`/`bindToMatchIfPending` 완전 제거,
+  `isActive(nowMillis)`가 매치 정보 없이 순수 시간만으로 판정하도록 단순화.
+- `GoCoachApp.kt`의 pending-매치-바인딩용 `LaunchedEffect` 제거(불필요해짐) — 그
+  결과 라인 수 848/880으로 여유가 늘어남(직전 876/880 대비).
+- `PremiumUiState.activateForMatch` → `activateAdGrant`로 리네이밍.
+- `PremiumStateStore` JSON 코덱, `PremiumStateTest.kt`, `PremiumStateStoreTest.kt` 모두
+  새 API에 맞게 갱신.
+- `GameSessionRuntimeState.matchGeneration` 자체(및 8차 개정에서 고친
+  `advanceMatchGeneration` 분기)는 삭제하지 않고 유지 — 프리미엄 게이팅에는 더 이상
+  안 쓰이지만 세션 리셋 시점을 구분하는 일반 부기 값으로서 유효.
+- `make test` 통과 확인.

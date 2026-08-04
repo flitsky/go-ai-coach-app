@@ -16,21 +16,11 @@ class PremiumStateStoreTest {
 
     @Test
     fun encodeDecodeRoundTripsAdGrantedState() {
-        val original = PremiumState.adGranted(matchGeneration = 7L, nowMillis = 1_000_000L)
+        val original = PremiumState.adGranted(nowMillis = 1_000_000L)
 
         val decoded = PremiumStateCodec.decode(PremiumStateCodec.encode(original))
 
         assertEquals(original, decoded)
-    }
-
-    @Test
-    fun encodeDecodeRoundTripsPendingAdGrantWithNullMatch() {
-        val original = PremiumState.adGranted(matchGeneration = null, nowMillis = 1_000_000L)
-
-        val decoded = PremiumStateCodec.decode(PremiumStateCodec.encode(original))
-
-        assertEquals(original, decoded)
-        assertNull(decoded?.adGrantMatchGeneration)
     }
 
     @Test

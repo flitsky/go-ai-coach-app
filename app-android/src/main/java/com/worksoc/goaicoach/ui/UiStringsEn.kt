@@ -134,7 +134,10 @@ internal val UiStringsEnglish = UiStringsKorean.copy(
     settingsTitle = "Settings",
     settingsAccountSectionTitle = "Account",
     settingsGuestStatusMessage = "You're using a guest account (local device ID). Sign in to continue on other devices.",
-    premiumModeTitleInactive = "Activate Premium Mode",
-    premiumModeTitleActive = "Premium Mode Active",
+    settingsDevSectionTitle = "Developer Testing",
+    settingsDevPremiumToggleTitle = "Premium Purchase Status",
+    settingsDevPremiumToggleSubtitle = "Toggle permanent activation without real payment (testing only).",
+    premiumModeTitle = "Activate Premium Mode",
     premiumModeFeatureList = "Analysis · Eval · Top Moves · Undo",
+    premiumPurchaseStubActivatedMessage = "Premium permanently activated. (test stub)",
 )

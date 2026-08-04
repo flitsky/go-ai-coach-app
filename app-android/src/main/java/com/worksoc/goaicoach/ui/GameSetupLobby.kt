@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -22,8 +23,10 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,6 +43,7 @@ import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.presentation.GameUiEvent
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import kotlinx.coroutines.delay
 
 /**
  * 1 Depth: 대국 설정 화면 (Game Lobby Screen / Match Setup)
@@ -65,6 +69,20 @@ internal fun GameSetupLobby(
         visible = showPremiumUpsellDialog,
         onDismiss = { showPremiumUpsellDialog = false },
     )
+
+    // 광고 시청 기반 활성화의 남은 시간을 "대국 시작하기" 버튼에 실시간으로 보여주기 위한
+    // 1초 tick. `GoCoachApp.kt`는 상태 훅 예산이 빠듯해 만료 시각만 넘겨주고, 실제 카운트
+    // 다운 계산/갱신은 여기(예산 제약이 없는 화면)에서 자체적으로 돈다.
+    var nowMillis by remember { mutableStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(premium.adGrantExpiresAtMillis) {
+        val expiresAt = premium.adGrantExpiresAtMillis ?: return@LaunchedEffect
+        while (true) {
+            nowMillis = System.currentTimeMillis()
+            if (nowMillis >= expiresAt) break
+            delay(1000)
+        }
+    }
+    val remainingAdGrantMillis = premium.adGrantExpiresAtMillis?.minus(nowMillis)?.coerceAtLeast(0L)
 
     Column(
         modifier = modifier
@@ -179,10 +197,11 @@ internal fun GameSetupLobby(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            PremiumModeCard(
-                isActive = premium.isActive,
-                onClick = { if (!premium.isActive) showPremiumUpsellDialog = true },
-            )
+            // 프리미엄이 이미 활성 상태면 카드를 아예 없애고, 아래 "대국 시작하기" 버튼
+            // 자체를 프리미엄 스타일로 표현하는 것으로 활성 상태를 알린다(중복 안내 방지).
+            if (!premium.isActive) {
+                PremiumModeCard(onClick = { showPremiumUpsellDialog = true })
+            }
 
             Button(
                 onClick = {
@@ -190,50 +209,74 @@ internal fun GameSetupLobby(
                     onStartMatch()
                 },
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary
+                    containerColor = if (premium.isActive) PremiumGold else MaterialTheme.colorScheme.primary
                 ),
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)
             ) {
-                Text(
-                    text = strings.startMatchAction,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = if (premium.isActive) "👑 ${strings.startMatchAction}" else strings.startMatchAction,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        modifier = Modifier.align(Alignment.Center),
+                    )
+                    // 오른쪽 끝에 현재 프리미엄 상태를 보여준다 — 광고 시청(시간 기반)이면
+                    // 남은 시간을 mm:ss로 카운트다운하고, 영구 구매면 시간 해제와 구분되도록
+                    // ∞로 표시한다(둘 다 premium.isActive일 때만 렌더링되는 영역이라 별도
+                    // isActive 체크는 없다).
+                    if (premium.isActive) {
+                        Surface(
+                            color = Color.White.copy(alpha = 0.22f),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.align(Alignment.CenterEnd),
+                        ) {
+                            Text(
+                                text = remainingAdGrantMillis?.let(::formatRemainingTime) ?: "∞",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            )
+                        }
+                    }
+                }
             }
         }
     }
 }
 
+/** 남은 시간을 "M:SS" 형식으로 포맷한다(언어 무관 — 시계 표기라 별도 번역이 필요 없다). */
+private fun formatRemainingTime(remainingMillis: Long): String {
+    val totalSeconds = remainingMillis / 1000
+    val minutes = totalSeconds / 60
+    val seconds = totalSeconds % 60
+    return "%d:%02d".format(minutes, seconds)
+}
+
 /**
- * 대국 설정 화면 하단에 고정 노출되는 프리미엄 모드 카드 — 금색 그라디언트로 일반 설정
- * 항목들과 확실히 구분되는 시각적 아이덴티티를 준다([PremiumGoldGradient] 등 참고).
- * 활성화된 상태에서는 안내만 표시하고(비활성화는 지원하지 않음 — [PremiumUiState]에 해제
- * API가 없다), 비활성 상태에서는 탭하면 [onClick]으로 업셀 팝업을 연다.
+ * 대국 설정 화면 하단에 고정 노출되는 프리미엄 모드 활성화 카드 — 금색 그라디언트 보더로
+ * 일반 설정 항목들과 확실히 구분되는 시각적 아이덴티티를 준다([PremiumGoldGradient] 등
+ * 참고). 프리미엄이 이미 활성 상태면 호출부([GameSetupLobby])가 이 카드 자체를 렌더링하지
+ * 않는다 — 그때는 "대국 시작하기" 버튼이 프리미엄 스타일로 바뀌는 것으로 충분하기 때문에,
+ * 이 컴포저블은 "아직 비활성이라 탭하면 활성화할 수 있음" 한 가지 상태만 표현한다.
  */
 @Composable
-private fun PremiumModeCard(isActive: Boolean, onClick: () -> Unit) {
+private fun PremiumModeCard(onClick: () -> Unit) {
     val strings = LocalUiStrings.current
 
-    val cardModifier = if (isActive) {
-        Modifier.background(PremiumGoldGradient, PremiumCardShape)
-    } else {
-        Modifier
-            .background(PremiumGoldLight.copy(alpha = 0.18f), PremiumCardShape)
-            .border(1.5.dp, PremiumGoldGradient, PremiumCardShape)
-            .clickable(onClick = onClick)
-    }
-
-    // 제목에 활성/비활성 상태(동사)를 담고, 부제는 기능 나열만 하는 짧은 문구로 분리해
+    // 제목에 "활성화하기"라는 동사를 담고, 부제는 기능 나열만 하는 짧은 문구로 분리해
     // 카드가 항상 한 줄씩 2줄로만 표시되게 한다. maxLines/ellipsis는 그래도 기기 폭이나
     // 폰트 배율이 작을 때 3번째 줄로 밀리는 걸 막는 안전장치.
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .then(cardModifier)
+            .background(PremiumGoldLight.copy(alpha = 0.18f), PremiumCardShape)
+            .border(1.5.dp, PremiumGoldGradient, PremiumCardShape)
+            .clickable(onClick = onClick)
             .padding(horizontal = 18.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -241,25 +284,25 @@ private fun PremiumModeCard(isActive: Boolean, onClick: () -> Unit) {
         Spacer(modifier = Modifier.width(10.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = if (isActive) strings.premiumModeTitleActive else strings.premiumModeTitleInactive,
+                text = strings.premiumModeTitle,
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 15.sp,
-                color = if (isActive) Color.White else PremiumGoldDeep,
+                color = PremiumGoldDeep,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
                 text = strings.premiumModeFeatureList,
                 fontSize = 12.sp,
-                color = if (isActive) Color.White.copy(alpha = 0.88f) else MaterialTheme.colorScheme.secondary,
+                color = MaterialTheme.colorScheme.secondary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
         }
         Spacer(modifier = Modifier.width(8.dp))
         Text(
-            text = if (isActive) "✓" else "›",
-            color = if (isActive) Color.White else PremiumGold,
+            text = "›",
+            color = PremiumGold,
             fontWeight = FontWeight.Bold,
             fontSize = 20.sp,
         )

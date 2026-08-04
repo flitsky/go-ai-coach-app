@@ -88,11 +88,24 @@ internal data class GameSessionCoreState(
             engineMessage = failure.engineMessage,
         )
 
-    fun applyGameSessionResetPlan(reset: GameSessionResetPlan): GameSessionCoreState =
+    /**
+     * [advanceMatchGeneration]는 기본 true(실제로 새 대국이 시작되는 경우, 예:
+     * [GameUiEvent.StartConfiguredGame])다. [applyGameSetupPreview]처럼 아직 대국을 시작한
+     * 것이 아니라 홈 화면으로 돌아가며 다음 대국 미리보기 보드만 새로 그리는 경우에는
+     * false로 호출해야 한다 — 그렇지 않으면 매치 제너레이션이 실제 대국 시작 없이도
+     * 계속 올라가, 그 번호에 묶인 프리미엄 광고 시청 활성화(1판 한정)가 시간이 한참
+     * 남았는데도 아무 대국도 시작하지 않은 채로 무효 판정되는 문제가 생긴다.
+     */
+    fun applyGameSessionResetPlan(
+        reset: GameSessionResetPlan,
+        advanceMatchGeneration: Boolean = true,
+    ): GameSessionCoreState =
         copy(
             gameState = reset.gameState,
             isGameEnded = false,
-            runtimeState = runtimeState.nextSessionGeneration().nextMatchGeneration(),
+            runtimeState = runtimeState.nextSessionGeneration().let { next ->
+                if (advanceMatchGeneration) next.nextMatchGeneration() else next
+            },
             analysisState = GameSessionAnalysisState.reset(
                 candidateText = reset.candidateText,
                 reviewAnalysis = reset.reviewAnalysis,
@@ -113,7 +126,11 @@ internal data class GameSessionCoreState(
             ),
         )
 
-    /** Previews the configured opening while keeping the session outside an active game. */
+    /**
+     * Previews the configured opening while keeping the session outside an active game.
+     * `advanceMatchGeneration = false` — 아직 실제로 대국을 시작한 것이 아니므로 매치
+     * 제너레이션은 그대로 둔다(위 [applyGameSessionResetPlan] 문서 참고).
+     */
     fun applyGameSetupPreview(
         ruleset: Ruleset,
         boardSize: BoardSize,
@@ -128,6 +145,7 @@ internal data class GameSessionCoreState(
                 handicapCount = handicapCount,
                 komi = komi,
             ),
+            advanceMatchGeneration = false,
         ).copy(isGameEnded = true)
 
     fun applySavedGameRestorePlan(restore: SavedGameRestorePlan): GameSessionCoreState =

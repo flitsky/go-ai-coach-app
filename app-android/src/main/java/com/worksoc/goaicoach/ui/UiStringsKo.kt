@@ -135,7 +135,10 @@ internal val UiStringsKorean = UiStrings(
     settingsTitle = "설정",
     settingsAccountSectionTitle = "계정",
     settingsGuestStatusMessage = "게스트로 이용 중입니다 (기기 로컬 ID). 로그인하면 다른 기기에서도 이어볼 수 있어요.",
-    premiumModeTitleInactive = "프리미엄 모드 활성화하기",
-    premiumModeTitleActive = "프리미엄 모드 활성화됨",
+    settingsDevSectionTitle = "개발자 테스트",
+    settingsDevPremiumToggleTitle = "프리미엄 모드 구매 완료 상태",
+    settingsDevPremiumToggleSubtitle = "실제 결제 없이 영구 활성화를 켜고 끕니다 (테스트용).",
+    premiumModeTitle = "프리미엄 모드 활성화하기",
     premiumModeFeatureList = "분석·형세보기·추천수·무르기",
+    premiumPurchaseStubActivatedMessage = "프리미엄이 영구 활성화되었습니다. (테스트용 즉시 처리)",
 )

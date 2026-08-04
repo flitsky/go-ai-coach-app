@@ -132,7 +132,10 @@ internal val UiStringsChineseSimplified = UiStringsKorean.copy(
     settingsTitle = "设置",
     settingsAccountSectionTitle = "账户",
     settingsGuestStatusMessage = "当前以访客身份使用(设备本地 ID)。登录后可在其他设备上继续游玩。",
-    premiumModeTitleInactive = "激活高级模式",
-    premiumModeTitleActive = "高级模式已激活",
+    settingsDevSectionTitle = "开发者测试",
+    settingsDevPremiumToggleTitle = "高级模式购买完成状态",
+    settingsDevPremiumToggleSubtitle = "无需实际付款即可开关永久激活(仅测试用)。",
+    premiumModeTitle = "激活高级模式",
     premiumModeFeatureList = "分析・形势判断・推荐着法・悔棋",
+    premiumPurchaseStubActivatedMessage = "高级模式已永久激活。(测试用即时处理)",
 )

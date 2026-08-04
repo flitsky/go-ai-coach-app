@@ -729,60 +729,39 @@ private fun GoCoachScreen(
     )
 
     val premiumUiState = PremiumUiState(
-        isActive = premiumState.isActive(
-            currentMatchGeneration = runtimeState.matchGeneration,
-            // 별도 tick 없이 재구성될 때마다 현재 시각으로 평가한다 — 대국 중에는 착수/AI
-            // 응답 등으로 이 컴포저블이 충분히 자주 재구성되므로 1시간 만료 판정에 문제없다.
-            nowMillis = System.currentTimeMillis(),
-        ),
-        activateForMatch = {
-            // 이미 대국 중(인게임 잠긴 버튼에서 활성화)이면 현재 매치에 바로 묶고,
-            // 아직 대국 시작 전(홈 화면 팝업)이면 어느 매치에도 묶지 않은 채로 둔다 —
-            // 실제 대국이 시작되는 시점(matchGeneration 변경)에 아래 effect가
-            // 그때 배정된 매치 번호로 확정한다. 홈 화면에서 바로 현재 matchGeneration에
-            // 묶어버리면, 그 뒤에 실제로 시작되는 대국은 다른(증가된) 매치 번호를 받아서
-            // 방금 활성화한 프리미엄이 곧바로 무효 판정되는 문제가 있었다.
-            // matchGeneration은 무르기(undo)로는 바뀌지 않는다 — sessionGeneration(엔진
-            // 오퍼레이션 무효화용)과 분리된 별도 카운터라서, 무르기 한 번에 프리미엄이
-            // 풀리는 문제가 없다.
-            premiumState = PremiumState.adGranted(
-                matchGeneration = if (currentDestination == ScreenDestination.InGame) {
-                    runtimeState.matchGeneration
-                } else {
-                    null
-                },
-                nowMillis = System.currentTimeMillis(),
-            )
+        // 별도 tick 없이 재구성될 때마다 현재 시각으로 평가한다 — 대국 중에는 착수/AI
+        // 응답 등으로 이 컴포저블이 충분히 자주 재구성되므로 1시간 만료 판정에 문제없다.
+        isActive = premiumState.isActive(nowMillis = System.currentTimeMillis()),
+        isPurchased = premiumState.source == PremiumSource.Purchase,
+        adGrantExpiresAtMillis = premiumState.adGrantStartedAtMillis?.plus(PremiumState.AdGrantDurationMillis),
+        setPurchased = { purchased ->
+            premiumState = if (purchased) PremiumState.purchased() else PremiumState()
+            premiumStateStore.save(premiumState)
+        },
+        activateAdGrant = {
+            // 특정 대국(매치)에 묶지 않는다 — 부여 시점부터 1시간 동안은 그 사이에 새
+            // 대국을 몇 판을 시작하든 계속 유효해야 한다는 결정에 따름(premium-mode/README.md).
+            premiumState = PremiumState.adGranted(nowMillis = System.currentTimeMillis())
             premiumStateStore.save(premiumState)
             diagnosticEventLog.append(
                 DiagnosticEvent(
                     severity = DiagnosticSeverity.Info,
                     code = "premium_ad_grant_activated",
                     message = "Premium ad grant activated.",
-                    context = mapOf(
-                        "adGrantMatchGeneration" to (premiumState.adGrantMatchGeneration?.toString() ?: "pending"),
-                        "currentMatchGeneration" to runtimeState.matchGeneration.toString(),
-                    ),
+                    context = mapOf("adGrantStartedAtMillis" to premiumState.adGrantStartedAtMillis.toString()),
                 ),
             )
         },
     )
 
-    // 홈 화면에서 활성화되어 아직 매치에 묶이지 않은 프리미엄을, 실제 대국이 시작되어
-    // matchGeneration이 배정/변경되는 시점에 그 매치로 확정한다.
-    LaunchedEffect(runtimeState.matchGeneration) {
-        premiumState = premiumState.bindToMatchIfPending(runtimeState.matchGeneration)
-        premiumStateStore.save(premiumState)
-    }
-
-    // 프리미엄이 비활성 상태가 될 때(활성화 안 함 선택, 만료, 새 대국 등) 형세보기/추천수의
+    // 프리미엄이 비활성 상태가 될 때(활성화 안 함 선택, 만료 등) 형세보기/추천수의
     // "켜짐" 상태값 자체를 꺼서, 버튼만 잠기고 기능은 이전 값대로 계속 동작하는 걸 방지한다.
     LaunchedEffect(premiumUiState.isActive) {
         if (!premiumUiState.isActive) {
             uxOptions = uxOptions.copy(showOwnershipOverlay = false)
             controllers.topMovesController.hide()
             // source가 None이면 애초에 활성화된 적이 없으므로(예: 앱 최초 실행) 로그하지 않는다
-            // — 실제로 활성 상태였다가 꺼진 경우(매치 불일치/만료/명시적 비활성화)만 남긴다.
+            // — 실제로 활성 상태였다가 꺼진 경우(만료/명시적 비활성화)만 남긴다.
             if (premiumState.source != PremiumSource.None) {
                 diagnosticEventLog.append(
                     DiagnosticEvent(
@@ -791,8 +770,6 @@ private fun GoCoachScreen(
                         message = "Premium is no longer active.",
                         context = mapOf(
                             "source" to premiumState.source.name,
-                            "adGrantMatchGeneration" to (premiumState.adGrantMatchGeneration?.toString() ?: "null"),
-                            "currentMatchGeneration" to runtimeState.matchGeneration.toString(),
                             "adGrantStartedAtMillis" to (premiumState.adGrantStartedAtMillis?.toString() ?: "null"),
                             "nowMillis" to System.currentTimeMillis().toString(),
                         ),

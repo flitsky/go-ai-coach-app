@@ -37,7 +37,6 @@ internal object PremiumStateCodec {
     fun encode(state: PremiumState): String =
         JSONObject()
             .put("source", state.source.name)
-            .put("adGrantMatchGeneration", state.adGrantMatchGeneration ?: JSONObject.NULL)
             .put("adGrantStartedAtMillis", state.adGrantStartedAtMillis ?: JSONObject.NULL)
             .toString()
 
@@ -46,7 +45,6 @@ internal object PremiumStateCodec {
             val json = JSONObject(raw)
             PremiumState(
                 source = enumOrDefault(json.optString("source"), PremiumSource.None),
-                adGrantMatchGeneration = json.optLongOrNull("adGrantMatchGeneration"),
                 adGrantStartedAtMillis = json.optLongOrNull("adGrantStartedAtMillis"),
             )
         }.getOrNull()
