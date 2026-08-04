@@ -210,3 +210,14 @@
   placeholder("G")를 유지하고 실제 Google 로그인 SDK 연동(Step 2) 시점에 그 SDK가 제공하는
   아이콘으로 교체하기로 함. Apple/이메일도 동일하게 placeholder 유지(원래도 실제 에셋 없음).
 - `make test` 통과 확인.
+
+## 11차 개정 (버튼 폰트 확대 + 게스트를 텍스트 링크로 전환, 2026-08-04)
+
+- `SocialLoginButton.kt`: 라벨 폰트 14sp 상당(기본값) → 18sp, 아이콘 글리프 15sp → 19sp로
+  확대(2단계 상당). 버튼 높이도 48dp → 56dp로 늘려 커진 텍스트가 여유 있게 들어가도록 함.
+- `OnboardingScreen.kt`: "계정 없이 시작하기"를 `SocialLoginButton`(테두리 있는 버튼)에서
+  테두리/배경 없는 클릭 가능한 `Text`로 전환 — Spotify/Duolingo류 온보딩에서 흔히 쓰이는
+  "건너뛰기" 텍스트 링크 패턴을 따름. 색은 `colorScheme.secondary`(절제된 톤), 터치 영역은
+  패딩(24dp 가로/14dp 세로)으로 접근성 최소 권장 크기(48dp) 이상 확보. 위 3개 로그인
+  버튼과의 구분선은 유지.
+- `make test` 통과 확인.

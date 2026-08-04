@@ -56,32 +56,32 @@ internal fun SocialLoginButton(
 ) {
     OutlinedButton(
         onClick = onClick,
-        modifier = modifier.fillMaxWidth().height(48.dp),
-        shape = RoundedCornerShape(24.dp),
+        modifier = modifier.fillMaxWidth().height(56.dp),
+        shape = RoundedCornerShape(28.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Box(modifier = Modifier.width(22.dp), contentAlignment = Alignment.Center) {
+            Box(modifier = Modifier.width(26.dp), contentAlignment = Alignment.Center) {
                 if (leadingIconRes != null) {
                     Image(
                         painter = painterResource(id = leadingIconRes),
                         contentDescription = null,
-                        modifier = Modifier.size(18.dp),
+                        modifier = Modifier.size(22.dp),
                     )
                 } else if (leadingGlyph != null) {
                     Text(
                         text = leadingGlyph,
-                        fontSize = 15.sp,
+                        fontSize = 19.sp,
                         fontWeight = FontWeight.Black,
                         color = if (glyphColor == Color.Unspecified) LocalContentColor.current else glyphColor,
                     )
                 }
             }
             Spacer(modifier = Modifier.width(12.dp))
-            Text(text = label)
+            Text(text = label, fontSize = 18.sp, fontWeight = FontWeight.Medium)
         }
     }
 }

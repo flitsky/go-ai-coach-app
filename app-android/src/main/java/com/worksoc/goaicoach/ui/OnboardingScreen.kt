@@ -2,6 +2,7 @@ package com.worksoc.goaicoach.ui
 
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -119,20 +120,27 @@ internal fun OnboardingScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
         HorizontalDivider(modifier = Modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.outlineVariant)
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
-        // 다른 3개 버튼과 동일한 무채색 톤 — "얕은 허들"의 선택지 중 하나일 뿐, 권장 경로처럼
-        // 강조되면 안 된다는 피드백에 따라 진한 배경색(Button)이 아닌 OutlinedButton으로 통일.
-        // 위 구분선으로 "로그인 수단들" 대비 "계정 없이"라는 별도 선택지임을 시각적으로 구분한다.
-        SocialLoginButton(
-            label = strings.continueWithoutAccount,
-            leadingGlyph = "👤", // 👤
-            onClick = {
-                deviceIdentityStore.loadOrCreate()
-                scope.launch { authClient.signInAnonymously() }
-                Toast.makeText(context, strings.guestStartedToastMessage, Toast.LENGTH_SHORT).show()
-                onOnboardingComplete()
-            },
+        // 버튼이 아니라 텍스트 링크로: Spotify/Duolingo류 온보딩에서 흔한 "건너뛰기" 패턴 —
+        // 위 3개 로그인 수단은 테두리 있는 버튼으로 동등하게 제시하고, 그 대안(계정 없이)은
+        // 테두리/배경 없는 절제된 텍스트로 격 낮춰 보여준다. 터치 영역은 패딩으로 48dp 이상
+        // 확보(접근성 최소 권장 크기).
+        Text(
+            text = strings.continueWithoutAccount,
+            fontSize = 15.sp,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.secondary,
+            modifier = Modifier
+                .clickable(
+                    onClick = {
+                        deviceIdentityStore.loadOrCreate()
+                        scope.launch { authClient.signInAnonymously() }
+                        Toast.makeText(context, strings.guestStartedToastMessage, Toast.LENGTH_SHORT).show()
+                        onOnboardingComplete()
+                    },
+                )
+                .padding(horizontal = 24.dp, vertical = 14.dp),
         )
     }
 }
