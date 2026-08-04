@@ -194,3 +194,19 @@
   `advanceMatchGeneration` 분기)는 삭제하지 않고 유지 — 프리미엄 게이팅에는 더 이상
   안 쓰이지만 세션 리셋 시점을 구분하는 일반 부기 값으로서 유효.
 - `make test` 통과 확인.
+
+## 10차 개정 (온보딩 로그인 버튼 폴리싱, 2026-08-04)
+
+- `SocialLoginButton.kt`: 버튼 내부 `Row`의 정렬을 `Arrangement.Center`로 바꿔 아이콘+라벨
+  그룹이 버튼 안에서 가운데 정렬되도록 함. 실제 아이콘 에셋(`leadingIconRes: Int?`)을 텍스트
+  placeholder(`leadingGlyph`)보다 우선 사용할 수 있도록 파라미터 추가.
+- `OnboardingScreen.kt`: 버튼 간 간격 12dp → 24dp(2배)로 확대. Google/Apple/이메일 3개
+  로그인 버튼과 "계정 없이 시작하기" 사이에 `HorizontalDivider` 추가해 두 그룹을 시각적으로
+  분리(다른 3개와 색은 동일하게 유지 — 강조 아님, 구조적 구분일 뿐).
+- **Google 실제 아이콘 시도 및 보류**: Play Services Base AAR의 공식 `googleg_standard_color_18`
+  에셋을 새 의존성 추가 없이 쓸 수 있는지 실제 빌드로 확인했으나, 이 프로젝트의 Firebase Auth
+  버전(BOM 34.16.0)이 더 이상 그 모듈을 전이 의존성으로 끌어오지 않아 `com.google.android.gms.R`
+  자체가 클래스패스에 없었다(컴파일 에러로 확인). 사용자가 사전에 허용한 대로, 지금은 텍스트
+  placeholder("G")를 유지하고 실제 Google 로그인 SDK 연동(Step 2) 시점에 그 SDK가 제공하는
+  아이콘으로 교체하기로 함. Apple/이메일도 동일하게 placeholder 유지(원래도 실제 에셋 없음).
+- `make test` 통과 확인.

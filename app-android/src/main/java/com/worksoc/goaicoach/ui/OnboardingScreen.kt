@@ -6,9 +6,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -87,6 +89,11 @@ internal fun OnboardingScreen(
 
         Spacer(modifier = Modifier.height(40.dp))
 
+        // Google "G" 공식 에셋(googleg_standard_color_18)은 Play Services Base AAR에
+        // 들어있는데, 이 프로젝트의 Firebase Auth 버전(BOM 34.16.0)은 더 이상 그 모듈을
+        // 전이 의존성으로 끌어오지 않아 실제로는 클래스패스에 없다(빌드 시도로 확인함) —
+        // 새 의존성을 추가하지 않는 한 지금은 텍스트 placeholder를 유지하고, 실제 Google
+        // 로그인 SDK(Step 2)를 붙이는 시점에 그 SDK가 제공하는 아이콘으로 교체한다.
         SocialLoginButton(
             label = strings.continueWithGoogle,
             leadingGlyph = "G",
@@ -94,15 +101,15 @@ internal fun OnboardingScreen(
             onClick = { showNotImplemented() },
         )
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
         SocialLoginButton(
             label = strings.continueWithApple,
-            leadingGlyph = "🍎", // 🍎 — 실제 Apple 로고 벡터 에셋으로 교체 전 임시 표기
+            leadingGlyph = "🍎", // 🍎 — Apple은 실제 SDK 없이 동등한 공식 에셋이 없어 임시 표기 유지
             onClick = { showNotImplemented() },
         )
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
         SocialLoginButton(
             label = strings.continueWithEmail,
@@ -110,10 +117,13 @@ internal fun OnboardingScreen(
             onClick = { showNotImplemented() },
         )
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(24.dp))
+        HorizontalDivider(modifier = Modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.outlineVariant)
+        Spacer(modifier = Modifier.height(24.dp))
 
         // 다른 3개 버튼과 동일한 무채색 톤 — "얕은 허들"의 선택지 중 하나일 뿐, 권장 경로처럼
         // 강조되면 안 된다는 피드백에 따라 진한 배경색(Button)이 아닌 OutlinedButton으로 통일.
+        // 위 구분선으로 "로그인 수단들" 대비 "계정 없이"라는 별도 선택지임을 시각적으로 구분한다.
         SocialLoginButton(
             label = strings.continueWithoutAccount,
             leadingGlyph = "👤", // 👤
