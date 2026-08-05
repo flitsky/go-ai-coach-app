@@ -42,6 +42,7 @@
 | 날짜 | 변경 | 이전 내용은 어디서 |
 | --- | --- | --- |
 | 2026-07-30 | `ARCHITECTURE.md`에서 go-ai-coach 파일/패키지 매핑 표를 걷어내고 원칙만 남김 | 이전 버전(계층별 구체 매핑 포함)은 `git log -p -- docs/ARCHITECTURE.md`로 확인. 매핑 내용 자체는 신설된 `GO_AI_COACH_ARCHITECTURE_ROADMAP.md`로 이전(그대로 복사가 아니라 새 7계층 경계에 맞게 재정리) |
+| 2026-08-05 | `docs/history/THREAD_HISTORY.md`를 압축 — 2026-05-31 날짜 헤더 하나 아래로 쌓여 있던 1,622줄 상세 로그를 "지난 히스토리 요약" 절(시기별 핵심만)로 대체하고, 이후로는 날짜 헤더마다 그 날의 요약만 짧게 추가하는 방식으로 전환 | 상세 원문은 `docs/archive/2026-08-05-thread-history-consolidation/THREAD_HISTORY_DETAIL_2026-05-31_to_2026-08-04.md`에 그대로 보존 |
 
 이런 식으로 문서를 "재작성"할 때마다(내용을 들어내거나 구조를 바꿀 때) 이 표에 한 줄을 추가한다 — 파일을 지우지 않는다는 원칙과 같은 이유로, git 히스토리를 찾아볼 최소한의 단서(무엇이 언제 어디로 갔는지)를 남기기 위함이다.
 
@@ -119,6 +120,7 @@
 | `archive/2026-06-engine-policy-superseded/` | 엔진 호출 정책 정리 전의 superseded 분석 문서 |
 | `archive/2026-06-17-architecture-docs-rewrite/` | `ARCHITECTURE.md` 신설로 대체된 `ARCHITECTURE_LAYERS_ANALYSIS.md` 초안 |
 | `archive/2026-06-17-early-decisions/` | 프로젝트 초기(2026-05-31~06-10) 의사결정/비전 문서. `STACK_DECISION.md`(KMP 최초 선택), `FUTURE_ARCHITECTURE_VISION.md`(초기 장기 비전 초안), `KATRAIN_UX_BACKLOG.md`(미착수 UX 후보 목록) — 모두 현재 핵심 문서(`ARCHITECTURE.md`/`OPERATIONS.md`)가 핵심 결론만 흡수했고, 원문은 근거 자료로 남긴다 |
+| `archive/2026-08-05-thread-history-consolidation/` | `docs/history/THREAD_HISTORY.md` 압축 전 원문(2026-05-31~08-04, 1,622줄) 전체 보존. 압축본은 `THREAD_HISTORY.md`의 "지난 히스토리 요약" 절 |
 
 ## 데이터 로그
 
