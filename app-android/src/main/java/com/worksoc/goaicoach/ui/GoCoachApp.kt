@@ -26,7 +26,6 @@ import com.worksoc.goaicoach.application.premium.PremiumState
 import com.worksoc.goaicoach.application.premium.PremiumStateStorePort
 import com.worksoc.goaicoach.application.premium.runPremiumAdGrantApplication
 import androidx.compose.ui.platform.LocalContext
-import com.worksoc.goaicoach.BuildConfig
 import com.worksoc.goaicoach.application.analysis.AnalysisCacheKey
 import com.worksoc.goaicoach.application.analysis.AnalysisResultCache
 import com.worksoc.goaicoach.application.analysis.PositionCacheOptimizationController
@@ -755,7 +754,7 @@ private fun GoCoachScreen(
             // 시작하든 유효). 로드 실패/중도 이탈 시에는 상태를 바꾸지 않는다.
             val activity = context as? Activity
             val outcome = if (activity != null) {
-                AndroidRewardedAdClient(activity, BuildConfig.REWARDED_AD_UNIT_ID).showRewardedAd()
+                AndroidRewardedInterstitialAdClient(activity, AdUnitIds.rewardedInterstitialAdUnitId).showRewardedAd()
             } else {
                 AdRewardOutcome.NotRewarded(AdRewardFailureReason.Unavailable)
             }

@@ -19,20 +19,28 @@ if (file("google-services.json").exists()) {
     apply(plugin = "com.google.gms.google-services")
 }
 
-// AdMob 앱/광고단위 ID는 local.properties(gitignored, sdk.dir과 같은 파일)의
-// admob.appId / admob.rewardedAdUnitId 두 키로 덮어쓴다 — 없으면 Google 공식 테스트 ID로
-// 폴백해 개발 환경에서 항상 즉시 동작한다. 실제 값이 코드/버전관리에 하드코딩되지 않는다
-// (premium-mode/README.md Step 3 참고).
+// Google 공식 테스트 값(https://developers.google.com/admob/android/test-ads) — 항상 공개/커밋
+// 가능하고, 실제 계정과 무관하다.
+val testAdmobAppId = "ca-app-pub-3940256099942544~3347511713"
+val testRewardedInterstitialAdUnitId = "ca-app-pub-3940256099942544/5354046379"
+val testBannerAdUnitId = "ca-app-pub-3940256099942544/6300978111"
+
+// 실제 AdMob 앱/광고단위 ID는 local.properties(gitignored, sdk.dir과 같은 파일)의 세 키로
+// 주입한다 — 코드/버전관리에 하드코딩하지 않는다(premium-mode/README.md Step 3 참고).
+// 다만 이 값이 실제로 쓰이는 것은 release 빌드뿐이다(아래 buildTypes 참고) — 정식 출시 전
+// (디버그/친구 배포 빌드)에는 이 값이 local.properties에 있어도 무시하고 항상 위 테스트 값만
+// 쓴다. AdMob은 실제 광고 단위에 인위적인 트래픽(자기 클릭, 개발 중 반복 노출 등)이 쌓이면
+// 계정을 정지시킬 수 있다는 정책이 있어(Google 공식 "Understanding account suspensions due to
+// invalid traffic" 문서) "사람이 토글을 깜빡할 가능성"이 없는 빌드 타입 자체를 안전장치로 쓴다.
 val localProperties = Properties().apply {
     val localPropertiesFile = rootProject.file("local.properties")
     if (localPropertiesFile.exists()) {
         localPropertiesFile.inputStream().use { load(it) }
     }
 }
-val admobAppId: String = localProperties.getProperty("admob.appId")
-    ?: "ca-app-pub-3940256099942544~3347511713"
-val admobRewardedAdUnitId: String = localProperties.getProperty("admob.rewardedAdUnitId")
-    ?: "ca-app-pub-3940256099942544/5224354917"
+val realAdmobAppId: String? = localProperties.getProperty("admob.appId")
+val realRewardedInterstitialAdUnitId: String? = localProperties.getProperty("admob.rewardedInterstitialAdUnitId")
+val realBannerAdUnitId: String? = localProperties.getProperty("admob.bannerAdUnitId")
 
 android {
     namespace = "com.worksoc.goaicoach"
@@ -52,11 +60,6 @@ android {
 
         val buildTime = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US).format(Date())
         buildConfigField("String", "BUILD_TIME", "\"$buildTime\"")
-
-        // AndroidManifest.xml의 com.google.android.gms.ads.APPLICATION_ID meta-data가 참조하는 자리.
-        manifestPlaceholders["admobAppId"] = admobAppId
-        // ui/AndroidRewardedAdClient.kt가 읽는 리워드 광고 단위 ID.
-        buildConfigField("String", "REWARDED_AD_UNIT_ID", "\"$admobRewardedAdUnitId\"")
     }
 
     compileOptions {
@@ -70,10 +73,41 @@ android {
     }
 
     buildTypes {
+        getByName("debug") {
+            // ui/AdUnitIds.kt가 이 플래그로 테스트/실제 ID를 고른다 — 디버그 빌드는 local.properties
+            // 내용과 무관하게 항상 true.
+            manifestPlaceholders["admobAppId"] = testAdmobAppId
+            buildConfigField("boolean", "USE_TEST_ADS", "true")
+            buildConfigField("String", "REWARDED_INTERSTITIAL_AD_UNIT_ID", "\"$testRewardedInterstitialAdUnitId\"")
+            buildConfigField("String", "BANNER_AD_UNIT_ID", "\"$testBannerAdUnitId\"")
+        }
+        getByName("release") {
+            // local.properties에 실제 값이 아직 없으면(미등록 상태) release 빌드도 안전하게 테스트
+            // 값으로 폴백한다 — "테스트해야 하는데 실제 광고가 나가는" 상황보다 "출시용인데 테스트
+            // 광고가 나가는" 상황(눈에 바로 띄는 버그)이 훨씬 덜 위험하기 때문.
+            val useTestAds = realAdmobAppId == null ||
+                realRewardedInterstitialAdUnitId == null ||
+                realBannerAdUnitId == null
+            manifestPlaceholders["admobAppId"] = realAdmobAppId ?: testAdmobAppId
+            buildConfigField("boolean", "USE_TEST_ADS", useTestAds.toString())
+            buildConfigField(
+                "String",
+                "REWARDED_INTERSTITIAL_AD_UNIT_ID",
+                "\"${realRewardedInterstitialAdUnitId ?: testRewardedInterstitialAdUnitId}\"",
+            )
+            buildConfigField("String", "BANNER_AD_UNIT_ID", "\"${realBannerAdUnitId ?: testBannerAdUnitId}\"")
+        }
         create("friend") {
             initWith(getByName("debug"))
             matchingFallbacks += listOf("debug")
             signingConfig = signingConfigs.getByName("debug")
+            // initWith가 buildConfigField/manifestPlaceholders를 항상 복사한다는 보장이 약해(AGP
+            // 버전에 따라 달라질 수 있음) 명시적으로 다시 선언한다 — "friend"는 정식 출시 전 지인
+            // 배포용 채널이라 이 안전장치가 가장 중요하게 적용돼야 하는 빌드이기도 하다.
+            manifestPlaceholders["admobAppId"] = testAdmobAppId
+            buildConfigField("boolean", "USE_TEST_ADS", "true")
+            buildConfigField("String", "REWARDED_INTERSTITIAL_AD_UNIT_ID", "\"$testRewardedInterstitialAdUnitId\"")
+            buildConfigField("String", "BANNER_AD_UNIT_ID", "\"$testBannerAdUnitId\"")
         }
     }
 

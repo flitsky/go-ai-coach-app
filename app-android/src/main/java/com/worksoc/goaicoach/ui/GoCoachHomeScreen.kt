@@ -75,110 +75,121 @@ internal fun GoCoachHomeScreen(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .systemBarsPadding()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+            .systemBarsPadding(),
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            HomeSettingsButton(onClick = onSettingsClick)
-            HomeLanguageSelector(
-                selectedLanguage = selectedLanguage,
-                onLanguageChange = onLanguageChange,
-            )
-        }
-
+        // 배너 광고는 이 바깥쪽 Column의 마지막 형제(아래)로 붙인다 — 안쪽 Column이 weight(1f)로
+        // 남은 공간을 다 차지하므로, 배너는 항상 화면 맨 아래에 고정되고 기존 24dp 패딩/중앙 정렬
+        // 콘텐츠는 전혀 건드리지 않는다.
         Column(
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
         ) {
-            GoStoneLogoBadge()
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            Text(
-                text = strings.appTitle,
-                fontSize = 26.sp,
-                fontWeight = FontWeight.ExtraBold,
-                color = MaterialTheme.colorScheme.onBackground,
-                textAlign = TextAlign.Center,
-            )
-
-            Text(
-                text = strings.homeTagline,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Normal,
-                color = MaterialTheme.colorScheme.secondary,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(top = 6.dp),
-            )
-        }
-
-        // 저장된 대국이 있을 때 노출되는 확대 및 깜빡이는 "이전 대국 이어하기" 버튼
-        if (hasResumableSession) {
-            val infiniteTransition = rememberInfiniteTransition(label = "resumeBlink")
-            val blinkingAlpha by infiniteTransition.animateFloat(
-                initialValue = 0.35f,
-                targetValue = 1.0f,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(durationMillis = 800, easing = LinearEasing),
-                    repeatMode = RepeatMode.Reverse,
-                ),
-                label = "blinkingAlpha",
-            )
-
-            Box(
-                modifier = Modifier
-                    .padding(bottom = 16.dp)
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
-                    .clickable(onClick = onResumeClick)
-                    .padding(horizontal = 18.dp, vertical = 10.dp),
-                contentAlignment = Alignment.Center,
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Text(
-                    text = "▶ " + strings.resumeTitle,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.graphicsLayer { alpha = blinkingAlpha },
+                HomeSettingsButton(onClick = onSettingsClick)
+                HomeLanguageSelector(
+                    selectedLanguage = selectedLanguage,
+                    onLanguageChange = onLanguageChange,
                 )
             }
+
+            Column(
+                modifier = Modifier.weight(1f),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                GoStoneLogoBadge()
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                Text(
+                    text = strings.appTitle,
+                    fontSize = 26.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    textAlign = TextAlign.Center,
+                )
+
+                Text(
+                    text = strings.homeTagline,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Normal,
+                    color = MaterialTheme.colorScheme.secondary,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(top = 6.dp),
+                )
+            }
+
+            // 저장된 대국이 있을 때 노출되는 확대 및 깜빡이는 "이전 대국 이어하기" 버튼
+            if (hasResumableSession) {
+                val infiniteTransition = rememberInfiniteTransition(label = "resumeBlink")
+                val blinkingAlpha by infiniteTransition.animateFloat(
+                    initialValue = 0.35f,
+                    targetValue = 1.0f,
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(durationMillis = 800, easing = LinearEasing),
+                        repeatMode = RepeatMode.Reverse,
+                    ),
+                    label = "blinkingAlpha",
+                )
+
+                Box(
+                    modifier = Modifier
+                        .padding(bottom = 16.dp)
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
+                        .clickable(onClick = onResumeClick)
+                        .padding(horizontal = 18.dp, vertical = 10.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = "▶ " + strings.resumeTitle,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.graphicsLayer { alpha = blinkingAlpha },
+                    )
+                }
+            }
+
+            // "대국 하기" (Start Match) 카드 — 이전 대국 존재 시 확인 팝업 분기
+            MenuCard(
+                title = strings.startMatch,
+                subtitle = strings.homeStartMatchSubtitle,
+                containerColor = MaterialTheme.colorScheme.primary,
+                titleColor = Color.White,
+                subtitleColor = Color.White.copy(alpha = 0.85f),
+                onClick = {
+                    if (hasResumableSession) {
+                        showOverwriteWarningDialog = true
+                    } else {
+                        onStartMatchClick()
+                    }
+                },
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // "학습 하기" (Study Mode) 카드
+            MenuCard(
+                title = strings.study,
+                subtitle = strings.homeStudySubtitle,
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                titleColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                subtitleColor = MaterialTheme.colorScheme.secondary,
+                onClick = {
+                    Toast.makeText(context, strings.notImplementedMessage, Toast.LENGTH_SHORT).show()
+                },
+            )
         }
 
-        // "대국 하기" (Start Match) 카드 — 이전 대국 존재 시 확인 팝업 분기
-        MenuCard(
-            title = strings.startMatch,
-            subtitle = strings.homeStartMatchSubtitle,
-            containerColor = MaterialTheme.colorScheme.primary,
-            titleColor = Color.White,
-            subtitleColor = Color.White.copy(alpha = 0.85f),
-            onClick = {
-                if (hasResumableSession) {
-                    showOverwriteWarningDialog = true
-                } else {
-                    onStartMatchClick()
-                }
-            },
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // "학습 하기" (Study Mode) 카드
-        MenuCard(
-            title = strings.study,
-            subtitle = strings.homeStudySubtitle,
-            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-            titleColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            subtitleColor = MaterialTheme.colorScheme.secondary,
-            onClick = {
-                Toast.makeText(context, strings.notImplementedMessage, Toast.LENGTH_SHORT).show()
-            },
-        )
+        BannerAdView(modifier = Modifier.fillMaxWidth())
     }
 
     // 이전 대국 존재 상태에서 새 대국 하기 선택 시 확인 경고 팝업
