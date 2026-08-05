@@ -1,6 +1,7 @@
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
@@ -17,6 +18,21 @@ plugins {
 if (file("google-services.json").exists()) {
     apply(plugin = "com.google.gms.google-services")
 }
+
+// AdMob 앱/광고단위 ID는 local.properties(gitignored, sdk.dir과 같은 파일)의
+// admob.appId / admob.rewardedAdUnitId 두 키로 덮어쓴다 — 없으면 Google 공식 테스트 ID로
+// 폴백해 개발 환경에서 항상 즉시 동작한다. 실제 값이 코드/버전관리에 하드코딩되지 않는다
+// (premium-mode/README.md Step 3 참고).
+val localProperties = Properties().apply {
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        localPropertiesFile.inputStream().use { load(it) }
+    }
+}
+val admobAppId: String = localProperties.getProperty("admob.appId")
+    ?: "ca-app-pub-3940256099942544~3347511713"
+val admobRewardedAdUnitId: String = localProperties.getProperty("admob.rewardedAdUnitId")
+    ?: "ca-app-pub-3940256099942544/5224354917"
 
 android {
     namespace = "com.worksoc.goaicoach"
@@ -36,6 +52,11 @@ android {
 
         val buildTime = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US).format(Date())
         buildConfigField("String", "BUILD_TIME", "\"$buildTime\"")
+
+        // AndroidManifest.xml의 com.google.android.gms.ads.APPLICATION_ID meta-data가 참조하는 자리.
+        manifestPlaceholders["admobAppId"] = admobAppId
+        // ui/AndroidRewardedAdClient.kt가 읽는 리워드 광고 단위 ID.
+        buildConfigField("String", "REWARDED_AD_UNIT_ID", "\"$admobRewardedAdUnitId\"")
     }
 
     compileOptions {
@@ -92,6 +113,8 @@ dependencies {
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(libs.google.id)
+
+    implementation(libs.play.services.ads)
 
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)

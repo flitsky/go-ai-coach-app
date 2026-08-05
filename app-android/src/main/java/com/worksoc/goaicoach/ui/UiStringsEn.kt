@@ -152,6 +152,7 @@ internal val UiStringsEnglish = UiStringsKorean.copy(
     premiumModeTitle = "Activate Premium Mode",
     premiumModeFeatureList = "Analysis · Eval · Top Moves · Undo",
     premiumPurchaseStubActivatedMessage = "Premium permanently activated. (test stub)",
+    premiumAdGrantFailedMessage = "The ad wasn't completed, so premium wasn't activated. Continuing in normal mode.",
     handicapEvenGameLabel = "Even",
     boardSizeShortLabel = "Board",
 )

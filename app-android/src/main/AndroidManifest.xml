@@ -6,6 +6,15 @@
         android:label="Go AI Coach"
         android:supportsRtl="true"
         android:theme="@style/Theme.GoAiCoach">
+
+        <!-- Google Mobile Ads SDK가 요구하는 필수 meta-data — 없으면 광고 로드 시점에
+             크래시한다. 실제 값은 app-android/build.gradle.kts가 local.properties의
+             admob.appId로부터 채우는 manifestPlaceholder이며, 없으면 Google 공식 테스트
+             App ID로 폴백한다(premium-mode/README.md Step 3 참고). -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="${admobAppId}" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true">

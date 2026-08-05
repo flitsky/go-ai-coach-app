@@ -194,6 +194,7 @@ internal data class UiStrings(
     val premiumModeTitle: String,
     val premiumModeFeatureList: String,
     val premiumPurchaseStubActivatedMessage: String,
+    val premiumAdGrantFailedMessage: String,
     val handicapEvenGameLabel: String,
     val boardSizeShortLabel: String,
 ) {

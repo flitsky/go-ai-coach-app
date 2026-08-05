@@ -150,6 +150,7 @@ internal val UiStringsChineseSimplified = UiStringsKorean.copy(
     premiumModeTitle = "激活高级模式",
     premiumModeFeatureList = "分析・形势判断・推荐着法・悔棋",
     premiumPurchaseStubActivatedMessage = "高级模式已永久激活。(测试用即时处理)",
+    premiumAdGrantFailedMessage = "广告未播放完成，高级模式未激活。将继续使用普通模式。",
     handicapEvenGameLabel = "分先",
     boardSizeShortLabel = "棋盘",
 )

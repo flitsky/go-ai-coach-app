@@ -153,6 +153,7 @@ internal val UiStringsKorean = UiStrings(
     premiumModeTitle = "프리미엄 모드 활성화하기",
     premiumModeFeatureList = "분석·형세보기·추천수·무르기",
     premiumPurchaseStubActivatedMessage = "프리미엄이 영구 활성화되었습니다. (테스트용 즉시 처리)",
+    premiumAdGrantFailedMessage = "광고 시청이 완료되지 않아 프리미엄이 활성화되지 않았습니다. 일반 모드로 계속합니다.",
     handicapEvenGameLabel = "호선",
     boardSizeShortLabel = "바둑판",
 )

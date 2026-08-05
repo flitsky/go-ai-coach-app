@@ -132,7 +132,7 @@ Step 1~2는 이미 구현됐고(`application/premium/PremiumState.kt`가 순수 
 
 - **스토어 정책 준수**: Google Play의 리워드 광고 UX 가이드라인(광고 시청 전 명확한 보상 고지 등), 결제 상품 등록/환불 정책을 확인해야 합니다.
 - **결제 검증**: 실 결제 연동 전 Google Play 테스트 트랙/라이선스 테스터 계정으로 검증이 필요합니다.
-- **SDK 도입 영향**: Google Mobile Ads SDK 추가 시 APK 크기, 초기 기동 시간에 영향이 있을 수 있어 Step 3에서 별도 확인이 필요합니다.
+- **SDK 도입 영향**: Google Mobile Ads SDK 추가 시 APK 크기, 초기 기동 시간에 영향이 있을 수 있어 Step 3에서 별도 확인이 필요합니다. → **확인 완료(2026-08-05)**: 디버그 APK 기준 19.00MB → 21.04MB(+2.92MB, +16%). `MobileAds.initialize()`를 앱 기동이 아니라 광고를 처음 요청하는 시점에 지연 호출하도록 설계해 콜드 스타트 경로 자체에는 영향이 없다. 자세한 내용은 아래 "Step 3 구현" 절 참고.
 - **기존 기능 회귀 방지**: 5장의 게이팅 대상 버튼들은 현재 이미 동작 중인 핵심 코칭 기능이므로, 일반 모드 진입 시 이 버튼들을 잠그는 로직이 기존 사용자 플로우(특히 이미 저장된 대국 이어하기 등)를 깨지 않도록 Step 1~2에서 회귀 테스트가 필요합니다.
 - **1시간 만료 판정 테스트**: 실제로 1시간을 기다려 검증하기 어려우므로, 만료 기준 시각을 주입 가능하게(테스트용 clock 추상화 등) 설계해 짧은 시간으로도 자동 만료 로직을 검증할 수 있어야 합니다.
 
@@ -144,7 +144,7 @@ Step 1~2는 이미 구현됐고(`application/premium/PremiumState.kt`가 순수 
 | --- | --- | --- |
 | Step 1 | 프리미엄 상태값 관리 인프라 | ✅ 완료 (2026-07-28) — `application/premium/PremiumState.kt` + 단위 테스트 |
 | Step 2 | 대국 시작 팝업 (스텁, 광고 없음) | ✅ 완료 (2026-07-28) — 홈 화면 팝업 + 인게임 잠긴 버튼 업셀까지 포함, `make test` 통과 |
-| Step 3 | 광고 노출 기능 연동 (Google) | 대기 |
+| Step 3 | 광고 노출 기능 연동 (Google) | ✅ 완료 (2026-08-05) — AdMob 리워드 광고 실연동(테스트 광고 단위), `make test` 통과, 에뮬레이터 실측 |
 | Step 4 | 프리미엄 영구 활성화 아이템 (Google) | 대기 |
 
 ### Step 1+2 구현 메모 (2026-07-28)
@@ -214,5 +214,19 @@ Step 1~2는 이미 구현됐고(`application/premium/PremiumState.kt`가 순수 
   고친 "홈 복귀 시 불필요하게 증가하던" 버그와도 무관하게 존재 가치가 있다고 판단.
 - `PremiumStateTest.kt`/`PremiumStateStoreTest.kt`를 새 API에 맞게 갱신(매치 관련
   테스트 제거, "여러 판에 걸쳐 유지된다"는 테스트 추가).
+
+### Step 3 구현 — AdMob 리워드 광고 실제 연동 (2026-08-05)
+- **배경**: `ui/PremiumUiState.kt`의 `activateAdGrant`가 광고 없이 탭 즉시 `PremiumState.adGranted(...)`를 부여하던 스텁을, 실제 AdMob 리워드 광고 시청 완료 콜백 안에서만 활성화하도록 교체했다. 같은 날 먼저 진행된 Google/이메일 로그인 실연동(`auth-onboarding/README.md` Step 2/3)의 포트/어댑터 분리 방식과 작업 흐름을 그대로 따랐다.
+- **계층 배치(4장 표 그대로 적용)**: `application/premium/AdRewardPort.kt`(순수 인터페이스, `AdRewardOutcome`/`AdRewardFailureReason` 포함)가 포트, `ui/AndroidRewardedAdClient.kt`가 실제 Google Mobile Ads SDK 어댑터다. `AuthClientPort`/`AndroidAuthClient`와 완전히 같은 자리 — `LayeringContractTest.authPremiumAndDeviceApplicationPackagesStayPlatformFree`가 `application/premium`에 android/ui/persistence import를 금지하므로, 포트 메서드 시그니처(`suspend fun showRewardedAd(): AdRewardOutcome`)에는 `Activity`를 노출하지 않고 대신 어댑터 생성자가 `Activity`/광고단위 ID를 받는다 — `AndroidAuthClient`가 `FirebaseAuth.getInstance()` 싱글턴을 내부에서 직접 쓰는 것과 같은 이유의 설계.
+- **"시청 완료 → 상태 전이" 판단을 GoCoachApp.kt에 인라인하지 않고 분리**: 4장 표는 이 판단을 App Service 계층(기존 `activateForMatch`류 람다와 동일한 성격)으로 분류했지만, `GoCoachApp.kt`가 이미 라인(856/880)·상태 훅(47/47, 여유 0) 예산을 거의 다 쓴 상태라 그대로 인라인하면 예산을 넘길 위험이 있었다. 그래서 `application/premium/PremiumAdGrantApplication.kt`에 순수 함수 `runPremiumAdGrantApplication(...)`으로 추출해(입력: `AdRewardOutcome` + 현재 시각, 출력: 다음 `PremiumState`(또는 상태 유지를 뜻하는 `null`) + 항상 남기는 진단 이벤트), `GoCoachApp.kt`의 `activateAdGrant` 람다는 광고 클라이언트 호출 + 이 함수 호출 + 결과 반영 3줄짜리 얇은 글루로만 남겼다. 최종 856→869줄(예산 880 이내), 상태 훅 47(불변) — 새 `remember`/`mutableStateOf`/`LaunchedEffect`를 추가하지 않았다.
+- **로딩/실패 UX**: `PremiumUpsellDialog`에 `isAdGrantInProgress` 상태를 추가해(`ui/PremiumUiState.kt`, `GoCoachApp.kt`가 아니라 다이얼로그 자신의 `remember`로 소유 — 예산이 빠듯한 쪽을 건드리지 않는 기존 패턴 재사용) 광고 로드~노출~판정이 끝날 때까지 세 버튼을 모두 비활성화하고 광고 버튼 자리에 진행 표시를 보여준다. `DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)`로 이 구간에는 뒤로가기/바깥 탭으로 닫지 못하게 막았다 — 닫히면 코루틴 스코프가 취소되어 이미 화면에 떠 있는 실제 광고의 시청 결과를 영영 못 받기 때문. 실패/중단(`AdRewardOutcome.NotRewarded`) 시에는 일반 모드를 유지한 채 안내 토스트만 띄우고 팝업은 닫지 않아, 바로 재시도하거나 다른 선택지를 고를 수 있다.
+- **광고 단위 ID 관리**: `app-android/build.gradle.kts`가 `local.properties`(gitignored, `sdk.dir`과 같은 파일)의 `admob.appId`/`admob.rewardedAdUnitId` 두 키를 읽어 각각 `manifestPlaceholders["admobAppId"]`(매니페스트의 `com.google.android.gms.ads.APPLICATION_ID` meta-data가 참조)와 `BuildConfig.REWARDED_AD_UNIT_ID`로 연결한다. 두 키가 없으면 Google 공식 테스트 ID(`ca-app-pub-3940256099942544~3347511713` / `.../5224354917`, 커밋해도 무방한 공개 값)로 폴백 — 실제 값은 코드/버전관리에 전혀 들어가지 않는다. **사용자가 나중에 해야 할 일**: [admob.google.com](https://admob.google.com)에서 계정/앱 등록 + 리워드 광고 단위 발급 → `local.properties`에 `admob.appId=...`/`admob.rewardedAdUnitId=...` 두 줄만 추가하면 코드 변경 없이 다음 빌드부터 실제 값이 반영된다(2026-08-05 확인 시점 기준, 사용자는 아직 미등록 상태 — "테스트 ID로 우선 진행"을 명시적으로 선택함).
+- **지연 SDK 초기화**: `MobileAds.initialize(...)`를 앱 기동 시점이 아니라 `AndroidRewardedAdClient.showRewardedAd()`가 처음 호출되는 시점(= 사용자가 실제로 광고 시청을 선택했을 때)에만 호출한다 — 프리미엄 광고 기능을 한 번도 안 쓰는 세션의 콜드 스타트 시간에는 영향이 없도록 하기 위함. 반복 호출은 SDK가 멱등 처리하므로 별도의 "이미 초기화됨" 플래그는 두지 않았다.
+- **의존성**: `com.google.android.gms:play-services-ads:25.4.0`(2026-08 기준 Google 공식 릴리스 노트로 확인한 최신 안정 버전).
+- **검증**:
+  - `JAVA_HOME=temurin-17 make test` 통과 — 신규 `PremiumAdGrantApplicationTest`(4건: 보상 획득 시 전이/로그, 시청 중단/로드 실패 시 상태 유지 + 사유별 로그, detail 미제공 시 빈 문자열 처리) 포함, `LayeringContractTest`(43건, `application/premium` 플랫폼-프리 검사 + `GoCoachApp.kt` 라인/상태훅 예산 검사 포함) 전부 green.
+  - **APK 크기/빌드 시간**(`git stash`로 되돌린 커밋 전 상태와 비교, 둘 다 `--rerun-tasks`로 클린 빌드): 디버그 APK 19,000,286 → 22,062,824 바이트(+2.92MB, 약 +16%) · `:app-android:assembleDebug` 30s → 37s. 디버그 빌드(코드/리소스 축소 없음) 기준 수치이며, 실 릴리스 빌드는 R8/리소스 shrink로 이보다 작아질 가능성이 있다.
+  - **에뮬레이터 실측**(`Pixel_7_API_35`, `emulator-5554`, 게스트 세션): (1) **정상 시청 완료** — 대국 설정 화면 프리미엄 카드 → 업셀 팝업 → "광고 시청으로 1시간 활성화" 탭 → 로딩 표시 → Google 테스트 리워드 광고 로드/노출 → "Reward granted" → 닫기 → 팝업 자동 닫힘 + 프리미엄 즉시 활성화("대국 시작하기" 버튼이 금색 + `59:58` 카운트다운으로 전환) + 진단 로그 `premium_ad_grant_activated` 기록까지 전부 확인. (2) **광고 로드 실패**(에뮬레이터 wifi/데이터를 강제로 꺼서 재현) — 로딩 표시 후 안내 토스트("광고 시청이 완료되지 않아...") 노출, 팝업은 닫히지 않고 유지, 일반 모드 그대로 유지, 진단 로그 `premium_ad_grant_not_rewarded`(`reason=LoadFailed`, 실제 SDK 에러 메시지 `Unable to resolve host "googleads.g.doubleclick.net"` 포함)까지 확인. 두 경로 모두 logcat에 크래시 없음. **시청 중 이탈(`DismissedWithoutReward`)은 실기기에서 별도 재현하지 못함** — Google 테스트 리워드 광고가 노출 직후 거의 즉시 보상을 부여해 "다 보기 전에 닫기" 타이밍을 에뮬레이터 조작만으로 만들 수 없었다. 이 분기는 위 "광고 로드 실패" 경로와 완전히 같은 처리 경로(`runPremiumAdGrantApplication`의 `NotRewarded` 분기)를 타므로 코드 리뷰 + `PremiumAdGrantApplicationTest`의 유닛 테스트로 대신 커버했다.
+- **신규 파일**: `application/premium/AdRewardPort.kt`, `application/premium/PremiumAdGrantApplication.kt`, `ui/AndroidRewardedAdClient.kt`, `app-android/src/test/.../application/PremiumAdGrantApplicationTest.kt`.
 
 이 문서는 각 단계 착수/완료 시점마다 위 마일스톤 표의 상태와 관련 섹션을 갱신하며, 완료된 단계도 지우지 않고 이력으로 남깁니다.

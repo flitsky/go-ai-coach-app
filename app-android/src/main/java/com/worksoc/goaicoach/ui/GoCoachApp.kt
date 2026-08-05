@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.ui
 
+import android.app.Activity
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
@@ -17,10 +18,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.worksoc.goaicoach.application.premium.AdRewardFailureReason
+import com.worksoc.goaicoach.application.premium.AdRewardOutcome
+import com.worksoc.goaicoach.application.premium.PremiumAdGrantRunRequest
 import com.worksoc.goaicoach.application.premium.PremiumSource
 import com.worksoc.goaicoach.application.premium.PremiumState
 import com.worksoc.goaicoach.application.premium.PremiumStateStorePort
+import com.worksoc.goaicoach.application.premium.runPremiumAdGrantApplication
 import androidx.compose.ui.platform.LocalContext
+import com.worksoc.goaicoach.BuildConfig
 import com.worksoc.goaicoach.application.analysis.AnalysisCacheKey
 import com.worksoc.goaicoach.application.analysis.AnalysisResultCache
 import com.worksoc.goaicoach.application.analysis.PositionCacheOptimizationController
@@ -743,18 +749,25 @@ private fun GoCoachScreen(
             premiumStateStore.save(premiumState)
         },
         activateAdGrant = {
-            // 특정 대국(매치)에 묶지 않는다 — 부여 시점부터 1시간 동안은 그 사이에 새
-            // 대국을 몇 판을 시작하든 계속 유효해야 한다는 결정에 따름(premium-mode/README.md).
-            premiumState = PremiumState.adGranted(nowMillis = System.currentTimeMillis())
-            premiumStateStore.save(premiumState)
-            diagnosticEventLog.append(
-                DiagnosticEvent(
-                    severity = DiagnosticSeverity.Info,
-                    code = "premium_ad_grant_activated",
-                    message = "Premium ad grant activated.",
-                    context = mapOf("adGrantStartedAtMillis" to premiumState.adGrantStartedAtMillis.toString()),
-                ),
+            // 실제 리워드 광고를 로드/노출한다(premium-mode/README.md Step 3) — 시청 완료
+            // (보상 획득) 여부는 runPremiumAdGrantApplication이 판정해, 그때만 상태를 특정
+            // 대국(매치)에 묶지 않고 부여한다(부여 시점부터 1시간 동안 몇 판을 새로
+            // 시작하든 유효). 로드 실패/중도 이탈 시에는 상태를 바꾸지 않는다.
+            val activity = context as? Activity
+            val outcome = if (activity != null) {
+                AndroidRewardedAdClient(activity, BuildConfig.REWARDED_AD_UNIT_ID).showRewardedAd()
+            } else {
+                AdRewardOutcome.NotRewarded(AdRewardFailureReason.Unavailable)
+            }
+            val result = runPremiumAdGrantApplication(
+                PremiumAdGrantRunRequest(outcome = outcome, nowMillis = System.currentTimeMillis()),
             )
+            result.nextState?.let { nextState ->
+                premiumState = nextState
+                premiumStateStore.save(nextState)
+            }
+            diagnosticEventLog.append(result.diagnosticEvent)
+            outcome
         },
     )
 
