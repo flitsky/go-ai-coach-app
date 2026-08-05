@@ -52,7 +52,7 @@
 
 ### Step 3 — 이메일 로그인 실제 연동
 - **목적**: Firebase Email/Password 또는 Email Link 로그인 연동.
-- **상태**: 대기
+- **상태**: ✅ 완료 (2026-08-05, Email/Password로 구현) → 구현 내용과 Email Link를 쓰지 않은 이유는 아래 "Step 3 구현" 절 참고.
 
 ### Step 4 — 데이터 동기화 & 구매 서버 검증
 - **목적**: Firestore로 기보/설정 클라우드 동기화. 프리미엄 모드 Step 4(영구 구매)의 서버 측 엔타이틀먼트 저장이 이 위에 얹힌다.
@@ -105,6 +105,13 @@ Step 1(익명 인증)은 이미 이 배치를 따르고 있다 — `AuthClientPo
   - `JAVA_HOME=temurin-17 make test` 통과 확인(`LayeringContractTest`의 `application/auth` 플랫폼 비종속 검사 포함).
   - 에뮬레이터(`Pixel_7_API_35`, `emulator-5554`)에 설치 후 설정 화면에서 실제 Google 계정(`flit9sky@gmail.com`)으로 로그인 End-to-end 확인 — Credential Manager 계정 선택 → Google 동의 화면 → Firebase 로그인 → 설정 화면 상태 문구/버튼이 즉시 갱신되는 것까지 실기기 로그(logcat)로 크래시 없음 확인.
   - **익명 → Google 승격(`linkGoogleCredential`) 경로는 기기에서 실측하지 못함** — 위 결정대로 Anonymous가 콘솔에서 계속 꺼져 있어 승격할 익명 세션 자체를 만들 수 없었다. 판단 로직(`AuthState.isPromotableAnonymousSession`)은 `AuthStateTest`에 유닛 테스트로 커버했고, 나중에 Anonymous를 켜면 코드 변경 없이 실기기 검증이 가능한 상태.
+
+### Step 3 구현 — 이메일 로그인 실제 연동 (2026-08-05)
+- **Email/Password vs Email Link 결정**: 콘솔에는 이메일/비밀번호와 함께 "이메일 링크(비밀번호 없는 로그인)"도 켜둔 상태였지만, 이번 라운드는 **Email/Password로 구현**했다. Email Link가 예전에 의존하던 Firebase Dynamic Links가 2025-08-25에 완전히 셧다운됐고, 그 이후의 공식 대체 경로(Firebase Hosting 기본 도메인 `PROJECT_ID.firebaseapp.com` + AndroidManifest 딥링크 인텐트 필터)조차 "프로젝트가 이미 새 도메인 구성으로 돼 있는지, 아니면 Admin SDK로 한 번 마이그레이션 호출을 해줘야 하는지"가 이 앱처럼 셧다운 이후에 새로 만든 프로젝트 기준으로도 문서상 명확히 확인되지 않았다 — 잘못 만들면 "링크를 눌러도 앱이 안 열리는" 방식으로 조용히 깨질 위험이 있어, 이번엔 안전하고 자체완결적인 Email/Password를 선택했다. Email Link는 이 불확실성을 콘솔/실기기로 직접 확인한 뒤 후속 작업으로 붙일 수 있다(포트 배치 기준은 표에 이미 정리돼 있음).
+- **`AuthClientPort`/`AndroidAuthClient`**: `signInWithEmail`/`linkEmailCredential`을 Google과 동일한 모양으로 추가. 다만 내부 순서는 다르다 — **먼저 계정 생성을 시도하고, 이미 가입된 이메일이면(`FirebaseAuthUserCollisionException`) 그 계정으로 로그인**하는 순서를 택했다. 반대 순서(로그인 먼저, 실패 시 가입)는 최신 Firebase Auth가 "가입 안 된 이메일"과 "비밀번호 오류"를 계정 열거(enumeration) 방지 목적으로 같은 예외로 뭉뚱그릴 수 있어 신뢰할 수 없기 때문이다 — 반면 이메일 중복(충돌)은 여전히 명확히 구분되는 신호다. `linkCredentialOnce`를 `AuthProvider`를 인자로 받도록 일반화해 Google/이메일이 공유한다.
+- **UI**: 신규 `EmailSignInDialog.kt`(이메일+비밀번호 2필드, 가입/로그인을 사용자가 직접 고르지 않고 버튼은 "계속하기" 하나) + `EmailSignInFlow.kt`(Google과 동일한 공유 시도 흐름). 비밀번호 6자 미만/이메일 형식 오류 시 클라이언트에서 버튼을 미리 비활성화하고, 실제 실패 판정은 항상 Firebase 응답을 신뢰한다. `FirebaseAuthWeakPasswordException`은 전용 메시지로, 그 외 실패(주로 비밀번호 오류)는 계정 존재 여부를 노출하지 않는 "이메일 또는 비밀번호를 확인해주세요" 문구로 안내한다.
+- **부수 수정(계정 전환 사고 방지)**: `SettingsScreen`에서 Google 버튼만 조건부로 숨기던 기존 로직을 "실계정(Google 또는 이메일) 로그인 중이면 두 버튼 다 숨김"으로 일반화했다 — 그렇지 않으면 예를 들어 Google로 로그인한 사용자가 실수로 이메일 버튼을 눌러 완전히 다른 계정으로 조용히 전환될 수 있었다(로그아웃 UI가 없어 되돌릴 방법도 없음). 이메일 기능을 추가하면서 새로 생긴 위험을 같은 라운드에서 막았다.
+- **검증**: `make test` 통과. 에뮬레이터(`emulator-5554`)에서 앱 데이터를 초기화해가며 세 가지 실제 경로를 전부 확인했다 — (1) 신규 이메일 가입 → 홈 화면 진입 및 설정 화면 상태 문구/버튼 갱신, (2) 같은 이메일+올바른 비밀번호로 재로그인(충돌 폴백 경로), (3) 같은 이메일+틀린 비밀번호(다이얼로그가 닫히지 않고 "이메일 또는 비밀번호를 확인해주세요" 토스트만 표시, 재시도 가능). 세 경우 모두 크래시 없음(logcat 확인).
 
 ---
 

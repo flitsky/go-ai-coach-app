@@ -34,6 +34,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.firebase.auth.FirebaseAuthWeakPasswordException
 import com.worksoc.goaicoach.BuildConfig
 import com.worksoc.goaicoach.application.auth.AuthClientPort
 import com.worksoc.goaicoach.application.auth.AuthProvider
@@ -43,13 +44,15 @@ import com.worksoc.goaicoach.persistence.UserPreferencesStore
 import kotlinx.coroutines.launch
 
 /**
- * 홈 화면 상단의 설정 진입점에서 열리는 화면. 게스트(로컬 기기 ID)/Google 로그인 상태를
- * 안내하고, 원하는 사용자가 Google/Apple/이메일 로그인으로 강화할 수 있는 선택지를
+ * 홈 화면 상단의 설정 진입점에서 열리는 화면. 게스트(로컬 기기 ID)/Google/이메일 로그인
+ * 상태를 안내하고, 원하는 사용자가 Google/Apple/이메일 로그인으로 강화할 수 있는 선택지를
  * 제공한다 — [OnboardingScreen]과 동일한 3개 버튼을 여기서도 노출해, 온보딩에서 "계정
  * 없이 시작하기"를 고른 사용자가 나중에 아무 때나 같은 선택지로 돌아올 수 있게 한다.
- * Google은 실제 Credential Manager 연동이고(익명 세션이면 [AuthClientPort.linkGoogleCredential]로
- * UID를 유지한 채 승격), Apple/이메일은 아직 "준비 중" 스텁이다. 이미 Google로 로그인된
- * 상태에서는 Google 버튼 자체를 숨겨 같은 계정으로 다시 시도할 이유를 없앤다.
+ * Google/이메일은 실제 연동이고(익명 세션이면 각각 [AuthClientPort.linkGoogleCredential]/
+ * `linkEmailCredential`로 UID를 유지한 채 승격), Apple만 아직 "준비 중" 스텁이다. 이미
+ * 실계정(Google 또는 이메일)으로 로그인된 상태에서는 두 버튼을 함께 숨긴다 — 그렇지 않으면
+ * 예를 들어 Google로 로그인한 뒤 실수로 이메일 버튼을 눌러 완전히 다른 계정으로 조용히
+ * 전환돼버릴 수 있다(로그아웃 UI가 없는 지금은 되돌릴 방법도 없다).
  *
  * [BuildConfig.DEBUG]일 때만 "개발자 테스트" 섹션을 추가로 노출한다 — 실제 결제 SDK
  * 연동 전까지 프리미엄 구매 상태를 자유롭게 켜고 끄며 QA할 수 있는 자리다. 릴리스
@@ -71,6 +74,9 @@ internal fun SettingsScreen(
     val preferencesStore = remember(context) { UserPreferencesStore(context) }
     var gameSetupUxMode by remember { mutableStateOf(preferencesStore.load().gameSetupUxMode) }
     var authState by remember { mutableStateOf(authClient.currentAuthState()) }
+    var showEmailDialog by remember { mutableStateOf(false) }
+    var isEmailSubmitting by remember { mutableStateOf(false) }
+    val hasRealAccount = authState.provider == AuthProvider.Google || authState.provider == AuthProvider.Email
 
     fun signInWithGoogle() {
         scope.launch {
@@ -81,6 +87,28 @@ internal fun SettingsScreen(
                 }
                 .onFailure {
                     Toast.makeText(context, strings.googleSignInFailedMessage, Toast.LENGTH_SHORT).show()
+                }
+        }
+    }
+
+    fun submitEmailSignIn(email: String, password: String) {
+        isEmailSubmitting = true
+        scope.launch {
+            val result = attemptEmailSignIn(authClient, email, password, diagnosticEventLog)
+            isEmailSubmitting = false
+            result
+                .onSuccess { newState ->
+                    authState = newState
+                    showEmailDialog = false
+                    Toast.makeText(context, strings.emailSignedInToastMessage, Toast.LENGTH_SHORT).show()
+                }
+                .onFailure { error ->
+                    val message = if (error is FirebaseAuthWeakPasswordException) {
+                        strings.emailSignInWeakPasswordMessage
+                    } else {
+                        strings.emailSignInFailedMessage
+                    }
+                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                 }
         }
     }
@@ -130,16 +158,16 @@ internal fun SettingsScreen(
             )
 
             Text(
-                text = if (authState.provider == AuthProvider.Google) {
-                    strings.settingsGoogleStatusMessage
-                } else {
-                    strings.settingsGuestStatusMessage
+                text = when (authState.provider) {
+                    AuthProvider.Google -> strings.settingsGoogleStatusMessage
+                    AuthProvider.Email -> strings.settingsEmailStatusMessage
+                    else -> strings.settingsGuestStatusMessage
                 },
                 fontSize = 13.sp,
                 color = MaterialTheme.colorScheme.onBackground,
             )
 
-            if (authState.provider != AuthProvider.Google) {
+            if (!hasRealAccount) {
                 SocialLoginButton(
                     label = strings.continueWithGoogle,
                     leadingGlyph = "G",
@@ -154,11 +182,13 @@ internal fun SettingsScreen(
                 onClick = { Toast.makeText(context, strings.notImplementedMessage, Toast.LENGTH_SHORT).show() },
             )
 
-            SocialLoginButton(
-                label = strings.continueWithEmail,
-                leadingGlyph = "✉",
-                onClick = { Toast.makeText(context, strings.notImplementedMessage, Toast.LENGTH_SHORT).show() },
-            )
+            if (!hasRealAccount) {
+                SocialLoginButton(
+                    label = strings.continueWithEmail,
+                    leadingGlyph = "✉",
+                    onClick = { showEmailDialog = true },
+                )
+            }
 
             // 실 결제 연동 전까지 QA가 프리미엄 구매 상태를 자유롭게 켜고 끄는 자리 —
             // 릴리스 빌드 유출 방지를 위해 반드시 BuildConfig.DEBUG로 게이팅한다.
@@ -228,5 +258,18 @@ internal fun SettingsScreen(
                 Spacer(modifier = Modifier.height(24.dp))
             }
         }
+    }
+
+    if (showEmailDialog) {
+        EmailSignInDialog(
+            titleText = strings.continueWithEmail,
+            emailLabel = strings.emailFieldLabel,
+            passwordLabel = strings.passwordFieldLabel,
+            continueLabel = strings.emailSignInSubmitLabel,
+            cancelLabel = strings.cancel,
+            isSubmitting = isEmailSubmitting,
+            onDismiss = { showEmailDialog = false },
+            onSubmit = ::submitEmailSignIn,
+        )
     }
 }

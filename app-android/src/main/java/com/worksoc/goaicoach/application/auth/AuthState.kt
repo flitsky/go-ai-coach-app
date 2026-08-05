@@ -1,9 +1,6 @@
 package com.worksoc.goaicoach.application.auth
 
-/**
- * 로그인 수단. [Email]은 UI에 배치만 되어 있고 아직 실제로 연동되지 않았다(버튼을 누르면
- * "준비 중" 안내만 표시됨) — [Anonymous]/[Google]은 실제로 발급된다.
- */
+/** 로그인 수단. 셋 다 실제로 발급된다(Apple은 아직 UI 스텁만 있고 이 enum엔 없음). */
 internal enum class AuthProvider {
     Anonymous,
     Google,

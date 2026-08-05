@@ -15,7 +15,11 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -23,6 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.firebase.auth.FirebaseAuthWeakPasswordException
 import com.worksoc.goaicoach.application.auth.AuthClientPort
 import com.worksoc.goaicoach.application.device.DeviceIdentityStorePort
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
@@ -30,17 +35,17 @@ import kotlinx.coroutines.launch
 
 /**
  * 최초 실행 시 한 번만 뜨는 온보딩 화면. 최초 실행 시점의 "얕은 허들"로 Google/Apple/이메일
- * 로그인과 "계정 없이 시작하기"를 함께 제시한다 — Google은 실제 Credential Manager 연동이고,
- * Apple/이메일은 아직 실제 SDK 연동 전이라 [SettingsScreen]과 동일하게 "준비 중" 안내만 표시한다.
+ * 로그인과 "계정 없이 시작하기"를 함께 제시한다 — Google/이메일은 실제 연동이고, Apple만
+ * 아직 실제 SDK 연동 전이라 [SettingsScreen]과 동일하게 "준비 중" 안내를 표시한다.
  *
- * 완료 조건은 [DeviceIdentityStorePort.loadOrCreate] 또는 Google 로그인 성공이다 — 게스트
- * 경로는 네트워크 없이 항상 즉시 성공하므로 "계정 없이 시작하기"를 선택하면 이 화면은 다시
- * 뜨지 않는다(반복 온보딩 없음). Firebase 익명 로그인([authClient])도 게스트 선택 시 함께
- * 시도하지만 fire-and-forget이다: 화면은 결과를 기다리지도, 실패를 알리지도 않는다 —
+ * 완료 조건은 [DeviceIdentityStorePort.loadOrCreate] 또는 Google/이메일 로그인 성공이다 —
+ * 게스트 경로는 네트워크 없이 항상 즉시 성공하므로 "계정 없이 시작하기"를 선택하면 이 화면은
+ * 다시 뜨지 않는다(반복 온보딩 없음). Firebase 익명 로그인([authClient])도 게스트 선택 시
+ * 함께 시도하지만 fire-and-forget이다: 화면은 결과를 기다리지도, 실패를 알리지도 않는다 —
  * 익명 로그인이 콘솔에서 비활성 상태인 현재는 조용히 실패하고, 나중에 활성화되면 이 코드
- * 변경 없이 조용히 성공하기 시작한다. Google 로그인은 그 반대로 실패/취소를 조용히 삼키지
- * 않고 토스트로 안내한다([attemptGoogleSignIn]) — 사용자가 명시적으로 시도한 동작이라
- * 결과를 알아야 하기 때문이다.
+ * 변경 없이 조용히 성공하기 시작한다. Google/이메일 로그인은 그 반대로 실패/취소를 조용히
+ * 삼키지 않고 토스트로 안내한다([attemptGoogleSignIn]/[attemptEmailSignIn]) — 사용자가
+ * 명시적으로 시도한 동작이라 결과를 알아야 하기 때문이다.
  */
 @Composable
 internal fun OnboardingScreen(
@@ -54,6 +59,8 @@ internal fun OnboardingScreen(
     val strings = LocalUiStrings.current
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    var showEmailDialog by remember { mutableStateOf(false) }
+    var isEmailSubmitting by remember { mutableStateOf(false) }
 
     fun showNotImplemented() {
         Toast.makeText(context, strings.notImplementedMessage, Toast.LENGTH_SHORT).show()
@@ -68,6 +75,28 @@ internal fun OnboardingScreen(
                 }
                 .onFailure {
                     Toast.makeText(context, strings.googleSignInFailedMessage, Toast.LENGTH_SHORT).show()
+                }
+        }
+    }
+
+    fun submitEmailSignIn(email: String, password: String) {
+        isEmailSubmitting = true
+        scope.launch {
+            val result = attemptEmailSignIn(authClient, email, password, diagnosticEventLog)
+            isEmailSubmitting = false
+            result
+                .onSuccess {
+                    showEmailDialog = false
+                    Toast.makeText(context, strings.emailSignedInToastMessage, Toast.LENGTH_SHORT).show()
+                    onOnboardingComplete()
+                }
+                .onFailure { error ->
+                    val message = if (error is FirebaseAuthWeakPasswordException) {
+                        strings.emailSignInWeakPasswordMessage
+                    } else {
+                        strings.emailSignInFailedMessage
+                    }
+                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                 }
         }
     }
@@ -134,7 +163,7 @@ internal fun OnboardingScreen(
         SocialLoginButton(
             label = strings.continueWithEmail,
             leadingGlyph = "✉", // ✉
-            onClick = { showNotImplemented() },
+            onClick = { showEmailDialog = true },
         )
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -160,6 +189,19 @@ internal fun OnboardingScreen(
                     },
                 )
                 .padding(horizontal = 24.dp, vertical = 14.dp),
+        )
+    }
+
+    if (showEmailDialog) {
+        EmailSignInDialog(
+            titleText = strings.continueWithEmail,
+            emailLabel = strings.emailFieldLabel,
+            passwordLabel = strings.passwordFieldLabel,
+            continueLabel = strings.emailSignInSubmitLabel,
+            cancelLabel = strings.cancel,
+            isSubmitting = isEmailSubmitting,
+            onDismiss = { showEmailDialog = false },
+            onSubmit = ::submitEmailSignIn,
         )
     }
 }

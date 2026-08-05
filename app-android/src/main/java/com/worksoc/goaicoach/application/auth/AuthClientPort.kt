@@ -21,6 +21,20 @@ internal interface AuthClientPort {
      */
     suspend fun linkGoogleCredential(idToken: String): Result<AuthState>
 
+    /**
+     * 익명 세션이 없는 상태에서의 이메일+비밀번호 로그인. 가입/로그인을 사용자가 직접
+     * 구분해서 고르지 않는다 — 계정이 없으면(이메일 중복 없음) 그 자리에서 신규 가입으로
+     * 대체하고, 있으면 그 계정으로 로그인한다.
+     */
+    suspend fun signInWithEmail(email: String, password: String): Result<AuthState>
+
+    /**
+     * 현재 익명 세션을 이 이메일+비밀번호 계정으로 승격한다(UID 유지, 데이터 유실 없음).
+     * 호출 시점에 익명 세션이 없으면 [signInWithEmail]과 동일하게 동작하고, 이 이메일이
+     * 이미 다른 사용자에 연결되어 있으면(충돌) 그 기존 계정으로 로그인한다.
+     */
+    suspend fun linkEmailCredential(email: String, password: String): Result<AuthState>
+
     /** 지금 이 기기의 로그인 상태를 동기적으로 읽는다 — 승격 여부 판단에 쓰인다. */
     fun currentAuthState(): AuthState
 }
