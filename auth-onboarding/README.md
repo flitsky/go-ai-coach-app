@@ -48,7 +48,7 @@
 ### Step 2 — Google 로그인 실제 연동
 - **목적**: Step 1의 "준비 중" 스텁을 Credential Manager/One Tap 기반 실제 Google 로그인으로 교체.
 - **범위**: SHA-1 인증서 지문을 Firebase 콘솔에 등록(이번 Step에서 처음 필요해짐), `AuthClientPort`에 `signInWithGoogle(...)` 메서드 추가, 익명 사용자가 로그인할 경우 `linkWithCredential`로 UID 승격(데이터 유실 없이).
-- **상태**: 대기
+- **상태**: ✅ 완료 (2026-08-05) → 구현 내용은 아래 "Step 2 구현" 절 참고.
 
 ### Step 3 — 이메일 로그인 실제 연동
 - **목적**: Firebase Email/Password 또는 Email Link 로그인 연동.
@@ -80,9 +80,10 @@ Step 1(익명 인증)은 이미 이 배치를 따르고 있다 — `AuthClientPo
 
 1. ✅ https://console.firebase.google.com 에서 장기 앱과 별도인 새 프로젝트 생성 (`project-baduk-hanpan`, 2026-08-04).
 2. ✅ Android 앱 추가 — 패키지명 `com.zenit9hub.ai.baduk` (2026-08-04에 등록됨). **주의**: 이 문서 작성 당시 예정했던 `com.worksoc.goaicoach`가 아니라 `com.zenit9hub.ai.baduk`로 등록됐다 — 그래서 `app-android/build.gradle.kts`의 `applicationId`도 이 값으로 맞춰 변경했다(아래 "Step 1 개정 2" 참고). `namespace`(Kotlin 패키지/R·BuildConfig 생성 위치)는 `com.worksoc.goaicoach`로 그대로 둠 — Firebase 매칭은 `applicationId`만 본다.
-3. ⬜ **Authentication → Sign-in method → 익명(Anonymous)** 활성화 (Step 1에 필요, SHA-1 불필요) — 아직 확인 안 됨, 활성화 전에는 `signInAnonymously()`가 계속 실패하지만 fire-and-forget이라 앱 사용에는 지장 없음.
-4. ✅ `google-services.json` 다운로드 → `app-android/google-services.json`에 저장 (`.gitignore`에 등록되어 있어 커밋되지 않음).
-5. ⬜ (Step 2 착수 시) Google 로그인용 SHA-1 인증서 지문 등록.
+3. ⬜ **Authentication → Sign-in method → 익명(Anonymous)** 활성화 (Step 1에 필요, SHA-1 불필요) — **의도적으로 보류 중(2026-08-05 결정)**. 익명 로그인을 켜면 게스트로 실행될 때마다(재설치 포함) Firebase 콘솔에 영구 사용자 레코드가 쌓여 "무분별하게 늘어난다"는 우려가 제기됨 — Firebase의 공식 완화책(휴면 익명 계정 자동 삭제)은 Identity Platform 업그레이드가 전제 조건이라 단순 설정만으로는 못 켠다. 지금은 Step 4(Firestore 동기화)가 아직 없어 익명 UID에 매달린 서버 데이터도 없으므로, 켜지 않아도 게스트 플로우(`DeviceIdentityStorePort` 기반)에는 지장이 없다 — Step 4 착수 시점에 재논의. 활성화 전에는 `signInAnonymously()`가 계속 실패하지만 fire-and-forget이라 앱 사용에는 지장 없음.
+4. ✅ `google-services.json` 다운로드 → `app-android/google-services.json`에 저장 (`.gitignore`에 등록되어 있어 커밋되지 않음). 2026-08-05에 Google 로그인용 OAuth 클라이언트가 포함된 버전으로 재다운로드/교체함.
+5. ✅ (2026-08-05) Google 로그인용 SHA-1/SHA-256 인증서 지문 등록 — 디버그 키스토어 기준(`./gradlew :app-android:signingReport`), `google-services.json`의 `oauth_client[].android_info.certificate_hash`와 일치 확인함.
+6. ✅ (2026-08-05) **Authentication → Sign-in method → Google** 활성화. 같은 시점에 **이메일/비밀번호**도 활성화됨(Step 3 착수 시 바로 쓸 수 있음, 이번 Step 2 코드는 사용하지 않음).
 
 ### Step 1 개정 2 — 실제 Firebase 프로젝트 연결 (2026-08-04)
 - google-services.json을 받아 `app-android/google-services.json`에 배치하고, 루트 `build.gradle.kts`(`google-services` 플러그인 버전 4.4.4 → 4.5.0), `gradle/libs.versions.toml`(`firebaseBom` 34.16.0 → 34.17.0, `firebase-analytics` 라이브러리 항목 추가), `app-android/build.gradle.kts`(`implementation(libs.firebase.analytics)`)를 갱신했다.
@@ -91,6 +92,19 @@ Step 1(익명 인증)은 이미 이 배치를 따르고 있다 — `AuthClientPo
 - **부수 버그 발견 및 수정**: applicationId 변경 직후 "이전 버전은 엔진이 되는데 새 패키지명 앱은 스텁으로 동작한다"는 리포트를 받음 — 원인은 `.so` 실행 파일이 아니라(APK에 번들되어 있어 무관), KataGo 모델/설정 파일(`model.bin.gz`, `gtp_learning.cfg`, `analysis_learning.cfg`)을 개발용으로 로컬 Mac에서 `adb shell run-as <package> cp ...`로 주입하는 `scripts/seed-katago-model-to-app.sh`와 `Makefile`(`reinstall-dev-engine`/`launch`)이 옛 패키지명 `com.worksoc.goaicoach`를 하드코딩하고 있던 것 — 새 패키지(`com.zenit9hub.ai.baduk`)는 앱 전용 저장소가 완전히 별개라(Android는 applicationId 단위로 파일 격리) 이 파일들이 하나도 주입되지 않은 상태였다. `EngineBootstrap.kt`가 이 파일들의 존재 여부만으로 실제 엔진(`LocalProcess`)/스텁(`Stub`)을 조용히 가른다(예외 처리 없이 단순 파일 체크).
   - `scripts/seed-katago-model-to-app.sh`의 `PACKAGE` 기본값과 `Makefile`의 3곳(`reinstall-dev-engine`의 `adb uninstall`, `launch`의 `force-stop`/`am start`)을 `app-android/build.gradle.kts`에서 `grep`으로 직접 읽어오는 `APP_PACKAGE`/`APP_NAMESPACE` 변수로 교체 — 이제 applicationId가 또 바뀌어도 하드코딩이 조용히 어긋나지 않는다. `MainActivity`의 adb 컴포넌트명은 `<APP_PACKAGE>/<APP_NAMESPACE>.MainActivity`로 구성해야 한다는 점도 확인(activity 클래스명은 namespace 기준, 설치 패키지는 applicationId 기준으로 서로 다른 값을 쓴다).
   - 실제 폰(`R5CT22WTVXP`)에 `make seed-engine` 재실행 → `files/katago/`에 세 파일 생성 확인, `make launch` 재실행 → 새 KataGo 로그 파일 2개 생성 확인(엔진 정상 기동).
+
+### Step 2 구현 — Google 로그인 실제 연동 (2026-08-05)
+- **콘솔**: Google 로그인 활성화 + SHA-1/SHA-256(디버그) 등록 + `google-services.json` 재다운로드까지 완료(위 3장 체크리스트 4~6번). 익명(Anonymous)은 콘솔 사용자 목록이 무분별하게 늘어난다는 우려로 **의도적으로 계속 보류**(3장 3번 참고) — 이번 Step 2 코드는 이 상태에서도 정상 동작하도록 설계함(아래 참고).
+- **`AuthClientPort`(포트, 플랫폼 비종속)**: `signInWithGoogle(idToken)`(신규 로그인), `linkGoogleCredential(idToken)`(익명 세션 승격), `currentAuthState()`(동기 조회) 3개 메서드 추가. "지금 익명 세션이라 승격 대상인지"는 `AuthState.isPromotableAnonymousSession`이라는 순수 함수로 분리해, 이 판단이 SDK 어댑터 안에 묻히지 않고 유스케이스 판단으로 남게 했다 — 위 "계층 배치 참고" 표가 명시한 기준.
+- **`AndroidAuthClient`(어댑터)**: 위 3개 메서드의 실제 Firebase Auth 구현. `linkGoogleCredential`이 `FirebaseAuthUserCollisionException`(이 Google 계정이 이미 다른 Firebase 사용자에 연결된 경우)을 만나면 그 기존 계정으로 그냥 로그인시키는 폴백을 흡수한다 — Step 4 이전인 지금은 익명 UID에 서버 데이터가 없어 안전한 처리.
+- **`ui/GoogleCredentialManagerClient.kt`(신규 파일)**: Credential Manager/Sign in with Google 호출만 전담 — Firebase Auth 호출과 SDK 실패 유형이 섞이지 않도록 분리(README 표의 "SDK 의존이 무거우면 전용 파일" 기준). `R.string.default_web_client_id`(google-services.json의 웹 OAuth 클라이언트로부터 자동 생성)를 참조한다.
+- **`ui/GoogleSignInFlow.kt`(신규 파일)**: `OnboardingScreen`/`SettingsScreen`이 공유하는 시도 흐름(토큰 요청 → 승격 여부 판단 → Firebase 호출 → 실패 시 `DiagnosticEventLogPort`로 로그). 실패/취소를 조용히 삼키지 않고 항상 로그 + 토스트로 안내.
+- **UI**: `OnboardingScreen`/`SettingsScreen`의 Google 버튼을 스텁에서 실제 플로우로 교체. `SettingsScreen`은 `authClient.currentAuthState()`로 초기 상태를 읽고, 로그인 성공 시 로컬 상태를 갱신해 문구를 "Google 계정으로 로그인되어 있습니다"로 바꾸고 Google 버튼 자체를 숨긴다(같은 계정으로 다시 시도할 이유를 없앰). 문자열 3개(`googleSignedInToastMessage`/`googleSignInFailedMessage`/`settingsGoogleStatusMessage`)를 4개 언어(ko/en/ja/zh) 모두에 추가.
+- **의존성**: `androidx.credentials:credentials:1.6.0`, `androidx.credentials:credentials-play-services-auth:1.6.0`, `com.google.android.libraries.identity.googleid:googleid:1.2.0`(2026-08 기준 최신 안정 버전).
+- **검증**:
+  - `JAVA_HOME=temurin-17 make test` 통과 확인(`LayeringContractTest`의 `application/auth` 플랫폼 비종속 검사 포함).
+  - 에뮬레이터(`Pixel_7_API_35`, `emulator-5554`)에 설치 후 설정 화면에서 실제 Google 계정(`flit9sky@gmail.com`)으로 로그인 End-to-end 확인 — Credential Manager 계정 선택 → Google 동의 화면 → Firebase 로그인 → 설정 화면 상태 문구/버튼이 즉시 갱신되는 것까지 실기기 로그(logcat)로 크래시 없음 확인.
+  - **익명 → Google 승격(`linkGoogleCredential`) 경로는 기기에서 실측하지 못함** — 위 결정대로 Anonymous가 콘솔에서 계속 꺼져 있어 승격할 익명 세션 자체를 만들 수 없었다. 판단 로직(`AuthState.isPromotableAnonymousSession`)은 `AuthStateTest`에 유닛 테스트로 커버했고, 나중에 Anonymous를 켜면 코드 변경 없이 실기기 검증이 가능한 상태.
 
 ---
 

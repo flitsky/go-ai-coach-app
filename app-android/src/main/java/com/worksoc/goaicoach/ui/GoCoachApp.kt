@@ -154,6 +154,8 @@ private fun GoCoachScreen(
     val authClient: AuthClientPort = AndroidAuthClient()
     // DeviceIdentityStore도 authClient와 같은 이유로 캐시해 두지 않는다(내부 상태 없는 얇은 래퍼).
     val deviceIdentityStore: DeviceIdentityStorePort = DeviceIdentityStore(context)
+    // Credential Manager 호출도 내부 상태가 없는 얇은 래퍼라 authClient와 동일하게 캐시하지 않는다.
+    val credentialManagerClient = GoogleCredentialManagerClient()
     // 온보딩을 이미 본 사용자는 바로 홈으로, 아니면 온보딩 화면부터 시작한다 — 별도 훅을
     // 새로 추가하지 않고 이 초기값 계산식에만 반영한다(이 파일의 상태 훅 예산이 거의
     // 소진돼 있어, 새 컴포즈 상태 훅을 추가하지 않는 쪽을 우선한다).
@@ -787,6 +789,8 @@ private fun GoCoachScreen(
             OnboardingScreen(
                 authClient = authClient,
                 deviceIdentityStore = deviceIdentityStore,
+                credentialManagerClient = credentialManagerClient,
+                diagnosticEventLog = diagnosticEventLog,
                 onOnboardingComplete = {
                     preferencesStore.save(initialPreferences.copy(hasSeenOnboarding = true))
                     currentDestination = ScreenDestination.Home
@@ -809,6 +813,8 @@ private fun GoCoachScreen(
         ScreenDestination.Settings -> {
             SettingsScreen(
                 authClient = authClient,
+                credentialManagerClient = credentialManagerClient,
+                diagnosticEventLog = diagnosticEventLog,
                 onBackClick = { currentDestination = ScreenDestination.Home },
             )
         }

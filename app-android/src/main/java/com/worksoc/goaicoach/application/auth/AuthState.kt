@@ -1,8 +1,8 @@
 package com.worksoc.goaicoach.application.auth
 
 /**
- * 로그인 수단. [Google]/[Email]은 UI에 배치만 되어 있고 아직 실제로 연동되지 않았다
- * (버튼을 누르면 "준비 중" 안내만 표시됨) — 실제로 발급되는 값은 현재 [Anonymous]뿐이다.
+ * 로그인 수단. [Email]은 UI에 배치만 되어 있고 아직 실제로 연동되지 않았다(버튼을 누르면
+ * "준비 중" 안내만 표시됨) — [Anonymous]/[Google]은 실제로 발급된다.
  */
 internal enum class AuthProvider {
     Anonymous,
@@ -26,3 +26,13 @@ internal data class AuthState(
             AuthState(isSignedIn = true, provider = provider, uid = uid)
     }
 }
+
+/**
+ * 지금 이 상태가 "승격 가능한 익명 세션"인지 — Google 로그인 시도 시 [AuthClientPort]의
+ * `signInWithGoogle`(신규)과 `linkGoogleCredential`(승격) 중 어느 쪽을 호출할지는 이
+ * 판단 하나로 결정된다. 이 판단 자체를 SDK 어댑터(`AndroidAuthClient`) 안에 묻지 않고
+ * 여기 순수 함수로 분리해, "언제 승격할지"가 raw SDK 기능이 아니라 유스케이스 판단으로
+ * 남도록 한다(`auth-onboarding/README.md`의 "계층 배치 참고" 표 Step 2 참고).
+ */
+internal val AuthState.isPromotableAnonymousSession: Boolean
+    get() = isSignedIn && provider == AuthProvider.Anonymous

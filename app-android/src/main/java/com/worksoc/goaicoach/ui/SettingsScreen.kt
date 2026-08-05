@@ -26,6 +26,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,17 +36,20 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.worksoc.goaicoach.BuildConfig
 import com.worksoc.goaicoach.application.auth.AuthClientPort
+import com.worksoc.goaicoach.application.auth.AuthProvider
+import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.preferences.GameSetupUxMode
 import com.worksoc.goaicoach.persistence.UserPreferencesStore
+import kotlinx.coroutines.launch
 
 /**
- * 홈 화면 상단의 설정 진입점에서 열리는 화면. 게스트(로컬 기기 ID) 상태를 안내하고,
- * 원하는 사용자가 Google/Apple/이메일 로그인으로 강화할 수 있는 선택지를 제공한다 —
- * [OnboardingScreen]과 동일한 3개 버튼을 여기서도 노출해, 온보딩에서 "계정 없이
- * 시작하기"를 고른 사용자가 나중에 아무 때나 같은 선택지로 돌아올 수 있게 한다. 세
- * 버튼 모두 아직 실제 SDK 연동 전이라 "준비 중" 안내만 표시한다. [authClient]는 현재
- * 이 화면에서 직접 쓰이지 않지만, 이후 실제 로그인 강화 플로우(예: 익명 → Google 계정
- * 연결)를 이 화면에 붙일 때의 자리로 시그니처에 남겨 둔다.
+ * 홈 화면 상단의 설정 진입점에서 열리는 화면. 게스트(로컬 기기 ID)/Google 로그인 상태를
+ * 안내하고, 원하는 사용자가 Google/Apple/이메일 로그인으로 강화할 수 있는 선택지를
+ * 제공한다 — [OnboardingScreen]과 동일한 3개 버튼을 여기서도 노출해, 온보딩에서 "계정
+ * 없이 시작하기"를 고른 사용자가 나중에 아무 때나 같은 선택지로 돌아올 수 있게 한다.
+ * Google은 실제 Credential Manager 연동이고(익명 세션이면 [AuthClientPort.linkGoogleCredential]로
+ * UID를 유지한 채 승격), Apple/이메일은 아직 "준비 중" 스텁이다. 이미 Google로 로그인된
+ * 상태에서는 Google 버튼 자체를 숨겨 같은 계정으로 다시 시도할 이유를 없앤다.
  *
  * [BuildConfig.DEBUG]일 때만 "개발자 테스트" 섹션을 추가로 노출한다 — 실제 결제 SDK
  * 연동 전까지 프리미엄 구매 상태를 자유롭게 켜고 끄며 QA할 수 있는 자리다. 릴리스
@@ -55,14 +59,31 @@ import com.worksoc.goaicoach.persistence.UserPreferencesStore
 @Composable
 internal fun SettingsScreen(
     authClient: AuthClientPort,
+    credentialManagerClient: GoogleCredentialManagerClient,
+    diagnosticEventLog: DiagnosticEventLogPort,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val strings = LocalUiStrings.current
     val context = LocalContext.current
     val premium = LocalPremiumUiState.current
+    val scope = rememberCoroutineScope()
     val preferencesStore = remember(context) { UserPreferencesStore(context) }
     var gameSetupUxMode by remember { mutableStateOf(preferencesStore.load().gameSetupUxMode) }
+    var authState by remember { mutableStateOf(authClient.currentAuthState()) }
+
+    fun signInWithGoogle() {
+        scope.launch {
+            attemptGoogleSignIn(context, authClient, credentialManagerClient, diagnosticEventLog)
+                .onSuccess { newState ->
+                    authState = newState
+                    Toast.makeText(context, strings.googleSignedInToastMessage, Toast.LENGTH_SHORT).show()
+                }
+                .onFailure {
+                    Toast.makeText(context, strings.googleSignInFailedMessage, Toast.LENGTH_SHORT).show()
+                }
+        }
+    }
 
     Column(
         modifier = modifier
@@ -109,17 +130,23 @@ internal fun SettingsScreen(
             )
 
             Text(
-                text = strings.settingsGuestStatusMessage,
+                text = if (authState.provider == AuthProvider.Google) {
+                    strings.settingsGoogleStatusMessage
+                } else {
+                    strings.settingsGuestStatusMessage
+                },
                 fontSize = 13.sp,
                 color = MaterialTheme.colorScheme.onBackground,
             )
 
-            SocialLoginButton(
-                label = strings.continueWithGoogle,
-                leadingGlyph = "G",
-                glyphColor = GoogleBrandBlue,
-                onClick = { Toast.makeText(context, strings.notImplementedMessage, Toast.LENGTH_SHORT).show() },
-            )
+            if (authState.provider != AuthProvider.Google) {
+                SocialLoginButton(
+                    label = strings.continueWithGoogle,
+                    leadingGlyph = "G",
+                    glyphColor = GoogleBrandBlue,
+                    onClick = { signInWithGoogle() },
+                )
+            }
 
             SocialLoginButton(
                 label = strings.continueWithApple,
