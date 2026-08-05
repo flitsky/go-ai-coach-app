@@ -113,6 +113,12 @@ Step 1(익명 인증)은 이미 이 배치를 따르고 있다 — `AuthClientPo
 - **부수 수정(계정 전환 사고 방지)**: `SettingsScreen`에서 Google 버튼만 조건부로 숨기던 기존 로직을 "실계정(Google 또는 이메일) 로그인 중이면 두 버튼 다 숨김"으로 일반화했다 — 그렇지 않으면 예를 들어 Google로 로그인한 사용자가 실수로 이메일 버튼을 눌러 완전히 다른 계정으로 조용히 전환될 수 있었다(로그아웃 UI가 없어 되돌릴 방법도 없음). 이메일 기능을 추가하면서 새로 생긴 위험을 같은 라운드에서 막았다.
 - **검증**: `make test` 통과. 에뮬레이터(`emulator-5554`)에서 앱 데이터를 초기화해가며 세 가지 실제 경로를 전부 확인했다 — (1) 신규 이메일 가입 → 홈 화면 진입 및 설정 화면 상태 문구/버튼 갱신, (2) 같은 이메일+올바른 비밀번호로 재로그인(충돌 폴백 경로), (3) 같은 이메일+틀린 비밀번호(다이얼로그가 닫히지 않고 "이메일 또는 비밀번호를 확인해주세요" 토스트만 표시, 재시도 가능). 세 경우 모두 크래시 없음(logcat 확인).
 
+### `signInAnonymously()` 제거 (2026-08-05)
+- Step 2/3 작업 중 사용자가 파이어베이스 Auth의 익명 로그인을 이 프로젝트에서 절대 켜지 않기로 확정했다(위 3장 3번, 이전 앱에서 재설치마다 새 익명 계정이 쌓여 허수 유저가 늘어나는 문제를 실제로 겪었음을 확인). 이에 따라 `AuthClientPort`/`AndroidAuthClient`의 `signInAnonymously()`와 `OnboardingScreen.kt` 게스트 버튼의 fire-and-forget 호출을 완전히 제거했다.
+- "Step 1 개정"(2026-08-04)에서는 이 호출을 일부러 남겨뒀었다 — 당시엔 "Firebase 설정이 아직 안 됐을 뿐"이라는 열린 가능성이었고, 나중에 `google-services.json`이 추가되면 코드를 안 건드려도 조용히 성공하기 시작하는 게 장점이었다. 지금은 그 전제가 달라졌다: Firebase는 이미 완전히 설정돼 있고(Google/이메일 로그인 실제 동작 중), 익명 로그인만 별도로 "구조적 한계 때문에 계속 끈다"는 확정된 결정이라 열린 가능성이 아니다 — 그래서 죽은 코드로 남겨두지 않고 제거했다. 나중에 이 결정이 다시 바뀌면 `signInWithGoogle`/`signInWithEmail`과 같은 패턴으로 다시 추가하면 된다.
+- `AuthProvider.Anonymous`와 `AuthState.isPromotableAnonymousSession`, `linkGoogleCredential`/`linkEmailCredential`의 승격 로직은 그대로 남겨뒀다 — 이건 "익명 로그인을 시도하는 코드"가 아니라 "혹시 익명 세션이 있다면 승격하는 코드"라 무해하고, 나중에 이 결정이 바뀌어도 다시 만들 필요가 없다.
+- 검증: `make test` 통과, `grep -rn signInAnonymously app-android/src`로 잔여 참조 없음 확인.
+
 ---
 
 ## 4. Step 1 구현 메모 (2026-07-29)
