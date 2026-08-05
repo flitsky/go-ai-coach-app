@@ -747,6 +747,11 @@ private fun GoCoachScreen(
             premiumState = if (purchased) PremiumState.purchased() else PremiumState()
             premiumStateStore.save(premiumState)
         },
+        purchasePremium = {
+            val (outcome, nextState) = performPremiumPurchase(context, diagnosticEventLog)
+            nextState?.let { premiumState = it; premiumStateStore.save(it) }
+            outcome
+        },
         activateAdGrant = {
             // 실제 리워드 광고를 로드/노출한다(premium-mode/README.md Step 3) — 시청 완료
             // (보상 획득) 여부는 runPremiumAdGrantApplication이 판정해, 그때만 상태를 특정
@@ -769,6 +774,11 @@ private fun GoCoachScreen(
             outcome
         },
     )
+
+    PremiumPurchaseRestoreEffect(context, diagnosticEventLog) { nextState ->
+        premiumState = nextState
+        premiumStateStore.save(nextState)
+    }
 
     // 프리미엄이 비활성 상태가 될 때(활성화 안 함 선택, 만료 등) 형세보기/추천수의
     // "켜짐" 상태값 자체를 꺼서, 버튼만 잠기고 기능은 이전 값대로 계속 동작하는 걸 방지한다.

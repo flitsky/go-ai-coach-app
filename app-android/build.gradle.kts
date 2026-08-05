@@ -42,6 +42,15 @@ val realAdmobAppId: String? = localProperties.getProperty("admob.appId")
 val realRewardedInterstitialAdUnitId: String? = localProperties.getProperty("admob.rewardedInterstitialAdUnitId")
 val realBannerAdUnitId: String? = localProperties.getProperty("admob.bannerAdUnitId")
 
+// 프리미엄 영구 구매 상품 ID(premium-mode/README.md Step 4) — local.properties(gitignored)의
+// billing.premiumProductId 키로 주입한다. AdMob과 달리 빌드 타입별 테스트/실제 분기가 없다 —
+// Play Billing은 "가짜 상품 ID"가 아니라 Play Console의 라이선스 테스터 계정으로 실제 상품에
+// 대한 무과금 테스트를 지원하므로, 모든 빌드 타입이 항상 같은(실제) 상품 ID를 쓴다. 아직 Play
+// Console에 상품을 등록하기 전에는 이 플레이스홀더로 폴백한다 — 존재하지 않는 ID라 Play가 상품을
+// 못 찾는 형태로 안전하게 실패한다(등록 전 실수로 결제가 되는 상황은 원천적으로 생기지 않는다).
+val premiumProductId: String =
+    localProperties.getProperty("billing.premiumProductId") ?: "premium_lifetime_placeholder"
+
 android {
     namespace = "com.worksoc.goaicoach"
     compileSdk = 35
@@ -60,6 +69,7 @@ android {
 
         val buildTime = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US).format(Date())
         buildConfigField("String", "BUILD_TIME", "\"$buildTime\"")
+        buildConfigField("String", "PREMIUM_PRODUCT_ID", "\"$premiumProductId\"")
     }
 
     compileOptions {
@@ -149,6 +159,10 @@ dependencies {
     implementation(libs.google.id)
 
     implementation(libs.play.services.ads)
+    // 콜백 기반 Billing API를 suspendCancellableCoroutine으로 직접 감싼다(AndroidAuthClient/
+    // AndroidRewardedInterstitialAdClient와 동일한 기존 패턴) — billing-ktx의 suspend 확장 함수는
+    // 쓰지 않으므로 별도로 추가하지 않는다.
+    implementation(libs.play.billing)
 
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)

@@ -193,7 +193,7 @@ internal data class UiStrings(
     val settingsDevGameSetupUxToggleSubtitle: String,
     val premiumModeTitle: String,
     val premiumModeFeatureList: String,
-    val premiumPurchaseStubActivatedMessage: String,
+    val premiumPurchaseFailedMessage: String,
     val premiumAdGrantFailedMessage: String,
     val handicapEvenGameLabel: String,
     val boardSizeShortLabel: String,
