@@ -4,18 +4,21 @@ import android.app.Activity
 import android.content.Context
 import com.worksoc.goaicoach.BuildConfig
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
+import com.worksoc.goaicoach.application.premium.AdRewardFailureReason
+import com.worksoc.goaicoach.application.premium.AdRewardOutcome
+import com.worksoc.goaicoach.application.premium.PremiumAdGrantRunRequest
 import com.worksoc.goaicoach.application.premium.PremiumPurchaseRunRequest
 import com.worksoc.goaicoach.application.premium.PremiumState
 import com.worksoc.goaicoach.application.premium.PurchaseFailureReason
 import com.worksoc.goaicoach.application.premium.PurchaseOutcome
 import com.worksoc.goaicoach.application.premium.PurchaseTrigger
+import com.worksoc.goaicoach.application.premium.runPremiumAdGrantApplication
 import com.worksoc.goaicoach.application.premium.runPremiumPurchaseApplication
 
 /**
- * `GoCoachApp.kt`가 상태 훅/라인 예산이 빠듯해(880줄/47훅, 여유 12줄·0훅 — premium-mode/README.md
- * Step 4 참고) 어댑터 생성 + 순수 판정 함수 호출 + 진단 로그 기록을 이 얇은 헬퍼로 모아, 호출부는
- * 반환된 [PremiumState]를 자신의 `premiumState`에 반영하는 한 줄만 남기면 되게 한다 — Step 3의
- * `activateAdGrant`처럼 이 시퀀스를 GoCoachApp.kt에 그대로 인라인할 여유가 이번엔 없었다.
+ * `GoCoachApp.kt`는 상태 훅/라인 예산이 빠듯해(state-holder-refactor 메모리 참고) 어댑터 생성 +
+ * 순수 판정 함수 호출 + 진단 로그 기록을 이 얇은 헬퍼로 모아, 호출부는 반환된 [PremiumState]를
+ * 자신의 `premiumState`에 반영하는 한 줄만 남기면 되게 한다.
  */
 internal suspend fun performPremiumPurchase(
     context: Context,
@@ -48,6 +51,29 @@ private suspend fun resolvePremiumPurchase(
     }
     val result = runPremiumPurchaseApplication(
         PremiumPurchaseRunRequest(outcome = outcome, trigger = trigger, nowMillis = System.currentTimeMillis()),
+    )
+    diagnosticEventLog.append(result.diagnosticEvent)
+    return outcome to result.nextState
+}
+
+/**
+ * 실제 AdMob 리워드 광고를 로드/노출하고(premium-mode/README.md Step 3), 시청 완료(보상 획득)
+ * 여부는 [runPremiumAdGrantApplication]이 판정해 그때만 상태를 특정 대국(매치)에 묶지 않고
+ * 부여한다(부여 시점부터 1시간 동안 몇 판을 새로 시작하든 유효). 로드 실패/중도 이탈 시에는
+ * 상태를 바꾸지 않는다. [performPremiumPurchase]와 같은 이유로 이 시퀀스를 GoCoachApp.kt 밖으로 뺐다.
+ */
+internal suspend fun performPremiumAdGrant(
+    context: Context,
+    diagnosticEventLog: DiagnosticEventLogPort,
+): Pair<AdRewardOutcome, PremiumState?> {
+    val activity = context as? Activity
+    val outcome = if (activity != null) {
+        AndroidRewardedInterstitialAdClient(activity, AdUnitIds.rewardedInterstitialAdUnitId).showRewardedAd()
+    } else {
+        AdRewardOutcome.NotRewarded(AdRewardFailureReason.Unavailable)
+    }
+    val result = runPremiumAdGrantApplication(
+        PremiumAdGrantRunRequest(outcome = outcome, nowMillis = System.currentTimeMillis()),
     )
     diagnosticEventLog.append(result.diagnosticEvent)
     return outcome to result.nextState

@@ -130,7 +130,6 @@ internal interface GoCoachAppWiringContext {
 
     // Side-effects / Actions
     fun applyCoreSessionState(next: GameSessionCoreState)
-    fun applyCoreState(next: GameSessionCoreState)
     fun activateEndgameJudgementReview()
     fun clearUndoEngineInterventionQuietWindow()
     fun engineProfileTimeoutPolicy(profile: EngineProfile): EngineTimeoutPolicy

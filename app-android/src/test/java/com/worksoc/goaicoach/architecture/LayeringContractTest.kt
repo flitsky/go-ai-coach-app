@@ -1318,7 +1318,7 @@ class LayeringContractTest {
         // Downward ratchet: GoCoachApp is being reduced from a workflow-owning
         // god file to a thin UI shell. These budgets only ever move down — when
         // a refactor lowers them, tighten the numbers here in the same change.
-        val lineBudget = 880
+        val lineBudget = 849
         val stateHookBudget = 47
 
         val goCoachApp = repoRoot()
