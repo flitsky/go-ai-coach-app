@@ -26,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -186,14 +187,18 @@ private fun PlayerSetupSideRow(
                 label = strings.controllerLabel(SeatController.Human),
                 selected = side.controller == SeatController.Human,
                 enabled = enabled,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .testTag(TestTags.seatControllerPill(state.color, SeatController.Human)),
                 onClick = { onSideChange(side.copy(controller = SeatController.Human)) },
             )
             SeatControllerPill(
                 label = strings.controllerLabel(SeatController.Ai),
                 selected = side.controller == SeatController.Ai,
                 enabled = enabled,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .testTag(TestTags.seatControllerPill(state.color, SeatController.Ai)),
                 onClick = { onSideChange(side.copy(controller = SeatController.Ai)) },
             )
         }

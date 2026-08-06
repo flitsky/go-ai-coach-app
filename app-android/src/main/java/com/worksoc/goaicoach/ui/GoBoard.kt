@@ -43,6 +43,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.movereview.MoveReviewMarker
@@ -139,6 +140,7 @@ internal fun GoBoard(
             Canvas(
                 modifier = Modifier
                     .fillMaxSize()
+                    .testTag(TestTags.GoBoard)
                     .onSizeChanged { canvasSize = it }
                     .pointerInput(
                         gameState.boardSize,
