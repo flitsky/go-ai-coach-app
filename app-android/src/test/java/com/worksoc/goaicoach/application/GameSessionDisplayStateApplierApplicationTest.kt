@@ -91,8 +91,10 @@ class GameSessionDisplayStateApplierApplicationTest {
         assertTrue(core.isGameEnded)
         assertEquals("final complete", core.engineMessage)
 
-        val undo = buildLocalTwoPlayerUndoPlan(
+        val undo = buildUndoLocalStatePlan(
             currentState = core.gameState,
+            undoCount = 1,
+            previousMoveReviews = emptyList(),
             scoreSnapshots = core.scoreState.scoreSnapshots,
         )
         holder.applyUndoLocalStatePlan(undo)

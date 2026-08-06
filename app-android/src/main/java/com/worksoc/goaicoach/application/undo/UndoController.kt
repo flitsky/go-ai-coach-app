@@ -3,7 +3,6 @@ package com.worksoc.goaicoach.application.undo
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.engine.EngineSessionClient
 import com.worksoc.goaicoach.application.engine.launchUiEffect
-import com.worksoc.goaicoach.application.engine.operation.EngineOperationResultGuard
 import com.worksoc.goaicoach.application.movereview.MoveReviewMarker
 import com.worksoc.goaicoach.application.score.PostUndoScoreSyncRunRequest
 import com.worksoc.goaicoach.application.score.ScoreSyncCompletionApplyPlan
@@ -41,12 +40,10 @@ internal class UndoController(
     private val onEngineMessage: (String) -> Unit,
     private val onQuietUntil: (Long) -> Unit,
     private val onPendingSyncChanged: (Boolean) -> Unit,
-    private val launchEngineOperation: (EngineOperationRequest, suspend () -> Unit) -> Unit,
     private val runEngineOperation: suspend (EngineOperationRequest, suspend () -> Unit) -> Unit,
     private val applyUndo: (UndoLocalStatePlan) -> Unit,
     private val applyScoreSyncCompletion: (ScoreSyncCompletionApplyPlan) -> GameState?,
     private val requestFollowUpAnalysis: (GameState) -> Unit,
-    private val appendDiscardLog: (EngineOperationResultGuard.Discard) -> Unit,
 ) {
     private var pendingSync: PendingPostUndoEngineSync? = null
     private var pendingSyncJob: Job? = null
@@ -125,11 +122,12 @@ internal class UndoController(
         }
     }
 
-    fun undoLocalTwoPlayerTurn(plan: UndoRequestPlan.LocalTwoPlayerUndo) {
-        runLocalTwoPlayerUndoApplication(
-            LocalTwoPlayerUndoRunRequest(
+    fun applyLocalUndo(plan: UndoRequestPlan.ApplyLocalUndo) {
+        runApplyLocalUndoApplication(
+            ApplyLocalUndoRunRequest(
                 plan = plan,
                 currentState = currentGameState(),
+                previousMoveReviews = currentMoveReviews(),
                 scoreSnapshots = currentScoreSnapshots(),
                 applyUndo = applyUndo,
                 markQuiet = ::markQuiet,
@@ -140,39 +138,15 @@ internal class UndoController(
         )
     }
 
-    fun undoEngineBackedTurn(plan: UndoRequestPlan.EngineUndo) {
-        runEngineUndoApplication(
-            EngineUndoRunRequest(
-                engineClient = engineClient,
-                plan = plan,
-                currentState = currentGameState(),
-                sessionGeneration = currentSessionGeneration(),
-                previousMoveReviews = currentMoveReviews(),
-                scoreSnapshots = currentScoreSnapshots(),
-                diagnosticEventLog = diagnosticEventLog,
-                launchEngineOperation = launchEngineOperation,
-                currentStateProvider = currentGameState,
-                currentSessionGenerationProvider = currentSessionGeneration,
-                applyUndo = applyUndo,
-                setEngineMessage = onEngineMessage,
-                markQuiet = ::markQuiet,
-                cancelPendingPostUndoSync = ::cancelPendingSync,
-                appendDiscardLog = appendDiscardLog,
-            ),
-        )
-    }
-
     fun undoLastTurn() {
         runUndoLastTurnApplication(
             UndoLastTurnRunRequest(
                 currentState = currentGameState(),
                 matchMode = currentMatchMode(),
                 isEngineReady = isEngineReady(),
-                isEngineBusy = isEngineBusy(),
-                humanSeatCount = currentPlayerSetup().humanSeatCount(),
+                playerSetup = currentPlayerSetup(),
                 showMessage = onEngineMessage,
-                runLocalTwoPlayerUndo = ::undoLocalTwoPlayerTurn,
-                runEngineUndo = ::undoEngineBackedTurn,
+                runApplyLocalUndo = ::applyLocalUndo,
             ),
         )
     }

@@ -1,27 +1,32 @@
 package com.worksoc.goaicoach.application
 
-import com.worksoc.goaicoach.application.engine.operation.*
-
 import com.worksoc.goaicoach.application.undo.*
 
-import com.worksoc.goaicoach.application.diagnostic.NoopDiagnosticEventLog
-import com.worksoc.goaicoach.application.engine.EngineUndoWorkflowResult
 import com.worksoc.goaicoach.application.movereview.MoveReviewMarker
 import com.worksoc.goaicoach.application.movereview.MoveReviewTone
 import com.worksoc.goaicoach.match.MatchMode
+import com.worksoc.goaicoach.match.PlayerSetup
+import com.worksoc.goaicoach.match.SeatController
+import com.worksoc.goaicoach.match.SidePlayerSetup
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
-import com.worksoc.goaicoach.shared.EngineStatus
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
+import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.ScoreSnapshot
 import com.worksoc.goaicoach.shared.ScoreSnapshotSource
 import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.replayWithoutLastMoves
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import kotlinx.coroutines.runBlocking
+
+private val HumanBlack = PlayerSetup() // black=Human, white=Ai (default)
+private val HumanWhite = PlayerSetup(
+    black = SidePlayerSetup(controller = SeatController.Ai),
+    white = SidePlayerSetup(controller = SeatController.Human),
+)
 
 class UndoApplicationTest {
     @Test
@@ -49,50 +54,68 @@ class UndoApplicationTest {
             currentState = GameState.empty(),
             matchMode = MatchMode.HumanVsAi,
             isEngineReady = true,
-            isEngineBusy = false,
-            humanSeatCount = 1,
+            playerSetup = HumanBlack,
         )
 
         assertEquals(UndoRequestPlan.ShowMessage("No move to undo."), plan)
     }
 
     @Test
-    fun undoRequestPlanHandlesOfflineLocalTwoPlayerUndo() {
-        val state = GameState.empty()
-            .play(Move.Pass(StoneColor.Black))
+    fun undoRequestPlanBlocksAiVsAiRegardlessOfMoveHistory() {
+        val state = GameState.empty().play(Move.Pass(StoneColor.Black))
 
         val plan = buildUndoRequestPlan(
             currentState = state,
-            matchMode = MatchMode.LocalTwoPlayer,
-            isEngineReady = false,
-            isEngineBusy = false,
-            humanSeatCount = 2,
-        )
-
-        assertEquals(UndoRequestPlan.LocalTwoPlayerUndo(syncEngineAfterUndo = false), plan)
-    }
-
-    @Test
-    fun undoRequestPlanBlocksBusyLocalTwoPlayerUndo() {
-        val state = GameState.empty()
-            .play(Move.Pass(StoneColor.Black))
-
-        val plan = buildUndoRequestPlan(
-            currentState = state,
-            matchMode = MatchMode.LocalTwoPlayer,
+            matchMode = MatchMode.AiVsAi,
             isEngineReady = true,
-            isEngineBusy = true,
-            humanSeatCount = 2,
+            playerSetup = PlayerSetup(
+                black = SidePlayerSetup(controller = SeatController.Ai),
+                white = SidePlayerSetup(controller = SeatController.Ai),
+            ),
         )
 
         assertEquals(
-            UndoRequestPlan.ShowMessage("Engine is busy. Undo after the current analysis."),
+            UndoRequestPlan.ShowMessage("Undo is not available while AI controls both sides."),
             plan,
         )
     }
 
     @Test
-    fun undoRequestPlanComputesEngineUndoCountForSingleHumanGame() {
+    fun undoRequestPlanAppliesLocalTwoPlayerUndoWithoutEngineSyncWhenOffline() {
+        val state = GameState.empty().play(Move.Pass(StoneColor.Black))
+
+        val plan = buildUndoRequestPlan(
+            currentState = state,
+            matchMode = MatchMode.LocalTwoPlayer,
+            isEngineReady = false,
+            playerSetup = HumanBlack,
+        )
+
+        assertEquals(UndoRequestPlan.ApplyLocalUndo(undoCount = 1, syncEngineAfterUndo = false), plan)
+    }
+
+    @Test
+    fun undoRequestPlanAppliesLocalTwoPlayerUndoRegardlessOfEngineBusyState() {
+        // No isEngineBusy parameter exists anymore for this branch -- Undo is
+        // always actionable now, including while a background engine op (e.g.
+        // analysis) is running. isEngineReady alone decides whether a sync follows.
+        val state = GameState.empty().play(Move.Pass(StoneColor.Black))
+
+        val plan = buildUndoRequestPlan(
+            currentState = state,
+            matchMode = MatchMode.LocalTwoPlayer,
+            isEngineReady = true,
+            playerSetup = HumanBlack,
+        )
+
+        assertEquals(UndoRequestPlan.ApplyLocalUndo(undoCount = 1, syncEngineAfterUndo = true), plan)
+    }
+
+    @Test
+    fun undoRequestPlanUndoesOneMoveRightAfterHumanBlackJustMoved() {
+        // 3 moves played (Black, White, Black) -- it's White/AI's turn next.
+        // The human (Black) just moved, so undo should land on 2 (before that
+        // move), not 1 (which would also discard White's earlier reply).
         val state = GameState.empty()
             .play(Move.Pass(StoneColor.Black))
             .play(Move.Pass(StoneColor.White))
@@ -102,35 +125,177 @@ class UndoApplicationTest {
             currentState = state,
             matchMode = MatchMode.HumanVsAi,
             isEngineReady = true,
-            isEngineBusy = false,
-            humanSeatCount = 1,
+            playerSetup = HumanBlack,
         )
 
-        assertEquals(UndoRequestPlan.EngineUndo(undoCount = 2), plan)
+        assertEquals(UndoRequestPlan.ApplyLocalUndo(undoCount = 1, syncEngineAfterUndo = true), plan)
     }
 
     @Test
-    fun localTwoPlayerUndoPlanReplaysOneMoveBackAndRecordsLocalSnapshot() {
+    fun undoRequestPlanUndoesTwoMovesWhenItIsAlreadyHumanBlacksTurn() {
+        // 4 moves played -- it's Black/human's turn next. Nothing of the human's
+        // to undo at this exact boundary, so undo steps back a full round (AI's
+        // reply + the human's move before it) to the previous human-turn boundary.
+        val state = GameState.empty()
+            .play(Move.Pass(StoneColor.Black))
+            .play(Move.Pass(StoneColor.White))
+            .play(Move.Pass(StoneColor.Black))
+            .play(Move.Pass(StoneColor.White))
+
+        val plan = buildUndoRequestPlan(
+            currentState = state,
+            matchMode = MatchMode.HumanVsAi,
+            isEngineReady = true,
+            playerSetup = HumanBlack,
+        )
+
+        assertEquals(UndoRequestPlan.ApplyLocalUndo(undoCount = 2, syncEngineAfterUndo = true), plan)
+    }
+
+    @Test
+    fun undoRequestPlanRepeatedPressesWalkBackOneHumanTurnAtATime() {
+        // Simulates two undo presses in a row on a 4-move Black-human game: each
+        // call recomputes from whatever the *current* state is, exactly like two
+        // separate button presses would -- this is the "여러 수 반복 무르기" case.
+        val fourMoves = GameState.empty()
+            .play(Move.Pass(StoneColor.Black))
+            .play(Move.Pass(StoneColor.White))
+            .play(Move.Pass(StoneColor.Black))
+            .play(Move.Pass(StoneColor.White))
+
+        val first = buildUndoRequestPlan(
+            currentState = fourMoves,
+            matchMode = MatchMode.HumanVsAi,
+            isEngineReady = true,
+            playerSetup = HumanBlack,
+        ) as UndoRequestPlan.ApplyLocalUndo
+        assertEquals(2, first.undoCount)
+
+        val afterFirstUndo = fourMoves.replayWithoutLastMoves(first.undoCount)
+        val second = buildUndoRequestPlan(
+            currentState = afterFirstUndo,
+            matchMode = MatchMode.HumanVsAi,
+            isEngineReady = true,
+            playerSetup = HumanBlack,
+        ) as UndoRequestPlan.ApplyLocalUndo
+        assertEquals(2, second.undoCount)
+        assertEquals(0, afterFirstUndo.replayWithoutLastMoves(second.undoCount).moves.size)
+    }
+
+    @Test
+    fun undoRequestPlanUndoesOneMoveRightAfterHumanWhiteJustMoved() {
+        // Black(AI) then White(human) -- it's Black/AI's turn next. The human
+        // (White) just moved, so undo should land on 1 (before that move).
+        val state = GameState.empty()
+            .play(Move.Pass(StoneColor.Black))
+            .play(Move.Pass(StoneColor.White))
+
+        val plan = buildUndoRequestPlan(
+            currentState = state,
+            matchMode = MatchMode.AiVsHuman,
+            isEngineReady = true,
+            playerSetup = HumanWhite,
+        )
+
+        assertEquals(UndoRequestPlan.ApplyLocalUndo(undoCount = 1, syncEngineAfterUndo = true), plan)
+    }
+
+    @Test
+    fun undoRequestPlanUndoesTwoMovesWhenItIsAlreadyHumanWhitesTurn() {
+        val state = GameState.empty()
+            .play(Move.Pass(StoneColor.Black))
+            .play(Move.Pass(StoneColor.White))
+            .play(Move.Pass(StoneColor.Black))
+
+        val plan = buildUndoRequestPlan(
+            currentState = state,
+            matchMode = MatchMode.AiVsHuman,
+            isEngineReady = true,
+            playerSetup = HumanWhite,
+        )
+
+        assertEquals(UndoRequestPlan.ApplyLocalUndo(undoCount = 2, syncEngineAfterUndo = true), plan)
+    }
+
+    @Test
+    fun undoRequestPlanReportsNothingToUndoWhenHumanWhiteHasNotMovedYet() {
+        // Only AI's opening move exists. The human hasn't played at all yet, so
+        // there's no human move for undo to discard.
+        val state = GameState.empty().play(Move.Pass(StoneColor.Black))
+
+        val plan = buildUndoRequestPlan(
+            currentState = state,
+            matchMode = MatchMode.AiVsHuman,
+            isEngineReady = true,
+            playerSetup = HumanWhite,
+        )
+
+        assertEquals(UndoRequestPlan.ShowMessage("No human move to undo yet."), plan)
+    }
+
+    @Test
+    fun undoRequestPlanUsesActualFirstMoverNotBlackForHandicapGames() {
+        // Handicap games start with White to move (GameState.withHandicap),
+        // human plays Black. moves.first().player (White) -- not a hardcoded
+        // "Black moves first" assumption -- must drive the parity so this still
+        // lands on the state right before the human's (Black's) move.
+        val state = GameState.withHandicap(BoardSize.Nine, Ruleset.Japanese, handicapCount = 2)
+            .play(Move.Pass(StoneColor.White))
+            .play(Move.Pass(StoneColor.Black))
+
+        val plan = buildUndoRequestPlan(
+            currentState = state,
+            matchMode = MatchMode.HumanVsAi,
+            isEngineReady = true,
+            playerSetup = HumanBlack,
+        )
+
+        assertEquals(UndoRequestPlan.ApplyLocalUndo(undoCount = 1, syncEngineAfterUndo = true), plan)
+    }
+
+    @Test
+    fun undoRequestPlanAppliesLocallyWithoutSyncWhenEngineIsNotReady() {
+        // Same "apply locally, engine sync is best-effort" fallback used
+        // elsewhere (HumanMoveController.submitMove) when the engine isn't ready
+        // -- undo should not simply refuse in this case.
+        val state = GameState.empty()
+            .play(Move.Pass(StoneColor.Black))
+            .play(Move.Pass(StoneColor.White))
+            .play(Move.Pass(StoneColor.Black))
+
+        val plan = buildUndoRequestPlan(
+            currentState = state,
+            matchMode = MatchMode.HumanVsAi,
+            isEngineReady = false,
+            playerSetup = HumanBlack,
+        )
+
+        assertEquals(UndoRequestPlan.ApplyLocalUndo(undoCount = 1, syncEngineAfterUndo = false), plan)
+    }
+
+    @Test
+    fun buildUndoLocalStatePlanReplaysOneMoveBackAndRecordsLocalSnapshot() {
         val state = GameState.empty()
             .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
             .play(Move.Play(StoneColor.White, BoardCoordinate.fromLabel("D5", BoardSize.Nine)))
 
-        val plan = buildLocalTwoPlayerUndoPlan(
+        val plan = buildUndoLocalStatePlan(
             currentState = state,
-            scoreSnapshots = listOf(ScoreSnapshot(moveNumber = 2, source = ScoreSnapshotSource.EngineEstimate)),
+            undoCount = 1,
+            previousMoveReviews = emptyList(),
+            scoreSnapshots = emptyList(),
         )
 
         assertEquals(1, plan.gameState.moves.size)
         assertEquals("Black E5", plan.lastMoveText)
-        assertEquals("Captured: Black 0 / White 0", plan.candidateText)
+        assertEquals("Undo cleared current Top Moves.", plan.candidateText)
         assertEquals("Score estimate not current.", plan.scoreText)
-        assertEquals("Move review cleared by undo.", plan.moveReviewText)
         assertEquals(1, plan.scoreSnapshots.single().moveNumber)
         assertFalse(plan.reviewAnalysis.hasEngineCandidates)
     }
 
     @Test
-    fun engineUndoPlanTrimsStateTimelineAndMoveReviewMarkers() {
+    fun buildUndoLocalStatePlanTrimsStateTimelineAndMoveReviewMarkers() {
         val state = GameState.empty()
             .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
             .play(Move.Play(StoneColor.White, BoardCoordinate.fromLabel("D5", BoardSize.Nine)))
@@ -148,7 +313,7 @@ class UndoApplicationTest {
             ),
         )
 
-        val plan = buildEngineUndoPlan(
+        val plan = buildUndoLocalStatePlan(
             currentState = state,
             undoCount = 2,
             previousMoveReviews = markers,
@@ -167,81 +332,55 @@ class UndoApplicationTest {
     }
 
     @Test
-    fun engineUndoCompletionPlanAppliesSuccessFailureOrDiscard() {
-        val state = GameState.empty()
-            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
-            .play(Move.Play(StoneColor.White, BoardCoordinate.fromLabel("D5", BoardSize.Nine)))
-        val changedState = state.play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("F5", BoardSize.Nine)))
-        val operation = engineOperationRequest(
-            kind = EngineOperationKind.EngineUndo,
-            state = state,
-            sessionGeneration = 9L,
-        )
-
-        val success = buildEngineUndoCompletionPlan(
-            result = EngineUndoWorkflowResult.Success(EngineStatus.ready("undo complete")),
-            operation = operation,
-            currentState = state,
-            currentSessionGeneration = 9L,
-            undoCount = 1,
-            previousMoveReviews = emptyList(),
-            scoreSnapshots = emptyList(),
-        )
-        val failure = buildEngineUndoCompletionPlan(
-            result = EngineUndoWorkflowResult.Failure(IllegalStateException("undo failed")),
-            operation = operation,
-            currentState = state,
-            currentSessionGeneration = 9L,
-            undoCount = 1,
-            previousMoveReviews = emptyList(),
-            scoreSnapshots = emptyList(),
-        )
-        val discard = buildEngineUndoCompletionPlan(
-            result = EngineUndoWorkflowResult.Success(EngineStatus.ready("undo complete")),
-            operation = operation,
-            currentState = changedState,
-            currentSessionGeneration = 9L,
-            undoCount = 1,
-            previousMoveReviews = emptyList(),
-            scoreSnapshots = emptyList(),
-        )
-
-        assertTrue(success is EngineUndoCompletionPlan.ApplySuccess)
-        assertEquals(1, (success as EngineUndoCompletionPlan.ApplySuccess).undo.gameState.moves.size)
-        assertEquals("Undid 1 move(s) in local state and engine state.", success.engineMessage)
-        assertTrue(failure is EngineUndoCompletionPlan.ApplyFailure)
-        assertEquals("undo failed", (failure as EngineUndoCompletionPlan.ApplyFailure).engineMessage)
-        assertTrue(discard is EngineUndoCompletionPlan.Discard)
-    }
-
-    @Test
-    fun undoLastTurnRunnerDispatchesLocalTwoPlayerUndoPlan() {
-        val state = GameState.empty()
-            .play(Move.Pass(StoneColor.Black))
+    fun undoLastTurnRunnerDispatchesApplyLocalUndoPlan() {
+        val state = GameState.empty().play(Move.Pass(StoneColor.Black))
         var message: String? = null
-        var localPlan: UndoRequestPlan.LocalTwoPlayerUndo? = null
-        var engineUndoCalled = false
+        var appliedPlan: UndoRequestPlan.ApplyLocalUndo? = null
 
         runUndoLastTurnApplication(
             UndoLastTurnRunRequest(
                 currentState = state,
                 matchMode = MatchMode.LocalTwoPlayer,
                 isEngineReady = true,
-                isEngineBusy = false,
-                humanSeatCount = 2,
+                playerSetup = HumanBlack,
                 showMessage = { value -> message = value },
-                runLocalTwoPlayerUndo = { plan -> localPlan = plan },
-                runEngineUndo = { engineUndoCalled = true },
+                runApplyLocalUndo = { plan -> appliedPlan = plan },
             ),
         )
 
         assertEquals(null, message)
-        assertEquals(UndoRequestPlan.LocalTwoPlayerUndo(syncEngineAfterUndo = true), localPlan)
-        assertFalse(engineUndoCalled)
+        assertEquals(UndoRequestPlan.ApplyLocalUndo(undoCount = 1, syncEngineAfterUndo = true), appliedPlan)
     }
 
     @Test
-    fun localTwoPlayerUndoRunnerAppliesUndoAndSchedulesSettledEngineSync() {
+    fun undoLastTurnRunnerShowsMessageInsteadOfDispatchingForAiVsAi() {
+        val state = GameState.empty().play(Move.Pass(StoneColor.Black))
+        var message: String? = null
+        var dispatchCalled = false
+
+        runUndoLastTurnApplication(
+            UndoLastTurnRunRequest(
+                currentState = state,
+                matchMode = MatchMode.AiVsAi,
+                isEngineReady = true,
+                playerSetup = PlayerSetup(
+                    black = SidePlayerSetup(controller = SeatController.Ai),
+                    white = SidePlayerSetup(controller = SeatController.Ai),
+                ),
+                showMessage = { value -> message = value },
+                runApplyLocalUndo = { dispatchCalled = true },
+            ),
+        )
+
+        assertEquals("Undo is not available while AI controls both sides.", message)
+        assertFalse(dispatchCalled)
+    }
+
+    @Test
+    fun applyLocalUndoRunnerAppliesImmediatelyAndSchedulesSettledEngineSync() {
+        // This is the property that makes undo safe to trigger while the engine
+        // is mid-turn: applyUndo runs synchronously here, before anything that
+        // could wait on or be discarded by an in-flight engine operation.
         val state = GameState.empty()
             .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
             .play(Move.Play(StoneColor.White, BoardCoordinate.fromLabel("D5", BoardSize.Nine)))
@@ -251,10 +390,11 @@ class UndoApplicationTest {
         var scheduledState: GameState? = null
         var scheduledQuietUntilMillis: Long? = null
 
-        runLocalTwoPlayerUndoApplication(
-            LocalTwoPlayerUndoRunRequest(
-                plan = UndoRequestPlan.LocalTwoPlayerUndo(syncEngineAfterUndo = true),
+        runApplyLocalUndoApplication(
+            ApplyLocalUndoRunRequest(
+                plan = UndoRequestPlan.ApplyLocalUndo(undoCount = 1, syncEngineAfterUndo = true),
                 currentState = state,
+                previousMoveReviews = emptyList(),
                 scoreSnapshots = emptyList(),
                 applyUndo = { undo -> applied = undo },
                 markQuiet = { 2_000L },
@@ -275,18 +415,18 @@ class UndoApplicationTest {
     }
 
     @Test
-    fun localTwoPlayerUndoRunnerCancelsEngineSyncWhenOffline() {
-        val state = GameState.empty()
-            .play(Move.Pass(StoneColor.Black))
+    fun applyLocalUndoRunnerCancelsEngineSyncWhenOffline() {
+        val state = GameState.empty().play(Move.Pass(StoneColor.Black))
         var applied: UndoLocalStatePlan? = null
         var engineMessage: String? = null
         var cancelCalled = false
         var scheduleCalled = false
 
-        runLocalTwoPlayerUndoApplication(
-            LocalTwoPlayerUndoRunRequest(
-                plan = UndoRequestPlan.LocalTwoPlayerUndo(syncEngineAfterUndo = false),
+        runApplyLocalUndoApplication(
+            ApplyLocalUndoRunRequest(
+                plan = UndoRequestPlan.ApplyLocalUndo(undoCount = 1, syncEngineAfterUndo = false),
                 currentState = state,
+                previousMoveReviews = emptyList(),
                 scoreSnapshots = emptyList(),
                 applyUndo = { undo -> applied = undo },
                 markQuiet = { 2_000L },
@@ -300,85 +440,5 @@ class UndoApplicationTest {
         assertEquals("Local undo completed without engine sync.", engineMessage)
         assertTrue(cancelCalled)
         assertFalse(scheduleCalled)
-    }
-
-    @Test
-    fun engineUndoRunnerLaunchesOperationAndAppliesSuccessfulCompletion() {
-        val state = GameState.empty()
-            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
-            .play(Move.Play(StoneColor.White, BoardCoordinate.fromLabel("D5", BoardSize.Nine)))
-        var launchedOperation: EngineOperationRequest? = null
-        var applied: UndoLocalStatePlan? = null
-        var engineMessage: String? = null
-        var quietMarked = false
-        var cancelCalled = false
-        var discardCalled = false
-
-        runEngineUndoApplication(
-            EngineUndoRunRequest(
-                plan = UndoRequestPlan.EngineUndo(undoCount = 1),
-                currentState = state,
-                sessionGeneration = 7L,
-                previousMoveReviews = emptyList(),
-                scoreSnapshots = emptyList(),
-                diagnosticEventLog = NoopDiagnosticEventLog,
-                launchEngineOperation = { operation, block ->
-                    launchedOperation = operation
-                    runBlocking { block() }
-                },
-                currentStateProvider = { state },
-                currentSessionGenerationProvider = { 7L },
-                applyUndo = { undo -> applied = undo },
-                setEngineMessage = { message -> engineMessage = message },
-                markQuiet = {
-                    quietMarked = true
-                    2_000L
-                },
-                cancelPendingPostUndoSync = { cancelCalled = true },
-                appendDiscardLog = { discardCalled = true },
-                runEngineWork = { _, _ -> EngineUndoWorkflowResult.Success(EngineStatus.ready("undo complete")) },
-            ),
-        )
-
-        assertEquals(EngineOperationKind.EngineUndo, launchedOperation?.kind)
-        assertEquals("engine-undo", launchedOperation?.timeoutPolicy?.label)
-        assertEquals(1, applied?.gameState?.moves?.size)
-        assertEquals("Undid 1 move(s) in local state and engine state.", engineMessage)
-        assertTrue(quietMarked)
-        assertTrue(cancelCalled)
-        assertFalse(discardCalled)
-    }
-
-    @Test
-    fun engineUndoRunnerDiscardsLateCompletionForChangedPosition() {
-        val state = GameState.empty()
-            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
-            .play(Move.Play(StoneColor.White, BoardCoordinate.fromLabel("D5", BoardSize.Nine)))
-        val changedState = state.play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("F5", BoardSize.Nine)))
-        var applied = false
-        var discardCalled = false
-
-        runEngineUndoApplication(
-            EngineUndoRunRequest(
-                plan = UndoRequestPlan.EngineUndo(undoCount = 1),
-                currentState = state,
-                sessionGeneration = 7L,
-                previousMoveReviews = emptyList(),
-                scoreSnapshots = emptyList(),
-                diagnosticEventLog = NoopDiagnosticEventLog,
-                launchEngineOperation = { _, block -> runBlocking { block() } },
-                currentStateProvider = { changedState },
-                currentSessionGenerationProvider = { 7L },
-                applyUndo = { applied = true },
-                setEngineMessage = {},
-                markQuiet = { 2_000L },
-                cancelPendingPostUndoSync = {},
-                appendDiscardLog = { discardCalled = true },
-                runEngineWork = { _, _ -> EngineUndoWorkflowResult.Success(EngineStatus.ready("undo complete")) },
-            ),
-        )
-
-        assertFalse(applied)
-        assertTrue(discardCalled)
     }
 }

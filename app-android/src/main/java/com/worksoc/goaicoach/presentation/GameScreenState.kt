@@ -275,7 +275,6 @@ internal data class GameActionButtonState(
 internal fun buildGameActionButtonStates(input: GameScreenStateInput): List<GameActionButtonState> {
     val canPlayOnBoard = !input.isGameEnded &&
         input.matchSeats.current.canAcceptBoardInput
-    val isBlockingBusy = input.isEngineBlockingBusy
     val topMovesButtonEnabled = !input.isGameEnded &&
         input.isEngineReady
 
@@ -291,9 +290,10 @@ internal fun buildGameActionButtonStates(input: GameScreenStateInput): List<Game
             role = GameActionButtonRole.Undo,
             label = "Undo",
             event = GameUiEvent.UndoLastTurn,
-            enabled = !isBlockingBusy &&
-                input.gameState.moves.isNotEmpty() &&
-                (input.isEngineReady || input.matchMode == MatchMode.LocalTwoPlayer),
+            // Always enabled regardless of engine-busy state -- undoLastTurn()
+            // (application/undo/UndoController.kt) applies locally immediately
+            // and safely, no matter what the engine is doing.
+            enabled = input.gameState.moves.isNotEmpty() && input.matchMode != MatchMode.AiVsAi,
             isFilled = false,
         ),
         GameActionButtonState(

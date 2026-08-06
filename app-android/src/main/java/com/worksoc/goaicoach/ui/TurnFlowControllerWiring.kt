@@ -76,7 +76,6 @@ internal fun wireUndoController(
         onEngineMessage = { message -> context.setEngineMessage(message) },
         onQuietUntil = { quietUntil -> context.setUndoEngineInterventionQuietUntil(quietUntil) },
         onPendingSyncChanged = { pending -> context.setPendingUndoSync(pending) },
-        launchEngineOperation = { operation, block -> context.lifecycleController.launchTracked(operation) { block() } },
         runEngineOperation = { operation, block -> context.lifecycleController.runTracked(operation) { block() } },
         applyUndo = { undo ->
             context.displayStateApplier.applyUndoLocalStatePlan(undo)
@@ -89,7 +88,6 @@ internal fun wireUndoController(
         },
         applyScoreSyncCompletion = context.displayStateApplier::applyScoreSyncCompletion,
         requestFollowUpAnalysis = { state -> topMovesController.requestAnalysis(state, automatic = true) },
-        appendDiscardLog = context.lifecycleController::appendDiscardLog,
     )
 
 internal fun wireAutoAiTurnController(

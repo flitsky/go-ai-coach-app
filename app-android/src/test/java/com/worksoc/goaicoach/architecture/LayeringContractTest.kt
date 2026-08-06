@@ -304,16 +304,14 @@ class LayeringContractTest {
         val text = goCoachApp.readText()
         val forbiddenFragments = listOf(
             "buildUndoRequestPlan(",
-            "buildLocalTwoPlayerUndoPlan(",
-            "buildEngineUndoCompletionPlan(",
-            "GameSessionEffect.UndoEngineMoves(",
-            "EngineUndoCompletionPlan.",
-            "EngineOperationKind.EngineUndo",
+            "buildUndoLocalStatePlan(",
+            "runApplyLocalUndoApplication(",
+            "UndoRequestPlan.ApplyLocalUndo(",
         )
             .filter { fragment -> fragment in text }
 
         assertTrue(
-            "GoCoachApp should run undo through runUndoLastTurnApplication/runEngineUndoApplication, not own engine undo workflow details:\n" +
+            "GoCoachApp should run undo through runUndoLastTurnApplication/UndoController.applyLocalUndo, not own undo workflow details:\n" +
                 forbiddenFragments.joinToString("\n"),
             forbiddenFragments.isEmpty(),
         )
