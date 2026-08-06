@@ -35,7 +35,40 @@ ENGINE_PHONE_SEARCH_MODE_BENCHMARK_ARGS ?= --time-cap-ms 10000
 export ANDROID_HOME
 export JAVA_HOME
 
-.PHONY: doctor test dev dev-stub install-dev install-dev-engine reinstall-dev-engine seed-engine launch friend-apk prepare-friend-assets engine-level-benchmark engine-device-benchmark engine-search-mode-benchmark engine-search-mode-benchmark-phone release ensure-debug-engine ensure-release-engine prebuild-engine clean
+.DEFAULT_GOAL := help
+
+.PHONY: help doctor test dev dev-stub install-dev install-dev-engine reinstall-dev-engine seed-engine launch friend-apk prepare-friend-assets engine-level-benchmark engine-device-benchmark engine-search-mode-benchmark engine-search-mode-benchmark-phone release ensure-debug-engine ensure-release-engine prebuild-engine clean
+
+help:
+	@echo "=========================================================================="
+	@echo "  Go AI Coach - Makefile Commands"
+	@echo "=========================================================================="
+	@echo ""
+	@echo " [Development & Installation]"
+	@echo "  make dev                 - Build Debug APK (requires debug engine binary)"
+	@echo "  make dev-stub            - Build Debug APK in Stub-only mode"
+	@echo "  make install-dev         - Build & Install Debug APK to device"
+	@echo "  make install-dev-engine  - Build/Install Debug APK + Seed KataGo model + Launch app"
+	@echo "  make reinstall-dev-engine- Uninstall app, re-install, seed model & launch"
+	@echo "  make seed-engine         - Seed KataGo model & configs to device"
+	@echo "  make launch              - Force-stop & launch app on target device"
+	@echo ""
+	@echo " [Environment & Testing]"
+	@echo "  make doctor              - Check JDK 17, ANDROID_HOME, and adb environment"
+	@echo "  make test                - Run unit tests for shared, engine, and app modules"
+	@echo ""
+	@echo " [Build & Engine Prebuild]"
+	@echo "  make friend-apk          - Build Friend APK with bundled KataGo assets"
+	@echo "  make prebuild-engine     - Compile native KataGo engine binary (libkatago.so)"
+	@echo "  make release             - Assemble Release APK"
+	@echo "  make clean               - Clean Gradle build outputs"
+	@echo ""
+	@echo " [Benchmarks]"
+	@echo "  make engine-level-benchmark            - Run KataGo level matrix benchmarks"
+	@echo "  make engine-device-benchmark           - Run device benchmarks"
+	@echo "  make engine-search-mode-benchmark      - Run search mode benchmarks on local machine"
+	@echo "  make engine-search-mode-benchmark-phone- Run search mode benchmarks on phone"
+	@echo "=========================================================================="
 
 doctor:
 	@echo "Checking local Android development environment..."
