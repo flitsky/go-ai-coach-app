@@ -89,10 +89,7 @@ class GameSettingsControllerTest {
     }
 
     @Test
-    fun changeSearchTimeSettingsAppliesEvenWhenEngineIsBusy() {
-        // Engine-busy gate is intentionally disabled so settings apply immediately.
-        // To restore the block-when-busy behaviour, re-enable the gate in GameSettingsController
-        // and revert this test to assert assertNull(appliedSettings) + busy message.
+    fun changeSearchTimeSettingsBlocksWhileEngineIsBusy() {
         var appliedSettings: SearchTimeSettings? = null
         var engineMessage: String? = null
 
@@ -150,8 +147,133 @@ class GameSettingsControllerTest {
         val nextSettings = SearchTimeSettings(SearchTimeLimit.WithinThreeSeconds)
         controller.changeSearchTimeSettings(nextSettings)
 
-        assertNotNull(appliedSettings)
+        assertNull(appliedSettings)
+        assertEquals("Engine is busy. Change search time after the current action.", engineMessage)
+    }
+
+    @Test
+    fun changePlayerSetupAppliesSetupWhenEngineIsNotBusy() {
+        var appliedSetup: PlayerSetup? = null
+        var engineMessage: String? = null
+
+        val controller = GameSettingsController(
+            currentGameState = { GameState.empty() },
+            currentPlayerSetup = { PlayerSetup() },
+            currentEngineProfile = { EngineProfile() },
+            currentSearchTimeSettings = { SearchTimeSettings() },
+            currentAnalysisState = { GameSessionAnalysisState.empty(GameState.empty()) },
+            currentAutoPlayDelaySetting = { AutoPlayDelaySetting.Default },
+            defaultPlayLevel = PlayLevelSetting(),
+            isEngineBusy = { false },
+            runtimeEventLog = ControllerFakeRuntimeEventLogPort(),
+            currentRuntimeLogContext = {
+                RuntimeLogContext(
+                    engineName = "KataGo",
+                    engineDiagnostic = "ok",
+                    playerSetup = PlayerSetup(),
+                    gameState = GameState.empty(),
+                    runtimeState = GameSessionRuntimeState(PlayLevelSetting(), EngineProfile(), com.worksoc.goaicoach.shared.AnalysisPreset.Lite),
+                    autoPlayDelaySetting = AutoPlayDelaySetting.Default,
+                    searchTimeSettings = SearchTimeSettings(),
+                    topMovesEnabled = true,
+                    isEngineReady = true,
+                    isEngineBusy = false,
+                    isGameEnded = false,
+                    isAutoAiTurnPending = false,
+                    shouldShowResumePrompt = false,
+                    analysisCacheStats = "entries=0",
+                    moveAnalysisCoverage = "none",
+                    scoreText = "0",
+                )
+            },
+            onEngineMessage = { msg -> engineMessage = msg },
+            applyPlayerSetup = { setup -> appliedSetup = setup },
+            applyCoreSessionState = {},
+            currentCoreSessionState = {
+                GameSessionCoreState(
+                    gameState = GameState.empty(),
+                    isGameEnded = false,
+                    analysisState = GameSessionAnalysisState.empty(GameState.empty()),
+                    scoreState = GameSessionScoreState.reset("0", emptyList(), ""),
+                    runtimeState = GameSessionRuntimeState(PlayLevelSetting(), EngineProfile(), com.worksoc.goaicoach.shared.AnalysisPreset.Lite),
+                    moveReviewState = GameSessionMoveReviewState.reset("", ""),
+                    engineMessage = ""
+                )
+            },
+            applyRuntimePlayLevelSelection = {},
+            applyAnalysisState = {},
+            applySettingsAutoPlayDelay = {},
+            applySettingsSearchTimeSettings = {},
+            clearUndoEngineInterventionQuietWindow = {}
+        )
+
+        val nextSetup = PlayerSetup()
+        controller.changePlayerSetup(nextSetup)
+
+        assertEquals(nextSetup, appliedSetup)
         assertNull(engineMessage)
+    }
+
+    @Test
+    fun changePlayerSetupBlocksWhileEngineIsBusy() {
+        var appliedSetup: PlayerSetup? = null
+        var engineMessage: String? = null
+
+        val controller = GameSettingsController(
+            currentGameState = { GameState.empty() },
+            currentPlayerSetup = { PlayerSetup() },
+            currentEngineProfile = { EngineProfile() },
+            currentSearchTimeSettings = { SearchTimeSettings() },
+            currentAnalysisState = { GameSessionAnalysisState.empty(GameState.empty()) },
+            currentAutoPlayDelaySetting = { AutoPlayDelaySetting.Default },
+            defaultPlayLevel = PlayLevelSetting(),
+            isEngineBusy = { true },
+            runtimeEventLog = ControllerFakeRuntimeEventLogPort(),
+            currentRuntimeLogContext = {
+                RuntimeLogContext(
+                    engineName = "KataGo",
+                    engineDiagnostic = "ok",
+                    playerSetup = PlayerSetup(),
+                    gameState = GameState.empty(),
+                    runtimeState = GameSessionRuntimeState(PlayLevelSetting(), EngineProfile(), com.worksoc.goaicoach.shared.AnalysisPreset.Lite),
+                    autoPlayDelaySetting = AutoPlayDelaySetting.Default,
+                    searchTimeSettings = SearchTimeSettings(),
+                    topMovesEnabled = true,
+                    isEngineReady = true,
+                    isEngineBusy = true,
+                    isGameEnded = false,
+                    isAutoAiTurnPending = false,
+                    shouldShowResumePrompt = false,
+                    analysisCacheStats = "entries=0",
+                    moveAnalysisCoverage = "none",
+                    scoreText = "0",
+                )
+            },
+            onEngineMessage = { msg -> engineMessage = msg },
+            applyPlayerSetup = { setup -> appliedSetup = setup },
+            applyCoreSessionState = {},
+            currentCoreSessionState = {
+                GameSessionCoreState(
+                    gameState = GameState.empty(),
+                    isGameEnded = false,
+                    analysisState = GameSessionAnalysisState.empty(GameState.empty()),
+                    scoreState = GameSessionScoreState.reset("0", emptyList(), ""),
+                    runtimeState = GameSessionRuntimeState(PlayLevelSetting(), EngineProfile(), com.worksoc.goaicoach.shared.AnalysisPreset.Lite),
+                    moveReviewState = GameSessionMoveReviewState.reset("", ""),
+                    engineMessage = ""
+                )
+            },
+            applyRuntimePlayLevelSelection = {},
+            applyAnalysisState = {},
+            applySettingsAutoPlayDelay = {},
+            applySettingsSearchTimeSettings = {},
+            clearUndoEngineInterventionQuietWindow = {}
+        )
+
+        controller.changePlayerSetup(PlayerSetup())
+
+        assertNull(appliedSetup)
+        assertEquals("Engine is busy. Change Player Setup after the current action.", engineMessage)
     }
 }
 

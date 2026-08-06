@@ -94,7 +94,7 @@ internal fun ExpandedGameMenuSection(
         if (showSettings) {
             PlayerSetupPanel(
                 state = screenState.playerSetupUi,
-                enabled = true, // engine-busy gate disabled; restore with !screenState.engine.isBusy
+                enabled = !screenState.engine.isBusy,
                 onPlayerSetupChange = { setup -> onEvent(GameUiEvent.ChangePlayerSetup(setup)) },
                 onAutoPlayDelayChange = { setting -> onEvent(GameUiEvent.ChangeAutoPlayDelay(setting)) },
             )
@@ -127,7 +127,7 @@ internal fun ExpandedGameMenuSection(
 
         SearchTimeSettingsPanel(
             settings = screenState.searchTimeSettings,
-            enabled = true, // engine-busy gate disabled; restore with !screenState.engine.isBusy
+            enabled = !screenState.engine.isBusy,
             onSettingsChange = { settings -> onEvent(GameUiEvent.ChangeSearchTimeSettings(settings)) },
         )
 

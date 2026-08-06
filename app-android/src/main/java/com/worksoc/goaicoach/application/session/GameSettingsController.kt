@@ -60,7 +60,7 @@ internal class GameSettingsController(
                 currentState = gameState,
                 currentProfile = currentEngineProfile(),
                 defaultPlayLevel = defaultPlayLevel,
-                isEngineBusy = false, // engine-busy gate disabled; restore with isEngineBusy()
+                isEngineBusy = isEngineBusy(),
                 searchTimeSettings = currentSearchTimeSettings(),
             )
         ) {
@@ -80,7 +80,7 @@ internal class GameSettingsController(
      * top-moves analysis cache, and updates runtime play-level selection.
      */
     fun changeSearchTimeSettings(nextSettings: SearchTimeSettings) {
-        when (val gate = evaluateSearchTimeChangeGate(isEngineBusy = false)) { // engine-busy gate disabled; restore with isEngineBusy()
+        when (val gate = evaluateSearchTimeChangeGate(isEngineBusy = isEngineBusy())) {
             EngineOperationGate.Allow -> Unit
             EngineOperationGate.NoOp -> return
             is EngineOperationGate.Block -> {
