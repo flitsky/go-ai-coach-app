@@ -77,9 +77,6 @@ internal fun GoCoachHomeScreen(
             .background(MaterialTheme.colorScheme.background)
             .systemBarsPadding(),
     ) {
-        // 배너 광고는 이 바깥쪽 Column의 마지막 형제(아래)로 붙인다 — 안쪽 Column이 weight(1f)로
-        // 남은 공간을 다 차지하므로, 배너는 항상 화면 맨 아래에 고정되고 기존 24dp 패딩/중앙 정렬
-        // 콘텐츠는 전혀 건드리지 않는다.
         Column(
             modifier = Modifier
                 .weight(1f)
@@ -188,8 +185,6 @@ internal fun GoCoachHomeScreen(
                 },
             )
         }
-
-        BannerAdView(modifier = Modifier.fillMaxWidth())
     }
 
     // 이전 대국 존재 상태에서 새 대국 하기 선택 시 확인 경고 팝업
