@@ -5,7 +5,8 @@
 갱신: 2026-06-27 — 현재 코드 기준선과 `make test` 결과를 반영해 `ARCHITECTURE.md`를 갱신하고, 오늘 기준 리팩토링 평가/계획 문서 `refactoring/ARCHITECTURE_IMPLEMENTATION_REVIEW_2026-06-27.md`를 추가했다.
 갱신: 2026-06-28 — 줄 수, 패키지 수, remote transport 구현 상태처럼 자주 낡는 현재 지표는 기준일을 붙인 문장으로만 적도록 운영 원칙을 추가했다.
 갱신: 2026-07-29 23:15 — 도메인 분리(엔진 브릿지 vs 조합 레이어) 재검토 착수 계획서 `refactoring/DOMAIN_SEPARATION_REFACTORING_KICKOFF_PLAN_260729_2315.md`를 추가했다. 이 문서부터 "착수 계획서" 유형은 `YYMMDD HHhMMm` 시분 단위 타임스탬프를 파일명에 붙이는 관례를 시작한다(기존 날짜만 붙이는 작업 로그류와 구분).
-갱신: 2026-07-30 — `ARCHITECTURE.md`를 앱 비종속 원칙 문서로 전면 재작성하고, go-ai-coach 구체 매핑·로드맵을 담은 `GO_AI_COACH_ARCHITECTURE_ROADMAP.md`를 신설했다(핵심 문서 9개 → 10개). `premium-mode/`, `auth-onboarding/`, `ux-improvement/`, `docs/baas_solutions_comparison.md`, `docs/baduk_app_architecture_recommendation.md`를 이 인덱스에 편입했다. 상세는 "문서 이력" 절 참고.
+갱신: 2026-07-30 — `ARCHITECTURE.md`를 앱 비종속 원칙 문서로 전면 재작성하고, go-ai-coach 구체 매핑·로드맵을 담은 `GO_AI_COACH_ARCHITECTURE_ROADMAP.md`를 신설했다(핵심 문서 9개 → 10개). `premium-mode/`, `auth-onboarding/`, `ux-improvement/`, `docs/baas_solutions_comparison.md`, `docs/baduk_app_architecture_recommendation.md`를 이 인덱스에 편입했다. 상세는 "문서 이력" 절 참고.  
+갱신: 2026-08-06 — `docs/refactoring/`에서 완료·흡수된 문서 24개와 미인덱스 상태였던 `docs/working-260617/implementation_plan.md`를 `archive/2026-08-06-refactoring-log-consolidation/`으로 이동했다(삭제 아님, 파일명+한 줄 설명 카탈로그는 그 폴더 `README.md`). 동시에 이 인덱스에서 누락돼 있던 활성 문서 2개(`PLAY_FLOW_UX_REFACTORING_PLAN_260804_0553.md`, `DOMAIN_SEPARATION_REFACTORING_STATUS_260806_1304.md`)를 아래 표에 추가해 실제 파일 목록과의 드리프트를 바로잡았다. 상세는 "문서 이력" 절 참고.
 
 ## 하위 폴더 한눈에 보기
 
@@ -43,6 +44,7 @@
 | --- | --- | --- |
 | 2026-07-30 | `ARCHITECTURE.md`에서 go-ai-coach 파일/패키지 매핑 표를 걷어내고 원칙만 남김 | 이전 버전(계층별 구체 매핑 포함)은 `git log -p -- docs/ARCHITECTURE.md`로 확인. 매핑 내용 자체는 신설된 `GO_AI_COACH_ARCHITECTURE_ROADMAP.md`로 이전(그대로 복사가 아니라 새 7계층 경계에 맞게 재정리) |
 | 2026-08-05 | `docs/history/THREAD_HISTORY.md`를 압축 — 2026-05-31 날짜 헤더 하나 아래로 쌓여 있던 1,622줄 상세 로그를 "지난 히스토리 요약" 절(시기별 핵심만)로 대체하고, 이후로는 날짜 헤더마다 그 날의 요약만 짧게 추가하는 방식으로 전환 | 상세 원문은 `docs/archive/2026-08-05-thread-history-consolidation/THREAD_HISTORY_DETAIL_2026-05-31_to_2026-08-04.md`에 그대로 보존 |
+| 2026-08-06 | `docs/refactoring/`(완료된 시점 스냅샷·조사 문서 24개)와 `docs/working-260617/implementation_plan.md`(보드 크기 다중 지원 계획, 이미 구현됨)를 정리 — 아래 "리팩토링 전략/진행 로그" 표를 지금도 진행 로그가 쌓이는 활성 문서 6개만 남도록 축소 | 이동된 문서 전체와 파일별 한 줄 설명은 `docs/archive/2026-08-06-refactoring-log-consolidation/README.md`에 보존. `docs/working-260617/`는 파일 이동 후 빈 폴더라 제거 |
 
 이런 식으로 문서를 "재작성"할 때마다(내용을 들어내거나 구조를 바꿀 때) 이 표에 한 줄을 추가한다 — 파일을 지우지 않는다는 원칙과 같은 이유로, git 히스토리를 찾아볼 최소한의 단서(무엇이 언제 어디로 갔는지)를 남기기 위함이다.
 
@@ -74,26 +76,18 @@
 
 ## 리팩토링 전략/진행 로그
 
+2026-08-06 기준, 지금도 진행 로그가 쌓이는 **활성** 착수 계획서만 이 표에 남긴다. 완료됐거나 이후 문서에 결론이 흡수된 로그는 `archive/2026-08-06-refactoring-log-consolidation/README.md`에 파일명+한 줄 설명으로 정리돼 있다(삭제 아님, 이동만 함).
+
 | 위치 | 용도 |
 | --- | --- |
-| `refactoring/REFACTORING_STRATEGY_2026-06-08.md` | 현재 구조 평가와 다음 리팩토링 방향 |
-| `refactoring/DOMAIN_SEPARATION_REFACTORING_PLAN.md` | Engine Core API, Middleware Domain, Game UX 계층 분리 원칙과 단계별 리팩토링 절차 |
-| `refactoring/NEXT_REFACTORING_WORKLIST_2026-06-13.md`, `..._2026-06-14.md` | 날짜별 작업 리스트와 진행 로그 |
-| `refactoring/GAME_SESSION_CONTROLLER_CANDIDATES_2026-06-13.md` | `GoCoachApp.kt`의 display plan applier/reducer 이전 후보와 `GameSessionController` 도입 순서 |
-| `refactoring/SESSION_STATE_REFACTORING_WORKLIST_2026-06-13.md` | reducer state holder를 단일 source of truth로 승격하는 작업 리스트와 진행 로그 |
-| `refactoring/ENGINE_SEARCH_MODE_ROADMAP_2026-06-13.md` | GTP stateful fast path와 JSON position analysis 정책 분리 로드맵, 맥북/폰 벤치마크 원본 데이터 |
-| `refactoring/REFACTORING_COMPLETION_ASSESSMENT_2026-06-13.md` | 계층 분리 완성도 평가, 남은 리스크, 다음 리팩토링 추천 순서 |
-| `refactoring/ARCHITECTURE_IMPLEMENTATION_REVIEW_2026-06-27.md` | 2026-06-27 현재 코드/문서 기준선, 구현 상태 평가, Codex (low)도 수행 가능한 시급/중장기 리팩토링 계획 |
 | `refactoring/DOMAIN_SEPARATION_REFACTORING_KICKOFF_PLAN_260729_2315.md` | 2026-06-27 계획의 H-*/M-* 항목 완료 여부 재확인, 엔진 브릿지(Engine Core API)/조합(Middleware) 계층 구분 재검토, 신규 auth/premium 도메인의 계층 적합성 검증, 다음 배치(H-08~) 계획. "착수 계획서" 시분 타임스탬프 관례의 첫 문서 |
-| `refactoring/LAYERED_ARCHITECTURE_REFACTORING_PLAN_260803_1500.md` | 2026-07-30 재정립한 7계층 모델(`ARCHITECTURE.md`/`GO_AI_COACH_ARCHITECTURE_ROADMAP.md`)을 실제 코드에 단계적으로 반영하는 착수 계획서. Stage A(테스트 정합성)~F(물리적 분산·다른 기기 연산)까지 안전도 순 로드맵, 진행 로그 누적 중 |
+| `refactoring/DOMAIN_SEPARATION_REFACTORING_STATUS_260806_1304.md` | 위 KICKOFF_PLAN의 M-01/M-04 상태 재확인 + 정정(이식성 가드레일이 처음부터 `application/` 전체 범위였음, M-04 스모크 테스트 1개 실동작 추가). M-02/03/05~08은 재검증 안 됨 — KICKOFF_PLAN이 여전히 그 항목들의 유일한 상세 소스 |
+| `refactoring/LAYERED_ARCHITECTURE_REFACTORING_PLAN_260803_1500.md` | 2026-07-30 재정립한 7계층 모델(`ARCHITECTURE.md`/`GO_AI_COACH_ARCHITECTURE_ROADMAP.md`)을 실제 코드에 단계적으로 반영하는 착수 계획서. Stage A(테스트 정합성)~F(물리적 분산·다른 기기 연산)까지 안전도 순 로드맵. Stage B-2(premium/auth 남은 단계)는 AdMob/Play Console 콘솔 설정이 선행돼야 해서 보류 중, 진행 로그 누적 중 |
 | `refactoring/CODE_QUALITY_REFACTORING_PLAN_260803_2217.md` | 계층 경계와 무관한 일반 코드 품질 리팩토링 착수 계획서(위 문서와 별개, 일시 병행). 상수화/공통 코드 추출/도메인 분리/모듈화 4개 카테고리를 Stage A~D 안전도 순으로 정리, 진행 로그 누적 중 |
-| `refactoring/ENGINE_BRIDGE_MODULE_CONSOLIDATION_PLAN_260804_0005.md` | `EngineCoreApi`의 로컬/원격 구현체를 `engine-android` 모듈 하나로 물리적으로 통합(완료) — 향후 원격 서버/DePIN 확장의 근간. `RemotePositionAnalysisTransport` 계약을 `:shared`로 이동해 순환 의존 없이 로컬/원격이 같은 계약 공유 |
-| `refactoring/ARCHITECTURE_LAYERS_REVIEW_2026-06-14.md` | 7계층 모델 채택 검토본. 원문 초안은 `archive/2026-06-17-architecture-docs-rewrite/`로, 현재 canonical 요약은 `ARCHITECTURE.md` |
-| `refactoring/INTERNAL_GO_APP_PRODUCT_REVIEW_2026-06-15.md` | 외부 바둑 앱 관점 리뷰를 제품 정확성, 엔진 오케스트레이션, KMP 확장성 기준으로 재검토한 내부 판단 |
-| `refactoring/EXTERNAL_REVIEW_*`, `INTERNAL_*_REVIEW_*`, `INTERNAL_ARCHITECT_REVIEW_*` (2026-06-15) | 외부 아키텍처 점수 리뷰 원문과 내부 대응 판단 |
-| `refactoring/GO_COACH_APP_SPLIT_PLAN_2026-06-15.md`, `ORCHESTRATION_SPLIT_AND_KMP_MAP_2026-06-15.md`, `UI_STATE_HOLDER_BOUNDARY_2026-06-15.md`, `LAUNCHED_EFFECT_INVENTORY_2026-06-15.md`, `KMP_MOVE_SPIKE_2026-06-15.md` | `GoCoachApp.kt` 분리 작업의 세부 계획/조사 문서 |
+| `refactoring/ENGINE_BRIDGE_MODULE_CONSOLIDATION_PLAN_260804_0005.md` | `EngineCoreApi`의 로컬/원격 구현체를 `engine-android` 모듈 하나로 물리적으로 통합(완료) — 향후 원격 서버/DePIN 확장의 근간. `RemotePositionAnalysisTransport` 계약을 `:shared`로 이동해 순환 의존 없이 로컬/원격이 같은 계약 공유. 완료됐지만 위 LAYERED_ARCHITECTURE 계획의 하위 문서라 부모와 함께 유지 |
+| `refactoring/PLAY_FLOW_UX_REFACTORING_PLAN_260804_0553.md` | 플레이 흐름 UX 개편 착수 계획서 — 로그인 반복 버그 수정, 프리미엄 팝업 타이밍 정리, 대국설정 심플/콤팩트 화면 체계(`GameSetupUxMode`). 진행 로그 누적 중 |
 
-이 폴더는 날짜가 붙은 작업 로그가 계속 쌓이는 곳이다. 작업이 끝났다고 지우지 않고, 다음 리팩토링에 참고할 이력으로 남긴다.
+이 폴더는 날짜가 붙은 작업 로그가 계속 쌓이는 곳이다. 작업이 끝났다고 지우지 않고, 다음 리팩토링에 참고할 이력으로 남긴다 — 단, 위 표가 무한정 길어지지 않도록 진행 로그가 멈추고 결론이 흡수된 문서는 주기적으로 `archive/<날짜>-<사유>/`로 옮기고 이 표에서 뺀다(2026-08-06에 처음 적용, "문서 이력" 절 참고).
 
 ## 엔진 검증/연구 리뷰
 
@@ -121,6 +115,7 @@
 | `archive/2026-06-17-architecture-docs-rewrite/` | `ARCHITECTURE.md` 신설로 대체된 `ARCHITECTURE_LAYERS_ANALYSIS.md` 초안 |
 | `archive/2026-06-17-early-decisions/` | 프로젝트 초기(2026-05-31~06-10) 의사결정/비전 문서. `STACK_DECISION.md`(KMP 최초 선택), `FUTURE_ARCHITECTURE_VISION.md`(초기 장기 비전 초안), `KATRAIN_UX_BACKLOG.md`(미착수 UX 후보 목록) — 모두 현재 핵심 문서(`ARCHITECTURE.md`/`OPERATIONS.md`)가 핵심 결론만 흡수했고, 원문은 근거 자료로 남긴다 |
 | `archive/2026-08-05-thread-history-consolidation/` | `docs/history/THREAD_HISTORY.md` 압축 전 원문(2026-05-31~08-04, 1,622줄) 전체 보존. 압축본은 `THREAD_HISTORY.md`의 "지난 히스토리 요약" 절 |
+| `archive/2026-08-06-refactoring-log-consolidation/` | `docs/refactoring/`에서 완료·흡수된 문서 24개 + `docs/working-260617/implementation_plan.md`(구현 완료된 보드 크기 다중 지원 계획) 보존. 폴더 자체 `README.md`에 파일명+한 줄 설명 전체 카탈로그 |
 
 ## 데이터 로그
 

@@ -23,10 +23,10 @@
 ## 2. 검토한 기존 문서 (재사용 근거)
 
 - **`docs/ARCHITECTURE.md`** (2026-06-17 작성, 2026-06-28 최종 갱신) — 7계층 구조의 canonical 현재 문서. 이 계획서의 1차 근거.
-- **`docs/refactoring/DOMAIN_SEPARATION_REFACTORING_PLAN.md`** (2026-06-12) — 7계층 분리 원칙의 원문(origin) 문서.
-- **`docs/refactoring/REFACTORING_STRATEGY_2026-06-08.md`** — "브릿지 vs 조합" 구분이 최초로 등장한 문서(2026-06-12 addendum).
-- **`docs/refactoring/ARCHITECTURE_LAYERS_REVIEW_2026-06-14.md`** — 아카이브된 초안(`archive/2026-06-17-architecture-docs-rewrite/ARCHITECTURE_LAYERS_ANALYSIS.md`)에 대한 검토본. 완성도 과장을 지적한 교정 문서.
-- **`docs/refactoring/ARCHITECTURE_IMPLEMENTATION_REVIEW_2026-06-27.md`** — 직전 리팩토링 착수 계획서(날짜 단위). 이번 문서는 이 문서의 **후속(다음 배치) 문서**다 — 3~5절에서 그 문서의 각 항목을 재확인한다.
+- **`DOMAIN_SEPARATION_REFACTORING_PLAN.md`** (2026-06-12, 2026-08-06부터 `docs/archive/2026-08-06-refactoring-log-consolidation/`) — 7계층 분리 원칙의 원문(origin) 문서.
+- **`REFACTORING_STRATEGY_2026-06-08.md`** (2026-08-06부터 `docs/archive/2026-08-06-refactoring-log-consolidation/`) — "브릿지 vs 조합" 구분이 최초로 등장한 문서(2026-06-12 addendum).
+- **`ARCHITECTURE_LAYERS_REVIEW_2026-06-14.md`** (2026-08-06부터 `docs/archive/2026-08-06-refactoring-log-consolidation/`) — 아카이브된 초안(`archive/2026-06-17-architecture-docs-rewrite/ARCHITECTURE_LAYERS_ANALYSIS.md`)에 대한 검토본. 완성도 과장을 지적한 교정 문서.
+- **`ARCHITECTURE_IMPLEMENTATION_REVIEW_2026-06-27.md`** (2026-08-06부터 `docs/archive/2026-08-06-refactoring-log-consolidation/`) — 직전 리팩토링 착수 계획서(날짜 단위). 이번 문서는 이 문서의 **후속(다음 배치) 문서**다 — 3~5절에서 그 문서의 각 항목을 재확인한다.
 - **`app-android/src/test/java/com/worksoc/goaicoach/architecture/LayeringContractTest.kt`** (1,260줄, 41개 `@Test`) — 위 문서들이 정의한 경계를 실제로 강제하는 회귀 테스트.
 
 ### 2.1. 확정된 용어 (그대로 재사용)
@@ -64,7 +64,7 @@ Core Rules Domain    Engine Core API Domain     (3계층, 2계층)
 
 ## 3. 2026-07-29 기준선 재확인
 
-`docs/refactoring/ARCHITECTURE_IMPLEMENTATION_REVIEW_2026-06-27.md`가 남긴 기준선과 비교한다. 검증 명령: `make test` (성공).
+`ARCHITECTURE_IMPLEMENTATION_REVIEW_2026-06-27.md`(2026-08-06부터 `docs/archive/2026-08-06-refactoring-log-consolidation/`)가 남긴 기준선과 비교한다. 검증 명령: `make test` (성공).
 
 | 항목 | 2026-06-27 | 2026-07-29 | 비고 |
 | --- | ---: | ---: | --- |
