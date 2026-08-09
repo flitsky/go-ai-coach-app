@@ -145,7 +145,7 @@ Step 1~2는 이미 구현됐고(`application/premium/PremiumState.kt`가 순수 
 | Step 1 | 프리미엄 상태값 관리 인프라 | ✅ 완료 (2026-07-28) — `application/premium/PremiumState.kt` + 단위 테스트 |
 | Step 2 | 대국 시작 팝업 (스텁, 광고 없음) | ✅ 완료 (2026-07-28) — 홈 화면 팝업 + 인게임 잠긴 버튼 업셀까지 포함, `make test` 통과 |
 | Step 3 | 광고 노출 기능 연동 (Google) | ✅ 완료 (2026-08-05) — AdMob 리워드 광고 실연동(테스트 광고 단위), `make test` 통과, 에뮬레이터 실측 |
-| Step 4 | 프리미엄 영구 활성화 아이템 (Google) | ✅ 완료 (2026-08-06) — Google Play Billing 9.1.0 실연동, `make test` 통과, 에뮬레이터 실측(등록 전 상품 조회 실패 경로까지). **단, Play Console 상품 등록·라이선스 테스터 설정은 사용자 측 후속 작업으로 아직 미완료** — 실제 결제 완료/재설치 복원 플로우의 최종 확인은 그 이후 별도 진행 |
+| Step 4 | 프리미엄 영구 활성화 아이템 (Google) | ✅ 완료 (2026-08-06 코드, 2026-08-09 Play Console 설정 + 실기 검증까지 전부 완료) — Google Play Billing 9.1.0 실연동. Play Console에 비소모성 상품 `premium_lifetime`("프리미엄 영구 해제", ₩9,900) 등록·활성화, 라이선스 테스터 등록, 내부 테스트 트랙 AAB 업로드까지 모두 완료된 상태를 2026-08-09에 재확인했고, 같은 날 라이선스 테스터 계정으로 (a) 실제 구매 완료 (b) 재설치(로그인 없는 게스트) 후 자동 복원 두 플로우 모두 실기(에뮬레이터)에서 end-to-end 확인. 아래 "2026-08-09 확인" 절 참고 |
 
 ### Step 1+2 구현 메모 (2026-07-28)
 - `LocalPremiumUiState`(CompositionLocal, `LocalUiStrings`와 동일 패턴)로 화면 트리 전역에 `isActive`/`activateForMatch`를 공급 — 각 게이팅 지점에 별도 파라미터를 추가하지 않고 `LocalPremiumUiState.current`만 읽으면 되도록 함.
@@ -256,5 +256,29 @@ Step 1~2는 이미 구현됐고(`application/premium/PremiumState.kt`가 순수 
   - **에뮬레이터 실측**(`Pixel_7_API_35`, `emulator-5554`): (1) **앱 시작 복원** — 로그에 `premium_purchase_restore_not_found`(reason=NotFound) 정상 기록, 크래시 없음. (2) **구매 버튼 실제 연동 확인** — 미등록 플레이스홀더 상품 ID로 실제 Play Billing에 연결 후 상품 조회 실패 → `premium_purchase_not_completed`(reason=ProductUnavailable) 로그 + "구매가 완료되지 않아..." 토스트 정상 노출, 팝업 유지(재시도 가능), 크래시 없음. (3) **개발자 토글 유지 확인** — 토글로 영구 구매 상태를 켠 뒤 앱을 강제 종료·재시작해도 복원 조회가 그 상태를 되돌리지 않음(`premium_purchase_restore_not_found`가 다시 기록되지만 로컬 Purchase 상태·"대국 시작하기" 버튼의 👑∞ 표시는 그대로 유지)을 확인 — "복원은 다운그레이드하지 않는다" 설계가 실제로 의도대로 동작함을 검증. (4) 기존 광고 시청 경로(Step 3)는 이번 변경으로 건드리지 않았고, 실제로 이전 세션에서 부여된 광고 기반 활성화(카운트다운 배지)가 그대로 남아있는 것도 확인했다.
   - **실 구매 완료/재설치 복원 플로우는 이번 범위에서 검증하지 못함** — Play Console에 상품이 아직 없고 라이선스 테스터 계정도 없어, "결제 성공 → `Purchased` 반환 → 영구 활성화" 경로 자체는 코드 리뷰 + 위 유닛 테스트로만 커버했다. 사용자가 등록을 마치면 `local.properties`에 실제 상품 ID를 추가한 뒤, 라이선스 테스터 계정으로 실 기기/에뮬레이터에서 (a) 신규 구매 완료, (b) 앱 재설치 후 자동 복원 두 플로우를 마저 확인해야 한다.
 - **신규 파일**: `application/premium/PurchasePort.kt`, `application/premium/PremiumPurchaseApplication.kt`, `ui/AndroidBillingClient.kt`, `ui/PremiumPurchaseGlue.kt`, `app-android/src/test/.../application/PremiumPurchaseApplicationTest.kt`.
+
+### Step 4 후속 — Play Console 설정 실제 상태 재확인 + 실기 구매/복원 e2e 검증 (2026-08-09)
+
+- **배경**: 위 2026-08-06 로그는 "Play Console에 상품이 아직 없고 라이선스 테스터 계정도 없다"고 기록했지만, 출시 준비 마무리 세션에서 Claude in Chrome으로 Play Console(`play.google.com/console`, 계정 `flit9sky@gmail.com`, 개발자 ID `6220696780099532887`)에 직접 접속해 확인한 결과 **이미 전부 완료돼 있었다** — 8/6 로그 이후 별도 세션에서 진행되고 문서에 반영되지 않은 상태였다.
+- **Play Console 확인 사실**:
+  - `premium-mode/README.md` Step 4가 참조하는 상품 `premium_lifetime`("프리미엄 영구 해제")이 **일회성 제품**으로 등록되어 있고, 구매 옵션 `premium-lifetime-purchase`가 **활성** 상태 — 173개 국가/지역에 가격 책정 완료(대한민국 ₩9,900, VAT 없음), 최근 업데이트 2026-08-06.
+  - **내부 테스트** 트랙에 AAB 버전 2(0.1.1)가 게시됨(2026-08-06 17:07), 테스터 이메일 목록에 `flit9sky@gmail.com` 포함.
+  - **라이선스 테스트**(설정 → 라이선스 테스트)에서 위와 동일한 "내부 테스트용 이메일 목록"이 라이선스 테스터 목록으로 이미 선택돼 있음 — 즉 `flit9sky@gmail.com`으로 로그인된 기기의 Play Billing 구매는 전부 "Test card, always approves"로 처리되는 무과금 테스트 주문이 된다.
+  - `local.properties`의 `billing.premiumProductId`도 8/6 시점에 이미 실제 값 `premium_lifetime`로 채워져 있었다(더 이상 플레이스홀더가 아님) — 코드 변경은 필요 없었다.
+- **동시에 발견한 별개 미커밋 작업**: `Makefile`/`app-android/build.gradle.kts`에 Play Console 업로드용 `playInternal` 빌드 타입(release keystore 서명, `make play-internal-aab` 타겟)이 추가돼 있었으나 커밋되지 않은 상태였다 — 위 내부 테스트 AAB(8/6 게시분)를 만드는 데 실제로 쓰인 것으로 보인다. 이 문서 갱신과 별개로 사용자 확인 후 커밋 여부를 결정한다.
+- **실기 e2e 검증**(`Pixel_7_API_35`, `emulator-5554`, Google 계정 `flit9sky@gmail.com` 로그인 상태 — 라이선스 테스터와 일치 확인 후 진행):
+  - **(a) 실제 구매 완료**: 앱 데이터 초기화 후 게스트로 진입 → 대국 설정 화면 프리미엄 카드 → 업셀 팝업 → "프리미엄 영구 활성화(결제)" → 실제 Play Billing 구매 시트가 "Test card, always approves" / "This is a test order, you will not be charged" 문구와 함께 뜸(라이선스 테스터로 처리되는 것을 시트에서 직접 확인) → 1-tap buy → "Payment successful" → 앱 UI가 즉시 👑`∞` 뱃지로 전환됨을 확인.
+  - **(b) 재설치 후 자동 복원(로그인 없는 사용자)**: 위 구매 직후 앱 데이터를 다시 초기화(재설치와 동일한 로컬 상태)하고 재실행 → 온보딩에서 **로그인하지 않고** "계정 없이 시작하기"로 게스트 진입 → 홈 → 대국 설정 화면에 진입한 순간 별도 조작 없이 곧바로 👑`∞` 뱃지가 표시됨. `PremiumPurchaseRestoreEffect`가 앱 시작 시 Firebase/게스트 인증 상태와 무관하게 Play Billing 소유 구매를 조회해 자동 반영한다는 설계가 실제로 로그인 없는 사용자에게도 그대로 동작함을 확인했다.
+  - 두 플로우 모두 크래시 없음. 이로써 2026-08-06 로그의 "실 구매 완료/재설치 복원 플로우는 검증하지 못함" 남은 갭이 해소됐다.
+- **결론**: Step 4는 코드·Play Console 설정·실기 검증까지 전부 완료됐다. 남은 것은 실제 서비스 오픈(스토어 공개 출시) 시점의 일반 절차(스토어 등록정보, 콘텐츠 등급, 프로덕션 트랙 승급 등)뿐이며 이는 Step 4의 범위가 아니다.
+
+### 배너 광고 재노출 위치 — 보류 결정 (2026-08-09)
+
+- 2026-08-08에 홈 화면 하단 배너 광고 호출부를 임시 제거한 뒤(`BannerAdView.kt`/`AdUnitIds.kt` 등 인프라는 그대로 유지, 커밋 `59d880c`), 재노출 위치를 이 세션에서 사용자에게 확인했다.
+- **결정**: 출시 시점엔 배너 광고를 노출하지 않는다. 향후 "대국 복기하기"(기보 복기) 기능이 추가되는 시점에 그 화면에 배너를 넣을 예정 — 지금 다시 판단할 필요 없이 그 기능 착수 시 함께 결정한다.
+
+### 업셀 팝업 버튼 순서/강조 — 현행 유지 확정 (2026-08-09)
+
+- `PremiumUpsellDialog`(`ui/PremiumUiState.kt`)의 현재 순서(광고 시청=강조된 주 버튼 → 결제=보조 버튼 → 아니오)를 사용자에게 재확인한 결과, 의도적인 배치로 그대로 유지하기로 확정했다. 코드 변경 없음.
 
 이 문서는 각 단계 착수/완료 시점마다 위 마일스톤 표의 상태와 관련 섹션을 갱신하며, 완료된 단계도 지우지 않고 이력으로 남깁니다.
