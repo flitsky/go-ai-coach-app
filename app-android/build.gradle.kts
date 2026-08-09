@@ -107,6 +107,12 @@ android {
             buildConfigField("String", "BANNER_AD_UNIT_ID", "\"$testBannerAdUnitId\"")
         }
         getByName("release") {
+            // playInternal과 동일한 Play Console 업로드용 release keystore로 서명한다 — 이 줄이
+            // 없으면 signingConfig가 지정되지 않아 bundleRelease/assembleRelease 결과물이
+            // 조용히 서명되지 않은 채로 나온다(AGP는 release 빌드타입에 서명을 자동 적용하지
+            // 않음). local.properties에 release.* 키가 없으면(키스토어 미생성) 서명 없이
+            // 빌드되어 이 빌드도 실패한다 — playInternal과 같은 전제조건.
+            signingConfig = signingConfigs.getByName("release")
             // local.properties에 실제 값이 아직 없으면(미등록 상태) release 빌드도 안전하게 테스트
             // 값으로 폴백한다 — "테스트해야 하는데 실제 광고가 나가는" 상황보다 "출시용인데 테스트
             // 광고가 나가는" 상황(눈에 바로 띄는 버그)이 훨씬 덜 위험하기 때문.
@@ -159,6 +165,14 @@ android {
             jniLibs.srcDirs("src/debug/jniLibs")
         }
         getByName("playInternal") {
+            assets.srcDirs("src/friend/assets")
+            jniLibs.srcDirs("src/debug/jniLibs")
+        }
+        getByName("release") {
+            // 별도로 검증된 "release 전용" KataGo 엔진 바이너리를 새로 준비하지 않는다(사용자
+            // 결정, 2026-08-09) — friend/playInternal과 동일하게 이미 검증된 debug 엔진 .so와
+            // 모델/설정 에셋을 그대로 재사용한다. 스토어에 올리는 AAB/APK가 설치 후 별도
+            // adb push(seed-engine) 없이도 자체적으로 동작해야 하므로 앱마켓 배포에는 필수다.
             assets.srcDirs("src/friend/assets")
             jniLibs.srcDirs("src/debug/jniLibs")
         }

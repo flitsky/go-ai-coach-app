@@ -13,7 +13,6 @@ APP_NAMESPACE := $(shell grep -m1 'namespace = ' app-android/build.gradle.kts | 
 
 ENGINE_ABI ?= arm64-v8a
 DEBUG_ENGINE_BINARY := app-android/src/debug/jniLibs/$(ENGINE_ABI)/libkatago.so
-RELEASE_ENGINE_BINARY := app-android/src/main/jniLibs/$(ENGINE_ABI)/libkatago.so
 FRIEND_ASSET_DIR := app-android/src/friend/assets/katago
 FRIEND_APK := dist/go-ai-coach-katago-friend.apk
 PLAY_INTERNAL_AAB := dist/go-ai-coach-play-internal.aab
@@ -39,7 +38,7 @@ export JAVA_HOME
 
 .DEFAULT_GOAL := help
 
-.PHONY: help doctor test dev dev-stub install-dev install-dev-engine reinstall-dev-engine seed-engine launch friend-apk play-internal-aab bundle-aab prepare-friend-assets engine-level-benchmark engine-device-benchmark engine-search-mode-benchmark engine-search-mode-benchmark-phone release ensure-debug-engine ensure-release-engine prebuild-engine clean
+.PHONY: help doctor test dev dev-stub install-dev install-dev-engine reinstall-dev-engine seed-engine launch friend-apk play-internal-aab bundle-aab prepare-friend-assets engine-level-benchmark engine-device-benchmark engine-search-mode-benchmark engine-search-mode-benchmark-phone release ensure-debug-engine prebuild-engine clean
 
 help:
 	@echo "=========================================================================="
@@ -130,11 +129,13 @@ play-internal-aab: doctor ensure-debug-engine prepare-friend-assets
 	@ls -lh "$(PLAY_INTERNAL_AAB)"
 	@shasum -a 256 "$(PLAY_INTERNAL_AAB)"
 
-# play-internal-aab과 달리 실제 release 빌드 타입을 그대로 번들링한다 — 진짜 release KataGo
-# 엔진(ensure-release-engine, release 타겟과 동일 전제조건)과 local.properties의 실제
-# AdMob/Play Billing 값을 쓴다. Play Console 정식 공개 출시(프로덕션 트랙) 업로드용 — 내부
-# 테스트 트랙에는 빠른 반복이 필요하므로 계속 play-internal-aab을 쓴다.
-bundle-aab: doctor ensure-release-engine
+# play-internal-aab과 달리 실제 release 빌드 타입을 그대로 번들링한다 — local.properties의 실제
+# AdMob/Play Billing 값을 쓴다는 점이 다르지만, KataGo 엔진/모델 에셋은 friend/playInternal과
+# 동일하게 이미 검증된 debug 엔진을 재사용한다(별도 "release 전용" 엔진을 새로 준비하지 않기로
+# 결정, app-android/build.gradle.kts의 release sourceSets 참고). Play Console 정식 공개
+# 출시(프로덕션 트랙) 업로드용 — 내부 테스트 트랙에는 빠른 반복이 필요하므로 계속
+# play-internal-aab을 쓴다.
+bundle-aab: doctor ensure-debug-engine prepare-friend-assets
 	$(GRADLEW) :app-android:bundleRelease
 	@mkdir -p dist
 	@cp app-android/build/outputs/bundle/release/app-android-release.aab "$(RELEASE_AAB)"
@@ -165,20 +166,13 @@ prepare-friend-assets:
 	@cp "$(FRIEND_ANALYSIS_CONFIG_PATH)" "$(FRIEND_ASSET_DIR)/analysis_learning.cfg"
 	@echo "Prepared friend APK assets in $(FRIEND_ASSET_DIR)"
 
-release: doctor ensure-release-engine
+release: doctor ensure-debug-engine prepare-friend-assets
 	$(GRADLEW) :app-android:assembleRelease
 
 ensure-debug-engine:
 	@test -f "$(DEBUG_ENGINE_BINARY)" || ( \
 		echo "Missing debug engine artifact: $(DEBUG_ENGINE_BINARY)"; \
 		echo "Run 'make prebuild-engine' to build the pinned local artifact, or use 'make dev-stub' for stub-only UI work."; \
-		exit 2; \
-	)
-
-ensure-release-engine:
-	@test -f "$(RELEASE_ENGINE_BINARY)" || ( \
-		echo "Missing release engine artifact: $(RELEASE_ENGINE_BINARY)"; \
-		echo "Release builds must use a prepared and verified engine artifact. Run the release artifact preparation flow before 'make release'."; \
 		exit 2; \
 	)
 
