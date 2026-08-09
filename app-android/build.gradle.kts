@@ -51,6 +51,21 @@ val realBannerAdUnitId: String? = localProperties.getProperty("admob.bannerAdUni
 val premiumProductId: String =
     localProperties.getProperty("billing.premiumProductId") ?: "premium_lifetime_placeholder"
 
+// versionCode/versionName은 저장소 루트의 version.properties(커밋 대상 — local.properties와
+// 달리 비밀값이 아니라 "지금까지 몇 번 릴리스했는지"를 나타내는 공유 상태다)에서 읽는다.
+// `make release`/`make bundle-aab`/`make play-internal-aab`이 Gradle을 부르기 전에
+// `scripts/bump-version.sh`로 이 파일을 먼저 갱신한다 — Play Console은 한 번 쓴 versionCode를
+// 절대 재사용할 수 없어서(재시도 업로드마다 실제로 증가해야 함), 매 릴리스 빌드마다 자동으로
+// 증가시키는 쪽이 사람이 수동으로 두 값을 맞춰 올리는 것보다 안전하다.
+val versionProperties = Properties().apply {
+    val versionPropertiesFile = rootProject.file("version.properties")
+    if (versionPropertiesFile.exists()) {
+        versionPropertiesFile.inputStream().use { load(it) }
+    }
+}
+val appVersionCode: Int = versionProperties.getProperty("VERSION_CODE")?.toInt() ?: 1
+val appVersionName: String = versionProperties.getProperty("VERSION_NAME") ?: "0.1.0"
+
 android {
     namespace = "com.worksoc.goaicoach"
     compileSdk = 35
@@ -62,8 +77,8 @@ android {
         applicationId = "com.zenit9hub.ai.baduk"
         minSdk = 26
         targetSdk = 35
-        versionCode = 2
-        versionName = "0.1.1"
+        versionCode = appVersionCode
+        versionName = appVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 

@@ -33,12 +33,17 @@ ENGINE_PHONE_BENCHMARK_SERIAL ?= $(ANDROID_SERIAL)
 ENGINE_PHONE_SEARCH_MODE_BENCHMARK_OUT ?= docs/engine-benchmark-logs/search-mode-phone-latest
 ENGINE_PHONE_SEARCH_MODE_BENCHMARK_ARGS ?= --time-cap-ms 10000
 
+# release/play-internal-aab/bundle-aab 실행 시 `make bundle-aab VERSION=0.2.0`처럼 넘기면
+# version.properties의 VERSION_NAME이 그 값으로 바뀐다. 비워두면(기본값) 패치 자리만 1
+# 증가한다 — 두 경우 모두 VERSION_CODE는 항상 1 증가한다(scripts/bump-version.sh 참고).
+VERSION ?=
+
 export ANDROID_HOME
 export JAVA_HOME
 
 .DEFAULT_GOAL := help
 
-.PHONY: help doctor test dev dev-stub install-dev install-dev-engine reinstall-dev-engine seed-engine launch friend-apk play-internal-aab bundle-aab prepare-friend-assets engine-level-benchmark engine-device-benchmark engine-search-mode-benchmark engine-search-mode-benchmark-phone release ensure-debug-engine prebuild-engine clean
+.PHONY: help doctor test dev dev-stub install-dev install-dev-engine reinstall-dev-engine seed-engine launch friend-apk play-internal-aab bundle-aab bump-version prepare-friend-assets engine-level-benchmark engine-device-benchmark engine-search-mode-benchmark engine-search-mode-benchmark-phone release ensure-debug-engine prebuild-engine clean
 
 help:
 	@echo "=========================================================================="
@@ -64,6 +69,8 @@ help:
 	@echo "  make bundle-aab          - Build release-signed AAB (real release engine + assets) for production Play Console upload"
 	@echo "  make prebuild-engine     - Compile native KataGo engine binary (libkatago.so)"
 	@echo "  make release             - Assemble Release APK"
+	@echo "                             (release/play-internal-aab/bundle-aab all bump version.properties first;"
+	@echo "                              pass VERSION=x.y.z to set an exact version, otherwise the patch digit +1)"
 	@echo "  make clean               - Clean Gradle build outputs"
 	@echo ""
 	@echo " [Benchmarks]"
@@ -118,11 +125,18 @@ friend-apk: doctor ensure-debug-engine prepare-friend-assets
 	@ls -lh "$(FRIEND_APK)"
 	@shasum -a 256 "$(FRIEND_APK)"
 
+# version.properties의 VERSION_CODE를 1 증가시킨다(Play Console은 한 번 올린 versionCode를
+# 절대 재사용할 수 없다 — "이미 사용된 버전 코드" 오류를 구조적으로 방지). VERSION_NAME은
+# VERSION= 인자가 있으면 그 값, 없으면 패치 자리만 1 증가한다. release/play-internal-aab/
+# bundle-aab 셋 다 이 타겟을 거쳐 항상 최신 미사용 버전으로 빌드된다.
+bump-version:
+	@./scripts/bump-version.sh "$(VERSION)"
+
 # playInternal은 friend와 같은 debug KataGo 엔진/에셋을 재사용하지만 release keystore로
 # 서명한다(premium-mode/README.md Step 4 후속 — Play Console 인앱 상품 등록에는 결제 권한이
 # 포함된 서명된 빌드 업로드가 선행 조건). local.properties의 release.* 키가 없으면 서명 없이
 # 빌드되어 이 타겟이 실패한다.
-play-internal-aab: doctor ensure-debug-engine prepare-friend-assets
+play-internal-aab: doctor bump-version ensure-debug-engine prepare-friend-assets
 	$(GRADLEW) :app-android:bundlePlayInternal
 	@mkdir -p dist
 	@cp app-android/build/outputs/bundle/playInternal/app-android-playInternal.aab "$(PLAY_INTERNAL_AAB)"
@@ -135,7 +149,7 @@ play-internal-aab: doctor ensure-debug-engine prepare-friend-assets
 # 결정, app-android/build.gradle.kts의 release sourceSets 참고). Play Console 정식 공개
 # 출시(프로덕션 트랙) 업로드용 — 내부 테스트 트랙에는 빠른 반복이 필요하므로 계속
 # play-internal-aab을 쓴다.
-bundle-aab: doctor ensure-debug-engine prepare-friend-assets
+bundle-aab: doctor bump-version ensure-debug-engine prepare-friend-assets
 	$(GRADLEW) :app-android:bundleRelease
 	@mkdir -p dist
 	@cp app-android/build/outputs/bundle/release/app-android-release.aab "$(RELEASE_AAB)"
@@ -166,7 +180,7 @@ prepare-friend-assets:
 	@cp "$(FRIEND_ANALYSIS_CONFIG_PATH)" "$(FRIEND_ASSET_DIR)/analysis_learning.cfg"
 	@echo "Prepared friend APK assets in $(FRIEND_ASSET_DIR)"
 
-release: doctor ensure-debug-engine prepare-friend-assets
+release: doctor bump-version ensure-debug-engine prepare-friend-assets
 	$(GRADLEW) :app-android:assembleRelease
 
 ensure-debug-engine:
