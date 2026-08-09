@@ -62,8 +62,8 @@ android {
         applicationId = "com.zenit9hub.ai.baduk"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "0.1.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -80,6 +80,21 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+    }
+
+    signingConfigs {
+        // Play Console 업로드용 release keystore(~/.android/, 저장소 밖 — local.properties의
+        // release.* 4개 키로 주입). 값이 없으면(키스토어 미생성 상태) storeFile을 세팅하지 않아
+        // playInternal을 실제로 빌드하기 전까지는 make test/make dev에 영향이 없다.
+        create("release") {
+            val storeFilePath = localProperties.getProperty("release.storeFile")
+            if (storeFilePath != null) {
+                storeFile = file(storeFilePath)
+                storePassword = localProperties.getProperty("release.storePassword")
+                keyAlias = localProperties.getProperty("release.keyAlias")
+                keyPassword = localProperties.getProperty("release.keyPassword")
+            }
+        }
     }
 
     buildTypes {
@@ -119,10 +134,31 @@ android {
             buildConfigField("String", "REWARDED_INTERSTITIAL_AD_UNIT_ID", "\"$testRewardedInterstitialAdUnitId\"")
             buildConfigField("String", "BANNER_AD_UNIT_ID", "\"$testBannerAdUnitId\"")
         }
+        create("playInternal") {
+            // Play Console 업로드 전용(premium-mode/README.md Step 4 후속) — friend와 완전히
+            // 같은 debug KataGo 엔진/에셋(release 엔진 준비 불필요)을 쓰지만, release keystore로
+            // 서명해 Play Console 내부 테스트 트랙에 올릴 수 있게 한다. friend 자체는 건드리지
+            // 않는다(지인 배포용 debug 서명 그대로 유지).
+            initWith(getByName("friend"))
+            matchingFallbacks += listOf("debug")
+            signingConfig = signingConfigs.getByName("release")
+            // friend는 debug에서 initWith해 isDebuggable=true를 그대로 물려받는다 — 사이드로드만
+            // 하는 friend에는 문제없지만, Play Console은 debuggable 빌드 업로드 시 게시 전 반드시
+            // 꺼야 한다고 경고한다. playInternal만 명시적으로 false로 되돌린다.
+            isDebuggable = false
+            manifestPlaceholders["admobAppId"] = testAdmobAppId
+            buildConfigField("boolean", "USE_TEST_ADS", "true")
+            buildConfigField("String", "REWARDED_INTERSTITIAL_AD_UNIT_ID", "\"$testRewardedInterstitialAdUnitId\"")
+            buildConfigField("String", "BANNER_AD_UNIT_ID", "\"$testBannerAdUnitId\"")
+        }
     }
 
     sourceSets {
         getByName("friend") {
+            assets.srcDirs("src/friend/assets")
+            jniLibs.srcDirs("src/debug/jniLibs")
+        }
+        getByName("playInternal") {
             assets.srcDirs("src/friend/assets")
             jniLibs.srcDirs("src/debug/jniLibs")
         }

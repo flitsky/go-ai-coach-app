@@ -16,6 +16,7 @@ DEBUG_ENGINE_BINARY := app-android/src/debug/jniLibs/$(ENGINE_ABI)/libkatago.so
 RELEASE_ENGINE_BINARY := app-android/src/main/jniLibs/$(ENGINE_ABI)/libkatago.so
 FRIEND_ASSET_DIR := app-android/src/friend/assets/katago
 FRIEND_APK := dist/go-ai-coach-katago-friend.apk
+PLAY_INTERNAL_AAB := dist/go-ai-coach-play-internal.aab
 FRIEND_MODEL_PATH ?= /opt/homebrew/Cellar/katago/1.16.4/share/katago/kata1-b18c384nbt-s9996604416-d4316597426.bin.gz
 FRIEND_CONFIG_PATH ?= /Users/ryan9kim/worksoc/katago/config/katago/gtp_learning.cfg
 FRIEND_ANALYSIS_CONFIG_PATH ?= /Users/ryan9kim/worksoc/katago/config/katago/analysis_learning.cfg
@@ -37,7 +38,7 @@ export JAVA_HOME
 
 .DEFAULT_GOAL := help
 
-.PHONY: help doctor test dev dev-stub install-dev install-dev-engine reinstall-dev-engine seed-engine launch friend-apk prepare-friend-assets engine-level-benchmark engine-device-benchmark engine-search-mode-benchmark engine-search-mode-benchmark-phone release ensure-debug-engine ensure-release-engine prebuild-engine clean
+.PHONY: help doctor test dev dev-stub install-dev install-dev-engine reinstall-dev-engine seed-engine launch friend-apk play-internal-aab prepare-friend-assets engine-level-benchmark engine-device-benchmark engine-search-mode-benchmark engine-search-mode-benchmark-phone release ensure-debug-engine ensure-release-engine prebuild-engine clean
 
 help:
 	@echo "=========================================================================="
@@ -59,6 +60,7 @@ help:
 	@echo ""
 	@echo " [Build & Engine Prebuild]"
 	@echo "  make friend-apk          - Build Friend APK with bundled KataGo assets"
+	@echo "  make play-internal-aab   - Build release-signed AAB for Play Console internal testing"
 	@echo "  make prebuild-engine     - Compile native KataGo engine binary (libkatago.so)"
 	@echo "  make release             - Assemble Release APK"
 	@echo "  make clean               - Clean Gradle build outputs"
@@ -114,6 +116,17 @@ friend-apk: doctor ensure-debug-engine prepare-friend-assets
 	@cp app-android/build/outputs/apk/friend/app-android-friend.apk "$(FRIEND_APK)"
 	@ls -lh "$(FRIEND_APK)"
 	@shasum -a 256 "$(FRIEND_APK)"
+
+# playInternal은 friend와 같은 debug KataGo 엔진/에셋을 재사용하지만 release keystore로
+# 서명한다(premium-mode/README.md Step 4 후속 — Play Console 인앱 상품 등록에는 결제 권한이
+# 포함된 서명된 빌드 업로드가 선행 조건). local.properties의 release.* 키가 없으면 서명 없이
+# 빌드되어 이 타겟이 실패한다.
+play-internal-aab: doctor ensure-debug-engine prepare-friend-assets
+	$(GRADLEW) :app-android:bundlePlayInternal
+	@mkdir -p dist
+	@cp app-android/build/outputs/bundle/playInternal/app-android-playInternal.aab "$(PLAY_INTERNAL_AAB)"
+	@ls -lh "$(PLAY_INTERNAL_AAB)"
+	@shasum -a 256 "$(PLAY_INTERNAL_AAB)"
 
 engine-level-benchmark:
 	python3 scripts/run-katago-level-matrix.py --games-per-matchup "$(ENGINE_MATCH_GAMES)" --out-dir "$(ENGINE_MATCH_OUT)" $(ENGINE_MATCH_ARGS)
