@@ -16,12 +16,15 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,6 +37,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException
 import com.google.firebase.auth.FirebaseAuthWeakPasswordException
 import com.worksoc.goaicoach.BuildConfig
 import com.worksoc.goaicoach.application.auth.AuthClientPort
@@ -76,7 +80,31 @@ internal fun SettingsScreen(
     var authState by remember { mutableStateOf(authClient.currentAuthState()) }
     var showEmailDialog by remember { mutableStateOf(false) }
     var isEmailSubmitting by remember { mutableStateOf(false) }
+    var showDeleteAccountDialog by remember { mutableStateOf(false) }
+    var isDeletingAccount by remember { mutableStateOf(false) }
     val hasRealAccount = authState.provider == AuthProvider.Google || authState.provider == AuthProvider.Email
+
+    fun deleteAccount() {
+        isDeletingAccount = true
+        scope.launch {
+            val result = attemptAccountDeletion(authClient, diagnosticEventLog)
+            isDeletingAccount = false
+            result
+                .onSuccess {
+                    showDeleteAccountDialog = false
+                    authState = authClient.currentAuthState()
+                    Toast.makeText(context, strings.settingsDeleteAccountSuccessMessage, Toast.LENGTH_SHORT).show()
+                }
+                .onFailure { error ->
+                    val message = if (error is FirebaseAuthRecentLoginRequiredException) {
+                        strings.settingsDeleteAccountRecentLoginRequiredMessage
+                    } else {
+                        strings.settingsDeleteAccountFailedMessage
+                    }
+                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                }
+        }
+    }
 
     fun signInWithGoogle() {
         scope.launch {
@@ -166,6 +194,18 @@ internal fun SettingsScreen(
                 fontSize = 13.sp,
                 color = MaterialTheme.colorScheme.onBackground,
             )
+
+            // 게스트(로컬 ID만 있는 상태)는 삭제할 서버 계정 자체가 없어 숨긴다. Google Play
+            // 정책상 계정 생성을 지원하는 앱은 인앱 삭제 경로가 필수라 BuildConfig.DEBUG로
+            // 게이팅하지 않는다 — 실제 사용자가 릴리스 빌드에서 항상 쓸 수 있어야 한다.
+            if (hasRealAccount) {
+                TextButton(
+                    onClick = { showDeleteAccountDialog = true },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                ) {
+                    Text(strings.settingsDeleteAccountButtonLabel)
+                }
+            }
 
             if (!hasRealAccount) {
                 SocialLoginButton(
@@ -270,6 +310,31 @@ internal fun SettingsScreen(
             isSubmitting = isEmailSubmitting,
             onDismiss = { showEmailDialog = false },
             onSubmit = ::submitEmailSignIn,
+        )
+    }
+
+    if (showDeleteAccountDialog) {
+        AlertDialog(
+            onDismissRequest = { if (!isDeletingAccount) showDeleteAccountDialog = false },
+            title = { Text(strings.settingsDeleteAccountConfirmTitle, fontWeight = FontWeight.Bold) },
+            text = { Text(strings.settingsDeleteAccountConfirmMessage) },
+            confirmButton = {
+                TextButton(
+                    onClick = ::deleteAccount,
+                    enabled = !isDeletingAccount,
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                ) {
+                    Text(strings.settingsDeleteAccountButtonLabel)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showDeleteAccountDialog = false },
+                    enabled = !isDeletingAccount,
+                ) {
+                    Text(strings.cancel)
+                }
+            },
         )
     }
 }

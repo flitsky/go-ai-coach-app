@@ -130,4 +130,13 @@ Step 1(익명 인증)은 이미 이 배치를 따르고 있다 — `AuthClientPo
 - `hasSeenOnboarding` 플래그는 새 저장소를 만들지 않고 기존 `UserPreferencesSnapshot`/`UserPreferencesStore`(SharedPreferences+JSON) 패턴에 필드 하나로 추가 — 스키마 버전은 올리지 않음(`optBoolean` 기본값으로 안전하게 하위 호환).
 - `GoCoachApp.kt`의 `currentDestination` 초기값 계산식만 바꿔(`hasSeenOnboarding` 기준 `Onboarding`/`Home` 분기) 새 Compose 상태 훅을 추가하지 않았다 — `LayeringContractTest`의 `stateHookBudget`(47)이 거의 소진된 상태였기 때문. `AndroidAuthClient`도 내부 상태가 없는 얇은 래퍼라 `remember`로 캐시하지 않고 매 재구성마다 새로 생성해도 무해하다는 점을 이용해 훅 예산을 아꼈다.
 
+### 계정 삭제 기능 추가 — Google Play 정책 대응 (2026-08-09)
+
+- **배경**: Play Console에 앱을 등록하며 "데이터 보안" 설문을 진행하던 중, Google Play 정책상 앱 내 계정 생성(이 앱은 Google/이메일 로그인 둘 다 지원)을 지원하는 앱은 (1) 앱 내 삭제 경로와 (2) 앱을 지우고도 접근 가능한 웹 링크/이메일 두 가지를 **모두** 제공해야 한다는 사실을 확인했다(Google 공식 문서 [Understanding Google Play's app account deletion requirements](https://support.google.com/googleplay/android-developer/answer/13327111) 기준, 2026-08-09 WebFetch로 재확인). 웹 링크 쪽은 `mailto:` 링크로도 요건을 satisfies한다는 점까지 확인해 Play Console 폼에는 연락처 이메일을 등록했고(코드 변경 아님), 이 절은 그중 앱 내 경로 구현을 기록한다.
+- **`AuthClientPort`/`AndroidAuthClient`**: `suspend fun deleteAccount(): Result<Unit>` 추가 — `FirebaseAuth.getInstance().currentUser?.delete()`를 기존 어댑터들과 동일한 `suspendCancellableCoroutine` 콜백 래핑 패턴으로 구현. 로그인 세션이 오래되면 Firebase가 `FirebaseAuthRecentLoginRequiredException`을 던지는데, 별도 재인증 플로우를 새로 만들지 않고 이 예외만 구분해 "재로그인 후 다시 시도" 안내로 갈라 보여주는 선에서 범위를 제한했다(YAGNI — 이 앱 사용 패턴상 재로그인이 자주 필요할 세션 길이가 아니라고 판단).
+- **`AccountDeletionFlow.kt`**(신규): `EmailSignInFlow.kt`/`GoogleSignInFlow.kt`와 동일한 얇은 글루 패턴 — 실패 시 진단 로그를 남기되, `FirebaseAuthRecentLoginRequiredException`은 `account_deletion_recent_login_required`로 별도 코드를 부여해 일반 실패(`account_deletion_failed`)와 구분한다.
+- **`SettingsScreen.kt`**: "계정 삭제" 버튼(`MaterialTheme.colorScheme.error` 톤)을 계정 상태 문구 바로 아래 배치하고 `hasRealAccount`일 때만 노출(게스트는 삭제할 서버 계정 자체가 없음). **`BuildConfig.DEBUG` 게이팅을 의도적으로 하지 않았다** — 다른 "개발자 테스트" 섹션과 달리, 이 기능은 실사용자가 릴리스 빌드에서 항상 쓸 수 있어야 하는 정책 요구사항이기 때문. 삭제 전 `AlertDialog`로 "영구 삭제, 되돌릴 수 없음" 확인을 받고(구매 프리미엄은 Play Billing이 Google 계정에 귀속되므로 이 삭제로 사라지지 않는다는 점도 명시), 삭제 성공 시 `authState`를 다시 읽어와(자동으로 게스트 상태로 갱신됨) UI가 즉시 로그인 버튼들을 다시 보여주도록 했다 — 별도 네비게이션/화면 전환 없이 같은 화면에서 자연스럽게 반영된다.
+- **범위에서 제외한 것**: Firestore 등 클라우드 DB에 저장된 사용자 데이터 삭제는 다루지 않는다 — Step 4(Firestore 동기화)가 아직 보류 상태라 애초에 클라우드에 저장되는 사용자 데이터가 없다(프리미엄 상태/기기 식별자 모두 기기 로컬 SharedPreferences). 나중에 Step 4가 진행되면 그때 이 삭제 경로도 함께 확장해야 한다.
+- **검증**: `make test` 통과. 에뮬레이터(`emulator-5554`)에서 실제로 테스트 이메일 계정을 새로 만들고 → 설정 화면에 "계정 삭제" 버튼이 로그인 후에만 나타나는 것 확인 → 확인 다이얼로그 → 삭제 확정 → "계정이 삭제되었습니다" 토스트 + 화면이 즉시 게스트 상태로 전환(로그인 버튼 재노출, 삭제 버튼 소멸)까지 end-to-end로 실측했다. 프리미엄 구매 완료 토글이 삭제 후에도 유지되는 것도 함께 확인(설계대로 Firebase 계정과 프리미엄 상태가 독립적임을 실증).
+
 이 문서는 각 단계 착수/완료 시점마다 위 마일스톤 표의 상태와 관련 섹션을 갱신하며, 완료된 단계도 지우지 않고 이력으로 남깁니다.

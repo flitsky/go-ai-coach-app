@@ -71,6 +71,20 @@ internal class AndroidAuthClient : AuthClientPort {
         }
     }
 
+    override suspend fun deleteAccount(): Result<Unit> {
+        val user = FirebaseAuth.getInstance().currentUser
+            ?: return Result.failure(IllegalStateException("No signed-in user to delete"))
+        return try {
+            suspendCancellableCoroutine { continuation ->
+                user.delete()
+                    .addOnSuccessListener { continuation.resume(Result.success(Unit)) }
+                    .addOnFailureListener { error -> continuation.resume(Result.failure(error)) }
+            }
+        } catch (error: Exception) {
+            Result.failure(error)
+        }
+    }
+
     override fun currentAuthState(): AuthState {
         val user = FirebaseAuth.getInstance().currentUser ?: return AuthState()
         val provider = when {

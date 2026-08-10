@@ -39,4 +39,13 @@ internal interface AuthClientPort {
 
     /** 지금 이 기기의 로그인 상태를 동기적으로 읽는다 — 승격 여부 판단에 쓰인다. */
     fun currentAuthState(): AuthState
+
+    /**
+     * 현재 로그인된 계정과 그 계정에 연결된 Firebase 쪽 데이터를 영구 삭제한다(Google Play
+     * 정책상 계정 생성을 지원하는 앱은 인앱 삭제 경로를 반드시 제공해야 한다). 로그인 세션이
+     * 오래됐으면 Firebase가 재인증을 요구하는 예외를 던질 수 있다 — 그 경우 호출부가 재로그인을
+     * 안내해야 한다. Google Play에서 구매한 프리미엄 소유권은 이 삭제로 사라지지 않는다(Play
+     * Billing은 Firebase 계정과 무관하게 Google 계정에 귀속된다).
+     */
+    suspend fun deleteAccount(): Result<Unit>
 }
