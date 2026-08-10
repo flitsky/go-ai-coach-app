@@ -12,6 +12,15 @@ import com.worksoc.goaicoach.application.device.DeviceIdentityStorePort
  */
 internal object FeatureFlags {
     const val isLoginEnabled = false
+
+    /**
+     * Google Play Billing을 통한 프리미엄 영구 구매를 끈다(사용자 결정, 2026-08-09) — 광고 시청
+     * 1시간 활성화만 남기고 결제 경로 자체를 스토어 심사/앱에서 제거해 "결제·계정 로그인이
+     * 필요 없는 앱"으로 간결하게 출시한다. [PurchasePort]/[AndroidBillingClient] 등 결제
+     * 연동 코드는 지우지 않았다 — 이 값을 true로 되돌리면 업셀 팝업의 결제 버튼과 앱 시작 시
+     * 구매 복원 조회가 코드 변경 없이 그대로 되살아난다.
+     */
+    const val isPurchaseEnabled = false
 }
 
 /**

@@ -79,7 +79,9 @@ internal data class PremiumUiState(
 internal val LocalPremiumUiState = staticCompositionLocalOf { PremiumUiState() }
 
 /**
- * "프리미엄 기능 활성화" 업셀 팝업. 3지선다: 영구 활성화(결제)/광고 시청 1시간/아니오.
+ * "프리미엄 기능 활성화" 업셀 팝업. [FeatureFlags.isPurchaseEnabled]가 켜져 있으면 3지선다
+ * (영구 활성화(결제)/광고 시청 1시간/아니오), 꺼져 있으면(2026-08-09 결정, 결제 없이 간결하게
+ * 출시) 결제 버튼이 숨겨져 광고 시청 1시간/아니오 2지선다가 된다.
  * 홈 화면 대국 시작 시와 인게임 중 잠긴 프리미엄 버튼 탭 시, 두 지점에서 공통으로 재사용한다.
  *
  * [isAdGrantInProgress]/[isPurchaseInProgress] 중 하나라도 true인 동안(광고 로드~노출~시청
@@ -136,19 +138,21 @@ internal fun PremiumUpsellDialog(
                         Text(strings.premiumUpsellAdGrantOption)
                     }
                 }
-                OutlinedButton(
-                    onClick = onSelectPurchase,
-                    enabled = !isAnyInProgress,
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                ) {
-                    if (isPurchaseInProgress) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(18.dp),
-                            strokeWidth = 2.dp,
-                            color = LocalContentColor.current,
-                        )
-                    } else {
-                        Text(strings.premiumUpsellPurchaseOption)
+                if (FeatureFlags.isPurchaseEnabled) {
+                    OutlinedButton(
+                        onClick = onSelectPurchase,
+                        enabled = !isAnyInProgress,
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    ) {
+                        if (isPurchaseInProgress) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                strokeWidth = 2.dp,
+                                color = LocalContentColor.current,
+                            )
+                        } else {
+                            Text(strings.premiumUpsellPurchaseOption)
+                        }
                     }
                 }
                 TextButton(
@@ -251,6 +255,7 @@ internal fun PremiumPurchaseRestoreEffect(
     diagnosticEventLog: DiagnosticEventLogPort,
     onRestored: (PremiumState) -> Unit,
 ) {
+    if (!FeatureFlags.isPurchaseEnabled) return
     LaunchedEffect(Unit) {
         val (_, nextState) = performPremiumPurchaseRestore(context, diagnosticEventLog)
         nextState?.let(onRestored)
