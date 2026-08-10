@@ -217,7 +217,10 @@ dependencies {
 
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
-    implementation(libs.firebase.analytics)
+    // firebase-analytics는 의도적으로 뺐다 — logEvent() 등 실제 사용처가 코드에 전혀 없어
+    // SDK만 자동 수집을 계속하는 상태였다(2026-08-09 grep으로 확인). 안 쓰는 수집 SDK는
+    // 끄는 옵션을 만들기보다 아예 빼는 쪽이 확실하다 — 나중에 실제로 이벤트를 남기고 싶어지면
+    // 이 줄을 되살리고 로그인 지점을 만들면 된다.
 
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)

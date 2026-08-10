@@ -178,36 +178,41 @@ internal fun SettingsScreen(
                 .padding(horizontal = 24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(
-                text = strings.settingsAccountSectionTitle,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.secondary,
-            )
+            // 로그인 기능 자체가 꺼져 있으면(FeatureFlags.isLoginEnabled = false) 계정 섹션을
+            // 통째로 숨긴다 — 로그인 수단이 하나도 없는데 "게스트로 이용 중입니다. 로그인하면..."
+            // 안내만 남아있으면 존재하지 않는 기능을 홍보하는 셈이 된다.
+            if (FeatureFlags.isLoginEnabled) {
+                Text(
+                    text = strings.settingsAccountSectionTitle,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.secondary,
+                )
 
-            Text(
-                text = when (authState.provider) {
-                    AuthProvider.Google -> strings.settingsGoogleStatusMessage
-                    AuthProvider.Email -> strings.settingsEmailStatusMessage
-                    else -> strings.settingsGuestStatusMessage
-                },
-                fontSize = 13.sp,
-                color = MaterialTheme.colorScheme.onBackground,
-            )
+                Text(
+                    text = when (authState.provider) {
+                        AuthProvider.Google -> strings.settingsGoogleStatusMessage
+                        AuthProvider.Email -> strings.settingsEmailStatusMessage
+                        else -> strings.settingsGuestStatusMessage
+                    },
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
 
-            // 게스트(로컬 ID만 있는 상태)는 삭제할 서버 계정 자체가 없어 숨긴다. Google Play
-            // 정책상 계정 생성을 지원하는 앱은 인앱 삭제 경로가 필수라 BuildConfig.DEBUG로
-            // 게이팅하지 않는다 — 실제 사용자가 릴리스 빌드에서 항상 쓸 수 있어야 한다.
-            if (hasRealAccount) {
-                TextButton(
-                    onClick = { showDeleteAccountDialog = true },
-                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
-                ) {
-                    Text(strings.settingsDeleteAccountButtonLabel)
+                // 게스트(로컬 ID만 있는 상태)는 삭제할 서버 계정 자체가 없어 숨긴다. Google Play
+                // 정책상 계정 생성을 지원하는 앱은 인앱 삭제 경로가 필수라 BuildConfig.DEBUG로
+                // 게이팅하지 않는다 — 실제 사용자가 릴리스 빌드에서 항상 쓸 수 있어야 한다.
+                if (hasRealAccount) {
+                    TextButton(
+                        onClick = { showDeleteAccountDialog = true },
+                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                    ) {
+                        Text(strings.settingsDeleteAccountButtonLabel)
+                    }
                 }
             }
 
-            if (!hasRealAccount) {
+            if (FeatureFlags.isLoginEnabled && !hasRealAccount) {
                 SocialLoginButton(
                     label = strings.continueWithGoogle,
                     leadingGlyph = "G",
@@ -216,13 +221,15 @@ internal fun SettingsScreen(
                 )
             }
 
-            SocialLoginButton(
-                label = strings.continueWithApple,
-                leadingGlyph = "🍎",
-                onClick = { Toast.makeText(context, strings.notImplementedMessage, Toast.LENGTH_SHORT).show() },
-            )
+            if (FeatureFlags.isLoginEnabled) {
+                SocialLoginButton(
+                    label = strings.continueWithApple,
+                    leadingGlyph = "🍎",
+                    onClick = { Toast.makeText(context, strings.notImplementedMessage, Toast.LENGTH_SHORT).show() },
+                )
+            }
 
-            if (!hasRealAccount) {
+            if (FeatureFlags.isLoginEnabled && !hasRealAccount) {
                 SocialLoginButton(
                     label = strings.continueWithEmail,
                     leadingGlyph = "✉",

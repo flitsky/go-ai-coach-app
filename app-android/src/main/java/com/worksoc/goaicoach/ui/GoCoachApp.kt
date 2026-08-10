@@ -156,11 +156,11 @@ private fun GoCoachScreen(
     val deviceIdentityStore: DeviceIdentityStorePort = DeviceIdentityStore(context)
     // Credential Manager 호출도 내부 상태가 없는 얇은 래퍼라 authClient와 동일하게 캐시하지 않는다.
     val credentialManagerClient = GoogleCredentialManagerClient()
-    // 온보딩을 이미 본 사용자는 바로 홈으로, 아니면 온보딩 화면부터 시작한다 — 별도 훅을
-    // 새로 추가하지 않고 이 초기값 계산식에만 반영한다(이 파일의 상태 훅 예산이 거의
-    // 소진돼 있어, 새 컴포즈 상태 훅을 추가하지 않는 쪽을 우선한다).
+    // 첫 화면 판단(로그인 기능 온/오프 포함)은 FeatureFlags.kt의 initialDestination으로
+    // 뺐다 — 별도 훅을 새로 추가하지 않고 이 초기값 계산식만 함수 호출로 바꾼다(이 파일의
+    // 상태 훅 예산이 거의 소진돼 있어, 새 컴포즈 상태 훅을 추가하지 않는 쪽을 우선한다).
     var currentDestination by remember {
-        mutableStateOf(if (initialPreferences.hasSeenOnboarding) ScreenDestination.Home else ScreenDestination.Onboarding)
+        mutableStateOf(initialDestination(deviceIdentityStore, initialPreferences.hasSeenOnboarding))
     }
     var showResignConfirmFromBack by remember { mutableStateOf(false) }
     var showResumeDialog by remember { mutableStateOf(false) }
