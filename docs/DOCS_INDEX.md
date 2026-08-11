@@ -6,7 +6,8 @@
 갱신: 2026-06-28 — 줄 수, 패키지 수, remote transport 구현 상태처럼 자주 낡는 현재 지표는 기준일을 붙인 문장으로만 적도록 운영 원칙을 추가했다.
 갱신: 2026-07-29 23:15 — 도메인 분리(엔진 브릿지 vs 조합 레이어) 재검토 착수 계획서 `refactoring/DOMAIN_SEPARATION_REFACTORING_KICKOFF_PLAN_260729_2315.md`를 추가했다. 이 문서부터 "착수 계획서" 유형은 `YYMMDD HHhMMm` 시분 단위 타임스탬프를 파일명에 붙이는 관례를 시작한다(기존 날짜만 붙이는 작업 로그류와 구분).
 갱신: 2026-07-30 — `ARCHITECTURE.md`를 앱 비종속 원칙 문서로 전면 재작성하고, go-ai-coach 구체 매핑·로드맵을 담은 `GO_AI_COACH_ARCHITECTURE_ROADMAP.md`를 신설했다(핵심 문서 9개 → 10개). `premium-mode/`, `auth-onboarding/`, `ux-improvement/`, `docs/baas_solutions_comparison.md`, `docs/baduk_app_architecture_recommendation.md`를 이 인덱스에 편입했다. 상세는 "문서 이력" 절 참고.  
-갱신: 2026-08-06 — `docs/refactoring/`에서 완료·흡수된 문서 24개와 미인덱스 상태였던 `docs/working-260617/implementation_plan.md`를 `archive/2026-08-06-refactoring-log-consolidation/`으로 이동했다(삭제 아님, 파일명+한 줄 설명 카탈로그는 그 폴더 `README.md`). 동시에 이 인덱스에서 누락돼 있던 활성 문서 2개(`PLAY_FLOW_UX_REFACTORING_PLAN_260804_0553.md`, `DOMAIN_SEPARATION_REFACTORING_STATUS_260806_1304.md`)를 아래 표에 추가해 실제 파일 목록과의 드리프트를 바로잡았다. 상세는 "문서 이력" 절 참고.
+갱신: 2026-08-06 — `docs/refactoring/`에서 완료·흡수된 문서 24개와 미인덱스 상태였던 `docs/working-260617/implementation_plan.md`를 `archive/2026-08-06-refactoring-log-consolidation/`으로 이동했다(삭제 아님, 파일명+한 줄 설명 카탈로그는 그 폴더 `README.md`). 동시에 이 인덱스에서 누락돼 있던 활성 문서 2개(`PLAY_FLOW_UX_REFACTORING_PLAN_260804_0553.md`, `DOMAIN_SEPARATION_REFACTORING_STATUS_260806_1304.md`)를 아래 표에 추가해 실제 파일 목록과의 드리프트를 바로잡았다. 상세는 "문서 이력" 절 참고.  
+갱신: 2026-08-11 — 외부 기획 디자이너 핸드오프용 export/import 채널 `design-handoff/README.md`를 신설해 "저장소 루트의 마스터플랜 폴더" 표에 편입했다. `export/`에 v0.1.2 기준 최초 스냅샷(유저플로우, 화면별 스펙, 스토어 등록정보 초안 포함) 생성.
 
 ## 하위 폴더 한눈에 보기
 
@@ -60,6 +61,7 @@
 | `ux-improvement/wireframes/v1_wireframe.md` | 위 마스터플랜의 v1.0.0 와이어프레임 스펙 |
 | `docs/baas_solutions_comparison.md` | Firebase/Supabase/PocketBase/Appwrite/Convex BaaS 비교 조사 — Firebase 채택 근거 원본. 결론은 `auth-onboarding/README.md`에 반영됨 |
 | `docs/baduk_app_architecture_recommendation.md` | 백엔드+AdMob 전략 추천 조사 — 결론은 `premium-mode/README.md`/`auth-onboarding/README.md`에 반영됨 |
+| `design-handoff/README.md` | 외부 기획 디자이너 핸드오프 export/import 채널. 라운드별 스냅샷(`export/<날짜>-<버전>/`)과 디자이너 회신(`import/<날짜>-<라운드명>/`) 이력을 쌓는다 |
 
 ## 운영 원칙
 
