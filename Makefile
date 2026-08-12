@@ -4,6 +4,12 @@ ANDROID_HOME ?= /Users/ryan9kim/Library/Android/sdk
 JAVA_HOME ?= $(shell /usr/libexec/java_home -v 17 2>/dev/null)
 GRADLEW := ./gradlew
 
+# adb 기기가 두 대 이상 붙어있으면(예: 실기기 + 에뮬레이터 동시 연결) adb가 대상을 특정하지
+# 못해 "more than one device/emulator" 에러를 낸다. 여기서 명시적으로 선언해두면 doctor가
+# 미리 감지해 안내할 수 있고, export될 때 adb/Gradle installDebug가 자동으로 이 값을 읽어
+# 대상을 정한다(-s 플래그를 모든 adb 호출에 일일이 붙이지 않아도 됨).
+ANDROID_SERIAL ?=
+
 # app-android/build.gradle.kts에서 직접 읽어온다 — 하드코딩하면 applicationId가 바뀔 때마다
 # (예: Firebase 패키지명 정정) adb 타겟이 옛 패키지를 계속 가리키는 채로 조용히 어긋난다.
 # MainActivity 컴포넌트명은 namespace 기준이다 — applicationId(설치 패키지)와
@@ -40,6 +46,9 @@ VERSION ?=
 
 export ANDROID_HOME
 export JAVA_HOME
+ifneq ($(strip $(ANDROID_SERIAL)),)
+export ANDROID_SERIAL
+endif
 
 .DEFAULT_GOAL := help
 
@@ -61,6 +70,8 @@ help:
 	@echo ""
 	@echo " [Environment & Testing]"
 	@echo "  make doctor              - Check JDK 17, ANDROID_HOME, and adb environment"
+	@echo "                             (fails fast with guidance if >1 adb device is connected;"
+	@echo "                              pass ANDROID_SERIAL=<serial> to pick one)"
 	@echo "  make test                - Run unit tests for shared, engine, and app modules"
 	@echo ""
 	@echo " [Build & Engine Prebuild]"
@@ -87,6 +98,17 @@ doctor:
 	@test -d "$(ANDROID_HOME)" || (echo "ANDROID_HOME does not exist: $(ANDROID_HOME)" && exit 1)
 	@test -x "$(ANDROID_HOME)/platform-tools/adb" || (echo "adb not found under ANDROID_HOME/platform-tools." && exit 1)
 	@test -x "$(GRADLEW)" || (echo "Gradle wrapper is missing or not executable." && exit 1)
+	@if [ -z "$(ANDROID_SERIAL)" ]; then \
+		DEVICE_COUNT=$$("$(ANDROID_HOME)/platform-tools/adb" devices | grep -c $$'\tdevice$$' || true); \
+		if [ "$$DEVICE_COUNT" -gt 1 ]; then \
+			echo "Multiple adb devices/emulators are connected — commands that talk to a device" >&2; \
+			echo "(seed-engine, launch, install-dev, ...) cannot pick one automatically:" >&2; \
+			"$(ANDROID_HOME)/platform-tools/adb" devices -l >&2; \
+			echo "Set ANDROID_SERIAL=<serial> (see above) and re-run, e.g.:" >&2; \
+			echo "  ANDROID_SERIAL=R5CT22WTVXP make seed-engine" >&2; \
+			exit 1; \
+		fi; \
+	fi
 	@echo "JAVA_HOME=$(JAVA_HOME)"
 	@echo "ANDROID_HOME=$(ANDROID_HOME)"
 	@echo "Environment check passed."
