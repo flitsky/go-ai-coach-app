@@ -39,14 +39,12 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.safety.engineTurnWatchdogTimeoutMillisFor
 import com.worksoc.goaicoach.application.safety.isEngineTurnWatchdogTriggered
 import com.worksoc.goaicoach.application.session.GameSessionTurnTimeState
 import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.match.SidePlayerSetup
-import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.presentation.GameActionButtonRole
 import com.worksoc.goaicoach.presentation.GameActionButtonState
 import com.worksoc.goaicoach.presentation.GameScreenState
@@ -79,6 +77,7 @@ internal fun GamePlaySection(
         snapshots = screenState.score.snapshots,
         capturedByBlack = screenState.gameState.capturedBy(StoneColor.Black),
         capturedByWhite = screenState.gameState.capturedBy(StoneColor.White),
+        whiteWinRate = screenState.score.estimate?.whiteWinRate,
         isExpanded = screenState.score.isGraphExpanded,
         onExpandedChange = onScoreGraphExpandedChange,
         modifier = Modifier.fillMaxWidth()
@@ -215,40 +214,10 @@ internal fun GamePlaySection(
         onEvent = onEvent,
     )
 
-    var showAnalysisDialog by remember { mutableStateOf(false) }
-    val strings = LocalUiStrings.current
-
     GameActionButtons(
         screenState = screenState,
-        onAnalysisClick = { showAnalysisDialog = true },
         onEvent = onEvent,
     )
-
-    if (showAnalysisDialog) {
-        AlertDialog(
-            onDismissRequest = { showAnalysisDialog = false },
-            title = {
-                Text(
-                    text = strings.kataGoAnalysis,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-            },
-            text = {
-                EngineResponsePanel(
-                    screenState = screenState,
-                    engineMessage = screenState.engine.message,
-                    candidateText = screenState.analysis.candidateText,
-                    moveReviewText = screenState.analysis.moveReviewText,
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = { showAnalysisDialog = false }) {
-                    Text(strings.close)
-                }
-            }
-        )
-    }
 }
 
 /**
@@ -292,7 +261,6 @@ private fun MoveQualityLegend() {
 @Composable
 private fun GameActionButtons(
     screenState: GameScreenState,
-    onAnalysisClick: () -> Unit,
     onEvent: (GameUiEvent) -> Unit,
 ) {
     val strings = LocalUiStrings.current
@@ -301,7 +269,7 @@ private fun GameActionButtons(
     var showPremiumUpsellDialog by remember { mutableStateOf(false) }
     val lockedAlpha = if (premium.isActive) 1f else 0.5f
 
-    // 분석/형세보기/추천수/무르기는 프리미엄 전용. 비활성 상태에서는 흐리게 표시하고,
+    // 형세보기/추천수/무르기는 프리미엄 전용. 비활성 상태에서는 흐리게 표시하고,
     // 탭하면 실제 동작 대신 업셀 팝업을 띄운다 (기권/통과는 게이팅 대상이 아님).
     fun premiumGated(action: () -> Unit) {
         if (premium.isActive) action() else showPremiumUpsellDialog = true
@@ -339,25 +307,12 @@ private fun GameActionButtons(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        // [1열] 분석, 형세보기(Eval), 추천수(Top Moves)
+        // [1행] 형세보기(Eval), 추천수(Top Moves), 무르기(Undo) — 모두 프리미엄 전용
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            val engineReady = screenState.engine.isReady
-            val isLocalTwoPlayer = screenState.matchMode == MatchMode.LocalTwoPlayer
-
-            // 1. "분석" 버튼 (프리미엄 전용)
-            val analysisEnabled = engineReady || isLocalTwoPlayer
-            ActionButton(
-                onClick = { premiumGated(onAnalysisClick) },
-                enabled = analysisEnabled,
-                modifier = Modifier.weight(1f).alpha(lockedAlpha),
-                label = strings.analysis,
-                premiumLocked = !premium.isActive,
-            )
-
-            // 2. 형세보기 (Eval) 버튼 (프리미엄 전용)
+            // 1. 형세보기 (Eval) 버튼 (프리미엄 전용)
             val evalAction = screenState.actionButtons.firstOrNull { it.role == GameActionButtonRole.Eval }
             if (evalAction != null) {
                 ToggleActionButton(
@@ -369,7 +324,7 @@ private fun GameActionButtons(
                 )
             }
 
-            // 3. 추천수 (Top Moves) 버튼 (프리미엄 전용)
+            // 2. 추천수 (Top Moves) 버튼 (프리미엄 전용)
             val topMovesAction = screenState.actionButtons.firstOrNull { it.role == GameActionButtonRole.TopMoves }
             if (topMovesAction != null) {
                 ToggleActionButton(
@@ -380,14 +335,26 @@ private fun GameActionButtons(
                     premiumLocked = !premium.isActive,
                 )
             }
+
+            // 3. 무르기 (Undo) 버튼 (프리미엄 전용)
+            val undoAction = screenState.actionButtons.firstOrNull { it.role == GameActionButtonRole.Undo }
+            if (undoAction != null) {
+                SingleActionButton(
+                    action = undoAction,
+                    label = strings.undo,
+                    onEvent = { event -> premiumGated { onEvent(event) } },
+                    modifier = Modifier.weight(1f).alpha(lockedAlpha),
+                    premiumLocked = !premium.isActive,
+                )
+            }
         }
 
-        // [2열] 기권(Resign/New Game), 통과(Pass), 무르기(Undo)
+        // [2행] 기권(Resign/New Game), 통과(Pass)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            // 1. 기권 / 새 게임 버튼 (좌측)
+            // 1. 기권 / 새 게임 버튼
             val resignEnabled = screenState.isGameEnded || (!screenState.engine.isBlockingBusy && screenState.matchSeats.current.canAcceptBoardInput)
             ActionButton(
                 onClick = {
@@ -402,7 +369,7 @@ private fun GameActionButtons(
                 label = if (screenState.isGameEnded) strings.newGameAction else strings.resign,
             )
 
-            // 2. 통과 (Pass) 버튼 (중앙)
+            // 2. 통과 (Pass) 버튼
             val passAction = screenState.actionButtons.firstOrNull { it.role == GameActionButtonRole.Pass }
             if (passAction != null) {
                 SingleActionButton(
@@ -410,18 +377,6 @@ private fun GameActionButtons(
                     label = strings.pass,
                     onEvent = onEvent,
                     modifier = Modifier.weight(1f),
-                )
-            }
-
-            // 3. 무르기 (Undo) 버튼 (우측, 프리미엄 전용)
-            val undoAction = screenState.actionButtons.firstOrNull { it.role == GameActionButtonRole.Undo }
-            if (undoAction != null) {
-                SingleActionButton(
-                    action = undoAction,
-                    label = strings.undo,
-                    onEvent = { event -> premiumGated { onEvent(event) } },
-                    modifier = Modifier.weight(1f).alpha(lockedAlpha),
-                    premiumLocked = !premium.isActive,
                 )
             }
         }

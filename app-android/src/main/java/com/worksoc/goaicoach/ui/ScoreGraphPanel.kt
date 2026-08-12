@@ -7,6 +7,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -44,13 +45,14 @@ internal fun ScoreTimelineGraph(
     snapshots: List<ScoreSnapshot>,
     capturedByBlack: Int,
     capturedByWhite: Int,
+    whiteWinRate: Double?,
     isExpanded: Boolean,
     onExpandedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val strings = LocalUiStrings.current
     val configuration = LocalConfiguration.current
-    val targetHeight = if (isExpanded) (configuration.screenWidthDp.dp / 4) else 36.dp
+    val targetHeight = if (isExpanded) (configuration.screenWidthDp.dp / 4) else 44.dp
     
     // 부드럽게 접히고 늘어나는 높이 애니메이션
     val heightDp by animateDpAsState(
@@ -97,7 +99,14 @@ internal fun ScoreTimelineGraph(
             else -> "0.0"
         }
     }
-    
+
+    // 승률(%)은 계산은 되지만 그동안 UI 어디에도 노출되지 않던 값이라, 항상 보이는 이 요약 바에 흡수한다.
+    val winRateLabel = whiteWinRate?.let { rate ->
+        val blackPct = ((1.0 - rate) * 100).roundToInt()
+        val whitePct = (rate * 100).roundToInt()
+        "${strings.colorLabel(StoneColor.Black)} $blackPct% · ${strings.colorLabel(StoneColor.White)} $whitePct%"
+    }
+
     Surface(
         modifier = modifier
             .fillMaxWidth()
@@ -109,8 +118,8 @@ internal fun ScoreTimelineGraph(
         tonalElevation = 0.dp,
         shadowElevation = 0.dp,
     ) {
-        if (heightDp <= 40.dp) {
-            // 접힌 상태: 흑/백 사석 수 + 현재 스코어차를 한눈에 보여준다.
+        if (heightDp <= 48.dp) {
+            // 접힌 상태: 흑/백 사석 수 + 현재 스코어차 + 승률을 한눈에 보여준다.
             Row(
                 modifier = Modifier
                     .fillMaxSize()
@@ -123,12 +132,21 @@ internal fun ScoreTimelineGraph(
                     color = textBlueColor,
                     style = MaterialTheme.typography.bodySmall,
                 )
-                Text(
-                    text = currentScoreLabel,
-                    color = textBlueColor,
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.Bold
-                )
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = currentScoreLabel,
+                        color = textBlueColor,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    if (winRateLabel != null) {
+                        Text(
+                            text = winRateLabel,
+                            color = textBlueColor,
+                            style = MaterialTheme.typography.labelSmall,
+                        )
+                    }
+                }
                 Text(
                     text = "${strings.colorLabel(StoneColor.White)} ${strings.capturesPrefix} $capturedByWhite",
                     color = textBlueColor,
