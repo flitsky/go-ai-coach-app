@@ -68,7 +68,7 @@ val appVersionName: String = versionProperties.getProperty("VERSION_NAME") ?: "0
 
 android {
     namespace = "com.worksoc.goaicoach"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         // Firebase 콘솔에 등록된 패키지명(google-services.json의 android_client_info)과
@@ -76,7 +76,7 @@ android {
         // 이 값과 독립적이라 com.worksoc.goaicoach로 그대로 둔다.
         applicationId = "com.zenit9hub.ai.baduk"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 36
         versionCode = appVersionCode
         versionName = appVersionName
 
@@ -128,6 +128,16 @@ android {
             // 않음). local.properties에 release.* 키가 없으면(키스토어 미생성) 서명 없이
             // 빌드되어 이 빌드도 실패한다 — playInternal과 같은 전제조건.
             signingConfig = signingConfigs.getByName("release")
+            // Play Console App Bundle Explorer가 "앱 최적화/최적화 비율/난독화 비율/축소 비율/R8
+            // 구성" 5개 항목을 전부 경고로 표시했던 원인 — release 빌드에서 R8이 아예 실행되지
+            // 않고 있었다(minify/shrink 둘 다 AGP 기본값 false). friend/playInternal은 debug에서
+            // initWith하므로 이 설정과 무관하게 그대로 유지된다(지인 배포·내부 테스트 채널 영향 없음).
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
             // local.properties에 실제 값이 아직 없으면(미등록 상태) release 빌드도 안전하게 테스트
             // 값으로 폴백한다 — "테스트해야 하는데 실제 광고가 나가는" 상황보다 "출시용인데 테스트
             // 광고가 나가는" 상황(눈에 바로 띄는 버그)이 훨씬 덜 위험하기 때문.
