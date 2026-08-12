@@ -71,7 +71,9 @@ help:
 	@echo " [Environment & Testing]"
 	@echo "  make doctor              - Check JDK 17, ANDROID_HOME, and adb environment"
 	@echo "                             (fails fast with guidance if >1 adb device is connected;"
-	@echo "                              pass ANDROID_SERIAL=<serial> to pick one)"
+	@echo "                              pass ANDROID_SERIAL=<serial> to pick one; also warns if the"
+	@echo "                              connected device's installed app is missing the seeded"
+	@echo "                              KataGo model, meaning it's silently running on the stub AI)"
 	@echo "  make test                - Run unit tests for shared, engine, and app modules"
 	@echo ""
 	@echo " [Build & Engine Prebuild]"
@@ -107,6 +109,19 @@ doctor:
 			echo "Set ANDROID_SERIAL=<serial> (see above) and re-run, e.g.:" >&2; \
 			echo "  ANDROID_SERIAL=R5CT22WTVXP make seed-engine" >&2; \
 			exit 1; \
+		fi; \
+	fi
+	@DEVICE_COUNT=$$("$(ANDROID_HOME)/platform-tools/adb" devices | grep -c $$'\tdevice$$' || true); \
+	if [ "$$DEVICE_COUNT" = "1" ] || [ -n "$(ANDROID_SERIAL)" ]; then \
+		if "$(ANDROID_HOME)/platform-tools/adb" shell pm path $(APP_PACKAGE) >/dev/null 2>&1; then \
+			if ! "$(ANDROID_HOME)/platform-tools/adb" shell run-as $(APP_PACKAGE) test -s files/katago/model.bin.gz >/dev/null 2>&1; then \
+				echo ""; \
+				echo "⚠️  KataGo model not seeded on the connected device/emulator for $(APP_PACKAGE)."; \
+				echo "   The app will silently fall back to the stub AI (instant, non-KataGo moves)"; \
+				echo "   until you run: make seed-engine"; \
+				echo "   (uninstall/reinstall wipes app files, so re-run after those too.)"; \
+				echo ""; \
+			fi; \
 		fi; \
 	fi
 	@echo "JAVA_HOME=$(JAVA_HOME)"

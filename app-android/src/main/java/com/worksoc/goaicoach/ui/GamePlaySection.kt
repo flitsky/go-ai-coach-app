@@ -33,7 +33,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
@@ -267,10 +266,9 @@ private fun GameActionButtons(
     val premium = LocalPremiumUiState.current
     var showResignConfirm by remember { mutableStateOf(false) }
     var showPremiumUpsellDialog by remember { mutableStateOf(false) }
-    val lockedAlpha = if (premium.isActive) 1f else 0.5f
 
-    // 형세보기/추천수/무르기는 프리미엄 전용. 비활성 상태에서는 흐리게 표시하고,
-    // 탭하면 실제 동작 대신 업셀 팝업을 띄운다 (기권/통과는 게이팅 대상이 아님).
+    // 형세보기/추천수는 프리미엄 전용. 잠겨 있을 때는 금색 테두리(PremiumLockedBorder)로
+    // 표시하고, 탭하면 실제 동작 대신 업셀 팝업을 띄운다 (기권/통과/무르기는 게이팅 대상이 아님).
     fun premiumGated(action: () -> Unit) {
         if (premium.isActive) action() else showPremiumUpsellDialog = true
     }
@@ -307,7 +305,7 @@ private fun GameActionButtons(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        // [1행] 형세보기(Eval), 추천수(Top Moves), 무르기(Undo) — 모두 프리미엄 전용
+        // [1행] 형세보기(Eval), 추천수(Top Moves) — 프리미엄 전용 온/오프 토글, 2열로 크게 배치
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -319,7 +317,7 @@ private fun GameActionButtons(
                     action = evalAction,
                     label = strings.eval,
                     onEvent = { event -> premiumGated { onEvent(event) } },
-                    modifier = Modifier.weight(1f).alpha(lockedAlpha),
+                    modifier = Modifier.weight(1f),
                     premiumLocked = !premium.isActive,
                 )
             }
@@ -331,25 +329,13 @@ private fun GameActionButtons(
                     action = topMovesAction,
                     label = strings.topMoves,
                     onEvent = { event -> premiumGated { onEvent(event) } },
-                    modifier = Modifier.weight(1f).alpha(lockedAlpha),
-                    premiumLocked = !premium.isActive,
-                )
-            }
-
-            // 3. 무르기 (Undo) 버튼 (프리미엄 전용)
-            val undoAction = screenState.actionButtons.firstOrNull { it.role == GameActionButtonRole.Undo }
-            if (undoAction != null) {
-                SingleActionButton(
-                    action = undoAction,
-                    label = strings.undo,
-                    onEvent = { event -> premiumGated { onEvent(event) } },
-                    modifier = Modifier.weight(1f).alpha(lockedAlpha),
+                    modifier = Modifier.weight(1f),
                     premiumLocked = !premium.isActive,
                 )
             }
         }
 
-        // [2행] 기권(Resign/New Game), 통과(Pass)
+        // [2행] 기권(Resign/New Game), 통과(Pass), 무르기(Undo) — 기본 기능 버튼 3열
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -375,6 +361,17 @@ private fun GameActionButtons(
                 SingleActionButton(
                     action = passAction,
                     label = strings.pass,
+                    onEvent = onEvent,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+
+            // 3. 무르기 (Undo) 버튼 (무료)
+            val undoAction = screenState.actionButtons.firstOrNull { it.role == GameActionButtonRole.Undo }
+            if (undoAction != null) {
+                SingleActionButton(
+                    action = undoAction,
+                    label = strings.undo,
                     onEvent = onEvent,
                     modifier = Modifier.weight(1f),
                 )
