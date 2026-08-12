@@ -1316,7 +1316,20 @@ class LayeringContractTest {
         // Downward ratchet: GoCoachApp is being reduced from a workflow-owning
         // god file to a thin UI shell. These budgets only ever move down — when
         // a refactor lowers them, tighten the numbers here in the same change.
-        val lineBudget = 849
+        //
+        // History (2026-08-12): bumped 849->858 to add a Study destination and
+        // wire screenState/selectedLanguage into SettingsScreen(...) (pure
+        // routing/parameter-passing, no new state hooks). Then dropped 858->816
+        // in the same day by extracting the last two inline workflow bodies this
+        // file still owned: changeBoardSize/changeHandicapCount/changeKomi moved
+        // into GameSettingsController (it already owned the sibling
+        // changePlayerSetup/changeSearchTimeSettings/changeAutoPlayDelay — these
+        // three just hadn't been moved yet), and the premium-deactivation
+        // LaunchedEffect's diagnostic-event decision moved into the pure
+        // application.premium.buildPremiumDeactivatedDiagnosticEvent. Net: lower
+        // than the pre-Study-screen 849, despite the Study/Settings routing added
+        // the same day.
+        val lineBudget = 816
         val stateHookBudget = 47
 
         val goCoachApp = repoRoot()

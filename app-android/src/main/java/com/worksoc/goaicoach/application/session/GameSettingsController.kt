@@ -5,10 +5,13 @@ import com.worksoc.goaicoach.application.engine.operation.evaluateSearchTimeChan
 import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
 import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
 import com.worksoc.goaicoach.application.runtime.runtimeAutoPlayDelayChangeLog
+import com.worksoc.goaicoach.application.analysis.toDisplayText
 import com.worksoc.goaicoach.application.topmoves.SearchTimeTopMovesResetRunRequest
 import com.worksoc.goaicoach.application.topmoves.runSearchTimeTopMovesResetApplication
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.PlayerSetup
+import com.worksoc.goaicoach.shared.BoardScorer
+import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.SearchTimeSettings
@@ -22,8 +25,12 @@ import com.worksoc.goaicoach.shared.EngineProfile
  * - [changeSearchTimeSettings]: validates gate, normalises settings, resets top-move
  *   analysis cache, updates runtime play-level selection.
  * - [changeAutoPlayDelay]: logs and applies delay setting.
+ * - [changeBoardSize]/[changeHandicapCount]: only apply while the game has ended (mid-game
+ *   resizing would invalidate the board already in play), then refresh the new-game preview.
+ * - [changeKomi]: no such gate — komi can change mid-game, updating the live [GameState]
+ *   and its score display in place instead of only the preview.
  *
- * GoCoachApp delegates all three handlers here. The composable supplies
+ * GoCoachApp delegates all handlers here. The composable supplies
  * provider lambdas for current state values and callbacks for state writes.
  * This controller owns no Compose state itself.
  */
@@ -34,6 +41,8 @@ internal class GameSettingsController(
     private val currentSearchTimeSettings: () -> SearchTimeSettings,
     private val currentAnalysisState: () -> GameSessionAnalysisState,
     private val currentAutoPlayDelaySetting: () -> AutoPlayDelaySetting,
+    private val currentSettingsState: () -> GameSessionSettingsState,
+    private val isGameEnded: () -> Boolean,
     private val defaultPlayLevel: PlayLevelSetting,
     private val isEngineBusy: () -> Boolean,
     private val runtimeEventLog: RuntimeEventLogPort,
@@ -46,6 +55,9 @@ internal class GameSettingsController(
     private val applyAnalysisState: (GameSessionAnalysisState) -> Unit,
     private val applySettingsAutoPlayDelay: (AutoPlayDelaySetting) -> Unit,
     private val applySettingsSearchTimeSettings: (SearchTimeSettings) -> Unit,
+    private val applySettingsBoardSize: (BoardSize) -> Unit,
+    private val applySettingsHandicapCount: (Int) -> Unit,
+    private val applySettingsKomi: (Double) -> Unit,
     private val clearUndoEngineInterventionQuietWindow: () -> Unit,
 ) {
     /**
@@ -122,5 +134,57 @@ internal class GameSettingsController(
             ),
         )
         applySettingsAutoPlayDelay(setting)
+    }
+
+    /** Board size only changes between games — mid-game resizing would invalidate the board already in play. */
+    fun changeBoardSize(size: BoardSize) {
+        if (!isGameEnded()) return
+        applySettingsBoardSize(size)
+        refreshNewGamePreview()
+    }
+
+    /** Same isGameEnded gate as [changeBoardSize] — handicap only changes between games. */
+    fun changeHandicapCount(count: Int) {
+        if (!isGameEnded()) return
+        applySettingsHandicapCount(count)
+        refreshNewGamePreview()
+    }
+
+    /**
+     * Unlike board size/handicap, komi doesn't invalidate an in-progress board, so it can
+     * change mid-game. While a game is running, the live [GameState] and its score display
+     * update in place instead of only the new-game preview.
+     */
+    fun changeKomi(komi: Double) {
+        applySettingsKomi(komi)
+        if (isGameEnded()) {
+            refreshNewGamePreview()
+            return
+        }
+        val updatedState = currentGameState().copy(komi = komi)
+        val core = currentCoreSessionState()
+        applyCoreSessionState(
+            core.copy(
+                gameState = updatedState,
+                scoreState = core.scoreState.copy(scoreText = BoardScorer.score(updatedState).toDisplayText()),
+            ),
+        )
+    }
+
+    /**
+     * Re-derives the not-yet-started game's preview board from the current settings —
+     * called whenever board size/handicap/komi changes between games, and also by
+     * GoCoachApp when leaving an ended game back to Home.
+     */
+    fun refreshNewGamePreview() {
+        val settings = currentSettingsState()
+        applyCoreSessionState(
+            currentCoreSessionState().applyGameSetupPreview(
+                ruleset = currentGameState().ruleset,
+                boardSize = settings.boardSize,
+                handicapCount = settings.handicapCount,
+                komi = settings.komi,
+            ),
+        )
     }
 }

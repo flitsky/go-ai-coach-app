@@ -139,7 +139,7 @@ internal fun ExpandedGameMenuSection(
 }
 
 @Composable
-private fun LanguageSettingsPanel(
+internal fun LanguageSettingsPanel(
     selectedLanguage: UiLanguage,
     onLanguageChange: (UiLanguage) -> Unit,
 ) {

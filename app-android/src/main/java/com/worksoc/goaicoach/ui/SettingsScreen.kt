@@ -45,6 +45,8 @@ import com.worksoc.goaicoach.application.auth.AuthProvider
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.preferences.GameSetupUxMode
 import com.worksoc.goaicoach.persistence.UserPreferencesStore
+import com.worksoc.goaicoach.presentation.GameScreenState
+import com.worksoc.goaicoach.presentation.GameUiEvent
 import kotlinx.coroutines.launch
 
 /**
@@ -62,12 +64,24 @@ import kotlinx.coroutines.launch
  * 연동 전까지 프리미엄 구매 상태를 자유롭게 켜고 끄며 QA할 수 있는 자리다. 릴리스
  * 빌드에서 노출되면 사용자가 무료로 프리미엄을 얻을 수 있게 되므로 반드시 이 게이팅을
  * 유지해야 한다.
+ *
+ * 계정 섹션이 [FeatureFlags.isLoginEnabled]로 꺼져 있고 개발자 섹션도 릴리스 빌드에서는
+ * 숨겨지는 지금 상태에서, 언어/대국 설정 없이는 이 화면이 완전히 빈 화면으로 보이는
+ * 문제가 있었다(사용자 피드백, 2026-08-12) — 그래서 홈 화면의 언어 선택기, 대국 설정
+ * 로비([GameSetupLobby])의 플레이어/규칙 패널을 여기서도 그대로 재사용해 노출한다.
+ * 다소 중복이지만, 설정 화면 하나에서 일괄 관리할 수 있다는 이점이 더 크다는 사용자 판단.
+ * 같은 [screenState]/[onEvent]를 씀으로써 여기서 바꾼 값이 곧바로 대국 설정 로비/게임
+ * 메뉴에도 반영된다(별도 저장소를 새로 만들지 않음).
  */
 @Composable
 internal fun SettingsScreen(
     authClient: AuthClientPort,
     credentialManagerClient: GoogleCredentialManagerClient,
     diagnosticEventLog: DiagnosticEventLogPort,
+    screenState: GameScreenState,
+    onEvent: (GameUiEvent) -> Unit,
+    selectedLanguage: UiLanguage,
+    onLanguageChange: (UiLanguage) -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -178,6 +192,60 @@ internal fun SettingsScreen(
                 .padding(horizontal = 24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            LanguageSettingsPanel(
+                selectedLanguage = selectedLanguage,
+                onLanguageChange = onLanguageChange,
+            )
+
+            Text(
+                text = strings.matchSetup,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.secondary,
+            )
+
+            PlayerSetupPanel(
+                state = screenState.playerSetupUi,
+                enabled = !screenState.engine.isBusy,
+                onPlayerSetupChange = { setup -> onEvent(GameUiEvent.ChangePlayerSetup(setup)) },
+                onAutoPlayDelayChange = { setting -> onEvent(GameUiEvent.ChangeAutoPlayDelay(setting)) },
+            )
+
+            // 대국 진행 중(게임 종료 전)에는 바둑판 크기·접바둑을 바꿀 수 없다 — 게임 메뉴
+            // ([ExpandedGameMenuSection])와 동일한 게이팅. 여기는 대국 설정 로비와 달리
+            // "항상 대국 시작 전"이 아니라(뒤로 가기로 진행 중인 대국을 둔 채 홈→설정으로도
+            // 올 수 있음) 로비의 canChangeBoardSize/canChangeHandicap=true를 그대로 쓰면 안 된다.
+            if (gameSetupUxMode == GameSetupUxMode.Compact) {
+                CompactScoringAndBoardSettingsPanel(
+                    ruleset = screenState.gameState.ruleset,
+                    boardSize = screenState.gameState.boardSize,
+                    handicapCount = screenState.handicapCount,
+                    komi = screenState.gameState.komi,
+                    onRulesetChange = { ruleset -> onEvent(GameUiEvent.ChangeScoringRule(ruleset)) },
+                    onBoardSizeChange = { size -> onEvent(GameUiEvent.ChangeBoardSize(size)) },
+                    onHandicapCountChange = { count -> onEvent(GameUiEvent.ChangeHandicapCount(count)) },
+                    onKomiChange = { komi -> onEvent(GameUiEvent.ChangeKomi(komi)) },
+                )
+            } else {
+                ScoringAndBoardSettingsPanel(
+                    ruleset = screenState.gameState.ruleset,
+                    boardSize = screenState.gameState.boardSize,
+                    handicapCount = screenState.handicapCount,
+                    komi = screenState.gameState.komi,
+                    canChangeRuleset = true,
+                    canChangeBoardSize = screenState.isGameEnded,
+                    canChangeHandicap = screenState.isGameEnded,
+                    canChangeKomi = true,
+                    onRulesetChange = { ruleset -> onEvent(GameUiEvent.ChangeScoringRule(ruleset)) },
+                    onBoardSizeChange = { size -> onEvent(GameUiEvent.ChangeBoardSize(size)) },
+                    onHandicapCountChange = { count -> onEvent(GameUiEvent.ChangeHandicapCount(count)) },
+                    onKomiChange = { komi -> onEvent(GameUiEvent.ChangeKomi(komi)) },
+                )
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+            HorizontalDivider()
+
             // 로그인 기능 자체가 꺼져 있으면(FeatureFlags.isLoginEnabled = false) 계정 섹션을
             // 통째로 숨긴다 — 로그인 수단이 하나도 없는데 "게스트로 이용 중입니다. 로그인하면..."
             // 안내만 남아있으면 존재하지 않는 기능을 홍보하는 셈이 된다.

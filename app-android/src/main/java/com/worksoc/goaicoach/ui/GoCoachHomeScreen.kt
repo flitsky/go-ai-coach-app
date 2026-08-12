@@ -1,6 +1,5 @@
 package com.worksoc.goaicoach.ui
 
-import android.widget.Toast
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -44,7 +43,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -54,13 +52,14 @@ import androidx.compose.ui.unit.sp
 /**
  * 0 Depth: 홈 화면 (Home Screen)
  * - 사용자가 앱 진입 시 최초로 마주하는 엔트리 화면입니다.
- * - "대국 하기" (대국 설정 로비로 이동) 및 "학습 하기" (준비 중 토스트 피드백) 메뉴를 제공합니다.
+ * - "대국 하기" (대국 설정 로비로 이동) 및 "학습 하기" ([StudyScreen]으로 이동) 메뉴를 제공합니다.
  * - 시스템 샌드위치/소프트키 및 상단 상태바 영역 침범 방지 적용.
  */
 @Composable
 internal fun GoCoachHomeScreen(
     onStartMatchClick: () -> Unit,
     onSettingsClick: () -> Unit,
+    onStudyClick: () -> Unit,
     selectedLanguage: UiLanguage,
     onLanguageChange: (UiLanguage) -> Unit,
     hasResumableSession: Boolean,
@@ -68,7 +67,6 @@ internal fun GoCoachHomeScreen(
     modifier: Modifier = Modifier,
 ) {
     val strings = LocalUiStrings.current
-    val context = LocalContext.current
     var showOverwriteWarningDialog by remember { mutableStateOf(false) }
 
     Column(
@@ -180,9 +178,7 @@ internal fun GoCoachHomeScreen(
                 containerColor = MaterialTheme.colorScheme.surfaceVariant,
                 titleColor = MaterialTheme.colorScheme.onSurfaceVariant,
                 subtitleColor = MaterialTheme.colorScheme.secondary,
-                onClick = {
-                    Toast.makeText(context, strings.notImplementedMessage, Toast.LENGTH_SHORT).show()
-                },
+                onClick = onStudyClick,
             )
         }
     }

@@ -8,6 +8,7 @@ import com.worksoc.goaicoach.application.session.RuntimePlayLevelSelection
 import com.worksoc.goaicoach.application.undo.UndoController
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.PlayerSetup
+import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 
 internal fun wireSettingsController(
@@ -21,6 +22,8 @@ internal fun wireSettingsController(
         currentSearchTimeSettings = { context.sessionSnapshot().settings.searchTimeSettings },
         currentAnalysisState = { context.analysisState() },
         currentAutoPlayDelaySetting = { context.sessionSnapshot().settings.autoPlayDelaySetting },
+        currentSettingsState = { context.settingsState() },
+        isGameEnded = { context.isGameEnded() },
         defaultPlayLevel = context.defaultPlayLevel,
         isEngineBusy = { context.isEngineBusy() },
         runtimeEventLog = context.runtimeEventLog,
@@ -33,6 +36,9 @@ internal fun wireSettingsController(
         applyAnalysisState = { analysis: GameSessionAnalysisState -> context.setAnalysisState(analysis) },
         applySettingsAutoPlayDelay = { setting: AutoPlayDelaySetting -> context.setSettingsState(context.settingsState().applyAutoPlayDelay(setting)) },
         applySettingsSearchTimeSettings = { settings: SearchTimeSettings -> context.setSettingsState(context.settingsState().applySearchTimeSettings(settings)) },
+        applySettingsBoardSize = { size: BoardSize -> context.setSettingsState(context.settingsState().applyBoardSize(size)) },
+        applySettingsHandicapCount = { count: Int -> context.setSettingsState(context.settingsState().applyHandicap(count)) },
+        applySettingsKomi = { komi: Double -> context.setSettingsState(context.settingsState().applyKomi(komi)) },
         clearUndoEngineInterventionQuietWindow = undoController::clearQuietWindow,
     )
 

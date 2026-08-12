@@ -20,12 +20,12 @@ import androidx.compose.ui.Modifier
 import com.worksoc.goaicoach.application.premium.PremiumSource
 import com.worksoc.goaicoach.application.premium.PremiumState
 import com.worksoc.goaicoach.application.premium.PremiumStateStorePort
+import com.worksoc.goaicoach.application.premium.buildPremiumDeactivatedDiagnosticEvent
 import androidx.compose.ui.platform.LocalContext
 import com.worksoc.goaicoach.application.analysis.AnalysisCacheKey
 import com.worksoc.goaicoach.application.analysis.AnalysisResultCache
 import com.worksoc.goaicoach.application.analysis.PositionCacheOptimizationController
 import com.worksoc.goaicoach.application.analysis.UndoAnalysisRestoreCache
-import com.worksoc.goaicoach.application.analysis.toDisplayText
 import com.worksoc.goaicoach.application.auth.AuthClientPort
 import com.worksoc.goaicoach.application.device.DeviceIdentityStorePort
 import com.worksoc.goaicoach.persistence.DeviceIdentityStore
@@ -302,19 +302,10 @@ private fun GoCoachScreen(
             positionCacheOptimizationState = positionCacheOptimizationState.clearPrompt()
         }
     }
-    fun refreshNewGamePreview() = applyCoreSessionState(
-        sessionSnapshot.core.applyGameSetupPreview(
-            ruleset = gameState.ruleset,
-            boardSize = settingsState.boardSize,
-            handicapCount = settingsState.handicapCount,
-            komi = settingsState.komi,
-        ),
-    )
-    val exitToHome = {
-        isGameEnded = true
-        refreshNewGamePreview()
-        currentDestination = ScreenDestination.Home
-    }
+    // controllers.settingsController::refreshNewGamePreview가 아직 없어(controllers는 아래에서
+    // 만들어짐) 일단 no-op으로 선언해 두고, controllers 생성 직후 실제 구현으로 교체한다 —
+    // cancelUndoSync와 같은 전방 참조 패턴.
+    var exitToHome: () -> Unit = {}
     val lifecycleController = remember {
         EngineOperationLifecycleController(
             scope = scope,
@@ -518,6 +509,11 @@ private fun GoCoachScreen(
 
     val controllers = remember(wiringContext) { wireGoCoachControllers(wiringContext) }
     cancelUndoSync = controllers.undoController::cancelPendingSync
+    exitToHome = {
+        isGameEnded = true
+        controllers.settingsController.refreshNewGamePreview()
+        currentDestination = ScreenDestination.Home
+    }
     fun dispatch(event: GameUiEvent) {
         dispatchGameUiEvent(
             event = event,
@@ -548,36 +544,11 @@ private fun GoCoachScreen(
                 },
                 changePlayerSetup = controllers.settingsController::changePlayerSetup, changeAutoPlayDelay = controllers.settingsController::changeAutoPlayDelay,
                 changeSearchTimeSettings = controllers.settingsController::changeSearchTimeSettings,
-                changeBoardSize = { size ->
-                    if (isGameEnded) {
-                        settingsState = settingsState.applyBoardSize(size)
-                        refreshNewGamePreview()
-                    }
-                },
+                changeBoardSize = controllers.settingsController::changeBoardSize,
                 changeScoringRule = controllers.scoringRuleController::change,
-                changeKomi = { komi ->
-                    settingsState = settingsState.applyKomi(komi)
-                    val updatedState = sessionSnapshot.gameState.copy(komi = komi)
-                    if (isGameEnded) {
-                        refreshNewGamePreview()
-                    } else {
-                        applyCoreSessionState(
-                            sessionSnapshot.core.copy(
-                                gameState = updatedState,
-                                scoreState = sessionSnapshot.core.scoreState.copy(
-                                    scoreText = com.worksoc.goaicoach.shared.BoardScorer.score(updatedState).toDisplayText(),
-                                )
-                            )
-                        )
-                    }
-                },
+                changeKomi = controllers.settingsController::changeKomi,
                 changeUxOptions = { options -> uxOptions = options },
-                changeHandicapCount = { count ->
-                    if (isGameEnded) {
-                        settingsState = settingsState.applyHandicap(count)
-                        refreshNewGamePreview()
-                    }
-                },
+                changeHandicapCount = controllers.settingsController::changeHandicapCount,
                 reportEngineTurnWatchdogTriggered = { elapsedMillis, thresholdMillis ->
                     diagnosticEventLog.append(
                         DiagnosticEvent(
@@ -753,26 +724,13 @@ private fun GoCoachScreen(
 
     // 프리미엄이 비활성 상태가 될 때(활성화 안 함 선택, 만료 등) 형세보기/추천수의
     // "켜짐" 상태값 자체를 꺼서, 버튼만 잠기고 기능은 이전 값대로 계속 동작하는 걸 방지한다.
+    // 진단 로그 내용 자체는 순수 함수(buildPremiumDeactivatedDiagnosticEvent)가 판정한다.
     LaunchedEffect(premiumUiState.isActive) {
         if (!premiumUiState.isActive) {
             uxOptions = uxOptions.copy(showOwnershipOverlay = false)
             controllers.topMovesController.hide()
-            // source가 None이면 애초에 활성화된 적이 없으므로(예: 앱 최초 실행) 로그하지 않는다
-            // — 실제로 활성 상태였다가 꺼진 경우(만료/명시적 비활성화)만 남긴다.
-            if (premiumState.source != PremiumSource.None) {
-                diagnosticEventLog.append(
-                    DiagnosticEvent(
-                        severity = DiagnosticSeverity.Info,
-                        code = "premium_deactivated",
-                        message = "Premium is no longer active.",
-                        context = mapOf(
-                            "source" to premiumState.source.name,
-                            "adGrantStartedAtMillis" to (premiumState.adGrantStartedAtMillis?.toString() ?: "null"),
-                            "nowMillis" to System.currentTimeMillis().toString(),
-                        ),
-                    ),
-                )
-            }
+            buildPremiumDeactivatedDiagnosticEvent(premiumState, System.currentTimeMillis())
+                ?.let(diagnosticEventLog::append)
         }
     }
 
@@ -797,17 +755,25 @@ private fun GoCoachScreen(
                     currentDestination = ScreenDestination.GameSetup
                 },
                 onSettingsClick = { currentDestination = ScreenDestination.Settings },
+                onStudyClick = { currentDestination = ScreenDestination.Study },
                 selectedLanguage = selectedLanguage,
                 onLanguageChange = onLanguageChange,
                 hasResumableSession = savedSessionToPrompt != null,
                 onResumeClick = { showResumeDialog = true },
             )
         }
+        ScreenDestination.Study -> {
+            StudyScreen(onBackClick = { currentDestination = ScreenDestination.Home })
+        }
         ScreenDestination.Settings -> {
             SettingsScreen(
                 authClient = authClient,
                 credentialManagerClient = credentialManagerClient,
                 diagnosticEventLog = diagnosticEventLog,
+                screenState = screenState,
+                onEvent = ::dispatch,
+                selectedLanguage = selectedLanguage,
+                onLanguageChange = onLanguageChange,
                 onBackClick = { currentDestination = ScreenDestination.Home },
             )
         }
@@ -844,6 +810,7 @@ internal enum class ScreenDestination {
     Onboarding,
     Home,
     Settings,
+    Study,
     GameSetup,
     InGame
 }
