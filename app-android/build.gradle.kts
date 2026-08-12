@@ -138,6 +138,16 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+            // Play Console이 "App Bundle에 네이티브 코드가 있는데 디버그 기호가 없다"고 경고했던
+            // 원인 — libkatago.so를 패키징 전에 strip해서 jniLibs에 넣고 있었다(지금은 unstripped
+            // 원본을 두고 scripts/build-katago-android-spike.sh 참고). 이 설정을 켜면 AGP가
+            // 패키징 시 자동으로 strip해서 넣으면서, 벗겨낸 심볼을 App Bundle에 동봉해 Play
+            // Console이 업로드 시점에 자동으로 가져간다(매 릴리스 수동 업로드 불필요). FULL(전체
+            // DWARF, 파일 큼) 대신 SYMBOL_TABLE(함수명 수준)을 택했다 — KataGo는 소스맵 없이
+            // 사내에서만 보는 크래시 로그라 함수명 단위 심볼이면 충분하다.
+            ndk {
+                debugSymbolLevel = "SYMBOL_TABLE"
+            }
             // local.properties에 실제 값이 아직 없으면(미등록 상태) release 빌드도 안전하게 테스트
             // 값으로 폴백한다 — "테스트해야 하는데 실제 광고가 나가는" 상황보다 "출시용인데 테스트
             // 광고가 나가는" 상황(눈에 바로 띄는 버그)이 훨씬 덜 위험하기 때문.
@@ -177,6 +187,12 @@ android {
             // 하는 friend에는 문제없지만, Play Console은 debuggable 빌드 업로드 시 게시 전 반드시
             // 꺼야 한다고 경고한다. playInternal만 명시적으로 false로 되돌린다.
             isDebuggable = false
+            // release와 동일한 이유(위 release 블록 주석 참고) — initWith가 ndk 설정까지 안정적으로
+            // 복사해준다는 보장이 없어(buildConfigField와 같은 사정) 명시적으로 다시 선언한다.
+            // playInternal이 실제로 Play Console에 업로드되는 채널이라 이쪽도 반드시 필요하다.
+            ndk {
+                debugSymbolLevel = "SYMBOL_TABLE"
+            }
             manifestPlaceholders["admobAppId"] = testAdmobAppId
             buildConfigField("boolean", "USE_TEST_ADS", "true")
             buildConfigField("String", "REWARDED_INTERSTITIAL_AD_UNIT_ID", "\"$testRewardedInterstitialAdUnitId\"")

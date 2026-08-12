@@ -58,8 +58,12 @@ rm -rf "$BUILD_DIR"
 
 "$CMAKE_BIN" --build "$BUILD_DIR" --target katago -- -j "${JOBS:-8}"
 
-"$NDK_DIR/toolchains/llvm/prebuilt/darwin-x86_64/bin/llvm-strip" \
-  -o "$OUTPUT_LIB" \
-  "$BUILD_DIR/katago"
+# 여기서 strip하지 않고 디버그 심볼이 그대로 남은 바이너리를 jniLibs에 둔다 — release/
+# playInternal 빌드 시 AGP가 패키징 단계에서 자동으로 strip해서 넣고, ndk.debugSymbolLevel
+# 설정에 따라 벗겨낸 심볼을 App Bundle에 동봉해 Play Console이 자동으로 받아가게 한다
+# (app-android/build.gradle.kts 참고). 여기서 미리 strip해버리면 AGP가 심볼을 만들어낼
+# 원본 자체가 없어져 Play Console의 "디버그 기호가 업로드되지 않았습니다" 경고를 해결할
+# 방법이 없어진다.
+cp "$BUILD_DIR/katago" "$OUTPUT_LIB"
 
-echo "Wrote $OUTPUT_LIB"
+echo "Wrote $OUTPUT_LIB (unstripped — release/playInternal builds strip on packaging)"
