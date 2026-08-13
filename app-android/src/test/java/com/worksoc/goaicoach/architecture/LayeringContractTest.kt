@@ -1329,7 +1329,14 @@ class LayeringContractTest {
         // application.premium.buildPremiumDeactivatedDiagnosticEvent. Net: lower
         // than the pre-Study-screen 849, despite the Study/Settings routing added
         // the same day.
-        val lineBudget = 816
+        //
+        // History (2026-08-13): bumped 816->819 to wire the "무르기" claim/
+        // grandfathering fields (isUndoClaimed/claimUndo) into PremiumUiState(...)
+        // and preserve isUndoClaimed across the three existing PremiumState
+        // transitions (setPurchased/purchasePremium/activateAdGrant), which would
+        // otherwise silently clear it. Reuses the existing premiumState state hook
+        // (no new remember/mutableStateOf/LaunchedEffect) — stateHookBudget stays 47.
+        val lineBudget = 819
         val stateHookBudget = 47
 
         val goCoachApp = repoRoot()

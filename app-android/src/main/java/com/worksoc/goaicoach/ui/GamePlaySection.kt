@@ -31,9 +31,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import android.widget.Toast
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
@@ -264,19 +266,52 @@ private fun GameActionButtons(
 ) {
     val strings = LocalUiStrings.current
     val premium = LocalPremiumUiState.current
+    val context = LocalContext.current
     var showResignConfirm by remember { mutableStateOf(false) }
     var showPremiumUpsellDialog by remember { mutableStateOf(false) }
+    var showUndoClaimDialog by remember { mutableStateOf(false) }
 
     // 형세보기/추천수는 프리미엄 전용. 잠겨 있을 때는 금색 테두리(PremiumLockedBorder)로
-    // 표시하고, 탭하면 실제 동작 대신 업셀 팝업을 띄운다 (기권/통과/무르기는 게이팅 대상이 아님).
+    // 표시하고, 탭하면 실제 동작 대신 업셀 팝업을 띄운다 (기권/통과는 게이팅 대상이 아님).
     fun premiumGated(action: () -> Unit) {
         if (premium.isActive) action() else showPremiumUpsellDialog = true
+    }
+
+    // 무르기는 프리미엄 게이팅이 아니라 초도 발행 클레임 프로모션 대상이다(launch-plan/README.md
+    // 3장) — 클레임했거나(그랜드파더링) 프리미엄이면 그대로 실행, 아니면 클레임 팝업을 띄운다.
+    // 액션을 뒤로 미루지 않는다 — premiumGated와 동일하게, 이번 탭은 팝업까지만 하고 멈춘다.
+    fun undoClaimGated(action: () -> Unit) {
+        if (premium.isUndoClaimed || premium.isActive) action() else showUndoClaimDialog = true
     }
 
     PremiumUpsellDialogHost(
         visible = showPremiumUpsellDialog,
         onDismiss = { showPremiumUpsellDialog = false },
     )
+
+    if (showUndoClaimDialog) {
+        AlertDialog(
+            onDismissRequest = { showUndoClaimDialog = false },
+            title = { Text(strings.undoClaimTitle) },
+            text = { Text(strings.undoClaimMessage) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showUndoClaimDialog = false
+                        premium.claimUndo()
+                        Toast.makeText(context, strings.undoClaimSuccessMessage, Toast.LENGTH_SHORT).show()
+                    },
+                ) {
+                    Text(strings.undoClaimConfirmAction)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showUndoClaimDialog = false }) {
+                    Text(strings.no)
+                }
+            },
+        )
+    }
 
     if (showResignConfirm) {
         AlertDialog(
@@ -366,13 +401,13 @@ private fun GameActionButtons(
                 )
             }
 
-            // 3. 무르기 (Undo) 버튼 (무료)
+            // 3. 무르기 (Undo) 버튼 (클레임 시 무료 — 그랜드파더링, launch-plan/README.md 3장)
             val undoAction = screenState.actionButtons.firstOrNull { it.role == GameActionButtonRole.Undo }
             if (undoAction != null) {
                 SingleActionButton(
                     action = undoAction,
                     label = strings.undo,
-                    onEvent = onEvent,
+                    onEvent = { event -> undoClaimGated { onEvent(event) } },
                     modifier = Modifier.weight(1f),
                 )
             }

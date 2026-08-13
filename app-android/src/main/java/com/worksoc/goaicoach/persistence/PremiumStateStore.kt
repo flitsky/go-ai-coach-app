@@ -38,6 +38,7 @@ internal object PremiumStateCodec {
         JSONObject()
             .put("source", state.source.name)
             .put("adGrantStartedAtMillis", state.adGrantStartedAtMillis ?: JSONObject.NULL)
+            .put("isUndoClaimed", state.isUndoClaimed)
             .toString()
 
     fun decode(raw: String): PremiumState? =
@@ -46,6 +47,7 @@ internal object PremiumStateCodec {
             PremiumState(
                 source = enumOrDefault(json.optString("source"), PremiumSource.None),
                 adGrantStartedAtMillis = json.optLongOrNull("adGrantStartedAtMillis"),
+                isUndoClaimed = json.optBoolean("isUndoClaimed", false),
             )
         }.getOrNull()
 

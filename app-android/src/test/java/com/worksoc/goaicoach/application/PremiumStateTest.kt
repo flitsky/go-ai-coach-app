@@ -76,4 +76,15 @@ class PremiumStateTest {
         // isActive의 경과시간 계산이 음수가 되어 영영 만료되지 않는 오판을 막아야 한다.
         assertFalse(state.isClockPlausibleAt(nowMillis = grantedAt - 1))
     }
+
+    @Test
+    fun undoClaimedIsIndependentOfActiveAndClockPlausibleJudgement() {
+        // isUndoClaimed는 초도 발행 그랜드파더링(launch-plan/README.md 3장) 전용 축이라,
+        // source/adGrantStartedAtMillis 기반 판정(isActive/isClockPlausibleAt)에 영향을
+        // 주면 안 된다 — 클레임만 하고 프리미엄은 없는 상태가 정상적으로 존재해야 한다.
+        val state = PremiumState(isUndoClaimed = true)
+
+        assertFalse(state.isActive(nowMillis = 0L))
+        assertTrue(state.isClockPlausibleAt(nowMillis = 0L))
+    }
 }

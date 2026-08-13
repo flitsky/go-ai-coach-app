@@ -22,6 +22,12 @@ internal enum class PremiumSource {
 internal data class PremiumState(
     val source: PremiumSource = PremiumSource.None,
     val adGrantStartedAtMillis: Long? = null,
+    // 초도 발행 "무르기 무료 클레임" 그랜드파더링(launch-plan/README.md 3장) — [source]와
+    // 별개 축이다. 한 번 true가 되면 이후 무르기 기본 정책이 바뀌어도 재평가하지 않고
+    // 계속 true로 남는다("지금 무르기가 기본으로 무료인가"가 아니라 "이 유저가 예전에
+    // 클레임을 받았는가"만 저장). [purchased]/[adGranted]로 전이할 때 이 필드까지 같이
+    // 초기화되지 않도록 호출부(`GoCoachApp.kt`)가 `.copy(isUndoClaimed = ...)`로 이어붙인다.
+    val isUndoClaimed: Boolean = false,
 ) {
     /**
      * 현재 시각 기준으로 프리미엄이 유효한지 판정한다.

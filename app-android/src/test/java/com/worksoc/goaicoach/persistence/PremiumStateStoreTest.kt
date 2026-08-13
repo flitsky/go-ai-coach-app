@@ -37,4 +37,24 @@ class PremiumStateStoreTest {
     fun decodeMalformedJsonReturnsNull() {
         assertNull(PremiumStateCodec.decode("not json"))
     }
+
+    @Test
+    fun encodeDecodeRoundTripsUndoClaimedFlag() {
+        val original = PremiumState(isUndoClaimed = true)
+
+        val decoded = PremiumStateCodec.decode(PremiumStateCodec.encode(original))
+
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun decodeMissingUndoClaimedKeyDefaultsToFalse() {
+        // isUndoClaimed 필드 추가 이전에 저장된 JSON(이 키 자체가 없음)을 하위 호환으로
+        // 읽어야 한다 — preferences-autosave 계열과 동일하게 optBoolean 기본값에 의존한다.
+        val legacyJson = """{"source":"None","adGrantStartedAtMillis":null}"""
+
+        val decoded = PremiumStateCodec.decode(legacyJson)
+
+        assertEquals(PremiumState(isUndoClaimed = false), decoded)
+    }
 }

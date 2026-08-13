@@ -696,25 +696,28 @@ private fun GoCoachScreen(
     )
 
     val premiumUiState = PremiumUiState(
-        // 별도 tick 없이 재구성될 때마다 현재 시각으로 평가한다 — 대국 중에는 착수/AI
-        // 응답 등으로 이 컴포저블이 충분히 자주 재구성되므로 1시간 만료 판정에 문제없다.
+        // 재구성 시점의 현재 시각으로 매번 평가한다(별도 tick 없이, 대국 중 재구성이 충분히 잦아 문제없음).
         isActive = premiumState.isActive(nowMillis = System.currentTimeMillis()),
         isPurchased = premiumState.source == PremiumSource.Purchase,
         adGrantExpiresAtMillis = premiumState.adGrantStartedAtMillis?.plus(PremiumState.AdGrantDurationMillis),
+        isUndoClaimed = premiumState.isUndoClaimed,
+        // 아래 세 곳 모두 isUndoClaimed를 명시적으로 이어붙인다 — PremiumState.purchased()/
+        // adGranted()가 이 필드를 모른 채 새로 만들어지므로, 안 그러면 클레임이 조용히 사라진다.
         setPurchased = { purchased ->
-            premiumState = if (purchased) PremiumState.purchased() else PremiumState()
+            premiumState = (if (purchased) PremiumState.purchased() else PremiumState()).copy(isUndoClaimed = premiumState.isUndoClaimed)
             premiumStateStore.save(premiumState)
         },
         purchasePremium = {
             val (outcome, nextState) = performPremiumPurchase(context, diagnosticEventLog)
-            nextState?.let { premiumState = it; premiumStateStore.save(it) }
+            nextState?.let { premiumState = it.copy(isUndoClaimed = premiumState.isUndoClaimed); premiumStateStore.save(premiumState) }
             outcome
         },
         activateAdGrant = {
             val (outcome, nextState) = performPremiumAdGrant(context, diagnosticEventLog)
-            nextState?.let { premiumState = it; premiumStateStore.save(it) }
+            nextState?.let { premiumState = it.copy(isUndoClaimed = premiumState.isUndoClaimed); premiumStateStore.save(premiumState) }
             outcome
         },
+        claimUndo = { premiumState = premiumState.copy(isUndoClaimed = true); premiumStateStore.save(premiumState) },
     )
 
     PremiumPurchaseRestoreEffect(context, diagnosticEventLog) { nextState ->

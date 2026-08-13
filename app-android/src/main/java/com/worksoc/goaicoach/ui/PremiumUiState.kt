@@ -62,11 +62,16 @@ import kotlinx.coroutines.launch
  * 실제 카운트다운(초 단위 재계산)은 이 값을 읽는 화면(예: [GameSetupLobby]) 쪽에서
  * 자체적으로 tick을 돌며 계산한다 — `GoCoachApp.kt`는 상태 훅 예산이 빠듯해 여기서는
  * 만료 시각만 그대로 넘겨준다.
+ *
+ * [isUndoClaimed]/[claimUndo]는 [isActive]와 별개 축이다 — 초도 발행 "무르기 무료 클레임"
+ * 그랜드파더링(launch-plan/README.md 3장)용으로, 한 번 클레임하면 이후 무르기 기본 정책이
+ * 바뀌어도 계속 무료다. 게이팅 판정은 항상 `isUndoClaimed || isActive`로 OR 결합한다.
  */
 internal data class PremiumUiState(
     val isActive: Boolean = false,
     val isPurchased: Boolean = false,
     val adGrantExpiresAtMillis: Long? = null,
+    val isUndoClaimed: Boolean = false,
     val activateAdGrant: suspend () -> AdRewardOutcome = {
         AdRewardOutcome.NotRewarded(AdRewardFailureReason.Unavailable)
     },
@@ -74,6 +79,7 @@ internal data class PremiumUiState(
         PurchaseOutcome.NotPurchased(PurchaseFailureReason.Unavailable)
     },
     val setPurchased: (Boolean) -> Unit = {},
+    val claimUndo: () -> Unit = {},
 )
 
 internal val LocalPremiumUiState = staticCompositionLocalOf { PremiumUiState() }
