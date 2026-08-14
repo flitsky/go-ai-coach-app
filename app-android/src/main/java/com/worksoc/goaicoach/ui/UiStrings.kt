@@ -196,6 +196,8 @@ internal data class UiStrings(
     val settingsDevPremiumToggleSubtitle: String,
     val settingsDevGameSetupUxToggleTitle: String,
     val settingsDevGameSetupUxToggleSubtitle: String,
+    val settingsVersionLabel: String,
+    val settingsBuildTimeLabel: String,
     val premiumModeTitle: String,
     val premiumModeFeatureList: String,
     val premiumPurchaseFailedMessage: String,
