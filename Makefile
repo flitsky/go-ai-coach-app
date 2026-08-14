@@ -4,11 +4,24 @@ ANDROID_HOME ?= /Users/ryan9kim/Library/Android/sdk
 JAVA_HOME ?= $(shell /usr/libexec/java_home -v 17 2>/dev/null)
 GRADLEW := ./gradlew
 
-# adb 기기가 두 대 이상 붙어있으면(예: 실기기 + 에뮬레이터 동시 연결) adb가 대상을 특정하지
-# 못해 "more than one device/emulator" 에러를 낸다. 여기서 명시적으로 선언해두면 doctor가
-# 미리 감지해 안내할 수 있고, export될 때 adb/Gradle installDebug가 자동으로 이 값을 읽어
-# 대상을 정한다(-s 플래그를 모든 adb 호출에 일일이 붙이지 않아도 됨).
+# Target device selection:
+# - TARGET: preset keyword ('emu' or 'phone')
+# - ANDROID_SERIAL: exact adb serial (or auto-resolved from connected devices)
+#
+# When multiple devices are attached, doctor will guide you to specify TARGET or ANDROID_SERIAL.
+# If a configured ANDROID_SERIAL is disconnected and exactly 1 other device is available,
+# it will automatically fall back to the active device.
+TARGET ?=
 ANDROID_SERIAL ?=
+
+# Auto-resolve target device serial when possible
+RESOLVED_SERIAL := $(shell TARGET="$(TARGET)" ANDROID_SERIAL="$(ANDROID_SERIAL)" ANDROID_HOME="$(ANDROID_HOME)" ./scripts/resolve-target-device.sh --get-serial 2>/dev/null)
+ifneq ($(strip $(RESOLVED_SERIAL)),)
+ANDROID_SERIAL := $(RESOLVED_SERIAL)
+export ANDROID_SERIAL
+else ifneq ($(strip $(ANDROID_SERIAL)),)
+export ANDROID_SERIAL
+endif
 
 # app-android/build.gradle.kts에서 직접 읽어온다 — 하드코딩하면 applicationId가 바뀔 때마다
 # (예: Firebase 패키지명 정정) adb 타겟이 옛 패키지를 계속 가리키는 채로 조용히 어긋난다.
@@ -46,9 +59,6 @@ VERSION ?=
 
 export ANDROID_HOME
 export JAVA_HOME
-ifneq ($(strip $(ANDROID_SERIAL)),)
-export ANDROID_SERIAL
-endif
 
 .DEFAULT_GOAL := help
 
@@ -62,18 +72,16 @@ help:
 	@echo " [Development & Installation]"
 	@echo "  make dev                 - Build Debug APK (requires debug engine binary)"
 	@echo "  make dev-stub            - Build Debug APK in Stub-only mode"
-	@echo "  make install-dev         - Build & Install Debug APK to device"
+	@echo "  make install-dev         - Build & Install Debug APK to target device"
 	@echo "  make install-dev-engine  - Build/Install Debug APK + Seed KataGo model + Launch app"
+	@echo "                             (Supports TARGET=emu or TARGET=phone, or ANDROID_SERIAL=<serial>)"
 	@echo "  make reinstall-dev-engine- Uninstall app, re-install, seed model & launch"
-	@echo "  make seed-engine         - Seed KataGo model & configs to device"
+	@echo "  make seed-engine         - Seed KataGo model & configs to target device"
 	@echo "  make launch              - Force-stop & launch app on target device"
 	@echo ""
 	@echo " [Environment & Testing]"
-	@echo "  make doctor              - Check JDK 17, ANDROID_HOME, and adb environment"
-	@echo "                             (fails fast with guidance if >1 adb device is connected;"
-	@echo "                              pass ANDROID_SERIAL=<serial> to pick one; also warns if the"
-	@echo "                              connected device's installed app is missing the seeded"
-	@echo "                              KataGo model, meaning it's silently running on the stub AI)"
+	@echo "  make doctor              - Check JDK 17, ANDROID_HOME, and adb target device"
+	@echo "                             (Supports TARGET=emu/phone or auto-resolution)"
 	@echo "  make test                - Run unit tests for shared, engine, and app modules"
 	@echo ""
 	@echo " [Build & Engine Prebuild]"
@@ -100,19 +108,8 @@ doctor:
 	@test -d "$(ANDROID_HOME)" || (echo "ANDROID_HOME does not exist: $(ANDROID_HOME)" && exit 1)
 	@test -x "$(ANDROID_HOME)/platform-tools/adb" || (echo "adb not found under ANDROID_HOME/platform-tools." && exit 1)
 	@test -x "$(GRADLEW)" || (echo "Gradle wrapper is missing or not executable." && exit 1)
-	@if [ -z "$(ANDROID_SERIAL)" ]; then \
-		DEVICE_COUNT=$$("$(ANDROID_HOME)/platform-tools/adb" devices | grep -c $$'\tdevice$$' || true); \
-		if [ "$$DEVICE_COUNT" -gt 1 ]; then \
-			echo "Multiple adb devices/emulators are connected — commands that talk to a device" >&2; \
-			echo "(seed-engine, launch, install-dev, ...) cannot pick one automatically:" >&2; \
-			"$(ANDROID_HOME)/platform-tools/adb" devices -l >&2; \
-			echo "Set ANDROID_SERIAL=<serial> (see above) and re-run, e.g.:" >&2; \
-			echo "  ANDROID_SERIAL=R5CT22WTVXP make seed-engine" >&2; \
-			exit 1; \
-		fi; \
-	fi
-	@DEVICE_COUNT=$$("$(ANDROID_HOME)/platform-tools/adb" devices | grep -c $$'\tdevice$$' || true); \
-	if [ "$$DEVICE_COUNT" = "1" ] || [ -n "$(ANDROID_SERIAL)" ]; then \
+	@TARGET="$(TARGET)" ANDROID_SERIAL="$(ANDROID_SERIAL)" ANDROID_HOME="$(ANDROID_HOME)" ./scripts/resolve-target-device.sh --doctor
+	@if [ -n "$(ANDROID_SERIAL)" ]; then \
 		if "$(ANDROID_HOME)/platform-tools/adb" shell pm path $(APP_PACKAGE) >/dev/null 2>&1; then \
 			if ! "$(ANDROID_HOME)/platform-tools/adb" shell run-as $(APP_PACKAGE) test -s files/katago/model.bin.gz >/dev/null 2>&1; then \
 				echo ""; \
