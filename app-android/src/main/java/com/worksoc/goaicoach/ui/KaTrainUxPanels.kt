@@ -24,6 +24,8 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
+import com.worksoc.goaicoach.application.premium.FeatureAccess
+import com.worksoc.goaicoach.application.premium.FeatureId
 import com.worksoc.goaicoach.presentation.KaTrainUxOptions
 
 @Composable
@@ -94,12 +96,15 @@ internal fun KaTrainUxMenuPanel(
                 // 착수 평가: 착수한 돌의 품질 색상 표시 여부. 기본 꺼짐 — 사용자가 의도적으로
                 // 켤 때만 노출한다. 향후 평가 신뢰도/방식이 점진적으로 고도화될 예정인 기능.
                 // 프리미엄 전용 — 비활성 상태에서는 흐리게 표시하고 탭하면 업셀 팝업을 띄운다.
+                // 판정은 FeatureAccessPolicy(6계층)에 위임 — GamePlaySection.kt의 형세보기/추천수와
+                // 같은 정책 소스를 공유한다(이 기능엔 클레임 경로가 없어 동작은 이전과 동일).
+                val moveReviewAllowed = premium.resolve(FeatureId.MoveReview) is FeatureAccess.Allowed
                 OptionSwitchCell(
                     label = strings.moveReviewToggle,
-                    checked = options.showMoveReview && premium.isActive,
-                    modifier = Modifier.weight(1f).alpha(if (premium.isActive) 1f else 0.5f),
+                    checked = options.showMoveReview && moveReviewAllowed,
+                    modifier = Modifier.weight(1f).alpha(if (moveReviewAllowed) 1f else 0.5f),
                     onCheckedChange = {
-                        if (premium.isActive) {
+                        if (moveReviewAllowed) {
                             onOptionsChange(options.copy(showMoveReview = it))
                         } else {
                             showPremiumUpsellDialog = true

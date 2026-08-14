@@ -16,6 +16,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import com.worksoc.goaicoach.application.movereview.MoveReviewTone
+import com.worksoc.goaicoach.application.premium.FeatureAccess
+import com.worksoc.goaicoach.application.premium.FeatureId
+import com.worksoc.goaicoach.application.premium.UnlockOption
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.AlertDialog
@@ -271,17 +274,17 @@ private fun GameActionButtons(
     var showPremiumUpsellDialog by remember { mutableStateOf(false) }
     var showUndoClaimDialog by remember { mutableStateOf(false) }
 
-    // 형세보기/추천수는 프리미엄 전용. 잠겨 있을 때는 금색 테두리(PremiumLockedBorder)로
-    // 표시하고, 탭하면 실제 동작 대신 업셀 팝업을 띄운다 (기권/통과는 게이팅 대상이 아님).
-    fun premiumGated(action: () -> Unit) {
-        if (premium.isActive) action() else showPremiumUpsellDialog = true
-    }
-
-    // 무르기는 프리미엄 게이팅이 아니라 초도 발행 클레임 프로모션 대상이다(launch-plan/README.md
-    // 3장) — 클레임했거나(그랜드파더링) 프리미엄이면 그대로 실행, 아니면 클레임 팝업을 띄운다.
-    // 액션을 뒤로 미루지 않는다 — premiumGated와 동일하게, 이번 탭은 팝업까지만 하고 멈춘다.
-    fun undoClaimGated(action: () -> Unit) {
-        if (premium.isUndoClaimed || premium.isActive) action() else showUndoClaimDialog = true
+    // 기능별 판정은 FeatureAccessPolicy(6계층, application/premium/FeatureAccessPolicy.kt)에
+    // 위임한다 — 어느 기능이 무료/광고/구매/클레임 중 무엇으로 풀리는지는 여기서 다시
+    // 판단하지 않는다. 잠겨 있을 때는 금색 테두리(PremiumLockedBorder)로 표시하고, 탭하면
+    // 실제 동작 대신 업셀(또는 클레임 가능하면 클레임) 팝업을 띄운다. 액션을 뒤로 미루지
+    // 않는다 — 이번 탭은 팝업까지만 하고 멈춘다 (기권/통과는 게이팅 대상이 아님).
+    fun featureGated(access: FeatureAccess, action: () -> Unit) {
+        when (access) {
+            is FeatureAccess.Allowed -> action()
+            is FeatureAccess.Locked ->
+                if (UnlockOption.Claim in access.unlockOptions) showUndoClaimDialog = true else showPremiumUpsellDialog = true
+        }
     }
 
     PremiumUpsellDialogHost(
@@ -298,7 +301,7 @@ private fun GameActionButtons(
                 TextButton(
                     onClick = {
                         showUndoClaimDialog = false
-                        premium.claimUndo()
+                        premium.claim(FeatureId.Undo)
                         Toast.makeText(context, strings.undoClaimSuccessMessage, Toast.LENGTH_SHORT).show()
                     },
                 ) {
@@ -348,24 +351,26 @@ private fun GameActionButtons(
             // 1. 형세보기 (Eval) 버튼 (프리미엄 전용)
             val evalAction = screenState.actionButtons.firstOrNull { it.role == GameActionButtonRole.Eval }
             if (evalAction != null) {
+                val evalAccess = premium.resolve(FeatureId.Eval)
                 ToggleActionButton(
                     action = evalAction,
                     label = strings.eval,
-                    onEvent = { event -> premiumGated { onEvent(event) } },
+                    onEvent = { event -> featureGated(evalAccess) { onEvent(event) } },
                     modifier = Modifier.weight(1f),
-                    premiumLocked = !premium.isActive,
+                    premiumLocked = evalAccess !is FeatureAccess.Allowed,
                 )
             }
 
             // 2. 추천수 (Top Moves) 버튼 (프리미엄 전용)
             val topMovesAction = screenState.actionButtons.firstOrNull { it.role == GameActionButtonRole.TopMoves }
             if (topMovesAction != null) {
+                val topMovesAccess = premium.resolve(FeatureId.TopMoves)
                 ToggleActionButton(
                     action = topMovesAction,
                     label = strings.topMoves,
-                    onEvent = { event -> premiumGated { onEvent(event) } },
+                    onEvent = { event -> featureGated(topMovesAccess) { onEvent(event) } },
                     modifier = Modifier.weight(1f),
-                    premiumLocked = !premium.isActive,
+                    premiumLocked = topMovesAccess !is FeatureAccess.Allowed,
                 )
             }
         }
@@ -404,10 +409,11 @@ private fun GameActionButtons(
             // 3. 무르기 (Undo) 버튼 (클레임 시 무료 — 그랜드파더링, launch-plan/README.md 3장)
             val undoAction = screenState.actionButtons.firstOrNull { it.role == GameActionButtonRole.Undo }
             if (undoAction != null) {
+                val undoAccess = premium.resolve(FeatureId.Undo)
                 SingleActionButton(
                     action = undoAction,
                     label = strings.undo,
-                    onEvent = { event -> undoClaimGated { onEvent(event) } },
+                    onEvent = { event -> featureGated(undoAccess) { onEvent(event) } },
                     modifier = Modifier.weight(1f),
                 )
             }

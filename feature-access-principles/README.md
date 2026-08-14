@@ -24,15 +24,15 @@
 
 ## 2. 기능 구현 레이어 원칙
 
-기능은 다음 3단으로 일관되게 정리한다 — 이미 코드 구조가 이 모양입니다. **2026-08-14 갱신**: 아래 "새로 만들 것" 3줄은 `docs/GO_AI_COACH_ARCHITECTURE_ROADMAP.md`의 "5/6계층 — 기능 엔타이틀먼트 정책 도입" 항목으로 7계층 모델 상의 정확한 위치까지 배치가 끝났습니다 — 이 문서는 왜 그 방향인지(원칙)를, 로드맵 문서는 정확히 어느 계층·어느 파일인지(배치)를 담당하는 분업이라 여기서는 결론만 인용합니다.
+기능은 다음 3단으로 일관되게 정리한다 — 이미 코드 구조가 이 모양입니다. **2026-08-14 갱신**: 아래 "기능 활성화 관리 도메인" 행이 `docs/GO_AI_COACH_ARCHITECTURE_ROADMAP.md`의 "6계층 — 기능 엔타이틀먼트 정책 도입" 항목으로 구현까지 끝났습니다 — 이 문서는 왜 그 방향인지(원칙)를, 로드맵 문서는 정확히 어느 계층·어느 파일인지(배치)를 담당하는 분업이라 여기서는 결론만 인용합니다.
 
 | 레이어 | 역할 | 현재 코드 위치 | 7계층 모델 상 위치 |
 | --- | --- | --- | --- |
 | 기능 구현 최상위 집합 레이어 | 엔진 코어~미들웨어까지 고도화된 기능을 일관되게 노출 | `application/*`(topmoves, movereview, score 등), `shared`/`engine-android` | 3계층(엔진 서비스) + 5계층(App Service 오케스트레이션) |
-| 기능 활성화 관리 도메인 | 기능별 무료/프리미엄 여부, 활성화 소스(광고/구매/클레임) 판정 | 상태: `application/premium/PremiumState.kt`. 판정: **(신규 제안, 미구현)** `application/featureaccess/FeatureAccessPolicy.kt` | 상태는 6계층(세션/연속성), 판정은 5계층(도메인 규칙) — "무엇을 갖고 있는가"와 "그래서 이 기능을 쓸 수 있는가"가 서로 다른 계층이라는 것이 이번에 명문화된 부분 |
-| 프레젠테이션 레이어 | UX로 노출, 유저 상태에 따라 업셀/광고/구매/클레임 플로우 전개 | `ui/GamePlaySection.kt`, `ui/PremiumUiState.kt`, `ui/PremiumUpsellDialog` | 7계층. **현재 갭**: 위 판정(`FeatureAccessPolicy`가 아직 없어서)이 지금은 `GamePlaySection.kt`의 `premiumGated`/`undoClaimGated`에 하드코딩돼 있다 — 7계층이 알면 안 되는 도메인 규칙을 알고 있는 상태. 상세는 로드맵 문서의 "알려진 갭" 참고 |
+| 기능 활성화 관리 도메인 | 기능별 무료/프리미엄 여부, 활성화 소스(광고/구매/클레임) 판정 | 상태: `application/premium/PremiumState.kt`(`claimedFeatures: Set<FeatureId>`). 판정: `application/premium/FeatureAccessPolicy.kt` | 상태·판정 둘 다 6계층(세션/연속성) — 판정 함수가 6계층 `PremiumState`를 파라미터로 받으므로 5계층일 수 없다(5계층은 6계층을 몰라야 함). "무엇을 갖고 있는가"와 "그래서 이 기능을 쓸 수 있는가"를 같은 계층 안에서 별도 타입으로 분리한 것이 이번에 명문화된 부분 |
+| 프레젠테이션 레이어 | UX로 노출, 유저 상태에 따라 업셀/광고/구매/클레임 플로우 전개 | `ui/GamePlaySection.kt`, `ui/KaTrainUxPanels.kt`, `ui/PremiumUiState.kt`, `ui/PremiumUpsellDialog` | 7계층. `GamePlaySection.kt`의 `featureGated(access, action)`·`KaTrainUxPanels.kt`의 `moveReviewAllowed`가 `FeatureAccessPolicy`의 판정 결과만 소비 — 더 이상 `isActive`/클레임 여부를 직접 조합하지 않는다 |
 
-새로 만들 것은 "단일 플래그(`isUndoClaimed`) → 기능별 원장(`claimedFeatures: Set<FeatureId>`)"으로 넓히는 것(6계층)과, 그 원장을 읽어 기능별로 판정하는 함수를 프레젠테이션에서 5계층으로 끌어올리는 것(`FeatureAccessPolicy`) — 두 가지입니다. 무르기가 그 첫 실사용 사례이고, 다음에 어떤 기능이든 같은 방식(클레임/광고/구매)으로 정책이 바뀌면 고칠 곳이 `FeatureAccessPolicy`의 분기 하나로 좁혀지는 것이 이 설계의 목적입니다.
+"단일 플래그(`isUndoClaimed`) → 기능별 원장(`claimedFeatures: Set<FeatureId>`)"으로 넓히고, 그 원장을 읽어 기능별로 판정하는 함수(`FeatureAccessPolicy`)를 프레젠테이션 3곳(`GamePlaySection.kt` 2곳, `KaTrainUxPanels.kt` 1곳)에서 걷어내 6계층 하나로 모았습니다. 무르기가 그 첫 실사용 사례이고, 다음에 어떤 기능이든 같은 방식(클레임/광고/구매)으로 정책이 바뀌면 고칠 곳이 `FeatureAccessPolicy`의 분기 하나로 좁혀지는 것이 이 설계의 목적입니다.
 
 ---
 
@@ -102,10 +102,10 @@
 ### 2026-08-13 갱신 — 위 "무르기" 관련 미확정 항목 해소
 - 무르기를 단순히 "다시 유료로" 되돌리는 게 아니라, **초도 발행 유저 한정 무료 클레임 + 그랜드파더링**(향후 정책이 바뀌어도 클레임한 유저는 계속 무료)으로 확정했습니다. 이는 6장 표의 "앱 내 활동/프로모션으로 얻은 영구 기능" 행의 구체 사례입니다. 상세 설계는 `launch-plan/README.md` 3장 참고.
 
-### 2026-08-14 갱신 — 2장 레이어 원칙을 7계층 모델에 정확히 배치
+### 2026-08-14 갱신 — 2장 레이어 원칙을 7계층 모델에 정확히 배치, 구현 완료
 - 배경: 정책적 결정(무료/광고/구매/클레임)이 앞으로도 계속 바뀔 것을 전제로, "기능 활성화 관리 도메인"이라는 뭉뚱그린 이름 하나로는 어디에 무엇을 둘지 결정할 때마다 다시 고민하게 된다는 문제 제기가 있었습니다.
-- 결론: 그 도메인을 **상태**(그 유저/기기가 지금 무엇을 갖고 있는가 — 6계층)와 **판정**(그래서 기능 X를 지금 쓸 수 있는가 — 5계층)으로 쪼갭니다. 상태는 계속 `PremiumState`가 갖되 단일 플래그(`isUndoClaimed`)를 기능별 원장(`claimedFeatures: Set<FeatureId>`)으로 넓히고, 판정은 새 `application/featureaccess/FeatureAccessPolicy.kt`(5계층)가 전담해 프레젠테이션(`ui/GamePlaySection.kt`)에 하드코딩된 지금의 OR 조건들을 대체합니다. 이렇게 하면 정책이 바뀔 때 고칠 곳이 이 판정 함수 하나로 좁혀지고, 프레젠테이션·저장소 코드는 손대지 않아도 됩니다.
-- 정확한 배치 근거와 파일 단위 로드맵은 이 문서가 아니라 `docs/GO_AI_COACH_ARCHITECTURE_ROADMAP.md`의 "5/6계층 — 기능 엔타이틀먼트 정책 도입" 항목에 있습니다 — 위 2장 표도 이 결정에 맞춰 갱신했습니다.
+- 결론: 그 도메인을 **상태**(그 유저/기기가 지금 무엇을 갖고 있는가)와 **판정**(그래서 기능 X를 지금 쓸 수 있는가)으로 쪼갭니다. 둘 다 6계층입니다 — 판정 함수가 6계층 `PremiumState`를 파라미터로 받는 이상 5계층일 수 없습니다(설계 초안엔 5계층으로 적었다가 착수 시점에 정정). 상태는 계속 `PremiumState`가 갖되 단일 플래그(`isUndoClaimed`)를 기능별 원장(`claimedFeatures: Set<FeatureId>`)으로 넓혔고, 판정은 새 `application/premium/FeatureAccessPolicy.kt`가 전담해 프레젠테이션 3곳(`ui/GamePlaySection.kt` 2곳, `ui/KaTrainUxPanels.kt` 1곳)에 하드코딩돼 있던 OR 조건들을 대체했습니다. 정책이 바뀔 때 고칠 곳이 이 판정 함수 하나로 좁혀지고, 프레젠테이션·저장소 코드는 손대지 않아도 됩니다.
+- 정확한 배치 근거와 파일 단위 로드맵은 이 문서가 아니라 `docs/GO_AI_COACH_ARCHITECTURE_ROADMAP.md`의 "6계층 — 기능 엔타이틀먼트 정책 도입" 항목에 있습니다 — 위 2장 표도 이 결정에 맞춰 갱신했습니다.
 
 ---
 

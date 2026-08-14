@@ -12,6 +12,14 @@ internal enum class PremiumSource {
     Purchase,
 }
 
+/** 프리미엄 게이팅 대상 기능. [FeatureAccessPolicy]가 이 각각에 대해 접근 가능 여부를 판정한다. */
+internal enum class FeatureId {
+    Undo,
+    Eval,
+    TopMoves,
+    MoveReview,
+}
+
 /**
  * 6계층(Session & Continuity) — 프리미엄 모드 상태. 플랫폼(Google Play 결제/광고 SDK)에
  * 의존하지 않는 순수 로직으로 설계해, 추후 iOS 쪽 활성화 소스를 추가할 때 이 타입 자체는
@@ -22,12 +30,13 @@ internal enum class PremiumSource {
 internal data class PremiumState(
     val source: PremiumSource = PremiumSource.None,
     val adGrantStartedAtMillis: Long? = null,
-    // 초도 발행 "무르기 무료 클레임" 그랜드파더링(launch-plan/README.md 3장) — [source]와
-    // 별개 축이다. 한 번 true가 되면 이후 무르기 기본 정책이 바뀌어도 재평가하지 않고
-    // 계속 true로 남는다("지금 무르기가 기본으로 무료인가"가 아니라 "이 유저가 예전에
-    // 클레임을 받았는가"만 저장). [purchased]/[adGranted]로 전이할 때 이 필드까지 같이
-    // 초기화되지 않도록 호출부(`GoCoachApp.kt`)가 `.copy(isUndoClaimed = ...)`로 이어붙인다.
-    val isUndoClaimed: Boolean = false,
+    // 앱 내 활동/프로모션으로 얻은 영구 클레임 원장(launch-plan/README.md 3장의 "무르기 무료
+    // 클레임"이 첫 사례) — [source]와 별개 축이다. 한 번 담긴 [FeatureId]는 그 기능의 기본
+    // 정책이 나중에 바뀌어도 재평가하지 않고 계속 남는다("지금 기본으로 무료인가"가 아니라
+    // "이 유저가 예전에 클레임을 받았는가"만 저장). [purchased]/[adGranted]로 전이할 때 이
+    // 필드까지 같이 초기화되지 않도록 호출부(`GoCoachApp.kt`)가 `.copy(claimedFeatures = ...)`로
+    // 이어붙인다.
+    val claimedFeatures: Set<FeatureId> = emptySet(),
 ) {
     /**
      * 현재 시각 기준으로 프리미엄이 유효한지 판정한다.

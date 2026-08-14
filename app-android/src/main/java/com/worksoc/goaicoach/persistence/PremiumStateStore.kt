@@ -1,9 +1,11 @@
 package com.worksoc.goaicoach.persistence
 
 import android.content.Context
+import com.worksoc.goaicoach.application.premium.FeatureId
 import com.worksoc.goaicoach.application.premium.PremiumSource
 import com.worksoc.goaicoach.application.premium.PremiumState
 import com.worksoc.goaicoach.application.premium.PremiumStateStorePort
+import org.json.JSONArray
 import org.json.JSONObject
 
 /**
@@ -38,7 +40,7 @@ internal object PremiumStateCodec {
         JSONObject()
             .put("source", state.source.name)
             .put("adGrantStartedAtMillis", state.adGrantStartedAtMillis ?: JSONObject.NULL)
-            .put("isUndoClaimed", state.isUndoClaimed)
+            .put("claimedFeatures", JSONArray(state.claimedFeatures.map { it.name }))
             .toString()
 
     fun decode(raw: String): PremiumState? =
@@ -47,10 +49,24 @@ internal object PremiumStateCodec {
             PremiumState(
                 source = enumOrDefault(json.optString("source"), PremiumSource.None),
                 adGrantStartedAtMillis = json.optLongOrNull("adGrantStartedAtMillis"),
-                isUndoClaimed = json.optBoolean("isUndoClaimed", false),
+                claimedFeatures = json.optClaimedFeatures(),
             )
         }.getOrNull()
 
     private fun JSONObject.optLongOrNull(key: String): Long? =
         if (isNull(key) || !has(key)) null else optLong(key)
+
+    // "claimedFeatures" 배열 도입 이전(구버전)엔 "isUndoClaimed" 단일 불리언으로 저장됐다 —
+    // 새 키가 있으면 그걸 쓰고, 없으면 구버전 불리언을 [FeatureId.Undo] 하나짜리 집합으로
+    // 마이그레이션한다. 배열 원소 중 알 수 없는 값(향후 버전 다운그레이드 등)은 개별
+    // 무시한다 — 손상된 원소 하나가 전체 decode를 실패시키면 안 되므로.
+    private fun JSONObject.optClaimedFeatures(): Set<FeatureId> {
+        val array = optJSONArray("claimedFeatures")
+        if (array != null) {
+            return (0 until array.length())
+                .mapNotNull { i -> runCatching { FeatureId.valueOf(array.getString(i)) }.getOrNull() }
+                .toSet()
+        }
+        return if (optBoolean("isUndoClaimed", false)) setOf(FeatureId.Undo) else emptySet()
+    }
 }

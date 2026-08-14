@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.persistence
 
+import com.worksoc.goaicoach.application.premium.FeatureId
 import com.worksoc.goaicoach.application.premium.PremiumSource
 import com.worksoc.goaicoach.application.premium.PremiumState
 import org.junit.Assert.assertEquals
@@ -39,8 +40,9 @@ class PremiumStateStoreTest {
     }
 
     @Test
-    fun encodeDecodeRoundTripsUndoClaimedFlag() {
-        val original = PremiumState(isUndoClaimed = true)
+    fun encodeDecodeRoundTripsClaimedFeatures() {
+        // 다중 원소로 검증 — Set이라 순서 무관하게 라운드트립돼야 한다.
+        val original = PremiumState(claimedFeatures = setOf(FeatureId.Undo, FeatureId.Eval))
 
         val decoded = PremiumStateCodec.decode(PremiumStateCodec.encode(original))
 
@@ -48,13 +50,24 @@ class PremiumStateStoreTest {
     }
 
     @Test
-    fun decodeMissingUndoClaimedKeyDefaultsToFalse() {
-        // isUndoClaimed 필드 추가 이전에 저장된 JSON(이 키 자체가 없음)을 하위 호환으로
+    fun decodeLegacyIsUndoClaimedBooleanMigratesToClaimedFeatures() {
+        // claimedFeatures 배열 도입 이전엔 isUndoClaimed 단일 불리언으로 저장됐다 — 그
+        // 구버전 JSON을 claimedFeatures = {Undo}로 마이그레이션해야 한다.
+        val legacyJson = """{"source":"None","adGrantStartedAtMillis":null,"isUndoClaimed":true}"""
+
+        val decoded = PremiumStateCodec.decode(legacyJson)
+
+        assertEquals(PremiumState(claimedFeatures = setOf(FeatureId.Undo)), decoded)
+    }
+
+    @Test
+    fun decodeMissingClaimedFeaturesKeyDefaultsToEmptySet() {
+        // claimedFeatures 필드 추가 이전(그리고 isUndoClaimed도 없는) JSON을 하위 호환으로
         // 읽어야 한다 — preferences-autosave 계열과 동일하게 optBoolean 기본값에 의존한다.
         val legacyJson = """{"source":"None","adGrantStartedAtMillis":null}"""
 
         val decoded = PremiumStateCodec.decode(legacyJson)
 
-        assertEquals(PremiumState(isUndoClaimed = false), decoded)
+        assertEquals(PremiumState(claimedFeatures = emptySet()), decoded)
     }
 }

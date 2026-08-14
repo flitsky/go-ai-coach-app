@@ -17,6 +17,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.worksoc.goaicoach.application.premium.FeatureAccessPolicy
 import com.worksoc.goaicoach.application.premium.PremiumSource
 import com.worksoc.goaicoach.application.premium.PremiumState
 import com.worksoc.goaicoach.application.premium.PremiumStateStorePort
@@ -700,24 +701,23 @@ private fun GoCoachScreen(
         isActive = premiumState.isActive(nowMillis = System.currentTimeMillis()),
         isPurchased = premiumState.source == PremiumSource.Purchase,
         adGrantExpiresAtMillis = premiumState.adGrantStartedAtMillis?.plus(PremiumState.AdGrantDurationMillis),
-        isUndoClaimed = premiumState.isUndoClaimed,
-        // 아래 세 곳 모두 isUndoClaimed를 명시적으로 이어붙인다 — PremiumState.purchased()/
-        // adGranted()가 이 필드를 모른 채 새로 만들어지므로, 안 그러면 클레임이 조용히 사라진다.
+        resolve = { featureId -> FeatureAccessPolicy.resolve(featureId, premiumState, System.currentTimeMillis()) },
+        // claimedFeatures를 이어붙인다 — 안 그러면 클레임이 조용히 사라진다.
         setPurchased = { purchased ->
-            premiumState = (if (purchased) PremiumState.purchased() else PremiumState()).copy(isUndoClaimed = premiumState.isUndoClaimed)
+            premiumState = (if (purchased) PremiumState.purchased() else PremiumState()).copy(claimedFeatures = premiumState.claimedFeatures)
             premiumStateStore.save(premiumState)
         },
         purchasePremium = {
             val (outcome, nextState) = performPremiumPurchase(context, diagnosticEventLog)
-            nextState?.let { premiumState = it.copy(isUndoClaimed = premiumState.isUndoClaimed); premiumStateStore.save(premiumState) }
+            nextState?.let { premiumState = it.copy(claimedFeatures = premiumState.claimedFeatures); premiumStateStore.save(premiumState) }
             outcome
         },
         activateAdGrant = {
             val (outcome, nextState) = performPremiumAdGrant(context, diagnosticEventLog)
-            nextState?.let { premiumState = it.copy(isUndoClaimed = premiumState.isUndoClaimed); premiumStateStore.save(premiumState) }
+            nextState?.let { premiumState = it.copy(claimedFeatures = premiumState.claimedFeatures); premiumStateStore.save(premiumState) }
             outcome
         },
-        claimUndo = { premiumState = premiumState.copy(isUndoClaimed = true); premiumStateStore.save(premiumState) },
+        claim = { featureId -> premiumState = premiumState.copy(claimedFeatures = premiumState.claimedFeatures + featureId); premiumStateStore.save(premiumState) },
     )
 
     PremiumPurchaseRestoreEffect(context, diagnosticEventLog) { nextState ->

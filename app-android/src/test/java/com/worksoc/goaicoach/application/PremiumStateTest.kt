@@ -1,7 +1,9 @@
 package com.worksoc.goaicoach.application
 
+import com.worksoc.goaicoach.application.premium.FeatureId
 import com.worksoc.goaicoach.application.premium.PremiumSource
 import com.worksoc.goaicoach.application.premium.PremiumState
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -78,13 +80,26 @@ class PremiumStateTest {
     }
 
     @Test
-    fun undoClaimedIsIndependentOfActiveAndClockPlausibleJudgement() {
-        // isUndoClaimed는 초도 발행 그랜드파더링(launch-plan/README.md 3장) 전용 축이라,
+    fun claimedFeaturesIsIndependentOfActiveAndClockPlausibleJudgement() {
+        // claimedFeatures는 초도 발행 그랜드파더링(launch-plan/README.md 3장) 전용 축이라,
         // source/adGrantStartedAtMillis 기반 판정(isActive/isClockPlausibleAt)에 영향을
         // 주면 안 된다 — 클레임만 하고 프리미엄은 없는 상태가 정상적으로 존재해야 한다.
-        val state = PremiumState(isUndoClaimed = true)
+        val state = PremiumState(claimedFeatures = setOf(FeatureId.Undo))
 
         assertFalse(state.isActive(nowMillis = 0L))
         assertTrue(state.isClockPlausibleAt(nowMillis = 0L))
+    }
+
+    @Test
+    fun claimedFeaturesSurvivesSourceTransition() {
+        // ui/GoCoachApp.kt의 세 전이 지점(setPurchased/purchasePremium/activateAdGrant)이
+        // 모두 .copy(claimedFeatures = ...)로 이어붙이는 패턴을 그대로 검증한다 — 새 source로
+        // 전이해도 클레임 원장이 조용히 사라지면 안 된다.
+        val claimed = PremiumState(claimedFeatures = setOf(FeatureId.Undo))
+
+        val afterPurchase = PremiumState.purchased().copy(claimedFeatures = claimed.claimedFeatures)
+
+        assertEquals(setOf(FeatureId.Undo), afterPurchase.claimedFeatures)
+        assertTrue(afterPurchase.isActive(nowMillis = 0L))
     }
 }
