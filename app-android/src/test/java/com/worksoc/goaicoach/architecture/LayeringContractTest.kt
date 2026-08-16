@@ -113,9 +113,7 @@ class LayeringContractTest {
 
     @Test
     fun localEngineSessionDelegateOwnsSessionOrchestration() {
-        val repoRoot = repoRoot()
-        val engineSession = repoRoot
-            .resolve("app-android/src/main/java/com/worksoc/goaicoach/application/engine/EngineSession.kt")
+        val engineSession = applicationFile("engine/EngineSession.kt")
         val sessionText = engineSession.readText()
         val forbiddenCoreExtensions = listOf(
             "startEngineSession",
@@ -139,14 +137,10 @@ class LayeringContractTest {
     @Test
     fun localEngineBenchmarkDelegateOwnsRawBenchmarkExecution() {
         val repoRoot = repoRoot()
-        val benchmarkApplication = repoRoot
-            .resolve("app-android/src/main/java/com/worksoc/goaicoach/application/engine/EngineDeviceBenchmarkApplication.kt")
-        val benchmarkModels = repoRoot
-            .resolve("app-android/src/main/java/com/worksoc/goaicoach/application/engine/EngineBenchmarkModels.kt")
-        val benchmarkDisplay = repoRoot
-            .resolve("app-android/src/main/java/com/worksoc/goaicoach/application/engine/EngineBenchmarkDisplayApplication.kt")
-        val benchmarkDelegate = repoRoot
-            .resolve("app-android/src/main/java/com/worksoc/goaicoach/application/engine/LocalEngineBenchmarkDelegate.kt")
+        val benchmarkApplication = applicationFile("engine/EngineDeviceBenchmarkApplication.kt")
+        val benchmarkModels = applicationFile("engine/EngineBenchmarkModels.kt")
+        val benchmarkDisplay = applicationFile("engine/EngineBenchmarkDisplayApplication.kt")
+        val benchmarkDelegate = applicationFile("engine/LocalEngineBenchmarkDelegate.kt")
         val applicationText = benchmarkApplication.readText()
         val delegateText = benchmarkDelegate.readText()
 
@@ -388,8 +382,7 @@ class LayeringContractTest {
 
     @Test
     fun savedSessionControllerDelegatesToApplicationRunners() {
-        val controller = repoRoot()
-            .resolve("app-android/src/main/java/com/worksoc/goaicoach/application/savedgame/SavedSessionController.kt")
+        val controller = applicationFile("savedgame/SavedSessionController.kt")
         val text = controller.readText()
         val requiredFragments = listOf(
             "runSavedGameRestoreApplication(",
@@ -434,8 +427,7 @@ class LayeringContractTest {
 
     @Test
     fun newGameControllerDelegatesToApplicationRunners() {
-        val controller = repoRoot()
-            .resolve("app-android/src/main/java/com/worksoc/goaicoach/application/startgame/NewGameController.kt")
+        val controller = applicationFile("startgame/NewGameController.kt")
         val text = controller.readText()
         val requiredFragments = listOf(
             "runStartEngineBackedGameApplication(",
@@ -585,8 +577,7 @@ class LayeringContractTest {
 
     @Test
     fun autoAiTurnControllerDelegatesToApplicationRunners() {
-        val controller = repoRoot()
-            .resolve("app-android/src/main/java/com/worksoc/goaicoach/application/autoai/AutoAiTurnController.kt")
+        val controller = applicationFile("autoai/AutoAiTurnController.kt")
         val text = controller.readText()
         val requiredFragments = listOf(
             "runScheduledAutoAiTurnApplication(",
@@ -604,8 +595,7 @@ class LayeringContractTest {
 
     @Test
     fun humanMoveControllerDelegatesToApplicationRunners() {
-        val controller = repoRoot()
-            .resolve("app-android/src/main/java/com/worksoc/goaicoach/application/humanmove/HumanMoveController.kt")
+        val controller = applicationFile("humanmove/HumanMoveController.kt")
         val text = controller.readText()
         val requiredFragments = listOf(
             "applyHumanMoveLocally(",
@@ -622,8 +612,7 @@ class LayeringContractTest {
 
     @Test
     fun topMovesControllerDelegatesToApplicationRunners() {
-        val controller = repoRoot()
-            .resolve("app-android/src/main/java/com/worksoc/goaicoach/application/topmoves/TopMovesController.kt")
+        val controller = applicationFile("topmoves/TopMovesController.kt")
         val text = controller.readText()
         val requiredFragments = listOf(
             "runTopMoveAnalysisApplication(",
@@ -685,8 +674,7 @@ class LayeringContractTest {
 
     @Test
     fun scoreEstimateControllerDelegatesToApplicationRunner() {
-        val controller = repoRoot()
-            .resolve("app-android/src/main/java/com/worksoc/goaicoach/application/score/ScoreEstimateController.kt")
+        val controller = applicationFile("score/ScoreEstimateController.kt")
         val text = controller.readText()
         val requiredFragments = listOf(
             "runScoreEstimateApplication(",
@@ -743,8 +731,7 @@ class LayeringContractTest {
 
     @Test
     fun debugReportControllerDelegatesToApplicationRunner() {
-        val controller = repoRoot()
-            .resolve("app-android/src/main/java/com/worksoc/goaicoach/application/debugreport/DebugReportController.kt")
+        val controller = applicationFile("debugreport/DebugReportController.kt")
         val text = controller.readText()
         val requiredFragments = listOf(
             "runDebugReportCopyApplication(",
@@ -805,8 +792,7 @@ class LayeringContractTest {
 
     @Test
     fun positionCacheOptimizationControllerDelegatesToApplicationRunner() {
-        val controller = repoRoot()
-            .resolve("app-android/src/main/java/com/worksoc/goaicoach/application/analysis/PositionCacheOptimizationController.kt")
+        val controller = applicationFile("analysis/PositionCacheOptimizationController.kt")
         val text = controller.readText()
         val requiredFragments = listOf(
             "runPositionAnalysisCacheOptimizationApplication(",
@@ -851,8 +837,7 @@ class LayeringContractTest {
 
     @Test
     fun engineOperationLifecycleControllerOwnsTransitionAndScope() {
-        val controller = repoRoot()
-            .resolve("app-android/src/main/java/com/worksoc/goaicoach/application/engine/operation/EngineOperationLifecycleController.kt")
+        val controller = applicationFile("engine/operation/EngineOperationLifecycleController.kt")
         val text = controller.readText()
         val requiredFragments = listOf(
             "applyEngineOperationLifecycleTransition(",
@@ -917,8 +902,7 @@ class LayeringContractTest {
 
     @Test
     fun gameSessionStateHolderStaysPlatformFreeForSharedMove() {
-        val holder = repoRoot()
-            .resolve("app-android/src/main/java/com/worksoc/goaicoach/application/session/GameSessionStateHolder.kt")
+        val holder = applicationFile("session/GameSessionStateHolder.kt")
         val forbiddenImports = listOf(
             "import android.",
             "import androidx.compose.",
@@ -963,13 +947,11 @@ class LayeringContractTest {
     @Test
     fun scoreSyncRunnersStaySplitByTriggerDomain() {
         val repoRoot = repoRoot()
-        val scoreRoot = repoRoot
-            .resolve("app-android/src/main/java/com/worksoc/goaicoach/application/score")
-        val common = scoreRoot.resolve("ScoreSyncRunnerApplication.kt")
+        val common = applicationFile("score/ScoreSyncRunnerApplication.kt")
         val expectedSplitFiles = listOf(
-            scoreRoot.resolve("ScoringRuleScoreSyncRunnerApplication.kt"),
-            scoreRoot.resolve("PostUndoScoreSyncRunnerApplication.kt"),
-            scoreRoot.resolve("RestoredGameScoreSyncRunnerApplication.kt"),
+            applicationFile("score/ScoringRuleScoreSyncRunnerApplication.kt"),
+            applicationFile("score/PostUndoScoreSyncRunnerApplication.kt"),
+            applicationFile("score/RestoredGameScoreSyncRunnerApplication.kt"),
         )
         val offenders = mutableListOf<String>()
 
@@ -1463,5 +1445,20 @@ class LayeringContractTest {
             current = current.parentFile ?: break
         }
         error("Could not locate repository root from ${File(".").canonicalPath}")
+    }
+
+    /**
+     * `application/` is migrating file-by-file from app-android to :shared (see
+     * docs/refactoring/GAMESESSION_SHARED_MIGRATION_KICKOFF_PLAN_260816_1808.md). Tests that read
+     * one specific file by hardcoded path must resolve it wherever it currently lives, or they
+     * break with FileNotFoundException the moment that one file crosses over — even though the
+     * policy the test enforces hasn't changed. relativePath is the part after ".../application/",
+     * e.g. "engine/EngineSession.kt".
+     */
+    private fun applicationFile(relativePath: String): File {
+        val repoRoot = repoRoot()
+        val sharedPath = repoRoot.resolve("shared/src/commonMain/kotlin/com/worksoc/goaicoach/application/$relativePath")
+        if (sharedPath.exists()) return sharedPath
+        return repoRoot.resolve("app-android/src/main/java/com/worksoc/goaicoach/application/$relativePath")
     }
 }

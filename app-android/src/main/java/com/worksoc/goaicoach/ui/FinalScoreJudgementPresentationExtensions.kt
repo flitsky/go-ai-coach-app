@@ -4,14 +4,16 @@ import com.worksoc.goaicoach.application.score.FinalScoreJudgement
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.StoneColor
 
-internal fun FinalScoreJudgement.resultText(strings: UiStrings): String =
-    if (winner == null) {
+internal fun FinalScoreJudgement.resultText(strings: UiStrings): String {
+    val winner = winner
+    return if (winner == null) {
         strings.drawLabel
     } else {
         margin?.let { m ->
             strings.winnerMarginLabel(strings.colorLabel(winner), m)
         } ?: strings.winnerWithoutMarginLabel(strings.colorLabel(winner))
     }
+}
 
 internal fun FinalScoreJudgement.scoringRuleLine(strings: UiStrings): String =
     strings.scoringRuleLabel(strings.rulesetLabel(ruleset))
