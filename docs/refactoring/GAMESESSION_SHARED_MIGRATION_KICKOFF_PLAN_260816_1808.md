@@ -81,7 +81,9 @@
 
 **최종 결과**: 프로덕션 11개 + 테스트 6개 전부 이동, 되돌린 테스트 없음(웨이브5와 대조적). `make test` 전체 그린. **이로써 `application/` 트리 이전이 전부 끝났다** — app-android에는 예정대로 딱 4개만 남는다: 프로덕션 `LocalFileDiagnosticEventExternalSink.kt` 1개(4절, 영구), 테스트 `DiagnosticEventApplicationTest.kt`/`SavedGamePersistenceTest.kt`/`ScoreDisplayApplicationTest.kt` 3개(전부 `application/` 트리가 아니라 persistence/ui 레이어를 직접 테스트하므로 영구, 웨이브5·6에서 확인).
 
-키스톤이 웨이브5에서 이미 이동했지만, 계획서 7절 완료 기준대로(세션 배선에 손대는 "마지막 웨이브") `NewGameBoardTapSmokeTest.kt`/`AppLaunchSmokeTest.kt` 에뮬레이터 실기 재확인을 한 번 더 진행.
+키스톤이 웨이브5에서 이미 이동했지만, 계획서 7절 완료 기준대로(세션 배선에 손대는 "마지막 웨이브") `NewGameBoardTapSmokeTest.kt`/`AppLaunchSmokeTest.kt` 에뮬레이터 실기 재확인을 한 번 더 진행 — `emulator-5554` 재사용, `make install-dev-engine` + `connectedDebugAndroidTest` 동시 실행으로 **다시 2/2 green**(`startsLocalGameAndAcceptsBoardTap` 1.41s, `launchesMainActivityAndShowsInitialSurface` 0.653s, failures=0 errors=0 skipped=0). `application/` 트리 전체 이전 후에도 실기 경로 정상.
+
+커밋 `83bc391`(origin/main에 push 완료).
 
 ---
 
