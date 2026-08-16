@@ -1117,32 +1117,35 @@ class LayeringContractTest {
 
     @Test
     fun engineOperationApplicationPoliciesStayPortable() {
-        val applicationRoot = repoRoot()
-            .resolve("app-android/src/main/java/com/worksoc/goaicoach/application")
-        val platformBoundAdapters = setOf(
-            applicationRoot.resolve("diagnostic/LocalFileDiagnosticEventExternalSink.kt").canonicalFile,
-        )
-        val portableCandidates = applicationRoot
+        // 260816: application/ 트리 전체가 shared/commonMain으로 물리적으로 이전됐다
+        // (GAMESESSION_SHARED_MIGRATION_KICKOFF_PLAN_260816_1808.md 웨이브 1~6). 스캔 대상을
+        // app-android/.../application(이제 LocalFileDiagnosticEventExternalSink.kt 하나만
+        // 남아 사실상 공집합)에서 실제로 파일들이 있는 shared/commonMain/.../application으로
+        // 옮긴다. ui./persistence./engine.(composition-root) 임포트는 shared가 app-android에
+        // 대한 Gradle 의존성 자체가 없어(shared/build.gradle.kts 확인 — commonMain은
+        // kotlinx-coroutines-core만 의존) 더 이상 텍스트 검사가 필요 없다(어기면 그냥
+        // Unresolved reference 컴파일 에러). 여전히 텍스트 검사가 필요한 건
+        // android./androidx./java./org.json. — shared의 androidTarget은 이 API들에 실제
+        // 접근 가능해서 컴파일은 통과하지만 iOS 등 다른 KMP 타깃을 조용히 깨뜨릴 수 있다.
+        val sharedApplicationRoot = repoRoot()
+            .resolve("shared/src/commonMain/kotlin/com/worksoc/goaicoach/application")
+        val platformBoundAdapter = repoRoot()
+            .resolve("app-android/src/main/java/com/worksoc/goaicoach/application/diagnostic/LocalFileDiagnosticEventExternalSink.kt")
+        val portableCandidates = sharedApplicationRoot
             .walkTopDown()
             .filter { file -> file.extension == "kt" }
-            .map { file -> file.canonicalFile }
-            .filterNot { file -> file in platformBoundAdapters }
             .toList()
         val forbiddenImports = listOf(
             "import android.",
             "import androidx.",
             "import java.",
             "import org.json.",
-            "import com.worksoc.goaicoach.ui.",
-            "import com.worksoc.goaicoach.persistence.",
-            "import com.worksoc.goaicoach.engine.",
         )
 
-        val missingPlatformBoundAdapters = platformBoundAdapters.filterNot { file -> file.exists() }
         assertTrue(
-            "Platform-bound application adapters must be explicit and existing:\n" +
-                missingPlatformBoundAdapters.joinToString("\n") { file -> file.path },
-            missingPlatformBoundAdapters.isEmpty(),
+            "Platform-bound application adapter must stay explicit and existing in app-android:\n" +
+                platformBoundAdapter.path,
+            platformBoundAdapter.exists(),
         )
 
         val offenders = forbiddenReferenceOffenders(
@@ -1151,7 +1154,7 @@ class LayeringContractTest {
         )
 
         assertTrue(
-            "Application files are middleware/KMP move candidates by default. Add only explicit adapter exceptions for platform-bound files:\n" +
+            "shared/.../application files must stay KMP-portable (no Android/JVM-only imports):\n" +
                 offenders.joinToString("\n"),
             offenders.isEmpty(),
         )

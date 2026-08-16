@@ -23,7 +23,12 @@
 
 효과 표시: **Sonnet 5 엔진이 투입해야 할 노력** 기준(울트라 > 최대 > 엑스트라 > 높음 > 중간 > 낮음, 6단계). 항목 간 실제로 구분되는 만큼만 단계를 썼다 — 억지로 6단계를 다 채우지 않았다.
 
-### 1. `GameSessionStateHolder` → `:shared` 모듈 본 이전 — **최대**
+### ~~1. `GameSessionStateHolder` → `:shared` 모듈 본 이전~~ — **완료 (2026-08-16)**
+
+**완료 기록**: 웨이브 1~6, 전체 124개 프로덕션 파일 + 대응 테스트가 전부 `shared/src/commonMain`·`commonTest`로 이전됐다(영구 예외 1개 프로덕션 파일 + 그걸 직접 테스트하는 3개 테스트 파일만 app-android 잔류, 설계상 정상 — 아래 "왜" 문단이 언급하는 4절 방침). 상세 실행 기록·교훈은 `docs/refactoring/GAMESESSION_SHARED_MIGRATION_KICKOFF_PLAN_260816_1808.md`(0절)이 원본. `:shared`/`:app-android` 컴파일 그린, `make test` 전체 그린, `NewGameBoardTapSmokeTest.kt`/`AppLaunchSmokeTest.kt` 에뮬레이터 실기 재확인 2회(웨이브5·6 완료 직후 각각) 전부 통과. `LayeringContractTest.kt`의 `engineOperationApplicationPoliciesStayPortable`도 스캔 대상을 app-android에서 `:shared`로 갱신 완료(같은 날, 이 문서 자체가 명시했던 "이동 완료 후에만" 타이밍).
+
+<details>
+<summary>원래 항목 내용 (참고용)</summary>
 
 **왜**: `application/` 트리(현재 125개 파일, 21개 서브패키지) 전체가 KMP(`:shared`)로 옮겨져야 iOS 등 다른 플랫폼에서도 도메인 로직을 재사용할 수 있다. 플랫폼 비종속성 자체는 `LayeringContractTest.kt`의 `engineOperationApplicationPoliciesStayPortable`이 이미 상시 검증하고 있어 "될까?"는 답이 났다 — 남은 건 실제 이동과 그 과정에서 나오는 설계 판단뿐.
 
@@ -34,6 +39,8 @@
 **진행 방법 / 완료 기준**: `docs/GO_AI_COACH_ARCHITECTURE_ROADMAP.md` "고도화 로드맵" 5번 항목 참고 — 리프 파일부터 `GameSessionStateHolder`까지 순서, `internal` 가시성 감사 기준, `LayeringContractTest.kt` 갱신 타이밍(이동 완료 후에만)이 이미 적혀 있다. 완료 기준: `:shared`/`:app-android` 양쪽 컴파일 + `make test` 전체 그린 + `NewGameBoardTapSmokeTest.kt`/`AppLaunchSmokeTest.kt` 실기 재확인.
 
 **주의**: 한 세션에 끝나는 규모가 아니다. `internal`→public 전환 범위가 파일마다 다를 수 있어, 큰 폭으로 넓어지는 지점이 나오면 착수 전에 사용자와 다시 상의할 것(되돌리기 번거로운 설계 결정이라 스파이크 계획서도 같은 이유로 조심스럽게 다뤘다).
+
+</details>
 
 ### 2. androidTest 커버리지 확장 — **중간**
 
