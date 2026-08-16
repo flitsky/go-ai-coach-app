@@ -16,7 +16,7 @@ import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
 
-internal fun GameSessionAnalysisState.applyTopMoveAnalysisLaunchPlan(
+fun GameSessionAnalysisState.applyTopMoveAnalysisLaunchPlan(
     launchPlan: TopMoveAnalysisLaunchPlan,
 ): TopMoveAnalysisLaunchStateUpdate? =
     when (launchPlan) {
@@ -44,7 +44,7 @@ internal fun GameSessionAnalysisState.applyTopMoveAnalysisLaunchPlan(
             )
     }
 
-internal fun buildTopMoveAnalysisPlan(
+fun buildTopMoveAnalysisPlan(
     targetState: GameState,
     engineProfile: EngineProfile,
     analysisPreset: AnalysisPreset,
@@ -70,7 +70,7 @@ internal fun buildTopMoveAnalysisPlan(
     )
 }
 
-internal fun buildTopMoveAnalysisLaunchPlan(
+fun buildTopMoveAnalysisLaunchPlan(
     request: TopMoveAnalysisLaunchRequest,
     cachedResultFor: (AnalysisCacheKey) -> CachedAnalysisResult?,
 ): TopMoveAnalysisLaunchPlan =
@@ -87,7 +87,7 @@ internal fun buildTopMoveAnalysisLaunchPlan(
         cachedResultFor = cachedResultFor,
     )
 
-internal fun buildTopMoveAnalysisLaunchPlan(
+fun buildTopMoveAnalysisLaunchPlan(
     targetState: GameState,
     engineProfile: EngineProfile,
     analysisPreset: AnalysisPreset,
@@ -134,7 +134,7 @@ internal fun buildTopMoveAnalysisLaunchPlan(
     )
 }
 
-internal fun GameSessionControllerState.toTopMoveAnalysisLaunchPlan(
+fun GameSessionControllerState.toTopMoveAnalysisLaunchPlan(
     targetState: GameState,
     deep: Boolean,
     automatic: Boolean,
@@ -155,7 +155,7 @@ internal fun GameSessionControllerState.toTopMoveAnalysisLaunchPlan(
         cachedResultFor = cachedResultFor,
     )
 
-internal fun runTopMoveAnalysisApplication(request: TopMoveAnalysisRunRequest) {
+fun runTopMoveAnalysisApplication(request: TopMoveAnalysisRunRequest) {
     if (request.automatic && request.pendingPostUndoEngineSync) {
         return
     }

@@ -34,12 +34,12 @@ import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.StoneColor
 import kotlinx.coroutines.runBlocking
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+import kotlin.test.Test
 
 class TopMovesApplicationTest {
     @Test
@@ -413,7 +413,7 @@ class TopMovesApplicationTest {
     }
 
     @Test
-    fun runTopMoveAnalysisEffectUsesEffectAndExecutionContext() = runBlocking {
+    fun runTopMoveAnalysisEffectUsesEffectAndExecutionContext(): Unit = runBlocking {
         val state = GameState.empty()
             .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
         val candidate = CandidateMove(

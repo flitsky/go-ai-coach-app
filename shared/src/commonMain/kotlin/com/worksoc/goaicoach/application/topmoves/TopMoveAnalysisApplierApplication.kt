@@ -1,6 +1,6 @@
 package com.worksoc.goaicoach.application.topmoves
 
-internal fun applyTopMoveAnalysisCompletionApplication(
+fun applyTopMoveAnalysisCompletionApplication(
     request: TopMoveAnalysisCompletionApplyRunRequest,
 ) {
     when (val applyPlan = request.applyPlan) {

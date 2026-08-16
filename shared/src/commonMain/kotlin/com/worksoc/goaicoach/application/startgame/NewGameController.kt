@@ -15,7 +15,7 @@ import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.engine.EngineOperationRequest
 
-internal class NewGameController(
+class NewGameController(
     private val engineClient: EngineSessionClient,
     private val diagnosticEventLog: DiagnosticEventLogPort,
     private val runtimeEventLog: RuntimeEventLogPort,

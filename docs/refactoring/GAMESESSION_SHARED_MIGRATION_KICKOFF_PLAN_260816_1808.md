@@ -1,6 +1,6 @@
 # `GameSessionStateHolder` → `:shared` 본 이전 — 착수 계획서
 
-작성일: 2026-08-16 18:08 (계획 수립) / **갱신: 2026-08-16 웨이브 1·2·3·4 실행 완료 후**
+작성일: 2026-08-16 18:08 (계획 수립) / **갱신: 2026-08-16 웨이브 1~6 전체 실행 완료 후 — 이 문서 범위(`application/` 트리 전체 이전)는 여기서 끝난다**
 
 **성격**: `docs/GO_AI_COACH_ARCHITECTURE_ROADMAP.md` "고도화 로드맵" 5번 항목 (2) "본 이전"의 실행 순서를 정하는 착수 계획서다(로드맵 문서 자체가 "착수 순서는 별도 착수 계획서에서 정한다"고 명시한 그 문서). 원래는 `docs/refactoring/REFACTORING_BACKLOG_260816_1744.md` 작업 우선순위 1번의 "계획부터 정리해서 보여달라"는 요청으로 코드 이동 없이 작성됐으나, 같은 날 이어진 세션에서 **웨이브 1 실행까지 완료**했다 — 이 문서는 이제 계획서 겸 실행 기록이다.
 
@@ -68,6 +68,21 @@
 
 커밋 `c7a06a3`(origin/main에 push 완료).
 
+### 웨이브 6 실행 결과 요약 (260816, 이어서) — **마지막 웨이브. `application/` 트리 전체 이전 완료. 새로운 종류의 버그(JUnit4 "should be void") 발견**
+
+배치 82–92 — topmoves 잔여 6개(`TopMoveAnalysisGuard`, `TopMoveAnalysisEngine`, `TopMoveAnalysisApplierApplication`, `TopMovesApplication`, `ShowHideTopMovesApplication`, `TopMovesController`, `TopMovesEffectLauncherApplication` — 정확히는 7개, 계획서 상 "6개"로 뭉뚱그려 적혔던 부분 실제로는 topmoves 7 + session 2 + startgame 2 = 11) + `session/GameSettingsController.kt` + `session/TurnAutomationTriggerApplication.kt` + `startgame/NewGameController.kt` + `startgame/StartEngineBackedGameRunnerApplication.kt` = 11개 파일 이동. 이동 전 포터빌리티 grep(`ui`/`persistence`/`middleware` import 유무) 11개 전부 클린. `internal`→public 컴파일러 수렴: `:shared` 1라운드(위젠 불필요), `:app-android` 메인 2라운드(4개 심볼 — `GameSettingsController`/`TurnAutomationTriggerApplication`/`NewGameController`/`TopMovesController` 등 컨트롤러 클래스 자체), 테스트 3라운드(4개+25개 심볼 — topmoves 도메인 함수가 많아 2차 라운드에서 25개로 컸음). **부수 효과**: 테스트 수렴 과정에서 이미 웨이브 2 때 이동해 있던 `autoai/AutoAiEffectLauncherApplication.kt`의 `runAutoAiTurnTriggerEffect`도 `internal`→public으로 넓어졌다 — `GameAutomationApplicationTest.kt`(아직 app-android에 남아있던 시점)가 이 심볼도 필요로 했는데, 그동안 범위 밖(topmoves 심볼들 때문에) 취급돼 이 필요성 자체가 드러날 일이 없었을 뿐이다. 정상적인 크로스 웨이브 위젠.
+
+**테스트 스코프 3단계 재확인 — 이번엔 6개 후보 전부 통과**: `TopMovesApplicationTest.kt`/`GameSettingsControllerTest.kt`/`StartEngineBackedGameRunnerTest.kt`(계획서 원래 후보) + `GameSessionAnalysisStateTest.kt`/`GameSessionControllerTest.kt`/`GameAutomationApplicationTest.kt`(웨이브5 0절에서 "웨이브6이 끝나면 범위 안이 될 가능성이 높다"고 남겨뒀던 것들, 사용자가 이번에 명시적으로 재확인 요청) — 6개 전부 (1) 이름 매칭 (2) `application/` 트리 심볼 교집합 (3) `ui.`/`persistence.` 사전 grep 전부 클린을 거쳐 이동, 실제 컴파일(`:shared:compileDebugUnitTestKotlinAndroid`)도 1차 시도에 전부 성공 — 웨이브5와 달리 이번엔 `ui.`/`persistence.` 사각지대에 걸린 파일이 없었다(`application/` 트리 파일이 이제 하나도 안 남았으니 애초에 걸릴 게 없는 게 당연).
+
+**새로 발견한 버그 종류 — 컴파일은 통과하지만 `make test` 실행 시점에만 드러나는 JUnit4 "should be void"**: `compileDebugUnitTestKotlinAndroid`는 전부 성공했는데 `:shared:testDebugUnitTest`가 `TopMovesApplicationTest > initializationError`로 실패(`InvalidTestClassError: Method runTopMoveAnalysisEffectUsesEffectAndExecutionContext() should be void`). 원인: 그 테스트 함수는 `fun ...() = runBlocking { ... assertNotNull(update.cachedResult) }` 형태의 **표현식-바디** 함수였고, 마지막 문장이 `assertNotNull(...)`이었다 — `org.junit.Assert.assertNotNull`은 `void`를 반환하지만 **`kotlin.test.assertNotNull(actual, message): T`는 널이 아님이 확인된 값을 반환한다**(체이닝용 설계). import를 1:1로 바꾸면서 반환 타입까지 조용히 바뀌어, `runBlocking` 블록의 추론 타입이 `Unit`에서 `T`로 바뀌었고, 그 결과 표현식-바디 함수 전체의 추론 반환 타입도 non-Unit이 됐다 — JUnit4는 컴파일 시점이 아니라 **테스트 실행 직전 클래스 검증 시점**에만 "테스트 메서드는 void여야 한다"를 확인하므로, 컴파일 수렴 스크립트(6절)는 이 종류의 문제를 원천적으로 못 잡는다(`make test`까지 가야 드러남 — 매 웨이브 `make test`를 실제로 돌리는 게 왜 필수인지 보여주는 사례).
+- 6개 파일 전체에서 `fun ... = runBlocking { ... }`(또는 `runTest`/`run`) 패턴의 표현식-바디 테스트 함수 15개를 전수 조사(각 함수의 진짜 마지막 문장을 스크립트로 추출)해서, 이 문제가 정확히 1건뿐임을 확인했다. 나머지는 안전했던 이유가 각각 달랐다: 마지막 문장이 `assertEquals`/`assertNull`/`assertTrue`(전부 `kotlin.test`에서도 `Unit` 반환) 이거나, `listOf(...).forEach { ... }`로 감싸여 있어서(람다의 기대 타입이 `(T) -> Unit`이라 내부 마지막 식이 무슨 타입이든 `forEach` 자체가 `Unit`을 반환 — Kotlin의 람다 Unit-강제변환 규칙) 안전했다.
+- 고친 방법: 그 한 함수만 `fun runTopMoveAnalysisEffectUsesEffectAndExecutionContext(): Unit = runBlocking { ... }`로 명시적 반환 타입을 붙였다(Kotlin은 함수의 선언된 반환 타입이 `Unit`이면 표현식-바디의 실제 값 타입과 무관하게 버린다 — 블록-바디 함수가 항상 `Unit`으로 추론되는 것과 같은 특례). `GameSettingsControllerTest.kt`의 두 `assertNotNull("메시지", 값)` 호출(JUnit 순서: message, actual)도 같은 김에 발견 — 이건 반환 타입이 아니라 **인자 순서** 문제였다(`kotlin.test.assertNotNull(actual, message)`는 반대 순서) — `Argument type mismatch` 컴파일 에러로 잡혀서 인자 순서를 뒤집어 고쳤다(이건 블록-바디 함수 안이라 반환 타입 문제와는 무관, 별개 버그).
+- **앞으로 참고**: `kotlin.test`의 `assertNotNull`/`assertFailsWith<T>`는 `Unit`이 아니라 값을 반환하는 예외적인 assert 함수다 — 표현식-바디 테스트 함수(`= runBlocking { ... }` 등)의 **마지막 문장**으로 이 둘을 쓰면 이번과 같은 문제가 재발할 수 있다. 컴파일은 통과하므로 `make test`까지 돌려야 드러난다.
+
+**최종 결과**: 프로덕션 11개 + 테스트 6개 전부 이동, 되돌린 테스트 없음(웨이브5와 대조적). `make test` 전체 그린. **이로써 `application/` 트리 이전이 전부 끝났다** — app-android에는 예정대로 딱 4개만 남는다: 프로덕션 `LocalFileDiagnosticEventExternalSink.kt` 1개(4절, 영구), 테스트 `DiagnosticEventApplicationTest.kt`/`SavedGamePersistenceTest.kt`/`ScoreDisplayApplicationTest.kt` 3개(전부 `application/` 트리가 아니라 persistence/ui 레이어를 직접 테스트하므로 영구, 웨이브5·6에서 확인).
+
+키스톤이 웨이브5에서 이미 이동했지만, 계획서 7절 완료 기준대로(세션 배선에 손대는 "마지막 웨이브") `NewGameBoardTapSmokeTest.kt`/`AppLaunchSmokeTest.kt` 에뮬레이터 실기 재확인을 한 번 더 진행.
+
 ---
 
 ## 1. 핵심 요약 (착수 전 조사 시점 스냅샷 — 웨이브 1 실행 후 달라진 숫자는 0절 참고)
@@ -127,7 +142,7 @@
 | 3 | 16(+`middleware/PositionAnalysisCacheResolver.kt` 1개 추가 발견분) | 46–61 | `engine/`의 나머지 전체(로컬 엔진 delegate·gateway·operation 하위) | **완료(260816)** |
 | 4 | 12 | 62–70 | humanmove·preferences 잔여, premium(3파일 순환 1건 + 2파일 순환 1건 포함), prompt | **완료(260816)** |
 | 5 | 11 | 71–81 | savedgame·score 잔여 + **`session/GameSessionStateHolder.kt` 본체(배치 81)** | **완료(260816)** |
-| 6 | 11 | 82–92 | topmoves·session·startgame 잔여 컨트롤러 — 홀더에 의존하는 마지막 그룹 | 다음 차례 |
+| 6 | 11 | 82–92 | topmoves·session·startgame 잔여 컨트롤러 — 홀더에 의존하는 마지막 그룹 | **완료(260816) — `application/` 트리 전체 이전 종료** |
 
 합계: 17+16+12+11+11 = 67 이동 + 1 영구 제외 = 68(+ 웨이브 3에서 발견된 `application/` 트리 밖 파일 1개 별도). 웨이브 5 완료 시점 기준 남은 것: 웨이브 6, 11개 파일뿐 — **키스톤 `GameSessionStateHolder.kt`는 이미 이동 완료.**
 
@@ -167,13 +182,11 @@ topmoves/TopMovesEffectLauncherApplication.kt
 ```
 동반 가능 테스트: `TopMovesApplicationTest.kt`, `GameSettingsControllerTest.kt`, `StartEngineBackedGameRunnerTest.kt`.
 
-**웨이브 6 완료 후에도 계속 app-android에 남는 테스트, 두 종류가 있다**:
-- **진짜 영구 잔류(웨이브 6과 무관, 절대 이동 안 함)**: `DiagnosticEventApplicationTest.kt`(`LocalFileDiagnosticEventExternalSink.kt` — 4절대로 영구 잔류 파일을 직접 테스트), `SavedGamePersistenceTest.kt`(`persistence.SavedGameSessionCodec` 직접 호출 — 웨이브 5에서 새로 발견, 0절 참고), `ScoreDisplayApplicationTest.kt`(`ui.resultText`/`ui.blackLine`/`ui.whiteLine`/`ui.UiStringsKorean` 직접 호출 — 역시 웨이브 5에서 새로 발견). 셋 다 `application/` 트리가 아니라 별도 레이어(persistence/ui)를 직접 테스트하고 있어서, 그 레이어가 이식 대상이 아닌 한(4절 방침) 웨이브가 몇 번을 더 지나도 범위 안이 되지 않는다.
-- **웨이브 6이 끝나면 범위 안이 될 가능성이 높은 것**: `GameAutomationApplicationTest.kt`(여러 서브패키지를 넘나드는 통합 테스트, 웨이브5 재확인 시점엔 `runTopMoveAnalysisTriggerEffect`/`runTurnAutomationTriggerEffect` — 둘 다 웨이브6 파일 — 때문에 아직 막혀 있었음). 웨이브 6 완료 후 재확인할 것(이름 매칭 → 심볼 교집합 → 실제 컴파일 3단계 전부 적용, 0절 웨이브5 교훈 참고).
+**웨이브 6까지 완료된 뒤에도 app-android에 남는 테스트 3개(전부 진짜 영구 잔류, 정상)**: `DiagnosticEventApplicationTest.kt`(`LocalFileDiagnosticEventExternalSink.kt` — 4절대로 영구 잔류 파일을 직접 테스트), `SavedGamePersistenceTest.kt`(`persistence.SavedGameSessionCodec` 직접 호출 — 웨이브 5에서 새로 발견, 0절 참고), `ScoreDisplayApplicationTest.kt`(`ui.resultText`/`ui.blackLine`/`ui.whiteLine`/`ui.UiStringsKorean` 직접 호출 — 역시 웨이브 5에서 새로 발견). 셋 다 `application/` 트리가 아니라 별도 레이어(persistence/ui)를 직접 테스트하고 있어서 그 레이어 자체가 이식 대상이 아닌 한(4절 방침) 계속 남는다. `GameAutomationApplicationTest.kt`는 예상대로 웨이브 6 완료 직후 재확인해서 이동 완료(0절 웨이브6 참고).
 
-이 44개(=22개 파일의 프로덕션 + 대응 테스트, 정확한 수는 이동 시점에 재확인) 중 웨이브 5의 11개 프로덕션 + 4개 테스트는 완료됐다(0절). 웨이브 6(11개 프로덕션 + 후보 테스트 3개)만 남으면 `application/` 트리 전체 이전이 끝난다. 웨이브 1~5는 이미 위 방식(파일 이동 → 아래 6절 스크립트로 3개 타깃 순서대로 수렴 → 테스트 스코프 확인(이름 매칭 → 심볼 교집합 → 실제 컴파일 3단계, 0절 웨이브5 교훈) → `make test` → 문서 갱신 → 커밋/푸시)으로 실행됐다 — 같은 순서를 그대로 반복하면 된다.
+이 44개(=22개 파일의 프로덕션 + 대응 테스트) 전부 웨이브 5·6에서 완료됐다(0절). **`application/` 트리 전체 이전이 끝났다.** 웨이브 1~6은 위 방식(파일 이동 → 아래 6절 스크립트로 3개 타깃 순서대로 수렴 → 테스트 스코프 확인(이름 매칭 → 심볼 교집합 → 실제 컴파일 3단계, 0절 웨이브5·6 교훈) → `make test` → 문서 갱신 → 커밋/푸시)으로 전부 실행됐다.
 
-**웨이브 5에 `GameSessionStateHolder.kt`가 있었다(완료)** — 원래 계획의 "웨이브 9" 프레이밍과 거의 일치(리프부터 시작해 뒤쪽에서 홀더가 나오는 흐름 자체는 교정 후에도 유지됨). 계획서 7절 완료 기준대로 웨이브 5 완료 직후 `NewGameBoardTapSmokeTest.kt`/`AppLaunchSmokeTest.kt` 실기 재확인을 이 세션에서 진행했고(결과는 0절 참고), **같은 기준에 따라 웨이브 6 완료 직후에도 한 번 더** 재확인이 필요하다(세션 배선에 손대는 마지막 웨이브이기 때문).
+**웨이브 5에 `GameSessionStateHolder.kt`가 있었다(완료)** — 원래 계획의 "웨이브 9" 프레이밍과 거의 일치(리프부터 시작해 뒤쪽에서 홀더가 나오는 흐름 자체는 교정 후에도 유지됨). 계획서 7절 완료 기준대로 웨이브 5 완료 직후, 그리고 세션 배선에 손대는 마지막 웨이브인 웨이브 6 완료 직후에도 한 번 더 `NewGameBoardTapSmokeTest.kt`/`AppLaunchSmokeTest.kt` 실기 재확인을 진행했다(결과는 0절 참고).
 
 ### (참고용, 더 이상 정확하지 않음) 원래 10웨이브 계획
 
@@ -470,18 +483,18 @@ undo/UndoRunnerApplication.kt
 
 ## 10. 다음 단계
 
-**웨이브 1~5(+ 캐치업)는 완료됐다**(0절). 남은 건 웨이브 6, 11개 파일뿐 — 정확한 파일 목록은 3절 끝에 이미 적어 뒀다. 진행 순서(웨이브 1~5와 동일, 그대로 반복):
+**웨이브 1~6 전부 완료됐다**(0절). `application/` 트리 전체 이전이 끝났다 — 이 섹션의 반복 루프(아래 1~8)는 이제 실행할 대상이 없다, 이후 유사한 이전 작업이 다시 필요할 때를 위한 기록으로 남겨둔다:
 
 1. `git mv`로 해당 웨이브의 프로덕션 파일을 `app-android/src/main/java/.../application/X` → `shared/src/commonMain/kotlin/.../application/X`로 이동(패키지명 유지)
 2. 이동 전에 그 파일들이 `application/` 밖(`ui`/`persistence`/`engine`/`middleware` 등)을 import하는지 먼저 grep — 웨이브 3의 교훈(middleware/ 사례)
 3. `python3 scripts/converge-shared-migration-visibility.py shared` → `app-main` → `app-test` 순서로 실행, 각각 그린 될 때까지(JAVA_HOME은 스크립트가 처리)
-4. 대응 테스트를 3절 끝의 표대로 옮기되, 이동 직전에 실제 참조 심볼이 아직 안 옮긴 파일을 가리키는지 다시 확인 — **3단계 검증**(이름 매칭 → `application/` 트리 심볼 교집합 → 실제 컴파일)을 다 거칠 것. 이름 매칭만 믿으면 안 되는 건 웨이브4 캐치업(13개 누락)에서, 심볼 교집합만으로도 부족한 건 웨이브5(`ui.`/`persistence.` 같은 트리 밖 패키지 참조를 못 봄 — 0절 웨이브5 교훈)에서 각각 확인됨
-5. `make test` 전체 그린 확인 — `LayeringContractTest.kt`가 `FileNotFoundException`을 내면 `applicationFile()` 헬퍼 패턴 확인(7절)
+4. 대응 테스트를 3절 끝의 표대로 옮기되, 이동 직전에 실제 참조 심볼이 아직 안 옮긴 파일을 가리키는지 다시 확인 — **3단계 검증**(이름 매칭 → `application/` 트리 심볼 교집합 → 실제 컴파일)을 다 거칠 것. 이름 매칭만 믿으면 안 되는 건 웨이브4 캐치업(13개 누락)에서, 심볼 교집합만으로도 부족한 건 웨이브5(`ui.`/`persistence.` 같은 트리 밖 패키지 참조를 못 봄)에서 각각 확인됨
+5. `make test` 전체 그린 확인 — `LayeringContractTest.kt`가 `FileNotFoundException`을 내면 `applicationFile()` 헬퍼 패턴 확인(7절). 컴파일 수렴(3번)이 그린이어도 `make test` 실행 단계에서만 드러나는 문제가 있을 수 있다 — 웨이브6에서 발견된 JUnit4 "should be void"(`kotlin.test.assertNotNull`/`assertFailsWith`가 표현식-바디 테스트 함수의 마지막 문장일 때, 0절 웨이브6 교훈) 같은 경우
 6. 이 문서의 0절에 실행 결과 기록, 3절 표 상태 갱신
-7. **웨이브 6 완료 후에는 여기서 한 단계 더** — `NewGameBoardTapSmokeTest.kt`/`AppLaunchSmokeTest.kt`를 에뮬레이터에서 실기 재확인(`make install-dev-engine` 후 실제 기기/에뮬레이터 필요, 컴파일+단위테스트만으로는 부족). 웨이브 5 완료 시점에 이미 한 번 실기 재확인했지만(0절), 세션 배선에 손대는 마지막 웨이브인 만큼 한 번 더 필요(7절 완료 기준)
-8. 커밋(`refactor(shared): ... 웨이브 N (M개 파일)` 형식, 웨이브 1~5 커밋 메시지가 예시) + push
+7. 세션 상태 배선(`GameSessionStateHolder.kt` 자체나 그에 의존하는 컨트롤러)에 손대는 웨이브 완료 후에는 `NewGameBoardTapSmokeTest.kt`/`AppLaunchSmokeTest.kt`를 에뮬레이터에서 실기 재확인(`make install-dev-engine` 후 실제 기기/에뮬레이터 필요, 컴파일+단위테스트만으로는 부족) — 웨이브5·6에서 실제로 두 번 다 실행함(0절)
+8. 커밋(`refactor(shared): ... 웨이브 N (M개 파일)` 형식, 웨이브 1~6 커밋 메시지가 예시) + push
 
-**웨이브 6까지 다 끝나면(이 문서 범위의 마지막)** 추가로:
+**웨이브 6까지 다 끝난 지금(이 문서 범위의 마지막)** 마무리로 진행할 것:
 - `LayeringContractTest.kt`의 **실제 계층 규칙**(`engineOperationApplicationPoliciesStayPortable`을 `:shared` 스캔으로 재작성 등)을 이제 갱신 — 지금까지는 파일 경로 문제만 고쳤지 규칙 자체는 안 건드렸다(7절)
 - `docs/refactoring/REFACTORING_BACKLOG_260816_1744.md`의 작업 우선순위 1번을 취소선 처리 + 완료일 기록(그 문서 자신의 "서두 작업 원칙" 5번)
 - `docs/GO_AI_COACH_ARCHITECTURE_ROADMAP.md`의 "알려진 갭"·"고도화 로드맵" 5번을 완료로 갱신

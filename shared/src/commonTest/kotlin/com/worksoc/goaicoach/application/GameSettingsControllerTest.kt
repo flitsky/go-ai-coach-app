@@ -11,11 +11,11 @@ import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.SearchTimeLimit
 import com.worksoc.goaicoach.shared.EngineProfile
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+import kotlin.test.Test
 
 class GameSettingsControllerTest {
     @Test
@@ -271,7 +271,7 @@ class GameSettingsControllerTest {
         controller.changeBoardSize(BoardSize.Nineteen)
 
         assertEquals(BoardSize.Nineteen, appliedSize)
-        assertNotNull("refreshNewGamePreview should push an updated core state", appliedCore)
+        assertNotNull(appliedCore, "refreshNewGamePreview should push an updated core state")
     }
 
     @Test
@@ -305,7 +305,7 @@ class GameSettingsControllerTest {
         controller.changeHandicapCount(2)
 
         assertEquals(2, appliedCount)
-        assertNotNull("refreshNewGamePreview should push an updated core state", appliedCore)
+        assertNotNull(appliedCore, "refreshNewGamePreview should push an updated core state")
     }
 
     @Test

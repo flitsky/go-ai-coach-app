@@ -14,7 +14,7 @@ import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
 
-internal fun buildCachedTopMoveAnalysisUpdate(
+fun buildCachedTopMoveAnalysisUpdate(
     targetState: GameState,
     cacheKey: AnalysisCacheKey,
     cached: CachedAnalysisResult,
@@ -36,7 +36,7 @@ internal fun buildCachedTopMoveAnalysisUpdate(
     )
 }
 
-internal fun buildCompletedTopMoveAnalysisUpdate(
+fun buildCompletedTopMoveAnalysisUpdate(
     targetState: GameState,
     result: AnalysisResult,
     rawCandidateText: String,
@@ -87,7 +87,7 @@ internal fun buildCompletedTopMoveAnalysisUpdate(
     )
 }
 
-internal suspend fun EngineSessionClient.runTopMoveAnalysis(
+suspend fun EngineSessionClient.runTopMoveAnalysis(
     targetState: GameState,
     engineProfile: EngineProfile,
     analysisPreset: AnalysisPreset,
@@ -114,7 +114,7 @@ internal suspend fun EngineSessionClient.runTopMoveAnalysis(
     )
 }
 
-internal suspend fun EngineSessionClient.runTopMoveAnalysisEffect(
+suspend fun EngineSessionClient.runTopMoveAnalysisEffect(
     effect: GameSessionEffect.RunTopMoveAnalysis,
     context: TopMoveAnalysisExecutionContext,
 ): TopMoveAnalysisUpdate =
@@ -128,7 +128,7 @@ internal suspend fun EngineSessionClient.runTopMoveAnalysisEffect(
         cacheEnabled = context.cacheEnabled,
     )
 
-internal suspend fun EngineSessionClient.runTopMoveAnalysisWorkflowResult(
+suspend fun EngineSessionClient.runTopMoveAnalysisWorkflowResult(
     effect: GameSessionEffect.RunTopMoveAnalysis,
     context: TopMoveAnalysisExecutionContext,
 ): TopMoveAnalysisWorkflowResult =
@@ -142,7 +142,7 @@ internal suspend fun EngineSessionClient.runTopMoveAnalysisWorkflowResult(
         onFailure = { error -> TopMoveAnalysisWorkflowResult.Failure(error) },
     )
 
-internal suspend fun EngineSessionClient.runTopMoveAnalysisEffectApplyPlan(
+suspend fun EngineSessionClient.runTopMoveAnalysisEffectApplyPlan(
     request: TopMoveAnalysisEffectLaunchRequest,
 ): TopMoveAnalysisCompletionApplyPlan =
     buildTopMoveAnalysisCompletionPlan(

@@ -10,7 +10,7 @@ import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
 import com.worksoc.goaicoach.match.PlayerSetup
 
-internal fun planShowTopMoves(
+fun planShowTopMoves(
     reviewAnalysis: MoveAnalysisSnapshot,
     lastAnalysisKey: AnalysisCacheKey?,
     currentPlan: TopMoveAnalysisPlan,
@@ -31,7 +31,7 @@ internal fun planShowTopMoves(
     )
 }
 
-internal fun GameSessionControllerState.toShowTopMovesPlan(
+fun GameSessionControllerState.toShowTopMovesPlan(
     isEngineBusy: Boolean,
 ): ShowTopMovesPlan =
     planShowTopMoves(
@@ -47,7 +47,7 @@ internal fun GameSessionControllerState.toShowTopMovesPlan(
         isEngineBusy = isEngineBusy,
     )
 
-internal fun GameSessionControllerState.toShowTopMovesApplicationPlan(
+fun GameSessionControllerState.toShowTopMovesApplicationPlan(
     isGameEnded: Boolean,
     isEngineReady: Boolean,
     isEngineBusy: Boolean,
@@ -98,7 +98,7 @@ internal fun GameSessionControllerState.toShowTopMovesApplicationPlan(
     }
 }
 
-internal fun runShowTopMovesApplication(request: ShowTopMovesRunRequest) {
+fun runShowTopMovesApplication(request: ShowTopMovesRunRequest) {
     val plan = request.controllerState.toShowTopMovesApplicationPlan(
         isGameEnded = request.isGameEnded,
         isEngineReady = request.isEngineReady,
@@ -117,7 +117,7 @@ internal fun GameSessionControllerState.toHideTopMovesStateUpdate(): ShowTopMove
         engineMessage = "Top Moves hidden. Background move review keeps using fast best-1 analysis.",
     )
 
-internal fun runHideTopMovesApplication(request: HideTopMovesRunRequest) {
+fun runHideTopMovesApplication(request: HideTopMovesRunRequest) {
     request.applyUpdate(request.controllerState.toHideTopMovesStateUpdate())
 }
 
@@ -126,7 +126,7 @@ internal fun GameSessionAnalysisState.toSearchTimeTopMovesResetState(state: Game
         .clearReviewAnalysis(state)
         .copy(lastAnalysisKey = null)
 
-internal fun runSearchTimeTopMovesResetApplication(request: SearchTimeTopMovesResetRunRequest) {
+fun runSearchTimeTopMovesResetApplication(request: SearchTimeTopMovesResetRunRequest) {
     request.applyAnalysisState(
         request.analysisState.toSearchTimeTopMovesResetState(request.state),
     )

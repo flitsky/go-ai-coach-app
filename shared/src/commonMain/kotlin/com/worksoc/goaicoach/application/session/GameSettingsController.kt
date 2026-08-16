@@ -34,7 +34,7 @@ import com.worksoc.goaicoach.shared.EngineProfile
  * provider lambdas for current state values and callbacks for state writes.
  * This controller owns no Compose state itself.
  */
-internal class GameSettingsController(
+class GameSettingsController(
     private val currentGameState: () -> GameState,
     private val currentPlayerSetup: () -> PlayerSetup,
     private val currentEngineProfile: () -> EngineProfile,

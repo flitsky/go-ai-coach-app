@@ -9,7 +9,7 @@ import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.engine.EngineOperationRequest
 
-internal class TopMovesController(
+class TopMovesController(
     private val engineClient: EngineSessionClient,
     private val currentControllerState: () -> GameSessionControllerState,
     private val isGameEnded: () -> Boolean,

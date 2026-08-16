@@ -3,7 +3,7 @@ package com.worksoc.goaicoach.application.autoai
 import com.worksoc.goaicoach.application.undo.undoEngineInterventionRemainingDelayMillis
 import kotlinx.coroutines.delay
 
-internal suspend fun runAutoAiTurnTriggerEffect(
+suspend fun runAutoAiTurnTriggerEffect(
     quietUntilMillis: Long,
     nowMillis: () -> Long = System::currentTimeMillis,
     delayMillis: suspend (Long) -> Unit = { millis -> delay(millis) },

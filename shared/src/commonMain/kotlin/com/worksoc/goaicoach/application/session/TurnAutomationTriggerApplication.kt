@@ -4,7 +4,7 @@ import com.worksoc.goaicoach.application.undo.undoEngineInterventionRemainingDel
 import com.worksoc.goaicoach.shared.GameState
 import kotlinx.coroutines.delay
 
-internal suspend fun runTurnAutomationTriggerEffect(
+suspend fun runTurnAutomationTriggerEffect(
     quietUntilMillis: Long,
     topMoveTargetState: GameState,
     nowMillis: () -> Long = System::currentTimeMillis,

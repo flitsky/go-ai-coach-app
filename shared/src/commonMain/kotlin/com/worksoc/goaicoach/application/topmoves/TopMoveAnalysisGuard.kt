@@ -9,7 +9,7 @@ import com.worksoc.goaicoach.shared.engine.EngineTimeoutPolicy
 import com.worksoc.goaicoach.shared.engine.engineOperationRequest
 import com.worksoc.goaicoach.shared.GameState
 
-internal fun topMoveAnalysisOperationToken(
+fun topMoveAnalysisOperationToken(
     targetState: GameState,
     plan: TopMoveAnalysisPlan,
     sessionGeneration: Long = 0L,
@@ -28,7 +28,7 @@ internal fun topMoveAnalysisOperationToken(
         analysisKey = plan.analysisKey,
     )
 
-internal fun evaluateTopMoveAnalysisResultGuard(
+fun evaluateTopMoveAnalysisResultGuard(
     token: TopMoveAnalysisOperationToken,
     currentState: GameState,
     currentAnalysisKey: AnalysisCacheKey?,
@@ -54,7 +54,7 @@ internal fun evaluateTopMoveAnalysisResultGuard(
     }
 }
 
-internal fun buildTopMoveAnalysisSuccessCompletionPlan(
+fun buildTopMoveAnalysisSuccessCompletionPlan(
     token: TopMoveAnalysisOperationToken,
     currentState: GameState,
     currentAnalysisKey: AnalysisCacheKey?,
@@ -79,7 +79,7 @@ internal fun buildTopMoveAnalysisSuccessCompletionPlan(
             TopMoveAnalysisCompletionPlan.Discard(guard)
     }
 
-internal fun buildTopMoveAnalysisFailureDisplayPlan(
+fun buildTopMoveAnalysisFailureDisplayPlan(
     targetState: GameState,
     error: Throwable,
     topMovesEnabled: Boolean,
@@ -91,7 +91,7 @@ internal fun buildTopMoveAnalysisFailureDisplayPlan(
         candidateText = "Top Moves analysis failed.".takeIf { topMovesEnabled },
     )
 
-internal fun buildTopMoveAnalysisFailureCompletionPlan(
+fun buildTopMoveAnalysisFailureCompletionPlan(
     token: TopMoveAnalysisOperationToken,
     currentState: GameState,
     currentAnalysisKey: AnalysisCacheKey?,
@@ -152,7 +152,7 @@ internal fun buildTopMoveAnalysisCompletionPlan(
             )
     }
 
-internal fun TopMoveAnalysisCompletionPlan.toApplyPlan(): TopMoveAnalysisCompletionApplyPlan =
+fun TopMoveAnalysisCompletionPlan.toApplyPlan(): TopMoveAnalysisCompletionApplyPlan =
     when (this) {
         is TopMoveAnalysisCompletionPlan.ApplySuccess ->
             TopMoveAnalysisCompletionApplyPlan.ApplySuccess(
