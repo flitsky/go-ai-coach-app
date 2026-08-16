@@ -33,11 +33,11 @@ import com.worksoc.goaicoach.shared.engine.EngineFallbackPolicy
 import com.worksoc.goaicoach.shared.engine.EngineOperationKind
 import com.worksoc.goaicoach.shared.engine.EngineOperationRequest
 import kotlinx.coroutines.runBlocking
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+import kotlin.test.Test
 
 class PositionAnalysisCacheOptimizationTest {
     @Test

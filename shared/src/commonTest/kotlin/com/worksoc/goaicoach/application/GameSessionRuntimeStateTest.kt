@@ -13,8 +13,8 @@ import com.worksoc.goaicoach.shared.PlayLevelGroup
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.SearchTimeLimit
-import org.junit.Assert.assertEquals
-import org.junit.Test
+import kotlin.test.assertEquals
+import kotlin.test.Test
 
 class GameSessionRuntimeStateTest {
     @Test

@@ -24,10 +24,10 @@ import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.ScoreEstimate
 import kotlinx.coroutines.runBlocking
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertSame
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertSame
+import kotlin.test.assertTrue
+import kotlin.test.Test
 
 class EngineSessionLifecycleApplicationTest {
     @Test

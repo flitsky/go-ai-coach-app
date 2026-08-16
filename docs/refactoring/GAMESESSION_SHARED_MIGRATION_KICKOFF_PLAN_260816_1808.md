@@ -75,7 +75,7 @@
 - **의존 그래프**: `application/` 트리의 모든 `.kt` 파일에서 `package` 선언과 최상위 선언(`class`/`interface`/`object`/`fun`/`val`/`var`/`typealias`, 확장함수 수신 타입 포함)을 파싱해 심볼→소유 파일 맵을 만들고, `import com.worksoc.goaicoach.application.*` 구문을 그 맵에 대응시켜 **파일 단위** 방향 그래프를 구성했다. Tarjan SCC로 강한 연결 요소(순환)를 계산하고, 요소를 위상정렬해 "무엇이 무엇보다 먼저 이동해야 하는가"의 실제 순서를 얻었다. 와일드카드 임포트 0건, 미해결 임포트 0건(확장함수 수신 타입 파싱 보정 후) — 그래프가 코드와 어긋나지 않는다.
 - **주의**: 서브패키지 단위로만 보면 거의 모든 서브패키지가 서로 순환하는 것처럼 보인다(예: `session`이 나머지 대부분과 상호 임포트). 그러나 이는 "서브패키지 A의 파일 하나가 B의 파일 하나를 참조하고, B의 다른 파일이 A의 다른 파일을 참조"하는 것이 서브패키지 레벨에서 뭉쳐 보이는 착시였다 — **실제 순환은 파일 단위로 딱 13개 파일에만 존재한다.** 이 문서의 순서는 파일 단위 계산 결과이지, 서브패키지 단위 직관이 아니다.
 - **internal 감사**: 각 파일의 최상위 `internal` 선언명을 추출해, (a) application/ 트리 밖(`ui/`, `persistence/`, `middleware/`, 합성 루트 `engine/`, `androidTest`, `app-android/src/test`)에서 이름 매칭으로 사용처를 찾고 (b) application/ 내부 다른 파일에서의 사용처를 찾았다. **이름 기반 텍스트 매칭이라 정밀 타입 리졸버가 아니다** — 흔한 단어는 오탐 가능성이 있고, 반대로 리플렉션/문자열 참조는 놓칠 수 있다. 규모를 가늠하기 위한 조사이며, **실제 실행 시점의 정답은 컴파일러 에러**다(스파이크도 이 방식으로 정확히 2개를 찾았다) — 6절 참고.
-- 원본 스크립트와 전체 배치 목록(113단계 세밀 순서, 이 문서의 10웨이브보다 더 잘게 쪼갠 버전)은 이번 세션의 스크래치패드에 있다 — 필요하면 재실행 가능(20줄 내외 파이썬, `application/` 트리 재스캔).
+- 원본 그래프 스크립트(`dep_graph2.py`)는 세션 스크래치패드에만 있었다(재현 가능하지만 저장소에는 없음) — 필요하면 이 절의 설명대로 재작성 가능. 대신 **컴파일러 위젠 스크립트는 `scripts/converge-shared-migration-visibility.py`로 저장소에 커밋해 뒀다**(아래 6절 참고) — 매 웨이브 파일 이동 직후 그대로 재사용할 것.
 
 **260816 실행 중 발견 — 이 조사 방법 자체에 결함이 있었다**: 위 그래프는 `import` 구문만 파싱했다. **Kotlin은 같은 패키지 안의 파일끼리는 import 없이도 서로의 최상위 선언을 참조할 수 있다** — 이 "같은 패키지 내부 참조" 엣지가 전부 누락돼 있었다. 웨이브 1의 19개 파일 중 2개(`EngineOperationPolicy.kt`, `ScoreDisplayApplication.kt`)를 실제로 옮겨 컴파일해보고서야 발견했다("Unresolved reference" 에러로). 같은 패키지 내부 참조까지 포함해 그래프를 다시 계산하니(파일 텍스트에서 형제 파일이 선언한 심볼명을 직접 검색하는 방식, `dep_graph2.py`) 순환 클러스터가 13개 파일(2건)이 아니라 **39개 파일(7건)**로 늘었다 — 그중 가장 큰 건 원래 "웨이브 2"라 부르던 11개 파일이 사실은 **26개 파일**이 서로 얽힌 것이었다(`session/GameSessionCoreState.kt`, `undo/` 3개 파일 등 원래 웨이브 6~8로 분류했던 것들이 실제로는 여기 다 물려 있었다). 교훈: **서브패키지 레벨 그래프는 착시를 만들고, import만 보는 파일 레벨 그래프도 같은 패키지 내부 참조를 놓치면 착시를 만든다** — 순환 여부를 판단하려면 반드시 같은 패키지 내부의 무-import 참조까지 스캔해야 한다. 이 교정된 스크립트(`dep_graph2.py`)와 그 결과(`scc_order2.txt`)가 이제 이 문서의 이동 순서 근거다(아래 3절부터는 교정된 결과 기준).
 
@@ -104,7 +104,7 @@
 
 ### 남은 68개 파일 — 웨이브 2~6
 
-교정된 그래프에서 웨이브 1(배치 1~29) 이후 순서를 그대로 세션 크기로 묶었다. 웨이브 1과 달리 추가 순환 클러스터가 크지 않아(최대 3파일) 각 웨이브가 계획대로 실행될 가능성이 높지만, **웨이브 1의 교훈대로 각 웨이브 착수 시 파일 이동 후 컴파일러가 지목하는 대로 처리하고, 세밀 순서가 필요하면 스크래치패드의 `scc_order2.txt`(배치 30~92)를 직접 참고할 것** — 이 표는 그 배치들을 세션 단위로 묶은 요약이다.
+교정된 그래프에서 웨이브 1(배치 1~29) 이후 순서를 그대로 세션 크기로 묶었다. 웨이브 1과 달리 추가 순환 클러스터가 크지 않아(최대 3파일) 각 웨이브가 계획대로 실행될 가능성이 높았고, 실제로 2~4는 전부 계획대로 끝났다. 웨이브 5·6의 정확한 파일 목록은 아래에 직접 적어 뒀다(원본 배치 데이터가 세션 스크래치패드에만 있어 새 스레드에서는 못 보므로) — 이 표는 그 배치들을 세션 단위로 묶은 요약이다.
 
 | 웨이브 | 파일 수 | 배치 범위 | 주요 내용 | 상태 |
 |---|---|---|---|---|
@@ -115,6 +115,46 @@
 | 6 | 11 | 82–92 | topmoves·session·startgame 잔여 컨트롤러 — 홀더에 의존하는 마지막 그룹 | 대기 |
 
 합계: 17+16+12+11+11 = 67 이동 + 1 영구 제외 = 68(+ 웨이브 3에서 발견된 `application/` 트리 밖 파일 1개 별도). 웨이브 4 완료 시점 기준 남은 것: 웨이브 5~6, 22개 파일 — **웨이브 5에 `GameSessionStateHolder.kt` 본체가 있다.**
+
+**260816 웨이브 4 직후 캐치업**: 매 웨이브마다 "그 웨이브의 새 파일에 이름이 대응하는 테스트만" 확인해 왔는데, 이번에 전체 잔여 테스트를 한 번 훑어보니(이름 매칭이 아니라 실제 참조 심볼 기준) **13개가 이전 웨이브들에서 이미 범위 안이 됐는데 놓치고 있었다** — `DebugReportBuilderTest`, `EngineSessionLifecycleApplicationTest`, `EngineStartupApplicationTest`, `GameSessionCoreStateTest`, `GameSessionMoveReviewStateTest`, `GameSessionRuntimeStateTest`, `GameSessionScoreStateTest`, `GameSessionTurnTimeStateTest`, `PositionAnalysisCacheOptimizationTest`, `ScoringRuleApplicationTest`, `StartGameApplicationTest`, `UndoApplicationTest`, `UserPreferencesApplicationTest`(이 마지막 것은 웨이브 1에서 명시적으로 범위 밖이라 되돌렸던 것 — 웨이브 4의 `UserPreferencesPorts.kt`/`UserPreferencesAutosaveApplication.kt` 이동으로 막혔던 게 풀렸는데 재확인을 안 했었다). 13개 모두 이동, 3개 타깃 전부 위젠 없이 1라운드 그린, `make test` 전체 그린. **교훈**: "이번 웨이브의 새 파일에 이름이 매칭되는 테스트만" 확인하는 방식은 과거 웨이브에서 막혔던 테스트가 나중에 풀리는 걸 놓친다 — 매 웨이브 끝에 남은 테스트 전체를 훑는 한 번의 스캔(위 파이썬 스니펫과 동일한 방식)을 습관화할 것. 이후 남은 잔여 테스트는 전부 웨이브 5·6의 프로덕션 파일이 실제로 이동해야만 풀리는 진짜 범위 밖 파일들이다.
+
+### 웨이브 5·6 정확한 파일 목록 (배치 71~92, 새 스레드용)
+
+**웨이브 5 (배치 71~81, 11개)**:
+```
+savedgame/SavedGamePersistence.kt
+savedgame/SavedGamePersistenceRunner.kt
+savedgame/SavedGameApplicationRunner.kt
+score/RestoredGameScoreSyncRunnerApplication.kt
+savedgame/SavedSessionController.kt
+score/ScoreEstimateRunnerApplication.kt
+score/ScoreEstimateController.kt
+score/ScoringRuleScoreSyncRunnerApplication.kt
+score/ScoringRuleController.kt
+session/GameSessionDisplayStateApplierApplication.kt
+session/GameSessionStateHolder.kt   ← 키스톤
+```
+동반 가능 테스트(260816 확인, 이동 시점에 재확인할 것): `SavedGamePersistenceTest.kt`, `SavedGameApplicationRunnerTest.kt`, `GameSessionDisplayStateApplierApplicationTest.kt`, `GameSessionStateHolderTest.kt`.
+
+**웨이브 6 (배치 82~92, 11개)**:
+```
+topmoves/TopMoveAnalysisGuard.kt
+topmoves/TopMoveAnalysisEngine.kt
+topmoves/TopMoveAnalysisApplierApplication.kt
+topmoves/TopMovesApplication.kt
+topmoves/ShowHideTopMovesApplication.kt
+session/GameSettingsController.kt
+session/TurnAutomationTriggerApplication.kt
+startgame/StartEngineBackedGameRunnerApplication.kt
+startgame/NewGameController.kt
+topmoves/TopMovesController.kt
+topmoves/TopMovesEffectLauncherApplication.kt
+```
+동반 가능 테스트: `TopMovesApplicationTest.kt`, `GameSettingsControllerTest.kt`, `StartEngineBackedGameRunnerTest.kt`.
+
+**웨이브 6 완료 후에도 계속 app-android에 남는 테스트 2개(정상)**: `DiagnosticEventApplicationTest.kt`(`LocalFileDiagnosticEventExternalSink.kt` — 4절대로 영구 잔류 파일을 테스트하므로 절대 이동 안 함), `GameAutomationApplicationTest.kt`(여러 서브패키지를 넘나드는 통합 테스트 — 웨이브 6까지 다 끝나면 범위 안이 될 가능성이 높으니 웨이브 6 완료 후 마지막으로 재확인할 것).
+
+이 44개(=22개 파일의 프로덕션 + 대응 테스트, 정확한 수는 이동 시점에 재확인)를 옮기고 나면 `application/` 트리 전체 이전이 끝난다. 웨이브 1~4는 이미 위 방식(파일 이동 → 아래 6절 스크립트로 3개 타깃 순서대로 수렴 → 테스트 스코프 확인 → `make test` → 문서 갱신 → 커밋/푸시)으로 실행됐다 — 같은 순서를 그대로 반복하면 된다.
 
 **웨이브 5에 `GameSessionStateHolder.kt`가 있다** — 원래 계획의 "웨이브 9" 프레이밍과 거의 일치(리프부터 시작해 뒤쪽에서 홀더가 나오는 흐름 자체는 교정 후에도 유지됨). 웨이브 5·6 완료 직후 `NewGameBoardTapSmokeTest.kt`/`AppLaunchSmokeTest.kt` 실기 재확인 필수(0절 완료 기준 참고).
 
@@ -385,7 +425,7 @@ undo/UndoRunnerApplication.kt
 컴파일러 주도 방식(1~2번 규칙)을 실제로 4~5라운드에 걸쳐 돌렸고, 정확히 예상대로 작동했다:
 
 1. **1차 라운드**: "Cannot access 'X': it is internal in file" — 이 문서가 예상한 그대로. `:shared` 자체 컴파일(같은 모듈 내부라 관대함)은 바로 통과했지만, `:app-android` 컴파일(모듈 경계를 실제로 넘는 지점)에서 대량으로 터졌다. 웨이브 1(56개 파일) 기준 최종적으로 **약 200개 심볼**을 public으로 바꿨다 — 표의 509개 예상치보다는 적지만(이동한 게 56/124라서 비례), "한두 개"가 아니라는 예측은 정확히 맞았다.
-2. **2차 캐스케이드(이 문서가 예상 못 한 것)**: 1차에서 함수/클래스를 public으로 바꾸고 나면, Kotlin이 **"'public' 함수가 'internal' 타입을 노출한다"는 별도 에러 범주**를 낸다 — 함수 시그니처에 쓰인 파라미터/리턴 타입도 함수 자신과 같은 가시성이어야 한다는 Kotlin 자체 규칙. 이것도 컴파일 에러로 정확히 지목되므로 대응은 동일(그 타입 선언도 public으로), 다만 **한 번의 컴파일로 안 끝나고 라운드가 여러 번 필요하다**는 걸 미리 알아두면 좋다 — "컴파일 → 나온 에러만큼 고침 → 재컴파일"을 에러가 0이 될 때까지 자동으로 반복하는 작은 스크립트(스크래치패드의 `converge.py`)를 짜서 처리했다. 다음 웨이브에도 같은 스크립트를 그대로 재사용할 수 있다.
+2. **2차 캐스케이드(이 문서가 예상 못 한 것)**: 1차에서 함수/클래스를 public으로 바꾸고 나면, Kotlin이 **"'public' 함수가 'internal' 타입을 노출한다"는 별도 에러 범주**를 낸다 — 함수 시그니처에 쓰인 파라미터/리턴 타입도 함수 자신과 같은 가시성이어야 한다는 Kotlin 자체 규칙. 이것도 컴파일 에러로 정확히 지목되므로 대응은 동일(그 타입 선언도 public으로), 다만 **한 번의 컴파일로 안 끝나고 라운드가 여러 번 필요하다**는 걸 미리 알아두면 좋다 — "컴파일 → 나온 에러만큼 고침 → 재컴파일"을 에러가 0이 될 때까지 자동으로 반복하는 스크립트를 짜서 처리했다. **저장소에 `scripts/converge-shared-migration-visibility.py`로 커밋해 뒀다** — 웨이브 2~4에서 실제로 재사용 검증됨. 사용법: `python3 scripts/converge-shared-migration-visibility.py shared|app-main|app-test` (JAVA_HOME은 스크립트가 알아서 설정함), 3개 타깃 순서대로 각각 실행.
 3. **컴파일 타깃이 여러 개라 순서대로 다 돌려야 한다**: `:shared:compileDebugKotlinAndroid`(shared 자체) → `:app-android:compileDebugKotlin`(app-android 메인) → `:app-android:compileDebugUnitTestKotlin`(app-android **테스트** 소스셋도 shared의 internal에 별도로 접근한다 — UI에서 안 쓰지만 기존 테스트가 화이트박스로 접근하던 함수들이 여기서 걸림) 순으로 각각 별도 라운드가 필요했다. 하나만 그린이라고 다음 것도 그린이라고 가정하지 말 것.
 
 ---
@@ -413,10 +453,20 @@ undo/UndoRunnerApplication.kt
 
 ## 10. 다음 단계
 
-**웨이브 1~4는 완료됐다**(0절, 커밋 `30d6508`/`4023c09`/`d962a8d`/다음 커밋). 다음은 웨이브 5(3절 표, 배치 71–81, savedgame·score 잔여 + **`session/GameSessionStateHolder.kt` 본체**, 11개 파일)부터 — 이 웨이브가 끝나면 키스톤이 이동하므로, 완료 후 `NewGameBoardTapSmokeTest.kt`/`AppLaunchSmokeTest.kt` 실기 재확인이 필요하다(0절·7절 참고):
-- 6절의 규칙대로 internal은 미리 안 건드리고 컴파일 에러로 확정(순서: `:shared` 메인 → `:app-android` 메인 → `:app-android` 테스트)
-- 이동하는 각 프로덕션 파일의 대응 테스트가 웨이브 범위를 넘는지 확인(7절 3번)
-- `make test`에서 `LayeringContractTest.kt`가 새로운 `FileNotFoundException`을 내면 `applicationFile()` 헬퍼로 해결되는지 우선 확인(7절 마지막 문단)
-- 웨이브 5(`GameSessionStateHolder.kt` 포함)·6 완료 후 스모크 테스트 실기 재확인
+**웨이브 1~4(+ 캐치업 테스트 13개)는 완료됐다**(0절). 남은 건 웨이브 5·6, 22개 파일 — 정확한 파일 목록은 3절 끝에 이미 적어 뒀다. 진행 순서(웨이브 1~4와 동일, 그대로 반복):
+
+1. `git mv`로 해당 웨이브의 프로덕션 파일을 `app-android/src/main/java/.../application/X` → `shared/src/commonMain/kotlin/.../application/X`로 이동(패키지명 유지)
+2. 이동 전에 그 파일들이 `application/` 밖(`ui`/`persistence`/`engine`/`middleware` 등)을 import하는지 먼저 grep — 웨이브 3의 교훈(middleware/ 사례)
+3. `python3 scripts/converge-shared-migration-visibility.py shared` → `app-main` → `app-test` 순서로 실행, 각각 그린 될 때까지(JAVA_HOME은 스크립트가 처리)
+4. 대응 테스트를 3절 끝의 표대로 옮기되, 이동 직전에 실제 참조 심볼이 아직 안 옮긴 파일을 가리키는지 다시 확인(이름 매칭만 믿지 말 것 — 웨이브 4 캐치업에서 13개를 놓친 이유)
+5. `make test` 전체 그린 확인 — `LayeringContractTest.kt`가 `FileNotFoundException`을 내면 `applicationFile()` 헬퍼 패턴 확인(7절)
+6. 이 문서의 0절에 실행 결과 기록, 3절 표 상태 갱신
+7. **웨이브 5(`GameSessionStateHolder.kt` 포함) 완료 후에는 여기서 한 단계 더** — `NewGameBoardTapSmokeTest.kt`/`AppLaunchSmokeTest.kt`를 에뮬레이터에서 실기 재확인(`make install-dev-engine` 후 실제 기기/에뮬레이터 필요, 컴파일+단위테스트만으로는 부족)
+8. 커밋(`refactor(shared): ... 웨이브 N (M개 파일)` 형식, 웨이브 1~4 커밋 메시지가 예시) + push
+
+**웨이브 6까지 다 끝나면(이 문서 범위의 마지막)** 추가로:
+- `LayeringContractTest.kt`의 **실제 계층 규칙**(`engineOperationApplicationPoliciesStayPortable`을 `:shared` 스캔으로 재작성 등)을 이제 갱신 — 지금까지는 파일 경로 문제만 고쳤지 규칙 자체는 안 건드렸다(7절)
+- `docs/refactoring/REFACTORING_BACKLOG_260816_1744.md`의 작업 우선순위 1번을 취소선 처리 + 완료일 기록(그 문서 자신의 "서두 작업 원칙" 5번)
+- `docs/GO_AI_COACH_ARCHITECTURE_ROADMAP.md`의 "알려진 갭"·"고도화 로드맵" 5번을 완료로 갱신
 
 `docs/GO_AI_COACH_ARCHITECTURE_ROADMAP.md` 고도화 로드맵 5번 항목 (2)는 이 문서를 가리키도록 이미 갱신해 뒀다(같은 세션).

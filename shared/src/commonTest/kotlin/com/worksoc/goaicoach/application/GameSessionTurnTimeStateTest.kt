@@ -4,8 +4,8 @@ import com.worksoc.goaicoach.application.session.*
 
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.StoneColor
-import org.junit.Assert.assertEquals
-import org.junit.Test
+import kotlin.test.assertEquals
+import kotlin.test.Test
 
 class GameSessionTurnTimeStateTest {
     @Test

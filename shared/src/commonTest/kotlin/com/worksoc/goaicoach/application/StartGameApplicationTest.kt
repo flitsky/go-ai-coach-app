@@ -11,9 +11,9 @@ import com.worksoc.goaicoach.shared.PlayLevelGroup
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.StoneColor
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
+import kotlin.test.Test
 
 class StartGameApplicationTest {
     @Test

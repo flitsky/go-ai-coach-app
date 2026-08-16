@@ -19,8 +19,8 @@ import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
 import com.worksoc.goaicoach.shared.PlayLevelSetting
-import org.junit.Assert.assertEquals
-import org.junit.Test
+import kotlin.test.assertEquals
+import kotlin.test.Test
 
 class GameSessionMoveReviewStateTest {
     @Test

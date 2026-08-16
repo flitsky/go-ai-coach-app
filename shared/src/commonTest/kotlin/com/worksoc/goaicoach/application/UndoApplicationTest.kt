@@ -17,10 +17,10 @@ import com.worksoc.goaicoach.shared.ScoreSnapshot
 import com.worksoc.goaicoach.shared.ScoreSnapshotSource
 import com.worksoc.goaicoach.shared.StoneColor
 import com.worksoc.goaicoach.shared.replayWithoutLastMoves
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
+import kotlin.test.Test
 
 private val HumanBlack = PlayerSetup() // black=Human, white=Ai (default)
 private val HumanWhite = PlayerSetup(

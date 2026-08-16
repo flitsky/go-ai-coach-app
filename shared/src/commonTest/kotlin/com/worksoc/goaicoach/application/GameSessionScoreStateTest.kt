@@ -9,9 +9,9 @@ import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.ScoreSnapshot
 import com.worksoc.goaicoach.shared.ScoreSnapshotSource
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
-import org.junit.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNull
+import kotlin.test.Test
 
 class GameSessionScoreStateTest {
     @Test
