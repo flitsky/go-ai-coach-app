@@ -55,6 +55,11 @@ import org.junit.runner.RunWith
  * com.worksoc.goaicoach.match.MatchPolicy.seatSnapshot] only allows board input
  * without a ready engine in that mode -- any AI seat requires `isEngineReady`,
  * which this fake deliberately never reaches.
+ *
+ * 260814: no onboarding click here anymore -- [FeatureFlags.isLoginEnabled] is
+ * `false` (2026-08-09 decision), so [initialDestination] skips onboarding and
+ * lands directly on Home. See [AppLaunchSmokeTest] (same package) for the same
+ * fix applied to the real-MainActivity launch path.
  */
 @RunWith(AndroidJUnit4::class)
 class NewGameBoardTapSmokeTest {
@@ -89,7 +94,6 @@ class NewGameBoardTapSmokeTest {
             )
         }
 
-        composeRule.onNodeWithText(strings.continueWithoutAccount).performClick()
         composeRule.onNodeWithText(strings.startMatch).performClick()
 
         // White defaults to AI; switch it to Human so this is Local Two Player
