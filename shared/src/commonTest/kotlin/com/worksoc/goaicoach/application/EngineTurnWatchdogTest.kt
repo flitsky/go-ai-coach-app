@@ -3,10 +3,10 @@ package com.worksoc.goaicoach.application
 import com.worksoc.goaicoach.application.safety.engineTurnWatchdogTimeoutMillisFor
 import com.worksoc.goaicoach.application.safety.isEngineTurnWatchdogTriggered
 import com.worksoc.goaicoach.shared.SearchTimeLimit
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class EngineTurnWatchdogTest {
     @Test
