@@ -30,7 +30,7 @@ import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.ScoreEstimate
 
-internal class LocalEngineSessionClient(
+class LocalEngineSessionClient(
     private val coreApi: EngineCoreApi,
     override val capabilities: EngineSessionCapabilities = EngineSessionCapabilities(
         supportsDeviceBenchmark = false,

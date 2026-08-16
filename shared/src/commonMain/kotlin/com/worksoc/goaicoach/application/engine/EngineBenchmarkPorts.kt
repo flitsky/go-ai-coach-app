@@ -1,6 +1,6 @@
 package com.worksoc.goaicoach.application.engine
 
-internal interface EngineBenchmarkStorePort {
+interface EngineBenchmarkStorePort {
     fun exists(): Boolean
 
     fun hasUsableProfile(

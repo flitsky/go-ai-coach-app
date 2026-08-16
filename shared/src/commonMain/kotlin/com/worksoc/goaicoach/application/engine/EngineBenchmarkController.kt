@@ -13,7 +13,7 @@ import kotlinx.coroutines.CoroutineScope
  * message) stays in the caller and is reached through the accessors below; only
  * the benchmark-specific orchestration lives here.
  */
-internal class EngineBenchmarkController(
+class EngineBenchmarkController(
     private val scope: CoroutineScope,
     private val engineClient: EngineSessionClient,
     private val store: EngineBenchmarkStorePort,

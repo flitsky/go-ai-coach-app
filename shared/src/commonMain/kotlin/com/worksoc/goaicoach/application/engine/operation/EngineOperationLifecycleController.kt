@@ -27,7 +27,7 @@ import kotlinx.coroutines.Job
  * [onBusyChanged] (called synchronously before each log append, so a runtime log
  * context that reads the busy flag observes the post-transition value).
  */
-internal class EngineOperationLifecycleController(
+class EngineOperationLifecycleController(
     private val scope: CoroutineScope,
     private val runtimeEventLog: RuntimeEventLogPort,
     private val diagnosticEventLog: DiagnosticEventLogPort,

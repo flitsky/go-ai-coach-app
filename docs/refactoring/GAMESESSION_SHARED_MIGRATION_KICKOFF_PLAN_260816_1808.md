@@ -1,6 +1,6 @@
 # `GameSessionStateHolder` → `:shared` 본 이전 — 착수 계획서
 
-작성일: 2026-08-16 18:08 (계획 수립) / **갱신: 2026-08-16 웨이브 1, 웨이브 2 실행 완료 후**
+작성일: 2026-08-16 18:08 (계획 수립) / **갱신: 2026-08-16 웨이브 1·2·3 실행 완료 후**
 
 **성격**: `docs/GO_AI_COACH_ARCHITECTURE_ROADMAP.md` "고도화 로드맵" 5번 항목 (2) "본 이전"의 실행 순서를 정하는 착수 계획서다(로드맵 문서 자체가 "착수 순서는 별도 착수 계획서에서 정한다"고 명시한 그 문서). 원래는 `docs/refactoring/REFACTORING_BACKLOG_260816_1744.md` 작업 우선순위 1번의 "계획부터 정리해서 보여달라"는 요청으로 코드 이동 없이 작성됐으나, 같은 날 이어진 세션에서 **웨이브 1 실행까지 완료**했다 — 이 문서는 이제 계획서 겸 실행 기록이다.
 
@@ -32,6 +32,19 @@
 - **테스트 7개 후보 중 6개 이동**(`AuthStateTest`, `DebugReportApplicationRunnerTest`, `DeviceIdentityTest`, `AutoAiCompletionApplierTest`, `AutoAiEndgameRunnerTest`, `AutoAiScheduledTurnRunnerTest`), **`RuntimeEventApplicationTest.kt`는 원위치 유지** — `buildEngineOperationDiscardLogPlan`/`recordEngineOperationDiscardLog`(`engine/operation/EngineOperationResultApplication.kt`·`EngineOperationLifecycleController.kt`, 웨이브 3 예정)까지 테스트하고 있어서. 웨이브 3 완료 후 재확인할 것.
 - **새로 발견한 테스트 전환 패턴**: `DeviceIdentityTest.kt`가 `org.junit.Assert.assertThrows(X::class.java) { ... }`를 썼다 — 지금까지의 단순 import 1:1 치환(`assertEquals` 등)과 달리 문법이 다르다. `kotlin.test.assertFailsWith<X> { ... }`로 변환(제네릭 타입 파라미터로, `.java` 클래스 인자가 아님). 앞으로 `assertThrows`가 나오면 이 패턴 적용.
 - `make test` **첫 시도에 바로 전체 그린** — `LayeringContractTest.kt` 관련 실패 없음(웨이브 1에서 미리 `applicationFile()` 헬퍼로 고쳐둔 덕분에 회귀 없었음, 이번 웨이브 파일들이 원래 하드코딩 대상도 아니었음).
+
+커밋 `4023c09`(origin/main에 push 완료).
+
+### 웨이브 3 실행 결과 요약 (260816, 이어서) — **이 문서 최초 스코프 밖의 파일 1개를 새로 발견해 포함시킴**
+
+배치 46–61(`engine/`의 나머지 16개 파일 — 로컬 delegate·gateway·operation 하위)을 이동. 프로덕션 16개 + 테스트 5개(그중 2개는 웨이브 1·2에서 "아직 범위 밖"으로 미뤄뒀던 `EngineSessionTest.kt`/`RuntimeEventApplicationTest.kt` — 이번 웨이브로 그 파일들이 이동하면서 자동으로 범위 안이 됨, 매 웨이브마다 이전에 미룬 테스트를 재확인하는 게 실제로 유효했다) 이동 완료. `:shared`/`:app-android` 컴파일 + `make test` 전체 그린.
+
+**새로 발견한 것 — `application/` 트리 밖 의존성**: `engine/LocalPositionAnalysisCacheCoordinator.kt`가 `application/`이 아니라 완전히 별개의 최상위 패키지 `com.worksoc.goaicoach.middleware`의 `PositionAnalysisCacheResolver.kt`를 참조하고 있었다. 이 계획서의 조사(2절)는 애초에 `application/` 트리 **내부**만 스캔했으므로 이런 트리 밖 참조는 원천적으로 탐지 범위 밖이었다 — `LayeringContractTest.kt`의 `engineOperationApplicationPoliciesStayPortable`도 `middleware.`는 금지 목록에 없어서(2계층 성격상 애초에 허용되는 방향) 걸러내지 못했다. 확인해보니:
+- `middleware/PositionAnalysisCacheResolver.kt` 자체는 android/java/ui/persistence import가 전혀 없어 완전히 이식 가능했고, 자신도 이미 이동한 `application/analysis/*` 타입에만 의존했다.
+- `middleware/` 안의 다른 파일(`JsonNullableExtensions.kt`는 `org.json.JSONObject`를 써서 이식 불가, `PositionAnalysisGateway.kt`/`RemotePositionAnalysisGateway.kt`)은 이걸 참조하지 않아 연쇄 확장 위험이 없었다.
+- 규모가 파일 1개(+테스트 1개)로 작고 명확히 경계 지어져 있어, 사용자에게 다시 확인받지 않고 바로 `shared/src/commonMain/kotlin/com/worksoc/goaicoach/middleware/`(패키지명 유지, `:shared` 안에 새 최상위 패키지로)로 함께 옮겼다 — 웨이브 1의 "56개로 확장" 같은 큰 스코프 변경과는 성격이 다르다고 판단(단일 파일, 완전히 격리됨, 되돌리기도 쉬움).
+- **앞으로의 웨이브에서 주의할 점**: `application/` 파일이 `middleware/`(또는 이론상 다른 app-android 최상위 패키지)를 참조하는 다른 사례가 더 있을 수 있다 — `Unresolved reference 'middleware'` 같은 컴파일 에러가 나오면 이 패턴으로 처리(포터빌리티 확인 후 `shared/.../middleware/`로 함께 이동)할 것.
+- 컴파일러 위젠 스크립트(`converge.py`)의 정규식 버그 하나 더 발견/수정: Kotlin의 `fun interface`(함수형 인터페이스) 선언을 `internal fun interface Foo`처럼 쓰면 기존 정규식이 "fun interface"를 통째로 수정자로 잘못 소비해 이름을 못 찾았다 — `kw` 그룹에 `fun\s+interface`를 `fun`보다 먼저 오는 대안으로 추가해 해결.
 
 ---
 
@@ -89,12 +102,12 @@
 | 웨이브 | 파일 수 | 배치 범위 | 주요 내용 | 상태 |
 |---|---|---|---|---|
 | 2 | 18(1개 영구 제외, 17개 이동) | 30–45 | analysis 잔여, auth(2파일 순환), runtime, autoai 잔여, debugreport 잔여, device(2파일 순환), diagnostic 잔여(**`LocalFileDiagnosticEventExternalSink.kt` 포함 — 4절대로 이동 제외**) | **완료(260816)** |
-| 3 | 16 | 46–61 | `engine/`의 나머지 전체(로컬 엔진 delegate·gateway·operation 하위) | 다음 차례 |
-| 4 | 12 | 62–70 | humanmove·preferences 잔여, premium(3파일 순환 1건 + 2파일 순환 1건 포함), prompt | 대기 |
+| 3 | 16(+`middleware/PositionAnalysisCacheResolver.kt` 1개 추가 발견분) | 46–61 | `engine/`의 나머지 전체(로컬 엔진 delegate·gateway·operation 하위) | **완료(260816)** |
+| 4 | 12 | 62–70 | humanmove·preferences 잔여, premium(3파일 순환 1건 + 2파일 순환 1건 포함), prompt | 다음 차례 |
 | 5 | 11 | 71–81 | savedgame·score 잔여 + **`session/GameSessionStateHolder.kt` 본체(배치 81)** | 대기 |
 | 6 | 11 | 82–92 | topmoves·session·startgame 잔여 컨트롤러 — 홀더에 의존하는 마지막 그룹 | 대기 |
 
-합계: 17+16+12+11+11 = 67 이동 + 1 영구 제외 = 68. ✓ (웨이브 2 완료 시점 기준 남은 것: 웨이브 3~6, 51개 파일 + `RuntimeEventApplicationTest.kt` 등 뒤늦게 이동 가능해질 테스트 소수)
+합계: 17+16+12+11+11 = 67 이동 + 1 영구 제외 = 68(+ 웨이브 3에서 발견된 `application/` 트리 밖 파일 1개 별도). 웨이브 3 완료 시점 기준 남은 것: 웨이브 4~6, 34개 파일.
 
 **웨이브 5에 `GameSessionStateHolder.kt`가 있다** — 원래 계획의 "웨이브 9" 프레이밍과 거의 일치(리프부터 시작해 뒤쪽에서 홀더가 나오는 흐름 자체는 교정 후에도 유지됨). 웨이브 5·6 완료 직후 `NewGameBoardTapSmokeTest.kt`/`AppLaunchSmokeTest.kt` 실기 재확인 필수(0절 완료 기준 참고).
 
@@ -393,7 +406,7 @@ undo/UndoRunnerApplication.kt
 
 ## 10. 다음 단계
 
-**웨이브 1·2는 완료됐다**(0절, 커밋 `30d6508`). 다음은 웨이브 3(3절 표, 배치 46–61, `engine/`의 나머지 16개 파일 — 로컬 엔진 delegate·gateway·operation 하위)부터:
+**웨이브 1·2·3은 완료됐다**(0절, 커밋 `30d6508`/`4023c09`/다음 커밋). 다음은 웨이브 4(3절 표, 배치 62–70, humanmove·preferences 잔여 + premium 순환 클러스터 2건 + prompt, 12개 파일)부터:
 - 6절의 규칙대로 internal은 미리 안 건드리고 컴파일 에러로 확정(순서: `:shared` 메인 → `:app-android` 메인 → `:app-android` 테스트)
 - 이동하는 각 프로덕션 파일의 대응 테스트가 웨이브 범위를 넘는지 확인(7절 3번)
 - `make test`에서 `LayeringContractTest.kt`가 새로운 `FileNotFoundException`을 내면 `applicationFile()` 헬퍼로 해결되는지 우선 확인(7절 마지막 문단)

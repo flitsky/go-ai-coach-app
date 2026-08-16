@@ -8,7 +8,7 @@ package com.worksoc.goaicoach.application.engine
  * RemoteEngineHttpConfig]로의 변환은 composition root에 가까운 `com.worksoc.goaicoach.engine`
  * 패키지(예: `EngineBootstrap.kt`와 같은 자리)에서 일어난다.
  */
-internal data class RemoteEngineCandidate(
+data class RemoteEngineCandidate(
     val endpointUrl: String,
     val enabled: Boolean,
     val connectTimeoutMillis: Int = 3_000,
@@ -26,7 +26,7 @@ internal data class RemoteEngineCandidate(
  * 판단은 실제로 후보가 2개 이상 존재할 때(DePIN 방향 확장) 추가한다. 선언된 순서를 우선순위로
  * 취급한다.
  */
-internal fun selectRemoteEngineCandidate(
+fun selectRemoteEngineCandidate(
     candidates: List<RemoteEngineCandidate>,
 ): RemoteEngineCandidate? =
     candidates.firstOrNull { candidate -> candidate.enabled && candidate.endpointUrl.isNotBlank() }

@@ -18,7 +18,7 @@ internal data class EngineOperationLifecycleState(
         }
 }
 
-internal enum class EngineActivityIndicator(
+enum class EngineActivityIndicator(
     val baseText: String,
 ) {
     Preparing("Preparing"),
