@@ -94,14 +94,14 @@
 
 ## 알려진 갭 (2026-07-30 기준)
 
-- `GameSessionStateHolder`(5계층)는 여전히 `app-android`에 있다. `shared`로 옮기는 KMP 이식은 아직 안 함.
+- `GameSessionStateHolder`(5계층)는 여전히 `app-android`에 있다. `shared`로 옮기는 KMP 이식은 아직 안 함 — **260814**: 이식 가능성 자체(플랫폼 비종속)는 `engineOperationApplicationPoliciesStayPortable`이 이미 `application/` 트리 전체를 검증하고 있어 확인된 상태다. 남은 건 물리적 이동과 `internal` 가시성(모듈 스코프) 재정리뿐 — 스코핑은 아래 "고도화 로드맵" 항목 참고. 아직 착수는 안 함(계획만).
 - ~~`RemoteEngineSessionClient`(3계층, 여러 원격 후보 중 선택·신뢰도 판단)가 없다~~ — 260804 Stage E-1/E-2에서 최소 형태로 해소(`selectRemoteEngineCandidate`+`RemoteEngineSessionBootstrap.createRemoteEngineSessionClient`). `RemoteEngineCoreApiAdapter`(원격 `EngineCoreApi` 구현체 자체, 260803 Stage D)와 함께 이제 준비돼 있지만, 아직 앱 실제 컴포지션(MainActivity/GoCoachApp)에 배선되지 않았고 "고정된 원격 서버 1대"조차 가리킬 실제 서버가 없어 실제로 쓰이고 있지 않다 — Stage F 영역.
 - ~~2계층의 로컬/원격 구현체가 대등하지 않다~~ — 260803 Stage D에서 해소(위 2계층 절 참고). 260804에 물리적으로도 `engine-android` 한 모듈로 모았다.
 - 4계층(외부 연동)이 포트(α)만 있고 안정화 서비스 본체가 얇다.
 - 6계층(세션/연속성)이 auth/premium 각자의 필요만 채우고 있고, 범용 개념이 없다.
 - ~~기능 엔타이틀먼트 판정이 6계층이 아니라 7계층에 있다~~ — 260814에 해소. "이 유저가 무르기를 쓸 수 있는가" 같은 OR 조합이 `ui/GamePlaySection.kt`의 `undoClaimGated`/`premiumGated`(형세보기·추천수용) 두 로컬 함수와 `ui/KaTrainUxPanels.kt`의 독립 인라인 체크(착수평가)까지 총 3곳에 각각 하드코딩돼 있던 것을, `application/premium/FeatureAccessPolicy.kt`(위 6계층 절) 하나로 통합했다 — 세 곳 모두 이제 `featureGated(access, action)`/`moveReviewAllowed` 형태로 판정 결과만 소비한다.
 - `LayeringContractTest.kt`는 아직 2026-06-27판 경계(옛 1~7계층 이름) 기준으로 작성돼 있다. 이번 재정의(2/3계층 재편, 4/6계층 신설, 5/7 번호 이동)를 반영하지 않았다.
-- androidTest(Robolectric/계측) 커버리지가 기본 검증 경로에 없다. 컴파일+JVM 단위 테스트가 기본 검증이다.
+- androidTest(Robolectric/계측) 커버리지가 기본 검증 경로에 없다(`make test`에 안 묶여 있음 — 의도적, M-04 제약). 컴파일+JVM 단위 테스트가 기본 검증이다. **260814**: `AppLaunchSmokeTest.kt`(실제 `MainActivity`→`createEngineBootstrap`→`GoCoachApp` 경로)가 `@Ignore` 스켈레톤에서 활성 테스트로 전환됐다 — M-04 target list 중 "app-launch" 경로 완료. saved-session prompt·더 넓은 이벤트 디스패치 커버리지는 여전히 열려 있다.
 
 ## 고도화 로드맵
 
@@ -111,10 +111,11 @@
 2. ~~**3계층 — `RemoteEngineSessionClient` 도입**~~ — 최소 형태 완료(260804 Stage E-1/E-2). 여러 원격/피어 후보 중 선택·신뢰도 판단을 흡수하는 자리(`selectRemoteEngineCandidate`)는 마련됐지만, 지금은 후보가 1개뿐이라 판단이 얕다. 후보가 실제로 여러 개가 되는 시점(DePIN 방향)에 응답시간/성공률 비교, "피어 평판/정산 기록"의 자리를 채워야 한다.
 3. **1계층 — 물리 실행 환경 추상화**: 지금은 `KataGoProcessRuntime`이 "이 기기에서 프로세스 실행"만 가정한다. 원격 서버/피어 기기라는 "다른 물리 위치"를 1계층 개념에 맞게 명시적으로 표현할 방법을 정의(예: 실행 위치를 나타내는 값 타입).
 4. **4계층 — 외부 연동 서비스 본체 두껍게 하기**: `premium-mode/README.md` Step 3(실제 광고)/Step 4(실제 결제), `auth-onboarding/README.md` Step 2~3(Google/이메일 로그인)을 구현하며, 포트(α)뿐 아니라 3계층 수준의 재시도/캐시/신뢰도 판단을 갖춘 서비스 본체로 채운다.
-5. ~~**6계층 — 기능 엔타이틀먼트 정책 도입**~~ — 완료(260814). `application/premium/PremiumState.kt`의 `isUndoClaimed: Boolean`을 `claimedFeatures: Set<FeatureId>`로 일반화하고(`persistence/PremiumStateStore.kt`에 구버전 불리언 하위호환 마이그레이션 포함), `application/premium/FeatureAccessPolicy.kt`(같은 6계층 — 애초 설계 초안엔 5계층으로 잘못 적혀 있었으나 착수 시점에 정정)를 신설해 `ui/GamePlaySection.kt`(형세보기/추천수/무르기)·`ui/KaTrainUxPanels.kt`(착수평가)에 각자 하드코딩돼 있던 3곳의 판정을 이 함수 하나로 통합했다. **의도적으로 남겨둔 것**: 클레임 전용 다이얼로그(`ui/GamePlaySection.kt`의 `showUndoClaimDialog`)를 `PremiumUpsellDialog`에 `Claim` 선택지로 통합하는 UI 단순화는 이번 범위에서 제외 — 클레임 가능 기능이 아직 무르기 하나뿐이라 지금 합치는 건 과설계로 판단, 두 번째 클레임형 기능이 생기면 재검토.
-6. **6계층 — 세션/연속성 공식화**: `auth-onboarding/README.md` Step 4(익명→실계정 승격, Firestore 동기화)를 이 계층의 정식 구현으로 진행 — **단, 익명 로그인 자체가 2026-08-05에 영구 폐기 결정됐으므로("재설치마다 허수 계정이 쌓이는 문제를 이전 앱에서 실제로 겪음") "익명→실계정 승격" 경로 자체가 성립하지 않는다. 이 항목은 착수 전에 목표를 다시 정의해야 한다** — 예를 들어 "게스트(로컬 ID)→실계정 승격"처럼 익명 인증을 전제하지 않는 형태로. 기기 식별자 기반 다중 기기 정책도 이 재정의와 함께 결정.
-7. **`LayeringContractTest.kt` 갱신**: 위 항목들이 실제 코드로 옮겨질 때마다, 이번 재정의(2/3계층 경계, 4/6계층 신설, 5/7 번호 이동)를 반영해 계층 위반을 기계적으로 검증하도록 갱신. **코드가 실제로 옮겨지기 전까지는 테스트를 먼저 갱신하지 않는다** — 아직 물리적으로 분리되지 않은 것을 분리된 것처럼 강제하면 오탐만 늘어난다.
-8. **문서 정리 후속 작업**: `docs/refactoring/`(23개 파일, 그중 8개는 2026-06-15 외부/내부 리뷰 클러스터로 중복이 크다)과 `docs/archive/` 전체를 다시 훑어 통폐합할지는 이번 범위 밖의 별도 작업이다. 필요해지면 이 로드맵에 항목을 추가한다.
+5. **(신규, 2026-08-14, 계획만·미착수) 5계층 — `GameSessionStateHolder` → `:shared` KMP 이전**: 이식 가능성(플랫폼 비종속)은 `engineOperationApplicationPoliciesStayPortable`(125개 파일, 21개 서브패키지 전체 스캔)이 이미 검증하고 있어 확인됨 — 남은 건 물리적 이동과, 그 이동이 유발하는 **`internal` 가시성 재정리**(Kotlin `internal`은 모듈 스코프라, `app-android`에 남는 `ui/`·`persistence/`·`engine/` 호출부에서 옮겨진 코드의 `internal` 멤버가 안 보이게 됨 — 이 축은 지금 어떤 자동 테스트도 지켜주지 않는다). `GameSessionCoreState`/`GameSessionController`가 `autoai/engine/humanmove/savedgame/score/startgame/topmoves/undo/debugreport/analysis/movereview/preferences` 12개 서브패키지를 전이적으로 끌어들여 "일부만 이전"이 불가능 — 사실상 `application/`(125개 파일) 전체가 한 단위. 제안 순서: (1) 팬인/팬아웃이 가장 작은 서브패키지(예: `application/safety/`) 하나로 전체 과정(이동→가시성 정리→app-android 호출부 수정→양쪽 모듈 컴파일)을 스파이크로 먼저 검증 — `:shared`가 지금 `commonMain`/`commonTest`뿐이라(진짜 멀티플랫폼 빌드 아직 아님) 새 `androidMain` 분리가 필요할지도 이 스파이크로 확인. (2) 통과하면 나머지를 리프→`GameSessionStateHolder` 순으로 본 이전. (3) `internal`→기본 가시성은 실제 app-android 호출부가 있는 지점만. (4) 이전 완료 후에만 항목 7의 `LayeringContractTest.kt` 갱신. (5) `NewGameBoardTapSmokeTest.kt`/`AppLaunchSmokeTest.kt`로 회귀 확인. 125개 파일 규모라 한 세션 작업이 아니고, 가시성 확대는 되돌리기 번거로운 설계 결정이라 스파이크 결과를 보고 재상의 필요.
+6. ~~**6계층 — 기능 엔타이틀먼트 정책 도입**~~ — 완료(260814). `application/premium/PremiumState.kt`의 `isUndoClaimed: Boolean`을 `claimedFeatures: Set<FeatureId>`로 일반화하고(`persistence/PremiumStateStore.kt`에 구버전 불리언 하위호환 마이그레이션 포함), `application/premium/FeatureAccessPolicy.kt`(같은 6계층 — 애초 설계 초안엔 5계층으로 잘못 적혀 있었으나 착수 시점에 정정)를 신설해 `ui/GamePlaySection.kt`(형세보기/추천수/무르기)·`ui/KaTrainUxPanels.kt`(착수평가)에 각자 하드코딩돼 있던 3곳의 판정을 이 함수 하나로 통합했다. **의도적으로 남겨둔 것**: 클레임 전용 다이얼로그(`ui/GamePlaySection.kt`의 `showUndoClaimDialog`)를 `PremiumUpsellDialog`에 `Claim` 선택지로 통합하는 UI 단순화는 이번 범위에서 제외 — 클레임 가능 기능이 아직 무르기 하나뿐이라 지금 합치는 건 과설계로 판단, 두 번째 클레임형 기능이 생기면 재검토.
+7. **6계층 — 세션/연속성 공식화**: `auth-onboarding/README.md` Step 4(익명→실계정 승격, Firestore 동기화)를 이 계층의 정식 구현으로 진행 — **단, 익명 로그인 자체가 2026-08-05에 영구 폐기 결정됐으므로("재설치마다 허수 계정이 쌓이는 문제를 이전 앱에서 실제로 겪음") "익명→실계정 승격" 경로 자체가 성립하지 않는다. 이 항목은 착수 전에 목표를 다시 정의해야 한다** — 예를 들어 "게스트(로컬 ID)→실계정 승격"처럼 익명 인증을 전제하지 않는 형태로. 기기 식별자 기반 다중 기기 정책도 이 재정의와 함께 결정.
+8. **`LayeringContractTest.kt` 갱신**: 위 항목들이 실제 코드로 옮겨질 때마다, 이번 재정의(2/3계층 경계, 4/6계층 신설, 5/7 번호 이동)를 반영해 계층 위반을 기계적으로 검증하도록 갱신. **코드가 실제로 옮겨지기 전까지는 테스트를 먼저 갱신하지 않는다** — 아직 물리적으로 분리되지 않은 것을 분리된 것처럼 강제하면 오탐만 늘어난다.
+9. **문서 정리 후속 작업**: `docs/refactoring/`(23개 파일, 그중 8개는 2026-06-15 외부/내부 리뷰 클러스터로 중복이 크다)과 `docs/archive/` 전체를 다시 훑어 통폐합할지는 이번 범위 밖의 별도 작업이다. 필요해지면 이 로드맵에 항목을 추가한다.
 
 ## 관련 문서
 
