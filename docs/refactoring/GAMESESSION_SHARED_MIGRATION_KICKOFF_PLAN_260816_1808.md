@@ -64,9 +64,9 @@
 
 **최종 결과**: 프로덕션 11개 전부 이동. 테스트는 `SavedGameApplicationRunnerTest.kt`, `GameSessionDisplayStateApplierApplicationTest.kt`, `GameSessionStateHolderTest.kt`, `HumanMoveApplicationTest.kt` 4개 이동(마지막 것은 계획서엔 없던 후보였으나 재검증으로 새로 확정). `SavedGamePersistenceTest.kt`/`ScoreDisplayApplicationTest.kt`는 **웨이브 6과 무관하게 영구적으로 app-android 잔류** — `DiagnosticEventApplicationTest.kt`와 같은 성격(미이전 레이어를 직접 테스트)이지 "다음 웨이브에서 풀리는" 부류가 아니다(아래 3절 "완료 후에도 남는 테스트" 갱신 참고). `make test` 전체 그린.
 
-이제 `GameSessionStateHolder.kt`가 이동했으므로 계획서 7절 완료 기준 5번대로 `NewGameBoardTapSmokeTest.kt`/`AppLaunchSmokeTest.kt` 에뮬레이터 실기 재확인 진행(이 문서 갱신 직후, 같은 세션).
+`GameSessionStateHolder.kt`가 이동했으므로 계획서 7절 완료 기준 5번대로 `NewGameBoardTapSmokeTest.kt`/`AppLaunchSmokeTest.kt` 에뮬레이터 실기 재확인을 커밋 직후 진행: `make install-dev-engine`(기존 `emulator-5554`/Pixel 7 API 35 AVD 재사용, 별도 부팅 불필요)으로 설치+모델 시딩+실행 후, `./gradlew :app-android:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.worksoc.goaicoach.smoke.NewGameBoardTapSmokeTest,com.worksoc.goaicoach.smoke.AppLaunchSmokeTest`로 두 개 동시 실행 — **2/2 green**(`startsLocalGameAndAcceptsBoardTap` 1.42s, `launchesMainActivityAndShowsInitialSurface` 0.641s, failures=0 errors=0 skipped=0). 세션 상태 배선이 `:shared`로 넘어간 뒤에도 실기 경로가 정상 동작함을 확인.
 
-커밋·push는 이 문서 갱신 직후 진행 — 실제 해시는 `git log`로 확인.
+커밋 `c7a06a3`(origin/main에 push 완료).
 
 ---
 
