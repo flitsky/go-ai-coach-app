@@ -13,7 +13,7 @@ import com.worksoc.goaicoach.shared.engine.EngineOperationRequest
 import com.worksoc.goaicoach.shared.engine.EngineTimeoutPolicy
 import com.worksoc.goaicoach.shared.engine.engineOperationRequest
 
-internal data class ScoringRuleSyncEffectLaunchRequest(
+data class ScoringRuleSyncEffectLaunchRequest(
     val state: GameState,
     val profile: EngineProfile,
     val previousSnapshots: List<ScoreSnapshot>,
@@ -25,7 +25,7 @@ internal data class ScoringRuleSyncEffectLaunchRequest(
     val fallbackMessage: String,
 )
 
-internal data class ScoringRuleSyncRunRequest(
+data class ScoringRuleSyncRunRequest(
     val engineClient: EngineSessionClient,
     val state: GameState,
     val profile: EngineProfile,
@@ -44,7 +44,7 @@ internal data class ScoringRuleSyncRunRequest(
     val fallbackMessage: String = "Scoring rule changed, but engine rule sync failed.",
 )
 
-internal suspend fun EngineSessionClient.runScoringRuleSyncCompletionPlan(
+suspend fun EngineSessionClient.runScoringRuleSyncCompletionPlan(
     request: ScoringRuleSyncEffectLaunchRequest,
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
 ): ScoreSyncCompletionPlan =
@@ -65,7 +65,7 @@ internal suspend fun EngineSessionClient.runScoringRuleSyncCompletionPlan(
         )
     }
 
-internal suspend fun EngineSessionClient.runScoringRuleSyncApplyPlan(
+suspend fun EngineSessionClient.runScoringRuleSyncApplyPlan(
     request: ScoringRuleSyncEffectLaunchRequest,
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
 ): ScoreSyncCompletionApplyPlan =
@@ -74,7 +74,7 @@ internal suspend fun EngineSessionClient.runScoringRuleSyncApplyPlan(
         diagnosticEventLog = diagnosticEventLog,
     ).toApplyPlan()
 
-internal fun runScoringRuleSyncApplication(request: ScoringRuleSyncRunRequest) {
+fun runScoringRuleSyncApplication(request: ScoringRuleSyncRunRequest) {
     val operation = engineOperationRequest(
         kind = EngineOperationKind.ScoringRuleSync,
         state = request.state,

@@ -22,7 +22,7 @@ import com.worksoc.goaicoach.shared.engine.EngineTimeoutPolicy
  * GoCoachApp delegates [changeScoringRule] here and supplies only callbacks.
  * All engine-interaction policy stays inside the application layer.
  */
-internal class ScoringRuleController(
+class ScoringRuleController(
     private val engineClient: EngineSessionClient,
     private val diagnosticEventLog: DiagnosticEventLogPort,
     private val currentGameState: () -> GameState,

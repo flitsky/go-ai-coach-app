@@ -5,13 +5,13 @@ import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.ScoreSnapshot
 
-internal sealed class SavedGamePersistencePlan {
+sealed class SavedGamePersistencePlan {
     data object Skip : SavedGamePersistencePlan()
     data object Clear : SavedGamePersistencePlan()
     data class Save(val snapshot: SavedGameSnapshot) : SavedGamePersistencePlan()
 }
 
-internal fun planSavedGamePersistence(
+fun planSavedGamePersistence(
     savedSessionUiState: SavedSessionUiState,
     isGameEnded: Boolean,
     gameState: GameState,
@@ -33,7 +33,7 @@ internal fun planSavedGamePersistence(
         nowMillis = nowMillis,
     )
 
-internal fun planSavedGamePersistence(
+fun planSavedGamePersistence(
     hasCheckedSavedSession: Boolean,
     shouldShowResumePrompt: Boolean,
     isGameEnded: Boolean,

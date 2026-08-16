@@ -18,7 +18,7 @@ import com.worksoc.goaicoach.application.score.ScoreSyncCompletionApplyPlan
 import com.worksoc.goaicoach.application.undo.UndoLocalStatePlan
 import com.worksoc.goaicoach.shared.GameState
 
-internal class GameSessionDisplayStateApplier(
+class GameSessionDisplayStateApplier(
     private val currentCoreState: () -> GameSessionCoreState,
     private val applyCoreState: (GameSessionCoreState) -> Unit,
     private val appendEngineOperationDiscardLog: (EngineOperationResultGuard.Discard) -> Unit = {},

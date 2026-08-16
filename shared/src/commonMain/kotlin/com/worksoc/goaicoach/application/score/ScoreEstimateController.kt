@@ -9,7 +9,7 @@ import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.ScoreSnapshot
 import com.worksoc.goaicoach.shared.engine.EngineOperationRequest
 
-internal class ScoreEstimateController(
+class ScoreEstimateController(
     private val engineClient: EngineSessionClient,
     private val diagnosticEventLog: DiagnosticEventLogPort,
     private val currentGameState: () -> GameState,

@@ -16,7 +16,7 @@ import kotlinx.coroutines.flow.update
  * Keeping ownership here is the seam that lets the same orchestration back an
  * iOS/desktop UI later: only the thin mirror at the UI edge is platform-specific.
  */
-internal class GameSessionStateHolder(initial: GameSessionControllerState) {
+class GameSessionStateHolder(initial: GameSessionControllerState) {
     private val _state = MutableStateFlow(initial)
 
     /** Observable state tree. UI layers collect this for recomposition. */

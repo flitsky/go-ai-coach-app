@@ -7,18 +7,18 @@ import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.ScoreSnapshot
 
-internal data class SavedSessionPromptRunRequest(
+data class SavedSessionPromptRunRequest(
     val store: SavedGameStorePort,
     val applyPrompt: (SavedSessionPromptPlan) -> Unit,
 )
 
-internal fun runSavedSessionPromptApplication(
+fun runSavedSessionPromptApplication(
     request: SavedSessionPromptRunRequest,
 ) {
     request.applyPrompt(loadSavedSessionPromptPlan(request.store))
 }
 
-internal data class SavedGamePersistenceRunRequest(
+data class SavedGamePersistenceRunRequest(
     val savedSessionUiState: SavedSessionUiState,
     val isGameEnded: Boolean,
     val gameState: GameState,
@@ -30,7 +30,7 @@ internal data class SavedGamePersistenceRunRequest(
     val store: SavedGameStorePort,
 )
 
-internal fun runSavedGamePersistenceApplication(
+fun runSavedGamePersistenceApplication(
     request: SavedGamePersistenceRunRequest,
 ) {
     runSavedGamePersistence(
@@ -48,7 +48,7 @@ internal fun runSavedGamePersistenceApplication(
     )
 }
 
-internal data class SavedGameRestoreRunRequest(
+data class SavedGameRestoreRunRequest(
     val snapshot: SavedGameSnapshot,
     val currentProfile: EngineProfile,
     val defaultPlayLevel: PlayLevelSetting,
@@ -59,7 +59,7 @@ internal data class SavedGameRestoreRunRequest(
     val applyRestore: (SavedGameRestorePlan) -> Unit,
 )
 
-internal sealed class SavedGameRestoreRunResult {
+sealed class SavedGameRestoreRunResult {
     data object Blocked : SavedGameRestoreRunResult()
 
     data class Restored(
@@ -70,7 +70,7 @@ internal sealed class SavedGameRestoreRunResult {
     ) : SavedGameRestoreRunResult()
 }
 
-internal fun runSavedGameRestoreApplication(
+fun runSavedGameRestoreApplication(
     request: SavedGameRestoreRunRequest,
 ): SavedGameRestoreRunResult =
     when (

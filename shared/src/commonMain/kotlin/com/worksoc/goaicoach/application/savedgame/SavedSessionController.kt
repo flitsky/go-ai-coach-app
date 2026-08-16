@@ -12,7 +12,7 @@ import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.engine.EngineOperationRequest
 import com.worksoc.goaicoach.shared.engine.EngineTimeoutPolicy
 
-internal class SavedSessionController(
+class SavedSessionController(
     private val engineClient: EngineSessionClient,
     private val diagnosticEventLog: DiagnosticEventLogPort,
     private val defaultPlayLevel: PlayLevelSetting,

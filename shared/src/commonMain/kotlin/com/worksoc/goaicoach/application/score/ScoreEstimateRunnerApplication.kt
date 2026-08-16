@@ -12,7 +12,7 @@ import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.ScoreSnapshot
 
-internal data class ScoreEstimateEffectLaunchRequest(
+data class ScoreEstimateEffectLaunchRequest(
     val effect: GameSessionEffect.RunScoreEstimate,
     val previousSnapshots: List<ScoreSnapshot>,
     val token: ScoreEstimateOperationToken,
@@ -20,7 +20,7 @@ internal data class ScoreEstimateEffectLaunchRequest(
     val currentSessionGeneration: Long,
 )
 
-internal data class ScoreEstimateRunRequest(
+data class ScoreEstimateRunRequest(
     val engineClient: EngineSessionClient,
     val state: GameState,
     val previousSnapshots: List<ScoreSnapshot>,
@@ -39,7 +39,7 @@ internal data class ScoreEstimateRunRequest(
     val applyCompletion: (ScoreEstimateCompletionApplyPlan) -> Unit,
 )
 
-internal suspend fun EngineSessionClient.runScoreEstimateDisplayPlan(
+suspend fun EngineSessionClient.runScoreEstimateDisplayPlan(
     request: ScoreEstimateRequestPlan.RequestEngineEstimate,
     previousSnapshots: List<ScoreSnapshot>,
     operationRequest: EngineOperationRequest? = null,
@@ -62,7 +62,7 @@ internal suspend fun EngineSessionClient.runScoreEstimateDisplayPlan(
     )
 }
 
-internal suspend fun EngineSessionClient.runScoreEstimateEffect(
+suspend fun EngineSessionClient.runScoreEstimateEffect(
     effect: GameSessionEffect.RunScoreEstimate,
     previousSnapshots: List<ScoreSnapshot>,
     operationRequest: EngineOperationRequest? = null,
@@ -75,7 +75,7 @@ internal suspend fun EngineSessionClient.runScoreEstimateEffect(
         diagnosticEventLog = diagnosticEventLog,
     )
 
-internal suspend fun EngineSessionClient.runScoreEstimateWorkflowResult(
+suspend fun EngineSessionClient.runScoreEstimateWorkflowResult(
     effect: GameSessionEffect.RunScoreEstimate,
     previousSnapshots: List<ScoreSnapshot>,
     operationRequest: EngineOperationRequest? = null,
@@ -93,7 +93,7 @@ internal suspend fun EngineSessionClient.runScoreEstimateWorkflowResult(
         onFailure = { error -> ScoreEstimateWorkflowResult.Failure(error) },
     )
 
-internal suspend fun EngineSessionClient.runScoreEstimateEffectCompletionPlan(
+suspend fun EngineSessionClient.runScoreEstimateEffectCompletionPlan(
     request: ScoreEstimateEffectLaunchRequest,
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
 ): ScoreEstimateCompletionPlan =
@@ -109,7 +109,7 @@ internal suspend fun EngineSessionClient.runScoreEstimateEffectCompletionPlan(
         currentSessionGeneration = request.currentSessionGeneration,
     )
 
-internal suspend fun EngineSessionClient.runScoreEstimateEffectApplyPlan(
+suspend fun EngineSessionClient.runScoreEstimateEffectApplyPlan(
     request: ScoreEstimateEffectLaunchRequest,
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
 ): ScoreEstimateCompletionApplyPlan =
@@ -118,7 +118,7 @@ internal suspend fun EngineSessionClient.runScoreEstimateEffectApplyPlan(
         diagnosticEventLog = diagnosticEventLog,
     ).toApplyPlan()
 
-internal fun runScoreEstimateApplication(request: ScoreEstimateRunRequest) {
+fun runScoreEstimateApplication(request: ScoreEstimateRunRequest) {
     val requestPlan = buildScoreEstimateRequestPlan(
         state = request.state,
         previousSnapshots = request.previousSnapshots,

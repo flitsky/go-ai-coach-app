@@ -5,7 +5,7 @@ import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.ScoreSnapshot
 
-internal data class SavedGamePersistenceRequest(
+data class SavedGamePersistenceRequest(
     val savedSessionUiState: SavedSessionUiState,
     val isGameEnded: Boolean,
     val gameState: GameState,
@@ -30,7 +30,7 @@ internal fun buildSavedGamePersistencePlan(
         nowMillis = request.nowMillis,
     )
 
-internal fun runSavedGamePersistence(
+fun runSavedGamePersistence(
     request: SavedGamePersistenceRequest,
     store: SavedGameStorePort,
 ) {
