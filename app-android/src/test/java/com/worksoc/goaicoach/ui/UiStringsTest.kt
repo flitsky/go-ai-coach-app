@@ -7,10 +7,10 @@ import org.junit.Test
 class UiStringsTest {
     @Test
     fun startGameActionUsesLocalizedCopyInEverySupportedLanguage() {
-        assertEquals("대국 시작", UiStrings.forLanguage(UiLanguage.Korean).newGameAction)
-        assertEquals("Start Game", UiStrings.forLanguage(UiLanguage.English).newGameAction)
-        assertEquals("対局開始", UiStrings.forLanguage(UiLanguage.Japanese).newGameAction)
-        assertEquals("开始对局", UiStrings.forLanguage(UiLanguage.ChineseSimplified).newGameAction)
+        assertEquals("새 대국 시작", UiStrings.forLanguage(UiLanguage.Korean).newGameAction)
+        assertEquals("New Game", UiStrings.forLanguage(UiLanguage.English).newGameAction)
+        assertEquals("新しい対局を開始", UiStrings.forLanguage(UiLanguage.Japanese).newGameAction)
+        assertEquals("开始新对局", UiStrings.forLanguage(UiLanguage.ChineseSimplified).newGameAction)
     }
 
     @Test
