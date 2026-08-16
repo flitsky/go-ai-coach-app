@@ -18,7 +18,7 @@ import com.worksoc.goaicoach.shared.StoneColor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 
-internal class AutoAiTurnController(
+class AutoAiTurnController(
     private val scope: CoroutineScope,
     private val engineClient: EngineSessionClient,
     private val diagnosticEventLog: DiagnosticEventLogPort,

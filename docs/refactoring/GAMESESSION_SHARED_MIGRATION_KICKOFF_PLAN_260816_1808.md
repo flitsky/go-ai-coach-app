@@ -1,6 +1,6 @@
 # `GameSessionStateHolder` → `:shared` 본 이전 — 착수 계획서
 
-작성일: 2026-08-16 18:08 (계획 수립) / **갱신: 2026-08-16 웨이브 1 실행 완료 후**
+작성일: 2026-08-16 18:08 (계획 수립) / **갱신: 2026-08-16 웨이브 1, 웨이브 2 실행 완료 후**
 
 **성격**: `docs/GO_AI_COACH_ARCHITECTURE_ROADMAP.md` "고도화 로드맵" 5번 항목 (2) "본 이전"의 실행 순서를 정하는 착수 계획서다(로드맵 문서 자체가 "착수 순서는 별도 착수 계획서에서 정한다"고 명시한 그 문서). 원래는 `docs/refactoring/REFACTORING_BACKLOG_260816_1744.md` 작업 우선순위 1번의 "계획부터 정리해서 보여달라"는 요청으로 코드 이동 없이 작성됐으나, 같은 날 이어진 세션에서 **웨이브 1 실행까지 완료**했다 — 이 문서는 이제 계획서 겸 실행 기록이다.
 
@@ -21,6 +21,17 @@
 - `app-android/ui/FinalScoreJudgementPresentationExtensions.kt`에서 Kotlin의 **모듈 간 스마트캐스트 제약**으로 인한 실제 컴파일 에러 1건 발견 및 수정 — 9절.
 
 **최종 완료 기준 충족**: `:shared`/`:app-android` 양쪽 컴파일 그린, `make test`(`:shared:check :engine-android:testDebugUnitTest :app-android:assembleDebug :app-android:testDebugUnitTest`) 전체 그린. 스모크 테스트(`NewGameBoardTapSmokeTest`/`AppLaunchSmokeTest`) 실기 재확인은 **아직 안 함** — `GameSessionStateHolder.kt` 자체나 세션 배선 컨트롤러들이 아직 이동 전이라 이번 웨이브에서는 필수가 아니라고 판단했다(원래 문서도 "웨이브 9·10 완료 직후"로 못박아 뒀음). 다음 웨이브들(특히 GameSessionStateHolder.kt를 포함하는 웨이브) 완료 시점에 실행할 것.
+
+커밋 `30d6508`(origin/main에 push 완료).
+
+### 웨이브 2 실행 결과 요약 (260816, 이어서)
+
+**웨이브 1과 달리 첫 시도부터 순조로웠다** — 교정된 그래프(2절)와 컴파일러 주도 위젠 방식(6절)이 실제로 검증된 뒤라, 배치 30–45의 18개 파일(17개 이동 + `LocalFileDiagnosticEventExternalSink.kt` 1개 영구 제외)을 계획 그대로 옮겼고 순환 클러스터(auth 2파일, device 2파일)도 예상대로였다.
+
+- **프로덕션 17개** 이동 완료. `internal`→public 컴파일러 수렴: `:shared` 자체는 1라운드 만에 그린(위젠 불필요), `:app-android` 메인 2라운드(24개 심볼), `:app-android` 테스트 2라운드(6개 심볼) — 웨이브 1보다 훨씬 빠르게 수렴(웨이브 1의 26파일 순환 클러스터 같은 밀집도가 없었기 때문으로 보임).
+- **테스트 7개 후보 중 6개 이동**(`AuthStateTest`, `DebugReportApplicationRunnerTest`, `DeviceIdentityTest`, `AutoAiCompletionApplierTest`, `AutoAiEndgameRunnerTest`, `AutoAiScheduledTurnRunnerTest`), **`RuntimeEventApplicationTest.kt`는 원위치 유지** — `buildEngineOperationDiscardLogPlan`/`recordEngineOperationDiscardLog`(`engine/operation/EngineOperationResultApplication.kt`·`EngineOperationLifecycleController.kt`, 웨이브 3 예정)까지 테스트하고 있어서. 웨이브 3 완료 후 재확인할 것.
+- **새로 발견한 테스트 전환 패턴**: `DeviceIdentityTest.kt`가 `org.junit.Assert.assertThrows(X::class.java) { ... }`를 썼다 — 지금까지의 단순 import 1:1 치환(`assertEquals` 등)과 달리 문법이 다르다. `kotlin.test.assertFailsWith<X> { ... }`로 변환(제네릭 타입 파라미터로, `.java` 클래스 인자가 아님). 앞으로 `assertThrows`가 나오면 이 패턴 적용.
+- `make test` **첫 시도에 바로 전체 그린** — `LayeringContractTest.kt` 관련 실패 없음(웨이브 1에서 미리 `applicationFile()` 헬퍼로 고쳐둔 덕분에 회귀 없었음, 이번 웨이브 파일들이 원래 하드코딩 대상도 아니었음).
 
 ---
 
@@ -75,15 +86,15 @@
 
 교정된 그래프에서 웨이브 1(배치 1~29) 이후 순서를 그대로 세션 크기로 묶었다. 웨이브 1과 달리 추가 순환 클러스터가 크지 않아(최대 3파일) 각 웨이브가 계획대로 실행될 가능성이 높지만, **웨이브 1의 교훈대로 각 웨이브 착수 시 파일 이동 후 컴파일러가 지목하는 대로 처리하고, 세밀 순서가 필요하면 스크래치패드의 `scc_order2.txt`(배치 30~92)를 직접 참고할 것** — 이 표는 그 배치들을 세션 단위로 묶은 요약이다.
 
-| 웨이브 | 파일 수 | 배치 범위 | 주요 내용 |
-|---|---|---|---|
-| 2 | 18(1개 영구 제외, 17개 이동) | 30–45 | analysis 잔여, auth(2파일 순환), runtime, autoai 잔여, debugreport 잔여, device(2파일 순환), diagnostic 잔여(**`LocalFileDiagnosticEventExternalSink.kt` 포함 — 4절대로 이동 제외**) |
-| 3 | 16 | 46–61 | `engine/`의 나머지 전체(로컬 엔진 delegate·gateway·operation 하위) |
-| 4 | 12 | 62–70 | humanmove·preferences 잔여, premium(3파일 순환 1건 + 2파일 순환 1건 포함), prompt |
-| 5 | 11 | 71–81 | savedgame·score 잔여 + **`session/GameSessionStateHolder.kt` 본체(배치 81)** |
-| 6 | 11 | 82–92 | topmoves·session·startgame 잔여 컨트롤러 — 홀더에 의존하는 마지막 그룹 |
+| 웨이브 | 파일 수 | 배치 범위 | 주요 내용 | 상태 |
+|---|---|---|---|---|
+| 2 | 18(1개 영구 제외, 17개 이동) | 30–45 | analysis 잔여, auth(2파일 순환), runtime, autoai 잔여, debugreport 잔여, device(2파일 순환), diagnostic 잔여(**`LocalFileDiagnosticEventExternalSink.kt` 포함 — 4절대로 이동 제외**) | **완료(260816)** |
+| 3 | 16 | 46–61 | `engine/`의 나머지 전체(로컬 엔진 delegate·gateway·operation 하위) | 다음 차례 |
+| 4 | 12 | 62–70 | humanmove·preferences 잔여, premium(3파일 순환 1건 + 2파일 순환 1건 포함), prompt | 대기 |
+| 5 | 11 | 71–81 | savedgame·score 잔여 + **`session/GameSessionStateHolder.kt` 본체(배치 81)** | 대기 |
+| 6 | 11 | 82–92 | topmoves·session·startgame 잔여 컨트롤러 — 홀더에 의존하는 마지막 그룹 | 대기 |
 
-합계: 17+16+12+11+11 = 67 이동 + 1 영구 제외 = 68. ✓
+합계: 17+16+12+11+11 = 67 이동 + 1 영구 제외 = 68. ✓ (웨이브 2 완료 시점 기준 남은 것: 웨이브 3~6, 51개 파일 + `RuntimeEventApplicationTest.kt` 등 뒤늦게 이동 가능해질 테스트 소수)
 
 **웨이브 5에 `GameSessionStateHolder.kt`가 있다** — 원래 계획의 "웨이브 9" 프레이밍과 거의 일치(리프부터 시작해 뒤쪽에서 홀더가 나오는 흐름 자체는 교정 후에도 유지됨). 웨이브 5·6 완료 직후 `NewGameBoardTapSmokeTest.kt`/`AppLaunchSmokeTest.kt` 실기 재확인 필수(0절 완료 기준 참고).
 
@@ -382,7 +393,7 @@ undo/UndoRunnerApplication.kt
 
 ## 10. 다음 단계
 
-**웨이브 1은 완료됐다**(0절). 다음은 웨이브 2(3절 표, 배치 30–45, analysis/auth/runtime/autoai/debugreport/device/diagnostic 잔여 18개 파일, `LocalFileDiagnosticEventExternalSink.kt` 1개는 이동 제외)부터:
+**웨이브 1·2는 완료됐다**(0절, 커밋 `30d6508`). 다음은 웨이브 3(3절 표, 배치 46–61, `engine/`의 나머지 16개 파일 — 로컬 엔진 delegate·gateway·operation 하위)부터:
 - 6절의 규칙대로 internal은 미리 안 건드리고 컴파일 에러로 확정(순서: `:shared` 메인 → `:app-android` 메인 → `:app-android` 테스트)
 - 이동하는 각 프로덕션 파일의 대응 테스트가 웨이브 범위를 넘는지 확인(7절 3번)
 - `make test`에서 `LayeringContractTest.kt`가 새로운 `FileNotFoundException`을 내면 `applicationFile()` 헬퍼로 해결되는지 우선 확인(7절 마지막 문단)

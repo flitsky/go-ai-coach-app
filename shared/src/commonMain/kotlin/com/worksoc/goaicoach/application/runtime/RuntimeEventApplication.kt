@@ -26,7 +26,7 @@ private const val RuntimeAppName = "Go AI Coach"
 private const val RuntimeAppPurpose =
     "Android-first local AI Go coaching app for 9x9 play, Top Moves, scoring, and endgame cleanup."
 
-internal data class RuntimeLogContext(
+data class RuntimeLogContext(
     val engineName: String,
     val engineDiagnostic: String,
     val playerSetup: PlayerSetup,
@@ -92,7 +92,7 @@ internal data class RuntimeLogContext(
             "search=${searchTimeSettings.normalized().summaryText()} diagnostic=${engineDiagnostic.runtimeLogSnippet(140)}"
 }
 
-internal fun GameSessionControllerState.toRuntimeLogContext(
+fun GameSessionControllerState.toRuntimeLogContext(
     engineName: String,
     engineDiagnostic: String,
     isEngineReady: Boolean,
@@ -120,7 +120,7 @@ internal fun GameSessionControllerState.toRuntimeLogContext(
         turnTimeText = turnTimeText,
     )
 
-internal fun runtimeAppStartLog(context: RuntimeLogContext): String =
+fun runtimeAppStartLog(context: RuntimeLogContext): String =
     context.event(
         name = "app_start",
         phase = "startup",
@@ -128,7 +128,7 @@ internal fun runtimeAppStartLog(context: RuntimeLogContext): String =
         detail = "App process started. Engine bootstrap will run, then saved-session resume check may appear.",
     )
 
-internal fun runtimeGameResetLog(
+fun runtimeGameResetLog(
     context: RuntimeLogContext,
     reset: GameSessionResetPlan,
 ): String =
@@ -139,7 +139,7 @@ internal fun runtimeGameResetLog(
         detail = "New local board prepared. message=${reset.engineMessage.runtimeLogSnippet(220)}",
     )
 
-internal fun runtimeEngineGameStartRequestLog(
+fun runtimeEngineGameStartRequestLog(
     context: RuntimeLogContext,
     ruleset: Ruleset,
     runtime: RuntimePlayLevelSelection,
@@ -152,7 +152,7 @@ internal fun runtimeEngineGameStartRequestLog(
             "limit=${runtime.engineProfile.analysisLimit.runtimeLogSummary()}",
     )
 
-internal fun runtimeEngineGameStartSuccessLog(
+fun runtimeEngineGameStartSuccessLog(
     context: RuntimeLogContext,
     elapsedMs: Long,
     message: String,
@@ -164,7 +164,7 @@ internal fun runtimeEngineGameStartSuccessLog(
         detail = "elapsedMs=$elapsedMs message=${message.runtimeLogSnippet(220)}",
     )
 
-internal fun runtimeEngineGameStartFailureLog(
+fun runtimeEngineGameStartFailureLog(
     context: RuntimeLogContext,
     elapsedMs: Long,
     error: Throwable,
@@ -176,7 +176,7 @@ internal fun runtimeEngineGameStartFailureLog(
         detail = "elapsedMs=$elapsedMs error=${error.runtimeErrorText(220)}",
     )
 
-internal fun runtimeAutoPlayDelayChangeLog(
+fun runtimeAutoPlayDelayChangeLog(
     context: RuntimeLogContext,
     from: AutoPlayDelaySetting,
     to: AutoPlayDelaySetting,
@@ -188,7 +188,7 @@ internal fun runtimeAutoPlayDelayChangeLog(
         detail = "from=${from.label}/${from.millis}ms to=${to.label}/${to.millis}ms",
     )
 
-internal fun runtimeEngineOperationStartedLog(
+fun runtimeEngineOperationStartedLog(
     context: RuntimeLogContext,
     operationId: String,
     activeOperationCount: Int,
@@ -201,7 +201,7 @@ internal fun runtimeEngineOperationStartedLog(
             "current=${context.gameState.runtimeBoardSummary()}",
     )
 
-internal fun runtimeEngineOperationCompletedLog(
+fun runtimeEngineOperationCompletedLog(
     context: RuntimeLogContext,
     operationId: String,
     activeOperationCount: Int,
@@ -214,7 +214,7 @@ internal fun runtimeEngineOperationCompletedLog(
             "current=${context.gameState.runtimeBoardSummary()}",
     )
 
-internal fun runtimeEngineOperationDiscardedLog(
+fun runtimeEngineOperationDiscardedLog(
     context: RuntimeLogContext,
     discard: EngineOperationResultGuard.Discard,
 ): String =
@@ -229,7 +229,7 @@ internal fun runtimeEngineOperationDiscardedLog(
             "current=${context.gameState.runtimeBoardSummary()}",
     )
 
-internal fun runtimeHumanMoveAcceptedLog(
+fun runtimeHumanMoveAcceptedLog(
     context: RuntimeLogContext,
     beforeMove: GameState,
     localMove: HumanMoveLocalResult,
@@ -251,7 +251,7 @@ internal fun runtimeHumanMoveAcceptedLog(
             "captured=${localMove.capturedText.runtimeLogSnippet(120)}",
     )
 
-internal fun runtimeHumanEngineSyncSuccessLog(
+fun runtimeHumanEngineSyncSuccessLog(
     context: RuntimeLogContext,
     sync: HumanEngineSyncDisplayPlan,
     elapsedMs: Long,
@@ -267,7 +267,7 @@ internal fun runtimeHumanEngineSyncSuccessLog(
         detail = "elapsedMs=$elapsedMs result=${sync.runtimeSyncSummary()}",
     )
 
-internal fun runtimeHumanEngineSyncFailureLog(
+fun runtimeHumanEngineSyncFailureLog(
     context: RuntimeLogContext,
     failure: HumanEngineSyncFailurePlan,
     elapsedMs: Long,
@@ -320,7 +320,7 @@ internal fun GameSessionRuntimeState.runtimeSummary(): String =
 internal fun AnalysisLimit.runtimeLogSummary(): String =
     "visits=$visits,timeMs=${timeMillis ?: "none"},candidates=$candidateCount"
 
-internal fun String.runtimeLogSnippet(maxChars: Int): String =
+fun String.runtimeLogSnippet(maxChars: Int): String =
     replace('\n', ' ')
         .replace('\r', ' ')
         .replace(Regex("\\s+"), " ")

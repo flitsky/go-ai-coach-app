@@ -10,7 +10,7 @@ import com.worksoc.goaicoach.shared.engine.EngineOperationRequest
 import com.worksoc.goaicoach.shared.engine.EngineTimeoutPolicy
 import com.worksoc.goaicoach.shared.engine.engineOperationRequest
 
-internal data class PositionAnalysisCacheOptimizationRunRequest(
+data class PositionAnalysisCacheOptimizationRunRequest(
     val plan: PositionAnalysisCacheOptimizationPlan,
     val uiState: PositionAnalysisCacheOptimizationUiState,
     val isEngineBusy: Boolean,
@@ -27,7 +27,7 @@ internal data class PositionAnalysisCacheOptimizationRunRequest(
     ) -> PositionAnalysisCacheOptimizationWorkflowResult = { block -> runEngineIo { block() } },
 )
 
-internal fun runPositionAnalysisCacheOptimizationApplication(
+fun runPositionAnalysisCacheOptimizationApplication(
     request: PositionAnalysisCacheOptimizationRunRequest,
 ) {
     val acceptedState = request.uiState.accept(request.plan)

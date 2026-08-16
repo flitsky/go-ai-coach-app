@@ -14,7 +14,7 @@ import com.worksoc.goaicoach.shared.engine.EngineOperationRequest
  * changes.  State the screen also reads ([PositionAnalysisCacheOptimizationUiState])
  * lives in the caller and is reached through the accessors below.
  */
-internal class PositionCacheOptimizationController(
+class PositionCacheOptimizationController(
     private val engineClient: EngineSessionClient,
     private val diagnosticEventLog: DiagnosticEventLogPort,
     private val currentGameState: () -> GameState,

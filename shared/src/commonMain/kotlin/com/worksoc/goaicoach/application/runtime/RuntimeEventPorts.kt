@@ -1,6 +1,6 @@
 package com.worksoc.goaicoach.application.runtime
 
-internal interface RuntimeEventLogPort {
+interface RuntimeEventLogPort {
     fun append(
         event: String,
         nowMillis: Long = System.currentTimeMillis(),

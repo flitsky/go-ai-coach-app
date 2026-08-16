@@ -13,7 +13,7 @@ package com.worksoc.goaicoach.application.device
  * 없다 — 계정 기반 교차 기기 상태(Firestore 동기화, 실제 로그인) 자체가 아직 없기 때문이다.
  * 이 타입은 그 정책이 필요해질 때 바로 쓸 수 있도록 식별자 인프라만 먼저 마련해 둔 것이다.
  */
-internal data class DeviceIdentity(val id: String) {
+data class DeviceIdentity(val id: String) {
     init {
         require(id.isNotBlank()) { "Device identity id must not be blank" }
     }

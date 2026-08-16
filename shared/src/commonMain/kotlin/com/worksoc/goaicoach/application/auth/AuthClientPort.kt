@@ -9,7 +9,7 @@ package com.worksoc.goaicoach.application.auth
  * 늘어나는 구조적 한계, `auth-onboarding/README.md` 3장 참고). 게스트 기능("계정 없이
  * 시작하기")은 `DeviceIdentityStorePort`의 로컬 UUID로 별도 동작하며 이 포트와 무관하다.
  */
-internal interface AuthClientPort {
+interface AuthClientPort {
     /**
      * 익명 세션이 없는 상태에서의 신규 Google 로그인. [idToken]은 Credential Manager/
      * Sign in with Google이 발급한 Google ID 토큰이다(`ui/GoogleCredentialManagerClient.kt`).

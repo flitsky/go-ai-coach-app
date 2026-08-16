@@ -5,7 +5,7 @@ import com.worksoc.goaicoach.shared.diagnostic.DiagnosticEventExternalExportPayl
 import com.worksoc.goaicoach.shared.diagnostic.DiagnosticEventExternalSinkPlan
 import com.worksoc.goaicoach.shared.diagnostic.buildDiagnosticEventExternalSinkPlan
 
-internal sealed class DiagnosticEventExternalSinkResult {
+sealed class DiagnosticEventExternalSinkResult {
     data class Skipped(val reason: String) : DiagnosticEventExternalSinkResult()
     data class Sent(val payload: DiagnosticEventExternalExportPayload) : DiagnosticEventExternalSinkResult()
     data class Failed(
@@ -14,7 +14,7 @@ internal sealed class DiagnosticEventExternalSinkResult {
     ) : DiagnosticEventExternalSinkResult()
 }
 
-internal fun runDiagnosticEventExternalSinkPlan(
+fun runDiagnosticEventExternalSinkPlan(
     event: DiagnosticEvent,
     userConsented: Boolean,
     debugReportText: String,

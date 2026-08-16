@@ -1,7 +1,7 @@
 package com.worksoc.goaicoach.application.auth
 
 /** 로그인 수단. 셋 다 실제로 발급된다(Apple은 아직 UI 스텁만 있고 이 enum엔 없음). */
-internal enum class AuthProvider {
+enum class AuthProvider {
     Anonymous,
     Google,
     Email,
@@ -13,7 +13,7 @@ internal enum class AuthProvider {
  * [AuthClientPort]와 같은 패키지에 있지만 계층이 다르다 — 이 타입은 "누구의 세션인가"를
  * 나타내는 상태(6계층)이고, [AuthClientPort]는 그 상태를 얻어오는 외부 SDK 포트(4계층)다.
  */
-internal data class AuthState(
+data class AuthState(
     val isSignedIn: Boolean = false,
     val provider: AuthProvider? = null,
     val uid: String? = null,
@@ -31,5 +31,5 @@ internal data class AuthState(
  * 여기 순수 함수로 분리해, "언제 승격할지"가 raw SDK 기능이 아니라 유스케이스 판단으로
  * 남도록 한다(`auth-onboarding/README.md`의 "계층 배치 참고" 표 Step 2 참고).
  */
-internal val AuthState.isPromotableAnonymousSession: Boolean
+val AuthState.isPromotableAnonymousSession: Boolean
     get() = isSignedIn && provider == AuthProvider.Anonymous

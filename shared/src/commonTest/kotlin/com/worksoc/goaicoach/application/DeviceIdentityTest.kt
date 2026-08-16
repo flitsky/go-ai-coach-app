@@ -1,14 +1,14 @@
 package com.worksoc.goaicoach.application
 
 import com.worksoc.goaicoach.application.device.DeviceIdentity
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertThrows
-import org.junit.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.Test
 
 class DeviceIdentityTest {
     @Test
     fun rejectsBlankId() {
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith<IllegalArgumentException> {
             DeviceIdentity(" ")
         }
     }

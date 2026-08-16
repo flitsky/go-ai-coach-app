@@ -27,9 +27,9 @@ import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.diagnostic.DiagnosticEvent
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
+import kotlin.test.Test
 
 class DebugReportApplicationRunnerTest {
     @Test

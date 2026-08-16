@@ -4,7 +4,7 @@ import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
 import com.worksoc.goaicoach.application.session.GameSessionControllerState
 
-internal class DebugReportController(
+class DebugReportController(
     private val engineName: String,
     private val engineDiagnostic: String,
     private val runtimeEventLog: RuntimeEventLogPort,
