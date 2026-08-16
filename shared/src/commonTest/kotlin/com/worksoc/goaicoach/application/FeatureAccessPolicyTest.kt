@@ -6,8 +6,8 @@ import com.worksoc.goaicoach.application.premium.FeatureAccessPolicy
 import com.worksoc.goaicoach.application.premium.FeatureId
 import com.worksoc.goaicoach.application.premium.PremiumState
 import com.worksoc.goaicoach.application.premium.UnlockOption
-import org.junit.Assert.assertEquals
-import org.junit.Test
+import kotlin.test.assertEquals
+import kotlin.test.Test
 
 class FeatureAccessPolicyTest {
     @Test

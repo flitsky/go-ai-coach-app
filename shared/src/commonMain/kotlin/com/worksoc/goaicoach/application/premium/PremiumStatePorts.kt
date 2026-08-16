@@ -7,7 +7,7 @@ package com.worksoc.goaicoach.application.premium
  * 구분되지 않는다) 메모리에만 있던 활성화 상태가 사라져 광고 시청 팝업이 다시 뜨는 문제를
  * 막기 위해 도입했다.
  */
-internal interface PremiumStateStorePort {
+interface PremiumStateStorePort {
     fun save(state: PremiumState)
     fun load(): PremiumState
 }

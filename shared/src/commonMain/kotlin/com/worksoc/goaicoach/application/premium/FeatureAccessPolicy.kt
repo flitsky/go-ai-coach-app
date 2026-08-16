@@ -1,21 +1,21 @@
 package com.worksoc.goaicoach.application.premium
 
 /** [FeatureAccess.Locked]일 때 사용자가 선택할 수 있는 잠금 해제 수단. */
-internal enum class UnlockOption {
+enum class UnlockOption {
     AdGrant,
     Purchase,
     Claim,
 }
 
 /** [FeatureAccess.Allowed]일 때, 그 허용이 어느 경로로 성립했는지. */
-internal enum class AllowedVia {
+enum class AllowedVia {
     Purchase,
     AdGrant,
     Claimed,
 }
 
 /** [FeatureAccessPolicy.resolve]의 판정 결과. */
-internal sealed interface FeatureAccess {
+sealed interface FeatureAccess {
     data class Allowed(val via: AllowedVia) : FeatureAccess
     data class Locked(val unlockOptions: Set<UnlockOption>) : FeatureAccess
 }
@@ -36,7 +36,7 @@ internal sealed interface FeatureAccess {
  * 무관하게 항상 반환한다 — 그 플래그는 7계층(ui) 소속이라 6계층이 알면 안 된다. 구매 버튼을
  * 실제로 숨길지는 지금처럼 프레젠테이션(`PremiumUpsellDialog`)이 계속 판단한다.
  */
-internal object FeatureAccessPolicy {
+object FeatureAccessPolicy {
     fun resolve(featureId: FeatureId, state: PremiumState, nowMillis: Long): FeatureAccess {
         if (state.isActive(nowMillis)) {
             val via = if (state.source == PremiumSource.Purchase) AllowedVia.Purchase else AllowedVia.AdGrant

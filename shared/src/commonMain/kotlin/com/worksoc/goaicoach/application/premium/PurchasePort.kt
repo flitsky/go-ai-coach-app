@@ -7,7 +7,7 @@ package com.worksoc.goaicoach.application.premium
  * 플랫폼 세부사항은 이 인터페이스의 메서드 시그니처가 아니라 어댑터의 생성자가 받는다 —
  * `AndroidRewardedInterstitialAdClient`가 같은 이유로 Activity를 시그니처에 노출하지 않는 것과 동일하다.
  */
-internal interface PurchasePort {
+interface PurchasePort {
     /** 구매 플로우를 실제로 띄우고, 완료(또는 취소/실패) 결과를 반환한다. */
     suspend fun purchasePremium(): PurchaseOutcome
 
@@ -16,7 +16,7 @@ internal interface PurchasePort {
 }
 
 /** [PurchaseOutcome.NotPurchased]가 발생한 원인 — 진단 로그에서 구분하기 위함이다. */
-internal enum class PurchaseFailureReason {
+enum class PurchaseFailureReason {
     /** 사용자가 구매 플로우를 취소함. */
     UserCancelled,
 
@@ -40,7 +40,7 @@ internal enum class PurchaseFailureReason {
 }
 
 /** "영구 구매" 시도(또는 복원 조회)의 결과. [Purchased]일 때만 프리미엄을 영구 활성화해야 한다. */
-internal sealed interface PurchaseOutcome {
+sealed interface PurchaseOutcome {
     data object Purchased : PurchaseOutcome
 
     data class NotPurchased(

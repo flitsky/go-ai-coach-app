@@ -1,6 +1,6 @@
 # `GameSessionStateHolder` → `:shared` 본 이전 — 착수 계획서
 
-작성일: 2026-08-16 18:08 (계획 수립) / **갱신: 2026-08-16 웨이브 1·2·3 실행 완료 후**
+작성일: 2026-08-16 18:08 (계획 수립) / **갱신: 2026-08-16 웨이브 1·2·3·4 실행 완료 후**
 
 **성격**: `docs/GO_AI_COACH_ARCHITECTURE_ROADMAP.md` "고도화 로드맵" 5번 항목 (2) "본 이전"의 실행 순서를 정하는 착수 계획서다(로드맵 문서 자체가 "착수 순서는 별도 착수 계획서에서 정한다"고 명시한 그 문서). 원래는 `docs/refactoring/REFACTORING_BACKLOG_260816_1744.md` 작업 우선순위 1번의 "계획부터 정리해서 보여달라"는 요청으로 코드 이동 없이 작성됐으나, 같은 날 이어진 세션에서 **웨이브 1 실행까지 완료**했다 — 이 문서는 이제 계획서 겸 실행 기록이다.
 
@@ -45,6 +45,13 @@
 - 규모가 파일 1개(+테스트 1개)로 작고 명확히 경계 지어져 있어, 사용자에게 다시 확인받지 않고 바로 `shared/src/commonMain/kotlin/com/worksoc/goaicoach/middleware/`(패키지명 유지, `:shared` 안에 새 최상위 패키지로)로 함께 옮겼다 — 웨이브 1의 "56개로 확장" 같은 큰 스코프 변경과는 성격이 다르다고 판단(단일 파일, 완전히 격리됨, 되돌리기도 쉬움).
 - **앞으로의 웨이브에서 주의할 점**: `application/` 파일이 `middleware/`(또는 이론상 다른 app-android 최상위 패키지)를 참조하는 다른 사례가 더 있을 수 있다 — `Unresolved reference 'middleware'` 같은 컴파일 에러가 나오면 이 패턴으로 처리(포터빌리티 확인 후 `shared/.../middleware/`로 함께 이동)할 것.
 - 컴파일러 위젠 스크립트(`converge.py`)의 정규식 버그 하나 더 발견/수정: Kotlin의 `fun interface`(함수형 인터페이스) 선언을 `internal fun interface Foo`처럼 쓰면 기존 정규식이 "fun interface"를 통째로 수정자로 잘못 소비해 이름을 못 찾았다 — `kw` 그룹에 `fun\s+interface`를 `fun`보다 먼저 오는 대안으로 추가해 해결.
+
+커밋 `d962a8d`(origin/main에 push 완료).
+
+### 웨이브 4 실행 결과 요약 (260816, 이어서)
+
+배치 62–70(humanmove·preferences 잔여, premium 순환 클러스터 2건, prompt) 12개 파일 + 테스트 5개(`FeatureAccessPolicyTest`, `PremiumStateTest`, `PremiumAdGrantApplicationTest`, `PremiumPurchaseApplicationTest`, `PromptPriorityApplicationTest`) 이동. 이번엔 웨이브 3에서 발견한 "application/ 트리 밖 참조" 패턴을 **이동 전에 미리 검사**했다(`middleware`/`ui`/`persistence`/`engine` import 유무를 12개 파일 전부 grep) — 전부 클린해서 놀랄 일 없이 진행. `internal`→public 컴파일러 수렴: `:shared` 1라운드(위젠 불필요), `:app-android` 메인 3라운드(28개 심볼 — premium이 결제/광고 관련 데이터 모델이 많아 위젠 대상이 좀 더 많았음), 테스트 1라운드(불필요). `make test` 전체 그린.
+
 
 ---
 
@@ -103,11 +110,11 @@
 |---|---|---|---|---|
 | 2 | 18(1개 영구 제외, 17개 이동) | 30–45 | analysis 잔여, auth(2파일 순환), runtime, autoai 잔여, debugreport 잔여, device(2파일 순환), diagnostic 잔여(**`LocalFileDiagnosticEventExternalSink.kt` 포함 — 4절대로 이동 제외**) | **완료(260816)** |
 | 3 | 16(+`middleware/PositionAnalysisCacheResolver.kt` 1개 추가 발견분) | 46–61 | `engine/`의 나머지 전체(로컬 엔진 delegate·gateway·operation 하위) | **완료(260816)** |
-| 4 | 12 | 62–70 | humanmove·preferences 잔여, premium(3파일 순환 1건 + 2파일 순환 1건 포함), prompt | 다음 차례 |
-| 5 | 11 | 71–81 | savedgame·score 잔여 + **`session/GameSessionStateHolder.kt` 본체(배치 81)** | 대기 |
+| 4 | 12 | 62–70 | humanmove·preferences 잔여, premium(3파일 순환 1건 + 2파일 순환 1건 포함), prompt | **완료(260816)** |
+| 5 | 11 | 71–81 | savedgame·score 잔여 + **`session/GameSessionStateHolder.kt` 본체(배치 81)** | 다음 차례 |
 | 6 | 11 | 82–92 | topmoves·session·startgame 잔여 컨트롤러 — 홀더에 의존하는 마지막 그룹 | 대기 |
 
-합계: 17+16+12+11+11 = 67 이동 + 1 영구 제외 = 68(+ 웨이브 3에서 발견된 `application/` 트리 밖 파일 1개 별도). 웨이브 3 완료 시점 기준 남은 것: 웨이브 4~6, 34개 파일.
+합계: 17+16+12+11+11 = 67 이동 + 1 영구 제외 = 68(+ 웨이브 3에서 발견된 `application/` 트리 밖 파일 1개 별도). 웨이브 4 완료 시점 기준 남은 것: 웨이브 5~6, 22개 파일 — **웨이브 5에 `GameSessionStateHolder.kt` 본체가 있다.**
 
 **웨이브 5에 `GameSessionStateHolder.kt`가 있다** — 원래 계획의 "웨이브 9" 프레이밍과 거의 일치(리프부터 시작해 뒤쪽에서 홀더가 나오는 흐름 자체는 교정 후에도 유지됨). 웨이브 5·6 완료 직후 `NewGameBoardTapSmokeTest.kt`/`AppLaunchSmokeTest.kt` 실기 재확인 필수(0절 완료 기준 참고).
 
@@ -406,7 +413,7 @@ undo/UndoRunnerApplication.kt
 
 ## 10. 다음 단계
 
-**웨이브 1·2·3은 완료됐다**(0절, 커밋 `30d6508`/`4023c09`/다음 커밋). 다음은 웨이브 4(3절 표, 배치 62–70, humanmove·preferences 잔여 + premium 순환 클러스터 2건 + prompt, 12개 파일)부터:
+**웨이브 1~4는 완료됐다**(0절, 커밋 `30d6508`/`4023c09`/`d962a8d`/다음 커밋). 다음은 웨이브 5(3절 표, 배치 71–81, savedgame·score 잔여 + **`session/GameSessionStateHolder.kt` 본체**, 11개 파일)부터 — 이 웨이브가 끝나면 키스톤이 이동하므로, 완료 후 `NewGameBoardTapSmokeTest.kt`/`AppLaunchSmokeTest.kt` 실기 재확인이 필요하다(0절·7절 참고):
 - 6절의 규칙대로 internal은 미리 안 건드리고 컴파일 에러로 확정(순서: `:shared` 메인 → `:app-android` 메인 → `:app-android` 테스트)
 - 이동하는 각 프로덕션 파일의 대응 테스트가 웨이브 범위를 넘는지 확인(7절 3번)
 - `make test`에서 `LayeringContractTest.kt`가 새로운 `FileNotFoundException`을 내면 `applicationFile()` 헬퍼로 해결되는지 우선 확인(7절 마지막 문단)

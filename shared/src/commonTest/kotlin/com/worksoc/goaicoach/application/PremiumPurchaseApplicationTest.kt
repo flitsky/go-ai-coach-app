@@ -7,9 +7,9 @@ import com.worksoc.goaicoach.application.premium.PurchaseOutcome
 import com.worksoc.goaicoach.application.premium.PurchaseTrigger
 import com.worksoc.goaicoach.application.premium.runPremiumPurchaseApplication
 import com.worksoc.goaicoach.shared.diagnostic.DiagnosticSeverity
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
-import org.junit.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNull
+import kotlin.test.Test
 
 class PremiumPurchaseApplicationTest {
     @Test

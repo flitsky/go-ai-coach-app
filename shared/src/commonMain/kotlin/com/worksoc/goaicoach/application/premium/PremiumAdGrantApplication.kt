@@ -3,7 +3,7 @@ package com.worksoc.goaicoach.application.premium
 import com.worksoc.goaicoach.shared.diagnostic.DiagnosticEvent
 import com.worksoc.goaicoach.shared.diagnostic.DiagnosticSeverity
 
-internal data class PremiumAdGrantRunRequest(
+data class PremiumAdGrantRunRequest(
     val outcome: AdRewardOutcome,
     val nowMillis: Long,
 )
@@ -12,7 +12,7 @@ internal data class PremiumAdGrantRunRequest(
  * [nextState]가 `null`이면 상태를 바꾸지 말라는 뜻이다(일반 모드 유지) — 호출부가 이 경우
  * `premiumState`/저장소 쓰기를 건너뛰도록 구분하려고 별도 래퍼 대신 nullable로 표현했다.
  */
-internal data class PremiumAdGrantRunResult(
+data class PremiumAdGrantRunResult(
     val nextState: PremiumState?,
     val diagnosticEvent: DiagnosticEvent,
 )
@@ -25,7 +25,7 @@ internal data class PremiumAdGrantRunResult(
  * 만으로 보장된다. 실패 사유를 담은 진단 이벤트는 항상(성공/실패 모두) 함께 반환해, 폴백을
  * 조용히 삼키지 않는다.
  */
-internal fun runPremiumAdGrantApplication(request: PremiumAdGrantRunRequest): PremiumAdGrantRunResult =
+fun runPremiumAdGrantApplication(request: PremiumAdGrantRunRequest): PremiumAdGrantRunResult =
     when (val outcome = request.outcome) {
         AdRewardOutcome.RewardEarned -> {
             val nextState = PremiumState.adGranted(nowMillis = request.nowMillis)

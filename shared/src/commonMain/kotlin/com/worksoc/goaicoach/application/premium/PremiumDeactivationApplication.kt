@@ -9,7 +9,7 @@ import com.worksoc.goaicoach.shared.diagnostic.DiagnosticSeverity
  * 반환해 로그하지 않는다 — 실제로 활성 상태였다가 꺼진 경우(만료/명시적 비활성화)만
  * 이벤트를 만든다.
  */
-internal fun buildPremiumDeactivatedDiagnosticEvent(
+fun buildPremiumDeactivatedDiagnosticEvent(
     previousState: PremiumState,
     nowMillis: Long,
 ): DiagnosticEvent? {

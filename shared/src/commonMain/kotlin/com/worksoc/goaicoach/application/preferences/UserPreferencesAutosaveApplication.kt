@@ -3,7 +3,7 @@ package com.worksoc.goaicoach.application.preferences
 import com.worksoc.goaicoach.application.session.GameSessionSettingsState
 import com.worksoc.goaicoach.shared.Ruleset
 
-internal data class UserPreferencesAutosaveRequest(
+data class UserPreferencesAutosaveRequest(
     val settingsState: GameSessionSettingsState,
     val ruleset: Ruleset,
     val komi: Double,
@@ -42,7 +42,7 @@ internal fun buildUserPreferencesAutosaveSnapshot(
         gameSetupUxMode = current.gameSetupUxMode,
     )
 
-internal fun runUserPreferencesAutosave(
+fun runUserPreferencesAutosave(
     request: UserPreferencesAutosaveRequest,
     store: UserPreferencesStorePort,
 ) {

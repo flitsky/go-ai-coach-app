@@ -3,10 +3,10 @@ package com.worksoc.goaicoach.application
 import com.worksoc.goaicoach.application.premium.FeatureId
 import com.worksoc.goaicoach.application.premium.PremiumSource
 import com.worksoc.goaicoach.application.premium.PremiumState
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
+import kotlin.test.Test
 
 class PremiumStateTest {
     @Test

@@ -6,14 +6,14 @@ package com.worksoc.goaicoach.application.premium
  * 시간이 남아 있으면 계속 유효하다(대국 단위로 끊기지 않는다). 실제 광고/결제 연동
  * (Step 3, 4) 이전까지는 [AdGrant]가 즉시 활성화되는 스텁으로 동작한다.
  */
-internal enum class PremiumSource {
+enum class PremiumSource {
     None,
     AdGrant,
     Purchase,
 }
 
 /** 프리미엄 게이팅 대상 기능. [FeatureAccessPolicy]가 이 각각에 대해 접근 가능 여부를 판정한다. */
-internal enum class FeatureId {
+enum class FeatureId {
     Undo,
     Eval,
     TopMoves,
@@ -27,7 +27,7 @@ internal enum class FeatureId {
  * 이 타입은 "지금 유효한 프리미엄 상태가 무엇인가"를 나타내는 상태(6계층)이고,
  * [PremiumStateStorePort]는 그 상태를 저장/복원하는 외부 저장소 포트(4계층)다.
  */
-internal data class PremiumState(
+data class PremiumState(
     val source: PremiumSource = PremiumSource.None,
     val adGrantStartedAtMillis: Long? = null,
     // 앱 내 활동/프로모션으로 얻은 영구 클레임 원장(launch-plan/README.md 3장의 "무르기 무료

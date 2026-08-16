@@ -9,12 +9,12 @@ import com.worksoc.goaicoach.shared.diagnostic.DiagnosticSeverity
  * 의미 있게 구분하기 위해서만 쓰인다(예: 복원 조회에서 "소유한 구매 없음"은 대부분의 사용자에게
  * 정상적인 기본 상태라 Warning이 아니라 Info로 남긴다).
  */
-internal enum class PurchaseTrigger {
+enum class PurchaseTrigger {
     Explicit,
     Restore,
 }
 
-internal data class PremiumPurchaseRunRequest(
+data class PremiumPurchaseRunRequest(
     val outcome: PurchaseOutcome,
     val trigger: PurchaseTrigger,
     val nowMillis: Long,
@@ -27,7 +27,7 @@ internal data class PremiumPurchaseRunRequest(
  * 응답 하나로 결제한 사용자의 접근권을 조용히 빼앗는 위험이, 실제로는 드문 환불 케이스가
  * 잠시 더 유지되는 위험보다 크다고 판단한 보수적 선택이다(premium-mode/README.md Step 4 참고).
  */
-internal data class PremiumPurchaseRunResult(
+data class PremiumPurchaseRunResult(
     val nextState: PremiumState?,
     val diagnosticEvent: DiagnosticEvent,
 )
@@ -39,7 +39,7 @@ internal data class PremiumPurchaseRunResult(
  * 일반 모드(또는 기존 상태) 유지는 호출부가 별도로 신경 쓸 필요 없이 이 함수의 반환값
  * (`nextState == null`)만으로 보장된다.
  */
-internal fun runPremiumPurchaseApplication(request: PremiumPurchaseRunRequest): PremiumPurchaseRunResult =
+fun runPremiumPurchaseApplication(request: PremiumPurchaseRunRequest): PremiumPurchaseRunResult =
     when (val outcome = request.outcome) {
         PurchaseOutcome.Purchased -> {
             val nextState = PremiumState.purchased()

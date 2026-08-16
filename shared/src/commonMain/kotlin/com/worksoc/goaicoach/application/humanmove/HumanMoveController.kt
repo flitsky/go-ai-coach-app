@@ -27,7 +27,7 @@ import com.worksoc.goaicoach.shared.describe
 import com.worksoc.goaicoach.shared.engine.EngineOperationRequest
 import com.worksoc.goaicoach.shared.engine.EngineTimeoutPolicy
 
-internal class HumanMoveController(
+class HumanMoveController(
     private val engineClient: EngineSessionClient,
     private val diagnosticEventLog: DiagnosticEventLogPort,
     private val runtimeEventLog: RuntimeEventLogPort,

@@ -1,6 +1,6 @@
 package com.worksoc.goaicoach.application.preferences
 
-internal interface UserPreferencesStorePort {
+interface UserPreferencesStorePort {
     fun save(snapshot: UserPreferencesSnapshot)
     fun load(): UserPreferencesSnapshot
 }

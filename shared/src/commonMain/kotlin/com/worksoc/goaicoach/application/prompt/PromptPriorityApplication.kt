@@ -1,11 +1,11 @@
 package com.worksoc.goaicoach.application.prompt
 
-internal data class PromptVisibilityDecision(
+data class PromptVisibilityDecision(
     val showResumePrompt: Boolean,
     val showCacheOptimizationPrompt: Boolean,
 )
 
-internal fun decidePromptVisibility(
+fun decidePromptVisibility(
     hasCompletedEngineStartup: Boolean,
     isEngineBusy: Boolean,
     hasPendingSavedSession: Boolean,

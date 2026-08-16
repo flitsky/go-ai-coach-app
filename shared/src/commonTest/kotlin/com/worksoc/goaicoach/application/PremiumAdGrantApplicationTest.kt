@@ -6,9 +6,9 @@ import com.worksoc.goaicoach.application.premium.PremiumAdGrantRunRequest
 import com.worksoc.goaicoach.application.premium.PremiumSource
 import com.worksoc.goaicoach.application.premium.runPremiumAdGrantApplication
 import com.worksoc.goaicoach.shared.diagnostic.DiagnosticSeverity
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
-import org.junit.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNull
+import kotlin.test.Test
 
 class PremiumAdGrantApplicationTest {
     @Test
