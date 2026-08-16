@@ -10,6 +10,7 @@
 갱신: 2026-08-11 — 외부 기획 디자이너 핸드오프용 export/import 채널 `design-handoff/README.md`를 신설해 "저장소 루트의 마스터플랜 폴더" 표에 편입했다. `export/`에 v0.1.2 기준 최초 스냅샷(유저플로우, 화면별 스펙, 스토어 등록정보 초안 포함) 생성.
 갱신: 2026-08-13 — 기능 유/무료 제공 원칙 문서 `feature-access-principles/README.md`를 신설해 "저장소 루트의 마스터플랜 폴더" 표에 편입했다. `premium-mode/README.md`(수익화 구현 로그)·`auth-onboarding/README.md`(계정 구현 로그) 위에서 "왜 그렇게 하기로 했는가"를 담는 상위 원칙 문서 — 두 문서와 계속 교차 참조된다.
 갱신: 2026-08-13 (2) — 위 원칙을 초도 발행에 구체적으로 적용하는 `launch-plan/README.md`를 신설해 같은 표에 편입했다. `premium-mode/README.md`의 기능 매트릭스(2장)도 현재 코드 상태(분석 삭제, 무르기 무료)에 맞게 함께 정정했다.
+갱신: 2026-08-16 — 리팩토링/코드 부채 정리 전용 우선순위 백로그 `refactoring/REFACTORING_BACKLOG_260816_1744.md`를 신설해 아래 표에 편입했다. 신규 기능 개발과 의도적으로 분리한 문서 — 새 스레드가 아키텍처 로드맵(`GO_AI_COACH_ARCHITECTURE_ROADMAP.md`)을 다시 읽지 않고도 다음에 뭘 할지 바로 고를 수 있게 하는 게 목적.
 
 ## 하위 폴더 한눈에 보기
 
@@ -92,6 +93,7 @@
 | `refactoring/CODE_QUALITY_REFACTORING_PLAN_260803_2217.md` | 계층 경계와 무관한 일반 코드 품질 리팩토링 착수 계획서(위 문서와 별개, 일시 병행). 상수화/공통 코드 추출/도메인 분리/모듈화 4개 카테고리를 Stage A~D 안전도 순으로 정리, 진행 로그 누적 중 |
 | `refactoring/ENGINE_BRIDGE_MODULE_CONSOLIDATION_PLAN_260804_0005.md` | `EngineCoreApi`의 로컬/원격 구현체를 `engine-android` 모듈 하나로 물리적으로 통합(완료) — 향후 원격 서버/DePIN 확장의 근간. `RemotePositionAnalysisTransport` 계약을 `:shared`로 이동해 순환 의존 없이 로컬/원격이 같은 계약 공유. 완료됐지만 위 LAYERED_ARCHITECTURE 계획의 하위 문서라 부모와 함께 유지 |
 | `refactoring/PLAY_FLOW_UX_REFACTORING_PLAN_260804_0553.md` | 플레이 흐름 UX 개편 착수 계획서 — 로그인 반복 버그 수정, 프리미엄 팝업 타이밍 정리, 대국설정 심플/콤팩트 화면 체계(`GameSetupUxMode`). 진행 로그 누적 중 |
+| `refactoring/REFACTORING_BACKLOG_260816_1744.md` | 리팩토링/코드 부채 정리 전용 우선순위 백로그(신규 기능 제외). 항목마다 효과 등급(Sonnet 5 투입 노력 6단계)·완료 기준·다음 세션 시작 프롬프트 포함 — 새 스레드가 이 문서 하나만 읽고 바로 착수 가능하도록 설계됨 |
 
 이 폴더는 날짜가 붙은 작업 로그가 계속 쌓이는 곳이다. 작업이 끝났다고 지우지 않고, 다음 리팩토링에 참고할 이력으로 남긴다 — 단, 위 표가 무한정 길어지지 않도록 진행 로그가 멈추고 결론이 흡수된 문서는 주기적으로 `archive/<날짜>-<사유>/`로 옮기고 이 표에서 뺀다(2026-08-06에 처음 적용, "문서 이력" 절 참고).
 
