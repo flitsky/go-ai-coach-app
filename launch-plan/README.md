@@ -6,7 +6,7 @@
 
 ---
 
-## 0. 최종 출시 체크리스트 종합 (260817 기준 — 새 스레드는 여기부터 읽을 것)
+## 0. 최종 출시 체크리스트 종합 (260817 갱신 — 새 스레드는 여기부터 읽을 것)
 
 `docs/refactoring/REFACTORING_BACKLOG_260816_1744.md`(리팩토링/코드부채 전용)와 `docs/refactoring/GAMESESSION_SHARED_MIGRATION_KICKOFF_PLAN_260816_1808.md`(`application/` 트리 → `:shared` 이전)가 이 날짜에 각각 마무리됐다 — 남은 작업은 리팩토링이 아니라 **초도 시장 발행 자체**로 성격이 넘어갔다. 아래는 코드베이스를 실제로 점검(파일 존재 여부, `local.properties` 키 존재 여부, manifest 내용 등)해서 확인한 현재 상태다 — 추정이 아니라 확인된 사실 기준.
 
@@ -16,22 +16,35 @@
 - **릴리스 서명 키스토어**: `local.properties`에 `release.storeFile`/`release.keyAlias`/`release.keyPassword`/`release.storePassword` 4개 키 모두 존재 확인(260817) — `app-android/build.gradle.kts`의 `release`/`playInternal` signingConfig가 이미 이걸 참조하도록 배선돼 있다.
 - **릴리스 빌드 파이프라인**: `make play-internal-aab`(Play Console 내부 테스트용)·`make bundle-aab`(정식 프로덕션용, 실제 AdMob/Billing 값 사용)·`make release`(APK) 전부 `bump-version`(version.properties의 VERSION_CODE 자동 증가, 재사용 방지)을 거치도록 완성돼 있다(커밋 `7d233f4`/`46eb5a0`). 260817 기준 `VERSION_CODE=111`/`VERSION_NAME=0.1.11`.
 - **Play Console 내부 테스트 트랙**: AAB 버전 2(0.1.1) 이미 게시됨, 테스터 이메일 등록 완료(2026-08-06 작업, 2026-08-09 재확인).
-- **스토어 등록정보 텍스트 초안**: `design-handoff/export/2026-08-11-v0.1.2/store_listing.txt` — 앱 이름/짧은 설명/자세한 설명/키워드까지 초안 존재. 스크린샷 4장(`screenshots/`)도 Play Console 규격(2:1, 1148x2296)에 맞춰 이미 캡처돼 있음.
+- **스토어 등록정보 텍스트 초안**: `design-handoff/export/2026-08-11-v0.1.2/store_listing.txt` — 앱 이름/짧은 설명/자세한 설명/키워드까지 초안 존재. 스크린샷 4장(`screenshots/`)도 Play Console 규격(2:1, 1148x2296)에 맞춰 이미 캡처돼 있음. **260817 재캡처됨 — 아래 신규 완료 항목 참고.**
 - **앱 핵심 기능/안정성**: 이번 세션에서 `application/` 트리 전체(124개 파일)가 `:shared`로 이전 완료, `make test` 전체 그린, 에뮬레이터 실기 스모크 테스트(app-launch/new-game/board-tap/saved-session-prompt) 4종 모두 통과.
+- **앱 런처 아이콘 (260817 신규 완료)**: `AndroidManifest.xml`에 `android:icon`/`android:roundIcon` 배선 완료. `res/mipmap-{mdpi,hdpi,xhdpi,xxhdpi,xxxhdpi}/`에 legacy 아이콘(스토어 512×512 아이콘을 그대로 축소) + adaptive icon 3레이어(foreground/background/**monochrome** — Android 13+ 테마 아이콘 대응) 전부 생성, `res/mipmap-anydpi-v26/ic_launcher*.xml`로 배선. 소스는 홈 화면의 `GoStoneLogoBadge()`(`GoCoachHomeScreen.kt`)를 픽셀 단위로 재현해 앱 내 로고와 완전히 동일한 디자인 — 별도 신규 디자인이 아니라 기존 브랜드 자산 재사용. 에뮬레이터(Pixel 7 API 35) 앱 서랍에서 실제 렌더링 확인 완료(홈 화면 dock에 남아있던 초록 테두리는 아이콘 배선 전에 고정 pin된 항목의 launcher 자체 캐시 잔상으로, 앱 서랍/재설치 기준으로는 재현되지 않음 — 실제 신규 설치 사용자에겐 발생하지 않는 로컬 아티팩트).
+- **스토어 등록용 고해상도 아이콘(512×512)·피처 그래픽(1024×500) (260817 재확인 — 이미 존재했음)**: 위 "미착수"로 적어뒀던 것은 부정확했다 — `dist/play-store-assets/`(gitignore 대상이라 이전 점검에서 누락)에 2026-08-11에 이미 만들어져 있었고 Play Console 업로드까지 확인된 상태였다(`dist/play-store-assets/README.md` 참고, 앱 아이콘과 동일한 `GoStoneLogoBadge()` 소스 재현). **260817에 `design-handoff/export/2026-08-17-v0.1.11/app_icon/`·`feature_graphic/`로 커밋** — 그동안 gitignore된 `dist/`에만 있어 git 히스토리에 안 남는 상태였던 걸 정본화.
+- **개인정보처리방침 URL (260817 재확인 — 이미 존재했음, 앱 내 노출만 신규 추가)**: 위 "미착수"의 "문서/URL이 전혀 없다"도 부정확했다 — `https://rezen.dev/go-ai-coach/privacy/`가 이미 실제 호스팅돼 있고 내용도 앱의 실제 데이터 처리 방식(로컬 익명 ID, AdMob 광고 ID, 서버 미전송, 앱 삭제 시 로컬 데이터 즉시 삭제)과 정확히 일치함을 WebFetch로 확인(2026-08-17). 다만 앱 안 어디에서도 링크하지 않고 있었다 — `SettingsScreen.kt` 하단 버전 정보 카드 밑에 "개인정보처리방침" 링크(4개 언어 문자열 포함) 추가, 탭 시 브라우저로 여는 것까지 에뮬레이터에서 실기 확인 완료. **Play Console 쪽은 별도**: "앱 콘텐츠 > 개인정보처리방침" 제출 필드에 이 URL을 등록하는 건 콘솔 작업이라 코드로 대신할 수 없음 — 사용자가 직접 등록 필요.
 
-### ❌ 미착수 — 진짜 남은 갭 (260817 신규 확인, 사용자가 언급한 "광고 실연동"보다 이쪽이 실제 병목)
-- **앱 런처 아이콘이 없다**: `AndroidManifest.xml`의 `<application>` 태그에 `android:icon` 속성 자체가 없고, `res/` 아래 `mipmap-*`/`ic_launcher*` 파일이 하나도 없다(260817 직접 확인 — `res/`엔 `drawable`·`values`만 존재). 지금 빌드하면 기본 안드로이드 placeholder 아이콘으로 설치된다 — **Play 스토어 등록의 필수 요건이자, 이 중 가장 눈에 띄는 미완성 항목**.
-- **스토어 등록용 고해상도 아이콘(512×512)·피처 그래픽(1024×500)**: `design-handoff/` 어디에도 없다. 위 런처 아이콘과 같은 소스 디자인에서 같이 만들어야 효율적.
-- **개인정보처리방침(Privacy Policy)**: 저장소 전체를 검색해도 문서/URL이 전혀 없다. AdMob·Firebase(Auth SDK 번들, 플래그로 꺼져 있어도 앱엔 포함됨)·Play Billing을 쓰는 이상 Play Console 필수 제출 항목이다 — 호스팅 위치(GitHub Pages, Firebase Hosting 등)부터 정해야 한다.
+### ❌ 미착수 — 진짜 남은 갭
 - **콘텐츠 등급 설문(IARC)**, **데이터 보안(Data safety) 양식**: Play Console에서 직접 입력해야 하는 항목이라 코드로 확인 불가 — 미완료로 간주하고 착수 시 처음부터 진행. 다행히 실제 데이터 흐름은 단순한 편이다: Firebase Analytics는 의도적으로 아예 안 넣었고(사용처 없음, `app-android/build.gradle.kts` 주석), Crashlytics도 없다 — AdMob 광고ID·Play Billing 구매정보 정도만 선언하면 될 가능성이 높다(정확한 문구는 Play Console 가이드로 최종 확인 필요).
+- **Play Console "개인정보처리방침" 제출 필드 등록**: URL 자체(`https://rezen.dev/go-ai-coach/privacy/`)는 준비돼 있고 앱에도 링크했다(위 참고) — 남은 건 Play Console 콘솔 화면에 그 URL을 붙여넣는 것뿐, 사용자가 직접 처리해야 한다.
 - **기획 디자이너 핸드오프 응답 대기 중**: `design-handoff/README.md` — 2026-08-11 발송 후 "아직 디자이너 회신 없음" 상태 그대로. "먼저 출시하고 고도화는 이후"라는 이번 방향과 맞게, 이 회신을 기다릴지 건너뛰고 지금 상태로 출시할지 결정 필요.
 
 ### ⚠️ 갱신 필요 (있긴 한데 최신 상태와 어긋남)
-- **스토어 등록정보 텍스트의 "요금 안내" 문단이 stale하다**: `store_listing.txt`가 "해당 대국 한 판(최대 1시간)"이라고 적어뒀는데, 실제 정책은 2026-08-04에 "1판 한정" 자체가 제거되고 **순수 1시간 타이머**로 바뀌었다(그 1시간 안엔 새 대국을 여러 판 시작해도 계속 유효) — `premium-mode/README.md` "결정 번복" 절 참고. 또한 v0.1.2(2026-08-11) 이후 추가된 **무르기 초기 클레임 프로모션**(`launch-plan/README.md` 3장)도 이 텍스트엔 반영 안 돼 있다.
-- **스크린샷도 v0.1.2(2026-08-11) 기준**이라, 그 이후 UI 변경(무르기 클레임 다이얼로그, 프리미엄 카드 골드 테마 등)이 반영 안 됐을 수 있다 — 재출시 전 최신 빌드로 다시 캡처할지 판단 필요.
+- **(260817 해소됨)** ~~스토어 등록정보 텍스트의 "요금 안내" 문단이 stale하다~~ — `store_listing.txt`의 "해당 대국 한 판(최대 1시간)" 문구를 "1시간 동안 활성화(그 안에 새 대국 여러 판 가능)"로 정정하고, 무르기 초기 클레임 프로모션 문장을 추가했다. `design-handoff/export/2026-08-17-v0.1.11/store_listing.txt`가 최신본.
+- **(260817 해소됨)** ~~스크린샷도 v0.1.2(2026-08-11) 기준이라 최신 UI 미반영~~ — 4장 전부 v0.1.11(VERSION_CODE=111) 기준으로 에뮬레이터 재캡처. 실제로 액션 버튼 배열(분석 버튼 제거 등 2회 변경), 무르기 클레임 프로모션, 프리미엄 카드 문구(분석 항목 삭제), 홈 화면 "학습 하기" 부제(유튜브 강좌로 문구 자체가 변경) 전부 눈에 보이는 차이가 있었다 — 재캡처가 실제로 필요했음을 스크린샷 비교로 확인. 신규본은 `design-handoff/export/2026-08-17-v0.1.11/screenshots/`(디자이너 핸드오프 정본, PNG 1296x2304) + `dist/play-store-assets/{phone,tablet_7in,tablet_10in}_screenshots/`(업로드용 사본, gitignore 대상).
+- **신규 발견 — 형세 보기 ON 상태에서 보드 영역(ownership) 오버레이 미표시**: 재캡처 과정에서 발견. 2026-08-11 캡처엔 형세 보기 ON 시 보드 위에 은은한 음영 오버레이가 있었는데, 260817 재캡처 시점(v0.1.11)엔 토글은 ON으로 바뀌지만 오버레이 자체가 전혀 안 나타난다(여러 수 진행 후에도, 승률 표시도 고정값). `GoBoard.kt`에 오버레이를 그리는 코드(`ownershipEstimate != null && premium.isActive`) 자체는 남아있어 — 값이 채워지는 경로가 최근 리팩토링(분석 버튼 제거 등)으로 끊겼을 가능성. 회귀인지 의도된 단순화인지 별도 확인이 필요해 백그라운드 조사 작업으로 분리했다(현재 세션 범위 밖 — 스토어 심사에 블로커는 아니라고 판단, 03_eval_coaching 스크린샷은 이 실제 동작을 그대로 반영해 재캡처함).
 
 ### 참고 — 이번 방향(초도 발행 먼저, 고도화는 이후)에 대한 의견
 핵심 엔지니어링(기능, 수익화 인프라, 아키텍처 리팩토링, 테스트)은 이미 상당히 성숙한 상태고, 남은 건 대부분 **코드가 아니라 자산/문서/콘솔 설정**이다 — 방향 자체가 타당하다. 다만 Google Play가 신규 개인 개발자 계정에 요구하는 **비공개 테스트(20명, 14일) 선행 조건**이 이 계정에 해당하는지는 Play Console에서 직접 확인이 필요하다 — 해당된다면 "정식 공개" 시점이 코드/자산 준비와 무관하게 그만큼 뒤로 밀린다.
+
+### 260817 오후 갱신 — 이번 세션에서 실제로 처리한 것
+사용자가 제안한 순서(①런처 아이콘+스토어 아이콘/피처그래픽 ②개인정보처리방침 노출 ③요금 안내 문단+스크린샷) 그대로 진행:
+1. 런처 아이콘 배선 + adaptive icon(foreground/background/monochrome) 생성, 에뮬레이터 실기 검증.
+2. 스토어 고해상도 아이콘/피처 그래픽은 이미 존재했음을 재확인, `design-handoff/`로 정본 커밋.
+3. 개인정보처리방침 URL 실제 접속 확인 후 설정 화면에 링크 추가(4개 언어), 에뮬레이터에서 탭→브라우저 오픈까지 검증.
+4. `store_listing.txt` 요금 안내 문단 정정(순수 1시간 타이머 + 무르기 클레임 프로모션 반영).
+5. 스크린샷 4장 재캡처 필요 여부를 실기로 직접 비교해 판단(필요했음을 확인) 후 재캡처, `design-handoff/export/2026-08-17-v0.1.11/`로 신규 폴더 커밋.
+6. 부수적으로 발견한 이슈(형세 보기 오버레이 미표시)는 범위 밖으로 판단해 별도 백그라운드 조사로 분리.
+
+남은 건 전부 Play Console 콘솔 작업(개인정보처리방침 필드 등록, IARC 설문, 데이터 보안 양식)과 기획 디자이너 회신 대기 여부 결정뿐 — 코드/자산 쪽에서 이 세션 범위 안의 갭은 소진됨.
 
 ---
 

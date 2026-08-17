@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- GoStoneLogoBadge(GoCoachHomeScreen.kt)의 배지 배경색과 동일 — 런처 아이콘을
+         홈 화면 로고와 시각적으로 일치시킨다. -->
+    <color name="ic_launcher_background">#F5F0E6</color>
+</resources>

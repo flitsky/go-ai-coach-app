@@ -157,6 +157,7 @@ internal val UiStringsKorean = UiStrings(
     settingsDevGameSetupUxToggleSubtitle = "켜면 계가·덤·바둑판·접바둑을 2x2 드롭다운으로 압축해 스크롤 없이 보여줍니다.",
     settingsVersionLabel = "버전",
     settingsBuildTimeLabel = "빌드",
+    settingsPrivacyPolicyLabel = "개인정보처리방침",
     premiumModeTitle = "프리미엄 모드 활성화하기",
     premiumModeFeatureList = "형세보기·추천수",
     premiumPurchaseFailedMessage = "구매가 완료되지 않아 프리미엄이 활성화되지 않았습니다. 일반 모드로 계속합니다.",

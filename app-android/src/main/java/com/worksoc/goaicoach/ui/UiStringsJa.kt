@@ -155,6 +155,7 @@ internal val UiStringsJapanese = UiStringsKorean.copy(
     settingsDevGameSetupUxToggleSubtitle = "オンにすると計算方式・コミ・盤面サイズ・置石を2x2のドロップダウンにまとめ、スクロール不要にします。",
     settingsVersionLabel = "バージョン",
     settingsBuildTimeLabel = "ビルド",
+    settingsPrivacyPolicyLabel = "プライバシーポリシー",
     premiumModeTitle = "プレミアムモードを有効化",
     premiumModeFeatureList = "形勢判断・推奨手",
     premiumPurchaseFailedMessage = "購入が完了しなかったため、プレミアムは有効化されませんでした。通常モードのまま続行します。",

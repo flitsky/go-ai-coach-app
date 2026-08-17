@@ -156,6 +156,7 @@ internal val UiStringsEnglish = UiStringsKorean.copy(
     settingsDevGameSetupUxToggleSubtitle = "When on, scoring/komi/board size/handicap collapse into a 2x2 dropdown grid with no scrolling.",
     settingsVersionLabel = "Version",
     settingsBuildTimeLabel = "Build",
+    settingsPrivacyPolicyLabel = "Privacy Policy",
     premiumModeTitle = "Activate Premium Mode",
     premiumModeFeatureList = "Eval · Top Moves",
     premiumPurchaseFailedMessage = "The purchase wasn't completed, so premium wasn't activated. Continuing in normal mode.",

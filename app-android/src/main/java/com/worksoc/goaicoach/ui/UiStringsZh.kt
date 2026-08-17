@@ -154,6 +154,7 @@ internal val UiStringsChineseSimplified = UiStringsKorean.copy(
     settingsDevGameSetupUxToggleSubtitle = "开启后将数目规则・贴目・棋盘尺寸・让子压缩为 2x2 下拉网格，无需滚动。",
     settingsVersionLabel = "版本",
     settingsBuildTimeLabel = "构建",
+    settingsPrivacyPolicyLabel = "隐私政策",
     premiumModeTitle = "激活高级模式",
     premiumModeFeatureList = "形势判断・推荐着法",
     premiumPurchaseFailedMessage = "购买未完成，高级模式未激活。将继续使用普通模式。",

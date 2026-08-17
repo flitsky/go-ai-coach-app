@@ -1,7 +1,10 @@
 package com.worksoc.goaicoach.ui
 
+import android.content.Intent
+import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -38,6 +41,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException
@@ -51,6 +55,11 @@ import com.worksoc.goaicoach.persistence.UserPreferencesStore
 import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.presentation.GameUiEvent
 import kotlinx.coroutines.launch
+
+// AdMob·Play Billing 등 Play Console 필수 제출 항목(개인정보처리방침 URL)과 동일한 문서를
+// 가리킨다 — Play Console "앱 콘텐츠" 폼에도 이 URL을 별도로 등록해야 한다(코드 배선과
+// 무관한 콘솔 설정, launch-plan/README.md 참고).
+private const val PRIVACY_POLICY_URL = "https://rezen.dev/go-ai-coach/privacy/"
 
 /**
  * 홈 화면 상단의 설정 진입점에서 열리는 화면. 게스트(로컬 기기 ID)/Google/이메일 로그인
@@ -403,6 +412,16 @@ internal fun SettingsScreen(
                             "${strings.settingsBuildTimeLabel} ${BuildConfig.BUILD_TIME}",
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = strings.settingsPrivacyPolicyLabel,
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.primary,
+                        textDecoration = TextDecoration.Underline,
+                        modifier = Modifier.clickable {
+                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(PRIVACY_POLICY_URL)))
+                        },
                     )
                 }
             }
