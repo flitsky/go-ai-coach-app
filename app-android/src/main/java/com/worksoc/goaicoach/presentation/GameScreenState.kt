@@ -92,6 +92,7 @@ internal data class GameScreenStateInput(
     val handicapCount: Int = 0,
     val isEngineBlockingBusy: Boolean = false,
     val engineActivityIndicator: EngineActivityIndicator? = null,
+    val engineTurnWaitCompletionSeq: Int = 0,
 )
 
 internal fun buildGameScreenStateInput(
@@ -103,6 +104,7 @@ internal fun buildGameScreenStateInput(
     isEngineBusy: Boolean,
     isEngineBlockingBusy: Boolean,
     engineActivityIndicator: EngineActivityIndicator? = null,
+    engineTurnWaitCompletionSeq: Int = 0,
     analysisCacheStats: String,
     isScoreGraphExpanded: Boolean,
     turnTimeText: String,
@@ -153,6 +155,7 @@ internal fun buildGameScreenStateInput(
         handicapCount = controller.settings.handicapCount,
         isEngineBlockingBusy = isEngineBlockingBusy,
         engineActivityIndicator = engineActivityIndicator,
+        engineTurnWaitCompletionSeq = engineTurnWaitCompletionSeq,
     )
 
 internal fun buildGameScreenState(input: GameScreenStateInput): GameScreenState {
@@ -185,6 +188,7 @@ internal fun buildGameScreenState(input: GameScreenStateInput): GameScreenState 
             isBusy = input.isEngineBusy,
             isBlockingBusy = input.isEngineBlockingBusy,
             activityIndicator = input.engineActivityIndicator,
+            engineTurnWaitCompletionSeq = input.engineTurnWaitCompletionSeq,
             message = input.engineMessage,
         ),
         analysis = AnalysisUiState(
@@ -229,6 +233,7 @@ internal data class EngineUiState(
     val isBusy: Boolean,
     val isBlockingBusy: Boolean,
     val activityIndicator: EngineActivityIndicator?,
+    val engineTurnWaitCompletionSeq: Int,
     val message: String,
 )
 

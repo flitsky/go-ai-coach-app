@@ -16,11 +16,26 @@ import com.worksoc.goaicoach.shared.SearchTimeLimit
  */
 
 /**
+ * 양패스(또는 보드 가득 참) 이후 계가(종국 처리) 엔진 호출의 와치독 한도. 사망돌 판정 +
+ * 최종 점수 계산을 순차로 수행하는데, 각 단계의 KataGo 탐색 시간 상한(합계는
+ * [com.worksoc.goaicoach.application.engine.AssistantJudgeEndgameTotalTimeCapMillis] = 3초)은
+ * KataGo 자체 탐색에만 적용되는 값이라 IPC/파싱 등 부가 지연을 포함한 실제 소요 시간은 이보다
+ * 훨씬 길어질 수 있다(실측 사례: 상한 합계 3초인데 실제 8.7초 소요). 일반 착수 시간 제한
+ * 기준(예: 4.2초)을 그대로 쓰면 정상적인 계가 처리 도중에도 오탐 팝업이 뜬다.
+ */
+const val EngineEndgameWatchdogTimeoutMillis: Long = 20_000L
+
+/**
  * 대국 설정의 AI 최대 응답 시간에 맞춰 와치독 한도를 계산한다.
+ * - [isResolvingEndgame]이면(양패스 이후 계가 처리 중) [EngineEndgameWatchdogTimeoutMillis] 고정.
  * - 응답 시간 제한이 설정돼 있으면 그 값의 1.2배 + 3초.
  * - 응답 시간 제한이 꺼져 있으면(무제한 탐색) 고정 60초.
  */
-fun engineTurnWatchdogTimeoutMillisFor(searchTimeLimit: SearchTimeLimit): Long {
+fun engineTurnWatchdogTimeoutMillisFor(
+    searchTimeLimit: SearchTimeLimit,
+    isResolvingEndgame: Boolean = false,
+): Long {
+    if (isResolvingEndgame) return EngineEndgameWatchdogTimeoutMillis
     val configuredMillis = searchTimeLimit.maximumMillis
     return if (configuredMillis != null) {
         (configuredMillis * 1.2).toLong() + 3_000L
@@ -34,5 +49,7 @@ fun isEngineTurnWatchdogTriggered(
     isAiTurn: Boolean,
     elapsedSinceTurnStartMillis: Long,
     searchTimeLimit: SearchTimeLimit,
+    isResolvingEndgame: Boolean = false,
 ): Boolean =
-    isAiTurn && elapsedSinceTurnStartMillis >= engineTurnWatchdogTimeoutMillisFor(searchTimeLimit)
+    isAiTurn &&
+        elapsedSinceTurnStartMillis >= engineTurnWatchdogTimeoutMillisFor(searchTimeLimit, isResolvingEndgame)

@@ -33,7 +33,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import android.widget.Toast
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -58,6 +60,7 @@ import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.StoneColor
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 
 private const val TurnTimerTickIntervalMillis = 200L
 
@@ -141,9 +144,14 @@ internal fun GamePlaySection(
                     StoneColor.White -> screenState.playerSetup.white.controller == SeatController.Ai
                 }
                 val searchTimeLimit = screenState.searchTimeSettings.limit
-                if (isEngineTurnWatchdogTriggered(isAiTurn, elapsedSinceTurnStartMillis, searchTimeLimit)) {
+                // 양패스(또는 보드 가득 참) 이후에는 일반 착수가 아니라 계가(종국 처리) 엔진
+                // 호출이 진행 중이다 — 정상적으로도 수 초 더 걸릴 수 있으므로 착수 시간 제한이
+                // 아닌 별도의 계가 전용 한도를 적용해야 오탐 팝업을 피할 수 있다.
+                val isResolvingEndgame = screenState.gameState.hasConsecutivePasses() ||
+                    screenState.gameState.isBoardFull()
+                if (isEngineTurnWatchdogTriggered(isAiTurn, elapsedSinceTurnStartMillis, searchTimeLimit, isResolvingEndgame)) {
                     watchdogReported = true
-                    val thresholdMillis = engineTurnWatchdogTimeoutMillisFor(searchTimeLimit)
+                    val thresholdMillis = engineTurnWatchdogTimeoutMillisFor(searchTimeLimit, isResolvingEndgame)
                     onEvent(
                         GameUiEvent.ReportEngineTurnWatchdogTriggered(
                             elapsedMillis = elapsedSinceTurnStartMillis,
@@ -161,11 +169,46 @@ internal fun GamePlaySection(
         }
     }
 
+    // 팝업이 떠 있는 도중 이번 차례 대기(AI 착수 AutoAiTurn, 사람 착수 후 동기화 HumanMoveSync —
+    // 양패스로 계가에 들어가는 경우 포함, AI 쪽 종국 처리 AutoAiEndgame)가 성공/실패/폐기(discard)
+    // 중 무엇으로 끝나든, currentTurnStartedAtMillis 갱신(성공 시에만 발생)을 기다리지 않고 즉시
+    // 팝업을 닫는다. 이 신호가 없으면 실패 후 조용히 재시도되는 경우, 혹은 계가 처리가 다른
+    // 종류의 작업(HumanMoveSync)으로 끝났는데 AutoAiTurn 완료만 감시하는 경우 팝업이 닫히지
+    // 않고 hang 상태로(계가 결과 팝업 아래에) 남는다.
+    //
+    // activityIndicator 자체(Thinking 여부)를 직접 비교하는 방식은 실기기 재현에서 실패했다 —
+    // 실패 직후 재시도가 같은 리컴포지션 배치 안에서 바로 다음 시도를 시작하면 값 전이가
+    // Compose 리컴포지션에 의해 뭉개져서(coalesced) LaunchedEffect(key) 쪽에서 "값이 바뀌었다"는
+    // 이벤트 자체를 못 받는다. 대신 완료 횟수를 세는 단조증가 카운터(engineTurnWaitCompletionSeq)를
+    // 도입해, "팝업이 뜬 시점의 카운터 값과 달라지는 순간"을 snapshotFlow로 기다린다 — 카운터는
+    // 절대 이전 값으로 되돌아가지 않으므로 중간값이 뭉개져도 최종적으로 값이 다르다는 사실
+    // 자체는 유실되지 않는다.
+    val liveEngineTurnWaitCompletionSeq = rememberUpdatedState(screenState.engine.engineTurnWaitCompletionSeq)
+    LaunchedEffect(showEngineStuckDialog) {
+        if (showEngineStuckDialog) {
+            val openedAtSeq = liveEngineTurnWaitCompletionSeq.value
+            snapshotFlow { liveEngineTurnWaitCompletionSeq.value }
+                .first { it != openedAtSeq }
+            showEngineStuckDialog = false
+        }
+    }
+
     if (showEngineStuckDialog) {
         val strings = LocalUiStrings.current
         AlertDialog(
             onDismissRequest = { showEngineStuckDialog = false },
-            title = { Text(strings.engineStuckDialogTitle) },
+            title = {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(strings.engineStuckDialogTitle)
+                    TextButton(onClick = { onEvent(GameUiEvent.CopyDebugReport) }) {
+                        Text(strings.copyLog, style = MaterialTheme.typography.labelSmall)
+                    }
+                }
+            },
             text = {
                 Column {
                     Text(strings.engineStuckDialogMessage)

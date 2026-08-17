@@ -75,6 +75,32 @@ class EngineOperationLifecycleTest {
     }
 
     @Test
+    fun engineTurnWaitCompletionSeqIncrementsForTurnWaitKindsOnly() {
+        fun completionSeqAfter(kind: EngineOperationKind): Int {
+            val operationId = "${kind.code}:g1"
+            val started = applyEngineOperationLifecycleTransition(
+                state = EngineOperationLifecycleState(),
+                transition = EngineOperationLifecycleTransition.Started(createRequest(operationId, kind)),
+            )
+            return applyEngineOperationLifecycleTransition(
+                state = started,
+                transition = EngineOperationLifecycleTransition.Completed(operationId),
+            ).engineTurnWaitCompletionSeq
+        }
+
+        // 엔진 응답 지연 팝업이 "이번 차례 대기 종료"로 취급해야 하는 작업들 — 양패스로 계가에
+        // 들어가는 경우도 HumanMoveSync로 처리되므로 반드시 포함되어야 한다.
+        assertEquals(1, completionSeqAfter(EngineOperationKind.AutoAiTurn))
+        assertEquals(1, completionSeqAfter(EngineOperationKind.HumanMoveSync))
+        assertEquals(1, completionSeqAfter(EngineOperationKind.AutoAiEndgame))
+
+        // 무관한 백그라운드 작업 완료로는 팝업을 오탐 종료시키면 안 된다.
+        assertEquals(0, completionSeqAfter(EngineOperationKind.TopMoves))
+        assertEquals(0, completionSeqAfter(EngineOperationKind.ScoreEstimate))
+        assertEquals(0, completionSeqAfter(EngineOperationKind.PositionCacheOptimization))
+    }
+
+    @Test
     fun activityIndicatorDistinguishesPreparingRecommendingThinkingAndOptimizing() {
         fun indicatorFor(kind: EngineOperationKind) =
             EngineOperationLifecycleState(

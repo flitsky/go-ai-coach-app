@@ -269,6 +269,7 @@ private fun GoCoachScreen(
     var isEngineBusy by remember { mutableStateOf(false) }
     var isEngineBlockingBusy by remember { mutableStateOf(false) }
     var engineActivityIndicator by remember { mutableStateOf<EngineActivityIndicator?>(EngineActivityIndicator.Preparing) }
+    var engineTurnWaitCompletionSeq by remember { mutableStateOf(0) }
     var isEngineReady by remember { mutableStateOf(false) }
     val analysisCache = remember { AnalysisResultCache(maxEntries = 96) }
     val undoAnalysisRestoreCache = remember { UndoAnalysisRestoreCache(maxEntries = 96) }
@@ -314,10 +315,11 @@ private fun GoCoachScreen(
             currentRuntimeLogContext = { currentRuntimeLogContext() },
             currentState = { gameState },
             currentSessionGeneration = { runtimeState.sessionGeneration },
-            onBusyChanged = { busy, blocking, activityIndicator ->
+            onBusyChanged = { busy, blocking, activityIndicator, completionSeq ->
                 isEngineBusy = busy
                 isEngineBlockingBusy = blocking
                 engineActivityIndicator = activityIndicator
+                engineTurnWaitCompletionSeq = completionSeq
             },
         )
     }
@@ -625,6 +627,7 @@ private fun GoCoachScreen(
                 isBusy = isEngineBusy,
                 isBlockingBusy = isEngineBlockingBusy,
                 activityIndicator = engineActivityIndicator,
+                engineTurnWaitCompletionSeq = engineTurnWaitCompletionSeq,
                 hasCompletedStartup = hasCompletedEngineStartup,
             ),
             displayRuntime = GoCoachScreenStateAssembler.DisplayRuntime(

@@ -34,7 +34,7 @@ class EngineOperationLifecycleController(
     private val currentRuntimeLogContext: () -> RuntimeLogContext,
     private val currentState: () -> GameState,
     private val currentSessionGeneration: () -> Long,
-    private val onBusyChanged: (Boolean, Boolean, EngineActivityIndicator?) -> Unit,
+    private val onBusyChanged: (Boolean, Boolean, EngineActivityIndicator?, Int) -> Unit,
 ) {
     private var lifecycleState = EngineOperationLifecycleState()
     private val activeJobs = mutableMapOf<String, Job>()
@@ -98,6 +98,7 @@ class EngineOperationLifecycleController(
             lifecycleState.isEngineBusy(generation),
             lifecycleState.isBlockingBusy(generation),
             lifecycleState.activityIndicator(generation),
+            lifecycleState.engineTurnWaitCompletionSeq,
         )
     }
 

@@ -18,6 +18,7 @@ internal object GoCoachScreenStateAssembler {
         val isBusy: Boolean,
         val isBlockingBusy: Boolean,
         val activityIndicator: EngineActivityIndicator? = null,
+        val engineTurnWaitCompletionSeq: Int = 0,
         val hasCompletedStartup: Boolean,
     )
 
@@ -38,6 +39,7 @@ internal object GoCoachScreenStateAssembler {
                 isEngineBusy = input.engineRuntime.isBusy,
                 isEngineBlockingBusy = input.engineRuntime.isBlockingBusy,
                 engineActivityIndicator = input.engineRuntime.activityIndicator,
+                engineTurnWaitCompletionSeq = input.engineRuntime.engineTurnWaitCompletionSeq,
                 analysisCacheStats = input.displayRuntime.analysisCacheStats,
                 isScoreGraphExpanded = input.displayRuntime.isScoreGraphExpanded,
                 turnTimeText = input.displayRuntime.turnTimeText,
