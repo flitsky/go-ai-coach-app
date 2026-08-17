@@ -39,8 +39,6 @@ internal fun GoCoachContent(
     benchmarkResult: EngineBenchmarkProfile?,
     onBenchmarkResultConfirmed: () -> Unit,
     onBenchmarkRerun: () -> Unit,
-    isDisplayMenuExpanded: Boolean,
-    onDisplayMenuExpandedChange: (Boolean) -> Unit,
     onScoreGraphExpandedChange: (Boolean) -> Unit,
     onFinalJudgementReview: () -> Unit,
     selectedLanguage: UiLanguage,
@@ -54,10 +52,11 @@ internal fun GoCoachContent(
     } else {
         null
     }
+    var isDisplayMenuExpanded by remember { mutableStateOf(false) }
     val onMenuEvent: (GameUiEvent) -> Unit = { event ->
         onEvent(event)
         if (shouldCollapseMenuAfterEvent(event)) {
-            onDisplayMenuExpandedChange(false)
+            isDisplayMenuExpanded = false
         }
     }
     var dismissedFinalJudgementKey by remember { mutableStateOf<String?>(null) }
@@ -125,12 +124,12 @@ internal fun GoCoachContent(
         GameHeaderSection(
             screenState = screenState,
             isDisplayMenuExpanded = isDisplayMenuExpanded,
-            onDisplayMenuExpandedChange = onDisplayMenuExpandedChange,
+            onDisplayMenuExpandedChange = { expanded -> isDisplayMenuExpanded = expanded },
         )
 
         if (isDisplayMenuExpanded) {
             AlertDialog(
-                onDismissRequest = { onDisplayMenuExpandedChange(false) },
+                onDismissRequest = { isDisplayMenuExpanded = false },
                 properties = DialogProperties(usePlatformDefaultWidth = false),
                 modifier = Modifier.fillMaxWidth(0.9f),
                 title = {
@@ -156,7 +155,7 @@ internal fun GoCoachContent(
                     }
                 },
                 confirmButton = {
-                    TextButton(onClick = { onDisplayMenuExpandedChange(false) }) {
+                    TextButton(onClick = { isDisplayMenuExpanded = false }) {
                         Text(strings.close)
                     }
                 }

@@ -1321,8 +1321,16 @@ class LayeringContractTest {
         // transitions (setPurchased/purchasePremium/activateAdGrant), which would
         // otherwise silently clear it. Reuses the existing premiumState state hook
         // (no new remember/mutableStateOf/LaunchedEffect) — stateHookBudget stays 47.
-        val lineBudget = 819
-        val stateHookBudget = 47
+        //
+        // History (2026-08-17): dropped 819->816, stateHookBudget 47->46. Un-hoisted
+        // isDisplayMenuExpanded from this file into GoCoachContent.kt (it was only
+        // ever read/written by GoCoachContent's own subtree). User explicitly
+        // accepted the one behavior change this causes: the display-options menu's
+        // open/closed state now resets when leaving and returning to the InGame
+        // destination, instead of surviving the round trip (backlog item 3's own
+        // "착수 전 사용자 결정 필요" gate).
+        val lineBudget = 816
+        val stateHookBudget = 46
 
         val goCoachApp = repoRoot()
             .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")

@@ -273,7 +273,6 @@ private fun GoCoachScreen(
     val analysisCache = remember { AnalysisResultCache(maxEntries = 96) }
     val undoAnalysisRestoreCache = remember { UndoAnalysisRestoreCache(maxEntries = 96) }
     var uxOptions by remember { mutableStateOf(initialPreferences.toKaTrainUxOptions()) }
-    var isDisplayMenuExpanded by remember { mutableStateOf(false) }
     var isScoreGraphExpanded by remember { mutableStateOf(false) }
     var hasCompletedEngineStartup by remember { mutableStateOf(false) }
 
@@ -795,8 +794,6 @@ private fun GoCoachScreen(
                 benchmarkResult = benchmarkUiState.resultToConfirm,
                 onBenchmarkResultConfirmed = { benchmarkUiState = benchmarkUiState.clearConfirmedResult() },
                 onBenchmarkRerun = controllers.benchmarkController::rerun,
-                isDisplayMenuExpanded = isDisplayMenuExpanded,
-                onDisplayMenuExpandedChange = { expanded -> isDisplayMenuExpanded = expanded },
                 onScoreGraphExpandedChange = { expanded -> isScoreGraphExpanded = expanded },
                 onFinalJudgementReview = ::activateEndgameJudgementReview,
                 selectedLanguage = selectedLanguage,
