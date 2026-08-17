@@ -42,13 +42,15 @@
 
 </details>
 
-### 2. androidTest 커버리지 확장 — **중간**
+### 2. androidTest 커버리지 확장 — **중간, saved-session-prompt는 완료 (2026-08-17)**
 
-**왜**: M-04 목표(app-launch/saved-session-prompt/new-game/event-dispatch/board-tap) 중 app-launch·new-game·board-tap은 끝났다(`AppLaunchSmokeTest.kt`, `NewGameBoardTapSmokeTest.kt`, 둘 다 2026-08-16 기준 정상). saved-session-prompt(저장된 대국 이어하기 팝업 흐름)와 더 넓은 이벤트 디스패치 커버리지가 아직 없다.
+**완료 기록 (saved-session-prompt)**: `app-android/src/androidTest/java/com/worksoc/goaicoach/smoke/SavedSessionPromptSmokeTest.kt` 신설. `@Before`에서 `shared_prefs/` 초기화 후 `GameSessionStore(context).save(snapshot)`로 이동 1수짜리(양쪽 다 Human — AI 시트가 있으면 엔진 미준비 상태에서 auto-AI-turn이 걸릴 위험이 있어 회피) `SavedGameSnapshot`을 실제 저장소에 미리 심어둔다. 검증: Home에서 깜빡이는 "▶ 이전 대국 이어하기" 필 노출 → 탭하면 `ResumeSavedSessionDialog`("이전 대국 이어하기" 타이틀) 노출 → "예" 탭 → 보드 화면 전환 + 이동수 표시가 정확히 "1"(새 대국이 아니라 저장된 스냅샷이 실제로 복원됐음을 증명 — 탭 없이 곧바로 1수). 새로 발견한 것: `NewGameBoardTapSmokeTest.kt`가 이미 파일-private `FakeUnavailableEngineSessionClient`를 갖고 있는데, Kotlin 최상위 `private class`는 파일 스코프가 아니라 **같은 패키지 안에서 이름이 충돌**한다(가시성만 제한할 뿐 이름공간은 공유) — 새 테스트의 페이크는 `FakeNeverReadyEngineSessionClient`로 다른 이름을 써야 했다. 에뮬레이터(`emulator-5554`)에서 3회 연속 통과(1.4s/1.4s/1.2s), 무한 반복 깜빡임 애니메이션(`rememberInfiniteTransition`)이 Compose 테스트 idle-sync를 막을까 우려했으나 실측 결과 문제 없었다. `make test`에는 여전히 안 묶음(M-04 의도적 제약, 유지).
 
-**진행 방법**: `NewGameBoardTapSmokeTest.kt`를 템플릿으로 삼는다 — `FakeUnavailableEngineSessionClient` 패턴, `@Before`에서 `shared_prefs/` 초기화, `ui/TestTags.kt`에 필요한 태그 추가. 이번엔 저장된 게임이 있는 상태(SharedPreferences에 `SavedGameSnapshot` 미리 심어두기)에서 시작해 "이어하기?" 다이얼로그가 뜨는지, 선택에 따라 올바른 화면으로 가는지 검증.
+**왜(남은 범위)**: M-04 목표(app-launch/saved-session-prompt/new-game/event-dispatch/board-tap) 중 app-launch·new-game·board-tap·saved-session-prompt 4개는 끝났다. 더 넓은 이벤트 디스패치 커버리지만 아직 없다.
 
-**완료 기준**: 새 스모크 테스트가 에뮬레이터에서 3회 연속 통과(이 세션의 검증 관례). `make test`에는 여전히 안 묶는다(M-04 의도적 제약, 유지).
+**진행 방법(남은 범위)**: 위 세 스모크 테스트를 템플릿으로 삼아 이어서 진행 — 어떤 이벤트들을 "더 넓은 디스패치"로 볼지(예: undo, 새 대국 설정 변경, 프리미엄 다이얼로그 등) 범위부터 사용자와 정하고 시작할 것.
+
+**완료 기준(남은 범위)**: 새 스모크 테스트가 에뮬레이터에서 3회 연속 통과(이 세션의 검증 관례). `make test`에는 여전히 안 묶는다(M-04 의도적 제약, 유지).
 
 ### 3. `GoCoachApp.kt` 상태훅 예산 여유 확보 — **낮음** (단, 착수 전 사용자 결정 필요)
 

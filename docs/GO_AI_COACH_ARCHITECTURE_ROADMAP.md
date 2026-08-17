@@ -103,7 +103,7 @@
 - 6계층(세션/연속성)이 auth/premium 각자의 필요만 채우고 있고, 범용 개념이 없다.
 - ~~기능 엔타이틀먼트 판정이 6계층이 아니라 7계층에 있다~~ — 260814에 해소. "이 유저가 무르기를 쓸 수 있는가" 같은 OR 조합이 `ui/GamePlaySection.kt`의 `undoClaimGated`/`premiumGated`(형세보기·추천수용) 두 로컬 함수와 `ui/KaTrainUxPanels.kt`의 독립 인라인 체크(착수평가)까지 총 3곳에 각각 하드코딩돼 있던 것을, `application/premium/FeatureAccessPolicy.kt`(위 6계층 절) 하나로 통합했다 — 세 곳 모두 이제 `featureGated(access, action)`/`moveReviewAllowed` 형태로 판정 결과만 소비한다.
 - `LayeringContractTest.kt`는 아직 2026-06-27판 경계(옛 1~7계층 이름) 기준으로 작성돼 있다. 이번 재정의(2/3계층 재편, 4/6계층 신설, 5/7 번호 이동)를 반영하지 않았다.
-- androidTest(Robolectric/계측) 커버리지가 기본 검증 경로에 없다(`make test`에 안 묶여 있음 — 의도적, M-04 제약). 컴파일+JVM 단위 테스트가 기본 검증이다. **260816**: `AppLaunchSmokeTest.kt`(실제 `MainActivity`→`createEngineBootstrap`→`GoCoachApp` 경로)가 `@Ignore` 스켈레톤에서 활성 테스트로 전환됐다 — M-04 target list 중 "app-launch" 경로 완료. saved-session prompt·더 넓은 이벤트 디스패치 커버리지는 여전히 열려 있다.
+- androidTest(Robolectric/계측) 커버리지가 기본 검증 경로에 없다(`make test`에 안 묶여 있음 — 의도적, M-04 제약). 컴파일+JVM 단위 테스트가 기본 검증이다. **260816**: `AppLaunchSmokeTest.kt`(실제 `MainActivity`→`createEngineBootstrap`→`GoCoachApp` 경로)가 `@Ignore` 스켈레톤에서 활성 테스트로 전환됐다 — M-04 target list 중 "app-launch" 경로 완료. **260817**: `SavedSessionPromptSmokeTest.kt` 신설으로 "saved-session-prompt" 경로도 완료(에뮬레이터 3회 연속 통과) — 상세는 `docs/refactoring/REFACTORING_BACKLOG_260816_1744.md` 작업 우선순위 2번. 더 넓은 이벤트 디스패치 커버리지만 여전히 열려 있다.
 
 ## 고도화 로드맵
 
