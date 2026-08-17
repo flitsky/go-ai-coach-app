@@ -33,6 +33,7 @@ internal fun wireNewGameController(
         currentSessionGeneration = { context.runtimeState().sessionGeneration },
         currentScoreState = { context.scoreState() },
         currentRuntimeLogContext = context::currentRuntimeLogContext,
+        cancelStaleOperations = context.lifecycleController::evictAllOperations,
         launchEngineOperation = { operation, block -> context.lifecycleController.launchTracked(operation) { block() } },
         applyGameSessionResetPlan = { reset: GameSessionResetPlan ->
             context.clearUndoEngineInterventionQuietWindow()

@@ -31,6 +31,7 @@ class NewGameController(
     private val currentSessionGeneration: () -> Long,
     private val currentScoreState: () -> GameSessionScoreState,
     private val currentRuntimeLogContext: () -> RuntimeLogContext,
+    private val cancelStaleOperations: () -> Unit,
     private val launchEngineOperation: (EngineOperationRequest, suspend () -> Unit) -> Unit,
     private val applyGameSessionResetPlan: (GameSessionResetPlan) -> Unit,
     private val applyRuntimePlayLevelSelection: (RuntimePlayLevelSelection) -> Unit,
@@ -76,6 +77,10 @@ class NewGameController(
     }
 
     fun startConfiguredGame() {
+        // 직전 대국(예: 방금 기권한 대국)을 정리하던 엔진 작업이 아직 activeOperations에 남아
+        // 있으면, 그게 늦게 끝나는 동안 새 대국의 isEngineBusy가 계속 true로 잡혀 AI 턴 예약이
+        // 조용히 취소되는 경쟁 상태가 생긴다 — 새 대국을 실제로 시작하기 전에 먼저 비운다.
+        cancelStaleOperations()
         val gameState = currentGameState()
         val targetState = GameState.withHandicap(
             boardSize = currentBoardSize(),

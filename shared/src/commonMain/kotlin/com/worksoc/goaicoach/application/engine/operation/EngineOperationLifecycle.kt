@@ -3,20 +3,28 @@ package com.worksoc.goaicoach.application.engine.operation
 internal data class EngineOperationLifecycleState(
     val activeOperations: Map<String, EngineOperationRequest> = emptyMap(),
 ) {
-    val isEngineBusy: Boolean
-        get() = activeOperations.isNotEmpty()
+    // 세 함수 모두 currentSessionGeneration을 받아 그 세대의 작업만 센다 — 예를 들어 기권
+    // 직후 사용자가 곧바로 새 대국을 시작하면, 기권을 엔진에 동기화하던 이전 세대의
+    // human_move_sync가 아직 끝나지 않은 채로 activeOperations에 남아 있을 수 있다.
+    // activeOperations.isNotEmpty()처럼 세대를 무시하고 세면, 그 작업이 뒤늦게 끝날 때까지
+    // 새 대국의 isEngineBusy가 계속 true로 잡혀 AI 턴 예약이 조용히 취소되는 경쟁 상태가
+    // 생긴다(실제 발생 사례로 확인됨).
+    fun isEngineBusy(currentSessionGeneration: Long): Boolean =
+        activeOperations.values.any { it.sessionGeneration == currentSessionGeneration }
 
-    val isBlockingBusy: Boolean
-        get() = activeOperations.values.any { it.kind.isBlocking }
+    fun isBlockingBusy(currentSessionGeneration: Long): Boolean =
+        activeOperations.values.any { it.sessionGeneration == currentSessionGeneration && it.kind.isBlocking }
 
-    val activityIndicator: EngineActivityIndicator?
-        get() = when {
-            activeOperations.values.any { it.kind in PreparingOperationKinds } -> EngineActivityIndicator.Preparing
-            activeOperations.values.any { it.kind == EngineOperationKind.AutoAiTurn } -> EngineActivityIndicator.Thinking
-            activeOperations.values.any { it.kind == EngineOperationKind.TopMoves } -> EngineActivityIndicator.Recommending
-            activeOperations.values.any { it.kind == EngineOperationKind.PositionCacheOptimization } -> EngineActivityIndicator.Optimizing
+    fun activityIndicator(currentSessionGeneration: Long): EngineActivityIndicator? {
+        val current = activeOperations.values.filter { it.sessionGeneration == currentSessionGeneration }
+        return when {
+            current.any { it.kind in PreparingOperationKinds } -> EngineActivityIndicator.Preparing
+            current.any { it.kind == EngineOperationKind.AutoAiTurn } -> EngineActivityIndicator.Thinking
+            current.any { it.kind == EngineOperationKind.TopMoves } -> EngineActivityIndicator.Recommending
+            current.any { it.kind == EngineOperationKind.PositionCacheOptimization } -> EngineActivityIndicator.Optimizing
             else -> null
         }
+    }
 }
 
 /** 표시 문구는 언어별로 다르므로 UI 레이어(`UiStrings`)에서 라벨링한다 — 여기서는 상태값만 든다. */

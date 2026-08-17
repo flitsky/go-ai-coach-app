@@ -313,6 +313,7 @@ private fun GoCoachScreen(
             diagnosticEventLog = diagnosticEventLog,
             currentRuntimeLogContext = { currentRuntimeLogContext() },
             currentState = { gameState },
+            currentSessionGeneration = { runtimeState.sessionGeneration },
             onBusyChanged = { busy, blocking, activityIndicator ->
                 isEngineBusy = busy
                 isEngineBlockingBusy = blocking

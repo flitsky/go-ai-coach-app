@@ -34,7 +34,7 @@ class EngineOperationLifecycleTest {
         )
 
         assertTrue(
-            next.isEngineBusy,
+            next.isEngineBusy(1L),
         )
         assertTrue("top_moves:g1" in next.activeOperations.keys)
     }
@@ -52,7 +52,7 @@ class EngineOperationLifecycleTest {
             transition = EngineOperationLifecycleTransition.Completed("top_moves:g1"),
         )
 
-        assertTrue(next.isEngineBusy)
+        assertTrue(next.isEngineBusy(1L))
         assertFalse("top_moves:g1" in next.activeOperations.keys)
         assertTrue("score:g1" in next.activeOperations.keys)
     }
@@ -70,7 +70,7 @@ class EngineOperationLifecycleTest {
             transition = EngineOperationLifecycleTransition.Reset,
         )
 
-        assertFalse(next.isEngineBusy)
+        assertFalse(next.isEngineBusy(1L))
         assertTrue(next.activeOperations.isEmpty())
     }
 
@@ -79,11 +79,30 @@ class EngineOperationLifecycleTest {
         fun indicatorFor(kind: EngineOperationKind) =
             EngineOperationLifecycleState(
                 activeOperations = mapOf("${kind.code}:g1" to createRequest("${kind.code}:g1", kind)),
-            ).activityIndicator
+            ).activityIndicator(1L)
 
         assertEquals(EngineActivityIndicator.Preparing, indicatorFor(EngineOperationKind.EngineStartup))
         assertEquals(EngineActivityIndicator.Recommending, indicatorFor(EngineOperationKind.TopMoves))
         assertEquals(EngineActivityIndicator.Thinking, indicatorFor(EngineOperationKind.AutoAiTurn))
         assertEquals(EngineActivityIndicator.Optimizing, indicatorFor(EngineOperationKind.PositionCacheOptimization))
+    }
+
+    @Test
+    fun busyFlagsAndIndicatorIgnoreOperationsFromOtherSessionGenerations() {
+        // 실제 발생 사례 재현: 기권 직후 새 대국을 시작하면 이전 세대(예: 1)의 엔진 작업이
+        // 아직 남아 있을 수 있다. 새 대국(세대 2) 입장에서는 이 작업이 "내 세대"가 아니므로
+        // busy/activityIndicator에 잡히면 안 된다.
+        val staleRequest = createRequest("auto_ai_turn:g1", EngineOperationKind.AutoAiTurn) // sessionGeneration = 1L
+        val state = EngineOperationLifecycleState(
+            activeOperations = mapOf("auto_ai_turn:g1" to staleRequest),
+        )
+
+        assertTrue(state.isEngineBusy(1L))
+        assertTrue(state.isBlockingBusy(1L))
+        assertEquals(EngineActivityIndicator.Thinking, state.activityIndicator(1L))
+
+        assertFalse(state.isEngineBusy(2L))
+        assertFalse(state.isBlockingBusy(2L))
+        assertEquals(null, state.activityIndicator(2L))
     }
 }
