@@ -6,6 +6,35 @@
 
 ---
 
+## 0. 최종 출시 체크리스트 종합 (260817 기준 — 새 스레드는 여기부터 읽을 것)
+
+`docs/refactoring/REFACTORING_BACKLOG_260816_1744.md`(리팩토링/코드부채 전용)와 `docs/refactoring/GAMESESSION_SHARED_MIGRATION_KICKOFF_PLAN_260816_1808.md`(`application/` 트리 → `:shared` 이전)가 이 날짜에 각각 마무리됐다 — 남은 작업은 리팩토링이 아니라 **초도 시장 발행 자체**로 성격이 넘어갔다. 아래는 코드베이스를 실제로 점검(파일 존재 여부, `local.properties` 키 존재 여부, manifest 내용 등)해서 확인한 현재 상태다 — 추정이 아니라 확인된 사실 기준.
+
+### ✅ 완료 (코드 + 실기/콘솔 검증까지 끝남, 재작업 불필요)
+- **AdMob 광고**: 실계정·실광고단위(배너+보상형 전면) 연동 완료. `debug`/`friend`는 빌드타입 자체가 항상 Google 공식 테스트 ID를 강제하고, `release`만 `local.properties`의 실제 값을 쓴다 — **"테스트 광고 → 실제 광고 전환"은 이미 자동화돼 있다**, 별도 전환 작업이 필요 없다(`ui/AdUnitIds.kt`, `premium-mode/README.md` "Step 3 후속"). `local.properties`에 `admob.appId`/`admob.bannerAdUnitId`/`admob.rewardedInterstitialAdUnitId` 3개 키 모두 존재 확인(260817).
+- **Play Billing**: Play Console에 비소모성 상품 `premium_lifetime` 등록·활성화, 라이선스 테스터 등록, 실제 구매 완료 + 재설치 자동 복원 두 플로우 모두 실기(에뮬레이터) e2e 검증 완료(2026-08-09, `premium-mode/README.md` "Step 4 후속"). `local.properties`의 `billing.premiumProductId`도 실제 값으로 채워져 있음(260817 확인).
+- **릴리스 서명 키스토어**: `local.properties`에 `release.storeFile`/`release.keyAlias`/`release.keyPassword`/`release.storePassword` 4개 키 모두 존재 확인(260817) — `app-android/build.gradle.kts`의 `release`/`playInternal` signingConfig가 이미 이걸 참조하도록 배선돼 있다.
+- **릴리스 빌드 파이프라인**: `make play-internal-aab`(Play Console 내부 테스트용)·`make bundle-aab`(정식 프로덕션용, 실제 AdMob/Billing 값 사용)·`make release`(APK) 전부 `bump-version`(version.properties의 VERSION_CODE 자동 증가, 재사용 방지)을 거치도록 완성돼 있다(커밋 `7d233f4`/`46eb5a0`). 260817 기준 `VERSION_CODE=111`/`VERSION_NAME=0.1.11`.
+- **Play Console 내부 테스트 트랙**: AAB 버전 2(0.1.1) 이미 게시됨, 테스터 이메일 등록 완료(2026-08-06 작업, 2026-08-09 재확인).
+- **스토어 등록정보 텍스트 초안**: `design-handoff/export/2026-08-11-v0.1.2/store_listing.txt` — 앱 이름/짧은 설명/자세한 설명/키워드까지 초안 존재. 스크린샷 4장(`screenshots/`)도 Play Console 규격(2:1, 1148x2296)에 맞춰 이미 캡처돼 있음.
+- **앱 핵심 기능/안정성**: 이번 세션에서 `application/` 트리 전체(124개 파일)가 `:shared`로 이전 완료, `make test` 전체 그린, 에뮬레이터 실기 스모크 테스트(app-launch/new-game/board-tap/saved-session-prompt) 4종 모두 통과.
+
+### ❌ 미착수 — 진짜 남은 갭 (260817 신규 확인, 사용자가 언급한 "광고 실연동"보다 이쪽이 실제 병목)
+- **앱 런처 아이콘이 없다**: `AndroidManifest.xml`의 `<application>` 태그에 `android:icon` 속성 자체가 없고, `res/` 아래 `mipmap-*`/`ic_launcher*` 파일이 하나도 없다(260817 직접 확인 — `res/`엔 `drawable`·`values`만 존재). 지금 빌드하면 기본 안드로이드 placeholder 아이콘으로 설치된다 — **Play 스토어 등록의 필수 요건이자, 이 중 가장 눈에 띄는 미완성 항목**.
+- **스토어 등록용 고해상도 아이콘(512×512)·피처 그래픽(1024×500)**: `design-handoff/` 어디에도 없다. 위 런처 아이콘과 같은 소스 디자인에서 같이 만들어야 효율적.
+- **개인정보처리방침(Privacy Policy)**: 저장소 전체를 검색해도 문서/URL이 전혀 없다. AdMob·Firebase(Auth SDK 번들, 플래그로 꺼져 있어도 앱엔 포함됨)·Play Billing을 쓰는 이상 Play Console 필수 제출 항목이다 — 호스팅 위치(GitHub Pages, Firebase Hosting 등)부터 정해야 한다.
+- **콘텐츠 등급 설문(IARC)**, **데이터 보안(Data safety) 양식**: Play Console에서 직접 입력해야 하는 항목이라 코드로 확인 불가 — 미완료로 간주하고 착수 시 처음부터 진행. 다행히 실제 데이터 흐름은 단순한 편이다: Firebase Analytics는 의도적으로 아예 안 넣었고(사용처 없음, `app-android/build.gradle.kts` 주석), Crashlytics도 없다 — AdMob 광고ID·Play Billing 구매정보 정도만 선언하면 될 가능성이 높다(정확한 문구는 Play Console 가이드로 최종 확인 필요).
+- **기획 디자이너 핸드오프 응답 대기 중**: `design-handoff/README.md` — 2026-08-11 발송 후 "아직 디자이너 회신 없음" 상태 그대로. "먼저 출시하고 고도화는 이후"라는 이번 방향과 맞게, 이 회신을 기다릴지 건너뛰고 지금 상태로 출시할지 결정 필요.
+
+### ⚠️ 갱신 필요 (있긴 한데 최신 상태와 어긋남)
+- **스토어 등록정보 텍스트의 "요금 안내" 문단이 stale하다**: `store_listing.txt`가 "해당 대국 한 판(최대 1시간)"이라고 적어뒀는데, 실제 정책은 2026-08-04에 "1판 한정" 자체가 제거되고 **순수 1시간 타이머**로 바뀌었다(그 1시간 안엔 새 대국을 여러 판 시작해도 계속 유효) — `premium-mode/README.md` "결정 번복" 절 참고. 또한 v0.1.2(2026-08-11) 이후 추가된 **무르기 초기 클레임 프로모션**(`launch-plan/README.md` 3장)도 이 텍스트엔 반영 안 돼 있다.
+- **스크린샷도 v0.1.2(2026-08-11) 기준**이라, 그 이후 UI 변경(무르기 클레임 다이얼로그, 프리미엄 카드 골드 테마 등)이 반영 안 됐을 수 있다 — 재출시 전 최신 빌드로 다시 캡처할지 판단 필요.
+
+### 참고 — 이번 방향(초도 발행 먼저, 고도화는 이후)에 대한 의견
+핵심 엔지니어링(기능, 수익화 인프라, 아키텍처 리팩토링, 테스트)은 이미 상당히 성숙한 상태고, 남은 건 대부분 **코드가 아니라 자산/문서/콘솔 설정**이다 — 방향 자체가 타당하다. 다만 Google Play가 신규 개인 개발자 계정에 요구하는 **비공개 테스트(20명, 14일) 선행 조건**이 이 계정에 해당하는지는 Play Console에서 직접 확인이 필요하다 — 해당된다면 "정식 공개" 시점이 코드/자산 준비와 무관하게 그만큼 뒤로 밀린다.
+
+---
+
 ## 1. 초도 발행 기본 원칙
 
 - **로그인 없음** — `FeatureFlags.isLoginEnabled = false` 유지. (`auth-onboarding/README.md`, 2026-08-09 결정 그대로)
