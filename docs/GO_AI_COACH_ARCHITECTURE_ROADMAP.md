@@ -59,7 +59,9 @@
 
 **재편 여부**: 기존 모델에는 이 계층이 없었고 "포트/어댑터 분리 원칙"이라는 (구)4계층 문서의 부칙으로만 존재했다. 이번에 3계층과 대등한 정식 서비스 계층으로 승격했다 — 3계층이 엔진 raw 계약을 서비스로 조합하듯, 이 계층은 외부 SDK의 raw 계약을 서비스로 조합한다(자세한 논거는 ARCHITECTURE.md 4계층 절).
 
-**핵심 갭**: 실제 결제(Play Billing)/실제 로그인(Google/이메일)/광고(AdMob)는 전부 스텁 상태다(`premium-mode/README.md`, `auth-onboarding/README.md` 참고). 포트(α)는 이미 이 계층 원칙대로 배치돼 있으니, 실제 SDK 연동 시 새 파일을 어디 둘지는 이미 정해져 있다. 다만 지금은 "α(포트)"만 있고 "Extended API 본체"(실패/재시도/캐시까지 감안한 안정화 서비스)는 아직 얇다 — `AndroidAuthClient`/`PremiumStateStore`는 SDK 호출을 그대로 감싸는 수준이라, 3계층의 `PositionAnalysisCacheResolver` 같은 신뢰도/재시도 판단이 아직 없다.
+**핵심 갭 (260817 정정 — 아래 원문 "전부 스텁 상태"는 더 이상 사실이 아니다)**: AdMob은 실제 계정·광고 단위(배너+리워드 전면)로 완전히 라이브다(빌드타입별 테스트/실제 광고 전환 포함, `[[premium-admob-status]]`). Play Billing은 코드가 end-to-end로 완성돼 실제 Play Billing 인프라에 연결돼 있으나, Play Console 상품 등록·라이선스 테스터 설정이라는 사용자 쪽 외부 작업에 막혀 있어 실사용 완결 여부는 이 문서 갱신 시점 기준 별도 확인이 필요하다(`[[premium-billing-status]]`). Google/이메일 로그인도 실제 Firebase로 기기 검증까지 끝났지만, `ui/FeatureFlags.kt`의 `isLoginEnabled = false`로 앱의 로그인 진입 경로 자체가 지금은 꺼져 있다(Email Link만 별도로 의도적 보류, `[[auth-google-signin-status]]`). 셋 다 스텁이 아니라 "동작하는 실제 코드는 있지만 각자 다른 이유로 최종 사용자 경로에는 아직 안 열려 있거나(로그인 플래그 OFF, 결제 상품 미등록) 처음부터 열려 있다(AdMob)"가 정확한 현재 상태다.
+
+포트(α)는 이미 이 계층 원칙대로 배치돼 있으니, 새 SDK 연동 시 파일을 어디 둘지는 이미 정해져 있다. **진짜 남은 갭은 원래 문구가 짚은 그대로다** — "Extended API 본체"(실패/재시도/캐시까지 감안한 안정화 서비스)는 아직 얇다: `AndroidAuthClient`/`PremiumStateStore`는 SDK 호출을 그대로 감싸는 수준이라, 3계층의 `PositionAnalysisCacheResolver` 같은 신뢰도/재시도 판단이 없다. 착수 시 유의: 로그인 쪽 하드닝은 `isLoginEnabled`가 켜지기 전까지 실기로 검증할 방법이 없다.
 
 ### 5계층 — Application / Domain
 
