@@ -61,6 +61,8 @@ internal fun GameHeaderSection(
                 } else {
                     MaterialTheme.colorScheme.secondary
                 },
+                // 색만으로 구분하면 색맹 사용자에게 안 보인다 — 굵기도 함께 바꿔 이중으로 신호한다.
+                fontWeight = if (screenState.engine.isBusy) FontWeight.Bold else FontWeight.Normal,
                 maxLines = 2,
                 textAlign = TextAlign.Center
             )

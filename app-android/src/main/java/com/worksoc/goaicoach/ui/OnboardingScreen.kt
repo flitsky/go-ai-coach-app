@@ -73,7 +73,8 @@ internal fun OnboardingScreen(
                     onOnboardingComplete()
                 }
                 .onFailure {
-                    Toast.makeText(context, strings.googleSignInFailedMessage, Toast.LENGTH_SHORT).show()
+                    // 실패 사유는 성공 안내보다 읽고 판단할 시간이 더 필요해 LENGTH_LONG을 쓴다.
+                    Toast.makeText(context, strings.googleSignInFailedMessage, Toast.LENGTH_LONG).show()
                 }
         }
     }
@@ -95,7 +96,7 @@ internal fun OnboardingScreen(
                     } else {
                         strings.emailSignInFailedMessage
                     }
-                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, message, Toast.LENGTH_LONG).show()
                 }
         }
     }
