@@ -155,6 +155,7 @@ internal val UiStringsChineseSimplified = UiStringsKorean.copy(
     settingsVersionLabel = "版本",
     settingsBuildTimeLabel = "构建",
     settingsPrivacyPolicyLabel = "隐私政策",
+    settingsDeveloperModeEnabledMessage = "开发者模式已启用。",
     premiumModeTitle = "激活高级模式",
     premiumModeFeatureList = "形势判断・推荐着法",
     premiumPurchaseFailedMessage = "购买未完成，高级模式未激活。将继续使用普通模式。",

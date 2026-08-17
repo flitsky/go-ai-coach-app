@@ -156,6 +156,7 @@ internal val UiStringsJapanese = UiStringsKorean.copy(
     settingsVersionLabel = "バージョン",
     settingsBuildTimeLabel = "ビルド",
     settingsPrivacyPolicyLabel = "プライバシーポリシー",
+    settingsDeveloperModeEnabledMessage = "開発者モードが有効になりました。",
     premiumModeTitle = "プレミアムモードを有効化",
     premiumModeFeatureList = "形勢判断・推奨手",
     premiumPurchaseFailedMessage = "購入が完了しなかったため、プレミアムは有効化されませんでした。通常モードのまま続行します。",

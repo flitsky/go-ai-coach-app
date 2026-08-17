@@ -199,6 +199,7 @@ internal data class UiStrings(
     val settingsVersionLabel: String,
     val settingsBuildTimeLabel: String,
     val settingsPrivacyPolicyLabel: String,
+    val settingsDeveloperModeEnabledMessage: String,
     val premiumModeTitle: String,
     val premiumModeFeatureList: String,
     val premiumPurchaseFailedMessage: String,
@@ -208,6 +209,14 @@ internal data class UiStrings(
     val enginePreparingTitle: String,
     val enginePreparingSubtitle: String,
 ) {
+    fun settingsDeveloperModeCountdownMessage(remainingTaps: Int): String =
+        when (language) {
+            UiLanguage.Korean -> "${remainingTaps}번 더 누르면 개발자 모드가 활성화됩니다."
+            UiLanguage.English -> "Tap $remainingTaps more time(s) to enable developer mode."
+            UiLanguage.Japanese -> "あと${remainingTaps}回タップすると開発者モードが有効になります。"
+            UiLanguage.ChineseSimplified -> "再点击 $remainingTaps 次即可启用开发者模式。"
+        }
+
     fun cacheOptBody(initialCount: Int, maxCount: Int, moveCount: Int, targetCount: Int): String =
         when (language) {
             UiLanguage.Korean -> "이번 판의 주요 국면을 분석 캐시에 저장해도 될까요?\n다음 플레이에서 같은 흐름이 나오면 더 쾌적하게 응수할 수 있습니다.\n\n우선 초반 ${initialCount}수를 확보하고, 안정화되면 ${maxCount}수까지 확장합니다.\n대상: ${moveCount}수 대국 중 최대 ${targetCount}개 JSON 분석"

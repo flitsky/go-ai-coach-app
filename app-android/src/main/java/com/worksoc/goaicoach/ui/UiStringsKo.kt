@@ -158,6 +158,7 @@ internal val UiStringsKorean = UiStrings(
     settingsVersionLabel = "버전",
     settingsBuildTimeLabel = "빌드",
     settingsPrivacyPolicyLabel = "개인정보처리방침",
+    settingsDeveloperModeEnabledMessage = "개발자 모드가 활성화되었습니다.",
     premiumModeTitle = "프리미엄 모드 활성화하기",
     premiumModeFeatureList = "형세보기·추천수",
     premiumPurchaseFailedMessage = "구매가 완료되지 않아 프리미엄이 활성화되지 않았습니다. 일반 모드로 계속합니다.",

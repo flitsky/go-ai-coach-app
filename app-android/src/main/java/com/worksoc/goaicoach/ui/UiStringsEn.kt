@@ -157,6 +157,7 @@ internal val UiStringsEnglish = UiStringsKorean.copy(
     settingsVersionLabel = "Version",
     settingsBuildTimeLabel = "Build",
     settingsPrivacyPolicyLabel = "Privacy Policy",
+    settingsDeveloperModeEnabledMessage = "Developer mode is now enabled.",
     premiumModeTitle = "Activate Premium Mode",
     premiumModeFeatureList = "Eval · Top Moves",
     premiumPurchaseFailedMessage = "The purchase wasn't completed, so premium wasn't activated. Continuing in normal mode.",

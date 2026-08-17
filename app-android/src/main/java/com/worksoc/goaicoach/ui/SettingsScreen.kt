@@ -51,6 +51,7 @@ import com.worksoc.goaicoach.application.auth.AuthClientPort
 import com.worksoc.goaicoach.application.auth.AuthProvider
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.preferences.GameSetupUxMode
+import com.worksoc.goaicoach.persistence.DeveloperModeStore
 import com.worksoc.goaicoach.persistence.UserPreferencesStore
 import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.presentation.GameUiEvent
@@ -60,6 +61,13 @@ import kotlinx.coroutines.launch
 // 가리킨다 — Play Console "앱 콘텐츠" 폼에도 이 URL을 별도로 등록해야 한다(코드 배선과
 // 무관한 콘솔 설정, launch-plan/README.md 참고).
 private const val PRIVACY_POLICY_URL = "https://rezen.dev/go-ai-coach/privacy/"
+
+// 버전 텍스트를 이만큼 두드리면 개발자 모드가 활성화된다.
+private const val DeveloperModeTapsRequired = 10
+
+// 활성화까지 남은 탭 수가 이 값 이하로 줄어들면 카운트다운 토스트를 보여준다(첫 탭부터
+// 매번 토스트를 띄우면 실수로 두 번 눌렀을 때도 소란스러워 초반 탭은 조용히 넘어간다).
+private const val DeveloperModeTapCountdownThreshold = 5
 
 /**
  * 홈 화면 상단의 설정 진입점에서 열리는 화면. 게스트(로컬 기기 ID)/Google/이메일 로그인
@@ -72,10 +80,10 @@ private const val PRIVACY_POLICY_URL = "https://rezen.dev/go-ai-coach/privacy/"
  * 예를 들어 Google로 로그인한 뒤 실수로 이메일 버튼을 눌러 완전히 다른 계정으로 조용히
  * 전환돼버릴 수 있다(로그아웃 UI가 없는 지금은 되돌릴 방법도 없다).
  *
- * [BuildConfig.DEBUG]일 때만 "개발자 테스트" 섹션을 추가로 노출한다 — 실제 결제 SDK
- * 연동 전까지 프리미엄 구매 상태를 자유롭게 켜고 끄며 QA할 수 있는 자리다. 릴리스
- * 빌드에서 노출되면 사용자가 무료로 프리미엄을 얻을 수 있게 되므로 반드시 이 게이팅을
- * 유지해야 한다.
+ * "개발자 테스트" 섹션은 평소에는 숨겨져 있고, 버전 정보 카드의 버전 텍스트를 10번
+ * 두드려야만(Debug/Release 빌드 공통) 나타난다 — 실제 결제 SDK 연동 전까지 프리미엄
+ * 구매 상태를 자유롭게 켜고 끄며 QA할 수 있는 자리다. 릴리스 빌드에서도 접근 가능해진
+ * 만큼, 우연히 10번 두드릴 가능성은 낮다고 보고 진입 장벽만으로 게이팅한다.
  *
  * 계정 섹션이 [FeatureFlags.isLoginEnabled]로 꺼져 있고 개발자 섹션도 릴리스 빌드에서는
  * 숨겨지는 지금 상태에서, 언어/대국 설정 없이는 이 화면이 완전히 빈 화면으로 보이는
@@ -103,6 +111,9 @@ internal fun SettingsScreen(
     val scope = rememberCoroutineScope()
     val preferencesStore = remember(context) { UserPreferencesStore(context) }
     var gameSetupUxMode by remember { mutableStateOf(preferencesStore.load().gameSetupUxMode) }
+    val developerModeStore = remember(context) { DeveloperModeStore(context) }
+    var isDeveloperModeEnabled by remember { mutableStateOf(developerModeStore.isEnabled()) }
+    var versionTapCount by remember { mutableStateOf(0) }
     var authState by remember { mutableStateOf(authClient.currentAuthState()) }
     var showEmailDialog by remember { mutableStateOf(false) }
     var isEmailSubmitting by remember { mutableStateOf(false) }
@@ -317,9 +328,72 @@ internal fun SettingsScreen(
                 )
             }
 
-            // 실 결제 연동 전까지 QA가 프리미엄 구매 상태를 자유롭게 켜고 끄는 자리 —
-            // 릴리스 빌드 유출 방지를 위해 반드시 BuildConfig.DEBUG로 게이팅한다.
-            if (BuildConfig.DEBUG) {
+            Spacer(modifier = Modifier.height(4.dp))
+            HorizontalDivider()
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Card(
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 16.dp, horizontal = 12.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(
+                        text = strings.appTitle,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "${strings.settingsVersionLabel} ${BuildConfig.VERSION_NAME} · " +
+                            "${strings.settingsBuildTimeLabel} ${BuildConfig.BUILD_TIME}",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        modifier = Modifier.clickable {
+                            if (isDeveloperModeEnabled) return@clickable
+                            versionTapCount++
+                            val remainingTaps = DeveloperModeTapsRequired - versionTapCount
+                            if (remainingTaps <= 0) {
+                                isDeveloperModeEnabled = true
+                                developerModeStore.setEnabled(true)
+                                Toast.makeText(
+                                    context,
+                                    strings.settingsDeveloperModeEnabledMessage,
+                                    Toast.LENGTH_SHORT,
+                                ).show()
+                            } else if (remainingTaps <= DeveloperModeTapCountdownThreshold) {
+                                Toast.makeText(
+                                    context,
+                                    strings.settingsDeveloperModeCountdownMessage(remainingTaps),
+                                    Toast.LENGTH_SHORT,
+                                ).show()
+                            }
+                        },
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = strings.settingsPrivacyPolicyLabel,
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.primary,
+                        textDecoration = TextDecoration.Underline,
+                        modifier = Modifier.clickable {
+                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(PRIVACY_POLICY_URL)))
+                        },
+                    )
+                }
+            }
+
+            // 개발자 모드가 활성화된 경우에만 노출된다 — Debug/Release 빌드 여부와 무관하게,
+            // 위 버전 텍스트를 10번 두드려야만 나타나는 숨김 섹션이다. 릴리스 빌드에서도
+            // 노출 가능해졌으므로(BuildConfig.DEBUG 게이팅 제거) 프리미엄 무료 획득 등
+            // 악용 가능성이 있는 토글을 추가할 때는 이 점을 고려해야 한다.
+            if (isDeveloperModeEnabled) {
                 Spacer(modifier = Modifier.height(12.dp))
                 HorizontalDivider()
                 Spacer(modifier = Modifier.height(4.dp))
@@ -383,47 +457,6 @@ internal fun SettingsScreen(
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
-            }
-
-            Spacer(modifier = Modifier.height(4.dp))
-            HorizontalDivider()
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Card(
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 16.dp, horizontal = 12.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Text(
-                        text = strings.appTitle,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "${strings.settingsVersionLabel} ${BuildConfig.VERSION_NAME} · " +
-                            "${strings.settingsBuildTimeLabel} ${BuildConfig.BUILD_TIME}",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = strings.settingsPrivacyPolicyLabel,
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.primary,
-                        textDecoration = TextDecoration.Underline,
-                        modifier = Modifier.clickable {
-                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(PRIVACY_POLICY_URL)))
-                        },
-                    )
-                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
