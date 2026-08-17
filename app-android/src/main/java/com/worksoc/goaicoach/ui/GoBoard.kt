@@ -65,6 +65,7 @@ import kotlin.math.min
 import kotlin.math.roundToInt
 
 private const val EngineActivityFrameIntervalMillis = 1_000L
+private val ActivityIndicatorDots = listOf("", " .", " ..", " ...")
 
 @Composable
 internal fun GoBoard(
@@ -223,9 +224,12 @@ internal fun GoBoard(
                 }
             }
 
+            val strings = LocalUiStrings.current
+
             if (engineActivityIndicator != null && engineActivityIndicator != EngineActivityIndicator.Preparing) {
+                val label = strings.engineActivityLabel(engineActivityIndicator)
                 Text(
-                    text = engineActivityIndicator.animatedText(activityFrame),
+                    text = label + ActivityIndicatorDots[activityFrame.mod(ActivityIndicatorDots.size)],
                     modifier = Modifier
                         .align(Alignment.TopCenter)
                         .padding(top = 2.dp),
@@ -235,7 +239,6 @@ internal fun GoBoard(
             }
 
             if (engineActivityIndicator == EngineActivityIndicator.Preparing) {
-                val strings = LocalUiStrings.current
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -286,13 +289,13 @@ internal fun GoBoard(
                         )
                         Spacer(modifier = Modifier.height(12.dp))
                         Text(
-                            text = "Preparing scoring...",
+                            text = strings.scoringPreparingTitle,
                             color = Color.White.copy(alpha = textAlpha),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "Thinking...",
+                            text = strings.enginePreparingSubtitle,
                             color = Color.White.copy(alpha = textAlpha * 0.8f),
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.padding(top = 4.dp)

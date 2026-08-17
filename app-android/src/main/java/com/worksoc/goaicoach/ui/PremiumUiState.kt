@@ -1,7 +1,6 @@
 package com.worksoc.goaicoach.ui
 
 import android.content.Context
-import android.widget.Toast
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -24,7 +23,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -109,6 +107,7 @@ internal fun PremiumUpsellDialog(
     onDismiss: () -> Unit,
     isAdGrantInProgress: Boolean = false,
     isPurchaseInProgress: Boolean = false,
+    errorMessage: String? = null,
 ) {
     val strings = LocalUiStrings.current
     val isAnyInProgress = isAdGrantInProgress || isPurchaseInProgress
@@ -134,6 +133,14 @@ internal fun PremiumUpsellDialog(
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(top = 8.dp, bottom = 20.dp),
                 )
+                if (errorMessage != null) {
+                    Text(
+                        text = errorMessage,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(bottom = 12.dp),
+                    )
+                }
                 Button(
                     onClick = onSelectAdGrant,
                     enabled = !isAnyInProgress,
@@ -194,20 +201,24 @@ internal fun PremiumUpsellDialogHost(
 ) {
     if (!visible) return
     val premium = LocalPremiumUiState.current
-    val context = LocalContext.current
     val strings = LocalUiStrings.current
     val scope = rememberCoroutineScope()
     var isAdGrantInProgress by remember { mutableStateOf(false) }
     var isPurchaseInProgress by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
     PremiumUpsellDialog(
         isAdGrantInProgress = isAdGrantInProgress,
         isPurchaseInProgress = isPurchaseInProgress,
+        errorMessage = errorMessage,
         onSelectPurchase = {
             // 탭 즉시 활성화하지 않는다 — 실제 구매 플로우 완료(및 확인/acknowledge) 후에만
             // premium.purchasePremium()이 실제로 상태를 바꾼다(premium-mode/README.md Step 4).
-            // 취소/실패 시에는 일반 모드를 유지한 채 안내만 하고 팝업은 닫지 않아, 바로
-            // 재시도하거나 다른 선택지를 고를 수 있게 한다 — activateAdGrant와 동일한 패턴.
+            // 취소/실패 시에는 일반 모드를 유지한 채 다이얼로그 안에 인라인으로 안내하고
+            // 팝업은 닫지 않아, 바로 재시도하거나 다른 선택지를 고를 수 있게 한다 — 토스트는
+            // 다이얼로그가 떠 있는 동안 가려지거나 놓치기 쉬워 인라인 메시지로 대체했다
+            // (activateAdGrant와 동일한 패턴).
+            errorMessage = null
             isPurchaseInProgress = true
             scope.launch {
                 val outcome = premium.purchasePremium()
@@ -218,7 +229,7 @@ internal fun PremiumUpsellDialogHost(
                         onAnyChoice()
                     }
                     is PurchaseOutcome.NotPurchased -> {
-                        Toast.makeText(context, strings.premiumPurchaseFailedMessage, Toast.LENGTH_SHORT).show()
+                        errorMessage = strings.premiumPurchaseFailedMessage
                     }
                 }
             }
@@ -226,8 +237,9 @@ internal fun PremiumUpsellDialogHost(
         onSelectAdGrant = {
             // 탭 즉시 활성화하지 않는다 — 광고 시청 완료(보상 획득) 콜백 안에서만
             // premium.activateAdGrant()가 실제로 상태를 바꾼다. 로드 실패/중도 이탈 시에는
-            // 일반 모드를 유지한 채 안내만 하고 팝업은 닫지 않아, 바로 재시도하거나 다른
-            // 선택지를 고를 수 있게 한다.
+            // 일반 모드를 유지한 채 다이얼로그 안에 인라인으로 안내하고 팝업은 닫지 않아,
+            // 바로 재시도하거나 다른 선택지를 고를 수 있게 한다.
+            errorMessage = null
             isAdGrantInProgress = true
             scope.launch {
                 val outcome = premium.activateAdGrant()
@@ -238,7 +250,7 @@ internal fun PremiumUpsellDialogHost(
                         onAnyChoice()
                     }
                     is AdRewardOutcome.NotRewarded -> {
-                        Toast.makeText(context, strings.premiumAdGrantFailedMessage, Toast.LENGTH_SHORT).show()
+                        errorMessage = strings.premiumAdGrantFailedMessage
                     }
                 }
             }

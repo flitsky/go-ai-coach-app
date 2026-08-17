@@ -166,4 +166,8 @@ internal val UiStringsEnglish = UiStringsKorean.copy(
     boardSizeShortLabel = "Board",
     enginePreparingTitle = "Preparing for your new game",
     enginePreparingSubtitle = "Just a moment, please",
+    engineThinkingLabel = "Thinking",
+    engineRecommendingLabel = "Recommending",
+    engineOptimizingLabel = "Optimizing",
+    scoringPreparingTitle = "Preparing to score the game",
 )

@@ -165,4 +165,8 @@ internal val UiStringsJapanese = UiStringsKorean.copy(
     boardSizeShortLabel = "碁盤",
     enginePreparingTitle = "新しい対局を準備しています",
     enginePreparingSubtitle = "少々お待ちください",
+    engineThinkingLabel = "考え中",
+    engineRecommendingLabel = "おすすめ選出中",
+    engineOptimizingLabel = "最適化中",
+    scoringPreparingTitle = "整地の準備をしています",
 )

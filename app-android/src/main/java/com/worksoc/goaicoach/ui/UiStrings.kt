@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
+import com.worksoc.goaicoach.application.engine.operation.EngineActivityIndicator
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
@@ -208,6 +209,10 @@ internal data class UiStrings(
     val boardSizeShortLabel: String,
     val enginePreparingTitle: String,
     val enginePreparingSubtitle: String,
+    val engineThinkingLabel: String,
+    val engineRecommendingLabel: String,
+    val engineOptimizingLabel: String,
+    val scoringPreparingTitle: String,
 ) {
     fun settingsDeveloperModeCountdownMessage(remainingTaps: Int): String =
         when (language) {
@@ -304,6 +309,15 @@ internal data class UiStrings(
             UiLanguage.ChineseSimplified -> "白: 子数 + 目数 + 贴目 $kVal = ${tot}目"
         }
     }
+
+    /** 보드 상단 작은 엔진 상태 텍스트("생각 중"/"추천 중"/"최적화 중")용 라벨. */
+    fun engineActivityLabel(indicator: EngineActivityIndicator): String =
+        when (indicator) {
+            EngineActivityIndicator.Preparing -> benchmarkPreparing
+            EngineActivityIndicator.Thinking -> engineThinkingLabel
+            EngineActivityIndicator.Recommending -> engineRecommendingLabel
+            EngineActivityIndicator.Optimizing -> engineOptimizingLabel
+        }
 
     private fun Double.formatScoreNumber(): String {
         val roundedTenth = (this * 10.0).roundToInt()

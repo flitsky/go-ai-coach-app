@@ -75,7 +75,7 @@ class EngineOperationLifecycleTest {
     }
 
     @Test
-    fun activityIndicatorDistinguishesPreparingRecommendingAndThinking() {
+    fun activityIndicatorDistinguishesPreparingRecommendingThinkingAndOptimizing() {
         fun indicatorFor(kind: EngineOperationKind) =
             EngineOperationLifecycleState(
                 activeOperations = mapOf("${kind.code}:g1" to createRequest("${kind.code}:g1", kind)),
@@ -84,14 +84,6 @@ class EngineOperationLifecycleTest {
         assertEquals(EngineActivityIndicator.Preparing, indicatorFor(EngineOperationKind.EngineStartup))
         assertEquals(EngineActivityIndicator.Recommending, indicatorFor(EngineOperationKind.TopMoves))
         assertEquals(EngineActivityIndicator.Thinking, indicatorFor(EngineOperationKind.AutoAiTurn))
-    }
-
-    @Test
-    fun activityIndicatorCyclesDotAnimationFrames() {
-        assertEquals("Thinking", EngineActivityIndicator.Thinking.animatedText(0))
-        assertEquals("Thinking .", EngineActivityIndicator.Thinking.animatedText(1))
-        assertEquals("Thinking ..", EngineActivityIndicator.Thinking.animatedText(2))
-        assertEquals("Thinking ...", EngineActivityIndicator.Thinking.animatedText(3))
-        assertEquals("Thinking", EngineActivityIndicator.Thinking.animatedText(4))
+        assertEquals(EngineActivityIndicator.Optimizing, indicatorFor(EngineOperationKind.PositionCacheOptimization))
     }
 }

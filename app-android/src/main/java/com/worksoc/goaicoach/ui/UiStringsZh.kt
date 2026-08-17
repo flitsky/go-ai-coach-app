@@ -164,4 +164,8 @@ internal val UiStringsChineseSimplified = UiStringsKorean.copy(
     boardSizeShortLabel = "棋盘",
     enginePreparingTitle = "正在为新对局做准备",
     enginePreparingSubtitle = "请稍候",
+    engineThinkingLabel = "思考中",
+    engineRecommendingLabel = "推荐中",
+    engineOptimizingLabel = "优化中",
+    scoringPreparingTitle = "正在为数子做准备",
 )

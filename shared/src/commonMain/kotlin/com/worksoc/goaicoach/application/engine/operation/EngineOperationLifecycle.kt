@@ -14,23 +14,18 @@ internal data class EngineOperationLifecycleState(
             activeOperations.values.any { it.kind in PreparingOperationKinds } -> EngineActivityIndicator.Preparing
             activeOperations.values.any { it.kind == EngineOperationKind.AutoAiTurn } -> EngineActivityIndicator.Thinking
             activeOperations.values.any { it.kind == EngineOperationKind.TopMoves } -> EngineActivityIndicator.Recommending
+            activeOperations.values.any { it.kind == EngineOperationKind.PositionCacheOptimization } -> EngineActivityIndicator.Optimizing
             else -> null
         }
 }
 
-enum class EngineActivityIndicator(
-    val baseText: String,
-) {
-    Preparing("Preparing"),
-    Recommending("Recommending"),
-    Thinking("Thinking"),
-    ;
-
-    fun animatedText(frame: Int): String =
-        baseText + ActivityIndicatorDots[frame.mod(ActivityIndicatorDots.size)]
+/** 표시 문구는 언어별로 다르므로 UI 레이어(`UiStrings`)에서 라벨링한다 — 여기서는 상태값만 든다. */
+enum class EngineActivityIndicator {
+    Preparing,
+    Recommending,
+    Thinking,
+    Optimizing,
 }
-
-private val ActivityIndicatorDots = listOf("", " .", " ..", " ...")
 
 private val PreparingOperationKinds = setOf(
     EngineOperationKind.EngineStartup,

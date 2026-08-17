@@ -167,4 +167,8 @@ internal val UiStringsKorean = UiStrings(
     boardSizeShortLabel = "바둑판",
     enginePreparingTitle = "새 대국을 위해 준비 중입니다",
     enginePreparingSubtitle = "잠시만 기다려 주세요",
+    engineThinkingLabel = "생각 중",
+    engineRecommendingLabel = "추천 중",
+    engineOptimizingLabel = "최적화 중",
+    scoringPreparingTitle = "계가를 위해 준비 중입니다",
 )
