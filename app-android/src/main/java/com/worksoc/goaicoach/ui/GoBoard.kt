@@ -223,15 +223,49 @@ internal fun GoBoard(
                 }
             }
 
-            engineActivityIndicator?.let { indicator ->
+            if (engineActivityIndicator != null && engineActivityIndicator != EngineActivityIndicator.Preparing) {
                 Text(
-                    text = indicator.animatedText(activityFrame),
+                    text = engineActivityIndicator.animatedText(activityFrame),
                     modifier = Modifier
                         .align(Alignment.TopCenter)
                         .padding(top = 2.dp),
                     color = colors.engineActivityText,
                     style = MaterialTheme.typography.labelMedium,
                 )
+            }
+
+            if (engineActivityIndicator == EngineActivityIndicator.Preparing) {
+                val strings = LocalUiStrings.current
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.35f), RoundedCornerShape(8.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        CircularProgressIndicator(
+                            color = Color.White.copy(alpha = textAlpha),
+                            strokeWidth = 3.dp,
+                            modifier = Modifier.size(36.dp)
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = strings.enginePreparingTitle,
+                            color = Color.White.copy(alpha = textAlpha),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = strings.enginePreparingSubtitle,
+                            color = Color.White.copy(alpha = textAlpha * 0.8f),
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    }
+                }
             }
 
             if (gameState.hasConsecutivePasses() && isEngineBusy) {

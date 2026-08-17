@@ -163,4 +163,6 @@ internal val UiStringsEnglish = UiStringsKorean.copy(
     premiumAdGrantFailedMessage = "The ad wasn't completed, so premium wasn't activated. Continuing in normal mode.",
     handicapEvenGameLabel = "Even",
     boardSizeShortLabel = "Board",
+    enginePreparingTitle = "Preparing for your new game",
+    enginePreparingSubtitle = "Just a moment, please",
 )

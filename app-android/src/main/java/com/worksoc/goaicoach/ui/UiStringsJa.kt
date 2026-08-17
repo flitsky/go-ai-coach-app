@@ -162,4 +162,6 @@ internal val UiStringsJapanese = UiStringsKorean.copy(
     premiumAdGrantFailedMessage = "広告の視聴が完了しなかったため、プレミアムは有効化されませんでした。通常モードのまま続行します。",
     handicapEvenGameLabel = "互先",
     boardSizeShortLabel = "碁盤",
+    enginePreparingTitle = "新しい対局を準備しています",
+    enginePreparingSubtitle = "少々お待ちください",
 )

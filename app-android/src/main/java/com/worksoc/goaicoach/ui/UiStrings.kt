@@ -205,6 +205,8 @@ internal data class UiStrings(
     val premiumAdGrantFailedMessage: String,
     val handicapEvenGameLabel: String,
     val boardSizeShortLabel: String,
+    val enginePreparingTitle: String,
+    val enginePreparingSubtitle: String,
 ) {
     fun cacheOptBody(initialCount: Int, maxCount: Int, moveCount: Int, targetCount: Int): String =
         when (language) {

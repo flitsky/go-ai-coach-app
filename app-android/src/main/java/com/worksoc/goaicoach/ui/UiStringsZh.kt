@@ -161,4 +161,6 @@ internal val UiStringsChineseSimplified = UiStringsKorean.copy(
     premiumAdGrantFailedMessage = "广告未播放完成，高级模式未激活。将继续使用普通模式。",
     handicapEvenGameLabel = "分先",
     boardSizeShortLabel = "棋盘",
+    enginePreparingTitle = "正在为新对局做准备",
+    enginePreparingSubtitle = "请稍候",
 )

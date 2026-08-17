@@ -164,4 +164,6 @@ internal val UiStringsKorean = UiStrings(
     premiumAdGrantFailedMessage = "광고 시청이 완료되지 않아 프리미엄이 활성화되지 않았습니다. 일반 모드로 계속합니다.",
     handicapEvenGameLabel = "호선",
     boardSizeShortLabel = "바둑판",
+    enginePreparingTitle = "새 대국을 위해 준비 중입니다",
+    enginePreparingSubtitle = "잠시만 기다려 주세요",
 )
