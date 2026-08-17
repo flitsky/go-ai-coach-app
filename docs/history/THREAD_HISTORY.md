@@ -5,7 +5,7 @@
 
 ## 지난 히스토리 요약 (2026-05-31 ~ 2026-08-04)
 
-2026-08-05에 정리한 요약입니다. 그전까지는 이 문서가 2026-05-31 날짜 헤더 하나 아래로 1,622줄이 계속 이어붙여져 있었고(날짜 헤더가 그 이후로 한 번도 새로 추가되지 않았음) 나중에 훑어보기 어려운 상태였습니다. 원문은 지우지 않고 [`docs/archive/2026-08-05-thread-history-consolidation/THREAD_HISTORY_DETAIL_2026-05-31_to_2026-08-04.md`](../archive/2026-08-05-thread-history-consolidation/THREAD_HISTORY_DETAIL_2026-05-31_to_2026-08-04.md)에 그대로 보존했습니다 — 특정 버그·실험의 정확한 로그/수치가 필요하면 그 파일에서 찾으면 됩니다. 아래는 시기별 핵심만 압축한 것입니다.
+2026-08-05에 정리한 요약입니다. 그전까지는 이 문서가 2026-05-31 날짜 헤더 하나 아래로 1,622줄이 계속 이어붙여져 있었고(날짜 헤더가 그 이후로 한 번도 새로 추가되지 않았음) 나중에 훑어보기 어려운 상태였습니다. 당시엔 원문을 지우지 않고 별도 아카이브 파일에 그대로 보존했으나, 2026-08-17 문서 보존 정책 전환(`docs/DOCS_INDEX.md` "문서 보존 정책" 참고)으로 그 아카이브 파일 자체를 저장소에서 제거했습니다 — 원문이 필요하면 `git log --all --diff-filter=D -- 'docs/archive/**/THREAD_HISTORY_DETAIL*'`로 삭제 커밋을 찾아 복원할 수 있습니다. 아래는 시기별 핵심만 압축한 것입니다.
 
 ### 초기 스택/엔진 POC (2026-05-31)
 - Android-first, Kotlin Multiplatform 채택(Flutter는 크로스플랫폼 UI 재사용이 더 중요해지면 재검토하는 후순위) — 핵심 이유는 엔진 통신을 `EngineAdapter` 뒤에 숨겨 stub/process/JNI/원격 전환 시 UI/도메인 코드를 다시 안 써도 되게 하는 것.
@@ -25,11 +25,11 @@
 - 핵심 버그 하나: KataGo 프로세스가 살아있는 동안 이전 탐색의 search tree/NN cache를 다음 탐색이 재사용해, AI 대 AI 자동대국에서 약한 레벨(B16)이 직전 강한 레벨(B64)의 탐색 결과를 몰래 물려받아 실력 경계가 오염되는 현상을 발견하고 해결했다(`docs/ENGINE_SEARCH_TREE_REUSE_REVIEW.md`) — 최종 정책은 "AI vs AI는 착수 직전 `clear_cache`, 사람 vs AI는 재사용 유지"다(사람 상대는 이어지는 탐색이 정상적인 엔진 활용이므로).
 
 ### 아키텍처 리팩토링 대장정 (06월 중순 ~ 07월, 지금도 이어지는 방법론)
-- `GoCoachApp.kt` 한 파일이 ~2,000줄까지 비대해진 문제를 인식하고 `docs/refactoring/REFACTORING_STRATEGY_2026-06-08.md` 기준 완성도(68% → 82% → 86%...)를 추적하며 장기간 단계별 추출 리팩토링을 진행했다.
-- `EngineAdapter`(구) → `EngineCoreApi`(순수 엔진 계약) → `EngineSessionClient`(미들웨어)로 계층을 분리한 뒤, `docs/refactoring/DOMAIN_SEPARATION_REFACTORING_PLAN.md`에서 **현재 `docs/ARCHITECTURE.md`의 근간이 된 7계층 모델**(Engine Runtime/Transport, Engine Core API, Core Rules, Middleware/Cache, Game Domain, App Service/Session Orchestration, Presentation)을 확립했다.
+- `GoCoachApp.kt` 한 파일이 ~2,000줄까지 비대해진 문제를 인식하고 완성도(68% → 82% → 86%...)를 추적하며 장기간 단계별 추출 리팩토링을 진행했다.
+- `EngineAdapter`(구) → `EngineCoreApi`(순수 엔진 계약) → `EngineSessionClient`(미들웨어)로 계층을 분리한 뒤, **현재 `docs/ARCHITECTURE.md`의 근간이 된 7계층 모델**(Engine Runtime/Transport, Engine Core API, Core Rules, Middleware/Cache, Game Domain, App Service/Session Orchestration, Presentation)을 확립했다.
 - `GameSessionCoreState`와 analysis/score/runtime/moveReview 하위 state를 Compose 개별 `remember` 상태에서 단일 source of truth reducer로 승격했다. `LayeringContractTest`를 도입해 계층 경계 위반(UI가 raw 엔진 API를 직접 참조하는 등)을 자동으로 막기 시작했다 — 이후 이 테스트가 계속 확장되어 지금은 1,000줄 넘는 회귀 방지 스위트가 되었다(2026-08-05 이메일/Google 로그인 작업 중에도 이 테스트를 직접 확인했다).
 - 이후 수십 라운드에 걸쳐 undo/Top Moves/score sync/benchmark/saved game/debug report/auto AI turn 등 개별 기능을 "전용 Application Runner 추출 + 테스트 추가 + `LayeringContractTest` 가드 추가 + `make test` 검증 + 커밋" 패턴으로 반복 분리했다 — 이 패턴 자체가 이 저장소의 표준 리팩토링 방법론으로 자리잡았다. 엔진 구현체(`KataGoProcessEngineAdapter` 등)도 `engine-android` 모듈로 물리적으로 이전되고 `internal`+`EngineCoreApiFactory` 뒤로 숨겨졌다.
-- 문서가 늘어나며 `docs/DOCS_INDEX.md`(문서 지도)와 `docs/archive/<날짜>-<사유>/` 보관 정책을 확립했다 — "삭제 대신 보관"이 이 저장소의 일관된 문서 운영 원칙이 되었다(이번 히스토리 정리도 같은 원칙을 따른다).
+- 문서가 늘어나며 `docs/DOCS_INDEX.md`(문서 지도)와 `docs/archive/<날짜>-<사유>/` 보관 정책을 확립했다 — "삭제 대신 보관"이 이 저장소의 문서 운영 원칙이었다. **2026-08-17에 이 원칙을 뒤집었다**: 프로젝트가 초도 발행 단계로 넘어가며 과거 리팩토링/의사결정 서사가 매 세션 코드베이스 탐색 시 토큰만 소모하는 부채로 판단돼, `docs/archive/`와 종료된 `docs/refactoring/`을 저장소에서 완전히 제거했다(git 히스토리로만 보존). 사유와 복원 방법은 `docs/DOCS_INDEX.md` "문서 보존 정책" 절 참고.
 
 ### 프리미엄/인증/UX 개편
 이 구간의 상세 진행 로그는 이 파일이 아니라 각 기능 전용 마스터플랜 문서에 있다(`docs/DOCS_INDEX.md`에 등록된 관례) — 이 파일에는 자세히 기록되지 않았다.

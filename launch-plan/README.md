@@ -8,7 +8,7 @@
 
 ## 0. 최종 출시 체크리스트 종합 (260817 갱신 — 새 스레드는 여기부터 읽을 것)
 
-`docs/refactoring/REFACTORING_BACKLOG_260816_1744.md`(리팩토링/코드부채 전용)와 `docs/refactoring/GAMESESSION_SHARED_MIGRATION_KICKOFF_PLAN_260816_1808.md`(`application/` 트리 → `:shared` 이전)가 이 날짜에 각각 마무리됐다 — 남은 작업은 리팩토링이 아니라 **초도 시장 발행 자체**로 성격이 넘어갔다. 아래는 코드베이스를 실제로 점검(파일 존재 여부, `local.properties` 키 존재 여부, manifest 내용 등)해서 확인한 현재 상태다 — 추정이 아니라 확인된 사실 기준.
+리팩토링/코드부채 백로그와 `application/` 트리 → `:shared` 이전 착수 계획서(둘 다 2026-08-17 문서 정리로 저장소에서 제거, `docs/DOCS_INDEX.md` "문서 보존 정책" 참고)가 이 날짜에 각각 마무리됐다 — 남은 작업은 리팩토링이 아니라 **초도 시장 발행 자체**로 성격이 넘어갔다. 아래는 코드베이스를 실제로 점검(파일 존재 여부, `local.properties` 키 존재 여부, manifest 내용 등)해서 확인한 현재 상태다 — 추정이 아니라 확인된 사실 기준.
 
 ### ✅ 완료 (코드 + 실기/콘솔 검증까지 끝남, 재작업 불필요)
 - **AdMob 광고**: 실계정·실광고단위(배너+보상형 전면) 연동 완료. `debug`/`friend`는 빌드타입 자체가 항상 Google 공식 테스트 ID를 강제하고, `release`만 `local.properties`의 실제 값을 쓴다 — **"테스트 광고 → 실제 광고 전환"은 이미 자동화돼 있다**, 별도 전환 작업이 필요 없다(`ui/AdUnitIds.kt`, `premium-mode/README.md` "Step 3 후속"). `local.properties`에 `admob.appId`/`admob.bannerAdUnitId`/`admob.rewardedInterstitialAdUnitId` 3개 키 모두 존재 확인(260817).

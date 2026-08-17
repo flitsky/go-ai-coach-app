@@ -36,7 +36,7 @@
 - **배경**: google-services.json이 아직 없는 개발 환경에서는 `signInAnonymously()`가 항상 실패해, `hasSeenOnboarding`이 저장되지 않고 온보딩 화면이 매 실행마다 반복되는 문제를 실측으로 확인했다.
 - **변경**: 온보딩 완료 조건을 `application/device/DeviceIdentityStorePort.loadOrCreate()`(Stage C-2에서 이미 만들어졌던, 소비자가 없던 로컬 UUID 인프라)로 바꿨다 — 네트워크 없이 항상 즉시 성공하므로 반복 노출이 사라진다. `signInAnonymously()` 호출은 제거하지 않고 버튼 탭 시 fire-and-forget으로 남겨, google-services.json이 나중에 추가되면 이 코드를 다시 건드리지 않고도 조용히 성공하기 시작한다.
 - **Google/이메일 스텁 버튼은 온보딩에서 제거**하고 신규 `SettingsScreen.kt`(홈 화면 좌상단 ⚙ 진입점)로 옮겼다 — 최초 실행 필수 흐름에서 로그인 UI 자체를 걷어내고, 원하는 사용자만 나중에 강화하도록 했다. 이 개편 이후에도 Step 2/3(Google/이메일 실제 연동)의 산출물 위치는 그대로 유효하다 — `AuthClientPort`에 메서드 추가 + `SettingsScreen.kt`의 두 버튼 onClick 교체로 착수하면 된다.
-- 관련: `docs/refactoring/PLAY_FLOW_UX_REFACTORING_PLAN_260804_0553.md`.
+- 관련: 당시 Play Flow UX 리팩토링 계획서(2026-08-17 문서 정리로 저장소에서 제거, `docs/DOCS_INDEX.md` "문서 보존 정책" 참고).
 
 ### Step 1 재개정 — 온보딩을 다시 "얕은 허들" 로그인 화면으로 (2026-08-04)
 - **배경**: 위 개정에서 온보딩을 완전히 건너뛰는 "시작하기" 단일 버튼으로 단순화했으나, 사용자 피드백으로 "설치 후 첫 화면은 로그인 화면이어야 하고, 그냥 패스시키는 지금 화면은 의미가 없다"는 방향이 확인됐다 — 첫 실행 시 로그인 여부를 가볍게라도 물어보는 게 맞다는 결론.

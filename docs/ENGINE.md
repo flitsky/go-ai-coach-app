@@ -74,5 +74,6 @@ fun PlayLevelSetting.aiMoveSearchMode(): EngineSearchMode =
 | `ENGINE_API_CALL_POLICY.md` | 호출 우선순위, candidateCount 운영표, visit 이론, 종국 GTP cap 정책, 진단 로그 수집, 캐시 품질/origin 전체 규칙 |
 | `engine-research/ENGINE_LEVEL_STRENGTH_REVIEW_2026-06-10.md` | B16/B32/B64 실제 대국 강도 검증 결과 |
 | `engine-research/ENGINE_SEARCH_TREE_REUSE_REVIEW.md` | search tree 재사용/격리 정책 상세 검토 |
+| `engine-research/ENGINE_CANDIDATE_EXPANSION_REVIEW_2026-08-17.md` | 레벨링용 후보수 확장 검토 — `refinePolicyMoves`가 엔진 어댑터에 이미 구현돼 있지만 AI 착수 경로에서는 항상 0으로 꺼져 있다는 점, 그 기능을 켰을 때의 후보수/latency 실측, 방향 권장안(아직 미반영) |
 | `refactoring/ENGINE_SEARCH_MODE_ROADMAP_2026-06-13.md` | 두 모드 도입 로드맵, 맥북/폰 벤치마크 원본 데이터 |
 | `engine-benchmark-logs/`, `engine-match-logs/` | raw 벤치마크/대국 로그 |
