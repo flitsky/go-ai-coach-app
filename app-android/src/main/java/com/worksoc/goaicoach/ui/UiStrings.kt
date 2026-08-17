@@ -442,7 +442,14 @@ internal data class UiStrings(
     fun sideSummary(setup: SidePlayerSetup, engineName: String): String =
         when (setup.controller) {
             SeatController.Human -> controllerLabel(SeatController.Human)
-            SeatController.Ai -> "${setup.aiEngine.label.ifBlank { engineName }} ${levelLabel(setup.playLevel.safeLevel)}"
+            SeatController.Ai -> {
+                val levelText = if (setup.playLevel.group == PlayLevelGroup.FastBeginner) {
+                    fastBeginnerTierLabel(setup.playLevel.safeLevel)
+                } else {
+                    levelLabel(setup.playLevel.safeLevel)
+                }
+                "${setup.aiEngine.label.ifBlank { engineName }} $levelText"
+            }
         }
 
     fun levelLabel(level: Int): String =
@@ -459,6 +466,41 @@ internal data class UiStrings(
             UiLanguage.English -> group.name
             UiLanguage.Japanese -> group.label
             UiLanguage.ChineseSimplified -> group.label
+        }
+
+    /** `빠른 초급` 1~5단계의 친근한 이름(초보~초고수). AI 선택 드롭다운과 대국 요약에서 쓴다. */
+    fun fastBeginnerTierLabel(level: Int): String =
+        when (level.coerceIn(1, PlayLevelGroup.FastBeginner.maxLevel)) {
+            1 -> when (language) {
+                UiLanguage.Korean -> "초보"
+                UiLanguage.English -> "Novice"
+                UiLanguage.Japanese -> "初心者"
+                UiLanguage.ChineseSimplified -> "新手"
+            }
+            2 -> when (language) {
+                UiLanguage.Korean -> "하수"
+                UiLanguage.English -> "Rookie"
+                UiLanguage.Japanese -> "初級者"
+                UiLanguage.ChineseSimplified -> "低手"
+            }
+            3 -> when (language) {
+                UiLanguage.Korean -> "중수"
+                UiLanguage.English -> "Intermediate"
+                UiLanguage.Japanese -> "中級者"
+                UiLanguage.ChineseSimplified -> "中手"
+            }
+            4 -> when (language) {
+                UiLanguage.Korean -> "고수"
+                UiLanguage.English -> "Advanced"
+                UiLanguage.Japanese -> "上級者"
+                UiLanguage.ChineseSimplified -> "高手"
+            }
+            else -> when (language) {
+                UiLanguage.Korean -> "초고수"
+                UiLanguage.English -> "Master"
+                UiLanguage.Japanese -> "達人"
+                UiLanguage.ChineseSimplified -> "大神"
+            }
         }
 
     fun komiValueLabel(komi: Double): String {

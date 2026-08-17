@@ -50,6 +50,8 @@ fun PlayLevelSetting.aiMoveSearchMode(): EngineSearchMode =
 
 `빠른 초급`은 느린 기기에서도 쾌적한 대국 체감을 우선하는 모드이고, `초급` 이상은 후보군 안정성과 레벨링 정확도를 우선하는 모드다.
 
+**검토 중(2026-08-17, 앱 미반영)**: `빠른 초급` 1~3단계를 후보 분류(최적수/중급수/최하수) 기반 5단계(`초보`~`초고수`)로 재정립하는 계획이 승인 대기 중이다 — `engine-research/FAST_BEGINNER_FIVE_TIER_REDESIGN_PLAN_2026-08-17.md` 참고. 위 표는 여전히 현재 코드 기준(1~3단계)이며, 계획이 구현되면 이 표를 갱신한다.
+
 ## `candidateCount`가 뜻하는 것
 
 `candidateCount`는 "엔진이 그 개수만큼 깊게 평가하라"는 강제값이 아니라 "앱이 응답 후보를 최대 몇 개까지 파싱/표시/레벨링에 쓸지"의 상한이다. 실제 scored 후보 수는 `maxVisits`/`maxTime`이 얼마나 채워졌는지에 달려 있다. 자세한 운영표(요청 10개 중 실제 1개/2개/3개/4개 이상일 때 레벨링 방식)는 `ENGINE_API_CALL_POLICY.md` → `candidateCount 의미` 섹션을 따른다.

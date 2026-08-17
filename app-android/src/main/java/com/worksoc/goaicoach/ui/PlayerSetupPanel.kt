@@ -38,6 +38,7 @@ import com.worksoc.goaicoach.match.SidePlayerSetup
 import com.worksoc.goaicoach.presentation.PlayerSetupSideUiState
 import com.worksoc.goaicoach.presentation.PlayerSetupUiState
 import com.worksoc.goaicoach.shared.PlayLevelGroup
+import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.SearchTimeLimit
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.StoneColor
@@ -202,32 +203,35 @@ private fun PlayerSetupSideRow(
                 onClick = { onSideChange(side.copy(controller = SeatController.Ai)) },
             )
         }
-        // AI 선택 시에만 노출되는 하위 메뉴 — "AI" 버튼 아래쪽에서 파생된 것처럼 우측 정렬
+        // AI 선택 시에만 노출되는 난이도 드롭다운 — "AI" 버튼 아래쪽에서 파생된 것처럼 우측 정렬.
+        // 2026-08-18부터 그룹(빠른초급/초급/중급/고급)→단계의 2뎁스 선택을 없애고,
+        // 빠른 초급의 5단계(초보~초고수)만 노출하는 1뎁스 드롭다운으로 간소화했다 —
+        // 초심자 진입 난이도를 낮추는 게 목적. 초급/중급/고급 그룹은 코드는 남아있지만
+        // 이 화면에서는 완전히 숨겼다(대체 진입 경로는 docs/engine-research의
+        // FAST_BEGINNER_FIVE_TIER_REDESIGN_PLAN 문서 로드맵 참고).
         if (side.controller == SeatController.Ai) {
+            val fastBeginnerLevel = if (side.playLevel.group == PlayLevelGroup.FastBeginner) {
+                side.playLevel.safeLevel
+            } else {
+                1
+            }
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Spacer(modifier = Modifier.weight(1f))
                 SetupDropdown(
-                    selectedText = strings.playLevelGroupLabel(side.playLevel.group),
+                    selectedText = strings.fastBeginnerTierLabel(fastBeginnerLevel),
                     enabled = enabled,
                     modifier = Modifier.width(112.dp),
-                    options = PlayLevelGroup.entries,
-                    optionLabel = { group -> strings.playLevelGroupLabel(group) },
-                    onSelected = { group ->
-                        onSideChange(side.copy(playLevel = side.playLevel.withGroup(group)))
-                    },
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                SetupDropdown(
-                    selectedText = strings.levelLabel(side.playLevel.safeLevel),
-                    enabled = enabled,
-                    modifier = Modifier.width(84.dp),
-                    options = (1..side.playLevel.group.maxLevel).toList(),
-                    optionLabel = { level -> strings.levelLabel(level) },
+                    options = (1..PlayLevelGroup.FastBeginner.maxLevel).toList(),
+                    optionLabel = { level -> strings.fastBeginnerTierLabel(level) },
                     onSelected = { level ->
-                        onSideChange(side.copy(playLevel = side.playLevel.withLevel(level)))
+                        onSideChange(
+                            side.copy(
+                                playLevel = PlayLevelSetting(group = PlayLevelGroup.FastBeginner, level = level),
+                            ),
+                        )
                     },
                 )
             }

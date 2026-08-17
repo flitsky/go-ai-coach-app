@@ -587,7 +587,8 @@ class GameAutomationApplicationTest {
         val setup = PlayerSetup(
             black = SidePlayerSetup(
                 controller = SeatController.Ai,
-                playLevel = PlayLevelSetting(PlayLevelGroup.FastBeginner, level = 3),
+                // 5단계(초고수)가 현재 빠른 초급의 BestOnly 단계.
+                playLevel = PlayLevelSetting(PlayLevelGroup.FastBeginner, level = 5),
             ),
             white = SidePlayerSetup(controller = SeatController.Human),
         )

@@ -59,7 +59,9 @@ class UserPreferencesApplicationTest {
                 autoPlayDelaySetting = AutoPlayDelaySetting.Study,
                 searchTimeSettings = SearchTimeSettings(SearchTimeLimit.WithinFiveSeconds),
                 boardSize = BoardSize.Nine,
-                handicapCount = 0,
+                // UserPreferencesSnapshot 위에서 handicapCount를 명시하지 않았으므로
+                // 기본값(BoardSize.Thirteen.maxHandicapCount = 5)을 그대로 쓴다.
+                handicapCount = 5,
             ),
             plan.settings,
         )

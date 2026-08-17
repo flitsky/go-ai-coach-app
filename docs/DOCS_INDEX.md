@@ -14,6 +14,7 @@
 갱신: 2026-08-17 — `refactoring/GAMESESSION_SHARED_MIGRATION_KICKOFF_PLAN_260816_1808.md`(`application/` 트리 124개 파일 → `:shared` 이전, 웨이브 1~6)가 이 인덱스에 누락돼 있던 것을 아래 표에 추가하며 완료로 표기. 같은 날 `REFACTORING_BACKLOG_260816_1744.md`의 번호 매긴 항목(1~4)도 전부 사용자 결정대로 마무리(1~3 완료, 4는 문서 정정만) — 리팩토링/코드부채 축이 사실상 소진되고, 다음 단계가 **초도 시장 발행**으로 넘어갔다. `launch-plan/README.md`에 0절(최종 출시 체크리스트 종합)을 신설해 그 단계의 진입점으로 삼았다 — 아래 "마스터플랜 폴더" 표의 해당 행 참고.
 갱신: 2026-08-17 (2) — `빠른 초급`/`초급` 레벨링용 후보수(candidate moves) 확장 방향을 검토한 `engine-research/ENGINE_CANDIDATE_EXPANSION_REVIEW_2026-08-17.md`를 신설해 "엔진 검증/연구 리뷰" 표에 편입했다. `ENGINE.md`/`ENGINE_API_CALL_POLICY.md`의 레벨 표를 코드와 대조해 정확함을 재확인하는 한편, `refinePolicyMoves`(엔진 어댑터에 이미 구현돼 있으나 AI 착수 경로에서는 항상 0으로 꺼져 있던 후보 확장 기능)의 비용/효과를 새 스크립트(`scripts/run-katago-candidate-refine-experiment.py`)로 실측했다. 앱 코드 변경은 없음 — 다음 실험으로 넘기는 방향 검토 문서.
 갱신: 2026-08-17 (3) — **"삭제 대신 보관" 문서 보존 원칙을 뒤집었다.** `docs/archive/`(5개 하위 폴더, 55개 파일, 1.2MB)와 `docs/refactoring/`(리팩토링 축이 260817에 종료 확인됨, 8개 파일)를 저장소에서 완전히 제거하고 git 히스토리로만 남겼다 — 사유와 복원 방법은 아래 "문서 보존 정책" 절 참고. 유일한 예외로 실측 데이터가 계속 인용되던 `ENGINE_BEGINNER_VISITS_BENCHMARK.md`는 `docs/engine-research/`로 이동 보존했다. 삭제된 경로를 가리키던 모든 교차 참조(`ENGINE_API_CALL_POLICY.md`, `GO_AI_COACH_ARCHITECTURE_ROADMAP.md`, `docs/history/THREAD_HISTORY.md`, `launch-plan/README.md`, `premium-mode/README.md`, `auth-onboarding/README.md`)를 함께 정리했다. 아래 "리팩토링 전략/진행 로그"·"아카이브" 두 섹션은 이 갱신으로 제거됐다.
+갱신: 2026-08-17 (4) — `빠른 초급` 1~3단계를 후보 분류(최적수/중급수/최하수) 기반 5단계(`초보`~`초고수`)로 재정립하는 계획서 `engine-research/FAST_BEGINNER_FIVE_TIER_REDESIGN_PLAN_2026-08-17.md`를 신설해 "엔진 검증/연구 리뷰" 표에 편입했다. 승인 대기 중인 계획 문서 — 앱 코드는 아직 바뀌지 않았다. 승인/구현되면 `ENGINE.md`/`ENGINE_API_CALL_POLICY.md`의 `빠른 초급` 표를 갱신해야 한다.
 
 ## 하위 폴더 한눈에 보기
 
@@ -114,6 +115,7 @@ git show <커밋해시>^:docs/archive/<경로>/<파일명>.md > <파일명>.md
 | `engine-research/ENGINE_SEARCH_TREE_REUSE_REVIEW.md` | KataGo search tree 재사용/격리 정책 검토 |
 | `engine-research/ENGINE_CANDIDATE_EXPANSION_REVIEW_2026-08-17.md` | `빠른 초급`/`초급` 더블체크 + 레벨링용 후보수 확장 레버(`refinePolicyMoves`) 비용/효과 실측. 아직 앱에는 미반영, 방향 검토 문서 |
 | `engine-research/ENGINE_BEGINNER_VISITS_BENCHMARK.md` | B16/B32/B64 후보수 최초 실측(2026-06-08). 위 CANDIDATE_EXPANSION_REVIEW가 같은 P0/P1/P2 국면을 재사용 — 2026-08-17에 `docs/archive/`에서 이 폴더로 이동 |
+| `engine-research/FAST_BEGINNER_FIVE_TIER_REDESIGN_PLAN_2026-08-17.md` | `빠른 초급` 1~3단계 → 5단계(`초보`~`초고수`) 재정립 계획. 승인 대기, 앱 코드 미반영 |
 
 ## 프로젝트 히스토리
 

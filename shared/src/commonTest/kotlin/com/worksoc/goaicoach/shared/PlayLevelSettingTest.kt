@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.shared
 
+import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -120,8 +121,8 @@ class PlayLevelSettingTest {
     fun stageIsClampedToGroupRange() {
         val setting = PlayLevelSetting(PlayLevelGroup.FastBeginner, level = 10)
 
-        assertEquals(3, setting.safeLevel)
-        assertEquals("빠른 초급 3단계", setting.displayLabel)
+        assertEquals(5, setting.safeLevel)
+        assertEquals("빠른 초급 · 초고수", setting.displayLabel)
     }
 
     @Test
@@ -133,38 +134,112 @@ class PlayLevelSettingTest {
     }
 
     @Test
-    fun fastBeginnerAlwaysUsesGtpBestOnlyForFastPlay() {
-        // level = 3은 여전히 BestOnly 임을 검증
+    fun fastBeginnerTopStageAlwaysUsesGtpBestOnlyForFastPlay() {
+        // 5단계(초고수)는 여전히 BestOnly + 후보 1개 요청임을 검증(과거 3단계와 동일 동작)
         val policy = PlayLevelSetting(
             group = PlayLevelGroup.FastBeginner,
-            level = 3,
+            level = 5,
         ).selectionPolicy
         val limit = PlayLevelSetting(
             group = PlayLevelGroup.FastBeginner,
-            level = 3,
+            level = 5,
         ).aiMoveAnalysisLimitWith(SearchTimeSettings())
 
         assertEquals(MoveSelectionPolicy.BestOnly, policy)
-        assertEquals(EngineSearchMode.GtpStatefulFast, PlayLevelSetting(PlayLevelGroup.FastBeginner, level = 3).aiMoveSearchMode())
+        assertEquals(EngineSearchMode.GtpStatefulFast, PlayLevelSetting(PlayLevelGroup.FastBeginner, level = 5).aiMoveSearchMode())
         assertEquals(16, limit.visits)
         assertEquals(1, limit.candidateCount)
         assertEquals(false, limit.includePolicy)
         assertEquals(0..0, policy.candidateIndexRange(candidateCount = 1))
         assertEquals(0..0, policy.candidateIndexRange(candidateCount = 10))
+    }
 
-        // level = 1, 2는 각각 하위권/중위권 정책 및 candidateCount = 8 임을 검증
-        val level1 = PlayLevelSetting(PlayLevelGroup.FastBeginner, level = 1)
-        val level2 = PlayLevelSetting(PlayLevelGroup.FastBeginner, level = 2)
+    @Test
+    fun fastBeginnerLevelsOneToFourUseBucketedTierSelectionWithSharedCandidateBudget() {
+        val expected = mapOf(
+            1 to Triple(100, 0, 0),
+            2 to Triple(60, 40, 0),
+            3 to Triple(20, 60, 20),
+            4 to Triple(10, 30, 60),
+        )
+        for ((level, percents) in expected) {
+            val (worst, mid, best) = percents
+            val setting = PlayLevelSetting(PlayLevelGroup.FastBeginner, level = level)
+            val policy = setting.selectionPolicy as MoveSelectionPolicy.BucketedTierSelection
 
-        assertEquals(MoveSelectionPolicy.PercentileRange(70, 100, "탐색 후보 최하위 30%"), level1.selectionPolicy)
-        assertEquals(8, level1.aiMoveAnalysisLimitWith(SearchTimeSettings()).candidateCount)
-
-        assertEquals(MoveSelectionPolicy.PercentileRange(40, 70, "탐색 후보 중위 40~70%"), level2.selectionPolicy)
-        assertEquals(8, level2.aiMoveAnalysisLimitWith(SearchTimeSettings()).candidateCount)
+            assertEquals(worst, policy.worstPercent, "level $level worstPercent")
+            assertEquals(mid, policy.midPercent, "level $level midPercent")
+            assertEquals(best, policy.bestPercent, "level $level bestPercent")
+            // 후보 요청 자체는 오늘과 동일한 GTP fast candidateCount=8을 그대로 쓴다 —
+            // 엔진 부하를 늘리지 않는다는 게 이 재설계의 핵심 전제.
+            assertEquals(8, setting.aiMoveAnalysisLimitWith(SearchTimeSettings()).candidateCount)
+            assertEquals(EngineSearchMode.GtpStatefulFast, setting.aiMoveSearchMode())
+        }
     }
 
     @Test
     fun bestOnlyAlwaysChoosesTopIndex() {
         assertEquals(0..0, MoveSelectionPolicy.BestOnly.candidateIndexRange(candidateCount = 10))
+    }
+
+    @Test
+    fun candidateBucketRangeMatchesClassificationTable() {
+        assertEquals(0..0, candidateBucketRange(1, CandidateBucket.Best))
+        assertEquals(null, candidateBucketRange(1, CandidateBucket.Mid))
+        assertEquals(null, candidateBucketRange(1, CandidateBucket.Worst))
+
+        assertEquals(0..0, candidateBucketRange(2, CandidateBucket.Best))
+        assertEquals(1..1, candidateBucketRange(2, CandidateBucket.Mid))
+        assertEquals(null, candidateBucketRange(2, CandidateBucket.Worst))
+
+        assertEquals(0..0, candidateBucketRange(3, CandidateBucket.Best))
+        assertEquals(1..1, candidateBucketRange(3, CandidateBucket.Mid))
+        assertEquals(2..2, candidateBucketRange(3, CandidateBucket.Worst))
+
+        assertEquals(0..0, candidateBucketRange(4, CandidateBucket.Best))
+        assertEquals(1..2, candidateBucketRange(4, CandidateBucket.Mid))
+        assertEquals(3..3, candidateBucketRange(4, CandidateBucket.Worst))
+
+        assertEquals(0..0, candidateBucketRange(8, CandidateBucket.Best))
+        assertEquals(1..6, candidateBucketRange(8, CandidateBucket.Mid))
+        assertEquals(7..7, candidateBucketRange(8, CandidateBucket.Worst))
+    }
+
+    @Test
+    fun targetBucketAlwaysStartsWithWorstOnFirstOwnMoveForAnyPositiveWorstPercent() {
+        val tiers = listOf(
+            MoveSelectionPolicy.BucketedTierSelection(100, 0, 0, "초보", "초보"),
+            MoveSelectionPolicy.BucketedTierSelection(60, 40, 0, "하수", "하수"),
+            MoveSelectionPolicy.BucketedTierSelection(20, 60, 20, "중수", "중수"),
+            MoveSelectionPolicy.BucketedTierSelection(10, 30, 60, "고수", "고수"),
+        )
+        for (tier in tiers) {
+            assertEquals(
+                CandidateBucket.Worst,
+                tier.targetBucket(ownMoveIndex = 0, random = Random(1)),
+                "${tier.tierName} must target worst on the very first move",
+            )
+        }
+    }
+
+    @Test
+    fun targetBucketConvergesToNominalWorstRatioOverManyMoves() {
+        val tier = MoveSelectionPolicy.BucketedTierSelection(10, 30, 60, "고수", "고수")
+        val totalMoves = 500
+        val worstCount = (0 until totalMoves).count { index ->
+            tier.targetBucket(ownMoveIndex = index, random = Random(index)) == CandidateBucket.Worst
+        }
+        // ceil-경계 통과 방식은 최대 1회 오차로 ceil(worstPercent/100 * totalMoves)에 수렴한다.
+        val expected = kotlin.math.ceil(tier.worstPercent * totalMoves / 100.0).toInt()
+        assertEquals(expected, worstCount)
+    }
+
+    @Test
+    fun resolveIndexRangeFallsBackWhenTargetBucketIsEmptyThisTurn() {
+        // 고수 1수차는 worst를 목표로 하지만, 후보가 2개뿐이면 worst 버킷이 없다 —
+        // mid로 폴백해야 한다(정책상 best로 건너뛰지 않는다).
+        val tier = MoveSelectionPolicy.BucketedTierSelection(10, 30, 60, "고수", "고수")
+        val range = tier.resolveIndexRange(candidateCount = 2, ownMoveIndex = 0, random = Random(1))
+        assertEquals(1..1, range)
     }
 }

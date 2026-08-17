@@ -13,6 +13,7 @@ import com.worksoc.goaicoach.shared.aiMoveAnalysisLimitWith
 import com.worksoc.goaicoach.shared.aiMoveSearchMode
 import com.worksoc.goaicoach.shared.describe
 import com.worksoc.goaicoach.shared.fastCandidateAnalysis
+import com.worksoc.goaicoach.shared.resolveIndexRange
 import kotlin.random.Random
 
 data class SelectedAiMove(
@@ -69,8 +70,19 @@ object AiMoveSelectionPolicy {
 
         val scoredPlayCandidates = scoredCandidates
             .filter { candidate -> candidate.move is Move.Play }
-        val range = playLevel.selectionPolicy.candidateIndexRange(scoredPlayCandidates.size)
-            ?: return null
+        val selectionPolicy = playLevel.selectionPolicy
+        val range = if (selectionPolicy is MoveSelectionPolicy.BucketedTierSelection) {
+            val ownMoveIndex = currentState.moves.count { move ->
+                move.player == aiPlayer && move is Move.Play
+            }
+            selectionPolicy.resolveIndexRange(
+                candidateCount = scoredPlayCandidates.size,
+                ownMoveIndex = ownMoveIndex,
+                random = random,
+            )
+        } else {
+            selectionPolicy.candidateIndexRange(scoredPlayCandidates.size)
+        } ?: return null
         val pool = scoredPlayCandidates.slice(range)
         if (pool.isEmpty()) {
             return null

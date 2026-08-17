@@ -20,7 +20,8 @@ class AiMoveSelectionPolicyTest {
     @Test
     fun gtpFastBestOnlyLimitUsesSingleCandidateForFastBeginnerBestLevel() {
         val limit = AiMoveSelectionPolicy.analysisLimitFor(
-            playLevel = PlayLevelSetting(PlayLevelGroup.FastBeginner, level = 3),
+            // 5단계(초고수)가 현재 빠른 초급의 최고 단계 — 여전히 BestOnly + 후보 1개.
+            playLevel = PlayLevelSetting(PlayLevelGroup.FastBeginner, level = 5),
             searchTimeSettings = SearchTimeSettings(),
             searchMode = EngineSearchMode.GtpStatefulFast,
         )
