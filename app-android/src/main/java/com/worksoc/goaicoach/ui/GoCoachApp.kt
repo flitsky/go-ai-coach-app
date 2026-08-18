@@ -110,6 +110,7 @@ import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizat
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkUiState
 import com.worksoc.goaicoach.application.savedgame.SavedSessionUiState
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.PlayLevelSetting
@@ -700,7 +701,8 @@ private fun GoCoachScreen(
     )
 
     val premiumUiState = PremiumUiState(
-        // 재구성 시점의 현재 시각으로 매번 평가한다(별도 tick 없이, 대국 중 재구성이 충분히 잦아 문제없음).
+        // 재구성 시점의 현재 시각으로 매번 평가한다 — 만료를 재구성 여부와 무관하게 정시에
+        // 감지해 기능을 끄는 것은 아래 `LaunchedEffect(premiumState, ...)`가 전담한다.
         isActive = premiumState.isActive(nowMillis = System.currentTimeMillis()),
         isPurchased = premiumState.source == PremiumSource.Purchase,
         adGrantExpiresAtMillis = premiumState.adGrantStartedAtMillis?.plus(PremiumState.AdGrantDurationMillis),
@@ -728,13 +730,26 @@ private fun GoCoachScreen(
         premiumStateStore.save(nextState)
     }
 
-    // 프리미엄이 비활성 상태가 될 때(활성화 안 함 선택, 만료 등) 형세보기/추천수의
-    // "켜짐" 상태값 자체를 꺼서, 버튼만 잠기고 기능은 이전 값대로 계속 동작하는 걸 방지한다.
-    // 진단 로그 내용 자체는 순수 함수(buildPremiumDeactivatedDiagnosticEvent)가 판정한다.
-    LaunchedEffect(premiumUiState.isActive) {
-        if (!premiumUiState.isActive) {
-            uxOptions = uxOptions.copy(showOwnershipOverlay = false)
-            controllers.topMovesController.hide()
+    // 프리미엄이 비활성 상태가 될 때(활성화 안 함 선택, 만료 등) 형세보기/추천수의 "켜짐"
+    // 상태값 자체를 꺼서, 버튼만 잠기고 기능은 이전 값대로 계속 동작하는 걸 방지한다. 키를
+    // `isActive` 하나로만 두지 않는 이유: (1) 그 값은 이 컴포저블이 재구성될 때만 새로
+    // 평가되는데, 대국이 끝났거나 로비 화면에 머무는 동안은 만료 시각이 지나도 재구성을
+    // 유발하는 게 없어 감지가 임의로 늦어진다 — 그래서 만료 시각까지 정확히 delay로
+    // 대기해 재구성 여부와 무관하게 정시에 감지한다. (2) 만료 후 앱을 재시작해 저장된
+    // 대국을 복원하면 `topMovesEnabled`/`showOwnershipOverlay`가 true로 되돌아올 수 있는데
+    // 그 시점에 `isActive`는 이미 false라 값이 안 바뀌어(false→false) 재실행이 안 되는
+    // 구멍이 있었다 — 이 두 값도 키에 묶어 복원 순간에도 즉시 재교정한다.
+    LaunchedEffect(premiumState, topMovesEnabled, uxOptions.showOwnershipOverlay) {
+        val expiresAtMillis = premiumState.adGrantStartedAtMillis
+            ?.takeIf { premiumState.source == PremiumSource.AdGrant }
+            ?.plus(PremiumState.AdGrantDurationMillis)
+        val remainingMillis = expiresAtMillis?.minus(System.currentTimeMillis())
+        if (remainingMillis != null && remainingMillis > 0) {
+            delay(remainingMillis)
+        }
+        if (!premiumState.isActive(System.currentTimeMillis())) {
+            if (uxOptions.showOwnershipOverlay) uxOptions = uxOptions.copy(showOwnershipOverlay = false)
+            if (topMovesEnabled) controllers.topMovesController.hide()
             buildPremiumDeactivatedDiagnosticEvent(premiumState, System.currentTimeMillis())
                 ?.let(diagnosticEventLog::append)
         }
