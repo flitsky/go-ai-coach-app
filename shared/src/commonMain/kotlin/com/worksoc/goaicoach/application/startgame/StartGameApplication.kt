@@ -1,6 +1,5 @@
 package com.worksoc.goaicoach.application.startgame
 
-import com.worksoc.goaicoach.application.engine.localScoreSnapshot
 import com.worksoc.goaicoach.application.session.RuntimePlayLevelSelection
 import com.worksoc.goaicoach.application.session.selectRuntimePlayLevel
 import com.worksoc.goaicoach.match.MatchMode
@@ -58,7 +57,10 @@ fun buildNewLocalGameSessionPlan(
         candidateText = "No analysis yet.",
         reviewAnalysis = MoveAnalysisSnapshot.empty(state),
         scoreText = "No score estimate yet.",
-        scoreSnapshots = listOf(localScoreSnapshot(state)),
+        // No moves have been played yet, so a flood-fill territory estimate is meaningless here:
+        // with only handicap stones on the board, every empty region borders a single color and
+        // the whole board gets counted as that color's territory (see B+157.5 misdisplay).
+        scoreSnapshots = emptyList(),
         moveReviewText = "No move review yet.",
         lastMoveText = "None",
         endgameLog = "No endgame result recorded.",

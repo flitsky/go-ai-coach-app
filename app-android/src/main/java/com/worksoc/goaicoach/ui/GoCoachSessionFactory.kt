@@ -4,7 +4,6 @@ import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizat
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnUiState
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkStorePort
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkUiState
-import com.worksoc.goaicoach.application.engine.localScoreSnapshot
 import com.worksoc.goaicoach.application.preferences.InitialUserPreferencesPlan
 import com.worksoc.goaicoach.application.savedgame.SavedSessionUiState
 import com.worksoc.goaicoach.application.session.GameSessionAnalysisState
@@ -31,7 +30,9 @@ internal fun buildInitialSessionState(
     ),
     scoreState = GameSessionScoreState.reset(
         scoreText = "No score estimate yet.",
-        scoreSnapshots = listOf(localScoreSnapshot(initialPlan.gameState)),
+        // No moves played yet (handicap stones only, if any) - a flood-fill territory estimate
+        // here would misreport the whole empty board as one side's territory (B+157.5 bug).
+        scoreSnapshots = emptyList(),
         endgameLog = "No endgame result recorded.",
     ),
     runtimeState = GameSessionRuntimeState(

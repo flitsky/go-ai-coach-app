@@ -1329,7 +1329,17 @@ class LayeringContractTest {
         // open/closed state now resets when leaving and returning to the InGame
         // destination, instead of surviving the round trip (backlog item 3's own
         // "착수 전 사용자 결정 필요" gate).
-        val lineBudget = 816
+        //
+        // History (2026-08-18): bumped 816->833. The `scoreState` HolderBackedState
+        // setter (the single choke point every scoreSnapshots write passes through,
+        // from any of the ~8 application-layer sites that can touch it) now diffs
+        // previous vs next snapshots and appends a runtimeScoreSnapshotsChangedLog
+        // line when they differ. This closed a real bug: a B+157.5 flood-fill
+        // misdisplay was traced to a site (engine-startup bootstrap) with no log
+        // coverage at all, so from now on any such site is diagnosable directly from
+        // RuntimeEventLog instead of code archaeology. No new remember/mutableStateOf/
+        // LaunchedEffect — stateHookBudget stays 46.
+        val lineBudget = 833
         val stateHookBudget = 46
 
         val goCoachApp = repoRoot()

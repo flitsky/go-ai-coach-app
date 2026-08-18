@@ -17,10 +17,12 @@ import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.ScoreSnapshot
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.StoneColor
 import com.worksoc.goaicoach.shared.analysisFingerprint
 import com.worksoc.goaicoach.shared.describe
+import com.worksoc.goaicoach.shared.toOneDecimalLabel
 
 private const val RuntimeAppName = "Go AI Coach"
 private const val RuntimeAppPurpose =
@@ -279,6 +281,52 @@ fun runtimeHumanEngineSyncFailureLog(
         detail = "elapsedMs=$elapsedMs message=${failure.engineMessage.runtimeLogSnippet(220)} " +
             "candidateText=${failure.candidateText.runtimeLogSnippet(180)}",
     )
+
+// 그래프에 찍히는 점수(scoreSnapshots)는 8곳 넘는 서로 다른 코드 경로에서 갱신될 수 있고,
+// 그중 일부는 정상적인 흐름의 진행 이벤트(game_reset, ai_turn_success 등) 로그와는 별개로
+// 조용히 실행된다 — 예: 엔진 부트스트랩 완료(engine_startup) 시점에 매번 스코어를 새로 계산해
+// 넣는데, 이건 "새 대국" 리셋과 무관해 리셋 관련 로그만 봐서는 원인을 추적할 수 없었다.
+// 이 함수는 실제로 값이 바뀔 때마다(어느 코드 경로든) GoCoachApp.kt의 scoreState 세터라는
+// 단일 지점에서 호출되므로, 앞으로 이런 종류의 오작동은 어느 이벤트 직후에
+// score_snapshots_changed 로그가 찍히는지만 보면 바로 원인 코드 경로를 특정할 수 있다.
+fun runtimeScoreSnapshotsChangedLog(
+    gameState: GameState,
+    previous: List<ScoreSnapshot>,
+    next: List<ScoreSnapshot>,
+): String =
+    listOf(
+        "event=score_snapshots_changed",
+        "phase=score_state",
+        "board=${gameState.runtimeBoardSummary().runtimeLogValue(180)}",
+        "previousLatest=${previous.runtimeLatestScoreLabel()}",
+        "nextLatest=${next.runtimeLatestScoreLabel()}",
+        "previous=${previous.runtimeScoreSnapshotsSummary().runtimeLogValue(400)}",
+        "next=${next.runtimeScoreSnapshotsSummary().runtimeLogValue(400)}",
+    ).joinToString(" ")
+
+private fun List<ScoreSnapshot>.runtimeScoreSnapshotsSummary(): String =
+    if (isEmpty()) {
+        "empty"
+    } else {
+        sortedBy { it.moveNumber }.joinToString(";") { snapshot ->
+            "m${snapshot.moveNumber}:${snapshot.source}" +
+                ":lead=${snapshot.whiteScoreLead?.toOneDecimalLabel() ?: "none"}" +
+                ":win=${snapshot.whiteWinRate?.toOneDecimalLabel() ?: "none"}"
+        }
+    }
+
+// 그래프 헤더에 실제로 표시되는 "B +N.N" / "W +N.N" 라벨과 동일한 규칙으로 계산한다
+// (ScoreTimelineGraph.kt의 currentScoreLabel과 부호/반올림 방식을 맞춤) — 로그의 값과
+// 화면에서 본 값을 바로 대조할 수 있어야 하기 때문이다.
+private fun List<ScoreSnapshot>.runtimeLatestScoreLabel(): String {
+    val latest = maxByOrNull { it.moveNumber } ?: return "none"
+    val lead = latest.whiteScoreLead ?: return "none(m${latest.moveNumber})"
+    return when {
+        lead > 0.0 -> "W+${lead.toOneDecimalLabel()}"
+        lead < 0.0 -> "B+${(-lead).toOneDecimalLabel()}"
+        else -> "0.0"
+    }
+}
 
 private fun HumanEngineSyncDisplayPlan.runtimeSyncSummary(): String =
     when (this) {

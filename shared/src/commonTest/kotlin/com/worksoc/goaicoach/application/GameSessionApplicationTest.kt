@@ -147,7 +147,7 @@ class GameSessionApplicationTest {
         assertEquals("No move review yet.", plan.moveReviewText)
         assertEquals("None", plan.lastMoveText)
         assertEquals("New game", plan.engineMessage)
-        assertEquals(1, plan.scoreSnapshots.size)
+        assertEquals(emptyList(), plan.scoreSnapshots)
         assertFalse(plan.reviewAnalysis.hasEngineCandidates)
     }
 

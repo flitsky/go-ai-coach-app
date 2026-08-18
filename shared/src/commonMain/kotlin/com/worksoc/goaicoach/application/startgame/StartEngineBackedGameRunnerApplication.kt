@@ -3,7 +3,6 @@ package com.worksoc.goaicoach.application.startgame
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.engine.EngineSessionClient
 import com.worksoc.goaicoach.application.engine.EngineStartupWorkflowResult
-import com.worksoc.goaicoach.application.engine.localScoreSnapshot
 import com.worksoc.goaicoach.application.engine.runEngineBackedNewGameWorkflowResult
 import com.worksoc.goaicoach.application.engine.runEngineIo
 import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
@@ -87,11 +86,16 @@ fun runStartEngineBackedGameApplication(
                 )
                 request.resetLocalGame(result.result.message, targetRuleset, request.plan.boardSize)
                 val resetState = request.currentStateProvider()
-                request.replaceScoreState(
-                    request.currentScoreStateProvider().replaceSnapshots(
-                        listOf(result.result.scoreSnapshot ?: localScoreSnapshot(resetState)),
-                    ),
-                )
+                // No moves have been played on resetState yet (handicap stones only, if any), so
+                // there is no engine estimate to show for it. Only replace the snapshots when the
+                // engine actually returned one - falling back to a local flood-fill territory
+                // estimate here would misreport the whole empty board as one side's territory
+                // (see the B+157.5 misdisplay).
+                result.result.scoreSnapshot?.let { snapshot ->
+                    request.replaceScoreState(
+                        request.currentScoreStateProvider().replaceSnapshots(listOf(snapshot)),
+                    )
+                }
                 resetState
             }
 

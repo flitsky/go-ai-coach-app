@@ -56,6 +56,7 @@ import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
 import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
 import com.worksoc.goaicoach.application.runtime.runtimeAppStartLog
 import com.worksoc.goaicoach.application.runtime.runtimeGameResetLog
+import com.worksoc.goaicoach.application.runtime.runtimeScoreSnapshotsChangedLog
 import com.worksoc.goaicoach.application.runtime.toRuntimeLogContext
 import com.worksoc.goaicoach.application.savedgame.SavedSessionController
 import com.worksoc.goaicoach.application.startgame.NewGameController
@@ -227,7 +228,19 @@ private fun GoCoachScreen(
     )
     var scoreState by HolderBackedState(
         { sessionSnapshot.core.scoreState },
-        { value -> mutateCore { it.copy(scoreState = value) } },
+        { value ->
+            val previousSnapshots = sessionSnapshot.core.scoreState.scoreSnapshots
+            if (previousSnapshots != value.scoreSnapshots) {
+                runtimeEventLog.append(
+                    runtimeScoreSnapshotsChangedLog(
+                        gameState = sessionSnapshot.gameState,
+                        previous = previousSnapshots,
+                        next = value.scoreSnapshots,
+                    ),
+                )
+            }
+            mutateCore { it.copy(scoreState = value) }
+        },
     )
     var moveReviewState by HolderBackedState(
         { sessionSnapshot.core.moveReviewState },

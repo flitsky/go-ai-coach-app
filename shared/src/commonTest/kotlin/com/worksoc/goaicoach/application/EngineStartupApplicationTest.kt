@@ -35,7 +35,7 @@ class EngineStartupApplicationTest {
     }
 
     @Test
-    fun successPlanFallsBackToLocalSnapshot() {
+    fun successPlanShowsNoScoreWhenEngineDidNotReturnAnEstimate() {
         val plan = buildEngineStartupSuccessDisplayPlan(
             state = GameState.empty(),
             result = EngineStartupResult(
@@ -45,7 +45,7 @@ class EngineStartupApplicationTest {
         )
 
         assertTrue(plan.isEngineReady)
-        assertEquals(ScoreSnapshotSource.LocalAreaEstimate, plan.scoreSnapshots.single().source)
+        assertEquals(emptyList<ScoreSnapshot>(), plan.scoreSnapshots)
     }
 
     @Test

@@ -1,7 +1,6 @@
 package com.worksoc.goaicoach.application.engine
 
 import com.worksoc.goaicoach.application.engine.EngineStartupResult
-import com.worksoc.goaicoach.application.engine.localScoreSnapshot
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.ScoreSnapshot
 
@@ -18,7 +17,13 @@ fun buildEngineStartupSuccessDisplayPlan(
 ): EngineStartupDisplayPlan =
     EngineStartupDisplayPlan(
         isEngineReady = true,
-        scoreSnapshots = listOf(result.scoreSnapshot ?: localScoreSnapshot(state)),
+        // No moves have been played on `state` yet (handicap stones only, if any), so there is
+        // nothing meaningful to show if the engine didn't return an estimate - falling back to a
+        // local flood-fill territory estimate here would misreport the whole empty board as one
+        // side's territory (see the B+157.5 misdisplay). This is the engine BOOTSTRAP step, not
+        // the "new game" reset - it fires on every app start / engine (re)init, well before the
+        // player ever taps "새 대국", which is why it was easy to miss as the actual source.
+        scoreSnapshots = result.scoreSnapshot?.let { listOf(it) } ?: emptyList(),
         engineMessage = result.message,
         candidateText = null,
     )

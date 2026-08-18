@@ -31,6 +31,8 @@ import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
 import com.worksoc.goaicoach.shared.PlayLevelGroup
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.ScoreSnapshot
+import com.worksoc.goaicoach.shared.ScoreSnapshotSource
 import com.worksoc.goaicoach.shared.SearchTimeLimit
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.StoneColor
@@ -81,6 +83,48 @@ class RuntimeEventApplicationTest {
         assertTrue(log.contains("search=Time limit 3000ms"))
         assertTrue(log.contains("detail=\"New local board prepared. message=new game started\""))
         assertTrue(log.contains("fp="))
+    }
+
+    @Test
+    fun scoreSnapshotsChangedLogShowsLatestLabelsForBothSides() {
+        val localAreaEstimate = ScoreSnapshot(
+            moveNumber = 0,
+            whiteScoreLead = -157.5,
+            whiteWinRate = null,
+            source = ScoreSnapshotSource.LocalAreaEstimate,
+        )
+        val engineEstimate = ScoreSnapshot(
+            moveNumber = 0,
+            whiteScoreLead = -53.043,
+            whiteWinRate = 0.0,
+            source = ScoreSnapshotSource.EngineEstimate,
+        )
+
+        val log = runtimeScoreSnapshotsChangedLog(
+            gameState = GameState.withHandicap(BoardSize.Nine, Ruleset.Japanese, handicapCount = 5),
+            previous = listOf(localAreaEstimate),
+            next = listOf(engineEstimate),
+        )
+
+        assertTrue(log.startsWith("event=score_snapshots_changed phase=score_state"))
+        assertTrue(log.contains("previousLatest=B+157.5"))
+        assertTrue(log.contains("nextLatest=B+53.0"))
+        assertTrue(log.contains("previous=\"m0:LocalAreaEstimate:lead=-157.5:win=none\""))
+        assertTrue(log.contains("next=\"m0:EngineEstimate:lead=-53.0:win=0.0\""))
+    }
+
+    @Test
+    fun scoreSnapshotsChangedLogHandlesEmptyLists() {
+        val log = runtimeScoreSnapshotsChangedLog(
+            gameState = GameState.empty(),
+            previous = emptyList(),
+            next = emptyList(),
+        )
+
+        assertTrue(log.contains("previousLatest=none"))
+        assertTrue(log.contains("nextLatest=none"))
+        assertTrue(log.contains("previous=\"empty\""))
+        assertTrue(log.contains("next=\"empty\""))
     }
 
     @Test
