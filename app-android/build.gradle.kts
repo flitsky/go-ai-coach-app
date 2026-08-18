@@ -51,6 +51,14 @@ val realBannerAdUnitId: String? = localProperties.getProperty("admob.bannerAdUni
 val premiumProductId: String =
     localProperties.getProperty("billing.premiumProductId") ?: "premium_lifetime_placeholder"
 
+// 개발용 원격 엔진 스파이크(docs/refactoring/LAYERED_ARCHITECTURE_REFACTORING_PLAN_260803_1500.md
+// Stage E-3) — local.properties(gitignored)의 debug.remoteEngineUrl 키로 맥북 등에서 띄운
+// scripts/run-katago-remote-analysis-server.py의 주소(예: http://192.168.0.10:8765/analyze)를
+// 넣으면 debug 빌드가 그 서버로 분석을 위임한다. AdMob 키와 같은 이유로 friend/playInternal/
+// release는 이 값을 절대 물려받지 않고 항상 빈 문자열(비활성)로 고정한다 — 지인 배포/출시
+// 빌드가 실수로 개발자 개인 맥북 IP를 하드코딩한 채 나가는 사고를 원천적으로 막기 위함.
+val debugRemoteEngineUrl: String? = localProperties.getProperty("debug.remoteEngineUrl")
+
 // versionCode/versionName은 저장소 루트의 version.properties(커밋 대상 — local.properties와
 // 달리 비밀값이 아니라 "지금까지 몇 번 릴리스했는지"를 나타내는 공유 상태다)에서 읽는다.
 // `make release`/`make bundle-aab`/`make play-internal-aab`이 Gradle을 부르기 전에
@@ -120,6 +128,7 @@ android {
             buildConfigField("boolean", "USE_TEST_ADS", "true")
             buildConfigField("String", "REWARDED_INTERSTITIAL_AD_UNIT_ID", "\"$testRewardedInterstitialAdUnitId\"")
             buildConfigField("String", "BANNER_AD_UNIT_ID", "\"$testBannerAdUnitId\"")
+            buildConfigField("String", "REMOTE_ENGINE_URL", "\"${debugRemoteEngineUrl ?: ""}\"")
         }
         getByName("release") {
             // playInternal과 동일한 Play Console 업로드용 release keystore로 서명한다 — 이 줄이
@@ -162,6 +171,8 @@ android {
                 "\"${realRewardedInterstitialAdUnitId ?: testRewardedInterstitialAdUnitId}\"",
             )
             buildConfigField("String", "BANNER_AD_UNIT_ID", "\"${realBannerAdUnitId ?: testBannerAdUnitId}\"")
+            // 개발자 맥북 IP가 출시 빌드에 섞여 나갈 방법이 없도록 항상 비활성 고정.
+            buildConfigField("String", "REMOTE_ENGINE_URL", "\"\"")
         }
         create("friend") {
             initWith(getByName("debug"))
@@ -174,6 +185,8 @@ android {
             buildConfigField("boolean", "USE_TEST_ADS", "true")
             buildConfigField("String", "REWARDED_INTERSTITIAL_AD_UNIT_ID", "\"$testRewardedInterstitialAdUnitId\"")
             buildConfigField("String", "BANNER_AD_UNIT_ID", "\"$testBannerAdUnitId\"")
+            // debug에서 initWith해도 지인 배포 채널에는 개발자 맥북 IP를 절대 물려주지 않는다.
+            buildConfigField("String", "REMOTE_ENGINE_URL", "\"\"")
         }
         create("playInternal") {
             // Play Console 업로드 전용(premium-mode/README.md Step 4 후속) — friend와 완전히
@@ -197,6 +210,7 @@ android {
             buildConfigField("boolean", "USE_TEST_ADS", "true")
             buildConfigField("String", "REWARDED_INTERSTITIAL_AD_UNIT_ID", "\"$testRewardedInterstitialAdUnitId\"")
             buildConfigField("String", "BANNER_AD_UNIT_ID", "\"$testBannerAdUnitId\"")
+            buildConfigField("String", "REMOTE_ENGINE_URL", "\"\"")
         }
     }
 

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  개발용 원격 엔진 스파이크 전용(docs/refactoring/LAYERED_ARCHITECTURE_REFACTORING_PLAN_260803_1500.md
+  Stage E-3). Android는 targetSdk 28+부터 평문(cleartext) HTTP를 기본 차단한다 —
+  BuildConfig.REMOTE_ENGINE_URL(scripts/run-katago-remote-analysis-server.py)이
+  로컬 네트워크 IP로 평문 HTTP를 쓰므로 이 예외가 필요하다.
+
+  이 파일은 debug 소스셋에만 있다 — friend/playInternal/release 매니페스트는
+  이 파일을 전혀 병합하지 않으므로(app-android/build.gradle.kts에서
+  REMOTE_ENGINE_URL도 그 빌드타입들에서 항상 빈 문자열로 고정돼 있는 것과 이중으로
+  안전) 배포용 빌드가 실수로 평문 HTTP를 허용한 채 나갈 방법이 없다.
+
+  10.0.2.2는 Android 에뮬레이터가 호스트 머신의 localhost를 가리키는 표준 별칭.
+
+  Android network security config의 <domain>은 정확한 호스트명/IP만 받고
+  CIDR 대역(10.0.0.0/8 같은)은 지원하지 않는다 — 그래서 "로컬 네트워크 전체"를
+  한 번에 허용할 수 없다. 실기기로 테스트할 때(같은 Wi-Fi의 맥북 LAN IP, 예:
+  192.168.x.x)는 그 IP를 <domain> 줄로 여기 직접 추가해야 한다. 매번 IP가
+  바뀌는 게 번거로우면 장기적으로는 mDNS 호스트명(예: MyMacBook.local, 보통
+  기본으로 광고됨)을 쓰는 방법도 검토할 수 있다 — 이번 스파이크 범위 밖.
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">10.0.2.2</domain>
+    </domain-config>
+</network-security-config>

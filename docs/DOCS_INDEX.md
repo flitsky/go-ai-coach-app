@@ -15,6 +15,8 @@
 갱신: 2026-08-17 (2) — `빠른 초급`/`초급` 레벨링용 후보수(candidate moves) 확장 방향을 검토한 `engine-research/ENGINE_CANDIDATE_EXPANSION_REVIEW_2026-08-17.md`를 신설해 "엔진 검증/연구 리뷰" 표에 편입했다. `ENGINE.md`/`ENGINE_API_CALL_POLICY.md`의 레벨 표를 코드와 대조해 정확함을 재확인하는 한편, `refinePolicyMoves`(엔진 어댑터에 이미 구현돼 있으나 AI 착수 경로에서는 항상 0으로 꺼져 있던 후보 확장 기능)의 비용/효과를 새 스크립트(`scripts/run-katago-candidate-refine-experiment.py`)로 실측했다. 앱 코드 변경은 없음 — 다음 실험으로 넘기는 방향 검토 문서.
 갱신: 2026-08-17 (3) — **"삭제 대신 보관" 문서 보존 원칙을 뒤집었다.** `docs/archive/`(5개 하위 폴더, 55개 파일, 1.2MB)와 `docs/refactoring/`(리팩토링 축이 260817에 종료 확인됨, 8개 파일)를 저장소에서 완전히 제거하고 git 히스토리로만 남겼다 — 사유와 복원 방법은 아래 "문서 보존 정책" 절 참고. 유일한 예외로 실측 데이터가 계속 인용되던 `ENGINE_BEGINNER_VISITS_BENCHMARK.md`는 `docs/engine-research/`로 이동 보존했다. 삭제된 경로를 가리키던 모든 교차 참조(`ENGINE_API_CALL_POLICY.md`, `GO_AI_COACH_ARCHITECTURE_ROADMAP.md`, `docs/history/THREAD_HISTORY.md`, `launch-plan/README.md`, `premium-mode/README.md`, `auth-onboarding/README.md`)를 함께 정리했다. 아래 "리팩토링 전략/진행 로그"·"아카이브" 두 섹션은 이 갱신으로 제거됐다.
 갱신: 2026-08-17 (4) — `빠른 초급` 1~3단계를 후보 분류(최적수/중급수/최하수) 기반 5단계(`초보`~`초고수`)로 재정립하는 계획서 `engine-research/FAST_BEGINNER_FIVE_TIER_REDESIGN_PLAN_2026-08-17.md`를 신설해 "엔진 검증/연구 리뷰" 표에 편입했다. 승인 대기 중인 계획 문서 — 앱 코드는 아직 바뀌지 않았다. 승인/구현되면 `ENGINE.md`/`ENGINE_API_CALL_POLICY.md`의 `빠른 초급` 표를 갱신해야 한다.
+갱신: 2026-08-18 — **전날 삭제 판단 정정.** `refactoring/LAYERED_ARCHITECTURE_REFACTORING_PLAN_260803_1500.md`를 2026-08-17 (3) 정리에서 "종료된 리팩토링 로그"로 분류해 지웠으나, 실제로는 원격 엔진(Stage D/E)·물리적 분산(Stage F, DePIN) 로드맵을 담은 **현재도 진행 중인 활성 계획서**였다 — `app-android/engine/RemoteEngineSessionBootstrap.kt`가 지금도 "Stage E-1" 용어로 이 문서를 직접 참조한다. git 히스토리에서 복원하고 `docs/refactoring/`을 이 활성 작업 전용으로 재생성했다. 문서 보존 정책의 판단 기준("지금도 다른 활성 문서/코드가 구체적으로 인용하는가")을 이번 삭제 때 놓쳤던 사례 — 코드 주석까지 확인하지 않고 문서 이름만으로 판단한 게 원인. 상세는 그 문서의 진행 로그 참고.
+갱신: 2026-08-18 (2) — Stage E-3(개발용 원격 엔진 HTTP 참조 서버) 실기 검증 후, HTTP를 MQ(또는 Firestore)로 바꾸고 폰↔폰까지 지원하는 후속 요청이 들어와 Stage F 전용 킥오프 문서 `refactoring/REMOTE_ENGINE_MQ_TRANSPORT_KICKOFF_PLAN_260818_0825.md`를 신설했다. **결정/설계만 기록한 문서 — 착수 전.** "맥북 파이썬으로 먼저 검증 후 앱 이식" 순서를 확정했고, MQTT/Firestore 두 후보로 전송 수단을 좁혔다.
 
 ## 하위 폴더 한눈에 보기
 
@@ -22,11 +24,12 @@
 | --- | --- |
 | `docs/` (최상위) | 2026-06-28 기준, 지금 제품을 이해/운영하는 데 바로 필요한 9개 핵심 문서만 |
 | `docs/engine-research/` | 엔진 강도·search tree 정책 검증 실험 리뷰. 결론은 핵심 문서에 반영됐지만 여전히 기술적으로 인용되는 근거 원본만 소수 유지 |
+| `docs/refactoring/` | **2026-08-18 재생성.** 지금 진행 중인 활성 리팩토링/로드맵 문서 전용 — 끝나면 다시 지운다(아래 "문서 보존 정책" 절). 현재 2개: `LAYERED_ARCHITECTURE_REFACTORING_PLAN_260803_1500.md`(원격 엔진/DePIN 로드맵)와 그 Stage F 전용 킥오프 문서 `REMOTE_ENGINE_MQ_TRANSPORT_KICKOFF_PLAN_260818_0825.md` |
 | `docs/history/` | 프로젝트 대화/작업 히스토리 누적 기록. 계속 append되는 진행 중인 로그 |
 | `docs/engine-match-logs/`, `docs/engine-benchmark-logs/` | KataGo 레벨 매트릭스·기기 성능 측정 raw/summary 로그 |
 | `docs/error-cases/` | 계가/사석/패스 관련 버그 재현 케이스 |
 
-**2026-08-17부로 `docs/refactoring/`(완료된 리팩토링 작업 로그)와 `docs/archive/<날짜>-<사유>/`(더 이상 유효하지 않은 문서 보관)는 저장소에 두지 않는다.** 완료되고 결론이 흡수된 문서는 이제 옮기지 않고 삭제한다 — 근거와 복원 방법은 아래 "문서 보존 정책" 절 참고.
+**`docs/refactoring/`(완료된 리팩토링 작업 로그)와 `docs/archive/<날짜>-<사유>/`(더 이상 유효하지 않은 문서 보관)는 기본적으로 저장소에 두지 않는다.** 완료되고 결론이 흡수된 문서는 옮기지 않고 삭제한다. `docs/refactoring/`은 지금처럼 **실제로 진행 중인** 로드맵이 있을 때만 예외적으로 존재하고, 그 작업이 끝나면 다시 삭제한다 — 근거와 복원 방법은 아래 "문서 보존 정책" 절 참고.
 
 ## docs/ 최상위 핵심 문서 (2026-07-30 기준 10개)
 
@@ -104,6 +107,19 @@ git show <커밋해시>^:docs/archive/<경로>/<파일명>.md > <파일명>.md
 ```
 
 **2026-08-17에 제거한 것**: `docs/archive/`(5개 하위 폴더, 55개 파일) 전체, `docs/refactoring/`(8개 파일, 리팩토링 축 종료 확인) 전체. 삭제된 경로를 가리키던 교차 참조(`ENGINE_API_CALL_POLICY.md`, `GO_AI_COACH_ARCHITECTURE_ROADMAP.md`, `docs/history/THREAD_HISTORY.md`, `launch-plan/README.md`, `premium-mode/README.md`, `auth-onboarding/README.md`)도 같은 날 함께 정리했다.
+
+**2026-08-18 정정**: 위 목록 중 `refactoring/LAYERED_ARCHITECTURE_REFACTORING_PLAN_260803_1500.md`는 삭제 판단이 틀렸다 — 원격 엔진/DePIN 로드맵이 아직 진행 중이었다(아래 "리팩토링 전략/진행 로그" 절). git 히스토리에서 복원했다. 이 사례가 남긴 교훈: 삭제 전에는 문서 이름/날짜만 보지 말고, **코드 주석이 그 문서를 아직 참조하는지**(`grep -r "문서파일명" --include="*.kt"`)까지 확인한다.
+
+## 리팩토링 전략/진행 로그
+
+`docs/refactoring/`은 기본적으로 비어 있다(문서 보존 정책 참고). 지금은 실제로 진행 중인 로드맵이 있어 예외적으로 1개를 담고 있다.
+
+| 위치 | 용도 |
+| --- | --- |
+| `refactoring/LAYERED_ARCHITECTURE_REFACTORING_PLAN_260803_1500.md` | 7계층 원칙을 실제 코드에 단계적으로 반영하는 로드맵. Stage D(로컬/원격 `EngineCoreApi` 계약 대등화)·Stage E(`RemoteEngineSessionClient`, 원격 후보 선택)는 260804에 완료. Stage E-3(개발용 HTTP 참조 서버 + 디버그 토글 배선, 260818)까지 실제 대국 e2e 검증 완료. Stage F(물리적 분산·DePIN)는 전용 킥오프 문서로 분리(아래 행) |
+| `refactoring/REMOTE_ENGINE_MQ_TRANSPORT_KICKOFF_PLAN_260818_0825.md` | Stage F 전용 킥오프 — HTTP→MQ/Firestore 전환, 폰↔폰 지원, 세션 토픽 기반 정합성 체크·보상 점수 감사로그 설계. **결정 문서, 착수 전** — "맥북 파이썬으로 먼저 검증 후 앱 이식" 결정과 근거만 기록, 구현은 별도 승인 대기 |
+
+이 문서의 작업이 전부 끝나면(또는 Stage F까지 갈 경우 그 전용 킥오프 문서로 넘어가면) 이 문서도 다시 삭제한다.
 
 ## 엔진 검증/연구 리뷰
 

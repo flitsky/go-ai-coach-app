@@ -46,7 +46,9 @@ class UserPreferencesApplicationTest {
         )
 
         assertEquals(Ruleset.Chinese, plan.gameState.ruleset)
-        assertEquals(StoneColor.Black, plan.gameState.nextPlayer)
+        // preferences가 handicapCount를 명시하지 않아 기본값(이 9x9 판의 최대 접바둑 5)을
+        // 그대로 쓴다 — 접바둑 대국은 백이 먼저 두므로 White가 맞다(2026-08-18 기본값 변경).
+        assertEquals(StoneColor.White, plan.gameState.nextPlayer)
         assertEquals(setup, plan.playerSetup)
         assertEquals(PlayLevelSetting(PlayLevelGroup.Beginner, level = 3), plan.runtime.playLevel)
         assertEquals(5_000L, plan.runtime.engineProfile.analysisLimit.timeMillis)

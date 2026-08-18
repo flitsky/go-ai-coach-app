@@ -266,6 +266,93 @@ class RemoteEngineCoreApiAdapterTest {
         )
     }
 
+    /**
+     * Contract/regression test against `scripts/run-katago-remote-analysis-server.py`'s
+     * `/engine` endpoint (`LAYERED_ARCHITECTURE_REFACTORING_PLAN` Stage E-3) — the
+     * one `createRemoteEngineSessionClient` actually talks to. Both response bodies
+     * below are verbatim captures from that script running against local KataGo on
+     * an empty 9x9 board, Black to move — not hand-written fixtures. If the Python
+     * server's JSON shape ever drifts from what this Kotlin codec expects, this
+     * test is the tripwire.
+     */
+    @Test
+    fun httpTransportParsesRealMacReferenceServerEngineResponses() = runBlocking {
+        val genMoveConnection = FakeEngineHttpURLConnection(
+            url = URL("http://example.test/engine"),
+            responseBody = """
+                {
+                  "result": {
+                    "status": {"state": "Ready", "message": "Remote engine genMove complete."},
+                    "summary": "Remote (macOS reference server) genMove selected E5.",
+                    "move": {"player": "Black", "type": "play", "point": "E5", "boardSize": 9}
+                  }
+                }
+            """.trimIndent(),
+        )
+        val genMoveTransport = HttpRemoteEngineOperationTransport(
+            config = RemoteEngineHttpConfig(endpointUrl = "http://example.test/engine", enabled = true),
+            connectionFactory = object : RemotePositionAnalysisHttpConnectionFactory {
+                override fun open(url: URL): HttpURLConnection = genMoveConnection
+            },
+        )
+        val genMoveResponse = genMoveTransport.execute(sampleRequest(operation = RemoteEngineOperation.GenMove))
+        assertEquals(EngineState.Ready, genMoveResponse.status.state)
+        assertEquals(
+            Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)),
+            genMoveResponse.move,
+        )
+
+        val estimateConnection = FakeEngineHttpURLConnection(
+            url = URL("http://example.test/engine"),
+            responseBody = """
+                {
+                  "result": {
+                    "status": {"state": "Ready", "message": "Remote engine estimateScore complete."},
+                    "summary": "Remote (macOS reference server) score estimate (ownership heatmap not implemented).",
+                    "whiteWinRate": 0.662439694,
+                    "whiteScoreLead": 0.252659785
+                  }
+                }
+            """.trimIndent(),
+        )
+        val estimateTransport = HttpRemoteEngineOperationTransport(
+            config = RemoteEngineHttpConfig(endpointUrl = "http://example.test/engine", enabled = true),
+            connectionFactory = object : RemotePositionAnalysisHttpConnectionFactory {
+                override fun open(url: URL): HttpURLConnection = estimateConnection
+            },
+        )
+        val estimateResponse = estimateTransport.execute(sampleRequest(operation = RemoteEngineOperation.EstimateScore))
+        assertEquals(0.662439694, estimateResponse.whiteWinRate ?: -1.0, 0.0001)
+        assertEquals(0.252659785, estimateResponse.whiteScoreLead ?: -1.0, 0.0001)
+        // Documented scope cut (module docstring): no ownership heatmap yet.
+        assertEquals(null, estimateResponse.ownership)
+
+        // deadStones: the reference server returns a clean "not implemented"
+        // error rather than a guessed answer — confirm that parses as an error
+        // status rather than throwing, so the app's existing local-fallback
+        // endgame path (docs/ENGINE_API_CALL_POLICY.md "종국 GTP 호출 정책") can
+        // catch it the same way it already catches local timeouts.
+        val deadStonesConnection = FakeEngineHttpURLConnection(
+            url = URL("http://example.test/engine"),
+            responseBody = """
+                {
+                  "result": {
+                    "status": {"state": "Error", "message": "Remote engine 'deadStones' is not implemented by this dev server."},
+                    "summary": "deadStones not implemented — app should fall back to local endgame judging."
+                  }
+                }
+            """.trimIndent(),
+        )
+        val deadStonesTransport = HttpRemoteEngineOperationTransport(
+            config = RemoteEngineHttpConfig(endpointUrl = "http://example.test/engine", enabled = true),
+            connectionFactory = object : RemotePositionAnalysisHttpConnectionFactory {
+                override fun open(url: URL): HttpURLConnection = deadStonesConnection
+            },
+        )
+        val deadStonesResponse = deadStonesTransport.execute(sampleRequest(operation = RemoteEngineOperation.DeadStones))
+        assertEquals(EngineState.Error, deadStonesResponse.status.state)
+    }
+
     private fun sampleRequest(
         operation: RemoteEngineOperation = RemoteEngineOperation.Analyze,
     ): RemoteEngineOperationRequest =

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  debug 소스셋 전용 매니페스트 병합 조각. src/main/AndroidManifest.xml의
+  <application> 태그에 networkSecurityConfig 속성만 추가한다(Gradle 매니페스트
+  머저가 같은 태그의 서로 다른 속성을 합쳐준다). friend/playInternal/release는
+  이 파일을 병합하지 않으므로 network_security_config_debug.xml의 cleartext
+  허용도 그 빌드타입들에는 전혀 적용되지 않는다.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application android:networkSecurityConfig="@xml/network_security_config_debug" />
+</manifest>

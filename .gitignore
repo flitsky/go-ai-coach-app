@@ -42,3 +42,10 @@ tmp/
 
 # Local agent/tool state
 .bkit/
+
+# Python (scripts/*.py)
+__pycache__/
+*.pyc
+.venv/
+venv/
+*-venv/
