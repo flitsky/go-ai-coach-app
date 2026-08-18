@@ -68,8 +68,34 @@
 4. **세션 토픽 정리(TTL) 정책 결정** — 오늘 초안에 없던 항목: 대국마다 새 토픽/컬렉션이 쌓이므로, 대국 종료 후 언제까지 보관할지(보상 정산에 필요한 기간만큼?) 정해야 한다.
 5. 위가 안정되면 → **개발자 토글 UI + MQ/Firestore transport 이식**을 별도 승인받아 진행.
 
+## 7. 프로토타입 실행 결과 (2026-08-18, 5절 승인 후 즉시 착수)
+
+6절 1~4번을 맥북에서 실제로 실행해 확인했다. 코드는 전부 `scripts/remote-engine-mq-prototype/`에 있다.
+
+**환경**: `pyenv`의 Python 3.11.9로 전용 가상환경(`scripts/.mq-prototype-venv/`, git에 안 잡힘)을 만들어 `paho-mqtt`/`google-cloud-firestore`를 설치했다 — 시스템 기본 Python은 3.14라 이 두 패키지의 사전빌드 wheel이 아직 없었다. MQTT는 `brew install mosquitto`로 로컬 브로커(`mosquitto-local.conf`, `localhost:1883`, 인증 없음, 이 프로토타입 전용)를, Firestore는 `npx firebase-tools emulators:start --only firestore --project demo-go-ai-coach`로 에뮬레이터(`127.0.0.1:8080`)를 띄웠다 — **둘 다 로컬 전용이고, 실제 프로덕션 Firebase 프로젝트(`project-baduk-hanpan`)나 실제 인증정보는 전혀 건드리지 않는다.**
+
+**1) 세션 토픽 흉내내기 — `run_session_topic_mqtt_prototype.py` / `run_session_topic_firestore_prototype.py`**: 요청자 1 + 후보 2를 각각 별도 프로세스로 띄우는 `--role demo` 모드로 실행. 두 트랜스포트 모두 "세션 ID로 토픽/컬렉션 구성 → 요청 발행 → 복수 응답 수신 → 도착 순서로 5/3/2/1점 랭킹 계산 → JSONL 이력 파일 기록"이 그대로 동작함을 확인했다(`runs/*.jsonl`). 후보가 응답하지 않는 경우("연결 불가")도 두 트랜스포트 모두에서 타임아웃 후 "NO responses" 경로가 정상적으로 잡혔다.
+
+**2) 정합성 체크 실험 — `run_consistency_check_experiment.py`**: `run-katago-remote-analysis-server.py`의 `KataGoEngine`을 그대로 재사용해(임포트, 코드 중복 없음), 같은 국면을 "로컬"(numSearchThreads=4) 설정으로 3회 반복 분석해 자연 편차(nondeterminism floor)를 측정하고, "원격"을 흉내낸 다른 스레드 설정(numSearchThreads=1, 약한 하드웨어 가정)의 1회 분석과 비교했다. 첫 3수 + 루트 국면(총 4개 포지션), maxVisits=150 기준 실측치:
+
+| 국면(수) | 로컬 반복 편차(winrate) | 로컬-원격 편차(winrate) |
+| --- | --- | --- |
+| 0 | 0.0030 | 0.0018 |
+| 1 | 0.0027 | 0.0086 |
+| 2 | 0.0023 | 0.0048 |
+| 3 | 0.0186 | 0.0545 |
+
+로컬-원격 편차가 로컬 반복 편차와 같은 자릿수라 **"정확히 같음"이 아니라 "허용 오차 기반 비교"가 맞다는 6절 2번의 가설이 실측으로 확인됐다.** 시작 임계값 제안: winrate 기준 관측된 최대 편차(0.0545)의 약 2배인 **0.10~0.11 winrate** — 이보다 크게 벌어지면 "다른 하드웨어라 그런 것"이 아니라 "다른 답"으로 취급. 향후 실제 이식 시 maxVisits를 실제 게임값(보통 더 큼)으로 올려 재측정 필요.
+
+**3) 타임아웃+병행 폴백 시뮬레이션 — `run_timeout_parallel_fallback_experiment.py`**: 로컬이 300ms마다 착수를 계속 진행하는 동안, 후보가 수마다 지연을 키우고(200ms + 150ms×수) 3~4번째 수는 아예 응답을 안 하도록(`--drop-moves 3 4`) 설정해 8수를 시뮬레이션. 결과: **로컬 착수 시퀀스(`committed_moves`)는 `[0,1,2,3,4,5,6,7]`로 한 번도 끊기거나 되돌아가지 않았고**, 뒤늦게 도착한 응답 6개 중 4개는 "이미 지나간 수"로 분류돼 로그만 남기고 상태는 전혀 건드리지 않았다. 응답을 안 한 3~4번 수 이후(5번 수부터)도 원격 요청 발행이 끊기지 않고 계속됐다 — 6절 3번이 확인하려던 두 가지("로컬 계속 진행", "원격 요청 계속 병행", "뒤늦은 응답이 이미 커밋된 수와 충돌하지 않음")를 모두 실측으로 검증했다.
+
+**4) 세션 토픽 TTL 정책 — 결정**: 보상 정산(5/3/2/1점) 로직 자체가 아직 미구현이라 "정산 주기"가 아직 정해져 있지 않으므로, 정산이 붙기 전까지는 **Firestore 문서 TTL 정책(문서에 `expireAt` 타임스탬프 필드를 두고 Firestore가 자동 삭제하는 기능, 별도 크론 불필요)으로 30일 보관**을 기본값으로 잡는다. 근거: (a) 4절 결론대로 감사로그는 결국 Firestore(류의 문서 DB)에 쌓일 공산이 높으므로 MQTT를 최종 채택해도 이 정책은 그대로 적용 가능하고, (b) 1인 개발 규모에서 30일이면 정산 배치를 주/월 단위로 돌리기에 충분한 여유가 있으면서도 무기한 보관으로 인한 스토리지 증가를 막는다. **후속 개선(지금 확정하지 않음)**: 정산 로직이 실제로 붙으면 "정산 완료 세션은 즉시 삭제, 미정산 세션만 30일 TTL"로 좁히는 편이 더 낫다 — 정산 여부를 모르는 지금 시점엔 과도한 설계라 보류.
+
+**5) 다음 단계**: 5절 결정대로 여기까지는 순수 파이썬 검증이고, **앱 쪽(개발자 토글 UI, `EngineCoreApiFactory`에 MQTT/Firestore transport 추가, "여러 응답 정합성 체크"·"로컬+원격 병행" 계약을 담을 새 인터페이스 설계)은 아직 착수하지 않았다** — 이 프로토타입 결과(특히 2·3번의 실측 임계값·동시성 패턴)를 바탕으로 이식 여부를 별도 승인받고 진행한다.
+
 ## 참고 문서
 
 - [`docs/refactoring/LAYERED_ARCHITECTURE_REFACTORING_PLAN_260803_1500.md`](LAYERED_ARCHITECTURE_REFACTORING_PLAN_260803_1500.md) — Stage D/E(오늘 이 문서가 이어받는 원격 엔진 배경), Stage F 정의(이 문서가 그 전용 킥오프)
 - `scripts/run-katago-remote-analysis-server.py` — 어제 만든 HTTP 참조 서버. MQ/Firestore 프로토타입에서 KataGo 프로세스 관리 부분을 그대로 재사용한다
+- `scripts/remote-engine-mq-prototype/` — 7절 결과를 낸 실제 파이썬 프로토타입 코드(MQTT/Firestore 세션 토픽, 정합성 체크, 타임아웃+병행 폴백 실험)와 실행 로그(`runs/*.jsonl`)
 - `shared/src/commonMain/kotlin/com/worksoc/goaicoach/shared/RemotePositionAnalysisTransport.kt` — 이미 있는 트랜스포트 추상화 계약(3절)

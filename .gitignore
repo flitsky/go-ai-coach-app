@@ -49,3 +49,5 @@ __pycache__/
 .venv/
 venv/
 *-venv/
+scripts/remote-engine-mq-prototype/runs/
+*-debug.log
