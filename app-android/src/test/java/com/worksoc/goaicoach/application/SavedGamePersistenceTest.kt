@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.application
 
 import com.worksoc.goaicoach.application.savedgame.*
+import com.worksoc.goaicoach.application.score.FinalScoreJudgement
 import com.worksoc.goaicoach.persistence.SavedGameSessionCodec
 import com.worksoc.goaicoach.shared.ScoreSnapshot
 import com.worksoc.goaicoach.shared.ScoreSnapshotSource
@@ -10,8 +11,10 @@ import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.PlayLevelSetting
+import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.StoneColor
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -65,6 +68,26 @@ class SavedGamePersistenceTest {
         )
 
         assertEquals(SavedGamePersistencePlan.Clear, endedPlan)
+    }
+
+    @Test
+    fun savesEndedGameSnapshotWhenFinalJudgementIsPresent() {
+        val judgement = finalScoreJudgement()
+        val endedPlan = planSavedGamePersistence(
+            hasCheckedSavedSession = true,
+            shouldShowResumePrompt = false,
+            isGameEnded = true,
+            gameState = playableState(),
+            playerSetup = PlayerSetup(),
+            playLevel = PlayLevelSetting(),
+            topMovesEnabled = false,
+            scoreSnapshots = emptyList(),
+            nowMillis = 10L,
+            finalScoreJudgement = judgement,
+        )
+
+        assertTrue(endedPlan is SavedGamePersistencePlan.Save)
+        assertEquals(judgement, (endedPlan as SavedGamePersistencePlan.Save).snapshot.finalScoreJudgement)
     }
 
     @Test
@@ -163,6 +186,36 @@ class SavedGamePersistenceTest {
     }
 
     @Test
+    fun savedGameSessionCodecSerializesAndDeserializesFinalScoreJudgement() {
+        val judgement = finalScoreJudgement()
+        val snapshot = SavedGameSnapshot(
+            gameState = playableState(),
+            playerSetup = PlayerSetup(),
+            playLevel = PlayLevelSetting(),
+            topMovesEnabled = true,
+            savedAtMillis = 999L,
+            finalScoreJudgement = judgement,
+        )
+        val decoded = SavedGameSessionCodec.decode(SavedGameSessionCodec.encode(snapshot))
+
+        assertEquals(judgement, decoded?.finalScoreJudgement)
+    }
+
+    @Test
+    fun savedGameSessionCodecRoundTripsNullFinalScoreJudgement() {
+        val snapshot = SavedGameSnapshot(
+            gameState = playableState(),
+            playerSetup = PlayerSetup(),
+            playLevel = PlayLevelSetting(),
+            topMovesEnabled = true,
+            savedAtMillis = 999L,
+        )
+        val decoded = SavedGameSessionCodec.decode(SavedGameSessionCodec.encode(snapshot))
+
+        assertNull(decoded?.finalScoreJudgement)
+    }
+
+    @Test
     fun persistenceRunnerAppliesSaveAndClearPlansToStore() {
         val store = RecordingSavedGameStore()
         val state = playableState()
@@ -229,4 +282,19 @@ class SavedGamePersistenceTest {
     private fun playableState(): GameState =
         GameState.empty()
             .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+
+    private fun finalScoreJudgement(): FinalScoreJudgement =
+        FinalScoreJudgement(
+            winner = StoneColor.Black,
+            margin = 0.5,
+            ruleset = Ruleset.Japanese,
+            isEstimatedDisplay = false,
+            removedBlack = 14,
+            removedWhite = 0,
+            blackArea = 44.0,
+            whiteAreaWithKomi = 43.5,
+            capturedByBlack = 12,
+            capturedByWhite = 8,
+            komi = 6.5,
+        )
 }

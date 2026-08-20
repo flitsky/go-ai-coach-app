@@ -3,6 +3,7 @@ package com.worksoc.goaicoach.persistence
 import android.content.Context
 import com.worksoc.goaicoach.application.savedgame.SavedGameStorePort
 import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
+import com.worksoc.goaicoach.application.score.FinalScoreJudgement
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.persistence.PlayerSetupJsonCodec.decodePlayerSetup
 import com.worksoc.goaicoach.persistence.PlayerSetupJsonCodec.decodePlayLevel
@@ -24,7 +25,10 @@ internal class GameSessionStore(context: Context) : SavedGameStorePort {
     private val prefs = context.applicationContext.getSharedPreferences(PrefsName, Context.MODE_PRIVATE)
 
     override fun save(snapshot: SavedGameSnapshot) {
-        if (!snapshot.isResumable) {
+        // A finished game is never "resumable" (see SavedGameSnapshot.isResumable), but a
+        // snapshot carrying a final-score judgement still needs to survive process death so
+        // the result popup can be restored on the next cold start.
+        if (!snapshot.isResumable && snapshot.finalScoreJudgement == null) {
             clear()
             return
         }
@@ -37,11 +41,11 @@ internal class GameSessionStore(context: Context) : SavedGameStorePort {
         val raw = prefs.getString(SessionKey, null) ?: return null
         return SavedGameSessionCodec.decode(raw)
             .also { snapshot ->
-                if (snapshot == null || !snapshot.isResumable) {
+                if (snapshot == null || (!snapshot.isResumable && snapshot.finalScoreJudgement == null)) {
                     clear()
                 }
             }
-            ?.takeIf { snapshot -> snapshot.isResumable }
+            ?.takeIf { snapshot -> snapshot.isResumable || snapshot.finalScoreJudgement != null }
     }
 
     override fun clear() {
@@ -73,6 +77,7 @@ internal object SavedGameSessionCodec {
             .put("playLevel", encodePlayLevel(snapshot.playLevel))
             .put("topMovesEnabled", snapshot.topMovesEnabled)
             .put("scoreSnapshots", encodeScoreSnapshots(snapshot.scoreSnapshots))
+            .put("finalScoreJudgement", snapshot.finalScoreJudgement?.let(::encodeFinalScoreJudgement) ?: JSONObject.NULL)
             .toString()
 
     fun decode(raw: String): SavedGameSnapshot? =
@@ -99,8 +104,38 @@ internal object SavedGameSessionCodec {
                 topMovesEnabled = json.optBoolean("topMovesEnabled", false),
                 savedAtMillis = json.optLong("savedAtMillis", 0L),
                 scoreSnapshots = scoreSnapshots,
+                finalScoreJudgement = json.optJSONObject("finalScoreJudgement")?.let(::decodeFinalScoreJudgement),
             )
         }.getOrNull()
+
+    private fun encodeFinalScoreJudgement(judgement: FinalScoreJudgement): JSONObject =
+        JSONObject()
+            .put("winner", judgement.winner?.name ?: JSONObject.NULL)
+            .put("margin", judgement.margin ?: JSONObject.NULL)
+            .put("ruleset", judgement.ruleset.name)
+            .put("isEstimatedDisplay", judgement.isEstimatedDisplay)
+            .put("removedBlack", judgement.removedBlack)
+            .put("removedWhite", judgement.removedWhite)
+            .put("blackArea", judgement.blackArea ?: JSONObject.NULL)
+            .put("whiteAreaWithKomi", judgement.whiteAreaWithKomi ?: JSONObject.NULL)
+            .put("capturedByBlack", judgement.capturedByBlack)
+            .put("capturedByWhite", judgement.capturedByWhite)
+            .put("komi", judgement.komi ?: JSONObject.NULL)
+
+    private fun decodeFinalScoreJudgement(json: JSONObject): FinalScoreJudgement =
+        FinalScoreJudgement(
+            winner = if (json.isNull("winner")) null else enumOrDefault(json.optString("winner"), StoneColor.Black),
+            margin = if (json.isNull("margin")) null else json.optDouble("margin"),
+            ruleset = enumOrDefault(json.optString("ruleset"), Ruleset.Japanese),
+            isEstimatedDisplay = json.optBoolean("isEstimatedDisplay", false),
+            removedBlack = json.optInt("removedBlack", 0),
+            removedWhite = json.optInt("removedWhite", 0),
+            blackArea = if (json.isNull("blackArea")) null else json.optDouble("blackArea"),
+            whiteAreaWithKomi = if (json.isNull("whiteAreaWithKomi")) null else json.optDouble("whiteAreaWithKomi"),
+            capturedByBlack = json.optInt("capturedByBlack", 0),
+            capturedByWhite = json.optInt("capturedByWhite", 0),
+            komi = if (json.isNull("komi")) null else json.optDouble("komi"),
+        )
 
     private fun encodeScoreSnapshots(snapshots: List<ScoreSnapshot>): JSONArray =
         JSONArray().also { array ->

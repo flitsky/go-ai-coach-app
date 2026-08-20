@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.application.savedgame
 
+import com.worksoc.goaicoach.application.score.FinalScoreJudgement
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.PlayLevelSetting
@@ -20,6 +21,7 @@ fun planSavedGamePersistence(
     topMovesEnabled: Boolean,
     scoreSnapshots: List<ScoreSnapshot>,
     nowMillis: Long,
+    finalScoreJudgement: FinalScoreJudgement? = null,
 ): SavedGamePersistencePlan =
     planSavedGamePersistence(
         hasCheckedSavedSession = savedSessionUiState.hasCheckedSavedSession,
@@ -31,6 +33,7 @@ fun planSavedGamePersistence(
         topMovesEnabled = topMovesEnabled,
         scoreSnapshots = scoreSnapshots,
         nowMillis = nowMillis,
+        finalScoreJudgement = finalScoreJudgement,
     )
 
 fun planSavedGamePersistence(
@@ -43,6 +46,7 @@ fun planSavedGamePersistence(
     topMovesEnabled: Boolean,
     scoreSnapshots: List<ScoreSnapshot>,
     nowMillis: Long,
+    finalScoreJudgement: FinalScoreJudgement? = null,
 ): SavedGamePersistencePlan {
     if (!hasCheckedSavedSession || shouldShowResumePrompt) {
         return SavedGamePersistencePlan.Skip
@@ -55,10 +59,19 @@ fun planSavedGamePersistence(
         topMovesEnabled = topMovesEnabled,
         savedAtMillis = nowMillis,
         scoreSnapshots = scoreSnapshots,
+        finalScoreJudgement = finalScoreJudgement,
     )
 
     if (isGameEnded) {
-        return SavedGamePersistencePlan.Clear
+        // A finished game has no resumable moves left, but the final-judgement popup
+        // (screenState.finalScoreJudgement) still needs to survive the OS killing this
+        // process while backgrounded — see SavedGameStore.load()/save() relaxing the
+        // resumable-only gate for snapshots carrying a judgement.
+        return if (finalScoreJudgement != null) {
+            SavedGamePersistencePlan.Save(snapshot)
+        } else {
+            SavedGamePersistencePlan.Clear
+        }
     }
 
     if (!snapshot.isResumable) {

@@ -70,6 +70,7 @@ import com.worksoc.goaicoach.application.engine.operation.EngineOperationResultG
 import com.worksoc.goaicoach.application.humanmove.HumanMoveController
 import com.worksoc.goaicoach.application.savedgame.SavedGamePersistenceRunRequest
 import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
+import com.worksoc.goaicoach.application.savedgame.buildEndedGameRestoreDisplayPlan
 import com.worksoc.goaicoach.application.savedgame.SavedGameStorePort
 import com.worksoc.goaicoach.application.savedgame.SavedSessionPromptRunRequest
 import com.worksoc.goaicoach.application.savedgame.runSavedGamePersistenceApplication
@@ -374,6 +375,14 @@ private fun GoCoachScreen(
                 store = sessionStore,
                 applyPrompt = { prompt ->
                     savedSessionUiState = savedSessionUiState.applyPrompt(prompt)
+                    // Ended-game snapshot: skip the resume prompt, jump straight to InGame and
+                    // restore its result popup so it survives the OS killing this process
+                    // while the app was backgrounded (see buildEndedGameRestoreDisplayPlan).
+                    val endedGameDisplay = prompt.pendingSavedSession?.let(::buildEndedGameRestoreDisplayPlan)
+                    if (endedGameDisplay != null) {
+                        applyFinalScoreWithJudgement(endedGameDisplay)
+                        currentDestination = ScreenDestination.InGame
+                    }
                 },
             ),
         )
@@ -436,6 +445,7 @@ private fun GoCoachScreen(
                 scoreSnapshots = scoreState.scoreSnapshots,
                 nowMillis = System.currentTimeMillis(),
                 store = sessionStore,
+                finalScoreJudgement = scoreState.finalScoreJudgement,
             ),
         )
     }

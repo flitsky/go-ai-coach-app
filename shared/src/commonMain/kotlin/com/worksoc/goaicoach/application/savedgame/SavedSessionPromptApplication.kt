@@ -27,7 +27,10 @@ internal fun buildSavedSessionCheckPlan(
 ): SavedSessionPromptPlan =
     SavedSessionPromptPlan(
         pendingSavedSession = savedSession,
-        shouldShowResumePrompt = savedSession != null,
+        // A snapshot carrying a final-score judgement is a finished game, not a game to
+        // resume — GoCoachApp restores its result popup directly instead of asking the
+        // user whether to continue playing.
+        shouldShowResumePrompt = savedSession != null && savedSession.finalScoreJudgement == null,
         hasCheckedSavedSession = true,
     )
 

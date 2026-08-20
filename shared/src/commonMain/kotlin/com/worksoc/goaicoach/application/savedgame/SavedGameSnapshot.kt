@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.application.savedgame
 
+import com.worksoc.goaicoach.application.score.FinalScoreJudgement
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.PlayLevelSetting
@@ -12,6 +13,7 @@ data class SavedGameSnapshot(
     val topMovesEnabled: Boolean,
     val savedAtMillis: Long,
     val scoreSnapshots: List<ScoreSnapshot> = emptyList(),
+    val finalScoreJudgement: FinalScoreJudgement? = null,
 ) {
     val isResumable: Boolean =
         gameState.moves.isNotEmpty() && !gameState.hasConsecutivePasses() && !gameState.isBoardFull()

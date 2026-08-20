@@ -1339,7 +1339,16 @@ class LayeringContractTest {
         // coverage at all, so from now on any such site is diagnosable directly from
         // RuntimeEventLog instead of code archaeology. No new remember/mutableStateOf/
         // LaunchedEffect — stateHookBudget stays 46.
-        val lineBudget = 833
+        //
+        // History (2026-08-19): bumped 833->843. Fixed the final-judgement popup
+        // disappearing when the OS killed the backgrounded process: the cold-start
+        // saved-session prompt effect now also restores an ended-game snapshot's
+        // FinalScoreDisplayPlan and jumps to InGame so it's visible (skipping the
+        // "resume?" prompt for it — see buildSavedSessionCheckPlan), and the
+        // persistence effect now threads scoreState.finalScoreJudgement through so
+        // such a snapshot gets saved instead of cleared. No new remember/
+        // mutableStateOf/LaunchedEffect — stateHookBudget stays 46.
+        val lineBudget = 843
         val stateHookBudget = 46
 
         val goCoachApp = repoRoot()

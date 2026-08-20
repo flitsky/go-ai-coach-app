@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.application.savedgame
 
+import com.worksoc.goaicoach.application.score.FinalScoreJudgement
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.GameState
@@ -28,6 +29,7 @@ data class SavedGamePersistenceRunRequest(
     val scoreSnapshots: List<ScoreSnapshot>,
     val nowMillis: Long,
     val store: SavedGameStorePort,
+    val finalScoreJudgement: FinalScoreJudgement? = null,
 )
 
 fun runSavedGamePersistenceApplication(
@@ -43,6 +45,7 @@ fun runSavedGamePersistenceApplication(
             topMovesEnabled = request.topMovesEnabled,
             scoreSnapshots = request.scoreSnapshots,
             nowMillis = request.nowMillis,
+            finalScoreJudgement = request.finalScoreJudgement,
         ),
         store = request.store,
     )

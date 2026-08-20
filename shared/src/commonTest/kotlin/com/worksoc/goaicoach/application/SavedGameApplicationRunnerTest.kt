@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.application
 
 import com.worksoc.goaicoach.application.savedgame.*
+import com.worksoc.goaicoach.application.score.FinalScoreJudgement
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
@@ -8,6 +9,7 @@ import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.PlayLevelSetting
+import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.StoneColor
 import kotlin.test.assertEquals
@@ -37,6 +39,39 @@ class SavedGameApplicationRunnerTest {
     }
 
     @Test
+    fun promptRunnerDoesNotOfferResumePromptForEndedGameSnapshot() {
+        val store = RecordingSavedGameStore()
+        store.snapshot = savedGameSnapshot().copy(finalScoreJudgement = finalScoreJudgement())
+        var applied: SavedSessionPromptPlan? = null
+
+        runSavedSessionPromptApplication(
+            SavedSessionPromptRunRequest(
+                store = store,
+                applyPrompt = { prompt -> applied = prompt },
+            ),
+        )
+
+        assertEquals(false, applied?.shouldShowResumePrompt)
+        assertEquals(true, applied?.hasCheckedSavedSession)
+    }
+
+    @Test
+    fun endedGameRestoreDisplayPlanIsNullWithoutJudgement() {
+        assertNull(buildEndedGameRestoreDisplayPlan(savedGameSnapshot()))
+    }
+
+    @Test
+    fun endedGameRestoreDisplayPlanCarriesJudgementAndGameStateThrough() {
+        val judgement = finalScoreJudgement()
+        val snapshot = savedGameSnapshot().copy(finalScoreJudgement = judgement)
+
+        val plan = buildEndedGameRestoreDisplayPlan(snapshot)
+
+        assertEquals(judgement, plan?.judgement)
+        assertEquals(snapshot.gameState, plan?.gameState)
+    }
+
+    @Test
     fun persistenceRunnerBuildsAndAppliesStoreAction() {
         val store = RecordingSavedGameStore()
         val state = playableState()
@@ -60,6 +95,34 @@ class SavedGameApplicationRunnerTest {
 
         assertEquals(listOf("save:456"), store.calls)
         assertEquals(state, store.snapshot?.gameState)
+    }
+
+    @Test
+    fun persistenceRunnerSavesEndedGameSnapshotWhenJudgementIsPresent() {
+        val store = RecordingSavedGameStore()
+        val state = playableState()
+        val judgement = finalScoreJudgement()
+
+        runSavedGamePersistenceApplication(
+            SavedGamePersistenceRunRequest(
+                savedSessionUiState = SavedSessionUiState(
+                    hasCheckedSavedSession = true,
+                    shouldShowResumePrompt = false,
+                ),
+                isGameEnded = true,
+                gameState = state,
+                playerSetup = PlayerSetup(),
+                playLevel = PlayLevelSetting(),
+                topMovesEnabled = false,
+                scoreSnapshots = emptyList(),
+                nowMillis = 456L,
+                store = store,
+                finalScoreJudgement = judgement,
+            ),
+        )
+
+        assertEquals(listOf("save:456"), store.calls)
+        assertEquals(judgement, store.snapshot?.finalScoreJudgement)
     }
 
     @Test
@@ -144,4 +207,19 @@ class SavedGameApplicationRunnerTest {
     private fun playableState(): GameState =
         GameState.empty()
             .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+
+    private fun finalScoreJudgement(): FinalScoreJudgement =
+        FinalScoreJudgement(
+            winner = StoneColor.Black,
+            margin = 0.5,
+            ruleset = Ruleset.Japanese,
+            isEstimatedDisplay = false,
+            removedBlack = 0,
+            removedWhite = 0,
+            blackArea = 44.0,
+            whiteAreaWithKomi = 43.5,
+            capturedByBlack = 12,
+            capturedByWhite = 8,
+            komi = 6.5,
+        )
 }
