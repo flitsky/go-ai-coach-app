@@ -163,7 +163,7 @@ internal fun GoBoard(
                 if (uxOptions.showCoordinates) {
                     drawBoardCoordinates(geometry, gameState.boardSize)
                 }
-                if (ownershipEstimate != null && premium.isActive) {
+                if (ownershipEstimate != null && (premium.isActive || isGameEnded)) {
                     drawOwnershipOverlay(geometry, gameState, ownershipEstimate)
                 }
                 if (premium.isActive) {

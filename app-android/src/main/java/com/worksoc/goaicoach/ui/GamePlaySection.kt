@@ -96,8 +96,10 @@ internal fun GamePlaySection(
         gameState = screenState.gameState,
         candidateMoves = screenState.analysis.candidateMoves,
         moveReviews = screenState.analysis.moveReviews,
+        // 대국 종료 시엔 프리미엄 여부와 무관하게 최종 형세를 보여준다 — 이 값 자체는
+        // '형세보기' 버튼의 켜짐 표시(GameScreenState.kt의 isFilled)와는 무관하다.
         ownershipEstimate = screenState.score.estimate?.ownership
-            ?.takeIf { screenState.uxOptions.showOwnershipOverlay },
+            ?.takeIf { screenState.uxOptions.showOwnershipOverlay || screenState.isGameEnded },
         uxOptions = screenState.uxOptions,
         inputEnabled = !screenState.isGameEnded &&
             screenState.matchSeats.current.canAcceptBoardInput,

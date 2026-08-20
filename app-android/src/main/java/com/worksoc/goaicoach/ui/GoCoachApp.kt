@@ -17,7 +17,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.worksoc.goaicoach.application.premium.FeatureAccess
 import com.worksoc.goaicoach.application.premium.FeatureAccessPolicy
+import com.worksoc.goaicoach.application.premium.FeatureId
 import com.worksoc.goaicoach.application.premium.PremiumSource
 import com.worksoc.goaicoach.application.premium.PremiumState
 import com.worksoc.goaicoach.application.premium.PremiumStateStorePort
@@ -300,7 +302,12 @@ private fun GoCoachScreen(
     var isPendingUndoSync by remember { mutableStateOf(false) }
     var cancelUndoSync: () -> Unit = {}
     fun clearUndoEngineInterventionQuietWindow() { undoEngineInterventionQuietUntil = 0L; cancelUndoSync() }
-    fun activateEndgameJudgementReview() { uxOptions = uxOptions.copy(showOwnershipOverlay = true) }
+    // 형세보기는 프리미엄 전용이라, 대국 종료 등에서 자동으로 부르는 이 함수가 권한 없이
+    // showOwnershipOverlay를 켜면 새 대국을 시작해도 안 꺼지는 버튼이 남는다.
+    fun activateEndgameJudgementReview() {
+        if (FeatureAccessPolicy.resolve(FeatureId.Eval, premiumState, System.currentTimeMillis()) !is FeatureAccess.Allowed) return
+        uxOptions = uxOptions.copy(showOwnershipOverlay = true)
+    }
     fun currentRuntimeLogContext(): RuntimeLogContext {
         return sessionSnapshot.toRuntimeLogContext(
             engineName = engineName,

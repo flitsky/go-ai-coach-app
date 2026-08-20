@@ -1348,7 +1348,16 @@ class LayeringContractTest {
         // persistence effect now threads scoreState.finalScoreJudgement through so
         // such a snapshot gets saved instead of cleared. No new remember/
         // mutableStateOf/LaunchedEffect — stateHookBudget stays 46.
-        val lineBudget = 843
+        //
+        // History (2026-08-19): bumped 843->850. Fixed activateEndgameJudgementReview()
+        // silently turning on the premium-only 형세보기(Eval) toggle for non-premium
+        // users too — it's called from several auto endgame-detection paths (game end,
+        // consecutive-pass detection) that predate the premium entitlement system, and
+        // nothing ever reset it on a new game, so the button stayed visually "on" with
+        // no working feature behind it. Now it checks FeatureAccessPolicy.resolve first
+        // and no-ops without access. No new remember/mutableStateOf/LaunchedEffect —
+        // stateHookBudget stays 46.
+        val lineBudget = 850
         val stateHookBudget = 46
 
         val goCoachApp = repoRoot()
