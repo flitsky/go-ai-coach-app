@@ -151,6 +151,7 @@ private fun buildFinalScoreJudgement(
         capturedByBlack = state.capturedBy(StoneColor.Black),
         capturedByWhite = state.capturedBy(StoneColor.White),
         komi = localScore.komi,
+        handicapCount = state.handicapCount,
     )
 }
 

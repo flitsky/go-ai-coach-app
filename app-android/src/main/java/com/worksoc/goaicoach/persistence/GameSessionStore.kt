@@ -121,6 +121,7 @@ internal object SavedGameSessionCodec {
             .put("capturedByBlack", judgement.capturedByBlack)
             .put("capturedByWhite", judgement.capturedByWhite)
             .put("komi", judgement.komi ?: JSONObject.NULL)
+            .put("handicapCount", judgement.handicapCount)
 
     private fun decodeFinalScoreJudgement(json: JSONObject): FinalScoreJudgement =
         FinalScoreJudgement(
@@ -135,6 +136,7 @@ internal object SavedGameSessionCodec {
             capturedByBlack = json.optInt("capturedByBlack", 0),
             capturedByWhite = json.optInt("capturedByWhite", 0),
             komi = if (json.isNull("komi")) null else json.optDouble("komi"),
+            handicapCount = json.optInt("handicapCount", 0),
         )
 
     private fun encodeScoreSnapshots(snapshots: List<ScoreSnapshot>): JSONArray =

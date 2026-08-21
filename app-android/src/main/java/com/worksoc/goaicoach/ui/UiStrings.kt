@@ -246,6 +246,16 @@ internal data class UiStrings(
             UiLanguage.ChineseSimplified -> "计分方式: $ruleLabel"
         }
 
+    fun gameModeLabel(handicapCount: Int): String {
+        val mode = if (handicapCount == 0) handicapEvenGameLabel else handicapLabel(handicapCount)
+        return when (language) {
+            UiLanguage.Korean -> "대국 방식: $mode"
+            UiLanguage.English -> "Game mode: $mode"
+            UiLanguage.Japanese -> "対局形式: $mode"
+            UiLanguage.ChineseSimplified -> "对局方式: $mode"
+        }
+    }
+
     fun winnerMarginLabel(colorLabel: String, margin: Double): String {
         val marginText = margin.formatScoreNumber()
         return when (language) {

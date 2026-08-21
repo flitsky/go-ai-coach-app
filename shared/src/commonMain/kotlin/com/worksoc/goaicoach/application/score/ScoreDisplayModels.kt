@@ -59,6 +59,7 @@ data class FinalScoreJudgement(
     val capturedByBlack: Int,
     val capturedByWhite: Int,
     val komi: Double?,
+    val handicapCount: Int = 0,
 )
 
 data class EndgameFailureDisplayPlan(

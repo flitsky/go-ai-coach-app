@@ -18,6 +18,9 @@ internal fun FinalScoreJudgement.resultText(strings: UiStrings): String {
 internal fun FinalScoreJudgement.scoringRuleLine(strings: UiStrings): String =
     strings.scoringRuleLabel(strings.rulesetLabel(ruleset))
 
+internal fun FinalScoreJudgement.gameModeLine(strings: UiStrings): String =
+    strings.gameModeLabel(handicapCount)
+
 internal fun FinalScoreJudgement.removedStonesLine(strings: UiStrings): String =
     strings.removedStonesLabel(removedBlack, removedWhite)
 

@@ -18,6 +18,7 @@ internal fun FinalScoreJudgement.dialogKey(moveCount: Int): String =
         isEstimatedDisplay.toString(),
         removedBlack.toString(),
         removedWhite.toString(),
+        handicapCount.toString(),
     ).joinToString("|")
 
 @Composable
@@ -34,6 +35,7 @@ internal fun FinalJudgementDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(judgement.resultText(strings))
+                Text(judgement.gameModeLine(strings))
                 Text(judgement.scoringRuleLine(strings))
                 Text(judgement.removedStonesLine(strings))
                 judgement.blackLine(strings)?.let { Text(it) }
