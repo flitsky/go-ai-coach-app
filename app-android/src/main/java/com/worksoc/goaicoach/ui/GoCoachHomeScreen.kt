@@ -60,6 +60,7 @@ internal fun GoCoachHomeScreen(
     onStartMatchClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onStudyClick: () -> Unit,
+    onGameHistoryClick: () -> Unit,
     selectedLanguage: UiLanguage,
     onLanguageChange: (UiLanguage) -> Unit,
     hasResumableSession: Boolean,
@@ -179,6 +180,18 @@ internal fun GoCoachHomeScreen(
                 titleColor = MaterialTheme.colorScheme.onSurfaceVariant,
                 subtitleColor = MaterialTheme.colorScheme.secondary,
                 onClick = onStudyClick,
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // "대국 기록" (Game History) 카드
+            MenuCard(
+                title = strings.gameHistoryTitle,
+                subtitle = strings.homeGameHistorySubtitle,
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                titleColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                subtitleColor = MaterialTheme.colorScheme.secondary,
+                onClick = onGameHistoryClick,
             )
         }
     }

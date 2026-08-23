@@ -1357,7 +1357,14 @@ class LayeringContractTest {
         // no working feature behind it. Now it checks FeatureAccessPolicy.resolve first
         // and no-ops without access. No new remember/mutableStateOf/LaunchedEffect —
         // stateHookBudget stays 46.
-        val lineBudget = 850
+        //
+        // History (2026-08-24): bumped 850->853 to add a GameHistory destination
+        // (backlog item 7, offline engagement track) — one ScreenDestination entry, one
+        // `when` branch delegating to GameHistoryScreen (which owns its own state/data
+        // loading, same as StudyScreen), and one onGameHistoryClick wire-up into
+        // GoCoachHomeScreen(...). Same shape as the 2026-08-12 Study destination bump.
+        // No new remember/mutableStateOf/LaunchedEffect — stateHookBudget stays 46.
+        val lineBudget = 853
         val stateHookBudget = 46
 
         val goCoachApp = repoRoot()

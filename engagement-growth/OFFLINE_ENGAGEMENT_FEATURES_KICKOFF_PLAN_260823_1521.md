@@ -121,6 +121,13 @@ AttendanceState(
 > 2. **`GameHistoryEntry`가 `GameState`/`FinalScoreJudgement`에서 직접 필요한 값만 뽑아 쓴다** — `boardSize`/`komi`/`handicapCount`/`moveCount`는 `GameState`에서, `ruleset`/`winner`/`margin`은 `FinalScoreJudgement`에서. 별도 request 데이터 클래스를 만들지 않고 함수가 `gameState`/`playerSetup`을 직접 받게 해, 셸 쪽 호출부를 한 번의 함수 호출로 줄였다.
 > 3. **참고(다음 항목용)**: 조사 중 `SidePlayerSetup.aiCharacterProfile()`(`match/MatchPolicy.kt`)이라는, 이름부터 캐릭터 개념처럼 보이는 기존 확장 함수를 발견했다 — 지금은 손대지 않았지만 #8(봇 캐릭터 도메인) 착수 전에 먼저 확인해볼 가치가 있다.
 
+> **구현 결정(백로그 #7, 2026-08-24)**:
+> 1. **홈 화면에 "대국 기록" 카드를 추가**해 진입점으로 삼았다(`GoCoachHomeScreen.kt`, "학습 하기" 카드 아래). `ScreenDestination.GameHistory`를 새로 추가하고, `GameHistoryScreen`은 `StudyScreen`과 같은 패턴(뒤로가기+제목 헤더)을 따른다.
+> 2. **목록 데이터는 화면이 직접 로드한다** — `GoCoachApp.kt`에 데이터를 들고 있지 않고 `GameHistoryScreen` 진입 시점에 `GameHistoryStore(context).loadAll()`을 한 번 호출해 최신순으로 정렬만 한다. 셸에 상태를 추가하지 않기 위함.
+> 3. **`ui/GoCoachApp.kt` 라인 예산을 850→853으로 올렸다** — 새 `ScreenDestination` 하나, `when` 분기 하나, 홈 화면 클릭 배선 한 줄이 필요했다. 2026-08-12에 Study 화면을 추가할 때도 같은 이유로 예산을 올렸던 전례를 따랐다(`LayeringContractTest.kt`의 History 주석 참고). 상태훅 예산(46)은 그대로다.
+> 4. **결과 문구는 문자열 이어붙이기 대신 `UiStrings.gameHistoryResultLabel(winner, margin)` 함수로 4개 언어를 전부 직접 작성했다** — 언어별 어순이 달라서(예: 한국어 "흑 승", 영어 "Black wins by") 조각을 이어붙이면 부자연스럽다. 기존 `colorLabel`/`removedStonesLabel`과 같은 패턴.
+> 5. **보관 개수 제한은 이번에도 구현하지 않았다** — 6장의 열린 질문이 그대로 남아 있고, 이제 목록 화면이 생겼으니 다음에 판단할 근거가 더 필요하면 논의할 것.
+
 ---
 
 ## 7. 기능 4 — AI 봇 캐릭터 & 컬렉션

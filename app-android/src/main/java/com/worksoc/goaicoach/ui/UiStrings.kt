@@ -142,6 +142,9 @@ internal data class UiStrings(
     val boardPreview: String,
     val homeStartMatchSubtitle: String,
     val homeStudySubtitle: String,
+    val gameHistoryTitle: String,
+    val homeGameHistorySubtitle: String,
+    val gameHistoryEmptyMessage: String,
     val engineCopyNotice: String,
     val cacheOptTitle: String,
     val cacheOptTargetLabel: String,
@@ -232,6 +235,25 @@ internal data class UiStrings(
             UiLanguage.Japanese -> "この対局の主要な局面を分析キャッシュに保存しますか？\n次回プレイで同じ流れになった際、より素早く応答できます。\n\nまず序盤${initialCount}手を確保し、安定すれば${maxCount}手まで拡張します。\n対象：${moveCount}手の対局中、最大${targetCount}個のJSON分析"
             UiLanguage.ChineseSimplified -> "是否在分析缓存中优化本局？\n存储关键局面有利于在以后的对局中提高响应速度。\n\n初始时保存前 $initialCount 手，稳定后可扩展到 $maxCount 手。\n目标：从 $moveCount 手对局中提取最多 $targetCount 个 JSON  分析记录。"
         }
+
+    fun gameHistoryResultLabel(winner: StoneColor?, margin: Double?): String {
+        if (winner == null) {
+            return when (language) {
+                UiLanguage.Korean -> "무승부"
+                UiLanguage.English -> "Draw"
+                UiLanguage.Japanese -> "持碁"
+                UiLanguage.ChineseSimplified -> "和棋"
+            }
+        }
+        val color = colorLabel(winner)
+        val marginText = margin?.let { "%.1f".format(it) }
+        return when (language) {
+            UiLanguage.Korean -> if (marginText != null) "$color 승 (${marginText}집)" else "$color 승"
+            UiLanguage.English -> if (marginText != null) "$color wins by $marginText" else "$color wins"
+            UiLanguage.Japanese -> if (marginText != null) "${color}の${marginText}目勝ち" else "${color}の勝ち"
+            UiLanguage.ChineseSimplified -> if (marginText != null) "$color 胜 $marginText 目" else "$color 胜"
+        }
+    }
 
     fun removedStonesLabel(black: Int, white: Int): String =
         when (language) {

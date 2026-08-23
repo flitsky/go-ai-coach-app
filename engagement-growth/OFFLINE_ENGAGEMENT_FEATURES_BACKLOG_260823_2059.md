@@ -74,16 +74,18 @@
    - 참고: 6장.
    - 산출물(shared): `GameHistoryEntry.kt`/`GameHistoryPorts.kt`/`GameHistoryAppendApplication.kt`(`runGameHistoryAppendIfCompleted`, 5케이스 테스트). 산출물(app-android): `persistence/GameHistoryStore.kt`+`GameHistoryCodec`(5케이스 테스트), `ui/GoCoachApp.kt`에 기존 `LaunchedEffect` 재사용으로 배선(새 효과 추가 안 함, 라인 예산 848/850). 구현 결정은 킥오프 플랜 6장 각주 참고 — 조사 중 발견한 `SidePlayerSetup.aiCharacterProfile()`은 #8에 참고로 남김. `LayeringContractTest` 포함 전체 테스트·컴파일 통과, 사용자 승인 완료(2026-08-24).
 
+7. 대국 히스토리 목록 UI — 단순 리스트 표시만 (AI 모델: Sonnet, 노력정도: 낮음) [완료]
+   - 참고: 6장.
+   - 산출물(app-android): `ui/GameHistoryScreen.kt`(신규 — 목록 자체 로드, `StudyScreen`과 같은 헤더 패턴), `ui/GoCoachHomeScreen.kt`(대국 기록 카드 추가), `ui/GoCoachApp.kt`(`ScreenDestination.GameHistory` 추가), `ui/UiStrings.kt`/4개 언어 파일(문자열 3개 + `gameHistoryResultLabel()` 함수). `LayeringContractTest`의 `GoCoachApp.kt` 라인 예산을 850→853으로 올림(Study 화면 추가 때와 같은 이유, 각주 참고) — 상태훅 예산(46)은 그대로. 구현 결정은 킥오프 플랜 6장 각주(백로그 #7) 참고. 전체 테스트·컴파일 통과, 사용자 승인 완료(2026-08-24). 에뮬레이터로 실제 렌더링은 확인하지 못함(도구 제약) — 이후 수동 테스트 중 이슈가 나오면 별도 스레드로 처리.
+
 ### 진행 중
 
-7. 대국 히스토리 목록 UI — 단순 리스트 표시만 (AI 모델: Sonnet, 노력정도: 낮음)[진행중]
-   - 참고: 6장.
-
-### 예정사항
-
-8. 봇 캐릭터 도메인 모델 + 컬렉션 저장소 — `BotCharacter`/`BotCharacterId`/`BotCollectionState`, `PlayLevelGroup` 티어와의 매핑 (AI 모델: Opus, 노력정도: 높음)
+8. 봇 캐릭터 도메인 모델 + 컬렉션 저장소 — `BotCharacter`/`BotCharacterId`/`BotCollectionState`, `PlayLevelGroup` 티어와의 매핑 (AI 모델: Opus, 노력정도: 높음)[진행중]
    - 참고: 7장. `PremiumState` 통합 여부 등 설계 판단이 들어가 Opus 권장. **#2~#7과 코드 의존관계 없음 — 병렬 착수 가능.**
    - 착수 전 확인: #6 작업 중 `SidePlayerSetup.aiCharacterProfile()`(`match/MatchPolicy.kt`)이라는 기존 확장 함수를 발견했다 — 캐릭터 개념이 이미 일부 있을 수 있으니 먼저 열어볼 것.
+   - 다른 스레드에서 진행 중(2026-08-24).
+
+### 예정사항
 
 9. 캐릭터 5종 콘텐츠 초안 — `FastBeginner` 그룹의 초보~초고수 5단계에 대응하는 이름·짧은 설명(아바타는 플레이스홀더) (AI 모델: Sonnet, 노력정도: 낮음)
    - 코드 작업이 아니라 콘텐츠 초안 제안 — 스레드가 후보를 제시하면 **사용자가 최종 확정**. #8 완료 후, #10 착수 전에 필요.
