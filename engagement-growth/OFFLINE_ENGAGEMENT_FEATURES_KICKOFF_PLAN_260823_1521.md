@@ -116,6 +116,11 @@ AttendanceState(
 - **미래 확장 대비**: 대국의 수순(move list)은 이미 엔진 통신용 `GameState`(shared)에 존재한다. 저장 시 함께 넣을지 요약만 저장할지는 구현 시 판단하되, 스키마에 `moves: List<Move>?`처럼 나중에 채울 자리를 비워두는 걸 권장한다(Phase 1엔 null/생략) — 나중에 필드를 추가할 때 기존 저장 데이터 마이그레이션 부담을 줄이기 위함.
 - **열린 질문**: SharedPreferences 단일 JSON blob에 대국이 무한히 쌓이면 크기가 계속 커진다. 최대 보관 개수 제한(예: 최근 200판)이 필요한지는 구현 시 판단하고 이 문서(또는 후속 결정 로그)에 남길 것.
 
+> **구현 결정(백로그 #6, 2026-08-24)**:
+> 1. **새 `LaunchedEffect`를 추가하지 않았다.** `ui/GoCoachApp.kt`의 라인(850)/상태훅(46) 예산이 빠듯해서, "대국 이어하기" 저장을 트리거하는 기존 `LaunchedEffect`(`isGameEnded` 등을 키로 재구성마다 재실행) 안에서 `runGameHistoryAppendIfCompleted`를 같이 호출한다. 그 효과가 관련 없는 이유로 여러 번 재실행돼도 중복 기록되지 않도록, 새 상태를 두지 않고 **저장소의 마지막 항목과 (수순 개수, 승자, 집수차)를 비교**해 멱등성을 확인한다(`runPremiumFeatureClaim`/`runAttendanceRewardGrant`와 같은 패턴).
+> 2. **`GameHistoryEntry`가 `GameState`/`FinalScoreJudgement`에서 직접 필요한 값만 뽑아 쓴다** — `boardSize`/`komi`/`handicapCount`/`moveCount`는 `GameState`에서, `ruleset`/`winner`/`margin`은 `FinalScoreJudgement`에서. 별도 request 데이터 클래스를 만들지 않고 함수가 `gameState`/`playerSetup`을 직접 받게 해, 셸 쪽 호출부를 한 번의 함수 호출로 줄였다.
+> 3. **참고(다음 항목용)**: 조사 중 `SidePlayerSetup.aiCharacterProfile()`(`match/MatchPolicy.kt`)이라는, 이름부터 캐릭터 개념처럼 보이는 기존 확장 함수를 발견했다 — 지금은 손대지 않았지만 #8(봇 캐릭터 도메인) 착수 전에 먼저 확인해볼 가치가 있다.
+
 ---
 
 ## 7. 기능 4 — AI 봇 캐릭터 & 컬렉션

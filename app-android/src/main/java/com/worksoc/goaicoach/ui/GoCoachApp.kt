@@ -59,6 +59,7 @@ import com.worksoc.goaicoach.application.runtime.runtimeAppStartLog
 import com.worksoc.goaicoach.application.runtime.runtimeGameResetLog
 import com.worksoc.goaicoach.application.runtime.runtimeScoreSnapshotsChangedLog
 import com.worksoc.goaicoach.application.runtime.toRuntimeLogContext
+import com.worksoc.goaicoach.application.gamehistory.runGameHistoryAppendIfCompleted
 import com.worksoc.goaicoach.application.savedgame.SavedSessionController
 import com.worksoc.goaicoach.application.startgame.NewGameController
 import com.worksoc.goaicoach.application.score.ScoringRuleController
@@ -88,6 +89,7 @@ import com.worksoc.goaicoach.application.topmoves.TopMoveAnalysisDeferral
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
+import com.worksoc.goaicoach.persistence.GameHistoryStore
 import com.worksoc.goaicoach.persistence.GameSessionStore
 import com.worksoc.goaicoach.persistence.EngineBenchmarkStore
 import com.worksoc.goaicoach.persistence.DebugReportMirrorStore
@@ -460,6 +462,11 @@ private fun GoCoachScreen(
                 store = sessionStore,
                 finalScoreJudgement = scoreState.finalScoreJudgement,
             ),
+        )
+        runGameHistoryAppendIfCompleted( // 대국 히스토리(백로그 #6) — 저장소 자체로 멱등성 확인
+            isGameEnded = isGameEnded, finalScoreJudgement = scoreState.finalScoreJudgement,
+            gameState = gameState, playerSetup = playerSetup,
+            nowMillis = System.currentTimeMillis(), store = GameHistoryStore(context),
         )
     }
     val deferredTopMoveAnalysis = remember { TopMoveAnalysisDeferral() }
