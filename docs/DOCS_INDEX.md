@@ -17,6 +17,9 @@
 갱신: 2026-08-17 (4) — `빠른 초급` 1~3단계를 후보 분류(최적수/중급수/최하수) 기반 5단계(`초보`~`초고수`)로 재정립하는 계획서 `engine-research/FAST_BEGINNER_FIVE_TIER_REDESIGN_PLAN_2026-08-17.md`를 신설해 "엔진 검증/연구 리뷰" 표에 편입했다. 승인 대기 중인 계획 문서 — 앱 코드는 아직 바뀌지 않았다. 승인/구현되면 `ENGINE.md`/`ENGINE_API_CALL_POLICY.md`의 `빠른 초급` 표를 갱신해야 한다.
 갱신: 2026-08-18 — **전날 삭제 판단 정정.** `refactoring/LAYERED_ARCHITECTURE_REFACTORING_PLAN_260803_1500.md`를 2026-08-17 (3) 정리에서 "종료된 리팩토링 로그"로 분류해 지웠으나, 실제로는 원격 엔진(Stage D/E)·물리적 분산(Stage F, DePIN) 로드맵을 담은 **현재도 진행 중인 활성 계획서**였다 — `app-android/engine/RemoteEngineSessionBootstrap.kt`가 지금도 "Stage E-1" 용어로 이 문서를 직접 참조한다. git 히스토리에서 복원하고 `docs/refactoring/`을 이 활성 작업 전용으로 재생성했다. 문서 보존 정책의 판단 기준("지금도 다른 활성 문서/코드가 구체적으로 인용하는가")을 이번 삭제 때 놓쳤던 사례 — 코드 주석까지 확인하지 않고 문서 이름만으로 판단한 게 원인. 상세는 그 문서의 진행 로그 참고.
 갱신: 2026-08-18 (2) — Stage E-3(개발용 원격 엔진 HTTP 참조 서버) 실기 검증 후, HTTP를 MQ(또는 Firestore)로 바꾸고 폰↔폰까지 지원하는 후속 요청이 들어와 Stage F 전용 킥오프 문서 `refactoring/REMOTE_ENGINE_MQ_TRANSPORT_KICKOFF_PLAN_260818_0825.md`를 신설했다. **결정/설계만 기록한 문서 — 착수 전.** "맥북 파이썬으로 먼저 검증 후 앱 이식" 순서를 확정했고, MQTT/Firestore 두 후보로 전송 수단을 좁혔다.
+갱신: 2026-08-23 — 일일 접속량(DAU) 증대 아이디어를 모으는 브레인스토밍 문서 `engagement-growth/README.md`를 신설해 "저장소 루트의 마스터플랜 폴더" 표에 편입했다. chess.com의 재방문 유도 기능(Daily Puzzle, Puzzle Rush, 봇 캐릭터, Game Review 등)을 참고 사례로 정리하고, 우리 앱의 현재 조건(로그인 꺼짐, 서버 없음, 멀티플레이 없음, 푸시 알림 인프라 없음 — 2026-08-23 코드베이스로 재확인)에 맞는 적용 아이디어를 상태 트래킹 표(제안/논의중/채택/보류/기각)로 관리한다. 아직 결정된 것은 없는 초안 단계 — 계속 논의하며 갱신 예정.
+갱신: 2026-08-23 (2) — 위 아이디어 중 출석 보상·AI 캐릭터화·업적 화면·대국 히스토리 4개를 "로그인 없이 로컬 전용(Phase 1)" 방향으로 구체화한 착수 계획서 `engagement-growth/OFFLINE_ENGAGEMENT_FEATURES_KICKOFF_PLAN_260823_1521.md`를 신설했다. 리팩토링이 아니라 신규 기능 착수 계획서라 `docs/refactoring/`가 아니라 주제 폴더(`engagement-growth/`) 안에 두는 것으로 배치 기준을 정했다 — 이 문서부터 "착수 계획서" 유형이 반드시 `docs/refactoring/`에만 있는 게 아니라는 점을 명확히 함. 로그인 연동(Phase 2)은 범위 밖으로 명시적으로 분리하되, 기존 Port 인터페이스(`shared`)+SharedPreferences 어댑터(`app-android/persistence`) 패턴을 그대로 따르게 해 나중에 Firestore 어댑터만 추가하면 확장되도록 설계했다. **결정 문서, 착수 전** — 새 스레드로 바로 넘겨 개발을 시작할 수 있는 형태.
+갱신: 2026-08-23 (3) — 위 킥오프 플랜을 새 스레드마다 하나씩 순차 착수 가능한 11개 일감(완료/진행중/예정 상태 + AI 모델·노력정도 표기)으로 쪼갠 백로그 `engagement-growth/OFFLINE_ENGAGEMENT_FEATURES_BACKLOG_260823_2059.md`를 신설했다. 사용자 피드백으로 "봇 캐릭터 선택이 곧 AI 레벨(초보~초고수) 선정" 방향이 확정돼 킥오프 플랜 7.1절에 반영, 백로그 #10(진입점 UX 개편)에 노력정도 최대로 표기했다.
 
 ## 하위 폴더 한눈에 보기
 
@@ -75,6 +78,9 @@
 | `docs/baas_solutions_comparison.md` | Firebase/Supabase/PocketBase/Appwrite/Convex BaaS 비교 조사 — Firebase 채택 근거 원본. 결론은 `auth-onboarding/README.md`에 반영됨 |
 | `docs/baduk_app_architecture_recommendation.md` | 백엔드+AdMob 전략 추천 조사 — 결론은 `premium-mode/README.md`/`auth-onboarding/README.md`에 반영됨 |
 | `design-handoff/README.md` | 외부 기획 디자이너 핸드오프 export/import 채널. 라운드별 스냅샷(`export/<날짜>-<버전>/`)과 디자이너 회신(`import/<날짜>-<라운드명>/`) 이력을 쌓는다 |
+| `engagement-growth/README.md` | 일일 접속량(DAU) 증대 아이디어 브레인스토밍 — chess.com 참고 사례와 우리 앱 조건에 맞춘 적용 아이디어를 상태 트래킹 표로 관리. 2026-08-23 초안 단계, 계속 논의하며 갱신 |
+| `engagement-growth/OFFLINE_ENGAGEMENT_FEATURES_KICKOFF_PLAN_260823_1521.md` | 위 아이디어 중 출석 보상·업적 화면·대국 히스토리·봇 컬렉션을 "로그인 없이 로컬 전용(Phase 1)"으로 구체화한 개발 착수 스펙. 새 스레드에 그대로 넘겨 바로 개발 가능한 형태 |
+| `engagement-growth/OFFLINE_ENGAGEMENT_FEATURES_BACKLOG_260823_2059.md` | 위 스펙을 새 스레드마다 하나씩 순차 착수 가능한 일감으로 쪼갠 진행 관리 백로그. 완료/진행중/예정 상태와 AI 모델·노력정도를 표기하며 스레드가 끝날 때마다 갱신. 매번 새 스레드에 넣을 고정 프롬프트와 착수 절차("신규 스레드 착수 프로토콜")를 문서 자체에 포함 |
 
 ## 운영 원칙
 
