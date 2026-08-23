@@ -66,14 +66,15 @@
    - 참고: 4.4절. `application/premium/*` 구조를 먼저 파악해 판단해야 하는 부분이 있어 Opus 권장.
    - 산출물: 확인 결과 클레임 진입점은 Compose 람다(`PremiumUiState.claim`)뿐이어서, UI에 의존하지 않는 `runPremiumFeatureClaim`(shared)을 신설하고 UI도 같은 함수를 쓰도록 통일. 출석 1일차 보상 지급은 `runAttendanceRewardGrant`(shared) + `AttendanceCheckInCoordinator` 배선으로 자동화(확인 팝업 없음, `withTierClaimed(1)`로 1회만). 기존 클레임 다이얼로그는 **방어적 폴백으로 유지**(판단 근거는 킥오프 플랜 4.4절 각주). 덤으로 구매 복원 시 `claimedFeatures`가 병합 없이 덮어써지던 기존 버그도 같이 해소됨. 변경 파일: (shared) `PremiumFeatureClaimApplication.kt`·`AttendanceRewardApplication.kt` 신규, `AttendanceCheckIn.kt` 수정, `PremiumFeatureClaimApplicationTest.kt`(5케이스)·`AttendanceRewardGrantTest.kt`(7케이스) 신규 / (app-android) `AttendanceCheckInCoordinator.kt`·`ui/PremiumUiState.kt`·`ui/GoCoachApp.kt`·`ui/GamePlaySection.kt` 수정. 컴파일·테스트 재검증(`--rerun-tasks`) 통과, 사용자 승인 완료(2026-08-23).
 
+5. 업적/보상 화면 UI — 최초 실행 시 노출, 오늘 받은 보상 + 획득 목록 표시 (AI 모델: Sonnet, 노력정도: 중간) [완료]
+   - 참고: 5장.
+   - 산출물(app-android): `ui/FirstLaunchRewardScreen.kt`(신규 — `rememberFirstLaunchRewardGate` 상태/로직 + `FirstLaunchRewardScreen` 화면), `ui/GoCoachApp.kt`(호출 1줄 + early return), `ui/UiStrings.kt`/4개 언어 파일(`firstLaunchReward*` 3개 문자열 추가). 기존 `hasSeenOnboarding`은 로그인 전용 죽은 경로라 재사용하지 않고 `AttendanceState.attendanceCount == 0`을 최초 실행 판정으로 사용 — 구현 결정 3가지는 킥오프 플랜 5장 각주 참고. `LayeringContractTest`(라인 850/상태훅 46 예산) 통과 확인(841줄). 테스트·컴파일 통과, 사용자 승인 완료(2026-08-24).
+
 ### 진행 중
 
-*(현재 진행 중인 항목 없음 — #5부터 착수 대기)*
+*(현재 진행 중인 항목 없음 — #6부터 착수 대기)*
 
 ### 예정사항
-
-5. 업적/보상 화면 UI — 최초 실행 시 노출, 오늘 받은 보상 + 획득 목록 표시 (AI 모델: Sonnet, 노력정도: 중간)
-   - 참고: 5장. #3·#4 완료 후 착수. 2일차 이후 보상 콘텐츠가 그때까지도 미정이면 플레이스홀더로 두고 넘어가고, 확정 필요 여부는 사용자에게 확인한다.
 
 6. 대국 히스토리 저장소 구현 — `GameHistoryStorePort`/`GameHistoryEntry` + 대국 종료 시 append 배선 (AI 모델: Sonnet, 노력정도: 중간)
    - 참고: 6장. #2~#5와 독립적 — 병렬 착수 가능.

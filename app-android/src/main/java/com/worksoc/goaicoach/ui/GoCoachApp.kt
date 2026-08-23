@@ -151,6 +151,13 @@ private fun GoCoachScreen(
 ) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+    // 최초 실행이면 나머지 화면 조립 전에 출석 1일차 보상 화면을 먼저 보여주고 돌아온다 —
+    // 실제 로직/상태는 ui/FirstLaunchRewardScreen.kt에 있다(상태 훅 예산 절약, 위 주석들과 같은 이유).
+    val firstLaunchReward = rememberFirstLaunchRewardGate(context)
+    if (firstLaunchReward.shouldShow) {
+        FirstLaunchRewardScreen(onContinue = firstLaunchReward.onContinue)
+        return
+    }
     val preferencesStore: UserPreferencesStorePort = remember(context) { UserPreferencesStore(context) }
     val initialPreferences = remember(preferencesStore) { preferencesStore.load() }
     // AndroidAuthClient는 내부 상태가 없는 얇은 래퍼라 재구성마다 새로 만들어도 비용/동작

@@ -100,6 +100,11 @@ AttendanceState(
 - 삽입 위치: `MainActivity.kt`의 `setContent` 진입점에서, 엔진 부트스트랩(`LaunchedEffect`)과 게임 화면 사이에 조건부로 넣는다.
 - Phase 1 UI 범위: 오늘 받은 보상 결과 + 지금까지 획득한 것들의 간단한 목록. 화려한 연출/디테일 UX는 스코프 밖(추후 별도 논의).
 
+> **구현 결정(백로그 #5, 2026-08-24)**:
+> 1. **최초 실행 판정에 `hasSeenOnboarding`을 재사용하지 않았다.** 확인해보니 그 플래그는 로그인 온보딩 전용이고, `FeatureFlags.isLoginEnabled = false`인 지금은 `initialDestination()`이 무조건 `ScreenDestination.Home`으로 직행해 그 온보딩 화면 자체가 죽은 경로다. 대신 `AttendanceState.attendanceCount == 0`(출석 기록이 한 번도 없음)을 그대로 최초 실행 판정으로 썼다 — 4장에서 이미 만든 개념이라 새 플래그가 필요 없다.
+> 2. **삽입 위치를 `MainActivity.kt`가 아니라 `ui/GoCoachApp.kt`의 `GoCoachScreen`으로 바꿨다.** `MainActivity`는 엔진 부트스트랩만 다루고, 저장소 인스턴스 생성·`ScreenDestination` 라우팅은 전부 `GoCoachScreen`에 있어 그쪽이 자연스러운 자리였다. 다만 이 파일은 `LayeringContractTest.goCoachAppStaysWithinShrinkingUiShellBudget`이 라인(850)·상태훅(46) 예산을 강제하고 있어, 실제 로직/상태는 전부 새 파일 `ui/FirstLaunchRewardScreen.kt`의 `rememberFirstLaunchRewardGate(context)`로 옮기고 `GoCoachScreen`에는 호출 한 줄 + 조건부 early return만 남겼다(`buildPremiumUiState`와 동일 패턴).
+> 3. **보상 지급을 기다리지 않고 즉시 화면을 보여준다.** 1일차 보상 내용은 이미 확정(무르기 무제한)이라 결과가 결정론적이므로, `runAttendanceRewardGrant` 완료를 기다리는 로딩 상태 없이 바로 표시한다. 그 사이 지급이 실패해도 다음 실행에서 스스로 복구되고, 4.4절의 방어적 폴백 다이얼로그가 남아 있다.
+
 ---
 
 ## 6. 기능 3 — 대국 히스토리 (대국 기록 목록)
