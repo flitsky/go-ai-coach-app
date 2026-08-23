@@ -1,7 +1,6 @@
 package com.worksoc.goaicoach.ui
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -93,31 +92,39 @@ internal fun GameHistoryScreen(
     }
 }
 
-private val RowDateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+/** 언어별 날짜 표기 어순이 달라 [UiLanguage]마다 다른 패턴/로케일을 쓴다(연도는 생략 — 목록용 짧은 표기). */
+private fun dateTimeFormat(language: UiLanguage): SimpleDateFormat =
+    when (language) {
+        UiLanguage.Korean -> SimpleDateFormat("M월 d일 HH:mm", Locale.KOREAN)
+        UiLanguage.English -> SimpleDateFormat("MMM d, HH:mm", Locale.ENGLISH)
+        UiLanguage.Japanese -> SimpleDateFormat("M月d日 HH:mm", Locale.JAPANESE)
+        UiLanguage.ChineseSimplified -> SimpleDateFormat("M月d日 HH:mm", Locale.SIMPLIFIED_CHINESE)
+    }
+
+/** "5점 접바둑"/"호선"처럼 대국 설정 요약에 쓰는 접바둑 값 — [UiStrings.gameModeLabel]과 달리 "대국 방식:" 접두어 없이 목록 행에 바로 쓸 짧은 조각. */
+private fun handicapPhrase(strings: UiStrings, handicapCount: Int): String =
+    if (handicapCount == 0) {
+        strings.handicapEvenGameLabel
+    } else {
+        "${strings.compactHandicapValueLabel(handicapCount)} ${strings.handicap}"
+    }
 
 @Composable
 private fun GameHistoryRow(entry: GameHistoryEntry, strings: UiStrings) {
+    // [날짜] [시간] [보드판사이즈] [플레이한 진영] [접바둑 설정] [결과] — 예: "8월 24일 00:34 13x13 흑 5점 접바둑 기권"
+    val summary = listOf(
+        dateTimeFormat(strings.language).format(Date(entry.playedAtMillis)),
+        "${entry.boardSize}x${entry.boardSize}",
+        strings.colorLabel(entry.humanColor),
+        handicapPhrase(strings, entry.handicapCount),
+        strings.gameHistoryResultLabel(entry.result, entry.margin),
+    ).joinToString(" ")
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Column {
-            Text(
-                text = RowDateFormat.format(Date(entry.playedAtMillis)),
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Text(
-                text = "${entry.boardSize}x${entry.boardSize}",
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.secondary,
-            )
-        }
-        Text(
-            text = strings.gameHistoryResultLabel(entry.winner, entry.margin),
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary,
-        )
+        Text(text = summary, color = MaterialTheme.colorScheme.onSurface)
     }
 }

@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.persistence
 
 import com.worksoc.goaicoach.application.gamehistory.GameHistoryEntry
+import com.worksoc.goaicoach.application.gamehistory.GameHistoryResult
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.match.SidePlayerSetup
@@ -12,7 +13,11 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class GameHistoryCodecTest {
-    private fun sampleEntry(id: String = "1000-1") = GameHistoryEntry(
+    private fun sampleEntry(
+        id: String = "1000-1",
+        result: GameHistoryResult = GameHistoryResult.Win,
+        margin: Double? = 3.5,
+    ) = GameHistoryEntry(
         id = id,
         playedAtMillis = 1_000L,
         boardSize = 9,
@@ -24,8 +29,9 @@ class GameHistoryCodecTest {
             white = SidePlayerSetup(controller = SeatController.Ai),
         ),
         moveCount = 84,
-        winner = StoneColor.Black,
-        margin = 3.5,
+        humanColor = StoneColor.Black,
+        result = result,
+        margin = margin,
     )
 
     @Test
@@ -38,14 +44,14 @@ class GameHistoryCodecTest {
     }
 
     @Test
-    fun roundTripPreservesNullWinnerAndMargin() {
-        val jigo = sampleEntry(id = "jigo").copy(winner = null, margin = null)
+    fun roundTripPreservesResignWithNullMargin() {
+        val resigned = sampleEntry(id = "resigned", result = GameHistoryResult.Resign, margin = null)
 
-        val decoded = GameHistoryCodec.decodeAll(GameHistoryCodec.encodeAll(listOf(jigo)))
+        val decoded = GameHistoryCodec.decodeAll(GameHistoryCodec.encodeAll(listOf(resigned)))
 
-        assertEquals(listOf(jigo), decoded)
-        assertNull(decoded.single().winner)
+        assertEquals(listOf(resigned), decoded)
         assertNull(decoded.single().margin)
+        assertEquals(GameHistoryResult.Resign, decoded.single().result)
     }
 
     @Test

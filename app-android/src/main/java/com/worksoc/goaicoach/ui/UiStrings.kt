@@ -8,6 +8,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import com.worksoc.goaicoach.application.engine.operation.EngineActivityIndicator
+import com.worksoc.goaicoach.application.gamehistory.GameHistoryResult
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
@@ -236,22 +237,34 @@ internal data class UiStrings(
             UiLanguage.ChineseSimplified -> "是否在分析缓存中优化本局？\n存储关键局面有利于在以后的对局中提高响应速度。\n\n初始时保存前 $initialCount 手，稳定后可扩展到 $maxCount 手。\n目标：从 $moveCount 手对局中提取最多 $targetCount 个 JSON  分析记录。"
         }
 
-    fun gameHistoryResultLabel(winner: StoneColor?, margin: Double?): String {
-        if (winner == null) {
-            return when (language) {
+    /** 사람 플레이어 기준 결과 문구. [margin]은 [GameHistoryResult.Win]/[GameHistoryResult.Loss]에서만 쓰인다. */
+    fun gameHistoryResultLabel(result: GameHistoryResult, margin: Double?): String {
+        val marginText = margin?.let { "%.1f".format(it) }
+        return when (result) {
+            GameHistoryResult.Resign -> when (language) {
+                UiLanguage.Korean -> "기권"
+                UiLanguage.English -> "Resigned"
+                UiLanguage.Japanese -> "投了"
+                UiLanguage.ChineseSimplified -> "认输"
+            }
+            GameHistoryResult.Draw -> when (language) {
                 UiLanguage.Korean -> "무승부"
                 UiLanguage.English -> "Draw"
                 UiLanguage.Japanese -> "持碁"
                 UiLanguage.ChineseSimplified -> "和棋"
             }
-        }
-        val color = colorLabel(winner)
-        val marginText = margin?.let { "%.1f".format(it) }
-        return when (language) {
-            UiLanguage.Korean -> if (marginText != null) "$color 승 (${marginText}집)" else "$color 승"
-            UiLanguage.English -> if (marginText != null) "$color wins by $marginText" else "$color wins"
-            UiLanguage.Japanese -> if (marginText != null) "${color}の${marginText}目勝ち" else "${color}の勝ち"
-            UiLanguage.ChineseSimplified -> if (marginText != null) "$color 胜 $marginText 目" else "$color 胜"
+            GameHistoryResult.Win -> when (language) {
+                UiLanguage.Korean -> if (marginText != null) "승 (${marginText}집)" else "승"
+                UiLanguage.English -> if (marginText != null) "Win by $marginText" else "Win"
+                UiLanguage.Japanese -> if (marginText != null) "${marginText}目勝ち" else "勝ち"
+                UiLanguage.ChineseSimplified -> if (marginText != null) "胜 $marginText 目" else "胜"
+            }
+            GameHistoryResult.Loss -> when (language) {
+                UiLanguage.Korean -> if (marginText != null) "패 (${marginText}집)" else "패"
+                UiLanguage.English -> if (marginText != null) "Loss by $marginText" else "Loss"
+                UiLanguage.Japanese -> if (marginText != null) "${marginText}目負け" else "負け"
+                UiLanguage.ChineseSimplified -> if (marginText != null) "负 $marginText 目" else "负"
+            }
         }
     }
 

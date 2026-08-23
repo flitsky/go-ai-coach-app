@@ -2,6 +2,7 @@ package com.worksoc.goaicoach.persistence
 
 import android.content.Context
 import com.worksoc.goaicoach.application.gamehistory.GameHistoryEntry
+import com.worksoc.goaicoach.application.gamehistory.GameHistoryResult
 import com.worksoc.goaicoach.application.gamehistory.GameHistoryStorePort
 import com.worksoc.goaicoach.persistence.PlayerSetupJsonCodec.decodePlayerSetup
 import com.worksoc.goaicoach.persistence.PlayerSetupJsonCodec.encodePlayerSetup
@@ -65,7 +66,8 @@ internal object GameHistoryCodec {
             .put("handicapCount", entry.handicapCount)
             .put("playerSetup", encodePlayerSetup(entry.playerSetup))
             .put("moveCount", entry.moveCount)
-            .put("winner", entry.winner?.name ?: JSONObject.NULL)
+            .put("humanColor", entry.humanColor.name)
+            .put("result", entry.result.name)
             .put("margin", entry.margin ?: JSONObject.NULL)
 
     private fun decodeEntry(json: JSONObject?): GameHistoryEntry? {
@@ -80,7 +82,8 @@ internal object GameHistoryCodec {
                 handicapCount = json.optInt("handicapCount", 0),
                 playerSetup = decodePlayerSetup(json.optJSONObject("playerSetup")),
                 moveCount = json.optInt("moveCount", 0),
-                winner = if (json.isNull("winner")) null else enumOrDefault(json.optString("winner"), StoneColor.Black),
+                humanColor = enumOrDefault(json.optString("humanColor"), StoneColor.Black),
+                result = enumOrDefault(json.optString("result"), GameHistoryResult.Win),
                 margin = if (json.isNull("margin")) null else json.optDouble("margin"),
             )
         }.getOrNull()
