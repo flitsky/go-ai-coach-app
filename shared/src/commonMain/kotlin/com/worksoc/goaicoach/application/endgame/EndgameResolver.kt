@@ -20,6 +20,7 @@ import com.worksoc.goaicoach.shared.describe
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.diagnostic.NoopDiagnosticEventLog
 import com.worksoc.goaicoach.application.diagnostic.scoreDisagreementDiagnosticEvent
+import com.worksoc.goaicoach.application.time.currentEpochMillis
 
 interface EndgameJudgeGateway {
     suspend fun configure(profile: EngineProfile): EngineStatus
@@ -167,49 +168,49 @@ suspend fun resolveAiEndgame(
     // analysis is allowed only after an explicit user objection, isolated by
     // match/session generation or a separate engine worker so New Game/Undo
     // cannot receive a stale result.
-    val resolverStartMillis = System.currentTimeMillis()
+    val resolverStartMillis = currentEpochMillis()
     var deadStonesResult: DeadStonesResult? = null
     var deadStonesError: String? = null
-    val deadStonesStartMillis = System.currentTimeMillis()
+    val deadStonesStartMillis = currentEpochMillis()
     assistantJudgeDeadStonesProfile?.let { profile -> judgeGateway.configure(profile) }
     runCatching { judgeGateway.deadStones() }
         .onSuccess { deadStonesResult = it }
         .onFailure { deadStonesError = it.message ?: "Unknown error" }
-    val deadStonesMs = System.currentTimeMillis() - deadStonesStartMillis
+    val deadStonesMs = currentEpochMillis() - deadStonesStartMillis
 
-    val localDetectStartMillis = System.currentTimeMillis()
+    val localDetectStartMillis = currentEpochMillis()
     val locallyInferredDeadStones = DeadStoneDetector.capturableDeadStones(originalState)
-    val localDeadStoneDetectionMs = System.currentTimeMillis() - localDetectStartMillis
+    val localDeadStoneDetectionMs = currentEpochMillis() - localDetectStartMillis
 
-    val localCleanupStartMillis = System.currentTimeMillis()
+    val localCleanupStartMillis = currentEpochMillis()
     val cleanup = DeadStoneCleaner.apply(
         state = originalState,
         deadStoneCoordinates = deadStonesResult?.coordinates.orEmpty() + locallyInferredDeadStones,
     )
     val localFinalScore = BoardScorer.score(cleanup.state)
-    val localCleanupScoringMs = System.currentTimeMillis() - localCleanupStartMillis
+    val localCleanupScoringMs = currentEpochMillis() - localCleanupStartMillis
 
     var engineScoreEstimate: ScoreEstimate? = null
     var engineScoreEstimateError: String? = null
-    val engineEstimateStartMillis = System.currentTimeMillis()
+    val engineEstimateStartMillis = currentEpochMillis()
     runCatching { judgeGateway.estimateScore(estimateLimit) }
         .onSuccess { engineScoreEstimate = it }
         .onFailure { engineScoreEstimateError = it.message ?: "Unknown error" }
-    val engineEstimateMs = System.currentTimeMillis() - engineEstimateStartMillis
+    val engineEstimateMs = currentEpochMillis() - engineEstimateStartMillis
 
-    val scoreSelectionStartMillis = System.currentTimeMillis()
+    val scoreSelectionStartMillis = currentEpochMillis()
     val scoreSelection = EndgameScoreSelector.selectDisplayScore(
         cleanup = cleanup,
         localScore = localFinalScore,
         engineEstimate = engineScoreEstimate,
         prePassCandidates = prePassCandidates,
     )
-    val scoreSelectionMs = System.currentTimeMillis() - scoreSelectionStartMillis
+    val scoreSelectionMs = currentEpochMillis() - scoreSelectionStartMillis
 
     var engineFinalScore: FinalScoreResult? = null
     var engineFinalScoreError: String? = null
     var engineFinalScoreSkippedReason: String? = null
-    val finalScoreStartMillis = System.currentTimeMillis()
+    val finalScoreStartMillis = currentEpochMillis()
     if (runDiagnosticFinalScore) {
         assistantJudgeFinalScoreProfile?.let { profile -> judgeGateway.configure(profile) }
         runCatching { judgeGateway.scoreFinal() }
@@ -218,7 +219,7 @@ suspend fun resolveAiEndgame(
     } else {
         engineFinalScoreSkippedReason = "skipped-by-assistant-judge-sla"
     }
-    val diagnosticFinalScoreMs = System.currentTimeMillis() - finalScoreStartMillis
+    val diagnosticFinalScoreMs = currentEpochMillis() - finalScoreStartMillis
 
     val timings = EndgameResolutionTimings(
         assistantJudgeDeadStonesTimeCapMs = assistantJudgeDeadStonesProfile?.analysisLimit?.timeMillis,
@@ -230,7 +231,7 @@ suspend fun resolveAiEndgame(
         engineEstimateMs = engineEstimateMs,
         scoreSelectionMs = scoreSelectionMs,
         diagnosticFinalScoreMs = diagnosticFinalScoreMs,
-        resolverTotalMs = System.currentTimeMillis() - resolverStartMillis,
+        resolverTotalMs = currentEpochMillis() - resolverStartMillis,
     )
 
     val engineScore = engineFinalScore

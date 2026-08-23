@@ -14,6 +14,7 @@ import com.worksoc.goaicoach.application.score.EndgameFailureDisplayPlan
 import com.worksoc.goaicoach.application.score.FinalScoreDisplayPlan
 import com.worksoc.goaicoach.application.score.ScoreEstimateDisplayPlan
 import com.worksoc.goaicoach.application.score.ScoreEstimateFailureDisplayPlan
+import com.worksoc.goaicoach.application.time.currentEpochMillis
 import com.worksoc.goaicoach.application.topmoves.TopMoveAnalysisFailureDisplayPlan
 import com.worksoc.goaicoach.application.undo.UndoLocalStatePlan
 import com.worksoc.goaicoach.shared.BoardSize
@@ -122,7 +123,7 @@ data class GameSessionCoreState(
             engineMessage = reset.engineMessage,
             turnTimeState = GameSessionTurnTimeState.reset(
                 state = reset.gameState,
-                nowMillis = System.currentTimeMillis(),
+                nowMillis = currentEpochMillis(),
             ),
         )
 
@@ -169,7 +170,7 @@ data class GameSessionCoreState(
             engineMessage = restore.engineMessage,
             turnTimeState = GameSessionTurnTimeState.reset(
                 state = restore.gameState,
-                nowMillis = System.currentTimeMillis(),
+                nowMillis = currentEpochMillis(),
             ),
         )
 
@@ -190,7 +191,7 @@ data class GameSessionCoreState(
             moveReviewState = moveReviewState.applyUndoLocalStatePlan(undo),
             turnTimeState = turnTimeState.restartCurrentTurn(
                 state = undo.gameState,
-                nowMillis = System.currentTimeMillis(),
+                nowMillis = currentEpochMillis(),
             ),
         )
 

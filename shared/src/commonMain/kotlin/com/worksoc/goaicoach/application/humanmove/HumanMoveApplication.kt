@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.application.humanmove
 
+import com.worksoc.goaicoach.application.time.currentEpochMillis
 import com.worksoc.goaicoach.shared.engine.EngineFallbackPolicy
 import com.worksoc.goaicoach.application.engine.operation.EngineOperationApplyPlan
 import com.worksoc.goaicoach.shared.engine.EngineOperationKind
@@ -104,7 +105,7 @@ data class HumanEngineSyncRunRequest(
         { block -> runEngineIo { block() } },
     val applyCompletion: (HumanEngineSyncCompletionApplyPlan, Long) -> GameState?,
     val requestFollowUpAnalysis: (GameState) -> Unit,
-    val nowMillis: () -> Long = { System.currentTimeMillis() },
+    val nowMillis: () -> Long = { currentEpochMillis() },
 )
 
 sealed class HumanEngineSyncCompletionPlan {

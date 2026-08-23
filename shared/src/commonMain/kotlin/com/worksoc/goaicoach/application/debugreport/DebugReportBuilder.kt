@@ -6,6 +6,7 @@ import com.worksoc.goaicoach.application.debugreport.UserNoticePort
 import com.worksoc.goaicoach.application.analysis.toDisplayText
 import com.worksoc.goaicoach.application.session.GameSessionControllerState
 import com.worksoc.goaicoach.application.session.GameSessionEffect
+import com.worksoc.goaicoach.application.time.currentEpochMillis
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.shared.AnalysisPreset
@@ -47,7 +48,7 @@ data class DebugReportSnapshot(
     val diagnosticEventLogText: String = "Diagnostic event log not loaded.",
     val searchTimeSettings: SearchTimeSettings = SearchTimeSettings(),
     val savedSessionJson: String? = null,
-    val createdAtMillis: Long = System.currentTimeMillis(),
+    val createdAtMillis: Long = currentEpochMillis(),
 )
 
 fun GameSessionControllerState.toDebugReportSnapshot(
@@ -259,7 +260,7 @@ fun buildDebugReport(
     diagnosticEventLogText: String = "Diagnostic event log not loaded.",
     searchTimeSettings: SearchTimeSettings = SearchTimeSettings(),
     savedSessionJson: String? = null,
-    createdAtMillis: Long = System.currentTimeMillis(),
+    createdAtMillis: Long = currentEpochMillis(),
 ): String {
     val localScoreText = BoardScorer.score(gameState).toDisplayText()
 

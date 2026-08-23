@@ -3,6 +3,7 @@ package com.worksoc.goaicoach.application.debugreport
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
 import com.worksoc.goaicoach.application.session.GameSessionControllerState
+import com.worksoc.goaicoach.application.time.currentEpochMillis
 
 internal data class DebugReportCopyRunRequest(
     val controllerState: GameSessionControllerState,
@@ -20,7 +21,7 @@ internal data class DebugReportCopyRunRequest(
     val mirror: DebugReportMirrorPort,
     val userNotice: UserNoticePort,
     val savedSessionJson: String?,
-    val nowMillis: () -> Long = { System.currentTimeMillis() },
+    val nowMillis: () -> Long = { currentEpochMillis() },
     val applyEngineMessage: (String) -> Unit,
 )
 

@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.application.engine
 
+import com.worksoc.goaicoach.application.time.currentEpochMillis
 import com.worksoc.goaicoach.shared.engine.EngineFallbackPolicy
 import com.worksoc.goaicoach.shared.engine.EngineOperationKind
 import com.worksoc.goaicoach.shared.engine.EngineOperationRequest
@@ -27,7 +28,7 @@ internal data class EngineBenchmarkRunRequest(
     val benchmarkUiState: EngineBenchmarkUiState,
     val diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
     val lifecycleCallbacks: EngineOperationLifecycleCallbacks = EngineOperationLifecycleCallbacks(),
-    val nowMillis: () -> Long = System::currentTimeMillis,
+    val nowMillis: () -> Long = ::currentEpochMillis,
     val delayMillis: suspend (Long) -> Unit = { millis -> delay(millis) },
     val runEngineWork: suspend (suspend () -> StartupBenchmarkWorkflowResult) -> StartupBenchmarkWorkflowResult =
         { block -> runEngineIo { block() } },

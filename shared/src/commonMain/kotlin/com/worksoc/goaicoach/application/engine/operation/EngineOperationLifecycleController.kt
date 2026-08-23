@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.application.engine.operation
 
+import com.worksoc.goaicoach.application.concurrency.sharedLock
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.engine.launchUiEffect
 import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
@@ -38,6 +39,7 @@ class EngineOperationLifecycleController(
 ) {
     private var lifecycleState = EngineOperationLifecycleState()
     private val activeJobs = mutableMapOf<String, Job>()
+    private val activeJobsLock = sharedLock()
 
     val isEngineBusy: Boolean get() = lifecycleState.isEngineBusy(currentSessionGeneration())
     val isBlockingBusy: Boolean get() = lifecycleState.isBlockingBusy(currentSessionGeneration())
@@ -120,11 +122,11 @@ class EngineOperationLifecycleController(
                 block()
             }
         }
-        synchronized(activeJobs) {
+        activeJobsLock.withLock {
             activeJobs[operation.operationId] = job
         }
         job.invokeOnCompletion {
-            synchronized(activeJobs) {
+            activeJobsLock.withLock {
                 activeJobs.remove(operation.operationId)
             }
         }
@@ -146,7 +148,7 @@ class EngineOperationLifecycleController(
     fun cancelBackgroundOperations() {
         val targets = lifecycleState.activeOperations.values.filter { !it.kind.isBlocking }
         targets.forEach { req ->
-            val job = synchronized(activeJobs) { activeJobs[req.operationId] }
+            val job = activeJobsLock.withLock { activeJobs[req.operationId] }
             if (job != null && job.isActive) {
                 job.cancel()
                 diagnosticEventLog.append(
@@ -173,7 +175,7 @@ class EngineOperationLifecycleController(
         val staleIds = lifecycleState.activeOperations.keys.toList()
         if (staleIds.isEmpty()) return
         staleIds.forEach { operationId ->
-            val job = synchronized(activeJobs) { activeJobs[operationId] }
+            val job = activeJobsLock.withLock { activeJobs[operationId] }
             if (job != null && job.isActive) {
                 job.cancel()
             }

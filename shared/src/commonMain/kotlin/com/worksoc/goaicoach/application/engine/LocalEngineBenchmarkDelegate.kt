@@ -7,6 +7,7 @@ import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.describe
+import kotlin.time.TimeSource
 
 internal class LocalEngineBenchmarkDelegate(
     private val coreApi: EngineCoreApi,
@@ -59,9 +60,11 @@ internal class LocalEngineBenchmarkDelegate(
                     )
                     val benchmarkState = benchmarkPosition.state.variantForBenchmarkSample(sampleIndex)
                     coreApi.syncToGameState(benchmarkState)
-                    val startNanos = System.nanoTime()
+                    // 벽시계(currentEpochMillis)가 아니라 단조 시계로 잰다 — System.nanoTime()의
+                    // 멀티플랫폼 대체이고, 측정 중 시스템 시각이 조정돼도 음수 구간이 안 생긴다.
+                    val startMark = TimeSource.Monotonic.markNow()
                     val result = coreApi.analyze(benchmarkAnalysisLimit(visits = visits, timeCapMs = timeCapMs))
-                    val elapsedMs = ((System.nanoTime() - startNanos) / 1_000_000.0).roundMillis()
+                    val elapsedMs = (startMark.elapsedNow().inWholeNanoseconds / 1_000_000.0).roundMillis()
                     val rootVisits = parseBenchmarkRootVisits(result.summary)
                     val sample = EngineBenchmarkSample(
                         sampleIndex = currentSample,

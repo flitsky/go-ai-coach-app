@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.application.endgame
 
+import com.worksoc.goaicoach.application.time.currentEpochMillis
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.CandidateMove
@@ -16,7 +17,7 @@ internal fun buildEndgameLog(
 ): String =
     buildString {
         appendLine("source=$source")
-        appendLine("recordedAtMillis=${System.currentTimeMillis()}")
+        appendLine("recordedAtMillis=${currentEpochMillis()}")
         appendLine("detail=$detail")
         appendLine("moveCount=${state.moves.size}")
         appendLine("lastTwoMoves=${state.moves.takeLast(2).joinToString { it.describe(state.boardSize) }}")

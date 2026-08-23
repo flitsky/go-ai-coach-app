@@ -2,6 +2,7 @@ package com.worksoc.goaicoach.application.analysis
 
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.engine.EngineSessionClient
+import com.worksoc.goaicoach.application.time.currentEpochMillis
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.shared.EngineSearchMode
 import com.worksoc.goaicoach.shared.GameState
@@ -37,7 +38,7 @@ class PositionCacheOptimizationController(
                 state = state,
                 limit = limit,
                 searchMode = EngineSearchMode.JsonPositionAnalysis,
-                nowMillis = System.currentTimeMillis(),
+                nowMillis = currentEpochMillis(),
             )
         },
     )

@@ -13,6 +13,7 @@ import com.worksoc.goaicoach.application.runtime.runtimeEngineGameStartSuccessLo
 import com.worksoc.goaicoach.application.session.GameSessionEffect
 import com.worksoc.goaicoach.application.session.GameSessionScoreState
 import com.worksoc.goaicoach.application.session.RuntimePlayLevelSelection
+import com.worksoc.goaicoach.application.time.currentEpochMillis
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Ruleset
@@ -37,7 +38,7 @@ data class StartEngineBackedGameRunRequest(
     val replaceScoreState: (GameSessionScoreState) -> Unit,
     val currentStateProvider: () -> GameState,
     val requestFollowUpAnalysis: (GameState) -> Unit,
-    val nowMillis: () -> Long = { System.currentTimeMillis() },
+    val nowMillis: () -> Long = { currentEpochMillis() },
 )
 
 fun runStartEngineBackedGameApplication(

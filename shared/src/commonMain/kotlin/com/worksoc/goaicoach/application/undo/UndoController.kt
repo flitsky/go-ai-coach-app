@@ -7,6 +7,7 @@ import com.worksoc.goaicoach.application.movereview.MoveReviewMarker
 import com.worksoc.goaicoach.application.score.PostUndoScoreSyncRunRequest
 import com.worksoc.goaicoach.application.score.ScoreSyncCompletionApplyPlan
 import com.worksoc.goaicoach.application.score.runPostUndoScoreSyncApplication
+import com.worksoc.goaicoach.application.time.currentEpochMillis
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.shared.EngineProfile
@@ -49,7 +50,7 @@ class UndoController(
     private var pendingSyncJob: Job? = null
 
     fun markQuiet(): Long {
-        val quietUntil = undoEngineInterventionQuietUntilMillis(System.currentTimeMillis())
+        val quietUntil = undoEngineInterventionQuietUntilMillis(currentEpochMillis())
         onQuietUntil(quietUntil)
         return quietUntil
     }
@@ -78,7 +79,7 @@ class UndoController(
         pendingSyncJob?.cancel()
         pendingSyncJob = launchUiEffect(scope) {
             val delayMillis = undoEngineInterventionRemainingDelayMillis(
-                nowMillis = System.currentTimeMillis(),
+                nowMillis = currentEpochMillis(),
                 quietUntilMillis = pending.quietUntilMillis,
             )
             if (delayMillis > 0L) {

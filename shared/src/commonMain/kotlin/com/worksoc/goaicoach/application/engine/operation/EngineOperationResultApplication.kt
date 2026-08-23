@@ -5,6 +5,7 @@ import com.worksoc.goaicoach.application.diagnostic.engineOperationDiscardedDiag
 import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
 import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
 import com.worksoc.goaicoach.application.runtime.runtimeEngineOperationDiscardedLog
+import com.worksoc.goaicoach.application.time.currentEpochMillis
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.diagnostic.DiagnosticEvent
 
@@ -35,7 +36,7 @@ internal fun recordEngineOperationDiscardLog(
     currentState: GameState,
     runtimeEventLog: RuntimeEventLogPort,
     diagnosticEventLog: DiagnosticEventLogPort,
-    nowMillis: Long = System.currentTimeMillis(),
+    nowMillis: Long = currentEpochMillis(),
 ) {
     val plan = buildEngineOperationDiscardLogPlan(
         context = context,

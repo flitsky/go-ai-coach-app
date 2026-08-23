@@ -14,6 +14,7 @@ import com.worksoc.goaicoach.application.session.GameSessionControllerState
 import com.worksoc.goaicoach.application.session.GameSessionEffect
 import com.worksoc.goaicoach.application.session.GameSessionRuntimeState
 import com.worksoc.goaicoach.application.session.TurnTimeMoveUpdate
+import com.worksoc.goaicoach.application.time.currentEpochMillis
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.ScoreSnapshot
@@ -54,7 +55,7 @@ internal data class AutoAiScheduledTurnRunRequest(
     val requestFollowUpAnalysis: (AutoAiTurnFollowUpRequest) -> Unit,
     val currentStateProvider: () -> GameState,
     val currentSessionGenerationProvider: () -> Long,
-    val nowMillis: () -> Long = { System.currentTimeMillis() },
+    val nowMillis: () -> Long = { currentEpochMillis() },
 )
 
 internal fun runScheduledAutoAiTurnApplication(

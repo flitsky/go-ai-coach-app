@@ -1161,6 +1161,58 @@ class LayeringContractTest {
     }
 
     @Test
+    fun sharedCommonMainAvoidsImplicitlyImportedJvmApis() {
+        // 260824: iOS 타깃(-PenableIosTargets=true)이 49개 에러로 깨져 있던 걸 고치면서 추가.
+        // engineOperationApplicationPoliciesStayPortable은 `import java.` 같은 **import 문**을
+        // 본다. 그런데 `java.lang.*`은 JVM에서 자동 임포트라 `System.currentTimeMillis()`는
+        // import 한 줄 없이 androidTarget에서 그냥 컴파일된다 — 그래서 텍스트 검사도 컴파일도
+        // 아무 말이 없는 채로 commonMain 20개 파일에 번졌고, 기본 빌드에서 제외되는 iOS
+        // 컴파일만 조용히 깨졌다. `kotlin.synchronized`도 같은 부류(자동 임포트 + JVM 전용).
+        //
+        // 이 테스트는 그 "import 없이 새는" 부류만 이름으로 직접 막는다. 대안(시간을 읽는 지점)은
+        // application/time/AppClock.kt의 currentEpochMillis(), 경과 시간은
+        // kotlin.time.TimeSource.Monotonic, 잠금은 application/concurrency/SharedLock.kt.
+        val commonMainRoot = repoRoot()
+            .resolve("shared/src/commonMain/kotlin/com/worksoc/goaicoach")
+        val forbiddenBareReferences = listOf(
+            "System.",
+            "System::",
+            "Thread.",
+            "Runtime.",
+            "synchronized(",
+        )
+
+        val offenders = commonMainRoot
+            .walkTopDown()
+            .filter { file -> file.extension == "kt" }
+            .flatMap { file ->
+                val scanLines = file.readLines()
+                    .filterNot { raw ->
+                        val trimmed = raw.trimStart()
+                        trimmed.startsWith("import ") || trimmed.startsWith("package ") ||
+                            trimmed.startsWith("//") || trimmed.startsWith("*") ||
+                            trimmed.startsWith("/*")
+                    }
+                    .map { line -> stripStringsAndTrailingComment(line) }
+                forbiddenBareReferences.mapNotNull { forbidden ->
+                    val bareUse = Regex("(?<![\\w.])${Regex.escape(forbidden)}")
+                    scanLines
+                        .firstOrNull { line -> bareUse.containsMatchIn(line) }
+                        ?.let { line ->
+                            "${file.relativeTo(repoRoot()).path}: `$forbidden` -> ${line.trim()}"
+                        }
+                }
+            }
+            .toList()
+
+        assertTrue(
+            "shared/commonMain must not use JVM-only APIs that need no import " +
+                "(they compile on androidTarget but break iOS):\n" + offenders.joinToString("\n"),
+            offenders.isEmpty(),
+        )
+    }
+
+    @Test
     fun sharedPolicyModelsStayKmpReady() {
         val sharedRoot = repoRoot()
             .resolve("shared/src/commonMain/kotlin/com/worksoc/goaicoach/shared")

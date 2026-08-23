@@ -1,7 +1,6 @@
 package com.worksoc.goaicoach.application.engine
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -11,10 +10,11 @@ import kotlinx.coroutines.withContext
  *
  * Keeping the dispatcher choice here prevents the Compose UI entry point from
  * owning engine execution policy directly. Future variants can replace this
- * with an injected dispatcher or remote-engine executor.
+ * with an injected dispatcher or remote-engine executor. The dispatcher itself
+ * is the one platform-specific bit ([engineIoDispatcher]).
  */
 suspend fun <T> runEngineIo(block: suspend () -> T): T =
-    withContext(Dispatchers.IO) {
+    withContext(engineIoDispatcher) {
         block()
     }
 

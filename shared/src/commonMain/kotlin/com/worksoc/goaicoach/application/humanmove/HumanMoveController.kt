@@ -15,6 +15,7 @@ import com.worksoc.goaicoach.application.session.GameSessionAnalysisState
 import com.worksoc.goaicoach.application.session.GameSessionMoveReviewState
 import com.worksoc.goaicoach.application.session.GameSessionScoreState
 import com.worksoc.goaicoach.application.session.TurnTimeMoveUpdate
+import com.worksoc.goaicoach.application.time.currentEpochMillis
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.shared.EngineProfile
@@ -147,7 +148,7 @@ class HumanMoveController(
         if (afterMove.hasConsecutivePasses()) {
             onConsecutivePassesDetected()
         }
-        val turnTimeUpdate = recordTurnMove(move.player, System.currentTimeMillis(), afterMove.nextPlayer)
+        val turnTimeUpdate = recordTurnMove(move.player, currentEpochMillis(), afterMove.nextPlayer)
 
         runtimeEventLog.append(
             runtimeHumanMoveAcceptedLog(
