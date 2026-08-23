@@ -13,6 +13,7 @@ googleid = "1.2.0"
 playServicesAds = "25.4.0"
 playBilling = "9.1.0"
 lifecycleProcess = "2.8.7"
+kotlinxCoroutines = "1.8.0"
 
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
@@ -36,6 +37,7 @@ google-id = { module = "com.google.android.libraries.identity.googleid:googleid"
 play-services-ads = { module = "com.google.android.gms:play-services-ads", version.ref = "playServicesAds" }
 play-billing = { module = "com.android.billingclient:billing", version.ref = "playBilling" }
 androidx-lifecycle-process = { module = "androidx.lifecycle:lifecycle-process", version.ref = "lifecycleProcess" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
