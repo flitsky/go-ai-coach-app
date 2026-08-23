@@ -254,6 +254,9 @@ dependencies {
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
+    // ProcessLifecycleOwner — 앱 전역 foreground 복귀(cold start 포함) 감지용.
+    // Compose BOM이 이 버전을 이미 constraint로 맞춰주므로 별도 충돌 없음.
+    implementation(libs.androidx.lifecycle.process)
 
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
