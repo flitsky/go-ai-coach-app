@@ -58,14 +58,15 @@
    - 참고: 킥오프 플랜 4.1절. cold start/foreground 복귀 감지 인프라 — 현재 앱엔 전혀 없었음(그린필드). #3 이후 항목들의 선행 조건 해소.
    - 산출물: `AppForegroundEvents.kt`(신규, foreground 이벤트 `SharedFlow`), `GoAiCoachApplication.kt`(신규, `ProcessLifecycleOwner` 옵저버 등록), `AndroidManifest.xml`(`android:name` 등록), `gradle/libs.versions.toml`·`app-android/build.gradle.kts`(`androidx.lifecycle:lifecycle-process:2.8.7` 의존성 명시). `compileDebugKotlin`·`processDebugMainManifest`·기존 유닛테스트 전체 통과, 사용자 승인 완료(2026-08-23).
 
+3. 출석 체크인 도메인·저장소 구현 — `AttendanceStorePort`/`AttendanceState`, UTC 날짜 기준 체크인 판정, 보상 티어 매핑 로직 (AI 모델: Sonnet, 노력정도: 높음) [완료]
+   - 참고: 4.1~4.3절. **스코프**: "몇 일차인지 판정하고 그 티어 이벤트를 흘려보내는" 메커니즘까지만 — 1일차(무르기 무제한)만 구체 보상이 정해져 있고, 2일차 이후 보상 *내용*은 미정이니 자리만 만들고 채우려 하지 않는다(4.2절).
+   - 산출물(shared): `AttendanceState.kt`, `AttendancePorts.kt`, `AttendanceCheckIn.kt`(`utcDayIndex`/`checkIn`/`isRewardedTier`), `AttendanceCheckInApplication.kt`(`runAttendanceCheckIn`), `AttendanceCheckInTest.kt`(8케이스). 산출물(app-android): `persistence/AttendanceStore.kt`+`AttendanceCodec`, `AttendanceCheckInCoordinator.kt`(#2의 `AppForegroundEvents` 구독 → 체크인 실행, `GoAiCoachApplication`에 배선), `AttendanceCodecTest.kt`(5케이스). 스펙의 `lastCheckInUtcDate: String`을 `lastCheckInUtcDay: Long`(UTC 하루 인덱스)로 구현 — 킥오프 플랜 4.3절에 각주로 반영됨. 테스트·컴파일 통과, 사용자 승인 완료(2026-08-23).
+
 ### 진행 중
 
-*(현재 진행 중인 항목 없음 — #3부터 다음 스레드 착수 대기)*
+*(현재 진행 중인 항목 없음 — #4부터 착수 대기)*
 
 ### 예정사항
-
-3. 출석 체크인 도메인·저장소 구현 — `AttendanceStorePort`/`AttendanceState`, UTC 날짜 기준 체크인 판정, 보상 티어 매핑 로직 (AI 모델: Sonnet, 노력정도: 높음)
-   - 참고: 4.1~4.3절. #2 완료 후 착수. **스코프**: "몇 일차인지 판정하고 그 티어 이벤트를 흘려보내는" 메커니즘까지만 — 1일차(무르기 무제한)만 구체 보상이 정해져 있고, 2일차 이후 보상 *내용*은 미정이니 자리만 만들고 채우려 하지 않는다(4.2절).
 
 4. `claim()` UI-비의존 진입점 확인 및 1일차 "무르기 무제한" 자동 지급 배선 + 기존 클레임 다이얼로그 정리 (AI 모델: Opus, 노력정도: 높음)
    - 참고: 4.4절. `application/premium/*` 구조를 먼저 파악해 판단해야 하는 부분이 있어 Opus 권장. #3 완료 후 착수.

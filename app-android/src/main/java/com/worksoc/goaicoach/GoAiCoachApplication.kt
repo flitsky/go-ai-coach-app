@@ -16,6 +16,7 @@ class GoAiCoachApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         ProcessLifecycleOwner.get().lifecycle.addObserver(ForegroundObserver)
+        AttendanceCheckInCoordinator(this).start()
     }
 
     private object ForegroundObserver : DefaultLifecycleObserver {

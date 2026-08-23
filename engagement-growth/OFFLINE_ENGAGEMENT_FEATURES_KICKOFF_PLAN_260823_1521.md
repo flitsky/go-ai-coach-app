@@ -73,6 +73,8 @@ AttendanceState(
 - 새 Port: `shared/.../application/attendance/AttendancePorts.kt` → `AttendanceStorePort { fun load(): AttendanceState; fun save(state: AttendanceState) }`
 - 새 어댑터: `app-android/.../persistence/AttendanceStore.kt` — 기존 두 스토어와 동일한 SharedPreferences-JSON 패턴, 새 키 사용.
 
+> **구현 결정(백로그 #3, 2026-08-23)**: `lastCheckInUtcDate: String`(ISO 날짜) 대신 `lastCheckInUtcDay: Long`(UTC 하루 인덱스, `epochMillis / 86_400_000`)으로 구현했다. `shared`는 플랫폼 독립적이어야 하는데(3장) 이 프로젝트엔 날짜 파싱/포맷 라이브러리(kotlinx-datetime 등)가 없어, 문자열 대신 정수 나눗셈만으로 "오늘 이미 체크인했는가"를 판정하게 한 결정 — 동작은 스펙과 동일하다.
+
 ### 4.4 기존 "무르기 클레임" 플로우 변경
 
 - **현재 동작**: `app-android/.../ui/GamePlaySection.kt`의 `GameActionButtons`(약 310행)에서 Undo가 Locked 상태일 때 첫 탭 시 `showUndoClaimDialog` → `AlertDialog` 확인 → `premium.claim(FeatureId.Undo)` 호출(`LocalPremiumUiState.current` 경유).
