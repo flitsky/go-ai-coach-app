@@ -337,6 +337,14 @@ private fun GameActionButtons(
         onDismiss = { showPremiumUpsellDialog = false },
     )
 
+    // ⚠️ 방어적 폴백으로만 남긴 경로다(킥오프 플랜 4.4절, 백로그 #4). 정상 흐름에서는 앱 최초
+    // 실행 시 출석 1일차 보상이 무르기를 자동 클레임하므로(`AttendanceCheckInCoordinator` →
+    // `runAttendanceRewardGrant`) 여기까지 오지 않는다. 그래도 지우지 않는 이유:
+    // (1) 자동 지급은 foreground 이벤트를 타는 비동기 경로라 실패/유실 가능성이 0이 아니고,
+    // (2) `PremiumStateStore.load()`가 기기 시계 이상 등으로 상태를 기본값 폴백하면 이미 받은
+    //     클레임이 사라지는데, 출석 쪽은 "1일차 지급 완료"로 기록돼 있어 자동 재지급되지 않는다.
+    // 이 두 경우에 무르기를 영영 못 쓰게 되는 것보다, 도달 확률이 낮은 팝업 하나를 남겨 두는
+    // 편이 안전하다. 자동 지급이 안정화됐다고 판단되면 그때 제거한다.
     if (showUndoClaimDialog) {
         AlertDialog(
             onDismissRequest = { showUndoClaimDialog = false },

@@ -20,10 +20,9 @@ import androidx.compose.ui.Modifier
 import com.worksoc.goaicoach.application.premium.FeatureAccess
 import com.worksoc.goaicoach.application.premium.FeatureAccessPolicy
 import com.worksoc.goaicoach.application.premium.FeatureId
-import com.worksoc.goaicoach.application.premium.PremiumSource
-import com.worksoc.goaicoach.application.premium.PremiumState
 import com.worksoc.goaicoach.application.premium.PremiumStateStorePort
 import com.worksoc.goaicoach.application.premium.buildPremiumDeactivatedDiagnosticEvent
+import com.worksoc.goaicoach.application.premium.saveMergingClaimedFeatures
 import androidx.compose.ui.platform.LocalContext
 import com.worksoc.goaicoach.application.analysis.AnalysisCacheKey
 import com.worksoc.goaicoach.application.analysis.AnalysisResultCache
@@ -729,33 +728,18 @@ private fun GoCoachScreen(
         onConfirm = { enabled -> uxOptions = uxOptions.copy(isDirectPlayEnabled = enabled) }
     )
 
-    val premiumUiState = PremiumUiState(
-        // 재구성 시점의 현재 시각으로 매번 평가한다(별도 tick 없이, 대국 중 재구성이 충분히 잦아 문제없음).
-        isActive = premiumState.isActive(nowMillis = System.currentTimeMillis()),
-        isPurchased = premiumState.source == PremiumSource.Purchase,
-        adGrantExpiresAtMillis = premiumState.adGrantStartedAtMillis?.plus(PremiumState.AdGrantDurationMillis),
-        resolve = { featureId -> FeatureAccessPolicy.resolve(featureId, premiumState, System.currentTimeMillis()) },
-        // claimedFeatures를 이어붙인다 — 안 그러면 클레임이 조용히 사라진다.
-        setPurchased = { purchased ->
-            premiumState = (if (purchased) PremiumState.purchased() else PremiumState()).copy(claimedFeatures = premiumState.claimedFeatures)
-            premiumStateStore.save(premiumState)
-        },
-        purchasePremium = {
-            val (outcome, nextState) = performPremiumPurchase(context, diagnosticEventLog)
-            nextState?.let { premiumState = it.copy(claimedFeatures = premiumState.claimedFeatures); premiumStateStore.save(premiumState) }
-            outcome
-        },
-        activateAdGrant = {
-            val (outcome, nextState) = performPremiumAdGrant(context, diagnosticEventLog)
-            nextState?.let { premiumState = it.copy(claimedFeatures = premiumState.claimedFeatures); premiumStateStore.save(premiumState) }
-            outcome
-        },
-        claim = { featureId -> premiumState = premiumState.copy(claimedFeatures = premiumState.claimedFeatures + featureId); premiumStateStore.save(premiumState) },
+    // 프리미엄 배선(활성화 판정·저장·클레임 규칙)의 본체는 ui/PremiumUiState.kt의
+    // buildPremiumUiState에 있다 — PremiumPurchaseGlue.kt와 같은 이유로 이 셸 밖에 뒀다.
+    val premiumUiState = buildPremiumUiState(
+        premiumState = premiumState,
+        store = premiumStateStore,
+        context = context,
+        diagnosticEventLog = diagnosticEventLog,
+        onStateChanged = { nextState -> premiumState = nextState },
     )
 
     PremiumPurchaseRestoreEffect(context, diagnosticEventLog) { nextState ->
-        premiumState = nextState
-        premiumStateStore.save(nextState)
+        premiumState = premiumStateStore.saveMergingClaimedFeatures(nextState)
     }
 
     // 프리미엄이 비활성 상태가 될 때(활성화 안 함 선택, 만료 등) 형세보기/추천수의

@@ -81,6 +81,16 @@ AttendanceState(
 - **변경 목표**: 1일차 출석 보상이 지급되는 시점(=앱 최초 실행 직후, 게임 플레이 이전)에 이 `claim(FeatureId.Undo)`를 미리 호출해 무르기가 항상 Allowed 상태이도록 만든다. 이후 `GamePlaySection.kt`의 클레임 다이얼로그 분기는 도달 불가능해지므로 **제거하거나 방어적 폴백으로만 남긴다**(출석 시스템이 어떤 이유로든 실패했을 때 대비) — 어느 쪽을 택할지는 구현 시 판단.
 - ⚠️ **확인 필요**: `claim()`이 지금 `LocalPremiumUiState.current`를 통해서만(Compose UI 컨텍스트) 호출 가능한지, 아니면 application 레이어에 UI 없이도 호출 가능한 함수가 있는지 `application/premium/PremiumState.kt`·`FeatureAccessPolicy.kt`를 먼저 확인할 것. 업적 화면이 뜨는 시점(앱 최초 실행 직후)은 아직 게임 화면 Compose 트리가 없을 수 있으므로, UI 트리에 의존하지 않는 application-layer 진입점이 필요할 가능성이 높다.
 
+> **구현 결정(백로그 #4, 2026-08-23)**: 위 "확인 필요"의 답은 **없었다** — 클레임 규칙은 `ui/GoCoachApp.kt`가 조립하는 `PremiumUiState.claim` 람다 안에만 있었고(Compose `CompositionLocal` 경유), application 계층에는 진입점이 없었다. 그래서 다음과 같이 구현했고, 스펙 문구와 달라진 부분은 아래와 같다.
+>
+> 1. **UI-비의존 진입점 신설**: `shared/.../application/premium/PremiumFeatureClaimApplication.kt`의 `runPremiumFeatureClaim(featureId, store)` — `PremiumStateStorePort`만 있으면 어디서든(Application 코루틴 포함) 호출 가능하다. UI의 `claim` 람다도 이 함수를 호출하도록 바꿔 규칙이 두 벌로 갈라지지 않게 했다.
+> 2. **지급 조건을 이벤트가 아니라 상태로 판정**: "방금 체크인 결과가 `rewardTier == 1`인가"가 아니라 "출석한 적이 있는데(`attendanceCount >= 1`) 1일차 보상이 아직 미지급인가(`!isTierClaimed(1)`)"로 판정한다(`runAttendanceRewardGrant`). 최초 실행 때 지급이 실패해도 다음 실행에서 스스로 복구되게 하려는 것으로, 정상 흐름의 결과(첫 실행에 1회 지급)는 스펙과 동일하다.
+> 3. **클레임 다이얼로그는 제거하지 않고 방어적 폴백으로 유지**: (a) 자동 지급이 foreground 이벤트를 타는 비동기 경로라 유실 가능성이 0이 아니고, (b) `PremiumStateStore.load()`가 기기 시계 이상 등으로 기본값 폴백하면 이미 받은 클레임이 사라지는데 출석 쪽은 "지급 완료"로 기록돼 있어 자동 재지급이 안 된다. 이 두 경우에 무르기를 영영 못 쓰는 것보다 도달 확률이 낮은 팝업을 남기는 편이 안전하다고 판단했다(`GamePlaySection.kt`에 같은 주석 표기).
+> 4. **클레임 원장 병합 저장**: 구매/광고/복원/QA 토글 저장 시 화면이 메모리에 들고 있던 `claimedFeatures`를 이어붙이면, 그 사이 화면 밖에서 지급된 클레임이 지워진다. `saveMergingClaimedFeatures`로 저장 직전에 저장소 값과 합치도록 바꿨다(기존 구매 복원 경로에 있던 클레임 유실도 함께 해소).
+> 5. **부수 리팩토링**: 위 변경으로 `GoCoachApp.kt`가 라인 예산(850, `LayeringContractTest`)을 넘겨, 프리미엄 배선 조립을 `ui/PremiumUiState.kt`의 `buildPremiumUiState(...)`로 옮겼다(`PremiumPurchaseGlue.kt`와 같은 선례). 결과적으로 셸은 850 → 835줄로 줄었다.
+>
+> **알려진 한계**: 자동 지급이 Compose 첫 구성보다 늦게 도착하면 그 세션 동안 화면은 무르기를 잠김으로 표시한다(다음 실행부터 정상). 이 경우에도 위 3번 폴백으로 즉시 사용 가능하다. 5장 업적 화면(#5)이 붙으면 지급 사실이 첫 실행에 바로 노출되므로 체감 문제는 더 줄어든다.
+
 ---
 
 ## 5. 기능 2 — 업적/보상 화면 (최초 실행 시 노출)

@@ -31,10 +31,15 @@ import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.premium.AdRewardFailureReason
 import com.worksoc.goaicoach.application.premium.AdRewardOutcome
 import com.worksoc.goaicoach.application.premium.FeatureAccess
+import com.worksoc.goaicoach.application.premium.FeatureAccessPolicy
 import com.worksoc.goaicoach.application.premium.FeatureId
+import com.worksoc.goaicoach.application.premium.PremiumSource
 import com.worksoc.goaicoach.application.premium.PremiumState
+import com.worksoc.goaicoach.application.premium.PremiumStateStorePort
 import com.worksoc.goaicoach.application.premium.PurchaseFailureReason
 import com.worksoc.goaicoach.application.premium.PurchaseOutcome
+import com.worksoc.goaicoach.application.premium.runPremiumFeatureClaim
+import com.worksoc.goaicoach.application.premium.saveMergingClaimedFeatures
 import kotlinx.coroutines.launch
 
 /**
@@ -86,6 +91,46 @@ internal data class PremiumUiState(
 )
 
 internal val LocalPremiumUiState = staticCompositionLocalOf { PremiumUiState() }
+
+/**
+ * [PremiumUiState]의 배선 본체. `GoCoachApp.kt`는 라인/상태 훅 예산이 빠듯해
+ * ([PremiumPurchaseGlue.kt]와 같은 이유) 이 조립을 여기로 뺐다 — 호출부는 현재
+ * [premiumState]와 "바뀌면 이렇게 반영해 달라"는 [onStateChanged]만 넘긴다.
+ *
+ * 상태를 저장할 때 호출부가 메모리에 들고 있던 [PremiumState.claimedFeatures]를 그대로
+ * 이어붙이지 않고 저장소에 남아 있는 집합과 합친다([saveMergingClaimedFeatures]) — 출석
+ * 1일차 보상처럼 Compose 트리 밖(Application 코루틴)에서 지급된 클레임을 이 화면의 저장이
+ * 지워버리지 않게 하기 위함이다(`OFFLINE_ENGAGEMENT_FEATURES_KICKOFF_PLAN_260823_1521.md` 4.4절).
+ * 같은 이유로 [PremiumUiState.claim]도 UI에 규칙을 두지 않고 application 계층의
+ * [runPremiumFeatureClaim]에 위임한다 — 출석 자동 지급이 쓰는 함수와 동일한 경로다.
+ */
+internal fun buildPremiumUiState(
+    premiumState: PremiumState,
+    store: PremiumStateStorePort,
+    context: Context,
+    diagnosticEventLog: DiagnosticEventLogPort,
+    onStateChanged: (PremiumState) -> Unit,
+): PremiumUiState = PremiumUiState(
+    // 재구성 시점의 현재 시각으로 매번 평가한다(별도 tick 없이, 대국 중 재구성이 충분히 잦아 문제없음).
+    isActive = premiumState.isActive(nowMillis = System.currentTimeMillis()),
+    isPurchased = premiumState.source == PremiumSource.Purchase,
+    adGrantExpiresAtMillis = premiumState.adGrantStartedAtMillis?.plus(PremiumState.AdGrantDurationMillis),
+    resolve = { featureId -> FeatureAccessPolicy.resolve(featureId, premiumState, System.currentTimeMillis()) },
+    setPurchased = { purchased ->
+        onStateChanged(store.saveMergingClaimedFeatures(if (purchased) PremiumState.purchased() else PremiumState()))
+    },
+    purchasePremium = {
+        val (outcome, nextState) = performPremiumPurchase(context, diagnosticEventLog)
+        nextState?.let { onStateChanged(store.saveMergingClaimedFeatures(it)) }
+        outcome
+    },
+    activateAdGrant = {
+        val (outcome, nextState) = performPremiumAdGrant(context, diagnosticEventLog)
+        nextState?.let { onStateChanged(store.saveMergingClaimedFeatures(it)) }
+        outcome
+    },
+    claim = { featureId -> runPremiumFeatureClaim(featureId, store)?.let(onStateChanged) },
+)
 
 /**
  * "프리미엄 기능 활성화" 업셀 팝업. [FeatureFlags.isPurchaseEnabled]가 켜져 있으면 3지선다

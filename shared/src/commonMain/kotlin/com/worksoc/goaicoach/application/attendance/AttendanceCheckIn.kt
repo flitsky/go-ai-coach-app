@@ -9,12 +9,16 @@ const val MillisPerUtcDay: Long = 24L * 60L * 60L * 1000L
  */
 fun utcDayIndex(epochMillis: Long): Long = epochMillis / MillisPerUtcDay
 
+/** [state]는 어느 분기든 "체크인 처리 후 현재 유효한 출석 상태"다 — 보상 지급 판정처럼 분기와
+ * 무관하게 최신 상태만 필요한 호출부가 `when`으로 분해하지 않아도 되게 부모에 올려 뒀다. */
 sealed class AttendanceCheckInResult {
+    abstract val state: AttendanceState
+
     /** 오늘 첫 방문. [state]는 카운트가 이미 반영된 새 상태, [rewardTier]는 방금 도달한 회차(= attendanceCount). */
-    data class CheckedIn(val state: AttendanceState, val rewardTier: Int) : AttendanceCheckInResult()
+    data class CheckedIn(override val state: AttendanceState, val rewardTier: Int) : AttendanceCheckInResult()
 
     /** 같은 UTC 날짜 안에서의 재실행 — 상태 변화 없음. */
-    data class AlreadyCheckedInToday(val state: AttendanceState) : AttendanceCheckInResult()
+    data class AlreadyCheckedInToday(override val state: AttendanceState) : AttendanceCheckInResult()
 }
 
 /**

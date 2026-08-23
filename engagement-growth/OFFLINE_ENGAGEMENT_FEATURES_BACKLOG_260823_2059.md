@@ -62,14 +62,15 @@
    - 참고: 4.1~4.3절. **스코프**: "몇 일차인지 판정하고 그 티어 이벤트를 흘려보내는" 메커니즘까지만 — 1일차(무르기 무제한)만 구체 보상이 정해져 있고, 2일차 이후 보상 *내용*은 미정이니 자리만 만들고 채우려 하지 않는다(4.2절).
    - 산출물(shared): `AttendanceState.kt`, `AttendancePorts.kt`, `AttendanceCheckIn.kt`(`utcDayIndex`/`checkIn`/`isRewardedTier`), `AttendanceCheckInApplication.kt`(`runAttendanceCheckIn`), `AttendanceCheckInTest.kt`(8케이스). 산출물(app-android): `persistence/AttendanceStore.kt`+`AttendanceCodec`, `AttendanceCheckInCoordinator.kt`(#2의 `AppForegroundEvents` 구독 → 체크인 실행, `GoAiCoachApplication`에 배선), `AttendanceCodecTest.kt`(5케이스). 스펙의 `lastCheckInUtcDate: String`을 `lastCheckInUtcDay: Long`(UTC 하루 인덱스)로 구현 — 킥오프 플랜 4.3절에 각주로 반영됨. 테스트·컴파일 통과, 사용자 승인 완료(2026-08-23).
 
+4. `claim()` UI-비의존 진입점 확인 및 1일차 "무르기 무제한" 자동 지급 배선 + 기존 클레임 다이얼로그 정리 (AI 모델: Opus, 노력정도: 높음) [완료]
+   - 참고: 4.4절. `application/premium/*` 구조를 먼저 파악해 판단해야 하는 부분이 있어 Opus 권장.
+   - 산출물: 확인 결과 클레임 진입점은 Compose 람다(`PremiumUiState.claim`)뿐이어서, UI에 의존하지 않는 `runPremiumFeatureClaim`(shared)을 신설하고 UI도 같은 함수를 쓰도록 통일. 출석 1일차 보상 지급은 `runAttendanceRewardGrant`(shared) + `AttendanceCheckInCoordinator` 배선으로 자동화(확인 팝업 없음, `withTierClaimed(1)`로 1회만). 기존 클레임 다이얼로그는 **방어적 폴백으로 유지**(판단 근거는 킥오프 플랜 4.4절 각주). 덤으로 구매 복원 시 `claimedFeatures`가 병합 없이 덮어써지던 기존 버그도 같이 해소됨. 변경 파일: (shared) `PremiumFeatureClaimApplication.kt`·`AttendanceRewardApplication.kt` 신규, `AttendanceCheckIn.kt` 수정, `PremiumFeatureClaimApplicationTest.kt`(5케이스)·`AttendanceRewardGrantTest.kt`(7케이스) 신규 / (app-android) `AttendanceCheckInCoordinator.kt`·`ui/PremiumUiState.kt`·`ui/GoCoachApp.kt`·`ui/GamePlaySection.kt` 수정. 컴파일·테스트 재검증(`--rerun-tasks`) 통과, 사용자 승인 완료(2026-08-23).
+
 ### 진행 중
 
-*(현재 진행 중인 항목 없음 — #4부터 착수 대기)*
+*(현재 진행 중인 항목 없음 — #5부터 착수 대기)*
 
 ### 예정사항
-
-4. `claim()` UI-비의존 진입점 확인 및 1일차 "무르기 무제한" 자동 지급 배선 + 기존 클레임 다이얼로그 정리 (AI 모델: Opus, 노력정도: 높음)
-   - 참고: 4.4절. `application/premium/*` 구조를 먼저 파악해 판단해야 하는 부분이 있어 Opus 권장. #3 완료 후 착수.
 
 5. 업적/보상 화면 UI — 최초 실행 시 노출, 오늘 받은 보상 + 획득 목록 표시 (AI 모델: Sonnet, 노력정도: 중간)
    - 참고: 5장. #3·#4 완료 후 착수. 2일차 이후 보상 콘텐츠가 그때까지도 미정이면 플레이스홀더로 두고 넘어가고, 확정 필요 여부는 사용자에게 확인한다.
