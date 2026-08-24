@@ -8,7 +8,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import com.worksoc.goaicoach.application.engine.operation.EngineActivityIndicator
+import com.worksoc.goaicoach.application.attendance.AttendanceReward
+import com.worksoc.goaicoach.application.consumable.ConsumableCatalog
+import com.worksoc.goaicoach.application.consumable.ConsumableItem
 import com.worksoc.goaicoach.application.gamehistory.GameHistoryResult
+import com.worksoc.goaicoach.application.premium.FeatureId
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
@@ -166,9 +170,9 @@ internal data class UiStrings(
     val undoClaimMessage: String,
     val undoClaimConfirmAction: String,
     val undoClaimSuccessMessage: String,
-    val firstLaunchRewardTitle: String,
-    val firstLaunchRewardUndoUnlimited: String,
-    val firstLaunchRewardContinue: String,
+    val attendanceRewardTitle: String,
+    val attendanceRewardClaimAction: String,
+    val attendanceRewardLaterAction: String,
     val engineStuckDialogTitle: String,
     val engineStuckDialogMessage: String,
     val engineStuckDialogResetAction: String,
@@ -235,6 +239,111 @@ internal data class UiStrings(
             UiLanguage.English -> "Would you like to optimize this match using local cache?\nStoring key positions helps responsiveness in future play.\n\nInitially secures the first $initialCount moves, expanding to $maxCount moves later.\nTarget: Up to $targetCount JSON analysis records out of $moveCount moves."
             UiLanguage.Japanese -> "この対局の主要な局面を分析キャッシュに保存しますか？\n次回プレイで同じ流れになった際、より素早く応答できます。\n\nまず序盤${initialCount}手を確保し、安定すれば${maxCount}手まで拡張します。\n対象：${moveCount}手の対局中、最大${targetCount}個のJSON分析"
             UiLanguage.ChineseSimplified -> "是否在分析缓存中优化本局？\n存储关键局面有利于在以后的对局中提高响应速度。\n\n初始时保存前 $initialCount 手，稳定后可扩展到 $maxCount 手。\n目标：从 $moveCount 手对局中提取最多 $targetCount 个 JSON  分析记录。"
+        }
+
+    /** Claim 팝업의 일차 머리글("1일차"). 밀린 일차를 한 팝업에 모아 보여주기 때문에 필요하다(5.1절). */
+    fun attendanceRewardDayLabel(tier: Int): String =
+        when (language) {
+            UiLanguage.Korean -> "${tier}일차"
+            UiLanguage.English -> "Day $tier"
+            UiLanguage.Japanese -> "${tier}日目"
+            UiLanguage.ChineseSimplified -> "第 $tier 天"
+        }
+
+    /** 출석 보상 한 건의 표시 문구(킥오프 플랜 4.2절 정책표 = `AttendanceRewardPolicy`). */
+    fun attendanceRewardLabel(reward: AttendanceReward): String =
+        when (reward) {
+            is AttendanceReward.PermanentFeature -> permanentFeatureRewardLabel(reward.featureId)
+            is AttendanceReward.Consumable ->
+                consumableRewardName(reward.item) + " " + consumableRewardAmount(reward.amount)
+            // 캐릭터 이름/티어명은 한국어 리터럴 하나뿐이다(백로그 #9 확정) — 다른 언어에서도 그대로
+            // 보여주고, 접두어만 언어에 맞춘다. 레벨 라벨 전체의 다국어화는 별도 일감이다.
+            is AttendanceReward.BotCharacterUnlock -> {
+                val tier = reward.character.toPlayLevelSetting()?.tierLabel
+                val name = reward.character.name + if (tier != null) " ($tier)" else ""
+                when (language) {
+                    UiLanguage.Korean -> "새 캐릭터 · $name"
+                    UiLanguage.English -> "New character · $name"
+                    UiLanguage.Japanese -> "新キャラクター · $name"
+                    UiLanguage.ChineseSimplified -> "新角色 · $name"
+                }
+            }
+        }
+
+    private fun permanentFeatureRewardLabel(featureId: FeatureId): String =
+        if (featureId == FeatureId.Undo) {
+            when (language) {
+                UiLanguage.Korean -> "무르기 무제한"
+                UiLanguage.English -> "Unlimited Undo"
+                UiLanguage.Japanese -> "「待った」無制限"
+                UiLanguage.ChineseSimplified -> "无限次悔棋"
+            }
+        } else {
+            val name = featureRewardName(featureId)
+            when (language) {
+                UiLanguage.Korean -> "$name 영구 해제"
+                UiLanguage.English -> "$name unlocked permanently"
+                UiLanguage.Japanese -> "$name 恒久解放"
+                UiLanguage.ChineseSimplified -> "$name 永久解锁"
+            }
+        }
+
+    private fun featureRewardName(featureId: FeatureId): String =
+        when (featureId) {
+            FeatureId.Undo -> when (language) {
+                UiLanguage.Korean -> "무르기"
+                UiLanguage.English -> "Undo"
+                UiLanguage.Japanese -> "待った"
+                UiLanguage.ChineseSimplified -> "悔棋"
+            }
+            FeatureId.Eval -> when (language) {
+                UiLanguage.Korean -> "형세 보기"
+                UiLanguage.English -> "Score Estimate"
+                UiLanguage.Japanese -> "形勢判断"
+                UiLanguage.ChineseSimplified -> "形势判断"
+            }
+            FeatureId.TopMoves -> when (language) {
+                UiLanguage.Korean -> "추천 수"
+                UiLanguage.English -> "Top Moves"
+                UiLanguage.Japanese -> "推奨手"
+                UiLanguage.ChineseSimplified -> "推荐着法"
+            }
+            FeatureId.MoveReview -> when (language) {
+                UiLanguage.Korean -> "기보 리뷰"
+                UiLanguage.English -> "Move Review"
+                UiLanguage.Japanese -> "棋譜レビュー"
+                UiLanguage.ChineseSimplified -> "棋谱回顾"
+            }
+        }
+
+    /** 모르는 종류(상위 버전에서 온 소모품)는 저장 키를 그대로 보여준다 — 지급 사실을 숨기지 않는다. */
+    private fun consumableRewardName(item: ConsumableItem): String =
+        when (item) {
+            ConsumableCatalog.EvalOnce -> onceTicketName(featureRewardName(FeatureId.Eval))
+            ConsumableCatalog.TopMovesOnce -> onceTicketName(featureRewardName(FeatureId.TopMoves))
+            ConsumableCatalog.PremiumOnce -> when (language) {
+                UiLanguage.Korean -> "광고 스킵권"
+                UiLanguage.English -> "Ad-skip ticket"
+                UiLanguage.Japanese -> "広告スキップ券"
+                UiLanguage.ChineseSimplified -> "免广告券"
+            }
+            else -> item.id.raw
+        }
+
+    private fun onceTicketName(featureName: String): String =
+        when (language) {
+            UiLanguage.Korean -> "$featureName 1회권"
+            UiLanguage.English -> "$featureName ticket"
+            UiLanguage.Japanese -> "$featureName 1回券"
+            UiLanguage.ChineseSimplified -> "$featureName 1次券"
+        }
+
+    private fun consumableRewardAmount(amount: Int): String =
+        when (language) {
+            UiLanguage.Korean -> "${amount}개"
+            UiLanguage.English -> "x$amount"
+            UiLanguage.Japanese -> "${amount}個"
+            UiLanguage.ChineseSimplified -> "${amount}个"
         }
 
     /** 사람 플레이어 기준 결과 문구. [margin]은 [GameHistoryResult.Win]/[GameHistoryResult.Loss]에서만 쓰인다. */

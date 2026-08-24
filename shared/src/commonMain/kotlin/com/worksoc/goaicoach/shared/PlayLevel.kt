@@ -138,14 +138,20 @@ data class PlayLevelSetting(
     val analysisPreset: AnalysisPreset = group.analysisPreset
     val analysisLimit: AnalysisLimit = group.defaultAnalysisLimit()
     val selectionPolicy: MoveSelectionPolicy = group.selectionPolicy(safeLevel)
-    val displayLabel: String =
-        (selectionPolicy as? MoveSelectionPolicy.BucketedTierSelection)?.let { tiered ->
-            "${group.label} · ${tiered.tierName}"
-        } ?: if (group == PlayLevelGroup.FastBeginner) {
+    /**
+     * 그룹 이름을 뺀 **단계 이름만**("초보"/"하수"/... , 다른 그룹은 "4단계").
+     * 봇 캐릭터 픽커가 캐릭터 이름 옆에 이 값을 병기해 어느 쪽이 센 상대인지 드러낸다(백로그 #9 확정).
+     */
+    val tierLabel: String =
+        (selectionPolicy as? MoveSelectionPolicy.BucketedTierSelection)?.tierName
             // 5단계(초고수)는 BestOnly라 위 분기를 안 타지만, 이름은 여전히 필요하다.
-            "${group.label} · 초고수"
+            ?: if (group == PlayLevelGroup.FastBeginner) "초고수" else "${safeLevel}단계"
+
+    val displayLabel: String =
+        if (group == PlayLevelGroup.FastBeginner) {
+            "${group.label} · $tierLabel"
         } else {
-            "${group.label} ${safeLevel}단계"
+            "${group.label} $tierLabel"
         }
 
     fun withGroup(nextGroup: PlayLevelGroup): PlayLevelSetting =

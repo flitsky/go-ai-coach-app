@@ -95,6 +95,29 @@ class BotCharacterCatalogTest {
     }
 
     @Test
+    fun rosterCarriesConfirmedNamesAndDescriptions() {
+        // 백로그 #9에서 사용자가 확정한 "바둑 도장" 콘셉트 — 플레이스홀더로 되돌아가지 않게 고정한다.
+        assertEquals(
+            listOf("첫돌이", "연습생 돌뫼", "도장생 반상", "사범 묘수", "관장 천원"),
+            BotCharacterCatalog.fastBeginnerRoster.map { it.name },
+        )
+        assertTrue(BotCharacterCatalog.all.all { it.description.isNotBlank() })
+        // 아바타는 아직 플레이스홀더 단계라 전부 비어 있다.
+        assertTrue(BotCharacterCatalog.all.all { it.avatarRef == null })
+    }
+
+    @Test
+    fun eachCharacterPairsWithItsTierLabelForThePicker() {
+        // 픽커는 캐릭터 이름 옆에 티어명을 병기해 강함 서열을 드러낸다(#9 확정, #10에서 사용).
+        assertEquals(
+            listOf("초보", "하수", "중수", "고수", "초고수"),
+            BotCharacterCatalog.fastBeginnerRoster.map { character ->
+                assertNotNull(character.toPlayLevelSetting()).tierLabel
+            },
+        )
+    }
+
+    @Test
     fun byIdAndByRawIdFindKnownCharactersAndRejectUnknownOnes() {
         assertEquals(
             BotCharacterCatalog.fastBeginnerRoster[2],

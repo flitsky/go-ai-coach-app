@@ -87,6 +87,36 @@
    - **사용자 확정(2026-08-24)**: `FastBeginner` 5종을 전부 잠금 — 기존에 조건 없이 고를 수 있던 5단계가 좁아지는 것은 의도된 방향. 1·2번째는 출석 1·5일차 지급, 3~5번째는 경로 미확정(임시 광고 획득). 배선은 하지 않았다(#13·#10·#11 몫).
    - 전체 707+ 테스트 통과(`LayeringContractTest` 43/43 포함), 사용자 승인 완료(2026-08-24).
 
+9. 캐릭터 5종 콘텐츠 초안 — `FastBeginner` 그룹의 초보~초고수 5단계에 대응하는 이름·짧은 설명(아바타는 플레이스홀더) (AI 모델: Sonnet, 노력정도: 낮음) [완료]
+   - 참고: 7장. 코드 작업이 아니라 콘텐츠 확정 항목 — 3개 세트를 제안해 **사용자가 "바둑 도장" 콘셉트로 확정**(2026-08-24).
+   - **확정 콘텐츠**: 초보=첫돌이 / 하수=연습생 돌뫼 / 중수=도장생 반상 / 고수=사범 묘수 / 초고수=관장 천원. 이름 자체가 서열이라 획득 순서(약한 상대 → 강한 상대)가 그대로 드러난다. 아바타는 여전히 플레이스홀더(`avatarRef`가 전부 `null`).
+   - **함께 확정된 결정 2가지**: ① 픽커는 캐릭터 이름 옆에 **기존 티어명(초보/하수/…)을 병기**한다 — 캐릭터 선택이 곧 난이도 선택이라 강함 서열이 즉시 보여야 하기 때문(#10에서 사용). ② 이름/설명은 **한국어 리터럴로 `shared`에 둔다** — 기존 `PlayLevelGroup.label`·`tierName`과 같은 선례이며, 레벨 라벨 전체의 다국어화는 별도 일감으로 미뤘다.
+   - 산출물(shared): `BotCharacterCatalog.kt`(`placeholderName`/`placeholderDescription` 2개 함수 삭제 → 확정 문자열을 캐릭터별 인자로 전달, `BotCharacterId`·티어 매핑·`unlockSource`는 불변), `PlayLevel.kt`(**`PlayLevelSetting.tierLabel` 신설** — 티어명 단독 접근자가 없어 5단계 `초고수`의 폴백 리터럴을 #10이 복사해야 하는 문제를 없앴다. `displayLabel`이 이 값을 재사용하도록 정리했고 출력값은 전 그룹 동일 유지), `BotCharacterCatalogTest.kt`(+2케이스 — 확정 이름 고정으로 플레이스홀더 회귀 방지, 캐릭터↔티어명 병기 매핑), `PlayLevelSettingTest.kt`(+1케이스 — `tierLabel` 및 `displayLabel` 회귀).
+   - 테스트 720개 전체 통과(`LayeringContractTest` 포함), 사용자 승인 완료(2026-08-24).
+
+12. 단발성(소모성) 아이템 도메인·저장소 — `ConsumableItemId`/`ConsumableInventory`/`ConsumableStorePort` + 지급·차감 순수 로직 (AI 모델: Opus, 노력정도: 높음) [완료]
+    - 참고: 4.5절. 쓰면 줄어드는 소모품이라 영구 boolean 원장(`PremiumState.claimedFeatures`)에 얹을 수 없어, 3장 원칙대로 별도 타입 + 별도 Port로 만들었다(#8의 `BotCollectionState`와 같은 구조).
+    - **착수 전 확인 2건 해소(사용자 확정 2026-08-24)**: ① **'광고 스킵권' 1장 = 프리미엄 1시간**(`PremiumState.AdGrantDurationMillis` 재사용). 조사 중 **이 앱엔 강제로 뜨는 광고가 아예 없다**는 사실이 드러났다 — 배너(`ui/BannerAdView.kt`)는 정의만 있고 어느 화면에도 붙어 있지 않으며, 유일한 광고는 잠긴 기능을 풀려고 자발적으로 보는 리워드 광고다. 그래서 스킵 대상도 그 리워드 광고 하나뿐이고 "광고 1회분을 대신 내는 표"로 정의됐다. ② **종류별 재고 상한 99개**(출석 주기 반복 시 무한 적립 방지).
+    - 산출물(shared): `application/consumable/` 신규 패키지 — `ConsumableItem.kt`(`ConsumableItemId` data class + `ConsumableEffect` sealed + `ConsumableCatalog` 3종), `ConsumableInventory.kt`(상한/오버플로 방어, 0이면 키 삭제 정규형), `ConsumablePorts.kt`(`ConsumableStorePort`), `ConsumableSpendApplication.kt`(`decideConsumableSpend` 순수 판정 + `runConsumableGrant`/`runConsumableSpend` 포트 배선), 테스트 21케이스. 산출물(app-android): `persistence/ConsumableInventoryStore.kt`+`ConsumableInventoryCodec`(`BotCollectionStore`와 동일한 전용 prefs + `schema:1` JSON 패턴), 테스트 5케이스.
+    - 구현 결정 6가지는 킥오프 플랜 4.5절 각주 참고. 핵심: **`FeatureAccessPolicy`를 고쳐 소모품을 네 번째 허용 경로로 넣지 않았다** — `resolve`는 부수효과 없는 조회인데 소모품은 보는 순간 줄어드는 자원이라 합치면 "확인만 했는데 재고가 닳는" 구조가 된다. 대신 우선순위 규칙은 `decideConsumableSpend`에 담고 판정은 `resolve`에 위임했다(영구 클레임으로 열린 기능도 통과 대상에 포함). 파생 리팩터링으로 `FeatureAccessPolicy.activeVia()`를 떼어냈다(동작 변화 없음).
+    - **배선은 하지 않았다** — `ConsumableInventoryStore`는 아직 어디에서도 생성되지 않는다(지급=#13, 소비=#15).
+    - 테스트 746개 전체 통과(기존 720 + 신규 26), `:shared:compileKotlinIosSimulatorArm64` 통과로 commonMain 플랫폼 독립성 확인, 사용자 승인 완료(2026-08-24).
+
+13. 출석 보상 정책 도메인 — 일차별 **다중 보상** 지급으로 확장 + 봇 캐릭터 지급 배선 (AI 모델: Opus, 노력정도: 높음) [완료]
+    - 참고: 4.2절 보상 정책표. `AttendanceReward` sealed 3종(`PermanentFeature`/`Consumable`/`BotCharacterUnlock`) + "일차 → 보상 목록" 정책표를 만들고, #4의 `runAttendanceRewardGrant`(1일차 무르기 하나만)를 **다중 보상·다중 일차 지급**으로 재작성했다. 1일차=무르기+첫돌이, 2~4일차=소모품 각 10개, 5일차=연습생 돌뫼 배선 완성.
+    - 산출물(shared): `AttendanceRewardPolicy.kt` 신규(`rewardsFor`/`pendingTiers`), `AttendanceRewardApplication.kt` 재작성(포트 4개 — 출석·프리미엄·소모품·봇), `BotCharacterGrantApplication.kt` 신규(`runBotCharacterUnlock` — #11의 광고 획득도 이 함수를 쓴다), `BotCharacterCatalog.forAttendanceTier()` 추가, `AttendanceRewardGrantTest.kt` 재작성(정책 7 + 지급 11 = 18케이스). 산출물(app-android): `AttendanceCheckInCoordinator.kt`·`ui/FirstLaunchRewardScreen.kt`에 소모품·봇 저장소 2개 추가 배선.
+    - 구현 결정 7가지는 킥오프 플랜 4.2절 각주 참고. 핵심: ① **캐릭터 보상은 정책표에 적지 않고 카탈로그(`BotUnlockSource.Attendance(tier)`)에서 읽어 온다** — 같은 사실을 두 군데 두지 않기 위함이며, #11에서 3~5번째 획득 경로가 정해지면 카탈로그 한 줄만 고치면 된다. ② **콘텐츠 미확정 회차(6·7, 14/21/28일차)는 `claimedTiers`에 넣지 않는다** — 나중에 콘텐츠가 정해졌을 때 그 사이 지나간 사용자가 영영 못 받는 일이 없어야 한다. ③ 결과 타입을 sealed에서 "지급된 목록"을 든 data class로 교체(#14 팝업이 받은 내역을 그대로 보여줘야 함). ④ 밀린 일차는 한 번에 전부 지급(무기한 보관 — 만료 정책은 #14 확인 사항).
+    - ⚠️ **#14에 부채 하나를 남겼다**: 1일차에 캐릭터도 지급되지만 `ui/FirstLaunchRewardScreen.kt`은 여전히 '무르기 무제한' 한 줄만 보여준다(지급 자체는 정상, 표시만 부정확). 그 화면을 Claim 방식으로 개편하는 것이 #14 범위라 곧 갈아엎을 화면에 4개 언어 문자열을 먼저 넣지 않았다 — 4.2절 각주 7번 참고.
+    - 테스트 757개 전체 통과, `:shared:compileKotlinIosSimulatorArm64` 통과, 사용자 승인 완료(2026-08-24).
+
+14. 출석 Claim 팝업 UI — 오늘 받을 보상 목록 표시 + `Claim` 버튼으로 지급 (AI 모델: Sonnet, 노력정도: 중간) [완료]
+    - 참고: 5.1절. **자동 지급 → Claim 방식 전환**. 핵심 구조 변경은 **`AttendanceCheckInCoordinator`에서 보상 지급을 걷어낸 것** — 백그라운드에서 먼저 지급하면 팝업에 보여줄 게 남지 않는다. 이제 지급 경로는 Claim 버튼 하나뿐이고 코디네이터는 체크인만 한다(앱만 켜고 팝업을 닫아도 출석은 기록돼야 하므로 여전히 필요).
+    - **착수 전 확인 3건 해소(사용자 확정 2026-08-24)**: ① 밀린 보상 **무기한 보관**(만료 없음 — #13의 `pendingTiers`가 이미 그렇게 동작해 추가 코드 없음), ② 밀린 일차는 **한 팝업에 모아 한 번의 Claim으로 전부 지급**, ③ 전체화면이 아니라 **다이얼로그**(최초 실행에만 뜨던 화면이 매일 뜨게 되므로).
+    - 산출물(app-android): `ui/FirstLaunchRewardScreen.kt` → **`ui/AttendanceRewardClaimDialog.kt`로 개명·재작성**(새 화면을 만들지 않았다 — 노출 조건이 "최초 실행인가"에서 "받을 보상이 남아 있는가"로 바뀌어 파일명이 사실과 어긋났다), `ui/GoCoachApp.kt`(조건부 early return 7줄 → 다이얼로그 호출 1줄), `ui/UiStrings.kt`(`attendanceRewardLabel(reward)` 등 보상 문구 함수 4개 + 기존 `firstLaunchReward*` 3개를 `attendanceReward*`로 정리)/4개 언어 파일, `AttendanceCheckInCoordinator.kt`(지급 제거).
+    - **#13이 남긴 부채 해소**: 1일차 캐릭터가 화면에 안 뜨던 문제가 정책표(`AttendanceRewardPolicy`)를 그대로 렌더링하면서 없어졌다.
+    - 셸 예산이 오히려 **줄었다**: `GoCoachApp.kt` 853→849줄(상태훅 46 유지). 라인·상태훅 둘 다 한계에 붙어 있던 상태라 4줄 여유가 생겼다. 구현 결정 6가지는 킥오프 플랜 5.1절 각주 참고.
+    - 테스트 757개 전체 통과(`LayeringContractTest` 44개 포함), 사용자 승인 완료(2026-08-24). 에뮬레이터로 실제 다이얼로그 렌더링은 확인하지 못함(#7과 같은 도구 제약) — 수동 테스트 중 이슈가 나오면 별도 스레드로 처리.
+
 ### 진행 중
 
 (없음)
@@ -98,23 +128,6 @@
 > 봇이 실제로 지급돼야 의미가 있는데, 그 지급 배선이 #13이다). 기존 번호는 완료 항목과 킥오프
 > 플랜 각주에서 참조하고 있어 다시 매기지 않았다 — **새 스레드는 번호가 아니라 이 목록의 맨 위
 > 항목을 가져간다**(현재 순서: 9 → 12 → 13 → 14 → 15 → 10 → 11).
-
-9. 캐릭터 5종 콘텐츠 초안 — `FastBeginner` 그룹의 초보~초고수 5단계에 대응하는 이름·짧은 설명(아바타는 플레이스홀더) (AI 모델: Sonnet, 노력정도: 낮음)
-   - 코드 작업이 아니라 콘텐츠 초안 제안 — 스레드가 후보를 제시하면 **사용자가 최종 확정**. #8 완료(2026-08-24)로 선행 조건 해소, #10 착수 전에 필요.
-   - 확정된 전제: 5종은 전부 잠겨 있고 **1번째는 출석 1일차, 2번째는 5일차 보상**으로 열린다(4.2절). 이름/설명은 이 획득 순서(약한 상대 → 강한 상대)가 드러나게 잡는 편이 자연스럽다. 갈아끼울 자리는 `BotCharacterCatalog.kt`의 `placeholderName`/`placeholderDescription` 호출 5줄.
-
-12. 단발성(소모성) 아이템 도메인·저장소 — `ConsumableItemId`/`ConsumableInventory`/`ConsumableStorePort` + 지급·차감 순수 로직 (AI 모델: Opus, 노력정도: 높음)
-    - 참고: 4.5절(2026-08-24 신설). 2~4일차 보상('형세 보기'·'추천 수'·'광고 스킵권' 각 10개)이 쓰면 줄어드는 **소모품**이라, 영구 boolean 원장인 `PremiumState.claimedFeatures`/`FeatureId`에 얹을 수 없다 — 3장 원칙대로 별도 타입 + 별도 Port로 만든다. #8의 `BotCollectionState`와 같은 구조를 따르면 된다.
-    - 착수 전 확인(사용자): **'광고 스킵권' 1회의 범위**(대국 1판인지 광고 1회인지)와 스킵 대상 광고 노출 지점. 이게 정해져야 차감 단위가 결정된다.
-
-13. 출석 보상 정책 도메인 — 일차별 **다중 보상** 지급으로 확장 + 봇 캐릭터 지급 배선 (AI 모델: Opus, 노력정도: 높음)
-    - 참고: 4.2절 보상 정책표(2026-08-24 확정). 한 일차에 보상이 여러 개 나올 수 있으므로(1일차부터 2개) `AttendanceReward` sealed 타입 + "일차 → 보상 목록" 정책표를 만들고, #4에서 만든 `runAttendanceRewardGrant`(1일차 무르기 하나만 지급)를 그 위로 확장한다.
-    - 보상 3종을 모두 지급할 수 있어야 하므로 **#8(봇 캐릭터)·#12(소모품) 완료 후 착수.** 1일차=무르기+첫 캐릭터, 5일차=두 번째 캐릭터 배선이 여기서 완성된다.
-
-14. 출석 Claim 팝업 UI — 오늘 받을 보상 목록 표시 + `Claim` 버튼으로 지급 (AI 모델: Sonnet, 노력정도: 중간)
-    - 참고: 5.1절(2026-08-24 갱신). **자동 지급 → Claim 방식으로 전환**하는 항목이라, #4의 "확인 팝업 없는 자동 지급"과 #5의 최초 실행 화면(`ui/FirstLaunchRewardScreen.kt`)을 이 흐름으로 개편한다(새로 만들지 말고 기존 화면을 살릴 것).
-    - Claim 하지 않고 닫으면 미지급으로 남아 다음 실행에 다시 떠야 한다. **#13 완료 후 착수.**
-    - 착수 전 확인(사용자): 밀린 과거 일차 보상의 만료 여부와, 여러 일차가 밀렸을 때 한 팝업에 모아 보여줄지.
 
 15. 단발성 아이템 소비 배선 — 형세 보기/추천 수/광고 스킵권 실제 차감 + 잔량 표시 (AI 모델: Opus, 노력정도: 높음)
     - 참고: 4.5절. #12에서 만든 재고를 실제 기능 사용 지점에 연결한다 — 이게 없으면 2~4일차 보상이 지급만 되고 쓸 수 없다.

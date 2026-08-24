@@ -11,9 +11,13 @@ import com.worksoc.goaicoach.shared.PlayLevelSetting
  * 곧 캐릭터 5종이 된다. `초급`/`중급`/`고급` 그룹은 현재 대국 셋업 UI에서 숨겨져 있어(대국장
  * 로드맵 예정) 캐릭터화 대상이 아니며, 그래서 [forPlayLevel]은 그 그룹들에 대해 `null`을 준다.
  *
- * ⚠️ [BotCharacter.name]/[BotCharacter.description]은 **전부 플레이스홀더**다 — 실제 캐릭터 이름과 설명은 백로그 #9에서
- * 사용자가 확정한다. 그때는 아래 [placeholderName]/[placeholderDescription] 호출만 확정된 문자열
- * 리터럴로 갈아끼우면 되고, [BotCharacterId]와 티어 매핑은 건드리지 않는다.
+ * 캐릭터 이름/설명은 "바둑 도장" 콘셉트로 확정됐다(백로그 #9, 2026-08-24) — 입문생에서 관장까지
+ * 이름 자체가 서열이라, 출석으로 한 명씩 열리는 획득 순서(약한 상대 → 강한 상대)가 그대로 드러난다.
+ * 이 이름만으로는 어느 쪽이 센지 모호하지 않도록, 픽커는 [PlayLevelSetting.tierLabel]("초보"/"하수"/...)을
+ * 함께 병기한다(#10 몫). 아바타는 아직 플레이스홀더다([BotCharacter.avatarRef]가 전부 `null`).
+ *
+ * ⚠️ 이름/설명은 콘텐츠라 자유롭게 고쳐도 되지만 [BotCharacterId]와 티어 매핑은 저장 스키마의
+ * 일부이므로 건드리지 않는다.
  */
 object BotCharacterCatalog {
 
@@ -27,13 +31,38 @@ object BotCharacterCatalog {
      */
     val fastBeginnerRoster: List<BotCharacter> = listOf(
         // 첫 번째 캐릭터 — 출석 1일차 보상(첫 실행 즉시 획득).
-        fastBeginnerCharacter(tier = 1, unlockSource = BotUnlockSource.Attendance(tier = 1)),
+        fastBeginnerCharacter(
+            tier = 1,
+            name = "첫돌이",
+            description = "오늘 처음 돌을 잡은 입문생. 두는 곳마다 실수예요.",
+            unlockSource = BotUnlockSource.Attendance(tier = 1),
+        ),
         // 두 번째 캐릭터 — 출석 5일차 보상.
-        fastBeginnerCharacter(tier = 2, unlockSource = BotUnlockSource.Attendance(tier = 5)),
+        fastBeginnerCharacter(
+            tier = 2,
+            name = "연습생 돌뫼",
+            description = "기본기를 익히는 중. 절반쯤은 제대로 둡니다.",
+            unlockSource = BotUnlockSource.Attendance(tier = 5),
+        ),
         // 3~5번째 — 획득 경로 미확정(6일차 이후/14·21·28일차 보상 vs 광고). 임시로 광고 획득.
-        fastBeginnerCharacter(tier = 3, unlockSource = BotUnlockSource.AdWatch),
-        fastBeginnerCharacter(tier = 4, unlockSource = BotUnlockSource.AdWatch),
-        fastBeginnerCharacter(tier = 5, unlockSource = BotUnlockSource.AdWatch),
+        fastBeginnerCharacter(
+            tier = 3,
+            name = "도장생 반상",
+            description = "웬만한 수는 받아칩니다. 방심하면 한 방 먹어요.",
+            unlockSource = BotUnlockSource.AdWatch,
+        ),
+        fastBeginnerCharacter(
+            tier = 4,
+            name = "사범 묘수",
+            description = "수를 읽고 빈틈을 파고듭니다. 실수는 놓치지 않아요.",
+            unlockSource = BotUnlockSource.AdWatch,
+        ),
+        fastBeginnerCharacter(
+            tier = 5,
+            name = "관장 천원",
+            description = "도장 최강. 언제나 최선의 수만 둡니다.",
+            unlockSource = BotUnlockSource.AdWatch,
+        ),
     )
 
     /** 현재 존재하는 모든 캐릭터. 다른 그룹이 캐릭터화되면 여기에 합친다. */
@@ -52,26 +81,32 @@ object BotCharacterCatalog {
 
     /** 저장된 id 문자열을 카탈로그 정의로 되돌린다. 모르는 id면 `null`(다운그레이드 등). */
     fun byRawId(raw: String): BotCharacter? = byId(BotCharacterId(raw))
+
+    /**
+     * 출석 [tier]일차에 열리는 캐릭터들. "몇 일차에 주는가"는 카탈로그의
+     * [BotUnlockSource.Attendance]가 단일 출처이므로, 출석 보상 정책표
+     * (`AttendanceRewardPolicy`)는 이 함수를 통해 그 정보를 읽어 간다 — 같은 사실을 두 군데
+     * 적어 두고 어긋나게 두지 않기 위함이다.
+     */
+    fun forAttendanceTier(tier: Int): List<BotCharacter> =
+        all.filter { character ->
+            (character.unlockSource as? BotUnlockSource.Attendance)?.tier == tier
+        }
 }
 
 /** `FastBeginner` 캐릭터 한 종을 만든다. */
-private fun fastBeginnerCharacter(tier: Int, unlockSource: BotUnlockSource): BotCharacter {
-    val group = PlayLevelGroup.FastBeginner
-    return BotCharacter(
+private fun fastBeginnerCharacter(
+    tier: Int,
+    name: String,
+    description: String,
+    unlockSource: BotUnlockSource,
+): BotCharacter =
+    BotCharacter(
         id = BotCharacterId("fast_beginner_$tier"),
-        name = placeholderName(group, tier),
-        description = placeholderDescription(group, tier),
+        name = name,
+        description = description,
         avatarRef = null,
-        linkedPlayLevel = group,
+        linkedPlayLevel = PlayLevelGroup.FastBeginner,
         tierWithinGroup = tier,
         unlockSource = unlockSource,
     )
-}
-
-/** #9 확정 전까지 쓰는 임시 이름 — 기존 난이도 라벨("빠른 초급 · 초보")을 그대로 빌려 쓴다. */
-private fun placeholderName(group: PlayLevelGroup, tier: Int): String =
-    PlayLevelSetting(group = group, level = tier).displayLabel
-
-/** #9 확정 전까지 쓰는 임시 설명 — 해당 단계의 착수 정책 설명을 그대로 빌려 쓴다. */
-private fun placeholderDescription(group: PlayLevelGroup, tier: Int): String =
-    PlayLevelSetting(group = group, level = tier).selectionPolicy.description

@@ -38,15 +38,27 @@ sealed interface FeatureAccess {
  */
 object FeatureAccessPolicy {
     fun resolve(featureId: FeatureId, state: PremiumState, nowMillis: Long): FeatureAccess {
-        if (state.isActive(nowMillis)) {
-            val via = if (state.source == PremiumSource.Purchase) AllowedVia.Purchase else AllowedVia.AdGrant
-            return FeatureAccess.Allowed(via)
-        }
+        activeVia(state, nowMillis)?.let { via -> return FeatureAccess.Allowed(via) }
         if (featureId in state.claimedFeatures) {
             return FeatureAccess.Allowed(AllowedVia.Claimed)
         }
         return FeatureAccess.Locked(unlockOptionsFor(featureId))
     }
+
+    /**
+     * 기능과 무관하게 **"지금 프리미엄 자체가 켜져 있는가"**만 묻고, 켜져 있으면 그 경로를 준다.
+     * [resolve]의 첫 분기를 그대로 떼어낸 것이라 판정 기준이 갈라지지 않는다 — 특정
+     * [FeatureId]에 묶이지 않는 판정이 필요한 곳(소모품 '광고 스킵권'은 기능이 아니라 프리미엄
+     * 자체를 켠다 — `application/consumable`)이 이 함수를 쓴다.
+     */
+    fun activeVia(state: PremiumState, nowMillis: Long): AllowedVia? =
+        if (!state.isActive(nowMillis)) {
+            null
+        } else if (state.source == PremiumSource.Purchase) {
+            AllowedVia.Purchase
+        } else {
+            AllowedVia.AdGrant
+        }
 
     private fun unlockOptionsFor(featureId: FeatureId): Set<UnlockOption> =
         when (featureId) {

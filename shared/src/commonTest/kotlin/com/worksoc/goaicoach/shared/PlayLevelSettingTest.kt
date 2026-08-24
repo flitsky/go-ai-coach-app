@@ -126,6 +126,19 @@ class PlayLevelSettingTest {
     }
 
     @Test
+    fun tierLabelDropsTheGroupNameForTheCharacterPicker() {
+        assertEquals(
+            listOf("초보", "하수", "중수", "고수", "초고수"),
+            (1..PlayLevelGroup.FastBeginner.maxLevel).map { level ->
+                PlayLevelSetting(PlayLevelGroup.FastBeginner, level).tierLabel
+            },
+        )
+        // 캐릭터화 대상이 아닌 그룹은 기존 "N단계" 표기를 그대로 유지한다.
+        assertEquals("4단계", PlayLevelSetting(PlayLevelGroup.Beginner, level = 4).tierLabel)
+        assertEquals("초급 4단계", PlayLevelSetting(PlayLevelGroup.Beginner, level = 4).displayLabel)
+    }
+
+    @Test
     fun percentileSelectionUsesSortedCandidateIndexes() {
         val policy = MoveSelectionPolicy.PercentileRange(50, 100, "하위 50%")
 
