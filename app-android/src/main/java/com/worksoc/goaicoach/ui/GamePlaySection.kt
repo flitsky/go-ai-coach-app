@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import com.worksoc.goaicoach.application.movereview.MoveReviewTone
+import com.worksoc.goaicoach.application.consumable.ConsumableItem
+import com.worksoc.goaicoach.application.consumable.ConsumableSpendDecision
 import com.worksoc.goaicoach.application.premium.FeatureAccess
 import com.worksoc.goaicoach.application.premium.FeatureId
 import com.worksoc.goaicoach.application.premium.UnlockOption
@@ -318,18 +320,54 @@ private fun GameActionButtons(
     var showResignConfirm by remember { mutableStateOf(false) }
     var showPremiumUpsellDialog by remember { mutableStateOf(false) }
     var showUndoClaimDialog by remember { mutableStateOf(false) }
+    val consumables = LocalConsumableUiState.current
+    val moveCount = screenState.gameState.moves.size
+    var pendingTicket by remember { mutableStateOf<PendingTicketSpend?>(null) }
 
     // 기능별 판정은 FeatureAccessPolicy(6계층, application/premium/FeatureAccessPolicy.kt)에
     // 위임한다 — 어느 기능이 무료/광고/구매/클레임 중 무엇으로 풀리는지는 여기서 다시
     // 판단하지 않는다. 잠겨 있을 때는 금색 테두리(PremiumLockedBorder)로 표시하고, 탭하면
     // 실제 동작 대신 업셀(또는 클레임 가능하면 클레임) 팝업을 띄운다. 액션을 뒤로 미루지
     // 않는다 — 이번 탭은 팝업까지만 하고 멈춘다 (기권/통과는 게이팅 대상이 아님).
-    fun featureGated(access: FeatureAccess, action: () -> Unit) {
+    //
+    // [featureId]가 있으면 잠긴 상태에서도 **1회권**이라는 길이 하나 더 있다(킥오프 플랜 4.5절):
+    // 재고가 있으면 업셀 대신 사용 확인 팝업을 띄우고, 확인하면 한 장을 써서 이번 한 번만
+    // 동작시킨다. 이미 1회권으로 켜 둔 표시를 다시 탭하는 것은 **끄는 동작**이므로 그냥
+    // 통과시킨다 — 끄는 데 또 한 장을 받으면 "1회"가 반 번이 되기 때문이다.
+    fun featureGated(access: FeatureAccess, featureId: FeatureId? = null, action: () -> Unit) {
+        if (featureId != null && consumables.isOneShotActive(featureId)) {
+            consumables.clearOneShot(featureId)
+            action()
+            return
+        }
         when (access) {
             is FeatureAccess.Allowed -> action()
-            is FeatureAccess.Locked ->
-                if (UnlockOption.Claim in access.unlockOptions) showUndoClaimDialog = true else showPremiumUpsellDialog = true
+            is FeatureAccess.Locked -> {
+                val ticket = featureId?.let(consumables::ticketFor)
+                when {
+                    ticket != null -> pendingTicket = PendingTicketSpend(ticket, featureId, action)
+                    UnlockOption.Claim in access.unlockOptions -> showUndoClaimDialog = true
+                    else -> showPremiumUpsellDialog = true
+                }
+            }
         }
+    }
+
+    pendingTicket?.let { pending ->
+        ConsumableSpendConfirmDialog(
+            item = pending.item,
+            remaining = consumables.countOf(pending.item),
+            onConfirm = {
+                pendingTicket = null
+                // 차감이 실제로 일어났을 때만 동작시킨다 — 그 사이 프리미엄이 켜졌다면
+                // decideConsumableSpend가 재고를 건드리지 않고 통과시키므로 그때도 동작한다.
+                if (consumables.spend(pending.item) !is ConsumableSpendDecision.OutOfStock) {
+                    consumables.markOneShot(pending.featureId, moveCount)
+                    pending.action()
+                }
+            },
+            onDismiss = { pendingTicket = null },
+        )
     }
 
     PremiumUpsellDialogHost(
@@ -408,9 +446,9 @@ private fun GameActionButtons(
                 ToggleActionButton(
                     action = evalAction,
                     label = strings.eval,
-                    onEvent = { event -> featureGated(evalAccess) { onEvent(event) } },
+                    onEvent = { event -> featureGated(evalAccess, FeatureId.Eval) { onEvent(event) } },
                     modifier = Modifier.weight(1f),
-                    premiumLocked = evalAccess !is FeatureAccess.Allowed,
+                    premiumLocked = evalAccess !is FeatureAccess.Allowed && !consumables.isOneShotActive(FeatureId.Eval),
                 )
             }
 
@@ -421,9 +459,9 @@ private fun GameActionButtons(
                 ToggleActionButton(
                     action = topMovesAction,
                     label = strings.topMoves,
-                    onEvent = { event -> featureGated(topMovesAccess) { onEvent(event) } },
+                    onEvent = { event -> featureGated(topMovesAccess, FeatureId.TopMoves) { onEvent(event) } },
                     modifier = Modifier.weight(1f),
-                    premiumLocked = topMovesAccess !is FeatureAccess.Allowed,
+                    premiumLocked = topMovesAccess !is FeatureAccess.Allowed && !consumables.isOneShotActive(FeatureId.TopMoves),
                 )
             }
         }
@@ -475,3 +513,13 @@ private fun GameActionButtons(
 }
 
 
+
+/**
+ * 사용 확인 팝업이 떠 있는 동안 붙들어 두는 "쓰려던 1회권" 한 건. 사용자가 확인을 누르면
+ * [action]이 그때 실행된다 — 확인 전에는 아무것도 하지 않는다(재화를 말없이 쓰지 않는다).
+ */
+private data class PendingTicketSpend(
+    val item: ConsumableItem,
+    val featureId: FeatureId,
+    val action: () -> Unit,
+)

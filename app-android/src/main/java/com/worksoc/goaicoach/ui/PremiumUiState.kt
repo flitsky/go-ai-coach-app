@@ -27,6 +27,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.worksoc.goaicoach.application.consumable.ConsumableCatalog
+import com.worksoc.goaicoach.application.consumable.ConsumableSpendDecision
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.premium.AdRewardFailureReason
 import com.worksoc.goaicoach.application.premium.AdRewardOutcome
@@ -153,6 +155,10 @@ internal fun PremiumUpsellDialog(
     isAdGrantInProgress: Boolean = false,
     isPurchaseInProgress: Boolean = false,
     errorMessage: String? = null,
+    // '광고 스킵권'을 보유했을 때만 채워지는 네 번째 선택지 — 광고를 보지 않고 같은 1시간
+    // 프리미엄을 켠다(킥오프 플랜 4.5절). 보유량이 0이면 null이라 버튼 자체가 뜨지 않는다.
+    adSkipTicketCount: Int = 0,
+    onSelectAdSkipTicket: (() -> Unit)? = null,
 ) {
     val strings = LocalUiStrings.current
     val isAnyInProgress = isAdGrantInProgress || isPurchaseInProgress
@@ -185,6 +191,15 @@ internal fun PremiumUpsellDialog(
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(bottom = 12.dp),
                     )
+                }
+                if (onSelectAdSkipTicket != null && adSkipTicketCount > 0) {
+                    Button(
+                        onClick = onSelectAdSkipTicket,
+                        enabled = !isAnyInProgress,
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                    ) {
+                        Text(strings.premiumUpsellUseTicketLabel(adSkipTicketCount))
+                    }
                 }
                 Button(
                     onClick = onSelectAdGrant,
@@ -246,6 +261,7 @@ internal fun PremiumUpsellDialogHost(
 ) {
     if (!visible) return
     val premium = LocalPremiumUiState.current
+    val consumables = LocalConsumableUiState.current
     val strings = LocalUiStrings.current
     val scope = rememberCoroutineScope()
     var isAdGrantInProgress by remember { mutableStateOf(false) }
@@ -253,6 +269,16 @@ internal fun PremiumUpsellDialogHost(
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     PremiumUpsellDialog(
+        adSkipTicketCount = consumables.countOf(ConsumableCatalog.PremiumOnce),
+        onSelectAdSkipTicket = {
+            // 광고를 보지 않고 같은 1시간 프리미엄을 켠다 — 차감/활성화 판정은 6계층
+            // (decideConsumableSpend)이 하고, 여기서는 결과에 따라 팝업만 닫는다.
+            errorMessage = null
+            if (consumables.spend(ConsumableCatalog.PremiumOnce) is ConsumableSpendDecision.Spent) {
+                onDismiss()
+                onAnyChoice()
+            }
+        },
         isAdGrantInProgress = isAdGrantInProgress,
         isPurchaseInProgress = isPurchaseInProgress,
         errorMessage = errorMessage,

@@ -752,19 +752,24 @@ private fun GoCoachScreen(
         premiumState = premiumStateStore.saveMergingClaimedFeatures(nextState)
     }
 
-    // 프리미엄이 비활성 상태가 될 때(활성화 안 함 선택, 만료 등) 형세보기/추천수의
-    // "켜짐" 상태값 자체를 꺼서, 버튼만 잠기고 기능은 이전 값대로 계속 동작하는 걸 방지한다.
-    // 진단 로그 내용 자체는 순수 함수(buildPremiumDeactivatedDiagnosticEvent)가 판정한다.
+    // 소모품 재고/단발성 상태 배선의 본체는 ui/ConsumableUiState.kt에 있다(위와 같은 이유).
+    val consumableUiState = buildConsumableUiState(context) { next -> premiumState = next }
+
+    // 프리미엄이 비활성 상태가 될 때(활성화 안 함 선택, 만료 등) 형세보기/추천수의 "켜짐" 상태값
+    // 자체를 꺼서, 버튼만 잠기고 기능은 이전 값대로 계속 동작하는 걸 방지한다. 진단 로그 내용
+    // 자체는 순수 함수(buildPremiumDeactivatedDiagnosticEvent)가 판정한다.
     LaunchedEffect(premiumUiState.isActive) {
         if (!premiumUiState.isActive) {
             uxOptions = uxOptions.copy(showOwnershipOverlay = false)
             controllers.topMovesController.hide()
-            buildPremiumDeactivatedDiagnosticEvent(premiumState, System.currentTimeMillis())
-                ?.let(diagnosticEventLog::append)
+            buildPremiumDeactivatedDiagnosticEvent(premiumState, System.currentTimeMillis())?.let(diagnosticEventLog::append)
         }
     }
 
-    CompositionLocalProvider(LocalPremiumUiState provides premiumUiState) {
+    // 1회권으로 켠 표시는 단발성이라 다음 수가 놓이면 스스로 꺼진다 — 프리미엄 토글과 달리 계속 갱신되지 않는 것이 "1회"의 단위다(4.5절).
+    OneShotAnalysisAutoClear(consumableUiState, gameState.moves.size, controllers.topMovesController::hide) { uxOptions = uxOptions.copy(showOwnershipOverlay = false) }
+
+    CompositionLocalProvider(LocalPremiumUiState provides premiumUiState, LocalConsumableUiState provides consumableUiState) {
     when (currentDestination) {
         ScreenDestination.Onboarding -> {
             OnboardingScreen(

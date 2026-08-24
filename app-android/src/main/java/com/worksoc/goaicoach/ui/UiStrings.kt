@@ -170,6 +170,10 @@ internal data class UiStrings(
     val undoClaimMessage: String,
     val undoClaimConfirmAction: String,
     val undoClaimSuccessMessage: String,
+    val consumableSpendTitle: String,
+    val consumableSpendConfirmAction: String,
+    val consumableSpendCancelAction: String,
+    val premiumUpsellUseTicketAction: String,
     val attendanceRewardTitle: String,
     val attendanceRewardClaimAction: String,
     val attendanceRewardLaterAction: String,
@@ -239,6 +243,26 @@ internal data class UiStrings(
             UiLanguage.English -> "Would you like to optimize this match using local cache?\nStoring key positions helps responsiveness in future play.\n\nInitially secures the first $initialCount moves, expanding to $maxCount moves later.\nTarget: Up to $targetCount JSON analysis records out of $moveCount moves."
             UiLanguage.Japanese -> "この対局の主要な局面を分析キャッシュに保存しますか？\n次回プレイで同じ流れになった際、より素早く応答できます。\n\nまず序盤${initialCount}手を確保し、安定すれば${maxCount}手まで拡張します。\n対象：${moveCount}手の対局中、最大${targetCount}個のJSON分析"
             UiLanguage.ChineseSimplified -> "是否在分析缓存中优化本局？\n存储关键局面有利于在以后的对局中提高响应速度。\n\n初始时保存前 $initialCount 手，稳定后可扩展到 $maxCount 手。\n目标：从 $moveCount 手对局中提取最多 $targetCount 个 JSON  分析记录。"
+        }
+
+    /** 1회권 사용 확인 문구. 남은 장수를 함께 보여준다 — 잔량 표시는 "쓰려는 순간"에만 둔다. */
+    fun consumableSpendMessage(item: ConsumableItem, remaining: Int): String {
+        val name = consumableRewardName(item)
+        return when (language) {
+            UiLanguage.Korean -> "$name 을(를) 사용할까요?\n사용 후 ${remaining - 1}장 남습니다."
+            UiLanguage.English -> "Use one $name?\n${remaining - 1} left after this."
+            UiLanguage.Japanese -> "${name} を使用しますか？\n使用後は残り${remaining - 1}枚です。"
+            UiLanguage.ChineseSimplified -> "要使用${name}吗？\n使用后剩余 ${remaining - 1} 张。"
+        }
+    }
+
+    /** 업셀 팝업의 '광고 스킵권 사용' 선택지 — 보유 장수를 함께 보여준다. */
+    fun premiumUpsellUseTicketLabel(remaining: Int): String =
+        when (language) {
+            UiLanguage.Korean -> "${premiumUpsellUseTicketAction} (${remaining}장 보유)"
+            UiLanguage.English -> "$premiumUpsellUseTicketAction ($remaining left)"
+            UiLanguage.Japanese -> "${premiumUpsellUseTicketAction}（残り${remaining}枚）"
+            UiLanguage.ChineseSimplified -> "${premiumUpsellUseTicketAction}（剩余 $remaining 张）"
         }
 
     /** Claim 팝업의 일차 머리글("1일차"). 밀린 일차를 한 팝업에 모아 보여주기 때문에 필요하다(5.1절). */

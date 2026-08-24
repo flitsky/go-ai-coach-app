@@ -1416,7 +1416,17 @@ class LayeringContractTest {
         // loading, same as StudyScreen), and one onGameHistoryClick wire-up into
         // GoCoachHomeScreen(...). Same shape as the 2026-08-12 Study destination bump.
         // No new remember/mutableStateOf/LaunchedEffect — stateHookBudget stays 46.
-        val lineBudget = 853
+        // History (2026-08-24): 853 -> 849 (backlog item 14, Claim popup): the first-launch
+        // reward screen became a dialog, so a 7-line conditional early return collapsed into
+        // a single AttendanceRewardClaimDialog(context) call that owns its own stores.
+        //
+        // History (2026-08-24): bumped 853->854 for consumable wiring (backlog item 15) —
+        // one buildConsumableUiState line, one OneShotAnalysisAutoClear line, and a second
+        // CompositionLocal on the existing provider. All state (inventory, one-shot tracking)
+        // and the auto-clear LaunchedEffect live in ui/ConsumableUiState.kt, so the shell only
+        // holds wiring. Net across items 14 and 15 is +1 line over the previous 853.
+        // No new remember/mutableStateOf/LaunchedEffect — stateHookBudget stays 46.
+        val lineBudget = 854
         val stateHookBudget = 46
 
         val goCoachApp = repoRoot()
