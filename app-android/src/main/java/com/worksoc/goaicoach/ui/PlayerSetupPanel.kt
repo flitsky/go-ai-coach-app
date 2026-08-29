@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.ui
 
 import com.worksoc.goaicoach.application.botcharacter.BotCharacterCatalog
+import com.worksoc.goaicoach.application.botcharacter.clampToOwnedBotCharacter
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -18,10 +19,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import android.widget.Toast
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.rememberCoroutineScope
@@ -235,6 +240,46 @@ private fun PlayerSetupSideRow(
             val scope = rememberCoroutineScope()
             val bots = LocalBotCharacterUiState.current
             val context = LocalContext.current
+
+            // 저장된 레벨이 획득하지 않은 캐릭터를 가리키면 여기서 낮춘다(#22). 획득 여부는
+            // 그동안 픽커에서 **새로 고를 때만** 강제돼서, 저장된 값이 잠긴 캐릭터를 가리키면
+            // 획득 시스템이 통째로 우회됐다 — #10 이전 드롭다운이 5단계를 게이트 없이 제공했으므로
+            // 기존 사용자 상당수가 해당된다.
+            //
+            // 판정 자체는 순수 함수가 하고 여기서는 **적용과 안내**만 한다. 적용은 기존
+            // `onSideChange` 경로를 그대로 타므로 자동 저장까지 함께 따라간다.
+            val clamp = clampToOwnedBotCharacter(side.playLevel, bots.collection)
+            val latestClamp by rememberUpdatedState(clamp)
+            val latestSide by rememberUpdatedState(side)
+            // ⚠️ 키를 `Unit`으로 두는 것이 중요하다. `clamp != null` 같은 조건을 키로 쓰면 클램프가
+            // **반영되는 순간 키가 뒤집혀 코루틴이 취소**돼, 바로 다음에 오는 안내가 영영 안 뜬다
+            // (2026-08-29에 실제로 그렇게 실패했다). 이 이펙트는 좌석이 화면에 있는 동안 한 번만
+            // 돌면 되므로 수명을 좌석에 맞춘다.
+            LaunchedEffect(Unit) {
+                val initial = latestClamp ?: return@LaunchedEffect
+                // ⚠️ **한 번만 보내면 안 된다.** 설정 변경은 `GameSettingsController.changePlayerSetup`의
+                // 엔진 사용 중 게이트를 지나는데, 앱을 켠 직후에는 KataGo가 아직 기동 중이라 그
+                // 게이트가 요청을 **조용히 버린다**(2026-08-29 계측 확인: 판정과 이펙트는 정상
+                // 실행되는데 `side.playLevel`이 그대로였다). 그대로 두면 앱을 켤 때마다 잠긴
+                // 상대가 남는다. 그래서 반영될 때까지 다시 보낸다.
+                //
+                // 안내는 **반영된 뒤에만** 한다 — 끝내 실패하면 바뀌지 않은 것을 바뀌었다고
+                // 말하게 된다. 시도를 유한하게 묶는 것도 같은 이유다(엔진이 영영 안 뜨는
+                // 상황에서 무한히 도는 대신 조용히 포기한다).
+                repeat(BotLevelClampRetryCount) {
+                    val target = latestClamp
+                    if (target == null) {
+                        Toast.makeText(
+                            context,
+                            strings.botLevelClampedMessage(initial.from, initial.to),
+                            Toast.LENGTH_LONG,
+                        ).show()
+                        return@LaunchedEffect
+                    }
+                    onSideChange(latestSide.copy(playLevel = target.playLevel))
+                    delay(BotLevelClampRetryIntervalMillis)
+                }
+            }
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -303,4 +348,12 @@ private fun SeatControllerPill(
     }
 }
 
+/**
+ * 잠긴 상대를 낮추는 요청(#22)을 몇 번까지 다시 보낼지. 엔진 기동이 끝나기를 기다리는 것이
+ * 목적이라 넉넉하지만 유한하게 잡는다 — 에뮬레이터에서 KataGo 기동에 수십 초가 걸리는 것을
+ * 관측했다.
+ */
+private const val BotLevelClampRetryCount: Int = 40
 
+/** 위 재시도 간격. */
+private const val BotLevelClampRetryIntervalMillis: Long = 500

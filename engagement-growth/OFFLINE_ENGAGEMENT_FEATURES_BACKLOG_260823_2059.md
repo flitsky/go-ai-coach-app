@@ -208,6 +208,19 @@
     - 산출물: `application/attendance/AttendanceRewardPolicy.kt`(`BotCharacterShards` 보상 + `WeeklyShardAmount`), `AttendanceRewardApplication.kt`(지급 경로 + "알릴 것" 필터), `application/botcharacter/BotCharacterCatalog.kt`(`shardPathCharacters`), `BotCollectionState.kt`(`withAdShards`), `BotCharacterShardApplication.kt`(`amount`), `application/premium/AdRewardPort.kt`(`RewardEarned(type, amount)`), `PremiumAdGrantApplication.kt`(진단 로그), `ui/AndroidRewardedInterstitialAdClient.kt`, `ui/UiStrings.kt`, `ui/BotCharacterUiState.kt`, `ui/AttendanceRewardClaimDialog.kt`, 테스트 3건.
     - 사용자 승인 완료(2026-08-29).
 
+22. 저장된 AI 레벨이 획득 게이트를 우회하는 문제 (AI 모델: Opus, 노력정도: 중간) [완료]
+    - 참고: 킥오프 플랜 7장(획득 경로), 백로그 #16·#10. **#20 실기 검증 중 발견해 발행한 항목이다.**
+    - **증상**: 앱을 새로 설치해 `go_ai_coach_bot_collection.xml`이 아예 없는(= 아무것도 획득하지 않은) 상태인데 대국 설정의 상대가 **사범 묘수(4단계)** 로 잡혀 있었고, 픽커에서도 그 줄이 선택 상태로 강조됐다. 조각 0/10인 잠긴 캐릭터인데 `대국 시작하기`는 활성 상태였다(2026-08-29 Galaxy S22 Ultra 실기 확인).
+    - **원인**: 선택된 상대는 `UserPreferences`에 저장된 **AI 레벨**에서 파생된다. `ui/PlayerSetupPanel.kt`의 `PlayerSetupSideRow`가 `side.playLevel.safeLevel` → `BotCharacterCatalog.forPlayLevel(...)`로 캐릭터를 구하면서 **그 캐릭터가 `isAvailable`인지는 보지 않는다.** 획득 여부는 픽커에서 **새로 고를 때만** 강제된다.
+    - ⚠️ **엣지 케이스가 아니라 기존 사용자 전체가 해당된다.** #10(`ac625a5`, 2026-08-29) 이전의 단계 드롭다운은 `(1..PlayLevelGroup.FastBeginner.maxLevel)` 전체를 **아무 게이트 없이** 제공했다(2026-08-18 5단계 개편부터 오늘까지). 그 사이 2~5단계를 골라 둔 사용자는 업그레이드 후에도 그 레벨을 그대로 쓰게 된다.
+    - **사용자 결정(2026-08-29)**: ⓐ **회수** — 획득한 최고 단계로 낮춘다(그랜드파더링하지 않는다). ⓑ **한 번 알린다** — 조용히 바꾸지 않는다.
+    - **낮추는 기준은 "획득한 최고 단계"가 아니라 "요청 단계 이하에서 가장 높은 단계"다.** 획득 집합은 연속이 아닐 수 있어(출석으로 3단계만 먼저 얻는 경우) 그냥 최고를 쓰면 요청보다 **더 센 상대로 올라가** 버린다. 1단계는 기본 제공이라 대체 상대는 항상 존재한다.
+    - **작업 중 드러난 함정 2건**(둘 다 계측으로 확인, 주석에 남김): ⓐ 설정 변경이 `GameSettingsController.changePlayerSetup`의 **엔진 사용 중 게이트에 조용히 버려진다** — 앱 기동 직후에는 KataGo가 아직 뜨는 중이라 한 번만 보내면 반영되지 않는다(유한 재시도로 해결). ⓑ `LaunchedEffect`의 키를 `clamp != null`로 두면 **반영되는 순간 키가 뒤집혀 코루틴이 취소**돼 안내가 영영 안 뜬다(키를 `Unit`으로).
+    - 실기 검증(에뮬레이터): 획득 0 + 저장된 레벨 5(관장 천원) → 첫돌이로 낮아지고 저장되며, 토스트 "아직 획득하지 않은 상대라 바꿨어요: 관장 천원 → 첫돌이" 표시. 4단계를 **실제로 획득한** 상태에서는 사범 묘수가 그대로 유지되고 아무 일도 일어나지 않는다(반대 케이스).
+    - **실기 검증(Galaxy S22 Ultra / SM-S908N, Android 16)**: 재현 조건(획득 0 + AI 좌석 4단계)을 심고 대국 설정에 들어가니 상대가 첫돌이로 바뀌고 토스트 "아직 획득하지 않은 상대라 바꿨어요: 사범 묘수 → 첫돌이"가 떴다. 저장된 레벨도 4 → 1로 기록됐다. 조각 3/5 진행분이 있는 2단계도 획득으로 쳐 주지 않는다는 것이 같은 상태에서 확인된다.
+    - 산출물: `application/botcharacter/BotCharacterLevelClamp.kt` 신규(`clampToOwnedBotCharacter`), `ui/PlayerSetupPanel.kt`(적용·안내·재시도), `ui/UiStrings.kt`(4개 언어 안내 문구), 테스트 7건 신설. `GoCoachApp.kt`는 라인 예산(851/851)이 꽉 차 있어 건드리지 않았다.
+    - 사용자 승인 완료(2026-08-29).
+
 ### 진행 중
 
 (없음)

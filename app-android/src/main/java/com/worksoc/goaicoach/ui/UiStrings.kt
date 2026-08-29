@@ -311,6 +311,22 @@ internal data class UiStrings(
         }
 
     /**
+     * 획득하지 않은 상대로 설정돼 있어 자동으로 낮췄다는 안내(#22).
+     *
+     * **조용히 바꾸지 않는다**(2026-08-29 사용자 결정) — 설정이 저 혼자 바뀌면 "내 상대가 왜
+     * 바뀌었지"가 된다. 두 이름을 화살표로 나란히 보여, 무엇에서 무엇으로 바뀌었는지가 한눈에
+     * 드러나게 한다. 한국어 조사(로/으로)를 피한 것도 의도적이다 — 캐릭터 이름의 받침 유무에
+     * 따라 조사가 갈리는데, 이름은 콘텐츠라 앞으로 바뀔 수 있다.
+     */
+    fun botLevelClampedMessage(from: BotCharacter, to: BotCharacter): String =
+        when (language) {
+            UiLanguage.Korean -> "아직 획득하지 않은 상대라 바꿨어요: ${from.name} → ${to.name}"
+            UiLanguage.English -> "Switched opponent: ${from.name} → ${to.name} (not unlocked yet)"
+            UiLanguage.Japanese -> "未獲得の相手なので変更しました: ${from.name} → ${to.name}"
+            UiLanguage.ChineseSimplified -> "该对手尚未解锁，已切换：${from.name} → ${to.name}"
+        }
+
+    /**
      * 조각 광고가 실패했을 때의 안내. **사유별로 문구가 다르다** — "광고를 못 불러왔다"는 구글
      * 쪽 사정이라 나중에 다시 시도하면 되지만, "끝까지 안 봤다"는 사용자가 지금 바꿀 수 있는
      * 일이다. 프리미엄용 문구(`premiumAdGrantFailedMessage`)를 재사용하면 캐릭터 조각을 모으던
