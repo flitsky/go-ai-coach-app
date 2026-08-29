@@ -37,6 +37,30 @@ internal suspend fun performPremiumPurchaseRestore(
         AndroidBillingClient(activity, BuildConfig.PREMIUM_PRODUCT_ID).restorePurchases()
     }
 
+/**
+ * 봇 캐릭터 한 종의 구매를 실행한다(백로그 #18).
+ *
+ * 프리미엄 구매와 **결과를 공유하지 않는다** — 프리미엄은 `PremiumState`를 바꾸지만 캐릭터는
+ * `BotCollectionState`에 소유를 기록하므로, 여기서는 결제 결과만 돌려주고 저장은 호출부가
+ * 컬렉션 경로(`runBotCharacterUnlock`)로 한다. 같은 `AndroidBillingClient`를 상품 ID만 바꿔
+ * 재사용하는 것은 그 어댑터가 처음부터 `productId`를 생성자로 받게 설계돼 있어서다.
+ */
+internal suspend fun performBotCharacterPurchase(context: Context): PurchaseOutcome {
+    val activity = context as? Activity
+        ?: return PurchaseOutcome.NotPurchased(PurchaseFailureReason.Unavailable)
+    return AndroidBillingClient(activity, BuildConfig.BOT_CHARACTER_PRODUCT_ID).purchasePremium()
+}
+
+/**
+ * 앱 시작 시 캐릭터 구매를 복원 조회한다 — 재설치로 로컬 컬렉션이 사라져도 산 캐릭터를
+ * 되찾아야 한다(프리미엄 쪽 [performPremiumPurchaseRestore]와 같은 이유).
+ */
+internal suspend fun performBotCharacterPurchaseRestore(context: Context): PurchaseOutcome {
+    val activity = context as? Activity
+        ?: return PurchaseOutcome.NotPurchased(PurchaseFailureReason.Unavailable)
+    return AndroidBillingClient(activity, BuildConfig.BOT_CHARACTER_PRODUCT_ID).restorePurchases()
+}
+
 private suspend fun resolvePremiumPurchase(
     context: Context,
     diagnosticEventLog: DiagnosticEventLogPort,

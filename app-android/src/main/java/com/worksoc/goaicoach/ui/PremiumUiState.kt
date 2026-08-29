@@ -113,13 +113,19 @@ internal fun buildPremiumUiState(
     store: PremiumStateStorePort,
     context: Context,
     diagnosticEventLog: DiagnosticEventLogPort,
+    characterPerkActive: Boolean,
     onStateChanged: (PremiumState) -> Unit,
 ): PremiumUiState = PremiumUiState(
     // 재구성 시점의 현재 시각으로 매번 평가한다(별도 tick 없이, 대국 중 재구성이 충분히 잦아 문제없음).
     isActive = premiumState.isActive(nowMillis = System.currentTimeMillis()),
     isPurchased = premiumState.source == PremiumSource.Purchase,
     adGrantExpiresAtMillis = premiumState.adGrantStartedAtMillis?.plus(PremiumState.AdGrantDurationMillis),
-    resolve = { featureId -> FeatureAccessPolicy.resolve(featureId, premiumState, System.currentTimeMillis()) },
+    // 구매 특전(#18)을 **여기 한 곳에서** 접는다. 인게임 게이팅이 전부 이 람다를 지나므로
+    // (`GamePlaySection`의 형세 보기·추천 수), 호출부를 하나도 고치지 않고 "지금 상대가 내가 산
+    // 캐릭터면 열린다"가 성립한다 — 8.3절 1번이 걱정하던 "호출부 전부가 바뀐다"를 피한 자리다.
+    resolve = { featureId ->
+        FeatureAccessPolicy.resolve(featureId, premiumState, System.currentTimeMillis(), characterPerkActive)
+    },
     setPurchased = { purchased ->
         onStateChanged(store.saveMergingClaimedFeatures(if (purchased) PremiumState.purchased() else PremiumState()))
     },
@@ -386,10 +392,16 @@ internal fun PremiumExpiryAutoDisableEffect(
     isEvalEnabled: Boolean,
     consumables: ConsumableUiState,
     diagnosticEventLog: DiagnosticEventLogPort,
+    characterPerkActive: Boolean,
     hideTopMoves: () -> Unit,
     hideEval: () -> Unit,
 ) {
-    LaunchedEffect(premiumState, isTopMovesEnabled, isEvalEnabled) {
+    LaunchedEffect(premiumState, isTopMovesEnabled, isEvalEnabled, characterPerkActive) {
+        // 구매 특전으로 켜져 있는 동안은 끄지 않는다(#18). 특전은 프리미엄과 별개 축이라
+        // `premiumState.isActive`가 거짓이어도 성립하는데, 그걸 모르면 산 캐릭터와 두는 내내
+        // 토글이 저 혼자 꺼진다. 상대가 바뀌어 특전이 사라지면 이 이펙트의 키가 바뀌면서
+        // 다시 돌고, 그때 비로소 꺼진다 — 그것이 이 항목이 원하는 동작이다.
+        if (characterPerkActive) return@LaunchedEffect
         val remainingMillis = premiumState.adGrantStartedAtMillis
             ?.takeIf { premiumState.source == PremiumSource.AdGrant }
             ?.plus(PremiumState.AdGrantDurationMillis)

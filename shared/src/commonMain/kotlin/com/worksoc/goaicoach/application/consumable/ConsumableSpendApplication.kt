@@ -46,8 +46,9 @@ fun decideConsumableSpend(
     inventory: ConsumableInventory,
     premiumState: PremiumState,
     nowMillis: Long,
+    characterPerkActive: Boolean = false,
 ): ConsumableSpendDecision {
-    alreadyAllowedVia(item, premiumState, nowMillis)?.let { via ->
+    alreadyAllowedVia(item, premiumState, nowMillis, characterPerkActive)?.let { via ->
         return ConsumableSpendDecision.AllowedWithoutSpending(via)
     }
     if (!inventory.has(item.id)) return ConsumableSpendDecision.OutOfStock
@@ -66,15 +67,25 @@ fun decideConsumableSpend(
     )
 }
 
-/** 소모품을 쓰지 않고도 이미 통과할 수 있는 경로가 있으면 그 경로를, 없으면 `null`. */
+/**
+ * 소모품을 쓰지 않고도 이미 통과할 수 있는 경로가 있으면 그 경로를, 없으면 `null`.
+ *
+ * [characterPerkActive]도 반드시 여기까지 흘러와야 한다(#18) — 특전으로 이미 열려 있는데
+ * 표를 차감하면, **쓰지도 않은 1회권이 줄어든다.** 4.5절의 "이미 쓸 수 있으면 차감하지 않는다"
+ * 규칙에 특전이 네 번째 경로로 들어온 것이다.
+ */
 private fun alreadyAllowedVia(
     item: ConsumableItem,
     premiumState: PremiumState,
     nowMillis: Long,
+    characterPerkActive: Boolean,
 ): AllowedVia? =
     when (val effect = item.effect) {
         is ConsumableEffect.FeatureUse ->
-            (FeatureAccessPolicy.resolve(effect.featureId, premiumState, nowMillis) as? FeatureAccess.Allowed)?.via
+            (
+                FeatureAccessPolicy.resolve(effect.featureId, premiumState, nowMillis, characterPerkActive)
+                    as? FeatureAccess.Allowed
+                )?.via
         // 프리미엄을 켜는 표는 특정 기능에 묶이지 않으므로 "지금 프리미엄이 켜져 있는가"만 본다.
         // 이미 켜져 있다면 한 장을 써 봐야 얻는 게 없으니 차감하지 않는다.
         ConsumableEffect.PremiumGrant -> FeatureAccessPolicy.activeVia(premiumState, nowMillis)
@@ -108,12 +119,14 @@ fun runConsumableSpend(
     consumableStore: ConsumableStorePort,
     premiumStore: PremiumStateStorePort,
     nowMillis: Long,
+    characterPerkActive: Boolean = false,
 ): ConsumableSpendDecision {
     val decision = decideConsumableSpend(
         item = item,
         inventory = consumableStore.load(),
         premiumState = premiumStore.load(),
         nowMillis = nowMillis,
+        characterPerkActive = characterPerkActive,
     )
     if (decision is ConsumableSpendDecision.Spent) {
         consumableStore.save(decision.inventory)

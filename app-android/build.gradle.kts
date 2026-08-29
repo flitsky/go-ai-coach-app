@@ -51,6 +51,12 @@ val realBannerAdUnitId: String? = localProperties.getProperty("admob.bannerAdUni
 val premiumProductId: String =
     localProperties.getProperty("billing.premiumProductId") ?: "premium_lifetime_placeholder"
 
+// 봇 캐릭터 개별 구매 상품 ID(백로그 #18, 5단계 관장 천원 4,900원) — 위 프리미엄 상품과 같은
+// 방식으로 주입하고 같은 이유로 플레이스홀더 폴백을 둔다. **둘은 서로 다른 상품이다**:
+// 프리미엄은 앱 전체를 켜고, 이쪽은 캐릭터 한 종의 소유권 + 그 캐릭터와 둘 때의 특전을 판다.
+val botCharacterProductId: String =
+    localProperties.getProperty("billing.botCharacterProductId") ?: "bot_character_placeholder"
+
 // 개발용 원격 엔진 스파이크(docs/refactoring/LAYERED_ARCHITECTURE_REFACTORING_PLAN_260803_1500.md
 // Stage E-3) — local.properties(gitignored)의 debug.remoteEngineUrl 키로 맥북 등에서 띄운
 // scripts/run-katago-remote-analysis-server.py의 주소(예: http://192.168.0.10:8765/analyze)를
@@ -93,6 +99,7 @@ android {
         val buildTime = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US).format(Date())
         buildConfigField("String", "BUILD_TIME", "\"$buildTime\"")
         buildConfigField("String", "PREMIUM_PRODUCT_ID", "\"$premiumProductId\"")
+        buildConfigField("String", "BOT_CHARACTER_PRODUCT_ID", "\"$botCharacterProductId\"")
     }
 
     compileOptions {

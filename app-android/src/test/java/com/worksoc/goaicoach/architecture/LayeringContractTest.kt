@@ -1440,7 +1440,14 @@ class LayeringContractTest {
         // third CompositionLocal, which pushed the provider call onto its own lines. The state and
         // the picker dialog itself live in ui/BotCharacterUiState.kt, so the shell only holds
         // wiring — same split as buildPremiumUiState and buildConsumableUiState.
-        val lineBudget = 851
+        // History (2026-08-29, backlog #18): bumped 851->855. The character purchase perk needs the
+        // opponent and the collection at buildPremiumUiState, so the bot-collection wiring moved above
+        // the premium wiring and one argument was added. Folding the perk into PremiumUiState.resolve
+        // is what keeps every in-game gating call site untouched (feature-access-principles 8.3-1).
+        // 856 rather than 855 because the perk value is shared with PremiumExpiryAutoDisableEffect —
+        // computing it twice would let the gating and the auto-disable disagree.
+        // No new remember/mutableStateOf/LaunchedEffect — stateHookBudget stays 46.
+        val lineBudget = 856
         val stateHookBudget = 46
 
         val goCoachApp = repoRoot()

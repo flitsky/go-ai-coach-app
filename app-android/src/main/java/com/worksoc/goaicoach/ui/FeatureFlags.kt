@@ -21,6 +21,20 @@ internal object FeatureFlags {
      * 구매 복원 조회가 코드 변경 없이 그대로 되살아난다.
      */
     const val isPurchaseEnabled = false
+
+    /**
+     * 봇 캐릭터 개별 구매(백로그 #18, 5단계 관장 천원 4,900원)를 켜는 **별도** 스위치.
+     *
+     * ⚠️ [isPurchaseEnabled]와 일부러 분리했다. 그 플래그는 **프리미엄 영구 구매**를 가리는데,
+     * 프리미엄은 월 구독으로 가기로 확정된 상태라(`feature-access-principles/README.md` 8장)
+     * 캐릭터를 팔자고 그것까지 되살릴 이유가 없다 — 하나로 묶었다면 켜는 순간 업셀 팝업에
+     * 영구 구매 버튼이 같이 돌아온다.
+     *
+     * **기본값이 `false`인 이유**: Play Console에 상품이 등록되기 전에 버튼을 노출하면 사용자가
+     * 눌러 봐야 "상품을 가져오지 못했습니다"만 본다. 등록이 끝나고 `local.properties`에
+     * `billing.botCharacterProductId`를 채운 뒤 이 값을 `true`로 바꾼다.
+     */
+    const val isBotCharacterPurchaseEnabled = false
 }
 
 /**

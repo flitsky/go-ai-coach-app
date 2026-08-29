@@ -25,8 +25,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import com.worksoc.goaicoach.application.botcharacter.BotCharacter
 import com.worksoc.goaicoach.application.botcharacter.runBotCharacterShardGrant
+import com.worksoc.goaicoach.application.botcharacter.runBotCharacterUnlock
 import com.worksoc.goaicoach.application.premium.AdRewardFailureReason
 import com.worksoc.goaicoach.application.premium.AdRewardOutcome
+import com.worksoc.goaicoach.application.premium.PurchaseFailureReason
+import com.worksoc.goaicoach.application.premium.PurchaseOutcome
 import com.worksoc.goaicoach.application.botcharacter.BotCharacterCatalog
 import com.worksoc.goaicoach.application.botcharacter.BotCollectionState
 import com.worksoc.goaicoach.application.botcharacter.BotCollectionStorePort
@@ -57,6 +60,13 @@ internal data class BotCharacterUiState(
      * 다시 켤 때까지 옛 숫자를 보여줬다(2026-08-29 실기 확인: 조각을 받은 직후에도 3/10).
      */
     val refresh: () -> Unit = {},
+    /**
+     * 캐릭터 한 종을 구매하고 성사되면 영구 소유로 기록한다(#18). [watchAdForShard]와 같은
+     * 계약이다 — 실패하면 상태를 바꾸지 않고 결과만 돌려주므로 호출부가 사유를 안내할 수 있다.
+     */
+    val purchase: suspend (BotCharacter) -> PurchaseOutcome = {
+        PurchaseOutcome.NotPurchased(PurchaseFailureReason.Unavailable)
+    },
 ) {
     /** 지금 이 캐릭터로 대국할 수 있는가. 기본 제공은 획득 기록 없이도 통과한다(#16). */
     fun isAvailable(character: BotCharacter): Boolean = collection.isAvailable(character)
@@ -79,6 +89,24 @@ internal val LocalBotCharacterUiState = staticCompositionLocalOf { BotCharacterU
 internal fun buildBotCharacterUiState(context: Context): BotCharacterUiState {
     val store: BotCollectionStorePort = remember(context) { BotCollectionStore(context) }
     var collection by remember(store) { mutableStateOf(store.load()) }
+
+    // 재설치로 로컬 컬렉션이 사라져도 **돈 주고 산 캐릭터는 되찾아야 한다**(#18). 프리미엄 쪽
+    // `PremiumPurchaseRestoreEffect`와 같은 취지이고, 여기 두는 이유는 `GoCoachApp.kt`의 라인
+    // 예산을 쓰지 않기 위해서다 — 이 빌더가 이미 저장소와 상태를 들고 있어 자리가 맞다.
+    //
+    // 플래그가 꺼져 있으면 아예 조회하지 않는다: 상품이 등록되기 전에는 매 실행마다 실패할
+    // 조회를 반복할 뿐이다.
+    LaunchedEffect(store) {
+        if (!FeatureFlags.isBotCharacterPurchaseEnabled) return@LaunchedEffect
+        val purchasable = BotCharacterCatalog.all
+            .firstOrNull { candidate -> candidate.unlockSource is BotUnlockSource.Purchase }
+            ?: return@LaunchedEffect
+        if (store.load().isClaimed(purchasable.id)) return@LaunchedEffect
+        if (performBotCharacterPurchaseRestore(context) is PurchaseOutcome.Purchased) {
+            runBotCharacterUnlock(purchasable.id, store)?.let { next -> collection = next }
+        }
+    }
+
     return BotCharacterUiState(
         collection = collection,
         refresh = { collection = store.load() },
@@ -88,6 +116,15 @@ internal fun buildBotCharacterUiState(context: Context): BotCharacterUiState {
             // 적립 자체는 5계층 순수 함수가 하고(read-modify-write), 여기서는 결과만 반영한다.
             if (outcome is AdRewardOutcome.RewardEarned) {
                 runBotCharacterShardGrant(character, store)?.let { grant -> collection = grant.state }
+            }
+            outcome
+        },
+        purchase = { character ->
+            val outcome = performBotCharacterPurchase(context)
+            // 결제가 확정됐을 때만 소유로 남긴다. Pending(계좌이체 등)은 아직 아니다 — 확정되면
+            // 다음 실행의 복원 조회가 잡는다.
+            if (outcome is PurchaseOutcome.Purchased) {
+                runBotCharacterUnlock(character.id, store)?.let { next -> collection = next }
             }
             outcome
         },
@@ -115,6 +152,7 @@ internal fun BotCharacterPickerDialog(
     adInProgress: Boolean,
     onSelect: (BotCharacter) -> Unit,
     onWatchAd: (BotCharacter) -> Unit,
+    onPurchase: (BotCharacter) -> Unit,
     onDismiss: () -> Unit,
 ) {
     val strings = LocalUiStrings.current
@@ -142,6 +180,12 @@ internal fun BotCharacterPickerDialog(
                 BotCharacterCatalog.fastBeginnerRoster.forEach { character ->
                     val available = bots.isAvailable(character)
                     val shardSource = character.unlockSource as? BotUnlockSource.AdShards
+                    // 유료 캐릭터는 상품이 등록되고 플래그가 켜져야 실제로 살 수 있다(#18) —
+                    // 등록 전에 버튼을 노출하면 눌러 봐야 "상품을 가져오지 못했습니다"만 본다.
+                    val canPurchase = !available &&
+                        character.unlockSource is BotUnlockSource.Purchase &&
+                        FeatureFlags.isBotCharacterPurchaseEnabled &&
+                        !adInProgress
                     BotCharacterRow(
                         character = character,
                         isSelected = character.id == selected?.id,
@@ -149,6 +193,7 @@ internal fun BotCharacterPickerDialog(
                         shards = bots.shardsFor(character),
                         // 잠겼어도 조각 경로면 탭할 수 있다 — 그 탭이 곧 광고 시청이다.
                         canWatchAd = !available && shardSource != null && !adInProgress,
+                        canPurchase = canPurchase,
                         onClick = {
                             when {
                                 available -> {
@@ -156,6 +201,7 @@ internal fun BotCharacterPickerDialog(
                                     onDismiss()
                                 }
                                 shardSource != null && !adInProgress -> onWatchAd(character)
+                                canPurchase -> onPurchase(character)
                             }
                         },
                     )
@@ -174,14 +220,15 @@ private fun BotCharacterRow(
     isAvailable: Boolean,
     shards: Int,
     canWatchAd: Boolean,
+    canPurchase: Boolean,
     onClick: () -> Unit,
 ) {
     val strings = LocalUiStrings.current
     val rowModifier = Modifier
         .fillMaxWidth()
-        .let { if (isAvailable || canWatchAd) it.clickable(onClick = onClick) else it }
-        // 잠긴 줄은 흐리게 두되, 광고로 열 수 있는 줄은 "누를 수 있다"는 신호를 남긴다.
-        .let { if (isAvailable) it else it.alpha(if (canWatchAd) 0.8f else 0.5f) }
+        .let { if (isAvailable || canWatchAd || canPurchase) it.clickable(onClick = onClick) else it }
+        // 잠긴 줄은 흐리게 두되, 지금 열 수 있는 줄(광고·구매)은 "누를 수 있다"는 신호를 남긴다.
+        .let { if (isAvailable) it else it.alpha(if (canWatchAd || canPurchase) 0.8f else 0.5f) }
         .padding(vertical = 8.dp)
 
     Column(modifier = rowModifier) {
@@ -240,4 +287,26 @@ internal suspend fun watchAdForShardAndReport(
         else -> strings.botShardEarnedToast(character, before + 1, required)
     }
     Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+}
+
+/**
+ * 캐릭터 한 종을 구매하고 결과를 토스트로 알린다(백로그 #18).
+ *
+ * [watchAdForShardAndReport]와 같은 이유로 **픽커가 아니라 그것을 여는 화면 쪽에서** 불러야
+ * 한다 — 결제 시트도 Activity 전환이라 다이얼로그 스코프가 취소된다.
+ *
+ * 결제가 성사됐을 때만 소유를 기록한다. 기록은 조각/출석과 **같은 경로**(`runBotCharacterUnlock`)로
+ * 흘려보내, 획득 사실이 어디서 왔든 컬렉션에는 한 가지 방식으로만 쌓이게 한다.
+ */
+internal suspend fun purchaseBotCharacterAndReport(
+    character: BotCharacter,
+    bots: BotCharacterUiState,
+    strings: UiStrings,
+    context: Context,
+) {
+    val message = when (val outcome = bots.purchase(character)) {
+        is PurchaseOutcome.Purchased -> strings.botPurchasedToast(character)
+        is PurchaseOutcome.NotPurchased -> strings.botPurchaseFailedMessage(outcome.reason)
+    }
+    Toast.makeText(context, message, Toast.LENGTH_LONG).show()
 }

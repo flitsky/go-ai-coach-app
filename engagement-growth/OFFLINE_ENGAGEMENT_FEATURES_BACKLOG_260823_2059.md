@@ -223,7 +223,23 @@
 
 ### 진행 중
 
-(없음)
+18. 봇 캐릭터 개별 구매 배선 — 5단계 관장 천원, **4,900원** 단발성 결제·영구 소유 (AI 모델: Opus, 노력정도: 높음) [진행중]
+    - 참고: 7장 획득 경로 표. **Phase 1 범위 확장이다** — 7장이 원래 "범위 밖(설계만 고려)"으로 못박아 뒀던 항목인데 2026-08-24에 범위 안으로 들어왔다.
+    - `BotUnlockSource.Purchase`를 신설한다(#8에서 "지금 만들지 않았다"고 미뤄 둔 타입 — sealed라 추가하면 기존 `when`이 컴파일 에러로 빠진 처리를 잡아준다). **비소모성 단발 결제라 이미 검증된 `premium_lifetime`의 `AndroidBillingClient`(INAPP) 패턴을 그대로 재사용할 수 있다.**
+    - 착수 전 확인(사용자): **Play Console 신규 상품 등록은 사용자 몫**이다(상품 ID·가격 9,900원 설정, 라이선스 테스터). 등록 전에는 실기 검증이 불가능하므로 착수 시점에 등록 여부를 먼저 확인할 것.
+    - **구현 완료(2026-08-29) — 다만 결제 자체는 검증 불가**:
+      · 결제 배선: `AndroidBillingClient(activity, productId)`가 이미 상품 ID로 매개변수화돼 있어 그대로 재사용했다. 상품 ID는 `local.properties`의 **`billing.botCharacterProductId`** 키로 주입하며, 없으면 플레이스홀더로 폴백해 "상품 없음"으로 안전하게 실패한다(프리미엄 상품과 같은 패턴).
+      · 플래그: **`FeatureFlags.isBotCharacterPurchaseEnabled`(기본 `false`)** 를 신설했다. `isPurchaseEnabled`와 **일부러 분리**했다 — 그건 프리미엄 영구 구매를 가리는데, 프리미엄은 월 구독으로 가기로 확정돼 있어 캐릭터를 팔자고 그것까지 되살릴 이유가 없다.
+      · 특전: `AllowedVia.CharacterPerk` 신설 + `PremiumUiState.resolve` 한 곳에서 접었다. 8.3절이 걱정한 "호출부 전부가 바뀐다"는 일어나지 않았다 — 인게임 게이팅이 이미 그 람다 하나로 모여 있었다.
+      · ⚠️ **1회권 차감 방지가 이 항목의 숨은 핵심이다.** 특전을 소모품 판정(`alreadyAllowedVia`)까지 흘려보내지 않으면, 특전으로 이미 열려 있는데 표가 조용히 줄어든다. 테스트로 고정했다.
+      · 재설치 복원: 산 캐릭터가 재설치로 사라지지 않도록 시작 시 복원 조회를 넣었다(`buildBotCharacterUiState` 안 — `GoCoachApp.kt` 라인 예산을 쓰지 않으려는 이유도 있다).
+    - **실기 검증(에뮬레이터)**: 관장 천원을 소유로 심고 프리미엄 없이 대국 → 형세 보기가 열리고 영역 오버레이가 렌더되며 **1회권 3장이 그대로**. 상대를 첫돌이로 바꾸면 잠금 테두리가 돌아온다(특전이 새지 않는다).
+    - ⚠️ **결제 부분은 Play Console 게이트에 막혀 보류됐다(2026-08-29)**. 콘솔의 "수익 창출"이 **"대시보드에서 앱 설정을 완료하세요"** 로 막혀 상품 등록 자체가 불가능하다 — 비공개 테스트 중이라서가 아니라, **앱 설정 대시보드의 미완료 항목(개인정보처리방침 필드·IARC 콘텐츠 등급·데이터 보안 양식)이 수익 창출의 선행 조건**이기 때문으로 보인다. 판매자(결제 프로필) 설정이 별도로 필요할 가능성도 남아 있다. 그 셋은 이미 `launch-plan/README.md` §0의 남은 콘솔 작업과 같은 목록이라, 하나를 끝내면 둘이 같이 열린다.
+    - **그래서 결제는 미루고 5단계를 출석 보상으로 돌린다(2026-08-29 사용자 결정)** — 별도 항목으로 발행. 이 항목의 **특전·결제 배선 코드는 지우지 않고 그대로 둔다**: 카탈로그에 `BotUnlockSource.Purchase` 캐릭터가 없어지면 `isBotCharacterPerkActive`가 항상 `false`라 조용히 잠들 뿐이고, 유료 상품을 다시 열 때 그대로 깨어난다.
+    - 남은 것(콘솔이 열린 뒤): ⓐ 4,900원 상품 등록 + 라이선스 테스터, ⓑ 상품 ID를 `local.properties`의 `billing.botCharacterProductId`에 기입, ⓒ `isBotCharacterPurchaseEnabled`를 `true`로.
+    - 산출물(승인 대기): (shared) `application/botcharacter/BotCharacterPerk.kt` 신규, `application/premium/FeatureAccessPolicy.kt`(`CharacterPerk`·`characterPerkActive`), `application/consumable/ConsumableSpendApplication.kt`(특전 반영). (app-android) `build.gradle.kts`·`ui/FeatureFlags.kt`·`ui/PremiumPurchaseGlue.kt`·`ui/PremiumUiState.kt`·`ui/BotCharacterUiState.kt`·`ui/PlayerSetupPanel.kt`·`ui/UiStrings.kt`·`ui/GoCoachApp.kt`. 테스트 9건 신설, `LayeringContractTest` 라인 예산 851→856(사유는 그 주석에).
+    - ⚠️ **프리미엄 월 구독 전환과 혼동하지 말 것** — 그건 이 백로그 밖(`premium-mode` 트랙)이고, 이 항목은 캐릭터 1종을 파는 별개 상품이다.
+    - **구매 특전도 이 항목의 몫이다(2026-08-29 추가)**: 구매자는 **그 캐릭터와 두는 동안** 형세 보기·추천 수를 무제한 쓴다. ⚠️ 지금의 `FeatureAccessPolicy`는 전역 판정이라 이걸 표현할 수 없다 — 착수 전 정해야 할 세 가지가 `feature-access-principles/README.md` 8.3절에 있다.
 
 ### 예정사항
 
@@ -236,12 +252,7 @@
 > 16 → 19 → 17 → 10 → 11 → 18**이다 — #19가 #17보다 앞선 이유는 #17 자신이 이미
 > "지급량이 바뀌므로 그 갱신 이후 착수"라고 못박아 뒀기 때문이다(아래 #17 참고).
 
-18. 봇 캐릭터 개별 구매 배선 — 5단계 관장 천원, 9,900원 단발성 결제·영구 소유 (AI 모델: Opus, 노력정도: 높음)
-    - 참고: 7장 획득 경로 표. **Phase 1 범위 확장이다** — 7장이 원래 "범위 밖(설계만 고려)"으로 못박아 뒀던 항목인데 2026-08-24에 범위 안으로 들어왔다.
-    - `BotUnlockSource.Purchase`를 신설한다(#8에서 "지금 만들지 않았다"고 미뤄 둔 타입 — sealed라 추가하면 기존 `when`이 컴파일 에러로 빠진 처리를 잡아준다). **비소모성 단발 결제라 이미 검증된 `premium_lifetime`의 `AndroidBillingClient`(INAPP) 패턴을 그대로 재사용할 수 있다.**
-    - 착수 전 확인(사용자): **Play Console 신규 상품 등록은 사용자 몫**이다(상품 ID·가격 9,900원 설정, 라이선스 테스터). 등록 전에는 실기 검증이 불가능하므로 착수 시점에 등록 여부를 먼저 확인할 것.
-    - ⚠️ **프리미엄 월 구독 전환과 혼동하지 말 것** — 그건 이 백로그 밖(`premium-mode` 트랙)이고, 이 항목은 캐릭터 1종을 파는 별개 상품이다.
-    - **구매 특전도 이 항목의 몫이다(2026-08-29 추가)**: 구매자는 **그 캐릭터와 두는 동안** 형세 보기·추천 수를 무제한 쓴다. ⚠️ 지금의 `FeatureAccessPolicy`는 전역 판정이라 이걸 표현할 수 없다 — 착수 전 정해야 할 세 가지가 `feature-access-principles/README.md` 8.3절에 있다.
+(없음)
 
 ---
 

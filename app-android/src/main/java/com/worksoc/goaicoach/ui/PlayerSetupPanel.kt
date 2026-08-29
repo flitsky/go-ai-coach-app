@@ -305,6 +305,16 @@ private fun PlayerSetupSideRow(
                             onSideChange(side.copy(playLevel = level))
                         }
                     },
+                    onPurchase = { character ->
+                        // 광고와 같은 이유로 여기서 돌린다(#20) — 결제 시트도 Activity 전환이라
+                        // 다이얼로그 안에서 돌리면 스코프가 취소돼 결과 처리를 못 한다.
+                        scope.launch {
+                            adInProgress = true
+                            purchaseBotCharacterAndReport(character, bots, strings, context)
+                            adInProgress = false
+                            showPicker = true
+                        }
+                    },
                     onWatchAd = { character ->
                         scope.launch {
                             adInProgress = true

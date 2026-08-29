@@ -16,6 +16,7 @@ import com.worksoc.goaicoach.application.botcharacter.BotUnlockSource
 import com.worksoc.goaicoach.application.consumable.ConsumableItem
 import com.worksoc.goaicoach.application.gamehistory.GameHistoryResult
 import com.worksoc.goaicoach.application.premium.AdRewardFailureReason
+import com.worksoc.goaicoach.application.premium.PurchaseFailureReason
 import com.worksoc.goaicoach.application.premium.FeatureId
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.MatchMode
@@ -302,11 +303,50 @@ internal data class UiStrings(
                 UiLanguage.ChineseSimplified ->
                     "需要 ${source.required} 个碎片 — 观看广告或签到第 ${WeeklyRewardCycleTier} 天"
             }
+            // 가격을 문구에 박지 않는다 — Play가 지역/통화별로 다른 값을 보여주는데 앱이 하나를
+            // 적어 두면 어긋난다. 실제 금액은 구매 시트가 알려 준다(#18).
             BotUnlockSource.Purchase -> when (language) {
-                UiLanguage.Korean -> "구매로 열려요"
-                UiLanguage.English -> "Unlocks with a purchase"
-                UiLanguage.Japanese -> "購入で解放"
-                UiLanguage.ChineseSimplified -> "购买后解锁"
+                UiLanguage.Korean -> "구매하면 바로 열려요 · 이 상대와 둘 땐 형세 보기·추천 수 무제한"
+                UiLanguage.English -> "Buy to unlock · unlimited eval and top moves against this opponent"
+                UiLanguage.Japanese -> "購入で解放 · この相手との対局では形勢・推奨手が無制限"
+                UiLanguage.ChineseSimplified -> "购买即可解锁 · 与该对手对局时形势判断和推荐手无限使用"
+            }
+        }
+
+    /** 캐릭터를 구매해 영구 획득했을 때(#18). 특전까지 함께 알려 무엇을 샀는지 분명히 한다. */
+    fun botPurchasedToast(character: BotCharacter): String =
+        when (language) {
+            UiLanguage.Korean -> "${character.name} 획득! 이 상대와 둘 땐 형세 보기·추천 수를 무제한으로 쓸 수 있어요."
+            UiLanguage.English -> "${character.name} unlocked! Eval and top moves are unlimited against this opponent."
+            UiLanguage.Japanese -> "${character.name} を獲得！この相手との対局では形勢・推奨手が無制限です。"
+            UiLanguage.ChineseSimplified -> "已获得${character.name}！与该对手对局时形势判断和推荐手可无限使用。"
+        }
+
+    /**
+     * 캐릭터 구매가 성사되지 않았을 때(#18). 사유별로 가른다 — 사용자가 스스로 취소한 것과
+     * 상품/결제가 안 되는 것은 다음에 할 일이 다르다. 조각 광고 실패 안내와 같은 기준이다.
+     */
+    fun botPurchaseFailedMessage(reason: PurchaseFailureReason): String =
+        when (reason) {
+            // 스스로 닫은 것이므로 실패라고 말하지 않는다.
+            PurchaseFailureReason.UserCancelled -> when (language) {
+                UiLanguage.Korean -> "구매를 취소했어요."
+                UiLanguage.English -> "Purchase cancelled."
+                UiLanguage.Japanese -> "購入をキャンセルしました。"
+                UiLanguage.ChineseSimplified -> "已取消购买。"
+            }
+            // 계좌이체 등 — 확정되면 다음 실행의 복원 조회에서 잡힌다.
+            PurchaseFailureReason.Pending -> when (language) {
+                UiLanguage.Korean -> "결제 확인 중이에요. 완료되면 자동으로 열립니다."
+                UiLanguage.English -> "Payment is pending. It will unlock once it completes."
+                UiLanguage.Japanese -> "支払いを確認中です。完了すると自動的に解放されます。"
+                UiLanguage.ChineseSimplified -> "正在确认支付，完成后会自动解锁。"
+            }
+            else -> when (language) {
+                UiLanguage.Korean -> "지금은 구매할 수 없어요. 잠시 후 다시 시도해 주세요."
+                UiLanguage.English -> "Can't purchase right now. Please try again in a moment."
+                UiLanguage.Japanese -> "現在購入できません。しばらくしてからお試しください。"
+                UiLanguage.ChineseSimplified -> "当前无法购买，请稍后再试。"
             }
         }
 

@@ -18,6 +18,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.worksoc.goaicoach.application.premium.FeatureAccess
+import com.worksoc.goaicoach.application.botcharacter.isBotCharacterPerkActive
+import com.worksoc.goaicoach.application.botcharacter.matchOpponentCharacter
 import com.worksoc.goaicoach.application.premium.FeatureAccessPolicy
 import com.worksoc.goaicoach.application.premium.FeatureId
 import com.worksoc.goaicoach.application.premium.PremiumStateStorePort
@@ -737,6 +739,10 @@ private fun GoCoachScreen(
         onConfirm = { enabled -> uxOptions = uxOptions.copy(isDirectPlayEnabled = enabled) }
     )
 
+    // 봇 캐릭터 수집 상태 — #8이 배선을 남겨 둔 자리를 #10이 채운다(본체는 ui/BotCharacterUiState.kt).
+    // 프리미엄 배선보다 **먼저** 만드는 이유: 구매 특전(#18) 판정에 지금 상대와 컬렉션이 필요하다.
+    val botCharacterUiState = buildBotCharacterUiState(context)
+    val characterPerkActive = isBotCharacterPerkActive(matchOpponentCharacter(playerSetup), botCharacterUiState.collection)
     // 프리미엄 배선(활성화 판정·저장·클레임 규칙)의 본체는 ui/PremiumUiState.kt의
     // buildPremiumUiState에 있다 — PremiumPurchaseGlue.kt와 같은 이유로 이 셸 밖에 뒀다.
     val premiumUiState = buildPremiumUiState(
@@ -744,6 +750,7 @@ private fun GoCoachScreen(
         store = premiumStateStore,
         context = context,
         diagnosticEventLog = diagnosticEventLog,
+        characterPerkActive = characterPerkActive,
         onStateChanged = { nextState -> premiumState = nextState },
     )
 
@@ -753,11 +760,9 @@ private fun GoCoachScreen(
 
     // 소모품 재고/단발성 상태 배선의 본체는 ui/ConsumableUiState.kt에 있다(위와 같은 이유).
     val consumableUiState = buildConsumableUiState(context) { next -> premiumState = next }
-    // 봇 캐릭터 수집 상태 — #8이 배선을 남겨 둔 자리를 #10이 채운다(본체는 ui/BotCharacterUiState.kt).
-    val botCharacterUiState = buildBotCharacterUiState(context)
 
     // 프리미엄 만료/해제 시 형세보기·추천수 토글을 되끄는 효과 — 본체는 ui/PremiumUiState.kt에 있다(위와 같은 이유).
-    PremiumExpiryAutoDisableEffect(premiumState, topMovesEnabled, uxOptions.showOwnershipOverlay, consumableUiState, diagnosticEventLog, controllers.topMovesController::hide) { uxOptions = uxOptions.copy(showOwnershipOverlay = false) }
+    PremiumExpiryAutoDisableEffect(premiumState, topMovesEnabled, uxOptions.showOwnershipOverlay, consumableUiState, diagnosticEventLog, characterPerkActive, controllers.topMovesController::hide) { uxOptions = uxOptions.copy(showOwnershipOverlay = false) }
 
     // 1회권으로 켠 표시는 단발성이라 다음 수가 놓이면 스스로 꺼진다 — 프리미엄 토글과 달리 계속 갱신되지 않는 것이 "1회"의 단위다(4.5절).
     OneShotAnalysisAutoClear(consumableUiState, gameState.moves.size, controllers.topMovesController::hide) { uxOptions = uxOptions.copy(showOwnershipOverlay = false) }
