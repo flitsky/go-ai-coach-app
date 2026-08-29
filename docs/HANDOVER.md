@@ -216,7 +216,9 @@ make doctor
 git branch -a --no-merged main
 ```
 
-**2026-08-29에 있던 미병합 브랜치 2개는 정리했습니다** — 내용은 전부 `main`에 있습니다.
+**2026-08-29에 있던 미병합 브랜치 2개는 정리했습니다** — 내용은 전부 `main`에 있고, 로컬·원격 브랜치는 삭제했습니다.
+
+> 삭제 시점 SHA(원본 커밋을 직접 봐야 할 때만 필요): `feature/remote-engine-mq-prototype` = `8e005aa`, `fix/premium-expiry-toggle-off` = `793efcd`. 둘 다 이제 도달 불가라 언젠가 GC되지만, **내용은 아래 표대로 `main`에 반영돼 있어 복구할 이유는 없습니다.**
 
 | 브랜치 | 담겨 있던 것 | 처리 |
 | --- | --- | --- |
