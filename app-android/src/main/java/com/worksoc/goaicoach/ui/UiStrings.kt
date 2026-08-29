@@ -175,7 +175,11 @@ internal data class UiStrings(
     /** 대국 메뉴의 '매 수마다' 옵션 라벨 2종. 켜면 표시가 수마다 갱신된다(프리미엄 전용). */
     val everyMoveEval: String,
     val everyMoveTopMoves: String,
-    /** 대국 한 판에 한 번만 뜨는 안내 — 버튼은 1회성이고 상시 보기는 메뉴에 있다는 것. */
+    /**
+     * 대국 한 판에 한 번만 뜨는 안내 — 버튼은 1회성이고 상시 보기는 메뉴에 있다는 것.
+     * ⚠️ 잔량 문구와 **한 토스트에 두 줄로 합쳐 뜬다**(GamePlaySection.toastForTap) —
+     * 안드로이드 토스트는 2줄까지만 보여주고 넘치면 자르므로 짧게 유지할 것.
+     */
     val everyMoveHint: String,
     val premiumUpsellUseTicketAction: String,
     val attendanceRewardTitle: String,

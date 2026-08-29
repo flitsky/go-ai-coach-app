@@ -335,13 +335,17 @@ private fun GameActionButtons(
     var showUndoClaimDialog by remember { mutableStateOf(false) }
     val consumables = LocalConsumableUiState.current
     val moveCount = screenState.gameState.moves.size
-    // 대국 한 판에 한 번만 띄우는 안내 — 이 버튼들이 1회성이고, 매 수마다 보려면 대국 메뉴에
-    // 옵션이 따로 있다는 것을 알린다. 대국이 바뀌면(수순이 리셋되면) 다시 뜬다.
+    // 버튼을 눌렀을 때 띄우는 토스트 하나. 잔량과 안내를 **한 토스트로 합친다** — 따로 띄우면
+    // 안드로이드가 둘을 큐잉해 첫 사용 때 토스트가 연달아 두 번 뜬다(2026-08-29 실기 확인).
+    // 안내("매 수마다 보려면 메뉴에서")는 대국 한 판에 한 번만 붙고, 수순이 리셋되면 다시 붙는다.
     var everyMoveHintShown by remember(screenState.gameState.moves.size == 0) { mutableStateOf(false) }
-    fun showEveryMoveHintIfFirstTime() {
-        if (everyMoveHintShown) return
+    fun toastForTap(spentMessage: String?) {
+        val hint = strings.everyMoveHint.takeIf { !everyMoveHintShown }
         everyMoveHintShown = true
-        Toast.makeText(context, strings.everyMoveHint, Toast.LENGTH_LONG).show()
+        val text = listOfNotNull(spentMessage, hint).joinToString("\n")
+        if (text.isEmpty()) return
+        val duration = if (hint != null) Toast.LENGTH_LONG else Toast.LENGTH_SHORT
+        Toast.makeText(context, text, duration).show()
     }
 
     // 기능별 판정은 FeatureAccessPolicy(6계층, application/premium/FeatureAccessPolicy.kt)에
@@ -372,7 +376,8 @@ private fun GameActionButtons(
                 // 동작 모델은 같다. 매 수마다 갱신되는 상시 표시는 대국 메뉴의 '매 수마다'
                 // 옵션이 담당한다. 켜는 동작일 때만 표시해야 끄는 탭이 1회성으로 오인되지 않는다.
                 if (turningOn && featureId != null) consumables.markOneShot(featureId, moveCount)
-                showEveryMoveHintIfFirstTime()
+                // 프리미엄은 차감이 없으니 잔량 문구가 없다 — 안내만 남으면 그것만 띄운다.
+                toastForTap(spentMessage = null)
             }
             is FeatureAccess.Locked -> {
                 val ticket = featureId?.let(consumables::ticketFor)
@@ -383,15 +388,22 @@ private fun GameActionButtons(
                     ticket != null -> {
                         // 차감이 실제로 일어났을 때만 동작시킨다 — 그 사이 프리미엄이 켜졌다면
                         // decideConsumableSpend가 재고를 건드리지 않고 통과시키므로 그때도 동작한다.
-                        if (consumables.spend(ticket) !is ConsumableSpendDecision.OutOfStock) {
-                            consumables.markOneShot(featureId, moveCount)
-                            action()
-                            Toast.makeText(
-                                context,
-                                strings.consumableSpentToast(ticket, consumables.countOf(ticket)),
-                                Toast.LENGTH_SHORT,
-                            ).show()
-                            showEveryMoveHintIfFirstTime()
+                        // ⚠️ 잔량은 반드시 판정 결과의 `remaining`(차감 후)을 쓴다. `consumables`는
+                        // 이번 재구성 시점의 값이라 `countOf`는 **차감 전** 재고를 돌려준다 —
+                        // 그대로 쓰면 토스트 잔량이 1 많게 나온다(2026-08-29 실기에서 발견).
+                        when (val decision = consumables.spend(ticket)) {
+                            is ConsumableSpendDecision.OutOfStock -> Unit
+                            is ConsumableSpendDecision.Spent -> {
+                                consumables.markOneShot(featureId, moveCount)
+                                action()
+                                toastForTap(strings.consumableSpentToast(ticket, decision.remaining))
+                            }
+                            // 프리미엄이 그 사이 켜져 재고를 안 건드린 경우 — 잔량 문구는 두지 않는다.
+                            is ConsumableSpendDecision.AllowedWithoutSpending -> {
+                                consumables.markOneShot(featureId, moveCount)
+                                action()
+                                toastForTap(spentMessage = null)
+                            }
                         }
                     }
                     UnlockOption.Claim in access.unlockOptions -> showUndoClaimDialog = true
