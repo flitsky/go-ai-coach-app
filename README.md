@@ -25,10 +25,15 @@ Next goal:
 
 ## Documentation
 
+**Taking over development? Start at [`docs/HANDOVER.md`](./docs/HANDOVER.md).** It explains how work is
+run in this repository — the single-file backlog method, the one file to open right now, and how to open
+the next track when the current one finishes. Written for a new developer pairing with an AI agent.
+
 All product/architecture documentation is written in Korean and lives under [`docs/`](./docs). Start at [`docs/DOCS_INDEX.md`](./docs/DOCS_INDEX.md) — it explains what each document and subfolder under `docs/` is for.
 
 Quick links to the main documents:
 
+- [`docs/HANDOVER.md`](./docs/HANDOVER.md) — how development is handed over and continued (working method, current live track)
 - [`docs/PRD.md`](./docs/PRD.md) — product requirements, target end state, roadmap
 - [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — the 7-layer (compressible to 4) architecture principles, app-agnostic
 - [`docs/GO_AI_COACH_ARCHITECTURE_ROADMAP.md`](./docs/GO_AI_COACH_ARCHITECTURE_ROADMAP.md) — the current package map for each layer, gaps, and roadmap, with dated current-code metrics
