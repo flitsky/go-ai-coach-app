@@ -221,16 +221,17 @@
     - 산출물: `application/botcharacter/BotCharacterLevelClamp.kt` 신규(`clampToOwnedBotCharacter`), `ui/PlayerSetupPanel.kt`(적용·안내·재시도), `ui/UiStrings.kt`(4개 언어 안내 문구), 테스트 7건 신설. `GoCoachApp.kt`는 라인 예산(851/851)이 꽉 차 있어 건드리지 않았다.
     - 사용자 승인 완료(2026-08-29).
 
-### 진행 중
-
-23. 5단계 관장 천원을 28일차 출석 장기 보상으로 전환 (AI 모델: Opus, 노력정도: 낮음) [진행중]
+23. 5단계 관장 천원을 28일차 출석 장기 보상으로 전환 (AI 모델: Opus, 노력정도: 낮음) [완료]
     - 참고: 킥오프 플랜 7장, `feature-access-principles/README.md` 8.3-1절. **#18이 콘솔 게이트에 막혀 발행된 항목이다.**
     - **배경**: Play Console "수익 창출"이 *"대시보드에서 앱 설정을 완료하세요"* 로 잠겨 4,900원 상품 등록이 불가능했다. 비공개 테스트 때문이 아니라 **앱 설정 대시보드 미완료 항목(개인정보처리방침 필드·IARC·데이터 보안)이 선행 조건**인 것으로 보이며, 판매자 설정이 추가로 필요할 가능성도 남아 있다. 그 셋은 `launch-plan/README.md` §0의 남은 콘솔 작업과 같은 목록이다.
     - **결정(사용자)**: 유료 구매는 뒤로 미루고 5단계를 **28일차 출석 보상**으로 연다. 최상위 상대에 닿는 길이 아예 없는 것보다 낫다.
     - ⚠️ **정책표가 캐릭터만 실제 회차로 조회하도록 바꿨다**(`contentTier`가 아니라 `tier`). 소모품은 8일차 이후 7일차를 반복하지만 캐릭터는 한 번뿐인 영구 획득이라 반복 축과 성질이 다르다 — 접어서 조회하면 28일차 캐릭터에 영영 닿지 못한다.
     - **결제·특전 배선(#18)은 지우지 않았다** — 카탈로그에 `Purchase` 캐릭터가 없으면 특전이 항상 거짓이라 조용히 잠든다. 유료를 다시 열면 `BotCharacterPerkTest.theCatalogCurrentlyHasNoPurchasableCharacterSoThePerkLiesDormant`가 먼저 깨져서 알려 준다.
     - **실기 검증(에뮬레이터)**: 28일차 Claim 팝업에 "새 캐릭터 · 관장 천원 (초고수)"가 실리고, 받기 후 `claimedBots`에 `fast_beginner_5`가 들어간다. 픽커 안내는 "출석 28일차에 받을 수 있어요". 7·14·21에는 캐릭터가 없다(테스트로 고정).
-    - 산출물(승인 대기): `application/botcharacter/BotCharacterCatalog.kt`(`Attendance(28)` + `TopCharacterAttendanceTier`), `application/attendance/AttendanceRewardPolicy.kt`(캐릭터만 실제 회차 조회), `feature-access-principles/README.md` 8.3-1절, 테스트 갱신 5건.
+    - 산출물: `application/botcharacter/BotCharacterCatalog.kt`(`Attendance(28)` + `TopCharacterAttendanceTier`), `application/attendance/AttendanceRewardPolicy.kt`(캐릭터만 실제 회차 조회), `feature-access-principles/README.md` 8.3-1절, 테스트 갱신 5건.
+    - 사용자 승인 완료(2026-08-29).
+
+### 진행 중
 
 18. 봇 캐릭터 개별 구매 배선 — 5단계 관장 천원, **4,900원** 단발성 결제·영구 소유 (AI 모델: Opus, 노력정도: 높음) [진행중]
     - 참고: 7장 획득 경로 표. **Phase 1 범위 확장이다** — 7장이 원래 "범위 밖(설계만 고려)"으로 못박아 뒀던 항목인데 2026-08-24에 범위 안으로 들어왔다.
