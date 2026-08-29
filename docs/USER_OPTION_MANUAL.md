@@ -9,8 +9,6 @@
 >
 > - **기능 게이팅 미반영**: `Undo`/`Top Moves`/`Eval`은 더 이상 상시 무료가 아니다 — 프리미엄·클레임·소모품 1회권으로 게이팅되며 잠긴 상태에서 누르면 업셀 또는 1회권 사용 확인 팝업이 뜬다. 정책 원본은 [`../launch-plan/README.md`](../launch-plan/README.md) 2장, [`../feature-access-principles/README.md`](../feature-access-principles/README.md).
 > - **신규 화면 미반영**: 홈/설정/학습/대국 기록 화면과 출석 보상 Claim 다이얼로그는 이 문서에 없다(이 문서는 단일 대국 화면 + 햄버거 메뉴 시절 구조를 설명한다). 화면 구조는 [`APP_IA_AND_UI_SPEC.md`](./APP_IA_AND_UI_SPEC.md) 1절을 따른다.
->
-> **형세 보기(Eval) 오버레이 관련 알려진 결함**: 토글은 켜지지만 보드 위 ownership 오버레이가 표시되지 않는 회귀가 2026-08-17에 발견됐고 아직 열려 있다(`../launch-plan/README.md` §0 참고). 아래 `Eval` 절의 오버레이 설명은 **의도된 동작**이지 현재 실제 동작이 아닐 수 있다.
 
 ## 기본 원칙
 
