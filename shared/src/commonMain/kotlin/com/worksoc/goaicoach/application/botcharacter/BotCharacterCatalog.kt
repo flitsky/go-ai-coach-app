@@ -24,44 +24,52 @@ object BotCharacterCatalog {
     /**
      * [PlayLevelGroup.FastBeginner] 5단계에 1:1로 대응하는 캐릭터 5종(티어 오름차순).
      *
-     * **모든 캐릭터가 잠겨 있고 획득해야 쓸 수 있다** — 지금까지 조건 없이 고를 수 있던 난이도
-     * 5단계가 좁아지는 것은 의도된 방향이다(2026-08-24 사용자 확정). 1·2번째 캐릭터의 지급
-     * 일차는 4.2절 보상 정책표에서 왔고, 3~5번째의 획득 경로는 아직 확정 전이라 임시로
-     * [BotUnlockSource.AdWatch]를 달아 뒀다.
+     * **획득 경로는 2026-08-24 재확정본(7장 표)을 따르며, 티어 오름차순이 아니다 — 의도된 배치다.**
+     * 무료 사용자는 1단계(기본)와 3단계(출석 4일차)를 갖게 되고 그 사이의 2단계가 비어 있는데,
+     * **기본으로 쥔 3단계가 버거우면 광고를 봐서라도 2단계를 데려오라**는 유인이다. 그래서
+     * 경로가 `기본·출석 = 1 → 3`, `광고 조각 = 2 → 4`, `유료 = 5`로 갈라진다.
+     *
+     * 이 배치는 #8의 "전 종 잠금"을 되돌린 것이다(백로그 #16) — 전부 잠그면 아무것도 획득하지
+     * 않은 사용자에게 고를 캐릭터가 하나도 없는 빈 상태가 생겼다.
+     *
+     * ⚠️ 여기 적힌 것은 **획득 경로 표기까지**다. 조각 누적 진행도(#11)와 결제 배선(#18)은 각
+     * 항목이 가져간다 — 지금 이 카탈로그만으로는 2·4·5단계를 실제로 열 방법이 아직 없다.
      */
     val fastBeginnerRoster: List<BotCharacter> = listOf(
-        // 첫 번째 캐릭터 — 출석 1일차 보상(첫 실행 즉시 획득).
+        // 1단계 — 기본 제공. 설치 즉시 잠금 없이 쓸 수 있는 유일한 캐릭터다.
         fastBeginnerCharacter(
             tier = 1,
             name = "첫돌이",
             description = "오늘 처음 돌을 잡은 입문생. 두는 곳마다 실수예요.",
-            unlockSource = BotUnlockSource.Attendance(tier = 1),
+            unlockSource = BotUnlockSource.Default,
         ),
-        // 두 번째 캐릭터 — 출석 5일차 보상.
+        // 2단계 — 광고 5회 조각 누적(#11).
         fastBeginnerCharacter(
             tier = 2,
             name = "연습생 돌뫼",
             description = "기본기를 익히는 중. 절반쯤은 제대로 둡니다.",
-            unlockSource = BotUnlockSource.Attendance(tier = 5),
+            unlockSource = BotUnlockSource.AdShards(required = 5),
         ),
-        // 3~5번째 — 획득 경로 미확정(6일차 이후/14·21·28일차 보상 vs 광고). 임시로 광고 획득.
+        // 3단계 — 출석 4일차 보상. 무료 사용자가 얻는 두 번째 캐릭터이자 유일한 출석 캐릭터다.
         fastBeginnerCharacter(
             tier = 3,
             name = "도장생 반상",
             description = "웬만한 수는 받아칩니다. 방심하면 한 방 먹어요.",
-            unlockSource = BotUnlockSource.AdWatch,
+            unlockSource = BotUnlockSource.Attendance(tier = 4),
         ),
+        // 4단계 — 광고 10회 조각 누적(#11).
         fastBeginnerCharacter(
             tier = 4,
             name = "사범 묘수",
             description = "수를 읽고 빈틈을 파고듭니다. 실수는 놓치지 않아요.",
-            unlockSource = BotUnlockSource.AdWatch,
+            unlockSource = BotUnlockSource.AdShards(required = 10),
         ),
+        // 5단계 — 개별 구매 전용(#18). 광고로도 출석으로도 열리지 않는다.
         fastBeginnerCharacter(
             tier = 5,
             name = "관장 천원",
             description = "도장 최강. 언제나 최선의 수만 둡니다.",
-            unlockSource = BotUnlockSource.AdWatch,
+            unlockSource = BotUnlockSource.Purchase,
         ),
     )
 
@@ -87,6 +95,10 @@ object BotCharacterCatalog {
      * [BotUnlockSource.Attendance]가 단일 출처이므로, 출석 보상 정책표
      * (`AttendanceRewardPolicy`)는 이 함수를 통해 그 정보를 읽어 간다 — 같은 사실을 두 군데
      * 적어 두고 어긋나게 두지 않기 위함이다.
+     *
+     * 2026-08-24 재확정본 기준으로 **출석으로 열리는 캐릭터는 3단계(4일차) 하나뿐**이다. 그래서
+     * 1일차에는 캐릭터 보상이 걸리지 않는다 — #16이 1단계를 기본 제공으로 돌리면서 정책표에
+     * 코드를 더하지 않고도 1일차 중복 지급이 사라졌다(#19가 기대던 선행 조건).
      */
     fun forAttendanceTier(tier: Int): List<BotCharacter> =
         all.filter { character ->

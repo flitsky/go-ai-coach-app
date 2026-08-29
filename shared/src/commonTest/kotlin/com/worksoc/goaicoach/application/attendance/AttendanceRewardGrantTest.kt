@@ -92,19 +92,22 @@ private class RewardStores(
     }
 }
 
-private val firstCharacter = BotCharacterCatalog.fastBeginnerRoster[0]
-private val secondCharacter = BotCharacterCatalog.fastBeginnerRoster[1]
+// 출석으로 열리는 캐릭터는 3단계(도장생 반상, 4일차) 하나뿐이다 — 1단계는 기본 제공이고
+// 2·4단계는 광고 조각, 5단계는 유료다(7장 재확정본, #16). 카탈로그가 단일 출처이므로 여기서도
+// 인덱스가 아니라 카탈로그 조회로 가져와, 표가 또 바뀌면 이 픽스처가 자동으로 따라가게 한다.
+private val attendanceCharacter = BotCharacterCatalog.forAttendanceTier(4).single()
+private val defaultCharacter = BotCharacterCatalog.fastBeginnerRoster.first()
 
 class AttendanceRewardPolicyTest {
 
     @Test
-    fun dayOneGrantsBothUnlimitedUndoAndTheFirstCharacter() {
-        // 4.2절 정책표 — 1일차부터 보상이 2개다. "일차 → 보상 1개"로는 표현할 수 없는 지점.
+    fun dayOneGrantsUnlimitedUndoOnlyNowThatTheFirstCharacterIsFree() {
+        // #16 전에는 1일차가 무르기 + 첫 캐릭터 2개였다. 1단계가 기본 제공으로 바뀌면서
+        // 정책표에 코드를 더하지 않고도 캐릭터 중복 지급이 사라졌다(#19가 기대던 선행 조건).
         val rewards = AttendanceRewardPolicy.rewardsFor(1)
 
-        assertEquals(2, rewards.size)
-        assertTrue(AttendanceReward.PermanentFeature(FeatureId.Undo) in rewards)
-        assertTrue(AttendanceReward.BotCharacterUnlock(firstCharacter) in rewards)
+        assertEquals(listOf(AttendanceReward.PermanentFeature(FeatureId.Undo)), rewards)
+        assertTrue(rewards.none { it is AttendanceReward.BotCharacterUnlock })
     }
 
     @Test
@@ -117,18 +120,21 @@ class AttendanceRewardPolicyTest {
             listOf(AttendanceReward.Consumable(ConsumableCatalog.TopMovesOnce, 10)),
             AttendanceRewardPolicy.rewardsFor(3),
         )
+        // 4일차에는 소모품과 함께 유일한 출석 캐릭터가 걸린다(#16).
         assertEquals(
-            listOf(AttendanceReward.Consumable(ConsumableCatalog.PremiumOnce, 10)),
+            listOf(
+                AttendanceReward.Consumable(ConsumableCatalog.PremiumOnce, 10),
+                AttendanceReward.BotCharacterUnlock(attendanceCharacter),
+            ),
             AttendanceRewardPolicy.rewardsFor(4),
         )
     }
 
     @Test
-    fun dayFiveGrantsTheSecondCharacter() {
-        assertEquals(
-            listOf(AttendanceReward.BotCharacterUnlock(secondCharacter)),
-            AttendanceRewardPolicy.rewardsFor(5),
-        )
+    fun dayFiveIsEmptyNowThatItsCharacterMovedToDayFour() {
+        // 5일차 캐릭터가 4일차로 옮겨져 이 회차는 콘텐츠가 비었다 — #19가 소모품으로 채운다.
+        // 빈 회차는 claimedTiers에 들어가지 않으므로, 그때 지나간 사용자도 나중에 받을 수 있다.
+        assertEquals(emptyList(), AttendanceRewardPolicy.rewardsFor(5))
     }
 
     @Test
@@ -151,7 +157,9 @@ class AttendanceRewardPolicyTest {
     fun pendingTiersListsEveryUnclaimedTierWithContentInOrder() {
         val state = AttendanceState(attendanceCount = 5, claimedTiers = setOf(1, 3))
 
-        assertEquals(listOf(2, 4, 5), AttendanceRewardPolicy.pendingTiers(state).map { it.tier })
+        // 5일차는 캐릭터가 4일차로 옮겨가며 콘텐츠가 비어(#16) 대기 목록에 뜨지 않는다.
+        // #19가 그 회차를 소모품으로 채우면 다시 [2, 4, 5]가 된다.
+        assertEquals(listOf(2, 4), AttendanceRewardPolicy.pendingTiers(state).map { it.tier })
     }
 
     @Test
@@ -166,7 +174,7 @@ class AttendanceRewardPolicyTest {
 class AttendanceRewardGrantTest {
 
     @Test
-    fun firstEverCheckInGrantsUndoAndTheFirstCharacterInOneCall() {
+    fun firstEverCheckInGrantsUndoAndNoCharacter() {
         val stores = RewardStores()
         val checkIn = stores.checkInAt(0L)
 
@@ -174,10 +182,12 @@ class AttendanceRewardGrantTest {
 
         assertTrue(result.didGrant)
         assertEquals(listOf(1), result.granted.map { it.tier })
-        assertEquals(2, result.grantedRewards.size)
+        assertEquals(1, result.grantedRewards.size)
         assertTrue(stores.attendance.stored.isTierClaimed(UndoUnlimitedRewardTier))
         assertEquals(setOf(FeatureId.Undo), stores.premium.stored.claimedFeatures)
-        assertTrue(stores.bots.stored.isClaimed(firstCharacter.id))
+        // 1단계는 기본 제공이라 지급 기록이 남지 않는다 — 그래도 고를 수는 있다.
+        assertFalse(stores.bots.stored.isClaimed(defaultCharacter.id))
+        assertTrue(stores.bots.stored.isAvailable(defaultCharacter))
     }
 
     @Test
@@ -201,14 +211,14 @@ class AttendanceRewardGrantTest {
     }
 
     @Test
-    fun theSecondCharacterArrivesOnDayFiveAndNotBefore() {
+    fun theAttendanceCharacterArrivesOnDayFourAndNotBefore() {
         val stores = RewardStores()
 
-        stores.attendForDays(4)
-        assertFalse(stores.bots.stored.isClaimed(secondCharacter.id))
+        stores.attendForDays(3)
+        assertFalse(stores.bots.stored.isClaimed(attendanceCharacter.id))
 
         stores.attendForDays(1)
-        assertTrue(stores.bots.stored.isClaimed(secondCharacter.id))
+        assertTrue(stores.bots.stored.isClaimed(attendanceCharacter.id))
     }
 
     @Test
@@ -257,23 +267,25 @@ class AttendanceRewardGrantTest {
 
         val result = stores.grant()
 
-        assertEquals(listOf(1, 2, 3, 4, 5), result.granted.map { it.tier })
+        // 5일차는 콘텐츠가 비어 지급 목록에도 claimedTiers에도 들어가지 않는다(#16 이후).
+        assertEquals(listOf(1, 2, 3, 4), result.granted.map { it.tier })
         assertEquals(setOf(FeatureId.Undo), stores.premium.stored.claimedFeatures)
         assertEquals(10, stores.consumables.stored.countOf(ConsumableCatalog.EvalOnce.id))
-        assertTrue(stores.bots.stored.isClaimed(firstCharacter.id))
-        assertTrue(stores.bots.stored.isClaimed(secondCharacter.id))
-        assertEquals(setOf(1, 2, 3, 4, 5), stores.attendance.stored.claimedTiers)
+        assertTrue(stores.bots.stored.isClaimed(attendanceCharacter.id))
+        assertEquals(setOf(1, 2, 3, 4), stores.attendance.stored.claimedTiers)
     }
 
     @Test
     fun undecidedTiersAreNotMarkedClaimedSoTheirRewardsSurviveALaterDecision() {
-        // 6·7일차를 지나쳤어도 claimedTiers에 들어가면 안 된다 — 나중에 콘텐츠가 정해졌을 때
-        // 그 사이 지나간 사용자가 영영 못 받는 일이 없어야 한다.
+        // 콘텐츠가 없는 회차는 claimedTiers에 들어가면 안 된다 — 나중에 콘텐츠가 정해졌을 때
+        // 그 사이 지나간 사용자가 영영 못 받는 일이 없어야 한다. #16 이후로는 6·7일차뿐 아니라
+        // **5일차도** 여기 해당한다(캐릭터가 4일차로 옮겨가며 비었다). #19가 채우면 다시 잡힌다.
         val stores = RewardStores(AttendanceState(attendanceCount = 7, lastCheckInUtcDay = 6L))
 
         stores.grant()
 
-        assertEquals(setOf(1, 2, 3, 4, 5), stores.attendance.stored.claimedTiers)
+        assertEquals(setOf(1, 2, 3, 4), stores.attendance.stored.claimedTiers)
+        assertFalse(stores.attendance.stored.isTierClaimed(5))
         assertFalse(stores.attendance.stored.isTierClaimed(6))
         assertFalse(stores.attendance.stored.isTierClaimed(7))
     }

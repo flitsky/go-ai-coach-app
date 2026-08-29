@@ -19,14 +19,17 @@ data class BotCollectionState(
         if (isClaimed(id)) this else copy(claimedBots = claimedBots + id)
 
     /**
-     * 지금 이 캐릭터를 골라서 대국할 수 있는지 판정한다. Phase 1에서는 **모든 획득 경로가 명시적
-     * 획득을 요구**하므로 결과적으로 [isClaimed]와 같지만, 캐릭터를 받아 호출하는 형태를 유지한다 —
-     * 나중에 월 구독처럼 개별 획득 없이 전체를 열어주는 소스가 붙으면 판정이 갈라지는 지점이
-     * 여기이기 때문이다(7장의 범위 밖 항목).
+     * 지금 이 캐릭터를 골라서 대국할 수 있는지 판정한다. **[isClaimed]와 갈라진다** —
+     * [BotUnlockSource.Default]인 캐릭터는 획득 기록 없이도 쓸 수 있기 때문이다(#8 KDoc이
+     * 예견했던 분기 지점이 #16에서 실제로 생겼다).
      *
-     * ⚠️ 아직 아무것도 획득하지 않은 사용자는 고를 수 있는 캐릭터가 **하나도 없다**(첫 캐릭터는
-     * 출석 1일차 보상으로 들어온다 — 4.2절). 캐릭터 픽커를 만드는 쪽(#10)이 이 빈 상태를 반드시
-     * 처리해야 한다.
+     * 그 덕에 **아무것도 획득하지 않은 사용자도 고를 수 있는 캐릭터가 최소 하나 있다**(1단계
+     * 첫돌이). #8 시점에 있던 "빈 상태" 부담이 사라졌으므로, 캐릭터 픽커(#10)가 다뤄야 할 것은
+     * 빈 목록이 아니라 **잠긴 4종을 각각 어떤 사유로 잠겼는지 구분해 보여주는 것**이다 —
+     * 획득 경로가 출석/광고 조각/유료 셋으로 갈리기 때문이다(7장 표).
+     *
+     * 월 구독처럼 개별 획득 없이 전체를 여는 소스가 나중에 붙으면 이 함수에 분기를 더한다.
      */
-    fun isAvailable(character: BotCharacter): Boolean = isClaimed(character.id)
+    fun isAvailable(character: BotCharacter): Boolean =
+        character.unlockSource == BotUnlockSource.Default || isClaimed(character.id)
 }

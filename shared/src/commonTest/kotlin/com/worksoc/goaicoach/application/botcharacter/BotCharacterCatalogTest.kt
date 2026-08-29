@@ -84,14 +84,39 @@ class BotCharacterCatalogTest {
     }
 
     @Test
-    fun firstTwoCharactersComeFromTheConfirmedAttendanceDays() {
+    fun unlockPathsFollowTheConfirmedTable() {
         val roster = BotCharacterCatalog.fastBeginnerRoster
 
-        // 4.2절 보상 정책표: 1일차 = 첫 번째 캐릭터, 5일차 = 두 번째 캐릭터.
-        assertEquals(BotUnlockSource.Attendance(tier = 1), roster[0].unlockSource)
-        assertEquals(BotUnlockSource.Attendance(tier = 5), roster[1].unlockSource)
-        // 3~5번째는 아직 확정 전이라 출석 보상으로 잡혀 있으면 안 된다.
-        assertTrue(roster.drop(2).none { it.unlockSource is BotUnlockSource.Attendance })
+        // 7장 재확정본(2026-08-24). 티어 오름차순이 아닌 것이 의도이므로 표 그대로 고정한다.
+        assertEquals(BotUnlockSource.Default, roster[0].unlockSource)
+        assertEquals(BotUnlockSource.AdShards(required = 5), roster[1].unlockSource)
+        assertEquals(BotUnlockSource.Attendance(tier = 4), roster[2].unlockSource)
+        assertEquals(BotUnlockSource.AdShards(required = 10), roster[3].unlockSource)
+        assertEquals(BotUnlockSource.Purchase, roster[4].unlockSource)
+    }
+
+    @Test
+    fun exactlyOneCharacterIsFreeAndOneComesFromAttendance() {
+        val roster = BotCharacterCatalog.fastBeginnerRoster
+
+        // 무료 사용자가 얻는 것은 기본 제공 1종 + 출석 1종뿐이고, 그 사이 2단계가 비어 있는
+        // 것이 광고 유인이다(7장). 이 균형이 조용히 깨지지 않게 개수로 고정한다.
+        assertEquals(1, roster.count { it.unlockSource == BotUnlockSource.Default })
+        assertEquals(1, roster.count { it.unlockSource is BotUnlockSource.Attendance })
+        assertEquals(2, roster.count { it.unlockSource is BotUnlockSource.AdShards })
+        assertEquals(1, roster.count { it.unlockSource == BotUnlockSource.Purchase })
+    }
+
+    @Test
+    fun attendanceLookupOnlyYieldsTheDayFourCharacter() {
+        // 1일차는 이제 캐릭터를 주지 않는다 — 1단계가 기본 제공으로 바뀌면서 정책표에 코드를
+        // 더하지 않고도 중복 지급이 사라졌다(#19의 선행 조건).
+        assertTrue(BotCharacterCatalog.forAttendanceTier(1).isEmpty())
+        assertTrue(BotCharacterCatalog.forAttendanceTier(5).isEmpty())
+        assertEquals(
+            listOf(BotCharacterId("fast_beginner_3")),
+            BotCharacterCatalog.forAttendanceTier(4).map { it.id },
+        )
     }
 
     @Test
@@ -136,7 +161,7 @@ class BotCollectionStateTest {
         description = "광고 시청으로 획득",
         linkedPlayLevel = PlayLevelGroup.FastBeginner,
         tierWithinGroup = 3,
-        unlockSource = BotUnlockSource.AdWatch,
+        unlockSource = BotUnlockSource.AdShards(required = 5),
     )
 
     private val attendanceBot = adBot.copy(
@@ -158,21 +183,32 @@ class BotCollectionStateTest {
     }
 
     @Test
-    fun nothingIsSelectableBeforeAnyCharacterIsClaimed() {
+    fun theDefaultCharacterIsSelectableWithoutAnyClaim() {
         val empty = BotCollectionState()
+        val default = BotCharacterCatalog.fastBeginnerRoster.first()
 
-        // 5단계가 조건 없이 선택되던 기존 UX가 좁아지는 것은 의도된 방향이다(2026-08-24 확정).
-        // 첫 캐릭터는 출석 1일차 보상으로 들어온다 — 픽커(#10)는 이 빈 상태를 처리해야 한다.
-        assertTrue(BotCharacterCatalog.all.none { empty.isAvailable(it) })
+        // #16이 없앤 것이 바로 이 지점의 빈 상태다 — 획득 기록이 하나도 없어도 고를 상대가 있다.
+        assertEquals(BotUnlockSource.Default, default.unlockSource)
+        assertTrue(empty.isAvailable(default))
+        assertFalse(empty.isClaimed(default.id))
+
+        // 나머지 4종은 여전히 잠겨 있다.
+        assertTrue(BotCharacterCatalog.all.filter { it != default }.none { empty.isAvailable(it) })
     }
 
     @Test
-    fun claimingOneCharacterMakesOnlyThatOneSelectable() {
-        val first = BotCharacterCatalog.fastBeginnerRoster.first()
-        val state = BotCollectionState().withClaimed(first.id)
+    fun claimingOneLockedCharacterOpensOnlyThatOne() {
+        val default = BotCharacterCatalog.fastBeginnerRoster.first()
+        val locked = BotCharacterCatalog.fastBeginnerRoster[2]
+        val state = BotCollectionState().withClaimed(locked.id)
 
-        assertTrue(state.isAvailable(first))
-        assertTrue(BotCharacterCatalog.all.filter { it != first }.none { state.isAvailable(it) })
+        assertTrue(state.isAvailable(locked))
+        assertTrue(state.isAvailable(default))
+        assertTrue(
+            BotCharacterCatalog.all
+                .filter { it != default && it != locked }
+                .none { state.isAvailable(it) },
+        )
     }
 
     @Test

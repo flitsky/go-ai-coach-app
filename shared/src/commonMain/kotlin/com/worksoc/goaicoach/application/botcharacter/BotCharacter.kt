@@ -20,11 +20,37 @@ data class BotCharacterId(val raw: String)
  * 여기에 더하면 되고, 그때 `when` 분기가 컴파일 에러로 드러나 빠뜨린 처리를 잡아준다.
  */
 sealed class BotUnlockSource {
+    /**
+     * 잠금 없이 **설치 즉시** 쓸 수 있는 캐릭터. 획득 기록([BotCollectionState.claimedBots])이
+     * 없어도 고를 수 있는 유일한 경로이며, 그래서 [BotCollectionState.isAvailable]이
+     * [BotCollectionState.isClaimed]와 갈라지는 지점이다(#8 KDoc이 예견한 분기).
+     *
+     * 2026-08-24 재확정으로 되살아났다 — #8은 "전 종 잠금"을 택해 이 타입을 지웠으나, 그러면
+     * 아무것도 획득하지 않은 사용자에게 **고를 수 있는 캐릭터가 하나도 없는** 빈 상태가 생겼다.
+     * 1단계를 기본 제공으로 돌려 그 상태 자체를 없앴다(7장 표, 백로그 #16).
+     */
+    data object Default : BotUnlockSource()
+
     /** 출석 [tier]일차 보상으로 지급되는 캐릭터(4.2절 보상 정책표). */
     data class Attendance(val tier: Int) : BotUnlockSource()
 
-    /** 리워드 광고 시청으로 획득. 기존 프리미엄의 1시간 임시 활성화와 달리 **영구 획득**이다(#11). */
-    data object AdWatch : BotUnlockSource()
+    /**
+     * 리워드 광고를 [required]회 봐서 **조각을 모아야** 열리는 캐릭터. 프리미엄의 1시간 임시
+     * 활성화와 달리 한 번 채우면 **영구 획득**이다.
+     *
+     * ⚠️ "1회 시청 = 즉시 획득"이 아니다(2026-08-24 재확정) — 진행도를 저장할 상태와 실제 적립
+     * 배선은 #11의 몫이고, 이 타입은 **카탈로그가 몇 회를 요구하는지 표기**하는 데까지만 쓴다.
+     * 시간제 활성화 축(`PremiumState.adGrantStartedAtMillis`)과 절대 섞지 않는다.
+     */
+    data class AdShards(val required: Int) : BotUnlockSource()
+
+    /**
+     * 개별 구매로만 열리는 캐릭터(단발성 비소모 결제, 영구 소유).
+     *
+     * 상품 id를 여기 담지 않는 이유: Play Console에 아직 상품이 등록되지 않았고, 없는 값을
+     * 그럴듯하게 지어 두면 다음 스레드가 그게 실재한다고 믿는다. 결제 배선과 함께 #18이 채운다.
+     */
+    data object Purchase : BotUnlockSource()
 }
 
 /**
