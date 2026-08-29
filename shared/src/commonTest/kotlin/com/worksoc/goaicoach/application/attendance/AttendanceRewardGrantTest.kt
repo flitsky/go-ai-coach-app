@@ -3,6 +3,7 @@ package com.worksoc.goaicoach.application.attendance
 import com.worksoc.goaicoach.application.botcharacter.BotCharacterCatalog
 import com.worksoc.goaicoach.application.botcharacter.BotCollectionState
 import com.worksoc.goaicoach.application.botcharacter.BotCollectionStorePort
+import com.worksoc.goaicoach.application.botcharacter.BotUnlockSource
 import com.worksoc.goaicoach.application.consumable.ConsumableCatalog
 import com.worksoc.goaicoach.application.consumable.ConsumableInventory
 import com.worksoc.goaicoach.application.consumable.ConsumableStorePort
@@ -96,6 +97,7 @@ private class RewardStores(
 // 2·4단계는 광고 조각, 5단계는 유료다(7장 재확정본, #16). 카탈로그가 단일 출처이므로 여기서도
 // 인덱스가 아니라 카탈로그 조회로 가져와, 표가 또 바뀌면 이 픽스처가 자동으로 따라가게 한다.
 private val attendanceCharacter = BotCharacterCatalog.forAttendanceTier(4).single()
+private val shardCharacters = BotCharacterCatalog.shardPathCharacters()
 private val defaultCharacter = BotCharacterCatalog.fastBeginnerRoster.first()
 
 class AttendanceRewardPolicyTest {
@@ -145,9 +147,55 @@ class AttendanceRewardPolicyTest {
                 AttendanceReward.Consumable(ConsumableCatalog.EvalOnce, 50),
                 AttendanceReward.Consumable(ConsumableCatalog.TopMovesOnce, 50),
                 AttendanceReward.Consumable(ConsumableCatalog.PremiumOnce, 10),
-            ),
+            ) + shardCharacters.map { AttendanceReward.BotCharacterShards(it, 1) },
             AttendanceRewardPolicy.rewardsFor(7),
         )
+        // 조각 경로 캐릭터가 누구인지도 함께 고정한다 — 카탈로그에서 파생시켰기 때문에 위 단언만
+        // 두면 캐릭터를 늘리거나 줄여도 통과해 버린다.
+        assertEquals(listOf("연습생 돌뫼", "사범 묘수"), shardCharacters.map { it.name })
+    }
+
+    @Test
+    fun theSeventhDayFeedsShardsSoTheAdPathIsNotTheOnlyWay() {
+        // 광고가 채워지지 않는 사용자도 결국 조각 캐릭터에 닿을 수 있어야 한다(2026-08-29).
+        // 반복 회차에 걸려 있으므로 회차를 거듭할수록 진행도가 쌓인다.
+        val botStore = FakeBotStore()
+        val target = shardCharacters.first()
+        val required = (target.unlockSource as BotUnlockSource.AdShards).required
+
+        repeat(required) { round ->
+            val tier = 7 * (round + 1)
+            runAttendanceRewardGrant(
+                state = AttendanceState(attendanceCount = tier, claimedTiers = (1 until tier).toSet()),
+                attendanceStore = FakeAttendanceStore(),
+                premiumStore = FakePremiumStore(),
+                consumableStore = FakeConsumableStore(),
+                botStore = botStore,
+            )
+        }
+
+        assertTrue(botStore.stored.isClaimed(target.id), "${target.name} must unlock without any ad")
+    }
+
+    @Test
+    fun shardsAlreadyCompletedAreNotAnnouncedAgain() {
+        // 조각은 7일차마다 영원히 반복된다 — 다 모은 캐릭터의 몫까지 팝업에 적으면 그 사용자는
+        // 매주 의미 없는 줄을 보게 된다.
+        val botStore = FakeBotStore(
+            shardCharacters.fold(BotCollectionState()) { state, character -> state.withClaimed(character.id) },
+        )
+
+        val result = runAttendanceRewardGrant(
+            state = AttendanceState(attendanceCount = 7, claimedTiers = (1..6).toSet()),
+            attendanceStore = FakeAttendanceStore(),
+            premiumStore = FakePremiumStore(),
+            consumableStore = FakeConsumableStore(),
+            botStore = botStore,
+        )
+
+        assertTrue(result.grantedRewards.none { it is AttendanceReward.BotCharacterShards })
+        // 같은 회차의 소모품은 그대로 지급되고 그대로 알린다.
+        assertEquals(3, result.grantedRewards.size)
     }
 
     @Test
@@ -158,7 +206,8 @@ class AttendanceRewardPolicyTest {
             assertTrue(isRewardedTier(tier), "tier $tier must be a rewarded tier")
             assertEquals(week, AttendanceRewardPolicy.rewardsFor(tier), "tier $tier")
         }
-        // 반복 회차가 캐릭터를 다시 주지는 않는다 — 7일차에 캐릭터가 없기 때문이다.
+        // 반복 회차가 캐릭터를 **영구 획득**으로 다시 주지는 않는다 — 7일차에 걸린 것은
+        // 조각(진행도)뿐이고, 그마저 다 모은 캐릭터는 지급 단계에서 걸러진다.
         assertTrue(week.none { it is AttendanceReward.BotCharacterUnlock })
     }
 

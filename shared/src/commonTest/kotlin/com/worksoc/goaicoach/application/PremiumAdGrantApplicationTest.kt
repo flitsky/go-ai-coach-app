@@ -16,7 +16,7 @@ class PremiumAdGrantApplicationTest {
         val nowMillis = 1_000_000L
 
         val result = runPremiumAdGrantApplication(
-            PremiumAdGrantRunRequest(outcome = AdRewardOutcome.RewardEarned, nowMillis = nowMillis),
+            PremiumAdGrantRunRequest(outcome = AdRewardOutcome.RewardEarned(), nowMillis = nowMillis),
         )
 
         val nextState = result.nextState

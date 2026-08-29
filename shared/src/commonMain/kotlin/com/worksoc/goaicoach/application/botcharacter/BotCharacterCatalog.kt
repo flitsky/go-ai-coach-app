@@ -104,6 +104,18 @@ object BotCharacterCatalog {
         all.filter { character ->
             (character.unlockSource as? BotUnlockSource.Attendance)?.tier == tier
         }
+
+    /**
+     * 조각을 모아서 여는 캐릭터들([BotUnlockSource.AdShards]).
+     *
+     * [forAttendanceTier]와 같은 이유로 카탈로그가 단일 출처다 — 출석 정책표가 "누구에게 조각을
+     * 주는가"를 따로 적어 두면, 캐릭터의 획득 경로를 바꿀 때 한쪽만 고쳐져 어긋난다.
+     *
+     * **이 경로가 광고 전용이 아니라는 점이 중요하다.** 조각은 캐릭터에 붙은 성질이고, 그것을
+     * 어디서 얻는지는 별개 축이다 — 광고 시청(#11)과 출석 장기 보상이 같은 조각 저장소에 쌓인다.
+     */
+    fun shardPathCharacters(): List<BotCharacter> =
+        all.filter { character -> character.unlockSource is BotUnlockSource.AdShards }
 }
 
 /** `FastBeginner` 캐릭터 한 종을 만든다. */

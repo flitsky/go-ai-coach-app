@@ -63,7 +63,9 @@ internal fun AttendanceRewardClaimDialog(context: Context) {
             request = AttendanceCheckInRequest(nowEpochMillis = System.currentTimeMillis()),
             store = attendanceStore,
         )
-        pending = AttendanceRewardPolicy.pendingTiers(checkIn.state)
+        // 컬렉션까지 넘겨야 이미 다 모은 캐릭터의 조각이 팝업에 실리지 않는다 — 조각은 7일차마다
+        // 영원히 반복되므로 이 필터가 없으면 매주 의미 없는 줄이 하나씩 남는다.
+        pending = AttendanceRewardPolicy.pendingTiers(checkIn.state, botStore.load())
     }
 
     if (pending.isEmpty()) return

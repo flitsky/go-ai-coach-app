@@ -27,7 +27,7 @@ data class PremiumAdGrantRunResult(
  */
 fun runPremiumAdGrantApplication(request: PremiumAdGrantRunRequest): PremiumAdGrantRunResult =
     when (val outcome = request.outcome) {
-        AdRewardOutcome.RewardEarned -> {
+        is AdRewardOutcome.RewardEarned -> {
             val nextState = PremiumState.adGranted(nowMillis = request.nowMillis)
             PremiumAdGrantRunResult(
                 nextState = nextState,
@@ -35,7 +35,14 @@ fun runPremiumAdGrantApplication(request: PremiumAdGrantRunRequest): PremiumAdGr
                     severity = DiagnosticSeverity.Info,
                     code = "premium_ad_grant_activated",
                     message = "Premium ad grant activated.",
-                    context = mapOf("adGrantStartedAtMillis" to nextState.adGrantStartedAtMillis.toString()),
+                    // SDK가 준 콘솔 보상값도 함께 남긴다 — 앱은 이 값으로 보상을 계산하지 않으므로
+                    // (항상 1시간) 콘솔과 앱 해석이 어긋나도 동작으로는 드러나지 않는다. 로그에
+                    // 남겨야 나중에 "콘솔에서 수량을 바꿨는데 왜 그대로냐"를 확인할 수 있다.
+                    context = mapOf(
+                        "adGrantStartedAtMillis" to nextState.adGrantStartedAtMillis.toString(),
+                        "consoleRewardType" to (outcome.type ?: ""),
+                        "consoleRewardAmount" to (outcome.amount?.toString() ?: ""),
+                    ),
                 ),
             )
         }

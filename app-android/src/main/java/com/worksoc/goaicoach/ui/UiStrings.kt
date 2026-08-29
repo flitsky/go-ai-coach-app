@@ -8,12 +8,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import com.worksoc.goaicoach.application.engine.operation.EngineActivityIndicator
+import com.worksoc.goaicoach.application.attendance.WeeklyRewardCycleTier
 import com.worksoc.goaicoach.application.attendance.AttendanceReward
 import com.worksoc.goaicoach.application.consumable.ConsumableCatalog
 import com.worksoc.goaicoach.application.botcharacter.BotCharacter
 import com.worksoc.goaicoach.application.botcharacter.BotUnlockSource
 import com.worksoc.goaicoach.application.consumable.ConsumableItem
 import com.worksoc.goaicoach.application.gamehistory.GameHistoryResult
+import com.worksoc.goaicoach.application.premium.AdRewardFailureReason
 import com.worksoc.goaicoach.application.premium.FeatureId
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.MatchMode
@@ -271,8 +273,9 @@ internal data class UiStrings(
      * 잠긴 캐릭터의 **획득 방법** 안내. 경로가 셋으로 갈리므로(출석/광고 조각/유료) 각각을
      * 구분해 보여준다 — 픽커에서 "왜 못 고르는가"가 곧 "무엇을 하면 되는가"여야 한다.
      *
-     * 광고 조각의 진행도(예: 3/5)는 아직 저장하지 않는다 — 그 상태는 #11의 몫이라 여기서는
-     * 필요 횟수만 알린다. 유료 캐릭터의 가격은 Play Console 상품이 아직 없어 적지 않는다(#18).
+     * 조각 경로는 **획득 수단을 둘 다 적는다.** 광고만 적으면, 광고가 채워지지 않는 사용자에게
+     * 자기가 갈 수 없는 길만 알려 주는 셈이 된다(2026-08-29). 유료 캐릭터의 가격은 Play Console
+     * 상품이 아직 없어 적지 않는다(#18).
      */
     fun botUnlockHint(source: BotUnlockSource, shards: Int = 0): String? =
         botUnlockHintBase(source)?.let { base ->
@@ -290,16 +293,46 @@ internal data class UiStrings(
                 UiLanguage.ChineseSimplified -> "签到第${source.tier}天可获得"
             }
             is BotUnlockSource.AdShards -> when (language) {
-                UiLanguage.Korean -> "광고 ${source.required}회를 보면 열려요"
-                UiLanguage.English -> "Unlocks after ${source.required} ads"
-                UiLanguage.Japanese -> "広告${source.required}回で解放"
-                UiLanguage.ChineseSimplified -> "观看${source.required}次广告后解锁"
+                UiLanguage.Korean ->
+                    "조각 ${source.required}개 필요 — 광고 시청, ${WeeklyRewardCycleTier}일차 출석"
+                UiLanguage.English ->
+                    "Needs ${source.required} shards — watch an ad, or day $WeeklyRewardCycleTier of check-in"
+                UiLanguage.Japanese ->
+                    "かけら${source.required}個が必要 — 広告視聴、または出席${WeeklyRewardCycleTier}日目"
+                UiLanguage.ChineseSimplified ->
+                    "需要 ${source.required} 个碎片 — 观看广告或签到第 ${WeeklyRewardCycleTier} 天"
             }
             BotUnlockSource.Purchase -> when (language) {
                 UiLanguage.Korean -> "구매로 열려요"
                 UiLanguage.English -> "Unlocks with a purchase"
                 UiLanguage.Japanese -> "購入で解放"
                 UiLanguage.ChineseSimplified -> "购买后解锁"
+            }
+        }
+
+    /**
+     * 조각 광고가 실패했을 때의 안내. **사유별로 문구가 다르다** — "광고를 못 불러왔다"는 구글
+     * 쪽 사정이라 나중에 다시 시도하면 되지만, "끝까지 안 봤다"는 사용자가 지금 바꿀 수 있는
+     * 일이다. 프리미엄용 문구(`premiumAdGrantFailedMessage`)를 재사용하면 캐릭터 조각을 모으던
+     * 사용자에게 "프리미엄이 활성화되지 않았습니다"라는 엉뚱한 안내가 나간다(2026-08-29 정정).
+     */
+    fun botShardAdFailedMessage(reason: AdRewardFailureReason): String =
+        when (reason) {
+            AdRewardFailureReason.DismissedWithoutReward -> when (language) {
+                UiLanguage.Korean -> "끝까지 보셔야 조각을 받을 수 있어요."
+                UiLanguage.English -> "Watch to the end to earn a shard."
+                UiLanguage.Japanese -> "最後まで視聴するとかけらを獲得できます。"
+                UiLanguage.ChineseSimplified -> "看完整段广告才能获得碎片。"
+            }
+            // 로드/노출 실패와 Activity 미확보는 전부 앱 밖의 사정이라 같은 안내로 묶는다.
+            AdRewardFailureReason.LoadFailed,
+            AdRewardFailureReason.ShowFailed,
+            AdRewardFailureReason.Unavailable,
+            -> when (language) {
+                UiLanguage.Korean -> "광고를 불러오지 못했어요, 잠시 후 다시 시도해 주세요."
+                UiLanguage.English -> "Couldn't load an ad. Please try again in a moment."
+                UiLanguage.Japanese -> "広告を読み込めませんでした。しばらくしてからもう一度お試しください。"
+                UiLanguage.ChineseSimplified -> "广告加载失败，请稍后再试。"
             }
         }
 
@@ -370,6 +403,17 @@ internal data class UiStrings(
                     UiLanguage.English -> "New character · $name"
                     UiLanguage.Japanese -> "新キャラクター · $name"
                     UiLanguage.ChineseSimplified -> "新角色 · $name"
+                }
+            }
+            // 획득이 아니라 진행도라는 것이 드러나야 한다 — "새 캐릭터"로 적으면 지금 쓸 수 있는
+            // 줄 알고 픽커에 갔다가 여전히 잠겨 있는 것을 보게 된다.
+            is AttendanceReward.BotCharacterShards -> {
+                val name = reward.character.name
+                when (language) {
+                    UiLanguage.Korean -> "$name 조각 ${reward.amount}개"
+                    UiLanguage.English -> "$name shards ×${reward.amount}"
+                    UiLanguage.Japanese -> "$name のかけら ${reward.amount}個"
+                    UiLanguage.ChineseSimplified -> "$name 碎片 ×${reward.amount}"
                 }
             }
         }

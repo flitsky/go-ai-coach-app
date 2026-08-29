@@ -318,7 +318,7 @@ internal fun PremiumUpsellDialogHost(
                 val outcome = premium.activateAdGrant()
                 isAdGrantInProgress = false
                 when (outcome) {
-                    AdRewardOutcome.RewardEarned -> {
+                    is AdRewardOutcome.RewardEarned -> {
                         onDismiss()
                         onAnyChoice()
                     }

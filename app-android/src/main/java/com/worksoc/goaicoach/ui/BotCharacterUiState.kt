@@ -10,6 +10,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,6 +47,15 @@ internal data class BotCharacterUiState(
     val watchAdForShard: suspend (BotCharacter) -> AdRewardOutcome = {
         AdRewardOutcome.NotRewarded(AdRewardFailureReason.Unavailable)
     },
+    /**
+     * 저장소를 다시 읽어 화면이 든 사본을 맞춘다.
+     *
+     * 이 상태는 저장소를 **한 번만** 읽고 그 뒤로는 자기 쓰기 경로(광고 조각)로만 갱신되는데,
+     * 컬렉션에 쓰는 경로가 그것 하나가 아니다 — 출석 보상이 `BotCollectionStore`에 직접 쓴다
+     * (`runAttendanceRewardGrant`). 그래서 출석으로 조각을 받거나 캐릭터를 열어도 픽커는 앱을
+     * 다시 켤 때까지 옛 숫자를 보여줬다(2026-08-29 실기 확인: 조각을 받은 직후에도 3/10).
+     */
+    val refresh: () -> Unit = {},
 ) {
     /** 지금 이 캐릭터로 대국할 수 있는가. 기본 제공은 획득 기록 없이도 통과한다(#16). */
     fun isAvailable(character: BotCharacter): Boolean = collection.isAvailable(character)
@@ -70,6 +80,7 @@ internal fun buildBotCharacterUiState(context: Context): BotCharacterUiState {
     var collection by remember(store) { mutableStateOf(store.load()) }
     return BotCharacterUiState(
         collection = collection,
+        refresh = { collection = store.load() },
         watchAdForShard = { character ->
             val outcome = showRewardedAdOnce(context)
             // 시청 성공일 때만 적립한다 — 광고를 끝까지 안 봤는데 조각이 쌓이면 안 된다.
@@ -107,6 +118,10 @@ internal fun BotCharacterPickerDialog(
 ) {
     val strings = LocalUiStrings.current
     val bots = LocalBotCharacterUiState.current
+
+    // 픽커를 열 때마다 저장소를 다시 읽는다 — 출석 보상처럼 이 상태를 거치지 않는 쓰기 경로가
+    // 있어서, 여는 시점에 맞추지 않으면 방금 받은 조각이 반영되지 않는다.
+    LaunchedEffect(Unit) { bots.refresh() }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -206,7 +221,10 @@ internal suspend fun watchAdForShardAndReport(
     val before = bots.shardsFor(character)
     val outcome = bots.watchAdForShard(character)
     val message = when {
-        outcome !is AdRewardOutcome.RewardEarned -> strings.premiumAdGrantFailedMessage
+        // 프리미엄 문구를 재사용하지 않는다 — 조각을 모으던 사용자에게 "프리미엄이 활성화되지
+        // 않았습니다"가 뜨던 버그를 2026-08-29에 정정했다.
+        outcome is AdRewardOutcome.NotRewarded -> strings.botShardAdFailedMessage(outcome.reason)
+        outcome !is AdRewardOutcome.RewardEarned -> return
         before + 1 >= required -> strings.botUnlockedToast(character)
         else -> strings.botShardEarnedToast(character, before + 1, required)
     }

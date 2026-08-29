@@ -21,15 +21,19 @@ data class BotCharacterShardGrant(
  * 뒤에만 부르는 것이 호출부의 책임이다 — 프리미엄 쪽(`runPremiumAdGrantApplication`)이 시청
  * 결과를 상태 전이로 바꾸는 것과 같은 분업이다.
  *
+ * [amount]는 한 번에 적립할 조각 수다 — 광고 시청은 1개씩이지만 출석 장기 보상은 여러 개를
+ * 한꺼번에 줄 수 있다.
+ *
  * @return 적립 후 상태와 이번에 획득까지 갔는지. 조각 경로가 아니거나 이미 가진 캐릭터면
- *   저장하지 않고 `null`을 돌려준다.
+ *   저장하지 않고 `null`을 돌려준다 — 호출부는 이 `null`로 "알릴 것이 없다"를 판정한다.
  */
 fun runBotCharacterShardGrant(
     character: BotCharacter,
     store: BotCollectionStorePort,
+    amount: Int = 1,
 ): BotCharacterShardGrant? {
     val current = store.load()
-    val next = current.withAdShard(character)
+    val next = current.withAdShards(character, amount)
     if (next == current) return null
     store.save(next)
     return BotCharacterShardGrant(state = next, unlocked = next.isClaimed(character.id))

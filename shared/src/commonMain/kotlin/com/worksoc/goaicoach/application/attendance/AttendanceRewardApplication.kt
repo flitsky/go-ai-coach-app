@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.application.attendance
 
 import com.worksoc.goaicoach.application.botcharacter.BotCollectionStorePort
+import com.worksoc.goaicoach.application.botcharacter.runBotCharacterShardGrant
 import com.worksoc.goaicoach.application.botcharacter.runBotCharacterUnlock
 import com.worksoc.goaicoach.application.consumable.ConsumableStorePort
 import com.worksoc.goaicoach.application.consumable.runConsumableGrant
@@ -55,23 +56,32 @@ fun runAttendanceRewardGrant(
     if (pending.isEmpty()) return AttendanceRewardGrantResult(state = state, granted = emptyList())
 
     var next = state
+    val granted = mutableListOf<AttendanceRewardTier>()
     for (tier in pending) {
-        for (reward in tier.rewards) {
+        // 흘려보낸 것과 **알릴 것**은 다르다 — 조각은 7일차마다 영원히 반복되므로, 이미 다 모은
+        // 캐릭터의 조각까지 팝업에 적으면 그 사용자는 매주 의미 없는 줄을 보게 된다.
+        val announced = tier.rewards.filter { reward ->
             grant(reward, premiumStore, consumableStore, botStore)
         }
+        if (announced.isNotEmpty()) granted += tier.copy(rewards = announced)
         next = next.withTierClaimed(tier.tier)
     }
     attendanceStore.save(next)
-    return AttendanceRewardGrantResult(state = next, granted = pending)
+    return AttendanceRewardGrantResult(state = next, granted = granted)
 }
 
-/** 보상 한 건을 그 종류에 맞는 저장소에 흘려보낸다. */
+/**
+ * 보상 한 건을 그 종류에 맞는 저장소에 흘려보낸다.
+ *
+ * @return 사용자에게 알릴 만한 변화가 실제로 있었는가. 조각만 판정하고 나머지는 항상 `true`다 —
+ *   조각 외의 보상은 반복 회차에 걸려 있지 않아, 이미 가진 것을 다시 받는 일이 사실상 없다.
+ */
 private fun grant(
     reward: AttendanceReward,
     premiumStore: PremiumStateStorePort,
     consumableStore: ConsumableStorePort,
     botStore: BotCollectionStorePort,
-) {
+): Boolean {
     when (reward) {
         // 이미 클레임돼 있으면(예: 예전에 인게임 클레임 팝업으로 직접 받은 사용자) null을
         // 돌려주지만, 출석 쪽 지급 기록은 그대로 남긴다 — "이 일차는 처리 완료"가 사실이므로
@@ -79,5 +89,9 @@ private fun grant(
         is AttendanceReward.PermanentFeature -> runPremiumFeatureClaim(reward.featureId, premiumStore)
         is AttendanceReward.Consumable -> runConsumableGrant(reward.item, reward.amount, consumableStore)
         is AttendanceReward.BotCharacterUnlock -> runBotCharacterUnlock(reward.character.id, botStore)
+        // 이미 다 모은 캐릭터면 `null`이 돌아온다 — 그때만 알리지 않는다.
+        is AttendanceReward.BotCharacterShards ->
+            return runBotCharacterShardGrant(reward.character, botStore, reward.amount) != null
     }
+    return true
 }

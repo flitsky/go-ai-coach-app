@@ -36,6 +36,13 @@ data class BotCollectionState(
      * 조각 경로가 아닌 캐릭터([BotUnlockSource.AdShards]가 아님)나 이미 획득한 캐릭터는 그대로
      * 돌려준다 — 호출부가 실수로 불러도 상태가 오염되지 않게 하는 방어다.
      */
+    /**
+     * 조각 [count]개를 한 번에 적립한다. 도중에 필요 수를 채우면 그 시점에 획득으로 넘어가고
+     * 남는 조각은 버려진다 — 출석 장기 보상이 여러 개를 한꺼번에 줄 수 있어 필요해졌다.
+     */
+    fun withAdShards(character: BotCharacter, count: Int): BotCollectionState =
+        (1..count).fold(this) { state, _ -> state.withAdShard(character) }
+
     fun withAdShard(character: BotCharacter): BotCollectionState {
         val source = character.unlockSource as? BotUnlockSource.AdShards ?: return this
         if (isClaimed(character.id)) return this

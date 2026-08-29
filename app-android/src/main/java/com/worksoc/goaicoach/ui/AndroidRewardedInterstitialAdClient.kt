@@ -76,14 +76,11 @@ internal class AndroidRewardedInterstitialAdClient(
     // 판정한다(Google 공식 가이드가 권장하는 순서 — RewardedAd와 동일).
     private suspend fun showLoadedAdOnce(ad: RewardedInterstitialAd): AdRewardOutcome =
         suspendCancellableCoroutine { continuation ->
-            var rewardEarned = false
+            var reward: AdRewardOutcome.RewardEarned? = null
             ad.fullScreenContentCallback = object : FullScreenContentCallback() {
                 override fun onAdDismissedFullScreenContent() {
-                    val outcome = if (rewardEarned) {
-                        AdRewardOutcome.RewardEarned
-                    } else {
-                        AdRewardOutcome.NotRewarded(AdRewardFailureReason.DismissedWithoutReward)
-                    }
+                    val outcome = reward
+                        ?: AdRewardOutcome.NotRewarded(AdRewardFailureReason.DismissedWithoutReward)
                     continuation.resume(outcome)
                 }
 
@@ -91,6 +88,11 @@ internal class AndroidRewardedInterstitialAdClient(
                     continuation.resume(AdRewardOutcome.NotRewarded(AdRewardFailureReason.ShowFailed, error.message))
                 }
             }
-            ad.show(activity) { rewardEarned = true }
+            // 콜백 인자(RewardItem)는 콘솔에 설정한 보상 종류/수량이다. 앱은 이 값으로 보상을
+            // 계산하지 않지만(AdRewardOutcome.RewardEarned KDoc 참고), 진단에서 콘솔과 앱 해석이
+            // 어긋난 것을 알아채려면 버리지 않고 실어 보내야 한다.
+            ad.show(activity) { item ->
+                reward = AdRewardOutcome.RewardEarned(type = item.type, amount = item.amount)
+            }
         }
 }

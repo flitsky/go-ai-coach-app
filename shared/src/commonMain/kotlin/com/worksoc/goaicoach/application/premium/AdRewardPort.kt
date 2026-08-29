@@ -34,7 +34,19 @@ enum class AdRewardFailureReason {
  * ([runPremiumAdGrantApplication]이 이 값을 상태 전이로 변환한다).
  */
 sealed interface AdRewardOutcome {
-    data object RewardEarned : AdRewardOutcome
+    /**
+     * 시청 완료. [type]/[amount]는 광고 SDK가 콜백으로 준 **AdMob 콘솔의 보상 설정**이다.
+     *
+     * ⚠️ 앱은 이 값을 **보상 계산에 쓰지 않는다** — 광고 1회가 무엇이 되는지는 앱이 정한다
+     * (프리미엄 1시간 / 캐릭터 조각 1개). 같은 광고 단위를 두 용도가 공유하는데 콘솔 보상값은
+     * 하나뿐이라, 콘솔을 진실의 원천으로 삼을 수 없기 때문이다. 그래도 값을 버리지 않고 실어
+     * 보내는 이유는 **콘솔 설정과 앱 해석이 어긋났을 때 진단 로그로 드러나게** 하기 위함이다
+     * (2026-08-29 사용자 지적으로 추가 — 그전에는 콜백 인자를 아예 받지 않고 버렸다).
+     */
+    data class RewardEarned(
+        val type: String? = null,
+        val amount: Int? = null,
+    ) : AdRewardOutcome
 
     data class NotRewarded(
         val reason: AdRewardFailureReason,

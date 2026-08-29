@@ -189,7 +189,28 @@
 
 ### 진행 중
 
-(없음)
+20. 조각 광고 시청 후 캐릭터 픽커가 닫히는 문제 (AI 모델: Sonnet, 노력정도: 중간) [진행중]
+    - 참고: 킥오프 플랜 7.1절. **#11에서 발견했으나 원인을 못 찾아 분리한 항목이다** — 기능 결함은 아니고 번거로움이지만, 사범 묘수는 조각 10개라 픽커를 열 번 다시 열어야 해서 무시하기 어렵다.
+    - **증상**: 픽커에서 조각 경로 캐릭터를 탭 → 광고 시청 → 앱 복귀 시 **픽커가 닫혀 있다.** 조각은 정상 적립된다(기능은 동작). 대국 설정 화면으로 돌아와 버려 연속 시청이 끊긴다.
+    - **계측으로 확인된 사실(2026-08-29)**: `DisposableEffect`+로그로 (a)를 갈랐다 — **`PlayerSetupPanel`은 살아남는다**(`panel-dispose`가 한 번도 찍히지 않음). **다이얼로그만 dispose된다.** 광고 종료 직후 `onDismissRequest`가 **두 번** 날아오고, 그 시점에는 이미 `adInProgress=false`다(코루틴이 먼저 재개된다).
+    - **이미 시도했고 전부 실패한 것**(같은 것을 반복하지 말 것):
+      ① `onDismissRequest`를 `adInProgress` 중에는 무시 → 요청이 플래그 해제 **뒤에** 와서 통과됨
+      ② `showPicker`를 `rememberSaveable`로 전환 → 효과 없음(다시 `remember`로 되돌림)
+      ③ 광고 종료 후 700ms 동안 dismiss를 무시하는 별도 유예 창(`ignoreDismiss`) → 효과 없음
+      ④ 광고 코루틴을 다이얼로그에서 **패널로 올리고** 끝난 뒤 `showPicker = true`로 복구 → **대입이 반영되지 않는다**(왜인지 미상). 이 구조 변경 자체는 스코프 취소를 피하는 개선이라 코드에 남겼고, 복구 줄도 자리가 맞으므로 남겨 뒀다.
+    - **가장 유망한 다음 수(제안)**: `AlertDialog`가 Activity 전환에 취약한 것이 근본 원인으로 보이므로, 픽커를 **다이얼로그가 아닌 것**(`ModalBottomSheet` 또는 전용 `ScreenDestination`)으로 바꾸면 문제가 통째로 사라질 가능성이 높다. 다만 이는 #10이 정한 UI 형태를 바꾸는 것이라 착수 전 사용자 확인이 필요하다.
+    - 관련 파일: `ui/PlayerSetupPanel.kt`(`showPicker`), `ui/BotCharacterUiState.kt`(`BotCharacterPickerDialog`), `ui/GameSetupLobby.kt`.
+
+
+21. 조각 획득의 광고 단일 의존성 해소 + 조각 실패 안내 분리 (AI 모델: Opus, 노력정도: 중간) [진행중]
+    - 참고: 킥오프 플랜 7장. **#20 진행 중 사용자 지적으로 발행된 항목이다** — "광고 시청으로 조각 모으는 것은 구글측 의존성이 들어가므로 항상 성립하지 않을 수 있다. 그 점이 간과된 것인지 체크하라. 그리고 광고 완료 후 리턴값을 받는 것으로 아는데 이 부분도 더블체크."
+    - **확인된 사실**: 지적 두 가지 모두 실제 결함이었다. ⓐ 2·4단계는 획득 경로가 `AdShards` 하나뿐이라 광고가 채워지지 않으면 영구히 잠긴다. ⓑ `ad.show(activity) { rewardEarned = true }`가 `RewardItem`을 통째로 버리고 있었다. ⓒ 덤으로, 조각 광고 실패 시 프리미엄용 문구("프리미엄이 활성화되지 않았습니다")가 그대로 나가고 있었다.
+    - **범위(사용자 확정)**: ⓐ **출석 장기 보상으로 조각 획득 경로 추가** / ⓑ 리턴값 포착 / ⓒ 실패 문구 분리. **유료 구매로 조각을 파는 안은 보류**(가능성은 열어 둠) — 열게 되면 #18에 붙는다.
+    - **작업 중 드러난 기존 결함 2건도 함께 고쳤다**: ⓐ Claim 팝업이 지급 **전** 목록을 정책표에서 직접 읽어, 이미 다 모은 캐릭터의 조각까지 매주 보여줬다(`pendingTiers(state, collection)` 신설). ⓑ 픽커가 저장소를 한 번만 읽어, 출석으로 받은 조각이 앱을 다시 켤 때까지 반영되지 않았다(픽커 열 때 재조회).
+    - **실기 검증(에뮬레이터, 2026-08-29)**: 14일차 지급 → `fast_beginner_4` 조각 3→4, 이미 가진 `fast_beginner_2`의 조각 줄은 팝업에서 빠짐. 21일차 지급 → 4→5, 픽커가 같은 실행에서 곧바로 5/10 표시. 네트워크를 끊고 조각 탭 → "광고를 불러오지 못했어요, 잠시 후 다시 시도해 주세요."
+    - 산출물(승인 대기): `application/attendance/AttendanceRewardPolicy.kt`(`BotCharacterShards` 보상 + `WeeklyShardAmount`), `AttendanceRewardApplication.kt`(지급 경로 + "알릴 것" 필터), `application/botcharacter/BotCharacterCatalog.kt`(`shardPathCharacters`), `BotCollectionState.kt`(`withAdShards`), `BotCharacterShardApplication.kt`(`amount`), `application/premium/AdRewardPort.kt`(`RewardEarned(type, amount)`), `PremiumAdGrantApplication.kt`(진단 로그), `ui/AndroidRewardedInterstitialAdClient.kt`, `ui/UiStrings.kt`, `ui/BotCharacterUiState.kt`, `ui/AttendanceRewardClaimDialog.kt`, 테스트 3건.
+
+---
 
 ### 예정사항
 
@@ -201,13 +222,6 @@
 > 두 조각(#16 카탈로그 재구성 / #19 정책표·지급량 갱신)으로 나눠 **남은 순서는
 > 16 → 19 → 17 → 10 → 11 → 18**이다 — #19가 #17보다 앞선 이유는 #17 자신이 이미
 > "지급량이 바뀌므로 그 갱신 이후 착수"라고 못박아 뒀기 때문이다(아래 #17 참고).
-
-20. 조각 광고 시청 후 캐릭터 픽커가 닫히는 문제 (AI 모델: Sonnet, 노력정도: 중간)
-    - 참고: 킥오프 플랜 7.1절. **#11에서 발견했으나 원인을 못 찾아 분리한 항목이다** — 기능 결함은 아니고 번거로움이지만, 사범 묘수는 조각 10개라 픽커를 열 번 다시 열어야 해서 무시하기 어렵다.
-    - **증상**: 픽커에서 조각 경로 캐릭터를 탭 → 광고 시청 → 앱 복귀 시 **픽커가 닫혀 있다.** 조각은 정상 적립된다(기능은 동작). 대국 설정 화면으로 돌아와 버려 연속 시청이 끊긴다.
-    - **이미 시도했고 효과가 없었던 것**(같은 것을 반복하지 말 것): ① `AlertDialog.onDismissRequest`를 광고 진행 중에는 무시 ② `showPicker`를 `remember` → `rememberSaveable`. 두 조치 모두 코드에 남아 있고 주석에 "해결하지 못했다"고 적혀 있다.
-    - **다음에 확인할 것**: (a) 다이얼로그가 닫히는 것인지 `PlayerSetupPanel` 자체가 재구성되며 상태가 초기화되는 것인지 — 로그나 `DisposableEffect`로 먼저 구분할 것. (b) `GameSetupLobby`가 화면 전환/`onResume`에서 상태를 다시 만드는 경로가 있는지. (c) 광고 후 픽커를 **다시 열어주는** 우회(원인 해결 대신)로 충분한지.
-    - 관련 파일: `ui/PlayerSetupPanel.kt`(`showPicker`), `ui/BotCharacterUiState.kt`(`BotCharacterPickerDialog`), `ui/GameSetupLobby.kt`.
 
 18. 봇 캐릭터 개별 구매 배선 — 5단계 관장 천원, 9,900원 단발성 결제·영구 소유 (AI 모델: Opus, 노력정도: 높음)
     - 참고: 7장 획득 경로 표. **Phase 1 범위 확장이다** — 7장이 원래 "범위 밖(설계만 고려)"으로 못박아 뒀던 항목인데 2026-08-24에 범위 안으로 들어왔다.
