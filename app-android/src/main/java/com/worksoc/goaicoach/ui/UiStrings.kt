@@ -10,6 +10,8 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import com.worksoc.goaicoach.application.engine.operation.EngineActivityIndicator
 import com.worksoc.goaicoach.application.attendance.AttendanceReward
 import com.worksoc.goaicoach.application.consumable.ConsumableCatalog
+import com.worksoc.goaicoach.application.botcharacter.BotCharacter
+import com.worksoc.goaicoach.application.botcharacter.BotUnlockSource
 import com.worksoc.goaicoach.application.consumable.ConsumableItem
 import com.worksoc.goaicoach.application.gamehistory.GameHistoryResult
 import com.worksoc.goaicoach.application.premium.FeatureId
@@ -181,6 +183,11 @@ internal data class UiStrings(
      * 안드로이드 토스트는 2줄까지만 보여주고 넘치면 자르므로 짧게 유지할 것.
      */
     val everyMoveHint: String,
+    /** 캐릭터 픽커 제목. */
+    val botPickerTitle: String,
+    /** 픽커 닫기. */
+    val botPickerCloseAction: String,
+
     val premiumUpsellUseTicketAction: String,
     val attendanceRewardTitle: String,
     val attendanceRewardClaimAction: String,
@@ -251,6 +258,43 @@ internal data class UiStrings(
             UiLanguage.English -> "Would you like to optimize this match using local cache?\nStoring key positions helps responsiveness in future play.\n\nInitially secures the first $initialCount moves, expanding to $maxCount moves later.\nTarget: Up to $targetCount JSON analysis records out of $moveCount moves."
             UiLanguage.Japanese -> "この対局の主要な局面を分析キャッシュに保存しますか？\n次回プレイで同じ流れになった際、より素早く応答できます。\n\nまず序盤${initialCount}手を確保し、安定すれば${maxCount}手まで拡張します。\n対象：${moveCount}手の対局中、最大${targetCount}個のJSON分析"
             UiLanguage.ChineseSimplified -> "是否在分析缓存中优化本局？\n存储关键局面有利于在以后的对局中提高响应速度。\n\n初始时保存前 $initialCount 手，稳定后可扩展到 $maxCount 手。\n目标：从 $moveCount 手对局中提取最多 $targetCount 个 JSON  分析记录。"
+        }
+
+    /**
+     * 캐릭터 픽커의 한 줄 라벨 — **이름 옆에 티어명을 병기**한다(백로그 #9 확정). 이름만으로는
+     * 어느 쪽이 센지 모호해서, 캐릭터 선택이 곧 난이도 선택이라는 것이 드러나지 않는다.
+     */
+    fun botCharacterLabel(character: BotCharacter): String =
+        "${character.name} (${fastBeginnerTierLabel(character.tierWithinGroup ?: 1)})"
+
+    /**
+     * 잠긴 캐릭터의 **획득 방법** 안내. 경로가 셋으로 갈리므로(출석/광고 조각/유료) 각각을
+     * 구분해 보여준다 — 픽커에서 "왜 못 고르는가"가 곧 "무엇을 하면 되는가"여야 한다.
+     *
+     * 광고 조각의 진행도(예: 3/5)는 아직 저장하지 않는다 — 그 상태는 #11의 몫이라 여기서는
+     * 필요 횟수만 알린다. 유료 캐릭터의 가격은 Play Console 상품이 아직 없어 적지 않는다(#18).
+     */
+    fun botUnlockHint(source: BotUnlockSource): String? =
+        when (source) {
+            BotUnlockSource.Default -> null
+            is BotUnlockSource.Attendance -> when (language) {
+                UiLanguage.Korean -> "출석 ${source.tier}일차에 받을 수 있어요"
+                UiLanguage.English -> "Comes with day ${source.tier} of check-in"
+                UiLanguage.Japanese -> "出席${source.tier}日目で獲得"
+                UiLanguage.ChineseSimplified -> "签到第${source.tier}天可获得"
+            }
+            is BotUnlockSource.AdShards -> when (language) {
+                UiLanguage.Korean -> "광고 ${source.required}회를 보면 열려요"
+                UiLanguage.English -> "Unlocks after ${source.required} ads"
+                UiLanguage.Japanese -> "広告${source.required}回で解放"
+                UiLanguage.ChineseSimplified -> "观看${source.required}次广告后解锁"
+            }
+            BotUnlockSource.Purchase -> when (language) {
+                UiLanguage.Korean -> "구매로 열려요"
+                UiLanguage.English -> "Unlocks with a purchase"
+                UiLanguage.Japanese -> "購入で解放"
+                UiLanguage.ChineseSimplified -> "购买后解锁"
+            }
         }
 
     /**

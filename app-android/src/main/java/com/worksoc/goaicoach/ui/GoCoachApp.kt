@@ -753,6 +753,8 @@ private fun GoCoachScreen(
 
     // 소모품 재고/단발성 상태 배선의 본체는 ui/ConsumableUiState.kt에 있다(위와 같은 이유).
     val consumableUiState = buildConsumableUiState(context) { next -> premiumState = next }
+    // 봇 캐릭터 수집 상태 — #8이 배선을 남겨 둔 자리를 #10이 채운다(본체는 ui/BotCharacterUiState.kt).
+    val botCharacterUiState = buildBotCharacterUiState(context)
 
     // 프리미엄 만료/해제 시 형세보기·추천수 토글을 되끄는 효과 — 본체는 ui/PremiumUiState.kt에 있다(위와 같은 이유).
     PremiumExpiryAutoDisableEffect(premiumState, topMovesEnabled, uxOptions.showOwnershipOverlay, consumableUiState, diagnosticEventLog, controllers.topMovesController::hide) { uxOptions = uxOptions.copy(showOwnershipOverlay = false) }
@@ -760,7 +762,11 @@ private fun GoCoachScreen(
     // 1회권으로 켠 표시는 단발성이라 다음 수가 놓이면 스스로 꺼진다 — 프리미엄 토글과 달리 계속 갱신되지 않는 것이 "1회"의 단위다(4.5절).
     OneShotAnalysisAutoClear(consumableUiState, gameState.moves.size, controllers.topMovesController::hide) { uxOptions = uxOptions.copy(showOwnershipOverlay = false) }
 
-    CompositionLocalProvider(LocalPremiumUiState provides premiumUiState, LocalConsumableUiState provides consumableUiState) {
+    CompositionLocalProvider(
+        LocalPremiumUiState provides premiumUiState,
+        LocalConsumableUiState provides consumableUiState,
+        LocalBotCharacterUiState provides botCharacterUiState,
+    ) {
     when (currentDestination) {
         ScreenDestination.Onboarding -> {
             OnboardingScreen(

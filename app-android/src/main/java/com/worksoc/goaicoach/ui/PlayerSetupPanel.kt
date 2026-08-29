@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.ui
 
+import com.worksoc.goaicoach.application.botcharacter.BotCharacterCatalog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -209,30 +210,44 @@ private fun PlayerSetupSideRow(
         // 초심자 진입 난이도를 낮추는 게 목적. 초급/중급/고급 그룹은 코드는 남아있지만
         // 이 화면에서는 완전히 숨겼다(대체 진입 경로는 docs/engine-research의
         // FAST_BEGINNER_FIVE_TIER_REDESIGN_PLAN 문서 로드맵 참고).
+        // 2026-08-29(#10)부터 단계 드롭다운을 **캐릭터 픽커**로 대체했다 — 7.1절대로 캐릭터
+        // 하나가 티어 하나에 1:1로 대응하므로 "캐릭터를 고르는 행위 = 난이도 선정"이다. 버튼은
+        // 지금 상대를 이름+티어명으로 보여주고, 탭하면 5종 목록(잠긴 것 포함)이 열린다.
         if (side.controller == SeatController.Ai) {
             val fastBeginnerLevel = if (side.playLevel.group == PlayLevelGroup.FastBeginner) {
                 side.playLevel.safeLevel
             } else {
                 1
             }
+            val current = BotCharacterCatalog.forPlayLevel(
+                PlayLevelSetting(group = PlayLevelGroup.FastBeginner, level = fastBeginnerLevel),
+            )
+            var showPicker by remember { mutableStateOf(false) }
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Spacer(modifier = Modifier.weight(1f))
-                SetupDropdown(
-                    selectedText = strings.fastBeginnerTierLabel(fastBeginnerLevel),
+                OutlinedButton(
+                    onClick = { showPicker = true },
                     enabled = enabled,
-                    modifier = Modifier.width(112.dp),
-                    options = (1..PlayLevelGroup.FastBeginner.maxLevel).toList(),
-                    optionLabel = { level -> strings.fastBeginnerTierLabel(level) },
-                    onSelected = { level ->
-                        onSideChange(
-                            side.copy(
-                                playLevel = PlayLevelSetting(group = PlayLevelGroup.FastBeginner, level = level),
-                            ),
-                        )
+                ) {
+                    Text(
+                        text = current?.let(strings::botCharacterLabel)
+                            ?: strings.fastBeginnerTierLabel(fastBeginnerLevel),
+                        style = MaterialTheme.typography.labelLarge,
+                    )
+                }
+            }
+            if (showPicker) {
+                BotCharacterPickerDialog(
+                    selected = current,
+                    onSelect = { character ->
+                        character.toPlayLevelSetting()?.let { level ->
+                            onSideChange(side.copy(playLevel = level))
+                        }
                     },
+                    onDismiss = { showPicker = false },
                 )
             }
         }

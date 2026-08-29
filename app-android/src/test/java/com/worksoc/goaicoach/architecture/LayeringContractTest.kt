@@ -1434,8 +1434,14 @@ class LayeringContractTest {
         // and must skip toggles a one-shot ticket turned on), so hoisting it was the only way
         // to take that fix without regrowing the shell — same move as buildPremiumUiState and
         // OneShotAnalysisAutoClear before it.
-        val lineBudget = 845
-        val stateHookBudget = 45
+        //
+        // History (2026-08-29, backlog #10): bumped 845->851, stateHookBudget 45->46. Wiring the
+        // bot collection store for the character picker: one buildBotCharacterUiState line plus a
+        // third CompositionLocal, which pushed the provider call onto its own lines. The state and
+        // the picker dialog itself live in ui/BotCharacterUiState.kt, so the shell only holds
+        // wiring — same split as buildPremiumUiState and buildConsumableUiState.
+        val lineBudget = 851
+        val stateHookBudget = 46
 
         val goCoachApp = repoRoot()
             .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
