@@ -163,12 +163,14 @@ internal fun GoBoard(
                 if (uxOptions.showCoordinates) {
                     drawBoardCoordinates(geometry, gameState.boardSize)
                 }
-                if (ownershipEstimate != null && (premium.isActive || isGameEnded)) {
+                // 그릴지 말지의 권한 판정은 호출부(GamePlaySection)가 한다 — 여기서 premium.isActive를
+                // 다시 보면 1회권으로 켠 표시가 걸러진다(1회권 사용자는 정의상 프리미엄이 비활성이라
+                // 티켓만 차감되고 아무것도 안 보이던 버그, 2026-08-29 실기 확인). 보드는 넘어온
+                // 데이터가 있으면 그린다.
+                if (ownershipEstimate != null) {
                     drawOwnershipOverlay(geometry, gameState, ownershipEstimate)
                 }
-                if (premium.isActive) {
-                    drawCandidateMoves(geometry, gameState, candidateMoves)
-                }
+                drawCandidateMoves(geometry, gameState, candidateMoves)
 
                 for ((coordinate, stone) in gameState.stones) {
                     drawStone(geometry.pointFor(coordinate), geometry.spacing * 0.42f, stone, isGameEnded)

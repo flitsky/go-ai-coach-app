@@ -45,6 +45,8 @@ internal fun KaTrainUxMenuButton(
 internal fun KaTrainUxMenuPanel(
     options: KaTrainUxOptions,
     onOptionsChange: (KaTrainUxOptions) -> Unit,
+    isTopMovesEveryMove: Boolean = false,
+    onTopMovesEveryMoveChange: (Boolean) -> Unit = {},
 ) {
     val strings = LocalUiStrings.current
     val premium = LocalPremiumUiState.current
@@ -123,6 +125,42 @@ internal fun KaTrainUxMenuPanel(
                 )
                 Spacer(modifier = Modifier.width(columnGap))
                 Spacer(modifier = Modifier.weight(1f))
+            }
+            // '매 수마다' 2종(2026-08-29 신설). 대국 화면의 형세 보기·추천 수 버튼은 이제
+            // **1회성 동작**이고, 수가 진행돼도 계속 갱신되는 상시 표시는 여기서 켠다 — 버튼이
+            // 상태 토글과 1회성 동작을 겸하면 "한 번 켜면 계속 켜져 있다"는 잘못된 기대가 생겨
+            // 두 축을 분리했다. 상시 표시는 프리미엄 전용이며, 판정은 버튼과 같은
+            // FeatureAccessPolicy(6계층)를 쓴다.
+            val evalAllowed = premium.resolve(FeatureId.Eval) is FeatureAccess.Allowed
+            val topMovesAllowed = premium.resolve(FeatureId.TopMoves) is FeatureAccess.Allowed
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                OptionSwitchCell(
+                    label = strings.everyMoveEval,
+                    checked = options.showOwnershipOverlay && evalAllowed,
+                    modifier = Modifier.weight(1f).alpha(if (evalAllowed) 1f else 0.5f),
+                    onCheckedChange = {
+                        if (evalAllowed) {
+                            onOptionsChange(options.copy(showOwnershipOverlay = it))
+                        } else {
+                            showPremiumUpsellDialog = true
+                        }
+                    },
+                )
+                Spacer(modifier = Modifier.width(columnGap))
+                OptionSwitchCell(
+                    label = strings.everyMoveTopMoves,
+                    checked = isTopMovesEveryMove && topMovesAllowed,
+                    modifier = Modifier.weight(1f).alpha(if (topMovesAllowed) 1f else 0.5f),
+                    onCheckedChange = {
+                        if (topMovesAllowed) {
+                            onTopMovesEveryMoveChange(it)
+                        } else {
+                            showPremiumUpsellDialog = true
+                        }
+                    },
+                )
             }
         }
     }

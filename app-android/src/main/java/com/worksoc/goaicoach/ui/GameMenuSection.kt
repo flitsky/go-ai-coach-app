@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.worksoc.goaicoach.BuildConfig
 import com.worksoc.goaicoach.presentation.GameScreenState
+import com.worksoc.goaicoach.presentation.GameActionButtonRole
 import com.worksoc.goaicoach.presentation.GameUiEvent
 import com.worksoc.goaicoach.shared.formatBuildTime
 
@@ -125,6 +126,10 @@ internal fun ExpandedGameMenuSection(
         KaTrainUxMenuPanel(
             options = screenState.uxOptions,
             onOptionsChange = { nextOptions -> onEvent(GameUiEvent.ChangeUxOptions(nextOptions)) },
+            isTopMovesEveryMove = screenState.actionButtons
+                .firstOrNull { it.role == GameActionButtonRole.TopMoves }?.isFilled == true,
+            // 추천 수는 uxOptions가 아니라 세션 설정에 있어 전용 이벤트로 뒤집는다.
+            onTopMovesEveryMoveChange = { onEvent(GameUiEvent.ToggleTopMoves) },
         )
 
         SearchTimeSettingsPanel(

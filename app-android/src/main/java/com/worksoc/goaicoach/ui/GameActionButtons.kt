@@ -65,7 +65,7 @@ internal fun ToggleActionButton(
                 contentColor = MaterialTheme.colorScheme.onPrimary
             )
         ) {
-            ToggleActionButtonContent(label = label, isOn = true)
+            ToggleActionButtonContent(label = label)
         }
     } else {
         OutlinedButton(
@@ -76,7 +76,7 @@ internal fun ToggleActionButton(
             contentPadding = ActionButtonContentPadding,
             border = if (premiumLocked) PremiumLockedBorder else ActionButtonBorder,
         ) {
-            ToggleActionButtonContent(label = label, isOn = false)
+            ToggleActionButtonContent(label = label)
         }
     }
 }
@@ -122,46 +122,17 @@ internal fun ActionButton(
     }
 }
 
+/**
+ * 형세 보기·추천 수 버튼의 내용. **ON/OFF 뱃지를 두지 않는다**(2026-08-29 사용자 확정) —
+ * 이 버튼들은 이제 상태 토글이 아니라 **1회성 동작**이라, 상태 표기가 오히려 "켜 두면 계속
+ * 갱신된다"는 잘못된 기대를 준다. 매 수마다 보는 방식은 대국 메뉴의 별도 옵션이 담당한다.
+ * 채워진 배경(켜짐)은 지금 표시 중인지를 알리는 용도로만 남긴다.
+ */
 @Composable
-private fun ToggleActionButtonContent(
-    label: String,
-    isOn: Boolean,
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        ActionButtonText(label)
-        ToggleStateBadge(isOn = isOn)
-    }
+private fun ToggleActionButtonContent(label: String) {
+    ActionButtonText(label)
 }
 
-@Composable
-private fun ToggleStateBadge(isOn: Boolean) {
-    val containerColor = if (isOn) {
-        MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.18f)
-    } else {
-        MaterialTheme.colorScheme.surfaceVariant
-    }
-    val contentColor = if (isOn) {
-        MaterialTheme.colorScheme.onPrimary
-    } else {
-        MaterialTheme.colorScheme.onSurfaceVariant
-    }
-
-    Surface(
-        color = containerColor,
-        contentColor = contentColor,
-        shape = RoundedCornerShape(50),
-    ) {
-        Text(
-            text = if (isOn) "ON" else "OFF",
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Bold,
-        )
-    }
-}
 
 @Composable
 private fun ActionButtonText(label: String) {

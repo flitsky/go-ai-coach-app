@@ -45,7 +45,8 @@ internal data class ConsumableUiState(
     val spend: (ConsumableItem) -> ConsumableSpendDecision = { ConsumableSpendDecision.OutOfStock },
     val markOneShot: (FeatureId, Int) -> Unit = { _, _ -> },
     val clearOneShot: (FeatureId) -> Unit = {},
-    val expireOneShotsAtMove: (Int) -> Boolean = { false },
+    /** 이번 수에서 만료된 기능들을 돌려준다 — 만료되지 않은 다른 기능까지 같이 끄지 않기 위함이다. */
+    val expireOneShotsAtMove: (Int) -> Set<FeatureId> = { emptySet() },
 ) {
     fun countOf(item: ConsumableItem): Int = inventory.countOf(item.id)
 
@@ -93,37 +94,13 @@ internal fun buildConsumableUiState(
         markOneShot = { featureId, moveCount -> oneShots = oneShots + (featureId to moveCount) },
         clearOneShot = { featureId -> oneShots = oneShots - featureId },
         expireOneShotsAtMove = { moveCount ->
-            val expired = oneShots.filterValues { activatedAt -> activatedAt != moveCount }
-            if (expired.isEmpty()) {
-                false
-            } else {
-                oneShots = oneShots - expired.keys
-                true
-            }
+            val expired = oneShots.filterValues { activatedAt -> activatedAt != moveCount }.keys
+            if (expired.isNotEmpty()) oneShots = oneShots - expired
+            expired
         },
     )
 }
 
-/**
- * 1회권을 실제로 쓰기 전에 띄우는 확인 팝업. 재화를 말없이 쓰지 않기 위한 것이며(2026-08-24
- * 사용자 확정), 남은 장수도 여기서 함께 보여준다 — 잔량 표시는 "쓰려는 순간"에만 두기로 했다.
- */
-@Composable
-internal fun ConsumableSpendConfirmDialog(
-    item: ConsumableItem,
-    remaining: Int,
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit,
-) {
-    val strings = LocalUiStrings.current
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(strings.consumableSpendTitle) },
-        text = { Text(strings.consumableSpendMessage(item, remaining)) },
-        confirmButton = { Button(onClick = onConfirm) { Text(strings.consumableSpendConfirmAction) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(strings.consumableSpendCancelAction) } },
-    )
-}
 
 /**
  * 1회권으로 켠 단발성 표시를 다음 수에서 자동으로 끈다. `GoCoachApp.kt`의 상태 훅 예산이
@@ -138,8 +115,8 @@ internal fun OneShotAnalysisAutoClear(
     hideEval: () -> Unit,
 ) {
     LaunchedEffect(moveCount) {
-        if (!state.expireOneShotsAtMove(moveCount)) return@LaunchedEffect
-        hideTopMoves()
-        hideEval()
+        val expired = state.expireOneShotsAtMove(moveCount)
+        if (FeatureId.TopMoves in expired) hideTopMoves()
+        if (FeatureId.Eval in expired) hideEval()
     }
 }

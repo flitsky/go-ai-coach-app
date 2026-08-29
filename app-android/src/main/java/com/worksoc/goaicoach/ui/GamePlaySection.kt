@@ -94,14 +94,27 @@ internal fun GamePlaySection(
 
     Spacer(modifier = Modifier.height(8.dp))
 
+    // 보드에 무엇을 그릴 권한이 있는지는 여기서 정해 GoBoard에는 데이터만 넘긴다 — 보드가 스스로
+    // premium.isActive를 보면 1회권으로 켠 표시가 걸러진다(티켓만 차감되고 아무것도 안 보이던
+    // 버그, 2026-08-29 실기 확인). 세 경로가 모두 허용이다: 프리미엄 / 1회권 / 대국 종료.
+    val boardPremium = LocalPremiumUiState.current
+    val boardConsumables = LocalConsumableUiState.current
+    fun mayShow(featureId: FeatureId): Boolean =
+        boardPremium.resolve(featureId) is FeatureAccess.Allowed ||
+            boardConsumables.isOneShotActive(featureId) ||
+            screenState.isGameEnded
+
     GoBoard(
         gameState = screenState.gameState,
-        candidateMoves = screenState.analysis.candidateMoves,
+        candidateMoves = screenState.analysis.candidateMoves
+            .takeIf { mayShow(FeatureId.TopMoves) }
+            .orEmpty(),
         moveReviews = screenState.analysis.moveReviews,
         // 대국 종료 시엔 프리미엄 여부와 무관하게 최종 형세를 보여준다 — 이 값 자체는
         // '형세보기' 버튼의 켜짐 표시(GameScreenState.kt의 isFilled)와는 무관하다.
         ownershipEstimate = screenState.score.estimate?.ownership
-            ?.takeIf { screenState.uxOptions.showOwnershipOverlay || screenState.isGameEnded },
+            ?.takeIf { screenState.uxOptions.showOwnershipOverlay || screenState.isGameEnded }
+            ?.takeIf { mayShow(FeatureId.Eval) },
         uxOptions = screenState.uxOptions,
         inputEnabled = !screenState.isGameEnded &&
             screenState.matchSeats.current.canAcceptBoardInput,
@@ -322,7 +335,14 @@ private fun GameActionButtons(
     var showUndoClaimDialog by remember { mutableStateOf(false) }
     val consumables = LocalConsumableUiState.current
     val moveCount = screenState.gameState.moves.size
-    var pendingTicket by remember { mutableStateOf<PendingTicketSpend?>(null) }
+    // 대국 한 판에 한 번만 띄우는 안내 — 이 버튼들이 1회성이고, 매 수마다 보려면 대국 메뉴에
+    // 옵션이 따로 있다는 것을 알린다. 대국이 바뀌면(수순이 리셋되면) 다시 뜬다.
+    var everyMoveHintShown by remember(screenState.gameState.moves.size == 0) { mutableStateOf(false) }
+    fun showEveryMoveHintIfFirstTime() {
+        if (everyMoveHintShown) return
+        everyMoveHintShown = true
+        Toast.makeText(context, strings.everyMoveHint, Toast.LENGTH_LONG).show()
+    }
 
     // 기능별 판정은 FeatureAccessPolicy(6계층, application/premium/FeatureAccessPolicy.kt)에
     // 위임한다 — 어느 기능이 무료/광고/구매/클레임 중 무엇으로 풀리는지는 여기서 다시
@@ -334,40 +354,51 @@ private fun GameActionButtons(
     // 재고가 있으면 업셀 대신 사용 확인 팝업을 띄우고, 확인하면 한 장을 써서 이번 한 번만
     // 동작시킨다. 이미 1회권으로 켜 둔 표시를 다시 탭하는 것은 **끄는 동작**이므로 그냥
     // 통과시킨다 — 끄는 데 또 한 장을 받으면 "1회"가 반 번이 되기 때문이다.
-    fun featureGated(access: FeatureAccess, featureId: FeatureId? = null, action: () -> Unit) {
+    fun featureGated(
+        access: FeatureAccess,
+        featureId: FeatureId? = null,
+        turningOn: Boolean = true,
+        action: () -> Unit,
+    ) {
         if (featureId != null && consumables.isOneShotActive(featureId)) {
             consumables.clearOneShot(featureId)
             action()
             return
         }
         when (access) {
-            is FeatureAccess.Allowed -> action()
+            is FeatureAccess.Allowed -> {
+                action()
+                // 프리미엄이어도 **버튼은 1회성**이다(2026-08-29 사용자 확정) — 차감이 없을 뿐
+                // 동작 모델은 같다. 매 수마다 갱신되는 상시 표시는 대국 메뉴의 '매 수마다'
+                // 옵션이 담당한다. 켜는 동작일 때만 표시해야 끄는 탭이 1회성으로 오인되지 않는다.
+                if (turningOn && featureId != null) consumables.markOneShot(featureId, moveCount)
+                showEveryMoveHintIfFirstTime()
+            }
             is FeatureAccess.Locked -> {
                 val ticket = featureId?.let(consumables::ticketFor)
                 when {
-                    ticket != null -> pendingTicket = PendingTicketSpend(ticket, featureId, action)
+                    // 확인 팝업 없이 바로 쓴다(2026-08-29 사용자 재확정) — 오탭 여지가 낮고
+                    // 오탭 비용도 작아 빠른 진행을 택했다. "말없이 쓰지 않는다"는 원래 취지는
+                    // 사용 직후 토스트로 잔량을 알리는 것으로 지킨다.
+                    ticket != null -> {
+                        // 차감이 실제로 일어났을 때만 동작시킨다 — 그 사이 프리미엄이 켜졌다면
+                        // decideConsumableSpend가 재고를 건드리지 않고 통과시키므로 그때도 동작한다.
+                        if (consumables.spend(ticket) !is ConsumableSpendDecision.OutOfStock) {
+                            consumables.markOneShot(featureId, moveCount)
+                            action()
+                            Toast.makeText(
+                                context,
+                                strings.consumableSpentToast(ticket, consumables.countOf(ticket)),
+                                Toast.LENGTH_SHORT,
+                            ).show()
+                            showEveryMoveHintIfFirstTime()
+                        }
+                    }
                     UnlockOption.Claim in access.unlockOptions -> showUndoClaimDialog = true
                     else -> showPremiumUpsellDialog = true
                 }
             }
         }
-    }
-
-    pendingTicket?.let { pending ->
-        ConsumableSpendConfirmDialog(
-            item = pending.item,
-            remaining = consumables.countOf(pending.item),
-            onConfirm = {
-                pendingTicket = null
-                // 차감이 실제로 일어났을 때만 동작시킨다 — 그 사이 프리미엄이 켜졌다면
-                // decideConsumableSpend가 재고를 건드리지 않고 통과시키므로 그때도 동작한다.
-                if (consumables.spend(pending.item) !is ConsumableSpendDecision.OutOfStock) {
-                    consumables.markOneShot(pending.featureId, moveCount)
-                    pending.action()
-                }
-            },
-            onDismiss = { pendingTicket = null },
-        )
     }
 
     PremiumUpsellDialogHost(
@@ -446,7 +477,7 @@ private fun GameActionButtons(
                 ToggleActionButton(
                     action = evalAction,
                     label = strings.eval,
-                    onEvent = { event -> featureGated(evalAccess, FeatureId.Eval) { onEvent(event) } },
+                    onEvent = { event -> featureGated(evalAccess, FeatureId.Eval, turningOn = !evalAction.isFilled) { onEvent(event) } },
                     modifier = Modifier.weight(1f),
                     premiumLocked = evalAccess !is FeatureAccess.Allowed && !consumables.isOneShotActive(FeatureId.Eval),
                 )
@@ -458,8 +489,8 @@ private fun GameActionButtons(
                 val topMovesAccess = premium.resolve(FeatureId.TopMoves)
                 ToggleActionButton(
                     action = topMovesAction,
-                    label = strings.topMoves,
-                    onEvent = { event -> featureGated(topMovesAccess, FeatureId.TopMoves) { onEvent(event) } },
+                    label = strings.topMovesAction,
+                    onEvent = { event -> featureGated(topMovesAccess, FeatureId.TopMoves, turningOn = !topMovesAction.isFilled) { onEvent(event) } },
                     modifier = Modifier.weight(1f),
                     premiumLocked = topMovesAccess !is FeatureAccess.Allowed && !consumables.isOneShotActive(FeatureId.TopMoves),
                 )
@@ -514,12 +545,3 @@ private fun GameActionButtons(
 
 
 
-/**
- * 사용 확인 팝업이 떠 있는 동안 붙들어 두는 "쓰려던 1회권" 한 건. 사용자가 확인을 누르면
- * [action]이 그때 실행된다 — 확인 전에는 아무것도 하지 않는다(재화를 말없이 쓰지 않는다).
- */
-private data class PendingTicketSpend(
-    val item: ConsumableItem,
-    val featureId: FeatureId,
-    val action: () -> Unit,
-)

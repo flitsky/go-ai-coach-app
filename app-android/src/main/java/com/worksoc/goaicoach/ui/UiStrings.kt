@@ -170,6 +170,13 @@ internal data class UiStrings(
     val undoClaimMessage: String,
     val undoClaimConfirmAction: String,
     val undoClaimSuccessMessage: String,
+    /** 추천 수 버튼 라벨 — 1회성 동작이라 상태(ON/OFF)가 아니라 행위로 읽히게 한다. */
+    val topMovesAction: String,
+    /** 대국 메뉴의 '매 수마다' 옵션 라벨 2종. 켜면 표시가 수마다 갱신된다(프리미엄 전용). */
+    val everyMoveEval: String,
+    val everyMoveTopMoves: String,
+    /** 대국 한 판에 한 번만 뜨는 안내 — 버튼은 1회성이고 상시 보기는 메뉴에 있다는 것. */
+    val everyMoveHint: String,
     val consumableSpendTitle: String,
     val consumableSpendConfirmAction: String,
     val consumableSpendCancelAction: String,
@@ -244,6 +251,21 @@ internal data class UiStrings(
             UiLanguage.Japanese -> "この対局の主要な局面を分析キャッシュに保存しますか？\n次回プレイで同じ流れになった際、より素早く応答できます。\n\nまず序盤${initialCount}手を確保し、安定すれば${maxCount}手まで拡張します。\n対象：${moveCount}手の対局中、最大${targetCount}個のJSON分析"
             UiLanguage.ChineseSimplified -> "是否在分析缓存中优化本局？\n存储关键局面有利于在以后的对局中提高响应速度。\n\n初始时保存前 $initialCount 手，稳定后可扩展到 $maxCount 手。\n目标：从 $moveCount 手对局中提取最多 $targetCount 个 JSON  分析记录。"
         }
+
+    /**
+     * 1회권을 쓴 직후 띄우는 토스트. 확인 팝업(2026-08-24 결정)을 대체한다 — 오탭 여지가 낮고
+     * 오탭 비용도 작아 빠른 진행을 택했다(2026-08-29 사용자 재확정). "말없이 쓰지 않는다"는
+     * 원래 취지는 쓴 직후 잔량을 알리는 것으로 지킨다. [remaining]은 **차감 후** 잔량이다.
+     */
+    fun consumableSpentToast(item: ConsumableItem, remaining: Int): String {
+        val name = consumableRewardName(item)
+        return when (language) {
+            UiLanguage.Korean -> "$name 사용 (잔여: ${remaining}장)"
+            UiLanguage.English -> "Used one $name ($remaining left)"
+            UiLanguage.Japanese -> "${name} を使用（残り${remaining}枚）"
+            UiLanguage.ChineseSimplified -> "已使用${name}（剩余 $remaining 张）"
+        }
+    }
 
     /** 1회권 사용 확인 문구. 남은 장수를 함께 보여준다 — 잔량 표시는 "쓰려는 순간"에만 둔다. */
     fun consumableSpendMessage(item: ConsumableItem, remaining: Int): String {
