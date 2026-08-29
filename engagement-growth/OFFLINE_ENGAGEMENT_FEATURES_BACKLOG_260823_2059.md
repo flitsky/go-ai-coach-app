@@ -195,20 +195,22 @@
     - **④의 기록("대입이 반영되지 않는다")은 사실이 아니었다** — 계측하면 `showPicker = true`는 실행되고 유지된다. 당시엔 ①번 가드가 함께 살아 있어 늦게 온 dismiss가 복구를 덮어쓴 것으로 보인다.
     - **UI 형태는 바꾸지 않았다** — 승인이 필요하다고 적어 뒀던 `ModalBottomSheet`/전용 화면 전환은 불필요했다.
     - 실기 검증(에뮬레이터): 광고를 연속으로 돌려 조각 3 → 10까지 채우고 **사범 묘수가 실제로 해금**될 때까지 픽커를 한 번도 다시 열지 않았다. 바깥 탭 2회(위/아래) 후에도 열려 있고, 뒤로 가기와 닫기 버튼으로는 정상적으로 닫힌다.
+    - **실기 검증(실제 단말 Galaxy S22 Ultra / SM-S908N, Android 16)**: 에뮬레이터에서 원 증상이 재현되지 않았으므로 실기에서 다시 확인했다 — 광고 2회 연속 시청에 조각 0 → 1 → 2, 그 사이 픽커가 계속 열려 있었다. 바깥 탭(위/아래) 후에도 열려 있고, 뒤로 가기·닫기 버튼은 정상적으로 닫는다. **실기에서도 원 증상은 나타나지 않았다.**
     - 산출물: `ui/BotCharacterUiState.kt`(`DialogProperties(dismissOnClickOutside = false)`), `ui/PlayerSetupPanel.kt`(광고 코루틴 호이스팅 — 커밋 `bc2bd7f`, 주석 정정). 계측 코드는 전부 제거했다.
     - 사용자 승인 완료(2026-08-29).
 
-### 진행 중
-
-21. 조각 획득의 광고 단일 의존성 해소 + 조각 실패 안내 분리 (AI 모델: Opus, 노력정도: 중간) [진행중]
+21. 조각 획득의 광고 단일 의존성 해소 + 조각 실패 안내 분리 (AI 모델: Opus, 노력정도: 중간) [완료]
     - 참고: 킥오프 플랜 7장. **#20 진행 중 사용자 지적으로 발행된 항목이다** — "광고 시청으로 조각 모으는 것은 구글측 의존성이 들어가므로 항상 성립하지 않을 수 있다. 그 점이 간과된 것인지 체크하라. 그리고 광고 완료 후 리턴값을 받는 것으로 아는데 이 부분도 더블체크."
     - **확인된 사실**: 지적 두 가지 모두 실제 결함이었다. ⓐ 2·4단계는 획득 경로가 `AdShards` 하나뿐이라 광고가 채워지지 않으면 영구히 잠긴다. ⓑ `ad.show(activity) { rewardEarned = true }`가 `RewardItem`을 통째로 버리고 있었다. ⓒ 덤으로, 조각 광고 실패 시 프리미엄용 문구("프리미엄이 활성화되지 않았습니다")가 그대로 나가고 있었다.
     - **범위(사용자 확정)**: ⓐ **출석 장기 보상으로 조각 획득 경로 추가** / ⓑ 리턴값 포착 / ⓒ 실패 문구 분리. **유료 구매로 조각을 파는 안은 보류**(가능성은 열어 둠) — 열게 되면 #18에 붙는다.
     - **작업 중 드러난 기존 결함 2건도 함께 고쳤다**: ⓐ Claim 팝업이 지급 **전** 목록을 정책표에서 직접 읽어, 이미 다 모은 캐릭터의 조각까지 매주 보여줬다(`pendingTiers(state, collection)` 신설). ⓑ 픽커가 저장소를 한 번만 읽어, 출석으로 받은 조각이 앱을 다시 켤 때까지 반영되지 않았다(픽커 열 때 재조회).
     - **실기 검증(에뮬레이터, 2026-08-29)**: 14일차 지급 → `fast_beginner_4` 조각 3→4, 이미 가진 `fast_beginner_2`의 조각 줄은 팝업에서 빠짐. 21일차 지급 → 4→5, 픽커가 같은 실행에서 곧바로 5/10 표시. 네트워크를 끊고 조각 탭 → "광고를 불러오지 못했어요, 잠시 후 다시 시도해 주세요."
-    - 산출물(승인 대기): `application/attendance/AttendanceRewardPolicy.kt`(`BotCharacterShards` 보상 + `WeeklyShardAmount`), `AttendanceRewardApplication.kt`(지급 경로 + "알릴 것" 필터), `application/botcharacter/BotCharacterCatalog.kt`(`shardPathCharacters`), `BotCollectionState.kt`(`withAdShards`), `BotCharacterShardApplication.kt`(`amount`), `application/premium/AdRewardPort.kt`(`RewardEarned(type, amount)`), `PremiumAdGrantApplication.kt`(진단 로그), `ui/AndroidRewardedInterstitialAdClient.kt`, `ui/UiStrings.kt`, `ui/BotCharacterUiState.kt`, `ui/AttendanceRewardClaimDialog.kt`, 테스트 3건.
+    - 산출물: `application/attendance/AttendanceRewardPolicy.kt`(`BotCharacterShards` 보상 + `WeeklyShardAmount`), `AttendanceRewardApplication.kt`(지급 경로 + "알릴 것" 필터), `application/botcharacter/BotCharacterCatalog.kt`(`shardPathCharacters`), `BotCollectionState.kt`(`withAdShards`), `BotCharacterShardApplication.kt`(`amount`), `application/premium/AdRewardPort.kt`(`RewardEarned(type, amount)`), `PremiumAdGrantApplication.kt`(진단 로그), `ui/AndroidRewardedInterstitialAdClient.kt`, `ui/UiStrings.kt`, `ui/BotCharacterUiState.kt`, `ui/AttendanceRewardClaimDialog.kt`, 테스트 3건.
+    - 사용자 승인 완료(2026-08-29).
 
----
+### 진행 중
+
+(없음)
 
 ### 예정사항
 
