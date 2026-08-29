@@ -502,8 +502,10 @@ private fun GameActionButtons(
                 val evalAccess = premium.resolve(FeatureId.Eval)
                 ToggleActionButton(
                     action = evalAction,
-                    label = strings.featureButtonLabel(
-                        base = strings.eval,
+                    // 이름과 잔량을 **따로** 넘긴다 — 한 문자열이면 폭이 모자랄 때 잔량부터
+                    // 잘려 나간다(#27).
+                    label = strings.eval,
+                    mark = strings.featureButtonMark(
                         access = evalAccess,
                         remaining = consumables.countOf(ConsumableCatalog.EvalOnce),
                     ),
@@ -519,8 +521,8 @@ private fun GameActionButtons(
                 val topMovesAccess = premium.resolve(FeatureId.TopMoves)
                 ToggleActionButton(
                     action = topMovesAction,
-                    label = strings.featureButtonLabel(
-                        base = strings.topMovesAction,
+                    label = strings.topMovesAction,
+                    mark = strings.featureButtonMark(
                         access = topMovesAccess,
                         remaining = consumables.countOf(ConsumableCatalog.TopMovesOnce),
                     ),

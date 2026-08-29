@@ -23,6 +23,7 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.presentation.GameActionButtonState
 import com.worksoc.goaicoach.presentation.GameUiEvent
@@ -41,6 +42,7 @@ internal val ActionButtonContentColor
 internal fun ToggleActionButton(
     action: GameActionButtonState,
     label: String,
+    mark: String? = null,
     onEvent: (GameUiEvent) -> Unit,
     modifier: Modifier = Modifier,
     premiumLocked: Boolean = false,
@@ -65,7 +67,7 @@ internal fun ToggleActionButton(
                 contentColor = MaterialTheme.colorScheme.onPrimary
             )
         ) {
-            ToggleActionButtonContent(label = label)
+            ToggleActionButtonContent(label = label, mark = mark)
         }
     } else {
         OutlinedButton(
@@ -76,7 +78,7 @@ internal fun ToggleActionButton(
             contentPadding = ActionButtonContentPadding,
             border = if (premiumLocked) PremiumLockedBorder else ActionButtonBorder,
         ) {
-            ToggleActionButtonContent(label = label)
+            ToggleActionButtonContent(label = label, mark = mark)
         }
     }
 }
@@ -129,18 +131,55 @@ internal fun ActionButton(
  * 채워진 배경(켜짐)은 지금 표시 중인지를 알리는 용도로만 남긴다.
  */
 @Composable
-private fun ToggleActionButtonContent(label: String) {
-    ActionButtonText(label)
+private fun ToggleActionButtonContent(label: String, mark: String? = null) {
+    ActionButtonText(label = label, mark = mark)
 }
 
 
+/**
+ * 버튼 라벨. **잔량 표기([mark])는 이름과 분리해 먼저 자리를 잡는다**(#27).
+ *
+ * 예전에는 `(3)`/`(∞)`/`(⏱)`가 한 문자열의 꼬리였는데, `softWrap = false` + 기본
+ * `TextOverflow.Clip` 조합은 폭 제약을 무시한 채 측정한 뒤 부모가 오른쪽을 잘라낸다 — 그래서
+ * **가장 먼저 사라지는 것이 하필 잔량**이었다. `Row`는 가중치 없는 자식을 먼저 측정하므로,
+ * 표기를 따로 떼면 그것은 언제나 온전히 그려지고 모자란 폭은 이름 쪽이 말줄임으로 흡수한다.
+ *
+ * 표기가 없는 버튼(기권·통과·무르기)도 `Clip` 대신 말줄임을 쓴다 — 글자가 뭉텅 잘리는 것보다
+ * "…"이 낫다.
+ */
 @Composable
-private fun ActionButtonText(label: String) {
-    Text(
-        text = label,
-        maxLines = 1,
-        softWrap = false,
-        style = MaterialTheme.typography.labelSmall,
-        fontWeight = FontWeight.SemiBold,
-    )
+private fun ActionButtonText(label: String, mark: String? = null) {
+    val labelStyle = MaterialTheme.typography.labelSmall
+    if (mark == null) {
+        Text(
+            text = label,
+            maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Ellipsis,
+            style = labelStyle,
+            fontWeight = FontWeight.SemiBold,
+        )
+        return
+    }
+    Row(
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = label,
+            modifier = Modifier.weight(1f, fill = false),
+            maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Ellipsis,
+            style = labelStyle,
+            fontWeight = FontWeight.SemiBold,
+        )
+        Text(
+            text = " ($mark)",
+            maxLines = 1,
+            softWrap = false,
+            style = labelStyle,
+            fontWeight = FontWeight.SemiBold,
+        )
+    }
 }

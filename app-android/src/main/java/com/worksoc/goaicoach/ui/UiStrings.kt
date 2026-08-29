@@ -383,12 +383,26 @@ internal data class UiStrings(
      * 무제한"이라 무한대와도 시계와도 성격이 다르다. 유료 캐릭터를 다시 열 때 함께 정한다(#18).
      */
     fun featureButtonLabel(base: String, access: FeatureAccess, remaining: Int): String =
+        featureButtonMark(access, remaining)?.let { mark -> "$base ($mark)" } ?: base
+
+    /**
+     * [featureButtonLabel]에서 **괄호 안만** 떼어 낸 것(#27).
+     *
+     * 버튼은 이것을 **별도 `Text`로** 그려 이름보다 먼저 자리를 잡게 한다. 한 문자열로 두면
+     * 표기가 문자열 끝이라, 폭이 모자랄 때 **하필 그 표기부터 사라진다** — #24가 상시 재고 바를
+     * 걷어내고 그 자리를 대신하라고 심어 둔 정보가 가장 먼저 죽는 셈이었다.
+     *
+     * 괄호 자체는 버튼이 붙이므로 여기서는 기호/숫자만 돌려준다. 표기 규칙의 원본은
+     * [featureButtonLabel]의 주석이다. [featureButtonLabel]은 지우지 않는다 — 화면 낭독기용
+     * `contentDescription`으로 계속 쓴다.
+     */
+    fun featureButtonMark(access: FeatureAccess, remaining: Int): String? =
         when {
-            access is FeatureAccess.Allowed && access.via == AllowedVia.Purchase -> "$base ($UnlimitedMark)"
-            access is FeatureAccess.Allowed && access.via == AllowedVia.AdGrant -> "$base ($TimeLimitedMark)"
-            access is FeatureAccess.Allowed -> base
-            remaining > 0 -> "$base ($remaining)"
-            else -> base
+            access is FeatureAccess.Allowed && access.via == AllowedVia.Purchase -> UnlimitedMark
+            access is FeatureAccess.Allowed && access.via == AllowedVia.AdGrant -> TimeLimitedMark
+            access is FeatureAccess.Allowed -> null
+            remaining > 0 -> remaining.toString()
+            else -> null
         }
 
     /** 캐릭터를 구매해 영구 획득했을 때(#18). 특전까지 함께 알려 무엇을 샀는지 분명히 한다. */
