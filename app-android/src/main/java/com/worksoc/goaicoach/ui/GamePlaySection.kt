@@ -477,6 +477,10 @@ private fun GameActionButtons(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        // 소모품 재고 상시 표시(#17) — 사용처 바로 위에 둬서 차감이 눈앞에서 보이게 한다.
+        // 본체는 ui/ConsumableUiState.kt에 있다(셸 예산 보호, buildConsumableUiState와 같은 이유).
+        ConsumableInventoryBar()
+
         // [1행] 형세보기(Eval), 추천수(Top Moves) — 프리미엄 전용 온/오프 토글, 2열로 크게 배치
         Row(
             modifier = Modifier.fillMaxWidth(),

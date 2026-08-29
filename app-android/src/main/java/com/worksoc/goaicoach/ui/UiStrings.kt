@@ -353,6 +353,17 @@ internal data class UiStrings(
         }
 
     /** 모르는 종류(상위 버전에서 온 소모품)는 저장 키를 그대로 보여준다 — 지급 사실을 숨기지 않는다. */
+    /**
+     * 상시 인벤토리에 쓰는 **짧은** 이름. `consumableRewardName`의 "…1회권" 접미사를 뺀 것으로,
+     * 줄 전체가 1회권 이야기인 자리에서는 접미사가 반복 노이즈가 된다(백로그 #17).
+     */
+    fun consumableShortName(item: ConsumableItem): String =
+        when (item) {
+            ConsumableCatalog.EvalOnce -> featureRewardName(FeatureId.Eval)
+            ConsumableCatalog.TopMovesOnce -> featureRewardName(FeatureId.TopMoves)
+            else -> consumableRewardName(item)
+        }
+
     private fun consumableRewardName(item: ConsumableItem): String =
         when (item) {
             ConsumableCatalog.EvalOnce -> onceTicketName(featureRewardName(FeatureId.Eval))
