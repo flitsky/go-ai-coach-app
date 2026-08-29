@@ -22,6 +22,7 @@ import com.worksoc.goaicoach.application.botcharacter.BotUnlockSource
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
 import com.worksoc.goaicoach.application.botcharacter.BotCharacter
 import com.worksoc.goaicoach.application.botcharacter.runBotCharacterShardGrant
 import com.worksoc.goaicoach.application.premium.AdRewardFailureReason
@@ -125,6 +126,16 @@ internal fun BotCharacterPickerDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        // **바깥 탭으로는 닫히지 않게 한다(#20).** 조각을 모으려면 광고를 5~10번 봐야 하고 그
+        // 사이 화면이 광고 Activity로 갔다 돌아오는데, 그 전환에서 흘러든 터치 하나가 "바깥
+        // 탭"으로 해석되면 사용자는 자기 자리를 잃는다. 닫는 길은 닫기 버튼과 뒤로 가기 둘 다
+        // 그대로 남으므로 잃는 것이 없다.
+        //
+        // ⚠️ `adInProgress`로 dismiss를 막는 방식은 쓰지 않는다(#20에서 실패한 ①번 시도) —
+        // 광고 코루틴이 먼저 재개돼 플래그가 이미 false가 된 뒤에 요청이 도착하므로 그 가드는
+        // 원리적으로 늦는다. 시간 창(700ms 유예)도 같은 이유로 틀렸다: 늦게 오는 것을 시간으로
+        // 쫓아가는 대신, 애초에 그 경로를 없앤다.
+        properties = DialogProperties(dismissOnClickOutside = false),
         title = { Text(strings.botPickerTitle) },
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {

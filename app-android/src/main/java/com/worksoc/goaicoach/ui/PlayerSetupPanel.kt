@@ -226,13 +226,10 @@ private fun PlayerSetupSideRow(
             val current = BotCharacterCatalog.forPlayLevel(
                 PlayLevelSetting(group = PlayLevelGroup.FastBeginner, level = fastBeginnerLevel),
             )
-            // 광고 코루틴을 다이얼로그가 아니라 여기서 돌리는 이유: 광고를 띄우면 픽커
-            // 다이얼로그가 닫히는데(#20), 다이얼로그 안에서 돌리면 그 순간 스코프까지 취소돼
-            // 결과 처리조차 못 한다. 패널은 그 전환에서 살아남는 것이 계측으로 확인됐다.
-            //
-            // ⚠️ 아래 `showPicker = true` 복구는 **아직 동작하지 않는다**(#20 미해결). 조각은
-            // 정상 적립되지만 픽커는 여전히 닫힌 채로 돌아온다 — 왜 이 대입이 반영되지 않는지
-            // 밝히지 못했다. 원인이 잡히면 이 자리가 맞는 자리이므로 줄은 남겨 둔다.
+            // 광고 코루틴을 다이얼로그가 아니라 여기서 돌리는 이유(#20): 다이얼로그 안에서
+            // 돌리면 픽커가 닫히는 순간 스코프까지 함께 취소돼, 조각 적립 결과를 알리는 것도
+            // 광고 뒤 픽커를 되살리는 것도 못 한다. 패널은 광고 Activity 전환에서 살아남는 것이
+            // 계측으로 확인됐다(`panel-dispose`가 한 번도 찍히지 않는다).
             var showPicker by remember { mutableStateOf(false) }
             var adInProgress by remember { mutableStateOf(false) }
             val scope = rememberCoroutineScope()
@@ -268,8 +265,9 @@ private fun PlayerSetupSideRow(
                             adInProgress = true
                             watchAdForShardAndReport(character, bots, strings, context)
                             adInProgress = false
-                            // 광고가 픽커를 닫았더라도 여기서 되살린다 — 조각 10개짜리를 모으려고
-                            // 픽커를 열 번 다시 여는 일이 없게 하는 것이 이 항목의 목적이다.
+                            // 만에 하나 광고가 픽커를 닫았더라도 여기서 되살린다. 지금은 바깥 탭
+                            // 경로를 막아 둬서(`BotCharacterPickerDialog`) 실제로 닫히지 않지만,
+                            // 이 줄은 광고 쪽 사정이 바뀌어도 자리를 지켜 주는 보험으로 남긴다.
                             showPicker = true
                         }
                     },
