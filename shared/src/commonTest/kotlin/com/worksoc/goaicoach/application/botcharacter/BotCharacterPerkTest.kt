@@ -9,6 +9,7 @@ import com.worksoc.goaicoach.application.premium.FeatureAccess
 import com.worksoc.goaicoach.application.premium.FeatureAccessPolicy
 import com.worksoc.goaicoach.application.premium.FeatureId
 import com.worksoc.goaicoach.application.premium.PremiumState
+import com.worksoc.goaicoach.shared.PlayLevelGroup
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.match.SidePlayerSetup
@@ -19,11 +20,25 @@ import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-private val purchasable: BotCharacter =
-    BotCharacterCatalog.all.first { it.unlockSource is BotUnlockSource.Purchase }
+/**
+ * 유료 캐릭터를 **직접 만들어 쓴다.** 2026-08-29에 5단계가 28일차 출석으로 옮겨가면서 카탈로그에
+ * `Purchase` 캐릭터가 하나도 남지 않았는데, 특전 규칙 자체는 로스터 구성과 무관하게 성립해야
+ * 한다 — 카탈로그에서 뽑아 쓰면 로스터가 바뀔 때마다 규칙 테스트가 같이 무너진다.
+ */
+private val purchasable: BotCharacter = BotCharacter(
+    id = BotCharacterId("test_purchasable"),
+    name = "테스트 유료 캐릭터",
+    description = "특전 규칙 검증용",
+    linkedPlayLevel = PlayLevelGroup.FastBeginner,
+    tierWithinGroup = 5,
+    unlockSource = BotUnlockSource.Purchase,
+)
 
 private val shardCharacter: BotCharacter =
     BotCharacterCatalog.all.first { it.unlockSource is BotUnlockSource.AdShards }
+
+/** 카탈로그의 실제 캐릭터 — 상대 판정([matchOpponentCharacter])은 카탈로그를 거치므로 필요하다. */
+private val rosterCharacter: BotCharacter = BotCharacterCatalog.all.first()
 
 private fun aiSetupFacing(character: BotCharacter) = PlayerSetup(
     black = SidePlayerSetup(controller = SeatController.Human),
@@ -58,7 +73,22 @@ class BotCharacterPerkTest {
 
     @Test
     fun theOpponentIsTheAiSeatsCharacter() {
-        assertEquals(purchasable, matchOpponentCharacter(aiSetupFacing(purchasable)))
+        assertEquals(rosterCharacter, matchOpponentCharacter(aiSetupFacing(rosterCharacter)))
+    }
+
+    @Test
+    fun theCatalogCurrentlyHasNoPurchasableCharacterSoThePerkLiesDormant() {
+        // 2026-08-29: 5단계가 28일차 출석으로 옮겨가면서 유료 전용 캐릭터가 사라졌다. 특전 배선은
+        // 지우지 않고 두되(#18), 지금은 어떤 상대에게도 성립하지 않는다는 사실을 고정한다 —
+        // 유료 상품을 다시 열 때 이 테스트가 먼저 깨져서 "특전이 살아났다"를 알려 준다.
+        assertTrue(BotCharacterCatalog.all.none { it.unlockSource is BotUnlockSource.Purchase })
+
+        val everythingOwned = BotCharacterCatalog.all
+            .fold(BotCollectionState()) { state, character -> state.withClaimed(character.id) }
+        assertTrue(
+            BotCharacterCatalog.all.none { isBotCharacterPerkActive(it, everythingOwned) },
+            "로스터 전체를 가져도 특전이 켜지면 안 된다",
+        )
     }
 
     @Test

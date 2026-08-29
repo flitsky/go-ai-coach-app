@@ -50,7 +50,7 @@ object BotCharacterCatalog {
             description = "기본기를 익히는 중. 절반쯤은 제대로 둡니다.",
             unlockSource = BotUnlockSource.AdShards(required = 5),
         ),
-        // 3단계 — 출석 4일차 보상. 무료 사용자가 얻는 두 번째 캐릭터이자 유일한 출석 캐릭터다.
+        // 3단계 — 출석 4일차 보상. 무료 사용자가 얻는 두 번째 캐릭터다(5단계도 28일차 출석이다).
         fastBeginnerCharacter(
             tier = 3,
             name = "도장생 반상",
@@ -69,7 +69,7 @@ object BotCharacterCatalog {
             tier = 5,
             name = "관장 천원",
             description = "도장 최강. 언제나 최선의 수만 둡니다.",
-            unlockSource = BotUnlockSource.Purchase,
+            unlockSource = BotUnlockSource.Attendance(tier = TopCharacterAttendanceTier),
         ),
     )
 
@@ -96,9 +96,12 @@ object BotCharacterCatalog {
      * (`AttendanceRewardPolicy`)는 이 함수를 통해 그 정보를 읽어 간다 — 같은 사실을 두 군데
      * 적어 두고 어긋나게 두지 않기 위함이다.
      *
-     * 2026-08-24 재확정본 기준으로 **출석으로 열리는 캐릭터는 3단계(4일차) 하나뿐**이다. 그래서
-     * 1일차에는 캐릭터 보상이 걸리지 않는다 — #16이 1단계를 기본 제공으로 돌리면서 정책표에
-     * 코드를 더하지 않고도 1일차 중복 지급이 사라졌다(#19가 기대던 선행 조건).
+     * 출석으로 열리는 캐릭터는 **3단계(4일차)와 5단계(28일차)** 둘이다(2026-08-29). 1일차에는
+     * 캐릭터가 걸리지 않는다 — #16이 1단계를 기본 제공으로 돌리면서 1일차 중복 지급이 사라졌다.
+     *
+     * ⚠️ **정책표는 이 함수를 접지 않은 실제 회차로 부른다.** 8일차 이후 소모품은 7일차 내용을
+     * 반복하지만(`AttendanceRewardPolicy`), 캐릭터는 **한 번뿐인 영구 획득**이라 반복 축과 성질이
+     * 다르다 — 접힌 회차(항상 7)로 조회하면 28일차 캐릭터에 영영 닿지 못한다.
      */
     fun forAttendanceTier(tier: Int): List<BotCharacter> =
         all.filter { character ->
@@ -117,6 +120,19 @@ object BotCharacterCatalog {
     fun shardPathCharacters(): List<BotCharacter> =
         all.filter { character -> character.unlockSource is BotUnlockSource.AdShards }
 }
+
+/**
+ * 최상위 캐릭터(5단계 관장 천원)를 여는 출석 회차.
+ *
+ * 원래는 유료 구매 전용이었다(백로그 #18). 2026-08-29에 Play Console의 "수익 창출"이 앱 설정
+ * 대시보드 미완료로 막혀 상품 등록 자체가 불가능해지자, **결제를 미루고 장기 출석 보상으로
+ * 돌렸다**(사용자 결정) — 최상위 상대에 닿는 길이 아예 없는 것보다 낫다.
+ *
+ * 4주(7의 배수 회차 중 네 번째)라 기존 반복 주기와 어긋나지 않는다. 결제를 다시 열 때는 이
+ * 캐릭터를 `Purchase`로 되돌리거나, 유료 전용 캐릭터를 새로 추가하면 된다 — #18이 넣은 결제·특전
+ * 배선은 지우지 않고 그대로 잠들어 있다.
+ */
+const val TopCharacterAttendanceTier: Int = 28
 
 /** `FastBeginner` 캐릭터 한 종을 만든다. */
 private fun fastBeginnerCharacter(

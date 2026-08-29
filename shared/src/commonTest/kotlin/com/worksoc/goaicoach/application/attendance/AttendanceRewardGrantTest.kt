@@ -93,7 +93,7 @@ private class RewardStores(
     }
 }
 
-// 출석으로 열리는 캐릭터는 3단계(도장생 반상, 4일차) 하나뿐이다 — 1단계는 기본 제공이고
+// 출석으로 열리는 캐릭터는 3단계(도장생 반상, 4일차)와 5단계(관장 천원, 28일차) 둘이다 — 1단계는 기본 제공이고
 // 2·4단계는 광고 조각, 5단계는 유료다(7장 재확정본, #16). 카탈로그가 단일 출처이므로 여기서도
 // 인덱스가 아니라 카탈로그 조회로 가져와, 표가 또 바뀌면 이 픽스처가 자동으로 따라가게 한다.
 private val attendanceCharacter = BotCharacterCatalog.forAttendanceTier(4).single()
@@ -133,7 +133,7 @@ class AttendanceRewardPolicyTest {
             listOf(AttendanceReward.Consumable(ConsumableCatalog.PremiumOnce, 3)),
             AttendanceRewardPolicy.rewardsFor(3),
         )
-        // 4일차는 소모품 없이 유일한 출석 캐릭터만 걸린다(#16).
+        // 4일차는 소모품 없이 캐릭터 하나만 걸린다(#16). 다른 출석 캐릭터는 28일차에 있다.
         assertEquals(
             listOf(AttendanceReward.BotCharacterUnlock(attendanceCharacter)),
             AttendanceRewardPolicy.rewardsFor(4),
@@ -202,10 +202,17 @@ class AttendanceRewardPolicyTest {
     fun multiplesOfSevenRepeatTheSeventhDayExactly() {
         val week = AttendanceRewardPolicy.rewardsFor(7)
 
-        listOf(14, 21, 28).forEach { tier ->
+        listOf(14, 21, 35).forEach { tier ->
             assertTrue(isRewardedTier(tier), "tier $tier must be a rewarded tier")
             assertEquals(week, AttendanceRewardPolicy.rewardsFor(tier), "tier $tier")
         }
+        // 28일차만 예외다 — 소모품은 7일차와 똑같이 반복하되 **최상위 캐릭터가 한 번 더 얹힌다**
+        // (2026-08-29, 유료 구매에서 옮겨옴). 캐릭터는 한 번뿐인 영구 획득이라 반복 축과
+        // 성질이 다르므로, 정책표가 캐릭터만 접지 않은 실제 회차로 조회한다.
+        assertEquals(
+            week + AttendanceReward.BotCharacterUnlock(BotCharacterCatalog.forAttendanceTier(28).single()),
+            AttendanceRewardPolicy.rewardsFor(28),
+        )
         // 반복 회차가 캐릭터를 **영구 획득**으로 다시 주지는 않는다 — 7일차에 걸린 것은
         // 조각(진행도)뿐이고, 그마저 다 모은 캐릭터는 지급 단계에서 걸러진다.
         assertTrue(week.none { it is AttendanceReward.BotCharacterUnlock })

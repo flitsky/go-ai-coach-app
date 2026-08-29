@@ -69,7 +69,7 @@ sealed class AttendanceReward {
     /** 쓰면 줄어드는 소모품 [amount]개(2·3·5·6·7일차). */
     data class Consumable(val item: ConsumableItem, val amount: Int) : AttendanceReward()
 
-    /** AI 봇 캐릭터 한 종을 영구 획득(4일차 — #16 이후 출석 캐릭터는 이 회차 하나뿐이다). */
+    /** AI 봇 캐릭터 한 종을 영구 획득(3단계는 4일차, 5단계는 28일차 — 2026-08-29 기준 둘뿐이다). */
     data class BotCharacterUnlock(val character: BotCharacter) : AttendanceReward()
 
     /**
@@ -129,8 +129,13 @@ object AttendanceRewardPolicy {
             }
             // 캐릭터 보상은 여기에 다시 적지 않는다 — "몇 일차에 열리는가"는 이미 카탈로그의
             // BotUnlockSource.Attendance(tier)에 붙어 있어, 그쪽을 단일 출처로 삼는다(#13).
-            // 반복 회차에서 contentTier(=7)로 조회하므로 캐릭터가 다시 지급되지도 않는다.
-            BotCharacterCatalog.forAttendanceTier(contentTier).forEach { character ->
+            //
+            // ⚠️ **캐릭터만 `contentTier`가 아니라 실제 [tier]로 조회한다**(2026-08-29). 소모품은
+            // 8일차 이후 7일차 내용을 반복하지만 캐릭터는 **한 번뿐인 영구 획득**이라 반복 축과
+            // 성질이 다르다 — 접어서 조회하면 28일차에 걸린 5단계 캐릭터에 영영 닿지 못한다.
+            // 중복 지급 걱정은 없다: 14·21처럼 캐릭터가 정의되지 않은 회차는 빈 목록이고,
+            // 이미 가진 캐릭터는 지급 단계에서 걸러진다.
+            BotCharacterCatalog.forAttendanceTier(tier).forEach { character ->
                 add(AttendanceReward.BotCharacterUnlock(character))
             }
         }

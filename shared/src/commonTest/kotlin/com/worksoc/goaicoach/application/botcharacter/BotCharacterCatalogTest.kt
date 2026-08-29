@@ -92,23 +92,25 @@ class BotCharacterCatalogTest {
         assertEquals(BotUnlockSource.AdShards(required = 5), roster[1].unlockSource)
         assertEquals(BotUnlockSource.Attendance(tier = 4), roster[2].unlockSource)
         assertEquals(BotUnlockSource.AdShards(required = 10), roster[3].unlockSource)
-        assertEquals(BotUnlockSource.Purchase, roster[4].unlockSource)
+        // 2026-08-29: 5단계가 유료 구매 → 28일차 출석 장기 보상으로 바뀌었다. Play Console의
+        // "수익 창출"이 앱 설정 미완료로 막혀 상품 등록 자체가 불가능해졌기 때문이다(#18).
+        assertEquals(BotUnlockSource.Attendance(tier = 28), roster[4].unlockSource)
     }
 
     @Test
-    fun exactlyOneCharacterIsFreeAndOneComesFromAttendance() {
+    fun everyCharacterIsReachableWithoutPaying() {
         val roster = BotCharacterCatalog.fastBeginnerRoster
 
-        // 무료 사용자가 얻는 것은 기본 제공 1종 + 출석 1종뿐이고, 그 사이 2단계가 비어 있는
-        // 것이 광고 유인이다(7장). 이 균형이 조용히 깨지지 않게 개수로 고정한다.
+        // 2026-08-29부터 **유료 전용 캐릭터가 없다** — 5단계가 28일차 출석으로 옮겨가면서, 돈을
+        // 쓰지 않고도 로스터 전체에 닿을 수 있게 됐다. 광고 유인은 조각 경로 2종이 계속 맡는다.
         assertEquals(1, roster.count { it.unlockSource == BotUnlockSource.Default })
-        assertEquals(1, roster.count { it.unlockSource is BotUnlockSource.Attendance })
+        assertEquals(2, roster.count { it.unlockSource is BotUnlockSource.Attendance })
         assertEquals(2, roster.count { it.unlockSource is BotUnlockSource.AdShards })
-        assertEquals(1, roster.count { it.unlockSource == BotUnlockSource.Purchase })
+        assertEquals(0, roster.count { it.unlockSource == BotUnlockSource.Purchase })
     }
 
     @Test
-    fun attendanceLookupOnlyYieldsTheDayFourCharacter() {
+    fun attendanceLookupYieldsTheDayFourAndDayTwentyEightCharacters() {
         // 1일차는 이제 캐릭터를 주지 않는다 — 1단계가 기본 제공으로 바뀌면서 정책표에 코드를
         // 더하지 않고도 중복 지급이 사라졌다(#19의 선행 조건).
         assertTrue(BotCharacterCatalog.forAttendanceTier(1).isEmpty())
@@ -116,6 +118,15 @@ class BotCharacterCatalogTest {
         assertEquals(
             listOf(BotCharacterId("fast_beginner_3")),
             BotCharacterCatalog.forAttendanceTier(4).map { it.id },
+        )
+        // 최상위 캐릭터는 28일차(7의 배수 중 네 번째)에 걸린다 — 2026-08-29에 유료 구매에서
+        // 옮겨왔다. 7·14·21에는 캐릭터가 없어야 반복 회차에서 중복 지급이 생기지 않는다.
+        listOf(7, 14, 21).forEach { tier ->
+            assertTrue(BotCharacterCatalog.forAttendanceTier(tier).isEmpty(), "tier $tier")
+        }
+        assertEquals(
+            listOf(BotCharacterId("fast_beginner_5")),
+            BotCharacterCatalog.forAttendanceTier(28).map { it.id },
         )
     }
 
