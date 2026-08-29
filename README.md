@@ -6,22 +6,25 @@ This repository is separate from `/Users/ryan9kim/worksoc/katago`, which remains
 
 ## Current Phase
 
-As of 2026-06-28, this is a playable local AI Go coaching app, 9x9, with a full local KataGo engine path (not a stub-only spike anymore).
+As of 2026-08-29, this is a playable local AI Go coaching app on 9x9, 13x13 and 19x19, with a full local KataGo engine path (not a stub-only spike anymore).
 
-Implemented baseline as of 2026-06-28:
+Implemented baseline as of 2026-08-29:
 
 1. Android Compose UI: board, player setup, search-time controls, score/win-rate graph, top-moves display, debug report copy, saved-game resume.
 2. `shared` Kotlin Multiplatform module: board rules, scoring (Area/Territory), engine core API contract, analysis policy, two engine search modes.
 3. `engine-android`: local KataGo process adapter (`libkatago.so`) supporting both GTP stateful-fast and JSON position-analysis paths, plus a stub adapter for engine-free UI work.
-4. As of 2026-06-28, `app-android/application/` has 17 feature-domain packages (session, autoai, undo, humanmove, startgame, savedgame, topmoves, engine, analysis, ...), each following a small `XxxController` + `XxxApplication.kt` pure-function pattern. As of 2026-06-28, `GoCoachApp.kt` is a 769-line composition root (was 1838 lines before the 2026-06 refactor).
-5. Four AI level groups (Fast Beginner / Beginner / Intermediate / Advanced — UI labels are in Korean) mapped to different visits/time/search-mode policy. See [docs/ENGINE.md](./docs/ENGINE.md).
-6. Device benchmarking, diagnostic event logging, and, as of 2026-06-28, a remote-engine-ready cache/gateway scaffold without a full remote `EngineSessionClient`.
+4. The `application/` tree lives in `:shared` — 27 feature-domain packages as of 2026-08-29 (session, autoai, undo, humanmove, startgame, savedgame, topmoves, engine, analysis, attendance, botcharacter, consumable, gamehistory, ...), each following a small `XxxController` + `XxxApplication.kt` pure-function pattern. Only `diagnostic/` stays in `app-android`, permanently, because its file sink needs the platform. `GoCoachApp.kt` is an 854-line composition root (was 1838 lines before the 2026-06 refactor); `LayeringContractTest` enforces that line count and a 46-state-hook budget.
+5. Four AI level groups exist in code (Fast Beginner / Beginner / Intermediate / Advanced — UI labels are in Korean) mapped to different visits/time/search-mode policy, but **only Fast Beginner is exposed to users** since 2026-08-18: it was split into five tiers (초보/하수/중수/고수/초고수) and the level picker collapsed to one dropdown. The other three groups are kept in code and hidden. See [docs/ENGINE.md](./docs/ENGINE.md).
+6. Device benchmarking, diagnostic event logging, and a remote engine path that is wired end-to-end but debug-only: `RemoteEngineCoreApiAdapter` + `createRemoteEngineSessionClient` are reachable from `MainActivity` under `BuildConfig.DEBUG` and were verified against a Mac reference server (`scripts/run-katago-remote-analysis-server.py`) in 2026-08. It is off by default.
+7. Offline engagement features (daily check-in rewards, consumable items, game history, AI bot characters) — an in-progress track, see `engagement-growth/`.
 
 Next goal:
 
-1. Move `GameSessionStateHolder` into the `shared` module for cross-platform reuse.
-2. Add androidTest/Robolectric coverage. As of 2026-06-28, default verification uses JVM unit tests only.
-3. Decide on JNI/native-library packaging and remote-engine fallback once a `RemoteEngineSessionClient` is built.
+1. Ship the initial Google Play release. Code and assets are done; what remains is Play Console paperwork — see `launch-plan/README.md` §0.
+2. Finish the offline engagement track — `engagement-growth/OFFLINE_ENGAGEMENT_FEATURES_BACKLOG_260823_2059.md` is the entry point.
+3. Add broader androidTest/Robolectric coverage. Default verification is JVM unit tests plus two emulator smoke tests.
+
+(`GameSessionStateHolder` moved into `:shared` in 2026-08; that goal is done.)
 
 ## Documentation
 

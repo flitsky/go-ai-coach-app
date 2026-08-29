@@ -328,6 +328,7 @@ AttendanceState(
   `premium-mode` 트랙에서 별도로 다룬다** — 상품 타입(INAPP → SUBS), `PremiumState`의 만료/갱신
   축, 복원 로직이 모두 바뀌는 작업이라 여기에 끼워 넣지 않는다. 다행히 `premium_lifetime`은 내부
   테스트 트랙에만 올라가 있어(라이선스 테스터 외 실구매자 없음) 마이그레이션 부담은 없다.
+  > **인계 확인(2026-08-29)**: 이 결정이 2026-08-24부터 5일간 `premium-mode/README.md`에 도달하지 못한 것을 저장소 점검에서 발견했다 — 넘기는 쪽만 적고 받는 쪽에 아무도 옮겨 적지 않아 `premium-mode`·`launch-plan`·`feature-access-principles` 어디에도 "구독"이 없었다. 같은 날 `premium-mode/README.md`의 "미착수 결정" 절로 옮겨 적었다. **다른 트랙으로 결정을 넘길 때는 받는 문서에도 그 자리에서 한 줄 남긴다.**
 - **범위 밖(설계만 고려, 지금 구현 안 함)**: 월 구독으로 전체 봇을 여는 상품. `BotUnlockSource`는
   sealed class라 `Subscription`을 나중에 더하면 기존 `when`이 컴파일 에러로 빠진 처리를 잡아준다.
 

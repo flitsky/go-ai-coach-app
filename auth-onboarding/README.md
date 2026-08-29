@@ -17,7 +17,17 @@
 - **결론**: "계정 없이 시작하기"(게스트 모드)는 제공한다. 다만 앱을 지우면 구매 이력을 못 찾는다는 우려는 **로그인 여부가 아니라 아이템 결제를 어떻게 구현하느냐**로 해결한다.
 - Google Play 인앱결제(Billing)는 앱 자체 로그인과 무관하게 **구매가 Google Play 계정에 귀속**된다. 재설치 후 `queryPurchases()`로 자동 복원되므로, 게스트 사용자도 이 복원 경로는 그대로 유효하다.
 - 진짜 위험한 경우는 서버(Firestore)에 `premium_until`처럼 **앱 자체 계정(UID)에 귀속된 엔타이틀먼트**를 둘 때뿐이다 — 이때는 로그인하지 않은 익명 사용자가 지우면 그 기록은 복구 불가.
-- 그래서 채택한 구조: 첫 실행 시 로그인을 강제하지 않고 **Firebase 익명(Anonymous) Auth로 조용히 시작** → Google/이메일 로그인은 "다른 기기에서 이어보기" 가치로 선택 제안 → 나중에 로그인하면 `linkWithCredential`로 기존 익명 UID의 데이터를 유지한 채 승격. 아이템 구매는 Play Billing 복원을 1차 안전망으로 삼고, Firestore 쪽 영구 엔타이틀먼트는 로그인한 사용자에 한해 추가 보장한다.
+- ~~그래서 채택한 구조: 첫 실행 시 로그인을 강제하지 않고 **Firebase 익명(Anonymous) Auth로 조용히 시작** → Google/이메일 로그인은 "다른 기기에서 이어보기" 가치로 선택 제안 → 나중에 로그인하면 `linkWithCredential`로 기존 익명 UID를 승격~~
+
+> ⚠️ **위 구조는 폐기됐다(2026-08-05). 이 절을 근거로 설계하지 마세요.** 파이어베이스 Auth의 익명 로그인은 이 프로젝트에서 **영구히 켜지 않기로 확정**됐다 — 재설치(로컬 세션 캐시 소실)마다 새 익명 계정이 생겨 콘솔에 고아 계정이 쌓이는 구조적 문제를 이전 앱에서 실제로 겪었기 때문이다. 아래 "`signInAnonymously()` 제거(2026-08-05)" 절이 원본 근거다.
+>
+> **대체된 실제 구조**: 게스트 식별은 파이어베이스와 무관한 **로컬 UUID**(`application/device/DeviceIdentityStorePort.loadOrCreate()`)가 담당한다. 재설치 후 프리미엄 복원은 앱 계정이 아니라 **Google Play 계정에 귀속된 Play Billing `queryPurchases()`**가 처리하므로(1.2절 두 번째 항목 그대로), 익명 인증 없이도 이 절이 걱정하던 문제는 생기지 않는다.
+>
+> ⚠️ **용어 주의**: 앱 기능인 **'계정 없이 시작하기'**(로컬 UUID)와 **파이어베이스 Auth의 익명 로그인 활성화 여부**(콘솔 설정, 현재 비활성)는 서로 다른 개념이며 혼용하지 않는다.
+>
+> 그 결과 **"익명 → 실계정 승격"을 전제로 쓴 아래 서술은 전부 성립하지 않는다** — Step 2/3의 `linkWithCredential` 승격 경로, Step 4의 목표 정의, 그리고 `docs/GO_AI_COACH_ARCHITECTURE_ROADMAP.md` 로드맵 7번이 그것이다. 로드맵 7번은 "착수 전에 목표를 다시 정의해야 한다"고 이미 표시해 뒀다(예: "게스트(로컬 ID) → 실계정 승격"). 승격 코드 자체(`AuthProvider.Anonymous`, `isPromotableAnonymousSession`, `linkGoogleCredential`/`linkEmailCredential`)는 무해해서 지우지 않고 남겨 뒀다.
+>
+> ⚠️ 여기에 더해 **로그인 기능 전체가 2026-08-09에 꺼졌다**(`ui/FeatureFlags.kt`의 `isLoginEnabled = false`) — 아래 "결정 번복: 이번 출시에서 로그인 기능 전체를 끄기로 결정" 절 참고.
 
 ---
 

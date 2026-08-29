@@ -18,7 +18,7 @@
 1. AI 차례에는 항상 현재 진영의 플레이 레벨로 `TurnAnalysis`를 요청한다.
 2. AI는 반환된 후보를 `MoveSelectionPolicy`로 레벨링해 착수한다.
 3. 각 레벨 그룹의 최고 단계는 항상 엔진 후보 순위의 최상위 수를 둔다.
-   - `빠른 초급 1~3단계`: B16 GTP 후보 중 최상위 수
+   - `빠른 초급`: B16 GTP 경로. **2026-08-18부터 5단계(초보~초고수)**이며 최상위 수만 두는 것은 5단계(초고수)뿐이다 — 1~4단계는 후보를 최하수/중급수/최적수 3버킷으로 나눠 단계별 비율대로 섞는다(아래 "현재 Top Moves 구현 상태와 한계" 절 참고).
    - `초급 7단계`: B32 후보 중 최상위 수
    - `중급 5단계`: B64 후보 중 최상위 수
    - `고급 5단계`: B160 후보 중 최상위 수
@@ -72,8 +72,8 @@ JSON 기반 운영의 목표는 다음과 같다.
 - `TopMovesDisplay` limit은 `fastCandidateAnalysis(candidateCount=5)`로 정규화되어 `includePolicy=false`, `refinePolicyMoves=0`, `minVisitsPerCandidate=0`, `minTimeMillis=null`이 된다.
 - `runTopMoveAnalysis()`는 `EngineSessionClient.analyzePosition(state, limit)`를 호출하며, 명시적 search mode를 넘기지 않으므로 기본값인 `EngineSearchMode.GtpStatefulFast`를 사용한다.
 - 따라서 플레이어가 보는 `Top Moves`는 현재 대국 runtime profile의 GTP fast 최상위 후보 최대 5개다. 1순위는 보드 위에 큰 원, 2~5순위는 작은 원으로 표시된다(`GoBoard.kt`의 `drawCandidateMoves()`). 상대 AI가 `빠른 초급`이면 같은 B16 계열 경량 분석에서 나온 후보군이다.
-- `빠른 초급 1~3단계`는 현재 코드상 모두 `MoveSelectionPolicy.BestOnly`다. 단계 이름은 남아 있지만 착수 선택 정책은 동일하다.
-- 이 구조에서는 `빠른 초급 3단계`를 상대로 Top Moves를 그대로 따라도 승리가 보장되지 않는다. 후보 5개 중 어떤 수를 선택해도 같은 수준의 분석이며, 선후/komi/엔진 tree reuse/후보 fill/사용자 착수 타이밍에 따라 사용자가 불리할 수 있다.
+- ~~`빠른 초급 1~3단계`는 현재 코드상 모두 `MoveSelectionPolicy.BestOnly`다. 단계 이름은 남아 있지만 착수 선택 정책은 동일하다.~~ → **2026-08-18에 더 이상 사실이 아니다.** `빠른 초급`이 5단계로 재정립되면서 1~4단계는 `MoveSelectionPolicy.BucketedTierSelection`(최하수/중급수/최적수 버킷별 착수 비율)을 쓰고, `BestOnly`는 5단계(초고수)에만 남았다. 따라서 단계별로 착수 선택 정책이 **실제로 다르다**. `EngineAnalysisPolicy.kt`가 `BestOnly`일 때만 후보 1개를 요청하고, 나머지 단계는 `candidateCount`(빠른 초급 기준 8)만큼 받는다. 설계 근거는 `engine-research/FAST_BEGINNER_FIVE_TIER_REDESIGN_PLAN_2026-08-17.md` 11절.
+- 이 구조에서는 `빠른 초급 초고수`(5단계, 옛 3단계에 해당)를 상대로 Top Moves를 그대로 따라도 승리가 보장되지 않는다. 후보 5개 중 어떤 수를 선택해도 같은 수준의 분석이며, 선후/komi/엔진 tree reuse/후보 fill/사용자 착수 타이밍에 따라 사용자가 불리할 수 있다.
 
 제품 메시지는 다음처럼 잡는다.
 
@@ -555,7 +555,7 @@ AI 차례와 사람 차례는 같은 `TurnAnalysis` snapshot 개념을 사용한
 
 ### AI 차례
 
-1. `빠른 초급`은 B16 `GtpStatefulFast`로 후보 1개만 요청하고 최상위 수를 둔다.
+1. `빠른 초급`은 B16 `GtpStatefulFast`를 쓴다. 후보 1개만 요청해 최상위 수를 두는 것은 **5단계(초고수)뿐**이고, 1~4단계는 `candidateCount`(8)만큼 받아 버킷 비율대로 고른다(2026-08-18~).
 2. `초급` 이상은 B32/B64/B160 `JsonPositionAnalysis`로 후보군을 요청한다.
 3. AI vs AI 자동대국에서 GTP mode를 쓸 때만 착수 분석 직전에 `EngineAdapter.clearSearchCache()`를 호출한다. JSON mode는 position-scoped 요청이므로 별도 GTP tree cache 격리가 필요하지 않다.
 4. 반환된 후보의 `engineOrder` 순서를 신뢰한다.

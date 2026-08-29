@@ -32,7 +32,7 @@
 
 **재편 여부**: 기존 2계층(Engine Core API Domain, 계약 정의만)에 기존 4계층(Middleware/Cache Domain)의 **전송** 절반(원격 게이트웨이/트랜스포트)을 합쳤다. "계약을 정의하는 것"과 "그 계약을 실제로 어떻게 도달시키는가(로컬 stdio냐 원격 HTTP냐)"가 개념적으로 같은 책임이라고 보기 때문이다. **260804 정리**: `EngineCoreApi`의 로컬/원격 구현체를 전부 `engine-android` 모듈로 물리적으로 모았다(그 전엔 원격 구현체가 app-android/middleware에 있었음) — app-android(3~7계층) 작업 시 엔진 내부 구현을 아예 안 봐도 되도록, 그리고 향후 원격/DePIN 확장의 물리적 근간이 되도록. 이 이동을 가능케 하려고 `RemotePositionAnalysisTransport`/`Request`/`Response`(전부 `:shared`-safe 타입만 사용)도 `:shared`로 옮겼다 — app-android(Gateway)와 engine-android(Http 구현체)가 순환 의존 없이 같은 계약을 공유하기 위함.
 
-**핵심 갭(해소됨, 260803 Stage D)**: `KataGoProcessEngineAdapter`(로컬)와 `RemoteEngineCoreApiAdapter`(원격)가 이제 `EngineCoreApi` 전체에 대해 대등한 계약을 만족한다(계약 테스트로 검증). 3계층의 후보 선택/신뢰도 판단(`selectRemoteEngineCandidate`)도 260804 Stage E-1/E-2에서 마련됐다 — 아래 3계층 절 참고. 다만 이 원격 경로는 아직 앱 실제 컴포지션(MainActivity/GoCoachApp)에 배선되지 않았다(가리킬 실제 원격 서버가 없음) — Stage F(실제 물리 분산) 영역, 별도 승인 필요.
+**핵심 갭(해소됨, 260803 Stage D)**: `KataGoProcessEngineAdapter`(로컬)와 `RemoteEngineCoreApiAdapter`(원격)가 이제 `EngineCoreApi` 전체에 대해 대등한 계약을 만족한다(계약 테스트로 검증). 3계층의 후보 선택/신뢰도 판단(`selectRemoteEngineCandidate`)도 260804 Stage E-1/E-2에서 마련됐다 — 아래 3계층 절 참고. **260818 갱신**: 이 원격 경로는 이제 `MainActivity`에 `BuildConfig.DEBUG` 한정으로 배선돼 있다(Stage E-3) — `local.properties`의 `debug.remoteEngineUrl`을 맥북 참조 서버(`scripts/run-katago-remote-analysis-server.py`)로 가리키면 실제 대국이 그 서버를 왕복한다(에뮬레이터 e2e 검증 완료). 기본값은 꺼짐이며, 앱 시작 시 한 번만 원격/로컬을 고르고 런타임 실패를 감지해 되돌리지 않는 한계가 남아 있다. 그 재설계와 MQ 전송 전환은 `refactoring/REMOTE_ENGINE_MQ_TRANSPORT_KICKOFF_PLAN_260818_0825.md`가 이어받았다 — Stage F(실제 물리 분산) 영역이라 앱 이식은 여전히 별도 승인 필요.
 
 ### 3계층 — Extended API (엔진 서비스)
 
@@ -68,8 +68,8 @@
 **위치**:
 - `shared/src/commonMain/.../BoardModels.kt`, `BoardRules.kt`, `LegalMoveGenerator.kt`, `BoardScorer.kt`(+`BoardAreaScorer.kt`/`BoardTerritoryScorer.kt`), `EndgameScoreSelector.kt`, `GameStateReplayer.kt`, `ScoreTimeline.kt` — 순수 바둑 규칙(KMP `commonMain`)
 - `shared/src/commonMain/kotlin/com/worksoc/goaicoach/match/MatchReferee.kt`, `AiMoveSelectionPolicy.kt`, `MatchPolicy.kt` — 대국 정책(참여 주체, 턴 권한, AI 레벨링). **260804 경로 정정**: 이전엔 `app-android/.../match/`였으나 "도메인별 파일 분리" 작업(커밋 `5278c12`)으로 `shared`로 이동했다 — 순수 로직이라 KMP 이식 대상이었다.
-- `shared/src/commonMain/kotlin/com/worksoc/goaicoach/application/{session,autoai,undo,humanmove,startgame,savedgame,topmoves,debugreport,score,endgame,diagnostic,runtime,preferences,prompt,movereview,analysis}` — App Service 유스케이스 오케스트레이션. **260816**: 착수 계획서 기준 웨이브 1~6으로 `app-android`에서 `shared`로 물리 이전 완료(예외 1개, 아래 "핵심 갭" 참고; 착수 계획서 원문은 2026-08-17 문서 정리로 저장소에서 제거 — `docs/DOCS_INDEX.md` "문서 보존 정책" 참고). `session/GameSessionStateHolder.kt`가 세션 상태의 단일 source of truth
-- `ui/GoCoachApp.kt` — 위 모든 컨트롤러를 생성/연결하는 composition root (2026-08-14 기준 819줄, `LayeringContractTest`가 라인수 819/상태훅 47 예산을 강제 — 예산 여유 0)
+- `shared/src/commonMain/kotlin/com/worksoc/goaicoach/application/` — App Service 유스케이스 오케스트레이션. **2026-08-29 기준 27개 서브패키지**: 위 이전 시점의 16개(`session`, `autoai`, `undo`, `humanmove`, `startgame`, `savedgame`, `topmoves`, `debugreport`, `score`, `endgame`, `diagnostic`, `runtime`, `preferences`, `prompt`, `movereview`, `analysis`)에 더해 `auth`·`premium`·`device`·`engine`·`safety`(위 3·4·6계층 절 참고), 플랫폼 누수 복구로 신설된 `time`·`concurrency`(로드맵 5번 (5)항), 그리고 참여/리텐션 트랙이 추가한 `attendance`·`botcharacter`·`consumable`·`gamehistory`. **260816**: 착수 계획서 기준 웨이브 1~6으로 `app-android`에서 `shared`로 물리 이전 완료(예외 1개, 아래 "핵심 갭" 참고; 착수 계획서 원문은 2026-08-17 문서 정리로 저장소에서 제거 — `docs/DOCS_INDEX.md` "문서 보존 정책" 참고). `session/GameSessionStateHolder.kt`가 세션 상태의 단일 source of truth
+- `ui/GoCoachApp.kt` — 위 모든 컨트롤러를 생성/연결하는 composition root (**2026-08-29 기준 854줄**, `LayeringContractTest`가 라인수 854/상태훅 46 예산을 강제 — 예산 여유 0). 예산은 화면이 늘 때마다 함께 올라왔다(대국 기록 화면에서 850→853, 출석 Claim 다이얼로그가 853→849로 되돌린 뒤 소모품 배선이 854로) — 올릴 때는 그 이유를 `LayeringContractTest` 안의 주석 이력에 남긴다
 
 **260814 정정**: 이 절에 한때 "기능별 접근 정책 판정"(`FeatureAccessPolicy`)을 5계층으로 적어뒀으나 오기였다 — `PremiumState`(6계층)를 파라미터로 받는 함수는 5계층이 아니라 6계층 소속이다(5계층은 6계층을 몰라야 하므로). 실제 구현은 아래 6계층 절 참고.
 
@@ -99,7 +99,7 @@
 ## 알려진 갭 (2026-07-30 기준)
 
 - ~~`GameSessionStateHolder`(5계층)는 여전히 `app-android`에 있다~~ — **260816 해소**. `application/safety/` 스파이크로 이전 절차(물리 이동·`internal`→public·JUnit→kotlin.test·양쪽 모듈 컴파일·iOS 타깃 컴파일까지)를 먼저 검증한 뒤, 같은 날 웨이브 1~6으로 `application/` 트리 124개 프로덕션 파일 전부(영구 예외 1개 제외)를 `shared`로 물리 이전 완료. `GameSessionStateHolder.kt` 본체(웨이브 5)와 그에 의존하는 마지막 컨트롤러들(웨이브 6) 모두 포함. `:shared`/`:app-android` 컴파일 + `make test` 전체 그린, `NewGameBoardTapSmokeTest.kt`/`AppLaunchSmokeTest.kt` 에뮬레이터 실기 재확인도 통과 — 상세는 아래 "고도화 로드맵" 5번 참고(당시 착수 계획서 원문은 2026-08-17 문서 정리로 제거, `docs/DOCS_INDEX.md` "문서 보존 정책" 참고).
-- ~~`RemoteEngineSessionClient`(3계층, 여러 원격 후보 중 선택·신뢰도 판단)가 없다~~ — 260804 Stage E-1/E-2에서 최소 형태로 해소(`selectRemoteEngineCandidate`+`RemoteEngineSessionBootstrap.createRemoteEngineSessionClient`). `RemoteEngineCoreApiAdapter`(원격 `EngineCoreApi` 구현체 자체, 260803 Stage D)와 함께 이제 준비돼 있지만, 아직 앱 실제 컴포지션(MainActivity/GoCoachApp)에 배선되지 않았고 "고정된 원격 서버 1대"조차 가리킬 실제 서버가 없어 실제로 쓰이고 있지 않다 — Stage F 영역.
+- ~~`RemoteEngineSessionClient`(3계층, 여러 원격 후보 중 선택·신뢰도 판단)가 없다~~ — 260804 Stage E-1/E-2에서 최소 형태로 해소(`selectRemoteEngineCandidate`+`RemoteEngineSessionBootstrap.createRemoteEngineSessionClient`). `RemoteEngineCoreApiAdapter`(원격 `EngineCoreApi` 구현체 자체, 260803 Stage D)와 함께 준비됐고, **260818 Stage E-3에서 `MainActivity`에 `BuildConfig.DEBUG` 한정으로 실제 배선됐다** — 맥북 참조 서버를 상대로 전체 대국 e2e까지 확인됐다(위 2계층 절 참고). 남은 갭은 "배선"이 아니라 런타임 실패 감지/폴백과 여러 후보 비교 신뢰도 판단이며, Stage F 영역이다.
 - ~~2계층의 로컬/원격 구현체가 대등하지 않다~~ — 260803 Stage D에서 해소(위 2계층 절 참고). 260804에 물리적으로도 `engine-android` 한 모듈로 모았다.
 - 4계층(외부 연동)이 포트(α)만 있고 안정화 서비스 본체가 얇다.
 - 6계층(세션/연속성)이 auth/premium 각자의 필요만 채우고 있고, 범용 개념이 없다.
@@ -138,4 +138,4 @@
 - 인증/온보딩 로드맵: `auth-onboarding/README.md`
 - 기능 유/무료 정책 원칙("무엇을 무료/광고/구매/클레임으로 줄지"의 근거) — 이 문서의 "6계층 — 기능 엔타이틀먼트 정책 도입" 항목이 배치를 결정하는 반대편 문서: `feature-access-principles/README.md`
 - 그 원칙을 초도 발행에 구체 적용한 전략/체크리스트: `launch-plan/README.md`
-- 이 7계층 모델이 정착하기까지의 리팩토링 과정: `refactoring/` (날짜별 작업 로그)
+- 이 7계층 모델이 정착하기까지의 리팩토링 과정: **날짜별 작업 로그는 2026-08-17 문서 보존 정책 전환으로 삭제됐다**(git 히스토리로만 보존). `docs/refactoring/`에는 지금 **진행 중인** 계획서만 남는다.
