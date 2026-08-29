@@ -177,9 +177,6 @@ internal data class UiStrings(
     val everyMoveTopMoves: String,
     /** 대국 한 판에 한 번만 뜨는 안내 — 버튼은 1회성이고 상시 보기는 메뉴에 있다는 것. */
     val everyMoveHint: String,
-    val consumableSpendTitle: String,
-    val consumableSpendConfirmAction: String,
-    val consumableSpendCancelAction: String,
     val premiumUpsellUseTicketAction: String,
     val attendanceRewardTitle: String,
     val attendanceRewardClaimAction: String,
@@ -264,17 +261,6 @@ internal data class UiStrings(
             UiLanguage.English -> "Used one $name ($remaining left)"
             UiLanguage.Japanese -> "${name} を使用（残り${remaining}枚）"
             UiLanguage.ChineseSimplified -> "已使用${name}（剩余 $remaining 张）"
-        }
-    }
-
-    /** 1회권 사용 확인 문구. 남은 장수를 함께 보여준다 — 잔량 표시는 "쓰려는 순간"에만 둔다. */
-    fun consumableSpendMessage(item: ConsumableItem, remaining: Int): String {
-        val name = consumableRewardName(item)
-        return when (language) {
-            UiLanguage.Korean -> "$name 을(를) 사용할까요?\n사용 후 ${remaining - 1}장 남습니다."
-            UiLanguage.English -> "Use one $name?\n${remaining - 1} left after this."
-            UiLanguage.Japanese -> "${name} を使用しますか？\n使用後は残り${remaining - 1}枚です。"
-            UiLanguage.ChineseSimplified -> "要使用${name}吗？\n使用后剩余 ${remaining - 1} 张。"
         }
     }
 
