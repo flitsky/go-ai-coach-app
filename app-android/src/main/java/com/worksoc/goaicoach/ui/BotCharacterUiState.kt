@@ -15,11 +15,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import android.widget.Toast
 import com.worksoc.goaicoach.application.botcharacter.BotUnlockSource
-import kotlinx.coroutines.launch
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.unit.dp
@@ -102,21 +100,16 @@ internal fun buildBotCharacterUiState(context: Context): BotCharacterUiState {
 @Composable
 internal fun BotCharacterPickerDialog(
     selected: BotCharacter?,
+    adInProgress: Boolean,
     onSelect: (BotCharacter) -> Unit,
+    onWatchAd: (BotCharacter) -> Unit,
     onDismiss: () -> Unit,
 ) {
     val strings = LocalUiStrings.current
     val bots = LocalBotCharacterUiState.current
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    // 광고가 뜨는 동안 같은 줄을 여러 번 눌러 조각이 중복 적립되지 않게 잠근다.
-    var adInProgress by remember { mutableStateOf(false) }
 
     AlertDialog(
-        // 광고 Activity 전환 중의 dismiss 요청을 막아 본 것이다. ⚠️ 이것만으로는 부족했다 —
-        // 광고를 보고 돌아오면 픽커는 여전히 닫혀 있다(원인 미상, PlayerSetupPanel의 showPicker
-        // 주석 참고). 무해하므로 남겨 두지만, 이 줄이 그 문제를 해결한다고 읽지 말 것.
-        onDismissRequest = { if (!adInProgress) onDismiss() },
+        onDismissRequest = onDismiss,
         title = { Text(strings.botPickerTitle) },
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
@@ -136,24 +129,7 @@ internal fun BotCharacterPickerDialog(
                                     onSelect(character)
                                     onDismiss()
                                 }
-                                shardSource != null && !adInProgress -> scope.launch {
-                                    adInProgress = true
-                                    val outcome = bots.watchAdForShard(character)
-                                    adInProgress = false
-                                    val message = when {
-                                        outcome !is AdRewardOutcome.RewardEarned ->
-                                            strings.premiumAdGrantFailedMessage
-                                        // 적립 직후 상태는 다음 재구성에 반영되므로 여기서 직접 센다.
-                                        bots.shardsFor(character) + 1 >= shardSource.required ->
-                                            strings.botUnlockedToast(character)
-                                        else -> strings.botShardEarnedToast(
-                                            character,
-                                            bots.shardsFor(character) + 1,
-                                            shardSource.required,
-                                        )
-                                    }
-                                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-                                }
+                                shardSource != null && !adInProgress -> onWatchAd(character)
                             }
                         },
                     )
@@ -208,4 +184,31 @@ private fun BotCharacterRow(
             }
         }
     }
+}
+
+
+/**
+ * 조각 광고 한 번을 실행하고 결과를 토스트로 알린다(백로그 #11·#20).
+ *
+ * ⚠️ **이 함수는 픽커 다이얼로그가 아니라 그것을 여는 화면 쪽에서 호출해야 한다.** 광고를 띄우면
+ * 다이얼로그로 dismiss 요청이 날아와 픽커가 닫히는데(2026-08-29 계측 확인), 다이얼로그 안에서
+ * 코루틴을 돌리면 그 순간 스코프까지 함께 취소돼 "끝나고 다시 열어주는" 복구조차 못 한다.
+ * 패널은 그 전환에서 살아남는 것이 로그로 확인됐으므로(`panel-dispose`가 찍히지 않는다) 거기서
+ * 돌린다.
+ */
+internal suspend fun watchAdForShardAndReport(
+    character: BotCharacter,
+    bots: BotCharacterUiState,
+    strings: UiStrings,
+    context: Context,
+) {
+    val required = (character.unlockSource as? BotUnlockSource.AdShards)?.required ?: return
+    val before = bots.shardsFor(character)
+    val outcome = bots.watchAdForShard(character)
+    val message = when {
+        outcome !is AdRewardOutcome.RewardEarned -> strings.premiumAdGrantFailedMessage
+        before + 1 >= required -> strings.botUnlockedToast(character)
+        else -> strings.botShardEarnedToast(character, before + 1, required)
+    }
+    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
 }

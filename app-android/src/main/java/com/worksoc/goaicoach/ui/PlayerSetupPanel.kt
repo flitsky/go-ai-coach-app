@@ -22,6 +22,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import kotlinx.coroutines.launch
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -223,11 +226,18 @@ private fun PlayerSetupSideRow(
             val current = BotCharacterCatalog.forPlayLevel(
                 PlayLevelSetting(group = PlayLevelGroup.FastBeginner, level = fastBeginnerLevel),
             )
-            // ⚠️ 알려진 문제(2026-08-29, 미해결): 조각 광고를 보고 돌아오면 **픽커가 닫혀 있다.**
-            // 조각 5개를 모으려면 픽커를 다섯 번 다시 열어야 한다. `rememberSaveable`로 바꾸고
-            // 다이얼로그의 dismiss 요청도 광고 중에는 무시해 봤지만 둘 다 효과가 없었다 — 원인을
-            // 아직 못 찾았다. 두 조치 자체는 무해해서 남겨 뒀다(전자는 프로세스 사망 대비로도 옳다).
-            var showPicker by rememberSaveable { mutableStateOf(false) }
+            // 광고 코루틴을 다이얼로그가 아니라 여기서 돌리는 이유: 광고를 띄우면 픽커
+            // 다이얼로그가 닫히는데(#20), 다이얼로그 안에서 돌리면 그 순간 스코프까지 취소돼
+            // 결과 처리조차 못 한다. 패널은 그 전환에서 살아남는 것이 계측으로 확인됐다.
+            //
+            // ⚠️ 아래 `showPicker = true` 복구는 **아직 동작하지 않는다**(#20 미해결). 조각은
+            // 정상 적립되지만 픽커는 여전히 닫힌 채로 돌아온다 — 왜 이 대입이 반영되지 않는지
+            // 밝히지 못했다. 원인이 잡히면 이 자리가 맞는 자리이므로 줄은 남겨 둔다.
+            var showPicker by remember { mutableStateOf(false) }
+            var adInProgress by remember { mutableStateOf(false) }
+            val scope = rememberCoroutineScope()
+            val bots = LocalBotCharacterUiState.current
+            val context = LocalContext.current
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -247,9 +257,20 @@ private fun PlayerSetupSideRow(
             if (showPicker) {
                 BotCharacterPickerDialog(
                     selected = current,
+                    adInProgress = adInProgress,
                     onSelect = { character ->
                         character.toPlayLevelSetting()?.let { level ->
                             onSideChange(side.copy(playLevel = level))
+                        }
+                    },
+                    onWatchAd = { character ->
+                        scope.launch {
+                            adInProgress = true
+                            watchAdForShardAndReport(character, bots, strings, context)
+                            adInProgress = false
+                            // 광고가 픽커를 닫았더라도 여기서 되살린다 — 조각 10개짜리를 모으려고
+                            // 픽커를 열 번 다시 여는 일이 없게 하는 것이 이 항목의 목적이다.
+                            showPicker = true
                         }
                     },
                     onDismiss = { showPicker = false },
