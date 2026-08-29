@@ -70,9 +70,23 @@
 (`a4f33ab`, 2026-08-12) — `app-android/build.gradle.kts`와 release 머지 매니페스트
 (`targetSdkVersion="36"`) 양쪽에서 확인했다. 경고가 가리키는 것은 **콘솔에 게시된 번들**이다:
 내부 테스트 트랙에 올라가 있는 AAB는 버전 2(0.1.1, 2026-08-06)로 **targetSdk 상향보다 엿새 앞선다.**
-따라서 해소 방법은 SDK를 올리는 것이 아니라 **현재 소스로 AAB를 새로 빌드해 올리는 것**이다
-(`make play-internal-aab` / `make bundle-aab` — 둘 다 `bump-version`이 걸려 있어 VERSION_CODE가
-자동 증가한다). ⚠️ 이 빌드는 `version.properties`를 변경하므로 착수 전 확인이 필요하다.
+따라서 해소 방법은 SDK를 올리는 것이 아니라 **현재 소스로 AAB를 새로 빌드해 올리는 것**이다.
+
+**빌드 완료(2026-08-29)**: 사용자 승인으로 `make play-internal-aab`을 돌렸다 — 비공개 테스트
+14일 요건이 아직 진행 중이라 같은 내부 테스트 트랙에 올리는 쪽이 안전하다는 판단.
+
+| 항목 | 값 |
+| --- | --- |
+| 산출물 | `dist/go-ai-coach-play-internal.aab` (111MB, gitignored) |
+| sha256 | `5914372d2be10f8175bda468b192b4a22a6e6f4dd4968bb00efd7e14b1613783` |
+| versionCode / versionName | **803 / 0.8.3** (`bump-version`이 0.8.2 → 0.8.3으로 자동 증가) |
+| targetSdk / minSdk | **36 / 26** |
+
+수치는 추정이 아니라 **번들 안의 바이너리 매니페스트를 aapt2로 직접 덤프해** 확인한 것이다
+(`targetSdkVersion=36`, `versionCode=803`) — 게시 번들이 0.1.1이던 것이 경고의 원인이었으므로,
+소스가 아니라 산출물에서 확인하는 것이 이 항목의 요점이다.
+
+**남은 것은 콘솔 업로드뿐이며 사용자 몫이다.**
 
 ---
 
