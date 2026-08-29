@@ -1,0 +1,15 @@
+// ⚠️ 로컬 Firestore 에뮬레이터 전용 규칙입니다 — 절대 프로덕션에 배포하지 마세요.
+// 이 프로토타입은 `firebase.json`이 가리키는 에뮬레이터(127.0.0.1:8080)에서만 돌며,
+// 실제 Firebase 프로젝트(`project-baduk-hanpan`)와 무관합니다. 아래 규칙은 인증 없이
+// 모든 문서에 읽기/쓰기를 허용하므로, 실제 프로젝트에 올라가면 DB 전체가 공개됩니다.
+// 실제 이식 시점에는 세션 토픽 단위 권한 규칙을 새로 작성해야 합니다
+// (docs/refactoring/REMOTE_ENGINE_MQ_TRANSPORT_KICKOFF_PLAN_260818_0825.md 6절 5번).
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}
