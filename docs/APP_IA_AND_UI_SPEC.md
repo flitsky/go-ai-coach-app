@@ -1,6 +1,8 @@
 # Go AI Coach - 앱 IA (Information Architecture) & UI/UX 기능 명세서
 
-본 문서는 **Go AI Coach** 앱의 화면 구조(IA), 화면별 UI 컴포넌트, 사용자 상호작용 피드백, 디자인 시스템 규칙을 정리한 통합 명세서입니다. UI/UX 디자이너, 모바일 개발자, 기획자가 앱의 전체 흐름과 세부 UX 사양을 한눈에 파악하고 협업할 수 있도록 구성되었습니다.
+본 문서는 **Go AI Coach** 앱의 화면 구조(IA), 화면별 UI 컴포넌트, 사용자 상호작용 피드백, 디자인 시스템 규칙을 정리한 통합 명세서입니다.
+
+> **갱신: 2026-08-29** — 1절 IA와 2절 화면 명세를 현재 코드(`ScreenDestination`, `ui/GamePlaySection.kt`) 기준으로 정정했습니다. 이전 판은 화면 3개 + `Analyze` 버튼을 명세했지만 실제 목적지는 7개이고 `Analyze` 버튼은 제거된 상태였습니다. UI/UX 디자이너, 모바일 개발자, 기획자가 앱의 전체 흐름과 세부 UX 사양을 한눈에 파악하고 협업할 수 있도록 구성되었습니다.
 
 ---
 
@@ -8,25 +10,33 @@
 
 앱은 단순하고 직관적인 **3단계 스크린 구조**와 상황별 팝업/다이얼로그로 이루어져 있습니다.
 
+`ScreenDestination`(`ui/GoCoachApp.kt`)이 정의하는 목적지는 **7개**입니다 — `Onboarding`, `Home`, `Settings`, `Study`, `GameHistory`, `GameSetup`, `InGame`.
+
 ```mermaid
 graph TD
-    A["홈 화면 (ScreenDestination.Home)"] -->|"대국 하기 클릭"| B["대국 설정 로비 (ScreenDestination.GameSetup)"]
-    A -->|"학습 하기 클릭"| F["학습 화면 (준비 중 안내 토스트)"]
-    B -->|"대국 시작하기 클릭"| C["메인 대국 화면 (ScreenDestination.InGame)"]
+    O["온보딩 (ScreenDestination.Onboarding)"] --> A
+    A["홈 화면 (ScreenDestination.Home)"] -->|"대국 하기"| B["대국 설정 로비 (ScreenDestination.GameSetup)"]
+    A -->|"학습 하기"| F["학습 화면 (ScreenDestination.Study)"]
+    A -->|"대국 기록"| G["대국 히스토리 목록 (ScreenDestination.GameHistory)"]
+    A -->|"설정"| S["설정 화면 (ScreenDestination.Settings)"]
+    B -->|"대국 시작하기"| C["메인 대국 화면 (ScreenDestination.InGame)"]
     C -->|"뒤로가기/종료"| A
-    
+
     C --> D["슬라이딩 메뉴 (Drawer / Panel)"]
     D --> D1["Player Setup (흑/백 AI 레벨)"]
     D --> D2["Search Time (탐색 시간)"]
     D --> D3["Game & Board Rules (계가/덤/접바둑)"]
     D --> D4["Display Options (표시 옵션)"]
 
-    C --> E["팝업 다이얼로그"]
+    A --> P["출석 보상 Claim 다이얼로그"]
+    C --> E["대국 중 팝업 다이얼로그"]
     E --> E1["이전 대국 이어하기 Prompt"]
     E --> E2["기권 확인 Confirm"]
-    E --> E3["바로 착수 추천 Dialog"]
+    E --> E3["프리미엄 업셀 / 1회권 사용 확인"]
     E --> E4["기기 성능 확인 (진행 중 / 완료)"]
 ```
+
+**2026-08-29 기준 이 절이 아직 상세 명세를 갖지 않은 화면**: `Onboarding`, `Settings`, `GameHistory`(참여/리텐션 트랙 백로그 #7로 신설), 그리고 앱 전역에 뜨는 출석 보상 Claim 다이얼로그(백로그 #14, `ui/AttendanceRewardClaimDialog.kt`). 해당 트랙의 스펙은 `engagement-growth/OFFLINE_ENGAGEMENT_FEATURES_KICKOFF_PLAN_260823_1521.md`에 있습니다 — 트랙이 끝나면 여기로 흡수합니다.
 
 ---
 
@@ -51,7 +61,7 @@ graph TD
      - **바둑판 크기 (`Board size`)**: `9x9`, `13x13`, `19x19`
      - **접바둑 (`Handicap`)**: `접바둑 없음`(기본값) ~ `접바둑 N점` (9x9·13x13은 최대 5점, 19x19는 최대 9점) — `[-] [드롭다운] [+]` 구성
   3. **플레이어 설정 (`Player Setup`)**:
-     - 흑/백 각각 `사람(플레이어)` 또는 `AI(난이도 4그룹: 빠른 초급/초급/중급/고급)` 선택.
+     - 흑/백 각각 `사람(플레이어)` 또는 `AI` 선택. **AI 난이도는 2026-08-18부터 `빠른 초급` 5단계(`초보`/`하수`/`중수`/`고수`/`초고수`) 1뎁스로만 노출됩니다** — 기존 `초급`/`중급`/`고급` 그룹은 코드는 남아 있으나 UI에서 숨겨졌습니다([ENGINE.md](./ENGINE.md) 레벨 매핑 표 참고).
   4. **대국 시작하기 버튼 (`startMatchAction`)**:
      - 선택한 옵션으로 새 대국 세션을 세팅하고 메인 대국 화면으로 진입.
 
@@ -73,7 +83,9 @@ graph TD
      - `Top Moves (추천 수 토글)`: 현재 국면 AI 상위 5개 추천 수 표시/숨김.
      - `Eval (형세 보기 토글)`: 사석/영역 및 승률 오버레이 토글.
      - `Resign (기권)`: 대국 포기. "정말 기권하시겠습니까?" 확인 다이얼로그 후 처리.
-     - `Analyze (분석)`: KataGo 분석 다이얼로그 오픈, 흑/백 분석 정보 표시.
+     - ~~`Analyze (분석)`~~ — **제거됨**(2026-08-17 이전). 별도 분석 다이얼로그는 더 이상 없습니다.
+
+     ⚠️ **위 액션들은 더 이상 전부 무조건 활성이 아닙니다.** `Undo`/`Top Moves`/`Eval`은 프리미엄·클레임·소모품 1회권으로 게이팅되며, 잠긴 상태에서 누르면 업셀 또는 1회권 사용 확인 팝업이 뜹니다(`ui/GamePlaySection.kt`, `ui/ConsumableUiState.kt`). 정책 원본은 [`../feature-access-principles/README.md`](../feature-access-principles/README.md)와 [`../launch-plan/README.md`](../launch-plan/README.md) 2장이며, 이 절은 아직 그 게이팅 상태별 UI를 상세히 명세하지 않았습니다.
   5. **슬라이딩 메뉴 (Drawer / Panel)**:
      - `Player Setup`, `Search Time`, `Game & Board Rules (계가/덤/접바둑)`, `Display Options (표시 옵션)` 설정 실시간 변경 가능.
 

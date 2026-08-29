@@ -7,7 +7,7 @@
 
 `Kotlin Multiplatform`을 1차 구현 기준으로 쓴다. 이유는 네이티브 엔진 제어와 Android 우선 출시 속도를 동시에 얻기 위함이다. `Flutter`는 여러 보드게임 앱에 UI를 재사용하는 것이 엔진 제어보다 중요해질 경우의 대안으로 남겨둔다.
 
-전체 비교 근거는 `archive/2026-06-17-early-decisions/STACK_DECISION.md`를 따른다.
+전체 비교 근거 문서(`STACK_DECISION.md`)는 2026-08-17 문서 보존 정책 전환으로 저장소에서 삭제됐다 — 결론은 위 두 문단이 그대로 담고 있고, 원문이 필요하면 `git log --all --diff-filter=D -- '**/STACK_DECISION.md'`로 복원한다.
 
 ## 계가/종국 정책
 
@@ -55,7 +55,6 @@ adb shell run-as com.worksoc.goaicoach cat files/runtime_events.log
 
 | 문서 | 다룰 내용 |
 | --- | --- |
-| `archive/2026-06-17-early-decisions/STACK_DECISION.md` | KMP vs Flutter 전체 비교 |
 | `SCORE_AND_ENDGAME_DECISION.md` | 계가/종국 SLA, 부심·주심 불일치 UX, KataGo raw 명령 목록 |
 | `USER_OPTION_MANUAL.md` | 모든 메뉴/버튼의 상세 동작, 기본값, 저장 정책 |
 | `DIAGNOSTIC_EVENT_SCHEMA.md` | diagnostic JSONL 스키마 + runtime event log 20종 전체 목록 |

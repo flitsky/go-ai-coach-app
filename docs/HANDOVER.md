@@ -132,7 +132,7 @@ AI 대화 스레드는 매번 백지에서 시작합니다(cold start). 사람�
 
 | 트랙 | 진입 파일 | 상태 |
 | --- | --- | --- |
-| **참여/리텐션 기능** (출석·업적·히스토리·봇 캐릭터) | `engagement-growth/OFFLINE_ENGAGEMENT_FEATURES_BACKLOG_260823_2059.md` | **진행 중.** 11개 완료, 6개 예정 — **지금 이어받을 곳** |
+| **참여/리텐션 기능** (출석·업적·히스토리·봇 캐릭터) | `engagement-growth/OFFLINE_ENGAGEMENT_FEATURES_BACKLOG_260823_2059.md` | **진행 중.** 13개 완료, 6개 예정(2026-08-29 기준) — **지금 이어받을 곳** |
 | 초도 마켓 발행 | `launch-plan/README.md` (0절이 최종 체크리스트) | 대기 |
 | 수익화 / 계정 / UX / 디자이너 핸드오프 | `premium-mode/`, `auth-onboarding/`, `ux-improvement/`, `design-handoff/` 각 `README.md` | append 로그 |
 | 기능 유/무료 원칙 (상위 원칙) | `feature-access-principles/README.md` | 참조용 |
@@ -171,8 +171,14 @@ make doctor
 
 - `make test` (검증) · `make dev` (디버그 빌드) · `make install-dev` (설치) · `make seed-engine` (KataGo 모델 주입)
 - ⚠️ KataGo 모델을 안 넣으면 앱이 **조용히 스텁 AI로 폴백**합니다(즉시 착수하는 가짜 AI). `make doctor`가 경고해 줍니다.
-- iOS 타깃은 기본 꺼져 있고 `-PenableIosTargets=true`로만 켜집니다. **현재 이 타깃은 깨져 있는 상태일 수 있으니**
-  안드로이드 빌드 실패로 오인하지 마세요.
+- iOS 타깃은 기본 꺼져 있고 `-PenableIosTargets=true`로만 켜집니다. **2026-08-24에 한 번 깨졌다가 복구됐습니다**
+  (`docs/GO_AI_COACH_ARCHITECTURE_ROADMAP.md` "플랫폼 누수 회귀 복구" 참고 — 에러 49개, 원인은 `import java.` 검사를
+  통과해버리는 `System.currentTimeMillis()`/`kotlin.synchronized`/`Dispatchers.IO`였습니다).
+  ⚠️ **평소 안드로이드 빌드/테스트가 그린이어도 이 타깃은 조용히 깨질 수 있습니다** — 아무도 안 켜기 때문입니다.
+  그래서 `shared/`를 건드린 일감은 아래 명령까지 돌리는 것이 백로그의 규칙입니다:
+  ```bash
+  ./gradlew :shared:compileKotlinIosSimulatorArm64 -PenableIosTargets=true
+  ```
 
 ---
 
@@ -196,6 +202,28 @@ make doctor
 
 ⚠️ 백로그에 `[진행중]` 항목이 남아 있는데 아무도 작업 중이 아니라면, **직전 스레드가 중단된 것**입니다.
 코드부터 쓰지 말고 `git status` / `git diff`로 어디까지 갔는지 먼저 진단하세요.
+
+---
+
+## 6.1. ⚠️ 문서가 알려주지 않는 것 — 미병합 브랜치
+
+위에 적힌 대로 이 저장소의 관행은 **`main` 직접 커밋**입니다. 그래서 **브랜치에 세워둔 작업은 어느 문서에도 나타나지 않습니다.**
+문서만 읽는 스레드에게는 그 작업이 존재하지 않는 것과 같습니다.
+
+**현황 파악을 시작할 때 반드시 이 한 줄을 먼저 돌리세요:**
+
+```bash
+git branch -a --no-merged main
+```
+
+**2026-08-29 기준으로 미병합 브랜치가 2개 있습니다:**
+
+| 브랜치 | 담긴 것 | 주의 |
+| --- | --- | --- |
+| `feature/remote-engine-mq-prototype` | Stage F MQ 전송 파이썬 프로토타입 8파일 973줄(`scripts/remote-engine-mq-prototype/` — MQTT·Firestore 세션 토픽, 정합성 체크, 타임아웃 병행 폴백) + 아래 프리미엄 픽스 | `docs/refactoring/REMOTE_ENGINE_MQ_TRANSPORT_KICKOFF_PLAN_260818_0825.md` 6절은 이걸 여전히 "승인 시 착수할" 미래 작업으로 적어둡니다 — **`main`만 보면 그 말이 맞습니다.** 실제로는 이미 짜여 브랜치에 있습니다 |
+| `fix/premium-expiry-toggle-off` | `프리미엄 만료 시점에 형세보기/추천수 토글 즉시 비활성화` 버그픽스 | **같은 픽스가 위 브랜치에도 중복으로 들어 있고, `main`에는 어느 쪽도 없습니다.** 즉 이 버그는 지금 `main`에 살아 있을 가능성이 높습니다 — 프리미엄 게이팅을 "해결됨"으로 취급하기 전에 먼저 확인하세요 |
+
+둘 다 `origin`에도 푸시돼 있어 유실 위험은 없습니다. **병합/체리픽/폐기 결정은 아직 내려지지 않았습니다**(2026-08-29 사용자 판단: 이번엔 기록만 하고 코드는 건드리지 않음). 이 표는 그 결정이 내려지면 갱신하세요.
 
 ---
 

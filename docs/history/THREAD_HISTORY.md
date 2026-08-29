@@ -15,7 +15,7 @@
 - 환경 메모: 로컬 셸 기본 `java`가 25라 Gradle Kotlin DSL이 즉시 실패한다 — 이후 모든 검증은 `JAVA_HOME=$(/usr/libexec/java_home -v 17)` 명시가 필수라는 점이 문서 전체에서 반복 확인된다(현재도 유효).
 
 ### 대국 UX 반복 (2026-05-31 ~ 06월 초)
-- 무르기, Top Moves/후보수 오버레이, ownership heatmap, 실시간 score/win-rate 그래프, 좌표/수순 번호 등 KaTrain 스타일 UX를 옵션 기반으로 순차 도입했다(`docs/KATRAIN_UX_BACKLOG.md`).
+- 무르기, Top Moves/후보수 오버레이, ownership heatmap, 실시간 score/win-rate 그래프, 좌표/수순 번호 등 KaTrain 스타일 UX를 옵션 기반으로 순차 도입했다(당시 추적 문서 `docs/KATRAIN_UX_BACKLOG.md` — 항목이 모두 흡수된 뒤 삭제됐다).
 - 계가 로직을 여러 차례 실사용 버그로 다듬었다 — 사석 미정리 상태에서 pass 종료 시 점수가 뒤집히는 문제를 다수 실제 로그로 재현(`docs/error-cases/`)해 `DeadStoneCleaner`/`DeadStoneDetector`/`EndgameScoreSelector`로 해결했다. 기본 계가 규칙도 중국식(Area)에서 한국/일본식(Territory)로 전환하고 Area/Territory 토글을 추가했다.
 - 배포 형태를 debug APK(~12MB, 엔진 미포함)와 `friend` 빌드 타입(엔진 내장 ~105MB, `make friend-apk`)으로 분리했다 — 평소 개발 루프 속도를 지키기 위함.
 

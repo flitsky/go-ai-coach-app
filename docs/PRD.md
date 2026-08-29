@@ -1,6 +1,6 @@
 # Go AI Coach PRD
 
-최종 수정: 2026-06-17 (9/10절 현황은 현재 코드 기준으로 갱신함. 1~8절은 POC 시절 원본 제품 결정이며 역사적 기록으로 그대로 둔다 — 실제로 무엇이 구현됐는지는 [GO_AI_COACH_ARCHITECTURE_ROADMAP.md](./GO_AI_COACH_ARCHITECTURE_ROADMAP.md), [ENGINE.md](./ENGINE.md)를 따른다)
+최종 수정: 2026-08-29 (9/10절 현황을 현재 코드 기준으로 재갱신 — 이전 갱신은 2026-06-17이었고 그 사이 두 달치 변경이 반영돼 있지 않았다. 1~8절은 POC 시절 원본 제품 결정이며 역사적 기록으로 그대로 둔다 — 실제로 무엇이 구현됐는지는 [GO_AI_COACH_ARCHITECTURE_ROADMAP.md](./GO_AI_COACH_ARCHITECTURE_ROADMAP.md), [ENGINE.md](./ENGINE.md)를 따른다)
 
 ## 1. 목표
 
@@ -136,10 +136,10 @@ MVP 학습 UX:
 - 대국 셋업 로비(`GameSetupLobby`): 대국 시작 전 바둑판 크기, 계가 방식, 덤, 접바둑, 플레이어/AI 조합을 설정하고 50% 축소 렌더링된 실시간 보드 프리뷰를 제공.
 - 다국어 지원: 한국어, 영어, 일어, 중국어(간체) 4개 국어 UI 및 용어 완벽 연동.
 - 로컬 KataGo 엔진(`libkatago.so`)이 **두 가지** 탐색 orchestration 모드(`GtpStatefulFast`, `JsonPositionAnalysis`)를 지원한다 — [ENGINE.md](./ENGINE.md) 참고. 엔진 없이 UI 작업을 할 수 있는 stub 어댑터도 그대로 사용 가능하다.
-- AI 난이도 4그룹(`빠른 초급`/`초급`/`중급`/`고급`), 각각 고유한 visits/time-cap/candidate-count 정책과 탐색 모드를 가진다.
+- AI 난이도는 코드상 4그룹(`빠른 초급`/`초급`/`중급`/`고급`)이 각각 고유한 visits/time-cap/candidate-count 정책과 탐색 모드를 갖지만, **2026-08-18부터 사용자에게 노출되는 것은 `빠른 초급` 하나뿐이다** — 그 안이 5단계(`초보`/`하수`/`중수`/`고수`/`초고수`)로 세분화되고 AI 선택 UI가 1뎁스로 간소화되면서, 나머지 세 그룹은 코드를 보존한 채 UI에서만 숨겨졌다(커밋 `5bf3526`, [ENGINE.md](./ENGINE.md) 레벨 매핑 표 참고).
 - Top Moves 보드 표시(최대 5개 후보, 1순위는 큰 원), 착수 후 복기 색상(green/yellow/orange/red/unknown), 점수/승률 그래프, 기기 벤치마킹, 디버그 리포트 복사, 진단/런타임 이벤트 로깅.
-- `app-android/application/`은 17개 기능 도메인 패키지로 분해되어 있고, 각각 작은 컨트롤러 + 순수함수 application 패턴을 따른다 — 계층 원칙은 [ARCHITECTURE.md](./ARCHITECTURE.md), go-ai-coach 전체 계층 지도는 [GO_AI_COACH_ARCHITECTURE_ROADMAP.md](./GO_AI_COACH_ARCHITECTURE_ROADMAP.md) 참고.
-- `shared` 모듈: 보드 규칙, 계가, 엔진 코어 API 계약, 분석 정책. 여전히 Android 우선이며 iOS/기타 KMP 타겟은 아직 검증되지 않았다.
+- **`application/` 트리는 2026-08 중순에 `app-android`에서 `:shared`로 이전 완료됐다**(2026-08-29 기준: `shared/commonMain/.../application/` 27개 패키지, `app-android` 쪽에는 플랫폼 의존이 남는 `diagnostic/` 1개만 잔류). 각 패키지는 작은 컨트롤러 + 순수함수 application 패턴을 따른다 — 계층 원칙은 [ARCHITECTURE.md](./ARCHITECTURE.md), go-ai-coach 전체 계층 지도는 [GO_AI_COACH_ARCHITECTURE_ROADMAP.md](./GO_AI_COACH_ARCHITECTURE_ROADMAP.md) 참고.
+- `shared` 모듈: 보드 규칙, 계가, 엔진 코어 API 계약, 분석 정책, 그리고 위 `application/` 트리 전체. **iOS 타깃은 실제로 컴파일 검증된다** — `./gradlew :shared:compileKotlinIosSimulatorArm64 -PenableIosTargets=true`가 `shared/`를 건드리는 일감의 필수 검증 절차이며, 2026-08-24에 한 번 회귀(에러 49개)했다가 복구됐다. 다만 iOS 앱 셸은 없고 검증 범위는 `commonMain` 컴파일까지다.
 - SGF 가져오기/내보내기, 서버 엔진 fallback(2절의 목표 최종 상태)은 **아직 구현되지 않았다**.
 
 ## 10. 로드맵 (2026-06-17 상태 갱신)
@@ -152,11 +152,12 @@ Phase 2: 로컬 엔진 브리지 POC. **완료.** 로컬 KataGo 프로세스 어
 
 Phase 3: 9x9 플레이 루프. **완료.** 전체 규칙, 계가, 무르기, 저장/이어하기, AI 레벨, Top Moves, 점수 그래프 모두 출시됨.
 
-Phase 4: 13x13, 19x19 지원. **착수 전.**
+Phase 4: 13x13, 19x19 지원. **완료.** `BoardSize.supported()`가 9/13/19를 모두 반환하고, 대국 설정 로비에서 선택 가능하며 접바둑 화점 배치도 크기별로 다르다(9x9·13x13 최대 5점, 19x19 최대 9점). *(이 항목은 2026-08-29까지 "착수 전"으로 남아 9절의 "완전한 9x9, 13x13, 19x19 대국 셋업" 서술과 같은 문서 안에서 모순돼 있었다.)*
 
 Phase 5: KaTrain에서 영감을 받은 복기 UX. **일부 완료.** Top Moves 표시, 착수 복기 색상, 점수/승률 그래프는 존재한다. 넓은 다중 후보 학습 모드와 SGF 주석은 아직 만들지 않았다.
 
-Phase 6: 선택적 서버 fallback. **착수 전.** 원격 position-analysis 게이트웨이/캐시 골격(`middleware/Remote*`)은 있지만 아직 `RemoteEngineSessionClient`는 없다 — GO_AI_COACH_ARCHITECTURE_ROADMAP.md의 "알려진 갭" 참고.
+Phase 6: 선택적 서버 fallback. **개발용 스파이크까지 완료, 제품 기능으로는 미착수.** 2026-08-29 기준 실재하는 것: `RemoteEngineCandidate.kt`(shared, 후보 선택), `RemoteEngineSessionBootstrap.kt`+`MainActivity` 배선(`BuildConfig.DEBUG` 한정), `RemoteEngineCoreApiAdapter.kt`(engine-android). 에뮬레이터↔맥북 참조 서버로 전체 대국 e2e가 성공했다(Stage E-3, 2026-08-18).
+  ⚠️ 남은 한계: 앱 시작 시 원격/로컬을 **한 번만** 고르고 런타임에 실패를 감지해 되돌리지 않는다 — 서버가 꺼져 있으면 매 호출이 타임아웃 뒤 "엔진 응답 지연"으로 드러난다. 그래서 `local.properties`의 `debug.remoteEngineUrl`은 기본 주석 처리 상태다. 이 재설계와 MQ 전송 전환은 `docs/refactoring/REMOTE_ENGINE_MQ_TRANSPORT_KICKOFF_PLAN_260818_0825.md`가 이어받았다 — **그 파이썬 프로토타입은 미병합 브랜치에 있다**(`docs/HANDOVER.md` 6.1절 참고).
 
 ## 11. 열린 리스크
 

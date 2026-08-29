@@ -129,4 +129,4 @@ OSI의 7계층이 실무에서 TCP/IP의 4계층(링크/인터넷/전송/응용)
 
 - go-ai-coach에 대한 구체적 계층별 파일/패키지 매핑, 현재 갭, 고도화 로드맵: [GO_AI_COACH_ARCHITECTURE_ROADMAP.md](./GO_AI_COACH_ARCHITECTURE_ROADMAP.md)
 - 엔진(1~3계층에 해당) 탐색 방식·레벨 정책·캐시 운영 상세: [ENGINE.md](./ENGINE.md)
-- 이 7계층 모델이 정착하기까지의 리팩토링 과정: `refactoring/` (날짜별 작업 로그)
+- 이 7계층 모델이 정착하기까지의 리팩토링 과정: **날짜별 작업 로그는 2026-08-17 문서 보존 정책 전환으로 저장소에서 삭제됐다**(git 히스토리로만 보존 — `docs/DOCS_INDEX.md` "문서 보존 정책" 참고). `docs/refactoring/`에는 지금 **진행 중인** 계획서만 남는다.

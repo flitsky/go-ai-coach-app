@@ -14,7 +14,7 @@
 - **AdMob 광고**: 실계정·실광고단위(배너+보상형 전면) 연동 완료. `debug`/`friend`는 빌드타입 자체가 항상 Google 공식 테스트 ID를 강제하고, `release`만 `local.properties`의 실제 값을 쓴다 — **"테스트 광고 → 실제 광고 전환"은 이미 자동화돼 있다**, 별도 전환 작업이 필요 없다(`ui/AdUnitIds.kt`, `premium-mode/README.md` "Step 3 후속"). `local.properties`에 `admob.appId`/`admob.bannerAdUnitId`/`admob.rewardedInterstitialAdUnitId` 3개 키 모두 존재 확인(260817).
 - **Play Billing**: Play Console에 비소모성 상품 `premium_lifetime` 등록·활성화, 라이선스 테스터 등록, 실제 구매 완료 + 재설치 자동 복원 두 플로우 모두 실기(에뮬레이터) e2e 검증 완료(2026-08-09, `premium-mode/README.md` "Step 4 후속"). `local.properties`의 `billing.premiumProductId`도 실제 값으로 채워져 있음(260817 확인).
 - **릴리스 서명 키스토어**: `local.properties`에 `release.storeFile`/`release.keyAlias`/`release.keyPassword`/`release.storePassword` 4개 키 모두 존재 확인(260817) — `app-android/build.gradle.kts`의 `release`/`playInternal` signingConfig가 이미 이걸 참조하도록 배선돼 있다.
-- **릴리스 빌드 파이프라인**: `make play-internal-aab`(Play Console 내부 테스트용)·`make bundle-aab`(정식 프로덕션용, 실제 AdMob/Billing 값 사용)·`make release`(APK) 전부 `bump-version`(version.properties의 VERSION_CODE 자동 증가, 재사용 방지)을 거치도록 완성돼 있다(커밋 `7d233f4`/`46eb5a0`). 260817 기준 `VERSION_CODE=111`/`VERSION_NAME=0.1.11`.
+- **릴리스 빌드 파이프라인**: `make play-internal-aab`(Play Console 내부 테스트용)·`make bundle-aab`(정식 프로덕션용, 실제 AdMob/Billing 값 사용)·`make release`(APK) 전부 `bump-version`(version.properties의 VERSION_CODE 자동 증가, 재사용 방지)을 거치도록 완성돼 있다(커밋 `7d233f4`/`46eb5a0`). 260817 기준 `VERSION_CODE=111`/`VERSION_NAME=0.1.11`. **(2026-08-29 갱신: 현재는 `VERSION_CODE=800`/`VERSION_NAME=0.8.2` — `version.properties` 확인. 아래 절들이 인용하는 `v0.1.11`/`VERSION_CODE=111`은 그 시점의 자산 스냅샷을 가리키는 것이며 현재 버전이 아니다.)**
 - **Play Console 내부 테스트 트랙**: AAB 버전 2(0.1.1) 이미 게시됨, 테스터 이메일 등록 완료(2026-08-06 작업, 2026-08-09 재확인).
 - **스토어 등록정보 텍스트 초안**: `design-handoff/export/2026-08-11-v0.1.2/store_listing.txt` — 앱 이름/짧은 설명/자세한 설명/키워드까지 초안 존재. 스크린샷 4장(`screenshots/`)도 Play Console 규격(2:1, 1148x2296)에 맞춰 이미 캡처돼 있음. **260817 재캡처됨 — 아래 신규 완료 항목 참고.**
 - **앱 핵심 기능/안정성**: 이번 세션에서 `application/` 트리 전체(124개 파일)가 `:shared`로 이전 완료, `make test` 전체 그린, 에뮬레이터 실기 스모크 테스트(app-launch/new-game/board-tap/saved-session-prompt) 4종 모두 통과.
@@ -33,7 +33,13 @@
 - **신규 발견 — 형세 보기 ON 상태에서 보드 영역(ownership) 오버레이 미표시**: 재캡처 과정에서 발견. 2026-08-11 캡처엔 형세 보기 ON 시 보드 위에 은은한 음영 오버레이가 있었는데, 260817 재캡처 시점(v0.1.11)엔 토글은 ON으로 바뀌지만 오버레이 자체가 전혀 안 나타난다(여러 수 진행 후에도, 승률 표시도 고정값). `GoBoard.kt`에 오버레이를 그리는 코드(`ownershipEstimate != null && premium.isActive`) 자체는 남아있어 — 값이 채워지는 경로가 최근 리팩토링(분석 버튼 제거 등)으로 끊겼을 가능성. 회귀인지 의도된 단순화인지 별도 확인이 필요해 백그라운드 조사 작업으로 분리했다(현재 세션 범위 밖 — 스토어 심사에 블로커는 아니라고 판단, 03_eval_coaching 스크린샷은 이 실제 동작을 그대로 반영해 재캡처함).
 
 ### 참고 — 이번 방향(초도 발행 먼저, 고도화는 이후)에 대한 의견
-핵심 엔지니어링(기능, 수익화 인프라, 아키텍처 리팩토링, 테스트)은 이미 상당히 성숙한 상태고, 남은 건 대부분 **코드가 아니라 자산/문서/콘솔 설정**이다 — 방향 자체가 타당하다. 다만 Google Play가 신규 개인 개발자 계정에 요구하는 **비공개 테스트(20명, 14일) 선행 조건**이 이 계정에 해당하는지는 Play Console에서 직접 확인이 필요하다 — 해당된다면 "정식 공개" 시점이 코드/자산 준비와 무관하게 그만큼 뒤로 밀린다.
+핵심 엔지니어링(기능, 수익화 인프라, 아키텍처 리팩토링, 테스트)은 이미 상당히 성숙한 상태고, 남은 건 대부분 **코드가 아니라 자산/문서/콘솔 설정**이다 — 방향 자체가 타당하다.
+
+~~다만 Google Play가 신규 개인 개발자 계정에 요구하는 **비공개 테스트(20명, 14일) 선행 조건**이 이 계정에 해당하는지는 Play Console에서 직접 확인이 필요하다~~
+
+**(2026-08-29 정정 — 확인됐고, 숫자도 틀렸다)**: 이 계정에 **해당한다**. 그리고 요건은 20명이 아니라 **12명 × 14일**이다. 2026-08-19 시점에 이미 **12명 참여까지 충족**됐고 남은 것은 14일 경과뿐이었다 — 즉 이 항목은 "미확인"이 아니라 **진행 중**이다. 근거와 Play Console 화면 캡처는 `docs/market-listing-history/README.md`에 있다.
+
+⚠️ 이 사실이 9일간 이 문서에 반영되지 못한 이유 자체가 교훈이다 — `docs/market-listing-history/`가 `docs/DOCS_INDEX.md`에 등재되지 않았고 어떤 문서도 링크하지 않아 **인바운드 참조가 0이었다.** 새 문서는 만든 자리에서 인덱스에 등록한다(`DOCS_INDEX.md` "운영 원칙" 참고).
 
 ### 260817 오후 갱신 — 이번 세션에서 실제로 처리한 것
 사용자가 제안한 순서(①런처 아이콘+스토어 아이콘/피처그래픽 ②개인정보처리방침 노출 ③요금 안내 문단+스크린샷) 그대로 진행:
