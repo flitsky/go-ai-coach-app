@@ -21,7 +21,6 @@ import com.worksoc.goaicoach.application.premium.FeatureAccess
 import com.worksoc.goaicoach.application.premium.FeatureAccessPolicy
 import com.worksoc.goaicoach.application.premium.FeatureId
 import com.worksoc.goaicoach.application.premium.PremiumStateStorePort
-import com.worksoc.goaicoach.application.premium.buildPremiumDeactivatedDiagnosticEvent
 import com.worksoc.goaicoach.application.premium.saveMergingClaimedFeatures
 import androidx.compose.ui.platform.LocalContext
 import com.worksoc.goaicoach.application.analysis.AnalysisCacheKey
@@ -755,16 +754,8 @@ private fun GoCoachScreen(
     // 소모품 재고/단발성 상태 배선의 본체는 ui/ConsumableUiState.kt에 있다(위와 같은 이유).
     val consumableUiState = buildConsumableUiState(context) { next -> premiumState = next }
 
-    // 프리미엄이 비활성 상태가 될 때(활성화 안 함 선택, 만료 등) 형세보기/추천수의 "켜짐" 상태값
-    // 자체를 꺼서, 버튼만 잠기고 기능은 이전 값대로 계속 동작하는 걸 방지한다. 진단 로그 내용
-    // 자체는 순수 함수(buildPremiumDeactivatedDiagnosticEvent)가 판정한다.
-    LaunchedEffect(premiumUiState.isActive) {
-        if (!premiumUiState.isActive) {
-            uxOptions = uxOptions.copy(showOwnershipOverlay = false)
-            controllers.topMovesController.hide()
-            buildPremiumDeactivatedDiagnosticEvent(premiumState, System.currentTimeMillis())?.let(diagnosticEventLog::append)
-        }
-    }
+    // 프리미엄 만료/해제 시 형세보기·추천수 토글을 되끄는 효과 — 본체는 ui/PremiumUiState.kt에 있다(위와 같은 이유).
+    PremiumExpiryAutoDisableEffect(premiumState, topMovesEnabled, uxOptions.showOwnershipOverlay, consumableUiState, diagnosticEventLog, controllers.topMovesController::hide) { uxOptions = uxOptions.copy(showOwnershipOverlay = false) }
 
     // 1회권으로 켠 표시는 단발성이라 다음 수가 놓이면 스스로 꺼진다 — 프리미엄 토글과 달리 계속 갱신되지 않는 것이 "1회"의 단위다(4.5절).
     OneShotAnalysisAutoClear(consumableUiState, gameState.moves.size, controllers.topMovesController::hide) { uxOptions = uxOptions.copy(showOwnershipOverlay = false) }

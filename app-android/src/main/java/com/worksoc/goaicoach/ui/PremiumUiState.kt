@@ -23,6 +23,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
+import kotlinx.coroutines.delay
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -41,6 +42,7 @@ import com.worksoc.goaicoach.application.premium.PremiumStateStorePort
 import com.worksoc.goaicoach.application.premium.PurchaseFailureReason
 import com.worksoc.goaicoach.application.premium.PurchaseOutcome
 import com.worksoc.goaicoach.application.premium.runPremiumFeatureClaim
+import com.worksoc.goaicoach.application.premium.buildPremiumDeactivatedDiagnosticEvent
 import com.worksoc.goaicoach.application.premium.saveMergingClaimedFeatures
 import kotlinx.coroutines.launch
 
@@ -353,5 +355,62 @@ internal fun PremiumPurchaseRestoreEffect(
     LaunchedEffect(Unit) {
         val (_, nextState) = performPremiumPurchaseRestore(context, diagnosticEventLog)
         nextState?.let(onRestored)
+    }
+}
+
+/**
+ * 프리미엄이 비활성이 되는 순간 형세 보기/추천 수의 "켜짐" 상태값 자체를 끈다 — 버튼만 잠기고
+ * 기능은 이전 값대로 계속 동작하는 것을 막기 위함이다. 진단 로그 내용 자체는 순수 함수
+ * ([buildPremiumDeactivatedDiagnosticEvent])가 판정한다.
+ *
+ * `GoCoachApp.kt`가 아니라 여기 사는 이유는 [buildPremiumUiState]·[PremiumPurchaseRestoreEffect]와
+ * 같다 — 그 파일의 라인/상태 훅 예산이 빠듯하다.
+ *
+ * **키를 `isActive` 하나로 두지 않는 이유** (원래 `fix/premium-expiry-toggle-off` 브랜치의 진단):
+ * 1. `isActive`는 컴포저블이 재구성될 때만 새로 평가되는데, 대국이 끝났거나 로비에 머무는 동안은
+ *    만료 시각이 지나도 재구성을 유발하는 게 없어 감지가 임의로 늦어진다 — 그래서 만료 시각까지
+ *    정확히 [delay]로 기다려 재구성 여부와 무관하게 정시에 감지한다.
+ * 2. 만료 후 앱을 재시작해 저장된 대국을 복원하면 두 토글이 true로 되돌아올 수 있는데, 그 시점에
+ *    `isActive`는 이미 false→false라 값이 안 바뀌어 재실행되지 않는 구멍이 있었다 — 두 토글값도
+ *    키에 묶어 복원 순간에도 즉시 재교정한다.
+ *
+ * ⚠️ **[consumables]로 1회권을 반드시 걸러야 한다.** 위 2번 때문에 이 효과는 토글이 켜지는 순간에도
+ * 돌고, 1회권 사용자는 정의상 프리미엄이 비활성이다 — 거르지 않으면 티켓을 차감하고 켠 표시를
+ * 곧바로 되끄게 된다(재고만 닳고 아무것도 안 보임). 1회권으로 켠 표시를 끄는 책임은 이 효과가
+ * 아니라 [OneShotAnalysisAutoClear](다음 수가 놓이면 해제)에 있다.
+ */
+@Composable
+internal fun PremiumExpiryAutoDisableEffect(
+    premiumState: PremiumState,
+    isTopMovesEnabled: Boolean,
+    isEvalEnabled: Boolean,
+    consumables: ConsumableUiState,
+    diagnosticEventLog: DiagnosticEventLogPort,
+    hideTopMoves: () -> Unit,
+    hideEval: () -> Unit,
+) {
+    LaunchedEffect(premiumState, isTopMovesEnabled, isEvalEnabled) {
+        val remainingMillis = premiumState.adGrantStartedAtMillis
+            ?.takeIf { premiumState.source == PremiumSource.AdGrant }
+            ?.plus(PremiumState.AdGrantDurationMillis)
+            ?.minus(System.currentTimeMillis())
+        if (remainingMillis != null && remainingMillis > 0) delay(remainingMillis)
+        if (premiumState.isActive(System.currentTimeMillis())) return@LaunchedEffect
+
+        var disabledAny = false
+        if (isEvalEnabled && !consumables.isOneShotActive(FeatureId.Eval)) {
+            hideEval()
+            disabledAny = true
+        }
+        if (isTopMovesEnabled && !consumables.isOneShotActive(FeatureId.TopMoves)) {
+            hideTopMoves()
+            disabledAny = true
+        }
+        // 실제로 무언가를 껐을 때만 남긴다 — 위 2번 때문에 이 효과는 토글이 바뀔 때마다 도는데,
+        // 만료된 상태로 계속 머무는 사용자에게 같은 로그를 반복해서 쌓지 않기 위함이다.
+        if (disabledAny) {
+            buildPremiumDeactivatedDiagnosticEvent(premiumState, System.currentTimeMillis())
+                ?.let(diagnosticEventLog::append)
+        }
     }
 }

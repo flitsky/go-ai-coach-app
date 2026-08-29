@@ -1426,8 +1426,16 @@ class LayeringContractTest {
         // and the auto-clear LaunchedEffect live in ui/ConsumableUiState.kt, so the shell only
         // holds wiring. Net across items 14 and 15 is +1 line over the previous 853.
         // No new remember/mutableStateOf/LaunchedEffect — stateHookBudget stays 46.
-        val lineBudget = 854
-        val stateHookBudget = 46
+        //
+        // History (2026-08-29): dropped 854->845, stateHookBudget 46->45. The premium
+        // expiry/deactivation LaunchedEffect moved into ui/PremiumUiState.kt as
+        // PremiumExpiryAutoDisableEffect, leaving a single call line in the shell. It had to
+        // grow (it now waits out the ad grant with delay() and re-checks on toggle changes,
+        // and must skip toggles a one-shot ticket turned on), so hoisting it was the only way
+        // to take that fix without regrowing the shell — same move as buildPremiumUiState and
+        // OneShotAnalysisAutoClear before it.
+        val lineBudget = 845
+        val stateHookBudget = 45
 
         val goCoachApp = repoRoot()
             .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
