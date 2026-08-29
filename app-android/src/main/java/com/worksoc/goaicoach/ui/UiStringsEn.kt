@@ -37,7 +37,6 @@ internal val UiStringsEnglish = UiStringsKorean.copy(
     playMove = "Play",
     pass = "Pass",
     undo = "Undo",
-    topMoves = "Top moves",
     eval = "Eval",
     resign = "Resign",
     newGameAction = "New Game",

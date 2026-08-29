@@ -280,8 +280,55 @@ internal data class GameActionButtonState(
 internal fun buildGameActionButtonStates(input: GameScreenStateInput): List<GameActionButtonState> {
     val canPlayOnBoard = !input.isGameEnded &&
         input.matchSeats.current.canAcceptBoardInput
-    val topMovesButtonEnabled = !input.isGameEnded &&
-        input.isEngineReady
+
+    /**
+     * 코칭 버튼(형세 판단·추천 수)이 지금 눌릴 수 있는가.
+     *
+     * **두 버튼이 같은 조건을 쓰는 것이 핵심이다**(2026-08-30). 예전에는 추천 수만
+     * `!isGameEnded && isEngineReady`였고 형세는 `isEngineReady || LocalTwoPlayer`라 갈라져 있었다.
+     * 그래서 대국이 끝났거나 새 대국을 준비하는 동안 **형세 버튼만 눌렸고, 누르면 1회권이 실제로
+     * 차감됐다**(실기 확인: 9 → 8 → 7). 확인 팝업 없이 바로 쓰는 설계라(`featureGated`) 사용자는
+     * 아무것도 못 본 채 표만 잃는다.
+     *
+     * `isEngineBusy`까지 보는 이유: AI가 생각하는 중에는 분석을 요청해 봐야 지금 국면의 답이
+     * 아니다. `isEngineReady`는 "엔진이 떴는가"일 뿐 "지금 한가한가"가 아니다.
+     *
+     * ⚠️ **`isEngineBlockingBusy`가 아니라 `isEngineBusy`를 본다.** 느슨하게 잡으면 안 된다 —
+     * 요청을 실제로 받아 주는 쪽(`buildScoreEstimateRequestPlan`, `shouldRequestTopMoveAnalysis`)이
+     * **`isEngineBusy`에서 거절**하기 때문이다. 버튼이 그보다 넓게 열려 있으면 그 틈에서 표만
+     * 나가고 아무것도 안 나온다. 규칙은 하나다: **버튼은 요청이 받아들여질 때만 눌린다.**
+     *
+     * 그래서 배경 분석이 도는 짧은 창에서도 잠긴다. 이는 의도된 후퇴다 — 잠깐 못 누르는 불편이
+     * 표를 잃는 것보다 낫다.
+     *
+     * 사람끼리 두는 대국([MatchMode.LocalTwoPlayer])은 엔진 없이도 형세를 볼 수 있어야 하므로
+     * 그 예외는 남긴다 — 다만 대국이 끝난 뒤에는 마찬가지로 막는다. 종국 후에는 형세가 이미
+     * 무료로 그려지므로(`GamePlaySection`) 그때 눌러 봐야 표만 닳는다.
+     */
+    val coachingGateOpen = !input.isGameEnded && !input.isEngineBusy
+
+    /**
+     * 형세 판단은 사람 차례가 아니어도 요청할 수 있다 — `buildScoreEstimateRequestPlan`이 좌석을
+     * 보지 않기 때문이다. 사람끼리 두는 대국은 엔진 없이도 국소 계가로 답을 주므로 그 예외를 남긴다.
+     */
+    val canRequestEval = coachingGateOpen &&
+        (input.isEngineReady || input.matchMode == MatchMode.LocalTwoPlayer)
+
+    /**
+     * 추천 수는 **사람 차례에만** 요청할 수 있다 — `shouldRequestTopMoveAnalysis`가 좌석까지 본다
+     * (`playerSetup.seatFor(nextPlayer).isHuman`). 그 조건을 여기서 빠뜨리면 AI 차례에 버튼이
+     * 살아 있고, 눌러도 요청이 거절되며 표만 나간다.
+     */
+    val canRequestTopMoves = coachingGateOpen &&
+        input.isEngineReady &&
+        input.matchSeats.current.isHuman
+
+    /**
+     * **이미 켜 둔 토글은 언제나 끌 수 있어야 한다.** 게이트가 닫혔다고 켜진 표시까지 잠그면
+     * 사용자가 그것을 끄지 못한 채 갇힌다(`buildGameScreenStateKeepsTopMovesButtonActiveWhileBusyWhenToggleIsOn`이
+     * 고정한 기존 결정). 끄는 탭은 표를 쓰지도 않는다(`GamePlaySection.featureGated`).
+     */
+    fun coachingButtonEnabled(isFilled: Boolean, canRequest: Boolean): Boolean = isFilled || canRequest
 
     return listOf(
         GameActionButtonState(
@@ -305,14 +352,14 @@ internal fun buildGameActionButtonStates(input: GameScreenStateInput): List<Game
             role = GameActionButtonRole.TopMoves,
             label = "Best",
             event = GameUiEvent.ToggleTopMoves,
-            enabled = topMovesButtonEnabled,
+            enabled = coachingButtonEnabled(input.topMovesEnabled, canRequestTopMoves),
             isFilled = input.topMovesEnabled,
         ),
         GameActionButtonState(
             role = GameActionButtonRole.Eval,
             label = "Eval",
             event = GameUiEvent.ToggleEvalWithGradient,
-            enabled = (input.isEngineReady || input.matchMode == MatchMode.LocalTwoPlayer),
+            enabled = coachingButtonEnabled(input.uxOptions.showOwnershipOverlay, canRequestEval),
             isFilled = input.uxOptions.showOwnershipOverlay,
         ),
     )

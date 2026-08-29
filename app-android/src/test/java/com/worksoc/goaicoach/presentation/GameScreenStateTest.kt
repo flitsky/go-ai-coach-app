@@ -156,6 +156,69 @@ class GameScreenStateTest {
     }
 
     @Test
+    fun coachingButtonsShareTheSameGateOnceTheGameEnded() {
+        // 2026-08-30 실기 버그: 대국이 끝나거나 새 대국을 준비하는 동안 **형세 버튼만** 눌렸고,
+        // 누르면 1회권이 실제로 차감됐다(9 → 8 → 7). 추천 수는 `!isGameEnded`를 봤는데 형세는
+        // 보지 않아 조건이 갈려 있었다. 둘은 같은 게이트를 써야 한다.
+        val ended = buildGameScreenState(
+            defaultInput(isGameEnded = true, topMovesEnabled = false, showOwnershipOverlay = false),
+        )
+
+        val actions = ended.actionButtons.associateBy { it.role }
+        assertFalse(requireNotNull(actions[GameActionButtonRole.Eval]).enabled)
+        assertFalse(requireNotNull(actions[GameActionButtonRole.TopMoves]).enabled)
+    }
+
+    @Test
+    fun coachingButtonsCloseWhileTheEngineBlocks() {
+        // AI가 생각하는 중에 분석을 요청해 봐야 지금 국면의 답이 아니다. 그런데도 표는 나간다.
+        // 차단 여부와 무관하게 `isEngineBusy`면 잠근다 — 요청을 받아 주는 쪽
+        // (`buildScoreEstimateRequestPlan`)이 바로 그 조건에서 거절하기 때문이다.
+        val busy = buildGameScreenState(
+            defaultInput(
+                isEngineBusy = true,
+                isEngineBlockingBusy = false,
+                topMovesEnabled = false,
+                showOwnershipOverlay = false,
+            ),
+        )
+
+        val actions = busy.actionButtons.associateBy { it.role }
+        assertFalse(requireNotNull(actions[GameActionButtonRole.Eval]).enabled)
+        assertFalse(requireNotNull(actions[GameActionButtonRole.TopMoves]).enabled)
+    }
+
+    @Test
+    fun topMovesClosesOnTheAiTurnBecauseItsGateChecksTheSeat() {
+        // `shouldRequestTopMoveAnalysis`는 좌석까지 본다(`seatFor(nextPlayer).isHuman`). 형세 판단
+        // 게이트는 좌석을 보지 않으므로 **두 버튼의 조건이 여기서 갈리는 것이 맞다** — 각자 자기
+        // 게이트와 정확히 같아야 표가 새지 않는다.
+        val aiTurn = buildGameScreenState(
+            defaultInput(
+                gameState = GameState.empty(nextPlayer = StoneColor.White),
+                topMovesEnabled = false,
+                showOwnershipOverlay = false,
+            ),
+        )
+
+        val actions = aiTurn.actionButtons.associateBy { it.role }
+        assertFalse(requireNotNull(actions[GameActionButtonRole.TopMoves]).enabled)
+        assertTrue(requireNotNull(actions[GameActionButtonRole.Eval]).enabled)
+    }
+
+    @Test
+    fun anAlreadyOnToggleStaysEnabledSoItCanBeTurnedOff() {
+        // 게이트가 닫혔다고 켜진 표시까지 잠그면 사용자가 그것을 끄지 못한 채 갇힌다.
+        val ended = buildGameScreenState(
+            defaultInput(isGameEnded = true, topMovesEnabled = true, showOwnershipOverlay = true),
+        )
+
+        val actions = ended.actionButtons.associateBy { it.role }
+        assertTrue(requireNotNull(actions[GameActionButtonRole.Eval]).enabled)
+        assertTrue(requireNotNull(actions[GameActionButtonRole.TopMoves]).enabled)
+    }
+
+    @Test
     fun buildGameScreenStateInputCanBeDerivedFromControllerState() {
         val gameState = GameState.empty(nextPlayer = StoneColor.White)
         val controller = GameSessionControllerState(
@@ -292,6 +355,8 @@ class GameScreenStateTest {
         isEngineBusy: Boolean = false,
         isEngineBlockingBusy: Boolean = false,
         topMovesEnabled: Boolean = false,
+        isGameEnded: Boolean = false,
+        showOwnershipOverlay: Boolean = true,
     ): GameScreenStateInput =
         GameScreenStateInput(
             gameState = gameState,
@@ -305,7 +370,7 @@ class GameScreenStateTest {
                 isEngineReady = true,
                 isEngineBlockingBusy = isEngineBlockingBusy,
             ),
-            uxOptions = KaTrainUxOptions(),
+            uxOptions = KaTrainUxOptions(showOwnershipOverlay = showOwnershipOverlay),
             engineName = "KataGo",
             engineDiagnostic = "ready",
             engineProfile = EngineProfile(),
@@ -331,7 +396,7 @@ class GameScreenStateTest {
             shouldShowResumePrompt = shouldShowResumePrompt,
             cacheOptimizationPrompt = null,
             hasCompletedEngineStartup = hasCompletedEngineStartup,
-            isGameEnded = false,
+            isGameEnded = isGameEnded,
             endgameLog = "No endgame result recorded.",
             isEngineBlockingBusy = isEngineBlockingBusy,
         )

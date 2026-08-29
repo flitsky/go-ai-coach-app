@@ -61,6 +61,7 @@ internal fun GoCoachHomeScreen(
     onSettingsClick: () -> Unit,
     onStudyClick: () -> Unit,
     onGameHistoryClick: () -> Unit,
+    onMyPageClick: () -> Unit,
     selectedLanguage: UiLanguage,
     onLanguageChange: (UiLanguage) -> Unit,
     hasResumableSession: Boolean,
@@ -192,6 +193,19 @@ internal fun GoCoachHomeScreen(
                 titleColor = MaterialTheme.colorScheme.onSurfaceVariant,
                 subtitleColor = MaterialTheme.colorScheme.secondary,
                 onClick = onGameHistoryClick,
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // "마이 페이지" 카드(#24) — 지금은 1회권 재고만 있지만, 출석 현황과 캐릭터 컬렉션이
+            // 앞으로 여기 붙는다. 그래서 설정 화면 한 절이 아니라 별도 목적지로 열었다.
+            MenuCard(
+                title = strings.myPageTitle,
+                subtitle = strings.homeMyPageSubtitle,
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                titleColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                subtitleColor = MaterialTheme.colorScheme.secondary,
+                onClick = onMyPageClick,
             )
         }
     }

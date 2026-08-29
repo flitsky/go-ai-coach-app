@@ -1446,8 +1446,11 @@ class LayeringContractTest {
         // is what keeps every in-game gating call site untouched (feature-access-principles 8.3-1).
         // 856 rather than 855 because the perk value is shared with PremiumExpiryAutoDisableEffect —
         // computing it twice would let the gating and the auto-disable disagree.
+        // History (2026-08-30, backlog #24): bumped 856->861 for the My Page destination — one enum
+        // value, one home-card callback, one routing branch. Same shape as the Study destination that
+        // bumped 849->858 in 2026-08-12; the screen body lives in MyPageScreen.kt, not here.
         // No new remember/mutableStateOf/LaunchedEffect — stateHookBudget stays 46.
-        val lineBudget = 856
+        val lineBudget = 861
         val stateHookBudget = 46
 
         val goCoachApp = repoRoot()

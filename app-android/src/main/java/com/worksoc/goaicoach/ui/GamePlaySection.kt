@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import com.worksoc.goaicoach.application.movereview.MoveReviewTone
 import com.worksoc.goaicoach.application.consumable.ConsumableItem
 import com.worksoc.goaicoach.application.consumable.ConsumableSpendDecision
+import com.worksoc.goaicoach.application.consumable.ConsumableCatalog
 import com.worksoc.goaicoach.application.premium.FeatureAccess
 import com.worksoc.goaicoach.application.premium.FeatureId
 import com.worksoc.goaicoach.application.premium.UnlockOption
@@ -369,6 +370,14 @@ private fun GameActionButtons(
             action()
             return
         }
+        // **끄는 동작에는 표를 쓰지 않는다**(2026-08-30). 위 `isOneShotActive` 분기가 그 취지를
+        // 이미 담고 있지만, 1회성 표시가 만료돼 지워진 뒤에 토글만 켜져 있는 상태가 생긴다 —
+        // 그때 다시 탭하면 **끄는 동작인데 아래 Locked 분기가 표를 한 장 먹는다.** 켜는 동작이
+        // 아닌 탭은 게이팅 자체를 건너뛴다.
+        if (!turningOn) {
+            action()
+            return
+        }
         when (access) {
             is FeatureAccess.Allowed -> {
                 action()
@@ -477,9 +486,10 @@ private fun GameActionButtons(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        // 소모품 재고 상시 표시(#17) — 사용처 바로 위에 둬서 차감이 눈앞에서 보이게 한다.
-        // 본체는 ui/ConsumableUiState.kt에 있다(셸 예산 보호, buildConsumableUiState와 같은 이유).
-        ConsumableInventoryBar()
+        // 재고 바를 여기 두지 않는다(#24, 2026-08-30). #17이 "차감이 눈앞에서 보이게" 상시
+        // 띄웠지만, 대국 내내 필요한 정보가 아닌 데다 바로 아래 버튼과 같은 말을 두 번 했다.
+        // 남은 수는 버튼 자신이 괄호로 말하고(`strings.featureButtonLabel`), 전체 재고는
+        // 마이 페이지가 맡는다.
 
         // [1행] 형세보기(Eval), 추천수(Top Moves) — 프리미엄 전용 온/오프 토글, 2열로 크게 배치
         Row(
@@ -492,7 +502,11 @@ private fun GameActionButtons(
                 val evalAccess = premium.resolve(FeatureId.Eval)
                 ToggleActionButton(
                     action = evalAction,
-                    label = strings.eval,
+                    label = strings.featureButtonLabel(
+                        base = strings.eval,
+                        access = evalAccess,
+                        remaining = consumables.countOf(ConsumableCatalog.EvalOnce),
+                    ),
                     onEvent = { event -> featureGated(evalAccess, FeatureId.Eval, turningOn = !evalAction.isFilled) { onEvent(event) } },
                     modifier = Modifier.weight(1f),
                     premiumLocked = evalAccess !is FeatureAccess.Allowed && !consumables.isOneShotActive(FeatureId.Eval),
@@ -505,7 +519,11 @@ private fun GameActionButtons(
                 val topMovesAccess = premium.resolve(FeatureId.TopMoves)
                 ToggleActionButton(
                     action = topMovesAction,
-                    label = strings.topMovesAction,
+                    label = strings.featureButtonLabel(
+                        base = strings.topMovesAction,
+                        access = topMovesAccess,
+                        remaining = consumables.countOf(ConsumableCatalog.TopMovesOnce),
+                    ),
                     onEvent = { event -> featureGated(topMovesAccess, FeatureId.TopMoves, turningOn = !topMovesAction.isFilled) { onEvent(event) } },
                     modifier = Modifier.weight(1f),
                     premiumLocked = topMovesAccess !is FeatureAccess.Allowed && !consumables.isOneShotActive(FeatureId.TopMoves),

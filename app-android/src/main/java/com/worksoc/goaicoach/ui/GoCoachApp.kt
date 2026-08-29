@@ -794,6 +794,7 @@ private fun GoCoachScreen(
                 onSettingsClick = { currentDestination = ScreenDestination.Settings },
                 onStudyClick = { currentDestination = ScreenDestination.Study },
                 onGameHistoryClick = { currentDestination = ScreenDestination.GameHistory },
+                onMyPageClick = { currentDestination = ScreenDestination.MyPage },
                 selectedLanguage = selectedLanguage,
                 onLanguageChange = onLanguageChange,
                 hasResumableSession = savedSessionToPrompt != null,
@@ -805,6 +806,9 @@ private fun GoCoachScreen(
         }
         ScreenDestination.GameHistory -> {
             GameHistoryScreen(onBackClick = { currentDestination = ScreenDestination.Home })
+        }
+        ScreenDestination.MyPage -> {
+            MyPageScreen(onBackClick = { currentDestination = ScreenDestination.Home })
         }
         ScreenDestination.Settings -> {
             SettingsScreen(
@@ -851,6 +855,7 @@ internal enum class ScreenDestination {
     Settings,
     Study,
     GameHistory,
+    MyPage,
     GameSetup,
     InGame
 }

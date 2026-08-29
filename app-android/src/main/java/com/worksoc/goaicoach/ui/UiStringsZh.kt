@@ -37,7 +37,6 @@ internal val UiStringsChineseSimplified = UiStringsKorean.copy(
     playMove = "落子",
     pass = "停一手",
     undo = "悔棋",
-    topMoves = "推荐手",
     eval = "形势判断",
     resign = "认输",
     newGameAction = "开始新对局",

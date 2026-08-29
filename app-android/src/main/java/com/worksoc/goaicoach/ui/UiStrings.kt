@@ -16,6 +16,8 @@ import com.worksoc.goaicoach.application.botcharacter.BotUnlockSource
 import com.worksoc.goaicoach.application.consumable.ConsumableItem
 import com.worksoc.goaicoach.application.gamehistory.GameHistoryResult
 import com.worksoc.goaicoach.application.premium.AdRewardFailureReason
+import com.worksoc.goaicoach.application.premium.AllowedVia
+import com.worksoc.goaicoach.application.premium.FeatureAccess
 import com.worksoc.goaicoach.application.premium.PurchaseFailureReason
 import com.worksoc.goaicoach.application.premium.FeatureId
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
@@ -90,7 +92,6 @@ internal data class UiStrings(
     val playMove: String,
     val pass: String,
     val undo: String,
-    val topMoves: String,
     val eval: String,
     val resign: String,
     val newGameAction: String,
@@ -175,7 +176,19 @@ internal data class UiStrings(
     val undoClaimMessage: String,
     val undoClaimConfirmAction: String,
     val undoClaimSuccessMessage: String,
-    /** 추천 수 버튼 라벨 — 1회성 동작이라 상태(ON/OFF)가 아니라 행위로 읽히게 한다. */
+    /**
+     * 추천 수 버튼 라벨 — 1회성 동작이라 상태(ON/OFF)가 아니라 행위로 읽히게 한다.
+     *
+     * 2026-08-30에 한국어를 "추천 수 받기" → "추천 수 보기"로 바꿨다. 사용자가 지적한 비대칭의
+     * 정체는 "동사가 있고 없고"가 아니라 **형세는 '보기', 추천 수는 '받기'라는 서로 다른 동사**였다.
+     * 머리동사를 맞추니 한 줄로 대칭이 되고, 폭도 그대로다.
+     *
+     * ⚠️ **'형세 보기'를 '형세 판단'으로 개명하는 안은 택하지 않았다.** 용어 통일 이득(일/중은 이미
+     * 形勢判断)보다 파급이 크다 — 그 문자열은 버튼([UiStrings.eval])과 보상/1회권 이름
+     * ([featureRewardName])에 **서로 다른 리터럴로 두 번** 박혀 있고, 거기서 마이 페이지 재고·출석
+     * 보상 팝업·사용 토스트·업셀·로비 배지가 파생되며, 2026-08-30에 확정한 Play 스토어 등록정보
+     * 본문과 스크린샷 한 장까지 걸린다. 개명은 별건으로 다룬다.
+     */
     val topMovesAction: String,
     /** 대국 메뉴의 '매 수마다' 옵션 라벨 2종. 켜면 표시가 수마다 갱신된다(프리미엄 전용). */
     val everyMoveEval: String,
@@ -311,6 +324,71 @@ internal data class UiStrings(
                 UiLanguage.Japanese -> "購入で解放 · この相手との対局では形勢・推奨手が無制限"
                 UiLanguage.ChineseSimplified -> "购买即可解锁 · 与该对手对局时形势判断和推荐手无限使用"
             }
+        }
+
+    /** 홈의 마이 페이지 진입 카드 부제(#24). 제목은 화면 제목을 그대로 쓴다(대국 기록 카드와 동일). */
+    val homeMyPageSubtitle: String
+        get() = when (language) {
+            UiLanguage.Korean -> "보유한 1회권을 확인해보세요."
+            UiLanguage.English -> "See the one-shot tickets you hold."
+            UiLanguage.Japanese -> "所持しているチケットを確認できます。"
+            UiLanguage.ChineseSimplified -> "查看你持有的单次券。"
+        }
+
+    /** 마이 페이지 화면 제목(#24). 출석 현황·캐릭터 컬렉션도 앞으로 여기 붙는다. */
+    val myPageTitle: String
+        get() = when (language) {
+            UiLanguage.Korean -> "마이 페이지"
+            UiLanguage.English -> "My Page"
+            UiLanguage.Japanese -> "マイページ"
+            UiLanguage.ChineseSimplified -> "我的"
+        }
+
+    /** 마이 페이지의 1회권 재고 절 머리글. */
+    val myPageInventoryTitle: String
+        get() = when (language) {
+            UiLanguage.Korean -> "보유 중인 1회권"
+            UiLanguage.English -> "Your one-shot tickets"
+            UiLanguage.Japanese -> "所持しているチケット"
+            UiLanguage.ChineseSimplified -> "持有的单次券"
+        }
+
+    /** 재고를 어디서 쓰고 어떻게 얻는지 한 줄 안내. */
+    val myPageInventoryHint: String
+        get() = when (language) {
+            UiLanguage.Korean -> "대국 중 버튼에도 남은 수가 표시됩니다. 매일 출석하면 더 받을 수 있어요."
+            UiLanguage.English -> "The in-game buttons show the count too. Check in daily to earn more."
+            UiLanguage.Japanese -> "対局中のボタンにも残数が表示されます。毎日出席すると増えます。"
+            UiLanguage.ChineseSimplified -> "对局中的按钮也会显示剩余数量。每日签到可获得更多。"
+        }
+
+    /**
+     * 인게임 코칭 버튼(형세 보기·추천 수)의 라벨에 **지금 상태를 괄호로 녹인다**(백로그 #24).
+     *
+     * 대국 화면에 재고 바를 상시 띄우는 대신 버튼 자신이 말하게 한 것이다 — 재고는 쓰는 자리
+     * 바로 그곳에서만 궁금하고, 전체 목록은 마이 페이지가 맡는다.
+     *
+     * 표기는 상태마다 다르다(2026-08-30 사용자 확정):
+     * - **영구 프리미엄** → `(∞)`. 조건 없이 무제한이다.
+     * - **광고 1시간 활성** → `($TimeLimitedMark)`. 무제한이지만 **시간 한정**이라는 것이 드러나야 하므로
+     *   무한대가 아니라 시계다 — `∞`로 적으면 영구 구매와 구분되지 않는다.
+     * - **1회권 보유** → `(3)` 처럼 남은 수.
+     * - **그 밖** → 괄호 없이 이름만. 여기에 **영구 클레임([AllowedVia.Claimed])도 포함된다**:
+     *   무르기처럼 클레임으로 열린 기능에는 무제한 표시를 붙이지 않는다(사용자 확정).
+     *
+     * ⚠️ **이 함수는 프리미엄/소모품이 걸린 버튼에만 쓴다.** 기권·통과·무르기 같은 나머지 버튼은
+     * 간결한 텍스트 그대로 두는 것이 이 항목의 범위다.
+     *
+     * ⚠️ [AllowedVia.CharacterPerk]는 아직 표기를 정하지 않아 괄호를 붙이지 않는다 — "상대 한정
+     * 무제한"이라 무한대와도 시계와도 성격이 다르다. 유료 캐릭터를 다시 열 때 함께 정한다(#18).
+     */
+    fun featureButtonLabel(base: String, access: FeatureAccess, remaining: Int): String =
+        when {
+            access is FeatureAccess.Allowed && access.via == AllowedVia.Purchase -> "$base ($UnlimitedMark)"
+            access is FeatureAccess.Allowed && access.via == AllowedVia.AdGrant -> "$base ($TimeLimitedMark)"
+            access is FeatureAccess.Allowed -> base
+            remaining > 0 -> "$base ($remaining)"
+            else -> base
         }
 
     /** 캐릭터를 구매해 영구 획득했을 때(#18). 특전까지 함께 알려 무엇을 샀는지 분명히 한다. */
@@ -522,17 +600,10 @@ internal data class UiStrings(
 
     /** 모르는 종류(상위 버전에서 온 소모품)는 저장 키를 그대로 보여준다 — 지급 사실을 숨기지 않는다. */
     /**
-     * 상시 인벤토리에 쓰는 **짧은** 이름. `consumableRewardName`의 "…1회권" 접미사를 뺀 것으로,
-     * 줄 전체가 1회권 이야기인 자리에서는 접미사가 반복 노이즈가 된다(백로그 #17).
+     * 소모품의 **전체** 이름("형세 보기 1회권"). 마이 페이지처럼 여러 종류를 나란히 놓는 자리는
+     * 줄마다 무엇의 표인지가 분명해야 하므로 접미사를 붙인 전체 이름을 쓴다.
      */
-    fun consumableShortName(item: ConsumableItem): String =
-        when (item) {
-            ConsumableCatalog.EvalOnce -> featureRewardName(FeatureId.Eval)
-            ConsumableCatalog.TopMovesOnce -> featureRewardName(FeatureId.TopMoves)
-            else -> consumableRewardName(item)
-        }
-
-    private fun consumableRewardName(item: ConsumableItem): String =
+    fun consumableRewardName(item: ConsumableItem): String =
         when (item) {
             ConsumableCatalog.EvalOnce -> onceTicketName(featureRewardName(FeatureId.Eval))
             ConsumableCatalog.TopMovesOnce -> onceTicketName(featureRewardName(FeatureId.TopMoves))
@@ -553,7 +624,8 @@ internal data class UiStrings(
             UiLanguage.ChineseSimplified -> "$featureName 1次券"
         }
 
-    private fun consumableRewardAmount(amount: Int): String =
+    /** 소모품 수량 표기("3개"). 마이 페이지의 재고 목록도 같은 표기를 쓴다(#24). */
+    fun consumableRewardAmount(amount: Int): String =
         when (language) {
             UiLanguage.Korean -> "${amount}개"
             UiLanguage.English -> "x$amount"
@@ -970,3 +1042,14 @@ internal data class UiStrings(
             }
     }
 }
+
+/**
+ * 조건 없이 무제한임을 나타내는 기호(#24). 번역 대상이 아니라 기호라 언어별로 같다.
+ */
+private const val UnlimitedMark: String = "∞"
+
+/**
+ * **시간 한정** 무제한임을 나타내는 기호(#24, 광고 1시간 활성화). 무한대와 갈라 놓는 것이
+ * 요점이다 — 둘 다 "지금은 안 줄어든다"지만 하나는 영구고 하나는 곧 끝난다.
+ */
+private const val TimeLimitedMark: String = "⏱"

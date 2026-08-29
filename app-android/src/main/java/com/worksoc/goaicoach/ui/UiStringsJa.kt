@@ -37,7 +37,6 @@ internal val UiStringsJapanese = UiStringsKorean.copy(
     playMove = "着手",
     pass = "パス",
     undo = "待った",
-    topMoves = "候補手",
     eval = "形勢判断",
     resign = "投了",
     newGameAction = "新しい対局を開始",
