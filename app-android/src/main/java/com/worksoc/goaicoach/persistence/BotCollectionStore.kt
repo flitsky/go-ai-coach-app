@@ -30,20 +30,46 @@ internal class BotCollectionStore(context: Context) : BotCollectionStorePort {
 
 internal object BotCollectionCodec {
     private const val CurrentSchemaVersion = 1
+    private const val ShardsKey = "adShards"
 
-    fun encode(state: BotCollectionState): String =
-        JSONObject()
+    fun encode(state: BotCollectionState): String {
+        val shards = JSONObject()
+        // 0 이하는 애초에 정규형에 없지만, 외부에서 만들어진 값이 들어와도 기록하지 않는다.
+        state.adShards.forEach { (id, count) -> if (count > 0) shards.put(id.raw, count) }
+        return JSONObject()
             .put("schema", CurrentSchemaVersion)
             .put("claimedBots", JSONArray(state.claimedBots.map { it.raw }))
+            .put(ShardsKey, shards)
             .toString()
+    }
 
+    /**
+     * ⚠️ 조각 진행도(#11)를 더하면서도 **스키마 번호를 올리지 않았다.** 이 코덱은 번호가 다르면
+     * `null`을 돌려주고 호출부가 기본 상태로 폴백하므로, 번호를 올리면 **이미 수집한 캐릭터가
+     * 통째로 날아간다.** 새 필드는 없으면 빈 값으로 읽으면 그만이라 하위호환으로 충분하다 —
+     * 기존 저장분에는 `shards` 키가 없고, 그 경우 진행도만 0에서 시작한다.
+     */
     fun decode(raw: String): BotCollectionState? =
         runCatching {
             val json = JSONObject(raw)
             if (json.optInt("schema", -1) != CurrentSchemaVersion) return@runCatching null
 
-            BotCollectionState(claimedBots = decodeClaimedBots(json.optJSONArray("claimedBots")))
+            BotCollectionState(
+                claimedBots = decodeClaimedBots(json.optJSONArray("claimedBots")),
+                adShards = decodeShards(json.optJSONObject(ShardsKey)),
+            )
         }.getOrNull()
+
+    /** [decodeClaimedBots]와 같은 이유로 모르는 id도 살린다. 0 이하이거나 숫자가 아닌 항목만 버린다. */
+    private fun decodeShards(json: JSONObject?): Map<BotCharacterId, Int> {
+        if (json == null) return emptyMap()
+        return buildMap {
+            for (raw in json.keys()) {
+                val count = json.optInt(raw, 0)
+                if (raw.isNotEmpty() && count > 0) put(BotCharacterId(raw), count)
+            }
+        }
+    }
 
     /**
      * 카탈로그에 없는 id도 걸러내지 않고 그대로 살린다 — 상위 버전에서 수집한 캐릭터를 가진 채

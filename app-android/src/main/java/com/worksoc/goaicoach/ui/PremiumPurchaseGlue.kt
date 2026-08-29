@@ -66,15 +66,24 @@ internal suspend fun performPremiumAdGrant(
     context: Context,
     diagnosticEventLog: DiagnosticEventLogPort,
 ): Pair<AdRewardOutcome, PremiumState?> {
-    val activity = context as? Activity
-    val outcome = if (activity != null) {
-        AndroidRewardedInterstitialAdClient(activity, AdUnitIds.rewardedInterstitialAdUnitId).showRewardedAd()
-    } else {
-        AdRewardOutcome.NotRewarded(AdRewardFailureReason.Unavailable)
-    }
+    val outcome = showRewardedAdOnce(context)
     val result = runPremiumAdGrantApplication(
         PremiumAdGrantRunRequest(outcome = outcome, nowMillis = System.currentTimeMillis()),
     )
     diagnosticEventLog.append(result.diagnosticEvent)
     return outcome to result.nextState
+}
+
+/**
+ * 리워드 광고를 한 번 띄우고 결과만 돌려준다 — **상태는 건드리지 않는다.**
+ *
+ * 광고 시청은 이제 두 곳에서 쓰인다: 프리미엄 1시간 활성화([performPremiumAdGrant])와 봇 캐릭터
+ * 조각 적립(#11, `ui/BotCharacterUiState.kt`). 두 결과의 수명이 정반대라(전자는 1시간 뒤 꺼지고
+ * 후자는 영구 소유) **"광고를 보여주는 일"과 "그 결과로 무엇을 바꿀지"를 분리**해 뒀다 — 이 함수는
+ * 앞의 절반만 맡는다.
+ */
+internal suspend fun showRewardedAdOnce(context: Context): AdRewardOutcome {
+    val activity = context as? Activity
+        ?: return AdRewardOutcome.NotRewarded(AdRewardFailureReason.Unavailable)
+    return AndroidRewardedInterstitialAdClient(activity, AdUnitIds.rewardedInterstitialAdUnitId).showRewardedAd()
 }

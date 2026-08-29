@@ -22,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -222,7 +223,11 @@ private fun PlayerSetupSideRow(
             val current = BotCharacterCatalog.forPlayLevel(
                 PlayLevelSetting(group = PlayLevelGroup.FastBeginner, level = fastBeginnerLevel),
             )
-            var showPicker by remember { mutableStateOf(false) }
+            // ⚠️ 알려진 문제(2026-08-29, 미해결): 조각 광고를 보고 돌아오면 **픽커가 닫혀 있다.**
+            // 조각 5개를 모으려면 픽커를 다섯 번 다시 열어야 한다. `rememberSaveable`로 바꾸고
+            // 다이얼로그의 dismiss 요청도 광고 중에는 무시해 봤지만 둘 다 효과가 없었다 — 원인을
+            // 아직 못 찾았다. 두 조치 자체는 무해해서 남겨 뒀다(전자는 프로세스 사망 대비로도 옳다).
+            var showPicker by rememberSaveable { mutableStateOf(false) }
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,

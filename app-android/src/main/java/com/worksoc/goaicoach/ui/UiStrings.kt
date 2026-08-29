@@ -274,7 +274,13 @@ internal data class UiStrings(
      * 광고 조각의 진행도(예: 3/5)는 아직 저장하지 않는다 — 그 상태는 #11의 몫이라 여기서는
      * 필요 횟수만 알린다. 유료 캐릭터의 가격은 Play Console 상품이 아직 없어 적지 않는다(#18).
      */
-    fun botUnlockHint(source: BotUnlockSource): String? =
+    fun botUnlockHint(source: BotUnlockSource, shards: Int = 0): String? =
+        botUnlockHintBase(source)?.let { base ->
+            // 조각 경로만 진행도를 덧붙인다 — 출석·유료는 셀 것이 없다.
+            if (source is BotUnlockSource.AdShards) "$base ($shards/${source.required})" else base
+        }
+
+    private fun botUnlockHintBase(source: BotUnlockSource): String? =
         when (source) {
             BotUnlockSource.Default -> null
             is BotUnlockSource.Attendance -> when (language) {
@@ -295,6 +301,24 @@ internal data class UiStrings(
                 UiLanguage.Japanese -> "購入で解放"
                 UiLanguage.ChineseSimplified -> "购买后解锁"
             }
+        }
+
+    /** 조각 1개를 적립했을 때(아직 획득 전). */
+    fun botShardEarnedToast(character: BotCharacter, shards: Int, required: Int): String =
+        when (language) {
+            UiLanguage.Korean -> "${character.name} 조각 $shards/$required"
+            UiLanguage.English -> "${character.name} $shards/$required"
+            UiLanguage.Japanese -> "${character.name} かけら $shards/$required"
+            UiLanguage.ChineseSimplified -> "${character.name} 碎片 $shards/$required"
+        }
+
+    /** 조각을 다 모아 캐릭터를 얻었을 때. */
+    fun botUnlockedToast(character: BotCharacter): String =
+        when (language) {
+            UiLanguage.Korean -> "${character.name}을(를) 얻었어요!"
+            UiLanguage.English -> "${character.name} unlocked!"
+            UiLanguage.Japanese -> "${character.name}を獲得しました！"
+            UiLanguage.ChineseSimplified -> "已获得${character.name}！"
         }
 
     /**

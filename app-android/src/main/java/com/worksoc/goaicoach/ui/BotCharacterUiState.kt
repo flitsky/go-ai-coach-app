@@ -15,10 +15,18 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
+import android.widget.Toast
+import com.worksoc.goaicoach.application.botcharacter.BotUnlockSource
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.botcharacter.BotCharacter
+import com.worksoc.goaicoach.application.botcharacter.runBotCharacterShardGrant
+import com.worksoc.goaicoach.application.premium.AdRewardFailureReason
+import com.worksoc.goaicoach.application.premium.AdRewardOutcome
 import com.worksoc.goaicoach.application.botcharacter.BotCharacterCatalog
 import com.worksoc.goaicoach.application.botcharacter.BotCollectionState
 import com.worksoc.goaicoach.application.botcharacter.BotCollectionStorePort
@@ -33,9 +41,19 @@ import com.worksoc.goaicoach.persistence.BotCollectionStore
  */
 internal data class BotCharacterUiState(
     val collection: BotCollectionState = BotCollectionState(),
+    /**
+     * 광고를 한 번 보여주고 조각 1개를 적립한다(#11). 시청에 실패하면 상태를 바꾸지 않고
+     * 결과만 돌려주므로, 호출부가 사유를 안내할 수 있다([activateAdGrant]와 같은 계약).
+     */
+    val watchAdForShard: suspend (BotCharacter) -> AdRewardOutcome = {
+        AdRewardOutcome.NotRewarded(AdRewardFailureReason.Unavailable)
+    },
 ) {
     /** 지금 이 캐릭터로 대국할 수 있는가. 기본 제공은 획득 기록 없이도 통과한다(#16). */
     fun isAvailable(character: BotCharacter): Boolean = collection.isAvailable(character)
+
+    /** 이 캐릭터에 지금까지 모인 조각 수(#11). */
+    fun shardsFor(character: BotCharacter): Int = collection.shardsFor(character.id)
 }
 
 internal val LocalBotCharacterUiState = staticCompositionLocalOf { BotCharacterUiState() }
@@ -45,13 +63,25 @@ internal val LocalBotCharacterUiState = staticCompositionLocalOf { BotCharacterU
  * ([buildPremiumUiState]·[buildConsumableUiState]와 같은 이유) 저장소 생성과 상태 보유를
  * 전부 여기로 뺀다.
  *
- * 지금은 읽기 전용이다 — 획득은 출석 보상(`runBotCharacterUnlock`)이 자기 경로로 저장하고,
- * 광고 조각(#11)·구매(#18)가 붙으면 그때 쓰기 경로가 필요해진다.
+ * 쓰기 경로는 광고 조각 적립 하나뿐이다(#11) — 출석 보상은 `runBotCharacterUnlock`이 자기 경로로
+ * 저장하고, 구매(#18)가 붙으면 그때 세 번째 경로가 생긴다.
  */
 @Composable
 internal fun buildBotCharacterUiState(context: Context): BotCharacterUiState {
     val store: BotCollectionStorePort = remember(context) { BotCollectionStore(context) }
-    return BotCharacterUiState(collection = remember(store) { store.load() })
+    var collection by remember(store) { mutableStateOf(store.load()) }
+    return BotCharacterUiState(
+        collection = collection,
+        watchAdForShard = { character ->
+            val outcome = showRewardedAdOnce(context)
+            // 시청 성공일 때만 적립한다 — 광고를 끝까지 안 봤는데 조각이 쌓이면 안 된다.
+            // 적립 자체는 5계층 순수 함수가 하고(read-modify-write), 여기서는 결과만 반영한다.
+            if (outcome is AdRewardOutcome.RewardEarned) {
+                runBotCharacterShardGrant(character, store)?.let { grant -> collection = grant.state }
+            }
+            outcome
+        },
+    )
 }
 
 /**
@@ -65,8 +95,9 @@ internal fun buildBotCharacterUiState(context: Context): BotCharacterUiState {
  * 각각의 사유를 그대로 보여주는 것이 곧 "무엇을 하면 열리는가"의 안내가 된다 — 숨기면 사용자는
  * 그 캐릭터의 존재도, 얻는 방법도 모른다.
  *
- * ⚠️ 잠긴 캐릭터를 **여기서 열어주지는 않는다.** 광고 조각 적립은 #11, 구매는 #18의 몫이라
- * 지금은 안내까지가 전부다.
+ * **광고 조각 캐릭터는 여기서 바로 열 수 있다(#11)** — 줄을 탭하면 광고가 뜨고, 다 보면 조각이
+ * 1개 쌓인다. 필요 수를 채우는 순간 영구 획득으로 넘어간다. 유료 캐릭터(#18)는 아직 진입점이
+ * 없어 안내까지가 전부다.
  */
 @Composable
 internal fun BotCharacterPickerDialog(
@@ -76,20 +107,54 @@ internal fun BotCharacterPickerDialog(
 ) {
     val strings = LocalUiStrings.current
     val bots = LocalBotCharacterUiState.current
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    // 광고가 뜨는 동안 같은 줄을 여러 번 눌러 조각이 중복 적립되지 않게 잠근다.
+    var adInProgress by remember { mutableStateOf(false) }
 
     AlertDialog(
-        onDismissRequest = onDismiss,
+        // 광고 Activity 전환 중의 dismiss 요청을 막아 본 것이다. ⚠️ 이것만으로는 부족했다 —
+        // 광고를 보고 돌아오면 픽커는 여전히 닫혀 있다(원인 미상, PlayerSetupPanel의 showPicker
+        // 주석 참고). 무해하므로 남겨 두지만, 이 줄이 그 문제를 해결한다고 읽지 말 것.
+        onDismissRequest = { if (!adInProgress) onDismiss() },
         title = { Text(strings.botPickerTitle) },
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
                 BotCharacterCatalog.fastBeginnerRoster.forEach { character ->
+                    val available = bots.isAvailable(character)
+                    val shardSource = character.unlockSource as? BotUnlockSource.AdShards
                     BotCharacterRow(
                         character = character,
                         isSelected = character.id == selected?.id,
-                        isAvailable = bots.isAvailable(character),
+                        isAvailable = available,
+                        shards = bots.shardsFor(character),
+                        // 잠겼어도 조각 경로면 탭할 수 있다 — 그 탭이 곧 광고 시청이다.
+                        canWatchAd = !available && shardSource != null && !adInProgress,
                         onClick = {
-                            onSelect(character)
-                            onDismiss()
+                            when {
+                                available -> {
+                                    onSelect(character)
+                                    onDismiss()
+                                }
+                                shardSource != null && !adInProgress -> scope.launch {
+                                    adInProgress = true
+                                    val outcome = bots.watchAdForShard(character)
+                                    adInProgress = false
+                                    val message = when {
+                                        outcome !is AdRewardOutcome.RewardEarned ->
+                                            strings.premiumAdGrantFailedMessage
+                                        // 적립 직후 상태는 다음 재구성에 반영되므로 여기서 직접 센다.
+                                        bots.shardsFor(character) + 1 >= shardSource.required ->
+                                            strings.botUnlockedToast(character)
+                                        else -> strings.botShardEarnedToast(
+                                            character,
+                                            bots.shardsFor(character) + 1,
+                                            shardSource.required,
+                                        )
+                                    }
+                                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                                }
+                            }
                         },
                     )
                 }
@@ -105,12 +170,16 @@ private fun BotCharacterRow(
     character: BotCharacter,
     isSelected: Boolean,
     isAvailable: Boolean,
+    shards: Int,
+    canWatchAd: Boolean,
     onClick: () -> Unit,
 ) {
     val strings = LocalUiStrings.current
     val rowModifier = Modifier
         .fillMaxWidth()
-        .let { if (isAvailable) it.clickable(onClick = onClick) else it.alpha(0.5f) }
+        .let { if (isAvailable || canWatchAd) it.clickable(onClick = onClick) else it }
+        // 잠긴 줄은 흐리게 두되, 광고로 열 수 있는 줄은 "누를 수 있다"는 신호를 남긴다.
+        .let { if (isAvailable) it else it.alpha(if (canWatchAd) 0.8f else 0.5f) }
         .padding(vertical = 8.dp)
 
     Column(modifier = rowModifier) {
@@ -130,7 +199,7 @@ private fun BotCharacterRow(
         )
         // 잠긴 캐릭터만 획득 방법을 덧붙인다 — 기본 제공은 안내할 것이 없다.
         if (!isAvailable) {
-            strings.botUnlockHint(character.unlockSource)?.let { hint ->
+            strings.botUnlockHint(character.unlockSource, shards)?.let { hint ->
                 Text(
                     text = hint,
                     style = MaterialTheme.typography.labelSmall,

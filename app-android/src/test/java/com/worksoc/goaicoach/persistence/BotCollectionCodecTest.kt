@@ -62,4 +62,29 @@ class BotCollectionCodecTest {
 
         assertEquals(BotCollectionState(), BotCollectionCodec.decode(raw))
     }
+
+    @Test
+    fun shardProgressSurvivesARoundTrip() {
+        val bot = BotCharacterId("fast_beginner_2")
+        val state = BotCollectionState(
+            claimedBots = setOf(BotCharacterId("fast_beginner_1")),
+            adShards = mapOf(bot to 3),
+        )
+
+        val restored = BotCollectionCodec.decode(BotCollectionCodec.encode(state))
+
+        assertEquals(state, restored)
+    }
+
+    @Test
+    fun stateSavedBeforeShardsExistedStillLoads() {
+        // #11 이전 저장분에는 adShards 키가 없다. 스키마 번호를 올리지 않은 이유가 이것이다 —
+        // 올렸다면 decode가 null을 주고 이미 수집한 캐릭터가 통째로 날아간다.
+        val legacy = """{"schema":1,"claimedBots":["fast_beginner_1"]}"""
+
+        val restored = BotCollectionCodec.decode(legacy)
+
+        assertEquals(setOf(BotCharacterId("fast_beginner_1")), restored?.claimedBots)
+        assertEquals(emptyMap<BotCharacterId, Int>(), restored?.adShards)
+    }
 }

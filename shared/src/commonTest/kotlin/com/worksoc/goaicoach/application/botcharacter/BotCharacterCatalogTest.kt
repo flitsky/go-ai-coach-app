@@ -225,6 +225,47 @@ class BotCollectionStateTest {
     }
 
     @Test
+    fun adShardsAccumulateAndFlipToOwnershipAtTheRequiredCount() {
+        val shardBot = BotCharacterCatalog.fastBeginnerRoster[1]   // 연습생 돌뫼 — 광고 5회
+        val required = (shardBot.unlockSource as BotUnlockSource.AdShards).required
+
+        var state = BotCollectionState()
+        repeat(required - 1) { state = state.withAdShard(shardBot) }
+
+        // 마지막 한 장 전까지는 진행도만 쌓이고 아직 못 고른다.
+        assertEquals(required - 1, state.shardsFor(shardBot.id))
+        assertFalse(state.isAvailable(shardBot))
+
+        state = state.withAdShard(shardBot)
+
+        assertTrue(state.isAvailable(shardBot))
+        // 획득한 뒤에는 진행도가 남지 않는다 — 이미 가진 캐릭터의 조각은 뜻이 없다.
+        assertEquals(0, state.shardsFor(shardBot.id))
+    }
+
+    @Test
+    fun shardsAreIgnoredForCharactersThatDoNotUseThatPath() {
+        val default = BotCharacterCatalog.fastBeginnerRoster[0]      // 기본 제공
+        val attendance = BotCharacterCatalog.fastBeginnerRoster[2]   // 출석 4일차
+        val purchase = BotCharacterCatalog.fastBeginnerRoster[4]     // 유료
+        val empty = BotCollectionState()
+
+        // 호출부가 실수로 불러도 상태가 오염되지 않아야 한다.
+        listOf(default, attendance, purchase).forEach { character ->
+            assertSame(empty, empty.withAdShard(character), character.name)
+        }
+    }
+
+    @Test
+    fun shardsStopAccruingOnceTheCharacterIsOwned() {
+        val shardBot = BotCharacterCatalog.fastBeginnerRoster[1]
+        val owned = BotCollectionState().withClaimed(shardBot.id)
+
+        assertSame(owned, owned.withAdShard(shardBot))
+        assertEquals(0, owned.shardsFor(shardBot.id))
+    }
+
+    @Test
     fun unknownIdsFromNewerVersionsSurviveInState() {
         val fromFutureVersion = BotCharacterId("bot_added_in_a_later_release")
         val state = BotCollectionState().withClaimed(fromFutureVersion)
