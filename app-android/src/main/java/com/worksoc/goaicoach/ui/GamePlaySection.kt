@@ -97,8 +97,6 @@ internal fun GamePlaySection(
         modifier = Modifier.fillMaxWidth()
     )
 
-    Spacer(modifier = Modifier.height(8.dp))
-
     // 보드에 무엇을 그릴 권한이 있는지는 여기서 정해 GoBoard에는 데이터만 넘긴다 — 보드가 스스로
     // premium.isActive를 보면 1회권으로 켠 표시가 걸러진다(티켓만 차감되고 아무것도 안 보이던
     // 버그, 2026-08-29 실기 확인). 세 경로가 모두 허용이다: 프리미엄 / 1회권 / 대국 종료.
@@ -113,6 +111,11 @@ internal fun GamePlaySection(
 
     // ⚠️ 크기 선택은 **보드 바깥, 위쪽 경계선 밖**에 둔다(2026-08-30 사용자 지시). 보드 위에
     // 얹으면 그 자리에 착수할 수 없다 — 판의 우상단은 실제로 두는 자리다.
+    //
+    // 선택기와 보드를 **한 Column으로 묶는다.** 둘을 형제로 두면 화면 Column의
+    // `spacedBy(12.dp)`가 사이에 끼어 선택기가 판에서 떠 보이고 세로도 낭비된다 — 묶으면
+    // 그 12dp가 이 묶음 위에만 한 번 붙고, 선택기는 경계선에 바짝 붙는다(사용자 피드백).
+    Column(modifier = Modifier.fillMaxWidth()) {
     BoardSizeModeSelector(
         isMaxSize = isBoardMaxSize,
         onSelect = { maxSize ->
@@ -154,6 +157,7 @@ internal fun GamePlaySection(
         isGameEnded = screenState.isGameEnded,
         isEngineBusy = screenState.engine.isBusy,
     )
+    }
 
     // 범례는 보드에 실제로 착수 품질 색이 그려지는 조건(GoBoard.kt의 showMoveReview + 프리미엄
     // 게이팅)과 정확히 일치시킨다 — 추천수/형세 활성 여부와는 무관하다.
@@ -643,12 +647,14 @@ private fun BoardSizeModeSelector(
 ) {
     val strings = LocalUiStrings.current
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        // 아래 2dp만 남긴다 — 경계선에 바짝 붙이는 것이 요점이고, 세로 공간도 아낀다.
+        modifier = Modifier.fillMaxWidth().padding(bottom = 2.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        BoardSizeModeOption(label = strings.boardModeFull, selected = isMaxSize) { onSelect(true) }
+        // 순서는 `여백` → `최대`다(사용자 지정). 작은 것에서 큰 것으로 읽히는 편이 자연스럽다.
         BoardSizeModeOption(label = strings.boardModeInset, selected = !isMaxSize) { onSelect(false) }
+        BoardSizeModeOption(label = strings.boardModeFull, selected = isMaxSize) { onSelect(true) }
     }
 }
 
@@ -667,7 +673,7 @@ private fun BoardSizeModeOption(label: String, selected: Boolean, onClick: () ->
     ) {
         Text(
             text = label,
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp),
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 1.dp),
             style = MaterialTheme.typography.labelSmall,
             fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
             color = if (selected) {
