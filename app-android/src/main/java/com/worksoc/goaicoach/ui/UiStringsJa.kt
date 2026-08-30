@@ -24,6 +24,7 @@ internal val UiStringsJapanese = UiStringsKorean.copy(
     engine = "エンジン",
     directPlay = "即時着手",
     coordinates = "座標",
+    playHaptic = "着手の振動",
     moveNumbers = "手数番号",
     lastMoveRing = "着手表示",
     moveReviewToggle = "着手評価",

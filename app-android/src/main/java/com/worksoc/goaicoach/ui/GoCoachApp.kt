@@ -432,6 +432,7 @@ private fun GoCoachScreen(
                 showOwnershipOverlay = uxOptions.showOwnershipOverlay,
                 isDirectPlayEnabled = uxOptions.isDirectPlayEnabled,
                 showMoveReview = uxOptions.showMoveReview,
+                isPlayHapticEnabled = uxOptions.isPlayHapticEnabled,
             ),
             store = preferencesStore,
         )

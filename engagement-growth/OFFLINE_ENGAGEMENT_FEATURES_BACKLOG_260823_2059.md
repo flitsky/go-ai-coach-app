@@ -367,6 +367,11 @@
       · ⓑ 헤더 제목 `maxLines = 2` → **4** + `TextOverflow.Ellipsis`. 이 칸은 화면 폭의 절반(가중치 1:2:1)뿐인데 `흑: 유저 / 백: KataGo 초고수`는 2.0배에서 약 380dp라 3줄이 필요하다. overflow 미지정(=Clip)이라 **잘렸다는 신호조차 없었다.**
     - **실기 검증(에뮬레이터 360dp)**: 배율 2.0배에서 헤더가 3줄로 상대 이름까지 온전하고(112dp), 점수 바가 자라 `W +1.6` + `흑 29% · 백 71%`가 다 보이며 좌우 `사석` 표기가 같은 폭(90dp)으로 잘림 없이 렌더된다. 기본 배율(1.0배)에서는 바가 여전히 44dp 한 줄이라 겉모습이 사실상 그대로다.
     - ⓒ(1행 코칭 버튼 말줄임)는 **손대지 않았다** — #27이 의도한 동작이다.
+    - 🐛 **이 수정이 크래시를 하나 만들었고, 같은 날 고쳤다**(사용자 제보: 그래프를 펼친 뒤 다시 누르면 강제 종료. 에뮬레이터 재현).
+      · `IllegalArgumentException: Cannot coerce value to an empty range: maximum -31.5 is less than minimum 31.5` — 그래프 Canvas가 **높이 0으로 측정**돼 `chartBottom = 0 - 12dp`가 `chartTop = 12dp`보다 작아졌고 `coerceIn(chartTop, chartBottom)`이 즉시 터졌다.
+      · 원인은 **높이 정책과 내용 분기가 서로 다른 조건을 본 것**이다. 높이는 `isExpanded`로, 내용은 `heightDp <= 48.dp`로 갈렸는데 `heightDp`는 스프링 애니메이션이라 **`isExpanded`가 false로 바뀐 뒤에도 한동안 48dp보다 크다.** 그 창에서 내용은 그래프인데 높이는 하한이라 maxHeight가 Infinity가 되고 `Canvas(fillMaxSize)`가 무너졌다.
+      · 수정: 두 분기가 **같은 값**(`isCollapsedLayout`)을 보게 했다. 더해서 Canvas에 `chartHeight <= 0f || chartWidth <= 0f`면 그리지 않는 이중 안전장치를 뒀다 — 한 프레임 0으로 측정된다고 앱이 죽어서는 안 된다.
+      · 검증: 느린 펼치기/접기 3회 + 애니메이션 중간을 노린 빠른 6연타에서 `FATAL EXCEPTION` 0건.
     - 산출물: `ui/ScoreGraphPanel.kt`, `ui/GameMenuSection.kt`.
     - 사용자 승인 완료(2026-08-30).
 
@@ -391,7 +396,8 @@
       · ⚠️ 착수 시 **결제를 암시하는 문구가 더 없는지 전수로 훑을 것.** 플래그로 가려진 것과 문구로 남은 것은 다르다.
     - **수정(2026-08-30)**:
       · ⓐ 홈의 드롭다운을 `GameMenuSection.kt`로 옮겨 `LanguageDropdownChip`으로 공개하고, `LanguageSettingsPanel`의 나열형 `SettingChoiceRow`를 그것으로 교체했다. 홈 `GoCoachHomeScreen`은 이제 언어 파라미터 자체를 받지 않는다.
-      · ⓐ-2 **언어를 영속화했다 — 다만 `UserPreferencesSnapshot`이 아니라 별도 스토어(`persistence/UiLanguageStore.kt`)다.** 착수해 보니 자동저장 조립부(`buildUserPreferencesSnapshot` → `toUserPreferencesSnapshot`)가 `hasSeenOnboarding`과 `gameSetupUxMode`를 **이미 떨어뜨리고 있었다** — 거기 끼워 넣었으면 같은 함정에 빠진다. `DeveloperModeStore`가 정확히 같은 이유로 이미 독립 저장소를 쓰고 있어 그 선례를 따랐다.
+      · ⓐ-2 **언어를 영속화했다 — 다만 `UserPreferencesSnapshot`이 아니라 별도 스토어(`persistence/UiLanguageStore.kt`)다.** `DeveloperModeStore`가 이미 같은 방식을 쓰고 있어 그 선례를 따랐다. 언어는 대국 세션보다 바깥(`ProvideUiLanguage`가 앱 전체를 감싼다)에 있어 오토세이브 배선에 얹기 어색하기도 하다.
+      · ⚠️ **정정(2026-08-30, #36 착수 중 발견)**: 이 자리에 처음엔 "자동저장 조립부가 `hasSeenOnboarding`과 `gameSetupUxMode`를 이미 떨어뜨리고 있다"고 적었는데 **틀렸다.** `buildUserPreferencesAutosaveSnapshot`이 그 둘을 `.copy(...)`로 명시적으로 보존한다. 내가 `toUserPreferencesSnapshot`만 보고 그 위 계층을 놓쳤다. 별도 스토어라는 결론 자체는 바뀌지 않지만 근거는 위 문장으로 대체한다.
       · ⓑ 상단 Row가 좌 `🧑 마이 페이지` / 우 `⚙ 설정`이 되고 하단 마이 페이지 카드를 없앴다. 설정 전용이던 `HomeSettingsButton`을 이모지·라벨만 받는 `HomeTopChip`으로 일반화해 두 칩이 같은 모양을 쓴다.
       · ⓒ 결제 노출은 **플래그로 이미 다 꺼져 있었고**(`isPurchaseEnabled`·`isBotCharacterPurchaseEnabled` 둘 다 `false`), `store_listing.txt`의 "앱 내 결제 없음"도 현재 빌드와 일치한다. 남은 건 문구 하나였다 — 한국어 `undoClaimSuccessMessage`가 **무료** 클레임에서 "구매 완료!"라고 말하고 있었다(영·일·중은 이미 "획득/解锁/Unlocked"로 정상). `"무르기를 얻었어요! 앞으로 계속 쓸 수 있습니다."`로 교체.
       · ⓒ 전수 확인: 결제를 암시하는 나머지 문구는 전부 게이트 뒤다 — `premiumUpsellPurchaseOption`은 `isPurchaseEnabled`, `settingsDeleteAccountConfirmMessage`는 `isLoginEnabled`, `settingsDevPremiumToggleSubtitle`은 개발자 모드, `premiumPurchaseFailedMessage`는 결제 시도 경로.
@@ -417,6 +423,33 @@
     - 산출물: `ui/GameMenuSection.kt`, `ui/GameStatusPanel.kt`.
     - 사용자 승인 완료(2026-08-30).
     - ➡️ **#37이 쓸 자리가 비었다** — `착수` 버튼 위가 이제 아무것도 없다.
+
+36. **착수 이펙트** — 터치 다운 시 약한 진동 + 설정 on/off (AI 모델: Sonnet, 노력정도: 낮음) [완료]
+    - 2026-08-30 사용자 지시. 진동만 다루는 **작은 항목**이라 앞쪽에 둔다(돋보기 확대는 #39로 분리).
+    - 반상을 누르는 순간(터치 **다운**, 착수 확정이 아니라) 아주 약한 햅틱을 준다. 대국 메뉴의 설정 토글로 켜고 끌 수 있어야 한다.
+    - 관련 파일: `ui/GoBoard.kt:146-158`(현재 `detectTapGestures`만 쓴다 — 다운 시점을 잡으려면 `onPress`/`awaitPointerEventScope`가 필요), 토글은 `ui/KaTrainUxPanels.kt`(`바로 착수`·`착수 표시` 등이 있는 그 격자), 상태는 `uxOptions`.
+    - ⚠️ **`uxOptions`가 어디에 저장되는지 먼저 확인할 것.** `UserPreferencesSnapshot`의 자동저장 조립부에 배선되지 않은 필드는 저장 시점에 조용히 기본값으로 되돌아간다(#34에서 확인 — `hasSeenOnboarding`·`gameSetupUxMode`가 실제로 그렇다). 배선이 없으면 `UiLanguageStore`처럼 독립 저장소를 쓸 것.
+    - ⚠️ 접근성/시스템 설정에서 햅틱을 끈 기기를 존중해야 한다. `HapticFeedbackType`(Compose) 또는 `view.performHapticFeedback`을 쓰면 시스템 설정을 자동으로 따른다 — `Vibrator`를 직접 부르면 그 존중이 깨진다.
+    - **수정(2026-08-30)**: `KaTrainUxOptions.isPlayHapticEnabled`(기본 켜짐) 신설 → 매퍼 → `UserPreferencesSnapshot` → `UserPreferencesAutosaveRequest` → 빌더 두 오버로드 → 코덱까지 배선하고, 대국 메뉴 `좌표` 옆의 **비어 있던 칸**에 토글을 넣었다. 4개 언어 문자열 추가.
+    - **라벨은 `착수 진동`이지 `착수 이펙트`가 아니다.** 실제로 진동만 하기 때문이다 — 하지 않는 일을 약속하는 라벨은 #31에서 이미 한 번 걸렀다(`検討`/`复盘`). 돋보기(#39)가 들어오면 그때 이름을 다시 볼 것.
+    - **손을 뗄 때가 아니라 닿는 순간**(`onPress`) 울린다. 이 진동은 "착수됐다"가 아니라 "눌린 것이 전달됐다"는 신호이기 때문이다. 반상 위 유효 교차점을 눌렀을 때만, 그리고 입력이 열려 있을 때만 울린다.
+    - ⚠️ `Vibrator`를 직접 부르지 않고 `LocalHapticFeedback`의 `performHapticFeedback(TextHandleMove)`을 쓴다 — 시스템·접근성 햅틱 설정을 자동으로 존중하므로 기기에서 진동을 꺼 둔 사용자에게는 토글이 켜져 있어도 조용하다.
+    - **범위: 두 모드 모두(2026-08-30 사용자 확정).** 최초 지시는 "바로 착수 모드일 때"였지만, 확인 착수 모드에서도 탭은 자리를 고르는 실제 동작이라 같은 피드백이 필요하고 한쪽만 울리면 모드 전환(#37) 때 일관성이 깨진다 — 넓힌 채로 승인받았다. 되돌리려면 `onPress` 조건에 `isDirectPlayEnabled`를 더하면 된다.
+    - ⚠️ **착수 중 실제로 전달 누락 함정에 걸렸다.** `buildUserPreferencesSnapshot`의 **두 번째 오버로드가 새 필드를 전달하지 않아** 다음 단계 기본값(`true`)이 조용히 이겼다 — 파라미터에 기본값이 있으니 컴파일도 통과한다. 실기에서 "토글을 꺼도 재시작하면 다시 켜져 있다"로 드러났다.
+      · 재발 방지로 `UserPreferencesApplicationTest.autosaveForwardsEveryToggleInsteadOfFallingBackToDefaults`를 넣었다 — **모든 불리언을 스냅샷 기본값의 반대로** 넣고 전부 살아남는지 본다. 전달을 빠뜨리면 그 필드만 기본값으로 돌아와 즉시 실패한다. red/green 확인: 전달을 도로 지우면 이 테스트만 실패한다.
+    - **실기 검증(에뮬레이터)**: 반상 유효 교차점을 누르면 `VibratorManagerService: performHapticFeedback ... constant 9`(가장 약한 틱)가 로그에 찍히고, 토글을 끄면 **로그가 0건**이다. 토글을 끄고 앱을 강제 종료 후 재실행해도 꺼진 채로 남는다. (에뮬레이터는 진동 하드웨어가 없어 `vibration absent`로 끝나므로, 세기 자체는 실기에서 확인이 필요하다.)
+    - **후속 수정(2026-08-30, 사용자 피드백 "진동이 안 느껴진다")**:
+      · 세기를 `TextHandleMove` → **`LongPress`** 로 올렸다. Compose(BOM 2025.04.01)의 `HapticFeedbackType`은 이 둘뿐이고, `LongPress`가 프리베이크 **`HEAVY_CLICK`** 으로 내려간다 — 프레임워크 3단계(`TICK` < `CLICK` < `HEAVY_CLICK`) 중 최상위다.
+      · **설정 토글을 켜는 순간에도 한 번 울린다**(사용자 요청). 진동은 눈에 안 보여 켠 것이 먹혔는지 알 길이 없다 — 그 진동이 곧 반상에서 느낄 세기의 미리듣기다. 끌 때는 울리지 않는다.
+      · 두 곳이 같은 세기를 써야 하므로 `ui/PlayHaptics.kt`에 한 줄로 모았다.
+    - ⚠️ **측정 방법을 잘못 알아 한참 헤맸다 — 다음 사람은 반복하지 말 것.**
+      · `VibratorManagerService`는 재생에 **실패했을 때만** logcat에 경고를 남긴다(*"vibration absent for constant 9"*). **성공한 진동은 logcat에 아무것도 남기지 않고** `dumpsys vibrator_manager`의 *Recent vibrations*에만 기록된다.
+      · 이걸 모르고 "로그 0건 = 디스패치 안 됨"으로 읽어, 멀쩡히 동작하던 `LongPress`를 실패로 오판했다. 그 오판 때문에 `View.performHapticFeedback` 직접 호출 → `HapticFeedbackConstants` 상수 순회 → `Vibrator` 직접 사용까지 갔다가 **전부 되돌렸다.**
+      · `Vibrator`(`EFFECT_HEAVY_CLICK`)는 실제로 동작했지만 `dumpsys` 이력상 **프레임워크 경로와 완전히 같은 효과**를 재생했다. 즉 얻는 것 없이 `android.permission.VIBRATE`(스토어 권한 목록에 노출)와 시스템 햅틱 설정 확인 코드만 늘어난다. **권한은 추가하지 않았다.**
+      · 세기 검증은 반드시 `adb shell dumpsys vibrator_manager | grep <패키지>`로 할 것.
+    - **실기 재검증(에뮬레이터, 진동 이력 기준)**: 토글 OFF → 이력 변화 없음. 토글 ON → +1건 `Prebaked=HEAVY_CLICK`. 반상 누름 → +1건 `Prebaked=HEAVY_CLICK`. (에뮬레이터는 진동 하드웨어가 없어 **체감 세기는 실기 확인이 필요하다** — 재생된 효과 종류까지만 보장된다.)
+    - 산출물: (shared) `application/preferences/UserPreferencesSnapshot.kt`·`UserPreferencesApplication.kt`·`UserPreferencesAutosaveApplication.kt`, 테스트 1건 신설. (app-android) `presentation/KaTrainUxOptions.kt`·`KaTrainUxOptionsMapper.kt`, `persistence/UserPreferencesStore.kt`, `ui/PlayHaptics.kt`(신규)·`GoBoard.kt`·`KaTrainUxPanels.kt`·`GoCoachApp.kt`·`UiStrings*.kt`.
+    - 사용자 승인 완료(2026-08-30).
 
 ### 진행 중
 
@@ -450,18 +483,11 @@
 > **2026-08-30 현황**: #16·#19·#17·#10·#11·#20~#23이 모두 완료됐고, #18은 Play Console
 > **2026-08-30 현황**: #24·#25·#27~#31·#34가 끝나 진행 중은 #18(콘솔 게이트) 하나뿐이다.
 > 같은 날 대국 화면 UX 일감 다섯(#35~#39)이 사용자 지시로 들어왔고, **영향도가 낮은 순서로**
-> 예정사항 맨 위에 놓았다 — ~~#35(수순 이동)~~ 완료 → #36(햅틱) → #37(착수 모드 스위치) → #38(보드 크기)
+> 예정사항 맨 위에 놓았다 — ~~#35(수순 이동)~~·~~#36(햅틱)~~ 완료 → #37(착수 모드 스위치) → #38(보드 크기)
 > → #39(돋보기, 출시 후순위). 스크린샷 재캡처와 AAB 빌드(#40)는 **그 뒤**다(사용자 지시) —
 > 화면이 계속 바뀌는 중에 찍으면 또 낡기 때문이다. #26·#32·#33은 그 아래로 내려갔다.
 >
 > ⚠️ **#35는 #37의 선행 작업이다** — #37이 쓸 자리를 #35가 비운다. 순서를 바꾸지 말 것.
-
-36. **착수 이펙트** — 터치 다운 시 약한 진동 + 설정 on/off (AI 모델: Sonnet, 노력정도: 낮음)
-    - 2026-08-30 사용자 지시. 진동만 다루는 **작은 항목**이라 앞쪽에 둔다(돋보기 확대는 #39로 분리).
-    - 반상을 누르는 순간(터치 **다운**, 착수 확정이 아니라) 아주 약한 햅틱을 준다. 대국 메뉴의 설정 토글로 켜고 끌 수 있어야 한다.
-    - 관련 파일: `ui/GoBoard.kt:146-158`(현재 `detectTapGestures`만 쓴다 — 다운 시점을 잡으려면 `onPress`/`awaitPointerEventScope`가 필요), 토글은 `ui/KaTrainUxPanels.kt`(`바로 착수`·`착수 표시` 등이 있는 그 격자), 상태는 `uxOptions`.
-    - ⚠️ **`uxOptions`가 어디에 저장되는지 먼저 확인할 것.** `UserPreferencesSnapshot`의 자동저장 조립부에 배선되지 않은 필드는 저장 시점에 조용히 기본값으로 되돌아간다(#34에서 확인 — `hasSeenOnboarding`·`gameSetupUxMode`가 실제로 그렇다). 배선이 없으면 `UiLanguageStore`처럼 독립 저장소를 쓸 것.
-    - ⚠️ 접근성/시스템 설정에서 햅틱을 끈 기기를 존중해야 한다. `HapticFeedbackType`(Compose) 또는 `view.performHapticFeedback`을 쓰면 시스템 설정을 자동으로 따른다 — `Vibrator`를 직접 부르면 그 존중이 깨진다.
 
 37. **`바로 착수`를 착수 버튼 자리에서 직접 켜고 끄기** (AI 모델: Opus, 노력정도: 중간)
     - 2026-08-30 사용자 지시. **#35가 끝난 뒤 착수한다**(그 항목이 자리를 비워 준다).

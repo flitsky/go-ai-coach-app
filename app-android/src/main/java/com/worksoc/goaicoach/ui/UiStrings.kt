@@ -99,6 +99,9 @@ internal data class UiStrings(
     val engine: String,
     val directPlay: String,
     val coordinates: String,
+    /** 착수 시 진동 토글(#36). 라벨이 "이펙트"가 아니라 "진동"인 이유는 실제로 진동만 하기
+     *  때문이다 — 하지 않는 일을 약속하는 라벨은 #31에서 이미 한 번 걸렀다. */
+    val playHaptic: String,
     val moveNumbers: String,
     val lastMoveRing: String,
     val moveReviewToggle: String,

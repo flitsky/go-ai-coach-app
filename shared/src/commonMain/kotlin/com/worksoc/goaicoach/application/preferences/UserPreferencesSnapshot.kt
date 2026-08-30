@@ -31,4 +31,5 @@ data class UserPreferencesSnapshot(
     val showMoveReview: Boolean = false,
     val hasSeenOnboarding: Boolean = false,
     val gameSetupUxMode: GameSetupUxMode = GameSetupUxMode.Compact,
+    val isPlayHapticEnabled: Boolean = true,
 )

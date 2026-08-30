@@ -56,6 +56,7 @@ internal object UserPreferencesCodec {
             .put("showMoveReview", snapshot.showMoveReview)
             .put("hasSeenOnboarding", snapshot.hasSeenOnboarding)
             .put("gameSetupUxMode", snapshot.gameSetupUxMode.name)
+            .put("isPlayHapticEnabled", snapshot.isPlayHapticEnabled)
             .toString()
 
     fun decode(raw: String): UserPreferencesSnapshot? =
@@ -90,6 +91,7 @@ internal object UserPreferencesCodec {
                 showMoveReview = json.optBoolean("showMoveReview", false),
                 hasSeenOnboarding = json.optBoolean("hasSeenOnboarding", false),
                 gameSetupUxMode = enumOrDefault(json.optString("gameSetupUxMode"), GameSetupUxMode.Compact),
+                isPlayHapticEnabled = json.optBoolean("isPlayHapticEnabled", true),
             )
         }.getOrNull()
 

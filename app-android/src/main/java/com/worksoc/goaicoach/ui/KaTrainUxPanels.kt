@@ -8,8 +8,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -21,8 +21,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.premium.FeatureAccess
 import com.worksoc.goaicoach.application.premium.FeatureId
@@ -124,7 +125,21 @@ internal fun KaTrainUxMenuPanel(
                     onCheckedChange = { onOptionsChange(options.copy(showCoordinates = it)) },
                 )
                 Spacer(modifier = Modifier.width(columnGap))
-                Spacer(modifier = Modifier.weight(1f))
+                // 반상을 누르는 순간의 햅틱(#36). 비워 두던 자리라 격자가 그대로 유지된다.
+                //
+                // **켤 때 한 번 울려 준다**(2026-08-30 사용자 요청). 진동은 눈에 보이지 않아
+                // 켠 것이 먹혔는지 알 길이 없다 — 여기서 울리는 그 진동이 곧 반상에서 느낄
+                // 세기의 미리듣기다. 끌 때는 울리지 않는다(끄는 동작에 진동으로 답하면 모순).
+                val hapticPreview = LocalHapticFeedback.current
+                OptionSwitchCell(
+                    label = strings.playHaptic,
+                    checked = options.isPlayHapticEnabled,
+                    modifier = Modifier.weight(1f),
+                    onCheckedChange = { enabled ->
+                        if (enabled) hapticPreview.performPlayHaptic()
+                        onOptionsChange(options.copy(isPlayHapticEnabled = enabled))
+                    },
+                )
             }
             // '매 수마다' 2종(2026-08-29 신설). 대국 화면의 형세 보기·추천 수 버튼은 이제
             // **1회성 동작**이고, 수가 진행돼도 계속 갱신되는 상시 표시는 여기서 켠다 — 버튼이

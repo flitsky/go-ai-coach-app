@@ -24,6 +24,7 @@ internal val UiStringsEnglish = UiStringsKorean.copy(
     engine = "Engine",
     directPlay = "Direct play",
     coordinates = "Coords",
+    playHaptic = "Haptics",
     moveNumbers = "Move nums",
     lastMoveRing = "Move mark",
     moveReviewToggle = "Move review",

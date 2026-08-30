@@ -75,6 +75,7 @@ fun buildUserPreferencesSnapshot(
     isDirectPlayEnabled: Boolean = true,
     showMoveReview: Boolean = false,
     komi: Double = com.worksoc.goaicoach.shared.DefaultKomi,
+    isPlayHapticEnabled: Boolean = true,
 ): UserPreferencesSnapshot =
     buildGameSettings(
         boardSize = boardSize,
@@ -92,6 +93,7 @@ fun buildUserPreferencesSnapshot(
         showOwnershipOverlay = showOwnershipOverlay,
         isDirectPlayEnabled = isDirectPlayEnabled,
         showMoveReview = showMoveReview,
+        isPlayHapticEnabled = isPlayHapticEnabled,
     )
 
 fun buildUserPreferencesSnapshot(
@@ -104,6 +106,7 @@ fun buildUserPreferencesSnapshot(
     isDirectPlayEnabled: Boolean = true,
     showMoveReview: Boolean = false,
     komi: Double = com.worksoc.goaicoach.shared.DefaultKomi,
+    isPlayHapticEnabled: Boolean = true,
 ): UserPreferencesSnapshot =
     buildUserPreferencesSnapshot(
         playerSetup = settingsState.playerSetup,
@@ -120,6 +123,7 @@ fun buildUserPreferencesSnapshot(
         isDirectPlayEnabled = isDirectPlayEnabled,
         showMoveReview = showMoveReview,
         komi = komi,
+        isPlayHapticEnabled = isPlayHapticEnabled,
     )
 
 internal fun buildGameSettings(
@@ -158,6 +162,7 @@ private fun GameSettings.toUserPreferencesSnapshot(
     showOwnershipOverlay: Boolean,
     isDirectPlayEnabled: Boolean,
     showMoveReview: Boolean,
+    isPlayHapticEnabled: Boolean = true,
 ): UserPreferencesSnapshot =
     UserPreferencesSnapshot(
         boardSize = boardSize,
@@ -174,4 +179,5 @@ private fun GameSettings.toUserPreferencesSnapshot(
         searchTimeSettings = searchTimeSettings,
         isDirectPlayEnabled = isDirectPlayEnabled,
         showMoveReview = showMoveReview,
+        isPlayHapticEnabled = isPlayHapticEnabled,
     )

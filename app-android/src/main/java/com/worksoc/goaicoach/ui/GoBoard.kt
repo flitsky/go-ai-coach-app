@@ -12,20 +12,19 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -38,18 +37,20 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import com.worksoc.goaicoach.application.engine.operation.EngineActivityIndicator
 import com.worksoc.goaicoach.application.movereview.MoveReviewMarker
 import com.worksoc.goaicoach.application.movereview.MoveReviewTone
 import com.worksoc.goaicoach.application.movereview.topMoveDisplayToneFor
-import com.worksoc.goaicoach.application.engine.operation.EngineActivityIndicator
 import com.worksoc.goaicoach.presentation.KaTrainUxOptions
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
@@ -59,10 +60,10 @@ import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.OwnershipEstimate
 import com.worksoc.goaicoach.shared.StoneColor
 import com.worksoc.goaicoach.shared.topMoveDeltaScoreLabel
-import kotlinx.coroutines.delay
 import kotlin.math.abs
 import kotlin.math.min
 import kotlin.math.roundToInt
+import kotlinx.coroutines.delay
 
 private const val EngineActivityFrameIntervalMillis = 1_000L
 private val ActivityIndicatorDots = listOf("", " .", " ..", " ...")
@@ -125,6 +126,8 @@ internal fun GoBoard(
         label = "lastMovePulse"
     )
 
+    val haptics = LocalHapticFeedback.current
+
     BoxWithConstraints(
         modifier = modifier,
         contentAlignment = Alignment.Center
@@ -148,14 +151,34 @@ internal fun GoBoard(
                         inputEnabled,
                         uxOptions.showCoordinates,
                         uxOptions.isDirectPlayEnabled,
+                        uxOptions.isPlayHapticEnabled,
                     ) {
-                        detectTapGestures { offset ->
-                            if (!inputEnabled) {
-                                return@detectTapGestures
-                            }
-                            coordinateFromTap(offset, canvasSize, gameState.boardSize, uxOptions.showCoordinates)
-                                ?.let(onCoordinateTap)
-                        }
+                        detectTapGestures(
+                            // 손가락이 **닿는 순간** 약하게 한 번 울린다(#36). 손을 뗄 때가
+                            // 아니라 닿을 때인 이유: 이 진동은 "착수됐다"가 아니라 "눌린 것이
+                            // 전달됐다"는 신호다.
+                            //
+                            // 반상 위 유효한 교차점을 눌렀을 때만 울린다 — 판 바깥 여백을
+                            // 스치는 것까지 울리면 신호가 아니라 소음이 된다. 입력이 막힌
+                            // 상황(AI 차례·종국)에서도 울리지 않는다.
+                            //
+                            // 세기와 그 근거는 `PlayHaptics.kt`에 모여 있다 — 설정 토글이
+                            // 같은 함수를 써서 "앞으로 이만큼 울린다"를 미리 들려준다.
+                            onPress = { offset ->
+                                if (inputEnabled && uxOptions.isPlayHapticEnabled &&
+                                    coordinateFromTap(offset, canvasSize, gameState.boardSize, uxOptions.showCoordinates) != null
+                                ) {
+                                    haptics.performPlayHaptic()
+                                }
+                            },
+                            onTap = { offset ->
+                                if (!inputEnabled) {
+                                    return@detectTapGestures
+                                }
+                                coordinateFromTap(offset, canvasSize, gameState.boardSize, uxOptions.showCoordinates)
+                                    ?.let(onCoordinateTap)
+                            },
+                        )
                     },
             ) {
                 val geometry = BoardGeometry.from(size, gameState.boardSize, uxOptions.showCoordinates)

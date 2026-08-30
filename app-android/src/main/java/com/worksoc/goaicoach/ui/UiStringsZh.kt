@@ -24,6 +24,7 @@ internal val UiStringsChineseSimplified = UiStringsKorean.copy(
     engine = "引擎",
     directPlay = "直接落子",
     coordinates = "坐标",
+    playHaptic = "落子振动",
     moveNumbers = "手数编号",
     lastMoveRing = "落子标记",
     moveReviewToggle = "着法评价",

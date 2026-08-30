@@ -189,6 +189,67 @@ class UserPreferencesApplicationTest {
         assertTrue(saved.isDirectPlayEnabled)
     }
 
+    /**
+     * **전달 누락 그물**(#36). 오토세이브는 `UserPreferencesAutosaveRequest` → 빌더 두 오버로드
+     * → `toUserPreferencesSnapshot`을 거치는데, 중간 오버로드가 필드 하나를 **전달하지 않으면**
+     * 다음 단계의 기본값이 조용히 이긴다. 파라미터에 기본값이 있으니 컴파일도 통과한다.
+     *
+     * 실제로 `isPlayHapticEnabled`를 추가할 때 두 번째 오버로드가 전달을 빠뜨려, 토글을 꺼도
+     * 앱을 껐다 켜면 다시 켜져 있었다(2026-08-30 실기에서 발견).
+     *
+     * 그래서 **모든 불리언을 스냅샷 기본값의 반대로** 넣고 전부 살아남는지 본다. 전달을
+     * 빠뜨리면 그 필드만 기본값으로 돌아오므로 즉시 실패한다 — 필드가 늘어도 여기에 한 줄씩
+     * 추가하기만 하면 같은 그물이 유지된다.
+     */
+    @Test
+    fun autosaveForwardsEveryToggleInsteadOfFallingBackToDefaults() {
+        val store = RecordingUserPreferencesStore()
+
+        runUserPreferencesAutosave(
+            request = UserPreferencesAutosaveRequest(
+                settingsState = GameSessionSettingsState(
+                    playerSetup = PlayerSetup(),
+                    autoPlayDelaySetting = AutoPlayDelaySetting.Short,
+                    searchTimeSettings = SearchTimeSettings(SearchTimeLimit.WithinOneSecond),
+                    topMovesEnabled = true,
+                    boardSize = BoardSize.Nine,
+                    handicapCount = 0,
+                ),
+                ruleset = Ruleset.Chinese,
+                komi = 7.5,
+                // 아래 다섯은 전부 UserPreferencesSnapshot 기본값의 **반대**다.
+                showCoordinates = true,
+                showMoveNumbers = true,
+                showLastMoveRing = false,
+                showOwnershipOverlay = false,
+                isDirectPlayEnabled = false,
+                showMoveReview = true,
+                isPlayHapticEnabled = false,
+            ),
+            store = store,
+        )
+
+        val saved = store.saved
+        val defaults = UserPreferencesSnapshot()
+        val reverted = buildList {
+            if (saved.showCoordinates == defaults.showCoordinates) add("showCoordinates")
+            if (saved.showMoveNumbers == defaults.showMoveNumbers) add("showMoveNumbers")
+            if (saved.showLastMoveRing == defaults.showLastMoveRing) add("showLastMoveRing")
+            if (saved.showOwnershipOverlay == defaults.showOwnershipOverlay) add("showOwnershipOverlay")
+            if (saved.isDirectPlayEnabled == defaults.isDirectPlayEnabled) add("isDirectPlayEnabled")
+            if (saved.showMoveReview == defaults.showMoveReview) add("showMoveReview")
+            if (saved.isPlayHapticEnabled == defaults.isPlayHapticEnabled) add("isPlayHapticEnabled")
+        }
+
+        // `assertEquals(message, expected, actual)`는 List에서 Double 오버로드로 잡혀
+        // 컴파일이 깨진다 — assertTrue로 간다.
+        assertTrue(
+            reverted.isEmpty(),
+            "오토세이브 경로에서 기본값으로 되돌아간 필드가 있다 = 빌더 오버로드 어딘가가 " +
+                "전달을 빠뜨렸다: " + reverted.joinToString(", "),
+        )
+    }
+
     @Test
     fun autosaveRunnerPreservesFieldsItDoesNotManage() {
         // 회귀 방지: 오토세이브는 대국 설정(계가/덤/바둑판 등)만 관리한다. 온보딩 완료 여부나

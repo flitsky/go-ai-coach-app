@@ -13,6 +13,7 @@ data class UserPreferencesAutosaveRequest(
     val showOwnershipOverlay: Boolean,
     val isDirectPlayEnabled: Boolean,
     val showMoveReview: Boolean = false,
+    val isPlayHapticEnabled: Boolean = true,
 )
 
 /**
@@ -37,6 +38,7 @@ internal fun buildUserPreferencesAutosaveSnapshot(
         showOwnershipOverlay = request.showOwnershipOverlay,
         isDirectPlayEnabled = request.isDirectPlayEnabled,
         showMoveReview = request.showMoveReview,
+        isPlayHapticEnabled = request.isPlayHapticEnabled,
     ).copy(
         hasSeenOnboarding = current.hasSeenOnboarding,
         gameSetupUxMode = current.gameSetupUxMode,

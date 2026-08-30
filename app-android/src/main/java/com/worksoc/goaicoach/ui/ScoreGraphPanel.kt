@@ -43,6 +43,9 @@ import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.roundToInt
 
+/** 이 높이 이하면 접힌 요약 바를 그린다. 높이 정책과 내용 분기가 같은 값을 봐야 한다(#30). */
+private val CollapsedHeightThreshold = 48.dp
+
 @Composable
 internal fun ScoreTimelineGraph(
     snapshots: List<ScoreSnapshot>,
@@ -110,18 +113,23 @@ internal fun ScoreTimelineGraph(
         "${strings.colorLabel(StoneColor.Black)} $blackPct% · ${strings.colorLabel(StoneColor.White)} $whitePct%"
     }
 
+    // 높이 정책과 내용 분기가 **반드시 같은 조건**을 봐야 한다(#30 회귀 수정, 2026-08-30).
+    //
+    // 접힌 요약 바는 하한 높이여야 한다 — 44dp 고정일 때 가운데 칸의 두 줄(스코어차
+    // `bodySmall` 14sp + 승률 `labelSmall` 11sp)이 배율 2.0배에서 약 72dp를 요구해 아랫줄이
+    // 썰렸다. 반대로 펼친 그래프는 `Canvas(fillMaxSize)`가 정확한 높이를 알아야 하므로 고정이다.
+    //
+    // ⚠️ 처음엔 이 분기를 `isExpanded`로 잡았는데 **앱이 죽었다.** `heightDp`는 스프링
+    // 애니메이션이라 `isExpanded`가 false로 바뀐 뒤에도 한동안 48dp보다 크다. 그 창에서
+    // 내용은 그래프(`heightDp > 48.dp` 분기)인데 높이는 하한이라, maxHeight가 Infinity가 되며
+    // Canvas가 높이 0으로 측정됐다 — `chartBottom = 0 - 12dp`가 `chartTop = 12dp`보다 작아져
+    // `coerceIn(31.5, -31.5)`이 `IllegalArgumentException`으로 터진다.
+    val isCollapsedLayout = heightDp <= CollapsedHeightThreshold
+
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            // 펼친 그래프는 `Canvas(fillMaxSize)`가 정확한 높이를 알아야 하므로 **고정**이어야
-            // 하지만, 접힌 요약 바는 하한이어야 한다(#30). 44dp 고정일 때 가운데 칸의 두 줄
-            // (스코어차 `bodySmall` 14sp + 승률 `labelSmall` 11sp)이 배율 2.0배에서 약 72dp를
-            // 요구해 아랫줄이 통째로 썰렸다. 이 바는 스크롤되는 Column 안에 있으므로 커져도
-            // 화면이 깨지지 않는다.
-            //
-            // ⚠️ 양쪽 모두 `heightIn`으로 통일하지 마라 — 펼친 쪽은 maxHeight가 Infinity가 돼
-            // 안쪽 `Canvas(fillMaxSize)`가 무너진다.
-            .then(if (isExpanded) Modifier.height(heightDp) else Modifier.heightIn(min = heightDp))
+            .then(if (isCollapsedLayout) Modifier.heightIn(min = heightDp) else Modifier.height(heightDp))
             .clickable { onExpandedChange(!isExpanded) },
         color = backgroundLight,
         shape = RoundedCornerShape(8.dp),
@@ -129,7 +137,7 @@ internal fun ScoreTimelineGraph(
         tonalElevation = 0.dp,
         shadowElevation = 0.dp,
     ) {
-        if (heightDp <= 48.dp) {
+        if (isCollapsedLayout) {
             // 접힌 상태: 흑/백 사석 수 + 현재 스코어차 + 승률을 한눈에 보여준다.
             // 세 칸 모두 `weight`를 준다(#30). 예전에는 가중치 없는 자식 셋 + `SpaceBetween`이라,
             // 글꼴이 커지면 남는 공간이 사라지면서 글자끼리 맞붙었다 — 영어 360dp에서
@@ -201,6 +209,10 @@ internal fun ScoreTimelineGraph(
                     val chartBottom = size.height - 12.dp.toPx()
                     val chartHeight = chartBottom - chartTop
                     val chartWidth = chartRight - chartLeft
+                    // 이중 안전장치. 위 분기가 옳으면 여기 걸릴 일이 없지만, 캔버스가 한 프레임
+                    // 0으로 측정된다고 **앱이 죽어서는 안 된다** — 아래 `coerceIn(chartTop,
+                    // chartBottom)`은 min > max면 즉시 예외를 던진다.
+                    if (chartHeight <= 0f || chartWidth <= 0f) return@Canvas
                     val centerY = chartTop + chartHeight / 2f
                     
                     // Y좌표 매핑 함수 (흑 우세는 위쪽, 백 우세는 아래쪽)
