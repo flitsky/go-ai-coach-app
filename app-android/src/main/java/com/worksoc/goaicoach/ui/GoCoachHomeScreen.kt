@@ -185,6 +185,20 @@ internal fun GoCoachHomeScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // "대국 기록" (Game History) 카드 — 대국 하기 바로 아래다(백로그 #45, 2026-08-30
+            // 사용자 지시). 두고 → 돌아보는 동선이 앱 안에서 이어지는데, 학습이 사이에 끼면
+            // 그 흐름이 유튜브 링크로 한 번 끊긴다.
+            MenuCard(
+                title = strings.gameHistoryTitle,
+                subtitle = strings.homeGameHistorySubtitle,
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                titleColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                subtitleColor = MaterialTheme.colorScheme.secondary,
+                onClick = onGameHistoryClick,
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             // "학습 하기" (Study Mode) 카드
             MenuCard(
                 title = strings.study,
@@ -193,18 +207,6 @@ internal fun GoCoachHomeScreen(
                 titleColor = MaterialTheme.colorScheme.onSurfaceVariant,
                 subtitleColor = MaterialTheme.colorScheme.secondary,
                 onClick = onStudyClick,
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // "대국 기록" (Game History) 카드
-            MenuCard(
-                title = strings.gameHistoryTitle,
-                subtitle = strings.homeGameHistorySubtitle,
-                containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                titleColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                subtitleColor = MaterialTheme.colorScheme.secondary,
-                onClick = onGameHistoryClick,
             )
 
             // 마이 페이지 카드는 여기 없다 — 좌상단 칩으로 올라갔다(#34). 목적지 자체는

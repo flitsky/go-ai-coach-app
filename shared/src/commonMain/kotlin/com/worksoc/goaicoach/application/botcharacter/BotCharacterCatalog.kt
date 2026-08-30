@@ -40,7 +40,7 @@ object BotCharacterCatalog {
         fastBeginnerCharacter(
             tier = 1,
             name = "첫돌이",
-            description = "오늘 처음 돌을 잡은 입문생. 두는 곳마다 실수예요.",
+            description = "입문자와 두려고 일부러 자주 실수하는 상대예요.",
             unlockSource = BotUnlockSource.Default,
         ),
         // 2단계 — 광고 5회 조각 누적(#11).
