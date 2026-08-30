@@ -43,8 +43,13 @@ import com.worksoc.goaicoach.R
  * 바뀔 때만 코드와 함께 썸네일 이미지도 같이 교체한다).
  */
 internal data class StudyVideoEntry(
+    /**
+     * 소개 문구 표의 키(백로그 #33). URL이 아니라 짧은 이름을 쓰는 이유는, 영상을 교체할 때
+     * **URL과 썸네일만 갈아 끼우고 문구는 그대로 두는** 경우가 흔하기 때문이다 — 주제가 같은
+     * 다른 강의로 바꿀 때 네 언어를 다시 쓰지 않아도 된다.
+     */
+    val id: String,
     val youtubeUrl: String,
-    val description: String,
     val thumbnailRes: Int,
 )
 
@@ -53,20 +58,23 @@ internal data class StudyVideoEntry(
 // 그래서 실제 강좌 채널(바둑에듀) 안에서 조회수가 높은 순으로 3편을 골랐다(직접 확인한
 // 조회수: #1 45만, #3 14만, #2 12만, 확인일 2026-08-12). 같은 채널의 1~3강이라 순서대로
 // 보면 자연스러운 입문 커리큘럼이 되는 것도 장점.
+//
+// ⚠️ 소개 문구는 여기 없다(백로그 #33) — 네 언어 표가 `UiStringsStudyVideos.kt`에 있다.
+// 한국어 리터럴로 두었더니 영어·일본어·중국어 사용자도 이 세 줄만 한글로 봤다.
 internal val studyVideoEntries: List<StudyVideoEntry> = listOf(
     StudyVideoEntry(
+        id = "rules",
         youtubeUrl = "https://www.youtube.com/watch?v=TEp_hxTHbV0",
-        description = "바둑을 처음 배우는 분을 위한 10분 기초 규칙 강의 (바둑에듀)",
         thumbnailRes = R.drawable.study_thumb_baduk_intro_1,
     ),
     StudyVideoEntry(
+        id = "shapes",
         youtubeUrl = "https://www.youtube.com/watch?v=XOX0gOQ3FCg",
-        description = "입구자·날일자 등 바둑 기초 행마를 10분에 익히기 (바둑에듀)",
         thumbnailRes = R.drawable.study_thumb_baduk_intro_3,
     ),
     StudyVideoEntry(
+        id = "life_and_death",
         youtubeUrl = "https://www.youtube.com/watch?v=tvmo7P1v9nc",
-        description = "삶의 조건과 빅, 입문자가 꼭 알아야 할 바둑 기초 개념 (바둑에듀)",
         thumbnailRes = R.drawable.study_thumb_baduk_intro_2,
     ),
 )
@@ -144,6 +152,9 @@ internal fun StudyScreen(
 
 @Composable
 private fun StudyVideoRow(entry: StudyVideoEntry, onClick: () -> Unit) {
+    // 소개는 표시 언어를 따른다(백로그 #33) — 썸네일의 접근성 설명도 같은 문구를 쓴다.
+    val description = LocalUiStrings.current.studyVideoDescription(entry)
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -156,7 +167,7 @@ private fun StudyVideoRow(entry: StudyVideoEntry, onClick: () -> Unit) {
     ) {
         Image(
             painter = painterResource(entry.thumbnailRes),
-            contentDescription = entry.description,
+            contentDescription = description,
             contentScale = ContentScale.Crop,
             modifier = Modifier
                 .size(width = 96.dp, height = 54.dp)
@@ -164,7 +175,7 @@ private fun StudyVideoRow(entry: StudyVideoEntry, onClick: () -> Unit) {
         )
 
         Text(
-            text = entry.description,
+            text = description,
             fontSize = 14.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 2,

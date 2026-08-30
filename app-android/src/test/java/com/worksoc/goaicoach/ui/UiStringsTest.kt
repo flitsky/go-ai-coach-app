@@ -120,6 +120,40 @@ class UiStringsTest {
     }
 
     /**
+     * 학습 강좌 소개도 **함수**로 나오므로 위 필드 그물의 사각지대다(백로그 #33) —
+     * `UiStringsBotCharacterTest`가 캐릭터 문구에 대해 하는 일을 여기서 강좌에 대해 한다.
+     *
+     * ⚠️ **비한국어에만 `한국어`/`Korean` 표기가 붙는다.** 강의 자체가 한국어 유튜브라, 자동
+     * 번역 자막으로 따라갈 수는 있어도 들어가 보고 알게 두지는 않기로 했다(2026-08-30 결정,
+     * 근거는 `UiStringsStudyVideos.kt`). 그 표기가 한국어 문구에까지 붙는 실수를 함께 막는다.
+     */
+    @Test
+    fun studyVideoBlurbsAreLocalizedAndFlagTheLectureLanguage() {
+        val leaks = studyVideoEntries.flatMap { entry ->
+            UiLanguage.entries
+                .filter { it != UiLanguage.Korean }
+                .map { language -> language to UiStrings.forLanguage(language).studyVideoDescription(entry) }
+                .filter { (_, value) -> value.containsHangul() || value == entry.id }
+                .map { (language, value) -> "${language.name} ${entry.id} = \"$value\"" }
+        }
+        assertEquals(
+            "비한국어 강좌 소개가 번역되지 않았거나 표에서 빠졌다:\n" + leaks.joinToString("\n") { "  - $it" },
+            emptyList<String>(),
+            leaks,
+        )
+
+        // 한국어 강의라는 사실은 비한국어에만 밝힌다.
+        val first = studyVideoEntries.first()
+        assertTrue(UiStringsEnglish.studyVideoDescription(first).contains("Korean"))
+        assertTrue(UiStringsJapanese.studyVideoDescription(first).contains("韓国語"))
+        assertTrue(UiStringsChineseSimplified.studyVideoDescription(first).contains("韩语"))
+        assertTrue(
+            "한국어 사용자에게 '한국어 강의'라고 알릴 이유가 없다 — 되묻게 만든다.",
+            !UiStringsKorean.studyVideoDescription(first).contains("한국어"),
+        )
+    }
+
+    /**
      * `UiStrings`의 String 필드 중 한글이 섞인 것을 (필드명 to 값)으로 돌려준다.
      *
      * ⚠️ `isAccessible = true`가 없으면 안 된다 — 코틀린은 생성자 프로퍼티의 백킹 필드를

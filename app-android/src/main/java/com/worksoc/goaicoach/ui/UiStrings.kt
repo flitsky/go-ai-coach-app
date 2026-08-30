@@ -315,6 +315,13 @@ internal data class UiStrings(
         }
 
     /**
+     * 학습 화면 강좌 한 편의 소개. 문구 표와 "한국어 강의임을 밝히는" 결정 근거는
+     * `UiStringsStudyVideos.kt`에 있다(백로그 #33).
+     */
+    fun studyVideoDescription(entry: StudyVideoEntry): String =
+        studyVideoDescriptionFor(language, entry.id)
+
+    /**
      * 캐릭터의 표시 이름. 문구 표와 그 번역 근거는 `UiStringsBotCharacters.kt`에 있다(백로그 #32) —
      * 도메인([BotCharacter])은 더 이상 사람이 읽는 이름을 갖지 않는다.
      */
