@@ -197,9 +197,9 @@
 
 ---
 
-## 진행 중
+---
 
-32. 봇 캐릭터의 **이름·설명이 한국어 하드코딩**이라 모든 외국어 사용자가 한글을 본다 (AI 모델: Opus, 노력정도: 중간) [진행중]
+32. 봇 캐릭터의 **이름·설명이 한국어 하드코딩**이라 모든 외국어 사용자가 한글을 본다 (AI 모델: Opus, 노력정도: 중간) [완료]
     - #31 작업 중 발견(2026-08-30). #31이 `UiStrings`의 `copy()` 누락이었다면 이건 **도메인 데이터**가 애초에 한 언어뿐인 경우다.
     - `shared/.../botcharacter/BotCharacterCatalog.kt`의 캐릭터 5종이 `name`·`description`을 한국어 리터럴로 갖는다(`첫돌이`, `연습생 돌뫼`, `도장생 반상`, `사범 묘수`, `관장 천원` + 설명 5줄). `UiStrings`가 이 값을 4개 언어 문장에 그대로 끼워 넣으므로(`botCharacterLabel`, `botShardProgressLabel`, `botPurchasedToast`, 출석 보상 목록 등 8곳 이상) **영어 사용자도 한글 이름을 본다.** 실기 확인: 일본어 대국 설정에서 `관장 천원 (達人)`.
     - ⚠️ **번역을 `BotCharacterCatalog`에 넣지 마라 — 계층 위반이다.** 그 파일은 `shared`의 도메인이고 `UiLanguage`는 `app-android`의 UI 개념이다. `UiStrings` 쪽에 `botCharacterName(id)` / `botCharacterDescription(id)` 조회를 두고, 도메인의 `name`은 **디버그·로그용 식별자로 격하**하는 편이 맞는지부터 따져라.
@@ -241,13 +241,21 @@
 실기(에뮬레이터)에서 일본어 픽커가 `館長 天元 (達人)`으로, 영어가 `Tengen the Master (Master)`로
 나오고 **두 화면 모두 한글이 한 글자도 남지 않은 것**을 UI 덤프로 확인했다.
 
-⚠️ **스토어 스크린샷은 한국어 세트라 영향이 없다** — 재캡처·재빌드가 필요 없다.
+⚠️ **스토어 스크린샷은 한국어 세트라 영향이 없다** — 재캡처가 필요 없었다.
+**다만 AAB는 다시 만들어야 했다**: 805는 이 수정보다 28분 먼저 빌드돼 있어 #32가 빠진 채
+"업로드 대상"으로 표기돼 있었다. 번들의 dex를 열어 새 문자열이 없음을 확인하고 806을 새로
+빌드했다(sha256 `2d435076…6f095f`). **코드가 멎은 뒤에 산출물을 만든다**는 규칙이 스크린샷뿐
+아니라 AAB에도 똑같이 적용된다는 뜻이다.
 
 **산출물**: (shared) `application/botcharacter/BotCharacter.kt`(필드 제거),
 `BotCharacterCatalog.kt`(문구 인자 제거). (app-android) `ui/UiStringsBotCharacters.kt` 신규,
 `ui/UiStrings.kt`(조회 두 개 + 호출부 여덟), `ui/BotCharacterUiState.kt`.
 테스트: `ui/UiStringsBotCharacterTest.kt`·`ui/HangulDetection.kt` 신규,
 `ui/UiStringsTest.kt`(판정기 공유), `commonTest`의 봇/출석 테스트 3개(단언을 id 기준으로 전환).
+
+## 진행 중
+
+없음.
 
 ## 예정사항
 
