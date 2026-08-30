@@ -28,8 +28,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -65,8 +63,6 @@ internal fun GoCoachHomeScreen(
     onStudyClick: () -> Unit,
     onGameHistoryClick: () -> Unit,
     onMyPageClick: () -> Unit,
-    selectedLanguage: UiLanguage,
-    onLanguageChange: (UiLanguage) -> Unit,
     hasResumableSession: Boolean,
     onResumeClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -95,15 +91,16 @@ internal fun GoCoachHomeScreen(
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            // 좌=마이 페이지, 우=설정(#34, 2026-08-30 사용자 지시). 언어 칩이 설정 안으로
+            // 들어가면서 우측이 비었고, 그 자리를 설정이 받고 좌측을 마이 페이지가 가져갔다.
+            // 마이 페이지는 #24에서 하단 카드로 났는데, 카드 넉 장이 세로를 빠듯하게 만든
+            // 장본인이기도 했다(#28).
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                HomeSettingsButton(onClick = onSettingsClick)
-                HomeLanguageSelector(
-                    selectedLanguage = selectedLanguage,
-                    onLanguageChange = onLanguageChange,
-                )
+                HomeTopChip(emoji = "🧑", label = strings.myPageTitle, onClick = onMyPageClick)
+                HomeTopChip(emoji = "⚙", label = strings.settingsTitle, onClick = onSettingsClick)
             }
 
             // 남는 세로 공간을 위·아래로 나눠 로고 블록을 가운데 둔다. 예전에는 **블록 자체가**
@@ -210,18 +207,8 @@ internal fun GoCoachHomeScreen(
                 onClick = onGameHistoryClick,
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // "마이 페이지" 카드(#24) — 지금은 1회권 재고만 있지만, 출석 현황과 캐릭터 컬렉션이
-            // 앞으로 여기 붙는다. 그래서 설정 화면 한 절이 아니라 별도 목적지로 열었다.
-            MenuCard(
-                title = strings.myPageTitle,
-                subtitle = strings.homeMyPageSubtitle,
-                containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                titleColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                subtitleColor = MaterialTheme.colorScheme.secondary,
-                onClick = onMyPageClick,
-            )
+            // 마이 페이지 카드는 여기 없다 — 좌상단 칩으로 올라갔다(#34). 목적지 자체는
+            // 그대로이고 진입점만 옮겼다.
         }
     }
 
@@ -251,69 +238,14 @@ internal fun GoCoachHomeScreen(
 }
 
 /**
- * 4개 국어(한국어, English, 日本語, 简体中文) 지원 언어 선택 드롭다운
+ * 홈 화면 상단 양 끝에 놓이는 칩 버튼(#34). 좌측 마이 페이지와 우측 설정이 **같은 모양**을
+ * 써야 해서, 설정 전용이던 `HomeSettingsButton`을 이모지와 라벨만 받는 형태로 일반화했다.
+ *
+ * 언어 선택 칩(`HomeLanguageSelector`)도 같은 겉모습이었지만 그쪽은 드롭다운을 품고 있어
+ * 합치지 않았다 — 지금은 설정 화면 안에서만 쓰인다.
  */
 @Composable
-private fun HomeLanguageSelector(
-    selectedLanguage: UiLanguage,
-    onLanguageChange: (UiLanguage) -> Unit,
-) {
-    var expanded by remember { mutableStateOf(false) }
-
-    Box {
-        Row(
-            modifier = Modifier
-                .clip(RoundedCornerShape(18.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant)
-                .clickable { expanded = true }
-                .padding(horizontal = 14.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            Text(
-                text = "🌐 ${selectedLanguage.menuLabel}",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-            )
-            Text(
-                text = "▾",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-            )
-        }
-
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-        ) {
-            UiLanguage.entries.forEach { lang ->
-                DropdownMenuItem(
-                    text = {
-                        Text(
-                            text = lang.menuLabel,
-                            fontWeight = if (lang == selectedLanguage) FontWeight.Bold else FontWeight.Normal,
-                            color = if (lang == selectedLanguage) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                        )
-                    },
-                    onClick = {
-                        expanded = false
-                        onLanguageChange(lang)
-                    },
-                )
-            }
-        }
-    }
-}
-
-/**
- * 홈 화면 상단 좌측의 설정 진입점. 여기서 로그인 강화([SettingsScreen])로 이동한다.
- */
-@Composable
-private fun HomeSettingsButton(onClick: () -> Unit) {
-    val strings = LocalUiStrings.current
-
+private fun HomeTopChip(emoji: String, label: String, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .clip(RoundedCornerShape(18.dp))
@@ -324,7 +256,7 @@ private fun HomeSettingsButton(onClick: () -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Text(
-            text = "⚙ ${strings.settingsTitle}",
+            text = "$emoji $label",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 12.sp,
             fontWeight = FontWeight.Bold,

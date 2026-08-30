@@ -795,8 +795,6 @@ private fun GoCoachScreen(
                 onStudyClick = { currentDestination = ScreenDestination.Study },
                 onGameHistoryClick = { currentDestination = ScreenDestination.GameHistory },
                 onMyPageClick = { currentDestination = ScreenDestination.MyPage },
-                selectedLanguage = selectedLanguage,
-                onLanguageChange = onLanguageChange,
                 hasResumableSession = savedSessionToPrompt != null,
                 onResumeClick = { showResumeDialog = true },
             )

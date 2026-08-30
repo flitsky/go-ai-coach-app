@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.animation.core.Spring
@@ -33,6 +34,8 @@ import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.shared.ScoreSnapshot
 import com.worksoc.goaicoach.shared.StoneColor
@@ -110,7 +113,15 @@ internal fun ScoreTimelineGraph(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .height(heightDp)
+            // 펼친 그래프는 `Canvas(fillMaxSize)`가 정확한 높이를 알아야 하므로 **고정**이어야
+            // 하지만, 접힌 요약 바는 하한이어야 한다(#30). 44dp 고정일 때 가운데 칸의 두 줄
+            // (스코어차 `bodySmall` 14sp + 승률 `labelSmall` 11sp)이 배율 2.0배에서 약 72dp를
+            // 요구해 아랫줄이 통째로 썰렸다. 이 바는 스크롤되는 Column 안에 있으므로 커져도
+            // 화면이 깨지지 않는다.
+            //
+            // ⚠️ 양쪽 모두 `heightIn`으로 통일하지 마라 — 펼친 쪽은 maxHeight가 Infinity가 돼
+            // 안쪽 `Canvas(fillMaxSize)`가 무너진다.
+            .then(if (isExpanded) Modifier.height(heightDp) else Modifier.heightIn(min = heightDp))
             .clickable { onExpandedChange(!isExpanded) },
         color = backgroundLight,
         shape = RoundedCornerShape(8.dp),
@@ -120,30 +131,49 @@ internal fun ScoreTimelineGraph(
     ) {
         if (heightDp <= 48.dp) {
             // 접힌 상태: 흑/백 사석 수 + 현재 스코어차 + 승률을 한눈에 보여준다.
+            // 세 칸 모두 `weight`를 준다(#30). 예전에는 가중치 없는 자식 셋 + `SpaceBetween`이라,
+            // 글꼴이 커지면 남는 공간이 사라지면서 글자끼리 맞붙었다 — 영어 360dp에서
+            // `White 0%Captures 0`처럼 띄어쓰기 없이 붙어 렌더됐다. 가중치를 주면 칸 경계가
+            // 고정되고, 넘치는 쪽은 자기 칸 안에서 말줄임된다.
             Row(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     text = "${strings.colorLabel(StoneColor.Black)} ${strings.capturesPrefix} $capturedByBlack",
                     color = textBlueColor,
                     style = MaterialTheme.typography.bodySmall,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
                 )
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(
+                    modifier = Modifier.weight(1.2f),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
                     Text(
                         text = currentScoreLabel,
                         color = textBlueColor,
                         style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                     if (winRateLabel != null) {
                         Text(
                             text = winRateLabel,
                             color = textBlueColor,
                             style = MaterialTheme.typography.labelSmall,
+                            // 스코어차와 달리 승률은 **두 줄을 허용한다.** 배율 2.0배에서
+                            // `흑 29% · 백 71%`가 이 칸(약 100dp)에 한 줄로는 안 들어가는데,
+                            // 바가 이제 하한 높이라 줄이 늘어도 잘리지 않는다 — 말줄임으로
+                            // 한쪽 승률을 지우는 것보다 두 줄로 다 보여주는 편이 낫다.
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center,
                         )
                     }
                 }
@@ -151,6 +181,10 @@ internal fun ScoreTimelineGraph(
                     text = "${strings.colorLabel(StoneColor.White)} ${strings.capturesPrefix} $capturedByWhite",
                     color = textBlueColor,
                     style = MaterialTheme.typography.bodySmall,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.End,
+                    modifier = Modifier.weight(1f),
                 )
             }
         } else {

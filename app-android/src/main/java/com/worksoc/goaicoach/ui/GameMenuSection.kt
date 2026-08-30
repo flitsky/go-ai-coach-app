@@ -1,25 +1,35 @@
 package com.worksoc.goaicoach.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.Modifier
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.worksoc.goaicoach.BuildConfig
-import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.presentation.GameActionButtonRole
+import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.presentation.GameUiEvent
 import com.worksoc.goaicoach.shared.formatBuildTime
 
@@ -64,7 +74,16 @@ internal fun GameHeaderSection(
                 },
                 // 색만으로 구분하면 색맹 사용자에게 안 보인다 — 굵기도 함께 바꿔 이중으로 신호한다.
                 fontWeight = if (screenState.engine.isBusy) FontWeight.Bold else FontWeight.Normal,
-                maxLines = 2,
+                // 2줄이 아니라 4줄인 이유(#30): 이 칸은 화면 폭의 절반뿐인데(가중치 1:2:1),
+                // `흑: 유저 / 백: KataGo 초고수`는 배율 2.0배에서 약 380dp라 3줄이 필요하다.
+                // 2줄 상한이면 **상대가 누구인지가 통째로 사라진다** — 실기에서 일본어가
+                // `黒: プレイヤー / 白:`에서 끊겨 AI 이름이 없어졌다. 엔진 이름은 길이 상한이
+                // 없으므로 무제한으로 두지 않고 4줄에서 끊되, 잘렸다는 사실은 보이게 한다.
+                //
+                // 헤더가 커져도 안전하다 — 대국 화면 루트 Column에 `verticalScroll`이 있다
+                // (`GoCoachContent.kt`).
+                maxLines = 4,
+                overflow = TextOverflow.Ellipsis,
                 textAlign = TextAlign.Center
             )
         }
@@ -163,14 +182,85 @@ internal fun LanguageSettingsPanel(
                 .padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            SettingChoiceRow(
-                label = strings.languageLabel,
-                options = UiLanguage.entries,
-                selected = selectedLanguage,
-                enabled = true,
-                optionLabel = { language -> language.menuLabel },
-                onSelected = onLanguageChange,
+            // 나열형(`SettingChoiceRow`)이 아니라 드롭다운이다(#34) — 언어가 늘어도 한 줄이
+            // 무너지지 않는다. 라벨과 컨트롤을 한 행에 놓아 다른 설정 항목과 결을 맞춘다.
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = strings.languageLabel,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                LanguageDropdownChip(
+                    selectedLanguage = selectedLanguage,
+                    onLanguageChange = onLanguageChange,
+                )
+            }
+        }
+    }
+}
+
+/**
+ * 언어 선택 드롭다운. **원래 홈 우상단 칩이었는데 설정 화면 안으로 들어왔다**(#34,
+ * 2026-08-30 사용자 지시).
+ *
+ * 설정에 이미 언어 절이 있었지만 [SettingChoiceRow]로 **지원 언어를 전부 나열**하는 방식이라,
+ * 언어가 늘수록 한 줄이 감당이 안 된다. 드롭다운은 항목이 몇 개든 칩 하나로 접힌다 —
+ * 그래서 나열형을 버리고 이쪽을 남겼다.
+ */
+@Composable
+internal fun LanguageDropdownChip(
+    selectedLanguage: UiLanguage,
+    onLanguageChange: (UiLanguage) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Box {
+        Row(
+            modifier = Modifier
+                .clip(RoundedCornerShape(18.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .clickable { expanded = true }
+                .padding(horizontal = 14.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(
+                text = "🌐 ${selectedLanguage.menuLabel}",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
             )
+            Text(
+                text = "▾",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+            )
+        }
+
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+        ) {
+            UiLanguage.entries.forEach { lang ->
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            text = lang.menuLabel,
+                            fontWeight = if (lang == selectedLanguage) FontWeight.Bold else FontWeight.Normal,
+                            color = if (lang == selectedLanguage) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                        )
+                    },
+                    onClick = {
+                        expanded = false
+                        onLanguageChange(lang)
+                    },
+                )
+            }
         }
     }
 }

@@ -6,6 +6,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
+import com.worksoc.goaicoach.persistence.UiLanguageStore
 import androidx.compose.runtime.staticCompositionLocalOf
 import com.worksoc.goaicoach.application.engine.operation.EngineActivityIndicator
 import com.worksoc.goaicoach.application.attendance.WeeklyRewardCycleTier
@@ -43,14 +45,32 @@ internal enum class UiLanguage(
 
 internal val LocalUiStrings = staticCompositionLocalOf { UiStringsKorean }
 
+/**
+ * 화면 표시 언어를 트리 전역에 공급한다.
+ *
+ * **선택은 저장된다**(#34). 예전에는 `remember`뿐이라 앱을 껐다 켤 때마다 한국어로 돌아갔는데,
+ * 언어 선택 UI가 홈 상단 칩에서 **설정 화면 안으로** 들어오면서 "저장되지 않는 설정"이 되어
+ * 그대로 둘 수 없었다. 저장소를 별도로 두는 이유는 [UiLanguageStore]의 주석에 있다.
+ */
 @Composable
 internal fun ProvideUiLanguage(
     content: @Composable (UiLanguage, (UiLanguage) -> Unit) -> Unit,
 ) {
-    var language by remember { mutableStateOf(UiLanguage.Korean) }
+    val context = LocalContext.current
+    val store = remember(context) { UiLanguageStore(context) }
+    // 저장된 이름이 없거나 알 수 없는 값이면 한국어로 시작한다 — 값 하나 때문에 앱이 죽지 않게.
+    var language by remember {
+        mutableStateOf(
+            store.loadName()?.let { name -> UiLanguage.entries.firstOrNull { it.name == name } }
+                ?: UiLanguage.Korean,
+        )
+    }
     val strings = remember(language) { UiStrings.forLanguage(language) }
     CompositionLocalProvider(LocalUiStrings provides strings) {
-        content(language) { nextLanguage -> language = nextLanguage }
+        content(language) { nextLanguage ->
+            language = nextLanguage
+            store.save(nextLanguage.name)
+        }
     }
 }
 
