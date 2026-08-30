@@ -118,7 +118,7 @@ internal fun GoCoachContent(
             .statusBarsPadding()
             .navigationBarsPadding()
             .verticalScroll(rememberScrollState())
-            .padding(16.dp),
+            .padding(GameScreenEdgePadding),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         GameHeaderSection(
@@ -170,3 +170,10 @@ internal fun GoCoachContent(
         )
     }
 }
+
+/**
+ * 대국 화면 최상위 여백. 보드 "최대 크기" 모드가 **정확히 이 값을 되찾아** 화면 폭 끝까지
+ * 그리므로(#38, `GamePlaySection`), 두 값이 어긋나면 보드가 화면 밖으로 나가거나 여백이 남는다.
+ * 그래서 숫자를 두 곳에 적지 않고 여기 하나로 둔다.
+ */
+internal val GameScreenEdgePadding = 16.dp

@@ -57,6 +57,7 @@ internal object UserPreferencesCodec {
             .put("hasSeenOnboarding", snapshot.hasSeenOnboarding)
             .put("gameSetupUxMode", snapshot.gameSetupUxMode.name)
             .put("isPlayHapticEnabled", snapshot.isPlayHapticEnabled)
+            .put("isBoardMaxSize", snapshot.isBoardMaxSize)
             .toString()
 
     fun decode(raw: String): UserPreferencesSnapshot? =
@@ -92,6 +93,7 @@ internal object UserPreferencesCodec {
                 hasSeenOnboarding = json.optBoolean("hasSeenOnboarding", false),
                 gameSetupUxMode = enumOrDefault(json.optString("gameSetupUxMode"), GameSetupUxMode.Compact),
                 isPlayHapticEnabled = json.optBoolean("isPlayHapticEnabled", true),
+                isBoardMaxSize = json.optBoolean("isBoardMaxSize", true),
             )
         }.getOrNull()
 

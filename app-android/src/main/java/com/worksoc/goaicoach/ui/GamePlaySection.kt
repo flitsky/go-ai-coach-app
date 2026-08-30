@@ -1,30 +1,25 @@
 package com.worksoc.goaicoach.ui
 
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import com.worksoc.goaicoach.application.movereview.MoveReviewTone
-import com.worksoc.goaicoach.application.consumable.ConsumableItem
-import com.worksoc.goaicoach.application.consumable.ConsumableSpendDecision
-import com.worksoc.goaicoach.application.consumable.ConsumableCatalog
-import com.worksoc.goaicoach.application.premium.FeatureAccess
-import com.worksoc.goaicoach.application.premium.FeatureId
-import com.worksoc.goaicoach.application.premium.UnlockOption
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -39,16 +34,25 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
-import android.widget.Toast
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
+import com.worksoc.goaicoach.application.consumable.ConsumableCatalog
+import com.worksoc.goaicoach.application.consumable.ConsumableItem
+import com.worksoc.goaicoach.application.consumable.ConsumableSpendDecision
+import com.worksoc.goaicoach.application.movereview.MoveReviewTone
+import com.worksoc.goaicoach.application.premium.FeatureAccess
+import com.worksoc.goaicoach.application.premium.FeatureId
+import com.worksoc.goaicoach.application.premium.UnlockOption
 import com.worksoc.goaicoach.application.safety.engineTurnWatchdogTimeoutMillisFor
 import com.worksoc.goaicoach.application.safety.isEngineTurnWatchdogTriggered
 import com.worksoc.goaicoach.application.session.GameSessionTurnTimeState
@@ -58,10 +62,10 @@ import com.worksoc.goaicoach.presentation.GameActionButtonRole
 import com.worksoc.goaicoach.presentation.GameActionButtonState
 import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.presentation.GameUiEvent
-import kotlin.math.roundToInt
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.StoneColor
+import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 
@@ -105,6 +109,19 @@ internal fun GamePlaySection(
             boardConsumables.isOneShotActive(featureId) ||
             screenState.isGameEnded
 
+    val isBoardMaxSize = screenState.uxOptions.isBoardMaxSize
+
+    // ⚠️ 크기 선택은 **보드 바깥, 위쪽 경계선 밖**에 둔다(2026-08-30 사용자 지시). 보드 위에
+    // 얹으면 그 자리에 착수할 수 없다 — 판의 우상단은 실제로 두는 자리다.
+    BoardSizeModeSelector(
+        isMaxSize = isBoardMaxSize,
+        onSelect = { maxSize ->
+            if (maxSize != isBoardMaxSize) {
+                onEvent(GameUiEvent.ChangeUxOptions(screenState.uxOptions.copy(isBoardMaxSize = maxSize)))
+            }
+        },
+    )
+
     GoBoard(
         gameState = screenState.gameState,
         candidateMoves = screenState.analysis.candidateMoves
@@ -120,7 +137,12 @@ internal fun GamePlaySection(
         inputEnabled = !screenState.isGameEnded &&
             screenState.matchSeats.current.canAcceptBoardInput,
         engineActivityIndicator = screenState.engine.activityIndicator,
-        modifier = Modifier.fillMaxWidth(),
+        // ⚠️ 폭을 **GoBoard 바깥에서** 바꾼다. 안에서 바꾸면 탭 좌표 변환·좌표 라벨·형세
+        // 오버레이가 저마다 다른 폭을 볼 위험이 있는데, 밖에서 주면 그 안의 모든 계산이
+        // 같은 Canvas 크기를 따라간다.
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(if (isBoardMaxSize) Modifier.expandBeyondScreenPadding() else Modifier),
         tentativeMove = tentativeMove,
         onCoordinateTap = { coordinate ->
             if (screenState.uxOptions.isDirectPlayEnabled) {
@@ -579,5 +601,81 @@ private fun GameActionButtons(
     }
 }
 
+/**
+ * 부모(대국 화면 최상위 Column)가 준 좌우 여백을 **되찾아** 화면 폭 끝까지 그리게 한다(#38).
+ *
+ * 보드를 패딩 바깥으로 옮기는 대신 여기서 폭만 늘리는 이유: 보드는 헤더·점수 바·버튼들과 같은
+ * Column 안에 있어야 세로 순서와 스크롤이 유지된다. 밖으로 빼면 그 배치를 다시 짜야 한다.
+ *
+ * 자기 크기는 **원래 제약대로** 보고하고 자식만 넓게 측정해 왼쪽으로 밀어 놓는다. 자기 크기를
+ * 같이 키우면 부모 Column의 폭이 따라 커져 다른 행까지 화면 밖으로 밀려난다.
+ */
+private fun Modifier.expandBeyondScreenPadding(): Modifier = layout { measurable, constraints ->
+    val extra = (GameScreenEdgePadding * 2).roundToPx()
+    val target = constraints.maxWidth + extra
+    val widened = Constraints.fixedWidth(target).copy(
+        minHeight = constraints.minHeight,
+        maxHeight = constraints.maxHeight,
+    )
+    val placeable = measurable.measure(widened)
+    layout(constraints.maxWidth, placeable.height) {
+        placeable.place(-(GameScreenEdgePadding.roundToPx()), 0)
+    }
+}
 
+/**
+ * 보드 **바로 위**, 우측 끝에 붙는 크기 선택기(#38, 위치는 사용자 지정).
+ *
+ * 두 모드를 **나란히 보여주고 선택된 쪽을 강조**한다. 토글 하나로 "누르면 무엇이 될지"를
+ * 말하는 방식(`PlayModeSwitch`)도 있지만, 여기서는 **지금 어느 모드인지**가 한눈에 보이는 편이
+ * 낫다 — 보드 크기는 상태가 곧 눈에 보이는 값이라 라벨이 상태와 어긋나면 오히려 헷갈린다.
+ *
+ * ⚠️ **보드 위에 얹지 마라.** 처음에는 판 우상단에 오버레이했는데, 거기는 실제로 착수하는
+ * 자리라 칩이 탭을 가로챈다(2026-08-30 사용자 지적).
+ *
+ * 폭은 화면 여백 안쪽(다른 행과 같은 오른쪽 끝)에 맞춘다. 최대 크기 모드에서 보드는 그보다
+ * 넓게 그려지지만, 선택기까지 화면 끝에 붙이면 잘려 보인다.
+ */
+@Composable
+private fun BoardSizeModeSelector(
+    isMaxSize: Boolean,
+    onSelect: (Boolean) -> Unit,
+) {
+    val strings = LocalUiStrings.current
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        BoardSizeModeOption(label = strings.boardModeFull, selected = isMaxSize) { onSelect(true) }
+        BoardSizeModeOption(label = strings.boardModeInset, selected = !isMaxSize) { onSelect(false) }
+    }
+}
 
+@Composable
+private fun BoardSizeModeOption(label: String, selected: Boolean, onClick: () -> Unit) {
+    Surface(
+        modifier = Modifier.clickable(onClick = onClick),
+        shape = RoundedCornerShape(10.dp),
+        color = if (selected) {
+            MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
+        } else {
+            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        },
+        border = if (selected) BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else null,
+        tonalElevation = 0.dp,
+    ) {
+        Text(
+            text = label,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp),
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+            color = if (selected) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+            },
+            maxLines = 1,
+        )
+    }
+}

@@ -32,4 +32,5 @@ data class UserPreferencesSnapshot(
     val hasSeenOnboarding: Boolean = false,
     val gameSetupUxMode: GameSetupUxMode = GameSetupUxMode.Compact,
     val isPlayHapticEnabled: Boolean = true,
+    val isBoardMaxSize: Boolean = true,
 )

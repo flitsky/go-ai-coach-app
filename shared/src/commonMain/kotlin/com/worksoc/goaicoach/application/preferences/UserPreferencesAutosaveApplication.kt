@@ -14,6 +14,7 @@ data class UserPreferencesAutosaveRequest(
     val isDirectPlayEnabled: Boolean,
     val showMoveReview: Boolean = false,
     val isPlayHapticEnabled: Boolean = true,
+    val isBoardMaxSize: Boolean = true,
 )
 
 /**
@@ -39,6 +40,7 @@ internal fun buildUserPreferencesAutosaveSnapshot(
         isDirectPlayEnabled = request.isDirectPlayEnabled,
         showMoveReview = request.showMoveReview,
         isPlayHapticEnabled = request.isPlayHapticEnabled,
+        isBoardMaxSize = request.isBoardMaxSize,
     ).copy(
         hasSeenOnboarding = current.hasSeenOnboarding,
         gameSetupUxMode = current.gameSetupUxMode,

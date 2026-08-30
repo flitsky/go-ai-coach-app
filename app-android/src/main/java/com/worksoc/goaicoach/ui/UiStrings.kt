@@ -104,6 +104,13 @@ internal data class UiStrings(
      * 100dp 남짓한 칸에 들어가야 해서 4자(전각) 대칭으로 짧게 잡았다. "모드"를 붙이면 배율
      * 1.5배에서 넘친다.
      */
+    /**
+     * 보드 크기 모드 칩(#38). **라벨은 현재 상태가 아니라 "누르면 무엇이 되는가"다** —
+     * `playModeDirect`/`playModeConfirm`과 같은 규칙이다(#37에서 한 번 반대로 만들었다가 고쳤다).
+     * 보드 모서리에 얹는 작은 칩이라 짧아야 한다.
+     */
+    val boardModeFull: String,
+    val boardModeInset: String,
     val playModeDirect: String,
     val playModeConfirm: String,
     val coordinates: String,

@@ -76,6 +76,7 @@ fun buildUserPreferencesSnapshot(
     showMoveReview: Boolean = false,
     komi: Double = com.worksoc.goaicoach.shared.DefaultKomi,
     isPlayHapticEnabled: Boolean = true,
+    isBoardMaxSize: Boolean = true,
 ): UserPreferencesSnapshot =
     buildGameSettings(
         boardSize = boardSize,
@@ -94,6 +95,7 @@ fun buildUserPreferencesSnapshot(
         isDirectPlayEnabled = isDirectPlayEnabled,
         showMoveReview = showMoveReview,
         isPlayHapticEnabled = isPlayHapticEnabled,
+        isBoardMaxSize = isBoardMaxSize,
     )
 
 fun buildUserPreferencesSnapshot(
@@ -107,6 +109,7 @@ fun buildUserPreferencesSnapshot(
     showMoveReview: Boolean = false,
     komi: Double = com.worksoc.goaicoach.shared.DefaultKomi,
     isPlayHapticEnabled: Boolean = true,
+    isBoardMaxSize: Boolean = true,
 ): UserPreferencesSnapshot =
     buildUserPreferencesSnapshot(
         playerSetup = settingsState.playerSetup,
@@ -124,6 +127,7 @@ fun buildUserPreferencesSnapshot(
         showMoveReview = showMoveReview,
         komi = komi,
         isPlayHapticEnabled = isPlayHapticEnabled,
+        isBoardMaxSize = isBoardMaxSize,
     )
 
 internal fun buildGameSettings(
@@ -163,6 +167,7 @@ private fun GameSettings.toUserPreferencesSnapshot(
     isDirectPlayEnabled: Boolean,
     showMoveReview: Boolean,
     isPlayHapticEnabled: Boolean = true,
+    isBoardMaxSize: Boolean = true,
 ): UserPreferencesSnapshot =
     UserPreferencesSnapshot(
         boardSize = boardSize,
@@ -180,4 +185,5 @@ private fun GameSettings.toUserPreferencesSnapshot(
         isDirectPlayEnabled = isDirectPlayEnabled,
         showMoveReview = showMoveReview,
         isPlayHapticEnabled = isPlayHapticEnabled,
+        isBoardMaxSize = isBoardMaxSize,
     )

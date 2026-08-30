@@ -1456,7 +1456,9 @@ class LayeringContractTest {
         // 디버그 리포트의 engineProfile이 영원히 데이터 클래스 기본값을 찍었고, 진짜
         // KataGo가 도는 빌드가 `stub/Stub/Beginner`로 보여 스텁 엔진으로 오독됐다.
         // 새 상태 훅은 없다 — stateHookBudget은 46 그대로.
-        val lineBudget = 865
+        // History (2026-08-30): 865->866. 보드 크기 모드(#38)의 새 uxOptions 필드를
+        // 오토세이브 요청에 넘기는 한 줄이다. 새 상태 훅 없음.
+        val lineBudget = 866
         val stateHookBudget = 46
 
         val goCoachApp = repoRoot()
