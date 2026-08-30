@@ -6,7 +6,7 @@ package com.worksoc.goaicoach.application.premium
  * 기존에는 클레임을 하는 길이 `ui/PremiumUiState.kt`의 `claim` 람다(=Compose
  * `CompositionLocal`) 하나뿐이라, 앱 최초 실행 직후(아직 Compose 트리가 없을 수 있는 시점)
  * 자동 지급하는 출석 보상 같은 경로에서는 쓸 수 없었다
- * (`OFFLINE_ENGAGEMENT_FEATURES_KICKOFF_PLAN_260823_1521.md` 4.4절). 이 함수는 그 판정/저장
+ * (`260823-260830_OFFLINE_ENGAGEMENT_FEATURES_KICKOFF_PLAN.md` 4.4절). 이 함수는 그 판정/저장
  * 로직만 떼어낸 것으로, [PremiumStateStorePort]만 있으면 어디서든(Application onCreate,
  * 백그라운드 코루틴 등) 호출할 수 있다. UI 쪽 `claim` 람다도 이 함수를 그대로 호출하도록
  * 바꿔, 클레임이 성립하는 규칙이 두 벌로 갈라지지 않게 한다.

@@ -24,7 +24,7 @@ sealed class AttendanceCheckInResult {
 /**
  * 5계층(App Service) — cold start/foreground 복귀마다 호출하는 순수 체크인 판정 함수.
  * 연속 출석 요구가 없다: 며칠을 건너뛰어도 다음 방문에서 그냥 attendanceCount가 1 증가한다
- * (스트릭 리셋 로직 자체가 없음 — `OFFLINE_ENGAGEMENT_FEATURES_KICKOFF_PLAN_260823_1521.md`
+ * (스트릭 리셋 로직 자체가 없음 — `260823-260830_OFFLINE_ENGAGEMENT_FEATURES_KICKOFF_PLAN.md`
  * 4.1절). 같은 UTC 날짜 안에서는 몇 번을 다시 열어도 카운트가 오르지 않는다.
  */
 fun AttendanceState.checkIn(nowEpochMillis: Long): AttendanceCheckInResult {

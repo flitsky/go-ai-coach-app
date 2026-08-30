@@ -16,7 +16,7 @@ enum class GameHistoryResult {
 /**
  * 완료된 대국 한 판의 기록. [SavedGameSnapshot](../savedgame/SavedGameSnapshot.kt)과는
  * 다른 개념이다 — 그건 "진행 중인 대국 1개 이어하기" 전용이고, 이건 끝난 대국을 누적해
- * "최근 대국 목록"으로 탐색하기 위한 것이다(`OFFLINE_ENGAGEMENT_FEATURES_KICKOFF_PLAN_260823_1521.md`
+ * "최근 대국 목록"으로 탐색하기 위한 것이다(`260823-260830_OFFLINE_ENGAGEMENT_FEATURES_KICKOFF_PLAN.md`
  * 6장).
  *
  * [humanColor]/[result]는 **사람 대 AI 대국**을 전제로 기록 시점에 미리 계산해 둔다(사람끼리

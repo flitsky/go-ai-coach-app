@@ -33,7 +33,7 @@ import java.util.Locale
 
 /**
  * 3 Depth: 대국 기록 화면 — Phase 1 범위는 단순 리스트 표시만이다(기보 재분석은 다음 단계,
- * `OFFLINE_ENGAGEMENT_FEATURES_KICKOFF_PLAN_260823_1521.md` 6장). 목록은 이 화면이 직접
+ * `260823-260830_OFFLINE_ENGAGEMENT_FEATURES_KICKOFF_PLAN.md` 6장). 목록은 이 화면이 직접
  * `GameHistoryStore`에서 읽어온다 — 별도 상태 훅 예산이 빠듯한 `GoCoachApp.kt`에 데이터를
  * 들고 있지 않고, 화면 진입 시점에 한 번 로드한다.
  */

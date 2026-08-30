@@ -15,7 +15,7 @@ data class BotCharacterId(val raw: String)
  * 봇 캐릭터의 획득 경로(카탈로그 메타데이터). "이 캐릭터를 어떻게 얻는가"를 나타내며,
  * "이 사용자가 지금 갖고 있는가"는 [BotCollectionState]가 따로 관리한다 — 두 축은 분리돼 있다.
  *
- * `OFFLINE_ENGAGEMENT_FEATURES_KICKOFF_PLAN_260823_1521.md` 7장에 따라 sealed class로 열어둔다.
+ * `260823-260830_OFFLINE_ENGAGEMENT_FEATURES_KICKOFF_PLAN.md` 7장에 따라 sealed class로 열어둔다.
  * 지금 범위 밖인 개별 구매/월 구독 상품이 나중에 추가되면 `Purchase`/`Subscription` 하위 타입을
  * 여기에 더하면 되고, 그때 `when` 분기가 컴파일 에러로 드러나 빠뜨린 처리를 잡아준다.
  */

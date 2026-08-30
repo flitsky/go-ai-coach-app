@@ -63,17 +63,17 @@ Chess.com은 "2억 5천만 명 이상"이 쓴다고 소개하는 서비스로(�
 
 | # | 아이디어 | 참고한 chess.com 기능 | 필요 인프라 | 체감 난이도 | 상태 | 비고 |
 | --- | --- | --- | --- | --- | --- | --- |
-| 1 | 매일 접속 시 데일리 보상(출석 체크) | Daily Puzzle의 스트릭 심리 | 로컬만 | 낮음 | 논의중 | 알고리즘·1일차 보상 구체화 완료 → `OFFLINE_ENGAGEMENT_FEATURES_KICKOFF_PLAN_260823_1521.md` 4장 |
+| 1 | 매일 접속 시 데일리 보상(출석 체크) | Daily Puzzle의 스트릭 심리 | 로컬만 | 낮음 | 논의중 | 알고리즘·1일차 보상 구체화 완료 → `260823-260830_OFFLINE_ENGAGEMENT_FEATURES_KICKOFF_PLAN.md` 4장 |
 | 2 | 일일 사활(수읽기) 문제 + 스트릭 | Daily Puzzle | 로컬 + 문제 생성 파이프라인 | 중간 | 제안 | KataGo로 사활 국면을 자동 생성·난이도 태깅할 수 있는지 조사 필요 |
 | 3 | 사활 러시(타임어택) 모드 | Puzzle Rush | 로컬 | 중간 | 제안 | 2번이 선행되어야 함 |
-| 4 | AI 상대 캐릭터화(이름·아바타·성격 부여) | Play vs Bots | 로컬(에셋만) | 낮음 | 논의중 | 봇 컬렉션 도메인 설계 완료 → `OFFLINE_ENGAGEMENT_FEATURES_KICKOFF_PLAN_260823_1521.md` 7장 |
+| 4 | AI 상대 캐릭터화(이름·아바타·성격 부여) | Play vs Bots | 로컬(에셋만) | 낮음 | 논의중 | 봇 컬렉션 도메인 설계 완료 → `260823-260830_OFFLINE_ENGAGEMENT_FEATURES_KICKOFF_PLAN.md` 7장 |
 | 5 | 대국 종료 "오늘의 리포트" 카드 | Game Review | 로컬 | 낮음 | 제안 | 기존 Top Moves·복기색상·점수그래프 데이터를 재구성만 하면 됨 |
 | 6 | 스트릭 만료 임박 로컬 알림 | 이탈 방지 알림 | 로컬 알림(WorkManager) | 낮음~중간 | 제안 | 알림 권한 요청 시점, 빈도(피로도) 설계 필요 |
-| 7 | 업적/배지 시스템 | Achievements | 로컬 | 중간 | 논의중 | 최초 실행 시 노출되는 업적 화면으로 구체화 → `OFFLINE_ENGAGEMENT_FEATURES_KICKOFF_PLAN_260823_1521.md` 5장 |
+| 7 | 업적/배지 시스템 | Achievements | 로컬 | 중간 | 논의중 | 최초 실행 시 노출되는 업적 화면으로 구체화 → `260823-260830_OFFLINE_ENGAGEMENT_FEATURES_KICKOFF_PLAN.md` 5장 |
 | 8 | 주간 사활문제 챌린지(비동기 이벤트) | Titled Tuesday | 로컬 + 콘텐츠 원격 배포 | 중간 | 제안 | 앱 업데이트 없이 새 문제를 배포할 방법(원격 config) 필요 |
 | 9 | "분석이 준비됐습니다" 알림 | 알림 전반 | 로컬 알림 | 낮음 | 제안 | 6번과 알림 인프라 공유 |
 | 10 | 리더보드 / 친구 대항전 | 클럽·리더보드 | 서버 + 계정 | 높음 | 보류 | 로그인 재활성화 이후 후보 — `feature-access-principles/README.md`의 현재 정책과 정면 충돌 |
-| 11 | 대국 히스토리(전체 대국 기록 목록·탐색) | Daily Chess의 결과 확인 습관, 범용 게임 히스토리 | 로컬(신규 Port) | 중간 | 논의중 | 기존 "이어하기" 저장(`SavedGameSnapshot`)과 다른 개념 — 별도 Port 신설 → `OFFLINE_ENGAGEMENT_FEATURES_KICKOFF_PLAN_260823_1521.md` 6장 |
+| 11 | 대국 히스토리(전체 대국 기록 목록·탐색) | Daily Chess의 결과 확인 습관, 범용 게임 히스토리 | 로컬(신규 Port) | 중간 | 논의중 | 기존 "이어하기" 저장(`SavedGameSnapshot`)과 다른 개념 — 별도 Port 신설 → `260823-260830_OFFLINE_ENGAGEMENT_FEATURES_KICKOFF_PLAN.md` 6장 |
 
 ---
 
@@ -115,11 +115,11 @@ Chess.com은 "2억 5천만 명 이상"이 쓴다고 소개하는 서비스로(�
 
 ### 2026-08-23 — Phase 1(로그인 없이 로컬 전용) 우선 착수로 방향 확정
 
-출석 보상(#1)·AI 캐릭터화(#4)·업적 화면(#7)·대국 히스토리(#11) 4개 아이디어를 "로그인 인증 없이 오프라인에서 관리" 원칙 하에 먼저 구체화했다. 로그인 연동(Phase 2)은 의도적으로 분리해 범위 밖으로 뺐고, 대신 Port 인터페이스를 `shared`에 두는 기존 저장 패턴을 그대로 따르게 해 나중에 Firestore 어댑터만 추가하면 Phase 2로 확장 가능하도록 설계했다. 상세 개발 명세는 `OFFLINE_ENGAGEMENT_FEATURES_KICKOFF_PLAN_260823_1521.md` — 새 스레드에 그대로 넘겨 바로 착수할 수 있는 형태로 작성함.
+출석 보상(#1)·AI 캐릭터화(#4)·업적 화면(#7)·대국 히스토리(#11) 4개 아이디어를 "로그인 인증 없이 오프라인에서 관리" 원칙 하에 먼저 구체화했다. 로그인 연동(Phase 2)은 의도적으로 분리해 범위 밖으로 뺐고, 대신 Port 인터페이스를 `shared`에 두는 기존 저장 패턴을 그대로 따르게 해 나중에 Firestore 어댑터만 추가하면 Phase 2로 확장 가능하도록 설계했다. 상세 개발 명세는 `260823-260830_OFFLINE_ENGAGEMENT_FEATURES_KICKOFF_PLAN.md` — 새 스레드에 그대로 넘겨 바로 착수할 수 있는 형태로 작성함.
 
 ### 2026-08-23 (2) — 킥오프 플랜을 스레드 단위 일감 백로그로 분해, 캐릭터 진입점 방향 확정
 
-킥오프 플랜을 새 스레드마다 하나씩 순차 착수 가능한 11개 일감으로 쪼갠 `OFFLINE_ENGAGEMENT_FEATURES_BACKLOG_260823_2059.md`를 신설했다. 동시에 사용자 피드백으로 "AI 봇 캐릭터는 기존 난이도 선택 UI 위에 얹는 장식이 아니라 그 UI를 완전히 대체한다 — 캐릭터 선택이 곧 AI 레벨(초보~초고수) 선정"이라는 방향이 확정돼, 킥오프 플랜 7장에 7.1절(진입점 UX)로 반영했다.
+킥오프 플랜을 새 스레드마다 하나씩 순차 착수 가능한 11개 일감으로 쪼갠 `260823-260830_OFFLINE_ENGAGEMENT_FEATURES_BACKLOG.md`를 신설했다. 동시에 사용자 피드백으로 "AI 봇 캐릭터는 기존 난이도 선택 UI 위에 얹는 장식이 아니라 그 UI를 완전히 대체한다 — 캐릭터 선택이 곧 AI 레벨(초보~초고수) 선정"이라는 방향이 확정돼, 킥오프 플랜 7장에 7.1절(진입점 UX)로 반영했다.
 
 ### 2026-08-23 (3) — 백로그에 "신규 스레드 착수 프로토콜" 신설, 항목 간 의존관계 오류 정정
 
@@ -129,8 +129,8 @@ Chess.com은 "2억 5천만 명 이상"이 쓴다고 소개하는 서비스로(�
 
 ## 관련 문서
 
-- `OFFLINE_ENGAGEMENT_FEATURES_KICKOFF_PLAN_260823_1521.md` — 출석 보상·업적 화면·대국 히스토리·봇 컬렉션 Phase 1 개발 착수 스펙
-- `OFFLINE_ENGAGEMENT_FEATURES_BACKLOG_260823_2059.md` — 위 스펙을 스레드 단위 일감으로 쪼갠 진행 관리 백로그
+- `260823-260830_OFFLINE_ENGAGEMENT_FEATURES_KICKOFF_PLAN.md` — 출석 보상·업적 화면·대국 히스토리·봇 컬렉션 Phase 1 개발 착수 스펙
+- `260823-260830_OFFLINE_ENGAGEMENT_FEATURES_BACKLOG.md` — 위 스펙을 스레드 단위 일감으로 쪼갠 진행 관리 백로그
 - `launch-plan/README.md` — 초도 발행 체크리스트, 이 문서와의 시점 관계(0절)
 - `feature-access-principles/README.md` — 로그인 없이/기기 로컬 저장 원칙. 데일리 보상·스트릭 설계 시 반드시 준수
 - `premium-mode/README.md` — 기존 "광고 시청 → 임시 기능 해금" 보상 패턴

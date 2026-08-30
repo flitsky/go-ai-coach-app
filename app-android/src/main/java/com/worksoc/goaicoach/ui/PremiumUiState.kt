@@ -104,7 +104,7 @@ internal val LocalPremiumUiState = staticCompositionLocalOf { PremiumUiState() }
  * 상태를 저장할 때 호출부가 메모리에 들고 있던 [PremiumState.claimedFeatures]를 그대로
  * 이어붙이지 않고 저장소에 남아 있는 집합과 합친다([saveMergingClaimedFeatures]) — 출석
  * 1일차 보상처럼 Compose 트리 밖(Application 코루틴)에서 지급된 클레임을 이 화면의 저장이
- * 지워버리지 않게 하기 위함이다(`OFFLINE_ENGAGEMENT_FEATURES_KICKOFF_PLAN_260823_1521.md` 4.4절).
+ * 지워버리지 않게 하기 위함이다(`260823-260830_OFFLINE_ENGAGEMENT_FEATURES_KICKOFF_PLAN.md` 4.4절).
  * 같은 이유로 [PremiumUiState.claim]도 UI에 규칙을 두지 않고 application 계층의
  * [runPremiumFeatureClaim]에 위임한다 — 출석 자동 지급이 쓰는 함수와 동일한 경로다.
  */

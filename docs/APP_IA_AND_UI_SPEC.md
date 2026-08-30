@@ -36,7 +36,7 @@ graph TD
     E --> E4["기기 성능 확인 (진행 중 / 완료)"]
 ```
 
-**2026-08-29 기준 이 절이 아직 상세 명세를 갖지 않은 화면**: `Onboarding`, `Settings`, `GameHistory`(참여/리텐션 트랙 백로그 #7로 신설), 그리고 앱 전역에 뜨는 출석 보상 Claim 다이얼로그(백로그 #14, `ui/AttendanceRewardClaimDialog.kt`). 해당 트랙의 스펙은 `engagement-growth/OFFLINE_ENGAGEMENT_FEATURES_KICKOFF_PLAN_260823_1521.md`에 있습니다 — 트랙이 끝나면 여기로 흡수합니다.
+**2026-08-29 기준 이 절이 아직 상세 명세를 갖지 않은 화면**: `Onboarding`, `Settings`, `GameHistory`(참여/리텐션 트랙 백로그 #7로 신설), 그리고 앱 전역에 뜨는 출석 보상 Claim 다이얼로그(백로그 #14, `ui/AttendanceRewardClaimDialog.kt`). 해당 트랙의 스펙은 `docs/roadmap/260823-260830_OFFLINE_ENGAGEMENT_FEATURES_KICKOFF_PLAN.md`에 있습니다 — 트랙이 끝나면 여기로 흡수합니다.
 
 ---
 

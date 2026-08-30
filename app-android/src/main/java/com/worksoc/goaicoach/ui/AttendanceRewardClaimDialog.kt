@@ -31,7 +31,7 @@ import com.worksoc.goaicoach.persistence.PremiumStateStore
 
 /**
  * 출석 체크인을 실행하고, **아직 받아 가지 않은 보상이 있으면** Claim 다이얼로그를 띄운다
- * (`OFFLINE_ENGAGEMENT_FEATURES_KICKOFF_PLAN_260823_1521.md` 5.1절).
+ * (`260823-260830_OFFLINE_ENGAGEMENT_FEATURES_KICKOFF_PLAN.md` 5.1절).
  *
  * 이 파일은 원래 최초 실행 전용 전체화면(`FirstLaunchRewardScreen`, 백로그 #5)이었다. 보상 지급이
  * **자동 지급 → Claim 방식**으로 바뀌면서(5.1절) 세 가지가 달라졌다:
