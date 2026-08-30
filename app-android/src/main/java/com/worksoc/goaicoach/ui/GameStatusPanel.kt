@@ -6,6 +6,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -25,7 +26,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
@@ -83,45 +88,50 @@ internal fun GameStatusPanel(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
+            val isDirectPlay = screenState.uxOptions.isDirectPlayEnabled
             PlayModeSwitch(
-                isDirectPlay = screenState.uxOptions.isDirectPlayEnabled,
+                isDirectPlay = isDirectPlay,
+                // **바로 착수일 때 스위치가 주인공이다**(#37 피드백, 2026-08-30). 그 모드에서는
+                // 아래 `착수` 버튼이 할 일이 없으므로 크기를 서로 맞바꾼다 — 지금 누를 수 있는
+                // 것이 커야 한다.
+                prominent = isDirectPlay,
                 enabled = !screenState.isGameEnded,
                 onToggle = {
                     onEvent(
                         GameUiEvent.ChangeUxOptions(
-                            screenState.uxOptions.copy(
-                                isDirectPlayEnabled = !screenState.uxOptions.isDirectPlayEnabled,
-                            ),
+                            screenState.uxOptions.copy(isDirectPlayEnabled = !isDirectPlay),
                         ),
                     )
                 },
             )
-            Button(
-                onClick = {
-                    tentativeMove?.let {
-                        onEvent(GameUiEvent.SubmitMove(Move.Play(screenState.gameState.nextPlayer, it)))
-                    }
-                },
-                // 바로 착수 모드에서는 `tentativeMove`가 애초에 만들어지지 않아 이미 꺼져
-                // 있지만, **모드를 조건에 명시**한다(#37). 스위치 바로 아래 버튼이라 둘의
-                // 관계가 코드에서도 보여야 하고, 나중에 tentativeMove 규칙이 바뀌어도
-                // "바로 착수면 이 버튼은 없다"가 유지된다.
-                enabled = !screenState.uxOptions.isDirectPlayEnabled &&
-                    tentativeMove != null &&
-                    !screenState.isGameEnded,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = Color.White,
-                    disabledContainerColor = Color(0xFFECEFF1),
-                    disabledContentColor = Color(0xFFB0BEC5)
-                ),
-                shape = RoundedCornerShape(24.dp),
-                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)
-            ) {
-                Text(strings.playMove, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            if (isDirectPlay) {
+                // 이 모드에서 `착수` 버튼은 쓸 일이 없다. 그렇다고 **지워 버리면** 모드를
+                // 바꿨을 때 버튼이 난데없이 튀어나온 것처럼 보이고, 평소처럼 **꽉 찬 회색
+                // 버튼**으로 두면 "왜 안 눌리지"가 된다. 점선 자리표시는 "여기 버튼이 있고,
+                // 모드를 바꾸면 살아난다"를 한 번에 말한다.
+                PlayButtonGhost(label = strings.playMove)
+            } else {
+                Button(
+                    onClick = {
+                        tentativeMove?.let {
+                            onEvent(GameUiEvent.SubmitMove(Move.Play(screenState.gameState.nextPlayer, it)))
+                        }
+                    },
+                    enabled = tentativeMove != null && !screenState.isGameEnded,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(PlayButtonHeight),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = Color.White,
+                        disabledContainerColor = Color(0xFFECEFF1),
+                        disabledContentColor = Color(0xFFB0BEC5),
+                    ),
+                    shape = RoundedCornerShape(24.dp),
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
+                ) {
+                    Text(strings.playMove, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                }
             }
         }
 
@@ -241,6 +251,8 @@ private fun formatMillis(millis: Long): String {
 @Composable
 private fun PlayModeSwitch(
     isDirectPlay: Boolean,
+    /** 이 모드에서 스위치가 주인공인가. 참이면 `착수` 버튼과 같은 크기·무게로 그린다. */
+    prominent: Boolean,
     enabled: Boolean,
     onToggle: () -> Unit,
 ) {
@@ -284,12 +296,13 @@ private fun PlayModeSwitch(
                 }
             }
             .clickable(enabled = enabled, onClick = onToggle),
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(if (prominent) 24.dp else 14.dp),
         color = MaterialTheme.colorScheme.surfaceVariant,
-        tonalElevation = 1.dp,
+        tonalElevation = if (prominent) 2.dp else 1.dp,
     ) {
         Row(
             modifier = Modifier
+                .then(if (prominent) Modifier.height(PlayButtonHeight) else Modifier)
                 .padding(horizontal = 6.dp, vertical = 5.dp)
                 // 뒷면을 다시 세운다.
                 .graphicsLayer { rotationX = if (showingConfirmSide) 180f else 0f },
@@ -304,7 +317,7 @@ private fun PlayModeSwitch(
             Spacer(modifier = Modifier.width(3.dp))
             Text(
                 text = if (showingConfirmSide) strings.playModeConfirm else strings.playModeDirect,
-                style = MaterialTheme.typography.labelSmall,
+                style = if (prominent) MaterialTheme.typography.labelLarge else MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
@@ -316,3 +329,50 @@ private fun PlayModeSwitch(
 
 /** 스와이프 한 번으로 뒤집히는 최소 이동량. 스크롤과 헷갈리지 않을 만큼은 커야 한다. */
 private const val SwipeToggleThresholdPx = 48f
+
+/** `착수` 버튼의 정상 높이. 스위치가 주인공일 때 그 높이를 물려받는다(#37). */
+private val PlayButtonHeight = 48.dp
+
+/** 점선 자리표시의 높이 — 정상 버튼보다 확실히 낮아 "지금은 쉬는 자리"로 읽힌다. */
+private val GhostPlayButtonHeight = 26.dp
+
+/**
+ * 바로 착수 모드에서 `착수` 버튼이 있던 자리를 지키는 **점선 자리표시**(#37 피드백).
+ *
+ * 누를 수 없고, 누를 수 있는 척도 하지 않는다. 점선 테두리와 낮은 높이가 "여기 버튼이 하나
+ * 있는데 지금은 쉬고 있다 — 모드를 바꾸면 살아난다"를 말한다. 아예 지우지 않는 이유는
+ * 레이아웃이 출렁이고, 모드를 바꿨을 때 버튼이 난데없이 생긴 것처럼 보이기 때문이다.
+ */
+@Composable
+private fun PlayButtonGhost(label: String) {
+    val ghostColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)
+    val dashOn = with(LocalDensity.current) { 6.dp.toPx() }
+    val dashOff = with(LocalDensity.current) { 5.dp.toPx() }
+    val strokeWidth = with(LocalDensity.current) { 1.dp.toPx() }
+    val corner = with(LocalDensity.current) { 24.dp.toPx() }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(GhostPlayButtonHeight)
+            .drawBehind {
+                drawRoundRect(
+                    color = ghostColor,
+                    cornerRadius = CornerRadius(corner, corner),
+                    style = Stroke(
+                        width = strokeWidth,
+                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(dashOn, dashOff)),
+                    ),
+                )
+            },
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = ghostColor,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
