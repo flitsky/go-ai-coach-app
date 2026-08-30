@@ -449,6 +449,50 @@
       · 세기 검증은 반드시 `adb shell dumpsys vibrator_manager | grep <패키지>`로 할 것.
     - **실기 재검증(에뮬레이터, 진동 이력 기준)**: 토글 OFF → 이력 변화 없음. 토글 ON → +1건 `Prebaked=HEAVY_CLICK`. 반상 누름 → +1건 `Prebaked=HEAVY_CLICK`. (에뮬레이터는 진동 하드웨어가 없어 **체감 세기는 실기 확인이 필요하다** — 재생된 효과 종류까지만 보장된다.)
     - 산출물: (shared) `application/preferences/UserPreferencesSnapshot.kt`·`UserPreferencesApplication.kt`·`UserPreferencesAutosaveApplication.kt`, 테스트 1건 신설. (app-android) `presentation/KaTrainUxOptions.kt`·`KaTrainUxOptionsMapper.kt`, `persistence/UserPreferencesStore.kt`, `ui/PlayHaptics.kt`(신규)·`GoBoard.kt`·`KaTrainUxPanels.kt`·`GoCoachApp.kt`·`UiStrings*.kt`.
+    - **최종 경로: `Vibrator.createOneShot(35ms, amplitude=255)`, 관문은 앱 토글 하나(ⓑ안, 2026-08-30 사용자 결정).** 실기에서 진동이 정상 발생함을 사용자가 확인했다.
+      · 프레임워크 햅틱(`View.performHapticFeedback` / Compose)은 **세기를 지정할 수 없다** — 프리베이크 `HEAVY_CLICK`이 상한이고 MEDIUM 스케일로 재생된다. 원샷 파형은 진폭을 직접 준다(실측 `amplitude=1.00`, 56ms).
+      · ⚠️ **`android.permission.VIBRATE`가 추가됐다.** normal 권한이라 런타임 프롬프트는 없지만 **스토어 권한 목록에 노출**되므로 AAB 업로드 시 등록정보와 함께 확인할 것(#40).
+      · ⚠️ **에뮬레이터에서는 시스템 '터치 피드백'이 꺼져 있으면 `Vibrator`로도 억제된다** — `dumpsys vibrator_manager`가 `ignored_for_settings`, `usage: TOUCH`로 찍힌다. 프리베이크든 원샷이든, `AudioAttributes`를 붙이든 안 붙이든 같았다. 즉 **"Vibrator는 그 설정을 우회한다"는 내 최초 근거는 에뮬레이터 기준으로 틀렸다.** 그럼에도 사용자 실기에서는 울리므로, 이 게이트는 기기/설정 상태에 따라 다르게 작동한다고 봐야 한다.
+    - ⚠️ **이전 기록(참고용): 실기에서 안 느껴진다는 보고가 두 번 있었다(2026-08-30).** 에뮬레이터는 진동 하드웨어가 없어 재생된 효과 종류까지만 보장되므로 원인을 가릴 수 없었다 — 그런데 **디버그 리포트에 햅틱 정보가 하나도 없었다.**
+      · 그래서 리포트에 `[Haptics]` 절을 신설했다(사용자 요청: "로그 인리치먼트"). 세 가지를 가른다: ⓐ 앱이 부르긴 했는가(`attempts`) ⓑ 시스템이 받아들였는가(`accepted`/`lastAccepted`) ⓒ 기기 상태(`deviceHasVibrator`, `systemHapticFeedbackEnabled`). 각 조합에 대한 해석 문장까지 붙여, 리포트만 보고 판단할 수 있게 했다.
+      · 이를 위해 호출 경로를 Compose `LocalHapticFeedback` → **`View.performHapticFeedback`** 으로 바꿨다. **성공 여부를 `Boolean`으로 돌려주기 때문**이다 — Compose API는 돌려주지 않아 "앱이 안 불렀는지, 시스템이 거절했는지"를 구분할 수 없다. 효과(`LONG_PRESS`=`HEAVY_CLICK`)는 동일하다.
+      · ⚠️ **같은 전달 누락 함정에 이 배선에서만 두 번 더 걸렸다**(#36 본문 포함 세션 통산 세 번). `DebugReportCopyActionRequest`와 `DebugReportCopyRunRequest` 양쪽에 기본값 파라미터를 추가했는데, 중간 조립부가 전달을 빠뜨려도 컴파일이 통과하고 리포트에는 `not recorded`만 찍힌다. **실기에서 실제 리포트를 뽑아 확인**해야 잡힌다 — 그렇게 잡았다.
+      · 실기 검증(에뮬레이터): 반상 1회 누른 뒤 '진단 로그 복사' → `attempts=1 accepted=1 lastAccepted=true / deviceHasVibrator=true systemHapticFeedbackEnabled=true`.
+      · **다음 단계는 사용자 폰의 리포트를 받아 보는 것이다.** `systemHapticFeedbackEnabled=false`면 기기 설정 문제이고, `accepted=true`인데도 약하면 `HEAVY_CLICK`으로 부족하다는 뜻이라 그때 `Vibrator` + `VIBRATE` 권한으로 진폭을 직접 지정할 근거가 생긴다.
+    - 사용자 승인 완료(2026-08-30).
+
+37. **`바로 착수`를 착수 버튼 자리에서 직접 켜고 끄기** (AI 모델: Opus, 노력정도: 중간) [완료]
+    - 2026-08-30 사용자 지시. **#35가 끝난 뒤 착수한다**(그 항목이 자리를 비워 준다).
+    - 지금은 대국 메뉴(☰) 안에 들어가야 `바로 착수`를 켜고 끌 수 있다. 이걸 **`착수` 버튼 바로 위**에서 위/아래 슬라이드로 전환하는 스위치로 만든다. 전환 시 **반 바퀴 도는 듯한 이펙트**를 준다(사용자 예시).
+    - 상태 대응: **바로 착수 모드** → 반상 탭이 곧 착수, `착수` 버튼은 **비활성**. **확인 착수 모드** → 탭은 자리만 고르고 `착수` 버튼이 **활성**.
+    - 문구는 착수 시 확정한다(사용자 위임). 후보: `바로 착수` ↔ `확인 후 착수` / `선택 착수`. ⚠️ **`바로 착수`는 이미 메뉴에 있는 용어라 그대로 살리는 편이 낫다** — 같은 기능을 두 이름으로 부르면 안 된다. 4개 언어 모두 추가할 것.
+    - 관련 파일: `ui/GameStatusPanel.kt`(가운데 Column), `ui/GamePlaySection.kt:126`(탭 분기), `ui/KaTrainUxPanels.kt:76`(기존 토글 — **남길지 없앨지 정할 것**. 두 곳에서 같은 값을 조작하게 되면 동기화는 자동이지만 UI가 중복된다).
+    - ⚠️ 판 크기에 따라 권장 모드를 안내하는 `DirectPlayRecommendationDialog`가 이미 있다(9로는 바로 착수, 19로는 확인 착수 권장). 스위치를 노출하면 그 팝업과 말이 겹치는지 확인할 것.
+    - **수정(2026-08-30)**: `GameStatusPanel`에 `PlayModeSwitch`를 신설해 `착수` 버튼 바로 위(#35가 비운 자리)에 놓았다. 배선은 이미 닿아 있어(`onEvent` + `screenState.uxOptions`) 새 플러밍이 없었다.
+    - **문구는 `바로 착수` / `확인 착수`** — 4자 대칭. "모드"를 붙이면 이 칸(실측 약 100dp)에서 배율 1.5배에 깨진다. 메뉴의 `directPlay`(`Direct play`)와 **별도 문자열**을 둔 이유가 그것이다. 4개 언어 추가.
+    - **반 바퀴 뒤집기**(사용자 지정 이펙트): `rotationX` 0↔180°에 `cameraDistance`로 원근을 잡고, 90°를 넘는 순간 뒷면 라벨로 갈아타며 180°를 되돌려 세운다 — 되돌리지 않으면 글자가 거꾸로 멈춘다.
+    - **탭과 세로 스와이프를 모두 받는다.** 지시는 스와이프였지만 탭이 훨씬 발견하기 쉽고 접근성 도구는 탭만 보낸다 — 스와이프만 받으면 못 쓰는 사용자가 생긴다.
+    - ⚠️ 세로 드래그를 **소비**해야 한다(`change.consume()`). 대국 화면 루트에 `verticalScroll`이 있어 소비하지 않으면 위젯 위에서 스와이프해도 화면만 스크롤된다.
+    - ⚠️ **한 제스처에 한 번만 뒤집게 해야 한다.** 처음엔 누적값만 0으로 되돌렸는데, 임계(48px)의 두 배를 넘게 끌면 두 번 뒤집혀 제자리로 돌아왔다(실기에서 120px 스와이프가 무반응처럼 보였다). 이번 제스처에서 이미 뒤집었는지를 따로 기억하고 손을 떼야 다시 열리게 고쳤다.
+    - `착수` 버튼 활성 조건에 **모드를 명시**했다(`!isDirectPlayEnabled && ...`). 바로 착수에서는 `tentativeMove`가 애초에 안 생겨 이미 꺼져 있지만, 스위치 바로 아래 버튼이라 둘의 관계가 코드에도 보여야 한다.
+    - **실기 검증(에뮬레이터)**: 탭으로 양방향 전환되고 라벨이 `바로 착수`↔`확인 착수`로 뒤집힌다. 위젯 위에서 시작하는 세로 스와이프(약 110px)도 전환된다. 스와이프 시작점이 위젯 밖(예: `착수` 버튼 위)이면 당연히 반응하지 않는다.
+    - 산출물: `ui/GameStatusPanel.kt`, `ui/UiStrings*.kt`(5파일).
+    - 사용자 승인 완료(2026-08-30).
+    - **대국 메뉴의 기존 토글은 남긴다(2026-08-30 사용자 확정)** — 중복이지만 메뉴를 통한 변경을 선호할 수 있다.
+
+41. 디버그 리포트의 `engineProfile`이 **실제 백엔드를 말하지 않던 문제** (AI 모델: Sonnet, 노력정도: 낮음) [완료]
+    - #36 진동 조사 중 **내가 이 필드를 오독해 "스텁 엔진 빌드"라고 잘못 단정**한 데서 드러났다(2026-08-30). 사용자가 바로 잡아 줬다.
+    - 리포트가 `engineProfile=stub/Stub/Beginner`로 찍혔지만 같은 리포트의 `[EngineDiagnostic]`은 `KataGo assets found. Using local process engine.`이고 AI는 실제로 `16 visits / 3169ms` 탐색을 돌리고 있었다. **필드가 거짓말을 하고 있었다.**
+    - 원인 둘:
+      · `GoCoachApp.kt`가 초기 프로필로 **맨 `EngineProfile()`** 을 넘겼다. 부트스트랩이 아는 `mode`/`displayName`이 여기까지 오지 않아, 리포트가 영원히 데이터 클래스 기본값을 찍었다.
+      · 그 기본값이 하필 `mode = EngineMode.Stub`, `name = "stub"` 이었다. **채워지지 않은 프로필이 실재하는 스텁 모드를 사칭**한 것이다.
+    - **수정(2026-08-30)**:
+      · 기본값을 **`EngineMode.Unknown` / `name = "unknown"`** 으로 바꿨다. 안 채워진 프로필이 스텁을 사칭하는 대신 "아직 모른다"고 말한다. `EngineMode.Unknown`은 엔진의 종류가 아니라 **배선 누락 표시**라는 것을 enum 주석에 박아 뒀다.
+      · ⚠️ `StubEngineAdapter`가 기본값에 기대고 있어(`EngineProfile()`) **명시적으로 `EngineMode.Stub`을 넣었다** — 안 그러면 진짜 스텁이 Unknown으로 보고된다.
+      · `bootstrap.mode`를 `MainActivity` → `GoCoachApp` → `GoCoachScreen` → 초기 `EngineProfile`까지 흘려보냈다.
+    - `LayeringContractTest` 라인 예산 861→865(#34가 2줄 줄인 뒤 순증 +4). 순수 파라미터 배선이고 새 상태 훅은 없다.
+    - **실기 검증(에뮬레이터)**: 리포트가 `engineProfile=KataGo/LocalProcess/Beginner`로 바뀌었다.
+    - 산출물: `shared/.../shared/EngineModels.kt`, `engine-android/.../StubEngineAdapter.kt`, `ui/GoCoachApp.kt`, `MainActivity.kt`, `test/.../LayeringContractTest.kt`.
     - 사용자 승인 완료(2026-08-30).
 
 ### 진행 중
@@ -483,19 +527,11 @@
 > **2026-08-30 현황**: #16·#19·#17·#10·#11·#20~#23이 모두 완료됐고, #18은 Play Console
 > **2026-08-30 현황**: #24·#25·#27~#31·#34가 끝나 진행 중은 #18(콘솔 게이트) 하나뿐이다.
 > 같은 날 대국 화면 UX 일감 다섯(#35~#39)이 사용자 지시로 들어왔고, **영향도가 낮은 순서로**
-> 예정사항 맨 위에 놓았다 — ~~#35(수순 이동)~~·~~#36(햅틱)~~ 완료 → #37(착수 모드 스위치) → #38(보드 크기)
+> 예정사항 맨 위에 놓았다 — ~~#35~~·~~#36~~·~~#37~~ 완료 → #38(보드 크기)
 > → #39(돋보기, 출시 후순위). 스크린샷 재캡처와 AAB 빌드(#40)는 **그 뒤**다(사용자 지시) —
 > 화면이 계속 바뀌는 중에 찍으면 또 낡기 때문이다. #26·#32·#33은 그 아래로 내려갔다.
 >
 > ⚠️ **#35는 #37의 선행 작업이다** — #37이 쓸 자리를 #35가 비운다. 순서를 바꾸지 말 것.
-
-37. **`바로 착수`를 착수 버튼 자리에서 직접 켜고 끄기** (AI 모델: Opus, 노력정도: 중간)
-    - 2026-08-30 사용자 지시. **#35가 끝난 뒤 착수한다**(그 항목이 자리를 비워 준다).
-    - 지금은 대국 메뉴(☰) 안에 들어가야 `바로 착수`를 켜고 끌 수 있다. 이걸 **`착수` 버튼 바로 위**에서 위/아래 슬라이드로 전환하는 스위치로 만든다. 전환 시 **반 바퀴 도는 듯한 이펙트**를 준다(사용자 예시).
-    - 상태 대응: **바로 착수 모드** → 반상 탭이 곧 착수, `착수` 버튼은 **비활성**. **확인 착수 모드** → 탭은 자리만 고르고 `착수` 버튼이 **활성**.
-    - 문구는 착수 시 확정한다(사용자 위임). 후보: `바로 착수` ↔ `확인 후 착수` / `선택 착수`. ⚠️ **`바로 착수`는 이미 메뉴에 있는 용어라 그대로 살리는 편이 낫다** — 같은 기능을 두 이름으로 부르면 안 된다. 4개 언어 모두 추가할 것.
-    - 관련 파일: `ui/GameStatusPanel.kt`(가운데 Column), `ui/GamePlaySection.kt:126`(탭 분기), `ui/KaTrainUxPanels.kt:76`(기존 토글 — **남길지 없앨지 정할 것**. 두 곳에서 같은 값을 조작하게 되면 동기화는 자동이지만 UI가 중복된다).
-    - ⚠️ 판 크기에 따라 권장 모드를 안내하는 `DirectPlayRecommendationDialog`가 이미 있다(9로는 바로 착수, 19로는 확인 착수 권장). 스위치를 노출하면 그 팝업과 말이 겹치는지 확인할 것.
 
 38. **보드 크기 모드 2종** — 여백 있는 현재 크기 / 폭을 꽉 채우는 최대 크기 (AI 모델: Opus, 노력정도: 중간)
     - 2026-08-30 사용자 지시. 보드 **우측 상단**에 두 모드를 고르는 컨트롤을 둔다.

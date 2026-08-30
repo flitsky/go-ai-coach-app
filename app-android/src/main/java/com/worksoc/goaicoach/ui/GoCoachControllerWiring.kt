@@ -64,6 +64,8 @@ internal data class GoCoachControllers(
 )
 
 internal interface GoCoachAppWiringContext {
+    /** 플랫폼 API가 필요한 배선용(#36의 진동 진단 등). 애플리케이션 컨텍스트를 담는다. */
+    val androidContext: android.content.Context
     val scope: CoroutineScope
     val engineClient: EngineSessionClient
     val diagnosticEventLog: DiagnosticEventLogPort
