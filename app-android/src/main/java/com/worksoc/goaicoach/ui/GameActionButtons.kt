@@ -32,7 +32,19 @@ internal val ActionButtonMinHeight = 48.dp
 internal val ActionButtonShape = RoundedCornerShape(16.dp)
 internal val ActionButtonBorder
     @Composable get() = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-internal val ActionButtonContentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)
+// 가로 4dp는 오타가 아니다(#29). 3분할 행의 버튼 폭은 360dp 화면에서 104dp인데, 좌우 8dp씩을
+// 떼면 글자에 88dp만 남는다. 옛 일본어 라벨 `新しい対局を開始`은 전각 8자 = 92dp라 배율
+// 1.0배에서도 넘쳤다. 4dp면 96dp가 되고, 라벨을 `新規対局`(46dp)으로 함께 줄여 이 행은
+// 2.0배까지 버틴다 — 둘 중 하나만으로는 부족했다.
+//
+// 짧은 라벨(`기권`/`통과`)의 겉모습은 바뀌지 않는다 — M3 `Button` 내부는
+// `Arrangement.Center`라 남는 여백이 어차피 양쪽으로 갈리기 때문이다. 실제로 넓어지는 건
+// 넘치던 라벨뿐이다.
+//
+// ⚠️ 1행(형세·추천 수)은 이 패딩으로 152dp를 받지만 그래도 2.0배에서는 잘린다
+//    (`추천 수 보…(5)`). 그건 이 상수가 아니라 라벨 길이의 문제이고, 잔량 표기는 별도
+//    `Text`라 언제나 살아남는다(#27).
+internal val ActionButtonContentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp)
 internal val ActionButtonContainerColor
     @Composable get() = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
 internal val ActionButtonContentColor
