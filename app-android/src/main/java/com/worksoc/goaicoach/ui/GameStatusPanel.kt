@@ -63,7 +63,9 @@ internal fun GameStatusPanel(
             alignEnd = false,
         )
 
-        // 중앙: [착수] 버튼
+        // 중앙: [착수] 버튼. 예전에는 이 위에 `수순 N수`가 있었는데 **헤더로 올라갔다**(#35) —
+        // 대국 내내 보는 값이 버튼 부속처럼 보였고, 무엇보다 이 자리는 착수 모드 스위치가
+        // 쓸 자리다(#37).
         Column(
             modifier = Modifier
                 .weight(1f)
@@ -71,11 +73,6 @@ internal fun GameStatusPanel(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            Text(
-                text = "${strings.moveCountPrefix} ${screenState.gameState.moves.size}${strings.moveCountSuffix}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.secondary,
-            )
             Button(
                 onClick = {
                     tentativeMove?.let {
