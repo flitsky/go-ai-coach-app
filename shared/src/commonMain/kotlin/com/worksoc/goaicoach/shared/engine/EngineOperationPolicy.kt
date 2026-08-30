@@ -219,13 +219,6 @@ fun evaluateEngineBenchmarkGate(
         else -> EngineOperationGate.Allow
     }
 
-fun evaluateSearchTimeChangeGate(isEngineBusy: Boolean): EngineOperationGate =
-    if (isEngineBusy) {
-        EngineOperationGate.Block("Engine is busy. Change search time after the current action.")
-    } else {
-        EngineOperationGate.Allow
-    }
-
 fun evaluateScoringRuleChangeGate(
     currentRuleset: Ruleset,
     nextRuleset: Ruleset,

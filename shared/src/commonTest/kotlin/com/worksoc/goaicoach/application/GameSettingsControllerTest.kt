@@ -84,8 +84,13 @@ class GameSettingsControllerTest {
         assertNull(engineMessage)
     }
 
+    /**
+     * 회귀 방지(2026-08-30): 예전에는 엔진이 바쁘면 이 설정 변경을 **막았고**, 그 게이트가
+     * AI 대 AI 대국에서 최대 탐색 시간을 영영 못 바꾸게 했다 — 그 모드에서는 엔진이 사실상
+     * 항상 바쁘다. 이 값은 다음 엔진 호출부터 적용되므로 막을 이유가 없다.
+     */
     @Test
-    fun changeSearchTimeSettingsBlocksWhileEngineIsBusy() {
+    fun changeSearchTimeSettingsAppliesEvenWhileEngineIsBusy() {
         var appliedSettings: SearchTimeSettings? = null
         var engineMessage: String? = null
 
@@ -138,8 +143,8 @@ class GameSettingsControllerTest {
         val nextSettings = SearchTimeSettings(SearchTimeLimit.WithinThreeSeconds)
         controller.changeSearchTimeSettings(nextSettings)
 
-        assertNull(appliedSettings)
-        assertEquals("Engine is busy. Change search time after the current action.", engineMessage)
+        assertEquals(nextSettings, appliedSettings, "엔진이 바빠도 설정은 적용돼야 한다")
+        assertNull(engineMessage, "막혔다는 안내가 뜨면 안 된다")
     }
 
     @Test

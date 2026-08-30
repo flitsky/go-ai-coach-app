@@ -178,15 +178,6 @@ class EngineOperationPolicyTest {
     }
 
     @Test
-    fun searchTimeChangeGateBlocksOnlyWhenBusy() {
-        assertEquals(
-            EngineOperationGate.Block("Engine is busy. Change search time after the current action."),
-            evaluateSearchTimeChangeGate(isEngineBusy = true),
-        )
-        assertEquals(EngineOperationGate.Allow, evaluateSearchTimeChangeGate(isEngineBusy = false))
-    }
-
-    @Test
     fun scoringRuleChangeGateDistinguishesNoOpBusyAndAllowed() {
         assertEquals(
             EngineOperationGate.NoOp,

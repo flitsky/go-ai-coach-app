@@ -102,13 +102,6 @@ fun evaluateEngineBenchmarkGate(
         isBenchmarkRunning = isBenchmarkRunning,
     ).toApplicationGate()
 
-fun evaluateSearchTimeChangeGate(
-    isEngineBusy: Boolean,
-): EngineOperationGate =
-    com.worksoc.goaicoach.shared.engine
-        .evaluateSearchTimeChangeGate(isEngineBusy)
-        .toApplicationGate()
-
 fun evaluateScoringRuleChangeGate(
     currentRuleset: com.worksoc.goaicoach.shared.Ruleset,
     nextRuleset: com.worksoc.goaicoach.shared.Ruleset,

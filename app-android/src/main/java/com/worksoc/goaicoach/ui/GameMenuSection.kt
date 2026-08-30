@@ -188,7 +188,10 @@ internal fun ExpandedGameMenuSection(
 
         SearchTimeSettingsPanel(
             settings = screenState.searchTimeSettings,
-            enabled = !screenState.engine.isBusy,
+            // 엔진이 바빠도 열어 둔다(2026-08-30). 이 값은 다음 엔진 호출부터 적용되므로
+            // 진행 중인 탐색을 흔들지 않는다. 막아 두면 **AI 대 AI 대국에서 영영 못 만진다** —
+            // 그 모드에서는 엔진이 사실상 항상 바쁘다.
+            enabled = true,
             onSettingsChange = { settings -> onEvent(GameUiEvent.ChangeSearchTimeSettings(settings)) },
         )
 

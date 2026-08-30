@@ -315,8 +315,11 @@ private fun PlayModeSwitch(
                 color = MaterialTheme.colorScheme.secondary,
             )
             Spacer(modifier = Modifier.width(3.dp))
+            // ⚠️ **라벨은 현재 상태가 아니라 "누르면 무엇이 되는가"다**(2026-08-30 사용자 지적).
+            // 착수 확인 모드에서 `착수 확인`이라고 쓰면 이미 그 상태인데 또 그 말을 하는 셈이라,
+            // 눌렀을 때 무엇이 될지 알 수 없다. 그래서 **반대편 모드 이름**을 보여준다.
             Text(
-                text = if (showingConfirmSide) strings.playModeConfirm else strings.playModeDirect,
+                text = if (showingConfirmSide) strings.playModeDirect else strings.playModeConfirm,
                 style = if (prominent) MaterialTheme.typography.labelLarge else MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,

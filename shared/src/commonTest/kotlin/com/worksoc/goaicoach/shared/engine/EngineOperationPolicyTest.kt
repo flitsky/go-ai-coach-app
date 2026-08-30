@@ -97,7 +97,6 @@ class EngineOperationPolicyTest {
                 isBenchmarkRunning = false,
             ) is EngineOperationGate.Block,
         )
-        assertTrue(evaluateSearchTimeChangeGate(isEngineBusy = true) is EngineOperationGate.Block)
         assertEquals(
             EngineOperationGate.NoOp,
             evaluateScoringRuleChangeGate(

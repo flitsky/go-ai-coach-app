@@ -1,7 +1,6 @@
 package com.worksoc.goaicoach.application.session
 
 import com.worksoc.goaicoach.application.engine.operation.EngineOperationGate
-import com.worksoc.goaicoach.application.engine.operation.evaluateSearchTimeChangeGate
 import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
 import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
 import com.worksoc.goaicoach.application.runtime.runtimeAutoPlayDelayChangeLog
@@ -91,15 +90,18 @@ class GameSettingsController(
      * Validates engine-busy gate, normalises [SearchTimeSettings], resets the
      * top-moves analysis cache, and updates runtime play-level selection.
      */
+    /**
+     * 최대 탐색 시간 제한을 바꾼다. **엔진이 바쁠 때도 받는다**(2026-08-30).
+     *
+     * 예전에는 `evaluateSearchTimeChangeGate`가 엔진이 바쁘면 막았는데, 그 게이트가 **AI 대 AI
+     * 대국에서 이 설정을 영영 못 만지게 했다** — 그 모드에서는 엔진이 사실상 항상 바쁘다.
+     *
+     * 막을 이유도 없었다. 이 값은 **다음 엔진 호출부터** 적용된다: 여기서 바꾸는 것은
+     * `settingsState.searchTimeSettings`와 그로부터 파생되는 런타임 플레이 레벨뿐이고,
+     * 진행 중인 작업은 시작할 때 이미 자기 `analysisLimit`을 확보했다. 즉 날아가는 탐색을
+     * 중간에 흔들지 않는다.
+     */
     fun changeSearchTimeSettings(nextSettings: SearchTimeSettings) {
-        when (val gate = evaluateSearchTimeChangeGate(isEngineBusy = isEngineBusy())) {
-            EngineOperationGate.Allow -> Unit
-            EngineOperationGate.NoOp -> return
-            is EngineOperationGate.Block -> {
-                onEngineMessage(gate.message)
-                return
-            }
-        }
         val normalized = nextSettings.normalized()
         clearUndoEngineInterventionQuietWindow()
         applySettingsSearchTimeSettings(normalized)
