@@ -46,6 +46,7 @@ internal fun wireDebugReportController(context: GoCoachAppWiringContext): DebugR
     DebugReportController(
         engineName = context.engineName(),
         engineDiagnostic = context.engineDiagnostic(),
+        hapticDiagnostic = { PlayHaptics(context.androidContext).diagnosticReport() },
         runtimeEventLog = context.runtimeEventLog,
         diagnosticEventLog = context.diagnosticEventLog,
         clipboard = context.clipboardPort,

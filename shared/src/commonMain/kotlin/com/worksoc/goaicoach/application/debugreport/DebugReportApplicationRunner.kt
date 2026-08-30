@@ -9,6 +9,8 @@ internal data class DebugReportCopyRunRequest(
     val controllerState: GameSessionControllerState,
     val engineName: String,
     val engineDiagnostic: String,
+    /** 착수 진동 진단(#36). app-android가 채운다. */
+    val hapticDiagnostic: String = "not recorded",
     val analysisCacheStatsText: () -> String,
     val positionAnalysisCacheStatsText: (Long) -> String,
     val isEngineReady: Boolean,
@@ -34,6 +36,7 @@ internal fun runDebugReportCopyApplication(
             controllerState = request.controllerState,
             engineName = request.engineName,
             engineDiagnostic = request.engineDiagnostic,
+            hapticDiagnostic = request.hapticDiagnostic,
             analysisCacheStats = request.analysisCacheStatsText(),
             positionAnalysisCacheStats = request.positionAnalysisCacheStatsText(nowMillis),
             isEngineReady = request.isEngineReady,

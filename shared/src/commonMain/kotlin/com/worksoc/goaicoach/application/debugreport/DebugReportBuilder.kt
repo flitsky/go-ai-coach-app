@@ -22,6 +22,13 @@ data class DebugReportSnapshot(
     val playerSetup: PlayerSetup,
     val engineName: String,
     val engineDiagnostic: String,
+    /**
+     * 착수 진동 진단(#36). 플랫폼 API를 타므로 `shared`가 만들 수 없어 **app-android가 채워
+     * 넣는다.** 기본값이 있는 이유는 이 필드를 모르는 호출부를 깨지 않기 위해서인데,
+     * ⚠️ 그래서 **전달을 빠뜨리면 조용히 "not recorded"가 된다** — 실기에서 이 절이
+     * "not recorded"로 보이면 기능이 아니라 배선을 먼저 의심할 것.
+     */
+    val hapticDiagnostic: String = "not recorded",
     val engineProfile: EngineProfile,
     val playLevel: PlayLevelSetting,
     val analysisPreset: AnalysisPreset,
@@ -103,6 +110,7 @@ fun buildDebugReport(snapshot: DebugReportSnapshot): String =
         playerSetup = snapshot.playerSetup,
         engineName = snapshot.engineName,
         engineDiagnostic = snapshot.engineDiagnostic,
+        hapticDiagnostic = snapshot.hapticDiagnostic,
         engineProfile = snapshot.engineProfile,
         playLevel = snapshot.playLevel,
         analysisPreset = snapshot.analysisPreset,
@@ -172,6 +180,8 @@ data class DebugReportCopyActionRequest(
     val controllerState: GameSessionControllerState,
     val engineName: String,
     val engineDiagnostic: String,
+    /** 착수 진동 진단(#36). app-android가 채운다. */
+    val hapticDiagnostic: String = "not recorded",
     val analysisCacheStats: String,
     val positionAnalysisCacheStats: String,
     val isEngineReady: Boolean,
@@ -202,7 +212,7 @@ fun runDebugReportCopyAction(
             runtimeEventLogText = request.runtimeEventLogText,
             diagnosticEventLogText = request.diagnosticEventLogText,
             savedSessionJson = request.savedSessionJson,
-        ),
+        ).copy(hapticDiagnostic = request.hapticDiagnostic),
     )
     return runDebugReportCopyEffect(
         effect = GameSessionEffect.CopyDebugReport(plan),
@@ -234,6 +244,7 @@ fun buildDebugReport(
     playerSetup: PlayerSetup,
     engineName: String,
     engineDiagnostic: String,
+    hapticDiagnostic: String = "not recorded",
     engineProfile: EngineProfile,
     playLevel: PlayLevelSetting,
     analysisPreset: AnalysisPreset,
@@ -299,6 +310,7 @@ fun buildDebugReport(
         )
         appendNamedTextSection("SavedSessionJson", savedSessionJson ?: "none")
         appendNamedTextSection("EngineDiagnostic", engineDiagnostic)
+        appendNamedTextSection("Haptics", hapticDiagnostic)
         appendNamedTextSection("EngineBenchmark", engineBenchmarkText)
         appendNamedTextSection("RuntimeEventLog", runtimeEventLogText)
         appendNamedTextSection("DiagnosticEventLog", diagnosticEventLogText, trailingBlankLine = false)

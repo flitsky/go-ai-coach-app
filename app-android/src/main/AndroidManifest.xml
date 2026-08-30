@@ -1,6 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!--
+        착수 진동(백로그 #36, 2026-08-30 사용자 결정 ⓑ안). normal 권한이라 런타임 프롬프트는
+        없지만 **스토어 권한 목록에는 노출된다** — AAB 업로드 시 등록정보와 함께 확인할 것.
+
+        프레임워크 햅틱(`View.performHapticFeedback`)은 권한이 필요 없어 먼저 썼으나,
+        시스템 "터치 피드백" 설정이 꺼진 기기에서 조용히 삼켜졌다(사용자 폰에서 확인:
+        호출 9회 전부 accepted인데 진동 없음). 앱에 전용 토글이 따로 있으므로 그 토글을
+        유일한 관문으로 삼기로 하고 Vibrator로 옮겼다 — 근거는 `ui/PlayHaptics.kt`.
+    -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+
     <application
         android:name=".GoAiCoachApplication"
         android:allowBackup="true"

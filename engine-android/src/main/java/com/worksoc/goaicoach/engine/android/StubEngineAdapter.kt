@@ -9,6 +9,7 @@ import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.CandidateMoveSource
 import com.worksoc.goaicoach.shared.DeadStonesResult
 import com.worksoc.goaicoach.shared.EngineCoreApi
+import com.worksoc.goaicoach.shared.EngineMode
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.EngineStatus
 import com.worksoc.goaicoach.shared.FinalScoreResult
@@ -29,7 +30,8 @@ internal class StubEngineAdapter : EngineCoreApi {
     private var handicapCount: Int = 0
     private var komi: Double = 6.5
     private var nextPlayer: StoneColor = StoneColor.Black
-    private var profile: EngineProfile = EngineProfile()
+    // 기본값이 Unknown이 됐으므로 스텁임을 **명시**한다 — 예전에는 기본값에 기대고 있었다.
+    private var profile: EngineProfile = EngineProfile(mode = EngineMode.Stub, name = "stub")
     private val occupied = linkedSetOf<BoardCoordinate>()
     private val playedMoves = mutableListOf<Move>()
 

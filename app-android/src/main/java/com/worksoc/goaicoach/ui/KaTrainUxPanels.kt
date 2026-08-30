@@ -22,7 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.premium.FeatureAccess
@@ -130,13 +130,14 @@ internal fun KaTrainUxMenuPanel(
                 // **켤 때 한 번 울려 준다**(2026-08-30 사용자 요청). 진동은 눈에 보이지 않아
                 // 켠 것이 먹혔는지 알 길이 없다 — 여기서 울리는 그 진동이 곧 반상에서 느낄
                 // 세기의 미리듣기다. 끌 때는 울리지 않는다(끄는 동작에 진동으로 답하면 모순).
-                val hapticPreview = LocalHapticFeedback.current
+                val hapticContext = LocalContext.current
+                val hapticPreview = remember(hapticContext) { PlayHaptics(hapticContext) }
                 OptionSwitchCell(
                     label = strings.playHaptic,
                     checked = options.isPlayHapticEnabled,
                     modifier = Modifier.weight(1f),
                     onCheckedChange = { enabled ->
-                        if (enabled) hapticPreview.performPlayHaptic()
+                        if (enabled) hapticPreview.play()
                         onOptionsChange(options.copy(isPlayHapticEnabled = enabled))
                     },
                 )

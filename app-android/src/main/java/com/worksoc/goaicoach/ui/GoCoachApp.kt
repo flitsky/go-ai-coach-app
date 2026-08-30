@@ -116,6 +116,7 @@ import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizat
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkUiState
 import com.worksoc.goaicoach.application.savedgame.SavedSessionUiState
 import kotlinx.coroutines.CoroutineScope
+import com.worksoc.goaicoach.shared.EngineMode
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.PlayLevelSetting
@@ -131,13 +132,15 @@ internal fun GoCoachApp(
     engineName: String,
     engineDiagnostic: String,
     diagnosticEventLog: DiagnosticEventLogPort,
+    /** 실제로 부팅된 백엔드. 리포트의 `engineProfile`이 진실을 말하려면 필요하다(EngineModels.kt 참고). */
+    engineMode: EngineMode,
 ) {
     MaterialTheme(
         colorScheme = AppLightColorScheme,
     ) {
         ProvideUiLanguage { selectedLanguage, onLanguageChange ->
             Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                GoCoachScreen(engineClient, engineName, engineDiagnostic, diagnosticEventLog, selectedLanguage, onLanguageChange)
+                GoCoachScreen(engineClient, engineName, engineDiagnostic, diagnosticEventLog, selectedLanguage, onLanguageChange, engineMode)
             }
         }
     }
@@ -151,6 +154,7 @@ private fun GoCoachScreen(
     diagnosticEventLog: DiagnosticEventLogPort,
     selectedLanguage: UiLanguage,
     onLanguageChange: (UiLanguage) -> Unit,
+    engineMode: EngineMode,
 ) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -192,7 +196,7 @@ private fun GoCoachScreen(
         buildInitialUserPreferencesPlan(
             preferences = initialPreferences,
             defaultPlayLevel = defaultPlayLevel,
-            currentProfile = EngineProfile(),
+            currentProfile = EngineProfile(mode = engineMode, name = engineName),
         )
     }
     val sessionHolder = remember {
@@ -483,6 +487,7 @@ private fun GoCoachScreen(
         uxOptions
     ) {
         object : GoCoachAppWiringContext {
+            override val androidContext: android.content.Context = context.applicationContext
             override val scope: CoroutineScope = scope
             override val engineClient: EngineSessionClient = engineClient
             override val diagnosticEventLog: DiagnosticEventLogPort = diagnosticEventLog

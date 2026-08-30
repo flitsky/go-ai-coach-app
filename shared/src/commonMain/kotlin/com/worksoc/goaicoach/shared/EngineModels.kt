@@ -107,14 +107,28 @@ interface EngineCoreApi {
  */
 interface EngineAdapter : EngineCoreApi
 
+/**
+ * ⚠️ **기본값이 [EngineMode.Stub]이면 안 된다.** 예전에는 그랬는데, 실제 백엔드를 채워 넣지
+ * 못한 프로필이 디버그 리포트에 `stub/Stub/Beginner`로 찍혀 **"이 빌드는 스텁 엔진이다"라는
+ * 오독**을 낳았다(2026-08-30). 진짜 KataGo가 돌고 있는데도 그렇게 보였다.
+ *
+ * 그래서 기본값을 [EngineMode.Unknown]으로 두어, 채워지지 않은 프로필이 **스텁을 사칭하는
+ * 대신 "아직 모른다"고 말하게** 했다. 스텁을 뜻하려면 [EngineMode.Stub]을 명시할 것.
+ */
 data class EngineProfile(
-    val mode: EngineMode = EngineMode.Stub,
+    val mode: EngineMode = EngineMode.Unknown,
     val difficulty: DifficultyProfile = DifficultyProfile.Beginner,
     val analysisLimit: AnalysisLimit = difficulty.defaultAnalysisLimit(),
-    val name: String = "stub",
+    val name: String = "unknown",
 )
 
 enum class EngineMode {
+    /**
+     * 아직 실제 백엔드가 정해지지 않았다는 표시 — **엔진의 종류가 아니다.**
+     * 리포트에 이 값이 보이면 "백엔드를 못 알아냈다"가 아니라 "이 프로필에 백엔드를 안 넣었다"는
+     * 뜻이므로, 채워 넣는 배선을 찾아야 한다.
+     */
+    Unknown,
     Stub,
     LocalProcess,
     JniNative,

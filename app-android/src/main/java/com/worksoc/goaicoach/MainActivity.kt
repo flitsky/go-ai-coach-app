@@ -101,6 +101,7 @@ class MainActivity : ComponentActivity() {
                         bootstrap.displayName
                     },
                     engineDiagnostic = bootstrap.diagnostic,
+                    engineMode = bootstrap.mode,
                     diagnosticEventLog = diagnosticEventLog,
                 )
             }

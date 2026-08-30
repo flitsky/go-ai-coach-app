@@ -42,7 +42,7 @@ import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntSize
@@ -126,7 +126,8 @@ internal fun GoBoard(
         label = "lastMovePulse"
     )
 
-    val haptics = LocalHapticFeedback.current
+    val hapticContext = LocalContext.current
+    val haptics = remember(hapticContext) { PlayHaptics(hapticContext) }
 
     BoxWithConstraints(
         modifier = modifier,
@@ -168,7 +169,7 @@ internal fun GoBoard(
                                 if (inputEnabled && uxOptions.isPlayHapticEnabled &&
                                     coordinateFromTap(offset, canvasSize, gameState.boardSize, uxOptions.showCoordinates) != null
                                 ) {
-                                    haptics.performPlayHaptic()
+                                    haptics.play()
                                 }
                             },
                             onTap = { offset ->

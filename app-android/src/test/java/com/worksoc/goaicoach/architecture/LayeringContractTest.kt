@@ -1450,7 +1450,13 @@ class LayeringContractTest {
         // value, one home-card callback, one routing branch. Same shape as the Study destination that
         // bumped 849->858 in 2026-08-12; the screen body lives in MyPageScreen.kt, not here.
         // No new remember/mutableStateOf/LaunchedEffect — stateHookBudget stays 46.
-        val lineBudget = 861
+        // History (2026-08-30): 861->865 (net +4 after #34 removed 2). 실제 부팅된
+        // 백엔드(EngineMode)를 GoCoachApp -> GoCoachScreen -> 초기 EngineProfile까지
+        // 흘려보내는 순수 파라미터 배선이다. 이전에는 여기서 맨 `EngineProfile()`을 넘겨
+        // 디버그 리포트의 engineProfile이 영원히 데이터 클래스 기본값을 찍었고, 진짜
+        // KataGo가 도는 빌드가 `stub/Stub/Beginner`로 보여 스텁 엔진으로 오독됐다.
+        // 새 상태 훅은 없다 — stateHookBudget은 46 그대로.
+        val lineBudget = 865
         val stateHookBudget = 46
 
         val goCoachApp = repoRoot()
