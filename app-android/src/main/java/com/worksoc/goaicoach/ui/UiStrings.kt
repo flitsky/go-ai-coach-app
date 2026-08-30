@@ -315,11 +315,21 @@ internal data class UiStrings(
         }
 
     /**
+     * 캐릭터의 표시 이름. 문구 표와 그 번역 근거는 `UiStringsBotCharacters.kt`에 있다(백로그 #32) —
+     * 도메인([BotCharacter])은 더 이상 사람이 읽는 이름을 갖지 않는다.
+     */
+    fun botCharacterName(character: BotCharacter): String = botCharacterNameFor(language, character.id)
+
+    /** 캐릭터 픽커에 붙는 한 줄 소개. */
+    fun botCharacterDescription(character: BotCharacter): String =
+        botCharacterDescriptionFor(language, character.id)
+
+    /**
      * 캐릭터 픽커의 한 줄 라벨 — **이름 옆에 티어명을 병기**한다(백로그 #9 확정). 이름만으로는
      * 어느 쪽이 센지 모호해서, 캐릭터 선택이 곧 난이도 선택이라는 것이 드러나지 않는다.
      */
     fun botCharacterLabel(character: BotCharacter): String =
-        "${character.name} (${fastBeginnerTierLabel(character.tierWithinGroup ?: 1)})"
+        "${botCharacterName(character)} (${fastBeginnerTierLabel(character.tierWithinGroup ?: 1)})"
 
     /**
      * 잠긴 캐릭터의 **획득 방법** 안내. 경로가 셋으로 갈리므로(출석/광고 조각/유료) 각각을
@@ -446,10 +456,10 @@ internal data class UiStrings(
     /** 캐릭터를 구매해 영구 획득했을 때(#18). 특전까지 함께 알려 무엇을 샀는지 분명히 한다. */
     fun botPurchasedToast(character: BotCharacter): String =
         when (language) {
-            UiLanguage.Korean -> "${character.name} 획득! 이 상대와 둘 땐 형세 보기·추천 수를 무제한으로 쓸 수 있어요."
-            UiLanguage.English -> "${character.name} unlocked! Eval and top moves are unlimited against this opponent."
-            UiLanguage.Japanese -> "${character.name} を獲得！この相手との対局では形勢・推奨手が無制限です。"
-            UiLanguage.ChineseSimplified -> "已获得${character.name}！与该对手对局时形势判断和推荐手可无限使用。"
+            UiLanguage.Korean -> "${botCharacterName(character)} 획득! 이 상대와 둘 땐 형세 보기·추천 수를 무제한으로 쓸 수 있어요."
+            UiLanguage.English -> "${botCharacterName(character)} unlocked! Eval and top moves are unlimited against this opponent."
+            UiLanguage.Japanese -> "${botCharacterName(character)} を獲得！この相手との対局では形勢・推奨手が無制限です。"
+            UiLanguage.ChineseSimplified -> "已获得${botCharacterName(character)}！与该对手对局时形势判断和推荐手可无限使用。"
         }
 
     /**
@@ -490,10 +500,10 @@ internal data class UiStrings(
      */
     fun botLevelClampedMessage(from: BotCharacter, to: BotCharacter): String =
         when (language) {
-            UiLanguage.Korean -> "아직 획득하지 않은 상대라 바꿨어요: ${from.name} → ${to.name}"
-            UiLanguage.English -> "Switched opponent: ${from.name} → ${to.name} (not unlocked yet)"
-            UiLanguage.Japanese -> "未獲得の相手なので変更しました: ${from.name} → ${to.name}"
-            UiLanguage.ChineseSimplified -> "该对手尚未解锁，已切换：${from.name} → ${to.name}"
+            UiLanguage.Korean -> "아직 획득하지 않은 상대라 바꿨어요: ${botCharacterName(from)} → ${botCharacterName(to)}"
+            UiLanguage.English -> "Switched opponent: ${botCharacterName(from)} → ${botCharacterName(to)} (not unlocked yet)"
+            UiLanguage.Japanese -> "未獲得の相手なので変更しました: ${botCharacterName(from)} → ${botCharacterName(to)}"
+            UiLanguage.ChineseSimplified -> "该对手尚未解锁，已切换：${botCharacterName(from)} → ${botCharacterName(to)}"
         }
 
     /**
@@ -525,19 +535,19 @@ internal data class UiStrings(
     /** 조각 1개를 적립했을 때(아직 획득 전). */
     fun botShardEarnedToast(character: BotCharacter, shards: Int, required: Int): String =
         when (language) {
-            UiLanguage.Korean -> "${character.name} 조각 $shards/$required"
-            UiLanguage.English -> "${character.name} $shards/$required"
-            UiLanguage.Japanese -> "${character.name} かけら $shards/$required"
-            UiLanguage.ChineseSimplified -> "${character.name} 碎片 $shards/$required"
+            UiLanguage.Korean -> "${botCharacterName(character)} 조각 $shards/$required"
+            UiLanguage.English -> "${botCharacterName(character)} $shards/$required"
+            UiLanguage.Japanese -> "${botCharacterName(character)} かけら $shards/$required"
+            UiLanguage.ChineseSimplified -> "${botCharacterName(character)} 碎片 $shards/$required"
         }
 
     /** 조각을 다 모아 캐릭터를 얻었을 때. */
     fun botUnlockedToast(character: BotCharacter): String =
         when (language) {
-            UiLanguage.Korean -> "${character.name}을(를) 얻었어요!"
-            UiLanguage.English -> "${character.name} unlocked!"
-            UiLanguage.Japanese -> "${character.name}を獲得しました！"
-            UiLanguage.ChineseSimplified -> "已获得${character.name}！"
+            UiLanguage.Korean -> "${botCharacterName(character)}을(를) 얻었어요!"
+            UiLanguage.English -> "${botCharacterName(character)} unlocked!"
+            UiLanguage.Japanese -> "${botCharacterName(character)}を獲得しました！"
+            UiLanguage.ChineseSimplified -> "已获得${botCharacterName(character)}！"
         }
 
     /**
@@ -579,11 +589,13 @@ internal data class UiStrings(
             is AttendanceReward.PermanentFeature -> permanentFeatureRewardLabel(reward.featureId)
             is AttendanceReward.Consumable ->
                 consumableRewardName(reward.item) + " " + consumableRewardAmount(reward.amount)
-            // 캐릭터 이름/티어명은 한국어 리터럴 하나뿐이다(백로그 #9 확정) — 다른 언어에서도 그대로
-            // 보여주고, 접두어만 언어에 맞춘다. 레벨 라벨 전체의 다국어화는 별도 일감이다.
+            // ⚠️ 여기는 한국어가 **두 갈래로** 새던 자리다(백로그 #32). 이름은 도메인 리터럴이었고,
+            // 티어명은 도메인의 `PlayLevelSetting.tierLabel`(한국어 전용)을 그대로 썼다 —
+            // `fastBeginnerTierLabel`이 이미 4개 언어를 갖고 있는데도 그쪽을 부르지 않았다.
+            // 도메인 라벨을 UI에 직접 쓰는 곳은 이제 앱 전체에서 없다.
             is AttendanceReward.BotCharacterUnlock -> {
-                val tier = reward.character.toPlayLevelSetting()?.tierLabel
-                val name = reward.character.name + if (tier != null) " ($tier)" else ""
+                val tier = reward.character.tierWithinGroup?.let { fastBeginnerTierLabel(it) }
+                val name = botCharacterName(reward.character) + if (tier != null) " ($tier)" else ""
                 when (language) {
                     UiLanguage.Korean -> "새 캐릭터 · $name"
                     UiLanguage.English -> "New character · $name"
@@ -594,7 +606,7 @@ internal data class UiStrings(
             // 획득이 아니라 진행도라는 것이 드러나야 한다 — "새 캐릭터"로 적으면 지금 쓸 수 있는
             // 줄 알고 픽커에 갔다가 여전히 잠겨 있는 것을 보게 된다.
             is AttendanceReward.BotCharacterShards -> {
-                val name = reward.character.name
+                val name = botCharacterName(reward.character)
                 when (language) {
                     UiLanguage.Korean -> "$name 조각 ${reward.amount}개"
                     UiLanguage.English -> "$name shards ×${reward.amount}"

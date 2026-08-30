@@ -138,18 +138,8 @@ class UiStringsTest {
                 field.isAccessible = true
                 (field.get(strings) as? String)?.let { field.name to it }
             }
-            .filter { (_, value) -> value.any { it in HangulRanges } }
+            .filter { (_, value) -> value.containsHangul() }
 
-    private companion object {
-        /**
-         * 완성형 음절뿐 아니라 **자모 영역까지** 본다. 지금 값에는 자모만 있는 문자열이 없지만,
-         * 의도가 "한글 잔재가 하나라도 있으면"이므로 범위를 좁히면 그물에 구멍이 생긴다.
-         */
-        val HangulRanges = CharRange('\uAC00', '\uD7A3') +   // 완성형 음절
-            CharRange('\u1100', '\u11FF') +                  // 자모
-            CharRange('\u3130', '\u318F') +                  // 호환 자모
-            CharRange('\uA960', '\uA97F') +                  // 자모 확장-A
-            CharRange('\uD7B0', '\uD7FF') +                  // 자모 확장-B
-            CharRange('\uFFA0', '\uFFDC')                    // 반각 자모
-    }
+    // 한글 판정 기준은 `HangulDetection.kt`가 단독으로 갖는다 — #32가 함수 반환값을 훑는 두 번째
+    // 그물(`UiStringsBotCharacterTest`)을 추가하면서, 두 그물이 서로 다른 기준을 갖지 않게 뺐다.
 }

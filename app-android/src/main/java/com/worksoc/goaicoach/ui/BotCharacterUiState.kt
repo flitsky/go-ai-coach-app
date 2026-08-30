@@ -242,7 +242,7 @@ private fun BotCharacterRow(
             },
         )
         Text(
-            text = character.description,
+            text = strings.botCharacterDescription(character),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

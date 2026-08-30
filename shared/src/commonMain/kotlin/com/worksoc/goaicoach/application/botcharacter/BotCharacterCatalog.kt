@@ -13,11 +13,15 @@ import com.worksoc.goaicoach.shared.PlayLevelSetting
  *
  * 캐릭터 이름/설명은 "바둑 도장" 콘셉트로 확정됐다(백로그 #9, 2026-08-24) — 입문생에서 관장까지
  * 이름 자체가 서열이라, 출석으로 한 명씩 열리는 획득 순서(약한 상대 → 강한 상대)가 그대로 드러난다.
- * 이 이름만으로는 어느 쪽이 센지 모호하지 않도록, 픽커는 [PlayLevelSetting.tierLabel]("초보"/"하수"/...)을
- * 함께 병기한다(#10 몫). 아바타는 아직 플레이스홀더다([BotCharacter.avatarRef]가 전부 `null`).
+ * 이 이름만으로는 어느 쪽이 센지 모호하지 않도록, 픽커는 티어명("초보"/"하수"/...)을 함께
+ * 병기한다(#10 몫). 아바타는 아직 플레이스홀더다([BotCharacter.avatarRef]가 전부 `null`).
  *
- * ⚠️ 이름/설명은 콘텐츠라 자유롭게 고쳐도 되지만 [BotCharacterId]와 티어 매핑은 저장 스키마의
- * 일부이므로 건드리지 않는다.
+ * ⚠️ **그 이름과 설명은 이 파일에 없다**(백로그 #32) — 네 언어 표가 UI 계층의
+ * `ui/UiStringsBotCharacters.kt`에 있다. 여기 한국어 리터럴로 두었더니 다른 언어 화면에도 한글이
+ * 그대로 나갔다. 이 카탈로그는 **id와 획득 경로**만 정한다.
+ *
+ * ⚠️ [BotCharacterId]와 티어 매핑은 저장 스키마의 일부이므로 건드리지 않는다. 그 id는 위 문구
+ * 표의 키이기도 해서, 바꾸면 이름이 통째로 id 문자열로 보인다.
  */
 object BotCharacterCatalog {
 
@@ -39,36 +43,26 @@ object BotCharacterCatalog {
         // 1단계 — 기본 제공. 설치 즉시 잠금 없이 쓸 수 있는 유일한 캐릭터다.
         fastBeginnerCharacter(
             tier = 1,
-            name = "첫돌이",
-            description = "입문자와 두려고 일부러 자주 실수하는 상대예요.",
             unlockSource = BotUnlockSource.Default,
         ),
         // 2단계 — 광고 5회 조각 누적(#11).
         fastBeginnerCharacter(
             tier = 2,
-            name = "연습생 돌뫼",
-            description = "기본기를 익히는 중. 절반쯤은 제대로 둡니다.",
             unlockSource = BotUnlockSource.AdShards(required = 5),
         ),
         // 3단계 — 출석 4일차 보상. 무료 사용자가 얻는 두 번째 캐릭터다(5단계도 28일차 출석이다).
         fastBeginnerCharacter(
             tier = 3,
-            name = "도장생 반상",
-            description = "웬만한 수는 받아칩니다. 방심하면 한 방 먹어요.",
             unlockSource = BotUnlockSource.Attendance(tier = 4),
         ),
         // 4단계 — 광고 10회 조각 누적(#11).
         fastBeginnerCharacter(
             tier = 4,
-            name = "사범 묘수",
-            description = "수를 읽고 빈틈을 파고듭니다. 실수는 놓치지 않아요.",
             unlockSource = BotUnlockSource.AdShards(required = 10),
         ),
         // 5단계 — 개별 구매 전용(#18). 광고로도 출석으로도 열리지 않는다.
         fastBeginnerCharacter(
             tier = 5,
-            name = "관장 천원",
-            description = "도장 최강. 언제나 최선의 수만 둡니다.",
             unlockSource = BotUnlockSource.Attendance(tier = TopCharacterAttendanceTier),
         ),
     )
@@ -137,14 +131,10 @@ const val TopCharacterAttendanceTier: Int = 28
 /** `FastBeginner` 캐릭터 한 종을 만든다. */
 private fun fastBeginnerCharacter(
     tier: Int,
-    name: String,
-    description: String,
     unlockSource: BotUnlockSource,
 ): BotCharacter =
     BotCharacter(
         id = BotCharacterId("fast_beginner_$tier"),
-        name = name,
-        description = description,
         avatarRef = null,
         linkedPlayLevel = PlayLevelGroup.FastBeginner,
         tierWithinGroup = tier,

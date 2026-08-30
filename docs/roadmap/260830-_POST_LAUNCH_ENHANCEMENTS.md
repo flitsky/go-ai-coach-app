@@ -199,7 +199,55 @@
 
 ## 진행 중
 
-없음.
+32. 봇 캐릭터의 **이름·설명이 한국어 하드코딩**이라 모든 외국어 사용자가 한글을 본다 (AI 모델: Opus, 노력정도: 중간) [진행중]
+    - #31 작업 중 발견(2026-08-30). #31이 `UiStrings`의 `copy()` 누락이었다면 이건 **도메인 데이터**가 애초에 한 언어뿐인 경우다.
+    - `shared/.../botcharacter/BotCharacterCatalog.kt`의 캐릭터 5종이 `name`·`description`을 한국어 리터럴로 갖는다(`첫돌이`, `연습생 돌뫼`, `도장생 반상`, `사범 묘수`, `관장 천원` + 설명 5줄). `UiStrings`가 이 값을 4개 언어 문장에 그대로 끼워 넣으므로(`botCharacterLabel`, `botShardProgressLabel`, `botPurchasedToast`, 출석 보상 목록 등 8곳 이상) **영어 사용자도 한글 이름을 본다.** 실기 확인: 일본어 대국 설정에서 `관장 천원 (達人)`.
+    - ⚠️ **번역을 `BotCharacterCatalog`에 넣지 마라 — 계층 위반이다.** 그 파일은 `shared`의 도메인이고 `UiLanguage`는 `app-android`의 UI 개념이다. `UiStrings` 쪽에 `botCharacterName(id)` / `botCharacterDescription(id)` 조회를 두고, 도메인의 `name`은 **디버그·로그용 식별자로 격하**하는 편이 맞는지부터 따져라.
+    - ⚠️ #31이 넣은 회귀 그물은 이걸 **못 잡는다.** 한글이 `UiStrings` 필드가 아니라 도메인 데이터에서 흘러들기 때문이다. 고칠 때 그물을 어디까지 넓힐지 함께 정할 것.
+    - 분량: 5종 × (이름 + 설명) × 3개 언어 = 30개 문자열. 캐릭터 이름은 말맛이 있는 고유명사라 **기계적 번역으로는 안 되고**(`첫돌이`, `사범 묘수`) 언어별로 새로 지어야 한다.
+
+### 구현 결과 (2026-08-30, 승인 대기)
+
+**도메인에서 표시 문구를 걷어냈다.** `BotCharacter`의 `name`·`description`을 **제거**하고,
+네 언어 표를 UI 계층의 `ui/UiStringsBotCharacters.kt`로 옮겼다. 문서가 제안한 "도메인 name을
+디버그용으로 격하"보다 한 걸음 더 갔는데, 격하만 하면 **같은 사실이 두 곳에 남아** 한쪽만
+고쳐지는 위험이 그대로다 — 카탈로그 자신이 다른 대목에서 경계하던 바로 그 상황이다. 지금
+도메인은 `BotCharacterId`와 획득 경로만 갖고, 그 id가 문구 표의 키다.
+
+**고친 호출부는 아홉 곳이다**(`UiStrings.kt` 여덟 + `BotCharacterUiState.kt` 하나).
+⚠️ 처음 조사에서 `character.name` 패턴만 찾아 **`botLevelClampedMessage`의 `from.name`/`to.name`을
+놓쳤다** — 컴파일러가 잡았다. grep 패턴에 기대지 말고 필드를 지운 뒤 컴파일에 물어보는 편이 확실하다.
+
+**출석 보상 목록에서는 한국어가 두 갈래로 새고 있었다.** 이름 말고 **티어명**도 도메인의
+`PlayLevelSetting.tierLabel`(한국어 전용)을 그대로 쓰고 있었다 — `fastBeginnerTierLabel`이 이미
+네 언어를 갖고 있는데 그쪽을 부르지 않았다. 그 한 줄을 고치면서 **도메인 레벨 라벨을 UI에
+직접 쓰는 곳이 앱 전체에서 사라졌다**(확인: `tierLabel|displayLabel` grep 결과 0건).
+
+**번역 방침**: 한국어 이름은 *직함 + 바둑 용어*다(도장생 `반상`, 사범 `묘수`, 관장 `천원`).
+음역하면 말맛이 사라지므로 언어마다 다시 지었고, 직함이 서열을 드러내고 이름이 그 언어권에서
+실제 쓰는 바둑 용어일 것 두 가지를 지켰다. 일·중은 한자어가 거의 그대로 대응하고(妙手/天元/盤面),
+영어는 바둑 어휘를 골랐다 — `Tesuji`·`Tengen`·`Goban`, 그리고 `돌뫼`(돌무더기)는 돌을 쌓은
+표식을 뜻하는 `Cairn`으로 옮겨 원뜻이 살아 있다.
+
+**회귀 그물을 어디까지 넓혔나**(이 항목이 착수 전에 정하라고 한 것):
+- #31의 그물은 `UiStrings`의 String **필드**를 리플렉션으로 훑는데, 새 문구는 **함수**로 나와
+  시야에 안 들어온다. 그래서 `UiStringsBotCharacterTest`를 따로 세웠다 — 카탈로그 전 종 × 전 언어를
+  훑어 ⓐ 표에 빠진 항목(=화면에 id가 그대로 뜨는 경우), ⓑ 비한국어에 남은 한글을 잡는다.
+- 두 그물이 "한글"의 정의를 각자 갖지 않도록 판정기를 `test/.../HangulDetection.kt`로 빼서 공유한다.
+- "한글만 아니면 통과"는 일본어 자리에 영어를 박아도 지나가므로, 이 항목을 발행하게 만든 그 줄
+  (`관장 천원 (達人)`)과 1·5단계 이름은 네 언어 값까지 못 박았다.
+
+**검증**: 단위 테스트 244건 통과(신설 5건), `:shared:compileKotlinIosSimulatorArm64` 통과.
+실기(에뮬레이터)에서 일본어 픽커가 `館長 天元 (達人)`으로, 영어가 `Tengen the Master (Master)`로
+나오고 **두 화면 모두 한글이 한 글자도 남지 않은 것**을 UI 덤프로 확인했다.
+
+⚠️ **스토어 스크린샷은 한국어 세트라 영향이 없다** — 재캡처·재빌드가 필요 없다.
+
+**산출물**: (shared) `application/botcharacter/BotCharacter.kt`(필드 제거),
+`BotCharacterCatalog.kt`(문구 인자 제거). (app-android) `ui/UiStringsBotCharacters.kt` 신규,
+`ui/UiStrings.kt`(조회 두 개 + 호출부 여덟), `ui/BotCharacterUiState.kt`.
+테스트: `ui/UiStringsBotCharacterTest.kt`·`ui/HangulDetection.kt` 신규,
+`ui/UiStringsTest.kt`(판정기 공유), `commonTest`의 봇/출석 테스트 3개(단언을 id 기준으로 전환).
 
 ## 예정사항
 
@@ -243,13 +291,6 @@
     - 산출물(승인 대기): (shared) `application/botcharacter/BotCharacterPerk.kt` 신규, `application/premium/FeatureAccessPolicy.kt`(`CharacterPerk`·`characterPerkActive`), `application/consumable/ConsumableSpendApplication.kt`(특전 반영). (app-android) `build.gradle.kts`·`ui/FeatureFlags.kt`·`ui/PremiumPurchaseGlue.kt`·`ui/PremiumUiState.kt`·`ui/BotCharacterUiState.kt`·`ui/PlayerSetupPanel.kt`·`ui/UiStrings.kt`·`ui/GoCoachApp.kt`. 테스트 9건 신설, `LayeringContractTest` 라인 예산 851→856(사유는 그 주석에).
     - ⚠️ **프리미엄 월 구독 전환과 혼동하지 말 것** — 그건 이 백로그 밖(`premium-mode` 트랙)이고, 이 항목은 캐릭터 1종을 파는 별개 상품이다.
     - **구매 특전도 이 항목의 몫이다(2026-08-29 추가)**: 구매자는 **그 캐릭터와 두는 동안** 형세 보기·추천 수를 무제한 쓴다. ⚠️ 지금의 `FeatureAccessPolicy`는 전역 판정이라 이걸 표현할 수 없다 — 착수 전 정해야 할 세 가지가 `feature-access-principles/README.md` 8.3절에 있다.
-
-32. 봇 캐릭터의 **이름·설명이 한국어 하드코딩**이라 모든 외국어 사용자가 한글을 본다 (AI 모델: Opus, 노력정도: 중간)
-    - #31 작업 중 발견(2026-08-30). #31이 `UiStrings`의 `copy()` 누락이었다면 이건 **도메인 데이터**가 애초에 한 언어뿐인 경우다.
-    - `shared/.../botcharacter/BotCharacterCatalog.kt`의 캐릭터 5종이 `name`·`description`을 한국어 리터럴로 갖는다(`첫돌이`, `연습생 돌뫼`, `도장생 반상`, `사범 묘수`, `관장 천원` + 설명 5줄). `UiStrings`가 이 값을 4개 언어 문장에 그대로 끼워 넣으므로(`botCharacterLabel`, `botShardProgressLabel`, `botPurchasedToast`, 출석 보상 목록 등 8곳 이상) **영어 사용자도 한글 이름을 본다.** 실기 확인: 일본어 대국 설정에서 `관장 천원 (達人)`.
-    - ⚠️ **번역을 `BotCharacterCatalog`에 넣지 마라 — 계층 위반이다.** 그 파일은 `shared`의 도메인이고 `UiLanguage`는 `app-android`의 UI 개념이다. `UiStrings` 쪽에 `botCharacterName(id)` / `botCharacterDescription(id)` 조회를 두고, 도메인의 `name`은 **디버그·로그용 식별자로 격하**하는 편이 맞는지부터 따져라.
-    - ⚠️ #31이 넣은 회귀 그물은 이걸 **못 잡는다.** 한글이 `UiStrings` 필드가 아니라 도메인 데이터에서 흘러들기 때문이다. 고칠 때 그물을 어디까지 넓힐지 함께 정할 것.
-    - 분량: 5종 × (이름 + 설명) × 3개 언어 = 30개 문자열. 캐릭터 이름은 말맛이 있는 고유명사라 **기계적 번역으로는 안 되고**(`첫돌이`, `사범 묘수`) 언어별로 새로 지어야 한다.
 
 33. 학습 화면의 강좌 소개 3줄이 한국어 하드코딩 (AI 모델: Sonnet, 노력정도: 낮음)
     - #31 작업 중 발견(2026-08-30). `ui/StudyScreen.kt:59,64,69`의 `studyVideoEntries[].description`이 `UiStrings`를 거치지 않는다.

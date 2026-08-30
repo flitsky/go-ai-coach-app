@@ -131,15 +131,24 @@ class BotCharacterCatalogTest {
     }
 
     @Test
-    fun rosterCarriesConfirmedNamesAndDescriptions() {
-        // 백로그 #9에서 사용자가 확정한 "바둑 도장" 콘셉트 — 플레이스홀더로 되돌아가지 않게 고정한다.
+    fun rosterCarriesTheConfirmedIdsInTierOrder() {
+        // id는 저장 스키마이자 UI 문구 표의 키다 — 바꾸면 수집 기록이 유실되고 이름이 통째로
+        // id 문자열로 보인다. 순서도 함께 고정한다(티어 오름차순).
         assertEquals(
-            listOf("첫돌이", "연습생 돌뫼", "도장생 반상", "사범 묘수", "관장 천원"),
-            BotCharacterCatalog.fastBeginnerRoster.map { it.name },
+            listOf(
+                "fast_beginner_1",
+                "fast_beginner_2",
+                "fast_beginner_3",
+                "fast_beginner_4",
+                "fast_beginner_5",
+            ),
+            BotCharacterCatalog.fastBeginnerRoster.map { it.id.raw },
         )
-        assertTrue(BotCharacterCatalog.all.all { it.description.isNotBlank() })
         // 아바타는 아직 플레이스홀더 단계라 전부 비어 있다.
         assertTrue(BotCharacterCatalog.all.all { it.avatarRef == null })
+        // ⚠️ 이름·설명은 여기서 검증하지 않는다(백로그 #32) — 도메인이 더 이상 갖고 있지 않다.
+        // "바둑 도장" 콘셉트가 플레이스홀더로 되돌아가지 않는지는 UI 계층의
+        // `app-android/.../ui/UiStringsBotCharacterTest.kt`가 네 언어 전부에 대해 지킨다.
     }
 
     @Test
@@ -168,8 +177,6 @@ class BotCollectionStateTest {
 
     private val adBot = BotCharacter(
         id = BotCharacterId("ad_bot"),
-        name = "광고 봇",
-        description = "광고 시청으로 획득",
         linkedPlayLevel = PlayLevelGroup.FastBeginner,
         tierWithinGroup = 3,
         unlockSource = BotUnlockSource.AdShards(required = 5),
@@ -263,7 +270,7 @@ class BotCollectionStateTest {
 
         // 호출부가 실수로 불러도 상태가 오염되지 않아야 한다.
         listOf(default, attendance, purchase).forEach { character ->
-            assertSame(empty, empty.withAdShard(character), character.name)
+            assertSame(empty, empty.withAdShard(character), character.id.raw)
         }
     }
 

@@ -27,8 +27,6 @@ import kotlin.test.assertTrue
  */
 private val purchasable: BotCharacter = BotCharacter(
     id = BotCharacterId("test_purchasable"),
-    name = "테스트 유료 캐릭터",
-    description = "특전 규칙 검증용",
     linkedPlayLevel = PlayLevelGroup.FastBeginner,
     tierWithinGroup = 5,
     unlockSource = BotUnlockSource.Purchase,

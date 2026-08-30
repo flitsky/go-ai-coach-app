@@ -152,7 +152,7 @@ class AttendanceRewardPolicyTest {
         )
         // 조각 경로 캐릭터가 누구인지도 함께 고정한다 — 카탈로그에서 파생시켰기 때문에 위 단언만
         // 두면 캐릭터를 늘리거나 줄여도 통과해 버린다.
-        assertEquals(listOf("연습생 돌뫼", "사범 묘수"), shardCharacters.map { it.name })
+        assertEquals(listOf("fast_beginner_2", "fast_beginner_4"), shardCharacters.map { it.id.raw })
     }
 
     @Test
@@ -174,7 +174,7 @@ class AttendanceRewardPolicyTest {
             )
         }
 
-        assertTrue(botStore.stored.isClaimed(target.id), "${target.name} must unlock without any ad")
+        assertTrue(botStore.stored.isClaimed(target.id), "${target.id.raw} must unlock without any ad")
     }
 
     @Test

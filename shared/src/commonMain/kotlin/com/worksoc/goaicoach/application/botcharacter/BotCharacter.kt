@@ -6,8 +6,8 @@ import com.worksoc.goaicoach.shared.PlayLevelSetting
 /**
  * 봇 캐릭터의 영구 식별자. 저장소(`persistence/BotCollectionStore.kt`)에 그대로 문자열로
  * 기록되므로 **한 번 정한 [raw] 값은 바꾸지 않는다** — 값을 바꾸면 이미 수집한 사용자의
- * 컬렉션이 통째로 유실된다. 표시 이름([BotCharacter.name])은 콘텐츠라 자유롭게 바꿔도 되지만
- * 이 id는 스키마의 일부다.
+ * 컬렉션이 통째로 유실된다. 표시 이름은 콘텐츠라 자유롭게 바꿔도 되지만(그쪽은 UI 계층의
+ * `ui/UiStringsBotCharacters.kt`에 있다) 이 id는 **스키마의 일부**이며, 그 표의 키이기도 하다.
  */
 data class BotCharacterId(val raw: String)
 
@@ -67,11 +67,15 @@ sealed class BotUnlockSource {
  *
  * [tierWithinGroup]이 `null`이면 그룹 전체에 대응할 뿐 특정 단계에 묶이지 않는다는 뜻이다 —
  * Phase 1 카탈로그는 전부 특정 티어에 1:1로 묶이므로 실제로는 항상 값이 있다.
+ *
+ * ⚠️ **사람이 읽는 이름과 소개는 여기 없다**(백로그 #32). 예전에는 `name`·`description`을
+ * 한국어 리터럴로 들고 있었는데, `shared`는 [com.worksoc.goaicoach.shared.PlayLevelGroup]처럼
+ * 언어 개념이 없는 계층이라 그 값이 4개 언어 화면에 그대로 새어 나갔다. 지금은 UI 계층의
+ * `ui/UiStringsBotCharacters.kt`가 [id]를 키로 네 언어를 들고 있고, 이 타입은 **식별자와 획득
+ * 경로만** 갖는다. 표시용 문구를 다시 이 안에 넣지 말 것.
  */
 data class BotCharacter(
     val id: BotCharacterId,
-    val name: String,
-    val description: String,
     val avatarRef: String? = null,
     val linkedPlayLevel: PlayLevelGroup,
     val tierWithinGroup: Int?,
