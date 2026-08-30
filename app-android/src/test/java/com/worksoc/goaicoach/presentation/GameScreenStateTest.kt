@@ -170,6 +170,44 @@ class GameScreenStateTest {
     }
 
     @Test
+    fun coachingButtonsStayClosedUntilTheFirstMoveIsPlayed() {
+        // 백로그 #43: 빈 판의 형세는 덤만 반영된 자명한 값이고 추천 수는 정석 첫수라, 판단할
+        // 것이 없는데 1회권만 나갔다. 토글이 꺼진 상태로 확인해야 한다 — 켜져 있으면
+        // `coachingButtonEnabled`가 "끌 수는 있어야 한다"로 열어 주기 때문이다.
+        val empty = buildGameScreenState(
+            defaultInput(showOwnershipOverlay = false, topMovesEnabled = false),
+        ).actionButtons.associateBy { it.role }
+        assertFalse(requireNotNull(empty[GameActionButtonRole.Eval]).enabled)
+        assertFalse(requireNotNull(empty[GameActionButtonRole.TopMoves]).enabled)
+
+        // 한 수만 놓이면 형세는 곧바로 열린다. 추천 수는 여기서 여전히 닫혀 있는데, 그건 이
+        // 가드 때문이 아니라 **첫 수 뒤가 AI(백) 차례**여서다 — 좌석 조건은 별개이고
+        // `topMovesClosesOnTheAiTurnBecauseItsGateChecksTheSeat`가 따로 고정한다.
+        val afterFirstMove = buildGameScreenState(
+            defaultInput(
+                gameState = GameState.empty().play(
+                    Move.Play(
+                        StoneColor.Black,
+                        com.worksoc.goaicoach.shared.BoardCoordinate.fromLabel("E5", BoardSize.Nine),
+                    ),
+                ),
+                showOwnershipOverlay = false,
+                topMovesEnabled = false,
+            ),
+        ).actionButtons.associateBy { it.role }
+        assertTrue(requireNotNull(afterFirstMove[GameActionButtonRole.Eval]).enabled)
+    }
+
+    @Test
+    fun anAlreadyShownOverlayCanStillBeTurnedOffOnAnEmptyBoard() {
+        // #43의 가드를 `canRequest` 쪽에만 넣은 이유. 프리미엄 사용자가 형세를 켜 둔 채 새
+        // 대국을 시작하면 빈 판인데 표시가 켜져 있는데, 그때 버튼까지 잠그면 끄지 못하고 갇힌다.
+        val screenState = buildGameScreenState(defaultInput(showOwnershipOverlay = true))
+
+        assertTrue(screenState.actionButtons.first { it.role == GameActionButtonRole.Eval }.enabled)
+    }
+
+    @Test
     fun coachingButtonsCloseWhileTheEngineBlocks() {
         // AI가 생각하는 중에 분석을 요청해 봐야 지금 국면의 답이 아니다. 그런데도 표는 나간다.
         // 차단 여부와 무관하게 `isEngineBusy`면 잠근다 — 요청을 받아 주는 쪽
@@ -193,9 +231,17 @@ class GameScreenStateTest {
         // `shouldRequestTopMoveAnalysis`는 좌석까지 본다(`seatFor(nextPlayer).isHuman`). 형세 판단
         // 게이트는 좌석을 보지 않으므로 **두 버튼의 조건이 여기서 갈리는 것이 맞다** — 각자 자기
         // 게이트와 정확히 같아야 표가 새지 않는다.
+        // ⚠️ 빈 판을 쓰면 안 된다 — 백로그 #43이 수순 0수를 두 버튼 모두에 대해 막으므로
+        // 형세까지 닫혀 "좌석 때문에 갈린다"는 이 테스트의 요지가 흐려진다. 흑이 한 수 두면
+        // 자연스럽게 백(AI) 차례가 된다.
         val aiTurn = buildGameScreenState(
             defaultInput(
-                gameState = GameState.empty(nextPlayer = StoneColor.White),
+                gameState = GameState.empty().play(
+                    Move.Play(
+                        StoneColor.Black,
+                        com.worksoc.goaicoach.shared.BoardCoordinate.fromLabel("E5", BoardSize.Nine),
+                    ),
+                ),
                 topMovesEnabled = false,
                 showOwnershipOverlay = false,
             ),

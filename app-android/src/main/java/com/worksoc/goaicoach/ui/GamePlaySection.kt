@@ -362,6 +362,12 @@ private fun GameActionButtons(
     var showUndoClaimDialog by remember { mutableStateOf(false) }
     val consumables = LocalConsumableUiState.current
     val moveCount = screenState.gameState.moves.size
+
+    // 이 탭이 표를 쓰지 않는가 — 켜져 있어 끄는 탭이거나, 이 수순에 이미 값을 치렀거나(#44).
+    // 잠금 테두리 판단에도 같은 기준을 써야 한다. 껐다고 테두리가 돌아오면 "누르면 또
+    // 나간다"고 잘못 알리게 된다 — 실제로는 무료로 통과한다.
+    fun tapIsFree(featureId: FeatureId): Boolean =
+        consumables.isOneShotActive(featureId) || consumables.isPaidForMove(featureId, moveCount)
     // 버튼을 눌렀을 때 띄우는 토스트 하나. 잔량과 안내를 **한 토스트로 합친다** — 따로 띄우면
     // 안드로이드가 둘을 큐잉해 첫 사용 때 토스트가 연달아 두 번 뜬다(2026-08-29 실기 확인).
     // 안내("매 수마다 보려면 메뉴에서")는 대국 한 판에 한 번만 붙고, 수순이 리셋되면 다시 붙는다.
@@ -393,6 +399,14 @@ private fun GameActionButtons(
     ) {
         if (featureId != null && consumables.isOneShotActive(featureId)) {
             consumables.clearOneShot(featureId)
+            action()
+            return
+        }
+        // **같은 수순에서 껐다 다시 켜는 탭은 무료다**(백로그 #44, 2026-08-30). 표 한 장의 유효
+        // 범위는 한 수이므로, 그 수 안에서 몇 번을 껐다 켜든 값은 이미 치른 것이다. 예전에는
+        // 끄는 순간 지불 기록까지 지워져 세 번째 탭에서 한 장이 또 나갔다.
+        if (featureId != null && turningOn && consumables.isPaidForMove(featureId, moveCount)) {
+            consumables.markOneShot(featureId, moveCount)
             action()
             return
         }
@@ -537,7 +551,7 @@ private fun GameActionButtons(
                     ),
                     onEvent = { event -> featureGated(evalAccess, FeatureId.Eval, turningOn = !evalAction.isFilled) { onEvent(event) } },
                     modifier = Modifier.weight(1f),
-                    premiumLocked = evalAccess !is FeatureAccess.Allowed && !consumables.isOneShotActive(FeatureId.Eval),
+                    premiumLocked = evalAccess !is FeatureAccess.Allowed && !tapIsFree(FeatureId.Eval),
                 )
             }
 
@@ -554,7 +568,7 @@ private fun GameActionButtons(
                     ),
                     onEvent = { event -> featureGated(topMovesAccess, FeatureId.TopMoves, turningOn = !topMovesAction.isFilled) { onEvent(event) } },
                     modifier = Modifier.weight(1f),
-                    premiumLocked = topMovesAccess !is FeatureAccess.Allowed && !consumables.isOneShotActive(FeatureId.TopMoves),
+                    premiumLocked = topMovesAccess !is FeatureAccess.Allowed && !tapIsFree(FeatureId.TopMoves),
                 )
             }
         }

@@ -304,8 +304,15 @@ internal fun buildGameActionButtonStates(input: GameScreenStateInput): List<Game
      * 사람끼리 두는 대국([MatchMode.LocalTwoPlayer])은 엔진 없이도 형세를 볼 수 있어야 하므로
      * 그 예외는 남긴다 — 다만 대국이 끝난 뒤에는 마찬가지로 막는다. 종국 후에는 형세가 이미
      * 무료로 그려지므로(`GamePlaySection`) 그때 눌러 봐야 표만 닳는다.
+     *
+     * ⚠️ **아직 한 수도 두지 않은 판도 막는다**(백로그 #43, 2026-08-30 사용자 제보). 빈 판의
+     * 형세는 덤만 반영된 자명한 값이고 추천 수는 정석 첫수라, 판단할 것이 없는데 표만 나갔다.
+     * 이 조건이 접바둑까지 함께 덮는다 — 배석 돌은 [GameState.moves]에 들어가지 않으므로
+     * 수순 0수이고, 정해진 배석 그대로라 역시 볼 것이 없다. **되돌리려면 이 한 항만 빼면 된다.**
      */
-    val coachingGateOpen = !input.isGameEnded && !input.isEngineBusy
+    val coachingGateOpen = !input.isGameEnded &&
+        !input.isEngineBusy &&
+        input.gameState.moves.isNotEmpty()
 
     /**
      * 형세 판단은 사람 차례가 아니어도 요청할 수 있다 — `buildScoreEstimateRequestPlan`이 좌석을
