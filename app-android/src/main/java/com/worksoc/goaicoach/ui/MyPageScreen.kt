@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.HorizontalDivider
@@ -17,12 +19,17 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.worksoc.goaicoach.application.attendance.buildAttendanceBoard
 import com.worksoc.goaicoach.application.consumable.ConsumableCatalog
+import com.worksoc.goaicoach.persistence.AttendanceStore
+import com.worksoc.goaicoach.persistence.BotCollectionStore
 
 /**
  * 3 Depth: 마이 페이지 — 지금은 **보유한 1회권 재고**만 보여준다(백로그 #24).
@@ -80,9 +87,11 @@ internal fun MyPageScreen(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            AttendanceBoardSection()
             Text(
                 text = strings.myPageInventoryTitle,
                 fontWeight = FontWeight.SemiBold,
@@ -121,6 +130,52 @@ internal fun MyPageScreen(
             Text(
                 text = strings.myPageInventoryHint,
                 fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+/**
+ * 출석 도장판을 **읽기 전용**으로 보여준다(백로그 #56).
+ *
+ * #55가 만든 판은 Claim 팝업 안에만 있어서, 다 받고 나면 자기 진행도를 볼 길이 없었다.
+ * 여기서는 같은 판을 언제든 볼 수 있게 한다.
+ *
+ * ⚠️ **체크인을 하지 않는다.** 저장된 상태만 읽는다 — 출석 판정은 앱 시작 시 한 번
+ * (`AttendanceRewardClaimDialog`)이라는 구조를 건드리면 화면을 여는 것만으로 일차가 오르는
+ * 사고가 난다.
+ *
+ * ⚠️ **Claim 버튼을 두지 않는다.** 지급 경로가 둘이 되면 밀린 회차 계산이 갈린다 —
+ * 받을 것이 있으면 다음 실행에 팝업이 알아서 뜬다(킥오프 5.1절).
+ */
+@Composable
+private fun AttendanceBoardSection() {
+    val strings = LocalUiStrings.current
+    val context = LocalContext.current
+    // 화면을 여는 시점의 저장값 한 번이면 된다 — 이 화면에 있는 동안 출석이 바뀌지 않는다.
+    val board = remember(context) {
+        buildAttendanceBoard(AttendanceStore(context).load(), BotCollectionStore(context).load())
+    }
+
+    Text(
+        text = attendanceBoardSectionTitleFor(strings.language),
+        fontWeight = FontWeight.SemiBold,
+        color = MaterialTheme.colorScheme.onSurface,
+    )
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = ActionButtonShape,
+        tonalElevation = 1.dp,
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            AttendanceStampBoard(board)
+            Text(
+                text = attendanceBoardBeyondNoticeFor(strings.language),
+                fontSize = 12.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }

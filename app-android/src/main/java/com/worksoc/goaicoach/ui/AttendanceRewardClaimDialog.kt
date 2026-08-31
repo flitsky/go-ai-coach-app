@@ -79,6 +79,7 @@ import com.worksoc.goaicoach.persistence.PremiumStateStore
  */
 @Composable
 internal fun AttendanceRewardClaimDialog(context: Context) {
+    val consumables = LocalConsumableUiState.current
     val attendanceStore = remember(context) { AttendanceStore(context) }
     val premiumStore = remember(context) { PremiumStateStore(context) }
     val consumableStore = remember(context) { ConsumableInventoryStore(context) }
@@ -120,6 +121,9 @@ internal fun AttendanceRewardClaimDialog(context: Context) {
                 consumableStore = consumableStore,
                 botStore = botStore,
             )
+            // ⚠️ 지급은 저장소에 **직접** 쓴다 — 화면이 들고 있는 재고에게 알려 주지 않으면
+            // 다음 실행 전까지 옛 값이 남는다(마이 페이지에서 "도장은 찍혔는데 0개"로 드러났다).
+            consumables.refresh()
             pending = emptyList()
         },
 
@@ -155,8 +159,7 @@ private fun AttendanceRewardClaimDialogContent(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                StampRow(cells = board.daily, compact = true)
-                StampRow(cells = board.weekly, compact = false)
+                AttendanceStampBoard(board)
                 if (board.beyondBoard.isNotEmpty()) {
                     Text(
                         text = attendanceBoardBeyondNoticeFor(strings.language),
@@ -173,92 +176,6 @@ private fun AttendanceRewardClaimDialogContent(
             Button(onClick = onClaim) { Text(strings.attendanceRewardClaimAction) }
         },
     )
-}
-
-/**
- * 도장판 한 행. [compact]가 참이면 여섯 칸(1~6일차), 거짓이면 네 칸(주 단위)이다 —
- * 두 행이 **같은 전체 너비**를 나눠 쓰므로 네 칸 쪽이 자연히 넓고 높아진다.
- */
-@Composable
-private fun StampRow(cells: List<AttendanceBoardCell>, compact: Boolean) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(if (compact) 4.dp else 6.dp),
-    ) {
-        cells.forEach { cell ->
-            StampCell(cell = cell, compact = compact, modifier = Modifier.weight(1f))
-        }
-    }
-}
-
-@Composable
-private fun StampCell(cell: AttendanceBoardCell, compact: Boolean, modifier: Modifier) {
-    val strings = LocalUiStrings.current
-    val stamped = cell.state == AttendanceCellState.Stamped
-    val claimable = cell.state == AttendanceCellState.Claimable
-    val shape = RoundedCornerShape(if (compact) 8.dp else 12.dp)
-    val background = when {
-        stamped -> MaterialTheme.colorScheme.surfaceVariant
-        claimable -> MaterialTheme.colorScheme.primaryContainer
-        else -> MaterialTheme.colorScheme.surface
-    }
-    Column(
-        modifier = modifier
-            // 여섯 칸은 정사각, 네 칸은 더 넓고 높게 — 보상 내용을 두어 줄 담아야 한다.
-            .then(if (compact) Modifier.aspectRatio(1f) else Modifier.height(108.dp))
-            .clip(shape)
-            .background(background)
-            .border(
-                BorderStroke(
-                    width = if (claimable) 2.dp else 1.dp,
-                    color = if (claimable) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.outlineVariant
-                    },
-                ),
-                shape,
-            )
-            .padding(horizontal = 4.dp, vertical = 6.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(2.dp),
-    ) {
-        Text(
-            text = strings.attendanceRewardDayLabel(cell.tier),
-            style = if (compact) {
-                MaterialTheme.typography.labelSmall
-            } else {
-                MaterialTheme.typography.labelMedium
-            },
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        if (stamped) {
-            // 도장. 글자 하나라 어느 언어에서도 잘리지 않는다.
-            Text(
-                text = StampMark,
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.primary,
-            )
-        } else {
-            Text(
-                // 좁은 6칸은 짧은 표기, 넓은 4칸은 전체 문구 — 4칸이 넓은 이유가 여기서 드러난다.
-                text = cell.rewards.joinToString("\n") { reward ->
-                    if (compact) {
-                        attendanceRewardShortLabelFor(strings.language, reward)
-                    } else {
-                        strings.attendanceRewardLabel(reward)
-                    }
-                }.ifBlank { attendanceUpcomingNoticeFor(strings.language) },
-                style = MaterialTheme.typography.labelSmall,
-                textAlign = TextAlign.Center,
-                maxLines = if (compact) 3 else 4,
-                overflow = TextOverflow.Ellipsis,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-        }
-    }
 }
 
 /**
@@ -292,6 +209,3 @@ private fun ClaimDetail(tiers: List<AttendanceRewardTier>, inventory: Consumable
         }
     }
 }
-
-/** 도장 표시. 이모지가 아니라 문자라 폰트가 없어도 네모로 깨지지 않는다. */
-private const val StampMark: String = "\u2713"

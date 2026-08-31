@@ -75,6 +75,15 @@ internal data class ConsumableUiState(
     val clearOneShot: (FeatureId) -> Unit = {},
     /** 이번 수에서 만료된 기능들을 돌려준다 — 만료되지 않은 다른 기능까지 같이 끄지 않기 위함이다. */
     val expireOneShotsAtMove: (Int) -> Set<FeatureId> = { emptySet() },
+    /**
+     * 저장소를 다시 읽어 재고 표시를 맞춘다.
+     *
+     * ⚠️ **이 상태는 [spend]로 나가는 것만 알고 들어오는 것은 모른다.** 출석 보상은
+     * `runAttendanceRewardGrant`가 저장소에 **직접** 쓰므로, 이 통로가 없으면 지급 직후 화면이
+     * 옛 재고를 계속 보여준다 — 실제로 마이 페이지에서 "1일차 도장은 찍혔는데 1회권은 0개"라는
+     * 모순으로 드러났다(#56). 재고를 저장소에 직접 쓰는 경로를 새로 만들면 여기도 함께 부를 것.
+     */
+    val refresh: () -> Unit = {},
 ) {
     fun countOf(item: ConsumableItem): Int = inventory.countOf(item.id)
 
@@ -175,6 +184,7 @@ internal fun buildConsumableUiState(
             if (expired.isNotEmpty()) ledger = next
             expired
         },
+        refresh = { inventory = store.load() },
     )
 }
 

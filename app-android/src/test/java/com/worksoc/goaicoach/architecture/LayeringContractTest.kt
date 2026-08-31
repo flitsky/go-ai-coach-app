@@ -1464,7 +1464,12 @@ class LayeringContractTest {
         // inside it, the preferences autosave overwrote the answers on first
         // composition — so this file gains no state hooks and no destination entry;
         // the screen's own state lives in LandingScreen.kt. stateHookBudget stays 46.
-        val lineBudget = 870
+        // History (2026-08-31, 2): bumped 870->874. The attendance claim dialog moved
+        // inside the CompositionLocalProvider block — outside it, LocalConsumableUiState
+        // resolved to its default, so the refresh that syncs ticket counts after a grant
+        // did nothing and My Page showed "day one stamped, zero tickets". The +4 is the
+        // comment recording that, so the call does not drift back out. No new state hooks.
+        val lineBudget = 874
         val stateHookBudget = 46
 
         val goCoachApp = repoRoot()

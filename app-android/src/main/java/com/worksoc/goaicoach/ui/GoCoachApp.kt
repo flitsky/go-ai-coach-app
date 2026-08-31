@@ -162,9 +162,6 @@ private fun GoCoachScreen(
 ) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
-    // 받아 가지 않은 출석 보상이 있으면 홈 위에 Claim 다이얼로그를 띄운다(킥오프 플랜 5.1절) —
-    // 체크인/지급/상태는 전부 ui/AttendanceRewardClaimDialog.kt가 들고 있다(상태 훅 예산 절약).
-    AttendanceRewardClaimDialog(context)
     val preferencesStore: UserPreferencesStorePort = remember(context) { UserPreferencesStore(context) }
     val initialPreferences = remember(preferencesStore) { preferencesStore.load() }
     // AndroidAuthClient는 내부 상태가 없는 얇은 래퍼라 재구성마다 새로 만들어도 비용/동작
@@ -783,6 +780,13 @@ private fun GoCoachScreen(
         LocalConsumableUiState provides consumableUiState,
         LocalBotCharacterUiState provides botCharacterUiState,
     ) {
+    // 받아 가지 않은 출석 보상이 있으면 홈 위에 Claim 다이얼로그를 띄운다(킥오프 플랜 5.1절) —
+    // 체크인/지급/상태는 전부 ui/AttendanceRewardClaimDialog.kt가 들고 있다(상태 훅 예산 절약).
+    //
+    // ⚠️ **이 provider 안에 있어야 한다.** 밖에 두면 `LocalConsumableUiState`가 아직 제공되지
+    // 않아 기본값(빈 상태)이 잡히고, 지급 후 재고 표시를 갱신하는 `refresh()`가 **아무 일도 하지
+    // 않는다** — 마이 페이지에서 "1일차 도장은 찍혔는데 1회권 0개"로 드러났던 결함이다(#56).
+    AttendanceRewardClaimDialog(context)
     when (currentDestination) {
         ScreenDestination.Onboarding -> {
             OnboardingScreen(

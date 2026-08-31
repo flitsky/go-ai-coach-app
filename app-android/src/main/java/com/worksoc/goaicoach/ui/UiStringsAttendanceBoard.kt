@@ -37,6 +37,16 @@ private val UpcomingNotices: Map<UiLanguage, String> = mapOf(
     UiLanguage.ChineseSimplified to "签到即可获得",
 )
 
+private val BoardSectionTitles: Map<UiLanguage, String> = mapOf(
+    UiLanguage.Korean to "출석 현황",
+    UiLanguage.English to "Check-in progress",
+    UiLanguage.Japanese to "出席状況",
+    UiLanguage.ChineseSimplified to "签到进度",
+)
+
+internal fun attendanceBoardSectionTitleFor(language: UiLanguage): String =
+    BoardSectionTitles.getValue(language)
+
 internal fun attendanceBoardBeyondNoticeFor(language: UiLanguage): String =
     BoardBeyondNotices.getValue(language)
 
