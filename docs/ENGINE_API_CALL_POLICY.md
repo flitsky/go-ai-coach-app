@@ -495,7 +495,7 @@ MQ를 앱에서 직접 운영하기보다는 Firebase/Crashlytics 계층을 먼�
 ```bash
 ENGINE_PHONE_BENCHMARK_SERIAL=192.168.35.3:45513 \
 ENGINE_SEARCH_MODE_BENCHMARK_SAMPLES=3 \
-ENGINE_PHONE_SEARCH_MODE_BENCHMARK_OUT=docs/engine-benchmark-logs/search-mode-phone-YYYYMMDD \
+ENGINE_PHONE_SEARCH_MODE_BENCHMARK_OUT=docs/measurements/engine-benchmark/search-mode-phone-YYYYMMDD \
 make engine-search-mode-benchmark-phone
 ```
 
@@ -506,7 +506,7 @@ python3 scripts/run-katago-search-mode-benchmark.py \
   --samples 3 \
   --time-cap-ms 10000 \
   --adb-serial 192.168.35.3:45513 \
-  --out-dir docs/engine-benchmark-logs/search-mode-phone-YYYYMMDD
+  --out-dir docs/measurements/engine-benchmark/search-mode-phone-YYYYMMDD
 ```
 
 전제 조건:

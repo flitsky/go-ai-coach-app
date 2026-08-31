@@ -37,18 +37,18 @@
 실행:
 
 ```bash
-ENGINE_MATCH_OUT=docs/engine-match-logs/matrix-tinycache-20260611 \
+ENGINE_MATCH_OUT=docs/measurements/engine-match/matrix-tinycache-20260611 \
 ENGINE_MATCH_GAMES=50 \
 make engine-level-benchmark
 ```
 
 결과:
 
-- summary: `docs/engine-match-logs/matrix-tinycache-20260611/summary.md`
+- summary: `docs/measurements/engine-match/matrix-tinycache-20260611/summary.md`
 - raw logs:
-  - `docs/engine-match-logs/matrix-tinycache-20260611/B16-vs-B32.jsonl`
-  - `docs/engine-match-logs/matrix-tinycache-20260611/B16-vs-B64.jsonl`
-  - `docs/engine-match-logs/matrix-tinycache-20260611/B32-vs-B64.jsonl`
+  - `docs/measurements/engine-match/matrix-tinycache-20260611/B16-vs-B32.jsonl`
+  - `docs/measurements/engine-match/matrix-tinycache-20260611/B16-vs-B64.jsonl`
+  - `docs/measurements/engine-match/matrix-tinycache-20260611/B32-vs-B64.jsonl`
 
 | Matchup | 기대 | 실제 | 해석 |
 | --- | ---: | ---: | --- |
@@ -227,7 +227,7 @@ Top Moves/힌트 분석은 학습 UI 품질을 위해 기존 `Balanced` 보강�
 초기 smoke 결과:
 
 - script: `scripts/run-katago-level-match.py`
-- log: `docs/engine-match-logs/fb3-vs-lb7-det-20260610.jsonl`
+- log: `docs/measurements/engine-match/fb3-vs-lb7-det-20260610.jsonl`
 - 조건: deterministic, `numSearchThreads=1`, warm-up 후 4판, 흑백 교대
 - 결과: `초급 7단계` 3승, `빠른 초급 3단계` 1승
 
@@ -237,13 +237,13 @@ Top Moves/힌트 분석은 학습 UI 품질을 위해 기존 `Balanced` 보강�
 
 요청한 3개 조합을 각각 50판씩 실행했다.
 
-- command: `make engine-level-benchmark ENGINE_MATCH_GAMES=50 ENGINE_MATCH_OUT=docs/engine-match-logs/matrix-20260610`
+- command: `make engine-level-benchmark ENGINE_MATCH_GAMES=50 ENGINE_MATCH_OUT=docs/measurements/engine-match/matrix-20260610`
 - script: `scripts/run-katago-level-matrix.py`
-- summary: `docs/engine-match-logs/matrix-20260610/summary.md`
+- summary: `docs/measurements/engine-match/matrix-20260610/summary.md`
 - raw logs:
-  - `docs/engine-match-logs/matrix-20260610/B16-vs-B32.jsonl`
-  - `docs/engine-match-logs/matrix-20260610/B16-vs-B64.jsonl`
-  - `docs/engine-match-logs/matrix-20260610/B32-vs-B64.jsonl`
+  - `docs/measurements/engine-match/matrix-20260610/B16-vs-B32.jsonl`
+  - `docs/measurements/engine-match/matrix-20260610/B16-vs-B64.jsonl`
+  - `docs/measurements/engine-match/matrix-20260610/B32-vs-B64.jsonl`
 - 조건: 실사용에 가까운 non-deterministic, `numSearchThreads=4`, 흑백 교대, warm-up, final evaluator `400 visits / 2000ms`
 - 소요 시간: 약 23분 41초
 
@@ -281,9 +281,9 @@ Top Moves/힌트 분석은 학습 UI 품질을 위해 기존 `Balanced` 보강�
 
 `maxTime` 부족으로 B32가 충분히 32 visits를 채우지 못하는지 확인하기 위해, 방문수는 그대로 두고 B16/B32의 time cap만 모두 `1000ms`로 늘린 50판 실험을 추가했다.
 
-- command: `python3 scripts/run-katago-level-match.py --black fast_beginner:3 --white beginner:7 --black-time-ms 1000 --white-time-ms 1000 --games 50 --swap-colors --seed 20260611 --out docs/engine-match-logs/b16-vs-b32-time1000-20260610.jsonl`
-- summary: `docs/engine-match-logs/b16-vs-b32-time1000-20260610-summary.md`
-- raw log: `docs/engine-match-logs/b16-vs-b32-time1000-20260610.jsonl`
+- command: `python3 scripts/run-katago-level-match.py --black fast_beginner:3 --white beginner:7 --black-time-ms 1000 --white-time-ms 1000 --games 50 --swap-colors --seed 20260611 --out docs/measurements/engine-match/b16-vs-b32-time1000-20260610.jsonl`
+- summary: `docs/measurements/engine-match/b16-vs-b32-time1000-20260610-summary.md`
+- raw log: `docs/measurements/engine-match/b16-vs-b32-time1000-20260610.jsonl`
 - 조건: 실사용에 가까운 non-deterministic, `numSearchThreads=4`, 흑백 교대, warm-up, final evaluator `400 visits / 2000ms`
 - 소요 시간: 약 6분 26초
 
@@ -305,9 +305,9 @@ Top Moves/힌트 분석은 학습 UI 품질을 위해 기존 `Balanced` 보강�
 
 동일 조건을 새 seed로 50판 더 실행했다.
 
-- command: `python3 scripts/run-katago-level-match.py --black fast_beginner:3 --white beginner:7 --black-time-ms 1000 --white-time-ms 1000 --games 50 --swap-colors --seed 20260612 --out docs/engine-match-logs/b16-vs-b32-time1000-r2-20260610.jsonl`
-- summary: `docs/engine-match-logs/b16-vs-b32-time1000-r2-20260610-summary.md`
-- raw log: `docs/engine-match-logs/b16-vs-b32-time1000-r2-20260610.jsonl`
+- command: `python3 scripts/run-katago-level-match.py --black fast_beginner:3 --white beginner:7 --black-time-ms 1000 --white-time-ms 1000 --games 50 --swap-colors --seed 20260612 --out docs/measurements/engine-match/b16-vs-b32-time1000-r2-20260610.jsonl`
+- summary: `docs/measurements/engine-match/b16-vs-b32-time1000-r2-20260610-summary.md`
+- raw log: `docs/measurements/engine-match/b16-vs-b32-time1000-r2-20260610.jsonl`
 
 | 조건 | B16 wins | B32 wins | B32 win rate | B32 avg lead | B16 avg root visits | B32 avg root visits |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |

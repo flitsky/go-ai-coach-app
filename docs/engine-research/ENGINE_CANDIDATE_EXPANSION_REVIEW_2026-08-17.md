@@ -106,10 +106,10 @@ KataGo 문서(`ENGINE_API_CALL_POLICY.md` "Visit의 의미와 탐색 원리" 절
 ```bash
 python3 scripts/run-katago-candidate-refine-experiment.py \
   --visits 16,32,64 --refine-budgets 0,4,8,12 --time-cap-ms 5000 \
-  --out docs/engine-benchmark-logs/candidate-refine-mac-20260817.md
+  --out docs/measurements/engine-benchmark/candidate-refine-mac-20260817.md
 ```
 
-원본 결과: [`docs/engine-benchmark-logs/candidate-refine-mac-20260817.md`](../engine-benchmark-logs/candidate-refine-mac-20260817.md) (36행 전체)
+원본 결과: [`docs/measurements/engine-benchmark/candidate-refine-mac-20260817.md`](../measurements/engine-benchmark/candidate-refine-mac-20260817.md) (36행 전체)
 
 ### 발췌 — refine 0 vs 8 (현재 `Balanced`=4, `Deep`=12와 비교용으로 8도 추가 측정)
 
@@ -172,7 +172,7 @@ P0에서 B32/B64 모두 `refine=0` 기준 13개로 동일했다. `ENGINE_BEGINNE
 | `scripts/run-katago-search-mode-benchmark.py` | GTP fast vs JSON position analysis latency 비교, 맥북/폰(ADB `run-as`) 둘 다 지원 | `make engine-search-mode-benchmark[-phone]` |
 | **`scripts/run-katago-candidate-refine-experiment.py`(신규)** | `refinePolicyMoves` 후보 확장 레버의 후보수 증가량과 latency 비용 측정 | 없음(직접 실행) |
 
-전부 앱 바이너리 없이 로컬 Homebrew KataGo(`/opt/homebrew/bin/katago`)와 번들 모델/config를 직접 구동한다. 폰 실측이 필요할 때만 ADB `run-as`로 실제 설치된 앱의 KataGo 산출물을 그대로 실행한다(`ENGINE_API_CALL_POLICY.md` "원격 폰 엔진 벤치마크 표준" 절). 이 경로는 앱을 빌드/설치/재시작할 필요 없이 반복 실험할 수 있다 — 사용자가 요청한 방향과 정확히 일치하는 기존 관례다. 새 스크립트도 이 관례(같은 옵션 이름, 같은 국면 데이터, `docs/engine-benchmark-logs/`에 결과 저장)를 그대로 따랐다.
+전부 앱 바이너리 없이 로컬 Homebrew KataGo(`/opt/homebrew/bin/katago`)와 번들 모델/config를 직접 구동한다. 폰 실측이 필요할 때만 ADB `run-as`로 실제 설치된 앱의 KataGo 산출물을 그대로 실행한다(`ENGINE_API_CALL_POLICY.md` "원격 폰 엔진 벤치마크 표준" 절). 이 경로는 앱을 빌드/설치/재시작할 필요 없이 반복 실험할 수 있다 — 사용자가 요청한 방향과 정확히 일치하는 기존 관례다. 새 스크립트도 이 관례(같은 옵션 이름, 같은 국면 데이터, `docs/measurements/engine-benchmark/`에 결과 저장)를 그대로 따랐다.
 
 새 스크립트는 아직 Makefile 타겟이 없다 — 반복 사용 가치가 확인되면(5절의 다음 실험들이 이 스크립트를 계속 쓰게 되면) 타겟을 추가하는 게 자연스럽다. 지금은 보류한다.
 
@@ -183,5 +183,5 @@ P0에서 B32/B64 모두 `refine=0` 기준 13개로 동일했다. `ENGINE_BEGINNE
 - [`docs/engine-research/ENGINE_BEGINNER_VISITS_BENCHMARK.md`](ENGINE_BEGINNER_VISITS_BENCHMARK.md) — 이 문제의 최초 발견, 오늘 실험이 재사용한 P0/P1/P2 국면 출처(2026-08-17: `docs/archive/`에서 이 폴더로 이동 — 근거는 5절 하단 정책 각주 참고)
 - [`docs/engine-research/ENGINE_LEVEL_STRENGTH_REVIEW_2026-06-10.md`](ENGINE_LEVEL_STRENGTH_REVIEW_2026-06-10.md) — `Balanced` 프리셋이 AI 응수에 실수로 섞였던 과거 사고 기록
 - [`docs/engine-research/ENGINE_SEARCH_TREE_REUSE_REVIEW.md`](ENGINE_SEARCH_TREE_REUSE_REVIEW.md) — GTP tree reuse/JSON position-scoped 분석의 구조적 차이
-- [`docs/engine-benchmark-logs/candidate-refine-mac-20260817.md`](../engine-benchmark-logs/candidate-refine-mac-20260817.md) — 오늘 실측 원본 데이터(36행)
+- [`docs/measurements/engine-benchmark/candidate-refine-mac-20260817.md`](../measurements/engine-benchmark/candidate-refine-mac-20260817.md) — 오늘 실측 원본 데이터(36행)
 - `scripts/run-katago-candidate-refine-experiment.py` — 오늘 추가한 실험 스크립트

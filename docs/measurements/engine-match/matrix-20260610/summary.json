@@ -8,7 +8,7 @@
   "finalTimeMs": 2000,
   "results": [
     {
-      "log": "docs/engine-match-logs/matrix-20260610/B16-vs-B32.jsonl",
+      "log": "docs/measurements/engine-match/matrix-20260610/B16-vs-B32.jsonl",
       "games": 50,
       "leftLevel": "빠른 초급 3단계",
       "rightLevel": "초급 7단계",
@@ -30,7 +30,7 @@
       }
     },
     {
-      "log": "docs/engine-match-logs/matrix-20260610/B16-vs-B64.jsonl",
+      "log": "docs/measurements/engine-match/matrix-20260610/B16-vs-B64.jsonl",
       "games": 50,
       "leftLevel": "빠른 초급 3단계",
       "rightLevel": "중급 5단계",
@@ -52,7 +52,7 @@
       }
     },
     {
-      "log": "docs/engine-match-logs/matrix-20260610/B32-vs-B64.jsonl",
+      "log": "docs/measurements/engine-match/matrix-20260610/B32-vs-B64.jsonl",
       "games": 50,
       "leftLevel": "초급 7단계",
       "rightLevel": "중급 5단계",

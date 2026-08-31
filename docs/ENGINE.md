@@ -18,7 +18,7 @@
 
 ### 실측: B16은 GTP가 빠르고, B32/B64는 역전된다
 
-2026-06-13 맥북/폰 벤치마크에서 같은 포지션으로 두 모드를 비교했다(원본 로드맵 문서 `refactoring/ENGINE_SEARCH_MODE_ROADMAP_2026-06-13.md`는 2026-08-17 문서 보존 정책 전환으로 저장소에서 제거됐다 — 결론인 아래 표가 그 문서를 대체하며, 원문은 `git log --all --diff-filter=D -- '**/ENGINE_SEARCH_MODE_ROADMAP*'`로 복원할 수 있다). raw 데이터는 `engine-benchmark-logs/search-mode-{mac,phone}-20260613/`에 남아 있다.
+2026-06-13 맥북/폰 벤치마크에서 같은 포지션으로 두 모드를 비교했다(원본 로드맵 문서 `refactoring/ENGINE_SEARCH_MODE_ROADMAP_2026-06-13.md`는 2026-08-17 문서 보존 정책 전환으로 저장소에서 제거됐다 — 결론인 아래 표가 그 문서를 대체하며, 원문은 `git log --all --diff-filter=D -- '**/ENGINE_SEARCH_MODE_ROADMAP*'`로 복원할 수 있다). raw 데이터는 `measurements/engine-benchmark/search-mode-{mac,phone}-20260613/`에 남아 있다.
 
 **폰 실기기 (`SM-S908N`, Eigen CPU backend, time cap 10000ms)**
 
@@ -81,4 +81,4 @@ fun PlayLevelSetting.aiMoveSearchMode(): EngineSearchMode =
 | `engine-research/ENGINE_LEVEL_STRENGTH_REVIEW_2026-06-10.md` | B16/B32/B64 실제 대국 강도 검증 결과 |
 | `engine-research/ENGINE_SEARCH_TREE_REUSE_REVIEW.md` | search tree 재사용/격리 정책 상세 검토 |
 | `engine-research/ENGINE_CANDIDATE_EXPANSION_REVIEW_2026-08-17.md` | 레벨링용 후보수 확장 검토 — `refinePolicyMoves`가 엔진 어댑터에 이미 구현돼 있지만 AI 착수 경로에서는 항상 0으로 꺼져 있다는 점, 그 기능을 켰을 때의 후보수/latency 실측, 방향 권장안(아직 미반영) |
-| `engine-benchmark-logs/`, `engine-match-logs/` | raw 벤치마크/대국 로그 |
+| `measurements/engine-benchmark/`, `measurements/engine-match/` | raw 벤치마크/대국 로그 |

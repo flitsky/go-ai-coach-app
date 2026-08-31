@@ -20,7 +20,7 @@
 - 배포 형태를 debug APK(~12MB, 엔진 미포함)와 `friend` 빌드 타입(엔진 내장 ~105MB, `make friend-apk`)으로 분리했다 — 평소 개발 루프 속도를 지키기 위함.
 
 ### 엔진 강도/레벨링/벤치마크 (06월 중순 전후)
-- KataGo 후보수(visits: 16/32/64)별 체감 난이도를 실제 자동 대국 매트릭스(50~150판 단위, `docs/engine-match-logs/`)로 검증하며 `빠른 초급`/`초급`/`중급`/`고급` `PlayLevelGroup` 체계로 정착시켰다. 색상/손실(`pointLoss`) 표시 기준을 KaTrain 공식과 여러 차례 맞대조해 정정했다.
+- KataGo 후보수(visits: 16/32/64)별 체감 난이도를 실제 자동 대국 매트릭스(50~150판 단위, `docs/measurements/engine-match/`)로 검증하며 `빠른 초급`/`초급`/`중급`/`고급` `PlayLevelGroup` 체계로 정착시켰다. 색상/손실(`pointLoss`) 표시 기준을 KaTrain 공식과 여러 차례 맞대조해 정정했다.
 - 기기별 실행 시간 편차가 커서 로컬 스크립트(`scripts/run-katago-device-benchmark.py`)와 인앱 최초 실행 벤치마크(진행 팝업 + 결과 팝업, 메뉴에서 재실행 가능)를 만들어 체감 속도와 실측을 분리했다.
 - 핵심 버그 하나: KataGo 프로세스가 살아있는 동안 이전 탐색의 search tree/NN cache를 다음 탐색이 재사용해, AI 대 AI 자동대국에서 약한 레벨(B16)이 직전 강한 레벨(B64)의 탐색 결과를 몰래 물려받아 실력 경계가 오염되는 현상을 발견하고 해결했다(`docs/ENGINE_SEARCH_TREE_REUSE_REVIEW.md`) — 최종 정책은 "AI vs AI는 착수 직전 `clear_cache`, 사람 vs AI는 재사용 유지"다(사람 상대는 이어지는 탐색이 정상적인 엔진 활용이므로).
 
