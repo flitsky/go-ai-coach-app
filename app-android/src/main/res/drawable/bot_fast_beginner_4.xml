@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  사범 묘수 / Tesuji the Instructor — 4단계(고수)
+  백로그 #48 — 손으로 작도한 벡터다(래스터 자산 없음). 밀도 버킷이 필요 없고 용량이 사실상 0이며,
+  #50의 조각 파이 클리핑도 이 위에서 그대로 된다. 색은 AppColorScheme/PremiumTheme에서 가져왔다.
+
+  ⚠️ 다섯 종이 **같은 규격**을 지켜야 캐러셀(#49)에서 크기가 튀지 않는다:
+     96x96 뷰포트 · 원판이 꽉 차는 full-bleed(중심 48,48 반지름 48) · 눈은 흰자+동공 2단.
+  ⚠️ 원판 밖으로 나가는 요소를 두지 말 것 — 원형 클립을 걸면 잘려 나간다.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="96dp"
+    android:height="96dp"
+    android:viewportWidth="96"
+    android:viewportHeight="96">
+    <path
+        android:fillColor="#FFF1DFB8"
+        android:pathData="M0,48 a48,48 0 1,0 96,0 a48,48 0 1,0 -96,0 Z" />
+    <path
+        android:fillColor="#FF2E2A26"
+        android:pathData="M22,55 a26,26 0 1,0 52,0 a26,26 0 1,0 -52,0 Z" />
+    <path
+        android:fillColor="#FF4A443D"
+        android:fillAlpha="0.5"
+        android:pathData="M31,45 a8,8 0 1,0 16,0 a8,8 0 1,0 -16,0 Z" />
+    <path
+        android:pathData="M28,38 L68,38"
+        android:strokeColor="#FFCA9B3E"
+        android:strokeWidth="5"
+        android:strokeLineCap="butt" />
+    <path
+        android:pathData="M28,38 L68,38"
+        android:strokeColor="#FF8A6416"
+        android:strokeWidth="1.2"
+        android:strokeLineCap="butt" />
+    <path
+        android:fillColor="#FFFBF8F1"
+        android:pathData="M34.5,55 a4.5,4.5 0 1,0 9.0,0 a4.5,4.5 0 1,0 -9.0,0 Z" />
+    <path
+        android:fillColor="#FFFBF8F1"
+        android:pathData="M52.5,55 a4.5,4.5 0 1,0 9.0,0 a4.5,4.5 0 1,0 -9.0,0 Z" />
+    <path
+        android:fillColor="#FF2E2A26"
+        android:pathData="M36.75,55 a2.25,2.25 0 1,0 4.5,0 a2.25,2.25 0 1,0 -4.5,0 Z" />
+    <path
+        android:fillColor="#FF2E2A26"
+        android:pathData="M54.75,55 a2.25,2.25 0 1,0 4.5,0 a2.25,2.25 0 1,0 -4.5,0 Z" />
+    <path
+        android:pathData="M41,67 Q48,71 55,67"
+        android:strokeColor="#FFFBF8F1"
+        android:strokeWidth="2.4"
+        android:strokeLineCap="round" />
+    <path
+        android:fillColor="#FFCA9B3E"
+        android:pathData="M71,17 Q74.4,23.6 81,27 Q74.4,30.4 71,37 Q67.6,30.4 61,27 Q67.6,23.6 71,17 Z" />
+    <path
+        android:fillColor="#FFCA9B3E"
+        android:pathData="M63,12 Q64.7,15.3 68,17 Q64.7,18.7 63,22 Q61.3,18.7 58,17 Q61.3,15.3 63,12 Z" />
+</vector>

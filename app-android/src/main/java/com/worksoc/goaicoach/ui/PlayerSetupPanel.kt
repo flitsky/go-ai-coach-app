@@ -289,6 +289,13 @@ private fun PlayerSetupSideRow(
                     onClick = { showPicker = true },
                     enabled = enabled,
                 ) {
+                    // 좌석 버튼에도 얼굴을 붙인다(#48) — 픽커를 열지 않고도 지금 상대가 누구인지
+                    // 알아보게 하는 것이 목적이다. 여기 오는 캐릭터는 항상 보유한 것이라
+                    // (미보유는 `clampToOwnedBotCharacter`가 걸러낸다) 흑백 처리가 필요 없다.
+                    current?.let { character ->
+                        BotCharacterAvatar(character = character, size = 22.dp)
+                        Spacer(Modifier.width(6.dp))
+                    }
                     Text(
                         text = current?.let(strings::botCharacterLabel)
                             ?: strings.fastBeginnerTierLabel(fastBeginnerLevel),

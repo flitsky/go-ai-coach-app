@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  연습생 돌뫼 / Cairn the Trainee — 2단계(하수)
+  백로그 #48 — 손으로 작도한 벡터다(래스터 자산 없음). 밀도 버킷이 필요 없고 용량이 사실상 0이며,
+  #50의 조각 파이 클리핑도 이 위에서 그대로 된다. 색은 AppColorScheme/PremiumTheme에서 가져왔다.
+
+  ⚠️ 다섯 종이 **같은 규격**을 지켜야 캐러셀(#49)에서 크기가 튀지 않는다:
+     96x96 뷰포트 · 원판이 꽉 차는 full-bleed(중심 48,48 반지름 48) · 눈은 흰자+동공 2단.
+  ⚠️ 원판 밖으로 나가는 요소를 두지 말 것 — 원형 클립을 걸면 잘려 나간다.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="96dp"
+    android:height="96dp"
+    android:viewportWidth="96"
+    android:viewportHeight="96">
+    <path
+        android:fillColor="#FFC7E3D5"
+        android:pathData="M0,48 a48,48 0 1,0 96,0 a48,48 0 1,0 -96,0 Z" />
+    <path
+        android:fillColor="#FF2E2A26"
+        android:pathData="M28,74 a20,20 0 1,0 40,0 a20,20 0 1,0 -40,0 Z" />
+    <path
+        android:fillColor="#FFFBF8F1"
+        android:pathData="M33,53 a15,15 0 1,0 30,0 a15,15 0 1,0 -30,0 Z" />
+    <path
+        android:pathData="M33,53 a15,15 0 1,0 30,0 a15,15 0 1,0 -30,0 Z"
+        android:strokeColor="#FFC9C0AE"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="butt" />
+    <path
+        android:fillColor="#FF2E2A26"
+        android:pathData="M35,32 a13,13 0 1,0 26,0 a13,13 0 1,0 -26,0 Z" />
+    <path
+        android:pathData="M37,26 L59,26"
+        android:strokeColor="#FF0E8C72"
+        android:strokeWidth="4"
+        android:strokeLineCap="round" />
+    <path
+        android:fillColor="#FFFBF8F1"
+        android:pathData="M39.8,33 a3.2,3.2 0 1,0 6.4,0 a3.2,3.2 0 1,0 -6.4,0 Z" />
+    <path
+        android:fillColor="#FFFBF8F1"
+        android:pathData="M49.8,33 a3.2,3.2 0 1,0 6.4,0 a3.2,3.2 0 1,0 -6.4,0 Z" />
+    <path
+        android:fillColor="#FF2E2A26"
+        android:pathData="M41.4,33 a1.6,1.6 0 1,0 3.2,0 a1.6,1.6 0 1,0 -3.2,0 Z" />
+    <path
+        android:fillColor="#FF2E2A26"
+        android:pathData="M51.4,33 a1.6,1.6 0 1,0 3.2,0 a1.6,1.6 0 1,0 -3.2,0 Z" />
+    <path
+        android:pathData="M45,40 L51,40"
+        android:strokeColor="#FFFBF8F1"
+        android:strokeWidth="2"
+        android:strokeLineCap="round" />
+</vector>

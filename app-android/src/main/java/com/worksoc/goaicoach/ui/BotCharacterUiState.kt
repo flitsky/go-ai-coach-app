@@ -1,10 +1,26 @@
 package com.worksoc.goaicoach.ui
 
 import android.content.Context
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -14,13 +30,18 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.platform.LocalContext
 import android.widget.Toast
 import com.worksoc.goaicoach.application.botcharacter.BotUnlockSource
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import com.worksoc.goaicoach.application.botcharacter.BotCharacter
@@ -34,6 +55,7 @@ import com.worksoc.goaicoach.application.botcharacter.BotCharacterCatalog
 import com.worksoc.goaicoach.application.botcharacter.BotCollectionState
 import com.worksoc.goaicoach.application.botcharacter.BotCollectionStorePort
 import com.worksoc.goaicoach.persistence.BotCollectionStore
+import kotlinx.coroutines.launch
 
 /**
  * 화면 트리 전역에서 읽는 봇 캐릭터 수집 상태([LocalPremiumUiState]·[LocalConsumableUiState]와
@@ -173,38 +195,69 @@ internal fun BotCharacterPickerDialog(
         // 광고 코루틴이 먼저 재개돼 플래그가 이미 false가 된 뒤에 요청이 도착하므로 그 가드는
         // 원리적으로 늦는다. 시간 창(700ms 유예)도 같은 이유로 틀렸다: 늦게 오는 것을 시간으로
         // 쫓아가는 대신, 애초에 그 경로를 없앤다.
-        properties = DialogProperties(dismissOnClickOutside = false),
+        // AlertDialog 기본 폭은 좁아서 카드 60% + 좌우 peek을 넣으면 글이 뭉개진다.
+        // 폭 제약을 풀고 화면의 94%를 직접 잡는다. ⚠️ 다이얼로그는 화면 단위 창이라, 인게임
+        // 햄버거 메뉴에서 열려도(`GameMenuSection`) 대국 설정 로비와 같은 폭으로 뜬다.
+        properties = DialogProperties(dismissOnClickOutside = false, usePlatformDefaultWidth = false),
+        modifier = Modifier.fillMaxWidth(0.94f),
         title = { Text(strings.botPickerTitle) },
         text = {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                BotCharacterCatalog.fastBeginnerRoster.forEach { character ->
-                    val available = bots.isAvailable(character)
-                    val shardSource = character.unlockSource as? BotUnlockSource.AdShards
-                    // 유료 캐릭터는 상품이 등록되고 플래그가 켜져야 실제로 살 수 있다(#18) —
-                    // 등록 전에 버튼을 노출하면 눌러 봐야 "상품을 가져오지 못했습니다"만 본다.
-                    val canPurchase = !available &&
-                        character.unlockSource is BotUnlockSource.Purchase &&
-                        FeatureFlags.isBotCharacterPurchaseEnabled &&
-                        !adInProgress
-                    BotCharacterRow(
-                        character = character,
-                        isSelected = character.id == selected?.id,
-                        isAvailable = available,
-                        shards = bots.shardsFor(character),
-                        // 잠겼어도 조각 경로면 탭할 수 있다 — 그 탭이 곧 광고 시청이다.
-                        canWatchAd = !available && shardSource != null && !adInProgress,
-                        canPurchase = canPurchase,
-                        onClick = {
-                            when {
-                                available -> {
-                                    onSelect(character)
-                                    onDismiss()
+            val roster = BotCharacterCatalog.fastBeginnerRoster
+            // ⓐ 완화책(#49): 지금 상대의 자리에서 연다. 0번에서 열면 5단계를 쓰는 사람이
+            // 매번 네 번 넘겨야 해서, 세로 목록보다 느려지는 것이 그대로 체감된다.
+            val initialPage = roster.indexOfFirst { it.id == selected?.id }.coerceAtLeast(0)
+            val pagerState = rememberPagerState(initialPage = initialPage) { roster.size }
+            val scope = rememberCoroutineScope()
+
+            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                // ⓒ 완화책: 카드를 폭의 60%로 두고 남는 40%를 좌우에 반씩 준다 — 양옆 카드가
+                // **균등하게** 걸쳐 보여야 "다섯 종이 더 있다"가 읽힌다(2026-08-30 사용자 확정).
+                val peek = maxWidth * 0.2f
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    HorizontalPager(
+                        state = pagerState,
+                        contentPadding = PaddingValues(horizontal = peek),
+                        pageSpacing = 6.dp,
+                    ) { page ->
+                        val character = roster[page]
+                        val available = bots.isAvailable(character)
+                        val shardSource = character.unlockSource as? BotUnlockSource.AdShards
+                        // 유료 캐릭터는 상품이 등록되고 플래그가 켜져야 실제로 살 수 있다(#18) —
+                        // 등록 전에 버튼을 노출하면 눌러 봐야 "상품을 가져오지 못했습니다"만 본다.
+                        val canPurchase = !available &&
+                            character.unlockSource is BotUnlockSource.Purchase &&
+                            FeatureFlags.isBotCharacterPurchaseEnabled &&
+                            !adInProgress
+                        BotCharacterCard(
+                            character = character,
+                            isSelected = character.id == selected?.id,
+                            isAvailable = available,
+                            shards = bots.shardsFor(character),
+                            // 잠겼어도 조각 경로면 탭할 수 있다 — 그 탭이 곧 광고 시청이다.
+                            canWatchAd = !available && shardSource != null && !adInProgress,
+                            canPurchase = canPurchase,
+                            onClick = {
+                                // ⚠️ 가운데 카드가 아니면 **행동하지 않고 그 카드로 넘긴다.**
+                                // 양옆은 20%만 보이므로, 거기서 곧바로 선택/광고가 일어나면
+                                // 스치듯 닿은 손가락이 의도치 않은 결과를 만든다.
+                                if (page != pagerState.currentPage) {
+                                    scope.launch { pagerState.animateScrollToPage(page) }
+                                    return@BotCharacterCard
                                 }
-                                shardSource != null && !adInProgress -> onWatchAd(character)
-                                canPurchase -> onPurchase(character)
-                            }
-                        },
-                    )
+                                when {
+                                    available -> {
+                                        onSelect(character)
+                                        onDismiss()
+                                    }
+                                    shardSource != null && !adInProgress -> onWatchAd(character)
+                                    canPurchase -> onPurchase(character)
+                                }
+                            },
+                        )
+                    }
+                    Spacer(Modifier.height(12.dp))
+                    // ⓑ 완화책: 점 다섯 개로 "어디쯤인지"와 "전부 몇 종인지"를 같이 알린다.
+                    PagerDots(count = roster.size, current = pagerState.currentPage)
                 }
             }
         },
@@ -212,9 +265,16 @@ internal fun BotCharacterPickerDialog(
     )
 }
 
-/** 픽커 한 줄. 잠긴 캐릭터는 흐리게 두고 탭을 막되, 획득 방법은 그대로 보여준다. */
+/**
+ * 캐러셀 카드 한 장(#49). 잠긴 캐릭터도 **숨기지 않는다** — 못 가진 것을 보여주는 게 이 픽커의
+ * 목적이라, 감추면 신규 설치 사용자에게는 카드가 한 장만 남는다.
+ *
+ * ⚠️ **높이를 고정한 것이 중요하다.** 설명 길이가 캐릭터마다 다르고 언어마다 또 달라서, 높이를
+ * 내용에 맡기면 넘길 때마다 다이얼로그가 출렁인다. 대신 글자 수가 넘칠 때를 대비해 각 줄에
+ * `maxLines`+말줄임을 걸어 둔다.
+ */
 @Composable
-private fun BotCharacterRow(
+private fun BotCharacterCard(
     character: BotCharacter,
     isSelected: Boolean,
     isAvailable: Boolean,
@@ -224,17 +284,51 @@ private fun BotCharacterRow(
     onClick: () -> Unit,
 ) {
     val strings = LocalUiStrings.current
-    val rowModifier = Modifier
+    val shape = RoundedCornerShape(16.dp)
+    val cardModifier = Modifier
         .fillMaxWidth()
-        .let { if (isAvailable || canWatchAd || canPurchase) it.clickable(onClick = onClick) else it }
-        // 잠긴 줄은 흐리게 두되, 지금 열 수 있는 줄(광고·구매)은 "누를 수 있다"는 신호를 남긴다.
-        .let { if (isAvailable) it else it.alpha(if (canWatchAd || canPurchase) 0.8f else 0.5f) }
-        .padding(vertical = 8.dp)
+        .height(232.dp)
+        .clip(shape)
+        .background(MaterialTheme.colorScheme.surface)
+        .border(
+            // 고른 카드만 테두리로 표시한다 — 캐러셀은 가운데 카드가 곧 초점이라 "지금 이게
+            // 선택된 것인지"가 목록보다 헷갈리기 쉽다.
+            border = BorderStroke(
+                width = if (isSelected) 2.dp else 1.dp,
+                color = if (isSelected) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.outlineVariant
+                },
+            ),
+            shape = shape,
+        )
+        .clickable(onClick = onClick)
+        // 잠긴 카드는 흐리게 두되, 지금 열 수 있는 카드(광고·구매)는 "누를 수 있다"는 신호를 남긴다.
+        .let { if (isAvailable) it else it.alpha(if (canWatchAd || canPurchase) 0.85f else 0.55f) }
+        .padding(horizontal = 12.dp, vertical = 16.dp)
 
-    Column(modifier = rowModifier) {
+    Column(
+        modifier = cardModifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        BotCharacterAvatar(
+            character = character,
+            size = 84.dp,
+            available = isAvailable,
+            // 조각 경로 캐릭터만 부분 공개를 받는다(#50) — 출석 해금(3·5단계)은 부분 진행이라는
+            // 개념이 없어 `null`로 두고 통째로 흑백이 된다. 이미 가진 캐릭터도 나눌 것이 없다.
+            reveal = (character.unlockSource as? BotUnlockSource.AdShards)
+                ?.takeIf { !isAvailable }
+                ?.let { source -> ShardReveal(acquired = shards, required = source.required) },
+        )
         Text(
             text = strings.botCharacterLabel(character),
             style = MaterialTheme.typography.titleSmall,
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
             color = if (isSelected) {
                 MaterialTheme.colorScheme.primary
             } else {
@@ -244,6 +338,9 @@ private fun BotCharacterRow(
         Text(
             text = strings.botCharacterDescription(character),
             style = MaterialTheme.typography.bodySmall,
+            textAlign = TextAlign.Center,
+            maxLines = 3,
+            overflow = TextOverflow.Ellipsis,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         // 잠긴 캐릭터만 획득 방법을 덧붙인다 — 기본 제공은 안내할 것이 없다.
@@ -252,6 +349,9 @@ private fun BotCharacterRow(
                 Text(
                     text = hint,
                     style = MaterialTheme.typography.labelSmall,
+                    textAlign = TextAlign.Center,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis,
                     color = MaterialTheme.colorScheme.primary,
                 )
             }
@@ -259,6 +359,27 @@ private fun BotCharacterRow(
     }
 }
 
+/** 현재 위치와 전체 개수를 같이 알리는 점 인디케이터(#49의 ⓑ 완화책). */
+@Composable
+private fun PagerDots(count: Int, current: Int) {
+    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        repeat(count) { index ->
+            val isCurrent = index == current
+            Box(
+                Modifier
+                    .size(if (isCurrent) 8.dp else 6.dp)
+                    .clip(CircleShape)
+                    .background(
+                        if (isCurrent) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.outlineVariant
+                        },
+                    ),
+            )
+        }
+    }
+}
 
 /**
  * 조각 광고 한 번을 실행하고 결과를 토스트로 알린다(백로그 #11·#20).

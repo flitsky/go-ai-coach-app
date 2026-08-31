@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  도장생 반상 / Goban the Student — 3단계(중수)
+  백로그 #48 — 손으로 작도한 벡터다(래스터 자산 없음). 밀도 버킷이 필요 없고 용량이 사실상 0이며,
+  #50의 조각 파이 클리핑도 이 위에서 그대로 된다. 색은 AppColorScheme/PremiumTheme에서 가져왔다.
+
+  ⚠️ 다섯 종이 **같은 규격**을 지켜야 캐러셀(#49)에서 크기가 튀지 않는다:
+     96x96 뷰포트 · 원판이 꽉 차는 full-bleed(중심 48,48 반지름 48) · 눈은 흰자+동공 2단.
+  ⚠️ 원판 밖으로 나가는 요소를 두지 말 것 — 원형 클립을 걸면 잘려 나간다.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="96dp"
+    android:height="96dp"
+    android:viewportWidth="96"
+    android:viewportHeight="96">
+    <path
+        android:fillColor="#FFEADFC0"
+        android:pathData="M0,48 a48,48 0 1,0 96,0 a48,48 0 1,0 -96,0 Z" />
+    <path
+        android:fillColor="#FFE4C588"
+        android:pathData="M17,23 L79,23 L79,73 L17,73 Z" />
+    <path
+        android:pathData="M17,23 L79,23 L79,73 L17,73 Z"
+        android:strokeColor="#FF8A7550"
+        android:strokeWidth="1.6"
+        android:strokeLineCap="butt" />
+    <path
+        android:pathData="M32,28 L32,68"
+        android:strokeColor="#FF8A7550"
+        android:strokeWidth="1.3"
+        android:strokeLineCap="butt" />
+    <path
+        android:pathData="M48,28 L48,68"
+        android:strokeColor="#FF8A7550"
+        android:strokeWidth="1.3"
+        android:strokeLineCap="butt" />
+    <path
+        android:pathData="M64,28 L64,68"
+        android:strokeColor="#FF8A7550"
+        android:strokeWidth="1.3"
+        android:strokeLineCap="butt" />
+    <path
+        android:pathData="M22,34 L74,34"
+        android:strokeColor="#FF8A7550"
+        android:strokeWidth="1.3"
+        android:strokeLineCap="butt" />
+    <path
+        android:pathData="M22,48 L74,48"
+        android:strokeColor="#FF8A7550"
+        android:strokeWidth="1.3"
+        android:strokeLineCap="butt" />
+    <path
+        android:pathData="M22,62 L74,62"
+        android:strokeColor="#FF8A7550"
+        android:strokeWidth="1.3"
+        android:strokeLineCap="butt" />
+    <path
+        android:fillColor="#FF2E2A26"
+        android:pathData="M24.5,34 a7.5,7.5 0 1,0 15.0,0 a7.5,7.5 0 1,0 -15.0,0 Z" />
+    <path
+        android:fillColor="#FF2E2A26"
+        android:pathData="M56.5,34 a7.5,7.5 0 1,0 15.0,0 a7.5,7.5 0 1,0 -15.0,0 Z" />
+    <path
+        android:fillColor="#FFFBF8F1"
+        android:fillAlpha="0.45"
+        android:pathData="M27.1,31.5 a2.4,2.4 0 1,0 4.8,0 a2.4,2.4 0 1,0 -4.8,0 Z" />
+    <path
+        android:fillColor="#FFFBF8F1"
+        android:fillAlpha="0.45"
+        android:pathData="M59.1,31.5 a2.4,2.4 0 1,0 4.8,0 a2.4,2.4 0 1,0 -4.8,0 Z" />
+    <path
+        android:pathData="M37,57 Q48,67 59,57"
+        android:strokeColor="#FF8A7550"
+        android:strokeWidth="3"
+        android:strokeLineCap="round" />
+</vector>
