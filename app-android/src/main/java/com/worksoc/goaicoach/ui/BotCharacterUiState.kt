@@ -319,9 +319,7 @@ private fun BotCharacterCard(
             available = isAvailable,
             // 조각 경로 캐릭터만 부분 공개를 받는다(#50) — 출석 해금(3·5단계)은 부분 진행이라는
             // 개념이 없어 `null`로 두고 통째로 흑백이 된다. 이미 가진 캐릭터도 나눌 것이 없다.
-            reveal = (character.unlockSource as? BotUnlockSource.AdShards)
-                ?.takeIf { !isAvailable }
-                ?.let { source -> ShardReveal(acquired = shards, required = source.required) },
+            reveal = shardRevealOf(character, shards),
         )
         Text(
             text = strings.botCharacterLabel(character),

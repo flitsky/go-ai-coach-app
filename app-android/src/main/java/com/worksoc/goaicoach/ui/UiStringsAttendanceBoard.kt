@@ -1,15 +1,15 @@
 package com.worksoc.goaicoach.ui
 
-import com.worksoc.goaicoach.application.attendance.AttendanceReward
-import com.worksoc.goaicoach.application.consumable.ConsumableCatalog
-import com.worksoc.goaicoach.application.premium.FeatureId
-
 /**
  * 출석 도장판(백로그 #55)이 새로 쓰는 문구. 구조는 `UiStringsLanding.kt`와 같다 — 화면 하나가
  * 쓰는 문구를 한 파일에 모아 네 언어 파일을 건드리지 않는다.
  *
  * 회차 이름·보상 이름은 기존 `UiStrings.attendanceRewardDayLabel` / `attendanceRewardLabel`을
- * 그대로 쓴다. 여기 있는 것은 **도장판 때문에 새로 필요해진 세 가지**뿐이다.
+ * 그대로 쓴다. 여기 있는 것은 **도장판 때문에 새로 필요해진 문구**뿐이다.
+ *
+ * ⚠️ **#57에서 `attendanceRewardShortLabelFor`를 걷어냈다.** 칸의 보상을 글자 대신 글리프로
+ * 그리게 되면서 쓰이는 곳이 없어졌다 — 짧은 표기를 되살리려 하지 말 것. 그 표기가 존재했던
+ * 이유(여섯 칸 폭에 전체 문구가 안 들어간다)를 글리프가 이미 해결한다.
  */
 private val BoardBeyondNotices: Map<UiLanguage, String> = mapOf(
     UiLanguage.Korean to "28일차 이후에는 7일마다 보상이 반복돼요.",
@@ -37,6 +37,17 @@ private val UpcomingNotices: Map<UiLanguage, String> = mapOf(
     UiLanguage.ChineseSimplified to "签到即可获得",
 )
 
+/**
+ * 도장이 찍힌 칸에 붙는 말. **화면에는 안 보이고 스크린 리더만 읽는다**(#57) — 인장 그림에는
+ * 글자가 없으므로, 이것이 없으면 받아 간 칸과 아직인 칸이 소리로 구분되지 않는다.
+ */
+private val StampedNotices: Map<UiLanguage, String> = mapOf(
+    UiLanguage.Korean to "받았어요",
+    UiLanguage.English to "Claimed",
+    UiLanguage.Japanese to "受取済み",
+    UiLanguage.ChineseSimplified to "已领取",
+)
+
 private val BoardSectionTitles: Map<UiLanguage, String> = mapOf(
     UiLanguage.Korean to "출석 현황",
     UiLanguage.English to "Check-in progress",
@@ -56,40 +67,5 @@ internal fun attendanceAtStockCapNoticeFor(language: UiLanguage): String =
 internal fun attendanceUpcomingNoticeFor(language: UiLanguage): String =
     UpcomingNotices.getValue(language)
 
-/**
- * 6칸 행에 들어갈 **짧은 표기**. `UiStrings.attendanceRewardLabel`의 전체 문구
- * ("형세 보기 1회권 30개")는 여섯 칸 폭에서 말줄임으로 뭉개진다 — 그 행의 주인공은 도장이고
- * 보상은 곁들임이라, 무엇인지만 알아보면 된다.
- *
- * ⚠️ 넓은 4칸 행에는 이걸 쓰지 않는다. 거기는 주 단위 보상이라 전체 문구를 담을 폭이 있고,
- * 담아야 "왜 넓은지"가 설명된다.
- */
-internal fun attendanceRewardShortLabelFor(language: UiLanguage, reward: AttendanceReward): String =
-    when (reward) {
-        is AttendanceReward.PermanentFeature -> when (reward.featureId) {
-            FeatureId.Undo -> shortWord(language, "무르기", "Undo", "待った", "悔棋")
-            FeatureId.Eval -> shortWord(language, "형세", "Eval", "形勢", "形势")
-            FeatureId.TopMoves -> shortWord(language, "추천", "Moves", "推奨", "推荐")
-            FeatureId.MoveReview -> shortWord(language, "착수 평가", "Review", "着手評価", "着手评价")
-        }
-        is AttendanceReward.Consumable -> {
-            val name = when (reward.item) {
-                ConsumableCatalog.EvalOnce -> shortWord(language, "형세", "Eval", "形勢", "形势")
-                ConsumableCatalog.TopMovesOnce -> shortWord(language, "추천", "Moves", "推奨", "推荐")
-                else -> shortWord(language, "스킵", "Skip", "スキップ", "跳过")
-            }
-            "$name ${reward.amount}"
-        }
-        // 조각은 개수보다 "조각이구나"가 먼저 읽혀야 한다 — 어느 캐릭터인지는 상세 영역이 말한다.
-        is AttendanceReward.BotCharacterShards ->
-            shortWord(language, "조각", "Shard", "かけら", "碎片") + " ${reward.amount}"
-        is AttendanceReward.BotCharacterUnlock -> botCharacterNameFor(language, reward.character.id)
-    }
-
-private fun shortWord(language: UiLanguage, ko: String, en: String, ja: String, zh: String): String =
-    when (language) {
-        UiLanguage.Korean -> ko
-        UiLanguage.English -> en
-        UiLanguage.Japanese -> ja
-        UiLanguage.ChineseSimplified -> zh
-    }
+internal fun attendanceStampedNoticeFor(language: UiLanguage): String =
+    StampedNotices.getValue(language)

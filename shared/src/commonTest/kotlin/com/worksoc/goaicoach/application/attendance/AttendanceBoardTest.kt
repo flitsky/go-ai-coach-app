@@ -86,6 +86,19 @@ class AttendanceBoardTest {
         assertEquals(3, grantedAmountOf(reward, ConsumableInventory()))
     }
 
+    /**
+     * ⚠️ **화면 하나가 이 사실 위에 서 있다**(#57). 좁은 여섯 칸은 폭이 45dp 남짓이라 보상을
+     * **하나만** 그리는데, 확정표상 1~6일차에 보상이 정확히 하나씩이기 때문에 성립한다.
+     * 표를 고쳐 그 회차에 보상이 둘 이상 생기면 화면은 조용히 하나만 보여주게 되므로,
+     * **그 전에 여기서 먼저 깨져야 한다.**
+     */
+    @Test
+    fun everyDailyCellCarriesExactlyOneReward() {
+        buildAttendanceBoard(AttendanceState()).daily.forEach { cell ->
+            assertEquals(1, cell.rewards.size, "${cell.tier}일차 보상 수")
+        }
+    }
+
     @Test
     fun nonConsumableRewardsHaveNoStockToReportOn() {
         val character = AttendanceRewardPolicy.rewardsFor(7).single()

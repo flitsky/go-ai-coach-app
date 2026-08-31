@@ -1,0 +1,20 @@
+<!--
+  형세 보기 1회권 글리프(백로그 #57). 원판의 왼쪽 절반만 채워 **집이 갈린 모양**을 낸다 —
+  흑백으로 나뉘는 것이 형세의 본뜻이라, 45dp 칸에서도 무엇인지 바로 읽힌다.
+
+  ⚠️ 색을 여기 박지 않는다. 호출부가 `ColorFilter.tint`로 테마 색을 입히므로 검정 한 가지로
+  그리고, 두 톤이 필요한 자리는 **채움과 테두리의 대비**로 낸다(단색으로 틴트해도 안 뭉개진다).
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:strokeColor="#FF000000"
+        android:strokeWidth="2"
+        android:pathData="M12,4 a8,8 0 1,0 0,16 a8,8 0 1,0 0,-16" />
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M12,4 a8,8 0 1,0 0,16 Z" />
+</vector>

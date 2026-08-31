@@ -31,6 +31,9 @@
   "쓰자"는 유인이 사라진다.
 - **밀린 회차는 한 번에 모아 지급한다.** 며칠 못 들어왔다고 보상이 사라지지 않는다 —
   "고정 불변"이라는 말의 다른 쪽 면이다.
+- ⚠️ **도장이 찍히는 연출은 이 정책 아래에서 성립하지 않는다**(#57에서 확인). Claim하는 순간
+  팝업이 닫히므로 도장이 찍히는 그 순간에 판이 사라진다. 연출을 넣으려면 **"받고도 팝업이
+  잠시 남는다"** 는 정책 변경이 먼저다 — 그건 위 "보류 경로를 남기지 않는다"와 정면으로 부딪힌다.
 
 ### ⚠️ 뒤집힌 이전 결정
 
@@ -115,6 +118,8 @@
 | 도장판 구성(순수) | `shared/.../application/attendance/AttendanceBoard.kt` |
 | 보유 상한 | `shared/.../application/consumable/ConsumableItem.kt` |
 | 캐릭터 해금 회차 | `shared/.../application/botcharacter/BotCharacterCatalog.kt` |
-| 화면 | `app-android/.../ui/AttendanceRewardClaimDialog.kt` |
+| 화면(팝업) | `app-android/.../ui/AttendanceRewardClaimDialog.kt` |
+| 화면(도장판 그림) | `app-android/.../ui/AttendanceBoardView.kt` — 보상은 **글자가 아니라 글리프**로 그린다(#57) |
+| 보상 글리프 | `app-android/src/main/res/drawable/reward_*.xml` |
 | 상위 원칙 | `feature-access-principles/README.md` (무료/유료 경계) |
 | 수익화 맥락 | `premium-mode/README.md` |

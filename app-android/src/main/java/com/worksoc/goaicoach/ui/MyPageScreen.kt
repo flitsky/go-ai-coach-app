@@ -154,8 +154,10 @@ private fun AttendanceBoardSection() {
     val strings = LocalUiStrings.current
     val context = LocalContext.current
     // 화면을 여는 시점의 저장값 한 번이면 된다 — 이 화면에 있는 동안 출석이 바뀌지 않는다.
+    // 판이 캐릭터 얼굴을 그리므로(#57) 수집 상태를 판과 그림 양쪽에 넘긴다.
+    val collection = remember(context) { BotCollectionStore(context).load() }
     val board = remember(context) {
-        buildAttendanceBoard(AttendanceStore(context).load(), BotCollectionStore(context).load())
+        buildAttendanceBoard(AttendanceStore(context).load(), collection)
     }
 
     Text(
@@ -172,7 +174,7 @@ private fun AttendanceBoardSection() {
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            AttendanceStampBoard(board)
+            AttendanceStampBoard(board, collection)
             Text(
                 text = attendanceBoardBeyondNoticeFor(strings.language),
                 fontSize = 12.sp,

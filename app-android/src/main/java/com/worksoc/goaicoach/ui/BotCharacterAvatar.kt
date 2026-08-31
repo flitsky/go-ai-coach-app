@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.R
 import com.worksoc.goaicoach.application.botcharacter.BotCharacter
+import com.worksoc.goaicoach.application.botcharacter.BotUnlockSource
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -61,6 +62,17 @@ internal fun botAvatarRes(character: BotCharacter): Int? =
 internal data class ShardReveal(val acquired: Int, val required: Int)
 
 /**
+ * 이 캐릭터에 부분 공개가 있는가. **조각 경로 캐릭터만 있다** — 출석 해금(3·5단계)은 부분
+ * 진행이라는 개념이 없어 `null`이고, [BotCharacterAvatar]가 그때는 통째로 흑백을 그린다.
+ *
+ * 픽커(#49)와 출석 도장판(#57)이 같이 쓴다. 두 곳이 각자 `as? BotUnlockSource.AdShards`를
+ * 적어 두면 조각 경로 판정이 갈라질 수 있어 한 군데로 모았다.
+ */
+internal fun shardRevealOf(character: BotCharacter, acquiredShards: Int): ShardReveal? =
+    (character.unlockSource as? BotUnlockSource.AdShards)
+        ?.let { source -> ShardReveal(acquired = acquiredShards, required = source.required) }
+
+/**
  * [acquired]/[required]에 해당하는 부채꼴 각도. **순수 함수라 단위 테스트로 고정한다** —
  * 이 항목에서 실제로 틀리기 쉬운 곳은 그림이 아니라 이 계산이다.
  *
@@ -88,6 +100,9 @@ internal fun shardSweepDegrees(acquired: Int, required: Int): Float {
  *
  * ⚠️ 흐림(`Modifier.blur`)은 쓰지 않았다 — API 31+ 전용이라 `minSdk`가 26인 이 앱에서는
  * 26~30 기기에서 **아무 일도 일어나지 않는다**(조용히 무시된다). 흑백만으로 구분한다.
+ *
+ * [seamColor]는 이 아바타가 얹히는 바탕색이다. 기본값은 픽커 카드의 `surface`이고, 다른 색
+ * 위에 놓는 호출부는 자기 배경을 넘겨야 이음선이 배경과 어긋나지 않는다(#57에서 드러났다).
  */
 @Composable
 internal fun BotCharacterAvatar(
@@ -96,10 +111,12 @@ internal fun BotCharacterAvatar(
     size: Dp = 40.dp,
     available: Boolean = true,
     reveal: ShardReveal? = null,
+    seamColor: Color = MaterialTheme.colorScheme.surface,
 ) {
     val res = botAvatarRes(character)
-    // 조각 경계선은 카드 바탕색으로 긋는다 — 선이 아니라 **틈**으로 보여야 "조각 났다"가 된다.
-    val seamColor = MaterialTheme.colorScheme.surface
+    // ⚠️ 조각 경계선은 **아바타가 놓인 바탕색**으로 그어야 한다 — 선이 아니라 틈으로 보여야
+    // "조각 났다"가 된다. 기본값이 `surface`인 것은 픽커 카드가 그 색이기 때문이고, 다른 색
+    // 위에 얹는 곳(출석 도장판의 칸, #57)은 자기 배경색을 넘겨야 흰 거미줄이 되지 않는다.
     val placeholderColor = MaterialTheme.colorScheme.surfaceVariant
     Box(
         modifier = modifier

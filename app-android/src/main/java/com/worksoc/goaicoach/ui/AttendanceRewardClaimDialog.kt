@@ -5,40 +5,25 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.ui.window.DialogProperties
 import com.worksoc.goaicoach.application.attendance.AttendanceBoard
-import com.worksoc.goaicoach.application.attendance.AttendanceBoardCell
-import com.worksoc.goaicoach.application.attendance.AttendanceCellState
 import com.worksoc.goaicoach.application.attendance.buildAttendanceBoard
+import com.worksoc.goaicoach.application.botcharacter.BotCollectionState
 import com.worksoc.goaicoach.application.attendance.grantedAmountOf
 import com.worksoc.goaicoach.application.consumable.ConsumableInventory
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.attendance.AttendanceCheckInRequest
@@ -88,6 +73,9 @@ internal fun AttendanceRewardClaimDialog(context: Context) {
     // 도장판(#55)은 "받을 것"만이 아니라 **10회차 전체**를 그리므로 보드와 재고를 함께 읽는다.
     var board by remember { mutableStateOf<AttendanceBoard?>(null) }
     var inventory by remember { mutableStateOf(ConsumableInventory()) }
+    // 판이 캐릭터 얼굴을 그리므로(#57) 수집 상태도 화면이 들고 있어야 한다 — 아직 못 얻은
+    // 캐릭터는 흑백, 조각 경로는 모은 만큼만 색이 돈다.
+    var collection by remember { mutableStateOf(BotCollectionState()) }
 
     LaunchedEffect(attendanceStore) {
         val checkIn = runAttendanceCheckIn(
@@ -96,9 +84,10 @@ internal fun AttendanceRewardClaimDialog(context: Context) {
         )
         // 컬렉션까지 넘겨야 이미 다 모은 캐릭터의 조각이 팝업에 실리지 않는다 — 조각은 7일차마다
         // 영원히 반복되므로 이 필터가 없으면 매주 의미 없는 줄이 하나씩 남는다.
-        val collection = botStore.load()
-        pending = AttendanceRewardPolicy.pendingTiers(checkIn.state, collection)
-        board = buildAttendanceBoard(checkIn.state, collection)
+        val loaded = botStore.load()
+        collection = loaded
+        pending = AttendanceRewardPolicy.pendingTiers(checkIn.state, loaded)
+        board = buildAttendanceBoard(checkIn.state, loaded)
         inventory = consumableStore.load()
     }
 
@@ -107,6 +96,7 @@ internal fun AttendanceRewardClaimDialog(context: Context) {
 
     AttendanceRewardClaimDialogContent(
         board = shownBoard,
+        collection = collection,
         inventory = inventory,
         tiers = pending,
         // ⚠️ 확인 버튼과 뒤로 가기·바깥 탭이 **같은 함수**를 부른다 — 정책상 닫는 방법에 따라
@@ -126,7 +116,6 @@ internal fun AttendanceRewardClaimDialog(context: Context) {
             consumables.refresh()
             pending = emptyList()
         },
-
     )
 }
 
@@ -142,6 +131,7 @@ internal fun AttendanceRewardClaimDialog(context: Context) {
 @Composable
 private fun AttendanceRewardClaimDialogContent(
     board: AttendanceBoard,
+    collection: BotCollectionState,
     inventory: ConsumableInventory,
     tiers: List<AttendanceRewardTier>,
     onClaim: () -> Unit,
@@ -159,7 +149,7 @@ private fun AttendanceRewardClaimDialogContent(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                AttendanceStampBoard(board)
+                AttendanceStampBoard(board, collection)
                 if (board.beyondBoard.isNotEmpty()) {
                     Text(
                         text = attendanceBoardBeyondNoticeFor(strings.language),

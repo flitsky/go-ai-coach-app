@@ -1,0 +1,20 @@
+<!--
+  착수 평가 글리프(백로그 #57). 지금 출석표에는 이 보상이 없지만 `FeatureId`가 네 갈래라
+  `when`이 빠짐없이 닫혀야 한다 — 표가 바뀌어 이 보상이 들어와도 빈 칸이 되지 않게 미리 둔다.
+  눈금 셋이 오르는 막대 = 수순별 평가.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M4,14 L7.5,14 L7.5,20 L4,20 Z" />
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M10.2,9 L13.7,9 L13.7,20 L10.2,20 Z" />
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M16.5,4 L20,4 L20,20 L16.5,20 Z" />
+</vector>
