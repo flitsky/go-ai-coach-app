@@ -60,6 +60,13 @@ GENERIC_NAMES = {"README.md", "summary.md", "index.md"}
 # 못 쓰는 검사는 결국 꺼진다. 정확히 잡아야 하는 건은 ALLOWED에 개별로 적는다.
 REMOVAL_WORDS = ("삭제", "제거", "removed", "deleted", "아카이브", "git 히스토리")
 
+# **이 저장소의 문서가 아닌** 이름들. 상류 프로젝트 문서를 인용할 때 나온다.
+# ⚠️ 파일별 예외(ALLOWED)로 넣지 않는 이유: 같은 외부 문서를 다른 문서가 또 인용하면 그때마다
+# 예외를 늘려야 하고, 그러면 "왜 예외인가"가 파일 수만큼 흩어진다. 종류로 한 번만 적는다.
+EXTERNAL_NAMES = {
+    "Analysis_Engine.md": "KataGo 상류 문서 — 원본 URL이 인용 근처에 있다",
+}
+
 # 날짜별 갱신 이력 줄은 **그때의 상태**를 적는 것이라 지금 없는 이름이 나오는 게 정상이다.
 CHANGELOG_LINE = re.compile(r"^\s*(갱신:|\|\s*20\d\d-\d\d-\d\d\s*\|)")
 
@@ -79,8 +86,6 @@ ALLOWED: dict[tuple[str, str], str] = {
     ("docs/spec/APP_IA_AND_UI_SPEC.md", "docs/spec/UI_DESIGN_TOKENS.md"): "추천 신규 제안(미작성)",
     ("docs/spec/APP_IA_AND_UI_SPEC.md", "docs/spec/SGF_AND_REVIEW_MODE_SPEC.md"): "추천 신규 제안(미작성)",
     ("docs/spec/APP_IA_AND_UI_SPEC.md", "docs/spec/USER_ONBOARDING_GUIDE.md"): "추천 신규 제안(미작성)",
-    # 상류 프로젝트(KataGo)의 문서 — 이 저장소의 문서가 아니다. 바로 아래 줄에 원본 URL이 있다.
-    ("docs/engine/ENGINE_API_CALL_POLICY.md", "Analysis_Engine.md"): "KataGo 상류 문서(외부)",
     # ⓒ 스크립트가 만들어 낼 출력 경로
     ("scripts/run-katago-candidate-refine-experiment.py",
      "docs/measurements/engine-benchmark/candidate-refine-latest.md"):
@@ -162,6 +167,8 @@ def main() -> int:
                 continue  # 자기 자신을 언급하는 것은 정상
             line = text[text.rfind("\n", 0, match.start()) + 1:
                         (text.find("\n", match.end()) + 1 or len(text)) - 1]
+            if name in EXTERNAL_NAMES:
+                continue
             if any(word in line for word in REMOVAL_WORDS) or CHANGELOG_LINE.match(line):
                 continue
             hits = by_name.get(name, [])
