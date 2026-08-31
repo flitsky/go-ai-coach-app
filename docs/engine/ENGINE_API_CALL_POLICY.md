@@ -9,9 +9,9 @@
 ## 먼저 볼 문서
 
 - 이 문서: 엔진 API 호출 정책, 호출 비용 순서, AI/사람 턴 일관성 기준
-- `ENGINE_LEVEL_STRENGTH_REVIEW_2026-06-10.md`: 실제 레벨별 visits/time/candidate count와 반복 대국 결과
+- `ENGINE_STRENGTH_RESEARCH.md`: 실제 레벨별 visits/time/candidate count와 반복 대국 결과
 - `ENGINE_SEARCH_TREE_REUSE_REVIEW.md`: KataGo search tree reuse와 AI vs AI 격리 정책
-- `ENGINE_CANDIDATE_EXPANSION_REVIEW_2026-08-17.md`: 레벨링용 후보수 확장 검토. 이 문서의 `candidateCount 의미`/후보 예산 절과 직접 관련 — `refinePolicyMoves`가 구현은 됐지만 AI 착수 경로에서 항상 0으로 꺼져 있다는 갭과 실측 데이터
+- `ENGINE_STRENGTH_RESEARCH.md`: 레벨링용 후보수 확장 검토. 이 문서의 `candidateCount 의미`/후보 예산 절과 직접 관련 — `refinePolicyMoves`가 구현은 됐지만 AI 착수 경로에서 항상 0으로 꺼져 있다는 갭과 실측 데이터
 
 ## 현재 결정
 
@@ -72,7 +72,7 @@ JSON 기반 운영의 목표는 다음과 같다.
 - `TopMovesDisplay` limit은 `fastCandidateAnalysis(candidateCount=5)`로 정규화되어 `includePolicy=false`, `refinePolicyMoves=0`, `minVisitsPerCandidate=0`, `minTimeMillis=null`이 된다.
 - `runTopMoveAnalysis()`는 `EngineSessionClient.analyzePosition(state, limit)`를 호출하며, 명시적 search mode를 넘기지 않으므로 기본값인 `EngineSearchMode.GtpStatefulFast`를 사용한다.
 - 따라서 플레이어가 보는 `Top Moves`는 현재 대국 runtime profile의 GTP fast 최상위 후보 최대 5개다. 1순위는 보드 위에 큰 원, 2~5순위는 작은 원으로 표시된다(`GoBoard.kt`의 `drawCandidateMoves()`). 상대 AI가 `빠른 초급`이면 같은 B16 계열 경량 분석에서 나온 후보군이다.
-- ~~`빠른 초급 1~3단계`는 현재 코드상 모두 `MoveSelectionPolicy.BestOnly`다. 단계 이름은 남아 있지만 착수 선택 정책은 동일하다.~~ → **2026-08-18에 더 이상 사실이 아니다.** `빠른 초급`이 5단계로 재정립되면서 1~4단계는 `MoveSelectionPolicy.BucketedTierSelection`(최하수/중급수/최적수 버킷별 착수 비율)을 쓰고, `BestOnly`는 5단계(초고수)에만 남았다. 따라서 단계별로 착수 선택 정책이 **실제로 다르다**. `EngineAnalysisPolicy.kt`가 `BestOnly`일 때만 후보 1개를 요청하고, 나머지 단계는 `candidateCount`(빠른 초급 기준 8)만큼 받는다. 설계 근거는 `engine-research/FAST_BEGINNER_FIVE_TIER_REDESIGN_PLAN_2026-08-17.md` 11절.
+- ~~`빠른 초급 1~3단계`는 현재 코드상 모두 `MoveSelectionPolicy.BestOnly`다. 단계 이름은 남아 있지만 착수 선택 정책은 동일하다.~~ → **2026-08-18에 더 이상 사실이 아니다.** `빠른 초급`이 5단계로 재정립되면서 1~4단계는 `MoveSelectionPolicy.BucketedTierSelection`(최하수/중급수/최적수 버킷별 착수 비율)을 쓰고, `BestOnly`는 5단계(초고수)에만 남았다. 따라서 단계별로 착수 선택 정책이 **실제로 다르다**. `EngineAnalysisPolicy.kt`가 `BestOnly`일 때만 후보 1개를 요청하고, 나머지 단계는 `candidateCount`(빠른 초급 기준 8)만큼 받는다. 설계 근거는 `FAST_BEGINNER_TIER_DESIGN.md` 11절.
 - 이 구조에서는 `빠른 초급 초고수`(5단계, 옛 3단계에 해당)를 상대로 Top Moves를 그대로 따라도 승리가 보장되지 않는다. 후보 5개 중 어떤 수를 선택해도 같은 수준의 분석이며, 선후/komi/엔진 tree reuse/후보 fill/사용자 착수 타이밍에 따라 사용자가 불리할 수 있다.
 
 제품 메시지는 다음처럼 잡는다.

@@ -1362,6 +1362,47 @@ Canvas 파이 클리핑 + 조각 틈), `ui/BotCharacterUiState.kt`(카드에서 
     - 산출물: `DOCS_INDEX.md`(정책 절 2개 신설), `scripts/check-doc-links.py`(맨 파일명 검사 + 링크
       금지 + 제거 서술 인식), 그 외 표기를 바꾼 40개 파일. 코드 변경은 주석뿐.
 
+62. **엔진 문서 통폐합 + 하위 폴더 5→3** (AI 모델: Opus, 노력정도: 중간) [완료]
+    - 2026-08-31 사용자 지시. *"통폐합해서 문서 개수를 줄인다. 이 과정에서 절대 의미가 손실되면
+      안된다."* + *"줄어든 문서 개수도 폴더 레벨링을 통해 직관적으로 탐색"*.
+    - **폴더 5 → 3**: `spec/`·`engine/`·`work/`. `measurements/`는 내용이 `engine-benchmark`·
+      `engine-match` 둘뿐이라 전부 엔진 데이터 → `engine/measurements/`. `roadmap`·`history`·
+      `knowhow-docs`는 **"어떻게 일해 왔고 일할 것인가"** 로 묶여 `work/` 아래로(사용자 지적대로
+      **방법론은 시간축이 아니므로 `history/` 안에 있으면 안 됐다**).
+      · `market-listing-history/` 폴더는 없앴다 — 4뎁스가 되는데 내용이 `README.md` 하나였다.
+        `work/history/MARKET_LISTING_HISTORY.md` 단일 파일로 평탄화(폴더와 문서가 함께 줄었다).
+    - **엔진 실측 3건(877줄) → `ENGINE_STRENGTH_RESEARCH.md` 1건.** 파편화 의심이 맞았다 —
+      3절이 1절의 P0/P1/P2 국면을 그대로 재사용하고, 2절의 사고 기록을 3절이 근거로 인용한다.
+      · ⚠️ **본문을 손으로 다시 쓰지 않았다.** `189.6ms`·`16.984`·`3453턴 중 1턴`처럼 **다시 쓰면
+        반드시 잃는 숫자**가 이 문서들의 존재 이유다. 제목 단계만 한 칸 내려 그대로 옮겼다.
+      · **의미 보존을 기계로 증명했다**: 원본 내용 줄 **612개 전부**가 통합본에 있고, 숫자 토큰
+        **179종 유실 0종**. 새로 쓴 것은 머리말뿐이다.
+      · 머리말이 새로 담은 것: 관통 결론 5개(예 — *"`maxTime`은 품질 하한이 아니라 상한"*,
+        time cap 250/500→1000ms로 늘려도 root visits가 `16.98→16.97`), **대체된 전제 표**
+        (1·2절은 `빠른 초급 3단계`/`초급 7단계`를 전제하는데 지금 코드는 5단계이고 초급·중급·고급은
+        UI에서 숨겨져 있다), 열린 질문 3개, 그리고 **본문이 인용하는 옛 파일명 → 이 문서 N절 대응표**.
+    - ⚠️ **제안했던 삭제 1건은 잘못이었고, 실행 전에 잡았다.**
+      `FAST_BEGINNER_FIVE_TIER_REDESIGN_PLAN_2026-08-17.md`을 *"완료된 계획, 결론은 `ENGINE.md`에"* 라며
+      삭제 대상으로 올렸는데, 삭제 직전 인바운드 참조를 보니 `USER_OPTION_MANUAL.md`가 그 문서의
+      **11절을 "설계 근거"로 지목**하고 있었다. 열어 보니 **다른 어디에도 없는 근거**가 있었다 —
+      무상태 배치 공식 `target(k) = ceil(worstPercent/100 * k)`와 그것이 5절 누적 방식과 수학적으로
+      같다는 논거, 상태 추적을 버린 이유(`GameSessionCoreState`/undo/직렬화로 새 필드가 번진다),
+      마이그레이션 생략 근거. **`ENGINE.md`에는 결과 표만 있다.**
+      · 그래서 삭제 대신 **`docs/spec/FAST_BEGINNER_TIER_DESIGN.md`로 옮기고 이름을 사실에 맞췄다** —
+        계획서가 아니라 설계 기록이고, 그것을 인용하는 `USER_OPTION_MANUAL.md` 옆이 제자리다.
+      · ⚠️ **색인이 그 문서를 "승인 대기, 앱 코드 미반영"이라고 적고 있었다.** 코드는
+        `FastBeginner.maxLevel = 5`다 — 사실 오류를 정정했다. 문서 자신의 상태 줄은 이미
+        "구현 완료"라고 맞게 적혀 있었다.
+    - ⚠️ **일괄 치환이 과거 서술 하나를 망쳤고 검증기가 잡았다.**
+      `run-katago-candidate-refine-experiment.py`의 *"archived docs/archive/…/ENGINE_BEGINNER_VISITS_BENCHMARK.md"* 는
+      **과거 아카이브 위치를 적은 사실 서술**인데 새 이름으로 바뀌어 버렸다. 복원했다 —
+      이름 일괄 치환은 "지금 그 문서를 가리키는 참조"에만 해야 한다.
+    - **결과**: 엔진 문서 8 → 4(+`measurements/`·`error-cases/`), spec 5 → 6. 순감 2건이지만
+      **의미 손실 0**이 구속 조건이었다.
+    - 산출물: `engine/ENGINE_STRENGTH_RESEARCH.md` 신규(941줄), 원본 3건 삭제,
+      `spec/FAST_BEGINNER_TIER_DESIGN.md`(이동·개명·상태 정정), `DOCS_INDEX.md`(지도·엔진·spec 절·
+      정책 현재 상태), `scripts/check-doc-links.py`(통합 원본 이름 예외), 경로 참조 30여 개 파일.
+
 
 ## 진행 중
 

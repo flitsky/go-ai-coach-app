@@ -121,7 +121,7 @@
   - `중수`(3단계) — 최하수 20% / 중급수 60% / 최적수 20%
   - `고수`(4단계) — 최하수 10% / 중급수 30% / 최적수 60%
   - `초고수`(5단계) — 버킷을 나누지 않고 후보 1개만 요청해 그 최적수를 그대로 둔다(과거 `빠른 초급 3단계`와 같은 동작)
-  - 설계 근거와 검토 과정은 `engine-research/FAST_BEGINNER_FIVE_TIER_REDESIGN_PLAN_2026-08-17.md`(11절이 최종안).
+  - 설계 근거와 검토 과정은 `FAST_BEGINNER_TIER_DESIGN.md`(11절이 최종안).
 - `초급`: 1~7단계 모두 Beginner 32 visits / 기본 2초. JSON position analysis로 후보군을 받고, 1~6단계는 후보 선택 구간을 다르게 섞으며, 7단계는 초급 B32 경계 안에서 최적수만 선택한다.
 - `중급`: Casual 64 visits / 기본 3초. JSON position analysis로 더 안정적인 후보군을 받는 절충 설정이다.
 - `고급`: Intermediate 160 visits / 1000ms. 더 강한 응수와 분석 품질을 목표로 한다.

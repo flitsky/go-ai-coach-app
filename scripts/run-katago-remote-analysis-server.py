@@ -36,7 +36,7 @@ Scope cuts (deliberate, documented rather than silently guessed at):
   - `includePolicy`/`refinePolicyMoves` in the request `limit` are accepted
     but not honored — as of 2026-08-18 no live app call path actually sends
     a non-zero `refinePolicyMoves` (see
-    docs/engine/ENGINE_CANDIDATE_EXPANSION_REVIEW_2026-08-17.md),
+    docs/engine/ENGINE_STRENGTH_RESEARCH.md),
     so this is not a regression for today's app, just a known gap if that
     changes later.
   - Always runs KataGo's stateless JSON analysis engine server-side,

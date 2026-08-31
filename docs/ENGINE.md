@@ -52,7 +52,7 @@ fun PlayLevelSetting.aiMoveSearchMode(): EngineSearchMode =
 
 ⚠️ **위 표는 코드에 정의된 4그룹 전부지만, 지금 사용자에게 실제로 노출되는 것은 `빠른 초급` 하나뿐이다**(2026-08-18~, 2026-08-29 확인). `ui/PlayerSetupPanel.kt`는 `PlayLevelGroup.FastBeginner`만 참조하며, AI 선택 UI가 1뎁스로 간소화되면서 `초급`/`중급`/`고급`은 **코드는 보존한 채 UI에서 숨겨졌다**(커밋 `5bf3526`). 세 그룹의 정책 값은 위 표 그대로 유효하니 다시 켤 때 이 표를 쓰면 된다.
 
-**구현 완료(2026-08-18)**: `빠른 초급`을 후보 분류(최적수/중급수/최하수) 기반 5단계(`초보`~`초고수`)로 재정립하는 계획이 승인·구현·배포됐다 — `engine-research/FAST_BEGINNER_FIVE_TIER_REDESIGN_PLAN_2026-08-17.md`(11절이 최종 설계), 커밋 `5bf3526`. `PlayLevelGroup.FastBeginner.maxLevel = 5`이며 위 표는 이를 반영해 갱신됐다. 마이그레이션은 없었다.
+**구현 완료(2026-08-18)**: `빠른 초급`을 후보 분류(최적수/중급수/최하수) 기반 5단계(`초보`~`초고수`)로 재정립하는 계획이 승인·구현·배포됐다 — `FAST_BEGINNER_TIER_DESIGN.md`(11절이 최종 설계), 커밋 `5bf3526`. `PlayLevelGroup.FastBeginner.maxLevel = 5`이며 위 표는 이를 반영해 갱신됐다. 마이그레이션은 없었다.
 
 > 이 문단은 2026-08-29까지 "검토 중 · 승인 대기 · 앱 미반영"으로 남아 있었다 — 계획서 쪽은 같은 날 "구현 완료"로 갱신됐는데 이 요약 문서가 따라가지 않아, 같은 저장소의 두 문서가 11일간 정면으로 모순됐다. **요약 문서(`ENGINE.md`)와 딥다이브/계획서는 같은 스레드에서 함께 갱신한다.**
 
@@ -78,7 +78,7 @@ fun PlayLevelSetting.aiMoveSearchMode(): EngineSearchMode =
 | 문서 | 다룰 내용 |
 | --- | --- |
 | `ENGINE_API_CALL_POLICY.md` | 호출 우선순위, candidateCount 운영표, visit 이론, 종국 GTP cap 정책, 진단 로그 수집, 캐시 품질/origin 전체 규칙 |
-| `engine/ENGINE_LEVEL_STRENGTH_REVIEW_2026-06-10.md` | B16/B32/B64 실제 대국 강도 검증 결과 |
+| `engine/ENGINE_STRENGTH_RESEARCH.md` | B16/B32/B64 실제 대국 강도 검증 결과 |
 | `engine/ENGINE_SEARCH_TREE_REUSE_REVIEW.md` | search tree 재사용/격리 정책 상세 검토 |
-| `engine/ENGINE_CANDIDATE_EXPANSION_REVIEW_2026-08-17.md` | 레벨링용 후보수 확장 검토 — `refinePolicyMoves`가 엔진 어댑터에 이미 구현돼 있지만 AI 착수 경로에서는 항상 0으로 꺼져 있다는 점, 그 기능을 켰을 때의 후보수/latency 실측, 방향 권장안(아직 미반영) |
+| `engine/ENGINE_STRENGTH_RESEARCH.md` | 레벨링용 후보수 확장 검토 — `refinePolicyMoves`가 엔진 어댑터에 이미 구현돼 있지만 AI 착수 경로에서는 항상 0으로 꺼져 있다는 점, 그 기능을 켰을 때의 후보수/latency 실측, 방향 권장안(아직 미반영) |
 | `measurements/engine-benchmark/`, `measurements/engine-match/` | raw 벤치마크/대국 로그 |

@@ -1,9 +1,18 @@
-# 빠른 초급 5단계 재정립 계획
+# 빠른 초급 5단계 설계 기록
 
 작성일: 2026-08-17
 갱신: 2026-08-18 — 사용자 승인 + 추가 요구사항 반영 후 구현 착수. 11절에 확정된 최종 설계(원래 5/7절이 제안했던 "누적 상태 추적 방식"보다 더 단순하고 안전한 무상태 방식으로 교체)와 오늘 함께 확정된 결정사항을 기록한다. 5/7절은 검토 과정 기록으로 그대로 남기고 지우지 않는다.
 
-상태: **구현 완료(2026-08-18), 빌드/테스트 검증 중.** 11절부터 읽는 것을 권장한다 — 5~7절은 검토 당시 두 가지 설계안을 비교한 과정이고, 실제 구현은 11절의 최종안을 따랐다.
+상태: **구현 완료·배포됨(2026-08-18).** 코드가 `PlayLevel.kt`의 `FastBeginner.maxLevel = 5`로 이를 반영한다.
+
+⚠️ **이 문서는 지우지 않는다(2026-08-31 판단).** 이름이 "계획"이었고 상태가 "구현 완료"라 보존 정책상
+삭제 후보로 잡혔는데, 실제로 열어 보니 **11절이 다른 어디에도 없는 설계 근거**를 담고 있었다 —
+무상태 배치 공식 `target(k) = ceil(worstPercent/100 * k)`와 그것이 5절 누적 방식과 수학적으로 같다는
+논거, 상태 추적 방식을 버린 이유(`GameSessionCoreState`/undo/직렬화에 새 필드가 번지는 리스크),
+마이그레이션을 하지 않기로 한 근거. `ENGINE.md`에는 **결과 표만** 있다. 그래서 삭제 대신
+`docs/engine/`에서 `docs/spec/`으로 옮기고 이름을 사실에 맞췄다 — 이제 계획서가 아니라 설계 기록이다.
+
+11절부터 읽는 것을 권장한다 — 5~7절은 검토 당시 두 가지 설계안을 비교한 과정이고, 실제 구현은 11절의 최종안을 따랐다.
 
 ## 배경
 
@@ -27,7 +36,7 @@ FastBeginner -> when (safeLevel) {
 
 - **1단계**: 엔진이 반환한 scored 후보를 order(0=최상위)로 정렬한 뒤, 하위 30%(70~100 percentile) 구간에서 균등 랜덤 선택. `AiMoveSelectionPolicy.select()`(`shared/match/AiMoveSelectionPolicy.kt:70-79`)가 `candidateIndexRange()`로 구한 range를 `slice()`한 뒤 `random.nextInt()`로 뽑는다. 말씀하신 "하위수를 비율로 착수" 그대로다.
 - **2단계**: 중위 40~70% 구간. 역시 "일부러 저하"가 맞다 — 다만 1단계보다는 약간 나은 구간이다.
-- **3단계**: `BestOnly`. `candidateIndexRange()`가 항상 `0..0`을 반환해 최상위 후보 1개만 선택 범위가 된다. 그리고 이보다 한 단계 더 앞에서, `AiMoveSelectionPolicy.analysisLimitFor()`(`shared/match/AiMoveSelectionPolicy.kt:24-37`)가 `selectionPolicy is BestOnly`이면 **엔진에 요청하는 candidateCount 자체를 8이 아니라 1로 줄인다.** 즉 3단계는 "8개 중 1등만 고른다"가 아니라 "애초에 1개만 탐색해서 그걸 둔다"— 말씀하신 그대로다. (같은 내용을 오늘 앞서 만든 `ENGINE_CANDIDATE_EXPANSION_REVIEW_2026-08-17.md` 1-2절에서도 확인했다.)
+- **3단계**: `BestOnly`. `candidateIndexRange()`가 항상 `0..0`을 반환해 최상위 후보 1개만 선택 범위가 된다. 그리고 이보다 한 단계 더 앞에서, `AiMoveSelectionPolicy.analysisLimitFor()`(`shared/match/AiMoveSelectionPolicy.kt:24-37`)가 `selectionPolicy is BestOnly`이면 **엔진에 요청하는 candidateCount 자체를 8이 아니라 1로 줄인다.** 즉 3단계는 "8개 중 1등만 고른다"가 아니라 "애초에 1개만 탐색해서 그걸 둔다"— 말씀하신 그대로다. (같은 내용을 오늘 앞서 만든 `ENGINE_STRENGTH_RESEARCH.md` 1-2절에서도 확인했다.)
 
 ## 2. 후보 분류 규칙 — 최적수/중급수/최하수
 
@@ -65,7 +74,7 @@ FastBeginner -> when (safeLevel) {
 
 ### 왜 단순 "매 턴 비율대로 뽑기"가 아닌가
 
-매 턴 독립적으로(예: 고수는 매 턴 10% 확률로 최하수) 뽑으면 말씀하신 문제가 그대로 재현된다 — 어느 턴에 최하수를 뽑아야 하는데 그 턴의 scored 후보가 1~2개뿐이면(최하수 버킷은 N≥3부터 존재) 채울 수가 없다. 오늘 실측(`ENGINE_CANDIDATE_EXPANSION_REVIEW_2026-08-17.md` 4절)에서도 후보수가 국면마다 크게 출렁이는 걸 직접 확인했다(빈 보드 5개 → 초반 8수 2개 → 중반 20수 3개, 항상 늘어나지 않는다). 그래서 "언제 최하수를 시도할지"를 게임 진행에 따라 동적으로 조정하는 장치가 필요하다.
+매 턴 독립적으로(예: 고수는 매 턴 10% 확률로 최하수) 뽑으면 말씀하신 문제가 그대로 재현된다 — 어느 턴에 최하수를 뽑아야 하는데 그 턴의 scored 후보가 1~2개뿐이면(최하수 버킷은 N≥3부터 존재) 채울 수가 없다. 오늘 실측(`ENGINE_STRENGTH_RESEARCH.md` 4절)에서도 후보수가 국면마다 크게 출렁이는 걸 직접 확인했다(빈 보드 5개 → 초반 8수 2개 → 중반 20수 3개, 항상 늘어나지 않는다). 그래서 "언제 최하수를 시도할지"를 게임 진행에 따라 동적으로 조정하는 장치가 필요하다.
 
 ### 검토한 두 방식과 최종 선택
 
@@ -229,7 +238,7 @@ target(k) = ceil(worstPercent / 100 * k)   # k = 이 진영의 몇 번째 수인
 
 ## 참고 문서
 
-- `ENGINE_CANDIDATE_EXPANSION_REVIEW_2026-08-17.md` — 오늘 앞서 진행한 후보수 확장 리서치. 이 문서의 2/6절 근거를 그대로 이어받음
+- `ENGINE_STRENGTH_RESEARCH.md` — 오늘 앞서 진행한 후보수 확장 리서치. 이 문서의 2/6절 근거를 그대로 이어받음
 - `ENGINE.md`, `ENGINE_API_CALL_POLICY.md` — 현재 레벨 정책의 canonical 문서. 이 계획이 실제 구현되면 두 문서의 `빠른 초급` 관련 표를 갱신해야 한다
 - `shared/src/commonMain/kotlin/com/worksoc/goaicoach/shared/PlayLevel.kt` — `PlayLevelGroup`/`MoveSelectionPolicy` 정의
 - `shared/src/commonMain/kotlin/com/worksoc/goaicoach/shared/EngineAnalysisPolicy.kt` — 탐색 모드별 요청 조합 로직

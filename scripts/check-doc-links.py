@@ -86,6 +86,11 @@ ALLOWED: dict[tuple[str, str], str] = {
     ("docs/spec/APP_IA_AND_UI_SPEC.md", "docs/spec/UI_DESIGN_TOKENS.md"): "추천 신규 제안(미작성)",
     ("docs/spec/APP_IA_AND_UI_SPEC.md", "docs/spec/SGF_AND_REVIEW_MODE_SPEC.md"): "추천 신규 제안(미작성)",
     ("docs/spec/APP_IA_AND_UI_SPEC.md", "docs/spec/USER_ONBOARDING_GUIDE.md"): "추천 신규 제안(미작성)",
+    # ⓑ' 통합된 원본의 옛 이름 — 본문이 서로를 그 이름으로 인용하고, 머리말의 대응표가
+    #     "그 셋이 이 문서의 1·2·3절"임을 밝힌다. 본문을 고치면 "원본 그대로"가 깨진다.
+    ("docs/engine/ENGINE_STRENGTH_RESEARCH.md", "ENGINE_BEGINNER_VISITS_BENCHMARK.md"): "이 문서 1절로 합쳐진 원본",
+    ("docs/engine/ENGINE_STRENGTH_RESEARCH.md", "ENGINE_LEVEL_STRENGTH_REVIEW_2026-06-10.md"): "이 문서 2절로 합쳐진 원본",
+    ("docs/engine/ENGINE_STRENGTH_RESEARCH.md", "ENGINE_CANDIDATE_EXPANSION_REVIEW_2026-08-17.md"): "이 문서 3절로 합쳐진 원본",
     # ⓒ 스크립트가 만들어 낼 출력 경로
     ("scripts/run-katago-candidate-refine-experiment.py",
      "docs/engine/measurements/engine-benchmark/candidate-refine-latest.md"):

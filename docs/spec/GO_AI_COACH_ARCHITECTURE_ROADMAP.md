@@ -128,7 +128,7 @@
 6. ~~**6계층 — 기능 엔타이틀먼트 정책 도입**~~ — 완료(260814). `application/premium/PremiumState.kt`의 `isUndoClaimed: Boolean`을 `claimedFeatures: Set<FeatureId>`로 일반화하고(`persistence/PremiumStateStore.kt`에 구버전 불리언 하위호환 마이그레이션 포함), `application/premium/FeatureAccessPolicy.kt`(같은 6계층 — 애초 설계 초안엔 5계층으로 잘못 적혀 있었으나 착수 시점에 정정)를 신설해 `ui/GamePlaySection.kt`(형세보기/추천수/무르기)·`ui/KaTrainUxPanels.kt`(착수평가)에 각자 하드코딩돼 있던 3곳의 판정을 이 함수 하나로 통합했다. **의도적으로 남겨둔 것**: 클레임 전용 다이얼로그(`ui/GamePlaySection.kt`의 `showUndoClaimDialog`)를 `PremiumUpsellDialog`에 `Claim` 선택지로 통합하는 UI 단순화는 이번 범위에서 제외 — 클레임 가능 기능이 아직 무르기 하나뿐이라 지금 합치는 건 과설계로 판단, 두 번째 클레임형 기능이 생기면 재검토.
 7. **6계층 — 세션/연속성 공식화**: `auth-onboarding/README.md` Step 4(익명→실계정 승격, Firestore 동기화)를 이 계층의 정식 구현으로 진행 — **단, 익명 로그인 자체가 2026-08-05에 영구 폐기 결정됐으므로("재설치마다 허수 계정이 쌓이는 문제를 이전 앱에서 실제로 겪음") "익명→실계정 승격" 경로 자체가 성립하지 않는다. 이 항목은 착수 전에 목표를 다시 정의해야 한다** — 예를 들어 "게스트(로컬 ID)→실계정 승격"처럼 익명 인증을 전제하지 않는 형태로. 기기 식별자 기반 다중 기기 정책도 이 재정의와 함께 결정.
 8. **`LayeringContractTest.kt` 갱신**: 위 항목들이 실제 코드로 옮겨질 때마다, 이번 재정의(2/3계층 경계, 4/6계층 신설, 5/7 번호 이동)를 반영해 계층 위반을 기계적으로 검증하도록 갱신. **코드가 실제로 옮겨지기 전까지는 테스트를 먼저 갱신하지 않는다** — 아직 물리적으로 분리되지 않은 것을 분리된 것처럼 강제하면 오탐만 늘어난다.
-9. ~~**문서 정리 후속 작업**~~ — **완료(260817)**. `docs/refactoring/`(리팩토링 축이 이미 종료됨)과 `docs/archive/` 전체(55개 파일, 1.2MB)를 저장소에서 제거했다. "삭제 대신 보관" 원칙을 뒤집는 결정이라 `DOCS_INDEX.md` "문서 보존 정책" 절에 사유와 복원 방법을 기록했다. 유일한 예외는 실측 데이터로 계속 인용되던 `ENGINE_BEGINNER_VISITS_BENCHMARK.md`로, `docs/engine/`로 이동 보존했다.
+9. ~~**문서 정리 후속 작업**~~ — **완료(260817)**. `docs/refactoring/`(리팩토링 축이 이미 종료됨)과 `docs/archive/` 전체(55개 파일, 1.2MB)를 저장소에서 제거했다. "삭제 대신 보관" 원칙을 뒤집는 결정이라 `DOCS_INDEX.md` "문서 보존 정책" 절에 사유와 복원 방법을 기록했다. 유일한 예외는 실측 데이터로 계속 인용되던 `ENGINE_STRENGTH_RESEARCH.md`로, `docs/engine/`로 이동 보존했다.
 
 ## 관련 문서
 
