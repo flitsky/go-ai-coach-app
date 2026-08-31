@@ -75,10 +75,12 @@
 | `USER_OPTION_MANUAL.md` | 현재 앱 옵션과 사용자 조작 설명 — `OPERATIONS.md`의 딥다이브 |
 | `DIAGNOSTIC_EVENT_SCHEMA.md` | 2026-06-28 기준 진단 이벤트 JSONL 스키마 + 런타임 이벤트 로그 20종 — `OPERATIONS.md`의 딥다이브 |
 | `SCORE_AND_ENDGAME_DECISION.md` | 중간 형세, 사석 정리, 종국 계가 정책, 부심/주심 SLA — `OPERATIONS.md`의 딥다이브 |
+| `ATTENDANCE_REWARD_POLICY.md` | 출석 보상표와 **그렇게 정한 이유** — 데일리 보상은 고정 불변의 자동 수령이라는 핵심 정책, 회차별 배치 근거, 보유 상한. `feature-access-principles/README.md`(무료/유료 경계)의 출석 축 딥다이브 |
 | `baduk_app_architecture_recommendation.md` | 2026-07-30 이전 초기 조사 — 바둑 앱 아키텍처 후보 비교. **요약/딥다이브 체계 밖의 일회성 리서치**로, 결론은 `ARCHITECTURE.md`/`PRD.md`에 흡수됐다. 남겨둘지 정리할지는 미결(2026-08-29 확인) |
 | `baas_solutions_comparison.md` | 2026-07-30 이전 초기 조사 — BaaS 후보 비교. 위와 같은 성격이며 결론은 `auth-onboarding/README.md`가 이어받았다. 남겨둘지 정리할지는 미결(2026-08-29 확인) |
 
 2026-07-30 기준 `PRD`/`ARCHITECTURE`/`ENGINE`/`OPERATIONS` 4개는 압축된 요약 문서이고, `GO_AI_COACH_ARCHITECTURE_ROADMAP`은 `ARCHITECTURE`의 파생 문서이며, 나머지(`ENGINE_API_CALL_POLICY`/`USER_OPTION_MANUAL`/`DIAGNOSTIC_EVENT_SCHEMA`/`SCORE_AND_ENDGAME_DECISION`)는 그 요약이 가리키는 상세 운영 규칙 문서다.
+갱신: 2026-08-31 — 출석 보상 정책 문서 `docs/ATTENDANCE_REWARD_POLICY.md`를 신설해 위 표에 편입했다(백로그 #55·#57). 계기는 **"'나중에' 버튼이 무의미해 보인다"는 사용자 지적**이었는데, 논의 끝에 그것이 버튼 하나의 문제가 아니라 **정책이 어디에도 적혀 있지 않아 생긴 혼선**임이 드러났다 — 킥오프 플랜 5.1절은 "닫으면 미지급으로 남는다"고 정해 뒀고, 그 문장만 보면 보류 버튼이 옳다. 실제 의도는 **데일리 보상은 고정 불변의 자동 수령이며 목적은 모으게 하는 것이 아니라 제때 쓰게 하는 것**이었고, 그 정책이 문서화되지 않아 코드와 논의가 반대 방향으로 갔다. 새 문서는 표(2026-08-31 확정)와 함께 **각 배치의 이유**를 적는다 — 특히 "무르기가 왜 1일차가 아니라 3일차인가"(이틀간 유료임을 겪게 한 뒤 준다), "조각의 무광고 경로가 왜 없는가"(의도된 광고 유입), "7·28일차를 왜 반복 회차와 섞으면 안 되는가"(소모품이 통째로 사라진다)처럼 숫자만으로는 복원되지 않는 근거들이다. 뒤집힌 이전 결정(5.1절)도 명시해 다음 사람이 옛 문장을 근거로 되돌리지 않게 했다.
 
 ### 문서 이력
 

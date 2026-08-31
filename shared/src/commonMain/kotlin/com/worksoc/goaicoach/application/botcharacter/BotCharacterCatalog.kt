@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.application.botcharacter
 
+import com.worksoc.goaicoach.application.attendance.WeeklyRewardCycleTier
 import com.worksoc.goaicoach.shared.PlayLevelGroup
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 
@@ -53,7 +54,10 @@ object BotCharacterCatalog {
         // 3단계 — 출석 4일차 보상. 무료 사용자가 얻는 두 번째 캐릭터다(5단계도 28일차 출석이다).
         fastBeginnerCharacter(
             tier = 3,
-            unlockSource = BotUnlockSource.Attendance(tier = 4),
+            // ⚠️ 4일차 → **7일차**로 옮겼다(#55, 2026-08-31 확정표). 도장판 UX에서 1~6일차 행은
+            // 소모품·기능만, 7·28일차는 캐릭터로 성격을 갈랐다. 저장소는 캐릭터 id만 담으므로
+            // 이미 4일차에 받은 사용자는 그대로 보유한다.
+            unlockSource = BotUnlockSource.Attendance(tier = WeeklyRewardCycleTier),
         ),
         // 4단계 — 광고 10회 조각 누적(#11).
         fastBeginnerCharacter(
@@ -135,7 +139,11 @@ private fun fastBeginnerCharacter(
 ): BotCharacter =
     BotCharacter(
         id = BotCharacterId("fast_beginner_$tier"),
-        avatarRef = null,
+        // 플랫폼 중립 키다(백로그 #48) — 여기는 공용 계층이라 Android 리소스 ID를 알면 안 된다.
+        // 이 문자열을 실제 그림으로 바꾸는 일은 앱 계층의 `botAvatarRes`가 맡는다.
+        // ⚠️ `id`와 값이 같아 보이지만 **같은 것이 아니다.** id는 저장·복원의 키라 절대 바꾸면
+        // 안 되고(모르는 id는 조용히 버려진다), 이쪽은 그림을 갈아끼우면 함께 바뀔 수 있다.
+        avatarRef = "bot_fast_beginner_$tier",
         linkedPlayLevel = PlayLevelGroup.FastBeginner,
         tierWithinGroup = tier,
         unlockSource = unlockSource,

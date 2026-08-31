@@ -245,7 +245,6 @@ internal data class UiStrings(
     val premiumUpsellUseTicketAction: String,
     val attendanceRewardTitle: String,
     val attendanceRewardClaimAction: String,
-    val attendanceRewardLaterAction: String,
     val engineStuckDialogTitle: String,
     val engineStuckDialogMessage: String,
     val engineStuckDialogResetAction: String,

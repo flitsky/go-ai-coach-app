@@ -97,7 +97,10 @@ class ConsumableSpendApplicationTest {
 
     @Test
     fun adSkipTicketTurnsOnPremiumForTheSameHourAsWatchingTheAd() {
+        // ⚠️ 10개를 주려 해도 9개만 들어간다 — 광고 스킵권 상한이 9다(#55). 이 표는 "광고를 안
+        // 보게 해 주는" 것이라 넉넉히 쌓이면 프리미엄 구독과 광고 수익 양쪽이 함께 옅어진다.
         val inventory = ConsumableInventory().withGranted(premiumTicket.id, 10)
+        assertEquals(PremiumOnceMaxStock, inventory.countOf(premiumTicket.id))
 
         val spent = assertIs<ConsumableSpendDecision.Spent>(
             decideConsumableSpend(premiumTicket, inventory, PremiumState(), Now),
@@ -107,7 +110,7 @@ class ConsumableSpendApplicationTest {
         assertTrue(premium.isActive(Now))
         assertTrue(premium.isActive(Now + PremiumState.AdGrantDurationMillis - 1))
         assertTrue(!premium.isActive(Now + PremiumState.AdGrantDurationMillis))
-        assertEquals(9, spent.remaining)
+        assertEquals(PremiumOnceMaxStock - 1, spent.remaining)
     }
 
     @Test

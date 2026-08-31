@@ -90,7 +90,9 @@ class BotCharacterCatalogTest {
         // 7장 재확정본(2026-08-24). 티어 오름차순이 아닌 것이 의도이므로 표 그대로 고정한다.
         assertEquals(BotUnlockSource.Default, roster[0].unlockSource)
         assertEquals(BotUnlockSource.AdShards(required = 5), roster[1].unlockSource)
-        assertEquals(BotUnlockSource.Attendance(tier = 4), roster[2].unlockSource)
+        // ⚠️ 4일차 → **7일차**(#55, 2026-08-31). 도장판 UX에서 1~6일차 행은 소모품·기능만 두고
+        // 7·28일차를 캐릭터 회차로 갈랐다.
+        assertEquals(BotUnlockSource.Attendance(tier = 7), roster[2].unlockSource)
         assertEquals(BotUnlockSource.AdShards(required = 10), roster[3].unlockSource)
         // 2026-08-29: 5단계가 유료 구매 → 28일차 출석 장기 보상으로 바뀌었다. Play Console의
         // "수익 창출"이 앱 설정 미완료로 막혀 상품 등록 자체가 불가능해졌기 때문이다(#18).
@@ -110,18 +112,20 @@ class BotCharacterCatalogTest {
     }
 
     @Test
-    fun attendanceLookupYieldsTheDayFourAndDayTwentyEightCharacters() {
-        // 1일차는 이제 캐릭터를 주지 않는다 — 1단계가 기본 제공으로 바뀌면서 정책표에 코드를
-        // 더하지 않고도 중복 지급이 사라졌다(#19의 선행 조건).
-        assertTrue(BotCharacterCatalog.forAttendanceTier(1).isEmpty())
-        assertTrue(BotCharacterCatalog.forAttendanceTier(5).isEmpty())
+    fun attendanceLookupYieldsTheDaySevenAndDayTwentyEightCharacters() {
+        // 1일차는 캐릭터를 주지 않는다 — 1단계가 기본 제공이라 중복 지급이 애초에 없다.
+        listOf(1, 4, 5, 6).forEach { tier ->
+            assertTrue(BotCharacterCatalog.forAttendanceTier(tier).isEmpty(), "tier $tier")
+        }
+        // ⚠️ 3단계가 4일차 → **7일차**로 옮겼다(#55).
         assertEquals(
             listOf(BotCharacterId("fast_beginner_3")),
-            BotCharacterCatalog.forAttendanceTier(4).map { it.id },
+            BotCharacterCatalog.forAttendanceTier(7).map { it.id },
         )
-        // 최상위 캐릭터는 28일차(7의 배수 중 네 번째)에 걸린다 — 2026-08-29에 유료 구매에서
-        // 옮겨왔다. 7·14·21에는 캐릭터가 없어야 반복 회차에서 중복 지급이 생기지 않는다.
-        listOf(7, 14, 21).forEach { tier ->
+        // 최상위 캐릭터는 28일차. 그 사이의 반복 회차(14·21)에는 캐릭터가 없어야
+        // 반복 지급에서 중복이 생기지 않는다 — 정책이 "7의 배수이면서 캐릭터가 없는 회차"를
+        // 반복 번들로 삼기 때문에, 여기가 비어 있다는 사실이 그 판정의 근거이기도 하다.
+        listOf(14, 21, 35).forEach { tier ->
             assertTrue(BotCharacterCatalog.forAttendanceTier(tier).isEmpty(), "tier $tier")
         }
         assertEquals(
@@ -144,8 +148,12 @@ class BotCharacterCatalogTest {
             ),
             BotCharacterCatalog.fastBeginnerRoster.map { it.id.raw },
         )
-        // 아바타는 아직 플레이스홀더 단계라 전부 비어 있다.
-        assertTrue(BotCharacterCatalog.all.all { it.avatarRef == null })
+        // 아바타는 #48에서 다섯 종 전부 채워졌다(그 전에는 전부 null이었다).
+        // ⚠️ `avatarRef`는 **id와 값이 겹쳐 보이지만 다른 축이다** — id는 저장 스키마라 고정이고,
+        // 이쪽은 그림을 갈아끼우면 함께 바뀔 수 있다. 그래서 "id와 같아야 한다"가 아니라
+        // "비어 있지 않아야 한다"만 여기서 지키고, 실제 그림 파일과의 대응은 앱 계층의
+        // `app-android/.../ui/BotCharacterAvatarTest.kt`가 확인한다(리소스가 거기에만 있다).
+        assertTrue(BotCharacterCatalog.all.all { !it.avatarRef.isNullOrBlank() })
         // ⚠️ 이름·설명은 여기서 검증하지 않는다(백로그 #32) — 도메인이 더 이상 갖고 있지 않다.
         // "바둑 도장" 콘셉트가 플레이스홀더로 되돌아가지 않는지는 UI 계층의
         // `app-android/.../ui/UiStringsBotCharacterTest.kt`가 네 언어 전부에 대해 지킨다.

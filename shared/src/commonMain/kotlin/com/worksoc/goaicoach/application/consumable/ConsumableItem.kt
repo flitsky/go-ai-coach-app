@@ -40,7 +40,23 @@ sealed class ConsumableEffect {
 data class ConsumableItem(
     val id: ConsumableItemId,
     val effect: ConsumableEffect,
+    /**
+     * 이 종류를 최대 몇 개까지 들고 있을 수 있는가(백로그 #55, 2026-08-31 사용자 확정).
+     *
+     * 상한을 두는 이유는 재고 관리가 아니라 **행동 유도**다 — 쌓이면 가치가 희석되고 "모으는
+     * 재미"에 빠지므로, *"어차피 또 받을 것이니 쓰자"* 쪽으로 민다. 그래서 종류마다 다르다.
+     */
+    val maxStock: Int = DefaultMaxStock,
 )
+
+/** 소모품 기본 보유 상한. */
+const val DefaultMaxStock: Int = 99
+
+/**
+ * 광고 스킵권만 낮은 상한을 쓴다 — 이건 **광고를 안 보게 해 주는** 표라, 넉넉히 쌓이면
+ * 프리미엄 구독(#26)과 광고 수익 양쪽의 의미가 함께 옅어진다.
+ */
+const val PremiumOnceMaxStock: Int = 9
 
 /**
  * 6계층(Session & Continuity) — 소모품 카탈로그. 킥오프 플랜 4.5절의 3종이 전부이며, 각각 출석
@@ -64,6 +80,7 @@ object ConsumableCatalog {
     val PremiumOnce = ConsumableItem(
         id = ConsumableItemId("premium_once"),
         effect = ConsumableEffect.PremiumGrant,
+        maxStock = PremiumOnceMaxStock,
     )
 
     val all: List<ConsumableItem> = listOf(EvalOnce, TopMovesOnce, PremiumOnce)
@@ -78,6 +95,12 @@ object ConsumableCatalog {
      * ([FeatureId.Undo]는 1일차에 영구 클레임으로 풀리고, [FeatureId.MoveReview]는 보상 대상이
      * 아니다)에는 `null`.
      */
+    /**
+     * 이 종류의 보유 상한. 카탈로그에 없는 id(다운그레이드로 흘러든 옛 저장값 등)는 기본 상한을
+     * 쓴다 — 모르는 값 때문에 지급이 통째로 막히는 것보다 낫다.
+     */
+    fun maxStockOf(id: ConsumableItemId): Int = byId(id)?.maxStock ?: DefaultMaxStock
+
     fun forFeature(featureId: FeatureId): ConsumableItem? =
         all.firstOrNull { item ->
             (item.effect as? ConsumableEffect.FeatureUse)?.featureId == featureId

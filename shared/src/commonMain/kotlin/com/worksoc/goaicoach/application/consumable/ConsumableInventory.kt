@@ -27,10 +27,29 @@ data class ConsumableInventory(
     fun withGranted(id: ConsumableItemId, amount: Int): ConsumableInventory {
         if (amount <= 0) return this
         // Long으로 더한다 — amount가 Int.MAX_VALUE에 가까우면 Int 덧셈이 음수로 넘칠 수 있다.
-        val next = (countOf(id).toLong() + amount).coerceAtMost(MaxPerItem.toLong()).toInt()
+        val next = (countOf(id).toLong() + amount).coerceAtMost(maxStockOf(id).toLong()).toInt()
         if (next == countOf(id)) return this
         return copy(counts = counts + (id to next))
     }
+
+    /** 이 종류의 상한(#55에서 종류별로 갈렸다 — 광고 스킵권만 9, 나머지는 99). */
+    fun maxStockOf(id: ConsumableItemId): Int = ConsumableCatalog.maxStockOf(id)
+
+    /**
+     * [amount]개를 주려 할 때 **실제로 들어갈 개수**. 상한에 걸려 버려지는 몫을 호출부가 미리 알기
+     * 위한 것이다(백로그 #55).
+     *
+     * ⚠️ 이것이 없으면 출석 팝업이 *"광고 스킵권 3개"* 라고 안내해 놓고 **0개가 들어가는** 일이
+     * 생긴다. 상한이 99일 때는 거의 드러나지 않았지만, 스킵권 상한을 9로 낮추면 4일차 3 +
+     * 14일차 3 + 21일차 3 = 정확히 9라 **35일차부터 매 반복마다** 벌어진다.
+     */
+    fun grantableAmount(id: ConsumableItemId, amount: Int): Int {
+        if (amount <= 0) return 0
+        return (maxStockOf(id) - countOf(id)).coerceIn(0, amount)
+    }
+
+    /** 이 종류를 상한까지 채웠는가 — 팝업이 "보유 상한 도달"을 알리는 데 쓴다. */
+    fun isAtMaxStock(id: ConsumableItemId): Boolean = countOf(id) >= maxStockOf(id)
 
     /**
      * [amount]개를 차감한다(기본 1개). 0 미만으로는 내려가지 않고, 0이 되면 키 자체를 지워

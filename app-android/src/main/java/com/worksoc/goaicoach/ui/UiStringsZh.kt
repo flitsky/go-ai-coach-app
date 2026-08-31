@@ -135,7 +135,6 @@ internal val UiStringsChineseSimplified = UiStringsKorean.copy(
     premiumUpsellUseTicketAction = "使用免广告券",
     attendanceRewardTitle = "出勤奖励",
     attendanceRewardClaimAction = "领取",
-    attendanceRewardLaterAction = "稍后",
     engineStuckDialogTitle = "引擎响应延迟",
     engineStuckDialogMessage = "AI 响应时间比预期长,引擎可能出现了问题。要现在重置引擎吗?当前对局进度(落子记录)将保持不变。",
     engineStuckDialogResetAction = "重置引擎",

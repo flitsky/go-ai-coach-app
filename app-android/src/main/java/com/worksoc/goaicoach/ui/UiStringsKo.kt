@@ -136,7 +136,6 @@ internal val UiStringsKorean = UiStrings(
     premiumUpsellUseTicketAction = "광고 스킵권 사용",
     attendanceRewardTitle = "출석 보상",
     attendanceRewardClaimAction = "받기",
-    attendanceRewardLaterAction = "나중에",
     engineStuckDialogTitle = "엔진 응답 지연",
     engineStuckDialogMessage = "AI 응답이 예상보다 오래 걸리고 있습니다. 엔진에 문제가 발생했을 수 있습니다. 지금 엔진을 초기화하시겠습니까? 현재 대국 진행 상황(착수 기록)은 그대로 유지됩니다.",
     engineStuckDialogResetAction = "엔진 초기화",

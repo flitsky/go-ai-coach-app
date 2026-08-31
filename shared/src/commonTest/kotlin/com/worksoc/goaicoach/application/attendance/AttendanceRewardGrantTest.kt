@@ -6,6 +6,7 @@ import com.worksoc.goaicoach.application.botcharacter.BotCollectionStorePort
 import com.worksoc.goaicoach.application.botcharacter.BotUnlockSource
 import com.worksoc.goaicoach.application.consumable.ConsumableCatalog
 import com.worksoc.goaicoach.application.consumable.ConsumableInventory
+import com.worksoc.goaicoach.application.consumable.PremiumOnceMaxStock
 import com.worksoc.goaicoach.application.consumable.ConsumableStorePort
 import com.worksoc.goaicoach.application.premium.FeatureAccess
 import com.worksoc.goaicoach.application.premium.FeatureAccessPolicy
@@ -96,97 +97,93 @@ private class RewardStores(
 // 출석으로 열리는 캐릭터는 3단계(도장생 반상, 4일차)와 5단계(관장 천원, 28일차) 둘이다 — 1단계는 기본 제공이고
 // 2·4단계는 광고 조각, 5단계는 유료다(7장 재확정본, #16). 카탈로그가 단일 출처이므로 여기서도
 // 인덱스가 아니라 카탈로그 조회로 가져와, 표가 또 바뀌면 이 픽스처가 자동으로 따라가게 한다.
-private val attendanceCharacter = BotCharacterCatalog.forAttendanceTier(4).single()
+// ⚠️ 4일차 → 7일차로 옮겼다(#55). 회차를 회차 상수로 부르는 이유는, 다음에 또 옮길 때
+// 이 줄이 조용히 빈 리스트를 `single()`하며 초기화 단계에서 터지지 않게 하기 위함이다.
+private val attendanceCharacter = BotCharacterCatalog.forAttendanceTier(WeeklyRewardCycleTier).single()
 private val shardCharacters = BotCharacterCatalog.shardPathCharacters()
 private val defaultCharacter = BotCharacterCatalog.fastBeginnerRoster.first()
 
 class AttendanceRewardPolicyTest {
 
     @Test
-    fun dayOneGrantsUnlimitedUndoOnlyNowThatTheFirstCharacterIsFree() {
-        // #16 전에는 1일차가 무르기 + 첫 캐릭터 2개였다. 1단계가 기본 제공으로 바뀌면서
-        // 정책표에 코드를 더하지 않고도 캐릭터 중복 지급이 사라졌다(#19가 기대던 선행 조건).
-        val rewards = AttendanceRewardPolicy.rewardsFor(1)
-
-        assertEquals(listOf(AttendanceReward.PermanentFeature(FeatureId.Undo)), rewards)
-        assertTrue(rewards.none { it is AttendanceReward.BotCharacterUnlock })
+    fun undoArrivesOnDayThreeAfterTheUserHasFeltItIsPaid() {
+        // ⚠️ **1일차가 아니라 3일차다**(#55, 2026-08-31 확정표). 무르기는 1회권이 아예 없어서
+        // 1·2일차에 쓰려면 광고를 봐야 한다 — 그 이틀을 겪은 뒤에 줘야 "공짜로 받았다"가 아니라
+        // "값나가는 걸 받았다"가 된다. 순서를 앞으로 당기면 그 학습이 통째로 사라진다.
+        assertEquals(
+            listOf(AttendanceReward.Consumable(ConsumableCatalog.EvalOnce, 30)),
+            AttendanceRewardPolicy.rewardsFor(1),
+        )
+        assertEquals(
+            listOf(AttendanceReward.PermanentFeature(FeatureId.Undo)),
+            AttendanceRewardPolicy.rewardsFor(UndoUnlimitedRewardTier),
+        )
+        assertEquals(3, UndoUnlimitedRewardTier)
     }
 
     @Test
     fun everyDayOfTheWeekMatchesTheConfirmedTable() {
-        // 4.2절 재확정본(2026-08-24) 전수. 지급량이 조용히 바뀌지 않게 표 그대로 고정한다.
+        // 2026-08-31 확정표 전수. 지급량과 **순서**가 조용히 바뀌지 않게 그대로 고정한다.
         assertEquals(
-            listOf(AttendanceReward.PermanentFeature(FeatureId.Undo)),
+            listOf(AttendanceReward.Consumable(ConsumableCatalog.EvalOnce, 30)),
             AttendanceRewardPolicy.rewardsFor(1),
         )
-        listOf(2, 5).forEach { tier ->
-            assertEquals(
-                listOf(
-                    AttendanceReward.Consumable(ConsumableCatalog.EvalOnce, 30),
-                    AttendanceReward.Consumable(ConsumableCatalog.TopMovesOnce, 30),
-                ),
-                AttendanceRewardPolicy.rewardsFor(tier),
-                "tier $tier",
-            )
-        }
         assertEquals(
-            listOf(AttendanceReward.Consumable(ConsumableCatalog.PremiumOnce, 3)),
+            listOf(AttendanceReward.Consumable(ConsumableCatalog.TopMovesOnce, 30)),
+            AttendanceRewardPolicy.rewardsFor(2),
+        )
+        assertEquals(
+            listOf(AttendanceReward.PermanentFeature(FeatureId.Undo)),
             AttendanceRewardPolicy.rewardsFor(3),
         )
-        // 4일차는 소모품 없이 캐릭터 하나만 걸린다(#16). 다른 출석 캐릭터는 28일차에 있다.
         assertEquals(
-            listOf(AttendanceReward.BotCharacterUnlock(attendanceCharacter)),
+            listOf(AttendanceReward.Consumable(ConsumableCatalog.PremiumOnce, 3)),
             AttendanceRewardPolicy.rewardsFor(4),
         )
+        // 5·6일차 조각은 "캐릭터는 광고를 봐야 모인다"를 알리는 맛보기다.
         assertEquals(
-            listOf(AttendanceReward.Consumable(ConsumableCatalog.PremiumOnce, 5)),
+            listOf(AttendanceReward.BotCharacterShards(shardCharacters[0], 1)),
+            AttendanceRewardPolicy.rewardsFor(5),
+        )
+        assertEquals(
+            listOf(AttendanceReward.BotCharacterShards(shardCharacters[1], 1)),
             AttendanceRewardPolicy.rewardsFor(6),
         )
+        // ⚠️ 7일차는 **캐릭터뿐이다** — 소모품을 얹지 않는다(확정표).
         assertEquals(
-            listOf(
-                AttendanceReward.Consumable(ConsumableCatalog.EvalOnce, 50),
-                AttendanceReward.Consumable(ConsumableCatalog.TopMovesOnce, 50),
-                AttendanceReward.Consumable(ConsumableCatalog.PremiumOnce, 10),
-            ) + shardCharacters.map { AttendanceReward.BotCharacterShards(it, 1) },
+            listOf(AttendanceReward.BotCharacterUnlock(attendanceCharacter)),
             AttendanceRewardPolicy.rewardsFor(7),
         )
-        // 조각 경로 캐릭터가 누구인지도 함께 고정한다 — 카탈로그에서 파생시켰기 때문에 위 단언만
-        // 두면 캐릭터를 늘리거나 줄여도 통과해 버린다.
+        // 조각 경로 캐릭터가 누구이고 **어느 순서인지**도 고정한다 — 5·6일차가 이 순서에 기댄다.
         assertEquals(listOf("fast_beginner_2", "fast_beginner_4"), shardCharacters.map { it.id.raw })
     }
 
-    @Test
-    fun theSeventhDayFeedsShardsSoTheAdPathIsNotTheOnlyWay() {
-        // 광고가 채워지지 않는 사용자도 결국 조각 캐릭터에 닿을 수 있어야 한다(2026-08-29).
-        // 반복 회차에 걸려 있으므로 회차를 거듭할수록 진행도가 쌓인다.
-        val botStore = FakeBotStore()
-        val target = shardCharacters.first()
-        val required = (target.unlockSource as BotUnlockSource.AdShards).required
+    fun shardCharactersCannotBeFinishedByAttendanceAloneOnPurpose() {
+        // ⚠️ **의도된 설계다(2026-08-31 사용자 확정).** 예전에는 7일차마다 조각이 나와 광고 없이도
+        // 언젠가 닿을 수 있었는데, 지금은 5·6일차에 **한 개씩**이 전부다. "반복 회차에 조각을
+        // 얹어 느린 무광고 경로를 두자"는 제안은 기각됐다 — 그 시점이면 광고로 이미 확보한
+        // 사용자가 많고, 간격이 벌어져 경로 구실을 못 한다. 되살리려면 그 결정부터 뒤집을 것.
+        val fromAttendance = (1..100)
+            .flatMap(AttendanceRewardPolicy::rewardsFor)
+            .filterIsInstance<AttendanceReward.BotCharacterShards>()
 
-        repeat(required) { round ->
-            val tier = 7 * (round + 1)
-            runAttendanceRewardGrant(
-                state = AttendanceState(attendanceCount = tier, claimedTiers = (1 until tier).toSet()),
-                attendanceStore = FakeAttendanceStore(),
-                premiumStore = FakePremiumStore(),
-                consumableStore = FakeConsumableStore(),
-                botStore = botStore,
-            )
+        shardCharacters.forEach { character ->
+            val granted = fromAttendance.filter { it.character == character }.sumOf { it.amount }
+            val required = (character.unlockSource as BotUnlockSource.AdShards).required
+            assertEquals(1, granted, "${character.id.raw}: 출석으로 나오는 조각은 1개뿐이어야 한다")
+            assertTrue(granted < required, "${character.id.raw}")
         }
-
-        assertTrue(botStore.stored.isClaimed(target.id), "${target.id.raw} must unlock without any ad")
     }
 
-    @Test
     fun shardsAlreadyCompletedAreNotAnnouncedAgain() {
-        // 조각은 7일차마다 영원히 반복된다 — 다 모은 캐릭터의 몫까지 팝업에 적으면 그 사용자는
-        // 매주 의미 없는 줄을 보게 된다.
+        // 이미 다 모은 캐릭터의 조각 줄은 팝업에 적지 않는다 — 의미 없는 줄이 남는다.
+        // ⚠️ 관측 지점이 7일차 → **5일차**로 옮겨졌다(확정표에서 조각이 5·6일차로 갔다).
         val botStore = FakeBotStore(
             shardCharacters.fold(BotCollectionState()) { state, character -> state.withClaimed(character.id) },
         )
 
         val result = runAttendanceRewardGrant(
-            state = AttendanceState(attendanceCount = 7, claimedTiers = (1..6).toSet()),
+            state = AttendanceState(attendanceCount = 6, claimedTiers = (1..4).toSet()),
             attendanceStore = FakeAttendanceStore(),
             premiumStore = FakePremiumStore(),
             consumableStore = FakeConsumableStore(),
@@ -194,31 +191,36 @@ class AttendanceRewardPolicyTest {
         )
 
         assertTrue(result.grantedRewards.none { it is AttendanceReward.BotCharacterShards })
-        // 같은 회차의 소모품은 그대로 지급되고 그대로 알린다.
-        assertEquals(3, result.grantedRewards.size)
     }
 
-    @Test
-    fun multiplesOfSevenRepeatTheSeventhDayExactly() {
-        val week = AttendanceRewardPolicy.rewardsFor(7)
+    fun weeklyRepeatsSkipTheCharacterTiers() {
+        // ⚠️ **여기가 이번 개편에서 가장 조용히 깨질 뻔한 곳이다.** 예전 구현은
+        // `contentTier = if (tier > 7) 7 else tier`로 접어서 14·21·35…가 7일차 내용을 그대로 썼다.
+        // 지금 7일차는 **캐릭터뿐**이라 그대로 접으면 14일차에 이미 가진 캐릭터만 나오고
+        // 소모품이 통째로 사라진다. 그래서 캐릭터 회차(7·28)와 반복 회차를 분리했다.
+        val repeatBundle = listOf(
+            AttendanceReward.Consumable(ConsumableCatalog.EvalOnce, 50),
+            AttendanceReward.Consumable(ConsumableCatalog.TopMovesOnce, 50),
+            AttendanceReward.Consumable(ConsumableCatalog.PremiumOnce, 3),
+        )
 
-        listOf(14, 21, 35).forEach { tier ->
+        listOf(14, 21, 35, 42).forEach { tier ->
             assertTrue(isRewardedTier(tier), "tier $tier must be a rewarded tier")
-            assertEquals(week, AttendanceRewardPolicy.rewardsFor(tier), "tier $tier")
+            assertEquals(repeatBundle, AttendanceRewardPolicy.rewardsFor(tier), "tier $tier")
         }
-        // 28일차만 예외다 — 소모품은 7일차와 똑같이 반복하되 **최상위 캐릭터가 한 번 더 얹힌다**
-        // (2026-08-29, 유료 구매에서 옮겨옴). 캐릭터는 한 번뿐인 영구 획득이라 반복 축과
-        // 성질이 다르므로, 정책표가 캐릭터만 접지 않은 실제 회차로 조회한다.
+        // 캐릭터가 걸린 두 회차는 소모품 없이 캐릭터만 준다.
         assertEquals(
-            week + AttendanceReward.BotCharacterUnlock(BotCharacterCatalog.forAttendanceTier(28).single()),
+            listOf(AttendanceReward.BotCharacterUnlock(attendanceCharacter)),
+            AttendanceRewardPolicy.rewardsFor(7),
+        )
+        assertEquals(
+            listOf(AttendanceReward.BotCharacterUnlock(BotCharacterCatalog.forAttendanceTier(28).single())),
             AttendanceRewardPolicy.rewardsFor(28),
         )
-        // 반복 회차가 캐릭터를 **영구 획득**으로 다시 주지는 않는다 — 7일차에 걸린 것은
-        // 조각(진행도)뿐이고, 그마저 다 모은 캐릭터는 지급 단계에서 걸러진다.
-        assertTrue(week.none { it is AttendanceReward.BotCharacterUnlock })
+        // 반복 회차는 캐릭터를 다시 주지 않는다.
+        assertTrue(repeatBundle.none { it is AttendanceReward.BotCharacterUnlock })
     }
 
-    @Test
     fun nonRewardedTiersStayEmpty() {
         // 8~13처럼 7의 배수가 아닌 회차는 애초에 보상 회차가 아니다(4.1절).
         listOf(8, 9, 13, 15, 20).forEach { tier ->
@@ -237,21 +239,24 @@ class AttendanceRewardPolicyTest {
     }
 
     @Test
-    fun aFullWeekOverflowsTheEvalStockOnPurpose() {
-        // 한 주기 형세 보기 지급량은 30 + 30 + 50 = 110으로 재고 상한 99를 넘는다.
-        // 넘치는 만큼 버려지는 것이 의도다(소모 유도, 2026-08-24 확정) — 상한을 올리려면
-        // ConsumableInventory.MaxPerItem 한 줄만 고치면 되도록 유지한다.
-        val weekly = (1..7)
+    fun theSkipTicketIsTheStockThatOverflowsNow() {
+        // ⚠️ 넘치는 종류가 **바뀌었다.** 예전 표는 한 주에 형세를 110개(30+30+50) 줘서 상한 99를
+        // 넘겼지만, 지금 첫 주 형세는 1일차 30개뿐이라 넘치지 않는다. 대신 광고 스킵권 상한이
+        // 9로 낮아지면서 4일차 3 + 14일차 3 + 21일차 3 = **정확히 9**가 되고, 35일차부터
+        // 매 반복마다 넘친다 — "쌓지 말고 쓰라"는 의도된 갈증이다.
+        val throughThreeWeeks = (1..21)
             .flatMap(AttendanceRewardPolicy::rewardsFor)
             .filterIsInstance<AttendanceReward.Consumable>()
-            .filter { it.item == ConsumableCatalog.EvalOnce }
+            .filter { it.item == ConsumableCatalog.PremiumOnce }
             .sumOf { it.amount }
 
-        assertEquals(110, weekly)
-        assertTrue(weekly > ConsumableInventory.MaxPerItem)
+        assertEquals(PremiumOnceMaxStock, throughThreeWeeks)
+        // 그 다음 반복은 통째로 버려진다 — 이 사실을 팝업이 감춰선 안 된다(#55 ⓑ).
+        val fullStock = ConsumableInventory().withGranted(ConsumableCatalog.PremiumOnce.id, PremiumOnceMaxStock)
+        assertEquals(0, fullStock.grantableAmount(ConsumableCatalog.PremiumOnce.id, 3))
+        assertTrue(fullStock.isAtMaxStock(ConsumableCatalog.PremiumOnce.id))
     }
 
-    @Test
     fun nonRewardedTiersHaveNoRewards() {
         listOf(0, -1, 8, 9, 13).forEach { tier ->
             assertTrue(AttendanceRewardPolicy.rewardsFor(tier).isEmpty(), "tier $tier must have no rewards")
@@ -277,7 +282,7 @@ class AttendanceRewardPolicyTest {
 class AttendanceRewardGrantTest {
 
     @Test
-    fun firstEverCheckInGrantsUndoAndNoCharacter() {
+    fun firstEverCheckInGrantsEvalTicketsAndNoCharacter() {
         val stores = RewardStores()
         val checkIn = stores.checkInAt(0L)
 
@@ -285,18 +290,19 @@ class AttendanceRewardGrantTest {
 
         assertTrue(result.didGrant)
         assertEquals(listOf(1), result.granted.map { it.tier })
-        assertEquals(1, result.grantedRewards.size)
-        assertTrue(stores.attendance.stored.isTierClaimed(UndoUnlimitedRewardTier))
-        assertEquals(setOf(FeatureId.Undo), stores.premium.stored.claimedFeatures)
+        assertEquals(30, stores.consumables.stored.countOf(ConsumableCatalog.EvalOnce.id))
+        // ⚠️ 무르기는 아직이다 — 3일차에 온다(#55). 첫날에 주면 "유료임을 겪는" 이틀이 사라진다.
+        assertTrue(stores.premium.stored.claimedFeatures.isEmpty())
+        assertFalse(stores.attendance.stored.isTierClaimed(UndoUnlimitedRewardTier))
         // 1단계는 기본 제공이라 지급 기록이 남지 않는다 — 그래도 고를 수는 있다.
         assertFalse(stores.bots.stored.isClaimed(defaultCharacter.id))
         assertTrue(stores.bots.stored.isAvailable(defaultCharacter))
     }
 
-    @Test
     fun grantedUndoResolvesAsAllowedForAFreeUser() {
         val stores = RewardStores()
-        stores.grant(stores.checkInAt(0L).state)
+        // 3일차까지 출석해야 무르기가 열린다(#55).
+        stores.attendForDays(UndoUnlimitedRewardTier)
 
         val access = FeatureAccessPolicy.resolve(FeatureId.Undo, stores.premium.stored, nowMillis = 0L)
         assertIs<FeatureAccess.Allowed>(access)
@@ -308,37 +314,36 @@ class AttendanceRewardGrantTest {
 
         stores.attendForDays(4)
 
-        // 2일차 형세30+추천30, 3일차 스킵권3, 4일차는 캐릭터뿐.
+        // 1일차 형세30, 2일차 추천30, 3일차 무르기(소모품 아님), 4일차 스킵권3.
         assertEquals(30, stores.consumables.stored.countOf(ConsumableCatalog.EvalOnce.id))
         assertEquals(30, stores.consumables.stored.countOf(ConsumableCatalog.TopMovesOnce.id))
         assertEquals(3, stores.consumables.stored.countOf(ConsumableCatalog.PremiumOnce.id))
     }
 
     @Test
-    fun aFullWeekClipsTheEvalStockAtTheCap() {
+    fun theFirstWeekStaysWellUnderEveryCap() {
         val stores = RewardStores()
 
         stores.attendForDays(7)
 
-        // 지급량 110이지만 상한 99에서 잘린다 — 넘치는 11개는 의도적으로 버려진다.
-        assertEquals(ConsumableInventory.MaxPerItem, stores.consumables.stored.countOf(ConsumableCatalog.EvalOnce.id))
-        assertEquals(ConsumableInventory.MaxPerItem, stores.consumables.stored.countOf(ConsumableCatalog.TopMovesOnce.id))
-        // 스킵권은 3 + 5 + 10 = 18로 상한에 닿지 않는다.
-        assertEquals(18, stores.consumables.stored.countOf(ConsumableCatalog.PremiumOnce.id))
+        // 확정표의 첫 주는 형세 30 / 추천 30 / 스킵 3뿐이다 — 어느 것도 상한에 닿지 않는다.
+        // 갈증은 반복 회차에서 온다(위 `theSkipTicketIsTheStockThatOverflowsNow` 참고).
+        assertEquals(30, stores.consumables.stored.countOf(ConsumableCatalog.EvalOnce.id))
+        assertEquals(30, stores.consumables.stored.countOf(ConsumableCatalog.TopMovesOnce.id))
+        assertEquals(3, stores.consumables.stored.countOf(ConsumableCatalog.PremiumOnce.id))
     }
 
-    @Test
-    fun theAttendanceCharacterArrivesOnDayFourAndNotBefore() {
+    fun theAttendanceCharacterArrivesOnDaySevenAndNotBefore() {
         val stores = RewardStores()
 
-        stores.attendForDays(3)
+        // ⚠️ 4일차 → 7일차로 옮겼다(#55). 1~6일차 행은 소모품·기능만 남기기 위함이다.
+        stores.attendForDays(6)
         assertFalse(stores.bots.stored.isClaimed(attendanceCharacter.id))
 
         stores.attendForDays(1)
         assertTrue(stores.bots.stored.isClaimed(attendanceCharacter.id))
     }
 
-    @Test
     fun rewardIsNotGrantedAgainOnLaterVisits() {
         val stores = RewardStores()
         stores.grant(stores.checkInAt(0L).state)
@@ -386,9 +391,11 @@ class AttendanceRewardGrantTest {
 
         assertEquals(listOf(1, 2, 3, 4, 5), result.granted.map { it.tier })
         assertEquals(setOf(FeatureId.Undo), stores.premium.stored.claimedFeatures)
-        // 2일차 30 + 5일차 30.
-        assertEquals(60, stores.consumables.stored.countOf(ConsumableCatalog.EvalOnce.id))
-        assertTrue(stores.bots.stored.isClaimed(attendanceCharacter.id))
+        // 형세는 1일차 30뿐이고, 스킵권은 4일차 3, 조각은 5일차 1개다.
+        assertEquals(30, stores.consumables.stored.countOf(ConsumableCatalog.EvalOnce.id))
+        assertEquals(3, stores.consumables.stored.countOf(ConsumableCatalog.PremiumOnce.id))
+        // ⚠️ 캐릭터는 7일차라 아직 오지 않는다.
+        assertFalse(stores.bots.stored.isClaimed(attendanceCharacter.id))
         assertEquals(setOf(1, 2, 3, 4, 5), stores.attendance.stored.claimedTiers)
     }
 
@@ -412,11 +419,9 @@ class AttendanceRewardGrantTest {
     @Test
     fun userWhoAlreadyClaimedUndoInGameKeepsASingleLedgerEntry() {
         val stores = RewardStores(initialPremium = PremiumState(claimedFeatures = setOf(FeatureId.Undo)))
-        val checkIn = stores.checkInAt(0L)
 
-        val result = stores.grant(checkIn.state)
+        stores.attendForDays(UndoUnlimitedRewardTier)
 
-        assertTrue(result.didGrant)
         assertEquals(setOf(FeatureId.Undo), stores.premium.stored.claimedFeatures)
         assertTrue(stores.attendance.stored.isTierClaimed(UndoUnlimitedRewardTier))
     }

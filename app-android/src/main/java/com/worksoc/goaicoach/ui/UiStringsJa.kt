@@ -136,7 +136,6 @@ internal val UiStringsJapanese = UiStringsKorean.copy(
     premiumUpsellUseTicketAction = "広告スキップ券を使う",
     attendanceRewardTitle = "出席報酬",
     attendanceRewardClaimAction = "受け取る",
-    attendanceRewardLaterAction = "あとで",
     engineStuckDialogTitle = "エンジン応答遅延",
     engineStuckDialogMessage = "AIの応答が予想より長くかかっています。エンジンに問題が発生した可能性があります。今すぐエンジンを初期化しますか?現在の対局の進行状況(着手履歴)はそのまま保持されます。",
     engineStuckDialogResetAction = "エンジンを初期化",

@@ -135,7 +135,6 @@ internal val UiStringsEnglish = UiStringsKorean.copy(
     premiumUpsellUseTicketAction = "Use ad-skip ticket",
     attendanceRewardTitle = "Attendance Reward",
     attendanceRewardClaimAction = "Claim",
-    attendanceRewardLaterAction = "Later",
     engineStuckDialogTitle = "Engine Response Delayed",
     engineStuckDialogMessage = "The AI is taking longer than expected to respond. The engine may have run into a problem. Reset the engine now? Your current match progress (move history) will be kept.",
     engineStuckDialogResetAction = "Reset Engine",

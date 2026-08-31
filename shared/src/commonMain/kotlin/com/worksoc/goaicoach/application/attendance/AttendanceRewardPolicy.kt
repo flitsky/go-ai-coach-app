@@ -7,61 +7,62 @@ import com.worksoc.goaicoach.application.consumable.ConsumableCatalog
 import com.worksoc.goaicoach.application.consumable.ConsumableItem
 import com.worksoc.goaicoach.application.premium.FeatureId
 
-/** 1일차(첫 출석) 회차 — '무제한 무르기' 영구 활성화가 걸려 있다. */
-const val UndoUnlimitedRewardTier: Int = 1
-
 /**
- * 7일 주기의 마지막 회차. 8일차 이후로는 **7의 배수 회차마다 이 회차의 보상이 그대로 반복**된다
- * (4.2절 재확정본, #19). 그래서 정책표에는 1~7일차만 적고 그 위는 조회 시점에 이 값으로 접는다 —
- * 표를 두 벌로 늘리면 한쪽만 고쳐져 어긋난다.
+ * 출석 보상표(백로그 #55에서 2026-08-31 사용자와 함께 재확정).
+ *
+ * | 회차 | 보상 |
+ * | --- | --- |
+ * | 1 | 형세 30 |
+ * | 2 | 추천 수 30 |
+ * | 3 | 무르기 무제한(영구) |
+ * | 4 | 광고 스킵권 3 |
+ * | 5 | 조각 1 (연습생 돌뫼) |
+ * | 6 | 조각 1 (사범 묘수) |
+ * | 7 | 캐릭터: 도장생 반상 — **소모품 없음** |
+ * | 14·21 | 형세 50 · 추천 50 · 스킵 3 |
+ * | 28 | 캐릭터: 관장 천원 — **소모품 없음** |
+ * | 35~ (7의 배수) | 형세 50 · 추천 50 · 스킵 3 |
+ *
+ * ## 설계 의도(사용자)
+ * 형세·추천을 따로 줘 각각을 인지시키고, **3일차까지 무르기가 유료임을 겪게 한 뒤** 지급해
+ * 가치를 체감시킨다. 5·6일차 조각으로 *"캐릭터는 광고를 봐야 모인다"* 를 알려 유입시킨다.
+ * 반복 보상은 **한 주가 풍족하면 프리미엄 의미가 없으므로** 갈증이 남게 준다.
+ *
+ * ⚠️ **조각의 무광고 경로는 의도적으로 없다.** 5·6일차 1개씩이 전부이고, 돌뫼는 광고 4번,
+ * 묘수는 광고 9번이 더 필요하다. "반복 회차에 조각을 얹자"는 제안은 2026-08-31에 기각됐다 —
+ * 그 시점이면 광고로 이미 확보한 사용자가 많고, 간격이 벌어져 경로 구실을 못 한다.
+ *
+ * ⚠️ **7·28일차를 반복 회차와 섞지 말 것.** 예전에는 `contentTier = if (tier > 7) 7 else tier`로
+ * 접어서 14·21·35…가 7일차 내용을 그대로 썼는데, 지금 7일차는 **캐릭터만**이라 그렇게 접으면
+ * 14일차에 이미 가진 캐릭터만 나오고 **소모품이 통째로 사라진다.** 그래서 캐릭터 회차와
+ * 반복 회차를 아래처럼 분리해 둔다.
  */
+
+/** 무르기 무제한이 열리는 회차. ⚠️ 1일차가 아니라 **3일차**다(#55) — 유료임을 겪은 뒤에 준다. */
+const val UndoUnlimitedRewardTier: Int = 3
+
+/** 7일 주기의 길이. 8일차 이후로는 이 배수 회차에만 보상이 있다. */
 const val WeeklyRewardCycleTier: Int = 7
 
-// 일차별 소모품 지급량(4.2절 표). #13이 쓰던 단일 상수(`ConsumableRewardAmount = 10`)로는
-// 표현할 수 없어 나눴다(#19) — 주중 회차와 7일차의 양이 다르고, 분석 1회권과 광고 스킵권의
-// 양도 다르기 때문이다.
-//
-// ⚠️ 한 주기 지급량이 종류별 재고 상한(`ConsumableInventory.MaxPerItem` = 99)을 넘는다
-// (형세 보기 30 + 30 + 50 = 110). **의도된 충돌이다** — 넘치는 만큼 버려지게 두어 소모를
-// 유도한다(2026-08-24 사용자 확정). 상한을 올리려면 `MaxPerItem` 한 줄만 고치면 된다.
-
-/** 2·5일차 — 형세 보기/추천 수 1회권을 **각각** 이만큼. */
+/** 1·2일차 — 형세 보기 / 추천 수 1회권을 각각 이만큼. */
 private const val AnalysisTicketAmount: Int = 30
 
-/** 7일차 — 형세 보기/추천 수 1회권을 **각각** 이만큼(주간 마무리라 더 크다). */
+/** 반복 회차(14·21·35…) — 형세 보기 / 추천 수 1회권을 각각 이만큼. */
 private const val WeeklyAnalysisTicketAmount: Int = 50
 
-/** 3일차 광고 스킵권. */
+/** 4일차 광고 스킵권. */
 private const val EarlySkipTicketAmount: Int = 3
 
-/** 6일차 광고 스킵권. */
-private const val MidSkipTicketAmount: Int = 5
-
-/** 7일차 광고 스킵권. */
-private const val WeeklySkipTicketAmount: Int = 10
-
 /**
- * 7일차마다 조각 경로 캐릭터 **각각**에게 지급하는 조각 수.
- *
- * 이 보상이 있는 이유는 순전히 **의존성 때문이다**: 조각 캐릭터의 획득 경로가 광고 하나뿐이면,
- * 광고가 채워지지 않는 상황(노필, 지역/연령 제한, 오프라인, 구글 계정 문제)에서 그 캐릭터는
- * 영영 잠긴 채로 남는다 — 앱이 스스로 통제할 수 없는 외부 사정으로 콘텐츠가 사라지는 셈이다
- * (2026-08-29 사용자 지적). 그래서 **앱 안에서만으로 완결되는 경로**를 하나 붙였다.
- *
- * 하필 7일차(= 영원히 반복되는 회차)인 이유도 같다 — 유한한 회차에 걸면 그 회차를 지나친
- * 사용자에게는 여전히 경로가 없다. 반복 회차에 걸어야 "언젠가는 반드시 열린다"가 성립한다.
- *
- * 주당 1개로 둔 것은 광고를 **여전히 빠른 길로 남기기 위해서다**: 광고는 앉은 자리에서 5번이면
- * 2단계가 열리지만, 이 경로만으로는 5회차(누적 35일 출석)가 걸린다. 출석은 연속이 아니라
- * 누적이므로(`AttendanceState.attendanceCount`) 며칠 빠져도 진행분은 사라지지 않는다.
+ * 반복 회차 광고 스킵권. ⚠️ 상한이 9인데 4일차 3 + 14일차 3 + 21일차 3 = **정확히 9**다 —
+ * 35일차부터는 상한에 걸려 버려진다. **의도된 갈증**이지만, 팝업이 "3개"라고 안내해 놓고 0개가
+ * 들어가면 안 되므로 `ConsumableInventory.grantableAmount`로 실제 지급량을 확인해 표시할 것.
  */
-private const val WeeklyShardAmount: Int = 1
+private const val WeeklySkipTicketAmount: Int = 3
 
-/**
- * 출석 보상 한 건. 세 종류가 **서로 다른 저장소**에 기록되기 때문에(영구 클레임=`PremiumState`,
- * 소모품=`ConsumableInventory`, 캐릭터=`BotCollectionState`) 지급 경로도 각각 다르다 — 이
- * sealed 타입이 그 분기를 한곳에 모아 준다.
- */
+/** 5·6일차에 주는 조각 개수. */
+private const val ShardRewardAmount: Int = 1
+
 sealed class AttendanceReward {
     /** 기능 하나를 **영구히** 열어준다(1일차 무르기). */
     data class PermanentFeature(val featureId: FeatureId) : AttendanceReward()
@@ -102,39 +103,13 @@ object AttendanceRewardPolicy {
     /** [tier]일차에 지급할 보상 목록. 보상 회차가 아니면 빈 목록. */
     fun rewardsFor(tier: Int): List<AttendanceReward> {
         if (!isRewardedTier(tier)) return emptyList()
-        // 8일차 이후 7의 배수 회차는 7일차 보상을 그대로 반복한다(4.2절) — 회차 번호는 그대로
-        // 두고 **내용을 조회할 때만** 접는다. `claimedTiers`에는 실제 회차(14, 21, ...)가 들어가야
-        // 같은 주기를 두 번 지급하지 않는다.
-        val contentTier = if (tier > WeeklyRewardCycleTier) WeeklyRewardCycleTier else tier
         return buildList {
-            when (contentTier) {
-                UndoUnlimitedRewardTier -> add(AttendanceReward.PermanentFeature(FeatureId.Undo))
-                2, 5 -> {
-                    add(consumable(ConsumableCatalog.EvalOnce, AnalysisTicketAmount))
-                    add(consumable(ConsumableCatalog.TopMovesOnce, AnalysisTicketAmount))
-                }
-                3 -> add(consumable(ConsumableCatalog.PremiumOnce, EarlySkipTicketAmount))
-                6 -> add(consumable(ConsumableCatalog.PremiumOnce, MidSkipTicketAmount))
-                WeeklyRewardCycleTier -> {
-                    add(consumable(ConsumableCatalog.EvalOnce, WeeklyAnalysisTicketAmount))
-                    add(consumable(ConsumableCatalog.TopMovesOnce, WeeklyAnalysisTicketAmount))
-                    add(consumable(ConsumableCatalog.PremiumOnce, WeeklySkipTicketAmount))
-                    // 누구에게 줄지는 카탈로그가 안다 — 캐릭터 보상과 같은 이유로 여기에 이름을
-                    // 다시 적지 않는다. 이미 다 모은 캐릭터의 몫은 지급 단계에서 걸러진다.
-                    BotCharacterCatalog.shardPathCharacters().forEach { character ->
-                        add(AttendanceReward.BotCharacterShards(character, WeeklyShardAmount))
-                    }
-                }
-                // 4일차는 소모품이 없다 — 캐릭터 하나뿐이며 아래에서 카탈로그가 채운다.
+            if (tier == UndoUnlimitedRewardTier) {
+                add(AttendanceReward.PermanentFeature(FeatureId.Undo))
             }
-            // 캐릭터 보상은 여기에 다시 적지 않는다 — "몇 일차에 열리는가"는 이미 카탈로그의
-            // BotUnlockSource.Attendance(tier)에 붙어 있어, 그쪽을 단일 출처로 삼는다(#13).
-            //
-            // ⚠️ **캐릭터만 `contentTier`가 아니라 실제 [tier]로 조회한다**(2026-08-29). 소모품은
-            // 8일차 이후 7일차 내용을 반복하지만 캐릭터는 **한 번뿐인 영구 획득**이라 반복 축과
-            // 성질이 다르다 — 접어서 조회하면 28일차에 걸린 5단계 캐릭터에 영영 닿지 못한다.
-            // 중복 지급 걱정은 없다: 14·21처럼 캐릭터가 정의되지 않은 회차는 빈 목록이고,
-            // 이미 가진 캐릭터는 지급 단계에서 걸러진다.
+            addAll(consumablesFor(tier))
+            addAll(shardsFor(tier))
+            // 캐릭터가 걸린 회차인지는 카탈로그가 안다 — 회차 번호를 여기 또 적으면 두 곳이 어긋난다.
             BotCharacterCatalog.forAttendanceTier(tier).forEach { character ->
                 add(AttendanceReward.BotCharacterUnlock(character))
             }
@@ -142,12 +117,40 @@ object AttendanceRewardPolicy {
     }
 
     /**
-     * 지금까지 출석한 회차 중 **아직 지급되지 않은** 것들을 오름차순으로 돌려준다.
-     *
-     * "방금 체크인한 회차"만 보지 않고 1일차부터 훑는 이유는 #4와 같다 — 지급 경로가 어떤 이유로든
-     * 실패해도(프로세스 조기 종료 등) 다음 실행에서 스스로 복구되게 하기 위함이다. 밀린 보상을
-     * 무기한 보관할지 만료시킬지는 아직 미확정이며(5.1절), 만료 정책이 정해지면 이 함수에 붙는다.
+     * ⚠️ **캐릭터 회차에는 소모품을 얹지 않는다**(확정표). 그래서 "7의 배수면 반복 번들"이 아니라
+     * **"7의 배수이면서 캐릭터 회차가 아니면"** 반복 번들이다 — 7·28을 빼는 이 조건이 핵심이다.
      */
+    private fun consumablesFor(tier: Int): List<AttendanceReward> = buildList {
+        when {
+            tier == 1 -> add(consumable(ConsumableCatalog.EvalOnce, AnalysisTicketAmount))
+            tier == 2 -> add(consumable(ConsumableCatalog.TopMovesOnce, AnalysisTicketAmount))
+            tier == 4 -> add(consumable(ConsumableCatalog.PremiumOnce, EarlySkipTicketAmount))
+            isWeeklyRepeatTier(tier) -> {
+                add(consumable(ConsumableCatalog.EvalOnce, WeeklyAnalysisTicketAmount))
+                add(consumable(ConsumableCatalog.TopMovesOnce, WeeklyAnalysisTicketAmount))
+                add(consumable(ConsumableCatalog.PremiumOnce, WeeklySkipTicketAmount))
+            }
+        }
+    }
+
+    /**
+     * 5·6일차에 조각 경로 캐릭터를 **카탈로그 순서대로** 하나씩 맛보게 한다. 순서에 기대므로
+     * `AttendanceRewardPolicyTest`가 조각 경로가 정확히 둘이고 그 순서인지를 고정한다.
+     */
+    private fun shardsFor(tier: Int): List<AttendanceReward> {
+        val index = when (tier) {
+            5 -> 0
+            6 -> 1
+            else -> return emptyList()
+        }
+        val character = BotCharacterCatalog.shardPathCharacters().getOrNull(index) ?: return emptyList()
+        return listOf(AttendanceReward.BotCharacterShards(character, ShardRewardAmount))
+    }
+
+    /** 소모품 반복 번들을 받는 회차 — 7의 배수이면서 **캐릭터가 걸리지 않은** 회차다. */
+    private fun isWeeklyRepeatTier(tier: Int): Boolean =
+        tier % WeeklyRewardCycleTier == 0 && BotCharacterCatalog.forAttendanceTier(tier).isEmpty()
+
     fun pendingTiers(state: AttendanceState): List<AttendanceRewardTier> =
         (1..state.attendanceCount)
             .filterNot(state::isTierClaimed)
