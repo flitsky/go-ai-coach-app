@@ -3,6 +3,7 @@ package com.worksoc.goaicoach.ui
 import com.worksoc.goaicoach.application.botcharacter.BotCharacterCatalog
 import com.worksoc.goaicoach.application.botcharacter.BotCharacterId
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -120,6 +121,33 @@ class UiStringsBotCharacterTest {
         UiLanguage.entries.forEach { language ->
             assertEquals("not_in_the_catalog", botCharacterNameFor(language, unknown))
             assertEquals("not_in_the_catalog", botCharacterDescriptionFor(language, unknown))
+        }
+    }
+
+    /**
+     * ⚠️ **1단계를 약한 상대로 소개하지 않는다**(2026-08-31 사용자 지시). 실기력이 일반 중급자를
+     * 상회하는데 "일부러 자주 실수한다"고 적어 두면 첫 판에서 진 사용자가 속았다고 느낀다 —
+     * 실제로 그 문구가 한동안 남아 있었고, 랜딩(#51)이 같은 원칙을 세운 뒤로는 **한 앱 안에서 두
+     * 말이 공존**하는 상태였다. 랜딩 쪽 그물(`UiStringsLandingTest`)과 짝을 이룬다.
+     */
+    @Test
+    fun theEntryOpponentIsNeverIntroducedAsWeak() {
+        val dismissive = listOf(
+            "일부러", "자주 실수", "약한", "쉬운",
+            "on purpose", "loose", "weak", "easy",
+            "わざと", "弱い", "簡単",
+            "故意", "下错", "弱", "简单",
+        )
+        val firstTier = BotCharacterCatalog.fastBeginnerRoster.first().id
+
+        UiLanguage.entries.forEach { language ->
+            val blurb = botCharacterDescriptionFor(language, firstTier)
+            dismissive.forEach { word ->
+                assertFalse(
+                    "$language: 1단계 소개가 상대를 얕잡아 말한다('$word'): $blurb",
+                    blurb.contains(word, ignoreCase = true),
+                )
+            }
         }
     }
 }

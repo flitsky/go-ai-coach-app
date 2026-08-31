@@ -66,11 +66,16 @@ private val BotCharacterNames: Map<String, Map<UiLanguage, String>> = mapOf(
 )
 
 private val BotCharacterDescriptions: Map<String, Map<UiLanguage, String>> = mapOf(
+    // ⚠️ **1단계를 약한 상대로 소개하지 않는다(2026-08-31 사용자 지시).** 실제 기력이 일반
+    // 중급자를 상회해서, 애초에 그래서 호선이 아니라 접바둑 기능을 넣었다 — "일부러 자주
+    // 실수한다"고 적어 두면 첫 판에서 진 사용자가 속았다고 느낀다. 그래서 "최선의 수는 아니지만
+    // 만만치 않다"로 틀을 바꿨고, 5단계의 "언제나 최선의 수만 둡니다"와 대비를 이룬다.
+    // 랜딩(#51)이 세운 "상대를 얕잡아 말하지 않는다" 원칙과 같은 축이다.
     "fast_beginner_1" to mapOf(
-        UiLanguage.Korean to "입문자와 두려고 일부러 자주 실수하는 상대예요.",
-        UiLanguage.English to "Plays loose on purpose so beginners get a real game.",
-        UiLanguage.Japanese to "入門者と打つため、わざとよく間違えます。",
-        UiLanguage.ChineseSimplified to "为了陪初学者，故意常常下错。",
+        UiLanguage.Korean to "최선의 수를 두지는 못하지만, 결코 만만치 않은 상대예요.",
+        UiLanguage.English to "Doesn't always find the best move, but a capable opponent.",
+        UiLanguage.Japanese to "最善手とはいきませんが、決して侮れない相手です。",
+        UiLanguage.ChineseSimplified to "未必能下出最佳一手，但实力不容小觑。",
     ),
     "fast_beginner_2" to mapOf(
         UiLanguage.Korean to "기본기를 익히는 중. 절반쯤은 제대로 둡니다.",
