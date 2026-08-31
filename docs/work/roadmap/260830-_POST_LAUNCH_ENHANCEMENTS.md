@@ -1382,7 +1382,8 @@ Canvas 파이 클리핑 + 조각 틈), `ui/BotCharacterUiState.kt`(카드에서 
         (1·2절은 `빠른 초급 3단계`/`초급 7단계`를 전제하는데 지금 코드는 5단계이고 초급·중급·고급은
         UI에서 숨겨져 있다), 열린 질문 3개, 그리고 **본문이 인용하는 옛 파일명 → 이 문서 N절 대응표**.
     - ⚠️ **제안했던 삭제 1건은 잘못이었고, 실행 전에 잡았다.**
-      `FAST_BEGINNER_FIVE_TIER_REDESIGN_PLAN_2026-08-17.md`을 *"완료된 계획, 결론은 `ENGINE.md`에"* 라며
+      옛 `FAST_BEGINNER_FIVE_TIER_REDESIGN_PLAN_2026-08-17.md`(지금은 개명돼 `FAST_BEGINNER_TIER_DESIGN.md`)를
+      *"완료된 계획, 결론은 `ENGINE.md`에"* 라며
       삭제 대상으로 올렸는데, 삭제 직전 인바운드 참조를 보니 `USER_OPTION_MANUAL.md`가 그 문서의
       **11절을 "설계 근거"로 지목**하고 있었다. 열어 보니 **다른 어디에도 없는 근거**가 있었다 —
       무상태 배치 공식 `target(k) = ceil(worstPercent/100 * k)`와 그것이 5절 누적 방식과 수학적으로
