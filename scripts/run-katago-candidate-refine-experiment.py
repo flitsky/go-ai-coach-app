@@ -276,7 +276,7 @@ def main() -> int:
     parser.add_argument("--katago", default=os.environ.get("KATAGO_BIN", DEFAULT_KATAGO))
     parser.add_argument("--model", default=os.environ.get("KATAGO_MODEL", DEFAULT_MODEL))
     parser.add_argument("--config", default=os.environ.get("KATAGO_ANALYSIS_CONFIG", DEFAULT_CONFIG))
-    parser.add_argument("--out", type=Path, default=Path("docs/measurements/engine-benchmark/candidate-refine-latest.md"))
+    parser.add_argument("--out", type=Path, default=Path("docs/engine/measurements/engine-benchmark/candidate-refine-latest.md"))
     parser.add_argument("--json-out", type=Path, default=None)
     args = parser.parse_args()
 

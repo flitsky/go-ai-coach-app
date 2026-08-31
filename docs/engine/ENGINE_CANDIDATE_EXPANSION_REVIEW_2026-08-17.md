@@ -106,7 +106,7 @@ KataGo 문서(`ENGINE_API_CALL_POLICY.md` "Visit의 의미와 탐색 원리" 절
 ```bash
 python3 scripts/run-katago-candidate-refine-experiment.py \
   --visits 16,32,64 --refine-budgets 0,4,8,12 --time-cap-ms 5000 \
-  --out docs/measurements/engine-benchmark/candidate-refine-mac-20260817.md
+  --out docs/engine/measurements/engine-benchmark/candidate-refine-mac-20260817.md
 ```
 
 원본 결과: `candidate-refine-mac-20260817.md` (36행 전체)
@@ -172,7 +172,7 @@ P0에서 B32/B64 모두 `refine=0` 기준 13개로 동일했다. `ENGINE_BEGINNE
 | `scripts/run-katago-search-mode-benchmark.py` | GTP fast vs JSON position analysis latency 비교, 맥북/폰(ADB `run-as`) 둘 다 지원 | `make engine-search-mode-benchmark[-phone]` |
 | **`scripts/run-katago-candidate-refine-experiment.py`(신규)** | `refinePolicyMoves` 후보 확장 레버의 후보수 증가량과 latency 비용 측정 | 없음(직접 실행) |
 
-전부 앱 바이너리 없이 로컬 Homebrew KataGo(`/opt/homebrew/bin/katago`)와 번들 모델/config를 직접 구동한다. 폰 실측이 필요할 때만 ADB `run-as`로 실제 설치된 앱의 KataGo 산출물을 그대로 실행한다(`ENGINE_API_CALL_POLICY.md` "원격 폰 엔진 벤치마크 표준" 절). 이 경로는 앱을 빌드/설치/재시작할 필요 없이 반복 실험할 수 있다 — 사용자가 요청한 방향과 정확히 일치하는 기존 관례다. 새 스크립트도 이 관례(같은 옵션 이름, 같은 국면 데이터, `docs/measurements/engine-benchmark/`에 결과 저장)를 그대로 따랐다.
+전부 앱 바이너리 없이 로컬 Homebrew KataGo(`/opt/homebrew/bin/katago`)와 번들 모델/config를 직접 구동한다. 폰 실측이 필요할 때만 ADB `run-as`로 실제 설치된 앱의 KataGo 산출물을 그대로 실행한다(`ENGINE_API_CALL_POLICY.md` "원격 폰 엔진 벤치마크 표준" 절). 이 경로는 앱을 빌드/설치/재시작할 필요 없이 반복 실험할 수 있다 — 사용자가 요청한 방향과 정확히 일치하는 기존 관례다. 새 스크립트도 이 관례(같은 옵션 이름, 같은 국면 데이터, `docs/engine/measurements/engine-benchmark/`에 결과 저장)를 그대로 따랐다.
 
 새 스크립트는 아직 Makefile 타겟이 없다 — 반복 사용 가치가 확인되면(5절의 다음 실험들이 이 스크립트를 계속 쓰게 되면) 타겟을 추가하는 게 자연스럽다. 지금은 보류한다.
 

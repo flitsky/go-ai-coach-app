@@ -35,7 +35,7 @@
 
 | # | 항목 | 상태 | 비고 |
 | --- | --- | --- | --- |
-| A-1 | 비공개 테스트 12명 × 14일 | ⏳ 12/14일 | ETA ~2026-09-02. 근거: `docs/history/market-listing-history/README.md` + 2026-08-30 사용자 확인 |
+| A-1 | 비공개 테스트 12명 × 14일 | ⏳ 12/14일 | ETA ~2026-09-02. 근거: `docs/work/history/MARKET_LISTING_HISTORY.md` + 2026-08-30 사용자 확인 |
 | A-2 | 개인정보처리방침 URL을 제출 필드에 등록 | ⬜ | URL은 이미 살아 있고 앱에서도 링크한다 — **콘솔에 붙여넣는 것만 남았다** |
 | A-3 | IARC 콘텐츠 등급 설문 | ⬜ | Firebase Analytics·Crashlytics를 **의도적으로 아예 안 넣었다** — 선언 대상은 AdMob 광고 ID와 Play Billing 구매 정보 정도 |
 | A-4 | 데이터 보안(Data safety) 양식 | ⬜ | A-3과 같은 근거 |

@@ -203,9 +203,9 @@ JSON position analysis는 현재 GTP fast path 대비 **구조적 장점이 뚜�
 
 하지만 "지금 당장 기본 대국 경로를 모두 JSON으로 바꾸자"는 결론은 아직 이르다. 폰에서 B16/B32/B64 latency, root visits fill, 자동대국 승률 분포를 비교해야 한다.
 
-2026-06-13 맥북 1차 latency 비교에서는 JSON position analysis가 B16/B32/B64의 `rootInfo.visits`를 모두 채웠다. 같은 기준 포지션에서 평균 elapsed는 B16 `167ms`, B32 `173ms`, B64 `282ms`였고, 현재 앱 thread 조건의 GTP fast path는 B16 `108ms`, B32 `225ms`, B64 `425ms`였다. 단, GTP fast path의 root 값은 JSON `rootInfo.visits` 원본이 아니라 후보별 visits 합산 추정치이므로 `15/31/63`처럼 목표보다 1 낮게 보일 수 있다. 자세한 raw/summary는 `docs/measurements/engine-benchmark/search-mode-mac-20260613/`에 둔다.
+2026-06-13 맥북 1차 latency 비교에서는 JSON position analysis가 B16/B32/B64의 `rootInfo.visits`를 모두 채웠다. 같은 기준 포지션에서 평균 elapsed는 B16 `167ms`, B32 `173ms`, B64 `282ms`였고, 현재 앱 thread 조건의 GTP fast path는 B16 `108ms`, B32 `225ms`, B64 `425ms`였다. 단, GTP fast path의 root 값은 JSON `rootInfo.visits` 원본이 아니라 후보별 visits 합산 추정치이므로 `15/31/63`처럼 목표보다 1 낮게 보일 수 있다. 자세한 raw/summary는 `docs/engine/measurements/engine-benchmark/search-mode-mac-20260613/`에 둔다.
 
-2026-06-13 Android 실기기 `SM-S908N` 1차 latency 비교에서는 JSON position analysis의 필요성이 더 뚜렷했다. 앱에 번들된 KataGo Eigen(CPU) backend를 ADB `run-as`로 실행했고, time cap `10000ms`, GTP `numSearchThreads=1`, JSON `numAnalysisThreads=1`, `numSearchThreads=4` 조건이었다. JSON은 B16/B32/B64 모두 `rootInfo.visits` fill OK였고 평균 elapsed는 B16 `4760ms`, B32 `3067ms`, B64 `4995ms`였다. GTP fast path는 B16 `3815ms`, B32 `7603ms`, B64 `10168ms`였고, root estimate는 각각 `15/31/47`이었다. 특히 B64는 10초 cap에서도 목표 root를 채우지 못했으므로, AI vs AI 레벨링 검증에서는 JSON mode를 우선 실험해야 한다. 자세한 raw/summary는 `docs/measurements/engine-benchmark/search-mode-phone-20260613/`에 둔다.
+2026-06-13 Android 실기기 `SM-S908N` 1차 latency 비교에서는 JSON position analysis의 필요성이 더 뚜렷했다. 앱에 번들된 KataGo Eigen(CPU) backend를 ADB `run-as`로 실행했고, time cap `10000ms`, GTP `numSearchThreads=1`, JSON `numAnalysisThreads=1`, `numSearchThreads=4` 조건이었다. JSON은 B16/B32/B64 모두 `rootInfo.visits` fill OK였고 평균 elapsed는 B16 `4760ms`, B32 `3067ms`, B64 `4995ms`였다. GTP fast path는 B16 `3815ms`, B32 `7603ms`, B64 `10168ms`였고, root estimate는 각각 `15/31/47`이었다. 특히 B64는 10초 cap에서도 목표 root를 채우지 못했으므로, AI vs AI 레벨링 검증에서는 JSON mode를 우선 실험해야 한다. 자세한 raw/summary는 `docs/engine/measurements/engine-benchmark/search-mode-phone-20260613/`에 둔다.
 
 권장 순서는 다음과 같다.
 

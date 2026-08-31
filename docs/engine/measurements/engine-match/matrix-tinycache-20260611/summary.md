@@ -9,9 +9,9 @@
 
 | Matchup | Left wins | Right wins | Left win rate | Avg left lead | Log |
 | --- | ---: | ---: | ---: | ---: | --- |
-| 빠른 초급 3단계 vs 초급 7단계 | 20 | 30 | 0.4 | -1.216 | docs/measurements/engine-match/matrix-tinycache-20260611/B16-vs-B32.jsonl |
-| 빠른 초급 3단계 vs 중급 5단계 | 8 | 42 | 0.16 | -7.891 | docs/measurements/engine-match/matrix-tinycache-20260611/B16-vs-B64.jsonl |
-| 초급 7단계 vs 중급 5단계 | 9 | 41 | 0.18 | -5.889 | docs/measurements/engine-match/matrix-tinycache-20260611/B32-vs-B64.jsonl |
+| 빠른 초급 3단계 vs 초급 7단계 | 20 | 30 | 0.4 | -1.216 | docs/engine/measurements/engine-match/matrix-tinycache-20260611/B16-vs-B32.jsonl |
+| 빠른 초급 3단계 vs 중급 5단계 | 8 | 42 | 0.16 | -7.891 | docs/engine/measurements/engine-match/matrix-tinycache-20260611/B16-vs-B64.jsonl |
+| 초급 7단계 vs 중급 5단계 | 9 | 41 | 0.18 | -5.889 | docs/engine/measurements/engine-match/matrix-tinycache-20260611/B32-vs-B64.jsonl |
 
 ## 평균 응답 시간
 

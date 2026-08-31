@@ -1260,7 +1260,7 @@ Canvas 파이 클리핑 + 조각 틈), `ui/BotCharacterUiState.kt`(카드에서 
 
 58. **문서 구조 재편 마무리** — 최상위 15→5, 중분류 8→5 (AI 모델: Sonnet, 노력정도: 중간) [완료]
     - 2026-08-31 발행. 구조 정책은 `DOCS_INDEX.md`의 "문서 구조 정책" 절에 이미 세웠고,
-      **1단계(로그 분리)만 끝났다**(`docs/measurements/`, 하위 폴더 9 → 8).
+      **1단계(로그 분리)만 끝났다**(`docs/engine/measurements/`, 하위 폴더 9 → 8).
     - **목표 형태는 그 절의 "현재 상태"에 이미 적혀 있다** — 여기 옮겨 적지 말 것(두 곳이 어긋난다).
       요약하면 최상위는 `HANDOVER` + 요약 4개(`PRD`·`ARCHITECTURE`·`ENGINE`·`OPERATIONS`),
       나머지 딥다이브 7개는 하위로. 중분류는 `architecture`·`engine`·`measurements`·`roadmap`·`history`.
@@ -1297,7 +1297,7 @@ Canvas 파이 클리핑 + 조각 틈), `ui/BotCharacterUiState.kt`(카드에서 
         `ATTENDANCE_REWARD_POLICY`·`USER_OPTION_MANUAL`처럼 **아키텍처가 아닌 제품 정책**이 들어가야
         한다. `spec/`으로 이름을 바꾸는 편이 정직해 보이나, 정책 문서를 함께 고쳐야 하므로
         착수 스레드가 사용자와 확정할 것.
-      · `docs/history/market-listing-history/images/`는 **빈 폴더**다(git 추적 대상 없음) — 옮길 때 버린다.
+      · `docs/work/history/market-listing-history/images/`는 **빈 폴더**다(git 추적 대상 없음) — 옮길 때 버린다.
     - ✅ **폴더 이름은 `spec/`으로 확정(2026-08-31 사용자 승인).** 정책이 적어 둔 `architecture/`에는
       아키텍처가 아닌 제품 정책이 들어가야 해서 이름을 바꿨다 — 정책 문서도 함께 고친다.
     - **결과: 세 상한 모두 충족.** 최상위 **5개**(+ 색인) · 중분류 **5개**(`spec/`·`engine/`·
@@ -1320,7 +1320,7 @@ Canvas 파이 클리핑 + 조각 틈), `ui/BotCharacterUiState.kt`(카드에서 
         "제거됨(git 히스토리가 아카이브)"이라는 사실로 고쳤다.
       · `run-katago-candidate-refine-experiment.py`의 `--out` **기본값이 존재하지 않는 폴더**
         (`docs/engine-benchmark-logs/`)를 가리키고 있었다 — 실행하면 정책과 어긋난 폴더가 새로
-        생긴다. `docs/measurements/engine-benchmark/`로 고쳤다.
+        생긴다. `docs/engine/measurements/engine-benchmark/`로 고쳤다.
       · `THREAD_HISTORY.md`의 참조 1건은 **옮긴 뒤에야 되살릴 수 있게 됐다**(그 파일이 `engine/`으로 왔다).
     - ⚠️ **깊이 여유가 없어졌다(2 → 3).** 상한 안이지만 이제 어떤 폴더든 한 겹 더 씌우면 규칙을
       넘는다. 정책 절에 "상한을 채운 뒤의 규칙"을 신설해 **"들어가려면 하나가 나와야 한다"가 선택이

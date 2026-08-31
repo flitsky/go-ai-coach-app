@@ -77,7 +77,7 @@ ALLOWED: dict[tuple[str, str], str] = {
         "2026-08-17 보존 정책 전환으로 삭제한 것을 기록한 문장",
     ("docs/DOCS_INDEX.md", "docs/working-260617/implementation_plan.md"):
         "2026-08-06에 삭제한 것을 기록한 문장",
-    ("docs/history/THREAD_HISTORY.md", "docs/KATRAIN_UX_BACKLOG.md"):
+    ("docs/work/history/THREAD_HISTORY.md", "docs/KATRAIN_UX_BACKLOG.md"):
         "그 시점에 있었던 문서를 가리키는 히스토리 서술",
     ("scripts/run-katago-candidate-refine-experiment.py",
      "docs/archive/2026-06-docs-consolidation/ENGINE_BEGINNER_VISITS_BENCHMARK.md"):
@@ -88,7 +88,7 @@ ALLOWED: dict[tuple[str, str], str] = {
     ("docs/spec/APP_IA_AND_UI_SPEC.md", "docs/spec/USER_ONBOARDING_GUIDE.md"): "추천 신규 제안(미작성)",
     # ⓒ 스크립트가 만들어 낼 출력 경로
     ("scripts/run-katago-candidate-refine-experiment.py",
-     "docs/measurements/engine-benchmark/candidate-refine-latest.md"):
+     "docs/engine/measurements/engine-benchmark/candidate-refine-latest.md"):
         "--out 기본값(실행하면 생성되는 산출물)",
 }
 
