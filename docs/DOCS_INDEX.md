@@ -104,7 +104,7 @@
 | 위치 | 용도 |
 | --- | --- |
 | `feature-access-principles/README.md` | 기능 유/무료 제공 원칙 — `premium-mode/`·`auth-onboarding/`이 "무엇을 어떻게 만들었는가"를 기록하는 실행 문서라면, 이 문서는 "왜 그렇게 하기로 했는가"를 담는 상위 원칙 문서. 맨 아래 결정사항이 계속 append됨 |
-| `launch-plan/README.md` | 위 원칙을 Google Play 초도 버전 발행에 구체적으로 적용한 전략·기능별 정책·체크리스트. **0절이 260817 기준 최종 출시 체크리스트 종합** — 리팩토링이 끝난 뒤 다음 단계(시장 발행)를 시작하는 새 스레드는 이 문서부터 읽을 것 |
+| `launch-plan/README.md` | 위 원칙을 Google Play 초도 버전 발행에 구체적으로 적용한 전략·기능별 정책·체크리스트. **§0이 정식 출시 최종 체크리스트다(2026-08-31 전면 갱신, 백로그 #54)** — 출시 관련 작업을 시작하는 스레드는 이 절부터 읽을 것. ⚠️ §0은 **현재 상태**이고 그 아래 날짜별 '갱신 기록'은 히스토리다. 둘이 어긋나면 §0이 옳다 |
 | `premium-mode/README.md` | 프리미엄/수익화 모드 마스터플랜(광고 1시간 활성화, 영구 결제). Step별 진행 로그가 계속 append됨 |
 | `auth-onboarding/README.md` | 최초 실행 온보딩 + 계정 시스템(Firebase 익명/Google/이메일 인증) 마스터플랜. [ARCHITECTURE.md](./ARCHITECTURE.md) 6계층(세션/연속성)의 실행 문서 |
 | `ux-improvement/README.md` | UX 개편(보드 스케일링, 패널, 직접 착수 흐름) 마스터플랜 |
