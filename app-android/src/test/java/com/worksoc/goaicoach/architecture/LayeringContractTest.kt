@@ -1469,7 +1469,9 @@ class LayeringContractTest {
         // resolved to its default, so the refresh that syncs ticket counts after a grant
         // did nothing and My Page showed "day one stamped, zero tickets". The +4 is the
         // comment recording that, so the call does not drift back out. No new state hooks.
-        val lineBudget = 874
+        // #39: +1 — 오토세이브 요청에 `isPlayMagnifierEnabled` 한 줄. 착수 돋보기 토글이
+        // 영구 저장돼야 하고, 이 셸이 오토세이브 요청을 조립하는 유일한 지점이다. 상태 훅 증가 없음.
+        val lineBudget = 875
         val stateHookBudget = 46
 
         val goCoachApp = repoRoot()

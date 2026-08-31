@@ -77,6 +77,7 @@ fun buildUserPreferencesSnapshot(
     komi: Double = com.worksoc.goaicoach.shared.DefaultKomi,
     isPlayHapticEnabled: Boolean = true,
     isBoardMaxSize: Boolean = true,
+    isPlayMagnifierEnabled: Boolean = true,
 ): UserPreferencesSnapshot =
     buildGameSettings(
         boardSize = boardSize,
@@ -96,6 +97,7 @@ fun buildUserPreferencesSnapshot(
         showMoveReview = showMoveReview,
         isPlayHapticEnabled = isPlayHapticEnabled,
         isBoardMaxSize = isBoardMaxSize,
+        isPlayMagnifierEnabled = isPlayMagnifierEnabled,
     )
 
 fun buildUserPreferencesSnapshot(
@@ -110,6 +112,7 @@ fun buildUserPreferencesSnapshot(
     komi: Double = com.worksoc.goaicoach.shared.DefaultKomi,
     isPlayHapticEnabled: Boolean = true,
     isBoardMaxSize: Boolean = true,
+    isPlayMagnifierEnabled: Boolean = true,
 ): UserPreferencesSnapshot =
     buildUserPreferencesSnapshot(
         playerSetup = settingsState.playerSetup,
@@ -128,6 +131,7 @@ fun buildUserPreferencesSnapshot(
         komi = komi,
         isPlayHapticEnabled = isPlayHapticEnabled,
         isBoardMaxSize = isBoardMaxSize,
+        isPlayMagnifierEnabled = isPlayMagnifierEnabled,
     )
 
 internal fun buildGameSettings(
@@ -168,6 +172,7 @@ private fun GameSettings.toUserPreferencesSnapshot(
     showMoveReview: Boolean,
     isPlayHapticEnabled: Boolean = true,
     isBoardMaxSize: Boolean = true,
+    isPlayMagnifierEnabled: Boolean = true,
 ): UserPreferencesSnapshot =
     UserPreferencesSnapshot(
         boardSize = boardSize,
@@ -186,4 +191,5 @@ private fun GameSettings.toUserPreferencesSnapshot(
         showMoveReview = showMoveReview,
         isPlayHapticEnabled = isPlayHapticEnabled,
         isBoardMaxSize = isBoardMaxSize,
+        isPlayMagnifierEnabled = isPlayMagnifierEnabled,
     )

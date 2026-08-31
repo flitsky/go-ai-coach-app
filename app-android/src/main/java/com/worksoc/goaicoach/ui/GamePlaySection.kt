@@ -40,6 +40,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -116,12 +117,20 @@ internal fun GamePlaySection(
     // `spacedBy(12.dp)`가 사이에 끼어 선택기가 판에서 떠 보이고 세로도 낭비된다 — 묶으면
     // 그 12dp가 이 묶음 위에만 한 번 붙고, 선택기는 경계선에 바짝 붙는다(사용자 피드백).
     Column(modifier = Modifier.fillMaxWidth()) {
-    BoardSizeModeSelector(
+    BoardTopControls(
+        isMagnifierEnabled = screenState.uxOptions.isPlayMagnifierEnabled,
+        onToggleMagnifier = {
+            onEvent(
+                GameUiEvent.ChangeUxOptions(
+                    screenState.uxOptions.copy(
+                        isPlayMagnifierEnabled = !screenState.uxOptions.isPlayMagnifierEnabled,
+                    ),
+                ),
+            )
+        },
         isMaxSize = isBoardMaxSize,
-        onSelect = { maxSize ->
-            if (maxSize != isBoardMaxSize) {
-                onEvent(GameUiEvent.ChangeUxOptions(screenState.uxOptions.copy(isBoardMaxSize = maxSize)))
-            }
+        onToggleBoardSize = {
+            onEvent(GameUiEvent.ChangeUxOptions(screenState.uxOptions.copy(isBoardMaxSize = !isBoardMaxSize)))
         },
     )
 
@@ -642,59 +651,103 @@ private fun Modifier.expandBeyondScreenPadding(): Modifier = layout { measurable
 }
 
 /**
- * 보드 **바로 위**, 우측 끝에 붙는 크기 선택기(#38, 위치는 사용자 지정).
- *
- * 두 모드를 **나란히 보여주고 선택된 쪽을 강조**한다. 토글 하나로 "누르면 무엇이 될지"를
- * 말하는 방식(`PlayModeSwitch`)도 있지만, 여기서는 **지금 어느 모드인지**가 한눈에 보이는 편이
- * 낫다 — 보드 크기는 상태가 곧 눈에 보이는 값이라 라벨이 상태와 어긋나면 오히려 헷갈린다.
+ * 보드 **바로 위** 경계선에 바짝 붙는 토글 두 개(#38의 자리에 #39가 하나를 더했다).
+ * 왼쪽은 **착수 돋보기**, 오른쪽은 **바둑판 크기**다(2026-08-31 사용자 지시 — 좌우 대칭 배치).
  *
  * ⚠️ **보드 위에 얹지 마라.** 처음에는 판 우상단에 오버레이했는데, 거기는 실제로 착수하는
  * 자리라 칩이 탭을 가로챈다(2026-08-30 사용자 지적).
  *
- * 폭은 화면 여백 안쪽(다른 행과 같은 오른쪽 끝)에 맞춘다. 최대 크기 모드에서 보드는 그보다
- * 넓게 그려지지만, 선택기까지 화면 끝에 붙이면 잘려 보인다.
+ * ## 세그먼트에서 토글로 바꾼 이유 (2026-08-31)
+ * 원래 크기 선택기는 `여백`·`최대` 두 칩을 나란히 놓고 선택된 쪽을 강조했고, 그 주석은
+ * *"라벨이 상태와 어긋나면 오히려 헷갈린다"* 는 이유로 토글을 물리쳤다. **그 판단을 뒤집었다:**
+ * - **판 크기는 상태가 이미 눈에 보인다.** 판이 화면 끝까지 차 있으면 최대인 것이 즉시 보이므로,
+ *   칩이 상태를 다시 말하는 것은 중복이다.
+ * - 이 앱에는 "뒤집을 수 있다"를 말하는 관용구가 이미 있다 — `PlayModeSwitch`의 `⇅` 글리프다.
+ *   ⚠️ 다만 **라벨 방향은 그쪽과 다르다**: 여기서는 색이 상태를 말하므로 라벨도 **지금 상태**를
+ *   적는다(`UiStringsBoardControls.kt` KDoc에 뒤집은 사유가 있다).
+ * - 폭이 절반으로 줄어 **왼쪽에 대칭 버튼 자리가 생긴다** — 이것이 실제 계기였다.
+ *
+ * ⚠️ **두 버튼은 반드시 같은 관용구를 써야 한다.** 하나는 상태 라벨, 하나는 동작 라벨이면
+ * 나란히 놓인 두 칩이 서로 다른 문법으로 말하게 되어 가장 헷갈린다 — 그래서 [BoardTopToggle]
+ * 하나를 공유한다.
  */
 @Composable
-private fun BoardSizeModeSelector(
+private fun BoardTopControls(
+    isMagnifierEnabled: Boolean,
+    onToggleMagnifier: () -> Unit,
     isMaxSize: Boolean,
-    onSelect: (Boolean) -> Unit,
+    onToggleBoardSize: () -> Unit,
 ) {
     val strings = LocalUiStrings.current
     Row(
         // 아래 2dp만 남긴다 — 경계선에 바짝 붙이는 것이 요점이고, 세로 공간도 아낀다.
         modifier = Modifier.fillMaxWidth().padding(bottom = 2.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End),
+        horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // 순서는 `여백` → `최대`다(사용자 지정). 작은 것에서 큰 것으로 읽히는 편이 자연스럽다.
-        BoardSizeModeOption(label = strings.boardModeInset, selected = !isMaxSize) { onSelect(false) }
-        BoardSizeModeOption(label = strings.boardModeFull, selected = isMaxSize) { onSelect(true) }
+        BoardTopToggle(
+            label = playMagnifierLabelFor(strings.language),
+            // ⚠️ 화면 라벨에 켜짐/꺼짐이 없으므로(사용자 지시) 상태는 **여기서만** 말한다.
+            // 지우면 스크린 리더 사용자에게 이 버튼은 상태를 알 수 없는 버튼이 된다.
+            spokenSubject = playMagnifierLabelFor(strings.language),
+            spokenState = playMagnifierStateFor(strings.language, isMagnifierEnabled),
+            active = isMagnifierEnabled,
+            onClick = onToggleMagnifier,
+        )
+        BoardTopToggle(
+            label = boardSizeToggleLabelFor(strings.language, isMaxSize),
+            spokenSubject = boardSizeSubjectFor(strings.language),
+            // 이쪽은 라벨이 곧 상태다 — 소리로도 같은 낱말을 넘긴다.
+            spokenState = boardSizeToggleLabelFor(strings.language, isMaxSize),
+            active = isMaxSize,
+            onClick = onToggleBoardSize,
+        )
     }
 }
 
+/**
+ * 두 토글이 **한 함수를 공유한다** — 모양이 갈리면 위 KDoc의 "같은 관용구" 약속이 깨진다.
+ *
+ * ⚠️ **활성 표시는 테두리 색뿐이다**(2026-08-31 사용자 지시 — *"테두리 색만으로 충분"*).
+ * 처음에는 대국 상태판 턴 카드처럼 배경까지 칠했는데 **너무 눈에 띄었다.** 그래서 배경·글자색·
+ * 글자 굵기를 **상태와 무관하게 고정**하고 테두리만 [ActiveStateBorder]로 바꾼다.
+ * 테두리 색 자체는 여전히 그 턴 카드와 같은 토큰이라 "초록 테두리 = 활성"이 화면 위아래에서
+ * 한 가지 뜻으로 읽힌다. 값을 여기 다시 적지 말 것.
+ *
+ * ⚠️ **글자색은 언제나 [ActionButtonContentColor]다**(상태판 아래 버튼들과 같은 방식).
+ * 꺼졌을 때 흐리게 하면 **비활성(누를 수 없음)으로 읽히는데** 이 버튼은 언제나 누를 수 있다.
+ */
 @Composable
-private fun BoardSizeModeOption(label: String, selected: Boolean, onClick: () -> Unit) {
+private fun BoardTopToggle(
+    label: String,
+    spokenSubject: String,
+    spokenState: String,
+    active: Boolean,
+    onClick: () -> Unit,
+) {
     Surface(
-        modifier = Modifier.clickable(onClick = onClick),
+        modifier = Modifier
+            .clickable(onClick = onClick)
+            .semantics {
+                // 이 파일·`GameActionButtons.kt`의 다른 토글들과 같은 관용구다.
+                role = Role.Switch
+                contentDescription = spokenSubject
+                stateDescription = spokenState
+            },
         shape = RoundedCornerShape(10.dp),
-        color = if (selected) {
-            MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
-        } else {
-            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-        },
-        border = if (selected) BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else null,
+        // ⚠️ 활성일 때도 **같은 배경**이다. 이름이 `Inactive~`인 것은 이 토큰의 출처(턴 카드의
+        // 비활성 색)를 가리키는 것이고, 여기서는 두 상태가 함께 쓰는 바탕색이다.
+        color = InactiveStateContainerColor,
+        border = if (active) ActiveStateBorder else InactiveStateBorder,
         tonalElevation = 0.dp,
     ) {
         Text(
-            text = label,
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 1.dp),
+            // `⇅`는 "이건 뒤집히는 것"이라는 이 앱의 관용구다(`PlayModeSwitch`와 같다).
+            text = "\u21C5 " + label,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp),
             style = MaterialTheme.typography.labelSmall,
-            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
-            color = if (selected) {
-                MaterialTheme.colorScheme.primary
-            } else {
-                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-            },
+            fontWeight = FontWeight.Normal,
+            color = ActionButtonContentColor,
             maxLines = 1,
         )
     }

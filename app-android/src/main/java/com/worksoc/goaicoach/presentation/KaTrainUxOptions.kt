@@ -19,4 +19,10 @@ internal data class KaTrainUxOptions(
      * 화면의 주인공이라 크게 보는 쪽을 기본으로 둔다. 끄면 화면 좌우 여백(16dp) 안쪽에 그린다.
      */
     val isBoardMaxSize: Boolean = true,
+    /**
+     * 꾹 눌러 끌어 두는 **착수 돋보기**(#39). 기본 켜짐 — 이 기능의 목적이 오착수 방지이고,
+     * 꾹 누름이 관문이라 **평소의 탭 동작을 전혀 바꾸지 않는다.** 끄면 예전처럼 누른 자리에서
+     * 떼는 즉시 그 자리에 두고, 꾹 눌러도 돋보기가 뜨지 않는다.
+     */
+    val isPlayMagnifierEnabled: Boolean = true,
 )

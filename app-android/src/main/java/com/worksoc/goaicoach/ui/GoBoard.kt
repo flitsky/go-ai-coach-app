@@ -11,7 +11,10 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.drag
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -40,6 +43,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.input.pointer.PointerEventTimeoutCancellationException
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
@@ -65,6 +69,23 @@ import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 
+/**
+ * 진행 중인 돋보기 드래그(#39). 좌표와 **그 드래그 동안 고정된 말풍선 방향**을 함께 들고 있다.
+ */
+private data class MagnifierDrag(val touch: Offset, val below: Boolean)
+
+/**
+ * 손가락과 말풍선 사이 간격. **판 크기가 아니라 dp로 잡는다** — 가려지는 것은 손끝이라는
+ * 물리적 크기이고, 판이 작아진다고 손가락이 작아지지는 않는다.
+ */
+private val MagnifierFingerGap = 28.dp
+
+/** 드래그 중 1배 판에 남기는 가늠돌 — 판세를 가리지 않을 만큼 흐리게(#39). */
+private const val DragGhostAlphaOnBoard = 0.5f
+
+/** 확대창 안의 가늠돌 — 여기서는 조준이 목적이라 또렷하게. */
+private const val DragGhostAlphaInMagnifier = 0.85f
+
 private const val EngineActivityFrameIntervalMillis = 1_000L
 private val ActivityIndicatorDots = listOf("", " .", " ..", " ...")
 
@@ -86,6 +107,9 @@ internal fun GoBoard(
 ) {
     val premium = LocalPremiumUiState.current
     var canvasSize by remember { mutableStateOf(IntSize.Zero) }
+    // 돋보기 드래그(#39). `null`이면 평소 상태다. ⚠️ 이 값은 **그리기 람다 안에서만** 읽는다 —
+    // 컴포지션 본문에서 읽으면 손가락이 움직일 때마다 화면 전체가 리컴포즈된다.
+    var magnifierDrag by remember { mutableStateOf<MagnifierDrag?>(null) }
     var activityFrame by remember { mutableStateOf(0) }
 
     LaunchedEffect(engineActivityIndicator) {
@@ -153,11 +177,27 @@ internal fun GoBoard(
                         uxOptions.showCoordinates,
                         uxOptions.isDirectPlayEnabled,
                         uxOptions.isPlayHapticEnabled,
+                        uxOptions.isPlayMagnifierEnabled,
                     ) {
-                        detectTapGestures(
+                        val holdThresholdMillis = viewConfiguration.longPressTimeoutMillis
+                        fun coordinateAt(offset: Offset) =
+                            coordinateFromTap(offset, canvasSize, gameState.boardSize, uxOptions.showCoordinates)
+
+                        // ⚠️ **`detectTapGestures`와 `detectDragGesturesAfterLongPress`를 나란히
+                        // 두는 방식은 쓸 수 없다.** 앞의 것이 꾹 누름 뒤에 `consumeUntilUp()`으로
+                        // 이후 이벤트를 전부 삼켜, 뒤의 드래그 감지기가 굶는다(#39 착수 시 확인).
+                        // 그래서 **제스처 루프 하나**가 세 갈래를 직접 가른다:
+                        //   ⓐ 임계 전에 뗐다      → 탭(기존 동작 그대로)
+                        //   ⓑ 임계 전에 취소됐다   → 아무것도 안 한다. 세로 스크롤이 가져간 경우다
+                        //   ⓒ 임계를 넘겼다       → 돋보기 + 드래그, **떼는 순간**에만 착수
+                        awaitEachGesture {
+                            val down = awaitFirstDown()
+                            down.consume()
+
                             // 손가락이 **닿는 순간** 약하게 한 번 울린다(#36). 손을 뗄 때가
                             // 아니라 닿을 때인 이유: 이 진동은 "착수됐다"가 아니라 "눌린 것이
-                            // 전달됐다"는 신호다.
+                            // 전달됐다"는 신호다. 드래그 착수(#39)가 붙은 뒤에도 이 뜻은 그대로다
+                            // — 착수 확정 신호는 **뗄 때** 따로 울린다.
                             //
                             // 반상 위 유효한 교차점을 눌렀을 때만 울린다 — 판 바깥 여백을
                             // 스치는 것까지 울리면 신호가 아니라 소음이 된다. 입력이 막힌
@@ -165,21 +205,74 @@ internal fun GoBoard(
                             //
                             // 세기와 그 근거는 `PlayHaptics.kt`에 모여 있다 — 설정 토글이
                             // 같은 함수를 써서 "앞으로 이만큼 울린다"를 미리 들려준다.
-                            onPress = { offset ->
-                                if (inputEnabled && uxOptions.isPlayHapticEnabled &&
-                                    coordinateFromTap(offset, canvasSize, gameState.boardSize, uxOptions.showCoordinates) != null
-                                ) {
-                                    haptics.play()
+                            if (inputEnabled && uxOptions.isPlayHapticEnabled && coordinateAt(down.position) != null) {
+                                haptics.play()
+                            }
+
+                            // 돋보기가 꺼져 있으면 **예전 동작 그대로**다(#39 토글) — 누른
+                            // 자리에서 떼면 그 자리에 두고, 꾹 눌러도 아무 일도 없다.
+                            if (!uxOptions.isPlayMagnifierEnabled) {
+                                waitForUpOrCancellation()?.let { up ->
+                                    up.consume()
+                                    if (inputEnabled) coordinateAt(down.position)?.let(onCoordinateTap)
                                 }
-                            },
-                            onTap = { offset ->
-                                if (!inputEnabled) {
-                                    return@detectTapGestures
+                                return@awaitEachGesture
+                            }
+
+                            var heldPastThreshold = false
+                            val releasedEarly = try {
+                                withTimeout(holdThresholdMillis) { waitForUpOrCancellation() }
+                            } catch (_: PointerEventTimeoutCancellationException) {
+                                heldPastThreshold = true
+                                null
+                            }
+
+                            if (!heldPastThreshold) {
+                                // `null`이면 다른 제스처(세로 스크롤)가 가져갔다 — 착수하지 않는다.
+                                releasedEarly?.let { up ->
+                                    up.consume()
+                                    if (inputEnabled) coordinateAt(down.position)?.let(onCoordinateTap)
                                 }
-                                coordinateFromTap(offset, canvasSize, gameState.boardSize, uxOptions.showCoordinates)
-                                    ?.let(onCoordinateTap)
-                            },
-                        )
+                                return@awaitEachGesture
+                            }
+
+                            // ⚠️ 입력이 막힌 상황에서는 돋보기도 띄우지 않는다 — 놓을 수 없는
+                            // 자리를 확대해 보여주면 놓을 수 있다고 오해한다.
+                            if (!inputEnabled) return@awaitEachGesture
+
+                            // ⚠️ 말풍선의 위/아래는 **여기서 한 번만** 정한다 — 매 프레임 다시
+                            // 판단하면 손가락이 경계선을 지날 때 창이 반대편으로 순간이동한다.
+                            val canvas = Size(canvasSize.width.toFloat(), canvasSize.height.toFloat())
+                            // 캔버스가 아직 0이면 계산할 것이 없다 — 손가락이 닿았다면 사실상
+                            // 일어나지 않지만, 여기서 터지게 두지는 않는다.
+                            val spacing = boardTapGeometry(
+                                canvasWidth = canvas.width,
+                                canvasHeight = canvas.height,
+                                boardSize = gameState.boardSize,
+                                showCoordinates = uxOptions.showCoordinates,
+                            )?.spacing ?: return@awaitEachGesture
+                            val gapPx = MagnifierFingerGap.toPx()
+                            val below = magnifierPrefersBelow(down.position, canvas, spacing, gapPx)
+
+                            magnifierDrag = MagnifierDrag(down.position, below)
+                            var last = down.position
+                            // ⚠️ **누르고 있는 동안 착수가 확정되면 안 된다**(사용자 확정).
+                            // 여기서는 좌표만 따라가고, 확정은 아래 `completed` 분기에서만 한다.
+                            val completed = drag(down.id) { change ->
+                                change.consume()
+                                last = change.position
+                                magnifierDrag = MagnifierDrag(last, below)
+                            }
+                            magnifierDrag = null
+                            if (!completed) return@awaitEachGesture
+
+                            // 판 밖에서 떼면 좌표가 없다 → 조용히 취소된다. 그것이 이 제스처의
+                            // 취소 경로다(별도 취소 버튼을 두지 않는 이유).
+                            coordinateAt(last)?.let { coordinate ->
+                                if (uxOptions.isPlayHapticEnabled) haptics.play()
+                                onCoordinateTap(coordinate)
+                            }
+                        }
                     },
             ) {
                 val geometry = BoardGeometry.from(size, gameState.boardSize, uxOptions.showCoordinates)
@@ -247,6 +340,56 @@ internal fun GoBoard(
                 }
                 if (uxOptions.showMoveNumbers) {
                     drawMoveNumbers(geometry, gameState)
+                }
+
+                // 돋보기(#39) — **맨 마지막에** 그려 판 위에 얹는다.
+                val drag = magnifierDrag
+                if (drag != null) {
+                    val touch = drag.touch
+                    val dragCoordinate = coordinateFromTap(
+                        touch,
+                        canvasSize,
+                        gameState.boardSize,
+                        uxOptions.showCoordinates,
+                    )
+                    val stoneRadius = geometry.spacing * 0.42f
+                    // 1배 판에도 가늠돌을 남긴다 — 확대창만 보고 두게 되면 판 전체의 모양을
+                    // 놓치기 때문이다. 확대창은 조준용, 이쪽은 판세 확인용이다.
+                    if (dragCoordinate != null) {
+                        drawGhostStone(
+                            center = geometry.pointFor(dragCoordinate),
+                            radius = stoneRadius,
+                            stone = gameState.nextPlayer,
+                            alpha = DragGhostAlphaOnBoard,
+                        )
+                    }
+                    drawMagnifier(
+                        placement = magnifierPlacement(
+                            touch = touch,
+                            canvasSize = size,
+                            cellSpacing = geometry.spacing,
+                            fingerGapPx = MagnifierFingerGap.toPx(),
+                            below = drag.below,
+                        ),
+                        touch = touch,
+                        background = if (isGameEnded) colors.boardBackgroundEnded else colors.boardBackgroundActive,
+                        border = colors.boardBorder,
+                    ) {
+                        // ⚠️ 확대창은 **격자·돌·가늠돌만** 그린다. 형세 오버레이나 추천 수 번호까지
+                        // 2배로 들어오면 정작 조준해야 할 교차점이 그 안에 묻힌다.
+                        drawBoardGrid(geometry, gameState.boardSize, colors.gridLine)
+                        for ((coordinate, stone) in gameState.stones) {
+                            drawStone(geometry.pointFor(coordinate), stoneRadius, stone, isGameEnded)
+                        }
+                        if (dragCoordinate != null) {
+                            drawGhostStone(
+                                center = geometry.pointFor(dragCoordinate),
+                                radius = stoneRadius,
+                                stone = gameState.nextPlayer,
+                                alpha = DragGhostAlphaInMagnifier,
+                            )
+                        }
+                    }
                 }
             }
 

@@ -164,16 +164,8 @@ private fun PlayerSeatCard(
     capturesLabel: String,
     alignEnd: Boolean,
 ) {
-    val bg = if (isActiveTurn) {
-        MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-    } else {
-        MaterialTheme.colorScheme.surfaceVariant
-    }
-    val border = if (isActiveTurn) {
-        BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary)
-    } else {
-        BorderStroke(1.dp, Color(0xFFCFD8DC))
-    }
+    val bg = if (isActiveTurn) ActiveStateContainerColor else InactiveStateContainerColor
+    val border = if (isActiveTurn) ActiveStateBorder else InactiveStateBorder
     val timeColor = if (isActiveTurn) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
 
     Surface(
@@ -379,3 +371,24 @@ private fun PlayButtonGhost(label: String) {
         )
     }
 }
+
+/**
+ * 대국 상태판 **턴 카드의 활성 색**. 보드 위 토글(#39)이 *"켜짐/최대"* 를 같은 색으로 말해야
+ * 해서(2026-08-31 사용자 지시) 인라인 값이던 것을 여기로 뺐다.
+ *
+ * ⚠️ **두 곳이 각자 색을 적어 두면 조용히 갈린다.** 한쪽 알파만 손대도 "같은 색"이라는 약속이
+ * 깨지는데 그건 눈으로만 드러난다 — 그래서 값을 한 군데로 모았다.
+ */
+internal val ActiveStateContainerColor: Color
+    @Composable get() = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+
+internal val ActiveStateBorder: BorderStroke
+    @Composable get() = BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary)
+
+internal val InactiveStateContainerColor: Color
+    @Composable get() = MaterialTheme.colorScheme.surfaceVariant
+
+internal val InactiveStateBorder: BorderStroke
+    @Composable get() = BorderStroke(1.dp, InactiveStateBorderColor)
+
+private val InactiveStateBorderColor = Color(0xFFCFD8DC)
