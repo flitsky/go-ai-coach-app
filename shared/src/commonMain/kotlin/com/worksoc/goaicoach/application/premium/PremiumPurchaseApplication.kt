@@ -60,20 +60,27 @@ fun runPremiumPurchaseApplication(request: PremiumPurchaseRunRequest): PremiumPu
         }
 
         is PurchaseOutcome.NotPurchased -> {
-            val isRestoreNotFound = request.trigger == PurchaseTrigger.Restore && outcome.reason == PurchaseFailureReason.NotFound
+            // ⚠️ **"미소유"와 "확인 못 함"을 여기서 가른다**(#26 착수 순서 1번). 예전에는 복원
+            // 실패가 무엇이든 `restore_not_found`("소유한 구매 없음")로 기록돼 **로그가 거짓을
+            // 적었다** — 조회가 오류로 끝났을 뿐인데 미소유라고 단정한 셈이다.
+            val isAuthoritativeNotOwned = outcome.isAuthoritativeNotOwned(request.trigger)
+            val isRestore = request.trigger == PurchaseTrigger.Restore
             PremiumPurchaseRunResult(
                 nextState = null,
                 diagnosticEvent = DiagnosticEvent(
-                    severity = if (isRestoreNotFound) DiagnosticSeverity.Info else DiagnosticSeverity.Warning,
-                    code = if (request.trigger == PurchaseTrigger.Restore) {
-                        "premium_purchase_restore_not_found"
-                    } else {
-                        "premium_purchase_not_completed"
+                    // 미소유는 대부분의 사용자에게 정상이라 Info, 확인 실패는 Warning이다.
+                    severity = if (isAuthoritativeNotOwned) DiagnosticSeverity.Info else DiagnosticSeverity.Warning,
+                    code = when {
+                        isAuthoritativeNotOwned -> "premium_purchase_restore_not_found"
+                        isRestore -> "premium_purchase_restore_unverified"
+                        else -> "premium_purchase_not_completed"
                     },
-                    message = if (request.trigger == PurchaseTrigger.Restore) {
-                        "No active purchase found on restore check; premium state unchanged."
-                    } else {
-                        "Purchase did not complete; premium not activated."
+                    message = when {
+                        isAuthoritativeNotOwned ->
+                            "No active purchase found on restore check; premium state unchanged."
+                        isRestore ->
+                            "Could not verify purchase ownership; premium state left as-is."
+                        else -> "Purchase did not complete; premium not activated."
                     },
                     context = mapOf(
                         "trigger" to request.trigger.name,
@@ -84,3 +91,20 @@ fun runPremiumPurchaseApplication(request: PremiumPurchaseRunRequest): PremiumPu
             )
         }
     }
+
+/**
+ * 이 결과가 **"Play가 미소유라고 답했다"** 는 뜻인가.
+ *
+ * ⚠️ **구독 강등은 오직 이것이 참일 때만 해도 된다**(#26 착수 순서 1번의 존재 이유).
+ * [PurchaseFailureReason.OwnershipUnknown]·[PurchaseFailureReason.BillingUnavailable]처럼
+ * **"확인하지 못했다"** 는 결과에 강등을 걸면, 일시적 네트워크 오류가 유료 구독자의 접근권을
+ * 박탈한다. 지금은 진단 로그의 심각도·코드를 가르는 데만 쓰이지만, 강등 로직이 들어올 때
+ * **이 함수가 유일한 관문**이 되어야 한다.
+ *
+ * 구매 트리거([PurchaseTrigger.Purchase])에서는 언제나 거짓이다 — 구매를 시도한 결과는
+ * "소유 여부 조회"가 아니다.
+ */
+fun PurchaseOutcome.isAuthoritativeNotOwned(trigger: PurchaseTrigger): Boolean =
+    trigger == PurchaseTrigger.Restore &&
+        this is PurchaseOutcome.NotPurchased &&
+        reason == PurchaseFailureReason.NotFound

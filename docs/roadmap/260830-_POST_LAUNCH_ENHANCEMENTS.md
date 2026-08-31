@@ -1251,7 +1251,7 @@ Canvas 파이 클리핑 + 조각 틈), `ui/BotCharacterUiState.kt`(카드에서 
 > ⚠️ **#26·#18은 여전히 출시 조건이다** — 후순위는 *착수 순서*일 뿐이고, 둘 다 Play Console
 > 수익 창출이 열려야 실기 검증이 된다(§0 A-7·A-8).
 
-26. 프리미엄을 영구 구매에서 **월간 구독(3,900원)** 으로 전환 (AI 모델: Opus, 노력정도: 높음)
+26. 프리미엄을 영구 구매에서 **월간 구독(3,900원)** 으로 전환 (AI 모델: Opus, 노력정도: 높음) [부분 착수]
     - 참고: `feature-access-principles/README.md` 8장(이미 "프리미엄 = 월 구독"이 기조), `premium-mode/README.md`. **2026-08-30 사용자 확정** — 금액이 5,000~10,000원에서 **3,900원**으로 좁혀졌고, "기능이 늘면서 가치가 오르면 그때 가격도 조정" 방침.
     - **핵심 난점**: "구매 = 영구"가 타입 하나가 아니라 **상태·판정·복원·저장·문구 다섯 곳에 각각 하드코딩**돼 있다. `PremiumState.isActive`는 `Purchase -> true`라 만료를 표현할 수 없고, `PurchaseOutcome.Purchased`는 페이로드가 없어 유효기간을 실어 나를 수 없다.
     - ⚠️ **착수 순서를 지켜야 한다.** `runPremiumPurchaseApplication`은 "복원에서 미소유가 나와도 절대 강등하지 않는다"를 의도적 설계로 못박아 뒀다 — 영구 구매에서는 옳았지만 구독에서는 만료자가 영원히 프리미엄을 유지하는 결함이 된다. **그런데 그 강등을 그냥 켜면 안 된다**: `AndroidBillingClient`가 "조회 성공+미소유"와 "조회 실패"를 똑같이 `null`로 뭉개므로, 강등을 켜는 순간 **일시적 네트워크 오류가 유료 구독자의 접근권을 박탈한다.** 그 conflation을 쪼개는 것이 1번이다.
@@ -1263,6 +1263,40 @@ Canvas 파이 클리핑 + 조각 틈), `ui/BotCharacterUiState.kt`(카드에서 
       · ⚠️ 다만 **"초기화를 고려한다"와 "초기화한다"는 다르다.** 실제 오픈 시 테스트 기간 권한을 밀 것인지는 아직 확정이 아니다 — 밀기로 한다면 그 시점에 별도 일감이 필요하다(저장소의 `PremiumState`를 어떤 조건으로 리셋할지, 무르기 클레임 같은 **별개 축**은 남길지).
     - 착수 전 확인(사용자): **ⓑ Play Console 수익 창출 잠금**(개인정보처리방침·IARC·데이터 보안)이 풀려야 구독 SKU를 만들 수 있다 — 그 전에는 실기 검증 불가.
     - ⚠️ **스토어 등록정보는 배포 시점에 바꾼다.** `store_listing.txt`가 "앱 내 결제 없음"을 세 번 단언하는데, 코드가 머지돼도 플래그가 꺼져 있는 동안은 그 문장이 **참**이다. 미리 바꾸면 스토어가 거짓을 말하고, 배포 때 잊으면 정책 위반이 된다.
+    - **✅ 2026-08-31 부분 착수 — 착수 순서 1·2번을 끝내고 나머지는 의도적으로 파킹했다.**
+      · **파킹 사유(사용자 결정)**: 남은 부분은 **결제 상태를 만지는 가장 위험한 코드**인데
+        Play Console 수익 창출이 잠겨 있어 **한 줄도 실기 검증이 안 된다.** 카운트다운 완료 예정이
+        ~2026-09-02(`launch-plan/README.md` §0 A-1)이므로, **코드를 쓰면서 바로 검증할 수 있는
+        그때 이어 잡는다.** 미검증 결제 코드를 쌓아 두지 않는 것이 이 항목의 위험 관리다.
+      · **1번 — conflation을 쪼갰다.** `queryOwnedPurchaseOnce`가 *"Play가 미소유라고 답함"* 과
+        *"조회가 실패함"* 을 **둘 다 `null`로** 반환하고 있었고, 그것이 `NotFound`로 접혔다.
+        `OwnershipQuery`(Owned/NotOwned/Unknown) 세 갈래 + 새 사유
+        `PurchaseFailureReason.OwnershipUnknown`으로 갈랐다.
+        · ✅ **오늘 당장 고친 결함이 하나 있다**: 조회가 실패해도 진단 로그가
+          `premium_purchase_restore_not_found`("소유한 구매 없음")라고 **거짓을 기록**하고 있었다.
+          이제 `restore_unverified`로 갈리고 심각도도 Info/Warning으로 나뉜다.
+        · **강등의 유일한 관문을 함수로 만들었다** — `isAuthoritativeNotOwned(trigger)`는
+          `Restore × NotFound` 한 조합에서만 참이다. 지금은 로그 심각도를 가르는 데 쓰이고,
+          강등 로직이 들어올 때 **반드시 이 함수를 지나야 한다.**
+      · **2번 — `ProductType`을 생성자로 올렸다.** 어댑터를 프리미엄(SUBS 예정)과 캐릭터 구매
+        (INAPP, #18)가 **공유**하므로, 클래스 안에서 상수로 치환하면 캐릭터 구매가 조용히 깨진다
+        (그 플래그가 꺼져 있어 실행 테스트로도 안 드러난다).
+        · ⚠️ **파 보니 함정이 하나 더 있었다**: **구독은 오퍼 토큰이 `subscriptionOfferDetails`에
+          있고 `oneTimePurchaseOfferDetails`는 항상 `null`이다.** 종류만 바꾸고 그 자리를 두면
+          구독이 **"상품 없음"으로 조용히 실패**하는데, 사용자에게 보이는 문구는 "지금은 구매할 수
+          없어요"라 원인이 드러나지도 않는다. 고르는 규칙을 순수 함수(`billingOfferToken`)로
+          떼어 테스트로 고정했다 — 실기로 못 밟는 지금 이것이 유일한 장치다.
+      · **✅ 버튼 표기(#24)는 `(∞)` 유지로 확정됐다(2026-08-31 사용자 결정).** 구독이 유효한
+        동안은 체감이 무제한이고, `(⏱)`는 로비 카운트다운(광고 1시간)과 짝이라 구독에 주면
+        **"1시간 남음"으로 오독된다.** 더 이상 미정이 아니다.
+      · **남은 것(콘솔이 열린 뒤)**: ⓐ 유효기간을 `PremiumState`·`PurchaseOutcome`·저장에 표현,
+        ⓑ `isAuthoritativeNotOwned`를 관문으로 강등 활성화, ⓒ 구독 관리/해지 딥링크 UI(마이 페이지),
+        ⓓ 콘솔 구독 SKU 등록, ⓔ 배포 시점에 `store_listing.txt`의 "앱 내 결제 없음" 수정.
+      · 산출물: (shared) `application/premium/PurchasePort.kt`(`OwnershipUnknown` 신설),
+        `application/premium/PremiumPurchaseApplication.kt`(진단 분기 + `isAuthoritativeNotOwned`).
+        (app-android) `ui/AndroidBillingClient.kt`(조회 세 갈래 + `productType` 매개변수 +
+        `billingOfferToken`). 테스트: `PremiumPurchaseApplicationTest`(2건 신설),
+        `AndroidBillingClientTest`(3건 신설).
 
 18. 봇 캐릭터 개별 구매 배선 — 5단계 관장 천원, **4,900원** 단발성 결제·영구 소유 (AI 모델: Opus, 노력정도: 높음)
     - **2026-08-30 이관.** 출시 백로그의 유일한 미완 항목이었지만 이번 비공개 테스트 릴리즈에는
