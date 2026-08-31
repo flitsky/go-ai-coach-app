@@ -1458,7 +1458,13 @@ class LayeringContractTest {
         // 새 상태 훅은 없다 — stateHookBudget은 46 그대로.
         // History (2026-08-30): 865->866. 보드 크기 모드(#38)의 새 uxOptions 필드를
         // 오토세이브 요청에 넘기는 한 줄이다. 새 상태 훅 없음.
-        val lineBudget = 866
+        // History (2026-08-31): bumped 866->870 for the first-run Landing screen
+        // (backlog #51). Four lines: LandingGate(...) wraps GoCoachScreen inside the
+        // existing Surface. The landing deliberately sits OUTSIDE GoCoachScreen —
+        // inside it, the preferences autosave overwrote the answers on first
+        // composition — so this file gains no state hooks and no destination entry;
+        // the screen's own state lives in LandingScreen.kt. stateHookBudget stays 46.
+        val lineBudget = 870
         val stateHookBudget = 46
 
         val goCoachApp = repoRoot()

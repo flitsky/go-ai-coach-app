@@ -9,6 +9,7 @@ import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.match.SidePlayerSetup
 import com.worksoc.goaicoach.shared.PlayLevelGroup
 import com.worksoc.goaicoach.shared.PlayLevelSetting
+import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.SearchTimeLimit
 import com.worksoc.goaicoach.shared.SearchTimeSettings
@@ -162,5 +163,32 @@ class UserPreferencesCodecTest {
     fun invalidPayloadReturnsNull() {
         assertNull(UserPreferencesCodec.decode("{broken"))
         assertNull(UserPreferencesCodec.decode("""{"schema":99}"""))
+    }
+
+    // ── 접바둑 기본값(백로그 #52) ──────────────────────────────────────────────
+    // 2026-08-18에는 "초심자 진입 난이도"를 이유로 그 판의 최대 접바둑이 기본값이었다.
+    // 그 역할은 첫 실행 랜딩(#51)이 가져갔고, 묻지 않은 사용자에게는 호선으로 시작한다.
+
+    @Test
+    fun aFreshSnapshotStartsOnEvenTerms() {
+        assertEquals(0, UserPreferencesSnapshot().handicapCount)
+        // 판 크기를 따라가던 옛 기본값이 아니라는 것까지 못박는다 — 19x19로 만들어도 0이다.
+        assertEquals(0, UserPreferencesSnapshot(boardSize = BoardSize.Nineteen).handicapCount)
+    }
+
+    /**
+     * ⚠️ **이 항목이 실제로 고친 불일치다.** 데이터 클래스 기본값은 5였는데 디코드 폴백은 0이라,
+     * "저장 파일이 아예 없으면 5, 키만 빠졌으면 0"이라는 두 기본값이 공존했다. 둘이 어긋나면
+     * 같은 신규 사용자가 경로에 따라 다른 판으로 시작한다 — 화면에서는 조용히 지나간다.
+     */
+    @Test
+    fun theDecodeFallbackMatchesTheSnapshotDefault() {
+        val withoutHandicapKey = JSONObject(UserPreferencesCodec.encode(UserPreferencesSnapshot()))
+            .apply { remove("handicapCount") }
+            .toString()
+
+        val decoded = UserPreferencesCodec.decode(withoutHandicapKey)
+
+        assertEquals(UserPreferencesSnapshot().handicapCount, decoded?.handicapCount)
     }
 }

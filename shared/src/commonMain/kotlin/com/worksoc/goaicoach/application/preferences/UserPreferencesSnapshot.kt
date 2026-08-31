@@ -11,14 +11,22 @@ data class UserPreferencesSnapshot(
     val boardSize: BoardSize = BoardSize.Thirteen,
     val playerSetup: PlayerSetup = PlayerSetup(),
     val ruleset: Ruleset = Ruleset.Japanese,
-    // 초심자 진입 난이도를 낮추기 위해 기본값을 이 판 크기의 최대 접바둑으로 둔다
-    // (2026-08-18 결정) — boardSize 파라미터를 그대로 참조해서, 나중에 boardSize
-    // 기본값이 바뀌거나 다른 판 크기로 생성돼도(예: 19x19는 최대 9) 항상 그 판의
-    // 실제 최대값을 따라간다. 기본 좌석 배정(흑=사람/백=AI, MatchPolicy.kt)에서는
-    // 접바둑을 받는 쪽이 사람이라 첫 대국을 훨씬 유리하게 시작한다. 부작용:
-    // handicapCount > 0인 대국은 GameState.withHandicap()이 nextPlayer를 White로
-    // 시작한다(접바둑은 백이 먼저 둠) — 이 기본값 변경 이전에는 항상 Black이었다.
-    val handicapCount: Int = boardSize.maxHandicapCount,
+    // 기본값은 **호선(0)** 이다(2026-08-31, 백로그 #52).
+    //
+    // 2026-08-18에는 "초심자 진입 난이도를 낮춘다"는 이유로 그 판의 최대 접바둑
+    // (`boardSize.maxHandicapCount`, 13x13에서 5)을 기본값으로 뒀다. 그 역할은 이제
+    // **첫 실행 랜딩(#51)이 가져갔다** — 실력을 직접 묻고 그 답에 따라 5점/3점/호선/후수를
+    // 배정한다. 묻지도 않은 사용자(랜딩을 건너뛴 경우)에게까지 최대 접바둑을 얹는 것은
+    // 과했고, 그것이 이 항목의 출발점이었다.
+    //
+    // ⚠️ **저장소 디코드 폴백과 값이 어긋나 있었다.** `UserPreferencesStore`는 키가 없으면
+    // `optInt("handicapCount", 0)`으로 **0**을 쓰는데 이 기본값은 5였다 — "저장 파일이 아예
+    // 없으면 5, 키만 빠졌으면 0"이라는 두 기본값이 공존했다. 0으로 맞추면서 그 불일치도
+    // 함께 없앴다. **둘은 같은 값이어야 한다**(`UserPreferencesStoreTest`가 고정한다).
+    //
+    // 참고: handicapCount > 0인 대국은 `GameState.withHandicap()`이 nextPlayer를 White로
+    // 시작한다(접바둑은 백이 먼저 둠). 기본값이 0이 되면서 첫 수는 다시 Black이다.
+    val handicapCount: Int = 0,
     val komi: Double = DefaultKomi,
     val topMovesEnabled: Boolean = false,
     val showCoordinates: Boolean = false,
