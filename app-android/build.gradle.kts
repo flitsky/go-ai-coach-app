@@ -207,6 +207,19 @@ android {
             // 하는 friend에는 문제없지만, Play Console은 debuggable 빌드 업로드 시 게시 전 반드시
             // 꺼야 한다고 경고한다. playInternal만 명시적으로 false로 되돌린다.
             isDebuggable = false
+            // Play Console이 업로드마다 "이 App Bundle 유형과 연결된 난독화 파일이 없습니다"라고
+            // 경고했던 원인 — playInternal이 friend→debug에서 initWith하느라 R8이 아예 돌지
+            // 않았다. release와 같은 설정을 여기에도 걸어 매핑 파일이 번들 안
+            // (BUNDLE-METADATA/com.android.tools.build.obfuscation/proguard.map)에 자동 동봉되게
+            // 한다 — 콘솔에 따로 올릴 필요가 없다. dex도 같이 줄어든다.
+            // ⚠️ 이 줄들이 "실기로 검증한 코드를 그대로 올린다"는 기존 전제를 깬다. 내부 테스트
+            // 빌드는 이제 R8을 거친 별개의 산출물이므로, 검증도 이 빌드 타입으로 해야 한다.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
             // release와 동일한 이유(위 release 블록 주석 참고) — initWith가 ndk 설정까지 안정적으로
             // 복사해준다는 보장이 없어(buildConfigField와 같은 사정) 명시적으로 다시 선언한다.
             // playInternal이 실제로 Play Console에 업로드되는 채널이라 이쪽도 반드시 필요하다.
