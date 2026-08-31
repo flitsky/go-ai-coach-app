@@ -21,7 +21,7 @@ Implemented baseline as of 2026-08-29:
 Next goal:
 
 1. Ship the initial Google Play release. Code and assets are done; what remains is Play Console paperwork — see `launch-plan/README.md` §0.
-2. Work the post-launch enhancement list — `260830-_POST_LAUNCH_ENHANCEMENTS.md` is the entry point.
+2. Work the active backlog — `260831-_ACTIVE_BACKLOG.md` is the entry point. Both remaining items (#26 subscription conversion, #18 character purchase) wait on Play Console monetization opening.
 3. Add broader androidTest/Robolectric coverage. Default verification is JVM unit tests plus two emulator smoke tests.
 
 (`GameSessionStateHolder` moved into `:shared` in 2026-08; that goal is done.)
