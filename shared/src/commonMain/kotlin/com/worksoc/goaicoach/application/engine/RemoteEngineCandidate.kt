@@ -18,7 +18,7 @@ data class RemoteEngineCandidate(
 /**
  * 후보 중 지금 쓸 만한 것 하나를 고른다 — "여러 원격 후보 중 선택·신뢰도 판단"을 3계층이
  * 흡수해, 상위(5계층 이상)는 지금 엔진이 로컬인지 원격인지, 원격이라면 후보가 몇 개인지 전혀
- * 몰라도 된다(`docs/ARCHITECTURE.md`의 3계층 "DePIN 관점에서의 역할" 절 그대로).
+ * 몰라도 된다(`ARCHITECTURE.md`의 3계층 "DePIN 관점에서의 역할" 절 그대로).
  *
  * 지금은 실제 피어 네트워킹 없이 "고정된 원격 서버 1대"로 시작하는 단계라(계획서
  * `LAYERED_ARCHITECTURE_REFACTORING_PLAN`의 Stage E-1 범위), 판단은 아직 "활성화돼 있고

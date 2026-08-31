@@ -2,14 +2,14 @@
 
 작성일: 2026-08-23
 
-**이 문서는 새 스레드에 그대로 프롬프트로 넘겨 바로 개발에 착수할 수 있도록 쓴 개발 명세입니다.** `docs/roadmap/260823-_DAU_GROWTH_IDEAS.md`의 아이디어 #1(출석 보상)·#4(AI 캐릭터화)·#7(업적)을 구체화한 문서이며, **Phase 1(로그인 없이 로컬 전용)만 다룹니다.** 로그인 연동(Phase 2)은 의도적으로 범위에서 뺐고, 대신 Phase 1의 모든 설계가 나중에 Phase 2로 자연스럽게 확장되도록 아키텍처 제약(3장)을 명시했습니다.
+**이 문서는 새 스레드에 그대로 프롬프트로 넘겨 바로 개발에 착수할 수 있도록 쓴 개발 명세입니다.** `260823-_DAU_GROWTH_IDEAS.md`의 아이디어 #1(출석 보상)·#4(AI 캐릭터화)·#7(업적)을 구체화한 문서이며, **Phase 1(로그인 없이 로컬 전용)만 다룹니다.** 로그인 연동(Phase 2)은 의도적으로 범위에서 뺐고, 대신 Phase 1의 모든 설계가 나중에 Phase 2로 자연스럽게 확장되도록 아키텍처 제약(3장)을 명시했습니다.
 
 ---
 
 ## 1. 배경
 
 - 제품 방향성(사용자 지정): **간결성, 빠른 접근 체험을 통한 점진적 허들 넘기기.** 이 원칙이 아래 모든 설계에 적용됩니다 — 스트릭 강제 없음, 페널티 없음, 보상은 자연스럽게 쌓이는 형태.
-- 배경 문서: `docs/roadmap/260823-_DAU_GROWTH_IDEAS.md`(2~4장, chess.com 참고 사례와 이 앱의 현재 조건 정리) — 이 스펙을 시작하기 전에 먼저 읽으면 맥락이 잡힙니다.
+- 배경 문서: `260823-_DAU_GROWTH_IDEAS.md`(2~4장, chess.com 참고 사례와 이 앱의 현재 조건 정리) — 이 스펙을 시작하기 전에 먼저 읽으면 맥락이 잡힙니다.
 
 ## 2. 스코프
 
@@ -27,7 +27,7 @@
 - 도메인 타입 + `XxxStorePort` 인터페이스는 `shared`에, 실제 저장 어댑터는 `app-android/.../persistence`에 둔다. 참고 예시: `UserPreferencesStorePort`/`UserPreferencesStore`, `SavedGameStorePort`/`GameSessionStore`.
 - 각 저장 데이터는 SharedPreferences에 **키 하나당 JSON blob 하나**로 저장하고, `schema: Int` 버전 필드를 포함한다(`UserPreferencesCodec` 참고).
 - 아래 3개 신규 기능은 **서로 다른 Port로 분리**한다 — 하나의 거대한 blob에 다 우겨넣지 않는다.
-- Phase 2 확장을 위해 도메인 모델(data class)은 플랫폼/저장소 비종속으로 `shared`에 두고, UI·저장 로직과 분리한다(`docs/ARCHITECTURE.md` 7계층 원칙).
+- Phase 2 확장을 위해 도메인 모델(data class)은 플랫폼/저장소 비종속으로 `shared`에 두고, UI·저장 로직과 분리한다(`ARCHITECTURE.md` 7계층 원칙).
 
 **이 원칙을 지키면 Phase 2는 "같은 Port를 구현하는 Firestore 어댑터 추가"만으로 끝납니다 — 지금 이 구조를 어기면 나중에 재설계가 필요합니다.**
 
@@ -322,7 +322,7 @@ AttendanceState(
 
 - `PlayLevel.kt`의 `PlayLevelGroup`/티어 이름(초보~초고수 등)은 현재 순수 기능적 표기이며 시각적 캐릭터 개념이 전혀 없다 — **이번이 최초 도입.**
 - 새 도메인 타입(shared): `BotCharacter(id: BotCharacterId, name, avatarRef, linkedPlayLevel: PlayLevelGroup, tierWithinGroup: Int?, unlockSource: BotUnlockSource)` — 기존 `PlayLevelGroup`을 대체하지 않고 그 **위에 프레젠테이션 레이어를 씌우는** 방식이다. 난이도/AI 강도 로직은 그대로 둔다.
-- 새 컬렉션 상태: `claimedBots: Set<BotCharacterId>` — `FeatureId`/`claimedFeatures`와 구조는 비슷하지만 도메인이 다르므로(기능 토글이 아니라 캐릭터 수집) **별도 타입으로 분리**한다. `PremiumState`에 얹을지 새 `BotCollectionState`로 분리할지는 `docs/ARCHITECTURE.md` 7계층 원칙에 맞춰 구현 시 판단.
+- 새 컬렉션 상태: `claimedBots: Set<BotCharacterId>` — `FeatureId`/`claimedFeatures`와 구조는 비슷하지만 도메인이 다르므로(기능 토글이 아니라 캐릭터 수집) **별도 타입으로 분리**한다. `PremiumState`에 얹을지 새 `BotCollectionState`로 분리할지는 `ARCHITECTURE.md` 7계층 원칙에 맞춰 구현 시 판단.
 - **획득 경로 — 2026-08-24 재확정본** (초안의 "전 종 잠금 + 티어 오름차순 해금"은 폐기):
 
 | 티어 | 이름 | 획득 경로 |
@@ -452,7 +452,7 @@ AttendanceState(
 
 ### 7.1 진입점 UX — 캐릭터 선택이 곧 AI 레벨 선택이다 (2026-08-23 갱신)
 
-기존 대국 셋업(`GameSetupLobby`/`PlayerSetupPanel` 등)의 "AI 난이도 선택"과 새 "봇 캐릭터 선택"은 **별개 UI로 공존하지 않는다.** 캐릭터 하나하나가 `PlayLevelGroup` + 티어 하나에 1:1로 대응하므로, **캐릭터를 고르는 행위 자체가 곧 AI 레벨을 정하는 것**이다 — 즉 현재 있는 난이도 dropdown/선택 UI를 캐릭터 픽커로 **대체**한다(위에 얹는 게 아니라 교체). 5단계(초보~초고수) 각각이 캐릭터 하나씩이라, `FastBeginner` 그룹의 5개 티어를 우선 캐릭터화하는 것이 자연스러운 시작점이다(다른 그룹 `초급`/`중급`/`고급`은 코드 보존, 대국장 로드맵 예정 — `docs/DOCS_INDEX.md`의 관련 항목 참고, 지금 이 작업의 범위는 아니다).
+기존 대국 셋업(`GameSetupLobby`/`PlayerSetupPanel` 등)의 "AI 난이도 선택"과 새 "봇 캐릭터 선택"은 **별개 UI로 공존하지 않는다.** 캐릭터 하나하나가 `PlayLevelGroup` + 티어 하나에 1:1로 대응하므로, **캐릭터를 고르는 행위 자체가 곧 AI 레벨을 정하는 것**이다 — 즉 현재 있는 난이도 dropdown/선택 UI를 캐릭터 픽커로 **대체**한다(위에 얹는 게 아니라 교체). 5단계(초보~초고수) 각각이 캐릭터 하나씩이라, `FastBeginner` 그룹의 5개 티어를 우선 캐릭터화하는 것이 자연스러운 시작점이다(다른 그룹 `초급`/`중급`/`고급`은 코드 보존, 대국장 로드맵 예정 — `DOCS_INDEX.md`의 관련 항목 참고, 지금 이 작업의 범위는 아니다).
 
 
 > **구현 결정(백로그 #8, 2026-08-24)**:
@@ -488,7 +488,7 @@ AttendanceState(
 - 기보 리플레이/재분석 UI (데이터 자리만 마련)
 - 봇 캐릭터 구매/구독 상품 (도메인 타입에 자리만 마련)
 - 보상 콘텐츠(2~7일차, 14/21/28일차)의 구체 내용 확정
-- 알림/스트릭 경고 (별도 트랙 — `docs/roadmap/260823-_DAU_GROWTH_IDEAS.md` 4장 #6/#9)
+- 알림/스트릭 경고 (별도 트랙 — `260823-_DAU_GROWTH_IDEAS.md` 4장 #6/#9)
 
 ---
 
@@ -514,7 +514,7 @@ AttendanceState(
 
 ## 관련 문서
 
-- `docs/roadmap/260823-_DAU_GROWTH_IDEAS.md` — 이 스펙의 배경이 된 아이디어 브레인스토밍
+- `260823-_DAU_GROWTH_IDEAS.md` — 이 스펙의 배경이 된 아이디어 브레인스토밍
 - `feature-access-principles/README.md` — 로그인 없이/기기 로컬 저장 원칙, 재설치 초기화 고지 원칙
 - `premium-mode/README.md` — 기존 광고 보상·클레임 구현 로그
-- `docs/ARCHITECTURE.md` — 7계층 원칙(도메인/저장 계층 분리 근거)
+- `ARCHITECTURE.md` — 7계층 원칙(도메인/저장 계층 분리 근거)

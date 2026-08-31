@@ -9,9 +9,9 @@
 ## 먼저 볼 문서
 
 - 이 문서: 엔진 API 호출 정책, 호출 비용 순서, AI/사람 턴 일관성 기준
-- `docs/engine/ENGINE_LEVEL_STRENGTH_REVIEW_2026-06-10.md`: 실제 레벨별 visits/time/candidate count와 반복 대국 결과
-- `docs/engine/ENGINE_SEARCH_TREE_REUSE_REVIEW.md`: KataGo search tree reuse와 AI vs AI 격리 정책
-- `docs/engine/ENGINE_CANDIDATE_EXPANSION_REVIEW_2026-08-17.md`: 레벨링용 후보수 확장 검토. 이 문서의 `candidateCount 의미`/후보 예산 절과 직접 관련 — `refinePolicyMoves`가 구현은 됐지만 AI 착수 경로에서 항상 0으로 꺼져 있다는 갭과 실측 데이터
+- `ENGINE_LEVEL_STRENGTH_REVIEW_2026-06-10.md`: 실제 레벨별 visits/time/candidate count와 반복 대국 결과
+- `ENGINE_SEARCH_TREE_REUSE_REVIEW.md`: KataGo search tree reuse와 AI vs AI 격리 정책
+- `ENGINE_CANDIDATE_EXPANSION_REVIEW_2026-08-17.md`: 레벨링용 후보수 확장 검토. 이 문서의 `candidateCount 의미`/후보 예산 절과 직접 관련 — `refinePolicyMoves`가 구현은 됐지만 AI 착수 경로에서 항상 0으로 꺼져 있다는 갭과 실측 데이터
 
 ## 현재 결정
 
@@ -626,7 +626,7 @@ KataGo GTP config 주석 기준으로 `visits`는 현재 턴에서 새로 수행
 - `pointLoss`가 없는 후보는 표시나 리뷰에서 `unknown`으로 다룬다.
 - `pointLoss`는 앱 내부에서 0 이상 손실값으로 유지한다. 보드 숫자는 KaTrain식으로 `-pointLoss`를 표시할 수 있지만, 내부 모델에는 음수 이득 의미를 섞지 않는다.
 
-값 해석 기준의 과거 상세 근거(`TOP_MOVES_VALUE_GUIDE.md`, `ENGINE_ANALYSIS_CONSISTENCY_REVIEW.md`, `GREEN_SPOT_HINT_DECISION.md`, `KATRAIN_TOP_MOVES_ANALYSIS.md`)는 2026-08-17 문서 정리에서 저장소 보관을 중단했다(`docs/DOCS_INDEX.md`의 "문서 보존 정책" 참고). 이 문서(`ENGINE_API_CALL_POLICY.md`)가 그 결론을 이미 흡수한 현재 기준이므로, 과거 근거 원문이 필요하면 `git log --all --diff-filter=D -- 'docs/archive/**/TOP_MOVES_VALUE_GUIDE.md'`처럼 파일명으로 삭제 커밋을 찾아 복원한다.
+값 해석 기준의 과거 상세 근거(`TOP_MOVES_VALUE_GUIDE.md`, `ENGINE_ANALYSIS_CONSISTENCY_REVIEW.md`, `GREEN_SPOT_HINT_DECISION.md`, `KATRAIN_TOP_MOVES_ANALYSIS.md`)는 2026-08-17 문서 정리에서 저장소 보관을 중단했다(`DOCS_INDEX.md`의 "문서 보존 정책" 참고). 이 문서(`ENGINE_API_CALL_POLICY.md`)가 그 결론을 이미 흡수한 현재 기준이므로, 과거 근거 원문이 필요하면 `git log --all --diff-filter=D -- 'docs/archive/**/TOP_MOVES_VALUE_GUIDE.md'`처럼 파일명으로 삭제 커밋을 찾아 복원한다.
 
 ## 다음 리팩토링 방향
 

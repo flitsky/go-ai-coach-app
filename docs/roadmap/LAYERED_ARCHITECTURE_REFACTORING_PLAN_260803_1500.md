@@ -4,7 +4,7 @@
 
 ## 0. 이 문서의 성격
 
-`docs/ARCHITECTURE.md`(원칙 문서)와 `docs/spec/GO_AI_COACH_ARCHITECTURE_ROADMAP.md`(go-ai-coach 매핑 + 알려진 갭)가 2026-07-30에 정립한 7계층(4계층 압축 가능) 모델을, **실제 코드에 단계적으로 반영**하기 위한 착수 계획서다. 이 리포지토리의 "착수 계획서" 관례(`YYMMDD HHhMMm` 타임스탬프, 진행 로그 누적)를 따른다.
+`ARCHITECTURE.md`(원칙 문서)와 `GO_AI_COACH_ARCHITECTURE_ROADMAP.md`(go-ai-coach 매핑 + 알려진 갭)가 2026-07-30에 정립한 7계층(4계층 압축 가능) 모델을, **실제 코드에 단계적으로 반영**하기 위한 착수 계획서다. 이 리포지토리의 "착수 계획서" 관례(`YYMMDD HHhMMm` 타임스탬프, 진행 로그 누적)를 따른다.
 
 이 문서 하나로 전체 리팩토링이 끝나지 않는다 — 특히 마지막 Stage(물리적 분산, 다른 기기에서 연산)는 그 자체로 별도 킥오프 문서가 필요한 대형 신규 기능이다. 이 문서는 "지금부터 거기까지 가는 순서와, 각 지점에서 무엇을 확인해야 하는가"를 정의하는 상위 로드맵이다.
 
@@ -46,7 +46,7 @@
 
 ### Stage F — 1계층 + 실제 물리 분산("다른 폰에서 연산") (최고위험, 별도 대형 프로젝트)
 - **F-1.** 실행 위치를 나타내는 명시적 값 타입 설계(로컬/지정 서버/피어 기기).
-- **F-2.** 피어 디바이스 탐색·인증·신뢰 프로토콜. **이 항목은 이 계획서의 범위를 벗어나는 별도 설계·보안 검토가 필요한 신규 대형 기능이다.** 특히 연산 에너지를 사고파는 마켓플레이스(포인트 적립/차감)는 부정사용 방지, 서비스 약관, 정산 정확성 문제를 동반한다 — 착수 시점에 **전용 킥오프 문서를 새로 작성**해야 하며, 이 계획서는 "여기까지 오면 별도 문서가 필요하다"는 지점만 표시해 둔다. **260818: 그 지점에 도달했다** — 사용자가 가장 빠른 응답 피어에게 순위별 보상 점수를 주는 설계를 제시해 전용 킥오프 문서 [`REMOTE_ENGINE_MQ_TRANSPORT_KICKOFF_PLAN_260818_0825.md`](REMOTE_ENGINE_MQ_TRANSPORT_KICKOFF_PLAN_260818_0825.md)를 신설했다. 아직 결정/설계 단계이며 착수 전이다.
+- **F-2.** 피어 디바이스 탐색·인증·신뢰 프로토콜. **이 항목은 이 계획서의 범위를 벗어나는 별도 설계·보안 검토가 필요한 신규 대형 기능이다.** 특히 연산 에너지를 사고파는 마켓플레이스(포인트 적립/차감)는 부정사용 방지, 서비스 약관, 정산 정확성 문제를 동반한다 — 착수 시점에 **전용 킥오프 문서를 새로 작성**해야 하며, 이 계획서는 "여기까지 오면 별도 문서가 필요하다"는 지점만 표시해 둔다. **260818: 그 지점에 도달했다** — 사용자가 가장 빠른 응답 피어에게 순위별 보상 점수를 주는 설계를 제시해 전용 킥오프 문서 `REMOTE_ENGINE_MQ_TRANSPORT_KICKOFF_PLAN_260818_0825.md`를 신설했다. 아직 결정/설계 단계이며 착수 전이다.
 - **F-3.** PoC: 정산/포인트 없이, 로컬 네트워크 내 2대 기기로 "다른 기기의 분석 결과가 온다"만 최소 검증.
 
 ## 4. 실행 원칙
@@ -72,7 +72,7 @@
 
 - 260818 — **E-3 착수: 실현 가능성 검토.** 사용자 요청 배경: (1) 개발 단계에서 맥북 등 서버 PC가 엔진을 구동하고 폰은 그 엔진 역할을 원격 수행 — 엔진 개발/디버깅과 앱 개발의 관심사 분리, (2) 향후 다른 폰이 서버 역할로 엔진만 돌리고 대국 플레이어는 포인트를 소진해 그 연산력을 빌려쓰는 DePIN형 과금 모델. gRPC/MQ/JSON-RPC 중 무엇으로 내부 통신을 분리할지 검토해달라는 요청이었다.
 
-  **핵심 발견: (1)번(개발용 원격 분리)의 클라이언트 쪽은 이미 90% 완성돼 있었다.** 이 문서 자체가 260803~260804에 이미 Stage D(로컬/원격 `EngineCoreApi` 대등 계약 — `RemoteEngineCoreApiAdapter`, mutex 직렬화·타임아웃·forceReset까지 로컬과 동등)와 Stage E-1/E-2(원격 후보 선택 + 런타임 전환 — `RemoteEngineCandidate`/`selectRemoteEngineCandidate`/`createRemoteEngineSessionClient`)를 완료해 뒀다는 걸 이 문서를 복원하고서야 다시 확인했다(이 문서를 2026-08-17에 실수로 삭제했던 것 자체가 이 사실을 놓치기 쉬웠다는 방증이기도 하다 — `docs/DOCS_INDEX.md`의 2026-08-18 정정 항목 참고). **유일하게 없는 것은 실제 서버뿐이다** — `RemoteEngineSessionBootstrap.kt`가 스스로 "Stage E-1 범위: 아직 실제 원격 서버가 없어 GoCoachApp/MainActivity의 실제 컴포지션에는 배선하지 않았다"고 명시하고 있다.
+  **핵심 발견: (1)번(개발용 원격 분리)의 클라이언트 쪽은 이미 90% 완성돼 있었다.** 이 문서 자체가 260803~260804에 이미 Stage D(로컬/원격 `EngineCoreApi` 대등 계약 — `RemoteEngineCoreApiAdapter`, mutex 직렬화·타임아웃·forceReset까지 로컬과 동등)와 Stage E-1/E-2(원격 후보 선택 + 런타임 전환 — `RemoteEngineCandidate`/`selectRemoteEngineCandidate`/`createRemoteEngineSessionClient`)를 완료해 뒀다는 걸 이 문서를 복원하고서야 다시 확인했다(이 문서를 2026-08-17에 실수로 삭제했던 것 자체가 이 사실을 놓치기 쉬웠다는 방증이기도 하다 — `DOCS_INDEX.md`의 2026-08-18 정정 항목 참고). **유일하게 없는 것은 실제 서버뿐이다** — `RemoteEngineSessionBootstrap.kt`가 스스로 "Stage E-1 범위: 아직 실제 원격 서버가 없어 GoCoachApp/MainActivity의 실제 컴포지션에는 배선하지 않았다"고 명시하고 있다.
 
   **프로토콜 선택 검토(gRPC / MQ / JSON-RPC / 기존 커스텀 JSON+HTTP)**:
 
@@ -91,6 +91,6 @@
 
 ## 6. 관련 문서
 
-- [../ARCHITECTURE.md](../ARCHITECTURE.md) — 레이어 원칙(앱 비종속)
-- [../GO_AI_COACH_ARCHITECTURE_ROADMAP.md](../spec/GO_AI_COACH_ARCHITECTURE_ROADMAP.md) — 계층별 현재 매핑, 알려진 갭
+- `ARCHITECTURE.md` — 레이어 원칙(앱 비종속)
+- `GO_AI_COACH_ARCHITECTURE_ROADMAP.md` — 계층별 현재 매핑, 알려진 갭
 - `premium-mode/README.md`, `auth-onboarding/README.md` — Stage B/C의 1차 소스 문서

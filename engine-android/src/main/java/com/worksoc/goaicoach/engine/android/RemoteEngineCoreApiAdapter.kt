@@ -35,7 +35,7 @@ import java.net.URL
 /**
  * 2계층(Middleware / Bridge) — [EngineCoreApi]의 원격 구현체.
  *
- * `docs/ARCHITECTURE.md` 2계층 설명대로 "계약은 하나, 구현체는 여러 개(로컬/원격)"라는
+ * `ARCHITECTURE.md` 2계층 설명대로 "계약은 하나, 구현체는 여러 개(로컬/원격)"라는
  * 원칙을 따른다: [KataGoProcessEngineAdapter](로컬)와 완전히 동일한 [EngineCoreApi] 계약을
  * 만족하는 것이 목표다. 260804 정리로 로컬/원격 구현체가 같은 모듈(`engine-android`)에
  * 물리적으로 함께 있다 — app-android는 둘 중 무엇을 쓰든 `EngineCoreApi` 계약만 보면 된다.

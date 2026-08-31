@@ -35,11 +35,11 @@
 
 > 🔁 **이 프롬프트는 더 이상 쓰지 말 것(2026-08-30).** 이 문서는 완결됐고 예정사항이 비어 있어,
 > 그대로 넣으면 스레드가 할 일을 못 찾는다. 같은 형식의 최신 프롬프트가
-> `docs/roadmap/260830-_POST_LAUNCH_ENHANCEMENTS.md`에 있다. 아래는 **당시 원문 보존**이다.
+> `260830-_POST_LAUNCH_ENHANCEMENTS.md`에 있다. 아래는 **당시 원문 보존**이다.
 
 **매번 새 스레드에 넣던 고정 프롬프트** (완결 전 원문, 보존용):
 
-> 이번 스레드에서는 `docs/roadmap/260823-260830_OFFLINE_ENGAGEMENT_FEATURES_BACKLOG.md` 이 파일의 내용을 파악하여 '예정사항'의 첫번째 항목을 파악하여 수행 담당해야합니다. 먼저 항목을 이해하셨다면 진행중으로 변경하고 작업 착수하시고, 결과물을 사용자와 논의 후 사용자가 완료 승인을 하면 문서에 완료 업데이트하고 당신의 스레드 업무가 종료되었다고 명시해주시면 됩니다.
+> 이번 스레드에서는 `260823-260830_OFFLINE_ENGAGEMENT_FEATURES_BACKLOG.md` 이 파일의 내용을 파악하여 '예정사항'의 첫번째 항목을 파악하여 수행 담당해야합니다. 먼저 항목을 이해하셨다면 진행중으로 변경하고 작업 착수하시고, 결과물을 사용자와 논의 후 사용자가 완료 승인을 하면 문서에 완료 업데이트하고 당신의 스레드 업무가 종료되었다고 명시해주시면 됩니다.
 
 (파일명만 있어도 검색해서 찾을 수 있지만, 위처럼 `docs/roadmap/` 경로를 포함해두면 탐색 한 단계를 줄일 수 있습니다.)
 
@@ -55,7 +55,7 @@
 **참고사항**
 
 - `AI 모델` 표기는 스레드를 어떤 모델로 실행할지 사용자가 참고하는 값이다 — 스레드가 스스로 모델을 바꾸는 동작이 아니다.
-- 이 백로그 갱신과 `docs/DOCS_INDEX.md` 갱신은 별개다. 항목을 완료할 때마다 `DOCS_INDEX.md`를 고칠 필요는 없다 — 그 문서는 새 파일이 생기거나 문서 구조 자체가 바뀔 때만 갱신한다.
+- 이 백로그 갱신과 `DOCS_INDEX.md` 갱신은 별개다. 항목을 완료할 때마다 `DOCS_INDEX.md`를 고칠 필요는 없다 — 그 문서는 새 파일이 생기거나 문서 구조 자체가 바뀔 때만 갱신한다.
 - 동시에 여러 스레드를 이 백로그에 붙이지 않는다 — 순차 실행을 전제로 설계됐다.
 - **검증 명령**(항목마다 돌릴 것): 이 저장소는 **JDK 17**이 필요하다 — 시스템 기본 JDK로 돌리면 Gradle이 `25` 한 줄만 뱉고 즉시 실패해 원인을 찾기 어렵다.
   `export JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home` 후 `./gradlew :shared:testDebugUnitTest :app-android:testDebugUnitTest`.
@@ -86,7 +86,7 @@
 ### 완료 사항
 
 1. 참여 기능 기획 문서화 — 아이디어 브레인스토밍 + Phase 1 개발 착수 스펙 작성 (AI 모델: Sonnet, 노력정도: 높음) [완료]
-   - 산출물: `docs/roadmap/260823-_DAU_GROWTH_IDEAS.md`, `260823-260830_OFFLINE_ENGAGEMENT_FEATURES_KICKOFF_PLAN.md`
+   - 산출물: `260823-_DAU_GROWTH_IDEAS.md`, `260823-260830_OFFLINE_ENGAGEMENT_FEATURES_KICKOFF_PLAN.md`
 
 2. 앱 라이프사이클 훅 신설 — `Application` 서브클래스 + `ProcessLifecycleOwner` 옵저버 등록 (AI 모델: Sonnet, 노력정도: 중간) [완료]
    - 참고: 킥오프 플랜 4.1절. cold start/foreground 복귀 감지 인프라 — 현재 앱엔 전혀 없었음(그린필드). #3 이후 항목들의 선행 조건 해소.

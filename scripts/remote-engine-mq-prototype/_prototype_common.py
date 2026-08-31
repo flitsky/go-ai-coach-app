@@ -6,7 +6,7 @@ Both `run_session_topic_mqtt_prototype.py` and
 role logic that doesn't depend on the transport — fake analysis payloads,
 timestamp-ordered reward ranking, JSONL run logs — lives here once.
 
-See `docs/roadmap/REMOTE_ENGINE_MQ_TRANSPORT_KICKOFF_PLAN_260818_0825.md`
+See `REMOTE_ENGINE_MQ_TRANSPORT_KICKOFF_PLAN_260818_0825.md`
 section 6, item 1.
 """
 

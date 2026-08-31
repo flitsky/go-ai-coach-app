@@ -27,7 +27,7 @@ Scope cuts (deliberate, documented rather than silently guessed at):
     scoring and dead-stone reading is a meaningfully large amount of logic
     to get right, and the app's own endgame flow already tolerates these
     two operations failing/timing out and falls back to local judging
-    (`docs/engine/ENGINE_API_CALL_POLICY.md`, "종국 GTP 호출 정책"). Returning a
+    (`ENGINE_API_CALL_POLICY.md`, "종국 GTP 호출 정책"). Returning a
     clean error here is the honest choice over a half-correct scorer.
   - `estimateScore` returns win rate / score lead only, no ownership
     heatmap — see `run_engine_estimate_score`'s docstring for why.

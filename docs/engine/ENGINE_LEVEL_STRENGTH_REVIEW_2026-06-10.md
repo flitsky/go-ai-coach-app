@@ -282,7 +282,7 @@ Top Moves/힌트 분석은 학습 UI 품질을 위해 기존 `Balanced` 보강�
 `maxTime` 부족으로 B32가 충분히 32 visits를 채우지 못하는지 확인하기 위해, 방문수는 그대로 두고 B16/B32의 time cap만 모두 `1000ms`로 늘린 50판 실험을 추가했다.
 
 - command: `python3 scripts/run-katago-level-match.py --black fast_beginner:3 --white beginner:7 --black-time-ms 1000 --white-time-ms 1000 --games 50 --swap-colors --seed 20260611 --out docs/measurements/engine-match/b16-vs-b32-time1000-20260610.jsonl`
-- summary: `docs/measurements/engine-match/b16-vs-b32-time1000-20260610-summary.md`
+- summary: `b16-vs-b32-time1000-20260610-summary.md`
 - raw log: `docs/measurements/engine-match/b16-vs-b32-time1000-20260610.jsonl`
 - 조건: 실사용에 가까운 non-deterministic, `numSearchThreads=4`, 흑백 교대, warm-up, final evaluator `400 visits / 2000ms`
 - 소요 시간: 약 6분 26초
@@ -306,7 +306,7 @@ Top Moves/힌트 분석은 학습 UI 품질을 위해 기존 `Balanced` 보강�
 동일 조건을 새 seed로 50판 더 실행했다.
 
 - command: `python3 scripts/run-katago-level-match.py --black fast_beginner:3 --white beginner:7 --black-time-ms 1000 --white-time-ms 1000 --games 50 --swap-colors --seed 20260612 --out docs/measurements/engine-match/b16-vs-b32-time1000-r2-20260610.jsonl`
-- summary: `docs/measurements/engine-match/b16-vs-b32-time1000-r2-20260610-summary.md`
+- summary: `b16-vs-b32-time1000-r2-20260610-summary.md`
 - raw log: `docs/measurements/engine-match/b16-vs-b32-time1000-r2-20260610.jsonl`
 
 | 조건 | B16 wins | B32 wins | B32 win rate | B32 avg lead | B16 avg root visits | B32 avg root visits |

@@ -48,7 +48,7 @@ import com.worksoc.goaicoach.application.premium.FeatureId
  * 읽기 전용 판(`MyPageScreen`). 한쪽에만 고치면 같은 화면이 두 모양으로 갈린다.
  *
  * ⚠️ **이 컴포저블은 지급하지 않는다.** 지급은 팝업의 Claim만 한다
- * (`docs/spec/ATTENDANCE_REWARD_POLICY.md` 1장). 여기에 탭 동작을 붙이지 말 것.
+ * (`ATTENDANCE_REWARD_POLICY.md` 1장). 여기에 탭 동작을 붙이지 말 것.
  *
  * ## #57에서 글자를 버린 이유
  * #55는 칸마다 보상을 **글자로** 적었는데, 여섯 칸 폭(360dp 기기에서 칸당 약 45dp)에서는

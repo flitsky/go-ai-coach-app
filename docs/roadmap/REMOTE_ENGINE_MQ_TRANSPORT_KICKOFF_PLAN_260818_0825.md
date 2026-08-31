@@ -4,7 +4,7 @@
 
 상태(2026-08-29 갱신): **6절의 파이썬 프로토타입은 완료됐고 실측 결과가 7절에 있다.** 앱 이식(개발자 토글 UI, `EngineCoreApiFactory`에 새 transport 추가)은 여전히 미착수이며 별도 승인이 필요하다.
 
-> 이 프로토타입은 2026-08-18에 `feature/remote-engine-mq-prototype` 브랜치에서 작성됐지만 `main`에 병합되지 않아, 2026-08-29까지 **`main`만 보면 존재하지 않는 상태**였다(그래서 6절이 여전히 미래 작업처럼 읽혔다). 같은 날 저장소 점검에서 발견해 `main`으로 가져왔고, 브랜치는 정리했다. 교훈은 `docs/HANDOVER.md` 6.1절에 남겼다 — **이 저장소는 `main` 직접 커밋이 관행이라, 브랜치에 세워둔 작업은 어떤 문서에도 나타나지 않는다.**
+> 이 프로토타입은 2026-08-18에 `feature/remote-engine-mq-prototype` 브랜치에서 작성됐지만 `main`에 병합되지 않아, 2026-08-29까지 **`main`만 보면 존재하지 않는 상태**였다(그래서 6절이 여전히 미래 작업처럼 읽혔다). 같은 날 저장소 점검에서 발견해 `main`으로 가져왔고, 브랜치는 정리했다. 교훈은 `HANDOVER.md` 6.1절에 남겼다 — **이 저장소는 `main` 직접 커밋이 관행이라, 브랜치에 세워둔 작업은 어떤 문서에도 나타나지 않는다.**
 
 원래 착수 배경: 사용자가 명시적으로 "당장 착수하기보다는 방향을 결정한 뒤 문서화"를 요청했다 — 이 문서는 그 결정과 근거를 기록한다.
 
@@ -99,7 +99,7 @@
 
 ## 참고 문서
 
-- [`docs/roadmap/LAYERED_ARCHITECTURE_REFACTORING_PLAN_260803_1500.md`](LAYERED_ARCHITECTURE_REFACTORING_PLAN_260803_1500.md) — Stage D/E(오늘 이 문서가 이어받는 원격 엔진 배경), Stage F 정의(이 문서가 그 전용 킥오프)
+- `LAYERED_ARCHITECTURE_REFACTORING_PLAN_260803_1500.md` — Stage D/E(오늘 이 문서가 이어받는 원격 엔진 배경), Stage F 정의(이 문서가 그 전용 킥오프)
 - `scripts/run-katago-remote-analysis-server.py` — 어제 만든 HTTP 참조 서버. MQ/Firestore 프로토타입에서 KataGo 프로세스 관리 부분을 그대로 재사용한다
 - `scripts/remote-engine-mq-prototype/` — 7절 결과를 낸 실제 파이썬 프로토타입 코드(MQTT/Firestore 세션 토픽, 정합성 체크, 타임아웃+병행 폴백 실험)와 실행 로그(`runs/*.jsonl`)
 - `shared/src/commonMain/kotlin/com/worksoc/goaicoach/shared/RemotePositionAnalysisTransport.kt` — 이미 있는 트랜스포트 추상화 계약(3절)

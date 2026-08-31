@@ -62,7 +62,7 @@ graph TD
 | 단계 | 작업 내용 | 예상 산출물 | 상태 |
 | --- | --- | --- | --- |
 | **Milestone 1** | 와이어프레임 문서화 및 버전 관리 체계 구축 | `ux-improvement/wireframes/v1_wireframe.md` | **진행 중** |
-| **Milestone 2** | UI State 확장 분석 및 Kotlin API 설계 계획 수립 | `docs/ARCHITECTURE.md` 혹은 implementation plan 반영 | 대기 |
+| **Milestone 2** | UI State 확장 분석 및 Kotlin API 설계 계획 수립 | `ARCHITECTURE.md` 혹은 implementation plan 반영 | 대기 |
 | **Milestone 3** | 바둑판 정사각형 렌더링 개선 (`GoBoard.kt`) | Parent 뷰 크기 기반 스케일링 완료된 Compose 코드 | 대기 |
 | **Milestone 4** | 대국 현황 패널 (3분할) 및 기능 버튼 패널 구현 | `GamePlaySection.kt` 개편 완료 | 대기 |
 | **Milestone 5** | "바로 착수" 옵션 구현 및 가상 착수-확정 흐름 구현 | `GameMenuSection.kt` 및 착수 로직 연동 완료 | 대기 |

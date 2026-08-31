@@ -229,8 +229,8 @@ target(k) = ceil(worstPercent / 100 * k)   # k = 이 진영의 몇 번째 수인
 
 ## 참고 문서
 
-- [`docs/engine/ENGINE_CANDIDATE_EXPANSION_REVIEW_2026-08-17.md`](ENGINE_CANDIDATE_EXPANSION_REVIEW_2026-08-17.md) — 오늘 앞서 진행한 후보수 확장 리서치. 이 문서의 2/6절 근거를 그대로 이어받음
-- [`docs/ENGINE.md`](../ENGINE.md), [`docs/engine/ENGINE_API_CALL_POLICY.md`](./ENGINE_API_CALL_POLICY.md) — 현재 레벨 정책의 canonical 문서. 이 계획이 실제 구현되면 두 문서의 `빠른 초급` 관련 표를 갱신해야 한다
+- `ENGINE_CANDIDATE_EXPANSION_REVIEW_2026-08-17.md` — 오늘 앞서 진행한 후보수 확장 리서치. 이 문서의 2/6절 근거를 그대로 이어받음
+- `ENGINE.md`, `ENGINE_API_CALL_POLICY.md` — 현재 레벨 정책의 canonical 문서. 이 계획이 실제 구현되면 두 문서의 `빠른 초급` 관련 표를 갱신해야 한다
 - `shared/src/commonMain/kotlin/com/worksoc/goaicoach/shared/PlayLevel.kt` — `PlayLevelGroup`/`MoveSelectionPolicy` 정의
 - `shared/src/commonMain/kotlin/com/worksoc/goaicoach/shared/EngineAnalysisPolicy.kt` — 탐색 모드별 요청 조합 로직
 - `shared/src/commonMain/kotlin/com/worksoc/goaicoach/match/AiMoveSelectionPolicy.kt` — 실제 후보 선택이 일어나는 지점

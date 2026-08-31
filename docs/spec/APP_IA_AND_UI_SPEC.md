@@ -36,7 +36,7 @@ graph TD
     E --> E4["기기 성능 확인 (진행 중 / 완료)"]
 ```
 
-**2026-08-29 기준 이 절이 아직 상세 명세를 갖지 않은 화면**: `Onboarding`, `Settings`, `GameHistory`(참여/리텐션 트랙 백로그 #7로 신설), 그리고 앱 전역에 뜨는 출석 보상 Claim 다이얼로그(백로그 #14, `ui/AttendanceRewardClaimDialog.kt`). 해당 트랙의 스펙은 `docs/roadmap/260823-260830_OFFLINE_ENGAGEMENT_FEATURES_KICKOFF_PLAN.md`에 있습니다 — 트랙이 끝나면 여기로 흡수합니다.
+**2026-08-29 기준 이 절이 아직 상세 명세를 갖지 않은 화면**: `Onboarding`, `Settings`, `GameHistory`(참여/리텐션 트랙 백로그 #7로 신설), 그리고 앱 전역에 뜨는 출석 보상 Claim 다이얼로그(백로그 #14, `ui/AttendanceRewardClaimDialog.kt`). 해당 트랙의 스펙은 `260823-260830_OFFLINE_ENGAGEMENT_FEATURES_KICKOFF_PLAN.md`에 있습니다 — 트랙이 끝나면 여기로 흡수합니다.
 
 ---
 
@@ -61,7 +61,7 @@ graph TD
      - **바둑판 크기 (`Board size`)**: `9x9`, `13x13`, `19x19`
      - **접바둑 (`Handicap`)**: `접바둑 없음`(기본값) ~ `접바둑 N점` (9x9·13x13은 최대 5점, 19x19는 최대 9점) — `[-] [드롭다운] [+]` 구성
   3. **플레이어 설정 (`Player Setup`)**:
-     - 흑/백 각각 `사람(플레이어)` 또는 `AI` 선택. **AI 난이도는 2026-08-18부터 `빠른 초급` 5단계(`초보`/`하수`/`중수`/`고수`/`초고수`) 1뎁스로만 노출됩니다** — 기존 `초급`/`중급`/`고급` 그룹은 코드는 남아 있으나 UI에서 숨겨졌습니다([ENGINE.md](../ENGINE.md) 레벨 매핑 표 참고).
+     - 흑/백 각각 `사람(플레이어)` 또는 `AI` 선택. **AI 난이도는 2026-08-18부터 `빠른 초급` 5단계(`초보`/`하수`/`중수`/`고수`/`초고수`) 1뎁스로만 노출됩니다** — 기존 `초급`/`중급`/`고급` 그룹은 코드는 남아 있으나 UI에서 숨겨졌습니다(`ENGINE.md` 레벨 매핑 표 참고).
   4. **대국 시작하기 버튼 (`startMatchAction`)**:
      - 선택한 옵션으로 새 대국 세션을 세팅하고 메인 대국 화면으로 진입.
 
@@ -85,7 +85,7 @@ graph TD
      - `Resign (기권)`: 대국 포기. "정말 기권하시겠습니까?" 확인 다이얼로그 후 처리.
      - ~~`Analyze (분석)`~~ — **제거됨**(2026-08-17 이전). 별도 분석 다이얼로그는 더 이상 없습니다.
 
-     ⚠️ **위 액션들은 더 이상 전부 무조건 활성이 아닙니다.** `Undo`/`Top Moves`/`Eval`은 프리미엄·클레임·소모품 1회권으로 게이팅되며, 잠긴 상태에서 누르면 업셀 또는 1회권 사용 확인 팝업이 뜹니다(`ui/GamePlaySection.kt`, `ui/ConsumableUiState.kt`). 정책 원본은 [`../feature-access-principles/README.md`](../../feature-access-principles/README.md)와 [`../launch-plan/README.md`](../../launch-plan/README.md) 2장이며, 이 절은 아직 그 게이팅 상태별 UI를 상세히 명세하지 않았습니다.
+     ⚠️ **위 액션들은 더 이상 전부 무조건 활성이 아닙니다.** `Undo`/`Top Moves`/`Eval`은 프리미엄·클레임·소모품 1회권으로 게이팅되며, 잠긴 상태에서 누르면 업셀 또는 1회권 사용 확인 팝업이 뜹니다(`ui/GamePlaySection.kt`, `ui/ConsumableUiState.kt`). 정책 원본은 `feature-access-principles/README.md`와 `launch-plan/README.md` 2장이며, 이 절은 아직 그 게이팅 상태별 UI를 상세히 명세하지 않았습니다.
   5. **슬라이딩 메뉴 (Drawer / Panel)**:
      - `Player Setup`, `Search Time`, `Game & Board Rules (계가/덤/접바둑)`, `Display Options (표시 옵션)` 설정 실시간 변경 가능.
 
@@ -135,7 +135,7 @@ AI 코칭 피드백은 절대적 우세 여부가 아니라 **현재 국면 최�
 
 다음 담당자가 UI/UX 및 기획을 계속 고도화할 때 추가로 관리하면 프로젝트 유지보수성이 크게 향상되는 추천 문서/자산 제안입니다:
 
-1. **`docs/spec/APP_IA_AND_UI_SPEC.md` (본 파일)**:
+1. **`APP_IA_AND_UI_SPEC.md` (본 파일)**:
    - 앱의 화면 정보 구조(IA), 컴포넌트 기능 명세, 다국어 표기 가이드 통합 관리.
 2. **`docs/spec/UI_DESIGN_TOKENS.md` (추천 신규 제안)**:
    - Color Palette(Dark/Light), Typography Tokens(Inter/Roboto Font Sizes), Padding/Margin Tokens, Spacing Token을 명시하여 Figma - Compose 간 Design Token 일치 유지.

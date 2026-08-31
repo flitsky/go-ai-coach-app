@@ -9,8 +9,8 @@
 ## 1. 개요 및 목표
 
 ### 1.1. 배경 및 필요성
-- 기존 장기(Janggi) 앱에서 이미 Firebase Auth + Firestore/Storage + AdMob을 연동해 성공적으로 운영 중인 경험을 이 바둑 앱에도 그대로 재활용합니다 (`docs/history/baduk_app_architecture_recommendation.md`).
-- BaaS 5종(Firebase/Supabase/PocketBase/Appwrite/Convex) 비교 검토 결과(`docs/history/baas_solutions_comparison.md`), 기보(SGF) 저장·보상형 광고·AdMob 시너지 관점에서 **Firebase가 최종 채택**되었습니다.
+- 기존 장기(Janggi) 앱에서 이미 Firebase Auth + Firestore/Storage + AdMob을 연동해 성공적으로 운영 중인 경험을 이 바둑 앱에도 그대로 재활용합니다 (`baduk_app_architecture_recommendation.md`).
+- BaaS 5종(Firebase/Supabase/PocketBase/Appwrite/Convex) 비교 검토 결과(`baas_solutions_comparison.md`), 기보(SGF) 저장·보상형 광고·AdMob 시너지 관점에서 **Firebase가 최종 채택**되었습니다.
 - 프리미엄 모드(`premium-mode/README.md`)의 Step 3(광고)/Step 4(구매)가 이 계정 시스템 위에 얹힐 예정이므로, 그 전제가 되는 "로그인/익명 사용자 식별" 기반을 먼저 마련하는 것이 이번 계획의 핵심입니다.
 
 ### 1.2. 핵심 논의: 계정 없이 시작하기 & 구매 복구
@@ -25,7 +25,7 @@
 >
 > ⚠️ **용어 주의**: 앱 기능인 **'계정 없이 시작하기'**(로컬 UUID)와 **파이어베이스 Auth의 익명 로그인 활성화 여부**(콘솔 설정, 현재 비활성)는 서로 다른 개념이며 혼용하지 않는다.
 >
-> 그 결과 **"익명 → 실계정 승격"을 전제로 쓴 아래 서술은 전부 성립하지 않는다** — Step 2/3의 `linkWithCredential` 승격 경로, Step 4의 목표 정의, 그리고 `docs/spec/GO_AI_COACH_ARCHITECTURE_ROADMAP.md` 로드맵 7번이 그것이다. 로드맵 7번은 "착수 전에 목표를 다시 정의해야 한다"고 이미 표시해 뒀다(예: "게스트(로컬 ID) → 실계정 승격"). 승격 코드 자체(`AuthProvider.Anonymous`, `isPromotableAnonymousSession`, `linkGoogleCredential`/`linkEmailCredential`)는 무해해서 지우지 않고 남겨 뒀다.
+> 그 결과 **"익명 → 실계정 승격"을 전제로 쓴 아래 서술은 전부 성립하지 않는다** — Step 2/3의 `linkWithCredential` 승격 경로, Step 4의 목표 정의, 그리고 `GO_AI_COACH_ARCHITECTURE_ROADMAP.md` 로드맵 7번이 그것이다. 로드맵 7번은 "착수 전에 목표를 다시 정의해야 한다"고 이미 표시해 뒀다(예: "게스트(로컬 ID) → 실계정 승격"). 승격 코드 자체(`AuthProvider.Anonymous`, `isPromotableAnonymousSession`, `linkGoogleCredential`/`linkEmailCredential`)는 무해해서 지우지 않고 남겨 뒀다.
 >
 > ⚠️ 여기에 더해 **로그인 기능 전체가 2026-08-09에 꺼졌다**(`ui/FeatureFlags.kt`의 `isLoginEnabled = false`) — 아래 "결정 번복: 이번 출시에서 로그인 기능 전체를 끄기로 결정" 절 참고.
 
@@ -38,7 +38,7 @@
 - **범위**:
   - Google/이메일 로그인 버튼은 배치만 하고, 탭하면 홈 화면 "학습하기" 카드와 동일한 "준비 중" 토스트 패턴을 재사용.
   - Apple 로그인은 UI 자체를 넣지 않음 (완전 후순위).
-  - Firebase 콘솔 프로젝트는 장기 앱과 별도 독립 프로젝트로 새로 생성 (Spark Plan 무료 할당량이 프로젝트 단위로 독립 적용되기 때문 — `docs/history/baduk_app_architecture_recommendation.md` 2장 참고).
+  - Firebase 콘솔 프로젝트는 장기 앱과 별도 독립 프로젝트로 새로 생성 (Spark Plan 무료 할당량이 프로젝트 단위로 독립 적용되기 때문 — `baduk_app_architecture_recommendation.md` 2장 참고).
 - **산출물**: `OnboardingScreen.kt`, `application/auth/AuthState.kt`(순수 도메인, iOS 이식 전제), `application/auth/AuthClientPort.kt` + `ui/AndroidAuthClient.kt`(Firebase Auth 실제 호출), `UserPreferencesSnapshot.hasSeenOnboarding` 플래그, Gradle Firebase 의존성 스캐폴딩(google-services.json 없이도 빌드가 깨지지 않도록 조건부 플러그인 적용).
 - **상태**: ✅ 완료 (2026-07-29) → 2026-08-04 개정, 아래 "Step 1 개정" 참고
 
@@ -46,7 +46,7 @@
 - **배경**: google-services.json이 아직 없는 개발 환경에서는 `signInAnonymously()`가 항상 실패해, `hasSeenOnboarding`이 저장되지 않고 온보딩 화면이 매 실행마다 반복되는 문제를 실측으로 확인했다.
 - **변경**: 온보딩 완료 조건을 `application/device/DeviceIdentityStorePort.loadOrCreate()`(Stage C-2에서 이미 만들어졌던, 소비자가 없던 로컬 UUID 인프라)로 바꿨다 — 네트워크 없이 항상 즉시 성공하므로 반복 노출이 사라진다. `signInAnonymously()` 호출은 제거하지 않고 버튼 탭 시 fire-and-forget으로 남겨, google-services.json이 나중에 추가되면 이 코드를 다시 건드리지 않고도 조용히 성공하기 시작한다.
 - **Google/이메일 스텁 버튼은 온보딩에서 제거**하고 신규 `SettingsScreen.kt`(홈 화면 좌상단 ⚙ 진입점)로 옮겼다 — 최초 실행 필수 흐름에서 로그인 UI 자체를 걷어내고, 원하는 사용자만 나중에 강화하도록 했다. 이 개편 이후에도 Step 2/3(Google/이메일 실제 연동)의 산출물 위치는 그대로 유효하다 — `AuthClientPort`에 메서드 추가 + `SettingsScreen.kt`의 두 버튼 onClick 교체로 착수하면 된다.
-- 관련: 당시 Play Flow UX 리팩토링 계획서(2026-08-17 문서 정리로 저장소에서 제거, `docs/DOCS_INDEX.md` "문서 보존 정책" 참고).
+- 관련: 당시 Play Flow UX 리팩토링 계획서(2026-08-17 문서 정리로 저장소에서 제거, `DOCS_INDEX.md` "문서 보존 정책" 참고).
 
 ### Step 1 재개정 — 온보딩을 다시 "얕은 허들" 로그인 화면으로 (2026-08-04)
 - **배경**: 위 개정에서 온보딩을 완전히 건너뛰는 "시작하기" 단일 버튼으로 단순화했으나, 사용자 피드백으로 "설치 후 첫 화면은 로그인 화면이어야 하고, 그냥 패스시키는 지금 화면은 의미가 없다"는 방향이 확인됐다 — 첫 실행 시 로그인 여부를 가볍게라도 물어보는 게 맞다는 결론.
@@ -72,13 +72,13 @@
 ### (별도 후순위) Apple 로그인
 - iOS 대응 시점에 맞춰 별도 과제로 진행. 이번 문서의 Step 1~4는 모두 Android/Firebase 우선이지만, `AuthState`/`AuthClientPort` 설계 자체는 플랫폼 비종속으로 만들어 두었다 (`premium-mode/README.md`의 `PremiumState` 설계 원칙과 동일).
 
-### 계층 배치 참고 (`docs/ARCHITECTURE.md`의 7계층 기준, 2026-07-29 정리)
+### 계층 배치 참고 (`ARCHITECTURE.md`의 7계층 기준, 2026-07-29 정리)
 
 Step 1(익명 인증)은 이미 이 배치를 따르고 있다 — `AuthClientPort`가 포트, `AndroidAuthClient`가 어댑터, `GoCoachApp.kt`/`OnboardingScreen.kt`가 App Service 오케스트레이션. Step 2~4의 새 코드도 착수 전에 같은 기준으로 미리 배치한다.
 
 | Step | 작업 | 계층 | 근거 |
 | --- | --- | --- | --- |
-| Step 2 | Google Credential Manager/One Tap SDK 호출(`signInWithGoogle`) | **포트/원시 계층** (엔진 2계층 `EngineCoreApi`에 대응) | `AuthClientPort`에 메서드 추가 + `AndroidAuthClient`(또는 SDK 의존이 무거우면 전용 파일, `docs/ARCHITECTURE.md`의 어댑터 파일 분리 기준 참고)가 실제 SDK를 감싼다. |
+| Step 2 | Google Credential Manager/One Tap SDK 호출(`signInWithGoogle`) | **포트/원시 계층** (엔진 2계층 `EngineCoreApi`에 대응) | `AuthClientPort`에 메서드 추가 + `AndroidAuthClient`(또는 SDK 의존이 무거우면 전용 파일, `ARCHITECTURE.md`의 어댑터 파일 분리 기준 참고)가 실제 SDK를 감싼다. |
 | Step 2 | 익명 UID → 실계정 `linkWithCredential` 승격 판단 | **App Service / Session Orchestration** (6계층) | "언제 승격할지, 승격 후 어느 화면으로 갈지"는 유스케이스 조합이지 원시 SDK 기능이 아니다. |
 | Step 3 | Firebase Email/Password·Email Link SDK 호출 | **포트/원시 계층** | Step 2의 Google 로그인과 동일한 성격 — `AuthClientPort`에 메서드만 추가. |
 | Step 4 | Play Billing `queryPurchases()` 복원 + Firestore 엔타이틀먼트 조율 | **Middleware / Cache Domain 성격** (4계층에 대응) | `premium-mode/README.md`의 Step 4와 동일한 판단(원시 응답을 그대로 믿지 않고 검증/캐시/신뢰도를 조율) — 실제로는 같은 기능이므로 두 문서가 가리키는 계층도 일치해야 한다. |
