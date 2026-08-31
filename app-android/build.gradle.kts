@@ -294,6 +294,11 @@ dependencies {
     // AndroidRewardedInterstitialAdClient와 동일한 기존 패턴) — billing-ktx의 suspend 확장 함수는
     // 쓰지 않으므로 별도로 추가하지 않는다.
     implementation(libs.play.billing)
+    // Play In-App Update(백로그 #53) — 설정 화면이 "새 버전이 있는가"를 묻는 데만 쓴다.
+    // ⚠️ **app-update-ktx는 일부러 넣지 않았다.** 이 저장소는 콜백 API를
+    // suspendCancellableCoroutine으로 직접 감싸는 쪽으로 통일돼 있다(billing·AdMob·Auth 셋 다) —
+    // 여기만 -ktx를 쓰면 같은 일을 두 방식으로 하게 된다.
+    implementation(libs.play.app.update)
 
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)

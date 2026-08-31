@@ -114,6 +114,9 @@ internal fun SettingsScreen(
     val developerModeStore = remember(context) { DeveloperModeStore(context) }
     var isDeveloperModeEnabled by remember { mutableStateOf(developerModeStore.isEnabled()) }
     var versionTapCount by remember { mutableStateOf(0) }
+    // 백로그 #53 — 화면이 열릴 때 한 번만 묻고, 결과가 오면 그때 아래 줄이 나타난다.
+    // 실패는 조용히 넘어간다(`AppUpdateRow`의 폴백 경로).
+    val updateStatus = rememberAppUpdateStatus()
     var authState by remember { mutableStateOf(authClient.currentAuthState()) }
     var showEmailDialog by remember { mutableStateOf(false) }
     var isEmailSubmitting by remember { mutableStateOf(false) }
@@ -387,6 +390,10 @@ internal fun SettingsScreen(
                             context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(PRIVACY_POLICY_URL)))
                         },
                     )
+                    // 백로그 #53. ⚠️ **위 버전 텍스트 옆에 붙이지 말 것** — 그 텍스트는 10번
+                    // 두드리면 개발자 모드가 켜지는 숨은 제스처를 갖고 있어, 업데이트 버튼을
+                    // 곁에 두면 오탭 하나가 개발자 모드를 연다. 링크를 사이에 두고 맨 아래에 둔다.
+                    AppUpdateRow(status = updateStatus)
                 }
             }
 
