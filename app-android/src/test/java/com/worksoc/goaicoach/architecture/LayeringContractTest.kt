@@ -1602,7 +1602,7 @@ class LayeringContractTest {
 
     /**
      * `application/` is migrating file-by-file from app-android to :shared (see
-     * docs/refactoring/GAMESESSION_SHARED_MIGRATION_KICKOFF_PLAN_260816_1808.md). Tests that read
+     * GAMESESSION_SHARED_MIGRATION_KICKOFF_PLAN_260816_1808.md (문서 보존 정책으로 제거됨 — git 히스토리가 아카이브다. docs/DOCS_INDEX.md "문서 보존 정책" 참고)). Tests that read
      * one specific file by hardcoded path must resolve it wherever it currently lives, or they
      * break with FileNotFoundException the moment that one file crosses over — even though the
      * policy the test enforces hasn't changed. relativePath is the part after ".../application/",

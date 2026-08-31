@@ -3,7 +3,7 @@
 
 application/ 파일을 shared/commonMain으로 옮긴 뒤, 컴파일 에러가 지목하는
 internal 선언만 골라 public으로 넓히는 과정을 자동으로 수렴시킨다.
-docs/refactoring/GAMESESSION_SHARED_MIGRATION_KICKOFF_PLAN_260816_1808.md
+GAMESESSION_SHARED_MIGRATION_KICKOFF_PLAN_260816_1808.md (문서 보존 정책으로 제거됨 — git 히스토리가 아카이브다. docs/DOCS_INDEX.md "문서 보존 정책" 참고)
 의 방법론(6절)을 그대로 구현한 것 — 사전 감사가 아니라 컴파일러가 실제로
 지목하는 것만 고치고, 그린이 될 때까지 반복한다.
 

@@ -123,7 +123,7 @@ flowchart TD
 | 위치 | 용도 |
 | --- | --- |
 | `docs/PRD.md` | 제품 요구명세, 로드맵 |
-| `docs/APP_IA_AND_UI_SPEC.md` | 화면별 UI/UX 상세 명세, 다국어 용어표 |
+| `docs/spec/APP_IA_AND_UI_SPEC.md` | 화면별 UI/UX 상세 명세, 다국어 용어표 |
 | `ux-improvement/README.md` | UX 개편 마스터플랜 |
 | `premium-mode/README.md` | 프리미엄/수익화 단계별 계획 |
 | `auth-onboarding/README.md` | 로그인/온보딩 마스터플랜 (현재 비활성화) |

@@ -62,7 +62,7 @@ class MainActivity : ComponentActivity() {
                 val diagnosticEventLog: DiagnosticEventLogPort = remember(applicationContext) {
                     DiagnosticEventLog(File(applicationContext.filesDir, DiagnosticEventLog.FileName))
                 }
-                // 개발용 원격 엔진 스파이크(docs/refactoring/LAYERED_ARCHITECTURE_REFACTORING_PLAN_260803_1500.md
+                // 개발용 원격 엔진 스파이크(docs/roadmap/LAYERED_ARCHITECTURE_REFACTORING_PLAN_260803_1500.md
                 // Stage E-3). BuildConfig.REMOTE_ENGINE_URL은 debug 빌드에서만, local.properties의
                 // debug.remoteEngineUrl 키가 있을 때만 비어있지 않다(app-android/build.gradle.kts 참고)
                 // — friend/playInternal/release는 항상 빈 문자열로 고정돼 있어 이 분기를 절대 타지

@@ -28,7 +28,7 @@ Google Play는 프로덕션(정식 출시) 트랙에 접근하려면 먼저 아�
 ## 폴더 구조
 
 ```
-docs/market-listing-history/
+docs/history/market-listing-history/
 ├── README.md          # 이 문서 (히스토리 로그)
 └── images/             # 관련 캡쳐 이미지
 ```

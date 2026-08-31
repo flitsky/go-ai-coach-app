@@ -16,7 +16,7 @@
 
 ## 1. 더블체크: `빠른 초급`/`초급`은 이미 잘 정리돼 있었다
 
-사용자가 기억하는 "깊이 있게 정리된 문서"는 [`docs/ENGINE.md`](../ENGINE.md)와 그 딥다이브인 [`docs/ENGINE_API_CALL_POLICY.md`](../ENGINE_API_CALL_POLICY.md)다. 오늘 이 두 문서를 실제 코드(`shared/src/commonMain/kotlin/.../PlayLevel.kt`, `EngineAnalysisPolicy.kt`)와 한 줄씩 대조했다.
+사용자가 기억하는 "깊이 있게 정리된 문서"는 [`docs/ENGINE.md`](../ENGINE.md)와 그 딥다이브인 [`docs/engine/ENGINE_API_CALL_POLICY.md`](./ENGINE_API_CALL_POLICY.md)다. 오늘 이 두 문서를 실제 코드(`shared/src/commonMain/kotlin/.../PlayLevel.kt`, `EngineAnalysisPolicy.kt`)와 한 줄씩 대조했다.
 
 ### 1-1. 레벨별 표는 코드와 정확히 일치한다
 
@@ -64,7 +64,7 @@ EngineSearchMode.JsonPositionAnalysis ->
 
 ## 2. 왜 이런 구조가 됐는지 (과거 기록과 대조)
 
-`docs/engine-research/ENGINE_BEGINNER_VISITS_BENCHMARK.md`(2026-06-08)가 이 문제의 출발점이었다. 당시 실측:
+`docs/engine/ENGINE_BEGINNER_VISITS_BENCHMARK.md`(2026-06-08)가 이 문제의 출발점이었다. 당시 실측:
 
 | 국면 | B16 후보수 | B32 후보수 | B64 후보수 |
 | --- | ---: | ---: | ---: |
@@ -76,7 +76,7 @@ EngineSearchMode.JsonPositionAnalysis ->
 
 > 4. 후보가 너무 적을 때 `64/500ms` 보강 분석을 자동 수행할지 결정한다.
 
-이 결정은 아직 내려지지 않았다. 대신 `refinePolicyMoves`라는, 방문수를 통째로 올리는 것보다 더 정교한 메커니즘이 `engine-android/KataGoJsonPositionAnalysisClient.kt`에 구현됐지만(2026-06-13 전후로 추정), `EngineAnalysisPolicy.kt`가 AI 착수 경로에서 이를 0으로 눌러놓은 채 지금까지 왔다. `docs/engine-research/ENGINE_LEVEL_STRENGTH_REVIEW_2026-06-10.md`의 "5. AI 응수와 Top Moves 분석 예산 혼합" 절을 보면, 과거에 `Balanced` 프리셋의 `minVisitsPerCandidate=4`/`refinePolicyMoves=4` 보강이 AI 착수 경로에 실수로 섞여 레벨 강도 실험이 오염된 사고가 있었다. `EngineAnalysisPolicy.kt`의 강제 0-초기화는 그 사고의 재발 방지책으로 보인다 — 즉 "후보 확장 기능이 나빠서" 꺼둔 게 아니라 "AI 착수와 Top Moves 예산이 섞이지 않게" 안전장치로 전부 꺼둔 것이다. 이 문서가 제안하는 방향은 이 안전장치를 없애자는 게 아니라, **AI 착수 전용의 명시적이고 작은 refine 예산을 새로 만들어 정책적으로 통제하자**는 것이다(5절).
+이 결정은 아직 내려지지 않았다. 대신 `refinePolicyMoves`라는, 방문수를 통째로 올리는 것보다 더 정교한 메커니즘이 `engine-android/KataGoJsonPositionAnalysisClient.kt`에 구현됐지만(2026-06-13 전후로 추정), `EngineAnalysisPolicy.kt`가 AI 착수 경로에서 이를 0으로 눌러놓은 채 지금까지 왔다. `docs/engine/ENGINE_LEVEL_STRENGTH_REVIEW_2026-06-10.md`의 "5. AI 응수와 Top Moves 분석 예산 혼합" 절을 보면, 과거에 `Balanced` 프리셋의 `minVisitsPerCandidate=4`/`refinePolicyMoves=4` 보강이 AI 착수 경로에 실수로 섞여 레벨 강도 실험이 오염된 사고가 있었다. `EngineAnalysisPolicy.kt`의 강제 0-초기화는 그 사고의 재발 방지책으로 보인다 — 즉 "후보 확장 기능이 나빠서" 꺼둔 게 아니라 "AI 착수와 Top Moves 예산이 섞이지 않게" 안전장치로 전부 꺼둔 것이다. 이 문서가 제안하는 방향은 이 안전장치를 없애자는 게 아니라, **AI 착수 전용의 명시적이고 작은 refine 예산을 새로 만들어 정책적으로 통제하자**는 것이다(5절).
 
 ## 3. 후보수를 늘리는 4가지 방법 비교
 
@@ -179,9 +179,9 @@ P0에서 B32/B64 모두 `refine=0` 기준 13개로 동일했다. `ENGINE_BEGINNE
 ## 참고 문서
 
 - [`docs/ENGINE.md`](../ENGINE.md) — 이 문서가 더블체크한 원본 요약
-- [`docs/ENGINE_API_CALL_POLICY.md`](../ENGINE_API_CALL_POLICY.md) — 딥다이브, `candidateCount 의미`/`Visit의 의미와 탐색 원리` 절
-- [`docs/engine-research/ENGINE_BEGINNER_VISITS_BENCHMARK.md`](ENGINE_BEGINNER_VISITS_BENCHMARK.md) — 이 문제의 최초 발견, 오늘 실험이 재사용한 P0/P1/P2 국면 출처(2026-08-17: `docs/archive/`에서 이 폴더로 이동 — 근거는 5절 하단 정책 각주 참고)
-- [`docs/engine-research/ENGINE_LEVEL_STRENGTH_REVIEW_2026-06-10.md`](ENGINE_LEVEL_STRENGTH_REVIEW_2026-06-10.md) — `Balanced` 프리셋이 AI 응수에 실수로 섞였던 과거 사고 기록
-- [`docs/engine-research/ENGINE_SEARCH_TREE_REUSE_REVIEW.md`](ENGINE_SEARCH_TREE_REUSE_REVIEW.md) — GTP tree reuse/JSON position-scoped 분석의 구조적 차이
+- [`docs/engine/ENGINE_API_CALL_POLICY.md`](./ENGINE_API_CALL_POLICY.md) — 딥다이브, `candidateCount 의미`/`Visit의 의미와 탐색 원리` 절
+- [`docs/engine/ENGINE_BEGINNER_VISITS_BENCHMARK.md`](ENGINE_BEGINNER_VISITS_BENCHMARK.md) — 이 문제의 최초 발견, 오늘 실험이 재사용한 P0/P1/P2 국면 출처(2026-08-17: `docs/archive/`에서 이 폴더로 이동 — 근거는 5절 하단 정책 각주 참고)
+- [`docs/engine/ENGINE_LEVEL_STRENGTH_REVIEW_2026-06-10.md`](ENGINE_LEVEL_STRENGTH_REVIEW_2026-06-10.md) — `Balanced` 프리셋이 AI 응수에 실수로 섞였던 과거 사고 기록
+- [`docs/engine/ENGINE_SEARCH_TREE_REUSE_REVIEW.md`](ENGINE_SEARCH_TREE_REUSE_REVIEW.md) — GTP tree reuse/JSON position-scoped 분석의 구조적 차이
 - [`docs/measurements/engine-benchmark/candidate-refine-mac-20260817.md`](../measurements/engine-benchmark/candidate-refine-mac-20260817.md) — 오늘 실측 원본 데이터(36행)
 - `scripts/run-katago-candidate-refine-experiment.py` — 오늘 추가한 실험 스크립트

@@ -9,9 +9,9 @@
 ## 먼저 볼 문서
 
 - 이 문서: 엔진 API 호출 정책, 호출 비용 순서, AI/사람 턴 일관성 기준
-- `docs/engine-research/ENGINE_LEVEL_STRENGTH_REVIEW_2026-06-10.md`: 실제 레벨별 visits/time/candidate count와 반복 대국 결과
-- `docs/engine-research/ENGINE_SEARCH_TREE_REUSE_REVIEW.md`: KataGo search tree reuse와 AI vs AI 격리 정책
-- `docs/engine-research/ENGINE_CANDIDATE_EXPANSION_REVIEW_2026-08-17.md`: 레벨링용 후보수 확장 검토. 이 문서의 `candidateCount 의미`/후보 예산 절과 직접 관련 — `refinePolicyMoves`가 구현은 됐지만 AI 착수 경로에서 항상 0으로 꺼져 있다는 갭과 실측 데이터
+- `docs/engine/ENGINE_LEVEL_STRENGTH_REVIEW_2026-06-10.md`: 실제 레벨별 visits/time/candidate count와 반복 대국 결과
+- `docs/engine/ENGINE_SEARCH_TREE_REUSE_REVIEW.md`: KataGo search tree reuse와 AI vs AI 격리 정책
+- `docs/engine/ENGINE_CANDIDATE_EXPANSION_REVIEW_2026-08-17.md`: 레벨링용 후보수 확장 검토. 이 문서의 `candidateCount 의미`/후보 예산 절과 직접 관련 — `refinePolicyMoves`가 구현은 됐지만 AI 착수 경로에서 항상 0으로 꺼져 있다는 갭과 실측 데이터
 
 ## 현재 결정
 

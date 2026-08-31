@@ -5,18 +5,18 @@
 이 문서는 **"무엇을 만드는 앱인가"가 아니라 "어떻게 일하는가"**를 넘깁니다.
 제품/아키텍처가 궁금하면 [`../README.md`](../README.md)와 [`DOCS_INDEX.md`](./DOCS_INDEX.md)를 보세요.
 
-> ### 📍 먼저 — 이 문서와 `knowhow-docs/`의 관계
+> ### 📍 먼저 — 이 문서와 `history/knowhow-docs/`의 관계
 >
 > 방법론 문서가 두 군데 있습니다. **역할이 다르니 헷갈리지 마세요.**
 >
-> | | 이 문서 (`HANDOVER.md`) | [`knowhow-docs/`](./knowhow-docs/) |
+> | | 이 문서 (`HANDOVER.md`) | [`history/knowhow-docs/`](./history/knowhow-docs/) |
 > | --- | --- | --- |
 > | 무엇 | **이 저장소에서 지금 실제로 굴러가는 방식** | 이 프로젝트에서 얻은 노하우를 **일반화·체계화한 사전 정리본** |
 > | 대상 | 이 저장소를 이어받는 사람 | **앞으로 시작할 신규 프로덕트** |
 > | 성격 | 현행 실무 기록 (경로·상태·환경이 박혀 있음) | 코드베이스 비종속 표준안 + 빈 템플릿 |
 > | 이 저장소에서 충돌하면 | **이쪽이 기준** | 참고 |
 >
-> `knowhow-docs/`는 "아직 안 쓰는 미래 규칙"이 아닙니다. **핵심 원칙은 이미 이 저장소의 현행 실무**이고
+> `history/knowhow-docs/`는 "아직 안 쓰는 미래 규칙"이 아닙니다. **핵심 원칙은 이미 이 저장소의 현행 실무**이고
 > (번호 불변·줄 위치가 실행 순서 / 완료는 사람 승인 후 / 버린 대안은 스펙 각주로 역류 / 착수 전 확인 필드),
 > 거기서 한 걸음 더 나아가 **형식을 정돈한 부분**이 신규 프로덕트를 겨냥한 몫입니다 —
 > 파일명 규약(`_SPEC_PLAN.md`), 완료 항목의 구조화 필드(`커밋:` `승인 완료:` `노력정도 예상 → 실제`),
@@ -72,9 +72,9 @@ AI 대화 스레드는 매번 백지에서 시작합니다(cold start). 사람�
 - **AI가 내린 설계 판단과 기각한 대안은 스펙 각주로 역류시킵니다** — 이게 다음 스레드를 막아주는 방어벽입니다.
 
 위 원칙은 **지금 이 저장소에서 그대로 돌아가고 있는 것**입니다. 같은 원칙을 코드베이스와 무관하게
-일반화하고 빈 템플릿까지 붙여 둔 문서가 [`knowhow-docs/`](./knowhow-docs/)입니다 —
-[`_SPEC_BACKLOG.md`](./knowhow-docs/_SPEC_BACKLOG.md)(방법론 가이드 + 백로그 템플릿) ·
-[`_SPEC_PLAN.md`](./knowhow-docs/_SPEC_PLAN.md)(스펙 템플릿 + 각주 작성 공식).
+일반화하고 빈 템플릿까지 붙여 둔 문서가 [`history/knowhow-docs/`](./history/knowhow-docs/)입니다 —
+[`_SPEC_BACKLOG.md`](./history/knowhow-docs/_SPEC_BACKLOG.md)(방법론 가이드 + 백로그 템플릿) ·
+[`_SPEC_PLAN.md`](./history/knowhow-docs/_SPEC_PLAN.md)(스펙 템플릿 + 각주 작성 공식).
 **신규 프로덕트를 시작한다면 그쪽이 출발점**이고, 이 저장소를 이어받는 중이라면 이 문서가 출발점입니다.
 
 ---
@@ -111,7 +111,7 @@ AI 대화 스레드는 매번 백지에서 시작합니다(cold start). 사람�
    → `docs/` 밖에 두는 게 맞습니다. 이유는 [4장 마지막 줄](#4-지금-살아있는-트랙) 참고.
 2. 스펙 문서와 백로그 문서, **두 개를 만듭니다.** 형식은 둘 중 하나를 고릅니다:
    - **현행 형식 그대로** — 지금 `docs/roadmap/`의 두 파일을 본떠 만듭니다. 이 저장소에서 검증된 방식이고 가장 안전합니다.
-   - **[`knowhow-docs/`](./knowhow-docs/) 템플릿** — 더 체계화된 형식(구조화된 완료 필드, `검증 명령:` 헤더 등). 원래 신규 프로덕트를 겨냥해 정리한 것이라, 이 저장소에 쓸 땐 **안 쓰는 필드를 억지로 채우지 말고 빼세요**(예: 조직 이슈 트래커 연계 6장 — 여긴 해당 없음).
+   - **[`history/knowhow-docs/`](./history/knowhow-docs/) 템플릿** — 더 체계화된 형식(구조화된 완료 필드, `검증 명령:` 헤더 등). 원래 신규 프로덕트를 겨냥해 정리한 것이라, 이 저장소에 쓸 땐 **안 쓰는 필드를 억지로 채우지 말고 빼세요**(예: 조직 이슈 트래커 연계 6장 — 여긴 해당 없음).
 
    어느 쪽이든 **1장의 원칙(절 번호 참조 · 각주 역류 · 3단 상태 구조)은 동일**합니다. 바뀌는 건 표기 형식뿐입니다.
 3. **스펙을 먼저 채웁니다.** 사람과 AI가 대화하며 범위·제외범위·제약을 확정하는 단계입니다.
@@ -173,7 +173,7 @@ make doctor
 - `make test` (검증) · `make dev` (디버그 빌드) · `make install-dev` (설치) · `make seed-engine` (KataGo 모델 주입)
 - ⚠️ KataGo 모델을 안 넣으면 앱이 **조용히 스텁 AI로 폴백**합니다(즉시 착수하는 가짜 AI). `make doctor`가 경고해 줍니다.
 - iOS 타깃은 기본 꺼져 있고 `-PenableIosTargets=true`로만 켜집니다. **2026-08-24에 한 번 깨졌다가 복구됐습니다**
-  (`docs/GO_AI_COACH_ARCHITECTURE_ROADMAP.md` "플랫폼 누수 회귀 복구" 참고 — 에러 49개, 원인은 `import java.` 검사를
+  (`docs/spec/GO_AI_COACH_ARCHITECTURE_ROADMAP.md` "플랫폼 누수 회귀 복구" 참고 — 에러 49개, 원인은 `import java.` 검사를
   통과해버리는 `System.currentTimeMillis()`/`kotlin.synchronized`/`Dispatchers.IO`였습니다).
   ⚠️ **평소 안드로이드 빌드/테스트가 그린이어도 이 타깃은 조용히 깨질 수 있습니다** — 아무도 안 켜기 때문입니다.
   그래서 `shared/`를 건드린 일감은 아래 명령까지 돌리는 것이 백로그의 규칙입니다:
@@ -223,7 +223,7 @@ git branch -a --no-merged main
 
 | 브랜치 | 담겨 있던 것 | 처리 |
 | --- | --- | --- |
-| `feature/remote-engine-mq-prototype` | Stage F MQ 전송 파이썬 프로토타입 8파일 973줄 + 아래 프리미엄 픽스(중복) | 프로토타입은 `main`으로 체리픽(`794e194`) — `docs/refactoring/REMOTE_ENGINE_MQ_TRANSPORT_KICKOFF_PLAN_260818_0825.md` 7절이 그 실측 결과다 |
+| `feature/remote-engine-mq-prototype` | Stage F MQ 전송 파이썬 프로토타입 8파일 973줄 + 아래 프리미엄 픽스(중복) | 프로토타입은 `main`으로 체리픽(`794e194`) — `docs/roadmap/REMOTE_ENGINE_MQ_TRANSPORT_KICKOFF_PLAN_260818_0825.md` 7절이 그 실측 결과다 |
 | `fix/premium-expiry-toggle-off` | `프리미엄 만료 시 형세보기/추천수 토글 즉시 비활성화` 버그픽스 | **그대로 병합하지 않고 이식**(`abc6f20`) — 아래 참고 |
 
 ⚠️ **프리미엄 픽스는 그대로 넣을 수 없었습니다.** 브랜치는 2026-08-18에 잘렸고 소모품 1회권은 2026-08-24에 들어와서, 서로를 모릅니다. 원본 픽스는 토글값을 `LaunchedEffect` 키에 묶는데 — 1회권은 **정의상 프리미엄이 비활성일 때** 토글을 켭니다. 그대로 적용하면 티켓을 차감하고 켠 표시를 그 즉시 되꺼서 **1회권 기능이 통째로 죽습니다.** 이식본은 1회권이 잡고 있는 기능을 건너뛰도록 고쳤고(`ui/PremiumUiState.kt`의 `PremiumExpiryAutoDisableEffect`), 원본과 무엇이 다른지는 그 KDoc과 커밋 `abc6f20`에 적어 뒀습니다.
@@ -240,10 +240,10 @@ git branch -a --no-merged main
 
 | 알고 싶은 것 | 문서 |
 | --- | --- |
-| 방법론 규칙 전문 · 빈 템플릿 (**신규 프로덕트용 정리본**) | [`knowhow-docs/`](./knowhow-docs/) |
+| 방법론 규칙 전문 · 빈 템플릿 (**신규 프로덕트용 정리본**) | [`history/knowhow-docs/`](./history/knowhow-docs/) |
 | 문서/폴더 전체 지도, 보존 정책 | [`DOCS_INDEX.md`](./DOCS_INDEX.md) |
 | 제품 요구사항·로드맵 | [`PRD.md`](./PRD.md) |
 | 7계층 아키텍처 원칙 (신규 코드 배치 기준) | [`ARCHITECTURE.md`](./ARCHITECTURE.md) |
-| 현재 패키지 지도와 갭 | [`GO_AI_COACH_ARCHITECTURE_ROADMAP.md`](./GO_AI_COACH_ARCHITECTURE_ROADMAP.md) |
+| 현재 패키지 지도와 갭 | [`GO_AI_COACH_ARCHITECTURE_ROADMAP.md`](./spec/GO_AI_COACH_ARCHITECTURE_ROADMAP.md) |
 | 엔진 탐색 모드·레벨 매핑 | [`ENGINE.md`](./ENGINE.md) |
 | 기능 유/무료 정책 | [`../feature-access-principles/README.md`](../feature-access-principles/README.md) |

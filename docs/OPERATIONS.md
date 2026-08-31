@@ -14,7 +14,7 @@
 - 중간 형세는 `EngineCoreApi.estimateScore()`로 받고, 수순별 추이는 `shared/ScoreTimeline`에 기록한다.
 - 양쪽 연속 pass 시 `deadStones()`로 사석을 먼저 정리한 뒤, `shared/BoardScorer`가 현재 ruleset(Area/Territory)으로 최종 계산한다.
 - 종국 판정은 **부심/주심 2단계**다. 부심(기본)은 `deadStones()` 2초 cap + `scoreFinal()` 1초 cap으로 빠르게 결과를 보여주고, 주심(사용자가 "이의 제기"를 눌렀을 때만)은 시간 제한 없이 정밀 재검증한다. 두 결과가 갈리면 자동으로 덮어쓰지 않고 사용자가 최종안을 선택한다.
-- 부심/주심 불일치는 `critical` diagnostic event 후보다(현재 `score.final_disagreement` 이벤트 자체는 코드에 정의만 되어 있고 호출부가 아직 연결되지 않음 — [DIAGNOSTIC_EVENT_SCHEMA.md](./DIAGNOSTIC_EVENT_SCHEMA.md) 참고).
+- 부심/주심 불일치는 `critical` diagnostic event 후보다(현재 `score.final_disagreement` 이벤트 자체는 코드에 정의만 되어 있고 호출부가 아직 연결되지 않음 — [DIAGNOSTIC_EVENT_SCHEMA.md](./spec/DIAGNOSTIC_EVENT_SCHEMA.md) 참고).
 
 상세 SLA 수치, KataGo 명령 목록, 불일치 UX 원칙은 `SCORE_AND_ENDGAME_DECISION.md`를 따른다.
 

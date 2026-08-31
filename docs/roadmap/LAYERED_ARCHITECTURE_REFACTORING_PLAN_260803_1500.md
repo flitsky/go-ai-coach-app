@@ -4,7 +4,7 @@
 
 ## 0. 이 문서의 성격
 
-`docs/ARCHITECTURE.md`(원칙 문서)와 `docs/GO_AI_COACH_ARCHITECTURE_ROADMAP.md`(go-ai-coach 매핑 + 알려진 갭)가 2026-07-30에 정립한 7계층(4계층 압축 가능) 모델을, **실제 코드에 단계적으로 반영**하기 위한 착수 계획서다. 이 리포지토리의 "착수 계획서" 관례(`YYMMDD HHhMMm` 타임스탬프, 진행 로그 누적)를 따른다.
+`docs/ARCHITECTURE.md`(원칙 문서)와 `docs/spec/GO_AI_COACH_ARCHITECTURE_ROADMAP.md`(go-ai-coach 매핑 + 알려진 갭)가 2026-07-30에 정립한 7계층(4계층 압축 가능) 모델을, **실제 코드에 단계적으로 반영**하기 위한 착수 계획서다. 이 리포지토리의 "착수 계획서" 관례(`YYMMDD HHhMMm` 타임스탬프, 진행 로그 누적)를 따른다.
 
 이 문서 하나로 전체 리팩토링이 끝나지 않는다 — 특히 마지막 Stage(물리적 분산, 다른 기기에서 연산)는 그 자체로 별도 킥오프 문서가 필요한 대형 신규 기능이다. 이 문서는 "지금부터 거기까지 가는 순서와, 각 지점에서 무엇을 확인해야 하는가"를 정의하는 상위 로드맵이다.
 
@@ -92,5 +92,5 @@
 ## 6. 관련 문서
 
 - [../ARCHITECTURE.md](../ARCHITECTURE.md) — 레이어 원칙(앱 비종속)
-- [../GO_AI_COACH_ARCHITECTURE_ROADMAP.md](../GO_AI_COACH_ARCHITECTURE_ROADMAP.md) — 계층별 현재 매핑, 알려진 갭
+- [../GO_AI_COACH_ARCHITECTURE_ROADMAP.md](../spec/GO_AI_COACH_ARCHITECTURE_ROADMAP.md) — 계층별 현재 매핑, 알려진 갭
 - `premium-mode/README.md`, `auth-onboarding/README.md` — Stage B/C의 1차 소스 문서

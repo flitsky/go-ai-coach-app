@@ -4,7 +4,7 @@
 흐름이 한 폴더 안에서 날짜순으로 읽히도록 정리했다.
 
 버그 수정이나 리팩토링 기록이 아니라 **기능 고도화 트랙**이 여기 온다. 출시 절차는
-`launch-plan/`, 화면 명세는 `docs/APP_IA_AND_UI_SPEC.md`가 따로 담당한다.
+`launch-plan/`, 화면 명세는 `docs/spec/APP_IA_AND_UI_SPEC.md`가 따로 담당한다.
 
 ## 파일 이름 규칙 — `시작일-완결일_이름.md`
 

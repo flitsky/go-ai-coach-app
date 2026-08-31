@@ -27,7 +27,7 @@ Scope cuts (deliberate, documented rather than silently guessed at):
     scoring and dead-stone reading is a meaningfully large amount of logic
     to get right, and the app's own endgame flow already tolerates these
     two operations failing/timing out and falls back to local judging
-    (`docs/ENGINE_API_CALL_POLICY.md`, "종국 GTP 호출 정책"). Returning a
+    (`docs/engine/ENGINE_API_CALL_POLICY.md`, "종국 GTP 호출 정책"). Returning a
     clean error here is the honest choice over a half-correct scorer.
   - `estimateScore` returns win rate / score lead only, no ownership
     heatmap — see `run_engine_estimate_score`'s docstring for why.
@@ -36,7 +36,7 @@ Scope cuts (deliberate, documented rather than silently guessed at):
   - `includePolicy`/`refinePolicyMoves` in the request `limit` are accepted
     but not honored — as of 2026-08-18 no live app call path actually sends
     a non-zero `refinePolicyMoves` (see
-    docs/engine-research/ENGINE_CANDIDATE_EXPANSION_REVIEW_2026-08-17.md),
+    docs/engine/ENGINE_CANDIDATE_EXPANSION_REVIEW_2026-08-17.md),
     so this is not a regression for today's app, just a known gap if that
     changes later.
   - Always runs KataGo's stateless JSON analysis engine server-side,

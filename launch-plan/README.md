@@ -35,7 +35,7 @@
 
 | # | 항목 | 상태 | 비고 |
 | --- | --- | --- | --- |
-| A-1 | 비공개 테스트 12명 × 14일 | ⏳ 12/14일 | ETA ~2026-09-02. 근거: `docs/market-listing-history/README.md` + 2026-08-30 사용자 확인 |
+| A-1 | 비공개 테스트 12명 × 14일 | ⏳ 12/14일 | ETA ~2026-09-02. 근거: `docs/history/market-listing-history/README.md` + 2026-08-30 사용자 확인 |
 | A-2 | 개인정보처리방침 URL을 제출 필드에 등록 | ⬜ | URL은 이미 살아 있고 앱에서도 링크한다 — **콘솔에 붙여넣는 것만 남았다** |
 | A-3 | IARC 콘텐츠 등급 설문 | ⬜ | Firebase Analytics·Crashlytics를 **의도적으로 아예 안 넣었다** — 선언 대상은 AdMob 광고 ID와 Play Billing 구매 정보 정도 |
 | A-4 | 데이터 보안(Data safety) 양식 | ⬜ | A-3과 같은 근거 |
@@ -224,7 +224,7 @@ isUndoUnlocked =
 - [x] 로그인 기능 OFF 유지 (`isLoginEnabled=false`)
 - [x] 결제 UI OFF 유지 (`isPurchaseEnabled=false`)
 - [x] `premium-mode/README.md` 기능 매트릭스를 현재 코드 상태(분석 삭제, 무르기 무료)에 맞게 정정 — 이번 문서 작업과 함께 처리(아래 "관련 문서" 갱신 이력 참고)
-- [x] 무르기 클레임 버튼 UI + 로컬 그랜드파더링 플래그 구현 — 커밋 `5fc7b49`(2026-08-13)로 완료. ~~단, 저장 형태는 이 문서가 예시로 든 `claimedFeatures`류(기능별 원장)가 아니라 `PremiumState.isUndoClaimed: Boolean` 단일 플래그다~~ → **2026-08-14에 이 문서가 원래 예시로 들었던 `claimedFeatures: Set<FeatureId>` 원장으로 일반화됐다**(`isUndoClaimed`는 더 이상 존재하지 않으며, `PremiumStateStore`에 구버전 불리언 하위호환 마이그레이션이 들어 있다). 판정도 `FeatureAccessPolicy.resolve()` 하나로 모였다 — 상세는 `docs/GO_AI_COACH_ARCHITECTURE_ROADMAP.md` 6계층 절 — 무르기 하나뿐이라 임시로는 충분하지만, 두 번째 클레임형 기능이 생기기 전에 원장으로 일반화하는 작업이 `docs/GO_AI_COACH_ARCHITECTURE_ROADMAP.md` "5/6계층 — 기능 엔타이틀먼트 정책 도입" 항목으로 남아 있다.
+- [x] 무르기 클레임 버튼 UI + 로컬 그랜드파더링 플래그 구현 — 커밋 `5fc7b49`(2026-08-13)로 완료. ~~단, 저장 형태는 이 문서가 예시로 든 `claimedFeatures`류(기능별 원장)가 아니라 `PremiumState.isUndoClaimed: Boolean` 단일 플래그다~~ → **2026-08-14에 이 문서가 원래 예시로 들었던 `claimedFeatures: Set<FeatureId>` 원장으로 일반화됐다**(`isUndoClaimed`는 더 이상 존재하지 않으며, `PremiumStateStore`에 구버전 불리언 하위호환 마이그레이션이 들어 있다). 판정도 `FeatureAccessPolicy.resolve()` 하나로 모였다 — 상세는 `docs/spec/GO_AI_COACH_ARCHITECTURE_ROADMAP.md` 6계층 절 — 무르기 하나뿐이라 임시로는 충분하지만, 두 번째 클레임형 기능이 생기기 전에 원장으로 일반화하는 작업이 `docs/spec/GO_AI_COACH_ARCHITECTURE_ROADMAP.md` "5/6계층 — 기능 엔타이틀먼트 정책 도입" 항목으로 남아 있다.
 - [x] 클레임 프로모션 노출 위치/문구 확정 — 대국 화면 액션 버튼 영역(무르기 버튼 탭 시 인게임 다이얼로그), `ui/GamePlaySection.kt`의 `undoClaimTitle`/`undoClaimMessage` 문구로 구현됨. 아래 예시로 들었던 대국 설정 화면/설정 메뉴 "혜택" 섹션은 채택되지 않았다.
 - [ ] 형세보기/추천수 영구 구매 버튼을 언제 켤지(= `isPurchaseEnabled=true` 전환 시점) 별도 결정
   → ⚠️ **이 질문은 2026-08-30에 성격이 바뀌었다.** 프리미엄이 **영구 구매가 아니라 월 구독
@@ -248,7 +248,7 @@ isUndoUnlocked =
 ### 2026-08-14 갱신 — 위 "확인 필요" 두 항목 해소
 - 무르기는 커밋 `5fc7b49`(2026-08-13)로 바로 "클레임 필요" 상태로 좁혀졌습니다 — 당분간 게이팅 없이 유지하는 중간 단계 없이 곧장 전환.
 - 클레임 UI는 대국 화면 액션 버튼 영역(무르기 버튼 탭 시 인게임 다이얼로그)으로 확정·구현됨. 대국 설정 화면/설정 메뉴 "혜택" 섹션 안은 채택되지 않았습니다.
-- 다음 단계는 배치 그 자체가 아니라 저장 구조 일반화입니다 — `docs/GO_AI_COACH_ARCHITECTURE_ROADMAP.md` "5/6계층 — 기능 엔타이틀먼트 정책 도입" 항목 참고 (단일 플래그 → 기능별 원장, 판정을 프레젠테이션에서 5계층으로 이동).
+- 다음 단계는 배치 그 자체가 아니라 저장 구조 일반화입니다 — `docs/spec/GO_AI_COACH_ARCHITECTURE_ROADMAP.md` "5/6계층 — 기능 엔타이틀먼트 정책 도입" 항목 참고 (단일 플래그 → 기능별 원장, 판정을 프레젠테이션에서 5계층으로 이동).
 
 ### 확인 필요 (아직 미정)
 - ~~형세보기/추천수 영구 구매 버튼을 언제 켤지(= `isPurchaseEnabled=true` 전환 시점).~~

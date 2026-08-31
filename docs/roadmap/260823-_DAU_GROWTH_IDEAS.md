@@ -21,7 +21,7 @@
 - 연속 접속일(스트릭) 분포
 - D1/D7/D30 리텐션율
 
-현재 앱에는 이를 측정할 analytics 인프라가 없습니다 — `firebase-analytics`는 실사용처가 없어 의도적으로 제외된 상태입니다(`app-android/build.gradle.kts` 주석: "logEvent() 등 실제 사용처가 코드에 전혀 없어"). `docs/DIAGNOSTIC_EVENT_SCHEMA.md`의 런타임 이벤트 로그는 기기별 진단용이지 집계용 analytics가 아닙니다. **아이디어를 도입하기 전에 "효과를 어떻게 잴지"부터 정하지 않으면, 나중에 이 기능들이 실제로 접속량을 늘렸는지 검증할 방법이 없습니다.** (열린 질문 — 7장)
+현재 앱에는 이를 측정할 analytics 인프라가 없습니다 — `firebase-analytics`는 실사용처가 없어 의도적으로 제외된 상태입니다(`app-android/build.gradle.kts` 주석: "logEvent() 등 실제 사용처가 코드에 전혀 없어"). `docs/spec/DIAGNOSTIC_EVENT_SCHEMA.md`의 런타임 이벤트 로그는 기기별 진단용이지 집계용 analytics가 아닙니다. **아이디어를 도입하기 전에 "효과를 어떻게 잴지"부터 정하지 않으면, 나중에 이 기능들이 실제로 접속량을 늘렸는지 검증할 방법이 없습니다.** (열린 질문 — 7장)
 
 ---
 

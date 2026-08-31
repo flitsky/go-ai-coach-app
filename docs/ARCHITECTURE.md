@@ -1,7 +1,7 @@
 # Architecture — 7계층 원칙
 
 작성일: 2026-06-17
-전면 재작성: 2026-07-30 — 특정 앱(go-ai-coach)의 파일/패키지 매핑을 이 문서에서 걷어내고, 재사용 가능한 레이어 원칙만 남겼다. go-ai-coach의 현재 구현 매핑·갭·고도화 로드맵은 [GO_AI_COACH_ARCHITECTURE_ROADMAP.md](./GO_AI_COACH_ARCHITECTURE_ROADMAP.md)를 따른다.
+전면 재작성: 2026-07-30 — 특정 앱(go-ai-coach)의 파일/패키지 매핑을 이 문서에서 걷어내고, 재사용 가능한 레이어 원칙만 남겼다. go-ai-coach의 현재 구현 매핑·갭·고도화 로드맵은 [GO_AI_COACH_ARCHITECTURE_ROADMAP.md](./spec/GO_AI_COACH_ARCHITECTURE_ROADMAP.md)를 따른다.
 레이어 순서 확정: 2026-07-30 — External Integration을 "물리 엔진과 무관한 최상위 횡단 계층"(7번)이 아니라, **3계층(Extended API)과 같은 패턴을 외부 SDK에 적용한 대등한 서비스 계층**(4번)으로 재배치했다. 이유는 "왜 4계층인가" 절 참고.
 
 **성격**: 이 문서는 **특정 앱에 종속되지 않는 원칙 문서**다. "무거운 연산 엔진(또는 외부 서비스)을 감싸 도메인 로직과 UI를 제공하는 앱"이라면 go-ai-coach가 아니어도 그대로 적용할 수 있도록, 구현 세부사항이 아니라 **레이어 경계를 정하는 논리와 그 논리를 지켜야 하는 이유**만 담는다. 새 앱을 시작할 때 이 문서를 그대로 복사해 오고, "물리 엔진"을 그 앱이 감싸는 무거운 자원(다른 게임 엔진, ML 추론 서버, 외부 하드웨어 등)으로 바꿔 읽으면 된다.
@@ -127,6 +127,6 @@ OSI의 7계층이 실무에서 TCP/IP의 4계층(링크/인터넷/전송/응용)
 
 ## 관련 문서
 
-- go-ai-coach에 대한 구체적 계층별 파일/패키지 매핑, 현재 갭, 고도화 로드맵: [GO_AI_COACH_ARCHITECTURE_ROADMAP.md](./GO_AI_COACH_ARCHITECTURE_ROADMAP.md)
+- go-ai-coach에 대한 구체적 계층별 파일/패키지 매핑, 현재 갭, 고도화 로드맵: [GO_AI_COACH_ARCHITECTURE_ROADMAP.md](./spec/GO_AI_COACH_ARCHITECTURE_ROADMAP.md)
 - 엔진(1~3계층에 해당) 탐색 방식·레벨 정책·캐시 운영 상세: [ENGINE.md](./ENGINE.md)
 - 이 7계층 모델이 정착하기까지의 리팩토링 과정: **날짜별 작업 로그는 2026-08-17 문서 보존 정책 전환으로 저장소에서 삭제됐다**(git 히스토리로만 보존 — `docs/DOCS_INDEX.md` "문서 보존 정책" 참고). `docs/refactoring/`에는 지금 **진행 중인** 계획서만 남는다.

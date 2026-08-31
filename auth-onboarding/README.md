@@ -9,8 +9,8 @@
 ## 1. 개요 및 목표
 
 ### 1.1. 배경 및 필요성
-- 기존 장기(Janggi) 앱에서 이미 Firebase Auth + Firestore/Storage + AdMob을 연동해 성공적으로 운영 중인 경험을 이 바둑 앱에도 그대로 재활용합니다 (`docs/baduk_app_architecture_recommendation.md`).
-- BaaS 5종(Firebase/Supabase/PocketBase/Appwrite/Convex) 비교 검토 결과(`docs/baas_solutions_comparison.md`), 기보(SGF) 저장·보상형 광고·AdMob 시너지 관점에서 **Firebase가 최종 채택**되었습니다.
+- 기존 장기(Janggi) 앱에서 이미 Firebase Auth + Firestore/Storage + AdMob을 연동해 성공적으로 운영 중인 경험을 이 바둑 앱에도 그대로 재활용합니다 (`docs/history/baduk_app_architecture_recommendation.md`).
+- BaaS 5종(Firebase/Supabase/PocketBase/Appwrite/Convex) 비교 검토 결과(`docs/history/baas_solutions_comparison.md`), 기보(SGF) 저장·보상형 광고·AdMob 시너지 관점에서 **Firebase가 최종 채택**되었습니다.
 - 프리미엄 모드(`premium-mode/README.md`)의 Step 3(광고)/Step 4(구매)가 이 계정 시스템 위에 얹힐 예정이므로, 그 전제가 되는 "로그인/익명 사용자 식별" 기반을 먼저 마련하는 것이 이번 계획의 핵심입니다.
 
 ### 1.2. 핵심 논의: 계정 없이 시작하기 & 구매 복구
@@ -25,7 +25,7 @@
 >
 > ⚠️ **용어 주의**: 앱 기능인 **'계정 없이 시작하기'**(로컬 UUID)와 **파이어베이스 Auth의 익명 로그인 활성화 여부**(콘솔 설정, 현재 비활성)는 서로 다른 개념이며 혼용하지 않는다.
 >
-> 그 결과 **"익명 → 실계정 승격"을 전제로 쓴 아래 서술은 전부 성립하지 않는다** — Step 2/3의 `linkWithCredential` 승격 경로, Step 4의 목표 정의, 그리고 `docs/GO_AI_COACH_ARCHITECTURE_ROADMAP.md` 로드맵 7번이 그것이다. 로드맵 7번은 "착수 전에 목표를 다시 정의해야 한다"고 이미 표시해 뒀다(예: "게스트(로컬 ID) → 실계정 승격"). 승격 코드 자체(`AuthProvider.Anonymous`, `isPromotableAnonymousSession`, `linkGoogleCredential`/`linkEmailCredential`)는 무해해서 지우지 않고 남겨 뒀다.
+> 그 결과 **"익명 → 실계정 승격"을 전제로 쓴 아래 서술은 전부 성립하지 않는다** — Step 2/3의 `linkWithCredential` 승격 경로, Step 4의 목표 정의, 그리고 `docs/spec/GO_AI_COACH_ARCHITECTURE_ROADMAP.md` 로드맵 7번이 그것이다. 로드맵 7번은 "착수 전에 목표를 다시 정의해야 한다"고 이미 표시해 뒀다(예: "게스트(로컬 ID) → 실계정 승격"). 승격 코드 자체(`AuthProvider.Anonymous`, `isPromotableAnonymousSession`, `linkGoogleCredential`/`linkEmailCredential`)는 무해해서 지우지 않고 남겨 뒀다.
 >
 > ⚠️ 여기에 더해 **로그인 기능 전체가 2026-08-09에 꺼졌다**(`ui/FeatureFlags.kt`의 `isLoginEnabled = false`) — 아래 "결정 번복: 이번 출시에서 로그인 기능 전체를 끄기로 결정" 절 참고.
 
@@ -38,7 +38,7 @@
 - **범위**:
   - Google/이메일 로그인 버튼은 배치만 하고, 탭하면 홈 화면 "학습하기" 카드와 동일한 "준비 중" 토스트 패턴을 재사용.
   - Apple 로그인은 UI 자체를 넣지 않음 (완전 후순위).
-  - Firebase 콘솔 프로젝트는 장기 앱과 별도 독립 프로젝트로 새로 생성 (Spark Plan 무료 할당량이 프로젝트 단위로 독립 적용되기 때문 — `docs/baduk_app_architecture_recommendation.md` 2장 참고).
+  - Firebase 콘솔 프로젝트는 장기 앱과 별도 독립 프로젝트로 새로 생성 (Spark Plan 무료 할당량이 프로젝트 단위로 독립 적용되기 때문 — `docs/history/baduk_app_architecture_recommendation.md` 2장 참고).
 - **산출물**: `OnboardingScreen.kt`, `application/auth/AuthState.kt`(순수 도메인, iOS 이식 전제), `application/auth/AuthClientPort.kt` + `ui/AndroidAuthClient.kt`(Firebase Auth 실제 호출), `UserPreferencesSnapshot.hasSeenOnboarding` 플래그, Gradle Firebase 의존성 스캐폴딩(google-services.json 없이도 빌드가 깨지지 않도록 조건부 플러그인 적용).
 - **상태**: ✅ 완료 (2026-07-29) → 2026-08-04 개정, 아래 "Step 1 개정" 참고
 

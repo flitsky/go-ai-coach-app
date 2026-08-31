@@ -330,7 +330,7 @@ class RemoteEngineCoreApiAdapterTest {
         // deadStones: the reference server returns a clean "not implemented"
         // error rather than a guessed answer — confirm that parses as an error
         // status rather than throwing, so the app's existing local-fallback
-        // endgame path (docs/ENGINE_API_CALL_POLICY.md "종국 GTP 호출 정책") can
+        // endgame path (docs/engine/ENGINE_API_CALL_POLICY.md "종국 GTP 호출 정책") can
         // catch it the same way it already catches local timeouts.
         val deadStonesConnection = FakeEngineHttpURLConnection(
             url = URL("http://example.test/engine"),

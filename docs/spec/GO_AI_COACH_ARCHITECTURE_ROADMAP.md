@@ -1,10 +1,10 @@
 # go-ai-coach 아키텍처 현황과 고도화 로드맵
 
 작성일: 2026-07-30
-레이어 순서 갱신: 2026-07-30 — External Integration이 4계층(3계층과 대등한 서비스 계층)으로 재배치되며 Application(5)/Session & Continuity(6)/Presentation(7) 번호가 한 칸씩 밀렸다. [ARCHITECTURE.md](./ARCHITECTURE.md)의 "레이어 순서 확정" 항목 참고.
+레이어 순서 갱신: 2026-07-30 — External Integration이 4계층(3계층과 대등한 서비스 계층)으로 재배치되며 Application(5)/Session & Continuity(6)/Presentation(7) 번호가 한 칸씩 밀렸다. [ARCHITECTURE.md](../ARCHITECTURE.md)의 "레이어 순서 확정" 항목 참고.
 기능 엔타이틀먼트 정책 배치: 2026-08-14 — "무료/광고/구매/클레임" 같은 기능별 정책이 앞으로도 계속 바뀔 것을 전제로, 그 정책 판정을 6계층에 `FeatureAccessPolicy`로 명문화하고(설계 초안엔 5계층으로 잘못 적었다가 착수 시점에 정정 — 6계층 `PremiumState`를 파라미터로 받으므로 5계층일 수 없다) 6계층 `PremiumState`를 단일 플래그(`isUndoClaimed`)에서 기능별 원장(`claimedFeatures: Set<FeatureId>`)으로 일반화, 프레젠테이션 3곳(`ui/GamePlaySection.kt` 2곳, `ui/KaTrainUxPanels.kt` 1곳)에 하드코딩돼 있던 판정을 이걸로 교체했다 — 구현 완료. 상세는 "알려진 갭"·"고도화 로드맵" 절, 그리고 `feature-access-principles/README.md` 2장(같은 결론을 정책 문서 쪽에서 먼저 제안해 뒀던 것).
 
-**성격**: [ARCHITECTURE.md](./ARCHITECTURE.md)(원칙 문서, 앱 비종속)의 7계층 모델을 go-ai-coach 코드베이스에 적용한 **파생 문서**다. "지금 무엇이 어디 있는가"와 "물리적으로 완전히 분리 가능한 상태까지 무엇이 남았는가"를 담는다. 레이어 정의 자체나 그 이유는 여기서 반복하지 않고 원칙 문서를 따른다.
+**성격**: [ARCHITECTURE.md](../ARCHITECTURE.md)(원칙 문서, 앱 비종속)의 7계층 모델을 go-ai-coach 코드베이스에 적용한 **파생 문서**다. "지금 무엇이 어디 있는가"와 "물리적으로 완전히 분리 가능한 상태까지 무엇이 남았는가"를 담는다. 레이어 정의 자체나 그 이유는 여기서 반복하지 않고 원칙 문서를 따른다.
 
 기존 `ARCHITECTURE.md`가 갖고 있던 계층별 파일/패키지 표는 이 문서로 이전됐다 — 이전 버전은 git 히스토리로 확인 가능하다(`git log -p -- docs/ARCHITECTURE.md`).
 
@@ -73,7 +73,7 @@
 
 **260814 정정**: 이 절에 한때 "기능별 접근 정책 판정"(`FeatureAccessPolicy`)을 5계층으로 적어뒀으나 오기였다 — `PremiumState`(6계층)를 파라미터로 받는 함수는 5계층이 아니라 6계층 소속이다(5계층은 6계층을 몰라야 하므로). 실제 구현은 아래 6계층 절 참고.
 
-**재편 여부**: 기존 3계층(Core Rules)+5계층(Game Domain)+6계층(App Service/Session Orchestration)을 하나로 통합. 순수 규칙과 오케스트레이션은 성격이 다르지만 "이 앱만의 것"이라는 공통점으로 묶었다 — [ARCHITECTURE.md](./ARCHITECTURE.md)의 5계층 정의를 따른다. 아래 3계층(엔진 서비스)과 4계층(외부 연동 서비스)을 동등하게 소비한다.
+**재편 여부**: 기존 3계층(Core Rules)+5계층(Game Domain)+6계층(App Service/Session Orchestration)을 하나로 통합. 순수 규칙과 오케스트레이션은 성격이 다르지만 "이 앱만의 것"이라는 공통점으로 묶었다 — [ARCHITECTURE.md](../ARCHITECTURE.md)의 5계층 정의를 따른다. 아래 3계층(엔진 서비스)과 4계층(외부 연동 서비스)을 동등하게 소비한다.
 
 **핵심 갭**: 예외 1개만 남았다 — `application/diagnostic/LocalFileDiagnosticEventExternalSink.kt`(`java.io.File` 직접 사용)는 포트/어댑터 분리 원칙에 따라 영구히 `app-android`에 잔류(포트 `DiagnosticEventExternalSinkPort`는 `shared`로 이전됨). `LayeringContractTest.kt`의 `engineOperationApplicationPoliciesStayPortable`이 이 예외 하나만 명시적으로 허용하고 나머지는 전부 `shared`에서 이식성을 상시 검증한다.
 
@@ -128,12 +128,12 @@
 6. ~~**6계층 — 기능 엔타이틀먼트 정책 도입**~~ — 완료(260814). `application/premium/PremiumState.kt`의 `isUndoClaimed: Boolean`을 `claimedFeatures: Set<FeatureId>`로 일반화하고(`persistence/PremiumStateStore.kt`에 구버전 불리언 하위호환 마이그레이션 포함), `application/premium/FeatureAccessPolicy.kt`(같은 6계층 — 애초 설계 초안엔 5계층으로 잘못 적혀 있었으나 착수 시점에 정정)를 신설해 `ui/GamePlaySection.kt`(형세보기/추천수/무르기)·`ui/KaTrainUxPanels.kt`(착수평가)에 각자 하드코딩돼 있던 3곳의 판정을 이 함수 하나로 통합했다. **의도적으로 남겨둔 것**: 클레임 전용 다이얼로그(`ui/GamePlaySection.kt`의 `showUndoClaimDialog`)를 `PremiumUpsellDialog`에 `Claim` 선택지로 통합하는 UI 단순화는 이번 범위에서 제외 — 클레임 가능 기능이 아직 무르기 하나뿐이라 지금 합치는 건 과설계로 판단, 두 번째 클레임형 기능이 생기면 재검토.
 7. **6계층 — 세션/연속성 공식화**: `auth-onboarding/README.md` Step 4(익명→실계정 승격, Firestore 동기화)를 이 계층의 정식 구현으로 진행 — **단, 익명 로그인 자체가 2026-08-05에 영구 폐기 결정됐으므로("재설치마다 허수 계정이 쌓이는 문제를 이전 앱에서 실제로 겪음") "익명→실계정 승격" 경로 자체가 성립하지 않는다. 이 항목은 착수 전에 목표를 다시 정의해야 한다** — 예를 들어 "게스트(로컬 ID)→실계정 승격"처럼 익명 인증을 전제하지 않는 형태로. 기기 식별자 기반 다중 기기 정책도 이 재정의와 함께 결정.
 8. **`LayeringContractTest.kt` 갱신**: 위 항목들이 실제 코드로 옮겨질 때마다, 이번 재정의(2/3계층 경계, 4/6계층 신설, 5/7 번호 이동)를 반영해 계층 위반을 기계적으로 검증하도록 갱신. **코드가 실제로 옮겨지기 전까지는 테스트를 먼저 갱신하지 않는다** — 아직 물리적으로 분리되지 않은 것을 분리된 것처럼 강제하면 오탐만 늘어난다.
-9. ~~**문서 정리 후속 작업**~~ — **완료(260817)**. `docs/refactoring/`(리팩토링 축이 이미 종료됨)과 `docs/archive/` 전체(55개 파일, 1.2MB)를 저장소에서 제거했다. "삭제 대신 보관" 원칙을 뒤집는 결정이라 `docs/DOCS_INDEX.md` "문서 보존 정책" 절에 사유와 복원 방법을 기록했다. 유일한 예외는 실측 데이터로 계속 인용되던 `ENGINE_BEGINNER_VISITS_BENCHMARK.md`로, `docs/engine-research/`로 이동 보존했다.
+9. ~~**문서 정리 후속 작업**~~ — **완료(260817)**. `docs/refactoring/`(리팩토링 축이 이미 종료됨)과 `docs/archive/` 전체(55개 파일, 1.2MB)를 저장소에서 제거했다. "삭제 대신 보관" 원칙을 뒤집는 결정이라 `docs/DOCS_INDEX.md` "문서 보존 정책" 절에 사유와 복원 방법을 기록했다. 유일한 예외는 실측 데이터로 계속 인용되던 `ENGINE_BEGINNER_VISITS_BENCHMARK.md`로, `docs/engine/`로 이동 보존했다.
 
 ## 관련 문서
 
-- 레이어 원칙 자체(앱 비종속): [ARCHITECTURE.md](./ARCHITECTURE.md)
-- 엔진 탐색 방식·레벨 정책·캐시 운영 상세: [ENGINE.md](./ENGINE.md)
+- 레이어 원칙 자체(앱 비종속): [ARCHITECTURE.md](../ARCHITECTURE.md)
+- 엔진 탐색 방식·레벨 정책·캐시 운영 상세: [ENGINE.md](../ENGINE.md)
 - 프리미엄/결제 로드맵: `premium-mode/README.md`
 - 인증/온보딩 로드맵: `auth-onboarding/README.md`
 - 기능 유/무료 정책 원칙("무엇을 무료/광고/구매/클레임으로 줄지"의 근거) — 이 문서의 "6계층 — 기능 엔타이틀먼트 정책 도입" 항목이 배치를 결정하는 반대편 문서: `feature-access-principles/README.md`

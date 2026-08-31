@@ -99,7 +99,7 @@
 
 ## 참고 문서
 
-- [`docs/refactoring/LAYERED_ARCHITECTURE_REFACTORING_PLAN_260803_1500.md`](LAYERED_ARCHITECTURE_REFACTORING_PLAN_260803_1500.md) — Stage D/E(오늘 이 문서가 이어받는 원격 엔진 배경), Stage F 정의(이 문서가 그 전용 킥오프)
+- [`docs/roadmap/LAYERED_ARCHITECTURE_REFACTORING_PLAN_260803_1500.md`](LAYERED_ARCHITECTURE_REFACTORING_PLAN_260803_1500.md) — Stage D/E(오늘 이 문서가 이어받는 원격 엔진 배경), Stage F 정의(이 문서가 그 전용 킥오프)
 - `scripts/run-katago-remote-analysis-server.py` — 어제 만든 HTTP 참조 서버. MQ/Firestore 프로토타입에서 KataGo 프로세스 관리 부분을 그대로 재사용한다
 - `scripts/remote-engine-mq-prototype/` — 7절 결과를 낸 실제 파이썬 프로토타입 코드(MQTT/Firestore 세션 토픽, 정합성 체크, 타임아웃+병행 폴백 실험)와 실행 로그(`runs/*.jsonl`)
 - `shared/src/commonMain/kotlin/com/worksoc/goaicoach/shared/RemotePositionAnalysisTransport.kt` — 이미 있는 트랜스포트 추상화 계약(3절)

@@ -1048,7 +1048,7 @@ Canvas 파이 클리핑 + 조각 틈), `ui/BotCharacterUiState.kt`(카드에서 
     - ❌ **도장 애니메이션·순차 연출은 넣지 않았다 — 넣을 자리가 없다.** 팝업은 Claim하는 순간
       닫히므로(정책상 닫는 모든 경로가 지급이다) **도장이 찍히는 그 순간에 판이 사라진다.**
       마이 페이지 판은 읽기 전용이라 찍히는 사건 자체가 없다. 되살리려면 "받고도 팝업이
-      잠시 남는다"는 정책 변경이 먼저이고, 그건 `docs/ATTENDANCE_REWARD_POLICY.md` 1장과 충돌한다.
+      잠시 남는다"는 정책 변경이 먼저이고, 그건 `docs/spec/ATTENDANCE_REWARD_POLICY.md` 1장과 충돌한다.
     - **검증**: 네 언어를 **전부 실기에서** 봤다(한국어/中文/English/日本語 — 로드맵 경고 ②).
       가장 긴 조합인 English 캐릭터 이름("Goban the Student")이 두 줄에 말줄임 없이 들어간다.
       R8 `playInternal`에서 `aapt2 dump resources`로 **글리프 5종이 리소스 축소를 살아남는지**
@@ -1258,6 +1258,79 @@ Canvas 파이 클리핑 + 조각 틈), `ui/BotCharacterUiState.kt`(카드에서 
     - 산출물: (app-android) `ui/AttendanceBoardView.kt`(`consumableGlyphRes` 추출),
       `ui/MyPageScreen.kt`(재고 줄에 글리프). 테스트 1건 보강.
 
+58. **문서 구조 재편 마무리** — 최상위 15→5, 중분류 8→5 (AI 모델: Sonnet, 노력정도: 중간) [완료]
+    - 2026-08-31 발행. 구조 정책은 `docs/DOCS_INDEX.md`의 "문서 구조 정책" 절에 이미 세웠고,
+      **1단계(로그 분리)만 끝났다**(`docs/measurements/`, 하위 폴더 9 → 8).
+    - **목표 형태는 그 절의 "현재 상태"에 이미 적혀 있다** — 여기 옮겨 적지 말 것(두 곳이 어긋난다).
+      요약하면 최상위는 `HANDOVER` + 요약 4개(`PRD`·`ARCHITECTURE`·`ENGINE`·`OPERATIONS`),
+      나머지 딥다이브 7개는 하위로. 중분류는 `architecture`·`engine`·`measurements`·`roadmap`·`history`.
+    - ⚠️ **로그 이동보다 훨씬 위험하다.** 옮길 대상이 **핵심 문서끼리 서로 인용하는 것들**이다
+      (예: `ENGINE.md` ↔ `ENGINE_API_CALL_POLICY.md`, `OPERATIONS.md` ↔ `USER_OPTION_MANUAL.md`·
+      `DIAGNOSTIC_EVENT_SCHEMA.md`·`SCORE_AND_ENDGAME_DECISION.md`). 로그는 아무도 인용하지 않는
+      데이터라 쉬웠지만, 이쪽은 **상대 링크와 절 참조가 사방으로 얽혀 있다.**
+    - ⚠️ **착수 순서를 지킬 것**(정책의 "폴더를 옮길 때" 조항):
+      ① 옮길 문서 전부에 대해 `grep -rn "<파일명>" .`을 **문서·코드 주석·`Makefile`·`scripts/`** 에 돌린다
+      (로그 이동에서 `Makefile` 4줄이, 2026-08-30 이동에서 코드 주석 8곳이 이 방법으로만 잡혔다).
+      ② 옮긴다. ③ **상대 링크(`../`)를 다시 계산한다** — 깊이가 한 단 깊어지면 전부 어긋난다.
+      ④ 문서가 가리키는 파일이 실재하는지 기계로 재확인한다.
+    - ⚠️ **`DOCS_INDEX.md`의 표 셋을 함께 고쳐야 한다** — "문서/폴더 전체 지도", "최상위 핵심 문서",
+      그리고 각 하위 폴더 절. 이 인덱스는 **표와 실제 파일이 어긋난 전력이 있다**(2026-08-29에
+      3중 불일치 발견). 개수 표기까지 실제와 맞출 것.
+    - ⚠️ **`HANDOVER.md`가 진입점이라 경로를 직접 안내한다** — 재편 후 그 안내가 낡으면 새로 온
+      사람이 첫 화면에서 막힌다. 마지막에 반드시 확인.
+    - 참고: `error-cases/`는 raw 로그가 아니라 **분석 문서 3건**이고 `SCORE_AND_ENDGAME_DECISION.md`가
+      인용한다 — `measurements/`가 아니라 `engine/` 또는 `history/` 쪽이 맞다(착수 시 판단).
+
+---
+    - **✅ 착수 순서 ①(전수 grep)은 2026-08-31에 이미 돌렸다 — 다시 돌리지 말고 이 결과를 쓸 것.**
+      · ⚠️ **문서 밖 참조가 5곳 있다**(정책이 경고한 바로 그 종류 — `.md`만 훑으면 전부 놓친다):
+        `ui/AttendanceRewardClaimDialog.kt`·`ui/AttendanceBoardView.kt`(→ `ATTENDANCE_REWARD_POLICY.md`),
+        `scripts/run-katago-remote-analysis-server.py`·`engine-android/.../RemoteEngineCoreApiAdapterTest.kt`
+        (→ `ENGINE_API_CALL_POLICY.md`), `application/premium/FeatureAccessPolicy.kt`
+        (→ `GO_AI_COACH_ARCHITECTURE_ROADMAP.md`). **다섯 곳 모두 `docs/<파일>.md` 형태**라 경로 치환만 하면 된다.
+      · ⚠️ **`design-handoff/export/2026-08-11-v0.1.2/go_ai_coach_handoff.html`도 걸리는데 고치지 말 것** —
+        날짜가 박힌 **동결 산출물**이다. 그때의 경로를 가리키는 것이 맞다.
+      · ⚠️ **문서 안에는 `docs/` 접두가 없는 표기가 섞여 있다** — `](./FILE.md)`, `](../FILE.md)`,
+        `` `FILE.md` `` 세 가지. 깊이가 한 단 깊어지면 `./`·`../`가 **전부 어긋난다.**
+        가장 많은 것이 `ENGINE_API_CALL_POLICY`(16종)와 `GO_AI_COACH_ARCHITECTURE_ROADMAP`(17종)이다.
+      · **폴더 이름 판단(착수 시 결정 필요)**: 정책이 적어 둔 `architecture/`에는
+        `ATTENDANCE_REWARD_POLICY`·`USER_OPTION_MANUAL`처럼 **아키텍처가 아닌 제품 정책**이 들어가야
+        한다. `spec/`으로 이름을 바꾸는 편이 정직해 보이나, 정책 문서를 함께 고쳐야 하므로
+        착수 스레드가 사용자와 확정할 것.
+      · `docs/history/market-listing-history/images/`는 **빈 폴더**다(git 추적 대상 없음) — 옮길 때 버린다.
+    - ✅ **폴더 이름은 `spec/`으로 확정(2026-08-31 사용자 승인).** 정책이 적어 둔 `architecture/`에는
+      아키텍처가 아닌 제품 정책이 들어가야 해서 이름을 바꿨다 — 정책 문서도 함께 고친다.
+    - **결과: 세 상한 모두 충족.** 최상위 **5개**(+ 색인) · 중분류 **5개**(`spec/`·`engine/`·
+      `measurements/`·`roadmap/`·`history/`) · 최대 깊이 **3**.
+      · 딥다이브 7개 → `spec/`(5) · `engine/`(2). 폴더 흡수: `engine-research`→`engine/`,
+        `error-cases`→`engine/error-cases/`, `knowhow-docs`·`market-listing-history`→`history/`,
+        `refactoring`→`roadmap/`. 초기 리서치 2건도 `history/`로 내렸다.
+    - ⚠️ **이동보다 참조 수정이 훨씬 컸다 — 이것이 이 항목의 실제 내용이었다.**
+      · **경로를 고친 파일이 29개.** 이름 기준 grep으로 찾은 5곳(코드 3·스크립트 1·테스트 1)보다
+        훨씬 많았는데, 나머지는 **폴더 경로 참조**였다 — `MainActivity.kt`·`build.gradle.kts`·
+        루트 `README.md`·마스터플랜 폴더 4곳. **이름만 grep하면 전부 놓친다.**
+      · **상대 링크 18건이 깨졌다.** 깊이가 바뀌면 `./`·`../`가 전부 어긋나는데 **눈으로는 하나도
+        드러나지 않는다** — 재편 직후 검증기가 깨진 참조 32건을 보고했다.
+    - **✅ 확인을 기계화했다 — `scripts/check-doc-links.py` 신설.** 정책의 마지막 단계
+      ("가리키는 파일이 실재하는지 기계로 재확인한다")를 손으로 하지 않게 만든 것이다. 마크다운
+      링크의 상대 경로까지 풀어 확인한다. 히스토리 서술·미작성 제안 문서·스크립트 출력 경로는
+      `ALLOWED` 표에 **사유와 함께** 예외로 적었다 — ⚠️ 사유 없이 예외를 늘리면 통과만 하는 장식이 된다.
+    - **그 도구가 재편과 무관하게 이미 죽어 있던 참조 5건도 드러냈다**(덤으로 함께 고쳤다):
+      · 보존 정책으로 삭제된 마이그레이션 계획서를 가리키던 **코드 주석·스크립트 2곳** →
+        "제거됨(git 히스토리가 아카이브)"이라는 사실로 고쳤다.
+      · `run-katago-candidate-refine-experiment.py`의 `--out` **기본값이 존재하지 않는 폴더**
+        (`docs/engine-benchmark-logs/`)를 가리키고 있었다 — 실행하면 정책과 어긋난 폴더가 새로
+        생긴다. `docs/measurements/engine-benchmark/`로 고쳤다.
+      · `THREAD_HISTORY.md`의 참조 1건은 **옮긴 뒤에야 되살릴 수 있게 됐다**(그 파일이 `engine/`으로 왔다).
+    - ⚠️ **깊이 여유가 없어졌다(2 → 3).** 상한 안이지만 이제 어떤 폴더든 한 겹 더 씌우면 규칙을
+      넘는다. 정책 절에 "상한을 채운 뒤의 규칙"을 신설해 **"들어가려면 하나가 나와야 한다"가 선택이
+      아니라 유일한 방법**임을 못박았다.
+    - **`HANDOVER.md`는 진입점이라 라벨까지 고쳤다** — 링크는 맞아도 보이는 이름이 `knowhow-docs/`면
+      경로를 직접 타이핑하는 사람이 막힌다. `history/knowhow-docs/`로 바꿨다.
+    - 산출물: `docs/` 트리 재편(문서 14개 이동), `docs/DOCS_INDEX.md`(전체 지도·최상위 표·`spec/` 절
+      신설·엔진 절 확장·정책 현재 상태·갱신 이력), `docs/HANDOVER.md`, `docs/ENGINE.md`,
+      `scripts/check-doc-links.py` 신규, 그 외 경로 참조 29개 파일.
+
 
 ## 진행 중
 
@@ -1348,47 +1421,6 @@ Canvas 파이 클리핑 + 조각 틈), `ui/BotCharacterUiState.kt`(카드에서 
 
 ---
 
-
-58. **문서 구조 재편 마무리** — 최상위 15→5, 중분류 8→5 (AI 모델: Sonnet, 노력정도: 중간)
-    - 2026-08-31 발행. 구조 정책은 `docs/DOCS_INDEX.md`의 "문서 구조 정책" 절에 이미 세웠고,
-      **1단계(로그 분리)만 끝났다**(`docs/measurements/`, 하위 폴더 9 → 8).
-    - **목표 형태는 그 절의 "현재 상태"에 이미 적혀 있다** — 여기 옮겨 적지 말 것(두 곳이 어긋난다).
-      요약하면 최상위는 `HANDOVER` + 요약 4개(`PRD`·`ARCHITECTURE`·`ENGINE`·`OPERATIONS`),
-      나머지 딥다이브 7개는 하위로. 중분류는 `architecture`·`engine`·`measurements`·`roadmap`·`history`.
-    - ⚠️ **로그 이동보다 훨씬 위험하다.** 옮길 대상이 **핵심 문서끼리 서로 인용하는 것들**이다
-      (예: `ENGINE.md` ↔ `ENGINE_API_CALL_POLICY.md`, `OPERATIONS.md` ↔ `USER_OPTION_MANUAL.md`·
-      `DIAGNOSTIC_EVENT_SCHEMA.md`·`SCORE_AND_ENDGAME_DECISION.md`). 로그는 아무도 인용하지 않는
-      데이터라 쉬웠지만, 이쪽은 **상대 링크와 절 참조가 사방으로 얽혀 있다.**
-    - ⚠️ **착수 순서를 지킬 것**(정책의 "폴더를 옮길 때" 조항):
-      ① 옮길 문서 전부에 대해 `grep -rn "<파일명>" .`을 **문서·코드 주석·`Makefile`·`scripts/`** 에 돌린다
-      (로그 이동에서 `Makefile` 4줄이, 2026-08-30 이동에서 코드 주석 8곳이 이 방법으로만 잡혔다).
-      ② 옮긴다. ③ **상대 링크(`../`)를 다시 계산한다** — 깊이가 한 단 깊어지면 전부 어긋난다.
-      ④ 문서가 가리키는 파일이 실재하는지 기계로 재확인한다.
-    - ⚠️ **`DOCS_INDEX.md`의 표 셋을 함께 고쳐야 한다** — "문서/폴더 전체 지도", "최상위 핵심 문서",
-      그리고 각 하위 폴더 절. 이 인덱스는 **표와 실제 파일이 어긋난 전력이 있다**(2026-08-29에
-      3중 불일치 발견). 개수 표기까지 실제와 맞출 것.
-    - ⚠️ **`HANDOVER.md`가 진입점이라 경로를 직접 안내한다** — 재편 후 그 안내가 낡으면 새로 온
-      사람이 첫 화면에서 막힌다. 마지막에 반드시 확인.
-    - 참고: `error-cases/`는 raw 로그가 아니라 **분석 문서 3건**이고 `SCORE_AND_ENDGAME_DECISION.md`가
-      인용한다 — `measurements/`가 아니라 `engine/` 또는 `history/` 쪽이 맞다(착수 시 판단).
-
----
-    - **✅ 착수 순서 ①(전수 grep)은 2026-08-31에 이미 돌렸다 — 다시 돌리지 말고 이 결과를 쓸 것.**
-      · ⚠️ **문서 밖 참조가 5곳 있다**(정책이 경고한 바로 그 종류 — `.md`만 훑으면 전부 놓친다):
-        `ui/AttendanceRewardClaimDialog.kt`·`ui/AttendanceBoardView.kt`(→ `ATTENDANCE_REWARD_POLICY.md`),
-        `scripts/run-katago-remote-analysis-server.py`·`engine-android/.../RemoteEngineCoreApiAdapterTest.kt`
-        (→ `ENGINE_API_CALL_POLICY.md`), `application/premium/FeatureAccessPolicy.kt`
-        (→ `GO_AI_COACH_ARCHITECTURE_ROADMAP.md`). **다섯 곳 모두 `docs/<파일>.md` 형태**라 경로 치환만 하면 된다.
-      · ⚠️ **`design-handoff/export/2026-08-11-v0.1.2/go_ai_coach_handoff.html`도 걸리는데 고치지 말 것** —
-        날짜가 박힌 **동결 산출물**이다. 그때의 경로를 가리키는 것이 맞다.
-      · ⚠️ **문서 안에는 `docs/` 접두가 없는 표기가 섞여 있다** — `](./FILE.md)`, `](../FILE.md)`,
-        `` `FILE.md` `` 세 가지. 깊이가 한 단 깊어지면 `./`·`../`가 **전부 어긋난다.**
-        가장 많은 것이 `ENGINE_API_CALL_POLICY`(16종)와 `GO_AI_COACH_ARCHITECTURE_ROADMAP`(17종)이다.
-      · **폴더 이름 판단(착수 시 결정 필요)**: 정책이 적어 둔 `architecture/`에는
-        `ATTENDANCE_REWARD_POLICY`·`USER_OPTION_MANUAL`처럼 **아키텍처가 아닌 제품 정책**이 들어가야
-        한다. `spec/`으로 이름을 바꾸는 편이 정직해 보이나, 정책 문서를 함께 고쳐야 하므로
-        착수 스레드가 사용자와 확정할 것.
-      · `docs/market-listing-history/images/`는 **빈 폴더**다(git 추적 대상 없음) — 옮길 때 버린다.
 
 ## 관련 문서
 
