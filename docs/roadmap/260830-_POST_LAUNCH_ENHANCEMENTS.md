@@ -1237,6 +1237,27 @@ Canvas 파이 클리핑 + 조각 틈), `ui/BotCharacterUiState.kt`(카드에서 
       빌더 3오버로드·오토세이브, (persistence) `UserPreferencesStore.kt`.
       `LayeringContractTest` 라인 예산 874→875(사유는 그 주석에). 테스트 2파일 신규 + 그물 2건 보강.
 
+60. 마이 페이지 **보유 1회권 표기에 글리프 붙이기** (AI 모델: Sonnet, 노력정도: 낮음) [완료]
+    - 2026-08-31 사용자 지시. 마이 페이지의 "보유 중인 1회권" 세 줄이 **글자뿐**인데,
+      **출석 현황(#57)에서 쓰는 것과 같은 그림**을 이름 앞에 붙여 두 화면이 같은 것을 같은 모양으로
+      말하게 한다. 같은 페이지 안에서 위(도장판)는 글리프로, 아래(재고)는 글자로 말하고 있었다.
+    - ⚠️ **그림 대응표를 두 벌 만들지 말 것.** #57의 `rewardGlyphRes`가 이미 소모품→글리프를 알고
+      있다 — 그 안쪽을 `consumableGlyphRes(item)`으로 떼어 **두 곳이 같은 표를 쓰게** 한다.
+      카탈로그에 소모품이 늘었을 때 한쪽만 비는 사고를 막는 그물
+      (`AttendanceBoardViewTest.everyConsumableInTheCatalogHasAGlyphBranch`)도 그 표를 계속 지킨다.
+    - **한 일**: `rewardGlyphRes` 안에 묻혀 있던 소모품→글리프 대응을 `consumableGlyphRes(item)`으로
+      떼어, **출석 도장판과 마이 페이지 재고 목록이 한 표를 공유**하게 했다. 재고 세 줄의 이름 앞에
+      18dp 글리프를 붙였다(색은 `onSurfaceVariant` — 이름이 주인공이고 그림은 곁들임이다).
+    - 글리프에는 `contentDescription`을 주지 않았다 — **바로 옆 이름이 같은 것을 말한다.** 넣으면
+      스크린 리더가 한 줄에서 같은 말을 두 번 읽는다.
+    - **실기 확인**: 마이 페이지 한 화면에서 위(출석 현황)와 아래(보유 1회권)가 같은 1회권을 같은
+      모양으로 말한다 — ◐ 형세 · ✦ 추천 · ▶| 스킵.
+    - 회귀 그물 1건(`AttendanceBoardViewTest.bothScreensDrawConsumablesFromTheSameGlyphTable`) —
+      ⚠️ **마이 페이지가 `R.drawable.reward_*`를 직접 지목하는지도 함께 본다.** 공유 함수를 쓰지 않고
+      각자 대응표를 들면 카탈로그가 늘었을 때 **한쪽만 조용히 빈다.**
+    - 산출물: (app-android) `ui/AttendanceBoardView.kt`(`consumableGlyphRes` 추출),
+      `ui/MyPageScreen.kt`(재고 줄에 글리프). 테스트 1건 보강.
+
 
 ## 진행 중
 
@@ -1352,6 +1373,22 @@ Canvas 파이 클리핑 + 조각 틈), `ui/BotCharacterUiState.kt`(카드에서 
       인용한다 — `measurements/`가 아니라 `engine/` 또는 `history/` 쪽이 맞다(착수 시 판단).
 
 ---
+    - **✅ 착수 순서 ①(전수 grep)은 2026-08-31에 이미 돌렸다 — 다시 돌리지 말고 이 결과를 쓸 것.**
+      · ⚠️ **문서 밖 참조가 5곳 있다**(정책이 경고한 바로 그 종류 — `.md`만 훑으면 전부 놓친다):
+        `ui/AttendanceRewardClaimDialog.kt`·`ui/AttendanceBoardView.kt`(→ `ATTENDANCE_REWARD_POLICY.md`),
+        `scripts/run-katago-remote-analysis-server.py`·`engine-android/.../RemoteEngineCoreApiAdapterTest.kt`
+        (→ `ENGINE_API_CALL_POLICY.md`), `application/premium/FeatureAccessPolicy.kt`
+        (→ `GO_AI_COACH_ARCHITECTURE_ROADMAP.md`). **다섯 곳 모두 `docs/<파일>.md` 형태**라 경로 치환만 하면 된다.
+      · ⚠️ **`design-handoff/export/2026-08-11-v0.1.2/go_ai_coach_handoff.html`도 걸리는데 고치지 말 것** —
+        날짜가 박힌 **동결 산출물**이다. 그때의 경로를 가리키는 것이 맞다.
+      · ⚠️ **문서 안에는 `docs/` 접두가 없는 표기가 섞여 있다** — `](./FILE.md)`, `](../FILE.md)`,
+        `` `FILE.md` `` 세 가지. 깊이가 한 단 깊어지면 `./`·`../`가 **전부 어긋난다.**
+        가장 많은 것이 `ENGINE_API_CALL_POLICY`(16종)와 `GO_AI_COACH_ARCHITECTURE_ROADMAP`(17종)이다.
+      · **폴더 이름 판단(착수 시 결정 필요)**: 정책이 적어 둔 `architecture/`에는
+        `ATTENDANCE_REWARD_POLICY`·`USER_OPTION_MANUAL`처럼 **아키텍처가 아닌 제품 정책**이 들어가야
+        한다. `spec/`으로 이름을 바꾸는 편이 정직해 보이나, 정책 문서를 함께 고쳐야 하므로
+        착수 스레드가 사용자와 확정할 것.
+      · `docs/market-listing-history/images/`는 **빈 폴더**다(git 추적 대상 없음) — 옮길 때 버린다.
 
 ## 관련 문서
 

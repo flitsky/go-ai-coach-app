@@ -38,6 +38,7 @@ import com.worksoc.goaicoach.application.attendance.AttendanceReward
 import com.worksoc.goaicoach.application.botcharacter.BotCharacter
 import com.worksoc.goaicoach.application.botcharacter.BotCollectionState
 import com.worksoc.goaicoach.application.consumable.ConsumableCatalog
+import com.worksoc.goaicoach.application.consumable.ConsumableItem
 import com.worksoc.goaicoach.application.premium.FeatureId
 
 /**
@@ -307,15 +308,25 @@ private fun BoxScope.StampSeal(compact: Boolean) {
 @DrawableRes
 internal fun rewardGlyphRes(reward: AttendanceReward): Int? = when (reward) {
     is AttendanceReward.PermanentFeature -> featureGlyphRes(reward.featureId)
-    is AttendanceReward.Consumable -> when (reward.item) {
-        ConsumableCatalog.EvalOnce -> R.drawable.reward_eval
-        ConsumableCatalog.TopMovesOnce -> R.drawable.reward_top_moves
-        ConsumableCatalog.PremiumOnce -> R.drawable.reward_ad_skip
-        // 카탈로그에 없는 소모품(다운그레이드로 흘러든 옛 저장값 등)은 그림이 없다.
-        else -> null
-    }
+    is AttendanceReward.Consumable -> consumableGlyphRes(reward.item)
     is AttendanceReward.BotCharacterShards -> null
     is AttendanceReward.BotCharacterUnlock -> null
+}
+
+/**
+ * 소모품 한 종의 글리프. **출석 도장판과 마이 페이지 재고 목록이 이 표를 공유한다**(#60) —
+ * 같은 1회권이 두 화면에서 다른 모양으로 보이면 같은 것으로 안 읽힌다.
+ *
+ * ⚠️ 이 `when`은 `else -> null`로 닫혀 있어 **컴파일러가 빠뜨림을 잡아 주지 않는다.** 카탈로그에
+ * 소모품을 더하면 그 자리만 조용히 빈다 — `AttendanceBoardViewTest`가 그 그물이다.
+ */
+@DrawableRes
+internal fun consumableGlyphRes(item: ConsumableItem): Int? = when (item) {
+    ConsumableCatalog.EvalOnce -> R.drawable.reward_eval
+    ConsumableCatalog.TopMovesOnce -> R.drawable.reward_top_moves
+    ConsumableCatalog.PremiumOnce -> R.drawable.reward_ad_skip
+    // 카탈로그에 없는 소모품(다운그레이드로 흘러든 옛 저장값 등)은 그림이 없다.
+    else -> null
 }
 
 @DrawableRes

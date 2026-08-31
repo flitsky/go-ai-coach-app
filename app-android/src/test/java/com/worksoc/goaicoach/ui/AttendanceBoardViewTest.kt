@@ -28,7 +28,27 @@ class AttendanceBoardViewTest {
         val unlisted = ConsumableCatalog.all.filter { item ->
             !source.contains("ConsumableCatalog.${pascalCase(item.id.raw)} ->")
         }
-        assertTrue("rewardGlyphRes에 빠진 소모품: ${unlisted.map { it.id.raw }}", unlisted.isEmpty())
+        assertTrue("consumableGlyphRes에 빠진 소모품: ${unlisted.map { it.id.raw }}", unlisted.isEmpty())
+    }
+
+    /**
+     * ⚠️ **표는 한 벌이어야 한다**(#60). 출석 도장판과 마이 페이지 재고 목록이 같은 1회권을 그리는데
+     * 각자 `when`을 들고 있으면 카탈로그가 늘었을 때 **한쪽만 조용히 빈다.** 두 화면이 같은 함수를
+     * 부르는지 소스로 확인한다.
+     */
+    @Test
+    fun bothScreensDrawConsumablesFromTheSameGlyphTable() {
+        assertTrue(
+            "consumableGlyphRes가 없다 — 표가 다시 갈렸다",
+            source.contains("internal fun consumableGlyphRes(item: ConsumableItem)"),
+        )
+        val myPage = File("src/main/java/com/worksoc/goaicoach/ui/MyPageScreen.kt").readText()
+        assertTrue("마이 페이지가 공유 표를 쓰지 않는다", myPage.contains("consumableGlyphRes(item)"))
+        // 마이 페이지가 자기 대응표를 따로 들고 있으면 안 된다.
+        assertTrue(
+            "마이 페이지가 글리프 리소스를 직접 지목한다 — 표가 두 벌이 됐다",
+            !myPage.contains("R.drawable.reward_"),
+        )
     }
 
     @Test

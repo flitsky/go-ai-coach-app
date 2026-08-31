@@ -13,6 +13,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -22,6 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -113,11 +115,29 @@ internal fun MyPageScreen(
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Text(
-                                text = strings.consumableRewardName(item),
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
+                            // 이름 앞에 **출석 도장판과 같은 글리프**를 붙인다(#60) — 위(도장판)는
+                            // 그림으로, 아래(재고)는 글자로만 말하고 있어 같은 1회권이 두 모양으로
+                            // 보였다. 표는 `consumableGlyphRes` 하나를 공유한다.
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                consumableGlyphRes(item)?.let { glyph ->
+                                    Icon(
+                                        painter = painterResource(glyph),
+                                        // 바로 옆 이름이 같은 것을 말한다 — 두 번 읽히면 소음이다.
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                                Text(
+                                    text = strings.consumableRewardName(item),
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                )
+                            }
                             Text(
                                 text = strings.consumableRewardAmount(consumables.countOf(item)),
                                 fontWeight = FontWeight.SemiBold,
