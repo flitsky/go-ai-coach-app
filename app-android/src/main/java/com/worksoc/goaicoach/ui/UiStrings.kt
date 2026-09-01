@@ -10,7 +10,6 @@ import androidx.compose.ui.platform.LocalContext
 import com.worksoc.goaicoach.persistence.UiLanguageStore
 import androidx.compose.runtime.staticCompositionLocalOf
 import com.worksoc.goaicoach.application.engine.operation.EngineActivityIndicator
-import com.worksoc.goaicoach.application.attendance.WeeklyRewardCycleTier
 import com.worksoc.goaicoach.application.attendance.AttendanceReward
 import com.worksoc.goaicoach.application.consumable.ConsumableCatalog
 import com.worksoc.goaicoach.application.botcharacter.BotCharacter
@@ -341,17 +340,9 @@ internal data class UiStrings(
      * 잠긴 캐릭터의 **획득 방법** 안내. 경로가 셋으로 갈리므로(출석/광고 조각/유료) 각각을
      * 구분해 보여준다 — 픽커에서 "왜 못 고르는가"가 곧 "무엇을 하면 되는가"여야 한다.
      *
-     * 조각 경로는 **획득 수단을 둘 다 적는다.** 광고만 적으면, 광고가 채워지지 않는 사용자에게
-     * 자기가 갈 수 없는 길만 알려 주는 셈이 된다(2026-08-29). 유료 캐릭터의 가격은 Play Console
-     * 상품이 아직 없어 적지 않는다(#18).
+     * 유료 캐릭터의 가격은 Play Console 상품이 아직 없어 적지 않는다(#18).
      */
     fun botUnlockHint(source: BotUnlockSource, shards: Int = 0): String? =
-        botUnlockHintBase(source)?.let { base ->
-            // 조각 경로만 진행도를 덧붙인다 — 출석·유료는 셀 것이 없다.
-            if (source is BotUnlockSource.AdShards) "$base ($shards/${source.required})" else base
-        }
-
-    private fun botUnlockHintBase(source: BotUnlockSource): String? =
         when (source) {
             BotUnlockSource.Default -> null
             is BotUnlockSource.Attendance -> when (language) {
@@ -360,16 +351,7 @@ internal data class UiStrings(
                 UiLanguage.Japanese -> "出席${source.tier}日目で獲得"
                 UiLanguage.ChineseSimplified -> "签到第${source.tier}天可获得"
             }
-            is BotUnlockSource.AdShards -> when (language) {
-                UiLanguage.Korean ->
-                    "조각 ${source.required}개 필요 — 광고 시청, ${WeeklyRewardCycleTier}일차 출석"
-                UiLanguage.English ->
-                    "Needs ${source.required} shards — watch an ad, or day $WeeklyRewardCycleTier of check-in"
-                UiLanguage.Japanese ->
-                    "かけら${source.required}個が必要 — 広告視聴、または出席${WeeklyRewardCycleTier}日目"
-                UiLanguage.ChineseSimplified ->
-                    "需要 ${source.required} 个碎片 — 观看广告或签到第 ${WeeklyRewardCycleTier} 天"
-            }
+            is BotUnlockSource.AdShards -> botShardUnlockHint(source.required, shards)
             // 가격을 문구에 박지 않는다 — Play가 지역/통화별로 다른 값을 보여주는데 앱이 하나를
             // 적어 두면 어긋난다. 실제 금액은 구매 시트가 알려 준다(#18).
             BotUnlockSource.Purchase -> when (language) {
@@ -379,6 +361,57 @@ internal data class UiStrings(
                 UiLanguage.ChineseSimplified -> "购买即可解锁 · 与该对手对局时形势判断和推荐手无限使用"
             }
         }
+
+    /**
+     * 조각 경로 캐릭터의 해금 힌트(백로그 #64 ⓒ). **두 줄이다** — 첫 줄은 *지금 어디까지 왔는가*,
+     * 둘째 줄은 *무엇을 하면 되는가*. 사용자 지시가 *"중요한 정보이면 개행해서 아랫줄에 표현하기"*
+     * 였고, 줄을 미리 갈라 두면 배율이 올라 접히더라도 **첫 줄만은 통째로** 읽힌다.
+     *
+     * ## 예전 문구(`조각 10개 필요 — 광고 시청, 7일차 출석 (3/10)`)를 버린 이유 셋
+     * ⓐ **진행이 글자에 안 드러났다.** 광고를 봐서 얼굴은 1/5이 칠해졌는데 글자는 여전히
+     *   *"10개 필요"* 여서 뭐가 달라졌는지 읽히지 않았다(2026-09-01 사용자 제보). 이제 **남은
+     *   수**를 말하고, 뒤에 붙던 `(3/10)`은 같은 말을 두 번 하는 것이라 뺐다.
+     * ⓑ **`7일차 출석`은 사실이 아니었다.** 확정표(`AttendanceRewardPolicy`)는 조각을
+     *   **5·6일차에 1개씩** 주고, 그 회차는 `isRewardedTier`상 **반복되지 않는다**(8일차 위로는
+     *   7의 배수만 반복). 7일차는 캐릭터(도장생 반상)뿐이다.
+     * ⓒ **그 출석 1개는 "경로"라 부르기 어렵다.** 받아도 돌뫼는 광고 4번, 묘수는 광고 9번이
+     *   여전히 필요하다 — 표의 KDoc도 *"조각의 무광고 경로는 의도적으로 없다"* 고 못박고 있다.
+     *   그래서 **광고만 남겼다**(2026-09-01 사용자 결정). ⚠️ 이것은 2026-08-29의 *"획득 수단을
+     *   둘 다 적는다"* 를 **의도적으로 뒤집은 것**이다 — 되돌리려면 없는 경로를 만들어 놓고
+     *   되돌리는 것이 아닌지부터 볼 것.
+     *
+     * ⚠️ **경계는 하나뿐이다(0개 / 1개 이상).** *"다 모았는데 아직 잠김"* 은 도달할 수 없다 —
+     * `BotCollectionState.withAdShard`가 `next >= required`인 순간 영구 획득으로 넘기므로 그
+     * 상태의 카드는 `isAvailable`이라 힌트를 아예 그리지 않는다. 아래 `coerceAtLeast(1)`은
+     * 저장값이 깨져 흘러들었을 때 *"0개 남았어요"* 라는 거짓말을 하지 않으려는 방어일 뿐이다.
+     */
+    private fun botShardUnlockHint(required: Int, shards: Int): String {
+        val remaining = (required - shards).coerceAtLeast(1)
+        val progress = if (shards <= 0) {
+            when (language) {
+                UiLanguage.Korean -> "조각 ${required}개를 모으면 열려요"
+                UiLanguage.English -> "Collect $required shards to unlock"
+                UiLanguage.Japanese -> "かけら${required}個で解放"
+                UiLanguage.ChineseSimplified -> "集齐 $required 个碎片即可解锁"
+            }
+        } else {
+            when (language) {
+                UiLanguage.Korean -> "조각 ${remaining}개 남았어요"
+                // ⚠️ 마지막 한 개일 때 `1 shards`가 되지 않게 한다 — 네 언어 중 수 일치가
+                // 필요한 것은 영어뿐이다.
+                UiLanguage.English -> "$remaining shard${if (remaining == 1) "" else "s"} to go"
+                UiLanguage.Japanese -> "かけら残り${remaining}個"
+                UiLanguage.ChineseSimplified -> "还差 $remaining 个碎片"
+            }
+        }
+        val howToEarn = when (language) {
+            UiLanguage.Korean -> "광고를 보면 1개씩 모여요"
+            UiLanguage.English -> "One shard per ad you watch"
+            UiLanguage.Japanese -> "広告1回で1個たまります"
+            UiLanguage.ChineseSimplified -> "每观看 1 次广告得 1 个"
+        }
+        return "$progress\n$howToEarn"
+    }
 
     /** 홈의 마이 페이지 진입 카드 부제(#24). 제목은 화면 제목을 그대로 쓴다(대국 기록 카드와 동일). */
     val homeMyPageSubtitle: String

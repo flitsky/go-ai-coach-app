@@ -40,8 +40,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import com.worksoc.goaicoach.application.botcharacter.BotCharacter
@@ -269,9 +271,21 @@ internal fun BotCharacterPickerDialog(
  * 캐러셀 카드 한 장(#49). 잠긴 캐릭터도 **숨기지 않는다** — 못 가진 것을 보여주는 게 이 픽커의
  * 목적이라, 감추면 신규 설치 사용자에게는 카드가 한 장만 남는다.
  *
- * ⚠️ **높이를 고정한 것이 중요하다.** 설명 길이가 캐릭터마다 다르고 언어마다 또 달라서, 높이를
+ * ⚠️ **카드끼리 높이가 같아야 한다.** 설명 길이가 캐릭터마다 다르고 언어마다 또 달라서, 높이를
  * 내용에 맡기면 넘길 때마다 다이얼로그가 출렁인다. 대신 글자 수가 넘칠 때를 대비해 각 줄에
  * `maxLines`+말줄임을 걸어 둔다.
+ *
+ * ## #64 ⓑ — 그런데 고정 `232.dp`는 배율을 따라가지 못했다
+ * 배율 1.3배에서 이름·설명이 커지자 **맨 아래 해금 힌트에 한 줄만 남아** `조각 10개 필요 —
+ * 광고 시…`로 잘렸다(2026-09-01 실기 확인). 잘린 것이 하필 *"무엇을 하면 열리는가"* 라,
+ * 이 픽커가 존재하는 이유가 그 자리에서 사라진다. 고친 축이 둘이다.
+ *
+ * 1. **높이를 배율에서 계산한다**([botCharacterCardHeight]) — 도장판(#64 ⓐ)처럼
+ *    `IntrinsicSize.Min`으로 형제끼리 맞출 수가 없다. 캐러셀은 **페이지를 한 장씩만 재므로**
+ *    다른 카드의 높이를 알 방법이 아예 없다.
+ * 2. **설명에만 `weight`를 건다.** [Column]은 가중치 없는 자식을 **먼저** 재므로 아바타·이름·힌트가
+ *    제 높이를 온전히 가져가고, 남는 자리를 설명이 쓴다 — 배율이 얼마든 **힌트가 눌리지 않는다.**
+ *    ⚠️ 이 순서를 뒤집어 힌트에 `weight`를 걸면 #64 ⓑ가 그대로 돌아온다.
  */
 @Composable
 private fun BotCharacterCard(
@@ -287,7 +301,7 @@ private fun BotCharacterCard(
     val shape = RoundedCornerShape(16.dp)
     val cardModifier = Modifier
         .fillMaxWidth()
-        .height(232.dp)
+        .height(botCharacterCardHeight())
         .clip(shape)
         .background(MaterialTheme.colorScheme.surface)
         .border(
@@ -335,6 +349,10 @@ private fun BotCharacterCard(
         )
         Text(
             text = strings.botCharacterDescription(character),
+            // ⚠️ **이 카드에서 유일하게 가중치를 가진 줄이다**(#64 ⓑ). 소개는 분위기이고 힌트는
+            // 할 일이라, 자리가 모자라면 **줄어야 하는 쪽은 이쪽**이다. `fill = false`라 남는
+            // 자리를 억지로 채우지도 않는다.
+            modifier = Modifier.weight(1f, fill = false),
             style = MaterialTheme.typography.bodySmall,
             textAlign = TextAlign.Center,
             maxLines = 3,
@@ -348,7 +366,9 @@ private fun BotCharacterCard(
                     text = hint,
                     style = MaterialTheme.typography.labelSmall,
                     textAlign = TextAlign.Center,
-                    maxLines = 3,
+                    // ⚠️ **`3`이 아니라 `4`다**(#64 ⓒ). 조각 힌트가 `\n`으로 두 줄을 이미 쓰는데,
+                    // 배율 2.0배에서는 둘째 줄이 혼자 두 줄로 접힌다 — 3이면 거기서 말줄임된다.
+                    maxLines = 4,
                     overflow = TextOverflow.Ellipsis,
                     color = MaterialTheme.colorScheme.primary,
                 )
@@ -356,6 +376,24 @@ private fun BotCharacterCard(
         }
     }
 }
+
+/**
+ * 카드 한 장의 높이(#64 ⓑ). **배율 1.0배에서는 예전 값 그대로**이고, 배율이 오르는 만큼 함께 큰다.
+ *
+ * 왜 단순 비례인가 — 카드 폭은 `dp`라 그대로인데 글자만 커지므로, 배율이 오르면 **같은 문장이 더
+ * 많은 줄로 접힌다.** 즉 필요한 것은 "글자 높이만큼"이 아니라 **줄 수까지 늘어날 여유**다. 비례로
+ * 키우면 그림·여백이 차지하는 고정분(약 134dp)이 그대로 남는 만큼 **글자 몫이 배율보다 빠르게**
+ * 늘어, 접히는 줄을 그대로 흡수한다(1.0배 6.1줄 → 1.3배 8.0줄 → 2.0배 10.3줄).
+ *
+ * ⚠️ **1.0배 아래로는 줄이지 않는다.** 작은 글꼴 설정에서 카드가 쪼그라들면 #49가 맞춰 둔
+ * 캐러셀 비례가 무너지는데, 거기서 얻을 것은 없다.
+ */
+@Composable
+private fun botCharacterCardHeight(): Dp =
+    BotCharacterCardBaseHeight * LocalDensity.current.fontScale.coerceAtLeast(1f)
+
+/** 배율 1.0배의 카드 높이(#49). ⚠️ 바꾸면 **모든 배율이 같은 비율로** 따라 움직인다. */
+private val BotCharacterCardBaseHeight = 232.dp
 
 /** 현재 위치와 전체 개수를 같이 알리는 점 인디케이터(#49의 ⓑ 완화책). */
 @Composable

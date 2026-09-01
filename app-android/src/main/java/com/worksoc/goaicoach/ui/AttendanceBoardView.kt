@@ -8,9 +8,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -24,11 +27,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.R
 import com.worksoc.goaicoach.application.attendance.AttendanceBoard
@@ -74,15 +79,34 @@ internal fun AttendanceStampBoard(
 /**
  * 도장판 한 행. [compact]가 참이면 여섯 칸(1~6일차), 거짓이면 네 칸(주 단위)이다 —
  * 두 행이 **같은 전체 너비**를 나눠 쓰므로 네 칸 쪽이 자연히 넓다.
+ *
+ * ## 높이를 내용에 맡기되, 한 행은 같은 높이로 묶는다 (#64 ⓐ)
+ * 칸 높이가 고정 `dp`였을 때 **글자만 폰트 배율을 따라 커지고 칸은 그대로**여서, 배율 1.3배에서
+ * 좁은 칸의 개수 줄(`30`·`3`)과 넓은 칸의 셋째 보상 줄(`▶| 3`)이 아래 절반부터 잘렸다
+ * (2026-09-01 실기 확인). [IntrinsicSize.Min]이 이 행에서 **가장 높은 칸**을 먼저 재고,
+ * 각 칸의 `fillMaxHeight()`가 나머지를 거기에 맞춘다.
+ *
+ * ⚠️ **행 단위로 묶는 것이 요점이다.** 칸마다 `heightIn`만 걸면 글리프 칸(1~4일차)은 자라고
+ * 얼굴 칸(5·6일차)은 바닥값에 머물러 **한 행의 칸 높이가 들쭉날쭉해진다** — #57이 빈 줄까지
+ * 남겨 가며 맞춰 둔 그 정렬이 무너진다.
  */
 @Composable
 private fun StampRow(cells: List<AttendanceBoardCell>, collection: BotCollectionState, compact: Boolean) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(IntrinsicSize.Min),
         horizontalArrangement = Arrangement.spacedBy(if (compact) 4.dp else 6.dp),
     ) {
         cells.forEach { cell ->
-            StampCell(cell = cell, collection = collection, compact = compact, modifier = Modifier.weight(1f))
+            StampCell(
+                cell = cell,
+                collection = collection,
+                compact = compact,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight(),
+            )
         }
     }
 }
@@ -107,7 +131,10 @@ private fun StampCell(
         modifier = modifier
             // ⚠️ #55의 `aspectRatio(1f)`를 버렸다. 45dp 정사각에는 회차·글리프·개수가 함께
             // 들어가지 못해 셋 중 하나가 늘 잘렸다. 세로로 조금 긴 칸이 도장 자리처럼도 보인다.
-            .height(if (compact) CompactCellHeight else WideCellHeight)
+            // ⚠️ **`height`가 아니라 `heightIn(min=)`이다**(#64 ⓐ) — 이것은 배율 1.0배의 모양을
+            // 그대로 지키는 **바닥값**일 뿐이고, 글자가 커지면 칸이 따라 자란다. 실제 높이는
+            // [StampRow]가 행 단위로 정한다.
+            .heightIn(min = if (compact) CompactCellMinHeight else WideCellMinHeight)
             .clip(shape)
             .background(background)
             .border(
@@ -268,10 +295,30 @@ private fun RewardFace(
     }
 }
 
-/** 받아 간 칸에 겹치는 인장. 그림을 가리지 않도록 테두리 원 안에 표시 하나만 둔다. */
+/**
+ * 받아 간 칸에 겹치는 인장. 그림을 가리지 않도록 테두리 원 안에 표시 하나만 둔다.
+ *
+ * ## ⚠️ 인장도 #64 ⓐ와 같은 뿌리로 잘리고 있었다 (2026-09-01 사용자 승인으로 함께 고침)
+ * 원은 고정 `dp`인데 안의 [StampMark]만 폰트 배율을 따라 커져서, 배율 2.0배에서는 체크가 통째로
+ * 잘리고 **빈 동그라미만** 남았다 — 이 칸의 유일한 "받아 감" 표시가 그 배율에서 사라졌다.
+ *
+ * ⚠️ **고친 축은 원이 아니라 글자다.** 처음에는 [CompactSealSize]를 배율만큼 키웠는데, 배율
+ * 2.0배에서 32dp 원이 20dp 글리프 위에 앉아 **1·3·5·6일차의 보상 그림이 통째로 가려졌다**(실기
+ * 확인) — 아래 `TopEnd` 주석이 경고하는 바로 그 사고가 크기 축으로 재현된 것이다. 그래서 원을
+ * 그대로 두고 **표시를 `dp`에 묶었다**: `dp.toSp()`는 지금 밀도로 환산한 값이라 배율이 얼마든
+ * 화면에 찍히는 크기가 같다.
+ *
+ * ✅ **이 표시는 글자가 아니라 그림이다** — 칸 전체가 `clearAndSetSemantics`로 묶여 있어 뜻은
+ * [describeCell]이 말로 전하고, 인장은 스크린 리더에 읽히지도 않는다. 그래서 배율을 안 따라가도
+ * 잃는 것이 없다. 반대로 보상 그림을 가리면 #57이 도장을 겹치기로 한 이유가 무너진다.
+ */
 @Composable
 private fun BoxScope.StampSeal(compact: Boolean) {
     val seal = MaterialTheme.colorScheme.primary
+    // 인장이 작아 `labelLarge`로는 원 밖으로 넘친다 — 좁은 칸에는 한 단계 작은 글자.
+    val markSize = with(LocalDensity.current) {
+        (if (compact) CompactMarkSize else WideMarkSize).toSp()
+    }
     Box(
         modifier = Modifier
             // ⚠️ **가운데에 두지 말 것.** 처음에는 좁은 칸의 인장을 그림 한가운데에 찍었는데,
@@ -286,12 +333,13 @@ private fun BoxScope.StampSeal(compact: Boolean) {
     ) {
         Text(
             text = StampMark,
-            // 인장이 작아 `labelLarge`로는 원 밖으로 넘친다 — 좁은 칸에는 한 단계 작은 글자.
-            style = if (compact) {
-                MaterialTheme.typography.labelSmall
-            } else {
-                MaterialTheme.typography.labelMedium
-            },
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontSize = markSize,
+                // ⚠️ 글자 크기만 묶고 줄 높이를 두면 **줄 높이가 배율을 따라 커져** 글자 상자가
+                // 원보다 높아지고, 잘림이 그대로 돌아온다. 폰트 기본값(`Unspecified`)은 글자
+                // 크기에 비례하므로 함께 묶인다.
+                lineHeight = TextUnit.Unspecified,
+            ),
             color = seal,
         )
     }
@@ -378,11 +426,23 @@ private const val StampedFaceAlpha: Float = 0.45f
 
 private const val SealFillAlpha: Float = 0.12f
 
-private val CompactCellHeight = 68.dp
-private val WideCellHeight = 108.dp
+/**
+ * 칸 높이의 **바닥값**(#64 ⓐ에서 `height` → `heightIn(min=)`으로 성격이 바뀌었다).
+ * 배율 1.0배에서 내용이 요구하는 높이보다 조금 커서, 그 배율의 모양은 예전 그대로다.
+ * ⚠️ 상한이 아니다 — 여기서 값을 올리면 **모든 배율에서** 칸이 함께 커진다.
+ */
+private val CompactCellMinHeight = 68.dp
+private val WideCellMinHeight = 108.dp
 private val CompactGlyphSize = 20.dp
 private val WideGlyphSize = 16.dp
 private val CompactAvatarSize = 26.dp
 private val WideAvatarSize = 40.dp
 private val CompactSealSize = 16.dp
 private val WideSealSize = 20.dp
+
+/**
+ * 인장 표시([StampMark])의 크기 — **`sp`가 아니라 `dp`다**(#64). 원 안에 갇힌 그림이라 배율을
+ * 따라가면 안 되고, 배율 1.0배에서 쓰던 `labelSmall`(11sp)·`labelMedium`(12sp)과 같은 값이다.
+ */
+private val CompactMarkSize = 11.dp
+private val WideMarkSize = 12.dp
