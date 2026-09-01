@@ -787,7 +787,12 @@ private fun GoCoachScreen(
     // ⚠️ **이 provider 안에 있어야 한다.** 밖에 두면 `LocalConsumableUiState`가 아직 제공되지
     // 않아 기본값(빈 상태)이 잡히고, 지급 후 재고 표시를 갱신하는 `refresh()`가 **아무 일도 하지
     // 않는다** — 마이 페이지에서 "1일차 도장은 찍혔는데 1회권 0개"로 드러났던 결함이다(#56).
-    AttendanceRewardClaimDialog(context)
+    // ⚠️ 초기화 안내가 떠 있는 동안에는 출석 팝업을 미룬다(#63). 순서로는 안 된다 — Compose
+    // 다이얼로그는 각자 별도 윈도우라 나중에 선언해도 위로 오지 않아, 안내가 출석 팝업 뒤에
+    // 가려 사용자가 "왜 1일차인지"를 나중에야 읽었다(2026-09-01 실기에서 확인).
+    if (!ReleaseResetNoticeDialog(context)) {
+        AttendanceRewardClaimDialog(context)
+    }
     when (currentDestination) {
         ScreenDestination.Onboarding -> {
             OnboardingScreen(

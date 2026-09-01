@@ -1,6 +1,8 @@
 package com.worksoc.goaicoach.architecture
 
 import java.io.File
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -1471,7 +1473,12 @@ class LayeringContractTest {
         // comment recording that, so the call does not drift back out. No new state hooks.
         // #39: +1 — 오토세이브 요청에 `isPlayMagnifierEnabled` 한 줄. 착수 돋보기 토글이
         // 영구 저장돼야 하고, 이 셸이 오토세이브 요청을 조립하는 유일한 지점이다. 상태 훅 증가 없음.
-        val lineBudget = 875
+        // #63: +5 — 정식 릴리즈 초기화 안내 다이얼로그와, 그것이 떠 있는 동안 출석 Claim 팝업을
+        // 미루는 게이트(+ 사유 주석 3줄). ⚠️ 선언 순서로 해결하려다 실패했다 — Compose 다이얼로그는
+        // 각자 별도 윈도우라 나중에 선언해도 위로 오지 않아, 안내가 출석 팝업 뒤에 가렸다
+        // (2026-09-01 실기 확인). 그 실패 기록이 주석 3줄의 값이다. 다이얼로그 자신의 상태는
+        // ReleaseResetNoticeDialog.kt가 들고 있어 **상태 훅은 늘지 않는다**.
+        val lineBudget = 880
         val stateHookBudget = 46
 
         val goCoachApp = repoRoot()
@@ -1582,12 +1589,104 @@ class LayeringContractTest {
      * actual code. Multi-line raw strings/comments spanning lines are out of
      * scope; triple- and double-quoted single-line strings are handled.
      */
+    /**
+     * 파일 전체에서 주석·문자열을 걷어낸 **코드만** 남긴다.
+     *
+     * ⚠️ **여러 줄 블록 주석(KDoc)을 먼저 지우는 것이 핵심이다.** [stripStringsAndTrailingComment]는
+     * 줄 단위라 `/* */`도 **한 줄 안에 닫힌 것만** 지운다 — KDoc 본문 줄(` * ...`)은 그대로 남는다.
+     * 그래서 이 헬퍼 없이 파일 전체를 훑으면 **주석에 적힌 클래스 이름이 코드로 오인된다.**
+     * 실제로 그 오탐 때문에 순서 계약 테스트가 한 번 거짓 통과했다(2026-09-01, #63) —
+     * 호출 순서를 뒤집었는데도 KDoc의 언급이 먼저 잡혀 통과했다.
+     */
+    private fun codeOnly(source: String): String =
+        source
+            .replace(Regex("/\\*.*?\\*/", RegexOption.DOT_MATCHES_ALL), "")
+            .lineSequence()
+            .joinToString("\n") { stripStringsAndTrailingComment(it) }
+
     private fun stripStringsAndTrailingComment(line: String): String =
         line
             .replace(Regex("\"\"\".*?\"\"\""), "\"\"")
             .replace(Regex("\"(\\\\.|[^\"\\\\])*\""), "\"\"")
             .replace(Regex("/\\*.*?\\*/"), "")
             .substringBefore("//")
+
+    /**
+     * 정식 릴리즈 초기화(#63)는 **다른 무엇도 읽거나 쓰기 전에** 끝나야 한다. 출석 체크인이 먼저
+     * 돌면 그날 기록이 붙었다가 곧바로 지워져 **사용자가 앱을 켰는데 출석이 안 붙는다.**
+     *
+     * ⚠️ 순서로만 성립하는 계약이라 **단위 테스트로는 절대 안 잡힌다** — 두 코디네이터는 각자
+     * 정상 동작하고, 틀리는 것은 호출 순서뿐이다. 그래서 소스 순서를 직접 못박는다.
+     */
+    @Test
+    fun releaseResetRunsBeforeAnythingElseTouchesStorage() {
+        val application = repoRoot()
+            .resolve("app-android/src/main/java/com/worksoc/goaicoach/GoAiCoachApplication.kt")
+        val text = codeOnly(application.readText())
+
+        val resetAt = text.indexOf("ReleaseResetCoordinator(this)")
+        val checkInAt = text.indexOf("AttendanceCheckInCoordinator(this)")
+
+        assertTrue(
+            "GoAiCoachApplication must run ReleaseResetCoordinator (backlog #63) before anything " +
+                "else touches storage — found ReleaseResetCoordinator at $resetAt and " +
+                "AttendanceCheckInCoordinator at $checkInAt",
+            resetAt in 0 until checkInAt,
+        )
+    }
+
+    /**
+     * 초기화가 **권한 넷만** 지우고 사용자 콘텐츠·설정은 남기는지 못박는다
+     * (`feature-access-principles/README.md` 8.3-2의 범위표).
+     *
+     * ⚠️ 이 테스트가 막는 사고는 *"초기화니까 전부 지우자"* 다. 대국 기록과 진행 중 대국은 권한이
+     * 아니라 **사용자가 직접 만든 것**이고, 기기 식별자를 지우면 진단 로그의 기기 추적이 끊긴다.
+     */
+    @Test
+    fun releaseResetClearsEntitlementsOnlyAndSparesUserContent() {
+        val coordinator = repoRoot()
+            .resolve("app-android/src/main/java/com/worksoc/goaicoach/ReleaseResetCoordinator.kt")
+        val text = codeOnly(coordinator.readText())
+
+        val required = listOf(
+            "AttendanceStore",
+            "BotCollectionStore",
+            "ConsumableInventoryStore",
+            "PremiumStateStore",
+        )
+        required.forEach { store ->
+            assertTrue(
+                "ReleaseResetCoordinator must clear $store — attendance pays each tier once, so " +
+                    "clearing the collection without attendance strands characters permanently",
+                text.contains("$store(context)"),
+            )
+        }
+
+        // ⚠️ 이름이 등장하는 것만으로는 부족하다 — 읽기만 하고 지우지 않아도 위 검사는 통과한다.
+        // clear() 호출 수를 넷으로 못박아 "하나를 빠뜨렸다"와 "하나를 더 지웠다"를 함께 잡는다.
+        // 형태(`Store(context).clear()`)로 세지 않는 이유: 지우기 전에 load()로 내용을 봐야 해서
+        // 지역변수를 거치는 것이 정상이고, 형태로 묶으면 그 정상적인 코드가 실패한다.
+        assertEquals(
+            "ReleaseResetCoordinator must call clear() exactly ${required.size} times — one per " +
+                "entitlement store, and nothing else",
+            required.size,
+            Regex("\\.clear\\(\\)").findAll(text).count(),
+        )
+
+        listOf(
+            "GameHistoryStore",
+            "GameSessionStore",
+            "UserPreferencesStore",
+            "UiLanguageStore",
+            "DeviceIdentityStore",
+        ).forEach { store ->
+            assertFalse(
+                "ReleaseResetCoordinator must NOT touch $store — user content, settings and the " +
+                    "diagnostic device id survive the release reset (8.3-2 scope table)",
+                text.contains(store),
+            )
+        }
+    }
 
     private fun repoRoot(): File {
         var current = File(".").canonicalFile

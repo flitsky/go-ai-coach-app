@@ -16,6 +16,17 @@ internal class BotCollectionStore(context: Context) : BotCollectionStorePort {
             .apply()
     }
 
+        /**
+     * 획득 캐릭터·조각 진행도 저장분을 통째로 지워 **설치 직후와 같은 상태로 되돌린다**(정식 릴리즈 초기화, 백로그 #63).
+     *
+     * ⚠️ 기본값을 `save`하지 않고 키를 **제거**한다 — 기본값을 써 넣으면 "한 번도 저장한 적 없음"과
+     * "기본값을 저장함"이 저장소에서 구분되지 않고, 나중에 스키마가 늘 때 그 둘의 의미가 갈릴 수 있다.
+     * 신규 설치를 그대로 재현하는 쪽이 초기화의 정의에 맞다.
+     */
+    fun clear() {
+        prefs.edit().clear().commit()
+    }
+
     override fun load(): BotCollectionState {
         val raw = prefs.getString(StateKey, null) ?: return BotCollectionState()
         return BotCollectionCodec.decode(raw) ?: BotCollectionState()
