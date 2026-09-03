@@ -14,6 +14,7 @@ import com.worksoc.goaicoach.application.attendance.buildAttendanceBoard
 import com.worksoc.goaicoach.application.botcharacter.BotCollectionState
 import com.worksoc.goaicoach.application.attendance.grantedAmountOf
 import com.worksoc.goaicoach.application.consumable.ConsumableInventory
+import com.worksoc.goaicoach.application.premium.PremiumState
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -57,13 +58,28 @@ import com.worksoc.goaicoach.persistence.PremiumStateStore
  *
  * `GoCoachApp.kt`는 이 함수 호출 한 줄만 하면 된다 — 저장소 네 개와 상태를 전부 여기서 들고 있어
  * 셸의 라인·상태훅 예산을 지킨다(`LayeringContractTest.goCoachAppStaysWithinShrinkingUiShellBudget`).
+ * ⚠️ [onPremiumChanged]도 **그 한 줄 안에** 넘긴다 — 예산에 여유가 0이라 줄이 늘면 그 테스트가 깨진다.
  *
  * 체크인 자체는 앱 시작 시 백그라운드에서 도는 `AttendanceCheckInCoordinator`도 동시에 수행하지만
  * 멱등이라(같은 UTC 날짜 안에서는 카운트가 오르지 않는다) 경합이 나도 최종 상태가 갈라지지 않는다.
  * 지급은 이제 그쪽에서 하지 않는다 — Claim이 유일한 지급 경로다.
  */
+/**
+ * [onPremiumChanged] — 지급으로 프리미엄 원장이 바뀌었을 때 **화면이 들고 있는 상태를 되읽게**
+ * 하는 통로(백로그 #65).
+ *
+ * ⚠️ **없으면 3일차 보상이 그 세션 동안 먹지 않는다.** 지급은 저장소에 직접 쓰는데
+ * `GoCoachApp`의 `premiumState`는 앱 실행당 한 번만 로드되므로, 무르기 영구 해금을 **받고도**
+ * 게이팅이 계속 `Locked`로 판정한다(`FeatureAccessPolicy`가 그 인메모리 값을 본다). 저장소에는
+ * 들어가 있어 다음 실행에서는 정상이라, "지급이 안 됐다"로 오진하기 쉬운 종류의 결함이었다.
+ * 재고에 대해 [ConsumableUiState.refresh]가 하는 일과 **정확히 같은 처방**이다 — 아래 지급
+ * 직후 주석이 같은 함정을 이미 기록해 두고 있었는데, 프리미엄 쪽만 빠져 있었다.
+ */
 @Composable
-internal fun AttendanceRewardClaimDialog(context: Context) {
+internal fun AttendanceRewardClaimDialog(
+    context: Context,
+    onPremiumChanged: (PremiumState) -> Unit,
+) {
     val consumables = LocalConsumableUiState.current
     val attendanceStore = remember(context) { AttendanceStore(context) }
     val premiumStore = remember(context) { PremiumStateStore(context) }
@@ -114,6 +130,12 @@ internal fun AttendanceRewardClaimDialog(context: Context) {
             // ⚠️ 지급은 저장소에 **직접** 쓴다 — 화면이 들고 있는 재고에게 알려 주지 않으면
             // 다음 실행 전까지 옛 값이 남는다(마이 페이지에서 "도장은 찍혔는데 0개"로 드러났다).
             consumables.refresh()
+            // ⚠️ 프리미엄도 같은 이유로 되읽는다(#65) — 3일차 보상이 무르기 영구 해금이고,
+            // 이 한 줄이 없으면 받은 그 세션 내내 무르기가 잠긴 채로 남는다.
+            // ⚠️ 이 호출은 **`onClaim` 안**에 있어야 한다 — 확인 버튼과 뒤로 가기·바깥 탭이 모두
+            // 이 함수를 타므로(위 `onDismissRequest`), 버튼 쪽에만 걸면 닫아서 받은 사용자에게
+            // 조용히 누락된다.
+            onPremiumChanged(premiumStore.load())
             pending = emptyList()
         },
     )

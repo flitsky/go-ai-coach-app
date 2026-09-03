@@ -791,7 +791,7 @@ private fun GoCoachScreen(
     // 다이얼로그는 각자 별도 윈도우라 나중에 선언해도 위로 오지 않아, 안내가 출석 팝업 뒤에
     // 가려 사용자가 "왜 1일차인지"를 나중에야 읽었다(2026-09-01 실기에서 확인).
     if (!ReleaseResetNoticeDialog(context)) {
-        AttendanceRewardClaimDialog(context)
+        AttendanceRewardClaimDialog(context) { next -> premiumState = next }
     }
     when (currentDestination) {
         ScreenDestination.Onboarding -> {
