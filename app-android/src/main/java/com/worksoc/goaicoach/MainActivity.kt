@@ -15,7 +15,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
-import com.worksoc.goaicoach.ui.DevFontScaleOverride
+import com.worksoc.goaicoach.persistence.UserPreferencesStore
+import com.worksoc.goaicoach.ui.AppFontScaleState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,18 +46,19 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            // ⚠️ **개발자 배율 오버라이드는 여기서 적용해야 한다**(백로그 #81) — 컴포지션 전체를
-            // 감싸야 모든 화면이 함께 커지고, 그래야 #64가 낳은 잘림을 실제로 재현할 수 있다.
-            // `GoCoachApp`에서는 할 수 없다(라인 예산 880/880, 함정 3번).
-            // ⚠️ 시스템 설정을 바꾸는 것이 아니라 **이 앱의 `LocalDensity`만** 덮어쓴다 —
-            // `WRITE_SETTINGS` 없이, 앱을 나가면 아무것도 남지 않는다.
+            // ⚠️ **앱 글꼴 배율은 여기서 적용해야 한다**(백로그 #81) — 컴포지션 전체를 감싸야
+            // 모든 화면이 함께 바뀐다. `GoCoachApp`에서는 할 수 없다(라인 예산 880/880, 함정 3번).
+            //
+            // ⚠️ **이 앱은 시스템 배율을 따르지 않는다.** 저장된 값(기본 1.0)을 그대로 쓰므로,
+            // 시스템에서 글자를 키운 사용자도 이 앱에서는 1.0으로 본다 — 2026-09-04 사용자 결정이고
+            // **접근성 비용이 있다**(사유와 되돌리는 방법은 `DefaultAppFontScale`의 KDoc).
+            //
+            // ⚠️ `load`를 여기서 한 번 부르지 않으면 **저장값이 무시된다** — 저장은 되는데 반영이
+            // 안 되는 것처럼 보이는, 원인 찾기 어려운 종류다.
+            val preferencesStore = remember(applicationContext) { UserPreferencesStore(applicationContext) }
+            LaunchedEffect(preferencesStore) { AppFontScaleState.load(preferencesStore) }
             val baseDensity = LocalDensity.current
-            val overrideScale = DevFontScaleOverride.scale
-            val density = if (overrideScale == null) {
-                baseDensity
-            } else {
-                Density(density = baseDensity.density, fontScale = overrideScale)
-            }
+            val density = Density(density = baseDensity.density, fontScale = AppFontScaleState.scale)
             CompositionLocalProvider(LocalDensity provides density) {
             var engineBootstrap by remember { mutableStateOf<EngineBootstrap?>(null) }
 

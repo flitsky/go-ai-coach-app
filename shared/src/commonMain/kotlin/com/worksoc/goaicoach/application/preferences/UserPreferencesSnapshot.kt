@@ -39,6 +39,15 @@ data class UserPreferencesSnapshot(
     val showMoveReview: Boolean = false,
     val hasSeenOnboarding: Boolean = false,
     val gameSetupUxMode: GameSetupUxMode = GameSetupUxMode.Compact,
+    /**
+     * 앱 글꼴 배율(백로그 #81). **시스템 배율을 따르지 않고 이 값을 쓴다** — 사유와 접근성 비용은
+     * [DefaultAppFontScale]의 KDoc에 있다.
+     *
+     * ⚠️ **오토세이브가 관리하지 않는 필드다** — `buildUserPreferencesAutosaveSnapshot`이
+     * `hasSeenOnboarding`처럼 `current`에서 이어 붙여야 한다. 배선하지 않으면 대국 설정을 한 번만
+     * 바꿔도 **다음 저장에서 조용히 1.0으로 돌아간다**(함정 2번, 과거 실제 버그).
+     */
+    val appFontScale: Float = DefaultAppFontScale,
     val isPlayHapticEnabled: Boolean = true,
     val isBoardMaxSize: Boolean = true,
     val isPlayMagnifierEnabled: Boolean = true,

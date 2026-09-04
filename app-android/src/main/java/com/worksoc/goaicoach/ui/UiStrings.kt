@@ -388,20 +388,20 @@ internal data class UiStrings(
         }
 
     /**
-     * 개발자 1차의 글꼴 배율 행 부제(백로그 #81) — **지금 배율**과 **그것이 앱 오버라이드인지**를
-     * 함께 말한다.
+     * 글꼴 배율 행 부제(백로그 #81) — **지금 배율**과 **그것이 앱에 저장된 값**임을 말한다.
      *
-     * ⚠️ 둘을 구분해 적어야 한다. 오버라이드 중인데 "시스템 값"으로 읽히면 *"왜 시스템에서 바꿔도
-     * 안 변하지"* 로 오진하고, 반대로 시스템 값인데 오버라이드로 읽히면 원래 배율을 잃었다고 본다.
+     * ⚠️ **"앱에 저장됨"이라고 적는다.** 이 앱은 시스템 배율을 따르지 않으므로, 시스템 값처럼
+     * 읽히면 *"시스템에서 바꿨는데 왜 안 변하지"* 로 오진한다 — 그 오진이 실제로 이 항목을 만든
+     * 제보였다(2026-09-04).
      *
      * ⚠️ **`fun`이라 리플렉션 그물이 못 본다**(함정 10번) — `UiStringsDevFontScaleTest`가 손 그물이다.
      */
-    fun settingsDevFontScaleSubtitle(current: Float, isOverridden: Boolean): String =
+    fun settingsDevFontScaleSubtitle(current: Float): String =
         when (language) {
-            UiLanguage.Korean -> if (isOverridden) "×$current · 앱에서 덮어씀" else "×$current · 시스템 값"
-            UiLanguage.English -> if (isOverridden) "×$current · overridden in app" else "×$current · system value"
-            UiLanguage.Japanese -> if (isOverridden) "×$current · アプリで上書き" else "×$current · システム値"
-            UiLanguage.ChineseSimplified -> if (isOverridden) "×$current · 应用内覆盖" else "×$current · 系统值"
+            UiLanguage.Korean -> "×$current · 앱에 저장됨"
+            UiLanguage.English -> "×$current · saved in app"
+            UiLanguage.Japanese -> "×$current · アプリに保存"
+            UiLanguage.ChineseSimplified -> "×$current · 已保存在应用"
         }
 
     fun settingsDevAttendanceSubtitle(current: Int, next: Int, nextIsRewarded: Boolean): String =

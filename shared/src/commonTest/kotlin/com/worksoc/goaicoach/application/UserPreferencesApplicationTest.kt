@@ -266,6 +266,10 @@ class UserPreferencesApplicationTest {
             UserPreferencesSnapshot(
                 hasSeenOnboarding = true,
                 gameSetupUxMode = GameSetupUxMode.Simple,
+                // 백로그 #81 — 글꼴 배율도 오토세이브가 모르는 필드다. ⚠️ 이 카나리아가 특히
+                // 중요한 이유: 배율은 **사용자가 직접 고르는 설정**이라, 되돌아가면 곧바로 눈에
+                // 보이는 회귀가 된다(대국 설정을 한 번 만지면 글자 크기가 제자리로 돌아간다).
+                appFontScale = 1.5f,
             ),
         )
 
@@ -292,6 +296,12 @@ class UserPreferencesApplicationTest {
 
         assertTrue(store.saved.hasSeenOnboarding)
         assertEquals(GameSetupUxMode.Simple, store.saved.gameSetupUxMode)
+        assertEquals(
+            1.5f,
+            store.saved.appFontScale,
+            "오토세이브가 글꼴 배율을 기본값으로 되돌렸다 — 사용자가 고른 크기가 대국 설정을 " +
+                "한 번 만지는 순간 사라진다(#81, 함정 2번).",
+        )
     }
 
     private class RecordingUserPreferencesStore : UserPreferencesStorePort {

@@ -543,15 +543,12 @@ internal fun SettingsScreen(
                             fontWeight = FontWeight.SemiBold,
                         )
                         Text(
-                            text = strings.settingsDevFontScaleSubtitle(
-                                current = LocalDensity.current.fontScale,
-                                isOverridden = DevFontScaleOverride.scale != null,
-                            ),
+                            text = strings.settingsDevFontScaleSubtitle(AppFontScaleState.scale),
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.secondary,
                         )
                     }
-                    TextButton(onClick = DevFontScaleOverride::cycle) {
+                    TextButton(onClick = { AppFontScaleState.cycle(preferencesStore) }) {
                         Text(strings.settingsDevFontScaleCycleAction)
                     }
                 }
