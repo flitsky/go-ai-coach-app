@@ -81,6 +81,27 @@ class DeveloperSectionTierContractTest {
     }
 
     /**
+     * ⚠️ **down을 소비해야 한다 — 소비하지 않았던 것이 실제 버그였다**(2026-09-04 사용자 제보).
+     *
+     * 버전 텍스트는 세로 스크롤 안에 있다. 소비하지 않으면 손가락이 **터치 슬롭을 넘는 순간
+     * 스크롤이 제스처를 가져가고** `waitForUpOrCancellation()`이 3초 전에 `null`을 돌려주므로,
+     * 홀드가 **조용히 무시된다.** 3초를 가만히 누르는 것은 실제 손가락으로는 드물다.
+     *
+     * ⚠️ **에뮬레이터에서는 재현되지 않는다** — `adb input swipe`는 DOWN과 UP만 보내고 MOVE를
+     * 만들지 않아 스크롤이 개입할 여지가 없다. 그래서 기기 셸에서 `input motionevent`로
+     * 지터를 섞어야 이 경로를 밟는다. **이 계약이 그 재현 비용을 대신한다.**
+     */
+    @Test
+    fun theHoldConsumesTheDownSoTheScrollCannotStealIt() {
+        assertTrue(
+            "down을 소비하지 않는다 — 손가락 지터가 터치 슬롭을 넘으면 스크롤이 홀드를 가져가고 " +
+                "3초 홀드가 조용히 무시된다(2026-09-04 제보). 에뮬레이터에서는 재현되지 않으므로 " +
+                "이 계약이 유일한 그물이다.",
+            settings.contains("awaitFirstDown(requireUnconsumed = false).consume()"),
+        )
+    }
+
+    /**
      * ⚠️ **1차에는 권한을 만드는 컨트롤이 없어야 한다.** 프리미엄 부여는 저장소에 프리미엄
      * 소스를 기록하고 `FeatureAccessPolicy.resolve`가 소스에서 곧바로 통과시켜 **모든 유료 기능이
      * 한꺼번에 열린다.** 그래서 2차다. 위치를 소스 오프셋으로 확인한다.

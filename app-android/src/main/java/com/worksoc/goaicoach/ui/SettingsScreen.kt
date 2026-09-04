@@ -415,10 +415,16 @@ internal fun SettingsScreen(
                         // 이유로 단일 `pointerInput`을 쓴다) — 그래서 하나로 합쳤다.
                         modifier = Modifier.pointerInput(isDeveloperModeEnabled) {
                             awaitEachGesture {
-                                // ⚠️ **down을 소비하지 않는다.** 이 텍스트는 세로 스크롤 안에 있어,
-                                // 소비하면 여기서 시작한 드래그로 화면을 못 굴린다. 스크롤이
-                                // 제스처를 가져가면 아래 `waitForUpOrCancellation()`이 null을 준다.
-                                awaitFirstDown(requireUnconsumed = false)
+                                // ⚠️ **down을 소비한다 — 처음에는 소비하지 않았고 그것이 버그였다**
+                                // (2026-09-04 사용자 제보: 폰에서 3초 홀드가 안 먹는다).
+                                // 이 텍스트는 세로 스크롤 안에 있어, 소비하지 않으면 손가락이
+                                // 터치 슬롭을 넘는 순간 **스크롤이 제스처를 가져가고**
+                                // `waitForUpOrCancellation()`이 3초 전에 null을 돌려준다 —
+                                // 그러면 홀드가 조용히 무시된다. `adb input swipe`는 MOVE
+                                // 이벤트를 만들지 않아 **에뮬레이터에서는 재현되지 않았다.**
+                                // · 잃는 것은 **이 한 줄 텍스트에서 스크롤을 시작하는 것**뿐이고,
+                                //   얻는 것은 기능 자체다 — `GoBoard.kt`도 같은 판단으로 소비한다.
+                                awaitFirstDown(requireUnconsumed = false).consume()
                                 var heldPastThreshold = false
                                 val releasedEarly = try {
                                     withTimeout(AdvancedDeveloperModeHoldMillis) { waitForUpOrCancellation() }
@@ -518,12 +524,37 @@ internal fun SettingsScreen(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // 읽기 전용 ② — **지금 글꼴 배율.** #64가 배율 관련 잘림을 네 자리에서 밟았는데,
-                // 재현할 때마다 시스템 설정을 왕복해야 했다.
-                DeveloperInfoRow(
-                    title = strings.settingsDevFontScaleTitle,
-                    value = "×${LocalDensity.current.fontScale}",
-                )
+                // **글꼴 배율을 앱 안에서 갈아 본다**(백로그 #81).
+                // ⚠️ 처음에는 **읽기 전용 표시**였다. 표시는 정확했지만(시스템에서 바꾸면 갱신된다)
+                // 원래 문제를 풀지 못했다 — #64를 재현하려면 매번 **시스템 설정을 왕복**해야 하는
+                // 것이 그 문제였고, 표시는 그 왕복을 줄여 주지 않는다. 게다가 주변 행이 전부
+                // 조작 가능해서 **이 행도 조작하는 것으로 읽힌다**(2026-09-04 사용자 제보).
+                // ⚠️ 시스템 설정을 바꾸는 것이 아니라 이 앱의 `LocalDensity`만 덮어쓴다 —
+                // 적용은 `MainActivity`가 컴포지션 전체를 감싸서 한다.
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = strings.settingsDevFontScaleTitle,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                        Text(
+                            text = strings.settingsDevFontScaleSubtitle(
+                                current = LocalDensity.current.fontScale,
+                                isOverridden = DevFontScaleOverride.scale != null,
+                            ),
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.secondary,
+                        )
+                    }
+                    TextButton(onClick = DevFontScaleOverride::cycle) {
+                        Text(strings.settingsDevFontScaleCycleAction)
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -851,12 +882,13 @@ private fun onVersionLongHold(
  */
 @Composable
 private fun DeveloperInfoRow(title: String, value: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(text = title, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+    // ⚠️ **제목과 값을 좌우로 나누지 않는다 — 처음엔 그렇게 했고 배율 2.0배에서 깨졌다**
+    // (2026-09-04, #81이 만든 배율 전환 버튼으로 발견했다). 값이 길면(`0.8.10 (810) · debug ·
+    // test ads`) 폭을 다 먹어 제목이 `빌 / 드`로 쪼개진다. 위아래로 두면 서로 폭을 다투지 않고,
+    // **주변 행들과 같은 모양**(제목 위, 부제 아래)이 되기도 한다.
+    // ⚠️ 고정 높이는 여전히 금지다(함정 9번) — 높이를 지정하지 않아 배율을 저절로 따라간다.
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(text = title, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
         Text(
             text = value,
             fontSize = 12.sp,

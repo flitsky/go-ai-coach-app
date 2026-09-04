@@ -169,6 +169,7 @@ internal val UiStringsEnglish = UiStringsKorean.copy(
     settingsDevTierAdvancedTitle = "Developer tests (advanced) · debug only",
     settingsDevBuildInfoTitle = "Build info",
     settingsDevFontScaleTitle = "Font scale",
+    settingsDevFontScaleCycleAction = "Change scale",
     settingsDevGrantTicketTitle = "Grant one ticket",
     settingsDevGrantTicketSubtitle = "Evaluation · Top moves · Ad skip",
     settingsDevGrantAction = "Grant",

@@ -12,6 +12,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
+import com.worksoc.goaicoach.ui.DevFontScaleOverride
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,6 +45,19 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
+            // ⚠️ **개발자 배율 오버라이드는 여기서 적용해야 한다**(백로그 #81) — 컴포지션 전체를
+            // 감싸야 모든 화면이 함께 커지고, 그래야 #64가 낳은 잘림을 실제로 재현할 수 있다.
+            // `GoCoachApp`에서는 할 수 없다(라인 예산 880/880, 함정 3번).
+            // ⚠️ 시스템 설정을 바꾸는 것이 아니라 **이 앱의 `LocalDensity`만** 덮어쓴다 —
+            // `WRITE_SETTINGS` 없이, 앱을 나가면 아무것도 남지 않는다.
+            val baseDensity = LocalDensity.current
+            val overrideScale = DevFontScaleOverride.scale
+            val density = if (overrideScale == null) {
+                baseDensity
+            } else {
+                Density(density = baseDensity.density, fontScale = overrideScale)
+            }
+            CompositionLocalProvider(LocalDensity provides density) {
             var engineBootstrap by remember { mutableStateOf<EngineBootstrap?>(null) }
 
             LaunchedEffect(Unit) {
@@ -104,6 +121,7 @@ class MainActivity : ComponentActivity() {
                     engineMode = bootstrap.mode,
                     diagnosticEventLog = diagnosticEventLog,
                 )
+            }
             }
         }
     }

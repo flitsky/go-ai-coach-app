@@ -170,6 +170,7 @@ internal val UiStringsJapanese = UiStringsKorean.copy(
     settingsDevTierAdvancedTitle = "開発者テスト（高度）· debug 専用",
     settingsDevBuildInfoTitle = "ビルド情報",
     settingsDevFontScaleTitle = "文字サイズ倍率",
+    settingsDevFontScaleCycleAction = "倍率を変える",
     settingsDevGrantTicketTitle = "チケットを1枚もらう",
     settingsDevGrantTicketSubtitle = "形勢判断 · おすすめ手 · 広告スキップ券",
     settingsDevGrantAction = "受け取る",

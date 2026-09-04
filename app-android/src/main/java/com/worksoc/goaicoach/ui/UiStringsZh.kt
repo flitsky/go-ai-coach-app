@@ -169,6 +169,7 @@ internal val UiStringsChineseSimplified = UiStringsKorean.copy(
     settingsDevTierAdvancedTitle = "开发者测试（高级）· 仅 debug",
     settingsDevBuildInfoTitle = "构建信息",
     settingsDevFontScaleTitle = "字体缩放",
+    settingsDevFontScaleCycleAction = "切换缩放",
     settingsDevGrantTicketTitle = "领取 1 张单次券",
     settingsDevGrantTicketSubtitle = "形势判断 · 推荐手 · 跳过广告券",
     settingsDevGrantAction = "领取",

@@ -286,6 +286,7 @@ internal data class UiStrings(
     val settingsDevTierAdvancedTitle: String,
     val settingsDevBuildInfoTitle: String,
     val settingsDevFontScaleTitle: String,
+    val settingsDevFontScaleCycleAction: String,
     val settingsDevGrantTicketTitle: String,
     val settingsDevGrantTicketSubtitle: String,
     val settingsDevGrantAction: String,
@@ -384,6 +385,23 @@ internal data class UiStrings(
             UiLanguage.English -> remainingMinutes?.let { "Active · $it min left" } ?: "Off now · tap for one hour"
             UiLanguage.Japanese -> remainingMinutes?.let { "有効 · 残り${it}分" } ?: "無効 · 押すと1時間"
             UiLanguage.ChineseSimplified -> remainingMinutes?.let { "已启用 · 剩余 $it 分钟" } ?: "未启用 · 点击获得 1 小时"
+        }
+
+    /**
+     * 개발자 1차의 글꼴 배율 행 부제(백로그 #81) — **지금 배율**과 **그것이 앱 오버라이드인지**를
+     * 함께 말한다.
+     *
+     * ⚠️ 둘을 구분해 적어야 한다. 오버라이드 중인데 "시스템 값"으로 읽히면 *"왜 시스템에서 바꿔도
+     * 안 변하지"* 로 오진하고, 반대로 시스템 값인데 오버라이드로 읽히면 원래 배율을 잃었다고 본다.
+     *
+     * ⚠️ **`fun`이라 리플렉션 그물이 못 본다**(함정 10번) — `UiStringsDevFontScaleTest`가 손 그물이다.
+     */
+    fun settingsDevFontScaleSubtitle(current: Float, isOverridden: Boolean): String =
+        when (language) {
+            UiLanguage.Korean -> if (isOverridden) "×$current · 앱에서 덮어씀" else "×$current · 시스템 값"
+            UiLanguage.English -> if (isOverridden) "×$current · overridden in app" else "×$current · system value"
+            UiLanguage.Japanese -> if (isOverridden) "×$current · アプリで上書き" else "×$current · システム値"
+            UiLanguage.ChineseSimplified -> if (isOverridden) "×$current · 应用内覆盖" else "×$current · 系统值"
         }
 
     fun settingsDevAttendanceSubtitle(current: Int, next: Int, nextIsRewarded: Boolean): String =

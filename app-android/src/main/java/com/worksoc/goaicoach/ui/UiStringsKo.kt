@@ -170,6 +170,7 @@ internal val UiStringsKorean = UiStrings(
     settingsDevTierAdvancedTitle = "개발자 테스트 (고급) · debug 전용",
     settingsDevBuildInfoTitle = "빌드 정보",
     settingsDevFontScaleTitle = "글꼴 배율",
+    settingsDevFontScaleCycleAction = "배율 바꾸기",
     settingsDevGrantTicketTitle = "1회권 1장 받기",
     settingsDevGrantTicketSubtitle = "형세 보기 · 추천 수 · 광고 스킵권",
     settingsDevGrantAction = "받기",
