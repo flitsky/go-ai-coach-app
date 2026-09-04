@@ -144,6 +144,7 @@ internal fun SettingsScreen(
     // 화면을 벗어나거나 앱을 다시 켜면 꺼진다 — 한 번 켠 기기가 영구히 열린 상태로 남지 않게
     // 하는 것이 이 항목의 안전장치 중 하나다.
     var isAdvancedDeveloperModeEnabled by remember { mutableStateOf(false) }
+    var showDiagnosticLog by remember { mutableStateOf(false) }
     var versionTapCount by remember { mutableStateOf(0) }
     val consumables = LocalConsumableUiState.current
     val bots = LocalBotCharacterUiState.current
@@ -564,6 +565,33 @@ internal fun SettingsScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
+                // 읽기 전용 ③ — **진단 로그를 앱 안에서 본다**(백로그 #79). `DiagnosticEventLog`가
+                // 계속 쌓고 있는데 앱에서 볼 길이 없어, 폰만 손에 있으면 확인이 불가능했다.
+                // ⚠️ 화면을 새로 만들지 않고 다이얼로그로 둔 이유는 셸 라인 예산이다(함정 3번).
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = strings.settingsDevDiagnosticLogTitle,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                        Text(
+                            text = strings.settingsDevDiagnosticLogSubtitle,
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.secondary,
+                        )
+                    }
+                    TextButton(onClick = { showDiagnosticLog = true }) {
+                        Text(strings.settingsDevDiagnosticLogOpenAction)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -740,6 +768,12 @@ internal fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
         }
+    }
+
+    // ⚠️ **스크롤 Column 밖, 다른 다이얼로그들과 형제 위치에 emit한다**(백로그 #79).
+    // 스크롤 안에 두면 별도 윈도우인데도 그 자리에 레이아웃 슬롯을 하나 차지한다.
+    if (showDiagnosticLog) {
+        DiagnosticLogDialog(context = context, onDismiss = { showDiagnosticLog = false })
     }
 
     if (showEmailDialog) {
