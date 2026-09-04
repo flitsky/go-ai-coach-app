@@ -294,6 +294,8 @@ internal data class UiStrings(
     val settingsDevShardClearAction: String,
     val settingsDevAttendanceTitle: String,
     val settingsDevAttendanceAdvanceAction: String,
+    val settingsDevAdGrantTitle: String,
+    val settingsDevAdGrantAction: String,
     val settingsDevPremiumToggleTitle: String,
     val settingsDevPremiumToggleSubtitle: String,
     val settingsDevGameSetupUxToggleTitle: String,
@@ -363,6 +365,22 @@ internal data class UiStrings(
      * ⚠️ **`fun`이라 `UiStringsTest`의 리플렉션 그물이 못 본다**(함정 10번) —
      * `UiStringsDevAttendanceTest`가 네 언어를 손으로 고정한다.
      */
+    /**
+     * 개발자 2차의 "광고 본 것으로 프리미엄 1시간" 부제(백로그 #78) — **남은 시간**을 말한다.
+     *
+     * ⚠️ 버튼이지 토글이 아니므로 화면이 상태를 보여 줄 다른 자리가 없다. 만료를 눈으로 확인하는
+     * 것이 이 버튼의 목적 절반이라(#26의 구독 유효기간 판정 전초전) 남은 시간이 곧 결과 표시다.
+     *
+     * ⚠️ **`fun`이라 리플렉션 그물이 못 본다**(함정 10번) — `UiStringsDevAdGrantTest`가 손 그물이다.
+     */
+    fun settingsDevAdGrantSubtitle(remainingMinutes: Int?): String =
+        when (language) {
+            UiLanguage.Korean -> remainingMinutes?.let { "지금 활성 · ${it}분 남음" } ?: "지금 꺼져 있음 · 누르면 1시간"
+            UiLanguage.English -> remainingMinutes?.let { "Active · $it min left" } ?: "Off now · tap for one hour"
+            UiLanguage.Japanese -> remainingMinutes?.let { "有効 · 残り${it}分" } ?: "無効 · 押すと1時間"
+            UiLanguage.ChineseSimplified -> remainingMinutes?.let { "已启用 · 剩余 $it 分钟" } ?: "未启用 · 点击获得 1 小时"
+        }
+
     fun settingsDevAttendanceSubtitle(current: Int, next: Int, nextIsRewarded: Boolean): String =
         when (language) {
             UiLanguage.Korean ->

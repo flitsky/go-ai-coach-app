@@ -81,21 +81,29 @@ class DeveloperSectionTierContractTest {
     }
 
     /**
-     * ⚠️ **1차에는 권한을 만드는 컨트롤이 없어야 한다.** 프리미엄 토글은
-     * `PremiumSource.Purchase`를 저장소에 **영구 기록**하고 `FeatureAccessPolicy.resolve`가 소스에서
-     * 곧바로 통과시켜 **모든 유료 기능이 한꺼번에 열린다.** 그래서 2차다.
+     * ⚠️ **1차에는 권한을 만드는 컨트롤이 없어야 한다.** 프리미엄 부여는 저장소에 프리미엄
+     * 소스를 기록하고 `FeatureAccessPolicy.resolve`가 소스에서 곧바로 통과시켜 **모든 유료 기능이
+     * 한꺼번에 열린다.** 그래서 2차다. 위치를 소스 오프셋으로 확인한다.
      *
-     * 위치를 소스 오프셋으로 확인한다 — 2차 헤더보다 **뒤에** 있어야 한다.
+     * ⚠️ **이 테스트는 #78로 한 번 갱신됐다.** 원래는 `premium.setPurchased(checked)`(영구 활성화
+     * **토글**)를 찾았는데, #78이 그것을 **"광고 본 것으로 1시간" 버튼**으로 바꿨다 — #26이 프리미엄을
+     * 월간 구독으로 옮기면서 판정이 *"영구히 샀는가"* 에서 **"지금 유효한가"** 로 바뀌기 때문이다.
+     * **지켜야 할 것은 컨트롤의 종류가 아니라 "권한을 만드는 것은 2차에 있다"** 이므로, 무엇이
+     * 그 자리에 오든 이 단언은 그대로 유효해야 한다.
      */
     @Test
-    fun thePremiumToggleSitsInTheAdvancedTier() {
+    fun theControlThatGrantsPremiumSitsInTheAdvancedTier() {
         val advancedGate = settings.indexOf("BuildConfig.DEBUG && isAdvancedDeveloperModeEnabled")
-        val premiumToggle = settings.indexOf("premium.setPurchased(checked)")
+        val premiumGrant = settings.indexOf("premium.simulateAdGrant")
         assertTrue("2차 게이트를 찾지 못했다 — 이 계약의 전제가 무너졌다.", advancedGate >= 0)
-        assertTrue("프리미엄 토글을 찾지 못했다.", premiumToggle >= 0)
+        assertTrue("프리미엄을 부여하는 컨트롤을 찾지 못했다.", premiumGrant >= 0)
         assertTrue(
-            "프리미엄 토글이 2차 게이트보다 앞에 있다 — 1차(=release에 실림)에 남아 있다는 뜻이다(#77).",
-            premiumToggle > advancedGate,
+            "프리미엄 부여가 2차 게이트보다 앞에 있다 — 1차(=release에 실림)에 있다는 뜻이다(#77).",
+            premiumGrant > advancedGate,
+        )
+        assertFalse(
+            "영구 활성화 토글이 되살아났다 — #78이 없앤 것이고, #26의 구독 전환과 어긋난다.",
+            settings.contains("premium.setPurchased"),
         )
     }
 

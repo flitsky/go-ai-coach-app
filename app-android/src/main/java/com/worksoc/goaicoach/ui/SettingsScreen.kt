@@ -147,6 +147,13 @@ internal fun SettingsScreen(
     var versionTapCount by remember { mutableStateOf(0) }
     val consumables = LocalConsumableUiState.current
     val bots = LocalBotCharacterUiState.current
+    // 개발자 2차의 프리미엄 부제가 읽는 값. `null`이면 지금 꺼져 있다는 뜻이다.
+    // ⚠️ 초 단위로 갱신하지 않는다 — 화면을 다시 그릴 때만 맞다. 만료를 정확히 재는 것은
+    // `PremiumExpiryAutoDisableEffect`의 몫이고, 여기 숫자는 "대략 얼마 남았나"의 안내다.
+    val premiumRemainingMinutes = premium.adGrantExpiresAtMillis
+        ?.minus(System.currentTimeMillis())
+        ?.takeIf { it > 0L }
+        ?.let { millis -> (millis / 60_000L).toInt() }
     // 개발자 2차의 출석 부제가 읽는 값.
     // ⚠️ **버튼을 누른 직후에 저장소를 읽으면 한 일차 뒤처진다** — 되감기는 표시만 지우고 실제
     // 증가는 `AttendanceRewardClaimDialog`의 effect가 하기 때문이다. 그래서 증가를 아는 쪽이
@@ -604,11 +611,15 @@ internal fun SettingsScreen(
                         color = MaterialTheme.colorScheme.error,
                     )
 
-                    // ⚠️ **2차인 이유**: 이 토글은 `PremiumSource.Purchase`를 **저장소에 영구
-                    // 기록**하고, `FeatureAccessPolicy.resolve`가 소스에서 곧바로 통과시키므로
-                    // **모든 유료 기능이 한꺼번에 열린다.** 라벨이 아니라 이 사실이 분류 기준이다.
-                    // ⚠️ 끄면 `PremiumState()`가 되지만 `claimedFeatures`는 남는다(병합 저장) —
-                    // 3일차 무르기를 이미 받은 계정은 꺼도 무르기가 열려 있다.
+                    // ⚠️ **영구 활성화 토글이 여기 있었다 — 버튼으로 바꿨다**(백로그 #78,
+                    // 2026-09-03 사용자 결정). 그 토글은 `PremiumSource.Purchase`를 저장소에
+                    // **영구 기록**했고, #26이 프리미엄을 월간 구독으로 옮기면서 판정 기준이
+                    // *"영구히 샀는가"* 가 아니라 **"지금 유효한가"** 로 바뀐다 — 사라질 상태를
+                    // 계속 테스트하게 두지 않는다.
+                    // ⚠️ **토글이 아니라 버튼인 이유**: 1시간 부여는 껐다 켜는 상태가 아니라
+                    // **사건**이다. Switch로 두면 "끄기"가 무엇을 뜻하는지 정의되지 않는다.
+                    // ✅ **부수 이득**: 이 버튼은 광고를 **띄우지 않고** 보상 경로만 밟으므로,
+                    // 실기에서 실제 AdMob 노출(자기 노출 = 정책 위반)을 만들지 않는다.
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -616,20 +627,19 @@ internal fun SettingsScreen(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = strings.settingsDevPremiumToggleTitle,
+                                text = strings.settingsDevAdGrantTitle,
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.SemiBold,
                             )
                             Text(
-                                text = strings.settingsDevPremiumToggleSubtitle,
+                                text = strings.settingsDevAdGrantSubtitle(premiumRemainingMinutes),
                                 fontSize = 12.sp,
                                 color = MaterialTheme.colorScheme.secondary,
                             )
                         }
-                        Switch(
-                            checked = premium.isPurchased,
-                            onCheckedChange = { checked -> premium.setPurchased(checked) },
-                        )
+                        TextButton(onClick = premium.simulateAdGrant) {
+                            Text(strings.settingsDevAdGrantAction)
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))

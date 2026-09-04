@@ -87,6 +87,11 @@ import kotlinx.coroutines.launch
  */
 internal data class PremiumUiState(
     val isActive: Boolean = false,
+    /**
+     * ⚠️ **이 값을 지금 읽는 화면은 없다**(백로그 #78) — 유일한 독자였던 개발자 영구 활성화
+     * 토글을 없앴다. 남겨 둔 이유는 #26이 구독 전환 시 *"지금 유효한가"* 와 *"어느 소스인가"* 를
+     * 갈라 볼 자리가 필요해서다. [isActive]가 게이팅의 정본이고 이쪽은 소스 구분일 뿐이다.
+     */
     val isPurchased: Boolean = false,
     val adGrantExpiresAtMillis: Long? = null,
     val resolve: (FeatureId) -> FeatureAccess = { FeatureAccess.Locked(emptySet()) },
@@ -96,7 +101,21 @@ internal data class PremiumUiState(
     val purchasePremium: suspend () -> PurchaseOutcome = {
         PurchaseOutcome.NotPurchased(PurchaseFailureReason.Unavailable)
     },
-    val setPurchased: (Boolean) -> Unit = {},
+    /**
+     * **광고를 본 것으로 상정해** 프리미엄 1시간을 부여한다 — 개발자 테스트 2차 전용(백로그 #78).
+     *
+     * ⚠️ 이전에는 `setPurchased(Boolean)`이 **영구 활성화**(`PremiumSource.Purchase`)를 켜고 끄는
+     * 스텁이었다. 그것을 없앤 이유는 #26이 프리미엄을 **월간 정기 구독**으로 옮기면서 판정
+     * 기준이 *"영구히 샀는가"* 가 아니라 ***"지금 유효한가"*** 로 바뀌기 때문이다 — 사라질 상태를
+     * 계속 테스트하게 두지 않는다(2026-09-03 사용자 결정).
+     * · ⚠️ **`PremiumSource.Purchase` 상수 자체는 지우지도 개명하지도 않았다**(함정 1번) —
+     *   #26이 그 이름을 유지한 채 의미만 "구독 유효"로 바꾸기로 확정했다. 없앤 것은 **토글**이다.
+     *
+     * ⚠️ **토글이 아니라 버튼인 이유**: 1시간 부여는 껐다 켜는 **상태**가 아니라 **사건**이다.
+     * Switch로 두면 "끄기"가 무엇을 뜻하는지 정의되지 않는다(만료를 앞당기는 것인가, 소스를
+     * 지우는 것인가). 남은 시간은 [adGrantExpiresAtMillis]가 말해 준다.
+     */
+    val simulateAdGrant: () -> Unit = {},
     val claim: (FeatureId) -> Unit = {},
 )
 
@@ -137,8 +156,12 @@ internal fun buildPremiumUiState(
     resolve = { featureId ->
         FeatureAccessPolicy.resolve(featureId, premiumState, System.currentTimeMillis(), characterPerkActive)
     },
-    setPurchased = { purchased ->
-        onStateChanged(store.saveMergingClaimedFeatures(if (purchased) PremiumState.purchased() else PremiumState()))
+simulateAdGrant = {
+        // ⚠️ 광고를 띄우는 한 걸음만 건너뛰고 **보상 루틴은 그대로** 탄다 — 그래야 이 버튼이
+        // 테스트하려던 것(보상 유입 + 1시간 활성화)을 실제로 테스트한다.
+        simulatePremiumAdGrant(diagnosticEventLog)?.let { next ->
+            onStateChanged(store.saveMergingClaimedFeatures(next))
+        }
     },
     purchasePremium = {
         val (outcome, nextState) = performPremiumPurchase(context, diagnosticEventLog)
