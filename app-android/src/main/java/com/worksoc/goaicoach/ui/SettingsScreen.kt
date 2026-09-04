@@ -65,6 +65,7 @@ import com.worksoc.goaicoach.application.attendance.isRewardedTier
 import com.worksoc.goaicoach.application.attendance.runAttendanceDevDayRewind
 import com.worksoc.goaicoach.persistence.AttendanceStore
 import com.worksoc.goaicoach.BuildConfig
+import com.worksoc.goaicoach.runReleaseResetAgain
 import com.worksoc.goaicoach.application.auth.AuthClientPort
 import com.worksoc.goaicoach.application.auth.AuthProvider
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
@@ -787,6 +788,56 @@ internal fun SettingsScreen(
                             },
                         ) {
                             Text(strings.settingsDevAttendanceAdvanceAction)
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // **정식 출시 초기화(#63)를 손으로 다시 돌린다**(백로그 #80).
+                    // ⚠️ **지울 목록을 여기서 따로 쓰지 않는다** — 마커를 되감고
+                    // `ReleaseResetCoordinator`를 그대로 부른다. 목록을 두 벌로 쓰면 권한 저장소가
+                    // 늘 때 한쪽만 고쳐져, **개발자 도구가 실제 초기화와 다른 일을 하게 된다**
+                    // (함정 6번이 경고한 그 어긋남).
+                    // ⚠️ **가장 파괴적인 버튼이라 2차다** — 출석·캐릭터·1회권·프리미엄을 통째로 지운다.
+                    // ⚠️ 지울 것이 없으면 안내도 뜨지 않는다(#63의 설계: 안내는 **잃은 사람에게만**
+                    // 간다). 안내를 보려면 먼저 뭐라도 받아 둘 것 — 그래서 결과를 토스트로 가른다.
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = strings.settingsDevReleaseResetTitle,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                            Text(
+                                text = strings.settingsDevReleaseResetSubtitle,
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.secondary,
+                            )
+                        }
+                        TextButton(
+                            onClick = {
+                                val wiped = runReleaseResetAgain(context)
+                                // 지운 뒤 화면 사본을 전부 되읽는다 — 세 곳이 각자 저장소를 들고
+                                // 있어서, 빠뜨리면 지워진 값이 화면에 남는다(#65와 같은 함정).
+                                consumables.refresh()
+                                bots.refresh()
+                                premium.reload()
+                                Toast.makeText(
+                                    context,
+                                    if (wiped) {
+                                        strings.settingsDevReleaseResetDoneMessage
+                                    } else {
+                                        strings.settingsDevReleaseResetNothingMessage
+                                    },
+                                    Toast.LENGTH_SHORT,
+                                ).show()
+                            },
+                        ) {
+                            Text(strings.settingsDevReleaseResetAction)
                         }
                     }
                 }

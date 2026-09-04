@@ -116,6 +116,15 @@ internal data class PremiumUiState(
      * 지우는 것인가). 남은 시간은 [adGrantExpiresAtMillis]가 말해 준다.
      */
     val simulateAdGrant: () -> Unit = {},
+    /**
+     * 저장소를 다시 읽어 화면이 든 사본을 맞춘다(백로그 #80).
+     *
+     * ⚠️ **화면 밖에서 프리미엄 저장소를 바꾸는 경로가 생길 때마다 필요하다.** 재고에 대해
+     * `ConsumableUiState.refresh`가, 컬렉션에 대해 `BotCharacterUiState.refresh`가 하는 일과 같다 —
+     * 개발자 2차의 "정식 출시 초기화 다시 실행"이 이 저장소를 통째로 지우므로, 이 통로가 없으면
+     * 지워진 프리미엄이 화면에는 살아 있는 것으로 남는다(#65가 같은 함정을 밟았다).
+     */
+    val reload: () -> Unit = {},
     val claim: (FeatureId) -> Unit = {},
 )
 
@@ -156,7 +165,8 @@ internal fun buildPremiumUiState(
     resolve = { featureId ->
         FeatureAccessPolicy.resolve(featureId, premiumState, System.currentTimeMillis(), characterPerkActive)
     },
-simulateAdGrant = {
+    reload = { onStateChanged(store.load()) },
+    simulateAdGrant = {
         // ⚠️ 광고를 띄우는 한 걸음만 건너뛰고 **보상 루틴은 그대로** 탄다 — 그래야 이 버튼이
         // 테스트하려던 것(보상 유입 + 1시간 활성화)을 실제로 테스트한다.
         simulatePremiumAdGrant(diagnosticEventLog)?.let { next ->

@@ -129,6 +129,53 @@ class DeveloperSectionTierContractTest {
     }
 
     /**
+     * ⚠️ **권한 저장소 넷을 지우는 버튼은 2차에 있어야 한다**(백로그 #80). 이 배치에서 가장
+     * 파괴적인 컨트롤이다 — 1차는 release 빌드에 실리므로, 여기 새면 **출시된 앱에 "내 출석·캐릭터·
+     * 1회권을 통째로 지우기" 버튼이 노출된다.** 잘못 눌러도 되돌릴 길이 없다.
+     *
+     * ⚠️ **지울 목록을 이 화면이 따로 쓰지 않는 것도 함께 못박는다.** `ReleaseResetCoordinator`의
+     * 목록을 재사용해야 하고(함정 6번), 그래서 화면은 `runReleaseResetAgain` **하나만** 부른다.
+     * 저장소를 여기서 직접 지우기 시작하면 실제 초기화와 개발자 도구가 갈라져, 이 도구로 한
+     * 검증이 아무것도 보장하지 않게 된다.
+     */
+    @Test
+    fun theControlThatWipesEntitlementStoresSitsInTheAdvancedTier() {
+        val advancedGate = settings.indexOf("BuildConfig.DEBUG && isAdvancedDeveloperModeEnabled")
+        val releaseReset = settings.indexOf("runReleaseResetAgain(context)")
+        assertTrue("2차 게이트를 찾지 못했다 — 이 계약의 전제가 무너졌다.", advancedGate >= 0)
+        assertTrue("정식 출시 초기화를 다시 돌리는 컨트롤을 찾지 못했다(#80).", releaseReset >= 0)
+        assertTrue(
+            "권한 저장소를 지우는 버튼이 2차 게이트보다 앞에 있다 — 1차(=release에 실림)에 있다는 " +
+                "뜻이고, 출시된 앱에 되돌릴 수 없는 초기화 버튼이 노출된다(#80).",
+            releaseReset > advancedGate,
+        )
+        // 화면이 저장소를 직접 지우면 목록이 두 벌로 갈라진다 — 초기화는 코디네이터의 일이다.
+        assertFalse(
+            "설정 화면이 권한 저장소를 직접 지우고 있다 — `ReleaseResetCoordinator`의 목록을 " +
+                "재사용할 것(함정 6번). 저장소가 늘 때 한쪽만 고쳐진다.",
+            settings.contains("Store(context).clear()"),
+        )
+    }
+
+    /**
+     * 초기화 뒤 **화면 사본 셋을 모두 되읽어야 한다.** 세 곳이 각자 저장소를 들고 있어서, 하나라도
+     * 빠뜨리면 지워진 값이 화면에 살아 있는 것으로 남는다 — #65가 프리미엄에서 밟은 함정이고,
+     * 지우는 쪽이 더 눈에 띈다(마이 페이지에 없는 캐릭터가 보인다).
+     */
+    @Test
+    fun wipingTheStoresRefreshesEveryScreenCopy() {
+        val wipe = settings.indexOf("runReleaseResetAgain(context)")
+        assertTrue("초기화 호출을 찾지 못했다.", wipe >= 0)
+        val after = settings.substring(wipe)
+        listOf("consumables.refresh()", "bots.refresh()", "premium.reload()").forEach { call ->
+            assertTrue(
+                "초기화 뒤 `$call`을 부르지 않는다 — 지워진 값이 화면에 남는다(#65와 같은 함정).",
+                after.contains(call),
+            )
+        }
+    }
+
+    /**
      * 1회권 지급은 1차에 있어도 되지만(출석 1일차가 30장을 준다) ⚠️ **`refresh()`를 함께 불러야
      * 한다** — `runConsumableGrant`는 저장소에 직접 쓰고 화면 사본은 나가는 것만 알기 때문이다.
      * 백로그 #65가 프리미엄에서 같은 함정을 밟았다.

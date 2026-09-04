@@ -70,3 +70,28 @@ internal class ReleaseResetCoordinator(private val context: Context) {
         return hadAnything
     }
 }
+
+/**
+ * **정식 출시 초기화를 손으로 다시 돌린다** — 개발자 테스트 2차 전용(백로그 #80).
+ *
+ * ## ⚠️ 지울 목록을 여기서 따로 쓰지 않는다
+ * 마커를 [ReleaseResetPolicy.NoResetApplied]로 되감고 [ReleaseResetCoordinator.applyIfNeeded]를
+ * **그대로 부른다.** 목록을 두 벌로 쓰면 권한 저장소가 늘 때 한쪽만 고쳐져 **개발자 도구가 실제
+ * 초기화와 다른 일을 하게 된다** — 함정 6번이 경고한 어긋남이고, 그렇게 되면 이 도구로 한 검증이
+ * 아무것도 보장하지 않는다.
+ *
+ * ## 부작용이 둘이다
+ * ⓐ 권한 저장소 넷이 **지금** 비워진다(반복 테스트의 출발점이 된다).
+ * ⓑ 실제로 지운 것이 있었으면 안내가 **다음 실행에** 뜬다 — `ReleaseResetNoticeDialog`가
+ *    `isNoticePending`을 컴포지션 시작에 한 번만 읽으므로, 이 자리에서 바로 뜨지는 않는다.
+ *
+ * ⚠️ **지울 것이 없으면 안내도 뜨지 않는다.** #63의 설계가 *"안내는 잃은 사람에게만"* 이라
+ * 신규 설치 상태에서 눌러도 조용하다 — 안내를 보려면 먼저 뭐라도 받아 둬야 한다. 그래서 반환값으로
+ * 그 둘을 가른다.
+ *
+ * @return 실제로 지운 것이 있었는가(= 다음 실행에 안내가 뜨는가).
+ */
+internal fun runReleaseResetAgain(context: Context): Boolean {
+    ReleaseResetStore(context).markApplied(ReleaseResetPolicy.NoResetApplied)
+    return ReleaseResetCoordinator(context).applyIfNeeded()
+}
