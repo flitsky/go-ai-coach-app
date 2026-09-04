@@ -61,7 +61,7 @@ class PremiumFeatureClaimApplicationTest {
 
     @Test
     fun savingNewSourceMergesClaimsAlreadyInTheStore() {
-        // 화면 밖(출석 보상 자동 지급)에서 먼저 들어온 클레임을 화면 쪽 저장이 지우면 안 된다.
+        // 화면 밖(출석 보상 Claim)에서 먼저 들어온 클레임을 화면 쪽 저장이 지우면 안 된다.
         val store = FakePremiumStateStore(PremiumState(claimedFeatures = setOf(FeatureId.Undo)))
 
         val saved = store.saveMergingClaimedFeatures(PremiumState.purchased())

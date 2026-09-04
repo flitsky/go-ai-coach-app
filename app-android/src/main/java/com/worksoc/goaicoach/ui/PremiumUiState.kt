@@ -108,11 +108,16 @@ internal val LocalPremiumUiState = staticCompositionLocalOf { PremiumUiState() }
  * [premiumState]와 "바뀌면 이렇게 반영해 달라"는 [onStateChanged]만 넘긴다.
  *
  * 상태를 저장할 때 호출부가 메모리에 들고 있던 [PremiumState.claimedFeatures]를 그대로
- * 이어붙이지 않고 저장소에 남아 있는 집합과 합친다([saveMergingClaimedFeatures]) — 출석
- * 1일차 보상처럼 Compose 트리 밖(Application 코루틴)에서 지급된 클레임을 이 화면의 저장이
- * 지워버리지 않게 하기 위함이다(`260823-260830_OFFLINE_ENGAGEMENT_FEATURES_KICKOFF_PLAN.md` 4.4절).
+ * 이어붙이지 않고 저장소에 남아 있는 집합과 합친다([saveMergingClaimedFeatures]) — **출석 Claim이
+ * 이 화면 밖에서 원장에 쓴 것**을 이 화면의 저장이 지워버리지 않게 하기 위함이다.
  * 같은 이유로 [PremiumUiState.claim]도 UI에 규칙을 두지 않고 application 계층의
- * [runPremiumFeatureClaim]에 위임한다 — 출석 자동 지급이 쓰는 함수와 동일한 경로다.
+ * [runPremiumFeatureClaim]에 위임한다 — 출석 지급이 지나는 함수와 동일한 경로다.
+ *
+ * ⚠️ 예전에는 여기 *"출석 **1일차** 보상처럼 Compose 트리 밖(**Application 코루틴**)에서 지급된"*
+ * 이라고 적혀 있었는데 **둘 다 사실이 아니게 됐다**(2026-09-03 정정, 백로그 #67): 회차는
+ * **3일차**로 옮겨졌고(#55), 지급은 Application 코루틴이 아니라 **`AttendanceRewardClaimDialog`의
+ * Claim**이 한다(#14로 자동 지급이 없어졌다). **합치는 이유 자체는 그대로 유효하다** — 그 다이얼로그도
+ * 이 화면의 `premiumState`와는 별개로 저장소에 직접 쓰기 때문이다(백로그 #65가 그 반대 방향을 뚫었다).
  */
 internal fun buildPremiumUiState(
     premiumState: PremiumState,

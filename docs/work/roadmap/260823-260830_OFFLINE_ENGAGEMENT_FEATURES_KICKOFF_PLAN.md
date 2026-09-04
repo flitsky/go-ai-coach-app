@@ -147,6 +147,14 @@ AttendanceState(
 
 - **현재 동작**: `app-android/.../ui/GamePlaySection.kt`의 `GameActionButtons`(약 310행)에서 Undo가 Locked 상태일 때 첫 탭 시 `showUndoClaimDialog` → `AlertDialog` 확인 → `premium.claim(FeatureId.Undo)` 호출(`LocalPremiumUiState.current` 경유).
 - **변경 목표**: 1일차 출석 보상이 지급되는 시점(=앱 최초 실행 직후, 게임 플레이 이전)에 이 `claim(FeatureId.Undo)`를 미리 호출해 무르기가 항상 Allowed 상태이도록 만든다. 이후 `GamePlaySection.kt`의 클레임 다이얼로그 분기는 도달 불가능해지므로 **제거하거나 방어적 폴백으로만 남긴다**(출석 시스템이 어떤 이유로든 실패했을 때 대비) — 어느 쪽을 택할지는 구현 시 판단.
+  - ⚠️ **2026-09-03 정정(백로그 #66) — 이 절의 전제가 그 뒤 둘 다 무너졌고, 결말은 "제거"다.**
+    ⓐ **자동 지급이 없어졌다**(#14) — `AttendanceCheckInCoordinator`는 체크인만 하고 지급하지
+    않는다. 지급 경로는 Claim 팝업 하나뿐이다. ⓑ **회차가 1일차 → 3일차로 옮겨졌다**(#55).
+    · 그래서 "방어적 폴백"으로 남겨 둔 그 다이얼로그는 **도달 확률이 낮은 경로가 아니라
+      1·2일차 유저가 반드시 만나는 정상 경로**가 돼 있었고, 3일차 출석 보상을 무력화했다.
+      2026-09-03에 **제거**했다.
+    · ⚠️ **위 본문을 근거로 그 폴백을 되살리지 말 것.** 이 문장이 "확정 설계"로 읽힌 것이
+      #66이 두 스레드를 지나며 살아남은 실제 원인이다.
 - ⚠️ **확인 필요**: `claim()`이 지금 `LocalPremiumUiState.current`를 통해서만(Compose UI 컨텍스트) 호출 가능한지, 아니면 application 레이어에 UI 없이도 호출 가능한 함수가 있는지 `application/premium/PremiumState.kt`·`FeatureAccessPolicy.kt`를 먼저 확인할 것. 업적 화면이 뜨는 시점(앱 최초 실행 직후)은 아직 게임 화면 Compose 트리가 없을 수 있으므로, UI 트리에 의존하지 않는 application-layer 진입점이 필요할 가능성이 높다.
 
 > **구현 결정(백로그 #4, 2026-08-23)**: 위 "확인 필요"의 답은 **없었다** — 클레임 규칙은 `ui/GoCoachApp.kt`가 조립하는 `PremiumUiState.claim` 람다 안에만 있었고(Compose `CompositionLocal` 경유), application 계층에는 진입점이 없었다. 그래서 다음과 같이 구현했고, 스펙 문구와 달라진 부분은 아래와 같다.

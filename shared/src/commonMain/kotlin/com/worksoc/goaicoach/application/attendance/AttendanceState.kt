@@ -9,7 +9,10 @@ package com.worksoc.goaicoach.application.attendance
  *
  * [claimedTiers]는 어떤 회차(= 그날의 [attendanceCount])의 보상이 실제로 지급 완료됐는지
  * 기록하는 원장이다 — 체크인 판정([AttendanceCheckInResult]) 자체와는 별개 축으로, 보상을
- * 실제로 지급하는 쪽(예: 1일차 "무르기 무제한" 자동 지급)이 지급 후에 채운다.
+ * 실제로 지급하는 쪽(예: **3일차** "무르기 무제한")이 지급 후에 채운다.
+ *
+ * ⚠️ 예전에는 여기 *"1일차 … **자동** 지급"* 이라고 적혀 있었는데 **둘 다 사실이 아니게 됐다** —
+ * 회차는 3일차로 옮겨졌고(#55), 자동 지급은 #14로 없어져 지급 경로는 Claim 하나뿐이다.
  */
 data class AttendanceState(
     val attendanceCount: Int = 0,

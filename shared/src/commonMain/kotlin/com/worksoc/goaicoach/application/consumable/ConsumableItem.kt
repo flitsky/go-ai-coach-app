@@ -92,8 +92,8 @@ object ConsumableCatalog {
 
     /**
      * 이 기능을 1회권으로 쓸 수 있다면 그 소모품을 돌려준다. 1회권이 없는 기능
-     * ([FeatureId.Undo]는 1일차에 영구 클레임으로 풀리고, [FeatureId.MoveReview]는 보상 대상이
-     * 아니다)에는 `null`.
+     * ([FeatureId.Undo]는 **3일차 출석 보상**의 영구 클레임으로 풀리고, [FeatureId.MoveReview]는
+     * 보상 대상이 아니다)에는 `null`.
      */
     /**
      * 이 종류의 보유 상한. 카탈로그에 없는 id(다운그레이드로 흘러든 옛 저장값 등)는 기본 상한을

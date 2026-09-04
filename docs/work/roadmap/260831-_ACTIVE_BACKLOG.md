@@ -186,70 +186,31 @@
 
 ## 진행 중
 
-66. **무르기 인게임 프로모션 클레임 경로를 제거하고 3일차 출석 보상만 남긴다** (AI 모델: Opus, 노력정도: 중간) [진행중]
-    - 원 발주 4번. **사용자 신고는 CONFIRMED**다 — 단 진단("옛 프로모션 코드의 잔재")은 절반만 맞다.
-    - **실제 원인**: 같은 엔타이틀먼트에 **지급 경로가 둘** 있다. `AttendanceRewardPolicy.kt:42`가
-      무르기 영구 해금을 **1일차가 아니라 3일차**로 옮겼는데(#55, `a017210`),
-      `FeatureAccessPolicy.kt:98`은 여전히 `UnlockOption.Claim`을 주고
-      `GamePlaySection.kt:467`이 그것을 보고 `:487-509`의 "영구 활성화" 다이얼로그를 띄우며
-      `:496`의 `premium.claim(FeatureId.Undo)`가 **1일차에 영구 지급**한다. 더 쉽고 아무 때나
-      열려 있어 3일차 보상과 그 설계 의도를 통째로 무력화한다.
-    - ⚠️ **죽은 코드가 아니다 — 문서에 확정으로 적힌 살아 있는 설계다**(`launch-plan/README.md`
-      3장, `31ba1f0`). `GamePlaySection.kt:479-486`이 "방어적 폴백"이라고 적어 두었지만 **그 주석의
-      전제 둘이 모두 무너졌다**: 자동 지급은 #14로 없어졌고(`AttendanceCheckInCoordinator.kt:15-20`),
-      회차도 3일차로 옮겨졌다. 그래서 1·2일차에는 폴백이 아니라 **무르기를 누르는 모든 사용자가
-      반드시 만나는 정상 경로**다.
-    - **처방**: `FeatureAccessPolicy.kt:98`을 `setOf(AdGrant, Purchase)`로 접고,
-      도달 불가가 되는 `GamePlaySection.kt` 371·467·479-509를 제거. 문구 4종
-      (`UiStrings.kt:212-215` + 4개 언어 `:125-129`)도 함께. `FeatureAccessPolicyTest.kt:14-21`이
-      **현재의 잘못된 계약을 초록으로 고정**하고 있으니 같은 변경에서 뒤집을 것.
-    - ⚠️ **`FeatureAccessPolicy.kt:68`의 `if (featureId in state.claimedFeatures)`는 절대 건드리지
-      말 것.** 닫아야 하는 것은 **지급** 경로이고 **판정** 경로는 유지다 — 함께 지우면 이미 획득한
-      사용자(구버전 `isUndoClaimed` 마이그레이션 유입 포함, `PremiumStateStore.kt:81`)가 전원 잠긴다.
-    - ⚠️ **`UnlockOption.Claim` 상수는 남겨 둘 것**(영속되지 않아 지워도 안전하지만, `claimedFeatures`
-      원장이 살아 있는 한 다시 쓰일 축이다). KDoc에 "지금은 어떤 기능도 이 수단으로 열지 않는다"를 적는다.
-    - ✅ **결정 완료(2026-09-03 사용자): 프로모션을 완전히 폐기하고, 복구 불가는 감수한다.**
-      · `launch-plan/README.md` 3장의 *"초기 유저 한정 무료 활성화 프로모션"* 은 폐기다(#67이 문서 정정).
-      · ⚠️ **잃는 것을 명시적으로 감수했다**: 이 팝업은 `PremiumStateStore.load()`의 기본값 폴백으로
-        `claimedFeatures`를 잃은 사용자의 **유일한 자력 복구 수단**이었다(`GamePlaySection.kt:483-485`).
-        제거하면 그 사용자는 출석에 '3일차 지급 완료'가 남아 **영영 못 받는다.**
-      · **감수가 정당한 근거**: 폴백 조건이 매우 좁고(광고 시청 후 기기 시계 되돌림, 또는 JSON 파싱
-        실패), 비공개 테스터는 #63 초기화(generation 1)로 이미 밀려 실사용 그랜드파더링 대상이 없다.
-      · ⚠️ **이 판단을 `FeatureAccessPolicy`나 `GamePlaySection`에 주석으로 남길 것** — 다음 스레드가
-        "복구 경로가 없는데?"를 버그로 재발행하지 않게.
+67. **무르기 정책에 대한 낡은 주석·문서를 3일차로 정정한다** (AI 모델: Sonnet, 노력정도: 낮음) [진행중]
+    - 대상: `GamePlaySection.kt:479-486`(삭제), `ConsumableItem.kt:95`,
+      `ReleaseResetCoordinator.kt:23`(둘 다 "1일차"라고 적혀 있다),
+      `launch-plan/README.md` 338·345-360·376, `feature-access-principles/README.md` 102-103.
+    - ⚠️ **이 낡은 서술이 코드의 근거로 계속 인용된 것이 #66 버그가 두 스레드를 지나며 살아남은
+      실제 원인이다.** 코드만 고치고 문서를 두면 세 번째 스레드가 되살린다.
     - **✅ 구현 완료(2026-09-03) — 사용자 승인·커밋 대기.**
-      · `FeatureAccessPolicy.unlockOptionsFor`에서 무르기의 `UnlockOption.Claim`을 뺐다 — 네 기능이
-        같은 분기로 접혔다. 그러자 `GamePlaySection`의 `UnlockOption.Claim in ...` 분기가 도달 불가가
-        되어 상태 1줄·분기 1줄·다이얼로그 30줄과 죽은 import를 함께 지웠다.
-      · **이제 1·2일차 무르기는 잠긴 유료 기능이다** — 탭하면 `PremiumUpsellDialogHost`가 뜬다
-        (무르기는 1회권이 없어 `ticket == null`이라 `else` 가지로 떨어진다). 영구 해금은 3일차 출석뿐.
-      · 문구 4종을 4개 언어에서 제거(`UiStrings` 선언 4줄 + 언어당 4줄 = 20줄). 넷 다 `val … : String`
-        **필드**라 `UiStringsTest` 리플렉션 그물이 이미 보고 있었다 — 손 그물이 따로 필요 없었다.
-      · `UnlockOption.Claim` 상수와 `PremiumUiState.claim`은 **남겼다**(원장이 살아 있고 클레임 축이
-        다시 필요해질 수 있다). 둘 다 KDoc에 *"지금 이 수단으로 열리는 기능은 없다"* 를 박았다.
-      · **감수한 손실을 코드에 적었다** — 저장소 손상 시 자력 복구 수단이 사라진 것은 **버그가 아니라
-        결정**이라고 `GamePlaySection`의 그 자리에 남겼다(다시 발행되지 않게).
-      · **가드**: `FeatureAccessPolicyTest` — 잘못된 계약을 초록으로 굳히고 있던 테스트를 **뒤집고**
-        (이름도 함께), **전 기능을 훑어 `Claim`이 어디에도 없음**을 고정하는 테스트를 신설했다.
-        그랜드파더링 판정 테스트에는 *"이것까지 지우면 기존 보유자가 전원 잠긴다"* 경고를 달았다.
-        ⚠️ **변이 3건으로 확인**(무르기에 Claim 되돌림 / 다른 기능에 Claim 신규 부착 / 그랜드파더링
-        판정 제거 — 셋 다 잡힌다).
-      · **✅ 잠김 표시(금색 테두리)도 여기서 함께 넣었다(2026-09-03 사용자 정리).** 원래 별건
-        후보였는데 **인자 하나였다** — `SingleActionButton`이 이미 `premiumLocked`를 받고 있어
-        `premiumLocked = undoAccess is FeatureAccess.Locked` 한 줄이 전부다.
-        · ⚠️ **"3일차에 일반 버튼으로 전환"을 따로 배선할 것이 없다.** 무르기가 열리는 길 셋
-          (구독/영구 · 광고 1시간 · 3일차 클레임)을 `resolve`가 **이미 한 값으로 접어** `Allowed`를
-          돌려주므로, 테두리가 저절로 사라진다. **상태 전이가 코드에 이미 모델링돼 있었다.**
-        · ⚠️ 라벨에는 아무 표시도 붙이지 않았다 — 무르기에 무제한 표시를 달지 않는 것은 사용자
-          확정이고, 그 버튼이 **48dp 고정 높이**라 줄이 늘면 폰트 배율에서 잘린다(함정 9번).
-        · 형세·추천이 함께 보는 `tapIsFree`는 뺐다 — 무르기에는 1회권이 없어 항상 false다.
-      · **사용 경로 셋을 테스트로 못박았다**: 구독/영구가 유효하면(원장이 비어 있어도) 열리고,
-        광고 1시간이 유효하면 열리고, **그 1시간이 지나면 다시 잠긴다.** 마지막 것이 없으면 광고
-        한 번이 영구 해금이 되어 #66이 닫은 것과 같은 구멍이 다시 난다.
-        · ⚠️ **변이 하나가 제 KDoc을 반박해서 문구를 고쳤다** — *"두 분기의 순서를 뒤집으면
-          깨진다"* 고 적었는데 뒤집어도 통과한다(둘이 동시에 성립하는 경우가 없어 동치다).
-          순서가 가르는 것은 **둘 다 참일 때 어느 `AllowedVia`가 이기는가**뿐이다.
-      · 테스트 **2779건 전부 통과**. `shared`를 건드려 **iOS 컴파일까지 확인**했다.
+      · **12곳을 고쳤다.** 처음 잡은 목록은 5곳이었는데 **grep 경로를 넓히니 배로 나왔다** —
+        `ConsumableUiStateTest`·`PremiumUiState`·`PremiumFeatureClaimApplication`(+ 그 테스트)이
+        첫 스윕에서 빠져 있었다.
+      · **틀린 축이 하나가 아니라 둘이었다**: ⓐ **회차**(1일차 → 3일차, #55), ⓑ **지급 방식**
+        (자동 지급 → Claim, #14). 여러 주석이 **둘 다** 틀린 채로 남아 있었고, ⓑ는 애초에 이 항목의
+        범위로 잡지 않았던 것이다.
+      · 코드/테스트 9곳: `AttendanceRewardPolicy`·`AttendanceState`·`ConsumableItem`·
+        `ConsumableSpendApplication`·`PremiumFeatureClaimApplication`·`ReleaseResetCoordinator`·
+        `PremiumUiState` + 테스트 3곳(`ConsumableInventoryTest`·`ConsumableSpendApplicationTest`·
+        `ConsumableUiStateTest`·`PremiumFeatureClaimApplicationTest`).
+      · 문서 3곳: `launch-plan/README.md` 2장 표 + **3장**, `feature-access-principles/README.md`
+        2026-08-13 갱신, 킥오프 플랜 **4.4절**.
+      · ⚠️ **launch-plan 3장을 지우지 않고 갈랐다** — **메커니즘과 프로모션은 다른 것**이다.
+        그랜드파더링(`claimedFeatures` 원장)은 **그대로 살아 있고 코드가 그대로 따르는 반면**,
+        폐기된 것은 **무료 클레임 프로모션**뿐이다. 즉 바뀐 것은 원장에 들어가는 **입구**이지
+        원장을 읽는 방식이 아니다. 세 문서 모두 *"이 문장을 근거로 되살리지 말 것"* 을 달았다 —
+        그 문장들이 "확정 설계"로 읽힌 것이 #66이 두 스레드를 살아남은 실제 원인이다.
+      · 테스트 **2779건 전부 통과**, iOS 컴파일 확인. **동작 변경 0** — 주석·문서만 고쳤다.
 
 ---
 
@@ -282,13 +243,6 @@
 >
 > 근거는 2026-09-03에 **읽어서 확인한 코드**다(에이전트 4명 조사 + 24개 주장에 대한 반증 검증).
 > 각 항목의 `file:line`은 그 시점(HEAD `f51376a`) 기준이다.
-
-67. **무르기 정책에 대한 낡은 주석·문서를 3일차로 정정한다** (AI 모델: Sonnet, 노력정도: 낮음)
-    - 대상: `GamePlaySection.kt:479-486`(삭제), `ConsumableItem.kt:95`,
-      `ReleaseResetCoordinator.kt:23`(둘 다 "1일차"라고 적혀 있다),
-      `launch-plan/README.md` 338·345-360·376, `feature-access-principles/README.md` 102-103.
-    - ⚠️ **이 낡은 서술이 코드의 근거로 계속 인용된 것이 #66 버그가 두 스레드를 지나며 살아남은
-      실제 원인이다.** 코드만 고치고 문서를 두면 세 번째 스레드가 되살린다.
 
 68. **획득 사실을 5계층 밖으로 꺼낸다** — `ShardGrant.unlocked` 보존 + 출석 결과에 신규 획득 캐릭터 (AI 모델: Opus, 노력정도: 중간)
     - **#69의 선행.** shared 순수 계층 + 단위 테스트만으로 끝나고 UI가 없다.
@@ -664,6 +618,7 @@
 
 | # | 무엇을 했는가 | 커밋 |
 | --- | --- | --- |
+| 66 | 무르기 인게임 프로모션 클레임 팝업 제거 — 3일차 출석 보상만 남기고, 잠긴 동안 프리미엄 테두리 | `9496690` |
 | 65 | 출석 Claim이 저장소에만 쓰고 화면 상태를 안 고쳐 3일차 무르기 해금이 그 세션 동안 안 먹던 결함 | `c601abb` |
 | 43 | 빈 바둑판에서 형세 보기가 열려 1회권만 소모되던 것을 게이트로 막았다 | `aacda3c` |
 | 44 | 같은 수순에서 껐다 켜면 1회권이 또 나가던 결함 — 지불 원장(`OneShotLedger`)을 표시 상태와 분리 | `aacda3c` |

@@ -60,7 +60,7 @@ fun decideConsumableSpend(
         premiumState = when (item.effect) {
             is ConsumableEffect.FeatureUse -> null
             // 광고를 본 것과 같은 상태로 켠다. claimedFeatures는 별개 축이라 반드시 이어붙인다 —
-            // 통째로 덮어쓰면 이미 받은 영구 클레임(예: 1일차 무르기)이 사라진다(#4의 회귀 이력).
+            // 통째로 덮어쓰면 이미 받은 영구 클레임(예: 3일차 무르기)이 사라진다(#4의 회귀 이력).
             ConsumableEffect.PremiumGrant ->
                 PremiumState.adGranted(nowMillis).copy(claimedFeatures = premiumState.claimedFeatures)
         },

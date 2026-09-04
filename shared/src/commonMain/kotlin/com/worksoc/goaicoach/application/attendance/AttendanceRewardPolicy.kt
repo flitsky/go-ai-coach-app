@@ -64,7 +64,7 @@ private const val WeeklySkipTicketAmount: Int = 3
 private const val ShardRewardAmount: Int = 1
 
 sealed class AttendanceReward {
-    /** 기능 하나를 **영구히** 열어준다(1일차 무르기). */
+    /** 기능 하나를 **영구히** 열어준다(3일차 무르기 — [UndoUnlimitedRewardTier]). */
     data class PermanentFeature(val featureId: FeatureId) : AttendanceReward()
 
     /** 쓰면 줄어드는 소모품 [amount]개(2·3·5·6·7일차). */

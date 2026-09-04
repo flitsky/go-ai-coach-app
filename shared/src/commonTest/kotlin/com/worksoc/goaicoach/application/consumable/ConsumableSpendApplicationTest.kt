@@ -69,7 +69,7 @@ class ConsumableSpendApplicationTest {
 
     @Test
     fun permanentClaimAlsoPassesThroughWithoutBurningStock() {
-        // 1일차 무르기처럼 영구 클레임으로 이미 열린 기능도 재고를 쓰지 않아야 한다.
+        // 3일차 무르기처럼 영구 클레임으로 이미 열린 기능도 재고를 쓰지 않아야 한다.
         val claimed = PremiumState(claimedFeatures = setOf(FeatureId.Eval))
         val inventory = ConsumableInventory().withGranted(evalTicket.id, 10)
 

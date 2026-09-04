@@ -105,7 +105,7 @@ class ConsumableCatalogTest {
     fun featureTicketsMapToTheirFeatureAndAdSkipMapsToNone() {
         assertEquals(ConsumableCatalog.EvalOnce, ConsumableCatalog.forFeature(FeatureId.Eval))
         assertEquals(ConsumableCatalog.TopMovesOnce, ConsumableCatalog.forFeature(FeatureId.TopMoves))
-        // 무르기는 1일차 영구 클레임으로 풀리고, 기보 리뷰는 보상 대상이 아니다(4.2절).
+        // 무르기는 3일차 출석 보상의 영구 클레임으로 풀리고, 기보 리뷰는 보상 대상이 아니다(4.2절).
         assertNull(ConsumableCatalog.forFeature(FeatureId.Undo))
         assertNull(ConsumableCatalog.forFeature(FeatureId.MoveReview))
         assertTrue(ConsumableCatalog.PremiumOnce.effect is ConsumableEffect.PremiumGrant)

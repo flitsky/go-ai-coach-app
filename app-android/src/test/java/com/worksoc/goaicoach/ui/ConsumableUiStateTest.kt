@@ -33,7 +33,7 @@ class ConsumableUiStateTest {
     fun featuresWithoutAOneShotTicketNeverOfferOne() {
         val stocked = stateWith(ConsumableCatalog.EvalOnce to 5, ConsumableCatalog.PremiumOnce to 5)
 
-        // 무르기는 1일차 영구 클레임으로 풀리고, 기보 리뷰는 보상 대상이 아니다(4.2절).
+        // 무르기는 3일차 출석 보상의 영구 클레임으로 풀리고, 기보 리뷰는 보상 대상이 아니다(4.2절).
         assertNull(stocked.ticketFor(FeatureId.Undo))
         assertNull(stocked.ticketFor(FeatureId.MoveReview))
     }
