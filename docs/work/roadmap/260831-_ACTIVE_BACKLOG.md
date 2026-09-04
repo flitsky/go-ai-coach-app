@@ -194,45 +194,61 @@
 
 ## 진행 중
 
-70. **개발자 섹션에 조각 수 조절 + 마지막 광고에서 획득 루틴이 도는지 실기 확인** (AI 모델: Sonnet, 노력정도: 중간) [진행중]
-    - 원 발주 2번. **#69 선행** — 팝업이 없으면 "확인"의 대상이 Toast뿐이다.
-    - ✅ **도메인 체인은 이미 완결돼 있다.** `next >= source.required`인 순간
-      `withClaimed(id)`가 `claimedBots`에 넣고 `adShards`에서 그 줄을 지우며 `store.save`까지 간다
-      (`BotCollectionState.kt:46-55`, `:30-31`). **고칠 것은 알리는 층뿐이고 그것이 #68·#69다.**
-    - **처방**: 쓰기를 UI에서 `copy(adShards = …)`로 만들지 말고 5계층에 함수를 하나 더한다
-      (예: `runBotCharacterShardSet`). 조절 후 `LocalBotCharacterUiState.refresh()`를 부를 것 —
-      픽커는 열 때만 `refresh()`한다(`BotCharacterUiState.kt:187`).
-    - ⚠️ **`count`를 `required - 1`로 클램프하거나 `withAdShards`를 돌릴 것.** 조각을 `required`
-      이상으로 심으면 *"다 모았는데 미획득"* 이라는, 코드 주석이 **도달 불가로 못박은** 상태가 생긴다
-      (`UiStrings.kt:383-386`). 크래시는 안 나지만 그 경계를 지키던 테스트가 무의미해진다.
-    - ⚠️ **캐릭터를 직접 심는 버튼은 넣지 말 것.** 넣는 순간 **유령 보상이 재현 가능해지고**(#68 참고)
-      무료 획득 경로가 된다. '조각 수만' 만지게 제한하면 그 문이 열리지 않는다.
-    - ✅ **릴리스 노출은 #77로 해결됐다** — 개발자 섹션 전체가 debug 전용이 되므로 이 항목은 그 위에서
-      만들면 된다. **버튼별로 `BuildConfig.DEBUG`를 덧씌우지 말 것**(이중 게이트가 된다).
-    - **남은 결정 하나**: 조작 방식 — 캐릭터별 +1/-1인가, "한 개 남기기"로 경계 점프인가.
-      2·4단계가 각각 5·10개라 **후자가 탭 수가 훨씬 적다**. 착수 시 확인할 것.
-    - **✅ 구현 완료(2026-09-03) — 사용자 승인·커밋 대기. 실기로 끝까지 밟았다.**
-      · 5계층에 `runBotCharacterShardSet`을 더했다. **UI가 `copy(adShards = …)`를 만들지 않게 하는
-        것이 이 함수의 값이다** — 화면이 맵을 직접 만들면 획득 경계를 우회하는 상태가 쉽게 생긴다.
-      · ⚠️ **`required - 1`로 자른다.** *"다 모았는데 미획득"* 은 `withAdShard`가 그 순간 획득으로
-        넘기기 때문에 **도달 불가한 상태**이고 해금 힌트 문구가 그 사실에 기대고 있다. 개발자
-        도구가 그 상태를 만들면 경계를 지키던 테스트가 통째로 뜻을 잃는다.
-      · ⚠️ **획득으로 바로 넘기는 버튼은 넣지 않았다** — 캐릭터를 심으면 유령 보상(#68)이 도달
-        가능해지고 7·28일차 대체 보상이라는 미해결 결정을 끌어온다.
-      · UI는 **2차**에 붙였다(조각은 광고 시청분이라 그 자체가 무료 획득 경로다). 조작은
-        **"한 개 남기기" / "비우기"** 두 버튼 — 2·4단계가 각각 5·10개라 +1/-1보다 탭이 훨씬 적다.
-        지급 뒤 `bots.refresh()`를 부른다.
-      · **가드**: `BotCharacterShardSetTest` 7건. ⚠️ **변이 5건으로 확인**(상한 클램프 제거 /
-        상한을 `required`로 / 이미 보유 가드 제거 / 조각 경로 가드 우회 / 무변화 조기반환 제거).
-        · ⚠️ **변이 하나가 처음엔 통과해서 다시 했다** — 같은 문장(`if (next == current) return null`)이
-          `runBotCharacterShardGrant`에도 있어 **다른 함수에 적용됐다.** 마지막 출현을 대상으로
-          바꿔 재검증하니 정상 실패한다.
-      · **실기 확인(에뮬레이터, 광고 경로 전체)**: "한 개 남기기" → 저장소 `fast_beginner_2: 4`,
-        화면 `4 / 5`, 힌트 *"조각 1개 남았어요"*, 파이가 한 조각만 빔. 정면 카드 탭 → **Test Ad**
-        재생(`Reward granted`) → 닫으니 `claimedBots: [fast_beginner_2]`, `adShards: {}` →
-        **축전 팝업(#69)이 컬러 아바타로 뜨고 픽커는 되살아나지 않았다**(z축 게이트 작동).
-        · ✅ **이것으로 #69의 광고 경로까지 실기로 닫혔다** — #69 시점에는 출석 경로만 확인했다.
-    - 테스트 **2811건 전부 통과**. iOS 컴파일 확인.
+71. **개발자 섹션: 출석 하루 진행 + 보상 팝업 재실행 버튼** (AI 모델: Sonnet, 노력정도: 중간) [진행중]
+    - 원 발주 3번. **설계 결론이 이미 확정돼 있어 한 스레드에서 끝난다.**
+    - ⚠️ **시계 주입 시임은 없다 — "저장된 하루 인덱스를 되감는" 방식만 성립한다.**
+      `AppClock.kt:24`는 포트가 아니라 최상위 함수이고, **출석 두 경로는 그것조차 안 쓰고**
+      `System.currentTimeMillis()`를 직접 읽는다(`AttendanceCheckInCoordinator.kt:34`,
+      `AttendanceRewardClaimDialog.kt:82`). 전역 오프셋은 프리미엄 만료·대국 타이머·기록
+      타임스탬프까지 오염시킨다(app-android에 직접 호출 20곳).
+    - **처방**: ⓐ shared에 `runAttendanceDevDayRewind` — 내용은
+      `store.save(store.load().copy(lastCheckInUtcDay = null))` 수준(`checkIn`이 `== today` 비교만
+      한다, `AttendanceCheckIn.kt:32`). ⚠️ **`attendanceCount`는 건드리지 말 것** — 증가는 `checkIn`의
+      책임이고 여기서 같이 올리면 체크인 경로가 둘이 된다.
+      ⓑ **팝업 재실행 시임**: `AttendanceRewardClaimDialog.kt` 안에 모듈 내 object
+      (`AttendanceReplaySignal` 등)를 두고 `LaunchedEffect(attendanceStore)` →
+      `LaunchedEffect(attendanceStore, revision)`으로 키를 늘린다. 이러면 **`GoCoachApp.kt`에 한 줄도
+      안 늘어난다.** ⓒ `SettingsScreen.kt:467` 직전에 버튼 행(`TextButton`은 `:33`에 이미 import돼 있다).
+    - ⚠️ **저장소만 되감으면 팝업이 안 뜬다.** 래치는 `AttendanceRewardClaimDialog.kt:72`의 키 없는
+      `remember { pending }`과 `:80`의 `LaunchedEffect(attendanceStore)`이며, 키인 store는 `:68`의
+      `remember(context)`라 컴포지션 수명 내내 불변이다. "저장하면 알아서 뜬다"고 가정하면 버튼이
+      아무 일도 안 하는 것처럼 보인다.
+    - ⚠️ **`Activity.recreate()`로 콜드부트를 흉내내지 말 것** — `MainActivity.kt:46-57`의
+      `LaunchedEffect(Unit)`이 엔진 부트스트랩을 다시 돌려 "Preparing …" 화면으로 떨어지고 **진행 중
+      대국이 날아간다.**
+    - ⚠️ **부제에 "지금 N일차 / 다음 N+1일차"를 적을 것.** 8~13·15~20·22~27일차는 `isRewardedTier`가
+      false라 **원래 팝업이 안 뜬다**(`AttendanceCheckIn.kt:47`). 5·6일차도 그 조각 캐릭터를 이미 모았으면
+      회차가 통째로 걸러진다(`AttendanceRewardPolicy.kt:172-176`). **버튼이 고장났다는 오진의 주 원인.**
+    - ⚠️ 되감은 뒤 백그라운드→포그라운드 하면 `AttendanceCheckInCoordinator`(`:30-39`)가 먼저 하루를
+      소비할 수 있다 — 멱등이라 상태가 갈라지진 않지만 "팝업 대신 조용히 카운트만 올랐다"가 된다.
+    - ✅ **릴리스 노출은 #77로 해결됐다**(개발자 섹션 전체가 debug 전용). 버튼별 `BuildConfig.DEBUG`를
+      덧씌우지 말 것.
+    - **✅ 구현 완료(2026-09-04) — 사용자 승인·커밋 대기. 에뮬레이터 실기 확인까지 마쳤다.**
+      · ⚠️ **되감기는 시간을 읽지 않는다.** `runAttendanceDevDayRewind`가 `lastCheckInUtcDay`만
+        비우고, 증가는 `checkIn`이 한다 — **같은 시각으로 여섯 번 되감아 7일차에 닿는 것**을
+        테스트로 고정했다. 전역 시계 오프셋은 프리미엄 만료·타이머·기록까지 오염시킨다.
+      · ⚠️ **`attendanceCount`는 건드리지 않는다** — 올리면 체크인 경로가 둘이 된다(#66의 결말).
+      · **재실행 시임**: `AttendanceClaimReplaySignal`을 `AttendanceRewardClaimDialog.kt` **안에**
+        두고 `LaunchedEffect` 키를 늘렸다 — 셸에 **0줄**, 예산 880/880·46/46 그대로다.
+        ⚠️ `Activity.recreate()`는 쓰지 않는다(엔진 부트스트랩이 다시 돌아 **진행 중 대국이 날아간다**).
+      · **부제가 일차와 보상 여부를 말한다.** 8~13·15~20·22~27일차는 원래 팝업이 안 뜨므로
+        숫자가 없으면 "버튼이 고장났다"로 오진하는 자리다. 그 문구는 `fun`이라 리플렉션 그물이
+        못 봐서 **손 그물**(`UiStringsDevAttendanceTest`)을 달고, 문구가 말하는 사실을
+        `isRewardedTier`에 되물어 함께 고정했다.
+      · ⚠️ **실기에서 결함 하나를 잡아 고쳤다 — 부제가 한 일차 뒤처졌다.** 되감기는 표시만 지우고
+        실제 증가는 팝업의 effect가 하므로, 누른 직후에 저장소를 읽으면 **증가 전 값**이 잡힌다
+        (부제가 "지금 3일차"에 멈춰 있었다). **effect 순서에 기대지 않는 유일한 방법**은 증가를
+        아는 쪽이 알려 주는 것이라, 시그널에 `lastCheckedInDay`를 실어 팝업이 발행하게 했다.
+      · **가드**: `AttendanceDevDayRewindTest` 4건 + `UiStringsDevAttendanceTest` 4건.
+        ⚠️ **변이 3건으로 확인**(되감기가 카운트까지 올림 / 연타 가드 제거 / 수령 기록까지 지움).
+        · ⚠️ 변이 검증 중 명령이 타임아웃으로 끊겨 **변이가 파일에 남아 있었다** — 확인·복구 후
+          재검증했다. **끊긴 뒤에는 워킹트리를 반드시 확인할 것.**
+      · **실기 확인(에뮬레이터)**: 3일차 시드 → "하루 진행" → 4일차 팝업(광고 스킵권 3개) →
+        받기 → 부제가 **"지금 4일차 · 누르면 5일차 보상"** 으로 갱신. 7일차까지 반복 후
+        **"지금 7일차 · 8일차는 보상 없음"** 이 정확히 나온다.
+      · ⚠️ **사용자 폰(SM-S911N) 확인은 못 했다** — USB 연결이 중간에 끊겼다. 재연결되면 같은
+        순서를 밟을 것.
+    - 테스트 **2819건 전부 통과**. iOS 컴파일 확인.
 
 ---
 
@@ -265,36 +281,6 @@
 >
 > 근거는 2026-09-03에 **읽어서 확인한 코드**다(에이전트 4명 조사 + 24개 주장에 대한 반증 검증).
 > 각 항목의 `file:line`은 그 시점(HEAD `f51376a`) 기준이다.
-
-71. **개발자 섹션: 출석 하루 진행 + 보상 팝업 재실행 버튼** (AI 모델: Sonnet, 노력정도: 중간)
-    - 원 발주 3번. **설계 결론이 이미 확정돼 있어 한 스레드에서 끝난다.**
-    - ⚠️ **시계 주입 시임은 없다 — "저장된 하루 인덱스를 되감는" 방식만 성립한다.**
-      `AppClock.kt:24`는 포트가 아니라 최상위 함수이고, **출석 두 경로는 그것조차 안 쓰고**
-      `System.currentTimeMillis()`를 직접 읽는다(`AttendanceCheckInCoordinator.kt:34`,
-      `AttendanceRewardClaimDialog.kt:82`). 전역 오프셋은 프리미엄 만료·대국 타이머·기록
-      타임스탬프까지 오염시킨다(app-android에 직접 호출 20곳).
-    - **처방**: ⓐ shared에 `runAttendanceDevDayRewind` — 내용은
-      `store.save(store.load().copy(lastCheckInUtcDay = null))` 수준(`checkIn`이 `== today` 비교만
-      한다, `AttendanceCheckIn.kt:32`). ⚠️ **`attendanceCount`는 건드리지 말 것** — 증가는 `checkIn`의
-      책임이고 여기서 같이 올리면 체크인 경로가 둘이 된다.
-      ⓑ **팝업 재실행 시임**: `AttendanceRewardClaimDialog.kt` 안에 모듈 내 object
-      (`AttendanceReplaySignal` 등)를 두고 `LaunchedEffect(attendanceStore)` →
-      `LaunchedEffect(attendanceStore, revision)`으로 키를 늘린다. 이러면 **`GoCoachApp.kt`에 한 줄도
-      안 늘어난다.** ⓒ `SettingsScreen.kt:467` 직전에 버튼 행(`TextButton`은 `:33`에 이미 import돼 있다).
-    - ⚠️ **저장소만 되감으면 팝업이 안 뜬다.** 래치는 `AttendanceRewardClaimDialog.kt:72`의 키 없는
-      `remember { pending }`과 `:80`의 `LaunchedEffect(attendanceStore)`이며, 키인 store는 `:68`의
-      `remember(context)`라 컴포지션 수명 내내 불변이다. "저장하면 알아서 뜬다"고 가정하면 버튼이
-      아무 일도 안 하는 것처럼 보인다.
-    - ⚠️ **`Activity.recreate()`로 콜드부트를 흉내내지 말 것** — `MainActivity.kt:46-57`의
-      `LaunchedEffect(Unit)`이 엔진 부트스트랩을 다시 돌려 "Preparing …" 화면으로 떨어지고 **진행 중
-      대국이 날아간다.**
-    - ⚠️ **부제에 "지금 N일차 / 다음 N+1일차"를 적을 것.** 8~13·15~20·22~27일차는 `isRewardedTier`가
-      false라 **원래 팝업이 안 뜬다**(`AttendanceCheckIn.kt:47`). 5·6일차도 그 조각 캐릭터를 이미 모았으면
-      회차가 통째로 걸러진다(`AttendanceRewardPolicy.kt:172-176`). **버튼이 고장났다는 오진의 주 원인.**
-    - ⚠️ 되감은 뒤 백그라운드→포그라운드 하면 `AttendanceCheckInCoordinator`(`:30-39`)가 먼저 하루를
-      소비할 수 있다 — 멱등이라 상태가 갈라지진 않지만 "팝업 대신 조용히 카운트만 올랐다"가 된다.
-    - ✅ **릴리스 노출은 #77로 해결됐다**(개발자 섹션 전체가 debug 전용). 버튼별 `BuildConfig.DEBUG`를
-      덧씌우지 말 것.
 
 72. **개발자 섹션: 다음 캐릭터 회차(7/28)로 건너뛰기** (AI 모델: Sonnet, 노력정도: 낮음) [사용자 승인 대기]
     - #71의 시임 위에 얹는 순수 추가. **#71만으로는 목적을 사실상 달성하지 못한다** — 28일차를 보려면
@@ -572,6 +558,7 @@
 
 | # | 무엇을 했는가 | 커밋 |
 | --- | --- | --- |
+| 70 | 개발자 2차에 조각 수 조절(`required-1` 클램프) — 광고 1회로 획득 루틴 실기 확인 | `4b4f64b` |
 | 77 | 개발자 테스트 2단 분리 — 1차(10탭·release 포함) / 2차(3초 홀드·debug 전용·세션 한정) | `9a6cabd` |
 | 69 | 캐릭터 획득 축전 팝업(#50 조각 공개 재생) — 출석·광고 배선, 여럿이면 순차, z축 게이트 둘 | `1cc1a65` |
 | 68 | 획득 사실을 5계층 밖으로(출석 결과 + 광고 반환형) · 유령 보상 차단 · `@Test` 누락 8건 부활 | `4e4e9ac` |

@@ -75,6 +75,50 @@ import com.worksoc.goaicoach.persistence.PremiumStateStore
  * 재고에 대해 [ConsumableUiState.refresh]가 하는 일과 **정확히 같은 처방**이다 — 아래 지급
  * 직후 주석이 같은 함정을 이미 기록해 두고 있었는데, 프리미엄 쪽만 빠져 있었다.
  */
+/**
+ * 출석 보상 팝업을 **다시 띄우라는 신호**(백로그 #71) — 개발자 테스트의 "출석 하루 진행" 버튼이
+ * 쓴다.
+ *
+ * ## ⚠️ 저장소를 되감기만 하면 팝업이 다시 뜨지 않는다
+ * 아래 [AttendanceRewardClaimDialog]가 받을 것을 계산하는 곳은 `LaunchedEffect(attendanceStore)`
+ * 하나이고, 그 키인 저장소는 `remember(context)`라 **컴포지션 수명 내내 불변**이다. 게다가
+ * 지급하면 `pending`이 비워지는데 그 상태 역시 키 없는 `remember`다. 즉 **디스크를 되감아도
+ * 화면은 그 사실을 알 방법이 없다** — "저장하면 알아서 뜬다"고 가정하면 버튼이 아무 일도 안
+ * 하는 것처럼 보인다.
+ *
+ * ## ⚠️ 그래서 신호를 이 파일 안에 둔다 — 셸이 아니라
+ * `GoCoachApp.kt`는 라인 예산 **880/880**, 상태훅 **46/46**으로 여유가 정확히 0이다(함정 3번).
+ * 모듈 내 `object`로 두면 셸에 **한 줄도** 늘지 않는다.
+ *
+ * ⚠️ **`Activity.recreate()`로 콜드부트를 흉내내지 말 것** — `MainActivity`의
+ * `LaunchedEffect(Unit)`이 엔진 부트스트랩을 다시 돌려 "Preparing …"으로 떨어지고 **진행 중
+ * 대국이 날아간다.** 이 신호는 그 대신이다.
+ */
+internal object AttendanceClaimReplaySignal {
+    /** 올릴 때마다 팝업 계산이 한 번 더 돈다. 값 자체에는 뜻이 없다 — 변하기만 하면 된다. */
+    var revision by mutableStateOf(0)
+        private set
+
+    /**
+     * 체크인을 **실제로 돌린 뒤의** 출석일. 개발자 버튼의 부제가 이 값을 읽는다.
+     *
+     * ⚠️ **버튼 쪽에서 저장소를 직접 읽으면 한 일차 뒤처진다** — 되감기는 표시만 지우고 실제
+     * 증가는 아래 [AttendanceRewardClaimDialog]의 effect가 하므로, 누른 직후에 읽으면 **증가
+     * 전 값**이 잡힌다(2026-09-04 실기에서 부제가 "지금 3일차"에 멈춰 있는 것으로 드러났다).
+     * 그래서 **증가를 아는 쪽이 알려 준다** — effect 순서에 기대지 않는 유일한 방법이다.
+     */
+    var lastCheckedInDay by mutableStateOf<Int?>(null)
+        private set
+
+    fun request() {
+        revision++
+    }
+
+    fun publishCheckedInDay(day: Int) {
+        lastCheckedInDay = day
+    }
+}
+
 @Composable
 internal fun AttendanceRewardClaimDialog(
     context: Context,
@@ -94,13 +138,15 @@ internal fun AttendanceRewardClaimDialog(
     // 캐릭터는 흑백, 조각 경로는 모은 만큼만 색이 돈다.
     var collection by remember { mutableStateOf(BotCollectionState()) }
 
-    LaunchedEffect(attendanceStore) {
+    LaunchedEffect(attendanceStore, AttendanceClaimReplaySignal.revision) {
         val checkIn = runAttendanceCheckIn(
             request = AttendanceCheckInRequest(nowEpochMillis = System.currentTimeMillis()),
             store = attendanceStore,
         )
         // 컬렉션까지 넘겨야 이미 다 모은 캐릭터의 조각이 팝업에 실리지 않는다 — 조각은 7일차마다
         // 영원히 반복되므로 이 필터가 없으면 매주 의미 없는 줄이 하나씩 남는다.
+        // 개발자 버튼의 부제가 뒤처지지 않게, 체크인 결과를 알려 준다(위 KDoc 참고).
+        AttendanceClaimReplaySignal.publishCheckedInDay(checkIn.state.attendanceCount)
         val loaded = botStore.load()
         collection = loaded
         pending = AttendanceRewardPolicy.pendingTiers(checkIn.state, loaded)

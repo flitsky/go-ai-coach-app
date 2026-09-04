@@ -61,6 +61,9 @@ import com.worksoc.goaicoach.application.botcharacter.BotCharacterCatalog
 import com.worksoc.goaicoach.application.botcharacter.BotUnlockSource
 import com.worksoc.goaicoach.application.botcharacter.runBotCharacterShardSet
 import com.worksoc.goaicoach.persistence.BotCollectionStore
+import com.worksoc.goaicoach.application.attendance.isRewardedTier
+import com.worksoc.goaicoach.application.attendance.runAttendanceDevDayRewind
+import com.worksoc.goaicoach.persistence.AttendanceStore
 import com.worksoc.goaicoach.BuildConfig
 import com.worksoc.goaicoach.application.auth.AuthClientPort
 import com.worksoc.goaicoach.application.auth.AuthProvider
@@ -144,6 +147,12 @@ internal fun SettingsScreen(
     var versionTapCount by remember { mutableStateOf(0) }
     val consumables = LocalConsumableUiState.current
     val bots = LocalBotCharacterUiState.current
+    // 개발자 2차의 출석 부제가 읽는 값.
+    // ⚠️ **버튼을 누른 직후에 저장소를 읽으면 한 일차 뒤처진다** — 되감기는 표시만 지우고 실제
+    // 증가는 `AttendanceRewardClaimDialog`의 effect가 하기 때문이다. 그래서 증가를 아는 쪽이
+    // 알려 주는 값(`lastCheckedInDay`)을 우선 쓰고, 아직 없으면 저장소를 읽는다.
+    val attendanceDay = AttendanceClaimReplaySignal.lastCheckedInDay
+        ?: remember(context) { AttendanceStore(context).load().attendanceCount }
     // 백로그 #53 — 화면이 열릴 때 한 번만 묻고, 결과가 오면 그때 아래 줄이 나타난다.
     // 실패는 조용히 넘어간다(`AppUpdateRow`의 폴백 경로).
     val updateStatus = rememberAppUpdateStatus()
@@ -671,6 +680,47 @@ internal fun SettingsScreen(
                             ) {
                                 Text(strings.settingsDevShardClearAction)
                             }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // ⚠️ **2차인 이유**: 이 버튼은 누를 때마다 1회권·캐릭터·무르기 영구 해금을
+                    // 실질적으로 **무료로 찍어낸다.** 기존 프리미엄 토글보다 악용 가치가 크다.
+                    // ⚠️ **부제에 지금 일차를 적는 것이 중요하다.** 8~13·15~20·22~27일차는
+                    // `isRewardedTier`가 false라 **원래 팝업이 안 뜬다.** 5·6일차도 그 조각
+                    // 캐릭터를 이미 다 모았으면 회차가 통째로 걸러진다. 숫자를 안 보여주면
+                    // "버튼이 고장났다"로 오진하게 되는 자리다.
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = strings.settingsDevAttendanceTitle,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                            Text(
+                                text = strings.settingsDevAttendanceSubtitle(
+                                    current = attendanceDay,
+                                    next = attendanceDay + 1,
+                                    nextIsRewarded = isRewardedTier(attendanceDay + 1),
+                                ),
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.secondary,
+                            )
+                        }
+                        TextButton(
+                            onClick = {
+                                // 되감기만으로는 팝업이 안 뜬다 — 신호까지 올려야 계산이 다시 돈다
+                                // (`AttendanceClaimReplaySignal`의 KDoc 참고).
+                                runAttendanceDevDayRewind(AttendanceStore(context))
+                                AttendanceClaimReplaySignal.request()
+                            },
+                        ) {
+                            Text(strings.settingsDevAttendanceAdvanceAction)
                         }
                     }
                 }

@@ -45,3 +45,28 @@ fun AttendanceState.checkIn(nowEpochMillis: Long): AttendanceCheckInResult {
  * 어떤 보상을 줄지(콘텐츠)는 이 함수의 범위 밖이다 — 1일차 외에는 아직 미확정(4.2절).
  */
 fun isRewardedTier(tier: Int): Boolean = tier in 1..7 || (tier > 7 && tier % 7 == 0)
+
+/**
+ * 5계층(App Service) — **개발자 테스트용**으로 "오늘 아직 체크인하지 않은" 상태로 되감는다
+ * (백로그 #71). 다음 체크인이 하루를 진행시키므로 출석일이 하나 오른다.
+ *
+ * ## ⚠️ 시계를 앞으로 돌리는 방식은 성립하지 않는다 — 그래서 저장값을 되감는다
+ * 출석 판정에 들어오는 벽시계는 **`AppClock`을 거치지 않는다.** app-android의 두 진입점
+ * (`AttendanceCheckInCoordinator`, `AttendanceRewardClaimDialog`)이 `System.currentTimeMillis()`를
+ * 직접 읽고, `AppClock.currentEpochMillis()`는 포트가 아니라 최상위 함수다. 게다가 전역 오프셋을
+ * 만들면 프리미엄 만료·대국 타이머·기록 타임스탬프까지 함께 오염된다(직접 호출이 20곳이다).
+ * **되감기는 시간을 읽을 필요가 없다** — [AttendanceState.lastCheckInUtcDay]만 비우면 된다.
+ *
+ * ## ⚠️ [AttendanceState.attendanceCount]는 건드리지 않는다
+ * 증가는 [checkIn]의 책임이다. 여기서 같이 올리면 **체크인 경로가 둘이 되어** 하나를 고칠 때
+ * 다른 하나가 남는다 — 그 종류의 이중 경로가 #66에서 어떻게 끝났는지 보면 된다.
+ *
+ * @return 되감은 새 상태. 이미 "오늘 안 함" 상태였으면 아무것도 하지 않고 `null`.
+ */
+fun runAttendanceDevDayRewind(store: AttendanceStorePort): AttendanceState? {
+    val current = store.load()
+    if (current.lastCheckInUtcDay == null) return null
+    val next = current.copy(lastCheckInUtcDay = null)
+    store.save(next)
+    return next
+}

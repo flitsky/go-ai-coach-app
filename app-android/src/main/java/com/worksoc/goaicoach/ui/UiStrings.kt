@@ -292,6 +292,8 @@ internal data class UiStrings(
     val settingsDevShardTitle: String,
     val settingsDevShardAlmostAction: String,
     val settingsDevShardClearAction: String,
+    val settingsDevAttendanceTitle: String,
+    val settingsDevAttendanceAdvanceAction: String,
     val settingsDevPremiumToggleTitle: String,
     val settingsDevPremiumToggleSubtitle: String,
     val settingsDevGameSetupUxToggleTitle: String,
@@ -350,6 +352,29 @@ internal data class UiStrings(
      * 캐릭터 픽커의 한 줄 라벨 — **이름 옆에 티어명을 병기**한다(백로그 #9 확정). 이름만으로는
      * 어느 쪽이 센지 모호해서, 캐릭터 선택이 곧 난이도 선택이라는 것이 드러나지 않는다.
      */
+    /**
+     * 개발자 2차의 출석 진행 버튼 부제(백로그 #71) — **지금 몇 일차이고 다음이 보상 회차인지**를
+     * 말한다.
+     *
+     * ⚠️ **이 안내가 없으면 버튼이 고장난 것처럼 보인다.** 8~13·15~20·22~27일차는
+     * `isRewardedTier`가 false라 **원래 팝업이 뜨지 않는다** — 숫자를 보여 주지 않으면 그 구간에서
+     * 버튼을 눌러 놓고 "안 된다"고 오진하게 된다.
+     *
+     * ⚠️ **`fun`이라 `UiStringsTest`의 리플렉션 그물이 못 본다**(함정 10번) —
+     * `UiStringsDevAttendanceTest`가 네 언어를 손으로 고정한다.
+     */
+    fun settingsDevAttendanceSubtitle(current: Int, next: Int, nextIsRewarded: Boolean): String =
+        when (language) {
+            UiLanguage.Korean ->
+                if (nextIsRewarded) "지금 ${current}일차 · 누르면 ${next}일차 보상" else "지금 ${current}일차 · ${next}일차는 보상 없음"
+            UiLanguage.English ->
+                if (nextIsRewarded) "Day $current now · tap for day $next reward" else "Day $current now · day $next has no reward"
+            UiLanguage.Japanese ->
+                if (nextIsRewarded) "現在${current}日目 · 押すと${next}日目の報酬" else "現在${current}日目 · ${next}日目は報酬なし"
+            UiLanguage.ChineseSimplified ->
+                if (nextIsRewarded) "当前第 $current 天 · 点击获得第 $next 天奖励" else "当前第 $current 天 · 第 $next 天无奖励"
+        }
+
     fun botCharacterLabel(character: BotCharacter): String =
         "${botCharacterName(character)} (${fastBeginnerTierLabel(character.tierWithinGroup ?: 1)})"
 
