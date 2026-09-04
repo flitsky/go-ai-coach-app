@@ -4,7 +4,14 @@ import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.background
+import android.content.Context
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
+import androidx.compose.ui.input.pointer.PointerEventTimeoutCancellationException
+import androidx.compose.ui.input.pointer.pointerInput
+import kotlinx.coroutines.withTimeout
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -46,6 +53,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException
 import com.google.firebase.auth.FirebaseAuthWeakPasswordException
+import androidx.compose.ui.platform.LocalDensity
+import com.worksoc.goaicoach.application.consumable.ConsumableCatalog
+import com.worksoc.goaicoach.application.consumable.runConsumableGrant
+import com.worksoc.goaicoach.persistence.ConsumableInventoryStore
 import com.worksoc.goaicoach.BuildConfig
 import com.worksoc.goaicoach.application.auth.AuthClientPort
 import com.worksoc.goaicoach.application.auth.AuthProvider
@@ -68,6 +79,15 @@ private const val DeveloperModeTapsRequired = 10
 // 활성화까지 남은 탭 수가 이 값 이하로 줄어들면 카운트다운 토스트를 보여준다(첫 탭부터
 // 매번 토스트를 띄우면 실수로 두 번 눌렀을 때도 소란스러워 초반 탭은 조용히 넘어간다).
 private const val DeveloperModeTapCountdownThreshold = 5
+
+/**
+ * 2차(고급) 개발자 테스트를 여는 **길게 누르기** 시간(백로그 #77).
+ *
+ * ⚠️ **`combinedClickable`의 `onLongClick`으로는 이 값을 표현할 수 없다** — 그쪽은
+ * `viewConfiguration.longPressTimeoutMillis`(약 500ms)에 하드와이어돼 있다. 그래서 아래
+ * 버전 텍스트는 `pointerInput` 제스처 하나로 **탭과 길게 누르기를 함께** 판정한다.
+ */
+private const val AdvancedDeveloperModeHoldMillis = 3_000L
 
 /**
  * 홈 화면 상단의 설정 진입점에서 열리는 화면. 게스트(로컬 기기 ID)/Google/이메일 로그인
@@ -113,7 +133,12 @@ internal fun SettingsScreen(
     var gameSetupUxMode by remember { mutableStateOf(preferencesStore.load().gameSetupUxMode) }
     val developerModeStore = remember(context) { DeveloperModeStore(context) }
     var isDeveloperModeEnabled by remember { mutableStateOf(developerModeStore.isEnabled()) }
+    // ⚠️ **2차는 저장하지 않는다**(백로그 #77). 1차와 달리 `DeveloperModeStore`에 남기지 않으므로
+    // 화면을 벗어나거나 앱을 다시 켜면 꺼진다 — 한 번 켠 기기가 영구히 열린 상태로 남지 않게
+    // 하는 것이 이 항목의 안전장치 중 하나다.
+    var isAdvancedDeveloperModeEnabled by remember { mutableStateOf(false) }
     var versionTapCount by remember { mutableStateOf(0) }
+    val consumables = LocalConsumableUiState.current
     // 백로그 #53 — 화면이 열릴 때 한 번만 묻고, 결과가 오면 그때 아래 줄이 나타난다.
     // 실패는 조용히 넘어간다(`AppUpdateRow`의 폴백 경로).
     val updateStatus = rememberAppUpdateStatus()
@@ -359,24 +384,60 @@ internal fun SettingsScreen(
                             "${strings.settingsBuildTimeLabel} ${BuildConfig.BUILD_TIME}",
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                        modifier = Modifier.clickable {
-                            if (isDeveloperModeEnabled) return@clickable
-                            versionTapCount++
-                            val remainingTaps = DeveloperModeTapsRequired - versionTapCount
-                            if (remainingTaps <= 0) {
-                                isDeveloperModeEnabled = true
-                                developerModeStore.setEnabled(true)
-                                Toast.makeText(
-                                    context,
-                                    strings.settingsDeveloperModeEnabledMessage,
-                                    Toast.LENGTH_SHORT,
-                                ).show()
-                            } else if (remainingTaps <= DeveloperModeTapCountdownThreshold) {
-                                Toast.makeText(
-                                    context,
-                                    strings.settingsDeveloperModeCountdownMessage(remainingTaps),
-                                    Toast.LENGTH_SHORT,
-                                ).show()
+                        // ⚠️ **`clickable`이 아니라 제스처 하나로 탭과 길게 누르기를 함께 판정한다**
+                        // (백로그 #77). `clickable`은 **누른 시간과 무관하게** 손을 떼는 순간
+                        // onClick을 부르므로, 그 위에 홀드 감지를 얹으면 3초를 누른 사용자가
+                        // "탭 한 번"으로도 세어진다. `combinedClickable`도 답이 아니다 —
+                        // `onLongClick`이 약 500ms에 하드와이어돼 있어 3초를 표현할 수 없다.
+                        // ⚠️ 그리고 감지기를 **두 개 겹치면 한쪽이 굶는다**(`GoBoard.kt`가 같은
+                        // 이유로 단일 `pointerInput`을 쓴다) — 그래서 하나로 합쳤다.
+                        modifier = Modifier.pointerInput(isDeveloperModeEnabled) {
+                            awaitEachGesture {
+                                // ⚠️ **down을 소비하지 않는다.** 이 텍스트는 세로 스크롤 안에 있어,
+                                // 소비하면 여기서 시작한 드래그로 화면을 못 굴린다. 스크롤이
+                                // 제스처를 가져가면 아래 `waitForUpOrCancellation()`이 null을 준다.
+                                awaitFirstDown(requireUnconsumed = false)
+                                var heldPastThreshold = false
+                                val releasedEarly = try {
+                                    withTimeout(AdvancedDeveloperModeHoldMillis) { waitForUpOrCancellation() }
+                                } catch (_: PointerEventTimeoutCancellationException) {
+                                    heldPastThreshold = true
+                                    null
+                                }
+                                when {
+                                    heldPastThreshold -> {
+                                        // 손을 뗄 때까지 기다린다 — 떼는 순간을 탭으로 세지 않기 위함이다.
+                                        waitForUpOrCancellation()
+                                        onVersionLongHold(
+                                            isDeveloperModeEnabled = isDeveloperModeEnabled,
+                                            isAdvancedEnabled = isAdvancedDeveloperModeEnabled,
+                                            onEnable = { isAdvancedDeveloperModeEnabled = true },
+                                            context = context,
+                                            strings = strings,
+                                        )
+                                    }
+                                    // null이면 스크롤 등 다른 제스처가 가져갔다 — 탭이 아니다.
+                                    releasedEarly != null -> {
+                                        if (isDeveloperModeEnabled) return@awaitEachGesture
+                                        versionTapCount++
+                                        val remainingTaps = DeveloperModeTapsRequired - versionTapCount
+                                        if (remainingTaps <= 0) {
+                                            isDeveloperModeEnabled = true
+                                            developerModeStore.setEnabled(true)
+                                            Toast.makeText(
+                                                context,
+                                                strings.settingsDeveloperModeEnabledMessage,
+                                                Toast.LENGTH_SHORT,
+                                            ).show()
+                                        } else if (remainingTaps <= DeveloperModeTapCountdownThreshold) {
+                                            Toast.makeText(
+                                                context,
+                                                strings.settingsDeveloperModeCountdownMessage(remainingTaps),
+                                                Toast.LENGTH_SHORT,
+                                            ).show()
+                                        }
+                                    }
+                                }
                             }
                         },
                     )
@@ -397,22 +458,57 @@ internal fun SettingsScreen(
                 }
             }
 
-            // 개발자 모드가 활성화된 경우에만 노출된다 — Debug/Release 빌드 여부와 무관하게,
-            // 위 버전 텍스트를 10번 두드려야만 나타나는 숨김 섹션이다. 릴리스 빌드에서도
-            // 노출 가능해졌으므로(BuildConfig.DEBUG 게이팅 제거) 프리미엄 무료 획득 등
-            // 악용 가능성이 있는 토글을 추가할 때는 이 점을 고려해야 한다.
+            // ## 개발자 테스트는 **두 단**이다(백로그 #77, 2026-09-03 사용자 결정)
+            //
+            // **1차(기본)** — 버전 텍스트 **10탭**. `DeveloperModeStore`에 저장되고 **release
+            // 빌드에도 실린다.** 그래서 여기에는 **권한을 만들지 않는 것만** 둔다: 읽기 전용
+            // 정보와, 이미 출석 보상으로 흔하게 들어오는 1회권 한 장 지급 정도.
+            //
+            // **2차(고급)** — 1차가 켜진 상태에서 버전 텍스트를 **3초 이상 길게** 누른다.
+            // 저장하지 않으므로 화면을 벗어나면 꺼지고, **`BuildConfig.DEBUG`로 감싸** release·
+            // playInternal에는 아예 들어가지 않는다. 프리미엄 부여·출석일 조작처럼 **권한을
+            // 무료로 찍어내는** 것들이 여기 온다.
+            //
+            // ⚠️ **길게 누르기는 은닉이지 경계가 아니다** — 제스처를 아는 사람은 그대로 한다.
+            // 실제 안전장치는 `BuildConfig.DEBUG` 하나뿐이므로, **새 컨트롤을 어느 단에 둘지는
+            // 라벨이 아니라 "그것이 무엇을 저장하는가"로 정한다.** 저장소에 권한(프리미엄·출석·
+            // 컬렉션·소모품 대량)을 쓰면 2차다.
             if (isDeveloperModeEnabled) {
                 Spacer(modifier = Modifier.height(12.dp))
                 HorizontalDivider()
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
-                    text = strings.settingsDevSectionTitle,
+                    text = strings.settingsDevTierBasicTitle,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.secondary,
                 )
 
+                // 읽기 전용 ① — **어느 빌드를 보고 있는가.** 실기에서 이걸 못 봐서 치른 값이
+                // 있다(#47, `launch-plan/README.md` §0 B-3의 808 vs 810). 버전만으로는
+                // 빌드타입과 광고 ID 종류를 알 수 없다.
+                DeveloperInfoRow(
+                    title = strings.settingsDevBuildInfoTitle,
+                    value = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE}) · " +
+                        "${BuildConfig.BUILD_TYPE} · ${if (BuildConfig.USE_TEST_ADS) "test ads" else "REAL ADS"}",
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // 읽기 전용 ② — **지금 글꼴 배율.** #64가 배율 관련 잘림을 네 자리에서 밟았는데,
+                // 재현할 때마다 시스템 설정을 왕복해야 했다.
+                DeveloperInfoRow(
+                    title = strings.settingsDevFontScaleTitle,
+                    value = "×${LocalDensity.current.fontScale}",
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 1회권 한 장 지급 — 출석 1일차가 30장을 주므로 한 장은 경제에 영향이 없다.
+                // ⚠️ **`consumables.refresh()`를 반드시 함께 부른다.** `runConsumableGrant`는
+                // 저장소에 **직접** 쓰고 화면 사본은 나가는 것만 알기 때문에(그 KDoc이 못박고
+                // 있다) 빠뜨리면 마이 페이지가 옛 재고를 계속 보여준다.
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -420,20 +516,29 @@ internal fun SettingsScreen(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = strings.settingsDevPremiumToggleTitle,
+                            text = strings.settingsDevGrantTicketTitle,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.SemiBold,
                         )
                         Text(
-                            text = strings.settingsDevPremiumToggleSubtitle,
+                            text = strings.settingsDevGrantTicketSubtitle,
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.secondary,
                         )
                     }
-                    Switch(
-                        checked = premium.isPurchased,
-                        onCheckedChange = { checked -> premium.setPurchased(checked) },
-                    )
+                    TextButton(
+                        onClick = {
+                            val store = ConsumableInventoryStore(context)
+                            listOf(
+                                ConsumableCatalog.EvalOnce,
+                                ConsumableCatalog.TopMovesOnce,
+                                ConsumableCatalog.PremiumOnce,
+                            ).forEach { item -> runConsumableGrant(item, amount = 1, consumableStore = store) }
+                            consumables.refresh()
+                        },
+                    ) {
+                        Text(strings.settingsDevGrantAction)
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -462,6 +567,56 @@ internal fun SettingsScreen(
                             preferencesStore.save(preferencesStore.load().copy(gameSetupUxMode = gameSetupUxMode))
                         },
                     )
+                }
+
+                // ⚠️ **`BuildConfig.DEBUG`가 이 배치의 유일한 실제 경계다**(위 머리말 참고).
+                // `DEBUG`는 `static final boolean`이라 release·playInternal에서는 컴파일 시점에
+                // `false`로 접히고, 이 블록은 도달 불가가 된다.
+                // · ⚠️ **다만 문구는 바이너리에 남는다** — 2026-09-03 release APK의 dex에서
+                //   실제로 확인했다. `UiStringsKo` 등이 **데이터 클래스 생성자 인자**로 모든 문구를
+                //   항상 만들기 때문에, 분기가 죽어도 문자열 상수는 살아 있다.
+                //   **경로가 없는 것과 이름이 안 보이는 것은 다르다** — 이 배치가 보장하는 것은
+                //   앞의 것뿐이고, APK를 뜯으면 2차의 존재는 드러난다. 그것으로 충분하다는 것이
+                //   이 설계의 전제다(길게 누르기는 애초에 은닉이지 경계가 아니다).
+                if (BuildConfig.DEBUG && isAdvancedDeveloperModeEnabled) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    HorizontalDivider()
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Text(
+                        text = strings.settingsDevTierAdvancedTitle,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+
+                    // ⚠️ **2차인 이유**: 이 토글은 `PremiumSource.Purchase`를 **저장소에 영구
+                    // 기록**하고, `FeatureAccessPolicy.resolve`가 소스에서 곧바로 통과시키므로
+                    // **모든 유료 기능이 한꺼번에 열린다.** 라벨이 아니라 이 사실이 분류 기준이다.
+                    // ⚠️ 끄면 `PremiumState()`가 되지만 `claimedFeatures`는 남는다(병합 저장) —
+                    // 3일차 무르기를 이미 받은 계정은 꺼도 무르기가 열려 있다.
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = strings.settingsDevPremiumToggleTitle,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                            Text(
+                                text = strings.settingsDevPremiumToggleSubtitle,
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.secondary,
+                            )
+                        }
+                        Switch(
+                            checked = premium.isPurchased,
+                            onCheckedChange = { checked -> premium.setPurchased(checked) },
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -506,6 +661,56 @@ internal fun SettingsScreen(
                     Text(strings.cancel)
                 }
             },
+        )
+    }
+}
+
+/**
+ * 버전 텍스트를 3초 이상 눌렀을 때(백로그 #77) — **2차(고급) 개발자 테스트**를 연다.
+ *
+ * ⚠️ **`BuildConfig.DEBUG`가 유일한 안전장치다.** 길게 누르기는 *은닉*이지 *경계*가 아니다 —
+ * 제스처를 아는 사람은 그대로 실행한다. 2차에 붙는 것들(프리미엄 부여, 출석일 조작, 조각 수
+ * 조절)은 **권한을 무료로 찍어내는** 것들이라, release·playInternal에서는 아예 존재하지 않아야
+ * 한다. `isMinifyEnabled`가 켜진 그 둘에서는 R8이 이 분기를 통째로 지운다.
+ * · `BuildConfig.DEBUG`는 **debug와 friend에서 true**, **playInternal과 release에서 false**다
+ *   (`playInternal`만 `isDebuggable = false`로 되돌린다 — `build.gradle.kts`).
+ *
+ * ⚠️ **release에서는 토스트도 띄우지 않는다.** 안내를 띄우면 2차의 존재 자체를 광고하는 셈이라,
+ * 조건이 맞지 않으면 **아무 일도 일어나지 않는 것**이 맞다.
+ */
+private fun onVersionLongHold(
+    isDeveloperModeEnabled: Boolean,
+    isAdvancedEnabled: Boolean,
+    onEnable: () -> Unit,
+    context: Context,
+    strings: UiStrings,
+) {
+    if (!BuildConfig.DEBUG) return
+    // 1차가 먼저다 — 10탭을 거치지 않은 사람에게 2차가 열리면 1차의 의미가 없어진다.
+    if (!isDeveloperModeEnabled || isAdvancedEnabled) return
+    onEnable()
+    Toast.makeText(context, strings.settingsAdvancedDeveloperModeEnabledMessage, Toast.LENGTH_SHORT).show()
+}
+
+/**
+ * 개발자 테스트 1차의 **읽기 전용 한 줄**(백로그 #77). 아무것도 쓰지 않으므로 release에 실려도
+ * 무해하고, 그래서 1차에 둔다.
+ *
+ * ⚠️ 고정 `dp` 높이를 주지 않는다 — 글꼴 배율이 커지면 상자가 함께 자라야 한다(함정 9번).
+ * 기존 두 컨트롤과 같은 `Row` + `Column(weight(1f))` 골격이라 배율에 저절로 따라간다.
+ */
+@Composable
+private fun DeveloperInfoRow(title: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(text = title, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+        Text(
+            text = value,
+            fontSize = 12.sp,
+            color = MaterialTheme.colorScheme.secondary,
         )
     }
 }
