@@ -234,6 +234,16 @@ internal data class UiStrings(
     val everyMoveHint: String,
     /** 캐릭터 픽커 제목. */
     val botPickerTitle: String,
+    /**
+     * 캐릭터 획득 축전 팝업(백로그 #69).
+     *
+     * ⚠️ **`fun`이 아니라 `val` 필드로 둔다** — `UiStringsTest`의 리플렉션 그물은 String **필드**만
+     * 훑으므로, 함수로 노출하면 4개 언어 누락을 아무도 못 본다(함정 10번, `botUnlockHint`가 그렇게
+     * 사실이 아닌 문구를 오래 달고 있었다).
+     */
+    val botAcquiredTitle: String,
+    /** 팝업을 어떻게 닫는지 — 버튼이 없으므로 이 한 줄이 유일한 안내다. */
+    val botAcquiredDismissHint: String,
     /** 픽커 닫기. */
     val botPickerCloseAction: String,
 

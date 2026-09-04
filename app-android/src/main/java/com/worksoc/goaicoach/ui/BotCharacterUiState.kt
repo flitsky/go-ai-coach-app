@@ -96,6 +96,22 @@ internal data class BotCharacterUiState(
     val purchase: suspend (BotCharacter) -> PurchaseOutcome = {
         PurchaseOutcome.NotPurchased(PurchaseFailureReason.Unavailable)
     },
+    /**
+     * 아직 축전하지 않은 획득 캐릭터의 **대기열**(백로그 #69). 맨 앞 하나만 팝업으로 뜬다.
+     *
+     * ⚠️ **하나가 아니라 목록인 이유**: 밀린 출석 회차가 한 번에 지급되면 **캐릭터 둘을 동시에**
+     * 얻을 수 있다(7일차·28일차). **순차로 하나씩 띄운다**(2026-09-03 사용자 결정) — 한 팝업에
+     * 모으면 어느 그림을 보여줄지가 애매해지고, #50 연출이 캐릭터 하나를 전제로 만들어져 있다.
+     *
+     * ⚠️ **저장하지 않는다.** 세션 한정 화면 상태다 — 저장소를 새로 만들면 `ReleaseResetCoordinator`
+     * 의 초기화 목록 넷에 합류해야 하고(함정 6번), `LayeringContractTest`가 그 `clear()` 호출 수를
+     * 정확히 4로 고정해 두었다.
+     */
+    val pendingAcquired: List<BotCharacter> = emptyList(),
+    /** 획득 대기열에 더한다. 이미 줄 서 있는 것 뒤에 붙으므로 지급 순서가 유지된다. */
+    val enqueueAcquired: (List<BotCharacter>) -> Unit = {},
+    /** 맨 앞 하나를 축전 완료 처리한다(팝업이 닫힐 때). */
+    val consumeAcquired: () -> Unit = {},
 ) {
     /** 지금 이 캐릭터로 대국할 수 있는가. 기본 제공은 획득 기록 없이도 통과한다(#16). */
     fun isAvailable(character: BotCharacter): Boolean = collection.isAvailable(character)
@@ -118,6 +134,8 @@ internal val LocalBotCharacterUiState = staticCompositionLocalOf { BotCharacterU
 internal fun buildBotCharacterUiState(context: Context): BotCharacterUiState {
     val store: BotCollectionStorePort = remember(context) { BotCollectionStore(context) }
     var collection by remember(store) { mutableStateOf(store.load()) }
+    // 축전 대기열(#69). 광고·출석 두 경로가 여기에 넣고, 아래에서 맨 앞 하나를 팝업으로 띄운다.
+    var pendingAcquired by remember(store) { mutableStateOf(emptyList<BotCharacter>()) }
 
     // 재설치로 로컬 컬렉션이 사라져도 **돈 주고 산 캐릭터는 되찾아야 한다**(#18). 프리미엄 쪽
     // `PremiumPurchaseRestoreEffect`와 같은 취지이고, 여기 두는 이유는 `GoCoachApp.kt`의 라인
@@ -136,7 +154,7 @@ internal fun buildBotCharacterUiState(context: Context): BotCharacterUiState {
         }
     }
 
-    return BotCharacterUiState(
+    val state = BotCharacterUiState(
         collection = collection,
         refresh = { collection = store.load() },
         watchAdForShard = { character ->
@@ -157,6 +175,11 @@ internal fun buildBotCharacterUiState(context: Context): BotCharacterUiState {
                 )
             }
         },
+        pendingAcquired = pendingAcquired,
+        enqueueAcquired = { characters ->
+            if (characters.isNotEmpty()) pendingAcquired = pendingAcquired + characters
+        },
+        consumeAcquired = { pendingAcquired = pendingAcquired.drop(1) },
         purchase = { character ->
             val outcome = performBotCharacterPurchase(context)
             // 결제가 확정됐을 때만 소유로 남긴다. Pending(계좌이체 등)은 아직 아니다 — 확정되면
@@ -167,6 +190,27 @@ internal fun buildBotCharacterUiState(context: Context): BotCharacterUiState {
             outcome
         },
     )
+
+    // ⚠️ **축전 팝업은 여기서 띄운다 — `GoCoachApp.kt`가 아니다**(백로그 #69). 셸은 라인 예산
+    // 880/880, 상태훅 46/46으로 **여유가 정확히 0**이라(함정 3번) 배선 한 줄에 계약 테스트가
+    // 깨진다. 이 함수는 이미 `@Composable`이고 저장소와 상태를 직접 들고 있으므로 여기서
+    // emit하면 셸에 **0줄**이 든다.
+    //
+    // ⚠️ `LocalUiStrings`는 이 호출부(`GoCoachApp.kt`의 `buildBotCharacterUiState(context)`)보다
+    // **위에서** 공급되므로 팝업 안에서 읽을 수 있다. 반면 `LocalBotCharacterUiState`는 **아래에서**
+    // 공급되므로 여기서 읽으면 안 된다 — 위 지역 변수를 그대로 쓴다.
+    //
+    // ⚠️ **픽커와 겹치지 않게 하는 것은 이 자리가 아니라 `PlayerSetupPanel`의 몫이다** — 광고가
+    // 끝나면 그쪽이 `showPicker`를 되살리는데, 획득했을 때는 되살리지 않는다. Compose 다이얼로그는
+    // 각자 별도 윈도우라 **선언 순서로는 z축이 정해지지 않는다**(함정 7번).
+    pendingAcquired.firstOrNull()?.let { character ->
+        BotCharacterAcquiredDialog(
+            character = character,
+            onDismiss = { pendingAcquired = pendingAcquired.drop(1) },
+        )
+    }
+
+    return state
 }
 
 /**
@@ -445,21 +489,28 @@ internal suspend fun watchAdForShardAndReport(
     bots: BotCharacterUiState,
     strings: UiStrings,
     context: Context,
-) {
-    val required = (character.unlockSource as? BotUnlockSource.AdShards)?.required ?: return
+): Boolean {
+    val required = (character.unlockSource as? BotUnlockSource.AdShards)?.required ?: return false
     val result = bots.watchAdForShard(character)
     val ad = result.ad
+    // ⚠️ **획득 순간에는 토스트를 띄우지 않는다**(백로그 #69, 2026-09-03 사용자 확정) — 축전
+    // 팝업이 같은 사실을 말하므로 둘 다 띄우면 같은 말을 두 번 한다. 토스트는 **조각이 쌓이는
+    // 동안**의 진행 안내로만 남는다.
+    // ⚠️ 획득 판정과 진행도 둘 다 **5계층이 준 값**을 쓴다(#68). 예전에는 여기서
+    // `직전 조각 수 + 1`로 다시 셌고, 그 사본은 출석 보상이 조각을 넣으면 낡았다.
+    if (ad is AdRewardOutcome.RewardEarned && result.unlocked) {
+        bots.enqueueAcquired(listOf(character))
+        return true
+    }
     val message = when {
         // 프리미엄 문구를 재사용하지 않는다 — 조각을 모으던 사용자에게 "프리미엄이 활성화되지
         // 않았습니다"가 뜨던 버그를 2026-08-29에 정정했다.
         ad is AdRewardOutcome.NotRewarded -> strings.botShardAdFailedMessage(ad.reason)
-        ad !is AdRewardOutcome.RewardEarned -> return
-        // ⚠️ 획득 판정과 진행도 둘 다 **5계층이 준 값**을 쓴다(#68). 예전에는 여기서
-        // `직전 조각 수 + 1`로 다시 셌고, 그 사본은 출석 보상이 조각을 넣으면 낡았다.
-        result.unlocked -> strings.botUnlockedToast(character)
+        ad !is AdRewardOutcome.RewardEarned -> return false
         else -> strings.botShardEarnedToast(character, result.shards, required)
     }
     Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+    return false
 }
 
 /**

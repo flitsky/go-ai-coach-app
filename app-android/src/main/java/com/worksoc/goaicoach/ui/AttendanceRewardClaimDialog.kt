@@ -81,6 +81,7 @@ internal fun AttendanceRewardClaimDialog(
     onPremiumChanged: (PremiumState) -> Unit,
 ) {
     val consumables = LocalConsumableUiState.current
+    val bots = LocalBotCharacterUiState.current
     val attendanceStore = remember(context) { AttendanceStore(context) }
     val premiumStore = remember(context) { PremiumStateStore(context) }
     val consumableStore = remember(context) { ConsumableInventoryStore(context) }
@@ -120,7 +121,7 @@ internal fun AttendanceRewardClaimDialog(
         onClaim = {
             // 저장소에서 다시 읽어 지급한다 — 다이얼로그가 떠 있는 동안 백그라운드 체크인으로
             // 일차가 하나 더 늘었을 수 있고, 그 경우까지 이 한 번의 Claim으로 받아 가는 게 맞다.
-            runAttendanceRewardGrant(
+            val result = runAttendanceRewardGrant(
                 state = attendanceStore.load(),
                 attendanceStore = attendanceStore,
                 premiumStore = premiumStore,
@@ -136,6 +137,17 @@ internal fun AttendanceRewardClaimDialog(
             // 이 함수를 타므로(위 `onDismissRequest`), 버튼 쪽에만 걸면 닫아서 받은 사용자에게
             // 조용히 누락된다.
             onPremiumChanged(premiumStore.load())
+            // ⚠️ 컬렉션도 되읽는다 — 캐릭터/조각은 이 다이얼로그가 `botStore`에 직접 썼고,
+            // 픽커가 든 사본은 그것을 모른다(그 사본이 낡는 문제를 `refresh`가 위해 존재한다).
+            bots.refresh()
+            // **획득 축전은 대기열에 넣기만 한다**(백로그 #69). 여기서 바로 띄우려 들면 지금
+            // 떠 있는 Claim 팝업과 **두 윈도우가 같은 프레임에** 공존한다 — Compose 다이얼로그는
+            // 선언 순서로 z축이 정해지지 않아(함정 7번) 어느 쪽이 위로 올지 보장이 없다.
+            // 바로 아래 `pending = emptyList()`가 이 팝업을 내리고, 그 다음 컴포지션에서
+            // `buildBotCharacterUiState`가 대기열 맨 앞을 띄운다.
+            // ⚠️ 밀린 회차가 캐릭터를 둘 이상 줄 수 있다(7·28일차) — 목록 그대로 넘겨 **지급
+            // 순서대로 하나씩** 축전한다(2026-09-03 사용자 결정).
+            bots.enqueueAcquired(result.acquiredCharacters)
             pending = emptyList()
         },
     )

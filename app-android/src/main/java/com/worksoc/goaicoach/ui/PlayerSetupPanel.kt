@@ -325,12 +325,18 @@ private fun PlayerSetupSideRow(
                     onWatchAd = { character ->
                         scope.launch {
                             adInProgress = true
-                            watchAdForShardAndReport(character, bots, strings, context)
+                            val acquired = watchAdForShardAndReport(character, bots, strings, context)
                             adInProgress = false
                             // 만에 하나 광고가 픽커를 닫았더라도 여기서 되살린다. 지금은 바깥 탭
                             // 경로를 막아 둬서(`BotCharacterPickerDialog`) 실제로 닫히지 않지만,
                             // 이 줄은 광고 쪽 사정이 바뀌어도 자리를 지켜 주는 보험으로 남긴다.
-                            showPicker = true
+                            //
+                            // ⚠️ **획득했을 때는 되살리지 않는다**(백로그 #69). 그 순간 축전 팝업이
+                            // 뜨는데, 픽커까지 살아 있으면 **두 개의 별도 윈도우가 동시에** 뜬다 —
+                            // Compose 다이얼로그는 선언 순서로 z축이 정해지지 않으므로(함정 7번)
+                            // 여기서 **명시적으로** 갈라야 한다. 축전을 닫으면 사용자는 로비로
+                            // 돌아가고, 얻은 상대는 픽커를 다시 열어 고르면 된다.
+                            showPicker = !acquired
                         }
                     },
                     onDismiss = { showPicker = false },
