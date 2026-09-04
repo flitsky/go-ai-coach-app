@@ -155,5 +155,5 @@
 ## 관련 문서
 
 - `launch-plan/README.md` — §0이 출시 실행 상태의 정본. **B-2가 이 폴더로 닫힌다**
-- `260831-_ACTIVE_BACKLOG.md` — 활성 코드 일감(#26·#18). 화면 변경이 멎었다는 근거
+- `260905-_ACTIVE_BACKLOG.md` — 활성 코드 일감(#26·#18). 화면 변경이 멎었다는 근거
 - `2026-08-30-play-store-listing-and-screenshots/README.md` — 앞 세트(다섯 장). 이력용
