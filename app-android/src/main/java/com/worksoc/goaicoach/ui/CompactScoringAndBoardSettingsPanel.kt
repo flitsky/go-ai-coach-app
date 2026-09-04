@@ -30,10 +30,16 @@ import com.worksoc.goaicoach.shared.Ruleset
 
 /**
  * 대국 설정 화면의 "콤팩트" 레이아웃 — 계가/덤/바둑판 크기/접바둑을 2x2 드롭다운 그리드로
- * 압축해 스크롤 없이 한 화면에 보이게 한다. [ScoringAndBoardSettingsPanel](심플 레이아웃)과
- * 기능은 동일하고(같은 GameUiEvent를 그대로 재사용), 시각적 밀도만 다르다 — 어느 것을 쓸지는
- * ⚠️ **이제 이 패널이 유일한 선택지다**(백로그 #73) — [GameSetupLobby]와 설정 화면이
- * 함께 이것만 그린다. 분기하던 `GameSetupUxMode`는 삭제됐다.
+ * 압축해 스크롤 없이 한 화면에 보이게 한다.
+ *
+ * ⚠️ **이제 이 패널이 유일한 선택지다.** [GameSetupLobby]와 설정 화면이 함께 이것만 그린다 —
+ * 분기하던 `GameSetupUxMode`는 #73이, 짝이던 심플 레이아웃(`ScoringAndBoardSettingsPanel`)은
+ * #76이 지웠다(2026-09-05).
+ *
+ * ⚠️ **이 패널은 `canChangeBoardSize`/`canChangeHandicap` 같은 게이팅 파라미터를 받지 않는다.**
+ * 심플 레이아웃에는 있었고 *"진행 중 대국에서는 판 크기·접바둑을 못 바꾼다"* 를 표현했다.
+ * 그 표현이 이제 저장소에 없으므로, **막아야 한다는 결정이 나면 여기에 새로 만들어야 한다** —
+ * 백로그 #75가 그 결정을 들고 있다.
  */
 @Composable
 internal fun CompactScoringAndBoardSettingsPanel(

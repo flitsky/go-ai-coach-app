@@ -142,35 +142,21 @@ internal fun ExpandedGameMenuSection(
     selectedLanguage: UiLanguage,
     onLanguageChange: (UiLanguage) -> Unit,
     onEvent: (GameUiEvent) -> Unit,
-    showSettings: Boolean = false,
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        if (showSettings) {
-            PlayerSetupPanel(
-                state = screenState.playerSetupUi,
-                enabled = !screenState.engine.isBusy,
-                onPlayerSetupChange = { setup -> onEvent(GameUiEvent.ChangePlayerSetup(setup)) },
-                onAutoPlayDelayChange = { setting -> onEvent(GameUiEvent.ChangeAutoPlayDelay(setting)) },
-            )
-
-            ScoringAndBoardSettingsPanel(
-                ruleset = screenState.gameState.ruleset,
-                boardSize = screenState.gameState.boardSize,
-                handicapCount = screenState.handicapCount,
-                komi = screenState.gameState.komi,
-                canChangeRuleset = true,
-                canChangeBoardSize = screenState.isGameEnded,
-                canChangeHandicap = screenState.isGameEnded,
-                canChangeKomi = true,
-                onRulesetChange = { ruleset -> onEvent(GameUiEvent.ChangeScoringRule(ruleset)) },
-                onBoardSizeChange = { size -> onEvent(GameUiEvent.ChangeBoardSize(size)) },
-                onHandicapCountChange = { count -> onEvent(GameUiEvent.ChangeHandicapCount(count)) },
-                onKomiChange = { komi -> onEvent(GameUiEvent.ChangeKomi(komi)) },
-            )
-        }
+        // ⚠️ **여기 있던 `if (showSettings) { … }` 블록은 #76이 지웠다**(2026-09-05).
+        // `showSettings`는 저장소 전체에서 **한 번도 true로 넘어온 적이 없었다** — 선언의
+        // 기본값 `false`와 이 게이트, 둘뿐이었다(유일한 호출부 `GoCoachContent.kt`가 넘기지
+        // 않는다). 그 안에서 `PlayerSetupPanel`과 `ScoringAndBoardSettingsPanel`을 그렸다.
+        // ⚠️ **함께 사라진 것이 하나 더 있다 — 진행 중 대국의 게이팅 표현이다.**
+        //   `canChangeBoardSize = screenState.isGameEnded` / `canChangeHandicap = screenState.isGameEnded`
+        //   가 *"대국 중에는 판 크기·접바둑을 못 바꾼다"* 를 표현한 **저장소의 마지막 한 벌**이었다.
+        //   `CompactScoringAndBoardSettingsPanel`은 그 파라미터를 받지 않는다.
+        //   · 동작상의 회귀는 아니다(사문이었다). 다만 **막아야 하는지는 아직 결정되지 않았고**,
+        //     그 결정은 **백로그 #75**가 들고 있다 — 원문을 그 항목에 옮겨 적어 뒀다.
 
         LanguageSettingsPanel(
             selectedLanguage = selectedLanguage,
@@ -220,7 +206,7 @@ internal fun LanguageSettingsPanel(
                 .padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            // 나열형(`SettingChoiceRow`)이 아니라 드롭다운이다(#34) — 언어가 늘어도 한 줄이
+            // 나열형(당시의 `SettingChoiceRow`, #76이 삭제)이 아니라 드롭다운이다(#34) — 언어가 늘어도 한 줄이
             // 무너지지 않는다. 라벨과 컨트롤을 한 행에 놓아 다른 설정 항목과 결을 맞춘다.
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -245,7 +231,8 @@ internal fun LanguageSettingsPanel(
  * 언어 선택 드롭다운. **원래 홈 우상단 칩이었는데 설정 화면 안으로 들어왔다**(#34,
  * 2026-08-30 사용자 지시).
  *
- * 설정에 이미 언어 절이 있었지만 [SettingChoiceRow]로 **지원 언어를 전부 나열**하는 방식이라,
+ * 설정에 이미 언어 절이 있었지만 `SettingChoiceRow`(나열형, #76이 삭제)로 **지원 언어를 전부
+ * 나열**하는 방식이라,
  * 언어가 늘수록 한 줄이 감당이 안 된다. 드롭다운은 항목이 몇 개든 칩 하나로 접힌다 —
  * 그래서 나열형을 버리고 이쪽을 남겼다.
  */

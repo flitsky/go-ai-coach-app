@@ -63,83 +63,11 @@ internal fun <T> SetupDropdown(
     }
 }
 
-@Composable
-internal fun <T> SettingDropdownRow(
-    label: String,
-    selectedText: String,
-    enabled: Boolean,
-    options: List<T>,
-    optionLabel: (T) -> String,
-    onSelected: (T) -> Unit,
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = label,
-            modifier = Modifier.weight(0.8f),
-            fontWeight = FontWeight.SemiBold,
-            style = MaterialTheme.typography.bodySmall,
-        )
-        SetupDropdown(
-            selectedText = selectedText,
-            enabled = enabled,
-            modifier = Modifier.weight(1.4f),
-            options = options,
-            optionLabel = optionLabel,
-            onSelected = onSelected,
-        )
-    }
-}
-
-/**
- * 소수(2~4개)의 선택지를 가로 pill 버튼 그룹으로 보여주는 선택 행.
- * 드롭다운 대신 모든 옵션을 한눈에 비교/선택할 수 있게 합니다.
- */
-@Composable
-internal fun <T> SettingChoiceRow(
-    label: String,
-    options: List<T>,
-    selected: T,
-    enabled: Boolean,
-    optionLabel: (T) -> String,
-    onSelected: (T) -> Unit,
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(
-            text = label,
-            fontWeight = FontWeight.SemiBold,
-            style = MaterialTheme.typography.bodySmall,
-        )
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            options.forEach { option ->
-                val isSelected = option == selected
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(18.dp))
-                        .background(
-                            if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                        )
-                        .clickable(enabled = enabled, onClick = { onSelected(option) })
-                        .padding(vertical = 10.dp, horizontal = 4.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = optionLabel(option),
-                        color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 12.sp,
-                        textAlign = TextAlign.Center,
-                        maxLines = 2,
-                    )
-                }
-            }
-        }
-    }
-}
+// ⚠️ **여기 있던 `SettingDropdownRow`와 `SettingChoiceRow`는 #76이 지웠다**(2026-09-05).
+//
+// `SettingChoiceRow`는 `ScoringAndBoardSettingsPanel`만 썼고 그 패널이 사문(`showSettings`가
+// 한 번도 true가 아니었다)이라 함께 죽었다. `SettingDropdownRow`는 **그와 무관하게 호출부가
+// 0곳이었다** — 원 스펙(#76)이 세지 않은 항목이고, 조사에서 따로 나왔다.
+//
+// ⚠️ **`SetupDropdown`은 남아 있다** — `PlayerSetupPanel`이 두 곳에서 쓴다. 이 파일을
+// 통째로 지우지 말 것.
