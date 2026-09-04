@@ -59,3 +59,42 @@ fun runBotCharacterShardGrant(
     store.save(next)
     return BotCharacterShardGrant(state = next, unlocked = next.isClaimed(character.id))
 }
+
+/**
+ * 5계층(App Service) — **개발자 테스트용**으로 조각 진행도를 특정 값으로 맞춘다(백로그 #70).
+ *
+ * ⚠️ **이 함수가 존재하는 이유는 UI가 `copy(adShards = …)`를 직접 만들지 않게 하려는 것이다.**
+ * 조각은 저장 스키마의 일부이고 획득 경계([BotCollectionState.withAdShard])와 한 쌍이라, 화면이
+ * 맵을 직접 만들면 그 경계를 우회하는 상태를 손쉽게 만들어 버린다.
+ *
+ * ⚠️ **필요 수 이상으로는 절대 올라가지 않는다** — `required - 1`로 자른다. *"다 모았는데
+ * 미획득"* 은 `withAdShard`가 그 순간 획득으로 넘기기 때문에 **도달할 수 없는 상태**이고,
+ * `UiStrings`의 해금 힌트가 그 사실에 기대고 있다(`coerceAtLeast(1)`은 저장값이 깨졌을 때
+ * *"0개 남았어요"* 라는 거짓말만 막는 방어다). 개발자 도구가 그 상태를 만들면 **경계를 지키던
+ * 테스트가 무의미해진다.**
+ *
+ * ⚠️ **획득으로 넘기는 기능은 일부러 넣지 않았다.** 캐릭터를 직접 심을 수 있게 되면 *유령 보상*
+ * (이미 보유한 캐릭터 회차가 통째로 빈손이 되는 것, 백로그 #68)이 도달 가능해지고, 7·28일차의
+ * 대체 보상이라는 **미해결 사용자 결정**을 강제로 끌어온다. 조각을 `required - 1`로 맞춘 뒤
+ * 광고를 한 번 보는 것으로 획득 루틴은 끝까지 밟힌다.
+ *
+ * @return 저장된 새 상태. 조각 경로가 아니거나 이미 획득한 캐릭터면 아무것도 하지 않고 `null`.
+ */
+fun runBotCharacterShardSet(
+    character: BotCharacter,
+    count: Int,
+    store: BotCollectionStorePort,
+): BotCollectionState? {
+    val source = character.unlockSource as? BotUnlockSource.AdShards ?: return null
+    val current = store.load()
+    if (current.isClaimed(character.id)) return null
+    val clamped = count.coerceIn(0, source.required - 1)
+    val next = if (clamped <= 0) {
+        current.copy(adShards = current.adShards - character.id)
+    } else {
+        current.copy(adShards = current.adShards + (character.id to clamped))
+    }
+    if (next == current) return null
+    store.save(next)
+    return next
+}

@@ -57,6 +57,10 @@ import androidx.compose.ui.platform.LocalDensity
 import com.worksoc.goaicoach.application.consumable.ConsumableCatalog
 import com.worksoc.goaicoach.application.consumable.runConsumableGrant
 import com.worksoc.goaicoach.persistence.ConsumableInventoryStore
+import com.worksoc.goaicoach.application.botcharacter.BotCharacterCatalog
+import com.worksoc.goaicoach.application.botcharacter.BotUnlockSource
+import com.worksoc.goaicoach.application.botcharacter.runBotCharacterShardSet
+import com.worksoc.goaicoach.persistence.BotCollectionStore
 import com.worksoc.goaicoach.BuildConfig
 import com.worksoc.goaicoach.application.auth.AuthClientPort
 import com.worksoc.goaicoach.application.auth.AuthProvider
@@ -139,6 +143,7 @@ internal fun SettingsScreen(
     var isAdvancedDeveloperModeEnabled by remember { mutableStateOf(false) }
     var versionTapCount by remember { mutableStateOf(0) }
     val consumables = LocalConsumableUiState.current
+    val bots = LocalBotCharacterUiState.current
     // 백로그 #53 — 화면이 열릴 때 한 번만 묻고, 결과가 오면 그때 아래 줄이 나타난다.
     // 실패는 조용히 넘어간다(`AppUpdateRow`의 폴백 경로).
     val updateStatus = rememberAppUpdateStatus()
@@ -616,6 +621,57 @@ internal fun SettingsScreen(
                             checked = premium.isPurchased,
                             onCheckedChange = { checked -> premium.setPurchased(checked) },
                         )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // ⚠️ **2차인 이유**: 조각은 **광고 시청분**이다(#11) — 여기서 채워 주는 것은
+                    // 곧 광고를 건너뛰고 캐릭터를 얻는 무료 경로다. 1차(release에 실림)에 두면
+                    // 그것이 그대로 출시된다.
+                    // ⚠️ **획득으로 바로 넘기는 버튼은 없다** — `runBotCharacterShardSet`이
+                    // `required - 1`로 자른다. 캐릭터를 직접 심으면 유령 보상(#68)이 도달
+                    // 가능해지고 7·28일차 대체 보상이라는 미해결 결정을 끌어온다. "한 개 남기기"
+                    // 뒤에 광고를 한 번 보면 획득 루틴이 끝까지 밟힌다.
+                    BotCharacterCatalog.shardPathCharacters().forEach { character ->
+                        val required = (character.unlockSource as? BotUnlockSource.AdShards)?.required ?: 0
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "${strings.settingsDevShardTitle} · ${strings.botCharacterName(character)}",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                )
+                                Text(
+                                    text = if (bots.isAvailable(character)) {
+                                        strings.botCharacterLabel(character)
+                                    } else {
+                                        "${bots.shardsFor(character)} / $required"
+                                    },
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.secondary,
+                                )
+                            }
+                            TextButton(
+                                onClick = {
+                                    runBotCharacterShardSet(character, required - 1, BotCollectionStore(context))
+                                    bots.refresh()
+                                },
+                            ) {
+                                Text(strings.settingsDevShardAlmostAction)
+                            }
+                            TextButton(
+                                onClick = {
+                                    runBotCharacterShardSet(character, 0, BotCollectionStore(context))
+                                    bots.refresh()
+                                },
+                            ) {
+                                Text(strings.settingsDevShardClearAction)
+                            }
+                        }
                     }
                 }
 
