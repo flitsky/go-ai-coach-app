@@ -45,7 +45,7 @@ class UserPreferencesCodecTest {
             autoPlayDelayMillis = AutoPlayDelaySetting.Slow.millis,
             searchTimeSettings = SearchTimeSettings(SearchTimeLimit.WithinFiveSeconds),
             showMoveReview = true,
-            appFontScale = 1.5f,
+            appFontScale = 1.3f,
         )
 
         val encoded = UserPreferencesCodec.encode(snapshot)
@@ -60,8 +60,8 @@ class UserPreferencesCodecTest {
         // 되는 것을 실기에서 확인했다(#81). 왕복이 정확한지와 저장 형태가 사람이 읽을 수 있는지를
         // 함께 본다. ⚠️ #73 전까지 이 자리는 `gameSetupUxMode`였고, **배율 왕복에는 그물이
         // 없었다** — 삭제된 필드의 자리를 그것으로 메운다.
-        assertEquals(1.5f, restored?.appFontScale)
-        assertEquals("1.5", encodedJson.getString("appFontScale"))
+        assertEquals(1.3f, restored?.appFontScale)
+        assertEquals("1.3", encodedJson.getString("appFontScale"))
         assertEquals(false, restored?.showCoordinates)
         assertEquals(true, restored?.showMoveNumbers)
         assertEquals(false, restored?.showLastMoveRing)

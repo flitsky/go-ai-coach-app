@@ -86,5 +86,11 @@ class UiStringsDevFontScaleTest {
         assertEquals(DefaultAppFontScale, sanitizeAppFontScale(-1f))
         assertEquals(DefaultAppFontScale, sanitizeAppFontScale(2.0f))
         assertEquals(AppFontScales.first(), nextAppFontScale(9.9f))
+        // ⚠️ **1.5는 실제로 순환에 있었다가 빠진 값이다**(#81이 넣고 2026-09-04에 뺐다). 그
+        // 배율을 골라 둔 기기의 저장에는 `"1.5"`가 남아 있으므로, 이것이 **마이그레이션 없이
+        // 1.0으로 접히는 경로**다 — 접히지 않으면 그 기기는 목록에 없는 배율에 갇히고 순환
+        // 버튼이 아무 일도 안 하는 것처럼 보인다.
+        assertEquals(DefaultAppFontScale, sanitizeAppFontScale(1.5f))
+        assertEquals(AppFontScales.first(), nextAppFontScale(1.5f))
     }
 }
