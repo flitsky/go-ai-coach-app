@@ -4,6 +4,17 @@ package com.worksoc.goaicoach.application.premium
 enum class UnlockOption {
     AdGrant,
     Purchase,
+
+    /**
+     * ⚠️ **지금 이 수단으로 열리는 기능은 하나도 없다**(백로그 #66, 2026-09-03).
+     * 무르기가 유일한 사용처였는데 그 경로를 닫았다 — 사유는 [FeatureAccessPolicy] 안의
+     * `unlockOptionsFor` KDoc에 있다.
+     *
+     * **그런데 상수는 남겨 뒀다.** `PremiumState.claimedFeatures` 원장은 그대로 살아 있고
+     * ([AllowedVia.Claimed]가 그것을 읽는다), "한 번 받으면 영구"라는 축이 필요한 기능이 다시
+     * 생기면 그때 이 자리를 쓴다. 지운다고 저장 포맷이 깨지지는 않지만(이 enum은 영속되지
+     * 않는다) 되살릴 때 축을 다시 발명하게 된다.
+     */
     Claim,
 }
 
@@ -93,9 +104,23 @@ object FeatureAccessPolicy {
             AllowedVia.AdGrant
         }
 
+    /**
+     * ⚠️ **무르기가 여기서 [UnlockOption.Claim]을 받던 것을 뺐다**(백로그 #66, 2026-09-03).
+     * 그 한 줄이 인게임 "영구 활성화" 팝업의 **유일한 방아쇠**였고, 그 팝업의 확인 버튼이
+     * 무르기를 **1일차부터 아무 때나 영구 지급**하고 있었다.
+     *
+     * 무르기의 영구 해금은 **3일차 출석 보상**이다(`AttendanceRewardPolicy.UndoUnlimitedRewardTier`,
+     * #55). 3일차에 둔 이유가 *"이틀 동안 '이건 유료구나'를 겪은 뒤에 받아야 값나가는 것을 받은
+     * 것이 된다"* (`ATTENDANCE_REWARD_POLICY.md`)인데, 더 쉬운 경로가 열려 있는 한 그 설계는
+     * 성립하지 않았다. **같은 엔타이틀먼트에 지급 경로가 둘이면 쉬운 쪽이 이긴다.**
+     *
+     * ⚠️ **닫은 것은 '지급' 경로뿐이고 '판정' 경로는 그대로다** — [resolve]의
+     * `featureId in state.claimedFeatures` 분기는 살아 있어, 이미 무르기를 획득한 사용자는
+     * 계속 [AllowedVia.Claimed]로 무료다. 그 분기를 함께 지우면 기존 보유자가 전원 잠긴다.
+     */
     private fun unlockOptionsFor(featureId: FeatureId): Set<UnlockOption> =
         when (featureId) {
-            FeatureId.Undo -> setOf(UnlockOption.AdGrant, UnlockOption.Purchase, UnlockOption.Claim)
-            FeatureId.Eval, FeatureId.TopMoves, FeatureId.MoveReview -> setOf(UnlockOption.AdGrant, UnlockOption.Purchase)
+            FeatureId.Undo, FeatureId.Eval, FeatureId.TopMoves, FeatureId.MoveReview ->
+                setOf(UnlockOption.AdGrant, UnlockOption.Purchase)
         }
 }

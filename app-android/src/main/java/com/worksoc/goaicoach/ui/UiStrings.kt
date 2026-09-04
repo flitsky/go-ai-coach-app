@@ -209,10 +209,6 @@ internal data class UiStrings(
     val premiumUpsellMessage: String,
     val premiumUpsellPurchaseOption: String,
     val premiumUpsellAdGrantOption: String,
-    val undoClaimTitle: String,
-    val undoClaimMessage: String,
-    val undoClaimConfirmAction: String,
-    val undoClaimSuccessMessage: String,
     /**
      * 추천 수 버튼 라벨 — 1회성 동작이라 상태(ON/OFF)가 아니라 행위로 읽히게 한다.
      *

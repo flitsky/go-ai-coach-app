@@ -75,6 +75,12 @@ import kotlinx.coroutines.launch
  * [resolve]는 기능별 게이팅 판정이다(`application/premium/FeatureAccessPolicy.kt`, 6계층에
  * 위임) — 화면은 더 이상 `isActive`/클레임 여부를 직접 조합해 판정하지 않고, 이 함수 하나가
  * 돌려주는 [FeatureAccess]([FeatureAccess.Allowed]/[FeatureAccess.Locked])만 보고 분기한다.
+ * ⚠️ **[claim]을 지금 부르는 UI는 하나도 없다**(백로그 #66, 2026-09-03). 유일한 호출부였던
+ * 인게임 무르기 "영구 활성화" 팝업을 제거했기 때문이다 — 무르기의 영구 해금은 이제 **3일차 출석
+ * 보상**뿐이고, 그쪽은 이 함수가 아니라 `runAttendanceRewardGrant`를 지나 같은
+ * `runPremiumFeatureClaim`에 닿는다. **원장([PremiumState.claimedFeatures])은 그대로 살아 있고**
+ * 판정도 그것을 읽으므로, 클레임 축이 필요한 기능이 다시 생기면 이 자리를 쓰면 된다.
+ *
  * [claim]은 클레임 가능한 기능([FeatureId], 지금은 무르기뿐)을 영구 클레임 원장에 추가한다 —
  * 초도 발행 "무르기 무료 클레임" 그랜드파더링(launch-plan/README.md 3장)용으로, 한 번
  * 클레임하면 이후 그 기능의 기본 정책이 바뀌어도 계속 무료다.

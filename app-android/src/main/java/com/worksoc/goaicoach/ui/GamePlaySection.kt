@@ -53,7 +53,6 @@ import com.worksoc.goaicoach.application.consumable.ConsumableSpendDecision
 import com.worksoc.goaicoach.application.movereview.MoveReviewTone
 import com.worksoc.goaicoach.application.premium.FeatureAccess
 import com.worksoc.goaicoach.application.premium.FeatureId
-import com.worksoc.goaicoach.application.premium.UnlockOption
 import com.worksoc.goaicoach.application.safety.engineTurnWatchdogTimeoutMillisFor
 import com.worksoc.goaicoach.application.safety.isEngineTurnWatchdogTriggered
 import com.worksoc.goaicoach.application.session.GameSessionTurnTimeState
@@ -368,7 +367,6 @@ private fun GameActionButtons(
     val context = LocalContext.current
     var showResignConfirm by remember { mutableStateOf(false) }
     var showPremiumUpsellDialog by remember { mutableStateOf(false) }
-    var showUndoClaimDialog by remember { mutableStateOf(false) }
     val consumables = LocalConsumableUiState.current
     val moveCount = screenState.gameState.moves.size
 
@@ -464,7 +462,6 @@ private fun GameActionButtons(
                             }
                         }
                     }
-                    UnlockOption.Claim in access.unlockOptions -> showUndoClaimDialog = true
                     else -> showPremiumUpsellDialog = true
                 }
             }
@@ -476,37 +473,20 @@ private fun GameActionButtons(
         onDismiss = { showPremiumUpsellDialog = false },
     )
 
-    // ⚠️ 방어적 폴백으로만 남긴 경로다(킥오프 플랜 4.4절, 백로그 #4). 정상 흐름에서는 앱 최초
-    // 실행 시 출석 1일차 보상이 무르기를 자동 클레임하므로(`AttendanceCheckInCoordinator` →
-    // `runAttendanceRewardGrant`) 여기까지 오지 않는다. 그래도 지우지 않는 이유:
-    // (1) 자동 지급은 foreground 이벤트를 타는 비동기 경로라 실패/유실 가능성이 0이 아니고,
-    // (2) `PremiumStateStore.load()`가 기기 시계 이상 등으로 상태를 기본값 폴백하면 이미 받은
-    //     클레임이 사라지는데, 출석 쪽은 "1일차 지급 완료"로 기록돼 있어 자동 재지급되지 않는다.
-    // 이 두 경우에 무르기를 영영 못 쓰게 되는 것보다, 도달 확률이 낮은 팝업 하나를 남겨 두는
-    // 편이 안전하다. 자동 지급이 안정화됐다고 판단되면 그때 제거한다.
-    if (showUndoClaimDialog) {
-        AlertDialog(
-            onDismissRequest = { showUndoClaimDialog = false },
-            title = { Text(strings.undoClaimTitle) },
-            text = { Text(strings.undoClaimMessage) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showUndoClaimDialog = false
-                        premium.claim(FeatureId.Undo)
-                        Toast.makeText(context, strings.undoClaimSuccessMessage, Toast.LENGTH_SHORT).show()
-                    },
-                ) {
-                    Text(strings.undoClaimConfirmAction)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showUndoClaimDialog = false }) {
-                    Text(strings.no)
-                }
-            },
-        )
-    }
+    // ⚠️ **무르기의 인게임 "영구 활성화" 팝업이 여기 있었다 — 지웠다**(백로그 #66, 2026-09-03).
+    // 확인 버튼이 `premium.claim(FeatureId.Undo)`로 무르기를 **1일차부터 영구 지급**하고 있었고,
+    // 그래서 3일차 출석 보상(#55)이 하는 일이 없었다. 이 자리의 주석은 그 경로를 "방어적 폴백"
+    // 이라고 적고 있었는데, 근거로 든 전제 **둘 다 그 사이 무너져 있었다**: 출석 1일차 자동
+    // 지급은 #14로 없어졌고(`AttendanceCheckInCoordinator`는 이제 지급하지 않는다), 무르기
+    // 회차도 1일차 → 3일차로 옮겨졌다. 즉 폴백이 아니라 **1·2일차 사용자가 반드시 만나는
+    // 정상 경로**였다.
+    //
+    // ⚠️ **잃은 것이 하나 있고, 그것을 알고 지웠다**(2026-09-03 사용자 결정). 이 팝업은
+    // `PremiumStateStore.load()`가 기기 시계 이상 등으로 상태를 기본값 폴백했을 때 무르기를
+    // 되찾는 **유일한 자력 복구 수단**이기도 했다 — 출석 쪽에는 "3일차 지급 완료"가 남아 있어
+    // 자동 재지급되지 않는다. 폴백 조건이 매우 좁고(광고 시청 후 기기 시계 되돌림, 또는 저장
+    // JSON 파싱 실패) 비공개 테스트 권한은 #63 초기화로 이미 밀렸으므로 **감수하기로 했다.**
+    // → **이것은 버그가 아니라 결정이다.** 복구 경로가 없다는 이유로 다시 발행하지 말 것.
 
     if (showResignConfirm) {
         AlertDialog(
@@ -613,7 +593,16 @@ private fun GameActionButtons(
                 )
             }
 
-            // 3. 무르기 (Undo) 버튼 (클레임 시 무료 — 그랜드파더링, launch-plan/README.md 3장)
+            // 3. 무르기 (Undo) 버튼 — **다른 프리미엄 기능과 같은 규칙으로 그린다**(백로그 #66).
+            // 잠긴 동안 금색 테두리가 붙고, 열리면 평범한 버튼으로 돌아간다. 무르기가 열리는 길은
+            // 셋이고 `resolve`가 그 셋을 이미 한 값으로 접어 준다:
+            //   ⓐ 프리미엄이 지금 유효(구독/영구) → `Allowed(Purchase)`
+            //   ⓑ 광고 1시간 활성 → `Allowed(AdGrant)`
+            //   ⓒ 3일차 출석 보상으로 영구 획득 → `Allowed(Claimed)`
+            // 셋 다 `Allowed`라 테두리가 저절로 사라진다 — **상태 전이를 따로 배선할 것이 없다.**
+            // ⚠️ 라벨에는 아무 표시도 붙이지 않는다. 무르기에 무제한 표시를 달지 않기로 한 것은
+            // 사용자 확정 사항이고(`UiStrings.featureButtonLabel` KDoc), 게다가 이 버튼은
+            // `ActionButtonMinHeight`(48dp) **고정 높이**라 줄이 늘면 폰트 배율에서 잘린다.
             val undoAction = screenState.actionButtons.firstOrNull { it.role == GameActionButtonRole.Undo }
             if (undoAction != null) {
                 val undoAccess = premium.resolve(FeatureId.Undo)
@@ -622,6 +611,10 @@ private fun GameActionButtons(
                     label = strings.undo,
                     onEvent = { event -> featureGated(undoAccess) { onEvent(event) } },
                     modifier = Modifier.weight(1f),
+                    // 형세·추천과 같은 관용구다. 다만 그 둘이 함께 보는 `tapIsFree`는 여기 없다 —
+                    // 무르기에는 1회권이 없어(`ConsumableCatalog`에 `FeatureUse(Undo)`가 없다)
+                    // 언제나 false이므로, 붙이면 읽는 사람만 헷갈린다.
+                    premiumLocked = undoAccess is FeatureAccess.Locked,
                 )
             }
         }
