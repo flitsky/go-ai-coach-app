@@ -69,7 +69,6 @@ import com.worksoc.goaicoach.runReleaseResetAgain
 import com.worksoc.goaicoach.application.auth.AuthClientPort
 import com.worksoc.goaicoach.application.auth.AuthProvider
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
-import com.worksoc.goaicoach.application.preferences.GameSetupUxMode
 import com.worksoc.goaicoach.persistence.DeveloperModeStore
 import com.worksoc.goaicoach.persistence.UserPreferencesStore
 import com.worksoc.goaicoach.presentation.GameScreenState
@@ -138,7 +137,6 @@ internal fun SettingsScreen(
     val premium = LocalPremiumUiState.current
     val scope = rememberCoroutineScope()
     val preferencesStore = remember(context) { UserPreferencesStore(context) }
-    var gameSetupUxMode by remember { mutableStateOf(preferencesStore.load().gameSetupUxMode) }
     val developerModeStore = remember(context) { DeveloperModeStore(context) }
     var isDeveloperModeEnabled by remember { mutableStateOf(developerModeStore.isEnabled()) }
     // ⚠️ **2차는 저장하지 않는다**(백로그 #77). 1차와 달리 `DeveloperModeStore`에 남기지 않으므로
@@ -286,37 +284,27 @@ internal fun SettingsScreen(
                 onAutoPlayDelayChange = { setting -> onEvent(GameUiEvent.ChangeAutoPlayDelay(setting)) },
             )
 
-            // 대국 진행 중(게임 종료 전)에는 바둑판 크기·접바둑을 바꿀 수 없다 — 게임 메뉴
-            // ([ExpandedGameMenuSection])와 동일한 게이팅. 여기는 대국 설정 로비와 달리
-            // "항상 대국 시작 전"이 아니라(뒤로 가기로 진행 중인 대국을 둔 채 홈→설정으로도
-            // 올 수 있음) 로비의 canChangeBoardSize/canChangeHandicap=true를 그대로 쓰면 안 된다.
-            if (gameSetupUxMode == GameSetupUxMode.Compact) {
-                CompactScoringAndBoardSettingsPanel(
-                    ruleset = screenState.gameState.ruleset,
-                    boardSize = screenState.gameState.boardSize,
-                    handicapCount = screenState.handicapCount,
-                    komi = screenState.gameState.komi,
-                    onRulesetChange = { ruleset -> onEvent(GameUiEvent.ChangeScoringRule(ruleset)) },
-                    onBoardSizeChange = { size -> onEvent(GameUiEvent.ChangeBoardSize(size)) },
-                    onHandicapCountChange = { count -> onEvent(GameUiEvent.ChangeHandicapCount(count)) },
-                    onKomiChange = { komi -> onEvent(GameUiEvent.ChangeKomi(komi)) },
-                )
-            } else {
-                ScoringAndBoardSettingsPanel(
-                    ruleset = screenState.gameState.ruleset,
-                    boardSize = screenState.gameState.boardSize,
-                    handicapCount = screenState.handicapCount,
-                    komi = screenState.gameState.komi,
-                    canChangeRuleset = true,
-                    canChangeBoardSize = screenState.isGameEnded,
-                    canChangeHandicap = screenState.isGameEnded,
-                    canChangeKomi = true,
-                    onRulesetChange = { ruleset -> onEvent(GameUiEvent.ChangeScoringRule(ruleset)) },
-                    onBoardSizeChange = { size -> onEvent(GameUiEvent.ChangeBoardSize(size)) },
-                    onHandicapCountChange = { count -> onEvent(GameUiEvent.ChangeHandicapCount(count)) },
-                    onKomiChange = { komi -> onEvent(GameUiEvent.ChangeKomi(komi)) },
-                )
-            }
+            // 룰 및 바둑판 세팅 패널. ⚠️ **레이아웃 선택지는 백로그 #73에서 없앴다.**
+            //
+            // ⚠️ **그때 함께 사라진 것이 하나 더 있다 — 진행 중 대국의 게이팅 표현이다.**
+            // 지운 Simple 분기는 `canChangeBoardSize`/`canChangeHandicap`에
+            // `screenState.isGameEnded`를 넘겨 *"대국 중에는 판 크기·접바둑을 못 바꾼다"* 를
+            // 표현하고 있었다(게임 메뉴와 같은 게이팅). `CompactScoringAndBoardSettingsPanel`은
+            // 그 파라미터를 **아예 받지 않는다.**
+            // · **동작상의 회귀는 아니다** — 기본값이 처음부터 Compact여서 실제 사용자에게는
+            //   오래전부터 게이팅이 없었다. 사라진 것은 **의도의 흔적**뿐이다.
+            // · ⚠️ **막아야 하는지는 아직 결정되지 않았다 — 백로그 #75가 그 결정을 들고 있다.**
+            //   여기서 임의로 되살리지 말 것(패널에 `canChange*`를 새로 넣는 UI 변경이 된다).
+            CompactScoringAndBoardSettingsPanel(
+                ruleset = screenState.gameState.ruleset,
+                boardSize = screenState.gameState.boardSize,
+                handicapCount = screenState.handicapCount,
+                komi = screenState.gameState.komi,
+                onRulesetChange = { ruleset -> onEvent(GameUiEvent.ChangeScoringRule(ruleset)) },
+                onBoardSizeChange = { size -> onEvent(GameUiEvent.ChangeBoardSize(size)) },
+                onHandicapCountChange = { count -> onEvent(GameUiEvent.ChangeHandicapCount(count)) },
+                onKomiChange = { komi -> onEvent(GameUiEvent.ChangeKomi(komi)) },
+            )
 
             Spacer(modifier = Modifier.height(4.dp))
             HorizontalDivider()
@@ -617,34 +605,6 @@ internal fun SettingsScreen(
                     TextButton(onClick = { showDiagnosticLog = true }) {
                         Text(strings.settingsDevDiagnosticLogOpenAction)
                     }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = strings.settingsDevGameSetupUxToggleTitle,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.SemiBold,
-                        )
-                        Text(
-                            text = strings.settingsDevGameSetupUxToggleSubtitle,
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.secondary,
-                        )
-                    }
-                    Switch(
-                        checked = gameSetupUxMode == GameSetupUxMode.Compact,
-                        onCheckedChange = { checked ->
-                            gameSetupUxMode = if (checked) GameSetupUxMode.Compact else GameSetupUxMode.Simple
-                            preferencesStore.save(preferencesStore.load().copy(gameSetupUxMode = gameSetupUxMode))
-                        },
-                    )
                 }
 
                 // ⚠️ **`BuildConfig.DEBUG`가 이 배치의 유일한 실제 경계다**(위 머리말 참고).

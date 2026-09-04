@@ -38,7 +38,6 @@ data class UserPreferencesSnapshot(
     val isDirectPlayEnabled: Boolean = true,
     val showMoveReview: Boolean = false,
     val hasSeenOnboarding: Boolean = false,
-    val gameSetupUxMode: GameSetupUxMode = GameSetupUxMode.Compact,
     /**
      * 앱 글꼴 배율(백로그 #81). **시스템 배율을 따르지 않고 이 값을 쓴다** — 사유와 접근성 비용은
      * [DefaultAppFontScale]의 KDoc에 있다.

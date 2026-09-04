@@ -80,7 +80,7 @@ class LandingSetupApplicationTest {
             showCoordinates = true,
             showMoveNumbers = true,
             isPlayHapticEnabled = false,
-            gameSetupUxMode = GameSetupUxMode.Simple,
+            appFontScale = 1.5f,
         )
 
         val applied = applyLandingSetup(current, SelfRatedSkill.Intermediate, Ruleset.Chinese)
@@ -90,7 +90,7 @@ class LandingSetupApplicationTest {
         assertTrue(applied.showCoordinates)
         assertTrue(applied.showMoveNumbers)
         assertTrue(!applied.isPlayHapticEnabled)
-        assertEquals(GameSetupUxMode.Simple, applied.gameSetupUxMode)
+        assertEquals(1.5f, applied.appFontScale)
     }
 
     /**

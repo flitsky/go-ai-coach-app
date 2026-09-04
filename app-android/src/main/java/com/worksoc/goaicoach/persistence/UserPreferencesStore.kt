@@ -2,7 +2,6 @@ package com.worksoc.goaicoach.persistence
 
 import android.content.Context
 import com.worksoc.goaicoach.application.preferences.DefaultAppFontScale
-import com.worksoc.goaicoach.application.preferences.GameSetupUxMode
 import com.worksoc.goaicoach.application.preferences.sanitizeAppFontScale
 import com.worksoc.goaicoach.application.preferences.UserPreferencesSnapshot
 import com.worksoc.goaicoach.application.preferences.UserPreferencesStorePort
@@ -57,7 +56,6 @@ internal object UserPreferencesCodec {
             .put("isDirectPlayEnabled", snapshot.isDirectPlayEnabled)
             .put("showMoveReview", snapshot.showMoveReview)
             .put("hasSeenOnboarding", snapshot.hasSeenOnboarding)
-            .put("gameSetupUxMode", snapshot.gameSetupUxMode.name)
             .put("isPlayHapticEnabled", snapshot.isPlayHapticEnabled)
             .put("isBoardMaxSize", snapshot.isBoardMaxSize)
             .put("isPlayMagnifierEnabled", snapshot.isPlayMagnifierEnabled)
@@ -98,7 +96,6 @@ internal object UserPreferencesCodec {
                 isDirectPlayEnabled = json.optBoolean("isDirectPlayEnabled", true),
                 showMoveReview = json.optBoolean("showMoveReview", false),
                 hasSeenOnboarding = json.optBoolean("hasSeenOnboarding", false),
-                gameSetupUxMode = enumOrDefault(json.optString("gameSetupUxMode"), GameSetupUxMode.Compact),
                 isPlayHapticEnabled = json.optBoolean("isPlayHapticEnabled", true),
                 isBoardMaxSize = json.optBoolean("isBoardMaxSize", true),
                 isPlayMagnifierEnabled = json.optBoolean("isPlayMagnifierEnabled", true),

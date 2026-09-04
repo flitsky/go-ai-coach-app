@@ -1,6 +1,6 @@
 package com.worksoc.goaicoach.persistence
 
-import com.worksoc.goaicoach.application.preferences.GameSetupUxMode
+import com.worksoc.goaicoach.application.preferences.DefaultAppFontScale
 import com.worksoc.goaicoach.application.preferences.UserPreferencesSnapshot
 import com.worksoc.goaicoach.match.HumanGameType
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
@@ -45,7 +45,7 @@ class UserPreferencesCodecTest {
             autoPlayDelayMillis = AutoPlayDelaySetting.Slow.millis,
             searchTimeSettings = SearchTimeSettings(SearchTimeLimit.WithinFiveSeconds),
             showMoveReview = true,
-            gameSetupUxMode = GameSetupUxMode.Simple,
+            appFontScale = 1.5f,
         )
 
         val encoded = UserPreferencesCodec.encode(snapshot)
@@ -56,7 +56,12 @@ class UserPreferencesCodecTest {
         assertEquals(Ruleset.Chinese, restored?.ruleset)
         assertEquals(false, restored?.topMovesEnabled)
         assertEquals(0.5, restored?.komi ?: -1.0, 0.0001)
-        assertEquals(GameSetupUxMode.Simple, restored?.gameSetupUxMode)
+        // ⚠️ 배율은 **문자열로** 저장한다 — `Float`를 `Double`로 넣으면 `1.2999999523162842`가
+        // 되는 것을 실기에서 확인했다(#81). 왕복이 정확한지와 저장 형태가 사람이 읽을 수 있는지를
+        // 함께 본다. ⚠️ #73 전까지 이 자리는 `gameSetupUxMode`였고, **배율 왕복에는 그물이
+        // 없었다** — 삭제된 필드의 자리를 그것으로 메운다.
+        assertEquals(1.5f, restored?.appFontScale)
+        assertEquals("1.5", encodedJson.getString("appFontScale"))
         assertEquals(false, restored?.showCoordinates)
         assertEquals(true, restored?.showMoveNumbers)
         assertEquals(false, restored?.showLastMoveRing)
@@ -88,7 +93,30 @@ class UserPreferencesCodecTest {
         assertEquals(AutoPlayDelaySetting.Default.millis, restored?.autoPlayDelayMillis)
         assertEquals(SearchTimeSettings(), restored?.searchTimeSettings)
         assertEquals(com.worksoc.goaicoach.shared.DefaultKomi, restored?.komi ?: -1.0, 0.0001)
-        assertEquals(GameSetupUxMode.Compact, restored?.gameSetupUxMode)
+        assertEquals(DefaultAppFontScale, restored?.appFontScale)
+    }
+
+    /**
+     * ⚠️ **삭제된 필드가 아직 저장돼 있는 파일도 그대로 읽혀야 한다**(백로그 #73).
+     *
+     * `gameSetupUxMode`를 지울 때 **`schema`를 올리지 않았고 잔존 키를 청소하지도 않았다.** 그
+     * 판단이 성립하는 근거가 이 테스트다 — 모르는 키는 무시되고, [UserPreferencesCodec.encode]가
+     * 매번 새 `JSONObject`를 만들므로 그 키는 **다음 저장에서 물리적으로 사라진다.**
+     *
+     * ⚠️ **`schema`를 올렸다면 훨씬 나빴다** — `decode`의 `else -> return@runCatching null`이
+     * 1/2 외의 값에서 **스냅샷을 통째로 버려** 판 크기·덤·표시 옵션·온보딩 완료까지 초기화된다.
+     * 필드를 하나 빼는 데 마이그레이션이 필요하다는 착각이 그 사고로 이어진다.
+     */
+    @Test
+    fun aSnapshotStillCarryingARemovedFieldDecodesUnchanged() {
+        val restored = UserPreferencesCodec.decode(
+            """{"schema":2,"gameSetupUxMode":"Simple","komi":0.5,"hasSeenOnboarding":true}""",
+        )
+
+        assertEquals(0.5, restored?.komi ?: -1.0, 0.0001)
+        assertTrue(restored?.hasSeenOnboarding ?: false)
+        // 지운 키가 남아 있어도 나머지가 살아남는다 — 스냅샷을 버리지 않는다.
+        assertEquals(DefaultAppFontScale, restored?.appFontScale)
     }
 
     @Test

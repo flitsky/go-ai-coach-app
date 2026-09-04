@@ -14,7 +14,8 @@ import android.content.Context
  * 같은 이유다. 그쪽은 저장할 때마다 `UserPreferencesSnapshot`을 통째로 다시 조립하는데
  * (`buildUserPreferencesSnapshot` → `toUserPreferencesSnapshot`), 그 조립부에 배선되지 않은
  * 필드는 저장 시점에 조용히 기본값으로 되돌아간다. 실제로 `hasSeenOnboarding`과
- * `gameSetupUxMode`가 조립부에 없다. 언어를 거기 끼워 넣으면 같은 함정에 빠진다.
+ * `appFontScale`이 조립부에 없어 오토세이브가 따로 이어 붙인다. 언어를 거기 끼워 넣으면 같은
+ * 함정에 빠진다.
  *
  * 저장은 **enum 이름 문자열**로 한다. 값을 못 알아보면(언어가 삭제·개명된 빌드로 롤백 등)
  * `null`을 돌려주고, 호출부는 기본 언어로 시작한다 — 저장된 값 하나 때문에 앱이 죽지 않는다.

@@ -34,14 +34,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.worksoc.goaicoach.application.preferences.GameSetupUxMode
-import com.worksoc.goaicoach.persistence.UserPreferencesStore
 import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.presentation.GameUiEvent
 import androidx.compose.material.icons.Icons
@@ -65,13 +62,6 @@ internal fun GameSetupLobby(
     val scrollState = rememberScrollState()
     val premium = LocalPremiumUiState.current
     var showPremiumUpsellDialog by remember { mutableStateOf(false) }
-
-    // 심플/콤팩트 레이아웃 선택은 설정 화면의 개발자 토글이 바꾸는 값이라, 화면 진입마다
-    // 저장소에서 새로 읽는다(GoCoachApp.kt를 거치지 않는 독립 경로 — 상태 훅 예산이 빠듯한
-    // 그쪽을 건드리지 않기 위해서다).
-    val context = LocalContext.current
-    val preferencesStore = remember(context) { UserPreferencesStore(context) }
-    val gameSetupUxMode = remember { preferencesStore.load().gameSetupUxMode }
 
     // 홈 화면에서는 더 이상 이 팝업을 강제로 띄우지 않는다 — 여기 대국 설정 화면에서
     // 사용자가 원할 때(아래 프리미엄 모드 카드 탭) 직접 열도록 한다.
@@ -139,36 +129,20 @@ internal fun GameSetupLobby(
                 onAutoPlayDelayChange = { setting -> onEvent(GameUiEvent.ChangeAutoPlayDelay(setting)) },
             )
 
-            // [2] 룰 및 바둑판 세팅 패널 (계가, 크기, 접바둑) — 설정 화면의 개발자 토글로
-            // 고른 레이아웃(심플/콤팩트)에 따라 둘 중 하나만 그린다. 기능(디스패치하는
-            // GameUiEvent)은 완전히 동일하고 시각적 밀도만 다르다.
-            if (gameSetupUxMode == GameSetupUxMode.Compact) {
-                CompactScoringAndBoardSettingsPanel(
-                    ruleset = screenState.gameState.ruleset,
-                    boardSize = screenState.gameState.boardSize,
-                    handicapCount = screenState.handicapCount,
-                    komi = screenState.gameState.komi,
-                    onRulesetChange = { ruleset -> onEvent(GameUiEvent.ChangeScoringRule(ruleset)) },
-                    onBoardSizeChange = { size -> onEvent(GameUiEvent.ChangeBoardSize(size)) },
-                    onHandicapCountChange = { count -> onEvent(GameUiEvent.ChangeHandicapCount(count)) },
-                    onKomiChange = { komi -> onEvent(GameUiEvent.ChangeKomi(komi)) },
-                )
-            } else {
-                ScoringAndBoardSettingsPanel(
-                    ruleset = screenState.gameState.ruleset,
-                    boardSize = screenState.gameState.boardSize,
-                    handicapCount = screenState.handicapCount,
-                    komi = screenState.gameState.komi,
-                    canChangeRuleset = true,
-                    canChangeBoardSize = true,
-                    canChangeHandicap = true,
-                    canChangeKomi = true,
-                    onRulesetChange = { ruleset -> onEvent(GameUiEvent.ChangeScoringRule(ruleset)) },
-                    onBoardSizeChange = { size -> onEvent(GameUiEvent.ChangeBoardSize(size)) },
-                    onHandicapCountChange = { count -> onEvent(GameUiEvent.ChangeHandicapCount(count)) },
-                    onKomiChange = { komi -> onEvent(GameUiEvent.ChangeKomi(komi)) },
-                )
-            }
+            // [2] 룰 및 바둑판 세팅 패널 (계가, 크기, 접바둑).
+            // ⚠️ **레이아웃 선택지는 백로그 #73에서 없앴다** — `GameSetupUxMode`의 Simple 쪽은
+            // 개발자 토글로만 닿을 수 있었고 기본값은 처음부터 Compact였다. 분기가 사라졌으니
+            // 이 화면에서 저장소를 읽을 일도 없다(그 독립 경로가 함께 없어졌다).
+            CompactScoringAndBoardSettingsPanel(
+                ruleset = screenState.gameState.ruleset,
+                boardSize = screenState.gameState.boardSize,
+                handicapCount = screenState.handicapCount,
+                komi = screenState.gameState.komi,
+                onRulesetChange = { ruleset -> onEvent(GameUiEvent.ChangeScoringRule(ruleset)) },
+                onBoardSizeChange = { size -> onEvent(GameUiEvent.ChangeBoardSize(size)) },
+                onHandicapCountChange = { count -> onEvent(GameUiEvent.ChangeHandicapCount(count)) },
+                onKomiChange = { komi -> onEvent(GameUiEvent.ChangeKomi(komi)) },
+            )
 
             // [3] 50% 비율 축소 실시간 바둑판 프리뷰
             Column(

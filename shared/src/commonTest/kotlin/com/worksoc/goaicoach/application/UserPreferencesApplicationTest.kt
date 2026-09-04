@@ -259,13 +259,17 @@ class UserPreferencesApplicationTest {
     @Test
     fun autosaveRunnerPreservesFieldsItDoesNotManage() {
         // 회귀 방지: 오토세이브는 대국 설정(계가/덤/바둑판 등)만 관리한다. 온보딩 완료 여부나
-        // 대국설정 UX 모드처럼 오토세이브가 모르는 필드는, 매번 데이터 클래스 기본값으로
-        // 덮어쓰지 않고 store에 이미 저장된 현재 값을 그대로 보존해야 한다.
+        // 글꼴 배율처럼 오토세이브가 모르는 필드는, 매번 데이터 클래스 기본값으로 덮어쓰지 않고
+        // store에 이미 저장된 현재 값을 그대로 보존해야 한다.
+        //
+        // ⚠️ **카나리아가 셋에서 둘로 줄었다**(#73이 `gameSetupUxMode`를 삭제). 남은 둘은 종류가
+        // 서로 달라서 그물이 얇아지지는 않았다 — `hasSeenOnboarding`은 **한 번만 참이 되는 플래그**,
+        // `appFontScale`은 **사용자가 직접 고르는 값**이다. ⚠️ 여기서 더 줄이는 항목은 대체
+        // 카나리아를 함께 마련할 것(`UserPreferencesAutosaveApplication`의 `copy` KDoc에도 적었다).
         val store = RecordingUserPreferencesStore()
         store.save(
             UserPreferencesSnapshot(
                 hasSeenOnboarding = true,
-                gameSetupUxMode = GameSetupUxMode.Simple,
                 // 백로그 #81 — 글꼴 배율도 오토세이브가 모르는 필드다. ⚠️ 이 카나리아가 특히
                 // 중요한 이유: 배율은 **사용자가 직접 고르는 설정**이라, 되돌아가면 곧바로 눈에
                 // 보이는 회귀가 된다(대국 설정을 한 번 만지면 글자 크기가 제자리로 돌아간다).
@@ -295,7 +299,6 @@ class UserPreferencesApplicationTest {
         )
 
         assertTrue(store.saved.hasSeenOnboarding)
-        assertEquals(GameSetupUxMode.Simple, store.saved.gameSetupUxMode)
         assertEquals(
             1.5f,
             store.saved.appFontScale,

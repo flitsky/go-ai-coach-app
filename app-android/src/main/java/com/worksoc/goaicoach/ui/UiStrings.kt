@@ -309,8 +309,6 @@ internal data class UiStrings(
     val settingsDevDiagnosticLogCopied: String,
     val settingsDevPremiumToggleTitle: String,
     val settingsDevPremiumToggleSubtitle: String,
-    val settingsDevGameSetupUxToggleTitle: String,
-    val settingsDevGameSetupUxToggleSubtitle: String,
     val settingsVersionLabel: String,
     val settingsBuildTimeLabel: String,
     val settingsPrivacyPolicyLabel: String,
