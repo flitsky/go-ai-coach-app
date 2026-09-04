@@ -6,12 +6,7 @@ import android.widget.Toast
 import androidx.compose.foundation.background
 import android.content.Context
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.waitForUpOrCancellation
-import androidx.compose.ui.input.pointer.PointerEventTimeoutCancellationException
-import androidx.compose.ui.input.pointer.pointerInput
-import kotlinx.coroutines.withTimeout
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -88,13 +83,24 @@ private const val DeveloperModeTapsRequired = 10
 private const val DeveloperModeTapCountdownThreshold = 5
 
 /**
- * 2차(고급) 개발자 테스트를 여는 **길게 누르기** 시간(백로그 #77).
+ * 2차(고급) 개발자 테스트를 여는 **'빌드 정보' 행의 탭 수**(2026-09-04, 백로그 #84).
  *
- * ⚠️ **`combinedClickable`의 `onLongClick`으로는 이 값을 표현할 수 없다** — 그쪽은
- * `viewConfiguration.longPressTimeoutMillis`(약 500ms)에 하드와이어돼 있다. 그래서 아래
- * 버전 텍스트는 `pointerInput` 제스처 하나로 **탭과 길게 누르기를 함께** 판정한다.
+ * ## ⚠️ 왜 길게 누르기를 버렸는가
+ * #77은 3초 홀드를 썼는데 **세로 스크롤 안에서는 신뢰할 수 없었다.**
+ * `waitForUpOrCancellation()`은 다른 핸들러가 제스처를 가져가면 3초 전에 `null`을 돌려주고,
+ * 그러면 홀드도 탭도 아니어서 **조용히 아무 일도 일어나지 않는다.** `down`을 소비해도
+ * 이후 MOVE 경쟁은 막지 못한다 — 재시작 뒤 그 자리까지 스크롤해 내려간 손가락은 이미
+ * 스크롤과 경쟁하는 상태라, 사용자에게는 *"한 번은 됐는데 다시는 안 된다"* 로 보였다
+ * (2026-09-04 사용자 제보 두 번).
+ *
+ * **탭은 이 경쟁을 아예 겪지 않는다** — 터치 슬롭을 넘기 전에 끝난다.
+ *
+ * ## ⚠️ 이 트리거의 은닉은 **위치**가 담당한다
+ * '빌드 정보' 행은 **1차 섹션 안에만 존재한다.** 그래서 *"1차를 먼저 켜야 한다"* 는 조건이
+ * 런타임 검사가 아니라 **구조로** 성립한다 — 1차가 꺼져 있으면 누를 대상 자체가 화면에 없다.
+ * 실제 경계는 여전히 [BuildConfig.DEBUG]다(은닉은 오조작 방지일 뿐이다).
  */
-private const val AdvancedDeveloperModeHoldMillis = 3_000L
+private const val AdvancedDeveloperModeTapsRequired = 10
 
 /**
  * 홈 화면 상단의 설정 진입점에서 열리는 화면. 게스트(로컬 기기 ID)/Google/이메일 로그인
@@ -145,6 +151,9 @@ internal fun SettingsScreen(
     var isAdvancedDeveloperModeEnabled by remember { mutableStateOf(false) }
     var showDiagnosticLog by remember { mutableStateOf(false) }
     var versionTapCount by remember { mutableStateOf(0) }
+    // ⚠️ **2차 진입 탭 수도 저장하지 않는다**(백로그 #84). 2차 자체가 세션 한정이므로
+    // (#77의 안전장치) 그 진입 카운터를 남기면 다음 실행이 9탭에서 시작하는 셈이 된다.
+    var buildInfoTapCount by remember { mutableStateOf(0) }
     val consumables = LocalConsumableUiState.current
     val bots = LocalBotCharacterUiState.current
     // 개발자 2차의 프리미엄 부제가 읽는 값. `null`이면 지금 꺼져 있다는 뜻이다.
@@ -395,66 +404,34 @@ internal fun SettingsScreen(
                             "${strings.settingsBuildTimeLabel} ${BuildConfig.BUILD_TIME}",
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                        // ⚠️ **`clickable`이 아니라 제스처 하나로 탭과 길게 누르기를 함께 판정한다**
-                        // (백로그 #77). `clickable`은 **누른 시간과 무관하게** 손을 떼는 순간
-                        // onClick을 부르므로, 그 위에 홀드 감지를 얹으면 3초를 누른 사용자가
-                        // "탭 한 번"으로도 세어진다. `combinedClickable`도 답이 아니다 —
-                        // `onLongClick`이 약 500ms에 하드와이어돼 있어 3초를 표현할 수 없다.
-                        // ⚠️ 그리고 감지기를 **두 개 겹치면 한쪽이 굶는다**(`GoBoard.kt`가 같은
-                        // 이유로 단일 `pointerInput`을 쓴다) — 그래서 하나로 합쳤다.
-                        modifier = Modifier.pointerInput(isDeveloperModeEnabled) {
-                            awaitEachGesture {
-                                // ⚠️ **down을 소비한다 — 처음에는 소비하지 않았고 그것이 버그였다**
-                                // (2026-09-04 사용자 제보: 폰에서 3초 홀드가 안 먹는다).
-                                // 이 텍스트는 세로 스크롤 안에 있어, 소비하지 않으면 손가락이
-                                // 터치 슬롭을 넘는 순간 **스크롤이 제스처를 가져가고**
-                                // `waitForUpOrCancellation()`이 3초 전에 null을 돌려준다 —
-                                // 그러면 홀드가 조용히 무시된다. `adb input swipe`는 MOVE
-                                // 이벤트를 만들지 않아 **에뮬레이터에서는 재현되지 않았다.**
-                                // · 잃는 것은 **이 한 줄 텍스트에서 스크롤을 시작하는 것**뿐이고,
-                                //   얻는 것은 기능 자체다 — `GoBoard.kt`도 같은 판단으로 소비한다.
-                                awaitFirstDown(requireUnconsumed = false).consume()
-                                var heldPastThreshold = false
-                                val releasedEarly = try {
-                                    withTimeout(AdvancedDeveloperModeHoldMillis) { waitForUpOrCancellation() }
-                                } catch (_: PointerEventTimeoutCancellationException) {
-                                    heldPastThreshold = true
-                                    null
-                                }
-                                when {
-                                    heldPastThreshold -> {
-                                        // 손을 뗄 때까지 기다린다 — 떼는 순간을 탭으로 세지 않기 위함이다.
-                                        waitForUpOrCancellation()
-                                        onVersionLongHold(
-                                            isDeveloperModeEnabled = isDeveloperModeEnabled,
-                                            isAdvancedEnabled = isAdvancedDeveloperModeEnabled,
-                                            onEnable = { isAdvancedDeveloperModeEnabled = true },
-                                            context = context,
-                                            strings = strings,
-                                        )
-                                    }
-                                    // null이면 스크롤 등 다른 제스처가 가져갔다 — 탭이 아니다.
-                                    releasedEarly != null -> {
-                                        if (isDeveloperModeEnabled) return@awaitEachGesture
-                                        versionTapCount++
-                                        val remainingTaps = DeveloperModeTapsRequired - versionTapCount
-                                        if (remainingTaps <= 0) {
-                                            isDeveloperModeEnabled = true
-                                            developerModeStore.setEnabled(true)
-                                            Toast.makeText(
-                                                context,
-                                                strings.settingsDeveloperModeEnabledMessage,
-                                                Toast.LENGTH_SHORT,
-                                            ).show()
-                                        } else if (remainingTaps <= DeveloperModeTapCountdownThreshold) {
-                                            Toast.makeText(
-                                                context,
-                                                strings.settingsDeveloperModeCountdownMessage(remainingTaps),
-                                                Toast.LENGTH_SHORT,
-                                            ).show()
-                                        }
-                                    }
-                                }
+                        // ⚠️ **다시 `clickable`이다 — 홀드 감지를 걷어냈다**(2026-09-04, #84).
+                        // #77이 여기에 3초 홀드를 얹은 것은 2차 진입을 숨기기 위해서였는데,
+                        // **세로 스크롤 안에서 3초 홀드는 신뢰할 수 없다.** `waitForUpOrCancellation()`은
+                        // 다른 핸들러가 제스처를 가져가면 3초 전에 `null`을 돌려주고, 그러면
+                        // 어느 분기에도 걸리지 않아 **조용히 아무 일도 일어나지 않는다.**
+                        // `down`을 소비해도 이후 MOVE 경쟁은 막지 못해서 실기에서 계속 샜다.
+                        // · 2차 진입은 **'빌드 정보' 행 10탭**으로 옮겼다(아래). 탭은 터치 슬롭을
+                        //   넘기 전에 끝나므로 이 경쟁을 **아예 겪지 않는다.**
+                        // · 홀드가 없어지자 `clickable`의 원래 문제(누른 시간과 무관하게 릴리즈에서
+                        //   onClick을 부른다)도 문제가 아니게 됐다 — 구분할 것이 없다.
+                        modifier = Modifier.clickable {
+                            if (isDeveloperModeEnabled) return@clickable
+                            versionTapCount++
+                            val remainingTaps = DeveloperModeTapsRequired - versionTapCount
+                            if (remainingTaps <= 0) {
+                                isDeveloperModeEnabled = true
+                                developerModeStore.setEnabled(true)
+                                Toast.makeText(
+                                    context,
+                                    strings.settingsDeveloperModeEnabledMessage,
+                                    Toast.LENGTH_SHORT,
+                                ).show()
+                            } else if (remainingTaps <= DeveloperModeTapCountdownThreshold) {
+                                Toast.makeText(
+                                    context,
+                                    strings.settingsDeveloperModeCountdownMessage(remainingTaps),
+                                    Toast.LENGTH_SHORT,
+                                ).show()
                             }
                         },
                     )
@@ -505,10 +482,26 @@ internal fun SettingsScreen(
                 // 읽기 전용 ① — **어느 빌드를 보고 있는가.** 실기에서 이걸 못 봐서 치른 값이
                 // 있다(#47, `launch-plan/README.md` §0 B-3의 808 vs 810). 버전만으로는
                 // 빌드타입과 광고 ID 종류를 알 수 없다.
+                // ⚠️ **이 행이 2차 개발자 테스트의 진입점이다 — 10번 탭**(백로그 #84).
+                // 읽기 전용 한 줄에 진입을 얹은 이유가 둘이다. ⓐ 이 행은 **1차 섹션 안에만
+                // 존재하므로** *"1차를 먼저 켜야 한다"* 가 구조로 성립한다(런타임 검사가 아니다).
+                // ⓑ 눌러도 **아무것도 바뀌지 않는 행**이라, 실수로 눌러 상태가 망가질 일이 없다.
+                // ⚠️ release·playInternal에서는 [onBuildInfoTap]이 곧바로 돌아온다 —
+                // 토스트조차 띄우지 않는다(안내를 띄우면 2차의 존재를 광고하는 셈이다).
                 DeveloperInfoRow(
                     title = strings.settingsDevBuildInfoTitle,
                     value = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE}) · " +
                         "${BuildConfig.BUILD_TYPE} · ${if (BuildConfig.USE_TEST_ADS) "test ads" else "REAL ADS"}",
+                    onTap = {
+                        buildInfoTapCount++
+                        onBuildInfoTap(
+                            tapCount = buildInfoTapCount,
+                            isAdvancedEnabled = isAdvancedDeveloperModeEnabled,
+                            onEnable = { isAdvancedDeveloperModeEnabled = true },
+                            context = context,
+                            strings = strings,
+                        )
+                    },
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -867,16 +860,17 @@ internal fun SettingsScreen(
  * ⚠️ **release에서는 토스트도 띄우지 않는다.** 안내를 띄우면 2차의 존재 자체를 광고하는 셈이라,
  * 조건이 맞지 않으면 **아무 일도 일어나지 않는 것**이 맞다.
  */
-private fun onVersionLongHold(
-    isDeveloperModeEnabled: Boolean,
+private fun onBuildInfoTap(
+    tapCount: Int,
     isAdvancedEnabled: Boolean,
     onEnable: () -> Unit,
     context: Context,
     strings: UiStrings,
 ) {
     if (!BuildConfig.DEBUG) return
-    // 1차가 먼저다 — 10탭을 거치지 않은 사람에게 2차가 열리면 1차의 의미가 없어진다.
-    if (!isDeveloperModeEnabled || isAdvancedEnabled) return
+    if (isAdvancedEnabled) return
+    val remaining = AdvancedDeveloperModeTapsRequired - tapCount
+    if (remaining > 0) return
     onEnable()
     Toast.makeText(context, strings.settingsAdvancedDeveloperModeEnabledMessage, Toast.LENGTH_SHORT).show()
 }
@@ -889,13 +883,24 @@ private fun onVersionLongHold(
  * 기존 두 컨트롤과 같은 `Row` + `Column(weight(1f))` 골격이라 배율에 저절로 따라간다.
  */
 @Composable
-private fun DeveloperInfoRow(title: String, value: String) {
+private fun DeveloperInfoRow(title: String, value: String, onTap: () -> Unit = {}) {
     // ⚠️ **제목과 값을 좌우로 나누지 않는다 — 처음엔 그렇게 했고 배율 2.0배에서 깨졌다**
     // (2026-09-04, #81이 만든 배율 전환 버튼으로 발견했다). 값이 길면(`0.8.10 (810) · debug ·
     // test ads`) 폭을 다 먹어 제목이 `빌 / 드`로 쪼개진다. 위아래로 두면 서로 폭을 다투지 않고,
     // **주변 행들과 같은 모양**(제목 위, 부제 아래)이 되기도 한다.
     // ⚠️ 고정 높이는 여전히 금지다(함정 9번) — 높이를 지정하지 않아 배율을 저절로 따라간다.
-    Column(modifier = Modifier.fillMaxWidth()) {
+    // ⚠️ 탭 대상은 **행 전체**다(제목만이 아니다) — 값 줄이 두 줄로 접히는 배율에서도
+    // 누를 곳이 줄지 않아야 한다. 물결 효과는 두지 않는다: 이 행은 눌러도 아무것도 바뀌지
+    // 않는 읽기 전용 줄이고, 눌리는 것처럼 보이면 조작할 수 있는 행으로 읽힌다(#81의 제보).
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onTap,
+            ),
+    ) {
         Text(text = title, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
         Text(
             text = value,

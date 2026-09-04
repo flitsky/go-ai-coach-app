@@ -60,44 +60,95 @@ class DeveloperSectionTierContractTest {
         )
     }
 
+    /*
+     * ⚠️ **여기 있던 계약 둘(`theVersionTextUsesOneGestureForBothTapAndHold`,
+     * `theHoldConsumesTheDownSoTheScrollCannotStealIt`)은 #84가 지웠다** — 지킬 제스처가
+     * 없어졌기 때문이다. 그중 `down` 소비 계약은 **처방 자체가 불충분했다**: down 소비는 첫
+     * 접촉만 막고 이후 MOVE 경쟁은 막지 못해서, **계약이 초록인 채로 실기에서는 계속 샜다.**
+     * 아래 두 계약이 그 자리를 대신하며 **홀드로 돌아가는 것 자체를** 막는다 —
+     * 잘못된 처방을 지키는 계약보다 그 처방을 금지하는 계약이 낫다는 것이 이 항목의 교훈이다.
+     */
+
     /**
-     * ⚠️ **탭과 3초 홀드는 제스처 **하나**로 판정해야 한다.** `clickable`은 누른 시간과 무관하게
-     * 릴리즈에서 onClick을 부르므로 홀드가 탭으로도 세어지고, `combinedClickable`의 `onLongClick`은
-     * 약 500ms에 하드와이어돼 3초를 표현할 수 없다. 감지기를 둘 겹치면 한쪽이 굶는다
-     * (`GoBoard.kt`가 같은 이유로 단일 `pointerInput`을 쓴다).
+     * ⚠️ **2차 진입은 '빌드 정보' 행의 탭이어야 한다 — 길게 누르기로 돌아가지 말 것**
+     * (2026-09-04, #84. 사용자가 **두 번** 제보한 결함이다).
+     *
+     * #77의 3초 홀드는 **세로 스크롤 안에서 신뢰할 수 없었다.** `waitForUpOrCancellation()`은
+     * 다른 핸들러가 제스처를 가져가면 3초 전에 `null`을 돌려주고, 그러면 홀드도 탭도 아니라서
+     * **어느 분기에도 걸리지 않고 조용히 끝난다.** 재시작 뒤 그 자리까지 스크롤해 내려간
+     * 손가락은 이미 스크롤과 경쟁 중이라, 사용자에게는 *"한 번은 됐는데 다시는 안 된다"* 로
+     * 보였다. **탭은 터치 슬롭을 넘기 전에 끝나므로 이 경쟁을 아예 겪지 않는다.**
+     *
+     * ⚠️ 홀드는 *"더 숨겨져 보인다"* 는 이유로 다시 끌려올 만한 선택지이고, 그 실패는
+     * **조용해서** 이 계약이 없으면 다시 새어 나간다.
      */
     @Test
-    fun theVersionTextUsesOneGestureForBothTapAndHold() {
-        assertTrue("단일 제스처(`pointerInput`)를 쓰지 않는다(#77).", settings.contains("Modifier.pointerInput(isDeveloperModeEnabled)"))
-        assertTrue("홀드 시간을 명시적 타임아웃으로 재지 않는다.", settings.contains("withTimeout(AdvancedDeveloperModeHoldMillis)"))
-        assertFalse(
-            "`combinedClickable`을 썼다 — `onLongClick`은 약 500ms 고정이라 3초를 표현할 수 없다(#77).",
-            settings.contains("combinedClickable"),
+    fun theAdvancedTierIsEnteredByTappingAndNeverByHolding() {
+        // ⚠️ **존재만 보면 안 된다** — `onBuildInfoTap(`은 헬퍼 **선언**에도 있어서, 배선을
+        // 떼어내도 `contains`는 통과한다(변이로 확인했다). 선언 1 + 호출 1 = 정확히 둘이어야
+        // 하고, 그러면 "배선을 뗐다"와 "두 곳에서 부른다"를 함께 잡는다.
+        assertEquals(
+            "`onBuildInfoTap(` 출현이 둘(선언+호출 한 곳)이 아니다 — 배선이 떨어졌거나 " +
+                "진입점이 늘었다(#84).",
+            2,
+            settings.split("onBuildInfoTap(").size - 1,
         )
-        assertFalse(
-            "버전 텍스트가 아직 `Modifier.clickable`로 탭을 센다 — 홀드가 탭으로도 세어진다(#77).",
-            settings.contains("if (isDeveloperModeEnabled) return@clickable"),
+        assertTrue(
+            "'빌드 정보' 행이 탭을 받지 않는다 — `DeveloperInfoRow`에 `onTap`이 배선돼야 한다(#84).",
+            settings.contains("onTap = {"),
+        )
+        assertTrue(
+            "2차 진입에 필요한 탭 수가 상수로 없다(#84).",
+            settings.contains("AdvancedDeveloperModeTapsRequired"),
+        )
+        listOf(
+            "waitForUpOrCancellation" to "스크롤이 가져가면 조용히 실패한다",
+            "PointerEventTimeoutCancellationException" to "홀드 판정의 잔재다",
+            "combinedClickable" to "`onLongClick`은 약 500ms 고정이라 3초를 표현할 수 없다",
+            "AdvancedDeveloperModeHoldMillis" to "홀드 시간 상수가 되살아났다",
+        ).forEach { (needle, why) ->
+            assertFalse(
+                "2차 진입이 다시 길게 누르기로 돌아갔다(`$needle`) — $why. #84가 탭으로 옮긴 사유를 볼 것.",
+                settings.contains(needle),
+            )
+        }
+    }
+
+    /**
+     * ⚠️ **"1차를 먼저 켜야 한다"는 조건은 런타임 검사가 아니라 위치로 성립한다**(#84).
+     *
+     * 진입점인 '빌드 정보' 행이 **1차 섹션 안에** 있어야 한다 — 1차가 꺼져 있으면 누를 대상
+     * 자체가 화면에 없다. 이 행을 섹션 밖으로 옮기면 그 구조적 보장이 사라져 10탭을 거치지
+     * 않은 사람에게 2차가 열리고, ⚠️ 반대로 **2차 블록 안으로** 들어가면 *"2차를 켜야 2차를
+     * 켤 수 있는"* 닫힌 고리가 된다. 그래서 양쪽 경계를 함께 못박는다.
+     */
+    @Test
+    fun theAdvancedTierEntryPointLivesInsideTheFirstTierSection() {
+        val firstTierGate = settings.indexOf("if (isDeveloperModeEnabled) {")
+        val entryPoint = settings.indexOf("onBuildInfoTap(")
+        val advancedGate = settings.indexOf("BuildConfig.DEBUG && isAdvancedDeveloperModeEnabled")
+        assertTrue("1차 섹션 게이트를 찾지 못했다 — 이 계약의 전제가 무너졌다.", firstTierGate >= 0)
+        assertTrue("2차 진입점을 찾지 못했다.", entryPoint >= 0)
+        assertTrue("2차 게이트를 찾지 못했다.", advancedGate >= 0)
+        assertTrue(
+            "2차 진입점이 1차 섹션보다 앞에 있다 — 1차를 켜지 않아도 누를 수 있다는 뜻이다(#84).",
+            entryPoint > firstTierGate,
+        )
+        assertTrue(
+            "2차 진입점이 2차 블록 안에 있다 — 2차를 켜야 2차를 켤 수 있는 닫힌 고리다(#84).",
+            entryPoint < advancedGate,
         )
     }
 
     /**
-     * ⚠️ **down을 소비해야 한다 — 소비하지 않았던 것이 실제 버그였다**(2026-09-04 사용자 제보).
-     *
-     * 버전 텍스트는 세로 스크롤 안에 있다. 소비하지 않으면 손가락이 **터치 슬롭을 넘는 순간
-     * 스크롤이 제스처를 가져가고** `waitForUpOrCancellation()`이 3초 전에 `null`을 돌려주므로,
-     * 홀드가 **조용히 무시된다.** 3초를 가만히 누르는 것은 실제 손가락으로는 드물다.
-     *
-     * ⚠️ **에뮬레이터에서는 재현되지 않는다** — `adb input swipe`는 DOWN과 UP만 보내고 MOVE를
-     * 만들지 않아 스크롤이 개입할 여지가 없다. 그래서 기기 셸에서 `input motionevent`로
-     * 지터를 섞어야 이 경로를 밟는다. **이 계약이 그 재현 비용을 대신한다.**
+     * ⚠️ **2차 진입 탭 카운터도 저장하면 안 된다.** 2차 자체가 세션 한정인데(#77) 카운터가
+     * 살아남으면 다음 실행이 9탭에서 시작하는 셈이고, 은닉이 한 번 쓰고 없어진다.
      */
     @Test
-    fun theHoldConsumesTheDownSoTheScrollCannotStealIt() {
+    fun theAdvancedTierTapCounterIsNotPersistedEither() {
         assertTrue(
-            "down을 소비하지 않는다 — 손가락 지터가 터치 슬롭을 넘으면 스크롤이 홀드를 가져가고 " +
-                "3초 홀드가 조용히 무시된다(2026-09-04 제보). 에뮬레이터에서는 재현되지 않으므로 " +
-                "이 계약이 유일한 그물이다.",
-            settings.contains("awaitFirstDown(requireUnconsumed = false).consume()"),
+            "2차 진입 탭 카운터가 평범한 `remember`가 아니다(#84).",
+            settings.contains("var buildInfoTapCount by remember { mutableStateOf(0) }"),
         )
     }
 
