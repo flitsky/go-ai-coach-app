@@ -4,6 +4,7 @@ import com.worksoc.goaicoach.application.botcharacter.BotCharacterCatalog
 import com.worksoc.goaicoach.application.botcharacter.BotCollectionState
 import com.worksoc.goaicoach.application.botcharacter.BotCollectionStorePort
 import com.worksoc.goaicoach.application.botcharacter.BotUnlockSource
+import com.worksoc.goaicoach.application.botcharacter.TopCharacterAttendanceTier
 import com.worksoc.goaicoach.application.consumable.ConsumableCatalog
 import com.worksoc.goaicoach.application.consumable.ConsumableInventory
 import com.worksoc.goaicoach.application.consumable.PremiumOnceMaxStock
@@ -53,6 +54,11 @@ private class FakeConsumableStore(initial: ConsumableInventory = ConsumableInven
 }
 
 private class FakeBotStore(initial: BotCollectionState = BotCollectionState()) : BotCollectionStorePort {
+    /** 픽스처를 통해 만든 저장소에 시작 상태를 심는다(#68 테스트) — 생성자 인자를 못 쓰는 자리용. */
+    fun seed(state: BotCollectionState) {
+        save(state)
+    }
+
     var stored: BotCollectionState = initial
         private set
 
@@ -158,6 +164,7 @@ class AttendanceRewardPolicyTest {
         assertEquals(listOf("fast_beginner_2", "fast_beginner_4"), shardCharacters.map { it.id.raw })
     }
 
+    @Test
     fun shardCharactersCannotBeFinishedByAttendanceAloneOnPurpose() {
         // ⚠️ **의도된 설계다(2026-08-31 사용자 확정).** 예전에는 7일차마다 조각이 나와 광고 없이도
         // 언젠가 닿을 수 있었는데, 지금은 5·6일차에 **한 개씩**이 전부다. "반복 회차에 조각을
@@ -175,6 +182,109 @@ class AttendanceRewardPolicyTest {
         }
     }
 
+    /**
+     * **획득 사실이 결과에 실려야 한다**(백로그 #68). 축전 팝업(#69)이 `granted`가 아니라
+     * [AttendanceRewardGrantResult.acquiredCharacters]로 구동되는 근거다.
+     *
+     * ⚠️ 즉시 해금 회차(7일차)에서 `granted`만 보면 *"캐릭터 획득"* 이라는 **보상 줄**은 있지만
+     * 그것이 **이번에 실제로 일어났는지**는 알 수 없다 — 이미 보유해도 같은 줄이 남았었다.
+     */
+    @Test
+    fun anImmediateUnlockTierReportsTheCharacterItActuallyGranted() {
+        val stores = RewardStores()
+
+        val result = stores.grant(
+            AttendanceState(
+                attendanceCount = WeeklyRewardCycleTier,
+                claimedTiers = (1 until WeeklyRewardCycleTier).toSet(),
+            ),
+        )
+
+        assertEquals(listOf(attendanceCharacter), result.acquiredCharacters)
+        assertTrue(result.didAcquireCharacter)
+        assertTrue(stores.bots.stored.isClaimed(attendanceCharacter.id))
+    }
+
+    /**
+     * ⚠️ **유령 보상**(#68에서 닫았다). 이미 보유한 캐릭터 회차는 축전도, Claim 목록의 줄도
+     * 남기지 않아야 한다 — 예전에는 `grant`가 무조건 `true`를 돌려줘 **팝업만 뜨고 아무 일도
+     * 일어나지 않았다.**
+     *
+     * ⚠️ **오늘 이 상태는 도달 불가다**(출석 해금 캐릭터는 출석 외 획득 경로가 없다). 그래서
+     * 이 테스트는 **미래를 위한 그물**이다 — 구매(#74)나 개발자 도구(#70)가 캐릭터를 심을 수
+     * 있게 되는 순간 도달 가능해진다.
+     * ⚠️ 그때 **7·28일차는 캐릭터가 유일한 보상이라 그 회차가 통째로 빈손이 된다** — 대체 보상은
+     * 별도 사용자 결정이므로(`launch-plan/README.md` C-2 상세) 여기서 정하지 않는다.
+     */
+    @Test
+    fun aCharacterTierAlreadyOwnedAnnouncesNothingAndCelebratesNothing() {
+        val stores = RewardStores()
+        stores.bots.seed(BotCollectionState().withClaimed(attendanceCharacter.id))
+
+        val result = stores.grant(
+            AttendanceState(
+                attendanceCount = WeeklyRewardCycleTier,
+                claimedTiers = (1 until WeeklyRewardCycleTier).toSet(),
+            ),
+        )
+
+        assertEquals(emptyList(), result.acquiredCharacters, "이미 가진 캐릭터를 축하하고 있다(유령 보상).")
+        assertTrue(
+            result.grantedRewards.none { it is AttendanceReward.BotCharacterUnlock },
+            "이미 가진 캐릭터가 Claim 목록에 남아 있다 — 팝업만 뜨고 아무 일도 일어나지 않는 줄이다.",
+        )
+    }
+
+    /**
+     * **조각이 마지막 한 개를 채워 캐릭터가 된 순간**도 획득이다(#68). 이 판정은 5계층
+     * (`BotCharacterShardGrant.unlocked`)에만 있었고 결과에서 버려지고 있었다 — `granted`에는
+     * *"조각 1개"* 로만 남아, 화면이 그 사실을 알 방법이 없었다.
+     */
+    @Test
+    fun aShardTierThatCompletesTheSetReportsTheCharacterAsAcquired() {
+        val shardCharacter = shardCharacters.first { character ->
+            (character.unlockSource as? BotUnlockSource.AdShards)?.required != null
+        }
+        val required = (shardCharacter.unlockSource as BotUnlockSource.AdShards).required
+        val stores = RewardStores()
+        // 한 개만 남겨 둔다 — 5일차 조각 1개가 그 마지막 한 개가 된다.
+        stores.bots.seed(BotCollectionState(adShards = mapOf(shardCharacter.id to required - 1)))
+
+        val result = stores.grant(AttendanceState(attendanceCount = 5, claimedTiers = (1..4).toSet()))
+
+        assertEquals(listOf(shardCharacter), result.acquiredCharacters)
+        assertTrue(stores.bots.stored.isClaimed(shardCharacter.id))
+    }
+
+    /** 반대로 **진행도만 오른 회차는 획득이 아니다** — 축전을 띄우면 안 된다. */
+    @Test
+    fun aShardTierThatOnlyAdvancesProgressAcquiresNothing() {
+        val stores = RewardStores()
+
+        val result = stores.grant(AttendanceState(attendanceCount = 5, claimedTiers = (1..4).toSet()))
+
+        assertTrue(result.grantedRewards.any { it is AttendanceReward.BotCharacterShards }, "조각은 지급됐어야 한다.")
+        assertEquals(emptyList(), result.acquiredCharacters, "진행도만 올랐는데 획득으로 보고했다.")
+        assertFalse(result.didAcquireCharacter)
+    }
+
+    /**
+     * ⚠️ **밀린 회차가 한 번에 지급되면 캐릭터를 둘 이상 동시에 획득할 수 있다**(7일차·28일차).
+     * 축전 팝업이 그 경우를 어떻게 보일지는 #69의 결정 사항이고, 여기서는 **결과가 둘 다 싣는지**만
+     * 고정한다 — 하나만 실으면 그 결정을 내릴 재료 자체가 없어진다.
+     */
+    @Test
+    fun catchingUpAcrossBothCharacterTiersReportsBothInGrantOrder() {
+        val stores = RewardStores()
+
+        val result = stores.grant(AttendanceState(attendanceCount = TopCharacterAttendanceTier))
+
+        val expected = BotCharacterCatalog.forAttendanceTier(WeeklyRewardCycleTier) +
+            BotCharacterCatalog.forAttendanceTier(TopCharacterAttendanceTier)
+        assertEquals(expected, result.acquiredCharacters)
+    }
+
+    @Test
     fun shardsAlreadyCompletedAreNotAnnouncedAgain() {
         // 이미 다 모은 캐릭터의 조각 줄은 팝업에 적지 않는다 — 의미 없는 줄이 남는다.
         // ⚠️ 관측 지점이 7일차 → **5일차**로 옮겨졌다(확정표에서 조각이 5·6일차로 갔다).
@@ -193,6 +303,7 @@ class AttendanceRewardPolicyTest {
         assertTrue(result.grantedRewards.none { it is AttendanceReward.BotCharacterShards })
     }
 
+    @Test
     fun weeklyRepeatsSkipTheCharacterTiers() {
         // ⚠️ **여기가 이번 개편에서 가장 조용히 깨질 뻔한 곳이다.** 예전 구현은
         // `contentTier = if (tier > 7) 7 else tier`로 접어서 14·21·35…가 7일차 내용을 그대로 썼다.
@@ -221,6 +332,7 @@ class AttendanceRewardPolicyTest {
         assertTrue(repeatBundle.none { it is AttendanceReward.BotCharacterUnlock })
     }
 
+    @Test
     fun nonRewardedTiersStayEmpty() {
         // 8~13처럼 7의 배수가 아닌 회차는 애초에 보상 회차가 아니다(4.1절).
         listOf(8, 9, 13, 15, 20).forEach { tier ->
@@ -257,6 +369,7 @@ class AttendanceRewardPolicyTest {
         assertTrue(fullStock.isAtMaxStock(ConsumableCatalog.PremiumOnce.id))
     }
 
+    @Test
     fun nonRewardedTiersHaveNoRewards() {
         listOf(0, -1, 8, 9, 13).forEach { tier ->
             assertTrue(AttendanceRewardPolicy.rewardsFor(tier).isEmpty(), "tier $tier must have no rewards")
@@ -299,6 +412,7 @@ class AttendanceRewardGrantTest {
         assertTrue(stores.bots.stored.isAvailable(defaultCharacter))
     }
 
+    @Test
     fun grantedUndoResolvesAsAllowedForAFreeUser() {
         val stores = RewardStores()
         // 3일차까지 출석해야 무르기가 열린다(#55).
@@ -333,6 +447,7 @@ class AttendanceRewardGrantTest {
         assertEquals(3, stores.consumables.stored.countOf(ConsumableCatalog.PremiumOnce.id))
     }
 
+    @Test
     fun theAttendanceCharacterArrivesOnDaySevenAndNotBefore() {
         val stores = RewardStores()
 
@@ -344,6 +459,7 @@ class AttendanceRewardGrantTest {
         assertTrue(stores.bots.stored.isClaimed(attendanceCharacter.id))
     }
 
+    @Test
     fun rewardIsNotGrantedAgainOnLaterVisits() {
         val stores = RewardStores()
         stores.grant(stores.checkInAt(0L).state)

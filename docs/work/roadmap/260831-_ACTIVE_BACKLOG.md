@@ -172,6 +172,14 @@
    (`consumables.refresh()`) — 새 지급 경로를 만들 때마다 **화면 상태를 되읽는 콜백을 함께 배선할 것.**
    · ⚠️ 그리고 이 다이얼로그는 `onDismissRequest = onClaim`이라 **어떻게 닫아도 지급된다** —
      콜백을 confirmButton에만 걸면 뒤로가기 경로에서 조용히 누락된다.
+15. **⚠️ `@Test`가 빠진 테스트 함수는 조용히 사라진다 — 빌드는 초록이다** (2026-09-03, #68에서 8건 발견).
+   `AttendanceRewardGrantTest`의 여덟 함수가 한 번도 돌지 않은 채 남아 있었다. 컴파일도 되고
+   빌드도 통과하며 **테스트 수만 조용히 줄어든다.** 그중에 #66의 그랜드파더링 판정과, 주석이
+   *"가장 조용히 깨질 뻔한 곳"* 이라고 적어 둔 회차 테스트가 있었다.
+   · ✅ **이제 `TestAnnotationContractTest`가 막는다**(shared 공용 테스트 + app-android 단위 테스트).
+   · ⚠️ **그 그물에 사각지대가 있다**: `shared` 테스트만 바뀐 빌드에서는 Gradle이
+     `:app-android:testDebugUnitTest`를 up-to-date로 건너뛰어 **그물도 함께 쉰다.** 테스트를
+     새로 넣은 뒤에는 **테스트 수가 실제로 늘었는지** 확인하거나 `--rerun-tasks`를 붙일 것.
 14. **⚠️ 같은 엔타이틀먼트에 지급 경로가 둘이면, 쉬운 쪽이 설계를 무력화한다** (2026-09-03, #66의 교훈).
    무르기 영구 해금은 **3일차 출석 보상**인데(`AttendanceRewardPolicy.kt:42`, #55) 인게임 프로모션
    클레임(`FeatureAccessPolicy.kt:98` → `GamePlaySection.kt:467·496`)이 **1일차부터 아무 때나** 같은
@@ -186,31 +194,47 @@
 
 ## 진행 중
 
-67. **무르기 정책에 대한 낡은 주석·문서를 3일차로 정정한다** (AI 모델: Sonnet, 노력정도: 낮음) [진행중]
-    - 대상: `GamePlaySection.kt:479-486`(삭제), `ConsumableItem.kt:95`,
-      `ReleaseResetCoordinator.kt:23`(둘 다 "1일차"라고 적혀 있다),
-      `launch-plan/README.md` 338·345-360·376, `feature-access-principles/README.md` 102-103.
-    - ⚠️ **이 낡은 서술이 코드의 근거로 계속 인용된 것이 #66 버그가 두 스레드를 지나며 살아남은
-      실제 원인이다.** 코드만 고치고 문서를 두면 세 번째 스레드가 되살린다.
+68. **획득 사실을 5계층 밖으로 꺼낸다** — `ShardGrant.unlocked` 보존 + 출석 결과에 신규 획득 캐릭터 (AI 모델: Opus, 노력정도: 중간) [진행중]
+    - **#69의 선행.** shared 순수 계층 + 단위 테스트만으로 끝나고 UI가 없다.
+    - **왜 먼저인가**: 도메인은 이미 정답을 알고 있는데 **앱 배선이 그 값을 버린다** —
+      `runBotCharacterShardGrant`의 `BotCharacterShardGrant.unlocked`를 호출부가
+      `?.let { grant -> collection = grant.state }`로 흘려버리고, 화면이 **자기 사본으로 획득 여부를
+      재추론**한다(`BotCharacterUiState.kt:436-444`의 `before + 1 >= required`). 출석으로 조각이
+      들어온 뒤에는 그 추론이 어긋난다 — 지급은 정확한데 알림만 틀리는, 로그로도 안 드러나는 버그다.
+      팝업을 먼저 만들면 그 추론이 팝업에 복사된다.
+    - **처방**: ⓐ `grant.unlocked`를 호출부가 실제로 읽게 한다(새 타입 불필요).
+      ⓑ `AttendanceRewardGrantResult`에 "이번 호출로 새로 획득한 캐릭터"를 담는다 —
+      `grant()`가 지금 `Boolean`으로 뭉개서(`AttendanceRewardApplication.kt:79-97`) 조각 완료로 획득한
+      캐릭터가 결과에 전혀 남지 않는다.
+    - ✅ **유령 보상이 여기서 자연히 닫힌다.** `BotCharacterUnlock`은 이미 보유해도 무조건
+      announced(`:96 return true`)라 **`granted` 목록으로 팝업을 구동하면 "이미 가진 캐릭터 획득!"을
+      축하한다.** 팝업을 이 새 필드로 구동하는 것이 그 결함을 우회하는 방식이다.
+    - ⚠️ `BotCollectionCodec.CurrentSchemaVersion`을 올리지 말 것 — 디코드가 null을 돌려주고
+      호출부가 기본 상태로 폴백해 **수집이 통째로 날아간다**(`BotCollectionStore.kt:57-72`).
+      이 항목은 새 저장 필드가 필요하지 않다.
     - **✅ 구현 완료(2026-09-03) — 사용자 승인·커밋 대기.**
-      · **12곳을 고쳤다.** 처음 잡은 목록은 5곳이었는데 **grep 경로를 넓히니 배로 나왔다** —
-        `ConsumableUiStateTest`·`PremiumUiState`·`PremiumFeatureClaimApplication`(+ 그 테스트)이
-        첫 스윕에서 빠져 있었다.
-      · **틀린 축이 하나가 아니라 둘이었다**: ⓐ **회차**(1일차 → 3일차, #55), ⓑ **지급 방식**
-        (자동 지급 → Claim, #14). 여러 주석이 **둘 다** 틀린 채로 남아 있었고, ⓑ는 애초에 이 항목의
-        범위로 잡지 않았던 것이다.
-      · 코드/테스트 9곳: `AttendanceRewardPolicy`·`AttendanceState`·`ConsumableItem`·
-        `ConsumableSpendApplication`·`PremiumFeatureClaimApplication`·`ReleaseResetCoordinator`·
-        `PremiumUiState` + 테스트 3곳(`ConsumableInventoryTest`·`ConsumableSpendApplicationTest`·
-        `ConsumableUiStateTest`·`PremiumFeatureClaimApplicationTest`).
-      · 문서 3곳: `launch-plan/README.md` 2장 표 + **3장**, `feature-access-principles/README.md`
-        2026-08-13 갱신, 킥오프 플랜 **4.4절**.
-      · ⚠️ **launch-plan 3장을 지우지 않고 갈랐다** — **메커니즘과 프로모션은 다른 것**이다.
-        그랜드파더링(`claimedFeatures` 원장)은 **그대로 살아 있고 코드가 그대로 따르는 반면**,
-        폐기된 것은 **무료 클레임 프로모션**뿐이다. 즉 바뀐 것은 원장에 들어가는 **입구**이지
-        원장을 읽는 방식이 아니다. 세 문서 모두 *"이 문장을 근거로 되살리지 말 것"* 을 달았다 —
-        그 문장들이 "확정 설계"로 읽힌 것이 #66이 두 스레드를 살아남은 실제 원인이다.
-      · 테스트 **2779건 전부 통과**, iOS 컴파일 확인. **동작 변경 0** — 주석·문서만 고쳤다.
+      · **ⓑ 출석**: `AttendanceRewardGrantResult`에 `acquiredCharacters`를 더했다. 내부의 `grant`가
+        `Boolean` 하나로 두 질문을 뭉개고 있어서 `RewardGrantOutcome(announce, acquired)`으로 갈랐다 —
+        *"Claim 목록에 적을 것인가"* 와 *"축전할 캐릭터가 생겼는가"* 는 다른 질문이다.
+      · **ⓐ 광고**: `watchAdForShard`의 반환형을 `BotShardAdOutcome(ad, unlocked, shards)`으로 바꿔
+        **5계층이 준 판정을 그대로 나르게** 했다. 화면이 `직전 조각 수 + 1 >= 필요 수`로 다시 세던
+        것을 없앴다 — 그 사본은 출석이 같은 저장소에 조각을 넣는 순간 낡는다.
+      · ✅ **유령 보상을 여기서 닫았다.** `BotCharacterUnlock`이 이미 보유해도 무조건 알림 대상이던
+        것을 실제 획득 여부로 바꿨다. ⚠️ **오늘은 도달 불가**(출석 해금 캐릭터는 출석 외 경로가
+        없다)라 **동작 변경이 아니라 미래를 위한 그물**이다 — #70·#74가 문을 연다.
+      · **테스트 5건 신설**: 즉시 해금이 실제 획득을 보고한다 / 이미 보유하면 축전도 Claim 줄도
+        없다 / 조각이 마지막 한 개를 채우면 획득으로 보고한다 / 진행도만 오르면 아니다 /
+        밀린 회차가 겹치면 **캐릭터 둘을 지급 순서대로** 싣는다(#69의 결정 재료).
+    - **⚠️ 이 항목에서 예정에 없던 것을 하나 발견해 함께 고쳤다 — `@Test` 누락 8건.**
+      · `AttendanceRewardGrantTest`의 **여덟 함수가 `@Test` 없이** 있어 **한 번도 돈 적이 없었다.**
+        그중에 **#66이 "지우면 기존 보유자가 전원 잠긴다"고 경고한 무르기 그랜드파더링 판정**과,
+        주석이 *"이번 개편에서 가장 조용히 깨질 뻔한 곳"* 이라고 적어 둔 주간 반복 회차 테스트가
+        들어 있었다. **되살리니 여덟 다 통과** — 숨은 회귀는 없었지만 **그동안의 초록은 근거가 없었다.**
+      · 저장소 전체를 훑어 **다른 곳에는 없음**을 확인했고, 재발을 막는
+        `TestAnnotationContractTest`를 신설했다(변이 1건으로 확인).
+        ⚠️ 그 그물에는 사각지대가 하나 있다 — `shared` 테스트만 바뀐 빌드에서는 Gradle이
+        `:app-android:testDebugUnitTest`를 통째로 건너뛰어 **그물도 함께 쉰다**(KDoc에 적어 뒀다).
+    - 테스트 **2793건 전부 통과**(2779 → +5 신설 +8 부활 +1 그물). iOS 컴파일 확인.
 
 ---
 
@@ -243,25 +267,6 @@
 >
 > 근거는 2026-09-03에 **읽어서 확인한 코드**다(에이전트 4명 조사 + 24개 주장에 대한 반증 검증).
 > 각 항목의 `file:line`은 그 시점(HEAD `f51376a`) 기준이다.
-
-68. **획득 사실을 5계층 밖으로 꺼낸다** — `ShardGrant.unlocked` 보존 + 출석 결과에 신규 획득 캐릭터 (AI 모델: Opus, 노력정도: 중간)
-    - **#69의 선행.** shared 순수 계층 + 단위 테스트만으로 끝나고 UI가 없다.
-    - **왜 먼저인가**: 도메인은 이미 정답을 알고 있는데 **앱 배선이 그 값을 버린다** —
-      `runBotCharacterShardGrant`의 `BotCharacterShardGrant.unlocked`를 호출부가
-      `?.let { grant -> collection = grant.state }`로 흘려버리고, 화면이 **자기 사본으로 획득 여부를
-      재추론**한다(`BotCharacterUiState.kt:436-444`의 `before + 1 >= required`). 출석으로 조각이
-      들어온 뒤에는 그 추론이 어긋난다 — 지급은 정확한데 알림만 틀리는, 로그로도 안 드러나는 버그다.
-      팝업을 먼저 만들면 그 추론이 팝업에 복사된다.
-    - **처방**: ⓐ `grant.unlocked`를 호출부가 실제로 읽게 한다(새 타입 불필요).
-      ⓑ `AttendanceRewardGrantResult`에 "이번 호출로 새로 획득한 캐릭터"를 담는다 —
-      `grant()`가 지금 `Boolean`으로 뭉개서(`AttendanceRewardApplication.kt:79-97`) 조각 완료로 획득한
-      캐릭터가 결과에 전혀 남지 않는다.
-    - ✅ **유령 보상이 여기서 자연히 닫힌다.** `BotCharacterUnlock`은 이미 보유해도 무조건
-      announced(`:96 return true`)라 **`granted` 목록으로 팝업을 구동하면 "이미 가진 캐릭터 획득!"을
-      축하한다.** 팝업을 이 새 필드로 구동하는 것이 그 결함을 우회하는 방식이다.
-    - ⚠️ `BotCollectionCodec.CurrentSchemaVersion`을 올리지 말 것 — 디코드가 null을 돌려주고
-      호출부가 기본 상태로 폴백해 **수집이 통째로 날아간다**(`BotCollectionStore.kt:57-72`).
-      이 항목은 새 저장 필드가 필요하지 않다.
 
 69. **캐릭터 획득 이펙트 팝업 신설 + 출석·광고 두 경로 배선** (AI 모델: Opus, 노력정도: 높음)
     - 원 발주 2-1-1. 사용자가 "선행"이라고 지정한 본체. 터치로 닫히고, 세 경로(출석·광고·구매)에서 뜬다.
@@ -618,6 +623,7 @@
 
 | # | 무엇을 했는가 | 커밋 |
 | --- | --- | --- |
+| 67 | 무르기 정책의 낡은 서술 12곳 정정 — 회차(1→3일차)와 지급 방식(자동→Claim) 두 축 | `d5e75c4` |
 | 66 | 무르기 인게임 프로모션 클레임 팝업 제거 — 3일차 출석 보상만 남기고, 잠긴 동안 프리미엄 테두리 | `9496690` |
 | 65 | 출석 Claim이 저장소에만 쓰고 화면 상태를 안 고쳐 3일차 무르기 해금이 그 세션 동안 안 먹던 결함 | `c601abb` |
 | 43 | 빈 바둑판에서 형세 보기가 열려 1회권만 소모되던 것을 게이트로 막았다 | `aacda3c` |

@@ -1,5 +1,7 @@
 package com.worksoc.goaicoach.application.botcharacter
 
+import com.worksoc.goaicoach.application.premium.AdRewardOutcome
+
 /**
  * 광고 1회 시청분의 조각을 적립한 결과(#11).
  *
@@ -9,6 +11,25 @@ package com.worksoc.goaicoach.application.botcharacter
 data class BotCharacterShardGrant(
     val state: BotCollectionState,
     val unlocked: Boolean,
+)
+
+/**
+ * 조각 광고 한 번의 결과 전부(백로그 #68) — 시청 결과와 **그 시청이 만든 변화**를 함께 나른다.
+ *
+ * ⚠️ **이 타입이 생긴 이유는 화면이 획득 여부를 자기 사본으로 다시 추론하고 있었기 때문이다.**
+ * 예전 배선은 [runBotCharacterShardGrant]가 돌려준 [BotCharacterShardGrant.unlocked]를 버리고
+ * 화면이 `직전 조각 수 + 1 >= 필요 수`로 판정했는데, 그 사본은 **출석 보상이 조각을 넣은 순간
+ * 낡는다**(출석은 같은 저장소에 직접 쓴다). 지급은 read-modify-write라 정확한데 **알림만 틀리는**,
+ * 로그에도 안 남는 종류의 어긋남이다.
+ *
+ * [shards]는 적립 **후**의 조각 수다 — 진행도 문구가 `직전 + 1`을 쓰지 않게 하려고 함께 싣는다.
+ * 획득까지 갔다면 조각은 [BotCollectionState.withClaimed]가 지우므로 0이고, 그때는 [unlocked]가
+ * 참이라 진행도 문구를 쓰지 않는다.
+ */
+data class BotShardAdOutcome(
+    val ad: AdRewardOutcome,
+    val unlocked: Boolean = false,
+    val shards: Int = 0,
 )
 
 /**

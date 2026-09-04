@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.application.attendance
 
+import com.worksoc.goaicoach.application.botcharacter.BotCharacter
 import com.worksoc.goaicoach.application.botcharacter.BotCollectionStorePort
 import com.worksoc.goaicoach.application.botcharacter.runBotCharacterShardGrant
 import com.worksoc.goaicoach.application.botcharacter.runBotCharacterUnlock
@@ -19,11 +20,30 @@ import com.worksoc.goaicoach.application.premium.runPremiumFeatureClaim
 data class AttendanceRewardGrantResult(
     val state: AttendanceState,
     val granted: List<AttendanceRewardTier>,
+    /**
+     * **이번 호출로 새로 영구 획득한 캐릭터**(백로그 #68). 획득 축전 팝업(#69)은 [granted]가 아니라
+     * **이 목록으로 구동해야 한다.**
+     *
+     * ⚠️ **[granted]로 구동하면 두 가지가 어긋난다.**
+     * 1. **조각 완료 획득이 안 보인다.** [AttendanceReward.BotCharacterShards]는 [granted]에
+     *    *"조각 N개"* 로만 남아, 그 조각이 마지막 한 개여서 **캐릭터가 됐다는 사실**이 결과에서
+     *    사라진다. 그 판정은 5계층 안(`BotCharacterShardGrant.unlocked`)에만 있었다.
+     * 2. **이미 가진 캐릭터를 축하하게 된다**(유령 보상). 아래 `grant`가 고쳐지기 전까지
+     *    [AttendanceReward.BotCharacterUnlock]은 이미 보유해도 무조건 알림 대상이었다.
+     *
+     * 두 경로(즉시 해금·조각 완료)를 여기서 합치므로 호출부는 획득 경로를 몰라도 된다.
+     * 순서는 지급 순서(= 일차 오름차순)를 그대로 따른다 — 밀린 회차가 한 번에 지급되면
+     * **캐릭터를 둘 이상 동시에 획득**할 수 있다(7·28일차).
+     */
+    val acquiredCharacters: List<BotCharacter> = emptyList(),
 ) {
     val didGrant: Boolean get() = granted.isNotEmpty()
 
     /** 이번에 지급된 보상 전체를 일차 구분 없이 펼친 목록. */
     val grantedRewards: List<AttendanceReward> get() = granted.flatMap { tier -> tier.rewards }
+
+    /** 이번 호출로 새로 획득한 캐릭터가 있는가(#68). 축전 팝업의 노출 조건이다. */
+    val didAcquireCharacter: Boolean get() = acquiredCharacters.isNotEmpty()
 }
 
 /**
@@ -57,41 +77,85 @@ fun runAttendanceRewardGrant(
 
     var next = state
     val granted = mutableListOf<AttendanceRewardTier>()
+    val acquired = mutableListOf<BotCharacter>()
     for (tier in pending) {
         // 흘려보낸 것과 **알릴 것**은 다르다 — 조각은 7일차마다 영원히 반복되므로, 이미 다 모은
         // 캐릭터의 조각까지 팝업에 적으면 그 사용자는 매주 의미 없는 줄을 보게 된다.
         val announced = tier.rewards.filter { reward ->
-            grant(reward, premiumStore, consumableStore, botStore)
+            val outcome = grant(reward, premiumStore, consumableStore, botStore)
+            outcome.acquired?.let(acquired::add)
+            outcome.announce
         }
         if (announced.isNotEmpty()) granted += tier.copy(rewards = announced)
         next = next.withTierClaimed(tier.tier)
     }
     attendanceStore.save(next)
-    return AttendanceRewardGrantResult(state = next, granted = granted)
+    return AttendanceRewardGrantResult(state = next, granted = granted, acquiredCharacters = acquired)
 }
+
+/**
+ * 보상 한 건을 흘려보낸 결과(백로그 #68).
+ *
+ * [announce]와 [acquired]는 **다른 질문**이다 — 전자는 *"Claim 팝업의 목록에 적을 것인가"*,
+ * 후자는 *"축전 팝업을 띄울 캐릭터가 생겼는가"* 다. 조각 보상은 [announce]가 참이면서
+ * [acquired]가 `null`인 경우가 대부분이고(진행도만 올랐다), 마지막 한 개일 때만 둘 다 채워진다.
+ */
+private data class RewardGrantOutcome(
+    val announce: Boolean,
+    val acquired: BotCharacter? = null,
+)
 
 /**
  * 보상 한 건을 그 종류에 맞는 저장소에 흘려보낸다.
  *
- * @return 사용자에게 알릴 만한 변화가 실제로 있었는가. 조각만 판정하고 나머지는 항상 `true`다 —
- *   조각 외의 보상은 반복 회차에 걸려 있지 않아, 이미 가진 것을 다시 받는 일이 사실상 없다.
+ * ⚠️ **예전에는 `Boolean` 하나만 돌려줬고, 그것이 두 가지를 뭉개고 있었다**(백로그 #68).
+ * 1. **조각이 마지막 한 개여서 캐릭터가 됐다는 사실**이 결과에서 사라졌다 —
+ *    `BotCharacterShardGrant.unlocked`가 그 자리에서 버려졌기 때문이다. 그래서 화면이 그 판정을
+ *    **자기 사본으로 다시 추론**했고(`before + 1 >= required`), 그 사이 출석으로 조각이 들어오면
+ *    어긋났다. 지급은 정확한데 **알림만 틀리는**, 로그로도 안 드러나는 종류의 결함이다.
+ * 2. **[AttendanceReward.BotCharacterUnlock]이 이미 보유해도 무조건 `true`였다**(유령 보상).
+ *    그 회차의 팝업에 *"캐릭터 획득!"* 이 뜨는데 실제로는 아무 일도 일어나지 않는다.
+ *
+ * @return 알릴 것인지([RewardGrantOutcome.announce])와 새로 획득한 캐릭터가 있는지
+ *   ([RewardGrantOutcome.acquired]). 소모품·영구 기능은 반복 회차에 걸려 있지 않아 항상 알린다.
  */
 private fun grant(
     reward: AttendanceReward,
     premiumStore: PremiumStateStorePort,
     consumableStore: ConsumableStorePort,
     botStore: BotCollectionStorePort,
-): Boolean {
+): RewardGrantOutcome =
     when (reward) {
         // 이미 클레임돼 있으면(예: 예전에 인게임 클레임 팝업으로 직접 받은 사용자) null을
         // 돌려주지만, 출석 쪽 지급 기록은 그대로 남긴다 — "이 일차는 처리 완료"가 사실이므로
         // 매 실행마다 다시 시도할 이유가 없다.
-        is AttendanceReward.PermanentFeature -> runPremiumFeatureClaim(reward.featureId, premiumStore)
-        is AttendanceReward.Consumable -> runConsumableGrant(reward.item, reward.amount, consumableStore)
-        is AttendanceReward.BotCharacterUnlock -> runBotCharacterUnlock(reward.character.id, botStore)
+        is AttendanceReward.PermanentFeature -> {
+            runPremiumFeatureClaim(reward.featureId, premiumStore)
+            RewardGrantOutcome(announce = true)
+        }
+        is AttendanceReward.Consumable -> {
+            runConsumableGrant(reward.item, reward.amount, consumableStore)
+            RewardGrantOutcome(announce = true)
+        }
+        // ⚠️ **이미 보유하면 알리지 않는다**(#68에서 고친 유령 보상). 오늘은 도달할 수 없지만
+        // (출석 해금 캐릭터는 출석 외 획득 경로가 없다) **구매(#74)나 개발자 도구(#70)가 캐릭터를
+        // 심을 수 있게 되는 순간 도달 가능해진다.**
+        // ⚠️ 그때 **7·28일차는 캐릭터가 유일한 보상이라 그 회차가 통째로 빈손이 된다** — 대체 보상
+        // ("동등 가치 소모품으로 대체")은 별도 사용자 결정이다(`launch-plan/README.md` C-2 상세).
+        is AttendanceReward.BotCharacterUnlock -> {
+            val unlockedNow = runBotCharacterUnlock(reward.character.id, botStore) != null
+            RewardGrantOutcome(
+                announce = unlockedNow,
+                acquired = reward.character.takeIf { unlockedNow },
+            )
+        }
         // 이미 다 모은 캐릭터면 `null`이 돌아온다 — 그때만 알리지 않는다.
-        is AttendanceReward.BotCharacterShards ->
-            return runBotCharacterShardGrant(reward.character, botStore, reward.amount) != null
+        is AttendanceReward.BotCharacterShards -> {
+            val shardGrant = runBotCharacterShardGrant(reward.character, botStore, reward.amount)
+            RewardGrantOutcome(
+                announce = shardGrant != null,
+                // 이번 적립이 필요 수를 채웠을 때만 획득이다. 이 판정은 5계층이 이미 갖고 있다.
+                acquired = reward.character.takeIf { shardGrant?.unlocked == true },
+            )
+        }
     }
-    return true
-}

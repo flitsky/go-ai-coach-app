@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import com.worksoc.goaicoach.application.botcharacter.BotCharacter
+import com.worksoc.goaicoach.application.botcharacter.BotShardAdOutcome
 import com.worksoc.goaicoach.application.botcharacter.runBotCharacterShardGrant
 import com.worksoc.goaicoach.application.botcharacter.runBotCharacterUnlock
 import com.worksoc.goaicoach.application.premium.AdRewardFailureReason
@@ -71,9 +72,13 @@ internal data class BotCharacterUiState(
     /**
      * 광고를 한 번 보여주고 조각 1개를 적립한다(#11). 시청에 실패하면 상태를 바꾸지 않고
      * 결과만 돌려주므로, 호출부가 사유를 안내할 수 있다([activateAdGrant]와 같은 계약).
+     *
+     * ⚠️ **돌려주는 것이 시청 결과만이 아니다**(백로그 #68) — 이번 적립이 **획득까지 갔는지**와
+     * **적립 후 조각 수**를 함께 싣는다([BotShardAdOutcome]). 호출부가 그것을 화면 사본으로 다시
+     * 추론하면 출석 보상이 같은 저장소에 쓴 순간 어긋나기 때문이다.
      */
-    val watchAdForShard: suspend (BotCharacter) -> AdRewardOutcome = {
-        AdRewardOutcome.NotRewarded(AdRewardFailureReason.Unavailable)
+    val watchAdForShard: suspend (BotCharacter) -> BotShardAdOutcome = {
+        BotShardAdOutcome(AdRewardOutcome.NotRewarded(AdRewardFailureReason.Unavailable))
     },
     /**
      * 저장소를 다시 읽어 화면이 든 사본을 맞춘다.
@@ -138,10 +143,19 @@ internal fun buildBotCharacterUiState(context: Context): BotCharacterUiState {
             val outcome = showRewardedAdOnce(context)
             // 시청 성공일 때만 적립한다 — 광고를 끝까지 안 봤는데 조각이 쌓이면 안 된다.
             // 적립 자체는 5계층 순수 함수가 하고(read-modify-write), 여기서는 결과만 반영한다.
-            if (outcome is AdRewardOutcome.RewardEarned) {
-                runBotCharacterShardGrant(character, store)?.let { grant -> collection = grant.state }
+            if (outcome !is AdRewardOutcome.RewardEarned) {
+                BotShardAdOutcome(outcome)
+            } else {
+                // ⚠️ 5계층이 준 판정을 **그대로 나른다**(#68). 여기서 `직전 + 1 >= 필요 수`로 다시
+                // 세지 않는다 — 그 사이 출석 보상이 조각을 넣었으면 그 셈이 틀린다.
+                val grant = runBotCharacterShardGrant(character, store)
+                grant?.let { collection = it.state }
+                BotShardAdOutcome(
+                    ad = outcome,
+                    unlocked = grant?.unlocked == true,
+                    shards = grant?.state?.shardsFor(character.id) ?: 0,
+                )
             }
-            outcome
         },
         purchase = { character ->
             val outcome = performBotCharacterPurchase(context)
@@ -433,15 +447,17 @@ internal suspend fun watchAdForShardAndReport(
     context: Context,
 ) {
     val required = (character.unlockSource as? BotUnlockSource.AdShards)?.required ?: return
-    val before = bots.shardsFor(character)
-    val outcome = bots.watchAdForShard(character)
+    val result = bots.watchAdForShard(character)
+    val ad = result.ad
     val message = when {
         // 프리미엄 문구를 재사용하지 않는다 — 조각을 모으던 사용자에게 "프리미엄이 활성화되지
         // 않았습니다"가 뜨던 버그를 2026-08-29에 정정했다.
-        outcome is AdRewardOutcome.NotRewarded -> strings.botShardAdFailedMessage(outcome.reason)
-        outcome !is AdRewardOutcome.RewardEarned -> return
-        before + 1 >= required -> strings.botUnlockedToast(character)
-        else -> strings.botShardEarnedToast(character, before + 1, required)
+        ad is AdRewardOutcome.NotRewarded -> strings.botShardAdFailedMessage(ad.reason)
+        ad !is AdRewardOutcome.RewardEarned -> return
+        // ⚠️ 획득 판정과 진행도 둘 다 **5계층이 준 값**을 쓴다(#68). 예전에는 여기서
+        // `직전 조각 수 + 1`로 다시 셌고, 그 사본은 출석 보상이 조각을 넣으면 낡았다.
+        result.unlocked -> strings.botUnlockedToast(character)
+        else -> strings.botShardEarnedToast(character, result.shards, required)
     }
     Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
 }
