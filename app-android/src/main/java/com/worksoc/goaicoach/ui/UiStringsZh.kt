@@ -99,6 +99,7 @@ internal val UiStringsChineseSimplified = UiStringsKorean.copy(
     engineUnavailableTitle = "AI 引擎未能启动",
     engineUnavailableMessage = "AI 无法正常工作 — 对弈和分析结果均不可信。重新安装应用通常" +
         "可以解决。双人对弈仍可照常使用。",
+    engineUnavailableBadge = "AI 异常 — 结果不可信",
     backToHome = "返回主菜单",
     notImplementedMessage = "此功能目前正在准备中。",
     showScoreGraph = "显示得分图",

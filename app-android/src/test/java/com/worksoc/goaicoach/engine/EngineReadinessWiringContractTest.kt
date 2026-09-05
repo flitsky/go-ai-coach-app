@@ -21,6 +21,8 @@ class EngineReadinessWiringContractTest {
     private val goCoachApp = codeOnly("src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
     private val failureNotice =
         codeOnly("src/main/java/com/worksoc/goaicoach/ui/EngineUnavailableNoticeDialog.kt")
+    private val badge = codeOnly("src/main/java/com/worksoc/goaicoach/ui/EngineUnavailableBadge.kt")
+    private val gamePlay = codeOnly("src/main/java/com/worksoc/goaicoach/ui/GamePlaySection.kt")
 
     @Test
     fun nothingBlocksTheFirstFrameWhileTheEngineGetsReady() {
@@ -122,6 +124,20 @@ class EngineReadinessWiringContractTest {
         assertTrue(
             "실패 팝업이 다른 팝업 뒤에 있다 — 앱이 정상 동작하지 않는다는 사실을 나중에야 읽는다.",
             failure < releaseReset,
+        )
+    }
+
+    @Test
+    fun theInGameBadgeIsDrivenByAvailabilityAndNotByReadiness() {
+        // ⚠️ `isReady`로 바꾸면 배지가 **정확히 거꾸로** 뜬다 — 스텁은 isReady=true라 안 뜨고,
+        // 준비 중에는 isReady=false라 매번 뜬다. 두 신호는 다른 것을 잰다(기조 1ⓒ).
+        assertTrue(
+            "대국 화면 배지가 availability를 보지 않는다 — 스텁 표시가 거꾸로 뜬다(#105).",
+            "screenState.engine.availability" in gamePlay,
+        )
+        assertTrue(
+            "배지가 Unavailable 이외에도 뜬다 — 준비 중에 경고가 번쩍인다(기조 1ⓒ).",
+            "availability != EngineAvailability.Unavailable) return" in badge,
         )
     }
 

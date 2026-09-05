@@ -100,6 +100,7 @@ internal val UiStringsEnglish = UiStringsKorean.copy(
     engineUnavailableMessage = "The AI is not working properly - neither its moves nor its " +
         "analysis can be trusted. Reinstalling the app usually fixes this. Two-player games " +
         "still work as usual.",
+    engineUnavailableBadge = "AI degraded - results cannot be trusted",
     backToHome = "Main Menu",
     notImplementedMessage = "This feature is currently under development.",
     showScoreGraph = "Show Score Graph",

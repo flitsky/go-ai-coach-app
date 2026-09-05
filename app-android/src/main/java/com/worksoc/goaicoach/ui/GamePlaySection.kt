@@ -116,6 +116,12 @@ internal fun GamePlaySection(
     // `spacedBy(12.dp)`가 사이에 끼어 선택기가 판에서 떠 보이고 세로도 낭비된다 — 묶으면
     // 그 12dp가 이 묶음 위에만 한 번 붙고, 선택기는 경계선에 바짝 붙는다(사용자 피드백).
     Column(modifier = Modifier.fillMaxWidth()) {
+    // ⚠️ 판 **위쪽 경계선 밖**이다 — 판 위에 얹으면 그 자리에 착수할 수 없다(위 주석과 같은 이유).
+    // 엔진이 멀쩡하면 아무것도 그리지 않으므로 정상 대국의 레이아웃은 그대로다.
+    EngineUnavailableBadge(
+        availability = screenState.engine.availability,
+        modifier = Modifier.padding(bottom = 6.dp),
+    )
     BoardTopControls(
         isMagnifierEnabled = screenState.uxOptions.isPlayMagnifierEnabled,
         onToggleMagnifier = {

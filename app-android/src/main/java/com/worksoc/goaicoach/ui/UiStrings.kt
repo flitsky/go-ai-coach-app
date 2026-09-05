@@ -206,6 +206,8 @@ internal data class UiStrings(
      */
     val engineUnavailableTitle: String,
     val engineUnavailableMessage: String,
+    /** 대국 화면에 계속 떠 있는 짧은 표식 — 팝업은 한 번 닫으면 사라지기 때문이다. */
+    val engineUnavailableBadge: String,
     val backToHome: String,
     val notImplementedMessage: String,
     val showScoreGraph: String,

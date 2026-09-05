@@ -15,6 +15,8 @@ import com.worksoc.goaicoach.match.turnStatusText
 import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
 import com.worksoc.goaicoach.shared.AnalysisPreset
 import com.worksoc.goaicoach.shared.CandidateMove
+import com.worksoc.goaicoach.application.engine.EngineAvailability
+import com.worksoc.goaicoach.application.engine.engineAvailabilityFor
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
@@ -235,7 +237,17 @@ internal data class EngineUiState(
     val activityIndicator: EngineActivityIndicator?,
     val engineTurnWaitCompletionSeq: Int,
     val message: String,
-)
+) {
+    /**
+     * 엔진의 세 상태(백로그 「핵심 동작 기조」 1ⓒ). ⚠️ **[isReady]와 다른 것을 잰다** —
+     * [isReady]는 *"기동이 끝났는가"* 이고 이쪽은 *"무엇이 떴는가"* 다. 스텁도 기동은
+     * 성공하므로 **스텁일 때 [isReady]는 `true`** 이고, 그 차이가 정확히 #101 ④가 깬 침묵이다.
+     *
+     * ⚠️ 판정을 여기서 다시 쓰지 말 것 — `engineAvailabilityFor`가 유일한 정본이다.
+     */
+    val availability: EngineAvailability
+        get() = engineAvailabilityFor(profile.mode)
+}
 
 internal data class AnalysisUiState(
     val preset: AnalysisPreset,
