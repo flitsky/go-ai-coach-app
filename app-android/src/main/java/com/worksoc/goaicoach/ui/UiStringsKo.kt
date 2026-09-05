@@ -95,6 +95,7 @@ internal val UiStringsKorean = UiStrings(
     study = "학습 하기",
     matchSetup = "대국 설정",
     startMatchAction = "대국 시작하기",
+    engineNotReadyToStart = "AI를 준비하고 있어요. 잠시 후 시작할 수 있어요.",
     backToHome = "메인으로",
     notImplementedMessage = "아직 준비 중인 기능입니다.",
     showScoreGraph = "스코어 그래프 보기",

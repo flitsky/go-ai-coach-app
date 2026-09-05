@@ -192,6 +192,14 @@ internal data class UiStrings(
     val study: String,
     val matchSetup: String,
     val startMatchAction: String,
+    /**
+     * 엔진이 아직 준비되지 않아 대국을 시작할 수 없을 때의 사유(백로그 #101).
+     *
+     * ⚠️ **이 문구가 없으면 잠긴 버튼이 고장으로 읽힌다.** 그리고 이 문구가 없던 시절의 동작은
+     * 더 나빴다 — 버튼이 눌리고 AI 대국이 **조용히 로컬 2인 대국으로 강등**돼, 사용자가
+     * **터치가 죽은 판** 앞에 앉았다.
+     */
+    val engineNotReadyToStart: String,
     val backToHome: String,
     val notImplementedMessage: String,
     val showScoreGraph: String,

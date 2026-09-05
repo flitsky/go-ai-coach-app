@@ -95,6 +95,7 @@ internal val UiStringsJapanese = UiStringsKorean.copy(
     study = "学習する",
     matchSetup = "対局設定",
     startMatchAction = "対局開始",
+    engineNotReadyToStart = "AIを準備しています。まもなく開始できます。",
     backToHome = "メインメニューへ",
     notImplementedMessage = "この機能は現在準備中です。",
     // 신규 로컬라이징 필드

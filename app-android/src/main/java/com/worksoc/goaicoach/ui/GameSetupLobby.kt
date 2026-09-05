@@ -202,7 +202,17 @@ internal fun GameSetupLobby(
                 PremiumModeCard(onClick = { showPremiumUpsellDialog = true })
             }
 
+            // ⚠️ **엔진이 준비되기 전에는 시작할 수 없다**(백로그 #101 0단계).
+            // 게이트가 없으면 `runStartConfiguredGame`이 AI 대국을 **조용히 로컬 2인 대국으로
+            // 강등**한다(`!isEngineReady && targetMode != LocalTwoPlayer` 분기). 그런데
+            // `playerSetup`은 HumanVsAi 그대로라 `canAcceptBoardInput`이 false가 되어,
+            // 사용자는 **터치가 죽은 판** 앞에 앉는다. 강등 사유(`engine.message`)는 앱 어디에서도
+            // 렌더되지 않아 **아무 설명도 없다.**
+            // ⚠️ **지금은 준비 화면이 이 구간을 가려 도달 불가지만**, #101이 그 화면을 없애면
+            // 신규 사용자의 첫 세 번의 탭(홈 → 대국 설정 → 시작)이 곧바로 이 경로가 된다.
+            val engineReady = screenState.engine.isReady
             Button(
+                enabled = engineReady,
                 onClick = {
                     onEvent(GameUiEvent.StartConfiguredGame)
                     onStartMatch()
@@ -243,6 +253,15 @@ internal fun GameSetupLobby(
                         }
                     }
                 }
+            }
+            // 잠긴 이유를 말한다 — 이유 없이 안 눌리는 버튼은 고장으로 읽힌다.
+            if (!engineReady) {
+                Text(
+                    text = strings.engineNotReadyToStart,
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.secondary,
+                    modifier = Modifier.padding(top = 6.dp),
+                )
             }
         }
     }

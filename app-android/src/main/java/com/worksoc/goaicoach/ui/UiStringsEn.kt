@@ -95,6 +95,7 @@ internal val UiStringsEnglish = UiStringsKorean.copy(
     study = "Study Mode",
     matchSetup = "Match Setup",
     startMatchAction = "Start Match Now",
+    engineNotReadyToStart = "Getting the AI ready. You can start in a moment.",
     backToHome = "Main Menu",
     notImplementedMessage = "This feature is currently under development.",
     showScoreGraph = "Show Score Graph",

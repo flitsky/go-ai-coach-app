@@ -95,6 +95,7 @@ internal val UiStringsChineseSimplified = UiStringsKorean.copy(
     study = "进行学习",
     matchSetup = "对局设置",
     startMatchAction = "开始对局",
+    engineNotReadyToStart = "正在准备 AI，稍后即可开始。",
     backToHome = "返回主菜单",
     notImplementedMessage = "此功能目前正在准备中。",
     showScoreGraph = "显示得分图",
