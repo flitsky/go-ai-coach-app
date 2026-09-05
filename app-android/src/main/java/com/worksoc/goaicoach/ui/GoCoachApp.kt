@@ -565,6 +565,9 @@ private fun GoCoachScreen(
     cancelUndoSync = controllers.undoController::cancelPendingSync
     exitToHome = {
         isGameEnded = true
+        // ⚠️ 판을 갈아엎기 **전에** 기록한다(#96) — 아래 `refreshNewGamePreview()`가 새 미리보기
+        // 판을 적용해 `Move.Resign`을 지운다. 순서를 바꾸면 뒤로가기 기권이 다시 안 남는다.
+        recordFinishedGameOnExit(context, true, scoreState.finalScoreJudgement, gameState, playerSetup)
         controllers.settingsController.refreshNewGamePreview()
         currentDestination = ScreenDestination.Home
     }

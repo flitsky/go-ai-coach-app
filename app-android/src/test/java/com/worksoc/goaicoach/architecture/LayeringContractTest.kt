@@ -1482,7 +1482,11 @@ class LayeringContractTest {
         // ⚠️ **이 셸이 오토세이브 요청을 조립하는 유일한 지점**이라 새로 저장되는 UX 옵션은
         // 여기를 지날 수밖에 없다(#39가 `isPlayMagnifierEnabled`로 같은 이유로 +1했다).
         // 상태 훅 증가 없음 — 값은 기존 `uxOptions`에 얹혀 온다.
-        val lineBudget = 882
+        // #96: +3 — 홈으로 나가기 직전에 끝난 대국을 기록하는 한 줄 + 사유 주석 두 줄.
+        // ⚠️ **주석이 이 예산을 쓰는 값을 한다** — 이 자리의 결함은 `refreshNewGamePreview()`가
+        // 판을 갈아엎기 **전에** 기록해야 한다는 순서 의존이고, 그 사유가 코드에 없으면 다음
+        // 사람이 두 줄의 순서를 아무렇지 않게 바꾼다(그래도 테스트는 초록이다).
+        val lineBudget = 885
         val stateHookBudget = 46
 
         val goCoachApp = repoRoot()
