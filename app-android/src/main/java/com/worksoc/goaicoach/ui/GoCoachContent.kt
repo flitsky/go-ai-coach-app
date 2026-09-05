@@ -134,7 +134,14 @@ internal fun GoCoachContent(
                 modifier = Modifier.fillMaxWidth(0.9f),
                 title = {
                     Text(
-                        text = strings.matchSetup,
+                        // ⚠️ **`matchSetup`("대국 설정")이 아니라 `settingsTitle`("설정")이다**(백로그 #110).
+                        // 이 다이얼로그에는 언어·표시 옵션·탐색 시간·진단 액션뿐이고 **플레이어 설정과
+                        // 계가/판 설정은 없다** — #76이 사문화된 `showSettings` 블록과 함께 지웠다.
+                        // 그 둘을 바꾸는 곳은 대국 설정 로비(대국 시작 전)와 홈 → `설정` 화면(대국 중에도
+                        // 가능, 종국 전에는 판 크기·접바둑 잠김)이다.
+                        // ⚠️ `matchSetup` 자체를 건드리지 말 것 — 나머지 두 호출부는 맞다
+                        // (`GameSetupLobby.kt`가 진짜 대국 설정 화면, `SettingsScreen.kt`가 그 섹션 헤더).
+                        text = strings.settingsTitle,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
