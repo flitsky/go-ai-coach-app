@@ -43,10 +43,12 @@ internal fun createRemoteEngineSessionClient(
                 readTimeoutMillis = candidate.readTimeoutMillis,
             ),
         ),
-        capabilities = EngineSessionCapabilities(
-            supportsDeviceBenchmark = false,
-            backend = EngineSessionBackend.RemoteServer,
-        ),
+        capabilitiesProvider = {
+            EngineSessionCapabilities(
+                supportsDeviceBenchmark = false,
+                backend = EngineSessionBackend.RemoteServer,
+            )
+        },
         positionAnalysisCacheStore = positionAnalysisCacheStore,
         trustedPositionAnalysisCacheProviders = trustedPositionAnalysisCacheProviders,
         diagnosticEventLog = diagnosticEventLog,

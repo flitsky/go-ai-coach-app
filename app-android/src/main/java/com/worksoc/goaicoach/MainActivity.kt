@@ -105,10 +105,12 @@ class MainActivity : ComponentActivity() {
                     // 고르면 항상 로컬로 폴백한다.
                     remoteClient ?: LocalEngineSessionClient(
                         coreApi = bootstrap.coreApi,
-                        capabilities = EngineSessionCapabilities(
-                            supportsDeviceBenchmark = bootstrap.mode == EngineMode.LocalProcess,
-                            backend = EngineSessionBackend.LocalEngine,
-                        ),
+                        capabilitiesProvider = {
+                            EngineSessionCapabilities(
+                                supportsDeviceBenchmark = bootstrap.mode == EngineMode.LocalProcess,
+                                backend = EngineSessionBackend.LocalEngine,
+                            )
+                        },
                         positionAnalysisCacheStore = positionAnalysisCacheStore,
                         diagnosticEventLog = diagnosticEventLog,
                     )

@@ -260,6 +260,21 @@
    · ⚠️ **지급 경로를 닫을 때 판정 경로를 함께 닫지 말 것** — `FeatureAccessPolicy.kt:68`의
      `if (featureId in state.claimedFeatures)`를 지우면 이미 획득한 사용자가 전원 잠긴다.
 
+19. **⚠️ 어떤 명령도 컴파일하지 않는 소스셋은 조용히 썩는다 — 그리고 그 썩음은 초록으로 보인다**
+   (2026-09-05, #101 ②단계의 적대적 감사가 적발). `app-android/src/androidTest`가 **2026-08-30부터
+   6일간 컴파일조차 되지 않는 채로** 있었다. `cfb82bd`(#41/#36)가 `GoCoachApp`에 **기본값 없는**
+   파라미터 `engineMode`를 추가하면서 계기 테스트 호출부 둘을 안 고쳤는데, `make test`가
+   `:shared:check … :app-android:testDebugUnitTest`만 돌고 **그 트리를 건드리지 않아** 내내 초록이었다.
+   CI도 없다(`.github` 자체가 없다).
+   · **⚠️ 무엇이 진짜 위험인가**: 계기 테스트가 안 돌던 것이 아니라, **생성자·시그니처를 바꿀 때
+     쓸어야 할 세 트리 중 하나에 아무 신호가 없었다**는 것이다. 이번 `LocalEngineSessionClient`
+     변경은 **운이 좋았다** — 그 트리의 가짜 둘이 인터페이스를 직접 구현해 영향이 없었을 뿐,
+     하나라도 `LocalEngineSessionClient(capabilities = …)`를 썼다면 `make test`는 **그대로 초록**이었다.
+   · **처방(적용함)**: `make test`에 `:app-android:compileDebugAndroidTestKotlin`을 넣었다.
+     **컴파일만** 한다 — 기기가 필요 없고 약 5초다. 넣은 뒤 파손을 되돌려 **실제로 잡히는지 확인했다.**
+   · ⚠️ **`assembleDebug`가 있으니 됐다고 생각하지 말 것** — `androidTest`는 **별도 소스셋**이라
+     한 톨도 겹치지 않는다.
+
 ---
 
 ## 진행 중
@@ -379,8 +394,14 @@
       · ⚠️ **실기로 그 창을 잡지는 못했다** — debug 빌드는 모델을 assets로 갖지 않아(adb push로만
         들어온다) *"모델을 지워 미준비를 만든다"* 가 성립하지 않고, 준비 화면이 아직 남아 있어
         복사 구간도 가려진다. 계약 테스트와 코드 경로가 근거다.
-    - **⚠️ 남은 제약 — `GoCoachApp.kt`에 새 코드를 넣을 수 없다.** 885/885로 꽉 차 있다.
-      새 배선은 `MainActivity`와 신규 파일로 가야 한다(예산 논의는 별도).
+    - **⚠️ 남은 제약 — 바뀌었다(지표 개편 후). 줄은 남지만 _상태_ 는 못 늘린다.**
+      · 옛 문장은 *"885/885로 꽉 차 있어 새 코드를 넣을 수 없다"* 였다. 지금은 **688/777**이라
+        줄 자체는 여유가 있다.
+      · ⚠️ **그런데 조이는 지표는 그쪽이 아니다** — **상태 훅 42/42, 여유 0**이다. ③단계는 하필
+        *"엔진이 준비됐는가"* 라는 **새 상태**를 다루므로 정확히 이 벽에 부딪힌다.
+      · **따라서: `GoCoachApp.kt`에 `remember`/`mutableStateOf`/`LaunchedEffect`를 새로
+        추가할 수 없다.** 준비 상태는 `MainActivity`나 신규 파일이 소유하고, 셸에는 **이미 있는
+        경로로** 흘려보내야 한다.
     - **✅ ①단계 완료 — `DeferredEngineCoreApi` 신설.**
       · **위임은 `await()`, 예외는 `forceReset` 하나.** ⚠️ `Deferred.getCompleted()`를 그냥 부르면
         **미완료 상태에서 던진다** — 그것도 *"멈춘 엔진을 마지막 수단으로 버린다"* 는 경로에서,
@@ -389,8 +410,42 @@
       · 가드 3건 + **변이 2건 확인**(getCompleted 직접 호출 / 준비 뒤에도 삼킴).
       · ⚠️ `kotlinx-coroutines-test`는 이 모듈의 의존성이 아니다 — 기존 테스트와 같이
         `runBlocking`을 쓴다.
-    - **다음 단계**: ② `capabilities`를 공급자로 →
-      ③ `MainActivity` 재배선(진단 로그·캐시 저장소를 게이트 **밖**으로, 준비 화면 제거) → ④ 문구.
+    - **✅ ②단계 완료 — `capabilities`를 값에서 공급자로.**
+      · `LocalEngineSessionClient(capabilities = <값>)` → `capabilitiesProvider: () -> …`,
+        그리고 `override val capabilities get() = capabilitiesProvider()`.
+        ⚠️ **인터페이스(`EngineSessionClient`)는 손대지 않았다** — `val`을 게터로 구현하면 되므로
+        다른 구현체·호출부는 이 변경을 **모른다.**
+      · **왜 공급자여야 하는가 — 어느 값으로 박아도 틀린다.** `supportsDeviceBenchmark`는
+        *"진짜 로컬 프로세스가 떴는가"* 인데, ③단계 이후 클라이언트는 **엔진보다 먼저** 태어난다.
+        `false`로 박으면 엔진이 떠도 벤치마크가 **영영 막히고**(`evaluateEngineBenchmarkGate`가
+        Block), `true`로 박으면 **스텁 폴백에서 없는 기능을 열어준다**.
+      · ✅ **전달 지점이 4곳뿐이었다**(프로덕션 2: `MainActivity`·`RemoteEngineSessionBootstrap`,
+        테스트 2). 그래서 하위호환 오버로드 없이 **전부 바꿨다** — 값 생성자를 남겨두면
+        *"박아도 되는 길"* 이 계속 열려 있다.
+      · ✅ **읽는 쪽은 전부 호출 시점 읽기였다**(분석마다 `backendId`, 벤치마크 게이트, 세션
+        수명주기 4곳) — 어디에도 캐싱이 없어 늦게 도착한 답이 그대로 반영된다.
+      · 가드 3건 + **변이 2건 확인**. ⚠️ 변이를 **두 방향**으로 걸었다:
+        `= capabilitiesProvider()`(즉시) → 3건 중 2건 실패, `by lazy { … }`(첫 답 기억) → 1건 실패.
+        **`by lazy`는 생성자에서 부르지 않으므로 "생성 중 호출 금지" 가드만으로는 못 잡는다** —
+        *"값이 바뀐다"* 를 직접 재는 가드가 따로 있어야 하는 이유다.
+      · ✅ iOS 타깃(`-PenableIosTargets=true`) 컴파일 확인. 전체 **1054건 통과**.
+    - **⚠️ ③단계로 넘기는 함정 — 공급자로 바꿔야 할 것이 `capabilities` 하나가 아니다.**
+      · `GoCoachApp`은 `engineMode`·`engineName`·`engineDiagnostic`을 **평범한 값**으로 받는데,
+        셋 다 `capabilities`와 **똑같이 부트스트랩이 끝나야 아는 사실**이다. 지금은 준비 화면이
+        게이트 역할을 해서 *"들어올 때 이미 참"* 이 보장되지만, ③단계가 그 게이트를 **없앤다.**
+      · ⚠️ **그리고 그 값은 다시 물어볼 수 없는 자리로 들어간다** —
+        `GoCoachApp.kt:196` `remember(initialPreferences, defaultPlayLevel) { … EngineProfile(
+        mode = engineMode, name = engineName) }`. **키에 `engineMode`·`engineName`이 없다.**
+        예측값으로 한 번 들어가면 진짜 값이 도착해도 **다시 계산되지 않는다** — 진단 리포트의
+        `engineProfile`이 영원히 *"stub AI"* 를 말하게 된다.
+      · **처방 후보**: 키에 넣거나(재계산), 셋도 공급자로 바꾸거나, ③단계에서 **예측하지 말고**
+        준비 전에는 정직하게 `EngineMode.Unknown`을 넘긴다(그 기본값이 존재하는 이유가 이것이다 —
+        `EngineModels.kt:111`). ⚠️ **어느 쪽이든 결정하고 가드를 세운 뒤에 게이트를 없앨 것.**
+    - **✅ 곁가지로 닫은 것 — `androidTest` 트리가 6일째 컴파일되지 않고 있었다**(함정 19).
+      이 변경이 쓸어야 할 세 소스셋 중 하나였는데 **아무 명령도 그 트리를 건드리지 않았다.**
+      호출부 둘을 고치고 `make test`에 컴파일 태스크를 넣었다.
+    - **다음 단계**: ③ `MainActivity` 재배선(진단 로그·캐시 저장소를 게이트 **밖**으로,
+      준비 화면 제거) → ④ 문구.
 
 ---
 

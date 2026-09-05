@@ -179,10 +179,12 @@ class EngineSessionTest {
         val engine = RecordingEngineAdapter()
         val client = LocalEngineSessionClient(
             coreApi = engine,
-            capabilities = EngineSessionCapabilities(
-                supportsDeviceBenchmark = true,
-                backend = EngineSessionBackend.LocalEngine,
-            ),
+            capabilitiesProvider = {
+                EngineSessionCapabilities(
+                    supportsDeviceBenchmark = true,
+                    backend = EngineSessionBackend.LocalEngine,
+                )
+            },
         )
         val state = GameState.empty()
             .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
@@ -202,6 +204,56 @@ class EngineSessionTest {
         )
         assertEquals(EngineSessionBackend.LocalEngine, client.capabilities.backend)
         assertEquals(true, client.capabilities.supportsDeviceBenchmark)
+    }
+
+    @Test
+    fun capabilitiesAreAskedAgainOnEveryReadSoALateAnswerStillArrives() {
+        // #101: 클라이언트가 엔진보다 **먼저** 만들어진다. 만들 때 모르던 답(로컬 프로세스가
+        // 실제로 떴는가)이 나중에 도착하는데, 그때 클라이언트는 이미 살아 있다.
+        var localProcessConfirmed = false
+        val client = LocalEngineSessionClient(
+            coreApi = RecordingEngineAdapter(),
+            capabilitiesProvider = {
+                EngineSessionCapabilities(supportsDeviceBenchmark = localProcessConfirmed)
+            },
+        )
+
+        assertEquals(false, client.capabilities.supportsDeviceBenchmark)
+
+        localProcessConfirmed = true
+
+        // ⚠️ 값으로 굳어 있으면 여기가 여전히 false다 — 엔진이 떠도 기기 벤치마크가 **영영** 막힌다
+        // (`evaluateEngineBenchmarkGate`는 이 플래그가 false면 Block을 돌려준다).
+        assertEquals(true, client.capabilities.supportsDeviceBenchmark)
+    }
+
+    @Test
+    fun capabilitiesProviderIsNotCalledWhileTheClientIsBeingBuilt() {
+        // 생성자에서 한 번이라도 부르면 그 호출은 **부트스트랩이 끝나기 전**에 일어난다 —
+        // 아직 존재하지 않는 것을 들여다보는 셈이고, 그 한 번의 답이 그대로 굳는다.
+        var calls = 0
+        val client = LocalEngineSessionClient(
+            coreApi = RecordingEngineAdapter(),
+            capabilitiesProvider = {
+                calls += 1
+                EngineSessionCapabilities(supportsDeviceBenchmark = false)
+            },
+        )
+
+        assertEquals(0, calls)
+
+        assertEquals(false, client.capabilities.supportsDeviceBenchmark)
+
+        assertEquals(1, calls)
+    }
+
+    @Test
+    fun capabilitiesDefaultToTheUnverifiedAnswerWhenNoProviderIsGiven() {
+        val client = LocalEngineSessionClient(coreApi = RecordingEngineAdapter())
+
+        // "모른다"의 기본값은 **못 한다** 쪽이어야 한다 — 없는 능력을 열어주지 않는다.
+        assertEquals(false, client.capabilities.supportsDeviceBenchmark)
+        assertEquals(EngineSessionBackend.LocalEngine, client.capabilities.backend)
     }
 
     @Test

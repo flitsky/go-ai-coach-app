@@ -30,16 +30,42 @@ import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.ScoreEstimate
 
+/**
+ * 아직 아무 것도 확인되지 않았을 때의 정직한 답. **"모른다"는 곧 "아직 못 한다"** 이므로
+ * 기기 벤치마크는 꺼진 쪽이 기본값이다 — 없는 능력을 있다고 답하는 쪽이 더 나쁘다.
+ */
+private val UnverifiedLocalCapabilities = EngineSessionCapabilities(
+    supportsDeviceBenchmark = false,
+)
+
 class LocalEngineSessionClient(
     private val coreApi: EngineCoreApi,
-    override val capabilities: EngineSessionCapabilities = EngineSessionCapabilities(
-        supportsDeviceBenchmark = false,
-    ),
+    /**
+     * ⚠️ **값이 아니라 공급자다**(백로그 #101 ②단계).
+     *
+     * 예전에는 값이었고, 그래도 됐다 — `MainActivity`가 부트스트랩이 **끝난 뒤에** 이 클라이언트를
+     * 만들었으니 `supportsDeviceBenchmark`(= 실제로 로컬 프로세스가 떴는가)를 이미 알고 있었다.
+     * #101에서 그 순서가 뒤집힌다: 클라이언트를 **먼저** 만들고 엔진은 뒤따라 준비된다.
+     * 그 시점에 값을 하나 골라 박으면 **영원히 그 값이다** — 어느 쪽으로 틀려도 대가가 있다.
+     * `false`로 박으면 로컬 엔진이 떠도 벤치마크가 **영영 막히고**, `true`로 박으면 스텁으로
+     * 폴백했을 때 없는 기능을 **열어준다**(`createEngineBootstrap`은 에셋이 없으면 스텁을 준다).
+     *
+     * 그래서 물어볼 때마다 다시 묻는다. ⚠️ **싸고, 막히지 않고, 아무 스레드에서나 안전해야 한다**
+     * — 분석 한 번마다 [capabilities]를 읽는다(`backendId`).
+     */
+    private val capabilitiesProvider: () -> EngineSessionCapabilities = { UnverifiedLocalCapabilities },
     private val positionAnalysisCacheStore: PositionAnalysisCacheStore = NoopPositionAnalysisCacheStore,
     private val trustedPositionAnalysisCacheProviders: List<TrustedPositionAnalysisCacheProvider> = emptyList(),
     private val diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
     private val clock: EngineClock = SystemEngineClock,
 ) : EngineSessionClient {
+    /**
+     * ⚠️ **읽을 때마다 새로 묻는다 — 어딘가에 담아두지 말 것.** 답은 시간이 지나면서 바뀐다
+     * (엔진이 준비되는 순간). 한 번 읽어 `remember`나 필드에 넣으면 그 자리에서 다시 굳는다.
+     */
+    override val capabilities: EngineSessionCapabilities
+        get() = capabilitiesProvider()
+
     private val coreSession = LocalEngineCoreSessionDelegate(
         coreApi = coreApi,
         clock = clock,

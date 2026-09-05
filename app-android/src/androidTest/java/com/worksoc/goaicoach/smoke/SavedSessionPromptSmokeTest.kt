@@ -29,6 +29,7 @@ import com.worksoc.goaicoach.shared.AnalysisResult
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.CandidateMove
+import com.worksoc.goaicoach.shared.EngineMode
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.EngineSearchMode
 import com.worksoc.goaicoach.shared.EngineStatus
@@ -102,6 +103,9 @@ class SavedSessionPromptSmokeTest {
                 engineName = "Fake Engine",
                 engineDiagnostic = "smoke-test",
                 diagnosticEventLog = NoopDiagnosticEventLog,
+                // ⚠️ 이 화면이 쓰는 엔진은 **가짜**다 — 진단 리포트가 로컬 프로세스를 사칭하지
+                // 않도록 스텁이라고 명시한다(`EngineModels.kt`의 `EngineMode` 머리말 참고).
+                engineMode = EngineMode.Stub,
             )
         }
 

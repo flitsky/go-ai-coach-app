@@ -429,7 +429,7 @@ class EngineDeviceBenchmarkApplicationTest {
         val engine = RecordingBenchmarkEngineAdapter()
         val client = LocalEngineSessionClient(
             coreApi = engine,
-            capabilities = EngineSessionCapabilities(supportsDeviceBenchmark = true),
+            capabilitiesProvider = { EngineSessionCapabilities(supportsDeviceBenchmark = true) },
         )
         val store = RecordingEngineBenchmarkStore()
         var benchmarkUiState = EngineBenchmarkUiState.initial(

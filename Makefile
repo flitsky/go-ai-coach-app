@@ -125,8 +125,12 @@ doctor:
 	@echo "ANDROID_HOME=$(ANDROID_HOME)"
 	@echo "Environment check passed."
 
+# ⚠️ `:app-android:compileDebugAndroidTestKotlin`은 **컴파일만** 한다(기기 불필요, 약 5초).
+# 계기 테스트를 돌리려는 게 아니라 **그 소스셋이 썩는 것을 막으려는 것**이다 — 실제로
+# 2026-08-30부터 6일간 컴파일조차 되지 않는 채로 방치됐고(`GoCoachApp`에 필수 파라미터
+# `engineMode`가 늘었는데 호출부 둘을 안 고침), 이 명령이 그 트리를 건드리지 않아 아무도 몰랐다.
 test: doctor
-	$(GRADLEW) :shared:check :engine-android:testDebugUnitTest :app-android:assembleDebug :app-android:testDebugUnitTest
+	$(GRADLEW) :shared:check :engine-android:testDebugUnitTest :app-android:assembleDebug :app-android:testDebugUnitTest :app-android:compileDebugAndroidTestKotlin
 
 dev: doctor ensure-debug-engine
 	$(GRADLEW) :app-android:assembleDebug
