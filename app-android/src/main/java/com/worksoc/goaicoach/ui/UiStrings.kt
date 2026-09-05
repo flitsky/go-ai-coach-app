@@ -376,7 +376,13 @@ internal data class UiStrings(
     val settingsDevPremiumToggleSubtitle: String,
     val settingsVersionLabel: String,
     val settingsBuildTimeLabel: String,
+    /** 동의 폼 초기화(#89, debug 2차 전용). */
+    val settingsDevConsentResetTitle: String,
+    val settingsDevConsentResetSubtitle: (Boolean) -> String,
+    val settingsDevConsentResetAction: String,
     val settingsPrivacyPolicyLabel: String,
+    /** 광고 개인정보 옵션(동의 철회) 진입점(#89). AdMob 콘솔에서 켠 경우에만 화면에 나온다. */
+    val settingsAdPrivacyOptionsLabel: String,
     val settingsDeveloperModeEnabledMessage: String,
     val premiumModeTitle: String,
     val premiumModeFeatureList: String,

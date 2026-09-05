@@ -280,6 +280,40 @@ internal fun DeveloperTestSection(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // 동의 폼(UMP) 상태 초기화 — 백로그 #89.
+            // ⚠️ **이것 없이는 폼을 한 번밖에 못 본다.** 한 번 동의하면 SDK가 자기 prefs
+            // (`IABTCF_*`)에 저장하고 다시 묻지 않는데, 개발자 모드의 3시간 초기화로는
+            // 지워지지 않는다 — `DeveloperModeResetCoordinator`는 `go_ai_coach_` 접두사
+            // prefs만 지운다.
+            // ⚠️ **한국에서 폼을 보려면 `local.properties`에 `consent.forceEeaDebug=true`도
+            // 필요하다.** 동의 필요 여부는 빌드타입이 아니라 **기기 IP**가 정하기 때문이다.
+            //   그 플래그는 debug에만 걸리고 friend/playInternal/release에서는 강제로 false다.
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = strings.settingsDevConsentResetTitle,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        text = strings.settingsDevConsentResetSubtitle(
+                            BuildConfig.FORCE_EEA_CONSENT_DEBUG,
+                        ),
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.secondary,
+                    )
+                }
+                TextButton(onClick = { AdsConsentManager.resetForDebug(context) }) {
+                    Text(strings.settingsDevConsentResetAction)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             // ⚠️ **2차인 이유**: 조각은 **광고 시청분**이다(#11) — 여기서 채워 주는 것은
             // 곧 광고를 건너뛰고 캐릭터를 얻는 무료 경로다. 1차(release에 실림)에 두면
             // 그것이 그대로 출시된다.

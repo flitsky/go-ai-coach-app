@@ -31,7 +31,13 @@ internal fun BannerAdView(modifier: Modifier = Modifier) {
             AdView(context).apply {
                 adUnitId = AdUnitIds.bannerAdUnitId
                 setAdSize(AdSize.getLargeAnchoredAdaptiveBannerAdSize(context, adWidthDp))
-                loadAd(AdRequest.Builder().build())
+                // ⚠️ **동의 없이는 요청하지 않는다**(백로그 #89). 이 컴포저블은 지금 어느 화면에도
+                // 붙어 있지 않지만(`59d880c`로 제거), 되살리는 사람은 `showRewardedAdOnce`의
+                // 게이트를 지나지 않으므로 여기 미리 심어 둔다 — 죽은 코드일 때가 가장 싸다.
+                // ⚠️ 콘솔에 메시지가 없으면 `canRequestAds`는 true다(`AdsConsentManager` 머리말).
+                if (AdsConsentManager.canRequestAds(context)) {
+                    loadAd(AdRequest.Builder().build())
+                }
             }
         },
         onRelease = { adView -> adView.destroy() },

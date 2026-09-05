@@ -3,6 +3,7 @@ package com.worksoc.goaicoach
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.lifecycle.lifecycleScope
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -25,11 +26,13 @@ import com.worksoc.goaicoach.engine.identity
 import com.worksoc.goaicoach.persistence.DiagnosticEventLog
 import com.worksoc.goaicoach.persistence.JsonPositionAnalysisCacheStore
 import com.worksoc.goaicoach.persistence.UserPreferencesStore
+import com.worksoc.goaicoach.ui.AdsConsentManager
 import com.worksoc.goaicoach.shared.EngineCoreApi
 import com.worksoc.goaicoach.shared.EngineMode
 import com.worksoc.goaicoach.ui.AppFontScaleState
 import com.worksoc.goaicoach.ui.GoCoachApp
 import java.io.File
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -37,6 +40,13 @@ import kotlinx.coroutines.withContext
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // ⚠️ **동의 상태 조회는 앱 기동마다 한 번** — UMP 규격이다(백로그 #89).
+        // 폼은 여기서 띄우지 **않는다.** 규격이 요구하는 것은 조회이고, 폼은 광고를 요청하기
+        // 직전에 `showRewardedAdOnce`가 띄운다 — #101이 세운 *"홈이 곧 랜딩"* 을 지키기 위해서다
+        // (공식 샘플대로 여기서 폼까지 띄우면 EEA 사용자는 앱을 켜자마자 전면 다이얼로그를 만난다).
+        // ⚠️ 이 호출이 끝나기 전에 광고 버튼이 눌릴 수 있는데, 그쪽이 스스로 다시 조회하므로
+        // 여기 결과를 기다리게 만들 필요가 없다 — 공유 상태를 두지 않은 이유다.
+        lifecycleScope.launch { AdsConsentManager.refresh(this@MainActivity) }
         setContent {
             // ⚠️ **앱 글꼴 배율은 여기서 적용해야 한다**(백로그 #81) — 컴포지션 전체를 감싸야
             // 모든 화면이 함께 바뀐다. `GoCoachApp`에서는 할 수 없다(그 파일은 상태 훅 42/42로

@@ -407,6 +407,9 @@ internal fun SettingsScreen(
                             context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(PRIVACY_POLICY_URL)))
                         },
                     )
+                    // 광고 개인정보 옵션(#89). 자기 상태를 자기가 갖는다 — 이 파일은 상태 훅
+                    // 13/13으로 여유가 0이다.
+                    AdPrivacyOptionsRow(strings = strings)
                     // 백로그 #53. ⚠️ **위 버전 텍스트 옆에 붙이지 말 것** — 그 텍스트는 10번
                     // 두드리면 개발자 모드가 켜지는 숨은 제스처를 갖고 있어, 업데이트 버튼을
                     // 곁에 두면 오탭 하나가 개발자 모드를 연다. 링크를 사이에 두고 맨 아래에 둔다.

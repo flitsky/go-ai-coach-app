@@ -140,5 +140,22 @@ internal fun simulatePremiumAdGrant(
 internal suspend fun showRewardedAdOnce(context: Context): AdRewardOutcome {
     val activity = context as? Activity
         ?: return AdRewardOutcome.NotRewarded(AdRewardFailureReason.Unavailable)
+    // ⚠️ **동의 게이트는 이 한 곳으로 족하다**(백로그 #89). 저장소의 광고 요청은 프리미엄
+    // 1시간(`PremiumUiState`)과 봇 캐릭터 조각(`BotCharacterUiState`) 둘인데 **둘 다 이 함수를
+    // 지난다** — 단일 깔때기라 여기만 막으면 새는 곳이 없다.
+    //
+    // 폼을 **광고 직전에** 띄우는 이유: 규격이 요구하는 것은 *"기동마다 조회"* 이지
+    // *"기동 즉시 폼"* 이 아니고, 이 앱의 유일한 광고는 사용자가 명시적으로 옵트인하는 리워드
+    // 광고다. 동의를 그 옵트인과 같은 순간에 묻는 편이 사용자에게 이해되고, #101이 세운
+    // *"홈이 곧 랜딩"* 도 지킨다.
+    //
+    // ⚠️ `refresh`를 여기서 한 번 더 부르는 것은 **경합을 없애기 위해서다.** 기동 시 조회가
+    // 끝나기 전에 광고 버튼이 눌릴 수 있는데, 상태를 공유해 기다리게 하는 대신 여기서 다시
+    // 조회하면 공유 상태가 필요 없다(SDK가 캐시하므로 값싸다).
+    AdsConsentManager.refresh(activity)
+    if (!AdsConsentManager.gatherConsentIfRequired(activity)) {
+        // 동의를 얻지 못했다 — 이미 있는 실패 경로를 그대로 탄다.
+        return AdRewardOutcome.NotRewarded(AdRewardFailureReason.Unavailable)
+    }
     return AndroidRewardedInterstitialAdClient(activity, AdUnitIds.rewardedInterstitialAdUnitId).showRewardedAd()
 }
