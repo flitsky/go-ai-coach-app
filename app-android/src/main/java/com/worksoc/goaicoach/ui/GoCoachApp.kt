@@ -440,6 +440,8 @@ private fun GoCoachScreen(
                 isPlayHapticEnabled = uxOptions.isPlayHapticEnabled,
                 isBoardMaxSize = uxOptions.isBoardMaxSize,
                 isPlayMagnifierEnabled = uxOptions.isPlayMagnifierEnabled,
+                magnifierSizeScale = uxOptions.magnifierSizeScale,
+                magnifierZoom = uxOptions.magnifierZoom,
             ),
             store = preferencesStore,
         )

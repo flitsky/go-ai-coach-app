@@ -2,6 +2,7 @@ package com.worksoc.goaicoach.persistence
 
 import android.content.Context
 import com.worksoc.goaicoach.application.preferences.DefaultAppFontScale
+import com.worksoc.goaicoach.application.preferences.MagnifierSettings
 import com.worksoc.goaicoach.application.preferences.sanitizeAppFontScale
 import com.worksoc.goaicoach.application.preferences.UserPreferencesSnapshot
 import com.worksoc.goaicoach.application.preferences.UserPreferencesStorePort
@@ -59,6 +60,10 @@ internal object UserPreferencesCodec {
             .put("isPlayHapticEnabled", snapshot.isPlayHapticEnabled)
             .put("isBoardMaxSize", snapshot.isBoardMaxSize)
             .put("isPlayMagnifierEnabled", snapshot.isPlayMagnifierEnabled)
+            // ⚠️ 배율류는 **문자열로** 저장한다 — `Float`를 `Double`로 넣으면
+            // `1.2000000476837158`이 된다(#81에서 글꼴 배율로 확인했다).
+            .put("magnifierSizeScale", snapshot.magnifierSizeScale.toString())
+            .put("magnifierZoom", snapshot.magnifierZoom.toString())
             // ⚠️ **`Float`를 `Double`로 넣지 않는다** — `1.3f.toDouble()`이
             // `1.2999999523162842`로 저장돼(2026-09-04 실기에서 확인) 사람이 읽을 수 없고,
             // 개발자 도구가 이 파일을 쓰는 자리라 손 편집도 전제된다. 왕복은 문자열이 정확하다.
@@ -99,6 +104,12 @@ internal object UserPreferencesCodec {
                 isPlayHapticEnabled = json.optBoolean("isPlayHapticEnabled", true),
                 isBoardMaxSize = json.optBoolean("isBoardMaxSize", true),
                 isPlayMagnifierEnabled = json.optBoolean("isPlayMagnifierEnabled", true),
+                magnifierSizeScale = MagnifierSettings.sanitizeSizeScale(
+                    json.optString("magnifierSizeScale").toFloatOrNull() ?: MagnifierSettings.defaultSizeScale,
+                ),
+                magnifierZoom = MagnifierSettings.sanitizeZoom(
+                    json.optString("magnifierZoom").toFloatOrNull() ?: MagnifierSettings.defaultZoom,
+                ),
                 // ⚠️ 읽는 쪽에서 좁힌다 — 0이나 음수가 흘러들면 글자 높이가 0이 돼 화면이
                 // 통째로 사라진다. 개발자 도구가 이 파일을 쓰므로 손 편집도 가능한 자리다.
                 // 숫자로 저장된 예전 값(문자열로 바꾸기 전)도 `optString`이 그대로 읽어 준다.

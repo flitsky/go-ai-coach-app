@@ -1,5 +1,7 @@
 package com.worksoc.goaicoach.presentation
 
+import com.worksoc.goaicoach.application.preferences.MagnifierSettings
+
 /** 영구 저장되는 UX 토글 번들 — 화면 상태 도출 로직([GameScreenState] 등)과는 다른 축이다. */
 internal data class KaTrainUxOptions(
     val showCoordinates: Boolean = false,
@@ -25,4 +27,12 @@ internal data class KaTrainUxOptions(
      * 떼는 즉시 그 자리에 두고, 꾹 눌러도 돋보기가 뜨지 않는다.
      */
     val isPlayMagnifierEnabled: Boolean = true,
+    /**
+     * 돋보기 **창 크기**와 **확대 배율**(#85). 값 목록·기본값·정규화는
+     * [com.worksoc.goaicoach.application.preferences.MagnifierSettings]가 갖는다.
+     *
+     * ⚠️ 둘은 보이는 칸 수에 **반대로** 작용한다(칸 수 ≈ 창 ÷ 배율) — 한쪽만 만지면 상쇄된다.
+     */
+    val magnifierSizeScale: Float = MagnifierSettings.defaultSizeScale,
+    val magnifierZoom: Float = MagnifierSettings.defaultZoom,
 )

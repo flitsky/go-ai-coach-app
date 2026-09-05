@@ -50,4 +50,8 @@ data class UserPreferencesSnapshot(
     val isPlayHapticEnabled: Boolean = true,
     val isBoardMaxSize: Boolean = true,
     val isPlayMagnifierEnabled: Boolean = true,
+    /** 돋보기 창 크기 배수(백로그 #85). 값 목록과 기본값은 [MagnifierSettings]가 갖는다. */
+    val magnifierSizeScale: Float = MagnifierSettings.defaultSizeScale,
+    /** 돋보기 확대 배율(백로그 #85). `1.0`은 판과 같은 크기 — 확대는 없어도 손가락 가림은 해소된다. */
+    val magnifierZoom: Float = MagnifierSettings.defaultZoom,
 )

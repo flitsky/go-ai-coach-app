@@ -9,6 +9,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.withTransform
+import com.worksoc.goaicoach.application.preferences.MagnifierSettings
 
 /**
  * 돋보기 말풍선의 자리와 배율(백로그 #39). **순수 계산이라 테스트로 고정한다** — 이 항목에서
@@ -38,19 +39,23 @@ internal fun magnifierPrefersBelow(
     canvasSize: Size,
     cellSpacing: Float,
     fingerGapPx: Float,
+    sizeScale: Float = MagnifierSettings.defaultSizeScale,
+    zoom: Float = MagnifierSettings.defaultZoom,
 ): Boolean {
-    val radius = magnifierRadius(canvasSize, cellSpacing)
+    val radius = magnifierRadius(canvasSize, cellSpacing, sizeScale, zoom)
     return touch.y - fingerGapPx - radius - radius < 0f
 }
 
 /**
  * 말풍선의 자리와 배율(2026-08-31 사용자 결정 ⓐ — 손가락 위 말풍선).
  *
- * ⚠️ **배율을 2배로 고정하고 보이는 칸 수를 양보한다.** "5×5 셀"이라는 지시를 글자대로 지키면
- * 작은 판에서 배율이 1배 아래로 내려간다 — 9줄 판은 칸이 이미 커서 5칸이 판의 절반을 넘기
- * 때문이다. 확대되지 않는 돋보기는 존재 이유가 없으므로 **배율을 지키고 칸 수를 줄인다.**
- * 19줄 판에서 약 3칸, 9줄 판에서 약 1.9칸이 보이는데, 작은 판은 칸 자체가 두 배 크므로
- * "옆 자리와 구별된다"는 목적은 같은 수준으로 달성된다.
+ * ⚠️ **배율과 창 크기는 이제 사용자 설정이다**(백로그 #85) — `MagnifierSettings`가 값 목록을
+ * 갖고, 여기서는 받은 값을 그대로 쓴다. 기본은 창 1.2배 · 배율 1.5배로, #39 당시(창 1.0 · 배율
+ * 2.0)보다 **보이는 칸 수가 1.6배**다. 실기 피드백이 *"너무 좁은 영역만 보여 준다"* 였다.
+ *
+ * ⚠️ 그래도 **칸 수를 지시대로 고정하지는 않는다.** "5×5 셀"을 글자대로 지키면 작은 판에서 창이
+ * 판의 절반을 넘는다 — 9줄 판은 칸이 이미 크기 때문이다. 지름 상한이 그것을 막고, 그래서
+ * 실제로 보이는 칸 수는 판 크기에 따라 달라진다.
  *
  * [below]는 [magnifierPrefersBelow]가 드래그 시작 때 정한 값을 그대로 받는다 — 여기서 다시
  * 판단하지 않는 것이 요점이다.
@@ -61,8 +66,10 @@ internal fun magnifierPlacement(
     cellSpacing: Float,
     fingerGapPx: Float,
     below: Boolean,
+    sizeScale: Float = MagnifierSettings.defaultSizeScale,
+    zoom: Float = MagnifierSettings.defaultZoom,
 ): MagnifierPlacement {
-    val radius = magnifierRadius(canvasSize, cellSpacing)
+    val radius = magnifierRadius(canvasSize, cellSpacing, sizeScale, zoom)
     val rawCenterY = if (below) {
         touch.y + fingerGapPx + radius
     } else {
@@ -77,15 +84,31 @@ internal fun magnifierPlacement(
             y = rawCenterY.coerceIn(radius, maxOf(radius, canvasSize.height - radius)),
         ),
         radius = radius,
-        scale = MagnifierScale,
+        scale = zoom,
         below = below,
     )
 }
 
-private fun magnifierRadius(canvasSize: Size, cellSpacing: Float): Float {
+/**
+ * 말풍선 반지름. **[sizeScale]이 창을, [zoom]이 확대를 따로 정한다**(백로그 #85).
+ *
+ * ⚠️ **두 값이 보이는 칸 수에 반대로 작용한다** — 보이는 칸 수는 대략 `지름 / (칸 간격 × 배율)`
+ * 이므로, 창을 키우면 늘고 배율을 올리면 준다. 사용자가 *"영역은 키우고 배율은 낮춰라"* 라고
+ * 한 것이 정확히 이 둘을 같은 방향으로 미는 조합이다.
+ *
+ * ⚠️ 상한([MagnifierMaxDiameterRatio])에도 [sizeScale]을 곱한다 — 19줄 판에서는 **상한 쪽이
+ * 걸리기 때문에**(칸이 작아 첫 항이 훨씬 크다) 상한을 키우지 않으면 창이 전혀 커지지 않는다.
+ * 처음에 첫 항에만 곱했다가 19줄에서 아무 변화가 없는 것을 계산으로 확인하고 고쳤다.
+ */
+private fun magnifierRadius(
+    canvasSize: Size,
+    cellSpacing: Float,
+    sizeScale: Float,
+    zoom: Float,
+): Float {
     val diameter = minOf(
-        MagnifierVisibleCells * cellSpacing * MagnifierScale,
-        canvasSize.minDimension * MagnifierMaxDiameterRatio,
+        MagnifierVisibleCells * cellSpacing * zoom * sizeScale,
+        canvasSize.minDimension * MagnifierMaxDiameterRatio * sizeScale,
     )
     return diameter / 2f
 }
@@ -150,9 +173,6 @@ internal fun DrawScope.drawMagnifier(
         style = Stroke(width = MagnifierInnerRingWidth),
     )
 }
-
-/** 확대 배율. 칸 수보다 이 값을 지킨다(위 KDoc 참고). */
-private const val MagnifierScale = 2f
 
 /** 지시받은 시야("5×5 셀"). 큰 판에서는 그대로, 작은 판에서는 지름 상한에 눌려 줄어든다. */
 private const val MagnifierVisibleCells = 5

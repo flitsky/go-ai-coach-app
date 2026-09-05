@@ -16,6 +16,8 @@ data class UserPreferencesAutosaveRequest(
     val isPlayHapticEnabled: Boolean = true,
     val isBoardMaxSize: Boolean = true,
     val isPlayMagnifierEnabled: Boolean = true,
+    val magnifierSizeScale: Float = MagnifierSettings.defaultSizeScale,
+    val magnifierZoom: Float = MagnifierSettings.defaultZoom,
 )
 
 /**
@@ -48,6 +50,8 @@ internal fun buildUserPreferencesAutosaveSnapshot(
         isPlayHapticEnabled = request.isPlayHapticEnabled,
         isBoardMaxSize = request.isBoardMaxSize,
         isPlayMagnifierEnabled = request.isPlayMagnifierEnabled,
+        magnifierSizeScale = request.magnifierSizeScale,
+        magnifierZoom = request.magnifierZoom,
     ).copy(
         hasSeenOnboarding = current.hasSeenOnboarding,
         // ⚠️ 글꼴 배율도 이 오토세이브가 관리하지 않는다(백로그 #81) — 빼면 사용자가 배율을

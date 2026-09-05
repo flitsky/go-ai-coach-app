@@ -2,6 +2,7 @@ package com.worksoc.goaicoach.ui
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import com.worksoc.goaicoach.application.preferences.MagnifierSettings
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -86,12 +87,38 @@ class BoardMagnifierTest {
      * 칸 수를 양보하기로 했다. 그 결정을 여기서 고정한다.
      */
     @Test
-    fun theScaleStaysAtTwoOnEveryBoardSizeEvenWhenFewerCellsFit() {
-        listOf(spacing9, spacing19).forEach { spacing ->
-            val placement = magnifierPlacement(Offset(500f, 700f), canvas, spacing, gap, below = false)
-            assertEquals("배율이 흔들렸다", 2f, placement.scale, 0.001f)
-            assertTrue("배율이 1배 이하로 내려갔다", placement.scale > 1f)
+    fun theRequestedZoomIsHonouredOnEveryBoardSize() {
+        // ⚠️ **#85로 배율이 상수에서 설정값이 됐다.** 지켜야 할 것은 *"2배"* 가 아니라
+        // **"요청한 값이 판 크기에 흔들리지 않는다"** 이고, 그것이 이 테스트의 원래 뜻이었다
+        // (작은 판에서 칸 수를 맞추려다 배율이 무너지는 것을 막는 계약).
+        MagnifierSettings.zoomScales.forEach { zoom ->
+            listOf(spacing9, spacing19).forEach { spacing ->
+                val placement = magnifierPlacement(
+                    Offset(500f, 700f), canvas, spacing, gap, below = false, zoom = zoom,
+                )
+                assertEquals("배율이 판 크기에 따라 흔들렸다", zoom, placement.scale, 0.001f)
+            }
         }
+    }
+
+    /**
+     * ⚠️ **#85의 목적 그 자체** — 기본 설정이 #39 당시보다 **넓게** 보여야 한다.
+     * 실기 피드백이 *"너무 좁은 영역만 보여 준다"* 였고, 창과 배율을 따로 만지면 서로 상쇄될 수
+     * 있어(칸 수 ≈ 창 ÷ 배율) 결과를 직접 잰다.
+     */
+    @Test
+    fun theDefaultShowsMoreCellsThanTheOriginalTuning() {
+        fun cells(sizeScale: Float, zoom: Float): Float {
+            val placement = magnifierPlacement(
+                Offset(500f, 700f), canvas, spacing19, gap, below = false,
+                sizeScale = sizeScale, zoom = zoom,
+            )
+            return placement.radius * 2f / (spacing19 * placement.scale)
+        }
+
+        val before = cells(1.0f, 2.0f)
+        val after = cells(MagnifierSettings.defaultSizeScale, MagnifierSettings.defaultZoom)
+        assertTrue("기본값이 이전보다 넓게 보이지 않는다 (이전 ${before}칸, 지금 ${after}칸)", after > before)
     }
 
     /**
@@ -113,11 +140,22 @@ class BoardMagnifierTest {
 
     /** 말풍선이 판을 다 덮으면 무엇을 확대했는지 알 수 없다 — 지름 상한이 그것을 막는다. */
     @Test
-    fun theBubbleNeverCoversMoreThanAThirdOfTheBoard() {
-        val placement = magnifierPlacement(Offset(500f, 700f), canvas, spacing9, gap, below = false)
-        assertTrue(
-            "지름이 판의 1/3을 넘었다 (${placement.radius * 2})",
-            placement.radius * 2f <= canvas.minDimension * 0.34f,
-        )
+    fun theBubbleStaysWellUnderTheFlippingThreshold() {
+        // ⚠️ **#85가 창을 1.2배로 키우면서 이 상한도 함께 올라갔다** — 상한에 `sizeScale`을
+        // 곱하지 않으면 19줄 판에서 창이 전혀 커지지 않기 때문이다(상한 쪽이 걸린다).
+        //
+        // ⚠️ **그래서 잃는 것이 있다.** 창이 커질수록 손가락 **위에 들어갈 자리가 없어져 아래로
+        // 뒤집히는 영역이 넓어진다.** #39 당시 0.42로 잡았더니 **판 한가운데서도 뒤집혔다.**
+        // 지금 최대는 0.32 × 1.2 = **0.384**로 그 선 아래이지만 여유가 줄었다 —
+        // ⚠️ **창 크기 선택지를 더 키우려면 이 값을 먼저 볼 것.**
+        MagnifierSettings.sizeScales.forEach { sizeScale ->
+            val placement = magnifierPlacement(
+                Offset(500f, 700f), canvas, spacing9, gap, below = false, sizeScale = sizeScale,
+            )
+            assertTrue(
+                "지름이 뒤집힘 문턱(0.42)에 너무 가깝다 (창 ${sizeScale}배, 지름 ${placement.radius * 2})",
+                placement.radius * 2f <= canvas.minDimension * 0.40f,
+            )
+        }
     }
 }

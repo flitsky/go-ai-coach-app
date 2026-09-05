@@ -252,7 +252,14 @@ internal fun GoBoard(
                                 showCoordinates = uxOptions.showCoordinates,
                             )?.spacing ?: return@awaitEachGesture
                             val gapPx = MagnifierFingerGap.toPx()
-                            val below = magnifierPrefersBelow(down.position, canvas, spacing, gapPx)
+                            val below = magnifierPrefersBelow(
+                                down.position,
+                                canvas,
+                                spacing,
+                                gapPx,
+                                sizeScale = uxOptions.magnifierSizeScale,
+                                zoom = uxOptions.magnifierZoom,
+                            )
 
                             magnifierDrag = MagnifierDrag(down.position, below)
                             var last = down.position
@@ -370,6 +377,11 @@ internal fun GoBoard(
                             cellSpacing = geometry.spacing,
                             fingerGapPx = MagnifierFingerGap.toPx(),
                             below = drag.below,
+                            // ⚠️ **두 곳에 같은 값을 줘야 한다** — 위 `magnifierPrefersBelow`도
+                            // 같은 반지름을 계산한다. 한쪽만 주면 말풍선이 뜰 자리를 잘못 재서
+                            // 손가락 위/아래 판정이 어긋난다(#85).
+                            sizeScale = uxOptions.magnifierSizeScale,
+                            zoom = uxOptions.magnifierZoom,
                         ),
                         touch = touch,
                         background = if (isGameEnded) colors.boardBackgroundEnded else colors.boardBackgroundActive,

@@ -1478,7 +1478,11 @@ class LayeringContractTest {
         // 각자 별도 윈도우라 나중에 선언해도 위로 오지 않아, 안내가 출석 팝업 뒤에 가렸다
         // (2026-09-01 실기 확인). 그 실패 기록이 주석 3줄의 값이다. 다이얼로그 자신의 상태는
         // ReleaseResetNoticeDialog.kt가 들고 있어 **상태 훅은 늘지 않는다**.
-        val lineBudget = 880
+        // #85: +2 — 돋보기 창 크기·확대 배율 두 값을 오토세이브 요청에 통과시키는 줄.
+        // ⚠️ **이 셸이 오토세이브 요청을 조립하는 유일한 지점**이라 새로 저장되는 UX 옵션은
+        // 여기를 지날 수밖에 없다(#39가 `isPlayMagnifierEnabled`로 같은 이유로 +1했다).
+        // 상태 훅 증가 없음 — 값은 기존 `uxOptions`에 얹혀 온다.
+        val lineBudget = 882
         val stateHookBudget = 46
 
         val goCoachApp = repoRoot()
