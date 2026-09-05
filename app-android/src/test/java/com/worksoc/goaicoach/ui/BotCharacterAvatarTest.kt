@@ -17,7 +17,22 @@ import org.junit.Test
  */
 class BotCharacterAvatarTest {
 
-    private val drawableDir = File("src/main/res/drawable")
+    /**
+     * ⚠️ **밀도 폴더가 `drawable`이 아니라 `drawable-nodpi`다**(백로그 #86, 2026-09-06).
+     * 손으로 작도한 벡터 5종을 그림 원화(768px)에서 뽑은 **384px 투명 WebP**로 갈아 끼우면서
+     * 옮겼다. `nodpi`인 이유: 이 그림은 `BotCharacterAvatar`가 `Canvas` 크기에 맞춰 **그릴 때**
+     * 스케일하므로, 안드로이드가 **디코드 시점에** 밀도로 또 늘리고 줄일 이유가 없다.
+     */
+    private val drawableDirs = listOf(
+        File("src/main/res/drawable-nodpi"),
+        File("src/main/res/drawable"),
+    )
+
+    /** 확장자를 모르는 채로 찾는다 — 벡터에서 래스터로 갈아탄 뒤 확장자가 자산 종류에 따라 다르다. */
+    private fun avatarFile(ref: String?): File? = drawableDirs
+        .asSequence()
+        .flatMap { dir -> (dir.listFiles() ?: emptyArray()).asSequence() }
+        .firstOrNull { it.name.substringBeforeLast('.') == ref }
 
     @Test
     fun everyCatalogCharacterHasAnAvatarReference() {
@@ -28,7 +43,7 @@ class BotCharacterAvatarTest {
     @Test
     fun everyAvatarReferenceResolvesToADrawableFile() {
         val missing = BotCharacterCatalog.all.filter { character ->
-            !File(drawableDir, "${character.avatarRef}.xml").exists()
+            avatarFile(character.avatarRef) == null
         }
         assertTrue(
             "그림 파일이 없는 캐릭터: ${missing.map { "${it.id.raw} -> ${it.avatarRef}" }}",
@@ -37,23 +52,43 @@ class BotCharacterAvatarTest {
     }
 
     /**
-     * ⚠️ 이 규격이 깨지면 캐러셀(#49)에서 카드마다 크기가 튄다. 다섯 종이 같은 뷰포트를
-     * 쓰는지 그림 자체를 읽어 확인한다 — 주석으로만 적어 둔 약속은 지켜지지 않는다.
+     * ⚠️ 이 규격이 깨지면 캐러셀(#49)에서 카드마다 크기가 튄다. 다섯 종이 같은 규격인지 그림
+     * 자체를 읽어 확인한다 — 주석으로만 적어 둔 약속은 지켜지지 않는다.
+     *
+     * ⚠️ **예전에는 벡터의 `viewportWidth/Height`를 봤다**(96x96). #86에서 래스터로 갈아타면서
+     * 같은 불변식을 **WebP 캔버스 크기**로 옮겼다. 파일 헤더를 직접 읽는 이유는 JVM 단위
+     * 테스트에 안드로이드도 WebP 디코더도 없기 때문이다 — `RIFF....WEBPVP8X` 뒤 24바이트째부터
+     * 24비트 리틀엔디언으로 (너비-1, 높이-1)이 들어 있다(WebP 확장 포맷 규격).
      */
     @Test
-    fun allAvatarsShareTheSameViewport() {
-        val viewports = BotCharacterCatalog.all.map { character ->
-            val xml = File(drawableDir, "${character.avatarRef}.xml").readText()
-            val width = Regex("""viewportWidth="([\d.]+)"""").find(xml)?.groupValues?.get(1)
-            val height = Regex("""viewportHeight="([\d.]+)"""").find(xml)?.groupValues?.get(1)
-            character.id.raw to "${width}x$height"
+    fun allAvatarsShareTheSameCanvasSize() {
+        val sizes = BotCharacterCatalog.all.map { character ->
+            val file = avatarFile(character.avatarRef)
+            assertTrue("그림 파일이 없다: ${character.avatarRef}", file != null)
+            character.id.raw to webpCanvasSize(file!!)
         }
         assertEquals(
-            "뷰포트가 서로 다르다: $viewports",
+            "캔버스 크기가 서로 다르다: $sizes",
             1,
-            viewports.map { it.second }.distinct().size,
+            sizes.map { it.second }.distinct().size,
         )
-        assertEquals("96x96", viewports.first().second)
+        assertEquals("384x384", sizes.first().second)
+    }
+
+    private fun webpCanvasSize(file: File): String {
+        val bytes = file.readBytes()
+        assertEquals("RIFF 컨테이너가 아니다: ${file.name}", "RIFF", String(bytes, 0, 4))
+        assertEquals("WEBP가 아니다: ${file.name}", "WEBP", String(bytes, 8, 4))
+        assertEquals(
+            "알파를 담는 확장 포맷(VP8X)이 아니다: ${file.name} — 배경이 투명해야 어두운 테마에서 " +
+                "흰 원판으로 보이지 않는다(#86).",
+            "VP8X",
+            String(bytes, 12, 4),
+        )
+        fun u24(at: Int) = (bytes[at].toInt() and 0xFF) or
+            ((bytes[at + 1].toInt() and 0xFF) shl 8) or
+            ((bytes[at + 2].toInt() and 0xFF) shl 16)
+        return "${u24(24) + 1}x${u24(27) + 1}"
     }
 
     /**
