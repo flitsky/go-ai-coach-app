@@ -151,37 +151,6 @@ internal fun DeveloperTestSection(
             },
         )
 
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // **글꼴 배율을 앱 안에서 갈아 본다**(백로그 #81).
-        // ⚠️ 처음에는 **읽기 전용 표시**였다. 표시는 정확했지만(시스템에서 바꾸면 갱신된다)
-        // 원래 문제를 풀지 못했다 — #64를 재현하려면 매번 **시스템 설정을 왕복**해야 하는
-        // 것이 그 문제였고, 표시는 그 왕복을 줄여 주지 않는다. 게다가 주변 행이 전부
-        // 조작 가능해서 **이 행도 조작하는 것으로 읽힌다**(2026-09-04 사용자 제보).
-        // ⚠️ 시스템 설정을 바꾸는 것이 아니라 이 앱의 `LocalDensity`만 덮어쓴다 —
-        // 적용은 `MainActivity`가 컴포지션 전체를 감싸서 한다.
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = strings.settingsDevFontScaleTitle,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold,
-                )
-                Text(
-                    text = strings.settingsDevFontScaleSubtitle(AppFontScaleState.scale),
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.secondary,
-                )
-            }
-            TextButton(onClick = { AppFontScaleState.cycle(preferencesStore) }) {
-                Text(strings.settingsDevFontScaleCycleAction)
-            }
-        }
-
         Spacer(modifier = Modifier.height(16.dp))
 
         // 1회권 한 장 지급 — 출석 1일차가 30장을 주므로 한 장은 경제에 영향이 없다.

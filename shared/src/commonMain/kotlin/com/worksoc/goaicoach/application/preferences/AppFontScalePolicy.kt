@@ -26,18 +26,11 @@ package com.worksoc.goaicoach.application.preferences
  */
 const val DefaultAppFontScale: Float = 1.0f
 
-/** 순환 순서. 마지막 값 다음은 처음으로 돌아온다. */
-val AppFontScales: List<Float> = listOf(1.0f, 1.3f)
-
 /**
- * [current] 다음 배율. 목록에 없는 값(저장이 깨졌거나 예전 값이 남은 경우)은 **처음 값**으로
- * 되돌린다 — 모르는 값을 그대로 두면 순환 버튼이 아무 일도 안 하는 것처럼 보인다.
+ * 사용자가 고를 수 있는 배율. ⚠️ **선택지 라벨과 짝을 이룬다**(`UiStrings.settingsFontScale*`) —
+ * 값을 늘리면 라벨도 늘려야 하고, `FontScaleSettingChoiceTest`가 그 어긋남을 잡는다.
  */
-fun nextAppFontScale(current: Float): Float {
-    val index = AppFontScales.indexOfFirst { scale -> scale == current }
-    if (index < 0) return AppFontScales.first()
-    return AppFontScales[(index + 1) % AppFontScales.size]
-}
+val AppFontScales: List<Float> = listOf(1.0f, 1.3f)
 
 /**
  * 저장에서 읽은 값을 신뢰할 수 있는 배율로 좁힌다.

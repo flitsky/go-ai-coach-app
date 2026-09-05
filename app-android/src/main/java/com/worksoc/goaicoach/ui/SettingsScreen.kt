@@ -236,6 +236,10 @@ internal fun SettingsScreen(
                 onLanguageChange = onLanguageChange,
             )
 
+            // 글꼴 크기(#106) — 언어와 같은 "표시" 성격이라 바로 아래에 둔다.
+            // ⚠️ 저장소는 이 패널이 스스로 갖는다 — 이 화면은 훅 13/13으로 여유가 0이다(#102).
+            FontScaleSettingsPanel()
+
             Text(
                 text = strings.matchSetup,
                 fontSize = 14.sp,

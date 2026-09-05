@@ -5,12 +5,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.worksoc.goaicoach.application.preferences.DefaultAppFontScale
 import com.worksoc.goaicoach.application.preferences.UserPreferencesStorePort
-import com.worksoc.goaicoach.application.preferences.nextAppFontScale
+import com.worksoc.goaicoach.application.preferences.sanitizeAppFontScale
 
 /**
  * 앱 글꼴 배율의 화면 쪽 보유자(백로그 #81).
  *
  * ## ⚠️ 세션 한정이 아니라 **저장되는 설정**이다
+ * (2026-09-05 #106에서 **정식 설정 메뉴로 승격**됐다 — `FontScaleSettingsPanel`.)
  * 처음에는 개발자 도구용 세션 한정 오버라이드였다. 2026-09-04에 사용자가 *"나중에 이게 실제
  * 기능으로 반영될 여지가 있으니 설정한 값이 유지되게"* 로 바꿨다 — 그래서 값은
  * `UserPreferencesStore`에 남고, 기본값은 [DefaultAppFontScale](**1.0**)이다.
@@ -37,14 +38,17 @@ internal object AppFontScaleState {
     }
 
     /**
-     * 다음 배율로 넘기고 **저장한다**.
+     * 고른 배율을 적용하고 **저장한다**(백로그 #106에서 순환 버튼을 대체했다).
+     *
+     * ⚠️ **들어온 값을 그대로 믿지 않는다** — `sanitizeAppFontScale`로 좁힌다. 0이나 음수가
+     * 흘러들면 글자 높이가 0이 되어 **화면이 통째로 사라진다**(그 함수의 KDoc 참고).
      *
      * ⚠️ 저장은 read-modify-write다 — 메모리에 든 스냅샷을 덮어쓰면 그 사이 오토세이브가 쓴
      * 대국 설정이 조용히 사라진다(이 저장소가 실제로 그 사고를 낸 자리다, 함정 2번).
      */
-    fun cycle(store: UserPreferencesStorePort) {
-        val next = nextAppFontScale(scale)
-        scale = next
-        store.save(store.load().copy(appFontScale = next))
+    fun select(store: UserPreferencesStorePort, next: Float) {
+        val safe = sanitizeAppFontScale(next)
+        scale = safe
+        store.save(store.load().copy(appFontScale = safe))
     }
 }

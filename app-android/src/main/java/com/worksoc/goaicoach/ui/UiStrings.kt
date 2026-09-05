@@ -89,6 +89,14 @@ internal data class UiStrings(
     val appTitle: String,
     val homeTagline: String,
     val languageLabel: String,
+    /**
+     * 글꼴 크기 설정(백로그 #106) — 개발자 도구에서 **정식 설정으로 승격**된 값이다.
+     * ⚠️ 선택지 라벨이 **[AppFontScales]의 값 수와 짝을 이룬다.** 배율을 늘리려면 라벨도 늘릴 것
+     * (`FontScaleSettingChoiceTest`가 그 어긋남을 잡는다).
+     */
+    val settingsFontScaleTitle: String,
+    val settingsFontScaleNormal: String,
+    val settingsFontScaleLarge: String,
     val close: String,
     val gameSection: String,
     val newGame: String,
@@ -322,8 +330,6 @@ internal data class UiStrings(
     val settingsDeveloperModeOffDoneMessage: String,
     val settingsDevTierAdvancedTitle: String,
     val settingsDevBuildInfoTitle: String,
-    val settingsDevFontScaleTitle: String,
-    val settingsDevFontScaleCycleAction: String,
     val settingsDevGrantTicketTitle: String,
     val settingsDevGrantTicketSubtitle: String,
     val settingsDevGrantAction: String,
@@ -489,14 +495,6 @@ internal data class UiStrings(
         }
         else -> "${(zoom * 100).toInt()}%"
     }
-
-    fun settingsDevFontScaleSubtitle(current: Float): String =
-        when (language) {
-            UiLanguage.Korean -> "×$current · 앱에 저장됨"
-            UiLanguage.English -> "×$current · saved in app"
-            UiLanguage.Japanese -> "×$current · アプリに保存"
-            UiLanguage.ChineseSimplified -> "×$current · 已保存在应用"
-        }
 
     fun settingsDevAttendanceSubtitle(current: Int, next: Int, nextIsRewarded: Boolean): String =
         when (language) {
