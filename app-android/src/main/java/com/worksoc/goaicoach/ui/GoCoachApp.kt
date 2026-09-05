@@ -116,7 +116,7 @@ import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizat
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkUiState
 import com.worksoc.goaicoach.application.savedgame.SavedSessionUiState
 import kotlinx.coroutines.CoroutineScope
-import com.worksoc.goaicoach.shared.EngineMode
+import com.worksoc.goaicoach.engine.EngineIdentity
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.PlayLevelSetting
@@ -129,11 +129,14 @@ import java.io.File
 @Composable
 internal fun GoCoachApp(
     engineClient: EngineSessionClient,
-    engineName: String,
-    engineDiagnostic: String,
+    /**
+     * ⚠️ **값이 아니라 공급자다**(백로그 #101 ③단계). 엔진 준비가 화면을 막지 않게 되면서,
+     * 이 셋(`mode`·`name`·`diagnostic`)은 **컴포지션이 시작된 뒤에** 도착한다.
+     * 값으로 받으면 도착한 답이 [androidx.compose.runtime.LaunchedEffect] 안까지 들어가지
+     * 못한다 — 그 블록은 **띄울 때의 값을 붙잡기** 때문이다.
+     */
+    engineIdentity: () -> EngineIdentity,
     diagnosticEventLog: DiagnosticEventLogPort,
-    /** 실제로 부팅된 백엔드. 리포트의 `engineProfile`이 진실을 말하려면 필요하다(EngineModels.kt 참고). */
-    engineMode: EngineMode,
 ) {
     MaterialTheme(
         colorScheme = AppLightColorScheme,
@@ -143,7 +146,7 @@ internal fun GoCoachApp(
                 // 첫 실행 랜딩(#51)은 아래 화면보다 **바깥**이라야 한다 — 안쪽 목적지로 넣으면
                 // 랜딩이 저장한 값을 자동저장이 곧바로 덮어쓴다(LandingScreen.kt의 주석 참고).
                 LandingGate(selectedLanguage, onLanguageChange) {
-                    GoCoachScreen(engineClient, engineName, engineDiagnostic, diagnosticEventLog, selectedLanguage, onLanguageChange, engineMode)
+                    GoCoachScreen(engineClient, engineIdentity, diagnosticEventLog, selectedLanguage, onLanguageChange)
                 }
             }
         }
@@ -153,13 +156,17 @@ internal fun GoCoachApp(
 @Composable
 private fun GoCoachScreen(
     engineClient: EngineSessionClient,
-    engineName: String,
-    engineDiagnostic: String,
+    engineIdentity: () -> EngineIdentity,
     diagnosticEventLog: DiagnosticEventLogPort,
     selectedLanguage: UiLanguage,
     onLanguageChange: (UiLanguage) -> Unit,
-    engineMode: EngineMode,
 ) {
+    // 여기서 한 번 물어 아래 읽는 곳들에 그대로 흘린다. ⚠️ **`remember`로 감싸지 않는다** —
+    // 감싸는 순간 준비 전 답이 그 자리에서 굳는다. 공급자가 컴포즈 상태를 읽으므로, 재구성이
+    // 곧 갱신이다(상태 훅도 늘지 않는다 — 예산 42/42, 함정 3번).
+    val identity = engineIdentity()
+    val engineName = identity.name
+    val engineDiagnostic = identity.diagnostic
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val preferencesStore: UserPreferencesStorePort = remember(context) { UserPreferencesStore(context) }
@@ -197,7 +204,7 @@ private fun GoCoachScreen(
         buildInitialUserPreferencesPlan(
             preferences = initialPreferences,
             defaultPlayLevel = defaultPlayLevel,
-            currentProfile = EngineProfile(mode = engineMode, name = engineName),
+            currentProfile = EngineProfile(mode = identity.mode, name = identity.name),
         )
     }
     val sessionHolder = remember {
@@ -377,12 +384,21 @@ private fun GoCoachScreen(
                 state = gameState,
                 profile = runtimeState.engineProfile,
                 sessionGeneration = runtimeState.sessionGeneration,
-                engineDiagnostic = engineDiagnostic,
+                // ⚠️ 붙잡은 값이 아니라 **그때 가서 묻는다** — 이 블록은 엔진이 준비되기 전에
+                // 떠서 `await()` 안에서 기다린다(백로그 #101).
+                engineDiagnostic = { engineIdentity().diagnostic },
                 diagnosticEventLog = diagnosticEventLog,
                 lifecycleCallbacks = lifecycleController.callbacks(),
             ),
         )
         isEngineReady = startup.isEngineReady
+        // ⚠️ **이제야 엔진의 정체를 안다.** 씨앗에 박힌 `Unresolved`를 여기서 덮지 않으면 진단
+        // 리포트의 `engineProfile`이 **영원히** `AI/Unknown`이라고 말한다 — `initialPlan`을 받은
+        // `sessionHolder`는 `remember`에 키가 없어 두 번 다시 만들어지지 않기 때문이다.
+        val resolved = engineIdentity()
+        runtimeState = runtimeState.copy(
+            engineProfile = runtimeState.engineProfile.copy(mode = resolved.mode, name = resolved.name),
+        )
         displayStateApplier.applyEngineStartupDisplayPlan(startup)
         hasCompletedEngineStartup = true
     }

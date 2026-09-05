@@ -24,7 +24,12 @@ data class EngineStartupRunRequest(
     val state: GameState,
     val profile: EngineProfile,
     val sessionGeneration: Long,
-    val engineDiagnostic: String,
+    /**
+     * ⚠️ **값이 아니라 공급자다**(백로그 #101 ③단계). 이 요청은 엔진이 아직 준비되지 않은
+     * 채로 만들어져 `await()` 안에서 기다릴 수 있는데, 이 문구는 **실패했을 때** 비로소 쓰인다.
+     * 값으로 붙잡아 두면 하필 그것이 필요한 순간(스텁 폴백)에 *"준비 중"* 만 남는다.
+     */
+    val engineDiagnostic: () -> String,
     val diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
     val lifecycleCallbacks: EngineOperationLifecycleCallbacks = EngineOperationLifecycleCallbacks(),
 )
@@ -57,7 +62,7 @@ suspend fun EngineSessionClient.runEngineStartupApplication(
         buildEngineStartupDisplayPlan(
             state = request.state,
             result = result,
-            engineDiagnostic = request.engineDiagnostic,
+            engineDiagnostic = request.engineDiagnostic(),
         )
     }
 }

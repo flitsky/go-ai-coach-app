@@ -429,23 +429,39 @@
         **`by lazy`는 생성자에서 부르지 않으므로 "생성 중 호출 금지" 가드만으로는 못 잡는다** —
         *"값이 바뀐다"* 를 직접 재는 가드가 따로 있어야 하는 이유다.
       · ✅ iOS 타깃(`-PenableIosTargets=true`) 컴파일 확인. 전체 **1054건 통과**.
-    - **⚠️ ③단계로 넘기는 함정 — 공급자로 바꿔야 할 것이 `capabilities` 하나가 아니다.**
-      · `GoCoachApp`은 `engineMode`·`engineName`·`engineDiagnostic`을 **평범한 값**으로 받는데,
-        셋 다 `capabilities`와 **똑같이 부트스트랩이 끝나야 아는 사실**이다. 지금은 준비 화면이
-        게이트 역할을 해서 *"들어올 때 이미 참"* 이 보장되지만, ③단계가 그 게이트를 **없앤다.**
-      · ⚠️ **그리고 그 값은 다시 물어볼 수 없는 자리로 들어간다** —
-        `GoCoachApp.kt:196` `remember(initialPreferences, defaultPlayLevel) { … EngineProfile(
-        mode = engineMode, name = engineName) }`. **키에 `engineMode`·`engineName`이 없다.**
-        예측값으로 한 번 들어가면 진짜 값이 도착해도 **다시 계산되지 않는다** — 진단 리포트의
-        `engineProfile`이 영원히 *"stub AI"* 를 말하게 된다.
-      · **처방 후보**: 키에 넣거나(재계산), 셋도 공급자로 바꾸거나, ③단계에서 **예측하지 말고**
-        준비 전에는 정직하게 `EngineMode.Unknown`을 넘긴다(그 기본값이 존재하는 이유가 이것이다 —
-        `EngineModels.kt:111`). ⚠️ **어느 쪽이든 결정하고 가드를 세운 뒤에 게이트를 없앨 것.**
+    - **✅ ③단계 완료 — 준비 화면을 없앴다. 메인이 곧 랜딩이다.**
+      (사용자 결정 2026-09-05: **예측하지 않고 `EngineMode.Unknown`**)
+      · ⚠️ **공급자로 바꿔야 할 것이 `capabilities` 하나가 아니었다.** `engineMode`·`engineName`·
+        `engineDiagnostic` 셋 다 **같은 순간에 같은 곳에서** 온다. 셋을 `EngineIdentity` 하나로
+        묶어 `() -> EngineIdentity`로 받는다. 준비 전 답은 `EngineIdentity.Unresolved`다.
+      · ⚠️ **가장 조용한 함정 — 도착한 답이 들어갈 자리가 없었다.** `initialPlan`이 만든
+        `EngineProfile(mode, name)`은 `sessionHolder`에 심기는데, 그 `remember`에는 **키가 없다.**
+        재구성으로는 절대 갱신되지 않는다 — `initialPlan`의 키에 넣어봐야 **소용없다**
+        (`sessionHolder`가 다시 만들어지지 않는다). 그래서 **엔진 기동이 끝난 뒤 프로필에 직접
+        찍는다.** 안 찍으면 진단 리포트가 **영원히** `AI/Unknown`이라고 말한다.
+      · ⚠️ **`LaunchedEffect`는 띄울 때의 값을 붙잡는다** — 그래서 실패 문구용 진단도
+        `EngineStartupRunRequest.engineDiagnostic`을 **공급자로** 바꿨다. 값이면 하필 그것이
+        필요한 순간(스텁 폴백)에 *"준비 중"* 만 남는다.
+      · ⚠️ **`engineClient`의 `remember` 키에 부트스트랩을 넣지 말 것** — 도착하는 순간
+        클라이언트가 새로 만들어지고 `LaunchedEffect(engineClient)`가 **엔진 기동을 다시** 돌린다.
+        부트스트랩은 키가 아니라 **람다 안에서 읽는다.**
+      · ✅ **원격 엔진 분기의 역방향 쓰기도 함께 고쳤다** — `usingRemoteEngine`을 `remember` 블록
+        **안에서** 쓰고 있었다(컴포지션 도중의 상태 쓰기). 후보 선택을 밖으로 꺼내 평범한 값으로.
+      · ✅ **워치독 위험 해소** — 백로그가 *"가장 큰 미확인 위험"* 으로 남겨둔 항목이다. 그것은
+        **AI 턴** 워치독이고, 준비 전에는 AI 턴이 시작될 수 없다(로비 시작 버튼 = 0단계 게이트,
+        이어하기 프롬프트 = `hasCompletedEngineStartup` 게이트). 복사 구간에 워치독이 볼 턴이 없다.
+      · 가드 **9건**(소스 계약 6 + 단위 3) + **변이 7건 확인**: 도장 제거 / 도장을 기동 **앞**으로 /
+        부트스트랩을 키로 / 정체를 `remember`로 / 진단을 값으로 / 준비 화면 복원 / 해제-알림 순서 뒤집기.
+      · 예산: `GoCoachApp.kt` **691/777**줄, 상태 훅 **42/42**(늘지 않았다).
     - **✅ 곁가지로 닫은 것 — `androidTest` 트리가 6일째 컴파일되지 않고 있었다**(함정 19).
       이 변경이 쓸어야 할 세 소스셋 중 하나였는데 **아무 명령도 그 트리를 건드리지 않았다.**
       호출부 둘을 고치고 `make test`에 컴파일 태스크를 넣었다.
-    - **다음 단계**: ③ `MainActivity` 재배선(진단 로그·캐시 저장소를 게이트 **밖**으로,
-      준비 화면 제거) → ④ 문구.
+    - **다음 단계**: ④ 준비 중 안내(비차단).
+      ⚠️ **지금은 아무 안내가 없다.** 준비 전에 대국을 시작하려 하면 로비가 사유를 말해주지만
+      (0단계), 그 전에 *"뭔가 준비 중"* 이라는 신호는 없다.
+      · `res/values*/strings.xml`의 `preparing_engine`·`engine_copy_notice`가 그 문구로 남아
+        있다(준비 화면이 쓰던 것, 4개 언어). ⚠️ **다만 토스트는 `ProvideUiLanguage` 안이라
+        `UiStrings` 쪽이 맞다** — 그렇게 하면 저 XML 문자열 둘은 죽는다(그때 함께 지울 것).
 
 ---
 
