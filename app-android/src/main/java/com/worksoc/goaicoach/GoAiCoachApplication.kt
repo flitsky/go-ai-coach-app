@@ -25,7 +25,7 @@ class GoAiCoachApplication : Application() {
         // 것 안에 **릴리즈 초기화 마커도 들어 있어서**, 순서가 뒤집히면 릴리즈 초기화가 방금 지워진
         // 마커를 보고 한 번 더 돌며 **안내까지 띄운다**(그때는 지울 것이 없으니 조용하긴 하다).
         // ⚠️ **debug에서는 돌지 않는다** — 개발자 본인의 실기 테스트가 3시간마다 날아가면 안 된다
-        // (2026-09-05 사용자 결정). `BuildConfig.DEBUG`는 debug·friend에서 참이다.
+        // (2026-09-05 사용자 결정). `BuildConfig.DEBUG`는 **debug에서만** 참이다(friend 빌드타입이 없어진 2026-09-06부터).
         if (!BuildConfig.DEBUG) {
             DeveloperModeResetCoordinator(this).applyIfNeeded(System.currentTimeMillis())
         }

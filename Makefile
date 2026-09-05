@@ -32,8 +32,12 @@ APP_NAMESPACE := $(shell grep -m1 'namespace = ' app-android/build.gradle.kts | 
 
 ENGINE_ABI ?= arm64-v8a
 DEBUG_ENGINE_BINARY := app-android/src/debug/jniLibs/$(ENGINE_ABI)/libkatago.so
+# ⚠️ **이름이 `FRIEND_`인 것은 역사다 — 지금 이것은 "번들에 싣는 엔진 에셋"이다.**
+# friend 빌드타입은 2026-09-06에 없어졌지만(마켓 오픈으로 지인 배포 채널의 역할이 끝났다) 이
+# 경로는 **release·playInternal AAB의 엔진 공급원**이라 그대로 남는다.
+# ⚠️ **개명하지 말 것** — `BundledEngineAssetContractTest`가 이 **변수 이름 자체를** 정규식으로
+# 읽어 "APK 안에 들어갈 이름"을 만든다. 바꾸면 그 계약이 깨진다.
 FRIEND_ASSET_DIR := app-android/src/friend/assets/katago
-FRIEND_APK := dist/go-ai-coach-katago-friend.apk
 PLAY_INTERNAL_AAB := dist/go-ai-coach-play-internal.aab
 RELEASE_AAB := dist/go-ai-coach-release.aab
 FRIEND_MODEL_PATH ?= /opt/homebrew/Cellar/katago/1.16.4/share/katago/kata1-b18c384nbt-s9996604416-d4316597426.bin.gz
@@ -62,7 +66,7 @@ export JAVA_HOME
 
 .DEFAULT_GOAL := help
 
-.PHONY: help doctor test dev dev-stub install-dev install-dev-engine reinstall-dev-engine seed-engine launch friend-apk play-internal-aab bundle-aab verify-admob-keys bump-version prepare-friend-assets engine-level-benchmark engine-device-benchmark engine-search-mode-benchmark engine-search-mode-benchmark-phone release ensure-debug-engine prebuild-engine clean
+.PHONY: help doctor test dev dev-stub install-dev install-dev-engine reinstall-dev-engine seed-engine launch play-internal-aab bundle-aab verify-admob-keys bump-version prepare-friend-assets engine-level-benchmark engine-device-benchmark engine-search-mode-benchmark engine-search-mode-benchmark-phone release ensure-debug-engine prebuild-engine clean
 
 help:
 	@echo "=========================================================================="
@@ -85,8 +89,7 @@ help:
 	@echo "  make test                - Run unit tests for shared, engine, and app modules"
 	@echo ""
 	@echo " [Build & Engine Prebuild]"
-	@echo "  make friend-apk          - Build Friend APK with bundled KataGo assets"
-	@echo "  make play-internal-aab   - Build release-signed AAB (friend/debug assets) for Play Console internal testing"
+	@echo "  make play-internal-aab   - Build release-signed AAB (debug engine + bundled assets) for Play Console internal testing"
 	@echo "  make bundle-aab          - Build release-signed AAB (real release engine + assets) for production Play Console upload"
 	@echo "  make verify-admob-keys   - Check local.properties has real AdMob keys (release/bundle-aab run this first)"
 	@echo "  make prebuild-engine     - Compile native KataGo engine binary (libkatago.so)"
@@ -156,13 +159,6 @@ seed-engine: doctor
 launch: doctor
 	$(ANDROID_HOME)/platform-tools/adb shell am force-stop $(APP_PACKAGE)
 	$(ANDROID_HOME)/platform-tools/adb shell am start -W -n $(APP_PACKAGE)/$(APP_NAMESPACE).MainActivity
-
-friend-apk: doctor ensure-debug-engine prepare-friend-assets
-	$(GRADLEW) :app-android:assembleFriend
-	@mkdir -p dist
-	@cp app-android/build/outputs/apk/friend/app-android-friend.apk "$(FRIEND_APK)"
-	@ls -lh "$(FRIEND_APK)"
-	@shasum -a 256 "$(FRIEND_APK)"
 
 # version.properties의 VERSION_CODE를 1 증가시킨다(Play Console은 한 번 올린 versionCode를
 # 절대 재사용할 수 없다 — "이미 사용된 버전 코드" 오류를 구조적으로 방지). VERSION_NAME은

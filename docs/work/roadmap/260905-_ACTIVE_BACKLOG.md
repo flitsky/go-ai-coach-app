@@ -449,9 +449,11 @@
       양식 미비는 업데이트 차단·앱 삭제**다. 급한 쪽은 A-4이고 A-10이 아니다.
     - ⚠️ **`USE_TEST_ADS`를 디버그 지오그래피에 재사용하지 말 것 — 축이 다르다.** 동의 필요
       여부는 빌드타입이 아니라 **기기 IP**가 정한다. `BuildConfig.DEBUG`도 안 된다(friend에서
-      참이다). 상속 사슬이 **debug → friend → playInternal**이므로 `FORCE_EEA_CONSENT_DEBUG`는
-      debug에서만 켜고 **friend·playInternal에서 명시적으로 끊었다**(실측 확인: 켠 상태에서
-      debug만 true, 나머지 셋 false).
+      참이었다). 상속 사슬이 **debug → friend → playInternal**이라 `FORCE_EEA_CONSENT_DEBUG`는
+      debug에서만 켜고 나머지에서 명시적으로 끊었다(실측 확인: 켠 상태에서 debug만 true).
+      ⚠️ **#114에서 friend가 없어져 사슬이 debug → playInternal 2단이 됐다** — 끊는 자리는
+      그대로 필요하고, `BuildConfig.DEBUG`와 범위가 같아졌다고 **합치지 말 것**(그 이유는
+      `AdsConsentManager`의 KDoc에 적어 뒀다).
     - ⚠️ **한 번 동의하면 폼을 다시 못 본다.** UMP는 자기 prefs(`IABTCF_*`)에 저장하고 개발자
       모드의 3시간 초기화는 `go_ai_coach_` 접두사만 지운다 — 그래서 debug 2차에 `reset()`
       버튼을 뒀다. 그것 없이 실기 테스트를 시작하면 갇힌다.
@@ -480,6 +482,20 @@
       `clickable="true"` 노드의 `bounds` 중심을 쓴다. 텍스트 노드가 아니라 **클릭 가능한 부모**의
       경계다.
 
+31. **⚠️ 빌드타입 이름과 같은 이름의 디렉터리를 함께 지우지 말 것**
+    - `friend`는 빌드타입 이름이면서 **release가 의존하는 디렉터리 이름**이었다.
+      `sourceSets`에서 playInternal·release가 `assets.srcDirs("src/friend/assets")`를 가리킨다 —
+      거기 **98MB KataGo 모델**이 있고 그게 스토어 AAB의 엔진이다.
+    - ⚠️ **지우면 조용히 스텁으로 떨어진다** — `seedAssetIfMissing`이 `IOException`을 삼킨다(함정 20).
+      게다가 그 디렉터리는 `.gitignore` 대상이라 **git에 없다**: 되돌릴 곳이 저장소에 없고
+      `make prepare-friend-assets`로 홈브루에서 다시 복사해 와야 한다.
+    - ✅ **개명도 하지 않기로 했다**(2026-09-06). 이름이 내용을 배신하는 것은 맞지만 값이 안 맞는다 —
+      `Makefile`의 **`FRIEND_ASSET_DIR` 식별자 자체를 `BundledEngineAssetContractTest`가 정규식으로
+      읽고**, 파이썬 스크립트 6곳이 그 경로를 기본값으로 박고 있으며, gitignore라 git이 이동을
+      도와주지 않는다. **주석으로 대신했다**(`build.gradle.kts` sourceSets, `Makefile` 변수 위).
+    - ⚠️ **`BuildConfig.DEBUG`와 `FORCE_EEA_CONSENT_DEBUG`를 합치지 말 것.** friend가 없어져 두
+      범위가 **우연히 같아졌지만**, 후자는 `local.properties` 옵트인을 함께 태운다.
+
 ---
 
 ## 완료사항
@@ -490,6 +506,7 @@
 
 | # | 무엇을 했는가 | 커밋 |
 | --- | --- | --- |
+| 114 | **`friend` 빌드타입 제거**(마켓 오픈으로 지인 배포 채널 역할 종료, 사용자 결정). ⚠️ **`src/friend/assets`는 남는다 — 그게 스토어 AAB의 엔진이다.** 빌드타입을 지우는 것과 디렉터리를 지우는 것은 다른 일이다. `playInternal`의 상속을 debug로 옮겼고 **값 손실 0**(BuildConfig 전후 diff 동일) | `TBD` |
 | 113 | 앱 이름을 **`바둑 AI`로 통일**(사용자 결정) — 문서 넷(제목 셋 + 본문 하나, 그중 하나는 항목이 몰랐던 `SCORE_AND_ENDGAME_DECISION.md`)에 이어 **코드 셋도**(리포트 제목·클립보드 라벨·런타임 로그 `app=`). #112의 *"영문 산출물이니 영어 이름"* 근거를 뒤집은 결정이라 그 주석도 다시 썼다. ⚠️ 스크린샷이 낡았다는 §0 B-2 서술은 **이미지 안의 글자를 말하는 것**이라 그대로 뒀다 | `c762590` |
 | 89 | **배포 국가를 좁히지 않고 동의 배너(UMP)를 붙였다**(사용자 결정). 새 의존성 **0** — UMP 4.0.0이 `play-services-ads`를 타고 이미 클래스패스에 있다. 광고 요청이 `showRewardedAdOnce` **단일 깔때기**를 지나 게이트는 한 곳이면 족했다. 폼은 기동 즉시가 아니라 **광고 직전**에 띄운다(#101 "홈이 곧 랜딩" 유지). ⚠️ **콘솔 게시(§0 A-10) 없이는 `canRequestAds()`가 true라 "붙었다"와 "동작한다"가 구분되지 않는다** **실기 확인 완료** — 디버그 EEA에서 폼이 뜨고 거부가 기록된다(함정 29) | `3f2bee0` |
 | 86 | 캐릭터 5종을 **사용자 제공 원화**로 교체(`docs/work/artwork/`). 손으로 작도한 벡터 → 384px 투명 WebP. ⚠️ *"파일만 갈아 끼우면 끝"* 이 아니었다 — 원화가 **불투명 배경**이라 그대로 쓰면 어두운 테마에서 흰 원판이 된다. 배경 추출 파이프라인을 `scripts/make-bot-avatars.py`로 남겼고, 계약 테스트를 뷰포트 → **WebP 캔버스+알파** 검사로 옮겼다 | `3747f35` |

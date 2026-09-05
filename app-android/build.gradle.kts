@@ -112,9 +112,11 @@ android {
 
         // ⚠️ **동의 폼(UMP) 디버그 지오그래피 강제 — debug에서만 켠다**(백로그 #89).
         // `USE_TEST_ADS`를 재사용하지 않는 이유: 동의 필요 여부는 빌드타입이 아니라 **기기 IP**가
-        // 정하는 별개의 축이고, `friend`·`playInternal`은 `USE_TEST_ADS=true`이면서도 **실제
-        // 테스터에게 배포되는** 빌드라 거기에 EEA를 강제하면 한국 테스터에게 폼이 뜬다.
-        // `BuildConfig.DEBUG`도 안 된다 — friend에서도 참이다(`GoAiCoachApplication` 주석).
+        // 정하는 별개의 축이고, `playInternal`은 `USE_TEST_ADS=true`이면서도 **실제 테스터에게
+        // 배포되는** 빌드라 거기에 EEA를 강제하면 한국 테스터에게 폼이 뜬다.
+        // ⚠️ **`BuildConfig.DEBUG`로 접지 말 것** — friend가 없어져(#114) 범위가 우연히 같아졌지만,
+        // 이 플래그는 `local.properties`의 `consent.forceEeaDebug` **옵트인**을 함께 태운다
+        // (사유 전문은 `AdsConsentManager`의 KDoc).
         buildConfigField("boolean", "FORCE_EEA_CONSENT_DEBUG", "false")
         buildConfigField("String", "CONSENT_TEST_DEVICE_HASHED_ID", "\"\"")
 
@@ -152,8 +154,8 @@ android {
     buildTypes {
         getByName("debug") {
             // ⚠️ **동의 폼 디버그 지오그래피는 여기서만 켜진다**(백로그 #89).
-            // 상속 사슬이 debug → friend → playInternal이라 **둘 다에서 다시 false로 못박는다** —
-            // friend는 `USE_TEST_ADS=true`이면서도 **실제 테스터에게 배포되는** 빌드다.
+            // 상속 사슬이 debug → playInternal이라 **거기서 다시 false로 못박는다** —
+            // playInternal은 `USE_TEST_ADS=true`이면서도 **실제 테스터에게 배포되는** 빌드다.
             buildConfigField("boolean", "FORCE_EEA_CONSENT_DEBUG", forceEeaConsentDebug.toString())
             buildConfigField("String", "CONSENT_TEST_DEVICE_HASHED_ID", "\"$consentTestDeviceHashedId\"")
             // ui/AdUnitIds.kt가 이 플래그로 테스트/실제 ID를 고른다 — 디버그 빌드는 local.properties
@@ -173,8 +175,8 @@ android {
             signingConfig = signingConfigs.getByName("release")
             // Play Console App Bundle Explorer가 "앱 최적화/최적화 비율/난독화 비율/축소 비율/R8
             // 구성" 5개 항목을 전부 경고로 표시했던 원인 — release 빌드에서 R8이 아예 실행되지
-            // 않고 있었다(minify/shrink 둘 다 AGP 기본값 false). friend/playInternal은 debug에서
-            // initWith하므로 이 설정과 무관하게 그대로 유지된다(지인 배포·내부 테스트 채널 영향 없음).
+            // 않고 있었다(minify/shrink 둘 다 AGP 기본값 false). ⚠️ `playInternal`은 debug에서
+            // initWith하므로 이 설정이 전해지지 않는다 — 그쪽은 자기 블록에서 따로 켠다.
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -225,37 +227,24 @@ android {
             // 개발자 맥북 IP가 출시 빌드에 섞여 나갈 방법이 없도록 항상 비활성 고정.
             buildConfigField("String", "REMOTE_ENGINE_URL", "\"\"")
         }
-        create("friend") {
+        create("playInternal") {
+            // Play Console 내부 테스트 트랙 전용(PREMIUM_MODE.md Step 4 후속) — debug와 같은
+            // KataGo 엔진/에셋(release 전용 엔진 준비 불필요)을 쓰되, release keystore로 서명해
+            // 업로드할 수 있게 한다.
+            //
+            // ⚠️ **예전에는 `initWith(getByName("friend"))` 였다**(2026-09-06 제거). 지인 배포
+            // 채널(friend)이 마켓 오픈으로 역할을 다해 빌드타입을 걷어냈다. **값은 하나도 잃지
+            // 않는다** — friend가 debug 위에 얹던 아홉 값을 이 블록이 이미 전부 다시 선언하고
+            // 있었기 때문이다(아래 참고). 그것은 우연이 아니라, 이 파일이 *"initWith 복사를
+            // 믿지 않는다"* 는 방침을 택한 결과다.
             initWith(getByName("debug"))
             matchingFallbacks += listOf("debug")
-            signingConfig = signingConfigs.getByName("debug")
-            // initWith가 buildConfigField/manifestPlaceholders를 항상 복사한다는 보장이 약해(AGP
-            // 버전에 따라 달라질 수 있음) 명시적으로 다시 선언한다 — "friend"는 정식 출시 전 지인
-            // 배포용 채널이라 이 안전장치가 가장 중요하게 적용돼야 하는 빌드이기도 하다.
-            manifestPlaceholders["admobAppId"] = testAdmobAppId
-            buildConfigField("boolean", "USE_TEST_ADS", "true")
-            // ⚠️ debug에서 켠 동의 디버그 지오그래피가 상속으로 새지 않게 끊는다(#89).
-            buildConfigField("boolean", "FORCE_EEA_CONSENT_DEBUG", "false")
-            buildConfigField("String", "CONSENT_TEST_DEVICE_HASHED_ID", "\"\"")
-            buildConfigField("String", "REWARDED_INTERSTITIAL_AD_UNIT_ID", "\"$testRewardedInterstitialAdUnitId\"")
-            buildConfigField("String", "BANNER_AD_UNIT_ID", "\"$testBannerAdUnitId\"")
-            // debug에서 initWith해도 지인 배포 채널에는 개발자 맥북 IP를 절대 물려주지 않는다.
-            buildConfigField("String", "REMOTE_ENGINE_URL", "\"\"")
-        }
-        create("playInternal") {
-            // Play Console 업로드 전용(PREMIUM_MODE.md Step 4 후속) — friend와 완전히
-            // 같은 debug KataGo 엔진/에셋(release 엔진 준비 불필요)을 쓰지만, release keystore로
-            // 서명해 Play Console 내부 테스트 트랙에 올릴 수 있게 한다. friend 자체는 건드리지
-            // 않는다(지인 배포용 debug 서명 그대로 유지).
-            initWith(getByName("friend"))
-            matchingFallbacks += listOf("debug")
             signingConfig = signingConfigs.getByName("release")
-            // friend는 debug에서 initWith해 isDebuggable=true를 그대로 물려받는다 — 사이드로드만
-            // 하는 friend에는 문제없지만, Play Console은 debuggable 빌드 업로드 시 게시 전 반드시
-            // 꺼야 한다고 경고한다. playInternal만 명시적으로 false로 되돌린다.
+            // debug에서 initWith하면 isDebuggable=true를 그대로 물려받는다. Play Console은
+            // debuggable 빌드 업로드 시 게시 전 반드시 꺼야 한다고 경고하므로 여기서 되돌린다.
             isDebuggable = false
             // Play Console이 업로드마다 "이 App Bundle 유형과 연결된 난독화 파일이 없습니다"라고
-            // 경고했던 원인 — playInternal이 friend→debug에서 initWith하느라 R8이 아예 돌지
+            // 경고했던 원인 — playInternal이 debug에서 initWith하느라 R8이 아예 돌지
             // 않았다. release와 같은 설정을 여기에도 걸어 매핑 파일이 번들 안
             // (BUNDLE-METADATA/com.android.tools.build.obfuscation/proguard.map)에 자동 동봉되게
             // 한다 — 콘솔에 따로 올릴 필요가 없다. dex도 같이 줄어든다.
@@ -292,17 +281,22 @@ android {
     }
 
     sourceSets {
-        getByName("friend") {
-            assets.srcDirs("src/friend/assets")
-            jniLibs.srcDirs("src/debug/jniLibs")
-        }
+        // ⚠️ **`src/friend/assets`라는 이름은 역사다 — 지금 이것은 "번들 엔진 에셋"이다.**
+        // friend 빌드타입은 2026-09-06에 없어졌지만 **이 디렉터리는 남는다.** 여기에 스토어에
+        // 올리는 AAB의 KataGo 모델(98MB)과 cfg 둘이 있다.
+        // ⚠️ **개명하지 않기로 했다**(2026-09-06). 이름이 내용을 배신하는 것은 맞지만 값이 안 맞는다:
+        //   · 이 디렉터리는 `.gitignore`라 **git에 없다** — 옮겨도 git이 도와주지 않고 되돌릴 곳도 없다.
+        //   · `Makefile`의 `FRIEND_ASSET_DIR` **이름 자체를 `BundledEngineAssetContractTest`가
+        //     정규식으로 읽는다** — 개명하면 그 계약이 깨진다.
+        //   · 파이썬 벤치마크 스크립트 6곳이 이 경로를 기본값으로 박고 있다.
+        //   이름 하나 고치자고 네 표면을 동시에 흔드는 값은 없다. 대신 이 주석이 그 자리를 대신한다.
         getByName("playInternal") {
             assets.srcDirs("src/friend/assets")
             jniLibs.srcDirs("src/debug/jniLibs")
         }
         getByName("release") {
             // 별도로 검증된 "release 전용" KataGo 엔진 바이너리를 새로 준비하지 않는다(사용자
-            // 결정, 2026-08-09) — friend/playInternal과 동일하게 이미 검증된 debug 엔진 .so와
+            // 결정, 2026-08-09) — playInternal과 동일하게 이미 검증된 debug 엔진 .so와
             // 모델/설정 에셋을 그대로 재사용한다. 스토어에 올리는 AAB/APK가 설치 후 별도
             // adb push(seed-engine) 없이도 자체적으로 동작해야 하므로 앱마켓 배포에는 필수다.
             assets.srcDirs("src/friend/assets")
@@ -419,7 +413,7 @@ val verifyReleaseAdmobKeys = tasks.register("verifyReleaseAdmobKeys") {
                     appendLine("  admob.rewardedInterstitialAdUnitId=ca-app-pub-…/…")
                     appendLine("  admob.bannerAdUnitId=ca-app-pub-…/…")
                     appendLine()
-                    append("테스트 광고로 배포하려면 release가 아니라 friend/playInternal 빌드를 쓸 것 ")
+                    append("테스트 광고로 배포하려면 release가 아니라 playInternal 빌드를 쓸 것 ")
                     append("— 그 둘은 USE_TEST_ADS를 하드코딩한다.")
                 },
             )
@@ -427,7 +421,7 @@ val verifyReleaseAdmobKeys = tasks.register("verifyReleaseAdmobKeys") {
     }
 }
 
-// ⚠️ friend/playInternal/debug는 여기 걸리지 않는다 — 그 셋은 폴백을 쓰는 것이 아니라
+// ⚠️ playInternal/debug는 여기 걸리지 않는다 — 그 둘은 폴백을 쓰는 것이 아니라
 // `USE_TEST_ADS="true"`를 **하드코딩**해서 실제 키를 아예 참조하지 않는다. 손대지 말 것.
 tasks.matching { it.name == "packageRelease" || it.name == "packageReleaseBundle" }
     .configureEach { dependsOn(verifyReleaseAdmobKeys) }

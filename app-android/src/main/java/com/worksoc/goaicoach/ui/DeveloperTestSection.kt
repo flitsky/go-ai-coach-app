@@ -287,7 +287,7 @@ internal fun DeveloperTestSection(
             // prefs만 지운다.
             // ⚠️ **한국에서 폼을 보려면 `local.properties`에 `consent.forceEeaDebug=true`도
             // 필요하다.** 동의 필요 여부는 빌드타입이 아니라 **기기 IP**가 정하기 때문이다.
-            //   그 플래그는 debug에만 걸리고 friend/playInternal/release에서는 강제로 false다.
+            //   그 플래그는 debug에만 걸리고 playInternal/release에서는 강제로 false다.
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -466,8 +466,9 @@ internal fun DeveloperTestSection(
  * 제스처를 아는 사람은 그대로 실행한다. 2차에 붙는 것들(프리미엄 부여, 출석일 조작, 조각 수
  * 조절)은 **권한을 무료로 찍어내는** 것들이라, release·playInternal에서는 아예 존재하지 않아야
  * 한다. `isMinifyEnabled`가 켜진 그 둘에서는 R8이 이 분기를 통째로 지운다.
- * · `BuildConfig.DEBUG`는 **debug와 friend에서 true**, **playInternal과 release에서 false**다
- *   (`playInternal`만 `isDebuggable = false`로 되돌린다 — `build.gradle.kts`).
+ * · `BuildConfig.DEBUG`는 **debug에서만 true**, playInternal·release에서 false다
+ *   (`playInternal`은 debug에서 `initWith` 하므로 `isDebuggable = false`로 명시적으로 되돌린다
+ *   — `build.gradle.kts`). ⚠️ 2026-09-06 이전에는 friend도 true였다.
  *
  * ⚠️ **release에서는 토스트도 띄우지 않는다.** 안내를 띄우면 2차의 존재 자체를 광고하는 셈이라,
  * 조건이 맞지 않으면 **아무 일도 일어나지 않는 것**이 맞다.

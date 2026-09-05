@@ -38,7 +38,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
  * 실기로 밟아 볼 방법이 없다**(아래 함정 참고). 확인 결과만 쓰면 잘못될 수 있는 곳이 훨씬 적다.
  *
  * ## ⚠️ 실기 검증의 한계 — 착수 전부터 알고 있던 함정
- * 이 API는 **Play로 설치된 앱에서만** 동작한다. `adb install`한 빌드·사이드로드한 friend APK에서는
+ * 이 API는 **Play로 설치된 앱에서만** 동작한다. `adb install`한 빌드에서는
  * 조회가 실패하고 [AppUpdateStatus.Unknown]으로 떨어진다. 즉 에뮬레이터에서는 **폴백 경로만**
  * 볼 수 있고 "새 버전 있음"이 뜨는 모습은 볼 수 없다 — 그래서 **폴백이 죽은 화면이 되지 않는 것**이
  * 이 구현에서 가장 중요한 성질이고, 상태 판정을 순수 함수로 떼어 테스트로 고정했다.

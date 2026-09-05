@@ -93,8 +93,7 @@ class MainActivity : ComponentActivity() {
                 // 개발용 원격 엔진 스파이크(docs/work/roadmap/LAYERED_ARCHITECTURE_REFACTORING_PLAN_260803_1500.md
                 // Stage E-3). BuildConfig.REMOTE_ENGINE_URL은 debug 빌드에서만, local.properties의
                 // debug.remoteEngineUrl 키가 있을 때만 비어있지 않다(app-android/build.gradle.kts 참고)
-                // — friend/playInternal/release는 항상 빈 문자열로 고정돼 있어 이 분기를 절대 타지
-                // 않는다.
+                // — playInternal/release는 항상 빈 문자열로 고정돼 있어 이 분기를 절대 타지 않는다.
                 val remoteEngineUrl = BuildConfig.REMOTE_ENGINE_URL
                 val remoteEngineRequested = BuildConfig.DEBUG && remoteEngineUrl.isNotBlank()
                 // ⚠️ 예전에는 아래 `engineClient`를 만드는 `remember` 블록 **안에서** 컴포즈 상태

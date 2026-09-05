@@ -114,10 +114,14 @@ internal object AdsConsentManager {
 
     /**
      * ⚠️ **`USE_TEST_ADS`를 재사용하지 않는다 — 축이 다르다.** 동의 필요 여부는 빌드타입이
-     * 아니라 **기기 IP**가 정한다. 게다가 `friend`·`playInternal`은 `USE_TEST_ADS=true`를
-     * 하드코딩하면서도 **실제 테스터에게 배포되는** 빌드라, 거기에 EEA를 강제하면 한국
-     * 테스터에게 동의 폼이 뜬다. `BuildConfig.DEBUG`도 friend에서 참이므로
-     * [BuildConfig.FORCE_EEA_CONSENT_DEBUG]라는 **debug 전용 플래그**를 따로 둔다.
+     * 아니라 **기기 IP**가 정한다. 게다가 `playInternal`은 `USE_TEST_ADS=true`를 하드코딩하면서도
+     * **실제 테스터에게 배포되는** 빌드라, 거기에 EEA를 강제하면 한국 테스터에게 동의 폼이 뜬다.
+     *
+     * ⚠️ **`BuildConfig.DEBUG`로 접으려는 유혹을 이길 것.** friend 빌드타입이 없어진
+     * 2026-09-06부터 `DEBUG`와 이 플래그의 유효 범위가 **우연히 같아졌다** — 그래도 합치면 둘을
+     * 잃는다: ⓐ 짝인 [BuildConfig.CONSENT_TEST_DEVICE_HASHED_ID]가 갈 곳이 없어지고,
+     * ⓑ 이 플래그는 빌드타입뿐 아니라 `local.properties`의 `consent.forceEeaDebug` **옵트인**을
+     * 함께 태운다. 디버그 빌드를 쓴다고 늘 EEA를 흉내내고 싶은 것은 아니다.
      */
     private fun consentRequestParameters(context: Context): ConsentRequestParameters {
         val builder = ConsentRequestParameters.Builder()
