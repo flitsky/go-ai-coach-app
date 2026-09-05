@@ -186,8 +186,6 @@ internal fun GamePlaySection(
     // 와치독 발동 시 뜨는 복구 팝업의 표시 여부. 새 차례가 시작될 때마다(키가 바뀔 때마다)
     // remember가 자동으로 false로 되돌리므로, 다음 차례에는 다시 정상적으로 감지 가능하다.
     var showEngineStuckDialog by remember(turnTimeState.currentTurnStartedAtMillis) { mutableStateOf(false) }
-    var engineStuckElapsedMillis by remember(turnTimeState.currentTurnStartedAtMillis) { mutableStateOf(0L) }
-    var engineStuckThresholdMillis by remember(turnTimeState.currentTurnStartedAtMillis) { mutableStateOf(0L) }
     LaunchedEffect(turnTimeState.currentTurnStartedAtMillis, turnTimeState.isPaused, screenState.isGameEnded) {
         // 안전 관리(레프리) 도메인 와치독: 새 차례가 시작될 때마다(이 effect가 재시작될 때마다)
         // 리셋되므로 별도 remember 없이 이 지역 변수 하나로 "이번 차례에 이미 보고했는지"를 추적한다.
@@ -219,8 +217,6 @@ internal fun GamePlaySection(
                     // 감지에 그치지 않고 사용자가 인식하고 직접 복구할 수 있도록 팝업을 띄운다.
                     // 자동 복구는 이번 범위에 포함하지 않음 — 개발 단계에서는 사용자가 직접
                     // 확인 후 판단하도록 한다.
-                    engineStuckElapsedMillis = elapsedSinceTurnStartMillis
-                    engineStuckThresholdMillis = thresholdMillis
                     showEngineStuckDialog = true
                 }
             }
@@ -268,15 +264,16 @@ internal fun GamePlaySection(
                 }
             },
             text = {
-                Column {
-                    Text(strings.engineStuckDialogMessage)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "elapsed=${engineStuckElapsedMillis / 1000}s / threshold=${engineStuckThresholdMillis / 1000}s",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.secondary,
-                    )
-                }
+                // ⚠️ **여기에 `elapsed=63s / threshold=60s` 한 줄이 있었다**(백로그 #91 ⓒ, 2026-09-06 제거).
+                // 이 다이얼로그의 나머지 넷은 전부 `strings.engineStuck*`(4개 언어)인데 그 줄만
+                // 하드코딩 영문이었고 `BuildConfig.DEBUG` 게이트도 없어 **릴리스 사용자에게 그대로
+                // 나갔다.** 번역하지 않고 지운 이유: 같은 두 값이 이미 진단 로그에 있고
+                // (`GoCoachApp.kt`의 `engine_turn_watchdog_triggered` → `elapsedMillis`/`thresholdMillis`),
+                // **이 팝업 제목 줄에 그 로그를 복사하는 버튼이 이미 있다.** 숫자를 원하는 사람은
+                // 개발자이고, 개발자는 그 버튼을 누르면 된다.
+                // ⚠️ **팝업 자체는 지우지 말 것** — 엔진 멈춤은 기조 1ⓒ의 "실패" 쪽이라 적극 알리는
+                // 것이 맞다. 지운 것은 사용자가 읽을 수 없는 한 줄뿐이다.
+                Text(strings.engineStuckDialogMessage)
             },
             confirmButton = {
                 TextButton(
