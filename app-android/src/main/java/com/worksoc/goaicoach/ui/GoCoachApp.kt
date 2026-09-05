@@ -811,7 +811,9 @@ private fun GoCoachScreen(
     // ⚠️ 초기화 안내가 떠 있는 동안에는 출석 팝업을 미룬다(#63). 순서로는 안 된다 — Compose
     // 다이얼로그는 각자 별도 윈도우라 나중에 선언해도 위로 오지 않아, 안내가 출석 팝업 뒤에
     // 가려 사용자가 "왜 1일차인지"를 나중에야 읽었다(2026-09-01 실기에서 확인).
-    if (!ReleaseResetNoticeDialog(context)) {
+    // ⚠️ 엔진 실패 알림이 **맨 앞**이다 — 이후 앱 동작이 보장되지 않는다는 뜻이라 가장 급하다
+    // (백로그 「핵심 동작 기조」 1ⓒ). 뒤의 둘은 저장소가 기억하고 있어 다음 기회에 뜬다.
+    if (!EngineUnavailableNoticeDialog(identity.mode) && !ReleaseResetNoticeDialog(context)) {
         AttendanceRewardClaimDialog(context) { next -> premiumState = next }
     }
     when (currentDestination) {

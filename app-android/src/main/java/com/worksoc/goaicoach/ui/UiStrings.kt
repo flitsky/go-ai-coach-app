@@ -200,6 +200,12 @@ internal data class UiStrings(
      * **터치가 죽은 판** 앞에 앉았다.
      */
     val engineNotReadyToStart: String,
+    /**
+     * ⚠️ 위 [engineNotReadyToStart]와 **다른 상태**다 — 저쪽은 *"아직"* 이고 이쪽은 *"안 된다"* 다.
+     * 기조 1ⓒ(백로그 「핵심 동작 기조」)를 읽지 않고 둘을 섞지 말 것.
+     */
+    val engineUnavailableTitle: String,
+    val engineUnavailableMessage: String,
     val backToHome: String,
     val notImplementedMessage: String,
     val showScoreGraph: String,

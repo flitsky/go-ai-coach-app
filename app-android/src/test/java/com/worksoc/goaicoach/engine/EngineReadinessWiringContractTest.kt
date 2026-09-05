@@ -19,6 +19,8 @@ class EngineReadinessWiringContractTest {
 
     private val mainActivity = codeOnly("src/main/java/com/worksoc/goaicoach/MainActivity.kt")
     private val goCoachApp = codeOnly("src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
+    private val failureNotice =
+        codeOnly("src/main/java/com/worksoc/goaicoach/ui/EngineUnavailableNoticeDialog.kt")
 
     @Test
     fun nothingBlocksTheFirstFrameWhileTheEngineGetsReady() {
@@ -86,6 +88,40 @@ class EngineReadinessWiringContractTest {
         assertTrue(
             "정체 도장이 엔진 기동보다 **앞에** 있다 — 그 시점에는 아직 아무것도 부팅되지 않았다(#101).",
             stamp > startup,
+        )
+    }
+
+    @Test
+    fun theFailureNoticeDoesNotDecideForItselfWhatCountsAsFailure() {
+        // ⚠️ 세 상태를 가르는 판단은 shared의 정책이 소유한다(기조 1ⓒ). 화면에서 `mode`를 직접
+        // 비교하기 시작하면 *"아직"* 과 *"안 된다"* 의 경계가 화면마다 갈라진다.
+        assertTrue(
+            "실패 팝업이 엔진 상태를 직접 판정한다 — 판단이 shared 정책 밖으로 샜다(기조 1ⓒ).",
+            "engineAvailabilityFor(mode)" in failureNotice,
+        )
+    }
+
+    @Test
+    fun theFailureNoticeIsNeverSilencedAcrossLaunches() {
+        // 다음 실행에도 여전히 스텁이면 **다시 알려야 한다.** "다시 보지 않기"를 저장하면
+        // 고쳐지지 않은 고장을 영구히 숨기게 된다.
+        assertTrue(
+            "실패 팝업이 닫힘을 저장소에 남긴다 — 고쳐지지 않은 고장이 영구히 숨는다(#101 ④).",
+            "Store" !in failureNotice,
+        )
+    }
+
+    @Test
+    fun theFailureNoticeOutranksTheOtherPopups() {
+        val failure = goCoachApp.indexOf("EngineUnavailableNoticeDialog(")
+        val releaseReset = goCoachApp.indexOf("ReleaseResetNoticeDialog(")
+
+        assertTrue("실패 팝업이 배선돼 있지 않다 — 스텁 폴백이 다시 조용해진다(#101 ④).", failure >= 0)
+        // ⚠️ Compose 다이얼로그는 각자 별도 윈도우라 **선언 순서로 위아래가 정해지지 않는다.**
+        // 게이트 체인의 앞자리를 차지하는 것으로만 보장된다(ReleaseResetNoticeDialog의 KDoc).
+        assertTrue(
+            "실패 팝업이 다른 팝업 뒤에 있다 — 앱이 정상 동작하지 않는다는 사실을 나중에야 읽는다.",
+            failure < releaseReset,
         )
     }
 

@@ -96,6 +96,9 @@ internal val UiStringsChineseSimplified = UiStringsKorean.copy(
     matchSetup = "对局设置",
     startMatchAction = "开始对局",
     engineNotReadyToStart = "正在准备 AI，稍后即可开始。",
+    engineUnavailableTitle = "AI 引擎未能启动",
+    engineUnavailableMessage = "AI 无法正常工作 — 对弈和分析结果均不可信。重新安装应用通常" +
+        "可以解决。双人对弈仍可照常使用。",
     backToHome = "返回主菜单",
     notImplementedMessage = "此功能目前正在准备中。",
     showScoreGraph = "显示得分图",

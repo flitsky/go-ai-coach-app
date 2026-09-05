@@ -96,6 +96,9 @@ internal val UiStringsJapanese = UiStringsKorean.copy(
     matchSetup = "対局設定",
     startMatchAction = "対局開始",
     engineNotReadyToStart = "AIを準備しています。まもなく開始できます。",
+    engineUnavailableTitle = "AIエンジンを起動できませんでした",
+    engineUnavailableMessage = "AIが正しく動作していません — 対局も分析結果も信頼できません。" +
+        "アプリを再インストールすると解決する場合が多いです。二人対局はこれまでどおり利用できます。",
     backToHome = "メインメニューへ",
     notImplementedMessage = "この機能は現在準備中です。",
     // 신규 로컬라이징 필드

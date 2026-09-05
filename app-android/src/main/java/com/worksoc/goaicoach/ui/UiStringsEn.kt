@@ -96,6 +96,10 @@ internal val UiStringsEnglish = UiStringsKorean.copy(
     matchSetup = "Match Setup",
     startMatchAction = "Start Match Now",
     engineNotReadyToStart = "Getting the AI ready. You can start in a moment.",
+    engineUnavailableTitle = "The AI engine did not start",
+    engineUnavailableMessage = "The AI is not working properly - neither its moves nor its " +
+        "analysis can be trusted. Reinstalling the app usually fixes this. Two-player games " +
+        "still work as usual.",
     backToHome = "Main Menu",
     notImplementedMessage = "This feature is currently under development.",
     showScoreGraph = "Show Score Graph",
