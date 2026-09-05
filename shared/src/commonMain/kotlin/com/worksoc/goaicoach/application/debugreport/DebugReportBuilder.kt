@@ -173,7 +173,7 @@ fun buildDebugReportCopyPlan(snapshot: DebugReportSnapshot): DebugReportCopyPlan
     val clipboardReport = buildDebugReport(clipboardSnapshot)
 
     return DebugReportCopyPlan(
-        clipboardLabel = "Go AI Coach debug report",
+        clipboardLabel = "Go AI debug report",
         clipboardReport = clipboardReport,
         fileReport = fileReport,
         engineMessage = "Debug report copied to clipboard. Paste it into chat for review.",

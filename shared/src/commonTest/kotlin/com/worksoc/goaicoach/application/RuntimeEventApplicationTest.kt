@@ -55,8 +55,8 @@ class RuntimeEventApplicationTest {
 
         assertTrue(log.contains("event=app_start"))
         assertTrue(log.contains("phase=startup"))
-        assertTrue(log.contains("app=\"Go AI Coach\""))
-        assertTrue(log.contains("purpose=\"Android-first local AI Go coaching app"))
+        assertTrue(log.contains("app=\"Go AI\""))
+        assertTrue(log.contains("purpose=\"Android-first local AI Go app for 9x9/13x13/19x19 play"))
         assertTrue(log.contains("engine=\"KataGo\""))
         assertTrue(log.contains("diagnostic=ready with local process"))
         assertTrue(log.contains("turnTime=\"B=0.0s W=0.0s current=Black\""))

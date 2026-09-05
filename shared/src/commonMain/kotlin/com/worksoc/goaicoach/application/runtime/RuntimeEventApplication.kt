@@ -24,9 +24,22 @@ import com.worksoc.goaicoach.shared.analysisFingerprint
 import com.worksoc.goaicoach.shared.describe
 import com.worksoc.goaicoach.shared.toOneDecimalLabel
 
-private const val RuntimeAppName = "Go AI Coach"
+/**
+ * ⚠️ **이 이름은 `AppNameContractTest`가 묶는 세 곳이 아니다**(백로그 #112). 그 계약은 런처
+ * 라벨·앱 안 타이틀·스토어 등록정보를 **같은 값**으로 묶는데, 그 값은 언어마다 다르다
+ * (`바둑 AI`/`Go AI`/`囲碁AI`/`围棋AI`). 여기 리포트·로그는 **영문 기술 산출물**이라 영어 이름
+ * `Go AI`를 쓴다 — 그물 밖이므로 앱 이름을 다시 바꾸면 **여기는 아무도 안 잡는다.** 그때 같이 볼 것.
+ */
+private const val RuntimeAppName = "Go AI"
+
+/**
+ * ⚠️ 2026-09-06에 두 군데가 틀려 있었다(#112). ⓐ **"coaching"** — #97이 *"코칭 기능이 아직 없으니
+ * 이름에 코치를 붙이지 말 것"* 으로 정했는데 로그만 계속 코칭 앱이라 말하고 있었다.
+ * ⓑ **"9x9 play"** — 지금은 9·13·19를 고를 수 있다(`CompactScoringAndBoardSettingsPanel`).
+ * ⚠️ `runtimeLogValue(120)`로 잘리므로 120자를 넘기지 말 것.
+ */
 private const val RuntimeAppPurpose =
-    "Android-first local AI Go coaching app for 9x9 play, Top Moves, scoring, and endgame cleanup."
+    "Android-first local AI Go app for 9x9/13x13/19x19 play, Top Moves, scoring, and endgame cleanup."
 
 data class RuntimeLogContext(
     val engineName: String,

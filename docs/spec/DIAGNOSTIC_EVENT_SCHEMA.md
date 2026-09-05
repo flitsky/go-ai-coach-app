@@ -175,7 +175,7 @@
 `RuntimeLogContext.event()`가 만드는 한 줄의 형태는 다음과 같다(필드는 고정 순서):
 
 ```text
-event=ai_turn_begin phase=ai_turn app="Go AI Coach" purpose="..." mode=AiVsHuman setup="..." board="..." engine=KataGo engineReady=true engineBusy=true runtime="..." analysis="topMoves=true cache=... coverage=..." score="..." turnTime="Time B 12.3s / W 8.1s" flags="..." transition=await_human_move detail="..."
+event=ai_turn_begin phase=ai_turn app="Go AI" purpose="..." mode=AiVsHuman setup="..." board="..." engine=KataGo engineReady=true engineBusy=true runtime="..." analysis="topMoves=true cache=... coverage=..." score="..." turnTime="Time B 12.3s / W 8.1s" flags="..." transition=await_human_move detail="..."
 ```
 
 `event` 필드가 이벤트 종류(아래 20개), `phase`가 상위 단계 분류, `transition`이 다음 예상 상태, `detail`이 자유 설명이다. 나머지는 매 이벤트마다 공통으로 찍히는 현재 스냅샷(보드, 엔진 상태, 분석 캐시 통계, 플래그)이다.
