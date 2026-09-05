@@ -44,6 +44,7 @@ class DebugReportApplicationRunnerTest {
                 controllerState = controllerState(),
                 engineName = "KataGo",
                 engineDiagnostic = "diagnostic ok",
+                buildStamp = "build=9.9.9 (999) release REAL-ADS | device=Test Device",
                 analysisCacheStatsText = { "analysis entries=1" },
                 positionAnalysisCacheStatsText = { nowMillis -> "position now=$nowMillis" },
                 isEngineReady = true,
@@ -65,6 +66,14 @@ class DebugReportApplicationRunnerTest {
         assertEquals("Debug report copied", notice.message)
         assertEquals(clipboard.text, mirror.report)
         assertEquals("Debug report copied to clipboard. Paste it into chat for review.", appliedMessage)
+        // ⚠️ **이 단언이 #92 배선의 네 홉을 한 번에 묶는다** — 러너 → 액션 요청 → 스냅샷 →
+        // 리포트 본문. 그 사이 계층들은 호출부를 안 깨려고 `"not recorded"` 기본값을 갖고 있어,
+        // 한 홉이라도 전달을 빠뜨리면 **컴파일은 통과하고 리포트만 조용히 거짓말한다.**
+        // 컨트롤러 → 러너 홉만은 기본값이 없어 컴파일러가 잡는다(`DebugReportController`).
+        assertTrue(
+            clipboard.text.orEmpty().contains("build=9.9.9 (999) release REAL-ADS | device=Test Device"),
+            "빌드·기기 스탬프가 리포트 머리말까지 도달하지 않았다(#92 배선이 끊겼다).",
+        )
         assertTrue(clipboard.text.orEmpty().contains("analysisCache=analysis entries=1"))
         assertTrue(clipboard.text.orEmpty().contains("positionAnalysisCache=position now=321"))
         assertTrue(clipboard.text.orEmpty().contains("turnTime=Time B 1.0s / W 2.0s"))

@@ -11,6 +11,8 @@ internal data class DebugReportCopyRunRequest(
     val engineDiagnostic: String,
     /** 착수 진동 진단(#36). app-android가 채운다. */
     val hapticDiagnostic: String = "not recorded",
+    /** 빌드·기기 스탬프(#92). app-android가 채운다. */
+    val buildStamp: String = "not recorded",
     val analysisCacheStatsText: () -> String,
     val positionAnalysisCacheStatsText: (Long) -> String,
     val isEngineReady: Boolean,
@@ -37,6 +39,7 @@ internal fun runDebugReportCopyApplication(
             engineName = request.engineName,
             engineDiagnostic = request.engineDiagnostic,
             hapticDiagnostic = request.hapticDiagnostic,
+            buildStamp = request.buildStamp,
             analysisCacheStats = request.analysisCacheStatsText(),
             positionAnalysisCacheStats = request.positionAnalysisCacheStatsText(nowMillis),
             isEngineReady = request.isEngineReady,

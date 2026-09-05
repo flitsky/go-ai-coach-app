@@ -14,9 +14,15 @@ import com.worksoc.goaicoach.shared.ScoreSnapshot
 import com.worksoc.goaicoach.shared.StoneColor
 import com.worksoc.goaicoach.shared.describe
 
-internal fun StringBuilder.appendDebugReportHeader(createdAtMillis: Long) {
+/**
+ * ⚠️ **[buildStamp]가 이 리포트의 첫 질문에 답한다 — "이거 어느 빌드예요?"**(백로그 #92).
+ * 그 전에는 제목과 타임스탬프뿐이라, 811·812를 동시에 돌리는 동안 사용자가 붙여넣은 로그가
+ * 어느 빌드 것인지 알 방법이 없었다. `shared`가 만들 수 없는 값이라 app-android가 넘긴다.
+ */
+internal fun StringBuilder.appendDebugReportHeader(createdAtMillis: Long, buildStamp: String) {
     appendLine("Go AI Coach debug report")
     appendLine("createdAtMillis=$createdAtMillis")
+    appendLine(buildStamp)
     appendLine()
 }
 

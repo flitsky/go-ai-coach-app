@@ -29,6 +29,14 @@ data class DebugReportSnapshot(
      * "not recorded"로 보이면 기능이 아니라 배선을 먼저 의심할 것.
      */
     val hapticDiagnostic: String = "not recorded",
+    /**
+     * 빌드·기기 스탬프(#92). ⚠️ **`shared`는 이 값을 만들 수 없다** — `BuildConfig`도
+     * `android.os.Build`도 플랫폼 API라, `hapticDiagnostic`과 똑같이 **app-android가 채워 넣는다.**
+     * 기본값이 있는 이유도 같다(이 필드를 모르는 호출부를 안 깨려고). ⚠️ 그래서 **전달을 빠뜨리면
+     * 조용히 "not recorded"가 된다** — 리포트에서 그렇게 보이면 배선을 먼저 의심할 것.
+     * `DebugReportBuildStampTest`가 컨트롤러부터 리포트 본문까지 한 번에 묶어 둔다.
+     */
+    val buildStamp: String = "not recorded",
     val engineProfile: EngineProfile,
     val playLevel: PlayLevelSetting,
     val analysisPreset: AnalysisPreset,
@@ -111,6 +119,7 @@ fun buildDebugReport(snapshot: DebugReportSnapshot): String =
         engineName = snapshot.engineName,
         engineDiagnostic = snapshot.engineDiagnostic,
         hapticDiagnostic = snapshot.hapticDiagnostic,
+        buildStamp = snapshot.buildStamp,
         engineProfile = snapshot.engineProfile,
         playLevel = snapshot.playLevel,
         analysisPreset = snapshot.analysisPreset,
@@ -182,6 +191,8 @@ data class DebugReportCopyActionRequest(
     val engineDiagnostic: String,
     /** 착수 진동 진단(#36). app-android가 채운다. */
     val hapticDiagnostic: String = "not recorded",
+    /** 빌드·기기 스탬프(#92). app-android가 채운다. */
+    val buildStamp: String = "not recorded",
     val analysisCacheStats: String,
     val positionAnalysisCacheStats: String,
     val isEngineReady: Boolean,
@@ -212,7 +223,7 @@ fun runDebugReportCopyAction(
             runtimeEventLogText = request.runtimeEventLogText,
             diagnosticEventLogText = request.diagnosticEventLogText,
             savedSessionJson = request.savedSessionJson,
-        ).copy(hapticDiagnostic = request.hapticDiagnostic),
+        ).copy(hapticDiagnostic = request.hapticDiagnostic, buildStamp = request.buildStamp),
     )
     return runDebugReportCopyEffect(
         effect = GameSessionEffect.CopyDebugReport(plan),
@@ -245,6 +256,7 @@ fun buildDebugReport(
     engineName: String,
     engineDiagnostic: String,
     hapticDiagnostic: String = "not recorded",
+    buildStamp: String = "not recorded",
     engineProfile: EngineProfile,
     playLevel: PlayLevelSetting,
     analysisPreset: AnalysisPreset,
@@ -276,7 +288,7 @@ fun buildDebugReport(
     val localScoreText = BoardScorer.score(gameState).toDisplayText()
 
     return buildString {
-        appendDebugReportHeader(createdAtMillis)
+        appendDebugReportHeader(createdAtMillis, buildStamp)
         appendRuntimeSection(
             mode = mode,
             playerSetup = playerSetup,
