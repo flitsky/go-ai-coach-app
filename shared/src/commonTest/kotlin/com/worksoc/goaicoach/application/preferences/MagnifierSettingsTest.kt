@@ -26,7 +26,7 @@ class MagnifierSettingsTest {
             "기본값이 이전보다 넓게 보이지 않는다(이전 $before, 지금 $after) — 창과 배율을 " +
                 "따로 만지면 서로 상쇄될 수 있다(#85).",
         )
-        assertEquals(1.6f, after / before, 0.001f, "지시받은 1.6배가 아니다")
+        assertEquals(2.4f, after / before, 0.001f, "지시받은 2.4배가 아니다(#95: 배율 `판 그대로`)")
     }
 
     /** 기본값은 목록 안에 있어야 한다 — 밖에 있으면 순환/선택 UI가 그 값을 표시할 수 없다. */

@@ -19,9 +19,12 @@ package com.worksoc.goaicoach.application.preferences
  * (`isPlayMagnifierEnabled`).
  *
  * ## ⚠️ 기본값은 "지금보다 넓게 보이는 쪽"이다
- * 창 **1.2배** + 배율 **1.5배**. 이전 동작은 창 1.0배 + 배율 2.0배였으므로, 보이는 칸 수가
- * `1.2 / 1.5 ÷ (1.0 / 2.0)` = **1.6배**로 늘어난다. 사용자 지시(*"영역을 1.2배로 키우고 확대
- * 비율은 조금 낮게"*)를 그대로 옮긴 값이다.
+ * 창 **1.2배** + 배율 **`판 그대로`(1.0)**. 이전 동작(창 1.0 · 배율 2.0) 대비 보이는 칸 수가
+ * `1.2 / 1.0 ÷ (1.0 / 2.0)` = **2.4배**다.
+ * · 2026-09-05에 실기로 셋을 다 써 본 사용자가 **배율 없는 쪽**을 골랐다(처음엔 1.5였다).
+ *   ⚠️ **확대를 0으로 둬도 이 기능은 제 일을 한다** — 애초 목적이 배율이 아니라
+ *   **손가락이 가린 자리를 손가락 위에 띄워 보여 주는 것**이었기 때문이다(#39).
+ *   *"돋보기인데 확대를 안 한다"* 가 이상해 보여 되돌리지 말 것.
  *
  * ⚠️ **값을 더하거나 뺄 때는 `sanitize`가 옛 저장분을 접어 준다는 것을 전제로 할 것** —
  * 목록에서 값을 빼면 그 값을 골라 둔 기기는 기본값으로 돌아온다(#83이 글꼴 배율에서 밟은 경로).
@@ -35,7 +38,7 @@ object MagnifierSettings {
     val zoomScales: List<Float> = listOf(1.0f, 1.2f, 1.5f)
 
     const val defaultSizeScale: Float = 1.2f
-    const val defaultZoom: Float = 1.5f
+    const val defaultZoom: Float = 1.0f
 
     fun sanitizeSizeScale(stored: Float): Float =
         if (sizeScales.any { scale -> scale == stored }) stored else defaultSizeScale
