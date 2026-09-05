@@ -514,6 +514,7 @@
 
 | # | 무엇을 했는가 | 커밋 |
 | --- | --- | --- |
+| 117 | `middleware` 게이트웨이 3파일(참조 0) — **사용자 판단으로 종결**(2026-09-06). 죽은 코드가 아니라 **KMP 모듈 분리를 위해 세워 둔 뼈대**이고, 그 분리를 **나중에 한다**는 결정이라 **그대로 둔다**. ⚠️ 지우려거든 `LayeringContractTest`의 존재 단언을 같은 커밋에서 함께 걷어낼 것 — 파일만 지우면 *"must exist"* 로 빨개진다 | — |
 | 116 | **죽은 코드 정리** — 미사용 import **100건**(24파일) · `EngineResponseParser`+테스트(참조 0, 221줄) · 죽은 `@Deprecated` typealias·`Noop…Provider`·참조 0 함수 둘 · 일회성 마이그레이션 스크립트 · 죽은 `.gitignore` 2줄. **총 395줄.** ⚠️ import는 `getValue`/`setValue` 같은 **암묵 사용을 제외**하고 **KDoc `[Symbol]` 링크까지 사용으로 세어** 골랐다(예전에 그걸로 깨진 적이 있다) | `790eff5` |
 | 115 | **잔재 정리** — 지인 배포 APK(110MB)·낡은 내부테스트 AAB 809(113MB)·파이썬 가상환경(97MB)·옛 스토어 자산 라운드 3개(추적 24파일). **디스크 320MB 회수.** ⚠️ 남긴 둘에는 이유가 있다 — `2026-08-11`은 디자이너 핸드오프 지시문과 링크 검사 예외가 걸려 있고, `2026-09-01`은 `AppNameContractTest`가 실제 경로로 읽는다 | `2c43257` |
 | 114 | **`friend` 빌드타입 제거**(마켓 오픈으로 지인 배포 채널 역할 종료, 사용자 결정). ⚠️ **`src/friend/assets`는 남는다 — 그게 스토어 AAB의 엔진이다.** 빌드타입을 지우는 것과 디렉터리를 지우는 것은 다른 일이다. `playInternal`의 상속을 debug로 옮겼고 **값 손실 0**(BuildConfig 전후 diff 동일) | `fdc1b63` |
@@ -575,8 +576,11 @@
 
 ## 예정사항
 
-> **출시 전 남은 코드 일감 0개** — #117은 코드가 아니라 **결정**이고 출시를 막지 않는다.
-> 아래 「출시 후 트랙」의 둘은 이 수에 세지 않는다.
+> **출시 전 남은 일감 0개.** 남은 것은 전부 **콘솔 작업**이다 —
+> `GOOGLE_PLAY_LAUNCH_PLAN.md` §0의 A-2·A-3·A-4·A-5·A-6·A-10·A-11.
+> ⚠️ **A-4(데이터 보안 양식)가 가장 급하다** — 그것만이 출시를 막는다.
+>
+> 아래 「출시 후 트랙」의 둘은 콘솔 수익창출 잠금이 풀린 뒤다.
 >
 > ⚠️ **남은 것은 전부 콘솔 작업이다** — `GOOGLE_PLAY_LAUNCH_PLAN.md` §0의 A-2·A-3·A-4·A-5·A-6과
 > **A-10**(AdMob 유럽 규정 메시지 게시). ⚠️ **A-4가 A-10보다 급하다**: 데이터 보안 양식 미비는
@@ -586,28 +590,6 @@
 > 예정사항에 사본이 남아 **한 일감이 두 절에 동시에** 있었고(규칙 ① 위반), #91 ⓑ도 #101 ③이 이미
 > 처리한 것이었다. 그 뒤 #103·#110·#111·#112·#113·#108·#86·#90·#91·#92를 처리해 **10 → 1**이 됐다.
 > 남은 #89는 사용자가 **배포 국가를 좁히지 않기로** 정하면서 성격이 바뀌었다 — 아래 참고.
-
-117. **`middleware` 게이트웨이 3파일을 살릴지 버릴지 정한다** (노력정도: 낮음) [사용자 판단 필요]
-    - `app-android/.../middleware/`의 셋 — `PositionAnalysisGateway.kt`(38줄) ·
-      `RemotePositionAnalysisGateway.kt`(39줄) · `RemotePositionAnalysisGatewayTest.kt`(75줄),
-      **합 152줄**. **프로덕션 참조가 0이다**(`PositionAnalysisGateway`·`PositionAnalysisBackend`
-      둘 다 미들웨어 패키지 밖에서 0건, 2026-09-06 실측).
-    - ⚠️ **그런데 죽은 코드가 아니다 — 일부러 세워 둔 뼈대다.** `LayeringContractTest`의
-      `positionAnalysisGatewayContractsStayKmpReadyAndTransportFree`가 이 파일들의 **존재를 단언**하고
-      (*"contract files must exist before the middleware module split"*), 안에 플랫폼 import가
-      새어 들어오지 않는지까지 검사한다. 파일 머리말도 *"KMP middleware 모듈로 옮길 수 있도록
-      공용 DTO만 쓴다"* 고 적는다.
-    - **그래서 이건 정리 항목이 아니라 결정 항목이다** — 물어야 할 것은 하나다:
-      **`middleware` 모듈 분리를 여전히 할 것인가?**
-      · **한다** → 그대로 둔다. 참조 0인 것이 정상이다(아직 옮기지 않았을 뿐).
-      · **안 한다** → 세 파일과 **그 계약 테스트를 같은 커밋에서 함께** 지운다.
-        ⚠️ 파일만 지우면 `make test`가 *"must exist"* 로 빨개진다.
-    - ⚠️ **같은 패키지의 `JsonNullableExtensions.kt`는 함께 지우면 안 된다** — 살아 있다.
-      `persistence/JsonPositionAnalysisCacheStore.kt`와 `EngineBenchmarkStore.kt`가 그 `optNullable*`을
-      쓴다. 패키지째 지우는 실수를 하기 쉬운 자리다.
-    - ⚠️ 헷갈리기 쉬운 이웃: `LayeringContractTest`의
-      `engineImplementationsLiveInEngineAndroidNotAppAndroid`는 **이미 만족돼 있고 무관하다**
-      (그 둘은 260804에 `engine-android`로 옮겨졌고, 계약은 app-android에 *없는지*를 본다).
 
 ### 출시 후 트랙 (#26·#18) — 위 개수에 세지 않는다
 
