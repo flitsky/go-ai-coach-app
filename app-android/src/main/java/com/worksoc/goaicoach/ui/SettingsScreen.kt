@@ -573,10 +573,16 @@ internal fun SettingsScreen(
                     TextButton(
                         onClick = {
                             val store = ConsumableInventoryStore(context)
+                            // ⚠️ **`PremiumOnce`(광고 스킵권)는 여기 두지 않는다**(2026-09-05).
+                            // 이 버튼은 1차라 **release 빌드에 그대로 실린다**(함정 11번). 형세·추천
+                            // 1회권은 1일차 출석이 30장씩 주는 것이라 경제에 영향이 없지만,
+                            // 광고 스킵권은 **광고가 사는 바로 그 재화**다(4·7일차 보상). 결제가
+                            // 파킹된 지금 광고가 유일한 수익원이라, 반복해서 누를 수 있는 스킵권
+                            // 발행기를 출시하는 앱에 넣는 셈이 된다.
+                            // · 필요하면 2차(debug 전용)에서 만들 것 — 기준은 #77의 *"무엇을 저장하는가"*.
                             listOf(
                                 ConsumableCatalog.EvalOnce,
                                 ConsumableCatalog.TopMovesOnce,
-                                ConsumableCatalog.PremiumOnce,
                             ).forEach { item -> runConsumableGrant(item, amount = 1, consumableStore = store) }
                             consumables.refresh()
                         },
