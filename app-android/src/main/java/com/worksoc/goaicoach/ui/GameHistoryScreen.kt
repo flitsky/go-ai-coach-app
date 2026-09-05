@@ -116,14 +116,24 @@ private fun handicapPhrase(strings: UiStrings, handicapCount: Int): String =
 
 @Composable
 private fun GameHistoryRow(entry: GameHistoryEntry, strings: UiStrings) {
-    // [날짜] [시간] [보드판사이즈] [플레이한 진영] [접바둑 설정] [결과] — 예: "8월 24일 00:34 13x13 흑 5점 접바둑 기권"
+    // [날짜] [시간] [보드판사이즈] [플레이한 진영] [접바둑 설정] [결과]
+    // 예: "8월 24일 00:34 · 13x13 · 흑 · 5점 접바둑 · 기권"
+    //
+    // ⚠️ **구분자는 공백이 아니라 ` · `다**(백로그 #108, 사용자 결정 2026-09-06 — "명확하게").
+    // 공백으로만 이으면 영어가 `Sep 5, 22:21 13x13 Black 5 Handicap Resigned` 로 **한 문장처럼**
+    // 읽힌다(한국어는 조사·단위가 있어 상대적으로 덜하다). 다섯 항목이 서로 다른 축이라는 것이
+    // 눈에 보여야 한다.
+    // ⚠️ **폭이 12만큼 늘어난다**(구분자 4개 × 3폭). 1.3배에서 이미 두 줄인 줄이 세 줄이 될 수
+    // 있는데, **잘리거나 겹치지는 않는다** — 이 자리는 줄 수 제한이 없다(#107에서 학습 화면의
+    // 근거 없는 `maxLines` 캡을 걷어낸 것과 같은 판단). 폭이 문제가 되면 구분자가 아니라
+    // **문구를 줄일 것.**
     val summary = listOf(
         dateTimeFormat(strings.language).format(Date(entry.playedAtMillis)),
         "${entry.boardSize}x${entry.boardSize}",
         strings.colorLabel(entry.humanColor),
         handicapPhrase(strings, entry.handicapCount),
         strings.gameHistoryResultLabel(entry.result, entry.margin),
-    ).joinToString(" ")
+    ).joinToString(" · ")
 
     Row(
         modifier = Modifier
