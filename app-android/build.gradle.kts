@@ -43,6 +43,15 @@ val localProperties = Properties().apply {
 val forceEeaConsentDebug: Boolean =
     localProperties.getProperty("consent.forceEeaDebug")?.toBoolean() ?: false
 
+// ⚠️ **`DebugGeography`만으로는 아무 일도 일어나지 않는다 — 테스트 기기로 등록돼야 한다**
+// (2026-09-06 실기에서 드러났다: 지오그래피를 EEA로 줬는데 `IABTCF_gdprApplies=0`이 찍혔다).
+// 기기별 해시 ID는 앱을 한 번 띄운 뒤 logcat에 UMP가 직접 알려 준다:
+//   `UserMessagingPlatform: Use new ConsentDebugSettings.Builder().addTestDeviceHashedId("…")`
+// 그 값을 `local.properties`(gitignored)의 `consent.testDeviceHashedId`에 넣는다 — 기기마다
+// 다르고 저장소에 커밋할 성질이 아니다.
+val consentTestDeviceHashedId: String =
+    localProperties.getProperty("consent.testDeviceHashedId").orEmpty()
+
 val realAdmobAppId: String? = localProperties.getProperty("admob.appId")
 val realRewardedInterstitialAdUnitId: String? = localProperties.getProperty("admob.rewardedInterstitialAdUnitId")
 val realBannerAdUnitId: String? = localProperties.getProperty("admob.bannerAdUnitId")
@@ -107,6 +116,7 @@ android {
         // 테스터에게 배포되는** 빌드라 거기에 EEA를 강제하면 한국 테스터에게 폼이 뜬다.
         // `BuildConfig.DEBUG`도 안 된다 — friend에서도 참이다(`GoAiCoachApplication` 주석).
         buildConfigField("boolean", "FORCE_EEA_CONSENT_DEBUG", "false")
+        buildConfigField("String", "CONSENT_TEST_DEVICE_HASHED_ID", "\"\"")
 
         val buildTime = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US).format(Date())
         buildConfigField("String", "BUILD_TIME", "\"$buildTime\"")
@@ -145,6 +155,7 @@ android {
             // 상속 사슬이 debug → friend → playInternal이라 **둘 다에서 다시 false로 못박는다** —
             // friend는 `USE_TEST_ADS=true`이면서도 **실제 테스터에게 배포되는** 빌드다.
             buildConfigField("boolean", "FORCE_EEA_CONSENT_DEBUG", forceEeaConsentDebug.toString())
+            buildConfigField("String", "CONSENT_TEST_DEVICE_HASHED_ID", "\"$consentTestDeviceHashedId\"")
             // ui/AdUnitIds.kt가 이 플래그로 테스트/실제 ID를 고른다 — 디버그 빌드는 local.properties
             // 내용과 무관하게 항상 true.
             manifestPlaceholders["admobAppId"] = testAdmobAppId
@@ -204,6 +215,7 @@ android {
             buildConfigField("boolean", "USE_TEST_ADS", useTestAds.toString())
             // 출시 빌드에는 어떤 경우에도 디버그 지오그래피가 없다(#89).
             buildConfigField("boolean", "FORCE_EEA_CONSENT_DEBUG", "false")
+            buildConfigField("String", "CONSENT_TEST_DEVICE_HASHED_ID", "\"\"")
             buildConfigField(
                 "String",
                 "REWARDED_INTERSTITIAL_AD_UNIT_ID",
@@ -224,6 +236,7 @@ android {
             buildConfigField("boolean", "USE_TEST_ADS", "true")
             // ⚠️ debug에서 켠 동의 디버그 지오그래피가 상속으로 새지 않게 끊는다(#89).
             buildConfigField("boolean", "FORCE_EEA_CONSENT_DEBUG", "false")
+            buildConfigField("String", "CONSENT_TEST_DEVICE_HASHED_ID", "\"\"")
             buildConfigField("String", "REWARDED_INTERSTITIAL_AD_UNIT_ID", "\"$testRewardedInterstitialAdUnitId\"")
             buildConfigField("String", "BANNER_AD_UNIT_ID", "\"$testBannerAdUnitId\"")
             // debug에서 initWith해도 지인 배포 채널에는 개발자 맥북 IP를 절대 물려주지 않는다.
@@ -271,6 +284,7 @@ android {
             buildConfigField("boolean", "USE_TEST_ADS", "true")
             // ⚠️ debug에서 켠 동의 디버그 지오그래피가 상속으로 새지 않게 끊는다(#89).
             buildConfigField("boolean", "FORCE_EEA_CONSENT_DEBUG", "false")
+            buildConfigField("String", "CONSENT_TEST_DEVICE_HASHED_ID", "\"\"")
             buildConfigField("String", "REWARDED_INTERSTITIAL_AD_UNIT_ID", "\"$testRewardedInterstitialAdUnitId\"")
             buildConfigField("String", "BANNER_AD_UNIT_ID", "\"$testBannerAdUnitId\"")
             buildConfigField("String", "REMOTE_ENGINE_URL", "\"\"")

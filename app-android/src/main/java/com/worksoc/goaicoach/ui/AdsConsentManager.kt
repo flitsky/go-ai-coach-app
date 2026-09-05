@@ -60,6 +60,18 @@ internal object AdsConsentManager {
      *
      * 돌려주는 값은 *"광고를 요청해도 되는가"* 다. ⚠️ 위 머리말대로 **콘솔에 메시지가 없으면
      * 언제나 `true`** 라는 점을 잊지 말 것.
+     *
+     * ## ⚠️ **"거부 = 광고 없음"이 아니다 — 이걸 "고치려" 들지 말 것**
+     * 2026-09-06 실기 확인: 폼에서 **거부**를 눌러도 광고는 재생된다. 저장된 값을 보면 거부는
+     * 정확히 기록돼 있다(`IABTCF_PurposeConsents=00000000000`, `IABTCF_gdprApplies=1`,
+     * 실제 `IABTCF_TCString`) — 그런데도 [ConsentInformation.canRequestAds]는 `true`다.
+     *
+     * **그것이 규격이다.** GDPR에서 거부는 *"맞춤 광고를 하지 말라"* 이지 *"광고를 주지 말라"* 가
+     * 아니고, 그 경우 SDK가 **비맞춤(limited) 광고**를 내보낸다. 거부에 광고를 아예 막으면
+     * 요구보다 엄격해져 **수익만 잃는다.**
+     *
+     * 그래서 이 게이트가 실제로 막는 경우는 **요청할 법적 근거가 아예 없을 때**(폼을 끝내지
+     * 못한 경우 등)로 좁다. 게이트가 "거의 안 막는다"는 관찰은 **버그가 아니다.**
      */
     suspend fun gatherConsentIfRequired(activity: Activity): Boolean {
         suspendCancellableCoroutine { continuation ->
@@ -110,11 +122,17 @@ internal object AdsConsentManager {
     private fun consentRequestParameters(context: Context): ConsentRequestParameters {
         val builder = ConsentRequestParameters.Builder()
         if (BuildConfig.FORCE_EEA_CONSENT_DEBUG) {
-            builder.setConsentDebugSettings(
-                ConsentDebugSettings.Builder(context)
-                    .setDebugGeography(ConsentDebugSettings.DebugGeography.DEBUG_GEOGRAPHY_EEA)
-                    .build(),
-            )
+            // ⚠️ **`addTestDeviceHashedId` 없이는 `setDebugGeography`가 조용히 무시된다.**
+            // 2026-09-06 실기에서 확인했다 — 지오그래피를 EEA로 줬는데도 SDK가 실제 IP(한국)를
+            // 보고 `IABTCF_gdprApplies=0`을 저장했다. 해시 ID는 앱을 한 번 띄우면 logcat이
+            // 알려 주고(`Use new ConsentDebugSettings.Builder().addTestDeviceHashedId("…")`),
+            // 그 값을 `local.properties`의 `consent.testDeviceHashedId`에 넣는다.
+            val debugSettings = ConsentDebugSettings.Builder(context)
+                .setDebugGeography(ConsentDebugSettings.DebugGeography.DEBUG_GEOGRAPHY_EEA)
+            BuildConfig.CONSENT_TEST_DEVICE_HASHED_ID
+                .takeIf { it.isNotBlank() }
+                ?.let { debugSettings.addTestDeviceHashedId(it) }
+            builder.setConsentDebugSettings(debugSettings.build())
         }
         return builder.build()
     }
