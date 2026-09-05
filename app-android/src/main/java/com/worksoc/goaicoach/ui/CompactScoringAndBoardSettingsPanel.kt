@@ -6,6 +6,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -67,18 +70,20 @@ internal fun CompactScoringAndBoardSettingsPanel(
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         // 1행: 계가 방식 / 덤
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            // ⚠️ **`IntrinsicSize.Min`으로 묶는다**(백로그 #107). 아래 칸 글자가 두 줄로 접히면
+            // 그 칸만 높아져 짝이 어긋난다 — 출석판이 같은 처방으로 고쳤다(#64 ⓐ, 함정 9번).
+            modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             CompactSettingDropdownCell(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f).fillMaxHeight(),
                 valueText = strings.compactRulesetLabel(ruleset),
                 options = Ruleset.entries,
                 optionLabel = strings::compactRulesetLabel,
                 onSelected = onRulesetChange,
             )
             CompactSettingDropdownCell(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f).fillMaxHeight(),
                 valueText = strings.compactKomiLabel(komi),
                 options = KomiOptions,
                 optionLabel = strings::komiValueLabel,
@@ -87,11 +92,13 @@ internal fun CompactScoringAndBoardSettingsPanel(
         }
         // 2행: 바둑판 크기 / 접바둑
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            // ⚠️ **`IntrinsicSize.Min`으로 묶는다**(백로그 #107). 아래 칸 글자가 두 줄로 접히면
+            // 그 칸만 높아져 짝이 어긋난다 — 출석판이 같은 처방으로 고쳤다(#64 ⓐ, 함정 9번).
+            modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             CompactSettingDropdownCell(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f).fillMaxHeight(),
                 valueText = strings.compactBoardSizeLabel(boardSize),
                 options = listOf(BoardSize.Nine, BoardSize.Thirteen, BoardSize.Nineteen),
                 optionLabel = { size -> "${size.value}x${size.value}" },
@@ -99,7 +106,7 @@ internal fun CompactScoringAndBoardSettingsPanel(
                 enabled = canChangeBoardShape,
             )
             CompactSettingDropdownCell(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f).fillMaxHeight(),
                 valueText = strings.compactHandicapLabel(handicapCount),
                 options = handicapOptions,
                 optionLabel = strings::compactHandicapValueLabel,
@@ -138,6 +145,8 @@ private fun <T> CompactSettingDropdownCell(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                // 행이 `IntrinsicSize.Min`이므로 배경도 그 높이를 채워야 짝이 나란히 보인다.
+                .fillMaxHeight()
                 .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
                 // ⚠️ `clickable(enabled = false)`로 둔다 — 아예 빼면 **잠긴 칸이 부모의 클릭을
                 // 대신 받는다.** 여기서는 부모가 스크롤이라 잠긴 칸을 눌렀을 때 엉뚱하게 반응한다.
@@ -155,7 +164,10 @@ private fun <T> CompactSettingDropdownCell(
                     // 잠긴 것이 **보여야** 한다 — 색만 흐리게 하고 값은 그대로 읽히게 둔다.
                     MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = DisabledAlpha)
                 },
-                maxLines = 1,
+                // ⚠️ **1줄이면 큰 글꼴에서 값이 잘린다** — 글꼴 크기가 정식 설정이 되면서
+                // (#106) 일반 사용자가 1.3배에 닿게 됐고, 실기에서 `바둑판 (13…` 으로 잘렸다.
+                // 고정 높이를 주지 않으므로 접혀도 칸이 함께 자란다(함정 9번).
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f),
             )

@@ -21,6 +21,7 @@ import org.junit.Test
 class FontScaleLayoutContractTest {
 
     private val attendanceBoard = codeOnly(sourceOf("AttendanceBoardView.kt"))
+    private val settingsGrid = codeOnly(sourceOf("CompactScoringAndBoardSettingsPanel.kt"))
     private val botPicker = codeOnly(sourceOf("BotCharacterUiState.kt"))
 
     /**
@@ -114,6 +115,38 @@ class FontScaleLayoutContractTest {
         assertTrue(
             "카드 안 가중치가 하나가 아니다(${weights}개) — 소개 하나만 양보해야 힌트가 안전하다(#64 ⓑ).",
             weights == 1,
+        )
+    }
+
+    /**
+     * 설정·로비의 2×2 드롭다운 격자(백로그 #107).
+     *
+     * ⚠️ **이 화면은 2026-09-05에 관객이 바뀌었다.** 1.3배는 예전부터 있었지만 개발자 도구 뒤에
+     * 있어서 **개발자만** 봤다. #106이 글꼴 크기를 정식 설정으로 승격하면서 일반 사용자가 그
+     * 배율에 닿게 됐고, 실기에서 `바둑판 (13…` 으로 **값이 잘렸다.**
+     */
+    @Test
+    fun theSettingsGridWrapsInsteadOfCuttingTheValueOff() {
+        assertTrue(
+            "격자 칸이 한 줄로 고정돼 있다 — 큰 글꼴에서 값이 잘린다(#107).",
+            settingsGrid.contains("maxLines = 2"),
+        )
+        assertTrue(
+            "한 줄 고정이 남아 있다 — 어느 칸인가는 여전히 잘린다(#107).",
+            !settingsGrid.contains("maxLines = 1"),
+        )
+    }
+
+    @Test
+    fun theSettingsGridRowTiesBothCellsToTheSameHeight() {
+        // ⚠️ 접히는 순간 그 칸만 높아진다 — 짝이 어긋나 보인다. 출석판과 같은 처방이다(#64 ⓐ).
+        assertTrue(
+            "격자 행이 `IntrinsicSize.Min`으로 묶여 있지 않다 — 접힌 칸만 커진다(#107).",
+            settingsGrid.contains("height(IntrinsicSize.Min)"),
+        )
+        assertTrue(
+            "격자 칸이 행 높이를 채우지 않는다 — 배경이 짝짝이가 된다(#107).",
+            settingsGrid.contains("fillMaxHeight()"),
         )
     }
 

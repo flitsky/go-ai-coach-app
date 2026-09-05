@@ -191,7 +191,14 @@ private fun PlayerSetupSideRow(
         ) {
             Text(
                 text = strings.colorLabel(state.color),
-                modifier = Modifier.weight(0.38f),
+                // ⚠️ **0.38f였고 영어 1.3배에서 `Blac / k`로 깨졌다**(백로그 #107, 2026-09-05 실기).
+                // 색 라벨이 여러 글자인 언어는 영어뿐이고(`Black`/`White` — 나머지는 한 글자),
+                // **한 단어라 끊을 자리가 없어** 줄바꿈이 단어 중간을 자른다.
+                // ⚠️ **내용에 맞춰 재는 방식으로 바꾸지 말 것** — 두 행의 라벨 폭이 서로 달라져
+                // (`Black` ≠ `White`) 아래위 알약이 어긋난다. 비율을 유지하되 넓히는 쪽이 맞다.
+                // ⚠️ 이 값은 **영어 1.3배가 기준**이다. 색 라벨이 더 긴 언어가 생기면 같은 증상이
+                // 돌아온다 — 그때는 이 숫자가 아니라 그 문구를 먼저 볼 것.
+                modifier = Modifier.weight(0.55f),
                 fontWeight = FontWeight.SemiBold,
             )
             SeatControllerPill(
