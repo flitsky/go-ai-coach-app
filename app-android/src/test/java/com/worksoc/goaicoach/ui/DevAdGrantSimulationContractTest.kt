@@ -18,7 +18,11 @@ class DevAdGrantSimulationContractTest {
 
     private val glue = codeOnly(sourceOf("PremiumPurchaseGlue.kt"))
     private val uiState = codeOnly(sourceOf("PremiumUiState.kt"))
-    private val settings = codeOnly(sourceOf("SettingsScreen.kt"))
+    // ⚠️ **개발자 섹션은 이제 별도 파일이다**(백로그 #102). 두 파일을 **셸 → 섹션 순서로**
+    // 이어 읽는다 — 그래야 아래 위치 비교(`indexOf`)가 **원래의 문서 순서**를 그대로 뜻한다.
+    // 섹션을 먼저 붙이면 "1차 게이트 안에 2차 진입이 있다"는 비교가 거꾸로 성립해 버린다.
+    private val settings =
+        codeOnly(sourceOf("SettingsScreen.kt")) + "\n" + codeOnly(sourceOf("DeveloperTestSection.kt"))
 
     /**
      * 시뮬레이션은 **실제 경로와 같은 5계층 함수**를 지나야 한다 — 다른 것은 광고를 띄우는

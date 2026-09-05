@@ -19,7 +19,11 @@ import org.junit.Test
  */
 class DeveloperSectionTierContractTest {
 
-    private val settings = codeOnly(sourceOf("SettingsScreen.kt"))
+    // ⚠️ **개발자 섹션은 이제 별도 파일이다**(백로그 #102). 두 파일을 **셸 → 섹션 순서로**
+    // 이어 읽는다 — 그래야 아래 위치 비교(`indexOf`)가 **원래의 문서 순서**를 그대로 뜻한다.
+    // 섹션을 먼저 붙이면 "1차 게이트 안에 2차 진입이 있다"는 비교가 거꾸로 성립해 버린다.
+    private val settings =
+        codeOnly(sourceOf("SettingsScreen.kt")) + "\n" + codeOnly(sourceOf("DeveloperTestSection.kt"))
 
     /**
      * ⚠️ **2차는 `BuildConfig.DEBUG` 안에 있어야 한다.** 길게 누르기만으로 게이트하면 제스처를

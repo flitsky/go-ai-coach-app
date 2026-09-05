@@ -1533,6 +1533,56 @@ class LayeringContractTest {
         )
     }
 
+    /**
+     * 예산은 이제 셸 하나가 아니라 **역할 단위**로 붙는다(백로그 #102).
+     *
+     * ⚠️ **왜 늘렸나**: 예산이 `GoCoachApp.kt` 하나만 지키는 동안 `SettingsScreen.kt`가
+     * **1003줄로 더 크게** 자라 있었다. 지표가 지키는 것만 지켜지고 나머지는 무방비였다는 뜻이다.
+     *
+     * ⚠️ **여기 있는 파일들은 "조립하는 쪽"이다.** 원칙은 파일이 아니라 역할에 있다 —
+     * *"조립만 하는 셸은 상태를 소유하지 않는다."* 그래서 조이는 힘은 **훅 수**에 두고
+     * (여유 0), 줄 수는 뒷받침으로 여유를 준다. 숫자를 올릴 때는 **무엇 때문에 늘었는지**를
+     * 반드시 여기 적을 것 — 사유 없이 올리면 이 그물은 뜻을 잃는다.
+     */
+    @Test
+    fun settingsScreenStaysAShellAndTheDeveloperSectionStaysItsOwnRole() {
+        // `SettingsScreen.kt` — 개발자 섹션을 떼어낸 뒤 코드 359줄 / 훅 13.
+        // ⚠️ 훅 **여유 0**이 이 항목의 핵심이다. 개발자 섹션의 상태를 이 화면으로 되돌리려는
+        // 순간 여기서 걸린다 — #102가 막으려는 것이 정확히 그것이다.
+        //
+        // `DeveloperTestSection.kt` — 코드 313줄 / 훅 4.
+        // ⚠️ 새 개발자 컨트롤은 대부분 저장소를 부르는 버튼이라 훅이 필요 없다. 훅이 필요하다면
+        // **정말 이 섹션이 상태를 가져야 하는지** 를 먼저 물을 것.
+        val budgets = listOf(
+            Triple("ui/SettingsScreen.kt", 400, 13),
+            Triple("ui/DeveloperTestSection.kt", 350, 4),
+        )
+        val stateHookRegex = Regex("\\b(remember|mutableStateOf|LaunchedEffect)\\b")
+        val offenders = mutableListOf<String>()
+
+        budgets.forEach { (path, lineBudget, stateHookBudget) ->
+            val file = repoRoot().resolve("app-android/src/main/java/com/worksoc/goaicoach/$path")
+            val allLines = file.readLines()
+            val lines = codeLinesOf(allLines)
+            val stateHookCount = lines.count { line -> stateHookRegex.containsMatchIn(line) }
+
+            if (lines.size > lineBudget) {
+                offenders += "$path grew to ${lines.size} code lines (budget $lineBudget, " +
+                    "imports/comments/blanks excluded; ${allLines.size} raw)."
+            }
+            if (stateHookCount > stateHookBudget) {
+                offenders += "$path holds $stateHookCount Compose state hooks (budget " +
+                    "$stateHookBudget): move state ownership to the role that uses it."
+            }
+        }
+
+        assertTrue(
+            "Settings must stay a shell and the developer section must stay its own role:\n" +
+                offenders.joinToString("\n"),
+            offenders.isEmpty(),
+        )
+    }
+
     private fun ktFilesIn(vararg dirs: File): List<File> =
         dirs.flatMap { dir ->
             if (dir.exists()) {
