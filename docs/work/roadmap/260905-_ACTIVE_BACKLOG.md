@@ -423,7 +423,7 @@
 
 | # | 무엇을 했는가 | 커밋 |
 | --- | --- | --- |
-| 90 | 출시 산출물이 **테스트 광고를 달고 나가는 길을 막았다** — `verifyReleaseAdmobKeys`를 `packageRelease`·`packageReleaseBundle`에 매달았다(구성 시점 아님). 구글 샘플 ID 붙여넣기도 잡는다. `make bundle-aab`/`release`는 **`bump-version`보다 먼저** 검사한다 | `TBD` |
+| 90 | 출시 산출물이 **테스트 광고를 달고 나가는 길을 막았다** — `verifyReleaseAdmobKeys`를 `packageRelease`·`packageReleaseBundle`에 매달았다(구성 시점 아님). 구글 샘플 ID 붙여넣기도 잡는다. `make bundle-aab`/`release`는 **`bump-version`보다 먼저** 검사한다 | `127480d` |
 | 110 | 대국 중 햄버거 다이얼로그가 **없는 것을 광고하던 제목** — `대국 설정` → `설정`. IA 스펙도 같은 메뉴를 두 곳(mermaid·5번)에서 틀리게 적고 있어 함께 고쳤다(`Drawer`가 아니라 `AlertDialog`다) | `d83dfca` |
 | 111 | **문서 통폐합** — 루트 마스터플랜 폴더 6개 → 1개. 다섯 폴더가 `README.md` 하나씩만 들고 있어 고유명 파일로 평탄화(`work/plans/` 신설 + 원칙 문서는 `spec/`으로). 참조 226건 갱신. ⚠️ **`check-doc-links.py`가 `폴더/README.md` 형태를 구조적으로 못 보던 것**을 발견해 검사를 확장했고, 그 확장이 곧바로 기존 파손 4건을 찾아냈다 | `721ac03` |
 | 103 | 준비 화면이 남기고 간 고아 문자열 8개 제거(4개 언어). `values/strings.xml`은 이제 **런처 라벨 전용** — 그 사실을 머리말에 못박았다 | `2b9e07b` |
