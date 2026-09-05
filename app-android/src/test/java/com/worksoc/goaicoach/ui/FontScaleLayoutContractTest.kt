@@ -22,6 +22,8 @@ class FontScaleLayoutContractTest {
 
     private val attendanceBoard = codeOnly(sourceOf("AttendanceBoardView.kt"))
     private val settingsGrid = codeOnly(sourceOf("CompactScoringAndBoardSettingsPanel.kt"))
+    private val statusPanel = codeOnly(sourceOf("GameStatusPanel.kt"))
+    private val developerSection = codeOnly(sourceOf("DeveloperTestSection.kt"))
     private val botPicker = codeOnly(sourceOf("BotCharacterUiState.kt"))
 
     /**
@@ -147,6 +149,44 @@ class FontScaleLayoutContractTest {
         assertTrue(
             "격자 칸이 행 높이를 채우지 않는다 — 배경이 짝짝이가 된다(#107).",
             settingsGrid.contains("fillMaxHeight()"),
+        )
+    }
+
+    /**
+     * 착수 모드 스위치(백로그 #107). 영어 1.3배에서 `⇅ Con…` 으로 잘렸다 —
+     * **무엇을 누르는지 알 수 없는 라벨은 없는 것과 같다.**
+     */
+    @Test
+    fun thePlayModeSwitchWrapsAndItsHeightIsAFloor() {
+        assertTrue(
+            "스위치 라벨이 한 줄로 고정돼 큰 글꼴에서 잘린다(#107).",
+            statusPanel.contains("maxLines = 2"),
+        )
+        // ⚠️ 접히게만 하고 높이를 고정으로 두면 **아랫줄이 잘린다** — 둘은 한 처방이다(함정 9번).
+        assertFalse(
+            "착수 버튼 높이가 다시 고정이다 — 접힌 라벨의 아랫줄이 잘린다(#107).",
+            statusPanel.contains(".height(PlayButtonHeight)"),
+        )
+        assertTrue(
+            "착수 버튼 높이가 바닥값이 아니다(#107).",
+            statusPanel.contains("heightIn(min = PlayButtonHeight)"),
+        )
+    }
+
+    /**
+     * 개발자 섹션 제목 행(백로그 #107). 영어 1.3배에서 `Turn off develope / r mode` 로
+     * **단어 중간이 잘렸다** — 둘 다 weight가 없으면 제목이 폭을 다 가져가고 버튼이 눌린다.
+     */
+    @Test
+    fun onlyTheDeveloperSectionTitleYieldsSpaceSoTheOffButtonIsNeverSqueezed() {
+        val title = developerSection.indexOf("strings.settingsDevTierBasicTitle")
+        val weight = developerSection.indexOf("Modifier.weight(1f)", title)
+        val button = developerSection.indexOf("onRequestDeveloperModeOff()", title)
+
+        assertTrue("제목을 찾지 못했다 — 이 계약의 전제가 무너졌다.", title >= 0 && button >= 0)
+        assertTrue(
+            "개발자 섹션 제목이 양보하지 않는다 — 끄기 버튼이 눌려 단어 중간에서 잘린다(#107).",
+            weight in (title + 1) until button,
         )
     }
 

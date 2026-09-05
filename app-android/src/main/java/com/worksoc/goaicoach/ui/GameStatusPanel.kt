@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -82,6 +83,10 @@ internal fun GameStatusPanel(
         // 중앙: [착수 모드 스위치] + [착수] 버튼. `수순 N수`가 헤더로 올라가며 비운 자리를
         // 스위치가 받았다(#35 → #37).
         Column(
+            // ⚠️ **폭을 훔쳐 넓히려다 되돌렸다**(백로그 #107, 2026-09-05 실기).
+            // 1.4f로 올리자 스위치 라벨은 들어갔지만 **좌석 카드의 `Captures: 0`이 잘렸다** —
+            // 세 칸이 1.3배에서 함께 들어갈 폭이 애초에 없다. **폭 배분으로 풀 문제가 아니라
+            // 문구 길이의 문제다**(사용자 판단). 한쪽을 고치면 다른 쪽이 깨지는 자리다.
             modifier = Modifier
                 .weight(1f)
                 .padding(horizontal = 4.dp),
@@ -120,7 +125,7 @@ internal fun GameStatusPanel(
                     enabled = tentativeMove != null && !screenState.isGameEnded,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(PlayButtonHeight),
+                        .heightIn(min = PlayButtonHeight),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = Color.White,
@@ -294,7 +299,9 @@ private fun PlayModeSwitch(
     ) {
         Row(
             modifier = Modifier
-                .then(if (prominent) Modifier.height(PlayButtonHeight) else Modifier)
+                // ⚠️ **고정 높이가 아니라 바닥값이다**(함정 9번, #107). 고정이면 두 줄로 접힌
+                // 라벨의 아랫줄이 잘린다 — 출석판이 같은 이유로 `heightIn(min = …)`으로 갔다.
+                .then(if (prominent) Modifier.heightIn(min = PlayButtonHeight) else Modifier)
                 .padding(horizontal = 6.dp, vertical = 5.dp)
                 // 뒷면을 다시 세운다.
                 .graphicsLayer { rotationX = if (showingConfirmSide) 180f else 0f },
@@ -315,7 +322,10 @@ private fun PlayModeSwitch(
                 style = if (prominent) MaterialTheme.typography.labelLarge else MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
+                // ⚠️ **1줄이면 큰 글꼴에서 `Con…` 이 된다**(백로그 #107, 영어 1.3배 실기).
+                // 무엇을 누르는지 알 수 없는 라벨은 없는 것과 같다. 아래 높이가 바닥값이라
+                // 접혀도 잘리지 않는다.
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
         }

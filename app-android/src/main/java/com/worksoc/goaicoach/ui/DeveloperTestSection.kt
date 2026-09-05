@@ -117,6 +117,10 @@ internal fun DeveloperTestSection(
         ) {
             Text(
                 text = strings.settingsDevTierBasicTitle,
+                // ⚠️ **제목이 양보한다**(백로그 #107). 둘 다 weight가 없으면 제목이 먼저 폭을
+                // 다 가져가고 버튼이 남은 자리에 눌려, 영어 1.3배에서 `Turn off develope / r mode`
+                // 로 **단어 중간이 잘렸다.** 제목은 띄어쓰기가 있어 접혀도 읽힌다.
+                modifier = Modifier.weight(1f),
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.secondary,
