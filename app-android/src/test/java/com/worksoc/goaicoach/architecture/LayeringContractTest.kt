@@ -1486,18 +1486,40 @@ class LayeringContractTest {
         // ⚠️ **주석이 이 예산을 쓰는 값을 한다** — 이 자리의 결함은 `refreshNewGamePreview()`가
         // 판을 갈아엎기 **전에** 기록해야 한다는 순서 의존이고, 그 사유가 코드에 없으면 다음
         // 사람이 두 줄의 순서를 아무렇지 않게 바꾼다(그래도 테스트는 초록이다).
-        val lineBudget = 885
-        val stateHookBudget = 46
+        // ── 2026-09-05: 지표를 바꿨다(사용자 결정). 사유는 아래 셋이다. ──────────────────
+        //
+        // ⚠️ **① 예산이 재던 것이 예산이 막으려는 것과 달랐다.** 885줄 중 **126줄(14%)이 import**,
+        //    43줄이 주석이었다 — 즉 예산의 5분의 1이 복잡도가 아닌 것에 쓰이고 있었다. 더 나쁜 것은
+        //    **주석이 세어졌다는 점**이다: *"왜 이 순서여야 하는가"* 를 적으면 예산이 깎였다.
+        //    #96이 실제로 그 대가를 치렀다(+3 중 2줄이 사유 주석). **좋은 일에 벌점이 붙는 지표는
+        //    오래 가지 못한다.** 그래서 이제 **import·주석·빈 줄을 빼고** 센다.
+        //
+        // ⚠️ **② 상태 훅 수도 같은 오염이 있었다.** `import ...remember` 같은 줄과 KDoc 한 줄이
+        //    훅으로 세어져 **46 중 4가 유령**이었다(실제 **42**). 예산이 4줄어치 헐거웠다는 뜻이다.
+        //    ⚠️ 처음엔 43으로 잡았다가 **변이로 걸렸다** — 훅을 하나 더해도 통과했다. 유령을
+        //    걷어낸 수를 다시 재서 42로 맞췄다. **여유 0이어야 이 지표가 일을 한다.**
+        //
+        // ⚠️ **③ 그래서 둘의 역할을 나눴다.** 훅 수가 **1차 지표**이고 여유가 **0**이다 —
+        //    *"이 셸이 얼마나 많은 것을 알고 있는가"* 를 직접 재기 때문이다. 줄 수는 **뒷받침**이고
+        //    777로 여유를 준다. 조이는 힘은 뜻이 정확한 쪽에 둔다.
+        //
+        // ⚠️ **원칙은 파일이 아니라 역할에 있다** — *"조립만 하는 셸은 상태를 소유하지 않는다"*.
+        //    줄 수는 그 위반의 신호일 뿐이다. 그래서 숫자를 올릴 때는 **무엇을 조립하느라 늘었는지**
+        //    를 여기 적는다. 사유 없이 올리는 순간 이 그물은 뜻을 잃는다.
+        val lineBudget = 777
+        val stateHookBudget = 42
 
         val goCoachApp = repoRoot()
             .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
-        val lines = goCoachApp.readLines()
+        val allLines = goCoachApp.readLines()
+        val lines = codeLinesOf(allLines)
         val stateHookRegex = Regex("\\b(remember|mutableStateOf|LaunchedEffect)\\b")
         val stateHookCount = lines.count { line -> stateHookRegex.containsMatchIn(line) }
 
         val offenders = mutableListOf<String>()
         if (lines.size > lineBudget) {
-            offenders += "GoCoachApp.kt grew to ${lines.size} lines (budget $lineBudget): " +
+            offenders += "GoCoachApp.kt grew to ${lines.size} code lines (budget $lineBudget, " +
+                "imports/comments/blanks excluded; ${allLines.size} raw): " +
                 "hoist wiring into a screen presenter, do not regrow the shell."
         }
         if (stateHookCount > stateHookBudget) {
@@ -1693,6 +1715,34 @@ class LayeringContractTest {
                     "diagnostic device id survive the release reset (8.3-2 scope table)",
                 text.contains(store),
             )
+        }
+    }
+
+    /**
+     * import·주석·빈 줄을 걷어낸 **코드 줄만** 남긴다(2026-09-05).
+     *
+     * ⚠️ **이것이 없으면 예산이 결합과 설명을 복잡도로 오해한다.** `GoCoachApp.kt`는 885줄 중
+     * 126줄이 import였다 — import는 복잡도가 아니라 **결합의 증상**이고, 그것을 예산으로 막으면
+     * 정작 줄여야 할 조립 코드는 그대로 둔 채 import만 줄이는 왜곡이 생긴다.
+     */
+    private fun codeLinesOf(lines: List<String>): List<String> {
+        var inBlockComment = false
+        return lines.filter { raw ->
+            val line = raw.trim()
+            when {
+                inBlockComment -> {
+                    if (line.contains("*/")) inBlockComment = false
+                    false
+                }
+                line.isEmpty() -> false
+                line.startsWith("//") -> false
+                line.startsWith("import ") || line.startsWith("package ") -> false
+                line.startsWith("/*") -> {
+                    if (!line.contains("*/")) inBlockComment = true
+                    false
+                }
+                else -> true
+            }
         }
     }
 
