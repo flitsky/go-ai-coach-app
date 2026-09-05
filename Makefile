@@ -62,7 +62,7 @@ export JAVA_HOME
 
 .DEFAULT_GOAL := help
 
-.PHONY: help doctor test dev dev-stub install-dev install-dev-engine reinstall-dev-engine seed-engine launch friend-apk play-internal-aab bundle-aab bump-version prepare-friend-assets engine-level-benchmark engine-device-benchmark engine-search-mode-benchmark engine-search-mode-benchmark-phone release ensure-debug-engine prebuild-engine clean
+.PHONY: help doctor test dev dev-stub install-dev install-dev-engine reinstall-dev-engine seed-engine launch friend-apk play-internal-aab bundle-aab verify-admob-keys bump-version prepare-friend-assets engine-level-benchmark engine-device-benchmark engine-search-mode-benchmark engine-search-mode-benchmark-phone release ensure-debug-engine prebuild-engine clean
 
 help:
 	@echo "=========================================================================="
@@ -88,6 +88,7 @@ help:
 	@echo "  make friend-apk          - Build Friend APK with bundled KataGo assets"
 	@echo "  make play-internal-aab   - Build release-signed AAB (friend/debug assets) for Play Console internal testing"
 	@echo "  make bundle-aab          - Build release-signed AAB (real release engine + assets) for production Play Console upload"
+	@echo "  make verify-admob-keys   - Check local.properties has real AdMob keys (release/bundle-aab run this first)"
 	@echo "  make prebuild-engine     - Compile native KataGo engine binary (libkatago.so)"
 	@echo "  make release             - Assemble Release APK"
 	@echo "                             (release/play-internal-aab/bundle-aab all bump version.properties first;"
@@ -187,12 +188,20 @@ play-internal-aab: doctor bump-version ensure-debug-engine prepare-friend-assets
 # 결정, app-android/build.gradle.kts의 release sourceSets 참고). Play Console 정식 공개
 # 출시(프로덕션 트랙) 업로드용 — 내부 테스트 트랙에는 빠른 반복이 필요하므로 계속
 # play-internal-aab을 쓴다.
-bundle-aab: doctor bump-version ensure-debug-engine prepare-friend-assets
+# ⚠️ **verify-admob-keys가 bump-version보다 먼저다**(백로그 #90). 순서를 바꾸지 말 것 —
+# bump-version은 `version.properties`를 **고쳐 쓰므로**, 키가 없어 Gradle이 나중에 실패하면
+# 올리지도 못한 버전만 올라간 채 남는다. 검사를 앞에 두면 아무것도 건드리기 전에 멈춘다.
+bundle-aab: doctor verify-admob-keys bump-version ensure-debug-engine prepare-friend-assets
 	$(GRADLEW) :app-android:bundleRelease
 	@mkdir -p dist
 	@cp app-android/build/outputs/bundle/release/app-android-release.aab "$(RELEASE_AAB)"
 	@ls -lh "$(RELEASE_AAB)"
 	@shasum -a 256 "$(RELEASE_AAB)"
+
+# 실제 AdMob 키가 준비됐는지만 본다. ⚠️ **규칙을 여기 옮겨 적지 말 것** — 정본은
+# `app-android/build.gradle.kts`의 `verifyReleaseAdmobKeys`이고, 두 곳에 적으면 반드시 어긋난다.
+verify-admob-keys:
+	$(GRADLEW) :app-android:verifyReleaseAdmobKeys
 
 engine-level-benchmark:
 	python3 scripts/run-katago-level-matrix.py --games-per-matchup "$(ENGINE_MATCH_GAMES)" --out-dir "$(ENGINE_MATCH_OUT)" $(ENGINE_MATCH_ARGS)
@@ -218,7 +227,8 @@ prepare-friend-assets:
 	@cp "$(FRIEND_ANALYSIS_CONFIG_PATH)" "$(FRIEND_ASSET_DIR)/analysis_learning.cfg"
 	@echo "Prepared friend APK assets in $(FRIEND_ASSET_DIR)"
 
-release: doctor bump-version ensure-debug-engine prepare-friend-assets
+# ⚠️ `bundle-aab`과 같은 이유로 verify-admob-keys가 bump-version보다 앞이다(백로그 #90).
+release: doctor verify-admob-keys bump-version ensure-debug-engine prepare-friend-assets
 	$(GRADLEW) :app-android:assembleRelease
 
 ensure-debug-engine:

@@ -171,12 +171,19 @@ android {
                 // ⚠️ `defaultConfig`에 넣지 말 것 — debug에도 걸려 x86_64 에뮬레이터가 막힌다.
                 abiFilters += "arm64-v8a"
             }
-            // local.properties에 실제 값이 아직 없으면(미등록 상태) release 빌드도 안전하게 테스트
-            // 값으로 폴백한다 — "테스트해야 하는데 실제 광고가 나가는" 상황보다 "출시용인데 테스트
-            // 광고가 나가는" 상황(눈에 바로 띄는 버그)이 훨씬 덜 위험하기 때문.
-            val useTestAds = realAdmobAppId == null ||
-                realRewardedInterstitialAdUnitId == null ||
-                realBannerAdUnitId == null
+            // 실제 값이 없으면 테스트 값으로 폴백한다. ⚠️ **이제 이것은 정책이 아니라 자리 채우기다**
+            // (백로그 #90, 2026-09-06). 구성 시점에는 `buildConfigField`가 무언가를 받아야 하므로
+            // 폴백을 남기되, **출시 산출물이 실제로 만들어지는 것은 아래 `verifyReleaseAdmobKeys`가
+            // 막는다.** 즉 키 없이 release를 구성할 수는 있어도 패키징할 수는 없다.
+            //
+            // 예전 근거는 *"출시용인데 테스트 광고가 나가는 건 눈에 바로 띄는 버그라 덜 위험하다"* 였다.
+            // ⚠️ **AAB에서는 그 전제가 성립하지 않는다** — 번들은 빌드해서 그대로 올리지, 설치해서
+            // 광고를 보지 않는다. 눈에 띌 사람이 아무도 없다.
+            // ⚠️ `isNullOrBlank`인 이유: `admob.appId=` 처럼 **빈 값**이면 예전 `== null` 검사는
+            // 통과해 `USE_TEST_ADS=false` + 빈 광고 단위 ID로 나갔다 — 폴백보다 나쁜 상태다.
+            val useTestAds = realAdmobAppId.isNullOrBlank() ||
+                realRewardedInterstitialAdUnitId.isNullOrBlank() ||
+                realBannerAdUnitId.isNullOrBlank()
             manifestPlaceholders["admobAppId"] = realAdmobAppId ?: testAdmobAppId
             buildConfigField("boolean", "USE_TEST_ADS", useTestAds.toString())
             buildConfigField(
@@ -325,3 +332,66 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 출시 산출물에 실제 AdMob 키가 들어갔는지 못박는다 (백로그 #90)
+//
+// **왜 필요한가.** `local.properties`는 gitignore 대상이라 기계마다 없을 수 있다. 그런데 release
+// 블록은 키가 없으면 **조용히 구글 테스트 광고 ID로 폴백**한다 — 기계를 바꾸거나 새로 클론한
+// 상태에서 `make bundle-aab`을 돌리면 **서명된 정식 AAB가 테스트 광고를 달고 스토어로 나간다**
+// (수익 0 + AdMob 정책 문제). AAB는 설치해서 광고를 보지 않으므로 아무도 알아채지 못한다.
+// 유일한 신호였던 개발자 행의 `REAL ADS` 문자열(`DeveloperTestSection.kt`)은 ⚠️ #99 이후
+// **3시간마다 꺼져서** 다시 10탭해야 보인다 — 사람이 지키는 안전장치로는 더 약해졌다.
+//
+// ⚠️ **`getByName("release") { … }` 안에서 `error()`를 던지지 말 것.** 빌드타입 블록은 **어느
+// Gradle 태스크를 돌려도 구성 시점에 평가되므로**, 키가 없는 기계에서 `testDebugUnitTest`조차
+// 못 돌게 된다 — 정확히 이 검사가 보호하려던 "새로 클론한 기계"가 먼저 막힌다. 그래서 검사를
+// **태스크로 만들어 패키징 태스크에 매단다**: 구성은 통과하고, 산출물을 만들 때 실행되며 실패한다.
+//
+// ⚠️ **`assembleRelease`/`bundleRelease`에 `doFirst`로 붙이지 말 것.** 그 둘은 수명주기 태스크라
+// 실제 패키징이 **끝난 뒤에** 실행된다 — 실패해도 APK/AAB는 이미 디스크에 남는다. 산출물을 진짜
+// 만드는 `packageRelease`(APK)·`packageReleaseBundle`(AAB)에 매달아야 한다.
+val realAdmobKeys = mapOf(
+    "admob.appId" to realAdmobAppId,
+    "admob.rewardedInterstitialAdUnitId" to realRewardedInterstitialAdUnitId,
+    "admob.bannerAdUnitId" to realBannerAdUnitId,
+)
+val googleSampleAdIds = setOf(testAdmobAppId, testRewardedInterstitialAdUnitId, testBannerAdUnitId)
+
+val verifyReleaseAdmobKeys = tasks.register("verifyReleaseAdmobKeys") {
+    group = "verification"
+    description = "release 산출물이 실제 AdMob 키로 빌드되는지 확인한다 (백로그 #90)."
+    doLast {
+        val problems = realAdmobKeys.mapNotNull { (key, value) ->
+            when {
+                value.isNullOrBlank() -> "$key — local.properties에 없거나 값이 비어 있다"
+                // ⚠️ 구글 샘플 ID를 실제 키 자리에 붙여 넣으면 폴백보다 **나쁘다** —
+                // `USE_TEST_ADS`가 false가 되어 개발자 행조차 "REAL ADS"라고 거짓말한다.
+                value in googleSampleAdIds -> "$key — 구글 샘플 광고 ID다(실제 키가 아니다)"
+                !value.startsWith("ca-app-pub-") -> "$key — `ca-app-pub-`로 시작하지 않는다: $value"
+                else -> null
+            }
+        }
+        if (problems.isNotEmpty()) {
+            error(
+                buildString {
+                    appendLine("출시 산출물을 만들 수 없다 — 실제 AdMob 키가 준비되지 않았다(백로그 #90).")
+                    problems.forEach { appendLine("  · $it") }
+                    appendLine()
+                    appendLine("local.properties(gitignored)에 세 키를 넣고 다시 시도할 것:")
+                    appendLine("  admob.appId=ca-app-pub-…~…")
+                    appendLine("  admob.rewardedInterstitialAdUnitId=ca-app-pub-…/…")
+                    appendLine("  admob.bannerAdUnitId=ca-app-pub-…/…")
+                    appendLine()
+                    append("테스트 광고로 배포하려면 release가 아니라 friend/playInternal 빌드를 쓸 것 ")
+                    append("— 그 둘은 USE_TEST_ADS를 하드코딩한다.")
+                },
+            )
+        }
+    }
+}
+
+// ⚠️ friend/playInternal/debug는 여기 걸리지 않는다 — 그 셋은 폴백을 쓰는 것이 아니라
+// `USE_TEST_ADS="true"`를 **하드코딩**해서 실제 키를 아예 참조하지 않는다. 손대지 말 것.
+tasks.matching { it.name == "packageRelease" || it.name == "packageReleaseBundle" }
+    .configureEach { dependsOn(verifyReleaseAdmobKeys) }
