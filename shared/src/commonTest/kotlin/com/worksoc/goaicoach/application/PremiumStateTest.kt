@@ -81,7 +81,7 @@ class PremiumStateTest {
 
     @Test
     fun claimedFeaturesIsIndependentOfActiveAndClockPlausibleJudgement() {
-        // claimedFeatures는 초도 발행 그랜드파더링(launch-plan/README.md 3장) 전용 축이라,
+        // claimedFeatures는 초도 발행 그랜드파더링(GOOGLE_PLAY_LAUNCH_PLAN.md 3장) 전용 축이라,
         // source/adGrantStartedAtMillis 기반 판정(isActive/isClockPlausibleAt)에 영향을
         // 주면 안 된다 — 클레임만 하고 프리미엄은 없는 상태가 정상적으로 존재해야 한다.
         val state = PremiumState(claimedFeatures = setOf(FeatureId.Undo))

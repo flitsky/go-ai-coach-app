@@ -5,7 +5,7 @@ import com.worksoc.goaicoach.application.device.DeviceIdentityStorePort
 /**
  * 기능 전체를 껐다 켰다 하는 컴파일타임 스위치 모음. 지금은 로그인(Google/이메일 계정 연동)
  * 하나뿐이다 — 게스트(기기 로컬 ID) + Google Play Billing 구매 복원만으로 이미 크로스
- * 디바이스 구매 복원이 완결되고(2026-08-09 실기 검증, `auth-onboarding/README.md` 참고)
+ * 디바이스 구매 복원이 완결되고(2026-08-09 실기 검증, `LOGIN_AND_ACCOUNT_SYSTEM.md` 참고)
  * 계정 로그인이 실제로 열어줄 다른 기능(Firestore 동기화 등)은 아직 미구현이라, 사용자
  * 결정으로 이번 출시에서는 끈다. 값을 `true`로 되돌리고 다시 빌드하면 온보딩/설정 화면의
  * 기존 로그인 UI가 코드 변경 없이 그대로 되살아난다 — 로그인 관련 코드 자체는 지우지 않았다.
@@ -26,7 +26,7 @@ internal object FeatureFlags {
      * 봇 캐릭터 개별 구매(백로그 #18, 5단계 관장 천원 4,900원)를 켜는 **별도** 스위치.
      *
      * ⚠️ [isPurchaseEnabled]와 일부러 분리했다. 그 플래그는 **프리미엄 영구 구매**를 가리는데,
-     * 프리미엄은 월 구독으로 가기로 확정된 상태라(`feature-access-principles/README.md` 8장)
+     * 프리미엄은 월 구독으로 가기로 확정된 상태라(`FEATURE_ACCESS_PRINCIPLES.md` 8장)
      * 캐릭터를 팔자고 그것까지 되살릴 이유가 없다 — 하나로 묶었다면 켜는 순간 업셀 팝업에
      * 영구 구매 버튼이 같이 돌아온다.
      *

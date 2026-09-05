@@ -29,7 +29,7 @@ data class AuthState(
  * `signInWithGoogle`(신규)과 `linkGoogleCredential`(승격) 중 어느 쪽을 호출할지는 이
  * 판단 하나로 결정된다. 이 판단 자체를 SDK 어댑터(`AndroidAuthClient`) 안에 묻지 않고
  * 여기 순수 함수로 분리해, "언제 승격할지"가 raw SDK 기능이 아니라 유스케이스 판단으로
- * 남도록 한다(`auth-onboarding/README.md`의 "계층 배치 참고" 표 Step 2 참고).
+ * 남도록 한다(`LOGIN_AND_ACCOUNT_SYSTEM.md`의 "계층 배치 참고" 표 Step 2 참고).
  */
 val AuthState.isPromotableAnonymousSession: Boolean
     get() = isSignedIn && provider == AuthProvider.Anonymous

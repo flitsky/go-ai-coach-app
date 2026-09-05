@@ -171,7 +171,7 @@ bump-version:
 	@./scripts/bump-version.sh "$(VERSION)"
 
 # playInternal은 friend와 같은 debug KataGo 엔진/에셋을 재사용하지만 release keystore로
-# 서명한다(premium-mode/README.md Step 4 후속 — Play Console 인앱 상품 등록에는 결제 권한이
+# 서명한다(PREMIUM_MODE.md Step 4 후속 — Play Console 인앱 상품 등록에는 결제 권한이
 # 포함된 서명된 빌드 업로드가 선행 조건). local.properties의 release.* 키가 없으면 서명 없이
 # 빌드되어 이 타겟이 실패한다.
 play-internal-aab: doctor bump-version ensure-debug-engine prepare-friend-assets

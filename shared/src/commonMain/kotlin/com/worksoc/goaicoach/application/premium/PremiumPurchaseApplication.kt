@@ -25,7 +25,7 @@ data class PremiumPurchaseRunRequest(
  * 건너뛰도록). 특히 [PurchaseTrigger.Restore]에서 Play가 "소유한 구매 없음"을 반환했다고 해서
  * 로컬에 이미 있던 [PremiumSource.Purchase] 상태를 되돌리지는 않는다 — 일시적인 네트워크
  * 응답 하나로 결제한 사용자의 접근권을 조용히 빼앗는 위험이, 실제로는 드문 환불 케이스가
- * 잠시 더 유지되는 위험보다 크다고 판단한 보수적 선택이다(premium-mode/README.md Step 4 참고).
+ * 잠시 더 유지되는 위험보다 크다고 판단한 보수적 선택이다(PREMIUM_MODE.md Step 4 참고).
  */
 data class PremiumPurchaseRunResult(
     val nextState: PremiumState?,

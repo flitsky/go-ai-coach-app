@@ -26,7 +26,7 @@ val testRewardedInterstitialAdUnitId = "ca-app-pub-3940256099942544/5354046379"
 val testBannerAdUnitId = "ca-app-pub-3940256099942544/6300978111"
 
 // 실제 AdMob 앱/광고단위 ID는 local.properties(gitignored, sdk.dir과 같은 파일)의 세 키로
-// 주입한다 — 코드/버전관리에 하드코딩하지 않는다(premium-mode/README.md Step 3 참고).
+// 주입한다 — 코드/버전관리에 하드코딩하지 않는다(PREMIUM_MODE.md Step 3 참고).
 // 다만 이 값이 실제로 쓰이는 것은 release 빌드뿐이다(아래 buildTypes 참고) — 정식 출시 전
 // (디버그/친구 배포 빌드)에는 이 값이 local.properties에 있어도 무시하고 항상 위 테스트 값만
 // 쓴다. AdMob은 실제 광고 단위에 인위적인 트래픽(자기 클릭, 개발 중 반복 노출 등)이 쌓이면
@@ -42,7 +42,7 @@ val realAdmobAppId: String? = localProperties.getProperty("admob.appId")
 val realRewardedInterstitialAdUnitId: String? = localProperties.getProperty("admob.rewardedInterstitialAdUnitId")
 val realBannerAdUnitId: String? = localProperties.getProperty("admob.bannerAdUnitId")
 
-// 프리미엄 영구 구매 상품 ID(premium-mode/README.md Step 4) — local.properties(gitignored)의
+// 프리미엄 영구 구매 상품 ID(PREMIUM_MODE.md Step 4) — local.properties(gitignored)의
 // billing.premiumProductId 키로 주입한다. AdMob과 달리 빌드 타입별 테스트/실제 분기가 없다 —
 // Play Billing은 "가짜 상품 ID"가 아니라 Play Console의 라이선스 테스터 계정으로 실제 상품에
 // 대한 무과금 테스트를 지원하므로, 모든 빌드 타입이 항상 같은(실제) 상품 ID를 쓴다. 아직 Play
@@ -203,7 +203,7 @@ android {
             buildConfigField("String", "REMOTE_ENGINE_URL", "\"\"")
         }
         create("playInternal") {
-            // Play Console 업로드 전용(premium-mode/README.md Step 4 후속) — friend와 완전히
+            // Play Console 업로드 전용(PREMIUM_MODE.md Step 4 후속) — friend와 완전히
             // 같은 debug KataGo 엔진/에셋(release 엔진 준비 불필요)을 쓰지만, release keystore로
             // 서명해 Play Console 내부 테스트 트랙에 올릴 수 있게 한다. friend 자체는 건드리지
             // 않는다(지인 배포용 debug 서명 그대로 유지).

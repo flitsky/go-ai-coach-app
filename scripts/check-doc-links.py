@@ -47,7 +47,7 @@ SKIP_DIRS = {".git", "build", ".gradle", "worktrees", ".claude", "node_modules",
 EXEMPT = {"docs/DOCS_INDEX.md", "docs/HANDOVER.md"}
 
 # 이름만으로는 문서를 식별하지 못하는 파일들 — 여러 폴더에 같은 이름이 있다.
-# 이런 문서는 정책의 예외로 **폴더까지** 적는다(`feature-access-principles/README.md`).
+# 이런 문서는 정책의 예외로 **폴더까지** 적는다(`FEATURE_ACCESS_PRINCIPLES.md`).
 GENERIC_NAMES = {"README.md", "summary.md", "index.md"}
 
 # ⚠️ **그 이름이 더 이상 유효하지 않다고 밝히는 문장은 깨진 참조가 아니다.** 이 저장소는 보존 정책상
@@ -63,6 +63,8 @@ GENERIC_NAMES = {"README.md", "summary.md", "index.md"}
 REMOVAL_WORDS = (
     "삭제", "제거", "removed", "deleted", "아카이브", "git 히스토리",
     "개명", "이름을 바�", "합쳤", "합쳐", "통합",
+    # 2026-09-06 추가 — 이 저장소가 이동을 서술하는 실제 낱말이다(통폐합 때 드러났다).
+    "옮겼", "옮기", "평탄화", "통폐합",
 )
 
 # **이 저장소의 문서가 아닌** 이름들. 상류 프로젝트 문서를 인용할 때 나온다.
@@ -96,6 +98,15 @@ ALLOWED: dict[tuple[str, str], str] = {
     ("docs/engine/ENGINE_STRENGTH_RESEARCH.md", "ENGINE_BEGINNER_VISITS_BENCHMARK.md"): "이 문서 1절로 합쳐진 원본",
     ("docs/engine/ENGINE_STRENGTH_RESEARCH.md", "ENGINE_LEVEL_STRENGTH_REVIEW_2026-06-10.md"): "이 문서 2절로 합쳐진 원본",
     ("docs/engine/ENGINE_STRENGTH_RESEARCH.md", "ENGINE_CANDIDATE_EXPANSION_REVIEW_2026-08-17.md"): "이 문서 3절로 합쳐진 원본",
+    # ⓐ' **봉인된 발송 산출물** — 2026-08-11에 외부 디자이너에게 보낸 그대로 남긴다.
+    #     2026-09-06 통폐합으로 세 문서가 옮겨졌지만 **이 파일은 그때의 발송본**이므로 고치지 않는다
+    #     (`260830-260831_POST_LAUNCH_ENHANCEMENTS.md`가 같은 이유로 동결 처리해 둔 산출물이다).
+    ("design-handoff/export/2026-08-11-v0.1.2/go_ai_coach_handoff.md", "ux-improvement/README.md"):
+        "봉인된 발송본 — 지금 위치는 `UX_IMPROVEMENT.md`",
+    ("design-handoff/export/2026-08-11-v0.1.2/go_ai_coach_handoff.md", "premium-mode/README.md"):
+        "봉인된 발송본 — 지금 위치는 `PREMIUM_MODE.md`",
+    ("design-handoff/export/2026-08-11-v0.1.2/go_ai_coach_handoff.md", "auth-onboarding/README.md"):
+        "봉인된 발송본 — 지금 위치는 `LOGIN_AND_ACCOUNT_SYSTEM.md`",
     # ⓒ 스크립트가 만들어 낼 출력 경로
     ("scripts/run-katago-candidate-refine-experiment.py",
      "docs/engine/measurements/engine-benchmark/candidate-refine-latest.md"):
@@ -107,9 +118,21 @@ PLACEHOLDER = re.compile(r"(FILE\.md|<[^>]+>\.md)")
 
 BARE_NAME = re.compile(r"`([A-Za-z_][A-Za-z0-9_.-]*\.md)`")
 MD_LINK = re.compile(r"\]\(([^)\s#]+\.md)(?:#[^)]*)?\)")
-ROOT_PATH = re.compile(r"`((?:docs|scripts|shared|app-android|engine-android)/[^`\s]+\.md)`")
+# ⚠️ **접두어 화이트리스트였던 것을 2026-09-06에 넓혔다.** 예전 패턴은
+# `(docs|scripts|shared|app-android|engine-android)/` 로 시작하는 것만 봤고, 그 결과
+# `` `launch-plan/README.md` `` 처럼 **루트의 다른 폴더를 가리키는 표기 226건을 구조적으로 못 봤다.**
+# 루트 마스터플랜 폴더 통폐합 때 실측으로 드러났다 — 폴더를 지운 뒤에도 검사가 초록불이었다.
+# 이제 **슬래시를 품고 `.md`로 끝나는 백틱 표기 전부**를 실재 여부로 판정한다.
+ROOT_PATH = re.compile(r"`([A-Za-z0-9_][A-Za-z0-9_.\-]*(?:/[A-Za-z0-9_.\-]+)+\.md)`")
 CODE_PATH = re.compile(r"docs/[A-Za-z0-9_\-/]+\.md")
 CODE_EXTS = (".kt", ".kts", ".py", ".sh")
+
+
+def line_of(text: str, pos: int) -> str:
+    """`pos`가 든 한 줄. 히스토리 서술 면제를 판정하는 데 쓴다."""
+    start = text.rfind("\n", 0, pos) + 1
+    end = text.find("\n", pos)
+    return text[start:end if end != -1 else len(text)]
 
 
 def walk(root: str):
@@ -143,32 +166,41 @@ def main() -> int:
         except (OSError, UnicodeDecodeError):
             continue
 
-        found: list[tuple[str, str]] = []
+        found: list[tuple[str, str, str]] = []
         if is_md:
             for match in MD_LINK.finditer(text):
                 target = match.group(1)
                 if target.startswith(("http", "mailto")):
                     continue
                 found.append(("link", os.path.relpath(
-                    os.path.normpath(os.path.join(os.path.dirname(path), target)), root)))
-            found += [("path", m.group(1)) for m in ROOT_PATH.finditer(text)]
+                    os.path.normpath(os.path.join(os.path.dirname(path), target)), root),
+                    line_of(text, match.start())))
+            found += [("path", m.group(1), line_of(text, m.start())) for m in ROOT_PATH.finditer(text)]
         else:
-            found += [("code", m.group(0)) for m in CODE_PATH.finditer(text)]
+            found += [("code", m.group(0), line_of(text, m.start())) for m in CODE_PATH.finditer(text)]
 
-        for kind, target in found:
+        for kind, target, line in found:
             if PLACEHOLDER.search(target):
+                continue
+            # ⚠️ 옮기거나 지운 사실을 적은 서술은 깨진 참조가 아니다 — 맨 파일명 검사와 같은 규칙을
+            #    경로 표기에도 적용한다(2026-09-06). 그러지 않으면 이력 줄이 전부 빨개진다.
+            if any(word in line for word in REMOVAL_WORDS) or CHANGELOG_LINE.match(line):
                 continue
             if (rel, target) in ALLOWED:
                 continue
-            if not os.path.exists(os.path.join(root, target)):
+            # ⚠️ **두 기준으로 푼다.** `DOCS_INDEX.md`는 자기 표에서 `spec/APP_IA_AND_UI_SPEC.md`처럼
+            #    **자기 폴더 기준**으로 적고, 코드 주석은 `docs/…`처럼 **저장소 루트 기준**으로 적는다.
+            #    한쪽만 보면 멀쩡한 표기가 전부 빨개진다(2026-09-06 검사 확장에서 실측).
+            here = os.path.dirname(os.path.join(root, rel))
+            if not (os.path.exists(os.path.join(root, target))
+                    or os.path.exists(os.path.join(here, target))):
                 row = (rel, kind, target)
                 if row not in broken:
                     broken.append(row)
 
-        if not is_md:
-            continue
-
         # ⚠️ 파일명 표기 정책의 사각지대 — 없는 문서를 이름으로 부르는 것.
+        # ⚠️ **2026-09-06부터 코드 주석도 본다.** 그전에는 `.md`만 봤는데, 코드가 문서를
+        #    파일명으로 가리키는 주석 30여 곳이 **개명 뒤에도 영구히 검사 밖**이었다.
         for match in BARE_NAME.finditer(text):
             name = match.group(1)
             if PLACEHOLDER.search(name) or (rel, name) in ALLOWED:
@@ -192,7 +224,7 @@ def main() -> int:
                 broken.append(row)
 
         # 참조 표기 정책: 예외 두 곳 밖에서는 문서를 마크다운 링크로 잇지 않는다.
-        if rel not in EXEMPT:
+        if is_md and rel not in EXEMPT:
             for match in MD_LINK.finditer(text):
                 target = match.group(1)
                 if target.startswith(("http", "mailto")) or PLACEHOLDER.search(target):

@@ -57,11 +57,11 @@ import kotlinx.coroutines.launch
  * 구분한다(설정 화면의 개발자 테스트 토글 표시용).
  *
  * [activateAdGrant]는 실제 AdMob 리워드 광고를 로드/노출하고, 시청 완료(보상 획득) 콜백
- * 안에서만 프리미엄을 활성화한다(premium-mode/README.md Step 3) — 로드 실패/중도 이탈 시
+ * 안에서만 프리미엄을 활성화한다(PREMIUM_MODE.md Step 3) — 로드 실패/중도 이탈 시
  * 상태를 바꾸지 않고 [AdRewardOutcome.NotRewarded]를 반환하므로, 호출부([PremiumUpsellDialogHost])가
  * 그 경우 일반 모드 유지 안내를 띄운다. [purchasePremium]은 실제 Google Play Billing 구매
  * 플로우를 띄우고, 구매 완료(및 확인/acknowledge) 후에만 프리미엄을 영구 활성화한다
- * (premium-mode/README.md Step 4) — 취소/실패 시 상태를 바꾸지 않고 [PurchaseOutcome.NotPurchased]를
+ * (PREMIUM_MODE.md Step 4) — 취소/실패 시 상태를 바꾸지 않고 [PurchaseOutcome.NotPurchased]를
  * 반환한다. [setPurchased]는 실제 결제 없이 영구 활성화 상태를 즉시 켜고 끄는 QA 전용 스텁으로
  * 남겨둔다 — 설정 화면의 "개발자 테스트" 토글(`BuildConfig.DEBUG` 게이팅)이 이 함수를 쓴다.
  *
@@ -82,7 +82,7 @@ import kotlinx.coroutines.launch
  * 판정도 그것을 읽으므로, 클레임 축이 필요한 기능이 다시 생기면 이 자리를 쓰면 된다.
  *
  * [claim]은 클레임 가능한 기능([FeatureId], 지금은 무르기뿐)을 영구 클레임 원장에 추가한다 —
- * 초도 발행 "무르기 무료 클레임" 그랜드파더링(launch-plan/README.md 3장)용으로, 한 번
+ * 초도 발행 "무르기 무료 클레임" 그랜드파더링(GOOGLE_PLAY_LAUNCH_PLAN.md 3장)용으로, 한 번
  * 클레임하면 이후 그 기능의 기본 정책이 바뀌어도 계속 무료다.
  */
 internal data class PremiumUiState(
@@ -336,7 +336,7 @@ internal fun PremiumUpsellDialogHost(
         errorMessage = errorMessage,
         onSelectPurchase = {
             // 탭 즉시 활성화하지 않는다 — 실제 구매 플로우 완료(및 확인/acknowledge) 후에만
-            // premium.purchasePremium()이 실제로 상태를 바꾼다(premium-mode/README.md Step 4).
+            // premium.purchasePremium()이 실제로 상태를 바꾼다(PREMIUM_MODE.md Step 4).
             // 취소/실패 시에는 일반 모드를 유지한 채 다이얼로그 안에 인라인으로 안내하고
             // 팝업은 닫지 않아, 바로 재시도하거나 다른 선택지를 고를 수 있게 한다 — 토스트는
             // 다이얼로그가 떠 있는 동안 가려지거나 놓치기 쉬워 인라인 메시지로 대체했다
@@ -387,7 +387,7 @@ internal fun PremiumUpsellDialogHost(
 
 /**
  * 앱 시작 시 1회, 이미 소유 중인 구매가 있는지 Play에 조회해 로컬 상태를 복원한다(재설치 등
- * 이유로 로컬 저장소가 비어 있는 경우 대비 — premium-mode/README.md Step 4). `GoCoachApp.kt`가
+ * 이유로 로컬 저장소가 비어 있는 경우 대비 — PREMIUM_MODE.md Step 4). `GoCoachApp.kt`가
  * 이 컴포저블을 호출하는 형태로 감싸는 이유는 [LaunchedEffect]를 이 파일에 남겨 `GoCoachApp.kt`의
  * 상태 훅 예산(47/47, 여유 없음)에 영향을 주지 않기 위함이다 — 위 [PremiumUpsellDialogHost]가
  * `isAdGrantInProgress`를 자체 `remember`로 소유하는 것과 같은 이유다. 소유 중인 구매가 없으면

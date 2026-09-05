@@ -2,7 +2,7 @@
 
 작성일: 2026-07-29
 
-본 문서는 **go-ai-coach** 앱에 "최초 실행 시 한 번만 뜨는 온보딩 화면"과 Firebase 기반 계정 시스템(Google/이메일/익명 로그인)을 도입하기 위한 작업 요약 및 단계별 개발 플랜입니다. `premium-mode/README.md`와 동일한 방식으로, 구현이 진행되며 계속 갱신되는 히스토리 문서로 유지합니다. "왜 이렇게 하기로 했는가"라는 상위 원칙은 `feature-access-principles/README.md`에 별도로 정리되어 있습니다 — 이 문서는 그 원칙의 실행 로그입니다.
+본 문서는 **go-ai-coach** 앱에 "최초 실행 시 한 번만 뜨는 온보딩 화면"과 Firebase 기반 계정 시스템(Google/이메일/익명 로그인)을 도입하기 위한 작업 요약 및 단계별 개발 플랜입니다. `PREMIUM_MODE.md`와 동일한 방식으로, 구현이 진행되며 계속 갱신되는 히스토리 문서로 유지합니다. "왜 이렇게 하기로 했는가"라는 상위 원칙은 `FEATURE_ACCESS_PRINCIPLES.md`에 별도로 정리되어 있습니다 — 이 문서는 그 원칙의 실행 로그입니다.
 
 ---
 
@@ -11,7 +11,7 @@
 ### 1.1. 배경 및 필요성
 - 기존 장기(Janggi) 앱에서 이미 Firebase Auth + Firestore/Storage + AdMob을 연동해 성공적으로 운영 중인 경험을 이 바둑 앱에도 그대로 재활용합니다 (`baduk_app_architecture_recommendation.md`).
 - BaaS 5종(Firebase/Supabase/PocketBase/Appwrite/Convex) 비교 검토 결과(`baas_solutions_comparison.md`), 기보(SGF) 저장·보상형 광고·AdMob 시너지 관점에서 **Firebase가 최종 채택**되었습니다.
-- 프리미엄 모드(`premium-mode/README.md`)의 Step 3(광고)/Step 4(구매)가 이 계정 시스템 위에 얹힐 예정이므로, 그 전제가 되는 "로그인/익명 사용자 식별" 기반을 먼저 마련하는 것이 이번 계획의 핵심입니다.
+- 프리미엄 모드(`PREMIUM_MODE.md`)의 Step 3(광고)/Step 4(구매)가 이 계정 시스템 위에 얹힐 예정이므로, 그 전제가 되는 "로그인/익명 사용자 식별" 기반을 먼저 마련하는 것이 이번 계획의 핵심입니다.
 
 ### 1.2. 핵심 논의: 계정 없이 시작하기 & 구매 복구
 - **결론**: "계정 없이 시작하기"(게스트 모드)는 제공한다. 다만 앱을 지우면 구매 이력을 못 찾는다는 우려는 **로그인 여부가 아니라 아이템 결제를 어떻게 구현하느냐**로 해결한다.
@@ -70,7 +70,7 @@
 - **상태**: 대기
 
 ### (별도 후순위) Apple 로그인
-- iOS 대응 시점에 맞춰 별도 과제로 진행. 이번 문서의 Step 1~4는 모두 Android/Firebase 우선이지만, `AuthState`/`AuthClientPort` 설계 자체는 플랫폼 비종속으로 만들어 두었다 (`premium-mode/README.md`의 `PremiumState` 설계 원칙과 동일).
+- iOS 대응 시점에 맞춰 별도 과제로 진행. 이번 문서의 Step 1~4는 모두 Android/Firebase 우선이지만, `AuthState`/`AuthClientPort` 설계 자체는 플랫폼 비종속으로 만들어 두었다 (`PREMIUM_MODE.md`의 `PremiumState` 설계 원칙과 동일).
 
 ### 계층 배치 참고 (`ARCHITECTURE.md`의 7계층 기준, 2026-07-29 정리)
 
@@ -81,7 +81,7 @@ Step 1(익명 인증)은 이미 이 배치를 따르고 있다 — `AuthClientPo
 | Step 2 | Google Credential Manager/One Tap SDK 호출(`signInWithGoogle`) | **포트/원시 계층** (엔진 2계층 `EngineCoreApi`에 대응) | `AuthClientPort`에 메서드 추가 + `AndroidAuthClient`(또는 SDK 의존이 무거우면 전용 파일, `ARCHITECTURE.md`의 어댑터 파일 분리 기준 참고)가 실제 SDK를 감싼다. |
 | Step 2 | 익명 UID → 실계정 `linkWithCredential` 승격 판단 | **App Service / Session Orchestration** (6계층) | "언제 승격할지, 승격 후 어느 화면으로 갈지"는 유스케이스 조합이지 원시 SDK 기능이 아니다. |
 | Step 3 | Firebase Email/Password·Email Link SDK 호출 | **포트/원시 계층** | Step 2의 Google 로그인과 동일한 성격 — `AuthClientPort`에 메서드만 추가. |
-| Step 4 | Play Billing `queryPurchases()` 복원 + Firestore 엔타이틀먼트 조율 | **Middleware / Cache Domain 성격** (4계층에 대응) | `premium-mode/README.md`의 Step 4와 동일한 판단(원시 응답을 그대로 믿지 않고 검증/캐시/신뢰도를 조율) — 실제로는 같은 기능이므로 두 문서가 가리키는 계층도 일치해야 한다. |
+| Step 4 | Play Billing `queryPurchases()` 복원 + Firestore 엔타이틀먼트 조율 | **Middleware / Cache Domain 성격** (4계층에 대응) | `PREMIUM_MODE.md`의 Step 4와 동일한 판단(원시 응답을 그대로 믿지 않고 검증/캐시/신뢰도를 조율) — 실제로는 같은 기능이므로 두 문서가 가리키는 계층도 일치해야 한다. |
 | Step 4 | Firestore 기보/설정 동기화(`users/{uid}` 문서 읽기/쓰기) | **Middleware / Cache Domain 성격** | 로컬/원격 데이터 조율이라는 점에서 `PositionAnalysisCacheResolver`와 같은 역할군. `application/` 안에 전용 파일(예: `application/sync/` 신설)로 분리하되 물리적으로 엔진 `middleware/`와는 합치지 않는다. |
 
 ---
@@ -155,7 +155,7 @@ Step 1(익명 인증)은 이미 이 배치를 따르고 있다 — `AuthClientPo
 - **구현 방식**: 기능을 삭제하지 않고 **컴파일타임 스위치**로 껐다 — `ui/FeatureFlags.kt` 신규, `internal object FeatureFlags { const val isLoginEnabled = false }`. 이 값을 `true`로 되돌리고 다시 빌드하면 온보딩/설정 화면의 기존 로그인 UI가 코드 변경 없이 그대로 되살아난다(로그인 관련 포트/어댑터/글루/UI 코드는 전부 그대로 남겨둠 — 이번 절 이전의 Step 1~3 산출물 전부 유효).
 - **`initialDestination()` 함수 신설**(`FeatureFlags.kt`): 로그인이 꺼져 있으면 온보딩 화면 자체를 건너뛰고 항상 홈으로 직행한다. 이때 온보딩의 "계정 없이 시작하기"가 하던 `DeviceIdentityStorePort.loadOrCreate()`(게스트 ID 생성) 호출을 이 함수 안에서 대신 수행해, 온보딩 화면을 한 번도 안 띄워도 프리미엄 구매 복원 등 게스트 기반 기능이 그대로 동작하게 했다 — `loadOrCreate()`는 이미 있으면 그대로 반환하는 멱등 호출이라 매 실행마다 불러도 안전하다. `GoCoachApp.kt`가 라인/상태 훅 예산이 정확히 꽉 찬 상태(849/849, 47/47)라, 이 판단 로직을 별도 파일로 빼서 `GoCoachApp.kt`는 기존 `remember { mutableStateOf(...) }` 초기값 계산식 한 줄만 함수 호출로 교체했다(순 라인 변화 0).
 - **`SettingsScreen.kt`**: "계정" 섹션(제목/상태 문구/Google·Apple·이메일 버튼/계정 삭제 버튼)을 전부 `if (FeatureFlags.isLoginEnabled)`로 감쌌다 — 로그인 수단이 하나도 없는데 "로그인하면 다른 기기에서도 이어볼 수 있어요" 안내만 남으면 존재하지 않는 기능을 홍보하는 셈이라 통째로 숨긴다.
-- **부수 결정 — Firebase Analytics 의존성 완전 제거**: 로그인을 재검토하며 데이터 수집 전반을 다시 훑어본 결과 `firebase-analytics` SDK가 포함돼 있으나 `logEvent()` 등 실제 호출이 코드 어디에도 없다는 것을 확인했다(grep으로 재확인) — 자동 수집만 계속되는 죽은 의존성이었다. 껐다 켰다 할 로직/UI가 없는 순수 수집 SDK라 플래그로 끄기보다 `app-android/build.gradle.kts`에서 의존성 자체를 제거했다. `premium-mode/README.md` 문서의 Data Safety 관련 향후 참고사항: 이 변경 이후 남는 데이터 수집원은 AdMob(광고 ID)과 Play Billing(구매 내역)뿐이다.
+- **부수 결정 — Firebase Analytics 의존성 완전 제거**: 로그인을 재검토하며 데이터 수집 전반을 다시 훑어본 결과 `firebase-analytics` SDK가 포함돼 있으나 `logEvent()` 등 실제 호출이 코드 어디에도 없다는 것을 확인했다(grep으로 재확인) — 자동 수집만 계속되는 죽은 의존성이었다. 껐다 켰다 할 로직/UI가 없는 순수 수집 SDK라 플래그로 끄기보다 `app-android/build.gradle.kts`에서 의존성 자체를 제거했다. `PREMIUM_MODE.md` 문서의 Data Safety 관련 향후 참고사항: 이 변경 이후 남는 데이터 수집원은 AdMob(광고 ID)과 Play Billing(구매 내역)뿐이다.
 - **검증**: `make test` 통과(`LayeringContractTest`의 `GoCoachApp.kt` 849/849줄·47/47훅 예산 검사 포함, Firebase Analytics 제거로 인한 컴파일 에러 없음). 에뮬레이터에서 앱 데이터 완전 초기화 후 재실행 — 온보딩 화면 자체가 뜨지 않고 곧바로 홈 진입, 설정 화면에 "계정" 섹션이 전혀 없음, 그리고 **로그인을 한 번도 하지 않은 완전 게스트 상태에서도 대국 설정 화면에 프리미엄 👑∞가 정상 표시**(Play Billing 복원이 로그인과 완전히 무관하게 동작)됨을 실측 확인했다.
 
 이 문서는 각 단계 착수/완료 시점마다 위 마일스톤 표의 상태와 관련 섹션을 갱신하며, 완료된 단계도 지우지 않고 이력으로 남깁니다.

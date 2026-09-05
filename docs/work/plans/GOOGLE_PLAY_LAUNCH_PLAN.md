@@ -2,7 +2,7 @@
 
 작성일: 2026-08-13
 
-본 문서는 `feature-access-principles/README.md`의 원칙 위에서, **Google Play 초도 버전 발행**을 위한 구체적인 기능별 정책과 실행 체크리스트를 담습니다. `premium-mode/README.md`·`auth-onboarding/README.md`와 동일한 방식으로 계속 갱신되는 히스토리 문서이며, 작성 과정에서 자연스럽게 **근시일 로드맵 문서** 역할도 겸하게 될 예정입니다(작성자 본인 언급, 2026-08-13).
+본 문서는 `FEATURE_ACCESS_PRINCIPLES.md`의 원칙 위에서, **Google Play 초도 버전 발행**을 위한 구체적인 기능별 정책과 실행 체크리스트를 담습니다. `PREMIUM_MODE.md`·`LOGIN_AND_ACCOUNT_SYSTEM.md`와 동일한 방식으로 계속 갱신되는 히스토리 문서이며, 작성 과정에서 자연스럽게 **근시일 로드맵 문서** 역할도 겸하게 될 예정입니다(작성자 본인 언급, 2026-08-13).
 
 ---
 
@@ -165,7 +165,7 @@
 
 ⚠️ **그래서 #18은 가격만으로 열리지 않는다 — 다만 이유가 앞서 적은 것과 다르다.** 막는 것은
 "팔 게 없다"가 아니라 **모델이 두 축을 표현하지 못한다**는 것이다. 상세·근거·미결정 사항은
-`feature-access-principles/README.md` **8.3-2**에 정리했다. 요약하면 셋이다:
+`FEATURE_ACCESS_PRINCIPLES.md` **8.3-2**에 정리했다. 요약하면 셋이다:
 
 1. **`BotCharacter.unlockSource`가 단일 값**이고 `Purchase` KDoc이 *"구매로만 열리는 캐릭터"* 라고
    못박고 있다 — 그대로 팔면 출석·광고 경로가 사라진다. 축을 갈라야 한다.
@@ -323,8 +323,8 @@ normal 권한이라 런타임 프롬프트는 없지만 스토어 '앱 권한' �
 
 ## 1. 초도 발행 기본 원칙
 
-- **로그인 없음** — `FeatureFlags.isLoginEnabled = false` 유지. (`auth-onboarding/README.md`, 2026-08-09 결정 그대로)
-- **앱 내 결제 없음** — `FeatureFlags.isPurchaseEnabled = false` 유지. 인프라 자체는 이미 구현·검증 완료 상태라(`premium-mode/README.md` 8장), 켜는 비용은 빌드가 아니라 "플래그 + 필요 시 신규 SKU 등록"뿐입니다.
+- **로그인 없음** — `FeatureFlags.isLoginEnabled = false` 유지. (`LOGIN_AND_ACCOUNT_SYSTEM.md`, 2026-08-09 결정 그대로)
+- **앱 내 결제 없음** — `FeatureFlags.isPurchaseEnabled = false` 유지. 인프라 자체는 이미 구현·검증 완료 상태라(`PREMIUM_MODE.md` 8장), 켜는 비용은 빌드가 아니라 "플래그 + 필요 시 신규 SKU 등록"뿐입니다.
 - 위 두 가지는 **새 결정이 아니라 기존 결정의 확인**입니다 — 초도 발행 시점에도 이대로 유지합니다.
 
 ---
@@ -380,7 +380,7 @@ isUndoUnlocked =
 
 즉 "무르기가 오늘 기본으로 무료냐"를 다시 묻는 게 아니라 "이 사람이 예전에 무료 클레임을 받았느냐"만 확인하는 구조가 핵심입니다. 이건 지난번 검토에서 제안했던 "기능 활성화 원장(ledger)" 개념의 실제 사례이기도 합니다 — `claimedFeatures`가 그 원장의 한 항목이 되는 것.
 
-**재설치 시 초기화 캐비앗**: `feature-access-principles/README.md` 6장 원칙("앱 내 활동/프로모션으로 얻은 기능 = 기기 로컬 저장, 재설치 시 초기화 고지")이 여기도 그대로 적용됩니다. 새 예외를 만들지 않습니다 — 그랜드파더링도 결국 로컬 저장이라, 재설치하면 클레임 기록도 함께 사라집니다. 클레임 팝업 문구에 "이 기기/앱 설치에 저장됩니다"를 명시하는 걸 권장합니다.
+**재설치 시 초기화 캐비앗**: `FEATURE_ACCESS_PRINCIPLES.md` 6장 원칙("앱 내 활동/프로모션으로 얻은 기능 = 기기 로컬 저장, 재설치 시 초기화 고지")이 여기도 그대로 적용됩니다. 새 예외를 만들지 않습니다 — 그랜드파더링도 결국 로컬 저장이라, 재설치하면 클레임 기록도 함께 사라집니다. 클레임 팝업 문구에 "이 기기/앱 설치에 저장됩니다"를 명시하는 걸 권장합니다.
 
 ---
 
@@ -392,7 +392,7 @@ isUndoUnlocked =
 
 - [x] 로그인 기능 OFF 유지 (`isLoginEnabled=false`)
 - [x] 결제 UI OFF 유지 (`isPurchaseEnabled=false`)
-- [x] `premium-mode/README.md` 기능 매트릭스를 현재 코드 상태(분석 삭제, 무르기 무료)에 맞게 정정 — 이번 문서 작업과 함께 처리(아래 "관련 문서" 갱신 이력 참고)
+- [x] `PREMIUM_MODE.md` 기능 매트릭스를 현재 코드 상태(분석 삭제, 무르기 무료)에 맞게 정정 — 이번 문서 작업과 함께 처리(아래 "관련 문서" 갱신 이력 참고)
 - [x] 무르기 클레임 버튼 UI + 로컬 그랜드파더링 플래그 구현 — 커밋 `5fc7b49`(2026-08-13)로 완료. ~~단, 저장 형태는 이 문서가 예시로 든 `claimedFeatures`류(기능별 원장)가 아니라 `PremiumState.isUndoClaimed: Boolean` 단일 플래그다~~ → **2026-08-14에 이 문서가 원래 예시로 들었던 `claimedFeatures: Set<FeatureId>` 원장으로 일반화됐다**(`isUndoClaimed`는 더 이상 존재하지 않으며, `PremiumStateStore`에 구버전 불리언 하위호환 마이그레이션이 들어 있다). 판정도 `FeatureAccessPolicy.resolve()` 하나로 모였다 — 상세는 `GO_AI_COACH_ARCHITECTURE_ROADMAP.md` 6계층 절 — 무르기 하나뿐이라 임시로는 충분하지만, 두 번째 클레임형 기능이 생기기 전에 원장으로 일반화하는 작업이 `GO_AI_COACH_ARCHITECTURE_ROADMAP.md` "5/6계층 — 기능 엔타이틀먼트 정책 도입" 항목으로 남아 있다.
 - [x] 클레임 프로모션 노출 위치/문구 확정 — 대국 화면 액션 버튼 영역(무르기 버튼 탭 시 인게임 다이얼로그), `ui/GamePlaySection.kt`의 `undoClaimTitle`/`undoClaimMessage` 문구로 구현됨. 아래 예시로 들었던 대국 설정 화면/설정 메뉴 "혜택" 섹션은 채택되지 않았다.
 - [ ] 형세보기/추천수 영구 구매 버튼을 언제 켤지(= `isPurchaseEnabled=true` 전환 시점) 별도 결정
@@ -407,12 +407,12 @@ isUndoUnlocked =
 ## 5. 결정사항
 
 ### 이미 확정 (다른 문서에서 인용)
-- 로그인/결제 UI를 이번 출시에서 끈다. (`auth-onboarding/README.md`, `premium-mode/README.md`, 2026-08-09)
-- 로컬 저장 기반 기능은 재설치 시 초기화될 수 있음을 고지한다. (`feature-access-principles/README.md` 6장)
+- 로그인/결제 UI를 이번 출시에서 끈다. (`LOGIN_AND_ACCOUNT_SYSTEM.md`, `PREMIUM_MODE.md`, 2026-08-09)
+- 로컬 저장 기반 기능은 재설치 시 초기화될 수 있음을 고지한다. (`FEATURE_ACCESS_PRINCIPLES.md` 6장)
 
 ### 이 문서에서 신규 확정
 - 형세 보기/추천 수는 초도 발행에서 **광고 1시간만** 제공하고, 영구 구매 버튼은 노출하지 않는다.
-- 무르기는 초도 발행 유저에게 **무료 활성화 프로모션**을 제공하고, 이후 정책이 바뀌어도 **클레임한 유저는 그랜드파더링으로 계속 무료**로 유지한다. (`feature-access-principles/README.md`에서 미확정으로 남겨뒀던 "무르기를 다시 유료로 되돌릴지" 질문에 대한 답 — 단순 유료 전환이 아니라 "클레임+그랜드파더링" 구조로 확정)
+- 무르기는 초도 발행 유저에게 **무료 활성화 프로모션**을 제공하고, 이후 정책이 바뀌어도 **클레임한 유저는 그랜드파더링으로 계속 무료**로 유지한다. (`FEATURE_ACCESS_PRINCIPLES.md`에서 미확정으로 남겨뒀던 "무르기를 다시 유료로 되돌릴지" 질문에 대한 답 — 단순 유료 전환이 아니라 "클레임+그랜드파더링" 구조로 확정)
 
 ### 2026-08-14 갱신 — 위 "확인 필요" 두 항목 해소
 - 무르기는 커밋 `5fc7b49`(2026-08-13)로 바로 "클레임 필요" 상태로 좁혀졌습니다 — 당분간 게이팅 없이 유지하는 중간 단계 없이 곧장 전환.
@@ -427,6 +427,6 @@ isUndoUnlocked =
 ---
 
 ## 관련 문서
-- `feature-access-principles/README.md` — 이 문서가 따르는 상위 원칙
-- `premium-mode/README.md` — 기능 매트릭스는 이번 작업으로 정정됨(분석 행 제거, 무르기 무료 반영) — 상세 변경 이력은 그 문서의 "문서 이력"/날짜 절 참고
-- `auth-onboarding/README.md` — 로그인 OFF 결정의 원본 근거
+- `FEATURE_ACCESS_PRINCIPLES.md` — 이 문서가 따르는 상위 원칙
+- `PREMIUM_MODE.md` — 기능 매트릭스는 이번 작업으로 정정됨(분석 행 제거, 무르기 무료 반영) — 상세 변경 이력은 그 문서의 "문서 이력"/날짜 절 참고
+- `LOGIN_AND_ACCOUNT_SYSTEM.md` — 로그인 OFF 결정의 원본 근거

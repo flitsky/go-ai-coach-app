@@ -85,7 +85,7 @@ graph TD
      - `Resign (기권)`: 대국 포기. "정말 기권하시겠습니까?" 확인 다이얼로그 후 처리.
      - ~~`Analyze (분석)`~~ — **제거됨**(2026-08-17 이전). 별도 분석 다이얼로그는 더 이상 없습니다.
 
-     ⚠️ **위 액션들은 더 이상 전부 무조건 활성이 아닙니다.** `Undo`/`Top Moves`/`Eval`은 프리미엄·클레임·소모품 1회권으로 게이팅되며, 잠긴 상태에서 누르면 업셀 또는 1회권 사용 확인 팝업이 뜹니다(`ui/GamePlaySection.kt`, `ui/ConsumableUiState.kt`). 정책 원본은 `feature-access-principles/README.md`와 `launch-plan/README.md` 2장이며, 이 절은 아직 그 게이팅 상태별 UI를 상세히 명세하지 않았습니다.
+     ⚠️ **위 액션들은 더 이상 전부 무조건 활성이 아닙니다.** `Undo`/`Top Moves`/`Eval`은 프리미엄·클레임·소모품 1회권으로 게이팅되며, 잠긴 상태에서 누르면 업셀 또는 1회권 사용 확인 팝업이 뜹니다(`ui/GamePlaySection.kt`, `ui/ConsumableUiState.kt`). 정책 원본은 `FEATURE_ACCESS_PRINCIPLES.md`와 `GOOGLE_PLAY_LAUNCH_PLAN.md` 2장이며, 이 절은 아직 그 게이팅 상태별 UI를 상세히 명세하지 않았습니다.
   5. **슬라이딩 메뉴 (Drawer / Panel)**:
      - `Player Setup`, `Search Time`, `Game & Board Rules (계가/덤/접바둑)`, `Display Options (표시 옵션)` 설정 실시간 변경 가능.
 

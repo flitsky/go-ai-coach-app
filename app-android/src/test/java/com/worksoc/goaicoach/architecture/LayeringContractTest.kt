@@ -1445,7 +1445,7 @@ class LayeringContractTest {
         // History (2026-08-29, backlog #18): bumped 851->855. The character purchase perk needs the
         // opponent and the collection at buildPremiumUiState, so the bot-collection wiring moved above
         // the premium wiring and one argument was added. Folding the perk into PremiumUiState.resolve
-        // is what keeps every in-game gating call site untouched (feature-access-principles 8.3-1).
+        // is what keeps every in-game gating call site untouched (FEATURE_ACCESS_PRINCIPLES.md 8.3-1).
         // 856 rather than 855 because the perk value is shared with PremiumExpiryAutoDisableEffect —
         // computing it twice would let the gating and the auto-disable disagree.
         // History (2026-08-30, backlog #24): bumped 856->861 for the My Page destination — one enum
@@ -1717,7 +1717,7 @@ class LayeringContractTest {
 
     /**
      * 초기화가 **권한 넷만** 지우고 사용자 콘텐츠·설정은 남기는지 못박는다
-     * (`feature-access-principles/README.md` 8.3-2의 범위표).
+     * (`FEATURE_ACCESS_PRINCIPLES.md` 8.3-2의 범위표).
      *
      * ⚠️ 이 테스트가 막는 사고는 *"초기화니까 전부 지우자"* 다. 대국 기록과 진행 중 대국은 권한이
      * 아니라 **사용자가 직접 만든 것**이고, 기기 식별자를 지우면 진단 로그의 기기 추적이 끊긴다.

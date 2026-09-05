@@ -2,7 +2,7 @@
 
 작성일: 2026-07-30
 레이어 순서 갱신: 2026-07-30 — External Integration이 4계층(3계층과 대등한 서비스 계층)으로 재배치되며 Application(5)/Session & Continuity(6)/Presentation(7) 번호가 한 칸씩 밀렸다. `ARCHITECTURE.md`의 "레이어 순서 확정" 항목 참고.
-기능 엔타이틀먼트 정책 배치: 2026-08-14 — "무료/광고/구매/클레임" 같은 기능별 정책이 앞으로도 계속 바뀔 것을 전제로, 그 정책 판정을 6계층에 `FeatureAccessPolicy`로 명문화하고(설계 초안엔 5계층으로 잘못 적었다가 착수 시점에 정정 — 6계층 `PremiumState`를 파라미터로 받으므로 5계층일 수 없다) 6계층 `PremiumState`를 단일 플래그(`isUndoClaimed`)에서 기능별 원장(`claimedFeatures: Set<FeatureId>`)으로 일반화, 프레젠테이션 3곳(`ui/GamePlaySection.kt` 2곳, `ui/KaTrainUxPanels.kt` 1곳)에 하드코딩돼 있던 판정을 이걸로 교체했다 — 구현 완료. 상세는 "알려진 갭"·"고도화 로드맵" 절, 그리고 `feature-access-principles/README.md` 2장(같은 결론을 정책 문서 쪽에서 먼저 제안해 뒀던 것).
+기능 엔타이틀먼트 정책 배치: 2026-08-14 — "무료/광고/구매/클레임" 같은 기능별 정책이 앞으로도 계속 바뀔 것을 전제로, 그 정책 판정을 6계층에 `FeatureAccessPolicy`로 명문화하고(설계 초안엔 5계층으로 잘못 적었다가 착수 시점에 정정 — 6계층 `PremiumState`를 파라미터로 받으므로 5계층일 수 없다) 6계층 `PremiumState`를 단일 플래그(`isUndoClaimed`)에서 기능별 원장(`claimedFeatures: Set<FeatureId>`)으로 일반화, 프레젠테이션 3곳(`ui/GamePlaySection.kt` 2곳, `ui/KaTrainUxPanels.kt` 1곳)에 하드코딩돼 있던 판정을 이걸로 교체했다 — 구현 완료. 상세는 "알려진 갭"·"고도화 로드맵" 절, 그리고 `FEATURE_ACCESS_PRINCIPLES.md` 2장(같은 결론을 정책 문서 쪽에서 먼저 제안해 뒀던 것).
 
 **성격**: `ARCHITECTURE.md`(원칙 문서, 앱 비종속)의 7계층 모델을 go-ai-coach 코드베이스에 적용한 **파생 문서**다. "지금 무엇이 어디 있는가"와 "물리적으로 완전히 분리 가능한 상태까지 무엇이 남았는가"를 담는다. 레이어 정의 자체나 그 이유는 여기서 반복하지 않고 원칙 문서를 따른다.
 
@@ -32,7 +32,7 @@
 
 **재편 여부**: 기존 2계층(Engine Core API Domain, 계약 정의만)에 기존 4계층(Middleware/Cache Domain)의 **전송** 절반(원격 게이트웨이/트랜스포트)을 합쳤다. "계약을 정의하는 것"과 "그 계약을 실제로 어떻게 도달시키는가(로컬 stdio냐 원격 HTTP냐)"가 개념적으로 같은 책임이라고 보기 때문이다. **260804 정리**: `EngineCoreApi`의 로컬/원격 구현체를 전부 `engine-android` 모듈로 물리적으로 모았다(그 전엔 원격 구현체가 app-android/middleware에 있었음) — app-android(3~7계층) 작업 시 엔진 내부 구현을 아예 안 봐도 되도록, 그리고 향후 원격/DePIN 확장의 물리적 근간이 되도록. 이 이동을 가능케 하려고 `RemotePositionAnalysisTransport`/`Request`/`Response`(전부 `:shared`-safe 타입만 사용)도 `:shared`로 옮겼다 — app-android(Gateway)와 engine-android(Http 구현체)가 순환 의존 없이 같은 계약을 공유하기 위함.
 
-**핵심 갭(해소됨, 260803 Stage D)**: `KataGoProcessEngineAdapter`(로컬)와 `RemoteEngineCoreApiAdapter`(원격)가 이제 `EngineCoreApi` 전체에 대해 대등한 계약을 만족한다(계약 테스트로 검증). 3계층의 후보 선택/신뢰도 판단(`selectRemoteEngineCandidate`)도 260804 Stage E-1/E-2에서 마련됐다 — 아래 3계층 절 참고. **260818 갱신**: 이 원격 경로는 이제 `MainActivity`에 `BuildConfig.DEBUG` 한정으로 배선돼 있다(Stage E-3) — `local.properties`의 `debug.remoteEngineUrl`을 맥북 참조 서버(`scripts/run-katago-remote-analysis-server.py`)로 가리키면 실제 대국이 그 서버를 왕복한다(에뮬레이터 e2e 검증 완료). 기본값은 꺼짐이며, 앱 시작 시 한 번만 원격/로컬을 고르고 런타임 실패를 감지해 되돌리지 않는 한계가 남아 있다. 그 재설계와 MQ 전송 전환은 `refactoring/REMOTE_ENGINE_MQ_TRANSPORT_KICKOFF_PLAN_260818_0825.md`가 이어받았다 — Stage F(실제 물리 분산) 영역이라 앱 이식은 여전히 별도 승인 필요.
+**핵심 갭(해소됨, 260803 Stage D)**: `KataGoProcessEngineAdapter`(로컬)와 `RemoteEngineCoreApiAdapter`(원격)가 이제 `EngineCoreApi` 전체에 대해 대등한 계약을 만족한다(계약 테스트로 검증). 3계층의 후보 선택/신뢰도 판단(`selectRemoteEngineCandidate`)도 260804 Stage E-1/E-2에서 마련됐다 — 아래 3계층 절 참고. **260818 갱신**: 이 원격 경로는 이제 `MainActivity`에 `BuildConfig.DEBUG` 한정으로 배선돼 있다(Stage E-3) — `local.properties`의 `debug.remoteEngineUrl`을 맥북 참조 서버(`scripts/run-katago-remote-analysis-server.py`)로 가리키면 실제 대국이 그 서버를 왕복한다(에뮬레이터 e2e 검증 완료). 기본값은 꺼짐이며, 앱 시작 시 한 번만 원격/로컬을 고르고 런타임 실패를 감지해 되돌리지 않는 한계가 남아 있다. 그 재설계와 MQ 전송 전환은 `REMOTE_ENGINE_MQ_TRANSPORT_KICKOFF_PLAN_260818_0825.md`가 이어받았다 — Stage F(실제 물리 분산) 영역이라 앱 이식은 여전히 별도 승인 필요.
 
 ### 3계층 — Extended API (엔진 서비스)
 
@@ -86,7 +86,7 @@
 
 **재편 여부**: 신규 계층(번호만 5→6으로 이동, 정의는 그대로). 기존 7계층 모델에는 없었고, `application/auth`/`application/premium`이 사실상 이 자리를 채우고 있었지만 명문화된 계층은 아니었다.
 
-**핵심 갭**: 아직 "세션/연속성"이라는 이름에 걸맞은 범용 개념(기기 식별자, 익명→실계정 승격, 다중 기기 정책)이 없다 — 지금은 auth/premium 각자가 필요한 만큼만 자기 상태를 갖고 있다. `auth-onboarding/README.md`의 "익명 인증 → 실계정 승격" 로드맵이 이 계층을 채우는 다음 작업이다(단, 익명 로그인 자체가 2026-08-05에 영구 폐기돼 그 로드맵 문구는 재검토가 먼저 필요 — 아래 로드맵 절 참고). `application/auth`/`application/premium` 자체는 이 6계층에 속하지만, 그 포트가 실제 Firebase/SharedPreferences에 닿는 부분(위 4계층 참고)과는 구분해서 봐야 한다. ~~`claimedFeatures` 일반화 전 수동 이어붙이기 부담~~ — 260814에 해소(바로 위 `PremiumState` 항목 참고).
+**핵심 갭**: 아직 "세션/연속성"이라는 이름에 걸맞은 범용 개념(기기 식별자, 익명→실계정 승격, 다중 기기 정책)이 없다 — 지금은 auth/premium 각자가 필요한 만큼만 자기 상태를 갖고 있다. `LOGIN_AND_ACCOUNT_SYSTEM.md`의 "익명 인증 → 실계정 승격" 로드맵이 이 계층을 채우는 다음 작업이다(단, 익명 로그인 자체가 2026-08-05에 영구 폐기돼 그 로드맵 문구는 재검토가 먼저 필요 — 아래 로드맵 절 참고). `application/auth`/`application/premium` 자체는 이 6계층에 속하지만, 그 포트가 실제 Firebase/SharedPreferences에 닿는 부분(위 4계층 참고)과는 구분해서 봐야 한다. ~~`claimedFeatures` 일반화 전 수동 이어붙이기 부담~~ — 260814에 해소(바로 위 `PremiumState` 항목 참고).
 
 ### 7계층 — Presentation
 
@@ -114,7 +114,7 @@
 1. ~~**2계층 — 로컬/원격 계약 대등화**~~ — 완료(260803 Stage D, 260804 물리적 모듈 통합). `RemoteEngineCoreApiAdapter`가 `EngineCoreApi` 전체를 구현하고, 로컬(`KataGoProcessEngineAdapter`)과 실패/타임아웃/재시도 신뢰도가 동등함을 계약 테스트로 검증했으며, 둘 다 `engine-android` 모듈에 물리적으로 함께 있다.
 2. ~~**3계층 — `RemoteEngineSessionClient` 도입**~~ — 최소 형태 완료(260804 Stage E-1/E-2). 여러 원격/피어 후보 중 선택·신뢰도 판단을 흡수하는 자리(`selectRemoteEngineCandidate`)는 마련됐지만, 지금은 후보가 1개뿐이라 판단이 얕다. 후보가 실제로 여러 개가 되는 시점(DePIN 방향)에 응답시간/성공률 비교, "피어 평판/정산 기록"의 자리를 채워야 한다.
 3. **1계층 — 물리 실행 환경 추상화**: 지금은 `KataGoProcessRuntime`이 "이 기기에서 프로세스 실행"만 가정한다. 원격 서버/피어 기기라는 "다른 물리 위치"를 1계층 개념에 맞게 명시적으로 표현할 방법을 정의(예: 실행 위치를 나타내는 값 타입).
-4. **4계층 — 외부 연동 서비스 본체 두껍게 하기**: `premium-mode/README.md` Step 3(실제 광고)/Step 4(실제 결제), `auth-onboarding/README.md` Step 2~3(Google/이메일 로그인)을 구현하며, 포트(α)뿐 아니라 3계층 수준의 재시도/캐시/신뢰도 판단을 갖춘 서비스 본체로 채운다.
+4. **4계층 — 외부 연동 서비스 본체 두껍게 하기**: `PREMIUM_MODE.md` Step 3(실제 광고)/Step 4(실제 결제), `LOGIN_AND_ACCOUNT_SYSTEM.md` Step 2~3(Google/이메일 로그인)을 구현하며, 포트(α)뿐 아니라 3계층 수준의 재시도/캐시/신뢰도 판단을 갖춘 서비스 본체로 채운다.
 5. ~~**5계층 — `GameSessionStateHolder` → `:shared` KMP 이전.**~~ — **완료(260816)**. 이식 가능성(플랫폼 비종속)은 `engineOperationApplicationPoliciesStayPortable`(125개 파일, 21개 서브패키지 전체 스캔)이 사전에 검증했고, `GameSessionCoreState`/`GameSessionController`가 `autoai/engine/humanmove/savedgame/score/startgame/topmoves/undo/debugreport/analysis/movereview/preferences` 12개 서브패키지를 전이적으로 끌어들여 "일부만 이전"이 불가능하다는 예측대로 `application/`(124개 프로덕션 파일) 전체를 한 단위로 이전했다.
    - ~~**(1) 스파이크**~~ — **완료(260816)**. `application/safety/EngineTurnWatchdog.kt`(팬인/팬아웃 최소, `SearchTimeLimit` 하나만 의존)를 `shared/commonMain`으로, 테스트를 `shared/commonTest`로 옮겨 전체 절차를 실제로 검증했다. 확인된 것: (a) 패키지명(`com.worksoc.goaicoach.application.safety`)은 그대로 유지 가능 — `:shared` 안에 이미 `match/`처럼 비-`shared` 패키지가 있어 모듈 경계와 패키지명이 독립적이므로, app-android 호출부(`ui/GamePlaySection.kt`)의 import 문은 **한 줄도 안 바뀜**. (b) `internal fun` 2개를 public으로 바꿔야 했다 — 예상대로. (c) **새로 발견한 것**: 테스트도 함께 옮겨야 하고, `shared/commonTest`는 `org.junit.*`가 아니라 `kotlin.test.*`(멀티플랫폼 API)를 쓰는 게 기존 컨벤션이라 import 전환이 필요했다 — API가 동일해서 기계적 치환이지만, 본 이전 때 옮기는 모든 테스트 파일마다 반복해야 할 작업. (d) `:shared`가 `androidMain` 없이도 문제없이 받아들였고, `./gradlew :shared:compileKotlinIosSimulatorArm64 -PenableIosTargets=true`까지 깨끗이 통과 — 진짜 멀티플랫폼 이식성까지 확인됨. `:shared:testDebugUnitTest`/`:app-android:testDebugUnitTest`/`make test` 전부 그린.
    - ~~**(2) 본 이전**~~ — **완료(웨이브 1~6, 260816)**. 당시 착수 계획서가 나머지 124개 프로덕션 파일(+기존 단위테스트 50개)의 실제 파일 단위 의존 그래프를 스캔해 이동 순서를 확정했다. **계획 수립 중 정정한 예상**: "`internal`→기본 가시성 확대는 실제 app-android 호출부가 있는 지점만"이라고 예상했었는데, 스파이크(파일 1개) 결과를 트리 전체로 낙관적으로 외삽한 것이었다 — 실측하니 509개 중 424개(83%)가 이미 `ui/`/`persistence/`/`middleware/`/테스트에서 참조되고 있어 이동 순서와 무관하게 public 전환이 필요했다. 같은 날 이어서 웨이브 1(56개 파일, 원래 계획한 19개가 아니라 파일 단위 의존 그래프 조사 자체의 결함 — 같은 패키지 내부의 무-import 참조 누락 — 을 실행 중 발견/교정한 뒤 확정된 진짜 원자적 단위)부터 시작해 웨이브 2~6까지 총 6개 웨이브로 나머지 68개 파일을 이전했다 — 웨이브 5에서 키스톤 `GameSessionStateHolder.kt` 본체, 웨이브 6에서 그에 의존하는 마지막 컨트롤러들(topmoves/session/startgame)이 이동했다. `internal`→public 전환은 사전 감사가 아니라 컴파일러가 지목하는 대로 반복 수렴하는 방식이 전 웨이브에서 그대로 통했고, 도중에 발견된 함정들 — `LayeringContractTest.kt`의 하드코딩 경로 문제(`applicationFile()` 헬퍼로 해결), Kotlin 크로스모듈 스마트캐스트 제약(로컬 val 캡처로 해결), `middleware/`처럼 `application/` 트리 밖 패키지를 참조하는 파일(포터빌리티 확인 후 함께 이전), 테스트가 `persistence/`·`ui/` 같은 비이식 레이어를 직접 테스트하는 경우(영구 잔류로 원위치), `kotlin.test.assertNotNull`/`assertFailsWith`가 `Unit`이 아니라 값을 반환해 표현식-바디 테스트 함수의 추론 반환 타입을 깨는 경우(명시적 `: Unit` 반환 타입으로 해결) — 도 전부 처리했다. 웨이브별 실행 기록 원문은 2026-08-17 문서 정리로 제거됐다(`DOCS_INDEX.md` "문서 보존 정책" 참고, 필요시 `git log`로 복원 가능).
@@ -126,7 +126,7 @@
      - **coroutines 업그레이드는 답이 아니었다(260824 실측)**: 처음엔 iOS 디스패처를 `Dispatchers.Default`로 임시 대체하면서 "1.9+로 올리면 네이티브 `Dispatchers.IO`가 공개되니 그때 바꾸자"고 적었는데, **틀린 전제였다** — 최신 안정판 1.11.0으로 올려서 확인해도 네이티브에는 여전히 `internal` 선언뿐이라 iosMain에서 접근할 수 없다. `Dispatchers.Default.limitedParallelism(n)`도 답이 아니다(Default의 스레드를 나눠 쓰는 뷰일 뿐 스레드가 늘지 않아 블로킹 문제가 그대로다). 그래서 `newFixedThreadPoolContext(8, "engine-io")`로 별도 풀을 직접 만들었고, **업그레이드 없이 1.8.0에서 해결됐다**. 확인 과정에서 두 군데(`shared`, `engine-android`)에 하드코딩돼 있던 `1.8.0`은 버전 카탈로그(`kotlinxCoroutines`)로 옮겨 놨다 — 다른 의존성과 동일한 방식이고, 나중에 올릴 일이 생기면 한 줄만 고치면 된다. 올리는 것 자체는 지금 근거가 없어 보류했다(출시 준비 단계에서 이유 없는 런타임 교체는 피한다).
      - **재발 방지**: `LayeringContractTest.sharedCommonMainAvoidsImplicitlyImportedJvmApis` 신설 — import 문이 아니라 `System.`/`System::`/`Thread.`/`Runtime.`/`synchronized(` **이름 자체**를 `shared/commonMain` 전체에서 막는다. 기본 테스트 루프에 포함되므로 iOS 타깃을 켜지 않아도 걸린다.
 6. ~~**6계층 — 기능 엔타이틀먼트 정책 도입**~~ — 완료(260814). `application/premium/PremiumState.kt`의 `isUndoClaimed: Boolean`을 `claimedFeatures: Set<FeatureId>`로 일반화하고(`persistence/PremiumStateStore.kt`에 구버전 불리언 하위호환 마이그레이션 포함), `application/premium/FeatureAccessPolicy.kt`(같은 6계층 — 애초 설계 초안엔 5계층으로 잘못 적혀 있었으나 착수 시점에 정정)를 신설해 `ui/GamePlaySection.kt`(형세보기/추천수/무르기)·`ui/KaTrainUxPanels.kt`(착수평가)에 각자 하드코딩돼 있던 3곳의 판정을 이 함수 하나로 통합했다. **의도적으로 남겨둔 것**: 클레임 전용 다이얼로그(`ui/GamePlaySection.kt`의 `showUndoClaimDialog`)를 `PremiumUpsellDialog`에 `Claim` 선택지로 통합하는 UI 단순화는 이번 범위에서 제외 — 클레임 가능 기능이 아직 무르기 하나뿐이라 지금 합치는 건 과설계로 판단, 두 번째 클레임형 기능이 생기면 재검토.
-7. **6계층 — 세션/연속성 공식화**: `auth-onboarding/README.md` Step 4(익명→실계정 승격, Firestore 동기화)를 이 계층의 정식 구현으로 진행 — **단, 익명 로그인 자체가 2026-08-05에 영구 폐기 결정됐으므로("재설치마다 허수 계정이 쌓이는 문제를 이전 앱에서 실제로 겪음") "익명→실계정 승격" 경로 자체가 성립하지 않는다. 이 항목은 착수 전에 목표를 다시 정의해야 한다** — 예를 들어 "게스트(로컬 ID)→실계정 승격"처럼 익명 인증을 전제하지 않는 형태로. 기기 식별자 기반 다중 기기 정책도 이 재정의와 함께 결정.
+7. **6계층 — 세션/연속성 공식화**: `LOGIN_AND_ACCOUNT_SYSTEM.md` Step 4(익명→실계정 승격, Firestore 동기화)를 이 계층의 정식 구현으로 진행 — **단, 익명 로그인 자체가 2026-08-05에 영구 폐기 결정됐으므로("재설치마다 허수 계정이 쌓이는 문제를 이전 앱에서 실제로 겪음") "익명→실계정 승격" 경로 자체가 성립하지 않는다. 이 항목은 착수 전에 목표를 다시 정의해야 한다** — 예를 들어 "게스트(로컬 ID)→실계정 승격"처럼 익명 인증을 전제하지 않는 형태로. 기기 식별자 기반 다중 기기 정책도 이 재정의와 함께 결정.
 8. **`LayeringContractTest.kt` 갱신**: 위 항목들이 실제 코드로 옮겨질 때마다, 이번 재정의(2/3계층 경계, 4/6계층 신설, 5/7 번호 이동)를 반영해 계층 위반을 기계적으로 검증하도록 갱신. **코드가 실제로 옮겨지기 전까지는 테스트를 먼저 갱신하지 않는다** — 아직 물리적으로 분리되지 않은 것을 분리된 것처럼 강제하면 오탐만 늘어난다.
 9. ~~**문서 정리 후속 작업**~~ — **완료(260817)**. `docs/refactoring/`(리팩토링 축이 이미 종료됨)과 `docs/archive/` 전체(55개 파일, 1.2MB)를 저장소에서 제거했다. "삭제 대신 보관" 원칙을 뒤집는 결정이라 `DOCS_INDEX.md` "문서 보존 정책" 절에 사유와 복원 방법을 기록했다. 유일한 예외는 실측 데이터로 계속 인용되던 `ENGINE_STRENGTH_RESEARCH.md`로, `docs/engine/`로 이동 보존했다.
 
@@ -134,8 +134,8 @@
 
 - 레이어 원칙 자체(앱 비종속): `ARCHITECTURE.md`
 - 엔진 탐색 방식·레벨 정책·캐시 운영 상세: `ENGINE.md`
-- 프리미엄/결제 로드맵: `premium-mode/README.md`
-- 인증/온보딩 로드맵: `auth-onboarding/README.md`
-- 기능 유/무료 정책 원칙("무엇을 무료/광고/구매/클레임으로 줄지"의 근거) — 이 문서의 "6계층 — 기능 엔타이틀먼트 정책 도입" 항목이 배치를 결정하는 반대편 문서: `feature-access-principles/README.md`
-- 그 원칙을 초도 발행에 구체 적용한 전략/체크리스트: `launch-plan/README.md`
+- 프리미엄/결제 로드맵: `PREMIUM_MODE.md`
+- 인증/온보딩 로드맵: `LOGIN_AND_ACCOUNT_SYSTEM.md`
+- 기능 유/무료 정책 원칙("무엇을 무료/광고/구매/클레임으로 줄지"의 근거) — 이 문서의 "6계층 — 기능 엔타이틀먼트 정책 도입" 항목이 배치를 결정하는 반대편 문서: `FEATURE_ACCESS_PRINCIPLES.md`
+- 그 원칙을 초도 발행에 구체 적용한 전략/체크리스트: `GOOGLE_PLAY_LAUNCH_PLAN.md`
 - 이 7계층 모델이 정착하기까지의 리팩토링 과정: **날짜별 작업 로그는 2026-08-17 문서 보존 정책 전환으로 삭제됐다**(git 히스토리로만 보존). `docs/refactoring/`에는 지금 **진행 중인** 계획서만 남는다.

@@ -3,7 +3,7 @@ package com.worksoc.goaicoach.application.premium
 /**
  * 4계층(External Integration) α — 실제 리워드 광고 SDK(AdMob) 호출을 감싸는 순수 포트.
  * 실제 어댑터는 `ui/AndroidRewardedAdClient.kt`(플랫폼 계층)에 둔다 — `AuthClientPort`와
- * 같은 자리(premium-mode/README.md "계층 배치 참고" 표). 광고를 보여줄 Activity/광고단위 ID
+ * 같은 자리(PREMIUM_MODE.md "계층 배치 참고" 표). 광고를 보여줄 Activity/광고단위 ID
  * 같은 플랫폼 세부사항은 이 인터페이스의 메서드 시그니처가 아니라 어댑터의 생성자가 받는다 —
  * `AndroidAuthClient`가 `FirebaseAuth.getInstance()`를 내부에서 직접 쓰는 것과 같은 이유로,
  * `application/premium`이 android.app.Activity 등 플랫폼 타입에 의존하지 않게 한다.

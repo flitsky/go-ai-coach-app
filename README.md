@@ -20,7 +20,7 @@ Implemented baseline as of 2026-08-29:
 
 Next goal:
 
-1. Ship the initial Google Play release. Code and assets are done; what remains is Play Console paperwork — see `launch-plan/README.md` §0.
+1. Ship the initial Google Play release. Code and assets are done; what remains is Play Console paperwork — see `GOOGLE_PLAY_LAUNCH_PLAN.md` §0.
 2. Work the active backlog — `260905-_ACTIVE_BACKLOG.md` is the entry point. Next up is #76 (dead-code cleanup, already investigated); #26 and #18 wait on Play Console monetization opening.
 3. Add broader androidTest/Robolectric coverage. Default verification is JVM unit tests plus two emulator smoke tests.
 

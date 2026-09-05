@@ -135,9 +135,10 @@ AI 대화 스레드는 매번 백지에서 시작합니다(cold start). 사람�
 | **참여/리텐션 기능** (출석·업적·히스토리·봇 캐릭터) | `docs/work/roadmap/260823-260830_OFFLINE_ENGAGEMENT_FEATURES_BACKLOG.md` | **완결(2026-08-30).** #1~#42 전부 끝났고 예정사항이 비어 있다 — 이력·근거 참조용 |
 | **출시 후 고도화** (#43~#62 — 랜딩·도장판·돋보기 착수·i18n 등) | `docs/work/roadmap/260830-260831_POST_LAUNCH_ENHANCEMENTS.md` | **완결(2026-08-31) · 봉인.** 완료 항목의 함정·구현 결정 근거 보관처 — ⚠️ 통째로 읽지 말 것 |
 | **활성 일감** (#76 사문 정리 → #72·#75 결정 대기 → #26·#18) | `docs/work/roadmap/260905-_ACTIVE_BACKLOG.md` | **진행 중 — 지금 이어받을 곳.** 2026-09-05 신설(4세대). 앞 세대(#63~#84)는 `260831-260905_DEV_TEST_SECTION_BUILDOUT.md`에 봉인 |
-| 초도 마켓 발행 | `launch-plan/README.md` (0절이 최종 체크리스트) | 대기 |
-| 수익화 / 계정 / UX / 디자이너 핸드오프 | `premium-mode/`, `auth-onboarding/`, `ux-improvement/`, `design-handoff/` 각 `README.md` | append 로그 |
-| 기능 유/무료 원칙 (상위 원칙) | `feature-access-principles/README.md` | 참조용 |
+| 초도 마켓 발행 | `docs/work/plans/GOOGLE_PLAY_LAUNCH_PLAN.md` (§0이 최종 체크리스트) | 대기 |
+| 수익화 / 계정 / UX | `docs/work/plans/` 의 `PREMIUM_MODE.md`, `LOGIN_AND_ACCOUNT_SYSTEM.md`, `UX_IMPROVEMENT.md` | 셋 다 **사실상 갱신 정지**(2026-09-06 확인) — 근거 참조용 |
+| 디자이너 핸드오프 / 스토어 자산 | `design-handoff/` (저장소 루트) | 라운드별 스냅샷. ⚠️ `AppNameContractTest`가 여기를 읽는다 |
+| 기능 유/무료 원칙 (상위 원칙) | `docs/spec/FEATURE_ACCESS_PRINCIPLES.md` | **활성** — #18·#26이 §8을 착수 전 필독으로 지목 |
 
 ⚠️ 위 문서 두 개 쌍(PLAN+BACKLOG) 방식을 **실제로 쓰는 트랙은 현재 `docs/work/roadmap/` 하나**입니다.
 나머지는 이 방법론이 정립되기 전에 만들어진 **단일 README append 로그**입니다 — 형식이 다르다고
@@ -247,4 +248,4 @@ git branch -a --no-merged main
 | 7계층 아키텍처 원칙 (신규 코드 배치 기준) | [`ARCHITECTURE.md`](./ARCHITECTURE.md) |
 | 현재 패키지 지도와 갭 | [`GO_AI_COACH_ARCHITECTURE_ROADMAP.md`](./spec/GO_AI_COACH_ARCHITECTURE_ROADMAP.md) |
 | 엔진 탐색 모드·레벨 매핑 | [`ENGINE.md`](./ENGINE.md) |
-| 기능 유/무료 정책 | [`../feature-access-principles/README.md`](../feature-access-principles/README.md) |
+| 기능 유/무료 정책 | [`FEATURE_ACCESS_PRINCIPLES.md`](./spec/FEATURE_ACCESS_PRINCIPLES.md) |

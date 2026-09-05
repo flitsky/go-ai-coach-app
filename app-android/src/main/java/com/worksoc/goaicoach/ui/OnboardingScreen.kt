@@ -41,7 +41,7 @@ import kotlinx.coroutines.launch
  * 완료 조건은 [DeviceIdentityStorePort.loadOrCreate] 또는 Google/이메일 로그인 성공이다 —
  * 게스트 경로는 네트워크 없이 항상 즉시 성공하므로 "계정 없이 시작하기"를 선택하면 이 화면은
  * 다시 뜨지 않는다(반복 온보딩 없음). Firebase 익명 로그인은 시도하지 않는다 — 파이어베이스
- * Auth의 익명 로그인 활성화는 이 프로젝트에서 켜지 않기로 확정됐다(`auth-onboarding/README.md`
+ * Auth의 익명 로그인 활성화는 이 프로젝트에서 켜지 않기로 확정됐다(`LOGIN_AND_ACCOUNT_SYSTEM.md`
  * 3장 참고). Google/이메일 로그인은 실패/취소를 조용히 삼키지 않고 토스트로 안내한다
  * ([attemptGoogleSignIn]/[attemptEmailSignIn]) — 사용자가 명시적으로 시도한 동작이라
  * 결과를 알아야 하기 때문이다.

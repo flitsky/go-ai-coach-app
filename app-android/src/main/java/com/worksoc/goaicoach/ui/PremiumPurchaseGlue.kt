@@ -81,7 +81,7 @@ private suspend fun resolvePremiumPurchase(
 }
 
 /**
- * 실제 AdMob 리워드 광고를 로드/노출하고(premium-mode/README.md Step 3), 시청 완료(보상 획득)
+ * 실제 AdMob 리워드 광고를 로드/노출하고(PREMIUM_MODE.md Step 3), 시청 완료(보상 획득)
  * 여부는 [runPremiumAdGrantApplication]이 판정해 그때만 상태를 특정 대국(매치)에 묶지 않고
  * 부여한다(부여 시점부터 1시간 동안 몇 판을 새로 시작하든 유효). 로드 실패/중도 이탈 시에는
  * 상태를 바꾸지 않는다. [performPremiumPurchase]와 같은 이유로 이 시퀀스를 GoCoachApp.kt 밖으로 뺐다.
@@ -110,7 +110,7 @@ internal suspend fun performPremiumAdGrant(
  *
  * ## ✅ 부수 이득 — 실기에서 실제 광고를 밟지 않아도 된다
  * `release`만 `local.properties`의 **실제 AdMob 단위**를 쓰므로, 개발자가 자기 빌드에서 광고를
- * 보거나 누르면 자기 노출·자기 클릭이라 **AdMob 정책 위반**이다(`launch-plan/README.md` §0 B-3이
+ * 보거나 누르면 자기 노출·자기 클릭이라 **AdMob 정책 위반**이다(`GOOGLE_PLAY_LAUNCH_PLAN.md` §0 B-3이
  * "광고만 일부러 안 밟았다"고 적은 이유). 이 함수는 광고를 **띄우지 않고** 보상 경로만 밟는다.
  *
  * ⚠️ 그래도 이 버튼은 **debug 전용 2차**에만 둔다(#77) — 프리미엄을 무료로 찍어내는 경로다.

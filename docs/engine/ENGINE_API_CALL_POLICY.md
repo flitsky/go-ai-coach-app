@@ -212,7 +212,7 @@ KataGo analysis config에는 `wideRootNoise`가 있으며, 이 값을 크게 하
 
 `AnalysisLimit.effectiveAnalysisLimit()`는 `candidateCount * minVisitsPerCandidate`와 `minTimeMillis`가 설정된 경우 요청 visits/time을 올릴 수 있다. 기본 실시간 대국 preset인 `Lite`와 현재 `Learning`은 `minVisitsPerCandidate=0`, `minTimeMillis=null`이므로 후보 수를 늘린다고 자동으로 visit/time이 늘지는 않는다. 반면 `Balanced` 이상이나 향후 broad study preset에서는 후보당 최소 visits를 요구해 더 무거운 분석으로 승격될 수 있다.
 
-JSON analysis path도 B16/B32/B64 같은 visit 레벨 설정을 그대로 표현할 수 있다. KataGo Analysis Engine query는 요청별 `maxVisits`를 받고, 우리 adapter도 `AnalysisLimit.visits`를 query JSON의 `maxVisits`에 넣는다. `timeMillis`는 `overrideSettings.maxTime`으로 들어간다. 따라서 JSON position analysis 전환의 쟁점은 "visit 설정 가능 여부"가 아니라, GTP stateful tree reuse를 포기하거나 줄이는 대신 position-scoped 요청, 원격 서버 호환성, AI vs AI 레벨 오염 완화라는 장점을 얻을지 여부다. 자세한 장단점은 `engine-research/ENGINE_SEARCH_TREE_REUSE_REVIEW.md`의 JSON position analysis 섹션을 따른다.
+JSON analysis path도 B16/B32/B64 같은 visit 레벨 설정을 그대로 표현할 수 있다. KataGo Analysis Engine query는 요청별 `maxVisits`를 받고, 우리 adapter도 `AnalysisLimit.visits`를 query JSON의 `maxVisits`에 넣는다. `timeMillis`는 `overrideSettings.maxTime`으로 들어간다. 따라서 JSON position analysis 전환의 쟁점은 "visit 설정 가능 여부"가 아니라, GTP stateful tree reuse를 포기하거나 줄이는 대신 position-scoped 요청, 원격 서버 호환성, AI vs AI 레벨 오염 완화라는 장점을 얻을지 여부다. 자세한 장단점은 `ENGINE_SEARCH_TREE_REUSE_REVIEW.md`의 JSON position analysis 섹션을 따른다.
 
 현재 레벨별 기본 visits는 다음과 같다.
 
@@ -584,7 +584,7 @@ KataGo GTP config 주석 기준으로 `visits`는 현재 턴에서 새로 수행
 
 따라서 “매판 random seed를 넣으면 프로세스 재시작이나 `clear_cache`가 불필요한가?”에 대한 현재 결론은 아니오다. 랜덤 시드는 다양성/재현성 제어 수단이고, `clear_cache`/fresh process는 엔진 내부 상태 격리 수단이다.
 
-재사용을 다시 살릴 후보는 random seed보다 `maxPlayouts` 기반 정책이다. `maxPlayouts`는 이전 tree visits를 포함하는 `maxVisits`와 달리 새로 수행할 탐색량을 더 직접적으로 제한할 수 있다. 다만 기존 tree 위에 새 playout을 더하는 방식이므로, 강도 보정 모드와는 별도인 “성능/품질 우선 모드”로 검증해야 한다. 자세한 검토는 `engine-research/ENGINE_SEARCH_TREE_REUSE_REVIEW.md`를 따른다.
+재사용을 다시 살릴 후보는 random seed보다 `maxPlayouts` 기반 정책이다. `maxPlayouts`는 이전 tree visits를 포함하는 `maxVisits`와 달리 새로 수행할 탐색량을 더 직접적으로 제한할 수 있다. 다만 기존 tree 위에 새 playout을 더하는 방식이므로, 강도 보정 모드와는 별도인 “성능/품질 우선 모드”로 검증해야 한다. 자세한 검토는 `ENGINE_SEARCH_TREE_REUSE_REVIEW.md`를 따른다.
 
 ### 사람 차례
 

@@ -25,7 +25,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
  * 새로 만들어 쓰는 얇은 래퍼다 — 구매 버튼 1개(명시적 구매) + 앱 시작 시 복원 조회 1번뿐인 이
  * 앱의 사용 패턴상, 연결을 계속 유지하는 대신 매번 연결→작업→종료를 짧게 반복하는 편이
  * `GoCoachApp.kt`에 별도 `remember`로 연결을 들고 있을 필요를 없애준다(상태 훅 예산이 이미
- * 47/47로 여유가 없다 — premium-mode/README.md Step 4 참고). `enableAutoServiceReconnection()`은
+ * 47/47로 여유가 없다 — PREMIUM_MODE.md Step 4 참고). `enableAutoServiceReconnection()`은
  * 이런 단발성 연결에는 의미가 없어 의도적으로 쓰지 않는다.
  *
  * 비소모성(non-consumable/one-time) 상품이라 `consumeAsync`는 쓰지 않는다 — 구매 완료 후

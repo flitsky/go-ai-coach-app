@@ -24,7 +24,7 @@ import com.worksoc.goaicoach.persistence.ReleaseResetStore
  *
  * **남기는 것**: 대국 기록·진행 중 대국(사용자 콘텐츠라 권한이 아니다), 설정·언어(취향),
  * 기기 식별자(지우면 진단 로그의 기기 추적이 끊긴다). 근거표는
- * `feature-access-principles/README.md` 8.3-2.
+ * `FEATURE_ACCESS_PRINCIPLES.md` 8.3-2.
  *
  * ### ⚠️ 반드시 다른 무엇보다 먼저 돌아야 한다
  *

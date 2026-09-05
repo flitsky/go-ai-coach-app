@@ -6,7 +6,7 @@ package com.worksoc.goaicoach.application.auth
  *
  * 익명(Anonymous) 로그인 메서드는 없다 — 파이어베이스 Auth의 익명 로그인 활성화는
  * 이 프로젝트에서 켜지 않기로 확정된 상태다(재설치마다 새 익명 계정이 쌓여 허수 유저가
- * 늘어나는 구조적 한계, `auth-onboarding/README.md` 3장 참고). 게스트 기능("계정 없이
+ * 늘어나는 구조적 한계, `LOGIN_AND_ACCOUNT_SYSTEM.md` 3장 참고). 게스트 기능("계정 없이
  * 시작하기")은 `DeviceIdentityStorePort`의 로컬 UUID로 별도 동작하며 이 포트와 무관하다.
  */
 interface AuthClientPort {

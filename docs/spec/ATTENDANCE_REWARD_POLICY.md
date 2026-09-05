@@ -121,5 +121,5 @@
 | 화면(팝업) | `app-android/.../ui/AttendanceRewardClaimDialog.kt` |
 | 화면(도장판 그림) | `app-android/.../ui/AttendanceBoardView.kt` — 보상은 **글자가 아니라 글리프**로 그린다(#57) |
 | 보상 글리프 | `app-android/src/main/res/drawable/reward_*.xml` |
-| 상위 원칙 | `feature-access-principles/README.md` (무료/유료 경계) |
-| 수익화 맥락 | `premium-mode/README.md` |
+| 상위 원칙 | `FEATURE_ACCESS_PRINCIPLES.md` (무료/유료 경계) |
+| 수익화 맥락 | `PREMIUM_MODE.md` |

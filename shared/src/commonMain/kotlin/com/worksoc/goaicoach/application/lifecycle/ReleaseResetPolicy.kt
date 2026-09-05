@@ -7,7 +7,7 @@ import com.worksoc.goaicoach.application.premium.PremiumState
 
 /**
  * 6계층(Session & Continuity) — **정식 릴리즈 초기화**를 이번 실행에서 해야 하는지 판정한다
- * (백로그 #63, `feature-access-principles/README.md` 8.3-2).
+ * (백로그 #63, `FEATURE_ACCESS_PRINCIPLES.md` 8.3-2).
  *
  * 비공개 테스트 기간에 쌓인 권한(캐릭터·출석·1회권·프리미엄)은 **테스트용이었으므로 정식
  * 릴리즈에서 민다**(2026-09-01 사용자 확정). #26이 *"'초기화를 고려한다'와 '초기화한다'는

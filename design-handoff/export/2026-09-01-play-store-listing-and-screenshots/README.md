@@ -1,6 +1,6 @@
 # Play Console 업로드 세트 — 2026-09-01 (스크린샷 재캡처, 백로그 B-2)
 
-`launch-plan/README.md` §0의 **B-2**를 실행한 결과다. 이 폴더 하나만 열면 스토어 등록정보 교체에
+`GOOGLE_PLAY_LAUNCH_PLAN.md` §0의 **B-2**를 실행한 결과다. 이 폴더 하나만 열면 스토어 등록정보 교체에
 필요한 것이 전부 들어 있다.
 
 > ✅ **AAB도 같은 날 만들었다(B-1).** `dist/go-ai-coach-release.aab` = **v0.8.10 / VERSION_CODE=810**,
@@ -154,6 +154,6 @@
 
 ## 관련 문서
 
-- `launch-plan/README.md` — §0이 출시 실행 상태의 정본. **B-2가 이 폴더로 닫힌다**
+- `GOOGLE_PLAY_LAUNCH_PLAN.md` — §0이 출시 실행 상태의 정본. **B-2가 이 폴더로 닫힌다**
 - `260905-_ACTIVE_BACKLOG.md` — 활성 코드 일감(#26·#18). 화면 변경이 멎었다는 근거
-- `2026-08-30-play-store-listing-and-screenshots/README.md` — 앞 세트(다섯 장). 이력용
+- 앞 세트(2026-08-30, 다섯 장)는 형제 폴더에 있다 — 이력용

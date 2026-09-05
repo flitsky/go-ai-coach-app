@@ -5,7 +5,7 @@ import com.worksoc.goaicoach.match.SeatController
 
 /**
  * 6계층(Session & Continuity) — **유료로 산 캐릭터와 두는 동안** 인게임 프리미엄 기능을 열어
- * 주는 구매 특전이 지금 성립하는지(백로그 #18, `feature-access-principles/README.md` 8장).
+ * 주는 구매 특전이 지금 성립하는지(백로그 #18, `FEATURE_ACCESS_PRINCIPLES.md` 8장).
  *
  * 특전은 **구매한 캐릭터에만** 붙는다. 광고 조각이나 출석으로 얻은 캐릭터는 아무리 상위
  * 단계라도 특전이 없다 — 특전의 목적이 구매 유도이기 때문이다(2026-08-29 사용자 확정).

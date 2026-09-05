@@ -141,7 +141,7 @@ private fun grant(
         // (출석 해금 캐릭터는 출석 외 획득 경로가 없다) **구매(#74)나 개발자 도구(#70)가 캐릭터를
         // 심을 수 있게 되는 순간 도달 가능해진다.**
         // ⚠️ 그때 **7·28일차는 캐릭터가 유일한 보상이라 그 회차가 통째로 빈손이 된다** — 대체 보상
-        // ("동등 가치 소모품으로 대체")은 별도 사용자 결정이다(`launch-plan/README.md` C-2 상세).
+        // ("동등 가치 소모품으로 대체")은 별도 사용자 결정이다(`GOOGLE_PLAY_LAUNCH_PLAN.md` C-2 상세).
         is AttendanceReward.BotCharacterUnlock -> {
             val unlockedNow = runBotCharacterUnlock(reward.character.id, botStore) != null
             RewardGrantOutcome(

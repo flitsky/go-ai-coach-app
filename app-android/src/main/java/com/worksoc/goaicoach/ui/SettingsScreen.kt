@@ -59,7 +59,7 @@ import androidx.compose.runtime.setValue
 
 // AdMob·Play Billing 등 Play Console 필수 제출 항목(개인정보처리방침 URL)과 동일한 문서를
 // 가리킨다 — Play Console "앱 콘텐츠" 폼에도 이 URL을 별도로 등록해야 한다(코드 배선과
-// 무관한 콘솔 설정, launch-plan/README.md 참고).
+// 무관한 콘솔 설정, GOOGLE_PLAY_LAUNCH_PLAN.md 참고).
 private const val PRIVACY_POLICY_URL = "https://rezen.dev/go-ai-coach/privacy/"
 
 // 버전 텍스트를 이만큼 두드리면 개발자 모드가 활성화된다.

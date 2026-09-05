@@ -33,13 +33,13 @@
 
 ### 프리미엄/인증/UX 개편
 이 구간의 상세 진행 로그는 이 파일이 아니라 각 기능 전용 마스터플랜 문서에 있다(`DOCS_INDEX.md`에 등록된 관례) — 이 파일에는 자세히 기록되지 않았다.
-- 수익화(광고 시청 기반 1시간 프리미엄, 영구 구매): `premium-mode/README.md`
-- 최초 실행 온보딩 + Firebase 계정 시스템(Google/이메일/익명): `auth-onboarding/README.md`
-- 보드/패널/UX 개편: `ux-improvement/README.md`
+- 수익화(광고 시청 기반 1시간 프리미엄, 영구 구매): `PREMIUM_MODE.md`
+- 최초 실행 온보딩 + Firebase 계정 시스템(Google/이메일/익명): `LOGIN_AND_ACCOUNT_SYSTEM.md`
+- 보드/패널/UX 개편: `UX_IMPROVEMENT.md`
 
 ## 2026-08-05
 
-- Google 로그인(Step 2, 커밋 `d4bd90b`)과 이메일/비밀번호 로그인(Step 3, 커밋 `debe374`) 실연동을 완료했다. `AuthClientPort`에 `signInWithGoogle`/`linkGoogleCredential`/`signInWithEmail`/`linkEmailCredential`/`currentAuthState`를 플랫폼 비종속으로 추가하고, `AndroidAuthClient`가 실제 Firebase Auth를 호출한다. Credential Manager 호출은 `GoogleCredentialManagerClient`로, 이메일 폼/공유 시도 흐름은 `EmailSignInDialog`+`EmailSignInFlow`로 분리했다. 에뮬레이터(`Pixel_7_API_35`)에서 Google 실계정, 이메일 신규 가입/기존 로그인/오답 비밀번호 세 경로를 모두 실측했다. 상세 근거는 `auth-onboarding/README.md`의 "Step 2/3 구현" 절.
+- Google 로그인(Step 2, 커밋 `d4bd90b`)과 이메일/비밀번호 로그인(Step 3, 커밋 `debe374`) 실연동을 완료했다. `AuthClientPort`에 `signInWithGoogle`/`linkGoogleCredential`/`signInWithEmail`/`linkEmailCredential`/`currentAuthState`를 플랫폼 비종속으로 추가하고, `AndroidAuthClient`가 실제 Firebase Auth를 호출한다. Credential Manager 호출은 `GoogleCredentialManagerClient`로, 이메일 폼/공유 시도 흐름은 `EmailSignInDialog`+`EmailSignInFlow`로 분리했다. 에뮬레이터(`Pixel_7_API_35`)에서 Google 실계정, 이메일 신규 가입/기존 로그인/오답 비밀번호 세 경로를 모두 실측했다. 상세 근거는 `LOGIN_AND_ACCOUNT_SYSTEM.md`의 "Step 2/3 구현" 절.
 - 이메일 로그인은 계정 생성을 먼저 시도하고, 이미 가입된 이메일이면(`FirebaseAuthUserCollisionException`) 로그인으로 폴백하는 순서를 택했다 — 반대 순서(로그인 먼저, 실패 시 가입)는 최신 Firebase Auth가 "미가입 이메일"과 "비밀번호 오류"를 계정 열거(enumeration) 방지 목적으로 같은 예외(`FirebaseAuthInvalidCredentialsException`)로 합칠 수 있어 그 구분을 신뢰할 수 없기 때문이다. 이메일 중복(충돌)은 여전히 명확히 구분되는 신호라 이 순서가 더 견고하다.
 - Email Link(비밀번호 없는 로그인)는 콘솔에서 이미 켜져 있었지만 구현하지 않았다 — Firebase Dynamic Links가 2025-08-25에 완전히 셧다운되면서, 그 공식 대체 경로(Firebase Hosting 기본 도메인 + Android App Links 딥링크)가 셧다운 이후 새로 만든 이 프로젝트에서 추가 마이그레이션 없이 바로 동작하는지가 문서상 불명확했다. 잘못 붙이면 "이메일 링크를 눌러도 앱이 안 열리는" 방식으로 조용히 깨질 위험이 있어, 자체완결적인 Email/Password를 먼저 선택하고 Email Link는 그 불확실성이 해소되면 이어 붙이기로 보류했다.
 - **파이어베이스 Auth의 익명(Anonymous) 로그인은 이 프로젝트에서 켜지 않기로 확정했다 — 구조적 한계 때문이다.** 사용자가 이전(장기) 앱에서 이를 활성화했다가, 앱을 지웠다 다시 깐 사용자마다 새 익명 계정이 만들어져 콘솔에 허수 유저만 계속 쌓이는 문제를 겪었음을 확인해줬다. 원인은 설정 실수가 아니라 기능 자체의 설계다: 파이어베이스 익명 로그인은 "기기 로컬에 캐시된 세션이 없으면 새 익명 사용자를 생성"하는 구조라, 재설치(=로컬 캐시 소실)마다 이전 익명 계정은 고아로 남고 새 계정이 또 생긴다. 공식 완화책(휴면 익명 계정 자동 삭제)도 Identity Platform 프로젝트 업그레이드가 전제라 간단한 설정 변경이 아니다. 이 앱의 게스트 기능("계정 없이 시작하기", `DeviceIdentityStorePort`의 로컬 UUID)은 파이어베이스 익명 로그인과 완전히 무관하게 이미 동작하므로, 이 결정으로 잃는 기능은 없다. Step 4(Firestore 동기화) 설계 시에도 파이어베이스 익명 로그인이 켜진다는 전제를 깔지 않는다.

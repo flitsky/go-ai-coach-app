@@ -3,7 +3,7 @@ package com.worksoc.goaicoach.application.premium
 /**
  * 4계층(External Integration) α — 실제 Google Play Billing SDK 호출을 감싸는 순수 포트.
  * 실제 어댑터는 `ui/AndroidBillingClient.kt`(플랫폼 계층)에 둔다 — `AdRewardPort`/`AuthClientPort`와
- * 같은 자리(premium-mode/README.md "계층 배치 참고" 표). 구매를 진행할 Activity/상품 ID 같은
+ * 같은 자리(PREMIUM_MODE.md "계층 배치 참고" 표). 구매를 진행할 Activity/상품 ID 같은
  * 플랫폼 세부사항은 이 인터페이스의 메서드 시그니처가 아니라 어댑터의 생성자가 받는다 —
  * `AndroidRewardedInterstitialAdClient`가 같은 이유로 Activity를 시그니처에 노출하지 않는 것과 동일하다.
  */

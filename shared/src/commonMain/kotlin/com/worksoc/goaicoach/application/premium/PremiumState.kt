@@ -30,7 +30,7 @@ enum class FeatureId {
 data class PremiumState(
     val source: PremiumSource = PremiumSource.None,
     val adGrantStartedAtMillis: Long? = null,
-    // 앱 내 활동/프로모션으로 얻은 영구 클레임 원장(launch-plan/README.md 3장의 "무르기 무료
+    // 앱 내 활동/프로모션으로 얻은 영구 클레임 원장(GOOGLE_PLAY_LAUNCH_PLAN.md 3장의 "무르기 무료
     // 클레임"이 첫 사례) — [source]와 별개 축이다. 한 번 담긴 [FeatureId]는 그 기능의 기본
     // 정책이 나중에 바뀌어도 재평가하지 않고 계속 남는다("지금 기본으로 무료인가"가 아니라
     // "이 유저가 예전에 클레임을 받았는가"만 저장). [purchased]/[adGranted]로 전이할 때 이
