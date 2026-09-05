@@ -32,7 +32,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.worksoc.goaicoach.R
@@ -178,8 +177,12 @@ private fun StudyVideoRow(entry: StudyVideoEntry, onClick: () -> Unit) {
             text = description,
             fontSize = 14.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
+            // ⚠️ **줄 수를 제한하지 않는다**(백로그 #107). `maxLines = 2` + 말줄임이었는데
+            // 1.3배에서 세 편이 **전부** 잘렸다(`… for a…`). 소개가 잘리면 그 강좌가 무엇을
+            // 다루는지 알 수 없어 **목록의 존재 이유가 사라진다.**
+            // ⚠️ 여기는 **폭 경쟁이 없다** — 화면의 3분의 2가 비어 있었다. 다른 자리(격자 칸·
+            // 착수 모드 스위치)처럼 문구를 줄여 풀 문제가 아니라, **캡 자체가 근거 없는 제한**이다.
+            // 행은 고정 높이가 아니므로 접히는 만큼 자란다(함정 9번).
         )
     }
 }

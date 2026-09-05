@@ -23,6 +23,7 @@ class FontScaleLayoutContractTest {
     private val attendanceBoard = codeOnly(sourceOf("AttendanceBoardView.kt"))
     private val settingsGrid = codeOnly(sourceOf("CompactScoringAndBoardSettingsPanel.kt"))
     private val statusPanel = codeOnly(sourceOf("GameStatusPanel.kt"))
+    private val studyScreen = codeOnly(sourceOf("StudyScreen.kt"))
     private val developerSection = codeOnly(sourceOf("DeveloperTestSection.kt"))
     private val botPicker = codeOnly(sourceOf("BotCharacterUiState.kt"))
 
@@ -187,6 +188,22 @@ class FontScaleLayoutContractTest {
         assertTrue(
             "개발자 섹션 제목이 양보하지 않는다 — 끄기 버튼이 눌려 단어 중간에서 잘린다(#107).",
             weight in (title + 1) until button,
+        )
+    }
+
+    /**
+     * 학습 목록의 강좌 소개(백로그 #107). `maxLines = 2` + 말줄임이라 1.3배에서 **세 편이
+     * 전부** 잘렸다 — `Ten-minute intro to the basic rules, for a…`.
+     *
+     * ⚠️ **여기는 폭 경쟁이 아니었다.** 화면의 3분의 2가 비어 있는데도 잘렸다 — 다른 자리처럼
+     * 문구를 줄여 풀 문제가 아니라 **캡 자체가 근거 없는 제한**이었다. 그 구분을 못 하면
+     * 멀쩡한 문구를 깎게 된다.
+     */
+    @Test
+    fun theStudyDescriptionIsNeverCutOff() {
+        assertFalse(
+            "강좌 소개에 줄 수 제한이 돌아왔다 — 1.3배에서 무엇을 다루는 강좌인지 읽을 수 없다(#107).",
+            studyScreen.contains("maxLines"),
         )
     }
 
