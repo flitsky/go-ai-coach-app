@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.ui
 
 internal val UiStringsChineseSimplified = UiStringsKorean.copy(
+    appTitle = "围棋AI",
     language = UiLanguage.ChineseSimplified,
     homeTagline = "与本地AI一起学习围棋",
     languageLabel = "语言",

@@ -23,6 +23,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.engine.EngineSessionBackend
@@ -145,12 +146,17 @@ private fun PreparingEngineScreen() {
                 verticalArrangement = Arrangement.Center,
             ) {
                 Text(
-                    text = "Go AI Coach POC",
+                    // ⚠️ **`UiStrings`가 아니라 안드로이드 리소스다** — 이 화면은
+                    // `ProvideUiLanguage` **바깥**에서 그려져 `LocalUiStrings`에 닿지 않는다.
+                    // 그래서 여기만 `res/values/strings.xml`을 쓴다(사유는 그 파일 머리말).
+                    // ⚠️ 예전 값은 `"Go AI Coach POC"`였다 — 출시 앱의 **첫 프레임**에 'POC'가
+                    // 찍혀 있었다(2026-09-05 발견).
+                    text = stringResource(R.string.app_name),
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
                 )
                 Text(
-                    text = "Preparing ...",
+                    text = stringResource(R.string.preparing_engine),
                     color = MaterialTheme.colorScheme.secondary,
                     style = MaterialTheme.typography.bodyLarge,
                     modifier = Modifier.padding(top = 12.dp),

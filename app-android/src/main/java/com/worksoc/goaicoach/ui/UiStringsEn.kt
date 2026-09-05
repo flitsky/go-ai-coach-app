@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.ui
 
 internal val UiStringsEnglish = UiStringsKorean.copy(
+    appTitle = "Go AI",
     language = UiLanguage.English,
     homeTagline = "Learn Go with your local AI",
     languageLabel = "Language",

@@ -75,6 +75,17 @@ internal fun ProvideUiLanguage(
 
 internal data class UiStrings(
     val language: UiLanguage,
+    /**
+     * 앱 이름(백로그 #97). ⚠️ **한국어 값은 스토어 등록정보의 `[앱 이름]`과 같아야 한다** —
+     * `AppNameContractTest`가 런처 라벨·앱 안 타이틀·스토어 셋을 묶어 놓았다.
+     *
+     * ⚠️ **브랜드가 아니라 서술이라 언어마다 번역한다.** "바둑 AI"는 코인된 이름이 아니라
+     * *"바둑 + AI"* 라는 설명이므로, 일본어 사용자에게 한글을 보여 줄 이유가 없다.
+     * 실제로 `UiStringsTest`의 상속 그물이 그 실수를 잡아냈다(2026-09-05).
+     *
+     * ⚠️ **"코치"를 붙이지 말 것** — 코칭 기능이 아직 없다(사용자 결정). 기능이 나오면 그때
+     * 네 언어와 스토어·런처를 함께 바꾼다.
+     */
     val appTitle: String,
     val homeTagline: String,
     val languageLabel: String,

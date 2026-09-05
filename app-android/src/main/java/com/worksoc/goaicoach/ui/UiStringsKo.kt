@@ -2,7 +2,7 @@ package com.worksoc.goaicoach.ui
 
 internal val UiStringsKorean = UiStrings(
     language = UiLanguage.Korean,
-    appTitle = "Go AI Coach",
+    appTitle = "바둑 AI",
     homeTagline = "로컬 AI와 함께하는 바둑 학습",
     languageLabel = "언어",
     close = "닫기",

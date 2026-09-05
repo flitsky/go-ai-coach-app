@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.ui
 
 internal val UiStringsJapanese = UiStringsKorean.copy(
+    appTitle = "囲碁AI",
     language = UiLanguage.Japanese,
     homeTagline = "ローカルAIと学ぶ囲碁",
     languageLabel = "言語",
