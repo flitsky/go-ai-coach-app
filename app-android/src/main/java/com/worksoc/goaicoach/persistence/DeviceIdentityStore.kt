@@ -23,7 +23,11 @@ internal class DeviceIdentityStore(context: Context) : DeviceIdentityStorePort {
         return DeviceIdentity(generated)
     }
 
-    private companion object {
+    internal companion object {
+        /**
+         * ⚠️ **`internal`로 열려 있다** — 개발자 모드 주기 초기화(#99)가 *"이것만 남긴다"* 를
+         * 이름으로 가리켜야 하기 때문이다. 문자열을 그쪽에 다시 적으면 이름이 바뀔 때 갈라진다.
+         */
         const val PrefsName = "go_ai_coach_device_identity"
         const val IdKey = "device_id"
     }

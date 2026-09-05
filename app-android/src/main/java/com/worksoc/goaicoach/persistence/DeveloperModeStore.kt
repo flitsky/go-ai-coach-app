@@ -18,8 +18,24 @@ internal class DeveloperModeStore(context: Context) {
         prefs.edit().putBoolean(EnabledKey, enabled).apply()
     }
 
+    /**
+     * 마지막 초기화(또는 개발자 모드를 켠) 시각. 없으면 `null`(백로그 #99).
+     *
+     * ⚠️ **켤 때 반드시 심어야 한다** — `null`이면 `DeveloperModeResetPolicy`가 절대 초기화하지
+     * 않는다(켜자마자 지우면 사용자가 무슨 일인지 알 수 없다). 즉 이 값을 안 심으면 주기 초기화가
+     * **조용히 동작하지 않는다.**
+     */
+    fun lastResetUtcMillis(): Long? =
+        prefs.getLong(LastResetKey, NoLastReset).takeIf { it != NoLastReset }
+
+    fun markResetBaseline(utcMillis: Long) {
+        prefs.edit().putLong(LastResetKey, utcMillis).apply()
+    }
+
     private companion object {
         const val PrefsName = "go_ai_coach_developer_mode"
         const val EnabledKey = "enabled"
+        const val LastResetKey = "last_reset_utc_millis"
+        const val NoLastReset = -1L
     }
 }

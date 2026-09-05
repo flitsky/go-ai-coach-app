@@ -290,6 +290,20 @@ internal data class UiStrings(
     val settingsDevSectionTitle: String,
     val settingsAdvancedDeveloperModeEnabledMessage: String,
     val settingsDevTierBasicTitle: String,
+    /**
+     * 개발자 모드 진입/해제 안내(백로그 #99).
+     *
+     * ⚠️ **진입 경고가 사실이어야 한다** — 켜면 실제로 3시간마다 최초 설치 상태로 돌아간다
+     * (`DeveloperModeResetCoordinator`). 문구만 겁을 주고 실제로는 안 지우면 거짓말이 되고,
+     * 반대로 지우면서 말하지 않으면 데이터를 빼앗는 셈이다.
+     */
+    val settingsDeveloperModeOptInTitle: String,
+    val settingsDeveloperModeOptInMessage: String,
+    val settingsDeveloperModeOptInConfirm: String,
+    val settingsDeveloperModeOffAction: String,
+    val settingsDeveloperModeOffTitle: String,
+    val settingsDeveloperModeOffMessage: String,
+    val settingsDeveloperModeOffDoneMessage: String,
     val settingsDevTierAdvancedTitle: String,
     val settingsDevBuildInfoTitle: String,
     val settingsDevFontScaleTitle: String,

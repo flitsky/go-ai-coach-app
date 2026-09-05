@@ -62,6 +62,7 @@ import com.worksoc.goaicoach.persistence.AttendanceStore
 import com.worksoc.goaicoach.persistence.GameSessionStore
 import com.worksoc.goaicoach.BuildConfig
 import com.worksoc.goaicoach.runReleaseResetAgain
+import com.worksoc.goaicoach.wipeToFreshInstall
 import com.worksoc.goaicoach.application.preferences.isBoardSetupLockedDuringGame
 import com.worksoc.goaicoach.application.auth.AuthClientPort
 import com.worksoc.goaicoach.application.auth.AuthProvider
@@ -163,6 +164,9 @@ internal fun SettingsScreen(
     // ⚠️ **2차 진입 탭 수도 저장하지 않는다**(백로그 #84). 2차 자체가 세션 한정이므로
     // (#77의 안전장치) 그 진입 카운터를 남기면 다음 실행이 9탭에서 시작하는 셈이 된다.
     var buildInfoTapCount by remember { mutableStateOf(0) }
+    // 개발자 모드 진입/해제 확인 팝업(백로그 #99). 저장하지 않는다 — 화면을 벗어나면 닫힌다.
+    var showDeveloperModeOptIn by remember { mutableStateOf(false) }
+    var showDeveloperModeOptOut by remember { mutableStateOf(false) }
     val consumables = LocalConsumableUiState.current
     val bots = LocalBotCharacterUiState.current
     // 개발자 2차의 프리미엄 부제가 읽는 값. `null`이면 지금 꺼져 있다는 뜻이다.
@@ -431,13 +435,11 @@ internal fun SettingsScreen(
                             versionTapCount++
                             val remainingTaps = DeveloperModeTapsRequired - versionTapCount
                             if (remainingTaps <= 0) {
-                                isDeveloperModeEnabled = true
-                                developerModeStore.setEnabled(true)
-                                Toast.makeText(
-                                    context,
-                                    strings.settingsDeveloperModeEnabledMessage,
-                                    Toast.LENGTH_SHORT,
-                                ).show()
+                                // ⚠️ **여기서 곧바로 켜지 않는다**(백로그 #99). 켜는 순간 이 기기는
+                                // "데이터가 3시간마다 버려지는 기기"가 되므로, **사용자가 그 사실을
+                                // 알고 고르게** 한다. 10탭은 이제 "열겠는가"를 묻는 문이다.
+                                versionTapCount = 0
+                                showDeveloperModeOptIn = true
                             } else if (remainingTaps <= DeveloperModeTapCountdownThreshold) {
                                 Toast.makeText(
                                     context,
@@ -484,12 +486,23 @@ internal fun SettingsScreen(
                 HorizontalDivider()
                 Spacer(modifier = Modifier.height(4.dp))
 
-                Text(
-                    text = strings.settingsDevTierBasicTitle,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.secondary,
-                )
+                // 제목 행에 **[개발자 모드 끄기]** 를 함께 둔다(백로그 #99 ⓑ). 켠 자리(버전 10탭)는
+                // 숨겨져 있어도 **끄는 자리는 보여야 한다** — 실수로 켠 사람이 되돌릴 길이 있어야 한다.
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = strings.settingsDevTierBasicTitle,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.secondary,
+                    )
+                    TextButton(onClick = { showDeveloperModeOptOut = true }) {
+                        Text(strings.settingsDeveloperModeOffAction)
+                    }
+                }
 
                 // 읽기 전용 ① — **어느 빌드를 보고 있는가.** 실기에서 이걸 못 봐서 치른 값이
                 // 있다(#47, `launch-plan/README.md` §0 B-3의 808 vs 810). 버전만으로는
@@ -822,6 +835,67 @@ internal fun SettingsScreen(
 
     // ⚠️ **스크롤 Column 밖, 다른 다이얼로그들과 형제 위치에 emit한다**(백로그 #79).
     // 스크롤 안에 두면 별도 윈도우인데도 그 자리에 레이아웃 슬롯을 하나 차지한다.
+    // ⓐ **진입 확인**(백로그 #99). 켜는 순간 이 기기는 "데이터가 버려지는 기기"가 되므로,
+    // 그 사실을 **켜기 전에** 말한다. 확인을 눌러야 비로소 켜진다.
+    if (showDeveloperModeOptIn) {
+        AlertDialog(
+            onDismissRequest = { showDeveloperModeOptIn = false },
+            title = { Text(strings.settingsDeveloperModeOptInTitle) },
+            text = { Text(strings.settingsDeveloperModeOptInMessage) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeveloperModeOptIn = false
+                        isDeveloperModeEnabled = true
+                        developerModeStore.setEnabled(true)
+                        // ⚠️ **기준 시각을 반드시 심는다** — 없으면 주기 초기화가 **조용히 동작하지
+                        // 않는다**(`DeveloperModeResetPolicy`가 `null`에서는 절대 초기화하지 않는다).
+                        developerModeStore.markResetBaseline(System.currentTimeMillis())
+                        Toast.makeText(
+                            context,
+                            strings.settingsDeveloperModeEnabledMessage,
+                            Toast.LENGTH_SHORT,
+                        ).show()
+                    },
+                ) { Text(strings.settingsDeveloperModeOptInConfirm) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeveloperModeOptIn = false }) { Text(strings.cancel) }
+            },
+        )
+    }
+
+    // ⓑ **해제 확인**(백로그 #99). 끄기는 단순히 플래그를 내리는 것이 아니라 **최초 설치 상태로
+    // 되돌리는 것**이다(사용자 확정) — 그래서 무슨 일이 일어나는지 먼저 말한다.
+    if (showDeveloperModeOptOut) {
+        AlertDialog(
+            onDismissRequest = { showDeveloperModeOptOut = false },
+            title = { Text(strings.settingsDeveloperModeOffTitle) },
+            text = { Text(strings.settingsDeveloperModeOffMessage) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeveloperModeOptOut = false
+                        // ⚠️ **주기 초기화(ⓒ)와 같은 함수로 수렴한다** — 둘은 같은 일이라
+                        // 나눠 쓰면 한쪽만 고쳐진다.
+                        wipeToFreshInstall(context)
+                        isDeveloperModeEnabled = false
+                        isAdvancedDeveloperModeEnabled = false
+                        Toast.makeText(
+                            context,
+                            strings.settingsDeveloperModeOffDoneMessage,
+                            Toast.LENGTH_LONG,
+                        ).show()
+                        onBackClick()
+                    },
+                ) { Text(strings.settingsDeveloperModeOffAction) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeveloperModeOptOut = false }) { Text(strings.cancel) }
+            },
+        )
+    }
+
     if (showDiagnosticLog) {
         DiagnosticLogDialog(context = context, onDismiss = { showDiagnosticLog = false })
     }
