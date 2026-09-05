@@ -106,13 +106,17 @@ fun createEngineBootstrap(
  * 네이티브 바이너리는 앱 데이터가 아니라 설치 디렉터리에 있어 애초에 지워지지 않으므로,
  * 이 함수가 도는 한 "앱 데이터 삭제 → 재실행"은 스스로 복구된다.
  *
- * ## ⚠️ 에셋 **이름**이 이 함수의 유일한 실패 지점이다
- * `assets.open()`은 이름이 틀리면 `IOException`을 던지고 [seedAssetIfMissing]이 그것을 **삼킨다**
- * (stderr 한 줄). 그래서 이름이 어긋나면 **조용히** 모델 없이 부팅되고 스텁으로 강등된다.
- * 실제로 그렇게 어긋나 있었다: 코드는 `katago/model.bin`을 열고 있었는데
- * `make prepare-friend-assets`는 **`model.bin.gz`** 로 넣고 있었다(2026-06-05 `628e2e8`부터).
- * 그 디렉터리가 gitignore라 **지난 빌드는 손으로 넣어둔 로컬 파일 덕에 통과했다.**
- * ⚠️ 이제 `BundledEngineAssetContractTest`가 두 이름을 묶어 둔다 — 한쪽만 바꾸면 `make test`가 깨진다.
+ * ## ⚠️ 빌드가 넣는 이름과 앱이 여는 이름이 **다르다 — 그래야 맞다**
+ * `make prepare-friend-assets`는 `katago/model.bin.gz`를 넣는데, 앱은 `katago/model.bin`을 연다.
+ * **AGP가 에셋의 `.gz`를 패키징하면서 풀고 확장자를 뗀다** — 2026-09-05 실측으로 확인했다:
+ * 소스에 `model.bin.gz`(97,898,094B) 하나뿐인데 병합 결과는 `model.bin`(105,532,578B)이고,
+ * 그 값은 `gzip -dc | wc -c`와 **정확히 같다.**
+ *
+ * ⚠️ **이것 때문에 한 번 잘못 고쳤다**(2026-09-05). 두 이름이 어긋난 것을 결함으로 보고
+ * 여는 쪽을 `.gz`로 바꿨는데, 그 이름은 **APK 안에 존재하지 않아** 오히려 스텁으로 떨어졌다.
+ * `assets.open()`의 실패는 [seedAssetIfMissing]이 **삼키므로**(stderr 한 줄) 조용히 그렇게 된다.
+ * ⚠️ **두 이름을 "같게" 만들려 하지 말 것** — `BundledEngineAssetContractTest`가 그 **변환**까지
+ * 포함해 묶어 둔다(빌드가 넣는 이름에서 `.gz`를 뗀 것 == 앱이 여는 이름).
  */
 private fun seedBundledKataGoAssetsIfNeeded(
     context: Context,
@@ -131,8 +135,10 @@ private fun seedBundledKataGoAssetsIfNeeded(
     if (!compressedModel.isFile && !bundledModel.isFile) {
         seedAssetIfMissing(
             context = context,
-            assetPath = "katago/model.bin.gz",
-            destination = compressedModel,
+            // ⚠️ `.gz`가 아니다 — 위 머리말 참고. AGP가 이미 풀어서 넣었으므로 APK 안의 이름은
+            // 확장자가 떨어진 `model.bin`이고, 푸는 결과도 비압축본(약 100MB)이다.
+            assetPath = "katago/model.bin",
+            destination = bundledModel,
         )?.let { messages += it }
     }
 
