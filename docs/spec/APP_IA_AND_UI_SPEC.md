@@ -1,6 +1,6 @@
-# Go AI Coach - 앱 IA (Information Architecture) & UI/UX 기능 명세서
+# 바둑 AI - 앱 IA (Information Architecture) & UI/UX 기능 명세서
 
-본 문서는 **Go AI Coach** 앱의 화면 구조(IA), 화면별 UI 컴포넌트, 사용자 상호작용 피드백, 디자인 시스템 규칙을 정리한 통합 명세서입니다.
+본 문서는 **바둑 AI** 앱의 화면 구조(IA), 화면별 UI 컴포넌트, 사용자 상호작용 피드백, 디자인 시스템 규칙을 정리한 통합 명세서입니다.
 
 > **갱신: 2026-08-29** — 1절 IA와 2절 화면 명세를 현재 코드(`ScreenDestination`, `ui/GamePlaySection.kt`) 기준으로 정정했습니다. 이전 판은 화면 3개 + `Analyze` 버튼을 명세했지만 실제 목적지는 7개이고 `Analyze` 버튼은 제거된 상태였습니다. UI/UX 디자이너, 모바일 개발자, 기획자가 앱의 전체 흐름과 세부 UX 사양을 한눈에 파악하고 협업할 수 있도록 구성되었습니다.
 

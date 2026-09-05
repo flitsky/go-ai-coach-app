@@ -89,7 +89,7 @@ KaTrain은 착수 중 포획 규칙과 prisoners를 자체 게임 상태에서 �
 
 ## 수순별 score graph
 
-KaTrain의 `ScoreGraph`는 착수 노드마다 분석 결과의 `scoreLead`와 `winrate`를 읽고, 그래프 위젯은 그 배열만 시각화한다. Go AI Coach도 같은 방향을 따른다.
+KaTrain의 `ScoreGraph`는 착수 노드마다 분석 결과의 `scoreLead`와 `winrate`를 읽고, 그래프 위젯은 그 배열만 시각화한다. 바둑 AI도 같은 방향을 따른다.
 
 - `ScoreSnapshot`
   - `moveNumber`
