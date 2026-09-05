@@ -1,6 +1,5 @@
 package com.worksoc.goaicoach.persistence
 
-import com.worksoc.goaicoach.match.AiEngineChoice
 import com.worksoc.goaicoach.match.HumanGameType
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
@@ -36,7 +35,6 @@ internal object PlayerSetupJsonCodec {
         JSONObject()
             .put("controller", side.controller.name)
             .put("humanGameType", side.humanGameType.name)
-            .put("aiEngine", side.aiEngine.name)
             .put("playLevel", encodePlayLevel(side.playLevel))
 
     private fun decodeSidePlayerSetup(
@@ -46,7 +44,6 @@ internal object PlayerSetupJsonCodec {
         SidePlayerSetup(
             controller = enumOrDefault(json?.optString("controller"), defaultController),
             humanGameType = enumOrDefault(json?.optString("humanGameType"), HumanGameType.Normal),
-            aiEngine = enumOrDefault(json?.optString("aiEngine"), AiEngineChoice.KataGo),
             playLevel = decodePlayLevel(json?.optJSONObject("playLevel")),
         )
 }

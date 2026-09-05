@@ -23,10 +23,6 @@ enum class HumanGameType(val label: String) {
     Teaching("티칭 모드"),
 }
 
-enum class AiEngineChoice(val label: String) {
-    KataGo("KataGo"),
-}
-
 enum class SeatId(
     val player: StoneColor,
     val label: String,
@@ -46,10 +42,12 @@ enum class SeatId(
 }
 
 data class AiCharacterProfile(
-    val engine: AiEngineChoice,
     val playLevel: PlayLevelSetting,
 ) {
-    val displayLabel: String = "${engine.label} ${playLevel.displayLabel}"
+    // ⚠️ **엔진 이름은 여기 없다**(백로그 #109). 예전에는 `AiEngineChoice.label`("KataGo")을
+    // 앞에 붙였는데, 그 열거형은 **값이 하나뿐**이라 스텁으로 떨어져도 `KataGo`라고 말했다.
+    // 이름은 실제로 뜬 엔진을 아는 쪽(`EngineIdentity`)에서 화면이 붙인다.
+    val displayLabel: String = playLevel.displayLabel
     val selectionDescription: String = playLevel.selectionPolicy.description
 }
 
@@ -126,16 +124,12 @@ enum class AutoPlayDelaySetting(
 data class SidePlayerSetup(
     val controller: SeatController,
     val humanGameType: HumanGameType = HumanGameType.Normal,
-    val aiEngine: AiEngineChoice = AiEngineChoice.KataGo,
     val playLevel: PlayLevelSetting = PlayLevelSetting(),
 )
 
 fun SidePlayerSetup.aiCharacterProfile(): AiCharacterProfile? =
     if (controller == SeatController.Ai) {
-        AiCharacterProfile(
-            engine = aiEngine,
-            playLevel = playLevel,
-        )
+        AiCharacterProfile(playLevel = playLevel)
     } else {
         null
     }

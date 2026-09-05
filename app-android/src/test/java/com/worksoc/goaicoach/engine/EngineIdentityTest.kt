@@ -20,8 +20,9 @@ class EngineIdentityTest {
 
     @Test
     fun theUnresolvedNameIsSomethingASeatLabelCanShow() {
-        // AI 좌석 라벨은 `aiEngine.label.ifBlank { engineName }`으로 이 값에 폴백한다 —
-        // 비어 있으면 좌석이 **이름 없이** 그려진다.
+        // AI 좌석 라벨이 이 값을 **그대로** 쓴다 — 비어 있으면 좌석이 이름 없이 그려진다.
+        // ⚠️ 백로그 #109 전까지는 그렇지 않았다(죽은 폴백이 가로막고 있었다).
+        // 그 회귀를 막는 것은 `SeatLabelEngineNameTest`다.
         assertTrue(
             "준비 전 엔진 이름이 비어 있다 — AI 좌석이 이름 없이 그려진다.",
             EngineIdentity.Unresolved.name.isNotBlank(),

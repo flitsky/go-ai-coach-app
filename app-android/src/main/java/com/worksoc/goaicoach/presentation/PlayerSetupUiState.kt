@@ -62,6 +62,8 @@ private fun buildPlayerSetupSideUiState(
         humanGameTypeLabel = side.humanGameType.label,
         aiLevelGroupLabel = side.playLevel.group.label,
         aiLevelLabel = "${side.playLevel.safeLevel}단계",
-        aiEngineLabel = side.aiEngine.label.ifBlank { engineName },
+        // ⚠️ 예전에는 `side.aiEngine.label.ifBlank { engineName }`이었는데, 그 라벨이 **절대
+        // 비지 않아** 폴백이 죽은 코드였다(백로그 #109) — 스텁으로 떨어져도 `KataGo`라고 말했다.
+        aiEngineLabel = engineName,
         aiDetailText = "${side.playLevel.group.difficulty.label} / ${side.playLevel.group.visits} visits",
     )

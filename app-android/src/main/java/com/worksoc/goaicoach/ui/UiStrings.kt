@@ -1179,7 +1179,7 @@ internal data class UiStrings(
                 } else {
                     levelLabel(setup.playLevel.safeLevel)
                 }
-                "${setup.aiEngine.label.ifBlank { engineName }} $levelText"
+                "$engineName $levelText"
             }
         }
 

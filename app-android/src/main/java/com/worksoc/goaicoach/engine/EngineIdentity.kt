@@ -26,9 +26,13 @@ data class EngineIdentity(
          * 찍으면 스텁 폴백 기기에서 **진단 리포트가 거짓말을 한다**(`engineProfile=…/LocalProcess`).
          * [EngineMode.Unknown]이 존재하는 이유가 정확히 이것이다(`EngineModels.kt`의 머리말).
          *
-         * ⚠️ [name]이 **빈 문자열이면 안 된다** — AI 좌석 라벨이
-         * `aiEngine.label.ifBlank { engineName }`으로 여기에 폴백하므로, 빈 값이면 좌석이
-         * **이름 없이** 그려진다. `"AI"`는 4개 언어에서 모두 읽히고, 앱 이름(바둑 AI)과도 맞는다.
+         * ⚠️ [name]이 **빈 문자열이면 안 된다** — AI 좌석 라벨이 이 값을 **그대로** 쓰므로
+         * 빈 값이면 좌석이 **이름 없이** 그려진다. `"AI"`는 4개 언어에서 모두 읽히고,
+         * 앱 이름(바둑 AI)과도 맞는다.
+         *
+         * ⚠️ **이 사유는 2026-09-05까지 거짓이었다**(백로그 #109). 그때까지 좌석은
+         * `aiEngine.label.ifBlank { engineName }`을 썼는데 그 라벨이 **절대 비지 않아**
+         * 여기 값이 **한 번도 쓰이지 않았다.** #109가 그 열거형을 걷어내면서 비로소 참이 됐다.
          */
         val Unresolved: EngineIdentity = EngineIdentity(
             mode = EngineMode.Unknown,

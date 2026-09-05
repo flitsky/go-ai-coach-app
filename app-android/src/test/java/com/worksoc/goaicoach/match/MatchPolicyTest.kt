@@ -62,9 +62,9 @@ class MatchPolicyTest {
 
         assertEquals(StoneColor.Black, blackSeat.player)
         assertTrue(blackSeat.isAi)
-        assertEquals(AiEngineChoice.KataGo, blackSeat.aiCharacter?.engine)
         assertEquals(blackLevel.normalized(), blackSeat.aiCharacter?.playLevel)
-        assertEquals("KataGo 초급 4단계", blackSeat.aiCharacter?.displayLabel)
+        // ⚠️ 엔진 이름이 빠졌다(백로그 #109) — 이 라벨은 이제 **난이도만** 말한다.
+        assertEquals("초급 4단계", blackSeat.aiCharacter?.displayLabel)
         assertTrue(blackSeat.aiCharacter?.selectionDescription?.isNotBlank() == true)
 
         assertEquals(StoneColor.White, whiteSeat.player)
