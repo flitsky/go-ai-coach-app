@@ -163,6 +163,13 @@ android {
             // 사내에서만 보는 크래시 로그라 함수명 단위 심볼이면 충분하다.
             ndk {
                 debugSymbolLevel = "SYMBOL_TABLE"
+                // ⚠️ **엔진은 arm64-v8a로만 빌드된다**(scripts/build-katago-android-spike.sh).
+                // 이것이 없으면 번들이 armeabi-v7a/x86/x86_64 스플릿도 만드는데, 그 셋에는
+                // `libkatago.so`가 없다 — 그 기기에 깔리면 **조용히 스텁 AI**로 떨어진다(#91 ⓐ).
+                // 스플릿을 아예 만들지 않으면 Play가 그 기기를 걸러 준다: **설치되지 않는 편이
+                // 가짜 AI로 두는 것보다 낫다.**
+                // ⚠️ `defaultConfig`에 넣지 말 것 — debug에도 걸려 x86_64 에뮬레이터가 막힌다.
+                abiFilters += "arm64-v8a"
             }
             // local.properties에 실제 값이 아직 없으면(미등록 상태) release 빌드도 안전하게 테스트
             // 값으로 폴백한다 — "테스트해야 하는데 실제 광고가 나가는" 상황보다 "출시용인데 테스트
@@ -225,6 +232,13 @@ android {
             // playInternal이 실제로 Play Console에 업로드되는 채널이라 이쪽도 반드시 필요하다.
             ndk {
                 debugSymbolLevel = "SYMBOL_TABLE"
+                // ⚠️ **엔진은 arm64-v8a로만 빌드된다**(scripts/build-katago-android-spike.sh).
+                // 이것이 없으면 번들이 armeabi-v7a/x86/x86_64 스플릿도 만드는데, 그 셋에는
+                // `libkatago.so`가 없다 — 그 기기에 깔리면 **조용히 스텁 AI**로 떨어진다(#91 ⓐ).
+                // 스플릿을 아예 만들지 않으면 Play가 그 기기를 걸러 준다: **설치되지 않는 편이
+                // 가짜 AI로 두는 것보다 낫다.**
+                // ⚠️ `defaultConfig`에 넣지 말 것 — debug에도 걸려 x86_64 에뮬레이터가 막힌다.
+                abiFilters += "arm64-v8a"
             }
             manifestPlaceholders["admobAppId"] = testAdmobAppId
             buildConfigField("boolean", "USE_TEST_ADS", "true")
