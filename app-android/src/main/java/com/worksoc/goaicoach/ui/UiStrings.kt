@@ -294,6 +294,24 @@ internal data class UiStrings(
     val settingsDevAttendanceAdvanceAction: String,
     val settingsDevReleaseResetTitle: String,
     val settingsDevReleaseResetSubtitle: String,
+    /**
+     * 진행 중 대국에서 판 크기·접바둑이 잠겼을 때의 사유 문구(백로그 #75).
+     *
+     * ⚠️ **잠근 이유를 말하지 않으면 고장으로 읽힌다.** 이 항목을 만든 계기 자체가
+     * *"바꿨는데 왜 그대로지"* 라는 어긋남이었으므로, 잠금만 넣고 설명을 빼면 같은 종류의
+     * 혼란을 모양만 바꿔 남기는 셈이 된다. **어디서 바꾸면 되는지**까지 말한다.
+     */
+    val boardShapeLockedDuringGame: String,
+    /**
+     * 기기에만 저장된다는 **소실 정책 고지**(백로그 #74 ⓒ, 2026-09-05 사용자 발주).
+     *
+     * ⚠️ **잃기 전에 알리는 것이 이 문구의 목적이다.** 복원 안내(#74 ⓐ)는 *이미 잃은 뒤* 뜨는
+     * 메시지이고 구매 플래그에 막혀 있지만, 이쪽은 구매와 무관해 지금 띄울 수 있다.
+     * · ⚠️ **구매 복원은 아직 여기 적지 않는다** — `FeatureFlags.isPurchaseEnabled`가 꺼져 있어
+     *   구매 자체가 불가능하다. 복원 문장은 #74 ⓐ가 열릴 때 함께 붙일 것.
+     */
+    val localOnlyDataNoticeTitle: String,
+    val localOnlyDataNoticeBody: String,
     val settingsDevReleaseResetAction: String,
     val settingsDevReleaseResetDoneMessage: String,
     val settingsDevReleaseResetNothingMessage: String,

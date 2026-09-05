@@ -59,8 +59,10 @@ import com.worksoc.goaicoach.persistence.BotCollectionStore
 import com.worksoc.goaicoach.application.attendance.isRewardedTier
 import com.worksoc.goaicoach.application.attendance.runAttendanceDevDayRewind
 import com.worksoc.goaicoach.persistence.AttendanceStore
+import com.worksoc.goaicoach.persistence.GameSessionStore
 import com.worksoc.goaicoach.BuildConfig
 import com.worksoc.goaicoach.runReleaseResetAgain
+import com.worksoc.goaicoach.application.preferences.isBoardSetupLockedDuringGame
 import com.worksoc.goaicoach.application.auth.AuthClientPort
 import com.worksoc.goaicoach.application.auth.AuthProvider
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
@@ -143,6 +145,13 @@ internal fun SettingsScreen(
     val premium = LocalPremiumUiState.current
     val scope = rememberCoroutineScope()
     val preferencesStore = remember(context) { UserPreferencesStore(context) }
+    // ⚠️ **저장된 대국도 함께 본다**(백로그 #75). 앱을 다시 켠 직후에는 저장된 대국이 아직
+    // `screenState`로 올라오지 않아 둔 수가 0으로 보인다 — 그때 잠그지 않으면 **껐다 켜는 것만으로
+    // 잠금이 우회된다**(2026-09-05 실기에서 실제로 밟았다).
+    // ⚠️ 인자로 받지 않고 여기서 읽는 이유: `GoCoachApp.kt`가 라인 예산 **880/880**이라 여유가
+    // 정확히 0이다(함정 3번). 이 화면은 이미 `context`로 저장소를 만들고 있어 자리가 맞다.
+    // ⚠️ `remember`로 한 번만 읽는다 — 컴포지션마다 읽으면 스크롤할 때마다 디스크를 때린다.
+    val resumableSavedGame = remember(context) { GameSessionStore(context).load()?.isResumable == true }
     val developerModeStore = remember(context) { DeveloperModeStore(context) }
     var isDeveloperModeEnabled by remember { mutableStateOf(developerModeStore.isEnabled()) }
     // ⚠️ **2차는 저장하지 않는다**(백로그 #77). 1차와 달리 `DeveloperModeStore`에 남기지 않으므로
@@ -293,17 +302,15 @@ internal fun SettingsScreen(
                 onAutoPlayDelayChange = { setting -> onEvent(GameUiEvent.ChangeAutoPlayDelay(setting)) },
             )
 
-            // 룰 및 바둑판 세팅 패널. ⚠️ **레이아웃 선택지는 백로그 #73에서 없앴다.**
+            // 룰 및 바둑판 세팅 패널. 레이아웃 선택지는 #73이 없앴고, 심플 레이아웃 자체는 #76이 지웠다.
             //
-            // ⚠️ **그때 함께 사라진 것이 하나 더 있다 — 진행 중 대국의 게이팅 표현이다.**
-            // 지운 Simple 분기는 `canChangeBoardSize`/`canChangeHandicap`에
-            // `screenState.isGameEnded`를 넘겨 *"대국 중에는 판 크기·접바둑을 못 바꾼다"* 를
-            // 표현하고 있었다(게임 메뉴와 같은 게이팅). `CompactScoringAndBoardSettingsPanel`은
-            // 그 파라미터를 **아예 받지 않는다.**
-            // · **동작상의 회귀는 아니다** — 기본값이 처음부터 Compact여서 실제 사용자에게는
-            //   오래전부터 게이팅이 없었다. 사라진 것은 **의도의 흔적**뿐이다.
-            // · ⚠️ **막아야 하는지는 아직 결정되지 않았다 — 백로그 #75가 그 결정을 들고 있다.**
-            //   여기서 임의로 되살리지 말 것(패널에 `canChange*`를 새로 넣는 UI 변경이 된다).
+            // ⚠️ **진행 중인 대국이 있으면 판 크기·접바둑이 잠긴다**(#75, 2026-09-05 사용자 결정).
+            // 잠그기 전에는 **조작은 되는데 진행 중 대국은 안 바뀌는** 상태였다(실기로 확인했다) —
+            // 설정에는 19x19라고 쓰여 있는데 이어서 여는 대국은 13x13이라 어긋나 보였다.
+            // 바뀌던 것은 *다음 대국의 기본값*뿐이었고, 그건 **로비에서 하면 될 일**이라는 것이
+            // 사용자 판단이다. 그래서 여기서만 잠그고 로비는 그대로 둔다.
+            // ⚠️ 조건을 여기서 인라인으로 쓰지 말 것 — `isGameEnded` 하나로 보면 **대국을 한 번도
+            // 하지 않은 사용자에게도 잠긴다**(시작한 적이 없으면 끝난 적도 없다).
             CompactScoringAndBoardSettingsPanel(
                 ruleset = screenState.gameState.ruleset,
                 boardSize = screenState.gameState.boardSize,
@@ -313,6 +320,11 @@ internal fun SettingsScreen(
                 onBoardSizeChange = { size -> onEvent(GameUiEvent.ChangeBoardSize(size)) },
                 onHandicapCountChange = { count -> onEvent(GameUiEvent.ChangeHandicapCount(count)) },
                 onKomiChange = { komi -> onEvent(GameUiEvent.ChangeKomi(komi)) },
+                canChangeBoardShape = !isBoardSetupLockedDuringGame(
+                    moveCount = screenState.gameState.moves.size,
+                    isGameEnded = screenState.isGameEnded,
+                    hasResumableSavedGame = resumableSavedGame,
+                ),
             )
 
             Spacer(modifier = Modifier.height(4.dp))

@@ -152,6 +152,36 @@ internal fun MyPageScreen(
                 fontSize = 13.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            
+            // **기기에만 저장된다는 고지**(백로그 #74 ⓒ, 2026-09-05 사용자 발주).
+            //
+            // ⚠️ **자리를 여기로 고른 이유**: 이 화면이 바로 잃게 되는 것들(출석 도장판·모은
+            // 캐릭터·1회권)을 나열하는 곳이다. 정책을 그것들과 **같은 화면**에서 읽어야
+            // *"내가 지금 보고 있는 이것들"* 로 연결된다 — 별도 공지 화면에 두면 볼 이유가 없다.
+            // ⚠️ 새 목적지를 만들지 않았다 — `GoCoachApp.kt`의 라인 예산이 880/880이다(함정 3번).
+            // ⚠️ **구매 복원은 아직 적지 않는다** — `isPurchaseEnabled`가 꺼져 있어 구매 자체가
+            //   불가능하다. 복원 문장은 #74 ⓐ가 열릴 때 함께 붙인다.
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = ActionButtonShape,
+                tonalElevation = 1.dp,
+            ) {
+                Column(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Text(
+                        text = strings.localOnlyDataNoticeTitle,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Text(
+                        text = strings.localOnlyDataNoticeBody,
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
         }
     }
 }

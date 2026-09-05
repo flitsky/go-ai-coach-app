@@ -36,10 +36,17 @@ import com.worksoc.goaicoach.shared.Ruleset
  * 분기하던 `GameSetupUxMode`는 #73이, 짝이던 심플 레이아웃(`ScoringAndBoardSettingsPanel`)은
  * #76이 지웠다(2026-09-05).
  *
- * ⚠️ **이 패널은 `canChangeBoardSize`/`canChangeHandicap` 같은 게이팅 파라미터를 받지 않는다.**
- * 심플 레이아웃에는 있었고 *"진행 중 대국에서는 판 크기·접바둑을 못 바꾼다"* 를 표현했다.
- * 그 표현이 이제 저장소에 없으므로, **막아야 한다는 결정이 나면 여기에 새로 만들어야 한다** —
- * 백로그 #75가 그 결정을 들고 있다.
+ * ## ⚠️ 판 크기·접바둑은 진행 중 대국에서 잠긴다(백로그 #75, 2026-09-05 사용자 결정)
+ * 심플 레이아웃이 갖고 있던 게이팅을 이 패널에 **다시 만들었다**(#73·#76이 그 표현을 지웠고,
+ * 그때 되살릴지가 미정이었다). 사용자 결정의 근거: *"굳이 대국 중에 다른 대국 설정이 필요한가,
+ * 나중에 대국 시작할 때 하면 될 일"* — **로비가 그 자리이고, 그쪽은 잠그지 않는다.**
+ *
+ * ⚠️ **계가 방식과 덤은 잠그지 않는다.** 원래 심플 레이아웃도 그 둘만 묶었다 — 판의 **모양**을
+ * 바꾸는 것과 **셈법**을 바꾸는 것은 진행 중 대국에 미치는 뜻이 다르다.
+ *
+ * ⚠️ **잠글지 판정하는 조건을 여기서 인라인으로 쓰지 말 것** —
+ * [com.worksoc.goaicoach.application.preferences.isBoardSetupLockedDuringGame]가 갖고 있다.
+ * `isGameEnded` 하나로 판단하면 **대국을 한 번도 하지 않은 사용자에게도 잠긴다.**
  */
 @Composable
 internal fun CompactScoringAndBoardSettingsPanel(
@@ -51,6 +58,8 @@ internal fun CompactScoringAndBoardSettingsPanel(
     onBoardSizeChange: (BoardSize) -> Unit,
     onHandicapCountChange: (Int) -> Unit,
     onKomiChange: (Double) -> Unit,
+    /** 판 크기·접바둑을 바꿀 수 있는가. 로비는 항상 `true`(늘 대국 시작 전이다), 설정 화면은 #75의 판정을 넘긴다. */
+    canChangeBoardShape: Boolean = true,
 ) {
     val strings = LocalUiStrings.current
     val handicapOptions = listOf(0) + (2..boardSize.maxHandicapCount).toList()
@@ -87,6 +96,7 @@ internal fun CompactScoringAndBoardSettingsPanel(
                 options = listOf(BoardSize.Nine, BoardSize.Thirteen, BoardSize.Nineteen),
                 optionLabel = { size -> "${size.value}x${size.value}" },
                 onSelected = onBoardSizeChange,
+                enabled = canChangeBoardShape,
             )
             CompactSettingDropdownCell(
                 modifier = Modifier.weight(1f),
@@ -94,6 +104,16 @@ internal fun CompactScoringAndBoardSettingsPanel(
                 options = handicapOptions,
                 optionLabel = strings::compactHandicapValueLabel,
                 onSelected = onHandicapCountChange,
+                enabled = canChangeBoardShape,
+            )
+        }
+        // ⚠️ **잠근 이유를 반드시 말한다.** 눌러도 안 열리는 칸을 이유 없이 두면 고장으로 읽힌다 —
+        // 사용자가 이 항목을 만든 계기도 *"바꿨는데 왜 그대로지"* 라는 어긋남이었다.
+        if (!canChangeBoardShape) {
+            Text(
+                text = strings.boardShapeLockedDuringGame,
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.secondary,
             )
         }
     }
@@ -111,6 +131,7 @@ private fun <T> CompactSettingDropdownCell(
     optionLabel: (T) -> String,
     onSelected: (T) -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
 ) {
     var expanded by remember { mutableStateOf(false) }
     Box(modifier = modifier) {
@@ -118,7 +139,9 @@ private fun <T> CompactSettingDropdownCell(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
-                .clickable { expanded = true }
+                // ⚠️ `clickable(enabled = false)`로 둔다 — 아예 빼면 **잠긴 칸이 부모의 클릭을
+                // 대신 받는다.** 여기서는 부모가 스크롤이라 잠긴 칸을 눌렀을 때 엉뚱하게 반응한다.
+                .clickable(enabled = enabled) { expanded = true }
                 .padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -126,7 +149,12 @@ private fun <T> CompactSettingDropdownCell(
                 text = valueText,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = if (enabled) {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                } else {
+                    // 잠긴 것이 **보여야** 한다 — 색만 흐리게 하고 값은 그대로 읽히게 둔다.
+                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = DisabledAlpha)
+                },
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f),
@@ -134,7 +162,11 @@ private fun <T> CompactSettingDropdownCell(
             Text(
                 text = "▾",
                 fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.secondary,
+                color = if (enabled) {
+                    MaterialTheme.colorScheme.secondary
+                } else {
+                    MaterialTheme.colorScheme.secondary.copy(alpha = DisabledAlpha)
+                },
             )
         }
         DropdownMenu(
@@ -153,3 +185,6 @@ private fun <T> CompactSettingDropdownCell(
         }
     }
 }
+
+/** 잠긴 칸의 불투명도. 값은 계속 읽혀야 하므로 완전히 흐리게 하지 않는다. */
+private const val DisabledAlpha = 0.38f
