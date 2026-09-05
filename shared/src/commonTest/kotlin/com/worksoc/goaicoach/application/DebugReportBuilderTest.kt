@@ -194,7 +194,7 @@ class DebugReportBuilderTest {
             ),
         )
 
-        assertEquals("Go AI debug report", plan.clipboardLabel)
+        assertEquals("바둑 AI debug report", plan.clipboardLabel)
         assertEquals("Debug report copied", plan.toastMessage)
         assertTrue(plan.engineMessage.contains("clipboard"))
         assertTrue(plan.clipboardReport.contains("[DiagnosticEventLog]"))

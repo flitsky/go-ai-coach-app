@@ -25,12 +25,19 @@ import com.worksoc.goaicoach.shared.describe
 import com.worksoc.goaicoach.shared.toOneDecimalLabel
 
 /**
- * ⚠️ **이 이름은 `AppNameContractTest`가 묶는 세 곳이 아니다**(백로그 #112). 그 계약은 런처
+ * ⚠️ **이 이름은 `AppNameContractTest`가 묶는 세 곳이 아니다**(백로그 #112·#113). 그 계약은 런처
  * 라벨·앱 안 타이틀·스토어 등록정보를 **같은 값**으로 묶는데, 그 값은 언어마다 다르다
- * (`바둑 AI`/`Go AI`/`囲碁AI`/`围棋AI`). 여기 리포트·로그는 **영문 기술 산출물**이라 영어 이름
- * `Go AI`를 쓴다 — 그물 밖이므로 앱 이름을 다시 바꾸면 **여기는 아무도 안 잡는다.** 그때 같이 볼 것.
+ * (`바둑 AI`/`Go AI`/`囲碁AI`/`围棋AI`).
+ *
+ * ⚠️ **그래서 여기에 무엇을 쓸지는 판단이었고, 사용자가 `바둑 AI`로 정했다**(2026-09-06).
+ * #112에서는 *"영문 기술 산출물이니 영어 이름"* 이라는 이유로 `Go AI`를 넣었는데, 그러자
+ * **문서는 `바둑 AI`, 코드는 `Go AI`** 로 갈렸다 — 이름이 둘이 되는 것보다 영문 로그에 한글이
+ * 섞이는 편이 낫다는 결정이다. 리포트 제목·클립보드 라벨도 같은 값이다.
+ *
+ * ⚠️ **그물 밖이므로 앱 이름을 다시 바꾸면 여기는 아무도 안 잡는다.** 그때 같이 볼 것 —
+ * `RuntimeAppName`, `DebugReportSections.kt`의 제목, `DebugReportBuilder.kt`의 클립보드 라벨 셋이다.
  */
-private const val RuntimeAppName = "Go AI"
+private const val RuntimeAppName = "바둑 AI"
 
 /**
  * ⚠️ 2026-09-06에 두 군데가 틀려 있었다(#112). ⓐ **"coaching"** — #97이 *"코칭 기능이 아직 없으니

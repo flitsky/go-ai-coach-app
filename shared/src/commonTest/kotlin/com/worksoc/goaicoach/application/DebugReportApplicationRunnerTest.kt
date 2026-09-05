@@ -62,7 +62,7 @@ class DebugReportApplicationRunnerTest {
             ),
         )
 
-        assertEquals("Go AI debug report", clipboard.label)
+        assertEquals("바둑 AI debug report", clipboard.label)
         assertEquals("Debug report copied", notice.message)
         assertEquals(clipboard.text, mirror.report)
         assertEquals("Debug report copied to clipboard. Paste it into chat for review.", appliedMessage)
@@ -111,7 +111,7 @@ class DebugReportApplicationRunnerTest {
             ),
         )
 
-        assertEquals("Go AI debug report", clipboard.label)
+        assertEquals("바둑 AI debug report", clipboard.label)
         assertEquals("Debug report saved to file, but failed to copy to clipboard", notice.message)
         assertEquals(clipboard.text, mirror.report) // 로그가 짧으므로 둘의 텍스트가 일치함
     }
