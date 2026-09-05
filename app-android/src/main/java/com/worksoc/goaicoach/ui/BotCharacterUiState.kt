@@ -33,7 +33,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
-import androidx.compose.ui.platform.LocalContext
 import android.widget.Toast
 import com.worksoc.goaicoach.application.botcharacter.BotUnlockSource
 import androidx.compose.ui.Alignment

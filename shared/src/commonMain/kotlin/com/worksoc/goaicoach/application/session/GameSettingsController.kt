@@ -1,6 +1,5 @@
 package com.worksoc.goaicoach.application.session
 
-import com.worksoc.goaicoach.application.engine.operation.EngineOperationGate
 import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
 import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
 import com.worksoc.goaicoach.application.runtime.runtimeAutoPlayDelayChangeLog

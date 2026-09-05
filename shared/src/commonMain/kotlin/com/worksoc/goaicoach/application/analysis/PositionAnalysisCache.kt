@@ -155,21 +155,6 @@ object NoopPositionAnalysisCacheStore : PositionAnalysisCacheStore {
         "disabled"
 }
 
-internal object NoopTrustedPositionAnalysisCacheProvider : TrustedPositionAnalysisCacheProvider {
-    override fun get(
-        key: PositionAnalysisCacheKey,
-        nowMillis: Long,
-    ): PositionAnalysisCacheEntry? = null
-
-    override fun peek(
-        key: PositionAnalysisCacheKey,
-        nowMillis: Long,
-    ): PositionAnalysisCacheEntry? = null
-
-    override fun statsText(nowMillis: Long): String =
-        "disabled"
-}
-
 fun positionAnalysisCacheKeyFor(
     state: GameState,
     searchMode: EngineSearchMode,

@@ -4,14 +4,12 @@ import android.content.Context
 import com.worksoc.goaicoach.application.savedgame.SavedGameStorePort
 import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
 import com.worksoc.goaicoach.application.score.FinalScoreJudgement
-import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.persistence.PlayerSetupJsonCodec.decodePlayerSetup
 import com.worksoc.goaicoach.persistence.PlayerSetupJsonCodec.decodePlayLevel
 import com.worksoc.goaicoach.persistence.PlayerSetupJsonCodec.encodePlayerSetup
 import com.worksoc.goaicoach.persistence.PlayerSetupJsonCodec.encodePlayLevel
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
-import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.GameStateReplayer
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.Ruleset

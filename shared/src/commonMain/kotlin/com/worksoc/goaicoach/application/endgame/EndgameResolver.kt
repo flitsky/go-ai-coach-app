@@ -14,7 +14,6 @@ import com.worksoc.goaicoach.shared.EndgameScoreSelector
 import com.worksoc.goaicoach.shared.EndgameScoreSource
 import com.worksoc.goaicoach.shared.FinalScoreResult
 import com.worksoc.goaicoach.shared.GameState
-import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.describe
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort

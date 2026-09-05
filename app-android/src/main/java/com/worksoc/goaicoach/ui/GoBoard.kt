@@ -65,8 +65,6 @@ import com.worksoc.goaicoach.shared.OwnershipEstimate
 import com.worksoc.goaicoach.shared.StoneColor
 import com.worksoc.goaicoach.shared.topMoveDeltaScoreLabel
 import kotlin.math.abs
-import kotlin.math.min
-import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 
 /**

@@ -134,17 +134,6 @@ suspend fun applyAiTurn(
     )
 }
 
-fun activePlayer(
-    mode: MatchMode,
-    gameState: GameState,
-): StoneColor =
-    when (mode) {
-        MatchMode.HumanVsAi -> HumanPlayer
-        MatchMode.AiVsHuman -> AiPlayer
-        MatchMode.AiVsAi -> gameState.nextPlayer
-        MatchMode.LocalTwoPlayer -> gameState.nextPlayer
-    }
-
 fun boardInputEnabled(
     playerSetup: PlayerSetup,
     isEngineReady: Boolean,
@@ -160,19 +149,6 @@ fun boardInputEnabled(
         .current
         .canAcceptBoardInput
 
-fun turnStatus(
-    nextPlayer: StoneColor,
-    isEngineBlockingBusy: Boolean,
-    playerSetup: PlayerSetup,
-): String {
-    val snapshot = playerSetup
-        .seatSnapshot(
-            nextPlayer = nextPlayer,
-            isEngineReady = true,
-            isEngineBlockingBusy = isEngineBlockingBusy,
-        )
-    return snapshot.turnStatusText(isEngineBlockingBusy)
-}
 
 private suspend fun AiMoveEngineGateway.selectAiMoveFromAnalysis(
     currentState: GameState,

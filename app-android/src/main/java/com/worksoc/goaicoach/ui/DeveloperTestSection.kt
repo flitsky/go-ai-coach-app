@@ -23,7 +23,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.platform.LocalDensity
 import com.worksoc.goaicoach.application.consumable.ConsumableCatalog
 import com.worksoc.goaicoach.application.consumable.runConsumableGrant
 import com.worksoc.goaicoach.persistence.ConsumableInventoryStore
@@ -38,7 +37,6 @@ import com.worksoc.goaicoach.BuildConfig
 import com.worksoc.goaicoach.runReleaseResetAgain
 import com.worksoc.goaicoach.persistence.DeveloperModeStore
 import com.worksoc.goaicoach.persistence.UserPreferencesStore
-import kotlinx.coroutines.launch
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 

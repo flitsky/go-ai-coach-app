@@ -14,7 +14,6 @@ import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.EngineSearchMode
 import com.worksoc.goaicoach.shared.GameState
-import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.aiMoveAnalysisLimitWith
 import com.worksoc.goaicoach.shared.aiMoveSearchMode

@@ -7,7 +7,6 @@ import com.worksoc.goaicoach.application.session.GameSessionControllerState
 import com.worksoc.goaicoach.application.session.GameSessionRuntimeState
 import com.worksoc.goaicoach.application.session.RuntimePlayLevelSelection
 import com.worksoc.goaicoach.application.session.TurnTimeMoveUpdate
-import com.worksoc.goaicoach.application.session.toSecondsText
 import com.worksoc.goaicoach.application.engine.operation.EngineOperationResultGuard
 import com.worksoc.goaicoach.application.startgame.GameSessionResetPlan
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
@@ -15,13 +14,11 @@ import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.summary
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.GameState
-import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.ScoreSnapshot
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.StoneColor
 import com.worksoc.goaicoach.shared.analysisFingerprint
-import com.worksoc.goaicoach.shared.describe
 import com.worksoc.goaicoach.shared.toOneDecimalLabel
 
 /**

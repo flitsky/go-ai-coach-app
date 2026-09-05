@@ -21,7 +21,6 @@ captures/
 app-android/google-services.json
 
 # Native / engine artifacts
-artifacts/engine/
 app-android/src/debug/assets/katago/
 app-android/src/friend/assets/katago/
 app-android/src/debug/jniLibs/
@@ -50,4 +49,3 @@ __pycache__/
 venv/
 *-venv/
 scripts/remote-engine-mq-prototype/runs/
-*-debug.log

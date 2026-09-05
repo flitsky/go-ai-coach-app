@@ -3,7 +3,6 @@ package com.worksoc.goaicoach.application.runtime
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnDisplayPlan
 import com.worksoc.goaicoach.application.endgame.AiEndgameResolution
 import com.worksoc.goaicoach.application.session.TurnTimeMoveUpdate
-import com.worksoc.goaicoach.application.session.toSecondsText
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.EngineSearchMode

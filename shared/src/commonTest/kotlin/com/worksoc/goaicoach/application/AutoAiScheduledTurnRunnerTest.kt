@@ -57,7 +57,6 @@ import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.ScoreEstimate
-import com.worksoc.goaicoach.shared.ScoreSnapshot
 import com.worksoc.goaicoach.shared.StoneColor
 import com.worksoc.goaicoach.shared.diagnostic.DiagnosticEvent
 import kotlinx.coroutines.runBlocking

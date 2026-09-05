@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  개발용 원격 엔진 스파이크 전용(docs/refactoring/LAYERED_ARCHITECTURE_REFACTORING_PLAN_260803_1500.md
+  개발용 원격 엔진 스파이크 전용(`LAYERED_ARCHITECTURE_REFACTORING_PLAN_260803_1500.md`
   Stage E-3). Android는 targetSdk 28+부터 평문(cleartext) HTTP를 기본 차단한다 —
   BuildConfig.REMOTE_ENGINE_URL(scripts/run-katago-remote-analysis-server.py)이
   로컬 네트워크 IP로 평문 HTTP를 쓰므로 이 예외가 필요하다.

@@ -302,9 +302,3 @@ class LocalEngineSessionClient(
             onProgress = onProgress,
         )
 }
-
-@Deprecated(
-    message = "Use LocalEngineSessionClient. The old name hid that this implementation is tied to a local EngineCoreApi.",
-    replaceWith = ReplaceWith("LocalEngineSessionClient"),
-)
-internal typealias AdapterEngineSessionClient = LocalEngineSessionClient

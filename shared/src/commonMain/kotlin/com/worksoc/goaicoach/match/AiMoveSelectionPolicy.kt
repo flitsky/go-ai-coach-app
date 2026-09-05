@@ -10,7 +10,6 @@ import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.StoneColor
 import com.worksoc.goaicoach.shared.aiMoveAnalysisLimitWith
-import com.worksoc.goaicoach.shared.aiMoveSearchMode
 import com.worksoc.goaicoach.shared.describe
 import com.worksoc.goaicoach.shared.fastCandidateAnalysis
 import com.worksoc.goaicoach.shared.resolveIndexRange
