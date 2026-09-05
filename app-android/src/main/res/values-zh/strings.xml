@@ -2,4 +2,5 @@
 <resources>
     <string name="app_name">围棋AI</string>
     <string name="preparing_engine">准备中…</string>
+    <string name="engine_copy_notice">首次运行将复制内置模型，这可能需要一点时间。</string>
 </resources>

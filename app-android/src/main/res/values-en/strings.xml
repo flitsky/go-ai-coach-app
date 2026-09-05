@@ -2,4 +2,5 @@
 <resources>
     <string name="app_name">Go AI</string>
     <string name="preparing_engine">Getting ready…</string>
+    <string name="engine_copy_notice">First run copies internal models, which may take a few moments.</string>
 </resources>

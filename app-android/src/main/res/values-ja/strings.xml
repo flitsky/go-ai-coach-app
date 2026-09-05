@@ -2,4 +2,5 @@
 <resources>
     <string name="app_name">囲碁AI</string>
     <string name="preparing_engine">準備中…</string>
+    <string name="engine_copy_notice">初回実行時はモデルのコピーを行うため、少し時間がかかる場合があります。</string>
 </resources>

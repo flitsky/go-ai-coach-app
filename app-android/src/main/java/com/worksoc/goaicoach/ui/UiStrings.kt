@@ -201,7 +201,6 @@ internal data class UiStrings(
     val gameHistoryTitle: String,
     val homeGameHistorySubtitle: String,
     val gameHistoryEmptyMessage: String,
-    val engineCopyNotice: String,
     val cacheOptTitle: String,
     val cacheOptTargetLabel: String,
     val scoreEstimateNotice: String,

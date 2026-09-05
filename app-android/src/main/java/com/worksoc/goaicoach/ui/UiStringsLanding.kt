@@ -21,7 +21,7 @@ import com.worksoc.goaicoach.application.preferences.landingSetupPlan
  */
 private val LandingTitles: Map<UiLanguage, String> = mapOf(
     UiLanguage.Korean to "바둑 AI 앱에 오신 걸 환영합니다",
-    UiLanguage.English to "Welcome to Go AI Coach",
+    UiLanguage.English to "Welcome to Go AI",
     UiLanguage.Japanese to "囲碁AIアプリへようこそ",
     UiLanguage.ChineseSimplified to "欢迎使用围棋 AI 应用",
 )

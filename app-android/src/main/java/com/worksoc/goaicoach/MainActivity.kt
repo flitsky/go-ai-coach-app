@@ -162,7 +162,11 @@ private fun PreparingEngineScreen() {
                     modifier = Modifier.padding(top = 12.dp),
                 )
                 Text(
-                    text = LocalUiStrings.current.engineCopyNotice,
+                    // ⚠️ **여기도 리소스여야 한다** — #97에서 위 두 줄만 바꾸고 이 줄을 놓쳤다.
+                    // 이 화면은 `ProvideUiLanguage` 바깥이라 `LocalUiStrings`가 **예외 없이
+                    // 한국어 기본값**으로 떨어진다(`staticCompositionLocalOf { UiStringsKorean }`).
+                    // 그 결과 영어 기기에서 `Go AI` / `Getting ready…` / **한국어 문장**이 함께 떴다.
+                    text = stringResource(R.string.engine_copy_notice),
                     color = MaterialTheme.colorScheme.secondary,
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(top = 8.dp),
