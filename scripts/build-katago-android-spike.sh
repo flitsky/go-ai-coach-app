@@ -43,10 +43,20 @@ if [[ ! -d "$EIGEN_SRC" ]]; then
 fi
 
 rm -rf "$BUILD_DIR"
+# ⚠️ **ANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON은 지우면 안 된다 — 그게 없으면 Play가 AAB를
+# 거부한다**(백로그 #118, 2026-09-06). 이 한 줄이 링커에 `-Wl,-z,max-page-size=16384`를 붙여
+# LOAD 세그먼트 정렬을 4KB → 16KB로 올린다(NDK r27 `build/cmake/flags.cmake:35`).
+# 2025-11-01부터 Play는 16KB 페이지 기기를 지원하지 않는 번들을 오류로 막는데, 811 업로드에서
+# **실제로 그 오류가 떴다** — 번들 안의 `.so` 셋 중 AndroidX 둘은 이미 16KB였고 **우리가 만드는
+# 이 바이너리만 4KB**였다.
+# ⚠️ **NDK를 r28로 올려서 해결하려 하지 말 것**(r28부터는 이게 기본값이라 그 유혹이 있다).
+# 엔진 바이너리는 기력·속도가 실측으로 고정된 산출물이라, 정렬 한 줄을 고치자고 컴파일러
+# 메이저 버전을 바꾸면 **검증 범위가 통째로 넓어진다.** 여기서는 링커 플래그만 바뀐다.
 "$CMAKE_BIN" -S "$KATAGO_SRC" -B "$BUILD_DIR" -G Ninja \
   -DCMAKE_TOOLCHAIN_FILE="$NDK_DIR/build/cmake/android.toolchain.cmake" \
   -DANDROID_ABI=arm64-v8a \
   -DANDROID_PLATFORM="$ANDROID_PLATFORM" \
+  -DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_CXX_FLAGS="-DLITTLE_ENDIAN=1234 -DBIG_ENDIAN=4321 -DBYTE_ORDER=1234" \
   -DUSE_BACKEND=EIGEN \
