@@ -53,6 +53,21 @@ internal fun botAvatarRes(character: BotCharacter): Int? =
     }
 
 /**
+ * [botAvatarRes]가 아는 그림 **전부**를 카탈로그 순서대로 늘어놓은 것. 스플래시(백로그 #125)가
+ * 캐릭터 도메인을 통째로 끌어오지 않고 그림만 쓰기 위한 자리다.
+ *
+ * ⚠️ **위 `when`과 이 목록은 손으로 맞춰야 한다** — 캐릭터 그림을 더하면서 여기를 빠뜨리면
+ * 스플래시만 조용히 옛 5장을 계속 쓴다. `AppSplashContractTest`가 두 자리를 묶어 둔다.
+ */
+internal val AllBotAvatarRes: List<Int> = listOf(
+    R.drawable.bot_fast_beginner_1,
+    R.drawable.bot_fast_beginner_2,
+    R.drawable.bot_fast_beginner_3,
+    R.drawable.bot_fast_beginner_4,
+    R.drawable.bot_fast_beginner_5,
+)
+
+/**
  * 조각 진행도(백로그 #50). [required]조각 중 [acquired]조각을 모았다는 뜻이고, 그만큼이
  * 12시부터 **시계방향으로** 원래 색을 되찾는다.
  *

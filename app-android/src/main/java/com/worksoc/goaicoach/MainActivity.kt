@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.lifecycle.lifecycleScope
+import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -30,6 +31,7 @@ import com.worksoc.goaicoach.ui.AdsConsentManager
 import com.worksoc.goaicoach.shared.EngineCoreApi
 import com.worksoc.goaicoach.shared.EngineMode
 import com.worksoc.goaicoach.ui.AppFontScaleState
+import com.worksoc.goaicoach.ui.AppSplash
 import com.worksoc.goaicoach.ui.GoCoachApp
 import java.io.File
 import kotlinx.coroutines.launch
@@ -123,21 +125,28 @@ class MainActivity : ComponentActivity() {
                         diagnosticEventLog = diagnosticEventLog,
                     )
                 }
-                GoCoachApp(
-                    engineClient = engineClient,
-                    // ⚠️ **예측하지 않는다** — 준비 전에는 `EngineIdentity.Unresolved`(mode=Unknown)를
-                    // 그대로 넘긴다(2026-09-05 사용자 결정). 여기서 *"어차피 KataGo겠지"* 로 찍으면
-                    // 스텁 폴백 기기의 진단 리포트가 거짓말을 한다.
-                    engineIdentity = {
-                        val resolved = engineBootstrap?.identity() ?: EngineIdentity.Unresolved
-                        if (remoteClient != null) {
-                            resolved.copy(name = "${resolved.name} (remote: $remoteEngineUrl)")
-                        } else {
-                            resolved
-                        }
-                    },
-                    diagnosticEventLog = diagnosticEventLog,
-                )
+                // ⚠️ **홈을 스플래시 뒤에 두지 않고 함께 컴포즈한다**(백로그 #125). 스플래시가
+                // 도는 1초 동안 홈은 이미 조립되고 엔진 부트스트랩도 돌고 있어야, 그 1초가
+                // **버려지는 시간이 아니라 벌어 두는 시간**이 된다. `AppSplash`는 위에 얹혀
+                // 터치를 먹고 스스로 사라진다.
+                Box {
+                    GoCoachApp(
+                        engineClient = engineClient,
+                        // ⚠️ **예측하지 않는다** — 준비 전에는 `EngineIdentity.Unresolved`(mode=Unknown)를
+                        // 그대로 넘긴다(2026-09-05 사용자 결정). 여기서 *"어차피 KataGo겠지"* 로 찍으면
+                        // 스텁 폴백 기기의 진단 리포트가 거짓말을 한다.
+                        engineIdentity = {
+                            val resolved = engineBootstrap?.identity() ?: EngineIdentity.Unresolved
+                            if (remoteClient != null) {
+                                resolved.copy(name = "${resolved.name} (remote: $remoteEngineUrl)")
+                            } else {
+                                resolved
+                            }
+                        },
+                        diagnosticEventLog = diagnosticEventLog,
+                    )
+                    AppSplash()
+                }
             }
         }
         // ⚠️ **동의 상태 조회는 앱 기동마다 한 번** — UMP 규격이다(백로그 #89).

@@ -4,6 +4,8 @@
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:fontFamily">sans</item>
         <item name="android:colorAccent">#2E7D32</item>
+        <!-- 백로그 #125 — 기동 순간의 흰 번쩍임을 없앤다(사유는 `colors.xml`의 그 색 주석). -->
+        <item name="android:windowBackground">@color/app_window_background</item>
     </style>
 </resources>
 
