@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -223,6 +224,17 @@ internal fun DeveloperTestSection(
                 Text(strings.settingsDevDiagnosticLogOpenAction)
             }
         }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // 읽기 전용 ④ — **시작 화면 후보 9종을 눌러 본다**(백로그 #126). 말로 조율하는 대신
+        // 다 그려 놓고 눈으로 고르기 위한 도구다.
+        // ⚠️ **1차에 두는 것이 맞다** — 이 버튼은 **아무것도 저장하지 않는다.** 배치를 가르는
+        // 기준은 라벨이 아니라 *"무엇을 저장하는가"* 이고(#77·함정 11번), 재생기는 화면만 그린다.
+        // ⚠️ **자기 상태를 스스로 갖는 별도 컴포저블이다** — 이 섹션도 `SettingsScreen`도
+        // 상태 훅 예산에 여유가 0이라(#102, `LayeringContractTest`), 상태를 어느 쪽에 얹어도
+        // 그물에 걸린다. **예산을 올리는 대신 역할을 하나 더 만드는 것**이 그 그물의 뜻이다.
+        SplashCandidateRow()
 
         // ⚠️ **`BuildConfig.DEBUG`가 이 배치의 유일한 실제 경계다**(위 머리말 참고).
         // `DEBUG`는 `static final boolean`이라 release·playInternal에서는 컴파일 시점에

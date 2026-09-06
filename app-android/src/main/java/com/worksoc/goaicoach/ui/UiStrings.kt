@@ -369,6 +369,8 @@ internal data class UiStrings(
     val settingsDevAdGrantAction: String,
     val settingsDevDiagnosticLogTitle: String,
     val settingsDevDiagnosticLogSubtitle: String,
+    val settingsDevSplashTitle: String,
+    val settingsDevSplashSubtitle: String,
     val settingsDevDiagnosticLogOpenAction: String,
     val settingsDevDiagnosticLogCopyAction: String,
     val settingsDevDiagnosticLogCopied: String,

@@ -2,11 +2,13 @@ package com.worksoc.goaicoach.ui
 
 import java.io.File
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * 스플래시(백로그 #125)가 지켜야 할 것 셋. **셋 다 어겨도 컴파일은 되고 다른 테스트는 초록이다.**
+ * 스플래시(백로그 #125·#126)가 지켜야 할 것들. **전부 어겨도 컴파일은 되고 다른 테스트는
+ * 초록이다** — 그래서 소스 계약으로 든다.
  */
 class AppSplashContractTest {
 
@@ -26,6 +28,8 @@ class AppSplashContractTest {
     private val splash = source("src/main/java/com/worksoc/goaicoach/ui/AppSplash.kt")
     private val avatar = source("src/main/java/com/worksoc/goaicoach/ui/BotCharacterAvatar.kt")
     private val main = source("src/main/java/com/worksoc/goaicoach/MainActivity.kt")
+    private val variants = source("src/main/java/com/worksoc/goaicoach/ui/SplashVariants.kt")
+    private val picker = source("src/main/java/com/worksoc/goaicoach/ui/SplashCandidateRow.kt")
 
     /**
      * ⚠️ 캐릭터 그림을 더하면서 [AllBotAvatarRes]를 빠뜨리면 **스플래시만 조용히 옛 5장을 계속
@@ -75,5 +79,59 @@ class AppSplashContractTest {
             "`AppSplash()`가 `setContent`보다 앞에 있다 — 창이 서기 전에 도는 코드다(함정 35번).",
             call > setContent,
         )
+    }
+
+    /**
+     * ⚠️ **미리보기가 기동과 다른 재생기를 쓰면, 고른 것과 실리는 것이 어긋난다** — 그리고 그
+     * 어긋남은 고르고 난 한참 뒤에야 드러난다(백로그 #126).
+     */
+    @Test
+    fun thePickerPlaysThroughTheSamePlayerAsLaunch() {
+        assertTrue(
+            "미리보기가 `SplashPlayer`를 쓰지 않는다 — 기동에서 보는 것과 갈린다(백로그 #126).",
+            picker.contains("SplashPlayer("),
+        )
+        assertTrue(
+            "`AppSplash`가 `SplashPlayer`를 쓰지 않는다 — 재생기가 두 벌이 됐다(백로그 #126).",
+            splash.contains("SplashPlayer("),
+        )
+        assertTrue(
+            "미리보기 다이얼로그에 `usePlatformDefaultWidth = false`가 없다 — 좌우 여백이 생겨 " +
+                "전체 화면 연출을 재현하지 못한다(백로그 #126).",
+            picker.contains("usePlatformDefaultWidth = false"),
+        )
+    }
+
+    /**
+     * ⚠️ **후보를 더하면서 목록에서 빠뜨리면 미리보기에서 아예 볼 수 없다.** 버튼이 하나 없는
+     * 것은 눈에 잘 안 띄고, 그 후보만 조용히 검증 밖에 남는다.
+     */
+    @Test
+    fun everyVariantIsReachableFromThePicker() {
+        val declared = Regex("""^\s{4}([A-Z][A-Za-z]+)\((\d+), (\d+)\),""", RegexOption.MULTILINE)
+            .findAll(variants).map { it.groupValues[1] to it.groupValues[2].toInt() }.toList()
+        assertTrue("`SplashVariant` 항목을 하나도 찾지 못했다 — 이 계약의 전제가 무너졌다.", declared.size >= 2)
+        assertEquals(
+            "후보 번호가 1부터 연속이 아니다: ${declared.map { it.second }}",
+            (1..declared.size).toList(), declared.map { it.second },
+        )
+        assertTrue(
+            "미리보기가 `SplashVariant.entries`를 돌지 않는다 — 후보를 손으로 나열하면 새 후보가 빠진다.",
+            picker.contains("SplashVariant.entries"),
+        )
+    }
+
+    /**
+     * ⚠️ **개발자 섹션 1차는 `release` 빌드에도 그대로 실린다**(함정 11번). 이 행이 거기 있어도
+     * 되는 이유는 **아무것도 저장하지 않기 때문**이고, 그 성질이 깨지면 2차로 내려야 한다.
+     */
+    @Test
+    fun thePickerWritesNothing() {
+        listOf("Store(", "runConsumableGrant", "runPremium", "Coordinator(").forEach { forbidden ->
+            assertFalse(
+                "미리보기가 `$forbidden`를 부른다 — 저장하는 컨트롤은 1차에 둘 수 없다(함정 11번).",
+                picker.contains(forbidden),
+            )
+        }
     }
 }
