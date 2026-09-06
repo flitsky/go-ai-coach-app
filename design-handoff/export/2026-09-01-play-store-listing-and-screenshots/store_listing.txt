@@ -86,12 +86,14 @@ No sign-in. Every opponent unlocks through daily check-ins or a short ad — non
 ──────────────────────────────────────────────────────────────
 
 [스크린샷] (screenshots/ 폴더, 1296x2304, 9:16, PNG)
-01_home.png            — 홈 화면(상단 마이 페이지·설정 + 대국 하기 / 학습 하기 / 대국 기록)
-02_setup_lobby.png     — 대국 설정 로비
-03_eval_coaching.png   — 대국 화면 — 형세 보기 ON(보드 위 영역 음영 표시)
-04_gameplay.png        — 대국 화면 기본 상태(1회권 재고 + 코칭 버튼)
-05_character_picker.png — 상대 고르기(캐릭터별 획득 경로 안내)
-06_landing.png           — 첫 실행 랜딩(기력 선택)
+⚠️ 2026-09-06 밤에 번호를 재배열했다(랜딩을 맨 앞으로) — 콘솔 업로드 순서는 파일명 오름차순을
+그대로 따르면 된다.
+01_landing.png           — 첫 실행 랜딩(기력 선택)
+02_home.png             — 홈 화면(상단 마이 페이지·설정 + 대국 하기 / 학습 하기 / 대국 기록)
+03_setup_lobby.png     — 대국 설정 로비
+04_character_picker.png — 상대 고르기(캐릭터별 획득 경로 안내)
+05_gameplay.png        — 대국 화면 기본 상태(1회권 재고 + 코칭 버튼)
+06_eval_coaching.png   — 대국 화면 — 형세 보기 ON(보드 위 영역 음영 표시)
 
 여섯 장 모두 업로드 대상이다(2026-09-01 06 추가). 콘솔 위치별 안내는 이 폴더의 README.md에 있다.
 
