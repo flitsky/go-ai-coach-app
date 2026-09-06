@@ -71,7 +71,7 @@ internal enum class SplashVariant(val number: Int, val durationMillis: Int) {
     OrbitBloom(3, 2000),
 
     /**
-     * **④궤도 확산 → 줌 소멸**(2026-09-06 사용자 지시. **지금 앱이 쓰는 것**).
+     * **④궤도 확산 → 줌 소멸**(2026-09-06 사용자 지시).
      *
      * 앞 1.5초는 ③과 같다 — 가운데서 피어나 고리를 이루고 멈춘다. 그다음 **그 자리 그대로에서**
      * ⑦처럼 한 장씩 빠르게 커지며, 더 커질 때 알파가 빠져 사라진다.
@@ -83,8 +83,18 @@ internal enum class SplashVariant(val number: Int, val durationMillis: Int) {
      */
     OrbitBloomBurst(4, 3500),
 
-    /** **⑤순차 상승 페이드** — 아래에서 하나씩 떠오른다. Material의 stagger enter. */
-    StaggerRise(5, 1500),
+    /**
+     * **⑤궤도 확산 → 즉시 줌 소멸**(2026-09-06 사용자 지시. **지금 앱이 쓰는 것**).
+     *
+     * ④를 조인 것이다. 다른 것은 둘뿐이다:
+     * · **피어난 뒤 기다리지 않는다** — 고리가 완성되는 그 순간 첫 장이 바로 확대되기 시작한다.
+     * · **소멸이 ④의 2배 속도**라 다섯 장이 **1초 안에** 전부 사라진다([RushSlotMillis]).
+     *
+     * ⚠️ **길이는 두 구간의 합이지 임의의 값이 아니다** — 피어남 [OrbitBloomAnimMillis] +
+     * 소멸 `5 × RushSlotMillis`. 어느 한쪽을 만지면 여기 숫자도 같이 만져야 하고, 그러지 않으면
+     * **마지막 장이 잘리거나 끝에 빈 화면이 남는다.**
+     */
+    OrbitBloomRush(5, 2400),
 
     /** **⑥궤도 수렴** — 원 궤도를 돌며 점점 안쪽으로 모여 한 점이 된다. */
     Orbit(6, 2000),
@@ -104,7 +114,7 @@ internal enum class SplashVariant(val number: Int, val durationMillis: Int) {
          * 지금 앱이 실제로 쓰는 후보(2026-09-06 사용자 선택). ⚠️ **최종 선택이 아니다** —
          * 고르고 나면 **1초대로 줄이는 조정이 예정돼 있다**(백로그 #126).
          */
-        val Current: SplashVariant = OrbitBloomBurst
+        val Current: SplashVariant = OrbitBloomRush
 
         fun ofNumber(number: Int): SplashVariant? = entries.firstOrNull { it.number == number }
     }
@@ -155,7 +165,8 @@ internal fun SplashScene(
 /** 카드처럼 원판에 얹을 것인가, 그림만 쓸 것인가. 연출의 성격이 갈리는 자리다. */
 private val SplashVariant.usesCoin: Boolean
     get() = when (this) {
-        SplashVariant.RadialStepBurst, SplashVariant.ZoomThrough, SplashVariant.OrbitBloomBurst -> false
+        SplashVariant.RadialStepBurst, SplashVariant.ZoomThrough,
+        SplashVariant.OrbitBloomBurst, SplashVariant.OrbitBloomRush -> false
         else -> true
     }
 
@@ -217,8 +228,16 @@ private fun transformFor(
         SplashVariant.RadialStepBurst -> radialStepBurst(index, elapsedMillis, radius)
         SplashVariant.CardFan -> cardFan(fromCenter, index, t, width)
         SplashVariant.OrbitBloom -> orbitBloom(index, count, t, radius)
-        SplashVariant.OrbitBloomBurst -> orbitBloomBurst(index, count, t, elapsedMillis, bloomRadius(radius, width))
-        SplashVariant.StaggerRise -> staggerRise(fromCenter, index, t, height, width, count)
+        SplashVariant.OrbitBloomBurst -> orbitBloomBurst(
+            index, count, t, elapsedMillis, bloomRadius(radius, width),
+            holdUntilMillis = BloomHoldUntilMillis,
+            slotMillis = BurstSlotMillis,
+        )
+        SplashVariant.OrbitBloomRush -> orbitBloomBurst(
+            index, count, t, elapsedMillis, bloomRadius(radius, width),
+            holdUntilMillis = OrbitBloomAnimMillis,   // 기다리지 않는다
+            slotMillis = RushSlotMillis,
+        )
         SplashVariant.Orbit -> orbit(index, count, t, radius)
         SplashVariant.ZoomThrough -> zoomThrough(index, count, t)
         SplashVariant.CardFlip -> cardFlip(fromCenter, index, t, width, count)
@@ -281,19 +300,6 @@ private fun cardFan(fromCenter: Float, index: Int, t: Float, width: Float): Coin
     )
 }
 
-// ── ⑤ 순차 상승 페이드 ────────────────────────────────────────────────────────
-private fun staggerRise(fromCenter: Float, index: Int, t: Float, height: Float, width: Float, count: Int): CoinFrame {
-    val start = index * 0.10f
-    val p = easeInOut(((t - start) / 0.34f).coerceIn(0f, 1f))
-    return CoinFrame(
-        size = CoinSize,
-        translationX = fromCenter * spacingFor(width, count),
-        translationY = (1f - p) * height * 0.10f,
-        scale = 0.90f + 0.10f * p,
-        alpha = p * splashEnvelope(t),
-    )
-}
-
 // ── ⑥ 궤도 수렴 / ③ 궤도 확산 / ④ 궤도 확산 → 줌 소멸 ───────────────────────
 //
 // 셋이 **같은 기하**를 공유한다. `u`가 0이면 활짝 펼쳐진 고리, 1이면 가운데로 모인 상태다.
@@ -336,12 +342,27 @@ private fun orbitBloom(index: Int, count: Int, t: Float, radius: Float): CoinFra
 private const val BloomHoldUntilMillis = 1500
 private const val BurstSlotMillis = 400
 
-private fun orbitBloomBurst(index: Int, count: Int, t: Float, elapsedMillis: Int, radius: Float): CoinFrame {
+/** ⑤의 소멸은 ④의 **2배 속도**다. 다섯 장 × 이 값 = 1.0초. */
+private const val RushSlotMillis = 200
+
+/**
+ * ④·⑤가 함께 쓴다. [holdUntilMillis]는 **첫 장이 확대를 시작하는 시각**이고,
+ * ⑤는 여기에 [OrbitBloomAnimMillis]를 그대로 넣어 **피어남이 끝나는 순간 곧바로** 잇는다.
+ */
+private fun orbitBloomBurst(
+    index: Int,
+    count: Int,
+    t: Float,
+    elapsedMillis: Int,
+    radius: Float,
+    holdUntilMillis: Int,
+    slotMillis: Int,
+): CoinFrame {
     val played = (elapsedMillis.toFloat() / OrbitBloomAnimMillis).coerceAtMost(1f)
     val ring = orbitAt(index, count, 1f - played, radius).copy(size = BurstSize)
-    val burstStart = BloomHoldUntilMillis + index * BurstSlotMillis
+    val burstStart = holdUntilMillis + index * slotMillis
     if (elapsedMillis < burstStart) return ring.copy(alpha = splashEnvelope(t))
-    val p = ((elapsedMillis - burstStart).toFloat() / BurstSlotMillis).coerceIn(0f, 1f)
+    val p = ((elapsedMillis - burstStart).toFloat() / slotMillis).coerceIn(0f, 1f)
     return ring.copy(
         scale = ring.scale * (1f + p * p * BurstScaleGain),
         alpha = if (p < BurstFadeStart) 1f else ((1f - (p - BurstFadeStart) / (1f - BurstFadeStart))).coerceIn(0f, 1f),
