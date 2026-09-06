@@ -89,12 +89,15 @@ internal enum class SplashVariant(val number: Int, val durationMillis: Int) {
      * ④를 조인 것이다. 다른 것은 둘뿐이다:
      * · **피어난 뒤 기다리지 않는다** — 고리가 완성되는 그 순간 첫 장이 바로 확대되기 시작한다.
      * · **소멸이 ④의 2배 속도**라 다섯 장이 **1초 안에** 전부 사라진다([RushSlotMillis]).
+     * · **피어남도 ③·④보다 짧다** — [RushBloomMillis]. ⚠️ **공용 상수를 줄이지 말 것**:
+     *   [OrbitBloomAnimMillis]는 ③의 *"⑥의 1.5배 속도"* 라는 정의 그 자체라, 그것을
+     *   건드리면 ③·④가 함께 바뀐다.
      *
-     * ⚠️ **길이는 두 구간의 합이지 임의의 값이 아니다** — 피어남 [OrbitBloomAnimMillis] +
-     * 소멸 `5 × RushSlotMillis`. 어느 한쪽을 만지면 여기 숫자도 같이 만져야 하고, 그러지 않으면
-     * **마지막 장이 잘리거나 끝에 빈 화면이 남는다.**
+     * ⚠️ **길이는 두 구간의 합이지 임의의 값이 아니다** — 피어남 [RushBloomMillis] +
+     * 소멸 `5 × RushSlotMillis` = 1700. 어느 한쪽을 만지면 여기 숫자도 같이 만져야 하고,
+     * 그러지 않으면 **마지막 장이 잘리거나 끝에 빈 화면이 남는다.**
      */
-    OrbitBloomRush(5, 2400),
+    OrbitBloomRush(5, 1700),
 
     /** **⑥궤도 수렴** — 원 궤도를 돌며 점점 안쪽으로 모여 한 점이 된다. */
     Orbit(6, 2000),
@@ -230,12 +233,14 @@ private fun transformFor(
         SplashVariant.OrbitBloom -> orbitBloom(index, count, t, radius)
         SplashVariant.OrbitBloomBurst -> orbitBloomBurst(
             index, count, t, elapsedMillis, bloomRadius(radius, width),
+            bloomMillis = OrbitBloomAnimMillis,
             holdUntilMillis = BloomHoldUntilMillis,
             slotMillis = BurstSlotMillis,
         )
         SplashVariant.OrbitBloomRush -> orbitBloomBurst(
             index, count, t, elapsedMillis, bloomRadius(radius, width),
-            holdUntilMillis = OrbitBloomAnimMillis,   // 기다리지 않는다
+            bloomMillis = RushBloomMillis,
+            holdUntilMillis = RushBloomMillis,   // 기다리지 않는다
             slotMillis = RushSlotMillis,
         )
         SplashVariant.Orbit -> orbit(index, count, t, radius)
@@ -346,8 +351,16 @@ private const val BurstSlotMillis = 400
 private const val RushSlotMillis = 200
 
 /**
- * ④·⑤가 함께 쓴다. [holdUntilMillis]는 **첫 장이 확대를 시작하는 시각**이고,
- * ⑤는 여기에 [OrbitBloomAnimMillis]를 그대로 넣어 **피어남이 끝나는 순간 곧바로** 잇는다.
+ * ⑤의 피어남(2026-09-06 사용자 지시로 1.333초 → 0.7초).
+ *
+ * ⚠️ **[OrbitBloomAnimMillis]를 줄여서 하지 말 것.** 그 상수는 ③의 *"⑥의 1.5배 속도"* 라는
+ * **정의 그 자체**라, 줄이는 순간 ③과 ④가 말없이 함께 빨라진다.
+ */
+private const val RushBloomMillis = 700
+
+/**
+ * ④·⑤가 함께 쓴다. [holdUntilMillis]는 **첫 장이 확대를 시작하는 시각**이고, ⑤는 여기에
+ * 자기 [bloomMillis]를 그대로 넣어 **피어남이 끝나는 순간 곧바로** 잇는다.
  */
 private fun orbitBloomBurst(
     index: Int,
@@ -355,10 +368,11 @@ private fun orbitBloomBurst(
     t: Float,
     elapsedMillis: Int,
     radius: Float,
+    bloomMillis: Int,
     holdUntilMillis: Int,
     slotMillis: Int,
 ): CoinFrame {
-    val played = (elapsedMillis.toFloat() / OrbitBloomAnimMillis).coerceAtMost(1f)
+    val played = (elapsedMillis.toFloat() / bloomMillis).coerceAtMost(1f)
     val ring = orbitAt(index, count, 1f - played, radius).copy(size = BurstSize)
     val burstStart = holdUntilMillis + index * slotMillis
     if (elapsedMillis < burstStart) return ring.copy(alpha = splashEnvelope(t))
