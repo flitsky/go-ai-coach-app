@@ -86,7 +86,7 @@ internal enum class SplashVariant(val number: Int, val durationMillis: Int) {
     OrbitBloomBurst(4, 3500),
 
     /**
-     * **⑤궤도 확산 → 즉시 줌 소멸**(2026-09-06 사용자 지시. **지금 앱이 쓰는 것**).
+     * **⑤궤도 확산 → 즉시 줌 소멸**(2026-09-06 사용자 지시).
      *
      * ④를 조인 것이다. 다른 것은 둘뿐이다:
      * · **피어난 뒤 기다리지 않는다** — 고리가 완성되는 그 순간 첫 장이 바로 확대되기 시작한다.
@@ -115,13 +115,23 @@ internal enum class SplashVariant(val number: Int, val durationMillis: Int) {
     CenterSpinBurst(6, 3000),
 
     /**
-     * **⑦중앙 회전 → 즉시 줌 소멸**(2026-09-06 사용자 지시).
+     * **⑦빠른 확산 → 겹쳐 소멸**(2026-09-06 사용자 지시. **지금 앱이 쓰는 것**).
      *
-     * ⑤에서 같은 구간을 뺀 것이다. ⑥과 도는 모습은 같고 **박자만 ⑤의 것**이다 —
-     * **기다리지 않고**, 장당 [RushSlotMillis]로 다섯 장이 **1초 안에** 사라진다.
-     * 길이도 ⑤와 같은 1.7초라, ⑤와 나란히 놓고 *"고리가 있는 편이 나은가"* 만 보면 된다.
+     * | 구간 | 연출 |
+     * | --- | --- |
+     * | 0~500ms | 가운데 뭉친 채 **돌면서 바깥으로 퍼져** 커진다(30%→100%, **0.5바퀴**) |
+     * | 500~600ms | 그 자리에서 잠깐 정지 |
+     * | 600ms부터 | 판다·돌뫼·소년·거북·부엉이가 **150ms 간격으로 시작**해 **각자 300ms** 동안 확대·소멸 |
+     * | ~1500ms | 마지막 장 소멸 완료 |
+     *
+     * ⚠️ **시작 간격(150ms)과 장당 길이(300ms)가 다르다 — 이것이 ④⑤⑥과 갈리는 지점이다.**
+     * 그 셋은 둘이 같아서 한 장이 사라진 뒤 다음 장이 시작하지만, 이쪽은 **둘씩 겹쳐** 흐른다.
+     * 그래서 [burstAfter]가 두 값을 따로 받는다 — 하나로 되돌리면 이 후보가 사라진다.
+     *
+     * ⚠️ **회전은 0.5바퀴다.** ③④⑤의 [OrbitTurns]는 1.15바퀴이고, 여기서 그 상수를 줄이면
+     * **셋이 함께 느려진다.**
      */
-    CenterSpinRush(7, 1700),
+    QuickBloomCascade(7, 1500),
 
     /** **⑧카드 플립** — Y축으로 뒤집히며 차례로 나타난다. */
     CardFlip(8, 1800),
@@ -135,7 +145,7 @@ internal enum class SplashVariant(val number: Int, val durationMillis: Int) {
          * 지금 앱이 실제로 쓰는 후보(2026-09-06 사용자 선택). ⚠️ **최종 선택이 아니다** —
          * 고르고 나면 **1초대로 줄이는 조정이 예정돼 있다**(백로그 #126).
          */
-        val Current: SplashVariant = OrbitBloomRush
+        val Current: SplashVariant = QuickBloomCascade
 
         fun ofNumber(number: Int): SplashVariant? = entries.firstOrNull { it.number == number }
     }
@@ -188,7 +198,7 @@ private val SplashVariant.usesCoin: Boolean
     get() = when (this) {
         SplashVariant.RadialStepBurst,
         SplashVariant.OrbitBloomBurst, SplashVariant.OrbitBloomRush,
-        SplashVariant.CenterSpinBurst, SplashVariant.CenterSpinRush -> false
+        SplashVariant.CenterSpinBurst, SplashVariant.QuickBloomCascade -> false
         else -> true
     }
 
@@ -268,11 +278,8 @@ private fun transformFor(
             holdUntilMillis = SpinHoldUntilMillis,
             slotMillis = BurstSlotMillis,
         )
-        SplashVariant.CenterSpinRush -> centerSpin(
-            index, count, t, elapsedMillis, radius,
-            spinMillis = SpinRushMillis,
-            holdUntilMillis = SpinRushMillis,   // 기다리지 않는다
-            slotMillis = RushSlotMillis,
+        SplashVariant.QuickBloomCascade -> quickBloomCascade(
+            index, count, t, elapsedMillis, bloomRadius(radius, width),
         )
         SplashVariant.CardFlip -> cardFlip(fromCenter, index, t, width, count)
         SplashVariant.Wave -> wave(fromCenter, index, t, width, count)
@@ -397,7 +404,7 @@ private fun orbitBloomBurst(
 ): CoinFrame {
     val played = (elapsedMillis.toFloat() / bloomMillis).coerceAtMost(1f)
     val ring = orbitAt(index, count, 1f - played, radius).copy(size = BurstSize)
-    return burstAfter(ring, index, t, elapsedMillis, holdUntilMillis, slotMillis)
+    return burstAfter(ring, index, t, elapsedMillis, holdUntilMillis, slotMillis, slotMillis)
 }
 
 // ── ⑥⑦ 중앙 회전 → 줌 소멸 ───────────────────────────────────────────────────
@@ -415,9 +422,6 @@ private const val SpinScaleStart = 0.30f
 private const val SpinUpMillis = 800
 private const val SpinHoldUntilMillis = 1000
 
-/** ⑦의 회전 구간. **기다리지 않으므로 이 값이 곧 첫 확대 시각**이고, `+ 5 × RushSlotMillis = 1700`이다. */
-private const val SpinRushMillis = 700
-
 private fun spinAt(index: Int, count: Int, u: Float, radius: Float): CoinFrame {
     val angle = (index.toFloat() / count) * Tau + easeInOut(u) * SpinTurns * Tau
     val grown = easeInOut(1f - u)
@@ -426,6 +430,41 @@ private fun spinAt(index: Int, count: Int, u: Float, radius: Float): CoinFrame {
         translationX = cos(angle) * radius * HuddleFraction,
         translationY = sin(angle) * radius * HuddleFraction,
         scale = SpinScaleStart + (1f - SpinScaleStart) * grown,
+    )
+}
+
+// ── ⑦ 빠른 확산 → 겹쳐 소멸 ──────────────────────────────────────────────────
+//
+// ③④⑤의 확산과 **모양은 같고 값이 다르다**: 0.5바퀴, 30%에서 시작, 0.5초.
+// ⚠️ 그래서 [orbitAt]을 재사용하지 않는다 — 거기 박힌 [OrbitTurns]와 시작 배율을 건드리면
+// ③④⑤가 함께 바뀐다. 퍼짐 곡선도 다르다: [orbitAt]은 앞의 15%가 제자리라(고리 연출에서는
+// 그 뜸이 자연스럽다) 0.5초에 쓰면 **처음 75ms가 얼어붙은 것처럼 보인다.**
+private const val CascadeBloomMillis = 500
+private const val CascadeHoldUntilMillis = 600
+private const val CascadeStaggerMillis = 150
+private const val CascadeSlotMillis = 300
+private const val CascadeTurns = 0.5f
+private const val CascadeScaleStart = 0.30f
+
+private fun cascadeBloomAt(index: Int, count: Int, u: Float, radius: Float): CoinFrame {
+    val angle = (index.toFloat() / count) * Tau + easeInOut(u) * CascadeTurns * Tau
+    val opened = 1f - easeInOut(u)
+    return CoinFrame(
+        size = BurstSize,
+        translationX = cos(angle) * radius * opened,
+        translationY = sin(angle) * radius * opened,
+        scale = CascadeScaleStart + (1f - CascadeScaleStart) * opened,
+    )
+}
+
+private fun quickBloomCascade(index: Int, count: Int, t: Float, elapsedMillis: Int, radius: Float): CoinFrame {
+    val played = (elapsedMillis.toFloat() / CascadeBloomMillis).coerceAtMost(1f)
+    val open = cascadeBloomAt(index, count, 1f - played, radius)
+    return burstAfter(
+        open, index, t, elapsedMillis,
+        holdUntilMillis = CascadeHoldUntilMillis,
+        staggerMillis = CascadeStaggerMillis,
+        slotMillis = CascadeSlotMillis,
     )
 }
 
@@ -441,14 +480,18 @@ private fun centerSpin(
 ): CoinFrame {
     val played = (elapsedMillis.toFloat() / spinMillis).coerceAtMost(1f)
     val huddle = spinAt(index, count, 1f - played, radius).copy(size = BurstSize)
-    return burstAfter(huddle, index, t, elapsedMillis, holdUntilMillis, slotMillis)
+    return burstAfter(huddle, index, t, elapsedMillis, holdUntilMillis, slotMillis, slotMillis)
 }
 
 /**
  * **④⑤⑥⑦이 공유하는 확대·소멸.** 제자리에서 빠르게 커지다가, 더 커질 때 알파가 빠져 사라진다.
  *
- * ⚠️ **여기 곡선을 바꾸면 넷이 함께 바뀐다.** 하나만 손보려면 매개변수로 가를 것 —
- * 지금 갈려 있는 것은 *"언제 시작하나"*([holdUntilMillis])와 *"장당 몇 ms인가"*([slotMillis])뿐이다.
+ * ⚠️ **여기 곡선을 바꾸면 넷이 함께 바뀐다.** 하나만 손보려면 매개변수로 가를 것.
+ *
+ * ⚠️ **[staggerMillis]와 [slotMillis]는 다른 것이다.**
+ * 앞은 *"다음 장이 몇 ms 뒤에 시작하나"*, 뒤는 *"한 장이 사라지는 데 몇 ms 걸리나"* 다.
+ * 둘이 같으면 한 장이 사라진 뒤 다음 장이 시작하고(④⑤⑥), **앞이 짧으면 겹쳐 흐른다**(⑦).
+ * 기본값으로 둘을 묶어 두면 ⑦이 조용히 사라지므로 **기본값을 두지 않는다.**
  */
 private fun burstAfter(
     base: CoinFrame,
@@ -456,9 +499,10 @@ private fun burstAfter(
     t: Float,
     elapsedMillis: Int,
     holdUntilMillis: Int,
+    staggerMillis: Int,
     slotMillis: Int,
 ): CoinFrame {
-    val start = holdUntilMillis + index * slotMillis
+    val start = holdUntilMillis + index * staggerMillis
     if (elapsedMillis < start) return base.copy(alpha = splashEnvelope(t))
     val p = ((elapsedMillis - start).toFloat() / slotMillis).coerceIn(0f, 1f)
     return base.copy(
