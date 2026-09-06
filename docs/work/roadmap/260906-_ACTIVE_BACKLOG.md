@@ -154,6 +154,10 @@
   `./gradlew :shared:testDebugUnitTest :app-android:testDebugUnitTest`.
   `shared/`를 건드렸다면 `./gradlew :shared:compileKotlinIosSimulatorArm64 -PenableIosTargets=true`
   까지 확인한다(commonMain 플랫폼 독립성).
+  · ⚠️ **기기가 둘 이상 붙어 있으면 `make`가 `doctor`에서 멈춘다**(2026-09-06에 밟았다). 폰과
+    에뮬레이터가 같이 연결돼 있으면 `make bundle-aab TARGET=emu`처럼 **`TARGET=emu|phone`을 붙일 것**
+    (또는 `ANDROID_SERIAL=<시리얼>`). ⚠️ 실패해도 `bump-version`은 이미 돌았을 수 있으니
+    **`version.properties`를 확인**할 것 — 버전 코드를 헛되이 태우지 않는다.
 - 이 백로그 갱신과 `DOCS_INDEX.md` 갱신은 별개다 — 그 문서는 새 파일이 생기거나 문서 구조 자체가
   바뀔 때만 갱신한다.
 - 저장소 관행은 `main` 직접 커밋이며 메시지는 `feat(scope): ... (backlog #N)` 형식이다.
