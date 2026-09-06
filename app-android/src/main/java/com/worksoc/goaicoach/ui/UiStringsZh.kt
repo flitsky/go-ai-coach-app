@@ -1,7 +1,7 @@
 package com.worksoc.goaicoach.ui
 
 internal val UiStringsChineseSimplified = UiStringsKorean.copy(
-    appTitle = "围棋AI",
+    appTitle = "围棋AI教练",
     language = UiLanguage.ChineseSimplified,
     homeTagline = "与本地AI一起学习围棋",
     languageLabel = "语言",
@@ -142,7 +142,7 @@ internal val UiStringsChineseSimplified = UiStringsKorean.copy(
     engineStuckDialogMessage = "AI 响应时间比预期长,引擎可能出现了问题。要现在重置引擎吗?当前对局进度(落子记录)将保持不变。",
     engineStuckDialogResetAction = "重置引擎",
     engineStuckDialogWaitAction = "关闭(继续等待)",
-    onboardingTitle = "欢迎使用围棋AI",
+    onboardingTitle = "欢迎使用围棋AI教练",
     onboardingSubtitle = "登录后可在其他设备上继续游玩，也可以不使用账号直接开始。",
     continueWithGoogle = "使用 Google 继续",
     continueWithApple = "使用 Apple 继续",

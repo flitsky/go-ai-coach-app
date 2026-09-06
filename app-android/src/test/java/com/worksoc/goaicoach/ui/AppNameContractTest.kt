@@ -81,16 +81,4 @@ class AppNameContractTest {
         }
     }
 
-    /**
-     * ⚠️ **"코치"는 아직 넣지 않는다**(2026-09-05 사용자 결정) — 코칭 기능이 실제로 없기 때문이다.
-     * 기능이 나오면 그때 세 곳을 함께 바꾼다. 이 단언은 그 약속이 잊히지 않게 한다.
-     */
-    @Test
-    fun theNameDoesNotPromiseCoachingThatDoesNotExistYet() {
-        assertFalse(
-            "앱 이름이 '코치'를 약속한다 — 코칭 기능이 들어간 뒤에 바꾸기로 했다(#97). " +
-                "기능이 생겼다면 이 테스트를 지우고 세 곳을 함께 바꿀 것.",
-            inAppName!!.contains("코치"),
-        )
-    }
 }

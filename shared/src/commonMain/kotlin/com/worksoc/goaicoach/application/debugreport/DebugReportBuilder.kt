@@ -173,7 +173,7 @@ fun buildDebugReportCopyPlan(snapshot: DebugReportSnapshot): DebugReportCopyPlan
     val clipboardReport = buildDebugReport(clipboardSnapshot)
 
     return DebugReportCopyPlan(
-        clipboardLabel = "바둑 AI debug report",
+        clipboardLabel = "바둑 AI 코치 debug report",
         clipboardReport = clipboardReport,
         fileReport = fileReport,
         engineMessage = "Debug report copied to clipboard. Paste it into chat for review.",

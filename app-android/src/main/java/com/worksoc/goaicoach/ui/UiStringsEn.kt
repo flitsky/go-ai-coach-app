@@ -1,7 +1,7 @@
 package com.worksoc.goaicoach.ui
 
 internal val UiStringsEnglish = UiStringsKorean.copy(
-    appTitle = "Go AI",
+    appTitle = "Go AI Coach",
     language = UiLanguage.English,
     homeTagline = "Learn Go with your local AI",
     languageLabel = "Language",
@@ -143,7 +143,7 @@ internal val UiStringsEnglish = UiStringsKorean.copy(
     engineStuckDialogMessage = "The AI is taking longer than expected to respond. The engine may have run into a problem. Reset the engine now? Your current match progress (move history) will be kept.",
     engineStuckDialogResetAction = "Reset Engine",
     engineStuckDialogWaitAction = "Close (keep waiting)",
-    onboardingTitle = "Welcome to Go AI",
+    onboardingTitle = "Welcome to Go AI Coach",
     onboardingSubtitle = "Sign in to continue on other devices later, or start right away without an account.",
     continueWithGoogle = "Continue with Google",
     continueWithApple = "Continue with Apple",

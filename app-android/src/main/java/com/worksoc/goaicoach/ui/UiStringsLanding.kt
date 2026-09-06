@@ -20,10 +20,10 @@ import com.worksoc.goaicoach.application.preferences.landingSetupPlan
  * 받는 꼴이 된다. 봇 이름을 바꾸더라도 **두 축이 겹치지 않는지 먼저 확인할 것.**
  */
 private val LandingTitles: Map<UiLanguage, String> = mapOf(
-    UiLanguage.Korean to "바둑 AI 앱에 오신 걸 환영합니다",
-    UiLanguage.English to "Welcome to Go AI",
-    UiLanguage.Japanese to "囲碁AIアプリへようこそ",
-    UiLanguage.ChineseSimplified to "欢迎使用围棋 AI 应用",
+    UiLanguage.Korean to "바둑 AI 코치 앱에 오신 걸 환영합니다",
+    UiLanguage.English to "Welcome to Go AI Coach",
+    UiLanguage.Japanese to "囲碁AIコーチアプリへようこそ",
+    UiLanguage.ChineseSimplified to "欢迎使用围棋 AI 教练应用",
 )
 
 private val LandingSubtitles: Map<UiLanguage, String> = mapOf(

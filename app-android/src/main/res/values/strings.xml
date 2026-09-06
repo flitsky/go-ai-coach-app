@@ -20,10 +20,12 @@
     <!--
       앱 이름. ⚠️ **스토어 등록정보의 이름과 같아야 한다**(2026-09-05 사용자 결정) —
       정본은 추적되는 `design-handoff/export/`의 `store_listing.txt`이고(`dist/`는 gitignore 대상),
-      지금 값은 "바둑 AI"다. `AppNameContractTest`가 세 곳을 함께 묶는다.
-      ⚠️ **"코치"를 붙이지 말 것** — 코칭 기능이 아직 없다. 그 기능이 나오면 그때 함께 바꾼다.
+      지금 값은 "바둑 AI 코치"다. `AppNameContractTest`가 세 곳을 함께 묶는다.
+      ⚠️ **"코치"가 다시 들어갔다(2026-09-06)** — 형세 보기·추천 수가 이미 코치 역할을 하고
+      있어, 실제 코칭 기능이 더 늘어난 뒤에 이름을 바꾸는 쪽이 오히려 부자연스럽다는 사용자
+      판단이다. 정식 출시 시점에 미리 반영한다.
       ⚠️ **브랜드가 아니라 서술이라 언어마다 번역한다** — `values-en/ja/zh`에도 있다.
       앱 안 타이틀(`UiStrings.appTitle`)과 같은 값을 유지할 것.
     -->
-    <string name="app_name">바둑 AI</string>
+    <string name="app_name">바둑 AI 코치</string>
 </resources>

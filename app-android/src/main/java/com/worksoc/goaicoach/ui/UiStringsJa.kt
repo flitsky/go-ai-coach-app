@@ -1,7 +1,7 @@
 package com.worksoc.goaicoach.ui
 
 internal val UiStringsJapanese = UiStringsKorean.copy(
-    appTitle = "囲碁AI",
+    appTitle = "囲碁AIコーチ",
     language = UiLanguage.Japanese,
     homeTagline = "ローカルAIと学ぶ囲碁",
     languageLabel = "言語",
@@ -143,7 +143,7 @@ internal val UiStringsJapanese = UiStringsKorean.copy(
     engineStuckDialogMessage = "AIの応答が予想より長くかかっています。エンジンに問題が発生した可能性があります。今すぐエンジンを初期化しますか?現在の対局の進行状況(着手履歴)はそのまま保持されます。",
     engineStuckDialogResetAction = "エンジンを初期化",
     engineStuckDialogWaitAction = "閉じる(引き続き待つ)",
-    onboardingTitle = "囲碁AIへようこそ",
+    onboardingTitle = "囲碁AIコーチへようこそ",
     onboardingSubtitle = "ログインすると、後で別の端末でも続きから再開できます。アカウントなしですぐに始めることもできます。",
     continueWithGoogle = "Googleで続ける",
     continueWithApple = "Appleで続ける",
