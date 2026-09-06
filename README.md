@@ -20,8 +20,8 @@ Implemented baseline as of 2026-08-29:
 
 Next goal:
 
-1. Ship the initial Google Play release. Code and assets are done; what remains is Play Console paperwork — see `GOOGLE_PLAY_LAUNCH_PLAN.md` §0.
-2. Work the active backlog — `260905-_ACTIVE_BACKLOG.md` is the entry point. Next up is #76 (dead-code cleanup, already investigated); #26 and #18 wait on Play Console monetization opening.
+1. Ship the initial Google Play release. Build **811 was uploaded and rejected** — Play requires 16 KB memory page support. The engine is relinked and **0.8.12 / 812** is built and verified; what remains is Play Console paperwork — see `GOOGLE_PLAY_LAUNCH_PLAN.md` §0.
+2. Work the active backlog — `260906-_ACTIVE_BACKLOG.md` is the entry point. Next up is #120 (AGP 9.0 upgrade, investigate first); #26 and #18 wait on Play Console monetization opening.
 3. Add broader androidTest/Robolectric coverage. Default verification is JVM unit tests plus two emulator smoke tests.
 
 (`GameSessionStateHolder` moved into `:shared` in 2026-08; that goal is done.)
