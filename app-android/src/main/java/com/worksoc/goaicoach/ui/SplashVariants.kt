@@ -58,11 +58,30 @@ internal enum class SplashVariant(val number: Int, val durationMillis: Int) {
     /** **②부채 셔플** — 백로그 #125에서 만든 것. 5장이 카드처럼 펼쳐졌다 한 장으로 모인다. */
     CardFan(2, 1200),
 
-    /** **③원형 리빌** — 중앙에서 원이 퍼지며 가로로 늘어선 5장을 드러낸다. Material의 고전. */
-    CircularReveal(3, 1600),
+    /**
+     * **③궤도 확산 — [Orbit]을 거꾸로 돌린 것**(2026-09-06 사용자 지시).
+     *
+     * 가운데 겹쳐 있던 5장이 **바깥으로 퍼지며** 고리를 이룬다. ⑥이 모이는 연출이라면 이쪽은
+     * 피어나는 연출이고, **속도는 ⑥의 1.5배**다(⑥의 2.0초짜리 움직임을 [OrbitBloomAnimMillis]
+     * 안에 끝낸다).
+     *
+     * ⚠️ **끝난 뒤에는 마지막 프레임에서 멈춰 있는다** — 남은 시간을 빈 화면으로 보내지 않는다.
+     * 그 정지가 이 후보의 절반이므로 [OrbitBloomAnimMillis]보다 **길이를 넉넉히 잡아야** 뜻이 산다.
+     */
+    OrbitBloom(3, 2000),
 
-    /** **④스프링 낙하** — 위에서 떨어져 바닥에서 오버슈트로 튕기며 안착한다. */
-    SpringDrop(4, 1700),
+    /**
+     * **④궤도 확산 → 줌 소멸**(2026-09-06 사용자 지시. **지금 앱이 쓰는 것**).
+     *
+     * 앞 1.5초는 ③과 같다 — 가운데서 피어나 고리를 이루고 멈춘다. 그다음 **그 자리 그대로에서**
+     * ⑦처럼 한 장씩 빠르게 커지며, 더 커질 때 알파가 빠져 사라진다.
+     *
+     * ⚠️ **⑦과 다른 것은 시작 위치 하나뿐이다** — ⑦은 화면 중앙에서 시작하지만 이쪽은
+     * **③이 마지막에 그려 둔 고리 위 제자리**에서 시작한다.
+     * ⚠️ **원판(coin)을 쓰지 않는다.** 원판을 4배로 키우면 흰 원이 화면을 덮어 **다섯 번의 흰
+     * 섬광**이 된다. 참조로 삼은 ⑦도 그림만 쓴다.
+     */
+    OrbitBloomBurst(4, 3500),
 
     /** **⑤순차 상승 페이드** — 아래에서 하나씩 떠오른다. Material의 stagger enter. */
     StaggerRise(5, 1500),
@@ -81,8 +100,11 @@ internal enum class SplashVariant(val number: Int, val durationMillis: Int) {
     ;
 
     companion object {
-        /** 지금 앱이 실제로 쓰는 후보. ⚠️ **최종 선택이 아니다**(백로그 #126). */
-        val Current: SplashVariant = RadialStepBurst
+        /**
+         * 지금 앱이 실제로 쓰는 후보(2026-09-06 사용자 선택). ⚠️ **최종 선택이 아니다** —
+         * 고르고 나면 **1초대로 줄이는 조정이 예정돼 있다**(백로그 #126).
+         */
+        val Current: SplashVariant = OrbitBloomBurst
 
         fun ofNumber(number: Int): SplashVariant? = entries.firstOrNull { it.number == number }
     }
@@ -107,27 +129,24 @@ internal fun SplashScene(
         // ⚠️ **반지름을 가로에만 매지 말 것** — 세로가 짧은 기기(가로 모드·폴더블 펼침)에서 위아래
         // 캐릭터가 화면 밖으로 나간다.
         val radius = minOf(w, h) * 0.26f
-        when (variant) {
-            SplashVariant.CircularReveal -> CircularRevealScene(avatars, t, w)
-            else -> avatars.forEachIndexed { index, res ->
-                val f = transformFor(variant, index, avatars.size, t, elapsedMillis, radius, w, h)
-                if (f.alpha > 0.001f) {
-                    SplashCoin(
-                        res = res,
-                        size = f.size,
-                        coin = variant.usesCoin,
-                        modifier = Modifier.graphicsLayer {
-                            translationX = f.translationX
-                            translationY = f.translationY
-                            scaleX = f.scale
-                            scaleY = f.scale
-                            alpha = f.alpha
-                            rotationZ = f.rotationZ
-                            rotationY = f.rotationY
-                            cameraDistance = 12f * density
-                        },
-                    )
-                }
+        avatars.forEachIndexed { index, res ->
+            val f = transformFor(variant, index, avatars.size, t, elapsedMillis, radius, w, h)
+            if (f.alpha > 0.001f) {
+                SplashCoin(
+                    res = res,
+                    size = f.size,
+                    coin = variant.usesCoin,
+                    modifier = Modifier.graphicsLayer {
+                        translationX = f.translationX
+                        translationY = f.translationY
+                        scaleX = f.scale
+                        scaleY = f.scale
+                        alpha = f.alpha
+                        rotationZ = f.rotationZ
+                        rotationY = f.rotationY
+                        cameraDistance = 12f * density
+                    },
+                )
             }
         }
     }
@@ -136,7 +155,7 @@ internal fun SplashScene(
 /** 카드처럼 원판에 얹을 것인가, 그림만 쓸 것인가. 연출의 성격이 갈리는 자리다. */
 private val SplashVariant.usesCoin: Boolean
     get() = when (this) {
-        SplashVariant.RadialStepBurst, SplashVariant.ZoomThrough -> false
+        SplashVariant.RadialStepBurst, SplashVariant.ZoomThrough, SplashVariant.OrbitBloomBurst -> false
         else -> true
     }
 
@@ -197,13 +216,13 @@ private fun transformFor(
     return when (variant) {
         SplashVariant.RadialStepBurst -> radialStepBurst(index, elapsedMillis, radius)
         SplashVariant.CardFan -> cardFan(fromCenter, index, t, width)
-        SplashVariant.SpringDrop -> springDrop(fromCenter, index, t, height, width, count)
+        SplashVariant.OrbitBloom -> orbitBloom(index, count, t, radius)
+        SplashVariant.OrbitBloomBurst -> orbitBloomBurst(index, count, t, elapsedMillis, bloomRadius(radius, width))
         SplashVariant.StaggerRise -> staggerRise(fromCenter, index, t, height, width, count)
         SplashVariant.Orbit -> orbit(index, count, t, radius)
         SplashVariant.ZoomThrough -> zoomThrough(index, count, t)
         SplashVariant.CardFlip -> cardFlip(fromCenter, index, t, width, count)
         SplashVariant.Wave -> wave(fromCenter, index, t, width, count)
-        SplashVariant.CircularReveal -> CoinFrame(size = CoinSize) // 위 분기에서 따로 그린다
     }
 }
 
@@ -262,25 +281,6 @@ private fun cardFan(fromCenter: Float, index: Int, t: Float, width: Float): Coin
     )
 }
 
-// ── ④ 스프링 낙하 ─────────────────────────────────────────────────────────────
-private fun springDrop(fromCenter: Float, index: Int, t: Float, height: Float, width: Float, count: Int): CoinFrame {
-    val start = index * 0.09f
-    val p = ((t - start) / 0.42f).coerceIn(0f, 1f)
-    // 감쇠 진동: 목표에 도달한 뒤 두어 번 튕긴다.
-    val overshoot = if (p >= 1f) 0f else {
-        val decay = 1f - p
-        (sin(p * PI.toFloat() * 3f) * decay * decay * 0.22f)
-    }
-    val drop = (1f - easeInOut(p)) * -height * 0.55f
-    return CoinFrame(
-        size = CoinSize,
-        translationX = fromCenter * spacingFor(width, count),
-        translationY = drop + overshoot * height * 0.10f,
-        scale = 1f + overshoot,
-        alpha = splashEnvelope(t),
-    )
-}
-
 // ── ⑤ 순차 상승 페이드 ────────────────────────────────────────────────────────
 private fun staggerRise(fromCenter: Float, index: Int, t: Float, height: Float, width: Float, count: Int): CoinFrame {
     val start = index * 0.10f
@@ -294,19 +294,76 @@ private fun staggerRise(fromCenter: Float, index: Int, t: Float, height: Float, 
     )
 }
 
-// ── ⑥ 궤도 수렴 ───────────────────────────────────────────────────────────────
-private fun orbit(index: Int, count: Int, t: Float, radius: Float): CoinFrame {
-    val turns = 1.15f
-    val angle = (index.toFloat() / count) * 2f * PI.toFloat() + easeInOut(t) * turns * 2f * PI.toFloat()
-    val shrink = 1f - easeInOut(((t - 0.35f) / 0.5f).coerceIn(0f, 1f))
+// ── ⑥ 궤도 수렴 / ③ 궤도 확산 / ④ 궤도 확산 → 줌 소멸 ───────────────────────
+//
+// 셋이 **같은 기하**를 공유한다. `u`가 0이면 활짝 펼쳐진 고리, 1이면 가운데로 모인 상태다.
+// ⑥은 `u`를 0→1로(모임), ③·④는 1→0으로(피어남) 흘려보낸다.
+private const val OrbitTurns = 1.15f
+private val Tau = 2f * PI.toFloat()
+
+private fun orbitAt(index: Int, count: Int, u: Float, radius: Float): CoinFrame {
+    val angle = (index.toFloat() / count) * Tau + easeInOut(u) * OrbitTurns * Tau
+    val spread = 1f - easeInOut(((u - 0.35f) / 0.5f).coerceIn(0f, 1f))
     return CoinFrame(
         size = CoinSize,
-        translationX = cos(angle) * radius * shrink,
-        translationY = sin(angle) * radius * shrink,
-        scale = 0.72f + 0.28f * shrink,
-        alpha = splashEnvelope(t),
+        translationX = cos(angle) * radius * spread,
+        translationY = sin(angle) * radius * spread,
+        scale = 0.72f + 0.28f * spread,
     )
 }
+
+private fun orbit(index: Int, count: Int, t: Float, radius: Float): CoinFrame =
+    orbitAt(index, count, t, radius).copy(alpha = splashEnvelope(t))
+
+/**
+ * ③ — ⑥의 **1.5배 속도**로 거꾸로 돌린다. ⑥의 2.0초짜리 움직임이 [OrbitBloomAnimMillis] 안에
+ * 끝나고, 그 뒤로는 `u`가 0에 붙어 **마지막 프레임에서 멈춰 있는다.**
+ */
+private const val OrbitBloomAnimMillis = 1333   // = 2000 / 1.5
+
+private fun orbitBloom(index: Int, count: Int, t: Float, radius: Float): CoinFrame {
+    val played = (t * SplashVariant.OrbitBloom.durationMillis / OrbitBloomAnimMillis).coerceAtMost(1f)
+    return orbitAt(index, count, 1f - played, radius).copy(alpha = splashEnvelope(t))
+}
+
+/**
+ * ④ — 앞 [BloomHoldUntilMillis]까지는 ③ 그대로(피어나고 멈춤), 그 뒤로 **각자 제자리에서**
+ * ⑦처럼 한 장씩 커지며 사라진다.
+ *
+ * ⚠️ **⑦과 다른 것은 시작 위치 하나뿐**이므로 확대·소멸 곡선은 [zoomThrough]와 같은 모양으로
+ * 둔다. 여기서 곡선을 따로 손보면 *"⑦ 그대로"* 라는 전제가 조용히 깨진다.
+ */
+private const val BloomHoldUntilMillis = 1500
+private const val BurstSlotMillis = 400
+
+private fun orbitBloomBurst(index: Int, count: Int, t: Float, elapsedMillis: Int, radius: Float): CoinFrame {
+    val played = (elapsedMillis.toFloat() / OrbitBloomAnimMillis).coerceAtMost(1f)
+    val ring = orbitAt(index, count, 1f - played, radius).copy(size = BurstSize)
+    val burstStart = BloomHoldUntilMillis + index * BurstSlotMillis
+    if (elapsedMillis < burstStart) return ring.copy(alpha = splashEnvelope(t))
+    val p = ((elapsedMillis - burstStart).toFloat() / BurstSlotMillis).coerceIn(0f, 1f)
+    return ring.copy(
+        scale = ring.scale * (1f + p * p * BurstScaleGain),
+        alpha = if (p < BurstFadeStart) 1f else ((1f - (p - BurstFadeStart) / (1f - BurstFadeStart))).coerceIn(0f, 1f),
+    )
+}
+
+private val BurstSize = 132.dp
+
+/**
+ * ④의 고리는 ⑥보다 **넓어야 한다.** 기본 반지름은 96dp 원판을 전제로 잡힌 값인데 ④는 [BurstSize]
+ * 짜리 그림을 늘어놓으므로, 그대로 쓰면 다섯이 서로 심하게 겹쳐 고리로 읽히지 않는다.
+ *
+ * ⚠️ **넓히되 화면 밖으로 내보내지 말 것** — 그림 반쪽과 여백을 뺀 값으로 상한을 둔다.
+ * 그림 폭을 화면 폭의 비율로 어림하는 이유는 이 함수에 밀도가 없기 때문이고, 어림이어도
+ * **상한의 방향이 안전한 쪽**이라 문제가 되지 않는다.
+ */
+private fun bloomRadius(radius: Float, width: Float): Float {
+    val figure = width * 0.32f
+    return minOf(radius * 1.35f, width / 2f - figure / 2f - width * 0.03f).coerceAtLeast(radius)
+}
+private const val BurstScaleGain = 3.4f
+private const val BurstFadeStart = 0.55f
 
 // ── ⑦ 줌 스루 ─────────────────────────────────────────────────────────────────
 private fun zoomThrough(index: Int, count: Int, t: Float): CoinFrame {
@@ -362,37 +419,4 @@ private fun splashEnvelope(t: Float): Float = when {
     t < 0.06f -> t / 0.06f
     t > 0.90f -> 1f - (t - 0.90f) / 0.10f
     else -> 1f
-}
-
-// ── ③ 원형 리빌 ───────────────────────────────────────────────────────────────
-//
-// ⚠️ 다른 후보와 달리 **컨테이너를 잘라야** 하므로 변환 하나로 표현되지 않는다. 그래서 이
-// 후보만 자기 컴포저블을 갖는다.
-@Composable
-private fun CircularRevealScene(avatars: List<Int>, t: Float, width: Float) {
-    val grow = easeInOut((t / 0.55f).coerceIn(0f, 1f))
-    val diameterPx = width * 1.25f * grow
-    Box(
-        modifier = Modifier
-            .size(with(androidx.compose.ui.platform.LocalDensity.current) { diameterPx.toDp() })
-            .clip(CircleShape)
-            .background(AppLightColorScheme.surface)
-            .graphicsLayer { alpha = splashEnvelope(t) },
-        contentAlignment = Alignment.Center,
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            avatars.forEachIndexed { index, res ->
-                val fromCenter = index - (avatars.size - 1) / 2f
-                SplashCoin(
-                    res = res,
-                    size = CoinSize,
-                    coin = false,
-                    modifier = Modifier.graphicsLayer {
-                        translationX = fromCenter * spacingFor(width, avatars.size)
-                        alpha = easeInOut(((t - 0.25f) / 0.35f).coerceIn(0f, 1f))
-                    },
-                )
-            }
-        }
-    }
 }
