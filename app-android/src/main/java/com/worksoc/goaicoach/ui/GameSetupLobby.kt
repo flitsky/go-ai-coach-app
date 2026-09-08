@@ -43,6 +43,9 @@ import com.worksoc.goaicoach.presentation.GameUiEvent
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import kotlinx.coroutines.delay
+import com.worksoc.goaicoach.match.SeatController
+import com.worksoc.goaicoach.application.guide.GuideSurface
+import com.worksoc.goaicoach.application.guide.GuideSetupFacts
 
 /**
  * 1 Depth: 대국 설정 화면 (Game Lobby Screen / Match Setup)
@@ -67,6 +70,22 @@ internal fun GameSetupLobby(
     PremiumUpsellDialogHost(
         visible = showPremiumUpsellDialog,
         onDismiss = { showPremiumUpsellDialog = false },
+    )
+
+    // ④ 첫돌이가 "먼저 저와 한 판" 하고 권하는 자리(백로그 #128).
+    //
+    // ⚠️ **문구가 기력을 말하지 않는다** — `applyLandingSetup`이 `SelfRatedSkill`을 버려서 앱이
+    // 그것을 기억하지 않기 때문이다(2026-09-09 사용자 결정: 언급 생략). 대신 **지금 화면이 들고 있는
+    // 실제 값**에서 파생하므로, 랜딩을 건너뛴 사용자와 방금 설정을 바꾼 사용자에게도 참이다.
+    // ⚠️ `humanPlaysBlack`을 좌석에서 읽는다 — 접바둑 돌은 규칙상 흑이 놓으므로 좌석이 뒤집히면
+    //   "내가 접어 준다"가 된다(`LandingSetupPlan`의 KDoc이 같은 것을 설명한다).
+    GuideAnchor(
+        surface = GuideSurface.MatchSetup,
+        blocked = showPremiumUpsellDialog,
+        facts = GuideSetupFacts(
+            handicapCount = screenState.handicapCount,
+            humanPlaysBlack = screenState.playerSetup.black.controller == SeatController.Human,
+        ),
     )
 
     // 광고 시청 기반 활성화의 남은 시간을 "대국 시작하기" 버튼에 실시간으로 보여주기 위한

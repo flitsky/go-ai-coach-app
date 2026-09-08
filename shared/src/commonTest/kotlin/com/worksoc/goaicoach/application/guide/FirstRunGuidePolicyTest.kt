@@ -25,7 +25,7 @@ class FirstRunGuidePolicyTest {
     fun armingPlaysTheFirstUnseenStepOfThatSurface() {
         assertEquals(GuideStep.HomeStartMatch, autoPlayStep(GuideSurface.Home, armed, blocked = false))
         assertEquals(GuideStep.MatchSetup, autoPlayStep(GuideSurface.MatchSetup, armed, blocked = false))
-        assertEquals(GuideStep.InGameTools, autoPlayStep(GuideSurface.InGame, armed, blocked = false))
+        assertEquals(GuideStep.InGameMagnifier, autoPlayStep(GuideSurface.InGame, armed, blocked = false))
     }
 
     @Test
@@ -90,6 +90,45 @@ class FirstRunGuidePolicyTest {
         }
     }
 
+    /**
+     * ⚠️ **대국 화면이 한 표면에 단계 넷을 갖는 첫 사례다**(2026-09-09, 버튼별로 쪼갬).
+     * 사용자가 하나를 확인하면 **다음이 뜨는** 것이 그 요구였고, 그것은 곧 *"미시청 중 선언 순서상
+     * 첫째"* 다 — 이 케이스가 그 순서를 못박는다.
+     */
+    @Test
+    fun theInGameStepsAdvanceOneTapAtATimeInDeclarationOrder() {
+        val expected = listOf(
+            GuideStep.InGameMagnifier,
+            GuideStep.InGameBoardSize,
+            GuideStep.InGameEval,
+            GuideStep.InGameTopMoves,
+        )
+        var progress = armed
+        expected.forEach { step ->
+            assertEquals(
+                step,
+                autoPlayStep(GuideSurface.InGame, progress, blocked = false),
+                "확인할 때마다 다음 버튼 안내가 떠야 한다",
+            )
+            progress = progress.copy(seenSteps = progress.seenSteps + step.id)
+        }
+        assertNull(
+            autoPlayStep(GuideSurface.InGame, progress, blocked = false),
+            "넷을 다 본 뒤에는 대국 화면에서 아무것도 뜨지 않아야 한다",
+        )
+    }
+
+    /** 네 단계가 각자 **다른 버튼**을 가리키는지 — 같은 대상을 두 번 가리키면 하나는 헛수고다. */
+    @Test
+    fun eachInGameStepPointsAtItsOwnButton() {
+        val targets = GuideStep.entries
+            .filter { it.surface == GuideSurface.InGame }
+            .map { it.target }
+        assertEquals(4, targets.size)
+        assertEquals(targets.distinct().size, targets.size, "두 단계가 같은 버튼을 가리킨다")
+        assertTrue(targets.none { it == null }, "대국 화면 단계는 가리킬 버튼이 있어야 한다")
+    }
+
     /** 같은 표면에 단계가 둘 생기는 미래를 지금 시뮬레이션한다 — 순서가 권위를 갖는지 본다. */
     @Test
     fun theEarlierDeclarationWinsWhenOneSurfaceHasTwoSteps() {
@@ -115,7 +154,10 @@ class FirstRunGuidePolicyTest {
     @Test
     fun theStoredIdsAreFrozen() {
         assertEquals(
-            listOf("landing", "attendance_claim", "home_start_match", "match_setup", "in_game_tools"),
+            listOf(
+                "landing", "attendance_claim", "home_start_match", "match_setup",
+                "in_game_magnifier", "in_game_board_size", "in_game_eval", "in_game_top_moves",
+            ),
             GuideStep.entries.map { it.id },
         )
     }

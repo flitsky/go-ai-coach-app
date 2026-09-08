@@ -31,6 +31,7 @@ import com.worksoc.goaicoach.application.session.GameSessionTurnTimeState
 import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.presentation.GameUiEvent
 import com.worksoc.goaicoach.presentation.shouldCollapseMenuAfterEvent
+import com.worksoc.goaicoach.application.guide.GuideSurface
 
 @Composable
 internal fun GoCoachContent(
@@ -176,6 +177,45 @@ internal fun GoCoachContent(
             onEvent = onEvent,
         )
     }
+
+    // ⑤ 대국 화면 — 첫돌이가 **버튼마다 하나씩** 안내한다(백로그 #128, 사용자 확정 ⓒ: 첫 대국에
+    // 한 번만 / 2026-09-09 지시: 버튼별로 쪼개고 버튼 옆에서, 버튼에 동그라미).
+    //
+    // ⚠️ **이 호출이 `Column` 뒤에 있는 이유** — 실기에서 동그라미는 그려지는데 말풍선이 보이지
+    // 않았다. 이 화면의 형제들은 `MainActivity`의 `Box` 자식이라 **나중에 온 것이 위에 그려진다**:
+    // 앞에 두면 반상이 말풍선을 덮는다. `fillMaxSize` 오버레이가 레이아웃을 밀지 않는 것도
+    // 부모가 `Box`이기 때문이다(`Column`이었다면 판을 밀어냈을 것이다).
+    //
+    // ⚠️ **`blocked`가 이 앵커의 핵심이다.** 위 사슬의 팝업들은 **별도 윈도우**라 창 안 카드를
+    // 덮는다 — 덮인 채 "봤음"으로 기록되면 사용자 기준으로는 **0번** 보게 되고, 그것이 사용자
+    // 확정 ⓒ를 조용히 무효화한다. 그래서 여섯을 전부 센다.
+    // ⚠️ `isGameEnded`를 반드시 넣는다 — `GoCoachApp`의 **끝난 대국 복원** 경로가 그 상태로 들어오고,
+    //   그 자리에서 도구를 소개하는 것은 뜻이 없다. (`moves.isEmpty()`를 트리거로 쓰지 말 것 —
+    //   접바둑 첫 대국은 AI가 먼저 두므로 그 조건이 첫 프레임에 이미 거짓이다.)
+    // ⚠️ **엔진 멈춤 팝업은 이 목록이 볼 수 없다** — 그 상태는 `GamePlaySection` **안**에 있다.
+    //   설계 심사가 정직하게 신고한 사각지대이고, 그 팝업이 뜬 채 카드가 함께 뜨면 카드는 덮인다.
+    //   다만 카드는 **누를 때만** 기록하므로 소진되지는 않는다(그 비대칭이 `GuideCard`의 KDoc에 있다).
+    // ⚠️ 이 앵커는 `CompositionLocalProvider` **안**에 있어야 한다 — 밖에서 그리면
+    //   `LocalConsumableUiState`·`LocalUiStrings` 같은 것들이 조용히 기본값으로 잡힌다.
+    GuideAnchor(
+        surface = GuideSurface.InGame,
+        blocked = screenState.isGameEnded ||
+            benchmarkProgress != null ||
+            benchmarkResult != null ||
+            cacheOptimizationPrompt != null ||
+            finalJudgementToShow != null ||
+            isDisplayMenuExpanded,
+        toolLabels = GuideToolLabels(
+            // ⚠️ **판 위에 적힌 그대로 인용한다** — 실기에서 처음에 어긋났다: `magnifierWindowSizeLabel`
+            // ("돋보기 창 크기")은 **설정 화면**의 라벨이고 판 위 토글은 `착수 돋보기`였다.
+            // ⚠️ 바둑판 쪽은 토글 라벨(`바둑판 최대`/`바둑판 여백`)이 **상태에 따라 바뀌므로**
+            //   인용하지 않고 **주체 이름**만 쓴다 — 여백 상태로 들어온 사용자에게도 참이어야 한다.
+            magnifier = playMagnifierLabelFor(strings.language),
+            boardSubject = boardSizeSubjectFor(strings.language),
+            eval = strings.eval,
+            topMoves = strings.topMovesAction,
+        ),
+    )
 }
 
 /**

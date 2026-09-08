@@ -398,6 +398,17 @@ internal data class UiStrings(
      * 라 일본어 자리에 영어를 박아도 못 잡으므로, `UiStringsTest`가 네 언어의 값을 직접 못박는다.
      */
     val localOnlyDataNoticePaidRestoreLine: String,
+    /**
+     * 첫돌이 가이드 카드(④⑤)의 두 동작(백로그 #128).
+     *
+     * ⚠️ **두 동작의 사정거리가 다르다** — `guideAckAction`은 **그 단계만** 닫고,
+     * `guideStopAction`은 **사슬 전체**를 끈다(사용자 확정 1번의 "닫을 수 있어야 한다").
+     * 화면마다 다른 낱말을 쓰면 사용자가 무엇을 껐는지 알 수 없으므로 **네 자리가 같은 라벨**을 쓴다.
+     * · ⚠️ 여기 있는 이유: **String 필드**라야 `UiStringsTest`의 리플렉션 그물이 번역 누락을 잡는다.
+     *   단계 본문은 함수로 나오므로 그 그물의 사각지대이고, 그쪽은 `UiStringsGuideTest`가 맡는다.
+     */
+    val guideAckAction: String,
+    val guideStopAction: String,
     /** 돋보기 창 크기 선택 줄의 라벨(백로그 #85). */
     val magnifierWindowSizeLabel: String,
     /** 돋보기 확대 배율 선택 줄의 라벨(백로그 #85). */

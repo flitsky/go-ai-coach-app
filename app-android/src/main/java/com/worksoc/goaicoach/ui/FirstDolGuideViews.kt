@@ -9,8 +9,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -152,4 +154,42 @@ internal fun GuideLine(text: String, modifier: Modifier = Modifier) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
+}
+
+/**
+ * ④⑤가 쓰는 **누를 수 있는** 카드. 창 안 다이얼로그다.
+ *
+ * ## ⚠️ 말풍선과 달리 이쪽은 기록 시점이 "사용자가 확인한 순간"이다
+ *
+ * 이 카드는 벤치마크·최종판정·엔진멈춤 팝업에 **덮일 수 있다**(그것들은 별도 윈도우다). 보여준
+ * 순간 기록하면 **덮인 채 소진**돼 사용자 기준으로는 0번 보게 된다 — 그래서 두 동작 중 하나를
+ * 누를 때만 기록한다. ③ 말풍선은 창 안 비모달이라 덮일 수 없어 시간 기준을 쓴다(그 비대칭이 의도다).
+ *
+ * ## 두 동작의 사정거리가 다르다
+ * · [onAck] *"알겠어요"* — **이 단계만** 닫는다.
+ * · [onStop] *"그만 보기"* — **사슬 전체**를 끈다(사용자 확정 1번의 단서).
+ */
+@Composable
+internal fun GuideCard(
+    text: String,
+    onAck: () -> Unit,
+    onStop: () -> Unit,
+) {
+    val strings = LocalUiStrings.current
+    AlertDialog(
+        // ⚠️ 바깥 탭·뒤로 가기는 *"알겠어요"* 와 같다 — 닫는 방법에 따라 결과가 달라지면 사용자가
+        // 무엇을 껐는지 알 수 없다(출석 팝업이 같은 이유로 모든 갈래를 한 함수로 모았다).
+        onDismissRequest = onAck,
+        title = {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                FirstDolAvatar(size = 36.dp)
+            }
+        },
+        text = { Text(text = text, fontSize = 14.sp) },
+        confirmButton = { TextButton(onClick = onAck) { Text(strings.guideAckAction) } },
+        dismissButton = { TextButton(onClick = onStop) { Text(strings.guideStopAction) } },
+    )
 }

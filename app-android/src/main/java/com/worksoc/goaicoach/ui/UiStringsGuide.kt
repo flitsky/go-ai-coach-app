@@ -84,34 +84,43 @@ private fun matchSetupBody(language: UiLanguage, facts: GuideSetupFacts): String
 }
 
 /**
- * ⑤ 대국 화면의 도구 넷.
+ * ⑤ 대국 화면 — **버튼마다 한 마디**(2026-09-09 사용자 지시로 한 장에서 넷으로 쪼갰다).
  *
- * 기능 이름을 **호출부가 화면에서 쓰는 실제 라벨로** 넘겨준다 — 가이드가 다른 낱말로 부르면
- * 사용자가 화면에서 그것을 찾지 못한다.
+ * 각 문구는 **그 버튼 옆에서** 뜨고 동그라미가 그 버튼을 가리키므로, 문구가 스스로 *"어느 버튼
+ * 이야기인가"* 를 설명할 필요가 없다 — 짧게 **무엇을 해 주는지**만 말한다.
+ *
+ * ⚠️ 라벨은 **호출부가 화면에서 읽어 넘긴다.** 실기에서 처음에 어긋났다 — 설정 화면 라벨
+ * (`돋보기 창 크기`)을 인용했는데 판 위 토글은 `착수 돋보기`였다.
+ *
+ * ⚠️ **게이트를 정직하게 말하는 것은 뒤의 둘뿐이다**(사용자 확정 ⓓ). 돋보기·바둑판 크기는 그냥
+ * 켜지므로 조건을 붙이면 없는 문턱을 만드는 셈이 된다 — 형세 보기·추천 수에만 여는 방법을 적는다.
  */
-private fun inGameToolsBody(
-    language: UiLanguage,
-    magnifier: String,
-    boardMax: String,
-    eval: String,
-    topMoves: String,
-): String = when (language) {
-    UiLanguage.Korean ->
-        "돌을 놓을 때 «$magnifier»가 손끝을 확대해 주고, «$boardMax»로 반상을 화면 꽉 채워 볼 수 있어요.\n" +
-            "«$eval»는 지금 누구 집인지, «$topMoves»는 제가 추천하는 자리를 보여 줘요 — " +
-            "출석해서 받은 1회권이나 짧은 광고 한 번으로 여실 수 있어요."
-    UiLanguage.English ->
-        "While you place a stone, «$magnifier» zooms in under your finger, and «$boardMax» fills the screen with the board.\n" +
-            "«$eval» shows whose territory is whose and «$topMoves» shows where I'd play — " +
-            "open either with a ticket from a daily check-in or one short ad."
-    UiLanguage.Japanese ->
-        "石を置くとき「$magnifier」が指先を拡大し、「$boardMax」で盤面を画面いっぱいに見られます。\n" +
-            "「$eval」は今どちらの地かを、「$topMoves」は私のおすすめの場所を見せます — " +
-            "出席でもらった1回券か、短い広告1本で開けられます。"
-    UiLanguage.ChineseSimplified ->
-        "落子时「$magnifier」会放大指尖处，用「$boardMax」可让棋盘铺满屏幕。\n" +
-            "「$eval」显示当前双方的地，「$topMoves」显示我推荐的落点 — " +
-            "用签到获得的单次券或看一段短广告即可开启。"
+private fun inGameMagnifierBody(language: UiLanguage, label: String): String = when (language) {
+    UiLanguage.Korean -> "«$label»를 켜면 돌을 놓을 때 손끝이 확대돼요. 촘촘한 곳에서 잘못 짚는 걸 막아 줘요."
+    UiLanguage.English -> "Turn on «$label» and the board zooms in under your finger as you place a stone — it saves you from misplacing in a crowded corner."
+    UiLanguage.Japanese -> "「$label」をオンにすると、石を置くとき指先が拡大されます。混み合った所での置き間違いを防げます。"
+    UiLanguage.ChineseSimplified -> "开启「$label」后，落子时指尖处会放大，可避免在密集处下错位置。"
+}
+
+private fun inGameBoardSizeBody(language: UiLanguage, label: String): String = when (language) {
+    UiLanguage.Korean -> "«$label»를 최대로 하면 반상이 화면을 꽉 채워요. 여백이 편하시면 다시 눌러 되돌릴 수 있어요."
+    UiLanguage.English -> "Set «$label» to full and the board fills the screen. Tap again if you prefer some margin."
+    UiLanguage.Japanese -> "「$label」を最大にすると盤面が画面いっぱいになります。余白のほうが見やすければもう一度押して戻せます。"
+    UiLanguage.ChineseSimplified -> "将「$label」设为最大可让棋盘铺满屏幕。若更习惯留白，再点一次即可还原。"
+}
+
+private fun inGameEvalBody(language: UiLanguage, label: String): String = when (language) {
+    UiLanguage.Korean -> "«$label»는 지금 누구 집인지 반상에 색으로 보여 줘요. 출석해서 받은 1회권이나 짧은 광고 한 번으로 여실 수 있어요."
+    UiLanguage.English -> "«$label» shades the board to show whose territory is whose. Open it with a ticket from a daily check-in, or one short ad."
+    UiLanguage.Japanese -> "「$label」は今どちらの地かを盤上に色で見せます。出席でもらった1回券か、短い広告1本で開けられます。"
+    UiLanguage.ChineseSimplified -> "「$label」会在棋盘上用颜色显示当前双方的地。用签到获得的单次券或看一段短广告即可开启。"
+}
+
+private fun inGameTopMovesBody(language: UiLanguage, label: String): String = when (language) {
+    UiLanguage.Korean -> "«$label»는 제가 좋다고 보는 자리 다섯 곳을 반상에 표시해요. 이것도 1회권이나 광고 한 번으로 열려요."
+    UiLanguage.English -> "«$label» marks the five spots I'd consider on the board. Same as Eval — a ticket or one short ad opens it."
+    UiLanguage.Japanese -> "「$label」は私が good と見る5か所を盤上に示します。こちらも1回券か広告1本で開きます。"
+    UiLanguage.ChineseSimplified -> "「$label」会在棋盘上标出我认为不错的五个点。同样用单次券或一段短广告即可开启。"
 }
 
 /**
@@ -131,9 +140,11 @@ internal fun guideBodyFor(
     GuideStep.AttendanceClaim -> AttendanceClaimBody.getValue(language)
     GuideStep.HomeStartMatch -> HomeStartMatchBody.getValue(language)
     GuideStep.MatchSetup -> matchSetupBody(language, facts ?: GuideSetupFacts(0, humanPlaysBlack = true))
-    GuideStep.InGameTools -> toolLabels?.let {
-        inGameToolsBody(language, it.magnifier, it.boardMax, it.eval, it.topMoves)
-    } ?: ""
+    // ⑤ 넷은 각자 **자기 버튼의 라벨 하나만** 인용한다.
+    GuideStep.InGameMagnifier -> inGameMagnifierBody(language, toolLabels?.magnifier ?: "")
+    GuideStep.InGameBoardSize -> inGameBoardSizeBody(language, toolLabels?.boardSubject ?: "")
+    GuideStep.InGameEval -> inGameEvalBody(language, toolLabels?.eval ?: "")
+    GuideStep.InGameTopMoves -> inGameTopMovesBody(language, toolLabels?.topMoves ?: "")
 }
 
 /**
@@ -155,10 +166,17 @@ private val MyPageGreeting: Map<UiLanguage, String> = mapOf(
 
 internal fun guideMyPageGreetingFor(language: UiLanguage): String = MyPageGreeting.getValue(language)
 
-/** ⑤가 인용할 **화면에 적힌 그대로의** 라벨 넷. */
+/**
+ * ⑤가 인용할 **화면에 적힌 그대로의** 라벨 넷.
+ *
+ * ⚠️ **[boardSubject]는 토글의 현재 라벨이 아니라 "무엇의" 설정인가다**(`boardSizeSubjectFor`).
+ * 판 위 토글은 상태에 따라 `바둑판 최대`/`바둑판 여백`으로 **글자가 바뀌므로** 그것을 인용하면
+ * 사용자가 여백 상태로 들어온 순간 문구가 화면과 어긋난다 — 실기에서 처음에 그렇게 어긋났다
+ * (`돋보기 창 크기`는 설정 화면 라벨이라 판 위 `착수 돋보기`와 다른 이름이었다).
+ */
 internal data class GuideToolLabels(
     val magnifier: String,
-    val boardMax: String,
+    val boardSubject: String,
     val eval: String,
     val topMoves: String,
 )

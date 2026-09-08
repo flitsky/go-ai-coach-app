@@ -31,7 +31,11 @@ enum class GuideSurface {
  * ⚠️ [id]는 **저장 포맷**이다(`seen_steps` 집합에 이 문자열이 들어간다). 함정 1번과 같은 성질이라
  * **상수 이름이 아니라 이 문자열을 바꾸면** 이미 본 사용자에게 가이드가 다시 뜬다. 바꾸지 말 것.
  */
-enum class GuideStep(val id: String, val surface: GuideSurface) {
+enum class GuideStep(
+    val id: String,
+    val surface: GuideSurface,
+    val target: GuideTarget? = null,
+) {
     /** ① 랜딩 상단 좌우 첫돌이 — 문구 없는 **정적 장식**이라 판정에 참여하지 않는다(아래 주석). */
     Landing("landing", GuideSurface.Landing),
 
@@ -44,9 +48,30 @@ enum class GuideStep(val id: String, val surface: GuideSurface) {
     /** ④ 대국 설정 화면. */
     MatchSetup("match_setup", GuideSurface.MatchSetup),
 
-    /** ⑤ 대국 화면의 도구 넷. */
-    InGameTools("in_game_tools", GuideSurface.InGame),
+    // ⑤ 대국 화면 — **버튼마다 하나씩** 넷으로 쪼갰다(2026-09-09 사용자 지시).
+    //
+    // ⚠️ 처음에는 한 장에 넷을 몰아 설명했는데(`in_game_tools`), 실기에서 두 가지가 드러났다:
+    // ⓐ 카드가 **판을 덮는다** — 접바둑 첫 대국은 AI가 먼저 두므로 그 순간을 가린다.
+    // ⓑ 넷을 한꺼번에 읽어야 해서 **어느 글자가 어느 버튼인지** 눈으로 잇기 어렵다.
+    // 그래서 각 단계가 **자기 버튼 옆에서** 말하고, 그 버튼에 동그라미를 쳐서 가리킨다.
+    //
+    // ⚠️ **이 넷이 한 표면(InGame)에 사는 첫 사례다.** 판정이 *"선언 순서상 첫 미시청 단계"* 를
+    // 고르므로 이 순서가 곧 재생 순서다 — `FirstRunGuidePolicyTest`가 그 성질을 이미 못박아 두었고,
+    // 그것을 미리 세워 둔 덕분에 이 쪼개기가 판정식 수정 없이 끝났다.
+    InGameMagnifier("in_game_magnifier", GuideSurface.InGame, GuideTarget.Magnifier),
+    InGameBoardSize("in_game_board_size", GuideSurface.InGame, GuideTarget.BoardSize),
+    InGameEval("in_game_eval", GuideSurface.InGame, GuideTarget.Eval),
+    InGameTopMoves("in_game_top_moves", GuideSurface.InGame, GuideTarget.TopMoves),
 }
+
+/**
+ * 코치마크가 **동그라미를 칠 대상**. 화면이 자기 컨트롤의 자리를 이 키로 알려 준다.
+ *
+ * ⚠️ 좌표를 화면 밖으로 흘리는 것은 이 저장소에 선례가 없다(`onGloballyPositioned` 사용처 0건).
+ * ③ 말풍선에서는 그래서 좌표 없이 푸는 쪽을 택했는데, *"버튼을 가리지 않게 그 옆에서, 버튼에
+ * 동그라미"* 라는 요구는 **대상의 자리를 알아야만** 성립한다 — 그 대가를 여기서 치른다.
+ */
+enum class GuideTarget { Magnifier, BoardSize, Eval, TopMoves }
 
 /**
  * 저장된 진행도. [GuideProgressStore]가 이 값을 싣고 내린다.

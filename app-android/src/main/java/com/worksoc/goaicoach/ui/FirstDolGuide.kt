@@ -115,10 +115,28 @@ internal fun GuideAnchor(
     if (step == null) return
     val strings = LocalUiStrings.current
 
-    LaunchedEffect(step) {
-        delay(ShownLongEnoughMillis)
+    fun ack() {
         store.markSeen(step)
+        latched = null
         progress = store.load()
+    }
+
+    fun stopWholeChain() {
+        store.dismiss()
+        latched = null
+        progress = store.load()
+    }
+
+    // ⚠️ **기록 시점이 표현형마다 다르다 — 그 비대칭이 의도다.**
+    // 카드(④⑤)는 별도 윈도우 팝업에 **덮일 수 있어** 시간으로 기록하면 덮인 채 소진된다.
+    // 말풍선·한 줄은 창 안 비모달이라 덮일 수 없으므로 시간이 안전하고, **누를 것이 없어** 시간
+    // 말고는 기록할 계기가 없다(경계 밖에 그려져 히트테스트를 못 받는다).
+    if (!step.isCard()) {
+        LaunchedEffect(step) {
+            delay(ShownLongEnoughMillis)
+            store.markSeen(step)
+            progress = store.load()
+        }
     }
 
     val body = guideBodyFor(strings.language, step, facts, toolLabels)
@@ -127,7 +145,28 @@ internal fun GuideAnchor(
         GuideStep.Landing -> Unit
         GuideStep.AttendanceClaim -> GuideLine(text = body, modifier = modifier)
         GuideStep.HomeStartMatch -> ZeroSizeOverlay(modifier) { GuideBubble(text = body) }
-        // ④⑤는 다음 단계에서 카드로 붙는다.
-        GuideStep.MatchSetup, GuideStep.InGameTools -> Unit
+        GuideStep.MatchSetup -> GuideCard(text = body, onAck = ::ack, onStop = ::stopWholeChain)
+        // ⑤ 넷은 **자기 버튼 옆에서** 말하고 그 버튼에 동그라미를 친다(2026-09-09 사용자 지시).
+        // `ack()`가 기록하면 판정이 곧바로 **다음 버튼**을 고른다 — 누를 때마다 다음이 뜨는 것이
+        // 요구였고, 그것이 `GuideStep` 선언 순서로 이미 표현돼 있다(정책 테스트가 못박는다).
+        GuideStep.InGameMagnifier, GuideStep.InGameBoardSize,
+        GuideStep.InGameEval, GuideStep.InGameTopMoves,
+        -> step.target?.let { target ->
+            GuideCoachMark(target = target, text = body, onNext = ::ack, onStop = ::stopWholeChain)
+        }
     }
+}
+
+/**
+ * 카드로 그려지는 단계인가. ⚠️ **`when`을 exhaustive로 유지할 것** — 단계를 더하면서 여기를
+ * 빠뜨리면 새 단계가 시간 기준으로 기록돼 **덮인 채 소진**될 수 있다.
+ */
+private fun GuideStep.isCard(): Boolean = when (this) {
+    // ⑤ 코치마크도 **누를 때만** 기록한다 — 사용자가 확인해야 다음으로 넘어가는 구조이므로
+    // 시간으로 기록하면 넷이 순식간에 소진된다.
+    GuideStep.MatchSetup,
+    GuideStep.InGameMagnifier, GuideStep.InGameBoardSize,
+    GuideStep.InGameEval, GuideStep.InGameTopMoves,
+    -> true
+    GuideStep.Landing, GuideStep.AttendanceClaim, GuideStep.HomeStartMatch -> false
 }

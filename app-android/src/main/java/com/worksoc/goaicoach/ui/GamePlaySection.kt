@@ -55,6 +55,7 @@ import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.StoneColor
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
+import com.worksoc.goaicoach.application.guide.GuideTarget
 
 private const val TurnTimerTickIntervalMillis = 200L
 
@@ -529,7 +530,7 @@ private fun GameActionButtons(
                         remaining = consumables.countOf(ConsumableCatalog.EvalOnce),
                     ),
                     onEvent = { event -> featureGated(evalAccess, FeatureId.Eval, turningOn = !evalAction.isFilled) { onEvent(event) } },
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f).guideTarget(GuideTarget.Eval),
                     premiumLocked = evalAccess !is FeatureAccess.Allowed && !tapIsFree(FeatureId.Eval),
                 )
             }
@@ -546,7 +547,7 @@ private fun GameActionButtons(
                         remaining = consumables.countOf(ConsumableCatalog.TopMovesOnce),
                     ),
                     onEvent = { event -> featureGated(topMovesAccess, FeatureId.TopMoves, turningOn = !topMovesAction.isFilled) { onEvent(event) } },
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f).guideTarget(GuideTarget.TopMoves),
                     premiumLocked = topMovesAccess !is FeatureAccess.Allowed && !tapIsFree(FeatureId.TopMoves),
                 )
             }
@@ -676,6 +677,8 @@ private fun BoardTopControls(
             spokenState = playMagnifierStateFor(strings.language, isMagnifierEnabled),
             active = isMagnifierEnabled,
             onClick = onToggleMagnifier,
+            // 첫돌이 가이드(#128 ⑤)가 이 버튼에 동그라미를 칠 수 있게 자리만 알려 준다.
+            modifier = Modifier.guideTarget(GuideTarget.Magnifier),
         )
         BoardTopToggle(
             label = boardSizeToggleLabelFor(strings.language, isMaxSize),
@@ -684,6 +687,7 @@ private fun BoardTopControls(
             spokenState = boardSizeToggleLabelFor(strings.language, isMaxSize),
             active = isMaxSize,
             onClick = onToggleBoardSize,
+            modifier = Modifier.guideTarget(GuideTarget.BoardSize),
         )
     }
 }
@@ -707,9 +711,10 @@ private fun BoardTopToggle(
     spokenState: String,
     active: Boolean,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Surface(
-        modifier = Modifier
+        modifier = modifier
             .clickable(onClick = onClick)
             .semantics {
                 // 이 파일·`GameActionButtons.kt`의 다른 토글들과 같은 관용구다.
