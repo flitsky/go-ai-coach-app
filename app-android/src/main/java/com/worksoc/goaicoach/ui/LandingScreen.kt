@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.preferences.SelfRatedSkill
 import com.worksoc.goaicoach.application.preferences.applyLandingSetup
 import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.persistence.GuideProgressStore
 import com.worksoc.goaicoach.persistence.UserPreferencesStore
 
 /**
@@ -72,6 +73,12 @@ internal fun LandingGate(
     val context = LocalContext.current
     val store = remember(context) { UserPreferencesStore(context) }
     var completed by remember { mutableStateOf(store.load().hasSeenOnboarding) }
+    // ⚠️ **첫돌이 가이드가 무장되는 자리는 여기 두 람다뿐이다**(백로그 #128). *"랜딩이 보여질 때"* 가
+    // 아니라 **끝냈을 때**여야 한다 — 보여질 때 켜면 답하기 전에 종료한 사용자에게 "①은 봤음"이 남고,
+    // 무엇보다 **기존 사용자**(이미 랜딩을 지난 사람)에게는 이 두 람다가 다시 돌지 않으므로
+    // 자동 재생이 아예 무장되지 않는다 — 그 성질이 공짜로 얻어지는 것이 이 자리를 고른 이유다.
+    // ⚠️ **두 갈래 모두**에 붙인다. '나중에 할게요'로 건너뛴 사용자도 첫 실행이다.
+    val guideStore = remember(context) { GuideProgressStore(context) }
 
     if (completed) {
         content()
@@ -82,12 +89,14 @@ internal fun LandingGate(
         onLanguageChange = onLanguageChange,
         onComplete = { skill, ruleset ->
             store.save(applyLandingSetup(store.load(), skill, ruleset))
+            guideStore.arm()
             completed = true
         },
         // 건너뛰면 설정은 그대로 두고 "봤다"는 사실만 남긴다 — 기존 사용자가 이미 맞춰 둔
         // 값이 덮어써지지 않게 하는 것이 이 갈래의 목적이다(2026-08-31 사용자 확정).
         onSkip = {
             store.save(store.load().copy(hasSeenOnboarding = true))
+            guideStore.arm()
             completed = true
         },
     )
@@ -121,18 +130,38 @@ internal fun LandingScreen(
         }
 
         Spacer(Modifier.height(24.dp))
-        Text(
-            text = landingTitleFor(selectedLanguage),
-            style = MaterialTheme.typography.headlineSmall,
-            textAlign = TextAlign.Center,
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            text = landingSubtitleFor(selectedLanguage),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
+        // 첫돌이가 **양옆에서 인사하는** 자리(백로그 #128 ①). 문구도 타이머도 없는 **정적 장식**이다 —
+        // ⚠️ 여기에 말풍선이나 지연을 넣으면 그 카운트가 `AppSplash` 아래에서 돌기 시작하는데,
+        // 스플래시의 끝을 밖에서 알 방법이 없다(#125). 기동 경로에 아무것도 더하지 않는다.
+        // ⚠️ 언어 칩 Row(위)는 건드리지 않았다 — 그 자리·그 순서에 사유가 이 파일 머리말에 있다.
+        // ⚠️ 아바타 둘이 제목의 가용 폭을 먹는다(360dp에서 320 → 232dp). 그래서 40dp이고,
+        //   제목이 한 줄 더 흐르는 것은 감수한 것이다 — 이 화면은 `verticalScroll`이고 가중치 자식이
+        //   없어 높이가 늘어도 잘릴 데가 없다(홈의 #28급 위험이 여기엔 없다).
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            FirstDolAvatar(size = 40.dp)
+            Column(
+                modifier = Modifier.weight(1f),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    text = landingTitleFor(selectedLanguage),
+                    style = MaterialTheme.typography.headlineSmall,
+                    textAlign = TextAlign.Center,
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = landingSubtitleFor(selectedLanguage),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
+            }
+            FirstDolAvatar(size = 40.dp, mirrored = true)
+        }
 
         Spacer(Modifier.height(32.dp))
         LandingQuestion(text = landingSkillQuestionFor(selectedLanguage))

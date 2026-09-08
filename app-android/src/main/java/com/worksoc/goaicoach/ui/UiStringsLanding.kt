@@ -1,6 +1,5 @@
 package com.worksoc.goaicoach.ui
 
-import com.worksoc.goaicoach.application.botcharacter.BotCharacterId
 import com.worksoc.goaicoach.application.preferences.SelfRatedSkill
 import com.worksoc.goaicoach.application.preferences.landingSetupPlan
 
@@ -119,7 +118,7 @@ internal fun landingSkillLabelFor(language: UiLanguage, skill: SelfRatedSkill): 
  */
 internal fun landingSkillResultFor(language: UiLanguage, skill: SelfRatedSkill): String {
     val plan = landingSetupPlan(skill)
-    val opponent = botCharacterNameFor(language, firstTierCharacterId)
+    val opponent = botCharacterNameFor(language, FirstDolCharacterId)
     val stones = plan.handicapCount
     return when (language) {
         // ⚠️ 이름 뒤에 조사를 붙이지 않는다 — "첫돌이와/를"처럼 붙여 쓰면 받침 있는 이름으로
@@ -147,5 +146,3 @@ internal fun landingSkillResultFor(language: UiLanguage, skill: SelfRatedSkill):
     }
 }
 
-/** 랜딩이 붙여 주는 상대. 카탈로그의 1단계 id와 같아야 한다(`LandingCopyTest`가 확인한다). */
-private val firstTierCharacterId = BotCharacterId("fast_beginner_1")
