@@ -152,13 +152,48 @@ internal fun FirstDolGuideReplayDialog(onClose: () -> Unit) {
                         GuideStep.entries
                             .filter { it.surface == GuideSurface.InGame }
                             .forEach { step ->
-                                ReplayLine(guideBodyFor(strings.language, step, toolLabels = toolLabels))
-                                ReplayControlSample(step)
+                                ReplayControlCard(
+                                    step = step,
+                                    text = guideBodyFor(strings.language, step, toolLabels = toolLabels),
+                                )
                             }
                     }
                 }
             }
         }
+    }
+}
+
+/**
+ * 한 단계를 **박스 하나**에 담는다 — 첫 줄에 `첫돌이 + 그 버튼`, 그 아래 설명(2026-09-09 사용자 지시).
+ *
+ * ## ⚠️ 왜 이 모양인가 — 버튼이 설명 사이에 끼면 위아래가 헷갈린다
+ *
+ * 처음에는 설명 박스와 버튼을 **형제로** 늘어놓았다(`ReplayLine` 다음에 컨트롤). 그러면 버튼이
+ * 위 설명의 것인지 아래 설명의 것인지 알 수 없다 — 사용자가 캡처를 보고 지적한 지점이다.
+ * 박스가 경계를 그어 주고, **첫 줄이 "무엇에 대한 설명인가"** 를 먼저 말하는 순서가 된다.
+ */
+@Composable
+private fun ReplayControlCard(step: GuideStep, text: String) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            FirstDolAvatar(size = 26.dp, seamColor = MaterialTheme.colorScheme.surfaceVariant)
+            ReplayControlSample(step)
+        }
+        Text(
+            text = text,
+            fontSize = 13.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
