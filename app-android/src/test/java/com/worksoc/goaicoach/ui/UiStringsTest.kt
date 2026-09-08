@@ -155,6 +155,47 @@ class UiStringsTest {
     }
 
     /**
+     * ⚠️ **이 문구는 플래그가 켜질 때까지 아무도 보지 않는다**(#129) — `MyPageScreen`이
+     * `FeatureFlags.isBotCharacterPurchaseEnabled` 뒤에 감춰 두기 때문이다. 위의 리플렉션 그물은
+     * *"한글만 아니면 통과"* 라 **일본어 자리에 영어를 박아도 잡지 못하고**, 화면에 안 나오니
+     * 사람 눈에도 안 걸린다. 그래서 네 언어의 값을 직접 못박는다.
+     *
+     * 고정하는 것 셋:
+     * · **`Google Play`** — 스토어 이름을 네 언어가 다 말해야 한다. 사용자 원문은 *"앱스토어"* 였는데
+     *   이 앱의 결제는 Play 하나뿐이고 Apple 경로는 코드에 없다(`AndroidBillingClient`만 존재).
+     * · **동사가 "확인"** 계열일 것 — 구매를 되돌리는 것이 아니라 결제 내역을 **조회**하는 것이다.
+     *   ⚠️ #26이 구독으로 가면 누군가 이 동사를 *"복구"* 로 되돌리려 할 텐데, 구독은 만료·강등이
+     *   있어 그 낱말이 거짓이 된다. 이 단언이 그 되돌림을 잡는다.
+     * · 한국어에 **`앱스토어`가 없을 것** — Apple 스토어를 가리키게 읽힌다.
+     */
+    @Test
+    fun thePaidRestoreLineNamesGooglePlayAndPromisesOnlyALookup() {
+        val expectedVerb = mapOf(
+            UiLanguage.Korean to "확인",
+            UiLanguage.English to "checks",
+            UiLanguage.Japanese to "確認",
+            UiLanguage.ChineseSimplified to "确认",
+        )
+        UiLanguage.entries.forEach { language ->
+            val line = UiStrings.forLanguage(language).localOnlyDataNoticePaidRestoreLine
+            assertTrue(
+                "${language.name}의 유료 복원 문구가 `Google Play`를 말하지 않는다 — 스토어 이름은 " +
+                    "네 언어가 모두 말해야 한다(#129): \"$line\"",
+                line.contains("Google Play"),
+            )
+            assertTrue(
+                "${language.name}의 유료 복원 문구에 확인 동사(${expectedVerb.getValue(language)})가 없다 — " +
+                    "이 문장이 약속할 수 있는 것은 결제 내역 **조회**이고 '복구'가 아니다(#129): \"$line\"",
+                line.contains(expectedVerb.getValue(language)),
+            )
+        }
+        assertTrue(
+            "한국어 문구가 '앱스토어'라고 적고 있다 — 이 앱의 결제는 Google Play 하나뿐이다(#129).",
+            !UiStringsKorean.localOnlyDataNoticePaidRestoreLine.contains("앱스토어"),
+        )
+    }
+
+    /**
      * `UiStrings`의 String 필드 중 한글이 섞인 것을 (필드명 to 값)으로 돌려준다.
      *
      * ⚠️ `isAccessible = true`가 없으면 안 된다 — 코틀린은 생성자 프로퍼티의 백킹 필드를
