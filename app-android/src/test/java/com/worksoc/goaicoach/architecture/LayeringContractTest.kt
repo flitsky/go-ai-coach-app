@@ -1759,6 +1759,11 @@ class LayeringContractTest {
             "UserPreferencesStore",
             "UiLanguageStore",
             "DeviceIdentityStore",
+            // 가이드 기록은 **권한이 아니라 취향**이다(백로그 #128) — 테스트 기간에 안내를 본 사람에게
+            // 정식 출시에서 그것을 다시 보여줄 이유가 없다. ⚠️ 이 한 줄이 *"안 했다"* 를
+            // *"안 하기로 했다"* 로 승격시킨다: 코디네이터에 이름만 넣어도 이 단언과 위의
+            // `clear()` 개수 단언(넷 고정)이 **함께** 빨개진다.
+            "GuideProgressStore",
         ).forEach { store ->
             assertFalse(
                 "ReleaseResetCoordinator must NOT touch $store — user content, settings and the " +

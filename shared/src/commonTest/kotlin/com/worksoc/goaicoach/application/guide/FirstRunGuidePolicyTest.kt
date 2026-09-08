@@ -1,0 +1,138 @@
+package com.worksoc.goaicoach.application.guide
+
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+
+/**
+ * [autoPlayStep]의 경계를 전부 센다(백로그 #128).
+ *
+ * ⚠️ **이 판정이 틀리면 화면을 보고 있어야만 알아챈다** — 가이드가 조용히 소진되거나 조용히
+ * 영원히 뜬다. 그것이 판정을 `shared`로 뺀 이유이고, 이 파일이 그 대가를 받는 자리다.
+ */
+class FirstRunGuidePolicyTest {
+
+    private val armed = GuideProgress(armed = true)
+
+    @Test
+    fun nothingPlaysBeforeLandingArmsTheChain() {
+        // 기존 사용자가 여기 해당한다 — 랜딩을 이미 지났으므로 armed가 켜질 기회가 없었다.
+        assertNull(autoPlayStep(GuideSurface.Home, GuideProgress(), blocked = false))
+    }
+
+    @Test
+    fun armingPlaysTheFirstUnseenStepOfThatSurface() {
+        assertEquals(GuideStep.HomeStartMatch, autoPlayStep(GuideSurface.Home, armed, blocked = false))
+        assertEquals(GuideStep.MatchSetup, autoPlayStep(GuideSurface.MatchSetup, armed, blocked = false))
+        assertEquals(GuideStep.InGameTools, autoPlayStep(GuideSurface.InGame, armed, blocked = false))
+    }
+
+    @Test
+    fun aSeenStepDoesNotPlayAgain() {
+        val seen = armed.copy(seenSteps = setOf(GuideStep.HomeStartMatch.id))
+        assertNull(autoPlayStep(GuideSurface.Home, seen, blocked = false))
+        // 다른 표면은 영향받지 않는다.
+        assertEquals(GuideStep.MatchSetup, autoPlayStep(GuideSurface.MatchSetup, seen, blocked = false))
+    }
+
+    /**
+     * ⚠️ **가려진 채 그려지면 사용자는 못 봤는데 기록된다.** 그래서 `blocked`는 판정의 인자이고
+     * 호출부의 재량이 아니다 — 이 단언이 그 계약이다.
+     */
+    @Test
+    fun nothingPlaysWhileAnotherDialogCoversTheSurface() {
+        assertNull(autoPlayStep(GuideSurface.Home, armed, blocked = true))
+        assertNull(autoPlayStep(GuideSurface.InGame, armed, blocked = true))
+    }
+
+    @Test
+    fun stopWatchingSilencesTheWholeChain() {
+        val off = armed.copy(dismissed = true)
+        GuideSurface.entries.forEach { surface ->
+            assertNull(
+                autoPlayStep(surface, off, blocked = false),
+                "'그만 보기'는 사슬 전체를 끈다 — $surface 가 살아남았다",
+            )
+        }
+    }
+
+    /**
+     * ⚠️ **①은 판정에 참여하지 않는다.** 랜딩의 첫돌이는 문구 없는 **정적 장식**이라 "봤다/안 봤다"가
+     * 없다 — 타이머나 말풍선을 넣는 순간 그 카운트가 `AppSplash` 아래에서 돌기 시작하고,
+     * 스플래시의 끝을 밖에서 알 수 없다는 #125의 문제가 되살아난다.
+     */
+    @Test
+    fun theLandingDecorationIsNotAPlayableStep() {
+        assertNull(autoPlayStep(GuideSurface.Landing, armed, blocked = false))
+    }
+
+    /**
+     * ⚠️ **오늘은 표면 하나에 단계 하나지만, 그 가정을 지금 풀어 둔다.** #18·#26이나 로그인이 붙으면
+     * 대국 설정·마이페이지에 두 번째 단계가 생긴다 — 그때 판정식을 다시 쓰지 않도록
+     * **선언 순서가 같은 표면 안에서도 권위를 갖는다**는 성질을 여기서 못박는다.
+     */
+    @Test
+    fun declarationOrderDrainsTheChainInOrder() {
+        val chain = GuideStep.entries.filter { it != GuideStep.Landing }
+        var progress = armed
+        chain.forEach { expected ->
+            assertEquals(
+                expected,
+                autoPlayStep(expected.surface, progress, blocked = false),
+                "선언 순서상 먼저인 미시청 단계가 나와야 한다",
+            )
+            progress = progress.copy(seenSteps = progress.seenSteps + expected.id)
+        }
+        // 다 보고 나면 어느 표면에서도 아무것도 뜨지 않는다.
+        GuideSurface.entries.forEach { surface ->
+            assertNull(autoPlayStep(surface, progress, blocked = false), "$surface 가 다 본 뒤에도 뜬다")
+        }
+    }
+
+    /** 같은 표면에 단계가 둘 생기는 미래를 지금 시뮬레이션한다 — 순서가 권위를 갖는지 본다. */
+    @Test
+    fun theEarlierDeclarationWinsWhenOneSurfaceHasTwoSteps() {
+        val onMatchSetup = GuideStep.entries.filter { it.surface == GuideSurface.MatchSetup }
+        assertTrue(onMatchSetup.isNotEmpty(), "대국 설정 표면에 단계가 하나도 없다 — 전제가 무너졌다")
+        // 표면이 같은 두 단계를 순서대로 늘어놓고, 앞선 것이 먼저 나오는지 확인한다.
+        val ordered = GuideStep.entries.filter { it != GuideStep.Landing }
+        val bySurface = ordered.groupBy { it.surface }
+        bySurface.forEach { (surface, steps) ->
+            val first = steps.first()
+            assertEquals(
+                first,
+                autoPlayStep(surface, armed, blocked = false),
+                "$surface 에서 선언 순서상 첫 단계가 나와야 한다",
+            )
+        }
+    }
+
+    /**
+     * ⚠️ [GuideStep.id]는 **저장 포맷**이다(함정 1번과 같은 성질) — 바꾸면 이미 본 사용자에게
+     * 가이드가 다시 뜬다. 값을 여기 못박아 무심한 개명을 잡는다.
+     */
+    @Test
+    fun theStoredIdsAreFrozen() {
+        assertEquals(
+            listOf("landing", "attendance_claim", "home_start_match", "match_setup", "in_game_tools"),
+            GuideStep.entries.map { it.id },
+        )
+    }
+
+    @Test
+    fun setupFactsSplitIntoTheThreeShapesTheCopyNeeds() {
+        assertEquals(
+            GuideSetupFacts.Shape.Even,
+            GuideSetupFacts(handicapCount = 0, humanPlaysBlack = true).shape,
+        )
+        assertEquals(
+            GuideSetupFacts.Shape.HumanTakesStones,
+            GuideSetupFacts(handicapCount = 5, humanPlaysBlack = true).shape,
+        )
+        assertEquals(
+            GuideSetupFacts.Shape.HumanGivesStones,
+            GuideSetupFacts(handicapCount = 5, humanPlaysBlack = false).shape,
+        )
+    }
+}
