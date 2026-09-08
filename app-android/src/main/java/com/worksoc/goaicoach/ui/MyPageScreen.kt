@@ -20,6 +20,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
@@ -53,6 +56,7 @@ internal fun MyPageScreen(
     modifier: Modifier = Modifier,
 ) {
     val strings = LocalUiStrings.current
+    var showGuideReplay by remember { mutableStateOf(false) }
     val consumables = LocalConsumableUiState.current
 
     Column(
@@ -97,6 +101,10 @@ internal fun MyPageScreen(
             // 인사**다 — 이 화면은 사용자가 *"내가 모은 것"* 을 보러 오는 자리이고, 그것을 함께
             // 챙겨 준 상대가 거기 있는 것이 자연스럽다. **가이드 다시보기** 행이 나중에 이 옆에 붙는다.
             GuideLine(text = guideMyPageGreetingFor(strings.language))
+            // **가이드 다시보기**(사용자 확정 ⓑ: 진입점은 여기 하나뿐. 설정에는 넣지 않는다).
+            // ⚠️ 상태는 이 화면이 든다 — 행은 상태가 없고, 다이얼로그가 별도 윈도우라
+            //   셸의 뒤로가기(마이페이지에서 활성)에 지지 않는다(그 사유는 그 파일의 KDoc).
+            GuideReplayRow(onClick = { showGuideReplay = true })
             AttendanceBoardSection()
             Text(
                 text = strings.myPageInventoryTitle,
@@ -208,6 +216,13 @@ internal fun MyPageScreen(
             }
         }
     }
+
+    // ⚠️ **`Dialog`라서 여기(함수 끝)에 두어도 된다** — 별도 윈도우라 위 `Column`의 레이아웃에
+    // 참여하지 않는다. 창 안 오버레이였다면 셸의 뒤로가기(마이페이지에서 활성)가 이 화면을
+    // 닫는 대신 홈으로 나가 버린다(그 사유는 `FirstDolGuideReplay.kt`의 KDoc).
+    if (showGuideReplay) {
+        FirstDolGuideReplayDialog(onClose = { showGuideReplay = false })
+    }
 }
 
 /**
@@ -256,4 +271,5 @@ private fun AttendanceBoardSection() {
             )
         }
     }
+
 }

@@ -408,6 +408,8 @@ internal data class UiStrings(
      *   단계 본문은 함수로 나오므로 그 그물의 사각지대이고, 그쪽은 `UiStringsGuideTest`가 맡는다.
      */
     val guideAckAction: String,
+    /** 마이페이지의 **가이드 다시보기** 행 라벨이자 그 화면의 제목(#128). */
+    val guideReplayAction: String,
     /** 돋보기 창 크기 선택 줄의 라벨(백로그 #85). */
     val magnifierWindowSizeLabel: String,
     /** 돋보기 확대 배율 선택 줄의 라벨(백로그 #85). */

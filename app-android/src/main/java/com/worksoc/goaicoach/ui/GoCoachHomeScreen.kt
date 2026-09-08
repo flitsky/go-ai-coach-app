@@ -353,8 +353,16 @@ private fun GoStoneLogoBadge() {
     }
 }
 
+/**
+ * ⚠️ **`private`이 아니라 `internal`인 이유는 가이드 다시보기 하나뿐이다**(백로그 #128).
+ * 그 화면이 ③을 설명할 때 **정적 삽화나 캡처가 아니라 이 진짜 카드**를 같은 문구로 그린다 —
+ * 이 저장소는 그림이 낡는 사고를 네 번 겪었다(#87·#97·#124·#127, §0 B-2).
+ * ⚠️ **일반 카드 API로 쓰지 말 것.** 이 함수의 레이아웃 근거(#28·#29)는 홈 화면의 열에 묶여
+ * 있어서, 다른 화면에서 쓰면 그 사유가 함께 따라가지 않는다. 호출부를 **두 파일로 못박아**
+ * 둔다(`FirstDolGuideContractTest`).
+ */
 @Composable
-private fun MenuCard(
+internal fun MenuCard(
     title: String,
     subtitle: String,
     containerColor: Color,

@@ -95,11 +95,20 @@ private fun matchSetupBody(language: UiLanguage, facts: GuideSetupFacts): String
  * ⚠️ **게이트를 정직하게 말하는 것은 뒤의 둘뿐이다**(사용자 확정 ⓓ). 돋보기·바둑판 크기는 그냥
  * 켜지므로 조건을 붙이면 없는 문턱을 만드는 셈이 된다 — 형세 보기·추천 수에만 여는 방법을 적는다.
  */
+/**
+ * ⚠️ **동작을 그대로 적는다**(2026-09-09 사용자 피드백: *"돋보기 설명이 모호함"*).
+ * 처음에는 *"돌을 놓을 때 손끝이 확대돼요"* 라고만 적었는데, 사용자가 **무엇을 해야** 그것이
+ * 일어나는지 알 수 없다는 지적이었다. `GoBoard.kt`의 제스처 루프를 확인해 실제 동작을 적었다:
+ * **꾹 누름 임계(`longPressTimeoutMillis`)를 넘기면** 확대가 뜨고, 그대로 끌어 자리를 고르고
+ * **떼는 순간** 착수된다. 그 마지막 조각이 빠지면 *"누르면 바로 놓이나?"* 라는 오해가 남는다.
+ * ⚠️ 돋보기가 **꺼져** 있으면 꾹 눌러도 아무 일이 없고 평범한 탭 착수다 — 그래서 문구가
+ * *"켜 두면"* 으로 시작한다.
+ */
 private fun inGameMagnifierBody(language: UiLanguage, label: String): String = when (language) {
-    UiLanguage.Korean -> "«$label»를 켜면 돌을 놓을 때 손끝이 확대돼요. 촘촘한 곳에서 잘못 짚는 걸 막아 줘요."
-    UiLanguage.English -> "Turn on «$label» and the board zooms in under your finger as you place a stone — it saves you from misplacing in a crowded corner."
-    UiLanguage.Japanese -> "「$label」をオンにすると、石を置くとき指先が拡大されます。混み合った所での置き間違いを防げます。"
-    UiLanguage.ChineseSimplified -> "开启「$label」后，落子时指尖处会放大，可避免在密集处下错位置。"
+    UiLanguage.Korean -> "«$label»를 켜 두면 반상을 잠시 누르고 있을 때 그 자리가 확대돼요. 그대로 손을 움직여 고른 뒤 떼면 착수돼서, 촘촘한 곳에서도 정확히 두실 수 있어요."
+    UiLanguage.English -> "With «$label» on, press and hold on the board and that spot zooms in. Slide to the point you want and lift to play it — precise even where stones are crowded."
+    UiLanguage.Japanese -> "「$label」をオンにしておくと、盤面を少し押し続けたところが拡大されます。そのまま指を動かして選び、離すと着手されるので、混み合った所でも正確に打てます。"
+    UiLanguage.ChineseSimplified -> "开启「$label」后，在棋盘上稍按不放，该处就会放大。保持按住移动到想要的位置，抬手即落子，即使在密集处也能精准落子。"
 }
 
 private fun inGameBoardSizeBody(language: UiLanguage, label: String): String = when (language) {
