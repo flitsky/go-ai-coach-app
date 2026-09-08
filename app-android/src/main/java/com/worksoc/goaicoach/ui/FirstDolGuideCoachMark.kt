@@ -66,10 +66,6 @@ internal object GuideTargetSpots {
         spots[target] = bounds
     }
 
-    fun forget(target: GuideTarget) {
-        spots.remove(target)
-    }
-
     fun boundsOf(target: GuideTarget): Rect? = spots[target]
 
     internal fun resetForTest() = spots.clear()
@@ -78,7 +74,11 @@ internal object GuideTargetSpots {
 /**
  * 이 컨트롤의 자리를 코치마크에게 알려 준다. 컨트롤 쪽 비용은 **이 한 줄**이다.
  *
- * ⚠️ 화면을 떠날 때 지운다 — 남겨 두면 다음 대국에서 **옛 좌표에 동그라미**가 그려진다.
+ * ⚠️ **화면을 떠날 때 지우지 않는다** — 한때 `forget()`을 두었는데 부르는 곳이 없어 걷어냈다.
+ * 그래도 되는 이유: 코치마크는 **대국 화면 표면에서만** 그려지고, 그 화면에 들어오면 컨트롤들이
+ * 컴포즈되며 **좌표를 곧바로 다시 보고**한다. 즉 옛 좌표가 쓰이는 창이 없다.
+ * ⚠️ 그 전제가 깨지는 변경(대국 화면 밖에서 코치마크를 그리게 되는 것)을 하려면 **먼저 지우는
+ * 경로를 만들 것** — 없으면 화면이 바뀐 뒤에도 옛 자리에 동그라미가 남는다.
  */
 @Composable
 internal fun Modifier.guideTarget(target: GuideTarget): Modifier {
