@@ -705,7 +705,11 @@ private fun BoardTopControls(
  * 꺼졌을 때 흐리게 하면 **비활성(누를 수 없음)으로 읽히는데** 이 버튼은 언제나 누를 수 있다.
  */
 @Composable
-private fun BoardTopToggle(
+/**
+ * ⚠️ **`internal`인 이유는 가이드 다시보기 하나뿐이다**(백로그 #128) — 그 화면이 ⑤를 설명할 때
+ * **진짜 이 토글**을 같은 라벨 함수로 그린다. 정적 삽화를 쓰지 않는 사유는 `MenuCard`와 같다.
+ */
+internal fun BoardTopToggle(
     label: String,
     spokenSubject: String,
     spokenState: String,

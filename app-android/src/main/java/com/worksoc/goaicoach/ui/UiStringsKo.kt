@@ -197,6 +197,7 @@ internal val UiStringsKorean = UiStrings(
     localOnlyDataNoticePaidRestoreLine = "단, Google Play에서 구매한 캐릭터는 달라요. 같은 Google Play 계정으로 다시 설치하면 결제 내역을 확인해 다시 열어 드려요.",
     guideAckAction = "알겠어요",
     guideReplayAction = "가이드 다시보기",
+    guideReplayInGameTitle = "대국 화면",
     magnifierWindowSizeLabel = "돋보기 창 크기",
     magnifierZoomLabel = "돋보기 확대 배율",
     settingsDevReleaseResetAction = "실행",

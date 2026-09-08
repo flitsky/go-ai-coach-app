@@ -197,6 +197,7 @@ internal val UiStringsEnglish = UiStringsKorean.copy(
     localOnlyDataNoticePaidRestoreLine = "Characters bought on Google Play are different. Reinstall with the same Google Play account and the app checks your purchase history and unlocks them again.",
     guideAckAction = "Got it",
     guideReplayAction = "Replay the guide",
+    guideReplayInGameTitle = "In-game screen",
     magnifierWindowSizeLabel = "Magnifier window size",
     magnifierZoomLabel = "Magnifier zoom",
     settingsDevReleaseResetAction = "Run",

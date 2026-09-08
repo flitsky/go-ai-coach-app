@@ -187,7 +187,8 @@ internal fun GoBoard(
                         // 그래서 **제스처 루프 하나**가 세 갈래를 직접 가른다:
                         //   ⓐ 임계 전에 뗐다      → 탭(기존 동작 그대로)
                         //   ⓑ 임계 전에 취소됐다   → 아무것도 안 한다. 세로 스크롤이 가져간 경우다
-                        //   ⓒ 임계를 넘겼다       → 돋보기 + 드래그, **떼는 순간**에만 착수
+                        //   ⓒ 임계를 넘겼다       → 끌어서 자리를 고르고 **떼는 순간**에만 착수.
+                        //                        확대 창은 `isPlayMagnifierEnabled`일 때만 함께 뜬다
                         awaitEachGesture {
                             val down = awaitFirstDown()
                             down.consume()
@@ -207,16 +208,13 @@ internal fun GoBoard(
                                 haptics.play()
                             }
 
-                            // 돋보기가 꺼져 있으면 **예전 동작 그대로**다(#39 토글) — 누른
-                            // 자리에서 떼면 그 자리에 두고, 꾹 눌러도 아무 일도 없다.
-                            if (!uxOptions.isPlayMagnifierEnabled) {
-                                waitForUpOrCancellation()?.let { up ->
-                                    up.consume()
-                                    if (inputEnabled) coordinateAt(down.position)?.let(onCoordinateTap)
-                                }
-                                return@awaitEachGesture
-                            }
-
+                            // ⚠️ **돋보기 토글은 "확대 창을 그릴지"만 정한다 — 끌어서 두는 것 자체는
+                            // 언제나 된다**(2026-09-09 사용자 지시). 그전에는 이 자리에서 갈라져,
+                            // 돋보기를 꺼 두면 꾹 눌러도 아무 일이 없고 **누른 자리**에 바로 놓였다.
+                            // 사용자 지적: *"착수 돋보기를 켜지 않아도 터치 후 이동하여 떼는 방식으로
+                            // 둘 수 있으면 좋겠다."* 그래서 분기를 아래 확대 창 쪽으로만 옮겼다.
+                            // · **빠른 탭은 그대로다** — 임계 전에 떼면 누른 자리에 놓인다. 그래서 이
+                            //   변경으로 *"살짝 미끄러진 탭이 엉뚱한 곳에 놓이는"* 회귀는 생기지 않는다.
                             var heldPastThreshold = false
                             val releasedEarly = try {
                                 withTimeout(holdThresholdMillis) { waitForUpOrCancellation() }
@@ -240,33 +238,38 @@ internal fun GoBoard(
 
                             // ⚠️ 말풍선의 위/아래는 **여기서 한 번만** 정한다 — 매 프레임 다시
                             // 판단하면 손가락이 경계선을 지날 때 창이 반대편으로 순간이동한다.
-                            val canvas = Size(canvasSize.width.toFloat(), canvasSize.height.toFloat())
-                            // 캔버스가 아직 0이면 계산할 것이 없다 — 손가락이 닿았다면 사실상
-                            // 일어나지 않지만, 여기서 터지게 두지는 않는다.
-                            val spacing = boardTapGeometry(
-                                canvasWidth = canvas.width,
-                                canvasHeight = canvas.height,
-                                boardSize = gameState.boardSize,
-                                showCoordinates = uxOptions.showCoordinates,
-                            )?.spacing ?: return@awaitEachGesture
-                            val gapPx = MagnifierFingerGap.toPx()
-                            val below = magnifierPrefersBelow(
-                                down.position,
-                                canvas,
-                                spacing,
-                                gapPx,
-                                sizeScale = uxOptions.magnifierSizeScale,
-                                zoom = uxOptions.magnifierZoom,
-                            )
+                            // ⚠️ **확대 창이 꺼져 있으면 이 계산을 아예 하지 않는다** — 기하를 못 구하는
+                            //   경우(캔버스 0)에 제스처를 통째로 취소하던 갈래가, 끌어서 두기까지
+                            //   함께 취소해 버리기 때문이다.
+                            val showMagnifier = uxOptions.isPlayMagnifierEnabled
+                            val below = if (showMagnifier) {
+                                val canvas = Size(canvasSize.width.toFloat(), canvasSize.height.toFloat())
+                                val spacing = boardTapGeometry(
+                                    canvasWidth = canvas.width,
+                                    canvasHeight = canvas.height,
+                                    boardSize = gameState.boardSize,
+                                    showCoordinates = uxOptions.showCoordinates,
+                                )?.spacing ?: return@awaitEachGesture
+                                magnifierPrefersBelow(
+                                    down.position,
+                                    canvas,
+                                    spacing,
+                                    MagnifierFingerGap.toPx(),
+                                    sizeScale = uxOptions.magnifierSizeScale,
+                                    zoom = uxOptions.magnifierZoom,
+                                )
+                            } else {
+                                false
+                            }
 
-                            magnifierDrag = MagnifierDrag(down.position, below)
+                            if (showMagnifier) magnifierDrag = MagnifierDrag(down.position, below)
                             var last = down.position
                             // ⚠️ **누르고 있는 동안 착수가 확정되면 안 된다**(사용자 확정).
                             // 여기서는 좌표만 따라가고, 확정은 아래 `completed` 분기에서만 한다.
                             val completed = drag(down.id) { change ->
                                 change.consume()
                                 last = change.position
-                                magnifierDrag = MagnifierDrag(last, below)
+                                if (showMagnifier) magnifierDrag = MagnifierDrag(last, below)
                             }
                             magnifierDrag = null
                             if (!completed) return@awaitEachGesture

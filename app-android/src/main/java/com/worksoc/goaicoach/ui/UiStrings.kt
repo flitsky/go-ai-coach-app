@@ -410,6 +410,13 @@ internal data class UiStrings(
     val guideAckAction: String,
     /** 마이페이지의 **가이드 다시보기** 행 라벨이자 그 화면의 제목(#128). */
     val guideReplayAction: String,
+    /**
+     * 다시보기에서 **대국 화면** 묶음의 제목(#128).
+     *
+     * ⚠️ 처음에는 `gameSection`("게임")을 재사용했는데 **무슨 화면인지 안 읽혔다**(사용자 지적) —
+     * 그 문구는 대국 메뉴의 절 제목이라 이 자리에서는 뭉뚱하다.
+     */
+    val guideReplayInGameTitle: String,
     /** 돋보기 창 크기 선택 줄의 라벨(백로그 #85). */
     val magnifierWindowSizeLabel: String,
     /** 돋보기 확대 배율 선택 줄의 라벨(백로그 #85). */

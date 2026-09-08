@@ -196,6 +196,7 @@ internal val UiStringsChineseSimplified = UiStringsKorean.copy(
     localOnlyDataNoticePaidRestoreLine = "不过，在 Google Play 购买的角色不同。使用同一 Google Play 账号重新安装后，应用会确认购买记录并重新解锁。",
     guideAckAction = "知道了",
     guideReplayAction = "重新查看指南",
+    guideReplayInGameTitle = "对局画面",
     magnifierWindowSizeLabel = "放大镜窗口大小",
     magnifierZoomLabel = "放大镜倍率",
     settingsDevReleaseResetAction = "执行",

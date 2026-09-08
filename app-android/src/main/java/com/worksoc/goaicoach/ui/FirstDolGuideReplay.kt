@@ -33,6 +33,10 @@ import com.worksoc.goaicoach.application.guide.GuideStep
 import com.worksoc.goaicoach.application.guide.GuideSurface
 import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.persistence.UserPreferencesStore
+import com.worksoc.goaicoach.presentation.GameUiEvent
+import com.worksoc.goaicoach.presentation.GameActionButtonState
+import com.worksoc.goaicoach.presentation.GameActionButtonRole
+import com.worksoc.goaicoach.application.guide.GuideTarget
 
 /**
  * **가이드 다시보기**(백로그 #128, 사용자 확정 ⓑ: 진입점은 마이페이지에만).
@@ -140,19 +144,76 @@ internal fun FirstDolGuideReplayDialog(onClose: () -> Unit) {
                     ReplaySection(title = strings.matchSetup) {
                         ReplayLine(guideBodyFor(strings.language, GuideStep.MatchSetup, facts = facts))
                     }
-                    ReplaySection(title = strings.gameSection) {
+                    ReplaySection(title = strings.guideReplayInGameTitle) {
+                        // ⚠️ **문구마다 그 버튼을 실물로 함께 그린다**(2026-09-09 사용자 지시:
+                        // *"'대국 하기' 버튼 보여주듯 각 가이드마다 해당 버튼이 그려지면 좋겠다"*).
+                        // 판 위 토글 둘은 `BoardTopToggle`, 아래 버튼 둘은 `ToggleActionButton` —
+                        // 대국 화면이 쓰는 **그 컴포저블**이다. 라벨도 같은 함수에서 나온다.
                         GuideStep.entries
                             .filter { it.surface == GuideSurface.InGame }
                             .forEach { step ->
-                                ReplayLine(
-                                    guideBodyFor(strings.language, step, toolLabels = toolLabels),
-                                )
+                                ReplayLine(guideBodyFor(strings.language, step, toolLabels = toolLabels))
+                                ReplayControlSample(step)
                             }
                     }
                 }
             }
         }
     }
+}
+
+/**
+ * 그 단계가 가리키는 **실제 컨트롤**을 그린다.
+ *
+ * ⚠️ **눌러도 아무 일도 하지 않는다** — 여기서 실제로 켜지면 다시보기가 대국 설정을 바꾸는
+ * 화면이 된다. 보여주는 것이 목적이라 `onClick`/`onEvent`를 빈 람다로 넘긴다.
+ * ⚠️ 잔량(`형세 보기 (30)`의 괄호)은 **인용하지 않는다** — 다시보기가 그 숫자를 말하면
+ * 재고가 바뀔 때마다 낡는다. `mark`를 비워 이름만 보여 준다.
+ */
+@Composable
+private fun ReplayControlSample(step: GuideStep) {
+    val strings = LocalUiStrings.current
+    when (step.target) {
+        GuideTarget.Magnifier -> BoardTopToggle(
+            label = playMagnifierLabelFor(strings.language),
+            spokenSubject = playMagnifierLabelFor(strings.language),
+            spokenState = playMagnifierStateFor(strings.language, enabled = true),
+            active = true,
+            onClick = {},
+        )
+        GuideTarget.BoardSize -> BoardTopToggle(
+            label = boardSizeToggleLabelFor(strings.language, isMaxSize = true),
+            spokenSubject = boardSizeSubjectFor(strings.language),
+            spokenState = boardSizeToggleLabelFor(strings.language, isMaxSize = true),
+            active = true,
+            onClick = {},
+        )
+        GuideTarget.Eval -> ReplayActionButtonSample(
+            role = GameActionButtonRole.Eval,
+            label = strings.eval,
+        )
+        GuideTarget.TopMoves -> ReplayActionButtonSample(
+            role = GameActionButtonRole.TopMoves,
+            label = strings.topMovesAction,
+        )
+        null -> Unit
+    }
+}
+
+@Composable
+private fun ReplayActionButtonSample(role: GameActionButtonRole, label: String) {
+    ToggleActionButton(
+        action = GameActionButtonState(
+            role = role,
+            label = label,
+            // 이벤트는 쏘지 않는다 — 아래 `onEvent`가 빈 람다다.
+            event = GameUiEvent.ToggleEvalWithGradient,
+            enabled = true,
+            isFilled = false,
+        ),
+        label = label,
+        onEvent = {},
+    )
 }
 
 @Composable

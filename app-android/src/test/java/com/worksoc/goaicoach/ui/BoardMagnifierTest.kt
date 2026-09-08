@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.ui
 
+import java.io.File
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import com.worksoc.goaicoach.application.preferences.MagnifierSettings
@@ -157,5 +158,42 @@ class BoardMagnifierTest {
                 placement.radius * 2f <= canvas.minDimension * 0.40f,
             )
         }
+    }
+
+    /**
+     * ⚠️ **끌어서 두기는 돋보기 토글에 걸려 있지 않다**(2026-09-09 사용자 지시).
+     *
+     * 그전에는 `GoBoard`의 제스처 루프가 `isPlayMagnifierEnabled`로 **먼저 갈라져**, 돋보기를 꺼 두면
+     * 꾹 눌러도 아무 일이 없고 **누른 자리**에 그대로 놓였다. 사용자 지적은 *"착수 돋보기를 켜지
+     * 않아도 터치 후 이동하여 떼는 방식으로 둘 수 있으면 좋겠다"* 였고, 그래서 토글의 뜻을
+     * **"확대 창을 그릴지"** 하나로 좁혔다.
+     *
+     * 이 계약이 지키는 것은 그 좁힘이다. 되돌리기 쉬운 종류다 — 확대 창을 손보다가 옛 조기 반환을
+     * 되살리면, **끌어서 두기가 조용히 사라지고** 어떤 단위 테스트도 빨개지지 않는다(제스처는
+     * 계측 테스트가 없다). 그래서 소스로 잡는다.
+     *
+     * ⚠️ 빠른 탭은 **일부러 그대로 두었다** — 임계 전에 떼면 누른 자리에 놓인다. 그 갈래까지
+     * 뗀 자리로 바꾸면 *"살짝 미끄러진 탭"* 이 엉뚱한 곳에 놓이는 회귀가 된다.
+     */
+    @Test
+    fun dragToPlaceIsNotGatedOnTheMagnifierToggle() {
+        val source = File("src/main/java/com/worksoc/goaicoach/ui/GoBoard.kt").readText()
+
+        assertFalse(
+            "제스처 루프가 `isPlayMagnifierEnabled`로 조기 반환한다 — 돋보기를 끄면 끌어서 두기가 " +
+                "함께 사라진다(2026-09-09 사용자 지시로 없앤 갈래다).",
+            source.contains("if (!uxOptions.isPlayMagnifierEnabled) {"),
+        )
+        assertTrue(
+            "확대 창을 그리는 자리가 `showMagnifier`로 가려져 있지 않다 — 토글이 뜻을 잃었거나, " +
+                "꺼져 있어도 창이 뜬다.",
+            source.contains("if (showMagnifier) magnifierDrag = MagnifierDrag("),
+        )
+        // 확대 창 상태를 켜는 자리는 **둘**(누른 순간·끄는 동안)이고 둘 다 가려져야 한다.
+        assertEquals(
+            "`magnifierDrag`에 값을 넣는 자리가 전부 `showMagnifier` 뒤에 있어야 한다.",
+            Regex("""magnifierDrag = MagnifierDrag\(""").findAll(source).count(),
+            Regex("""if \(showMagnifier\) magnifierDrag = MagnifierDrag\(""").findAll(source).count(),
+        )
     }
 }

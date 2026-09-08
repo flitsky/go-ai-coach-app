@@ -197,6 +197,7 @@ internal val UiStringsJapanese = UiStringsKorean.copy(
     localOnlyDataNoticePaidRestoreLine = "ただし、Google Playで購入したキャラクターは別です。同じGoogle Playアカウントで再インストールすると、購入履歴を確認して再度開放します。",
     guideAckAction = "わかりました",
     guideReplayAction = "ガイドをもう一度見る",
+    guideReplayInGameTitle = "対局画面",
     magnifierWindowSizeLabel = "ルーペの大きさ",
     magnifierZoomLabel = "ルーペの拡大率",
     settingsDevReleaseResetAction = "実行",
