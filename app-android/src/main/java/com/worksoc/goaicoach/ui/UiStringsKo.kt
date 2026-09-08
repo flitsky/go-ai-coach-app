@@ -196,7 +196,6 @@ internal val UiStringsKorean = UiStrings(
     localOnlyDataNoticeBody = "출석 기록·모은 캐릭터·1회권·무르기 무제한처럼 앱에 쌓인 건 이 기기에만 있어요. 앱을 지우거나 기기를 바꾸면 앱이 되돌려 드릴 방법이 없어요.",
     localOnlyDataNoticePaidRestoreLine = "단, Google Play에서 구매한 캐릭터는 달라요. 같은 Google Play 계정으로 다시 설치하면 결제 내역을 확인해 다시 열어 드려요.",
     guideAckAction = "알겠어요",
-    guideStopAction = "그만 보기",
     magnifierWindowSizeLabel = "돋보기 창 크기",
     magnifierZoomLabel = "돋보기 확대 배율",
     settingsDevReleaseResetAction = "실행",

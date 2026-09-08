@@ -79,12 +79,16 @@ enum class GuideTarget { Magnifier, BoardSize, Eval, TopMoves }
  * @param armed 랜딩을 **끝낸** 적이 있는가. ⚠️ *"랜딩을 봤는가"* 가 아니다 — 완료·건너뛰기 두 갈래
  *   모두에서 켜진다. 이 한 값이 **기존 사용자에게 자동 재생이 시작되지 않는 것**을 공짜로 만든다:
  *   이미 랜딩을 지난 사용자는 `armed`가 꺼진 채이므로 자동 재생이 아예 무장되지 않는다.
- * @param dismissed 사용자가 *"그만 보기"* 를 눌렀는가. 사슬 **전체**를 끈다(사용자 확정 1번의 단서).
+ *
+ * ⚠️ **`dismissed`("그만 보기") 플래그는 두었다가 없앴다**(2026-09-09 사용자 판정). 사슬이 짧아서
+ * (대국 화면 넷 + 앞의 둘) *"알겠어요"* 를 연타하면 곧 끝나는데, **사정거리가 다른 버튼 둘**을
+ * 나란히 두면 사용자가 무엇을 껐는지 알 수 없다는 지적이었다 — 그래서 동작은 하나로 줄였다.
+ * 나중에 *"가이드 다시 보지 않기"* 를 정말 두게 되면 **설정 화면의 항목**으로 붙일 것이고,
+ * 그때 이 플래그를 되살리면 된다. 쓰는 사람이 없는 플래그를 미리 남겨 두지는 않는다.
  * @param seenSteps 이미 보여준 단계의 [GuideStep.id] 집합.
  */
 data class GuideProgress(
     val armed: Boolean = false,
-    val dismissed: Boolean = false,
     val seenSteps: Set<String> = emptySet(),
 ) {
     fun hasSeen(step: GuideStep): Boolean = step.id in seenSteps
@@ -107,7 +111,7 @@ fun autoPlayStep(
     progress: GuideProgress,
     blocked: Boolean,
 ): GuideStep? {
-    if (!progress.armed || progress.dismissed || blocked) return null
+    if (!progress.armed || blocked) return null
     return GuideStep.entries
         .filter { step -> step.surface == surface && step != GuideStep.Landing }
         .firstOrNull { step -> !progress.hasSeen(step) }

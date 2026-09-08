@@ -99,15 +99,14 @@ internal fun Modifier.guideTarget(target: GuideTarget): Modifier {
  * ## ⚠️ 스크림을 두지 않는다
  *
  * 전면을 덮으면 사용자가 **설명받은 그 버튼을 눌러 볼 수 없다.** 이 오버레이는 배경을 칠하지 않고
- * 포인터도 잡지 않는다 — 누를 것은 말풍선 안의 두 글자뿐이다(#125 스플래시가 터치를 일부러
- * 먹는 것과 정반대의 이유다).
+ * 포인터도 잡지 않는다 — 누를 것은 말풍선 안의 `알겠어요` 하나뿐이다(#125 스플래시가 터치를
+ * 일부러 먹는 것과 정반대의 이유다).
  */
 @Composable
 internal fun GuideCoachMark(
     target: GuideTarget,
     text: String,
     onNext: () -> Unit,
-    onStop: () -> Unit,
 ) {
     val strings = LocalUiStrings.current
     val density = LocalDensity.current
@@ -193,7 +192,6 @@ internal fun GuideCoachMark(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End,
             ) {
-                TextButton(onClick = onStop) { Text(strings.guideStopAction, fontSize = 13.sp) }
                 TextButton(onClick = onNext) { Text(strings.guideAckAction, fontSize = 13.sp) }
             }
         }

@@ -36,7 +36,6 @@ internal class GuideProgressStore(context: Context) {
 
     fun load(): GuideProgress = GuideProgress(
         armed = prefs.getBoolean(ArmedKey, false),
-        dismissed = prefs.getBoolean(DismissedKey, false),
         // ⚠️ `getStringSet`이 돌려주는 집합을 그대로 들고 있지 말 것 — 안드로이드 문서가 그 인스턴스를
         // 수정하지 말라고 못박고, 구현이 내부 집합을 그대로 돌려주는 버전도 있다. 사본을 만든다.
         seenSteps = prefs.getStringSet(SeenStepsKey, emptySet())?.toSet() ?: emptySet(),
@@ -50,11 +49,6 @@ internal class GuideProgressStore(context: Context) {
     fun markSeen(step: GuideStep) {
         val next = load().seenSteps + step.id
         prefs.edit().putStringSet(SeenStepsKey, next).apply()
-    }
-
-    /** *"그만 보기"* — 사슬 전체를 끈다. */
-    fun dismiss() {
-        prefs.edit().putBoolean(DismissedKey, true).apply()
     }
 
     /**
@@ -72,7 +66,6 @@ internal class GuideProgressStore(context: Context) {
     private companion object {
         const val PrefsName = "go_ai_coach_guide"
         const val ArmedKey = "armed"
-        const val DismissedKey = "dismissed"
         const val SeenStepsKey = "seen_steps"
     }
 }

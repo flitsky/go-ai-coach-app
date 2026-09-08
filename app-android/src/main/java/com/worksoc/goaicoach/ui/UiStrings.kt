@@ -401,14 +401,13 @@ internal data class UiStrings(
     /**
      * 첫돌이 가이드 카드(④⑤)의 두 동작(백로그 #128).
      *
-     * ⚠️ **두 동작의 사정거리가 다르다** — `guideAckAction`은 **그 단계만** 닫고,
-     * `guideStopAction`은 **사슬 전체**를 끈다(사용자 확정 1번의 "닫을 수 있어야 한다").
-     * 화면마다 다른 낱말을 쓰면 사용자가 무엇을 껐는지 알 수 없으므로 **네 자리가 같은 라벨**을 쓴다.
+     * ⚠️ 한때 `guideStopAction`("그만 보기", 사슬 전체 끄기)이 옆에 있었으나 **없앴다**
+     * (2026-09-09 사용자 판정) — 사정거리가 다른 버튼 둘을 나란히 두면 무엇을 껐는지 알 수 없고,
+     * 사슬이 짧아 이 하나를 연타하면 끝난다. 되살리려면 설정 항목으로 둘 것.
      * · ⚠️ 여기 있는 이유: **String 필드**라야 `UiStringsTest`의 리플렉션 그물이 번역 누락을 잡는다.
      *   단계 본문은 함수로 나오므로 그 그물의 사각지대이고, 그쪽은 `UiStringsGuideTest`가 맡는다.
      */
     val guideAckAction: String,
-    val guideStopAction: String,
     /** 돋보기 창 크기 선택 줄의 라벨(백로그 #85). */
     val magnifierWindowSizeLabel: String,
     /** 돋보기 확대 배율 선택 줄의 라벨(백로그 #85). */

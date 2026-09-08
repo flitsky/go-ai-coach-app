@@ -165,15 +165,16 @@ internal fun GuideLine(text: String, modifier: Modifier = Modifier) {
  * 순간 기록하면 **덮인 채 소진**돼 사용자 기준으로는 0번 보게 된다 — 그래서 두 동작 중 하나를
  * 누를 때만 기록한다. ③ 말풍선은 창 안 비모달이라 덮일 수 없어 시간 기준을 쓴다(그 비대칭이 의도다).
  *
- * ## 두 동작의 사정거리가 다르다
- * · [onAck] *"알겠어요"* — **이 단계만** 닫는다.
- * · [onStop] *"그만 보기"* — **사슬 전체**를 끈다(사용자 확정 1번의 단서).
+ * ## 동작은 **하나뿐이다**
+ *
+ * ⚠️ 한때 *"그만 보기"*(사슬 전체 끄기)를 나란히 뒀다가 **없앴다**(2026-09-09 사용자 판정) —
+ * 사슬이 짧아 *"알겠어요"* 를 연타하면 곧 끝나는데, **사정거리가 다른 버튼 둘**을 나란히 두면
+ * 사용자가 무엇을 껐는지 알 수 없다. 되살리려면 설정 항목으로 둘 것(`GuideProgress`의 KDoc).
  */
 @Composable
 internal fun GuideCard(
     text: String,
     onAck: () -> Unit,
-    onStop: () -> Unit,
 ) {
     val strings = LocalUiStrings.current
     AlertDialog(
@@ -190,6 +191,5 @@ internal fun GuideCard(
         },
         text = { Text(text = text, fontSize = 14.sp) },
         confirmButton = { TextButton(onClick = onAck) { Text(strings.guideAckAction) } },
-        dismissButton = { TextButton(onClick = onStop) { Text(strings.guideStopAction) } },
     )
 }

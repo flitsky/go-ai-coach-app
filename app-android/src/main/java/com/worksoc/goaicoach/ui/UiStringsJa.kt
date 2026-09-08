@@ -196,7 +196,6 @@ internal val UiStringsJapanese = UiStringsKorean.copy(
     localOnlyDataNoticeBody = "出席記録・集めたキャラクター・1回券・「待った」無制限など、アプリにたまるものはこの端末にだけ保存されます。アプリを削除したり端末を変えたりすると、アプリ側で元に戻すことはできません。",
     localOnlyDataNoticePaidRestoreLine = "ただし、Google Playで購入したキャラクターは別です。同じGoogle Playアカウントで再インストールすると、購入履歴を確認して再度開放します。",
     guideAckAction = "わかりました",
-    guideStopAction = "今後表示しない",
     magnifierWindowSizeLabel = "ルーペの大きさ",
     magnifierZoomLabel = "ルーペの拡大率",
     settingsDevReleaseResetAction = "実行",

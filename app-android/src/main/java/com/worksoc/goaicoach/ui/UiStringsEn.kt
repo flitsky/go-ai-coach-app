@@ -196,7 +196,6 @@ internal val UiStringsEnglish = UiStringsKorean.copy(
     localOnlyDataNoticeBody = "Check-in streak, characters, single-use tickets, Unlimited Undo — what the app builds up stays on this device. Delete the app or switch devices and the app can't bring it back.",
     localOnlyDataNoticePaidRestoreLine = "Characters bought on Google Play are different. Reinstall with the same Google Play account and the app checks your purchase history and unlocks them again.",
     guideAckAction = "Got it",
-    guideStopAction = "Stop showing",
     magnifierWindowSizeLabel = "Magnifier window size",
     magnifierZoomLabel = "Magnifier zoom",
     settingsDevReleaseResetAction = "Run",

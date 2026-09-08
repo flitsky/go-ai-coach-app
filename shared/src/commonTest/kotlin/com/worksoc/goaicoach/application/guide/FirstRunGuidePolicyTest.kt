@@ -46,17 +46,6 @@ class FirstRunGuidePolicyTest {
         assertNull(autoPlayStep(GuideSurface.InGame, armed, blocked = true))
     }
 
-    @Test
-    fun stopWatchingSilencesTheWholeChain() {
-        val off = armed.copy(dismissed = true)
-        GuideSurface.entries.forEach { surface ->
-            assertNull(
-                autoPlayStep(surface, off, blocked = false),
-                "'그만 보기'는 사슬 전체를 끈다 — $surface 가 살아남았다",
-            )
-        }
-    }
-
     /**
      * ⚠️ **①은 판정에 참여하지 않는다.** 랜딩의 첫돌이는 문구 없는 **정적 장식**이라 "봤다/안 봤다"가
      * 없다 — 타이머나 말풍선을 넣는 순간 그 카운트가 `AppSplash` 아래에서 돌기 시작하고,
