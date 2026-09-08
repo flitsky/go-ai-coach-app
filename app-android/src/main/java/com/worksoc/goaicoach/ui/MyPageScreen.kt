@@ -93,6 +93,10 @@ internal fun MyPageScreen(
                 .padding(horizontal = 16.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            // 첫돌이가 여기서도 인사한다(백로그 #128 ②의 둘째 자리). ⚠️ **단계가 아니라 늘 보이는
+            // 인사**다 — 이 화면은 사용자가 *"내가 모은 것"* 을 보러 오는 자리이고, 그것을 함께
+            // 챙겨 준 상대가 거기 있는 것이 자연스럽다. **가이드 다시보기** 행이 나중에 이 옆에 붙는다.
+            GuideLine(text = guideMyPageGreetingFor(strings.language))
             AttendanceBoardSection()
             Text(
                 text = strings.myPageInventoryTitle,

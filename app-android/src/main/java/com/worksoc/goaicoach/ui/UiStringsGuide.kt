@@ -136,6 +136,25 @@ internal fun guideBodyFor(
     } ?: ""
 }
 
+/**
+ * 마이페이지에서 첫돌이가 건네는 한 줄(백로그 #128 ②의 둘째 자리).
+ *
+ * ⚠️ **단계가 아니다** — 판정에 참여하지 않고 늘 보인다. 마이페이지는 사용자가 *"내가 모은 것"* 을
+ * 보러 오는 자리라, 그것을 함께 챙겨 온 상대가 거기 있는 것이 자연스럽다. 나중에 **가이드
+ * 다시보기** 행이 이 옆에 붙는다.
+ */
+private val MyPageGreeting: Map<UiLanguage, String> = mapOf(
+    // ⚠️ **이름을 문구에 박지 않는다.** 첫돌이의 이름은 언어마다 다르고(`botCharacterNameFor`)
+    // 한국어는 뒤에 조사가 붙는다 — 박아 두면 네 언어 중 하나는 반드시 어색해진다. 옆에 얼굴이
+    // 있으므로 누가 말하는지는 이미 보인다.
+    UiLanguage.Korean to "여기서 그동안 모은 걸 볼 수 있어요.",
+    UiLanguage.English to "Everything you've collected so far shows up here.",
+    UiLanguage.Japanese to "ここで今まで集めたものを見られます。",
+    UiLanguage.ChineseSimplified to "在这里可以看到您一直收集的内容。",
+)
+
+internal fun guideMyPageGreetingFor(language: UiLanguage): String = MyPageGreeting.getValue(language)
+
 /** ⑤가 인용할 **화면에 적힌 그대로의** 라벨 넷. */
 internal data class GuideToolLabels(
     val magnifier: String,

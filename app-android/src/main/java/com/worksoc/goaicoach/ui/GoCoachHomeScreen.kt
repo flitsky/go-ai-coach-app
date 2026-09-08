@@ -49,6 +49,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.worksoc.goaicoach.application.guide.GuideSurface
 
 /**
  * 0 Depth: 홈 화면 (Home Screen)
@@ -168,20 +169,38 @@ internal fun GoCoachHomeScreen(
             }
 
             // "대국 하기" (Start Match) 카드 — 이전 대국 존재 시 확인 팝업 분기
-            MenuCard(
-                title = strings.startMatch,
-                subtitle = strings.homeStartMatchSubtitle,
-                containerColor = MaterialTheme.colorScheme.primary,
-                titleColor = Color.White,
-                subtitleColor = Color.White.copy(alpha = 0.85f),
-                onClick = {
-                    if (hasResumableSession) {
-                        showOverwriteWarningDialog = true
-                    } else {
-                        onStartMatchClick()
-                    }
-                },
-            )
+            //
+            // ⚠️ **첫돌이 말풍선을 이 열의 새 자식으로 넣지 말 것**(백로그 #128 ③). 자식을 더하면
+            // 카드가 아래로 밀려 **사용자가 눌러야 할 표적이 움직이고**, #28이 만졌던 가중치·스크롤
+            // 산수에 다시 손대는 셈이 된다. 그래서 **호출부만 `Box`로 감싸고** 말풍선은 그 안에서
+            // 겹친다 — `MenuCard`의 본문과 시그니처는 한 글자도 바뀌지 않았다.
+            // ⚠️ 말풍선은 `ZeroSizeOverlay`가 **0×0으로 보고**하므로 배율이 올라 말풍선이 커져도
+            //   Box는 카드 높이 그대로다(그 이유는 그 함수의 KDoc — 설계안 셋이 여기서 틀렸다).
+            Box(modifier = Modifier.fillMaxWidth()) {
+                MenuCard(
+                    title = strings.startMatch,
+                    subtitle = strings.homeStartMatchSubtitle,
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleColor = Color.White,
+                    subtitleColor = Color.White.copy(alpha = 0.85f),
+                    onClick = {
+                        if (hasResumableSession) {
+                            showOverwriteWarningDialog = true
+                        } else {
+                            onStartMatchClick()
+                        }
+                    },
+                )
+                // ⚠️ **스크림을 두지 않는다.** #125 스플래시가 터치를 일부러 먹는 것과 **반대**다 —
+                // 여기서 터치를 먹으면 사용자가 이 카드를 누를 수 없어 자동 재생이 막다른 길이 된다
+                // (다음 단계 ④는 이 카드를 눌러 대국 설정에 도착해야 열린다).
+                // ⚠️ 출석 팝업이 떠 있으면 억제한다 — 뒤에 깔린 채 "봤음"으로 기록되지 않게.
+                GuideAnchor(
+                    surface = GuideSurface.Home,
+                    blocked = AttendanceClaimVisibility.isShowing,
+                    modifier = Modifier.align(Alignment.TopEnd),
+                )
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 

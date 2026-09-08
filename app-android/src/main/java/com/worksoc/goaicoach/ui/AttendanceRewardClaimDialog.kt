@@ -12,6 +12,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.worksoc.goaicoach.application.attendance.AttendanceBoard
 import com.worksoc.goaicoach.application.attendance.buildAttendanceBoard
 import com.worksoc.goaicoach.application.botcharacter.BotCollectionState
+import com.worksoc.goaicoach.application.guide.GuideSurface
 import com.worksoc.goaicoach.application.attendance.grantedAmountOf
 import com.worksoc.goaicoach.application.consumable.ConsumableInventory
 import com.worksoc.goaicoach.application.premium.PremiumState
@@ -225,10 +226,19 @@ private fun AttendanceRewardClaimDialogContent(
         modifier = Modifier.fillMaxWidth(0.94f),
         title = { Text(strings.attendanceRewardTitle) },
         text = {
+            // ⚠️ **이 팝업이 떠 있는 동안 홈의 ③ 말풍선을 억제한다**(백로그 #128). 첫 실행에는 둘이
+            // 같은 순간에 뜨는데(홈은 이 팝업과 **함께** 컴포즈돼 있다), 말풍선이 팝업 뒤에 깔리면
+            // 사용자는 못 봤는데 "봤음"으로 기록된다.
+            // ⚠️ 컴포지션 수명에만 묶는다 — 지급 경로에 걸면 팝업이 다른 이유로 사라지는 갈래에서
+            // 켜진 채 굳어 ③이 **영구히** 침묵한다(그 사유는 `AttendanceClaimVisibility`의 KDoc).
+            AttendanceClaimVisibility.TrackWhileShown()
             Column(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
+                // ② 첫돌이가 거드는 한 줄. ⚠️ 보상 표 **밖**·작게 둔다 — 판 안의 5·6·7·28일차
+                // 그림들과 같은 크기로 두면 *"받는 캐릭터"* 로 오해된다.
+                GuideAnchor(surface = GuideSurface.AttendanceClaim, blocked = false)
                 AttendanceStampBoard(board, collection)
                 if (board.beyondBoard.isNotEmpty()) {
                     Text(
