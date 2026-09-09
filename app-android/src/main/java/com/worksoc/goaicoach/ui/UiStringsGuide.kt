@@ -128,7 +128,7 @@ private fun inGameEvalBody(language: UiLanguage, label: String): String = when (
 private fun inGameTopMovesBody(language: UiLanguage, label: String): String = when (language) {
     UiLanguage.Korean -> "«$label»는 제가 좋다고 보는 자리 다섯 곳을 반상에 표시해요. 이것도 1회권이나 광고 한 번으로 열려요."
     UiLanguage.English -> "«$label» marks the five spots I'd consider on the board. Same as Eval — a ticket or one short ad opens it."
-    UiLanguage.Japanese -> "「$label」は私が good と見る5か所を盤上に示します。こちらも1回券か広告1本で開きます。"
+    UiLanguage.Japanese -> "「$label」は私が良いと見る5か所を盤上に示します。こちらも1回券か広告1本で開きます。"
     UiLanguage.ChineseSimplified -> "「$label」会在棋盘上标出我认为不错的五个点。同样用单次券或一段短广告即可开启。"
 }
 
@@ -148,13 +148,25 @@ internal fun guideBodyFor(
     GuideStep.Landing -> ""
     GuideStep.AttendanceClaim -> AttendanceClaimBody.getValue(language)
     GuideStep.HomeStartMatch -> HomeStartMatchBody.getValue(language)
-    GuideStep.MatchSetup -> matchSetupBody(language, facts ?: GuideSetupFacts(0, humanPlaysBlack = true))
-    // ⑤ 넷은 각자 **자기 버튼의 라벨 하나만** 인용한다.
-    GuideStep.InGameMagnifier -> inGameMagnifierBody(language, toolLabels?.magnifier ?: "")
-    GuideStep.InGameBoardSize -> inGameBoardSizeBody(language, toolLabels?.boardSubject ?: "")
-    GuideStep.InGameEval -> inGameEvalBody(language, toolLabels?.eval ?: "")
-    GuideStep.InGameTopMoves -> inGameTopMovesBody(language, toolLabels?.topMoves ?: "")
+    // ⚠️ **폴백을 두지 않는다**(2026-09-09 감사). 한때 `facts ?: GuideSetupFacts(0, …)` 였는데,
+    // 그 기본값은 **호선**이라 5점 접바둑 사용자에게 *"호선으로 맞춰 뒀어요"* 라고 **거짓을 말하면서
+    // 컴파일도 테스트도 통과**했다(앵커에서 `facts =` 한 줄만 빠지면 그렇게 된다). 조용한 거짓말보다
+    // 시끄러운 실패가 낫다 — `requireNotNull`이 개발 중에 즉시 터지고, 그 갈래를 `UiStringsGuideTest`가
+    // 못박는다. 인자가 필요한 단계를 늘릴 때도 같은 규칙을 따를 것.
+    GuideStep.MatchSetup -> matchSetupBody(
+        language,
+        requireNotNull(facts) { "④ 문구는 살아 있는 대국 설정 없이는 참일 수 없다(백로그 #128)" },
+    )
+    // ⑤ 넷은 각자 **자기 버튼의 라벨 하나만** 인용한다. 라벨이 없으면 *"«»를 켜 두면…"* 이라는
+    // 빈 인용부호가 화면에 나가므로 여기서도 폴백을 두지 않는다.
+    GuideStep.InGameMagnifier -> inGameMagnifierBody(language, requireLabels(toolLabels).magnifier)
+    GuideStep.InGameBoardSize -> inGameBoardSizeBody(language, requireLabels(toolLabels).boardSubject)
+    GuideStep.InGameEval -> inGameEvalBody(language, requireLabels(toolLabels).eval)
+    GuideStep.InGameTopMoves -> inGameTopMovesBody(language, requireLabels(toolLabels).topMoves)
 }
+
+private fun requireLabels(toolLabels: GuideToolLabels?): GuideToolLabels =
+    requireNotNull(toolLabels) { "⑤ 문구는 화면에 적힌 라벨 없이는 참일 수 없다(백로그 #128)" }
 
 /**
  * 마이페이지에서 첫돌이가 건네는 한 줄(백로그 #128 ②의 둘째 자리).

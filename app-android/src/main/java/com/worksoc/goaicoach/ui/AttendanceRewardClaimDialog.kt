@@ -230,8 +230,8 @@ private fun AttendanceRewardClaimDialogContent(
             // 같은 순간에 뜨는데(홈은 이 팝업과 **함께** 컴포즈돼 있다), 말풍선이 팝업 뒤에 깔리면
             // 사용자는 못 봤는데 "봤음"으로 기록된다.
             // ⚠️ 컴포지션 수명에만 묶는다 — 지급 경로에 걸면 팝업이 다른 이유로 사라지는 갈래에서
-            // 켜진 채 굳어 ③이 **영구히** 침묵한다(그 사유는 `AttendanceClaimVisibility`의 KDoc).
-            AttendanceClaimVisibility.TrackWhileShown()
+            // 켜진 채 굳어 ③이 **영구히** 침묵한다(그 사유는 `GuideBlockingOverlays`의 KDoc).
+            GuideBlockingOverlays.TrackWhileShown()
             Column(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(10.dp),

@@ -51,19 +51,20 @@ internal class GuideProgressStore(context: Context) {
         prefs.edit().putStringSet(SeenStepsKey, next).apply()
     }
 
-    /**
-     * 개발자 도구가 최초 설치 상태를 다시 만들 때 쓴다.
-     *
-     * ⚠️ **설정·개발자 섹션 파일에서 `GuideProgressStore(context).clear()`를 직접 부르지 말 것** —
-     * `DeveloperSectionTierContractTest`가 그 두 파일에서 `Store(context).clear()` 문자열을 금지한다
-     * (저장소를 화면이 직접 비우는 것을 막는 그물이다). 부를 일이 있으면 가이드 쪽이 노출하는
-     * `resetFirstRunGuide(context)`를 통할 것.
-     */
-    fun clear() {
-        prefs.edit().clear().apply()
-    }
-
     private companion object {
+        /**
+         * ⚠️ **`go_ai_coach_` 접두사가 지우는 힘을 만든다.**
+         *
+         * 개발자 초기화는 저장소 목록을 손으로 들고 있지 않다 — `DeveloperModeResetCoordinator`가
+         * `shared_prefs` 디렉터리를 훑어 **이 접두사로** 고른다. 그래서 이 파일은 초기화 쪽에
+         * 등록하지 않아도 자동으로 포함되고, **이름에서 접두사를 떼는 순간 개발자 초기화가
+         * 가이드 진행도만 조용히 지나친다**(최초 설치 상태를 다시 만들었다고 믿는데 가이드는
+         * 다시 뜨지 않는다). `FirstDolGuideContractTest`가 접두사를 못박는다.
+         *
+         * ⚠️ 2026-09-09까지 이 자리에 `clear()`가 있고 그 KDoc이 *"부를 일이 있으면
+         * `resetFirstRunGuide(context)`를 통할 것"* 이라고 적고 있었다 — **그 함수는 없었고**
+         * `clear()`도 호출부가 0이었다. 접두사 훑기가 이미 그 일을 한다.
+         */
         const val PrefsName = "go_ai_coach_guide"
         const val ArmedKey = "armed"
         const val SeenStepsKey = "seen_steps"

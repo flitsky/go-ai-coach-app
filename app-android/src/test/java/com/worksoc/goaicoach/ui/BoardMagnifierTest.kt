@@ -177,7 +177,14 @@ class BoardMagnifierTest {
      */
     @Test
     fun dragToPlaceIsNotGatedOnTheMagnifierToggle() {
+        // ⚠️ **주석과 `import`를 걷어낸 뒤 센다**(함정 10-2). 2026-09-09 감사가 이 테스트가 원문을
+        // 그대로 읽는 것을 짚었다 — 아래 `assertTrue`는 **주석에 적힌 같은 문장으로도 통과**하므로,
+        // 코드를 지우고 사유만 주석으로 남기는(흔한) 변경이 그물을 조용히 통과했을 것이다.
         val source = File("src/main/java/com/worksoc/goaicoach/ui/GoBoard.kt").readText()
+            .replace(Regex("""/\*.*?\*/""", RegexOption.DOT_MATCHES_ALL), "")
+            .lines()
+            .filterNot { it.trimStart().startsWith("import ") }
+            .joinToString("\n") { it.substringBefore("//") }
 
         assertFalse(
             "제스처 루프가 `isPlayMagnifierEnabled`로 조기 반환한다 — 돋보기를 끄면 끌어서 두기가 " +

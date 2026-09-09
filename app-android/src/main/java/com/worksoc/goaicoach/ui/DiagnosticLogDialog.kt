@@ -55,6 +55,12 @@ internal fun DiagnosticLogDialog(
     // ⚠️ 파일 읽기는 **한 번만** 한다 — 컴포지션마다 읽으면 스크롤할 때마다 디스크를 때린다.
     val tail = remember(context) { readDiagnosticLogTail(context) }
 
+    // ⚠️ 이 팝업이 떠 있는 동안 첫돌이 가이드를 **기록하지 않는다** — 뒤에 깔린 채 "봤음"으로
+
+    //   소진되는 것을 막는다(그 사유는 `GuideBlockingOverlays`의 KDoc).
+
+    GuideBlockingOverlays.TrackWhileShown()
+
     AlertDialog(
         onDismissRequest = onDismiss,
         // 로그 한 줄이 길어 기본 다이얼로그 폭으로는 거의 읽히지 않는다.

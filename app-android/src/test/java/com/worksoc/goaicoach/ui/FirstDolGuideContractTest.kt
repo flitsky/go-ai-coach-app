@@ -144,6 +144,95 @@ class FirstDolGuideContractTest {
      * 카드·토글 API로 쓰기 시작하면 그 사유가 함께 따라가지 않는다. 그래서 **쓸 수 있는 파일을
      * 개수로 못박는다** — 늘려야 할 이유가 생기면 이 단언을 고치면서 사유를 적게 된다.
      */
+    /**
+     * ⚠️ **팝업이 덮고 있으면 가이드는 기록하지 않아야 한다.**
+     *
+     * ③ 말풍선은 *"1.2초 컴포즈돼 있었으면 봤다"* 로 기록한다. 그래서 홈 위에 뜬 팝업이 그것을
+     * 덮고 있어도 시간은 그대로 흘러 **한 번도 못 본 안내가 영구히 소진**된다(`seen_steps`는
+     * 영구다). 2026-09-09 감사가 실제로 그 구멍을 짚었다 — 게이트가 **출석 팝업 하나**만 세고
+     * 있었고, 엔진 안내·초기화 안내가 뜬 동안에는 출석 팝업이 억제되므로 게이트는 `false`였다.
+     *
+     * 그래서 **`*Dialog.kt` 파일 전부**를 훑는다(손으로 센 목록이 아니다 — 새 팝업 파일이
+     * 들어오면 그물이 스스로 넓어진다). 팝업을 여는 자리 수와 [GuideBlockingOverlays.TrackWhileShown]
+     * 호출 수가 같아야 한다.
+     */
+    @Test
+    fun everyDialogTellsTheGuideItIsCoveringTheScreen() {
+        val dialogFiles = File(repoRoot, "app-android/src/main/java/com/worksoc/goaicoach/ui")
+            .listFiles { file -> file.name.endsWith("Dialog.kt") || file.name.endsWith("Dialogs.kt") }
+            .orEmpty()
+        assertTrue("`*Dialog.kt` 파일을 하나도 못 찾았다 — 이 그물이 아무것도 보지 않는다.", dialogFiles.size >= 5)
+
+        val opensDialog = Regex("""(?<![A-Za-z])(?:AlertDialog|Dialog)\(""")
+        val tracks = Regex("""GuideBlockingOverlays\.TrackWhileShown\(\)""")
+        dialogFiles.forEach { file ->
+            val source = code("app-android/src/main/java/com/worksoc/goaicoach/ui/${file.name}")
+            assertEquals(
+                "${file.name}: 팝업을 여는 자리 수와 `GuideBlockingOverlays.TrackWhileShown()` 수가 " +
+                    "다르다 — 추적하지 않는 팝업이 첫돌이 말풍선을 덮은 채 \"봤음\"으로 소진시킨다(백로그 #128).",
+                opensDialog.findAll(source).count(),
+                tracks.findAll(source).count(),
+            )
+        }
+    }
+
+    /**
+     * ⚠️ **인자가 필요한 단계는 앵커가 그 인자를 넘겨야 한다.**
+     *
+     * 2026-09-09 감사 전까지 `guideBodyFor`가 `facts ?: GuideSetupFacts(0, …)`로 **조용히 폴백**해서,
+     * 앵커에서 `facts =` 한 줄만 빠지면 5점 접바둑 사용자에게 *"호선으로 맞춰 뒀어요"* 라고
+     * **거짓을 말하면서 컴파일도 테스트도 통과**했다. 폴백은 없앴고(`requireNotNull`), 이 계약은
+     * 그 크래시를 **개발 중에** 만나게 한다 — 사용자 기기에서 만나기 전에.
+     *
+     * 요구하는 인자를 **enum에서 파생**한다: 그 표면에 ④가 있으면 `facts`, 동그라미 대상이 있는
+     * 단계가 있으면 `toolLabels`.
+     */
+    @Test
+    fun everyAnchorHandsInTheFactsItsOwnStepsQuote() {
+        val anchorCall = Regex("""GuideAnchor\((?:[^()]|\((?:[^()]|\([^()]*\))*\))*\)""")
+        val calls = uiSources
+            .filterKeys { it != "FirstDolGuide.kt" }   // 선언 자체는 호출이 아니다
+            .flatMap { (name, source) -> anchorCall.findAll(source).map { name to it.value } }
+        assertTrue("`GuideAnchor(...)` 호출을 하나도 못 찾았다 — 정규식이 늘어났거나 배선이 사라졌다.", calls.isNotEmpty())
+
+        calls.forEach { (name, call) ->
+            val surface = Regex("""GuideSurface\.(\w+)""").find(call)?.groupValues?.get(1)
+            assertTrue("$name: `GuideAnchor` 호출이 표면을 적지 않는다.", surface != null)
+            val steps = GuideStep.entries.filter { it.surface.name == surface }
+            if (steps.any { it == GuideStep.MatchSetup }) {
+                assertTrue(
+                    "$name($surface): ④가 이 표면에 있는데 `facts =`를 넘기지 않는다 — 문구가 " +
+                        "살아 있는 접바둑 값을 인용할 수 없다(백로그 #128).",
+                    call.contains("facts ="),
+                )
+            }
+            if (steps.any { it.target != null }) {
+                assertTrue(
+                    "$name($surface): 라벨을 인용하는 단계가 이 표면에 있는데 `toolLabels =`를 " +
+                        "넘기지 않는다 — ⑤가 빈 인용부호로 뜬다(백로그 #128).",
+                    call.contains("toolLabels ="),
+                )
+            }
+        }
+    }
+
+    /**
+     * ⚠️ **접두사가 지우는 힘을 만든다.** 개발자 초기화는 저장소를 손으로 열거하지 않고
+     * `shared_prefs`를 `go_ai_coach_` 접두사로 훑는다 — 이름에서 접두사가 빠지면 *"최초 설치
+     * 상태"* 를 만들었다고 믿는데 **가이드만 다시 뜨지 않는다.** 그 조용한 예외를 막는다.
+     */
+    @Test
+    fun theGuideProgressStoreKeepsTheNameTheDeveloperResetSweeps() {
+        val store = code("app-android/src/main/java/com/worksoc/goaicoach/persistence/GuideProgressStore.kt")
+        val prefsName = Regex("""PrefsName = "([^"]+)"""").find(store)?.groupValues?.get(1)
+        assertEquals(
+            "`GuideProgressStore`의 prefs 이름이 `go_ai_coach_` 접두사를 잃었다 — 개발자 초기화가 " +
+                "가이드 진행도를 조용히 지나친다(`DeveloperModeResetCoordinator`).",
+            true,
+            prefsName?.startsWith("go_ai_coach_"),
+        )
+    }
+
     @Test
     fun theBorrowedHomeAndBoardControlsStayBorrowedByTheGuideOnly() {
         mapOf(

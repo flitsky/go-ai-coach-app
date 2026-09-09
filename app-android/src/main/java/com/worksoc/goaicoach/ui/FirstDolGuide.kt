@@ -37,17 +37,28 @@ import kotlinx.coroutines.delay
  */
 
 /**
- * 출석 보상 팝업이 **지금 화면에 있는가.**
+ * **팝업이 지금 화면에 있는가**(어느 팝업이든).
  *
- * ⚠️ **이 값을 지급 경로에서 끄지 말 것.** 팝업은 받을 것이 없으면 아예 뜨지 않는 갈래도 있고
- * (`pending.isEmpty()`), 엔진 안내·초기화 안내가 먼저 뜨면 그 뒤로 밀린다 — 지급에 걸어 두면
- * 그 갈래에서 `true`로 굳어 **③이 영구히 침묵한다.** 그래서 팝업 자신의 **컴포지션 수명**
- * (`DisposableEffect`)에만 묶는다.
+ * ## ⚠️ 왜 "출석 팝업"이 아니라 "팝업 전부"인가
+ *
+ * 2026-09-09까지 이것은 `AttendanceClaimVisibility`, 즉 **출석 보상 팝업 하나**만 세는 값이었다.
+ * 그런데 ③ 말풍선은 *"1.2초 동안 컴포즈돼 있었으면 봤다"* 로 기록하므로, 홈 위에 뜰 수 있는
+ * **다른** 팝업(엔진 안내·릴리즈 초기화 안내·캐릭터 획득·직접착수 권유)이 덮고 있어도 그 1.2초는
+ * 그대로 흐른다 → 사용자는 **한 번도 못 봤는데 영구히 "봤음"** 이 된다(`seen_steps`는 영구다).
+ * 앞의 둘은 출석 팝업 자체를 억제하므로 옛 게이트로는 `false`였다 — 정확히 그 구멍이었다.
+ *
+ * 그래서 **팝업이라면 무엇이든** 자기 컴포지션 동안 [TrackWhileShown]을 부르고, 가이드는 그동안
+ * 기록하지 않는다. 손으로 센 목록이 아니라 **`*Dialog.kt` 파일 전부**를 훑는 계약으로 지킨다
+ * (`FirstDolGuideContractTest`) — 새 팝업이 배선 없이 들어오면 빨개진다.
+ *
+ * ⚠️ **이 값을 지급/닫힘 경로에서 끄지 말 것.** 팝업은 받을 것이 없으면 아예 뜨지 않는 갈래도 있고
+ * (`pending.isEmpty()`), 다른 안내가 먼저 뜨면 그 뒤로 밀린다 — 그런 경로에 걸어 두면 `true`로
+ * 굳어 **③이 영구히 침묵한다.** 그래서 팝업 자신의 **컴포지션 수명**(`DisposableEffect`)에만 묶는다.
  *
  * ⚠️ 프로세스 전역 가변 상태다. `Context`를 들지 않으므로 누수는 없고, 훗날 Robolectric이 들어오면
  * [resetForTest]로 되감을 것.
  */
-internal object AttendanceClaimVisibility {
+internal object GuideBlockingOverlays {
     private var count by mutableIntStateOf(0)
 
     val isShowing: Boolean get() = count > 0

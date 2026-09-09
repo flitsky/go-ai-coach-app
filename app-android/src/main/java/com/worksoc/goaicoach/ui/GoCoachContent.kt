@@ -199,7 +199,8 @@ internal fun GoCoachContent(
     //   `LocalConsumableUiState`·`LocalUiStrings` 같은 것들이 조용히 기본값으로 잡힌다.
     GuideAnchor(
         surface = GuideSurface.InGame,
-        blocked = screenState.isGameEnded ||
+        blocked = GuideBlockingOverlays.isShowing ||
+            screenState.isGameEnded ||
             benchmarkProgress != null ||
             benchmarkResult != null ||
             cacheOptimizationPrompt != null ||

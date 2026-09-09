@@ -45,6 +45,12 @@ internal fun EmailSignInDialog(
         Patterns.EMAIL_ADDRESS.matcher(email).matches() &&
         password.length >= MinPasswordLength
 
+    // ⚠️ 이 팝업이 떠 있는 동안 첫돌이 가이드를 **기록하지 않는다** — 뒤에 깔린 채 "봤음"으로
+
+    //   소진되는 것을 막는다(그 사유는 `GuideBlockingOverlays`의 KDoc).
+
+    GuideBlockingOverlays.TrackWhileShown()
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(titleText) },

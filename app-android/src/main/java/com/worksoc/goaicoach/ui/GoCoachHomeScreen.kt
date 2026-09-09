@@ -194,10 +194,13 @@ internal fun GoCoachHomeScreen(
                 // ⚠️ **스크림을 두지 않는다.** #125 스플래시가 터치를 일부러 먹는 것과 **반대**다 —
                 // 여기서 터치를 먹으면 사용자가 이 카드를 누를 수 없어 자동 재생이 막다른 길이 된다
                 // (다음 단계 ④는 이 카드를 눌러 대국 설정에 도착해야 열린다).
-                // ⚠️ 출석 팝업이 떠 있으면 억제한다 — 뒤에 깔린 채 "봤음"으로 기록되지 않게.
+                // ⚠️ **팝업이 떠 있으면 억제한다** — 뒤에 깔린 채 "봤음"으로 기록되지 않게.
+                //   2026-09-09까지 출석 팝업 **하나**만 셌는데, 엔진 안내·초기화 안내가 뜬 동안에는
+                //   출석 팝업이 억제돼 게이트가 `false`였다 → ③이 그 뒤에 깔린 채 소진됐다
+                //   (그 사유는 `GuideBlockingOverlays`의 KDoc).
                 GuideAnchor(
                     surface = GuideSurface.Home,
-                    blocked = AttendanceClaimVisibility.isShowing,
+                    blocked = GuideBlockingOverlays.isShowing,
                     modifier = Modifier.align(Alignment.TopEnd),
                 )
             }

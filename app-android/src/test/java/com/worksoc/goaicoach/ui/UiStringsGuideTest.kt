@@ -3,6 +3,7 @@ package com.worksoc.goaicoach.ui
 import com.worksoc.goaicoach.application.guide.GuideSetupFacts
 import com.worksoc.goaicoach.application.guide.GuideStep
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -45,6 +46,46 @@ class UiStringsGuideTest {
                 .map { step -> "${language.name}.${step.name}" }
         }
         assertEquals("문구가 비어 있는 단계가 있다(백로그 #128):\n" + blanks.joinToString("\n"), emptyList<String>(), blanks)
+    }
+
+    /**
+     * ⚠️ **마이페이지 인사는 단계가 아니라서 위 그물이 못 본다** — 그런데 표(`Map`)에서
+     * `getValue`로 꺼내므로 언어 키가 하나 빠지면 **화면이 예외로 죽는다**(빈 문구가 아니다).
+     * 늘 보이는 한 줄이라 그 언어 사용자는 마이페이지를 아예 열 수 없다.
+     */
+    @Test
+    fun theMyPageGreetingExistsInEveryLanguage() {
+        UiLanguage.entries.forEach { language ->
+            val greeting = guideMyPageGreetingFor(language)
+            assertTrue(
+                "${language.name} 마이페이지 인사가 비어 있다 — 표에 키가 없으면 `getValue`가 " +
+                    "던져 화면이 죽는다(백로그 #128).",
+                greeting.isNotBlank(),
+            )
+        }
+    }
+
+    /**
+     * ⚠️ **인자를 안 넘기면 시끄럽게 실패해야 한다.**
+     *
+     * 2026-09-09까지 `guideBodyFor`가 `facts ?: GuideSetupFacts(0, …)` / `toolLabels?.x ?: ""` 로
+     * **조용히 폴백**했다. 그 기본값은 **호선**이라, 앵커에서 인자 한 줄이 빠지면 5점 접바둑
+     * 사용자에게 *"호선으로 맞춰 뒀어요"* 라고 **거짓을 말하면서** 컴파일도 테스트도 통과했다.
+     * ⑤도 라벨이 없으면 *"«»를 켜 두면…"* 이라는 빈 인용부호로 나갔다. 폴백을 없앤 것이
+     * 되돌려지지 않게 못박는다 — 조용한 거짓말보다 시끄러운 실패가 낫다.
+     */
+    @Test
+    fun theCopyRefusesToGuessWhatItWasNotGiven() {
+        UiLanguage.entries.forEach { language ->
+            assertThrows(IllegalArgumentException::class.java) {
+                guideBodyFor(language, GuideStep.MatchSetup)
+            }
+            GuideStep.entries.filter { it.target != null }.forEach { step ->
+                assertThrows(IllegalArgumentException::class.java) {
+                    guideBodyFor(language, step, facts = facts)
+                }
+            }
+        }
     }
 
     /**
@@ -124,6 +165,46 @@ class UiStringsGuideTest {
             )
         }
     }
+
+    /**
+     * ⚠️ **한글 판정기의 사각지대: 다른 언어에 섞인 영어 낱말.**
+     *
+     * 2026-09-09 감사가 일본어 ⑤에서 *"私が good と見る5か所"* 를 집어냈다 — `good`이 그대로
+     * 박혀 있었고, [nonKoreanGuideCopyCarriesNoHangul]은 **한글만** 보므로 통과시켰다. 번역을
+     * 절반만 한 흔적은 대체로 이렇게 남는다.
+     *
+     * ⚠️ 라벨은 **호출부가 넘긴 값**이라(테스트에서 `MAGNIFIER` 같은 ASCII를 쓴다) 검사 전에
+     * 걷어낸다. 한국어도 함께 본다 — 한국어 문구에 영어 낱말이 남는 것도 같은 실수다.
+     */
+    @Test
+    fun copyInAKoreanOrCjkLanguageCarriesNoStrayEnglishWord() {
+        val latinWord = Regex("""[A-Za-z]{2,}""")
+        // 자기검증: 영어 문구에서는 반드시 걸려야 한다 — 걸리지 않으면 이 검사기가 죽어 있다.
+        assertTrue(
+            "영어 문구에서 라틴 낱말을 못 찾았다 — 이 그물이 문구를 읽고 있지 않다.",
+            playableSteps.all { step -> latinWord.containsMatchIn(stripLabels(bodyOf(UiLanguage.English, step))) },
+        )
+
+        val leaks = UiLanguage.entries
+            .filter { it != UiLanguage.English }
+            .flatMap { language ->
+                playableSteps.mapNotNull { step ->
+                    val body = stripLabels(bodyOf(language, step))
+                    latinWord.find(body)?.let { "${language.name}.${step.name} = \"${it.value}\"" }
+                }
+            }
+        assertEquals(
+            "비영어 문구에 영어 낱말이 남아 있다 = 번역을 절반만 했다(백로그 #128):\n" +
+                leaks.joinToString("\n"),
+            emptyList<String>(),
+            leaks,
+        )
+    }
+
+    /** 호출부가 넘긴 라벨은 문구의 몫이 아니다 — 검사 전에 걷어낸다. */
+    private fun stripLabels(body: String): String =
+        listOf(toolLabels.magnifier, toolLabels.boardSubject, toolLabels.eval, toolLabels.topMoves)
+            .fold(body) { text, label -> text.replace(label, "") }
 
     private companion object {
         /** 랜딩의 기력 보기 다섯(한국어) — 이 낱말이 ④에 나타나면 저장되지 않는 값을 말하는 것이다. */
