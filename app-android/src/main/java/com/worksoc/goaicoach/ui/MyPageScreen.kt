@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -99,13 +100,25 @@ internal fun MyPageScreen(
         ) {
             // 첫돌이가 여기서도 인사한다(백로그 #128 ②의 둘째 자리). ⚠️ **단계가 아니라 늘 보이는
             // 인사**다 — 이 화면은 사용자가 *"내가 모은 것"* 을 보러 오는 자리이고, 그것을 함께
-            // 챙겨 준 상대가 거기 있는 것이 자연스럽다. **가이드 다시보기** 행이 나중에 이 옆에 붙는다.
-            GuideLine(text = guideMyPageGreetingFor(strings.language))
-            // **가이드 다시보기**(사용자 확정 ⓑ: 진입점은 여기 하나뿐. 설정에는 넣지 않는다).
-            // ⚠️ 상태는 이 화면이 든다 — 행은 상태가 없고, 다이얼로그가 별도 윈도우라
-            //   셸의 뒤로가기(마이페이지에서 활성)에 지지 않는다(그 사유는 그 파일의 KDoc).
-            GuideReplayRow(onClick = { showGuideReplay = true })
-            AttendanceBoardSection()
+            // 챙겨 준 상대가 거기 있는 것이 자연스럽다.
+            //
+            // ⚠️ **인사는 첫 절의 제목과 한 줄을 쓴다**(2026-09-09 사용자 판정). 한때 인사·다시보기·
+            // 출석 제목이 위에서 아래로 따로 서 있었는데, 실기에서 **세 덩어리가 서로 얽혀 보였다**
+            // — 인사가 무엇을 소개하는지, 다시보기 카드가 어느 절에 속한 것인지 읽히지 않았다.
+            // 그래서 인사는 제목 옆으로 붙이고(제목+인사+판이 한 덩어리), 다시보기는 **맨 아래**로
+            // 내렸다(이미 본 가이드를 다시 여는 행이 첫 화면을 차지할 이유가 없다).
+            AttendanceBoardSection(
+                titleTrailing = {
+                    GuideLine(
+                        text = guideMyPageGreetingFor(strings.language),
+                        // ⚠️ 제목이 가져간 만큼만 남긴다 — `weight`가 없으면 인사가 줄바꿈하지
+                        // 못하고 오른쪽으로 밀려 잘린다(영어 문구가 네 언어 중 가장 길다).
+                        // 남는 폭이 좁아 **접히는 것을 전제로** 위쪽 정렬을 쓴다(그 사유는 `GuideLine`).
+                        modifier = Modifier.weight(1f),
+                        verticalAlignment = Alignment.Top,
+                    )
+                },
+            )
             Text(
                 text = strings.myPageInventoryTitle,
                 fontWeight = FontWeight.SemiBold,
@@ -214,6 +227,12 @@ internal fun MyPageScreen(
                     }
                 }
             }
+            // **가이드 다시보기**(사용자 확정 ⓑ: 진입점은 여기 하나뿐. 설정에는 넣지 않는다).
+            // ⚠️ **맨 아래가 제자리다**(2026-09-09 사용자 판정) — 이미 본 가이드를 다시 여는 행이라
+            //   서둘러 눈에 띌 필요가 없고, 위에 있으면 인사와 출석 제목 사이를 끊었다.
+            // ⚠️ 상태는 이 화면이 든다 — 행은 상태가 없고, 다이얼로그가 별도 윈도우라
+            //   셸의 뒤로가기(마이페이지에서 활성)에 지지 않는다(그 사유는 그 파일의 KDoc).
+            GuideReplayRow(onClick = { showGuideReplay = true })
         }
     }
 
@@ -239,7 +258,7 @@ internal fun MyPageScreen(
  * 받을 것이 있으면 다음 실행에 팝업이 알아서 뜬다(킥오프 5.1절).
  */
 @Composable
-private fun AttendanceBoardSection() {
+private fun AttendanceBoardSection(titleTrailing: @Composable RowScope.() -> Unit) {
     val strings = LocalUiStrings.current
     val context = LocalContext.current
     // 화면을 여는 시점의 저장값 한 번이면 된다 — 이 화면에 있는 동안 출석이 바뀌지 않는다.
@@ -249,11 +268,22 @@ private fun AttendanceBoardSection() {
         buildAttendanceBoard(AttendanceStore(context).load(), collection)
     }
 
-    Text(
-        text = attendanceBoardSectionTitleFor(strings.language),
-        fontWeight = FontWeight.SemiBold,
-        color = MaterialTheme.colorScheme.onSurface,
-    )
+    // 제목과 [titleTrailing](첫돌이 인사)이 **한 줄**을 쓴다 — 그 사유는 호출부에 있다.
+    // 인사가 두 줄로 늘어날 수 있으므로 제목을 가운데 정렬해 둔다.
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        // ⚠️ **위쪽 정렬**이다 — 인사가 두세 줄로 접히면(영어·큰 글꼴) 가운데 정렬은 제목을
+        // 문단 중간에 띄워 놓는다. 위로 맞추면 제목과 인사 **첫 줄**이 한 줄로 읽힌다.
+        verticalAlignment = Alignment.Top,
+    ) {
+        Text(
+            text = attendanceBoardSectionTitleFor(strings.language),
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        titleTrailing()
+    }
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = ActionButtonShape,

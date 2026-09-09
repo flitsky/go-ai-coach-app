@@ -91,9 +91,11 @@ private fun MaterialThemeSurface(): Color = androidx.compose.material3.MaterialT
  * ## ⚠️ 그래서 이 안에 **누를 것을 두지 말 것**
  *
  * 부모 경계 **밖**에 그려진 자식은 히트테스트를 받지 못한다 — 버튼을 넣으면 눌리지 않는 버튼이
- * 된다. ③ 말풍선을 **비인터랙티브 그림**으로 둔 이유가 이것이고, 대신 ③은 화면을 떠날 때
- * 스스로 "봤음"으로 기록돼 다시 뜨지 않는다. 사슬을 끄는 *"그만 보기"* 는 눌릴 수 있는 자리
- * (④⑤ 카드·마이페이지)에 둔다.
+ * 된다. ③ 말풍선을 **비인터랙티브 그림**으로 둔 이유가 이것이고, 대신 ③은 **1.2초 동안 팝업에
+ * 덮이지 않은 채** 있었으면 스스로 "봤음"으로 기록된다(`GuideBlockingOverlays`).
+ *
+ * ⚠️ 이 문단은 2026-09-09까지 *"사슬을 끄는 「그만 보기」는 눌릴 수 있는 자리(④⑤ 카드·마이페이지)에
+ * 둔다"* 로 끝나고 있었다 — 그 버튼은 같은 날 **없어졌다**(사용자 판정: `GuideCard`의 KDoc).
  */
 @Composable
 internal fun ZeroSizeOverlay(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
@@ -141,11 +143,18 @@ internal fun GuideBubble(text: String, modifier: Modifier = Modifier) {
  * 문장과 함께 두어 **안내자**로 읽히게 한다.
  */
 @Composable
-internal fun GuideLine(text: String, modifier: Modifier = Modifier) {
+internal fun GuideLine(
+    text: String,
+    modifier: Modifier = Modifier,
+    // ⚠️ 문구가 **두 줄 이상**으로 접힐 수 있는 자리에서는 `Top`을 넘긴다 — 기본값(`가운데`)은
+    // 얼굴을 문단 중간에 세운다. 마이페이지가 좁은 폭(제목과 한 줄을 쓴다)에서 그렇고, 실기
+    // 영어·큰 글꼴에서 얼굴이 둘째 줄 옆에 서 있었다. 출석 팝업은 폭이 넉넉해 기본값을 쓴다.
+    verticalAlignment: Alignment.Vertical = Alignment.CenterVertically,
+) {
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment = verticalAlignment,
     ) {
         FirstDolAvatar(size = 24.dp)
         Text(
