@@ -29,9 +29,31 @@
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="${admobAppId}" />
 
+        <!--
+            ⚠️ **회전하면 대국이 통째로 날아갔다**(2026-09-09 재현). 이 앱은 세로 전용인데
+            아무 제한도 걸어두지 않아, 회전 한 번에 액티비티가 파괴·재생성되면서
+            `GoCoachApp`의 `currentDestination`(`remember`, 저장되지 않는다)이 초기값으로
+            돌아가 **대국 중에 로비로 튕겼다.** 실측 로그: `ActivityRecord ... is relaunching`,
+            재기동 3415ms, KataGo 엔진까지 다시 기동.
+
+            ⓐ `screenOrientation="portrait"` — 세로 고정(2026-09-09 사용자 결정: "랜드스케이프
+               모드 지원 안 하니 돌아가지 않게"). 폰에서는 이것으로 회전 자체가 사라진다.
+
+            ⓑ `configChanges` — ⓐ만으로는 부족해서 같이 둔다. 두 가지 이유다:
+               · **targetSdk 36에서는 큰 화면(sw≥600dp)에서 ⓐ가 무시된다** — 태블릿·폴더블은
+                 여전히 회전하고, 그러면 ⓐ가 없는 것과 똑같이 대국이 날아간다. 스토어에
+                 태블릿 스크린샷을 올리는 앱이라 해당 없는 이야기가 아니다.
+               · **회전만 액티비티를 죽이는 게 아니다** — 시스템 글꼴/화면 크기 변경,
+                 다크 모드 전환, 멀티윈도우 크기 조절이 전부 같은 경로로 같은 사고를 낸다.
+               Compose는 이 값들을 `LocalConfiguration`/`LocalDensity`로 다시 읽으므로 재생성
+               없이도 정상 동작한다. 이 앱은 문자열도 글꼴 배율도 자체 관리(`UiStrings`,
+               `AppFontScaleState`)라 리소스 재해석에 기대는 부분이 없다.
+        -->
         <activity
             android:name=".MainActivity"
-            android:exported="true">
+            android:exported="true"
+            android:screenOrientation="portrait"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden|uiMode|density|fontScale|locale|layoutDirection">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
