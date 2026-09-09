@@ -206,8 +206,38 @@ class UiStringsGuideTest {
         listOf(toolLabels.magnifier, toolLabels.boardSubject, toolLabels.eval, toolLabels.topMoves)
             .fold(body) { text, label -> text.replace(label, "") }
 
+    /**
+     * ⚠️ **⑤ 추천 수 문구는 개수를 말하지 않는다**(2026-09-09 사용자 지적).
+     *
+     * 네 언어가 *"자리 다섯 곳 / five spots / 5か所 / 五个点"* 이라고 적고 있었는데, 5는 엔진에
+     * **요청하는** 후보 수일 뿐이다 — 화면에 찍히는 것은 엔진이 실제로 점수를 매긴 것이라
+     * 끝내기·좁은 판에서는 그보다 적다. 하나만 떠도 문구는 참이어야 한다.
+     *
+     * ⚠️ 숫자 전부를 금지할 수는 없다 — 같은 문장이 *"1회권"* 을 말한다. 그래서 **개수를 세는
+     * 낱말**만 막는다.
+     */
+    @Test
+    fun theTopMovesCopyNeverPromisesAFixedNumberOfCandidates() {
+        UiLanguage.entries.forEach { language ->
+            val body = bodyOf(language, GuideStep.InGameTopMoves)
+            CountWordsThatWouldOverpromise.forEach { word ->
+                assertTrue(
+                    "${language.name} ⑤ 문구가 '$word'라고 개수를 못박는다 — 엔진이 그보다 적게 " +
+                        "돌려주는 자리(끝내기·좁은 판)에서 거짓이 된다(2026-09-09 사용자 지적).",
+                    // ⚠️ `ignoreCase` 없이는 영어가 문장 첫머리에서 *"Five spots…"* 로 돌아올 때
+                    // 그물을 그대로 빠져나간다 — 목록이 소문자 `five`만 들고 있기 때문이다.
+                    !body.contains(word, ignoreCase = true),
+                )
+            }
+        }
+    }
+
     private companion object {
         /** 랜딩의 기력 보기 다섯(한국어) — 이 낱말이 ④에 나타나면 저장되지 않는 값을 말하는 것이다. */
         val SkillWordsThatWouldBeAGuess = listOf("입문", "초급", "중급", "상급", "최상급")
+
+        /** ⑤가 개수를 세면 나타나는 낱말들 — 네 언어에서 실제로 쓰였던 것 그대로. */
+        val CountWordsThatWouldOverpromise =
+            listOf("다섯", "five", "5か所", "五个", "五個", "5곳", "5개", "다섯 곳")
     }
 }

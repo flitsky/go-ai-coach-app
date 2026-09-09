@@ -125,11 +125,22 @@ private fun inGameEvalBody(language: UiLanguage, label: String): String = when (
     UiLanguage.ChineseSimplified -> "「$label」会在棋盘上用颜色显示当前双方的地。用签到获得的单次券或看一段短广告即可开启。"
 }
 
+/**
+ * ⚠️ **개수를 말하지 않는다**(2026-09-09 사용자 지적: *"항상 5개를 보여주는 게 아니다"*).
+ *
+ * 2026-09-09까지 네 언어가 *"자리 다섯 곳 / five spots / 5か所 / 五个点"* 이라고 적고 있었다.
+ * `LightweightTopMoveCandidateCount = 5`는 엔진에 **요청하는** 수일 뿐이고, 화면에 찍히는 것은
+ * `snapshot.candidatesForDisplay()` — **엔진이 실제로 점수를 매긴 것**이다(끝내기·좁은 판에서는
+ * 그보다 적다. 엔진 메시지 자체가 `scored/legal`로 그 차이를 말한다). 그래서 문구는 **후보**라고만
+ * 하고 수를 세지 않는다 — 하나가 뜨든 다섯이 뜨든 참이어야 한다.
+ *
+ * `UiStringsGuideTest`가 개수 낱말을 금지한다.
+ */
 private fun inGameTopMovesBody(language: UiLanguage, label: String): String = when (language) {
-    UiLanguage.Korean -> "«$label»는 제가 좋다고 보는 자리 다섯 곳을 반상에 표시해요. 이것도 1회권이나 광고 한 번으로 열려요."
-    UiLanguage.English -> "«$label» marks the five spots I'd consider on the board. Same as Eval — a ticket or one short ad opens it."
-    UiLanguage.Japanese -> "「$label」は私が良いと見る5か所を盤上に示します。こちらも1回券か広告1本で開きます。"
-    UiLanguage.ChineseSimplified -> "「$label」会在棋盘上标出我认为不错的五个点。同样用单次券或一段短广告即可开启。"
+    UiLanguage.Korean -> "«$label»는 제가 보기에 좋은 최적수 후보를 반상에 표시해요. 이것도 1회권이나 광고 한 번으로 열려요."
+    UiLanguage.English -> "«$label» marks the moves I'd consider best on the board. Same as Eval — a ticket or one short ad opens it."
+    UiLanguage.Japanese -> "「$label」は私が良いと見る候補手を盤上に示します。こちらも1回券か広告1本で開きます。"
+    UiLanguage.ChineseSimplified -> "「$label」会在棋盘上标出我认为不错的候选点。同样用单次券或一段短广告即可开启。"
 }
 
 /**
