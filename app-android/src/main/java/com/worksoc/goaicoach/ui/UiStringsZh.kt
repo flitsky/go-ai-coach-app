@@ -200,7 +200,7 @@ internal val UiStringsChineseSimplified = UiStringsKorean.copy(
         "设置和语言也会全部清除，应用将立即重启。结果与刚安装完全相同，引导页和新手指引会从头再次显示。" +
         "仅保留设备标识符。",
     settingsDevFreshInstallAction = "恢复",
-    boardShapeLockedDuringGame = "对局进行中无法更改棋盘大小和让子。请在开始新对局时设置。",
+    matchSetupLockedDuringGame = "对局进行中无法修改对局设置。请在开始新对局时设定。",
     localOnlyDataNoticeTitle = "无需登录即可畅玩",
     localOnlyDataNoticeBody = "签到记录、收集的角色、单次券、无限次悔棋等在应用中积累的内容仅保存在本机。删除应用或更换设备后，应用无法为您恢复。",
     localOnlyDataNoticePaidRestoreLine = "不过，在 Google Play 购买的角色不同。使用同一 Google Play 账号重新安装后，应用会确认购买记录并重新解锁。",

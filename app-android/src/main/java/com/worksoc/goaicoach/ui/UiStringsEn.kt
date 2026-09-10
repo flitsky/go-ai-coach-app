@@ -202,7 +202,7 @@ internal val UiStringsEnglish = UiStringsKorean.copy(
         "the app immediately. It ends up exactly like a fresh install, so the landing and the guide " +
         "run again from the start. Only the device identifier is kept.",
     settingsDevFreshInstallAction = "Reset",
-    boardShapeLockedDuringGame = "Board size and handicap can't change during a game. Set them when you start a new one.",
+    matchSetupLockedDuringGame = "Match settings are locked during a game. Choose them when you start a new one.",
     localOnlyDataNoticeTitle = "Play without signing in",
     localOnlyDataNoticeBody = "Check-in streak, characters, single-use tickets, Unlimited Undo — what the app builds up stays on this device. Delete the app or switch devices and the app can't bring it back.",
     localOnlyDataNoticePaidRestoreLine = "Characters bought on Google Play are different. Reinstall with the same Google Play account and the app checks your purchase history and unlocks them again.",

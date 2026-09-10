@@ -44,8 +44,15 @@ import com.worksoc.goaicoach.shared.Ruleset
  * 그때 되살릴지가 미정이었다). 사용자 결정의 근거: *"굳이 대국 중에 다른 대국 설정이 필요한가,
  * 나중에 대국 시작할 때 하면 될 일"* — **로비가 그 자리이고, 그쪽은 잠그지 않는다.**
  *
- * ⚠️ **계가 방식과 덤은 잠그지 않는다.** 원래 심플 레이아웃도 그 둘만 묶었다 — 판의 **모양**을
- * 바꾸는 것과 **셈법**을 바꾸는 것은 진행 중 대국에 미치는 뜻이 다르다.
+ * ## ⚠️ 2026-09-10: **넷을 함께 잠근다**(계가·덤 포함)
+ * 그전에는 판 크기·접바둑만 잠그고 *"판의 모양을 바꾸는 것과 셈법을 바꾸는 것은 뜻이 다르다"*
+ * 는 이유로 계가·덤을 열어 뒀다. 사용자 실사용에서 **그 구분이 오히려 사고로 읽혔다** —
+ * 넷이 같은 베이지 칸이라 흐린 글자만으로는 구분되지 않아 *"비활성처럼 보이는데 눌리고,
+ * 심지어 값이 바뀐다"* 가 됐다(2026-09-10 사용자 제보).
+ * · **덤을 바꾸면 이미 둔 판의 점수가 소급해 바뀐다** — 형세·승률·최종 판정이 한꺼번에
+ *   달라진다. 계가 방식도 같은 계통이다. 진행 중 대국에서 **안전한 변경이 아니다.**
+ * · 잘못 시작했다면 기권하고 다시 여는 비용이 낮다는 것이 사용자 판단이다.
+ * · 그래서 규칙이 *"대국 중에는 대국 설정을 못 바꾼다"* 하나로 단순해졌다.
  *
  * ⚠️ **잠글지 판정하는 조건을 여기서 인라인으로 쓰지 말 것** —
  * [com.worksoc.goaicoach.application.preferences.isBoardSetupLockedDuringGame]가 갖고 있다.
@@ -61,8 +68,12 @@ internal fun CompactScoringAndBoardSettingsPanel(
     onBoardSizeChange: (BoardSize) -> Unit,
     onHandicapCountChange: (Int) -> Unit,
     onKomiChange: (Double) -> Unit,
-    /** 판 크기·접바둑을 바꿀 수 있는가. 로비는 항상 `true`(늘 대국 시작 전이다), 설정 화면은 #75의 판정을 넘긴다. */
-    canChangeBoardShape: Boolean = true,
+    /**
+     * 대국 설정 네 칸(계가·덤·판 크기·접바둑)을 바꿀 수 있는가. 로비는 항상 `true`(늘 대국
+     * 시작 전이다), 설정 화면과 대국 화면 메뉴는 `isBoardSetupLockedDuringGame`의 판정을 넘긴다.
+     * ⚠️ 이름이 `...BoardShape`가 아닌 이유는 2026-09-10에 **계가·덤까지 범위가 넓어졌기** 때문이다.
+     */
+    canChangeMatchSetup: Boolean = true,
 ) {
     val strings = LocalUiStrings.current
     val handicapOptions = listOf(0) + (2..boardSize.maxHandicapCount).toList()
@@ -81,6 +92,7 @@ internal fun CompactScoringAndBoardSettingsPanel(
                 options = Ruleset.entries,
                 optionLabel = strings::compactRulesetLabel,
                 onSelected = onRulesetChange,
+                enabled = canChangeMatchSetup,
             )
             CompactSettingDropdownCell(
                 modifier = Modifier.weight(1f).fillMaxHeight(),
@@ -88,6 +100,7 @@ internal fun CompactScoringAndBoardSettingsPanel(
                 options = KomiOptions,
                 optionLabel = strings::komiValueLabel,
                 onSelected = onKomiChange,
+                enabled = canChangeMatchSetup,
             )
         }
         // 2행: 바둑판 크기 / 접바둑
@@ -103,7 +116,7 @@ internal fun CompactScoringAndBoardSettingsPanel(
                 options = listOf(BoardSize.Nine, BoardSize.Thirteen, BoardSize.Nineteen),
                 optionLabel = { size -> "${size.value}x${size.value}" },
                 onSelected = onBoardSizeChange,
-                enabled = canChangeBoardShape,
+                enabled = canChangeMatchSetup,
             )
             CompactSettingDropdownCell(
                 modifier = Modifier.weight(1f).fillMaxHeight(),
@@ -111,14 +124,14 @@ internal fun CompactScoringAndBoardSettingsPanel(
                 options = handicapOptions,
                 optionLabel = strings::compactHandicapValueLabel,
                 onSelected = onHandicapCountChange,
-                enabled = canChangeBoardShape,
+                enabled = canChangeMatchSetup,
             )
         }
         // ⚠️ **잠근 이유를 반드시 말한다.** 눌러도 안 열리는 칸을 이유 없이 두면 고장으로 읽힌다 —
         // 사용자가 이 항목을 만든 계기도 *"바꿨는데 왜 그대로지"* 라는 어긋남이었다.
-        if (!canChangeBoardShape) {
+        if (!canChangeMatchSetup) {
             Text(
-                text = strings.boardShapeLockedDuringGame,
+                text = strings.matchSetupLockedDuringGame,
                 fontSize = 12.sp,
                 color = MaterialTheme.colorScheme.secondary,
             )

@@ -28,7 +28,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.worksoc.goaicoach.BuildConfig
-import com.worksoc.goaicoach.application.preferences.isBoardSetupLockedDuringGame
 import com.worksoc.goaicoach.presentation.GameActionButtonRole
 import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.presentation.GameUiEvent
@@ -155,16 +154,14 @@ internal fun ExpandedGameMenuSection(
         // 대국 중에는 계가·덤도 못 바꿨다. 사용자 결정(2026-09-10): *"대국 중에는 대국에
         // 집중하도록 메인에서 설정하게 하고, 깜빡한 사용자는 대국 화면에서도 바꿀 수 있게."*
         //
-        // ⚠️ **함께 돌아온 것이 게이팅 표현이다.** #76이 *"막아야 하는지 미정"* 으로 남긴 그
-        // 판단은 #75가 이미 내렸다 — 판 크기·접바둑만 잠그고 **계가·덤은 열어 둔다.**
-        // 판정을 여기서 새로 쓰지 않고 `isBoardSetupLockedDuringGame`을 부르는 이유가 그것이다.
-        // ⚠️ `hasResumableSavedGame`은 **넘기지 않는다(기본 false).** 그 인자가 막으려는 것은
-        // *"앱을 막 켜서 저장된 대국이 아직 메모리에 없어 `moveCount`가 0으로 보이는"* 경우인데,
-        // 대국 화면 안에서는 그 판이 이미 메모리에 있어 `moves.size`가 진실이다.
-        // · ⚠️ **완전히 같지는 않다**: 새 대국을 막 시작한 0수 시점에는 이쪽이 열려 있고 메인
-        //   설정은 저장분을 읽어 잠글 수 있다. 창이 좁고(0수에서 판을 바꾸는 것은 #75가 명시적으로
-        //   허용한 *"다음 대국 준비"* 다) 여기서 디스크를 다시 읽으면 메뉴를 열 때마다 I/O가
-        //   붙어 그대로 뒀다 — **두 화면의 판정을 하나로 맞추려면 저장분을 인자로 내려보낼 것.**
+        // ⚠️ **다만 대국 설정 네 칸은 여기서 항상 잠긴다**(2026-09-10 사용자 결정). 이 화면에서
+        // 바꿀 수 있는 것은 **언어·표시 옵션·탐색 시간**이고, 계가·덤·판 크기·접바둑은 보여만 준다.
+        // 하루 전 판단(*"판의 모양과 셈법은 뜻이 다르니 계가·덤은 열어 둔다"*)을 실사용이 뒤집었다:
+        //   ⓐ 넷이 같은 베이지 칸이라 **활성/비활성이 글자 농도로만 구분돼** 넷 다 잠긴 것처럼
+        //      보이는데 둘만 열렸다 — *"비활성 같은데 눌리고 값도 바뀐다"*(사용자 제보).
+        //   ⓑ 0수에서는 넷이 다 열리고 **한 수 두는 순간 둘만 잠기는** 경계가 생겼다.
+        //   ⓒ 덤을 바꾸면 이미 둔 판의 점수가 **소급해** 바뀐다 — 형세·승률·최종 판정이 함께 튄다.
+        // 잘못 시작했으면 기권하고 다시 여는 비용이 낮다는 것이 사용자 판단이다.
         // ⚠️ 순서를 메인 설정과 **같게** 유지할 것(언어 → 대국 설정 → 표시 → 탐색 시간).
 
         LanguageSettingsPanel(
@@ -189,10 +186,13 @@ internal fun ExpandedGameMenuSection(
             onBoardSizeChange = { size -> onEvent(GameUiEvent.ChangeBoardSize(size)) },
             onHandicapCountChange = { count -> onEvent(GameUiEvent.ChangeHandicapCount(count)) },
             onKomiChange = { komi -> onEvent(GameUiEvent.ChangeKomi(komi)) },
-            canChangeBoardShape = !isBoardSetupLockedDuringGame(
-                moveCount = screenState.gameState.moves.size,
-                isGameEnded = screenState.isGameEnded,
-            ),
+            // ⚠️ **여기서는 조건 없이 잠근다**(2026-09-10 사용자 결정). 이 화면에 있다는 것
+            // 자체가 *"대국 중"* 이므로 둘 곳이 아니다 — `isBoardSetupLockedDuringGame`을 쓰면
+            // **0수(막 시작해 아직 안 둔 판)에서 넷이 열려**, 한 수 두는 순간 잠기는 이상한
+            // 경계가 생긴다(사용자 제보: *"시작 직후엔 열리는데 한 수 두면 계가·덤만 열린다"*).
+            // 그 정책의 *"아직 안 둔 판은 다음 대국 준비"* 라는 허용은 **로비와 메인 설정**의
+            // 이야기다 — 그 둘은 대국 화면 밖이라 여전히 정책 판정을 쓴다.
+            canChangeMatchSetup = false,
         )
 
         KaTrainUxMenuPanel(

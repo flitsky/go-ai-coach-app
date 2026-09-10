@@ -20,6 +20,29 @@ class BoardSetupLockContractTest {
     private val settings = codeOnly(sourceOf("SettingsScreen.kt"))
     private val lobby = codeOnly(sourceOf("GameSetupLobby.kt"))
     private val panel = codeOnly(sourceOf("CompactScoringAndBoardSettingsPanel.kt"))
+    private val gameMenu = codeOnly(sourceOf("GameMenuSection.kt"))
+
+    /**
+     * ⚠️ **대국 화면 메뉴는 조건 없이 잠근다**(2026-09-10 사용자 결정). 그 화면에 있다는 것
+     * 자체가 *"대국 중"* 이므로 정책 판정을 쓸 자리가 아니다.
+     *
+     * 여기에 `isBoardSetupLockedDuringGame`을 되돌려 놓으면 **0수(막 시작해 아직 안 둔 판)에서
+     * 넷이 열리고 한 수 두는 순간 잠기는** 경계가 되살아난다 — 사용자가 실제로 제보한 그
+     * 증상이다(*"시작 직후엔 열리는데 한 수 두면 계가·덤만 열린다"*).
+     */
+    @Test
+    fun theGameMenuLocksMatchSetupUnconditionally() {
+        assertTrue(
+            "대국 화면 메뉴가 `canChangeMatchSetup = false`를 넘기지 않는다 — 0수에서 다시 열린다" +
+                "(2026-09-10 사용자 결정).",
+            gameMenu.contains("canChangeMatchSetup = false"),
+        )
+        assertTrue(
+            "대국 화면 메뉴가 잠금 정책 판정을 다시 쓰고 있다 — 그 함수의 `moveCount > 0` 조건이 " +
+                "0수를 열어 버린다. 이 화면에서는 조건 없이 잠근다.",
+            !gameMenu.contains("isBoardSetupLockedDuringGame"),
+        )
+    }
 
     /**
      * ⚠️ **설정 화면은 잠금 판정을 넘겨야 한다.** 넘기지 않으면 패널 기본값이 `true`라
@@ -28,9 +51,9 @@ class BoardSetupLockContractTest {
     @Test
     fun theSettingsScreenPassesTheLockDecision() {
         assertTrue(
-            "설정 화면이 `canChangeBoardShape`를 넘기지 않는다 — 패널 기본값이 true라 " +
+            "설정 화면이 `canChangeMatchSetup`을 넘기지 않는다 — 패널 기본값이 true라 " +
                 "잠금이 조용히 사라진다(#75).",
-            settings.contains("canChangeBoardShape = !isBoardSetupLockedDuringGame("),
+            settings.contains("canChangeMatchSetup = !isBoardSetupLockedDuringGame("),
         )
         assertTrue(
             "잠금 판정에 둔 수를 넘기지 않는다(#75).",
@@ -63,8 +86,8 @@ class BoardSetupLockContractTest {
         assertFalse(
             "설정 화면이 `isGameEnded`만 보고 직접 잠금을 판단한다 — 대국을 한 번도 하지 않은 " +
                 "사용자에게도 잠긴다. `isBoardSetupLockedDuringGame`을 쓸 것(#75).",
-            settings.contains("canChangeBoardShape = screenState.isGameEnded") ||
-                settings.contains("canChangeBoardShape = !screenState.isGameEnded"),
+            settings.contains("canChangeMatchSetup = screenState.isGameEnded") ||
+                settings.contains("canChangeMatchSetup = !screenState.isGameEnded"),
         )
     }
 
@@ -78,20 +101,27 @@ class BoardSetupLockContractTest {
             lobby.contains("CompactScoringAndBoardSettingsPanel("))
         assertFalse(
             "로비까지 판 크기·접바둑을 잠갔다 — 그러면 바꿀 수 있는 자리가 사라진다(#75).",
-            lobby.contains("canChangeBoardShape"),
+            lobby.contains("canChangeMatchSetup"),
         )
     }
 
     /**
-     * ⚠️ **잠그는 것은 판 크기·접바둑 둘뿐이다.** 계가 방식·덤까지 잠그면 원래 설계(심플
-     * 레이아웃도 그 둘만 묶었다)와 어긋난다. 셀에 넘긴 `enabled`가 정확히 둘이어야 한다.
+     * ⚠️ **2026-09-10에 뒤집혔다 — 이제 네 칸 전부를 잠근다.**
+     *
+     * 그전에는 *"판의 모양을 바꾸는 것과 셈법을 바꾸는 것은 뜻이 다르다"* 는 이유로 계가·덤을
+     * 열어 두고 이 테스트가 **둘**을 못박고 있었다. 실사용이 그 구분을 무너뜨렸다(사용자 제보):
+     * 넷이 같은 베이지 칸이라 활성/비활성이 글자 농도로만 갈려 **넷 다 잠긴 것처럼 보이는데
+     * 둘만 열렸고**, 덤을 바꾸면 이미 둔 판의 점수가 소급해 바뀐다.
+     *
+     * ⚠️ 되돌리려는 사람에게: 숫자만 2로 낮추지 말 것. 그러면 그 시절의 **혼동이 그대로**
+     * 돌아온다 — 되살리려면 네 칸의 활성/비활성이 **한눈에 구분되는 시각**부터 마련할 것.
      */
     @Test
-    fun onlyTheTwoBoardShapeCellsAreGated() {
+    fun allFourMatchSetupCellsAreGated() {
         assertEquals(
-            "게이팅된 셀이 둘(판 크기·접바둑)이 아니다 — 계가 방식이나 덤까지 잠갔는지 볼 것(#75).",
-            2,
-            panel.split("enabled = canChangeBoardShape").size - 1,
+            "게이팅된 셀이 넷이 아니다 — 계가·덤을 다시 열어 뒀는지 볼 것(2026-09-10 사용자 결정).",
+            4,
+            panel.split("enabled = canChangeMatchSetup").size - 1,
         )
     }
 
@@ -103,7 +133,7 @@ class BoardSetupLockContractTest {
     fun theLockExplainsItself() {
         assertTrue(
             "잠겼을 때 사유 문구를 띄우지 않는다 — 이유 없는 잠금은 고장으로 읽힌다(#75).",
-            panel.contains("strings.boardShapeLockedDuringGame"),
+            panel.contains("strings.matchSetupLockedDuringGame"),
         )
     }
 

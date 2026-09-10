@@ -365,7 +365,7 @@ internal data class UiStrings(
      * *"바꿨는데 왜 그대로지"* 라는 어긋남이었으므로, 잠금만 넣고 설명을 빼면 같은 종류의
      * 혼란을 모양만 바꿔 남기는 셈이 된다. **어디서 바꾸면 되는지**까지 말한다.
      */
-    val boardShapeLockedDuringGame: String,
+    val matchSetupLockedDuringGame: String,
     /**
      * 기기에만 저장된다는 **소실 정책 고지**(백로그 #74 ⓒ, 2026-09-05 사용자 발주.
      * 문구는 #129에서 *"현재 버전의 한계"* 로 다시 씀, 2026-09-08).

@@ -201,7 +201,7 @@ internal val UiStringsKorean = UiStrings(
         "대국·설정·언어까지 전부 지워지고, 앱이 즉시 다시 시작됩니다. 방금 설치한 것과 같은 " +
         "상태가 되어 랜딩과 가이드가 처음부터 다시 뜹니다. 기기 식별자만 남습니다.",
     settingsDevFreshInstallAction = "되돌리기",
-    boardShapeLockedDuringGame = "대국 중에는 바둑판 크기와 접바둑을 바꿀 수 없어요. 새 대국을 시작할 때 정해 주세요.",
+    matchSetupLockedDuringGame = "대국 중에는 대국 설정을 바꿀 수 없어요. 새 대국을 시작할 때 정해 주세요.",
     localOnlyDataNoticeTitle = "로그인 없이 바로 즐기는 앱이에요",
     localOnlyDataNoticeBody = "출석 기록·모은 캐릭터·1회권·무르기 무제한처럼 앱에 쌓인 건 이 기기에만 있어요. 앱을 지우거나 기기를 바꾸면 앱이 되돌려 드릴 방법이 없어요.",
     localOnlyDataNoticePaidRestoreLine = "단, Google Play에서 구매한 캐릭터는 달라요. 같은 Google Play 계정으로 다시 설치하면 결제 내역을 확인해 다시 열어 드려요.",

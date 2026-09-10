@@ -272,7 +272,7 @@ internal fun SettingsScreen(
                 onBoardSizeChange = { size -> onEvent(GameUiEvent.ChangeBoardSize(size)) },
                 onHandicapCountChange = { count -> onEvent(GameUiEvent.ChangeHandicapCount(count)) },
                 onKomiChange = { komi -> onEvent(GameUiEvent.ChangeKomi(komi)) },
-                canChangeBoardShape = !isBoardSetupLockedDuringGame(
+                canChangeMatchSetup = !isBoardSetupLockedDuringGame(
                     moveCount = screenState.gameState.moves.size,
                     isGameEnded = screenState.isGameEnded,
                     hasResumableSavedGame = resumableSavedGame,
