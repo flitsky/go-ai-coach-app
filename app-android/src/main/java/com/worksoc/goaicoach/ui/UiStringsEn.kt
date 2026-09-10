@@ -191,6 +191,14 @@ internal val UiStringsEnglish = UiStringsKorean.copy(
     settingsDevAttendanceAdvanceAction = "Advance",
     settingsDevReleaseResetTitle = "Re-run launch reset",
     settingsDevReleaseResetSubtitle = "Clears attendance, characters, tickets, premium",
+    settingsDevFreshInstallTitle = "Reset to a first launch",
+    settingsDevFreshInstallSubtitle = "Wipes everything and restarts · landing and guide from the top",
+    settingsDevFreshInstallConfirmTitle = "Reset the app to a first launch?",
+    settingsDevFreshInstallConfirmMessage = "On top of attendance, characters, tickets and premium, " +
+        "this also clears game history, the game in progress, settings and language, then restarts " +
+        "the app immediately. It ends up exactly like a fresh install, so the landing and the guide " +
+        "run again from the start. Only the device identifier is kept.",
+    settingsDevFreshInstallAction = "Reset",
     boardShapeLockedDuringGame = "Board size and handicap can't change during a game. Set them when you start a new one.",
     localOnlyDataNoticeTitle = "Play without signing in",
     localOnlyDataNoticeBody = "Check-in streak, characters, single-use tickets, Unlimited Undo — what the app builds up stays on this device. Delete the app or switch devices and the app can't bring it back.",

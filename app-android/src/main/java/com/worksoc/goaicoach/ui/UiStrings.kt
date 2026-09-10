@@ -341,6 +341,19 @@ internal data class UiStrings(
     val settingsDevReleaseResetTitle: String,
     val settingsDevReleaseResetSubtitle: String,
     /**
+     * 개발자 테스트 2차의 *'앱 최초 실행 상태로 되돌리기'*(2026-09-09 사용자 요청).
+     *
+     * ⚠️ **바로 위 릴리즈 초기화와 뜻이 다르다.** 그쪽은 권한 넷만 밀고 설정·기록·온보딩 완료를
+     * 남기지만, 이쪽은 그것까지 밀어 **랜딩과 가이드가 다시 뜨는 상태**를 만들고 앱을 재시작한다.
+     * 두 문구가 서로를 흉내 내면 눌러 보기 전에는 구분할 수 없게 되므로, 부제에 **"다시 시작"과
+     * "랜딩·가이드부터"** 를 반드시 남길 것.
+     */
+    val settingsDevFreshInstallTitle: String,
+    val settingsDevFreshInstallSubtitle: String,
+    val settingsDevFreshInstallConfirmTitle: String,
+    val settingsDevFreshInstallConfirmMessage: String,
+    val settingsDevFreshInstallAction: String,
+    /**
      * 진행 중 대국에서 판 크기·접바둑이 잠겼을 때의 사유 문구(백로그 #75).
      *
      * ⚠️ **잠근 이유를 말하지 않으면 고장으로 읽힌다.** 이 항목을 만든 계기 자체가

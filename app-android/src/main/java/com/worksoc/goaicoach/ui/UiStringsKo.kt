@@ -191,6 +191,13 @@ internal val UiStringsKorean = UiStrings(
     settingsDevAttendanceAdvanceAction = "하루 진행",
     settingsDevReleaseResetTitle = "출시 초기화 재실행",
     settingsDevReleaseResetSubtitle = "출석·캐릭터·1회권·프리미엄을 지웁니다",
+    settingsDevFreshInstallTitle = "앱 최초 실행 상태로 되돌리기",
+    settingsDevFreshInstallSubtitle = "전부 지우고 앱을 다시 시작합니다 · 랜딩·가이드부터",
+    settingsDevFreshInstallConfirmTitle = "앱 최초 실행 상태로 되돌릴까요?",
+    settingsDevFreshInstallConfirmMessage = "출석·캐릭터·1회권·프리미엄에 더해 대국 기록·진행 중 " +
+        "대국·설정·언어까지 전부 지워지고, 앱이 즉시 다시 시작됩니다. 방금 설치한 것과 같은 " +
+        "상태가 되어 랜딩과 가이드가 처음부터 다시 뜹니다. 기기 식별자만 남습니다.",
+    settingsDevFreshInstallAction = "되돌리기",
     boardShapeLockedDuringGame = "대국 중에는 바둑판 크기와 접바둑을 바꿀 수 없어요. 새 대국을 시작할 때 정해 주세요.",
     localOnlyDataNoticeTitle = "로그인 없이 바로 즐기는 앱이에요",
     localOnlyDataNoticeBody = "출석 기록·모은 캐릭터·1회권·무르기 무제한처럼 앱에 쌓인 건 이 기기에만 있어요. 앱을 지우거나 기기를 바꾸면 앱이 되돌려 드릴 방법이 없어요.",

@@ -190,6 +190,13 @@ internal val UiStringsChineseSimplified = UiStringsKorean.copy(
     settingsDevAttendanceAdvanceAction = "前进一天",
     settingsDevReleaseResetTitle = "重新执行发布重置",
     settingsDevReleaseResetSubtitle = "清除签到、角色、单次券和高级模式",
+    settingsDevFreshInstallTitle = "恢复到首次启动状态",
+    settingsDevFreshInstallSubtitle = "清除全部并重启应用 · 从引导页开始",
+    settingsDevFreshInstallConfirmTitle = "要恢复到应用首次启动的状态吗？",
+    settingsDevFreshInstallConfirmMessage = "除签到、角色、单次券和高级模式外，对局记录、进行中的对局、" +
+        "设置和语言也会全部清除，应用将立即重启。结果与刚安装完全相同，引导页和新手指引会从头再次显示。" +
+        "仅保留设备标识符。",
+    settingsDevFreshInstallAction = "恢复",
     boardShapeLockedDuringGame = "对局进行中无法更改棋盘大小和让子。请在开始新对局时设置。",
     localOnlyDataNoticeTitle = "无需登录即可畅玩",
     localOnlyDataNoticeBody = "签到记录、收集的角色、单次券、无限次悔棋等在应用中积累的内容仅保存在本机。删除应用或更换设备后，应用无法为您恢复。",

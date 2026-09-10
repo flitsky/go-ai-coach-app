@@ -191,6 +191,13 @@ internal val UiStringsJapanese = UiStringsKorean.copy(
     settingsDevAttendanceAdvanceAction = "1日進める",
     settingsDevReleaseResetTitle = "リリースリセット再実行",
     settingsDevReleaseResetSubtitle = "出席・キャラクター・1回券・プレミアムを消します",
+    settingsDevFreshInstallTitle = "アプリ初回起動の状態に戻す",
+    settingsDevFreshInstallSubtitle = "すべて消してアプリを再起動します・ランディングとガイドから",
+    settingsDevFreshInstallConfirmTitle = "アプリを初回起動の状態に戻しますか？",
+    settingsDevFreshInstallConfirmMessage = "出席・キャラクター・1回券・プレミアムに加えて、対局記録・" +
+        "進行中の対局・設定・言語まですべて消え、アプリがすぐに再起動します。インストール直後と" +
+        "同じ状態になり、ランディングとガイドが最初から表示されます。端末識別子だけが残ります。",
+    settingsDevFreshInstallAction = "戻す",
     boardShapeLockedDuringGame = "対局中は盤サイズと置き石を変更できません。新しい対局を始めるときに決めてください。",
     localOnlyDataNoticeTitle = "ログインなしですぐに遊べるアプリです",
     localOnlyDataNoticeBody = "出席記録・集めたキャラクター・1回券・「待った」無制限など、アプリにたまるものはこの端末にだけ保存されます。アプリを削除したり端末を変えたりすると、アプリ側で元に戻すことはできません。",

@@ -1,10 +1,12 @@
 package com.worksoc.goaicoach
 
 import android.content.Context
+import android.content.Intent
 import com.worksoc.goaicoach.application.lifecycle.DeveloperModeResetPolicy
 import com.worksoc.goaicoach.persistence.DeveloperModeStore
 import com.worksoc.goaicoach.persistence.DeviceIdentityStore
 import java.io.File
+import kotlin.system.exitProcess
 
 /**
  * 개발자 모드가 켜져 있는 동안 **[DeveloperModeResetPolicy.ResetIntervalHours]시간마다 앱을 최초
@@ -95,6 +97,39 @@ internal fun wipeToFreshInstall(context: Context) {
             // 함께 버려야 한다. 파일만 지우면 살아 있는 인스턴스가 옛 값을 계속 돌려준다.
             app.deleteSharedPreferences(name)
         }
+}
+
+/**
+ * [wipeToFreshInstall] **+ 프로세스 재시작** — 개발자 테스트 2차의 *'앱 최초 실행 상태로 되돌리기'*
+ * 버튼 전용이다(2026-09-09 사용자 요청).
+ *
+ * ## ⚠️ 지우는 것만으로는 랜딩이 뜨지 않는다 — 이 함수가 있는 이유가 그것이다
+ * 저장소를 비워도 **화면은 그대로다.** `GoCoachApp`이 `hasSeenOnboarding`을 컴포지션 시작에
+ * 한 번 읽고, 목적지(`currentDestination`)는 `remember`라 저장되지 않은 채 살아 있다. 그래서
+ * 지우기만 하면 *"지웠다는데 가이드가 안 뜬다"* 가 된다 — 기존 **개발자 모드 끄기(ⓑ)가 실제로
+ * 그 상태**이고, 그쪽은 홈으로 돌아가는 것으로 끝난다(그 버튼의 목적은 흔적을 지우는 것이지
+ * 첫 실행을 재현하는 것이 아니라 고치지 않았다).
+ *
+ * ## ⚠️ 액티비티 재생성이 아니라 **프로세스**를 다시 띄운다
+ * 액티비티만 새로 만들면 [GoAiCoachApplication]의 `onCreate`가 다시 돌지 않는다 — 릴리즈 초기화와
+ * 출석 체크인이 거기 있어서, 빠지면 "최초 실행"이 반쪽이 된다(1일차 보상이 안 붙은 채로 랜딩만
+ * 뜬다). 진짜 첫 실행과 같은 순서를 얻으려면 **콜드 스타트**여야 한다.
+ *
+ * ⚠️ **debug 전용 경로에서만 부른다.** `exitProcess`는 사용자 앱이 할 일이 아니다 — 호출부는
+ * `BuildConfig.DEBUG`로 감싼 2차 섹션이고, release·playInternal에서는 R8이 통째로 지운다.
+ */
+internal fun restartToFreshInstall(context: Context) {
+    val app = context.applicationContext
+    wipeToFreshInstall(app)
+    // ⚠️ 런처 인텐트를 **패키지 매니저에서 얻는다** — `MainActivity`를 직접 가리키면 런처
+    // 진입점이 바뀌는 날 조용히 어긋난다. `CLEAR_TASK`로 기존 태스크를 걷어내야 재시작 뒤
+    // 옛 액티비티가 되살아나지 않는다.
+    app.packageManager.getLaunchIntentForPackage(app.packageName)
+        ?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+        ?.let(app::startActivity)
+    // `startActivity`는 AMS가 받아 둔 뒤 돌아오므로, 여기서 프로세스를 끝내도 그 실행은 살아 있다
+    // — 시스템이 앱을 새 프로세스로 다시 띄운다. 그것이 곧 콜드 스타트다.
+    exitProcess(0)
 }
 
 /** 이 앱이 만드는 SharedPreferences의 공통 접두사. 밖의 것(SDK 상태)은 건드리지 않는다. */
