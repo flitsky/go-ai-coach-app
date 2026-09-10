@@ -340,6 +340,9 @@ internal data class UiStrings(
     val settingsDevAttendanceAdvanceAction: String,
     /** 개발자 1차의 'AI 착수 지연' 부제 — AI끼리 둘 때만 적용된다는 사실을 적는다(2026-09-10). */
     val settingsDevAutoPlayDelaySubtitle: String,
+    /** 개발자 1차의 '엔진 성능 측정' 부제·버튼(2026-09-10에 대국 메뉴에서 옮겨 왔다). */
+    val settingsDevBenchmarkSubtitle: String,
+    val settingsDevBenchmarkAction: String,
     val settingsDevReleaseResetTitle: String,
     val settingsDevReleaseResetSubtitle: String,
     /**

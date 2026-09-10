@@ -51,6 +51,7 @@ import com.worksoc.goaicoach.application.auth.AuthClientPort
 import com.worksoc.goaicoach.application.auth.AuthProvider
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.persistence.DeveloperModeStore
+import com.worksoc.goaicoach.presentation.GameActionButtonRole
 import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.presentation.GameUiEvent
 import kotlinx.coroutines.launch
@@ -278,6 +279,25 @@ internal fun SettingsScreen(
                 ),
             )
 
+            // ⚠️ **아래 둘은 2026-09-10까지 대국 화면 메뉴에만 있었다.** 두 설정 화면이
+            // **언어 하나만 겹치고 나머지는 서로 배타적**이라 어느 쪽에도 전체가 없었다.
+            // 이제 양쪽이 같은 것을 담고, **메인이 주 무대·대국 화면은 깜빡한 사람의 자리**다.
+            // ⚠️ 순서를 대국 화면 메뉴와 **같게** 유지할 것(언어 → 대국 설정 → 표시 → 탐색 시간).
+            KaTrainUxMenuPanel(
+                options = screenState.uxOptions,
+                onOptionsChange = { next -> onEvent(GameUiEvent.ChangeUxOptions(next)) },
+                isTopMovesEveryMove = screenState.actionButtons
+                    .firstOrNull { it.role == GameActionButtonRole.TopMoves }?.isFilled == true,
+                onTopMovesEveryMoveChange = { onEvent(GameUiEvent.ToggleTopMoves) },
+            )
+
+            // 엔진이 바빠도 열어 둔다 — 다음 엔진 호출부터 적용되므로 진행 중 탐색을 흔들지 않는다.
+            SearchTimeSettingsPanel(
+                settings = screenState.searchTimeSettings,
+                enabled = true,
+                onSettingsChange = { settings -> onEvent(GameUiEvent.ChangeSearchTimeSettings(settings)) },
+            )
+
             Spacer(modifier = Modifier.height(4.dp))
             HorizontalDivider()
 
@@ -444,6 +464,7 @@ internal fun SettingsScreen(
                     // 2026-09-10에 대국 설정에서 개발자 섹션으로 옮겨 온 값.
                     autoPlayDelaySetting = screenState.autoPlayDelaySetting,
                     onAutoPlayDelayChange = { setting -> onEvent(GameUiEvent.ChangeAutoPlayDelay(setting)) },
+                    onBenchmark = { onEvent(GameUiEvent.ShowEngineBenchmark) },
                 )
             }
 

@@ -18,7 +18,6 @@ import androidx.compose.ui.unit.dp
 @Composable
 internal fun GameMenuActionsPanel(
     onCopyLog: () -> Unit,
-    onBenchmark: () -> Unit,
 ) {
     val strings = LocalUiStrings.current
     Surface(
@@ -41,12 +40,6 @@ internal fun GameMenuActionsPanel(
                     modifier = Modifier.weight(1f),
                 ) {
                     Text(strings.copyLog, style = MaterialTheme.typography.bodySmall)
-                }
-                OutlinedButton(
-                    onClick = onBenchmark,
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Text(strings.benchmark, style = MaterialTheme.typography.bodySmall)
                 }
             }
         }

@@ -53,7 +53,7 @@ import androidx.compose.runtime.setValue
  *
  * ## 이 파일이 소유하는 것 / 밖에서 받는 것
  * 소유: 빌드 정보 탭 수, 저장소·소모품·캐릭터·프리미엄·출석 표시값. 전부 여기서만 쓴다.
- * 받는 것은 **다섯**이고, 다섯 다 이 섹션 **바깥에 사는 것**들이다 —
+ * 받는 것은 **여섯**이고, 여섯 다 이 섹션 **바깥에 사는 것**들이다 —
  * 2차 활성 여부(해제 팝업이 되돌려야 하므로), 진단 로그 팝업, 개발자 모드 끄기 요청,
  * 그리고 AI 착수 지연의 현재 값과 변경 콜백(2026-09-10에 대국 설정에서 옮겨 왔다).
  *
@@ -80,6 +80,8 @@ internal fun DeveloperTestSection(
     // 지킨다: 이 섹션 바깥에 사는 것만 받는다.
     autoPlayDelaySetting: AutoPlayDelaySetting,
     onAutoPlayDelayChange: (AutoPlayDelaySetting) -> Unit,
+    // 2026-09-10에 대국 화면 메뉴에서 옮겨 온 진단(사유는 `DeveloperEngineBenchmarkControl`).
+    onBenchmark: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -240,6 +242,8 @@ internal fun DeveloperTestSection(
             selected = autoPlayDelaySetting,
             onSelected = onAutoPlayDelayChange,
         )
+
+        DeveloperEngineBenchmarkControl(onBenchmark = onBenchmark)
 
         Spacer(modifier = Modifier.height(16.dp))
 

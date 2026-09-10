@@ -28,6 +28,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.worksoc.goaicoach.BuildConfig
+import com.worksoc.goaicoach.application.preferences.isBoardSetupLockedDuringGame
 import com.worksoc.goaicoach.presentation.GameActionButtonRole
 import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.presentation.GameUiEvent
@@ -147,20 +148,51 @@ internal fun ExpandedGameMenuSection(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        // ⚠️ **여기 있던 `if (showSettings) { … }` 블록은 #76이 지웠다**(2026-09-05).
-        // `showSettings`는 저장소 전체에서 **한 번도 true로 넘어온 적이 없었다** — 선언의
-        // 기본값 `false`와 이 게이트, 둘뿐이었다(유일한 호출부 `GoCoachContent.kt`가 넘기지
-        // 않는다). 그 안에서 `PlayerSetupPanel`과 `ScoringAndBoardSettingsPanel`을 그렸다.
-        // ⚠️ **함께 사라진 것이 하나 더 있다 — 진행 중 대국의 게이팅 표현이다.**
-        //   `canChangeBoardSize = screenState.isGameEnded` / `canChangeHandicap = screenState.isGameEnded`
-        //   가 *"대국 중에는 판 크기·접바둑을 못 바꾼다"* 를 표현한 **저장소의 마지막 한 벌**이었다.
-        //   `CompactScoringAndBoardSettingsPanel`은 그 파라미터를 받지 않는다.
-        //   · 동작상의 회귀는 아니다(사문이었다). 다만 **막아야 하는지는 아직 결정되지 않았고**,
-        //     그 결정은 **백로그 #75**가 들고 있다 — 원문을 그 항목에 옮겨 적어 뒀다.
+        // ⚠️ **#76이 지웠던 대국 설정이 2026-09-10에 돌아왔다** — 이번에는 사문이 아니다.
+        // 그때 지운 것은 `showSettings`라는 **한 번도 true가 된 적 없는 게이트** 뒤의 죽은
+        // 블록이었고, 그 안에 `PlayerSetupPanel`과 룰/판 패널이 들어 있었다. 되살린 이유는
+        // 두 설정 화면이 **언어 하나만 겹치고 나머지가 서로 배타적**이었기 때문이다 —
+        // 대국 중에는 계가·덤도 못 바꿨다. 사용자 결정(2026-09-10): *"대국 중에는 대국에
+        // 집중하도록 메인에서 설정하게 하고, 깜빡한 사용자는 대국 화면에서도 바꿀 수 있게."*
+        //
+        // ⚠️ **함께 돌아온 것이 게이팅 표현이다.** #76이 *"막아야 하는지 미정"* 으로 남긴 그
+        // 판단은 #75가 이미 내렸다 — 판 크기·접바둑만 잠그고 **계가·덤은 열어 둔다.**
+        // 판정을 여기서 새로 쓰지 않고 `isBoardSetupLockedDuringGame`을 부르는 이유가 그것이다.
+        // ⚠️ `hasResumableSavedGame`은 **넘기지 않는다(기본 false).** 그 인자가 막으려는 것은
+        // *"앱을 막 켜서 저장된 대국이 아직 메모리에 없어 `moveCount`가 0으로 보이는"* 경우인데,
+        // 대국 화면 안에서는 그 판이 이미 메모리에 있어 `moves.size`가 진실이다.
+        // · ⚠️ **완전히 같지는 않다**: 새 대국을 막 시작한 0수 시점에는 이쪽이 열려 있고 메인
+        //   설정은 저장분을 읽어 잠글 수 있다. 창이 좁고(0수에서 판을 바꾸는 것은 #75가 명시적으로
+        //   허용한 *"다음 대국 준비"* 다) 여기서 디스크를 다시 읽으면 메뉴를 열 때마다 I/O가
+        //   붙어 그대로 뒀다 — **두 화면의 판정을 하나로 맞추려면 저장분을 인자로 내려보낼 것.**
+        // ⚠️ 순서를 메인 설정과 **같게** 유지할 것(언어 → 대국 설정 → 표시 → 탐색 시간).
 
         LanguageSettingsPanel(
             selectedLanguage = selectedLanguage,
             onLanguageChange = onLanguageChange,
+        )
+
+        PlayerSetupPanel(
+            state = screenState.playerSetupUi,
+            // 엔진이 바쁠 때는 잠근다 — 좌석 교체는 진행 중 세션에 그대로 적용되므로
+            // (`GameSettingsController.changePlayerSetup`), 탐색 도중에 바꾸면 어긋난다.
+            enabled = !screenState.engine.isBusy,
+            onPlayerSetupChange = { setup -> onEvent(GameUiEvent.ChangePlayerSetup(setup)) },
+        )
+
+        CompactScoringAndBoardSettingsPanel(
+            ruleset = screenState.gameState.ruleset,
+            boardSize = screenState.gameState.boardSize,
+            handicapCount = screenState.handicapCount,
+            komi = screenState.gameState.komi,
+            onRulesetChange = { ruleset -> onEvent(GameUiEvent.ChangeScoringRule(ruleset)) },
+            onBoardSizeChange = { size -> onEvent(GameUiEvent.ChangeBoardSize(size)) },
+            onHandicapCountChange = { count -> onEvent(GameUiEvent.ChangeHandicapCount(count)) },
+            onKomiChange = { komi -> onEvent(GameUiEvent.ChangeKomi(komi)) },
+            canChangeBoardShape = !isBoardSetupLockedDuringGame(
+                moveCount = screenState.gameState.moves.size,
+                isGameEnded = screenState.isGameEnded,
+            ),
         )
 
         KaTrainUxMenuPanel(
@@ -181,9 +213,13 @@ internal fun ExpandedGameMenuSection(
             onSettingsChange = { settings -> onEvent(GameUiEvent.ChangeSearchTimeSettings(settings)) },
         )
 
+        // ⚠️ **'엔진 성능 측정'은 2026-09-10에 개발자 섹션으로 옮겼다**(사용자 결정) —
+        // 1~3분이 걸리는 진단이고, 대국 중에 누를 일이 아니다.
+        // ⚠️ **'진단 로그 복사'는 여기 남긴다.** 그쪽은 사용자가 **문제를 신고하는 경로**라,
+        // 개발자 모드 뒤로 숨기면 고장을 만난 사용자가 보고할 방법을 잃는다. 옮기라고 하신
+        // 둘 중 이것만 남긴 이유가 그것이다.
         GameMenuActionsPanel(
             onCopyLog = { onEvent(GameUiEvent.CopyDebugReport) },
-            onBenchmark = { onEvent(GameUiEvent.ShowEngineBenchmark) },
         )
     }
 }
