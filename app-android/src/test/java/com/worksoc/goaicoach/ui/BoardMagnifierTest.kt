@@ -174,6 +174,17 @@ class BoardMagnifierTest {
      *
      * ⚠️ 빠른 탭은 **일부러 그대로 두었다** — 임계 전에 떼면 누른 자리에 놓인다. 그 갈래까지
      * 뗀 자리로 바꾸면 *"살짝 미끄러진 탭"* 이 엉뚱한 곳에 놓이는 회귀가 된다.
+     *
+     * ## 2026-09-09 2차 — 계약이 **되먹임까지** 넓어졌다
+     *
+     * 위 1차 수정은 *놓이는 동작*만 풀어 줬고 **드래그 상태(`playDrag`)는 여전히 확대창이 켜졌을
+     * 때만 채웠다.** 그래서 돋보기를 끈 사용자는 끌어서 둘 수는 있는데 **손을 따라오는 가늠돌이
+     * 하나도 안 그려져**, 어디에 놓일지 모르는 채로 끌다 떼야 했다. 사용자 지적:
+     * *"돋보기만 없는 상태로 돌이 손을 따라 드르륵 이동하게 해주세요."*
+     *
+     * 그래서 이 테스트의 방향이 **뒤집혔다.** 예전에는 *"`magnifierDrag`에 값을 넣는 자리가 전부
+     * `showMagnifier` 뒤에 있어야 한다"* 고 못박았는데, 지금은 그 반대다 — 상태는 **언제나** 채우고
+     * 가려지는 것은 **확대창을 그리는 자리 하나**뿐이다. 옛 단언을 되살리면 가늠돌이 다시 사라진다.
      */
     @Test
     fun dragToPlaceIsNotGatedOnTheMagnifierToggle() {
@@ -191,16 +202,22 @@ class BoardMagnifierTest {
                 "함께 사라진다(2026-09-09 사용자 지시로 없앤 갈래다).",
             source.contains("if (!uxOptions.isPlayMagnifierEnabled) {"),
         )
-        assertTrue(
-            "확대 창을 그리는 자리가 `showMagnifier`로 가려져 있지 않다 — 토글이 뜻을 잃었거나, " +
-                "꺼져 있어도 창이 뜬다.",
-            source.contains("if (showMagnifier) magnifierDrag = MagnifierDrag("),
-        )
-        // 확대 창 상태를 켜는 자리는 **둘**(누른 순간·끄는 동안)이고 둘 다 가려져야 한다.
+        // 드래그 상태를 채우는 자리는 **둘**(누른 순간·끄는 동안)이고, 이제 **둘 다 가려지면 안 된다.**
         assertEquals(
-            "`magnifierDrag`에 값을 넣는 자리가 전부 `showMagnifier` 뒤에 있어야 한다.",
-            Regex("""magnifierDrag = MagnifierDrag\(""").findAll(source).count(),
-            Regex("""if \(showMagnifier\) magnifierDrag = MagnifierDrag\(""").findAll(source).count(),
+            "`playDrag`에 값을 넣는 자리가 둘이 아니다 — 제스처 루프의 모양이 바뀌었다면 이 계약부터 다시 볼 것.",
+            2,
+            Regex("""playDrag = PlayDrag\(""").findAll(source).count(),
+        )
+        assertEquals(
+            "`playDrag`를 `showMagnifier` 뒤에 숨긴 자리가 있다 — 돋보기를 끄면 손을 따라오는 " +
+                "가늠돌이 그려지지 않는다(2026-09-09 사용자 지시로 없앤 갈래다).",
+            0,
+            Regex("""if \(showMagnifier\)\s*playDrag = PlayDrag\(""").findAll(source).count(),
+        )
+        assertTrue(
+            "확대 창을 그리는 자리가 토글로 가려져 있지 않다 — 토글이 뜻을 잃었거나, 꺼 둬도 창이 뜬다. " +
+                "가려야 하는 것은 **확대창 하나뿐**이고 가늠돌은 언제나 그린다.",
+            source.contains("if (uxOptions.isPlayMagnifierEnabled) drawMagnifier("),
         )
     }
 }

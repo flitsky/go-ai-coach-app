@@ -68,9 +68,17 @@ import kotlin.math.abs
 import kotlinx.coroutines.delay
 
 /**
- * 진행 중인 돋보기 드래그(#39). 좌표와 **그 드래그 동안 고정된 말풍선 방향**을 함께 들고 있다.
+ * 진행 중인 **착수 드래그**(#39). 좌표와 **그 드래그 동안 고정된 말풍선 방향**을 함께 들고 있다.
+ *
+ * ⚠️ **돋보기 전용이 아니다**(2026-09-09 사용자 지시로 이름을 바꿨다). 예전 이름은
+ * `MagnifierDrag`였고 확대창이 켜져 있을 때만 값을 채웠는데, 그러면 돋보기를 꺼 둔 사용자는
+ * **손을 따라오는 가늠돌이 아예 안 그려져** 어디에 놓일지 모르는 채로 끌다 떼야 했다.
+ * 끌어서 두는 동작 자체는 이미 언제나 되고 있었으므로, 빠져 있던 것은 **눈에 보이는 되먹임**뿐이다.
+ * 사용자 지적: *"돋보기만 없는 상태로 돌이 손을 따라 드르륵 이동하게 해주세요."*
+ *
+ * [below]는 확대창이 켜졌을 때만 의미가 있다 — 꺼져 있으면 말풍선을 안 그리므로 쓰이지 않는다.
  */
-private data class MagnifierDrag(val touch: Offset, val below: Boolean)
+private data class PlayDrag(val touch: Offset, val below: Boolean)
 
 /**
  * 손가락과 말풍선 사이 간격. **판 크기가 아니라 dp로 잡는다** — 가려지는 것은 손끝이라는
@@ -105,9 +113,9 @@ internal fun GoBoard(
 ) {
     val premium = LocalPremiumUiState.current
     var canvasSize by remember { mutableStateOf(IntSize.Zero) }
-    // 돋보기 드래그(#39). `null`이면 평소 상태다. ⚠️ 이 값은 **그리기 람다 안에서만** 읽는다 —
+    // 착수 드래그(#39). `null`이면 평소 상태다. ⚠️ 이 값은 **그리기 람다 안에서만** 읽는다 —
     // 컴포지션 본문에서 읽으면 손가락이 움직일 때마다 화면 전체가 리컴포즈된다.
-    var magnifierDrag by remember { mutableStateOf<MagnifierDrag?>(null) }
+    var playDrag by remember { mutableStateOf<PlayDrag?>(null) }
     var activityFrame by remember { mutableStateOf(0) }
 
     LaunchedEffect(engineActivityIndicator) {
@@ -262,16 +270,19 @@ internal fun GoBoard(
                                 false
                             }
 
-                            if (showMagnifier) magnifierDrag = MagnifierDrag(down.position, below)
+                            // ⚠️ **확대창 여부와 무관하게 채운다**(2026-09-09). 여기에 `showMagnifier`
+                            // 조건을 걸면 돋보기를 끈 사용자에게는 가늠돌이 그려지지 않아, 손을
+                            // 따라오는 돌 없이 깜깜한 채로 끌게 된다 — 그것이 이번에 고친 증상이다.
+                            playDrag = PlayDrag(down.position, below)
                             var last = down.position
                             // ⚠️ **누르고 있는 동안 착수가 확정되면 안 된다**(사용자 확정).
                             // 여기서는 좌표만 따라가고, 확정은 아래 `completed` 분기에서만 한다.
                             val completed = drag(down.id) { change ->
                                 change.consume()
                                 last = change.position
-                                if (showMagnifier) magnifierDrag = MagnifierDrag(last, below)
+                                playDrag = PlayDrag(last, below)
                             }
-                            magnifierDrag = null
+                            playDrag = null
                             if (!completed) return@awaitEachGesture
 
                             // 판 밖에서 떼면 좌표가 없다 → 조용히 취소된다. 그것이 이 제스처의
@@ -350,8 +361,8 @@ internal fun GoBoard(
                     drawMoveNumbers(geometry, gameState)
                 }
 
-                // 돋보기(#39) — **맨 마지막에** 그려 판 위에 얹는다.
-                val drag = magnifierDrag
+                // 착수 드래그의 되먹임(#39) — **맨 마지막에** 그려 판 위에 얹는다.
+                val drag = playDrag
                 if (drag != null) {
                     val touch = drag.touch
                     val dragCoordinate = coordinateFromTap(
@@ -361,8 +372,10 @@ internal fun GoBoard(
                         uxOptions.showCoordinates,
                     )
                     val stoneRadius = geometry.spacing * 0.42f
-                    // 1배 판에도 가늠돌을 남긴다 — 확대창만 보고 두게 되면 판 전체의 모양을
-                    // 놓치기 때문이다. 확대창은 조준용, 이쪽은 판세 확인용이다.
+                    // ⚠️ **1배 판의 가늠돌은 돋보기와 무관하게 항상 그린다**(2026-09-09).
+                    // 이것이 손을 따라 움직이는 그 돌이다 — 확대창은 조준을 돕는 덤이고,
+                    // "지금 어디에 놓이는지"를 알려주는 본체는 이쪽이다. 예전에는 이 블록 전체가
+                    // 확대창과 운명을 같이해서, 돋보기를 끄면 되먹임이 통째로 사라졌다.
                     if (dragCoordinate != null) {
                         drawGhostStone(
                             center = geometry.pointFor(dragCoordinate),
@@ -371,7 +384,7 @@ internal fun GoBoard(
                             alpha = DragGhostAlphaOnBoard,
                         )
                     }
-                    drawMagnifier(
+                    if (uxOptions.isPlayMagnifierEnabled) drawMagnifier(
                         placement = magnifierPlacement(
                             touch = touch,
                             canvasSize = size,
