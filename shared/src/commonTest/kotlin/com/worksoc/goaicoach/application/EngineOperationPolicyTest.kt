@@ -12,6 +12,7 @@ import com.worksoc.goaicoach.shared.analysisFingerprint
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlin.test.Test
+import com.worksoc.goaicoach.application.engine.operation.EngineOperationBlockReason
 
 class EngineOperationPolicyTest {
     @Test
@@ -140,7 +141,10 @@ class EngineOperationPolicyTest {
     @Test
     fun benchmarkGateRequiresReadyLocalIdleEngine() {
         assertEquals(
-            EngineOperationGate.Block("Engine benchmark requires a ready local engine."),
+            EngineOperationGate.Block(
+                message = "Engine benchmark requires a ready local engine.",
+                reason = EngineOperationBlockReason.EngineNotReady,
+            ),
             evaluateEngineBenchmarkGate(
                 isEngineReady = false,
                 supportsDeviceBenchmark = true,
@@ -149,7 +153,10 @@ class EngineOperationPolicyTest {
             ),
         )
         assertEquals(
-            EngineOperationGate.Block("Engine benchmark is available only for the local KataGo process engine."),
+            EngineOperationGate.Block(
+                message = "Engine benchmark is available only for the local KataGo process engine.",
+                reason = EngineOperationBlockReason.BenchmarkUnsupported,
+            ),
             evaluateEngineBenchmarkGate(
                 isEngineReady = true,
                 supportsDeviceBenchmark = false,
@@ -158,7 +165,10 @@ class EngineOperationPolicyTest {
             ),
         )
         assertEquals(
-            EngineOperationGate.Block("Engine is busy. Run benchmark after the current response."),
+            EngineOperationGate.Block(
+                message = "Engine is busy. Run benchmark after the current response.",
+                reason = EngineOperationBlockReason.EngineBusy,
+            ),
             evaluateEngineBenchmarkGate(
                 isEngineReady = true,
                 supportsDeviceBenchmark = true,
@@ -194,6 +204,8 @@ class EngineOperationPolicyTest {
             isEngineBusy = true,
         )
         assertTrue(busy is EngineOperationGate.Block)
+        // ⚠️ 사유까지 확인한다 — 화면이 번역하는 것은 문장이 아니라 이 타입이다.
+        assertEquals(EngineOperationBlockReason.EngineBusy, busy.reason)
 
         assertEquals(
             EngineOperationGate.Allow,
@@ -216,8 +228,10 @@ class EngineOperationPolicyTest {
             com.worksoc.goaicoach.shared.engine.EngineOperationGate.NoOp.toApplicationGate(),
         )
         assertEquals(
-            EngineOperationGate.Block("busy"),
-            com.worksoc.goaicoach.shared.engine.EngineOperationGate.Block("busy").toApplicationGate(),
+            EngineOperationGate.Block("busy", EngineOperationBlockReason.EngineBusy),
+            com.worksoc.goaicoach.shared.engine.EngineOperationGate
+                .Block("busy", EngineOperationBlockReason.EngineBusy)
+                .toApplicationGate(),
         )
     }
 

@@ -40,7 +40,13 @@ class EngineBenchmarkController(
                 benchmarkUiState = currentBenchmarkUiState(),
                 diagnosticEventLog = diagnosticEventLog,
                 lifecycleCallbacks = lifecycleCallbacks(),
-                onBlocked = { message -> onEngineMessage(message) },
+                onBlocked = { block ->
+                    // 진단 문자열은 그대로 남긴다 — 디버그 리포트가 읽는 자리다.
+                    onEngineMessage(block.message)
+                    // ⚠️ **그리고 화면에도 알린다.** 위 한 줄만 있던 시절, 막힌 사유는 앱 어디에도
+                    // 렌더되지 않아 사용자에게는 버튼이 그냥 죽은 것으로 보였다.
+                    onBenchmarkUiState(currentBenchmarkUiState().blockedBy(block.reason))
+                },
                 onBenchmarkUiState = { state -> onBenchmarkUiState(state) },
                 onDisplayPlan = { plan -> onDisplayPlan(plan) },
                 onProgress = { progress, displayPlan ->

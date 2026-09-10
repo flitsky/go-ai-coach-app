@@ -5,6 +5,7 @@ import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.SearchTimeLimit
 import kotlin.math.ceil
+import com.worksoc.goaicoach.application.engine.operation.EngineOperationBlockReason
 
 data class EngineBenchmarkMetric(
     val visits: Int,
@@ -170,16 +171,35 @@ data class EngineBenchmarkProgress(
         }
 }
 
+/**
+ * ⚠️ **이 상태가 화면에 닿지 않으면 벤치마크는 통째로 침묵한다** — 2026-09-10에 실제로 그랬다.
+ * 진행/결과 팝업이 `ScreenDestination.InGame` 안에서만 그려지고 있었고, 버튼은 설정 화면으로
+ * 옮겨져 있어서 **막힘·진행·성공·실패 네 갈래 전부** 아무것도 보이지 않았다.
+ * 지금은 셸이 목적지와 무관하게 한 번 그린다(`EngineBenchmarkOverlays`).
+ */
 data class EngineBenchmarkUiState(
     val benchmarkText: String,
     val progress: EngineBenchmarkProgress? = null,
     val resultToConfirm: EngineBenchmarkProfile? = null,
+    /**
+     * 게이트가 실행을 막은 이유. ⚠️ **이것이 `null`이 아닌 동안이 유일하게 사용자에게 "왜 안
+     * 되는지"가 보이는 구간이다** — 예전에는 이 사유가 `engineMessage`(진단 문자열)로만 흘러가
+     * 어디에도 렌더되지 않았다.
+     */
+    val blockedReason: EngineOperationBlockReason? = null,
 ) {
     val isRunning: Boolean
         get() = progress != null
 
+    /** ⚠️ 막힘 표시도 함께 지운다 — 새 시도가 앞 시도의 사유를 물려받으면 거짓을 말한다. */
     fun clearResult(): EngineBenchmarkUiState =
-        copy(resultToConfirm = null)
+        copy(resultToConfirm = null, blockedReason = null)
+
+    fun blockedBy(reason: EngineOperationBlockReason): EngineBenchmarkUiState =
+        copy(progress = null, resultToConfirm = null, blockedReason = reason)
+
+    fun clearBlocked(): EngineBenchmarkUiState =
+        copy(blockedReason = null)
 
     fun startWaitingForEngineSettle(): EngineBenchmarkUiState =
         copy(
@@ -210,8 +230,9 @@ data class EngineBenchmarkUiState(
     fun failWithoutProfile(): EngineBenchmarkUiState =
         copy(progress = null)
 
+    /** ⚠️ 결과를 띄울 때도 앞선 막힘 표시를 지운다 — 둘이 동시에 참일 수 없다. */
     fun showResult(profile: EngineBenchmarkProfile): EngineBenchmarkUiState =
-        copy(resultToConfirm = profile)
+        copy(resultToConfirm = profile, blockedReason = null)
 
     fun clearConfirmedResult(): EngineBenchmarkUiState =
         copy(resultToConfirm = null)

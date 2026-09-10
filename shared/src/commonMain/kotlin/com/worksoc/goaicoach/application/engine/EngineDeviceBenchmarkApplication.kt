@@ -32,7 +32,11 @@ internal data class EngineBenchmarkRunRequest(
     val delayMillis: suspend (Long) -> Unit = { millis -> delay(millis) },
     val runEngineWork: suspend (suspend () -> StartupBenchmarkWorkflowResult) -> StartupBenchmarkWorkflowResult =
         { block -> runEngineIo { block() } },
-    val onBlocked: (String) -> Unit = {},
+    /**
+     * ⚠️ **`Block` 전체를 넘긴다 — 문자열만 넘기지 말 것.** `message`는 진단용 영어이고
+     * `reason`은 화면이 번역할 타입인데, 예전에는 문자열만 넘겨 UI가 번역할 근거를 잃었다.
+     */
+    val onBlocked: (EngineOperationGate.Block) -> Unit = {},
     val onBenchmarkUiState: (EngineBenchmarkUiState) -> Unit = {},
     val onDisplayPlan: (EngineBenchmarkDisplayPlan) -> Unit = {},
     val onProgress: suspend (EngineBenchmarkProgress, EngineBenchmarkDisplayPlan) -> Unit = { _, _ -> },
@@ -50,7 +54,7 @@ internal suspend fun runEngineBenchmarkApplication(request: EngineBenchmarkRunRe
         EngineOperationGate.Allow -> Unit
         EngineOperationGate.NoOp -> return
         is EngineOperationGate.Block -> {
-            request.onBlocked(gate.message)
+            request.onBlocked(gate)
             return
         }
     }

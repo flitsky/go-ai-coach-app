@@ -785,7 +785,23 @@ private fun GoCoachScreen(
     // 가려 사용자가 "왜 1일차인지"를 나중에야 읽었다(2026-09-01 실기에서 확인).
     // ⚠️ 엔진 실패 알림이 **맨 앞**이다 — 이후 앱 동작이 보장되지 않는다는 뜻이라 가장 급하다
     // (백로그 「핵심 동작 기조」 1ⓒ). 뒤의 둘은 저장소가 기억하고 있어 다음 기회에 뜬다.
-    if (!EngineUnavailableNoticeDialog(identity.mode) && !ReleaseResetNoticeDialog(context)) {
+    // ⚠️ **벤치마크는 목적지 분기 밖에서 그린다**(2026-09-10). 버튼은 설정 화면(개발자 섹션)에
+    // 있는데 팝업이 `InGame` 가지 안에 있어서, 설정에서 누르면 아무 반응도 없었다. 사유 전문은
+    // `EngineBenchmarkOverlays`의 KDoc.
+    // ⚠️ 자리는 엔진 실패 알림 **다음**이다 — 실패 알림은 "이후 동작이 보장되지 않는다"는 뜻이라
+    // 가장 급하고(「핵심 동작 기조」 1ⓒ), 벤치마크는 사용자가 방금 버튼을 눌러 기다리는 중이라
+    // 저장소가 기억해 뒀다 다음에 띄울 수 있는 뒤의 둘보다 앞이다.
+    if (!EngineUnavailableNoticeDialog(identity.mode) &&
+        !EngineBenchmarkOverlays(
+            progress = benchmarkUiState.progress,
+            result = benchmarkUiState.resultToConfirm,
+            blockedReason = benchmarkUiState.blockedReason,
+            onResultConfirmed = { benchmarkUiState = benchmarkUiState.clearConfirmedResult() },
+            onRerun = controllers.benchmarkController::rerun,
+            onBlockedDismissed = { benchmarkUiState = benchmarkUiState.clearBlocked() },
+        ) &&
+        !ReleaseResetNoticeDialog(context)
+    ) {
         AttendanceRewardClaimDialog(context) { next -> premiumState = next }
     }
     when (currentDestination) {
@@ -847,10 +863,10 @@ private fun GoCoachScreen(
         ScreenDestination.InGame -> {
             GoCoachContent(
                 screenState = screenState,
+                // ⚠️ 이 둘은 **그리라고** 넘기는 값이 아니다 — 벤치마크가 떠 있는 동안 대국
+                // 화면의 다른 팝업을 미루라는 신호다(`GoCoachContent`의 주석).
                 benchmarkProgress = benchmarkUiState.progress,
                 benchmarkResult = benchmarkUiState.resultToConfirm,
-                onBenchmarkResultConfirmed = { benchmarkUiState = benchmarkUiState.clearConfirmedResult() },
-                onBenchmarkRerun = controllers.benchmarkController::rerun,
                 onScoreGraphExpandedChange = { expanded -> isScoreGraphExpanded = expanded },
                 onFinalJudgementReview = ::activateEndgameJudgementReview,
                 selectedLanguage = selectedLanguage,

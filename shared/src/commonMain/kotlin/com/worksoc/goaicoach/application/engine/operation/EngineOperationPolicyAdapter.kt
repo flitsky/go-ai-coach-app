@@ -5,7 +5,7 @@ internal fun com.worksoc.goaicoach.shared.engine.EngineOperationGate.toApplicati
         com.worksoc.goaicoach.shared.engine.EngineOperationGate.Allow -> EngineOperationGate.Allow
         com.worksoc.goaicoach.shared.engine.EngineOperationGate.NoOp -> EngineOperationGate.NoOp
         is com.worksoc.goaicoach.shared.engine.EngineOperationGate.Block ->
-            EngineOperationGate.Block(message)
+            EngineOperationGate.Block(message = message, reason = reason)
     }
 
 internal fun com.worksoc.goaicoach.shared.engine.EngineOperationResultGuard.toApplicationGuard():

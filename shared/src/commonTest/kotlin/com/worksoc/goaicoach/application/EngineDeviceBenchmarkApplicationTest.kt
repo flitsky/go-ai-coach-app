@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.application
 
 import com.worksoc.goaicoach.application.engine.*
+import com.worksoc.goaicoach.application.engine.operation.EngineOperationBlockReason
 import com.worksoc.goaicoach.application.engine.operation.EngineOperationLifecycleCallbacks
 import com.worksoc.goaicoach.application.session.*
 
@@ -480,6 +481,79 @@ class EngineDeviceBenchmarkApplicationTest {
         assertEquals(
             listOf("start:startup_benchmark", "done:startup_benchmark"),
             lifecycleEvents,
+        )
+    }
+
+    /**
+     * ⚠️ **이 그물이 없어서 버튼이 조용히 죽어 있었다**(2026-09-10 사용자 신고).
+     *
+     * 게이트가 막으면 사유가 `onBlocked`로만 나갔고, 배선은 그것을 `engineMessage`(진단 문자열)에
+     * 넣었으며 **그 값은 앱 어디에서도 렌더되지 않았다.** 그래서 세 가지 차단 사유 전부가
+     * 사용자에게는 *"눌러도 아무 일 없음"* 으로 보였다.
+     *
+     * 여기서 고정하는 것은 **막힘이 UI 상태에 남는다**는 것이다 — 문자열이 아니라 타입으로.
+     * ⚠️ `onBlocked`가 문자열만 넘기던 시절로 되돌리면 이 테스트가 컴파일되지 않는다.
+     */
+    @Test
+    fun aBlockedBenchmarkLeavesATypedReasonTheScreenCanTranslate() = runBlocking {
+        val cases = listOf(
+            Triple(false, true, EngineOperationBlockReason.EngineNotReady),
+            Triple(true, false, EngineOperationBlockReason.BenchmarkUnsupported),
+        )
+
+        cases.forEach { (ready, supported, expected) ->
+            var uiState = EngineBenchmarkUiState.initial(benchmarkText = "no benchmark", profile = null)
+            val diagnosticMessages = mutableListOf<String>()
+            val store = RecordingEngineBenchmarkStore()
+
+            runEngineBenchmarkApplication(
+                EngineBenchmarkRunRequest(
+                    engineClient = LocalEngineSessionClient(
+                        coreApi = RecordingBenchmarkEngineAdapter(),
+                        capabilitiesProvider = { EngineSessionCapabilities(supportsDeviceBenchmark = supported) },
+                    ),
+                    store = store,
+                    state = GameState.empty(ruleset = Ruleset.Chinese),
+                    sessionGeneration = 1L,
+                    isEngineReady = ready,
+                    isEngineBusy = false,
+                    benchmarkUiState = uiState,
+                    delayMillis = {},
+                    runEngineWork = { block -> block() },
+                    onBlocked = { block ->
+                        diagnosticMessages += block.message
+                        uiState = uiState.blockedBy(block.reason)
+                    },
+                    onBenchmarkUiState = { state -> uiState = state },
+                ),
+            )
+
+            assertEquals(expected, uiState.blockedReason)
+            // 진단 문자열은 **여전히** 흘러야 한다 — 디버그 리포트가 읽는 자리라 둘 다 필요하다.
+            assertEquals(1, diagnosticMessages.size)
+            // 막혔으면 아무것도 실행되지 않았다.
+            assertEquals(null, store.savedProfile)
+            assertEquals(false, uiState.isRunning)
+        }
+    }
+
+    /**
+     * 다음 시도가 **앞 시도의 사유를 물려받지 않는다**. 물려받으면 엔진이 준비된 뒤에도
+     * "아직 준비 중"이라고 거짓을 말한다.
+     */
+    @Test
+    fun aNewAttemptClearsThePreviousBlockedReason() {
+        val blocked = EngineBenchmarkUiState
+            .initial(benchmarkText = "no benchmark", profile = null)
+            .blockedBy(EngineOperationBlockReason.EngineBusy)
+
+        assertEquals(null, blocked.clearResult().blockedReason)
+        assertEquals(null, blocked.clearBlocked().blockedReason)
+        assertEquals(
+            null,
+            blocked.showResult(benchmarkProfile(
+                EngineBenchmarkMetric(visits = 32, samples = 5, minMs = 1.0, avgMs = 2.0, maxMs = 3.0),
+            )).blockedReason,
         )
     }
 }

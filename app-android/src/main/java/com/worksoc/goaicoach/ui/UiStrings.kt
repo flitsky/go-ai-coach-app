@@ -170,6 +170,17 @@ internal data class UiStrings(
     val later: String,
     val confirm: String,
     val rerunBenchmark: String,
+    /**
+     * 벤치마크가 지금은 돌 수 없다고 알리는 팝업의 제목과 세 사유.
+     *
+     * ⚠️ **게이트의 영어 `message`를 여기로 옮겨 오지 말 것** — 그건 진단 로그가 읽는 문장이고,
+     * 이 넷은 사람이 읽는 문장이다. 사유가 늘면 `EngineOperationBlockReason`에 상수를 더하고
+     * 여기에 짝을 만들면 된다(`when`이 빠뜨림을 컴파일 에러로 잡는다).
+     */
+    val benchmarkBlockedTitle: String,
+    val benchmarkBlockedEngineNotReady: String,
+    val benchmarkBlockedUnsupported: String,
+    val benchmarkBlockedEngineBusy: String,
     val benchmarkDoneTitle: String,
     val benchmarkRunningTitle: String,
     val benchmarkRunningBody: String,

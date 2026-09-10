@@ -8,10 +8,20 @@ typealias EngineOperationRequest = com.worksoc.goaicoach.shared.engine.EngineOpe
 typealias EngineTimeoutPolicy = com.worksoc.goaicoach.shared.engine.EngineTimeoutPolicy
 internal typealias PositionScopedOperationToken = com.worksoc.goaicoach.shared.engine.PositionScopedOperationToken
 
+typealias EngineOperationBlockReason = com.worksoc.goaicoach.shared.engine.EngineOperationBlockReason
+
 sealed class EngineOperationGate {
     data object Allow : EngineOperationGate()
     data object NoOp : EngineOperationGate()
-    data class Block(val message: String) : EngineOperationGate()
+
+    /**
+     * @property message 진단용 영어 문장. @property reason 화면이 번역할 타입.
+     * ⚠️ 둘의 역할이 다르다 — 자세한 사유는 `shared.engine.EngineOperationBlockReason`의 KDoc.
+     */
+    data class Block(
+        val message: String,
+        val reason: EngineOperationBlockReason,
+    ) : EngineOperationGate()
 }
 
 sealed class EngineOperationResultGuard {

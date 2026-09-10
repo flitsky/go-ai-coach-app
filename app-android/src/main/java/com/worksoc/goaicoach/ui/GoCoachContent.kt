@@ -38,8 +38,6 @@ internal fun GoCoachContent(
     screenState: GameScreenState,
     benchmarkProgress: EngineBenchmarkProgress?,
     benchmarkResult: EngineBenchmarkProfile?,
-    onBenchmarkResultConfirmed: () -> Unit,
-    onBenchmarkRerun: () -> Unit,
     onScoreGraphExpandedChange: (Boolean) -> Unit,
     onFinalJudgementReview: () -> Unit,
     selectedLanguage: UiLanguage,
@@ -71,16 +69,12 @@ internal fun GoCoachContent(
         ?.takeIf { finalJudgementKey != null && dismissedFinalJudgementKey != finalJudgementKey }
     val dismissFinalJudgement = { dismissedFinalJudgementKey = finalJudgementKey }
 
-    if (benchmarkProgress != null) {
-        EngineBenchmarkProgressDialog(progress = benchmarkProgress)
-    } else if (benchmarkResult != null) {
-        EngineBenchmarkResultDialog(
-            profile = benchmarkResult,
-            strings = strings,
-            onConfirm = onBenchmarkResultConfirmed,
-            onRerun = onBenchmarkRerun,
-        )
-    }
+    // ⚠️ **벤치마크 팝업은 여기서 그리지 않는다**(2026-09-10). 이 화면은 `InGame`에서만
+    // 컴포즈되는데 '엔진 성능 측정' 버튼은 **설정 화면**에 있어서, 여기서 그리면 설정에서 누른
+    // 사용자는 막힘·진행·결과·실패 **넷 다** 보지 못한다. 셸(`GoCoachApp`)이 목적지와 무관하게
+    // 한 번 그린다(`EngineBenchmarkOverlays`).
+    // ⚠️ 그래도 `benchmarkProgress`/`benchmarkResult`는 계속 받는다 — **그리기 위해서가 아니라,
+    // 벤치마크가 떠 있는 동안 이 화면의 다른 팝업을 미루기 위해서**다(아래 세 곳).
 
     if (cacheOptimizationPrompt != null) {
         CacheOptimizationPromptDialog(

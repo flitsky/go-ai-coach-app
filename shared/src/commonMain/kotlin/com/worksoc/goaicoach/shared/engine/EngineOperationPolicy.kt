@@ -4,10 +4,41 @@ import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.analysisFingerprint
 
+/**
+ * 엔진 작업이 **막힌 이유**를 타입으로 부른다.
+ *
+ * ## ⚠️ 왜 문자열만으로는 안 되는가
+ * [EngineOperationGate.Block.message]는 **진단용 영어**다 — 디버그 리포트와 런타임 로그가 읽는다.
+ * 그 문장을 그대로 화면에 띄우면 한국어 앱이 영어로 말하게 되고, 문장을 손보는 순간 UI가 함께
+ * 바뀐다. **사용자에게 보이는 말은 이 열거형을 보고 4개 언어에서 고른다**(`UiStrings`).
+ *
+ * ⚠️ **상수 이름을 저장에 쓰지 말 것.** 이 값은 화면에만 살고 저장소를 지나지 않는다 —
+ * 지나게 만드는 순간 함정 1번(enum 상수 이름 = 저장 포맷)에 걸린다.
+ */
+enum class EngineOperationBlockReason {
+    /** 엔진이 아직 뜨지 않았다. 시간이 지나면 풀린다 — 「기조 1ⓒ」의 *"아직"* 쪽이다. */
+    EngineNotReady,
+
+    /** 이 엔진 구현이 기기 벤치마크를 지원하지 않는다(원격·스텁). 기다려도 풀리지 않는다. */
+    BenchmarkUnsupported,
+
+    /** 엔진이 지금 다른 일을 하고 있다. 그 응답이 끝나면 풀린다. */
+    EngineBusy,
+}
+
 sealed class EngineOperationGate {
     data object Allow : EngineOperationGate()
     data object NoOp : EngineOperationGate()
-    data class Block(val message: String) : EngineOperationGate()
+
+    /**
+     * @property message 진단용 영어 문장(디버그 리포트·런타임 로그).
+     * @property reason 화면이 번역해서 보여줄 **타입**. ⚠️ 기본값을 주지 말 것 — 새 차단 사유를
+     *   더하는 사람이 조용히 빠뜨리면, 그 경우만 다시 침묵한다(2026-09-10에 벤치마크가 그랬다).
+     */
+    data class Block(
+        val message: String,
+        val reason: EngineOperationBlockReason,
+    ) : EngineOperationGate()
 }
 
 data class PositionScopedOperationToken(
@@ -208,13 +239,22 @@ fun evaluateEngineBenchmarkGate(
 ): EngineOperationGate =
     when {
         !isEngineReady ->
-            EngineOperationGate.Block("Engine benchmark requires a ready local engine.")
+            EngineOperationGate.Block(
+                message = "Engine benchmark requires a ready local engine.",
+                reason = EngineOperationBlockReason.EngineNotReady,
+            )
 
         !supportsDeviceBenchmark ->
-            EngineOperationGate.Block("Engine benchmark is available only for the local KataGo process engine.")
+            EngineOperationGate.Block(
+                message = "Engine benchmark is available only for the local KataGo process engine.",
+                reason = EngineOperationBlockReason.BenchmarkUnsupported,
+            )
 
         isEngineBusy || isBenchmarkRunning ->
-            EngineOperationGate.Block("Engine is busy. Run benchmark after the current response.")
+            EngineOperationGate.Block(
+                message = "Engine is busy. Run benchmark after the current response.",
+                reason = EngineOperationBlockReason.EngineBusy,
+            )
 
         else -> EngineOperationGate.Allow
     }
@@ -226,6 +266,9 @@ fun evaluateScoringRuleChangeGate(
 ): EngineOperationGate =
     when {
         nextRuleset == currentRuleset -> EngineOperationGate.NoOp
-        isEngineBusy -> EngineOperationGate.Block("Engine is busy. Change scoring rule after the current response.")
+        isEngineBusy -> EngineOperationGate.Block(
+            message = "Engine is busy. Change scoring rule after the current response.",
+            reason = EngineOperationBlockReason.EngineBusy,
+        )
         else -> EngineOperationGate.Allow
     }
