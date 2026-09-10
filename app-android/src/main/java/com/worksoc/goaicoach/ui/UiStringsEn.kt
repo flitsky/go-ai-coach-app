@@ -189,6 +189,7 @@ internal val UiStringsEnglish = UiStringsKorean.copy(
     settingsDevShardClearAction = "Clear",
     settingsDevAttendanceTitle = "Check-in +1 day",
     settingsDevAttendanceAdvanceAction = "Advance",
+    settingsDevAutoPlayDelaySubtitle = "Applies only when AI plays AI · instant by default",
     settingsDevReleaseResetTitle = "Re-run launch reset",
     settingsDevReleaseResetSubtitle = "Clears attendance, characters, tickets, premium",
     settingsDevFreshInstallTitle = "Reset to a first launch",

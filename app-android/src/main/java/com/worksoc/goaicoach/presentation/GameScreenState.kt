@@ -174,7 +174,6 @@ internal fun buildGameScreenState(input: GameScreenStateInput): GameScreenState 
         playerSetup = input.playerSetup,
         playerSetupUi = buildPlayerSetupUiState(
             setup = input.playerSetup,
-            autoPlayDelaySetting = input.autoPlayDelaySetting,
             engineName = input.engineName,
         ),
         autoPlayDelaySetting = input.autoPlayDelaySetting,

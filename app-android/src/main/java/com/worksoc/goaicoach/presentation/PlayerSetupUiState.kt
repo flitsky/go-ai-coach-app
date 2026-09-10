@@ -1,6 +1,5 @@
 package com.worksoc.goaicoach.presentation
 
-import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SidePlayerSetup
 import com.worksoc.goaicoach.match.summary
@@ -10,8 +9,6 @@ internal data class PlayerSetupUiState(
     val setup: PlayerSetup,
     val black: PlayerSetupSideUiState,
     val white: PlayerSetupSideUiState,
-    val autoPlayDelaySetting: AutoPlayDelaySetting,
-    val showAutoPlayDelay: Boolean,
     val summaryText: String,
 )
 
@@ -27,9 +24,14 @@ internal data class PlayerSetupSideUiState(
     val aiDetailText: String,
 )
 
+/**
+ * ⚠️ **`autoPlayDelaySetting`/`showAutoPlayDelay`는 2026-09-10에 지웠다.** 'AI 착수 지연'이
+ * 개발자 섹션(`DeveloperAutoPlayDelayControl`)으로 옮겨 가면서 이 상태를 읽는 곳이 하나도
+ * 남지 않았다 — 값과 그 표시 조건을 여기 남겨 두면 **아무도 그리지 않는 상태**가 된다.
+ * 개발자 섹션은 세션 설정(`GameScreenState.autoPlayDelaySetting`)에서 직접 읽는다.
+ */
 internal fun buildPlayerSetupUiState(
     setup: PlayerSetup,
-    autoPlayDelaySetting: AutoPlayDelaySetting,
     engineName: String,
 ): PlayerSetupUiState =
     PlayerSetupUiState(
@@ -44,8 +46,6 @@ internal fun buildPlayerSetupUiState(
             side = setup.white,
             engineName = engineName,
         ),
-        autoPlayDelaySetting = autoPlayDelaySetting,
-        showAutoPlayDelay = setup.isAutoPlay(),
         summaryText = setup.summary(engineName),
     )
 

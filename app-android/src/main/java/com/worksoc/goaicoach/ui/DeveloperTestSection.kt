@@ -34,6 +34,7 @@ import com.worksoc.goaicoach.persistence.BotCollectionStore
 import com.worksoc.goaicoach.application.attendance.isRewardedTier
 import com.worksoc.goaicoach.application.attendance.runAttendanceDevDayRewind
 import com.worksoc.goaicoach.persistence.AttendanceStore
+import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.BuildConfig
 import com.worksoc.goaicoach.runReleaseResetAgain
 import com.worksoc.goaicoach.persistence.DeveloperModeStore
@@ -52,8 +53,9 @@ import androidx.compose.runtime.setValue
  *
  * ## 이 파일이 소유하는 것 / 밖에서 받는 것
  * 소유: 빌드 정보 탭 수, 저장소·소모품·캐릭터·프리미엄·출석 표시값. 전부 여기서만 쓴다.
- * 받는 것은 **셋뿐**이고, 셋 다 이 섹션 **바깥에 사는 것**들이다 —
- * 2차 활성 여부(해제 팝업이 되돌려야 하므로), 진단 로그 팝업, 개발자 모드 끄기 요청.
+ * 받는 것은 **다섯**이고, 다섯 다 이 섹션 **바깥에 사는 것**들이다 —
+ * 2차 활성 여부(해제 팝업이 되돌려야 하므로), 진단 로그 팝업, 개발자 모드 끄기 요청,
+ * 그리고 AI 착수 지연의 현재 값과 변경 콜백(2026-09-10에 대국 설정에서 옮겨 왔다).
  *
  * ## ⚠️ 두 단의 경계는 라벨이 아니라 "무엇을 저장하는가"다(백로그 #77)
  * **1차**는 `DeveloperModeStore`에 저장되고 **release에도 실린다.** 그래서 여기에는 권한을
@@ -73,6 +75,11 @@ internal fun DeveloperTestSection(
     onAdvancedEnabledChange: (Boolean) -> Unit,
     onShowDiagnosticLog: () -> Unit,
     onRequestDeveloperModeOff: () -> Unit,
+    // ⚠️ AI 착수 지연은 **세션 설정에 사는 값**이라 밖에서 받는다(2026-09-10에 대국 설정에서
+    // 옮겨 왔다). 위 머리말의 *"받는 것은 셋뿐"* 은 이제 다섯이다 — 늘린 둘도 같은 기준을
+    // 지킨다: 이 섹션 바깥에 사는 것만 받는다.
+    autoPlayDelaySetting: AutoPlayDelaySetting,
+    onAutoPlayDelayChange: (AutoPlayDelaySetting) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -224,6 +231,15 @@ internal fun DeveloperTestSection(
                 Text(strings.settingsDevDiagnosticLogOpenAction)
             }
         }
+
+        // **AI 착수 지연** — 2026-09-10에 대국 설정에서 이리로 옮겼다(사용자 지시).
+        // ⚠️ **1차가 맞다**: 이 값은 권한이 아니라 취향(`autoPlayDelayMillis`)이라 release에
+        // 실려도 무해하고, 2차에 두면 release에서는 조절할 길이 아예 사라진다.
+        // 사유 전문은 `DeveloperAutoPlayDelayControl`의 KDoc.
+        DeveloperAutoPlayDelayControl(
+            selected = autoPlayDelaySetting,
+            onSelected = onAutoPlayDelayChange,
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 

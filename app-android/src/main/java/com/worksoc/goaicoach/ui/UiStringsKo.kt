@@ -189,6 +189,7 @@ internal val UiStringsKorean = UiStrings(
     settingsDevShardClearAction = "비우기",
     settingsDevAttendanceTitle = "출석 하루 진행",
     settingsDevAttendanceAdvanceAction = "하루 진행",
+    settingsDevAutoPlayDelaySubtitle = "AI끼리 둘 때만 적용됩니다 · 기본은 즉시",
     settingsDevReleaseResetTitle = "출시 초기화 재실행",
     settingsDevReleaseResetSubtitle = "출석·캐릭터·1회권·프리미엄을 지웁니다",
     settingsDevFreshInstallTitle = "앱 최초 실행 상태로 되돌리기",

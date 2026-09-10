@@ -144,7 +144,6 @@ internal fun GameSetupLobby(
                 state = screenState.playerSetupUi,
                 enabled = true,
                 onPlayerSetupChange = { setup -> onEvent(GameUiEvent.ChangePlayerSetup(setup)) },
-                onAutoPlayDelayChange = { setting -> onEvent(GameUiEvent.ChangeAutoPlayDelay(setting)) },
             )
 
             // [2] 룰 및 바둑판 세팅 패널 (계가, 크기, 접바둑).

@@ -338,6 +338,8 @@ internal data class UiStrings(
     val settingsDevShardClearAction: String,
     val settingsDevAttendanceTitle: String,
     val settingsDevAttendanceAdvanceAction: String,
+    /** 개발자 1차의 'AI 착수 지연' 부제 — AI끼리 둘 때만 적용된다는 사실을 적는다(2026-09-10). */
+    val settingsDevAutoPlayDelaySubtitle: String,
     val settingsDevReleaseResetTitle: String,
     val settingsDevReleaseResetSubtitle: String,
     /**

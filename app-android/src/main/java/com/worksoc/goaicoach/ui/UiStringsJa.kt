@@ -189,6 +189,7 @@ internal val UiStringsJapanese = UiStringsKorean.copy(
     settingsDevShardClearAction = "空にする",
     settingsDevAttendanceTitle = "出席を1日進める",
     settingsDevAttendanceAdvanceAction = "1日進める",
+    settingsDevAutoPlayDelaySubtitle = "AI同士の対局にのみ適用されます・既定は即時",
     settingsDevReleaseResetTitle = "リリースリセット再実行",
     settingsDevReleaseResetSubtitle = "出席・キャラクター・1回券・プレミアムを消します",
     settingsDevFreshInstallTitle = "アプリ初回起動の状態に戻す",

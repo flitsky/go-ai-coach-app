@@ -188,6 +188,7 @@ internal val UiStringsChineseSimplified = UiStringsKorean.copy(
     settingsDevShardClearAction = "清空",
     settingsDevAttendanceTitle = "签到前进一天",
     settingsDevAttendanceAdvanceAction = "前进一天",
+    settingsDevAutoPlayDelaySubtitle = "仅在 AI 对 AI 时生效 · 默认立即",
     settingsDevReleaseResetTitle = "重新执行发布重置",
     settingsDevReleaseResetSubtitle = "清除签到、角色、单次券和高级模式",
     settingsDevFreshInstallTitle = "恢复到首次启动状态",

@@ -251,7 +251,6 @@ internal fun SettingsScreen(
                 state = screenState.playerSetupUi,
                 enabled = !screenState.engine.isBusy,
                 onPlayerSetupChange = { setup -> onEvent(GameUiEvent.ChangePlayerSetup(setup)) },
-                onAutoPlayDelayChange = { setting -> onEvent(GameUiEvent.ChangeAutoPlayDelay(setting)) },
             )
 
             // 룰 및 바둑판 세팅 패널. 레이아웃 선택지는 #73이 없앴고, 심플 레이아웃 자체는 #76이 지웠다.
@@ -442,6 +441,9 @@ internal fun SettingsScreen(
                     onAdvancedEnabledChange = { enabled -> isAdvancedDeveloperModeEnabled = enabled },
                     onShowDiagnosticLog = { showDiagnosticLog = true },
                     onRequestDeveloperModeOff = { showDeveloperModeOptOut = true },
+                    // 2026-09-10에 대국 설정에서 개발자 섹션으로 옮겨 온 값.
+                    autoPlayDelaySetting = screenState.autoPlayDelaySetting,
+                    onAutoPlayDelayChange = { setting -> onEvent(GameUiEvent.ChangeAutoPlayDelay(setting)) },
                 )
             }
 

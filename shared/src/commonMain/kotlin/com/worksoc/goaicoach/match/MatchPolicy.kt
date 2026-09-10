@@ -113,7 +113,18 @@ enum class AutoPlayDelaySetting(
     Study(3_000L, "3초");
 
     companion object {
-        val Default: AutoPlayDelaySetting = Normal
+        /**
+         * **기본은 지연 없음**(2026-09-10 사용자 결정, 이전 값은 [Normal] 1초).
+         *
+         * ⚠️ **이미 쓰던 기기는 안 바뀐다** — `UserPreferencesSnapshot.autoPlayDelayMillis`가
+         * 저장된 값을 그대로 읽으므로, 이 상수는 **신규 설치와 초기화 이후에만** 효력이 있다.
+         * 되돌리려면 이 한 줄만 고치면 된다.
+         *
+         * ⚠️ 이 값이 보이는 곳은 **AI 대 AI 대국뿐**이었다(`SidePlayerSetup.isAutoPlay()`).
+         * 2026-09-10에 그 조작 UI 자체를 개발자 섹션으로 옮겼다 — 일반 사용자에게는
+         * *"AI가 자기들끼리 두는 속도"* 가 설정에 있을 이유가 없다는 판단이다.
+         */
+        val Default: AutoPlayDelaySetting = None
 
         fun fromMillis(millis: Long): AutoPlayDelaySetting =
             entries.firstOrNull { setting -> setting.millis == millis }

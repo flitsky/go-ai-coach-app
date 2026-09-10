@@ -37,7 +37,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.match.SidePlayerSetup
@@ -54,7 +53,6 @@ internal fun PlayerSetupPanel(
     state: PlayerSetupUiState,
     enabled: Boolean,
     onPlayerSetupChange: (PlayerSetup) -> Unit,
-    onAutoPlayDelayChange: (AutoPlayDelaySetting) -> Unit,
 ) {
     val strings = LocalUiStrings.current
     Surface(
@@ -78,12 +76,11 @@ internal fun PlayerSetupPanel(
                 enabled = enabled,
                 onSideChange = { side -> onPlayerSetupChange(state.setup.updateSide(StoneColor.White, side)) },
             )
-            if (state.showAutoPlayDelay) {
-                AutoPlayDelayRow(
-                    selected = state.autoPlayDelaySetting,
-                    onSelected = onAutoPlayDelayChange,
-                )
-            }
+            // ⚠️ **'AI 착수 지연'은 2026-09-10에 개발자 섹션으로 옮겼다**(사용자 지시).
+            // 여기 있을 때도 `state.showAutoPlayDelay`(= 양쪽 좌석이 모두 AI)로 가려져 있어
+            // **AI 대 AI 대국에서만** 보였다 — 일반 사용자에게는 존재조차 드문 줄이었고,
+            // 뜻도 *"AI가 자기들끼리 두는 속도"* 라 대국 설정에 둘 이유가 약했다.
+            // 지금 자리는 `DeveloperAutoPlayDelayControl`이다.
         }
     }
 }
@@ -138,34 +135,6 @@ private fun MaximumSearchTimeLimitRow(
             modifier = Modifier.weight(1f),
             options = SearchTimeLimit.entries,
             optionLabel = strings::searchTimeLimitLabel,
-            onSelected = onSelected,
-        )
-    }
-}
-
-@Composable
-private fun AutoPlayDelayRow(
-    selected: AutoPlayDelaySetting,
-    onSelected: (AutoPlayDelaySetting) -> Unit,
-) {
-    val strings = LocalUiStrings.current
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = strings.autoDelay,
-            modifier = Modifier.weight(1f),
-            color = MaterialTheme.colorScheme.secondary,
-            style = MaterialTheme.typography.bodySmall,
-        )
-        SetupDropdown(
-            selectedText = strings.autoPlayDelayLabel(selected),
-            enabled = true,
-            modifier = Modifier.weight(1f),
-            options = AutoPlayDelaySetting.entries,
-            optionLabel = { setting -> strings.autoPlayDelayLabel(setting) },
             onSelected = onSelected,
         )
     }
