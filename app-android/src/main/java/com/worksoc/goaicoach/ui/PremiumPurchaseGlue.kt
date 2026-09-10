@@ -2,6 +2,7 @@ package com.worksoc.goaicoach.ui
 
 import android.app.Activity
 import android.content.Context
+import com.android.billingclient.api.BillingClient
 import com.worksoc.goaicoach.BuildConfig
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.premium.AdRewardFailureReason
@@ -25,7 +26,7 @@ internal suspend fun performPremiumPurchase(
     diagnosticEventLog: DiagnosticEventLogPort,
 ): Pair<PurchaseOutcome, PremiumState?> =
     resolvePremiumPurchase(context, diagnosticEventLog, PurchaseTrigger.Explicit) { activity ->
-        AndroidBillingClient(activity, BuildConfig.PREMIUM_PRODUCT_ID).purchasePremium()
+        AndroidBillingClient(activity, BuildConfig.PREMIUM_PRODUCT_ID, PremiumProductType).purchasePremium()
     }
 
 /** 앱 시작 시 복원 조회 버전 — [performPremiumPurchase]와 판정 로직(상태 전이/로그)을 그대로 공유한다. */
@@ -34,7 +35,7 @@ internal suspend fun performPremiumPurchaseRestore(
     diagnosticEventLog: DiagnosticEventLogPort,
 ): Pair<PurchaseOutcome, PremiumState?> =
     resolvePremiumPurchase(context, diagnosticEventLog, PurchaseTrigger.Restore) { activity ->
-        AndroidBillingClient(activity, BuildConfig.PREMIUM_PRODUCT_ID).restorePurchases()
+        AndroidBillingClient(activity, BuildConfig.PREMIUM_PRODUCT_ID, PremiumProductType).restorePurchases()
     }
 
 /**
@@ -48,7 +49,7 @@ internal suspend fun performPremiumPurchaseRestore(
 internal suspend fun performBotCharacterPurchase(context: Context): PurchaseOutcome {
     val activity = context as? Activity
         ?: return PurchaseOutcome.NotPurchased(PurchaseFailureReason.Unavailable)
-    return AndroidBillingClient(activity, BuildConfig.BOT_CHARACTER_PRODUCT_ID).purchasePremium()
+    return AndroidBillingClient(activity, BuildConfig.BOT_CHARACTER_PRODUCT_ID, BotCharacterProductType).purchasePremium()
 }
 
 /**
@@ -58,7 +59,7 @@ internal suspend fun performBotCharacterPurchase(context: Context): PurchaseOutc
 internal suspend fun performBotCharacterPurchaseRestore(context: Context): PurchaseOutcome {
     val activity = context as? Activity
         ?: return PurchaseOutcome.NotPurchased(PurchaseFailureReason.Unavailable)
-    return AndroidBillingClient(activity, BuildConfig.BOT_CHARACTER_PRODUCT_ID).restorePurchases()
+    return AndroidBillingClient(activity, BuildConfig.BOT_CHARACTER_PRODUCT_ID, BotCharacterProductType).restorePurchases()
 }
 
 private suspend fun resolvePremiumPurchase(
@@ -159,3 +160,29 @@ internal suspend fun showRewardedAdOnce(context: Context): AdRewardOutcome {
     }
     return AndroidRewardedInterstitialAdClient(activity, AdUnitIds.rewardedInterstitialAdUnitId).showRewardedAd()
 }
+
+/**
+ * 프리미엄이 파는 것은 **월 구독**이다(#26, 2026-08-30 사용자 확정 3,900원/월).
+ *
+ * ⚠️ **이 한 줄이 없던 동안 구독은 조회조차 되지 않았다**(#26 ⓕ, 2026-09-08 발견). 어댑터의
+ * `productType` 기본값이 `INAPP`이었고 `SUBS`를 넘기는 호출부가 저장소에 **하나도 없어서**,
+ * 구독자의 복원이 **오류가 아니라 조용한 미소유**로 끝났다 — 사용자에게 아무 표시도 남지 않는다.
+ *
+ * ⚠️ **지금은 아직 아무 일도 일어나지 않는다** — `FeatureFlags.isPurchaseEnabled`가 꺼져 있고
+ * 콘솔 수익 창출이 잠겨 있어 SKU 자체가 없다. 그래서 이 값을 **미리** 바로잡아 두는 것이고,
+ * 플래그를 켜는 사람이 이 한 줄을 다시 찾아내지 않아도 되게 하는 것이 요점이다.
+ *
+ * ⚠️ **`billing.premiumProductId`도 함께 봐야 한다** — 지금 값은 `premium_lifetime`이다.
+ * 콘솔에 구독 SKU를 만들 때 그 ID로 바꿀 것. 종류만 `SUBS`이고 ID가 단발 상품이면
+ * "상품 없음"으로 실패한다(#26 남은 것 ⓓ).
+ */
+private val PremiumProductType: String = BillingClient.ProductType.SUBS
+
+/**
+ * 봇 캐릭터는 **단발 구매·영구 소유**다(#18, 4,900원).
+ *
+ * ⚠️ **프리미엄과 같은 어댑터를 공유하므로 반드시 자기 종류를 말해야 한다.** 예전에는 둘 다
+ * 기본값에 기대고 있었고, 그래서 프리미엄을 `SUBS`로 바꾸려면 클래스 안 상수를 건드려야 했는데
+ * 그러면 **캐릭터 구매가 조용히 깨졌다**(함정 8번).
+ */
+private val BotCharacterProductType: String = BillingClient.ProductType.INAPP

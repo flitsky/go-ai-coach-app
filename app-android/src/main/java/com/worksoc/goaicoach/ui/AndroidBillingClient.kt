@@ -40,8 +40,13 @@ internal class AndroidBillingClient(
      * 프리미엄은 월 구독으로 가고 봇 캐릭터(#18)는 단발 구매로 남는데 **둘이 이 클래스를 공유한다** —
      * 클래스 안에서 상수로 치환하면 캐릭터 구매가 조용히 깨지고, 그 플래그가 꺼져 있어
      * 테스트로도 드러나지 않는다.
+     *
+     * ⚠️ **기본값을 없앴다(2026-09-10, #26 ⓕ).** `INAPP` 기본값이 있던 동안 **프리미엄 호출부
+     * 넷이 전부 그 기본값을 그냥 썼고**, 그래서 구독은 조회조차 되지 않았다 — 실패가 아니라
+     * **조용한 미소유**로 끝나 사용자에게 아무 표시도 남지 않는 종류의 결함이다. 빠뜨릴 수
+     * 없게 필수 인자로 둔다. 새 호출부는 자기가 파는 것이 무엇인지 **말해야 한다.**
      */
-    private val productType: String = BillingClient.ProductType.INAPP,
+    private val productType: String,
 ) : PurchasePort {
     // launchBillingFlow의 결과는 동기 반환값이 아니라 PurchasesUpdatedListener 콜백으로 온다 —
     // 이 리스너는 BillingClient 생성 시 한 번만 등록되므로, 현재 진행 중인 구매 요청의

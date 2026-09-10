@@ -80,4 +80,42 @@ class AndroidBillingClientTest {
             hardcoded.isEmpty(),
         )
     }
+
+    /**
+     * 프리미엄은 `SUBS`, 봇 캐릭터는 `INAPP` — **호출부가 직접 말해야 한다**(#26 ⓕ).
+     *
+     * ⚠️ **이 그물이 없어서 구독은 조회조차 되지 않았다.** 어댑터의 `productType` 기본값이
+     * `INAPP`이었고 `SUBS`를 넘기는 호출부가 저장소에 하나도 없었는데, 플래그가 꺼져 있어
+     * **실행 테스트로는 영원히 드러나지 않는다.** 그래서 소스를 읽는다.
+     *
+     * ⚠️ **기본값을 되살리지 말 것** — 그 순간 다음 호출부가 다시 조용히 틀린 종류를 쓴다.
+     */
+    @Test
+    fun everyBillingCallSiteNamesTheProductTypeItSells() {
+        val glue = File("src/main/java/com/worksoc/goaicoach/ui/PremiumPurchaseGlue.kt").readText()
+            .replace(Regex("""/\*.*?\*/""", RegexOption.DOT_MATCHES_ALL), "")
+            .lines().joinToString("\n") { line -> line.substringBefore("//") }
+
+        assertTrue(
+            "프리미엄이 SUBS를 선언하지 않는다 — 구독 복원이 오류가 아니라 조용한 미소유로 끝난다(#26 ⓕ).",
+            glue.contains("BillingClient.ProductType.SUBS"),
+        )
+        assertTrue(
+            "봇 캐릭터가 INAPP를 선언하지 않는다 — 단발 구매가 구독으로 조회되면 조용히 깨진다(#18).",
+            glue.contains("BillingClient.ProductType.INAPP"),
+        )
+        Regex("""AndroidBillingClient\(([^)]*)\)""").findAll(glue).forEach { match ->
+            assertTrue(
+                "`AndroidBillingClient(${match.groupValues[1]})`가 상품 종류를 넘기지 않는다 — " +
+                    "기본값에 기대는 순간 무엇을 파는지 코드가 말하지 않게 된다.",
+                match.groupValues[1].contains("ProductType"),
+            )
+        }
+
+        val adapter = File("src/main/java/com/worksoc/goaicoach/ui/AndroidBillingClient.kt").readText()
+        assertTrue(
+            "`productType`에 기본값이 되살아났다 — 호출부가 다시 조용히 빠뜨릴 수 있다(#26 ⓕ).",
+            !adapter.contains("private val productType: String ="),
+        )
+    }
 }
