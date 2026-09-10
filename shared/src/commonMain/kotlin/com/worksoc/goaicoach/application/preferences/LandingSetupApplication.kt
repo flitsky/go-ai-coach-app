@@ -13,15 +13,20 @@ import com.worksoc.goaicoach.shared.Ruleset
  * 두세요"라는 안내를 받는 꼴이 된다(2026-08-31 사용자 확정).
  *
  * ⚠️ **낮은 등급이라고 약한 상대를 붙이는 것이 아니다.** 1단계 봇도 실제 기력은 일반 중급자를
- * 상회한다(사용자 확인) — 그래서 다섯 답 모두 같은 1단계를 상대로 두되, **접바둑 돌 수와
+ * 상회한다(사용자 확인) — 그래서 세 답 모두 같은 1단계를 상대로 두되, **접바둑 돌 수와
  * 좌석으로만** 균형을 맞춘다. 문구도 "쉬운 상대를 붙였다"고 말하면 안 된다.
+ *
+ * ⚠️ **2026-09-09에 다섯에서 셋으로 줄였다**(사용자 지시: *"수준을 간결하게 3가지로만 묻기"*).
+ * 없앤 것은 `Beginner`(3점·흑)와 `Expert`(3점·백)인데, 남은 셋이 그 자리를 대신한다 —
+ * 입문이 5점에서 **3점으로 내려왔고**(초안의 *"3점을 깔고 둬봐요"*), 상급이 2점·백을 그대로 맡는다.
+ * · **저장 포맷 걱정은 없다** — [applyLandingSetup]이 이 값을 버리고 `handicapCount`/`playerSetup`
+ *   같은 결과만 저장한다(`FirstRunGuidePolicy` 주석 참고). 함정 1번(enum 이름 = 저장 포맷)에
+ *   해당하지 않는 몇 안 되는 enum이다.
  */
 enum class SelfRatedSkill {
     Entry,
-    Beginner,
     Intermediate,
     Advanced,
-    Expert,
 }
 
 /**
@@ -35,14 +40,12 @@ data class LandingSetupPlan(
     val humanPlaysBlack: Boolean,
 )
 
-/** 자기 실력 → 접바둑 계획(2026-08-31 사용자 확정 표). */
+/** 자기 실력 → 접바둑 계획(2026-08-31 확정, 2026-09-09에 셋으로 축약). */
 fun landingSetupPlan(skill: SelfRatedSkill): LandingSetupPlan =
     when (skill) {
-        SelfRatedSkill.Entry -> LandingSetupPlan(handicapCount = 5, humanPlaysBlack = true)
-        SelfRatedSkill.Beginner -> LandingSetupPlan(handicapCount = 3, humanPlaysBlack = true)
+        SelfRatedSkill.Entry -> LandingSetupPlan(handicapCount = 3, humanPlaysBlack = true)
         SelfRatedSkill.Intermediate -> LandingSetupPlan(handicapCount = 0, humanPlaysBlack = true)
         SelfRatedSkill.Advanced -> LandingSetupPlan(handicapCount = 2, humanPlaysBlack = false)
-        SelfRatedSkill.Expert -> LandingSetupPlan(handicapCount = 3, humanPlaysBlack = false)
     }
 
 /**
@@ -76,7 +79,7 @@ fun applyLandingSetup(
 }
 
 /**
- * 다섯 답 모두 **1단계를 상대로** 시작한다 — 신규 설치 시 획득해 둔 캐릭터가 그것뿐이라
+ * 세 답 모두 **1단계를 상대로** 시작한다 — 신규 설치 시 획득해 둔 캐릭터가 그것뿐이라
  * 다른 선택지가 애초에 없고, 상위 캐릭터는 모아서 여는 것이 이 앱의 구조이기 때문이다.
  */
 private val FirstTierOpponent = PlayLevelSetting(group = PlayLevelGroup.FastBeginner, level = 1)

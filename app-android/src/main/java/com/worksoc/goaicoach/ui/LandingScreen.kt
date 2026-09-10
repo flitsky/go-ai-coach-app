@@ -213,9 +213,12 @@ private fun SkillChoices(
     selected: SelfRatedSkill?,
     onSelect: (SelfRatedSkill) -> Unit,
 ) {
-    // 5개를 3+2로 나눈다. FlowRow를 쓰지 않는 이유는 실험적 API라 이 화면 하나 때문에
-    // opt-in을 늘리고 싶지 않아서다 — 보기 수가 고정(5)이라 나누는 편이 단순하다.
-    val rows = listOf(SelfRatedSkill.entries.take(3), SelfRatedSkill.entries.drop(3))
+    // 한 줄에 최대 셋씩 흘린다. FlowRow를 쓰지 않는 이유는 실험적 API라 이 화면 하나 때문에
+    // opt-in을 늘리고 싶지 않아서다.
+    // ⚠️ **`chunked`로 둔 이유**: 2026-09-09에 보기가 다섯에서 셋으로 줄면서 지금은 한 줄로
+    // 끝나지만, 예전처럼 `take(3)`/`drop(3)`으로 자리를 못박아 두면 보기가 넷이 되는 날
+    // **빈 줄이 생기거나 한 줄이 넘친다.** 개수가 변해도 3개씩 접히도록 둔다.
+    val rows = SelfRatedSkill.entries.chunked(3)
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         rows.forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

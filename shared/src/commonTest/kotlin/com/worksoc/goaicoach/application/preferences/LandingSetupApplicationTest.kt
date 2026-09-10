@@ -11,45 +11,53 @@ import kotlin.test.assertTrue
 /** 백로그 #51 — 랜딩의 답이 초기 설정으로 옮겨지는 순수 로직. */
 class LandingSetupApplicationTest {
 
+    /** 보기는 2026-09-09에 셋으로 줄었다 — 입문자가 5점이 아니라 **3점**을 받는다. */
     @Test
     fun weakerSelfRatingTakesMoreStonesAsBlack() {
-        assertEquals(LandingSetupPlan(5, humanPlaysBlack = true), landingSetupPlan(SelfRatedSkill.Entry))
-        assertEquals(LandingSetupPlan(3, humanPlaysBlack = true), landingSetupPlan(SelfRatedSkill.Beginner))
+        assertEquals(LandingSetupPlan(3, humanPlaysBlack = true), landingSetupPlan(SelfRatedSkill.Entry))
         assertEquals(LandingSetupPlan(0, humanPlaysBlack = true), landingSetupPlan(SelfRatedSkill.Intermediate))
     }
 
     /**
-     * ⚠️ 상급 이상은 **사람이 백을 잡는다.** 접바둑 돌은 규칙상 항상 흑이 놓으므로, 좌석을
-     * 뒤집는 것이 곧 "내가 AI에게 돌을 접어 준다"가 된다 — 이 뒤집힘이 빠지면 고수가 오히려
+     * ⚠️ 상급자는 **사람이 백을 잡는다.** 접바둑 돌은 규칙상 항상 흑이 놓으므로, 좌석을
+     * 뒤집는 것이 곧 "내가 AI에게 돌을 접어 준다"가 된다 — 이 뒤집힘이 빠지면 상급자가 오히려
      * 돌을 받는 정반대 설정이 된다.
      */
     @Test
     fun strongerSelfRatingGivesStonesToTheAiByPlayingWhite() {
         assertEquals(LandingSetupPlan(2, humanPlaysBlack = false), landingSetupPlan(SelfRatedSkill.Advanced))
-        assertEquals(LandingSetupPlan(3, humanPlaysBlack = false), landingSetupPlan(SelfRatedSkill.Expert))
     }
 
     @Test
-    fun entryLevelSeatsTheHumanOnBlackWithFiveStones() {
+    fun entryLevelSeatsTheHumanOnBlackWithThreeStones() {
         val applied = applyLandingSetup(UserPreferencesSnapshot(), SelfRatedSkill.Entry, Ruleset.Japanese)
 
-        assertEquals(5, applied.handicapCount)
+        assertEquals(3, applied.handicapCount)
         assertEquals(SeatController.Human, applied.playerSetup.black.controller)
         assertEquals(SeatController.Ai, applied.playerSetup.white.controller)
         assertEquals(Ruleset.Japanese, applied.ruleset)
     }
 
     @Test
-    fun expertLevelSeatsTheHumanOnWhiteSoTheAiTakesTheStones() {
-        val applied = applyLandingSetup(UserPreferencesSnapshot(), SelfRatedSkill.Expert, Ruleset.Chinese)
+    fun advancedLevelSeatsTheHumanOnWhiteSoTheAiTakesTheStones() {
+        val applied = applyLandingSetup(UserPreferencesSnapshot(), SelfRatedSkill.Advanced, Ruleset.Chinese)
 
-        assertEquals(3, applied.handicapCount)
+        assertEquals(2, applied.handicapCount)
         assertEquals(SeatController.Ai, applied.playerSetup.black.controller)
         assertEquals(SeatController.Human, applied.playerSetup.white.controller)
         assertEquals(Ruleset.Chinese, applied.ruleset)
     }
 
-    /** 다섯 답 모두 1단계를 상대로 시작한다 — 신규 설치에 열려 있는 캐릭터가 그것뿐이다. */
+    /**
+     * 보기가 셋뿐이라는 것 자체를 못박는다 — 사용자 지시가 *"간결하게 3가지로만"* 이었고,
+     * 넷째가 조용히 붙으면 랜딩의 그 간결함이 되돌려진다(2026-09-09).
+     */
+    @Test
+    fun theLandingAsksWithExactlyThreeChoices() {
+        assertEquals(3, SelfRatedSkill.entries.size, "${SelfRatedSkill.entries}")
+    }
+
+    /** 세 답 모두 1단계를 상대로 시작한다 — 신규 설치에 열려 있는 캐릭터가 그것뿐이다. */
     @Test
     fun everyAnswerStartsAgainstTheFirstTierOpponent() {
         SelfRatedSkill.entries.forEach { skill ->
@@ -94,8 +102,13 @@ class LandingSetupApplicationTest {
     }
 
     /**
-     * ⚠️ 9x9는 접바둑 상한이 5다. 표의 값이 상한을 넘는 판에서도 잘리는지 본다 — 넘긴 채로
-     * 저장되면 `handicapStonePositions`가 `require`에서 터진다.
+     * ⚠️ 9x9는 접바둑 상한이 5다. 상한을 넘긴 채로 저장되면 `handicapStonePositions`가
+     * `require`에서 터지므로, 작은 판에서도 값이 안전한지 본다.
+     *
+     * ⚠️ **2026-09-09부터 이 검사는 잠든 그물이다 — "자르기가 동작한다"의 증거로 읽지 말 것.**
+     * 보기가 셋으로 줄면서 표의 최대가 3점(입문자)이 됐고, 9x9 상한이 5라 **자를 일이 없다.**
+     * 그래도 남겨 두는 이유는 표가 다시 커지는 날(예: 입문자를 5점으로 되돌리는 변경)
+     * 이 자리가 곧바로 실검사로 되살아나기 때문이다. 그때 아래 단언의 기대값도 함께 바뀐다.
      */
     @Test
     fun handicapIsClampedToWhatTheBoardAllows() {
@@ -104,6 +117,6 @@ class LandingSetupApplicationTest {
         val applied = applyLandingSetup(nine, SelfRatedSkill.Entry, Ruleset.Japanese)
 
         assertTrue(applied.handicapCount <= BoardSize.Nine.maxHandicapCount)
-        assertEquals(5, applied.handicapCount)
+        assertEquals(3, applied.handicapCount)
     }
 }
