@@ -10,7 +10,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import com.worksoc.goaicoach.application.guide.GuideSetupFacts
 import com.worksoc.goaicoach.application.guide.GuideStep
 import com.worksoc.goaicoach.application.guide.GuideSurface
 import com.worksoc.goaicoach.application.guide.autoPlayStep
@@ -110,7 +109,6 @@ internal fun GuideAnchor(
     surface: GuideSurface,
     blocked: Boolean,
     modifier: Modifier = Modifier,
-    facts: GuideSetupFacts? = null,
     toolLabels: GuideToolLabels? = null,
 ) {
     val context = LocalContext.current
@@ -144,10 +142,8 @@ internal fun GuideAnchor(
         }
     }
 
-    val body = guideBodyFor(strings.language, step, facts, toolLabels)
+    val body = guideBodyFor(strings.language, step, toolLabels)
     when (step) {
-        // ①은 판정에 참여하지 않는다(랜딩의 정적 장식) — 여기 올 수 없다.
-        GuideStep.Landing -> Unit
         GuideStep.AttendanceClaim -> GuideLine(text = body, modifier = modifier)
         GuideStep.HomeStartMatch -> ZeroSizeOverlay(modifier) { GuideBubble(text = body) }
         GuideStep.MatchSetup -> GuideCard(text = body, onAck = ::ack)
@@ -173,5 +169,5 @@ private fun GuideStep.isCard(): Boolean = when (this) {
     GuideStep.InGameMagnifier, GuideStep.InGameBoardSize,
     GuideStep.InGameEval, GuideStep.InGameTopMoves,
     -> true
-    GuideStep.Landing, GuideStep.AttendanceClaim, GuideStep.HomeStartMatch -> false
+    GuideStep.AttendanceClaim, GuideStep.HomeStartMatch -> false
 }

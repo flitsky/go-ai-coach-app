@@ -18,21 +18,16 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.worksoc.goaicoach.application.guide.GuideSetupFacts
 import com.worksoc.goaicoach.application.guide.GuideStep
 import com.worksoc.goaicoach.application.guide.GuideSurface
-import com.worksoc.goaicoach.match.SeatController
-import com.worksoc.goaicoach.persistence.UserPreferencesStore
 import com.worksoc.goaicoach.presentation.GameUiEvent
 import com.worksoc.goaicoach.presentation.GameActionButtonState
 import com.worksoc.goaicoach.presentation.GameActionButtonRole
@@ -59,9 +54,8 @@ import com.worksoc.goaicoach.application.guide.GuideTarget
  * 여기서 `armed`나 `seen_steps`를 건드리면 다시보기를 한 번 볼 때마다 **자동 재생이 다시 무장돼**
  * 홈·대국에서 말풍선이 또 뜬다. 그래서 **진행도 저장소는 열지 않는다**(`FirstDolGuideContractTest`가
  * 그것을 계약으로 지킨다).
- * ⚠️ 다만 **설정은 읽는다**(`UserPreferencesStore`) — ④ 문구가 말하는 접바둑·좌석이 *지금* 값이어야
- * 참이기 때문이다. 한때 이 KDoc이 *"저장소를 읽지도 쓰지도 않는다"* 고 적고 있었는데 그것은
- * 거짓이었다(2026-09-09 정정). 금지 대상은 저장소 일반이 아니라 **진행도**다.
+ * (한때 ④ 문구가 접바둑·좌석을 인용해서 **설정 저장소는 읽었다** — #140이 그 문구를 한 가지로 바꿔
+ * 이제는 읽지 않는다. 금지 대상은 그때도 지금도 저장소 일반이 아니라 **진행도**다.)
  *
  * ## 왜 마법사가 아니라 한 장의 스크롤인가
  *
@@ -71,16 +65,6 @@ import com.worksoc.goaicoach.application.guide.GuideTarget
 @Composable
 internal fun FirstDolGuideReplayDialog(onClose: () -> Unit) {
     val strings = LocalUiStrings.current
-    val context = LocalContext.current
-    // ⚠️ **읽기만 한다.** ④ 문구가 말하는 접바둑·좌석은 **지금 저장된 값**이어야 참이다 —
-    // 다시보기가 옛 값을 외워 두면 사용자가 설정을 바꾼 뒤 거짓을 말한다.
-    val facts = remember(context) {
-        val saved = UserPreferencesStore(context).load()
-        GuideSetupFacts(
-            handicapCount = saved.handicapCount,
-            humanPlaysBlack = saved.playerSetup.black.controller == SeatController.Human,
-        )
-    }
     val toolLabels = GuideToolLabels(
         magnifier = playMagnifierLabelFor(strings.language),
         boardSubject = boardSizeSubjectFor(strings.language),
@@ -146,7 +130,7 @@ internal fun FirstDolGuideReplayDialog(onClose: () -> Unit) {
                         )
                     }
                     ReplaySection(title = strings.matchSetup) {
-                        ReplayLine(guideBodyFor(strings.language, GuideStep.MatchSetup, facts = facts))
+                        ReplayLine(guideBodyFor(strings.language, GuideStep.MatchSetup))
                     }
                     ReplaySection(title = strings.guideReplayInGameTitle) {
                         // ⚠️ **문구마다 그 버튼을 실물로 함께 그린다**(2026-09-09 사용자 지시:

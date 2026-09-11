@@ -199,11 +199,11 @@ internal val UiStringsJapanese = UiStringsKorean.copy(
     settingsDevReleaseResetTitle = "リリースリセット再実行",
     settingsDevReleaseResetSubtitle = "出席・キャラクター・1回券・プレミアムを消します",
     settingsDevFreshInstallTitle = "アプリ初回起動の状態に戻す",
-    settingsDevFreshInstallSubtitle = "すべて消してアプリを再起動します・ランディングとガイドから",
+    settingsDevFreshInstallSubtitle = "すべて消してアプリを再起動します・ガイドから",
     settingsDevFreshInstallConfirmTitle = "アプリを初回起動の状態に戻しますか？",
     settingsDevFreshInstallConfirmMessage = "出席・キャラクター・1回券・プレミアムに加えて、対局記録・" +
         "進行中の対局・設定・言語まですべて消え、アプリがすぐに再起動します。インストール直後と" +
-        "同じ状態になり、ランディングとガイドが最初から表示されます。端末識別子だけが残ります。",
+        "同じ状態になり、ガイドが最初から表示されます。端末識別子だけが残ります。",
     settingsDevFreshInstallAction = "戻す",
     matchSetupLockedDuringGame = "対局中は対局設定を変更できません。新しい対局を始めるときに決めてください。",
     localOnlyDataNoticeTitle = "ログインなしですぐに遊べるアプリです",

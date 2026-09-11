@@ -11,14 +11,13 @@ package com.worksoc.goaicoach.application.guide
  *
  * ## ⚠️ 표면당 단계가 하나라고 가정하지 않는다
  *
- * 오늘은 표면 다섯과 단계 다섯이 1:1이라 [autoPlayStep]이 그냥 첫 미시청 단계를 고른다. 그런데
+ * 한때는 표면과 단계가 1:1이라 [autoPlayStep]이 그냥 첫 미시청 단계를 고르면 됐다. 그런데
  * #18·#26(구매·구독)이나 로그인이 붙으면 **이미 단계가 있는 표면**(대국 설정·마이페이지)에 두 번째
  * 단계가 생긴다. 그때 판정식을 다시 쓰지 않도록 **[GuideStep] 선언 순서가 같은 표면 안에서도
  * 권위를 갖는다** — 그 성질을 `FirstRunGuidePolicyTest`가 케이스로 못박는다. 지금은 공짜이고,
  * 나중에는 판정식 재작성이다.
  */
 enum class GuideSurface {
-    Landing,
     AttendanceClaim,
     Home,
     MatchSetup,
@@ -26,19 +25,19 @@ enum class GuideSurface {
 }
 
 /**
- * 가이드의 다섯 단계. **선언 순서가 재생 순서이고, 한 표면에서 둘이 경쟁할 때의 우선순위다.**
+ * 가이드의 단계. **선언 순서가 재생 순서이고, 한 표면에서 둘이 경쟁할 때의 우선순위다.**
  *
  * ⚠️ [id]는 **저장 포맷**이다(`seen_steps` 집합에 이 문자열이 들어간다). 함정 1번과 같은 성질이라
  * **상수 이름이 아니라 이 문자열을 바꾸면** 이미 본 사용자에게 가이드가 다시 뜬다. 바꾸지 말 것.
+ *
+ * ⚠️ 번호 ②~⑤는 #128이 붙인 그대로다. **①(랜딩 상단 좌우 첫돌이)은 #140이 랜딩과 함께 없앴다** —
+ * 문구 없는 정적 장식이라 판정에 참여한 적이 없어 `landing`이 `seen_steps`에 쓰인 적도 없다.
  */
 enum class GuideStep(
     val id: String,
     val surface: GuideSurface,
     val target: GuideTarget? = null,
 ) {
-    /** ① 랜딩 상단 좌우 첫돌이 — 문구 없는 **정적 장식**이라 판정에 참여하지 않는다(아래 주석). */
-    Landing("landing", GuideSurface.Landing),
-
     /** ② 출석 보상 팝업 안 한 줄. */
     AttendanceClaim("attendance_claim", GuideSurface.AttendanceClaim),
 
@@ -76,9 +75,9 @@ enum class GuideTarget { Magnifier, BoardSize, Eval, TopMoves }
 /**
  * 저장된 진행도. [GuideProgressStore]가 이 값을 싣고 내린다.
  *
- * @param armed 랜딩을 **끝낸** 적이 있는가. ⚠️ *"랜딩을 봤는가"* 가 아니다 — 완료·건너뛰기 두 갈래
- *   모두에서 켜진다. 이 한 값이 **기존 사용자에게 자동 재생이 시작되지 않는 것**을 공짜로 만든다:
- *   이미 랜딩을 지난 사용자는 `armed`가 꺼진 채이므로 자동 재생이 아예 무장되지 않는다.
+ * @param armed **첫 실행 처리**(`FirstRunGate`)를 이 설치에서 거쳤는가. 이 한 값이 **기존 사용자에게
+ *   자동 재생이 시작되지 않는 것**을 공짜로 만든다: 이미 첫 실행을 지난 사용자는 그 처리가 다시 돌지
+ *   않으므로 `armed`가 꺼진 채이고, 자동 재생이 아예 무장되지 않는다(#140 전에는 랜딩을 끝낼 때 켜졌다).
  *
  * ⚠️ **`dismissed`("그만 보기") 플래그는 두었다가 없앴다**(2026-09-09 사용자 판정). 사슬이 짧아서
  * (대국 화면 넷 + 앞의 둘) *"알겠어요"* 를 연타하면 곧 끝나는데, **사정거리가 다른 버튼 둘**을
@@ -113,34 +112,6 @@ fun autoPlayStep(
 ): GuideStep? {
     if (!progress.armed || blocked) return null
     return GuideStep.entries
-        .filter { step -> step.surface == surface && step != GuideStep.Landing }
+        .filter { step -> step.surface == surface }
         .firstOrNull { step -> !progress.hasSeen(step) }
-}
-
-/**
- * ④ 문구가 말할 수 있는 **살아 있는 사실**.
- *
- * ## ⚠️ 기력은 여기 없다 — 앱이 그것을 기억하지 않는다
- *
- * 사용자 원문은 *"(기력)을 선택하셨으니 5점 접바둑으로…"* 였는데, `applyLandingSetup`은
- * `ruleset`·`handicapCount`·`playerSetup`·`hasSeenOnboarding`만 남기고 **`SelfRatedSkill`을 버린다.**
- * 저장소 전체에서 그 열거형을 참조하는 곳은 정책 파일·랜딩 화면의 휘발 상태·문구표 셋뿐이라,
- * *"입문을 선택하셨으니"* 는 **오늘의 코드로 말할 수 없다.** 기력을 새로 장부에 올리는 대신
- * **언급을 생략하기로 했다**(2026-09-09 사용자 결정) — 랜딩을 건너뛴 사용자와 나중에 설정을 바꾼
- * 사용자에게도 거짓이 되지 않는 쪽이다.
- *
- * 그래서 ④는 **실제 저장값에서 파생한** 이 셋만 말한다.
- */
-data class GuideSetupFacts(
-    val handicapCount: Int,
-    val humanPlaysBlack: Boolean,
-) {
-    /** 문구가 갈리는 세 갈래. 호선/흑 N점/백 N점. */
-    val shape: Shape = when {
-        handicapCount <= 0 -> Shape.Even
-        humanPlaysBlack -> Shape.HumanTakesStones
-        else -> Shape.HumanGivesStones
-    }
-
-    enum class Shape { Even, HumanTakesStones, HumanGivesStones }
 }

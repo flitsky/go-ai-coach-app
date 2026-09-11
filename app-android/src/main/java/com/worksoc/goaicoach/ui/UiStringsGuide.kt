@@ -1,10 +1,9 @@
 package com.worksoc.goaicoach.ui
 
-import com.worksoc.goaicoach.application.guide.GuideSetupFacts
 import com.worksoc.goaicoach.application.guide.GuideStep
 
 /**
- * 첫돌이 가이드가 말하는 문구(백로그 #128). 구조는 `UiStringsLanding.kt`와 같다 — **기능 하나가
+ * 첫돌이 가이드가 말하는 문구(백로그 #128). 구조는 `UiStringsStudyVideos.kt`와 같다 — **기능 하나가
  * 쓰는 문구를 한 파일에** 모아 네 언어 파일을 통째로 건드리지 않는다.
  *
  * ## ⚠️ 여기 문구는 리플렉션 그물의 **사각지대**다
@@ -43,45 +42,26 @@ private val HomeStartMatchBody: Map<UiLanguage, String> = mapOf(
 )
 
 /**
- * ④ 대국 설정 화면.
+ * ④ 대국 설정 화면 — **한 가지 문구**(백로그 #140, 2026-09-11 사용자 결정).
  *
- * ⚠️ **기력을 말하지 않는다**(2026-09-09 사용자 결정). 사용자 원문은 *"(기력)을 선택하셨으니"* 였는데
- * `applyLandingSetup`이 `SelfRatedSkill`을 **버려서** 앱이 그것을 기억하지 않는다. 대신 **살아 있는
- * 저장값**(접바둑 점수·좌석)에서 파생하므로, 랜딩을 건너뛴 사용자와 나중에 설정을 바꾼 사용자에게도
- * 거짓이 되지 않는다. 사유 전문은 `GuideSetupFacts`의 KDoc.
+ * 한국어는 사용자 문구를 **그대로** 쓰고, 다른 셋은 그 뜻을 옮겼다. 첫 줄은 권유, 둘째 줄은
+ * *"결과를 보고 접바둑으로 조정할 수 있다"* 는 안내다 — 줄바꿈도 사용자 문구의 일부다.
+ *
+ * ## ⚠️ 설정을 인용하지 않는다 — 그래서 인자가 없다
+ * #128은 이 문구를 **살아 있는 접바둑 값**(`GuideSetupFacts`: 호선/흑 N점/백 N점 세 갈래)에서
+ * 파생했다. 랜딩이 실력에 따라 5점·3점·후수를 배정하던 때라 첫 판의 모양이 사람마다 달랐기
+ * 때문이다. #140이 랜딩을 없애 **첫 판이 늘 첫돌이와 호선**이 되면서 갈래가 필요 없어졌고,
+ * 사용자는 *"일관된 가이드"* 를 원했다 — 그래서 갈래와 `GuideSetupFacts`를 함께 걷어냈다.
+ * ⚠️ 이 문구는 **권유**다(*"호선으로 둬봐요"*) — "지금 호선으로 맞춰 뒀다"는 **사실 진술이 아니므로**,
+ * 가이드 다시보기에서 접바둑으로 바꿔 둔 사용자가 읽어도 거짓이 되지 않는다. 사실 진술로 바꾸려면
+ * 갈래를 되살려야 한다.
  */
-private fun matchSetupBody(language: UiLanguage, facts: GuideSetupFacts): String = when (language) {
-    // ⚠️ 이름·라벨 뒤에 조사를 붙이지 않는다 — 랜딩이 같은 함정을 문장 끊기로 풀었다
-    // (`UiStringsLanding.kt`의 `landingSkillResultFor` 주석).
-    UiLanguage.Korean -> when (facts.shape) {
-        GuideSetupFacts.Shape.Even -> "기본 상대인 저와 먼저 한 판 두시겠어요? 지금은 호선으로 맞춰 뒀어요."
-        GuideSetupFacts.Shape.HumanTakesStones ->
-            "기본 상대인 저와 먼저 한 판 두시겠어요? 지금은 ${facts.handicapCount}점 접바둑으로 맞춰 뒀어요."
-        GuideSetupFacts.Shape.HumanGivesStones ->
-            "기본 상대인 저와 먼저 한 판 두시겠어요? 지금은 제가 ${facts.handicapCount}점을 받고 시작해요."
-    } + " 실력에 맞춰 언제든 바꾸실 수 있어요."
-    UiLanguage.English -> when (facts.shape) {
-        GuideSetupFacts.Shape.Even -> "Play me first — I'm the opponent you start with. We're set to an even game."
-        GuideSetupFacts.Shape.HumanTakesStones ->
-            "Play me first — I'm the opponent you start with. You're set to take ${facts.handicapCount} handicap stones."
-        GuideSetupFacts.Shape.HumanGivesStones ->
-            "Play me first — I'm the opponent you start with. I'm set to take ${facts.handicapCount} handicap stones."
-    } + " Change it any time as you improve."
-    UiLanguage.Japanese -> when (facts.shape) {
-        GuideSetupFacts.Shape.Even -> "まずは最初の相手である私と一局どうですか。今は互先の設定です。"
-        GuideSetupFacts.Shape.HumanTakesStones ->
-            "まずは最初の相手である私と一局どうですか。今は${facts.handicapCount}子局の設定です。"
-        GuideSetupFacts.Shape.HumanGivesStones ->
-            "まずは最初の相手である私と一局どうですか。今は私が${facts.handicapCount}子置く設定です。"
-    } + "上達に合わせていつでも変更できます。"
-    UiLanguage.ChineseSimplified -> when (facts.shape) {
-        GuideSetupFacts.Shape.Even -> "先和我下一局吧，我是您的第一位对手。目前设置为分先。"
-        GuideSetupFacts.Shape.HumanTakesStones ->
-            "先和我下一局吧，我是您的第一位对手。目前设置为您受${facts.handicapCount}子。"
-        GuideSetupFacts.Shape.HumanGivesStones ->
-            "先和我下一局吧，我是您的第一位对手。目前设置为我受${facts.handicapCount}子。"
-    } + "随着水平提高可随时调整。"
-}
+private val MatchSetupBody: Map<UiLanguage, String> = mapOf(
+    UiLanguage.Korean to "저와 함께 호선으로 둬봐요.\n결과 보시고 접바둑으로 조정도 가능하답니다.",
+    UiLanguage.English to "Let's play an even game together.\nOnce you see how it goes, you can switch to a handicap game.",
+    UiLanguage.Japanese to "私と一緒に互先で打ってみましょう。\n結果を見て、置碁に調整することもできますよ。",
+    UiLanguage.ChineseSimplified to "和我一起下一盘分先吧。\n看看结果，也可以调整为让子棋哦。",
+)
 
 /**
  * ⑤ 대국 화면 — **버튼마다 한 마디**(2026-09-09 사용자 지시로 한 장에서 넷으로 쪼갰다).
@@ -144,7 +124,7 @@ private fun inGameTopMovesBody(language: UiLanguage, label: String): String = wh
 }
 
 /**
- * 단계별 본문. ④⑤는 값이 필요하므로 [facts]·[toolLabels]를 받는다.
+ * 단계별 본문. ⑤는 화면의 라벨이 필요하므로 [toolLabels]를 받는다.
  *
  * ⚠️ **`when`을 exhaustive로 유지할 것** — 단계를 더하면서 여기 분기를 빠뜨리면 그 단계가 조용히
  * 빈 문구로 뜬다. `else`를 넣지 말 것(넣는 순간 컴파일러가 알려 주지 않는다).
@@ -152,24 +132,14 @@ private fun inGameTopMovesBody(language: UiLanguage, label: String): String = wh
 internal fun guideBodyFor(
     language: UiLanguage,
     step: GuideStep,
-    facts: GuideSetupFacts? = null,
     toolLabels: GuideToolLabels? = null,
 ): String = when (step) {
-    // ①은 문구 없는 정적 장식이다(판정에도 참여하지 않는다) — 부를 일이 없지만 빈 문자열로 닫는다.
-    GuideStep.Landing -> ""
     GuideStep.AttendanceClaim -> AttendanceClaimBody.getValue(language)
     GuideStep.HomeStartMatch -> HomeStartMatchBody.getValue(language)
-    // ⚠️ **폴백을 두지 않는다**(2026-09-09 감사). 한때 `facts ?: GuideSetupFacts(0, …)` 였는데,
-    // 그 기본값은 **호선**이라 5점 접바둑 사용자에게 *"호선으로 맞춰 뒀어요"* 라고 **거짓을 말하면서
-    // 컴파일도 테스트도 통과**했다(앵커에서 `facts =` 한 줄만 빠지면 그렇게 된다). 조용한 거짓말보다
-    // 시끄러운 실패가 낫다 — `requireNotNull`이 개발 중에 즉시 터지고, 그 갈래를 `UiStringsGuideTest`가
-    // 못박는다. 인자가 필요한 단계를 늘릴 때도 같은 규칙을 따를 것.
-    GuideStep.MatchSetup -> matchSetupBody(
-        language,
-        requireNotNull(facts) { "④ 문구는 살아 있는 대국 설정 없이는 참일 수 없다(백로그 #128)" },
-    )
+    GuideStep.MatchSetup -> MatchSetupBody.getValue(language)
     // ⑤ 넷은 각자 **자기 버튼의 라벨 하나만** 인용한다. 라벨이 없으면 *"«»를 켜 두면…"* 이라는
-    // 빈 인용부호가 화면에 나가므로 여기서도 폴백을 두지 않는다.
+    // 빈 인용부호가 화면에 나가므로 폴백을 두지 않는다 — 조용한 거짓말보다 시끄러운 실패가 낫다
+    // (2026-09-09 감사: 한때 `?: ""`로 조용히 넘어갔다).
     GuideStep.InGameMagnifier -> inGameMagnifierBody(language, requireLabels(toolLabels).magnifier)
     GuideStep.InGameBoardSize -> inGameBoardSizeBody(language, requireLabels(toolLabels).boardSubject)
     GuideStep.InGameEval -> inGameEvalBody(language, requireLabels(toolLabels).eval)

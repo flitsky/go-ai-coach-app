@@ -2,6 +2,8 @@ package com.worksoc.goaicoach.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,6 +23,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.referentialEqualityPolicy
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,6 +32,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -96,11 +100,20 @@ internal fun Modifier.guideTarget(target: GuideTarget): Modifier {
  * 말풍선은 대상이 화면 **아래쪽**에 있으면 위에, 위쪽에 있으면 아래에 붙인다. 동그라미는 대상보다
  * 조금 크게 둘러 **테두리만** 그리므로 버튼의 글자를 덮지 않는다.
  *
- * ## ⚠️ 스크림을 두지 않는다
+ * ## ⚠️ 화면 어디를 눌러도 **다음 코치마크로** 넘어간다 (백로그 #140 — #128의 판단을 뒤집었다)
  *
- * 전면을 덮으면 사용자가 **설명받은 그 버튼을 눌러 볼 수 없다.** 이 오버레이는 배경을 칠하지 않고
- * 포인터도 잡지 않는다 — 누를 것은 말풍선 안의 `알겠어요` 하나뿐이다(#125 스플래시가 터치를
- * 일부러 먹는 것과 정반대의 이유다).
+ * #128은 *"전면을 덮으면 설명받은 그 버튼을 눌러 볼 수 없다"* 며 포인터를 잡지 않았다. 그런데 그
+ * 틈으로 **판이 터치를 받아 착수가 됐다**(사용자 피드백: *"가이드가 떴을 때 바둑판을 누르면 착수가
+ * 되어버림"*). 사용자 결정(2026-09-11): 가이드가 떠 있으면 **어디를 누르든 가이드를 넘기는 것으로**
+ * 받고, 그 터치는 아래로 보내지 않는다. 넘기는 것은 **하나**다 — 전체 종료가 아니다.
+ * - 흡수 층은 이 오버레이의 **첫 자식**(= 맨 아래)이다. 말풍선의 `알겠어요`는 그 위에서 자기 터치를
+ *   받는다. ⚠️ 층을 **부모**에 걸지 말 것 — 조상과 자식은 한 터치를 함께 받으므로 버튼과 층이 **둘 다**
+ *   넘겨 코치마크 하나를 건너뛴다. 말풍선의 글자·배경에는 포인터 입력이 없어 그 터치는 층이 받는다.
+ * - 판은 이 오버레이의 **아래 형제**다(`GoCoachContent`가 앵커를 `Column` 뒤에 둔다). Compose는 겹친
+ *   형제 중 **위의 것이 받으면 아래로 보내지 않는다.** ⚠️ #138 이후 판은 누르는 순간 가늠돌을 띄우므로
+ *   (함정 44) 층이 판보다 아래에 놓이면 판이 먼저 가져간다.
+ * - **떼는 순간** 넘긴다 — 누르는 순간 넘기면 손가락이 닿은 채 다음 코치마크가 뜬다.
+ * - 배경은 여전히 칠하지 않는다(스크림 없음) — 요청은 "터치를 막아라"였지 "가려라"가 아니었다.
  */
 @Composable
 internal fun GuideCoachMark(
@@ -111,6 +124,15 @@ internal fun GuideCoachMark(
     val strings = LocalUiStrings.current
     val density = LocalDensity.current
     var overlay by remember { mutableStateOf(Rect.Zero) }
+    // ⚠️ 흡수 층의 `pointerInput(Unit)`은 **처음 붙잡은 람다**로 계속 돈다 — 다음 코치마크로 넘어가도
+    //   이 자리는 그대로라 재시작되지 않는다. 그래서 늘 **최신** `onNext`를 부르게 한다.
+    // ⚠️ **`rememberUpdatedState`를 쓰면 안 된다 — 실기에서 그렇게 멈췄다.** 그건 **구조적 동등성**으로
+    //   갱신을 거르는데, 호출부가 넘기는 `::ack`(지역 함수 참조)는 컴포지션마다 **새 클로저**(그때의
+    //   단계를 쥔)이면서 **서로 `==`** 다. 그래서 갱신이 걸러져 첫 코치마크의 `ack`가 계속 불렸고,
+    //   둘째부터는 판을 눌러도 이미 본 첫 단계만 다시 기록하며 넘어가지 않았다(`알겠어요`는 멀쩡했다 —
+    //   `clickable`은 `onClick`을 **참조로** 비교한다). 그래서 **참조 동등성**으로 들고 있는다.
+    val latestOnNext = remember { mutableStateOf(onNext, referentialEqualityPolicy()) }
+    latestOnNext.value = onNext
     val bounds = GuideTargetSpots.boundsOf(target) ?: return
 
     Box(
@@ -118,6 +140,21 @@ internal fun GuideCoachMark(
             .fillMaxSize()
             .onGloballyPositioned { overlay = it.boundsInRoot() },
     ) {
+        // 흡수 층 — **맨 먼저**(= 맨 아래) 둔다. 사유는 위 KDoc.
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .pointerInput(Unit) {
+                    awaitEachGesture {
+                        awaitFirstDown(requireUnconsumed = false).consume()
+                        do {
+                            val event = awaitPointerEvent()
+                            event.changes.forEach { it.consume() }
+                        } while (event.changes.any { it.pressed })
+                        latestOnNext.value()
+                    }
+                },
+        )
         val local = bounds.translate(-overlay.left, -overlay.top)
         val ringPadding = with(density) { 6.dp.toPx() }
         val ring = Rect(

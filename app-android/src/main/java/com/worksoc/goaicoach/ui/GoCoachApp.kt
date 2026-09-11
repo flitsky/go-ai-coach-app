@@ -115,9 +115,9 @@ internal fun GoCoachApp(
     ) {
         ProvideUiLanguage { selectedLanguage, onLanguageChange ->
             Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                // 첫 실행 랜딩(#51)은 아래 화면보다 **바깥**이라야 한다 — 안쪽 목적지로 넣으면
-                // 랜딩이 저장한 값을 자동저장이 곧바로 덮어쓴다(LandingScreen.kt의 주석 참고).
-                LandingGate(selectedLanguage, onLanguageChange) {
+                // 첫 실행 처리(#140, 예전 #51 랜딩)는 아래 화면보다 **바깥**이라야 한다 — 안쪽에 두면
+                // 그 저장을 자동저장이 곧바로 덮어쓴다(FirstRunGate.kt의 주석 참고).
+                FirstRunGate {
                     GoCoachScreen(engineClient, engineIdentity, diagnosticEventLog, selectedLanguage, onLanguageChange)
                 }
             }

@@ -1,7 +1,7 @@
 package com.worksoc.goaicoach.ui
 
 /**
- * 설정 화면의 앱 업데이트 줄이 쓰는 문구(백로그 #53). 구조는 `UiStringsLanding.kt`와 같다 —
+ * 설정 화면의 앱 업데이트 줄이 쓰는 문구(백로그 #53). 구조는 `UiStringsStudyVideos.kt`와 같다 —
  * 화면 한 조각이 쓰는 문구를 한 파일에 모아 네 언어 파일을 건드리지 않는다.
  */
 private val UpdateAvailableLabels: Map<UiLanguage, String> = mapOf(

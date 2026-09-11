@@ -1,6 +1,5 @@
 package com.worksoc.goaicoach.ui
 
-import com.worksoc.goaicoach.application.guide.GuideSetupFacts
 import com.worksoc.goaicoach.application.guide.GuideStep
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
@@ -19,7 +18,6 @@ import org.junit.Test
  */
 class UiStringsGuideTest {
 
-    private val facts = GuideSetupFacts(handicapCount = 5, humanPlaysBlack = true)
     private val toolLabels = GuideToolLabels(
         magnifier = "MAGNIFIER",
         boardSubject = "BOARD",
@@ -28,10 +26,10 @@ class UiStringsGuideTest {
     )
 
     private fun bodyOf(language: UiLanguage, step: GuideStep) =
-        guideBodyFor(language, step, facts = facts, toolLabels = toolLabels)
+        guideBodyFor(language, step, toolLabels = toolLabels)
 
-    /** ①은 문구가 없는 정적 장식이라 이 그물의 대상이 아니다. */
-    private val playableSteps = GuideStep.entries.filter { it != GuideStep.Landing }
+    /** (한때 ①은 문구 없는 장식이라 여기서 빠졌다 — #140이 ①을 없애 이제 모든 단계가 말한다.) */
+    private val playableSteps = GuideStep.entries
 
     /**
      * ⚠️ **빈 문구는 조용하다** — 말풍선이 뜨고 글자만 없는 화면이 되고, 그것을 알아채는 유일한
@@ -68,21 +66,17 @@ class UiStringsGuideTest {
     /**
      * ⚠️ **인자를 안 넘기면 시끄럽게 실패해야 한다.**
      *
-     * 2026-09-09까지 `guideBodyFor`가 `facts ?: GuideSetupFacts(0, …)` / `toolLabels?.x ?: ""` 로
-     * **조용히 폴백**했다. 그 기본값은 **호선**이라, 앵커에서 인자 한 줄이 빠지면 5점 접바둑
-     * 사용자에게 *"호선으로 맞춰 뒀어요"* 라고 **거짓을 말하면서** 컴파일도 테스트도 통과했다.
-     * ⑤도 라벨이 없으면 *"«»를 켜 두면…"* 이라는 빈 인용부호로 나갔다. 폴백을 없앤 것이
-     * 되돌려지지 않게 못박는다 — 조용한 거짓말보다 시끄러운 실패가 낫다.
+     * 2026-09-09까지 `guideBodyFor`가 `toolLabels?.x ?: ""` 로 **조용히 폴백**해서, ⑤가 라벨 없이
+     * *"«»를 켜 두면…"* 이라는 빈 인용부호로 나갔다(④도 같은 폴백으로 5점 접바둑 사용자에게 *"호선으로
+     * 맞춰 뒀어요"* 라고 말했었다 — #140이 ④를 인자 없는 한 문구로 바꿔 그 갈래는 사라졌다).
+     * 폴백을 없앤 것이 되돌려지지 않게 못박는다 — 조용한 거짓말보다 시끄러운 실패가 낫다.
      */
     @Test
     fun theCopyRefusesToGuessWhatItWasNotGiven() {
         UiLanguage.entries.forEach { language ->
-            assertThrows(IllegalArgumentException::class.java) {
-                guideBodyFor(language, GuideStep.MatchSetup)
-            }
             GuideStep.entries.filter { it.target != null }.forEach { step ->
                 assertThrows(IllegalArgumentException::class.java) {
-                    guideBodyFor(language, step, facts = facts)
+                    guideBodyFor(language, step)
                 }
             }
         }
@@ -141,28 +135,20 @@ class UiStringsGuideTest {
     }
 
     /**
-     * ⚠️ **④는 기력을 말하지 않는다.** `applyLandingSetup`이 `SelfRatedSkill`을 버려서 앱이 그것을
-     * 기억하지 않으므로, *"입문을 선택하셨으니"* 는 **오늘의 코드로 말할 수 없다**(2026-09-09 사용자
-     * 결정: 언급 생략). 대신 살아 있는 접바둑 값을 인용한다 — 그 둘을 함께 못박는다.
+     * ⚠️ **④는 사용자가 준 문구 그대로다**(백로그 #140, 2026-09-11: *"제가 제안한 문구를 다국어로
+     * 번역 적용"*). 한국어는 글자 하나까지, 줄바꿈까지 그 문구다 — 다듬고 싶어지면 사용자에게 먼저 묻는다.
+     * 다른 세 언어도 **두 줄**이다: 권유 한 줄, 접바둑으로 조정할 수 있다는 안내 한 줄.
      */
     @Test
-    fun theMatchSetupCopyCitesTheLiveHandicapAndNeverTheSkill() {
-        val skillWords = UiLanguage.entries.flatMap { language ->
-            SkillWordsThatWouldBeAGuess.map { language to it }
-        }
-        skillWords.forEach { (language, word) ->
-            assertTrue(
-                "${language.name} ④ 문구가 '$word'를 말한다 — 앱은 사용자가 고른 기력을 저장하지 " +
-                    "않으므로 그것은 추측이다(백로그 #128).",
-                !bodyOf(language, GuideStep.MatchSetup).contains(word),
-            )
-        }
+    fun theMatchSetupCopyIsTheUsersOwnWordsInTwoLines() {
+        assertEquals(
+            "저와 함께 호선으로 둬봐요.\n결과 보시고 접바둑으로 조정도 가능하답니다.",
+            guideBodyFor(UiLanguage.Korean, GuideStep.MatchSetup),
+        )
         UiLanguage.entries.forEach { language ->
-            assertTrue(
-                "${language.name} ④ 문구가 접바둑 점수(5)를 인용하지 않는다 — 살아 있는 설정을 " +
-                    "말하기로 한 것이 이 문구의 근거다.",
-                bodyOf(language, GuideStep.MatchSetup).contains("5"),
-            )
+            val lines = guideBodyFor(language, GuideStep.MatchSetup).split("\n")
+            assertEquals("${language.name} ④ 문구가 두 줄이 아니다: $lines", 2, lines.size)
+            assertTrue("${language.name} ④ 문구에 빈 줄이 있다: $lines", lines.none { it.isBlank() })
         }
     }
 
@@ -233,15 +219,6 @@ class UiStringsGuideTest {
     }
 
     private companion object {
-        /**
-         * 랜딩의 기력 보기(한국어) — 이 낱말이 ④에 나타나면 저장되지 않는 값을 말하는 것이다.
-         *
-         * ⚠️ **보기는 2026-09-09에 셋(입문자/중급자/상급자)으로 줄었지만 목록은 다섯 그대로 둔다.**
-         * `contains` 검사라 `입문`이 `입문자`도 함께 잡고, 없어진 `초급`·`최상급`은 **되살아날 때를
-         * 대비한 여분**이다 — 줄여서 얻는 것이 없고, 줄이면 그날 그물에 구멍이 난다.
-         */
-        val SkillWordsThatWouldBeAGuess = listOf("입문", "초급", "중급", "상급", "최상급")
-
         /** ⑤가 개수를 세면 나타나는 낱말들 — 네 언어에서 실제로 쓰였던 것 그대로. */
         val CountWordsThatWouldOverpromise =
             listOf("다섯", "five", "5か所", "五个", "五個", "5곳", "5개", "다섯 곳")

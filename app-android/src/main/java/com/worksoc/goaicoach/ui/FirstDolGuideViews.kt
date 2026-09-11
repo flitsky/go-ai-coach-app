@@ -18,7 +18,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
@@ -32,9 +31,9 @@ import com.worksoc.goaicoach.application.botcharacter.BotCharacterId
  *
  * ## ⚠️ 이 파일이 첫돌이 id의 단일 출처다
  *
- * `UiStringsLanding.kt`가 같은 상수를 `private`으로 들고 있었는데, 가이드가 다섯 자리에서 첫돌이를
- * 그리게 되면서 **두 곳이 갈릴 위험**이 생겼다. 그래서 그 선언을 여기로 올리고 랜딩이 이것을
- * 참조한다 — 카탈로그 1단계가 바뀌면 고칠 자리도 하나다.
+ * 옛 랜딩 문구(`UiStringsLanding.kt`, #140이 지웠다)가 같은 상수를 `private`으로 들고 있었는데, 가이드가
+ * 여러 자리에서 첫돌이를 그리게 되면서 **두 곳이 갈릴 위험**이 생겼다. 그래서 그 선언을 여기로
+ * 올렸다 — 카탈로그 1단계가 바뀌면 고칠 자리도 하나다.
  *
  * ## ⚠️ 카탈로그에 없으면 **아무것도 그리지 않는다**
  *
@@ -47,22 +46,18 @@ internal val FirstDolCharacterId = BotCharacterId("fast_beginner_1")
 /**
  * 첫돌이 그림 하나.
  *
- * @param mirrored 좌우 반전. 랜딩 상단 **좌우 한 쌍**을 마주 보게 하려고 둔 것이다.
- *   ⚠️ 원화가 비대칭이면 반전이 어색해 보일 수 있다 — 그 판정은 실기에서 눈으로 한다.
+ * (한때 있던 `mirrored` 좌우 반전은 랜딩 상단 한 쌍 전용이라 #140이 랜딩과 함께 걷어냈다.)
  */
 @Composable
 internal fun FirstDolAvatar(
     size: Dp = 40.dp,
-    mirrored: Boolean = false,
     modifier: Modifier = Modifier,
     seamColor: Color = Color.Unspecified,
 ) {
     val character = BotCharacterCatalog.all.firstOrNull { it.id == FirstDolCharacterId } ?: return
     BotCharacterAvatar(
         character = character,
-        modifier = modifier
-            .size(size)
-            .then(if (mirrored) Modifier.graphicsLayer(scaleX = -1f) else Modifier),
+        modifier = modifier.size(size),
         size = size,
         available = true,
         seamColor = if (seamColor == Color.Unspecified) MaterialThemeSurface() else seamColor,

@@ -199,12 +199,12 @@ internal val UiStringsEnglish = UiStringsKorean.copy(
     settingsDevReleaseResetTitle = "Re-run launch reset",
     settingsDevReleaseResetSubtitle = "Clears attendance, characters, tickets, premium",
     settingsDevFreshInstallTitle = "Reset to a first launch",
-    settingsDevFreshInstallSubtitle = "Wipes everything and restarts · landing and guide from the top",
+    settingsDevFreshInstallSubtitle = "Wipes everything and restarts · guide from the top",
     settingsDevFreshInstallConfirmTitle = "Reset the app to a first launch?",
     settingsDevFreshInstallConfirmMessage = "On top of attendance, characters, tickets and premium, " +
         "this also clears game history, the game in progress, settings and language, then restarts " +
-        "the app immediately. It ends up exactly like a fresh install, so the landing and the guide " +
-        "run again from the start. Only the device identifier is kept.",
+        "the app immediately. It ends up exactly like a fresh install, so the guide " +
+        "runs again from the start. Only the device identifier is kept.",
     settingsDevFreshInstallAction = "Reset",
     matchSetupLockedDuringGame = "Match settings are locked during a game. Choose them when you start a new one.",
     localOnlyDataNoticeTitle = "Play without signing in",

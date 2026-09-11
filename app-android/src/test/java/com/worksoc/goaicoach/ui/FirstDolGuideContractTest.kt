@@ -83,9 +83,7 @@ class FirstDolGuideContractTest {
             "어느 화면도 `GuideAnchor(surface = GuideSurface.…)`를 부르지 않는다 — 이 계약의 전제가 무너졌다.",
             wired.isNotEmpty(),
         )
-        // ①(Landing)은 문구 없는 정적 장식이라 앵커가 없다 — 판정에도 참여하지 않는다.
         val needed = GuideStep.entries
-            .filter { it != GuideStep.Landing }
             .map { it.surface.name }
             .toSet()
         assertEquals(
@@ -177,18 +175,17 @@ class FirstDolGuideContractTest {
     }
 
     /**
-     * ⚠️ **인자가 필요한 단계는 앵커가 그 인자를 넘겨야 한다.**
+     * ⚠️ **라벨을 인용하는 단계는 앵커가 그 라벨을 넘겨야 한다.**
      *
-     * 2026-09-09 감사 전까지 `guideBodyFor`가 `facts ?: GuideSetupFacts(0, …)`로 **조용히 폴백**해서,
-     * 앵커에서 `facts =` 한 줄만 빠지면 5점 접바둑 사용자에게 *"호선으로 맞춰 뒀어요"* 라고
-     * **거짓을 말하면서 컴파일도 테스트도 통과**했다. 폴백은 없앴고(`requireNotNull`), 이 계약은
-     * 그 크래시를 **개발 중에** 만나게 한다 — 사용자 기기에서 만나기 전에.
+     * 2026-09-09 감사 전까지 `guideBodyFor`가 인자가 없으면 **조용히 폴백**해서, 앵커에서 인자 한 줄만
+     * 빠지면 거짓 문구가 **컴파일도 테스트도 통과**했다. 폴백은 없앴고(`requireNotNull`), 이 계약은 그
+     * 크래시를 **개발 중에** 만나게 한다 — 사용자 기기에서 만나기 전에.
      *
-     * 요구하는 인자를 **enum에서 파생**한다: 그 표면에 ④가 있으면 `facts`, 동그라미 대상이 있는
-     * 단계가 있으면 `toolLabels`.
+     * 요구하는 인자를 **enum에서 파생**한다: 동그라미 대상이 있는 단계가 그 표면에 있으면 `toolLabels`.
+     * (④의 `facts`는 #140이 ④를 인자 없는 한 문구로 바꾸며 없어졌다.)
      */
     @Test
-    fun everyAnchorHandsInTheFactsItsOwnStepsQuote() {
+    fun everyAnchorHandsInTheLabelsItsOwnStepsQuote() {
         val anchorCall = Regex("""GuideAnchor\((?:[^()]|\((?:[^()]|\([^()]*\))*\))*\)""")
         val calls = uiSources
             .filterKeys { it != "FirstDolGuide.kt" }   // 선언 자체는 호출이 아니다
@@ -199,13 +196,6 @@ class FirstDolGuideContractTest {
             val surface = Regex("""GuideSurface\.(\w+)""").find(call)?.groupValues?.get(1)
             assertTrue("$name: `GuideAnchor` 호출이 표면을 적지 않는다.", surface != null)
             val steps = GuideStep.entries.filter { it.surface.name == surface }
-            if (steps.any { it == GuideStep.MatchSetup }) {
-                assertTrue(
-                    "$name($surface): ④가 이 표면에 있는데 `facts =`를 넘기지 않는다 — 문구가 " +
-                        "살아 있는 접바둑 값을 인용할 수 없다(백로그 #128).",
-                    call.contains("facts ="),
-                )
-            }
             if (steps.any { it.target != null }) {
                 assertTrue(
                     "$name($surface): 라벨을 인용하는 단계가 이 표면에 있는데 `toolLabels =`를 " +
@@ -214,6 +204,106 @@ class FirstDolGuideContractTest {
                 )
             }
         }
+    }
+
+    /**
+     * ⚠️ **코치마크가 떠 있으면 화면 어디를 눌러도 다음으로 넘어가고, 판은 그 터치를 받지 않는다**
+     * (백로그 #140 — 사용자 피드백: *"가이드가 떴을 때 바둑판을 누르면 착수가 되어버림"*).
+     *
+     * 제스처는 계측 테스트가 없어 소스로 잡는다. 셋이 전부 맞아야 성립한다:
+     * ⓐ 코치마크에 **흡수 층**(`pointerInput`)이 있고 떼는 순간 넘긴다,
+     * ⓑ 그 층이 동그라미·말풍선보다 **먼저**(= 아래) 선언된다 — 뒤에 오면 `알겠어요`를 덮어 버튼이
+     *   죽고, 부모에 걸면 버튼과 층이 한 터치에 둘 다 넘겨 **하나를 건너뛴다**,
+     * ⓒ 늘 **최신** `onNext`를 **참조 동등성으로** 들고 부른다 — `rememberUpdatedState`(구조적 동등성)는
+     *   `::ack`의 새 클로저를 옛것과 `==`로 보고 갱신을 걸러, 실기에서 둘째 코치마크부터 멈췄다
+     *   (아래 [aLocalFunctionReferenceLooksEqualToItsStaleSelf]가 그 성질을 못박는다).
+     */
+    @Test
+    fun theCoachMarkSwallowsEveryTouchAndAdvancesOnRelease() {
+        val source = uiSources.getValue("FirstDolGuideCoachMark.kt")
+        val body = source.substring(source.indexOf("fun GuideCoachMark("))
+
+        val outerBox = body.indexOf("Box(")
+        val layer = body.indexOf("Box(", outerBox + 1)
+        val swallow = body.indexOf(".pointerInput(")
+        val ring = body.indexOf("drawBehind")
+        val bubble = body.indexOf("Column(")
+        assertTrue("코치마크에 흡수 층(`pointerInput`)이 없다 — 그 틈으로 판이 착수한다(#140).", swallow >= 0)
+        assertTrue(
+            "흡수 층이 바깥 `Box`에 걸려 있다 — 조상은 `알겠어요`와 한 터치를 함께 받아 코치마크 하나를 건너뛴다.",
+            swallow > layer && layer > outerBox,
+        )
+        assertTrue(
+            "흡수 층이 동그라미·말풍선보다 뒤에 있다 — 위에 그려져 `알겠어요`를 덮는다.",
+            swallow < ring && swallow < bubble,
+        )
+
+        val gesture = body.substring(swallow, ring)
+        assertTrue("터치를 제스처 단위로 받지 않는다.", gesture.contains("awaitEachGesture"))
+        assertTrue("받은 터치를 소비하지 않는다.", gesture.contains(".consume()"))
+        val lastPressed = gesture.indexOf("while (event.changes.any { it.pressed })")
+        val advance = gesture.indexOf("latestOnNext.value()")
+        assertTrue("떼는 순간(모든 손가락이 떨어진 뒤) 최신 `onNext`로 넘기지 않는다.", lastPressed in 0 until advance)
+        assertTrue(
+            "최신 `onNext`를 **참조 동등성**으로 들고 있지 않다 — 옛 `ack`가 남아 둘째 코치마크부터 멈춘다.",
+            body.contains("mutableStateOf(onNext, referentialEqualityPolicy())") && body.contains("latestOnNext.value = onNext"),
+        )
+        assertFalse(
+            "`rememberUpdatedState`는 구조적 동등성이라 `::ack`의 새 클로저를 걸러낸다(실기에서 멈췄다).",
+            body.contains("rememberUpdatedState"),
+        )
+    }
+
+    /**
+     * 위 ⓒ의 **근거**를 못박는다 — 테스트가 아니라 언어·런타임의 성질이다.
+     *
+     * 같은 지역 함수의 참조(`::ack`)는 부를 때마다 **다른 값을 쥔 새 클로저**인데도 서로 `==`다. 그래서
+     * 구조적 동등성 상태(`mutableStateOf` 기본값 = `rememberUpdatedState`의 속)에 넣으면 새것이 **걸러지고
+     * 옛것이 남는다.** 이 성질이 바뀌면(코틀린이 캡처까지 비교하게 되면) 이 테스트가 알려 준다 — 그때
+     * 참조 동등성 우회가 필요 없어졌는지 다시 볼 것.
+     */
+    @Test
+    fun aLocalFunctionReferenceLooksEqualToItsStaleSelf() {
+        fun referenceFor(step: String): () -> String {
+            fun ack() = step
+            return ::ack
+        }
+        val first = referenceFor("InGameMagnifier")
+        val second = referenceFor("InGameBoardSize")
+        assertEquals("두 참조는 다른 단계를 쥔다", listOf("InGameMagnifier", "InGameBoardSize"), listOf(first(), second()))
+        assertEquals("그런데도 `==`다 — 이것이 구조적 동등성이 갱신을 거르는 이유다", first, second)
+
+        val structural = androidx.compose.runtime.mutableStateOf(first)
+        structural.value = second
+        assertEquals("구조적 동등성은 새것을 걸러 옛 단계를 남긴다", "InGameMagnifier", structural.value())
+
+        val referential = androidx.compose.runtime.mutableStateOf(first, androidx.compose.runtime.referentialEqualityPolicy())
+        referential.value = second
+        assertEquals("참조 동등성은 새것을 받는다", "InGameBoardSize", referential.value())
+    }
+
+    /**
+     * ⚠️ **첫 실행 처리는 화면보다 먼저, 그리고 한 곳에서만**(백로그 #140 — 랜딩을 없앤 뒤의 `FirstRunGate`).
+     *
+     * `GoCoachScreen`은 첫 컴포지션에서 설정을 읽고 자동저장이 곧바로 되쓴다. 첫 실행 저장이
+     * `content()`보다 늦으면(예: `LaunchedEffect`로 옮기면) 자동저장이 `hasSeenOnboarding = false`를
+     * 되써 **매 실행이 첫 실행**이 된다. 가이드 무장도 여기 한 곳이어야 기존 사용자에게 자동 재생이
+     * 무장되지 않는다(`GuideProgress.armed`).
+     */
+    @Test
+    fun theFirstRunIsSettledBeforeTheAppComposesAndArmsTheGuideOnce() {
+        val gate = uiSources.getValue("FirstRunGate.kt")
+        val save = gate.indexOf("store.save(completeFirstRun(")
+        val arm = gate.indexOf("GuideProgressStore(context).arm()")
+        val content = gate.lastIndexOf("content()")
+        assertTrue("첫 실행을 저장하지 않는다.", save >= 0)
+        assertTrue("가이드를 무장하지 않는다 — 신규 사용자에게 첫돌이 안내가 영영 뜨지 않는다.", arm >= 0)
+        assertTrue("첫 실행 저장이 `content()`보다 늦다 — 자동저장이 되써 매 실행이 첫 실행이 된다.", save < content && arm < content)
+        listOf("LaunchedEffect", "SideEffect", "DisposableEffect").forEach { effect ->
+            assertFalse("`$effect`는 컴포지션 **뒤에** 돈다 — 위 순서가 깨진다.", gate.contains(effect))
+        }
+        val armers = uiSources.filterValues { it.contains(".arm()") }.keys
+        assertEquals("가이드를 무장하는 곳이 `FirstRunGate` 하나가 아니다.", setOf("FirstRunGate.kt"), armers)
     }
 
     /**

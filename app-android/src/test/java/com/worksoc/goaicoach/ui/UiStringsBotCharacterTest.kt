@@ -128,7 +128,7 @@ class UiStringsBotCharacterTest {
      * ⚠️ **1단계를 약한 상대로 소개하지 않는다**(2026-08-31 사용자 지시). 실기력이 일반 중급자를
      * 상회하는데 "일부러 자주 실수한다"고 적어 두면 첫 판에서 진 사용자가 속았다고 느낀다 —
      * 실제로 그 문구가 한동안 남아 있었고, 랜딩(#51)이 같은 원칙을 세운 뒤로는 **한 앱 안에서 두
-     * 말이 공존**하는 상태였다. 랜딩 쪽 그물(`UiStringsLandingTest`)과 짝을 이룬다.
+     * 말이 공존**하는 상태였다. (짝이던 랜딩 쪽 그물 `UiStringsLandingTest`는 #140이 랜딩과 함께 지웠다.)
      */
     @Test
     fun theEntryOpponentIsNeverIntroducedAsWeak() {

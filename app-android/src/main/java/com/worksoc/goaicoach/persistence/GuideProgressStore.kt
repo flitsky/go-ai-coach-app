@@ -41,7 +41,7 @@ internal class GuideProgressStore(context: Context) {
         seenSteps = prefs.getStringSet(SeenStepsKey, emptySet())?.toSet() ?: emptySet(),
     )
 
-    /** 랜딩을 **끝냈다**(완료·건너뛰기 두 갈래 모두). 이 시점부터 자동 재생이 무장된다. */
+    /** 첫 실행 처리를 거쳤다(`FirstRunGate`, #140 — 전에는 랜딩을 끝낼 때). 이 시점부터 자동 재생이 무장된다. */
     fun arm() {
         prefs.edit().putBoolean(ArmedKey, true).apply()
     }

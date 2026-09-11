@@ -1,7 +1,7 @@
 package com.worksoc.goaicoach.ui
 
 /**
- * 출석 도장판(백로그 #55)이 새로 쓰는 문구. 구조는 `UiStringsLanding.kt`와 같다 — 화면 하나가
+ * 출석 도장판(백로그 #55)이 새로 쓰는 문구. 구조는 `UiStringsStudyVideos.kt`와 같다 — 화면 하나가
  * 쓰는 문구를 한 파일에 모아 네 언어 파일을 건드리지 않는다.
  *
  * 회차 이름·보상 이름은 기존 `UiStrings.attendanceRewardDayLabel` / `attendanceRewardLabel`을

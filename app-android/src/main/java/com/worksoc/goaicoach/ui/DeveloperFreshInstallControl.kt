@@ -33,7 +33,7 @@ import com.worksoc.goaicoach.restartToFreshInstall
  * ## ⚠️ 릴리즈 초기화(#63)와 뜻이 다르다 — 나란히 있어서 더 헷갈린다
  * 그쪽은 **권한 넷**(출석·캐릭터·1회권·프리미엄)만 밀고 대국 기록·설정·언어·온보딩 완료는
  * 일부러 남긴다(`FEATURE_ACCESS_PRINCIPLES.md` 8.3-2: 권한이 아닌 것은 건드리지 않는다).
- * 이 컨트롤은 **그 남긴 것들까지** 밀어 랜딩과 가이드가 다시 뜨는 상태를 만든다.
+ * 이 컨트롤은 **그 남긴 것들까지** 밀어 첫 실행 처리와 가이드가 다시 도는 상태를 만든다.
  *
  * ## ⚠️ 지울 목록을 여기 적지 않는다
  * `wipeToFreshInstall`의 **접두사 훑기**를 그대로 쓴다(함정 6번) — 저장소가 새로 늘어도 자동으로
@@ -80,7 +80,7 @@ internal fun DeveloperFreshInstallControl() {
             confirmButton = {
                 TextButton(
                     // ⚠️ 토스트를 띄우지 않는다 — 이 줄 다음에 **프로세스가 끝난다.** 띄워 봐야
-                    // 보이지 않고, 재시작된 앱의 랜딩이 그 자체로 결과를 알린다.
+                    // 보이지 않고, 재시작된 앱의 첫돌이 가이드가 그 자체로 결과를 알린다.
                     onClick = { restartToFreshInstall(context) },
                 ) { Text(strings.settingsDevFreshInstallAction) }
             },
