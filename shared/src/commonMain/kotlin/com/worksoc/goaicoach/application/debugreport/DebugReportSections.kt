@@ -19,7 +19,7 @@ import com.worksoc.goaicoach.shared.describe
  * 어느 빌드 것인지 알 방법이 없었다. `shared`가 만들 수 없는 값이라 app-android가 넘긴다.
  */
 internal fun StringBuilder.appendDebugReportHeader(createdAtMillis: Long, buildStamp: String) {
-    appendLine("바둑 AI 코치 debug report")
+    appendLine("포켓 바둑 코치 debug report")
     appendLine("createdAtMillis=$createdAtMillis")
     appendLine(buildStamp)
     appendLine()

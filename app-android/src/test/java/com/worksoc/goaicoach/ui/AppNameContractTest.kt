@@ -96,6 +96,38 @@ class AppNameContractTest {
      * ⚠️ **'POC'가 출시 빌드의 첫 프레임에 찍혀 있었다**(2026-09-05 발견) — 엔진 준비 화면이
      * `"Go AI Coach POC"`를 하드코딩하고 있었다. 그 화면은 **모든 사용자가 보는 첫 화면**이다.
      */
+    /**
+     * ⚠️ **그물 밖이던 셋을 한국어 런처 이름에 묶는다**(2026-09-11).
+     *
+     * 런타임 로그의 `app=`, 진단 리포트 제목, 클립보드 라벨은 오래 그물 밖이었다 — 런처 이름이 언어마다
+     * 달라 비교할 단일 값이 없다고 봤기 때문이다(함정 26). 그래서 **#137의 개명(`바둑 AI 코치` →
+     * `포켓 바둑 코치`)이 셋을 그대로 두고 지나갔다** — 함정 색인이 경고하던 바로 그 사고다.
+     * 그러나 셋 다 **한국어 이름을 고정으로** 쓰므로 한국어 런처 라벨(`values/strings.xml`)과 견주면 된다.
+     */
+    @Test
+    fun theDiagnosticNamesFollowTheKoreanLauncherName() {
+        val shared = File(repoRoot, "shared/src/commonMain/kotlin/com/worksoc/goaicoach/application")
+        val sites = mapOf(
+            "런타임 로그 `app=`(RuntimeEventApplication.kt)" to
+                Regex("""const val RuntimeAppName = "([^"]+)"""")
+                    .find(File(shared, "runtime/RuntimeEventApplication.kt").readText())?.groupValues?.get(1),
+            "진단 리포트 제목(DebugReportSections.kt)" to
+                Regex("""appendLine\("([^"]+) debug report"\)""")
+                    .find(File(shared, "debugreport/DebugReportSections.kt").readText())?.groupValues?.get(1),
+            "클립보드 라벨(DebugReportBuilder.kt)" to
+                Regex("""clipboardLabel = "([^"]+) debug report"""")
+                    .find(File(shared, "debugreport/DebugReportBuilder.kt").readText())?.groupValues?.get(1),
+        )
+        sites.forEach { (where, name) ->
+            assertTrue("$where 에서 앱 이름을 찾지 못했다 — 이 계약의 전제가 무너졌다.", name != null)
+            assertEquals(
+                "$where 이(가) 런처와 다른 이름을 말한다 — 앱 이름을 바꿀 때 그물 밖이던 셋을 놓친 것이다(#137).",
+                resourceName,
+                name,
+            )
+        }
+    }
+
     @Test
     fun noPlaceholderWordingSurvivesInUserFacingNames() {
         val mainActivity = File(repoRoot, "app-android/src/main/java/com/worksoc/goaicoach/MainActivity.kt")
