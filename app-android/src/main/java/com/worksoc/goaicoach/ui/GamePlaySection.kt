@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -38,6 +39,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.consumable.ConsumableCatalog
 import com.worksoc.goaicoach.application.consumable.ConsumableSpendDecision
@@ -62,6 +65,10 @@ private const val TurnTimerTickIntervalMillis = 200L
 @Composable
 internal fun GamePlaySection(
     screenState: GameScreenState,
+    // ⚠️ **기본값을 두지 않는다**(함정 40) — 빠뜨리면 조용히 예전처럼 넘치는 화면이 된다.
+    //   재는 쪽은 `GoCoachContent`이고 계산은 `fittedBoardMaxHeightPx`(#139).
+    boardMaxHeight: Dp?,
+    onBoardHeightChanged: (Int) -> Unit,
     onScoreGraphExpandedChange: (Boolean) -> Unit,
     turnTimeState: GameSessionTurnTimeState,
     onEvent: (GameUiEvent) -> Unit,
@@ -147,6 +154,11 @@ internal fun GamePlaySection(
         // 같은 Canvas 크기를 따라간다.
         modifier = Modifier
             .fillMaxWidth()
+            // ⚠️ 한 화면에 맞추는 상한(#139) — 넘칠 때만 가로폭보다 작다. `GoBoard`의 `min(가로, 세로)`가
+            //   이 세로를 보고 판을 줄인다. 확대(`expandBeyondScreenPadding`)보다 **앞**에 둬야 그쪽이
+            //   이 상한을 그대로 넘겨받는다.
+            .then(if (boardMaxHeight != null) Modifier.heightIn(max = boardMaxHeight) else Modifier)
+            .onSizeChanged { size -> onBoardHeightChanged(size.height) }
             .then(if (isBoardMaxSize) Modifier.expandBeyondScreenPadding() else Modifier),
         tentativeMove = tentativeMove,
         onCoordinateTap = { coordinate ->

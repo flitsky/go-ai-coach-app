@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -18,10 +19,14 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkProfile
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkProgress
@@ -107,12 +112,35 @@ internal fun GoCoachContent(
         )
     }
 
+    // ⚠️ 판을 한 화면에 맞추려고 **세 높이**를 잰다(백로그 #139 1차, 계산은 `fittedBoardMaxHeightPx`).
+    //   · 뷰포트 — `verticalScroll` **앞**에서 잰다. 스크롤 안에서는 잴 높이가 없다(함정 45).
+    //   · 내용 전체 — `verticalScroll` **뒤**, 그리고 `wrapContentHeight` **뒤**에서 잰다(padding까지 포함).
+    //     ⚠️ `verticalScroll`은 `fillMaxSize`의 **최소 높이를 그대로 넘긴다** — 그래서 내용이 화면보다
+    //     짧으면 뷰포트 높이로 늘어나 재진다. 그러면 상한이 지금 판 크기에 **고정**되어, 그래프를 접거나
+    //     화면이 커져도 판이 다시 커지지 않는다(실측: 그래프 접은 뒤 판이 바닥 크기에 갇혔다).
+    //     `wrapContentHeight`가 그 최소를 풀어 **본래 높이**를 재게 한다. 보이는 배치는 같다(위 정렬).
+    //   · 판 — `GamePlaySection`이 알려 준다.
+    // 보통 폰에서는 상한이 가로폭보다 커서 판이 그대로다 — 줄어드는 것은 넘칠 때(폴드 안쪽 화면 등)뿐이다.
+    var viewportHeightPx by remember { mutableIntStateOf(0) }
+    var contentHeightPx by remember { mutableIntStateOf(0) }
+    var boardHeightPx by remember { mutableIntStateOf(0) }
+    val density = LocalDensity.current
+    val boardMaxHeight = fittedBoardMaxHeightPx(
+        viewportPx = viewportHeightPx,
+        contentPx = contentHeightPx,
+        boardPx = boardHeightPx,
+        minBoardPx = with(density) { MinFittedBoardSide.roundToPx() },
+    )?.let { px -> with(density) { px.toDp() } }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .statusBarsPadding()
             .navigationBarsPadding()
+            .onSizeChanged { size -> viewportHeightPx = size.height }
             .verticalScroll(rememberScrollState())
+            .wrapContentHeight(align = Alignment.Top)
+            .onSizeChanged { size -> contentHeightPx = size.height }
             .padding(GameScreenEdgePadding),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -166,6 +194,8 @@ internal fun GoCoachContent(
 
         GamePlaySection(
             screenState = screenState,
+            boardMaxHeight = boardMaxHeight,
+            onBoardHeightChanged = { height -> boardHeightPx = height },
             onScoreGraphExpandedChange = onScoreGraphExpandedChange,
             turnTimeState = turnTimeState,
             onEvent = onEvent,
