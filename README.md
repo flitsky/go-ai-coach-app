@@ -20,8 +20,8 @@ Implemented baseline as of 2026-08-29:
 
 Next goal:
 
-1. Ship the initial Google Play release. Build **811 was uploaded and rejected** — Play requires 16 KB memory page support. The engine is relinked and **0.8.12 / 812** is built and verified; what remains is Play Console paperwork — see `GOOGLE_PLAY_LAUNCH_PLAN.md` §0.
-2. Work the active backlog — `260906-_ACTIVE_BACKLOG.md` is the entry point. Next up is #120 (AGP 9.0 upgrade, investigate first); #26 and #18 wait on Play Console monetization opening.
+1. **Released on Google Play** — 0.8.11 / 811 is in production (176 countries). 0.9.2 / 902 (renamed to *포켓 바둑 코치*) is submitted with a store-listing change and under review. Canonical release state: `GOOGLE_PLAY_LAUNCH_PLAN.md` §0.
+2. Work the active backlog — `260911-_ACTIVE_BACKLOG.md` is the entry point. Top priority is post-launch user feedback — #139 (Galaxy Fold: the board keeps moving) is in progress, then #140 (first-run guide simplification); #26 and #18 wait on Play Console monetization opening.
 3. Add broader androidTest/Robolectric coverage. Default verification is JVM unit tests plus two emulator smoke tests.
 
 (`GameSessionStateHolder` moved into `:shared` in 2026-08; that goal is done.)
