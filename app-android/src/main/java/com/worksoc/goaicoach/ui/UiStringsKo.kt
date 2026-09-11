@@ -2,7 +2,7 @@ package com.worksoc.goaicoach.ui
 
 internal val UiStringsKorean = UiStrings(
     language = UiLanguage.Korean,
-    appTitle = "바둑 AI 코치",
+    appTitle = "포켓 바둑 코치",
     homeTagline = "로컬 AI와 함께하는 바둑 학습",
     languageLabel = "언어",
     settingsFontScaleTitle = "글꼴 크기",
@@ -147,7 +147,7 @@ internal val UiStringsKorean = UiStrings(
     engineStuckDialogMessage = "AI 응답이 예상보다 오래 걸리고 있습니다. 엔진에 문제가 발생했을 수 있습니다. 지금 엔진을 초기화하시겠습니까? 현재 대국 진행 상황(착수 기록)은 그대로 유지됩니다.",
     engineStuckDialogResetAction = "엔진 초기화",
     engineStuckDialogWaitAction = "닫기(계속 대기)",
-    onboardingTitle = "바둑 AI 코치에 오신 것을 환영합니다",
+    onboardingTitle = "포켓 바둑 코치에 오신 것을 환영합니다",
     onboardingSubtitle = "로그인하면 나중에 다른 기기에서도 이어볼 수 있어요. 계정 없이 바로 시작할 수도 있습니다.",
     continueWithGoogle = "Google로 계속하기",
     continueWithApple = "Apple로 계속하기",

@@ -25,7 +25,7 @@ import com.worksoc.goaicoach.application.preferences.landingSetupPlan
  * 떠 있어 화자가 분명하고, 초안 자체가 *"제가 2점을 깔고 도전해볼게요"* 처럼 1인칭이었다.
  */
 private val LandingTitles: Map<UiLanguage, String> = mapOf(
-    UiLanguage.Korean to "바둑 AI 코치 앱에 오신 걸 환영합니다",
+    UiLanguage.Korean to "포켓 바둑 코치에 오신 걸 환영합니다",
     UiLanguage.English to "Welcome to Go AI Coach",
     UiLanguage.Japanese to "囲碁AIコーチアプリへようこそ",
     UiLanguage.ChineseSimplified to "欢迎使用围棋 AI 教练应用",
