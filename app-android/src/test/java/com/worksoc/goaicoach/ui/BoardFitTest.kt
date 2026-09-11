@@ -86,9 +86,11 @@ class BoardFitTest {
 
         val content = src("GoCoachContent.kt")
         val viewport = content.indexOf("onSizeChanged { size -> viewportHeightPx = size.height }")
-        val scroll = content.indexOf(".verticalScroll(rememberScrollState())")
+        // ⚠️ 대국 화면의 스크롤은 **뷰포트 측정 다음**의 것이다 — 파일에는 다른 스크롤(메뉴 다이얼로그 안)도
+        //   있어서 첫 번째 것을 집으면 엉뚱한 사슬을 본다(#141에서 다이얼로그가 위로 올라오며 실제로 그랬다).
+        val scroll = content.indexOf(".verticalScroll(rememberScrollState())", startIndex = maxOf(viewport, 0))
         val whole = content.indexOf("onSizeChanged { size -> contentHeightPx = size.height }")
-        assertTrue("뷰포트·스크롤·내용을 재는 자리를 찾지 못했다", viewport >= 0 && scroll >= 0 && whole >= 0)
+        assertTrue("뷰포트를 재는 자리를 찾지 못했다", viewport >= 0 && whole >= 0)
         assertTrue("뷰포트를 스크롤 **앞**에서 재지 않는다 — 스크롤 안에서는 세로가 무한이다(함정 45).", viewport < scroll)
         assertTrue("내용 전체를 스크롤 **뒤**에서 재지 않는다 — 넘친 만큼을 알 수 없다.", scroll < whole)
         // ⚠️ 스크롤은 fillMaxSize의 최소 높이를 넘긴다 — 풀지 않으면 짧은 내용이 뷰포트 높이로 재져

@@ -7,6 +7,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -30,6 +34,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
@@ -65,13 +70,17 @@ private const val TurnTimerTickIntervalMillis = 200L
 @Composable
 internal fun GamePlaySection(
     screenState: GameScreenState,
+    // 폰 배치 / 넓은 배치(#141). 판정은 `gameScreenLayoutFor` — 뷰포트 크기만 본다.
+    layout: GameScreenLayout,
     // ⚠️ **기본값을 두지 않는다**(함정 40) — 빠뜨리면 조용히 예전처럼 넘치는 화면이 된다.
-    //   재는 쪽은 `GoCoachContent`이고 계산은 `fittedBoardMaxHeightPx`(#139).
+    //   재는 쪽은 `GoCoachContent`이고 계산은 `fittedBoardMaxHeightPx`(#139). 폰 배치만 쓴다.
     boardMaxHeight: Dp?,
     onBoardHeightChanged: (Int) -> Unit,
     onScoreGraphExpandedChange: (Boolean) -> Unit,
     turnTimeState: GameSessionTurnTimeState,
     onEvent: (GameUiEvent) -> Unit,
+    // 넓은 배치의 위 줄 맨 앞 ☰. 메뉴 상태는 `GoCoachContent`가 들고 있다. 폰 배치는 헤더가 그린다.
+    wideMenuButton: @Composable () -> Unit,
 ) {
     var tentativeMove by remember { mutableStateOf<BoardCoordinate?>(null) }
 
@@ -81,16 +90,6 @@ internal fun GamePlaySection(
     LaunchedEffect(screenState.uxOptions.isDirectPlayEnabled) {
         tentativeMove = null
     }
-
-    ScoreTimelineGraph(
-        snapshots = screenState.score.snapshots,
-        capturedByBlack = screenState.gameState.capturedBy(StoneColor.Black),
-        capturedByWhite = screenState.gameState.capturedBy(StoneColor.White),
-        whiteWinRate = screenState.score.estimate?.whiteWinRate,
-        isExpanded = screenState.score.isGraphExpanded,
-        onExpandedChange = onScoreGraphExpandedChange,
-        modifier = Modifier.fillMaxWidth()
-    )
 
     // 보드에 무엇을 그릴 권한이 있는지는 여기서 정해 GoBoard에는 데이터만 넘긴다 — 보드가 스스로
     // premium.isActive를 보면 1회권으로 켠 표시가 걸러진다(티켓만 차감되고 아무것도 안 보이던
@@ -103,82 +102,17 @@ internal fun GamePlaySection(
             screenState.isGameEnded
 
     val isBoardMaxSize = screenState.uxOptions.isBoardMaxSize
-
-    // ⚠️ 크기 선택은 **보드 바깥, 위쪽 경계선 밖**에 둔다(2026-08-30 사용자 지시). 보드 위에
-    // 얹으면 그 자리에 착수할 수 없다 — 판의 우상단은 실제로 두는 자리다.
-    //
-    // 선택기와 보드를 **한 Column으로 묶는다.** 둘을 형제로 두면 화면 Column의
-    // `spacedBy(12.dp)`가 사이에 끼어 선택기가 판에서 떠 보이고 세로도 낭비된다 — 묶으면
-    // 그 12dp가 이 묶음 위에만 한 번 붙고, 선택기는 경계선에 바짝 붙는다(사용자 피드백).
-    Column(modifier = Modifier.fillMaxWidth()) {
-    // ⚠️ 판 **위쪽 경계선 밖**이다 — 판 위에 얹으면 그 자리에 착수할 수 없다(위 주석과 같은 이유).
-    // 엔진이 멀쩡하면 아무것도 그리지 않으므로 정상 대국의 레이아웃은 그대로다.
-    EngineUnavailableBadge(
-        availability = screenState.engine.availability,
-        modifier = Modifier.padding(bottom = 6.dp),
-    )
-    BoardTopControls(
-        isMagnifierEnabled = screenState.uxOptions.isPlayMagnifierEnabled,
-        onToggleMagnifier = {
-            onEvent(
-                GameUiEvent.ChangeUxOptions(
-                    screenState.uxOptions.copy(
-                        isPlayMagnifierEnabled = !screenState.uxOptions.isPlayMagnifierEnabled,
-                    ),
+    val onToggleMagnifier = {
+        onEvent(
+            GameUiEvent.ChangeUxOptions(
+                screenState.uxOptions.copy(
+                    isPlayMagnifierEnabled = !screenState.uxOptions.isPlayMagnifierEnabled,
                 ),
-            )
-        },
-        isMaxSize = isBoardMaxSize,
-        onToggleBoardSize = {
-            onEvent(GameUiEvent.ChangeUxOptions(screenState.uxOptions.copy(isBoardMaxSize = !isBoardMaxSize)))
-        },
-    )
-
-    GoBoard(
-        gameState = screenState.gameState,
-        candidateMoves = screenState.analysis.candidateMoves
-            .takeIf { mayShow(FeatureId.TopMoves) }
-            .orEmpty(),
-        moveReviews = screenState.analysis.moveReviews,
-        // 대국 종료 시엔 프리미엄 여부와 무관하게 최종 형세를 보여준다 — 이 값 자체는
-        // '형세보기' 버튼의 켜짐 표시(GameScreenState.kt의 isFilled)와는 무관하다.
-        ownershipEstimate = screenState.score.estimate?.ownership
-            ?.takeIf { screenState.uxOptions.showOwnershipOverlay || screenState.isGameEnded }
-            ?.takeIf { mayShow(FeatureId.Eval) },
-        uxOptions = screenState.uxOptions,
-        inputEnabled = !screenState.isGameEnded &&
-            screenState.matchSeats.current.canAcceptBoardInput,
-        engineActivityIndicator = screenState.engine.activityIndicator,
-        // ⚠️ 폭을 **GoBoard 바깥에서** 바꾼다. 안에서 바꾸면 탭 좌표 변환·좌표 라벨·형세
-        // 오버레이가 저마다 다른 폭을 볼 위험이 있는데, 밖에서 주면 그 안의 모든 계산이
-        // 같은 Canvas 크기를 따라간다.
-        modifier = Modifier
-            .fillMaxWidth()
-            // ⚠️ 한 화면에 맞추는 상한(#139) — 넘칠 때만 가로폭보다 작다. `GoBoard`의 `min(가로, 세로)`가
-            //   이 세로를 보고 판을 줄인다. 확대(`expandBeyondScreenPadding`)보다 **앞**에 둬야 그쪽이
-            //   이 상한을 그대로 넘겨받는다.
-            .then(if (boardMaxHeight != null) Modifier.heightIn(max = boardMaxHeight) else Modifier)
-            .onSizeChanged { size -> onBoardHeightChanged(size.height) }
-            .then(if (isBoardMaxSize) Modifier.expandBeyondScreenPadding() else Modifier),
-        tentativeMove = tentativeMove,
-        onCoordinateTap = { coordinate ->
-            if (screenState.uxOptions.isDirectPlayEnabled) {
-                onEvent(GameUiEvent.PlayAt(coordinate))
-            } else {
-                tentativeMove = coordinate
-            }
-        },
-        isGameEnded = screenState.isGameEnded,
-        isEngineBusy = screenState.engine.isBusy,
-    )
+            ),
+        )
     }
-
-    // 범례는 보드에 실제로 착수 품질 색이 그려지는 조건(GoBoard.kt의 showMoveReview + 프리미엄
-    // 게이팅)과 정확히 일치시킨다 — 추천수/형세 활성 여부와는 무관하다.
-    val premiumForLegend = LocalPremiumUiState.current
-    if (screenState.uxOptions.showMoveReview && premiumForLegend.isActive) {
-        Spacer(modifier = Modifier.height(4.dp))
-        MoveQualityLegend()
+    val onToggleBoardSize = {
+        onEvent(GameUiEvent.ChangeUxOptions(screenState.uxOptions.copy(isBoardMaxSize = !isBoardMaxSize)))
     }
 
     // 대국 현황 패널 & 실시간 타이머 계산 (AI 차례 포함 실시간 티킹)
@@ -307,20 +241,279 @@ internal fun GamePlaySection(
     val blackTotalMillis = turnTimeState.blackAccumulatedMillis + if (currentTurnPlayer == StoneColor.Black) elapsedSinceTurnStart else 0L
     val whiteTotalMillis = turnTimeState.whiteAccumulatedMillis + if (currentTurnPlayer == StoneColor.White) elapsedSinceTurnStart else 0L
 
-    GameStatusPanel(
-        screenState = screenState,
-        turnTimeState = turnTimeState,
-        tentativeMove = tentativeMove,
-        blackTotalMillis = blackTotalMillis,
-        whiteTotalMillis = whiteTotalMillis,
-        onEvent = onEvent,
-    )
+    // 판은 두 배치가 **같은 호출**을 쓴다 — 자리(modifier)만 다르다. 두 벌로 적으면 한쪽만 고쳐지는
+    // 사고가 난다(표시 권한·입력 조건이 여기 다 모여 있다).
+    val board: @Composable (Modifier) -> Unit = { boardModifier ->
+        GoBoard(
+            gameState = screenState.gameState,
+            candidateMoves = screenState.analysis.candidateMoves
+                .takeIf { mayShow(FeatureId.TopMoves) }
+                .orEmpty(),
+            moveReviews = screenState.analysis.moveReviews,
+            // 대국 종료 시엔 프리미엄 여부와 무관하게 최종 형세를 보여준다 — 이 값 자체는
+            // '형세보기' 버튼의 켜짐 표시(GameScreenState.kt의 isFilled)와는 무관하다.
+            ownershipEstimate = screenState.score.estimate?.ownership
+                ?.takeIf { screenState.uxOptions.showOwnershipOverlay || screenState.isGameEnded }
+                ?.takeIf { mayShow(FeatureId.Eval) },
+            uxOptions = screenState.uxOptions,
+            inputEnabled = !screenState.isGameEnded &&
+                screenState.matchSeats.current.canAcceptBoardInput,
+            engineActivityIndicator = screenState.engine.activityIndicator,
+            modifier = boardModifier,
+            tentativeMove = tentativeMove,
+            onCoordinateTap = { coordinate ->
+                if (screenState.uxOptions.isDirectPlayEnabled) {
+                    onEvent(GameUiEvent.PlayAt(coordinate))
+                } else {
+                    tentativeMove = coordinate
+                }
+            },
+            isGameEnded = screenState.isGameEnded,
+            isEngineBusy = screenState.engine.isBusy,
+        )
+    }
 
-    GameActionButtons(
-        screenState = screenState,
-        onEvent = onEvent,
-    )
+    // 범례는 보드에 실제로 착수 품질 색이 그려지는 조건(GoBoard.kt의 showMoveReview + 프리미엄
+    // 게이팅)과 정확히 일치시킨다 — 추천수/형세 활성 여부와는 무관하다.
+    val showMoveQualityLegend = screenState.uxOptions.showMoveReview && LocalPremiumUiState.current.isActive
+
+    when (layout) {
+        GameScreenLayout.Phone -> {
+            ScoreTimelineGraph(
+                snapshots = screenState.score.snapshots,
+                capturedByBlack = screenState.gameState.capturedBy(StoneColor.Black),
+                capturedByWhite = screenState.gameState.capturedBy(StoneColor.White),
+                whiteWinRate = screenState.score.estimate?.whiteWinRate,
+                isExpanded = screenState.score.isGraphExpanded,
+                onExpandedChange = onScoreGraphExpandedChange,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            // ⚠️ 크기 선택은 **보드 바깥, 위쪽 경계선 밖**에 둔다(2026-08-30 사용자 지시). 보드 위에
+            // 얹으면 그 자리에 착수할 수 없다 — 판의 우상단은 실제로 두는 자리다.
+            //
+            // 선택기와 보드를 **한 Column으로 묶는다.** 둘을 형제로 두면 화면 Column의
+            // `spacedBy(12.dp)`가 사이에 끼어 선택기가 판에서 떠 보이고 세로도 낭비된다 — 묶으면
+            // 그 12dp가 이 묶음 위에만 한 번 붙고, 선택기는 경계선에 바짝 붙는다(사용자 피드백).
+            Column(modifier = Modifier.fillMaxWidth()) {
+                // ⚠️ 판 **위쪽 경계선 밖**이다 — 판 위에 얹으면 그 자리에 착수할 수 없다(위 주석과 같은 이유).
+                // 엔진이 멀쩡하면 아무것도 그리지 않으므로 정상 대국의 레이아웃은 그대로다.
+                EngineUnavailableBadge(
+                    availability = screenState.engine.availability,
+                    modifier = Modifier.padding(bottom = 6.dp),
+                )
+                BoardTopControls(
+                    isMagnifierEnabled = screenState.uxOptions.isPlayMagnifierEnabled,
+                    onToggleMagnifier = onToggleMagnifier,
+                    isMaxSize = isBoardMaxSize,
+                    onToggleBoardSize = onToggleBoardSize,
+                )
+                // ⚠️ 폭을 **GoBoard 바깥에서** 바꾼다. 안에서 바꾸면 탭 좌표 변환·좌표 라벨·형세
+                // 오버레이가 저마다 다른 폭을 볼 위험이 있는데, 밖에서 주면 그 안의 모든 계산이
+                // 같은 Canvas 크기를 따라간다.
+                board(
+                    Modifier
+                        .fillMaxWidth()
+                        // ⚠️ 한 화면에 맞추는 상한(#139) — 넘칠 때만 가로폭보다 작다. `GoBoard`의 `min(가로, 세로)`가
+                        //   이 세로를 보고 판을 줄인다. 확대(`expandBeyondScreenPadding`)보다 **앞**에 둬야 그쪽이
+                        //   이 상한을 그대로 넘겨받는다.
+                        .then(if (boardMaxHeight != null) Modifier.heightIn(max = boardMaxHeight) else Modifier)
+                        .onSizeChanged { size -> onBoardHeightChanged(size.height) }
+                        .then(if (isBoardMaxSize) Modifier.expandBeyondScreenPadding() else Modifier),
+                )
+            }
+
+            if (showMoveQualityLegend) {
+                Spacer(modifier = Modifier.height(4.dp))
+                MoveQualityLegend()
+            }
+
+            GameStatusPanel(
+                screenState = screenState,
+                turnTimeState = turnTimeState,
+                tentativeMove = tentativeMove,
+                blackTotalMillis = blackTotalMillis,
+                whiteTotalMillis = whiteTotalMillis,
+                onEvent = onEvent,
+            )
+
+            GameActionButtons(
+                screenState = screenState,
+                onEvent = onEvent,
+                firstRowLeading = null,
+                secondRowLeading = null,
+            )
+        }
+
+        GameScreenLayout.Wide -> WidePlayArrangement(
+            screenState = screenState,
+            // 차례 표시는 폰 상태판과 **같은 출처**를 본다 — 시계가 도는 쪽과 초록 테두리가 어긋나지 않게.
+            currentTurnPlayer = currentTurnPlayer,
+            isBoardMaxSize = isBoardMaxSize,
+            onToggleMagnifier = onToggleMagnifier,
+            onToggleBoardSize = onToggleBoardSize,
+            tentativeMove = tentativeMove,
+            blackTotalMillis = blackTotalMillis,
+            whiteTotalMillis = whiteTotalMillis,
+            showMoveQualityLegend = showMoveQualityLegend,
+            onScoreGraphExpandedChange = onScoreGraphExpandedChange,
+            onEvent = onEvent,
+            menuButton = wideMenuButton,
+            board = board,
+        )
+    }
 }
+
+/**
+ * **넓은 배치**(백로그 #141 P1, 2026-09-12 사용자 확정) — 판을 먼저 최대로, 조작부는 **남는 변**에.
+ * 세로로 펼친 폴드는 거의 정사각형이라 위아래가 남는다:
+ * - 위 한 줄: ☰ · 흑 좌석 · 수순/점수(누르면 그래프) · 백 좌석
+ * - 판: 남는 높이를 전부 — `GoBoard`의 `min(가로, 세로)`가 정사각형을 잡는다. 스크롤이 없다.
+ * - 아래 두 줄: [돋보기 · 판 크기 · 형세 보기 · 추천 수] / [착수 칸 · 기권 · 통과 · 무르기]
+ *
+ * ⚠️ **스크롤이 없어야 한다** — 판 위 끌기는 착수다(함정 44). 넘치는 것이 생기면 판이 줄지 화면이
+ *   늘지 않는다(판이 `weight(1f)`).
+ * ⚠️ 형세 그래프는 판 위에 **떠서** 열린다 — 판을 밀어내면 판 크기가 출렁인다.
+ * ⚠️ `바둑판 여백`은 이 배치에서 판 둘레에 [WideBoardInset]을 준다 — 판이 세로에 묶여 있어
+ *   폰 배치의 '가로 여백 되찾기'로는 아무 차이가 없기 때문이다.
+ */
+@Composable
+private fun WidePlayArrangement(
+    screenState: GameScreenState,
+    currentTurnPlayer: StoneColor,
+    isBoardMaxSize: Boolean,
+    onToggleMagnifier: () -> Unit,
+    onToggleBoardSize: () -> Unit,
+    tentativeMove: BoardCoordinate?,
+    blackTotalMillis: Long,
+    whiteTotalMillis: Long,
+    showMoveQualityLegend: Boolean,
+    onScoreGraphExpandedChange: (Boolean) -> Unit,
+    onEvent: (GameUiEvent) -> Unit,
+    menuButton: @Composable () -> Unit,
+    board: @Composable (Modifier) -> Unit,
+) {
+    val strings = LocalUiStrings.current
+    val turn = currentTurnPlayer.takeIf { !screenState.isGameEnded }
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(IntrinsicSize.Min),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            menuButton()
+            CompactSeatCard(
+                isActiveTurn = turn == StoneColor.Black,
+                stoneGlyph = "●",
+                stoneGlyphColor = Color.Black,
+                label = strings.sideLabel(screenState.playerSetup.black, StoneColor.Black),
+                elapsedMillis = blackTotalMillis,
+                capturedCount = screenState.gameState.capturedBy(StoneColor.Black),
+                capturesLabel = strings.captures,
+                modifier = Modifier.weight(1f).fillMaxHeight(),
+            )
+            WideScoreSummary(
+                moveCountText = "${strings.moveCountPrefix} ${screenState.gameState.moves.size}${strings.moveCountSuffix}",
+                snapshots = screenState.score.snapshots,
+                whiteWinRate = screenState.score.estimate?.whiteWinRate,
+                isGraphExpanded = screenState.score.isGraphExpanded,
+                onGraphExpandedChange = onScoreGraphExpandedChange,
+                modifier = Modifier.weight(1f).fillMaxHeight(),
+            )
+            CompactSeatCard(
+                isActiveTurn = turn == StoneColor.White,
+                stoneGlyph = "○",
+                stoneGlyphColor = Color.Gray,
+                label = strings.sideLabel(screenState.playerSetup.white, StoneColor.White),
+                elapsedMillis = whiteTotalMillis,
+                capturedCount = screenState.gameState.capturedBy(StoneColor.White),
+                capturesLabel = strings.captures,
+                modifier = Modifier.weight(1f).fillMaxHeight(),
+            )
+        }
+
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth(),
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                EngineUnavailableBadge(
+                    availability = screenState.engine.availability,
+                    modifier = Modifier.padding(bottom = 6.dp),
+                )
+                board(
+                    Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .then(if (isBoardMaxSize) Modifier else Modifier.padding(WideBoardInset)),
+                )
+                if (showMoveQualityLegend) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    MoveQualityLegend()
+                }
+            }
+            if (screenState.score.isGraphExpanded) {
+                ScoreTimelineGraph(
+                    snapshots = screenState.score.snapshots,
+                    capturedByBlack = screenState.gameState.capturedBy(StoneColor.Black),
+                    capturedByWhite = screenState.gameState.capturedBy(StoneColor.White),
+                    whiteWinRate = screenState.score.estimate?.whiteWinRate,
+                    isExpanded = true,
+                    onExpandedChange = onScoreGraphExpandedChange,
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .fillMaxWidth(),
+                )
+            }
+        }
+
+        GameActionButtons(
+            screenState = screenState,
+            onEvent = onEvent,
+            firstRowLeading = {
+                BoardTopToggle(
+                    label = playMagnifierLabelFor(strings.language),
+                    spokenSubject = playMagnifierLabelFor(strings.language),
+                    spokenState = playMagnifierStateFor(strings.language, screenState.uxOptions.isPlayMagnifierEnabled),
+                    active = screenState.uxOptions.isPlayMagnifierEnabled,
+                    onClick = onToggleMagnifier,
+                    prominent = true,
+                    modifier = Modifier.weight(1f).guideTarget(GuideTarget.Magnifier),
+                )
+                BoardTopToggle(
+                    label = boardSizeToggleLabelFor(strings.language, isBoardMaxSize),
+                    spokenSubject = boardSizeSubjectFor(strings.language),
+                    spokenState = boardSizeToggleLabelFor(strings.language, isBoardMaxSize),
+                    active = isBoardMaxSize,
+                    onClick = onToggleBoardSize,
+                    prominent = true,
+                    modifier = Modifier.weight(1f).guideTarget(GuideTarget.BoardSize),
+                )
+            },
+            secondRowLeading = {
+                PlaySlot(
+                    screenState = screenState,
+                    tentativeMove = tentativeMove,
+                    onEvent = onEvent,
+                    horizontal = true,
+                    modifier = Modifier.weight(2f),
+                )
+            },
+        )
+    }
+}
+
+/** 넓은 배치에서 `바둑판 여백`일 때 판 둘레 여백. */
+private val WideBoardInset = 16.dp
 
 /**
  * 추천수(Top Moves) 또는 형세보기(Eval) 오버레이가 켜져 있을 때 노출되는
@@ -364,6 +557,10 @@ private fun MoveQualityLegend() {
 private fun GameActionButtons(
     screenState: GameScreenState,
     onEvent: (GameUiEvent) -> Unit,
+    // 넓은 배치(#141)가 두 줄 **맨 앞**에 끼워 넣는 칸 — 첫 줄엔 판 토글 둘, 둘째 줄엔 착수 칸.
+    // 폰 배치는 `null`(토글은 판 위, 착수 칸은 상태판 가운데에 있다). 게이팅·팝업은 두 배치가 공유한다.
+    firstRowLeading: (@Composable RowScope.() -> Unit)?,
+    secondRowLeading: (@Composable RowScope.() -> Unit)?,
 ) {
     val strings = LocalUiStrings.current
     val premium = LocalPremiumUiState.current
@@ -528,6 +725,7 @@ private fun GameActionButtons(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
+            firstRowLeading?.invoke(this)
             // 1. 형세보기 (Eval) 버튼 (프리미엄 전용)
             val evalAction = screenState.actionButtons.firstOrNull { it.role == GameActionButtonRole.Eval }
             if (evalAction != null) {
@@ -569,7 +767,9 @@ private fun GameActionButtons(
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
+            secondRowLeading?.invoke(this)
             // 1. 기권 / 새 게임 버튼
             val resignEnabled = screenState.isGameEnded || (!screenState.engine.isBlockingBusy && screenState.matchSeats.current.canAcceptBoardInput)
             ActionButton(
@@ -689,6 +889,7 @@ private fun BoardTopControls(
             spokenState = playMagnifierStateFor(strings.language, isMagnifierEnabled),
             active = isMagnifierEnabled,
             onClick = onToggleMagnifier,
+            prominent = false,
             // 첫돌이 가이드(#128 ⑤)가 이 버튼에 동그라미를 칠 수 있게 자리만 알려 준다.
             modifier = Modifier.guideTarget(GuideTarget.Magnifier),
         )
@@ -699,6 +900,7 @@ private fun BoardTopControls(
             spokenState = boardSizeToggleLabelFor(strings.language, isMaxSize),
             active = isMaxSize,
             onClick = onToggleBoardSize,
+            prominent = false,
             modifier = Modifier.guideTarget(GuideTarget.BoardSize),
         )
     }
@@ -727,6 +929,8 @@ internal fun BoardTopToggle(
     spokenState: String,
     active: Boolean,
     onClick: () -> Unit,
+    // 넓은 배치(#141)의 아래 줄 버튼 크기로 그리는가. 폰 배치의 판 위 칩과 다시보기는 `false`.
+    prominent: Boolean,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -745,14 +949,25 @@ internal fun BoardTopToggle(
         border = if (active) ActiveStateBorder else InactiveStateBorder,
         tonalElevation = 0.dp,
     ) {
-        Text(
-            // `⇅`는 "이건 뒤집히는 것"이라는 이 앱의 관용구다(`PlayModeSwitch`와 같다).
-            text = "\u21C5 " + label,
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp),
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Normal,
-            color = ActionButtonContentColor,
-            maxLines = 1,
-        )
+        // 가운데 정렬 상자 — 칩일 때는 글자에 딱 맞아 모양이 그대로이고, 넓은 배치에서 칸을 채울 때
+        // 글자가 **가운데**에 온다(Surface는 최소 크기를 자식에게 넘긴다).
+        Box(
+            modifier = if (prominent) Modifier.heightIn(min = ProminentBoardToggleMinHeight) else Modifier,
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                // `⇅`는 "이건 뒤집히는 것"이라는 이 앱의 관용구다(`PlayModeSwitch`와 같다).
+                text = "\u21C5 " + label,
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp),
+                style = if (prominent) MaterialTheme.typography.labelLarge else MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Normal,
+                color = ActionButtonContentColor,
+                // 넓은 칸은 배율이 오르면 두 줄로 접힌다 — 높이가 바닥값이라 잘리지 않는다(함정 9번).
+                maxLines = if (prominent) 2 else 1,
+            )
+        }
     }
 }
+
+/** 넓은 배치에서 판 토글이 아래 줄 다른 버튼과 키를 맞추는 바닥 높이. */
+private val ProminentBoardToggleMinHeight = 48.dp

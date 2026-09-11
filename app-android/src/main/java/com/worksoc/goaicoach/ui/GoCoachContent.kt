@@ -1,6 +1,8 @@
 package com.worksoc.goaicoach.ui
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -132,74 +134,111 @@ internal fun GoCoachContent(
         minBoardPx = with(density) { MinFittedBoardSide.roundToPx() },
     )?.let { px -> with(density) { px.toDp() } }
 
-    Column(
+    if (isDisplayMenuExpanded) {
+        AlertDialog(
+            onDismissRequest = { isDisplayMenuExpanded = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false),
+            modifier = Modifier.fillMaxWidth(0.9f),
+            title = {
+                Text(
+                    // ⚠️ **`matchSetup`("대국 설정")이 아니라 `settingsTitle`("설정")이다**(백로그 #110).
+                    // 이 다이얼로그에는 언어·표시 옵션·탐색 시간·진단 액션뿐이고 **플레이어 설정과
+                    // 계가/판 설정은 없다** — #76이 사문화된 `showSettings` 블록과 함께 지웠다.
+                    // 그 둘을 바꾸는 곳은 대국 설정 로비(대국 시작 전)와 홈 → `설정` 화면(대국 중에도
+                    // 가능, 종국 전에는 판 크기·접바둑 잠김)이다.
+                    // ⚠️ `matchSetup` 자체를 건드리지 말 것 — 나머지 두 호출부는 맞다
+                    // (`GameSetupLobby.kt`가 진짜 대국 설정 화면, `SettingsScreen.kt`가 그 섹션 헤더).
+                    text = strings.settingsTitle,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    ExpandedGameMenuSection(
+                        screenState = screenState,
+                        selectedLanguage = selectedLanguage,
+                        onLanguageChange = onLanguageChange,
+                        onEvent = onMenuEvent,
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { isDisplayMenuExpanded = false }) {
+                    Text(strings.close)
+                }
+            }
+        )
+    }
+
+    // ⚠️ **배치 갈래**(백로그 #141) — 폰 배치(스크롤 + #139 판 맞춤) / 넓은 배치(스크롤 없음, 판이 남는
+    //   높이를 전부). 판정은 **뷰포트 크기만** 본다(`gameScreenLayoutFor`) — 그래프·범례가 떠도 배치가
+    //   흔들리지 않는다. 상태바·내비게이션 바는 여기서 한 번 뺀다.
+    BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
             .statusBarsPadding()
-            .navigationBarsPadding()
-            .onSizeChanged { size -> viewportHeightPx = size.height }
-            .verticalScroll(rememberScrollState())
-            .wrapContentHeight(align = Alignment.Top)
-            .onSizeChanged { size -> contentHeightPx = size.height }
-            .padding(GameScreenEdgePadding),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+            .navigationBarsPadding(),
     ) {
-        GameHeaderSection(
-            screenState = screenState,
-            isDisplayMenuExpanded = isDisplayMenuExpanded,
-            onDisplayMenuExpandedChange = { expanded -> isDisplayMenuExpanded = expanded },
-        )
-
-        if (isDisplayMenuExpanded) {
-            AlertDialog(
-                onDismissRequest = { isDisplayMenuExpanded = false },
-                properties = DialogProperties(usePlatformDefaultWidth = false),
-                modifier = Modifier.fillMaxWidth(0.9f),
-                title = {
-                    Text(
-                        // ⚠️ **`matchSetup`("대국 설정")이 아니라 `settingsTitle`("설정")이다**(백로그 #110).
-                        // 이 다이얼로그에는 언어·표시 옵션·탐색 시간·진단 액션뿐이고 **플레이어 설정과
-                        // 계가/판 설정은 없다** — #76이 사문화된 `showSettings` 블록과 함께 지웠다.
-                        // 그 둘을 바꾸는 곳은 대국 설정 로비(대국 시작 전)와 홈 → `설정` 화면(대국 중에도
-                        // 가능, 종국 전에는 판 크기·접바둑 잠김)이다.
-                        // ⚠️ `matchSetup` 자체를 건드리지 말 것 — 나머지 두 호출부는 맞다
-                        // (`GameSetupLobby.kt`가 진짜 대국 설정 화면, `SettingsScreen.kt`가 그 섹션 헤더).
-                        text = strings.settingsTitle,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                },
-                text = {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .verticalScroll(rememberScrollState()),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        ExpandedGameMenuSection(
-                            screenState = screenState,
-                            selectedLanguage = selectedLanguage,
-                            onLanguageChange = onLanguageChange,
-                            onEvent = onMenuEvent,
+        val layout = gameScreenLayoutFor(maxWidth.value, maxHeight.value)
+        if (layout == GameScreenLayout.Wide) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = GameScreenEdgePadding, vertical = 12.dp),
+            ) {
+                GamePlaySection(
+                    screenState = screenState,
+                    layout = layout,
+                    // 넓은 배치는 스크롤이 없어 #139의 판 맞춤이 필요 없다 — 판이 남는 높이를 가진다.
+                    boardMaxHeight = null,
+                    onBoardHeightChanged = {},
+                    onScoreGraphExpandedChange = onScoreGraphExpandedChange,
+                    turnTimeState = turnTimeState,
+                    onEvent = onEvent,
+                    wideMenuButton = {
+                        KaTrainUxMenuButton(
+                            menuExpanded = isDisplayMenuExpanded,
+                            onMenuExpandedChange = { expanded -> isDisplayMenuExpanded = expanded },
                         )
-                    }
-                },
-                confirmButton = {
-                    TextButton(onClick = { isDisplayMenuExpanded = false }) {
-                        Text(strings.close)
-                    }
-                }
-            )
-        }
+                    },
+                )
+            }
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .onSizeChanged { size -> viewportHeightPx = size.height }
+                    .verticalScroll(rememberScrollState())
+                    .wrapContentHeight(align = Alignment.Top)
+                    .onSizeChanged { size -> contentHeightPx = size.height }
+                    .padding(GameScreenEdgePadding),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                GameHeaderSection(
+                    screenState = screenState,
+                    isDisplayMenuExpanded = isDisplayMenuExpanded,
+                    onDisplayMenuExpandedChange = { expanded -> isDisplayMenuExpanded = expanded },
+                )
 
-        GamePlaySection(
-            screenState = screenState,
-            boardMaxHeight = boardMaxHeight,
-            onBoardHeightChanged = { height -> boardHeightPx = height },
-            onScoreGraphExpandedChange = onScoreGraphExpandedChange,
-            turnTimeState = turnTimeState,
-            onEvent = onEvent,
-        )
+                GamePlaySection(
+                    screenState = screenState,
+                    layout = layout,
+                    boardMaxHeight = boardMaxHeight,
+                    onBoardHeightChanged = { height -> boardHeightPx = height },
+                    onScoreGraphExpandedChange = onScoreGraphExpandedChange,
+                    turnTimeState = turnTimeState,
+                    onEvent = onEvent,
+                    // 폰 배치의 ☰는 헤더(`GameHeaderSection`)가 그린다.
+                    wideMenuButton = {},
+                )
+            }
+        }
     }
 
     // ⑤ 대국 화면 — 첫돌이가 **버튼마다 하나씩** 안내한다(백로그 #128, 사용자 확정 ⓒ: 첫 대국에

@@ -43,6 +43,84 @@ import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.roundToInt
 
+/** 흑 우세 기준의 점수차 목록. 0수(0.0)에서 시작한다 — 그래프와 넓은 배치 요약이 같은 값을 본다. */
+internal fun blackLeadPoints(snapshots: List<ScoreSnapshot>): List<Double> {
+    val list = mutableListOf(0.0)
+    snapshots.filter { it.hasScoreData }
+        .sortedBy { it.moveNumber }
+        .forEach { snapshot -> snapshot.whiteScoreLead?.let { whiteLead -> list.add(-whiteLead) } }
+    return list
+}
+
+/** 마지막 점수차를 `B +1.5` / `W +0.9` / `0.0`으로. */
+internal fun latestLeadLabel(points: List<Double>): String {
+    val latestLead = if (points.size > 1) points.last() else 0.0
+    val roundedLatest = ((abs(latestLead) * 10).roundToInt() / 10.0).toString()
+    return when {
+        latestLead > 0.0 -> "B +$roundedLatest"
+        latestLead < 0.0 -> "W +$roundedLatest"
+        else -> "0.0"
+    }
+}
+
+internal fun winRateLabelFor(whiteWinRate: Double, strings: UiStrings): String {
+    val blackPct = ((1.0 - whiteWinRate) * 100).roundToInt()
+    val whitePct = (whiteWinRate * 100).roundToInt()
+    return "${strings.colorLabel(StoneColor.Black)} $blackPct% · ${strings.colorLabel(StoneColor.White)} $whitePct%"
+}
+
+/**
+ * 넓은 배치(#141) 위 줄 가운데의 **수순·점수 요약**. 폰 배치의 헤더 `수순 N수`와 접힌 그래프 바의
+ * 점수·승률을 한 칸에 모았다(사석은 양옆 좌석 카드가 말한다). 누르면 형세 그래프가 **판 위에 떠서**
+ * 열린다 — 판을 밀어내지 않는다(2026-09-12 사용자 확정).
+ */
+@Composable
+internal fun WideScoreSummary(
+    moveCountText: String,
+    snapshots: List<ScoreSnapshot>,
+    whiteWinRate: Double?,
+    isGraphExpanded: Boolean,
+    onGraphExpandedChange: (Boolean) -> Unit,
+    modifier: Modifier,
+) {
+    val strings = LocalUiStrings.current
+    val lead = androidx.compose.runtime.remember(snapshots) { latestLeadLabel(blackLeadPoints(snapshots)) }
+    Surface(
+        modifier = modifier
+            .heightIn(min = 48.dp)
+            .clickable { onGraphExpandedChange(!isGraphExpanded) },
+        color = Color(0xFFF8FAFC),
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Text(
+                text = "$moveCountText · $lead ${if (isGraphExpanded) "\u25B4" else "\u25BE"}",
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF475569),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center,
+            )
+            whiteWinRate?.let { rate ->
+                Text(
+                    text = winRateLabelFor(rate, strings),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color(0xFF64748B),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
+                )
+            }
+        }
+    }
+}
+
 /** 이 높이 이하면 접힌 요약 바를 그린다. 높이 정책과 내용 분기가 같은 값을 봐야 한다(#30). */
 private val CollapsedHeightThreshold = 48.dp
 
@@ -77,41 +155,17 @@ internal fun ScoreTimelineGraph(
     val jigoLineColor = Color(0xFF94A3B8) // 명확한 비김 기준선 그레이
 
     // 데이터 가공 및 캐싱: Composable 레벨에서 계산하여 Canvas 프레임 오버헤드 방지
-    val points = androidx.compose.runtime.remember(snapshots) {
-        val list = mutableListOf<Double>()
-        list.add(0.0)
-        snapshots.filter { it.hasScoreData }
-            .sortedBy { it.moveNumber }
-            .forEach {
-                it.whiteScoreLead?.let { whiteLead ->
-                    list.add(-whiteLead) // 흑 우세 기준
-                }
-            }
-        list
-    }
+    val points = androidx.compose.runtime.remember(snapshots) { blackLeadPoints(snapshots) }
 
     val maxScale = androidx.compose.runtime.remember(points) {
         val maxAbsLead = points.maxOfOrNull { abs(it) } ?: 0.0
         maxOf(ceil(maxAbsLead / 5.0) * 5.0, 5.0)
     }
 
-    val currentScoreLabel = androidx.compose.runtime.remember(points) {
-        val latestLead = if (points.size > 1) points.last() else 0.0
-        val latestAbs = abs(latestLead)
-        val roundedLatest = ((latestAbs * 10).roundToInt() / 10.0).toString()
-        when {
-            latestLead > 0.0 -> "B +$roundedLatest"
-            latestLead < 0.0 -> "W +$roundedLatest"
-            else -> "0.0"
-        }
-    }
+    val currentScoreLabel = androidx.compose.runtime.remember(points) { latestLeadLabel(points) }
 
     // 승률(%)은 계산은 되지만 그동안 UI 어디에도 노출되지 않던 값이라, 항상 보이는 이 요약 바에 흡수한다.
-    val winRateLabel = whiteWinRate?.let { rate ->
-        val blackPct = ((1.0 - rate) * 100).roundToInt()
-        val whitePct = (rate * 100).roundToInt()
-        "${strings.colorLabel(StoneColor.Black)} $blackPct% · ${strings.colorLabel(StoneColor.White)} $whitePct%"
-    }
+    val winRateLabel = whiteWinRate?.let { rate -> winRateLabelFor(rate, strings) }
 
     // 높이 정책과 내용 분기가 **반드시 같은 조건**을 봐야 한다(#30 회귀 수정, 2026-08-30).
     //

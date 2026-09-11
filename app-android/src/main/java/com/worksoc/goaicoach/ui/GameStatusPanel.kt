@@ -81,8 +81,12 @@ internal fun GameStatusPanel(
         )
 
         // 중앙: [착수 모드 스위치] + [착수] 버튼. `수순 N수`가 헤더로 올라가며 비운 자리를
-        // 스위치가 받았다(#35 → #37).
-        Column(
+        // 스위치가 받았다(#35 → #37). 넓은 배치(#141)도 같은 칸을 **가로로** 쓴다 — [PlaySlot].
+        PlaySlot(
+            screenState = screenState,
+            tentativeMove = tentativeMove,
+            onEvent = onEvent,
+            horizontal = false,
             // ⚠️ **폭을 훔쳐 넓히려다 되돌렸다**(백로그 #107, 2026-09-05 실기).
             // 1.4f로 올리자 스위치 라벨은 들어갔지만 **좌석 카드의 `Captures: 0`이 잘렸다** —
             // 세 칸이 1.3배에서 함께 들어갈 폭이 애초에 없다. **폭 배분으로 풀 문제가 아니라
@@ -90,55 +94,7 @@ internal fun GameStatusPanel(
             modifier = Modifier
                 .weight(1f)
                 .padding(horizontal = 4.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            val isDirectPlay = screenState.uxOptions.isDirectPlayEnabled
-            PlayModeSwitch(
-                isDirectPlay = isDirectPlay,
-                // **바로 착수일 때 스위치가 주인공이다**(#37 피드백, 2026-08-30). 그 모드에서는
-                // 아래 `착수` 버튼이 할 일이 없으므로 크기를 서로 맞바꾼다 — 지금 누를 수 있는
-                // 것이 커야 한다.
-                prominent = isDirectPlay,
-                enabled = !screenState.isGameEnded,
-                onToggle = {
-                    onEvent(
-                        GameUiEvent.ChangeUxOptions(
-                            screenState.uxOptions.copy(isDirectPlayEnabled = !isDirectPlay),
-                        ),
-                    )
-                },
-            )
-            if (isDirectPlay) {
-                // 이 모드에서 `착수` 버튼은 쓸 일이 없다. 그렇다고 **지워 버리면** 모드를
-                // 바꿨을 때 버튼이 난데없이 튀어나온 것처럼 보이고, 평소처럼 **꽉 찬 회색
-                // 버튼**으로 두면 "왜 안 눌리지"가 된다. 점선 자리표시는 "여기 버튼이 있고,
-                // 모드를 바꾸면 살아난다"를 한 번에 말한다.
-                PlayButtonGhost(label = strings.playMove)
-            } else {
-                Button(
-                    onClick = {
-                        tentativeMove?.let {
-                            onEvent(GameUiEvent.SubmitMove(Move.Play(screenState.gameState.nextPlayer, it)))
-                        }
-                    },
-                    enabled = tentativeMove != null && !screenState.isGameEnded,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = PlayButtonHeight),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = Color.White,
-                        disabledContainerColor = Color(0xFFECEFF1),
-                        disabledContentColor = Color(0xFFB0BEC5),
-                    ),
-                    shape = RoundedCornerShape(24.dp),
-                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
-                ) {
-                    Text(strings.playMove, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                }
-            }
-        }
+        )
 
         PlayerSeatCard(
             modifier = Modifier.weight(1.3f),
@@ -153,6 +109,156 @@ internal fun GameStatusPanel(
         )
     }
 }
+
+/**
+ * **착수 칸** — [착수 모드 스위치] + [착수] 버튼(#37). 폰 배치는 세로로 쌓고(상태판 가운데),
+ * 넓은 배치(#141)는 **가로로** 나란히 둔다(아래 둘째 줄 맨 앞).
+ *
+ * ⚠️ **두 모드에서 크기를 맞바꾼다 — 가로여도 같은 약속이다.** 바로 착수일 때는 `착수`가 할 일이
+ * 없으니 스위치가 주인공이고 `착수`는 **점선 자리표시로 작게** 남는다. 착수 확인일 때는 반대로
+ * `착수`가 크고 스위치가 작다(2026-09-12 사용자 확인: *"기능 전환에 따라 착수 버튼이 활성화되거나
+ * 엄청 작은 상태로"*). 세로에서는 높이를, 가로에서는 **폭**을 맞바꾼다.
+ */
+@Composable
+internal fun PlaySlot(
+    screenState: GameScreenState,
+    tentativeMove: BoardCoordinate?,
+    onEvent: (GameUiEvent) -> Unit,
+    horizontal: Boolean,
+    modifier: Modifier,
+) {
+    val strings = LocalUiStrings.current
+    val isDirectPlay = screenState.uxOptions.isDirectPlayEnabled
+    val switch: @Composable (Modifier) -> Unit = { switchModifier ->
+        PlayModeSwitch(
+            isDirectPlay = isDirectPlay,
+            // **바로 착수일 때 스위치가 주인공이다**(#37 피드백, 2026-08-30). 그 모드에서는
+            // `착수` 버튼이 할 일이 없으므로 크기를 서로 맞바꾼다 — 지금 누를 수 있는
+            // 것이 커야 한다.
+            prominent = isDirectPlay,
+            enabled = !screenState.isGameEnded,
+            onToggle = {
+                onEvent(
+                    GameUiEvent.ChangeUxOptions(
+                        screenState.uxOptions.copy(isDirectPlayEnabled = !isDirectPlay),
+                    ),
+                )
+            },
+            modifier = switchModifier,
+        )
+    }
+    val playButton: @Composable (Modifier) -> Unit = { buttonModifier ->
+        if (isDirectPlay) {
+            // 이 모드에서 `착수` 버튼은 쓸 일이 없다. 그렇다고 **지워 버리면** 모드를
+            // 바꿨을 때 버튼이 난데없이 튀어나온 것처럼 보이고, 평소처럼 **꽉 찬 회색
+            // 버튼**으로 두면 "왜 안 눌리지"가 된다. 점선 자리표시는 "여기 버튼이 있고,
+            // 모드를 바꾸면 살아난다"를 한 번에 말한다.
+            PlayButtonGhost(label = strings.playMove, modifier = buttonModifier)
+        } else {
+            Button(
+                onClick = {
+                    tentativeMove?.let {
+                        onEvent(GameUiEvent.SubmitMove(Move.Play(screenState.gameState.nextPlayer, it)))
+                    }
+                },
+                enabled = tentativeMove != null && !screenState.isGameEnded,
+                modifier = buttonModifier
+                    .fillMaxWidth()
+                    .heightIn(min = PlayButtonHeight),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = Color.White,
+                    disabledContainerColor = Color(0xFFECEFF1),
+                    disabledContentColor = Color(0xFFB0BEC5),
+                ),
+                shape = RoundedCornerShape(24.dp),
+                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
+            ) {
+                Text(strings.playMove, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+
+    if (horizontal) {
+        // 가로: **폭**을 맞바꾼다. 주인공이 넓게(1.5), 쉬는 쪽이 좁게(0.5 — 점선 자리표시).
+        Row(
+            modifier = modifier,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            switch(Modifier.weight(if (isDirectPlay) PlaySlotLeadWeight else PlaySlotRestWeight))
+            playButton(Modifier.weight(if (isDirectPlay) PlaySlotRestWeight else PlaySlotLeadWeight))
+        }
+    } else {
+        Column(
+            modifier = modifier,
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            switch(Modifier)
+            playButton(Modifier)
+        }
+    }
+}
+
+/** 가로 착수 칸에서 주인공(넓은 쪽)과 쉬는 쪽의 폭 비율. */
+private const val PlaySlotLeadWeight = 1.5f
+private const val PlaySlotRestWeight = 0.5f
+
+/**
+ * 넓은 배치(#141) 위 줄의 **좌석 카드** — 폰 배치의 [PlayerSeatCard]를 두 줄로 줄였다.
+ * 첫 줄 `● 흑 (유저)`, 둘째 줄 `00:12 · 사석 0`. 차례 표시(초록 테두리·배경)는 폰과 같은 토큰이다.
+ *
+ * ⚠️ **높이는 바닥값이다**(함정 9번) — 배율이 오르면 두 줄이 자라야 한다. 사용자가 실물을 보고
+ *   세로를 늘릴지 검토하기로 했다(2026-09-12) — 늘린 만큼 판이 준다.
+ */
+@Composable
+internal fun CompactSeatCard(
+    isActiveTurn: Boolean,
+    stoneGlyph: String,
+    stoneGlyphColor: Color,
+    label: String,
+    elapsedMillis: Long,
+    capturedCount: Int,
+    capturesLabel: String,
+    modifier: Modifier,
+) {
+    Surface(
+        modifier = modifier.heightIn(min = CompactSeatCardMinHeight),
+        color = if (isActiveTurn) ActiveStateContainerColor else InactiveStateContainerColor,
+        border = if (isActiveTurn) ActiveStateBorder else InactiveStateBorder,
+        shape = RoundedCornerShape(8.dp),
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(stoneGlyph, style = MaterialTheme.typography.titleSmall, color = stoneGlyphColor)
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF1F1F1F),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Text(
+                text = "${formatMillis(elapsedMillis)} · $capturesLabel: $capturedCount",
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = if (isActiveTurn) FontWeight.Bold else FontWeight.Normal,
+                color = if (isActiveTurn) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+/** 넓은 배치 좌석 카드의 바닥 높이. */
+private val CompactSeatCardMinHeight = 48.dp
 
 /**
  * 흑/백 진영 정보 카드. 대국 차례일 때 프라이머리 색으로 강조된다.
@@ -222,7 +328,7 @@ private fun PlayerSeatCard(
     }
 }
 
-private fun formatMillis(millis: Long): String {
+internal fun formatMillis(millis: Long): String {
     val seconds = (millis + 50L) / 1000L
     val minutes = seconds / 60
     val remainingSeconds = seconds % 60
@@ -252,6 +358,7 @@ private fun PlayModeSwitch(
     prominent: Boolean,
     enabled: Boolean,
     onToggle: () -> Unit,
+    modifier: Modifier,
 ) {
     val strings = LocalUiStrings.current
     val rotation by animateFloatAsState(
@@ -263,7 +370,7 @@ private fun PlayModeSwitch(
     val density = LocalDensity.current.density
 
     Surface(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .graphicsLayer {
                 rotationX = rotation
@@ -349,7 +456,7 @@ private val GhostPlayButtonHeight = 26.dp
  * 레이아웃이 출렁이고, 모드를 바꿨을 때 버튼이 난데없이 생긴 것처럼 보이기 때문이다.
  */
 @Composable
-private fun PlayButtonGhost(label: String) {
+private fun PlayButtonGhost(label: String, modifier: Modifier) {
     val ghostColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)
     val dashOn = with(LocalDensity.current) { 6.dp.toPx() }
     val dashOff = with(LocalDensity.current) { 5.dp.toPx() }
@@ -357,7 +464,7 @@ private fun PlayButtonGhost(label: String) {
     val corner = with(LocalDensity.current) { 24.dp.toPx() }
 
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .height(GhostPlayButtonHeight)
             .drawBehind {

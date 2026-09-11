@@ -203,6 +203,7 @@ private fun ReplayControlSample(step: GuideStep) {
             spokenState = playMagnifierStateFor(strings.language, enabled = true),
             active = true,
             onClick = {},
+            prominent = false,
         )
         GuideTarget.BoardSize -> BoardTopToggle(
             label = boardSizeToggleLabelFor(strings.language, isMaxSize = true),
@@ -210,6 +211,7 @@ private fun ReplayControlSample(step: GuideStep) {
             spokenState = boardSizeToggleLabelFor(strings.language, isMaxSize = true),
             active = true,
             onClick = {},
+            prominent = false,
         )
         GuideTarget.Eval -> ReplayActionButtonSample(
             role = GameActionButtonRole.Eval,
