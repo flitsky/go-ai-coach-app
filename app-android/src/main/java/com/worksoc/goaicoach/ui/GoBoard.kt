@@ -14,7 +14,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.drag
-import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -67,27 +66,13 @@ import com.worksoc.goaicoach.shared.topMoveDeltaScoreLabel
 import kotlin.math.abs
 import kotlinx.coroutines.delay
 
-/**
- * 진행 중인 **착수 드래그**(#39). 좌표와 **그 드래그 동안 고정된 말풍선 방향**을 함께 들고 있다.
- *
- * ⚠️ **돋보기 전용이 아니다**(2026-09-09 사용자 지시로 이름을 바꿨다). 예전 이름은
- * `MagnifierDrag`였고 확대창이 켜져 있을 때만 값을 채웠는데, 그러면 돋보기를 꺼 둔 사용자는
- * **손을 따라오는 가늠돌이 아예 안 그려져** 어디에 놓일지 모르는 채로 끌다 떼야 했다.
- * 끌어서 두는 동작 자체는 이미 언제나 되고 있었으므로, 빠져 있던 것은 **눈에 보이는 되먹임**뿐이다.
- * 사용자 지적: *"돋보기만 없는 상태로 돌이 손을 따라 드르륵 이동하게 해주세요."*
- *
- * [below]는 확대창이 켜졌을 때만 의미가 있다 — 꺼져 있으면 말풍선을 안 그리므로 쓰이지 않는다.
- */
-private data class PlayDrag(val touch: Offset, val below: Boolean)
+// 착수 드래그 상태(`PlayDrag`)와 임계 전 추적기는 `BoardPlayDrag.kt`에 있다(#138).
 
 /**
  * 손가락과 말풍선 사이 간격. **판 크기가 아니라 dp로 잡는다** — 가려지는 것은 손끝이라는
  * 물리적 크기이고, 판이 작아진다고 손가락이 작아지지는 않는다.
  */
 private val MagnifierFingerGap = 28.dp
-
-/** 드래그 중 1배 판에 남기는 가늠돌 — 판세를 가리지 않을 만큼 흐리게(#39). */
-private const val DragGhostAlphaOnBoard = 0.5f
 
 /** 확대창 안의 가늠돌 — 여기서는 조준이 목적이라 또렷하게. */
 private const val DragGhostAlphaInMagnifier = 0.85f
@@ -186,17 +171,23 @@ internal fun GoBoard(
                         uxOptions.isPlayMagnifierEnabled,
                     ) {
                         val holdThresholdMillis = viewConfiguration.longPressTimeoutMillis
+                        val touchSlop = viewConfiguration.touchSlop
                         fun coordinateAt(offset: Offset) =
                             coordinateFromTap(offset, canvasSize, gameState.boardSize, uxOptions.showCoordinates)
 
                         // ⚠️ **`detectTapGestures`와 `detectDragGesturesAfterLongPress`를 나란히
                         // 두는 방식은 쓸 수 없다.** 앞의 것이 꾹 누름 뒤에 `consumeUntilUp()`으로
                         // 이후 이벤트를 전부 삼켜, 뒤의 드래그 감지기가 굶는다(#39 착수 시 확인).
-                        // 그래서 **제스처 루프 하나**가 세 갈래를 직접 가른다:
-                        //   ⓐ 임계 전에 뗐다      → 탭(기존 동작 그대로)
-                        //   ⓑ 임계 전에 취소됐다   → 아무것도 안 한다. 세로 스크롤이 가져간 경우다
-                        //   ⓒ 임계를 넘겼다       → 끌어서 자리를 고르고 **떼는 순간**에만 착수.
-                        //                        확대 창은 `isPlayMagnifierEnabled`일 때만 함께 뜬다
+                        // 그래서 **제스처 루프 하나**가 직접 가른다(#138에서 모양이 바뀌었다):
+                        //   ① 누르는 순간   → 가늠돌을 그린다. 확대창은 아직 띄우지 않는다
+                        //   ② 임계 전       → 가늠돌이 손가락을 따라간다(슬롭 밖으로 움직였을 때부터).
+                        //                    이벤트를 **판이 가진다** — 판이 항상 우선이다(2026-09-11
+                        //                    사용자 결정, 사유는 `trackPressUntilUp`).
+                        //                    떼면 **가늠돌이 있던 자리**에 놓인다
+                        //   ③ 임계를 넘겼다 → 확대 창이 `isPlayMagnifierEnabled`일 때만 함께 뜬다.
+                        //                    계속 따라가고, 떼는 순간에만 착수
+                        // ⚠️ **돋보기 토글은 "확대 창을 그릴지"만 정한다** — 가늠돌도 끌어서 두기도 언제나
+                        // 된다(2026-09-09 사용자 지시). 토글로 제스처를 먼저 가르던 옛 갈래를 되살리지 말 것.
                         awaitEachGesture {
                             val down = awaitFirstDown()
                             down.consume()
@@ -216,80 +207,100 @@ internal fun GoBoard(
                                 haptics.play()
                             }
 
-                            // ⚠️ **돋보기 토글은 "확대 창을 그릴지"만 정한다 — 끌어서 두는 것 자체는
-                            // 언제나 된다**(2026-09-09 사용자 지시). 그전에는 이 자리에서 갈라져,
-                            // 돋보기를 꺼 두면 꾹 눌러도 아무 일이 없고 **누른 자리**에 바로 놓였다.
-                            // 사용자 지적: *"착수 돋보기를 켜지 않아도 터치 후 이동하여 떼는 방식으로
-                            // 둘 수 있으면 좋겠다."* 그래서 분기를 아래 확대 창 쪽으로만 옮겼다.
-                            // · **빠른 탭은 그대로다** — 임계 전에 떼면 누른 자리에 놓인다. 그래서 이
-                            //   변경으로 *"살짝 미끄러진 탭이 엉뚱한 곳에 놓이는"* 회귀는 생기지 않는다.
-                            var heldPastThreshold = false
-                            val releasedEarly = try {
-                                withTimeout(holdThresholdMillis) { waitForUpOrCancellation() }
-                            } catch (_: PointerEventTimeoutCancellationException) {
-                                heldPastThreshold = true
-                                null
-                            }
-
-                            if (!heldPastThreshold) {
-                                // `null`이면 다른 제스처(세로 스크롤)가 가져갔다 — 착수하지 않는다.
-                                releasedEarly?.let { up ->
-                                    up.consume()
-                                    if (inputEnabled) coordinateAt(down.position)?.let(onCoordinateTap)
-                                }
-                                return@awaitEachGesture
-                            }
-
-                            // ⚠️ 입력이 막힌 상황에서는 돋보기도 띄우지 않는다 — 놓을 수 없는
-                            // 자리를 확대해 보여주면 놓을 수 있다고 오해한다.
+                            // ⚠️ 입력이 막힌 상황(AI 차례·종국)에서는 가늠돌도 확대창도 띄우지 않는다 —
+                            // 놓을 수 없는 자리에 돌을 그려 보이면 놓을 수 있다고 오해한다.
                             if (!inputEnabled) return@awaitEachGesture
 
-                            // ⚠️ 말풍선의 위/아래는 **여기서 한 번만** 정한다 — 매 프레임 다시
-                            // 판단하면 손가락이 경계선을 지날 때 창이 반대편으로 순간이동한다.
-                            // ⚠️ **확대 창이 꺼져 있으면 이 계산을 아예 하지 않는다** — 기하를 못 구하는
-                            //   경우(캔버스 0)에 제스처를 통째로 취소하던 갈래가, 끌어서 두기까지
-                            //   함께 취소해 버리기 때문이다.
-                            val showMagnifier = uxOptions.isPlayMagnifierEnabled
-                            val below = if (showMagnifier) {
-                                val canvas = Size(canvasSize.width.toFloat(), canvasSize.height.toFloat())
-                                val spacing = boardTapGeometry(
-                                    canvasWidth = canvas.width,
-                                    canvasHeight = canvas.height,
-                                    boardSize = gameState.boardSize,
-                                    showCoordinates = uxOptions.showCoordinates,
-                                )?.spacing ?: return@awaitEachGesture
-                                magnifierPrefersBelow(
-                                    down.position,
-                                    canvas,
-                                    spacing,
-                                    MagnifierFingerGap.toPx(),
-                                    sizeScale = uxOptions.magnifierSizeScale,
-                                    zoom = uxOptions.magnifierZoom,
-                                )
-                            } else {
-                                false
-                            }
+                            // ⚠️ **어떤 경로로 끝나든 가늠돌을 지운다**(#138). 누르고 있는 동안
+                            // `inputEnabled`가 바뀌면(AI 차례가 끝나는 순간) 이 `pointerInput`이 **키
+                            // 변경으로 다시 시작**되고, 진행 중이던 제스처 코루틴은 **취소**된다. 그때
+                            // 지우지 않으면 손을 뗀 뒤에도 판 위에 가늠돌이 남는다 — 가늠돌이 누르는
+                            // 즉시 뜨게 된 뒤로 그 틈이 매 착수마다 열린다.
+                            try {
+                                // ① 누르는 **순간** 가늠돌(#138, 사용자 요청 *"'착수 확인'처럼 돌이 먼저
+                                //   보여지게"*). 예전에는 임계(약 0.4초)를 넘겨야 채워져서, 빠른 탭은
+                                //   **아무것도 안 보인 채** 처음 누른 자리에 놓였다.
+                                var follow = DragFollow(target = down.position, following = false)
+                                playDrag = PlayDrag(follow.target, below = false, magnifier = false)
 
-                            // ⚠️ **확대창 여부와 무관하게 채운다**(2026-09-09). 여기에 `showMagnifier`
-                            // 조건을 걸면 돋보기를 끈 사용자에게는 가늠돌이 그려지지 않아, 손을
-                            // 따라오는 돌 없이 깜깜한 채로 끌게 된다 — 그것이 이번에 고친 증상이다.
-                            playDrag = PlayDrag(down.position, below)
-                            var last = down.position
-                            // ⚠️ **누르고 있는 동안 착수가 확정되면 안 된다**(사용자 확정).
-                            // 여기서는 좌표만 따라가고, 확정은 아래 `completed` 분기에서만 한다.
-                            val completed = drag(down.id) { change ->
-                                change.consume()
-                                last = change.position
-                                playDrag = PlayDrag(last, below)
-                            }
-                            playDrag = null
-                            if (!completed) return@awaitEachGesture
+                                // ② 임계 전 — 따라가며 이벤트를 판이 가진다(사유는 `trackPressUntilUp`).
+                                var heldPastThreshold = false
+                                val released = try {
+                                    withTimeout(holdThresholdMillis) {
+                                        trackPressUntilUp(down.id) { position ->
+                                            follow = followDrag(
+                                                down = down.position,
+                                                current = position,
+                                                touchSlop = touchSlop,
+                                                following = follow.following,
+                                            )
+                                            playDrag = PlayDrag(follow.target, below = false, magnifier = false)
+                                        }
+                                    }
+                                } catch (_: PointerEventTimeoutCancellationException) {
+                                    heldPastThreshold = true
+                                    false
+                                }
 
-                            // 판 밖에서 떼면 좌표가 없다 → 조용히 취소된다. 그것이 이 제스처의
-                            // 취소 경로다(별도 취소 버튼을 두지 않는 이유).
-                            coordinateAt(last)?.let { coordinate ->
-                                if (uxOptions.isPlayHapticEnabled) haptics.play()
-                                onCoordinateTap(coordinate)
+                                if (!heldPastThreshold) {
+                                    // `false`면 판보다 먼저 누가 가져갔다 — 착수하지 않는다.
+                                    if (!released) return@awaitEachGesture
+                                    // ⚠️ **누른 자리가 아니라 가늠돌이 있던 자리에 놓는다**(#138) — 보이는 곳과
+                                    // 놓이는 곳이 같아야 한다. 슬롭 안의 떨림은 `followDrag`가 처음 자리로
+                                    // 붙잡아 두므로, #39가 막으려던 *"살짝 미끄러진 탭"* 회귀는 여전히 막혀 있다.
+                                    coordinateAt(follow.target)?.let { coordinate ->
+                                        // 끌어서 옮겼을 때만 뗄 때 한 번 더 울린다 — 탭은 닿을 때 한 번이면 된다.
+                                        if (follow.following && uxOptions.isPlayHapticEnabled) haptics.play()
+                                        onCoordinateTap(coordinate)
+                                    }
+                                    return@awaitEachGesture
+                                }
+
+                                // ③ 임계를 넘겼다. ⚠️ 말풍선의 위/아래는 **여기서 한 번만** 정한다 — 매
+                                // 프레임 다시 판단하면 손가락이 경계선을 지날 때 창이 반대편으로 순간이동한다.
+                                // ⚠️ **확대 창이 꺼져 있거나 기하를 못 구하면(캔버스 0) 창만 안 띄운다** —
+                                //   예전에는 기하가 없으면 제스처를 통째로 취소해, 끌어서 두기까지 함께 사라졌다.
+                                val magnifierSpacing = if (uxOptions.isPlayMagnifierEnabled) {
+                                    boardTapGeometry(
+                                        canvasWidth = canvasSize.width.toFloat(),
+                                        canvasHeight = canvasSize.height.toFloat(),
+                                        boardSize = gameState.boardSize,
+                                        showCoordinates = uxOptions.showCoordinates,
+                                    )?.spacing
+                                } else {
+                                    null
+                                }
+                                val showMagnifier = magnifierSpacing != null
+                                val below = magnifierSpacing?.let { spacing ->
+                                    magnifierPrefersBelow(
+                                        follow.target,
+                                        Size(canvasSize.width.toFloat(), canvasSize.height.toFloat()),
+                                        spacing,
+                                        MagnifierFingerGap.toPx(),
+                                        sizeScale = uxOptions.magnifierSizeScale,
+                                        zoom = uxOptions.magnifierZoom,
+                                    )
+                                } ?: false
+
+                                var target = follow.target
+                                playDrag = PlayDrag(target, below, magnifier = showMagnifier)
+                                // ⚠️ **누르고 있는 동안 착수가 확정되면 안 된다**(사용자 확정).
+                                // 여기서는 좌표만 따라가고, 확정은 아래 `completed` 분기에서만 한다.
+                                val completed = drag(down.id) { change ->
+                                    change.consume()
+                                    target = change.position
+                                    playDrag = PlayDrag(target, below, magnifier = showMagnifier)
+                                }
+                                if (!completed) return@awaitEachGesture
+
+                                // 판 밖에서 떼면 좌표가 없다 → 조용히 취소된다. 그것이 이 제스처의
+                                // 취소 경로다(별도 취소 버튼을 두지 않는 이유).
+                                coordinateAt(target)?.let { coordinate ->
+                                    if (uxOptions.isPlayHapticEnabled) haptics.play()
+                                    onCoordinateTap(coordinate)
+                                }
+                            } finally {
+                                playDrag = null
                             }
                         }
                     },
@@ -376,15 +387,20 @@ internal fun GoBoard(
                     // 이것이 손을 따라 움직이는 그 돌이다 — 확대창은 조준을 돕는 덤이고,
                     // "지금 어디에 놓이는지"를 알려주는 본체는 이쪽이다. 예전에는 이 블록 전체가
                     // 확대창과 운명을 같이해서, 돋보기를 끄면 되먹임이 통째로 사라졌다.
-                    if (dragCoordinate != null) {
+                    // ⚠️ **'착수 확인'의 임시 돌과 같은 모습**(깜빡이는 반투명)으로 그린다(#138, 사용자
+                    //   요청 *"'착수 확인'처럼"*). 두 모드에서 "여기에 놓인다"가 같은 말로 읽혀야 한다.
+                    //   이미 임시 돌이 있는 자리면 겹쳐 그리지 않는다 — 겹치면 그 칸만 진해 보인다.
+                    if (dragCoordinate != null && dragCoordinate != tentativeMove) {
                         drawGhostStone(
                             center = geometry.pointFor(dragCoordinate),
                             radius = stoneRadius,
                             stone = gameState.nextPlayer,
-                            alpha = DragGhostAlphaOnBoard,
+                            alpha = ghostAlpha,
                         )
                     }
-                    if (uxOptions.isPlayMagnifierEnabled) drawMagnifier(
+                    // 확대창은 **임계를 넘긴 드래그**에서만 뜬다 — 그 판단은 제스처가 `magnifier`에
+                    // 담아 둔다(토글이 꺼져 있으면 거기서 이미 `false`다).
+                    if (drag.magnifier) drawMagnifier(
                         placement = magnifierPlacement(
                             touch = touch,
                             canvasSize = size,

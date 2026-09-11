@@ -161,63 +161,134 @@ class BoardMagnifierTest {
     }
 
     /**
-     * ⚠️ **끌어서 두기는 돋보기 토글에 걸려 있지 않다**(2026-09-09 사용자 지시).
+     * ⚠️ **가늠돌은 누르는 순간 뜨고, 확대창은 꾹 누른 뒤에만 뜬다**(#138).
      *
-     * 그전에는 `GoBoard`의 제스처 루프가 `isPlayMagnifierEnabled`로 **먼저 갈라져**, 돋보기를 꺼 두면
-     * 꾹 눌러도 아무 일이 없고 **누른 자리**에 그대로 놓였다. 사용자 지적은 *"착수 돋보기를 켜지
-     * 않아도 터치 후 이동하여 떼는 방식으로 둘 수 있으면 좋겠다"* 였고, 그래서 토글의 뜻을
-     * **"확대 창을 그릴지"** 하나로 좁혔다.
+     * ## 이 계약이 걸어온 길
+     * - **#39**: 끌어서 두기 도입. 돋보기를 꺼 두면 꾹 눌러도 아무 일이 없었다.
+     * - **2026-09-09 1차**: 토글의 뜻을 *"확대 창을 그릴지"* 로 좁혀 끌어서 두기를 언제나 되게 했다.
+     * - **2026-09-09 2차(#131)**: 가늠돌까지 토글에서 풀었다 — 돋보기를 끈 사용자에게도 손을 따라오는 돌.
+     *   그때 이 테스트는 *"`playDrag`를 채우는 자리가 정확히 둘"* 이라고 셌다.
+     * - **2026-09-11(#138)**: 가늠돌을 **꾹 누름 임계 이전으로 앞당겼다.** 그전에는 임계(약 0.4초)를 넘겨야
+     *   떠서, 빠른 탭은 **아무것도 안 보인 채** 처음 누른 자리에 놓였다. 사용자 요청: *"터치 다운해서
+     *   '착수 확인'처럼 돌이 먼저 보여지게 하면서 드래그시 위치 변경도 따라오게."* 그래서 개수 대신
+     *   **순서와 플래그**를 본다 — 개수는 루프 모양이 조금만 바뀌어도 틀리고, 지켜야 할 뜻을 말하지 않는다.
      *
-     * 이 계약이 지키는 것은 그 좁힘이다. 되돌리기 쉬운 종류다 — 확대 창을 손보다가 옛 조기 반환을
-     * 되살리면, **끌어서 두기가 조용히 사라지고** 어떤 단위 테스트도 빨개지지 않는다(제스처는
-     * 계측 테스트가 없다). 그래서 소스로 잡는다.
-     *
-     * ⚠️ 빠른 탭은 **일부러 그대로 두었다** — 임계 전에 떼면 누른 자리에 놓인다. 그 갈래까지
-     * 뗀 자리로 바꾸면 *"살짝 미끄러진 탭"* 이 엉뚱한 곳에 놓이는 회귀가 된다.
-     *
-     * ## 2026-09-09 2차 — 계약이 **되먹임까지** 넓어졌다
-     *
-     * 위 1차 수정은 *놓이는 동작*만 풀어 줬고 **드래그 상태(`playDrag`)는 여전히 확대창이 켜졌을
-     * 때만 채웠다.** 그래서 돋보기를 끈 사용자는 끌어서 둘 수는 있는데 **손을 따라오는 가늠돌이
-     * 하나도 안 그려져**, 어디에 놓일지 모르는 채로 끌다 떼야 했다. 사용자 지적:
-     * *"돋보기만 없는 상태로 돌이 손을 따라 드르륵 이동하게 해주세요."*
-     *
-     * 그래서 이 테스트의 방향이 **뒤집혔다.** 예전에는 *"`magnifierDrag`에 값을 넣는 자리가 전부
-     * `showMagnifier` 뒤에 있어야 한다"* 고 못박았는데, 지금은 그 반대다 — 상태는 **언제나** 채우고
-     * 가려지는 것은 **확대창을 그리는 자리 하나**뿐이다. 옛 단언을 되살리면 가늠돌이 다시 사라진다.
+     * ⚠️ 제스처는 계측 테스트가 없다 — 그래서 소스로 잡는다. 아래 하나하나가 **되돌리기 쉬운 곳**이다.
      */
     @Test
-    fun dragToPlaceIsNotGatedOnTheMagnifierToggle() {
-        // ⚠️ **주석과 `import`를 걷어낸 뒤 센다**(함정 10-2). 2026-09-09 감사가 이 테스트가 원문을
-        // 그대로 읽는 것을 짚었다 — 아래 `assertTrue`는 **주석에 적힌 같은 문장으로도 통과**하므로,
-        // 코드를 지우고 사유만 주석으로 남기는(흔한) 변경이 그물을 조용히 통과했을 것이다.
-        val source = File("src/main/java/com/worksoc/goaicoach/ui/GoBoard.kt").readText()
-            .replace(Regex("""/\*.*?\*/""", RegexOption.DOT_MATCHES_ALL), "")
-            .lines()
-            .filterNot { it.trimStart().startsWith("import ") }
-            .joinToString("\n") { it.substringBefore("//") }
+    fun theGhostAppearsOnTouchDownAndTheMagnifierOnlyAfterTheHold() {
+        val source = goBoardSource()
 
+        // ① 누르는 순간 — 임계를 기다리기 **전에** 가늠돌을 채운다.
+        val firstGhost = source.indexOf("playDrag = PlayDrag(")
+        val holdWait = source.indexOf("withTimeout(holdThresholdMillis)")
+        assertTrue("가늠돌을 채우는 자리를 찾지 못했다", firstGhost >= 0)
+        assertTrue("꾹 누름 임계를 기다리는 자리를 찾지 못했다", holdWait >= 0)
+        assertTrue(
+            "가늠돌이 임계 **뒤에** 처음 채워진다 — 빠른 탭은 다시 아무것도 안 보인 채 놓인다(#138).",
+            firstGhost < holdWait,
+        )
+        // ② 그 순간에는 확대창을 **띄우지 않는다** — 모든 탭에 말풍선이 번쩍이면 안 된다.
+        assertTrue(
+            "누르는 순간의 가늠돌이 확대창까지 켠다 — 탭할 때마다 말풍선이 번쩍인다(#138).",
+            source.substring(firstGhost, holdWait)
+                .contains("playDrag = PlayDrag(follow.target, below = false, magnifier = false)"),
+        )
+        // ③ 확대창을 그리는 자리는 제스처가 정한 플래그 하나만 본다.
+        assertTrue(
+            "확대창을 그리는 자리가 `drag.magnifier`를 보지 않는다 — 임계 전 가늠돌에도 창이 뜨거나, " +
+                "임계 후에도 안 뜬다(#138).",
+            source.contains("if (drag.magnifier) drawMagnifier("),
+        )
+        // ④ 그 플래그는 여전히 토글에서 온다 — 토글이 뜻을 잃으면 안 된다.
+        assertTrue(
+            "확대창 플래그가 `isPlayMagnifierEnabled`에서 오지 않는다 — 돋보기를 꺼도 창이 뜬다.",
+            source.contains("val magnifierSpacing = if (uxOptions.isPlayMagnifierEnabled)") &&
+                source.contains("magnifier = showMagnifier"),
+        )
+        // 옛 조기 반환이 되살아나면 돋보기를 끌 때 끌어서 두기가 사라진다(2026-09-09).
         assertFalse(
             "제스처 루프가 `isPlayMagnifierEnabled`로 조기 반환한다 — 돋보기를 끄면 끌어서 두기가 " +
                 "함께 사라진다(2026-09-09 사용자 지시로 없앤 갈래다).",
             source.contains("if (!uxOptions.isPlayMagnifierEnabled) {"),
         )
-        // 드래그 상태를 채우는 자리는 **둘**(누른 순간·끄는 동안)이고, 이제 **둘 다 가려지면 안 된다.**
-        assertEquals(
-            "`playDrag`에 값을 넣는 자리가 둘이 아니다 — 제스처 루프의 모양이 바뀌었다면 이 계약부터 다시 볼 것.",
-            2,
-            Regex("""playDrag = PlayDrag\(""").findAll(source).count(),
-        )
-        assertEquals(
-            "`playDrag`를 `showMagnifier` 뒤에 숨긴 자리가 있다 — 돋보기를 끄면 손을 따라오는 " +
-                "가늠돌이 그려지지 않는다(2026-09-09 사용자 지시로 없앤 갈래다).",
-            0,
-            Regex("""if \(showMagnifier\)\s*playDrag = PlayDrag\(""").findAll(source).count(),
+    }
+
+    /**
+     * 빠른 탭은 **가늠돌이 있던 자리**에 놓인다(#138) — 보이는 곳과 놓이는 곳이 같아야 한다.
+     *
+     * ⚠️ 이것은 #39의 결정을 **뒤집은** 것이다. 그때는 *"살짝 미끄러진 탭이 엉뚱한 곳에 놓인다"* 며 빠른
+     * 탭을 **누른 자리**에 묶었다. 그 걱정은 이제 `followDrag`의 **터치 슬롭**이 맡는다 — 슬롭 안의
+     * 떨림은 처음 자리를 유지한다(`BoardPlayDragTest`가 그 계약을 잡는다).
+     * 옛 `coordinateAt(down.position)`으로 되돌리면 가늠돌을 끌어 옮겨 놓고도 처음 자리에 놓인다.
+     */
+    @Test
+    fun aQuickReleasePlacesWhereTheGhostWas() {
+        val source = goBoardSource()
+        assertFalse(
+            "빠른 탭이 누른 자리에 놓인다 — 가늠돌을 끌어 옮겨도 처음 자리에 놓이게 된다(#138).",
+            source.contains("coordinateAt(down.position)?.let(onCoordinateTap)"),
         )
         assertTrue(
-            "확대 창을 그리는 자리가 토글로 가려져 있지 않다 — 토글이 뜻을 잃었거나, 꺼 둬도 창이 뜬다. " +
-                "가려야 하는 것은 **확대창 하나뿐**이고 가늠돌은 언제나 그린다.",
-            source.contains("if (uxOptions.isPlayMagnifierEnabled) drawMagnifier("),
+            "빠른 탭이 가늠돌 자리(`follow.target`)에 놓이지 않는다(#138).",
+            source.contains("coordinateAt(follow.target)"),
         )
     }
+
+    /**
+     * ⚠️ **어떤 경로로 끝나도 가늠돌이 지워진다**(#138).
+     *
+     * 누르고 있는 동안 `inputEnabled`가 바뀌면(AI 차례가 끝나는 순간) `pointerInput`이 키 변경으로 다시
+     * 시작되고 제스처 코루틴은 **취소**된다. `finally`가 아니면 그 경로에서 지울 곳이 없어, 손을 뗀 뒤에도
+     * 판 위에 가늠돌이 남는다.
+     */
+    @Test
+    fun theGhostIsClearedOnEveryExitIncludingCancellation() {
+        assertTrue(
+            "가늠돌을 `finally`에서 지우지 않는다 — 제스처가 취소되면 판 위에 남는다(#138).",
+            Regex("""finally\s*\{\s*playDrag = null\s*\}""").containsMatchIn(goBoardSource()),
+        )
+    }
+
+    /**
+     * ⚠️ **판이 항상 우선이다**(#138, 2026-09-11 사용자 결정). 임계 전 추적기는 이동을 **소비**해서
+     * 조상(`verticalScroll`)이 끼어들지 못하게 한다.
+     *
+     * 첫 구현은 반대였다 — 소비하지 않고 스크롤에 양보했더니 **0.4초 안의 빠른 세로 조정이 스크롤에
+     * 빼앗겨 취소**됐다(가로는 따라왔다 — 방향에 따라 동작이 갈렸다). 사용자 결정: *"판이 항상 우선하면서
+     * 즉시 터치 드래그하더라도 바로 끌려와야 한다."* 이 계약이 그 결정을 지킨다. 대가는 함정 44.
+     *
+     * ⚠️ **Final 단계의 소비 검사가 되살아나면 모든 끌기가 취소된다** — 이제 우리가 소비하므로, 그 검사는
+     * 제 소비를 조상의 가로채기로 오인한다.
+     */
+    @Test
+    fun theBoardAlwaysOwnsAGestureThatStartsOnIt() {
+        val source = File("src/main/java/com/worksoc/goaicoach/ui/BoardPlayDrag.kt").readText()
+            .replace(Regex("""/\*.*?\*/""", RegexOption.DOT_MATCHES_ALL), "")
+            .lines().joinToString("\n") { it.substringBefore("//") }
+        val start = source.indexOf("fun AwaitPointerEventScope.trackPressUntilUp(")
+        assertTrue("`trackPressUntilUp`을 찾지 못했다 — 이 계약의 전제가 무너졌다.", start >= 0)
+        val body = source.substring(start)
+        val guard = body.indexOf("if (change.isConsumed) return false")
+        val move = body.indexOf("onMove(")
+        assertTrue("먼저 가져간 경우의 양보 갈래나 `onMove`를 찾지 못했다.", guard >= 0 && move > guard)
+        assertTrue(
+            "임계 전 추적기가 이동을 소비하지 않는다 — 판에서 시작한 빠른 세로 끌기를 스크롤이 빼앗아 " +
+                "취소된다(#138, 사용자 결정: 판이 항상 우선).",
+            body.substring(guard, move).contains("change.consume()"),
+        )
+        assertFalse(
+            "임계 전 추적기가 Final 단계를 본다 — 제 소비를 조상의 가로채기로 오인해 모든 끌기가 취소된다(#138).",
+            body.contains("PointerEventPass.Final"),
+        )
+    }
+
+    // ⚠️ **주석과 `import`를 걷어낸 뒤 센다**(함정 10-2) — 코드를 지우고 사유만 주석으로 남기는(흔한)
+    // 변경이 그물을 조용히 통과하지 않게.
+    private fun goBoardSource(): String =
+        File("src/main/java/com/worksoc/goaicoach/ui/GoBoard.kt").readText()
+            .replace(Regex("""/\*.*?\*/""", RegexOption.DOT_MATCHES_ALL), "")
+            .lines()
+            .filterNot { it.trimStart().startsWith("import ") }
+            .joinToString("\n") { it.substringBefore("//") }
 }
