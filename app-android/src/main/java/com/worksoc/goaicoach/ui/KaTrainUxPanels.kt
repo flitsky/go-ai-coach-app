@@ -21,6 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -71,10 +72,32 @@ internal fun KaTrainUxMenuPanel(
             modifier = Modifier.padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            // **판 위에 있던 토글 둘이 여기로 내려왔다**(백로그 #143, 2026-09-12 사용자 지시).
-            // 대국 화면을 판에 집중시키려고 뺐고, 둘 다 기본값이 이미 그 값이라(돋보기 켜짐 · 판 최대)
-            // 대부분 사용자는 한 번도 누르지 않는다. ⚠️ 이 패널은 **☰ 대국 메뉴와 설정 화면이 공유**하므로
-            // 여기 한 번 넣으면 두 곳에서 보인다 — 설정 화면의 돋보기 창 크기·배율(#85) 바로 위에 붙는다.
+            // **메뉴 순서는 사용자가 정한 것이다**(2026-09-12). 위에서부터 판 자체 → 착수하는 동작 →
+            // 착수 뒤의 표시 → 프리미엄 순으로 내려간다. ⚠️ 순서를 바꾸려거든 사용자에게 물을 것 —
+            // 여기 늘어선 차례가 곧 그 결정이고, `MenuOptionOrderContractTest`가 그것을 지킨다.
+            //
+            // **판 위에 있던 토글 둘이 여기로 내려왔다**(백로그 #143). 대국 화면을 판에 집중시키려고
+            // 뺐고, 둘 다 기본값이 이미 그 값이라(돋보기 켜짐 · 판 최대) 대부분 사용자는 한 번도 누르지
+            // 않는다. ⚠️ 이 패널은 **☰ 대국 메뉴와 설정 화면이 공유**한다.
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                OptionSwitchCell(
+                    // ⚠️ 스위치의 라벨은 **켰을 때의 상태**를 적는다(`바둑판 최대`) — 주체 이름(`바둑판 크기`)만
+                    // 적으면 켜짐이 무엇을 뜻하는지 알 수 없다. 판 위 토글이 상태를 라벨로 말하던 것과 같은 관용구다.
+                    label = boardSizeToggleLabelFor(strings.language, isMaxSize = true),
+                    checked = options.isBoardMaxSize,
+                    modifier = Modifier.weight(1f),
+                    onCheckedChange = { onOptionsChange(options.copy(isBoardMaxSize = it)) },
+                )
+                Spacer(modifier = Modifier.width(columnGap))
+                OptionSwitchCell(
+                    label = strings.coordinates,
+                    checked = options.showCoordinates,
+                    modifier = Modifier.weight(1f),
+                    onCheckedChange = { onOptionsChange(options.copy(showCoordinates = it)) },
+                )
+            }
             Row(
                 modifier = Modifier.fillMaxWidth(),
             ) {
@@ -85,13 +108,13 @@ internal fun KaTrainUxMenuPanel(
                     onCheckedChange = { onOptionsChange(options.copy(isPlayMagnifierEnabled = it)) },
                 )
                 Spacer(modifier = Modifier.width(columnGap))
+                // **지연 착수**(백로그 #144) — 켜면 떼고 0.5초 뒤에 놓이고, 그 사이 다시 누르면 그 자리에서 다시 센다.
+                // 기본 꺼짐이라(지금 동작이 바뀌는 것) 원하는 사람만 여기서 켠다.
                 OptionSwitchCell(
-                    // ⚠️ 스위치의 라벨은 **켰을 때의 상태**를 적는다(`바둑판 최대`) — 주체 이름(`바둑판 크기`)만
-                    // 적으면 켜짐이 무엇을 뜻하는지 알 수 없다. 판 위 토글이 상태를 라벨로 말하던 것과 같은 관용구다.
-                    label = boardSizeToggleLabelFor(strings.language, isMaxSize = true),
-                    checked = options.isBoardMaxSize,
+                    label = strings.delayedPlay,
+                    checked = options.isDelayedPlayEnabled,
                     modifier = Modifier.weight(1f),
-                    onCheckedChange = { onOptionsChange(options.copy(isBoardMaxSize = it)) },
+                    onCheckedChange = { onOptionsChange(options.copy(isDelayedPlayEnabled = it)) },
                 )
             }
             Row(
@@ -102,6 +125,59 @@ internal fun KaTrainUxMenuPanel(
                     checked = options.showLastMoveRing,
                     modifier = Modifier.weight(1f),
                     onCheckedChange = { onOptionsChange(options.copy(showLastMoveRing = it)) },
+                )
+                Spacer(modifier = Modifier.width(columnGap))
+                // 반상을 누르는 순간의 햅틱(#36). **켤 때 한 번 울려 준다**(2026-08-30 사용자 요청) —
+                // 진동은 눈에 보이지 않아 켠 것이 먹혔는지 알 길이 없다. 끌 때는 울리지 않는다.
+                val hapticContext = LocalContext.current
+                val hapticPreview = remember(hapticContext) { PlayHaptics(hapticContext) }
+                OptionSwitchCell(
+                    label = strings.playHaptic,
+                    checked = options.isPlayHapticEnabled,
+                    modifier = Modifier.weight(1f),
+                    onCheckedChange = { enabled ->
+                        if (enabled) hapticPreview.play()
+                        onOptionsChange(options.copy(isPlayHapticEnabled = enabled))
+                    },
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                // **착수 이펙트**(백로그 #145) — 확정되는 순간 그 돌이 부풀었다가 제자리로 돌아온다.
+                // 기본 켜짐이라(없던 것이 생기는 쪽) 거슬리는 사람이 여기서 끈다.
+                OptionSwitchCell(
+                    label = strings.playEffect,
+                    checked = options.isPlayEffectEnabled,
+                    modifier = Modifier.weight(1f),
+                    onCheckedChange = { onOptionsChange(options.copy(isPlayEffectEnabled = it)) },
+                )
+                Spacer(modifier = Modifier.width(columnGap))
+                // 착수 평가: 착수한 돌의 품질 색상 표시 여부. 기본 꺼짐 — 사용자가 의도적으로 켤 때만 노출한다.
+                // 프리미엄 전용 — 판정은 FeatureAccessPolicy(6계층)에 위임하고, 라벨도 프리미엄 색으로 적는다.
+                val moveReviewAllowed = premium.resolve(FeatureId.MoveReview) is FeatureAccess.Allowed
+                OptionSwitchCell(
+                    label = strings.moveReviewToggle,
+                    checked = options.showMoveReview && moveReviewAllowed,
+                    modifier = Modifier.weight(1f).alpha(if (moveReviewAllowed) 1f else 0.5f),
+                    labelColor = PremiumGoldDeep,
+                    onCheckedChange = {
+                        if (moveReviewAllowed) {
+                            onOptionsChange(options.copy(showMoveReview = it))
+                        } else {
+                            showPremiumUpsellDialog = true
+                        }
+                    },
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                OptionSwitchCell(
+                    label = strings.moveNumbers,
+                    checked = options.showMoveNumbers,
+                    modifier = Modifier.weight(1f),
+                    onCheckedChange = { onOptionsChange(options.copy(showMoveNumbers = it)) },
                 )
                 Spacer(modifier = Modifier.width(columnGap))
                 // '착수 확인 / 바로 착수'는 #143이 UX에서 지웠다 — 코드는 플래그 뒤에 그대로 남는다
@@ -117,89 +193,12 @@ internal fun KaTrainUxMenuPanel(
                     Spacer(modifier = Modifier.weight(1f))
                 }
             }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                OptionSwitchCell(
-                    label = strings.moveNumbers,
-                    checked = options.showMoveNumbers,
-                    modifier = Modifier.weight(1f),
-                    onCheckedChange = { onOptionsChange(options.copy(showMoveNumbers = it)) },
-                )
-                Spacer(modifier = Modifier.width(columnGap))
-                // 착수 평가: 착수한 돌의 품질 색상 표시 여부. 기본 꺼짐 — 사용자가 의도적으로
-                // 켤 때만 노출한다. 향후 평가 신뢰도/방식이 점진적으로 고도화될 예정인 기능.
-                // 프리미엄 전용 — 비활성 상태에서는 흐리게 표시하고 탭하면 업셀 팝업을 띄운다.
-                // 판정은 FeatureAccessPolicy(6계층)에 위임 — GamePlaySection.kt의 형세보기/추천수와
-                // 같은 정책 소스를 공유한다(이 기능엔 클레임 경로가 없어 동작은 이전과 동일).
-                val moveReviewAllowed = premium.resolve(FeatureId.MoveReview) is FeatureAccess.Allowed
-                OptionSwitchCell(
-                    label = strings.moveReviewToggle,
-                    checked = options.showMoveReview && moveReviewAllowed,
-                    modifier = Modifier.weight(1f).alpha(if (moveReviewAllowed) 1f else 0.5f),
-                    onCheckedChange = {
-                        if (moveReviewAllowed) {
-                            onOptionsChange(options.copy(showMoveReview = it))
-                        } else {
-                            showPremiumUpsellDialog = true
-                        }
-                    },
-                )
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                OptionSwitchCell(
-                    label = strings.coordinates,
-                    checked = options.showCoordinates,
-                    modifier = Modifier.weight(1f),
-                    onCheckedChange = { onOptionsChange(options.copy(showCoordinates = it)) },
-                )
-                Spacer(modifier = Modifier.width(columnGap))
-                // 반상을 누르는 순간의 햅틱(#36). 비워 두던 자리라 격자가 그대로 유지된다.
-                //
-                // **켤 때 한 번 울려 준다**(2026-08-30 사용자 요청). 진동은 눈에 보이지 않아
-                // 켠 것이 먹혔는지 알 길이 없다 — 여기서 울리는 그 진동이 곧 반상에서 느낄
-                // 세기의 미리듣기다. 끌 때는 울리지 않는다(끄는 동작에 진동으로 답하면 모순).
-                val hapticContext = LocalContext.current
-                val hapticPreview = remember(hapticContext) { PlayHaptics(hapticContext) }
-                OptionSwitchCell(
-                    label = strings.playHaptic,
-                    checked = options.isPlayHapticEnabled,
-                    modifier = Modifier.weight(1f),
-                    onCheckedChange = { enabled ->
-                        if (enabled) hapticPreview.play()
-                        onOptionsChange(options.copy(isPlayHapticEnabled = enabled))
-                    },
-                )
-            }
-            // '매 수마다' 2종(2026-08-29 신설). 대국 화면의 형세 보기·추천 수 버튼은 이제
-            // **1회성 동작**이고, 수가 진행돼도 계속 갱신되는 상시 표시는 여기서 켠다 — 버튼이
-            // 상태 토글과 1회성 동작을 겸하면 "한 번 켜면 계속 켜져 있다"는 잘못된 기대가 생겨
-            // 두 축을 분리했다. 상시 표시는 프리미엄 전용이며, 판정은 버튼과 같은
-            // FeatureAccessPolicy(6계층)를 쓴다.
-            // **지연 착수**(백로그 #144) — 켜면 떼고 0.5초 뒤에 놓이고, 그 사이 다시 누르면 그 자리에서 다시 센다.
-            // 기본 꺼짐이라(지금 동작이 바뀌는 것) 원하는 사람만 여기서 켠다.
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                OptionSwitchCell(
-                    label = strings.delayedPlay,
-                    checked = options.isDelayedPlayEnabled,
-                    modifier = Modifier.weight(1f),
-                    onCheckedChange = { onOptionsChange(options.copy(isDelayedPlayEnabled = it)) },
-                )
-                Spacer(modifier = Modifier.width(columnGap))
-                // **착수 이펙트**(백로그 #145) — 확정되는 순간 그 돌이 120%로 커졌다가 100%로 돌아온다.
-                // 기본 켜짐이라(없던 것이 생기는 쪽) 거슬리는 사람이 여기서 끈다.
-                OptionSwitchCell(
-                    label = strings.playEffect,
-                    checked = options.isPlayEffectEnabled,
-                    modifier = Modifier.weight(1f),
-                    onCheckedChange = { onOptionsChange(options.copy(isPlayEffectEnabled = it)) },
-                )
-            }
 
+            // '매 수마다' 2종(2026-08-29 신설). 대국 화면의 형세 보기·추천 수 버튼은 **1회성 동작**이고,
+            // 수가 진행돼도 계속 갱신되는 상시 표시는 여기서 켠다. 상시 표시는 **프리미엄 전용**이며,
+            // 판정은 버튼과 같은 FeatureAccessPolicy(6계층)를 쓴다.
+            // ⚠️ **라벨을 프리미엄 색으로 적는다**(2026-09-12 사용자 요청) — 흐리게(alpha)만 두면
+            //   "지금 못 쓴다"로는 읽혀도 **"프리미엄 기능이다"로는 읽히지 않는다.**
             val evalAllowed = premium.resolve(FeatureId.Eval) is FeatureAccess.Allowed
             val topMovesAllowed = premium.resolve(FeatureId.TopMoves) is FeatureAccess.Allowed
             Row(
@@ -209,6 +208,7 @@ internal fun KaTrainUxMenuPanel(
                     label = strings.everyMoveEval,
                     checked = options.showOwnershipOverlay && evalAllowed,
                     modifier = Modifier.weight(1f).alpha(if (evalAllowed) 1f else 0.5f),
+                    labelColor = PremiumGoldDeep,
                     onCheckedChange = {
                         if (evalAllowed) {
                             onOptionsChange(options.copy(showOwnershipOverlay = it))
@@ -222,6 +222,7 @@ internal fun KaTrainUxMenuPanel(
                     label = strings.everyMoveTopMoves,
                     checked = isTopMovesEveryMove && topMovesAllowed,
                     modifier = Modifier.weight(1f).alpha(if (topMovesAllowed) 1f else 0.5f),
+                    labelColor = PremiumGoldDeep,
                     onCheckedChange = {
                         if (topMovesAllowed) {
                             onTopMovesEveryMoveChange(it)
@@ -262,6 +263,12 @@ private fun OptionSwitchCell(
     label: String,
     checked: Boolean,
     modifier: Modifier = Modifier,
+    /**
+     * 라벨 글자색. 기본값은 보통 옵션의 색이고, **프리미엄 전용 옵션만** 금색을 넘긴다
+     * (2026-09-12 사용자 요청). ⚠️ 흐리게(alpha)만으로는 *"지금 못 쓴다"* 로 읽힐 뿐
+     * *"프리미엄 기능이다"* 로는 읽히지 않아 색을 따로 준다.
+     */
+    labelColor: Color? = null,
     onCheckedChange: (Boolean) -> Unit,
 ) {
     Row(
@@ -273,7 +280,7 @@ private fun OptionSwitchCell(
             text = label,
             modifier = Modifier.weight(1f),
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurface,
+            color = labelColor ?: MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
             maxLines = 2,
         )
