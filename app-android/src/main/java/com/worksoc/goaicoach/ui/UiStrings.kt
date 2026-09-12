@@ -135,6 +135,8 @@ internal data class UiStrings(
     val playHaptic: String,
     /** 메뉴의 **지연 착수** 스위치(백로그 #144) — 켜면 떼고 0.5초 뒤에 놓인다. */
     val delayedPlay: String,
+    /** 메뉴의 **착수 이펙트** 스위치(백로그 #145) — 확정되는 순간 돌이 120%로 커졌다가 100%로. */
+    val playEffect: String,
     val moveNumbers: String,
     val lastMoveRing: String,
     val moveReviewToggle: String,

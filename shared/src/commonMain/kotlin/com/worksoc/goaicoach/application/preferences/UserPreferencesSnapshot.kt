@@ -10,6 +10,16 @@ import com.worksoc.goaicoach.shared.SearchTimeSettings
 /** 지연 착수가 켜졌을 때 기다리는 시간. 사용자 지정값(#144). */
 const val DelayedPlayWindowMillis: Long = 500L
 
+/**
+ * 착수 이펙트(#145)가 도는 시간 — 커졌다 돌아오는 **왕복 전체**다.
+ *
+ * ⚠️ **잠정값이다** — 사용자가 *"구현 확인 후 시간을 좀 더 늘릴 여지가 있음"* 을 남겼다. 여기 한 곳만 고친다.
+ */
+const val PlayEffectMillis: Long = 200L
+
+/** 착수 이펙트가 부풀어 오르는 최대 배율(#145) — 120%. */
+const val PlayEffectPeakScale: Float = 1.2f
+
 data class UserPreferencesSnapshot(
     val boardSize: BoardSize = BoardSize.Thirteen,
     val playerSetup: PlayerSetup = PlayerSetup(),
@@ -62,6 +72,14 @@ data class UserPreferencesSnapshot(
      * ⚠️ **기본값은 꺼짐**이다 — 지금 동작(떼는 순간 착수)이 바뀌는 것이라, 원하는 사람만 메뉴에서 켠다.
      */
     val isDelayedPlayEnabled: Boolean = false,
+    /**
+     * **착수 이펙트**(백로그 #145) — 돌이 확정되는 순간 [PlayEffectMillis] 동안 [PlayEffectPeakScale]까지
+     * 커졌다가 100%로 돌아온다. **사람 착수와 AI 착수**에 붙고, 무르기·기보 탐색·저장 대국 이어받기에는
+     * 붙지 않는다.
+     *
+     * ⚠️ **기본값은 켜짐**이다 — 없던 것이 생기는 쪽이라 [isDelayedPlayEnabled](기본 꺼짐)와 반대다.
+     */
+    val isPlayEffectEnabled: Boolean = true,
     val isBoardMaxSize: Boolean = true,
     val isPlayMagnifierEnabled: Boolean = true,
     /** 돋보기 창 크기 배수(백로그 #85). 값 목록과 기본값은 [MagnifierSettings]가 갖는다. */

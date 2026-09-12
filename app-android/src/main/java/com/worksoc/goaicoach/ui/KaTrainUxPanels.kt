@@ -190,7 +190,14 @@ internal fun KaTrainUxMenuPanel(
                     onCheckedChange = { onOptionsChange(options.copy(isDelayedPlayEnabled = it)) },
                 )
                 Spacer(modifier = Modifier.width(columnGap))
-                Spacer(modifier = Modifier.weight(1f))
+                // **착수 이펙트**(백로그 #145) — 확정되는 순간 그 돌이 120%로 커졌다가 100%로 돌아온다.
+                // 기본 켜짐이라(없던 것이 생기는 쪽) 거슬리는 사람이 여기서 끈다.
+                OptionSwitchCell(
+                    label = strings.playEffect,
+                    checked = options.isPlayEffectEnabled,
+                    modifier = Modifier.weight(1f),
+                    onCheckedChange = { onOptionsChange(options.copy(isPlayEffectEnabled = it)) },
+                )
             }
 
             val evalAllowed = premium.resolve(FeatureId.Eval) is FeatureAccess.Allowed

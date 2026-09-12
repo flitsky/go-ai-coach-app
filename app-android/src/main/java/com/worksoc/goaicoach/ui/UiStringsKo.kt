@@ -32,6 +32,7 @@ internal val UiStringsKorean = UiStrings(
     coordinates = "좌표",
     playHaptic = "착수 진동",
     delayedPlay = "지연 착수",
+    playEffect = "착수 이펙트",
     moveNumbers = "수순 번호",
     lastMoveRing = "착수 표시",
     moveReviewToggle = "착수 평가",

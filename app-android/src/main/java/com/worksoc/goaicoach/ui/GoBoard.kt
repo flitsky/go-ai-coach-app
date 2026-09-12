@@ -2,6 +2,7 @@ package com.worksoc.goaicoach.ui
 
 import android.graphics.Paint
 import android.graphics.Typeface
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -30,6 +31,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -54,6 +56,8 @@ import com.worksoc.goaicoach.application.engine.operation.EngineActivityIndicato
 import com.worksoc.goaicoach.application.movereview.MoveReviewMarker
 import com.worksoc.goaicoach.application.movereview.MoveReviewTone
 import com.worksoc.goaicoach.application.movereview.topMoveDisplayToneFor
+import com.worksoc.goaicoach.application.preferences.PlayEffectMillis
+import com.worksoc.goaicoach.application.preferences.PlayEffectPeakScale
 import com.worksoc.goaicoach.presentation.KaTrainUxOptions
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
@@ -118,6 +122,33 @@ internal fun GoBoard(
     // 컴포지션 본문에서 읽으면 손가락이 움직일 때마다 화면 전체가 리컴포즈된다.
     var playDrag by remember { mutableStateOf<PlayDrag?>(null) }
     var activityFrame by remember { mutableStateOf(0) }
+
+    // 착수 이펙트(#145) — 확정되는 순간 **그 돌 하나만** 120%까지 커졌다가 100%로 돌아온다.
+    // ⚠️ 배율도 자리도 **그리기 람다 안에서만** 읽는다(`playDrag`와 같은 이유) — 컴포지션 본문에서 읽으면
+    //   이펙트가 도는 내내 화면 전체가 리컴포즈된다.
+    val playEffectScale = remember { Animatable(1f) }
+    var playEffectAt by remember { mutableStateOf<BoardCoordinate?>(null) }
+    var seenMoveCount by remember { mutableIntStateOf(gameState.moves.size) }
+
+    // ⚠️ **새 수에만 붙는다**(#145 착수 전 결정, 사람·AI 모두). 수가 **정확히 하나** 늘고 마지막이 `Move.Play`일 때만.
+    //   · 무르기는 수가 **줄어** 걸러진다.
+    //   · 저장 대국 이어받기·새 판·판 크기 변경은 **점프**라 걸러진다(한 수짜리 복원은 이 앱에 없다 — `UndoLastTurn`뿐).
+    //   · 통과는 `Move.Pass`라 좌표가 없어 `as?`에서 걸러진다.
+    //   · 첫 컴포지션은 이전 값이 곧 현재 값이라 튀지 않는다 — 이어받기에서 돌이 뛰면 안 된다.
+    LaunchedEffect(gameState.moves.size) {
+        val previous = seenMoveCount
+        val current = gameState.moves.size
+        seenMoveCount = current
+        if (!uxOptions.isPlayEffectEnabled) return@LaunchedEffect
+        if (current != previous + 1) return@LaunchedEffect
+        val placed = gameState.moves.lastOrNull() as? Move.Play ?: return@LaunchedEffect
+        playEffectAt = placed.coordinate
+        playEffectScale.snapTo(1f)
+        val half = (PlayEffectMillis / 2).toInt()
+        playEffectScale.animateTo(PlayEffectPeakScale, tween(durationMillis = half, easing = LinearEasing))
+        playEffectScale.animateTo(1f, tween(durationMillis = half, easing = LinearEasing))
+        playEffectAt = null
+    }
 
     LaunchedEffect(engineActivityIndicator) {
         activityFrame = 0
@@ -344,7 +375,14 @@ internal fun GoBoard(
                 drawCandidateMoves(geometry, gameState, candidateMoves)
 
                 for ((coordinate, stone) in gameState.stones) {
-                    drawStone(geometry.pointFor(coordinate), geometry.spacing * 0.42f, stone, isGameEnded)
+                    // 착수 이펙트(#145)는 **방금 놓인 돌**에만 붙는다 — 나머지는 배율 1이라 그대로다.
+                    val effectScale = if (coordinate == playEffectAt) playEffectScale.value else 1f
+                    drawStone(
+                        geometry.pointFor(coordinate),
+                        geometry.spacing * 0.42f * effectScale,
+                        stone,
+                        isGameEnded,
+                    )
                 }
 
                 if (tentativeMove != null) {

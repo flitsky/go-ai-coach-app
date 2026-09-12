@@ -12,6 +12,7 @@ internal fun UserPreferencesSnapshot.toKaTrainUxOptions(): KaTrainUxOptions =
         showMoveReview = showMoveReview,
         isPlayHapticEnabled = isPlayHapticEnabled,
         isDelayedPlayEnabled = isDelayedPlayEnabled,
+        isPlayEffectEnabled = isPlayEffectEnabled,
         isBoardMaxSize = isBoardMaxSize,
         isPlayMagnifierEnabled = isPlayMagnifierEnabled,
         magnifierSizeScale = magnifierSizeScale,
