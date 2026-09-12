@@ -107,4 +107,35 @@ class DelayedPlayContractTest {
             store.contains("""json.optBoolean("isDelayedPlayEnabled", false)"""),
         )
     }
+
+    /**
+     * ⚠️ **실기 결함(2026-09-12 사용자)** — 대기 중 다른 곳을 눌렀는데도 **옛 자리가 확정**됐다.
+     * 0.5초가 손가락이 **닿아 있는 동안** 끝나 버렸기 때문이다(손은 누르고 떼는 데 0.5초를 쉽게 넘긴다).
+     *
+     * 규칙: **카운트는 판에서 손이 떨어져 있을 때만 돈다.** 누르는 순간 대기를 버리고, 떼는 순간
+     * `onCoordinateTap`이 새 번호로 다시 센다.
+     *
+     * ⚠️ 합성 탭(`adb input tap`)은 down→up이 몇 ms라 이 결함을 **못 잡는다** — 그래서 그때 실기가
+     * 통과해 버렸다. 눈이 아니라 이 그물이 지켜야 하는 이유다.
+     */
+    @Test
+    fun aNewPressStopsTheCountdownSoTheOldSpotIsNotConfirmed() {
+        val board = code("src/main/java/com/worksoc/goaicoach/ui/GoBoard.kt")
+        assertTrue(
+            "판이 누르는 순간을 바깥에 알리지 않는다 — 새 자리를 누르고 있는 사이에 0.5초가 끝나 옛 자리가 확정된다(#144).",
+            board.contains("onCoordinatePress: () -> Unit"),
+        )
+        assertTrue(
+            "누르는 순간 알리지 않는다 — 통로만 있고 부르지 않으면 아무것도 멈추지 않는다(#144).",
+            Regex("""down\.consume\(\)\s*onCoordinatePress\(\)""").containsMatchIn(board),
+        )
+        assertTrue(
+            "지연 착수 설정이 제스처 루프의 키에 없다 — 대국 중 켜고 꺼도 즉시 반영되지 않는다(#144).",
+            board.contains("uxOptions.isDelayedPlayEnabled,"),
+        )
+        assertTrue(
+            "누르는 순간 대기를 버리지 않는다 — 타이머가 계속 돌아 옛 자리가 확정된다(#144).",
+            section.contains("onCoordinatePress = { pendingPlay = null }"),
+        )
+    }
 }

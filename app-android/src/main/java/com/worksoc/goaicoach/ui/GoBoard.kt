@@ -99,6 +99,14 @@ internal fun GoBoard(
      */
     pendingPlay: BoardCoordinate? = null,
     pendingPlayProgress: () -> Float = { 0f },
+    /**
+     * 판에 **손가락이 닿는 순간** 알린다(#144 실기 결함, 2026-09-12 사용자).
+     *
+     * ⚠️ 지연 착수의 0.5초는 **판에서 손이 떨어져 있을 때만** 돌아야 한다. 안 그러면 새 자리를 누르고
+     * 있는 동안 0.5초가 끝나 **옛 자리가 확정**된다 — 손가락은 누르고 떼는 데 0.5초를 쉽게 넘긴다.
+     * ⚠️ 합성 탭(`adb input tap`)은 down→up이 몇 ms라 이 결함을 **못 잡는다.** 실기에서만 드러났다.
+     */
+    onCoordinatePress: () -> Unit = {},
     onCoordinateTap: (BoardCoordinate) -> Unit,
     isGameEnded: Boolean = false,
     isEngineBusy: Boolean = false,
@@ -175,6 +183,7 @@ internal fun GoBoard(
                         inputEnabled,
                         uxOptions.showCoordinates,
                         uxOptions.isDirectPlayEnabled,
+                        uxOptions.isDelayedPlayEnabled,
                         uxOptions.isPlayHapticEnabled,
                         uxOptions.isPlayMagnifierEnabled,
                     ) {
@@ -199,6 +208,13 @@ internal fun GoBoard(
                         awaitEachGesture {
                             val down = awaitFirstDown()
                             down.consume()
+
+                            // 지연 착수(#144)의 카운트를 **멈춘다** — 0.5초는 판에서 손이 떨어져
+                            // 있을 때만 돈다. 여기서 멈추지 않으면 새 자리를 누르고 있는 사이에
+                            // 0.5초가 끝나 **옛 자리가 확정**된다(2026-09-12 실기 결함).
+                            // ⚠️ `inputEnabled` 판정보다 **먼저** 부른다 — 멈추는 일은 놓을 수
+                            // 있든 없든 똑같이 해야 한다.
+                            onCoordinatePress()
 
                             // 손가락이 **닿는 순간** 약하게 한 번 울린다(#36). 손을 뗄 때가
                             // 아니라 닿을 때인 이유: 이 진동은 "착수됐다"가 아니라 "눌린 것이

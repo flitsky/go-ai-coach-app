@@ -296,6 +296,12 @@ internal fun GamePlaySection(
             tentativeMove = tentativeMove,
             pendingPlay = pendingPlay?.coordinate,
             pendingPlayProgress = { pendingPlayProgress.value },
+            // 손가락이 닿는 순간 대기를 **버린다**(#144 실기 결함, 2026-09-12 사용자).
+            // 카운트는 판에서 손이 떨어져 있을 때만 돈다 — 버리면 `LaunchedEffect(pendingPlay)`가
+            // 취소돼 옛 자리가 확정되지 않고, 떼는 순간 `onCoordinateTap`이 **새 번호**로 다시 센다.
+            // ⚠️ 조건을 달지 않는다 — 지연 착수가 꺼져 있으면 대기 자체가 없어 `null` 대입은 무해하고,
+            //   조건을 달면 이 람다가 옛 `screenState`를 붙든 채 굳을 수 있다.
+            onCoordinatePress = { pendingPlay = null },
             onCoordinateTap = { coordinate ->
                 when {
                     // 지연 착수(#144): 누를 때마다 **그 자리에서 처음부터** 다시 센다 — 다른 자리든 같은 자리든.
