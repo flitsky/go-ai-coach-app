@@ -159,8 +159,9 @@ internal fun KaTrainUxMenuPanel(
                 OptionSwitchCell(
                     label = strings.moveReviewToggle,
                     checked = options.showMoveReview && moveReviewAllowed,
-                    modifier = Modifier.weight(1f).alpha(if (moveReviewAllowed) 1f else 0.5f),
+                    modifier = Modifier.weight(1f),
                     labelColor = PremiumGoldDeep,
+                    switchAlpha = if (moveReviewAllowed) 1f else 0.5f,
                     onCheckedChange = {
                         if (moveReviewAllowed) {
                             onOptionsChange(options.copy(showMoveReview = it))
@@ -207,8 +208,9 @@ internal fun KaTrainUxMenuPanel(
                 OptionSwitchCell(
                     label = strings.everyMoveEval,
                     checked = options.showOwnershipOverlay && evalAllowed,
-                    modifier = Modifier.weight(1f).alpha(if (evalAllowed) 1f else 0.5f),
+                    modifier = Modifier.weight(1f),
                     labelColor = PremiumGoldDeep,
+                    switchAlpha = if (evalAllowed) 1f else 0.5f,
                     onCheckedChange = {
                         if (evalAllowed) {
                             onOptionsChange(options.copy(showOwnershipOverlay = it))
@@ -221,8 +223,9 @@ internal fun KaTrainUxMenuPanel(
                 OptionSwitchCell(
                     label = strings.everyMoveTopMoves,
                     checked = isTopMovesEveryMove && topMovesAllowed,
-                    modifier = Modifier.weight(1f).alpha(if (topMovesAllowed) 1f else 0.5f),
+                    modifier = Modifier.weight(1f),
                     labelColor = PremiumGoldDeep,
+                    switchAlpha = if (topMovesAllowed) 1f else 0.5f,
                     onCheckedChange = {
                         if (topMovesAllowed) {
                             onTopMovesEveryMoveChange(it)
@@ -269,6 +272,14 @@ private fun OptionSwitchCell(
      * *"프리미엄 기능이다"* 로는 읽히지 않아 색을 따로 준다.
      */
     labelColor: Color? = null,
+    /**
+     * **스위치만** 흐려지는 정도(0~1). 잠긴 프리미엄 옵션이 1 미만을 넘긴다.
+     *
+     * ⚠️ **라벨까지 흐리지 않는다**(2026-09-12 사용자 결정 ⓐ안). 흐림은 *"지금 잠겨 있다"*,
+     * 금색은 *"프리미엄 기능이다"* 로 **서로 다른 말을 한다** — 둘을 겹쳐 걸면 금색이 배경으로
+     * 섞여(실측 `(191,175,136)`, 의도 `(138,100,22)`) 프리미엄이라는 신호가 죽는다.
+     */
+    switchAlpha: Float = 1f,
     onCheckedChange: (Boolean) -> Unit,
 ) {
     Row(
@@ -284,7 +295,11 @@ private fun OptionSwitchCell(
             textAlign = TextAlign.Center,
             maxLines = 2,
         )
-        Switch(checked = checked, onCheckedChange = onCheckedChange)
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            modifier = Modifier.alpha(switchAlpha),
+        )
     }
 }
 

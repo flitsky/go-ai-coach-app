@@ -87,4 +87,36 @@ class MenuOptionOrderContractTest {
                 menu.contains("color = labelColor ?: MaterialTheme.colorScheme.onSurface"),
         )
     }
+
+    /**
+     * ⚠️ **잠금 표시(흐림)는 스위치에만 건다 — 라벨은 또렷한 금색으로 남는다**(2026-09-12 사용자 결정 ⓐ안).
+     *
+     * 처음 구현은 `Modifier.weight(1f).alpha(...)`로 **칸 전체**를 흐렸는데, 그러면 금색이 배경으로 섞여
+     * 실측 `(191,175,136)`이 됐다(의도는 `(138,100,22)`). 보통 옵션과 구별은 돼도 *"금색"* 이라기엔 옅고,
+     * **프리미엄이라는 신호가 잠김 표시에 먹힌다.** 흐림과 금색은 서로 다른 말을 하므로 겹쳐 걸지 않는다.
+     *
+     * ⚠️ 되돌리기 쉬운 종류다 — 누가 "잠긴 건 흐리게" 하며 `modifier`에 `.alpha(`를 다시 붙이면
+     * **컴파일도 되고 다른 테스트도 초록인 채** 금색만 조용히 죽는다.
+     */
+    @Test
+    fun theLockedLabelStaysGoldAndOnlyTheSwitchDims() {
+        assertEquals(
+            "프리미엄 칸의 `modifier`에 `.alpha(`가 다시 붙었다 — 라벨까지 흐려져 금색이 배경으로 섞인다.",
+            0,
+            Regex("""Modifier\.weight\(1f\)\.alpha\(""").findAll(menu).count(),
+        )
+        assertEquals(
+            "흐림을 스위치로 넘기는 칸이 셋이 아니다 — 잠긴 프리미엄 셋만 흐려져야 한다.",
+            3,
+            Regex("""switchAlpha = if \(""").findAll(menu).count(),
+        )
+        assertTrue(
+            "흐림이 스위치에 걸리지 않는다 — 잠긴 옵션이 열린 것처럼 보인다.",
+            menu.contains("modifier = Modifier.alpha(switchAlpha)"),
+        )
+        assertTrue(
+            "`switchAlpha`의 기본값이 1f가 아니다 — 보통 옵션의 스위치까지 흐려진다.",
+            menu.contains("switchAlpha: Float = 1f"),
+        )
+    }
 }
