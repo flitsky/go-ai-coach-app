@@ -15,10 +15,10 @@ const val DelayedPlayWindowMillis: Long = 500L
  *
  * ⚠️ **잠정값이다** — 사용자가 *"구현 확인 후 시간을 좀 더 늘릴 여지가 있음"* 을 남겼다. 여기 한 곳만 고친다.
  */
-const val PlayEffectMillis: Long = 200L
+const val PlayEffectMillis: Long = 600L
 
-/** 착수 이펙트가 부풀어 오르는 최대 배율(#145) — 120%. */
-const val PlayEffectPeakScale: Float = 1.2f
+/** 착수 이펙트가 부풀어 오르는 최대 배율(#145) — 150%. ⚠️ 잠정값: 20%가 눈에 안 띈다는 실기 피드백으로 올렸다. */
+const val PlayEffectPeakScale: Float = 1.5f
 
 data class UserPreferencesSnapshot(
     val boardSize: BoardSize = BoardSize.Thirteen,

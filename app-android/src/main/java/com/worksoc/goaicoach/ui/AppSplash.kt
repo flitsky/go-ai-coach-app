@@ -8,6 +8,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -47,10 +48,52 @@ import androidx.compose.ui.zIndex
  *
  * ⚠️ **화면 회전으로 다시 재생되면 안 된다** — [rememberSaveable]로 끝난 상태를 들고 간다.
  */
+/**
+ * 스플래시가 **지금 화면을 덮고 있는가**(백로그 #148).
+ *
+ * ## ⚠️ 왜 필요한가 — 팝업은 스플래시 위로 올라온다
+ *
+ * [MainActivity]는 `Box { GoCoachApp(...); AppSplash() }`로 **홈을 스플래시 아래에 이미 컴포즈**한다
+ * (#125 — 그 1초에 홈을 조립하고 엔진을 띄우려고). 그런데 Compose 다이얼로그는 **각자 별도 윈도우**라
+ * 스플래시의 `zIndex(1f)`가 누르지 못한다. 그래서 출석 보상 팝업이 **스플래시와 겹쳐** 떴다
+ * (2026-09-12 사용자 제보).
+ *
+ * ⚠️ **순서로는 안 된다** — #63이 같은 벽에 부딪혀 이미 배운 것이다(`ReleaseResetNoticeDialog`의 KDoc).
+ * 나중에 선언해도 위로 오지 않으므로 **명시적 게이트**로만 보장된다.
+ *
+ * ⚠️ 상태를 여기 `object`에 두는 이유는 `GoCoachApp.kt`의 **상태훅 예산이 42/42로 여유 0**이기 때문이다
+ * (함정 3번). 셸은 `!SplashVisibility.isShowing` 한 항만 쓰고 훅은 한 개도 늘지 않는다.
+ *
+ * ⚠️ 컴포지션 수명(`DisposableEffect`)에만 묶는다 — `onFinished` 같은 경로에 걸면 재생이 끝나지 않은
+ * 채 화면을 떠났을 때 `true`로 굳어 **출석 팝업이 영영 안 뜬다.**
+ */
+internal object SplashVisibility {
+    var isShowing by mutableStateOf(false)
+        private set
+
+    @Composable
+    fun TrackWhileShown() {
+        DisposableEffect(Unit) {
+            isShowing = true
+            onDispose { isShowing = false }
+        }
+    }
+
+    internal fun resetForTest() {
+        isShowing = false
+    }
+}
+
 @Composable
 internal fun AppSplash(variant: SplashVariant = SplashVariant.Current) {
     var finished by rememberSaveable { mutableStateOf(false) }
     if (finished) return
+    // 홈 위의 팝업을 미루게 한다(위 KDoc).
+    SplashVisibility.TrackWhileShown()
+    // ⚠️ 가이드도 이 1초를 **안 본 것**으로 쳐야 한다 — ③ 말풍선은 *"1.2초 떠 있었으면 봤다"* 로
+    //   영구 기록하는데, 스플래시가 덮은 동안에도 그 시간이 흐르면 한 번도 못 본 안내가 소진된다.
+    //   팝업들이 모두 같은 일을 한다(`GuideBlockingOverlays`) — 스플래시만 빠져 있었다.
+    GuideBlockingOverlays.TrackWhileShown()
     SplashPlayer(variant = variant, onFinished = { finished = true })
 }
 

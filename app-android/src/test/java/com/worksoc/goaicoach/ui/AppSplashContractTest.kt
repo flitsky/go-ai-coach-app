@@ -122,6 +122,53 @@ class AppSplashContractTest {
     }
 
     /**
+     * ⚠️ **출석 보상 팝업이 스플래시와 겹쳐 떴다**(2026-09-12 사용자 제보, #148).
+     *
+     * 홈은 스플래시 **아래에 이미 컴포즈**돼 있고(#125), Compose 다이얼로그는 **각자 별도 윈도우**라
+     * 스플래시의 `zIndex(1f)`가 누르지 못한다. 그래서 팝업이 스플래시 위로 올라온다.
+     * ⚠️ **선언 순서로는 못 고친다** — #63이 `ReleaseResetNoticeDialog`에서 같은 벽에 부딪혀 배웠고,
+     * 그 교훈이 셸의 게이트 사슬이다. 스플래시도 그 사슬의 한 항이어야 한다.
+     */
+    @Test
+    fun theShellDefersPopupsWhileTheSplashCoversTheHome() {
+        assertTrue(
+            "스플래시가 떠 있는지를 바깥에 알리지 않는다 — 셸이 게이트를 걸 방법이 없다(#148).",
+            splash.contains("internal object SplashVisibility") && splash.contains("SplashVisibility.TrackWhileShown()"),
+        )
+        assertTrue(
+            "스플래시 표시 여부를 컴포지션 수명에 묶지 않았다 — `onFinished` 같은 경로에 걸면 `true`로 " +
+                "굳어 출석 팝업이 영영 안 뜬다(#148).",
+            splash.contains("DisposableEffect(Unit)") && splash.contains("onDispose { isShowing = false }"),
+        )
+        val shell = source("src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
+        assertTrue(
+            "셸이 스플래시가 떠 있는 동안 출석 팝업을 미루지 않는다 — 팝업이 스플래시와 겹쳐 뜬다(#148).",
+            shell.contains("!SplashVisibility.isShowing"),
+        )
+        // ⚠️ 셸의 **상태훅 예산은 42/42로 여유 0**이다(함정 3번). 상태를 셸로 올리면 이 그물이 아니라
+        //   `LayeringContractTest`가 빨개지는데, 그때 원인을 이 자리와 잇기 어려우므로 여기서도 못박는다.
+        assertFalse(
+            "스플래시 상태가 셸로 올라왔다 — 훅 예산 42/42(여유 0)를 깬다(#148).",
+            shell.contains("rememberSaveable") && shell.contains("SplashPlayer"),
+        )
+    }
+
+    /**
+     * ⚠️ **스플래시가 덮은 1초에 첫돌이 가이드가 소진되면 안 된다.**
+     *
+     * ③ 말풍선은 *"1.2초 컴포즈돼 있었으면 봤다"* 로 **영구** 기록한다(`seen_steps`). 팝업들은 모두
+     * [GuideBlockingOverlays.TrackWhileShown]으로 그 시간을 멈추는데, 스플래시만 빠져 있었다 —
+     * `*Dialog.kt`를 훑는 `FirstDolGuideContractTest`의 그물 **바깥**이라 아무도 못 잡는 자리다.
+     */
+    @Test
+    fun theSplashStopsTheGuideClockWhileItCovers() {
+        assertTrue(
+            "스플래시가 가이드에게 '지금 덮고 있다'고 알리지 않는다 — 못 본 안내가 영구히 소진된다(#148).",
+            splash.contains("GuideBlockingOverlays.TrackWhileShown()"),
+        )
+    }
+
+    /**
      * ⚠️ **개발자 섹션 1차는 `release` 빌드에도 그대로 실린다**(함정 11번). 이 행이 거기 있어도
      * 되는 이유는 **아무것도 저장하지 않기 때문**이고, 그 성질이 깨지면 2차로 내려야 한다.
      */
