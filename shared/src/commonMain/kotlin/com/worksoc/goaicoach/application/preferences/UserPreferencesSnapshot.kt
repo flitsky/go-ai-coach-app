@@ -17,8 +17,8 @@ const val DelayedPlayWindowMillis: Long = 500L
  */
 const val PlayEffectMillis: Long = 600L
 
-/** 착수 이펙트가 부풀어 오르는 최대 배율(#145) — 150%. ⚠️ 잠정값: 20%가 눈에 안 띈다는 실기 피드백으로 올렸다. */
-const val PlayEffectPeakScale: Float = 1.5f
+/** 착수 이펙트가 부풀어 오르는 최대 배율(#145) — 135%. ⚠️ 잠정값: 20%→50%→35%로 실기 피드백을 따라 조정 중이다. */
+const val PlayEffectPeakScale: Float = 1.35f
 
 data class UserPreferencesSnapshot(
     val boardSize: BoardSize = BoardSize.Thirteen,
