@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.RowScope
@@ -345,9 +346,25 @@ internal fun GamePlaySection(
             )
         }
 
-        GameScreenLayout.Wide -> WidePlayArrangement(
+        GameScreenLayout.WideStacked -> WidePlayArrangement(
             screenState = screenState,
             // 차례 표시는 폰 상태판과 **같은 출처**를 본다 — 시계가 도는 쪽과 초록 테두리가 어긋나지 않게.
+            currentTurnPlayer = currentTurnPlayer,
+            isBoardMaxSize = isBoardMaxSize,
+            onToggleMagnifier = onToggleMagnifier,
+            onToggleBoardSize = onToggleBoardSize,
+            tentativeMove = tentativeMove,
+            blackTotalMillis = blackTotalMillis,
+            whiteTotalMillis = whiteTotalMillis,
+            showMoveQualityLegend = showMoveQualityLegend,
+            onScoreGraphExpandedChange = onScoreGraphExpandedChange,
+            onEvent = onEvent,
+            menuButton = wideMenuButton,
+            board = board,
+        )
+
+        GameScreenLayout.WideColumns -> WideColumnsArrangement(
+            screenState = screenState,
             currentTurnPlayer = currentTurnPlayer,
             isBoardMaxSize = isBoardMaxSize,
             onToggleMagnifier = onToggleMagnifier,
@@ -415,6 +432,7 @@ private fun WidePlayArrangement(
                 elapsedMillis = blackTotalMillis,
                 capturedCount = screenState.gameState.capturedBy(StoneColor.Black),
                 capturesLabel = strings.captures,
+                stacked = false,
                 modifier = Modifier.weight(1f).fillMaxHeight(),
             )
             WideScoreSummary(
@@ -433,6 +451,7 @@ private fun WidePlayArrangement(
                 elapsedMillis = whiteTotalMillis,
                 capturedCount = screenState.gameState.capturedBy(StoneColor.White),
                 capturesLabel = strings.captures,
+                stacked = false,
                 modifier = Modifier.weight(1f).fillMaxHeight(),
             )
         }
@@ -512,6 +531,172 @@ private fun WidePlayArrangement(
     }
 }
 
+/**
+ * **좌우 기둥 배치**(백로그 #141 L1, 2026-09-12 사용자 확정) — 가로로 돌리면 **좌우**가 남는다.
+ * - 얇은 위 줄: ☰ · 수순/점수(누르면 그래프) · 판 토글 둘
+ * - 가운데: 왼쪽 기둥 | 판(남는 폭·높이) | 오른쪽 기둥
+ *   · 왼쪽 — 흑 좌석 · 형세 보기 · 추천 수
+ *   · 오른쪽 — 백 좌석 · 착수 칸 · 무르기 · 통과 · 기권
+ *
+ * ⚠️ **판은 가운데 칸이 통째로 가진다**(`weight(1f)`) — 기둥은 고정 폭([WideColumnWidth])이라 판이
+ *   남는 폭을 전부 쓰고, `GoBoard`의 `min(가로, 세로)`가 거기서 정사각형을 잡는다. 스크롤은 없다(함정 44).
+ * ⚠️ 좌석 카드는 **세 줄**로 접는다(`stacked`) — 기둥 폭에서 시계와 사석을 한 줄에 쓰면 잘린다.
+ * ⚠️ 버튼 순서는 폰 배치의 좌→우를 **위→아래**로 옮긴 것이다(무르기·통과·기권이 아니라
+ *   기권·통과·무르기 순서로 두면, 가장 자주 쓰는 무르기가 맨 아래로 가 손이 먼 자리에 놓인다).
+ */
+@Composable
+private fun WideColumnsArrangement(
+    screenState: GameScreenState,
+    currentTurnPlayer: StoneColor,
+    isBoardMaxSize: Boolean,
+    onToggleMagnifier: () -> Unit,
+    onToggleBoardSize: () -> Unit,
+    tentativeMove: BoardCoordinate?,
+    blackTotalMillis: Long,
+    whiteTotalMillis: Long,
+    showMoveQualityLegend: Boolean,
+    onScoreGraphExpandedChange: (Boolean) -> Unit,
+    onEvent: (GameUiEvent) -> Unit,
+    menuButton: @Composable () -> Unit,
+    board: @Composable (Modifier) -> Unit,
+) {
+    val strings = LocalUiStrings.current
+    val turn = currentTurnPlayer.takeIf { !screenState.isGameEnded }
+    GameActionButtonHost(screenState = screenState, onEvent = onEvent) { slots ->
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(IntrinsicSize.Min),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                menuButton()
+                WideScoreSummary(
+                    moveCountText = "${strings.moveCountPrefix} ${screenState.gameState.moves.size}${strings.moveCountSuffix}",
+                    snapshots = screenState.score.snapshots,
+                    whiteWinRate = screenState.score.estimate?.whiteWinRate,
+                    isGraphExpanded = screenState.score.isGraphExpanded,
+                    onGraphExpandedChange = onScoreGraphExpandedChange,
+                    modifier = Modifier.weight(1f),
+                )
+                BoardTopToggle(
+                    label = playMagnifierLabelFor(strings.language),
+                    spokenSubject = playMagnifierLabelFor(strings.language),
+                    spokenState = playMagnifierStateFor(strings.language, screenState.uxOptions.isPlayMagnifierEnabled),
+                    active = screenState.uxOptions.isPlayMagnifierEnabled,
+                    onClick = onToggleMagnifier,
+                    prominent = false,
+                    modifier = Modifier.guideTarget(GuideTarget.Magnifier),
+                )
+                BoardTopToggle(
+                    label = boardSizeToggleLabelFor(strings.language, isBoardMaxSize),
+                    spokenSubject = boardSizeSubjectFor(strings.language),
+                    spokenState = boardSizeToggleLabelFor(strings.language, isBoardMaxSize),
+                    active = isBoardMaxSize,
+                    onClick = onToggleBoardSize,
+                    prominent = false,
+                    modifier = Modifier.guideTarget(GuideTarget.BoardSize),
+                )
+            }
+
+            Row(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Column(
+                    modifier = Modifier.width(WideColumnWidth),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    CompactSeatCard(
+                        isActiveTurn = turn == StoneColor.Black,
+                        stoneGlyph = "●",
+                        stoneGlyphColor = Color.Black,
+                        label = strings.sideLabel(screenState.playerSetup.black, StoneColor.Black),
+                        elapsedMillis = blackTotalMillis,
+                        capturedCount = screenState.gameState.capturedBy(StoneColor.Black),
+                        capturesLabel = strings.captures,
+                        stacked = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    slots.eval(Modifier.fillMaxWidth())
+                    slots.topMoves(Modifier.fillMaxWidth())
+                }
+
+                Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        EngineUnavailableBadge(
+                            availability = screenState.engine.availability,
+                            modifier = Modifier.padding(bottom = 6.dp),
+                        )
+                        board(
+                            Modifier
+                                .weight(1f)
+                                .fillMaxWidth()
+                                .then(if (isBoardMaxSize) Modifier else Modifier.padding(WideBoardInset)),
+                        )
+                        if (showMoveQualityLegend) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            MoveQualityLegend()
+                        }
+                    }
+                    if (screenState.score.isGraphExpanded) {
+                        ScoreTimelineGraph(
+                            snapshots = screenState.score.snapshots,
+                            capturedByBlack = screenState.gameState.capturedBy(StoneColor.Black),
+                            capturedByWhite = screenState.gameState.capturedBy(StoneColor.White),
+                            whiteWinRate = screenState.score.estimate?.whiteWinRate,
+                            isExpanded = true,
+                            onExpandedChange = onScoreGraphExpandedChange,
+                            modifier = Modifier
+                                .align(Alignment.TopCenter)
+                                .fillMaxWidth(),
+                        )
+                    }
+                }
+
+                Column(
+                    modifier = Modifier.width(WideColumnWidth),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    CompactSeatCard(
+                        isActiveTurn = turn == StoneColor.White,
+                        stoneGlyph = "○",
+                        stoneGlyphColor = Color.Gray,
+                        label = strings.sideLabel(screenState.playerSetup.white, StoneColor.White),
+                        elapsedMillis = whiteTotalMillis,
+                        capturedCount = screenState.gameState.capturedBy(StoneColor.White),
+                        capturesLabel = strings.captures,
+                        stacked = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    PlaySlot(
+                        screenState = screenState,
+                        tentativeMove = tentativeMove,
+                        onEvent = onEvent,
+                        horizontal = false,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    slots.undo(Modifier.fillMaxWidth())
+                    slots.pass(Modifier.fillMaxWidth())
+                    slots.resign(Modifier.fillMaxWidth())
+                }
+            }
+        }
+    }
+}
+
+/** 좌우 기둥의 폭. 좌석 카드 세 줄과 `형세 보기 (30)` 라벨이 들어가는 최소치에서 잡았다. */
+private val WideColumnWidth = 104.dp
+
 /** 넓은 배치에서 `바둑판 여백`일 때 판 둘레 여백. */
 private val WideBoardInset = 16.dp
 
@@ -553,14 +738,26 @@ private fun MoveQualityLegend() {
     }
 }
 
+/**
+ * 대국 조작 버튼 **다섯 칸**. 게이팅(1회권·광고·프리미엄)·팝업은 [GameActionButtonHost]가 들고,
+ * **어디에 놓을지는 배치가 정한다** — 폰·위아래 배치는 두 줄로, 좌우 기둥(L1)은 판 양옆 기둥으로.
+ *
+ * ⚠️ 칸을 두 벌로 적지 말 것. 잠금 테두리·잔량 표기·1회권 차감이 버튼마다 붙어 있어서, 배치마다
+ * 다시 적으면 한쪽만 고쳐지는 사고가 난다(#44·#66이 그 자리다).
+ */
+internal class GameActionSlots internal constructor(
+    val eval: @Composable (Modifier) -> Unit,
+    val topMoves: @Composable (Modifier) -> Unit,
+    val resign: @Composable (Modifier) -> Unit,
+    val pass: @Composable (Modifier) -> Unit,
+    val undo: @Composable (Modifier) -> Unit,
+)
+
 @Composable
-private fun GameActionButtons(
+private fun GameActionButtonHost(
     screenState: GameScreenState,
     onEvent: (GameUiEvent) -> Unit,
-    // 넓은 배치(#141)가 두 줄 **맨 앞**에 끼워 넣는 칸 — 첫 줄엔 판 토글 둘, 둘째 줄엔 착수 칸.
-    // 폰 배치는 `null`(토글은 판 위, 착수 칸은 상태판 가운데에 있다). 게이팅·팝업은 두 배치가 공유한다.
-    firstRowLeading: (@Composable RowScope.() -> Unit)?,
-    secondRowLeading: (@Composable RowScope.() -> Unit)?,
+    content: @Composable (GameActionSlots) -> Unit,
 ) {
     val strings = LocalUiStrings.current
     val premium = LocalPremiumUiState.current
@@ -711,21 +908,8 @@ private fun GameActionButtons(
         )
     }
 
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        // 재고 바를 여기 두지 않는다(#24, 2026-08-30). #17이 "차감이 눈앞에서 보이게" 상시
-        // 띄웠지만, 대국 내내 필요한 정보가 아닌 데다 바로 아래 버튼과 같은 말을 두 번 했다.
-        // 남은 수는 버튼 자신이 괄호로 말하고(`strings.featureButtonLabel`), 전체 재고는
-        // 마이 페이지가 맡는다.
-
-        // [1행] 형세보기(Eval), 추천수(Top Moves) — 프리미엄 전용 온/오프 토글, 2열로 크게 배치
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            firstRowLeading?.invoke(this)
+    val slots = GameActionSlots(
+        eval = { modifier ->
             // 1. 형세보기 (Eval) 버튼 (프리미엄 전용)
             val evalAction = screenState.actionButtons.firstOrNull { it.role == GameActionButtonRole.Eval }
             if (evalAction != null) {
@@ -740,11 +924,12 @@ private fun GameActionButtons(
                         remaining = consumables.countOf(ConsumableCatalog.EvalOnce),
                     ),
                     onEvent = { event -> featureGated(evalAccess, FeatureId.Eval, turningOn = !evalAction.isFilled) { onEvent(event) } },
-                    modifier = Modifier.weight(1f).guideTarget(GuideTarget.Eval),
+                    modifier = modifier.guideTarget(GuideTarget.Eval),
                     premiumLocked = evalAccess !is FeatureAccess.Allowed && !tapIsFree(FeatureId.Eval),
                 )
             }
-
+        },
+        topMoves = { modifier ->
             // 2. 추천수 (Top Moves) 버튼 (프리미엄 전용)
             val topMovesAction = screenState.actionButtons.firstOrNull { it.role == GameActionButtonRole.TopMoves }
             if (topMovesAction != null) {
@@ -757,20 +942,13 @@ private fun GameActionButtons(
                         remaining = consumables.countOf(ConsumableCatalog.TopMovesOnce),
                     ),
                     onEvent = { event -> featureGated(topMovesAccess, FeatureId.TopMoves, turningOn = !topMovesAction.isFilled) { onEvent(event) } },
-                    modifier = Modifier.weight(1f).guideTarget(GuideTarget.TopMoves),
+                    modifier = modifier.guideTarget(GuideTarget.TopMoves),
                     premiumLocked = topMovesAccess !is FeatureAccess.Allowed && !tapIsFree(FeatureId.TopMoves),
                 )
             }
-        }
-
-        // [2행] 기권(Resign/New Game), 통과(Pass), 무르기(Undo) — 기본 기능 버튼 3열
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            secondRowLeading?.invoke(this)
-            // 1. 기권 / 새 게임 버튼
+        },
+        resign = { modifier ->
+            // 기권 / 새 게임 버튼
             val resignEnabled = screenState.isGameEnded || (!screenState.engine.isBlockingBusy && screenState.matchSeats.current.canAcceptBoardInput)
             ActionButton(
                 onClick = {
@@ -781,22 +959,23 @@ private fun GameActionButtons(
                     }
                 },
                 enabled = resignEnabled,
-                modifier = Modifier.weight(1f),
+                modifier = modifier,
                 label = if (screenState.isGameEnded) strings.newGameAction else strings.resign,
             )
-
-            // 2. 통과 (Pass) 버튼
+        },
+        pass = { modifier ->
             val passAction = screenState.actionButtons.firstOrNull { it.role == GameActionButtonRole.Pass }
             if (passAction != null) {
                 SingleActionButton(
                     action = passAction,
                     label = strings.pass,
                     onEvent = onEvent,
-                    modifier = Modifier.weight(1f),
+                    modifier = modifier,
                 )
             }
-
-            // 3. 무르기 (Undo) 버튼 — **다른 프리미엄 기능과 같은 규칙으로 그린다**(백로그 #66).
+        },
+        undo = { modifier ->
+            // 무르기 (Undo) 버튼 — **다른 프리미엄 기능과 같은 규칙으로 그린다**(백로그 #66).
             // 잠긴 동안 금색 테두리가 붙고, 열리면 평범한 버튼으로 돌아간다. 무르기가 열리는 길은
             // 셋이고 `resolve`가 그 셋을 이미 한 값으로 접어 준다:
             //   ⓐ 프리미엄이 지금 유효(구독/영구) → `Allowed(Purchase)`
@@ -813,12 +992,61 @@ private fun GameActionButtons(
                     action = undoAction,
                     label = strings.undo,
                     onEvent = { event -> featureGated(undoAccess) { onEvent(event) } },
-                    modifier = Modifier.weight(1f),
+                    modifier = modifier,
                     // 형세·추천과 같은 관용구다. 다만 그 둘이 함께 보는 `tapIsFree`는 여기 없다 —
                     // 무르기에는 1회권이 없어(`ConsumableCatalog`에 `FeatureUse(Undo)`가 없다)
                     // 언제나 false이므로, 붙이면 읽는 사람만 헷갈린다.
                     premiumLocked = undoAccess is FeatureAccess.Locked,
                 )
+            }
+        },
+    )
+
+    content(slots)
+}
+
+/**
+ * 두 줄 배치 — 폰 배치와 위아래 넓은 배치(P1)가 함께 쓴다.
+ */
+@Composable
+private fun GameActionButtons(
+    screenState: GameScreenState,
+    onEvent: (GameUiEvent) -> Unit,
+    // 넓은 배치(#141)가 두 줄 **맨 앞**에 끼워 넣는 칸 — 첫 줄엔 판 토글 둘, 둘째 줄엔 착수 칸.
+    // 폰 배치는 `null`(토글은 판 위, 착수 칸은 상태판 가운데에 있다). 게이팅·팝업은 두 배치가 공유한다.
+    firstRowLeading: (@Composable RowScope.() -> Unit)?,
+    secondRowLeading: (@Composable RowScope.() -> Unit)?,
+) {
+    GameActionButtonHost(screenState = screenState, onEvent = onEvent) { slots ->
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            // 재고 바를 여기 두지 않는다(#24, 2026-08-30). #17이 "차감이 눈앞에서 보이게" 상시
+            // 띄웠지만, 대국 내내 필요한 정보가 아닌 데다 바로 아래 버튼과 같은 말을 두 번 했다.
+            // 남은 수는 버튼 자신이 괄호로 말하고(`strings.featureButtonLabel`), 전체 재고는
+            // 마이 페이지가 맡는다.
+
+            // [1행] 형세보기(Eval), 추천수(Top Moves) — 프리미엄 전용 온/오프 토글, 2열로 크게 배치
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                firstRowLeading?.invoke(this)
+                slots.eval(Modifier.weight(1f))
+                slots.topMoves(Modifier.weight(1f))
+            }
+
+            // [2행] 기권(Resign/New Game), 통과(Pass), 무르기(Undo) — 기본 기능 버튼 3열
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                secondRowLeading?.invoke(this)
+                slots.resign(Modifier.weight(1f))
+                slots.pass(Modifier.weight(1f))
+                slots.undo(Modifier.weight(1f))
             }
         }
     }

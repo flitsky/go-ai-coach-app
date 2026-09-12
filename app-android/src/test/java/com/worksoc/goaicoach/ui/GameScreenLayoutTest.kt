@@ -1,6 +1,8 @@
 package com.worksoc.goaicoach.ui
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -26,16 +28,24 @@ class GameScreenLayoutTest {
         assertEquals(GameScreenLayout.Phone, layoutOf(360, 600))
     }
 
+    /** ⚠️ 남는 변이 어디냐로 갈린다 — 세로로 펼치면 위아래(P1), 가로로 돌리면 좌우(L1). */
     @Test
-    fun theUnfoldedFoldGoesWideInBothOrientations() {
-        assertEquals("펼친 세로(690×781)", GameScreenLayout.Wide, layoutOf(690, 781))
-        assertEquals("펼친 가로(829×642)", GameScreenLayout.Wide, layoutOf(829, 642))
+    fun theUnfoldedFoldStacksWhenTallAndUsesColumnsWhenWide() {
+        assertEquals("펼친 세로(690×781)", GameScreenLayout.WideStacked, layoutOf(690, 781))
+        assertEquals("펼친 가로(829×642)", GameScreenLayout.WideColumns, layoutOf(829, 642))
     }
 
     @Test
-    fun aTallTabletKeepsThePhoneLayoutAndALandscapeTabletGoesWide() {
+    fun aTallTabletKeepsThePhoneLayoutAndALandscapeTabletUsesColumns() {
         assertEquals("세로 태블릿(800×1220)", GameScreenLayout.Phone, layoutOf(800, 1220))
-        assertEquals("가로 태블릿(1280×752)", GameScreenLayout.Wide, layoutOf(1280, 752))
+        assertEquals("가로 태블릿(1280×752)", GameScreenLayout.WideColumns, layoutOf(1280, 752))
+    }
+
+    /** 두 넓은 배치는 화면 껍데기(스크롤 없음)를 공유한다 — 그 물음에 한 번에 답하는 값. */
+    @Test
+    fun bothWideLayoutsAnswerIsWide() {
+        assertTrue(GameScreenLayout.WideStacked.isWide && GameScreenLayout.WideColumns.isWide)
+        assertFalse(GameScreenLayout.Phone.isWide)
     }
 
     /** 경계: 폰 배치로 판이 가로폭의 90%를 채우면 폰, 못 채우면 넓은 배치. */
@@ -45,6 +55,6 @@ class GameScreenLayoutTest {
         val boardWidth = width - 32f
         val justEnough = (PhoneLayoutNonBoardHeightDp + boardWidth * PhoneLayoutMinBoardFillRatio).toInt() + 1
         assertEquals(GameScreenLayout.Phone, layoutOf(width, justEnough))
-        assertEquals(GameScreenLayout.Wide, layoutOf(width, justEnough - 2))
+        assertEquals(GameScreenLayout.WideStacked, layoutOf(width, justEnough - 2))
     }
 }

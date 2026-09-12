@@ -186,7 +186,7 @@ internal fun GoCoachContent(
             .navigationBarsPadding(),
     ) {
         val layout = gameScreenLayoutFor(maxWidth.value, maxHeight.value)
-        if (layout == GameScreenLayout.Wide) {
+        if (layout.isWide) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()

@@ -38,20 +38,51 @@ class WideGameLayoutContractTest {
             "배치 판정이 뷰포트 크기를 보지 않는다 — 그래프·범례에 따라 배치가 흔들린다.",
             content.contains("gameScreenLayoutFor(maxWidth.value, maxHeight.value)"),
         )
-        val wideBranch = content.between("if (layout == GameScreenLayout.Wide) {", "} else {")
+        val wideBranch = content.between("if (layout.isWide) {", "} else {")
         assertFalse("넓은 배치에 스크롤이 생겼다 — 판 위 끌기가 착수라 스크롤할 자리가 없다(함정 44).", wideBranch.contains("verticalScroll"))
 
-        val wide = code("GamePlaySection.kt").between("private fun WidePlayArrangement(", "private val WideBoardInset")
-        assertFalse("넓은 배치 안에 스크롤이 생겼다(함정 44).", wide.contains("verticalScroll"))
+        wideArrangements().forEach { (name, source) ->
+            assertFalse("$name 안에 스크롤이 생겼다(함정 44).", source.contains("verticalScroll"))
+        }
     }
 
     @Test
-    fun theBoardTakesTheHeightThatIsLeft() {
-        val wide = code("GamePlaySection.kt").between("private fun WidePlayArrangement(", "private val WideBoardInset")
-        val boardCall = wide.between("board(\n", "if (showMoveQualityLegend)")
+    fun theBoardTakesTheSpaceThatIsLeftInBothWideLayouts() {
+        wideArrangements().forEach { (name, source) ->
+            val boardCall = source.between("board(\n", "if (showMoveQualityLegend)")
+            assertTrue(
+                "$name: 판이 남는 자리를 가져가지 않는다(`weight(1f)`) — 넘치면 판이 줄지 않고 조작부가 잘린다.",
+                boardCall.contains(".weight(1f)"),
+            )
+        }
+    }
+
+    /**
+     * ⚠️ 좌우 기둥(L1)에서 판은 **가운데 칸이 통째로** 가져야 한다 — 기둥이 고정 폭이므로 판이 남는
+     * 폭을 전부 쓴다. 가운데 칸에 `weight`가 없으면 판이 제 크기를 못 찾는다.
+     */
+    @Test
+    fun theColumnsAreFixedWidthSoTheBoardGetsTheRest() {
+        val columns = code("GamePlaySection.kt").between("private fun WideColumnsArrangement(", "private val WideColumnWidth")
         assertTrue(
-            "판이 남는 높이를 가져가지 않는다(`weight(1f)`) — 넘치면 판이 줄지 않고 아래 줄이 잘린다.",
-            boardCall.contains(".weight(1f)"),
+            "기둥이 고정 폭(`WideColumnWidth`)이 아니다 — 판과 폭을 다투게 된다.",
+            columns.contains("Modifier.width(WideColumnWidth)"),
+        )
+        assertTrue(
+            "판 칸이 남는 폭을 가져가지 않는다.",
+            columns.contains("Box(modifier = Modifier.weight(1f).fillMaxHeight())"),
+        )
+        assertTrue(
+            "좌석 카드가 기둥에서 세 줄로 접히지 않는다 — 좁은 폭에서 시계·사석이 잘린다.",
+            columns.contains("stacked = true"),
+        )
+    }
+
+    private fun wideArrangements(): List<Pair<String, String>> {
+        val play = code("GamePlaySection.kt")
+        return listOf(
+            "P1 위아래" to play.between("private fun WidePlayArrangement(", "private val WideBoardInset"),
+            "L1 좌우 기둥" to play.between("private fun WideColumnsArrangement(", "private val WideColumnWidth"),
         )
     }
 
@@ -66,17 +97,38 @@ class WideGameLayoutContractTest {
             "가로 착수 칸에서 `착수`가 확인 모드일 때 넓지 않다 — 두 크기가 맞바뀌어야 한다.",
             slot.contains("playButton(Modifier.weight(if (isDirectPlay) PlaySlotRestWeight else PlaySlotLeadWeight))"),
         )
-        val wide = code("GamePlaySection.kt").between("private fun WidePlayArrangement(", "private val WideBoardInset")
-        assertTrue("넓은 배치가 착수 칸을 가로로 쓰지 않는다.", wide.contains("horizontal = true"))
+        val stacked = code("GamePlaySection.kt").between("private fun WidePlayArrangement(", "private val WideBoardInset")
+        assertTrue("위아래 배치가 착수 칸을 가로로 쓰지 않는다.", stacked.contains("horizontal = true"))
+        val columns = code("GamePlaySection.kt").between("private fun WideColumnsArrangement(", "private val WideColumnWidth")
+        assertTrue("좌우 기둥이 착수 칸을 세로로 쓰지 않는다 — 기둥 폭에서는 가로가 들어가지 않는다.", columns.contains("horizontal = false"))
     }
 
     @Test
     fun theWideTogglesStillTellTheCoachMarkWhereTheyAre() {
-        val wide = code("GamePlaySection.kt").between("private fun WidePlayArrangement(", "private val WideBoardInset")
-        listOf("GuideTarget.Magnifier", "GuideTarget.BoardSize").forEach { target ->
-            assertTrue(
-                "넓은 배치의 토글이 `guideTarget($target)`을 알리지 않는다 — 첫돌이 동그라미가 사라진다(#128).",
-                wide.contains("guideTarget($target)"),
+        wideArrangements().forEach { (name, source) ->
+            listOf("GuideTarget.Magnifier", "GuideTarget.BoardSize").forEach { target ->
+                assertTrue(
+                    "${name}의 토글이 `guideTarget($target)`을 알리지 않는다 — 첫돌이 동그라미가 사라진다(#128).",
+                    source.contains("guideTarget($target)"),
+                )
+            }
+        }
+    }
+
+    /**
+     * ⚠️ 형세·추천은 **칸(`GameActionSlots`)이 자기 자리를 알린다** — 배치마다 적으면 한쪽만 고쳐진다.
+     * 두 배치 모두 그 칸을 쓰므로, 칸이 알리면 어디에 놓이든 동그라미가 따라온다.
+     */
+    @Test
+    fun theActionSlotsCarryTheirOwnCoachMarkTargets() {
+        val host = code("GamePlaySection.kt").between("private fun GameActionButtonHost(", "private fun GameActionButtons(")
+        listOf("GuideTarget.Eval", "GuideTarget.TopMoves").forEach { target ->
+            assertTrue("조작 버튼 칸이 `guideTarget($target)`을 알리지 않는다(#128).", host.contains("guideTarget($target)"))
+        }
+        wideArrangements().forEach { (name, source) ->
+            assertFalse(
+                "${name}이 형세·추천을 직접 그린다 — 게이팅이 두 벌이 되는 길이다. 칸(`slots`)을 쓸 것.",
+                source.contains("ToggleActionButton("),
             )
         }
     }

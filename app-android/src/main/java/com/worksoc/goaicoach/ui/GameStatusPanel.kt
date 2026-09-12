@@ -206,11 +206,14 @@ private const val PlaySlotLeadWeight = 1.5f
 private const val PlaySlotRestWeight = 0.5f
 
 /**
- * 넓은 배치(#141) 위 줄의 **좌석 카드** — 폰 배치의 [PlayerSeatCard]를 두 줄로 줄였다.
- * 첫 줄 `● 흑 (유저)`, 둘째 줄 `00:12 · 사석 0`. 차례 표시(초록 테두리·배경)는 폰과 같은 토큰이다.
+ * 넓은 배치(#141)의 **좌석 카드** — 폰 배치의 [PlayerSeatCard]를 줄였다. 차례 표시(초록 테두리·배경)는
+ * 폰과 같은 토큰이다.
+ * - 위아래 배치(P1)의 위 줄: **두 줄** — `● 흑 (유저)` / `00:12 · 사석 0`.
+ * - 좌우 기둥(L1)의 기둥: [stacked] — 기둥 폭이 100dp 남짓이라 **세 줄**로 접는다. 한 줄에 시계와
+ *   사석을 같이 쓰면 그 폭에서 말줄임으로 잘린다.
  *
- * ⚠️ **높이는 바닥값이다**(함정 9번) — 배율이 오르면 두 줄이 자라야 한다. 사용자가 실물을 보고
- *   세로를 늘릴지 검토하기로 했다(2026-09-12) — 늘린 만큼 판이 준다.
+ * ⚠️ **높이는 바닥값이다**(함정 9번) — 배율이 오르면 줄이 자라야 한다. 사용자가 실물을 보고 세로를
+ *   늘릴지 검토하기로 했고(2026-09-12) *"이대로 진행"* 으로 지금 값을 유지했다 — 늘린 만큼 판이 준다.
  */
 @Composable
 internal fun CompactSeatCard(
@@ -221,6 +224,7 @@ internal fun CompactSeatCard(
     elapsedMillis: Long,
     capturedCount: Int,
     capturesLabel: String,
+    stacked: Boolean,
     modifier: Modifier,
 ) {
     Surface(
@@ -246,13 +250,22 @@ internal fun CompactSeatCard(
                 )
             }
             Text(
-                text = "${formatMillis(elapsedMillis)} · $capturesLabel: $capturedCount",
+                text = if (stacked) formatMillis(elapsedMillis) else "${formatMillis(elapsedMillis)} · $capturesLabel: $capturedCount",
                 style = MaterialTheme.typography.bodySmall,
                 fontWeight = if (isActiveTurn) FontWeight.Bold else FontWeight.Normal,
                 color = if (isActiveTurn) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
+            if (stacked) {
+                Text(
+                    text = "$capturesLabel: $capturedCount",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
     }
 }

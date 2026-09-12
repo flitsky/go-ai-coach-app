@@ -13,25 +13,35 @@ import kotlin.math.min
  * ⚠️ 폭이 [WideLayoutMinWidthDp] 밑이면 언제나 폰 배치다 — 넓은 배치의 한 줄짜리 위 줄과 네 칸
  *   아래 줄은 좁은 화면에 들어가지 않는다. 짧은 폰에서 조금 넘치는 것은 #139의 판 맞춤이 받는다.
  *
- * ## 넓은 배치의 모양 (P1 — 와이어프레임 검토, 2026-09-12)
- * 판을 먼저 최대로 잡고 조작부는 **남는 변**에 붙인다. 세로로 펼친 폴드는 거의 정사각형이라
- * 위아래가 남는다: 위 한 줄(☰ · 흑 · 수순/점수 · 백), 아래 두 줄(도구 넷 / 착수 칸 · 기권 · 통과 ·
- * 무르기). 가로 전용 배치(L1, 좌우 기둥)는 후속이며, 그전까지 가로도 이 배치를 쓴다.
+ * ## 넓은 배치의 모양 — 남는 변이 어디냐에 따라 둘 (2026-09-12 사용자 확정)
+ * 판을 먼저 최대로 잡고 조작부는 **남는 변**에 붙인다.
+ * - [WideStacked] (P1) — 세로로 펼친 폴드는 거의 정사각형이라 **위아래**가 남는다: 위 한 줄
+ *   (☰ · 흑 · 수순/점수 · 백), 아래 두 줄(도구 넷 / 착수 칸 · 기권 · 통과 · 무르기).
+ * - [WideColumns] (L1) — 가로로 돌리면 **좌우**가 남는다: 얇은 위 줄, 판 양옆에 기둥 둘
+ *   (왼쪽 흑 좌석·형세·추천 / 오른쪽 백 좌석·착수 칸·무르기·통과·기권).
+ *
+ * ⚠️ **가로/세로는 뷰포트 모양으로 가른다**(`widthDp > heightDp`) — 기기 방향 API가 아니라. 분할
+ *   화면·접힘 상태에서 방향과 실제 모양이 어긋나는데, 배치가 따라야 하는 것은 **모양**이다.
  *
  * ⚠️ **판정은 뷰포트 크기만 본다** — 그래프를 펼치거나 범례가 떠도 배치가 바뀌지 않게, 그리고
  *   배치를 바꾼 결과가 다시 판정을 흔들지 않게(#139의 측정값을 쓰지 않는 이유).
  */
-internal enum class GameScreenLayout { Phone, Wide }
+internal enum class GameScreenLayout {
+    Phone,
+    WideStacked,
+    WideColumns,
+    ;
+
+    /** 넓은 배치인가 — 화면 껍데기(스크롤 없음·여백)가 같은 둘. */
+    val isWide: Boolean get() = this != Phone
+}
 
 internal fun gameScreenLayoutFor(widthDp: Float, heightDp: Float): GameScreenLayout {
     if (widthDp < WideLayoutMinWidthDp) return GameScreenLayout.Phone
     val boardWidthDp = widthDp - 2 * GameScreenEdgePadding.value
     val phoneBoardDp = min(boardWidthDp, heightDp - PhoneLayoutNonBoardHeightDp)
-    return if (phoneBoardDp >= boardWidthDp * PhoneLayoutMinBoardFillRatio) {
-        GameScreenLayout.Phone
-    } else {
-        GameScreenLayout.Wide
-    }
+    if (phoneBoardDp >= boardWidthDp * PhoneLayoutMinBoardFillRatio) return GameScreenLayout.Phone
+    return if (widthDp > heightDp) GameScreenLayout.WideColumns else GameScreenLayout.WideStacked
 }
 
 /** 넓은 배치를 쓸 수 있는 최소 폭. 큰 화면의 관례적 경계(sw600dp)와 같다. */
