@@ -431,9 +431,15 @@ internal fun GoBoard(
                     } else {
                         baseRingColor.darken(-lastMovePulse * 0.2f)
                     }
+                    // 착수 이펙트(#145)가 도는 동안에는 **테두리도 돌과 같은 배율로** 커졌다 돌아온다
+                    // (2026-09-12 사용자 요청). 돌만 부풀면 테두리가 돌 안으로 파고들어, 커지는 내내
+                    // 표시가 어긋나 보인다.
+                    // ⚠️ 배율은 여기서도 **그리기 람다 안에서만** 읽는다 — 돌과 같은 이유다.
+                    // ⚠️ 선 두께(5f)는 **키우지 않는다** — 함께 굵어지면 커지는 동안 테두리만 도드라진다.
+                    val ringScale = if (lastMove.coordinate == playEffectAt) playEffectScale.value else 1f
                     drawCircle(
                         color = pulsedRingColor,
-                        radius = geometry.spacing * 0.48f,
+                        radius = geometry.spacing * 0.48f * ringScale,
                         center = geometry.pointFor(lastMove.coordinate),
                         style = Stroke(width = 5f),
                     )

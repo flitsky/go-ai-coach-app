@@ -76,6 +76,24 @@ class PlayEffectContractTest {
         )
     }
 
+    /**
+     * ⚠️ **착수 표시 테두리도 돌과 같은 배율로 커진다**(2026-09-12 사용자 요청).
+     *
+     * 돌만 부풀면 테두리가 **돌 안으로 파고들어** 커지는 내내 표시가 어긋나 보인다. 둘은 같은
+     * 순간에 같은 배율이어야 한다 — 한쪽만 고치면 컴파일도 테스트도 멀쩡하고 화면에서만 드러난다.
+     */
+    @Test
+    fun theLastMoveRingGrowsWithTheStone() {
+        assertTrue(
+            "착수 표시 테두리가 이펙트 배율을 쓰지 않는다 — 돌만 커지고 테두리는 제자리다(#145).",
+            board.contains("val ringScale = if (lastMove.coordinate == playEffectAt) playEffectScale.value else 1f"),
+        )
+        assertTrue(
+            "테두리 반지름에 배율이 곱해지지 않는다 — 값만 돌고 테두리는 그대로다(#145).",
+            board.contains("geometry.spacing * 0.48f * ringScale"),
+        )
+    }
+
     /** ⚠️ 함정 2번 — 자동저장 조립부에 없는 필드는 다음 저장에서 조용히 기본값으로 돌아간다. */
     @Test
     fun theNewOptionSurvivesAnAutosave() {
