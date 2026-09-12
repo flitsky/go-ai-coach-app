@@ -111,8 +111,8 @@ We reworked how it feels to open the app and place a stone.
 02_home.png             — 홈 화면(상단 마이 페이지·설정 + 대국 하기 / 학습 하기 / 대국 기록)
 03_setup_lobby.png     — 대국 설정 로비
 04_character_picker.png — 상대 고르기(캐릭터별 획득 경로 안내)
-05_gameplay.png        — 대국 화면 기본 상태(1회권 재고 + 코칭 버튼)
-06_eval_coaching.png   — 대국 화면 — 형세 보기 ON(보드 위 영역 음영 표시)
+05_gameplay.png        — 대국 화면 기본 상태(1회권 재고 + 코칭 버튼)  ✅ 2026-09-12 재캡처(#143 조작부 반영)
+06_eval_coaching.png   — 대국 화면 — 형세 보기 ON(보드 위 영역 음영 표시)  ✅ 2026-09-12 재캡처(#143 조작부 반영)
 
 여섯 장 모두 업로드 대상이다(2026-09-01 06 추가). 콘솔 위치별 안내는 이 폴더의 README.md에 있다.
 
