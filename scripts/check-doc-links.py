@@ -86,6 +86,8 @@ ALLOWED: dict[tuple[str, str], str] = {
         "2026-08-06에 삭제한 것을 기록한 문장",
     ("docs/work/history/THREAD_HISTORY.md", "docs/KATRAIN_UX_BACKLOG.md"):
         "그 시점에 있었던 문서를 가리키는 히스토리 서술",
+    ("work/plans/GOOGLE_PLAY_LAUNCH_PLAN.md", "design-handoff/README.md"):
+        "2026-09-13에 design-handoff/ 자체를 work/play-store-assets/로 흡수하며 삭제한 것을 기록한 문장",
     ("scripts/run-katago-candidate-refine-experiment.py",
      "docs/archive/2026-06-docs-consolidation/ENGINE_BEGINNER_VISITS_BENCHMARK.md"):
         "옛 아카이브 위치를 적어 둔 주석(사실 서술)",

@@ -51,7 +51,7 @@ AI와 대국하며 실수를 색으로 짚어주는 무료 바둑 학습 앱, �
 ⚠️ **콘솔은 언어 태그로 감싼 형식을 받는다.** 아래 `<ko-KR>` 블록을 **태그째** 복사해 넣을 것.
 ⚠️ **등록정보에 없는 언어의 태그를 넣지 말 것** — 지금 등록정보는 **한국어 하나뿐**이라
    `<ko-KR>`만 유효하다. 영어 등록정보를 추가한 뒤에야 아래 `<en-US>` 블록을 함께 넣는다.
-⚠️ **언어당 500자 이내.** 지금: 한국어 250자 · 영어 438자.
+⚠️ **언어당 500자 이내.** 지금: 한국어 229자 · 영어 386자.
 
 ⚠️ **2026-09-11에 본문을 통째로 새로 썼다 — "첫 출시" 문구를 버렸다.**
    그전까지 이 자리는 *"첫 출시입니다"* 였고, 근거는 *"811~901 전부 번호만 오르고 사용자에게
@@ -63,57 +63,39 @@ AI와 대국하며 실수를 색으로 짚어주는 무료 바둑 학습 앱, �
      출시 노트는 변경 이력이 아니라 "당신에게 무엇이 달라지는가"다.
    · ⚠️ **다음 버전에는 이 본문을 그대로 두지 말 것.** 902가 나간 뒤의 기준선은 902다.
 
-⚠️ **2026-09-12에 904용으로 다시 썼다 — 기준선은 902다.**(903은 건너뛰었다)
-   · 902 이후 완료된 것은 열 건이지만(#138·#139·#140·#141·#143·#144·#145·#147·#148·#149)
-     **열 줄을 적지 않는다.** 이 파일의 원칙이 *"변경 이력이 아니라 당신에게 무엇이 달라지는가"* 라,
-     손으로 느끼는 것만 남기고 회전 정책(#147)·팝업 겹침 수정(#148)처럼 눈에 잘 안 띄거나
-     고장을 고친 것은 뺐다.
-   · ⚠️ **902 노트의 *"첫 실행 안내를 세 가지 질문으로 줄였습니다"* 를 지웠다.** #140이 그 질문들을
-     통째로 없앴으므로 904에서는 **거짓**이 된다 — 남겨 두면 스토어가 거짓말을 한다.
-   · ⚠️ **다음 버전에도 그대로 두지 말 것.** 904가 나간 뒤의 기준선은 904다.
-
 ──────── 지금 붙여넣을 것 (한국어 등록정보만 있는 상태) ────────
 <ko-KR>
-앱을 켜고 돌을 놓기까지, 손에 닿는 부분을 손봤습니다.
+앱 이름이 '포켓 바둑 코치'로 바뀌었습니다. 주머니 속 코치라는 뜻 그대로, 인터넷 없이 기기에서 바로 두고 복기합니다.
 
-· 누르는 순간 돌이 먼저 보이고, 손가락을 따라 옮겨 뗀 자리에 놓입니다
-· 돌이 놓일 때 살짝 커졌다 돌아옵니다(메뉴에서 끌 수 있어요)
-· 실수를 줄이고 싶다면 '지연 착수'를 켜 보세요 — 뗀 뒤 잠깐 자리를 바꿀 수 있습니다
-· 폴더블을 펼치면 판이 크게, 스크롤 없이 한 화면에 담깁니다
-· 첫 실행에 아무것도 묻지 않고 바로 시작합니다
-· 대국 화면과 설정 메뉴를 정리했습니다
+· 대국 중 화면을 돌려도 두던 판이 사라지지 않습니다
+· 돋보기를 꺼도 손가락을 따라 돌이 움직입니다
+· 첫 실행 안내를 세 가지 질문으로 줄였습니다
+· 설정을 한곳에 모으고, 대국 중에는 판 설정이 바뀌지 않도록 잠갔습니다
+· AI 착수 대기 없이 바로 두도록 기본값을 바꿨습니다
 </ko-KR>
 ──────────────────────────────────────────────────────────────
 
 ──────── 영어 등록정보를 추가한 뒤 (위 블록에 이어 붙인다) ────────
 <en-US>
-We reworked how it feels to open the app and place a stone.
+Renamed to Pocket Go Coach. A coach in your pocket - play and review right on your device, with no connection.
 
-· The stone shows as you press, follows your finger, and lands where you lift
-· Placed stones pop briefly - you can turn this off in the menu
-· Turn on Delayed play to nudge your spot for a moment after lifting
-· Unfold a foldable and the board fills one screen, with no scrolling
-· First run asks nothing and starts right away
-· Tidied up the game screen and the settings menu
+· Rotating the screen no longer loses the game you were playing
+· Stones follow your finger even with the magnifier off
+· First-run setup is down to three questions
+· Settings are in one place, and board setup is locked during a game
+· The AI answers immediately by default
 </en-US>
 ──────────────────────────────────────────────────────────────
 
 [스크린샷] (screenshots/ 폴더, 1296x2304, 9:16, PNG)
 ⚠️ 2026-09-06 밤에 번호를 재배열했다(랜딩을 맨 앞으로) — 콘솔 업로드 순서는 파일명 오름차순을
 그대로 따르면 된다.
-01_home_guide.png        — 홈 + 첫돌이 안내 말풍선(`대국 하기`를 가리킨다)  ⭐ 옛 `01_landing`을 대체
-02_home.png              — 홈 화면(안내가 사라진 상태)
-03_setup_guide.png       — 대국 설정 + 첫돌이 안내 카드(`저와 함께 호선으로 둬봐요`)
-04_setup.png             — 대국 설정(안내가 사라진 상태)
-05_gameplay_guide.png    — 대국 화면 + 코치마크(`형세 보기` 버튼에 동그라미)
-06_gameplay.png          — 대국 화면 6수(흑이 세 화점에 벌린 넓은 포석)
-07_eval_coaching.png     — 형세 보기 ON(반상에 영역 음영)
-  ⚠️ 2026-09-12에 **일곱 장 체계로 갈았다**(사용자 지시). 옛 여섯 장(`01_landing`·`02_home`·
-     `03_setup_lobby`·`04_character_picker`·`05_gameplay`·`06_eval_coaching`)은 **지웠다** —
-     콘솔이 파일명 오름차순으로 싣기 때문에 남겨 두면 새 컷과 섞인다.
-  ⚠️ **`04_character_picker`(상대 고르기)가 세트에서 빠졌다** — 사용자가 준 목록에 없었다.
-     되살리려면 8번째 슬롯으로 넣을 것(콘솔 폰 슬롯은 8장까지).
-  ✅ 옛 `01_landing`의 "설치해도 볼 수 없는 화면" 문제는 이것으로 **해소됐다**(#140).
+01_landing.png           — 첫 실행 랜딩(기력 선택)
+02_home.png             — 홈 화면(상단 마이 페이지·설정 + 대국 하기 / 학습 하기 / 대국 기록)
+03_setup_lobby.png     — 대국 설정 로비
+04_character_picker.png — 상대 고르기(캐릭터별 획득 경로 안내)
+05_gameplay.png        — 대국 화면 기본 상태(1회권 재고 + 코칭 버튼)
+06_eval_coaching.png   — 대국 화면 — 형세 보기 ON(보드 위 영역 음영 표시)
 
 여섯 장 모두 업로드 대상이다(2026-09-01 06 추가). 콘솔 위치별 안내는 이 폴더의 README.md에 있다.
 

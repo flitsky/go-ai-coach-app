@@ -32,12 +32,15 @@ class AppNameContractTest {
     /**
      * 스토어 등록정보의 `[앱 이름]` 바로 다음 줄.
      *
-     * ⚠️ **`dist/`가 아니라 `design-handoff/export/`를 읽는다** — `dist/`는 **gitignore 대상**이라
+     * ⚠️ **`dist/`가 아니라 `work/play-store-assets/`를 읽는다** — `dist/`는 **gitignore 대상**이라
      * (`.gitignore:8`) 새로 클론한 저장소나 CI에는 **그 파일이 없다.** 거기를 읽으면 이 테스트가
-     * 내 기계에서만 통과한다. 두 사본은 같은 내용이고, 추적되는 쪽이 정본이다.
+     * 내 기계에서만 통과한다. `work/play-store-assets/`가 git 추적되는 정본이다.
      * · 같은 이유로 ⚠️ **`dist/` 안의 등록정보만 고치고 끝내지 말 것** — 커밋되지 않는다.
+     * ⚠️ **2026-09-13에 `design-handoff/export/<날짜>-<버전>/`(라운드별 스냅샷) 방식을 접었다** —
+     * 지금은 `work/play-store-assets/` 하나만 유지하고, 버전 이력은 git으로 추적한다(필요하면
+     * 날짜 붙인 폴더/파일을 추가하는 것도 허용). 옛 라운드 폴더를 찾을 땐 git 히스토리를 본다.
      */
-    private val storeName = File(repoRoot, "design-handoff/export/2026-09-01-play-store-listing-and-screenshots/store_listing.txt")
+    private val storeName = File(repoRoot, "work/play-store-assets/store_listing.txt")
         .readLines()
         .let { lines -> lines.getOrNull(lines.indexOfFirst { it.startsWith("[앱 이름]") } + 1)?.trim() }
 

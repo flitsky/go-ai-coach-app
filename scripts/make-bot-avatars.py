@@ -1,10 +1,10 @@
 """캐릭터 원화 → 원형 아바타용 투명 WebP (백로그 #86).
 
     python3 scripts/make-bot-avatars.py \
-      docs/work/artwork/캐릭터1.png app-android/src/main/res/drawable-nodpi/bot_fast_beginner_1.webp \
+      work/artwork/캐릭터1.png app-android/src/main/res/drawable-nodpi/bot_fast_beginner_1.webp \
       ... (5쌍)
 
-원화는 `docs/work/artwork/`에 있는 768x768 **불투명** PNG다. 아바타는 `BotCharacterAvatar`가
+원화는 `work/artwork/`에 있는 768x768 **불투명** PNG다. 아바타는 `BotCharacterAvatar`가
 **원형으로 잘라** 그리므로 배경이 남아 있으면 어두운 테마에서 **흰 원판**이 된다. 그래서
 배경을 알파로 뽑아내는 것이 이 스크립트의 전부다.
 
