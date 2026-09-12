@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.ui
 
 import java.io.File
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -61,6 +62,31 @@ class WideGameLayoutContractTest {
      * ⚠️ 좌우 기둥(L1)에서 판은 **가운데 칸이 통째로** 가져야 한다 — 기둥이 고정 폭이므로 판이 남는
      * 폭을 전부 쓴다. 가운데 칸에 `weight`가 없으면 판이 제 크기를 못 찾는다.
      */
+    /**
+     * ⚠️ **위아래 배치(P1)의 조작 버튼 다섯은 한 줄이다**(2026-09-12 사용자 지시 — *"폴드 사이즈에서는 버튼
+     * 5개 나란히 한 줄"*). 두 줄로 되돌리면 그만큼(버튼 줄 48dp + 틈 8dp) **판이 작아진다.**
+     * 폰 배치는 그대로 두 줄이다 — 폭이 380dp 남짓이라 다섯이면 라벨이 잘린다.
+     */
+    @Test
+    fun theWidePortraitPutsAllFiveActionsInOneRow() {
+        val stacked = code("GamePlaySection.kt").between("private fun WidePlayArrangement(", "private val WideBoardInset")
+        val row = stacked.between("GameActionButtonHost(", "}\n        }")
+        listOf("slots.eval(", "slots.topMoves(", "slots.resign(", "slots.pass(", "slots.undo(").forEach { slot ->
+            assertTrue("위아래 배치의 한 줄에 `$slot`이 없다 — 다섯이 한 줄이어야 한다(#143).", row.contains(slot))
+        }
+        assertEquals(
+            "위아래 배치가 조작 버튼을 두 줄로 나눠 그린다 — 한 줄이어야 판이 그만큼 커진다(#143).",
+            1,
+            Regex("""Row\(""").findAll(row).count(),
+        )
+
+        val phone = code("GamePlaySection.kt").between("GameScreenLayout.Phone -> {", "GameScreenLayout.WideStacked ->")
+        assertTrue(
+            "폰 배치가 두 줄짜리 `GameActionButtons`를 쓰지 않는다 — 좁은 폭에서 다섯을 한 줄에 넣으면 라벨이 잘린다.",
+            phone.contains("GameActionButtons("),
+        )
+    }
+
     @Test
     fun theColumnsAreFixedWidthSoTheBoardGetsTheRest() {
         val columns = code("GamePlaySection.kt").between("private fun WideColumnsArrangement(", "private val WideColumnWidth")

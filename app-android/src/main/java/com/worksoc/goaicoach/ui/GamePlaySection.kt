@@ -489,21 +489,33 @@ private fun WidePlayArrangement(
             }
         }
 
-        GameActionButtons(
-            screenState = screenState,
-            onEvent = onEvent,
-            // 판 토글 둘은 #143이 메뉴로 옮겼다 — 아래 첫 줄은 형세·추천만 남는다.
-            firstRowLeading = null,
-            secondRowLeading = playConfirmSlot { modifier ->
-                PlaySlot(
-                    screenState = screenState,
-                    tentativeMove = tentativeMove,
-                    onEvent = onEvent,
-                    horizontal = true,
-                    modifier = modifier.weight(2f),
-                )
-            },
-        )
+        // ⭐ **다섯을 한 줄로**(2026-09-12 사용자 지시 — *"폴드 사이즈에서는 버튼 5개 나란히 한 줄"*).
+        // #143이 토글 둘과 착수 칸을 빼면서 아래가 헐거워졌고, 한 줄로 접은 만큼(48dp + 틈 8dp) **판이 커진다.**
+        // ⚠️ 폰 배치는 그대로 두 줄이다 — 폭이 380dp 남짓이라 다섯이면 칸당 70dp도 안 돼 라벨이 잘린다.
+        GameActionButtonHost(screenState = screenState, onEvent = onEvent) { slots ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                // 확인 모드를 되살리면(플래그) 여섯 칸이 된다 — 그때는 칸당 100dp 남짓으로 좁아지지만
+                // 기본 경로가 아니므로 줄을 나누지 않고 그대로 둔다.
+                playConfirmSlot { modifier ->
+                    PlaySlot(
+                        screenState = screenState,
+                        tentativeMove = tentativeMove,
+                        onEvent = onEvent,
+                        horizontal = true,
+                        modifier = modifier.weight(2f),
+                    )
+                }?.invoke(this)
+                slots.eval(Modifier.weight(1f))
+                slots.topMoves(Modifier.weight(1f))
+                slots.resign(Modifier.weight(1f))
+                slots.pass(Modifier.weight(1f))
+                slots.undo(Modifier.weight(1f))
+            }
+        }
     }
 }
 
