@@ -57,8 +57,8 @@ enum class GuideStep(
     // ⚠️ **이 넷이 한 표면(InGame)에 사는 첫 사례다.** 판정이 *"선언 순서상 첫 미시청 단계"* 를
     // 고르므로 이 순서가 곧 재생 순서다 — `FirstRunGuidePolicyTest`가 그 성질을 이미 못박아 두었고,
     // 그것을 미리 세워 둔 덕분에 이 쪼개기가 판정식 수정 없이 끝났다.
-    InGameMagnifier("in_game_magnifier", GuideSurface.InGame, GuideTarget.Magnifier),
-    InGameBoardSize("in_game_board_size", GuideSurface.InGame, GuideTarget.BoardSize),
+    // ⚠️ 돋보기·판 크기 단계는 **#143이 지웠다** — 그 두 버튼이 메뉴로 들어가 대국 화면에 없다.
+    //   가리킬 것이 없는 코치마크는 조용히 안 뜨는 것이 아니라 **아예 두지 않는다**(저장된 id는 무시된다).
     InGameEval("in_game_eval", GuideSurface.InGame, GuideTarget.Eval),
     InGameTopMoves("in_game_top_moves", GuideSurface.InGame, GuideTarget.TopMoves),
 }
@@ -70,7 +70,7 @@ enum class GuideStep(
  * ③ 말풍선에서는 그래서 좌표 없이 푸는 쪽을 택했는데, *"버튼을 가리지 않게 그 옆에서, 버튼에
  * 동그라미"* 라는 요구는 **대상의 자리를 알아야만** 성립한다 — 그 대가를 여기서 치른다.
  */
-enum class GuideTarget { Magnifier, BoardSize, Eval, TopMoves }
+enum class GuideTarget { Eval, TopMoves }
 
 /**
  * 저장된 진행도. [GuideProgressStore]가 이 값을 싣고 내린다.

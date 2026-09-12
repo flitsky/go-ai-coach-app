@@ -25,7 +25,7 @@ class FirstRunGuidePolicyTest {
     fun armingPlaysTheFirstUnseenStepOfThatSurface() {
         assertEquals(GuideStep.HomeStartMatch, autoPlayStep(GuideSurface.Home, armed, blocked = false))
         assertEquals(GuideStep.MatchSetup, autoPlayStep(GuideSurface.MatchSetup, armed, blocked = false))
-        assertEquals(GuideStep.InGameMagnifier, autoPlayStep(GuideSurface.InGame, armed, blocked = false))
+        assertEquals(GuideStep.InGameEval, autoPlayStep(GuideSurface.InGame, armed, blocked = false))
     }
 
     @Test
@@ -70,15 +70,14 @@ class FirstRunGuidePolicyTest {
     }
 
     /**
-     * ⚠️ **대국 화면이 한 표면에 단계 넷을 갖는 첫 사례다**(2026-09-09, 버튼별로 쪼갬).
+     * ⚠️ **대국 화면이 한 표면에 단계 여럿을 갖는 첫 사례다**(2026-09-09, 버튼별로 쪼갬).
      * 사용자가 하나를 확인하면 **다음이 뜨는** 것이 그 요구였고, 그것은 곧 *"미시청 중 선언 순서상
      * 첫째"* 다 — 이 케이스가 그 순서를 못박는다.
+     * (넷이었다가 #143이 돋보기·판 크기 버튼을 메뉴로 옮기며 **둘**이 됐다.)
      */
     @Test
     fun theInGameStepsAdvanceOneTapAtATimeInDeclarationOrder() {
         val expected = listOf(
-            GuideStep.InGameMagnifier,
-            GuideStep.InGameBoardSize,
             GuideStep.InGameEval,
             GuideStep.InGameTopMoves,
         )
@@ -103,7 +102,9 @@ class FirstRunGuidePolicyTest {
         val targets = GuideStep.entries
             .filter { it.surface == GuideSurface.InGame }
             .map { it.target }
-        assertEquals(4, targets.size)
+        // ⚠️ 자기검증 — 필터가 조용히 0개를 집으면 아래 둘은 아무것도 보지 않으면서 통과한다.
+        //   넷이었다가 #143이 돋보기·판 크기 버튼을 메뉴로 옮기며 **둘**이 됐다.
+        assertEquals(2, targets.size)
         assertEquals(targets.distinct().size, targets.size, "두 단계가 같은 버튼을 가리킨다")
         assertTrue(targets.none { it == null }, "대국 화면 단계는 가리킬 버튼이 있어야 한다")
     }
@@ -130,14 +131,15 @@ class FirstRunGuidePolicyTest {
      * ⚠️ [GuideStep.id]는 **저장 포맷**이다(함정 1번과 같은 성질) — 바꾸면 이미 본 사용자에게
      * 가이드가 다시 뜬다. 값을 여기 못박아 무심한 개명을 잡는다.
      *
-     * ⚠️ `landing`은 #140이 **지웠다**(개명이 아니다) — ①은 판정에 참여한 적이 없어 저장된 적도 없다.
+     * ⚠️ `landing`은 #140이, `in_game_magnifier`·`in_game_board_size`는 #143이 **지웠다**(개명이 아니다).
+     *   지운 id가 남의 `seen_steps`에 남아 있어도 그냥 무시된다 — 그래서 지우는 것은 안전하고, **바꾸는 것**만 위험하다.
      */
     @Test
     fun theStoredIdsAreFrozen() {
         assertEquals(
             listOf(
                 "attendance_claim", "home_start_match", "match_setup",
-                "in_game_magnifier", "in_game_board_size", "in_game_eval", "in_game_top_moves",
+                "in_game_eval", "in_game_top_moves",
             ),
             GuideStep.entries.map { it.id },
         )

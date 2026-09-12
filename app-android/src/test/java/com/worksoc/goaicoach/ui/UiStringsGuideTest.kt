@@ -19,8 +19,6 @@ import org.junit.Test
 class UiStringsGuideTest {
 
     private val toolLabels = GuideToolLabels(
-        magnifier = "MAGNIFIER",
-        boardSubject = "BOARD",
         eval = "EVAL",
         topMoves = "TOPMOVES",
     )
@@ -118,8 +116,6 @@ class UiStringsGuideTest {
     @Test
     fun theInGameCopyQuotesTheLabelItWasGiven() {
         val expected = mapOf(
-            GuideStep.InGameMagnifier to toolLabels.magnifier,
-            GuideStep.InGameBoardSize to toolLabels.boardSubject,
             GuideStep.InGameEval to toolLabels.eval,
             GuideStep.InGameTopMoves to toolLabels.topMoves,
         )
@@ -189,7 +185,7 @@ class UiStringsGuideTest {
 
     /** 호출부가 넘긴 라벨은 문구의 몫이 아니다 — 검사 전에 걷어낸다. */
     private fun stripLabels(body: String): String =
-        listOf(toolLabels.magnifier, toolLabels.boardSubject, toolLabels.eval, toolLabels.topMoves)
+        listOf(toolLabels.eval, toolLabels.topMoves)
             .fold(body) { text, label -> text.replace(label, "") }
 
     /**

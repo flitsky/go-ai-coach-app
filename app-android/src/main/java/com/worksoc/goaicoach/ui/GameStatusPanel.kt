@@ -69,7 +69,9 @@ internal fun GameStatusPanel(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         PlayerSeatCard(
-            modifier = Modifier.weight(1.3f),
+            // #143이 가운데 착수 칸을 지우면서 **흑·백이 폭을 반씩** 갖는다(사용자 지시).
+            // 확인 모드를 되살리면(플래그) 가운데 칸이 다시 들어와 셋이 나눠 갖는다.
+            modifier = Modifier.weight(1f),
             isActiveTurn = currentTurnPlayer == StoneColor.Black && !screenState.isGameEnded,
             stoneGlyph = "●",
             stoneGlyphColor = Color.Black,
@@ -82,7 +84,7 @@ internal fun GameStatusPanel(
 
         // 중앙: [착수 모드 스위치] + [착수] 버튼. `수순 N수`가 헤더로 올라가며 비운 자리를
         // 스위치가 받았다(#35 → #37). 넓은 배치(#141)도 같은 칸을 **가로로** 쓴다 — [PlaySlot].
-        PlaySlot(
+        if (FeatureFlags.isPlayConfirmModeEnabled) PlaySlot(
             screenState = screenState,
             tentativeMove = tentativeMove,
             onEvent = onEvent,
@@ -97,7 +99,7 @@ internal fun GameStatusPanel(
         )
 
         PlayerSeatCard(
-            modifier = Modifier.weight(1.3f),
+            modifier = Modifier.weight(1f),
             isActiveTurn = currentTurnPlayer == StoneColor.White && !screenState.isGameEnded,
             stoneGlyph = "○",
             stoneGlyphColor = Color.Gray,

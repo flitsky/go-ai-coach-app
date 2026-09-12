@@ -136,7 +136,7 @@ class FirstDolGuideContractTest {
     }
 
     /**
-     * ⚠️ **홈의 `MenuCard`와 판 위 `BoardTopToggle`은 다시보기 하나 때문에 `internal`이 됐다.**
+     * ⚠️ **홈의 `MenuCard`는 다시보기가 빌려 쓰는 실물이다**(#143이 판 위 토글은 지웠다).
      *
      * 둘의 레이아웃 근거(#28·#29의 사고)는 **자기 화면의 열**에 묶여 있어서, 다른 화면에서 일반
      * 카드·토글 API로 쓰기 시작하면 그 사유가 함께 따라가지 않는다. 그래서 **쓸 수 있는 파일을
@@ -268,18 +268,18 @@ class FirstDolGuideContractTest {
             fun ack() = step
             return ::ack
         }
-        val first = referenceFor("InGameMagnifier")
-        val second = referenceFor("InGameBoardSize")
-        assertEquals("두 참조는 다른 단계를 쥔다", listOf("InGameMagnifier", "InGameBoardSize"), listOf(first(), second()))
+        val first = referenceFor("InGameEval")
+        val second = referenceFor("InGameTopMoves")
+        assertEquals("두 참조는 다른 단계를 쥔다", listOf("InGameEval", "InGameTopMoves"), listOf(first(), second()))
         assertEquals("그런데도 `==`다 — 이것이 구조적 동등성이 갱신을 거르는 이유다", first, second)
 
         val structural = androidx.compose.runtime.mutableStateOf(first)
         structural.value = second
-        assertEquals("구조적 동등성은 새것을 걸러 옛 단계를 남긴다", "InGameMagnifier", structural.value())
+        assertEquals("구조적 동등성은 새것을 걸러 옛 단계를 남긴다", "InGameEval", structural.value())
 
         val referential = androidx.compose.runtime.mutableStateOf(first, androidx.compose.runtime.referentialEqualityPolicy())
         referential.value = second
-        assertEquals("참조 동등성은 새것을 받는다", "InGameBoardSize", referential.value())
+        assertEquals("참조 동등성은 새것을 받는다", "InGameTopMoves", referential.value())
     }
 
     /**
@@ -325,9 +325,11 @@ class FirstDolGuideContractTest {
 
     @Test
     fun theBorrowedHomeAndBoardControlsStayBorrowedByTheGuideOnly() {
+        // ⚠️ `BoardTopToggle(`은 이 표에서 빠졌다 — #143이 판 위 토글 둘을 메뉴로 옮기며 그 컴포저블 자체를
+        //   지웠고, 그것을 인용하던 코치마크 두 단계도 함께 사라졌다. 부르는 곳이 없는 이름을 표에 남기면
+        //   "0개여야 한다"는 뜻이 되어 다음에 되살릴 때 엉뚱하게 빨개진다.
         mapOf(
             "MenuCard(" to setOf("GoCoachHomeScreen.kt", "FirstDolGuideReplay.kt"),
-            "BoardTopToggle(" to setOf("GamePlaySection.kt", "FirstDolGuideReplay.kt"),
         ).forEach { (call, allowed) ->
             val callers = uiSources
                 .filterValues { source -> source.contains(call) }

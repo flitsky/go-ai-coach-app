@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.ui
 
 import com.worksoc.goaicoach.application.device.DeviceIdentityStorePort
+import com.worksoc.goaicoach.presentation.KaTrainUxOptions
 
 /**
  * 기능 전체를 껐다 켰다 하는 컴파일타임 스위치 모음. 지금은 로그인(Google/이메일 계정 연동)
@@ -35,7 +36,32 @@ internal object FeatureFlags {
      * `billing.botCharacterProductId`를 채운 뒤 이 값을 `true`로 바꾼다.
      */
     const val isBotCharacterPurchaseEnabled = false
+
+    /**
+     * **'착수 확인 / 바로 착수' 모드**를 켜는 스위치(백로그 #143, 2026-09-12 사용자 결정 — **끈다**).
+     *
+     * 매 수마다 `착수` 버튼으로 한 번 더 확인받는 모드였다. 끄는 근거(사용자): **3일차 출석 보상 뒤로는
+     * 무르기가 무제한**이라 잘못 둔 수는 무르기로 풀린다 — 매 수 확인은 값보다 비용이 크다. 대국 화면에서
+     * 버튼 두 개(스위치 + `착수`)와 메뉴 스위치, 판 크기별 권장 팝업까지 셋이 이 값 하나로 사라진다.
+     *
+     * ⚠️ **끈 상태에서는 판정을 바로 착수로 강제해야 한다** — 저장값이 `false`인 기존 사용자가 확인 모드에
+     * 갇힌 채 `착수` 버튼을 잃으면 **돌을 아예 못 둔다.** 강제하는 자리는 `GoCoachApp`이 `uxOptions`를 만드는
+     * 딱 한 곳이다(`toKaTrainUxOptions()` 직후) — 읽는 곳마다 분기하면 하나를 빠뜨린다.
+     *
+     * 코드·문구·테스트는 지우지 않았다. `true`로 되돌리면 그대로 되살아난다.
+     */
+    const val isPlayConfirmModeEnabled = false
 }
+
+/**
+ * 확인 모드가 꺼져 있으면 **저장값과 무관하게 바로 착수로 본다**(백로그 #143).
+ *
+ * ⚠️ **강제하는 자리는 여기 하나뿐이어야 한다** — `GoCoachApp`이 저장값을 `KaTrainUxOptions`로 옮기는 그 한 줄에
+ * 붙인다. 읽는 곳마다 분기하면(`GoBoard`·`GamePlaySection`·상태판…) 반드시 하나를 빠뜨리고, 빠뜨린 그 경로에서
+ * 저장값이 `false`인 기존 사용자가 **확인 모드에 갇힌 채 `착수` 버튼도 없어 돌을 못 둔다.**
+ */
+internal fun KaTrainUxOptions.withPlayConfirmModeGate(): KaTrainUxOptions =
+    if (FeatureFlags.isPlayConfirmModeEnabled) this else copy(isDirectPlayEnabled = true)
 
 /**
  * 앱 시작 시 첫 화면을 계산한다. [GoCoachApp.kt]가 상태 훅/라인 예산이 빠듯해(state-holder-refactor

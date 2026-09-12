@@ -66,8 +66,6 @@ import com.worksoc.goaicoach.application.guide.GuideTarget
 internal fun FirstDolGuideReplayDialog(onClose: () -> Unit) {
     val strings = LocalUiStrings.current
     val toolLabels = GuideToolLabels(
-        magnifier = playMagnifierLabelFor(strings.language),
-        boardSubject = boardSizeSubjectFor(strings.language),
         eval = strings.eval,
         topMoves = strings.topMovesAction,
     )
@@ -135,7 +133,7 @@ internal fun FirstDolGuideReplayDialog(onClose: () -> Unit) {
                     ReplaySection(title = strings.guideReplayInGameTitle) {
                         // ⚠️ **문구마다 그 버튼을 실물로 함께 그린다**(2026-09-09 사용자 지시:
                         // *"'대국 하기' 버튼 보여주듯 각 가이드마다 해당 버튼이 그려지면 좋겠다"*).
-                        // 판 위 토글 둘은 `BoardTopToggle`, 아래 버튼 둘은 `ToggleActionButton` —
+                        // 아래 버튼 둘은 `ToggleActionButton` — (판 위 토글 둘은 #143이 메뉴로 옮기며 단계째 사라졌다.)
                         // 대국 화면이 쓰는 **그 컴포저블**이다. 라벨도 같은 함수에서 나온다.
                         GuideStep.entries
                             .filter { it.surface == GuideSurface.InGame }
@@ -197,22 +195,6 @@ private fun ReplayControlCard(step: GuideStep, text: String) {
 private fun ReplayControlSample(step: GuideStep) {
     val strings = LocalUiStrings.current
     when (step.target) {
-        GuideTarget.Magnifier -> BoardTopToggle(
-            label = playMagnifierLabelFor(strings.language),
-            spokenSubject = playMagnifierLabelFor(strings.language),
-            spokenState = playMagnifierStateFor(strings.language, enabled = true),
-            active = true,
-            onClick = {},
-            prominent = false,
-        )
-        GuideTarget.BoardSize -> BoardTopToggle(
-            label = boardSizeToggleLabelFor(strings.language, isMaxSize = true),
-            spokenSubject = boardSizeSubjectFor(strings.language),
-            spokenState = boardSizeToggleLabelFor(strings.language, isMaxSize = true),
-            active = true,
-            onClick = {},
-            prominent = false,
-        )
         GuideTarget.Eval -> ReplayActionButtonSample(
             role = GameActionButtonRole.Eval,
             label = strings.eval,

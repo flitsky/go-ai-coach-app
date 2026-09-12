@@ -101,18 +101,10 @@ class WideGameLayoutContractTest {
         assertTrue("위아래 배치가 착수 칸을 가로로 쓰지 않는다.", stacked.contains("horizontal = true"))
         val columns = code("GamePlaySection.kt").between("private fun WideColumnsArrangement(", "private val WideColumnWidth")
         assertTrue("좌우 기둥이 착수 칸을 세로로 쓰지 않는다 — 기둥 폭에서는 가로가 들어가지 않는다.", columns.contains("horizontal = false"))
-    }
-
-    @Test
-    fun theWideTogglesStillTellTheCoachMarkWhereTheyAre() {
-        wideArrangements().forEach { (name, source) ->
-            listOf("GuideTarget.Magnifier", "GuideTarget.BoardSize").forEach { target ->
-                assertTrue(
-                    "${name}의 토글이 `guideTarget($target)`을 알리지 않는다 — 첫돌이 동그라미가 사라진다(#128).",
-                    source.contains("guideTarget($target)"),
-                )
-            }
-        }
+        // ⚠️ #143이 착수 칸을 **플래그 뒤로** 보냈다(UX에서는 빠졌고 코드는 남았다). 두 배치 모두 그 뒤에 있어야
+        //   한다 — 한쪽만 남으면 플래그를 켰을 때 배치마다 다른 화면이 된다.
+        assertTrue("위아래 배치의 착수 칸이 플래그 뒤에 있지 않다(#143).", stacked.contains("playConfirmSlot {"))
+        assertTrue("좌우 기둥의 착수 칸이 플래그 뒤에 있지 않다(#143).", columns.contains("if (FeatureFlags.isPlayConfirmModeEnabled)"))
     }
 
     /**

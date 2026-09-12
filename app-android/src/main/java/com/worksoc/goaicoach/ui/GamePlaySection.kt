@@ -303,12 +303,6 @@ internal fun GamePlaySection(
                     availability = screenState.engine.availability,
                     modifier = Modifier.padding(bottom = 6.dp),
                 )
-                BoardTopControls(
-                    isMagnifierEnabled = screenState.uxOptions.isPlayMagnifierEnabled,
-                    onToggleMagnifier = onToggleMagnifier,
-                    isMaxSize = isBoardMaxSize,
-                    onToggleBoardSize = onToggleBoardSize,
-                )
                 // ⚠️ 폭을 **GoBoard 바깥에서** 바꾼다. 안에서 바꾸면 탭 좌표 변환·좌표 라벨·형세
                 // 오버레이가 저마다 다른 폭을 볼 위험이 있는데, 밖에서 주면 그 안의 모든 계산이
                 // 같은 Canvas 크기를 따라간다.
@@ -498,33 +492,15 @@ private fun WidePlayArrangement(
         GameActionButtons(
             screenState = screenState,
             onEvent = onEvent,
-            firstRowLeading = {
-                BoardTopToggle(
-                    label = playMagnifierLabelFor(strings.language),
-                    spokenSubject = playMagnifierLabelFor(strings.language),
-                    spokenState = playMagnifierStateFor(strings.language, screenState.uxOptions.isPlayMagnifierEnabled),
-                    active = screenState.uxOptions.isPlayMagnifierEnabled,
-                    onClick = onToggleMagnifier,
-                    prominent = true,
-                    modifier = Modifier.weight(1f).guideTarget(GuideTarget.Magnifier),
-                )
-                BoardTopToggle(
-                    label = boardSizeToggleLabelFor(strings.language, isBoardMaxSize),
-                    spokenSubject = boardSizeSubjectFor(strings.language),
-                    spokenState = boardSizeToggleLabelFor(strings.language, isBoardMaxSize),
-                    active = isBoardMaxSize,
-                    onClick = onToggleBoardSize,
-                    prominent = true,
-                    modifier = Modifier.weight(1f).guideTarget(GuideTarget.BoardSize),
-                )
-            },
-            secondRowLeading = {
+            // 판 토글 둘은 #143이 메뉴로 옮겼다 — 아래 첫 줄은 형세·추천만 남는다.
+            firstRowLeading = null,
+            secondRowLeading = playConfirmSlot { modifier ->
                 PlaySlot(
                     screenState = screenState,
                     tentativeMove = tentativeMove,
                     onEvent = onEvent,
                     horizontal = true,
-                    modifier = Modifier.weight(2f),
+                    modifier = modifier.weight(2f),
                 )
             },
         )
@@ -582,24 +558,6 @@ private fun WideColumnsArrangement(
                     isGraphExpanded = screenState.score.isGraphExpanded,
                     onGraphExpandedChange = onScoreGraphExpandedChange,
                     modifier = Modifier.weight(1f),
-                )
-                BoardTopToggle(
-                    label = playMagnifierLabelFor(strings.language),
-                    spokenSubject = playMagnifierLabelFor(strings.language),
-                    spokenState = playMagnifierStateFor(strings.language, screenState.uxOptions.isPlayMagnifierEnabled),
-                    active = screenState.uxOptions.isPlayMagnifierEnabled,
-                    onClick = onToggleMagnifier,
-                    prominent = false,
-                    modifier = Modifier.guideTarget(GuideTarget.Magnifier),
-                )
-                BoardTopToggle(
-                    label = boardSizeToggleLabelFor(strings.language, isBoardMaxSize),
-                    spokenSubject = boardSizeSubjectFor(strings.language),
-                    spokenState = boardSizeToggleLabelFor(strings.language, isBoardMaxSize),
-                    active = isBoardMaxSize,
-                    onClick = onToggleBoardSize,
-                    prominent = false,
-                    modifier = Modifier.guideTarget(GuideTarget.BoardSize),
                 )
             }
 
@@ -678,13 +636,15 @@ private fun WideColumnsArrangement(
                         stacked = true,
                         modifier = Modifier.fillMaxWidth(),
                     )
-                    PlaySlot(
-                        screenState = screenState,
-                        tentativeMove = tentativeMove,
-                        onEvent = onEvent,
-                        horizontal = false,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
+                    if (FeatureFlags.isPlayConfirmModeEnabled) {
+                        PlaySlot(
+                            screenState = screenState,
+                            tentativeMove = tentativeMove,
+                            onEvent = onEvent,
+                            horizontal = false,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
                     slots.undo(Modifier.fillMaxWidth())
                     slots.pass(Modifier.fillMaxWidth())
                     slots.resign(Modifier.fillMaxWidth())
@@ -696,6 +656,19 @@ private fun WideColumnsArrangement(
 
 /** 좌우 기둥의 폭. 좌석 카드 세 줄과 `형세 보기 (30)` 라벨이 들어가는 최소치에서 잡았다. */
 private val WideColumnWidth = 104.dp
+
+/**
+ * 착수 칸을 **플래그 뒤에** 둔다(백로그 #143) — 꺼져 있으면 아래 줄에 칸이 아예 생기지 않는다.
+ * 코드는 지우지 않았으므로 `FeatureFlags.isPlayConfirmModeEnabled`를 켜면 그대로 돌아온다.
+ */
+private fun playConfirmSlot(
+    content: @Composable RowScope.(Modifier) -> Unit,
+): (@Composable RowScope.() -> Unit)? =
+    if (FeatureFlags.isPlayConfirmModeEnabled) {
+        { content(Modifier) }
+    } else {
+        null
+    }
 
 /** 넓은 배치에서 `바둑판 여백`일 때 판 둘레 여백. */
 private val WideBoardInset = 16.dp
@@ -1074,128 +1047,3 @@ private fun Modifier.expandBeyondScreenPadding(): Modifier = layout { measurable
     }
 }
 
-/**
- * 보드 **바로 위** 경계선에 바짝 붙는 토글 두 개(#38의 자리에 #39가 하나를 더했다).
- * 왼쪽은 **착수 돋보기**, 오른쪽은 **바둑판 크기**다(2026-08-31 사용자 지시 — 좌우 대칭 배치).
- *
- * ⚠️ **보드 위에 얹지 마라.** 처음에는 판 우상단에 오버레이했는데, 거기는 실제로 착수하는
- * 자리라 칩이 탭을 가로챈다(2026-08-30 사용자 지적).
- *
- * ## 세그먼트에서 토글로 바꾼 이유 (2026-08-31)
- * 원래 크기 선택기는 `여백`·`최대` 두 칩을 나란히 놓고 선택된 쪽을 강조했고, 그 주석은
- * *"라벨이 상태와 어긋나면 오히려 헷갈린다"* 는 이유로 토글을 물리쳤다. **그 판단을 뒤집었다:**
- * - **판 크기는 상태가 이미 눈에 보인다.** 판이 화면 끝까지 차 있으면 최대인 것이 즉시 보이므로,
- *   칩이 상태를 다시 말하는 것은 중복이다.
- * - 이 앱에는 "뒤집을 수 있다"를 말하는 관용구가 이미 있다 — `PlayModeSwitch`의 `⇅` 글리프다.
- *   ⚠️ 다만 **라벨 방향은 그쪽과 다르다**: 여기서는 색이 상태를 말하므로 라벨도 **지금 상태**를
- *   적는다(`UiStringsBoardControls.kt` KDoc에 뒤집은 사유가 있다).
- * - 폭이 절반으로 줄어 **왼쪽에 대칭 버튼 자리가 생긴다** — 이것이 실제 계기였다.
- *
- * ⚠️ **두 버튼은 반드시 같은 관용구를 써야 한다.** 하나는 상태 라벨, 하나는 동작 라벨이면
- * 나란히 놓인 두 칩이 서로 다른 문법으로 말하게 되어 가장 헷갈린다 — 그래서 [BoardTopToggle]
- * 하나를 공유한다.
- */
-@Composable
-private fun BoardTopControls(
-    isMagnifierEnabled: Boolean,
-    onToggleMagnifier: () -> Unit,
-    isMaxSize: Boolean,
-    onToggleBoardSize: () -> Unit,
-) {
-    val strings = LocalUiStrings.current
-    Row(
-        // 아래 2dp만 남긴다 — 경계선에 바짝 붙이는 것이 요점이고, 세로 공간도 아낀다.
-        modifier = Modifier.fillMaxWidth().padding(bottom = 2.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        BoardTopToggle(
-            label = playMagnifierLabelFor(strings.language),
-            // ⚠️ 화면 라벨에 켜짐/꺼짐이 없으므로(사용자 지시) 상태는 **여기서만** 말한다.
-            // 지우면 스크린 리더 사용자에게 이 버튼은 상태를 알 수 없는 버튼이 된다.
-            spokenSubject = playMagnifierLabelFor(strings.language),
-            spokenState = playMagnifierStateFor(strings.language, isMagnifierEnabled),
-            active = isMagnifierEnabled,
-            onClick = onToggleMagnifier,
-            prominent = false,
-            // 첫돌이 가이드(#128 ⑤)가 이 버튼에 동그라미를 칠 수 있게 자리만 알려 준다.
-            modifier = Modifier.guideTarget(GuideTarget.Magnifier),
-        )
-        BoardTopToggle(
-            label = boardSizeToggleLabelFor(strings.language, isMaxSize),
-            spokenSubject = boardSizeSubjectFor(strings.language),
-            // 이쪽은 라벨이 곧 상태다 — 소리로도 같은 낱말을 넘긴다.
-            spokenState = boardSizeToggleLabelFor(strings.language, isMaxSize),
-            active = isMaxSize,
-            onClick = onToggleBoardSize,
-            prominent = false,
-            modifier = Modifier.guideTarget(GuideTarget.BoardSize),
-        )
-    }
-}
-
-/**
- * 두 토글이 **한 함수를 공유한다** — 모양이 갈리면 위 KDoc의 "같은 관용구" 약속이 깨진다.
- *
- * ⚠️ **활성 표시는 테두리 색뿐이다**(2026-08-31 사용자 지시 — *"테두리 색만으로 충분"*).
- * 처음에는 대국 상태판 턴 카드처럼 배경까지 칠했는데 **너무 눈에 띄었다.** 그래서 배경·글자색·
- * 글자 굵기를 **상태와 무관하게 고정**하고 테두리만 [ActiveStateBorder]로 바꾼다.
- * 테두리 색 자체는 여전히 그 턴 카드와 같은 토큰이라 "초록 테두리 = 활성"이 화면 위아래에서
- * 한 가지 뜻으로 읽힌다. 값을 여기 다시 적지 말 것.
- *
- * ⚠️ **글자색은 언제나 [ActionButtonContentColor]다**(상태판 아래 버튼들과 같은 방식).
- * 꺼졌을 때 흐리게 하면 **비활성(누를 수 없음)으로 읽히는데** 이 버튼은 언제나 누를 수 있다.
- */
-@Composable
-/**
- * ⚠️ **`internal`인 이유는 가이드 다시보기 하나뿐이다**(백로그 #128) — 그 화면이 ⑤를 설명할 때
- * **진짜 이 토글**을 같은 라벨 함수로 그린다. 정적 삽화를 쓰지 않는 사유는 `MenuCard`와 같다.
- */
-internal fun BoardTopToggle(
-    label: String,
-    spokenSubject: String,
-    spokenState: String,
-    active: Boolean,
-    onClick: () -> Unit,
-    // 넓은 배치(#141)의 아래 줄 버튼 크기로 그리는가. 폰 배치의 판 위 칩과 다시보기는 `false`.
-    prominent: Boolean,
-    modifier: Modifier = Modifier,
-) {
-    Surface(
-        modifier = modifier
-            .clickable(onClick = onClick)
-            .semantics {
-                // 이 파일·`GameActionButtons.kt`의 다른 토글들과 같은 관용구다.
-                role = Role.Switch
-                contentDescription = spokenSubject
-                stateDescription = spokenState
-            },
-        shape = RoundedCornerShape(10.dp),
-        // ⚠️ 활성일 때도 **같은 배경**이다. 이름이 `Inactive~`인 것은 이 토큰의 출처(턴 카드의
-        // 비활성 색)를 가리키는 것이고, 여기서는 두 상태가 함께 쓰는 바탕색이다.
-        color = InactiveStateContainerColor,
-        border = if (active) ActiveStateBorder else InactiveStateBorder,
-        tonalElevation = 0.dp,
-    ) {
-        // 가운데 정렬 상자 — 칩일 때는 글자에 딱 맞아 모양이 그대로이고, 넓은 배치에서 칸을 채울 때
-        // 글자가 **가운데**에 온다(Surface는 최소 크기를 자식에게 넘긴다).
-        Box(
-            modifier = if (prominent) Modifier.heightIn(min = ProminentBoardToggleMinHeight) else Modifier,
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                // `⇅`는 "이건 뒤집히는 것"이라는 이 앱의 관용구다(`PlayModeSwitch`와 같다).
-                text = "\u21C5 " + label,
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp),
-                style = if (prominent) MaterialTheme.typography.labelLarge else MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.Normal,
-                color = ActionButtonContentColor,
-                // 넓은 칸은 배율이 오르면 두 줄로 접힌다 — 높이가 바닥값이라 잘리지 않는다(함정 9번).
-                maxLines = if (prominent) 2 else 1,
-            )
-        }
-    }
-}
-
-/** 넓은 배치에서 판 토글이 아래 줄 다른 버튼과 키를 맞추는 바닥 높이. */
-private val ProminentBoardToggleMinHeight = 48.dp

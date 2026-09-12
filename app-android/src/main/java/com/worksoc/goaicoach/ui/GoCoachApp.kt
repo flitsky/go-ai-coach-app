@@ -278,7 +278,7 @@ private fun GoCoachScreen(
     var isEngineReady by remember { mutableStateOf(false) }
     val analysisCache = remember { AnalysisResultCache(maxEntries = 96) }
     val undoAnalysisRestoreCache = remember { UndoAnalysisRestoreCache(maxEntries = 96) }
-    var uxOptions by remember { mutableStateOf(initialPreferences.toKaTrainUxOptions()) }
+    var uxOptions by remember { mutableStateOf(initialPreferences.toKaTrainUxOptions().withPlayConfirmModeGate()) }
     var isScoreGraphExpanded by remember { mutableStateOf(false) }
     var hasCompletedEngineStartup by remember { mutableStateOf(false) }
 
@@ -735,11 +735,15 @@ private fun GoCoachScreen(
         )
     }
 
-    DirectPlayRecommendationDialog(
-        boardSize = settingsState.boardSize,
-        isDirectPlayEnabled = uxOptions.isDirectPlayEnabled,
-        onConfirm = { enabled -> uxOptions = uxOptions.copy(isDirectPlayEnabled = enabled) }
-    )
+    // 판 크기별 착수 모드 권장 팝업 — #143이 확인 모드를 UX에서 지우면서 함께 잠긴다.
+    // 남겨 두면 **없는 기능을 묻는 팝업**이 된다(플래그를 켜면 그대로 돌아온다).
+    if (FeatureFlags.isPlayConfirmModeEnabled) {
+        DirectPlayRecommendationDialog(
+            boardSize = settingsState.boardSize,
+            isDirectPlayEnabled = uxOptions.isDirectPlayEnabled,
+            onConfirm = { enabled -> uxOptions = uxOptions.copy(isDirectPlayEnabled = enabled) }
+        )
+    }
 
     // 봇 캐릭터 수집 상태 — #8이 배선을 남겨 둔 자리를 #10이 채운다(본체는 ui/BotCharacterUiState.kt).
     // 프리미엄 배선보다 **먼저** 만드는 이유: 구매 특전(#18) 판정에 지금 상대와 컬렉션이 필요하다.

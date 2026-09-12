@@ -71,22 +71,51 @@ internal fun KaTrainUxMenuPanel(
             modifier = Modifier.padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
+            // **판 위에 있던 토글 둘이 여기로 내려왔다**(백로그 #143, 2026-09-12 사용자 지시).
+            // 대국 화면을 판에 집중시키려고 뺐고, 둘 다 기본값이 이미 그 값이라(돋보기 켜짐 · 판 최대)
+            // 대부분 사용자는 한 번도 누르지 않는다. ⚠️ 이 패널은 **☰ 대국 메뉴와 설정 화면이 공유**하므로
+            // 여기 한 번 넣으면 두 곳에서 보인다 — 설정 화면의 돋보기 창 크기·배율(#85) 바로 위에 붙는다.
             Row(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 OptionSwitchCell(
-                    label = strings.directPlay,
-                    checked = options.isDirectPlayEnabled,
+                    label = playMagnifierLabelFor(strings.language),
+                    checked = options.isPlayMagnifierEnabled,
                     modifier = Modifier.weight(1f),
-                    onCheckedChange = { onOptionsChange(options.copy(isDirectPlayEnabled = it)) },
+                    onCheckedChange = { onOptionsChange(options.copy(isPlayMagnifierEnabled = it)) },
                 )
                 Spacer(modifier = Modifier.width(columnGap))
+                OptionSwitchCell(
+                    // ⚠️ 스위치의 라벨은 **켰을 때의 상태**를 적는다(`바둑판 최대`) — 주체 이름(`바둑판 크기`)만
+                    // 적으면 켜짐이 무엇을 뜻하는지 알 수 없다. 판 위 토글이 상태를 라벨로 말하던 것과 같은 관용구다.
+                    label = boardSizeToggleLabelFor(strings.language, isMaxSize = true),
+                    checked = options.isBoardMaxSize,
+                    modifier = Modifier.weight(1f),
+                    onCheckedChange = { onOptionsChange(options.copy(isBoardMaxSize = it)) },
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+            ) {
                 OptionSwitchCell(
                     label = strings.lastMoveRing,
                     checked = options.showLastMoveRing,
                     modifier = Modifier.weight(1f),
                     onCheckedChange = { onOptionsChange(options.copy(showLastMoveRing = it)) },
                 )
+                Spacer(modifier = Modifier.width(columnGap))
+                // '착수 확인 / 바로 착수'는 #143이 UX에서 지웠다 — 코드는 플래그 뒤에 그대로 남는다
+                // (`FeatureFlags.isPlayConfirmModeEnabled`). 꺼져 있으면 이 칸이 **빈자리로** 남아 격자가 유지된다.
+                if (FeatureFlags.isPlayConfirmModeEnabled) {
+                    OptionSwitchCell(
+                        label = strings.directPlay,
+                        checked = options.isDirectPlayEnabled,
+                        modifier = Modifier.weight(1f),
+                        onCheckedChange = { onOptionsChange(options.copy(isDirectPlayEnabled = it)) },
+                    )
+                } else {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
             }
             Row(
                 modifier = Modifier.fillMaxWidth(),

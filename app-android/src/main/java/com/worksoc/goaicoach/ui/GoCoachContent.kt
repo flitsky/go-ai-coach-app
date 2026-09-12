@@ -269,13 +269,9 @@ internal fun GoCoachContent(
             cacheOptimizationPrompt != null ||
             finalJudgementToShow != null ||
             isDisplayMenuExpanded,
+        // ⚠️ **화면에 적힌 그대로 인용한다** — 가이드가 다른 낱말로 부르면 사용자가 그것을 찾지 못한다.
+        //   (돋보기·판 크기 단계는 #143이 그 버튼을 메뉴로 옮기며 함께 지웠다.)
         toolLabels = GuideToolLabels(
-            // ⚠️ **판 위에 적힌 그대로 인용한다** — 실기에서 처음에 어긋났다: `magnifierWindowSizeLabel`
-            // ("돋보기 창 크기")은 **설정 화면**의 라벨이고 판 위 토글은 `착수 돋보기`였다.
-            // ⚠️ 바둑판 쪽은 토글 라벨(`바둑판 최대`/`바둑판 여백`)이 **상태에 따라 바뀌므로**
-            //   인용하지 않고 **주체 이름**만 쓴다 — 여백 상태로 들어온 사용자에게도 참이어야 한다.
-            magnifier = playMagnifierLabelFor(strings.language),
-            boardSubject = boardSizeSubjectFor(strings.language),
             eval = strings.eval,
             topMoves = strings.topMovesAction,
         ),

@@ -75,29 +75,6 @@ private val MatchSetupBody: Map<UiLanguage, String> = mapOf(
  * ⚠️ **게이트를 정직하게 말하는 것은 뒤의 둘뿐이다**(사용자 확정 ⓓ). 돋보기·바둑판 크기는 그냥
  * 켜지므로 조건을 붙이면 없는 문턱을 만드는 셈이 된다 — 형세 보기·추천 수에만 여는 방법을 적는다.
  */
-/**
- * ⚠️ **동작을 그대로 적는다**(2026-09-09 사용자 피드백: *"돋보기 설명이 모호함"*).
- * 처음에는 *"돌을 놓을 때 손끝이 확대돼요"* 라고만 적었는데, 사용자가 **무엇을 해야** 그것이
- * 일어나는지 알 수 없다는 지적이었다. `GoBoard.kt`의 제스처 루프를 확인해 실제 동작을 적었다:
- * **꾹 누름 임계(`longPressTimeoutMillis`)를 넘기면** 확대가 뜨고, 그대로 끌어 자리를 고르고
- * **떼는 순간** 착수된다. 그 마지막 조각이 빠지면 *"누르면 바로 놓이나?"* 라는 오해가 남는다.
- * ⚠️ 돋보기가 **꺼져** 있으면 꾹 눌러도 아무 일이 없고 평범한 탭 착수다 — 그래서 문구가
- * *"켜 두면"* 으로 시작한다.
- */
-private fun inGameMagnifierBody(language: UiLanguage, label: String): String = when (language) {
-    UiLanguage.Korean -> "«$label»를 켜 두면 반상을 잠시 누르고 있을 때 그 자리가 확대돼요. 그대로 손을 움직여 고른 뒤 떼면 착수돼서, 촘촘한 곳에서도 정확히 두실 수 있어요."
-    UiLanguage.English -> "With «$label» on, press and hold on the board and that spot zooms in. Slide to the point you want and lift to play it — precise even where stones are crowded."
-    UiLanguage.Japanese -> "「$label」をオンにしておくと、盤面を少し押し続けたところが拡大されます。そのまま指を動かして選び、離すと着手されるので、混み合った所でも正確に打てます。"
-    UiLanguage.ChineseSimplified -> "开启「$label」后，在棋盘上稍按不放，该处就会放大。保持按住移动到想要的位置，抬手即落子，即使在密集处也能精准落子。"
-}
-
-private fun inGameBoardSizeBody(language: UiLanguage, label: String): String = when (language) {
-    UiLanguage.Korean -> "«$label»를 최대로 하면 반상이 화면을 꽉 채워요. 여백이 편하시면 다시 눌러 되돌릴 수 있어요."
-    UiLanguage.English -> "Set «$label» to full and the board fills the screen. Tap again if you prefer some margin."
-    UiLanguage.Japanese -> "「$label」を最大にすると盤面が画面いっぱいになります。余白のほうが見やすければもう一度押して戻せます。"
-    UiLanguage.ChineseSimplified -> "将「$label」设为最大可让棋盘铺满屏幕。若更习惯留白，再点一次即可还原。"
-}
-
 private fun inGameEvalBody(language: UiLanguage, label: String): String = when (language) {
     UiLanguage.Korean -> "«$label»는 지금 누구 집인지 반상에 색으로 보여 줘요. 출석해서 받은 1회권이나 짧은 광고 한 번으로 여실 수 있어요."
     UiLanguage.English -> "«$label» shades the board to show whose territory is whose. Open it with a ticket from a daily check-in, or one short ad."
@@ -140,8 +117,6 @@ internal fun guideBodyFor(
     // ⑤ 넷은 각자 **자기 버튼의 라벨 하나만** 인용한다. 라벨이 없으면 *"«»를 켜 두면…"* 이라는
     // 빈 인용부호가 화면에 나가므로 폴백을 두지 않는다 — 조용한 거짓말보다 시끄러운 실패가 낫다
     // (2026-09-09 감사: 한때 `?: ""`로 조용히 넘어갔다).
-    GuideStep.InGameMagnifier -> inGameMagnifierBody(language, requireLabels(toolLabels).magnifier)
-    GuideStep.InGameBoardSize -> inGameBoardSizeBody(language, requireLabels(toolLabels).boardSubject)
     GuideStep.InGameEval -> inGameEvalBody(language, requireLabels(toolLabels).eval)
     GuideStep.InGameTopMoves -> inGameTopMovesBody(language, requireLabels(toolLabels).topMoves)
 }
@@ -177,8 +152,6 @@ internal fun guideMyPageGreetingFor(language: UiLanguage): String = MyPageGreeti
  * (`돋보기 창 크기`는 설정 화면 라벨이라 판 위 `착수 돋보기`와 다른 이름이었다).
  */
 internal data class GuideToolLabels(
-    val magnifier: String,
-    val boardSubject: String,
     val eval: String,
     val topMoves: String,
 )
