@@ -1,5 +1,7 @@
 package com.worksoc.goaicoach
 
+import android.content.pm.ActivityInfo
+import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -19,6 +21,7 @@ import com.worksoc.goaicoach.application.engine.EngineSessionCapabilities
 import com.worksoc.goaicoach.application.engine.LocalEngineSessionClient
 import com.worksoc.goaicoach.application.engine.RemoteEngineCandidate
 import com.worksoc.goaicoach.engine.DeferredEngineCoreApi
+import com.worksoc.goaicoach.ui.allowsRotation
 import com.worksoc.goaicoach.engine.EngineBootstrap
 import com.worksoc.goaicoach.engine.EngineIdentity
 import com.worksoc.goaicoach.engine.createEngineBootstrap
@@ -40,6 +43,27 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 class MainActivity : ComponentActivity() {
+    /**
+     * 회전 정책(백로그 #147) — 폰은 세로 고정, 큰 화면(sw≥600dp)은 자유. 판정은 `allowsRotation` 하나가 한다.
+     *
+     * ⚠️ **매니페스트의 `portrait`는 그대로 둔다** — 이 줄이 돌기 전(첫 프레임)까지의 기본값이고, 큰 화면에서만
+     * 여기서 풀어 준다. `SCREEN_ORIENTATION_USER`는 시스템의 회전 잠금 설정을 존중한다.
+     * ⚠️ `onConfigurationChanged`에서도 다시 적용해야 한다 — 폴드를 접었다 펴면 폭이 바뀌는데(`configChanges`
+     * 덕분에 액티비티는 살아 있다) 그때 정책도 따라가야 접은 화면에서 가로로 남는 일이 없다.
+     */
+    private fun applyRotationPolicy(configuration: Configuration) {
+        requestedOrientation = if (allowsRotation(configuration.smallestScreenWidthDp)) {
+            ActivityInfo.SCREEN_ORIENTATION_USER
+        } else {
+            ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        }
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        applyRotationPolicy(newConfig)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -163,6 +187,10 @@ class MainActivity : ComponentActivity() {
         // 인플레이트하는 바로 그 순간**과 겹쳐, `android.R.id.content`가 사라진 decor가 만들어진다.
         // 실측(Pixel 7 / API 35, `playInternal`): **앞에 두면 9/120, 뒤에 두면 0/120.**
         // ⚠️ 되돌리기 쉬운 만큼 `StartupOrderContractTest`가 이 순서를 소스 계약으로 지킨다.
+        // 회전 정책(#147)을 건다. ⚠️ **`setContent`보다 앞에 두지 말 것** — `super.onCreate`와 `setContent` 사이는
+        // #123이 실측으로 비워 둔 구간이고(`StartupOrderContractTest`), 그 계약은 이 줄을 실제로 잡아냈다.
+        // 창이 세워진 뒤에 걸어도 결과는 같다: 큰 화면이면 잠금이 풀리고, `configChanges` 덕분에 대국은 살아 있다.
+        applyRotationPolicy(resources.configuration)
         lifecycleScope.launch { AdsConsentManager.refresh(this@MainActivity) }
     }
 }

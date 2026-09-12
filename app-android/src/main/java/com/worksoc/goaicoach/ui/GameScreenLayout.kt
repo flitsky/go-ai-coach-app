@@ -48,6 +48,28 @@ internal fun gameScreenLayoutFor(widthDp: Float, heightDp: Float): GameScreenLay
 internal const val WideLayoutMinWidthDp = 600f
 
 /**
+ * 이 화면에서 **회전을 허용할까**(백로그 #147, 2026-09-12 사용자 확정: *"권장안으로 진행"*).
+ *
+ * 폰은 세로 고정, 큰 화면은 자유다. 판정 기준을 [WideLayoutMinWidthDp] **하나로 공유**하는 것이 요점이다 —
+ * 배치가 갈리는 폭과 회전이 열리는 폭이 어긋나면 *"가로로 돌렸는데 폰 배치가 뜨는"* 화면이 생긴다.
+ *
+ * ## 왜 폰은 계속 잠그나
+ * 폰 가로는 어느 배치로도 답이 없다 — 세로가 360dp 남짓이라 판이 그만큼 작아지고, 좌우 기둥(L1)은 폭이
+ * 600dp 이상일 때만 쓴다.
+ *
+ * ## 왜 큰 화면은 여는 게 맞나
+ * targetSdk 36에서 **Android 16은 sw≥600dp 화면의 세로 고정을 무시한다** — 폴드를 펼쳐 돌리면 이미 가로로
+ * 그려지고 L1이 뜬다. 이 정책은 그것을 명시적으로 받아들이고, 안드로이드 14·15 폴드에도 같은 동작을 준다.
+ * ⚠️ **회전으로 대국이 날아가던 사고(2026-09-09)는 별개로 이미 고쳐져 있다** — `configChanges`가 액티비티
+ * 재생성을 막는다. 그 잠금을 푸는 것과 그 사고는 이제 관계가 없다.
+ *
+ * @param smallestScreenWidthDp **방향과 무관한** 폭(두 방향 중 좁은 쪽). ⚠️ `screenWidthDp`를 쓰면 돌리는
+ *   순간 기준이 바뀌어 잠금이 오락가락한다.
+ */
+internal fun allowsRotation(smallestScreenWidthDp: Int): Boolean =
+    smallestScreenWidthDp >= WideLayoutMinWidthDp
+
+/**
  * 폰 배치에서 **판이 아닌 모든 것**의 세로 합(dp). 2026-09-11 실측(#139): 헤더·점수 카드·판 위 토글·
  * 좌석 카드·버튼 두 줄과 여백을 합쳐 약 426dp. 폰 배치의 조작부를 크게 바꾸면 다시 잴 것.
  */
