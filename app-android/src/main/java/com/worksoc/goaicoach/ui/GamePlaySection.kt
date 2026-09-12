@@ -1,6 +1,9 @@
 package com.worksoc.goaicoach.ui
 
 import android.widget.Toast
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -29,6 +32,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
@@ -52,6 +56,7 @@ import com.worksoc.goaicoach.application.consumable.ConsumableCatalog
 import com.worksoc.goaicoach.application.consumable.ConsumableSpendDecision
 import com.worksoc.goaicoach.application.movereview.MoveReviewTone
 import com.worksoc.goaicoach.application.premium.FeatureAccess
+import com.worksoc.goaicoach.application.preferences.DelayedPlayWindowMillis
 import com.worksoc.goaicoach.application.premium.FeatureId
 import com.worksoc.goaicoach.application.safety.engineTurnWatchdogTimeoutMillisFor
 import com.worksoc.goaicoach.application.safety.isEngineTurnWatchdogTriggered
@@ -67,6 +72,12 @@ import kotlinx.coroutines.flow.first
 import com.worksoc.goaicoach.application.guide.GuideTarget
 
 private const val TurnTimerTickIntervalMillis = 200L
+
+/**
+ * 지연 착수가 기다리는 자리(백로그 #144). [token]은 **누를 때마다 새로 발급**한다 — 같은 자리를 다시 눌러도
+ * 타이머가 처음부터 다시 돌게 하는 것이 이 값의 유일한 존재 이유다.
+ */
+private data class PendingPlay(val coordinate: BoardCoordinate, val token: Int)
 
 @Composable
 internal fun GamePlaySection(
@@ -84,9 +95,30 @@ internal fun GamePlaySection(
     wideMenuButton: @Composable () -> Unit,
 ) {
     var tentativeMove by remember { mutableStateOf<BoardCoordinate?>(null) }
+    // 지연 착수(#144) — 떼고 나서 기다리는 자리. ⚠️ **좌표만으로는 안 된다**: 같은 자리를 다시 눌러도
+    // 처음부터 다시 세야 하는데(사용자 결정), 좌표가 그대로면 키가 안 바뀌어 타이머가 재시작되지 않는다.
+    // 그래서 누를 때마다 **새 번호**를 함께 발급한다.
+    var pendingPlay by remember { mutableStateOf<PendingPlay?>(null) }
+    var pendingPlaySeq by remember { mutableIntStateOf(0) }
+    // 이 애니메이션이 곧 타이머다 — 진해지는 것과 놓이는 시점이 **같은 하나**라 서로 어긋날 수 없다.
+    val pendingPlayProgress = remember { Animatable(0f) }
 
     LaunchedEffect(screenState.gameState) {
         tentativeMove = null
+        // ⚠️ 판이 바뀌면 대기를 버린다 — 무르기·기권·종국·AI 착수가 그 사이 들어오면, 남겨 둘 경우
+        //   이미 끝난 판이나 남의 차례에 돌이 하나 더 떨어진다.
+        pendingPlay = null
+    }
+
+    LaunchedEffect(pendingPlay) {
+        val waiting = pendingPlay ?: return@LaunchedEffect
+        pendingPlayProgress.snapTo(0f)
+        pendingPlayProgress.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(durationMillis = DelayedPlayWindowMillis.toInt(), easing = LinearEasing),
+        )
+        pendingPlay = null
+        onEvent(GameUiEvent.PlayAt(waiting.coordinate))
     }
     LaunchedEffect(screenState.uxOptions.isDirectPlayEnabled) {
         tentativeMove = null
@@ -262,11 +294,17 @@ internal fun GamePlaySection(
             engineActivityIndicator = screenState.engine.activityIndicator,
             modifier = boardModifier,
             tentativeMove = tentativeMove,
+            pendingPlay = pendingPlay?.coordinate,
+            pendingPlayProgress = { pendingPlayProgress.value },
             onCoordinateTap = { coordinate ->
-                if (screenState.uxOptions.isDirectPlayEnabled) {
-                    onEvent(GameUiEvent.PlayAt(coordinate))
-                } else {
-                    tentativeMove = coordinate
+                when {
+                    // 지연 착수(#144): 누를 때마다 **그 자리에서 처음부터** 다시 센다 — 다른 자리든 같은 자리든.
+                    screenState.uxOptions.isDelayedPlayEnabled -> {
+                        pendingPlaySeq += 1
+                        pendingPlay = PendingPlay(coordinate, pendingPlaySeq)
+                    }
+                    screenState.uxOptions.isDirectPlayEnabled -> onEvent(GameUiEvent.PlayAt(coordinate))
+                    else -> tentativeMove = coordinate
                 }
             },
             isGameEnded = screenState.isGameEnded,

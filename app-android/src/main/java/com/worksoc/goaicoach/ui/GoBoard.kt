@@ -91,6 +91,14 @@ internal fun GoBoard(
     engineActivityIndicator: EngineActivityIndicator?,
     modifier: Modifier = Modifier,
     tentativeMove: BoardCoordinate? = null,
+    /**
+     * **지연 착수**(백로그 #144)로 확정을 기다리는 자리. 없으면 `null`.
+     *
+     * ⚠️ 진행도를 **값이 아니라 람다로** 받는다 — 컴포지션 본문에서 애니메이션 값을 읽으면 0.5초 내내
+     * 매 프레임 화면 전체가 리컴포즈된다(`playDrag`가 같은 이유로 그리기 람다 안에서만 읽힌다).
+     */
+    pendingPlay: BoardCoordinate? = null,
+    pendingPlayProgress: () -> Float = { 0f },
     onCoordinateTap: (BoardCoordinate) -> Unit,
     isGameEnded: Boolean = false,
     isEngineBusy: Boolean = false,
@@ -329,6 +337,18 @@ internal fun GoBoard(
                         radius = geometry.spacing * 0.42f,
                         stone = gameState.nextPlayer,
                         alpha = ghostAlpha
+                    )
+                }
+
+                // 지연 착수(#144): 기다리는 동안 **점점 진해진다.** 깜빡이는 가늠돌(위)과 일부러 다른 표현이다 —
+                // 저쪽은 "여기 둘까?"이고 이쪽은 "곧 놓인다"라서, 시간이 흐르는 것이 보여야 한다.
+                if (pendingPlay != null) {
+                    drawGhostStone(
+                        center = geometry.pointFor(pendingPlay),
+                        radius = geometry.spacing * 0.42f,
+                        stone = gameState.nextPlayer,
+                        alpha = PendingPlayMinAlpha +
+                            (1f - PendingPlayMinAlpha) * pendingPlayProgress().coerceIn(0f, 1f),
                     )
                 }
 
@@ -939,3 +959,6 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawGhostStone(
         style = Stroke(width = 2.2f),
     )
 }
+
+/** 지연 착수가 시작될 때의 투명도. 여기서 1.0까지 진해지며 확정된다(#144). */
+private const val PendingPlayMinAlpha = 0.35f

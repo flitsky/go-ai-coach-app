@@ -58,6 +58,7 @@ internal object UserPreferencesCodec {
             .put("showMoveReview", snapshot.showMoveReview)
             .put("hasSeenOnboarding", snapshot.hasSeenOnboarding)
             .put("isPlayHapticEnabled", snapshot.isPlayHapticEnabled)
+            .put("isDelayedPlayEnabled", snapshot.isDelayedPlayEnabled)
             .put("isBoardMaxSize", snapshot.isBoardMaxSize)
             .put("isPlayMagnifierEnabled", snapshot.isPlayMagnifierEnabled)
             // ⚠️ 배율류는 **문자열로** 저장한다 — `Float`를 `Double`로 넣으면
@@ -102,6 +103,7 @@ internal object UserPreferencesCodec {
                 showMoveReview = json.optBoolean("showMoveReview", false),
                 hasSeenOnboarding = json.optBoolean("hasSeenOnboarding", false),
                 isPlayHapticEnabled = json.optBoolean("isPlayHapticEnabled", true),
+                isDelayedPlayEnabled = json.optBoolean("isDelayedPlayEnabled", false),
                 isBoardMaxSize = json.optBoolean("isBoardMaxSize", true),
                 isPlayMagnifierEnabled = json.optBoolean("isPlayMagnifierEnabled", true),
                 magnifierSizeScale = MagnifierSettings.sanitizeSizeScale(

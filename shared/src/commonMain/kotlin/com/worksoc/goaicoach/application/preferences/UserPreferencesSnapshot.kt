@@ -7,6 +7,9 @@ import com.worksoc.goaicoach.shared.DefaultKomi
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 
+/** 지연 착수가 켜졌을 때 기다리는 시간. 사용자 지정값(#144). */
+const val DelayedPlayWindowMillis: Long = 500L
+
 data class UserPreferencesSnapshot(
     val boardSize: BoardSize = BoardSize.Thirteen,
     val playerSetup: PlayerSetup = PlayerSetup(),
@@ -52,6 +55,13 @@ data class UserPreferencesSnapshot(
      */
     val appFontScale: Float = DefaultAppFontScale,
     val isPlayHapticEnabled: Boolean = true,
+    /**
+     * **지연 착수**(백로그 #144, 2026-09-12 사용자 결정) — 손을 뗀 뒤 [DelayedPlayWindowMillis] 동안 기다렸다가
+     * 놓는다. 그 사이 판을 다시 누르면 그 자리로 옮기고 **처음부터 다시 센다**(같은 자리를 눌러도 마찬가지다).
+     *
+     * ⚠️ **기본값은 꺼짐**이다 — 지금 동작(떼는 순간 착수)이 바뀌는 것이라, 원하는 사람만 메뉴에서 켠다.
+     */
+    val isDelayedPlayEnabled: Boolean = false,
     val isBoardMaxSize: Boolean = true,
     val isPlayMagnifierEnabled: Boolean = true,
     /** 돋보기 창 크기 배수(백로그 #85). 값 목록과 기본값은 [MagnifierSettings]가 갖는다. */

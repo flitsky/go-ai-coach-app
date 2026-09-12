@@ -178,6 +178,21 @@ internal fun KaTrainUxMenuPanel(
             // 상태 토글과 1회성 동작을 겸하면 "한 번 켜면 계속 켜져 있다"는 잘못된 기대가 생겨
             // 두 축을 분리했다. 상시 표시는 프리미엄 전용이며, 판정은 버튼과 같은
             // FeatureAccessPolicy(6계층)를 쓴다.
+            // **지연 착수**(백로그 #144) — 켜면 떼고 0.5초 뒤에 놓이고, 그 사이 다시 누르면 그 자리에서 다시 센다.
+            // 기본 꺼짐이라(지금 동작이 바뀌는 것) 원하는 사람만 여기서 켠다.
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                OptionSwitchCell(
+                    label = strings.delayedPlay,
+                    checked = options.isDelayedPlayEnabled,
+                    modifier = Modifier.weight(1f),
+                    onCheckedChange = { onOptionsChange(options.copy(isDelayedPlayEnabled = it)) },
+                )
+                Spacer(modifier = Modifier.width(columnGap))
+                Spacer(modifier = Modifier.weight(1f))
+            }
+
             val evalAllowed = premium.resolve(FeatureId.Eval) is FeatureAccess.Allowed
             val topMovesAllowed = premium.resolve(FeatureId.TopMoves) is FeatureAccess.Allowed
             Row(

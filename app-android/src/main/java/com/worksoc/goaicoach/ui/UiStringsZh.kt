@@ -31,6 +31,7 @@ internal val UiStringsChineseSimplified = UiStringsKorean.copy(
     playModeConfirm = "确认",
     coordinates = "坐标",
     playHaptic = "落子振动",
+    delayedPlay = "延迟落子",
     moveNumbers = "手数编号",
     lastMoveRing = "落子标记",
     moveReviewToggle = "着法评价",

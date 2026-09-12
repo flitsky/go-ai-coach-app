@@ -426,6 +426,7 @@ private fun GoCoachScreen(
                 isDirectPlayEnabled = uxOptions.isDirectPlayEnabled,
                 showMoveReview = uxOptions.showMoveReview,
                 isPlayHapticEnabled = uxOptions.isPlayHapticEnabled,
+                isDelayedPlayEnabled = uxOptions.isDelayedPlayEnabled,
                 isBoardMaxSize = uxOptions.isBoardMaxSize,
                 isPlayMagnifierEnabled = uxOptions.isPlayMagnifierEnabled,
                 magnifierSizeScale = uxOptions.magnifierSizeScale,

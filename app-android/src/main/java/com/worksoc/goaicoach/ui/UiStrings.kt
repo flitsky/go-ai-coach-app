@@ -133,6 +133,8 @@ internal data class UiStrings(
     /** 착수 시 진동 토글(#36). 라벨이 "이펙트"가 아니라 "진동"인 이유는 실제로 진동만 하기
      *  때문이다 — 하지 않는 일을 약속하는 라벨은 #31에서 이미 한 번 걸렀다. */
     val playHaptic: String,
+    /** 메뉴의 **지연 착수** 스위치(백로그 #144) — 켜면 떼고 0.5초 뒤에 놓인다. */
+    val delayedPlay: String,
     val moveNumbers: String,
     val lastMoveRing: String,
     val moveReviewToggle: String,

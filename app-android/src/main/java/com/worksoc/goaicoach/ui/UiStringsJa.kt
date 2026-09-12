@@ -31,6 +31,7 @@ internal val UiStringsJapanese = UiStringsKorean.copy(
     playModeConfirm = "確認",
     coordinates = "座標",
     playHaptic = "着手の振動",
+    delayedPlay = "遅延着手",
     moveNumbers = "手数番号",
     lastMoveRing = "着手表示",
     moveReviewToggle = "着手評価",

@@ -31,6 +31,7 @@ internal val UiStringsEnglish = UiStringsKorean.copy(
     playModeConfirm = "Ask",
     coordinates = "Coords",
     playHaptic = "Haptics",
+    delayedPlay = "Delayed play",
     moveNumbers = "Move nums",
     lastMoveRing = "Move mark",
     moveReviewToggle = "Move review",
