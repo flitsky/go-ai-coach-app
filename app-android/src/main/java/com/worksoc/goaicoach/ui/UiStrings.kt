@@ -1243,6 +1243,20 @@ internal data class UiStrings(
      * ⚠️ 여기서는 [controllerLabel]("유저")이 아니라 **"사람"** 을 쓴다. 좌석 한 칸을 가리킬 때는
      * "유저"가 자연스럽지만, `유저:AI`처럼 **대진으로 이을 때**는 "사람"이 읽힌다(사용자 표기).
      */
+    /**
+     * 캐릭터 픽커에서 **구독 덕에 열려 있는** 카드에 붙는 줄(백로그 #157).
+     *
+     * ⚠️ *"보유"* 가 아니라 *"이용 중"* 이다 — 구독은 **살아 있는 상태**이지 획득이 아니고,
+     * 해지하면 도로 잠긴다. "가졌다"고 말하면 해지 순간 빼앗긴 것으로 읽힌다.
+     */
+    val botUnlockedBySubscription: String
+        get() = when (language) {
+            UiLanguage.Korean -> "프리미엄 구독으로 이용 중"
+            UiLanguage.English -> "Available with Premium"
+            UiLanguage.Japanese -> "プレミアム登録中は利用可能"
+            UiLanguage.ChineseSimplified -> "高级订阅期间可用"
+        }
+
     fun seatMatchupLabel(playerSetup: PlayerSetup): String {
         fun side(controller: SeatController): String =
             when (controller) {

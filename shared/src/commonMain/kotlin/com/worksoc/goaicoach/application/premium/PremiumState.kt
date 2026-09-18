@@ -55,6 +55,22 @@ data class PremiumState(
         }
 
     /**
+     * **구독(또는 그 자리를 잇는 영속 권한)이 살아 있는가** — 로스터 전체를 여는 축이다(백로그 #157).
+     *
+     * ⚠️ **[isActive]와 갈라진다. 광고 1시간([PremiumSource.AdGrant])은 여기 포함되지 않는다.**
+     * 인게임 기능은 광고로도 1시간 열리지만, **캐릭터 로스터까지 열리면 안 된다** — 광고 몇 번이
+     * 월 구독과 같은 것을 주면 구독을 살 이유가 사라진다(`FEATURE_ACCESS_PRINCIPLES.md` 8.2가
+     * 중간안 *"보유한 모두에게 무제한"* 을 폐기한 것과 같은 이유다).
+     *
+     * ⚠️ **이 권한은 저장소에 쓰지 않는다** — 구독은 **살아 있는 상태**이지 획득 이력이 아니다.
+     * `claimedBots`에 넣으면 해지 뒤에도 캐릭터가 남는다(#157).
+     *
+     * 지금 [PremiumSource.Purchase]가 그 자리를 들고 있고, **#158이 그것을 월 구독으로 바꾼다** —
+     * 그때 이 함수는 고칠 것이 없다.
+     */
+    fun isSubscriptionActive(): Boolean = source == PremiumSource.Purchase
+
+    /**
      * 저장소에서 막 읽어온 상태를 신뢰해도 되는지 판정한다. [PremiumSource.AdGrant]의 시작
      * 시각이 현재보다 미래라면(기기 시계 되돌림, 디스크 손상 등) 신뢰할 수 없다는 신호다 —
      * 그런 값을 그대로 믿으면 [isActive]의 경과시간 계산(`nowMillis - adGrantStartedAtMillis`)이

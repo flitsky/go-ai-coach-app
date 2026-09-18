@@ -785,7 +785,8 @@ private fun GoCoachScreen(
     CompositionLocalProvider(
         LocalPremiumUiState provides premiumUiState,
         LocalConsumableUiState provides consumableUiState,
-        LocalBotCharacterUiState provides botCharacterUiState,
+        // 구독은 프리미엄 배선이 만들어진 **뒤에야** 알 수 있어 여기서 얹는다(#157).
+        LocalBotCharacterUiState provides botCharacterUiState.copy(subscriptionActive = premiumUiState.isPurchased),
     ) {
     // 받아 가지 않은 출석 보상이 있으면 홈 위에 Claim 다이얼로그를 띄운다(킥오프 플랜 5.1절) —
     // 체크인/지급/상태는 전부 ui/AttendanceRewardClaimDialog.kt가 들고 있다(상태 훅 예산 절약).

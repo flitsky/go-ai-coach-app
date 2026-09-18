@@ -111,9 +111,27 @@ internal data class BotCharacterUiState(
     val enqueueAcquired: (List<BotCharacter>) -> Unit = {},
     /** 맨 앞 하나를 축전 완료 처리한다(팝업이 닫힐 때). */
     val consumeAcquired: () -> Unit = {},
+    /**
+     * 구독이 살아 있는가 — 살아 있으면 **로스터 전체가 열린다**(백로그 #157, 8.1의 구독 특전 ⓐ).
+     *
+     * ⚠️ **광고 1시간은 여기 해당하지 않는다**(`PremiumState.isSubscriptionActive`).
+     * ⚠️ **저장소에 쓰지 않는다** — 구독은 살아 있는 상태이지 획득 이력이 아니다. 그래서 이 값은
+     * `GoCoachApp`이 프리미엄 배선을 만든 **뒤에** provider에서 얹어 준다(봇 상태가 먼저 만들어진다).
+     */
+    val subscriptionActive: Boolean = false,
 ) {
-    /** 지금 이 캐릭터로 대국할 수 있는가. 기본 제공은 획득 기록 없이도 통과한다(#16). */
-    fun isAvailable(character: BotCharacter): Boolean = collection.isAvailable(character)
+    /** 지금 이 캐릭터로 대국할 수 있는가. 기본 제공은 획득 기록 없이도 통과한다(#16), 구독자는 전부(#157). */
+    fun isAvailable(character: BotCharacter): Boolean =
+        collection.isAvailable(character, subscriptionActive)
+
+    /**
+     * **구독 때문에** 열려 있는가 — 해지하면 도로 잠기는 자리인가(#157).
+     *
+     * ⚠️ 픽커가 *"구독으로 이용 중"* 을 붙이는 근거다. 이 표시가 없으면 **해지하는 순간 말없이
+     * 잠겨** 사용자에게는 "내 캐릭터가 사라졌다"로 읽힌다.
+     */
+    fun isSubscriptionOnly(character: BotCharacter): Boolean =
+        collection.isAvailableOnlyViaSubscription(character, subscriptionActive)
 
     /** 이 캐릭터에 지금까지 모인 조각 수(#11). */
     fun shardsFor(character: BotCharacter): Int = collection.shardsFor(character.id)
@@ -291,6 +309,9 @@ internal fun BotCharacterPickerDialog(
                             character = character,
                             isSelected = character.id == selected?.id,
                             isAvailable = available,
+                            // ⚠️ 구독으로 열린 자리는 **그렇다고 말해야 한다**(#157) — 해지하면
+                            // 도로 잠기는데, 표시가 없으면 말없이 사라진 것으로 읽힌다.
+                            viaSubscription = bots.isSubscriptionOnly(character),
                             shards = bots.shardsFor(character),
                             // 잠겼어도 조각 경로면 탭할 수 있다 — 그 탭이 곧 광고 시청이다.
                             canWatchAd = !available && shardSource != null && !adInProgress,
@@ -353,6 +374,7 @@ private fun BotCharacterCard(
     canWatchAd: Boolean,
     canPurchase: Boolean,
     onClick: () -> Unit,
+    viaSubscription: Boolean = false,
 ) {
     val strings = LocalUiStrings.current
     val shape = RoundedCornerShape(16.dp)
@@ -416,6 +438,18 @@ private fun BotCharacterCard(
             overflow = TextOverflow.Ellipsis,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        // 구독으로 열린 자리임을 밝힌다(#157). ⚠️ 획득 힌트와 **배타적**이다 — 구독으로 이미
+        // 열려 있는데 "광고 5회를 보세요"가 함께 뜨면 지금 쓸 수 있다는 사실이 묻힌다.
+        if (viaSubscription) {
+            Text(
+                text = strings.botUnlockedBySubscription,
+                style = MaterialTheme.typography.labelSmall,
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                color = PremiumGoldDeep,
+            )
+        }
         // 잠긴 캐릭터만 획득 방법을 덧붙인다 — 기본 제공은 안내할 것이 없다.
         if (!isAvailable) {
             strings.botUnlockHint(character.unlockSource, shards)?.let { hint ->

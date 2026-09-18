@@ -64,8 +64,29 @@ data class BotCollectionState(
      * 빈 목록이 아니라 **잠긴 4종을 각각 어떤 사유로 잠겼는지 구분해 보여주는 것**이다 —
      * 획득 경로가 출석/광고 조각/유료 셋으로 갈리기 때문이다(7장 표).
      *
-     * 월 구독처럼 개별 획득 없이 전체를 여는 소스가 나중에 붙으면 이 함수에 분기를 더한다.
+     * ⭐ **그 "나중"이 왔다**(#157) — [subscriptionActive]가 개별 획득 없이 전체를 연다.
+     * `FEATURE_ACCESS_PRINCIPLES.md` 8.1이 약속한 구독 특전 셋 중 첫째(ⓐ)다.
+     *
+     * ⚠️ **저장소는 건드리지 않는다.** 구독은 **살아 있는 상태**이지 획득 이력이 아니라서,
+     * `claimedBots`에 넣으면 **해지 뒤에도 남는다.** 그래서 축을 늘리지 않고 **판정에만** 얹는다
+     * — `BotCollectionStore.CurrentSchemaVersion`도 올리지 않는다(올리면 수집물이 통째로 날아간다).
+     *
+     * ⚠️ **광고 1시간은 여기 해당하지 않는다** — [PremiumState.isSubscriptionActive] 참고.
+     *
+     * ⚠️ 기본값이 `false`인 것은 **구독을 모르는 호출부를 지키기 위해서**다. 다만 화면에
+     * 보이는 경로가 기본값을 쓰면 구독자에게 캐릭터가 안 열린다 — 배선은 `BotCharacterUiState`가 맡는다.
      */
-    fun isAvailable(character: BotCharacter): Boolean =
-        character.unlockSource == BotUnlockSource.Default || isClaimed(character.id)
+    fun isAvailable(character: BotCharacter, subscriptionActive: Boolean = false): Boolean =
+        subscriptionActive ||
+            character.unlockSource == BotUnlockSource.Default ||
+            isClaimed(character.id)
+
+    /**
+     * **구독 때문에** 열려 있는가 — 즉 구독을 해지하면 도로 잠기는가(#157).
+     *
+     * ⚠️ 픽커가 *"구독으로 이용 중"* 을 표시하는 근거다. 표시가 없으면 **해지하는 순간 말없이
+     * 잠겨** 사용자에게는 "내 캐릭터가 사라졌다"로 읽힌다.
+     */
+    fun isAvailableOnlyViaSubscription(character: BotCharacter, subscriptionActive: Boolean): Boolean =
+        subscriptionActive && !isAvailable(character, subscriptionActive = false)
 }

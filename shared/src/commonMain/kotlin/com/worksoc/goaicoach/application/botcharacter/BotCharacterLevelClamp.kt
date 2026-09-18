@@ -38,16 +38,19 @@ data class BotLevelClamp(
 fun clampToOwnedBotCharacter(
     playLevel: PlayLevelSetting,
     collection: BotCollectionState,
+    subscriptionActive: Boolean = false,
 ): BotLevelClamp? {
     val current = BotCharacterCatalog.forPlayLevel(playLevel) ?: return null
-    if (collection.isAvailable(current)) return null
+    // ⚠️ **구독자는 내려갈 이유가 없다**(#157) — 로스터 전체가 열려 있으므로 이 함수가
+    // 낮추면 구독을 사고도 상대가 강등된다.
+    if (collection.isAvailable(current, subscriptionActive)) return null
     val currentTier = current.tierWithinGroup ?: return null
 
     val target = BotCharacterCatalog.all
         .filter { candidate ->
             candidate.linkedPlayLevel == current.linkedPlayLevel &&
                 (candidate.tierWithinGroup ?: return@filter false) <= currentTier &&
-                collection.isAvailable(candidate)
+                collection.isAvailable(candidate, subscriptionActive)
         }
         .maxByOrNull { candidate -> candidate.tierWithinGroup ?: 0 }
         ?: return null
