@@ -102,15 +102,30 @@ class BoardGeometryCalculatorTest {
         assertEquals(centerColumn, snappedWithinTolerance.column)
 
         // 오차 범위 밖의 터치 (스냅 실패하여 null 반환해야 함)
-        val outOfToleranceOffset = geometry.spacing * 0.5f
-        val snappedOutOfTolerance = boardCoordinateFromTap(
-            targetX + outOfToleranceOffset,
+        // ⚠️ **정확히 반 칸 떨어진 자리는 이제 받아들인다**(U-5, 백로그 #152) — 옛 허용오차
+        // 0.45에서는 여기가 `null`이었고, 그 0.05칸이 실기에서 죽은 띠로 드러났다.
+        // `roundToInt`가 반올림해 **이웃 쪽**을 집는다.
+        val halfCell = geometry.spacing * 0.5f
+        val snappedAtHalfCell = boardCoordinateFromTap(
+            targetX + halfCell,
             targetY,
             width,
             height,
             boardSize,
             showCoordinates = true
         )
-        assertNull(snappedOutOfTolerance)
+        assertNotNull("두 점 한가운데가 무시된다 — 죽은 띠가 돌아왔다(#152 회귀).", snappedAtHalfCell)
+        assertEquals(centerColumn + 1, snappedAtHalfCell!!.column)
+
+        // ⚠️ 반 칸을 넘기면 여전히 무시한다 — 반상 바깥을 눌러도 놓이면 취소 경로가 죽는다.
+        val outsideBoard = boardCoordinateFromTap(
+            geometry.originX - geometry.spacing * 0.6f,
+            targetY,
+            width,
+            height,
+            boardSize,
+            showCoordinates = true
+        )
+        assertNull("반 칸 바깥까지 받아들인다 — 판 밖 탭이 가장자리에 놓인다.", outsideBoard)
     }
 }
