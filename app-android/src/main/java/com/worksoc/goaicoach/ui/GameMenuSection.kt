@@ -14,6 +14,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -142,6 +143,13 @@ internal fun ExpandedGameMenuSection(
     selectedLanguage: UiLanguage,
     onLanguageChange: (UiLanguage) -> Unit,
     onEvent: (GameUiEvent) -> Unit,
+    /**
+     * '대국 나가기'(백로그 #175).
+     *
+     * ⚠️ **`GameUiEvent`가 아니라 콜백인 이유**: 나가기는 대국 상태를 바꾸는 일이 아니라 **화면
+     * 이동**이고, 목적지를 아는 것은 `GoCoachApp`뿐이다.
+     */
+    onExitGame: () -> Unit = {},
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -221,6 +229,25 @@ internal fun ExpandedGameMenuSection(
         GameMenuActionsPanel(
             onCopyLog = { onEvent(GameUiEvent.CopyDebugReport) },
         )
+
+        // **대국 나가기 — 메뉴의 맨 아래**(백로그 #175, 2026-09-18 사용자).
+        //
+        // ⚠️ **좌상단 이모지 안을 물리쳤다**(사용자에게 근거를 대고 확정): 그 자리는 헤더 2행이
+        // 이미 쓰고 있고, 판 옆 가장자리라 **오터치가 곧 대국 이탈**이 된다. 무엇보다 나가는 길은
+        // **이미 있었다** — 뒤로가기(`GoCoachApp`의 `BackHandler`)다. 진짜 문제는 *"길이 없다"* 가
+        // 아니라 ***"길이 안 보인다"*** 였고, 메뉴 한 줄이면 오터치 없이 보이게 만든다.
+        //
+        // ⚠️ **확인 팝업을 두지 않는다**(사용자 확정 ⓐ) — 판은 `SavedGameSnapshot`이 들고 있어
+        // '이어 하기'로 돌아온다. 뒤로가기도 안 묻는데 이 버튼만 물으면 같은 일이 두 얼굴이 된다.
+        //
+        // ⚠️ **`KaTrainUxMenuPanel` 안에 넣지 말 것** — 그 패널은 **설정 화면과 공유**한다
+        // (그 파일의 주석). 안에 넣으면 대국 중이 아닌 설정 화면에도 '대국 나가기'가 생긴다.
+        TextButton(
+            onClick = onExitGame,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(exitGameActionFor(LocalUiStrings.current.language))
+        }
     }
 }
 

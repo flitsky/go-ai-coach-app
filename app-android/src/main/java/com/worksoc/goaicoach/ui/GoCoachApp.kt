@@ -888,6 +888,15 @@ private fun GoCoachScreen(
                 benchmarkResult = benchmarkUiState.resultToConfirm,
                 onScoreGraphExpandedChange = { expanded -> isScoreGraphExpanded = expanded },
                 onFinalJudgementReview = ::activateEndgameJudgementReview,
+                // ⚠️ 대국 화면에는 나가는 길이 **뒤로가기뿐이었다** — 있긴 한데 보이지 않았다
+                // (백로그 #175). 메뉴의 '대국 나가기'는 **뒤로가기와 정확히 같은 길**을 탄다
+                // (2026-09-18 사용자 확정): 대국 중이면 기권을 먼저 묻고, 끝난 판이면 바로 나간다.
+                // ⚠️ **여기서 팝업을 새로 만들지 말 것** — 위 `BackHandler`가 쓰는
+                //   `showResignConfirmFromBack` 하나를 공유해야 두 입구가 같은 말을 한다.
+                //   따로 만들면 문구·동작이 갈리고, 이 파일의 상태 훅 예산도 여유가 없다.
+                onExitGame = {
+                    if (!isGameEnded) showResignConfirmFromBack = true else exitToHome()
+                },
                 selectedLanguage = selectedLanguage,
                 onLanguageChange = onLanguageChange,
                 turnTimeState = turnTimeState,

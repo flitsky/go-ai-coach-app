@@ -722,14 +722,6 @@ internal data class UiStrings(
             UiLanguage.ChineseSimplified -> "持有的单次券"
         }
 
-    /** 재고를 어디서 쓰고 어떻게 얻는지 한 줄 안내. */
-    val myPageInventoryHint: String
-        get() = when (language) {
-            UiLanguage.Korean -> "대국 중 버튼에도 남은 수가 표시됩니다. 매일 출석하면 더 받을 수 있어요."
-            UiLanguage.English -> "The in-game buttons show the count too. Check in daily to earn more."
-            UiLanguage.Japanese -> "対局中のボタンにも残数が表示されます。毎日出席すると増えます。"
-            UiLanguage.ChineseSimplified -> "对局中的按钮也会显示剩余数量。每日签到可获得更多。"
-        }
 
     /**
      * 인게임 코칭 버튼(형세 보기·추천 수)의 라벨에 **지금 상태를 괄호로 녹인다**(백로그 #24).

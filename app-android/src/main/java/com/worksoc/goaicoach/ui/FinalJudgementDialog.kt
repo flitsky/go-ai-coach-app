@@ -51,9 +51,13 @@ internal fun FinalJudgementDialog(
                 Text(strings.reviewJudgement)
             }
         },
+        // ⚠️ **버튼은 둘로 유지한다**(2026-09-18 사용자). 확인 쪽이 오른쪽(`confirmButton`),
+        // 재 대국이 그 왼쪽이다 — Material3의 기본 배치가 그대로 원하는 순서를 만든다.
         dismissButton = {
             TextButton(onClick = onNewGame) {
-                Text(strings.newGameAction)
+                // ⚠️ 하단 액션바의 `newGameAction`("대국 시작")과 **다른 문구다** — 그 사유는
+                // `UiStrings.rematchAction`의 KDoc.
+                Text(rematchActionFor(strings.language))
             }
         },
     )

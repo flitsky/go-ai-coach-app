@@ -15,19 +15,24 @@ class UiStringsTest {
      * 같은 뜻의 긴 문구는 [UiStrings.overwriteWarningTitle]이 그대로 갖고 있다 — 그쪽은
      * 다이얼로그 제목이라 폭이 넉넉하다. 아래 테스트가 그 분기를 함께 고정한다.
      *
-     * **영어만 그대로 둔 이유**: 폭으로는 `Rematch`(48dp)가 `New Game`(58dp)보다 유리하지만,
-     * 이 버튼이 쏘는 `StartConfiguredGame`은 **그 시점의 현재 설정**으로 시작한다. 대국이
-     * 끝난 뒤 헤더에서 상대나 판 크기를 바꿔 놓고 눌러도 되므로 "같은 상대와 다시"를 뜻하는
-     * `Rematch`는 거짓이 될 수 있다. 나머지 세 언어가 전부 "새 대국"인데 영어만 뜻이 갈리는
-     * 것도 나쁘다. 대신 영어는 배율 1.8배 이상에서 `New Ga…`로 말줄임되는데(#27의 Ellipsis),
+     * **영어를 `Rematch`로 쓰지 않는 이유**: 이 버튼이 쏘는 `StartConfiguredGame`은 **그 시점의
+     * 현재 설정**으로 시작한다. 대국이 끝난 뒤 헤더에서 상대나 판 크기를 바꿔 놓고 눌러도 되므로
+     * "같은 상대와 다시"를 뜻하는 `Rematch`는 거짓이 될 수 있다.
+     *
+     * ⭐ **2026-09-18에 그 제약이 오히려 답이 됐다**(#175): 종료 **팝업**은 모달이라 설정을 바꿀
+     * 틈이 없어 거기서는 `Rematch`가 참이다. 그래서 문구를 **둘로 갈랐다** — 팝업은
+     * `rematchActionFor`("재 대국"/`Rematch`), 설정을 바꿀 수 있는 이 하단 바는 중립적인
+     * "대국 시작"/`Start Game`. ⚠️ **다시 하나로 합치려면 이 차이부터 없앨 것.** 대신 영어는 배율 1.8배 이상에서 `New Ga…`로 말줄임되는데(#27의 Ellipsis),
      * 일본어가 **기본 배율에서** 잘리던 것에 비하면 훨씬 가벼운 손해다.
      */
     @Test
     fun startGameActionUsesShortLocalizedCopyInEverySupportedLanguage() {
-        assertEquals("새 대국", UiStrings.forLanguage(UiLanguage.Korean).newGameAction)
-        assertEquals("New Game", UiStrings.forLanguage(UiLanguage.English).newGameAction)
-        assertEquals("新規対局", UiStrings.forLanguage(UiLanguage.Japanese).newGameAction)
-        assertEquals("新对局", UiStrings.forLanguage(UiLanguage.ChineseSimplified).newGameAction)
+        // ⚠️ **2026-09-18에 "새 대국" → "대국 시작"으로 바꿨다**(백로그 #175, 사용자).
+        // 길이는 여전히 전각 4자라 위 폭 계산(전각 8자 = 92dp가 한계)을 그대로 통과한다.
+        assertEquals("대국 시작", UiStrings.forLanguage(UiLanguage.Korean).newGameAction)
+        assertEquals("Start Game", UiStrings.forLanguage(UiLanguage.English).newGameAction)
+        assertEquals("対局開始", UiStrings.forLanguage(UiLanguage.Japanese).newGameAction)
+        assertEquals("开始对局", UiStrings.forLanguage(UiLanguage.ChineseSimplified).newGameAction)
     }
 
     @Test
@@ -113,11 +118,20 @@ class UiStringsTest {
         assertEquals("対局結果", titles[UiLanguage.Japanese])
         assertEquals("终局结果", titles[UiLanguage.ChineseSimplified])
 
+        // ⚠️ **"판정 검토" → "확인"으로 바꿨다**(2026-09-18, 백로그 #175).
+        // 이 버튼은 `activateEndgameJudgementReview`를 부르는데 그 함수는 **프리미엄 권한이 없으면
+        // 아무 일도 하지 않고 그냥 닫힌다**(`GoCoachApp.kt`). 즉 무료 사용자에게 "판정 검토"는
+        // **존재하지 않는 기능을 약속하는 라벨**이었다 — 함정 39·51이 경계한 바로 그 형태다.
+        // 이름을 줄이니 거짓이 사라지고, 프리미엄 사용자에게는 형세 오버레이가 덤으로 켜진다.
         val reviews = UiLanguage.entries.associateWith { UiStrings.forLanguage(it).reviewJudgement }
-        assertEquals("판정 검토", reviews[UiLanguage.Korean])
-        assertEquals("Review", reviews[UiLanguage.English])
-        assertEquals("盤面で確認", reviews[UiLanguage.Japanese])
-        assertEquals("查看盘面", reviews[UiLanguage.ChineseSimplified])
+        assertEquals("확인", reviews[UiLanguage.Korean])
+        assertEquals("OK", reviews[UiLanguage.English])
+        assertEquals("確認", reviews[UiLanguage.Japanese])
+        assertEquals("确定", reviews[UiLanguage.ChineseSimplified])
+
+        // 같은 팝업의 다른 버튼 — **하단 액션바와 다른 문구여야 한다**(아래 테스트의 사유 참고).
+        assertEquals("재 대국", rematchActionFor(UiLanguage.Korean))
+        assertEquals("Rematch", rematchActionFor(UiLanguage.English))
     }
 
     /**

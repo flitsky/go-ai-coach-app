@@ -187,11 +187,6 @@ internal fun MyPageScreen(
                     }
                 }
             }
-            Text(
-                text = strings.myPageInventoryHint,
-                fontSize = 13.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
             
             // **기기에만 저장된다는 고지**(백로그 #74 ⓒ, 2026-09-05 사용자 발주).
             //

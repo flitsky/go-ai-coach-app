@@ -47,6 +47,8 @@ internal fun GoCoachContent(
     benchmarkResult: EngineBenchmarkProfile?,
     onScoreGraphExpandedChange: (Boolean) -> Unit,
     onFinalJudgementReview: () -> Unit,
+    /** ☰ 메뉴 최하단의 '대국 나가기'가 부른다(백로그 #175). 홈으로 돌아간다. */
+    onExitGame: () -> Unit,
     selectedLanguage: UiLanguage,
     onLanguageChange: (UiLanguage) -> Unit,
     turnTimeState: GameSessionTurnTimeState,
@@ -95,6 +97,17 @@ internal fun GoCoachContent(
             strings = strings,
             onAccept = { onEvent(GameUiEvent.AcceptCacheOptimizationPrompt) },
             onDismiss = { onEvent(GameUiEvent.DismissCacheOptimizationPrompt) },
+        )
+    }
+
+    // **통과 알림 + 계가 묻기**(백로그 #175). ⚠️ 상태를 이 파일에 두지 않고 그 파일이 들게 한다 —
+    // `GoCoachApp.kt`의 상태 훅 예산이 0이고, 여기도 같은 이유로 가볍게 유지한다.
+    // ⚠️ **벤치마크가 떠 있는 동안에는 띄우지 않는다** — 아래 계가 팝업과 같은 이유다(팝업이 겹친다).
+    if (benchmarkProgress == null && benchmarkResult == null) {
+        PassNoticeHost(
+            screenState = screenState,
+            // '예' = **나도 통과**. 종국 판정은 규칙(`MatchReferee`)이 하고 이 팝업은 하지 않는다.
+            onPassAgain = { onEvent(GameUiEvent.Pass) },
         )
     }
 
@@ -165,6 +178,11 @@ internal fun GoCoachContent(
                         selectedLanguage = selectedLanguage,
                         onLanguageChange = onLanguageChange,
                         onEvent = onMenuEvent,
+                        // 나가면 메뉴도 함께 닫는다 — 안 닫으면 홈 위에 대국 메뉴가 남는다.
+                        onExitGame = {
+                            isDisplayMenuExpanded = false
+                            onExitGame()
+                        },
                     )
                 }
             },
