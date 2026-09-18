@@ -955,6 +955,8 @@ private fun GameActionButtonHost(
                     onEvent = { event -> featureGated(evalAccess, FeatureId.Eval, turningOn = !evalAction.isFilled) { onEvent(event) } },
                     modifier = modifier.guideTarget(GuideTarget.Eval),
                     premiumLocked = evalAccess !is FeatureAccess.Allowed && !tapIsFree(FeatureId.Eval),
+                    // 금색은 **프리미엄 축**이라는 뜻이다 — 잠겼든 열렸든 붙는다(`PremiumLockedBorder` KDoc).
+                    premiumFeature = true,
                 )
             }
         },
@@ -973,6 +975,7 @@ private fun GameActionButtonHost(
                     onEvent = { event -> featureGated(topMovesAccess, FeatureId.TopMoves, turningOn = !topMovesAction.isFilled) { onEvent(event) } },
                     modifier = modifier.guideTarget(GuideTarget.TopMoves),
                     premiumLocked = topMovesAccess !is FeatureAccess.Allowed && !tapIsFree(FeatureId.TopMoves),
+                    premiumFeature = true,
                 )
             }
         },
@@ -1026,6 +1029,10 @@ private fun GameActionButtonHost(
                     // 무르기에는 1회권이 없어(`ConsumableCatalog`에 `FeatureUse(Undo)`가 없다)
                     // 언제나 false이므로, 붙이면 읽는 사람만 헷갈린다.
                     premiumLocked = undoAccess is FeatureAccess.Locked,
+                    // ⚠️ **무르기에는 `premiumFeature`를 주지 않는다 — 빠뜨린 것이 아니라 결정이다**
+                    // (2026-09-18). 무르기는 **출석 3일차로 영구 해금되는 무료 경로**가 있어서,
+                    // 열린 뒤에도 금색을 상시로 두면 "돈을 내야 하는 것"으로 과장된다. 대국 메뉴가
+                    // 금색을 셋(매 수마다 형세·추천·착수 평가)에만 준 것과 같은 선이다(#149).
                 )
             }
         },

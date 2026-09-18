@@ -47,6 +47,24 @@ internal val ActionButtonContainerColor
 internal val ActionButtonContentColor
     @Composable get() = MaterialTheme.colorScheme.primary
 
+/**
+ * 프리미엄 축 버튼의 테두리 규칙 — **한 곳에 둔다**(2026-09-18).
+ *
+ * ⚠️ 호출부마다 삼항 연산자로 흩어 두면 한 버튼만 옛 규칙(*"잠겼을 때만 금색"*)으로 돌아가도
+ * **컴파일도 되고 테스트도 초록인 채** 그 버튼만 다른 말을 한다. 자세한 근거는 [PremiumLockedBorder].
+ */
+@Composable
+private fun premiumBorderOr(
+    fallback: BorderStroke?,
+    premiumFeature: Boolean,
+    premiumLocked: Boolean,
+): BorderStroke? =
+    when {
+        premiumLocked -> PremiumLockedBorder
+        premiumFeature -> PremiumUnlockedBorder
+        else -> fallback
+    }
+
 @Composable
 internal fun ToggleActionButton(
     action: GameActionButtonState,
@@ -55,6 +73,11 @@ internal fun ToggleActionButton(
     onEvent: (GameUiEvent) -> Unit,
     modifier: Modifier = Modifier,
     premiumLocked: Boolean = false,
+    /**
+     * 이 버튼이 **프리미엄 축의 기능인가** — 지금 쓸 수 있는지와는 별개다(2026-09-18).
+     * ⚠️ [premiumLocked]만으로는 *"프리미엄인데 열려 있다"* 를 말할 수 없어 축을 따로 받는다.
+     */
+    premiumFeature: Boolean = false,
 ) {
     val isOn = action.isFilled
     val toggleModifier = modifier
@@ -85,7 +108,7 @@ internal fun ToggleActionButton(
             modifier = toggleModifier,
             shape = ActionButtonShape,
             contentPadding = ActionButtonContentPadding,
-            border = if (premiumLocked) PremiumLockedBorder else ActionButtonBorder,
+            border = premiumBorderOr(ActionButtonBorder, premiumFeature, premiumLocked),
         ) {
             ToggleActionButtonContent(label = label, mark = mark)
         }
@@ -99,6 +122,7 @@ internal fun SingleActionButton(
     onEvent: (GameUiEvent) -> Unit,
     modifier: Modifier = Modifier,
     premiumLocked: Boolean = false,
+    premiumFeature: Boolean = false,
 ) {
     ActionButton(
         onClick = { onEvent(action.event) },
@@ -106,6 +130,7 @@ internal fun SingleActionButton(
         modifier = modifier,
         label = label,
         premiumLocked = premiumLocked,
+        premiumFeature = premiumFeature,
     )
 }
 
@@ -116,6 +141,7 @@ internal fun ActionButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     premiumLocked: Boolean = false,
+    premiumFeature: Boolean = false,
 ) {
     FilledTonalButton(
         onClick = onClick,
@@ -127,7 +153,7 @@ internal fun ActionButton(
             containerColor = ActionButtonContainerColor,
             contentColor = ActionButtonContentColor,
         ),
-        border = if (premiumLocked) PremiumLockedBorder else null,
+        border = premiumBorderOr(null, premiumFeature, premiumLocked),
     ) {
         ActionButtonText(label)
     }
