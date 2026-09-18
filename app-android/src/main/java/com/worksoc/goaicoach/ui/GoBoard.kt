@@ -350,18 +350,25 @@ internal fun GoBoard(
                                     )
                                 } ?: false
 
-                                // ⚠️ **임계를 넘겨도 띄움을 유지한다**(#154). 끌기가 0.4초를 넘기는 것은
-                                // 흔한 일인데, 여기서 띄움을 놓으면 그 순간 가늠돌이 **한 칸 아래로
-                                // 툭 떨어진다.** 조준이 끊기는 그 점프가 띄움의 이득을 통째로 지운다.
+                                // ⚠️ **임계 뒤의 띄움은 확대창이 대신한다**(U-9, 2026-09-18 사용자:
+                                // *"돋보기 기능이 활성화된 경우, 0.4초 임계 뒤에는 내려주세요"*).
+                                // 확대창이 뜨면 손가락 밑이 그 안에 보이므로 띄움이 할 일이 없고,
+                                // 둘을 겹쳐 걸면 조준점이 말풍선과 따로 놀아 오히려 헷갈린다.
+                                // ⭐ **돋보기가 꺼져 있으면 띄움을 그대로 유지한다** — 그때는 대신해 줄
+                                // 것이 없기 때문이다. 사용자가 *"끌기가 안정화되면 돋보기를 비활성화할
+                                // 수도 있다"* 고 했고, 그날 이 규칙이 저절로 맞는 쪽으로 돈다.
+                                // ⚠️ 확대창이 뜰 때는 임계를 넘는 순간 가늠돌이 한 칸 내려온다 —
+                                // **알고 받아들인 것이다**(같은 순간 말풍선이 뜨므로 화면이 어차피 바뀐다).
+                                val holdLiftPx = if (showMagnifier) 0f else liftPx
                                 var finger = follow.finger
-                                var target = Offset(finger.x, finger.y - liftPx)
+                                var target = Offset(finger.x, finger.y - holdLiftPx)
                                 playDrag = PlayDrag(target, below, magnifier = showMagnifier, finger = finger)
                                 // ⚠️ **누르고 있는 동안 착수가 확정되면 안 된다**(사용자 확정).
                                 // 여기서는 좌표만 따라가고, 확정은 아래 `completed` 분기에서만 한다.
                                 val completed = drag(down.id) { change ->
                                     change.consume()
                                     finger = change.position
-                                    target = Offset(finger.x, finger.y - liftPx)
+                                    target = Offset(finger.x, finger.y - holdLiftPx)
                                     playDrag = PlayDrag(target, below, magnifier = showMagnifier, finger = finger)
                                 }
                                 if (!completed) return@awaitEachGesture

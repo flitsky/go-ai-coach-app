@@ -319,4 +319,34 @@ class BoardMagnifierTest {
             source.contains("val touch = drag.touch"),
         )
     }
+
+    /**
+     * ⚠️ **임계 뒤의 띄움은 확대창이 대신한다 — 다만 확대창이 실제로 뜰 때만**
+     * (U-9, 2026-09-18 사용자: *"돋보기 기능이 활성화된 경우, 0.4초 임계 뒤에는 내려주세요"*).
+     *
+     * 두 갈래를 **하나로 뭉개기 쉬운 자리**다:
+     * - 무조건 내리면 → 돋보기를 꺼 둔 사용자는 대신해 줄 것도 없이 띄움만 잃는다.
+     * - 무조건 유지하면 → 말풍선이 뜬 채로 조준점이 따로 놀아 헷갈린다.
+     *
+     * 그래서 판단은 `showMagnifier` 하나에 걸려 있어야 한다. 사용자가 *"끌기가 안정화되면 돋보기를
+     * 비활성화할 수도 있다"* 고 했으므로, 그날 이 규칙이 저절로 띄움 유지 쪽으로 돈다.
+     */
+    @Test
+    fun thePastHoldLiftIsHandedOverToTheMagnifierOnlyWhenItActuallyShows() {
+        val source = goBoardSource()
+        assertTrue(
+            "임계 뒤 띄움이 `showMagnifier`에 걸려 있지 않다 — 돋보기를 꺼도 띄움이 사라지거나, " +
+                "켜도 조준점이 말풍선과 따로 논다(U-9, #154).",
+            source.contains("val holdLiftPx = if (showMagnifier) 0f else liftPx"),
+        )
+        assertEquals(
+            "임계 뒤 좌표를 만드는 자리가 둘 다 `holdLiftPx`를 쓰지 않는다 — 끌기 중에 규칙이 바뀐다.",
+            2,
+            Regex("""Offset\(finger\.x, finger\.y - holdLiftPx\)""").findAll(source).count(),
+        )
+        assertFalse(
+            "임계 뒤에 `liftPx`를 그대로 쓴다 — U-9가 정한 인계가 무시된다.",
+            source.contains("Offset(finger.x, finger.y - liftPx)"),
+        )
+    }
 }
