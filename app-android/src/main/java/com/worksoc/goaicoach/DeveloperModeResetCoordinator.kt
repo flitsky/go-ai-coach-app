@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach
 
+import com.worksoc.goaicoach.persistence.GameHistoryDirName
 import android.content.Context
 import android.content.Intent
 import com.worksoc.goaicoach.application.lifecycle.DeveloperModeResetPolicy
@@ -19,8 +20,9 @@ import kotlin.system.exitProcess
  *
  * ## ⚠️ 무엇을 지우고 무엇을 남기는가 (2026-09-05 사용자 확정)
  * 기준은 *"사용자가 만들거나 얻은 것은 전부 지우고, 앱이 자기 APK에서 되만들 수 있는 것은 남긴다"* 다.
- * · **지운다** — `go_ai_coach_`로 시작하는 SharedPreferences **전부**(권한 넷 · 대국 기록 ·
- *   진행 중 대국 · 설정 · 언어 · 온보딩 완료 · 릴리즈 초기화 마커 · **개발자 모드 플래그 자신**).
+ * · **지운다** — `go_ai_coach_`로 시작하는 SharedPreferences **전부**(권한 넷 ·
+ *   진행 중 대국 · 설정 · 언어 · 온보딩 완료 · 릴리즈 초기화 마커 · **개발자 모드 플래그 자신**),
+ *   그리고 `filesDir/game_history`(**대국 기록** — 2026-09-18에 파일로 옮겼다, 백로그 #151).
  * · **남긴다** — [DeviceIdentityStore]. ⚠️ 지우면 **한 기기가 하루 8개의 새 기기로 보여** 기기
  *   기준 지표가 오염된다(#63도 같은 이유로 남긴다).
  * · **남긴다** — `filesDir`의 KataGo 모델(약 100MB)과 진단 로그. 모델은 **AAB에 들어 있어 지워도
@@ -97,6 +99,12 @@ internal fun wipeToFreshInstall(context: Context) {
             // 함께 버려야 한다. 파일만 지우면 살아 있는 인스턴스가 옛 값을 계속 돌려준다.
             app.deleteSharedPreferences(name)
         }
+    // ⚠️ **`shared_prefs` 훑기만으로는 대국 기록이 살아남는다**(백로그 #151). 기록은 2026-09-18에
+    // `SharedPreferences`에서 `filesDir/game_history`로 옮겨졌다 — 상한이 100MB라 prefs에 둘 수
+    // 없었기 때문이다(prefs는 파일 전체를 메모리에 들고 있는다).
+    // ⚠️ 위 접두사 훑기와 달리 **이것은 이름을 손으로 가리킨다.** `filesDir`에는 지우면 안 되는
+    // 것(KataGo 모델 약 100MB · 진단 로그)이 함께 있어 통째로 훑을 수 없다.
+    File(app.filesDir, GameHistoryDirName).deleteRecursively()
 }
 
 /**

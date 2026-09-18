@@ -464,6 +464,10 @@ private fun GoCoachScreen(
             isGameEnded = isGameEnded, finalScoreJudgement = scoreState.finalScoreJudgement,
             gameState = gameState, playerSetup = playerSetup,
             nowMillis = System.currentTimeMillis(), store = GameHistoryStore(context),
+            // 리플레이 적재(백로그 #151) — 둘 다 **이미 세션 상태에 있던 것**이라 새로 계산하지
+            // 않는다. 여기서 넘기지 않으면 대국이 끝나는 순간 그대로 버려진다.
+            scoreSnapshots = scoreState.scoreSnapshots,
+            moveEvaluations = moveReviewState.moveReviews,
         )
     }
     val deferredTopMoveAnalysis = remember { TopMoveAnalysisDeferral() }
@@ -557,7 +561,10 @@ private fun GoCoachScreen(
         isGameEnded = true
         // ⚠️ 판을 갈아엎기 **전에** 기록한다(#96) — 아래 `refreshNewGamePreview()`가 새 미리보기
         // 판을 적용해 `Move.Resign`을 지운다. 순서를 바꾸면 뒤로가기 기권이 다시 안 남는다.
-        recordFinishedGameOnExit(context, true, scoreState.finalScoreJudgement, gameState, playerSetup)
+        recordFinishedGameOnExit(
+            context, true, scoreState.finalScoreJudgement, gameState, playerSetup,
+            scoreState.scoreSnapshots, moveReviewState.moveReviews,
+        )
         controllers.settingsController.refreshNewGamePreview()
         currentDestination = ScreenDestination.Home
     }

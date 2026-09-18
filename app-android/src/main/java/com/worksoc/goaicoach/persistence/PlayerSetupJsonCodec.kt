@@ -56,3 +56,14 @@ internal inline fun <reified T : Enum<T>> enumOrDefault(
         ?.takeIf { it.isNotBlank() }
         ?.let { value -> runCatching { enumValueOf<T>(value) }.getOrNull() }
         ?: default
+
+/**
+ * [enumOrDefault]와 달리 **모르는 값을 기본값으로 메우지 않는다.**
+ *
+ * ⚠️ 대국 기록의 승자(`winner`)처럼 *"값이 없다"* 와 *"흑이다"* 가 **서로 다른 뜻**인 자리에서는
+ * 기본값을 끼워 넣으면 없는 사실을 지어내게 된다(백로그 #151).
+ */
+internal inline fun <reified T : Enum<T>> enumOrNull(name: String?): T? =
+    name
+        ?.takeIf { it.isNotBlank() }
+        ?.let { value -> runCatching { enumValueOf<T>(value) }.getOrNull() }

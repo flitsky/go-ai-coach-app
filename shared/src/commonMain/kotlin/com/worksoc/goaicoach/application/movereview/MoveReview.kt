@@ -11,6 +11,14 @@ data class MoveReviewMarker(
     val coordinate: BoardCoordinate,
     val moveNumber: Int,
     val tone: MoveReviewTone,
+    /**
+     * 최선수 대비 손실집수. **[tone]은 이 값을 구간으로 뭉갠 것**이라 되돌릴 수 없어서 따로 든다
+     * (백로그 #151, U-35). 다시보기가 *"10집 이상 잃은 수"* 처럼 **수치로** 고르려면 필요하다.
+     *
+     * ⚠️ 마커가 만들어졌다면 값이 있다 — [buildMoveReview]가 `pointLoss == null`인 후보는 애초에
+     * 마커를 만들지 않기 때문이다. `null`로 남는 경우는 **옛 저장분을 읽을 때**뿐이다.
+     */
+    val pointLoss: Double? = null,
 )
 
 enum class MoveReviewTone {
@@ -78,6 +86,7 @@ internal fun buildMoveReview(
             coordinate = play.coordinate,
             moveNumber = moveNumber,
             tone = tone,
+            pointLoss = pointLoss,
         ),
         text = "Move review: ${play.coordinate.label(boardSize)} ${moveReviewTextFor(pointLoss)} ($lossText$priorText).",
     )

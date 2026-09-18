@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.application.topmoves
 
+import com.worksoc.goaicoach.application.gamehistory.ReplayRecordingPolicy
 import com.worksoc.goaicoach.application.analysis.AnalysisCacheKey
 import com.worksoc.goaicoach.application.analysis.CachedAnalysisResult
 import com.worksoc.goaicoach.application.analysis.analysisKeyFor
@@ -167,7 +168,16 @@ fun runTopMoveAnalysisApplication(request: TopMoveAnalysisRunRequest) {
             shouldShowResumePrompt = request.shouldShowResumePrompt,
             playerSetup = request.playerSetup,
             targetState = request.targetState,
-            topMovesEnabled = request.controllerState.settings.topMovesEnabled,
+            // ⚠️ **U-35(2026-09-18 사용자): 무료 대국에서도 손실집수를 계산하고 저장한다.**
+            // 이 자리가 그 결정이 걸리는 **유일한 관문**이었다 — `topMovesEnabled`가 거짓이면
+            // 사전 분석을 **아예 요청하지 않아서** `reviewAnalysis`가 비고, `buildMoveReview`가
+            // *"no pre-move analysis cache was ready"* 로 빠져 **마커도 손실집수도 생기지 않았다.**
+            // 그 결과 다시보기의 실착 지표가 사실상 구독자 전용이 된다.
+            // ⚠️ 이 토글은 **표시**를 끄는 것이지 분석을 끄는 것이 아니다 — 실제로 아래 실행부
+            // (`TopMoveAnalysisEngine`)는 `topMovesEnabled`로 **후보 표시만** 가른다.
+            // ⚠️ 되돌리려면 [ReplayRecordingPolicy.RecordMoveEvaluations] 한 줄만 뒤집으면 된다.
+            topMovesEnabled = request.controllerState.settings.topMovesEnabled ||
+                ReplayRecordingPolicy.RecordMoveEvaluations,
         )
     ) {
         return

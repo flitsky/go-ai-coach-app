@@ -11,17 +11,22 @@ import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.StoneColor
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 private class FakeGameHistoryStore : GameHistoryStorePort {
     private val entries = mutableListOf<GameHistoryEntry>()
+    val replays = mutableMapOf<String, GameReplayData>()
 
-    override fun appendCompletedGame(entry: GameHistoryEntry) {
+    override fun appendCompletedGame(entry: GameHistoryEntry, replay: GameReplayData?) {
         entries += entry
+        replay?.let { replays[entry.id] = it }
     }
 
     override fun loadAll(): List<GameHistoryEntry> = entries.toList()
+
+    override fun loadReplay(id: String): GameReplayData? = replays[id]
 }
 
 private val HumanBlackVsAiWhite = PlayerSetup(
@@ -69,7 +74,7 @@ class GameHistoryAppendApplicationTest {
         )
 
         assertTrue(entry != null)
-        assertEquals(GameHistoryResult.Win, entry.result)
+        assertEquals(StoneColor.Black, entry.winner)
         assertEquals(StoneColor.Black, entry.humanColor)
         assertEquals(3.5, entry.margin)
     }
@@ -88,7 +93,7 @@ class GameHistoryAppendApplicationTest {
         )
 
         assertTrue(entry != null)
-        assertEquals(GameHistoryResult.Loss, entry.result)
+        assertEquals(StoneColor.White, entry.winner)
     }
 
     @Test
@@ -105,7 +110,8 @@ class GameHistoryAppendApplicationTest {
         )
 
         assertTrue(entry != null)
-        assertEquals(GameHistoryResult.Draw, entry.result)
+        assertNull(entry.winner)
+        assertFalse(entry.isResign)
     }
 
     @Test
@@ -125,13 +131,15 @@ class GameHistoryAppendApplicationTest {
         )
 
         assertTrue(entry != null)
-        assertEquals(GameHistoryResult.Resign, entry.result)
+        assertTrue(entry.isResign)
+        // ⭐ 백이 기권했으므로 **흑이 이겼다** — 옛 구현은 이것을 버렸다(백로그 #151).
+        assertEquals(StoneColor.Black, entry.winner)
         assertNull(entry.margin)
     }
 
     @Test
-    fun resignationByTheHumanIsAlsoJustRecordedAsResign() {
-        // Whoever resigned, the result type is Resign — not distinguished (user request).
+    fun resignationByTheHumanRecordsTheOpponentAsTheWinner() {
+        // 기권한 쪽이 사람이든 AI든 **승자는 언제나 그 반대편**이다(백로그 #151).
         val store = FakeGameHistoryStore()
         val gameState = gameStateWithMoves(passMoves(10) + Move.Resign(StoneColor.Black))
 
@@ -145,7 +153,8 @@ class GameHistoryAppendApplicationTest {
         )
 
         assertTrue(entry != null)
-        assertEquals(GameHistoryResult.Resign, entry.result)
+        assertTrue(entry.isResign)
+        assertEquals(StoneColor.White, entry.winner)
     }
 
     @Test
@@ -163,11 +172,11 @@ class GameHistoryAppendApplicationTest {
 
         assertTrue(entry != null)
         assertEquals(StoneColor.White, entry.humanColor)
-        assertEquals(GameHistoryResult.Win, entry.result)
+        assertEquals(StoneColor.White, entry.winner)
     }
 
     @Test
-    fun humanVsHumanIsNotRecorded() {
+    fun humanVsHumanIsRecordedWithNoHumanColor() {
         val store = FakeGameHistoryStore()
         val bothHuman = PlayerSetup(
             black = SidePlayerSetup(controller = SeatController.Human),
@@ -183,12 +192,15 @@ class GameHistoryAppendApplicationTest {
             store = store,
         )
 
-        assertNull(entry)
-        assertTrue(store.loadAll().isEmpty())
+        // ⚠️ 2026-09-18 사용자 결정으로 **모든 대국 방식**을 기록한다(백로그 #151).
+        assertTrue(entry != null)
+        assertNull(entry.humanColor, "사람이 둘이면 '사람의 진영'이 성립하지 않는다")
+        assertEquals(StoneColor.Black, entry.winner)
+        assertEquals(1, store.loadAll().size)
     }
 
     @Test
-    fun aiVsAiIsNotRecorded() {
+    fun aiVsAiIsRecordedWithNoHumanColor() {
         val store = FakeGameHistoryStore()
         val bothAi = PlayerSetup(
             black = SidePlayerSetup(controller = SeatController.Ai),
@@ -204,7 +216,9 @@ class GameHistoryAppendApplicationTest {
             store = store,
         )
 
-        assertNull(entry)
+        assertTrue(entry != null)
+        assertNull(entry.humanColor)
+        assertEquals(StoneColor.Black, entry.winner)
     }
 
     @Test

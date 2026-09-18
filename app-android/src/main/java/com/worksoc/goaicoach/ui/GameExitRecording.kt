@@ -2,10 +2,12 @@ package com.worksoc.goaicoach.ui
 
 import android.content.Context
 import com.worksoc.goaicoach.application.gamehistory.runGameHistoryAppendIfCompleted
+import com.worksoc.goaicoach.application.movereview.MoveReviewMarker
 import com.worksoc.goaicoach.application.score.FinalScoreJudgement
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.persistence.GameHistoryStore
 import com.worksoc.goaicoach.shared.GameState
+import com.worksoc.goaicoach.shared.ScoreSnapshot
 
 /**
  * 홈으로 나가기 **직전에** 끝난 대국을 기록한다(백로그 #96).
@@ -42,6 +44,8 @@ internal fun recordFinishedGameOnExit(
     finalScoreJudgement: FinalScoreJudgement?,
     gameState: GameState,
     playerSetup: PlayerSetup,
+    scoreSnapshots: List<ScoreSnapshot> = emptyList(),
+    moveEvaluations: List<MoveReviewMarker> = emptyList(),
 ) {
     runGameHistoryAppendIfCompleted(
         isGameEnded = isGameEnded,
@@ -50,5 +54,9 @@ internal fun recordFinishedGameOnExit(
         playerSetup = playerSetup,
         nowMillis = System.currentTimeMillis(),
         store = GameHistoryStore(context),
+        // ⚠️ **이 경로도 리플레이를 실어야 한다**(백로그 #151). 뒤로가기 기권은 여기서만
+        // 기록되므로, 빠뜨리면 **기권으로 끝난 판만 수순이 없는** 기록이 된다.
+        scoreSnapshots = scoreSnapshots,
+        moveEvaluations = moveEvaluations,
     )
 }

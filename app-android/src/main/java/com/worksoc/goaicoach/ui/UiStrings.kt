@@ -1236,6 +1236,71 @@ internal data class UiStrings(
     fun sideLabel(setup: SidePlayerSetup, color: StoneColor): String =
         "${colorLabel(color)} (${controllerLabel(setup.controller)})"
 
+    /**
+     * 대국 기록 한 줄의 **흑백 실제 세팅**(백로그 #151, 2026-09-18 사용자). 예: `사람:AI`.
+     *
+     * ⚠️ **차례는 언제나 흑:백이다** — 바둑에서 흑이 먼저 두므로, 뒤집으면 같은 판이 다른 판처럼 읽힌다.
+     * ⚠️ 여기서는 [controllerLabel]("유저")이 아니라 **"사람"** 을 쓴다. 좌석 한 칸을 가리킬 때는
+     * "유저"가 자연스럽지만, `유저:AI`처럼 **대진으로 이을 때**는 "사람"이 읽힌다(사용자 표기).
+     */
+    fun seatMatchupLabel(playerSetup: PlayerSetup): String {
+        fun side(controller: SeatController): String =
+            when (controller) {
+                SeatController.Ai -> "AI"
+                SeatController.Human -> when (language) {
+                    UiLanguage.Korean -> "사람"
+                    UiLanguage.English -> "Human"
+                    UiLanguage.Japanese -> "人"
+                    UiLanguage.ChineseSimplified -> "人"
+                }
+            }
+        return "${side(playerSetup.black.controller)}:${side(playerSetup.white.controller)}"
+    }
+
+    /**
+     * 대국 기록 한 줄의 **승리한 진영**(백로그 #151). 예: `백 불계승` · `흑 3.5집승` · `무승부`.
+     *
+     * ⚠️ [winner]가 `null`이면서 [isResign]이 참인 경우는 **2026-09-18 이전 기록뿐**이다 —
+     * 그때는 *"어느 쪽이 기권했는지 구분하지 않는다"* 는 결정 때문에 승자가 저장되지 않았다.
+     * 그런 줄만 진영 없이 "기권"으로 남는다. **새 기록에는 이 경우가 없다.**
+     */
+    fun gameHistoryOutcomeLabel(winner: StoneColor?, isResign: Boolean, margin: Double?): String {
+        if (winner == null) {
+            return if (isResign) {
+                when (language) {
+                    UiLanguage.Korean -> "기권"
+                    UiLanguage.English -> "Resigned"
+                    UiLanguage.Japanese -> "投了"
+                    UiLanguage.ChineseSimplified -> "认输"
+                }
+            } else {
+                when (language) {
+                    UiLanguage.Korean -> "무승부"
+                    UiLanguage.English -> "Draw"
+                    UiLanguage.Japanese -> "持碁"
+                    UiLanguage.ChineseSimplified -> "和棋"
+                }
+            }
+        }
+        val color = colorLabel(winner)
+        val marginText = margin?.formatScoreNumber()
+        return when {
+            isResign -> when (language) {
+                UiLanguage.Korean -> "$color 불계승"
+                UiLanguage.English -> "$color wins by resignation"
+                UiLanguage.Japanese -> "$color 中押し勝ち"
+                UiLanguage.ChineseSimplified -> "$color 中盘胜"
+            }
+            marginText != null -> when (language) {
+                UiLanguage.Korean -> "$color ${marginText}집승"
+                UiLanguage.English -> "$color +$marginText"
+                UiLanguage.Japanese -> "$color ${marginText}目勝ち"
+                UiLanguage.ChineseSimplified -> "$color 胜 $marginText 目"
+            }
+            else -> winnerWithoutMarginLabel(color)
+        }
+    }
+
     fun matchModeLabel(mode: MatchMode): String =
         when (mode) {
             MatchMode.HumanVsAi -> when (language) {

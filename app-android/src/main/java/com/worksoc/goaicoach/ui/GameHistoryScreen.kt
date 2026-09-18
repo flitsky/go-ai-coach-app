@@ -97,13 +97,18 @@ internal fun GameHistoryScreen(
     }
 }
 
-/** 언어별 날짜 표기 어순이 달라 [UiLanguage]마다 다른 패턴/로케일을 쓴다(연도는 생략 — 목록용 짧은 표기). */
-private fun dateTimeFormat(language: UiLanguage): SimpleDateFormat =
+/**
+ * 언어별 날짜 표기 어순이 달라 [UiLanguage]마다 다른 패턴/로케일을 쓴다(연도는 생략 — 목록용 짧은 표기).
+ *
+ * ⚠️ **시각(HH:mm)을 뺐다**(백로그 #151, 2026-09-18 사용자). 한 줄에 다섯 조각이 들어가는데
+ * 분 단위까지 붙으면 폭만 먹고 고르는 데 도움이 안 된다 — 같은 날 여러 판은 **차례로 놓인다.**
+ */
+private fun dateFormat(language: UiLanguage): SimpleDateFormat =
     when (language) {
-        UiLanguage.Korean -> SimpleDateFormat("M월 d일 HH:mm", Locale.KOREAN)
-        UiLanguage.English -> SimpleDateFormat("MMM d, HH:mm", Locale.ENGLISH)
-        UiLanguage.Japanese -> SimpleDateFormat("M月d日 HH:mm", Locale.JAPANESE)
-        UiLanguage.ChineseSimplified -> SimpleDateFormat("M月d日 HH:mm", Locale.SIMPLIFIED_CHINESE)
+        UiLanguage.Korean -> SimpleDateFormat("M월 d일", Locale.KOREAN)
+        UiLanguage.English -> SimpleDateFormat("MMM d", Locale.ENGLISH)
+        UiLanguage.Japanese -> SimpleDateFormat("M月d日", Locale.JAPANESE)
+        UiLanguage.ChineseSimplified -> SimpleDateFormat("M月d日", Locale.SIMPLIFIED_CHINESE)
     }
 
 /** "5점 접바둑"/"호선"처럼 대국 설정 요약에 쓰는 접바둑 값 — [UiStrings.gameModeLabel]과 달리 "대국 방식:" 접두어 없이 목록 행에 바로 쓸 짧은 조각. */
@@ -116,23 +121,24 @@ private fun handicapPhrase(strings: UiStrings, handicapCount: Int): String =
 
 @Composable
 private fun GameHistoryRow(entry: GameHistoryEntry, strings: UiStrings) {
-    // [날짜] [시간] [보드판사이즈] [플레이한 진영] [접바둑 설정] [결과]
-    // 예: "8월 24일 00:34 · 13x13 · 흑 · 5점 접바둑 · 기권"
+    // [날짜] [보드판 크기] [흑백 세팅] [호선/접바둑] [승리한 진영]
+    // 예: "9월 18일 · 13x13 · 사람:AI · 3점 접바둑 · 백 불계승"
+    //
+    // ⚠️ **2026-09-18에 사용자가 다시 정한 배열이다**(백로그 #151). 바뀐 것은 셋이다 —
+    // 시각을 뺐고, "플레이한 진영(흑)"을 **실제 대국 세팅(사람:AI)** 으로 바꿨고, 결과를
+    // **사람 기준(승/패/기권)에서 진영 기준(백 불계승)** 으로 옮겼다.
+    // ⚠️ 사람 기준을 되살리지 말 것 — 이제 **사람:사람·AI:AI 대국도 기록되므로** "승/패"가
+    // 누구의 승패인지 말할 수 없는 줄이 생긴다.
     //
     // ⚠️ **구분자는 공백이 아니라 ` · `다**(백로그 #108, 사용자 결정 2026-09-06 — "명확하게").
-    // 공백으로만 이으면 영어가 `Sep 5, 22:21 13x13 Black 5 Handicap Resigned` 로 **한 문장처럼**
-    // 읽힌다(한국어는 조사·단위가 있어 상대적으로 덜하다). 다섯 항목이 서로 다른 축이라는 것이
-    // 눈에 보여야 한다.
-    // ⚠️ **폭이 12만큼 늘어난다**(구분자 4개 × 3폭). 1.3배에서 이미 두 줄인 줄이 세 줄이 될 수
-    // 있는데, **잘리거나 겹치지는 않는다** — 이 자리는 줄 수 제한이 없다(#107에서 학습 화면의
-    // 근거 없는 `maxLines` 캡을 걷어낸 것과 같은 판단). 폭이 문제가 되면 구분자가 아니라
-    // **문구를 줄일 것.**
+    // 공백으로만 이으면 영어가 한 문장처럼 읽힌다. 다섯 항목이 서로 다른 축이라는 것이
+    // 눈에 보여야 한다. 폭이 문제가 되면 구분자가 아니라 **문구를 줄일 것.**
     val summary = listOf(
-        dateTimeFormat(strings.language).format(Date(entry.playedAtMillis)),
+        dateFormat(strings.language).format(Date(entry.playedAtMillis)),
         "${entry.boardSize}x${entry.boardSize}",
-        strings.colorLabel(entry.humanColor),
+        strings.seatMatchupLabel(entry.playerSetup),
         handicapPhrase(strings, entry.handicapCount),
-        strings.gameHistoryResultLabel(entry.result, entry.margin),
+        strings.gameHistoryOutcomeLabel(entry.winner, entry.isResign, entry.margin),
     ).joinToString(" · ")
 
     Row(

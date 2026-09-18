@@ -70,11 +70,11 @@ internal object SavedGameSessionCodec {
             .put("boardSize", snapshot.gameState.boardSize.value)
             .put("ruleset", snapshot.gameState.ruleset.name)
             .put("handicapCount", snapshot.gameState.handicapCount)
-            .put("moves", encodeMoves(snapshot.gameState.moves, snapshot.gameState.boardSize))
+            .put("moves", ReplayJsonCodec.encodeMoves(snapshot.gameState.moves, snapshot.gameState.boardSize))
             .put("playerSetup", encodePlayerSetup(snapshot.playerSetup))
             .put("playLevel", encodePlayLevel(snapshot.playLevel))
             .put("topMovesEnabled", snapshot.topMovesEnabled)
-            .put("scoreSnapshots", encodeScoreSnapshots(snapshot.scoreSnapshots))
+            .put("scoreSnapshots", ReplayJsonCodec.encodeScoreSnapshots(snapshot.scoreSnapshots))
             .put("finalScoreJudgement", snapshot.finalScoreJudgement?.let(::encodeFinalScoreJudgement) ?: JSONObject.NULL)
             .toString()
 
@@ -87,14 +87,14 @@ internal object SavedGameSessionCodec {
             val boardSize = BoardSize(json.optInt("boardSize", BoardSize.Nine.value))
             val ruleset = enumOrDefault(json.optString("ruleset"), Ruleset.Japanese)
             val handicapCount = json.optInt("handicapCount", 0)
-            val moves = decodeMoves(json.optJSONArray("moves") ?: JSONArray(), boardSize)
+            val moves = ReplayJsonCodec.decodeMoves(json.optJSONArray("moves") ?: JSONArray(), boardSize)
             val gameState = GameStateReplayer.replay(
                 boardSize = boardSize,
                 ruleset = ruleset,
                 moves = moves,
                 handicapCount = handicapCount,
             )
-            val scoreSnapshots = decodeScoreSnapshots(json.optJSONArray("scoreSnapshots") ?: JSONArray())
+            val scoreSnapshots = ReplayJsonCodec.decodeScoreSnapshots(json.optJSONArray("scoreSnapshots") ?: JSONArray())
             SavedGameSnapshot(
                 gameState = gameState,
                 playerSetup = decodePlayerSetup(json.optJSONObject("playerSetup")),
@@ -137,75 +137,4 @@ internal object SavedGameSessionCodec {
             handicapCount = json.optInt("handicapCount", 0),
         )
 
-    private fun encodeScoreSnapshots(snapshots: List<ScoreSnapshot>): JSONArray =
-        JSONArray().also { array ->
-            snapshots.forEach { snapshot ->
-                array.put(
-                    JSONObject()
-                        .put("moveNumber", snapshot.moveNumber)
-                        .put("whiteScoreLead", snapshot.whiteScoreLead ?: JSONObject.NULL)
-                        .put("whiteWinRate", snapshot.whiteWinRate ?: JSONObject.NULL)
-                        .put("source", snapshot.source.name)
-                )
-            }
-        }
-
-    private fun decodeScoreSnapshots(json: JSONArray): List<ScoreSnapshot> =
-        List(json.length()) { index ->
-            val item = json.getJSONObject(index)
-            val moveNumber = item.getInt("moveNumber")
-            val whiteScoreLead = if (item.isNull("whiteScoreLead")) null else item.getDouble("whiteScoreLead")
-            val whiteWinRate = if (item.isNull("whiteWinRate")) null else item.getDouble("whiteWinRate")
-            val source = enumOrDefault(item.optString("source"), ScoreSnapshotSource.EngineEstimate)
-            ScoreSnapshot(
-                moveNumber = moveNumber,
-                whiteScoreLead = whiteScoreLead,
-                whiteWinRate = whiteWinRate,
-                source = source
-            )
-        }
-
-    private fun encodeMoves(
-        moves: List<Move>,
-        boardSize: BoardSize,
-    ): JSONArray =
-        JSONArray().also { array ->
-            moves.forEach { move ->
-                array.put(
-                    JSONObject()
-                        .put("type", move.typeName())
-                        .put("player", move.player.name)
-                        .also { moveJson ->
-                            if (move is Move.Play) {
-                                moveJson.put("coordinate", move.coordinate.label(boardSize))
-                            }
-                        },
-                )
-            }
-        }
-
-    private fun decodeMoves(
-        json: JSONArray,
-        boardSize: BoardSize,
-    ): List<Move> =
-        List(json.length()) { index ->
-            val moveJson = json.getJSONObject(index)
-            val player = enumOrDefault(moveJson.getString("player"), StoneColor.Black)
-            when (moveJson.getString("type")) {
-                "play" -> Move.Play(
-                    player = player,
-                    coordinate = BoardCoordinate.fromLabel(moveJson.getString("coordinate"), boardSize),
-                )
-                "pass" -> Move.Pass(player)
-                "resign" -> Move.Resign(player)
-                else -> error("Unknown move type: ${moveJson.getString("type")}")
-            }
-        }
-
-    private fun Move.typeName(): String =
-        when (this) {
-            is Move.Play -> "play"
-            is Move.Pass -> "pass"
-            is Move.Resign -> "resign"
-        }
 }
