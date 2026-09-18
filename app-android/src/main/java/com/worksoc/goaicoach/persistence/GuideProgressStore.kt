@@ -22,7 +22,7 @@ import com.worksoc.goaicoach.application.guide.GuideStep
  *
  * ## ⚠️ 정식 릴리즈 초기화(#63)는 이 저장소를 지우지 않는다
  *
- * 가이드 기록은 **권한이 아니라 취향**이다(8.3-2의 가르는 기준). 테스트 기간에 가이드를 본 사람에게
+ * 가이드 기록은 **권한이 아니라 취향**이다(8.6의 가르는 기준). 테스트 기간에 가이드를 본 사람에게
  * 정식 출시에서 그것을 다시 보여줄 이유가 없다. `LayeringContractTest`의 spared 목록에 이름을
  * 올려 두었으니, 나중에 누가 `ReleaseResetCoordinator`에 이 이름을 넣으면 **두 단언이 함께 빨개진다.**
  *
