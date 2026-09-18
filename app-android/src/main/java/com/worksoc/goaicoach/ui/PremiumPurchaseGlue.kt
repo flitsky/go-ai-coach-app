@@ -133,12 +133,17 @@ internal suspend fun performPremiumAdGrant(
  */
 internal fun simulatePremiumAdGrant(
     diagnosticEventLog: DiagnosticEventLogPort,
+    // ⚠️ **실제 광고 경로와 같은 이유로 필요하다**(#158). 이 개발자 버튼은 *"광고를 띄우는 한
+    // 걸음만 건너뛰고 보상 루틴은 그대로 탄다"* 는 것이 존재 이유라, 여기만 상태를 안 넘기면
+    // **개발자 버튼으로만 구독이 강등되는** 더 나쁜 어긋남이 생긴다.
+    currentState: PremiumState = PremiumState(),
 ): PremiumState? {
     val result = runPremiumAdGrantApplication(
         PremiumAdGrantRunRequest(
             // 콘솔 보상값은 앱이 쓰지 않는다(항상 1시간) — 실제 콜백에서도 비어 올 수 있다.
             outcome = AdRewardOutcome.RewardEarned(),
             nowMillis = System.currentTimeMillis(),
+            currentState = currentState,
         ),
     )
     diagnosticEventLog.append(result.diagnosticEvent)

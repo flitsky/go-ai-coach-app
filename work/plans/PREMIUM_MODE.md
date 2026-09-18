@@ -310,6 +310,36 @@ Step 1~2는 이미 구현됐고(`application/premium/PremiumState.kt`가 순수 
   **활성화는 백로그 #162가 플래그·스토어 문구·방침과 같은 날 한다.**
 - ⚠️ **라이선스 테스터로 실결제를 밟으려면 활성 상태여야 한다** → #158 실기 검증 시점에 사용자에게 물을 것(백로그 U-43).
 
+#### ✅ 2026-09-18 — 구독 강등 구현, 그리고 **자체 만료 시계를 두지 않기로 한 결정**
+
+**한 것**(백로그 #158, 커밋 `afde0d87`): Play가 **권위 있는 미소유**를 답할 때만 `PremiumSource.Purchase`를
+`None`으로 내린다. `OwnershipUnknown`·`BillingUnavailable`(*"확인하지 못했다"*)에는 **절대 내리지 않는다** —
+네트워크 한 번 끊긴 것이 유료 구독자의 접근권을 박탈하기 때문이다.
+
+⚠️ **함께 잡은 결함**: `PremiumState.adGranted`가 **새 상태를 만들어서**, 구독자가 광고를 보면
+`Purchase` → `AdGrant`로 덮여 **구독이 1시간짜리로 강등**됐다. `saveMergingClaimedFeatures`는
+`claimedFeatures`만 되살리므로 이것을 막지 못했다. 이제 구독이 살아 있으면 광고는 아무것도 바꾸지 않는다.
+
+##### ⚠️ 「구독 유효기간을 앱이 들고 있기」는 **일부러 하지 않았다**
+
+백로그 #158은 *"`PremiumState.isActive`에 유효기간, `PurchaseOutcome.Purchased`에 페이로드"* 를 지시했지만,
+**Play Billing 클라이언트는 만료 시각을 주지 않는다.** `Purchase`가 주는 것은 `purchaseTime`·`purchaseToken`·
+`isAutoRenewing`·`purchaseState`뿐이고, `expiryTimeMillis`는 **서버 API(Play Developer API)** 에만 있다.
+`purchaseTime + 한 달`로 지어내면 오퍼·비례배분·유예에서 곧바로 어긋난다.
+
+대신 플랫폼이 주는 정답은 **"지금 소유 중인가"** 이고, `queryPurchasesAsync`가 **오프라인에서도 로컬 캐시로**
+답한다. **유예 기간에는 소유로, 계정 보류에는 미소유로** 나오므로 원하는 동작이 그대로 나온다.
+
+- ✅ **부수 효과**: 저장한 만료 시각이 없으므로 백로그가 경계한 *"`isClockPlausibleAt`의 `Purchase -> true` —
+  시계를 되돌리면 해지한 구독이 영구히 산다"* 가 **성립하지 않는다.** 시계를 되돌려도 얻을 것이 없고,
+  다음 소유 조회가 강등한다.
+- ⚠️ **되살리려면 이 사유부터 뒤집을 것.** 자체 만료 시계를 두는 순간 **Play와 앱이라는 두 개의 진실**이
+  생기고, 둘이 어긋나는 날 어느 쪽을 믿을지가 새 문제로 온다.
+
+⚠️ **`billing.premiumProductId`는 `premium_basic`으로 바꿨다 — 다만 `local.properties`는 `.gitignore`
+대상이라 커밋되지 않는다.** 다른 기기·CI에서는 **각자 바꿔야 한다**(없으면 `premium_lifetime_placeholder`로
+폴백해 상품을 못 찾는 형태로 안전하게 실패한다).
+
 #### ⛔ 캐릭터 개별 판매는 폐기했다 (2026-09-18 사용자)
 
 - 옛 「캐릭터 보유와의 관계」(매판 N회 우선 소진)와 「관련: 개별 구매 ₩4,900」 두 불릿은 **무효다.**

@@ -48,6 +48,12 @@ class SubscriptionWiringContractTest {
             "광고 부여에 현재 상태를 안 넘긴다 — Purchase가 AdGrant로 덮인다(#158).",
             premium.contains("performPremiumAdGrant(context, diagnosticEventLog, premiumState)"),
         )
+        // ⚠️ **개발자 시뮬레이션도 같은 루틴을 탄다.** 여기만 빠뜨리면 *"개발자 버튼으로만
+        // 구독이 강등되는"* 더 찾기 어려운 어긋남이 된다.
+        assertTrue(
+            "개발자 광고 시뮬레이션에 현재 상태를 안 넘긴다 — 그 버튼만 구독을 덮는다(#158).",
+            premium.contains("simulatePremiumAdGrant(diagnosticEventLog, premiumState)"),
+        )
     }
 
     /**

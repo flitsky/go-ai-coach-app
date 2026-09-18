@@ -169,7 +169,7 @@ internal fun buildPremiumUiState(
     simulateAdGrant = {
         // ⚠️ 광고를 띄우는 한 걸음만 건너뛰고 **보상 루틴은 그대로** 탄다 — 그래야 이 버튼이
         // 테스트하려던 것(보상 유입 + 1시간 활성화)을 실제로 테스트한다.
-        simulatePremiumAdGrant(diagnosticEventLog)?.let { next ->
+        simulatePremiumAdGrant(diagnosticEventLog, premiumState)?.let { next ->
             onStateChanged(store.saveMergingClaimedFeatures(next))
         }
     },
