@@ -253,6 +253,13 @@ internal data class UiStrings(
     val legendBlunder: String,
     val premiumUpsellTitle: String,
     val premiumUpsellMessage: String,
+    /**
+     * 업셀 팝업의 결제 선택지 라벨.
+     *
+     * ⚠️ **2026-09-18까지 *"프리미엄 영구 활성화(결제)"* 라고 적혀 있었다**(#159) — #157·#158이
+     * 프리미엄을 **월간 구독**으로 옮긴 뒤로 거짓이었다. 영구를 다시 주장하려면 수익화 기조
+     * (`FEATURE_ACCESS_PRINCIPLES.md` 8장)부터 뒤집어야 한다.
+     */
     val premiumUpsellPurchaseOption: String,
     val premiumUpsellAdGrantOption: String,
     /**

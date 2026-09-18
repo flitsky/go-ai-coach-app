@@ -8,6 +8,7 @@ import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.premium.AdRewardFailureReason
 import com.worksoc.goaicoach.application.premium.AdRewardOutcome
 import com.worksoc.goaicoach.application.premium.PremiumAdGrantRunRequest
+import com.worksoc.goaicoach.application.premium.PremiumProductInfo
 import com.worksoc.goaicoach.application.premium.PremiumPurchaseRunRequest
 import com.worksoc.goaicoach.application.premium.PremiumState
 import com.worksoc.goaicoach.application.premium.PurchaseFailureReason
@@ -39,6 +40,19 @@ internal suspend fun performPremiumPurchaseRestore(
     resolvePremiumPurchase(context, diagnosticEventLog, PurchaseTrigger.Restore, currentState) { activity ->
         AndroidBillingClient(activity, BuildConfig.PREMIUM_PRODUCT_ID, PremiumProductType).restorePurchases()
     }
+
+/**
+ * 구독 고지에 쓸 가격·주기를 Play에서 읽어 온다(백로그 #159) — **아무것도 사지 않는다.**
+ *
+ * ⚠️ [performPremiumPurchase]와 **같은 상품 ID·같은 종류**를 써야 한다. 여기만 다른 값을 보면
+ * 고지한 가격과 실제로 결제되는 상품이 어긋난다 — 그래서 둘 다 `BuildConfig.PREMIUM_PRODUCT_ID`와
+ * [PremiumProductType] 한 쌍을 그대로 쓴다.
+ */
+internal suspend fun queryPremiumProductInfo(context: Context): PremiumProductInfo? {
+    val activity = context as? Activity ?: return null
+    return AndroidBillingClient(activity, BuildConfig.PREMIUM_PRODUCT_ID, PremiumProductType)
+        .queryPremiumProductInfo()
+}
 
 /**
  * 봇 캐릭터 한 종의 구매를 실행한다(백로그 #18).

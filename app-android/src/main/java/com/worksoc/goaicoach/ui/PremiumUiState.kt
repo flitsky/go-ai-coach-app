@@ -14,6 +14,8 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -211,6 +213,9 @@ internal fun PremiumUpsellDialog(
     // 프리미엄을 켠다(킥오프 플랜 4.5절). 보유량이 0이면 null이라 버튼 자체가 뜨지 않는다.
     adSkipTicketCount: Int = 0,
     onSelectAdSkipTicket: (() -> Unit)? = null,
+    // 구독 고지(가격·주기·자동갱신·해지 경로)를 그릴 재료(#159). 결제 버튼이 숨겨져 있으면
+    // 그리지 않으므로 기본값으로 둬도 된다.
+    productInfo: PremiumProductInfoState = PremiumProductInfoState.Loading,
 ) {
     val strings = LocalUiStrings.current
     val isAnyInProgress = isAdGrantInProgress || isPurchaseInProgress
@@ -225,7 +230,14 @@ internal fun PremiumUpsellDialog(
             shape = RoundedCornerShape(16.dp),
             tonalElevation = 3.dp,
         ) {
-            Column(modifier = Modifier.padding(24.dp)) {
+            // ⚠️ **본문을 스크롤 가능하게 둔다**(#159). 선택지가 최대 넷인 팝업에 구독 고지
+            // 세 줄이 더해졌다 — 글꼴 배율 1.3에 긴 언어(영어)가 겹치면 작은 화면에서 아래
+            // 버튼이 밀려 나간다. 고정 높이를 주는 대신 넘칠 때만 스크롤되게 한다(함정 9).
+            Column(
+                modifier = Modifier
+                    .padding(24.dp)
+                    .verticalScroll(rememberScrollState()),
+            ) {
                 Text(
                     text = strings.premiumUpsellTitle,
                     style = MaterialTheme.typography.titleLarge,
@@ -269,6 +281,14 @@ internal fun PremiumUpsellDialog(
                     }
                 }
                 if (FeatureFlags.isPurchaseEnabled) {
+                    // ⚠️ **구글 정책이 요구하는 고지는 결제 버튼과 같은 자리에 있어야 한다.**
+                    // 마이페이지 카드가 1.5줄이라 상세를 못 담는 대신, 결제가 실제로 시작되는
+                    // 두 지점(여기와 `PremiumSubscribeDialog`)은 **같은 블록**을 그린다 —
+                    // 두 곳에 각각 문장을 쓰면 언젠가 한쪽만 고쳐져 어긋난다.
+                    PremiumSubscriptionNoticeBlock(
+                        productInfo = productInfo,
+                        modifier = Modifier.padding(top = 16.dp, bottom = 8.dp),
+                    )
                     OutlinedButton(
                         onClick = onSelectPurchase,
                         enabled = !isAnyInProgress,
@@ -320,7 +340,17 @@ internal fun PremiumUpsellDialogHost(
     var isPurchaseInProgress by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
+    // ⚠️ 결제 버튼이 숨겨져 있으면 **조회하지 않는다** — 고지를 그릴 일이 없는데 billing
+    // 연결을 맺을 이유가 없다. `isPurchaseEnabled`는 빌드 상수라 이 분기로 컴포지션 구조가
+    // 흔들리지 않는다.
+    val productInfo = if (FeatureFlags.isPurchaseEnabled) {
+        rememberPremiumProductInfo()
+    } else {
+        PremiumProductInfoState.Loading
+    }
+
     PremiumUpsellDialog(
+        productInfo = productInfo,
         adSkipTicketCount = consumables.countOf(ConsumableCatalog.PremiumOnce),
         onSelectAdSkipTicket = {
             // 광고를 보지 않고 같은 1시간 프리미엄을 켠다 — 차감/활성화 판정은 6계층

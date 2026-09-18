@@ -14,7 +14,9 @@ import com.android.billingclient.api.QueryProductDetailsParams
 import com.android.billingclient.api.QueryPurchasesParams
 import com.worksoc.goaicoach.application.premium.PurchaseFailureReason
 import com.worksoc.goaicoach.application.premium.PurchaseOutcome
+import com.worksoc.goaicoach.application.premium.PremiumProductInfo
 import com.worksoc.goaicoach.application.premium.PurchasePort
+import com.worksoc.goaicoach.application.premium.billingPeriodFromIso8601
 import kotlin.coroutines.resume
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -95,6 +97,45 @@ internal class AndroidBillingClient(
                 OwnershipQuery.NotOwned -> PurchaseOutcome.NotPurchased(PurchaseFailureReason.NotFound)
                 is OwnershipQuery.Unknown ->
                     PurchaseOutcome.NotPurchased(PurchaseFailureReason.OwnershipUnknown, query.detail)
+            }
+        } finally {
+            client.endConnection()
+        }
+    }
+
+    /**
+     * 고지에 쓸 가격·주기만 읽는다(#159) — **결제 플로우를 띄우지 않는다.**
+     *
+     * ⚠️ **오퍼 목록에서 첫 번째를 고르는 것은 `billingOfferToken`과 같은 임시 규칙이다**(#159가
+     * 부채로 남긴 그 줄). 기본 요금제 하나에 오퍼가 없으면 목록도 하나라 지금은 맞지만,
+     * **7일 무료체험을 붙이는 날 여기와 저기를 함께 고쳐야 한다** — 둘이 다른 오퍼를 고르면
+     * 고지한 가격과 실제로 결제되는 가격이 어긋난다.
+     *
+     * ⚠️ 가격 단계(`pricingPhases`)도 **첫 번째**를 읽는다. 무료체험이 붙으면 첫 단계가 `0원`이
+     * 되므로, 그날 이 줄은 *"체험 뒤 정가"* 를 함께 말하도록 바뀌어야 한다.
+     */
+    override suspend fun queryPremiumProductInfo(): PremiumProductInfo? {
+        val client = connectOnce() ?: return null
+        return try {
+            val details = queryProductDetailsOnce(client) ?: return null
+            val subscriptionPhase = details.subscriptionOfferDetails
+                ?.firstOrNull()
+                ?.pricingPhases
+                ?.pricingPhaseList
+                ?.firstOrNull()
+            if (subscriptionPhase != null) {
+                PremiumProductInfo(
+                    formattedPrice = subscriptionPhase.formattedPrice,
+                    period = billingPeriodFromIso8601(subscriptionPhase.billingPeriod),
+                )
+            } else {
+                // 단발 상품(캐릭터)도 같은 어댑터를 쓴다 — 그쪽은 주기가 없다.
+                details.oneTimePurchaseOfferDetails?.let { oneTime ->
+                    PremiumProductInfo(
+                        formattedPrice = oneTime.formattedPrice,
+                        period = com.worksoc.goaicoach.application.premium.BillingPeriod.Unknown,
+                    )
+                }
             }
         } finally {
             client.endConnection()

@@ -13,6 +13,19 @@ interface PurchasePort {
 
     /** 앱 시작 시 이미 소유 중인 구매가 있는지 조회한다 — 재설치 등으로 로컬 상태가 사라진 경우 복원용. */
     suspend fun restorePurchases(): PurchaseOutcome
+
+    /**
+     * 구독 고지에 쓸 **가격·결제 주기**를 Play에서 읽어 온다(백로그 #159). 못 읽으면 `null`.
+     *
+     * ⚠️ **결제를 시작하지 않는다.** [purchasePremium]도 내부에서 같은 상품 조회를 하지만 그것은
+     * 결제 플로우의 첫 걸음이고, 이쪽은 **아무것도 사지 않고 값만 본다** — 그래서 구독 버튼을
+     * 누르기 **전에** 가격을 보여줄 수 있다. 구글 정책이 요구하는 "결제 지점의 고지"가 그것이다.
+     *
+     * ⚠️ **`null`을 "상품 없음"으로 읽지 말 것.** 네트워크가 없거나 Play 연결이 안 된 것도 `null`이다.
+     * 호출부는 가격 자리를 비운 채 *"결제 화면에서 확인할 수 있다"* 로 물러나야 하고,
+     * **구독 버튼 자체를 잠그면 안 된다** — 실제 금액은 Play 결제 시트가 반드시 보여준다.
+     */
+    suspend fun queryPremiumProductInfo(): PremiumProductInfo?
 }
 
 /** [PurchaseOutcome.NotPurchased]가 발생한 원인 — 진단 로그에서 구분하기 위함이다. */
