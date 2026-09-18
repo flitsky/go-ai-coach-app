@@ -169,20 +169,35 @@ class GameScreenStateTest {
         assertFalse(requireNotNull(actions[GameActionButtonRole.TopMoves]).enabled)
     }
 
+    /**
+     * **빈 판에서 형세는 닫히고, 추천 수는 열린다** (2026-09-18 사용자 제보로 #43이 반만 뒤집혔다).
+     *
+     * #43은 *"빈 판의 형세는 덤만 반영된 자명한 값이고 추천 수는 정석 첫수"* 라며 **둘을 함께**
+     * 막았다. 그 전제가 뒤집혔다 — *"첫수를 둬야 하는 상황에서도 어디다 둘지 추천받을 수
+     * 있어야 한다."* 빈 판에서 둘은 성질이 다르다: 형세는 아직 **답이 없고**(둔 돌이 없다),
+     * 추천 수는 **답이 있다**(첫 수 자리).
+     *
+     * ⚠️ 토글이 꺼진 상태로 확인해야 한다 — 켜져 있으면 `coachingButtonEnabled`가
+     * "끌 수는 있어야 한다"로 열어 주어 이 조건을 통과해 버린다.
+     */
     @Test
-    fun coachingButtonsStayClosedUntilTheFirstMoveIsPlayed() {
-        // 백로그 #43: 빈 판의 형세는 덤만 반영된 자명한 값이고 추천 수는 정석 첫수라, 판단할
-        // 것이 없는데 1회권만 나갔다. 토글이 꺼진 상태로 확인해야 한다 — 켜져 있으면
-        // `coachingButtonEnabled`가 "끌 수는 있어야 한다"로 열어 주기 때문이다.
+    fun onAnEmptyBoardEvalStaysClosedButTopMovesIsOpen() {
         val empty = buildGameScreenState(
             defaultInput(showOwnershipOverlay = false, topMovesEnabled = false),
         ).actionButtons.associateBy { it.role }
-        assertFalse(requireNotNull(empty[GameActionButtonRole.Eval]).enabled)
-        assertFalse(requireNotNull(empty[GameActionButtonRole.TopMoves]).enabled)
 
-        // 한 수만 놓이면 형세는 곧바로 열린다. 추천 수는 여기서 여전히 닫혀 있는데, 그건 이
-        // 가드 때문이 아니라 **첫 수 뒤가 AI(백) 차례**여서다 — 좌석 조건은 별개이고
-        // `topMovesClosesOnTheAiTurnBecauseItsGateChecksTheSeat`가 따로 고정한다.
+        assertFalse(
+            "빈 판에서 형세가 열렸다 — 둔 돌이 없어 덤만 반영된 자명한 값인데 1회권이 나간다(#43).",
+            requireNotNull(empty[GameActionButtonRole.Eval]).enabled,
+        )
+        assertTrue(
+            "빈 판에서 추천 수가 잠겼다 — 첫 수를 두려는 사람이 코치를 못 부른다(2026-09-18 사용자 제보).",
+            requireNotNull(empty[GameActionButtonRole.TopMoves]).enabled,
+        )
+    }
+
+    @Test
+    fun evalOpensAsSoonAsOneMoveIsPlayed() {
         val afterFirstMove = buildGameScreenState(
             defaultInput(
                 gameState = GameState.empty().play(
@@ -195,6 +210,7 @@ class GameScreenStateTest {
                 topMovesEnabled = false,
             ),
         ).actionButtons.associateBy { it.role }
+
         assertTrue(requireNotNull(afterFirstMove[GameActionButtonRole.Eval]).enabled)
     }
 
@@ -231,9 +247,11 @@ class GameScreenStateTest {
         // `shouldRequestTopMoveAnalysis`는 좌석까지 본다(`seatFor(nextPlayer).isHuman`). 형세 판단
         // 게이트는 좌석을 보지 않으므로 **두 버튼의 조건이 여기서 갈리는 것이 맞다** — 각자 자기
         // 게이트와 정확히 같아야 표가 새지 않는다.
-        // ⚠️ 빈 판을 쓰면 안 된다 — 백로그 #43이 수순 0수를 두 버튼 모두에 대해 막으므로
-        // 형세까지 닫혀 "좌석 때문에 갈린다"는 이 테스트의 요지가 흐려진다. 흑이 한 수 두면
-        // 자연스럽게 백(AI) 차례가 된다.
+        // ⚠️ 빈 판을 쓰면 안 된다 — 수순 0수에서는 **형세가 닫히므로**(#43의 절반은 유효하다)
+        // "좌석 때문에 갈린다"는 이 테스트의 요지가 흐려진다. 흑이 한 수 두면 자연스럽게
+        // 백(AI) 차례가 되고, 그때 형세는 열려 있고 추천 수만 좌석 때문에 닫힌다.
+        // ⚠️ 2026-09-18부터 **빈 판에서도 추천 수는 열린다** — 그래서 빈 판을 쓰면 이 테스트가
+        // 잡으려는 좌석 조건 대신 "둘 다 열림"을 보게 돼 아무것도 못 잡는다.
         val aiTurn = buildGameScreenState(
             defaultInput(
                 gameState = GameState.empty().play(

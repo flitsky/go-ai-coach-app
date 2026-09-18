@@ -316,26 +316,42 @@ internal fun buildGameActionButtonStates(input: GameScreenStateInput): List<Game
      * 그 예외는 남긴다 — 다만 대국이 끝난 뒤에는 마찬가지로 막는다. 종국 후에는 형세가 이미
      * 무료로 그려지므로(`GamePlaySection`) 그때 눌러 봐야 표만 닳는다.
      *
-     * ⚠️ **아직 한 수도 두지 않은 판도 막는다**(백로그 #43, 2026-08-30 사용자 제보). 빈 판의
-     * 형세는 덤만 반영된 자명한 값이고 추천 수는 정석 첫수라, 판단할 것이 없는데 표만 나갔다.
-     * 이 조건이 접바둑까지 함께 덮는다 — 배석 돌은 [GameState.moves]에 들어가지 않으므로
-     * 수순 0수이고, 정해진 배석 그대로라 역시 볼 것이 없다. **되돌리려면 이 한 항만 빼면 된다.**
+     * ⚠️ **수순 0수 조건은 여기 없다 — 형세 쪽으로 옮겼다**([canRequestEval], 2026-09-18).
      */
-    val coachingGateOpen = !input.isGameEnded &&
-        !input.isEngineBusy &&
-        input.gameState.moves.isNotEmpty()
+    val coachingGateOpen = !input.isGameEnded && !input.isEngineBusy
+
+    /**
+     * **빈 판에서는 형세를 볼 것이 없다**(백로그 #43, 2026-08-30 사용자 제보). 덤만 반영된
+     * 자명한 값인데 1회권만 나갔다. 접바둑도 함께 덮인다 — 배석 돌은 [GameState.moves]에
+     * 들어가지 않아 수순 0수이고, 정해진 배석 그대로라 역시 볼 것이 없다.
+     *
+     * ## ⚠️ 2026-09-18: 이 조건이 **추천 수까지 덮던 것을 사용자가 되돌렸다**
+     * #43은 *"추천 수는 정석 첫수라 판단할 것이 없다"* 며 두 버튼을 함께 막았다. 사용자 제보로
+     * 그 전제가 뒤집혔다 — *"첫수를 둬야 하는 상황에서도 어디다 둘지 추천받을 수 있어야 한다."*
+     * 형세와 추천 수는 **빈 판에서 성질이 다르다**: 형세는 아직 **답이 없고**(둔 돌이 없다),
+     * 추천 수는 **답이 있다**(첫 수를 어디 둘지). 그래서 조건을 둘로 갈랐다.
+     *
+     * ⚠️ **다시 묶지 말 것** — 묶는 순간 첫 수를 두려는 사람이 코치를 못 부른다.
+     */
+    val hasPlayedMove = input.gameState.moves.isNotEmpty()
 
     /**
      * 형세 판단은 사람 차례가 아니어도 요청할 수 있다 — `buildScoreEstimateRequestPlan`이 좌석을
      * 보지 않기 때문이다. 사람끼리 두는 대국은 엔진 없이도 국소 계가로 답을 주므로 그 예외를 남긴다.
      */
     val canRequestEval = coachingGateOpen &&
+        hasPlayedMove &&
         (input.isEngineReady || input.matchMode == MatchMode.LocalTwoPlayer)
 
     /**
      * 추천 수는 **사람 차례에만** 요청할 수 있다 — `shouldRequestTopMoveAnalysis`가 좌석까지 본다
      * (`playerSetup.seatFor(nextPlayer).isHuman`). 그 조건을 여기서 빠뜨리면 AI 차례에 버튼이
      * 살아 있고, 눌러도 요청이 거절되며 표만 나간다.
+     *
+     * ⚠️ **[hasPlayedMove]를 보지 않는다 — 일부러다**(2026-09-18 사용자 제보). 첫 수를 두려는
+     * 사람이야말로 *"어디다 둘지"* 를 묻는다. 요청을 받아 주는 쪽(`shouldRequestTopMoveAnalysis`)도
+     * 수순을 보지 않으므로, 버튼이 열려 있어도 **표만 나가고 아무것도 안 나오는 일은 없다**
+     * (이 파일이 지키는 규칙: *"버튼은 요청이 받아들여질 때만 눌린다"*).
      */
     val canRequestTopMoves = coachingGateOpen &&
         input.isEngineReady &&
