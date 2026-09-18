@@ -6,10 +6,17 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
@@ -122,11 +129,20 @@ internal fun PassNoticeHost(
  * 둘 다 판 아래에 있으므로, 그 방향에서 날아오면 누가 통과했는지가 글자를 읽기 전에 보인다.
  *
  * ## 색은 진영을 한 번 더 말한다
- * - **흑 통과** — 불투명한 **흰 상자** 위에 검은 글자
- * - **백 통과** — 불투명한 **검은 상자** 위에 흰 글자
+ * - **흑 통과** — 불투명한 **흰 상자** 위에 **검은 돌**과 검은 글자
+ * - **백 통과** — 불투명한 **검은 상자** 위에 **흰 돌**과 흰 글자
  *
  * ⚠️ **상자는 불투명하고 글자만 반투명하다**(사용자 지시). 상자를 비치게 하면 판의 격자와 돌이
  * 글자에 겹쳐 읽히지 않는다 — 배경이 무엇이든 같은 대비를 보장하려고 상자를 막았다.
+ *
+ * ## ⚠️ 상자와 글자 색을 **뒤집지 말 것** — 돌이 그 배치를 결정한다
+ * *"검은 상자가 흑을 뜻하는 게 자연스럽지 않나"* 는 2026-09-19에 실제로 나온 물음이고, **돌을
+ * 넣기로 한 순간 답이 정해졌다**: 돌은 **대비되는 바닥 위에서만 보인다.** 흑 통과를 검은 상자로
+ * 하면 **검은 돌이 상자에 묻혀 사라진다** — 바둑판에서 검은 돌을 검은 바닥에 놓지 않는 것과 같다.
+ *
+ * 그래서 역할이 이렇게 갈린다 — **상자는 무대, 돌이 배우다.** 진영을 말하는 것은 돌이고,
+ * 상자는 그 돌이 보이도록 반대색을 깐다. 뒤집으면 가장 큰 면적(상자)이 진영을 말하게 되는 대신
+ * **정작 진영의 상징(돌)이 안 보인다.**
  *
  * ⚠️ **버튼이 없다** — 사용자가 닫을 것이 아니라 *"방금 이런 일이 있었다"* 를 알리는 자리다.
  * 뒤로가기·바깥 탭으로는 닫히게 둔다(급한 사용자를 붙잡아 두지 않는다).
@@ -192,18 +208,49 @@ private fun PassNoticeDialog(player: StoneColor) {
                     alpha = (fly.value * 2.2f).coerceAtMost(1f)
                 },
             ) {
-                Text(
-                    text = passNoticeTitleFor(strings.language),
+                Row(
                     // ⚠️ 고정 높이를 쓰지 않는다(함정 9) — 글꼴 배율 1.3에서 상자가 글자를 자르면 안 된다.
-                    modifier = Modifier.padding(horizontal = 44.dp, vertical = 24.dp),
-                    fontSize = 40.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    textAlign = TextAlign.Center,
-                    color = textColor,
-                )
+                    modifier = Modifier.padding(horizontal = 36.dp, vertical = 22.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(18.dp),
+                ) {
+                    PassNoticeStone(isBlack = isBlack)
+                    Text(
+                        text = passNoticeTitleFor(strings.language),
+                        fontSize = 40.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        textAlign = TextAlign.Center,
+                        color = textColor,
+                    )
+                }
             }
         }
     }
+}
+
+/**
+ * 통과한 진영의 **돌 한 알**(백로그 #177, 2026-09-19 사용자).
+ *
+ * ⚠️ **돌은 글자보다 진하다** — 글자에는 불투명도 0.82를 주지만 돌은 그대로 둔다. 진영을 말하는
+ * 것이 돌이므로 그것까지 흐리면 이 조각을 넣은 이유가 사라진다.
+ *
+ * ⚠️ **테두리는 흰 돌 때문에 있는 것이 아니다.** 흰 돌은 검은 상자 위라 이미 잘 보인다 — 테두리는
+ * 두 경우 모두에 **같은 무게**를 주려고 둔다(한쪽만 테두리가 있으면 크기가 달라 보인다).
+ * 판 위의 돌도 같은 이유로 둘 다 윤곽을 갖는다.
+ *
+ * ⚠️ **고정 dp를 쓴다**(함정 9의 예외). 이것은 글자 상자가 아니라 **그림**이라 폰트 배율을 따라
+ * 커질 필요가 없고, 커지면 옆 글자와 균형이 깨진다.
+ */
+@Composable
+private fun PassNoticeStone(isBlack: Boolean) {
+    val stone = if (isBlack) Color.Black else Color.White
+    val ring = (if (isBlack) Color.White else Color.Black).copy(alpha = 0.30f)
+    Box(
+        modifier = Modifier
+            .size(38.dp)
+            .background(stone, CircleShape)
+            .border(1.5.dp, ring, CircleShape),
+    )
 }
 
 /** *"계가 하시겠습니까?"* — **예**는 «나도 통과»다(위 KDoc). */
