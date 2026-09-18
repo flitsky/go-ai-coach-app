@@ -15,10 +15,50 @@ import androidx.compose.ui.input.pointer.PointerId
  *   모든 탭에 말풍선이 번쩍이면 안 되기 때문이다. 이 플래그가 없던 때는 "가늠돌이 있다"가 곧
  *   "확대창을 그린다"여서 가늠돌을 임계 앞으로 당길 수 없었다.
  */
-internal data class PlayDrag(val touch: Offset, val below: Boolean, val magnifier: Boolean)
+internal data class PlayDrag(
+    /**
+     * **조준점** — 가늠돌이 놓일 자리다. 끌고 있을 때는 손가락보다 [PlayDragLiftCells]칸 **위**다(#154).
+     * ⚠️ 확대창을 놓을 때 이 값을 쓰지 말 것 — 그건 [finger]다.
+     */
+    val touch: Offset,
+    val below: Boolean,
+    val magnifier: Boolean,
+    /**
+     * **실제 손가락 자리.** 확대창은 이것을 기준으로 놓는다 — 말풍선이 조준점을 따라 올라가면
+     * 손가락에서 떨어져 어디를 가리키는지 알 수 없어진다(백로그 #154: *"확대창에는 손가락을 그대로 줄 것"*).
+     *
+     * ⚠️ **기본값이 [touch]인 것은 일부러다.** 띄움이 없던 자리(누르는 순간)는 조준점과 손가락이 같고,
+     * 그래서 `PlayDrag(follow.target, below = false, magnifier = false)`가 **글자 그대로 남는다** —
+     * `BoardMagnifierTest`의 소스 계약이 그 문자열을 그대로 찾는다(함정 22: 계약을 고치기 전에 보존을 먼저).
+     */
+    val finger: Offset = touch,
+)
+
+/**
+ * 끌고 있을 때 가늠돌을 손가락보다 이만큼 **위로** 띄운다 — 단위는 **칸**(백로그 #154).
+ *
+ * ## ⚠️ dp가 아니라 칸인 이유
+ * 같은 28dp가 판 크기에 따라 **0.45칸~1.94칸**으로 벌어진다(판 한 변 280dp[MinFittedBoardSide] ~ 562dp).
+ * dp로 잡으면 촘촘한 판에서는 두 칸 가까이 건너뛰어 엉뚱해 보이고, 성긴 판에서는 손가락을 못 벗어난다.
+ * 칸으로 잡으면 어느 판에서든 *"손끝 바로 한 줄 위"* 로 같게 읽힌다.
+ *
+ * ## ⚠️ 맨 아랫줄은 나빠진다 — 알고 받아들인 것이다 (2026-09-18 사용자)
+ * *"맨 아랫줄의 우려가 있으나 우선 구현한다. 맨 아랫줄을 놓을 때는 이미 종국에 다다랐을 것이고,
+ * 끌기 없이 착수하는 경험이 쌓일 것으로 보자."* — 맨 아랫줄에 두려면 손가락이 그 아래 여백(~9dp)에
+ * 있어야 하는데 자리가 모자란다. **끌지 않고 그냥 탭하면 띄움이 없으므로 여전히 놓인다.**
+ *
+ * 재조정은 이 한 줄이다(#145 패턴).
+ */
+internal const val PlayDragLiftCells: Float = 1f
 
 /** [followDrag]의 결과 — 가늠돌을 그릴 자리와, 이제 손가락을 따라가는 중인지. */
-internal data class DragFollow(val target: Offset, val following: Boolean)
+internal data class DragFollow(
+    /** 가늠돌을 그릴 자리 — 따라가는 중이면 손가락보다 [PlayDragLiftCells]칸 위다(#154). */
+    val target: Offset,
+    val following: Boolean,
+    /** 띄우기 **전**의 손가락 자리. 확대창이 이것을 쓴다. 띄움이 없으면 [target]과 같다. */
+    val finger: Offset = target,
+)
 
 /**
  * 가늠돌이 손가락을 **언제부터** 따라갈지(#138).
@@ -40,9 +80,17 @@ internal fun followDrag(
     current: Offset,
     touchSlop: Float,
     following: Boolean,
+    liftPx: Float = 0f,
 ): DragFollow {
     val nowFollowing = following || (current - down).getDistance() > touchSlop
-    return DragFollow(target = if (nowFollowing) current else down, following = nowFollowing)
+    // ⚠️ **띄움은 따라가는 중에만 건다**(#154). 슬롭 안의 떨림은 아직 탭이고, 탭까지 띄우면
+    // 누른 곳과 다른 데 놓여 #39가 막으려던 바로 그 사고가 된다. 그래서 `down`은 그대로 돌려준다.
+    if (!nowFollowing) return DragFollow(target = down, following = false, finger = down)
+    return DragFollow(
+        target = Offset(current.x, current.y - liftPx),
+        following = true,
+        finger = current,
+    )
 }
 
 /**

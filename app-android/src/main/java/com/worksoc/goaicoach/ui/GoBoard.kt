@@ -275,6 +275,16 @@ internal fun GoBoard(
                                 // ① 누르는 **순간** 가늠돌(#138, 사용자 요청 *"'착수 확인'처럼 돌이 먼저
                                 //   보여지게"*). 예전에는 임계(약 0.4초)를 넘겨야 채워져서, 빠른 탭은
                                 //   **아무것도 안 보인 채** 처음 누른 자리에 놓였다.
+                                // 띄움 폭은 **칸 기준**이므로 지금 판의 간격이 필요하다(#154).
+                                // ⚠️ 제스처가 시작될 때마다 다시 읽는다 — `pointerInput`의 키에
+                                // `canvasSize`가 없어서, 판 크기가 바뀌어도 블록이 다시 시작되지 않는다.
+                                val liftPx = boardTapGeometry(
+                                    canvasWidth = canvasSize.width.toFloat(),
+                                    canvasHeight = canvasSize.height.toFloat(),
+                                    boardSize = gameState.boardSize,
+                                    showCoordinates = uxOptions.showCoordinates,
+                                )?.let { it.spacing * PlayDragLiftCells } ?: 0f
+
                                 var follow = DragFollow(target = down.position, following = false)
                                 playDrag = PlayDrag(follow.target, below = false, magnifier = false)
 
@@ -288,6 +298,7 @@ internal fun GoBoard(
                                                 current = position,
                                                 touchSlop = touchSlop,
                                                 following = follow.following,
+                                                liftPx = liftPx,
                                             )
                                             playDrag = PlayDrag(follow.target, below = false, magnifier = false)
                                         }
@@ -328,7 +339,9 @@ internal fun GoBoard(
                                 val showMagnifier = magnifierSpacing != null
                                 val below = magnifierSpacing?.let { spacing ->
                                     magnifierPrefersBelow(
-                                        follow.target,
+                                        // ⚠️ **조준점이 아니라 손가락**이다(#154) — 말풍선은 손가락을
+                                        // 기준으로 놓아야 어디를 가리키는지 읽힌다.
+                                        follow.finger,
                                         Size(canvasSize.width.toFloat(), canvasSize.height.toFloat()),
                                         spacing,
                                         MagnifierFingerGap.toPx(),
@@ -337,14 +350,19 @@ internal fun GoBoard(
                                     )
                                 } ?: false
 
-                                var target = follow.target
-                                playDrag = PlayDrag(target, below, magnifier = showMagnifier)
+                                // ⚠️ **임계를 넘겨도 띄움을 유지한다**(#154). 끌기가 0.4초를 넘기는 것은
+                                // 흔한 일인데, 여기서 띄움을 놓으면 그 순간 가늠돌이 **한 칸 아래로
+                                // 툭 떨어진다.** 조준이 끊기는 그 점프가 띄움의 이득을 통째로 지운다.
+                                var finger = follow.finger
+                                var target = Offset(finger.x, finger.y - liftPx)
+                                playDrag = PlayDrag(target, below, magnifier = showMagnifier, finger = finger)
                                 // ⚠️ **누르고 있는 동안 착수가 확정되면 안 된다**(사용자 확정).
                                 // 여기서는 좌표만 따라가고, 확정은 아래 `completed` 분기에서만 한다.
                                 val completed = drag(down.id) { change ->
                                     change.consume()
-                                    target = change.position
-                                    playDrag = PlayDrag(target, below, magnifier = showMagnifier)
+                                    finger = change.position
+                                    target = Offset(finger.x, finger.y - liftPx)
+                                    playDrag = PlayDrag(target, below, magnifier = showMagnifier, finger = finger)
                                 }
                                 if (!completed) return@awaitEachGesture
 
@@ -482,7 +500,9 @@ internal fun GoBoard(
                     // 담아 둔다(토글이 꺼져 있으면 거기서 이미 `false`다).
                     if (drag.magnifier) drawMagnifier(
                         placement = magnifierPlacement(
-                            touch = touch,
+                            // ⚠️ **손가락**이다(#154) — 조준점을 주면 말풍선이 함께 올라가
+                            // 손가락에서 떨어진다.
+                            touch = drag.finger,
                             canvasSize = size,
                             cellSpacing = geometry.spacing,
                             fingerGapPx = MagnifierFingerGap.toPx(),
@@ -493,7 +513,7 @@ internal fun GoBoard(
                             sizeScale = uxOptions.magnifierSizeScale,
                             zoom = uxOptions.magnifierZoom,
                         ),
-                        touch = touch,
+                        touch = drag.finger,
                         background = if (isGameEnded) colors.boardBackgroundEnded else colors.boardBackgroundActive,
                         border = colors.boardBorder,
                     ) {

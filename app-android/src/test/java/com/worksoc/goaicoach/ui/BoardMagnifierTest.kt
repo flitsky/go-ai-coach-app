@@ -291,4 +291,32 @@ class BoardMagnifierTest {
             .lines()
             .filterNot { it.trimStart().startsWith("import ") }
             .joinToString("\n") { it.substringBefore("//") }
+
+    /**
+     * ⚠️ **확대창은 조준점이 아니라 손가락을 기준으로 놓인다**(백로그 #154).
+     *
+     * #154가 가늠돌을 손가락 위로 [PlayDragLiftCells]칸 띄운 뒤로, 말풍선까지 같이 올라가면
+     * **손가락에서 떨어져 어디를 가리키는지 알 수 없어진다.** 백로그가 *"확대창에는 손가락을
+     * 그대로 줄 것"* 이라고 못박은 이유다.
+     *
+     * ⚠️ 되돌리기 쉬운 종류다 — 누가 정리하다 `drag.finger`를 `touch`로 바꿔도 **컴파일도 되고
+     * 다른 테스트도 초록인 채** 말풍선만 조용히 손가락을 떠난다. 세 자리를 함께 본다.
+     */
+    @Test
+    fun theMagnifierFollowsTheFingerNotTheLiftedAim() {
+        val source = goBoardSource()
+        assertTrue(
+            "말풍선 위/아래 판정이 손가락이 아니라 조준점을 본다 — 띄운 만큼 어긋난다(#154).",
+            source.contains("magnifierPrefersBelow(") && source.contains("follow.finger,"),
+        )
+        assertEquals(
+            "확대창에 손가락을 넘기는 자리가 둘이 아니다 — `magnifierPlacement`와 `drawMagnifier` 둘 다여야 한다(#154).",
+            2,
+            Regex("""touch = drag\.finger,""").findAll(source).count(),
+        )
+        assertTrue(
+            "가늠돌이 조준점(`drag.touch`)이 아닌 것에서 나온다 — 띄움이 무의미해진다(#154).",
+            source.contains("val touch = drag.touch"),
+        )
+    }
 }
