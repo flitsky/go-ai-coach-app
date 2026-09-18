@@ -91,6 +91,32 @@ class PremiumSubscriptionCopyWidthTest {
     }
 
     /**
+     * 여러 문장짜리 **문단**은 띠를 더 넓게 잡는다.
+     *
+     * ⚠️ **왜 문단만 느슨한가**: 문단은 접히므로 잘림 위험이 없고, 위험한 것은 **가장 긴 언어**뿐이다.
+     * 그리고 중국어는 같은 뜻을 본래 훨씬 적은 칸에 담는다 — 띠를 맞추겠다고 늘리면 그것은
+     * **분량을 채우려는 군더더기**이지 번역이 아니다. 그래서 문단은 **상한을 보고 편차는 느슨하게** 본다.
+     */
+    @Test
+    fun multiSentenceParagraphsStayUnderTheirCapAndRoughlyInBalance() {
+        val cap = 130
+        val paragraphs = mapOf<String, (UiLanguage) -> String>(
+            "StaleSubscriptionTitles" to ::premiumStaleSubscriptionTitleFor,
+            "StaleSubscriptionBodies" to ::premiumStaleSubscriptionBodyFor,
+        )
+        paragraphs.forEach { (name, getter) ->
+            UiLanguage.entries.forEach { language ->
+                val text = getter(language)
+                assertTrue(
+                    "$name(${language.name})이 문단 상한 ${cap}칸을 넘는다(${text.displayWidth()}칸).",
+                    text.displayWidth() <= cap,
+                )
+            }
+        }
+        assertUniform(paragraphs, maxSpread = 40)
+    }
+
+    /**
      * 자기검증. 폭 계산이 **실제로 전각을 2로 세고 있는지** 못 박는다 — 이 함수가 모든 문자를
      * 1로 세면 위 두 검사는 아무것도 안 보면서 통과한다(함정 24).
      */

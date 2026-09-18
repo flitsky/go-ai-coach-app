@@ -37,6 +37,20 @@ data class PremiumState(
     // 필드까지 같이 초기화되지 않도록 호출부(`GoCoachApp.kt`)가 `.copy(claimedFeatures = ...)`로
     // 이어붙인다.
     val claimedFeatures: Set<FeatureId> = emptySet(),
+    /**
+     * **마지막으로 Play에 구독 소유를 확인하는 데 성공한 시각**(백로그 #174).
+     *
+     * ⚠️ **만료 시각이 아니다.** 앱은 구독이 언제 끝나는지 모른다 — 이 값은 오직
+     * [SubscriptionFreshnessPolicy]가 *"이 답을 언제까지 믿을지"* 를 재는 데만 쓴다.
+     * **여기에 `purchaseTime + 한 달` 같은 값을 넣지 말 것**(그 판단이 #158이 자체 시계를 접은 이유다).
+     *
+     * ⚠️ **`null`은 "확인에 실패했다"가 아니라 "아직 한 번도 확인한 적이 없다"이다** — #174 이전
+     * 저장값에는 이 키가 없어 디코더가 `null`을 준다. 정책이 그 경우를 **강등이 아니라 재조회**로
+     * 받는 이유가 그것이다(업데이트를 받은 유료 구독자를 켜자마자 내리지 않기 위해).
+     *
+     * ⚠️ 광고 1시간([PremiumSource.AdGrant])과는 무관하다 — 그쪽 수명은 [adGrantStartedAtMillis]가 잰다.
+     */
+    val lastSubscriptionVerifiedAtMillis: Long? = null,
 ) {
     /**
      * 현재 시각 기준으로 프리미엄이 유효한지 판정한다.

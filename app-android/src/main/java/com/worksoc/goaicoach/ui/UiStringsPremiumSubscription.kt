@@ -190,3 +190,40 @@ internal fun premiumSubscriptionPriceLineFor(
         BillingPeriod.Unknown -> "定期 $formattedPrice"
     }
 }
+
+/**
+ * ⚠️ **72시간 동안 확인에 실패해 프리미엄을 내렸을 때의 안내**(백로그 #174).
+ *
+ * 문구가 말해야 하는 것은 셋이다 — **무슨 일이 있었는지**(Play에 못 닿았다) · **그래서 지금
+ * 어떤 상태인지**(프리미엄이 꺼졌다) · **무엇을 하면 되는지**(연결하고 다시 열기). 함정 39가
+ * *"무엇이 있다 말고 무엇을 하면 된다"* 라고 한 그 형태다.
+ *
+ * ⚠️ **"오류"라고 쓰지 않는다** — 사용자가 잘못한 것이 아니고, 실제로 할 수 있는 일이 있다.
+ * ⚠️ **"해지되었습니다"라고 쓰지 않는다** — 앱은 해지 여부를 **모른다.** 아는 것은 *"사흘 넘게
+ * 확인하지 못했다"* 뿐이다. 없는 사실을 말하면 구독이 살아 있는 사용자에게 거짓이 된다.
+ */
+private val StaleSubscriptionTitles: Map<UiLanguage, String> = mapOf(
+    UiLanguage.Korean to "구독을 확인하지 못했습니다",
+    UiLanguage.English to "Subscription not verified",
+    UiLanguage.Japanese to "定期購入を確認できません",
+    UiLanguage.ChineseSimplified to "目前无法确认您的订阅信息",
+)
+
+private val StaleSubscriptionBodies: Map<UiLanguage, String> = mapOf(
+    // ⚠️ **과거형이다** — 팝업과 강등이 같은 순간이라(사용자 확정) *"꺼집니다"* 는 거짓이 된다.
+    //   나머지 세 언어도 같은 시제다(`is now off` · `オフにしました` · `已关闭`).
+    UiLanguage.Korean to "구글 결제 정보를 사흘 넘게 가져오지 못해 프리미엄 기능이 꺼졌습니다. " +
+        "인터넷에 연결한 뒤 앱을 다시 열어 주세요.",
+    UiLanguage.English to "We couldn't reach Google Play for over three days, so premium is now off. " +
+        "Connect to the internet and open the app again.",
+    UiLanguage.Japanese to "3日以上Google Playに接続できなかったため、プレミアムをオフにしました。" +
+        "ネットに接続してアプリを開き直してください。",
+    UiLanguage.ChineseSimplified to "超过三天未能连接 Google Play，高级功能已关闭。" +
+        "请连接网络后重新打开应用以恢复订阅。",
+)
+
+internal fun premiumStaleSubscriptionTitleFor(language: UiLanguage): String =
+    StaleSubscriptionTitles.getValue(language)
+
+internal fun premiumStaleSubscriptionBodyFor(language: UiLanguage): String =
+    StaleSubscriptionBodies.getValue(language)

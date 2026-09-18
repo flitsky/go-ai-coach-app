@@ -31,9 +31,17 @@ class SubscriptionWiringContractTest {
             "복원 효과에 현재 상태를 안 넘긴다 — 해지한 구독이 영원히 살아 있는다(#158).",
             app.contains("PremiumPurchaseRestoreEffect(context, diagnosticEventLog, premiumState)"),
         )
+        // ⚠️ **식별자가 `currentState` → `latestState`로 바뀌었다**(2026-09-18, #174).
+        // 함정 22는 *"소스 계약이 고정한 이름은 바꾸기보다 되돌리는 게 싸다"* 고 하지만, 여기서는
+        // **되돌릴 수 없다** — 파라미터 `currentState`를 그대로 쓰는 것이 바로 #174가 고친
+        // 결함이다. 이 효과가 이제 `AppForegroundEvents`를 구독해 **앱이 사는 내내** 돌아 있어,
+        // `LaunchedEffect(Unit)`의 람다가 첫 컴포지션의 상태를 붙잡으면 그 뒤에 구독을 산 사람이
+        // 다음 복귀에서 도로 강등된다(함정 46). `latestState`는 `rememberUpdatedState(currentState)`다.
+        // · 그 유도 관계 자체는 `PremiumSubscriptionExpiryContractTest`가 따로 못 박는다 —
+        //   여기서 이름만 보면 누군가 `latestState`라는 이름의 엉뚱한 값을 넘겨도 통과한다.
         assertTrue(
-            "복원 효과가 받은 상태를 조회에 흘리지 않는다(#158).",
-            premium.contains("performPremiumPurchaseRestore(context, diagnosticEventLog, currentState)"),
+            "복원 효과가 받은 상태를 조회에 흘리지 않는다(#158 · 이름은 #174에서 `latestState`로 바뀜).",
+            premium.contains("performPremiumPurchaseRestore(context, diagnosticEventLog, latestState)"),
         )
         assertTrue(
             "조회가 상태를 판정 함수까지 넘기지 않는다(#158).",

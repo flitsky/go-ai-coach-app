@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LocalContentColor
@@ -21,6 +22,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -34,6 +36,7 @@ import com.worksoc.goaicoach.application.consumable.ConsumableCatalog
 import com.worksoc.goaicoach.application.consumable.ConsumableSpendDecision
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.premium.AdRewardFailureReason
+import com.worksoc.goaicoach.AppForegroundEvents
 import com.worksoc.goaicoach.application.premium.AdRewardOutcome
 import com.worksoc.goaicoach.application.premium.FeatureAccess
 import com.worksoc.goaicoach.application.premium.FeatureAccessPolicy
@@ -43,6 +46,7 @@ import com.worksoc.goaicoach.application.premium.PremiumState
 import com.worksoc.goaicoach.application.premium.PremiumStateStorePort
 import com.worksoc.goaicoach.application.premium.PurchaseFailureReason
 import com.worksoc.goaicoach.application.premium.PurchaseOutcome
+import com.worksoc.goaicoach.application.premium.decideStaleSubscriptionDowngrade
 import com.worksoc.goaicoach.application.premium.runPremiumFeatureClaim
 import com.worksoc.goaicoach.application.premium.buildPremiumDeactivatedDiagnosticEvent
 import com.worksoc.goaicoach.application.premium.saveMergingClaimedFeatures
@@ -416,7 +420,7 @@ internal fun PremiumUpsellDialogHost(
 }
 
 /**
- * 앱 시작 시 1회, 이미 소유 중인 구매가 있는지 Play에 조회해 로컬 상태를 복원한다(재설치 등
+ * 앱 시작 시 **그리고 포그라운드로 돌아올 때마다**, 이미 소유 중인 구매가 있는지 Play에 조회해 로컬 상태를 복원한다(재설치 등
  * 이유로 로컬 저장소가 비어 있는 경우 대비 — PREMIUM_MODE.md Step 4). `GoCoachApp.kt`가
  * 이 컴포저블을 호출하는 형태로 감싸는 이유는 [LaunchedEffect]를 이 파일에 남겨 `GoCoachApp.kt`의
  * 상태 훅 예산(47/47, 여유 없음)에 영향을 주지 않기 위함이다 — 위 [PremiumUpsellDialogHost]가
@@ -424,6 +428,20 @@ internal fun PremiumUpsellDialogHost(
  * (복원할 [PremiumState]가 없으면) [onRestored]는 호출되지 않는다 — 대부분의 사용자에게
  * 정상적인 기본 상태이고, 로컬에 이미 있던 영구 구매 상태를 이 조회 실패로 되돌리지도 않는다
  * (`runPremiumPurchaseApplication`의 보수적 설계).
+ *
+ * ## ⚠️ 왜 포그라운드 복귀마다 다시 묻는가 (백로그 #174, 2026-09-18)
+ * #173 실기가 드러낸 것: **강등 계기가 「앱 완전 재시작」 하나뿐이었다.** 앱을 켠 채 만료 시각을
+ * 넘겨도, 홈으로 나갔다 돌아와도 권한이 그대로 살아 있었다 — 이 효과가 `LaunchedEffect(Unit)`이라
+ * **컴포지션당 한 번**만 물었기 때문이다. 그래서 **해지한 사용자가 앱을 계속 켜 두면 권한이 계속 살았다.**
+ *
+ * ⚠️ **조회가 잦아져도 위험하지 않은 이유는 #158의 관문이다** — 강등은 `isAuthoritativeNotOwned`
+ * (Play가 **권위 있게 "미소유"** 라고 답한 경우) 하나로만 일어난다. 조회 실패는 몇 번이 쌓여도
+ * 아무도 내리지 않는다. 그 관문이 없다면 이 변경은 **지하철에서 앱을 여는 유료 구독자를
+ * 강등시키는** 변경이 됐을 것이다. ⚠️ **관문을 손대는 사람은 이 KDoc을 함께 볼 것.**
+ *
+ * ⚠️ **아직 안 덮는 경우가 하나 남는다** — 앱을 **한 번도 배경으로 보내지 않고** 계속 켜 둔 채
+ * 만료를 넘기는 경우. 그것까지 덮으려면 주기 재평가가 필요한데 배터리·네트워크를 계속 쓴다.
+ * #174가 그 선택지를 열어 뒀다.
  */
 @Composable
 internal fun PremiumPurchaseRestoreEffect(
@@ -435,10 +453,66 @@ internal fun PremiumPurchaseRestoreEffect(
     onRestored: (PremiumState) -> Unit,
 ) {
     if (!FeatureFlags.isPurchaseEnabled) return
+
+    // ⚠️ **`LaunchedEffect(Unit)` 안에서 첫 컴포지션의 값을 붙잡지 않도록 감싼다**(함정 46).
+    // 이 효과는 이제 앱이 사는 내내 돌아 있으므로, 감싸지 않으면 **처음 켤 때의 `PremiumState`로
+    // 영원히 강등 판정을 한다** — 그 사이에 구독을 산 사람이 다음 복귀에서 도로 내려간다.
+    // · `PremiumState`는 data class라 구조적 동등성이 곧 값 비교이고, [onRestored]는 람다라
+    //   컴포지션마다 새 클로저다 — 함정 46이 경고한 `::함수참조` 형태가 아니므로 갱신이 걸러지지 않는다.
+    val latestState by rememberUpdatedState(currentState)
+    val latestOnRestored by rememberUpdatedState(onRestored)
+    // 팝업 상태를 이 파일이 든다 — `GoCoachApp.kt`는 상태 훅 여유가 0이다(위 KDoc과 같은 이유).
+    var showStaleNotice by remember { mutableStateOf(false) }
+
     LaunchedEffect(Unit) {
-        val (_, nextState) = performPremiumPurchaseRestore(context, diagnosticEventLog, currentState)
-        nextState?.let(onRestored)
+        suspend fun queryOnce() {
+            val (_, nextState) = performPremiumPurchaseRestore(context, diagnosticEventLog, latestState)
+            if (nextState != null) {
+                latestOnRestored(nextState)
+                return
+            }
+            // ⚠️ **조회로는 아무것도 못 정했을 때에만 신선도를 본다**(백로그 #174).
+            // Play가 답을 줬다면 그 답이 정본이다 — 앱의 시계가 Play를 이기는 일은 없어야 한다.
+            decideStaleSubscriptionDowngrade(latestState, System.currentTimeMillis())?.let { downgraded ->
+                showStaleNotice = true
+                latestOnRestored(downgraded)
+            }
+        }
+        // ⚠️ **콜드 스타트는 이 직접 호출이 맡는다.** `AppForegroundEvents`는 `replay = 0`이라
+        // 구독자가 붙기 전에 emit된 값은 **아무 데도 가지 않는다** — 콜드 스타트의 foreground
+        // 이벤트는 이 컴포지션이 붙기 전에 이미 지나갔다. 같은 이유로 **중복 조회도 생기지 않는다.**
+        queryOnce()
+        AppForegroundEvents.events.collect { queryOnce() }
     }
+
+    if (showStaleNotice) {
+        StaleSubscriptionNoticeDialog(onDismiss = { showStaleNotice = false })
+    }
+}
+
+/**
+ * **사흘 넘게 구독을 확인하지 못해 프리미엄을 내렸다**고 알린다(백로그 #174, 2026-09-18 사용자 설계).
+ *
+ * ⚠️ **팝업과 강등은 같은 순간이다**(사용자 확정 2번) — 경고만 하고 다음 기회에 내리지 않는다.
+ * 그래서 문구는 *"꺼집니다"* 가 아니라 이미 일어난 일을 말한다.
+ *
+ * ⚠️ **`TrackWhileShown`을 반드시 부른다**(함정 40) — 이것을 빠뜨리면 첫돌이 안내가 이 팝업 **뒤에서**
+ * 자동 재생되고, 사용자가 못 본 채로 "봤다"고 기록돼 그 단계가 **영구히 침묵한다.**
+ */
+@Composable
+private fun StaleSubscriptionNoticeDialog(onDismiss: () -> Unit) {
+    val strings = LocalUiStrings.current
+    GuideBlockingOverlays.TrackWhileShown()
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(premiumStaleSubscriptionTitleFor(strings.language)) },
+        // ⚠️ 고정 높이를 쓰지 않는다(함정 9) — 네 언어 중 가장 긴 문단이 글꼴 배율 1.3에서
+        // 두 줄이 더 늘어난다.
+        text = { Text(premiumStaleSubscriptionBodyFor(strings.language)) },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text(strings.close) }
+        },
+    )
 }
 
 /**

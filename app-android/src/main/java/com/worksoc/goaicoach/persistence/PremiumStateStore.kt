@@ -52,6 +52,9 @@ internal object PremiumStateCodec {
             .put("source", state.source.name)
             .put("adGrantStartedAtMillis", state.adGrantStartedAtMillis ?: JSONObject.NULL)
             .put("claimedFeatures", JSONArray(state.claimedFeatures.map { it.name }))
+            // ⚠️ **키를 더하기만 한다**(함정 55) — 이 코덱에는 스키마 번호 등호 검사가 없으므로
+            // 기존 기록은 이 키가 없는 채로 읽히고 `null`이 된다. 그것이 "아직 확인한 적 없음"이다.
+            .put("lastSubscriptionVerifiedAtMillis", state.lastSubscriptionVerifiedAtMillis ?: JSONObject.NULL)
             .toString()
 
     fun decode(raw: String): PremiumState? =
@@ -61,6 +64,7 @@ internal object PremiumStateCodec {
                 source = enumOrDefault(json.optString("source"), PremiumSource.None),
                 adGrantStartedAtMillis = json.optLongOrNull("adGrantStartedAtMillis"),
                 claimedFeatures = json.optClaimedFeatures(),
+                lastSubscriptionVerifiedAtMillis = json.optLongOrNull("lastSubscriptionVerifiedAtMillis"),
             )
         }.getOrNull()
 

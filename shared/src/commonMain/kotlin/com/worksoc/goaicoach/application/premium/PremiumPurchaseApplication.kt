@@ -55,7 +55,14 @@ data class PremiumPurchaseRunResult(
 fun runPremiumPurchaseApplication(request: PremiumPurchaseRunRequest): PremiumPurchaseRunResult =
     when (val outcome = request.outcome) {
         PurchaseOutcome.Purchased -> {
+            // ⚠️ **여기가 「확인에 성공했다」고 도장을 찍는 유일한 자리다**(백로그 #174).
+            // Play가 *"소유 중"* 이라고 답한 순간이고, [SubscriptionFreshnessPolicy]의 24/72시간
+            // 시계는 이 시각부터 다시 센다.
+            // · **조회 실패에는 찍지 않는다** — 그래야 답을 못 얻은 시간이 실제로 쌓이고 72시간이 온다.
+            // · **권위 있는 미소유에도 찍을 필요가 없다** — 그 경우는 같은 호출에서 곧바로 강등되므로
+            //   믿을 답이 남지 않는다.
             val nextState = PremiumState.purchased()
+                .copy(lastSubscriptionVerifiedAtMillis = request.nowMillis)
             val isRestore = request.trigger == PurchaseTrigger.Restore
             PremiumPurchaseRunResult(
                 nextState = nextState,
