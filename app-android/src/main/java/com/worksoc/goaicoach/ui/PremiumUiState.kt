@@ -179,7 +179,7 @@ internal fun buildPremiumUiState(
         outcome
     },
     activateAdGrant = {
-        val (outcome, nextState) = performPremiumAdGrant(context, diagnosticEventLog)
+        val (outcome, nextState) = performPremiumAdGrant(context, diagnosticEventLog, premiumState)
         nextState?.let { onStateChanged(store.saveMergingClaimedFeatures(it)) }
         outcome
     },
@@ -399,11 +399,14 @@ internal fun PremiumUpsellDialogHost(
 internal fun PremiumPurchaseRestoreEffect(
     context: Context,
     diagnosticEventLog: DiagnosticEventLogPort,
+    // ⚠️ **현재 상태를 넘겨야 강등이 된다**(#158) — 안 넘기면 기본값(`None`)이 들어가
+    // "내릴 것이 없다"로 판정돼 **해지한 구독이 계속 살아 있는다.**
+    currentState: PremiumState,
     onRestored: (PremiumState) -> Unit,
 ) {
     if (!FeatureFlags.isPurchaseEnabled) return
     LaunchedEffect(Unit) {
-        val (_, nextState) = performPremiumPurchaseRestore(context, diagnosticEventLog)
+        val (_, nextState) = performPremiumPurchaseRestore(context, diagnosticEventLog, currentState)
         nextState?.let(onRestored)
     }
 }

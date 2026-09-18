@@ -33,8 +33,10 @@ internal suspend fun performPremiumPurchase(
 internal suspend fun performPremiumPurchaseRestore(
     context: Context,
     diagnosticEventLog: DiagnosticEventLogPort,
+    // ⚠️ **강등 판정에 필요하다**(#158) — 지금 `Purchase`인 사람만 내릴 것이 있다.
+    currentState: PremiumState = PremiumState(),
 ): Pair<PurchaseOutcome, PremiumState?> =
-    resolvePremiumPurchase(context, diagnosticEventLog, PurchaseTrigger.Restore) { activity ->
+    resolvePremiumPurchase(context, diagnosticEventLog, PurchaseTrigger.Restore, currentState) { activity ->
         AndroidBillingClient(activity, BuildConfig.PREMIUM_PRODUCT_ID, PremiumProductType).restorePurchases()
     }
 
@@ -66,6 +68,7 @@ private suspend fun resolvePremiumPurchase(
     context: Context,
     diagnosticEventLog: DiagnosticEventLogPort,
     trigger: PurchaseTrigger,
+    currentState: PremiumState = PremiumState(),
     callBillingClient: suspend (Activity) -> PurchaseOutcome,
 ): Pair<PurchaseOutcome, PremiumState?> {
     val activity = context as? Activity
@@ -75,7 +78,12 @@ private suspend fun resolvePremiumPurchase(
         PurchaseOutcome.NotPurchased(PurchaseFailureReason.Unavailable)
     }
     val result = runPremiumPurchaseApplication(
-        PremiumPurchaseRunRequest(outcome = outcome, trigger = trigger, nowMillis = System.currentTimeMillis()),
+        PremiumPurchaseRunRequest(
+            outcome = outcome,
+            trigger = trigger,
+            nowMillis = System.currentTimeMillis(),
+            currentState = currentState,
+        ),
     )
     diagnosticEventLog.append(result.diagnosticEvent)
     return outcome to result.nextState
@@ -90,10 +98,17 @@ private suspend fun resolvePremiumPurchase(
 internal suspend fun performPremiumAdGrant(
     context: Context,
     diagnosticEventLog: DiagnosticEventLogPort,
+    // ⚠️ **살아 있는 구독을 덮지 않기 위해 필요하다**(#158) — 안 넘기면 기본값(`None`)이 들어가
+    // 구독자가 광고를 본 순간 `Purchase`가 `AdGrant`로 강등된다.
+    currentState: PremiumState = PremiumState(),
 ): Pair<AdRewardOutcome, PremiumState?> {
     val outcome = showRewardedAdOnce(context)
     val result = runPremiumAdGrantApplication(
-        PremiumAdGrantRunRequest(outcome = outcome, nowMillis = System.currentTimeMillis()),
+        PremiumAdGrantRunRequest(
+            outcome = outcome,
+            nowMillis = System.currentTimeMillis(),
+            currentState = currentState,
+        ),
     )
     diagnosticEventLog.append(result.diagnosticEvent)
     return outcome to result.nextState

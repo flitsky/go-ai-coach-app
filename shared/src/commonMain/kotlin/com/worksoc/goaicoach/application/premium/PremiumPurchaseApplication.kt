@@ -18,14 +18,27 @@ data class PremiumPurchaseRunRequest(
     val outcome: PurchaseOutcome,
     val trigger: PurchaseTrigger,
     val nowMillis: Long,
+    /**
+     * 지금 로컬에 있는 상태 — **강등 판정에 필요하다**(백로그 #158).
+     *
+     * 강등은 [PremiumSource.Purchase]일 때만 뜻이 있다. 광고 부여는 스스로 시간으로 만료되고,
+     * [PremiumSource.None]은 내릴 것이 없다. 그리고 [PremiumState.claimedFeatures]는
+     * **강등해도 남아야 한다** — 출석으로 받은 영구 클레임은 구독과 무관하다.
+     */
+    val currentState: PremiumState = PremiumState(),
 )
 
 /**
  * [nextState]가 `null`이면 상태를 바꾸지 말라는 뜻이다(호출부가 premiumState/저장소 쓰기를
- * 건너뛰도록). 특히 [PurchaseTrigger.Restore]에서 Play가 "소유한 구매 없음"을 반환했다고 해서
- * 로컬에 이미 있던 [PremiumSource.Purchase] 상태를 되돌리지는 않는다 — 일시적인 네트워크
- * 응답 하나로 결제한 사용자의 접근권을 조용히 빼앗는 위험이, 실제로는 드문 환불 케이스가
- * 잠시 더 유지되는 위험보다 크다고 판단한 보수적 선택이다(PREMIUM_MODE.md Step 4 참고).
+ * 건너뛰도록).
+ *
+ * ⚠️ **2026-09-18에 이 계약이 한쪽만 뒤집혔다**(백로그 #158). 예전에는 *"Play가 미소유라고 해도
+ * 되돌리지 않는다"* 가 전부였다 — 영구 구매에서는 그것이 옳았다. **구독에서는 아니다**: 해지·
+ * 만료·계정 보류가 정상 흐름이라 되잠그지 않으면 한 번 결제한 사람이 영원히 프리미엄이 된다.
+ *
+ * 그래서 지금은 **권위 있는 미소유**([isAuthoritativeNotOwned])에서만 강등한다. *"확인하지
+ * 못했다"*(`OwnershipUnknown`·`BillingUnavailable`)는 **여전히 되돌리지 않는다** — 일시적인
+ * 네트워크 응답 하나로 결제한 사용자의 접근권을 빼앗는 위험은 그대로이기 때문이다.
  */
 data class PremiumPurchaseRunResult(
     val nextState: PremiumState?,
@@ -65,12 +78,33 @@ fun runPremiumPurchaseApplication(request: PremiumPurchaseRunRequest): PremiumPu
             // 적었다** — 조회가 오류로 끝났을 뿐인데 미소유라고 단정한 셈이다.
             val isAuthoritativeNotOwned = outcome.isAuthoritativeNotOwned(request.trigger)
             val isRestore = request.trigger == PurchaseTrigger.Restore
+            // ⚠️ **구독 강등은 여기, 그리고 여기서만 일어난다**(백로그 #158).
+            //
+            // 영구 구매 시절에는 강등이 아예 없었다 — 한 번 사면 끝이라 "미소유"는 환불뿐이었고,
+            // 일시적 네트워크 오류로 접근권을 뺏는 위험이 더 컸다. **구독은 정반대다**: 해지·만료·
+            // 계정 보류가 정상 흐름이라, 되잠그지 않으면 **한 번 결제한 사람이 영원히 프리미엄**이다.
+            //
+            // ⚠️ **관문은 [isAuthoritativeNotOwned] 하나다.** `OwnershipUnknown`(조회 실패)이나
+            // `BillingUnavailable`에 강등을 걸면 **네트워크 한 번 끊긴 것이 유료 구독자의 접근권을
+            // 박탈한다.** 그 구분이 이 함수보다 먼저 만들어져 있던 이유가 이것이다.
+            //
+            // ⚠️ **`claimedFeatures`는 남긴다** — 출석 3일차로 받은 무르기 같은 영구 클레임은
+            // 구독과 다른 축이다(`PremiumState.claimedFeatures` KDoc). `copy`가 그것을 지킨다.
+            // ⚠️ **광고 부여는 건드리지 않는다** — 스스로 시간으로 만료되고, 구독 조회가 광고
+            //   1시간을 끊을 이유가 없다.
+            val downgraded = isAuthoritativeNotOwned &&
+                request.currentState.source == PremiumSource.Purchase
             PremiumPurchaseRunResult(
-                nextState = null,
+                nextState = if (downgraded) {
+                    request.currentState.copy(source = PremiumSource.None)
+                } else {
+                    null
+                },
                 diagnosticEvent = DiagnosticEvent(
                     // 미소유는 대부분의 사용자에게 정상이라 Info, 확인 실패는 Warning이다.
                     severity = if (isAuthoritativeNotOwned) DiagnosticSeverity.Info else DiagnosticSeverity.Warning,
                     code = when {
+                        downgraded -> "premium_subscription_downgraded"
                         isAuthoritativeNotOwned -> "premium_purchase_restore_not_found"
                         isRestore -> "premium_purchase_restore_unverified"
                         else -> "premium_purchase_not_completed"

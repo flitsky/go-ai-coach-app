@@ -769,7 +769,7 @@ private fun GoCoachScreen(
         onStateChanged = { nextState -> premiumState = nextState },
     )
 
-    PremiumPurchaseRestoreEffect(context, diagnosticEventLog) { nextState ->
+    PremiumPurchaseRestoreEffect(context, diagnosticEventLog, premiumState) { nextState ->
         premiumState = premiumStateStore.saveMergingClaimedFeatures(nextState)
     }
 

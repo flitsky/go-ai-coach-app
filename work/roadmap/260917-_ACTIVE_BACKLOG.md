@@ -314,6 +314,24 @@
 - 확대창에는 손가락을 그대로 줄 것. 오프셋은 **상수 하나**로(재조정 한 줄 — #145 패턴).
 - 사용자 결정: **U-9**(꾹 누름 임계 후에도 띄울지).
 
+### 158. **구독 전환 코어** **[진행중]** (AI 모델: Opus, 노력정도: 높음)
+
+> **이 자리인 이유**: #157 뒤. 구독 권한이 **사라졌을 때 되잠기는 경로**가 아직 없다 —
+> 지금은 미소유여도 `nextState = null`이라 아무것도 되돌리지 않는다. 2026-09-18 착수.
+
+
+- `PremiumState.isActive`(:49-55)에 유효기간, `PurchaseOutcome.Purchased`에 페이로드, `billing.premiumProductId`를
+  구독 SKU(`premium_basic`)로. ⚠️ **`PremiumSource.Purchase` 개명 금지**(`PremiumStateStore.kt:61`이 모르는 이름을
+  조용히 `None`으로 떨어뜨린다) — 의미만 "영구"→"구독 유효"로.
+- ⚠️ **강등은 `isAuthoritativeNotOwned`(`PremiumPurchaseApplication.kt:107-110`) 밖에서 켜지 말 것** —
+  `OwnershipUnknown`은 "확인 못 했다"이지 미소유가 아니다. 네트워크 한 번 실패가 구독자 접근권을 뺏는다.
+- ⚠️ **`saveMergingClaimedFeatures`(`PremiumFeatureClaimApplication.kt:40-43`)가 `claimedFeatures` 하나만 이름으로
+  합치고 나머지를 덮어쓴다** — 광고 시청/QA 토글 저장이 **살아 있는 구독 만료시각을 조용히 지운다**
+  (메모리 `preferences-autosave-pattern`의 재현).
+- 함께: `isClockPlausibleAt`(`PremiumState.kt:65-69`)의 `Purchase -> true` — 시계를 되돌리면 해지한 구독이 영구히 산다.
+- ⚠️ `AndroidBillingClient`의 `ProductType`을 클래스 안에서 전역 치환하지 말 것 — **생성자 파라미터로 올린다**
+  (캐릭터 판매는 폐기했지만 그 코드가 남아 있고, 나중에 되살릴 때 조용히 깨진다).
+
 ---
 
 ## 예정사항
@@ -330,7 +348,6 @@
 
 | # | 제목 | 모델/노력 | 이 자리인 이유 |
 |---|---|---|---|
-| 158 | 구독 전환 코어 | Opus/높음 | 157 뒤. SKU 등록 후 실기 검증 |
 | 159 | 구독 고지 UI + **오퍼 선택 규칙** | Opus/높음 | 정책 요구. ⚠️ **첫달 900원의 전제가 여기 있다** |
 | 162 | 구독 켜는 날 | Sonnet/중간 | 플래그·스토어·방침·콘솔 답안이 같은 날 |
 | 156 | 대국 다시보기 화면 | Opus/높음 | 151 뒤. 스토어 부제가 이미 "복기"를 약속한다 |
@@ -348,20 +365,6 @@
 | 120·121·122 | 앞 세대에서 넘어온 것 | — | 아래 별도 절 |
 
 ---
-
-### 158. **구독 전환 코어** (AI 모델: Opus, 노력정도: 높음)
-
-- `PremiumState.isActive`(:49-55)에 유효기간, `PurchaseOutcome.Purchased`에 페이로드, `billing.premiumProductId`를
-  구독 SKU(`premium_basic`)로. ⚠️ **`PremiumSource.Purchase` 개명 금지**(`PremiumStateStore.kt:61`이 모르는 이름을
-  조용히 `None`으로 떨어뜨린다) — 의미만 "영구"→"구독 유효"로.
-- ⚠️ **강등은 `isAuthoritativeNotOwned`(`PremiumPurchaseApplication.kt:107-110`) 밖에서 켜지 말 것** —
-  `OwnershipUnknown`은 "확인 못 했다"이지 미소유가 아니다. 네트워크 한 번 실패가 구독자 접근권을 뺏는다.
-- ⚠️ **`saveMergingClaimedFeatures`(`PremiumFeatureClaimApplication.kt:40-43`)가 `claimedFeatures` 하나만 이름으로
-  합치고 나머지를 덮어쓴다** — 광고 시청/QA 토글 저장이 **살아 있는 구독 만료시각을 조용히 지운다**
-  (메모리 `preferences-autosave-pattern`의 재현).
-- 함께: `isClockPlausibleAt`(`PremiumState.kt:65-69`)의 `Purchase -> true` — 시계를 되돌리면 해지한 구독이 영구히 산다.
-- ⚠️ `AndroidBillingClient`의 `ProductType`을 클래스 안에서 전역 치환하지 말 것 — **생성자 파라미터로 올린다**
-  (캐릭터 판매는 폐기했지만 그 코드가 남아 있고, 나중에 되살릴 때 조용히 깨진다).
 
 ### 159. **구독 고지 UI + 오퍼 선택 규칙** (AI 모델: Opus, 노력정도: 높음)
 

@@ -6,6 +6,14 @@ import com.worksoc.goaicoach.shared.diagnostic.DiagnosticSeverity
 data class PremiumAdGrantRunRequest(
     val outcome: AdRewardOutcome,
     val nowMillis: Long,
+    /**
+     * 지금 로컬 상태 — **살아 있는 구독을 덮지 않기 위해 필요하다**(백로그 #158).
+     *
+     * ⚠️ [PremiumState.adGranted]는 **새 상태를 만든다.** 그대로 저장하면 `source`가
+     * `Purchase` → `AdGrant`로 바뀌어, **구독자가 광고를 본 순간 구독이 1시간짜리로 강등된다.**
+     * `saveMergingClaimedFeatures`는 `claimedFeatures`만 되살리므로 이 덮어쓰기를 막지 못한다.
+     */
+    val currentState: PremiumState = PremiumState(),
 )
 
 /**
@@ -27,8 +35,26 @@ data class PremiumAdGrantRunResult(
  */
 fun runPremiumAdGrantApplication(request: PremiumAdGrantRunRequest): PremiumAdGrantRunResult =
     when (val outcome = request.outcome) {
-        is AdRewardOutcome.RewardEarned -> {
+        is AdRewardOutcome.RewardEarned -> if (request.currentState.source == PremiumSource.Purchase) {
+            // ⚠️ **구독이 살아 있으면 광고는 아무것도 바꾸지 않는다**(#158). 광고가 주는 것은
+            // 구독이 이미 주는 것의 부분집합이라 얹을 것이 없고, 덮으면 **강등**이 된다.
+            // (지금은 구독자에게 광고 버튼이 뜨지 않아 도달하기 어렵지만, 유예 기간처럼
+            //  "구독인데 업셀이 보이는" 상태가 생기면 곧바로 도달한다.)
+            PremiumAdGrantRunResult(
+                nextState = null,
+                diagnosticEvent = DiagnosticEvent(
+                    severity = DiagnosticSeverity.Info,
+                    code = "premium_ad_grant_ignored_active_subscription",
+                    message = "Rewarded ad ignored; an active subscription already grants more.",
+                    context = mapOf("consoleRewardType" to (outcome.type ?: "")),
+                ),
+            )
+        } else {
+            // ⚠️ **`claimedFeatures`를 이어 붙인다** — `adGranted`는 새 상태를 만들기 때문에
+            // 그냥 두면 출석으로 받은 영구 클레임이 이 저장에서 사라진다(저장소 병합이 다시
+            // 살려 주지만, 여기서 맞는 값을 만드는 편이 한 겹 덜 위험하다).
             val nextState = PremiumState.adGranted(nowMillis = request.nowMillis)
+                .copy(claimedFeatures = request.currentState.claimedFeatures)
             PremiumAdGrantRunResult(
                 nextState = nextState,
                 diagnosticEvent = DiagnosticEvent(
