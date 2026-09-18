@@ -1,7 +1,16 @@
 package com.worksoc.goaicoach.ui
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -17,6 +26,9 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -25,7 +37,9 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.shared.Move
+import com.worksoc.goaicoach.shared.StoneColor
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /** 통과 알림이 떠 있는 시간. ⚠️ 1초보다 길게 둔다 — 짧으면 상대가 못 보고, 검증도 못 한다(함정 49). */
 private const val PassNoticeMillis = 1_600L
@@ -57,7 +71,11 @@ internal fun PassNoticeHost(
     onPassAgain: () -> Unit,
 ) {
     val moveCount = screenState.gameState.moves.size
-    val lastMoveIsPass = screenState.gameState.moves.lastOrNull() is Move.Pass
+    val lastPass = screenState.gameState.moves.lastOrNull() as? Move.Pass
+    val lastMoveIsPass = lastPass != null
+    // ⚠️ 알림이 떠 있는 1.6초 동안 그 뒤의 수가 들어올 수 있다 — 색을 나중에 다시 읽으면
+    // **엉뚱한 진영 색으로 바뀐다.** 띄우는 순간의 진영을 붙잡아 둔다.
+    var noticePlayer by remember { mutableStateOf(StoneColor.Black) }
     // ⚠️ 장수 효과가 아니라 `moveCount`마다 다시 도는 효과지만, 콜백은 여전히 최신을 봐야 한다.
     val latestOnPassAgain by rememberUpdatedState(onPassAgain)
 
@@ -72,6 +90,7 @@ internal fun PassNoticeHost(
     LaunchedEffect(moveCount, lastMoveIsPass) {
         if (!lastMoveIsPass || moveCount == announcedMoveCount) return@LaunchedEffect
         announcedMoveCount = moveCount
+        noticePlayer = lastPass?.player ?: StoneColor.Black
         askAfterNotice = !screenState.isGameEnded && screenState.matchSeats.current.canAcceptBoardInput
         showNotice = true
         delay(PassNoticeMillis)
@@ -80,7 +99,7 @@ internal fun PassNoticeHost(
     }
 
     if (showNotice) {
-        PassNoticeDialog()
+        PassNoticeDialog(player = noticePlayer)
     }
 
     if (showScorePrompt) {
@@ -95,31 +114,92 @@ internal fun PassNoticeHost(
 }
 
 /**
- * 스스로 사라지는 알림. ⚠️ **버튼이 없다** — 사용자가 닫을 것이 아니라 *"방금 이런 일이 있었다"* 를
- * 알리는 자리다. 뒤로가기·바깥 탭으로는 닫을 수 있게 둔다(급한 사용자를 붙잡아 두지 않는다).
+ * **통과한 진영의 자리에서 날아와 화면 가운데에 꽂히는 알림**(백로그 #177, 2026-09-19 사용자).
+ *
+ * ## 왜 날아오는가
+ * 통과는 판에 **아무 흔적을 남기지 않는다.** 가운데에 조용히 나타나기만 하면 *"무엇이 통과했는지"*
+ * 가 빠진다 — 움직임의 **출발점**이 그 답을 말한다. 좌석 카드는 흑이 왼쪽, 백이 오른쪽에 있고
+ * 둘 다 판 아래에 있으므로, 그 방향에서 날아오면 누가 통과했는지가 글자를 읽기 전에 보인다.
+ *
+ * ## 색은 진영을 한 번 더 말한다
+ * - **흑 통과** — 불투명한 **흰 상자** 위에 검은 글자
+ * - **백 통과** — 불투명한 **검은 상자** 위에 흰 글자
+ *
+ * ⚠️ **상자는 불투명하고 글자만 반투명하다**(사용자 지시). 상자를 비치게 하면 판의 격자와 돌이
+ * 글자에 겹쳐 읽히지 않는다 — 배경이 무엇이든 같은 대비를 보장하려고 상자를 막았다.
+ *
+ * ⚠️ **버튼이 없다** — 사용자가 닫을 것이 아니라 *"방금 이런 일이 있었다"* 를 알리는 자리다.
+ * 뒤로가기·바깥 탭으로는 닫히게 둔다(급한 사용자를 붙잡아 두지 않는다).
+ *
+ * ⚠️ **`usePlatformDefaultWidth = false`가 필요하다** — 기본 다이얼로그 폭 안에서는 좌석 자리까지
+ * 날아올 거리가 없다. 화면 전체를 받아야 출발점을 좌·우 아래로 잡을 수 있다.
  */
 @Composable
-private fun PassNoticeDialog() {
+private fun PassNoticeDialog(player: StoneColor) {
     val strings = LocalUiStrings.current
-    // ⚠️ 이 알림이 떠 있는 동안 첫돌이 가이드를 기록하지 않는다 — 뒤에 깔린 채 "봤음"으로
-    //   소진되는 것을 막는다(함정 40).
+    // ⚠️ 이 알림이 떠 있는 동안 첫돌이 가이드를 기록하지 않는다(함정 40).
     GuideBlockingOverlays.TrackWhileShown()
+
+    val isBlack = player == StoneColor.Black
+    val boxColor = if (isBlack) Color.White else Color.Black
+    // ⚠️ 글자 불투명도는 **낮추되 읽히는 선까지만** — 0.6 아래로 내리면 배율 1.0의 작은 화면에서
+    //   획이 뭉개진다(#177 실기 조정).
+    val textColor = (if (isBlack) Color.Black else Color.White).copy(alpha = 0.82f)
+
     Dialog(
         onDismissRequest = {},
-        properties = DialogProperties(dismissOnBackPress = true, dismissOnClickOutside = true),
+        properties = DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = true,
+            usePlatformDefaultWidth = false,
+        ),
     ) {
-        Surface(shape = PremiumCardShape, tonalElevation = 6.dp) {
-            Column(
-                modifier = Modifier.padding(horizontal = 48.dp, vertical = 28.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
+        BoxWithConstraints(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center,
+        ) {
+            // 출발점 — 좌석 카드가 있는 **판 아래**의 좌(흑)·우(백).
+            // ⚠️ 화면 폭·높이의 비율로 잡는다. 고정 dp로 잡으면 큰 화면(폴드)에서 출발점이
+            //   화면 안쪽으로 들어와 "날아온다"가 사라진다(함정 45가 경계한 것과 같은 결).
+            val density = LocalDensity.current
+            val startX = with(density) { (maxWidth * if (isBlack) -0.30f else 0.30f).toPx() }
+            val startY = with(density) { (maxHeight * 0.38f).toPx() }
+
+            val fly = remember { Animatable(0f) }
+            val scale = remember { Animatable(0.35f) }
+            LaunchedEffect(Unit) {
+                launch { fly.animateTo(1f, tween(durationMillis = 260, easing = FastOutSlowInEasing)) }
+                // 커졌다가 되튀는 것이 "탕!"이다 — 도착과 동시에 한 번 넘겼다가 제자리로 돌아온다.
+                scale.animateTo(1.18f, tween(durationMillis = 260, easing = FastOutSlowInEasing))
+                scale.animateTo(
+                    targetValue = 1f,
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        stiffness = Spring.StiffnessMedium,
+                    ),
+                )
+            }
+
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = boxColor,
+                border = BorderStroke(1.5.dp, textColor.copy(alpha = 0.25f)),
+                modifier = Modifier.graphicsLayer {
+                    translationX = startX * (1f - fly.value)
+                    translationY = startY * (1f - fly.value)
+                    scaleX = scale.value
+                    scaleY = scale.value
+                    alpha = (fly.value * 2.2f).coerceAtMost(1f)
+                },
             ) {
                 Text(
                     text = passNoticeTitleFor(strings.language),
                     // ⚠️ 고정 높이를 쓰지 않는다(함정 9) — 글꼴 배율 1.3에서 상자가 글자를 자르면 안 된다.
+                    modifier = Modifier.padding(horizontal = 44.dp, vertical = 24.dp),
                     fontSize = 40.sp,
                     fontWeight = FontWeight.ExtraBold,
                     textAlign = TextAlign.Center,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = textColor,
                 )
             }
         }
