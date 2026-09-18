@@ -1,6 +1,9 @@
 package com.worksoc.goaicoach.ui
 
 import com.worksoc.goaicoach.application.premium.BillingPeriod
+import com.worksoc.goaicoach.application.premium.PurchaseFailureNotice
+import com.worksoc.goaicoach.application.premium.PurchaseOutcome
+import com.worksoc.goaicoach.application.premium.failureNotice
 
 /**
  * 구독 고지가 쓰는 문구(백로그 #159). 구조는 `UiStringsAppUpdate.kt`와 같다 — 화면 한 조각이
@@ -227,3 +230,50 @@ internal fun premiumStaleSubscriptionTitleFor(language: UiLanguage): String =
 
 internal fun premiumStaleSubscriptionBodyFor(language: UiLanguage): String =
     StaleSubscriptionBodies.getValue(language)
+
+/**
+ * **결제가 끝나지 않은 사유별 안내**(백로그 #178). 무엇을 언제 쓸지는
+ * `PurchaseFailureNotice`가 정한다 — 여기는 문구만 갖는다.
+ *
+ * ⚠️ **취소에는 문구가 없다**(`Silent`) — 의도한 행동에 안내를 붙이면 소음이다.
+ * 실패 문구(`premiumPurchaseFailedMessage`)는 [UiStrings]에 이미 있으므로 여기 두지 않는다.
+ */
+private val PurchaseUnavailableMessages: Map<UiLanguage, String> = mapOf(
+    UiLanguage.Korean to "지금은 결제를 이용할 수 없습니다. 잠시 후 다시 시도해 주세요.",
+    UiLanguage.English to "Purchases aren't available right now. Please try again later.",
+    UiLanguage.Japanese to "現在お支払いをご利用いただけません。しばらくしてからお試しください。",
+    UiLanguage.ChineseSimplified to "目前无法使用支付功能，请稍后再试。",
+)
+
+/**
+ * ⚠️ **"실패"라고 쓰지 않는다** — 계좌이체처럼 나중에 확정되는 결제다. 실패라고 말하면
+ * 사용자가 **한 번 더 결제한다.**
+ */
+private val PurchasePendingMessages: Map<UiLanguage, String> = mapOf(
+    UiLanguage.Korean to "결제가 처리 중입니다. 완료되면 프리미엄이 자동으로 켜집니다.",
+    UiLanguage.English to "Your payment is processing. Premium turns on once it completes.",
+    UiLanguage.Japanese to "お支払いを処理中です。完了するとプレミアムが自動で有効になります。",
+    UiLanguage.ChineseSimplified to "正在处理付款，完成后将自动开启高级功能。",
+)
+
+internal fun premiumPurchaseUnavailableMessageFor(language: UiLanguage): String =
+    PurchaseUnavailableMessages.getValue(language)
+
+internal fun premiumPurchasePendingMessageFor(language: UiLanguage): String =
+    PurchasePendingMessages.getValue(language)
+
+/**
+ * 결제 결과를 **화면에 적을 문구**로 옮긴다 — `null`이면 **아무 말도 하지 않는다**(취소).
+ *
+ * ⚠️ 이 한 줄이 두 결제 지점(업셀 팝업 · 마이페이지 구독 다이얼로그)에서 **같게** 쓰여야 한다.
+ * 한쪽만 고치면 같은 사유에 다른 말을 하는 앱이 된다.
+ */
+internal fun purchaseFailureMessageFor(
+    outcome: PurchaseOutcome,
+    strings: UiStrings,
+): String? = when (outcome.failureNotice()) {
+    null, PurchaseFailureNotice.Silent -> null
+    PurchaseFailureNotice.Pending -> premiumPurchasePendingMessageFor(strings.language)
+    PurchaseFailureNotice.Unavailable -> premiumPurchaseUnavailableMessageFor(strings.language)
+    PurchaseFailureNotice.Failed -> strings.premiumPurchaseFailedMessage
+}

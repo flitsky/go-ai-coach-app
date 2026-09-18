@@ -385,8 +385,10 @@ internal fun PremiumUpsellDialogHost(
                         onDismiss()
                         onAnyChoice()
                     }
+                    // ⚠️ **취소에는 아무 말도 하지 않는다**(#178) — 스스로 그만둔 사람에게
+                    //   오류 문구를 띄우던 것이 이 갈래의 이유다. 사유별 문구는 두 결제 지점이 공유한다.
                     is PurchaseOutcome.NotPurchased -> {
-                        errorMessage = strings.premiumPurchaseFailedMessage
+                        errorMessage = purchaseFailureMessageFor(outcome, strings)
                     }
                 }
             }

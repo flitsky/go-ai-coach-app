@@ -372,8 +372,10 @@ internal fun PremiumSubscribeDialog(onDismiss: () -> Unit) {
                             isPurchaseInProgress = false
                             when (outcome) {
                                 PurchaseOutcome.Purchased -> onDismiss()
+                                // ⚠️ 위 업셀 팝업과 **같은 규칙**을 쓴다(#178) — 한쪽만 고치면
+                                //   같은 사유에 다른 말을 하는 앱이 된다.
                                 is PurchaseOutcome.NotPurchased ->
-                                    errorMessage = strings.premiumPurchaseFailedMessage
+                                    errorMessage = purchaseFailureMessageFor(outcome, strings)
                             }
                         }
                     },
