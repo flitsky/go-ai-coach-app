@@ -589,7 +589,21 @@ internal fun GoBoard(
                 }
             }
 
-            if (gameState.hasConsecutivePasses() && isEngineBusy) {
+            // ⚠️ **`!isGameEnded`가 이 오버레이의 핵심 조건이다**(백로그 #176, 2026-09-18 사용자 제보).
+            //
+            // `hasConsecutivePasses()`는 **양통과로 끝난 판에서 종료 뒤에도 계속 참**이다 — 수순이
+            // 그대로 남아 있기 때문이다. 그래서 이 조건만 보면, 종료 화면에서 `대국 시작`을 눌러
+            // **새 대국용으로 엔진이 깨어나는 동안** *"계가를 위해 준비 중입니다"* 가 뜬다.
+            // 위의 `Preparing` 오버레이("새 대국을 위해 준비 중입니다")와 **둘이 동시에 떠서**
+            // 나중에 그려지는 이쪽이 덮었다.
+            //
+            // 실측으로 두 구간이 갈린다(2026-09-18, Pixel 8):
+            //   · 진짜 계가 중 — `busy=true ended=false passes=true`
+            //   · 새 대국 준비 — `busy=true ended=true  passes=true ind=Preparing`
+            // ⚠️ **종국 플래그는 계가가 *끝난 뒤*에 켜진다** — 그래서 `!isGameEnded`가 계가 구간을
+            //   가리지 않는다. 그 순서가 바뀌면 이 오버레이가 통째로 사라지니, 순서를 건드리는
+            //   사람은 여기를 함께 볼 것.
+            if (gameState.hasConsecutivePasses() && isEngineBusy && !isGameEnded) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
