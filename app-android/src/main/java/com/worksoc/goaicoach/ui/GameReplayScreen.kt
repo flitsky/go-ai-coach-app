@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -34,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.worksoc.goaicoach.application.gamehistory.GameHistoryEntry
@@ -135,10 +137,29 @@ internal fun GameReplayScreen(
             )
         }
 
+        // ⚠️ **이 앱에서 배너가 처음 화면에 붙는 자리다**(2026-09-19 사용자). 2026-08-08에 홈에서
+        // 떼면서(`59d880c`) *"다음에 붙일 곳은 복기 화면"* 이라고 적어 둔 그 자리다
+        // (`PREMIUM_MODE.md` 「배너 광고 재노출 위치 — 보류 결정」).
+        // ⚠️ **헤더 아래다** — 위로 올리면 나가는 길(뒤로가기)이 광고 밑에 깔린다.
+        // ⚠️ **구독자에게는 뜨지 않는다** — 판정은 `SubscriptionAwareBannerAd`가 갖는다.
+        SubscriptionAwareBannerAd(modifier = Modifier.padding(top = 4.dp))
+
+        ReplayBlunderSection(
+            markers = replay.moveEvaluations,
+            blunderMoveNumbers = blunders,
+            currentMoveNumber = moveNumber,
+            strings = strings,
+            onJumpTo = { target -> moveNumber = target.coerceIn(0, timeline.lastMoveNumber) },
+        )
+
         // ⚠️ **스크롤 부모를 두지 않는다.** 판은 `pointerInput`이 `awaitFirstDown().consume()`을
         // `inputEnabled` 판정보다 **먼저** 하므로(`GoBoard.kt:238`), 읽기 전용이어도 판 위에서
         // 시작한 끌기를 삼킨다 — 스크롤 안에 넣으면 판 위에서 화면이 안 굴러간다(함정 44).
         // 대신 판이 남는 높이를 받고, 조작부는 자기 높이만 쓴다.
+        //
+        // ⚠️ **판이 배너와 실착 칩 사이의 완충이기도 하다.** 누르는 것(칩) 바로 옆에 광고를 두지
+        // 않는 것이 AdMob의 「실수 클릭 유도 배치 금지」이고, 이 배치에서는 칩이 광고 바로
+        // 아래라 **칩과 광고 사이 여백을 일부러 둔다**(`ReplayBlunderSection`의 위 패딩).
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -177,14 +198,6 @@ internal fun GameReplayScreen(
             isExpanded = isScoreExpanded,
             onExpandedChange = { isScoreExpanded = it },
             strings = strings,
-        )
-
-        ReplayBlunderSection(
-            markers = replay.moveEvaluations,
-            blunderMoveNumbers = blunders,
-            currentMoveNumber = moveNumber,
-            strings = strings,
-            onJumpTo = { target -> moveNumber = target.coerceIn(0, timeline.lastMoveNumber) },
         )
     }
 }
@@ -365,7 +378,9 @@ private fun ReplayBlunderSection(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp),
+            // ⚠️ 위 여백이 **광고와의 완충**이다(AdMob 「실수 클릭 유도 배치 금지」) — 칩이 배너
+            // 바로 아래 줄이라 붙여 두면 광고를 누르려다 칩을, 칩을 누르려다 광고를 누른다.
+            .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 4.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         Text(
@@ -399,6 +414,8 @@ private fun ReplayBlunderSection(
                         // 쓰지 않는다 — 그 금색은 "프리미엄 축의 기능"이라는 뜻이 이미 있다.
                         isOn = target == currentMoveNumber,
                         onClick = { onJumpTo(target) },
+                        minHeight = BlunderChipMinHeight,
+                        contentPadding = BlunderChipContentPadding,
                     )
                 }
             }
@@ -419,6 +436,8 @@ private fun ReplayToggleButton(
     isOn: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    minHeight: Dp = ActionButtonMinHeight,
+    contentPadding: PaddingValues = ActionButtonContentPadding,
 ) {
     val content = @Composable {
         Text(
@@ -433,16 +452,16 @@ private fun ReplayToggleButton(
     if (isOn) {
         Button(
             onClick = onClick,
-            modifier = modifier.heightIn(min = ActionButtonMinHeight),
+            modifier = modifier.heightIn(min = minHeight),
             shape = ActionButtonShape,
-            contentPadding = ActionButtonContentPadding,
+            contentPadding = contentPadding,
         ) { content() }
     } else {
         OutlinedButton(
             onClick = onClick,
-            modifier = modifier.heightIn(min = ActionButtonMinHeight),
+            modifier = modifier.heightIn(min = minHeight),
             shape = ActionButtonShape,
-            contentPadding = ActionButtonContentPadding,
+            contentPadding = contentPadding,
         ) { content() }
     }
 }
@@ -454,3 +473,17 @@ private fun ReplayToggleButton(
  * 바꿀 수 있는 자리가 된다. 글자는 [gameReplayBlunderBadgeFor]가, 그림은 여기가 갖는다.
  */
 private const val BlunderChipEmoji = "\u2757"
+
+/**
+ * 실착 칩의 최소 높이 — 이동 버튼([ActionButtonMinHeight], 48dp)보다 **20% 낮다**
+ * (2026-09-19 사용자: *"세로 여백이 많아 보인다"*).
+ *
+ * ⚠️ **48dp를 밑도는 것은 의도다.** Material의 권장 터치 영역이 48dp이므로 이 칩은 그보다 작고,
+ * 그래서 **화면의 주 조작부에는 이 높이를 쓰지 않는다** — ⏮◀▶⏭와 수순 번호는 48dp 그대로다.
+ * 칩은 "바로 그 수로 뛰는 지름길"이라 같은 일을 슬라이더·이동 버튼으로도 할 수 있다.
+ * ⚠️ `height`가 아니라 `heightIn(min=)`이다(함정 9) — 글꼴 배율이 커지면 칩도 함께 자란다.
+ */
+private val BlunderChipMinHeight: Dp = ActionButtonMinHeight * 0.8f
+
+/** 낮아진 칩에 맞춘 안쪽 여백 — 높이만 줄이고 패딩을 그대로 두면 글자가 상자에 낌다. */
+private val BlunderChipContentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)

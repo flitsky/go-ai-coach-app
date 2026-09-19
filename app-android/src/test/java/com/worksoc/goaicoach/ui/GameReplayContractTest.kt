@@ -22,6 +22,7 @@ class GameReplayContractTest {
     private val replay = source("src/main/java/com/worksoc/goaicoach/ui/GameReplayScreen.kt")
     private val history = source("src/main/java/com/worksoc/goaicoach/ui/GameHistoryScreen.kt")
     private val shell = source("src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
+    private val banner = source("src/main/java/com/worksoc/goaicoach/ui/BannerAdView.kt")
 
     /**
      * ⚠️ **셸의 상태 훅 예산은 42/42로 여유 0이다**(함정 3). 다시보기를 `ScreenDestination`으로
@@ -116,6 +117,72 @@ class GameReplayContractTest {
         assertTrue(
             "목록 행의 클릭이 `hasReplay`로 갈리지 않는다 — 열리지 않는 행이 눌린다.",
             history.contains("takeIf { entry.hasReplay }"),
+        )
+    }
+
+    /**
+     * 사용자가 정한 세로 차례(2026-09-19): **광고 → 큰 실수 → 판 → 수순 조작 → 사석·승률.**
+     *
+     * ⚠️ 차례가 바뀌어도 **컴파일도 되고 화면도 뜬다** — 블록을 옮기는 것은 한 줄 이동이라
+     * 다음 사람이 무심코 되돌리기 쉽다. 의도가 있는 배치이므로 소스에서 못박는다:
+     * 실착 요약이 판보다 **위**인 것이 이 배치의 핵심이다(복기의 결론을 먼저 보여 준다).
+     */
+    @Test
+    fun theBlocksStayInTheOrderTheUserChose() {
+        val order = listOf(
+            "SubscriptionAwareBannerAd(",
+            "ReplayBlunderSection(",
+            "GoBoard(",
+            "ReplayControls(",
+            "ReplayScoreSection(",
+        )
+        val positions = order.map { name ->
+            val at = replay.indexOf(name)
+            assertTrue("다시보기 화면에서 `$name` 호출을 찾지 못했다.", at >= 0)
+            name to at
+        }
+        positions.zipWithNext { (leftName, left), (rightName, right) ->
+            assertTrue(
+                "세로 차례가 어긋났다 — `$rightName`이 `$leftName`보다 위에 있다. " +
+                    "사용자가 정한 차례는 광고 → 큰 실수 → 판 → 수순 조작 → 사석·승률이다(2026-09-19).",
+                left < right,
+            )
+        }
+    }
+
+    /**
+     * ⚠️ **화면이 `BannerAdView`를 직접 부르면 구독자에게도 광고가 뜬다.** 등재문이
+     * *"광고 없이 편하게 쓰고 싶다면 프리미엄 구독"* 이라 적고 있어, 그것은 스토어가 하는 말과
+     * 앱이 하는 일을 어긋나게 한다 — 2026-09-16 거부가 가르친 바로 그것이다(함정 51·52).
+     */
+    @Test
+    fun theReplayScreenShowsTheBannerThroughTheSubscriptionGate() {
+        assertTrue(
+            "다시보기가 `SubscriptionAwareBannerAd`를 부르지 않는다.",
+            replay.contains("SubscriptionAwareBannerAd("),
+        )
+        assertFalse(
+            "다시보기가 `BannerAdView`를 직접 부른다 — 구독자에게도 광고가 뜬다. " +
+                "`SubscriptionAwareBannerAd`를 쓸 것.",
+            Regex("""(?<!Subscription)(?<!AwareBanner)\bBannerAdView\s*\(""").containsMatchIn(replay),
+        )
+    }
+
+    /**
+     * ⚠️ **`isActive`로 바꾸면 광고를 한 번 본 사람에게 한 시간 동안 배너가 사라진다.**
+     * `isActive`는 광고 시청으로 얻은 1시간 부여까지 포함하는데, 등재문이 광고를 없애 준다고
+     * 약속한 대상은 **구독**뿐이다. 한 글자 차이라 리뷰에서 놓치기 쉬워 그물을 단다.
+     */
+    @Test
+    fun theBannerGateLooksAtTheSubscriptionNotTheAdGrant() {
+        assertTrue(
+            "배너 게이트가 `isPurchased`를 보지 않는다.",
+            banner.contains("LocalPremiumUiState.current.isPurchased"),
+        )
+        assertFalse(
+            "배너 게이트가 `isActive`를 본다 — 광고를 본 사람에게 한 시간 동안 배너가 사라진다. " +
+                "광고를 없애 주기로 한 것은 구독(`isPurchased`)뿐이다.",
+            banner.contains("LocalPremiumUiState.current.isActive"),
         )
     }
 }
