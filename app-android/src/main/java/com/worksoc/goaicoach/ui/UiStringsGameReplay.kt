@@ -127,6 +127,71 @@ private val NavigationLabels: Map<UiLanguage, List<String>> = mapOf(
     UiLanguage.ChineseSimplified to listOf("回到开局", "上一手", "下一手", "跳到最后"),
 )
 
+/**
+ * 「현 지점부터 커스텀 새 대국하기」 버튼(백로그 #172).
+ *
+ * ⚠️ **수순 번호를 문구에 넣는다** — 이 버튼은 *"지금 보고 있는 그 자리"* 에서 갈라진다는 것이
+ * 전부이고, 번호가 없으면 어느 국면에서 시작하는지 화면 어디에서도 다시 확인할 수 없다
+ * (타이틀의 "17 / 240"은 버튼과 떨어져 있다). 확인 팝업을 한 번 더 두는 대신 **라벨이 말하게**
+ * 한 것이다(2026-09-20 결정).
+ */
+private val BranchLabels: Map<UiLanguage, (Int) -> String> = mapOf(
+    UiLanguage.Korean to { moveNumber: Int -> "${moveNumber}수부터 새 대국" },
+    UiLanguage.English to { moveNumber: Int -> "New game from move $moveNumber" },
+    UiLanguage.Japanese to { moveNumber: Int -> "$moveNumber 手目から新規対局" },
+    UiLanguage.ChineseSimplified to { moveNumber: Int -> "从第 $moveNumber 手开始新对局" },
+)
+
+/** 0수(시작 국면)에서 갈라질 때 — 붙일 번호가 없다. */
+private val BranchFromStartLabels: Map<UiLanguage, String> = mapOf(
+    UiLanguage.Korean to "시작 국면부터 새 대국",
+    UiLanguage.English to "New game from the start",
+    UiLanguage.Japanese to "開始局面から新規対局",
+    UiLanguage.ChineseSimplified to "从开局开始新对局",
+)
+
+/**
+ * 끝난 국면이라 갈라질 수 없을 때 버튼 아래 붙는 사유.
+ *
+ * ⚠️ **비활성만으로는 이유가 안 보인다**(함정 42) — 다시보기는 **마지막 수에서 열리므로**(#156)
+ * 기권·종국으로 끝난 판에서는 들어오자마자 눌리지 않는 버튼을 보게 된다. "왜"가 없으면 고장이다.
+ * 기조대로 *"기다리면 된다"* 고 말하지 않는다 — 한 수 앞으로 돌리면 **지금** 풀린다.
+ */
+private val BranchBlockedReasons: Map<UiLanguage, String> = mapOf(
+    UiLanguage.Korean to "이미 끝난 국면입니다. 한 수 앞으로 되돌리면 그 자리에서 새 대국을 시작할 수 있습니다.",
+    UiLanguage.English to "This position is already finished. Step back one move to branch from there.",
+    UiLanguage.Japanese to "すでに終局した局面です。一手戻ればそこから新規対局を始められます。",
+    UiLanguage.ChineseSimplified to "该局面已经结束。回退一手即可从那里开始新对局。",
+)
+
+/**
+ * 진행 중인 **다른** 대국이 저장 슬롯에 있을 때 분기 전에 묻는 말(백로그 #172).
+ *
+ * ⚠️ **[UiStrings.overwriteWarningMessage]를 그대로 쓰지 않는다** — 그 문구는 *"대국 설정으로
+ * 이동하시겠습니까?"* 로 끝난다. 분기는 설정 화면을 **거치지 않고** 바로 판에 서므로, 그대로
+ * 가져다 쓰면 일어나지 않을 일을 묻게 된다(함정 39: 안내는 실제로 일어날 일을 말한다).
+ * 앞 절(*"이전 대국을 이어받을 수 없다"*)은 같은 일이라 같은 말로 남기고 **마지막 물음만** 바꿨다.
+ * 제목은 홈과 **같은 것**([UiStrings.overwriteWarningTitle])을 쓴다 — 같은 일에 같은 머리말.
+ */
+private val BranchOverwriteMessages: Map<UiLanguage, (Int) -> String> = mapOf(
+    UiLanguage.Korean to { moveNumber: Int ->
+        "저장된 이전 대국이 존재합니다. 새 대국을 시작하면 이전 대국을 이어받을 수 없게 됩니다. " +
+            "${moveNumber}수 자리에서 새 대국을 시작할까요?"
+    },
+    UiLanguage.English to { moveNumber: Int ->
+        "A saved match exists. Starting a new match means you can no longer resume it. " +
+            "Start a new game from move $moveNumber?"
+    },
+    UiLanguage.Japanese to { moveNumber: Int ->
+        "保存された前回の対局が存在します。新しい対局を開始すると前回の対局は再開できなくなります。" +
+            "$moveNumber 手目から新しい対局を始めますか？"
+    },
+    UiLanguage.ChineseSimplified to { moveNumber: Int ->
+        "存在已保存的前局。开始新对局后将无法继续之前的对局。" +
+            "要从第 $moveNumber 手开始新对局吗？"
+    },
+)
+
 internal enum class ReplayNavigation { First, Previous, Next, Last }
 
 internal fun gameReplayTitleFor(language: UiLanguage): String = Titles.getValue(language)
@@ -154,6 +219,19 @@ internal fun gameReplayNoBlundersFor(language: UiLanguage): String = NoBlunders.
 
 internal fun gameReplayNavigationLabelFor(language: UiLanguage, step: ReplayNavigation): String =
     NavigationLabels.getValue(language)[step.ordinal]
+
+internal fun gameReplayBranchLabelFor(language: UiLanguage, moveNumber: Int): String =
+    if (moveNumber <= 0) {
+        BranchFromStartLabels.getValue(language)
+    } else {
+        BranchLabels.getValue(language)(moveNumber)
+    }
+
+internal fun gameReplayBranchBlockedFor(language: UiLanguage): String =
+    BranchBlockedReasons.getValue(language)
+
+internal fun gameReplayBranchOverwriteMessageFor(language: UiLanguage, moveNumber: Int): String =
+    BranchOverwriteMessages.getValue(language)(moveNumber)
 
 /**
  * 「10집 이상」의 **집수를 문구에 박지 않는다** — 임계는

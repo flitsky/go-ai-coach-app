@@ -43,10 +43,12 @@ import com.worksoc.goaicoach.application.gamehistory.GameHistoryEntry
 import com.worksoc.goaicoach.application.gamehistory.GameReplayData
 import com.worksoc.goaicoach.application.gamehistory.blunderMoveNumbers
 import com.worksoc.goaicoach.application.gamehistory.buildGameReplayTimeline
+import com.worksoc.goaicoach.application.gamehistory.canStartBranchedGameAt
 import com.worksoc.goaicoach.application.movereview.MoveReviewMarker
 import com.worksoc.goaicoach.application.premium.FeatureId
 import com.worksoc.goaicoach.presentation.KaTrainUxOptions
 import com.worksoc.goaicoach.shared.BoardSize
+import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.StoneColor
 
 /**
@@ -72,6 +74,17 @@ internal fun GameReplayScreen(
     entry: GameHistoryEntry,
     replay: GameReplayData,
     onBackClick: () -> Unit,
+    /**
+     * 「현 지점부터 커스텀 새 대국하기」(백로그 #172) — 지금 보고 있는 [GameState]를 그대로 준다.
+     *
+     * ⚠️ **스냅샷을 여기서 짓지 않는다.** 분기 대국은 결국 셸이 목적지를 `InGame`으로 바꿔야
+     * 시작되는데, 이 화면은 셸을 모르고(#156이 지킨 경계) 셸도 다시보기를 모른다
+     * (`GameReplayContractTest`). 그래서 **국면 하나만** 위로 올려 보내고, 대국 기록 화면이
+     * 그것을 `buildBranchedGameSnapshot(...)`으로 옮겨 담아 셸에 넘긴다.
+     *
+     * `null`이면 버튼 자체를 그리지 않는다 — 배선되지 않은 자리에 죽은 버튼을 두지 않는다.
+     */
+    onBranchFromHere: ((GameState) -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     val strings = LocalUiStrings.current
@@ -211,6 +224,61 @@ internal fun GameReplayScreen(
             onMoveNumberChange = { next -> moveNumber = next.coerceIn(0, timeline.lastMoveNumber) },
             onToggleMoveNumbers = { showMoveNumbers = !showMoveNumbers },
         )
+
+        // ⚠️ **맨 아래다 — 이동 도구와 섞지 않는다.** 위의 네 버튼은 이 화면 안에서 위치를
+        // 옮기는 것이고, 이것은 **화면을 떠나 새 대국을 시작하는** 버튼이다. 같은 줄에 두면
+        // 「다음 수」 옆에서 잘못 눌린다.
+        onBranchFromHere?.let { startBranch ->
+            ReplayBranchSection(
+                state = state,
+                moveNumber = moveNumber,
+                language = strings.language,
+                onStartBranch = { startBranch(state) },
+            )
+        }
+    }
+}
+
+/**
+ * 「현 지점부터 커스텀 새 대국하기」(백로그 #172).
+ *
+ * ⚠️ **끝난 국면에서는 비활성이고, 그 사유를 글로 적는다**(함정 42) — 다시보기는 마지막 수에서
+ * 열리므로(#156) 기권·종국으로 끝난 판에서는 **들어오자마자** 눌리지 않는 버튼을 만난다.
+ * 판정은 `canStartBranchedGameAt`(shared) 하나가 갖는다 — 화면이 자기 조건을 따로 쓰면
+ * 스냅샷을 짓는 쪽과 어긋난다.
+ */
+@Composable
+private fun ReplayBranchSection(
+    state: GameState,
+    moveNumber: Int,
+    language: UiLanguage,
+    onStartBranch: () -> Unit,
+) {
+    val canBranch = canStartBranchedGameAt(state)
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Button(
+            onClick = onStartBranch,
+            enabled = canBranch,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(
+                text = gameReplayBranchLabelFor(language, moveNumber),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        if (!canBranch) {
+            Text(
+                text = gameReplayBranchBlockedFor(language),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.secondary,
+            )
+        }
     }
 }
 

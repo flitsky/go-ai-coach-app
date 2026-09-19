@@ -854,7 +854,22 @@ private fun GoCoachScreen(
             StudyScreen(onBackClick = { currentDestination = ScreenDestination.Home })
         }
         ScreenDestination.GameHistory -> {
-            GameHistoryScreen(onBackClick = { currentDestination = ScreenDestination.Home })
+            GameHistoryScreen(
+                onBackClick = { currentDestination = ScreenDestination.Home },
+                // 홈의 「대국 하기」와 **같은 신호**다 — 분기 대국도 저장 슬롯 하나를 밀어낸다.
+                hasResumableSession = savedSessionToPrompt != null,
+                // ⚠️ **분기 대국은 「이어하기」와 같은 길을 탄다**(백로그 #172). 필요한 것
+                //   (수순이 실린 국면에서 시작 · 엔진을 그 자리로 동기화 · 좌석 설정 복원)이
+                //   `SavedSessionController.restore`에 이미 전부 있다 — 새 진입점을 파면
+                //   검증된 경로가 둘로 갈린다. 목적지 전환도 그 핸들러가 한다.
+                // ⚠️ `topMovesEnabled`만 여기서 덮는다 — 대국 기록 화면은 지금 설정을 모르는데,
+                //   복원 경로가 스냅샷의 값을 설정에 되쓰므로 그대로 두면 사용자의 설정이
+                //   조용히 꺼진다(함정 2와 같은 모양).
+                onStartBranchedGame = { snapshot ->
+                    sessionStore.clear()
+                    dispatch(GameUiEvent.ResumeSavedSession(snapshot.copy(topMovesEnabled = topMovesEnabled)))
+                },
+            )
         }
         ScreenDestination.MyPage -> {
             MyPageScreen(onBackClick = { currentDestination = ScreenDestination.Home })

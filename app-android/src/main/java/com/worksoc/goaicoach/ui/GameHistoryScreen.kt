@@ -12,11 +12,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.runtime.Composable
@@ -33,7 +35,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.worksoc.goaicoach.application.gamehistory.GameHistoryEntry
 import com.worksoc.goaicoach.application.gamehistory.GameReplayData
+import com.worksoc.goaicoach.application.gamehistory.buildBranchedGameSnapshot
+import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
 import com.worksoc.goaicoach.persistence.GameHistoryStore
+import com.worksoc.goaicoach.shared.GameState
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -47,6 +52,19 @@ import java.util.Locale
 @Composable
 internal fun GameHistoryScreen(
     onBackClick: () -> Unit,
+    /**
+     * 저장 슬롯(`SavedGameStorePort`는 **한 판만** 담는다)에 진행 중인 **다른** 대국이 있는가.
+     * 홈의 「대국 하기」가 쓰는 것과 **같은 신호**다 — 분기 대국도 그 슬롯을 밀어내므로
+     * 같은 경고를 같은 문구로 띄운다(백로그 #172, 구 U-38).
+     */
+    hasResumableSession: Boolean,
+    /**
+     * 분기 대국을 시작한다(백로그 #172). 셸이 복원 경로에 태우고 목적지를 `InGame`으로 바꾼다.
+     *
+     * ⚠️ **`GameReplayData`를 셸에 넘기지 않는다** — 셸은 다시보기를 몰라야 하고
+     * (`GameReplayContractTest`), 그래서 이 화면이 [SavedGameSnapshot]까지 지어서 올린다.
+     */
+    onStartBranchedGame: (SavedGameSnapshot) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val strings = LocalUiStrings.current
@@ -65,13 +83,59 @@ internal fun GameHistoryScreen(
     // 생겨서 컴포지션 중에 상태를 되돌리게 된다 — 리컴포지션을 스스로 부르는 모양이다.
     // 누르는 순간 둘을 함께 집으면 그 틈이 아예 없다.
     var opened by remember { mutableStateOf<Pair<GameHistoryEntry, GameReplayData>?>(null) }
+    // ⚠️ **경고 팝업의 상태도 여기 둔다 — 셸로 올리지 않는다**(백로그 #172). `GoCoachApp.kt`의
+    // 상태 훅 예산은 42/42로 **여유가 0**이라(함정 3), 셸에 `var showOverwrite`를 하나 더하는
+    // 순간 `LayeringContractTest`가 깨진다. 확인을 받고 나서야 셸을 부르면 셸은 상태가 필요 없다.
+    //
+    // ⚠️ **국면을 담아 둔다 — 부울이 아니다.** 팝업을 여는 순간과 「확인」을 누르는 순간 사이에
+    // 사용자가 다시보기에서 수순을 옮길 수 있으므로, 누를 때 다시 읽으면 **경고와 다른 자리**에서
+    // 대국이 시작된다. 물어본 그 국면을 그대로 들고 있다가 그것으로 시작한다.
+    var pendingBranch by remember { mutableStateOf<GameState?>(null) }
     opened?.let { (entry, replay) ->
+        // `hasResumableSession`이면 먼저 묻고, 아니면 곧바로 갈라진다 — 확인 팝업을 두 번
+        // 겹치지 않는다(2026-09-20 결정: 버튼 라벨이 이미 "17수부터 새 대국"이라 말한다).
+        val branch: (GameState) -> Unit = { state ->
+            if (hasResumableSession) {
+                pendingBranch = state
+            } else {
+                onStartBranchedGame(branchedSnapshotOf(entry, replay, state))
+            }
+        }
         GameReplayScreen(
             entry = entry,
             replay = replay,
             onBackClick = { opened = null },
+            onBranchFromHere = branch,
             modifier = modifier,
         )
+        // ⚠️ 팝업은 다시보기 화면 **위에** 그려야 한다 — `return` 앞에서 함께 컴포즈한다.
+        //   제목은 홈의 것을 **그대로** 쓴다(구 U-38: 같은 일에 같은 머리말). 본문만 다르다 —
+        //   홈의 문구는 *"대국 설정으로 이동하시겠습니까?"* 로 끝나는데 분기는 설정 화면을
+        //   거치지 않는다(함정 39). 사유는 `gameReplayBranchOverwriteMessageFor`의 KDoc.
+        pendingBranch?.let { state ->
+            AlertDialog(
+                onDismissRequest = { pendingBranch = null },
+                title = { Text(strings.overwriteWarningTitle, fontWeight = FontWeight.Bold) },
+                text = {
+                    Text(gameReplayBranchOverwriteMessageFor(strings.language, state.moves.size))
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            pendingBranch = null
+                            onStartBranchedGame(branchedSnapshotOf(entry, replay, state))
+                        },
+                    ) {
+                        Text(strings.confirm)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { pendingBranch = null }) {
+                        Text(strings.cancel)
+                    }
+                },
+            )
+        }
         return
     }
 
@@ -135,6 +199,26 @@ internal fun GameHistoryScreen(
         }
     }
 }
+
+/**
+ * 분기 대국의 시작점(백로그 #172) — 계산은 전부 shared의 [buildBranchedGameSnapshot]이 한다.
+ *
+ * ⚠️ **`topMovesEnabled`는 여기서 정하지 않는다.** 복원 경로가 스냅샷의 값을 설정에 되쓰므로
+ * (`applySavedGameRestore`), 지금 값을 모르는 이 화면이 골라 넣으면 사용자의 설정이 조용히
+ * 꺼진다 — 셸이 넘겨받아 자기 값으로 덮는다(`GoCoachApp.kt`의 `copy(topMovesEnabled = ...)`).
+ */
+private fun branchedSnapshotOf(
+    entry: GameHistoryEntry,
+    replay: GameReplayData,
+    state: GameState,
+): SavedGameSnapshot =
+    buildBranchedGameSnapshot(
+        branchState = state,
+        playerSetup = entry.playerSetup,
+        scoreSnapshots = replay.scoreSnapshots,
+        topMovesEnabled = false,
+        nowMillis = System.currentTimeMillis(),
+    )
 
 /**
  * 언어별 날짜 표기 어순이 달라 [UiLanguage]마다 다른 패턴/로케일을 쓴다(연도는 생략 — 목록용 짧은 표기).

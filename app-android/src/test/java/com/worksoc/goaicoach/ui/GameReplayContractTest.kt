@@ -274,6 +274,66 @@ class GameReplayContractTest {
     }
 
     /**
+     * 「현 지점부터 커스텀 새 대국하기」(백로그 #172).
+     *
+     * ⚠️ **분기는 이어하기와 같은 길을 타야 한다.** 필요한 것(수순이 실린 국면에서 시작 ·
+     * 엔진을 그 자리로 동기화 · 좌석 설정 복원 · 세션/매치 제너레이션 · 턴 시계 리셋)은
+     * `SavedSessionController.restore`에 **이미 전부** 있다 — `NewGameController`에 두 번째
+     * 진입점을 파면 검증된 경로가 둘로 갈리고, 한쪽만 고쳐지는 사고가 난다(함정 14와 같은 모양).
+     */
+    @Test
+    fun theBranchedGameRidesTheSavedSessionRestorePath() {
+        assertTrue(
+            "셸이 분기 대국을 `ResumeSavedSession`으로 태우지 않는다 — 복원 경로를 재사용할 것(백로그 #172).",
+            shell.contains("onStartBranchedGame") && shell.contains("GameUiEvent.ResumeSavedSession"),
+        )
+        assertFalse(
+            "셸이 분기용 새 진입점을 만들었다 — 이어하기 경로 하나로 모을 것.",
+            shell.contains("startBranchedGame(") || shell.contains("branchedSnapshot"),
+        )
+    }
+
+    /**
+     * ⚠️ **원본 기록은 읽기 전용이다**(2026-09-19 사용자, 1번). 분기 대국의 결과는 **완전히 새
+     * 기록**으로 쌓이고, 원본을 덮어쓰거나 고치는 경로는 만들지 않는다 — 다시보기 쪽 어디에도
+     * 저장소의 쓰기 함수가 있어서는 안 된다.
+     */
+    @Test
+    fun branchingNeverWritesBackToTheSourceRecord() {
+        listOf("appendCompletedGame", "saveReplay", "deleteReplay", "store.save").forEach { name ->
+            listOf("다시보기" to replay, "대국 기록" to history).forEach { (where, source) ->
+                assertFalse(
+                    "$where 화면이 `$name`을 부른다 — 분기는 원본을 한 글자도 건드리지 않는다(백로그 #172).",
+                    source.contains(name),
+                )
+            }
+        }
+    }
+
+    /**
+     * ⚠️ **저장 슬롯은 한 판뿐이다.** 진행 중인 **다른** 대국이 있는데 분기하면 그것이 조용히
+     * 밀려난다 — 홈의 「대국 하기」가 쓰는 것과 **같은 신호·같은 문구**로 먼저 묻는다(구 U-38).
+     *
+     * ⚠️ 경고 상태는 **대국 기록 화면이 소유한다** — 셸의 상태 훅 예산이 42/42라(함정 3)
+     * `var`를 하나만 올려도 `LayeringContractTest`가 깨진다.
+     */
+    @Test
+    fun branchingAsksBeforeItDiscardsAnotherGameInProgress() {
+        assertTrue(
+            "분기 경고가 홈과 같은 문구(`overwriteWarningTitle`)를 쓰지 않는다.",
+            history.contains("strings.overwriteWarningTitle"),
+        )
+        assertTrue(
+            "분기 경고가 `hasResumableSession`으로 갈리지 않는다 — 진행 중인 대국이 조용히 밀려난다.",
+            history.contains("hasResumableSession"),
+        )
+        assertFalse(
+            "경고 상태가 셸로 올라왔다 — 훅 예산 42/42(여유 0)를 깬다(함정 3).",
+            shell.contains("pendingBranch"),
+        )
+    }
+
+    /**
      * ⚠️ **슬라이더가 없어진 자리를 형세 그래프가 메운다** — 그래서 접힌 요약 바가 아니라
      * **펼쳐진 상태로 먼저** 보여야 한다(2026-09-19 사용자: "상단의 '승률' 그래프를 확장
      * 상태로 먼저 보여지게 하기"). 접었다 펼 수는 있다 — 시작 상태만 이 테스트의 대상이다.
