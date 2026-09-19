@@ -18,6 +18,7 @@ graph TD
     A["홈 화면 (ScreenDestination.Home)"] -->|"대국 하기"| B["대국 설정 로비 (ScreenDestination.GameSetup)"]
     A -->|"학습 하기"| F["학습 화면 (ScreenDestination.Study)"]
     A -->|"대국 기록"| G["대국 히스토리 목록 (ScreenDestination.GameHistory)"]
+    G -->|"행 누르기(기록이 있는 판만)"| G1["대국 다시보기 (목적지가 아니라 하위 상태)"]
     A -->|"설정"| S["설정 화면 (ScreenDestination.Settings)"]
     B -->|"대국 시작하기"| C["메인 대국 화면 (ScreenDestination.InGame)"]
     C -->|"뒤로가기/종료"| A
@@ -35,6 +36,12 @@ graph TD
     E --> E3["프리미엄 업셀 / 1회권 사용 확인"]
     E --> E4["기기 성능 확인 (진행 중 / 완료)"]
 ```
+
+> ⚠️ **다시보기는 `ScreenDestination`이 아니다**(백로그 #156, 2026-09-19). `GameHistoryScreen`이
+> 들고 있는 하위 상태이고, 시스템 뒤로가기는 그 화면의 **중첩 `BackHandler`**가 잡아 목록으로
+> 되돌린다 — 셸(`GoCoachApp.kt`)의 핸들러는 목적지가 Home이 아니면 무조건 홈으로 보내기 때문이다.
+> 목적지로 올리지 않은 이유는 셸의 **상태 훅 예산이 42/42로 여유 0**이라는 것이다(함정 3).
+> 이 저장소의 **중첩 `BackHandler` 첫 사례**다.
 
 **2026-08-29 기준 이 절이 아직 상세 명세를 갖지 않은 화면**: `Onboarding`, `Settings`, `GameHistory`(참여/리텐션 트랙 백로그 #7로 신설), 그리고 앱 전역에 뜨는 출석 보상 Claim 다이얼로그(백로그 #14, `ui/AttendanceRewardClaimDialog.kt`). 해당 트랙의 스펙은 `260823-260830_OFFLINE_ENGAGEMENT_FEATURES_KICKOFF_PLAN.md`에 있습니다 — 트랙이 끝나면 여기로 흡수합니다.
 

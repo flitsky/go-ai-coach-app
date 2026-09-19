@@ -1,6 +1,8 @@
 package com.worksoc.goaicoach.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,14 +20,19 @@ import androidx.compose.material3.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.worksoc.goaicoach.application.gamehistory.GameHistoryEntry
+import com.worksoc.goaicoach.application.gamehistory.GameReplayData
 import com.worksoc.goaicoach.persistence.GameHistoryStore
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -46,6 +53,34 @@ internal fun GameHistoryScreen(
     val context = LocalContext.current
     val entries = remember(context) {
         GameHistoryStore(context).loadAll().sortedByDescending { it.playedAtMillis }
+    }
+
+    // ⚠️ **다시보기는 이 화면의 하위 상태다 — 셸의 목적지가 아니다**(백로그 #156).
+    // `GoCoachApp.kt`의 상태 훅 예산이 42/42로 여유 0이라(함정 3), 목적지를 하나 더 만들면
+    // 셸에 상태가 늘어 `LayeringContractTest`가 깨진다. 뒤로가기는 `GameReplayScreen`의
+    // 중첩 `BackHandler`가 잡는다.
+    //
+    // ⚠️ **본문까지 한 상태에 담는다.** 목록은 메타데이터만 읽고 본문은 열릴 때 그 한 판만
+    // 읽는데(#151), 그 읽기를 컴포지션 안에 두면 *"파일이 없더라도 일단 열린 상태"* 가 먼저
+    // 생겨서 컴포지션 중에 상태를 되돌리게 된다 — 리컴포지션을 스스로 부르는 모양이다.
+    // 누르는 순간 둘을 함께 집으면 그 틈이 아예 없다.
+    var opened by remember { mutableStateOf<Pair<GameHistoryEntry, GameReplayData>?>(null) }
+    opened?.let { (entry, replay) ->
+        GameReplayScreen(
+            entry = entry,
+            replay = replay,
+            onBackClick = { opened = null },
+            modifier = modifier,
+        )
+        return
+    }
+
+    // `hasReplay`가 이미 걸러 주지만 색인과 파일이 어긋날 수 있어(지우다 만 상태) 여기서도
+    // 한 번 더 막는다 — 본문이 없으면 열지 않는다.
+    val open: (GameHistoryEntry) -> Unit = { entry ->
+        GameHistoryStore(context).loadReplay(entry.id)
+            ?.takeIf { !it.isEmpty }
+            ?.let { replay -> opened = entry to replay }
     }
 
     Column(
@@ -89,7 +124,11 @@ internal fun GameHistoryScreen(
         } else {
             LazyColumn(modifier = Modifier.fillMaxSize()) {
                 items(entries) { entry ->
-                    GameHistoryRow(entry, strings)
+                    GameHistoryRow(
+                        entry = entry,
+                        strings = strings,
+                        onClick = { open(entry) }.takeIf { entry.hasReplay },
+                    )
                     HorizontalDivider()
                 }
             }
@@ -119,8 +158,14 @@ private fun handicapPhrase(strings: UiStrings, handicapCount: Int): String =
         "${strings.compactHandicapValueLabel(handicapCount)} ${strings.handicap}"
     }
 
+/**
+ * 한 줄 요약 — **목록 행과 다시보기 헤더가 같은 문구를 쓴다**(백로그 #156).
+ *
+ * ⚠️ 두 벌로 적으면 한쪽만 고쳐지는 사고가 난다 — 이 저장소가 판 렌더에서 같은 이유로 호출을
+ * 하나로 묶어 둔 것과 같은 판단이다(`GamePlaySection.kt`의 `board` 람다).
+ */
 @Composable
-private fun GameHistoryRow(entry: GameHistoryEntry, strings: UiStrings) {
+internal fun gameHistorySummaryLine(entry: GameHistoryEntry, strings: UiStrings): String {
     // [날짜] [보드판 크기] [흑백 세팅] [호선/접바둑] [승리한 진영]
     // 예: "9월 18일 · 13x13 · 사람:AI · 3점 접바둑 · 백 불계승"
     //
@@ -139,13 +184,43 @@ private fun GameHistoryRow(entry: GameHistoryEntry, strings: UiStrings) {
         strings.seatMatchupLabel(entry.playerSetup),
         handicapPhrase(strings, entry.handicapCount),
         strings.gameHistoryOutcomeLabel(entry.winner, entry.isResign, entry.margin),
-    ).joinToString(" · ")
+    ).joinToString(" \u00B7 ")
+    return summary
+}
 
+/**
+ * ⚠️ **[onClick]이 `null`이면 행은 눌리지 않는다** — 2026-09-18 이전 기록에는 수순이 저장된
+ * 적이 없어(#151) 다시보기가 영영 열리지 않는다. 눌러도 아무 일이 없는 행보다, 아예 눌리지
+ * 않고 꼬리표도 없는 편이 *"이 줄은 다르다"* 를 말한다.
+ */
+@Composable
+private fun GameHistoryRow(
+    entry: GameHistoryEntry,
+    strings: UiStrings,
+    onClick: (() -> Unit)?,
+) {
+    val summary = gameHistorySummaryLine(entry, strings)
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Text(text = summary, color = MaterialTheme.colorScheme.onSurface)
+        Text(
+            text = summary,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f),
+        )
+        if (onClick != null) {
+            Text(
+                text = "${gameReplayRowBadgeFor(strings.language)} \u203A",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
     }
 }
