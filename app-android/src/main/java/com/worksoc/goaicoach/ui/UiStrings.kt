@@ -956,6 +956,13 @@ internal data class UiStrings(
             }
         }
 
+    /**
+     * [FeatureId]의 짧은 표시 이름("형세 보기"·"추천 수"…) — [featureRewardName]을 공개로 감싼다.
+     * 출석·소모품 보상 문구가 쓰던 표를 다시보기 화면의 예비 버튼(#156)이 그대로 재사용한다 —
+     * 같은 기능이면 어디서 부르든 같은 이름이어야 한다.
+     */
+    fun featureShortName(featureId: FeatureId): String = featureRewardName(featureId)
+
     private fun featureRewardName(featureId: FeatureId): String =
         when (featureId) {
             FeatureId.Undo -> when (language) {

@@ -2,6 +2,7 @@ package com.worksoc.goaicoach.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,6 +19,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -43,6 +45,7 @@ import com.worksoc.goaicoach.application.gamehistory.GameReplayData
 import com.worksoc.goaicoach.application.gamehistory.blunderMoveNumbers
 import com.worksoc.goaicoach.application.gamehistory.buildGameReplayTimeline
 import com.worksoc.goaicoach.application.movereview.MoveReviewMarker
+import com.worksoc.goaicoach.application.premium.FeatureId
 import com.worksoc.goaicoach.presentation.KaTrainUxOptions
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.StoneColor
@@ -120,6 +123,10 @@ internal fun GameReplayScreen(
             // 그린다, #25). 실착 칩이 바로 그 자리라 실기에서 반쯤 가려졌다 — 위쪽은 헤더의
             // `statusBarsPadding()`이 맡고 아래는 이 한 줄이 맡는다(설정·학습 화면과 같은 방식).
             .navigationBarsPadding(),
+        // ⚠️ **섹션 사이 간격을 한 상수로 통일한다**(2026-09-19 사용자: "공백이 많지 않게
+        // 일관성 있게"). 예전에는 섹션마다 제각각 top/bottom 패딩을 들고 있어 간격이
+        // 8·12·16dp로 흩어져 있었다 — 여기 한 곳만 고치면 전부 같이 움직인다.
+        verticalArrangement = Arrangement.spacedBy(ReplaySectionGap),
     ) {
         ReplayHeader(
             title = gameReplayTitleFor(strings.language),
@@ -133,7 +140,7 @@ internal fun GameReplayScreen(
                 text = gameReplayTruncatedFor(strings.language, timeline.truncatedAtMoveNumber!!),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                modifier = Modifier.padding(horizontal = 16.dp),
             )
         }
 
@@ -142,8 +149,14 @@ internal fun GameReplayScreen(
         // (`PREMIUM_MODE.md` 「배너 광고 재노출 위치 — 보류 결정」).
         // ⚠️ **헤더 아래다** — 위로 올리면 나가는 길(뒤로가기)이 광고 밑에 깔린다.
         // ⚠️ **구독자에게는 뜨지 않는다** — 판정은 `SubscriptionAwareBannerAd`가 갖는다.
-        SubscriptionAwareBannerAd(modifier = Modifier.padding(top = 4.dp))
+        //
+        // ⚠️ **차례가 2026-09-19에 「큰 실수」 앞으로 다시 바뀌었다** — 광고 → 큰 실수 →
+        // 사석·승률 → 판 → 조작부. `GameReplayContractTest`가 이 순서를 못박는다.
+        SubscriptionAwareBannerAd()
 
+        // ⚠️ **광고와 칩 사이의 완충은 이제 이 섹션 간격(`ReplaySectionGap`) 하나가 맡는다** —
+        // 예전에 블런더 섹션 자신이 `top = 12.dp`로 더 얹어 두던 것을 걷어냈다. AdMob의
+        // 「실수 클릭 유도 배치 금지」는 여전히 지킨다 — 간격이 0이 아니면 충분하다.
         ReplayBlunderSection(
             markers = replay.moveEvaluations,
             blunderMoveNumbers = blunders,
@@ -152,14 +165,22 @@ internal fun GameReplayScreen(
             onJumpTo = { target -> moveNumber = target.coerceIn(0, timeline.lastMoveNumber) },
         )
 
+        // ⚠️ **판보다 위다**(2026-09-19) — "흑 사석 · 승률 · 백 사석"을 큰 실수 바로 아래,
+        // 판 바로 위에 둔다. 형세 그래프(펼치면 나오는 것)도 같은 컴포넌트라 여기 함께 온다.
+        ReplayScoreSection(
+            replay = replay,
+            moveNumber = moveNumber,
+            capturedByBlack = state.capturedBy(StoneColor.Black),
+            capturedByWhite = state.capturedBy(StoneColor.White),
+            isExpanded = isScoreExpanded,
+            onExpandedChange = { isScoreExpanded = it },
+            strings = strings,
+        )
+
         // ⚠️ **스크롤 부모를 두지 않는다.** 판은 `pointerInput`이 `awaitFirstDown().consume()`을
         // `inputEnabled` 판정보다 **먼저** 하므로(`GoBoard.kt:238`), 읽기 전용이어도 판 위에서
         // 시작한 끌기를 삼킨다 — 스크롤 안에 넣으면 판 위에서 화면이 안 굴러간다(함정 44).
         // 대신 판이 남는 높이를 받고, 조작부는 자기 높이만 쓴다.
-        //
-        // ⚠️ **판이 배너와 실착 칩 사이의 완충이기도 하다.** 누르는 것(칩) 바로 옆에 광고를 두지
-        // 않는 것이 AdMob의 「실수 클릭 유도 배치 금지」이고, 이 배치에서는 칩이 광고 바로
-        // 아래라 **칩과 광고 사이 여백을 일부러 둔다**(`ReplayBlunderSection`의 위 패딩).
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -189,18 +210,14 @@ internal fun GameReplayScreen(
             onMoveNumberChange = { next -> moveNumber = next.coerceIn(0, timeline.lastMoveNumber) },
             onToggleMoveNumbers = { showMoveNumbers = !showMoveNumbers },
         )
-
-        ReplayScoreSection(
-            replay = replay,
-            moveNumber = moveNumber,
-            capturedByBlack = state.capturedBy(StoneColor.Black),
-            capturedByWhite = state.capturedBy(StoneColor.White),
-            isExpanded = isScoreExpanded,
-            onExpandedChange = { isScoreExpanded = it },
-            strings = strings,
-        )
     }
 }
+
+/**
+ * 섹션 사이 세로 간격의 유일한 정본(2026-09-19 사용자: "일관성 있게 줄여주기").
+ * 바꾸려면 여기 한 줄만 고치면 화면 전체가 같이 움직인다.
+ */
+private val ReplaySectionGap = 8.dp
 
 @Composable
 private fun ReplayHeader(
@@ -253,21 +270,49 @@ private fun ReplayControls(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp),
+            .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Text(
-            text = if (moveNumber == 0) {
-                gameReplayStartPositionFor(language)
-            } else {
-                "${strings.moveCountPrefix} $moveNumber${strings.moveCountSuffix} / $lastMoveNumber"
-            },
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth(),
-        )
+        // ⚠️ **타이틀은 "17수"가 아니라 "17"이다**(2026-09-19 사용자) — 접미사(한국어 "수",
+        // 일본어·중국어 "手")를 뗐다. 언어마다 다르게 골라 떼면 넷 중 셋만 짧아지므로 넷 다
+        // 같은 규칙(접미사 없음)으로 맞췄다 — 이 화면 전용 표기이고, `strings.moveCountSuffix`는
+        // 다른 화면(`GameMenuSection.kt`·`GamePlaySection.kt`)에서 그대로 쓴다.
+        //
+        // ⚠️ **체크박스가 이전의 "수순 번호" 버튼을 대신한다.** 버튼 하나를 없애는 대신 타이틀
+        // 줄 오른쪽 끝에 얹어 **간결하게** 만들었다(2026-09-19 사용자) — 아래 버튼 줄은 이동
+        // 전용으로 남고, 화면 옵션(수순 번호)은 타이틀 옆으로 옮겨 성격이 갈린다.
+        Box(modifier = Modifier.fillMaxWidth()) {
+            Text(
+                text = if (moveNumber == 0) {
+                    gameReplayStartPositionFor(language)
+                } else {
+                    "${strings.moveCountPrefix} $moveNumber / $lastMoveNumber"
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.align(Alignment.Center),
+            )
+            Row(
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    // ⚠️ 체크박스 자체(20dp 안팎)는 손가락으로 누르기엔 좁다 — 라벨까지 묶어
+                    // **줄 전체를 관문으로** 둔다. `Checkbox`의 `onCheckedChange`는 `null`로
+                    // 비워 이중 리스너(체크박스 + 바깥 Row)가 서로 다른 값을 부르는 사고를 막는다.
+                    .clickable(onClick = onToggleMoveNumbers),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Checkbox(checked = showMoveNumbers, onCheckedChange = null)
+                Text(
+                    text = gameReplayShowMoveNumbersLabelFor(language),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
 
         if (lastMoveNumber > 0) {
             Slider(
@@ -308,11 +353,29 @@ private fun ReplayControls(
                 onClick = { onMoveNumberChange(lastMoveNumber) },
                 modifier = Modifier.weight(1f),
             )
-            ReplayToggleButton(
-                label = strings.moveNumbers,
-                isOn = showMoveNumbers,
-                onClick = onToggleMoveNumbers,
-                modifier = Modifier.weight(2f),
+        }
+
+        // ⚠️ **예비 버튼이다 — 지금은 항상 비활성**(2026-09-19 사용자: "나중에 엔진도 개입시켜서
+        // 적극적으로 리플레이 분석할 수 있게 하고자 합니다"). 이 자리에 실을 기능(그 수순에서
+        // 형세 재분석·추천 수 조회)은 대국 화면과 달리 **지나간 국면을 엔진에 다시 물어야** 해서
+        // 성격이 다르다 — 비동기 분석·대기 표시·캐시가 새로 필요하다(백로그 #156이 남긴 메모).
+        // ⚠️ 라벨은 대국 화면과 같은 표(`UiStrings.featureShortName`)를 그대로 쓴다 — 나중에
+        // 배선할 때 같은 기능은 같은 이름이어야 한다.
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            ActionButton(
+                label = strings.featureShortName(FeatureId.Eval),
+                enabled = false,
+                onClick = {},
+                modifier = Modifier.weight(1f),
+            )
+            ActionButton(
+                label = strings.featureShortName(FeatureId.TopMoves),
+                enabled = false,
+                onClick = {},
+                modifier = Modifier.weight(1f),
             )
         }
     }
@@ -339,7 +402,7 @@ private fun ReplayScoreSection(
     }
     val hasAnyScoreData = remember(replay) { replay.scoreSnapshots.any { it.hasScoreData } }
 
-    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp)) {
+    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
         if (!hasAnyScoreData) {
             Text(
                 text = gameReplayNoScoreDataFor(strings.language),
@@ -378,9 +441,7 @@ private fun ReplayBlunderSection(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            // ⚠️ 위 여백이 **광고와의 완충**이다(AdMob 「실수 클릭 유도 배치 금지」) — 칩이 배너
-            // 바로 아래 줄이라 붙여 두면 광고를 누르려다 칩을, 칩을 누르려다 광고를 누른다.
-            .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 4.dp),
+            .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         Text(

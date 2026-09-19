@@ -121,20 +121,23 @@ class GameReplayContractTest {
     }
 
     /**
-     * 사용자가 정한 세로 차례(2026-09-19): **광고 → 큰 실수 → 판 → 수순 조작 → 사석·승률.**
+     * 사용자가 정한 세로 차례(2026-09-19 두 번째 정정): **광고 → 큰 실수 → 사석·승률 → 판 → 조작부.**
+     *
+     * ⚠️ **한 번 바뀐 차례다.** 첫 판(같은 날 앞서)은 「조작부 → 사석·승률」 순이었는데, 사용자가
+     * 사석·승률(형세 요약)을 판 **위**로 다시 올렸다 — 세 요약(실수·형세·판)이 조작부보다
+     * 먼저 오고, 조작하는 도구(슬라이더·버튼)는 맨 끝에 남는다.
      *
      * ⚠️ 차례가 바뀌어도 **컴파일도 되고 화면도 뜬다** — 블록을 옮기는 것은 한 줄 이동이라
-     * 다음 사람이 무심코 되돌리기 쉽다. 의도가 있는 배치이므로 소스에서 못박는다:
-     * 실착 요약이 판보다 **위**인 것이 이 배치의 핵심이다(복기의 결론을 먼저 보여 준다).
+     * 다음 사람이 무심코 되돌리기 쉽다. 의도가 있는 배치이므로 소스에서 못박는다.
      */
     @Test
     fun theBlocksStayInTheOrderTheUserChose() {
         val order = listOf(
             "SubscriptionAwareBannerAd(",
             "ReplayBlunderSection(",
+            "ReplayScoreSection(",
             "GoBoard(",
             "ReplayControls(",
-            "ReplayScoreSection(",
         )
         val positions = order.map { name ->
             val at = replay.indexOf(name)
@@ -144,10 +147,80 @@ class GameReplayContractTest {
         positions.zipWithNext { (leftName, left), (rightName, right) ->
             assertTrue(
                 "세로 차례가 어긋났다 — `$rightName`이 `$leftName`보다 위에 있다. " +
-                    "사용자가 정한 차례는 광고 → 큰 실수 → 판 → 수순 조작 → 사석·승률이다(2026-09-19).",
+                    "사용자가 정한 차례는 광고 → 큰 실수 → 사석·승률 → 판 → 조작부다(2026-09-19).",
                 left < right,
             )
         }
+    }
+
+    /**
+     * ⚠️ **섹션 간격이 흩어지면 "일관성 있게 줄여 달라"는 요청이 다시 열린다.** 최상위 `Column`의
+     * `verticalArrangement`가 간격의 **유일한** 정본이어야 한다 — 개별 섹션(블런더·형세·조작부)이
+     * 다시 자기 `top`/`bottom`/양쪽 `vertical` 패딩을 얹으면, `ReplaySectionGap` 하나를 고쳐도
+     * 그 섹션만 안 움직이는 사고가 난다.
+     *
+     * ⚠️ **`ReplayHeader`의 `vertical = 8.dp`는 대상 밖이다** — 그건 헤더 자신의 내부 여백
+     * (뒤로가기 아이콘과 제목 사이 프레임)이지 섹션 사이 간격이 아니라서, 애초에 여기 찾는
+     * 값들(12dp·2dp·4dp)과 겹치지 않는다.
+     */
+    @Test
+    fun sectionsShareTheOneGapConstant() {
+        assertTrue(
+            "`ReplaySectionGap`이 최상위 `Column`의 `verticalArrangement`에 안 걸려 있다.",
+            replay.contains("verticalArrangement = Arrangement.spacedBy(ReplaySectionGap)"),
+        )
+        listOf("vertical = 12.dp", "vertical = 2.dp", "top = 12.dp", "bottom = 4.dp").forEach { needle ->
+            assertFalse(
+                "섹션 하나가 개별 세로 패딩(`$needle`)을 다시 들고 있다 — `ReplaySectionGap` " +
+                    "하나로 통일하기로 했다(2026-09-19).",
+                replay.contains(needle),
+            )
+        }
+    }
+
+    /**
+     * 수순 타이틀(2026-09-19 두 번째 정정): **"17수 / 17"이 아니라 "17 / 17"**, 가운데 정렬.
+     * 오른쪽 끝에는 버튼이 아니라 **체크박스**로 "수순 표시"를 켜고 끈다.
+     *
+     * ⚠️ **`ReplayToggleButton`으로 만든 "수순 번호" 버튼은 없앴다** — 그 자리는 이제 아래
+     * 버튼 줄의 예비 버튼 둘이 대신 쓴다.
+     */
+    @Test
+    fun theMoveTitleIsShortAndTheToggleIsACheckbox() {
+        assertFalse(
+            "다시보기 타이틀이 여전히 `moveCountSuffix`를 붙인다 — \"17수 / 17\"이 아니라 " +
+                "\"17 / 17\"이어야 한다(2026-09-19 사용자).",
+            replay.contains("\$moveNumber\${strings.moveCountSuffix}"),
+        )
+        assertTrue(
+            "타이틀 줄에 `Checkbox(`가 없다 — 수순 표시 토글이 체크박스여야 한다.",
+            replay.contains("Checkbox("),
+        )
+        assertFalse(
+            "옛 \"수순 번호\" 버튼(`strings.moveNumbers`)이 아직 남아 있다 — 체크박스로 옮겼다.",
+            replay.contains("strings.moveNumbers"),
+        )
+    }
+
+    /**
+     * ⚠️ **예비 버튼은 지금 항상 비활성이다**(2026-09-19 사용자: "나중에 엔진도 개입시켜서").
+     * `enabled = true`로 되돌리면 아직 배선하지 않은 기능이 눌리는 버튼처럼 보인다.
+     */
+    @Test
+    fun theReservedButtonsStayDisabledUntilTheEngineIsWired() {
+        listOf("FeatureId.Eval", "FeatureId.TopMoves").forEach { feature ->
+            assertTrue(
+                "예비 버튼이 `strings.featureShortName($feature)`를 안 쓴다 — 대국 화면과 " +
+                    "같은 이름 표를 재사용해야 한다.",
+                replay.contains("strings.featureShortName($feature)"),
+            )
+        }
+        val reservedRow = replay.substringAfter("strings.featureShortName(FeatureId.Eval)")
+            .substringBefore("strings.featureShortName(FeatureId.TopMoves)")
+        assertTrue(
+            "형세 보기 예비 버튼이 `enabled = false`가 아니다 — 아직 배선되지 않은 기능이다.",
+            reservedRow.contains("enabled = false"),
+        )
     }
 
     /**

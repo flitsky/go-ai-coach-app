@@ -34,6 +34,7 @@ class UiStringsGameReplayTest {
                 "판정 기준" to gameReplayBlunderCriterionFor(language),
                 "손실 표기" to gameReplayPointLossFor(language, 12.5),
                 "끊긴 기록" to gameReplayTruncatedFor(language, 48),
+                "수순 표시 체크박스 라벨" to gameReplayShowMoveNumbersLabelFor(language),
             ).forEach { (what, text) ->
                 assertTrue("$language / $what 문구가 비었다", text.isNotBlank())
             }

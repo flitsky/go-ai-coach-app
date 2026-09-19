@@ -42,6 +42,20 @@ private val Unavailable: Map<UiLanguage, String> = mapOf(
     UiLanguage.ChineseSimplified to "该对局没有保存手顺记录，无法回放。",
 )
 
+/**
+ * 수순 표시 체크박스의 라벨(백로그 #156, 2026-09-19 사용자 — 타이틀 줄 오른쪽 끝 체크박스).
+ *
+ * ⚠️ **[UiStrings.moveNumbers]("수순 번호")와 다른 문구다** — 그건 대국 중 설정 메뉴의 스위치
+ * 라벨이고, 여기는 체크박스 옆 짧은 라벨이다. 같은 개념이라고 하나로 합치면 다음 사람이
+ * 설정 메뉴 쪽 문구를 조사 없이 여기서도 바꾸게 된다.
+ */
+private val ShowMoveNumbersLabels: Map<UiLanguage, String> = mapOf(
+    UiLanguage.Korean to "수순 표시",
+    UiLanguage.English to "Move #",
+    UiLanguage.Japanese to "手数表示",
+    UiLanguage.ChineseSimplified to "显示手数",
+)
+
 private val StartPosition: Map<UiLanguage, String> = mapOf(
     UiLanguage.Korean to "시작 국면",
     UiLanguage.English to "Start",
@@ -122,6 +136,9 @@ internal fun gameReplayRowBadgeFor(language: UiLanguage): String = RowBadges.get
 internal fun gameReplayUnavailableFor(language: UiLanguage): String = Unavailable.getValue(language)
 
 internal fun gameReplayStartPositionFor(language: UiLanguage): String = StartPosition.getValue(language)
+
+internal fun gameReplayShowMoveNumbersLabelFor(language: UiLanguage): String =
+    ShowMoveNumbersLabels.getValue(language)
 
 internal fun gameReplayScoreSectionFor(language: UiLanguage): String = ScoreSectionTitles.getValue(language)
 
