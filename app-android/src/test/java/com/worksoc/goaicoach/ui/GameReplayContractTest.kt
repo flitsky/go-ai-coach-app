@@ -258,4 +258,32 @@ class GameReplayContractTest {
             banner.contains("LocalPremiumUiState.current.isActive"),
         )
     }
+
+    /**
+     * ⚠️ **슬라이더는 2026-09-19에 없앴다** — 사용자: "'수순' 아래의 그래프바를 전격 제거한다."
+     * 되살리려는 유혹이 오면(스크럽이 아쉽다는 피드백 등) 이 테스트가 그 결정을 먼저 보여 준다 —
+     * 자리를 옮긴 게 아니라 역할 자체를 위 형세 그래프로 넘긴 것이다(바로 아래 테스트).
+     */
+    @Test
+    fun thereIsNoMoveSliderAnymore() {
+        assertFalse(
+            "다시보기에 `Slider(`가 남아 있다 — 2026-09-19 사용자 요청으로 걷어냈다. " +
+                "위치를 훑는 역할은 확장된 형세 그래프와 이동 버튼·실착 칩이 나눠 맡는다.",
+            replay.contains("Slider("),
+        )
+    }
+
+    /**
+     * ⚠️ **슬라이더가 없어진 자리를 형세 그래프가 메운다** — 그래서 접힌 요약 바가 아니라
+     * **펼쳐진 상태로 먼저** 보여야 한다(2026-09-19 사용자: "상단의 '승률' 그래프를 확장
+     * 상태로 먼저 보여지게 하기"). 접었다 펼 수는 있다 — 시작 상태만 이 테스트의 대상이다.
+     */
+    @Test
+    fun theScoreGraphStartsExpanded() {
+        assertTrue(
+            "`isScoreExpanded`가 `true`로 시작하지 않는다 — 슬라이더가 빠진 자리를 확장된 " +
+                "형세 그래프가 처음부터 채워야 한다(2026-09-19 사용자).",
+            replay.contains("var isScoreExpanded by remember { mutableStateOf(true) }"),
+        )
+    }
 }

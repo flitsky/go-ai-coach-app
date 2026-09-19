@@ -24,7 +24,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -49,7 +48,6 @@ import com.worksoc.goaicoach.application.premium.FeatureId
 import com.worksoc.goaicoach.presentation.KaTrainUxOptions
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.StoneColor
-import kotlin.math.roundToInt
 
 /**
  * 4 Depth: 한 판을 수순대로 되짚는 화면(백로그 #156).
@@ -99,7 +97,10 @@ internal fun GameReplayScreen(
     // 이어진다. 처음부터 보려면 `⏮`가 한 번이다.
     var moveNumber by remember(entry.id) { mutableIntStateOf(timeline.lastMoveNumber) }
     var showMoveNumbers by remember { mutableStateOf(false) }
-    var isScoreExpanded by remember { mutableStateOf(false) }
+    // ⚠️ **처음부터 펼쳐 연다**(2026-09-19 사용자) — 슬라이더를 없애면서 그 역할(위치를
+    // 한눈에 훑는 것)을 이 그래프가 대신하기로 했다. 접힌 요약 바로 여는 것은 슬라이더가
+    // 있던 시절의 기본값이라 이제 안 맞는다. 여전히 눌러서 접을 수는 있다 — 시작 상태만 다르다.
+    var isScoreExpanded by remember { mutableStateOf(true) }
 
     val state = timeline.stateAt(moveNumber)
     val uxOptions = remember(showMoveNumbers) {
@@ -314,17 +315,11 @@ private fun ReplayControls(
             }
         }
 
-        if (lastMoveNumber > 0) {
-            Slider(
-                value = moveNumber.toFloat(),
-                onValueChange = { raw -> onMoveNumberChange(raw.roundToInt()) },
-                valueRange = 0f..lastMoveNumber.toFloat(),
-                // 눈금은 **수순 사이의 칸 수**다 — 끝 두 개는 `valueRange`가 이미 든다.
-                steps = (lastMoveNumber - 1).coerceAtLeast(0),
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-
+        // ⚠️ **슬라이더는 2026-09-19에 걷어냈다**(사용자: "'수순' 아래의 그래프바를 전격
+        // 제거한다"). 자리를 옮긴 것도 아니고 되살릴 계획도 없다 — 위치를 훑는 역할은
+        // **위에서 항상 펼쳐져 있는 형세 그래프**가 대신한다(같은 요청의 둘째 문장: 그
+        // 그래프를 처음부터 확장 상태로 보여 슬라이더가 빠진 자리를 커버한다). 이동은
+        // 아래 4버튼과 실착 칩(그 수로 점프)만 남는다.
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
