@@ -62,6 +62,62 @@ private val InactiveTaglines: Map<UiLanguage, String> = mapOf(
 )
 
 /**
+ * 구독 다이얼로그의 특전 목록 제목(2026-09-20 사용자 요청) — 고지(가격·주기·자동갱신·해지)
+ * 앞에 붙는 **마케팅 문구**다. 위 [InactiveTaglines]의 KDoc이 "상세는 업셀 팝업의 몫"이라고
+ * 적어 뒀지만, 실제로 구독을 누르는 자리(마이페이지 → [PremiumSubscribeDialog])에는 그 상세가
+ * 하나도 없어 사용자가 "너무 단조롭다"고 지적했다 — 그래서 여기 새로 만든다.
+ */
+private val BenefitsTitles: Map<UiLanguage, String> = mapOf(
+    UiLanguage.Korean to "프리미엄 구독 특전",
+    UiLanguage.English to "Premium subscription benefits",
+    UiLanguage.Japanese to "プレミアム登録の特典",
+    UiLanguage.ChineseSimplified to "高级订阅特权",
+)
+
+/**
+ * 특전 ⓐ(`FEATURE_ACCESS_PRINCIPLES.md` 8.1) — **구독 전용**이다. 광고 1시간은 이걸 안 준다
+ * ([[premium-character-unlock-policy]] 메모리, 2026-09-20 재확인).
+ */
+private val BenefitRosterLabels: Map<UiLanguage, String> = mapOf(
+    UiLanguage.Korean to "모든 캐릭터 해금",
+    UiLanguage.English to "Unlock every character",
+    UiLanguage.Japanese to "全キャラクターを解放",
+    UiLanguage.ChineseSimplified to "解锁所有角色",
+)
+
+private val BenefitFeaturesLabels: Map<UiLanguage, String> = mapOf(
+    UiLanguage.Korean to "프리미엄 기능 무제한 사용",
+    UiLanguage.English to "Unlimited premium features",
+    UiLanguage.Japanese to "プレミアム機能を使い放題",
+    UiLanguage.ChineseSimplified to "无限使用高级功能",
+)
+
+/**
+ * ⚠️ **[UiStrings.premiumModeFeatureList]와 같은 넷을 같은 순서로 나열한다** — 형세보기·추천수·
+ * 착수평가·무르기(대국 설정 화면 프리미엄 카드 부제, 2026-09-20). 하나를 고치면 다른 쪽도 볼 것.
+ * "기능:" 접두어가 없는 것은 이 문구가 [BenefitFeaturesLabels] 아래 괄호로 들어가 이미 문맥이
+ * "무엇을 무제한으로 쓰는가"이기 때문이다 — 접두어를 또 붙이면 같은 말이 중복된다.
+ */
+private val BenefitFeatureNames: Map<UiLanguage, String> = mapOf(
+    UiLanguage.Korean to "형세보기, 추천수, 착수 평가, 무르기",
+    UiLanguage.English to "Eval, Top Moves, Move Review, Undo",
+    UiLanguage.Japanese to "形勢判断、候補手、着手評価、待った",
+    UiLanguage.ChineseSimplified to "形势判断、推荐手、着法评价、悔棋",
+)
+
+internal fun premiumSubscriptionBenefitsTitleFor(language: UiLanguage): String =
+    BenefitsTitles.getValue(language)
+
+internal fun premiumSubscriptionBenefitRosterFor(language: UiLanguage): String =
+    BenefitRosterLabels.getValue(language)
+
+internal fun premiumSubscriptionBenefitFeaturesFor(language: UiLanguage): String =
+    BenefitFeaturesLabels.getValue(language)
+
+internal fun premiumSubscriptionBenefitFeatureNamesFor(language: UiLanguage): String =
+    BenefitFeatureNames.getValue(language)
+
+/**
  * ⚠️ **"해지"라는 말을 빼지 말 것.** 이 버튼이 앱 안에서 해지 경로를 알리는 **유일한 자리**다
  * (구독 중에는 업셀 팝업이 뜨지 않아 고지 블록도 안 보인다). 폭이 모자라면 상태 라벨
  * ([ActiveLabels])을 줄이지, 이쪽을 줄이지 않는다.

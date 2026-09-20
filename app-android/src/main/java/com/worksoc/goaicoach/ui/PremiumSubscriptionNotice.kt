@@ -315,6 +315,45 @@ internal fun PremiumSubscriptionNoticeSection(
 }
 
 /**
+ * 구독 특전 목록(2026-09-20 사용자 요청) — [PremiumSubscriptionNoticeBlock](고지) **앞에** 둬서
+ * "무엇을 얻는가"를 먼저 말하고 "얼마에·어떻게"를 그다음에 말한다. 이전에는 이 다이얼로그가
+ * 고지 네 줄뿐이라 "너무 단조롭다"는 지적을 받았다.
+ *
+ * ⚠️ **특전 ⓐ(캐릭터 로스터)만 구독 전용이다** — 특전 ⓑ(인게임 기능)는 광고 1시간도 동일하게
+ * 준다([[premium-character-unlock-policy]] 메모리). 그래도 거짓 고지가 아닌 이유는 문구가
+ * *"구독해야만 얻는다"* 가 아니라 *"구독하면 이렇게 된다"* 만 말하기 때문이다 — 광고를 매시간
+ * 다시 안 봐도 된다는 것 자체가 구독의 값어치다.
+ */
+@Composable
+private fun PremiumBenefitsList(language: UiLanguage) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = premiumSubscriptionBenefitsTitleFor(language),
+            fontWeight = FontWeight.Bold,
+            color = PremiumGoldDeep,
+        )
+        PremiumBenefitRow(premiumSubscriptionBenefitRosterFor(language))
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            PremiumBenefitRow(premiumSubscriptionBenefitFeaturesFor(language))
+            Text(
+                text = "(${premiumSubscriptionBenefitFeatureNamesFor(language)})",
+                fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 20.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun PremiumBenefitRow(text: String) {
+    Row {
+        Text(text = "•", modifier = Modifier.padding(end = 6.dp))
+        Text(text = text)
+    }
+}
+
+/**
  * **고지를 갖춘 결제 지점**(백로그 #159). 마이페이지 카드의 `구독하기`가 여는 유일한 문이다.
  *
  * ## ⚠️ 이 한 단계를 없애지 말 것
@@ -355,6 +394,7 @@ internal fun PremiumSubscribeDialog(onDismiss: () -> Unit) {
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                 )
+                PremiumBenefitsList(strings.language)
                 PremiumSubscriptionNoticeBlock(productInfo)
                 if (errorMessage != null) {
                     Text(

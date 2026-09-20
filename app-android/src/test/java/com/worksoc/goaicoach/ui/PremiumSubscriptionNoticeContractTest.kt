@@ -41,6 +41,10 @@ class PremiumSubscriptionNoticeContractTest {
         "premiumSubscriptionCancelNotice" to ::premiumSubscriptionCancelNoticeFor,
         "premiumSubscriptionPriceLoading" to ::premiumSubscriptionPriceLoadingFor,
         "premiumSubscriptionPriceUnavailable" to ::premiumSubscriptionPriceUnavailableFor,
+        "premiumSubscriptionBenefitsTitle" to ::premiumSubscriptionBenefitsTitleFor,
+        "premiumSubscriptionBenefitRoster" to ::premiumSubscriptionBenefitRosterFor,
+        "premiumSubscriptionBenefitFeatures" to ::premiumSubscriptionBenefitFeaturesFor,
+        "premiumSubscriptionBenefitFeatureNames" to ::premiumSubscriptionBenefitFeatureNamesFor,
     )
 
     /**
