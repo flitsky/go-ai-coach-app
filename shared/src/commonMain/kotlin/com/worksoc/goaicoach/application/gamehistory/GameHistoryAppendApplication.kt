@@ -97,8 +97,14 @@ fun runGameHistoryAppendIfCompleted(
     return entry
 }
 
-/** 사람이 잡은 진영 전부 — 둘 다일 수도(로컬 2인 대국), 하나도 없을 수도(AI:AI) 있다. */
-private fun humanControlledColors(playerSetup: PlayerSetup): Set<StoneColor> =
+/**
+ * 사람이 잡은 진영 전부 — 둘 다일 수도(로컬 2인 대국), 하나도 없을 수도(AI:AI) 있다.
+ *
+ * ⚠️ **더 이상 이 파일 안에서만 쓰지 않는다**(2026-09-20) — [deriveReplayMoveEvaluations]가
+ * 다시보기를 열 때마다 같은 계산을 다시 하려면 이 함수가 필요하다. 대국 저장 시점과
+ * 다시보기 조회 시점이 **같은 규칙**으로 사람 진영을 가려야 결과가 어긋나지 않는다.
+ */
+fun humanControlledColors(playerSetup: PlayerSetup): Set<StoneColor> =
     buildSet {
         if (playerSetup.black.controller == SeatController.Human) add(StoneColor.Black)
         if (playerSetup.white.controller == SeatController.Human) add(StoneColor.White)

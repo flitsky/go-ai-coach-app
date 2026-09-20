@@ -1,6 +1,6 @@
 package com.worksoc.goaicoach.ui
 
-import com.worksoc.goaicoach.application.gamehistory.BlunderPointLossThreshold
+import com.worksoc.goaicoach.application.gamehistory.ScoreSwingThreshold
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -115,40 +115,37 @@ private val NoScoreData: Map<UiLanguage, String> = mapOf(
     UiLanguage.ChineseSimplified to "该对局没有形势记录。",
 )
 
-private val BlunderSectionTitles: Map<UiLanguage, String> = mapOf(
-    UiLanguage.Korean to "큰 실수",
-    UiLanguage.English to "Big mistakes",
-    UiLanguage.Japanese to "大きなミス",
-    UiLanguage.ChineseSimplified to "重大失误",
-)
-
-/** 판 위·구간 칩에 붙는 짧은 표식. */
-private val BlunderBadges: Map<UiLanguage, String> = mapOf(
-    UiLanguage.Korean to "실착",
-    UiLanguage.English to "Blunder",
-    UiLanguage.Japanese to "悪手",
-    UiLanguage.ChineseSimplified to "恶手",
+/**
+ * 「변곡점」 절 제목(2026-09-20 사용자 리메이크 — "큰 실수"를 대체한다).
+ *
+ * ⚠️ **"실수"가 아니라 "형세가 흔들린 지점"이다** — [deriveScoreSwingHighlights]가 사람·AI
+ * 구분 없이 모든 수순을 보므로, 이제 "누구의 잘못"이라는 함의가 없는 이름이어야 한다.
+ */
+private val ScoreSwingSectionTitles: Map<UiLanguage, String> = mapOf(
+    UiLanguage.Korean to "변곡점",
+    UiLanguage.English to "Turning points",
+    UiLanguage.Japanese to "変局点",
+    UiLanguage.ChineseSimplified to "转折点",
 )
 
 /**
- * 착수 평가가 하나도 안 붙은 판.
+ * 형세 기록 자체가 없는 판.
  *
- * ⚠️ *"실수가 없었다"* 로 읽히면 안 된다 — 평가가 붙으려면 **그 수를 두기 전에 사전 분석 캐시가
- * 준비돼 있어야** 하고(`MoveReview.kt`), 무료 대국은 그 조건이 잘 맞지 않는다. 그래서 문구는
- * "잘 뒀다"가 아니라 **"잴 자료가 없다"** 고 말한다.
+ * ⚠️ [deriveScoreSwingHighlights]는 [ScoreSnapshot] 하나만 본다 — 그것이 아예 없으면 "변곡점이
+ * 없었다"가 아니라 **"잴 자료가 없었다"** 고 말해야 한다(무료 대국은 이 조건이 잘 맞지 않는다).
  */
-private val NoMoveEvaluations: Map<UiLanguage, String> = mapOf(
-    UiLanguage.Korean to "이 대국에는 착수 평가 기록이 없어 실수 구간을 표시할 수 없습니다.",
-    UiLanguage.English to "This game has no move evaluations, so mistakes cannot be marked.",
-    UiLanguage.Japanese to "この対局には着手評価の記録がなく、ミス箇所を示せません。",
-    UiLanguage.ChineseSimplified to "该对局没有落子评估记录，无法标出失误。",
+private val NoScoreDataForSwings: Map<UiLanguage, String> = mapOf(
+    UiLanguage.Korean to "이 대국에는 형세 기록이 없어 변곡점을 표시할 수 없습니다.",
+    UiLanguage.English to "This game has no score records, so turning points cannot be shown.",
+    UiLanguage.Japanese to "この対局には形勢の記録がなく、変局点を表示できません。",
+    UiLanguage.ChineseSimplified to "该对局没有形势记录，无法显示转折点。",
 )
 
-private val NoBlunders: Map<UiLanguage, String> = mapOf(
-    UiLanguage.Korean to "크게 잃은 수가 없습니다.",
-    UiLanguage.English to "No move lost that much.",
-    UiLanguage.Japanese to "大きく損した手はありません。",
-    UiLanguage.ChineseSimplified to "没有损失很大的着法。",
+private val NoScoreSwings: Map<UiLanguage, String> = mapOf(
+    UiLanguage.Korean to "형세가 크게 움직인 수가 없습니다.",
+    UiLanguage.English to "No move swung the score that much.",
+    UiLanguage.Japanese to "形勢が大きく動いた手はありません。",
+    UiLanguage.ChineseSimplified to "没有明显改变形势的着法。",
 )
 
 private val NavigationLabels: Map<UiLanguage, List<String>> = mapOf(
@@ -250,13 +247,13 @@ internal fun gameReplayScoreSectionFor(language: UiLanguage): String = ScoreSect
 
 internal fun gameReplayNoScoreDataFor(language: UiLanguage): String = NoScoreData.getValue(language)
 
-internal fun gameReplayBlunderSectionFor(language: UiLanguage): String = BlunderSectionTitles.getValue(language)
+internal fun gameReplayScoreSwingSectionFor(language: UiLanguage): String =
+    ScoreSwingSectionTitles.getValue(language)
 
-internal fun gameReplayBlunderBadgeFor(language: UiLanguage): String = BlunderBadges.getValue(language)
+internal fun gameReplayNoScoreDataForSwingsFor(language: UiLanguage): String =
+    NoScoreDataForSwings.getValue(language)
 
-internal fun gameReplayNoMoveEvaluationsFor(language: UiLanguage): String = NoMoveEvaluations.getValue(language)
-
-internal fun gameReplayNoBlundersFor(language: UiLanguage): String = NoBlunders.getValue(language)
+internal fun gameReplayNoScoreSwingsFor(language: UiLanguage): String = NoScoreSwings.getValue(language)
 
 internal fun gameReplayNavigationLabelFor(language: UiLanguage, step: ReplayNavigation): String =
     NavigationLabels.getValue(language)[step.ordinal]
@@ -275,30 +272,39 @@ internal fun gameReplayBranchOverwriteMessageFor(language: UiLanguage, moveNumbe
     BranchOverwriteMessages.getValue(language)(moveNumber)
 
 /**
- * 「10집 이상」의 **집수를 문구에 박지 않는다** — 임계는
- * [BlunderPointLossThreshold] 하나가 정본이고, 네 언어 문구가 그 값을 따라온다.
+ * 「3집 이상」의 **집수를 문구에 박지 않는다** — 임계는
+ * [ScoreSwingThreshold] 하나가 정본이고, 네 언어 문구가 그 값을 따라온다.
  */
-internal fun gameReplayBlunderCriterionFor(
+internal fun gameReplayScoreSwingCriterionFor(
     language: UiLanguage,
-    thresholdPoints: Double = BlunderPointLossThreshold,
+    thresholdPoints: Double = ScoreSwingThreshold,
 ): String {
     val points = pointsText(thresholdPoints)
     return when (language) {
-        UiLanguage.Korean -> "최선수보다 $points 집 이상 잃은 수"
-        UiLanguage.English -> "Moves that lost $points+ points vs. the best move"
-        UiLanguage.Japanese -> "最善手より $points 目以上損した手"
-        UiLanguage.ChineseSimplified -> "比最佳着法损失 $points 目以上的着法"
+        UiLanguage.Korean -> "이전 수 대비 $points 집 이상 증감한 수"
+        UiLanguage.English -> "Moves that swung the score by $points+ points"
+        UiLanguage.Japanese -> "前の手より $points 目以上動いた手"
+        UiLanguage.ChineseSimplified -> "比上一手波动 $points 目以上的着法"
     }
 }
 
-/** 실착 칩에 적는 손실 — `48수 · −12.5집`의 뒷조각. */
-internal fun gameReplayPointLossFor(language: UiLanguage, pointLoss: Double): String {
-    val points = pointsText(abs(pointLoss))
+/**
+ * 변곡점 버튼 하나의 라벨 — `1수: -9.5`(2026-09-20 사용자 리메이크). 부호는 그대로 보여준다
+ * (양수 = 백에게, 음수 = 흑에게 유리해진 방향) — "실착"이 아니므로 손실 단위(집)도, 항상
+ * 음수인 손실 표기도 더 이상 쓰지 않는다.
+ */
+internal fun gameReplayScoreSwingChipLabelFor(
+    language: UiLanguage,
+    moveNumber: Int,
+    swing: Double,
+): String {
+    val magnitude = pointsText(abs(swing))
+    val signedValue = if (swing >= 0.0) "+$magnitude" else "-$magnitude"
     return when (language) {
-        UiLanguage.Korean -> "−$points 집"
-        UiLanguage.English -> "−$points pts"
-        UiLanguage.Japanese -> "−$points 目"
-        UiLanguage.ChineseSimplified -> "−$points 目"
+        UiLanguage.Korean -> "${moveNumber}수: $signedValue"
+        UiLanguage.English -> "Move $moveNumber: $signedValue"
+        UiLanguage.Japanese -> "$moveNumber 手目: $signedValue"
+        UiLanguage.ChineseSimplified -> "第 $moveNumber 手: $signedValue"
     }
 }
 

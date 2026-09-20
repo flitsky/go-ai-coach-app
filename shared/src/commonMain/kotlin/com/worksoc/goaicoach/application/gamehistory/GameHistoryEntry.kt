@@ -71,6 +71,12 @@ data class GameHistoryEntry(
  * 새로 계산한다 — 엔진 재호출은 없다(`GameHistoryAppendApplication.kt` 참고). 그래서 사람이
  * 둔 수 중 **앞뒤 스냅샷이 둘 다 있는 수에만** 붙는다.
  *
+ * ⚠️⚠️ **다시보기 화면은 이 필드를 읽지 않는다**(2026-09-20 추가 개정) — 임계값·집계 방식이
+ * 나중에 또 바뀔 수 있는데, 여기 저장된 값은 **기록 당시 코드의 스냅샷**이라 그 변화를 못
+ * 따라온다. 화면은 [GameReplayTimeline.kt]의 `deriveReplayMoveEvaluations`로 [moves]·
+ * [scoreSnapshots]에서 매번 다시 계산한다 — 이 필드는 다른 소비자를 깨지 않기 위해 계속
+ * 저장만 될 뿐, **정본이 아니다.**
+ *
  * ⚠️ **저장 가능한 것에 층이 있다.** [moves]는 항상 남지만, [scoreSnapshots]는 무료 대국에서
  * `LocalAreaEstimate`라 거칠고 `whiteWinRate`가 `null`이며 **초반에 거짓말을 한다.**
  */

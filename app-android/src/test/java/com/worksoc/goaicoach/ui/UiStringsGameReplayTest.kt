@@ -1,6 +1,6 @@
 package com.worksoc.goaicoach.ui
 
-import com.worksoc.goaicoach.application.gamehistory.BlunderPointLossThreshold
+import com.worksoc.goaicoach.application.gamehistory.ScoreSwingThreshold
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -27,12 +27,11 @@ class UiStringsGameReplayTest {
                 "시작 국면" to gameReplayStartPositionFor(language),
                 "형세 절 제목" to gameReplayScoreSectionFor(language),
                 "형세 없음" to gameReplayNoScoreDataFor(language),
-                "실수 절 제목" to gameReplayBlunderSectionFor(language),
-                "실착 표식" to gameReplayBlunderBadgeFor(language),
-                "평가 없음" to gameReplayNoMoveEvaluationsFor(language),
-                "실수 없음" to gameReplayNoBlundersFor(language),
-                "판정 기준" to gameReplayBlunderCriterionFor(language),
-                "손실 표기" to gameReplayPointLossFor(language, 12.5),
+                "변곡점 절 제목" to gameReplayScoreSwingSectionFor(language),
+                "형세 기록 없음" to gameReplayNoScoreDataForSwingsFor(language),
+                "변곡점 없음" to gameReplayNoScoreSwingsFor(language),
+                "판정 기준" to gameReplayScoreSwingCriterionFor(language),
+                "변곡점 칩 라벨" to gameReplayScoreSwingChipLabelFor(language, 48, -12.5),
                 "끊긴 기록" to gameReplayTruncatedFor(language, 48),
                 "수순 표시 체크박스 라벨" to gameReplayShowMoveNumbersLabelFor(language),
                 "분기 버튼(17수)" to gameReplayBranchLabelFor(language, 17),
@@ -55,35 +54,44 @@ class UiStringsGameReplayTest {
     }
 
     /**
-     * ⚠️ **임계값을 문구에 박지 않는다.** 10집은 [BlunderPointLossThreshold] 하나가 정본이고
+     * ⚠️ **임계값을 문구에 박지 않는다.** 3집은 [ScoreSwingThreshold] 하나가 정본이고
      * 네 언어가 그 값을 따라와야 한다 — 숫자를 손으로 적어 두면 임계를 바꾼 다음 스레드가
-     * **코드는 12집인데 화면은 10집이라고 말하는** 상태를 만든다.
+     * **코드는 12집인데 화면은 3집이라고 말하는** 상태를 만든다.
      */
     @Test
-    fun theBlunderCriterionFollowsTheThresholdConstant() {
+    fun theScoreSwingCriterionFollowsTheThresholdConstant() {
+        // ⚠️ **숫자 경계로 찾는다** — "23"은 문자열로 "3"을 포함하므로 `contains("3")`는
+        // 23집 문구를 옛 3집 문구로 오판한다.
+        fun mentionsNumber(text: String, number: Int): Boolean =
+            Regex("(?<!\\d)$number(?!\\d)").containsMatchIn(text)
+
         languages.forEach { language ->
             assertTrue(
-                "$language 기준 문구가 기본 임계(10)를 말하지 않는다",
-                gameReplayBlunderCriterionFor(language).contains("10"),
+                "$language 기준 문구가 기본 임계(3)를 말하지 않는다",
+                mentionsNumber(gameReplayScoreSwingCriterionFor(language), 3),
             )
             assertTrue(
-                "$language 기준 문구가 바뀐 임계(25)를 따라오지 않는다",
-                gameReplayBlunderCriterionFor(language, 25.0).contains("25"),
+                "$language 기준 문구가 바뀐 임계(23)를 따라오지 않는다",
+                mentionsNumber(gameReplayScoreSwingCriterionFor(language, 23.0), 23),
             )
             assertFalse(
                 "$language 기준 문구에 옛 임계가 남았다",
-                gameReplayBlunderCriterionFor(language, 25.0).contains("10"),
+                mentionsNumber(gameReplayScoreSwingCriterionFor(language, 23.0), 3),
             )
         }
-        assertEquals(10.0, BlunderPointLossThreshold, 0.0)
+        assertEquals(3.0, ScoreSwingThreshold, 0.0)
     }
 
-    /** 정수는 소수점을 떼고, 소수는 한 자리만. `12.5`를 `12.5`로, `10.0`을 `10`으로. */
+    /**
+     * 변곡점 칩 라벨 — 정수는 소수점을 떼고, 소수는 한 자리만, **부호는 항상 붙는다**
+     * (2026-09-20 사용자 리메이크: `1수: -9.5`처럼 방향까지 보여준다).
+     */
     @Test
-    fun pointLossIsWrittenWithAtMostOneDecimal() {
-        assertEquals("−12.5 집", gameReplayPointLossFor(UiLanguage.Korean, 12.5))
-        assertEquals("−10 집", gameReplayPointLossFor(UiLanguage.Korean, 10.0))
-        assertEquals("−12.5 pts", gameReplayPointLossFor(UiLanguage.English, -12.53))
+    fun scoreSwingChipLabelShowsSignAndAtMostOneDecimal() {
+        assertEquals("1수: -9.5", gameReplayScoreSwingChipLabelFor(UiLanguage.Korean, 1, -9.5))
+        assertEquals("15수: +3.5", gameReplayScoreSwingChipLabelFor(UiLanguage.Korean, 15, 3.5))
+        assertEquals("9수: -10", gameReplayScoreSwingChipLabelFor(UiLanguage.Korean, 9, -10.0))
+        assertEquals("Move 9: -10", gameReplayScoreSwingChipLabelFor(UiLanguage.English, 9, -10.03))
     }
 
     /**

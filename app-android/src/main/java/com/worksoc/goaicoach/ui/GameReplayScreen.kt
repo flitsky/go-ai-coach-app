@@ -41,10 +41,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.worksoc.goaicoach.application.gamehistory.GameHistoryEntry
 import com.worksoc.goaicoach.application.gamehistory.GameReplayData
-import com.worksoc.goaicoach.application.gamehistory.blunderMoveNumbers
+import com.worksoc.goaicoach.application.gamehistory.ScoreSwingHighlight
 import com.worksoc.goaicoach.application.gamehistory.buildGameReplayTimeline
 import com.worksoc.goaicoach.application.gamehistory.canStartBranchedGameAt
-import com.worksoc.goaicoach.application.movereview.MoveReviewMarker
+import com.worksoc.goaicoach.application.gamehistory.deriveReplayMoveEvaluations
+import com.worksoc.goaicoach.application.gamehistory.deriveScoreSwingHighlights
 import com.worksoc.goaicoach.application.premium.FeatureId
 import com.worksoc.goaicoach.presentation.KaTrainUxOptions
 import com.worksoc.goaicoach.shared.BoardSize
@@ -66,8 +67,8 @@ import com.worksoc.goaicoach.shared.StoneColor
  * ## ⚠️ 판 위 착수 평가 색은 여기서 열지 않는다
  * `GoBoard`가 `uxOptions.showMoveReview && premium.isActive`로 **스스로** 가른다. 이 화면은
  * `showMoveReview`만 켜 두고 프리미엄 판정은 건드리지 않는다 — 여는 순간 대국 화면에서 파는
- * 기능을 뒷문으로 내주는 것이 된다(함정 14). 무료로 주는 것은 아래 **실착 구간 목록**이고,
- * 그건 `#156`의 목적이 명시한 지표다.
+ * 기능을 뒷문으로 내주는 것이 된다(함정 14). 무료로 주는 것은 아래 **변곡점 목록**이고,
+ * 그건 `#156`의 목적이 명시한 지표다(2026-09-20 리메이크 — "실착"에서 "변곡점"으로).
  */
 @Composable
 internal fun GameReplayScreen(
@@ -104,7 +105,15 @@ internal fun GameReplayScreen(
             moves = replay.moves,
         )
     }
-    val blunders = remember(replay) { blunderMoveNumbers(replay.moveEvaluations) }
+    // ⚠️ **저장된 `replay.moveEvaluations`를 읽지 않는다**(2026-09-20 개정) — 그건 대국이
+    // 끝나던 순간의 코드로 캐시해 둔 값이라, 임계값·집계 방식을 바꿔도 이미 기록된 대국에는
+    // 반영되지 않는다. `moves`·`scoreSnapshots`(원 데이터)만 믿고 지금 로직으로 매번 다시
+    // 계산한다 — `deriveReplayMoveEvaluations` 참고. 이건 판 위 착수 평가 색(구독자 전용,
+    // 사람이 둔 수만) 전용이다 — 아래 「변곡점」 목록과는 다른 개념·다른 데이터다.
+    val moveEvaluations = remember(entry, replay) { deriveReplayMoveEvaluations(entry, replay) }
+    // ⚠️ **「변곡점」은 [moves]도 사람 진영도 보지 않는다**(2026-09-20 사용자 리메이크) —
+    // `scoreSnapshots` 하나만으로 사람:사람·사람:AI·AI:AI 모든 대국에 똑같이 뜬다.
+    val scoreSwings = remember(replay) { deriveScoreSwingHighlights(replay.scoreSnapshots) }
 
     // ⚠️ **마지막 수에서 연다.** 목록 행이 방금 말한 것이 결과이고, 그 국면에서 시작해야 화면이
     // 이어진다. 처음부터 보려면 `⏮`가 한 번이다.
@@ -164,22 +173,23 @@ internal fun GameReplayScreen(
         // ⚠️ **헤더 아래다** — 위로 올리면 나가는 길(뒤로가기)이 광고 밑에 깔린다.
         // ⚠️ **구독자에게는 뜨지 않는다** — 판정은 `SubscriptionAwareBannerAd`가 갖는다.
         //
-        // ⚠️ **차례가 2026-09-19에 「큰 실수」 앞으로 다시 바뀌었다** — 광고 → 큰 실수 →
-        // 사석·승률 → 판 → 조작부. `GameReplayContractTest`가 이 순서를 못박는다.
+        // ⚠️ **차례가 2026-09-19에 「큰 실수」(2026-09-20 「변곡점」으로 리메이크) 앞으로 다시
+        // 바뀌었다** — 광고 → 변곡점 → 사석·승률 → 판 → 조작부. `GameReplayContractTest`가 이
+        // 순서를 못박는다.
         SubscriptionAwareBannerAd()
 
         // ⚠️ **광고와 칩 사이의 완충은 이제 이 섹션 간격(`ReplaySectionGap`) 하나가 맡는다** —
         // 예전에 블런더 섹션 자신이 `top = 12.dp`로 더 얹어 두던 것을 걷어냈다. AdMob의
         // 「실수 클릭 유도 배치 금지」는 여전히 지킨다 — 간격이 0이 아니면 충분하다.
-        ReplayBlunderSection(
-            markers = replay.moveEvaluations,
-            blunderMoveNumbers = blunders,
+        ReplayScoreSwingSection(
+            hasScoreData = replay.scoreSnapshots.isNotEmpty(),
+            swings = scoreSwings,
             currentMoveNumber = moveNumber,
             strings = strings,
             onJumpTo = { target -> moveNumber = target.coerceIn(0, timeline.lastMoveNumber) },
         )
 
-        // ⚠️ **판보다 위다**(2026-09-19) — "흑 사석 · 승률 · 백 사석"을 큰 실수 바로 아래,
+        // ⚠️ **판보다 위다**(2026-09-19) — "흑 사석 · 승률 · 백 사석"을 변곡점 바로 아래,
         // 판 바로 위에 둔다. 형세 그래프(펼치면 나오는 것)도 같은 컴포넌트라 여기 함께 온다.
         ReplayScoreSection(
             replay = replay,
@@ -205,7 +215,7 @@ internal fun GameReplayScreen(
             GoBoard(
                 gameState = state,
                 candidateMoves = emptyList(),
-                moveReviews = replay.moveEvaluations,
+                moveReviews = moveEvaluations,
                 ownershipEstimate = null,
                 uxOptions = uxOptions,
                 inputEnabled = false,
@@ -487,15 +497,19 @@ private fun ReplayScoreSection(
 }
 
 /**
- * 큰 실수 구간. 칩을 누르면 그 수로 뛴다.
+ * 「변곡점」 구간(2026-09-20 사용자 리메이크 — "큰 실수"를 대체한다). 칩을 누르면 그 수로 뛴다.
  *
- * ⚠️ 평가가 **하나도 없는 것**과 **평가는 있는데 큰 실수가 없는 것**은 다른 말이다 — 앞의 것을
- * "실수 없음"으로 적으면 잴 자료가 없었던 판을 잘 둔 판으로 바꿔 말하게 된다.
+ * ⚠️ **누가 두었는지 보지 않는다** — [ScoreSwingHighlight]는 [ScoreSnapshot] 하나만으로
+ * 고르므로, 사람:사람·사람:AI·AI:AI 어느 조합의 대국에도 똑같이 뜬다(옛 "실착" 목록은
+ * 사람이 둔 수에만 붙었다).
+ *
+ * ⚠️ 형세 기록이 **하나도 없는 것**과 **기록은 있는데 변곡점이 없는 것**은 다른 말이다 — 앞의
+ * 것을 "변곡점 없음"으로 적으면 잴 자료가 없었던 판을 형세가 안정적이던 판으로 바꿔 말하게 된다.
  */
 @Composable
-private fun ReplayBlunderSection(
-    markers: List<MoveReviewMarker>,
-    blunderMoveNumbers: List<Int>,
+private fun ReplayScoreSwingSection(
+    hasScoreData: Boolean,
+    swings: List<ScoreSwingHighlight>,
     currentMoveNumber: Int,
     strings: UiStrings,
     onJumpTo: (Int) -> Unit,
@@ -508,38 +522,37 @@ private fun ReplayBlunderSection(
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         Text(
-            text = "${gameReplayBlunderSectionFor(language)} · ${gameReplayBlunderCriterionFor(language)}",
+            text = "${gameReplayScoreSwingSectionFor(language)} \u00B7 ${gameReplayScoreSwingCriterionFor(language)}",
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.secondary,
         )
         when {
-            markers.isEmpty() -> Text(
-                text = gameReplayNoMoveEvaluationsFor(language),
+            !hasScoreData -> Text(
+                text = gameReplayNoScoreDataForSwingsFor(language),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.secondary,
             )
 
-            blunderMoveNumbers.isEmpty() -> Text(
-                text = gameReplayNoBlundersFor(language),
+            swings.isEmpty() -> Text(
+                text = gameReplayNoScoreSwingsFor(language),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.secondary,
             )
 
             else -> LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                items(blunderMoveNumbers) { target ->
-                    val loss = markers.firstOrNull { it.moveNumber == target }?.pointLoss
-                    val lossText = loss?.let { " \u00B7 ${gameReplayPointLossFor(language, it)}" }.orEmpty()
+                items(swings, key = { it.moveNumber }) { highlight ->
                     ReplayToggleButton(
-                        // ⚠️ 이모지는 **칩에만** 붙인다. 판 위 표식은 `GoBoard`가 프리미엄으로
-                        // 가르는 착수 평가 색이라, 거기에 같은 뜻의 그림을 무료로 얹으면
-                        // 파는 기능을 뒷문으로 내주게 된다(함정 14).
-                        label = "$BlunderChipEmoji ${gameReplayBlunderBadgeFor(language)} $target$lossText",
+                        label = gameReplayScoreSwingChipLabelFor(
+                            language,
+                            highlight.moveNumber,
+                            highlight.swing,
+                        ),
                         // 지금 서 있는 수의 칩은 **채워서** 표시한다. 프리미엄 테두리를 강조에
                         // 쓰지 않는다 — 그 금색은 "프리미엄 축의 기능"이라는 뜻이 이미 있다.
-                        isOn = target == currentMoveNumber,
-                        onClick = { onJumpTo(target) },
-                        minHeight = BlunderChipMinHeight,
-                        contentPadding = BlunderChipContentPadding,
+                        isOn = highlight.moveNumber == currentMoveNumber,
+                        onClick = { onJumpTo(highlight.moveNumber) },
+                        minHeight = ScoreSwingChipMinHeight,
+                        contentPadding = ScoreSwingChipContentPadding,
                     )
                 }
             }
@@ -591,23 +604,15 @@ private fun ReplayToggleButton(
 }
 
 /**
- * 실착 칩 앞의 표식(2026-09-18 사용자: *"급변 지점에 '실착' 이모지"*).
- *
- * ⚠️ **문구 표에 넣지 않는다** — 네 언어가 같은 그림을 쓰므로 표에 넣으면 번역자가 그림을
- * 바꿀 수 있는 자리가 된다. 글자는 [gameReplayBlunderBadgeFor]가, 그림은 여기가 갖는다.
- */
-private const val BlunderChipEmoji = "\u2757"
-
-/**
- * 실착 칩의 최소 높이 — 이동 버튼([ActionButtonMinHeight], 48dp)보다 **20% 낮다**
- * (2026-09-19 사용자: *"세로 여백이 많아 보인다"*).
+ * 변곡점 칩의 최소 높이 — 이동 버튼([ActionButtonMinHeight], 48dp)보다 **20% 낮다**
+ * (2026-09-19 사용자: *"세로 여백이 많아 보인다"*, 2026-09-20 "변곡점"으로 리메이크해도 유지).
  *
  * ⚠️ **48dp를 밑도는 것은 의도다.** Material의 권장 터치 영역이 48dp이므로 이 칩은 그보다 작고,
  * 그래서 **화면의 주 조작부에는 이 높이를 쓰지 않는다** — ⏮◀▶⏭와 수순 번호는 48dp 그대로다.
  * 칩은 "바로 그 수로 뛰는 지름길"이라 같은 일을 슬라이더·이동 버튼으로도 할 수 있다.
  * ⚠️ `height`가 아니라 `heightIn(min=)`이다(함정 9) — 글꼴 배율이 커지면 칩도 함께 자란다.
  */
-private val BlunderChipMinHeight: Dp = ActionButtonMinHeight * 0.8f
+private val ScoreSwingChipMinHeight: Dp = ActionButtonMinHeight * 0.8f
 
 /** 낮아진 칩에 맞춘 안쪽 여백 — 높이만 줄이고 패딩을 그대로 두면 글자가 상자에 낌다. */
-private val BlunderChipContentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+private val ScoreSwingChipContentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)

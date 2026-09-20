@@ -134,7 +134,7 @@ class GameReplayContractTest {
     fun theBlocksStayInTheOrderTheUserChose() {
         val order = listOf(
             "SubscriptionAwareBannerAd(",
-            "ReplayBlunderSection(",
+            "ReplayScoreSwingSection(",
             "ReplayScoreSection(",
             "GoBoard(",
             "ReplayControls(",
