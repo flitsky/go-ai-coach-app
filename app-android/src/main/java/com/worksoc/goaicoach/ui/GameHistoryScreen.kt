@@ -22,6 +22,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -279,18 +280,18 @@ private fun branchedSnapshotOf(
  */
 private fun dateFormat(language: UiLanguage): SimpleDateFormat =
     when (language) {
-        UiLanguage.Korean -> SimpleDateFormat("M월 d일", Locale.KOREAN)
+        UiLanguage.Korean -> SimpleDateFormat("M.d", Locale.KOREAN)
         UiLanguage.English -> SimpleDateFormat("MMM d", Locale.ENGLISH)
         UiLanguage.Japanese -> SimpleDateFormat("M月d日", Locale.JAPANESE)
         UiLanguage.ChineseSimplified -> SimpleDateFormat("M月d日", Locale.SIMPLIFIED_CHINESE)
     }
 
-/** "5점 접바둑"/"호선"처럼 대국 설정 요약에 쓰는 접바둑 값 — [UiStrings.gameModeLabel]과 달리 "대국 방식:" 접두어 없이 목록 행에 바로 쓸 짧은 조각. */
+/** "접바둑(5)"/"호선"처럼 대국 설정 요약에 쓰는 접바둑 값 — [UiStrings.gameModeLabel]과 달리 "대국 방식:" 접두어 없이 목록 행에 바로 쓸 짧은 조각. */
 private fun handicapPhrase(strings: UiStrings, handicapCount: Int): String =
     if (handicapCount == 0) {
         strings.handicapEvenGameLabel
     } else {
-        "${strings.compactHandicapValueLabel(handicapCount)} ${strings.handicap}"
+        "${strings.handicap}($handicapCount)"
     }
 
 /**
@@ -302,7 +303,7 @@ private fun handicapPhrase(strings: UiStrings, handicapCount: Int): String =
 @Composable
 internal fun gameHistorySummaryLine(entry: GameHistoryEntry, strings: UiStrings): String {
     // [날짜] [보드판 크기] [흑백 세팅] [호선/접바둑] [승리한 진영]
-    // 예: "9월 18일 · 13x13 · 사람:AI · 3점 접바둑 · 백 불계승"
+    // 예: "9.18 · 13x13 · 사람:AI · 접바둑(3) · 백 불계승"
     //
     // ⚠️ **2026-09-18에 사용자가 다시 정한 배열이다**(백로그 #151). 바뀐 것은 셋이다 —
     // 시각을 뺐고, "플레이한 진영(흑)"을 **실제 대국 세팅(사람:AI)** 으로 바꿨고, 결과를
@@ -381,18 +382,21 @@ private fun GameHistoryRow(
                 modifier = Modifier.weight(1f),
             )
             if (onClick != null) {
-                Text(
-                    text = "${gameReplayRowBadgeFor(strings.language)} \u203A",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+                Icon(
+                    imageVector = Icons.Filled.PlayArrow,
+                    contentDescription = gameReplayRowBadgeFor(strings.language),
+                    tint = MaterialTheme.colorScheme.primary,
                 )
             }
         }
         val hasNote = !entry.note.isNullOrBlank()
+        val noteText = entry.note.takeIf { hasNote } ?: gameHistoryNotePlaceholderFor(strings.language)
         Text(
-            text = entry.note.takeIf { hasNote } ?: gameHistoryNotePlaceholderFor(strings.language),
+            text = if (hasNote && entry.id == ReferenceGameHistoryId) {
+                referenceGameNoteAnnotated(noteText)
+            } else {
+                AnnotatedString(noteText)
+            },
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.secondary,
             maxLines = 1,
@@ -403,5 +407,46 @@ private fun GameHistoryRow(
                 .padding(horizontal = 16.dp)
                 .padding(bottom = 12.dp),
         )
+    }
+}
+
+/**
+ * 참고 기보 한 줄 평에서 강조할 부분 문자열들(2026-09-20 사용자 요청) — AI 캐릭터 이름 둘("사범 꼬북",
+ * "관장")과 "2점 접바둑", "0.5집 석패". **진하게는 쓰지 않는다** — 위 요약 줄의 "참고 기보" 라벨이
+ * 이미 진하게+강조색이라, 여기까지 진하게 쓰면 위계가 뭉개진다. 굵기만 빼고 **색은 그 라벨과
+ * 같은 강조색을 그대로 쓴다**(2026-09-20 사용자 재요청 — "같은 디자인 아이덴티티로") — 이 조각들이
+ * "무엇을 참고해야 하는지"를 가리키는 같은 성격의 강조이기 때문이다.
+ *
+ * ⚠️ 하드코딩된 한국어 부분 문자열이다. [referenceGameHistoryEntry]의 `note`가 언어 설정과 무관하게
+ * 항상 고정된 한 문장(다국어 버전 없음)이기 때문에 그대로 맞는다 — 그 문장이 바뀌면 이 목록도
+ * 같이 손봐야 한다.
+ */
+private val ReferenceGameNoteHighlights = listOf("사범 꼬북", "관장", "2점 접바둑", "0.5집 석패")
+
+@Composable
+private fun referenceGameNoteAnnotated(note: String): AnnotatedString {
+    // ⚠️ **"참고 기보" 라벨과 같은 색**이어야 한다(`GameHistoryRow`의 `SpanStyle(color = primary)`) —
+    // 색이 다르면 라벨과 이 강조가 서로 다른 두 개념처럼 읽힌다.
+    val highlightColor = MaterialTheme.colorScheme.primary
+    return buildAnnotatedString {
+        var cursor = 0
+        while (cursor < note.length) {
+            val next = ReferenceGameNoteHighlights
+                .mapNotNull { phrase ->
+                    val index = note.indexOf(phrase, cursor)
+                    if (index >= 0) index to phrase else null
+                }
+                .minByOrNull { (index, _) -> index }
+            if (next == null) {
+                append(note.substring(cursor))
+                break
+            }
+            val (index, phrase) = next
+            append(note.substring(cursor, index))
+            withStyle(SpanStyle(color = highlightColor)) {
+                append(phrase)
+            }
+            cursor = index + phrase.length
+        }
     }
 }
