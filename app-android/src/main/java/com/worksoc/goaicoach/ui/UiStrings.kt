@@ -523,6 +523,23 @@ internal data class UiStrings(
         studyVideoDescriptionFor(language, entry.id)
 
     /**
+     * 학습 허브 하위 분류의 이름·한 줄 소개·「준비 중」 배지(백로그 #163).
+     *
+     * ⚠️ **생성자 필드가 아니라 함수인 것이 핵심이다** — [UiStrings]의 생성자는 이미 250칸을
+     * 써서 JVM 한도 255칸에 붙어 있다. 아홉 줄을 생성자에 더했더니 **컴파일은 통과하고
+     * 테스트만 `ClassFormatError`로 무더기로 죽었다.** 사유와 문구 표는
+     * `UiStringsStudyCategories.kt`에 있다.
+     */
+    fun studyCategoryTitle(category: StudyCategory): String =
+        studyCategoryTitleFor(language, category)
+
+    fun studyCategorySubtitle(category: StudyCategory): String =
+        studyCategorySubtitleFor(language, category)
+
+    /** 아직 콘텐츠가 없는 분류에 붙는 배지(U-16: 토스트가 아니라 **비활성** + 이 배지). */
+    val studyComingSoon: String get() = studyComingSoonFor(language)
+
+    /**
      * 캐릭터의 표시 이름. 문구 표와 그 번역 근거는 `UiStringsBotCharacters.kt`에 있다(백로그 #32) —
      * 도메인([BotCharacter])은 더 이상 사람이 읽는 이름을 갖지 않는다.
      */
