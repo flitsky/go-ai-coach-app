@@ -73,6 +73,13 @@ internal class GameHistoryStore(context: Context) : GameHistoryStorePort {
         return GameReplayCodec.decode(raw, BoardSize(entry.boardSize))
     }
 
+    override fun updateNote(id: String, note: String?) {
+        val current = loadAll()
+        if (current.none { it.id == id }) return
+        val trimmed = note?.trim()?.takeIf { it.isNotEmpty() }
+        writeIndex(current.map { entry -> if (entry.id == id) entry.copy(note = trimmed) else entry })
+    }
+
     /**
      * U-4의 두 겹 상한을 건다. ⚠️ **저장소 안에서 건다** — 호출부에 맡기면 경로마다 달라진다.
      */
@@ -166,6 +173,7 @@ internal object GameHistoryIndexCodec {
             .put("isResign", entry.isResign)
             .put("margin", entry.margin ?: JSONObject.NULL)
             .put("hasReplay", entry.hasReplay)
+            .put("note", entry.note ?: JSONObject.NULL)
 
     private fun decodeEntry(json: JSONObject?, legacy: Boolean): GameHistoryEntry? {
         if (json == null) return null
@@ -191,6 +199,7 @@ internal object GameHistoryIndexCodec {
                     ?: json.optBoolean("isResign", false),
                 margin = if (json.isNull("margin")) null else json.optDouble("margin"),
                 hasReplay = json.optBoolean("hasReplay", false),
+                note = if (json.isNull("note")) null else json.optString("note").takeIf { it.isNotBlank() },
             )
         }.getOrNull()
     }

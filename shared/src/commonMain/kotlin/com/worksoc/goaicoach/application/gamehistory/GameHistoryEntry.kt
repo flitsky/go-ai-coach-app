@@ -52,6 +52,12 @@ data class GameHistoryEntry(
     val margin: Double? = null,
     /** 이 기록에 딸린 [GameReplayData]가 저장돼 있는가. 목록에서 "다시보기" 가능 여부를 가른다. */
     val hasReplay: Boolean = false,
+    /**
+     * 사용자가 이 기록에 남긴 한 줄 평(2026-09-20 사용자 요청). `null`/빈 문자열은 "아직 없음"이다 —
+     * 화면은 그 경우 입력을 유도하는 안내문을 대신 보여준다. 번들 참고 기보만 이 값이 고정돼
+     * 있고 수정할 수 없다 — 그 판별은 화면이 [GameHistoryEntry.id]로 한다.
+     */
+    val note: String? = null,
 )
 
 /**

@@ -55,6 +55,9 @@ fun referenceGameHistoryEntry(): GameHistoryEntry =
         isResign = false,
         margin = 0.5,
         hasReplay = true,
+        // ⚠️ **고정값이다 — 수정 UI를 안 단다.** 사용자 기록의 한 줄 평과 같은 자리에 나오지만,
+        // 이 판별은 `GameHistoryScreen.kt`가 `entry.id == ReferenceGameHistoryId`로 한다.
+        note = "사범 꼬북이 관장과 2점 접바둑을 두었으나 0.5집 석패한 기록입니다.",
     )
 
 fun loadReferenceGameReplay(context: Context): GameReplayData? =

@@ -15,4 +15,11 @@ interface GameHistoryStorePort {
 
     /** 한 판의 리플레이 본문. 저장돼 있지 않으면 `null`. */
     fun loadReplay(id: String): GameReplayData? = null
+
+    /**
+     * [id] 기록의 한 줄 평을 바꿔 쓴다(2026-09-20). [note]가 `null`/빈 문자열이면 지운다.
+     * 그 id가 목록에 없으면 조용히 아무 일도 하지 않는다 — 번들 참고 기보처럼 애초에 이
+     * 저장소를 거치지 않는 기록에 대고 불러도 안전해야 한다.
+     */
+    fun updateNote(id: String, note: String?) {}
 }

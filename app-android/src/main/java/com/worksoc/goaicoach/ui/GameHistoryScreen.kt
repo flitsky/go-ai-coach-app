@@ -17,6 +17,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material.icons.Icons
@@ -29,8 +30,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.worksoc.goaicoach.application.gamehistory.GameHistoryEntry
@@ -74,9 +79,15 @@ internal fun GameHistoryScreen(
     val context = LocalContext.current
     // ⚠️ **참고 기보는 항상 맨 앞이다** — 실기 기록 정렬(재생 시각 내림차순)에 끼워 넣는 게
     // 아니라, 그 앞에 붙인다. 그래야 나중에 실제로 둔 판이 쌓여도 순서가 안 밀린다.
-    val entries = remember(context) {
-        listOf(referenceGameHistoryEntry()) +
-            GameHistoryStore(context).loadAll().sortedByDescending { it.playedAtMillis }
+    //
+    // ⚠️ **`var`다 — 한 줄 평을 저장한 뒤 다시 읽지 않고 그 자리에서 갱신한다**(2026-09-20).
+    // 전체를 다시 읽으면 정렬이 다시 계산돼 화면이 깜빡이고, 그사이 다른 기록이 추가됐다면
+    // 그 판이 슬쩍 끼어드는 모양이 된다.
+    var entries by remember(context) {
+        mutableStateOf(
+            listOf(referenceGameHistoryEntry()) +
+                GameHistoryStore(context).loadAll().sortedByDescending { it.playedAtMillis },
+        )
     }
 
     // ⚠️ **다시보기는 이 화면의 하위 상태다 — 셸의 목적지가 아니다**(백로그 #156).
@@ -156,6 +167,33 @@ internal fun GameHistoryScreen(
         replay?.takeIf { !it.isEmpty }?.let { nonEmptyReplay -> opened = entry to nonEmptyReplay }
     }
 
+    // ⚠️ **참고 기보는 이 자리에 못 온다** — 그 행은 `onNoteClick`을 아예 안 받는다(고정값,
+    // 수정 불가). 그래서 여기서는 항상 실기록이고, `GameHistoryStore.updateNote`를 믿고 쓴다.
+    var editingNoteFor by remember { mutableStateOf<GameHistoryEntry?>(null) }
+    editingNoteFor?.let { entry ->
+        var noteText by remember(entry.id) { mutableStateOf(entry.note.orEmpty()) }
+        val save = {
+            val saved = noteText.trim().ifEmpty { null }
+            GameHistoryStore(context).updateNote(entry.id, saved)
+            entries = entries.map { if (it.id == entry.id) it.copy(note = saved) else it }
+            editingNoteFor = null
+        }
+        AlertDialog(
+            onDismissRequest = { editingNoteFor = null },
+            title = { Text(gameHistoryNoteDialogTitleFor(strings.language), fontWeight = FontWeight.Bold) },
+            text = {
+                OutlinedTextField(
+                    value = noteText,
+                    onValueChange = { noteText = it },
+                    singleLine = true,
+                    placeholder = { Text(gameHistoryNotePlaceholderFor(strings.language)) },
+                )
+            },
+            confirmButton = { TextButton(onClick = save) { Text(strings.confirm) } },
+            dismissButton = { TextButton(onClick = { editingNoteFor = null }) { Text(strings.cancel) } },
+        )
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -201,6 +239,10 @@ internal fun GameHistoryScreen(
                         entry = entry,
                         strings = strings,
                         onClick = { open(entry) }.takeIf { entry.hasReplay },
+                        // ⚠️ 참고 기보(id == ReferenceGameHistoryId)는 한 줄 평이 고정값이라
+                        // 수정 UI를 안 준다(2026-09-20 사용자 요청 — "수정 불가 처리 필수").
+                        onNoteClick = { editingNoteFor = entry }
+                            .takeIf { entry.id != ReferenceGameHistoryId },
                     )
                     HorizontalDivider()
                 }
@@ -289,38 +331,77 @@ internal fun gameHistorySummaryLine(entry: GameHistoryEntry, strings: UiStrings)
 }
 
 /**
- * ⚠️ **[onClick]이 `null`이면 행은 눌리지 않는다** — 2026-09-18 이전 기록에는 수순이 저장된
+ * 2줄 행(2026-09-20 사용자 요청) — 첫 줄은 기존 요약(날짜·판 크기·세팅·접바둑·결과), 둘째
+ * 줄은 한 줄 평이다. 둘은 **서로 다른 것을 누른다** — 첫 줄은 다시보기, 둘째 줄은 한 줄 평
+ * 입력이라 한 행 안에 클릭 영역을 둘로 가른다.
+ *
+ * ⚠️ **[onClick]이 `null`이면 첫 줄은 안 눌린다** — 2026-09-18 이전 기록에는 수순이 저장된
  * 적이 없어(#151) 다시보기가 영영 열리지 않는다. 눌러도 아무 일이 없는 행보다, 아예 눌리지
  * 않고 꼬리표도 없는 편이 *"이 줄은 다르다"* 를 말한다.
+ *
+ * ⚠️ **[onNoteClick]이 `null`이면 둘째 줄도 안 눌린다** — 번들 참고 기보의 한 줄 평은 고정값이라
+ * 수정할 수 없다(사용자 지시 — "수정 불가 처리 필수").
  */
 @Composable
 private fun GameHistoryRow(
     entry: GameHistoryEntry,
     strings: UiStrings,
     onClick: (() -> Unit)?,
+    onNoteClick: (() -> Unit)?,
 ) {
     val summary = gameHistorySummaryLine(entry, strings)
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Text(
-            text = summary,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.weight(1f),
-        )
-        if (onClick != null) {
-            Text(
-                text = "${gameReplayRowBadgeFor(strings.language)} \u203A",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+    // ⚠️ **"참고 기보" 부분만 진하게+강조색**(2026-09-20 사용자 요청) — 나머지 조각(판 크기·
+    // 세팅·접바둑·결과)은 실기록 행과 같은 평범한 글자여야 한다. 그 라벨은 항상 요약 줄의
+    // **맨 앞 접두어**이므로(`gameHistorySummaryLine`), 통째로 지어 넣지 않고 그 자리만 잘라
+    // AnnotatedString으로 다시 잇는다 — 라벨 문구가 언어별로 달라도 그대로 맞는다.
+    val summaryText = if (entry.id == ReferenceGameHistoryId) {
+        val label = gameHistoryReferenceLabelFor(strings.language)
+        buildAnnotatedString {
+            withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)) {
+                append(label)
+            }
+            append(summary.removePrefix(label))
         }
+    } else {
+        AnnotatedString(summary)
+    }
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .padding(bottom = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = summaryText,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f),
+            )
+            if (onClick != null) {
+                Text(
+                    text = "${gameReplayRowBadgeFor(strings.language)} \u203A",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+        val hasNote = !entry.note.isNullOrBlank()
+        Text(
+            text = entry.note.takeIf { hasNote } ?: gameHistoryNotePlaceholderFor(strings.language),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.secondary,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(if (onNoteClick != null) Modifier.clickable(onClick = onNoteClick) else Modifier)
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 12.dp),
+        )
     }
 }

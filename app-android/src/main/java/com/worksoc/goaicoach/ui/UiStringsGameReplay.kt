@@ -42,6 +42,26 @@ private val ReferenceGameLabels: Map<UiLanguage, String> = mapOf(
 )
 
 /**
+ * 대국 기록 행의 둘째 줄(2026-09-20 사용자 요청) — 한 줄 평이 아직 없는 기록에서, 그 자리가
+ * 눌러서 입력할 수 있는 자리임을 알리는 안내문. 참고 기보(고정값이라 늘 채워져 있다)에는
+ * 쓰이지 않는다.
+ */
+private val NotePlaceholders: Map<UiLanguage, String> = mapOf(
+    UiLanguage.Korean to "터치해서 한줄 평을 입력해보세요",
+    UiLanguage.English to "Tap to add a one-line note",
+    UiLanguage.Japanese to "タップして一言メモを入力",
+    UiLanguage.ChineseSimplified to "点击输入一句话评价",
+)
+
+/** 한 줄 평 입력 다이얼로그의 제목. */
+private val NoteDialogTitles: Map<UiLanguage, String> = mapOf(
+    UiLanguage.Korean to "한 줄 평",
+    UiLanguage.English to "One-line note",
+    UiLanguage.Japanese to "一言メモ",
+    UiLanguage.ChineseSimplified to "一句话评价",
+)
+
+/**
  * 리플레이 본문이 없는 옛 기록을 눌렀을 때.
  *
  * ⚠️ **"준비 중"이라고 말하지 않는다** — 기다려도 생기지 않는다. 2026-09-18 이전 기록에는
@@ -210,6 +230,12 @@ internal fun gameReplayTitleFor(language: UiLanguage): String = Titles.getValue(
 
 internal fun gameHistoryReferenceLabelFor(language: UiLanguage): String =
     ReferenceGameLabels.getValue(language)
+
+internal fun gameHistoryNotePlaceholderFor(language: UiLanguage): String =
+    NotePlaceholders.getValue(language)
+
+internal fun gameHistoryNoteDialogTitleFor(language: UiLanguage): String =
+    NoteDialogTitles.getValue(language)
 
 internal fun gameReplayRowBadgeFor(language: UiLanguage): String = RowBadges.getValue(language)
 
