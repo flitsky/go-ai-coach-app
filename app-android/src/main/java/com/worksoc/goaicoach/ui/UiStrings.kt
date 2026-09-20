@@ -13,6 +13,7 @@ import com.worksoc.goaicoach.application.engine.operation.EngineActivityIndicato
 import com.worksoc.goaicoach.application.attendance.AttendanceReward
 import com.worksoc.goaicoach.application.consumable.ConsumableCatalog
 import com.worksoc.goaicoach.application.botcharacter.BotCharacter
+import com.worksoc.goaicoach.application.botcharacter.BotCharacterCatalog
 import com.worksoc.goaicoach.application.botcharacter.BotUnlockSource
 import com.worksoc.goaicoach.application.consumable.ConsumableItem
 import com.worksoc.goaicoach.application.gamehistory.GameHistoryResult
@@ -1347,16 +1348,31 @@ internal data class UiStrings(
             "${colorLabel(StoneColor.White)}: ${sideSummary(setup.white, engineName)}",
         ).joinToString(" / ")
 
+    /**
+     * ⚠️ **캐릭터 이름만 보여준다**(2026-09-20 사용자 지시). 예전엔 `$engineName $levelText`
+     * ("KataGo 초고수")뿐이라 사용자가 고른 캐릭터가 화면 어디에도 드러나지 않았고, 캐릭터 이름을
+     * 넣은 뒤에도 한동안 `이름 (엔진명)`으로 엔진명을 괄호에 남겼었다 — 그마저 사용자가 걷어냈다.
+     *
+     * ⚠️ **실제로 뜬 엔진 이름을 확인하는 안전장치(백로그 #109)는 이 함수가 아니라 진단
+     * 리포트 쪽(`SidePlayerSetup.summary`, `shared`의 `SidePlayerSetupSummaryTest`)으로
+     * 옮겨졌다.** 스텁 엔진이 실제 KataGo인 척하는 결함을 그쪽이 대신 잡는다 — 여기 화면
+     * 문구는 이제 `engineName` 파라미터를 캐릭터 없는 그룹의 옛 폴백에서만 쓴다.
+     */
     fun sideSummary(setup: SidePlayerSetup, engineName: String): String =
         when (setup.controller) {
             SeatController.Human -> controllerLabel(SeatController.Human)
             SeatController.Ai -> {
-                val levelText = if (setup.playLevel.group == PlayLevelGroup.FastBeginner) {
-                    fastBeginnerTierLabel(setup.playLevel.safeLevel)
+                val character = BotCharacterCatalog.forPlayLevel(setup.playLevel)
+                if (character != null) {
+                    botCharacterName(character)
                 } else {
-                    levelLabel(setup.playLevel.safeLevel)
+                    val levelText = if (setup.playLevel.group == PlayLevelGroup.FastBeginner) {
+                        fastBeginnerTierLabel(setup.playLevel.safeLevel)
+                    } else {
+                        levelLabel(setup.playLevel.safeLevel)
+                    }
+                    "$engineName $levelText"
                 }
-                "$engineName $levelText"
             }
         }
 
