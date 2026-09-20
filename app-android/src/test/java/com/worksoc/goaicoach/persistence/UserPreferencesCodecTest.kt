@@ -88,7 +88,7 @@ class UserPreferencesCodecTest {
         assertFalse(restored?.showCoordinates ?: true)
         assertFalse(restored?.showMoveNumbers ?: true)
         assertTrue(restored?.showLastMoveRing ?: false)
-        assertTrue(restored?.showOwnershipOverlay ?: false)
+        assertFalse(restored?.showOwnershipOverlay ?: true)
         assertFalse(restored?.showMoveReview ?: true)
         assertEquals(AutoPlayDelaySetting.Default.millis, restored?.autoPlayDelayMillis)
         assertEquals(SearchTimeSettings(), restored?.searchTimeSettings)
@@ -218,5 +218,66 @@ class UserPreferencesCodecTest {
         val decoded = UserPreferencesCodec.decode(withoutHandicapKey)
 
         assertEquals(UserPreferencesSnapshot().handicapCount, decoded?.handicapCount)
+    }
+
+    // ── 인메모리 기본값 + 명시적 사용자 변경만 저장(2026-09-20 사용자 지시) ──────────
+
+    private val toggleKeys = listOf(
+        "topMovesEnabled", "showCoordinates", "showMoveNumbers", "showLastMoveRing",
+        "showOwnershipOverlay", "isDirectPlayEnabled", "showMoveReview",
+        "isPlayHapticEnabled", "isDelayedPlayEnabled", "isPlayEffectEnabled",
+        "isBoardMaxSize", "isPlayMagnifierEnabled",
+    )
+
+    /**
+     * 사용자가 한 번도 건드리지 않은 토글(=지금 앱 기본값과 같은 값)은 저장 파일에 **키 자체가
+     * 없어야** 한다 — 그래야 다음 앱 버전이 기본값을 바꿨을 때 이 사용자가 자동으로 따라간다.
+     */
+    @Test
+    fun untouchedTogglesAreOmittedFromTheEncodedJson() {
+        val json = JSONObject(UserPreferencesCodec.encode(UserPreferencesSnapshot()))
+
+        toggleKeys.forEach { key ->
+            assertFalse("기본값 그대로인 '$key'가 저장 파일에 남아 있다", json.has(key))
+        }
+    }
+
+    /**
+     * 반대로 앱 기본값과 **다르게** 명시한 토글은 반드시 저장돼야 한다 — 안 그러면 사용자가
+     * 방금 바꾼 값이 다음 로드에서 조용히 기본값으로 되돌아간다.
+     */
+    @Test
+    fun explicitlyChangedTogglesAreWrittenToTheEncodedJson() {
+        val defaults = UserPreferencesSnapshot()
+        val changed = UserPreferencesSnapshot(
+            showCoordinates = !defaults.showCoordinates,
+            isPlayHapticEnabled = !defaults.isPlayHapticEnabled,
+        )
+
+        val json = JSONObject(UserPreferencesCodec.encode(changed))
+
+        assertTrue(json.has("showCoordinates"))
+        assertEquals(!defaults.showCoordinates, json.getBoolean("showCoordinates"))
+        assertTrue(json.has("isPlayHapticEnabled"))
+        assertEquals(!defaults.isPlayHapticEnabled, json.getBoolean("isPlayHapticEnabled"))
+        // 안 건드린 나머지는 여전히 빠져 있어야 한다.
+        assertFalse(json.has("showMoveNumbers"))
+        assertFalse(json.has("isBoardMaxSize"))
+    }
+
+    /**
+     * 이 그물이 진짜로 지키는 것 — **저장 파일에 키가 없는 토글은 지금 코드의 기본값을 그대로
+     * 따라간다.** 여기서는 `UserPreferencesSnapshot()`이 곧 "앱이 인메모리로 들고 있는 기본값"
+     * 이므로, 별도의 가짜 미래 버전 없이도 "키가 없으면 현재 기본값"이라는 것만 확인한다.
+     */
+    @Test
+    fun aToggleMissingFromStorageResolvesToTheCurrentInMemoryDefault() {
+        val withoutOwnershipKey = JSONObject(UserPreferencesCodec.encode(UserPreferencesSnapshot()))
+            .apply { assertFalse(has("showOwnershipOverlay")) }
+            .toString()
+
+        val decoded = UserPreferencesCodec.decode(withoutOwnershipKey)
+
+        assertEquals(UserPreferencesSnapshot().showOwnershipOverlay, decoded?.showOwnershipOverlay)
     }
 }

@@ -103,8 +103,10 @@ class DelayedPlayContractTest {
         val store = code("src/main/java/com/worksoc/goaicoach/persistence/UserPreferencesStore.kt")
         assertTrue("저장소가 지연 착수를 쓰지 않는다(#144).", store.contains(""""isDelayedPlayEnabled", snapshot.isDelayedPlayEnabled"""))
         assertTrue(
-            "저장소가 지연 착수를 **꺼짐** 기본값으로 읽지 않는다 — 기본값은 꺼짐이다(사용자 결정).",
-            store.contains("""json.optBoolean("isDelayedPlayEnabled", false)"""),
+            // ⚠️ 2026-09-20부터 하드코딩 리터럴이 아니라 `defaults.isDelayedPlayEnabled`(현재
+            // 스냅샷 기본값)를 읽는다 — 인메모리 기본값이 바뀌면 이 폴백도 함께 따라가야 한다.
+            "저장소가 지연 착수의 폴백을 인메모리 기본값에서 읽지 않는다(사용자 결정: 기본값은 꺼짐).",
+            store.contains("""json.optBoolean("isDelayedPlayEnabled", defaults.isDelayedPlayEnabled)"""),
         )
     }
 

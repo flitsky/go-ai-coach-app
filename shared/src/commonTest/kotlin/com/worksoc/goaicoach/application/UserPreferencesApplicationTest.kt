@@ -218,10 +218,13 @@ class UserPreferencesApplicationTest {
                 ruleset = Ruleset.Chinese,
                 komi = 7.5,
                 // 아래는 전부 UserPreferencesSnapshot 기본값의 **반대**다.
+                // ⚠️ showOwnershipOverlay는 2026-09-20에 기본값이 true→false로 바뀌었다 —
+                // 반대값도 함께 뒤집는다(안 그러면 "저장값 == 기본값"이 우연히 참이 돼 이
+                // 카나리아가 무엇을 검사하는지와 무관하게 통과한다).
                 showCoordinates = true,
                 showMoveNumbers = true,
                 showLastMoveRing = false,
-                showOwnershipOverlay = false,
+                showOwnershipOverlay = true,
                 isDirectPlayEnabled = false,
                 showMoveReview = true,
                 isPlayHapticEnabled = false,

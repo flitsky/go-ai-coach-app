@@ -49,7 +49,12 @@ data class UserPreferencesSnapshot(
     val showCoordinates: Boolean = false,
     val showMoveNumbers: Boolean = false,
     val showLastMoveRing: Boolean = true,
-    val showOwnershipOverlay: Boolean = true,
+    /**
+     * "형세 보기" 활성 상태 겸 대국 메뉴의 "매 수마다 형세"(`UiStrings.everyMoveEval`).
+     * **기본값은 꺼짐**(2026-09-20 사용자 결정 — 이전엔 켜짐이었다). 대국 시작과 동시에 판 위에
+     * 소유권 히트맵이 항상 깔려 있던 것을 끄고, 원하는 사용자만 버튼으로 켜게 한다.
+     */
+    val showOwnershipOverlay: Boolean = false,
     val autoPlayDelayMillis: Long = AutoPlayDelaySetting.Default.millis,
     val searchTimeSettings: SearchTimeSettings = SearchTimeSettings(),
     val isDirectPlayEnabled: Boolean = true,

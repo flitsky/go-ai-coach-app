@@ -127,8 +127,10 @@ class PlayEffectContractTest {
         val store = code("src/main/java/com/worksoc/goaicoach/persistence/UserPreferencesStore.kt")
         assertTrue("저장소가 착수 이펙트를 쓰지 않는다(#145).", store.contains(""""isPlayEffectEnabled", snapshot.isPlayEffectEnabled"""))
         assertTrue(
-            "저장소가 착수 이펙트를 **켜짐** 기본값으로 읽지 않는다 — 키가 없던 기존 사용자에게 꺼진 채로 남는다(#145).",
-            store.contains("""json.optBoolean("isPlayEffectEnabled", true)"""),
+            // ⚠️ 2026-09-20부터 하드코딩 리터럴이 아니라 `defaults.isPlayEffectEnabled`(현재
+            // 스냅샷 기본값)를 읽는다 — 인메모리 기본값이 바뀌면 이 폴백도 함께 따라가야 한다.
+            "저장소가 착수 이펙트의 폴백을 인메모리 기본값에서 읽지 않는다 — 키가 없던 기존 사용자에게 꺼진 채로 남는다(#145).",
+            store.contains("""json.optBoolean("isPlayEffectEnabled", defaults.isPlayEffectEnabled)"""),
         )
         val menu = code("src/main/java/com/worksoc/goaicoach/ui/KaTrainUxPanels.kt")
         assertTrue(
