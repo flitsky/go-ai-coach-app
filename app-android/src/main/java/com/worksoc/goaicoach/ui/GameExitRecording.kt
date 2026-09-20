@@ -2,7 +2,6 @@ package com.worksoc.goaicoach.ui
 
 import android.content.Context
 import com.worksoc.goaicoach.application.gamehistory.runGameHistoryAppendIfCompleted
-import com.worksoc.goaicoach.application.movereview.MoveReviewMarker
 import com.worksoc.goaicoach.application.score.FinalScoreJudgement
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.persistence.GameHistoryStore
@@ -45,7 +44,6 @@ internal fun recordFinishedGameOnExit(
     gameState: GameState,
     playerSetup: PlayerSetup,
     scoreSnapshots: List<ScoreSnapshot> = emptyList(),
-    moveEvaluations: List<MoveReviewMarker> = emptyList(),
 ) {
     runGameHistoryAppendIfCompleted(
         isGameEnded = isGameEnded,
@@ -54,9 +52,9 @@ internal fun recordFinishedGameOnExit(
         playerSetup = playerSetup,
         nowMillis = System.currentTimeMillis(),
         store = GameHistoryStore(context),
-        // ⚠️ **이 경로도 리플레이를 실어야 한다**(백로그 #151). 뒤로가기 기권은 여기서만
-        // 기록되므로, 빠뜨리면 **기권으로 끝난 판만 수순이 없는** 기록이 된다.
+        // ⚠️ **이 경로도 형세를 실어야 한다**(백로그 #151). 뒤로가기 기권은 여기서만
+        // 기록되므로, 빠뜨리면 **기권으로 끝난 판만 형세 없는** 기록이 된다. 손실집수는
+        // 넘길 필요가 없다 — 호출된 함수가 이 형세로부터 직접 계산한다.
         scoreSnapshots = scoreSnapshots,
-        moveEvaluations = moveEvaluations,
     )
 }

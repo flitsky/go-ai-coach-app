@@ -1,6 +1,5 @@
 package com.worksoc.goaicoach.application.topmoves
 
-import com.worksoc.goaicoach.application.gamehistory.ReplayRecordingPolicy
 import com.worksoc.goaicoach.application.analysis.AnalysisCacheKey
 import com.worksoc.goaicoach.application.analysis.CachedAnalysisResult
 import com.worksoc.goaicoach.application.analysis.analysisKeyFor
@@ -168,16 +167,21 @@ fun runTopMoveAnalysisApplication(request: TopMoveAnalysisRunRequest) {
             shouldShowResumePrompt = request.shouldShowResumePrompt,
             playerSetup = request.playerSetup,
             targetState = request.targetState,
-            // ⚠️ **U-35(2026-09-18 사용자): 무료 대국에서도 손실집수를 계산하고 저장한다.**
-            // 이 자리가 그 결정이 걸리는 **유일한 관문**이었다 — `topMovesEnabled`가 거짓이면
-            // 사전 분석을 **아예 요청하지 않아서** `reviewAnalysis`가 비고, `buildMoveReview`가
-            // *"no pre-move analysis cache was ready"* 로 빠져 **마커도 손실집수도 생기지 않았다.**
-            // 그 결과 다시보기의 실착 지표가 사실상 구독자 전용이 된다.
+            // ⚠️ **2026-09-20 개정(백로그 #151, 사용자) — U-35의 강제 상시 탐색을 걷어냈다.**
+            // 예전에는 여기서 `topMovesEnabled`가 거짓이어도 리플레이용으로 무조건 탐색을
+            // 걸었다("추천 수 보기"를 꺼도 매 턴 돌았다) — 대국 진행 자체를 방해한다는
+            // 제보로 걷어냈다. 리플레이의 큰 실수 표시는 이제 이 탐색 없이
+            // `deriveMoveReviewMarkersFromScoreSwing`(이미 공짜로 기록되는 형세 스냅샷의
+            // 앞뒤 차이)로 대국이 끝나는 시점에 만든다 — `GameHistoryAppendApplication.kt` 참고.
+            // ⚠️ **`showMoveReviewEnabled`는 남긴다** — "착수 평가"(대국 중 마지막 수 색 링,
+            // 구독자 전용)가 이 탐색 결과(`reviewAnalysis`)를 그대로 쓰기 때문에, 그 토글을
+            // 켠 사용자에게는 여전히 매 턴 돌아야 한다. 둘 다 **사용자가 명시적으로 켠 경우만**
+            // 돈다는 게 이번 개정의 원칙 — "언젠가 필요할지 모른다"는 이유만으로는 대국 진행을
+            // 방해하지 않는다.
             // ⚠️ 이 토글은 **표시**를 끄는 것이지 분석을 끄는 것이 아니다 — 실제로 아래 실행부
             // (`TopMoveAnalysisEngine`)는 `topMovesEnabled`로 **후보 표시만** 가른다.
-            // ⚠️ 되돌리려면 [ReplayRecordingPolicy.RecordMoveEvaluations] 한 줄만 뒤집으면 된다.
             topMovesEnabled = request.controllerState.settings.topMovesEnabled ||
-                ReplayRecordingPolicy.RecordMoveEvaluations,
+                request.showMoveReviewEnabled,
         )
     ) {
         return

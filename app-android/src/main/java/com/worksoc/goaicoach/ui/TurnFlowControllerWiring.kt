@@ -28,6 +28,7 @@ internal fun wireTopMovesController(context: GoCoachAppWiringContext): TopMovesC
         isEngineBusy = { context.isEngineBusy() },
         shouldShowResumePrompt = { context.shouldShowResumePrompt() },
         currentPlayerSetup = { context.playerSetup() },
+        showMoveReviewEnabled = { context.showMoveReviewEnabled() },
         pendingPostUndoEngineSync = { context.isPendingUndoSync() },
         analysisCacheEnabled = { context.analysisCache.isEnabled },
         cachedResultFor = { key -> context.undoAnalysisRestoreCache.get(key) ?: context.analysisCache.get(key) },

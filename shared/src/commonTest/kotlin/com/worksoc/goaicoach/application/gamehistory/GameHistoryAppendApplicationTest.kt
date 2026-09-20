@@ -4,10 +4,13 @@ import com.worksoc.goaicoach.application.score.FinalScoreJudgement
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.match.SidePlayerSetup
+import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.ScoreSnapshot
+import com.worksoc.goaicoach.shared.ScoreSnapshotSource
 import com.worksoc.goaicoach.shared.StoneColor
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -219,6 +222,38 @@ class GameHistoryAppendApplicationTest {
         assertTrue(entry != null)
         assertNull(entry.humanColor)
         assertEquals(StoneColor.Black, entry.winner)
+    }
+
+    @Test
+    fun replayCarriesBlunderMarkersDerivedFromScoreSnapshotsWithoutAnyPassedInMarkers() {
+        // ⚠️ 2026-09-20 개정 — moveEvaluations는 더 이상 파라미터로 넘어오지 않는다.
+        // scoreSnapshots만 주면 여기서 직접 계산해 실어야 한다(백로그 #151).
+        val store = FakeGameHistoryStore()
+        val coordinate = BoardCoordinate.fromLabel("E5", BoardSize.Nine)
+        val moves = listOf(Move.Play(StoneColor.Black, coordinate))
+        // 흑이 두자 백 리드가 +11 뛴다 — 흑에게 11집 손해(#151 U-37의 10집 임계를 넘는다).
+        val scoreSnapshots = listOf(
+            ScoreSnapshot(moveNumber = 0, whiteScoreLead = 0.0, source = ScoreSnapshotSource.EngineEstimate),
+            ScoreSnapshot(moveNumber = 1, whiteScoreLead = 11.0, source = ScoreSnapshotSource.EngineEstimate),
+        )
+
+        val entry = runGameHistoryAppendIfCompleted(
+            isGameEnded = true,
+            finalScoreJudgement = judgement(winner = StoneColor.White),
+            gameState = gameStateWithMoves(moves),
+            playerSetup = HumanBlackVsAiWhite,
+            nowMillis = 1_000L,
+            store = store,
+            scoreSnapshots = scoreSnapshots,
+        )
+
+        assertTrue(entry != null)
+        val replay = store.replays[entry.id]
+        assertTrue(replay != null)
+        val marker = replay.moveEvaluations.single()
+        assertEquals(1, marker.moveNumber)
+        assertEquals(coordinate, marker.coordinate)
+        assertEquals(11.0, marker.pointLoss)
     }
 
     @Test

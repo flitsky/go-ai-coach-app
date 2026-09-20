@@ -146,6 +146,9 @@ data class TopMoveAnalysisRunRequest(
     val isEngineBusy: Boolean,
     val shouldShowResumePrompt: Boolean,
     val playerSetup: PlayerSetup,
+    /** "착수 평가"(구독자 전용, 대국 중 마지막 수 색 링) 토글. 켜져 있으면 `topMovesEnabled`가
+     * 꺼져 있어도 매 턴 자동 탐색이 돈다 — 그 표시가 이 탐색 결과를 그대로 쓰기 때문이다. */
+    val showMoveReviewEnabled: Boolean = false,
     val analysisCacheEnabled: Boolean,
     val cachedResultFor: (AnalysisCacheKey) -> CachedAnalysisResult?,
     val currentState: () -> GameState,

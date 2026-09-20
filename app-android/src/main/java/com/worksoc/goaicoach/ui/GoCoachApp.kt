@@ -464,10 +464,10 @@ private fun GoCoachScreen(
             isGameEnded = isGameEnded, finalScoreJudgement = scoreState.finalScoreJudgement,
             gameState = gameState, playerSetup = playerSetup,
             nowMillis = System.currentTimeMillis(), store = GameHistoryStore(context),
-            // 리플레이 적재(백로그 #151) — 둘 다 **이미 세션 상태에 있던 것**이라 새로 계산하지
-            // 않는다. 여기서 넘기지 않으면 대국이 끝나는 순간 그대로 버려진다.
+            // 리플레이 적재(백로그 #151) — **이미 세션 상태에 있던 것**이라 새로 계산하지
+            // 않는다. 여기서 넘기지 않으면 대국이 끝나는 순간 그대로 버려진다. 손실집수는
+            // 더 이상 여기서 넘기지 않는다 — 호출된 함수가 이 형세로부터 직접 계산한다.
             scoreSnapshots = scoreState.scoreSnapshots,
-            moveEvaluations = moveReviewState.moveReviews,
         )
     }
     val deferredTopMoveAnalysis = remember { TopMoveAnalysisDeferral() }
@@ -526,6 +526,7 @@ private fun GoCoachScreen(
             override fun shouldShowResumePrompt(): Boolean = shouldShowResumePrompt
             override fun matchMode(): MatchMode = matchMode
             override fun topMovesEnabled(): Boolean = topMovesEnabled
+            override fun showMoveReviewEnabled(): Boolean = uxOptions.showMoveReview
             override fun currentRuntimeLogContext(): RuntimeLogContext = currentRuntimeLogContext()
             override fun engineName(): String = engineName
             override fun engineDiagnostic(): String = engineDiagnostic
@@ -563,7 +564,7 @@ private fun GoCoachScreen(
         // 판을 적용해 `Move.Resign`을 지운다. 순서를 바꾸면 뒤로가기 기권이 다시 안 남는다.
         recordFinishedGameOnExit(
             context, true, scoreState.finalScoreJudgement, gameState, playerSetup,
-            scoreState.scoreSnapshots, moveReviewState.moveReviews,
+            scoreState.scoreSnapshots,
         )
         controllers.settingsController.refreshNewGamePreview()
         currentDestination = ScreenDestination.Home

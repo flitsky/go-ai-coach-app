@@ -1,6 +1,6 @@
 package com.worksoc.goaicoach.application.gamehistory
 
-import com.worksoc.goaicoach.application.movereview.MoveReviewMarker
+import com.worksoc.goaicoach.application.movereview.deriveMoveReviewMarkersFromScoreSwing
 import com.worksoc.goaicoach.application.score.FinalScoreJudgement
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
@@ -18,6 +18,15 @@ import kotlin.random.Random
  * 이제 셋 다 남긴다 — 다시보기(#156)의 대상이 대국 방식에 따라 달라질 이유가 없다.
  * 그래서 [GameHistoryEntry.humanColor]가 **nullable**이 됐고, 승패의 정본이 *"사람이 이겼는가"*
  * 에서 **[GameHistoryEntry.winner] "어느 진영이 이겼는가"** 로 옮겨갔다.
+ *
+ * ## ⚠️ 2026-09-20부터 손실집수는 **여기서 직접 계산한다** (백로그 #151 개정, 사용자 결정)
+ * 예전에는 매 수 사람 차례가 시작될 때마다 엔진에 후보수 탐색을 걸어 손실집수를 미리
+ * 구해 뒀다가([moveEvaluations]로 넘겨받았다) — 그런데 "추천 수 보기"·"착수 평가" 둘 다
+ * 꺼 둔 사용자에게도 **그 탐색이 매 턴 돌아** 대국 진행 자체를 방해했다(사용자 제보).
+ * 이제는 그 탐색을 하지 않는다. 대신 [deriveMoveReviewMarkersFromScoreSwing]이 이미
+ * 공짜로 기록되는 [scoreSnapshots](매 수 엔진 동기화의 부산물)의 **앞뒤 차이**만으로 큰
+ * 실수를 골라낸다 — 새 엔진 호출이 전혀 없다. 주 기능(대국 진행)이 보조 기능(다시보기)
+ * 때문에 느려지지 않아야 한다는 게 이 개정의 철학이다.
  *
  * ## 멱등성 — 저장소 자체가 근거다
  * `ui/GoCoachApp.kt`가 "대국 이어하기" 저장과 같은 `LaunchedEffect`에서 호출한다. 그 효과가
@@ -41,7 +50,6 @@ fun runGameHistoryAppendIfCompleted(
     nowMillis: Long,
     store: GameHistoryStorePort,
     scoreSnapshots: List<ScoreSnapshot> = emptyList(),
-    moveEvaluations: List<MoveReviewMarker> = emptyList(),
 ): GameHistoryEntry? {
     if (!isGameEnded) return null
 
@@ -64,8 +72,11 @@ fun runGameHistoryAppendIfCompleted(
     val replay = GameReplayData(
         moves = gameState.moves,
         scoreSnapshots = scoreSnapshots,
-        // 무르기 뒤에도 남아 있는 옛 마커가 섞이지 않도록 지금 수순 길이로 자른다.
-        moveEvaluations = moveEvaluations.filter { marker -> marker.moveNumber <= moveCount },
+        moveEvaluations = deriveMoveReviewMarkersFromScoreSwing(
+            moves = gameState.moves,
+            scoreSnapshots = scoreSnapshots,
+            humanColors = humanControlledColors(playerSetup),
+        ),
     )
     val entry = GameHistoryEntry(
         id = "$nowMillis-${Random.nextInt(0, 1_000_000)}",
@@ -85,6 +96,13 @@ fun runGameHistoryAppendIfCompleted(
     store.appendCompletedGame(entry, replay.takeIf { !it.isEmpty })
     return entry
 }
+
+/** 사람이 잡은 진영 전부 — 둘 다일 수도(로컬 2인 대국), 하나도 없을 수도(AI:AI) 있다. */
+private fun humanControlledColors(playerSetup: PlayerSetup): Set<StoneColor> =
+    buildSet {
+        if (playerSetup.black.controller == SeatController.Human) add(StoneColor.Black)
+        if (playerSetup.white.controller == SeatController.Human) add(StoneColor.White)
+    }
 
 /**
  * 정확히 한쪽만 [SeatController.Human]일 때만 그 색을 돌려준다 — 그 외(둘 다 사람/둘 다 AI)는 `null`.

@@ -57,12 +57,16 @@ data class GameHistoryEntry(
 /**
  * 다시보기가 **엔진 재탐색 없이** 한 판을 재생하는 데 필요한 전부(백로그 #151).
  *
- * ⚠️ **새로 계산하는 것이 아니라 옮겨 담는 것이다** — 셋 다 대국 중에 이미 만들어져 세션
- * 상태에 들어 있고, 대국이 끝나는 순간 버려지고 있었다.
+ * ⚠️ [moves]·[scoreSnapshots]는 **새로 계산하는 것이 아니라 옮겨 담는 것**이다 — 대국 중에
+ * 이미 만들어져 세션 상태에 들어 있고, 대국이 끝나는 순간 버려지고 있었다.
+ *
+ * ⚠️ [moveEvaluations]는 **다르다** — 대국 중에 쌓아 둔 것을 옮기지 않는다(2026-09-20 개정).
+ * 대국이 끝나 기록되는 이 순간, [scoreSnapshots]의 앞뒤 차이로부터 [deriveMoveReviewMarkersFromScoreSwing]가
+ * 새로 계산한다 — 엔진 재호출은 없다(`GameHistoryAppendApplication.kt` 참고). 그래서 사람이
+ * 둔 수 중 **앞뒤 스냅샷이 둘 다 있는 수에만** 붙는다.
  *
  * ⚠️ **저장 가능한 것에 층이 있다.** [moves]는 항상 남지만, [scoreSnapshots]는 무료 대국에서
  * `LocalAreaEstimate`라 거칠고 `whiteWinRate`가 `null`이며 **초반에 거짓말을 한다.**
- * [moveEvaluations]는 사전 분석 캐시가 준비된 수에만 붙는다.
  */
 data class GameReplayData(
     val moves: List<Move>,

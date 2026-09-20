@@ -108,6 +108,8 @@ internal interface GoCoachAppWiringContext {
     fun shouldShowResumePrompt(): Boolean
     fun matchMode(): MatchMode
     fun topMovesEnabled(): Boolean
+    /** "착수 평가"(구독자 전용) 켜짐 여부 — UX 옵션 소관이라 [settingsState]엔 없다. */
+    fun showMoveReviewEnabled(): Boolean
     fun currentRuntimeLogContext(): RuntimeLogContext
     fun engineName(): String
     fun engineDiagnostic(): String

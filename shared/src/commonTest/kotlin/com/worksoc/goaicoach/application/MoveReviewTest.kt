@@ -8,6 +8,8 @@ import com.worksoc.goaicoach.shared.CandidateMoveSource
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
+import com.worksoc.goaicoach.shared.ScoreSnapshot
+import com.worksoc.goaicoach.shared.ScoreSnapshotSource
 import com.worksoc.goaicoach.shared.StoneColor
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -113,6 +115,83 @@ class MoveReviewTest {
         )
 
         assertNull(review.marker)
+    }
+
+    private fun leadSnapshot(moveNumber: Int, whiteScoreLead: Double) =
+        ScoreSnapshot(
+            moveNumber = moveNumber,
+            whiteScoreLead = whiteScoreLead,
+            source = ScoreSnapshotSource.EngineEstimate,
+        )
+
+    @Test
+    fun deriveMoveReviewMarkersFromScoreSwingChargesTheLossToTheMoverOnly() {
+        val black = BoardCoordinate.fromLabel("E5", BoardSize.Nine)
+        val white = BoardCoordinate.fromLabel("C3", BoardSize.Nine)
+        val moves = listOf(Move.Play(StoneColor.Black, black), Move.Play(StoneColor.White, white))
+        // 흑이 두자 백 리드가 +12 뛴다(흑에게 12집 손해) — 백이 두자 그대로다(백에게 손해 없음).
+        val snapshots = listOf(leadSnapshot(0, 0.0), leadSnapshot(1, 12.0), leadSnapshot(2, 12.0))
+
+        val markers = deriveMoveReviewMarkersFromScoreSwing(
+            moves = moves,
+            scoreSnapshots = snapshots,
+            humanColors = setOf(StoneColor.Black, StoneColor.White),
+        )
+
+        assertEquals(2, markers.size)
+        val blackMarker = markers.single { it.moveNumber == 1 }
+        assertEquals(12.0, blackMarker.pointLoss)
+        assertEquals(MoveReviewTone.Blunder, blackMarker.tone)
+        val whiteMarker = markers.single { it.moveNumber == 2 }
+        assertEquals(0.0, whiteMarker.pointLoss)
+        assertEquals(MoveReviewTone.Excellent, whiteMarker.tone)
+    }
+
+    @Test
+    fun deriveMoveReviewMarkersFromScoreSwingChargesAWhiteBlunderCorrectly() {
+        val coordinate = BoardCoordinate.fromLabel("E5", BoardSize.Nine)
+        val moves = listOf(Move.Play(StoneColor.Black, coordinate), Move.Play(StoneColor.White, coordinate))
+        // 백이 두자 백 리드가 10 떨어진다 — 백에게 10집 손해.
+        val snapshots = listOf(leadSnapshot(0, 0.0), leadSnapshot(1, 0.0), leadSnapshot(2, -10.0))
+
+        val markers = deriveMoveReviewMarkersFromScoreSwing(
+            moves = moves,
+            scoreSnapshots = snapshots,
+            humanColors = setOf(StoneColor.White),
+        )
+
+        assertEquals(1, markers.size)
+        assertEquals(10.0, markers.single().pointLoss)
+    }
+
+    @Test
+    fun deriveMoveReviewMarkersFromScoreSwingSkipsMovesTheHumanDidNotPlay() {
+        val coordinate = BoardCoordinate.fromLabel("E5", BoardSize.Nine)
+        val moves = listOf(Move.Play(StoneColor.White, coordinate))
+        val snapshots = listOf(leadSnapshot(0, 0.0), leadSnapshot(1, 20.0))
+
+        val markers = deriveMoveReviewMarkersFromScoreSwing(
+            moves = moves,
+            scoreSnapshots = snapshots,
+            humanColors = setOf(StoneColor.Black),
+        )
+
+        assertTrue(markers.isEmpty())
+    }
+
+    @Test
+    fun deriveMoveReviewMarkersFromScoreSwingSkipsMovesWithoutBothSnapshots() {
+        val coordinate = BoardCoordinate.fromLabel("E5", BoardSize.Nine)
+        val moves = listOf(Move.Play(StoneColor.Black, coordinate))
+
+        val markers = deriveMoveReviewMarkersFromScoreSwing(
+            moves = moves,
+            // 착수 뒤 스냅샷(moveNumber=1)이 없다 — 무료 대국에서 형세가 성기게 찍히는 경우.
+            scoreSnapshots = listOf(leadSnapshot(0, 0.0)),
+            humanColors = setOf(StoneColor.Black),
+        )
+
+        assertTrue(markers.isEmpty())
     }
 
     @Test
