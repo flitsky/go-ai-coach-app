@@ -32,6 +32,7 @@ import com.worksoc.goaicoach.shared.PlayLevelGroup
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.SearchTimeLimit
 import com.worksoc.goaicoach.shared.StoneColor
+import kotlin.math.abs
 import kotlin.math.roundToInt
 
 internal enum class UiLanguage(
@@ -1110,6 +1111,29 @@ internal data class UiStrings(
             UiLanguage.Japanese -> "$colorLabel 勝ち"
             UiLanguage.ChineseSimplified -> "$colorLabel 胜"
         }
+
+    /**
+     * 형세 보기 버튼이 켜져 있는 동안 라벨 전체를 대신하는 우세 진영·점수차 표기(2026-09-20
+     * 사용자 결정) — 잔량 표기(mark)와 조합한 "W +13.4 (30)"은 (30)이 무엇인지 알아보기
+     * 어려워 버렸다. 켜지면 잔량 없이 이 라벨만 보인다.
+     *
+     * 언어별로 자연어("백 13.4집 우세")를 우선 쓰되, **영어만 예외**다 — 번역 결과("White
+     * leads by 13.4")가 버튼 폭(#27이 이미 한계까지 밀어붙인 자리)에 들어가지 않아
+     * [blackLeadLabel]과 같은 짧은 기호 표기("W +13.4")로 대신한다. 비김(0.0)도 모든 언어에서
+     * 이 기호 표기를 쓴다 — 그래프 쪽 [latestLeadLabel]과 같은 선택이다.
+     */
+    fun scoreLeadButtonLabel(whiteScoreLead: Double): String {
+        val blackLead = -whiteScoreLead
+        if (language == UiLanguage.English || blackLead == 0.0) return blackLeadLabel(blackLead)
+        val marginText = abs(blackLead).formatScoreNumber()
+        val leader = colorLabel(if (blackLead > 0.0) StoneColor.Black else StoneColor.White)
+        return when (language) {
+            UiLanguage.Korean -> "$leader ${marginText}집 우세"
+            UiLanguage.Japanese -> "$leader ${marginText}目優勢"
+            UiLanguage.ChineseSimplified -> "$leader 领先 ${marginText}目"
+            UiLanguage.English -> blackLeadLabel(blackLead)
+        }
+    }
 
     fun scoreTextDetailTerritory(colorLabel: String, territory: Double, prisoners: Double, total: Double): String {
         val tVal = territory.formatScoreNumber()

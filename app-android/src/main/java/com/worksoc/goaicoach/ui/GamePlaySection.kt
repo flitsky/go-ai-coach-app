@@ -949,15 +949,31 @@ private fun GameActionButtonHost(
             val evalAction = screenState.actionButtons.firstOrNull { it.role == GameActionButtonRole.Eval }
             if (evalAction != null) {
                 val evalAccess = premium.resolve(FeatureId.Eval)
+                // 켜져 있는 동안은 라벨 자체를 점수차로 바꾼다(2026-09-20 사용자 결정) — 판 아래
+                // 별도 줄로 보여줬더니 화면이 밀렸다. 버튼은 이미 고정 슬롯이라 여기서 바꿔치기하면
+                // 레이아웃이 흔들리지 않는다. `mayShow`와 같은 세 경로(프리미엄/1회권/종국)를 직접
+                // 검사한다 — `isFilled`만 보면 1회권이 만료된 뒤에도 옛 점수가 남아있을 수 있다
+                // (판 오버레이가 겪은 것과 같은 문제, 127-130행 주석 참고).
+                val mayShowEvalScore = evalAccess is FeatureAccess.Allowed ||
+                    consumables.isOneShotActive(FeatureId.Eval) ||
+                    screenState.isGameEnded
+                val evalScoreLabel = screenState.score.estimate?.whiteScoreLead
+                    ?.takeIf { evalAction.isFilled && mayShowEvalScore }
+                    ?.let { whiteLead -> strings.scoreLeadButtonLabel(whiteLead) }
                 ToggleActionButton(
                     action = evalAction,
                     // 이름과 잔량을 **따로** 넘긴다 — 한 문자열이면 폭이 모자랄 때 잔량부터
-                    // 잘려 나간다(#27).
-                    label = strings.eval,
-                    mark = strings.featureButtonMark(
-                        access = evalAccess,
-                        remaining = consumables.countOf(ConsumableCatalog.EvalOnce),
-                    ),
+                    // 잘려 나간다(#27). 점수를 보여줄 때는 잔량을 아예 지운다 — "W +13.4 (30)"처럼
+                    // 붙여 놓으면 (30)이 뭘 뜻하는지 알아볼 수 없다(2026-09-20 사용자 지적).
+                    label = evalScoreLabel ?: strings.eval,
+                    mark = if (evalScoreLabel == null) {
+                        strings.featureButtonMark(
+                            access = evalAccess,
+                            remaining = consumables.countOf(ConsumableCatalog.EvalOnce),
+                        )
+                    } else {
+                        null
+                    },
                     onEvent = { event -> featureGated(evalAccess, FeatureId.Eval, turningOn = !evalAction.isFilled) { onEvent(event) } },
                     modifier = modifier.guideTarget(GuideTarget.Eval),
                     premiumLocked = evalAccess !is FeatureAccess.Allowed && !tapIsFree(FeatureId.Eval),
