@@ -8,6 +8,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -26,6 +28,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -93,20 +96,46 @@ internal fun PassNoticeHost(
     // ⚠️ **알림을 띄우는 순간의 판정을 붙잡아 둔다.** 1.6초 뒤에 다시 보면 그 사이 AI가 두어
     // 조건이 바뀌어 있을 수 있다 — 그러면 통과와 무관한 순간에 계가를 묻게 된다.
     var askAfterNotice by remember { mutableStateOf(false) }
+    // ⚠️ 닫힘 타이머는 `moveCount`/`lastMoveIsPass`와 **별개의 키**로 돌린다(실사고 기록,
+    // 2026-09-20). 상대 AI는 지연 없이 곧바로 두므로, 알림이 뜬 1.6초 안에 `moveCount`가
+    // 다시 바뀌는 일이 흔하다 — 그 순간 Compose가 위 이펙트의 코루틴을 정리 없이 취소해
+    // `showNotice = false`를 실행할 기회 자체가 사라지고, 팝업이 영구히 화면에 남아
+    // 반상 입력을 계속 가로막았다. 이 세대 번호는 "새 통과를 알린다"고 판단한 순간에만
+    // 증가하므로, 그 뒤 AI가 몇 수를 두든 이 타이머는 취소되지 않고 반드시 끝까지 돈다.
+    var noticeGeneration by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(moveCount, lastMoveIsPass) {
+        // ⚠️ 알림이 떠 있는 사이 다음 수(대개 AI)가 이미 반영됐다면 곧바로 내린다(실사고 기록,
+        // 2026-09-20) — AI는 지연 없이 곧장 두므로, 안 내리면 그 착수 이펙트가 팝업에 가려
+        // 최대 1.6초간 안 보인다. 통과 알림은 "방금 그런 일이 있었다"는 순간 고지일 뿐이라,
+        // 새 수가 이미 판에 반영된 뒤까지 화면을 덮고 있을 이유가 없다.
+        if (showNotice && moveCount != announcedMoveCount) {
+            showNotice = false
+        }
         if (!lastMoveIsPass || moveCount == announcedMoveCount) return@LaunchedEffect
         announcedMoveCount = moveCount
         noticePlayer = lastPass?.player ?: StoneColor.Black
         askAfterNotice = !screenState.isGameEnded && screenState.matchSeats.current.canAcceptBoardInput
         showNotice = true
+        noticeGeneration += 1
+    }
+
+    LaunchedEffect(noticeGeneration) {
+        if (noticeGeneration == 0) return@LaunchedEffect
         delay(PassNoticeMillis)
+        // 그사이 사용자가 직접 닫았다면(아래 onDismiss) 이미 false다 — 계가 팝업도 띄우지 않는다.
+        if (!showNotice) return@LaunchedEffect
         showNotice = false
         if (askAfterNotice) showScorePrompt = true
     }
 
     if (showNotice) {
-        PassNoticeDialog(player = noticePlayer)
+        // ⚠️ `noticeGeneration`으로 키를 건다 — 연속 통과처럼 알림이 알림 위에 곧바로 덮어써질 때
+        // (위 이펙트에서 내렸다가 같은 프레임에 다시 켜는 경우) 매번 새로 마운트돼 날아오는
+        // 등장 애니메이션이 진영이 바뀔 때마다 다시 재생된다.
+        key(noticeGeneration) {
+            PassNoticeDialog(player = noticePlayer, onDismiss = { showNotice = false })
+        }
     }
 
     if (showScorePrompt) {
@@ -145,13 +174,16 @@ internal fun PassNoticeHost(
  * **정작 진영의 상징(돌)이 안 보인다.**
  *
  * ⚠️ **버튼이 없다** — 사용자가 닫을 것이 아니라 *"방금 이런 일이 있었다"* 를 알리는 자리다.
- * 뒤로가기·바깥 탭으로는 닫히게 둔다(급한 사용자를 붙잡아 두지 않는다).
+ * 화면 아무 곳이나 탭하거나 뒤로가기를 누르면 닫히게 둔다(급한 사용자를 붙잡아 두지 않는다).
+ * ⚠️ 콘텐츠가 `fillMaxSize()`라 다이얼로그 창 "바깥"이 존재하지 않는다 — `dismissOnClickOutside`
+ * 만으로는 아무것도 닫히지 않으므로 화면 전체에 탭 제스처를 직접 건다(실사고 기록, 2026-09-20:
+ * `onDismissRequest`가 빈 람다였고 탭으로도 닫히지 않아, 타이머가 고착되면 되살릴 방법이 없었다).
  *
  * ⚠️ **`usePlatformDefaultWidth = false`가 필요하다** — 기본 다이얼로그 폭 안에서는 좌석 자리까지
  * 날아올 거리가 없다. 화면 전체를 받아야 출발점을 좌·우 아래로 잡을 수 있다.
  */
 @Composable
-private fun PassNoticeDialog(player: StoneColor) {
+private fun PassNoticeDialog(player: StoneColor, onDismiss: () -> Unit) {
     val strings = LocalUiStrings.current
     // ⚠️ 이 알림이 떠 있는 동안 첫돌이 가이드를 기록하지 않는다(함정 40).
     GuideBlockingOverlays.TrackWhileShown()
@@ -163,7 +195,7 @@ private fun PassNoticeDialog(player: StoneColor) {
     val textColor = (if (isBlack) Color.Black else Color.White).copy(alpha = 0.82f)
 
     Dialog(
-        onDismissRequest = {},
+        onDismissRequest = onDismiss,
         properties = DialogProperties(
             dismissOnBackPress = true,
             dismissOnClickOutside = true,
@@ -171,7 +203,13 @@ private fun PassNoticeDialog(player: StoneColor) {
         ),
     ) {
         BoxWithConstraints(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onDismiss,
+                ),
             contentAlignment = Alignment.Center,
         ) {
             // 출발점 — 좌석 카드가 있는 **판 아래**의 좌(흑)·우(백).
