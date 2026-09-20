@@ -29,10 +29,18 @@ import android.provider.Settings
  * ⚠️ `android.permission.VIBRATE`가 필요하다(normal 권한, 런타임 프롬프트 없음). 다만
  * **스토어 권한 목록에 노출**되므로 등록정보와 어긋나지 않는지 확인할 것.
  */
-private const val OneShotMillis = 35L
+/** 예전 값 35ms → 28ms(80%) 거쳐 30ms로 최종 조정(2026-09-20 사용자: "약간 길게 느껴짐"). */
+private const val OneShotMillis = 30L
 
 /** 0~255. 최대치로 두는 이유는 사용자가 "약하다"고 두 번 보고했기 때문이다(#36). */
 private const val OneShotAmplitude = 255
+
+/**
+ * 착수 불가 위치 피드백(2026-09-20 사용자 지시) — 짧은 진동 두 번을 붙여서 정상 착수(길게
+ * 한 번)와 손끝만으로 구분되게 한다.
+ */
+private const val InvalidPulseMillis = 15L
+private const val InvalidPulseGapMillis = 15L
 
 internal class PlayHaptics(context: Context) {
     private val appContext = context.applicationContext
@@ -65,6 +73,28 @@ internal class PlayHaptics(context: Context) {
             vibrator.vibrate(VibrationEffect.createOneShot(OneShotMillis, OneShotAmplitude))
         }
         PlayHapticDiagnostics.record(result.isSuccess, result.exceptionOrNull()?.message ?: "vibrate() called")
+    }
+
+    /**
+     * 착수 불가 위치를 짚었을 때(끌기 중 포함) 짧게 두 번 울린다 — [play]의 긴 한 번과
+     * 손끝만으로 구분하기 위함이다. `createWaveform`의 timings는 [off, on, off, on] 순서다.
+     */
+    fun playInvalid() {
+        val vibrator = vibrator ?: run { PlayHapticDiagnostics.record(false, "no vibrator service"); return }
+        if (!vibrator.hasVibrator()) {
+            PlayHapticDiagnostics.record(false, "device reports no vibrator")
+            return
+        }
+        val result = runCatching {
+            vibrator.vibrate(
+                VibrationEffect.createWaveform(
+                    longArrayOf(0, InvalidPulseMillis, InvalidPulseGapMillis, InvalidPulseMillis),
+                    intArrayOf(0, OneShotAmplitude, 0, OneShotAmplitude),
+                    -1,
+                ),
+            )
+        }
+        PlayHapticDiagnostics.record(result.isSuccess, result.exceptionOrNull()?.message ?: "vibrate(invalid) called")
     }
 
     fun diagnosticReport(): String = PlayHapticDiagnostics.report(appContext, vibrator)

@@ -63,6 +63,7 @@ import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.GameState
+import com.worksoc.goaicoach.shared.LegalMoveGenerator
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.OwnershipEstimate
 import com.worksoc.goaicoach.shared.StoneColor
@@ -288,6 +289,17 @@ internal fun GoBoard(
                                 var follow = DragFollow(target = down.position, following = false)
                                 playDrag = PlayDrag(follow.target, below = false, magnifier = false)
 
+                                // 끌기 중 착수 불가 위치를 짚을 때마다 짧게 두 번 울린다(2026-09-20
+                                // 사용자 지시). 좌표가 바뀔 때만 검사한다 — 매 프레임 다시 물으면 같은
+                                // 자리에 머무는 동안에도 계속 울려 소음이 된다.
+                                var lastHoverCoordinate: BoardCoordinate? = null
+                                fun maybeSignalInvalidHover(coordinate: BoardCoordinate?) {
+                                    if (!uxOptions.isPlayHapticEnabled) return
+                                    if (coordinate == null || coordinate == lastHoverCoordinate) return
+                                    lastHoverCoordinate = coordinate
+                                    if (!LegalMoveGenerator.isLegalPlay(gameState, coordinate)) haptics.playInvalid()
+                                }
+
                                 // ② 임계 전 — 따라가며 이벤트를 판이 가진다(사유는 `trackPressUntilUp`).
                                 var heldPastThreshold = false
                                 val released = try {
@@ -301,6 +313,9 @@ internal fun GoBoard(
                                                 liftPx = liftPx,
                                             )
                                             playDrag = PlayDrag(follow.target, below = false, magnifier = false)
+                                            // 슬롭을 넘어 실제로 끌 때만 짚는다 — 안 그러면 누른 첫
+                                            // 좌표에서 곧바로 판정이 나 손끝을 떼기 전인데 울린다.
+                                            if (follow.following) maybeSignalInvalidHover(coordinateAt(follow.target))
                                         }
                                     }
                                 } catch (_: PointerEventTimeoutCancellationException) {
@@ -316,7 +331,14 @@ internal fun GoBoard(
                                     // 붙잡아 두므로, #39가 막으려던 *"살짝 미끄러진 탭"* 회귀는 여전히 막혀 있다.
                                     coordinateAt(follow.target)?.let { coordinate ->
                                         // 끌어서 옮겼을 때만 뗄 때 한 번 더 울린다 — 탭은 닿을 때 한 번이면 된다.
-                                        if (follow.following && uxOptions.isPlayHapticEnabled) haptics.play()
+                                        // 착수 불가 자리면 정상 착수음 대신 짧게 두 번 울린다.
+                                        if (follow.following && uxOptions.isPlayHapticEnabled) {
+                                            if (LegalMoveGenerator.isLegalPlay(gameState, coordinate)) {
+                                                haptics.play()
+                                            } else {
+                                                haptics.playInvalid()
+                                            }
+                                        }
                                         onCoordinateTap(coordinate)
                                     }
                                     return@awaitEachGesture
@@ -370,13 +392,20 @@ internal fun GoBoard(
                                     finger = change.position
                                     target = Offset(finger.x, finger.y - holdLiftPx)
                                     playDrag = PlayDrag(target, below, magnifier = showMagnifier, finger = finger)
+                                    maybeSignalInvalidHover(coordinateAt(target))
                                 }
                                 if (!completed) return@awaitEachGesture
 
                                 // 판 밖에서 떼면 좌표가 없다 → 조용히 취소된다. 그것이 이 제스처의
                                 // 취소 경로다(별도 취소 버튼을 두지 않는 이유).
                                 coordinateAt(target)?.let { coordinate ->
-                                    if (uxOptions.isPlayHapticEnabled) haptics.play()
+                                    if (uxOptions.isPlayHapticEnabled) {
+                                        if (LegalMoveGenerator.isLegalPlay(gameState, coordinate)) {
+                                            haptics.play()
+                                        } else {
+                                            haptics.playInvalid()
+                                        }
+                                    }
                                     onCoordinateTap(coordinate)
                                 }
                             } finally {
