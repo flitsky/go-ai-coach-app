@@ -324,15 +324,17 @@ internal fun GamePlaySection(
 
     when (layout) {
         GameScreenLayout.Phone -> {
-            ScoreTimelineGraph(
-                snapshots = screenState.score.snapshots,
-                capturedByBlack = screenState.gameState.capturedBy(StoneColor.Black),
-                capturedByWhite = screenState.gameState.capturedBy(StoneColor.White),
-                whiteWinRate = screenState.score.estimate?.whiteWinRate,
-                isExpanded = screenState.score.isGraphExpanded,
-                onExpandedChange = onScoreGraphExpandedChange,
-                modifier = Modifier.fillMaxWidth()
-            )
+            if (FeatureFlags.isScoreGraphEnabled) {
+                ScoreTimelineGraph(
+                    snapshots = screenState.score.snapshots,
+                    capturedByBlack = screenState.gameState.capturedBy(StoneColor.Black),
+                    capturedByWhite = screenState.gameState.capturedBy(StoneColor.White),
+                    whiteWinRate = screenState.score.estimate?.whiteWinRate,
+                    isExpanded = screenState.score.isGraphExpanded,
+                    onExpandedChange = onScoreGraphExpandedChange,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
 
             // ⚠️ 크기 선택은 **보드 바깥, 위쪽 경계선 밖**에 둔다(2026-08-30 사용자 지시). 보드 위에
             // 얹으면 그 자리에 착수할 수 없다 — 판의 우상단은 실제로 두는 자리다.
@@ -473,14 +475,16 @@ private fun WidePlayArrangement(
                 stacked = false,
                 modifier = Modifier.weight(1f).fillMaxHeight(),
             )
-            WideScoreSummary(
-                moveCountText = "${strings.moveCountPrefix} ${screenState.gameState.moves.size}${strings.moveCountSuffix}",
-                snapshots = screenState.score.snapshots,
-                whiteWinRate = screenState.score.estimate?.whiteWinRate,
-                isGraphExpanded = screenState.score.isGraphExpanded,
-                onGraphExpandedChange = onScoreGraphExpandedChange,
-                modifier = Modifier.weight(1f).fillMaxHeight(),
-            )
+            if (FeatureFlags.isScoreGraphEnabled) {
+                WideScoreSummary(
+                    moveCountText = "${strings.moveCountPrefix} ${screenState.gameState.moves.size}${strings.moveCountSuffix}",
+                    snapshots = screenState.score.snapshots,
+                    whiteWinRate = screenState.score.estimate?.whiteWinRate,
+                    isGraphExpanded = screenState.score.isGraphExpanded,
+                    onGraphExpandedChange = onScoreGraphExpandedChange,
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                )
+            }
             CompactSeatCard(
                 isActiveTurn = turn == StoneColor.White,
                 stoneGlyph = "○",
@@ -518,7 +522,7 @@ private fun WidePlayArrangement(
                     MoveQualityLegend()
                 }
             }
-            if (screenState.score.isGraphExpanded) {
+            if (FeatureFlags.isScoreGraphEnabled && screenState.score.isGraphExpanded) {
                 ScoreTimelineGraph(
                     snapshots = screenState.score.snapshots,
                     capturedByBlack = screenState.gameState.capturedBy(StoneColor.Black),
@@ -607,14 +611,16 @@ private fun WideColumnsArrangement(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 menuButton()
-                WideScoreSummary(
-                    moveCountText = "${strings.moveCountPrefix} ${screenState.gameState.moves.size}${strings.moveCountSuffix}",
-                    snapshots = screenState.score.snapshots,
-                    whiteWinRate = screenState.score.estimate?.whiteWinRate,
-                    isGraphExpanded = screenState.score.isGraphExpanded,
-                    onGraphExpandedChange = onScoreGraphExpandedChange,
-                    modifier = Modifier.weight(1f),
-                )
+                if (FeatureFlags.isScoreGraphEnabled) {
+                    WideScoreSummary(
+                        moveCountText = "${strings.moveCountPrefix} ${screenState.gameState.moves.size}${strings.moveCountSuffix}",
+                        snapshots = screenState.score.snapshots,
+                        whiteWinRate = screenState.score.estimate?.whiteWinRate,
+                        isGraphExpanded = screenState.score.isGraphExpanded,
+                        onGraphExpandedChange = onScoreGraphExpandedChange,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
             }
 
             Row(
@@ -662,7 +668,7 @@ private fun WideColumnsArrangement(
                             MoveQualityLegend()
                         }
                     }
-                    if (screenState.score.isGraphExpanded) {
+                    if (FeatureFlags.isScoreGraphEnabled && screenState.score.isGraphExpanded) {
                         ScoreTimelineGraph(
                             snapshots = screenState.score.snapshots,
                             capturedByBlack = screenState.gameState.capturedBy(StoneColor.Black),

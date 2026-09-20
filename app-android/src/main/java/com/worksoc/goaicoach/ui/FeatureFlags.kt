@@ -59,6 +59,21 @@ internal object FeatureFlags {
      * 코드·문구·테스트는 지우지 않았다. `true`로 되돌리면 그대로 되살아난다.
      */
     const val isPlayConfirmModeEnabled = false
+
+    /**
+     * 대국 화면 상단의 **형세 요약/그래프**(`ScoreGraphPanel.kt`의 `WideScoreSummary`·
+     * `ScoreTimelineGraph`)를 켜는 스위치. **끈다**(2026-09-20 사용자 결정) — 대국 집중도를
+     * 높이려고 상단에 항시 떠 있던 점수차·승률 요약을 없앤다.
+     *
+     * ⚠️ 판 위에 얹는 영역 소유권 히트맵(`showOwnershipOverlay`, "형세 보기" 버튼)과는
+     * **다른 기능이다** — 그쪽은 그대로 둔다. 여기서 끄는 것은 판 바깥, 화면 상단(또는 넓은
+     * 배치의 가운데 칸)에 항상 보이던 요약 바/그래프뿐이다.
+     *
+     * 코드·문구·테스트는 지우지 않았다. 나중에 설정 화면에 토글로 노출하고 싶으면 이 상수
+     * 대신 `KaTrainUxOptions`에 필드를 추가해 저장값으로 옮기면 된다 — 지금은 그 정도 무게를
+     * 실을 필요가 없어 컴파일타임 스위치로만 둔다.
+     */
+    const val isScoreGraphEnabled = false
 }
 
 /**
