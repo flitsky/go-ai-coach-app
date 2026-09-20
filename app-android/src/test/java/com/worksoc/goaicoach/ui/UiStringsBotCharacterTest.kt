@@ -80,31 +80,33 @@ class UiStringsBotCharacterTest {
     }
 
     /**
-     * 위 그물은 "한글만 아니면 통과"라 일본어 자리에 영어를 박아도 잡지 못한다. 그래서 실제로
-     * 샜던 줄 하나를 값까지 못 박는다 — **`관장 천원 (達人)`** 이 이 항목을 발행하게 만든 화면이다.
-     * 이름은 한글, 티어명은 일본어로 한 줄 안에 두 언어가 섞여 있었다.
+     * 예전엔 표시 이름 뒤에 티어 라벨을 괄호로 덧붙였고, 그 라벨이 한 언어만 슬쩍 새는 결함이
+     * 있었다(`관장 천원 (達人)` — 이름은 한글, 티어명은 일본어). 도장 서열 개편으로 괄호 자체를
+     * 없애고 서열을 직함에 담았으므로, 이제 표시 이름이 곧 [botCharacterNameFor] 값과 같다 —
+     * 섞일 두 번째 문자열이 없다.
      */
     @Test
     fun thePickerLabelNoLongerMixesTwoLanguagesInOneLine() {
         val top = requireNotNull(BotCharacterCatalog.byRawId("fast_beginner_5"))
 
-        assertEquals("관장 천원 (초고수)", UiStringsKorean.botCharacterLabel(top))
-        assertEquals("Tengen the Master (Master)", UiStringsEnglish.botCharacterLabel(top))
-        assertEquals("館長 天元 (達人)", UiStringsJapanese.botCharacterLabel(top))
-        assertEquals("馆长 天元 (大神)", UiStringsChineseSimplified.botCharacterLabel(top))
+        assertEquals("관장 천원", UiStringsKorean.botCharacterName(top))
+        assertEquals("Tengen the Master", UiStringsEnglish.botCharacterName(top))
+        assertEquals("館長 天元", UiStringsJapanese.botCharacterName(top))
+        assertEquals("馆长 天元", UiStringsChineseSimplified.botCharacterName(top))
     }
 
     /**
-     * 이름은 **직함 + 그 언어권의 실제 바둑 용어**로 지었다(표 KDoc 참고). 기계 음역으로 되돌아가면
-     * 말맛이 사라지므로, 서열이 드러나는 1·5단계 이름을 네 언어 모두 못 박아 둔다.
+     * 이름은 **직함 + 별명**으로 지었고 서열은 직함 자체가 드러낸다(표 KDoc 참고): 문하생 →
+     * 수제자 → 사범 → 관장. 기계 음역으로 되돌아가면 말맛이 사라지므로, 서열이 드러나는 1·5단계
+     * 이름을 네 언어 모두 못 박아 둔다.
      */
     @Test
     fun characterNamesKeepTheDojoLadderInEveryLanguage() {
         val first = BotCharacterId("fast_beginner_1")
-        assertEquals("첫돌이", botCharacterNameFor(UiLanguage.Korean, first))
-        assertEquals("Pebble", botCharacterNameFor(UiLanguage.English, first))
-        assertEquals("初石", botCharacterNameFor(UiLanguage.Japanese, first))
-        assertEquals("初子", botCharacterNameFor(UiLanguage.ChineseSimplified, first))
+        assertEquals("문하생 판다", botCharacterNameFor(UiLanguage.Korean, first))
+        assertEquals("Panda the Pupil", botCharacterNameFor(UiLanguage.English, first))
+        assertEquals("門下生 パンダ", botCharacterNameFor(UiLanguage.Japanese, first))
+        assertEquals("门生 熊猫", botCharacterNameFor(UiLanguage.ChineseSimplified, first))
 
         val last = BotCharacterId("fast_beginner_5")
         assertEquals("관장 천원", botCharacterNameFor(UiLanguage.Korean, last))

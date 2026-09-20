@@ -415,7 +415,7 @@ private fun BotCharacterCard(
             reveal = shardRevealOf(character, shards),
         )
         Text(
-            text = strings.botCharacterLabel(character),
+            text = strings.botCharacterName(character),
             style = MaterialTheme.typography.titleSmall,
             textAlign = TextAlign.Center,
             maxLines = 2,

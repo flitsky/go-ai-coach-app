@@ -366,7 +366,7 @@ internal fun DeveloperTestSection(
                         )
                         Text(
                             text = if (bots.isAvailable(character)) {
-                                strings.botCharacterLabel(character)
+                                strings.botCharacterName(character)
                             } else {
                                 "${bots.shardsFor(character)} / $required"
                             },

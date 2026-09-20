@@ -111,7 +111,7 @@ internal fun BotCharacterAcquiredDialog(
                     textAlign = TextAlign.Center,
                 )
                 Text(
-                    text = strings.botCharacterLabel(character),
+                    text = strings.botCharacterName(character),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.primary,
                     textAlign = TextAlign.Center,

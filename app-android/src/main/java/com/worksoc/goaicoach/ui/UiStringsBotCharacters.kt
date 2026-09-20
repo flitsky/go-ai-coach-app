@@ -3,7 +3,7 @@ package com.worksoc.goaicoach.ui
 import com.worksoc.goaicoach.application.botcharacter.BotCharacterId
 
 /**
- * 봇 캐릭터 5종의 **표시 이름과 소개 문구**(백로그 #32).
+ * 봇 캐릭터 5종의 **표시 이름과 소개 문구**(백로그 #32, 이름 체계는 이후 도장 서열 개편으로 교체).
  *
  * ## 왜 도메인이 아니라 여기 있는가
  *
@@ -17,45 +17,50 @@ import com.worksoc.goaicoach.application.botcharacter.BotCharacterId
  * 들고, 사람이 읽는 글자는 전부 이 파일에 있다 — **같은 사실을 두 곳에 적지 않는다**는 카탈로그
  * 자신의 원칙과도 맞는다.
  *
- * ## 이름을 어떻게 옮겼는가
+ * ## 이름을 어떻게 옮겼는가 — 도장 서열 체계
  *
- * 한국어 이름은 **직함 + 바둑 용어**로 되어 있다(도장생 `반상`, 사범 `묘수`, 관장 `천원`).
- * 기계적으로 음역하면 그 말맛이 통째로 사라지므로 언어마다 다시 지었고, 두 가지를 지켰다:
- * **직함이 서열을 드러낼 것**(입문 → 연습 → 도장생 → 사범 → 관장), **이름이 그 언어권에서
- * 실제로 쓰는 바둑 용어일 것**.
+ * 이름은 **직함 + 별명**이고, 서열은 괄호가 아니라 **직함 자체**로 드러난다(픽커에 더는 티어
+ * 라벨을 괄호로 덧붙이지 않는다 — [UiStrings.botCharacterName]이 곧 표시 이름이다):
+ * 문하생(1·2단계) → 수제자(3단계) → 사범(4단계) → 관장(5단계).
  *
- * - 일본어·중국어는 한자어가 거의 그대로 대응한다(묘수=妙手/妙手, 천원=天元/天元, 반상=盤面/盘面).
- * - 영어는 대응 한자가 없어 영어권 바둑 어휘를 골랐다 — `Tesuji`(묘수), `Tengen`(천원),
- *   `Goban`(반상)은 영어 바둑 커뮤니티에서 그대로 쓰는 말이다. 2단계 `돌뫼`(돌+뫼, 돌무더기)는
- *   돌을 쌓아 만든 표식을 뜻하는 `Cairn`으로 옮겨 원뜻이 살아 있다.
+ * 직함은 언어마다 뜻으로 옮기되 되도록 짧은 단어를 썼다 —
+ * `Apprentice` 대신 `Pupil`, `Senior Apprentice` 대신 `Sr. Pupil`처럼 축약해 화면 폭 문제를
+ * 피한다. 영어는 "별명 the 직함" 어순(`Panda the Pupil`), 한국어·일본어·중국어는 "직함 별명"
+ * 어순을 쓴다.
+ *
+ * 별명은 **발음 그대로**가 아니라 그 언어에서 실제로 쓰는 단어로 옮긴다 — 판다(동물, 이미 각
+ * 언어의 실존 단어)·꼬북(거북이 애칭)이 그렇다. 다만 `돌뫼`·`반상`·`천원` 셋은 원래 실제
+ * 바둑 용어(각각 돌무더기·바둑판·바둑판 중심점)라서 서열 개편 전 번역을 그대로 재사용한다 —
+ * `Cairn`(돌뫼)·`Goban`(반상)·`Tengen`(천원)은 영어 바둑 커뮤니티가 실제로 쓰는 말이고,
+ * 일본어·중국어는 한자어가 그대로 대응한다(반상=盤面/盘面, 천원=天元/天元).
  *
  * ⚠️ 새 캐릭터를 카탈로그에 추가하면 **네 언어 모두** 여기에 줄을 더해야 한다.
  * `UiStringsBotCharacterTest`가 카탈로그 전 종 × 전 언어를 훑어 빠진 것을 잡는다.
  */
 private val BotCharacterNames: Map<String, Map<UiLanguage, String>> = mapOf(
     "fast_beginner_1" to mapOf(
-        UiLanguage.Korean to "첫돌이",
-        UiLanguage.English to "Pebble",
-        UiLanguage.Japanese to "初石",
-        UiLanguage.ChineseSimplified to "初子",
+        UiLanguage.Korean to "문하생 판다",
+        UiLanguage.English to "Panda the Pupil",
+        UiLanguage.Japanese to "門下生 パンダ",
+        UiLanguage.ChineseSimplified to "门生 熊猫",
     ),
     "fast_beginner_2" to mapOf(
-        UiLanguage.Korean to "연습생 돌뫼",
-        UiLanguage.English to "Cairn the Trainee",
-        UiLanguage.Japanese to "練習生 石丘",
-        UiLanguage.ChineseSimplified to "练习生 石丘",
+        UiLanguage.Korean to "문하생 돌뫼",
+        UiLanguage.English to "Cairn the Pupil",
+        UiLanguage.Japanese to "門下生 石丘",
+        UiLanguage.ChineseSimplified to "门生 石丘",
     ),
     "fast_beginner_3" to mapOf(
-        UiLanguage.Korean to "도장생 반상",
-        UiLanguage.English to "Goban the Student",
-        UiLanguage.Japanese to "道場生 盤面",
-        UiLanguage.ChineseSimplified to "道场生 盘面",
+        UiLanguage.Korean to "수제자 반상",
+        UiLanguage.English to "Goban the Sr. Pupil",
+        UiLanguage.Japanese to "高弟 盤面",
+        UiLanguage.ChineseSimplified to "高徒 盘面",
     ),
     "fast_beginner_4" to mapOf(
-        UiLanguage.Korean to "사범 묘수",
-        UiLanguage.English to "Tesuji the Instructor",
-        UiLanguage.Japanese to "師範 妙手",
-        UiLanguage.ChineseSimplified to "师父 妙手",
+        UiLanguage.Korean to "사범 꼬북",
+        UiLanguage.English to "Turtle the Instructor",
+        UiLanguage.Japanese to "師範 カメ",
+        UiLanguage.ChineseSimplified to "师父 小龟",
     ),
     "fast_beginner_5" to mapOf(
         UiLanguage.Korean to "관장 천원",

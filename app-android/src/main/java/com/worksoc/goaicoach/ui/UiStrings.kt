@@ -615,9 +615,6 @@ internal data class UiStrings(
                 if (nextIsRewarded) "当前第 $current 天 · 点击获得第 $next 天奖励" else "当前第 $current 天 · 第 $next 天无奖励"
         }
 
-    fun botCharacterLabel(character: BotCharacter): String =
-        "${botCharacterName(character)} (${fastBeginnerTierLabel(character.tierWithinGroup ?: 1)})"
-
     /**
      * 잠긴 캐릭터의 **획득 방법** 안내. 경로가 셋으로 갈리므로(출석/광고 조각/유료) 각각을
      * 구분해 보여준다 — 픽커에서 "왜 못 고르는가"가 곧 "무엇을 하면 되는가"여야 한다.
@@ -656,7 +653,7 @@ internal data class UiStrings(
      * ⓑ **`7일차 출석`은 사실이 아니었다.** 확정표(`AttendanceRewardPolicy`)는 조각을
      *   **5·6일차에 1개씩** 주고, 그 회차는 `isRewardedTier`상 **반복되지 않는다**(8일차 위로는
      *   7의 배수만 반복). 7일차는 캐릭터(도장생 반상)뿐이다.
-     * ⓒ **그 출석 1개는 "경로"라 부르기 어렵다.** 받아도 돌뫼는 광고 4번, 묘수는 광고 9번이
+     * ⓒ **그 출석 1개는 "경로"라 부르기 어렵다.** 받아도 돌뫼는 광고 4번, 꼬북은 광고 9번이
      *   여전히 필요하다 — 표의 KDoc도 *"조각의 무광고 경로는 의도적으로 없다"* 고 못박고 있다.
      *   그래서 **광고만 남겼다**(2026-09-01 사용자 결정). ⚠️ 이것은 2026-08-29의 *"획득 수단을
      *   둘 다 적는다"* 를 **의도적으로 뒤집은 것**이다 — 되돌리려면 없는 경로를 만들어 놓고
@@ -911,13 +908,8 @@ internal data class UiStrings(
             is AttendanceReward.PermanentFeature -> permanentFeatureRewardLabel(reward.featureId)
             is AttendanceReward.Consumable ->
                 consumableRewardName(reward.item) + " " + consumableRewardAmount(reward.amount)
-            // ⚠️ 여기는 한국어가 **두 갈래로** 새던 자리다(백로그 #32). 이름은 도메인 리터럴이었고,
-            // 티어명은 도메인의 `PlayLevelSetting.tierLabel`(한국어 전용)을 그대로 썼다 —
-            // `fastBeginnerTierLabel`이 이미 4개 언어를 갖고 있는데도 그쪽을 부르지 않았다.
-            // 도메인 라벨을 UI에 직접 쓰는 곳은 이제 앱 전체에서 없다.
             is AttendanceReward.BotCharacterUnlock -> {
-                val tier = reward.character.tierWithinGroup?.let { fastBeginnerTierLabel(it) }
-                val name = botCharacterName(reward.character) + if (tier != null) " ($tier)" else ""
+                val name = botCharacterName(reward.character)
                 when (language) {
                     UiLanguage.Korean -> "새 캐릭터 · $name"
                     UiLanguage.English -> "New character · $name"

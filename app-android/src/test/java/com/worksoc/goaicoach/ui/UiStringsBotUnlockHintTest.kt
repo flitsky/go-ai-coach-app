@@ -23,7 +23,7 @@ class UiStringsBotUnlockHintTest {
 
     private val languages = UiLanguage.entries
 
-    /** 조각 경로 캐릭터 둘 — 돌뫼(5개)와 묘수(10개). 카탈로그가 단일 출처다. */
+    /** 조각 경로 캐릭터 둘 — 돌뫼(5개)와 꼬북(10개). 카탈로그가 단일 출처다. */
     private val shardCharacters = BotCharacterCatalog.shardPathCharacters()
 
     private fun shardSource(index: Int) =

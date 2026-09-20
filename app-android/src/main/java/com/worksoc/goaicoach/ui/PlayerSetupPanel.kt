@@ -271,7 +271,7 @@ private fun PlayerSetupSideRow(
                         Spacer(Modifier.width(6.dp))
                     }
                     Text(
-                        text = current?.let(strings::botCharacterLabel)
+                        text = current?.let(strings::botCharacterName)
                             ?: strings.fastBeginnerTierLabel(fastBeginnerLevel),
                         style = MaterialTheme.typography.labelLarge,
                     )

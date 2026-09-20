@@ -30,6 +30,18 @@ private val RowBadges: Map<UiLanguage, String> = mapOf(
 )
 
 /**
+ * 번들 참고 기보 행(2026-09-20 사용자 요청) — 대국 기록 목록 맨 위에 항상 고정 노출되는
+ * 예시 판의 요약 줄에서, 날짜가 들어갈 자리에 대신 쓰는 라벨. `ReferenceGameHistoryId` 판별은
+ * `GameHistoryScreen.kt`의 `gameHistorySummaryLine`이 한다.
+ */
+private val ReferenceGameLabels: Map<UiLanguage, String> = mapOf(
+    UiLanguage.Korean to "참고 기보",
+    UiLanguage.English to "Reference game",
+    UiLanguage.Japanese to "参考棋譜",
+    UiLanguage.ChineseSimplified to "参考棋谱",
+)
+
+/**
  * 리플레이 본문이 없는 옛 기록을 눌렀을 때.
  *
  * ⚠️ **"준비 중"이라고 말하지 않는다** — 기다려도 생기지 않는다. 2026-09-18 이전 기록에는
@@ -195,6 +207,9 @@ private val BranchOverwriteMessages: Map<UiLanguage, (Int) -> String> = mapOf(
 internal enum class ReplayNavigation { First, Previous, Next, Last }
 
 internal fun gameReplayTitleFor(language: UiLanguage): String = Titles.getValue(language)
+
+internal fun gameHistoryReferenceLabelFor(language: UiLanguage): String =
+    ReferenceGameLabels.getValue(language)
 
 internal fun gameReplayRowBadgeFor(language: UiLanguage): String = RowBadges.getValue(language)
 

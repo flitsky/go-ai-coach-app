@@ -39,6 +39,7 @@ class UiStringsGameReplayTest {
                 "분기 버튼(시작 국면)" to gameReplayBranchLabelFor(language, 0),
                 "분기 불가 사유" to gameReplayBranchBlockedFor(language),
                 "분기 덮어쓰기 경고" to gameReplayBranchOverwriteMessageFor(language, 17),
+                "참고 기보 라벨" to gameHistoryReferenceLabelFor(language),
             ).forEach { (what, text) ->
                 assertTrue("$language / $what 문구가 비었다", text.isNotBlank())
             }

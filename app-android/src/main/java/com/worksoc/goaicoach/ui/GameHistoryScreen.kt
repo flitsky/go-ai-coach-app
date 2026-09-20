@@ -38,6 +38,9 @@ import com.worksoc.goaicoach.application.gamehistory.GameReplayData
 import com.worksoc.goaicoach.application.gamehistory.buildBranchedGameSnapshot
 import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
 import com.worksoc.goaicoach.persistence.GameHistoryStore
+import com.worksoc.goaicoach.persistence.ReferenceGameHistoryId
+import com.worksoc.goaicoach.persistence.loadReferenceGameReplay
+import com.worksoc.goaicoach.persistence.referenceGameHistoryEntry
 import com.worksoc.goaicoach.shared.GameState
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -69,8 +72,11 @@ internal fun GameHistoryScreen(
 ) {
     val strings = LocalUiStrings.current
     val context = LocalContext.current
+    // ⚠️ **참고 기보는 항상 맨 앞이다** — 실기 기록 정렬(재생 시각 내림차순)에 끼워 넣는 게
+    // 아니라, 그 앞에 붙인다. 그래야 나중에 실제로 둔 판이 쌓여도 순서가 안 밀린다.
     val entries = remember(context) {
-        GameHistoryStore(context).loadAll().sortedByDescending { it.playedAtMillis }
+        listOf(referenceGameHistoryEntry()) +
+            GameHistoryStore(context).loadAll().sortedByDescending { it.playedAtMillis }
     }
 
     // ⚠️ **다시보기는 이 화면의 하위 상태다 — 셸의 목적지가 아니다**(백로그 #156).
@@ -142,9 +148,12 @@ internal fun GameHistoryScreen(
     // `hasReplay`가 이미 걸러 주지만 색인과 파일이 어긋날 수 있어(지우다 만 상태) 여기서도
     // 한 번 더 막는다 — 본문이 없으면 열지 않는다.
     val open: (GameHistoryEntry) -> Unit = { entry ->
-        GameHistoryStore(context).loadReplay(entry.id)
-            ?.takeIf { !it.isEmpty }
-            ?.let { replay -> opened = entry to replay }
+        val replay = if (entry.id == ReferenceGameHistoryId) {
+            loadReferenceGameReplay(context)
+        } else {
+            GameHistoryStore(context).loadReplay(entry.id)
+        }
+        replay?.takeIf { !it.isEmpty }?.let { nonEmptyReplay -> opened = entry to nonEmptyReplay }
     }
 
     Column(
@@ -262,8 +271,15 @@ internal fun gameHistorySummaryLine(entry: GameHistoryEntry, strings: UiStrings)
     // ⚠️ **구분자는 공백이 아니라 ` · `다**(백로그 #108, 사용자 결정 2026-09-06 — "명확하게").
     // 공백으로만 이으면 영어가 한 문장처럼 읽힌다. 다섯 항목이 서로 다른 축이라는 것이
     // 눈에 보여야 한다. 폭이 문제가 되면 구분자가 아니라 **문구를 줄일 것.**
+    // ⚠️ **참고 기보는 날짜 자리에 날짜를 안 적는다**(2026-09-20 사용자 요청) — 그 판이 언제
+    // 두어졌는지는 의미가 없고, "이건 실기록이 아니라 예시"라는 게 한눈에 보여야 한다.
+    val dateOrReferenceLabel = if (entry.id == ReferenceGameHistoryId) {
+        gameHistoryReferenceLabelFor(strings.language)
+    } else {
+        dateFormat(strings.language).format(Date(entry.playedAtMillis))
+    }
     val summary = listOf(
-        dateFormat(strings.language).format(Date(entry.playedAtMillis)),
+        dateOrReferenceLabel,
         "${entry.boardSize}x${entry.boardSize}",
         strings.seatMatchupLabel(entry.playerSetup),
         handicapPhrase(strings, entry.handicapCount),
