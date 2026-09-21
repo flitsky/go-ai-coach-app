@@ -46,7 +46,9 @@ import androidx.compose.ui.zIndex
  * ## ⚠️ 글자를 넣지 않는다
  * 앱 이름을 여기 적는 순간 **4개 언어 × 함정 26번의 "그물 밖 자리"** 가 하나 더 생긴다.
  *
- * ⚠️ **화면 회전으로 다시 재생되면 안 된다** — [rememberSaveable]로 끝난 상태를 들고 간다.
+ * ⚠️ **콜드 스타트(프로세스 최초 기동)일 때만 단 1회 재생되어야 한다** —
+ * 화면 회전뿐 아니라 백그라운드 복귀(Warm Start)나 Activity 재생성 시 다시 뜨지 않도록
+ * [SplashVisibility.hasPlayedInProcess] 프로세스 플래그로 1회 실행을 보장한다.
  */
 /**
  * 스플래시가 **지금 화면을 덮고 있는가**(백로그 #148).
@@ -71,6 +73,14 @@ internal object SplashVisibility {
     var isShowing by mutableStateOf(false)
         private set
 
+    /**
+     * 프로세스 수명(Process Lifetime) 동안 스플래시가 이미 재생(또는 표시)되었는지 여부.
+     * 콜드 스타트(Cold Start) 시에만 최초 1회 재생되고,
+     * 백그라운드 복귀(Warm Start), Activity 재생성, 런처 재진입 등에서는 재실행되지 않도록 막는다.
+     */
+    var hasPlayedInProcess: Boolean = false
+        internal set
+
     @Composable
     fun TrackWhileShown() {
         DisposableEffect(Unit) {
@@ -81,11 +91,13 @@ internal object SplashVisibility {
 
     internal fun resetForTest() {
         isShowing = false
+        hasPlayedInProcess = false
     }
 }
 
 @Composable
 internal fun AppSplash(variant: SplashVariant = SplashVariant.Current) {
+    if (SplashVisibility.hasPlayedInProcess) return
     var finished by rememberSaveable { mutableStateOf(false) }
     if (finished) return
     // 홈 위의 팝업을 미루게 한다(위 KDoc).
@@ -94,7 +106,18 @@ internal fun AppSplash(variant: SplashVariant = SplashVariant.Current) {
     //   영구 기록하는데, 스플래시가 덮은 동안에도 그 시간이 흐르면 한 번도 못 본 안내가 소진된다.
     //   팝업들이 모두 같은 일을 한다(`GuideBlockingOverlays`) — 스플래시만 빠져 있었다.
     GuideBlockingOverlays.TrackWhileShown()
-    SplashPlayer(variant = variant, onFinished = { finished = true })
+    DisposableEffect(Unit) {
+        onDispose {
+            SplashVisibility.hasPlayedInProcess = true
+        }
+    }
+    SplashPlayer(
+        variant = variant,
+        onFinished = {
+            finished = true
+            SplashVisibility.hasPlayedInProcess = true
+        },
+    )
 }
 
 /**

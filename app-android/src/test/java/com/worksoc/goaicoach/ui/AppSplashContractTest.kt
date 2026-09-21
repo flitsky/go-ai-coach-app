@@ -181,4 +181,33 @@ class AppSplashContractTest {
             )
         }
     }
+
+    /**
+     * ⚠️ **스플래시는 프로세스 수명 동안 단 1회(콜드 스타트)만 재생되어야 한다.**
+     *
+     * 백그라운드 복귀(Warm Start), 런처 재진입, 태스크 복귀 시마다 1초 스플래시가 뜨면
+     * 사용자 경험을 심각하게 해친다. 프로세스 인메모리 플래그(`hasPlayedInProcess`)로
+     * 1회 실행을 보장해야 한다.
+     */
+    @Test
+    fun theSplashPlaysOnlyOncePerProcessLifetime() {
+        assertTrue(
+            "스플래시가 프로세스 내 1회 재생 플래그(hasPlayedInProcess)를 관리하지 않는다.",
+            splash.contains("hasPlayedInProcess"),
+        )
+        assertTrue(
+            "AppSplash에서 hasPlayedInProcess 가드 체크가 누락되었다.",
+            splash.contains("SplashVisibility.hasPlayedInProcess"),
+        )
+    }
+
+    @Test
+    fun splashVisibilityTracksProcessPlayedStateAndResets() {
+        SplashVisibility.resetForTest()
+        assertFalse(SplashVisibility.hasPlayedInProcess)
+        SplashVisibility.hasPlayedInProcess = true
+        assertTrue(SplashVisibility.hasPlayedInProcess)
+        SplashVisibility.resetForTest()
+        assertFalse(SplashVisibility.hasPlayedInProcess)
+    }
 }
