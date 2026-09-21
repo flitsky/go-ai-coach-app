@@ -448,7 +448,15 @@ internal fun MenuCard(
                 // 그렇게 짰다가 봤다.
                 .heightIn(min = 120.dp)
                 .background(containerColor)
-                .padding(24.dp),
+                // ⚠️ **아이콘이 있으면 왼쪽만 극단적으로 좁힌다**(2026-09-21 사용자 요청) —
+                // 제목·부제 앞의 위·아래·오른쪽 여백(24dp)은 그대로 두고, 아이콘과 카드 왼쪽
+                // 테두리 사이만 좁혀 아이콘이 카드에 바짝 붙게 한다.
+                .padding(
+                    start = if (icon != null) MenuCardIconStartPadding else 24.dp,
+                    top = 24.dp,
+                    end = 24.dp,
+                    bottom = 24.dp,
+                ),
             // 카드가 최소 높이일 때 내용을 세로 가운데에 둔다. 예전에는 `fillMaxSize` 자식
             // Column의 `Arrangement.Center`가 하던 일인데, 높이가 내용에 따라 달라진 지금은
             // 높이를 아는 쪽이 상자뿐이라 여기로 옮겼다.
@@ -501,6 +509,9 @@ internal fun MenuCard(
  * 2026-09-21 사용자 요청으로 최초 값(56dp)의 150%로 키웠다.
  */
 private val MenuCardIconSize = 84.dp
+
+/** 아이콘이 있을 때 카드 왼쪽 테두리와 아이콘 사이의 여백(2026-09-21 사용자 요청 — 극단적으로 좁힘). */
+private val MenuCardIconStartPadding = 4.dp
 
 /**
  * "대국 하기" 카드 아이콘 — 마지막으로 고른 AI 캐릭터, 없으면 기본값(레벨1, "문하생 판다")을
