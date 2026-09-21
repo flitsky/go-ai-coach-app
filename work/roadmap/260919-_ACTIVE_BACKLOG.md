@@ -220,8 +220,46 @@
 
 > 지금 손대고 있는 것과, **코드는 끝나고 사용자 행동만 남은** 것.
 
-_(현재 없음 — #174의 미확정 전제는 2026-09-20 중간 완료로 정리했다. 완료사항 표 참고,
-남은 실측·처방은 예정사항 **#180**.)_
+### 181. **홈 화면 카드 메뉴에 정사각형 아이콘 추가** [진행중] (AI 모델: Sonnet, 노력정도: 중간)
+
+**목적(2026-09-21 사용자, 최우선순위 지정)**: `MenuCard`(대국 하기·대국 기록·학습 하기) 좌측에
+정사각형 아이콘을 둬서 각 메뉴가 무엇으로 이어지는지 더 직관적이고 흥미롭게 만든다.
+
+1. **대국 하기** — 기본은 "문하생 판다"(`fast_beginner_1`), 사용자가 마지막으로 고른 AI 캐릭터가
+   있으면 그 이미지로 바뀐다.
+2. **대국 기록** — 「보드 미리보기」처럼 축소한 바둑판에, 번들 참고 기보(137수, `ReferenceGameHistory.kt`)를
+   끝까지 둔 국면을 그려 둔다.
+3. **학습 하기** — 바둑판 + 초반 포석 두세 수 + 돋보기(판의 50% 크기)를 겹친 조합 아이콘.
+
+- ⚠️ **`MenuCard`에 아이콘 슬롯이 없다**(`GoCoachHomeScreen.kt:368-435`) — `title`·`subtitle`·색상만
+  받는다. 호출부는 `FirstDolGuideContractTest.kt:332`가 `GoCoachHomeScreen.kt`·`FirstDolGuideReplay.kt`
+  **두 파일로 못박아 둔다** — 새 파라미터를 옵션(기본값 `null`)으로 추가하면 호출부 파일 집합은
+  그대로라 이 계약은 안 깨진다. 다만 실물을 그대로 복제하는 게 목적인 `FirstDolGuideReplay.kt`의
+  "대국 하기" 카드 재현에도 같은 아이콘을 넘겨야 그 화면의 "실물을 조립한다" 원칙이 안 깨진다.
+- ⚠️ **`GoCoachApp.kt`의 상태 훅 예산은 42/42, 여유 0**(`LayeringContractTest`) — 아이콘 계산은 그
+  셸에 새 훅을 넣지 않는다. "마지막 선택 AI 캐릭터"는 이미 셸에 있는 `val screenState`(훅이 아니라
+  파생값)의 `screenState.playerSetup`을 `GoCoachHomeScreen`에 파라미터로 그대로 흘려보내는 것으로
+  끝난다. 참고 기보 국면·학습 미니보드 계산은 `GoCoachHomeScreen.kt` 자신의 `remember`로 처리한다
+  (그 파일은 셸이 아니라 예산 대상이 아니다).
+- **대국 하기 아이콘**: `BotCharacterCatalog.forPlayLevel(...)`이 이미 `PlayerSetupPanel.kt:203`에서
+  쓰는 패턴 — AI 쪽 `playLevel`을 넣으면 캐릭터를 돌려준다. `FastBeginner` 그룹이 아니거나 AI 좌석이
+  없으면(로컬 2인 등) 레벨 1(문하생 판다)로 떨어지게 짜면 "기본은 판다" 요구사항이 저절로 만족된다.
+  그림은 `botAvatarRes`(`BotCharacterAvatar.kt`)가 이미 아는 `bot_fast_beginner_1.webp` 등 5장 —
+  이미 배경이 투명해 원형 클립 없이 정사각형 그대로 써도 잘린 티가 안 난다(직접 확인함).
+- **대국 기록 아이콘**: `ReferenceGameHistory.kt`의 `loadReferenceGameReplay(context)` +
+  `referenceGameHistoryEntry()`의 메타데이터(13×13, 접2, 일본룰, 덤 6.5)로 `GameReplayTimeline.kt`의
+  `buildGameReplayTimeline(...)`을 돌려 `states.last()`(137수를 다 둔 국면)를 얻는다. 그 국면을
+  `GoBoard`(대국 설정 로비의 「보드 미리보기」와 같은 컴포저블)로 작게 그린다 — 좌표·훈수는 꺼 둔다.
+  ⚠️ 자산이 없거나 디코드가 실패하면(`loadReferenceGameReplay`가 `null`) 아이콘 없이 조용히
+  넘어간다 — 장식용이라 실패가 사용자에게 보여선 안 된다.
+- **학습 하기 아이콘**: 실제 대국 규칙(`BoardRules.play`)을 거치지 않고 `GameState.empty(...).copy(stones = …)`로
+  9×9에 돌 두세 개를 직접 앉힌 정적 국면을 `GoBoard`로 작게 그리고, 그 위에 돋보기(이모지 또는 벡터)를
+  판 한 변의 50% 크기로 겹친다(사용자가 준 조합 스펙 그대로).
+- ⚠️ **정사각형 아이콘 컨테이너 패턴이 저장소에 없다** — `BotCharacterAvatar`는 원형, `StudyVideoRow`는
+  16:9 썸네일이다. `MenuCard` 안에 `Row`(기존 `Column`만 있던 자리)로 바꿔 `Box.size(?).clip(RoundedCornerShape(?))`
+  아이콘 슬롯을 새로 만든다.
+
+사용자 결정: 없음 — 위 세 조합은 사용자가 이미 구체적으로 지시했다.
 
 ---
 
