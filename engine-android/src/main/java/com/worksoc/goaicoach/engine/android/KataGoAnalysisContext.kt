@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.engine.android
 
+import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.GameStateReplayer
@@ -13,12 +14,25 @@ internal data class KataGoAnalysisContext(
     val nextPlayer: StoneColor,
     val playedMoves: List<Move>,
     val handicapCount: Int,
+    val initialStones: Map<BoardCoordinate, StoneColor> = emptyMap(),
 )
 
 internal fun KataGoAnalysisContext.replayState(): GameState =
-    GameStateReplayer.replay(
-        boardSize = boardSize,
-        ruleset = ruleset,
-        moves = playedMoves,
-        handicapCount = handicapCount,
-    )
+    if (initialStones.isNotEmpty()) {
+        val initial = GameState(
+            boardSize = boardSize,
+            ruleset = ruleset,
+            nextPlayer = nextPlayer,
+            stones = initialStones,
+            moves = emptyList(),
+            handicapCount = handicapCount,
+        )
+        playedMoves.fold(initial) { state, move -> state.play(move) }
+    } else {
+        GameStateReplayer.replay(
+            boardSize = boardSize,
+            ruleset = ruleset,
+            moves = playedMoves,
+            handicapCount = handicapCount,
+        )
+    }

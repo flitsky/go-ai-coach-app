@@ -120,7 +120,7 @@ object FeatureAccessPolicy {
      */
     private fun unlockOptionsFor(featureId: FeatureId): Set<UnlockOption> =
         when (featureId) {
-            FeatureId.Undo, FeatureId.Eval, FeatureId.TopMoves, FeatureId.MoveReview ->
+            FeatureId.Undo, FeatureId.Eval, FeatureId.TopMoves, FeatureId.MoveReview, FeatureId.BoardScan ->
                 setOf(UnlockOption.AdGrant, UnlockOption.Purchase)
         }
 }

@@ -12,6 +12,15 @@
     -->
     <uses-permission android:name="android.permission.VIBRATE" />
 
+    <!--
+        카메라 바둑판 인식 (백로그 #179, 온디바이스 전용).
+        사진은 기기 내부 메모리에서만 실시간 처리 후 즉시 해제되며 외부 서버로 절대 전송되지 않는다.
+        카메라가 없는 기기(태블릿 등)에서도 갤러리 사진 분석이 가능하도록 required="false"로 둔다.
+    -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
+
     <application
         android:name=".GoAiCoachApplication"
         android:allowBackup="true"

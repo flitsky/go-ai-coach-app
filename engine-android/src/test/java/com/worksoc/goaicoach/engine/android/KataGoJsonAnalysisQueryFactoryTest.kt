@@ -72,4 +72,36 @@ class KataGoJsonAnalysisQueryFactoryTest {
         assertEquals("D4", query.getJSONArray("moves").getJSONArray(0).getString(1))
         assertEquals(1, query.getJSONArray("analyzeTurns").getInt(0))
     }
+
+    @Test
+    fun buildsPositionAnalysisQueryForStaticPositionWithInitialStones() {
+        val initialStones = listOf(
+            StoneColor.Black to BoardCoordinate.fromLabel("E5", BoardSize.Nine),
+            StoneColor.White to BoardCoordinate.fromLabel("D4", BoardSize.Nine),
+        )
+
+        val query = KataGoJsonAnalysisQueryFactory.build(
+            id = "query-static",
+            boardSize = BoardSize.Nine,
+            ruleset = Ruleset.Japanese,
+            playedMoves = emptyList(),
+            limit = AnalysisLimit(
+                visits = 64,
+                includePolicy = true,
+            ),
+            initialStones = initialStones,
+            initialPlayer = StoneColor.White,
+        )
+
+        assertEquals("query-static", query.getString("id"))
+        assertEquals("W", query.getString("initialPlayer"))
+        val stonesJson = query.getJSONArray("initialStones")
+        assertEquals(2, stonesJson.length())
+        assertEquals("B", stonesJson.getJSONArray(0).getString(0))
+        assertEquals("E5", stonesJson.getJSONArray(0).getString(1))
+        assertEquals("W", stonesJson.getJSONArray(1).getString(0))
+        assertEquals("D4", stonesJson.getJSONArray(1).getString(1))
+        assertEquals(0, query.getJSONArray("moves").length())
+        assertEquals(0, query.getJSONArray("analyzeTurns").getInt(0))
+    }
 }

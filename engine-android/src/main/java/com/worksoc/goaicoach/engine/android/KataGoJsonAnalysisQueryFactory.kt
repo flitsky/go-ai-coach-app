@@ -1,10 +1,12 @@
 package com.worksoc.goaicoach.engine.android
 
 import com.worksoc.goaicoach.shared.AnalysisLimit
+import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.DefaultKomi
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.StoneColor
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -18,6 +20,8 @@ internal object KataGoJsonAnalysisQueryFactory {
         refineMove: Move.Play? = null,
         includePolicyOverride: Boolean? = null,
         komi: Double = DefaultKomi,
+        initialStones: List<Pair<StoneColor, BoardCoordinate>> = emptyList(),
+        initialPlayer: StoneColor = StoneColor.Black,
     ): JSONObject {
         val overrideSettings = JSONObject()
         limit.timeMillis?.let { overrideSettings.put("maxTime", it / 1_000.0) }
@@ -33,8 +37,8 @@ internal object KataGoJsonAnalysisQueryFactory {
             .put("komi", komi)
             .put("boardXSize", boardSize.value)
             .put("boardYSize", boardSize.value)
-            .put("initialPlayer", "B")
-            .put("initialStones", JSONArray())
+            .put("initialPlayer", initialPlayer.toGtpColor())
+            .put("initialStones", initialStones.toJsonInitialStones(boardSize))
             .put("moves", queryMoves.toJsonMoves(boardSize))
             .put("analyzeTurns", JSONArray().put(queryMoves.size))
             .put("maxVisits", limit.visits)
@@ -44,6 +48,17 @@ internal object KataGoJsonAnalysisQueryFactory {
             .put("overrideSettings", overrideSettings)
             .put("priority", 0)
     }
+
+    private fun List<Pair<StoneColor, BoardCoordinate>>.toJsonInitialStones(boardSize: BoardSize): JSONArray =
+        JSONArray().also { stones ->
+            forEach { (color, coord) ->
+                stones.put(
+                    JSONArray()
+                        .put(color.toGtpColor())
+                        .put(coord.label(boardSize)),
+                )
+            }
+        }
 
     private fun List<Move>.toJsonMoves(boardSize: BoardSize): JSONArray =
         JSONArray().also { moves ->

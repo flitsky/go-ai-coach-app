@@ -8,6 +8,7 @@ import com.worksoc.goaicoach.shared.EngineCoreApi
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.EngineStatus
 import com.worksoc.goaicoach.shared.FinalScoreResult
+import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.MoveResult
 import com.worksoc.goaicoach.shared.Ruleset
@@ -69,6 +70,8 @@ internal class DeferredEngineCoreApi(
     ): EngineStatus = api().newGame(boardSize, ruleset, handicapCount, komi)
 
     override suspend fun playMove(move: Move): EngineStatus = api().playMove(move)
+
+    override suspend fun syncStaticPosition(state: GameState): EngineStatus = api().syncStaticPosition(state)
 
     override suspend fun genMove(player: StoneColor): MoveResult = api().genMove(player)
 

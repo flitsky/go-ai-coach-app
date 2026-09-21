@@ -47,6 +47,29 @@ class KataGoAnalysisContextTest {
     }
 
     @Test
+    fun replayStatePreservesStaticInitialStones() {
+        val stones = mapOf(
+            BoardCoordinate.fromLabel("E5", BoardSize.Nine) to StoneColor.Black,
+            BoardCoordinate.fromLabel("D4", BoardSize.Nine) to StoneColor.White,
+        )
+        val context = KataGoAnalysisContext(
+            boardSize = BoardSize.Nine,
+            ruleset = Ruleset.Japanese,
+            nextPlayer = StoneColor.White,
+            playedMoves = emptyList(),
+            handicapCount = 0,
+            initialStones = stones,
+        )
+
+        val state = context.replayState()
+
+        assertEquals(StoneColor.White, state.nextPlayer)
+        assertEquals(2, state.stones.size)
+        assertEquals(StoneColor.Black, state.stoneAt(BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+        assertEquals(StoneColor.White, state.stoneAt(BoardCoordinate.fromLabel("D4", BoardSize.Nine)))
+    }
+
+    @Test
     fun gtpCandidateFallbackUsesWhiteTurnForHandicapOpening() = runBlocking {
         val context = KataGoAnalysisContext(
             boardSize = BoardSize.Thirteen,

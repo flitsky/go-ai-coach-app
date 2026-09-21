@@ -383,6 +383,7 @@ private fun featureGlyphRes(featureId: FeatureId): Int = when (featureId) {
     FeatureId.Eval -> R.drawable.reward_eval
     FeatureId.TopMoves -> R.drawable.reward_top_moves
     FeatureId.MoveReview -> R.drawable.reward_move_review
+    FeatureId.BoardScan -> R.drawable.reward_eval
 }
 
 /** 이 보상이 걸고 있는 캐릭터. 조각도 해금도 같은 얼굴을 쓴다 — 다른 것은 색이 얼마나 도느냐다. */

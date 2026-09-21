@@ -57,6 +57,7 @@ class FeatureAccessPolicyTest {
         assertEquals(expected, FeatureAccessPolicy.resolve(FeatureId.Eval, PremiumState(), nowMillis = 0L))
         assertEquals(expected, FeatureAccessPolicy.resolve(FeatureId.TopMoves, PremiumState(), nowMillis = 0L))
         assertEquals(expected, FeatureAccessPolicy.resolve(FeatureId.MoveReview, PremiumState(), nowMillis = 0L))
+        assertEquals(expected, FeatureAccessPolicy.resolve(FeatureId.BoardScan, PremiumState(), nowMillis = 0L))
     }
 
     /**

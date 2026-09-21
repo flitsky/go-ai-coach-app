@@ -360,6 +360,13 @@ dependencies {
     // 여기만 -ktx를 쓰면 같은 일을 두 방식으로 하게 된다.
     implementation(libs.play.app.update)
 
+    // CameraX (백로그 #179 - 카메라 바둑판 인식)
+    implementation(libs.androidx.camera.core)
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.androidx.camera.view)
+    implementation(libs.guava)
+
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 

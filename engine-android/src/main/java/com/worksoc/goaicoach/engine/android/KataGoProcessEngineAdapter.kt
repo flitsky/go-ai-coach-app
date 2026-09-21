@@ -11,6 +11,7 @@ import com.worksoc.goaicoach.shared.EngineMode
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.EngineStatus
 import com.worksoc.goaicoach.shared.FinalScoreResult
+import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.MoveResult
 import com.worksoc.goaicoach.shared.Ruleset
@@ -38,6 +39,7 @@ internal class KataGoProcessEngineAdapter(
     private var handicapCount: Int = 0
     private var komi: Double = DefaultKomi
     private var nextPlayer: StoneColor = StoneColor.Black
+    private var initialStones: Map<BoardCoordinate, StoneColor> = emptyMap()
     private var process: Process? = null
     private var input: BufferedWriter? = null
     private var output: BufferedReader? = null
@@ -81,6 +83,7 @@ internal class KataGoProcessEngineAdapter(
         this.komi = komi
         nextPlayer = if (handicapCount > 0) StoneColor.White else StoneColor.Black
         playedMoves.clear()
+        initialStones = emptyMap()
         sendCommand(KataGoProtocolCommands.boardSize(boardSize))
         sendCommand(KataGoProtocolCommands.komi(komi))
         sendCommand(KataGoProtocolCommands.rules(ruleset))
@@ -90,6 +93,19 @@ internal class KataGoProcessEngineAdapter(
             sendCommand(KataGoProtocolCommands.setFreeHandicap(positions, boardSize))
         }
         return EngineStatus.ready("KataGo new ${boardSize.value}x${boardSize.value} ${ruleset.scoringLabel} game")
+    }
+
+    override suspend fun syncStaticPosition(state: GameState): EngineStatus {
+        ensureProcessStarted()
+        this.boardSize = state.boardSize
+        this.ruleset = state.ruleset
+        this.handicapCount = state.handicapCount
+        this.komi = state.komi
+        this.nextPlayer = state.nextPlayer
+        this.initialStones = state.stones
+        this.playedMoves.clear()
+        this.playedMoves += state.moves
+        return EngineStatus.ready("KataGo static position synced: ${state.stones.size} stone(s), ${state.nextPlayer} turn")
     }
 
     override suspend fun playMove(move: Move): EngineStatus {
@@ -387,6 +403,7 @@ internal class KataGoProcessEngineAdapter(
             nextPlayer = nextPlayer,
             playedMoves = playedMoves.toList(),
             handicapCount = handicapCount,
+            initialStones = initialStones,
         )
 
     private suspend fun applySearchLimit(limit: AnalysisLimit) {
@@ -424,6 +441,14 @@ internal class KataGoProcessEngineAdapter(
             refineMove = refineMove,
             includePolicyOverride = includePolicyOverride,
             komi = komi,
+            initialStones = initialStones.map { (coord, color) -> color to coord },
+            initialPlayer = if (initialStones.isNotEmpty()) {
+                nextPlayer
+            } else if (handicapCount > 0) {
+                StoneColor.White
+            } else {
+                StoneColor.Black
+            },
         )
     }
 

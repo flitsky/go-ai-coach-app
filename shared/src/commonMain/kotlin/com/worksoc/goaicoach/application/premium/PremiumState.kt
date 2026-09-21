@@ -18,6 +18,7 @@ enum class FeatureId {
     Eval,
     TopMoves,
     MoveReview,
+    BoardScan,
 }
 
 /**

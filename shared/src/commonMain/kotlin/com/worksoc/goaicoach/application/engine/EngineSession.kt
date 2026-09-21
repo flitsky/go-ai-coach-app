@@ -34,6 +34,9 @@ data class LocalEngineMoveResult(
 )
 
 suspend fun EngineCoreApi.syncToGameState(state: GameState): EngineStatus {
+    if (state.handicapCount == 0 && state.moves.isEmpty() && state.stones.isNotEmpty()) {
+        return syncStaticPosition(state)
+    }
     val status = newGame(state.boardSize, state.ruleset, state.handicapCount, state.komi)
     state.moves.forEach { move ->
         playMove(move)

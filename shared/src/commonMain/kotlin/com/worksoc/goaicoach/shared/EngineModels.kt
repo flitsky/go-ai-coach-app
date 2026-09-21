@@ -40,6 +40,13 @@ interface EngineCoreApi {
     suspend fun undoMove(): EngineStatus
 
     /**
+     * Synchronizes a static board position (such as a position detected from a camera or manual setup)
+     * where stones are already placed without a historical move sequence.
+     */
+    suspend fun syncStaticPosition(state: GameState): EngineStatus =
+        EngineStatus.ready("Static position synced: ${state.stones.size} stone(s)")
+
+    /**
      * Clears engine-side search state without changing the board.
      *
      * This is intentionally separate from app-level analysis caching. KataGo
