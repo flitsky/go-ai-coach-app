@@ -79,31 +79,7 @@ internal fun CompactScoringAndBoardSettingsPanel(
     val handicapOptions = listOf(0) + (2..boardSize.maxHandicapCount).toList()
 
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        // 1행: 계가 방식 / 덤
-        Row(
-            // ⚠️ **`IntrinsicSize.Min`으로 묶는다**(백로그 #107). 아래 칸 글자가 두 줄로 접히면
-            // 그 칸만 높아져 짝이 어긋난다 — 출석판이 같은 처방으로 고쳤다(#64 ⓐ, 함정 9번).
-            modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            CompactSettingDropdownCell(
-                modifier = Modifier.weight(1f).fillMaxHeight(),
-                valueText = strings.compactRulesetLabel(ruleset),
-                options = Ruleset.entries,
-                optionLabel = strings::compactRulesetLabel,
-                onSelected = onRulesetChange,
-                enabled = canChangeMatchSetup,
-            )
-            CompactSettingDropdownCell(
-                modifier = Modifier.weight(1f).fillMaxHeight(),
-                valueText = strings.compactKomiLabel(komi),
-                options = KomiOptions,
-                optionLabel = strings::komiValueLabel,
-                onSelected = onKomiChange,
-                enabled = canChangeMatchSetup,
-            )
-        }
-        // 2행: 바둑판 크기 / 접바둑
+        // 1행: 바둑판 크기 / 접바둑
         Row(
             // ⚠️ **`IntrinsicSize.Min`으로 묶는다**(백로그 #107). 아래 칸 글자가 두 줄로 접히면
             // 그 칸만 높아져 짝이 어긋난다 — 출석판이 같은 처방으로 고쳤다(#64 ⓐ, 함정 9번).
@@ -124,6 +100,30 @@ internal fun CompactScoringAndBoardSettingsPanel(
                 options = handicapOptions,
                 optionLabel = strings::compactHandicapValueLabel,
                 onSelected = onHandicapCountChange,
+                enabled = canChangeMatchSetup,
+            )
+        }
+        // 2행: 계가 방식 / 덤
+        Row(
+            // ⚠️ **`IntrinsicSize.Min`으로 묶는다**(백로그 #107). 아래 칸 글자가 두 줄로 접히면
+            // 그 칸만 높아져 짝이 어긋난다 — 출석판이 같은 처방으로 고쳤다(#64 ⓐ, 함정 9번).
+            modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            CompactSettingDropdownCell(
+                modifier = Modifier.weight(1f).fillMaxHeight(),
+                valueText = strings.compactRulesetLabel(ruleset),
+                options = Ruleset.entries,
+                optionLabel = strings::compactRulesetLabel,
+                onSelected = onRulesetChange,
+                enabled = canChangeMatchSetup,
+            )
+            CompactSettingDropdownCell(
+                modifier = Modifier.weight(1f).fillMaxHeight(),
+                valueText = strings.compactKomiLabel(komi),
+                options = KomiOptions,
+                optionLabel = strings::komiValueLabel,
+                onSelected = onKomiChange,
                 enabled = canChangeMatchSetup,
             )
         }

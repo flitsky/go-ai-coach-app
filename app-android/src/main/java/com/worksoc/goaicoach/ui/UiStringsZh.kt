@@ -112,7 +112,6 @@ internal val UiStringsChineseSimplified = UiStringsKorean.copy(
     backToHome = "返回主菜单",
     notImplementedMessage = "此功能目前正在准备中。",
     showScoreGraph = "显示得分图",
-    boardPreview = "棋盘预览",
     homeStartMatchSubtitle = "设置并开始与 AI 或本地玩家的对局。",
     homeStudySubtitle = "入门讲座、基础行棋与死活，尽在此处。",
     gameHistoryTitle = "对局记录",

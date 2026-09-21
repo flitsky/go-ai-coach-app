@@ -113,7 +113,6 @@ internal val UiStringsJapanese = UiStringsKorean.copy(
     notImplementedMessage = "この機能は現在準備中です。",
     // 신규 로컬라이징 필드
     showScoreGraph = "スコアグラフ表示",
-    boardPreview = "盤面プレビュー",
     homeStartMatchSubtitle = "AIやローカルプレイヤーとの対局を設定して開始します。",
     homeStudySubtitle = "入門講座・基本の形・詰碁をここで学びましょう。",
     gameHistoryTitle = "対局記録",

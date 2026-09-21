@@ -113,7 +113,6 @@ internal val UiStringsEnglish = UiStringsKorean.copy(
     backToHome = "Main Menu",
     notImplementedMessage = "This feature is currently under development.",
     showScoreGraph = "Show Score Graph",
-    boardPreview = "Board Preview",
     homeStartMatchSubtitle = "Configure and start a match with AI or local players.",
     homeStudySubtitle = "Learn Go with lessons, fundamental shapes, and life-and-death.",
     gameHistoryTitle = "Game History",

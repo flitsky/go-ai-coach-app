@@ -236,7 +236,6 @@ internal data class UiStrings(
     val backToHome: String,
     val notImplementedMessage: String,
     val showScoreGraph: String,
-    val boardPreview: String,
     val homeStartMatchSubtitle: String,
     val homeStudySubtitle: String,
     val gameHistoryTitle: String,

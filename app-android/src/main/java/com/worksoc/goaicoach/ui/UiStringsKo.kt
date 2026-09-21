@@ -113,7 +113,6 @@ internal val UiStringsKorean = UiStrings(
     backToHome = "메인으로",
     notImplementedMessage = "아직 준비 중인 기능입니다.",
     showScoreGraph = "스코어 그래프 보기",
-    boardPreview = "보드 미리보기",
     homeStartMatchSubtitle = "AI 혹은 로컬 플레이어와 대국을 설정하고 시작합니다.",
     homeStudySubtitle = "유튜브 기초 강좌·행마·사활을 한자리에서 배워보세요.",
     gameHistoryTitle = "대국 기록",

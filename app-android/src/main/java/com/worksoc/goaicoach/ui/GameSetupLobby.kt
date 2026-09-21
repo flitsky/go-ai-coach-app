@@ -153,18 +153,12 @@ internal fun GameSetupLobby(
             )
 
             // [3] 50% 비율 축소 실시간 바둑판 프리뷰
+            // ⚠️ **라벨 텍스트를 의도적으로 없앴다** — 세로 공간을 확보하기 위해서다. 보드판이
+            // 그려지는 것 자체로 미리보기임이 드러난다고 판단(2026-09-21 사용자 결정).
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(
-                    text = strings.boardPreview,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.secondary,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-
                 // 50% 비율 축소 렌더링
                 Row(
                     modifier = Modifier.fillMaxWidth(0.5f),
