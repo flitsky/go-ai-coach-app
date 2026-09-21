@@ -50,7 +50,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -59,12 +58,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.worksoc.goaicoach.application.botcharacter.BotCharacter
 import com.worksoc.goaicoach.application.botcharacter.BotCharacterCatalog
-import com.worksoc.goaicoach.application.gamehistory.buildGameReplayTimeline
 import com.worksoc.goaicoach.application.guide.GuideSurface
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
-import com.worksoc.goaicoach.persistence.loadReferenceGameReplay
-import com.worksoc.goaicoach.persistence.referenceGameHistoryEntry
 import com.worksoc.goaicoach.presentation.KaTrainUxOptions
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
@@ -98,10 +94,8 @@ internal fun GoCoachHomeScreen(
     modifier: Modifier = Modifier,
 ) {
     val strings = LocalUiStrings.current
-    val context = LocalContext.current
     var showOverwriteWarningDialog by remember { mutableStateOf(false) }
     val lastSelectedAiCharacter = remember(playerSetup) { currentAiCharacterOrDefault(playerSetup) }
-    val referenceKifuFinalState = remember(context) { loadReferenceKifuFinalState(context) }
 
     Column(
         modifier = modifier
@@ -250,9 +244,7 @@ internal fun GoCoachHomeScreen(
                 titleColor = MaterialTheme.colorScheme.onSurfaceVariant,
                 subtitleColor = MaterialTheme.colorScheme.secondary,
                 onClick = onGameHistoryClick,
-                icon = referenceKifuFinalState?.let { finalState ->
-                    { ReferenceKifuBoardIcon(gameState = finalState) }
-                },
+                icon = { GameHistoryBoardIcon() },
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -551,31 +543,92 @@ internal fun BotCharacterSquareIcon(character: BotCharacter) {
 }
 
 /**
- * "대국 기록" 카드 아이콘이 쓸, 번들 참고 기보(137수)를 끝까지 둔 국면(백로그 #181). 에셋이
- * 없거나 디코드가 실패하면 `null` — 장식용 아이콘이라 실패를 사용자에게 보이지 않고 그냥
- * 아이콘 없이 넘어간다(호출부의 `icon = referenceKifuFinalState?.let { ... }`).
+ * "대국 기록" 카드 아이콘이 그릴 9x9 종국 국면(백로그 #181, 2026-09-21 사용자 요청으로
+ * 13x13 137수 참고 기보에서 교체). 13x13은 아이콘 크기(84dp)에서 169칸이 너무 촘촘해
+ * 돌인지 격자선인지 구분이 안 됐다 — 9x9(81칸)가 그 크기에서 읽힌다.
+ *
+ * ⚠️ **가짜로 지어낸 배치가 아니다.** 에뮬레이터에서 실제로 둔 9x9 대국(문하생 판다 대
+ * 관장 천원, 105수, 흑 6.5집승, `game_history/replay/1789951644440-318459.json`)을
+ * `GameReplayCodec.decode` + `buildGameReplayTimeline`으로 그대로 재생해 얻은 **종국 결과**를
+ * 옮겼다 — 따낸 돌까지 규칙대로 반영된 진짜 종국 모양이다(원본 파일은 이 기기에만 있는 테스트
+ * 데이터라 에셋으로 묶지 않고, 그 결과만 고정값으로 옮겨 왔다).
  */
-private fun loadReferenceKifuFinalState(context: android.content.Context): GameState? {
-    val entry = referenceGameHistoryEntry()
-    val replay = loadReferenceGameReplay(context)?.takeIf { !it.isEmpty } ?: return null
-    return buildGameReplayTimeline(
-        boardSize = BoardSize(entry.boardSize),
-        ruleset = entry.ruleset,
-        handicapCount = entry.handicapCount,
-        komi = entry.komi,
-        moves = replay.moves,
-    ).states.last()
-}
+private val GameHistoryPreviewGameState: GameState = GameState.empty(
+    boardSize = BoardSize.Nine,
+    ruleset = Ruleset.Japanese,
+).copy(
+    stones = mapOf(
+        BoardCoordinate(row = 0, column = 1) to StoneColor.White,
+        BoardCoordinate(row = 0, column = 2) to StoneColor.Black,
+        BoardCoordinate(row = 0, column = 3) to StoneColor.Black,
+        BoardCoordinate(row = 0, column = 4) to StoneColor.White,
+        BoardCoordinate(row = 0, column = 5) to StoneColor.White,
+        BoardCoordinate(row = 0, column = 7) to StoneColor.White,
+        BoardCoordinate(row = 1, column = 0) to StoneColor.White,
+        BoardCoordinate(row = 1, column = 2) to StoneColor.Black,
+        BoardCoordinate(row = 1, column = 3) to StoneColor.White,
+        BoardCoordinate(row = 1, column = 4) to StoneColor.White,
+        BoardCoordinate(row = 1, column = 5) to StoneColor.White,
+        BoardCoordinate(row = 1, column = 8) to StoneColor.White,
+        BoardCoordinate(row = 2, column = 0) to StoneColor.Black,
+        BoardCoordinate(row = 2, column = 1) to StoneColor.Black,
+        BoardCoordinate(row = 2, column = 2) to StoneColor.Black,
+        BoardCoordinate(row = 2, column = 3) to StoneColor.Black,
+        BoardCoordinate(row = 2, column = 4) to StoneColor.White,
+        BoardCoordinate(row = 2, column = 5) to StoneColor.White,
+        BoardCoordinate(row = 2, column = 6) to StoneColor.White,
+        BoardCoordinate(row = 2, column = 7) to StoneColor.White,
+        BoardCoordinate(row = 2, column = 8) to StoneColor.White,
+        BoardCoordinate(row = 3, column = 0) to StoneColor.Black,
+        BoardCoordinate(row = 3, column = 2) to StoneColor.Black,
+        BoardCoordinate(row = 3, column = 3) to StoneColor.Black,
+        BoardCoordinate(row = 3, column = 4) to StoneColor.Black,
+        BoardCoordinate(row = 3, column = 5) to StoneColor.White,
+        BoardCoordinate(row = 3, column = 6) to StoneColor.Black,
+        BoardCoordinate(row = 3, column = 7) to StoneColor.Black,
+        BoardCoordinate(row = 3, column = 8) to StoneColor.Black,
+        BoardCoordinate(row = 4, column = 3) to StoneColor.Black,
+        BoardCoordinate(row = 4, column = 4) to StoneColor.Black,
+        BoardCoordinate(row = 4, column = 5) to StoneColor.Black,
+        BoardCoordinate(row = 4, column = 6) to StoneColor.Black,
+        BoardCoordinate(row = 4, column = 7) to StoneColor.White,
+        BoardCoordinate(row = 4, column = 8) to StoneColor.White,
+        BoardCoordinate(row = 5, column = 0) to StoneColor.Black,
+        BoardCoordinate(row = 5, column = 2) to StoneColor.Black,
+        BoardCoordinate(row = 5, column = 3) to StoneColor.Black,
+        BoardCoordinate(row = 5, column = 4) to StoneColor.Black,
+        BoardCoordinate(row = 5, column = 5) to StoneColor.White,
+        BoardCoordinate(row = 5, column = 6) to StoneColor.Black,
+        BoardCoordinate(row = 5, column = 7) to StoneColor.White,
+        BoardCoordinate(row = 5, column = 8) to StoneColor.White,
+        BoardCoordinate(row = 6, column = 4) to StoneColor.Black,
+        BoardCoordinate(row = 6, column = 5) to StoneColor.White,
+        BoardCoordinate(row = 6, column = 6) to StoneColor.White,
+        BoardCoordinate(row = 7, column = 0) to StoneColor.Black,
+        BoardCoordinate(row = 7, column = 2) to StoneColor.Black,
+        BoardCoordinate(row = 7, column = 3) to StoneColor.Black,
+        BoardCoordinate(row = 7, column = 4) to StoneColor.Black,
+        BoardCoordinate(row = 7, column = 5) to StoneColor.Black,
+        BoardCoordinate(row = 7, column = 6) to StoneColor.White,
+        BoardCoordinate(row = 7, column = 7) to StoneColor.White,
+        BoardCoordinate(row = 7, column = 8) to StoneColor.White,
+        BoardCoordinate(row = 8, column = 1) to StoneColor.Black,
+        BoardCoordinate(row = 8, column = 2) to StoneColor.Black,
+        BoardCoordinate(row = 8, column = 3) to StoneColor.Black,
+        BoardCoordinate(row = 8, column = 4) to StoneColor.Black,
+        BoardCoordinate(row = 8, column = 5) to StoneColor.White,
+        BoardCoordinate(row = 8, column = 6) to StoneColor.White,
+    ),
+)
 
 /**
  * 「보드 미리보기」(`GameSetupLobby.kt`)와 같은 `GoBoard`를 아이콘 크기로 그린다. `isGameEnded =
- * true`로 둬 끝난 대국다운 톤(무채색 쪽에 가까운 돌 렌더링)을 준다 — 참고 기보는 실제로 끝난
- * 판이다.
+ * true`로 둬 끝난 대국다운 톤(무채색 쪽에 가까운 돌 렌더링)을 준다 — 실제로 끝난 판이다.
  */
 @Composable
-private fun ReferenceKifuBoardIcon(gameState: GameState) {
+private fun GameHistoryBoardIcon() {
     GoBoard(
-        gameState = gameState,
+        gameState = GameHistoryPreviewGameState,
         candidateMoves = emptyList(),
         moveReviews = emptyList(),
         ownershipEstimate = null,
