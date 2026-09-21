@@ -20,10 +20,10 @@ import org.junit.Test
 class CurrentAiCharacterOrDefaultTest {
 
     @Test
-    fun defaultPlayerSetupResolvesToTheLevelOneCharacter() {
-        // PlayerSetup()의 기본값 그대로 — 흑은 사람, 백은 AI 레벨1(문하생 판다).
+    fun defaultPlayerSetupResolvesToTheLevelThreeCharacter() {
+        // 2026-09-21 사용자 요청: PlayerSetup() 기본 상태의 홈 아이콘은 문하생 판다가 아니라 수제자 반상(3단계).
         val character = currentAiCharacterOrDefault(PlayerSetup())
-        assertEquals("fast_beginner_1", character.id.raw)
+        assertEquals("fast_beginner_3", character.id.raw)
     }
 
     @Test
@@ -73,25 +73,25 @@ class CurrentAiCharacterOrDefaultTest {
     }
 
     /**
-     * 로컬 2인 대국처럼 AI 좌석이 아예 없으면 기본값(레벨1)으로 떨어진다 — `null`을 던지거나
+     * 로컬 2인 대국처럼 AI 좌석이 아예 없으면 기본값(레벨3)으로 떨어진다 — `null`을 던지거나
      * 예외를 내지 않는다는 것이 핵심이다.
      */
     @Test
-    fun fallsBackToLevelOneWhenNeitherSeatIsAi() {
+    fun fallsBackToLevelThreeWhenNeitherSeatIsAi() {
         val playerSetup = PlayerSetup(
             black = SidePlayerSetup(controller = SeatController.Human),
             white = SidePlayerSetup(controller = SeatController.Human),
         )
-        assertEquals("fast_beginner_1", currentAiCharacterOrDefault(playerSetup).id.raw)
+        assertEquals("fast_beginner_3", currentAiCharacterOrDefault(playerSetup).id.raw)
     }
 
     /**
      * `FastBeginner`가 아닌 그룹(초급/중급/고급 — 대국 설정 UI에서는 숨겨져 있지만 저장값으로는
-     * 남아 있을 수 있다)이 저장돼 있으면 레벨 1로 떨어진다 — 존재하지 않는 캐릭터를 가리키다
+     * 남아 있을 수 있다)이 저장돼 있으면 기본값(레벨3)으로 떨어진다 — 존재하지 않는 캐릭터를 가리키다
      * `forPlayLevel`이 `null`을 돌려주는 경로를 막는다.
      */
     @Test
-    fun fallsBackToLevelOneWhenTheAiSeatIsNotInTheFastBeginnerGroup() {
+    fun fallsBackToLevelThreeWhenTheAiSeatIsNotInTheFastBeginnerGroup() {
         val playerSetup = PlayerSetup(
             black = SidePlayerSetup(controller = SeatController.Human),
             white = SidePlayerSetup(
@@ -99,6 +99,6 @@ class CurrentAiCharacterOrDefaultTest {
                 playLevel = PlayLevelSetting(group = PlayLevelGroup.Intermediate, level = 3),
             ),
         )
-        assertEquals("fast_beginner_1", currentAiCharacterOrDefault(playerSetup).id.raw)
+        assertEquals("fast_beginner_3", currentAiCharacterOrDefault(playerSetup).id.raw)
     }
 }

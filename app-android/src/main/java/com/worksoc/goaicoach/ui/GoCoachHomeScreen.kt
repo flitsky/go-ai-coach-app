@@ -590,33 +590,44 @@ internal fun MenuCard(
 
 /**
  * [MenuCard] 아이콘 슬롯(바깥 정사각형)의 한 변. 안쪽 그림은 비대칭 여백만큼 더 작다.
- * 2026-09-21 사용자 요청으로 최초 값(56dp)의 150%(84dp)로 키웠다가, 같은 날 다시 90%인
- * 75.6dp로 줄였다.
+ * 2026-09-21 사용자 요청으로 최초 값(56dp)의 150%(84dp)로 키웠다가, 90%(75.6dp),
+ * 다시 같은 날 90%인 68dp로 축소 조정했다.
  */
-private val MenuCardIconSize = 75.6.dp
+private val MenuCardIconSize = 68.dp
 
 /** 아이콘이 있을 때 카드 왼쪽 테두리와 아이콘 사이의 여백(2026-09-21 사용자 요청 — 극단적으로 좁힘). */
 private val MenuCardIconStartPadding = 4.dp
 
 /**
- * "대국 하기" 카드 아이콘 — 마지막으로 고른 AI 캐릭터, 없으면 기본값(레벨1, "문하생 판다")을
- * 돌려준다(백로그 #181). [PlayerSetup]의 두 좌석 중 AI가 맡은 쪽을 찾고, 그 쪽이 없거나
- * `FastBeginner` 그룹이 아니면(로컬 2인 대국·구 그룹 등) 레벨 1로 떨어진다 —
- * `PlayerSetupPanel.kt`의 캐릭터 픽커가 쓰는 것과 같은 산수다.
+ * "대국 하기" 카드 아이콘 — 마지막으로 고른 AI 캐릭터, 없거나 기본 설정이면 기본값(레벨3, "수제자 반상")을
+ * 돌려준다(백로그 #181, 2026-09-21 사용자 요청으로 기본값을 판다에서 수제자 반상으로 변경).
+ * [PlayerSetup]이 기본값(흑 사람, 백 AI 1단계)인 초기 상태이거나, 두 좌석 중 AI가 없거나
+ * `FastBeginner` 그룹이 아니면 기본값인 레벨 3("수제자 반상")을 돌려준다.
  */
 internal fun currentAiCharacterOrDefault(playerSetup: PlayerSetup): BotCharacter {
+    if (playerSetup == DefaultPlayerSetup) {
+        return defaultAiCharacter()
+    }
     val aiPlayLevel = listOf(playerSetup.white, playerSetup.black)
         .firstOrNull { side -> side.controller == SeatController.Ai }
         ?.playLevel
     val fastBeginnerLevel = if (aiPlayLevel?.group == PlayLevelGroup.FastBeginner) {
         aiPlayLevel.safeLevel
     } else {
-        1
+        DefaultAiCharacterLevel
     }
     return BotCharacterCatalog.forPlayLevel(
         PlayLevelSetting(group = PlayLevelGroup.FastBeginner, level = fastBeginnerLevel),
-    ) ?: BotCharacterCatalog.fastBeginnerRoster.first()
+    ) ?: defaultAiCharacter()
 }
+
+private val DefaultPlayerSetup = PlayerSetup()
+private const val DefaultAiCharacterLevel = 3
+private fun defaultAiCharacter(): BotCharacter =
+    BotCharacterCatalog.forPlayLevel(
+        PlayLevelSetting(group = PlayLevelGroup.FastBeginner, level = DefaultAiCharacterLevel),
+    ) ?: BotCharacterCatalog.fastBeginnerRoster.getOrNull(2)
+        ?: BotCharacterCatalog.fastBeginnerRoster.first()
 
 /**
  * [currentAiCharacterOrDefault]가 고른 캐릭터를 정사각형 그대로 그린다. `BotCharacterAvatar`를
