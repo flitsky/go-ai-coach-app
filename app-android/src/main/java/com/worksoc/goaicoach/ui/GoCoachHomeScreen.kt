@@ -6,6 +6,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -21,13 +22,17 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -44,12 +49,30 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.worksoc.goaicoach.application.botcharacter.BotCharacter
+import com.worksoc.goaicoach.application.botcharacter.BotCharacterCatalog
+import com.worksoc.goaicoach.application.gamehistory.buildGameReplayTimeline
 import com.worksoc.goaicoach.application.guide.GuideSurface
+import com.worksoc.goaicoach.match.PlayerSetup
+import com.worksoc.goaicoach.match.SeatController
+import com.worksoc.goaicoach.persistence.loadReferenceGameReplay
+import com.worksoc.goaicoach.persistence.referenceGameHistoryEntry
+import com.worksoc.goaicoach.presentation.KaTrainUxOptions
+import com.worksoc.goaicoach.shared.BoardCoordinate
+import com.worksoc.goaicoach.shared.BoardSize
+import com.worksoc.goaicoach.shared.GameState
+import com.worksoc.goaicoach.shared.PlayLevelGroup
+import com.worksoc.goaicoach.shared.PlayLevelSetting
+import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.StoneColor
 
 /**
  * 0 Depth: 홈 화면 (Home Screen)
@@ -66,10 +89,19 @@ internal fun GoCoachHomeScreen(
     onMyPageClick: () -> Unit,
     hasResumableSession: Boolean,
     onResumeClick: () -> Unit,
+    /**
+     * 백로그 #181 — "대국 하기" 카드 아이콘이 마지막으로 고른 AI 캐릭터를 보여주기 위해 받는다.
+     * ⚠️ 새 상태 훅이 아니다 — `GoCoachApp.kt`가 이미 들고 있는 `screenState.playerSetup`(파생값)을
+     * 그대로 흘려보낸 것뿐이다(셸의 훅 예산 42/42, 함정 3).
+     */
+    playerSetup: PlayerSetup,
     modifier: Modifier = Modifier,
 ) {
     val strings = LocalUiStrings.current
+    val context = LocalContext.current
     var showOverwriteWarningDialog by remember { mutableStateOf(false) }
+    val lastSelectedAiCharacter = remember(playerSetup) { currentAiCharacterOrDefault(playerSetup) }
+    val referenceKifuFinalState = remember(context) { loadReferenceKifuFinalState(context) }
 
     Column(
         modifier = modifier
@@ -190,6 +222,7 @@ internal fun GoCoachHomeScreen(
                             onStartMatchClick()
                         }
                     },
+                    icon = { BotCharacterSquareIcon(character = lastSelectedAiCharacter) },
                 )
                 // ⚠️ **스크림을 두지 않는다.** #125 스플래시가 터치를 일부러 먹는 것과 **반대**다 —
                 // 여기서 터치를 먹으면 사용자가 이 카드를 누를 수 없어 자동 재생이 막다른 길이 된다
@@ -217,6 +250,9 @@ internal fun GoCoachHomeScreen(
                 titleColor = MaterialTheme.colorScheme.onSurfaceVariant,
                 subtitleColor = MaterialTheme.colorScheme.secondary,
                 onClick = onGameHistoryClick,
+                icon = referenceKifuFinalState?.let { finalState ->
+                    { ReferenceKifuBoardIcon(gameState = finalState) }
+                },
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -229,6 +265,7 @@ internal fun GoCoachHomeScreen(
                 titleColor = MaterialTheme.colorScheme.onSurfaceVariant,
                 subtitleColor = MaterialTheme.colorScheme.secondary,
                 onClick = onStudyClick,
+                icon = { StudyPreviewIcon() },
             )
 
             // 마이 페이지 카드는 여기 없다 — 좌상단 칩으로 올라갔다(#34). 목적지 자체는
@@ -372,6 +409,12 @@ internal fun MenuCard(
     titleColor: Color,
     subtitleColor: Color,
     onClick: () -> Unit,
+    /**
+     * 카드 좌측의 정사각형 아이콘(백로그 #181). 없으면 예전 레이아웃(제목·부제만)과 1px도
+     * 다르지 않다 — `null`이 기본값이라 이 함수의 다른 호출부(`FirstDolGuideReplay.kt`가 넘기지
+     * 않는 카드가 생기더라도)는 손댈 필요가 없다.
+     */
+    icon: (@Composable () -> Unit)? = null,
 ) {
     Card(
         shape = RoundedCornerShape(14.dp),
@@ -411,25 +454,187 @@ internal fun MenuCard(
             // 높이를 아는 쪽이 상자뿐이라 여기로 옮겼다.
             contentAlignment = Alignment.CenterStart,
         ) {
-            Column(
+            Row(
                 modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    text = title,
-                    color = titleColor,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                )
+                if (icon != null) {
+                    // 흰 배경은 초록 primary(대국 하기)·베이지 surfaceVariant(대국 기록·학습
+                    // 하기) 양쪽 모두에서 아이콘을 또렷이 띄운다 — 카드 색을 가리지 않는 유일한
+                    // 공통분모다. surfaceVariant 카드에서는 흰색과 베이지가 가까워 테두리 없이는
+                    // 경계가 묻히므로 옅은 테두리를 함께 둔다.
+                    Box(
+                        modifier = Modifier
+                            .size(MenuCardIconSize)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(Color.White)
+                            .border(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f), RoundedCornerShape(16.dp))
+                            .padding(6.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        icon()
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                }
+                Column(
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text(
+                        text = title,
+                        color = titleColor,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
 
-                Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(4.dp))
 
-                Text(
-                    text = subtitle,
-                    color = subtitleColor,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Normal,
-                )
+                    Text(
+                        text = subtitle,
+                        color = subtitleColor,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Normal,
+                    )
+                }
             }
         }
     }
 }
+
+/** [MenuCard] 아이콘 슬롯(바깥 정사각형)의 한 변. 안쪽 그림은 `padding(6.dp)`만큼 더 작다. */
+private val MenuCardIconSize = 56.dp
+
+/**
+ * "대국 하기" 카드 아이콘 — 마지막으로 고른 AI 캐릭터, 없으면 기본값(레벨1, "문하생 판다")을
+ * 돌려준다(백로그 #181). [PlayerSetup]의 두 좌석 중 AI가 맡은 쪽을 찾고, 그 쪽이 없거나
+ * `FastBeginner` 그룹이 아니면(로컬 2인 대국·구 그룹 등) 레벨 1로 떨어진다 —
+ * `PlayerSetupPanel.kt`의 캐릭터 픽커가 쓰는 것과 같은 산수다.
+ */
+internal fun currentAiCharacterOrDefault(playerSetup: PlayerSetup): BotCharacter {
+    val aiPlayLevel = listOf(playerSetup.white, playerSetup.black)
+        .firstOrNull { side -> side.controller == SeatController.Ai }
+        ?.playLevel
+    val fastBeginnerLevel = if (aiPlayLevel?.group == PlayLevelGroup.FastBeginner) {
+        aiPlayLevel.safeLevel
+    } else {
+        1
+    }
+    return BotCharacterCatalog.forPlayLevel(
+        PlayLevelSetting(group = PlayLevelGroup.FastBeginner, level = fastBeginnerLevel),
+    ) ?: BotCharacterCatalog.fastBeginnerRoster.first()
+}
+
+/**
+ * [currentAiCharacterOrDefault]가 고른 캐릭터를 정사각형 그대로 그린다. `BotCharacterAvatar`를
+ * 재사용하지 않는 이유는 그쪽이 원형 클립·잠금 회색조용이기 때문이다 — 여기서는 항상
+ * "보유·선택된" 캐릭터만 다루므로 그 상태들이 필요 없다. 원화가 이미 투명 배경이라(직접 확인)
+ * 정사각형으로 그대로 둬도 잘린 티가 나지 않는다.
+ */
+@Composable
+internal fun BotCharacterSquareIcon(character: BotCharacter) {
+    val res = botAvatarRes(character) ?: return
+    Image(
+        painter = painterResource(res),
+        contentDescription = null,
+        contentScale = ContentScale.Fit,
+        modifier = Modifier.fillMaxSize(),
+    )
+}
+
+/**
+ * "대국 기록" 카드 아이콘이 쓸, 번들 참고 기보(137수)를 끝까지 둔 국면(백로그 #181). 에셋이
+ * 없거나 디코드가 실패하면 `null` — 장식용 아이콘이라 실패를 사용자에게 보이지 않고 그냥
+ * 아이콘 없이 넘어간다(호출부의 `icon = referenceKifuFinalState?.let { ... }`).
+ */
+private fun loadReferenceKifuFinalState(context: android.content.Context): GameState? {
+    val entry = referenceGameHistoryEntry()
+    val replay = loadReferenceGameReplay(context)?.takeIf { !it.isEmpty } ?: return null
+    return buildGameReplayTimeline(
+        boardSize = BoardSize(entry.boardSize),
+        ruleset = entry.ruleset,
+        handicapCount = entry.handicapCount,
+        komi = entry.komi,
+        moves = replay.moves,
+    ).states.last()
+}
+
+/**
+ * 「보드 미리보기」(`GameSetupLobby.kt`)와 같은 `GoBoard`를 아이콘 크기로 그린다. `isGameEnded =
+ * true`로 둬 끝난 대국다운 톤(무채색 쪽에 가까운 돌 렌더링)을 준다 — 참고 기보는 실제로 끝난
+ * 판이다.
+ */
+@Composable
+private fun ReferenceKifuBoardIcon(gameState: GameState) {
+    GoBoard(
+        gameState = gameState,
+        candidateMoves = emptyList(),
+        moveReviews = emptyList(),
+        ownershipEstimate = null,
+        uxOptions = KaTrainUxOptions(),
+        inputEnabled = false,
+        engineActivityIndicator = null,
+        modifier = Modifier.fillMaxSize(),
+        tentativeMove = null,
+        onCoordinateTap = {},
+        isGameEnded = true,
+        isEngineBusy = false,
+    )
+}
+
+/**
+ * "학습 하기" 카드의 정적 국면 — 실제 대국 규칙(`BoardRules.play`)을 거치지 않고 초반 포석
+ * 몇 수를 바로 앉힌다(백로그 #181, 합법성 검사가 필요 없는 순수 장식용). `object`가 아니라
+ * `private val`인 이유는 컴포지션마다 새로 만들 이유가 없어서다 — 상태가 없는 상수 데이터다.
+ */
+private val StudyPreviewGameState: GameState = GameState.empty(
+    boardSize = BoardSize.Nine,
+    ruleset = Ruleset.Japanese,
+).copy(
+    stones = mapOf(
+        BoardCoordinate(row = 2, column = 6) to StoneColor.Black,
+        BoardCoordinate(row = 6, column = 2) to StoneColor.White,
+        BoardCoordinate(row = 6, column = 6) to StoneColor.Black,
+    ),
+)
+
+/**
+ * "학습 하기" 카드 아이콘 — 바둑판(초반 포석 세 점) 위에 돋보기를 판 한 변의 절반 크기로
+ * 겹친다(백로그 #181, 사용자가 준 조합 스펙 그대로). 돋보기는 이모지 대신 `Icons.Filled.Search`
+ * 벡터를 쓴다 — 기기·글꼴에 따라 렌더링이 갈리는 이모지보다 크기·색이 항상 예측 가능하다.
+ */
+@Composable
+private fun StudyPreviewIcon() {
+    Box(modifier = Modifier.fillMaxSize()) {
+        GoBoard(
+            gameState = StudyPreviewGameState,
+            candidateMoves = emptyList(),
+            moveReviews = emptyList(),
+            ownershipEstimate = null,
+            uxOptions = KaTrainUxOptions(),
+            inputEnabled = false,
+            engineActivityIndicator = null,
+            modifier = Modifier.fillMaxSize(),
+            tentativeMove = null,
+            onCoordinateTap = {},
+            isGameEnded = false,
+            isEngineBusy = false,
+        )
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .fillMaxSize(StudyPreviewMagnifierSizeFraction)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.surface),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Search,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.fillMaxSize(0.7f),
+            )
+        }
+    }
+}
+
+/** 판 한 변 대비 돋보기 배지의 비율(사용자 스펙: "판의 50% 사이즈"). */
+private const val StudyPreviewMagnifierSizeFraction = 0.5f

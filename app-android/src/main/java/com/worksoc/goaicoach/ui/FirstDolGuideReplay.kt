@@ -28,6 +28,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.worksoc.goaicoach.application.guide.GuideStep
 import com.worksoc.goaicoach.application.guide.GuideSurface
+import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.presentation.GameUiEvent
 import com.worksoc.goaicoach.presentation.GameActionButtonState
 import com.worksoc.goaicoach.presentation.GameActionButtonRole
@@ -125,6 +126,12 @@ internal fun FirstDolGuideReplayDialog(onClose: () -> Unit) {
                             titleColor = Color.White,
                             subtitleColor = Color.White.copy(alpha = 0.85f),
                             onClick = {},
+                            // ⚠️ **마지막 선택이 아니라 항상 기본값이다**(백로그 #181). 이 다시보기는
+                            // 진행도 저장소를 열지 않는다는 계약이 있는데(위 KDoc), 실제 선택을 보여
+                            // 주려면 `playerSetup`을 이 다이얼로그까지 새로 꿰어야 한다 — 여기서 보여
+                            // 주는 것은 "이 카드가 무엇인가"이지 "지금 무엇이 골라져 있나"가 아니므로
+                            // 기본 캐릭터(문하생 판다)로 충분하다.
+                            icon = { BotCharacterSquareIcon(character = currentAiCharacterOrDefault(PlayerSetup())) },
                         )
                     }
                     ReplaySection(title = strings.matchSetup) {

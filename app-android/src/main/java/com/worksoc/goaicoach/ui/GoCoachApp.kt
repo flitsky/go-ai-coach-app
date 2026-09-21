@@ -849,6 +849,7 @@ private fun GoCoachScreen(
                 onMyPageClick = { currentDestination = ScreenDestination.MyPage },
                 hasResumableSession = savedSessionToPrompt != null,
                 onResumeClick = { showResumeDialog = true },
+                playerSetup = screenState.playerSetup,
             )
         }
         ScreenDestination.Study -> {
