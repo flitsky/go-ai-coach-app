@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
@@ -44,10 +45,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
@@ -96,6 +100,12 @@ internal fun GoCoachHomeScreen(
     val strings = LocalUiStrings.current
     var showOverwriteWarningDialog by remember { mutableStateOf(false) }
     val lastSelectedAiCharacter = remember(playerSetup) { currentAiCharacterOrDefault(playerSetup) }
+    // 백로그 #182 — 구독 여부로 로고·타이틀 색을 가른다. `isPurchased`만 본다(광고 1시간은
+    // 제외, [[premium-character-unlock-policy]]와 같은 결). `PremiumSubscriptionCard`가
+    // "구독 중" 문구를 결정하는 것과 같은 기준이라 새 상태가 아니라 CompositionLocal을 그대로 읽는다.
+    val subscribed = LocalPremiumUiState.current.isPurchased
+    val showsPremiumPrompt = !subscribed && FeatureFlags.isPurchaseEnabled
+    var showSubscribeDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier
@@ -137,7 +147,38 @@ internal fun GoCoachHomeScreen(
             Spacer(modifier = Modifier.weight(1f))
 
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                GoStoneLogoBadge()
+                // 백로그 #182 — "Premium?"은 아이콘 우상단, 점선 원 테두리 바로 옆에서 이어지듯
+                // 배치한다(2026-09-21 사용자 지시). 배경 없이 금색 글자만 두고, 아이콘과 글자
+                // 둘 다 탭하면 구독 다이얼로그가 뜬다 — 표적을 하나로 묶지 않은 이유는 "Premium?"이
+                // `.offset()`으로 배지 바깥까지 밀려나 있어(오프셋은 그리기 위치만 바꾸고 부모
+                // 레이아웃 크기엔 반영되지 않는다) 부모 하나에만 `clickable`을 걸면 그 영역을
+                // 못 덮기 때문이다.
+                val premiumBadgeClickModifier = if (showsPremiumPrompt) {
+                    Modifier.clip(CircleShape).clickable { showSubscribeDialog = true }
+                } else {
+                    Modifier
+                }
+
+                Box {
+                    Box(modifier = premiumBadgeClickModifier) {
+                        GoStoneLogoBadge(subscribed = subscribed, showsPremiumPrompt = showsPremiumPrompt)
+                    }
+
+                    if (showsPremiumPrompt) {
+                        Text(
+                            text = "Premium?",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = PremiumGold,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .offset(x = 40.dp, y = (-2).dp)
+                                .clickable { showSubscribeDialog = true }
+                                .padding(horizontal = 7.dp, vertical = 2.dp),
+                        )
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(20.dp))
 
@@ -145,7 +186,7 @@ internal fun GoCoachHomeScreen(
                     text = strings.appTitle,
                     fontSize = 26.sp,
                     fontWeight = FontWeight.ExtraBold,
-                    color = MaterialTheme.colorScheme.onBackground,
+                    color = if (subscribed) PremiumGoldDeep else MaterialTheme.colorScheme.onBackground,
                     textAlign = TextAlign.Center,
                 )
 
@@ -288,6 +329,12 @@ internal fun GoCoachHomeScreen(
             },
         )
     }
+
+    // "Premium?" 탭으로 여는 구독 창구(백로그 #182). `PremiumSubscriptionCard`와 같은 패턴 —
+    // 새 상태 훅이 아니라 이 컴포저블 로컬 `remember`.
+    if (showSubscribeDialog) {
+        PremiumSubscribeDialog(onDismiss = { showSubscribeDialog = false })
+    }
 }
 
 /**
@@ -317,21 +364,43 @@ private fun HomeTopChip(emoji: String, label: String, onClick: () -> Unit) {
     }
 }
 
+/**
+ * 백로그 #182 — 테두리로 프리미엄 상태를 알린다: 구독 중이면 금색 실선, 구독 창구를
+ * 보여줄 수 있으면(미구독 + [FeatureFlags.isPurchaseEnabled]) 금색 점선, 그 외엔 원래
+ * 중립 테두리. `Modifier.border`엔 점선이 없어 점선만 `drawWithContent`로 직접 그린다.
+ */
 @Composable
-private fun GoStoneLogoBadge() {
+private fun GoStoneLogoBadge(subscribed: Boolean, showsPremiumPrompt: Boolean) {
     val stoneSizeDp = 51.dp
     // 광원 위치/반경을 실제 픽셀 기준으로 계산해, 하드코딩된 px 값이 스톤 크기와 어긋나
     // 그라데이션이 중앙의 작은 얼룩으로만 보이던 문제(특히 흑돌에서 두드러짐)를 없앤다.
     val stoneSizePx = with(LocalDensity.current) { stoneSizeDp.toPx() }
     val highlightCenter = Offset(stoneSizePx * 0.32f, stoneSizePx * 0.28f)
     val highlightRadius = stoneSizePx * 0.85f
+    val dashedStrokeWidthPx = with(LocalDensity.current) { 2.dp.toPx() }
+
+    val borderModifier = when {
+        subscribed -> Modifier.border(2.dp, PremiumGoldGradient, CircleShape)
+        showsPremiumPrompt -> Modifier.drawWithContent {
+            drawContent()
+            drawCircle(
+                color = PremiumGold,
+                radius = (size.minDimension - dashedStrokeWidthPx) / 2f,
+                style = Stroke(
+                    width = dashedStrokeWidthPx,
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(12f, 8f)),
+                ),
+            )
+        }
+        else -> Modifier.border(1.dp, Color(0xFFE5DDD0), CircleShape)
+    }
 
     Box(
         modifier = Modifier
             .size(125.dp)
             .shadow(elevation = 8.dp, shape = CircleShape, clip = false)
             .background(Color(0xFFF5F0E6), CircleShape)
-            .border(1.dp, Color(0xFFE5DDD0), CircleShape),
+            .then(borderModifier),
         contentAlignment = Alignment.Center,
     ) {
         Row(

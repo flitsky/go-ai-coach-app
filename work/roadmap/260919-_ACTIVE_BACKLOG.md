@@ -277,6 +277,7 @@
 
 | # | 제목 | 모델/노력 | 이 자리인 이유 |
 |---|---|---|---|
+| 182 | 홈 화면 로고 배지 — 프리미엄 차별화 + 구독 진입점 | Sonnet/낮음~중간 | **2026-09-21 사용자, 최우선순위 지정** |
 | 164 | 학습 콘텐츠 첫 카테고리 | Opus/중간~최대 | U-17 결정 뒤 |
 | 165 | 마이페이지 아바타·닉네임 | Sonnet/중간 | 1단계는 화면 밖으로 안 나간다 |
 | 169 | 「로그인 없이」 판매 문구 전환 | Opus/중간 | **170의 선행.** 코드보다 문구·방침이 크다 |
@@ -289,6 +290,45 @@
 | 179 | 카메라로 바둑판 인식해 분석 | Opus/최대 | **2026-09-19 사용자 추가.** 새 영역이라 맨 뒤 — 권한·방침·데이터 보안이 함께 움직인다 |
 | 180 | 구독 오프라인 조회 실측 + 보정 | Sonnet/낮음 | **2026-09-20 #174에서 분리.** 실측 의존 — 사용자가 후순위로 지정, 기회가 생기면 |
 | 120·121·122 | 앞 세대에서 넘어온 것 | — | 아래 별도 절 |
+
+---
+
+### 182. **홈 화면 로고 배지 — 프리미엄 차별화 + 구독 진입점** (AI 모델: Sonnet, 노력정도: 낮음~중간)
+
+**목적(2026-09-21 사용자, 최우선순위 지정)**: 홈 화면 상단 가운데 로고(`GoStoneLogoBadge`)와 타이틀에 프리미엄
+구독 상태를 시각적으로 드러내고, 미구독 사용자에게 구독 창구를 연다.
+
+1. **구독 중** (`LocalPremiumUiState.current.isPurchased == true`): `GoStoneLogoBadge`의 기존 원형 테두리
+   (`GoCoachHomeScreen.kt:342`, 지금 `Color(0xFFE5DDD0)` 1dp)를 프리미엄 금색(`PremiumTheme.kt`의
+   `PremiumGold`/`PremiumGoldGradient`)으로 바꾼다. 바로 아래 타이틀 `Text`(`GoCoachHomeScreen.kt:150-156`,
+   `strings.appTitle`)의 `color`도 같은 금색 계열로 바꾼다.
+2. **미구독**: 같은 테두리를 프리미엄 금색의 **점선**으로 그리고(Compose 기본 `border`엔 점선이 없다 —
+   `Modifier.drawBehind` + `PathEffect.dashPathEffect`로 직접 그릴 것), 아이콘 바로 아래·타이틀 위에
+   "Premium?" 텍스트를 작게 노출한다. 탭하면 `PremiumSubscribeDialog(onDismiss = …)`를 띄운다(로컬
+   `remember { mutableStateOf(false) }`로 여닫음 — `PremiumSubscriptionCard`, `PremiumSubscriptionNotice.kt:169-229`
+   와 같은 패턴).
+
+**사용자 결정 — 2026-09-21 확정** (`AskUserQuestion` 3문항):
+- **게이팅 기준은 `isPurchased`다**(실 구독만). `isActive`(구독 + 광고 1시간)로는 배지가 켜지지 않는다 —
+  `PremiumSubscriptionCard`가 "구독 중" 문구를 결정하는 것과 같은 기준이고, 캐릭터 로스터 정책
+  ([[premium-character-unlock-policy]])과도 같은 결이다. **광고 1시간으로 이 배지를 켜자는 재요청이 오면
+  이미 검토·기각된 방향임을 먼저 알릴 것.**
+- **"Premium?" 문구는 4개 언어로 번역하지 않고 영어 그대로 고정한다**("AI"처럼 브랜드성 단어로 취급) —
+  **`UiStrings`에 넣지 말 것.** 다음 스레드가 i18n 누락(함정 21·32류)으로 오인해 번역을 추가하지 않도록.
+- **배치는 아이콘 바로 아래·타이틀 위**다 — 지금 `GoStoneLogoBadge()` 다음 `Spacer(height = 20.dp)` 자리.
+
+⚠️ **구현 시 참고**:
+- `GoCoachHomeScreen.kt`는 셸(`GoCoachApp.kt`)의 훅 예산(42/42) 대상이 **아니다** — `LocalPremiumUiState.current`를
+  이 파일에서 직접 읽으면 되고 새 파라미터·새 훅이 필요 없다(#181과 같은 이유).
+- 다이얼로그 여닫음 상태는 이 파일에 이미 있는 `showOverwriteWarningDialog`와 같은 자리에 로컬 `remember`로 추가한다.
+- 색은 하드코딩하지 말고 `PremiumTheme.kt`만 참조한다 — 그 파일의 존재 이유 자체가 "톤을 바꿀 때 한 곳만 고치기"다.
+- `PremiumSubscriptionCard`(`PremiumSubscriptionNotice.kt:179`)는 `!subscribed && !FeatureFlags.isPurchaseEnabled`
+  일 때 자기 자신을 숨긴다 — "Premium?" 진입점도 같은 조건을 따를지 착수 시 코드로 확인할 것(지금
+  `isPurchaseEnabled = true`라 실기 동작에는 차이가 없다).
+- ✅ **확인 완료**: `FirstDolGuideReplay.kt`는 로고·타이틀 헤더를 재현하지 않는다(grep 0건, `MenuCard`
+  카드만 복제) — #181과 달리 이 항목은 두 파일 동기화 제약이 없다.
+- 실기 확인은 개발자 프리미엄 토글(`BuildConfig.DEBUG` 전용, [[premium-billing-status]])로 구독/미구독
+  두 상태를 다 켜서 점선 테두리 굵기·간격이 실제로 보기 좋은지 눈으로 볼 것.
 
 ---
 
