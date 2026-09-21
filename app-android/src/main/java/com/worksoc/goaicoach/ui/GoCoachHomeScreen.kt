@@ -459,22 +459,18 @@ internal fun MenuCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (icon != null) {
-                    // 흰 배경은 초록 primary(대국 하기)·베이지 surfaceVariant(대국 기록·학습
-                    // 하기) 양쪽 모두에서 아이콘을 또렷이 띄운다 — 카드 색을 가리지 않는 유일한
-                    // 공통분모다. surfaceVariant 카드에서는 흰색과 베이지가 가까워 테두리 없이는
-                    // 경계가 묻히므로 옅은 테두리를 함께 둔다.
+                    // ⚠️ **배경 없이 카드 색 위에 그대로 얹는다**(2026-09-21 사용자 결정 — 흰 배경
+                    // 제거). 아이콘 셋 다 자체적으로 또렷하다(캐릭터 원화는 투명 배경, 보드는
+                    // 스스로 나무판 배경을 그린다) — 별도 컨테이너 배경이 없어도 안 묻힌다.
                     Box(
                         modifier = Modifier
                             .size(MenuCardIconSize)
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(Color.White)
-                            .border(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f), RoundedCornerShape(16.dp))
-                            .padding(6.dp),
+                            .padding(2.dp),
                         contentAlignment = Alignment.Center,
                     ) {
                         icon()
                     }
-                    Spacer(modifier = Modifier.width(16.dp))
+                    Spacer(modifier = Modifier.width(12.dp))
                 }
                 Column(
                     modifier = Modifier.weight(1f),
@@ -500,8 +496,11 @@ internal fun MenuCard(
     }
 }
 
-/** [MenuCard] 아이콘 슬롯(바깥 정사각형)의 한 변. 안쪽 그림은 `padding(6.dp)`만큼 더 작다. */
-private val MenuCardIconSize = 56.dp
+/**
+ * [MenuCard] 아이콘 슬롯(바깥 정사각형)의 한 변. 안쪽 그림은 `padding(2.dp)`만큼 더 작다.
+ * 2026-09-21 사용자 요청으로 최초 값(56dp)의 150%로 키웠다.
+ */
+private val MenuCardIconSize = 84.dp
 
 /**
  * "대국 하기" 카드 아이콘 — 마지막으로 고른 AI 캐릭터, 없으면 기본값(레벨1, "문하생 판다")을
