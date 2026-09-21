@@ -534,7 +534,10 @@ internal fun MenuCard(
                     Box(
                         modifier = Modifier
                             .size(MenuCardIconSize)
-                            .padding(2.dp),
+                            // 2026-09-21 사용자 요청 — 좌측은 최소, 상·하·우측은 적당히.
+                            // 카드 왼쪽 테두리와의 거리는 `MenuCardIconStartPadding`이 이미
+                            // 맡고 있어 이 안쪽 여백까지 왼쪽에 더 주면 이중으로 벌어진다.
+                            .padding(start = 0.dp, top = 4.dp, end = 4.dp, bottom = 4.dp),
                         contentAlignment = Alignment.Center,
                     ) {
                         icon()
@@ -566,10 +569,11 @@ internal fun MenuCard(
 }
 
 /**
- * [MenuCard] 아이콘 슬롯(바깥 정사각형)의 한 변. 안쪽 그림은 `padding(2.dp)`만큼 더 작다.
- * 2026-09-21 사용자 요청으로 최초 값(56dp)의 150%로 키웠다.
+ * [MenuCard] 아이콘 슬롯(바깥 정사각형)의 한 변. 안쪽 그림은 비대칭 여백만큼 더 작다.
+ * 2026-09-21 사용자 요청으로 최초 값(56dp)의 150%(84dp)로 키웠다가, 같은 날 다시 90%인
+ * 75.6dp로 줄였다.
  */
-private val MenuCardIconSize = 84.dp
+private val MenuCardIconSize = 75.6.dp
 
 /** 아이콘이 있을 때 카드 왼쪽 테두리와 아이콘 사이의 여백(2026-09-21 사용자 요청 — 극단적으로 좁힘). */
 private val MenuCardIconStartPadding = 4.dp
