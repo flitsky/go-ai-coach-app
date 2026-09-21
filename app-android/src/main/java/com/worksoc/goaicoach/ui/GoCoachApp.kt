@@ -70,6 +70,7 @@ import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.persistence.GameHistoryStore
 import com.worksoc.goaicoach.persistence.GameSessionStore
+import com.worksoc.goaicoach.persistence.ExperimentalFeaturesStore
 import com.worksoc.goaicoach.persistence.EngineBenchmarkStore
 import com.worksoc.goaicoach.persistence.DebugReportMirrorStore
 import com.worksoc.goaicoach.persistence.RuntimeEventLog
@@ -89,7 +90,9 @@ import com.worksoc.goaicoach.application.session.GameSessionAnalysisState
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnUiState
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationUiState
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkUiState
+import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
 import com.worksoc.goaicoach.application.savedgame.SavedSessionUiState
+import com.worksoc.goaicoach.ui.vision.BoardScanScreen
 import kotlinx.coroutines.CoroutineScope
 import com.worksoc.goaicoach.engine.EngineIdentity
 import com.worksoc.goaicoach.shared.EngineProfile
@@ -712,7 +715,7 @@ private fun GoCoachScreen(
         )
     }
 
-    BackHandler(enabled = currentDestination != ScreenDestination.Home && currentDestination != ScreenDestination.Onboarding) {
+    BackHandler(enabled = currentDestination != ScreenDestination.Home && currentDestination != ScreenDestination.Onboarding && currentDestination != ScreenDestination.BoardScan) {
         if (currentDestination == ScreenDestination.InGame && !isGameEnded) {
             showResignConfirmFromBack = true
         } else {
@@ -847,6 +850,7 @@ private fun GoCoachScreen(
                 onStudyClick = { currentDestination = ScreenDestination.Study },
                 onGameHistoryClick = { currentDestination = ScreenDestination.GameHistory },
                 onMyPageClick = { currentDestination = ScreenDestination.MyPage },
+                onBoardScanClick = { currentDestination = ScreenDestination.BoardScan },
                 hasResumableSession = savedSessionToPrompt != null,
                 onResumeClick = { showResumeDialog = true },
                 playerSetup = screenState.playerSetup,
@@ -854,6 +858,30 @@ private fun GoCoachScreen(
         }
         ScreenDestination.Study -> {
             StudyScreen(onBackClick = { currentDestination = ScreenDestination.Home })
+        }
+        ScreenDestination.BoardScan -> {
+            if (!ExperimentalFeaturesStore(context).isCameraBoardScanEnabled()) {
+                exitToHome()
+            } else {
+                BoardScanScreen(
+                    engineClient = engineClient,
+                    onBackClick = exitToHome,
+                    onStartGameWithState = { scannedState ->
+                        sessionStore.clear()
+                        dispatch(
+                            GameUiEvent.ResumeSavedSession(
+                                SavedGameSnapshot(
+                                    gameState = scannedState,
+                                    playerSetup = screenState.playerSetup,
+                                    playLevel = screenState.playLevel,
+                                    topMovesEnabled = topMovesEnabled,
+                                    savedAtMillis = System.currentTimeMillis(),
+                                )
+                            )
+                        )
+                    },
+                )
+            }
         }
         ScreenDestination.GameHistory -> {
             GameHistoryScreen(
@@ -932,5 +960,6 @@ internal enum class ScreenDestination {
     GameHistory,
     MyPage,
     GameSetup,
-    InGame
+    InGame,
+    BoardScan,
 }

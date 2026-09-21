@@ -19,7 +19,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -209,7 +209,7 @@ internal fun SettingsScreen(
         ) {
             IconButton(onClick = onBackClick) {
                 Icon(
-                    imageVector = Icons.Default.ArrowBack,
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = strings.close,
                     tint = MaterialTheme.colorScheme.primary,
                 )
@@ -240,6 +240,9 @@ internal fun SettingsScreen(
             // 글꼴 크기(#106) — 언어와 같은 "표시" 성격이라 바로 아래에 둔다.
             // ⚠️ 저장소는 이 패널이 스스로 갖는다 — 이 화면은 훅 13/13으로 여유가 0이다(#102).
             FontScaleSettingsPanel()
+
+            // 실험실 기능(#179 소프트랜딩) — 자체 저장소와 상태를 가져 이 화면의 훅 예산을 쓰지 않는다.
+            ExperimentalFeaturesSettingsPanel()
 
             Text(
                 text = strings.matchSetup,

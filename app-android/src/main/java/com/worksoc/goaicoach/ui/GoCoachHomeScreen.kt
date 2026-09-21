@@ -54,15 +54,18 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.worksoc.goaicoach.persistence.ExperimentalFeaturesStore
 import com.worksoc.goaicoach.application.botcharacter.BotCharacter
 import com.worksoc.goaicoach.application.botcharacter.BotCharacterCatalog
 import com.worksoc.goaicoach.application.guide.GuideSurface
+import com.worksoc.goaicoach.application.premium.FeatureId
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.presentation.KaTrainUxOptions
@@ -87,6 +90,7 @@ internal fun GoCoachHomeScreen(
     onStudyClick: () -> Unit,
     onGameHistoryClick: () -> Unit,
     onMyPageClick: () -> Unit,
+    onBoardScanClick: () -> Unit,
     hasResumableSession: Boolean,
     onResumeClick: () -> Unit,
     /**
@@ -106,6 +110,8 @@ internal fun GoCoachHomeScreen(
     val subscribed = LocalPremiumUiState.current.isPurchased
     val showsPremiumPrompt = !subscribed && FeatureFlags.isPurchaseEnabled
     var showSubscribeDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val isCameraBoardScanEnabled = ExperimentalFeaturesStore(context).isCameraBoardScanEnabled()
 
     Column(
         modifier = modifier
@@ -300,6 +306,20 @@ internal fun GoCoachHomeScreen(
                 onClick = onStudyClick,
                 icon = { StudyPreviewIcon() },
             )
+
+            // 🧪 실험실 기능(#179): 설정 > 실험실에서 활성화한 경우에만 메뉴에 노출 (기본값: 비활성/숨김)
+            if (isCameraBoardScanEnabled) {
+                Spacer(modifier = Modifier.height(16.dp))
+                MenuCard(
+                    title = strings.featureShortName(FeatureId.BoardScan),
+                    subtitle = strings.boardScanSubtitle(),
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    titleColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    subtitleColor = MaterialTheme.colorScheme.secondary,
+                    onClick = onBoardScanClick,
+                    icon = { BoardScanPreviewIcon() },
+                )
+            }
 
             // 마이 페이지 카드는 여기 없다 — 좌상단 칩으로 올라갔다(#34). 목적지 자체는
             // 그대로이고 진입점만 옮겼다.
@@ -774,3 +794,40 @@ private fun StudyPreviewIcon() {
 
 /** 판 한 변 대비 돋보기 배지의 비율(사용자 스펙: "판의 50% 사이즈"). */
 private const val StudyPreviewMagnifierSizeFraction = 0.5f
+
+/**
+ * "바둑판 사진 분석" 카드 아이콘 — 바둑판 위에 카메라 심볼을 겹친 프리뷰 배지.
+ */
+@Composable
+private fun BoardScanPreviewIcon() {
+    Box(modifier = Modifier.fillMaxSize()) {
+        GoBoard(
+            gameState = StudyPreviewGameState,
+            candidateMoves = emptyList(),
+            moveReviews = emptyList(),
+            ownershipEstimate = null,
+            uxOptions = KaTrainUxOptions(),
+            inputEnabled = false,
+            engineActivityIndicator = null,
+            modifier = Modifier.fillMaxSize(),
+            tentativeMove = null,
+            onCoordinateTap = {},
+            isGameEnded = false,
+            isEngineBusy = false,
+        )
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .fillMaxSize(StudyPreviewMagnifierSizeFraction)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.surface),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = "📷",
+                fontSize = 16.sp,
+                textAlign = TextAlign.Center,
+            )
+        }
+    }
+}
