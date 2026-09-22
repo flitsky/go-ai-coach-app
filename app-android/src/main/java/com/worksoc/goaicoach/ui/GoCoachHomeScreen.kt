@@ -29,6 +29,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -263,7 +264,7 @@ internal fun GoCoachHomeScreen(
                             onStartMatchClick()
                         }
                     },
-                    icon = { BotCharacterSquareIcon(character = lastSelectedAiCharacter) },
+                    icon = { GamePlayPreviewIcon(character = lastSelectedAiCharacter) },
                 )
                 // ⚠️ **스크림을 두지 않는다.** #125 스플래시가 터치를 일부러 먹는 것과 **반대**다 —
                 // 여기서 터치를 먹으면 사용자가 이 카드를 누를 수 없어 자동 재생이 막다른 길이 된다
@@ -637,16 +638,78 @@ private fun defaultAiCharacter(): BotCharacter =
  * 2026-09-22 사용자 요청: 불투명도 90%(alpha = 0.9f)를 적용해 카드 배경과 부드럽게 어우러지도록 한다.
  */
 @Composable
-internal fun BotCharacterSquareIcon(character: BotCharacter) {
+internal fun BotCharacterSquareIcon(character: BotCharacter, modifier: Modifier = Modifier) {
     val res = botAvatarRes(character) ?: return
     Image(
         painter = painterResource(res),
         contentDescription = null,
         contentScale = ContentScale.Fit,
         alpha = 0.9f,
-        modifier = Modifier.fillMaxSize(),
+        // ⚠️ **기본값이 `fillMaxSize()`인 것은 이 자리가 원래 슬롯을 꽉 채우던 자리라서다.**
+        // [GamePlayPreviewIcon]은 판 위에 70%로 얹으려고 이 구멍을 쓴다(백로그 #192).
+        modifier = modifier.then(Modifier.fillMaxSize()),
     )
 }
+
+/**
+ * "대국 하기" 카드의 정적 국면 — **두 점**만 놓는다(2026-09-22 사용자 지시). 「학습 하기」가
+ * 세 점인 것과 일부러 다르다: 이쪽은 *"이제 두기 시작한다"* 이고 저쪽은 *"공부할 모양이 있다"* 다.
+ * `BoardRules.play`를 거치지 않고 바로 앉히는 것은 [StudyPreviewGameState]와 같은 이유다(장식용).
+ */
+private val GamePlayPreviewGameState: GameState = GameState.empty(
+    boardSize = BoardSize.Nine,
+    ruleset = Ruleset.Japanese,
+).copy(
+    stones = mapOf(
+        BoardCoordinate(row = 2, column = 6) to StoneColor.Black,
+        BoardCoordinate(row = 6, column = 2) to StoneColor.White,
+    ),
+)
+
+/**
+ * "대국 하기" 카드 아이콘 — 바둑판(두 점) 위 **좌상단**에 상대 캐릭터를 70%로 얹는다
+ * (2026-09-22 사용자 지시, 백로그 #192).
+ *
+ * ## ⚠️ 전에는 캐릭터가 슬롯을 통째로 채웠다
+ * 그래서 카드 넷 중 이것만 판이 없었다 — 「대국 기록」·「학습 하기」·「사진 분석」은 전부 판 위에
+ * 무언가를 얹은 모양이다. 판을 깔면서 **넷이 한 식구로 읽힌다.**
+ *
+ * ## ⚠️ 배지 자리가 다른 것은 일부러다
+ * 「학습 하기」의 돋보기는 **우하단**이고 이쪽 캐릭터는 **좌상단**이다(사용자 지시). 캐릭터는
+ * 원형 배지가 아니라 **그림 그대로**라, 우하단에 두면 판의 초반 포석과 겹쳐 지저분해진다.
+ *
+ * ⚠️ **[FirstDolGuideReplay]가 이 컴포저블을 함께 쓴다** — 다시보기 ③이 홈의 **진짜 카드**를
+ * 조립하기 때문이다. 여기만 바꾸고 그쪽을 두면 **다시보기가 없는 화면을 보여 준다**(그 파일이
+ * 네 번 겪었다고 적어 둔 바로 그 사고). `internal`인 이유가 그것이다.
+ */
+@Composable
+internal fun GamePlayPreviewIcon(character: BotCharacter) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        GoBoard(
+            gameState = GamePlayPreviewGameState,
+            candidateMoves = emptyList(),
+            moveReviews = emptyList(),
+            ownershipEstimate = null,
+            uxOptions = KaTrainUxOptions(),
+            inputEnabled = false,
+            engineActivityIndicator = null,
+            modifier = Modifier.fillMaxSize(),
+            tentativeMove = null,
+            onCoordinateTap = {},
+            isGameEnded = false,
+            isEngineBusy = false,
+        )
+        BotCharacterSquareIcon(
+            character = character,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .fillMaxSize(GamePlayPreviewCharacterFraction),
+        )
+    }
+}
+
+/** 판 한 변 대비 캐릭터 크기 — 슬롯을 꽉 채우던 것의 **70%**(2026-09-22 사용자 지시). */
+private const val GamePlayPreviewCharacterFraction = 0.7f
 
 /**
  * "대국 기록" 카드 아이콘이 그릴 9x9 종국 국면(백로그 #181, 2026-09-21 사용자 요청으로
@@ -728,25 +791,58 @@ private val GameHistoryPreviewGameState: GameState = GameState.empty(
 )
 
 /**
- * 「보드 미리보기」(`GameSetupLobby.kt`)와 같은 `GoBoard`를 아이콘 크기로 그린다. `isGameEnded =
- * true`로 둬 끝난 대국다운 톤(무채색 쪽에 가까운 돌 렌더링)을 준다 — 실제로 끝난 판이다.
+ * 「보드 미리보기」(`GameSetupLobby.kt`)와 같은 `GoBoard`를 아이콘 크기로 그린 뒤, **「기록」을
+ * 뜻하는 배지**를 얹는다(2026-09-22 사용자 지시, 백로그 #192 — 「학습 하기」를 참고하라는 지시였다).
+ * `isGameEnded = true`로 둬 끝난 대국다운 톤을 준다 — 실제로 끝난 판이다.
+ *
+ * ## ⚠️ 이모지가 아니라 벡터다 — 지시를 그대로 옮기지 않은 자리
+ * 사용자는 *"기록을 의미하는 이모지"* 라고 했지만, **같은 지시가 참고하라고 가리킨
+ * [StudyPreviewIcon]이 이모지를 일부러 쓰지 않는다**(#181: *"기기·글꼴에 따라 렌더링이 갈리는
+ * 이모지보다 크기·색이 항상 예측 가능하다"*). 배지는 원형 흰 바탕에 **틴트된 심볼**이라 이모지를
+ * 넣으면 그 안에서 혼자 총천연색이 되고 기기마다 크기가 튄다. 그래서 **모양은 참고 대상에 맞추고
+ * 뜻만 「기록」으로** 바꿨다 — 그것이 두 지시를 동시에 만족시키는 유일한 해석이다.
+ *
+ * ⚠️ **`Icons.Filled.History`를 쓰고 싶었지만 못 썼다** — 그것은 `material-icons-extended`에 있고
+ * 이 앱은 **코어 세트만** 의존한다(확장 세트는 APK를 크게 불린다). 코어 안에서 「지나간 대국의
+ * 목록」에 가장 가까운 것이 `AutoMirrored.Filled.List`이고, **대국 기록 화면이 실제로 목록**이다.
+ * ⚠️ `AutoMirrored`인 이유는 RTL에서 좌우가 뒤집혀야 하기 때문이다(이 앱은 아직 RTL 언어가
+ * 없지만, 뒤집히면 안 되는 심볼과 섞이지 않게 기본형을 지킨다).
  */
 @Composable
 private fun GameHistoryBoardIcon() {
-    GoBoard(
-        gameState = GameHistoryPreviewGameState,
-        candidateMoves = emptyList(),
-        moveReviews = emptyList(),
-        ownershipEstimate = null,
-        uxOptions = KaTrainUxOptions(),
-        inputEnabled = false,
-        engineActivityIndicator = null,
-        modifier = Modifier.fillMaxSize(),
-        tentativeMove = null,
-        onCoordinateTap = {},
-        isGameEnded = true,
-        isEngineBusy = false,
-    )
+    Box(modifier = Modifier.fillMaxSize()) {
+        GoBoard(
+            gameState = GameHistoryPreviewGameState,
+            candidateMoves = emptyList(),
+            moveReviews = emptyList(),
+            ownershipEstimate = null,
+            uxOptions = KaTrainUxOptions(),
+            inputEnabled = false,
+            engineActivityIndicator = null,
+            modifier = Modifier.fillMaxSize(),
+            tentativeMove = null,
+            onCoordinateTap = {},
+            isGameEnded = true,
+            isEngineBusy = false,
+        )
+        // ⚠️ **자리·크기·바탕을 [StudyPreviewIcon]과 똑같이 맞춘다** — 두 카드가 나란히 서므로
+        // 하나만 어긋나면 그것이 먼저 눈에 띈다. 상수도 그쪽 것을 그대로 쓴다.
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .fillMaxSize(StudyPreviewMagnifierSizeFraction)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.75f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.List,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.fillMaxSize(0.7f),
+            )
+        }
+    }
 }
 
 /**

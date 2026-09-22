@@ -132,7 +132,7 @@ internal fun FirstDolGuideReplayDialog(onClose: () -> Unit) {
                             // 주려면 `playerSetup`을 이 다이얼로그까지 새로 꿰어야 한다 — 여기서 보여
                             // 주는 것은 "이 카드가 무엇인가"이지 "지금 무엇이 골라져 있나"가 아니므로
                             // 기본 캐릭터(수제자 반상)로 충분하다.
-                            icon = { BotCharacterSquareIcon(character = currentAiCharacterOrDefault(PlayerSetup())) },
+                            icon = { GamePlayPreviewIcon(character = currentAiCharacterOrDefault(PlayerSetup())) },
                         )
                     }
                     ReplaySection(title = strings.matchSetup) {
