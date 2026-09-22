@@ -328,8 +328,14 @@ class AttendanceRewardPolicyTest {
             listOf(AttendanceReward.BotCharacterUnlock(BotCharacterCatalog.forAttendanceTier(28).single())),
             AttendanceRewardPolicy.rewardsFor(28),
         )
-        // 반복 회차는 캐릭터를 다시 주지 않는다.
-        assertTrue(repeatBundle.none { it is AttendanceReward.BotCharacterUnlock })
+        // 반복 회차는 캐릭터를 다시 주지 않는다 — 위 forEach의 assertEquals(repeatBundle, ...)가
+        // 이미 그 사실을 고정한다(캐릭터가 하나라도 섞이면 목록 내용이 달라져 거기서 먼저 깨진다).
+        // 예전엔 여기서 `repeatBundle.none { it is AttendanceReward.BotCharacterUnlock }`로
+        // 한 번 더 확인했지만, repeatBundle은 `Consumable(...)`만으로 만든 상수라 애초에
+        // BotCharacterUnlock을 담을 수 없다 — 실제 정책 결과가 아니라 상수 자신을 검사하는
+        // 항진명제였다(코틀린 2.4부터 컴파일 에러가 되는 KTLC-365 경고의 원인). 실물을 검사하려면
+        // `AttendanceRewardPolicy.rewardsFor(tier)`를 봐야 하는데, 그건 이미 위 assertEquals가
+        // 하고 있으므로 중복 없이 지운다.
     }
 
     @Test
