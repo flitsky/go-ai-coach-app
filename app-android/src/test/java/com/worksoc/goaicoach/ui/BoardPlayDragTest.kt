@@ -98,9 +98,13 @@ class BoardPlayDragTest {
     /**
      * ⚠️ **띄움 폭은 dp가 아니라 칸이다**(#154). 같은 28dp가 판 크기에 따라 0.45~1.94칸으로 벌어져,
      * 촘촘한 판에서는 두 칸 가까이 건너뛰고 성긴 판에서는 손가락을 못 벗어난다.
+     *
+     * ⚠️ **값 자체를 못박는 것도 일부러다**(2026-09-22, #189로 1f → 1.5f). 이 상수는 실기 감각으로
+     * 정해지는 값이라 조용히 바뀌기 쉬운데, 바뀌면 **맨 아랫줄에서 끌어서 두기가 닿는 범위가 함께
+     * 움직인다**(`PlayDragLiftCells`의 KDoc). 그 대가를 모른 채 숫자만 고치는 일을 여기서 막는다.
      */
     @Test
     fun theLiftIsMeasuredInCellsSoItReadsTheSameOnEveryBoardSize() {
-        assertEquals(1f, PlayDragLiftCells)
+        assertEquals(1.5f, PlayDragLiftCells)
     }
 }
