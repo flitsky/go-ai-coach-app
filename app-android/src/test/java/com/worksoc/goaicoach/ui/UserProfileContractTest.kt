@@ -71,18 +71,26 @@ class UserProfileContractTest {
     }
 
     /**
-     * ⚠️ **맨 위 자리는 구독 카드의 것이다**(2026-09-18 사용자 확정, #159). 해지 경로가 찾기
-     * 어려우면 그 자체가 정책 문제라는 사유가 붙어 있다 — 「나」 줄이 그 위로 올라가면 그
-     * 결정을 말없이 뒤집게 된다.
+     * ⚠️ **구독 카드가 「나」 줄 **바로 아래**여야 한다**(2026-09-22 사용자 지시로 순서가 뒤집혔다).
+     *
+     * 2026-09-18(#159)이 구독 카드를 맨 위에 둔 사유 — *"해지 경로가 찾기 어려우면 그 자체가
+     * 정책 문제"* — 는 **지금도 유효하다.** 지키려던 것이 *맨 위*가 아니라 **「스크롤 없이
+     * 닿는다」** 였을 뿐이라 한 줄짜리 프로필이 위에 와도 성립한다. 그래서 그물은 자리를
+     * **둘째까지**로 묶는다 — 셋째로 밀리는 순간 그 전제가 깨진다.
      */
     @Test
-    fun theProfileRowDoesNotTakeTheTopSpotFromTheSubscriptionCard() {
+    fun theSubscriptionCardStaysWithinReachAtTheTop() {
         val premium = myPage.indexOf("PremiumSubscriptionCard()")
         val profile = myPage.indexOf("UserProfileRow(")
-        assertTrue("두 조각을 다 찾지 못했다 — 그물이 헛돌고 있다.", premium >= 0 && profile >= 0)
+        val attendance = myPage.indexOf("AttendanceBoardSection(")
+        assertTrue("세 조각을 다 찾지 못했다 — 그물이 헛돌고 있다.", premium >= 0 && profile >= 0 && attendance >= 0)
         assertTrue(
-            "「나」 줄이 구독 카드보다 위에 있다 — 2026-09-18 결정을 뒤집었다(#159).",
-            premium < profile,
+            "「나」 줄이 맨 위가 아니다 — 2026-09-22 사용자 지시를 되돌렸다.",
+            profile < premium,
+        )
+        assertTrue(
+            "구독 카드가 출석 절 아래로 밀렸다 — 해지 경로가 스크롤 밖으로 나간다(#159).",
+            premium < attendance,
         )
     }
 
