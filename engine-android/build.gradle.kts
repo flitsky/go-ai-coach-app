@@ -22,7 +22,7 @@ kotlin {
 }
 
 dependencies {
-    implementation(project(":shared"))
+    api(project(":shared"))
     implementation(libs.kotlinx.coroutines.core)
 
     testImplementation(kotlin("test"))
