@@ -24,6 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -61,6 +62,14 @@ import java.util.Locale
 @Composable
 internal fun GameHistoryScreen(
     onBackClick: () -> Unit,
+    /**
+     * 대국 화면에서 「복기 하기」로 들어왔을 때, 다시보기를 닫으면 갈 곳(백로그 #185).
+     *
+     * ⚠️ **나가는 문이 둘이다.** 목록에서 연 다시보기는 지금처럼 **목록**으로 돌아가고,
+     * 대국 화면에서 온 것만 **그 대국 화면**으로 돌아간다 — 사용자는 목록에 들른 적이 없다.
+     * 하나로 합치면 둘 중 하나는 반드시 엉뚱한 곳으로 간다.
+     */
+    onReturnToGame: () -> Unit,
     /**
      * 저장 슬롯(`SavedGameStorePort`는 **한 판만** 담는다)에 진행 중인 **다른** 대국이 있는가.
      * 홈의 「대국 하기」가 쓰는 것과 **같은 신호**다 — 분기 대국도 그 슬롯을 밀어내므로
@@ -109,11 +118,17 @@ internal fun GameHistoryScreen(
     // 사용자가 다시보기에서 수순을 옮길 수 있으므로, 누를 때 다시 읽으면 **경고와 다른 자리**에서
     // 대국이 시작된다. 물어본 그 국면을 그대로 들고 있다가 그것으로 시작한다.
     var pendingBranch by remember { mutableStateOf<GameState?>(null) }
+    // 대국 화면에서 왔는가 — 다시보기의 **나가는 문**과 덮어쓰기 경고를 함께 가른다(백로그 #185).
+    var cameFromGame by remember { mutableStateOf(false) }
     opened?.let { (entry, replay) ->
         // `hasResumableSession`이면 먼저 묻고, 아니면 곧바로 갈라진다 — 확인 팝업을 두 번
         // 겹치지 않는다(2026-09-20 결정: 버튼 라벨이 이미 "17수부터 새 대국"이라 말한다).
+        // ⚠️ **방금 끝난 그 판에서 갈라질 때는 경고하지 않는다**(백로그 #185, 2026-09-22 사용자).
+        // 저장 슬롯에 남아 있는 것이 **자기 자신**이라, 「진행 중인 다른 대국을 덮어씁니다」가
+        // 사실과 다른 말이 된다(함정 39: 안내 문구가 거짓이면 없느니만 못하다).
+        val warnBeforeBranch = hasResumableSession && !cameFromGame
         val branch: (GameState) -> Unit = { state ->
-            if (hasResumableSession) {
+            if (warnBeforeBranch) {
                 pendingBranch = state
             } else {
                 onStartBranchedGame(branchedSnapshotOf(entry, replay, state))
@@ -122,7 +137,13 @@ internal fun GameHistoryScreen(
         GameReplayScreen(
             entry = entry,
             replay = replay,
-            onBackClick = { opened = null },
+            onBackClick = {
+                opened = null
+                if (cameFromGame) {
+                    cameFromGame = false
+                    onReturnToGame()
+                }
+            },
             onBranchFromHere = branch,
             modifier = modifier,
         )
@@ -166,6 +187,24 @@ internal fun GameHistoryScreen(
             GameHistoryStore(context).loadReplay(entry.id)
         }
         replay?.takeIf { !it.isEmpty }?.let { nonEmptyReplay -> opened = entry to nonEmptyReplay }
+    }
+
+    /**
+     * 「복기 하기」로 들어왔으면 **목록을 건너뛰고** 그 판의 다시보기를 곧장 연다(백로그 #185).
+     *
+     * ⚠️ **요청한 판이 맞는지 수순 개수로 확인한다.** 대국 화면은 자기 기록의 id를 모르므로
+     * *"가장 최근 기록"* 으로 찾는데, 기록 붙이기가 아직 안 돌았거나 실패했으면 그것은
+     * **직전 대국**이다 — 확인 없이 열면 화면은 아무 말 없이 **남의 판**을 보여 준다.
+     * 어긋나면 그냥 목록을 보여 준다(사용자가 자기 판을 목록에서 고를 수 있다).
+     *
+     * ⚠️ **참고 기보는 후보에서 뺀다** — 항상 맨 앞이라 `first()`로 집으면 그것이 잡힌다.
+     */
+    LaunchedEffect(entries) {
+        val requestedMoveCount = FinishedGameFlow.take() ?: return@LaunchedEffect
+        val newest = entries.firstOrNull { it.id != ReferenceGameHistoryId } ?: return@LaunchedEffect
+        if (newest.moveCount != requestedMoveCount || !newest.hasReplay) return@LaunchedEffect
+        cameFromGame = true
+        open(newest)
     }
 
     // ⚠️ **참고 기보는 이 자리에 못 온다** — 그 행은 `onNoteClick`을 아예 안 받는다(고정값,

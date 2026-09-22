@@ -47,6 +47,13 @@ internal fun GoCoachContent(
     benchmarkResult: EngineBenchmarkProfile?,
     onScoreGraphExpandedChange: (Boolean) -> Unit,
     onFinalJudgementReview: () -> Unit,
+    /**
+     * 끝난 판을 다시보기로 연다(백로그 #185) — 계가 팝업과 하단 액션바가 **같은 곳**을 부른다.
+     * ⚠️ **이동이라 `GameUiEvent`가 아니다** — `onExitGame`과 같은 선이다.
+     */
+    onReviewFinishedGame: () -> Unit,
+    /** 대국 설정 화면으로 간다(백로그 #185) — 끝난 판에서 하단 액션바가 여는 길. */
+    onOpenGameSetup: () -> Unit,
     /** ☰ 메뉴 최하단의 '대국 나가기'가 부른다(백로그 #175). 홈으로 돌아간다. */
     onExitGame: () -> Unit,
     selectedLanguage: UiLanguage,
@@ -67,16 +74,23 @@ internal fun GoCoachContent(
             isDisplayMenuExpanded = false
         }
     }
-    var dismissedFinalJudgementKey by remember { mutableStateOf<String?>(null) }
+    // ⚠️ **닫았다는 기억을 이 화면이 혼자 들지 않는다**(백로그 #185). 「복기 하기」가 목적지를
+    // 바꾸면 이 조각이 컴포지션에서 빠졌다가 돌아오는데, 그때 `remember`가 새로 만들어져
+    // **판정 결과가 다시 뜬다**(2026-09-22 실기에서 잡혔다). 그래서 화면 밖에도 함께 적는다.
+    var dismissedFinalJudgementKey by remember { mutableStateOf(FinishedGameFlow.dismissedJudgementKey) }
     LaunchedEffect(screenState.isGameEnded) {
         if (!screenState.isGameEnded) {
             dismissedFinalJudgementKey = null
+            FinishedGameFlow.clearDismissedJudgement()
         }
     }
     val finalJudgementKey = screenState.finalScoreJudgement?.dialogKey(screenState.gameState.moves.size)
     val finalJudgementToShow = screenState.finalScoreJudgement
         ?.takeIf { finalJudgementKey != null && dismissedFinalJudgementKey != finalJudgementKey }
-    val dismissFinalJudgement = { dismissedFinalJudgementKey = finalJudgementKey }
+    val dismissFinalJudgement = {
+        dismissedFinalJudgementKey = finalJudgementKey
+        FinishedGameFlow.markJudgementDismissed(finalJudgementKey)
+    }
 
     // ⚠️ **벤치마크 팝업은 여기서 그리지 않는다**(2026-09-10). 이 화면은 `InGame`에서만
     // 컴포즈되는데 '엔진 성능 측정' 버튼은 **설정 화면**에 있어서, 여기서 그리면 설정에서 누른
@@ -120,9 +134,11 @@ internal fun GoCoachContent(
                 onFinalJudgementReview()
                 dismissFinalJudgement()
             },
-            onNewGame = {
+            // ⚠️ **팝업을 먼저 닫고 나간다** — 닫지 않으면 대국 기록 화면 위에 계가 결과가
+            // 그대로 떠 있다(다이얼로그는 별도 윈도우라 목적지가 바뀌어도 살아남는다, 함정 7).
+            onReplay = {
                 dismissFinalJudgement()
-                onEvent(GameUiEvent.StartConfiguredGame)
+                onReviewFinishedGame()
             },
         )
     }
@@ -212,6 +228,8 @@ internal fun GoCoachContent(
             ) {
                 GamePlaySection(
                     screenState = screenState,
+                    onReviewFinishedGame = onReviewFinishedGame,
+                    onOpenGameSetup = onOpenGameSetup,
                     layout = layout,
                     // 넓은 배치는 스크롤이 없어 #139의 판 맞춤이 필요 없다 — 판이 남는 높이를 가진다.
                     boardMaxHeight = null,
@@ -246,6 +264,8 @@ internal fun GoCoachContent(
 
                 GamePlaySection(
                     screenState = screenState,
+                    onReviewFinishedGame = onReviewFinishedGame,
+                    onOpenGameSetup = onOpenGameSetup,
                     layout = layout,
                     boardMaxHeight = boardMaxHeight,
                     onBoardHeightChanged = { height -> boardHeightPx = height },

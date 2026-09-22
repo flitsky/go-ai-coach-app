@@ -20,6 +20,21 @@ private val RematchActions: Map<UiLanguage, String> = mapOf(
     UiLanguage.ChineseSimplified to "再来一局",
 )
 
+/**
+ * 끝난 대국을 다시보기로 여는 버튼(백로그 #185) — **계가 팝업과 하단 액션바가 같은 문구를 쓴다.**
+ *
+ * ⚠️ 목적지 화면의 제목은 「대국 다시보기」(`gameReplayTitleFor`)로 **문구가 다르다.** 이것은
+ * 실수가 아니라 사용자 어휘를 따른 것이다 — 등재문 부제가 *"오프라인 AI 대국·복기"* 이고
+ * 2026-09-22 지시도 「복기 하기」였다. 둘을 통일하려면 **화면 제목 쪽을 고쳐야** 하고,
+ * 그것은 #156이 정한 이름을 바꾸는 별도 결정이다.
+ */
+private val ReviewGameActions: Map<UiLanguage, String> = mapOf(
+    UiLanguage.Korean to "복기 하기",
+    UiLanguage.English to "Review",
+    UiLanguage.Japanese to "検討する",
+    UiLanguage.ChineseSimplified to "复盘",
+)
+
 private val ExitGameActions: Map<UiLanguage, String> = mapOf(
     UiLanguage.Korean to "대국 나가기",
     UiLanguage.English to "Leave game",
@@ -54,6 +69,8 @@ private val ScoreNowPromptBodies: Map<UiLanguage, String> = mapOf(
 )
 
 internal fun rematchActionFor(language: UiLanguage): String = RematchActions.getValue(language)
+
+internal fun reviewGameActionFor(language: UiLanguage): String = ReviewGameActions.getValue(language)
 
 internal fun exitGameActionFor(language: UiLanguage): String = ExitGameActions.getValue(language)
 

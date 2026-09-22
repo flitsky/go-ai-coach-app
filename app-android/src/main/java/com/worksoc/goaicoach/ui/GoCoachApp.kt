@@ -886,6 +886,9 @@ private fun GoCoachScreen(
         ScreenDestination.GameHistory -> {
             GameHistoryScreen(
                 onBackClick = { currentDestination = ScreenDestination.Home },
+                // 대국 화면에서 「복기 하기」로 들어온 다시보기의 **나가는 문**(백로그 #185).
+                // 왔던 곳으로 돌려보낸다 — 그 대국 화면은 아직 살아 있고 계가 결과도 그대로다.
+                onReturnToGame = { currentDestination = ScreenDestination.InGame },
                 // 홈의 「대국 하기」와 **같은 신호**다 — 분기 대국도 저장 슬롯 하나를 밀어낸다.
                 hasResumableSession = savedSessionToPrompt != null,
                 // ⚠️ **분기 대국은 「이어하기」와 같은 길을 탄다**(백로그 #172). 필요한 것
@@ -933,6 +936,12 @@ private fun GoCoachScreen(
                 benchmarkResult = benchmarkUiState.resultToConfirm,
                 onScoreGraphExpandedChange = { expanded -> isScoreGraphExpanded = expanded },
                 onFinalJudgementReview = ::activateEndgameJudgementReview,
+                // 백로그 #185. 상태를 여기 두지 않는다 — 훅 예산이 0이라(`FinishedGameFlow` KDoc).
+                onReviewFinishedGame = {
+                    FinishedGameFlow.request(screenState.gameState.moves.size)
+                    currentDestination = ScreenDestination.GameHistory
+                },
+                onOpenGameSetup = { currentDestination = ScreenDestination.GameSetup },
                 // ⚠️ 대국 화면에는 나가는 길이 **뒤로가기뿐이었다** — 있긴 한데 보이지 않았다
                 // (백로그 #175). 메뉴의 '대국 나가기'는 **뒤로가기와 정확히 같은 길**을 탄다
                 // (2026-09-18 사용자 확정): 대국 중이면 기권을 먼저 묻고, 끝난 판이면 바로 나간다.

@@ -93,6 +93,13 @@ internal fun GamePlaySection(
     onEvent: (GameUiEvent) -> Unit,
     // 넓은 배치의 위 줄 맨 앞 ☰. 메뉴 상태는 `GoCoachContent`가 들고 있다. 폰 배치는 헤더가 그린다.
     wideMenuButton: @Composable () -> Unit,
+    /**
+     * 끝난 판을 다시보기로 연다(백로그 #185). **이동이라 `GameUiEvent`가 아니라 콜백이다** —
+     * `onExitGame`·`onFinalJudgementReview`와 같은 선이다(대국 로직은 이벤트, 화면 이동은 콜백).
+     */
+    onReviewFinishedGame: () -> Unit,
+    /** 대국 설정 화면으로 간다(백로그 #185). 같은 이유로 콜백이다. */
+    onOpenGameSetup: () -> Unit,
 ) {
     var tentativeMove by remember { mutableStateOf<BoardCoordinate?>(null) }
     // 지연 착수(#144) — 떼고 나서 기다리는 자리. ⚠️ **좌표만으로는 안 된다**: 같은 자리를 다시 눌러도
@@ -381,6 +388,8 @@ internal fun GamePlaySection(
             GameActionButtons(
                 screenState = screenState,
                 onEvent = onEvent,
+                onReviewFinishedGame = onReviewFinishedGame,
+                onOpenGameSetup = onOpenGameSetup,
                 firstRowLeading = null,
                 secondRowLeading = null,
             )
@@ -388,6 +397,8 @@ internal fun GamePlaySection(
 
         GameScreenLayout.WideStacked -> WidePlayArrangement(
             screenState = screenState,
+            onReviewFinishedGame = onReviewFinishedGame,
+            onOpenGameSetup = onOpenGameSetup,
             // 차례 표시는 폰 상태판과 **같은 출처**를 본다 — 시계가 도는 쪽과 초록 테두리가 어긋나지 않게.
             currentTurnPlayer = currentTurnPlayer,
             isBoardMaxSize = isBoardMaxSize,
@@ -405,6 +416,8 @@ internal fun GamePlaySection(
 
         GameScreenLayout.WideColumns -> WideColumnsArrangement(
             screenState = screenState,
+            onReviewFinishedGame = onReviewFinishedGame,
+            onOpenGameSetup = onOpenGameSetup,
             currentTurnPlayer = currentTurnPlayer,
             isBoardMaxSize = isBoardMaxSize,
             onToggleMagnifier = onToggleMagnifier,
@@ -437,6 +450,8 @@ internal fun GamePlaySection(
 @Composable
 private fun WidePlayArrangement(
     screenState: GameScreenState,
+    onReviewFinishedGame: () -> Unit,
+    onOpenGameSetup: () -> Unit,
     currentTurnPlayer: StoneColor,
     isBoardMaxSize: Boolean,
     onToggleMagnifier: () -> Unit,
@@ -540,7 +555,12 @@ private fun WidePlayArrangement(
         // ⭐ **다섯을 한 줄로**(2026-09-12 사용자 지시 — *"폴드 사이즈에서는 버튼 5개 나란히 한 줄"*).
         // #143이 토글 둘과 착수 칸을 빼면서 아래가 헐거워졌고, 한 줄로 접은 만큼(48dp + 틈 8dp) **판이 커진다.**
         // ⚠️ 폰 배치는 그대로 두 줄이다 — 폭이 380dp 남짓이라 다섯이면 칸당 70dp도 안 돼 라벨이 잘린다.
-        GameActionButtonHost(screenState = screenState, onEvent = onEvent) { slots ->
+        GameActionButtonHost(
+            screenState = screenState,
+            onEvent = onEvent,
+            onReviewFinishedGame = onReviewFinishedGame,
+            onOpenGameSetup = onOpenGameSetup,
+        ) { slots ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -583,6 +603,8 @@ private fun WidePlayArrangement(
 @Composable
 private fun WideColumnsArrangement(
     screenState: GameScreenState,
+    onReviewFinishedGame: () -> Unit,
+    onOpenGameSetup: () -> Unit,
     currentTurnPlayer: StoneColor,
     isBoardMaxSize: Boolean,
     onToggleMagnifier: () -> Unit,
@@ -598,7 +620,12 @@ private fun WideColumnsArrangement(
 ) {
     val strings = LocalUiStrings.current
     val turn = currentTurnPlayer.takeIf { !screenState.isGameEnded }
-    GameActionButtonHost(screenState = screenState, onEvent = onEvent) { slots ->
+    GameActionButtonHost(
+        screenState = screenState,
+        onEvent = onEvent,
+        onReviewFinishedGame = onReviewFinishedGame,
+        onOpenGameSetup = onOpenGameSetup,
+    ) { slots ->
         Column(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -792,6 +819,8 @@ internal class GameActionSlots internal constructor(
 private fun GameActionButtonHost(
     screenState: GameScreenState,
     onEvent: (GameUiEvent) -> Unit,
+    onReviewFinishedGame: () -> Unit,
+    onOpenGameSetup: () -> Unit,
     content: @Composable (GameActionSlots) -> Unit,
 ) {
     val strings = LocalUiStrings.current
@@ -1014,18 +1043,42 @@ private fun GameActionButtonHost(
                 },
                 enabled = resignEnabled,
                 modifier = modifier,
-                label = if (screenState.isGameEnded) strings.newGameAction else strings.resign,
+                // ⚠️ **종국 후 문구가 「재 대국」이다**(U-52, 2026-09-22). 이 칸의 그 라벨은
+                // **종국 후에만** 보이고, 계가 팝업에 있던 「재 대국」과 **같은 이벤트**를 쏜다
+                // (`StartConfiguredGame`). 문구만 달랐던 옛 사유는 끊어진 포인터였다 —
+                // `FinalJudgementDialog`의 주석이 가리키던 `UiStrings.rematchAction`의 KDoc은
+                // 이미 없다. 같은 일을 하는 버튼은 같은 이름으로 부른다.
+                label = if (screenState.isGameEnded) {
+                    rematchActionFor(strings.language)
+                } else {
+                    strings.resign
+                },
             )
         },
         pass = { modifier ->
-            val passAction = screenState.actionButtons.firstOrNull { it.role == GameActionButtonRole.Pass }
-            if (passAction != null) {
-                SingleActionButton(
-                    action = passAction,
-                    label = strings.pass,
-                    onEvent = onEvent,
+            // ⚠️ **끝난 판에서는 이 칸이 「복기 하기」가 된다**(백로그 #185). 종국 후 통과는 할
+            // 일이 없어 어차피 비활성이던 자리다 — 바로 옆 「기권 → 재 대국」이 이미 쓰던
+            // 관용구를 한 번 더 쓴다.
+            // ⚠️ **갈래를 여기(칸을 만드는 곳)에 둔다 — 배치에 두지 말 것.** 같은 다섯 칸을
+            // 세 배치가 그리고(한 줄 다섯·좌우 기둥·두 줄) **좌우 기둥은 순서가 뒤집혀 있다** —
+            // 배치마다 갈래를 적으면 한쪽만 고쳐진다(`GameActionSlots`의 KDoc, #44·#66).
+            if (screenState.isGameEnded) {
+                ActionButton(
+                    onClick = onReviewFinishedGame,
+                    enabled = true,
                     modifier = modifier,
+                    label = reviewGameActionFor(strings.language),
                 )
+            } else {
+                val passAction = screenState.actionButtons.firstOrNull { it.role == GameActionButtonRole.Pass }
+                if (passAction != null) {
+                    SingleActionButton(
+                        action = passAction,
+                        label = strings.pass,
+                        onEvent = onEvent,
+                        modifier = modifier,
+                    )
+                }
             }
         },
         undo = { modifier ->
@@ -1039,6 +1092,22 @@ private fun GameActionButtonHost(
             // ⚠️ 라벨에는 아무 표시도 붙이지 않는다. 무르기에 무제한 표시를 달지 않기로 한 것은
             // 사용자 확정 사항이고(`UiStrings.featureButtonLabel` KDoc), 게다가 이 버튼은
             // `ActionButtonMinHeight`(48dp) **고정 높이**라 줄이 늘면 폰트 배율에서 잘린다.
+            // ⚠️ **끝난 판에서는 이 칸이 「대국 설정」이 된다**(백로그 #185).
+            // ⚠️ **되돌아오지 않는 결정이다** — 지금까지 무르기는 종국 후에도 살아 있어서
+            // 기권·계가를 **되돌려 계속 둘 수 있었다**(2026-09-22 실기 확인: 기권 직후 무르기를
+            // 누르면 수순이 하나 줄고 버튼이 「기권」으로 돌아왔다). 그 길을 이 칸에서 걷어내도
+            // 좋다고 2026-09-22 사용자가 확인했다. **되살리려면 그 확인부터 뒤집을 것.**
+            // ⚠️ 대국 설정으로 가는 길은 끝난 판에 **달리 없다** — 대국 중 메뉴(☰)의 설정 컨트롤은
+            // 종국 후에도 잠겨 있다(같은 날 실기 확인). 그래서 이 칸이 새로 여는 길이다.
+            if (screenState.isGameEnded) {
+                ActionButton(
+                    onClick = onOpenGameSetup,
+                    enabled = true,
+                    modifier = modifier,
+                    label = strings.matchSetup,
+                )
+                return@GameActionSlots
+            }
             val undoAction = screenState.actionButtons.firstOrNull { it.role == GameActionButtonRole.Undo }
             if (undoAction != null) {
                 val undoAccess = premium.resolve(FeatureId.Undo)
@@ -1070,12 +1139,19 @@ private fun GameActionButtonHost(
 private fun GameActionButtons(
     screenState: GameScreenState,
     onEvent: (GameUiEvent) -> Unit,
+    onReviewFinishedGame: () -> Unit,
+    onOpenGameSetup: () -> Unit,
     // 넓은 배치(#141)가 두 줄 **맨 앞**에 끼워 넣는 칸 — 첫 줄엔 판 토글 둘, 둘째 줄엔 착수 칸.
     // 폰 배치는 `null`(토글은 판 위, 착수 칸은 상태판 가운데에 있다). 게이팅·팝업은 두 배치가 공유한다.
     firstRowLeading: (@Composable RowScope.() -> Unit)?,
     secondRowLeading: (@Composable RowScope.() -> Unit)?,
 ) {
-    GameActionButtonHost(screenState = screenState, onEvent = onEvent) { slots ->
+    GameActionButtonHost(
+        screenState = screenState,
+        onEvent = onEvent,
+        onReviewFinishedGame = onReviewFinishedGame,
+        onOpenGameSetup = onOpenGameSetup,
+    ) { slots ->
         Column(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(8.dp),
