@@ -14,12 +14,8 @@ data class UserPreferencesAutosaveRequest(
     val isDirectPlayEnabled: Boolean,
     val showMoveReview: Boolean = false,
     val isPlayHapticEnabled: Boolean = true,
-    val isDelayedPlayEnabled: Boolean = false,
     val isPlayEffectEnabled: Boolean = true,
     val isBoardMaxSize: Boolean = true,
-    val isPlayMagnifierEnabled: Boolean = true,
-    val magnifierSizeScale: Float = MagnifierSettings.defaultSizeScale,
-    val magnifierZoom: Float = MagnifierSettings.defaultZoom,
 )
 
 /**
@@ -50,17 +46,18 @@ internal fun buildUserPreferencesAutosaveSnapshot(
         isDirectPlayEnabled = request.isDirectPlayEnabled,
         showMoveReview = request.showMoveReview,
         isPlayHapticEnabled = request.isPlayHapticEnabled,
-        isDelayedPlayEnabled = request.isDelayedPlayEnabled,
         isPlayEffectEnabled = request.isPlayEffectEnabled,
         isBoardMaxSize = request.isBoardMaxSize,
-        isPlayMagnifierEnabled = request.isPlayMagnifierEnabled,
-        magnifierSizeScale = request.magnifierSizeScale,
-        magnifierZoom = request.magnifierZoom,
     ).copy(
         hasSeenOnboarding = current.hasSeenOnboarding,
         // ⚠️ 글꼴 배율도 이 오토세이브가 관리하지 않는다(백로그 #81) — 빼면 사용자가 배율을
         // 바꿔 놓고 대국 설정을 한 번 만지는 순간 조용히 1.0으로 돌아간다.
         appFontScale = current.appFontScale,
+        // ⚠️ **설정 세대도 오토세이브가 관리하지 않는다**(백로그 #188) — 빼면 저장할 때마다
+        // 세대가 기본값(현재 세대)으로 덮여, **마이그레이션이 이미 돈 것처럼 보인다.** 그러면
+        // 아직 안 돈 사용자에게 영영 안 돌거나, 반대로 매번 다시 돌아 사용자가 고른 값을 계속
+        // 되돌린다. 이 한 줄이 그 둘을 함께 막는다.
+        settingsSchemaGeneration = current.settingsSchemaGeneration,
     )
 
 fun runUserPreferencesAutosave(

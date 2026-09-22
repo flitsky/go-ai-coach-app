@@ -56,7 +56,6 @@ import com.worksoc.goaicoach.application.consumable.ConsumableCatalog
 import com.worksoc.goaicoach.application.consumable.ConsumableSpendDecision
 import com.worksoc.goaicoach.application.movereview.MoveReviewTone
 import com.worksoc.goaicoach.application.premium.FeatureAccess
-import com.worksoc.goaicoach.application.preferences.DelayedPlayWindowMillis
 import com.worksoc.goaicoach.application.premium.FeatureId
 import com.worksoc.goaicoach.application.safety.engineTurnWatchdogTimeoutMillisFor
 import com.worksoc.goaicoach.application.safety.isEngineTurnWatchdogTriggered
@@ -72,12 +71,6 @@ import kotlinx.coroutines.flow.first
 import com.worksoc.goaicoach.application.guide.GuideTarget
 
 private const val TurnTimerTickIntervalMillis = 200L
-
-/**
- * 지연 착수가 기다리는 자리(백로그 #144). [token]은 **누를 때마다 새로 발급**한다 — 같은 자리를 다시 눌러도
- * 타이머가 처음부터 다시 돌게 하는 것이 이 값의 유일한 존재 이유다.
- */
-private data class PendingPlay(val coordinate: BoardCoordinate, val token: Int)
 
 @Composable
 internal fun GamePlaySection(
@@ -102,30 +95,8 @@ internal fun GamePlaySection(
     onOpenGameSetup: () -> Unit,
 ) {
     var tentativeMove by remember { mutableStateOf<BoardCoordinate?>(null) }
-    // 지연 착수(#144) — 떼고 나서 기다리는 자리. ⚠️ **좌표만으로는 안 된다**: 같은 자리를 다시 눌러도
-    // 처음부터 다시 세야 하는데(사용자 결정), 좌표가 그대로면 키가 안 바뀌어 타이머가 재시작되지 않는다.
-    // 그래서 누를 때마다 **새 번호**를 함께 발급한다.
-    var pendingPlay by remember { mutableStateOf<PendingPlay?>(null) }
-    var pendingPlaySeq by remember { mutableIntStateOf(0) }
-    // 이 애니메이션이 곧 타이머다 — 진해지는 것과 놓이는 시점이 **같은 하나**라 서로 어긋날 수 없다.
-    val pendingPlayProgress = remember { Animatable(0f) }
-
     LaunchedEffect(screenState.gameState) {
         tentativeMove = null
-        // ⚠️ 판이 바뀌면 대기를 버린다 — 무르기·기권·종국·AI 착수가 그 사이 들어오면, 남겨 둘 경우
-        //   이미 끝난 판이나 남의 차례에 돌이 하나 더 떨어진다.
-        pendingPlay = null
-    }
-
-    LaunchedEffect(pendingPlay) {
-        val waiting = pendingPlay ?: return@LaunchedEffect
-        pendingPlayProgress.snapTo(0f)
-        pendingPlayProgress.animateTo(
-            targetValue = 1f,
-            animationSpec = tween(durationMillis = DelayedPlayWindowMillis.toInt(), easing = LinearEasing),
-        )
-        pendingPlay = null
-        onEvent(GameUiEvent.PlayAt(waiting.coordinate))
     }
     LaunchedEffect(screenState.uxOptions.isDirectPlayEnabled) {
         tentativeMove = null
@@ -142,15 +113,6 @@ internal fun GamePlaySection(
             screenState.isGameEnded
 
     val isBoardMaxSize = screenState.uxOptions.isBoardMaxSize
-    val onToggleMagnifier = {
-        onEvent(
-            GameUiEvent.ChangeUxOptions(
-                screenState.uxOptions.copy(
-                    isPlayMagnifierEnabled = !screenState.uxOptions.isPlayMagnifierEnabled,
-                ),
-            ),
-        )
-    }
     val onToggleBoardSize = {
         onEvent(GameUiEvent.ChangeUxOptions(screenState.uxOptions.copy(isBoardMaxSize = !isBoardMaxSize)))
     }
@@ -301,23 +263,11 @@ internal fun GamePlaySection(
             engineActivityIndicator = screenState.engine.activityIndicator,
             modifier = boardModifier,
             tentativeMove = tentativeMove,
-            pendingPlay = pendingPlay?.coordinate,
-            pendingPlayProgress = { pendingPlayProgress.value },
-            // 손가락이 닿는 순간 대기를 **버린다**(#144 실기 결함, 2026-09-12 사용자).
-            // 카운트는 판에서 손이 떨어져 있을 때만 돈다 — 버리면 `LaunchedEffect(pendingPlay)`가
-            // 취소돼 옛 자리가 확정되지 않고, 떼는 순간 `onCoordinateTap`이 **새 번호**로 다시 센다.
-            // ⚠️ 조건을 달지 않는다 — 지연 착수가 꺼져 있으면 대기 자체가 없어 `null` 대입은 무해하고,
-            //   조건을 달면 이 람다가 옛 `screenState`를 붙든 채 굳을 수 있다.
-            onCoordinatePress = { pendingPlay = null },
             onCoordinateTap = { coordinate ->
-                when {
-                    // 지연 착수(#144): 누를 때마다 **그 자리에서 처음부터** 다시 센다 — 다른 자리든 같은 자리든.
-                    screenState.uxOptions.isDelayedPlayEnabled -> {
-                        pendingPlaySeq += 1
-                        pendingPlay = PendingPlay(coordinate, pendingPlaySeq)
-                    }
-                    screenState.uxOptions.isDirectPlayEnabled -> onEvent(GameUiEvent.PlayAt(coordinate))
-                    else -> tentativeMove = coordinate
+                if (screenState.uxOptions.isDirectPlayEnabled) {
+                    onEvent(GameUiEvent.PlayAt(coordinate))
+                } else {
+                    tentativeMove = coordinate
                 }
             },
             isGameEnded = screenState.isGameEnded,
@@ -402,7 +352,6 @@ internal fun GamePlaySection(
             // 차례 표시는 폰 상태판과 **같은 출처**를 본다 — 시계가 도는 쪽과 초록 테두리가 어긋나지 않게.
             currentTurnPlayer = currentTurnPlayer,
             isBoardMaxSize = isBoardMaxSize,
-            onToggleMagnifier = onToggleMagnifier,
             onToggleBoardSize = onToggleBoardSize,
             tentativeMove = tentativeMove,
             blackTotalMillis = blackTotalMillis,
@@ -420,7 +369,6 @@ internal fun GamePlaySection(
             onOpenGameSetup = onOpenGameSetup,
             currentTurnPlayer = currentTurnPlayer,
             isBoardMaxSize = isBoardMaxSize,
-            onToggleMagnifier = onToggleMagnifier,
             onToggleBoardSize = onToggleBoardSize,
             tentativeMove = tentativeMove,
             blackTotalMillis = blackTotalMillis,
@@ -454,7 +402,6 @@ private fun WidePlayArrangement(
     onOpenGameSetup: () -> Unit,
     currentTurnPlayer: StoneColor,
     isBoardMaxSize: Boolean,
-    onToggleMagnifier: () -> Unit,
     onToggleBoardSize: () -> Unit,
     tentativeMove: BoardCoordinate?,
     blackTotalMillis: Long,
@@ -607,7 +554,6 @@ private fun WideColumnsArrangement(
     onOpenGameSetup: () -> Unit,
     currentTurnPlayer: StoneColor,
     isBoardMaxSize: Boolean,
-    onToggleMagnifier: () -> Unit,
     onToggleBoardSize: () -> Unit,
     tentativeMove: BoardCoordinate?,
     blackTotalMillis: Long,

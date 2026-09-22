@@ -73,15 +73,6 @@ import kotlinx.coroutines.delay
 
 // 착수 드래그 상태(`PlayDrag`)와 임계 전 추적기는 `BoardPlayDrag.kt`에 있다(#138).
 
-/**
- * 손가락과 말풍선 사이 간격. **판 크기가 아니라 dp로 잡는다** — 가려지는 것은 손끝이라는
- * 물리적 크기이고, 판이 작아진다고 손가락이 작아지지는 않는다.
- */
-private val MagnifierFingerGap = 28.dp
-
-/** 확대창 안의 가늠돌 — 여기서는 조준이 목적이라 또렷하게. */
-private const val DragGhostAlphaInMagnifier = 0.85f
-
 private const val EngineActivityFrameIntervalMillis = 1_000L
 private val ActivityIndicatorDots = listOf("", " .", " ..", " ...")
 
@@ -215,9 +206,7 @@ internal fun GoBoard(
                         inputEnabled,
                         uxOptions.showCoordinates,
                         uxOptions.isDirectPlayEnabled,
-                        uxOptions.isDelayedPlayEnabled,
                         uxOptions.isPlayHapticEnabled,
-                        uxOptions.isPlayMagnifierEnabled,
                     ) {
                         val holdThresholdMillis = viewConfiguration.longPressTimeoutMillis
                         val touchSlop = viewConfiguration.touchSlop
@@ -233,10 +222,9 @@ internal fun GoBoard(
                         //                    이벤트를 **판이 가진다** — 판이 항상 우선이다(2026-09-11
                         //                    사용자 결정, 사유는 `trackPressUntilUp`).
                         //                    떼면 **가늠돌이 있던 자리**에 놓인다
-                        //   ③ 임계를 넘겼다 → 확대 창이 `isPlayMagnifierEnabled`일 때만 함께 뜬다.
-                        //                    계속 따라가고, 떼는 순간에만 착수
-                        // ⚠️ **돋보기 토글은 "확대 창을 그릴지"만 정한다** — 가늠돌도 끌어서 두기도 언제나
-                        // 된다(2026-09-09 사용자 지시). 토글로 제스처를 먼저 가르던 옛 갈래를 되살리지 말 것.
+                        //   ③ 임계를 넘겼다 → 계속 따라가고, 떼는 순간에만 착수
+                        // ⚠️ **확대 창은 2026-09-22에 없앴다**(백로그 #188) — 가늠돌과 끌어서 두기는
+                        // 그대로 남는다. 토글로 제스처를 가르던 옛 갈래를 되살리지 말 것.
                         awaitEachGesture {
                             val down = awaitFirstDown()
                             down.consume()
@@ -287,7 +275,7 @@ internal fun GoBoard(
                                 )?.let { it.spacing * PlayDragLiftCells } ?: 0f
 
                                 var follow = DragFollow(target = down.position, following = false)
-                                playDrag = PlayDrag(follow.target, below = false, magnifier = false)
+                                playDrag = PlayDrag(follow.target, below = false)
 
                                 // 끌기 중 착수 불가 위치를 짚을 때마다 짧게 두 번 울린다(2026-09-20
                                 // 사용자 지시). 좌표가 바뀔 때만 검사한다 — 매 프레임 다시 물으면 같은
@@ -312,7 +300,7 @@ internal fun GoBoard(
                                                 following = follow.following,
                                                 liftPx = liftPx,
                                             )
-                                            playDrag = PlayDrag(follow.target, below = false, magnifier = false)
+                                            playDrag = PlayDrag(follow.target, below = false)
                                             // 슬롭을 넘어 실제로 끌 때만 짚는다 — 안 그러면 누른 첫
                                             // 좌표에서 곧바로 판정이 나 손끝을 떼기 전인데 울린다.
                                             if (follow.following) maybeSignalInvalidHover(coordinateAt(follow.target))
@@ -344,54 +332,24 @@ internal fun GoBoard(
                                     return@awaitEachGesture
                                 }
 
-                                // ③ 임계를 넘겼다. ⚠️ 말풍선의 위/아래는 **여기서 한 번만** 정한다 — 매
-                                // 프레임 다시 판단하면 손가락이 경계선을 지날 때 창이 반대편으로 순간이동한다.
-                                // ⚠️ **확대 창이 꺼져 있거나 기하를 못 구하면(캔버스 0) 창만 안 띄운다** —
-                                //   예전에는 기하가 없으면 제스처를 통째로 취소해, 끌어서 두기까지 함께 사라졌다.
-                                val magnifierSpacing = if (uxOptions.isPlayMagnifierEnabled) {
-                                    boardTapGeometry(
-                                        canvasWidth = canvasSize.width.toFloat(),
-                                        canvasHeight = canvasSize.height.toFloat(),
-                                        boardSize = gameState.boardSize,
-                                        showCoordinates = uxOptions.showCoordinates,
-                                    )?.spacing
-                                } else {
-                                    null
-                                }
-                                val showMagnifier = magnifierSpacing != null
-                                val below = magnifierSpacing?.let { spacing ->
-                                    magnifierPrefersBelow(
-                                        // ⚠️ **조준점이 아니라 손가락**이다(#154) — 말풍선은 손가락을
-                                        // 기준으로 놓아야 어디를 가리키는지 읽힌다.
-                                        follow.finger,
-                                        Size(canvasSize.width.toFloat(), canvasSize.height.toFloat()),
-                                        spacing,
-                                        MagnifierFingerGap.toPx(),
-                                        sizeScale = uxOptions.magnifierSizeScale,
-                                        zoom = uxOptions.magnifierZoom,
-                                    )
-                                } ?: false
+                                // ③ 임계를 넘겼다 — 계속 따라가고, 떼는 순간에만 착수한다.
 
-                                // ⚠️ **임계 뒤의 띄움은 확대창이 대신한다**(U-9, 2026-09-18 사용자:
-                                // *"돋보기 기능이 활성화된 경우, 0.4초 임계 뒤에는 내려주세요"*).
-                                // 확대창이 뜨면 손가락 밑이 그 안에 보이므로 띄움이 할 일이 없고,
-                                // 둘을 겹쳐 걸면 조준점이 말풍선과 따로 놀아 오히려 헷갈린다.
-                                // ⭐ **돋보기가 꺼져 있으면 띄움을 그대로 유지한다** — 그때는 대신해 줄
-                                // 것이 없기 때문이다. 사용자가 *"끌기가 안정화되면 돋보기를 비활성화할
-                                // 수도 있다"* 고 했고, 그날 이 규칙이 저절로 맞는 쪽으로 돈다.
-                                // ⚠️ 확대창이 뜰 때는 임계를 넘는 순간 가늠돌이 한 칸 내려온다 —
-                                // **알고 받아들인 것이다**(같은 순간 말풍선이 뜨므로 화면이 어차피 바뀐다).
-                                val holdLiftPx = if (showMagnifier) 0f else liftPx
+                                // ⚠️ **임계를 넘겨도 띄움을 내리지 않는다**(백로그 #188).
+                                // 2026-09-18의 U-9는 *"돋보기가 뜨면 띄움을 내려라"* 였는데,
+                                // **확대창을 없앴으므로 대신해 줄 것이 사라졌다** — 그 규칙이
+                                // 저절로 "언제나 띄운다"로 도는 것이 그 결정의 단서였다
+                                // (*"끌기가 안정화되면 돋보기를 비활성화할 수도 있다"*, 사용자).
+                                val holdLiftPx = liftPx
                                 var finger = follow.finger
                                 var target = Offset(finger.x, finger.y - holdLiftPx)
-                                playDrag = PlayDrag(target, below, magnifier = showMagnifier, finger = finger)
+                                playDrag = PlayDrag(target, below = false, finger = finger)
                                 // ⚠️ **누르고 있는 동안 착수가 확정되면 안 된다**(사용자 확정).
                                 // 여기서는 좌표만 따라가고, 확정은 아래 `completed` 분기에서만 한다.
                                 val completed = drag(down.id) { change ->
                                     change.consume()
                                     finger = change.position
                                     target = Offset(finger.x, finger.y - holdLiftPx)
-                                    playDrag = PlayDrag(target, below, magnifier = showMagnifier, finger = finger)
+                                    playDrag = PlayDrag(target, below = false, finger = finger)
                                     maybeSignalInvalidHover(coordinateAt(target))
                                 }
                                 if (!completed) return@awaitEachGesture
@@ -531,42 +489,6 @@ internal fun GoBoard(
                             stone = gameState.nextPlayer,
                             alpha = ghostAlpha,
                         )
-                    }
-                    // 확대창은 **임계를 넘긴 드래그**에서만 뜬다 — 그 판단은 제스처가 `magnifier`에
-                    // 담아 둔다(토글이 꺼져 있으면 거기서 이미 `false`다).
-                    if (drag.magnifier) drawMagnifier(
-                        placement = magnifierPlacement(
-                            // ⚠️ **손가락**이다(#154) — 조준점을 주면 말풍선이 함께 올라가
-                            // 손가락에서 떨어진다.
-                            touch = drag.finger,
-                            canvasSize = size,
-                            cellSpacing = geometry.spacing,
-                            fingerGapPx = MagnifierFingerGap.toPx(),
-                            below = drag.below,
-                            // ⚠️ **두 곳에 같은 값을 줘야 한다** — 위 `magnifierPrefersBelow`도
-                            // 같은 반지름을 계산한다. 한쪽만 주면 말풍선이 뜰 자리를 잘못 재서
-                            // 손가락 위/아래 판정이 어긋난다(#85).
-                            sizeScale = uxOptions.magnifierSizeScale,
-                            zoom = uxOptions.magnifierZoom,
-                        ),
-                        touch = drag.finger,
-                        background = if (isGameEnded) colors.boardBackgroundEnded else colors.boardBackgroundActive,
-                        border = colors.boardBorder,
-                    ) {
-                        // ⚠️ 확대창은 **격자·돌·가늠돌만** 그린다. 형세 오버레이나 추천 수 번호까지
-                        // 2배로 들어오면 정작 조준해야 할 교차점이 그 안에 묻힌다.
-                        drawBoardGrid(geometry, gameState.boardSize, colors.gridLine)
-                        for ((coordinate, stone) in gameState.stones) {
-                            drawStone(geometry.pointFor(coordinate), stoneRadius, stone, isGameEnded)
-                        }
-                        if (dragCoordinate != null) {
-                            drawGhostStone(
-                                center = geometry.pointFor(dragCoordinate),
-                                radius = stoneRadius,
-                                stone = gameState.nextPlayer,
-                                alpha = DragGhostAlphaInMagnifier,
-                            )
-                        }
                     }
                 }
             }

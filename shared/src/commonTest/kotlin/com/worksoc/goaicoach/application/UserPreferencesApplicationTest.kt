@@ -229,7 +229,6 @@ class UserPreferencesApplicationTest {
                 showMoveReview = true,
                 isPlayHapticEnabled = false,
                 isBoardMaxSize = false,
-                isPlayMagnifierEnabled = false,
             ),
             store = store,
         )
@@ -244,10 +243,9 @@ class UserPreferencesApplicationTest {
             if (saved.isDirectPlayEnabled == defaults.isDirectPlayEnabled) add("isDirectPlayEnabled")
             if (saved.showMoveReview == defaults.showMoveReview) add("showMoveReview")
             if (saved.isPlayHapticEnabled == defaults.isPlayHapticEnabled) add("isPlayHapticEnabled")
-            // ⚠️ 아래 둘은 #39에서 채웠다 — `isBoardMaxSize`는 그물이 생긴 뒤에 추가된
-            // 필드인데 목록에 오르지 않아 **2026-08-31까지 검사 대상이 아니었다.**
+            // ⚠️ `isBoardMaxSize`는 그물이 생긴 뒤에 추가된 필드인데 목록에 오르지 않아
+            // **2026-08-31까지 검사 대상이 아니었다**(#39에서 채웠다).
             if (saved.isBoardMaxSize == defaults.isBoardMaxSize) add("isBoardMaxSize")
-            if (saved.isPlayMagnifierEnabled == defaults.isPlayMagnifierEnabled) add("isPlayMagnifierEnabled")
         }
 
         // `assertEquals(message, expected, actual)`는 List에서 Double 오버로드로 잡혀

@@ -39,8 +39,6 @@ class MenuOptionOrderContractTest {
         val expected = listOf(
             "boardSizeToggleLabelFor(strings.language, isMaxSize = true)",
             "strings.coordinates",
-            "playMagnifierLabelFor(strings.language)",
-            "strings.delayedPlay",
             "strings.lastMoveRing",
             "strings.playHaptic",
             "strings.playEffect",

@@ -131,10 +131,8 @@ internal fun GameReplayScreen(
             showMoveReview = true,
             showOwnershipOverlay = false,
             isDirectPlayEnabled = false,
-            isDelayedPlayEnabled = false,
             isPlayHapticEnabled = false,
             isPlayEffectEnabled = false,
-            isPlayMagnifierEnabled = false,
         )
     }
 

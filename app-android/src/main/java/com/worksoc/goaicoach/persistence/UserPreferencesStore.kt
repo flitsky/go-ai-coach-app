@@ -2,9 +2,9 @@ package com.worksoc.goaicoach.persistence
 
 import android.content.Context
 import com.worksoc.goaicoach.application.preferences.DefaultAppFontScale
-import com.worksoc.goaicoach.application.preferences.MagnifierSettings
 import com.worksoc.goaicoach.application.preferences.sanitizeAppFontScale
 import com.worksoc.goaicoach.application.preferences.UserPreferencesSnapshot
+import com.worksoc.goaicoach.application.preferences.migrateSettingsSchema
 import com.worksoc.goaicoach.application.preferences.UserPreferencesStorePort
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.persistence.PlayerSetupJsonCodec.decodePlayerSetup
@@ -24,9 +24,20 @@ internal class UserPreferencesStore(context: Context) : UserPreferencesStorePort
             .apply()
     }
 
+    /**
+     * ⚠️ **읽는 김에 설정 세대를 올린다**(백로그 #188) — 기본값이 바뀐 필드를 옛 사용자에게도
+     * 미치게 하는 유일한 지점이다. `migrateSettingsSchema`는 올릴 것이 없으면 **같은 인스턴스를
+     * 그대로** 돌려주므로, 대부분의 실행에서는 아무 일도 일어나지 않는다.
+     *
+     * ⚠️ **올렸으면 곧바로 저장한다** — 저장하지 않으면 앱을 켤 때마다 다시 돌고, 그 사이
+     * 사용자가 고친 값이 매번 되돌려진다.
+     */
     override fun load(): UserPreferencesSnapshot {
         val raw = prefs.getString(PreferencesKey, null) ?: return UserPreferencesSnapshot()
-        return UserPreferencesCodec.decode(raw) ?: UserPreferencesSnapshot()
+        val stored = UserPreferencesCodec.decode(raw) ?: return UserPreferencesSnapshot()
+        val migrated = migrateSettingsSchema(stored)
+        if (migrated !== stored) save(migrated)
+        return migrated
     }
 
     private companion object {
@@ -61,10 +72,9 @@ internal object UserPreferencesCodec {
             .put("autoPlayDelayMillis", snapshot.autoPlayDelayMillis)
             .put("searchTimeSettings", encodeSearchTimeSettings(snapshot.searchTimeSettings))
             .put("hasSeenOnboarding", snapshot.hasSeenOnboarding)
-            // ⚠️ 배율류는 **문자열로** 저장한다 — `Float`를 `Double`로 넣으면
-            // `1.2000000476837158`이 된다(#81에서 글꼴 배율로 확인했다).
-            .put("magnifierSizeScale", snapshot.magnifierSizeScale.toString())
-            .put("magnifierZoom", snapshot.magnifierZoom.toString())
+            // **설정 세대**(백로그 #188). ⚠️ 키만 더한다(함정 55) — 스키마를 갈아엎으면
+            // `wipeToFreshInstall`이 조용히 지나친다.
+            .put("settingsSchemaGeneration", snapshot.settingsSchemaGeneration)
             // ⚠️ **`Float`를 `Double`로 넣지 않는다** — `1.3f.toDouble()`이
             // `1.2999999523162842`로 저장돼(2026-09-04 실기에서 확인) 사람이 읽을 수 없고,
             // 개발자 도구가 이 파일을 쓰는 자리라 손 편집도 전제된다. 왕복은 문자열이 정확하다.
@@ -82,10 +92,8 @@ internal object UserPreferencesCodec {
         putIfChanged("isDirectPlayEnabled", snapshot.isDirectPlayEnabled, defaults.isDirectPlayEnabled)
         putIfChanged("showMoveReview", snapshot.showMoveReview, defaults.showMoveReview)
         putIfChanged("isPlayHapticEnabled", snapshot.isPlayHapticEnabled, defaults.isPlayHapticEnabled)
-        putIfChanged("isDelayedPlayEnabled", snapshot.isDelayedPlayEnabled, defaults.isDelayedPlayEnabled)
         putIfChanged("isPlayEffectEnabled", snapshot.isPlayEffectEnabled, defaults.isPlayEffectEnabled)
         putIfChanged("isBoardMaxSize", snapshot.isBoardMaxSize, defaults.isBoardMaxSize)
-        putIfChanged("isPlayMagnifierEnabled", snapshot.isPlayMagnifierEnabled, defaults.isPlayMagnifierEnabled)
 
         return json.toString()
     }
@@ -128,16 +136,12 @@ internal object UserPreferencesCodec {
                 showMoveReview = json.optBoolean("showMoveReview", defaults.showMoveReview),
                 hasSeenOnboarding = json.optBoolean("hasSeenOnboarding", false),
                 isPlayHapticEnabled = json.optBoolean("isPlayHapticEnabled", defaults.isPlayHapticEnabled),
-                isDelayedPlayEnabled = json.optBoolean("isDelayedPlayEnabled", defaults.isDelayedPlayEnabled),
                 isPlayEffectEnabled = json.optBoolean("isPlayEffectEnabled", defaults.isPlayEffectEnabled),
                 isBoardMaxSize = json.optBoolean("isBoardMaxSize", defaults.isBoardMaxSize),
-                isPlayMagnifierEnabled = json.optBoolean("isPlayMagnifierEnabled", defaults.isPlayMagnifierEnabled),
-                magnifierSizeScale = MagnifierSettings.sanitizeSizeScale(
-                    json.optString("magnifierSizeScale").toFloatOrNull() ?: MagnifierSettings.defaultSizeScale,
-                ),
-                magnifierZoom = MagnifierSettings.sanitizeZoom(
-                    json.optString("magnifierZoom").toFloatOrNull() ?: MagnifierSettings.defaultZoom,
-                ),
+                // ⚠️ **없으면 0이다** — 이 키가 생기기 전에 저장한 사용자가 그 경우이고,
+                // 바로 그 사람들에게 마이그레이션이 돌아야 한다. 기본값(현재 세대)을 쓰면
+                // **아무에게도 안 돈다.**
+                settingsSchemaGeneration = json.optInt("settingsSchemaGeneration", 0),
                 // ⚠️ 읽는 쪽에서 좁힌다 — 0이나 음수가 흘러들면 글자 높이가 0이 돼 화면이
                 // 통째로 사라진다. 개발자 도구가 이 파일을 쓰므로 손 편집도 가능한 자리다.
                 // 숫자로 저장된 예전 값(문자열로 바꾸기 전)도 `optString`이 그대로 읽어 준다.

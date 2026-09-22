@@ -57,9 +57,12 @@ class PlayControlsContractTest {
         }
 
         val menu = code("ui/KaTrainUxPanels.kt")
-        assertTrue(
-            "메뉴에 착수 돋보기 스위치가 없다 — 판에서 뺐는데 메뉴에도 없으면 **끌 방법이 사라진다**(#143).",
-            menu.contains("options.isPlayMagnifierEnabled"),
+        // ⚠️ **착수 돋보기는 2026-09-22에 기능째 사라졌다**(백로그 #188) — 여기서 "메뉴에 있어야
+        // 한다"고 지키던 것을, 이제 **어디에도 없어야 한다**로 뒤집는다. 판에서 뺐는데 끌 방법이
+        // 사라지는 것이 #143의 걱정이었는데, 끌 것 자체가 없어졌다.
+        assertFalse(
+            "착수 돋보기가 메뉴에 돌아왔다 — 기능은 #188에서 통째로 걷어냈다.",
+            menu.contains("isPlayMagnifierEnabled"),
         )
         assertTrue(
             "메뉴에 바둑판 크기 스위치가 없다 — 판에서 뺐는데 메뉴에도 없으면 끌 방법이 사라진다(#143).",

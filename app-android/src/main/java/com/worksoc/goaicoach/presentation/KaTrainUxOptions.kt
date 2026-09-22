@@ -1,7 +1,5 @@
 package com.worksoc.goaicoach.presentation
 
-import com.worksoc.goaicoach.application.preferences.MagnifierSettings
-
 /** 영구 저장되는 UX 토글 번들 — 화면 상태 도출 로직([GameScreenState] 등)과는 다른 축이다. */
 internal data class KaTrainUxOptions(
     val showCoordinates: Boolean = false,
@@ -16,25 +14,10 @@ internal data class KaTrainUxOptions(
     // 잦은 동작이고, 눌린 것이 전달됐다는 확인은 조용한 편보다 있는 편이 낫다. 시스템
     // 햅틱을 꺼 둔 사용자에게는 어차피 울리지 않는다(`performHapticFeedback`이 존중한다).
     val isPlayHapticEnabled: Boolean = true,
-    val isDelayedPlayEnabled: Boolean = false,
     val isPlayEffectEnabled: Boolean = true,
     /**
      * 보드를 화면 폭 끝까지 그릴지(#38). **기본 켜짐**(2026-08-30 사용자 결정) — 보드가 이
      * 화면의 주인공이라 크게 보는 쪽을 기본으로 둔다. 끄면 화면 좌우 여백(16dp) 안쪽에 그린다.
      */
     val isBoardMaxSize: Boolean = true,
-    /**
-     * 꾹 눌러 끌어 두는 **착수 돋보기**(#39). 기본 켜짐 — 이 기능의 목적이 오착수 방지이고,
-     * 꾹 누름이 관문이라 **평소의 탭 동작을 전혀 바꾸지 않는다.** 끄면 예전처럼 누른 자리에서
-     * 떼는 즉시 그 자리에 두고, 꾹 눌러도 돋보기가 뜨지 않는다.
-     */
-    val isPlayMagnifierEnabled: Boolean = true,
-    /**
-     * 돋보기 **창 크기**와 **확대 배율**(#85). 값 목록·기본값·정규화는
-     * [com.worksoc.goaicoach.application.preferences.MagnifierSettings]가 갖는다.
-     *
-     * ⚠️ 둘은 보이는 칸 수에 **반대로** 작용한다(칸 수 ≈ 창 ÷ 배율) — 한쪽만 만지면 상쇄된다.
-     */
-    val magnifierSizeScale: Float = MagnifierSettings.defaultSizeScale,
-    val magnifierZoom: Float = MagnifierSettings.defaultZoom,
 )

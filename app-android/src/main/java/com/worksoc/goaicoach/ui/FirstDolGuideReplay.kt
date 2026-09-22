@@ -46,7 +46,8 @@ import com.worksoc.goaicoach.application.guide.GuideTarget
  * ## ⚠️ 그림이 아니라 **실물을 조립한다**
  *
  * ③은 홈의 **진짜 `MenuCard`** 를 같은 문구(`strings.startMatch`)로 그리고, ⑤ 넷은 **판 위에 적히는
- * 그 라벨 함수**(`playMagnifierLabelFor` 등)를 그대로 부른다. 정적 삽화나 캡처를 쓰지 않는 이유는
+ * 그 라벨**(`strings.eval`·`strings.topMovesAction`)을 `GuideToolLabels`로 그대로 부른다.
+ * 정적 삽화나 캡처를 쓰지 않는 이유는
  * 이 저장소의 이력이다 — 화면이 바뀔 때 그림만 낡아 **다시보기가 거짓을 말하는** 사고를 네 번
  * 겪었다(#87·#97·#124·#127, §0 B-2). 실물을 부르면 화면이 바뀌는 순간 여기도 함께 바뀐다.
  *

@@ -136,7 +136,6 @@ internal data class UiStrings(
      *  때문이다 — 하지 않는 일을 약속하는 라벨은 #31에서 이미 한 번 걸렀다. */
     val playHaptic: String,
     /** 메뉴의 **지연 착수** 스위치(백로그 #144) — 켜면 떼고 0.5초 뒤에 놓인다. */
-    val delayedPlay: String,
     /** 메뉴의 **착수 이펙트** 스위치(백로그 #145) — 확정되는 순간 돌이 120%로 커졌다가 100%로. */
     val playEffect: String,
     val moveNumbers: String,
@@ -469,10 +468,6 @@ internal data class UiStrings(
      * 그 문구는 대국 메뉴의 절 제목이라 이 자리에서는 뭉뚱하다.
      */
     val guideReplayInGameTitle: String,
-    /** 돋보기 창 크기 선택 줄의 라벨(백로그 #85). */
-    val magnifierWindowSizeLabel: String,
-    /** 돋보기 확대 배율 선택 줄의 라벨(백로그 #85). */
-    val magnifierZoomLabel: String,
     val settingsDevReleaseResetAction: String,
     val settingsDevReleaseResetDoneMessage: String,
     val settingsDevReleaseResetNothingMessage: String,
@@ -600,38 +595,6 @@ internal data class UiStrings(
      *
      * ⚠️ **`fun`이라 리플렉션 그물이 못 본다**(함정 10번) — `UiStringsDevFontScaleTest`가 손 그물이다.
      */
-    /**
-     * 돋보기 창 크기 칩의 값 표기(백로그 #85). `1.0`이 #39 당시 크기라 **"기본"** 으로 읽히게 한다.
-     *
-     * ⚠️ `fun`이라 리플렉션 그물에 안 잡힌다(함정 10번) — `UiStringsMagnifierTest`가 손 그물이다.
-     */
-    fun magnifierSizeOptionLabel(scale: Float): String = when {
-        scale == 1.0f -> when (language) {
-            UiLanguage.Korean -> "기본"
-            UiLanguage.English -> "Standard"
-            UiLanguage.Japanese -> "標準"
-            UiLanguage.ChineseSimplified -> "标准"
-        }
-        else -> "×$scale"
-    }
-
-    /**
-     * 돋보기 확대 배율 칩의 값 표기(백로그 #85).
-     *
-     * ⚠️ **`1.0`을 "확대 없음"이 아니라 "판 크기 그대로"로 적는다** — 사용자의 표현이
-     * *"기본 대국보드판 사이즈 그대로"* 였고, 그 편이 정확하다. 확대가 없어도 손가락이 가린
-     * 자리를 위에 띄워 주므로 **돋보기로서는 여전히 동작한다.**
-     */
-    fun magnifierZoomOptionLabel(zoom: Float): String = when {
-        zoom == 1.0f -> when (language) {
-            UiLanguage.Korean -> "판 그대로"
-            UiLanguage.English -> "Actual size"
-            UiLanguage.Japanese -> "盤と同じ"
-            UiLanguage.ChineseSimplified -> "与棋盘相同"
-        }
-        else -> "${(zoom * 100).toInt()}%"
-    }
-
     fun settingsDevAttendanceSubtitle(current: Int, next: Int, nextIsRewarded: Boolean): String =
         when (language) {
             UiLanguage.Korean ->

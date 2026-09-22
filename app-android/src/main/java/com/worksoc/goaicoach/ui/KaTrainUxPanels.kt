@@ -27,7 +27,6 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.worksoc.goaicoach.application.preferences.MagnifierSettings
 import com.worksoc.goaicoach.application.premium.FeatureAccess
 import com.worksoc.goaicoach.application.premium.FeatureId
 import com.worksoc.goaicoach.presentation.KaTrainUxOptions
@@ -96,25 +95,6 @@ internal fun KaTrainUxMenuPanel(
                     checked = options.showCoordinates,
                     modifier = Modifier.weight(1f),
                     onCheckedChange = { onOptionsChange(options.copy(showCoordinates = it)) },
-                )
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                OptionSwitchCell(
-                    label = playMagnifierLabelFor(strings.language),
-                    checked = options.isPlayMagnifierEnabled,
-                    modifier = Modifier.weight(1f),
-                    onCheckedChange = { onOptionsChange(options.copy(isPlayMagnifierEnabled = it)) },
-                )
-                Spacer(modifier = Modifier.width(columnGap))
-                // **지연 착수**(백로그 #144) — 켜면 떼고 0.5초 뒤에 놓이고, 그 사이 다시 누르면 그 자리에서 다시 센다.
-                // 기본 꺼짐이라(지금 동작이 바뀌는 것) 원하는 사람만 여기서 켠다.
-                OptionSwitchCell(
-                    label = strings.delayedPlay,
-                    checked = options.isDelayedPlayEnabled,
-                    modifier = Modifier.weight(1f),
-                    onCheckedChange = { onOptionsChange(options.copy(isDelayedPlayEnabled = it)) },
                 )
             }
             Row(
@@ -236,27 +216,6 @@ internal fun KaTrainUxMenuPanel(
                 )
             }
 
-            // **돋보기 창 크기·확대 배율**(백로그 #85, 2026-09-05 사용자 발주).
-            //
-            // ⚠️ **여기 둔 이유가 "대국 중에 바꿀 수 있어야 해서"** 다. 사용자의 목적이
-            // *"최적이 뭔지 체크하면서 값 조정"* 이라, 판을 보면서 즉시 바꿔 보지 못하면 비교
-            // 자체가 안 된다. 이 메뉴는 대국 중에 열 수 있고 `ChangeUxOptions`가 곧바로 반영한다.
-            // ⚠️ 두 값은 보이는 칸 수에 **반대로** 작용한다(칸 수 ≈ 창 ÷ 배율) — 그래서 손잡이를
-            //   둘로 나눴다. 하나로 합치면 "넓게 보고 싶은데 확대는 유지" 같은 조합을 못 만든다.
-            MagnifierScaleRow(
-                label = strings.magnifierWindowSizeLabel,
-                options = MagnifierSettings.sizeScales,
-                selected = options.magnifierSizeScale,
-                optionLabel = strings::magnifierSizeOptionLabel,
-                onSelected = { next -> onOptionsChange(options.copy(magnifierSizeScale = next)) },
-            )
-            MagnifierScaleRow(
-                label = strings.magnifierZoomLabel,
-                options = MagnifierSettings.zoomScales,
-                selected = options.magnifierZoom,
-                optionLabel = strings::magnifierZoomOptionLabel,
-                onSelected = { next -> onOptionsChange(options.copy(magnifierZoom = next)) },
-            )
         }
     }
 }
@@ -311,54 +270,3 @@ private fun OptionSwitchCell(
  * 선택지가 항상 보여야 한 번의 탭으로 옮겨 다닐 수 있다 — 드롭다운은 매번 두 번 눌러야 한다.
  * 값이 둘·셋뿐이라 폭도 문제가 되지 않는다.
  */
-@Composable
-private fun MagnifierScaleRow(
-    label: String,
-    options: List<Float>,
-    selected: Float,
-    optionLabel: (Float) -> String,
-    onSelected: (Float) -> Unit,
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 6.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            options.forEach { option ->
-                val isSelected = option == selected
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = if (isSelected) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.surfaceVariant
-                    },
-                    modifier = Modifier
-                        .weight(1f)
-                        .clickable { onSelected(option) },
-                ) {
-                    Text(
-                        text = optionLabel(option),
-                        style = MaterialTheme.typography.bodySmall,
-                        textAlign = TextAlign.Center,
-                        color = if (isSelected) {
-                            MaterialTheme.colorScheme.onPrimary
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp, horizontal = 4.dp),
-                    )
-                }
-            }
-        }
-    }
-}

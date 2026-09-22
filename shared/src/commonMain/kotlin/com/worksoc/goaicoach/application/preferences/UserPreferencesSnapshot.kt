@@ -7,9 +7,6 @@ import com.worksoc.goaicoach.shared.DefaultKomi
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 
-/** 지연 착수가 켜졌을 때 기다리는 시간. 사용자 지정값(#144). */
-const val DelayedPlayWindowMillis: Long = 500L
-
 /**
  * 착수 이펙트(#145)가 도는 시간 — 커졌다 돌아오는 **왕복 전체**다.
  *
@@ -71,24 +68,34 @@ data class UserPreferencesSnapshot(
     val appFontScale: Float = DefaultAppFontScale,
     val isPlayHapticEnabled: Boolean = true,
     /**
-     * **지연 착수**(백로그 #144, 2026-09-12 사용자 결정) — 손을 뗀 뒤 [DelayedPlayWindowMillis] 동안 기다렸다가
-     * 놓는다. 그 사이 판을 다시 누르면 그 자리로 옮기고 **처음부터 다시 센다**(같은 자리를 눌러도 마찬가지다).
-     *
-     * ⚠️ **기본값은 꺼짐**이다 — 지금 동작(떼는 순간 착수)이 바뀌는 것이라, 원하는 사람만 메뉴에서 켠다.
-     */
-    val isDelayedPlayEnabled: Boolean = false,
-    /**
      * **착수 이펙트**(백로그 #145) — 돌이 확정되는 순간 [PlayEffectMillis] 동안 [PlayEffectPeakScale]까지
      * 커졌다가 100%로 돌아온다. **사람 착수와 AI 착수**에 붙고, 무르기·기보 탐색·저장 대국 이어받기에는
      * 붙지 않는다.
      *
-     * ⚠️ **기본값은 켜짐**이다 — 없던 것이 생기는 쪽이라 [isDelayedPlayEnabled](기본 꺼짐)와 반대다.
+     * ⚠️ **기본값은 켜짐**이다 — 없던 것이 생기는 쪽이다.
      */
     val isPlayEffectEnabled: Boolean = true,
     val isBoardMaxSize: Boolean = true,
-    val isPlayMagnifierEnabled: Boolean = true,
-    /** 돋보기 창 크기 배수(백로그 #85). 값 목록과 기본값은 [MagnifierSettings]가 갖는다. */
-    val magnifierSizeScale: Float = MagnifierSettings.defaultSizeScale,
-    /** 돋보기 확대 배율(백로그 #85). `1.0`은 판과 같은 크기 — 확대는 없어도 손가락 가림은 해소된다. */
-    val magnifierZoom: Float = MagnifierSettings.defaultZoom,
+    /**
+     * 이 스냅샷이 **어느 설정 세대에 저장됐는가**(백로그 #188).
+     *
+     * ## ⚠️ 왜 필요했나 — 기본값을 바꿔도 기존 사용자에게 안 미친다
+     * 저장된 값이 늘 이기므로, *"최대 탐색 시간 기본값을 3초 → 10초로 올린다"* 같은 결정이
+     * **이미 한 번이라도 저장한 사용자에게는 아무 일도 하지 않는다.** 이 값이 그 구멍을 메운다 —
+     * 읽을 때 세대가 낮으면 **그 세대에서 뜻이 바뀐 필드만** 기본값으로 덮고 세대를 올린다.
+     *
+     * ## ⚠️ 전체 초기화가 아니다
+     * 사용자가 의도적으로 고른 언어·글꼴 배율·판 크기는 **지킨다.** 되돌리는 것은
+     * [settingsMigrationsFor]가 세대별로 이름을 적어 둔 필드뿐이다.
+     *
+     * ## ⚠️ `ReleaseResetCoordinator`와 **다른 축**이다(함정 6)
+     * 그쪽은 **권한 저장소 넷**을 지운다. 이것은 설정 마이그레이션이다 — 하나로 묶으면 설정을
+     * 고칠 때마다 권한이 날아간다.
+     *
+     * ## ⚠️⚠️ 자동저장에 반드시 배선할 것(함정 2)
+     * `buildUserPreferencesAutosaveSnapshot`이 스냅샷을 **새로 만든다.** 여기서 `current`의 값을
+     * 이어 붙이지 않으면 저장할 때마다 세대가 초기값으로 돌아가 **마이그레이션이 매번 다시 돌고,
+     * 사용자가 고른 값이 계속 되돌려진다.** `appFontScale`·`hasSeenOnboarding`이 같은 자리다.
+     */
+    val settingsSchemaGeneration: Int = CurrentSettingsSchemaGeneration,
 )

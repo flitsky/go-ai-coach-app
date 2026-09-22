@@ -76,12 +76,8 @@ fun buildUserPreferencesSnapshot(
     showMoveReview: Boolean = false,
     komi: Double = com.worksoc.goaicoach.shared.DefaultKomi,
     isPlayHapticEnabled: Boolean = true,
-    isDelayedPlayEnabled: Boolean = false,
     isPlayEffectEnabled: Boolean = true,
     isBoardMaxSize: Boolean = true,
-    isPlayMagnifierEnabled: Boolean = true,
-    magnifierSizeScale: Float = MagnifierSettings.defaultSizeScale,
-    magnifierZoom: Float = MagnifierSettings.defaultZoom,
 ): UserPreferencesSnapshot =
     buildGameSettings(
         boardSize = boardSize,
@@ -100,12 +96,8 @@ fun buildUserPreferencesSnapshot(
         isDirectPlayEnabled = isDirectPlayEnabled,
         showMoveReview = showMoveReview,
         isPlayHapticEnabled = isPlayHapticEnabled,
-        isDelayedPlayEnabled = isDelayedPlayEnabled,
         isPlayEffectEnabled = isPlayEffectEnabled,
         isBoardMaxSize = isBoardMaxSize,
-        isPlayMagnifierEnabled = isPlayMagnifierEnabled,
-        magnifierSizeScale = magnifierSizeScale,
-        magnifierZoom = magnifierZoom,
     )
 
 fun buildUserPreferencesSnapshot(
@@ -119,12 +111,8 @@ fun buildUserPreferencesSnapshot(
     showMoveReview: Boolean = false,
     komi: Double = com.worksoc.goaicoach.shared.DefaultKomi,
     isPlayHapticEnabled: Boolean = true,
-    isDelayedPlayEnabled: Boolean = false,
     isPlayEffectEnabled: Boolean = true,
     isBoardMaxSize: Boolean = true,
-    isPlayMagnifierEnabled: Boolean = true,
-    magnifierSizeScale: Float = MagnifierSettings.defaultSizeScale,
-    magnifierZoom: Float = MagnifierSettings.defaultZoom,
 ): UserPreferencesSnapshot =
     buildUserPreferencesSnapshot(
         playerSetup = settingsState.playerSetup,
@@ -142,12 +130,8 @@ fun buildUserPreferencesSnapshot(
         showMoveReview = showMoveReview,
         komi = komi,
         isPlayHapticEnabled = isPlayHapticEnabled,
-        isDelayedPlayEnabled = isDelayedPlayEnabled,
         isPlayEffectEnabled = isPlayEffectEnabled,
         isBoardMaxSize = isBoardMaxSize,
-        isPlayMagnifierEnabled = isPlayMagnifierEnabled,
-        magnifierSizeScale = magnifierSizeScale,
-        magnifierZoom = magnifierZoom,
     )
 
 internal fun buildGameSettings(
@@ -187,12 +171,8 @@ private fun GameSettings.toUserPreferencesSnapshot(
     isDirectPlayEnabled: Boolean,
     showMoveReview: Boolean,
     isPlayHapticEnabled: Boolean = true,
-    isDelayedPlayEnabled: Boolean = false,
     isPlayEffectEnabled: Boolean = true,
     isBoardMaxSize: Boolean = true,
-    isPlayMagnifierEnabled: Boolean = true,
-    magnifierSizeScale: Float = MagnifierSettings.defaultSizeScale,
-    magnifierZoom: Float = MagnifierSettings.defaultZoom,
 ): UserPreferencesSnapshot =
     UserPreferencesSnapshot(
         boardSize = boardSize,
@@ -210,10 +190,6 @@ private fun GameSettings.toUserPreferencesSnapshot(
         isDirectPlayEnabled = isDirectPlayEnabled,
         showMoveReview = showMoveReview,
         isPlayHapticEnabled = isPlayHapticEnabled,
-        isDelayedPlayEnabled = isDelayedPlayEnabled,
         isPlayEffectEnabled = isPlayEffectEnabled,
         isBoardMaxSize = isBoardMaxSize,
-        isPlayMagnifierEnabled = isPlayMagnifierEnabled,
-        magnifierSizeScale = magnifierSizeScale,
-        magnifierZoom = magnifierZoom,
     )
