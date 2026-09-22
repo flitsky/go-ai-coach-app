@@ -121,4 +121,57 @@ class FinalResultBadgeContractTest {
             badge.contains("strings.winnerWithoutMarginLabel("),
         )
     }
+
+    /**
+     * ⚠️⚠️ **금색은 이 앱에서 이미 「프리미엄 기능이다」라는 뜻이다**(2026-09-18 결정 ⓐ안,
+     * `PremiumTheme.kt`). 트로피 옆이라 **가장 고르기 쉬운 색이면서 고르면 안 되는 색**이고,
+     * 두르는 순간 같은 화면에서 금색이 두 가지를 뜻한다 — 대국 메뉴의 프리미엄 옵션 셋이
+     * 바로 옆에서 그 규칙을 쓰고 있다.
+     *
+     * ⚠️ **프라이머리(초록)도 막는다** — `ActiveStateBorder`가 **「지금 차례」**다. 종국에는
+     * 아무도 차례가 아니라 색이 비어 보이지만, 같은 화면에서 같은 초록이 그 뜻으로 읽히던 자리다.
+     *
+     * 둘 다 *"어울려 보여서"* 바뀌기 쉬운 자리라 **코드로 고정한다**(백로그 #190).
+     */
+    @Test
+    fun theWinnerBorderUsesNeitherThePremiumGoldNorTheYourTurnGreen() {
+        assertFalse(
+            "승자 테두리가 금색을 쓴다 — 금색은 「프리미엄 기능」이라는 뜻이라 같은 화면에서 " +
+                "두 가지를 말하게 된다(#190).",
+            badge.contains("PremiumGold"),
+        )
+        assertFalse(
+            "승자 테두리가 프라이머리(초록)를 쓴다 — 그 색은 「지금 차례」다(`ActiveStateBorder`).",
+            badge.contains("colorScheme.primary"),
+        )
+    }
+
+    /**
+     * ⚠️ **백은 `Color.White`가 아니라 `Color.Gray`다** — 배지 바탕이 밝은 `surfaceVariant`라
+     * 흰 테두리는 **있으나 마나**가 된다. 좌석 카드(`PlayerSeatCard`)가 백을 회색으로 그리는
+     * 그 규칙과 같은 값이어야 하고, **한쪽만 고치면 같은 화면에서 백이 두 색이 된다.**
+     */
+    @Test
+    fun theWinnerBorderDrawsWhiteAsGreyJustLikeTheSeatCardDoes() {
+        assertTrue(
+            "배지가 백 승자를 회색으로 그리지 않는다 — 밝은 바탕에서 테두리가 사라진다(#190).",
+            badge.contains("StoneColor.White -> Color.Gray"),
+        )
+        assertTrue(
+            "좌석 카드가 백을 회색으로 그리지 않는다 — 배지와 진영색이 갈라진다.",
+            panel.contains("stoneGlyphColor = Color.Gray"),
+        )
+    }
+
+    /**
+     * ⚠️ **무승부에는 승자색이 붙으면 안 된다** — 아무도 이기지 않았다. 덤이 모두 반집이라
+     * 실제로 나올 수 없지만, **「없는 경우」를 그리면 조용히 틀린다**(트로피가 같은 이유로 빠진다).
+     */
+    @Test
+    fun aDrawWearsNoWinnerColourAtAll() {
+        assertTrue(
+            "무승부(`null`)에 테두리 색이 붙는다 — 아무도 안 이겼는데 이긴 것처럼 보인다(#190).",
+            badge.contains("null -> null"),
+        )
+    }
 }

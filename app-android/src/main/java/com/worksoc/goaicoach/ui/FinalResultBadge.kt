@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.ui
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -10,6 +11,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -33,6 +35,21 @@ import com.worksoc.goaicoach.shared.StoneColor
  * 않는다. **2026-09-22 지시가 가리킨 것은 판 아래의 그 패널**이라 거기까지만 했다 —
  * 넓은 배치의 자리는 별도 설계가 필요하다(백로그 #187의 남은 몫).
  *
+ * ## 승리 진영을 **테두리**에도 싣는다 (2026-09-22, 백로그 #190)
+ * #187은 결과를 **글자로만** 남겼다 — 읽어야 안다. 종국이 되면 좌석 카드 둘은 `isActiveTurn`이
+ * **둘 다 false**라 회색으로 똑같아져서, 판 아래 이 구간에서 승패를 **색으로** 말해 주는 것이
+ * 하나도 없었다. 그래서 이 배지가 **승자 진영색 테두리**를 두른다.
+ *
+ * ⚠️⚠️ **금색을 쓰지 않는다 — 이 앱에서 금색은 뜻이 이미 정해져 있다.** `PremiumTheme.kt`가
+ * *"금색은 「프리미엄 기능이다」라는 뜻"* (2026-09-18 사용자 결정 ⓐ안)이라고 못박았고 대국
+ * 메뉴의 프리미엄 옵션 셋이 그것을 쓴다. 트로피와 어울려 보인다는 이유로 **가장 고르기 쉬우면서
+ * 고르면 안 되는 색**이다 — 두르는 순간 같은 화면에서 금색이 두 가지를 뜻한다.
+ * ⚠️ **프라이머리(초록)도 쓰지 않는다** — [ActiveStateBorder]가 **「지금 차례」**다.
+ *
+ * 그래서 [winnerBorderColor]는 **좌석 카드가 이미 쓰는 진영색**을 그대로 쓴다(흑 `Color.Black` ·
+ * 백 `Color.Gray`). 백을 흰색이 아니라 회색으로 그리는 그 규칙 덕에 밝은 배경에서도 안 사라지고,
+ * 새 색을 하나도 만들지 않는다.
+ *
  * ## ⚠️ 기권으로 끝난 판에는 [FinalScoreJudgement]가 **없다**
  * 그래서 승자를 두 경로로 찾는다 — 계가면 판정에서, 기권이면 **마지막 수에서**.
  * `Move.Resign`은 **던진 쪽**을 들고 있으므로 승자는 그 반대편이다(대국 기록이 쓰는 것과
@@ -55,6 +72,9 @@ internal fun FinalResultBadge(
         modifier = modifier,
         shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.surfaceVariant,
+        // ⚠️ **무승부에는 테두리를 두르지 않는다** — 아무도 안 이겼다. 중립색으로라도 두르면
+        // 「누군가 이겼는데 색을 못 읽겠다」로 보인다(없는 편이 정직하다).
+        border = winnerBorderColor(winner)?.let { BorderStroke(WinnerBorderWidth, it) },
         tonalElevation = 3.dp,
         shadowElevation = 2.dp,
     ) {
@@ -67,7 +87,9 @@ internal fun FinalResultBadge(
             // ⚠️ **무승부에는 트로피를 달지 않는다** — 아무도 이기지 않았다.
             // (덤이 모두 반집이라 실제로는 나올 수 없지만, 「없는 경우」를 그리면 조용히 틀린다.)
             if (winner != null) {
-                Text(text = TrophyGlyph, fontSize = 22.sp)
+                // ⚠️ **테두리와 같은 것을 말한다** — 색맹·저대비 화면에서 테두리 색만으로는
+                // 흑·백이 안 갈린다. 글리프가 그 두 번째 통로다(좌석 카드와 같은 `●`/`○`).
+                Text(text = "$TrophyGlyph ${stoneGlyphOf(winner)}", fontSize = 22.sp)
             }
             Text(
                 // ⚠️ **팝업과 같은 낱말을 쓴다** — 둘이 다른 말을 하면 어느 쪽이 맞는지 알 수 없다
@@ -91,6 +113,30 @@ internal fun FinalResultBadge(
         }
     }
 }
+
+/**
+ * 승자 테두리 두께 — [ActiveStateBorder](1.5dp)보다 **굵다.** 종국 화면에서 가장 먼저 눈에
+ * 들어와야 하는 것이 이 구간이고, 옆의 좌석 카드 둘은 이때 회색 1dp로 물러나 있다.
+ */
+private val WinnerBorderWidth = 2.5.dp
+
+/**
+ * 승자 진영의 테두리 색 — 무승부면 `null`(테두리 없음).
+ *
+ * ⚠️ **좌석 카드의 `stoneGlyphColor`와 같은 값을 쓴다**(`GameStatusPanel`의 `PlayerSeatCard`).
+ * 백이 `Color.White`가 아니라 `Color.Gray`인 것이 요점이다 — 배지 바탕이 밝은 `surfaceVariant`라
+ * 흰 테두리는 **있으나 마나**가 된다. 한쪽만 고치면 같은 화면에서 백이 두 색이 되므로 **둘을 함께
+ * 고칠 것**(`FinalResultBadgeContractTest`가 이 규칙을 문자로 고정한다).
+ */
+private fun winnerBorderColor(winner: StoneColor?): Color? = when (winner) {
+    StoneColor.Black -> Color.Black
+    StoneColor.White -> Color.Gray
+    null -> null
+}
+
+/** 좌석 카드와 같은 진영 글리프. */
+private fun stoneGlyphOf(winner: StoneColor): String =
+    if (winner == StoneColor.Black) "\u25CF" else "\u25CB"
 
 /**
  * 승리 트로피(2026-09-22 사용자 지시).
