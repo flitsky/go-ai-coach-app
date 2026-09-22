@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  안드로이드 **자동 백업** 제외 규칙 — API 30 이하(백로그 #186).
+
+  ⚠️ **파일이 둘인 이유**: `minSdk = 26`이라 API 31+는 `data_extraction_rules.xml`이 보고,
+  그 아래는 이 파일이 본다. **둘 중 하나만 고치면 한쪽 기기에서 아무것도 달라지지 않고,
+  그 사실은 최신 에뮬레이터 실기에서 보이지 않는다.** 규칙을 바꿀 때는 반드시 둘 다.
+
+  ⚠️ **빼는 것이 요점이다 — 지금까지 백업은 통째로 실패하고 있었다.**
+  `files/katago`(엔진 모델)가 94MB인데 자동 백업 쿼터는 25MB다(2026-09-05 실측,
+  `adb shell bmgr backupnow` -> `Size quota exceeded`). 그 하나를 빼면 남는 것은 약 1.6MB로
+  쿼터의 6%다. 모델은 앱 에셋에서 **다시 풀리는** 자산이라 백업할 이유도 없다
+  (`EngineBootstrap`: "앱 데이터를 지워도 다시 풀리는 것이 요점이다").
+
+  ⚠️ **`cache`·`no_backup`은 적지 않는다** — 안드로이드가 자동으로 뺀다. 여기 적으면
+  "무엇을 일부러 뺐는가"가 흐려진다.
+-->
+<full-backup-content>
+    <!-- 엔진 모델(94MB). 이것 하나가 백업 대상의 98.4%였다. -->
+    <exclude domain="file" path="katago" />
+    <!--
+      AdMob WebView 저장소. 복원해서 얻을 것이 없고 용량만 든다.
+      ⚠️ **도메인이 `root`다** — `app_webview`는 `filesDir` **안이 아니라** 앱 데이터 루트에 있다
+      (`domain="file"`로 적으면 아무것도 빠지지 않고, 그 사실은 조용하다).
+    -->
+    <exclude domain="root" path="app_webview" />
+</full-backup-content>
