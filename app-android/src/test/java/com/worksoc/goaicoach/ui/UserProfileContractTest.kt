@@ -71,6 +71,30 @@ class UserProfileContractTest {
     }
 
     /**
+     * ⚠️ **「나」 줄은 지금 꺼져 있다**(2026-09-22 사용자 결정) — 기능이 덜 돼서가 아니라
+     * **쓸 데가 없어서**다(#165가 노출을 마이 페이지 안으로만 한정한 결과, U-53).
+     *
+     * 그물이 지키는 것은 *꺼져 있다*가 아니라 **「게이트를 거쳐서만 그려진다」**이다 —
+     * 게이트를 지우고 줄을 되살리는 것은 **결정을 뒤집는 일**이라 눈에 띄어야 한다.
+     * 켜는 것 자체는 상수 한 줄이면 되고, 그때 이 테스트는 그대로 통과한다.
+     */
+    @Test
+    fun theProfileRowIsDrawnOnlyThroughItsGate() {
+        assertTrue(
+            "`ShowUserProfileRow` 게이트가 사라졌다 — 「나」 줄이 결정 없이 다시 노출된다(U-53).",
+            myPage.contains("private const val ShowUserProfileRow"),
+        )
+        assertTrue(
+            "「나」 줄이 게이트 밖에서 그려진다.",
+            myPage.contains("if (ShowUserProfileRow) {"),
+        )
+        assertTrue(
+            "닉네임 팝업이 게이트 밖에서 뜰 수 있다 — 줄이 없는데 팝업만 뜨는 길이 남는다.",
+            myPage.contains("if (ShowUserProfileRow && isEditingNickname)"),
+        )
+    }
+
+    /**
      * ⚠️ **구독 카드가 「나」 줄 **바로 아래**여야 한다**(2026-09-22 사용자 지시로 순서가 뒤집혔다).
      *
      * 2026-09-18(#159)이 구독 카드를 맨 위에 둔 사유 — *"해지 경로가 찾기 어려우면 그 자체가
