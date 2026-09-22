@@ -7,12 +7,14 @@ import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.match.SidePlayerSetup
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize
+import com.worksoc.goaicoach.shared.DefaultKomi
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.PlayLevelGroup
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.StoneColor
+import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -51,6 +53,74 @@ class SavedGameSessionCodecTest {
         assertEquals(PlayLevelSetting(PlayLevelGroup.Beginner, level = 4), restored?.playLevel)
         assertEquals(true, restored?.topMovesEnabled)
         assertEquals(1234L, restored?.savedAtMillis)
+    }
+
+    /**
+     * 덤은 점수 계산의 입력이다 — 이어하기에서 유실되면 승패가 뒤집힌다. 기본값(6.5)이
+     * 아닌 값을 양쪽으로 하나씩 골라 왕복을 단언한다(2026-09-23 회귀).
+     */
+    @Test
+    fun roundTripPreservesNonDefaultKomi() {
+        for (komi in listOf(0.5, 7.5)) {
+            val gameState = GameState.empty(BoardSize.Nine, Ruleset.Japanese, komi = komi)
+                .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+            val snapshot = SavedGameSnapshot(
+                gameState = gameState,
+                playerSetup = PlayerSetup(),
+                playLevel = PlayLevelSetting(),
+                topMovesEnabled = false,
+                savedAtMillis = 1L,
+            )
+
+            val restored = SavedGameSessionCodec.decode(SavedGameSessionCodec.encode(snapshot))
+
+            assertEquals(komi, restored?.gameState?.komi)
+            assertEquals(gameState, restored?.gameState)
+        }
+    }
+
+    /** 접바둑(핸디캡) 경로도 같은 replay 호출을 타므로 함께 고정한다. */
+    @Test
+    fun roundTripPreservesKomiOnHandicapGame() {
+        val gameState = GameState.withHandicap(BoardSize.Nine, Ruleset.Japanese, handicapCount = 2, komi = 0.5)
+            .play(Move.Play(StoneColor.White, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+        val snapshot = SavedGameSnapshot(
+            gameState = gameState,
+            playerSetup = PlayerSetup(),
+            playLevel = PlayLevelSetting(),
+            topMovesEnabled = false,
+            savedAtMillis = 1L,
+        )
+
+        val restored = SavedGameSessionCodec.decode(SavedGameSessionCodec.encode(snapshot))
+
+        assertEquals(0.5, restored?.gameState?.komi)
+        assertEquals(gameState, restored?.gameState)
+    }
+
+    /**
+     * komi 키가 없던 **옛 저장분**은 지금까지 6.5로 복원돼 왔다. 스키마 번호를 올리지 않고
+     * 흡수하기로 했으므로, 키가 없는 JSON은 여전히 6.5여야 한다.
+     */
+    @Test
+    fun legacyJsonWithoutKomiFallsBackToDefault() {
+        val gameState = GameState.empty(BoardSize.Nine, Ruleset.Japanese)
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+        val encoded = JSONObject(
+            SavedGameSessionCodec.encode(
+                SavedGameSnapshot(
+                    gameState = gameState,
+                    playerSetup = PlayerSetup(),
+                    playLevel = PlayLevelSetting(),
+                    topMovesEnabled = false,
+                    savedAtMillis = 1L,
+                ),
+            ),
+        ).apply { remove("komi") }.toString()
+
+        val restored = SavedGameSessionCodec.decode(encoded)
+
+        assertEquals(DefaultKomi, restored?.gameState?.komi)
     }
 
     @Test
