@@ -125,7 +125,7 @@ class LayeringContractTest {
     @Test
     fun localEngineSessionDelegateOwnsSessionOrchestration() {
         val engineSession = RepoPaths.applicationPath("engine/EngineSession.kt")
-        val sessionText = engineSession.readText()
+        val sessionText = codeOnly(engineSession.readText())
         val forbiddenCoreExtensions = listOf(
             "startEngineSession",
             "startNewEngineGame",
@@ -152,8 +152,8 @@ class LayeringContractTest {
         val benchmarkModels = RepoPaths.applicationPath("engine/EngineBenchmarkModels.kt")
         val benchmarkDisplay = RepoPaths.applicationPath("engine/EngineBenchmarkDisplayApplication.kt")
         val benchmarkDelegate = RepoPaths.applicationPath("engine/LocalEngineBenchmarkDelegate.kt")
-        val applicationText = benchmarkApplication.readText()
-        val delegateText = benchmarkDelegate.readText()
+        val applicationText = codeOnly(benchmarkApplication.readText())
+        val delegateText = codeOnly(benchmarkDelegate.readText())
 
         val offenders = mutableListOf<String>()
         if ("import com.worksoc.goaicoach.shared.EngineCoreApi" in applicationText) {
@@ -185,7 +185,7 @@ class LayeringContractTest {
     @Test
     fun goCoachAppDoesNotOwnBenchmarkWorkflowBody() {
         val goCoachApp = RepoPaths.goCoachApp
-        val text = goCoachApp.readText()
+        val text = codeOnly(goCoachApp.readText())
         val forbiddenFragments = listOf(
             "runStartupBenchmarkWorkflowResult(",
             "engineBenchmarkWaitingDisplayPlan(",
@@ -218,10 +218,9 @@ class LayeringContractTest {
             "SettingsAndDiagnosticsControllerWiring.kt",
         )
         val wiringText = wiringFileNames.joinToString("\n") { fileName ->
-            RepoPaths.uiFile(fileName)
-                .readText()
+            codeOnly(RepoPaths.uiFile(fileName).readText())
         }
-        val text = goCoachApp.readText() + "\n" + wiringText
+        val text = codeOnly(goCoachApp.readText()) + "\n" + wiringText
         val forbiddenFragments = listOf(
             "topMoveAnalysisOperationToken(",
             "runTopMoveAnalysisEffectApplyPlan(",
@@ -261,7 +260,7 @@ class LayeringContractTest {
     @Test
     fun goCoachAppDoesNotOwnHumanMoveSyncWorkflowBody() {
         val goCoachApp = RepoPaths.goCoachApp
-        val text = goCoachApp.readText()
+        val text = codeOnly(goCoachApp.readText())
         val forbiddenFragments = listOf(
             "HumanEngineSyncCompletionRequest(",
             "HumanEngineSyncEffectLaunchRequest(",
@@ -282,7 +281,7 @@ class LayeringContractTest {
     @Test
     fun goCoachAppDoesNotOwnPostUndoScoreSyncWorkflowBody() {
         val goCoachApp = RepoPaths.goCoachApp
-        val text = goCoachApp.readText()
+        val text = codeOnly(goCoachApp.readText())
         val forbiddenFragments = listOf(
             "PostUndoScoreSyncEffectLaunchRequest(",
             "runPostUndoScoreSyncApplyPlan(",
@@ -300,7 +299,7 @@ class LayeringContractTest {
     @Test
     fun goCoachAppDoesNotOwnUndoWorkflowBody() {
         val goCoachApp = RepoPaths.goCoachApp
-        val text = goCoachApp.readText()
+        val text = codeOnly(goCoachApp.readText())
         val forbiddenFragments = listOf(
             "buildUndoRequestPlan(",
             "buildUndoLocalStatePlan(",
@@ -319,7 +318,7 @@ class LayeringContractTest {
     @Test
     fun goCoachAppDoesNotOwnScoringRuleSyncWorkflowBody() {
         val goCoachApp = RepoPaths.goCoachApp
-        val text = goCoachApp.readText()
+        val text = codeOnly(goCoachApp.readText())
         val forbiddenFragments = listOf(
             "ScoringRuleSyncEffectLaunchRequest(",
             "runScoringRuleSyncApplyPlan(",
@@ -337,7 +336,7 @@ class LayeringContractTest {
     @Test
     fun goCoachAppDoesNotOwnRestoredGameSyncWorkflowBody() {
         val goCoachApp = RepoPaths.goCoachApp
-        val text = goCoachApp.readText()
+        val text = codeOnly(goCoachApp.readText())
         val forbiddenFragments = listOf(
             "RestoredGameSyncEffectLaunchRequest(",
             "RestoredGameSyncExecutionContext(",
@@ -357,7 +356,7 @@ class LayeringContractTest {
     @Test
     fun goCoachAppDoesNotOwnSavedGameWorkflowBody() {
         val goCoachApp = RepoPaths.goCoachApp
-        val text = goCoachApp.readText()
+        val text = codeOnly(goCoachApp.readText())
         val forbiddenFragments = listOf(
             "SavedGamePersistenceRequest(",
             "SavedGameRestoreRequestPlan",
@@ -385,7 +384,7 @@ class LayeringContractTest {
     @Test
     fun savedSessionControllerDelegatesToApplicationRunners() {
         val controller = RepoPaths.applicationPath("savedgame/SavedSessionController.kt")
-        val text = controller.readText()
+        val text = codeOnly(controller.readText())
         val requiredFragments = listOf(
             "runSavedGameRestoreApplication(",
             "runRestoredGameSyncApplication(",
@@ -401,7 +400,7 @@ class LayeringContractTest {
     @Test
     fun goCoachAppDoesNotOwnEngineBackedNewGameWorkflowBody() {
         val goCoachApp = RepoPaths.goCoachApp
-        val text = goCoachApp.readText()
+        val text = codeOnly(goCoachApp.readText())
         val forbiddenFragments = listOf(
             "GameSessionEffect.StartEngineBackedGame(",
             "runEngineBackedNewGameWorkflowResult(",
@@ -429,7 +428,7 @@ class LayeringContractTest {
     @Test
     fun newGameControllerDelegatesToApplicationRunners() {
         val controller = RepoPaths.applicationPath("startgame/NewGameController.kt")
-        val text = controller.readText()
+        val text = codeOnly(controller.readText())
         val requiredFragments = listOf(
             "runStartEngineBackedGameApplication(",
             "buildStartConfiguredGamePlan(",
@@ -457,10 +456,9 @@ class LayeringContractTest {
             "SettingsAndDiagnosticsControllerWiring.kt",
         )
         val wiringText = wiringFileNames.joinToString("\n") { fileName ->
-            RepoPaths.uiFile(fileName)
-                .readText()
+            codeOnly(RepoPaths.uiFile(fileName).readText())
         }
-        val text = goCoachApp.readText() + "\n" + wiringText
+        val text = codeOnly(goCoachApp.readText()) + "\n" + wiringText
         val forbiddenFragments = listOf(
             "autoAiTurnOperationToken(",
             "GameSessionEffect.RunAutoAiTurn(",
@@ -500,10 +498,9 @@ class LayeringContractTest {
             "SettingsAndDiagnosticsControllerWiring.kt",
         )
         val wiringText = wiringFileNames.joinToString("\n") { fileName ->
-            RepoPaths.uiFile(fileName)
-                .readText()
+            codeOnly(RepoPaths.uiFile(fileName).readText())
         }
-        val text = goCoachApp.readText() + "\n" + wiringText
+        val text = codeOnly(goCoachApp.readText()) + "\n" + wiringText
         val forbiddenFragments = listOf(
             "fun applyAutoAiTurnSuccessCompletion(",
             "fun applyAutoAiTurnFailureCompletion(",
@@ -541,10 +538,9 @@ class LayeringContractTest {
             "SettingsAndDiagnosticsControllerWiring.kt",
         )
         val wiringText = wiringFileNames.joinToString("\n") { fileName ->
-            RepoPaths.uiFile(fileName)
-                .readText()
+            codeOnly(RepoPaths.uiFile(fileName).readText())
         }
-        val text = goCoachApp.readText() + "\n" + wiringText
+        val text = codeOnly(goCoachApp.readText()) + "\n" + wiringText
         val forbiddenFragments = listOf(
             "autoAiEndgameOperationToken(",
             "GameSessionEffect.ResolveAutoAiEndgame(",
@@ -573,7 +569,7 @@ class LayeringContractTest {
     @Test
     fun autoAiTurnControllerDelegatesToApplicationRunners() {
         val controller = RepoPaths.applicationPath("autoai/AutoAiTurnController.kt")
-        val text = controller.readText()
+        val text = codeOnly(controller.readText())
         val requiredFragments = listOf(
             "runScheduledAutoAiTurnApplication(",
             "AutoAiScheduledTurnRunRequest(",
@@ -591,7 +587,7 @@ class LayeringContractTest {
     @Test
     fun humanMoveControllerDelegatesToApplicationRunners() {
         val controller = RepoPaths.applicationPath("humanmove/HumanMoveController.kt")
-        val text = controller.readText()
+        val text = codeOnly(controller.readText())
         val requiredFragments = listOf(
             "applyHumanMoveLocally(",
             "runHumanEngineSyncApplication(",
@@ -608,7 +604,7 @@ class LayeringContractTest {
     @Test
     fun topMovesControllerDelegatesToApplicationRunners() {
         val controller = RepoPaths.applicationPath("topmoves/TopMovesController.kt")
-        val text = controller.readText()
+        val text = codeOnly(controller.readText())
         val requiredFragments = listOf(
             "runTopMoveAnalysisApplication(",
             "TopMoveAnalysisRunRequest(",
@@ -639,10 +635,9 @@ class LayeringContractTest {
             "SettingsAndDiagnosticsControllerWiring.kt",
         )
         val wiringText = wiringFileNames.joinToString("\n") { fileName ->
-            RepoPaths.uiFile(fileName)
-                .readText()
+            codeOnly(RepoPaths.uiFile(fileName).readText())
         }
-        val text = goCoachApp.readText() + "\n" + wiringText
+        val text = codeOnly(goCoachApp.readText()) + "\n" + wiringText
         val forbiddenFragments = listOf(
             "scoreEstimateOperationToken(",
             "ScoreEstimateEffectLaunchRequest(",
@@ -668,7 +663,7 @@ class LayeringContractTest {
     @Test
     fun scoreEstimateControllerDelegatesToApplicationRunner() {
         val controller = RepoPaths.applicationPath("score/ScoreEstimateController.kt")
-        val text = controller.readText()
+        val text = codeOnly(controller.readText())
         val requiredFragments = listOf(
             "runScoreEstimateApplication(",
             "ScoreEstimateRunRequest(",
@@ -695,10 +690,9 @@ class LayeringContractTest {
             "SettingsAndDiagnosticsControllerWiring.kt",
         )
         val wiringText = wiringFileNames.joinToString("\n") { fileName ->
-            RepoPaths.uiFile(fileName)
-                .readText()
+            codeOnly(RepoPaths.uiFile(fileName).readText())
         }
-        val text = goCoachApp.readText() + "\n" + wiringText
+        val text = codeOnly(goCoachApp.readText()) + "\n" + wiringText
         val forbiddenFragments = listOf(
             "DebugReportCopyActionRequest(",
             "runDebugReportCopyAction(",
@@ -723,7 +717,7 @@ class LayeringContractTest {
     @Test
     fun debugReportControllerDelegatesToApplicationRunner() {
         val controller = RepoPaths.applicationPath("debugreport/DebugReportController.kt")
-        val text = controller.readText()
+        val text = codeOnly(controller.readText())
         val requiredFragments = listOf(
             "runDebugReportCopyApplication(",
             "DebugReportCopyRunRequest(",
@@ -750,10 +744,9 @@ class LayeringContractTest {
             "SettingsAndDiagnosticsControllerWiring.kt",
         )
         val wiringText = wiringFileNames.joinToString("\n") { fileName ->
-            RepoPaths.uiFile(fileName)
-                .readText()
+            codeOnly(RepoPaths.uiFile(fileName).readText())
         }
-        val text = goCoachApp.readText() + "\n" + wiringText
+        val text = codeOnly(goCoachApp.readText()) + "\n" + wiringText
         val forbiddenFragments = listOf(
             "GameSessionEffect.RunPositionCacheOptimization(",
             "PositionAnalysisCacheOptimizationWorkflowResult.",
@@ -782,7 +775,7 @@ class LayeringContractTest {
     @Test
     fun positionCacheOptimizationControllerDelegatesToApplicationRunner() {
         val controller = RepoPaths.applicationPath("analysis/PositionCacheOptimizationController.kt")
-        val text = controller.readText()
+        val text = codeOnly(controller.readText())
         val requiredFragments = listOf(
             "runPositionAnalysisCacheOptimizationApplication(",
             "PositionAnalysisCacheOptimizationRunRequest(",
@@ -800,7 +793,7 @@ class LayeringContractTest {
     @Test
     fun goCoachAppDoesNotOwnEngineOperationLifecycleBody() {
         val goCoachApp = RepoPaths.goCoachApp
-        val text = goCoachApp.readText()
+        val text = codeOnly(goCoachApp.readText())
         val forbiddenFragments = listOf(
             "applyEngineOperationLifecycleTransition(",
             "EngineOperationLifecycleTransition.",
@@ -826,7 +819,7 @@ class LayeringContractTest {
     @Test
     fun engineOperationLifecycleControllerOwnsTransitionAndScope() {
         val controller = RepoPaths.applicationPath("engine/operation/EngineOperationLifecycleController.kt")
-        val text = controller.readText()
+        val text = codeOnly(controller.readText())
         val requiredFragments = listOf(
             "applyEngineOperationLifecycleTransition(",
             "runEngineOperationInScope(",
@@ -843,7 +836,7 @@ class LayeringContractTest {
     @Test
     fun goCoachAppUsesScreenStateAssemblerInsteadOfDirectScreenStateBuilders() {
         val goCoachApp = RepoPaths.goCoachApp
-        val text = goCoachApp.readText()
+        val text = codeOnly(goCoachApp.readText())
         val forbiddenFragments = listOf(
             "buildGameScreenStateInput(",
             "buildGameScreenState(",
@@ -865,7 +858,7 @@ class LayeringContractTest {
     @Test
     fun goCoachAppCollectsSessionStateHolderAndUsesDisplayApplierNaming() {
         val goCoachApp = RepoPaths.goCoachApp
-        val text = goCoachApp.readText()
+        val text = codeOnly(goCoachApp.readText())
         val forbiddenFragments = listOf(
             "GameSessionUiStateHolder",
             "uiStateHolder",
@@ -945,7 +938,7 @@ class LayeringContractTest {
             .filterNot { file -> file.exists() }
             .forEach { file -> offenders += "${file.relativeTo(repoRoot).path}: missing score sync split file" }
 
-        val commonText = common.readText()
+        val commonText = codeOnly(common.readText())
         val forbiddenCommonFragments = listOf(
             "ScoringRuleSyncEffectLaunchRequest",
             "PostUndoScoreSyncEffectLaunchRequest",
@@ -1012,7 +1005,7 @@ class LayeringContractTest {
             forbiddenImports = forbiddenImports,
         )
         val transportOffenders = contracts.flatMap { file ->
-            val text = file.readText()
+            val text = codeOnly(file.readText())
             forbiddenTransportFragments
                 .filter { fragment -> fragment in text }
                 .map { fragment -> "${file.relativeTo(repoRoot).path}: transport detail -> $fragment" }
@@ -1053,7 +1046,7 @@ class LayeringContractTest {
             missing.isEmpty() && stillInAppAndroid.isEmpty(),
         )
 
-        val transportText = RepoPaths.engineAndroid("HttpRemotePositionAnalysisTransport.kt").readText()
+        val transportText = codeOnly(RepoPaths.engineAndroid("HttpRemotePositionAnalysisTransport.kt").readText())
         assertTrue(
             "HTTP transport is intentionally JVM/Android-bound and should remain in its own file.",
             transportText.contains("java.net.HttpURLConnection") && transportText.contains("org.json.JSONObject"),
@@ -1073,21 +1066,21 @@ class LayeringContractTest {
             engineAndroidRoot.resolve("StubEngineAdapter.kt") to "internal class StubEngineAdapter",
         )
 
-        val notInternal = concreteAdapters.filterNot { (file, marker) -> file.readText().contains(marker) }
+        val notInternal = concreteAdapters.filterNot { (file, marker) -> codeOnly(file.readText()).contains(marker) }
         assertTrue(
             "EngineCoreApi concrete adapters must stay internal to engine-android:\n" +
                 notInternal.keys.joinToString("\n") { file -> file.relativeTo(repoRoot).path },
             notInternal.isEmpty(),
         )
 
-        val factoryText = engineAndroidRoot.resolve("EngineCoreApiFactory.kt").readText()
+        val factoryText = codeOnly(engineAndroidRoot.resolve("EngineCoreApiFactory.kt").readText())
         assertTrue(
             "engine-android must expose EngineCoreApiFactory as the only public construction seam.",
             factoryText.contains("object EngineCoreApiFactory") && !factoryText.trimStart().startsWith("internal"),
         )
 
         val bootstrap = RepoPaths.appAndroid("engine/EngineBootstrap.kt")
-        val bootstrapText = bootstrap.readText()
+        val bootstrapText = codeOnly(bootstrap.readText())
         val forbiddenDirectConstruction = listOf("KataGoProcessEngineAdapter(", "StubEngineAdapter(")
             .filter { fragment -> fragment in bootstrapText }
         assertTrue(
@@ -1558,14 +1551,28 @@ class LayeringContractTest {
         )
     }
 
-    private fun ktFilesIn(vararg dirs: File): List<File> =
-        dirs.flatMap { dir ->
+    /**
+     * [dirs] 아래의 `.kt` 파일 전부.
+     *
+     * ⚠️ **빈 결과는 실패다.** 이 헬퍼가 없는 디렉터리를 조용히 빈 목록으로 돌려주는 바람에
+     * 260816~260923 사이 import 규칙 넷이 **0개 파일을 검사하며 무조건 통과**했다
+     * (`application/`·`match/`가 :shared로 이사했는데 스캔 경로가 따라오지 않았다).
+     * 그 종류의 사망은 아무것도 빨개지지 않아서 **누가 볼 일이 없다** — 유일한 증상이
+     * "초록"이기 때문이다. 그래서 여기서 못박는다: 스캔 대상이 비면 그 자리에서 터뜨린다.
+     */
+    private fun ktFilesIn(vararg dirs: File): List<File> {
+        val files = dirs.flatMap { dir ->
             if (dir.exists()) {
                 dir.walkTopDown().filter { file -> file.extension == "kt" }.toList()
             } else {
                 emptyList()
             }
         }
+        require(files.isNotEmpty()) {
+            "스캔 대상이 비었다 — 경로가 낡았다: ${dirs.joinToString { it.path }}"
+        }
+        return files
+    }
 
     /**
      * Reports forbidden references in [files].
@@ -1639,12 +1646,6 @@ class LayeringContractTest {
     }
 
     /**
-     * Blanks out string-literal and single-line block-comment contents, plus a
-     * trailing line comment, so forbidden-reference detection looks only at
-     * actual code. Multi-line raw strings/comments spanning lines are out of
-     * scope; triple- and double-quoted single-line strings are handled.
-     */
-    /**
      * 파일 전체에서 주석·문자열을 걷어낸 **코드만** 남긴다.
      *
      * ⚠️ **여러 줄 블록 주석(KDoc)을 먼저 지우는 것이 핵심이다.** [stripStringsAndTrailingComment]는
@@ -1652,6 +1653,11 @@ class LayeringContractTest {
      * 그래서 이 헬퍼 없이 파일 전체를 훑으면 **주석에 적힌 클래스 이름이 코드로 오인된다.**
      * 실제로 그 오탐 때문에 순서 계약 테스트가 한 번 거짓 통과했다(2026-09-01, #63) —
      * 호출 순서를 뒤집었는데도 KDoc의 언급이 먼저 잡혀 통과했다.
+     *
+     * 260923: 이 파일의 소스 읽기 **전부**(43곳)를 이 헬퍼로 통과시켰다. 날것 `readText()`는
+     * 한 곳만 남아 있어도 그 자리에서 같은 오탐이 되살아나므로, **새 검사를 추가할 때도
+     * `codeOnly(file.readText())` 형태를 지킬 것.** 일부러 주석까지 봐야 하는 검사가 생기면
+     * 그때는 왜 예외인지 그 자리에 적는다.
      */
     private fun codeOnly(source: String): String =
         source
@@ -1659,6 +1665,12 @@ class LayeringContractTest {
             .lineSequence()
             .joinToString("\n") { stripStringsAndTrailingComment(it) }
 
+    /**
+     * Blanks out string-literal and single-line block-comment contents, plus a
+     * trailing line comment, so forbidden-reference detection looks only at
+     * actual code. Multi-line raw strings/comments spanning lines are out of
+     * scope; triple- and double-quoted single-line strings are handled.
+     */
     private fun stripStringsAndTrailingComment(line: String): String =
         line
             .replace(Regex("\"\"\".*?\"\"\""), "\"\"")
