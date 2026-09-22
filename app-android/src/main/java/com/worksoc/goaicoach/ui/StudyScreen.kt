@@ -46,7 +46,7 @@ internal enum class StudyCategory(val available: Boolean) {
     /** 2026-09-20까지 이 목록이 곧 「학습 하기」였다 — 콘텐츠가 통째로 한 칸 내려왔다. */
     YoutubeLessons(available = true),
     Rules(available = true),
-    Fundamentals(available = false),
+    Fundamentals(available = true),
     LifeAndDeath(available = false),
 }
 
@@ -70,16 +70,30 @@ internal fun StudyScreen(
     val strings = LocalUiStrings.current
     var opened by remember { mutableStateOf<StudyCategory?>(null) }
 
-    when (opened) {
+    // ⚠️ 지역 값으로 한 번 받는다 — `by remember`는 위임 프로퍼티라 `when` 안에서
+    // 스마트 캐스트가 되지 않는다.
+    val openedCategory = opened
+    when (openedCategory) {
         StudyCategory.YoutubeLessons -> {
             StudyVideoListScreen(onBackClick = { opened = null }, modifier = modifier)
             return
         }
-        StudyCategory.Rules -> {
-            StudyRulesScreen(onBackClick = { opened = null }, modifier = modifier)
-            return
+        // ⚠️ **분류마다 화면을 파지 않는다** — 규칙과 행마는 형식이 같아(정적 문구 + 도해
+        // 넘김) **한 화면이 갈래만 바꿔** 그린다. 분류를 갈래로 옮기는 자리는
+        // `studyLessonTrackFor` 하나다(백로그 #183).
+        StudyCategory.Rules, StudyCategory.Fundamentals -> {
+            val track = studyLessonTrackFor(openedCategory)
+            if (track != null) {
+                StudyLessonTrackScreen(
+                    track = track,
+                    category = openedCategory,
+                    onBackClick = { opened = null },
+                    modifier = modifier,
+                )
+                return
+            }
         }
-        // 남은 둘은 `available = false`라 열리지 않는다 — 행이 눌리지 않으므로 여기 올 수
+        // 「기본 사활」은 `available = false`라 열리지 않는다 — 행이 눌리지 않으므로 여기 올 수
         // 없다. 그 화면을 들고 오는 일감이 이 자리에 가지를 더한다.
         else -> Unit
     }

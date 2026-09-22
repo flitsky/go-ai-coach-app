@@ -28,12 +28,17 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.worksoc.goaicoach.presentation.KaTrainUxOptions
-import com.worksoc.goaicoach.shared.GoRuleLessonId
-import com.worksoc.goaicoach.shared.goRuleLessons
+import com.worksoc.goaicoach.shared.StudyLesson
+import com.worksoc.goaicoach.shared.StudyLessonId
+import com.worksoc.goaicoach.shared.StudyLessonTrack
+import com.worksoc.goaicoach.shared.studyLessonsFor
 
 /**
- * 3 Depth: 「바둑 규칙 배우기」(백로그 #164) — 단원 목록과, 고른 단원의 도해를 한 장씩 넘기는
- * 화면.
+ * 3 Depth: 한 **갈래**의 단원 목록과, 고른 단원의 도해를 한 장씩 넘기는 화면
+ * (백로그 #164 「바둑 규칙 배우기」 · #183 「바둑 기초 행마」).
+ *
+ * ⚠️ **갈래를 늘릴 때 이 파일을 복사하지 말 것** — 화면은 [track]만 받아 그린다. 새 갈래는
+ * `StudyLessonTrack`에 값을 더하고 `studyLessons`에 단원을, 곁표에 문구를 더하면 열린다.
  *
  * ⚠️ **단원도 이 화면의 상태다 — 셸의 목적지가 아니다.** 학습 허브가 하위 분류를 자기 상태로
  * 가진 것과 같은 판단이다(백로그 #163·#156, 함정 3: 셸의 상태 훅 예산은 42/42로 여유 0).
@@ -43,15 +48,20 @@ import com.worksoc.goaicoach.shared.goRuleLessons
  * 어느 쪽이 먼저 잡는지가 등록 순서에 달리게 되어, 읽는 사람이 예측할 수 없다.
  */
 @Composable
-internal fun StudyRulesScreen(
+internal fun StudyLessonTrackScreen(
+    track: StudyLessonTrack,
+    category: StudyCategory,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val strings = LocalUiStrings.current
-    var openedLesson by remember { mutableStateOf<GoRuleLessonId?>(null) }
+    val lessons = remember(track) { studyLessonsFor(track) }
+    // ⚠️ 갈래가 바뀌면 열려 있던 단원을 버린다 — 키가 없으면 다른 갈래의 단원이 그대로 열린다.
+    var openedLesson by remember(track) { mutableStateOf<StudyLessonId?>(null) }
 
     openedLesson?.let { lessonId ->
-        StudyRuleLessonScreen(
+        StudyLessonScreen(
+            lessons = lessons,
             lessonId = lessonId,
             onBackClick = { openedLesson = null },
             onOpenLesson = { next -> openedLesson = next },
@@ -68,7 +78,7 @@ internal fun StudyRulesScreen(
             .background(MaterialTheme.colorScheme.background),
     ) {
         StudyScreenHeader(
-            title = studyCategoryTitleFor(strings.language, StudyCategory.Rules),
+            title = studyCategoryTitleFor(strings.language, category),
             onBackClick = onBackClick,
         )
 
@@ -80,12 +90,12 @@ internal fun StudyRulesScreen(
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            goRuleLessons.forEach { lesson ->
+            lessons.forEach { lesson ->
                 // ⚠️ 허브와 **같은 줄 컴포넌트**를 쓴다 — 한 칸 들어왔을 뿐인데 행의 생김새가
                 // 바뀌면 다른 곳에 온 것처럼 읽힌다. 「준비 중」이 없는 것만 다르다.
                 StudyEntryRow(
-                    title = goRuleLessonTitleFor(strings.language, lesson.id),
-                    subtitle = goRuleLessonSummaryFor(strings.language, lesson.id),
+                    title = studyLessonTitleFor(strings.language, lesson.id),
+                    subtitle = studyLessonSummaryFor(strings.language, lesson.id),
                     comingSoonLabel = null,
                     onClick = { openedLesson = lesson.id },
                 )
@@ -104,14 +114,15 @@ internal fun StudyRulesScreen(
  * 안에서 구른다(글꼴 배율이 올라가도 판이 밀려나지 않는다).
  */
 @Composable
-private fun StudyRuleLessonScreen(
-    lessonId: GoRuleLessonId,
+private fun StudyLessonScreen(
+    lessons: List<StudyLesson>,
+    lessonId: StudyLessonId,
     onBackClick: () -> Unit,
-    onOpenLesson: (GoRuleLessonId) -> Unit,
+    onOpenLesson: (StudyLessonId) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val strings = LocalUiStrings.current
-    val lesson = remember(lessonId) { goRuleLessons.single { it.id == lessonId } }
+    val lesson = remember(lessonId) { lessons.single { it.id == lessonId } }
     // 도해는 수순에서 접는다 — 좌표 표를 손으로 적지 않으므로 규칙과 어긋날 수 없다.
     val states = remember(lessonId) { lesson.statesByStep() }
     // ⚠️ `remember`의 키가 [lessonId]다 — 「다음 단원」으로 갈아탈 때 이 조각은 그대로
@@ -123,7 +134,7 @@ private fun StudyRuleLessonScreen(
     val step = lesson.steps[stepIndex]
     val state = states[stepIndex]
     val isLastStep = stepIndex == lesson.steps.lastIndex
-    val nextLesson = goRuleLessons.getOrNull(goRuleLessons.indexOf(lesson) + 1)?.id
+    val nextLesson = lessons.getOrNull(lessons.indexOf(lesson) + 1)?.id
 
     val bodyScroll = rememberScrollState()
     // 장을 넘겼는데 설명이 아래로 굴러가 있으면 첫 줄을 놓친다.
@@ -135,7 +146,7 @@ private fun StudyRuleLessonScreen(
             .background(MaterialTheme.colorScheme.background),
     ) {
         StudyScreenHeader(
-            title = goRuleLessonTitleFor(strings.language, lessonId),
+            title = studyLessonTitleFor(strings.language, lessonId),
             onBackClick = onBackClick,
         )
 
@@ -157,9 +168,9 @@ private fun StudyRuleLessonScreen(
                 inputEnabled = false,
                 engineActivityIndicator = null,
                 modifier = Modifier.fillMaxSize(),
-                // ⚠️ 가늠돌의 뜻은 **「다음은 여기」 하나뿐이다**(`GoRuleStep.marker`).
+                // ⚠️ 가늠돌의 뜻은 **「다음은 여기」 하나뿐이다**(`StudyLessonStep.marker`).
                 // 둘 수 없는 자리에 찍으면 판이 "놓을 수 있다"고 말해 글과 반대가 된다 —
-                // `GoRuleLessonsTest.everyMarkerPointsAtALegalMove`가 그물이다.
+                // `StudyLessonsTest.everyMarkerPointsAtALegalMove`가 그물이다.
                 tentativeMove = step.marker,
                 onCoordinateTap = {},
                 // 마지막 단원은 두 번 거르며 실제로 끝난다 — 끝난 판의 톤을 그대로 받는다.
@@ -183,7 +194,7 @@ private fun StudyRuleLessonScreen(
                     .padding(horizontal = 20.dp, vertical = 12.dp),
             ) {
                 Text(
-                    text = goRuleStepBodyFor(strings.language, step.id),
+                    text = studyLessonBodyFor(strings.language, step.id),
                     fontSize = 16.sp,
                     lineHeight = 25.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -191,21 +202,21 @@ private fun StudyRuleLessonScreen(
             }
         }
 
-        StudyRuleLessonControls(
+        StudyLessonControls(
             stepNumber = stepIndex + 1,
             stepCount = lesson.steps.size,
             onPrevious = { stepIndex -= 1 }.takeIf { stepIndex > 0 },
             forwardLabel = when {
-                !isLastStep -> studyRulesNextFor(strings.language)
-                nextLesson != null -> studyRulesNextLessonFor(strings.language)
-                else -> studyRulesBackToListFor(strings.language)
+                !isLastStep -> studyLessonNextFor(strings.language)
+                nextLesson != null -> studyLessonNextLessonFor(strings.language)
+                else -> studyLessonBackToListFor(strings.language)
             },
             onForward = when {
                 !isLastStep -> ({ stepIndex += 1 })
                 nextLesson != null -> ({ onOpenLesson(nextLesson) })
                 else -> onBackClick
             },
-            previousLabel = studyRulesPreviousFor(strings.language),
+            previousLabel = studyLessonPreviousFor(strings.language),
         )
     }
 }
@@ -235,7 +246,7 @@ private const val BodyShare = 1f
  * — M3가 비활성일 때 **바탕색까지** 내려 주므로 배경이라는 다른 축이 함께 움직인다.
  */
 @Composable
-private fun StudyRuleLessonControls(
+private fun StudyLessonControls(
     stepNumber: Int,
     stepCount: Int,
     previousLabel: String,
