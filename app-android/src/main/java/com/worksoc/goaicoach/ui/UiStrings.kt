@@ -421,22 +421,21 @@ internal data class UiStrings(
     val localOnlyDataNoticeTitle: String,
     val localOnlyDataNoticeBody: String,
     /**
-     * 위 고지에 **구매 플래그가 켜질 때만** 덧붙는 조각(#129).
+     * 위 고지에 **늘 덧붙는** 구독 복원 조각(#129 → 2026-09-22 전면 개정).
      *
-     * ⚠️ **게이트는 `isBotCharacterPurchaseEnabled` 하나다 — `isPurchaseEnabled`를 OR로 묶지 말 것.**
-     * 프리미엄·구독 쪽 복원은 `PremiumPurchaseGlue.kt:36-38`이 `AndroidBillingClient`의 기본값
-     * `INAPP`으로 조회하고 **`SUBS`를 넘기는 호출부가 저장소에 하나도 없다.** 그래서 #26이
-     * `isPurchaseEnabled`를 켜는 날 이 문장을 함께 노출하면, 구독자에게는 조회가 **조용한 미소유**로
-     * 끝나 *"앱이 다시 열어 준다"* 가 아무 일도 하지 않는다 — #87(앱이 안 하는 것을 문구가 약속했다)의
-     * 재판이다. 구독용 문장은 그 한 줄(`SUBS` 전달)이 고쳐진 뒤 **별도 필드**로 붙인다.
+     * ## ⚠️ 2026-09-22에 뜻이 바뀌었다 — 옛 KDoc을 근거로 되돌리지 말 것
+     * 이 조각은 원래 **캐릭터 개별 판매**(`isBotCharacterPurchaseEnabled`) 뒤에 숨어 있었고,
+     * KDoc은 *"`SUBS`를 넘기는 호출부가 저장소에 하나도 없으니 구독 복원을 약속하지 말라"* 고
+     * 막고 있었다(#87의 재판을 막으려는 그물). **그 두 전제가 모두 사라졌다**:
+     * · 캐릭터 개별 판매는 **2026-09-18에 폐기**됐다(#160·#161·#18) → 플래그는 영영 꺼져 있다.
+     * · `PremiumPurchaseGlue.kt`의 `PremiumProductType`이 이제 **`SUBS`**다 → 구독 복원은 실제로 된다.
      *
-     * ⚠️ **동사는 "복구"가 아니라 "확인 → 다시 열기"다.** 구매를 되돌리는 것이 아니라 Play의 결제
-     * 내역을 조회해 소유를 다시 기록하는 것이고(`BotCharacterUiState.kt:151`), 실패는 오류가 아니라
-     * **조용한 미소유**다. 그 완충은 문구가 아니라 이 KDoc이 진다 — 카드에서 결제한 사용자를
-     * 불안하게 만들지 않기 위해서다.
+     * ⚠️ **그래서 이 문장의 참·거짓은 그 한 줄에 달려 있다.** `PremiumProductType`이 `INAPP`으로
+     * 돌아가는 순간 구독자에게 조회가 **조용한 미소유**로 끝나고 이 문장은 거짓이 된다 —
+     * `LocalOnlyDataNoticeContractTest`가 그 한 줄을 지킨다.
      *
-     * ⚠️ **플래그가 꺼진 동안 이 문구는 아무도 보지 않는다.** 리플렉션 그물은 *"한글만 아니면 통과"*
-     * 라 일본어 자리에 영어를 박아도 못 잡으므로, `UiStringsTest`가 네 언어의 값을 직접 못박는다.
+     * ⚠️ **상태로 가리지 않는다.** 구독자에게는 안심이고 아직 아닌 사람에게는 *"구독하면 이것도
+     * 해결된다"* 는 정보인데, `isPurchased`로 가리면 후자가 영영 보지 못한다.
      */
     val localOnlyDataNoticePaidRestoreLine: String,
     /**

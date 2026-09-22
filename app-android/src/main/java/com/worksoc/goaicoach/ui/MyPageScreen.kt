@@ -270,13 +270,20 @@ internal fun MyPageScreen(
                     // (옛 랜딩 문구가 같은 이유로 문장을 끊었다 — #140이 랜딩과 함께 지웠다). 조각별로 번역·검증이
                     // 독립되는 이점도 있다. 이 카드는 고정 높이를 쓰지 않으므로 줄이 늘어도 잘리지 않는다
                     // — **그 성질을 유지할 것**(`height`/`heightIn`을 넣는 순간 이 줄이 먼저 잘린다).
-                    if (FeatureFlags.isBotCharacterPurchaseEnabled) {
-                        Text(
-                            text = strings.localOnlyDataNoticePaidRestoreLine,
-                            fontSize = 13.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
+                    // ⚠️ **게이트를 걷어냈다**(2026-09-22). 이 조각은 `isBotCharacterPurchaseEnabled`
+                    // 뒤에 있었는데, **캐릭터 개별 판매가 2026-09-18에 폐기**돼(#160·#161·#18) 그
+                    // 플래그는 영영 켜지지 않는다 — 문구가 죽어 있었다.
+                    // ⚠️ **이제 구독 이야기이고, 구독 복원은 실제로 된다.** 옛 KDoc이 *"`SUBS`를
+                    // 넘기는 호출부가 저장소에 하나도 없다"* 고 막던 것은 #26/#150 이전 사실이고,
+                    // 지금은 `PremiumPurchaseGlue.kt`의 `PremiumProductType`이 `SUBS`다
+                    // (`LocalOnlyDataNoticeContractTest`가 그 한 줄을 지킨다).
+                    // ⚠️ **모두에게 보인다** — 구독자에게는 안심이고, 아직 아닌 사람에게는
+                    // 「구독하면 이것도 해결된다」는 정보다. 상태로 가리면 후자가 영영 못 본다.
+                    Text(
+                        text = strings.localOnlyDataNoticePaidRestoreLine,
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
             // **가이드 다시보기**(사용자 확정 ⓑ: 진입점은 여기 하나뿐. 설정에는 넣지 않는다).

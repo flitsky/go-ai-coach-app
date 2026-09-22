@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.application
 
 import com.worksoc.goaicoach.application.safety.EngineEndgameWatchdogTimeoutMillis
+import com.worksoc.goaicoach.application.safety.EngineResponseGraceMillis
 import com.worksoc.goaicoach.application.safety.engineTurnWatchdogTimeoutMillisFor
 import com.worksoc.goaicoach.application.safety.isEngineTurnWatchdogTriggered
 import com.worksoc.goaicoach.shared.SearchTimeLimit
@@ -10,16 +11,32 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class EngineTurnWatchdogTest {
+    /**
+     * 설정값 × 1.2 + 부가 지연 3초 + **기본 응답 여유 5초**(2026-09-22).
+     * ⚠️ 숫자를 손으로 적는다 — `EngineResponseGraceMillis`로 계산하면 그 상수를 바꿔도
+     * 테스트가 함께 따라가서 **아무것도 지키지 않게 된다**(함정 24: 초록 ≠ 안전).
+     */
     @Test
-    fun timeoutScalesConfiguredLimitByOnePointTwoPlusThreeSeconds() {
-        assertEquals(15_000L, engineTurnWatchdogTimeoutMillisFor(SearchTimeLimit.WithinTenSeconds))
-        assertEquals(6_600L, engineTurnWatchdogTimeoutMillisFor(SearchTimeLimit.WithinThreeSeconds))
-        assertEquals(4_200L, engineTurnWatchdogTimeoutMillisFor(SearchTimeLimit.WithinOneSecond))
+    fun timeoutScalesConfiguredLimitByOnePointTwoPlusOverheadPlusGrace() {
+        assertEquals(20_000L, engineTurnWatchdogTimeoutMillisFor(SearchTimeLimit.WithinTenSeconds))
+        assertEquals(11_600L, engineTurnWatchdogTimeoutMillisFor(SearchTimeLimit.WithinThreeSeconds))
+        assertEquals(9_200L, engineTurnWatchdogTimeoutMillisFor(SearchTimeLimit.WithinOneSecond))
+    }
+
+    /** 여유가 **세 갈래 전부**에 붙는지 — 한 갈래만 붙는 사고를 막는다. */
+    @Test
+    fun theResponseGraceIsAddedToEveryBranch() {
+        assertEquals(5_000L, EngineResponseGraceMillis)
+        assertEquals(
+            EngineEndgameWatchdogTimeoutMillis + EngineResponseGraceMillis,
+            engineTurnWatchdogTimeoutMillisFor(SearchTimeLimit.WithinOneSecond, isResolvingEndgame = true),
+        )
+        assertEquals(60_000L + EngineResponseGraceMillis, engineTurnWatchdogTimeoutMillisFor(SearchTimeLimit.Off))
     }
 
     @Test
-    fun timeoutIsFixedSixtySecondsWhenLimitIsOff() {
-        assertEquals(60_000L, engineTurnWatchdogTimeoutMillisFor(SearchTimeLimit.Off))
+    fun timeoutIsFixedSixtyFiveSecondsWhenLimitIsOff() {
+        assertEquals(65_000L, engineTurnWatchdogTimeoutMillisFor(SearchTimeLimit.Off))
     }
 
     @Test
@@ -38,7 +55,7 @@ class EngineTurnWatchdogTest {
         assertFalse(
             isEngineTurnWatchdogTriggered(
                 isAiTurn = true,
-                elapsedSinceTurnStartMillis = 6_599L,
+                elapsedSinceTurnStartMillis = 11_599L,
                 searchTimeLimit = SearchTimeLimit.WithinThreeSeconds,
             ),
         )
@@ -49,7 +66,7 @@ class EngineTurnWatchdogTest {
         assertTrue(
             isEngineTurnWatchdogTriggered(
                 isAiTurn = true,
-                elapsedSinceTurnStartMillis = 6_600L,
+                elapsedSinceTurnStartMillis = 11_600L,
                 searchTimeLimit = SearchTimeLimit.WithinThreeSeconds,
             ),
         )
@@ -58,22 +75,22 @@ class EngineTurnWatchdogTest {
     @Test
     fun endgameTimeoutIgnoresSearchTimeLimitAndUsesFixedBudget() {
         assertEquals(
-            EngineEndgameWatchdogTimeoutMillis,
+            25_000L,
             engineTurnWatchdogTimeoutMillisFor(SearchTimeLimit.WithinOneSecond, isResolvingEndgame = true),
         )
         assertEquals(
-            EngineEndgameWatchdogTimeoutMillis,
+            25_000L,
             engineTurnWatchdogTimeoutMillisFor(SearchTimeLimit.Off, isResolvingEndgame = true),
         )
     }
 
     @Test
     fun notTriggeredDuringEndgameResolutionUnderTheEndgameBudgetEvenPastNormalThreshold() {
-        // 일반 착수 기준(1초 제한 -> 4_200ms)은 이미 넘었지만 계가 처리 중이므로 트리거되지 않는다.
+        // 일반 착수 기준(1초 제한 -> 9_200ms)은 이미 넘었지만 계가 처리 중이므로 트리거되지 않는다.
         assertFalse(
             isEngineTurnWatchdogTriggered(
                 isAiTurn = true,
-                elapsedSinceTurnStartMillis = 8_700L,
+                elapsedSinceTurnStartMillis = 9_500L,
                 searchTimeLimit = SearchTimeLimit.WithinOneSecond,
                 isResolvingEndgame = true,
             ),
@@ -85,7 +102,7 @@ class EngineTurnWatchdogTest {
         assertTrue(
             isEngineTurnWatchdogTriggered(
                 isAiTurn = true,
-                elapsedSinceTurnStartMillis = EngineEndgameWatchdogTimeoutMillis,
+                elapsedSinceTurnStartMillis = EngineEndgameWatchdogTimeoutMillis + EngineResponseGraceMillis,
                 searchTimeLimit = SearchTimeLimit.WithinOneSecond,
                 isResolvingEndgame = true,
             ),
@@ -93,18 +110,18 @@ class EngineTurnWatchdogTest {
     }
 
     @Test
-    fun triggeredAtSixtySecondsWhenLimitIsOff() {
+    fun triggeredAtSixtyFiveSecondsWhenLimitIsOff() {
         assertFalse(
             isEngineTurnWatchdogTriggered(
                 isAiTurn = true,
-                elapsedSinceTurnStartMillis = 59_999L,
+                elapsedSinceTurnStartMillis = 64_999L,
                 searchTimeLimit = SearchTimeLimit.Off,
             ),
         )
         assertTrue(
             isEngineTurnWatchdogTriggered(
                 isAiTurn = true,
-                elapsedSinceTurnStartMillis = 60_000L,
+                elapsedSinceTurnStartMillis = 65_000L,
                 searchTimeLimit = SearchTimeLimit.Off,
             ),
         )

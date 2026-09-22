@@ -26,22 +26,45 @@ import com.worksoc.goaicoach.shared.SearchTimeLimit
 const val EngineEndgameWatchdogTimeoutMillis: Long = 20_000L
 
 /**
+ * 탐색 **밖**에서 드는 몫 — IPC·JSON 파싱·프로세스 스케줄링. KataGo의 탐색 시간 상한은
+ * 탐색에만 걸리므로 이만큼은 언제나 더 든다.
+ */
+const val EngineTurnWatchdogOverheadMillis: Long = 3_000L
+
+/**
+ * **기본 엔진 응답 여유**(2026-09-22 사용자 지시) — 「엔진 응답 지연」 팝업이 불필요하게
+ * 떴다 사라지는 일을 줄이려고 모든 한도에 한 겹 더 얹는 몫이다.
+ *
+ * ⚠️ **조절 손잡이는 이것 하나다.** 오탐이 여전하면 여기만 올리면 되고, 판정 로직·호출부·
+ * 화면을 건드릴 필요가 없다. 반대로 진짜로 멎은 엔진을 알아채는 데도 그만큼 늦어진다 —
+ * 그 둘의 맞바꿈이 이 상수의 전부다.
+ * ⚠️ **세 갈래 전부에 붙는다**(계가·시간제한·무제한). 이름이 「기본 여유」인 이유이고,
+ * 한 갈래만 붙이면 다른 갈래에서 왜 안 붙는지를 다음 사람이 다시 캐야 한다.
+ */
+const val EngineResponseGraceMillis: Long = 5_000L
+
+/** 탐색 시간 제한이 꺼져 있을 때(무제한)의 바탕 한도. */
+const val UnlimitedSearchWatchdogBaseMillis: Long = 60_000L
+
+/**
  * 대국 설정의 AI 최대 응답 시간에 맞춰 와치독 한도를 계산한다.
- * - [isResolvingEndgame]이면(양패스 이후 계가 처리 중) [EngineEndgameWatchdogTimeoutMillis] 고정.
- * - 응답 시간 제한이 설정돼 있으면 그 값의 1.2배 + 3초.
- * - 응답 시간 제한이 꺼져 있으면(무제한 탐색) 고정 60초.
+ * - [isResolvingEndgame]이면(양패스 이후 계가 처리 중) [EngineEndgameWatchdogTimeoutMillis].
+ * - 응답 시간 제한이 설정돼 있으면 그 값의 1.2배 + [EngineTurnWatchdogOverheadMillis].
+ * - 응답 시간 제한이 꺼져 있으면(무제한 탐색) [UnlimitedSearchWatchdogBaseMillis].
+ *
+ * 그리고 **어느 갈래든 마지막에 [EngineResponseGraceMillis]를 더한다.**
  */
 fun engineTurnWatchdogTimeoutMillisFor(
     searchTimeLimit: SearchTimeLimit,
     isResolvingEndgame: Boolean = false,
 ): Long {
-    if (isResolvingEndgame) return EngineEndgameWatchdogTimeoutMillis
     val configuredMillis = searchTimeLimit.maximumMillis
-    return if (configuredMillis != null) {
-        (configuredMillis * 1.2).toLong() + 3_000L
-    } else {
-        60_000L
+    val baseMillis = when {
+        isResolvingEndgame -> EngineEndgameWatchdogTimeoutMillis
+        configuredMillis != null -> (configuredMillis * 1.2).toLong() + EngineTurnWatchdogOverheadMillis
+        else -> UnlimitedSearchWatchdogBaseMillis
     }
+    return baseMillis + EngineResponseGraceMillis
 }
 
 /** AI 차례에서 [elapsedSinceTurnStartMillis]가 와치독 한도를 넘겼는지 판정한다. */

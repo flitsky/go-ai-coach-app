@@ -90,36 +90,37 @@ class LocalOnlyDataNoticeContractTest {
     }
 
     /**
-     * ⚠️ **유료 조각의 게이트는 `isBotCharacterPurchaseEnabled` 하나여야 한다.**
+     * ⚠️ **이 문장의 참·거짓은 `PremiumProductType` 한 줄에 달려 있다.**
      *
-     * `isPurchaseEnabled`를 OR로 묶으면 #26(월 구독)이 그것을 켜는 날 문장이 함께 노출되는데,
-     * 구독 복원은 `PremiumPurchaseGlue.kt`가 `AndroidBillingClient`의 기본값 `INAPP`으로 조회하고
-     * **`SUBS`를 넘기는 호출부가 저장소에 없다** — 구독자에게는 조용한 미소유로 끝나
-     * *"앱이 다시 열어 준다"* 가 아무 일도 하지 않는다. #87(앱이 안 하는 것을 문구가 약속했다)의 재판이다.
+     * 2026-09-22 이전 이 그물은 정반대를 지켰다 — *"구독 복원은 `INAPP`으로 조회해 조용히
+     * 실패하니 구독 이야기를 쓰지 말라"*(#87 「앱이 안 하는 것을 문구가 약속했다」의 재판을
+     * 막으려던 것). **그 전제가 사라졌다**: `PremiumPurchaseGlue.kt`가 이제 `SUBS`로 조회한다.
+     * 그래서 같은 위험을 **반대편에서** 지킨다 — 그 한 줄이 `INAPP`으로 돌아가는 순간
+     * 마이 페이지의 *"앱이 구독을 확인해 모든 기능을 다시 열어 드립니다"* 가 거짓이 된다.
      *
-     * 되돌리기 쉬운 만큼(OR 한 글자다) 그물을 단다.
+     * ⚠️ 옛 게이트(`isBotCharacterPurchaseEnabled`)도 함께 걷어냈다 — **캐릭터 개별 판매가
+     * 2026-09-18에 폐기**돼(#160·#161·#18) 그 플래그는 영영 켜지지 않고, 문구가 죽어 있었다.
+     * 이제 **모두에게 보인다**: 구독자에게는 안심이고, 아직 아닌 사람에게는 *"구독하면 이것도
+     * 해결된다"* 는 정보다.
      */
     @Test
-    fun thePaidLineIsGatedOnTheCharacterPurchaseFlagAlone() {
-        val myPage = source("app-android/src/main/java/com/worksoc/goaicoach/ui/MyPageScreen.kt")
-            .replace(Regex("""/\*.*?\*/""", RegexOption.DOT_MATCHES_ALL), "")
-            .lines()
-            .filterNot { it.trimStart().startsWith("//") }
-            .joinToString("\n") { it.substringBefore("//") }
-
-        val gate = myPage.lines()
-            .indexOfFirst { it.contains("localOnlyDataNoticePaidRestoreLine") }
-            .let { at -> myPage.lines().take(at).last { it.contains("if (") } }
-
+    fun theRestoreLineIsOnlyHonestWhilePremiumIsQueriedAsASubscription() {
+        val glue = source("app-android/src/main/java/com/worksoc/goaicoach/ui/PremiumPurchaseGlue.kt")
         assertTrue(
-            "유료 조각의 게이트가 `isBotCharacterPurchaseEnabled`가 아니다: \"${gate.trim()}\" (#129)",
-            gate.contains("isBotCharacterPurchaseEnabled"),
+            "`PremiumProductType`이 `SUBS`가 아니다 — 구독 조회가 조용한 미소유로 끝나고, " +
+                "마이 페이지의 복원 문장이 거짓이 된다(#87의 재판).",
+            glue.contains("BillingClient.ProductType.SUBS"),
         )
+
+        val myPage = source("app-android/src/main/java/com/worksoc/goaicoach/ui/MyPageScreen.kt")
+            .lines()
+            .joinToString("\n") { it.substringBefore("//") }
         assertTrue(
-            "유료 조각의 게이트가 `isPurchaseEnabled`를 함께 본다 — 구독 복원은 `INAPP`으로 조회해 " +
-                "조용히 실패하므로, 그 플래그가 켜지는 날 이 문장은 거짓이 된다(#129). " +
-                "구독용 문장은 `SUBS` 전달이 고쳐진 뒤 별도 필드로 붙일 것: \"${gate.trim()}\"",
-            !gate.contains("isPurchaseEnabled"),
+            "복원 문장이 다시 플래그 뒤로 숨었다 — 아직 구독하지 않은 사람이 " +
+                "\"구독하면 이것도 해결된다\"를 영영 못 보게 된다.",
+            myPage.contains("strings.localOnlyDataNoticePaidRestoreLine") &&
+                !myPage.contains("isBotCharacterPurchaseEnabled"),
         )
     }
+
 }
