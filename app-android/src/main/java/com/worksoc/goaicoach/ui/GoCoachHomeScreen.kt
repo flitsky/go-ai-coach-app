@@ -790,7 +790,8 @@ private fun StudyPreviewIcon() {
                 .align(Alignment.BottomEnd)
                 .fillMaxSize(StudyPreviewMagnifierSizeFraction)
                 .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surface),
+                // 2026-09-22 사용자 요청 — 흰 배경 불투명도를 75%로 낮춰 뒤판이 살짝 비친다.
+                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.75f)),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
@@ -831,7 +832,8 @@ private fun BoardScanPreviewIcon() {
                 .align(Alignment.BottomEnd)
                 .fillMaxSize(StudyPreviewMagnifierSizeFraction)
                 .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surface),
+                // 2026-09-22 사용자 요청 — 흰 배경 불투명도를 75%로 낮춰 뒤판이 살짝 비친다.
+                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.75f)),
             contentAlignment = Alignment.Center,
         ) {
             Text(
