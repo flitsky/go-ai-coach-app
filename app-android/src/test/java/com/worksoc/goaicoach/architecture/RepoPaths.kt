@@ -62,20 +62,19 @@ internal object RepoPaths {
      * 보고 없으면 app-android로 떨어진다. [relativePath]는 `.../application/` 뒤의 부분
      * (예: `engine/EngineSession.kt`, `score`).
      */
-    fun applicationPath(relativePath: String): File {
-        val sharedPath = shared("application/$relativePath")
-        if (sharedPath.exists()) return sharedPath
-        return appAndroid("application/$relativePath")
-    }
+    fun applicationPath(relativePath: String = ""): File = sharedFirst("application", relativePath)
 
     /**
      * `match/` 아래의 한 경로. `application/`과 같은 이유로 shared를 먼저 본다
      * (260816에 `match/`는 통째로 :shared로 건너갔다).
      */
-    fun matchPath(relativePath: String = ""): File {
-        val sharedPath = shared(if (relativePath.isEmpty()) "match" else "match/$relativePath")
+    fun matchPath(relativePath: String = ""): File = sharedFirst("match", relativePath)
+
+    private fun sharedFirst(packageDir: String, relativePath: String): File {
+        val tail = if (relativePath.isEmpty()) packageDir else "$packageDir/$relativePath"
+        val sharedPath = shared(tail)
         if (sharedPath.exists()) return sharedPath
-        return appAndroid(if (relativePath.isEmpty()) "match" else "match/$relativePath")
+        return appAndroid(tail)
     }
 
     private fun resolveUnder(base: String, relativePath: String): File =

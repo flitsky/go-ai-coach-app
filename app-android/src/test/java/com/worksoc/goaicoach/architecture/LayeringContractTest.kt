@@ -31,12 +31,23 @@ class LayeringContractTest {
         )
     }
 
+    /**
+     * ⚠️ 260923: 이 가드는 **260816부터 아무것도 검사하지 않고 있었다.** `application/`과 `match/`가
+     * :shared로 이사했는데 스캔 경로가 `app-android/.../{application,match}`에 남아 있었고,
+     * [ktFilesIn]이 없는 디렉터리를 조용히 빈 목록으로 돌려줘 **무조건 통과**했다.
+     * 스캔 대상을 실재하는 트리로 옮긴다 — 본보기는 같은 파일의
+     * [engineOperationApplicationPoliciesStayPortable]이다(그 테스트만 함정을 알아챘었다).
+     *
+     * app-android에 남은 `application/diagnostic/LocalFileDiagnosticEventExternalSink.kt`도 함께
+     * 본다 — 그 하나는 일부러 플랫폼에 묶인 어댑터지만, 그렇다고 엔진 런타임 구현체를 직접
+     * 참조해도 되는 것은 아니다.
+     */
     @Test
     fun applicationAndMatchDoNotDependOnCompatibilityEngineAdapterOrAndroidRuntime() {
-        val sourceRoot = RepoPaths.appAndroid()
         val checkedDirs = listOf(
-            sourceRoot.resolve("application"),
-            sourceRoot.resolve("match"),
+            RepoPaths.applicationPath(),
+            RepoPaths.matchPath(),
+            RepoPaths.appAndroid("application"),
         )
         val forbiddenImports = listOf(
             "import com.worksoc.goaicoach.shared.EngineAdapter",
@@ -61,11 +72,12 @@ class LayeringContractTest {
         // KataGoProcessEngineAdapter): the port interfaces (AuthClientPort,
         // PremiumStateStorePort, DeviceIdentityStorePort) must stay pure Kotlin, while the real
         // Android/Firebase/SharedPreferences-backed adapters live in ui/ or persistence/.
-        val sourceRoot = RepoPaths.appAndroid()
+        // ⚠️ 260923: 셋 다 :shared로 건너간 뒤(260816)에도 스캔 경로가 app-android에 남아
+        // **0개 파일을 검사하며 무조건 통과**하고 있었다. 실재하는 트리를 가리키게 고친다.
         val checkedDirs = listOf(
-            sourceRoot.resolve("application/auth"),
-            sourceRoot.resolve("application/premium"),
-            sourceRoot.resolve("application/device"),
+            RepoPaths.applicationPath("auth"),
+            RepoPaths.applicationPath("premium"),
+            RepoPaths.applicationPath("device"),
         )
         val forbiddenImports = listOf(
             "import android.",
@@ -90,9 +102,10 @@ class LayeringContractTest {
         )
     }
 
+    /** ⚠️ 260923: `match/`가 :shared로 건너간 뒤 0개 파일을 검사하고 있었다(위 가드와 같은 사망). */
     @Test
     fun matchPoliciesDoNotImportRawEngineCoreApi() {
-        val matchRoot = RepoPaths.appAndroid("match")
+        val matchRoot = RepoPaths.matchPath()
         val forbiddenImports = listOf(
             "import com.worksoc.goaicoach.shared.EngineCoreApi",
         )
@@ -897,7 +910,8 @@ class LayeringContractTest {
 
     @Test
     fun scoreRunnersUseEngineSessionClientContractOnly() {
-        val scoreRoot = RepoPaths.appAndroid("application/score")
+        // ⚠️ 260923: `application/score`가 :shared로 건너간 뒤 0개 파일을 검사하고 있었다.
+        val scoreRoot = RepoPaths.applicationPath("score")
         val forbiddenImports = listOf(
             "import com.worksoc.goaicoach.application.engine.syncAndEstimateGraphScore",
             "import com.worksoc.goaicoach.application.engine.configureSyncAndEstimateGraphScore",
