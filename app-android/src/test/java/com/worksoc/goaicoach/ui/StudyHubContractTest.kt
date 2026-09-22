@@ -32,7 +32,14 @@ class StudyHubContractTest {
      */
     @Test
     fun theShellDoesNotKnowAboutTheStudySubCategories() {
-        listOf("StudyCategory", "StudyVideoListScreen", "studyVideoEntries").forEach { name ->
+        listOf(
+            "StudyCategory",
+            "StudyVideoListScreen",
+            "studyVideoEntries",
+            // 백로그 #164가 「바둑 규칙 배우기」로 한 겹을 더 팠다 — 같은 규칙을 받는다.
+            "StudyRulesScreen",
+            "goRuleLessons",
+        ).forEach { name ->
             assertFalse(
                 "`GoCoachApp.kt`가 `$name`을 안다 — 학습 하위 분류 배선이 셸로 올라왔다. " +
                     "하위 상태는 학습 허브가 소유한다(백로그 #163).",

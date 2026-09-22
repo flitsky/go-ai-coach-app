@@ -34,18 +34,18 @@ import androidx.compose.ui.unit.sp
 /**
  * 학습 허브의 하위 분류(백로그 #163, U-16 — 2026-09-20 사용자 결정).
  *
- * ⚠️ **순서가 곧 화면의 순서다** — 선언 순서로 그린다. 지금 열 수 있는 것은 [YoutubeLessons]
- * 하나뿐이고 나머지 셋은 **자리를 먼저 보여 준다**(회색 + 「준비 중」 배지, 비활성).
+ * ⚠️ **순서가 곧 화면의 순서다** — 선언 순서로 그린다. 아직 없는 분류는 **자리를 먼저
+ * 보여 준다**(회색 + 「준비 중」 배지, 비활성).
  * 사용자 결정으로 *"누르면 토스트"* 가 아니라 **눌리지 않는** 쪽을 골랐다 — 앞으로 무엇이
  * 올지 알리되, 누를 수 있는 것처럼 보여 헛손질을 만들지는 않는다.
  *
- * ⚠️ **#164가 채울 때 여기에 줄을 더하지 말 것** — 줄은 이미 있다. [available]을 `true`로
- * 돌리고 [StudyScreen]의 `when`에 화면을 이어 주면 된다.
+ * ⚠️ **채울 때 여기에 줄을 더하지 말 것** — 줄은 이미 있다. [available]을 `true`로 돌리고
+ * [StudyScreen]의 `when`에 화면을 이어 주면 된다(#164가 [Rules]를 그렇게 열었다).
  */
 internal enum class StudyCategory(val available: Boolean) {
     /** 2026-09-20까지 이 목록이 곧 「학습 하기」였다 — 콘텐츠가 통째로 한 칸 내려왔다. */
     YoutubeLessons(available = true),
-    Rules(available = false),
+    Rules(available = true),
     Fundamentals(available = false),
     LifeAndDeath(available = false),
 }
@@ -75,8 +75,12 @@ internal fun StudyScreen(
             StudyVideoListScreen(onBackClick = { opened = null }, modifier = modifier)
             return
         }
-        // 나머지 셋은 `available = false`라 열리지 않는다 — 행이 눌리지 않으므로 여기 올 수
-        // 없다. #164가 화면을 들고 올 때 이 자리에 가지를 더한다.
+        StudyCategory.Rules -> {
+            StudyRulesScreen(onBackClick = { opened = null }, modifier = modifier)
+            return
+        }
+        // 남은 둘은 `available = false`라 열리지 않는다 — 행이 눌리지 않으므로 여기 올 수
+        // 없다. 그 화면을 들고 오는 일감이 이 자리에 가지를 더한다.
         else -> Unit
     }
 
@@ -96,7 +100,7 @@ internal fun StudyScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             StudyCategory.entries.forEach { category ->
-                StudyCategoryRow(
+                StudyEntryRow(
                     title = strings.studyCategoryTitle(category),
                     subtitle = strings.studyCategorySubtitle(category),
                     comingSoonLabel = strings.studyComingSoon.takeIf { !category.available },
@@ -140,7 +144,8 @@ internal fun StudyScreenHeader(title: String, onBackClick: () -> Unit) {
 }
 
 /**
- * 허브의 한 줄. [onClick]이 `null`이면 **아직 없는 분류**다 — 회색으로 내리고 배지를 붙인다.
+ * 목록의 한 줄 — 허브와 「바둑 규칙 배우기」 단원 목록이 **같은 것을 쓴다**(백로그 #164).
+ * [onClick]이 `null`이면 **아직 없는 분류**다 — 회색으로 내리고 배지를 붙인다.
  *
  * ⚠️ **`clickable`을 달고 `enabled = false`로 끄지 않는다** — 아예 달지 않는다. 그래야 리플
  * 잔상도 남지 않고, 접근성 서비스가 "누를 수 있는 것"으로 읽어 주지도 않는다.
@@ -148,7 +153,7 @@ internal fun StudyScreenHeader(title: String, onBackClick: () -> Unit) {
  * 행이 접히는 만큼 자란다.
  */
 @Composable
-private fun StudyCategoryRow(
+internal fun StudyEntryRow(
     title: String,
     subtitle: String,
     comingSoonLabel: String?,
