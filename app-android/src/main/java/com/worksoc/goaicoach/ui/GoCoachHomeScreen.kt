@@ -634,6 +634,7 @@ private fun defaultAiCharacter(): BotCharacter =
  * 재사용하지 않는 이유는 그쪽이 원형 클립·잠금 회색조용이기 때문이다 — 여기서는 항상
  * "보유·선택된" 캐릭터만 다루므로 그 상태들이 필요 없다. 원화가 이미 투명 배경이라(직접 확인)
  * 정사각형으로 그대로 둬도 잘린 티가 나지 않는다.
+ * 2026-09-22 사용자 요청: 불투명도 90%(alpha = 0.9f)를 적용해 카드 배경과 부드럽게 어우러지도록 한다.
  */
 @Composable
 internal fun BotCharacterSquareIcon(character: BotCharacter) {
@@ -642,6 +643,7 @@ internal fun BotCharacterSquareIcon(character: BotCharacter) {
         painter = painterResource(res),
         contentDescription = null,
         contentScale = ContentScale.Fit,
+        alpha = 0.9f,
         modifier = Modifier.fillMaxSize(),
     )
 }
@@ -764,8 +766,8 @@ private val StudyPreviewGameState: GameState = GameState.empty(
 )
 
 /**
- * "학습 하기" 카드 아이콘 — 바둑판(초반 포석 세 점) 위에 돋보기를 판 한 변의 절반 크기로
- * 겹친다(백로그 #181, 사용자가 준 조합 스펙 그대로). 돋보기는 이모지 대신 `Icons.Filled.Search`
+ * "학습 하기" 카드 아이콘 — 바둑판(초반 포석 세 점) 위에 돋보기를 판 한 변의 60% 크기로
+ * 겹친다(백로그 #181, 2026-09-22 120% 확대). 돋보기는 이모지 대신 `Icons.Filled.Search`
  * 벡터를 쓴다 — 기기·글꼴에 따라 렌더링이 갈리는 이모지보다 크기·색이 항상 예측 가능하다.
  */
 @Composable
@@ -804,8 +806,8 @@ private fun StudyPreviewIcon() {
     }
 }
 
-/** 판 한 변 대비 돋보기 배지의 비율(사용자 스펙: "판의 50% 사이즈"). */
-private const val StudyPreviewMagnifierSizeFraction = 0.5f
+/** 판 한 변 대비 돋보기·카메라 배지의 비율(기존 50%에서 120% 확대한 60%). */
+private const val StudyPreviewMagnifierSizeFraction = 0.6f
 
 /**
  * "바둑판 사진 분석" 카드 아이콘 — 바둑판 위에 카메라 심볼을 겹친 프리뷰 배지.
@@ -838,7 +840,7 @@ private fun BoardScanPreviewIcon() {
         ) {
             Text(
                 text = "📷",
-                fontSize = 16.sp,
+                fontSize = 20.sp,
                 textAlign = TextAlign.Center,
             )
         }
