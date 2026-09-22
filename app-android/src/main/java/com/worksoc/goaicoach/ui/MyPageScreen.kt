@@ -13,6 +13,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
@@ -36,6 +37,7 @@ import com.worksoc.goaicoach.application.attendance.buildAttendanceBoard
 import com.worksoc.goaicoach.application.consumable.ConsumableCatalog
 import com.worksoc.goaicoach.persistence.AttendanceStore
 import com.worksoc.goaicoach.persistence.BotCollectionStore
+import com.worksoc.goaicoach.persistence.UserProfileStore
 
 /**
  * 3 Depth: 마이 페이지 — 지금은 **보유한 1회권 재고**만 보여준다(백로그 #24).
@@ -57,8 +59,26 @@ internal fun MyPageScreen(
     modifier: Modifier = Modifier,
 ) {
     val strings = LocalUiStrings.current
+    val context = LocalContext.current
     var showGuideReplay by remember { mutableStateOf(false) }
     val consumables = LocalConsumableUiState.current
+    // ⚠️ **저장소를 읽은 값을 상태로 들고 있는다**(함정 13). 저장 직후에 저장소를 다시 읽지 않고
+    // 이 자리에서 갱신한다 — 쓰기만 하고 되읽지 않으면 화면이 옛 이름을 그대로 보여 준다.
+    val profileStore = remember(context) { UserProfileStore(context) }
+    var nickname by remember(context) { mutableStateOf(profileStore.nickname()) }
+    var isEditingNickname by remember { mutableStateOf(false) }
+
+    if (isEditingNickname) {
+        UserNicknameDialog(
+            initialNickname = nickname,
+            onDismiss = { isEditingNickname = false },
+            onConfirm = { next ->
+                profileStore.saveNickname(next)
+                nickname = profileStore.nickname()
+                isEditingNickname = false
+            },
+        )
+    }
 
     Column(
         modifier = modifier
@@ -112,6 +132,21 @@ internal fun MyPageScreen(
             // ⚠️ 상태는 카드가 스스로 든다 — 이 화면이 `GoCoachApp.kt`에 상태를 두지 않는
             //   것과 같은 이유다(그 파일은 상태 훅 여유가 0이다).
             PremiumSubscriptionCard()
+
+            // **「나」 줄**(백로그 #165) — 앱 어디에도 사용자 자신을 가리키는 이름·그림이 0건이던
+            // 것을 여기서 처음 만든다.
+            //
+            // ⚠️ **프리미엄 카드 위로 올리지 않았다.** 「마이 페이지니까 나부터」가 자연스럽지만,
+            // 맨 위 자리는 2026-09-18 사용자 확정(#159)이 구독 카드에 준 것이다 — 해지 경로가
+            // 찾기 어려우면 그 자체가 정책 문제라는 사유가 붙어 있다. 그 결정을 뒤집는 것은
+            // 이 항목의 몫이 아니라 **사용자가 정할 일**이다.
+            // ⚠️ **출석 덩어리 위에 독립된 한 줄로 선다** — 2026-09-09 판정이 풀려던 것은
+            // *인사·다시보기·출석 제목이 서로 얽혀 보이는 것*이었고, 이 줄은 원과 이름과 연필이라
+            // 그 셋 어디와도 헷갈리지 않는다(구독 카드가 같은 사유로 이미 그 위에 서 있다).
+            UserProfileRow(
+                nickname = nickname,
+                onEditClick = { isEditingNickname = true },
+            )
 
             // 첫돌이가 여기서도 인사한다(백로그 #128 ②의 둘째 자리). ⚠️ **단계가 아니라 늘 보이는
             // 인사**다 — 이 화면은 사용자가 *"내가 모은 것"* 을 보러 오는 자리이고, 그것을 함께
@@ -312,4 +347,54 @@ private fun AttendanceBoardSection(titleTrailing: @Composable RowScope.() -> Uni
         }
     }
 
+}
+
+/**
+ * 마이 페이지의 「나」 줄 — 아바타 원 · 닉네임 · 연필(백로그 #165).
+ *
+ * ⚠️ **줄 전체가 눌린다.** 연필만 눌리게 두면 표적이 너무 작고, 이름을 눌러 보는 사람이 반드시
+ * 있다 — 눌리지 않으면 고장으로 읽힌다(함정 42와 같은 결의 문제다).
+ * ⚠️ **이름이 없을 때는 자리표시 문구가 보인다**(회색). 빈 줄로 두면 무엇을 하면 되는지
+ * 알 수 없다 — *"무엇이 있다"가 아니라 "무엇을 하면 된다"*(함정 39).
+ */
+@Composable
+private fun UserProfileRow(
+    nickname: String?,
+    onEditClick: () -> Unit,
+) {
+    val strings = LocalUiStrings.current
+    val hasName = !nickname.isNullOrBlank()
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = ActionButtonShape,
+        tonalElevation = 1.dp,
+        onClick = onEditClick,
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            UserAvatar(
+                nickname = nickname,
+                contentDescription = avatarDescriptionFor(strings.language),
+            )
+            Text(
+                text = nickname ?: nicknamePlaceholderFor(strings.language),
+                modifier = Modifier.weight(1f),
+                fontWeight = if (hasName) FontWeight.SemiBold else FontWeight.Normal,
+                color = if (hasName) {
+                    MaterialTheme.colorScheme.onSurface
+                } else {
+                    MaterialTheme.colorScheme.secondary
+                },
+            )
+            Icon(
+                imageVector = Icons.Default.Edit,
+                contentDescription = editNicknameDescriptionFor(strings.language),
+                tint = MaterialTheme.colorScheme.secondary,
+            )
+        }
+    }
 }
