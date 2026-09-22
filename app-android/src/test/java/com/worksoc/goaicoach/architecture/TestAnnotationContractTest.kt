@@ -16,10 +16,11 @@ import org.junit.Test
  *
  * 검사 대상은 `shared`의 공용 테스트와 `app-android`의 단위 테스트 소스 전부다.
  *
- * ⚠️ **한 가지 사각지대가 있다 — Gradle의 up-to-date 판정.** 이 테스트는 소스 파일을 **실행 중에**
- * 읽지만 Gradle은 그것을 입력으로 모르므로, `shared`의 테스트 소스만 바뀐 빌드에서는
- * `:app-android:testDebugUnitTest`가 통째로 건너뛰어져 **이 그물도 함께 쉰다.** app-android 쪽이
- * 한 줄이라도 바뀌면 다시 돈다. 확실히 확인하려면 `--rerun-tasks`를 붙일 것.
+ * ⚠️ **사각지대였던 것 — Gradle의 up-to-date 판정.** 이 테스트는 소스 파일을 **실행 중에** 읽으므로
+ * Gradle이 그것을 입력으로 알아야 한다. 몰랐을 때는 `shared`의 테스트 소스만 바뀐 빌드에서
+ * `:app-android:testDebugUnitTest`가 통째로 건너뛰어져 **이 그물도 함께 쉬었다.**
+ * 지금은 `app-android/build.gradle.kts`의 `tasks.withType<Test>`가 스캔 트리
+ * (`shared/src/commonTest` 포함)를 `inputs.files`로 선언해 그 구멍을 막는다.
  *
  * ⚠️ **헬퍼와 테스트를 이름이 아니라 모양으로 가른다** — 클래스 본문에 있고, 인자가 없고,
  * 반환형을 적지 않은(`Unit`) 함수만 테스트 후보로 본다. `checkInAt(...)`/`grant(...)`처럼 인자나
@@ -30,8 +31,8 @@ class TestAnnotationContractTest {
     @Test
     fun everyTestShapedFunctionCarriesTheTestAnnotation() {
         val roots = listOf(
-            repoRoot().resolve("shared/src/commonTest"),
-            repoRoot().resolve("app-android/src/test"),
+            RepoPaths.root.resolve("shared/src/commonTest"),
+            RepoPaths.root.resolve("app-android/src/test"),
         ).filter { it.exists() }
         check(roots.isNotEmpty()) { "테스트 소스 루트를 하나도 찾지 못했다 — 이 그물이 아무것도 안 보고 있다." }
 
@@ -55,7 +56,7 @@ class TestAnnotationContractTest {
         return lines.mapIndexedNotNull { index, line ->
             val name = signature.find(line)?.groupValues?.get(1) ?: return@mapIndexedNotNull null
             if (precedingAnnotationIsTest(lines, index)) return@mapIndexedNotNull null
-            "${file.relativeTo(repoRoot()).path}:${index + 1}  $name"
+            "${file.relativeTo(RepoPaths.root).path}:${index + 1}  $name"
         }
     }
 
@@ -77,14 +78,5 @@ class TestAnnotationContractTest {
             cursor--
         }
         return false
-    }
-
-    private fun repoRoot(): File {
-        var current = File(".").canonicalFile
-        while (true) {
-            if (File(current, "settings.gradle.kts").exists()) return current
-            current = current.parentFile ?: break
-        }
-        error("Could not locate repository root from ${File(".").canonicalPath}")
     }
 }

@@ -441,3 +441,30 @@ val verifyReleaseAdmobKeys = tasks.register("verifyReleaseAdmobKeys") {
 // `USE_TEST_ADS="true"`를 **하드코딩**해서 실제 키를 아예 참조하지 않는다. 손대지 말 것.
 tasks.matching { it.name == "packageRelease" || it.name == "packageReleaseBundle" }
     .configureEach { dependsOn(verifyReleaseAdmobKeys) }
+
+// ── 아키텍처 계약 테스트가 소스 트리를 읽는다는 사실을 Gradle에 알려준다 ────────────────────
+// `LayeringContractTest`/`TestAnnotationContractTest`는 컴파일러가 못 보는 규칙(계층 방향,
+// 호출 순서, 파일 분할)을 지키려고 소스 파일을 **실행 중에 문자열로** 읽는다. 그래서 두 가지를
+// 못박아야 한다.
+//
+// ⓐ **어느 저장소를 읽을 것인가.** 이 저장소는 워크트리를 여러 개 두고 세션이 나눠 쓴다.
+//    테스트 쪽 `File(".")` 상향 탐색은 *실행 디렉터리가 속한* 트리를 찾으므로, 어디서 Gradle을
+//    띄웠느냐에 따라 **다른 트리를 검사할 수 있다.** rootDir을 주입해 그 미끄러짐을 없앤다.
+//    (절대 경로라 원격 빌드 캐시로 옮겨 쓸 수 없는 입력이 되지만, 이 저장소는 로컬 빌드만 쓴다.)
+//
+// ⓑ **무엇이 바뀌면 다시 돌 것인가.** 스캔 대상은 컴파일 입력이 아니다 — 주석만 바꾸거나
+//    :shared 소스만 바꾼 빌드에서는 `:app-android:testDebugUnitTest`가 통째로 UP-TO-DATE로
+//    건너뛰어져 **이 그물들이 함께 쉰다**(TestAnnotationContractTest의 KDoc이 경고하던 사각지대).
+//    스캔 트리를 입력으로 선언해 그 구멍을 막는다.
+tasks.withType<Test>().configureEach {
+    systemProperty("repo.root", rootDir.absolutePath)
+    inputs.files(
+        fileTree(rootDir.resolve("app-android/src/main/java")),
+        fileTree(rootDir.resolve("shared/src/commonMain/kotlin")),
+        fileTree(rootDir.resolve("engine-android/src/main/java")),
+        // TestAnnotationContractTest가 :shared의 공용 테스트 소스까지 훑는다.
+        fileTree(rootDir.resolve("shared/src/commonTest")),
+    )
+        .withPropertyName("architectureContractScannedSources")
+        .withPathSensitivity(PathSensitivity.RELATIVE)
+}

@@ -9,8 +9,7 @@ import org.junit.Test
 class LayeringContractTest {
     @Test
     fun uiAndPresentationDoNotImportRawEngineCoreApi() {
-        val sourceRoot = repoRoot()
-            .resolve("app-android/src/main/java/com/worksoc/goaicoach")
+        val sourceRoot = RepoPaths.appAndroid()
         val checkedDirs = listOf(
             sourceRoot.resolve("ui"),
             sourceRoot.resolve("presentation"),
@@ -34,8 +33,7 @@ class LayeringContractTest {
 
     @Test
     fun applicationAndMatchDoNotDependOnCompatibilityEngineAdapterOrAndroidRuntime() {
-        val sourceRoot = repoRoot()
-            .resolve("app-android/src/main/java/com/worksoc/goaicoach")
+        val sourceRoot = RepoPaths.appAndroid()
         val checkedDirs = listOf(
             sourceRoot.resolve("application"),
             sourceRoot.resolve("match"),
@@ -63,8 +61,7 @@ class LayeringContractTest {
         // KataGoProcessEngineAdapter): the port interfaces (AuthClientPort,
         // PremiumStateStorePort, DeviceIdentityStorePort) must stay pure Kotlin, while the real
         // Android/Firebase/SharedPreferences-backed adapters live in ui/ or persistence/.
-        val sourceRoot = repoRoot()
-            .resolve("app-android/src/main/java/com/worksoc/goaicoach")
+        val sourceRoot = RepoPaths.appAndroid()
         val checkedDirs = listOf(
             sourceRoot.resolve("application/auth"),
             sourceRoot.resolve("application/premium"),
@@ -95,8 +92,7 @@ class LayeringContractTest {
 
     @Test
     fun matchPoliciesDoNotImportRawEngineCoreApi() {
-        val matchRoot = repoRoot()
-            .resolve("app-android/src/main/java/com/worksoc/goaicoach/match")
+        val matchRoot = RepoPaths.appAndroid("match")
         val forbiddenImports = listOf(
             "import com.worksoc.goaicoach.shared.EngineCoreApi",
         )
@@ -115,7 +111,7 @@ class LayeringContractTest {
 
     @Test
     fun localEngineSessionDelegateOwnsSessionOrchestration() {
-        val engineSession = applicationFile("engine/EngineSession.kt")
+        val engineSession = RepoPaths.applicationPath("engine/EngineSession.kt")
         val sessionText = engineSession.readText()
         val forbiddenCoreExtensions = listOf(
             "startEngineSession",
@@ -138,11 +134,11 @@ class LayeringContractTest {
 
     @Test
     fun localEngineBenchmarkDelegateOwnsRawBenchmarkExecution() {
-        val repoRoot = repoRoot()
-        val benchmarkApplication = applicationFile("engine/EngineDeviceBenchmarkApplication.kt")
-        val benchmarkModels = applicationFile("engine/EngineBenchmarkModels.kt")
-        val benchmarkDisplay = applicationFile("engine/EngineBenchmarkDisplayApplication.kt")
-        val benchmarkDelegate = applicationFile("engine/LocalEngineBenchmarkDelegate.kt")
+        val repoRoot = RepoPaths.root
+        val benchmarkApplication = RepoPaths.applicationPath("engine/EngineDeviceBenchmarkApplication.kt")
+        val benchmarkModels = RepoPaths.applicationPath("engine/EngineBenchmarkModels.kt")
+        val benchmarkDisplay = RepoPaths.applicationPath("engine/EngineBenchmarkDisplayApplication.kt")
+        val benchmarkDelegate = RepoPaths.applicationPath("engine/LocalEngineBenchmarkDelegate.kt")
         val applicationText = benchmarkApplication.readText()
         val delegateText = benchmarkDelegate.readText()
 
@@ -175,8 +171,7 @@ class LayeringContractTest {
 
     @Test
     fun goCoachAppDoesNotOwnBenchmarkWorkflowBody() {
-        val goCoachApp = repoRoot()
-            .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
+        val goCoachApp = RepoPaths.goCoachApp
         val text = goCoachApp.readText()
         val forbiddenFragments = listOf(
             "runStartupBenchmarkWorkflowResult(",
@@ -198,8 +193,7 @@ class LayeringContractTest {
 
     @Test
     fun goCoachAppDoesNotOwnTopMovesWorkflowBody() {
-        val goCoachApp = repoRoot()
-            .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
+        val goCoachApp = RepoPaths.goCoachApp
         // 260804: 컨트롤러 배선이 GoCoachControllerWiring.kt 하나에서 도메인별 4개 파일로
         // 분리됐다(Stage C-2) — 이 테스트들의 의도("GoCoachApp이 아니라 배선 계층이 이 로직을
         // 소유한다")는 그대로이므로 5개 파일을 전부 합쳐서 확인한다.
@@ -211,8 +205,7 @@ class LayeringContractTest {
             "SettingsAndDiagnosticsControllerWiring.kt",
         )
         val wiringText = wiringFileNames.joinToString("\n") { fileName ->
-            repoRoot()
-                .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/$fileName")
+            RepoPaths.uiFile(fileName)
                 .readText()
         }
         val text = goCoachApp.readText() + "\n" + wiringText
@@ -254,8 +247,7 @@ class LayeringContractTest {
 
     @Test
     fun goCoachAppDoesNotOwnHumanMoveSyncWorkflowBody() {
-        val goCoachApp = repoRoot()
-            .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
+        val goCoachApp = RepoPaths.goCoachApp
         val text = goCoachApp.readText()
         val forbiddenFragments = listOf(
             "HumanEngineSyncCompletionRequest(",
@@ -276,8 +268,7 @@ class LayeringContractTest {
 
     @Test
     fun goCoachAppDoesNotOwnPostUndoScoreSyncWorkflowBody() {
-        val goCoachApp = repoRoot()
-            .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
+        val goCoachApp = RepoPaths.goCoachApp
         val text = goCoachApp.readText()
         val forbiddenFragments = listOf(
             "PostUndoScoreSyncEffectLaunchRequest(",
@@ -295,8 +286,7 @@ class LayeringContractTest {
 
     @Test
     fun goCoachAppDoesNotOwnUndoWorkflowBody() {
-        val goCoachApp = repoRoot()
-            .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
+        val goCoachApp = RepoPaths.goCoachApp
         val text = goCoachApp.readText()
         val forbiddenFragments = listOf(
             "buildUndoRequestPlan(",
@@ -315,8 +305,7 @@ class LayeringContractTest {
 
     @Test
     fun goCoachAppDoesNotOwnScoringRuleSyncWorkflowBody() {
-        val goCoachApp = repoRoot()
-            .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
+        val goCoachApp = RepoPaths.goCoachApp
         val text = goCoachApp.readText()
         val forbiddenFragments = listOf(
             "ScoringRuleSyncEffectLaunchRequest(",
@@ -334,8 +323,7 @@ class LayeringContractTest {
 
     @Test
     fun goCoachAppDoesNotOwnRestoredGameSyncWorkflowBody() {
-        val goCoachApp = repoRoot()
-            .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
+        val goCoachApp = RepoPaths.goCoachApp
         val text = goCoachApp.readText()
         val forbiddenFragments = listOf(
             "RestoredGameSyncEffectLaunchRequest(",
@@ -355,8 +343,7 @@ class LayeringContractTest {
 
     @Test
     fun goCoachAppDoesNotOwnSavedGameWorkflowBody() {
-        val goCoachApp = repoRoot()
-            .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
+        val goCoachApp = RepoPaths.goCoachApp
         val text = goCoachApp.readText()
         val forbiddenFragments = listOf(
             "SavedGamePersistenceRequest(",
@@ -384,7 +371,7 @@ class LayeringContractTest {
 
     @Test
     fun savedSessionControllerDelegatesToApplicationRunners() {
-        val controller = applicationFile("savedgame/SavedSessionController.kt")
+        val controller = RepoPaths.applicationPath("savedgame/SavedSessionController.kt")
         val text = controller.readText()
         val requiredFragments = listOf(
             "runSavedGameRestoreApplication(",
@@ -400,8 +387,7 @@ class LayeringContractTest {
 
     @Test
     fun goCoachAppDoesNotOwnEngineBackedNewGameWorkflowBody() {
-        val goCoachApp = repoRoot()
-            .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
+        val goCoachApp = RepoPaths.goCoachApp
         val text = goCoachApp.readText()
         val forbiddenFragments = listOf(
             "GameSessionEffect.StartEngineBackedGame(",
@@ -429,7 +415,7 @@ class LayeringContractTest {
 
     @Test
     fun newGameControllerDelegatesToApplicationRunners() {
-        val controller = applicationFile("startgame/NewGameController.kt")
+        val controller = RepoPaths.applicationPath("startgame/NewGameController.kt")
         val text = controller.readText()
         val requiredFragments = listOf(
             "runStartEngineBackedGameApplication(",
@@ -446,8 +432,7 @@ class LayeringContractTest {
 
     @Test
     fun goCoachAppDoesNotOwnScheduledAutoAiTurnWorkflowBody() {
-        val goCoachApp = repoRoot()
-            .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
+        val goCoachApp = RepoPaths.goCoachApp
         // 260804: 컨트롤러 배선이 GoCoachControllerWiring.kt 하나에서 도메인별 4개 파일로
         // 분리됐다(Stage C-2) — 이 테스트들의 의도("GoCoachApp이 아니라 배선 계층이 이 로직을
         // 소유한다")는 그대로이므로 5개 파일을 전부 합쳐서 확인한다.
@@ -459,8 +444,7 @@ class LayeringContractTest {
             "SettingsAndDiagnosticsControllerWiring.kt",
         )
         val wiringText = wiringFileNames.joinToString("\n") { fileName ->
-            repoRoot()
-                .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/$fileName")
+            RepoPaths.uiFile(fileName)
                 .readText()
         }
         val text = goCoachApp.readText() + "\n" + wiringText
@@ -491,8 +475,7 @@ class LayeringContractTest {
 
     @Test
     fun goCoachAppDoesNotOwnAutoAiTurnCompletionApplyBody() {
-        val goCoachApp = repoRoot()
-            .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
+        val goCoachApp = RepoPaths.goCoachApp
         // 260804: 컨트롤러 배선이 GoCoachControllerWiring.kt 하나에서 도메인별 4개 파일로
         // 분리됐다(Stage C-2) — 이 테스트들의 의도("GoCoachApp이 아니라 배선 계층이 이 로직을
         // 소유한다")는 그대로이므로 5개 파일을 전부 합쳐서 확인한다.
@@ -504,8 +487,7 @@ class LayeringContractTest {
             "SettingsAndDiagnosticsControllerWiring.kt",
         )
         val wiringText = wiringFileNames.joinToString("\n") { fileName ->
-            repoRoot()
-                .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/$fileName")
+            RepoPaths.uiFile(fileName)
                 .readText()
         }
         val text = goCoachApp.readText() + "\n" + wiringText
@@ -534,8 +516,7 @@ class LayeringContractTest {
 
     @Test
     fun goCoachAppDoesNotOwnAutoAiEndgameResolveWorkflowBody() {
-        val goCoachApp = repoRoot()
-            .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
+        val goCoachApp = RepoPaths.goCoachApp
         // 260804: 컨트롤러 배선이 GoCoachControllerWiring.kt 하나에서 도메인별 4개 파일로
         // 분리됐다(Stage C-2) — 이 테스트들의 의도("GoCoachApp이 아니라 배선 계층이 이 로직을
         // 소유한다")는 그대로이므로 5개 파일을 전부 합쳐서 확인한다.
@@ -547,8 +528,7 @@ class LayeringContractTest {
             "SettingsAndDiagnosticsControllerWiring.kt",
         )
         val wiringText = wiringFileNames.joinToString("\n") { fileName ->
-            repoRoot()
-                .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/$fileName")
+            RepoPaths.uiFile(fileName)
                 .readText()
         }
         val text = goCoachApp.readText() + "\n" + wiringText
@@ -579,7 +559,7 @@ class LayeringContractTest {
 
     @Test
     fun autoAiTurnControllerDelegatesToApplicationRunners() {
-        val controller = applicationFile("autoai/AutoAiTurnController.kt")
+        val controller = RepoPaths.applicationPath("autoai/AutoAiTurnController.kt")
         val text = controller.readText()
         val requiredFragments = listOf(
             "runScheduledAutoAiTurnApplication(",
@@ -597,7 +577,7 @@ class LayeringContractTest {
 
     @Test
     fun humanMoveControllerDelegatesToApplicationRunners() {
-        val controller = applicationFile("humanmove/HumanMoveController.kt")
+        val controller = RepoPaths.applicationPath("humanmove/HumanMoveController.kt")
         val text = controller.readText()
         val requiredFragments = listOf(
             "applyHumanMoveLocally(",
@@ -614,7 +594,7 @@ class LayeringContractTest {
 
     @Test
     fun topMovesControllerDelegatesToApplicationRunners() {
-        val controller = applicationFile("topmoves/TopMovesController.kt")
+        val controller = RepoPaths.applicationPath("topmoves/TopMovesController.kt")
         val text = controller.readText()
         val requiredFragments = listOf(
             "runTopMoveAnalysisApplication(",
@@ -634,8 +614,7 @@ class LayeringContractTest {
 
     @Test
     fun goCoachAppDoesNotOwnScoreEstimateWorkflowBody() {
-        val goCoachApp = repoRoot()
-            .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
+        val goCoachApp = RepoPaths.goCoachApp
         // 260804: 컨트롤러 배선이 GoCoachControllerWiring.kt 하나에서 도메인별 4개 파일로
         // 분리됐다(Stage C-2) — 이 테스트들의 의도("GoCoachApp이 아니라 배선 계층이 이 로직을
         // 소유한다")는 그대로이므로 5개 파일을 전부 합쳐서 확인한다.
@@ -647,8 +626,7 @@ class LayeringContractTest {
             "SettingsAndDiagnosticsControllerWiring.kt",
         )
         val wiringText = wiringFileNames.joinToString("\n") { fileName ->
-            repoRoot()
-                .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/$fileName")
+            RepoPaths.uiFile(fileName)
                 .readText()
         }
         val text = goCoachApp.readText() + "\n" + wiringText
@@ -676,7 +654,7 @@ class LayeringContractTest {
 
     @Test
     fun scoreEstimateControllerDelegatesToApplicationRunner() {
-        val controller = applicationFile("score/ScoreEstimateController.kt")
+        val controller = RepoPaths.applicationPath("score/ScoreEstimateController.kt")
         val text = controller.readText()
         val requiredFragments = listOf(
             "runScoreEstimateApplication(",
@@ -692,8 +670,7 @@ class LayeringContractTest {
 
     @Test
     fun goCoachAppDoesNotOwnDebugReportCopyWorkflowBody() {
-        val goCoachApp = repoRoot()
-            .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
+        val goCoachApp = RepoPaths.goCoachApp
         // 260804: 컨트롤러 배선이 GoCoachControllerWiring.kt 하나에서 도메인별 4개 파일로
         // 분리됐다(Stage C-2) — 이 테스트들의 의도("GoCoachApp이 아니라 배선 계층이 이 로직을
         // 소유한다")는 그대로이므로 5개 파일을 전부 합쳐서 확인한다.
@@ -705,8 +682,7 @@ class LayeringContractTest {
             "SettingsAndDiagnosticsControllerWiring.kt",
         )
         val wiringText = wiringFileNames.joinToString("\n") { fileName ->
-            repoRoot()
-                .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/$fileName")
+            RepoPaths.uiFile(fileName)
                 .readText()
         }
         val text = goCoachApp.readText() + "\n" + wiringText
@@ -733,7 +709,7 @@ class LayeringContractTest {
 
     @Test
     fun debugReportControllerDelegatesToApplicationRunner() {
-        val controller = applicationFile("debugreport/DebugReportController.kt")
+        val controller = RepoPaths.applicationPath("debugreport/DebugReportController.kt")
         val text = controller.readText()
         val requiredFragments = listOf(
             "runDebugReportCopyApplication(",
@@ -749,8 +725,7 @@ class LayeringContractTest {
 
     @Test
     fun goCoachAppDoesNotOwnPositionCacheOptimizationWorkflowBody() {
-        val goCoachApp = repoRoot()
-            .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
+        val goCoachApp = RepoPaths.goCoachApp
         // 260804: 컨트롤러 배선이 GoCoachControllerWiring.kt 하나에서 도메인별 4개 파일로
         // 분리됐다(Stage C-2) — 이 테스트들의 의도("GoCoachApp이 아니라 배선 계층이 이 로직을
         // 소유한다")는 그대로이므로 5개 파일을 전부 합쳐서 확인한다.
@@ -762,8 +737,7 @@ class LayeringContractTest {
             "SettingsAndDiagnosticsControllerWiring.kt",
         )
         val wiringText = wiringFileNames.joinToString("\n") { fileName ->
-            repoRoot()
-                .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/$fileName")
+            RepoPaths.uiFile(fileName)
                 .readText()
         }
         val text = goCoachApp.readText() + "\n" + wiringText
@@ -794,7 +768,7 @@ class LayeringContractTest {
 
     @Test
     fun positionCacheOptimizationControllerDelegatesToApplicationRunner() {
-        val controller = applicationFile("analysis/PositionCacheOptimizationController.kt")
+        val controller = RepoPaths.applicationPath("analysis/PositionCacheOptimizationController.kt")
         val text = controller.readText()
         val requiredFragments = listOf(
             "runPositionAnalysisCacheOptimizationApplication(",
@@ -812,8 +786,7 @@ class LayeringContractTest {
 
     @Test
     fun goCoachAppDoesNotOwnEngineOperationLifecycleBody() {
-        val goCoachApp = repoRoot()
-            .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
+        val goCoachApp = RepoPaths.goCoachApp
         val text = goCoachApp.readText()
         val forbiddenFragments = listOf(
             "applyEngineOperationLifecycleTransition(",
@@ -839,7 +812,7 @@ class LayeringContractTest {
 
     @Test
     fun engineOperationLifecycleControllerOwnsTransitionAndScope() {
-        val controller = applicationFile("engine/operation/EngineOperationLifecycleController.kt")
+        val controller = RepoPaths.applicationPath("engine/operation/EngineOperationLifecycleController.kt")
         val text = controller.readText()
         val requiredFragments = listOf(
             "applyEngineOperationLifecycleTransition(",
@@ -856,8 +829,7 @@ class LayeringContractTest {
 
     @Test
     fun goCoachAppUsesScreenStateAssemblerInsteadOfDirectScreenStateBuilders() {
-        val goCoachApp = repoRoot()
-            .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
+        val goCoachApp = RepoPaths.goCoachApp
         val text = goCoachApp.readText()
         val forbiddenFragments = listOf(
             "buildGameScreenStateInput(",
@@ -879,8 +851,7 @@ class LayeringContractTest {
 
     @Test
     fun goCoachAppCollectsSessionStateHolderAndUsesDisplayApplierNaming() {
-        val goCoachApp = repoRoot()
-            .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
+        val goCoachApp = RepoPaths.goCoachApp
         val text = goCoachApp.readText()
         val forbiddenFragments = listOf(
             "GameSessionUiStateHolder",
@@ -904,7 +875,7 @@ class LayeringContractTest {
 
     @Test
     fun gameSessionStateHolderStaysPlatformFreeForSharedMove() {
-        val holder = applicationFile("session/GameSessionStateHolder.kt")
+        val holder = RepoPaths.applicationPath("session/GameSessionStateHolder.kt")
         val forbiddenImports = listOf(
             "import android.",
             "import androidx.compose.",
@@ -926,8 +897,7 @@ class LayeringContractTest {
 
     @Test
     fun scoreRunnersUseEngineSessionClientContractOnly() {
-        val scoreRoot = repoRoot()
-            .resolve("app-android/src/main/java/com/worksoc/goaicoach/application/score")
+        val scoreRoot = RepoPaths.appAndroid("application/score")
         val forbiddenImports = listOf(
             "import com.worksoc.goaicoach.application.engine.syncAndEstimateGraphScore",
             "import com.worksoc.goaicoach.application.engine.configureSyncAndEstimateGraphScore",
@@ -948,12 +918,12 @@ class LayeringContractTest {
 
     @Test
     fun scoreSyncRunnersStaySplitByTriggerDomain() {
-        val repoRoot = repoRoot()
-        val common = applicationFile("score/ScoreSyncRunnerApplication.kt")
+        val repoRoot = RepoPaths.root
+        val common = RepoPaths.applicationPath("score/ScoreSyncRunnerApplication.kt")
         val expectedSplitFiles = listOf(
-            applicationFile("score/ScoringRuleScoreSyncRunnerApplication.kt"),
-            applicationFile("score/PostUndoScoreSyncRunnerApplication.kt"),
-            applicationFile("score/RestoredGameScoreSyncRunnerApplication.kt"),
+            RepoPaths.applicationPath("score/ScoringRuleScoreSyncRunnerApplication.kt"),
+            RepoPaths.applicationPath("score/PostUndoScoreSyncRunnerApplication.kt"),
+            RepoPaths.applicationPath("score/RestoredGameScoreSyncRunnerApplication.kt"),
         )
         val offenders = mutableListOf<String>()
 
@@ -989,9 +959,8 @@ class LayeringContractTest {
 
     @Test
     fun positionAnalysisGatewayContractsStayKmpReadyAndTransportFree() {
-        val repoRoot = repoRoot()
-        val middlewareRoot = repoRoot()
-            .resolve("app-android/src/main/java/com/worksoc/goaicoach/middleware")
+        val repoRoot = RepoPaths.root
+        val middlewareRoot = RepoPaths.appAndroid("middleware")
         val contracts = listOf(
             middlewareRoot.resolve("PositionAnalysisGateway.kt"),
             middlewareRoot.resolve("RemotePositionAnalysisGateway.kt"),
@@ -1049,29 +1018,28 @@ class LayeringContractTest {
         // 260804 정리: EngineCoreApi의 로컬/원격 구현체를 전부 engine-android 모듈로 물리적으로
         // 모았다 — app-android(3~7계층) 작업 시 엔진 내부를 아예 안 봐도 되게 하고, 실수로도
         // app-android 쪽에 엔진 구현 세부사항이 다시 새어 들어오지 않았는지 기계적으로 보장한다.
-        val repoRoot = repoRoot()
+        val repoRoot = RepoPaths.root
         val movedFiles = listOf(
-            "engine-android/src/main/java/com/worksoc/goaicoach/engine/android/HttpRemotePositionAnalysisTransport.kt",
-            "engine-android/src/main/java/com/worksoc/goaicoach/engine/android/RemoteEngineCoreApiAdapter.kt",
+            RepoPaths.engineAndroid("HttpRemotePositionAnalysisTransport.kt"),
+            RepoPaths.engineAndroid("RemoteEngineCoreApiAdapter.kt"),
         )
         val staleAppAndroidPaths = listOf(
-            "app-android/src/main/java/com/worksoc/goaicoach/middleware/HttpRemotePositionAnalysisTransport.kt",
-            "app-android/src/main/java/com/worksoc/goaicoach/middleware/RemoteEngineCoreApiAdapter.kt",
+            RepoPaths.appAndroid("middleware/HttpRemotePositionAnalysisTransport.kt"),
+            RepoPaths.appAndroid("middleware/RemoteEngineCoreApiAdapter.kt"),
         )
 
-        val missing = movedFiles.filterNot { path -> repoRoot.resolve(path).exists() }
-        val stillInAppAndroid = staleAppAndroidPaths.filter { path -> repoRoot.resolve(path).exists() }
+        val missing = movedFiles.filterNot { file -> file.exists() }
+        val stillInAppAndroid = staleAppAndroidPaths.filter { file -> file.exists() }
 
         assertTrue(
             "EngineCoreApi implementations must live in engine-android:\n" +
-                "missing:\n${missing.joinToString("\n")}\n" +
-                "still present in app-android (should have moved):\n${stillInAppAndroid.joinToString("\n")}",
+                "missing:\n${missing.joinToString("\n") { it.relativeTo(repoRoot).path }}\n" +
+                "still present in app-android (should have moved):\n" +
+                stillInAppAndroid.joinToString("\n") { it.relativeTo(repoRoot).path },
             missing.isEmpty() && stillInAppAndroid.isEmpty(),
         )
 
-        val transportText = repoRoot
-            .resolve("engine-android/src/main/java/com/worksoc/goaicoach/engine/android/HttpRemotePositionAnalysisTransport.kt")
-            .readText()
+        val transportText = RepoPaths.engineAndroid("HttpRemotePositionAnalysisTransport.kt").readText()
         assertTrue(
             "HTTP transport is intentionally JVM/Android-bound and should remain in its own file.",
             transportText.contains("java.net.HttpURLConnection") && transportText.contains("org.json.JSONObject"),
@@ -1084,9 +1052,8 @@ class LayeringContractTest {
         // 모듈 밖(app-android 포함)에서 이름조차 보이면 안 된다 — Kotlin `internal`이 컴파일
         // 타임에 강제하지만, 이 테스트는 그 modifier가 실수로 지워지지 않았는지 소스 레벨에서도
         // 확인하고, app-android가 실제로 EngineCoreApiFactory(공개 생성 지점)만 쓰는지 본다.
-        val repoRoot = repoRoot()
-        val engineAndroidRoot = repoRoot
-            .resolve("engine-android/src/main/java/com/worksoc/goaicoach/engine/android")
+        val repoRoot = RepoPaths.root
+        val engineAndroidRoot = RepoPaths.engineAndroid()
         val concreteAdapters = mapOf(
             engineAndroidRoot.resolve("KataGoProcessEngineAdapter.kt") to "internal class KataGoProcessEngineAdapter(",
             engineAndroidRoot.resolve("StubEngineAdapter.kt") to "internal class StubEngineAdapter",
@@ -1105,8 +1072,7 @@ class LayeringContractTest {
             factoryText.contains("object EngineCoreApiFactory") && !factoryText.trimStart().startsWith("internal"),
         )
 
-        val bootstrap = repoRoot
-            .resolve("app-android/src/main/java/com/worksoc/goaicoach/engine/EngineBootstrap.kt")
+        val bootstrap = RepoPaths.appAndroid("engine/EngineBootstrap.kt")
         val bootstrapText = bootstrap.readText()
         val forbiddenDirectConstruction = listOf("KataGoProcessEngineAdapter(", "StubEngineAdapter(")
             .filter { fragment -> fragment in bootstrapText }
@@ -1129,10 +1095,8 @@ class LayeringContractTest {
         // Unresolved reference 컴파일 에러). 여전히 텍스트 검사가 필요한 건
         // android./androidx./java./org.json. — shared의 androidTarget은 이 API들에 실제
         // 접근 가능해서 컴파일은 통과하지만 iOS 등 다른 KMP 타깃을 조용히 깨뜨릴 수 있다.
-        val sharedApplicationRoot = repoRoot()
-            .resolve("shared/src/commonMain/kotlin/com/worksoc/goaicoach/application")
-        val platformBoundAdapter = repoRoot()
-            .resolve("app-android/src/main/java/com/worksoc/goaicoach/application/diagnostic/LocalFileDiagnosticEventExternalSink.kt")
+        val sharedApplicationRoot = RepoPaths.shared("application")
+        val platformBoundAdapter = RepoPaths.appAndroid("application/diagnostic/LocalFileDiagnosticEventExternalSink.kt")
         val portableCandidates = sharedApplicationRoot
             .walkTopDown()
             .filter { file -> file.extension == "kt" }
@@ -1174,8 +1138,7 @@ class LayeringContractTest {
         // 이 테스트는 그 "import 없이 새는" 부류만 이름으로 직접 막는다. 대안(시간을 읽는 지점)은
         // application/time/AppClock.kt의 currentEpochMillis(), 경과 시간은
         // kotlin.time.TimeSource.Monotonic, 잠금은 application/concurrency/SharedLock.kt.
-        val commonMainRoot = repoRoot()
-            .resolve("shared/src/commonMain/kotlin/com/worksoc/goaicoach")
+        val commonMainRoot = RepoPaths.shared()
         val forbiddenBareReferences = listOf(
             "System.",
             "System::",
@@ -1201,7 +1164,7 @@ class LayeringContractTest {
                     scanLines
                         .firstOrNull { line -> bareUse.containsMatchIn(line) }
                         ?.let { line ->
-                            "${file.relativeTo(repoRoot()).path}: `$forbidden` -> ${line.trim()}"
+                            "${file.relativeTo(RepoPaths.root).path}: `$forbidden` -> ${line.trim()}"
                         }
                 }
             }
@@ -1216,8 +1179,7 @@ class LayeringContractTest {
 
     @Test
     fun sharedPolicyModelsStayKmpReady() {
-        val sharedRoot = repoRoot()
-            .resolve("shared/src/commonMain/kotlin/com/worksoc/goaicoach/shared")
+        val sharedRoot = RepoPaths.shared("shared")
         val candidates = listOf(
             sharedRoot.resolve("diagnostic/DiagnosticEventModel.kt"),
             sharedRoot.resolve("engine/EngineOperationPolicy.kt"),
@@ -1509,8 +1471,7 @@ class LayeringContractTest {
         val lineBudget = 777
         val stateHookBudget = 42
 
-        val goCoachApp = repoRoot()
-            .resolve("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
+        val goCoachApp = RepoPaths.goCoachApp
         val allLines = goCoachApp.readLines()
         val lines = codeLinesOf(allLines)
         val stateHookRegex = Regex("\\b(remember|mutableStateOf|LaunchedEffect)\\b")
@@ -1561,7 +1522,7 @@ class LayeringContractTest {
         val offenders = mutableListOf<String>()
 
         budgets.forEach { (path, lineBudget, stateHookBudget) ->
-            val file = repoRoot().resolve("app-android/src/main/java/com/worksoc/goaicoach/$path")
+            val file = RepoPaths.appAndroid(path)
             val allLines = file.readLines()
             val lines = codeLinesOf(allLines)
             val stateHookCount = lines.count { line -> stateHookRegex.containsMatchIn(line) }
@@ -1611,7 +1572,7 @@ class LayeringContractTest {
             val lines = file.readLines()
             forbiddenImports.flatMap { forbidden ->
                 detectForbiddenReference(lines, forbidden)
-                    .map { reason -> "${file.relativeTo(repoRoot()).path}: $reason" }
+                    .map { reason -> "${file.relativeTo(RepoPaths.root).path}: $reason" }
             }
         }
 
@@ -1700,8 +1661,7 @@ class LayeringContractTest {
      */
     @Test
     fun releaseResetRunsBeforeAnythingElseTouchesStorage() {
-        val application = repoRoot()
-            .resolve("app-android/src/main/java/com/worksoc/goaicoach/GoAiCoachApplication.kt")
+        val application = RepoPaths.appAndroid("GoAiCoachApplication.kt")
         val text = codeOnly(application.readText())
 
         val resetAt = text.indexOf("ReleaseResetCoordinator(this)")
@@ -1724,8 +1684,7 @@ class LayeringContractTest {
      */
     @Test
     fun releaseResetClearsEntitlementsOnlyAndSparesUserContent() {
-        val coordinator = repoRoot()
-            .resolve("app-android/src/main/java/com/worksoc/goaicoach/ReleaseResetCoordinator.kt")
+        val coordinator = RepoPaths.appAndroid("ReleaseResetCoordinator.kt")
         val text = codeOnly(coordinator.readText())
 
         val required = listOf(
@@ -1801,29 +1760,4 @@ class LayeringContractTest {
         }
     }
 
-    private fun repoRoot(): File {
-        var current = File(".").canonicalFile
-        while (true) {
-            if (File(current, "settings.gradle.kts").exists()) {
-                return current
-            }
-            current = current.parentFile ?: break
-        }
-        error("Could not locate repository root from ${File(".").canonicalPath}")
-    }
-
-    /**
-     * `application/` is migrating file-by-file from app-android to :shared (see
-     * GAMESESSION_SHARED_MIGRATION_KICKOFF_PLAN_260816_1808.md (문서 보존 정책으로 제거됨 — git 히스토리가 아카이브다. docs/DOCS_INDEX.md "문서 보존 정책" 참고)). Tests that read
-     * one specific file by hardcoded path must resolve it wherever it currently lives, or they
-     * break with FileNotFoundException the moment that one file crosses over — even though the
-     * policy the test enforces hasn't changed. relativePath is the part after ".../application/",
-     * e.g. "engine/EngineSession.kt".
-     */
-    private fun applicationFile(relativePath: String): File {
-        val repoRoot = repoRoot()
-        val sharedPath = repoRoot.resolve("shared/src/commonMain/kotlin/com/worksoc/goaicoach/application/$relativePath")
-        if (sharedPath.exists()) return sharedPath
-        return repoRoot.resolve("app-android/src/main/java/com/worksoc/goaicoach/application/$relativePath")
-    }
 }
