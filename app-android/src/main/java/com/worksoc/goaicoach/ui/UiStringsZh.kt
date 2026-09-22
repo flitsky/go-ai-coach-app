@@ -206,7 +206,7 @@ internal val UiStringsChineseSimplified = UiStringsKorean.copy(
         "仅保留设备标识符。",
     settingsDevFreshInstallAction = "恢复",
     matchSetupLockedDuringGame = "对局进行中无法修改对局设置。请在开始新对局时设定。",
-    localOnlyDataNoticeTitle = "无需登录即可畅玩",
+    localOnlyDataNoticeTitle = "您的记录保存在哪里",
     localOnlyDataNoticeBody = "签到记录、收集的角色和单次券会积累在本机。如果已开启 Google 账号备份，重新安装或更换设备后大部分内容会恢复到最后一次备份时的状态。",
     localOnlyDataNoticePaidRestoreLine = "如果您正在订阅高级版，则无需担心。使用同一 Google Play 账号重新安装后，应用会确认订阅并重新解锁所有功能。",
     guideAckAction = "知道了",

@@ -207,7 +207,7 @@ internal val UiStringsJapanese = UiStringsKorean.copy(
         "同じ状態になり、ガイドが最初から表示されます。端末識別子だけが残ります。",
     settingsDevFreshInstallAction = "戻す",
     matchSetupLockedDuringGame = "対局中は対局設定を変更できません。新しい対局を始めるときに決めてください。",
-    localOnlyDataNoticeTitle = "ログインなしですぐに遊べるアプリです",
+    localOnlyDataNoticeTitle = "記録はどこに保存されますか",
     localOnlyDataNoticeBody = "出席記録・集めたキャラクター・1回券はこの端末にたまります。Googleアカウントのバックアップが有効なら、再インストールや機種変更のあとも最後のバックアップ時点まで復元されます。",
     localOnlyDataNoticePaidRestoreLine = "プレミアム購読中なら心配はいりません。同じGoogle Playアカウントで再インストールすると、アプリが購読を確認してすべての機能を再び開きます。",
     guideAckAction = "わかりました",

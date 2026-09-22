@@ -208,7 +208,7 @@ internal val UiStringsEnglish = UiStringsKorean.copy(
         "runs again from the start. Only the device identifier is kept.",
     settingsDevFreshInstallAction = "Reset",
     matchSetupLockedDuringGame = "Match settings are locked during a game. Choose them when you start a new one.",
-    localOnlyDataNoticeTitle = "Play without signing in",
+    localOnlyDataNoticeTitle = "Where your progress is kept",
     localOnlyDataNoticeBody = "Check-ins, characters and single-use tickets build up on this device. With Google account backup on, most of it comes back when you reinstall or switch devices — as of the last backup.",
     localOnlyDataNoticePaidRestoreLine = "With a Premium subscription there is nothing to worry about. Reinstall with the same Google Play account and the app checks your subscription and unlocks every feature again.",
     guideAckAction = "Got it",
