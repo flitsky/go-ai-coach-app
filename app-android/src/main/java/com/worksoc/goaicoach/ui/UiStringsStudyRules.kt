@@ -8,7 +8,7 @@ import com.worksoc.goaicoach.shared.GoRuleLessonId
  *
  * ⚠️ **[UiStrings] 생성자에 넣지 말 것 — 자리가 0칸이다.** `copy$default`가 JVM 인자 한도
  * 255칸에 딱 붙어 있어 한 줄만 더해도 **앱은 컴파일되고 테스트만 통째로** `ClassFormatError`로
- * 죽는다(함정 58, `StudyHubContractTest`가 칸수를 센다). 여기처럼 곁표 + 함수로 뺀다.
+ * 죽는다(함정 61, `StudyHubContractTest`가 칸수를 센다). 여기처럼 곁표 + 함수로 뺀다.
  *
  * ⚠️ **본문에 박힌 숫자는 도해가 보증한다.** `territory.count`의 27·36·6집반은 판을 고치면
  * 곧바로 거짓이 되는데 화면은 아무 말도 하지 않는다 — `GoRuleLessonsTest`가 같은 숫자를
