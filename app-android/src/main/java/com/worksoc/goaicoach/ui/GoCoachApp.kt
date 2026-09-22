@@ -35,7 +35,6 @@ import com.worksoc.goaicoach.application.debugreport.UserNoticePort
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.shared.diagnostic.DiagnosticEvent
 import com.worksoc.goaicoach.shared.diagnostic.DiagnosticSeverity
-import com.worksoc.goaicoach.application.engine.EngineBenchmarkController
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkStorePort
 import com.worksoc.goaicoach.application.engine.EngineSessionClient
 import com.worksoc.goaicoach.application.engine.EngineStartupRunRequest
@@ -395,21 +394,6 @@ private fun GoCoachScreen(
             ),
         )
     }
-    val benchmarkController = EngineBenchmarkController(
-        scope = scope,
-        engineClient = engineClient,
-        store = benchmarkStore,
-        diagnosticEventLog = diagnosticEventLog,
-        lifecycleCallbacks = { lifecycleController.callbacks() },
-        currentState = { gameState },
-        sessionGeneration = { runtimeState.sessionGeneration },
-        isEngineReady = { isEngineReady },
-        isEngineBusy = { isEngineBusy },
-        currentBenchmarkUiState = { benchmarkUiState },
-        onBenchmarkUiState = { state -> benchmarkUiState = state },
-        onEngineMessage = { message -> engineMessage = message },
-        onDisplayPlan = { plan -> displayStateApplier.applyEngineBenchmarkDisplayPlan(plan) },
-    )
     LaunchedEffect(
         preferencesStore,
         settingsState,
