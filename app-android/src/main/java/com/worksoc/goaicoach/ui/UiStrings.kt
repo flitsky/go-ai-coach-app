@@ -1160,6 +1160,36 @@ internal data class UiStrings(
         }
     }
 
+    /**
+     * 종료 화면 결과 배지의 **셋째 줄**(백로그 #187) — 예: `(+11.5집)` · `(불계)`.
+     *
+     * ⚠️ **둘째 줄과 겹쳐 읽히지 않게 괄호 안에만 둔다** — 둘째 줄이 이미
+     * [winnerWithoutMarginLabel]로 *"백 승"* 을 말했으므로 여기서 다시 「승」을 쓰면 두 번 이긴다.
+     * ⚠️ **기권이면 집수가 없다** — `FinalScoreJudgement`가 아예 `null`이다. 그 경우 빈 괄호를
+     * 그리면 고장으로 읽히므로 「불계」를 쓴다(대국 기록이 쓰는 낱말과 같다).
+     * 둘 다 아니면(무승부) `null` — 그때는 둘째 줄이 이미 「무승부」라 덧붙일 것이 없다.
+     */
+    fun finalResultDetailLabel(margin: Double?, isResign: Boolean): String? {
+        if (margin != null) {
+            val marginText = margin.formatScoreNumber()
+            return when (language) {
+                UiLanguage.Korean -> "(+${marginText}집)"
+                UiLanguage.English -> "(+$marginText points)"
+                UiLanguage.Japanese -> "(+${marginText}目)"
+                UiLanguage.ChineseSimplified -> "(+${marginText}目)"
+            }
+        }
+        if (isResign) {
+            return when (language) {
+                UiLanguage.Korean -> "(불계)"
+                UiLanguage.English -> "(by resignation)"
+                UiLanguage.Japanese -> "(中押し)"
+                UiLanguage.ChineseSimplified -> "(中盘)"
+            }
+        }
+        return null
+    }
+
     fun winnerWithoutMarginLabel(colorLabel: String): String =
         when (language) {
             UiLanguage.Korean -> "$colorLabel 승"

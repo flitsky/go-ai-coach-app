@@ -61,54 +61,69 @@ internal fun GameStatusPanel(
     val capturedByBlack = screenState.gameState.capturedBy(StoneColor.Black)
     val capturedByWhite = screenState.gameState.capturedBy(StoneColor.White)
 
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        PlayerSeatCard(
-            // #143이 가운데 착수 칸을 지우면서 **흑·백이 폭을 반씩** 갖는다(사용자 지시).
-            // 확인 모드를 되살리면(플래그) 가운데 칸이 다시 들어와 셋이 나눠 갖는다.
-            modifier = Modifier.weight(1f),
-            isActiveTurn = currentTurnPlayer == StoneColor.Black && !screenState.isGameEnded,
-            stoneGlyph = "●",
-            stoneGlyphColor = Color.Black,
-            label = strings.sideLabel(screenState.playerSetup.black, StoneColor.Black),
-            elapsedMillisText = formatMillis(blackTotalMillis),
-            capturedCount = capturedByBlack,
-            capturesLabel = strings.captures,
-            alignEnd = false,
-        )
-
-        // 중앙: [착수 모드 스위치] + [착수] 버튼. `수순 N수`가 헤더로 올라가며 비운 자리를
-        // 스위치가 받았다(#35 → #37). 넓은 배치(#141)도 같은 칸을 **가로로** 쓴다 — [PlaySlot].
-        if (FeatureFlags.isPlayConfirmModeEnabled) PlaySlot(
-            screenState = screenState,
-            tentativeMove = tentativeMove,
-            onEvent = onEvent,
-            horizontal = false,
-            // ⚠️ **폭을 훔쳐 넓히려다 되돌렸다**(백로그 #107, 2026-09-05 실기).
-            // 1.4f로 올리자 스위치 라벨은 들어갔지만 **좌석 카드의 `Captures: 0`이 잘렸다** —
-            // 세 칸이 1.3배에서 함께 들어갈 폭이 애초에 없다. **폭 배분으로 풀 문제가 아니라
-            // 문구 길이의 문제다**(사용자 판단). 한쪽을 고치면 다른 쪽이 깨지는 자리다.
+    // ⚠️ **좌석 카드 둘 「사이」가 아니라 그 「위」다**(백로그 #187, 2026-09-22 사용자 지시).
+    // 카드 사이에 칸을 하나 더 만들면 흑·백이 폭을 반씩 갖는 배분(#143)이 깨지고, 그 폭은
+    // 1.3배에서 이미 빠듯하다(#107이 같은 자리에서 `Captures: 0`을 잘라 먹었다).
+    // 그래서 **배분은 그대로 두고 가운데에 겹쳐** 그린다.
+    Box(modifier = modifier.fillMaxWidth()) {
+        Row(
             modifier = Modifier
-                .weight(1f)
-                .padding(horizontal = 4.dp),
-        )
+                .fillMaxWidth()
+                .padding(vertical = 4.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            PlayerSeatCard(
+                // #143이 가운데 착수 칸을 지우면서 **흑·백이 폭을 반씩** 갖는다(사용자 지시).
+                // 확인 모드를 되살리면(플래그) 가운데 칸이 다시 들어와 셋이 나눠 갖는다.
+                modifier = Modifier.weight(1f),
+                isActiveTurn = currentTurnPlayer == StoneColor.Black && !screenState.isGameEnded,
+                stoneGlyph = "●",
+                stoneGlyphColor = Color.Black,
+                label = strings.sideLabel(screenState.playerSetup.black, StoneColor.Black),
+                elapsedMillisText = formatMillis(blackTotalMillis),
+                capturedCount = capturedByBlack,
+                capturesLabel = strings.captures,
+                alignEnd = false,
+            )
 
-        PlayerSeatCard(
-            modifier = Modifier.weight(1f),
-            isActiveTurn = currentTurnPlayer == StoneColor.White && !screenState.isGameEnded,
-            stoneGlyph = "○",
-            stoneGlyphColor = Color.Gray,
-            label = strings.sideLabel(screenState.playerSetup.white, StoneColor.White),
-            elapsedMillisText = formatMillis(whiteTotalMillis),
-            capturedCount = capturedByWhite,
-            capturesLabel = strings.captures,
-            alignEnd = true,
-        )
+            // 중앙: [착수 모드 스위치] + [착수] 버튼. `수순 N수`가 헤더로 올라가며 비운 자리를
+            // 스위치가 받았다(#35 → #37). 넓은 배치(#141)도 같은 칸을 **가로로** 쓴다 — [PlaySlot].
+            if (FeatureFlags.isPlayConfirmModeEnabled) PlaySlot(
+                screenState = screenState,
+                tentativeMove = tentativeMove,
+                onEvent = onEvent,
+                horizontal = false,
+                // ⚠️ **폭을 훔쳐 넓히려다 되돌렸다**(백로그 #107, 2026-09-05 실기).
+                // 1.4f로 올리자 스위치 라벨은 들어갔지만 **좌석 카드의 `Captures: 0`이 잘렸다** —
+                // 세 칸이 1.3배에서 함께 들어갈 폭이 애초에 없다. **폭 배분으로 풀 문제가 아니라
+                // 문구 길이의 문제다**(사용자 판단). 한쪽을 고치면 다른 쪽이 깨지는 자리다.
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 4.dp),
+            )
+
+            PlayerSeatCard(
+                modifier = Modifier.weight(1f),
+                isActiveTurn = currentTurnPlayer == StoneColor.White && !screenState.isGameEnded,
+                stoneGlyph = "○",
+                stoneGlyphColor = Color.Gray,
+                label = strings.sideLabel(screenState.playerSetup.white, StoneColor.White),
+                elapsedMillisText = formatMillis(whiteTotalMillis),
+                capturedCount = capturedByWhite,
+                capturesLabel = strings.captures,
+                alignEnd = true,
+            )
+        }
+
+        // ⚠️ **종국에만 뜬다** — 대국 중에는 좌석 카드 가운데를 가리면 안 된다(시계·사석이 있다).
+        if (screenState.isGameEnded) {
+            FinalResultBadge(
+                gameState = screenState.gameState,
+                judgement = screenState.finalScoreJudgement,
+                modifier = Modifier.align(Alignment.Center),
+            )
+        }
     }
 }
 
