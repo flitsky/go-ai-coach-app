@@ -125,6 +125,13 @@ internal object RemotePositionAnalysisJsonCodec {
         JSONObject()
             .put("boardSize", state.boardSize.value)
             .put("ruleset", state.ruleset.name)
+            // ⚠️ 백로그 #19 — 예전에는 komi/handicapCount가 빠져 있었다. 원격 서버가
+            // 이 값 없이는 덤/접바둑을 알 도리가 없어 항상 `DefaultKomi`(6.5)·맞바둑으로
+            // 가정해 분석했다 — 이어하기 덤 유실(#1)과 같은 함정이 같은 이유로 남아 있던 것.
+            // `scripts/run-katago-remote-analysis-server.py` 모듈 docstring이 이 gap을
+            // 스스로 문서화해 두고 있었다("neither ... sends komi at all").
+            .put("komi", state.komi)
+            .put("handicapCount", state.handicapCount)
             .put("nextPlayer", state.nextPlayer.name)
             .put("capturedByBlack", state.capturedByBlack)
             .put("capturedByWhite", state.capturedByWhite)
