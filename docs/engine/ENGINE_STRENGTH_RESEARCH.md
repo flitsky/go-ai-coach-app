@@ -944,7 +944,7 @@ P0에서 B32/B64 모두 `refine=0` 기준 13개로 동일했다. `ENGINE_BEGINNE
 - `ENGINE_API_CALL_POLICY.md` — 딥다이브, `candidateCount 의미`/`Visit의 의미와 탐색 원리` 절
 - `ENGINE_BEGINNER_VISITS_BENCHMARK.md` — 이 문제의 최초 발견, 오늘 실험이 재사용한 P0/P1/P2 국면 출처(2026-08-17: `docs/archive/`에서 이 폴더로 이동 — 근거는 5절 하단 정책 각주 참고)
 - `ENGINE_LEVEL_STRENGTH_REVIEW_2026-06-10.md` — `Balanced` 프리셋이 AI 응수에 실수로 섞였던 과거 사고 기록
-- `ENGINE_SEARCH_TREE_REUSE_REVIEW.md` — GTP tree reuse/JSON position-scoped 분석의 구조적 차이
+- `ENGINE_API_CALL_POLICY.md`의 「턴별 일관성 정책」·「랜덤 시드와 search cache」 — GTP tree reuse/JSON position-scoped 분석의 구조적 차이 (2026-09-23: `ENGINE_SEARCH_TREE_REUSE_REVIEW.md`가 여기로 흡수되고 삭제됐다)
 - `candidate-refine-mac-20260817.md` — 오늘 실측 원본 데이터(36행)
 - `scripts/run-katago-candidate-refine-experiment.py` — 오늘 추가한 실험 스크립트
 

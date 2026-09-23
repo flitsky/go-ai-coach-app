@@ -10,7 +10,6 @@
 
 - 이 문서: 엔진 API 호출 정책, 호출 비용 순서, AI/사람 턴 일관성 기준
 - `ENGINE_STRENGTH_RESEARCH.md`: 실제 레벨별 visits/time/candidate count와 반복 대국 결과
-- `ENGINE_SEARCH_TREE_REUSE_REVIEW.md`: KataGo search tree reuse와 AI vs AI 격리 정책
 - `ENGINE_STRENGTH_RESEARCH.md`: 레벨링용 후보수 확장 검토. 이 문서의 `candidateCount 의미`/후보 예산 절과 직접 관련 — `refinePolicyMoves`가 구현은 됐지만 AI 착수 경로에서 항상 0으로 꺼져 있다는 갭과 실측 데이터
 
 ## 현재 결정
@@ -213,7 +212,7 @@ KataGo analysis config에는 `wideRootNoise`가 있으며, 이 값을 크게 하
 
 `AnalysisLimit.effectiveAnalysisLimit()`는 `candidateCount * minVisitsPerCandidate`와 `minTimeMillis`가 설정된 경우 요청 visits/time을 올릴 수 있다. 기본 실시간 대국 preset인 `Lite`와 현재 `Learning`은 `minVisitsPerCandidate=0`, `minTimeMillis=null`이므로 후보 수를 늘린다고 자동으로 visit/time이 늘지는 않는다. 반면 `Balanced` 이상이나 향후 broad study preset에서는 후보당 최소 visits를 요구해 더 무거운 분석으로 승격될 수 있다.
 
-JSON analysis path도 B16/B32/B64 같은 visit 레벨 설정을 그대로 표현할 수 있다. KataGo Analysis Engine query는 요청별 `maxVisits`를 받고, 우리 adapter도 `AnalysisLimit.visits`를 query JSON의 `maxVisits`에 넣는다. `timeMillis`는 `overrideSettings.maxTime`으로 들어간다. 따라서 JSON position analysis 전환의 쟁점은 "visit 설정 가능 여부"가 아니라, GTP stateful tree reuse를 포기하거나 줄이는 대신 position-scoped 요청, 원격 서버 호환성, AI vs AI 레벨 오염 완화라는 장점을 얻을지 여부다. 자세한 장단점은 `ENGINE_SEARCH_TREE_REUSE_REVIEW.md`의 JSON position analysis 섹션을 따른다.
+JSON analysis path도 B16/B32/B64 같은 visit 레벨 설정을 그대로 표현할 수 있다. KataGo Analysis Engine query는 요청별 `maxVisits`를 받고, 우리 adapter도 `AnalysisLimit.visits`를 query JSON의 `maxVisits`에 넣는다. `timeMillis`는 `overrideSettings.maxTime`으로 들어간다. 따라서 JSON position analysis 전환의 쟁점은 "visit 설정 가능 여부"가 아니라, GTP stateful tree reuse를 포기하거나 줄이는 대신 position-scoped 요청, 원격 서버 호환성, AI vs AI 레벨 오염 완화라는 장점을 얻을지 여부다. 자세한 장단점은 이 문서의 「GTP fast와 JSON position analysis 운영 방향」과 「턴별 일관성 정책」 절을 따른다.
 
 현재 레벨별 기본 visits는 다음과 같다.
 
@@ -588,7 +587,7 @@ KataGo GTP config 주석 기준으로 `visits`는 현재 턴에서 새로 수행
 
 따라서 “매판 random seed를 넣으면 프로세스 재시작이나 `clear_cache`가 불필요한가?”에 대한 현재 결론은 아니오다. 랜덤 시드는 다양성/재현성 제어 수단이고, `clear_cache`/fresh process는 엔진 내부 상태 격리 수단이다.
 
-재사용을 다시 살릴 후보는 random seed보다 `maxPlayouts` 기반 정책이다. `maxPlayouts`는 이전 tree visits를 포함하는 `maxVisits`와 달리 새로 수행할 탐색량을 더 직접적으로 제한할 수 있다. 다만 기존 tree 위에 새 playout을 더하는 방식이므로, 강도 보정 모드와는 별도인 “성능/품질 우선 모드”로 검증해야 한다. 자세한 검토는 `ENGINE_SEARCH_TREE_REUSE_REVIEW.md`를 따른다.
+재사용을 다시 살릴 후보는 random seed보다 `maxPlayouts` 기반 정책이다. `maxPlayouts`는 이전 tree visits를 포함하는 `maxVisits`와 달리 새로 수행할 탐색량을 더 직접적으로 제한할 수 있다. 다만 기존 tree 위에 새 playout을 더하는 방식이므로, 강도 보정 모드와는 별도인 “성능/품질 우선 모드”로 검증해야 한다. 착수 전 밟을 실험 순서는 이 문서의 「다음 리팩토링 방향」 → 「search tree 재사용을 다시 켜려면 — 다음 실험」 절에 있다.
 
 ### 사람 차례
 
@@ -639,3 +638,21 @@ KataGo GTP config 주석 기준으로 `visits`는 현재 턴에서 새로 수행
 3. `TopMovesDisplay`와 `HumanMoveReview`를 같은 snapshot에서 파생하되 UI 표시 정책만 분리한다.
 4. broad study analysis를 별도 메뉴/모드로 만들 때도 기존 `MoveAnalysisSnapshot`에 merge하는 방식으로 확장한다.
 5. 기기 벤치마크 결과를 바탕으로 fast best-5 분석의 time cap을 기기별로 조정한다.
+
+### search tree 재사용을 다시 켜려면 — 다음 실험
+
+현재 기본값(사람 vs AI는 재사용 유지, AI vs AI만 착수 직전 `clearSearchCache()`)을 **바로 바꾸지 않는다.** 재사용을 다시 살리고 싶으면 별도 모드로 아래를 먼저 진행한다.
+
+1. `EngineSearchReusePolicy`를 둔다.
+   - `IsolatedTurnSearch`
+   - `ReuseTreeWithPlayoutBudget`
+   - `ReuseTreeSameSideOnly`
+   - `DeterministicTest`
+2. `AnalysisLimit`에 `playouts` 또는 별도 `SearchBudget`을 추가한다.
+3. `KataGoProcessEngineAdapter.applySearchLimit()`에서 `maxPlayouts`를 지원한다.
+4. runtime log에 `searchReusePolicy`, `maxVisits`, `maxPlayouts`, `clearCache`, `seedPolicy`를 남긴다.
+5. `B16 vs B32`, `B16 vs B64`, `B32 vs B64`를 각 모드로 50판 이상 비교한다.
+
+핵심은 random seed가 아니다 — seed는 다양성/재현성 제어 수단이고, 이미 유효한 subtree가 남아 있으면 seed가 달라도 새 탐색이 거의 일어나지 않는다. 격리의 실체는 `maxPlayouts`, side별 세션, 위 정책 enum, 그리고 로그 기반 검증이다.
+
+> 이 절은 `ENGINE_SEARCH_TREE_REUSE_REVIEW.md`(2026-06-11 작성)에서 흡수했다. 그 문서의 나머지 결론부는 이 문서의 「엔진 호출 방식 우선순위」·「턴별 일관성 정책」·「랜덤 시드와 search cache」 절이 이미 담고 있었고, 미흡수분이 이 「다음 실험」뿐이어서 원문은 2026-09-23에 삭제했다.
