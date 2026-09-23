@@ -171,7 +171,7 @@ class LayeringContractTest {
         if (!benchmarkDisplay.exists()) {
             offenders += "${benchmarkDisplay.relativeTo(repoRoot).path}: missing benchmark display split"
         }
-        if (benchmarkApplication.readLines().size > 220) {
+        if (benchmarkApplication.readContractSourceLines().size > 220) {
             offenders += "${benchmarkApplication.relativeTo(repoRoot).path}: workflow shell grew past 220 lines"
         }
 
@@ -950,7 +950,7 @@ class LayeringContractTest {
         forbiddenCommonFragments.forEach { fragment ->
             offenders += "${common.relativeTo(repoRoot).path}: common runner still owns $fragment"
         }
-        if (common.readLines().size > 90) {
+        if (common.readContractSourceLines().size > 90) {
             offenders += "${common.relativeTo(repoRoot).path}: common score sync helper grew past 90 lines"
         }
         expectedSplitFiles
@@ -1479,7 +1479,7 @@ class LayeringContractTest {
         val stateHookBudget = 42
 
         val goCoachApp = RepoPaths.goCoachApp
-        val allLines = goCoachApp.readLines()
+        val allLines = goCoachApp.readContractSourceLines()
         val lines = codeLinesOf(allLines)
         val stateHookRegex = Regex("\\b(remember|mutableStateOf|LaunchedEffect)\\b")
         val stateHookCount = lines.count { line -> stateHookRegex.containsMatchIn(line) }
@@ -1530,7 +1530,7 @@ class LayeringContractTest {
 
         budgets.forEach { (path, lineBudget, stateHookBudget) ->
             val file = RepoPaths.appAndroid(path)
-            val allLines = file.readLines()
+            val allLines = file.readContractSourceLines()
             val lines = codeLinesOf(allLines)
             val stateHookCount = lines.count { line -> stateHookRegex.containsMatchIn(line) }
 

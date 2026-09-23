@@ -2,6 +2,7 @@ package com.worksoc.goaicoach.ui
 
 import com.worksoc.goaicoach.architecture.RepoPaths
 import com.worksoc.goaicoach.architecture.readContractSource
+import com.worksoc.goaicoach.architecture.readContractSourceLines
 import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -49,7 +50,7 @@ class AppNameContractTest {
      * 날짜 붙인 폴더/파일을 추가하는 것도 허용). 옛 라운드 폴더를 찾을 땐 git 히스토리를 본다.
      */
     private val storeName = File(repoRoot, "work/play-store-assets/store_listing.txt")
-        .readLines()
+        .readContractSourceLines()
         .let { lines -> lines.getOrNull(lines.indexOfFirst { it.startsWith("[앱 이름]") } + 1)?.trim() }
 
     /**

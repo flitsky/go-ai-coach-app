@@ -132,3 +132,21 @@ internal fun File.readContractSource(): String {
     }
     return readText()
 }
+
+/**
+ * [readContractSource]와 같은 진입점을, 줄 단위 계약(줄 수 예산 등)이 쓰는 `File.readLines()`
+ * 형태로 준다.
+ *
+ * ⚠️ **`readContractSource().lines()`로 대체하지 마라** — 동작이 달라진다. `File.readLines()`는
+ * `BufferedReader.readLine()` 기반이라 파일이 개행으로 끝나도 끝에 빈 줄을 추가하지 않는 반면,
+ * Kotlin의 `String.lines()`는 구분자로 나누는 방식이라 **개행으로 끝나면 빈 문자열이 하나
+ * 더 생긴다.** 이 저장소의 파일은 관례상 끝에 개행이 있으므로, 바꿔치면 줄 수 예산 계약들이
+ * 전부 조용히 1줄씩 밀린다 — 읽는 방식만 바꾸고 단언은 그대로 두어야 하므로 `readLines()`를
+ * 그대로 위임한다.
+ */
+internal fun File.readContractSourceLines(): List<String> {
+    check(exists()) {
+        "이 계약이 보는 소스가 없다: $absolutePath. 파일이 옮겨졌다면 RepoPaths.kt를 갱신하라."
+    }
+    return readLines()
+}
