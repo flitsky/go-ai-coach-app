@@ -26,10 +26,16 @@
 
 | 영역 | 핵심 옵션 |
 | --- | --- |
-| `Player Setup` | 흑/백 각각 사람·AI 선택, AI는 `빠른 초급`/`초급`/`중급`/`고급` + 단계, 둘 다 AI면 `Auto delay` |
+| `Player Setup` | 흑/백 각각 사람·AI 선택, AI는 봇 캐릭터 픽커로 `빠른 초급` 5단계(초보~초고수) 중 하나를 고름(주1), 둘 다 AI면 `Auto delay` |
 | `Search Time` | `Time cap On/Off` + B16/B32/B64별 응답시간 cap |
 | `Game` | `New`, `Copy Log`, `Benchmark`, `Scoring rule: Area | Territory` |
 | `Display menu` | `Coords`, `Move nums`, `Last ring` (ownership gradient는 여기 없고 `Eval` 액션 버튼이 담당) |
+
+주1: `PlayLevelGroup`에는 `빠른 초급` 외에 `초급`/`중급`/`고급` 세 그룹이 더 있지만(각 5~7단계),
+2026-08-18부터 이 화면에서는 완전히 숨겼다 — 코드(`shared/.../PlayLevel.kt`)는 지우지 않고 남겨뒀고,
+재노출은 대국장 로드맵에서 검토 예정이다(마이그레이션 없음). 그리고 2026-08-29(#10)부터는 남은
+`빠른 초급` 5단계 선택 자체도 숫자 드롭다운이 아니라 **봇 캐릭터 픽커**(캐릭터 하나 = 티어 하나,
+`PlayerSetupPanel.kt`)로 바뀌었다.
 
 세부 동작, 기본값, 저장/복원 정책은 `USER_OPTION_MANUAL.md`를 따른다.
 
