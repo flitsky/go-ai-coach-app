@@ -51,6 +51,74 @@ AI와 대국하며 실수를 색으로 짚어주는 무료 바둑 학습 앱, �
 바둑, Go, Baduk, Weiqi, 围棋, 바둑 AI, 바둑 대국, 바둑 복기, 바둑 학습, 바둑 코치, 오프라인 바둑, 계가, 접바둑, KataGo
 
 
+────────────────────────────────────────────────────────────────
+[자세한 설명 — 영어 등재정보] (4000자 이내, 현재 3,991자)
+
+⚠️ **2026-09-24에 영어 등재정보를 열었다.** 그전까지 등재정보는 한국어 하나뿐이었고,
+   이 파일 곳곳의 *"한국어 하나뿐이니 다른 언어 탭을 만들지 말 것"* 은 **그때 기준이다.**
+   ⚠️⚠️ **그래서 이제 출시 노트에 `<en-US>` 블록도 함께 넣어야 한다** — 등재정보에 있는
+   언어의 출시 노트가 비면 그 언어권 사용자에게 변경 내용이 안 보인다.
+
+⚠️ **가격을 숫자로 적지 않았다.** 한국어 본문은 "월 3,900원"인데, 영어 등재정보는
+   한국 밖에서도 읽힌다. Play가 국가별 가격을 알아서 보여 주므로 본문에는
+   *"the price for your country is shown on this page"* 로 두었다 — **숫자를 박으면
+   다른 나라에서 틀린 값이 되고, 그것은 문구가 거짓이 되는 자리다**(함정 51).
+
+⚠️ **한국어 본문과 같은 것만 적는다.** 닉네임·아바타(꺼진 채 나갔다)와 카메라 인식
+   (「실험실」 옵트인 베타)은 양쪽 모두에 없다. **한쪽만 고치면 두 언어가 다른 앱을 말한다** —
+   한국어를 고치는 사람은 여기도 함께 고칠 것.
+
+────────────────────────────────────────────────────────────────
+[CORE IDEA]
+Pocket Go Coach is a Go (Baduk / Weiqi) learning app built around KataGo, the open-source engine — running on your device, not on a server. Play a genuinely strong AI with no connection at all, and see exactly how many points each move gave away, in colour, as you play it.
+
+[WHAT'S INSIDE]
+- Play the AI: five opponent characters from beginner to expert — choosing your opponent is how you choose the difficulty
+- Collect opponents: two unlock with shards from short ads (5 and 10), two by checking in daily (day 7 and day 28). Every opponent, up to the strongest, is reachable without paying
+- Move review: every move is scored by the points it lost against the engine's best, shaded from deep green (best) to red (a real mistake)
+- Top moves: the engine's five best candidate moves, drawn straight onto the board
+- Evaluation: live score difference and win rate, counting captures and territory, plus a shaded overlay of whose area each part of the board is
+- Daily check-in: single-use AI coaching passes and opponent shards, every day you open the app
+- Game records: every game you have played, kept on your device
+- Game replay: step through a finished game move by move, jump straight to any move that cost 10 points or more, and see on the score graph where it actually turned
+- Play on from the review: go back to the move you regret and continue from there — the review becomes your next game
+- Learn — the rules: six lessons — the board and the first move, liberties, atari and capture, forbidden points, ko, territory and scoring
+- Learn — basic shape: five lessons — connecting and cutting, extending to escape, the tiger's mouth, the one-point jump, the knight's move. Each is played out on the board one move at a time
+- Beginner video lessons: a curated list, opened from inside the app
+- Score and win-rate graph: the shape of the whole game at a glance
+- Undo: take a move back and try a different one
+- Haptic feedback on each stone (can be turned off in settings)
+- Board size on screen: leave a margin, or fill the width edge to edge
+- Board sizes: 9x9, 13x13 and 19x19
+- Scoring: area scoring (Chinese) or territory scoring (Japanese / Korean)
+- Komi and handicap, configurable
+- Resume: a saved game waits for you and picks up where you left it
+- Four languages: Korean, English, Japanese and Simplified Chinese
+- Device backup: with Google account backup on, most records come back when you reinstall or change phones (as of the last backup)
+
+[WHAT IT COSTS]
+Installing the app and playing — stones, scoring, handicap and all — is free.
+
+The AI coaching features (evaluation and top moves) work two ways. One short ad unlocks them for a full hour, across as many new games as you start in it. Or spend a single-use pass from your daily check-in and use one with no ad at all.
+
+Undo unlocks the same way, and is yours permanently as the day-3 check-in reward.
+
+If you would rather not watch ads, there is a Premium subscription (billed monthly; the price for your country is shown on this page). While it is active the AI coaching features work without ads and without limit, and every opponent is available to choose. It renews until you cancel, from subscription management in the Play Store.
+
+[WHO IT'S FOR]
+- Complete beginners, and anyone who wants a coach that can say precisely which move was the mistake
+- Players who want engine analysis on the device itself, not on a server
+- Anyone who wants to start from the rules — the board and the very first move are in the app
+
+[WHAT MAKES IT DIFFERENT]
+- A real KataGo engine running locally, not an API call — play and analysis both work offline
+- Feedback measured as points lost against the best move, not a verdict of good or bad — so you see why a move was disappointing
+- Not one opponent or feature is paid-only — the subscription is a more comfortable route to the same things
+
+Go, Baduk, Weiqi, igo, Go AI, Go game, Go review, learn Go, Go lessons, Go coach, offline Go, komi, handicap, KataGo
+────────────────────────────────────────────────────────────────
+
+
 [출시 노트] (Play Console "출시 노트" 필드 — 그대로 붙여넣는다)
 
 ⚠️ **콘솔은 언어 태그로 감싼 형식을 받는다.** 아래 `<ko-KR>` 블록을 **태그째** 복사해 넣을 것.
