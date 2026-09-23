@@ -13,6 +13,21 @@
 - BaaS 5종(Firebase/Supabase/PocketBase/Appwrite/Convex) 비교 검토 결과(`baas_solutions_comparison.md`), 기보(SGF) 저장·보상형 광고·AdMob 시너지 관점에서 **Firebase가 최종 채택**되었습니다.
 - 프리미엄 모드(`PREMIUM_MODE.md`)의 Step 3(광고)/Step 4(구매)가 이 계정 시스템 위에 얹힐 예정이므로, 그 전제가 되는 "로그인/익명 사용자 식별" 기반을 먼저 마련하는 것이 이번 계획의 핵심입니다.
 
+#### 1.1.1. Firebase 프로젝트를 장기 앱과 분리하는 근거 (흡수: 2026-09-23)
+
+⚠️ 아래는 원래 `work/history/baduk_app_architecture_recommendation.md` 2장에만 있던 사실이다.
+그 문서는 채택되지 않은 축(Firestore SGF 스키마·Remote Config A/B·단품 결제)이 대부분이라
+정리 대상이지만, **이 한 가지 사실만은 지금도 살아 있는 결정을 떠받치고 있어** 여기로 옮겨 적는다.
+
+- **Firebase의 무료 할당량(Spark Plan)은 구글 계정 단위가 아니라 '프로젝트' 단위로 각각 독립 적용된다.**
+  같은 구글 계정 아래 프로젝트를 둘 만들면 각각이 온전한 무료 할당량을 따로 받는다.
+- 따라서 바둑 앱은 **콘솔에서 새 프로젝트를 생성**해야 하고, 장기 앱 프로젝트 안에
+  안드로이드 앱을 추가하는 형태로 묶으면 **두 앱이 무료 사용량을 공유**해 유료 전환이 빨라진다.
+- 당시 인용된 Spark Plan 한도는 Firestore 하루 읽기 5만 회·쓰기 2만 회였다.
+  ⚠️ **이 수치는 2026-07-29 조사 시점 값이고 요금제는 바뀔 수 있다** — 실제 한도는 착수 시점에 다시 확인한다.
+
+이 근거가 적용되는 결정은 아래 Step 1의 "Firebase 콘솔 프로젝트는 장기 앱과 별도 독립 프로젝트로 새로 생성"이다.
+
 ### 1.2. 핵심 논의: 계정 없이 시작하기 & 구매 복구
 - **결론**: "계정 없이 시작하기"(게스트 모드)는 제공한다. 다만 앱을 지우면 구매 이력을 못 찾는다는 우려는 **로그인 여부가 아니라 아이템 결제를 어떻게 구현하느냐**로 해결한다.
 - Google Play 인앱결제(Billing)는 앱 자체 로그인과 무관하게 **구매가 Google Play 계정에 귀속**된다. 재설치 후 `queryPurchases()`로 자동 복원되므로, 게스트 사용자도 이 복원 경로는 그대로 유효하다.
@@ -38,7 +53,7 @@
 - **범위**:
   - Google/이메일 로그인 버튼은 배치만 하고, 탭하면 홈 화면 "학습하기" 카드와 동일한 "준비 중" 토스트 패턴을 재사용.
   - Apple 로그인은 UI 자체를 넣지 않음 (완전 후순위).
-  - Firebase 콘솔 프로젝트는 장기 앱과 별도 독립 프로젝트로 새로 생성 (Spark Plan 무료 할당량이 프로젝트 단위로 독립 적용되기 때문 — `baduk_app_architecture_recommendation.md` 2장 참고).
+  - Firebase 콘솔 프로젝트는 장기 앱과 별도 독립 프로젝트로 새로 생성 (Spark Plan 무료 할당량이 프로젝트 단위로 독립 적용되기 때문 — 근거는 위 **1.1.1절**에 옮겨 적었다).
 - **산출물**: `OnboardingScreen.kt`, `application/auth/AuthState.kt`(순수 도메인, iOS 이식 전제), `application/auth/AuthClientPort.kt` + `ui/AndroidAuthClient.kt`(Firebase Auth 실제 호출), `UserPreferencesSnapshot.hasSeenOnboarding` 플래그, Gradle Firebase 의존성 스캐폴딩(google-services.json 없이도 빌드가 깨지지 않도록 조건부 플러그인 적용).
 - **상태**: ✅ 완료 (2026-07-29) → 2026-08-04 개정, 아래 "Step 1 개정" 참고
 
