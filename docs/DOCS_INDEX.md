@@ -86,7 +86,7 @@
 하나였고 그것이 0건으로 확인됐기 때문에 사용자 판단으로 건너뛴 것이다 — **"활성 문서는 옮겨도
 된다"는 일반 규칙으로 확대하지 말 것.** 다음 이동에서도 고정 프롬프트가 0건인지 먼저 셀 것.
 
-**`docs/refactoring/`(완료된 리팩토링 작업 로그)와 `docs/archive/<날짜>-<사유>/`(더 이상 유효하지 않은 문서 보관)는 기본적으로 저장소에 두지 않는다.** 완료되고 결론이 흡수된 문서는 옮기지 않고 삭제한다. `docs/refactoring/`은 지금처럼 **실제로 진행 중인** 로드맵이 있을 때만 예외적으로 존재하고, 그 작업이 끝나면 다시 삭제한다 — 근거와 복원 방법은 아래 "문서 보존 정책" 절 참고.
+**`docs/refactoring/`(완료된 리팩토링 작업 로그)와 `docs/archive/<날짜>-<사유>/`(더 이상 유효하지 않은 문서 보관)는 기본적으로 저장소에 두지 않는다.** 완료되고 결론이 흡수된 문서는 옮기지 않고 삭제한다. ⚠️ **`docs/refactoring/` 폴더는 2026-08-17에 삭제됐고 되살리지 않는다** — 진행 중인 리팩토링 로드맵도 `work/roadmap/`으로 간다(아래 "리팩토링 로드맵은 어디로 가는가" 절이 정본이다). 근거와 복원 방법은 아래 "문서 보존 정책" 절 참고.
 
 #### 2026-09-13 — `design-handoff/`를 없애고 `work/play-store-assets/`로 합쳤다 (그리고 저장소 루트에는 이제 이런 폴더가 하나도 없다)
 
@@ -131,6 +131,7 @@
 | `spec/FAST_BEGINNER_TIER_DESIGN.md` | `빠른 초급` 5단계(`초보`~`초고수`) **설계 기록**. ⚠️ 이름이 "계획"이고 상태가 "구현 완료"라 삭제 후보로 잡혔지만, **11절이 다른 어디에도 없는 근거**(무상태 배치 공식과 그 수학적 동등성, 상태 방식을 버린 이유, 마이그레이션 생략 근거)를 담고 있어 보존했다 — `ENGINE.md`에는 결과 표만 있다 |
 | `spec/ATTENDANCE_REWARD_POLICY.md` | 출석 보상표와 **그렇게 정한 이유** — 데일리 보상은 고정 불변의 자동 수령이라는 핵심 정책, 회차별 배치 근거, 보유 상한. `FEATURE_ACCESS_PRINCIPLES.md`(무료/유료 경계)의 출석 축 딥다이브 |
 | `spec/FEATURE_ACCESS_PRINCIPLES.md` | 기능 유/무료 제공 원칙 — `PREMIUM_MODE.md`·`LOGIN_AND_ACCOUNT_SYSTEM.md`이 "무엇을 어떻게 만들었는가"를 기록하는 실행 문서라면, 이 문서는 "왜 그렇게 하기로 했는가"를 담는 상위 원칙 문서. 맨 아래 결정사항이 계속 append됨 |
+| `spec/PITFALLS.md` | **함정 전문**(2026-09-23 신설, 백로그 #194). 이 저장소가 **실제로 한 번씩 밟은 것**들이다. ⚠️ **읽는 문서가 아니라 찾는 문서** — 활성 백로그의 함정 **색인**에서 키워드를 먼저 고르고 **그 번호만** 편다. ⚠️ **번호는 영구불변**이고 **전문은 고치지 않는다**(새로 안 것은 색인에 ⚠️로, 새 함정이면 다음 번호). 봉인 백로그 넷에 흩어져 있던 것을 모았고 **원본은 그대로 뒀다**. 2026-09-23 기준 76번까지 있다(1~66이 최초 수집분, 67~76은 같은 날 아키텍처 진단서 §4에서 편입) |
 갱신: 2026-08-31 — 출석 보상 정책 문서 `docs/spec/ATTENDANCE_REWARD_POLICY.md`를 신설해 위 표에 편입했다(백로그 #55·#57). 계기는 **"'나중에' 버튼이 무의미해 보인다"는 사용자 지적**이었는데, 논의 끝에 그것이 버튼 하나의 문제가 아니라 **정책이 어디에도 적혀 있지 않아 생긴 혼선**임이 드러났다 — 킥오프 플랜 5.1절은 "닫으면 미지급으로 남는다"고 정해 뒀고, 그 문장만 보면 보류 버튼이 옳다. 실제 의도는 **데일리 보상은 고정 불변의 자동 수령이며 목적은 모으게 하는 것이 아니라 제때 쓰게 하는 것**이었고, 그 정책이 문서화되지 않아 코드와 논의가 반대 방향으로 갔다. 새 문서는 표(2026-08-31 확정)와 함께 **각 배치의 이유**를 적는다 — 특히 "무르기가 왜 1일차가 아니라 3일차인가"(이틀간 유료임을 겪게 한 뒤 준다), "조각의 무광고 경로가 왜 없는가"(의도된 광고 유입), "7·28일차를 왜 반복 회차와 섞으면 안 되는가"(소모품이 통째로 사라진다)처럼 숫자만으로는 복원되지 않는 근거들이다. 뒤집힌 이전 결정(5.1절)도 명시해 다음 사람이 옛 문장을 근거로 되돌리지 않게 했다.
 갱신: 2026-08-31 (2) — **문서 구조 정책**을 신설하고(위 "문서 구조 정책" 절) 첫 단계로 **로그 분리**를 실행했다. 사용자 의도는 개수 관리가 아니라 **인지 부하의 상한**이다 — 최상위 문서 5개, 중분류 폴더 5개, 깊이 3뎁스. `docs/engine-benchmark-logs/`와 `docs/engine-match-logs/`를 `docs/engine/measurements/` 아래로 옮겼다(하위 폴더 9 → 8). ⚠️ 이 이동에서 **깊이 규칙과 즉시 충돌**하는 것을 발견했다 — 로그 79개 중 72개가 이미 깊이 3이라 한 겹 더 씌우면 4뎁스가 된다. 12개나 되는 실행별 폴더를 평탄화하는 것도 답이 아니어서, **원시 측정 데이터를 깊이 규칙의 적용 대상 밖으로 두되 한 폴더 안에 가두는** 쪽으로 정리했다(근거는 정책 절에). ⚠️ 이동 전 전수 grep에서 **`Makefile`의 벤치마크 출력 경로 4줄**이 옛 경로를 하드코딩하고 있던 것을 발견해 함께 고쳤다 — 2026-08-30 `engagement-growth/` 이동 때 코드 주석 8곳이 깨졌던 것과 같은 유형이라, 그 교훈을 정책의 "폴더를 옮길 때" 항목으로 승격했다. 문서 14개와 로그 요약 6개의 경로도 함께 갱신하고 가리키는 파일이 실재하는지 재확인했다. **최상위 문서 정리(15 → 5)와 중분류 통합(8 → 5)은 아직 남아 있다** — 목표 형태는 정책 절의 "현재 상태"에 적어 뒀다.
 
@@ -171,6 +172,7 @@
 | `PREMIUM_MODE.md` | 프리미엄/수익화 모드 마스터플랜(광고 1시간 활성화, 영구 결제). Step별 진행 로그가 계속 append됨 |
 | `LOGIN_AND_ACCOUNT_SYSTEM.md` | 최초 실행 온보딩 + 계정 시스템(Firebase 익명/Google/이메일 인증) 마스터플랜. [ARCHITECTURE.md](./ARCHITECTURE.md) 6계층(세션/연속성)의 실행 문서 |
 | `UX_IMPROVEMENT.md` | UX 개편(보드 스케일링, 패널, 직접 착수 흐름) 마스터플랜 **v1.0.0 와이어프레임은 이 문서 부록 A**로 합쳐졌다(2026-09-06) |
+| `REMOTE_ENGINE_AND_LAYERING.md` | 원격 엔진(Stage D/E)·물리적 분산(Stage F, DePIN) 로드맵. 2026-09-23에 `work/roadmap/LAYERED_ARCHITECTURE_REFACTORING_PLAN_260803_1500.md`에서 **개명·이동**했다 — Stage F-2가 사용자 승인 대기라 **완결일을 적을 수 없어** 기능축이 맞다. ⚠️ 계층 정렬 축(Stage A~C)의 실측 정본은 `work/roadmap/260923-_ARCHITECTURE_DIAGNOSIS_AND_REFACTORING.md`로 넘어갔다. Stage F 전용 킥오프는 `work/roadmap/260818-_REMOTE_ENGINE_MQ_TRANSPORT.md` |
 
 ⚠️ **`PREMIUM_MODE.md`·`LOGIN_AND_ACCOUNT_SYSTEM.md`·`UX_IMPROVEMENT.md` 셋은 2026-09-06 조사에서
 **사실상 완결(갱신 정지)** 로 확인됐고, `UX_IMPROVEMENT.md`는 본문이 현재 화면과 어긋난다
@@ -191,24 +193,31 @@
 
 ## 앱 고도화 트랙과 초기 리서치 (`work/roadmap/`, `work/history/`)
 
+### `work/roadmap/` — 목록의 정본은 그 폴더의 `README.md`다
+
+⚠️ **이 인덱스는 roadmap 문서를 하나씩 등재하지 않는다**(2026-09-23 결정). 같은 표를 여기와
+`work/roadmap/README.md` 두 곳에서 손으로 유지하던 기간에 **이쪽이 드리프트했다** — 신설 문서가
+빠지고, 개명·이동된 문서의 옛 이름이 남았다. 갱신 지점을 하나로 줄여 그 재발 표면을 없앴다.
+
+- **전수 목록과 각 문서의 성격** → `work/roadmap/README.md` 「지금 있는 문서」 표
+- **새 스레드의 진입점** → `work/roadmap/260923-_ACTIVE_BACKLOG.md`
+  (`HANDOVER.md` §0의 고정 프롬프트가 가리키는 파일이다)
+- **파일 이름 규칙** `시작일-완결일_이름.md` — 이름순 정렬이 곧 시간순이고,
+  완결일 자리가 비어 있으면(`260923-_`) 진행 중이라는 뜻이다. 규칙 원문도 그 `README.md`에 있다
+
+⚠️ **그래도 "반드시 등재한다"는 운영 원칙은 살아 있다** — 등재처가 이 인덱스에서
+`work/roadmap/README.md`로 옮겨졌을 뿐이다. 그 폴더에 새 문서를 만들면 **그 자리에서** 그
+`README.md`의 표에 한 줄 넣는다. 2026-09-23에 신설된 아키텍처 진단서가 하루도 안 돼 양쪽 어디에도
+없었던 것이 이 규칙이 필요한 이유다.
+
+### `work/history/` — 초기 리서치
+
 | 위치 | 용도 |
 | --- | --- |
 | `work/history/baas_solutions_comparison.md` | Firebase/Supabase/PocketBase/Appwrite/Convex BaaS 비교 조사 — Firebase 채택 근거 원본. 결론은 `LOGIN_AND_ACCOUNT_SYSTEM.md`에 반영됨 |
 | `work/history/baduk_app_architecture_recommendation.md` | 백엔드+AdMob 전략 추천 조사 — 결론은 `PREMIUM_MODE.md`/`LOGIN_AND_ACCOUNT_SYSTEM.md`에 반영됨 |
-| `work/roadmap/260823-_DAU_GROWTH_IDEAS.md` | 일일 접속량(DAU) 증대 아이디어 브레인스토밍 — chess.com 참고 사례와 우리 앱 조건에 맞춘 적용 아이디어를 상태 트래킹 표로 관리. 2026-08-23 초안 단계, 계속 논의하며 갱신 |
-| `work/roadmap/260823-260830_OFFLINE_ENGAGEMENT_FEATURES_KICKOFF_PLAN.md` | 위 아이디어 중 출석 보상·업적 화면·대국 히스토리·봇 컬렉션을 "로그인 없이 로컬 전용(Phase 1)"으로 구체화한 개발 착수 스펙. 새 스레드에 그대로 넘겨 바로 개발 가능한 형태 |
-| `work/roadmap/260823-260830_OFFLINE_ENGAGEMENT_FEATURES_BACKLOG.md` | 위 스펙을 새 스레드마다 하나씩 순차 착수 가능한 일감으로 쪼갠 진행 관리 백로그. **2026-08-30 완결 — 더 이상 갱신하지 않는다**(#40 스크린샷 재캡처 + 비공개 테스트 AAB v0.8.4가 마지막). #1~#40의 완료 이력과 "신규 스레드 착수 프로토콜"은 참조용으로 그대로 남아 있다. **새 일감은 아래 문서가 받는다** |
-| `work/roadmap/260830-260831_POST_LAUNCH_ENHANCEMENTS.md` | 위 백로그에서 갈라 나온 **출시 이후 고도화 항목**(#43~#62). **2026-08-31 완결·봉인 — 더 이상 갱신하지 않는다.** 문서가 1,501줄까지 자랐고 그중 **91%가 완료 항목**이라 정작 읽어야 할 예정사항 84줄이 맨 아래 깔려서, 활성 일감을 아래 문서로 넘겼다. ⚠️ **통째로 읽지 말 것** — 완료 항목의 착수 전 함정·구현 결정·실기 검증 근거 보관처다. 삭제하지 않은 이유와 삭제 판단 조건은 그 문서 서두와 활성 백로그의 "이 문서를 쓰는 규칙" 절에 있다 |
-| `docs/spec/PITFALLS.md` | **함정 전문 1~66**(2026-09-23 신설, 백로그 #194). 이 저장소가 **실제로 한 번씩 밟은 것**들이다. ⚠️ **읽는 문서가 아니라 찾는 문서** — 활성 백로그의 함정 **색인**에서 키워드를 먼저 고르고 **그 번호만** 편다. ⚠️ **번호는 영구불변**이고 **전문은 고치지 않는다**(새로 안 것은 색인에 ⚠️로, 새 함정이면 다음 번호). 봉인 백로그 넷에 흩어져 있던 것을 모았고 **원본은 그대로 뒀다** |
-| `work/roadmap/260923-_ACTIVE_BACKLOG.md` | **현재 활성 일감 목록**(2026-09-23 신설, 9세대). 새 스레드의 진입점이고 `HANDOVER.md` §0의 고정 프롬프트가 가리키는 파일이다. ⭐ **8세대의 92KB를 47KB로 줄이며 성격을 갈랐다** — 완료 이력은 git이 정본이라 빈 표로 시작하고(250자 캡), 「예정사항」은 **「다음」·「대기」·「서 있는 답」** 셋으로 나뉘었다. 함정 색인 60건은 그대로 이어받았다 |
-| `work/roadmap/260919-260922_STUDY_CONTENT_AND_1_0_RELEASE.md` | **8세대(봉인)**. 학습 콘텐츠 두 갈래·자동 백업 복원·설정 간소화, 그리고 **1.0.0 프로덕션 출시**. 완료 31건 상세 · **함정 58~66 전문** · 해소된 U-번호가 여기 있다 |
-| `work/roadmap/260917-260919_SUBSCRIPTION_LAUNCH_AND_GAMEPLAY_FLOW.md` | 7세대(#150~#178) — 구독 개통과 정식 출시(909). **봉인** · 함정 51~57 전문 |
-| `work/roadmap/260919-260919_RELEASE_909_HANDOFF.md` | 909 출시 하루짜리 인수인계. **완결** — 내용은 `GOOGLE_PLAY_LAUNCH_PLAN.md` §0으로 흡수됐다 |
-| `work/roadmap/260906-260911_RELEASE_AND_EARLY_FEEDBACK.md` | 완결 · **봉인**(#118~#137). 출시 과정과 등록 초기 사용자 요구 — Play 콘솔 지적 대응·시작 크래시·첫돌이 가이드·초기 사용 피드백·앱 이름 `포켓 바둑 코치`. 이 세대 안에서 정식 출시(811). ⚠️ **통째로 읽지 말 것** — 완료 항목의 근거 보관처다 |
-| `work/roadmap/260905-260906_LAUNCH_PREP_AND_CLEANUP.md` | 완결 · **봉인**(#85~#117). 출시 직전 정비 — 문서 통폐합·동의 배너·광고 키 게이트·앱 이름 통일·`friend` 제거·죽은 코드 정리와 산출물 B-1(AAB 811)·B-2(스토어 컷). ⚠️ **통째로 읽지 말 것** — 완료 항목의 근거 보관처다 |
-| `work/roadmap/260831-260905_DEV_TEST_SECTION_BUILDOUT.md` | 완결 · **봉인**(#63~#84). 개발자 테스트 섹션 2단 배치와 출시 산출물 B-1·B-2. ⚠️ **통째로 읽지 말 것** — 완료 항목의 근거 보관처다 |
-| `work/history/baas_solutions_comparison.md` | Firebase/Supabase/PocketBase/Appwrite/Convex BaaS 비교 조사 — Firebase 채택 근거 원본. 결론은 `LOGIN_AND_ACCOUNT_SYSTEM.md`에 반영됨 |
-| `work/history/baduk_app_architecture_recommendation.md` | 백엔드+AdMob 전략 추천 조사 — 결론은 `PREMIUM_MODE.md`/`LOGIN_AND_ACCOUNT_SYSTEM.md`에 반영됨 |
+
+⚠️ 같은 두 문서가 아래 「프로젝트 히스토리」 절에도 등재돼 있다(그쪽이 성격 설명까지 담은 정본이다).
 
 ## 작업 방법론 문서
 
@@ -228,7 +237,8 @@
 
 - 엔진 강도/검증 실험 리뷰(현재도 인용되는 것만) → `docs/engine/`
 - 누적 프로젝트 대화/작업 히스토리 → `work/history/`
-- 리팩토링 전략·작업 로그, 완료된 의사결정 서사 → **저장소에 두지 않는다** (아래 "문서 보존 정책" 참고). 지금 진행 중인 리팩토링이 있다면 `docs/refactoring/`을 다시 만들어 그 활성 로그만 담고, 끝나면 지운다.
+- 완료된 리팩토링 작업 로그·완료된 의사결정 서사 → **저장소에 두지 않는다** (아래 "문서 보존 정책" 참고).
+- 지금 진행 중인 리팩토링 로드맵 → `work/roadmap/`. ⚠️ **`docs/refactoring/`을 다시 만들지 말 것** — 그 폴더는 2026-08-17에 삭제됐고, 리팩토링 로드맵은 성격이 고도화 계획과 같아 `work/roadmap/`으로 흡수했다(아래 "리팩토링 로드맵은 어디로 가는가" 절).
 
 ## 문서 구조 정책 (2026-08-31부터)
 
@@ -384,20 +394,27 @@ git show <커밋해시>^:docs/archive/<경로>/<파일명>.md > <파일명>.md
 
 **2026-08-17에 제거한 것**: `docs/archive/`(5개 하위 폴더, 55개 파일) 전체, `docs/refactoring/`(8개 파일, 리팩토링 축 종료 확인) 전체. 삭제된 경로를 가리키던 교차 참조(`ENGINE_API_CALL_POLICY.md`, `GO_AI_COACH_ARCHITECTURE_ROADMAP.md`, `docs/work/history/THREAD_HISTORY.md`, `GOOGLE_PLAY_LAUNCH_PLAN.md`, `PREMIUM_MODE.md`, `LOGIN_AND_ACCOUNT_SYSTEM.md`)도 같은 날 함께 정리했다.
 
-**2026-08-18 정정**: 위 목록 중 `refactoring/LAYERED_ARCHITECTURE_REFACTORING_PLAN_260803_1500.md`는 삭제 판단이 틀렸다 — 원격 엔진/DePIN 로드맵이 아직 진행 중이었다(아래 "리팩토링 전략/진행 로그" 절). git 히스토리에서 복원했다. 이 사례가 남긴 교훈: 삭제 전에는 문서 이름/날짜만 보지 말고, **코드 주석이 그 문서를 아직 참조하는지**(`grep -r "문서파일명" --include="*.kt"`)까지 확인한다.
+**2026-08-18 정정**: 위 목록 중 `refactoring/LAYERED_ARCHITECTURE_REFACTORING_PLAN_260803_1500.md`(2026-09-23에 `work/plans/REMOTE_ENGINE_AND_LAYERING.md`로 개명·이동)는 삭제 판단이 틀렸다 — 원격 엔진/DePIN 로드맵이 아직 진행 중이었다(아래 "리팩토링 전략/진행 로그" 절). git 히스토리에서 복원했다. 이 사례가 남긴 교훈: 삭제 전에는 문서 이름/날짜만 보지 말고, **코드 주석이 그 문서를 아직 참조하는지**(`grep -r "문서파일명" --include="*.kt"`)까지 확인한다.
 
-## 리팩토링 전략/진행 로그 (`work/roadmap/` 안)
+## 리팩토링 로드맵은 어디로 가는가 (`docs/refactoring/`는 없다)
 
-⚠️ **`docs/refactoring/` 폴더는 없어졌다**(백로그 #58, 중분류 8 → 5). 리팩토링 로드맵은 성격이
-고도화 계획과 같아 `work/roadmap/`으로 흡수했다 — 폴더를 되살리지 말 것.
-여전히 **끝나면 삭제한다**는 보존 정책은 그대로 적용된다.
+⚠️ **`docs/refactoring/` 폴더는 없어졌다**(2026-08-17 삭제, 백로그 #58로 중분류 8 → 5).
+리팩토링 로드맵은 성격이 고도화 계획과 같아 `work/roadmap/`으로 흡수했다 — **폴더를 되살리지 말 것.**
+여전히 **끝나면 삭제한다**는 보존 정책은 그대로 적용된다. 이 문서 안의 다른 서술이 이와 어긋나면
+**이 절이 정본이다.**
 
-| 위치 | 용도 |
-| --- | --- |
-| `work/roadmap/LAYERED_ARCHITECTURE_REFACTORING_PLAN_260803_1500.md` | 7계층 원칙을 실제 코드에 단계적으로 반영하는 로드맵. Stage D(로컬/원격 `EngineCoreApi` 계약 대등화)·Stage E(`RemoteEngineSessionClient`, 원격 후보 선택)는 260804에 완료. Stage E-3(개발용 HTTP 참조 서버 + 디버그 토글 배선, 260818)까지 실제 대국 e2e 검증 완료. Stage F(물리적 분산·DePIN)는 전용 킥오프 문서로 분리(아래 행) |
-| `work/roadmap/REMOTE_ENGINE_MQ_TRANSPORT_KICKOFF_PLAN_260818_0825.md` | Stage F 전용 킥오프 — HTTP→MQ/Firestore 전환, 폰↔폰 지원, 세션 토픽 기반 정합성 체크·보상 점수 감사로그 설계. **결정 문서, 착수 전** — "맥북 파이썬으로 먼저 검증 후 앱 이식" 결정과 근거만 기록, 구현은 별도 승인 대기 |
+그 폴더에 있던 활성 계획서 둘은 2026-09-23에 각각 제자리를 찾아갔다.
 
-이 문서의 작업이 전부 끝나면(또는 Stage F까지 갈 경우 그 전용 킥오프 문서로 넘어가면) 이 문서도 다시 삭제한다.
+| 옛 이름 (`docs/refactoring/` 시절) | 지금 어디에 | 왜 그쪽인가 |
+| --- | --- | --- |
+| `LAYERED_ARCHITECTURE_REFACTORING_PLAN_260803_1500.md` | `work/plans/REMOTE_ENGINE_AND_LAYERING.md` (개명·이동) | Stage F-2(피어 신뢰·정산)가 사용자 승인 대기라 **완결일을 적을 수 없다** → 시간축(`roadmap/`)이 아니라 기능축(`plans/`) |
+| `REMOTE_ENGINE_MQ_TRANSPORT_KICKOFF_PLAN_260818_0825.md` | `work/roadmap/260818-_REMOTE_ENGINE_MQ_TRANSPORT.md` (개명) | 날짜 접두사가 없어 폴더의 **이름순 = 시간순** 정렬을 혼자 깨고 있었다 |
+
+⚠️ **두 문서 다 "착수 전"이 아니다**(2026-09-23 기준). MQ 킥오프의 6절 파이썬 프로토타입은
+2026-08-29에 완료돼 `main`에 들어와 있고(`scripts/remote-engine-mq-prototype/`), 남은 것은
+**앱 이식**(개발자 토글 UI, `EngineCoreApiFactory`에 새 transport 추가)뿐이며 그것이 별도 승인
+대기다. 계층 정렬 축(Stage A~C)의 실측 정본은
+`work/roadmap/260923-_ARCHITECTURE_DIAGNOSIS_AND_REFACTORING.md`로 넘어갔다.
 
 ## 엔진 딥다이브·검증 (`docs/engine/`)
 
@@ -408,10 +425,13 @@ git show <커밋해시>^:docs/archive/<경로>/<파일명>.md > <파일명>.md
 | --- | --- |
 | `engine/ENGINE_API_CALL_POLICY.md` | 엔진 호출 정책, 턴 분석, 캐시, 후보수 처리 기준 — `ENGINE.md`의 딥다이브 |
 | `engine/SCORE_AND_ENDGAME_DECISION.md` | 중간 형세, 사석 정리, 종국 계가 정책, 부심/주심 SLA — `OPERATIONS.md`·`ENGINE.md`가 함께 가리키는 딥다이브 |
-| `engine/ENGINE_SEARCH_TREE_REUSE_REVIEW.md` | KataGo search tree 재사용/격리 정책 검토 |
 | `engine/ENGINE_STRENGTH_RESEARCH.md` | **실측 근거 통합본**(백로그 #62) — B16/B32/B64 후보수·latency 최초 실측(2026-06-08), 레벨 강도 검토와 150판 매트릭스(2026-06-10~12), `refinePolicyMoves` 후보 확장 레버 검토(2026-08-17) 셋을 한 문서로 합쳤다. ⚠️ **본문은 원본 그대로**이고 머리말이 관통 결론·대체된 전제·열린 질문을 정리한다 |
 | `engine/measurements/` | 위 실측들의 raw/summary 로그. **깊이 규칙 적용 대상 밖** |
 | `engine/error-cases/` | 계가/사석/패스 관련 **재현 케이스 분석 3건**. ⚠️ raw 로그가 아니라 분석 문서라 `measurements/`가 아니고, `engine/SCORE_AND_ENDGAME_DECISION.md`가 이들을 인용한다 |
+
+⚠️ **`ENGINE_SEARCH_TREE_REUSE_REVIEW.md`는 2026-09-23에 삭제됐다**(`96ee12bd`). 미흡수분이던
+「다음 실험」 절은 `engine/ENGINE_API_CALL_POLICY.md`의 「search tree 재사용을 다시 켜려면 — 다음
+실험」으로 이관됐다. 옛 이름으로 찾고 있다면 그쪽을 볼 것.
 
 ## 마켓 등록 히스토리
 
