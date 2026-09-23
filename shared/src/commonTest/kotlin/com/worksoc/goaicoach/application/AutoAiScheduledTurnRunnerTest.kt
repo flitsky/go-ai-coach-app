@@ -63,6 +63,9 @@ import kotlinx.coroutines.runBlocking
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlin.test.Test
+import com.worksoc.goaicoach.testsupport.FakeEngineSessionClient
+import com.worksoc.goaicoach.testsupport.RecordingRuntimeEventLog
+import com.worksoc.goaicoach.application.diagnostic.NoopDiagnosticEventLog
 
 class AutoAiScheduledTurnRunnerTest {
     @Test
@@ -97,7 +100,7 @@ class AutoAiScheduledTurnRunnerTest {
                 playLevel = playLevel,
             ),
         )
-        val runtimeLog = ScheduledRunnerRuntimeEventLog()
+        val runtimeLog = RecordingRuntimeEventLog()
         val startedIds = mutableListOf<String>()
         val completedIds = mutableListOf<String>()
         var followUp: AutoAiTurnFollowUpRequest? = null
@@ -166,7 +169,7 @@ class AutoAiScheduledTurnRunnerTest {
         var autoAiState = AutoAiTurnUiState()
         var cancelled = false
         var launchedEngine = false
-        val runtimeLog = ScheduledRunnerRuntimeEventLog()
+        val runtimeLog = RecordingRuntimeEventLog()
         val runtimeState = GameSessionRuntimeState(
             playLevel = PlayLevelSetting(),
             engineProfile = EngineProfile(),
@@ -222,7 +225,7 @@ class AutoAiScheduledTurnRunnerTest {
         controllerStateProvider: () -> GameSessionControllerState,
         client: EngineSessionClient,
         runtimeState: GameSessionRuntimeState,
-        runtimeLog: ScheduledRunnerRuntimeEventLog,
+        runtimeLog: RecordingRuntimeEventLog,
         isEngineReady: () -> Boolean = { true },
         delayMillis: suspend (Long) -> Unit = {},
         applyScheduled: (AutoAiTurnRequestPlan.Schedule) -> Unit = {},
@@ -267,7 +270,7 @@ class AutoAiScheduledTurnRunnerTest {
                 )
             },
             runtimeEventLog = runtimeLog,
-            diagnosticEventLog = ScheduledRunnerNoopDiagnosticLog,
+            diagnosticEventLog = NoopDiagnosticEventLog,
             delayMillis = delayMillis,
             launchAutoAiEffect = { block -> runBlocking { block() } },
             applyScheduled = applyScheduled,
@@ -353,7 +356,7 @@ class AutoAiScheduledTurnRunnerTest {
 
 private class ScheduledRunnerFakeEngineClient(
     private val result: AutoAiTurnResult,
-) : EngineSessionClient {
+) : FakeEngineSessionClient() {
     var currentState: GameState? = null
         private set
     var playLevel: PlayLevelSetting? = null
@@ -362,51 +365,6 @@ private class ScheduledRunnerFakeEngineClient(
         private set
     var searchTimeSettings: SearchTimeSettings? = null
         private set
-
-    override val capabilities: EngineSessionCapabilities =
-        EngineSessionCapabilities(supportsDeviceBenchmark = false)
-
-    override fun positionAnalysisCacheStatsText(nowMillis: Long): String = "disabled"
-
-    override fun positionAnalysisCacheQualityFor(
-        state: GameState,
-        limit: AnalysisLimit,
-        searchMode: EngineSearchMode,
-        nowMillis: Long,
-    ): PositionAnalysisCacheQuality? = null
-
-    override suspend fun startSession(
-        profile: EngineProfile,
-        state: GameState,
-    ): EngineStartupResult = error("not used")
-
-    override suspend fun startNewGame(
-        profile: EngineProfile,
-        boardSize: BoardSize,
-        ruleset: Ruleset,
-        handicapCount: Int,
-        komi: Double,
-    ): EngineStartupResult = error("not used")
-
-    override suspend fun analyzePosition(
-        state: GameState,
-        limit: AnalysisLimit,
-        searchMode: EngineSearchMode,
-    ): AnalysisResult = error("not used")
-
-    override suspend fun optimizePositionAnalysisCache(
-        plan: PositionAnalysisCacheOptimizationPlan,
-    ): PositionAnalysisCacheOptimizationResult = error("not used")
-
-    override suspend fun syncAndEstimateGraphScore(
-        state: GameState,
-        profile: EngineProfile,
-    ): ScoreEstimate = error("not used")
-
-    override suspend fun configureSyncAndEstimateGraphScore(
-        state: GameState,
-        profile: EngineProfile,
-    ): ScoreEstimate = error("not used")
 
     override suspend fun runAutoAiTurn(
         currentState: GameState,
@@ -422,59 +380,4 @@ private class ScheduledRunnerFakeEngineClient(
         this.searchTimeSettings = searchTimeSettings
         return result
     }
-
-    override suspend fun syncAfterHumanMove(
-        afterMove: GameState,
-        profile: EngineProfile,
-        move: Move,
-        previousReviewCandidates: List<CandidateMove>,
-    ): LocalEngineMoveResult = error("not used")
-
-    override suspend fun estimateScoreForState(
-        state: GameState,
-        profile: EngineProfile,
-        syncFirst: Boolean,
-    ): ScoreEstimate = error("not used")
-
-    override suspend fun resolveEndgameForState(
-        state: GameState,
-        profile: EngineProfile,
-        prePassCandidates: List<CandidateMove>,
-    ): AiEndgameResolution = error("not used")
-
-    override suspend fun undoMove(): EngineStatus = error("not used")
-
-    override suspend fun runStartupBenchmark(
-        restoreState: GameState,
-        nowMillis: Long,
-        onProgress: suspend (EngineBenchmarkProgress) -> Unit,
-    ): EngineBenchmarkProfile = error("not used")
-}
-
-private class ScheduledRunnerRuntimeEventLog : RuntimeEventLogPort {
-    val events = mutableListOf<String>()
-
-    override fun append(
-        event: String,
-        nowMillis: Long,
-    ) {
-        events += event
-    }
-
-    override fun readText(): String = events.joinToString("\n")
-
-    override fun clear() {
-        events.clear()
-    }
-}
-
-private object ScheduledRunnerNoopDiagnosticLog : DiagnosticEventLogPort {
-    override fun append(
-        event: DiagnosticEvent,
-        nowMillis: Long,
-    ) = Unit
-
-    override fun readText(): String = ""
-
-    override fun clear() = Unit
 }

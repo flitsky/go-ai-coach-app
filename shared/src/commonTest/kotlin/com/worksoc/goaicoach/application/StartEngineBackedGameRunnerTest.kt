@@ -47,6 +47,9 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.test.Test
+import com.worksoc.goaicoach.testsupport.FakeEngineSessionClient
+import com.worksoc.goaicoach.testsupport.RecordingRuntimeEventLog
+import com.worksoc.goaicoach.application.diagnostic.NoopDiagnosticEventLog
 
 class StartEngineBackedGameRunnerTest {
     @Test
@@ -60,7 +63,7 @@ class StartEngineBackedGameRunnerTest {
         )
         val runtime = runtimeSelection()
         val client = RunnerFakeStartGameEngineClient()
-        val runtimeLog = RunnerRecordingRuntimeEventLog()
+        val runtimeLog = RecordingRuntimeEventLog()
         var appliedRuntime: RuntimePlayLevelSelection? = null
         var launchedOperation: EngineOperationRequest? = null
         var followUpState: GameState? = null
@@ -77,7 +80,7 @@ class StartEngineBackedGameRunnerTest {
                 sessionGeneration = 12L,
                 runtimeContextProvider = { runtimeContext(initialState, runtime) },
                 runtimeEventLog = runtimeLog,
-                diagnosticEventLog = RunnerNoopDiagnosticEventLog,
+                diagnosticEventLog = NoopDiagnosticEventLog,
                 applyRuntime = { selection -> appliedRuntime = selection },
                 launchEngineOperation = { operation, block ->
                     launchedOperation = operation
@@ -129,7 +132,7 @@ class StartEngineBackedGameRunnerTest {
         val client = RunnerFakeStartGameEngineClient(
             newGameError = IllegalStateException("engine failed"),
         )
-        val runtimeLog = RunnerRecordingRuntimeEventLog()
+        val runtimeLog = RecordingRuntimeEventLog()
         var resetMessage: String? = null
         var followUpState: GameState? = null
 
@@ -145,7 +148,7 @@ class StartEngineBackedGameRunnerTest {
                 sessionGeneration = 3L,
                 runtimeContextProvider = { runtimeContext(initialState, runtime) },
                 runtimeEventLog = runtimeLog,
-                diagnosticEventLog = RunnerNoopDiagnosticEventLog,
+                diagnosticEventLog = NoopDiagnosticEventLog,
                 applyRuntime = {},
                 launchEngineOperation = { _, block -> runBlocking { block() } },
                 resetLocalGame = { message, ruleset, size ->
@@ -219,7 +222,7 @@ class StartEngineBackedGameRunnerTest {
 
 private class RunnerFakeStartGameEngineClient(
     private val newGameError: Throwable? = null,
-) : EngineSessionClient {
+) : FakeEngineSessionClient() {
     var newGameProfile: EngineProfile? = null
         private set
     var newGameBoardSize: BoardSize? = null
@@ -227,27 +230,11 @@ private class RunnerFakeStartGameEngineClient(
     var newGameRuleset: Ruleset? = null
         private set
 
-    override val capabilities: EngineSessionCapabilities =
-        EngineSessionCapabilities(
-            supportsDeviceBenchmark = false,
-            backend = EngineSessionBackend.LocalEngine,
-        )
-
-    override fun positionAnalysisCacheStatsText(nowMillis: Long): String = "disabled"
-
-    override fun positionAnalysisCacheQualityFor(
-        state: GameState,
-        limit: AnalysisLimit,
-        searchMode: EngineSearchMode,
-        nowMillis: Long,
-    ): PositionAnalysisCacheQuality? = null
-
-    override suspend fun startSession(
-        profile: EngineProfile,
-        state: GameState,
-    ): EngineStartupResult =
-        error("not used")
-
+    /**
+     * `scoreSnapshot = null`은 축약이 아니다 — 프로덕션
+     * `LocalEngineCoreSessionDelegate.startNewGame`이 초기 점수 추정에 실패하면
+     * `runCatching { ... }.getOrNull()`로 정확히 이 값을 돌려준다.
+     */
     override suspend fun startNewGame(
         profile: EngineProfile,
         boardSize: BoardSize,
@@ -264,98 +251,4 @@ private class RunnerFakeStartGameEngineClient(
             scoreSnapshot = null,
         )
     }
-
-    override suspend fun analyzePosition(
-        state: GameState,
-        limit: AnalysisLimit,
-        searchMode: EngineSearchMode,
-    ): AnalysisResult =
-        error("not used")
-
-    override suspend fun optimizePositionAnalysisCache(
-        plan: PositionAnalysisCacheOptimizationPlan,
-    ): PositionAnalysisCacheOptimizationResult =
-        error("not used")
-
-    override suspend fun syncAndEstimateGraphScore(
-        state: GameState,
-        profile: EngineProfile,
-    ): ScoreEstimate =
-        error("not used")
-
-    override suspend fun configureSyncAndEstimateGraphScore(
-        state: GameState,
-        profile: EngineProfile,
-    ): ScoreEstimate =
-        error("not used")
-
-    override suspend fun runAutoAiTurn(
-        currentState: GameState,
-        playLevel: PlayLevelSetting,
-        currentProfile: EngineProfile,
-        searchTimeSettings: SearchTimeSettings,
-        searchMode: EngineSearchMode,
-        isolateSearchCache: Boolean,
-    ): AutoAiTurnResult =
-        error("not used")
-
-    override suspend fun syncAfterHumanMove(
-        afterMove: GameState,
-        profile: EngineProfile,
-        move: Move,
-        previousReviewCandidates: List<CandidateMove>,
-    ): LocalEngineMoveResult =
-        error("not used")
-
-    override suspend fun estimateScoreForState(
-        state: GameState,
-        profile: EngineProfile,
-        syncFirst: Boolean,
-    ): ScoreEstimate =
-        error("not used")
-
-    override suspend fun resolveEndgameForState(
-        state: GameState,
-        profile: EngineProfile,
-        prePassCandidates: List<CandidateMove>,
-    ): AiEndgameResolution =
-        error("not used")
-
-    override suspend fun undoMove(): EngineStatus =
-        error("not used")
-
-    override suspend fun runStartupBenchmark(
-        restoreState: GameState,
-        nowMillis: Long,
-        onProgress: suspend (EngineBenchmarkProgress) -> Unit,
-    ): EngineBenchmarkProfile =
-        error("not used")
-}
-
-private class RunnerRecordingRuntimeEventLog : RuntimeEventLogPort {
-    val events = mutableListOf<String>()
-
-    override fun append(
-        event: String,
-        nowMillis: Long,
-    ) {
-        events += event
-    }
-
-    override fun readText(): String = events.joinToString("\n")
-
-    override fun clear() {
-        events.clear()
-    }
-}
-
-private object RunnerNoopDiagnosticEventLog : DiagnosticEventLogPort {
-    override fun append(
-        event: DiagnosticEvent,
-        nowMillis: Long,
-    ) = Unit
-
-    override fun readText(): String = ""
-
-    override fun clear() = Unit
 }

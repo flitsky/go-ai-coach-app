@@ -16,6 +16,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.test.Test
+import com.worksoc.goaicoach.testsupport.CannedRuntimeEventLog
 
 class GameSettingsControllerTest {
     @Test
@@ -37,7 +38,7 @@ class GameSettingsControllerTest {
             isGameEnded = { false },
             defaultPlayLevel = PlayLevelSetting(),
             isEngineBusy = { false },
-            runtimeEventLog = ControllerFakeRuntimeEventLogPort(),
+            runtimeEventLog = CannedRuntimeEventLog(),
             currentRuntimeLogContext = {
                 RuntimeLogContext(
                     engineName = "KataGo",
@@ -105,7 +106,7 @@ class GameSettingsControllerTest {
             isGameEnded = { false },
             defaultPlayLevel = PlayLevelSetting(),
             isEngineBusy = { true },
-            runtimeEventLog = ControllerFakeRuntimeEventLogPort(),
+            runtimeEventLog = CannedRuntimeEventLog(),
             currentRuntimeLogContext = {
                 RuntimeLogContext(
                     engineName = "KataGo",
@@ -163,7 +164,7 @@ class GameSettingsControllerTest {
             isGameEnded = { false },
             defaultPlayLevel = PlayLevelSetting(),
             isEngineBusy = { false },
-            runtimeEventLog = ControllerFakeRuntimeEventLogPort(),
+            runtimeEventLog = CannedRuntimeEventLog(),
             currentRuntimeLogContext = {
                 RuntimeLogContext(
                     engineName = "KataGo",
@@ -221,7 +222,7 @@ class GameSettingsControllerTest {
             isGameEnded = { false },
             defaultPlayLevel = PlayLevelSetting(),
             isEngineBusy = { true },
-            runtimeEventLog = ControllerFakeRuntimeEventLogPort(),
+            runtimeEventLog = CannedRuntimeEventLog(),
             currentRuntimeLogContext = {
                 RuntimeLogContext(
                     engineName = "KataGo",
@@ -391,7 +392,7 @@ class GameSettingsControllerTest {
         isGameEnded = isGameEnded,
         defaultPlayLevel = PlayLevelSetting(),
         isEngineBusy = { false },
-        runtimeEventLog = ControllerFakeRuntimeEventLogPort(),
+        runtimeEventLog = CannedRuntimeEventLog(),
         currentRuntimeLogContext = {
             RuntimeLogContext(
                 engineName = "KataGo",
@@ -446,9 +447,3 @@ private fun defaultTestCoreState(): GameSessionCoreState =
         moveReviewState = GameSessionMoveReviewState.reset("", ""),
         engineMessage = ""
     )
-
-private class ControllerFakeRuntimeEventLogPort : RuntimeEventLogPort {
-    override fun append(event: String, nowMillis: Long) = Unit
-    override fun readText(): String = ""
-    override fun clear() = Unit
-}

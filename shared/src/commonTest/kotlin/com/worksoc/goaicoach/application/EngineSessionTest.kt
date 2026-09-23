@@ -31,6 +31,7 @@ import kotlinx.coroutines.runBlocking
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlin.test.Test
+import com.worksoc.goaicoach.testsupport.RecordingDiagnosticEventLog
 
 class EngineSessionTest {
     @Test
@@ -760,22 +761,4 @@ private class InMemoryTrustedPositionAnalysisCacheProvider(
 
     override fun statsText(nowMillis: Long): String =
         "trustedEntries=${entryMap.size}"
-}
-
-private class RecordingDiagnosticEventLog : DiagnosticEventLogPort {
-    val events = mutableListOf<DiagnosticEvent>()
-
-    override fun append(
-        event: DiagnosticEvent,
-        nowMillis: Long,
-    ) {
-        events += event
-    }
-
-    override fun readText(): String =
-        events.joinToString("\n") { event -> event.summary() }
-
-    override fun clear() {
-        events.clear()
-    }
 }

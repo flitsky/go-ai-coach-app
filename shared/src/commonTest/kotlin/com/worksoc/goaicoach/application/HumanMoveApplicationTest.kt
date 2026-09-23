@@ -39,6 +39,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.test.Test
+import com.worksoc.goaicoach.testsupport.FakeEngineSessionClient
 
 class HumanMoveApplicationTest {
     @Test
@@ -583,7 +584,7 @@ class HumanMoveApplicationTest {
 private class FakeHumanEngineSessionClient(
     private val result: LocalEngineMoveResult,
     private val failure: Throwable? = null,
-) : EngineSessionClient {
+) : FakeEngineSessionClient() {
     var afterMove: GameState? = null
         private set
     var profile: EngineProfile? = null
@@ -592,68 +593,6 @@ private class FakeHumanEngineSessionClient(
         private set
     var previousReviewCandidates: List<CandidateMove>? = null
         private set
-
-    override val capabilities: EngineSessionCapabilities =
-        EngineSessionCapabilities(supportsDeviceBenchmark = false)
-
-    override fun positionAnalysisCacheStatsText(nowMillis: Long): String =
-        "disabled"
-
-    override fun positionAnalysisCacheQualityFor(
-        state: GameState,
-        limit: AnalysisLimit,
-        searchMode: EngineSearchMode,
-        nowMillis: Long,
-    ): PositionAnalysisCacheQuality? = null
-
-    override suspend fun startSession(
-        profile: EngineProfile,
-        state: GameState,
-    ): EngineStartupResult =
-        error("not used")
-
-    override suspend fun startNewGame(
-        profile: EngineProfile,
-        boardSize: BoardSize,
-        ruleset: Ruleset,
-        handicapCount: Int,
-        komi: Double,
-    ): EngineStartupResult =
-        error("not used")
-
-    override suspend fun analyzePosition(
-        state: GameState,
-        limit: AnalysisLimit,
-        searchMode: EngineSearchMode,
-    ): AnalysisResult =
-        error("not used")
-
-    override suspend fun optimizePositionAnalysisCache(
-        plan: PositionAnalysisCacheOptimizationPlan,
-    ): PositionAnalysisCacheOptimizationResult =
-        error("not used")
-
-    override suspend fun syncAndEstimateGraphScore(
-        state: GameState,
-        profile: EngineProfile,
-    ): ScoreEstimate =
-        error("not used")
-
-    override suspend fun configureSyncAndEstimateGraphScore(
-        state: GameState,
-        profile: EngineProfile,
-    ): ScoreEstimate =
-        error("not used")
-
-    override suspend fun runAutoAiTurn(
-        currentState: GameState,
-        playLevel: PlayLevelSetting,
-        currentProfile: EngineProfile,
-        searchTimeSettings: SearchTimeSettings,
-        searchMode: EngineSearchMode,
-        isolateSearchCache: Boolean,
-    ): AutoAiTurnResult =
-        error("not used")
 
     override suspend fun syncAfterHumanMove(
         afterMove: GameState,
@@ -668,28 +607,4 @@ private class FakeHumanEngineSessionClient(
         failure?.let { throw it }
         return result
     }
-
-    override suspend fun estimateScoreForState(
-        state: GameState,
-        profile: EngineProfile,
-        syncFirst: Boolean,
-    ): ScoreEstimate =
-        error("not used")
-
-    override suspend fun resolveEndgameForState(
-        state: GameState,
-        profile: EngineProfile,
-        prePassCandidates: List<CandidateMove>,
-    ): AiEndgameResolution =
-        error("not used")
-
-    override suspend fun undoMove(): EngineStatus =
-        error("not used")
-
-    override suspend fun runStartupBenchmark(
-        restoreState: GameState,
-        nowMillis: Long,
-        onProgress: suspend (EngineBenchmarkProgress) -> Unit,
-    ): EngineBenchmarkProfile =
-        error("not used")
 }

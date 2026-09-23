@@ -21,6 +21,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.test.Test
+import com.worksoc.goaicoach.testsupport.RecordingDiagnosticEventLog
 
 class EndgameResolverTest {
     @Test
@@ -70,7 +71,7 @@ class EndgameResolverTest {
                     Move.Pass(StoneColor.White),
                 ),
             )
-        val log = FakeDiagnosticEventLog()
+        val log = RecordingDiagnosticEventLog()
         val engine = FakeEndgameJudgeGateway(finalScoreRaw = "W+100.5")
 
         val resolution = resolveAiEndgame(
@@ -90,15 +91,6 @@ class EndgameResolverTest {
         assertEquals("W+100.5", event.context["engineFinalScore"])
         assertEquals(localRaw, event.context["localScore"])
     }
-}
-
-private class FakeDiagnosticEventLog : DiagnosticEventLogPort {
-    val events = mutableListOf<com.worksoc.goaicoach.shared.diagnostic.DiagnosticEvent>()
-    override fun append(event: com.worksoc.goaicoach.shared.diagnostic.DiagnosticEvent, nowMillis: Long) {
-        events.add(event)
-    }
-    override fun readText(): String = ""
-    override fun clear() { events.clear() }
 }
 
 private class FakeEndgameJudgeGateway(

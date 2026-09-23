@@ -41,6 +41,8 @@ import com.worksoc.goaicoach.shared.diagnostic.DiagnosticSeverity
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlin.test.Test
+import com.worksoc.goaicoach.testsupport.RecordingRuntimeEventLog
+import com.worksoc.goaicoach.testsupport.RecordingDiagnosticEventLog
 
 class RuntimeEventApplicationTest {
     @Test
@@ -221,12 +223,12 @@ class RuntimeEventApplicationTest {
             nowMillis = 123L,
         )
 
-        assertEquals(1, runtimeLog.events.size)
-        assertTrue(runtimeLog.events.single().first.contains("event=engine_operation_discarded"))
-        assertEquals(123L, runtimeLog.events.single().second)
-        assertEquals(1, diagnosticLog.events.size)
-        assertEquals("engine.operation.discarded", diagnosticLog.events.single().first.code)
-        assertEquals(123L, diagnosticLog.events.single().second)
+        assertEquals(1, runtimeLog.entries.size)
+        assertTrue(runtimeLog.entries.single().first.contains("event=engine_operation_discarded"))
+        assertEquals(123L, runtimeLog.entries.single().second)
+        assertEquals(1, diagnosticLog.entries.size)
+        assertEquals("engine.operation.discarded", diagnosticLog.entries.single().first.code)
+        assertEquals(123L, diagnosticLog.entries.single().second)
     }
 
     @Test
@@ -374,39 +376,4 @@ class RuntimeEventApplicationTest {
             turnTimeText = "B=0.0s W=0.0s current=${gameState.nextPlayer.label}",
         )
 
-    private class RecordingRuntimeEventLog : RuntimeEventLogPort {
-        val events = mutableListOf<Pair<String, Long>>()
-
-        override fun append(
-            event: String,
-            nowMillis: Long,
-        ) {
-            events += event to nowMillis
-        }
-
-        override fun readText(): String =
-            events.joinToString("\n") { it.first }
-
-        override fun clear() {
-            events.clear()
-        }
-    }
-
-    private class RecordingDiagnosticEventLog : DiagnosticEventLogPort {
-        val events = mutableListOf<Pair<DiagnosticEvent, Long>>()
-
-        override fun append(
-            event: DiagnosticEvent,
-            nowMillis: Long,
-        ) {
-            events += event to nowMillis
-        }
-
-        override fun readText(): String =
-            events.joinToString("\n") { it.first.summary() }
-
-        override fun clear() {
-            events.clear()
-        }
-    }
 }

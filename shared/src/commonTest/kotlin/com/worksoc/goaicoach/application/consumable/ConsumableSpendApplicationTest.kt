@@ -9,6 +9,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import com.worksoc.goaicoach.testsupport.FakePremiumStore
 
 private const val Now = 1_700_000_000_000L
 
@@ -23,19 +24,6 @@ private class FakeConsumableStore(
     }
 
     override fun load(): ConsumableInventory = inventory
-}
-
-private class FakePremiumStore(
-    var state: PremiumState = PremiumState(),
-) : PremiumStateStorePort {
-    var saveCount = 0
-
-    override fun save(state: PremiumState) {
-        this.state = state
-        saveCount++
-    }
-
-    override fun load(): PremiumState = state
 }
 
 class ConsumableSpendApplicationTest {

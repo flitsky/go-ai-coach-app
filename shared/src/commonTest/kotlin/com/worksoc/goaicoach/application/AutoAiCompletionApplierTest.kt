@@ -32,6 +32,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import kotlin.test.Test
+import com.worksoc.goaicoach.testsupport.RecordingRuntimeEventLog
 
 class AutoAiCompletionApplierTest {
     @Test
@@ -44,7 +45,7 @@ class AutoAiCompletionApplierTest {
             state = after,
             shouldResolveEndgame = false,
         )
-        val runtimeLog = CompletionRuntimeLog()
+        val runtimeLog = RecordingRuntimeEventLog()
         var appliedDisplay: AutoAiTurnDisplayPlan? = null
         var appliedTurnTime: TurnTimeMoveUpdate? = null
 
@@ -99,7 +100,7 @@ class AutoAiCompletionApplierTest {
     @Test
     fun failureLogsAndAppliesFailureDisplay() {
         val failure = IllegalStateException("AI failed")
-        val runtimeLog = CompletionRuntimeLog()
+        val runtimeLog = RecordingRuntimeEventLog()
         var appliedFailure: Throwable? = null
 
         val followUp = runBlocking {
@@ -138,7 +139,7 @@ class AutoAiCompletionApplierTest {
     private fun baseRequest(
         before: GameState = GameState.empty(),
         completion: AutoAiTurnCompletionPlan,
-        runtimeLog: CompletionRuntimeLog = CompletionRuntimeLog(),
+        runtimeLog: RecordingRuntimeEventLog = RecordingRuntimeEventLog(),
         applyTurnTimeUpdate: (TurnTimeMoveUpdate) -> Unit = {},
         applyTurnDisplay: (AutoAiTurnDisplayPlan) -> AutoAiTurnFollowUpPlan = { AutoAiTurnFollowUpPlan.None },
         resolveEndgame: suspend (AutoAiTurnEndgamePlan.Resolve) -> Unit = {},
@@ -217,21 +218,4 @@ class AutoAiCompletionApplierTest {
             endgamePrePassCandidates = emptyList(),
             nextAnalysisState = state.takeUnless { shouldResolveEndgame },
         )
-}
-
-private class CompletionRuntimeLog : RuntimeEventLogPort {
-    val events = mutableListOf<String>()
-
-    override fun append(
-        event: String,
-        nowMillis: Long,
-    ) {
-        events += event
-    }
-
-    override fun readText(): String = events.joinToString("\n")
-
-    override fun clear() {
-        events.clear()
-    }
 }

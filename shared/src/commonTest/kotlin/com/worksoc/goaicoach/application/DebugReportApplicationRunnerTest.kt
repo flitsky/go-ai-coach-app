@@ -30,6 +30,8 @@ import com.worksoc.goaicoach.shared.diagnostic.DiagnosticEvent
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlin.test.Test
+import com.worksoc.goaicoach.testsupport.CannedRuntimeEventLog
+import com.worksoc.goaicoach.testsupport.CannedDiagnosticEventLog
 
 class DebugReportApplicationRunnerTest {
     @Test
@@ -51,8 +53,8 @@ class DebugReportApplicationRunnerTest {
                 isEngineBusy = false,
                 turnTimeText = { "Time B 1.0s / W 2.0s" },
                 turnTimeDebugText = { nowMillis -> "debug now=$nowMillis" },
-                runtimeEventLog = FakeRuntimeEventLogPort("runtime log"),
-                diagnosticEventLog = FakeDiagnosticEventLogPort("diagnostic log"),
+                runtimeEventLog = CannedRuntimeEventLog("runtime log"),
+                diagnosticEventLog = CannedDiagnosticEventLog("diagnostic log"),
                 clipboard = clipboard,
                 mirror = mirror,
                 userNotice = notice,
@@ -100,8 +102,8 @@ class DebugReportApplicationRunnerTest {
                 isEngineBusy = false,
                 turnTimeText = { "Time B 1.0s / W 2.0s" },
                 turnTimeDebugText = { nowMillis -> "debug now=$nowMillis" },
-                runtimeEventLog = FakeRuntimeEventLogPort("runtime log"),
-                diagnosticEventLog = FakeDiagnosticEventLogPort("diagnostic log"),
+                runtimeEventLog = CannedRuntimeEventLog("runtime log"),
+                diagnosticEventLog = CannedDiagnosticEventLog("diagnostic log"),
                 clipboard = clipboard,
                 mirror = mirror,
                 userNotice = notice,
@@ -152,32 +154,6 @@ class DebugReportApplicationRunnerTest {
             positionCacheOptimization = PositionAnalysisCacheOptimizationUiState(),
         )
     }
-}
-
-private class FakeRuntimeEventLogPort(
-    private val text: String,
-) : RuntimeEventLogPort {
-    override fun append(
-        event: String,
-        nowMillis: Long,
-    ) = Unit
-
-    override fun readText(): String = text
-
-    override fun clear() = Unit
-}
-
-private class FakeDiagnosticEventLogPort(
-    private val text: String,
-) : DiagnosticEventLogPort {
-    override fun append(
-        event: DiagnosticEvent,
-        nowMillis: Long,
-    ) = Unit
-
-    override fun readText(): String = text
-
-    override fun clear() = Unit
 }
 
 private class RunnerFakeClipboardPort : ClipboardPort {

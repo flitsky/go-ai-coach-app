@@ -19,6 +19,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
+import com.worksoc.goaicoach.testsupport.FakePremiumStore
 
 private class FakeAttendanceStore(initial: AttendanceState = AttendanceState()) : AttendanceStorePort {
     var stored: AttendanceState = initial
@@ -29,17 +30,6 @@ private class FakeAttendanceStore(initial: AttendanceState = AttendanceState()) 
     }
 
     override fun load(): AttendanceState = stored
-}
-
-private class FakePremiumStore(initial: PremiumState = PremiumState()) : PremiumStateStorePort {
-    var stored: PremiumState = initial
-        private set
-
-    override fun save(state: PremiumState) {
-        stored = state
-    }
-
-    override fun load(): PremiumState = stored
 }
 
 private class FakeConsumableStore(initial: ConsumableInventory = ConsumableInventory()) : ConsumableStorePort {

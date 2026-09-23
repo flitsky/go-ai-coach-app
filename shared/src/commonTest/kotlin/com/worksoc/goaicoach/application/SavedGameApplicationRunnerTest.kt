@@ -17,11 +17,12 @@ import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import kotlin.test.Test
+import com.worksoc.goaicoach.testsupport.FakeSavedGameStore
 
 class SavedGameApplicationRunnerTest {
     @Test
     fun promptRunnerLoadsStoreAndAppliesPrompt() {
-        val store = RecordingSavedGameStore()
+        val store = FakeSavedGameStore()
         val snapshot = savedGameSnapshot()
         store.snapshot = snapshot
         var applied: SavedSessionPromptPlan? = null
@@ -40,7 +41,7 @@ class SavedGameApplicationRunnerTest {
 
     @Test
     fun promptRunnerDoesNotOfferResumePromptForEndedGameSnapshot() {
-        val store = RecordingSavedGameStore()
+        val store = FakeSavedGameStore()
         store.snapshot = savedGameSnapshot().copy(finalScoreJudgement = finalScoreJudgement())
         var applied: SavedSessionPromptPlan? = null
 
@@ -73,7 +74,7 @@ class SavedGameApplicationRunnerTest {
 
     @Test
     fun persistenceRunnerBuildsAndAppliesStoreAction() {
-        val store = RecordingSavedGameStore()
+        val store = FakeSavedGameStore()
         val state = playableState()
 
         runSavedGamePersistenceApplication(
@@ -99,7 +100,7 @@ class SavedGameApplicationRunnerTest {
 
     @Test
     fun persistenceRunnerSavesEndedGameSnapshotWhenJudgementIsPresent() {
-        val store = RecordingSavedGameStore()
+        val store = FakeSavedGameStore()
         val state = playableState()
         val judgement = finalScoreJudgement()
 
@@ -174,25 +175,6 @@ class SavedGameApplicationRunnerTest {
         assertEquals(restore?.gameState, restored.gameState)
         assertEquals(restore?.runtime?.engineProfile, restored.engineProfile)
         assertEquals(true, restored.syncEngineAfterRestore)
-    }
-
-    private class RecordingSavedGameStore : SavedGameStorePort {
-        val calls = mutableListOf<String>()
-        var snapshot: SavedGameSnapshot? = null
-
-        override fun save(snapshot: SavedGameSnapshot) {
-            this.snapshot = snapshot
-            calls += "save:${snapshot.savedAtMillis}"
-        }
-
-        override fun load(): SavedGameSnapshot? = snapshot
-
-        override fun clear() {
-            snapshot = null
-            calls += "clear"
-        }
-
-        override fun readRawJson(): String? = null
     }
 
     private fun savedGameSnapshot(): SavedGameSnapshot =
