@@ -197,6 +197,10 @@ export JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home
 
 - **75** iOS 컴파일 게이트는 옳지만 `make test`(유일한 릴리스 게이트)에 넣지 말 것 — 아무것도 출하하지 않는 타깃의 컴파일 실패로 안드로이드 릴리스가 막히면 안 된다. 별도 `make test-ios`로 분리, iOS가 실제로 출하하는 날 되돌릴 것
 - **76** 죽은 스캔을 `require`로 되살리는 조치는 실행 즉시 초록이 아니라 위반이 쏟아질 각오를 하고 넣을 것 — 오래 검사되지 않던 구간의 실제 위반이 무더기로 드러날 수 있다. `make test`가 유일한 릴리스 게이트라 드러난 위반은 **같은 스레드가 끝까지 초록으로 만들고 닫아야** 한다(위반 0건은 보장이 아니라 그때의 결과일 뿐)
+- **77** 공유 트리에서 **음성 대조(고의 파손)는 `--rerun-tasks` 없이 거짓 판독을 낸다** — Gradle이 소스 변경을 무시하고 컴파일을 `UP-TO-DATE`로 건너뛰어 "멀쩡한데 안 깨진다"가 나온다. 함정 24의 거울상(빨개져야 할 것이 안 빨개지는데 그게 안전으로 읽힌다). 로그에서 컴파일이 실제로 돌았는지 눈으로 확인할 것
+- **78** 공유 트리에서 **`build/test-results`의 테스트 개수는 못 믿는다** — 다른 세션이 필터 걸린 테스트를 돌려 덮어쓴다. 개수 대조는 빌드 산출물이 아니라 **소스에서** 센다(`git ls-tree`로 두 리비전의 `@Test`를 세는 식)
+- **79** Lint `abortOnError=true`는 **새 Error만 막고 새 Warning은 통과시킨다**(`warningsAsErrors=false`이므로). 얻는 보장은 "새 Error 0"이지 "새 경고 0"이 아니다. 덤: `NewApi`는 인라인되는 상수 참조를 건너뛰어 음성 대조가 안 걸린다 — 실제 메서드 호출로 해야 한다
+- **80** `git add <경로>` 뒤의 `git commit -m`도 안전하지 않다 — `add`와 `commit` 사이에 다른 세션이 스테이징하면 삼켜진다(실제 35파일). **`git commit <경로> -m`** 으로 커밋할 것. ⚠️ **전문의 "인덱스는 작업 트리 전체가 공유한다"는 너무 넓다**(2026-09-24 교정): 인덱스는 **워크트리마다 별개**이고 이 함정은 **같은 워크트리를 쓰는 세션끼리만** 해당한다. `git worktree list`로 확인할 것 — `.claude/worktrees/*`·`.release-build`의 세션과는 인덱스를 공유하지 않는다. ⚠️ 남의 트리가 깨끗한지 **내 트리에서 `git status`로 재지 말 것** — `git -C <그 워크트리> status`로 트리를 지목해야 한다
 
 **광고·결제**
 - **8** `AndroidBillingClient` 공유 — 상품 종류는 **호출부가 선언**(#136에서 기본값 제거)
@@ -531,7 +535,7 @@ _(없음)_
 | 8세대(봉인) — 완료 이력·함정 58~66 전문·해소된 U | `260919-260922_STUDY_CONTENT_AND_1_0_RELEASE.md` |
 | **리팩토링 진행** — 이 트랙의 일감·진척은 전부 저기 있다(번호 체계가 다르다) | `260923-_REFACTORING_BACKLOG.md` — 「진행 중」 → 「예정사항」 순으로 집는다 · 착수 프로토콜과 함정 색인이 그 안에 있다 |
 | **아키텍처 실측과 처방** — 계층 일감은 여기서 나온다 | `260923-_ARCHITECTURE_DIAGNOSIS_AND_REFACTORING.md` — §1 무엇이 실제로 깨져 있나 · §3 목표 아키텍처 · §4 착수 전 함정(→ `PITFALLS.md` 67~76) |
-| **함정 전문 1~76** | `docs/spec/PITFALLS.md` — 번호로 찾아 그 번호만 편다 |
+| **함정 전문 1~80** | `docs/spec/PITFALLS.md` — 번호로 찾아 그 번호만 편다 |
 | 출시·콘솔 절차, 등재문, 체크리스트 | `work/plans/GOOGLE_PLAY_LAUNCH_PLAN.md` · `work/play-store-assets/store_listing.txt` |
 | 화면 구조·기능 명세 | `docs/spec/APP_IA_AND_UI_SPEC.md` |
 | 권한·게이팅 정책 | `docs/spec/FEATURE_ACCESS_PRINCIPLES.md` |
