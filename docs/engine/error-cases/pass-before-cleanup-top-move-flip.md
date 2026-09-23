@@ -1,5 +1,7 @@
 # 오류 케이스: 사석 정리 전 pass로 최종 승자가 뒤집히는 상황
 
+> ✅ **해소됨 — 열린 버그가 아니다.** `EndgameRegressionTest.kt`의 `passBeforeCleanupUsesPrePassTopMoveWhenLocalFinalFlipsWinner`와 `EndgameScoreSelectorTest.kt`의 `selectsUnsettledPrePassTopMoveEstimateWhenPassFinalConflictsWithBestContinuation`이 이 케이스를 고정하고 있다(둘 다 `shared/src/commonTest/.../shared/`). 아래는 그 단언의 근거 기록이다.
+
 작성일: 2026-06-06
 
 ## 원본 로그

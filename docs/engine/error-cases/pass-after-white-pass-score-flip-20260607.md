@@ -1,5 +1,7 @@
 # Pass 후 W+1.5로 뒤집히는 계가 케이스
 
+> ✅ **해소됨 — 열린 버그가 아니다.** `shared/src/commonTest/.../EndgameRegressionTest.kt`의 `passAfterWhitePassNeedsEngineDeadListBeforeAreaScoring`과 `passAfterWhitePassUsesPrePassTopMovesIfDeadListIsMissing`이 이 케이스를 고정하고 있다. 아래는 그 단언이 왜 그 값이어야 하는지의 근거 기록이다.
+
 작성일: 2026-06-07
 
 ## 원본 로그
