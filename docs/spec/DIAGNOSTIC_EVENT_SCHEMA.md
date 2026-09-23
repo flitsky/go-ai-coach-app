@@ -146,20 +146,62 @@
 
 ### `score.final_disagreement`
 
-엔진 최종 계가와 local score가 불일치할 때 기록하도록 설계된 이벤트다.
+엔진 최종 계가와 local score가 불일치할 때 기록한다.
 
-필수 context (설계상):
+필수 context:
 
 - `engineFinalScore`
 - `localScore`
 - `source`
 
-**현재 상태(2026-06-17): 죽은 코드다.** `scoreDisagreementDiagnosticEvent()`(`application/diagnostic/DiagnosticEventApplication.kt`)가 정의되어 있지만 호출하는 곳이 코드베이스 어디에도 없다. 종국 판정(`deadStones`/`scoreFinal` 부심·주심 판정)에서 점수 불일치를 실제로 비교하는 로직이 아직 이 이벤트를 발행하는 지점까지 연결되지 않았다.
+⚠️ **2026-09-23 정정 — 죽은 코드가 아니다.** 이 문서는 2026-06-17에 "호출하는 곳이 없다"고 적었으나
+낡았다. `scoreDisagreementDiagnosticEvent()`(`application/diagnostic/DiagnosticEventApplication.kt`)는
+`application/endgame/EndgameResolver.kt`가 실제로 호출한다 — assistant-judge 최종 계가(`judgeGateway.scoreFinal()`)가
+성공하고 그 `rawScore`가 로컬 최종 점수(`localFinalScore.rawScore`)와 다를 때마다 발행된다. 호출 자체는
+`fb705cac`(2026-06-08 `EndgameResolver` 분리) 이전부터 있었고, 이 문서가 "죽었다"고 적은 2026-06-17
+**그날** 후속 커밋(`90a1a944`)이 조건 비교문(`if (localFinalScore.rawScore != engineScore.rawScore)`)을
+붙여 실제로 살아났다 — 이후 지금까지 호출부가 사라진 적이 없다. **죽었다고 믿으면 계가 불일치를
+진단할 수 있는 유일한 이벤트를 아무도 보지 않게 된다.**
 
-해석(연결되면):
+해석:
 
 - dead-stone cleanup, ruleset, komi, local scorer 전제 차이를 우선 확인한다.
 - 사용자가 향후 "이의 제기" 또는 오류 전송을 선택하는 경우 최우선 수집 대상이다.
+
+## ⚠️ 코드 대비 문서 격차 (2026-09-23 실측)
+
+위 절들이 다루는 6개 `code`(`engine.operation.slow`/`.timeout`/`.discarded`,
+`engine.visit_fill_short`/`_unknown`, `score.final_disagreement`)는 전부 `application/diagnostic/`
+패키지 안의 함수가 만들고, 문서와 코드 사이에 **누락도 잉여도 없다.**
+
+그런데 이 문서가 다루는 범위를 `DiagnosticEventLogPort.append(event)`를 실제로 호출하는 **모든**
+곳으로 넓히면(같은 `diagnostic_events.jsonl`에 같이 쌓인다 — port는 하나뿐이다), 다른 패키지가
+만드는 **19개 `code`가 이 문서 어디에도 없다.** 즉 지금 실제로 기록되는 25개 코드 중 이 문서가
+아는 것은 6개(24%)뿐이다:
+
+| 영역 | 코드 | severity | 위치 |
+| --- | --- | --- | --- |
+| 엔진 operation lifecycle | `engine_operation_cancelled` | Info | `application/engine/operation/EngineOperationLifecycleController.kt` |
+| | `engine_operations_evicted` | Info | 〃 |
+| 엔진 턴 워치독(대국 화면) | `engine_turn_watchdog_triggered` | Warning | `ui/GoCoachApp.kt` |
+| | `engine_force_reset_requested` | Warning | 〃 |
+| 프리미엄 광고 부여 | `premium_ad_grant_ignored_active_subscription` | Info | `application/premium/PremiumAdGrantApplication.kt` |
+| | `premium_ad_grant_activated` | Info | 〃 |
+| | `premium_ad_grant_not_rewarded` | Warning | 〃 |
+| 프리미엄 비활성화 | `premium_deactivated` | Info | `application/premium/PremiumDeactivationApplication.kt` |
+| 프리미엄 구매/복원 | `premium_purchase_activated` / `premium_purchase_restored` | Info | `application/premium/PremiumPurchaseApplication.kt` |
+| | `premium_subscription_downgraded` / `premium_purchase_restore_not_found` / `premium_purchase_restore_unverified` / `premium_purchase_not_completed` | Info 또는 Warning(동적) | 〃 |
+| 로그인 실패(계정 기능은 `isLoginEnabled=false`로 꺼져 있다) | `google_credential_request_failed` / `google_firebase_sign_in_failed` | Warning | `ui/GoogleSignInFlow.kt` |
+| | `email_firebase_sign_in_failed` | Warning | `ui/EmailSignInFlow.kt` |
+| 계정 삭제 실패 | `account_deletion_recent_login_required` / `account_deletion_failed` | Warning | `ui/AccountDeletionFlow.kt` |
+
+- 이 표는 **누락 보고**이지 스키마 정의가 아니다 — 각 코드의 필수 context 필드까지 이 문서 형식으로
+  정리하는 것은 별도 작업으로 남긴다.
+- 로그인·계정 삭제 관련 다섯 코드는 `FeatureFlags.isLoginEnabled=false`인 지금 사실상 도달하지
+  않는다(로그인 UI 자체가 숨어 있다) — 그래도 코드는 실재하고 로그인을 되살리면 바로 발행되므로
+  표에서 뺄 이유는 아니다.
+- **잉여는 없다** — 이 문서가 알고 있는 6개 코드는 전부 실제로 코드에도 있다. 문제는 전적으로
+  "누락" 쪽이다.
 
 ## Runtime Event Log — 별도 시스템
 
