@@ -142,6 +142,7 @@ Hilt(commonMain 불가)·Koin(이득 0)·전면 MVI(이미 절반 작동)·모�
 | 11 | **`make test-ios` 별도 게이트 신설** — 함정 75대로 `make test`에 합치지 않았다. `System.` 주입으로 실제로 막는 것 확인 | `9b19aaaf` |
 | 12 | **app-android Lint 개통** — baseline 84건(1 error+74 warnings+9 hints), `abortOnError=true`. 새 Error가 실제로 빌드를 막는 것 확인 | `76cbaed9` |
 | 13 | **빌드 힙·병렬화 + `make test-device` 신설** — configuration-cache는 근거와 함께 끄고 남겼다 | `d1b3b56e` |
+| 58 | **계기 테스트 3개 전부 초록** — 원인은 탭 회귀가 아니라 둘이었다: ⓐ 로비 시작 버튼이 좌석을 안 보고 잠겨 **대국 화면에 들어간 적이 없었다**(엔진 못 뜨는 기기에서 사람끼리도 못 두던 제품 결함 동반 해소), ⓑ `shared_prefs` **파일만** 지우던 초기화가 프로세스 캐시를 못 비워 앞 테스트 설정을 물려받았다. 실기 2회 확인 | `14967120` |
 
 ### 진행 중
 
@@ -151,10 +152,6 @@ _(없음 — 아래 「예정사항」 첫 항목부터 집는다)_
 
 #### P1 잔여 — #9·#10이 드러낸 것 (번호는 뒤에 붙이고 **순서로** 우선순위를 표시한다)
 
-58. **`NewGameBoardTapSmokeTest` 실패 수정** (AI 모델: Sonnet, 노력정도: 중간)
-    · `app-android/src/androidTest`의 `assertIsDisplayed()`에서 *"The component is not displayed!"*.
-      **기존 버그**이고 #13이 `make test-device`를 연 덕에 드러났다. `AppLaunchSmokeTest`가 지목한 **온보딩 전제**부터 볼 것.
-    · ⚠️ 계측 테스트 3개가 초록이 아니면 `make test-device`는 열어 둔 의미가 없다.
 59. **`DeadStoneDetector`가 패 금지를 물려받아 사석을 조용히 놓친다** (AI 모델: Opus, 노력정도: 중간)
     · 어떤 그룹의 유일한 활로가 `koPoint`이고 `koForbiddenFor`가 그 그룹을 따낼 쪽이면
       `runCatching { … }.getOrNull() ?: continue`가 **그 그룹을 후보에서 조용히 제외**한다.
