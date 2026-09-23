@@ -88,8 +88,10 @@ Showing 1/1 scored spot(s).
 - `debug-report-after-diagnostic-9-moves.txt`: 9수 진행 후 앱 debug report
 - `shared_prefs_go_ai_coach_session.xml`: 9수 저장 대국 snapshot
 - `katago-20260611-070637-811388FD.log`: KataGo process 로그
-- `screen-*.png`: 실제 폰 조작 중 화면 캡처
-- `logcat-*.txt`: 조작 구간 logcat tail
+- ~~`screen-*.png`~~ / ~~`logcat-*.txt`~~ / ~~`uiautomator-*.xml`~~: 2026-09-23 저장소에서 제거됐다(약 11MB).
+  위 표와 해석이 이 원시 파일들을 대체한다. 화면 캡처는 2026-06-11 당시 UI라 현행 UI와 비교할 수 없다.
+  원본이 필요하면 `git show 513b12dd:docs/engine-benchmark-logs/phone-gameplay-20260611/<파일명>`으로 복원한다
+  (당시 경로는 `docs/engine-benchmark-logs/`였다).
 
 ## 다음 판단
 

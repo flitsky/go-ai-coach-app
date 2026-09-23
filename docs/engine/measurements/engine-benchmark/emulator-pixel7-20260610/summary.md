@@ -15,7 +15,8 @@
 
 - `engine_benchmark_profile.json`: 앱 내부 benchmark 저장 원본
 - `20260610-222131-3F392515.log`: KataGo process 로그
-- `logcat-tail.txt`: 설치/실행/benchmark 구간 logcat tail
+- ~~`logcat-tail.txt`~~: 2026-09-23 저장소에서 제거됐다. 아래 "결과 요약"과 "해석"이 이를 대체한다.
+  복원은 `git log --all --diff-filter=D -- '**/emulator-pixel7-20260610/logcat-tail.txt'`로 커밋을 찾아서 한다.
 
 ## Benchmark 조건
 
