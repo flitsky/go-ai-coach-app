@@ -3,6 +3,11 @@
 본 문서는 **바둑 AI** 앱의 화면 구조(IA), 화면별 UI 컴포넌트, 사용자 상호작용 피드백, 디자인 시스템 규칙을 정리한 통합 명세서입니다.
 
 > **갱신: 2026-08-29** — 1절 IA와 2절 화면 명세를 현재 코드(`ScreenDestination`, `ui/GamePlaySection.kt`) 기준으로 정정했습니다. 이전 판은 화면 3개 + `Analyze` 버튼을 명세했지만 실제 목적지는 7개이고 `Analyze` 버튼은 제거된 상태였습니다. UI/UX 디자이너, 모바일 개발자, 기획자가 앱의 전체 흐름과 세부 UX 사양을 한눈에 파악하고 협업할 수 있도록 구성되었습니다.
+>
+> **재정정: 2026-09-23(아키텍처 진단 감사)** — 위 7개는 그 뒤 둘이 더 늘어 **9개**다.
+> `MyPage`(백로그 #24, 2026-08-30)와 `BoardScan`(백로그 #179, 2026-09-21)이 추가됐다. 아래 1절의
+> 개수·mermaid를 이번에 맞췄다 — §2.3-2가 `MyPage`를 이미 상세히 다루면서도 1절 개수·다이어그램에는
+> 없던 자기모순도 함께 해소한다.
 
 ---
 
@@ -10,7 +15,7 @@
 
 앱은 단순하고 직관적인 **3단계 스크린 구조**와 상황별 팝업/다이얼로그로 이루어져 있습니다.
 
-`ScreenDestination`(`ui/GoCoachApp.kt`)이 정의하는 목적지는 **7개**입니다 — `Onboarding`, `Home`, `Settings`, `Study`, `GameHistory`, `GameSetup`, `InGame`.
+`ScreenDestination`(`ui/GoCoachApp.kt`)이 정의하는 목적지는 2026-09-23 기준 **9개**입니다 — `Onboarding`, `Home`, `Settings`, `Study`, `GameHistory`, `MyPage`, `GameSetup`, `InGame`, `BoardScan`.
 
 ```mermaid
 graph TD
@@ -21,6 +26,8 @@ graph TD
     A -->|"대국 기록"| G["대국 히스토리 목록 (ScreenDestination.GameHistory)"]
     G -->|"행 누르기(기록이 있는 판만)"| G1["대국 다시보기 (목적지가 아니라 하위 상태)"]
     A -->|"설정"| S["설정 화면 (ScreenDestination.Settings)"]
+    A -->|"마이 페이지"| M["마이 페이지 (ScreenDestination.MyPage, §2.3-2)"]
+    A -->|"바둑판 스캔(실험실 옵트인)"| BS["카메라 보드 스캔 (ScreenDestination.BoardScan)"]
     B -->|"대국 시작하기"| C["메인 대국 화면 (ScreenDestination.InGame)"]
     C -->|"뒤로가기/종료"| A
 
@@ -45,6 +52,11 @@ graph TD
 > 이 저장소의 **중첩 `BackHandler` 첫 사례**다.
 
 **2026-08-29 기준 이 절이 아직 상세 명세를 갖지 않은 화면**: `Onboarding`, `Settings`, `GameHistory`(참여/리텐션 트랙 백로그 #7로 신설), 그리고 앱 전역에 뜨는 출석 보상 Claim 다이얼로그(백로그 #14, `ui/AttendanceRewardClaimDialog.kt`). 해당 트랙의 스펙은 `260823-260830_OFFLINE_ENGAGEMENT_FEATURES_KICKOFF_PLAN.md`에 있습니다 — 트랙이 끝나면 여기로 흡수합니다.
+
+⚠️ **2026-09-23 추가**: 위 목록 이후 생긴 두 목적지 중 `MyPage`는 §2.3-2가 상세 명세를 갖췄다.
+`BoardScan`(백로그 #179, 실험실 옵트인 카메라 바둑판 인식)은 아직 이 절에 상세 명세가 없다 —
+`ExperimentalFeaturesStore.isCameraBoardScanEnabled()`가 꺼져 있으면 홈으로 되돌리는 것과, 스캔 결과로
+새 대국을 시작하는 것(`onStartGameWithState`)만 코드에서 확인했다.
 
 ---
 
