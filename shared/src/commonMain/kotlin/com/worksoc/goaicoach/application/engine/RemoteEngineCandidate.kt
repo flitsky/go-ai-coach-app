@@ -18,10 +18,11 @@ data class RemoteEngineCandidate(
 /**
  * 후보 중 지금 쓸 만한 것 하나를 고른다 — "여러 원격 후보 중 선택·신뢰도 판단"을 3계층이
  * 흡수해, 상위(5계층 이상)는 지금 엔진이 로컬인지 원격인지, 원격이라면 후보가 몇 개인지 전혀
- * 몰라도 된다(`ARCHITECTURE.md`의 3계층 "DePIN 관점에서의 역할" 절 그대로).
+ * 몰라도 된다(`docs/spec/GO_AI_COACH_ARCHITECTURE_ROADMAP.md`의 3계층 "DePIN 관점에서의 역할" 절 그대로 —
+ * `ARCHITECTURE.md`가 아니다, 그 파일엔 DePIN이 나오지 않는다).
  *
  * 지금은 실제 피어 네트워킹 없이 "고정된 원격 서버 1대"로 시작하는 단계라(계획서
- * `LAYERED_ARCHITECTURE_REFACTORING_PLAN`의 Stage E-1 범위), 판단은 아직 "활성화돼 있고
+ * `REMOTE_ENGINE_AND_LAYERING.md`의 Stage E-1 범위), 판단은 아직 "활성화돼 있고
  * 엔드포인트가 비어있지 않은 첫 후보"만큼만 있다 — 여러 후보의 응답 시간/성공률을 비교하는
  * 판단은 실제로 후보가 2개 이상 존재할 때(DePIN 방향 확장) 추가한다. 선언된 순서를 우선순위로
  * 취급한다.
