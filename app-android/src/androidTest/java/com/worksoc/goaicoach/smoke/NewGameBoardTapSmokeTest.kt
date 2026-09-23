@@ -6,7 +6,6 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationPlan
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationResult
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheQuality
@@ -58,6 +57,15 @@ import org.junit.runner.RunWith
  * without a ready engine in that mode -- any AI seat requires `isEngineReady`,
  * which this fake deliberately never reaches.
  *
+ * 260923: that same seat choice is also what lets the *lobby* start at all. The
+ * `대국 시작하기` button is gated on engine readiness (backlog #101 step 0), and
+ * until 2026-09-23 the gate ignored the seats -- so this test silently never left
+ * the setup screen, tapped the lobby's *preview* board (whose `onCoordinateTap` is
+ * empty) and failed on the assertion below. `GameSetupLobby`'s gate now exempts
+ * Local Two Player, which is what `EngineUnavailableNoticeDialog` promises the user
+ * anyway. ⚠️ If this test starts failing at the board tap again, check that gate
+ * first (`EngineReadyGateContractTest` pins both directions).
+ *
  * 260814: no onboarding click here anymore -- [FeatureFlags.isLoginEnabled] is
  * `false` (2026-08-09 decision), so [initialDestination] skips onboarding and
  * lands directly on Home. See [AppLaunchSmokeTest] (same package) for the same
@@ -75,14 +83,14 @@ class NewGameBoardTapSmokeTest {
      * so leftover SharedPreferences from a previous run or manual install (saved
      * game, onboarding-seen flag, premium state) would otherwise make navigation
      * from Home non-deterministic (e.g. an unexpected "resume saved game?"
-     * dialog). Wiping shared_prefs simulates a fresh install so this test's path
-     * is the same every time.
+     * dialog). [resetToFreshInstallState] simulates a fresh install so this
+     * test's path is the same every time -- and it has to clear the *in-memory*
+     * SharedPreferences too, which is exactly what this test used to get wrong;
+     * see that function's KDoc.
      */
     @Before
     fun clearPersistedAppState() {
-        val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val prefsDir = context.filesDir.resolveSibling("shared_prefs")
-        prefsDir.listFiles()?.forEach { it.delete() }
+        resetToFreshInstallState()
     }
 
     @Test
@@ -101,8 +109,16 @@ class NewGameBoardTapSmokeTest {
 
         composeRule.onNodeWithText(strings.startMatch).performClick()
 
-        // White defaults to AI; switch it to Human so this is Local Two Player
-        // (see the class doc for why that matters with a never-ready fake engine).
+        // Both seats to Human, so this is Local Two Player (see the class doc for why that
+        // matters with a never-ready fake engine).
+        //
+        // ⚠️ Black is set explicitly even though it defaults to Human. Relying on that default
+        // is what made this test order-dependent: the pill is idempotent (`onSideChange` assigns
+        // rather than toggles), so one extra click costs nothing, while a Black seat inherited
+        // from a previous test -- or from a future change of default -- silently makes this
+        // Ai-vs-Human and re-locks the lobby's start button.
+        composeRule.onNodeWithTag(TestTags.seatControllerPill(StoneColor.Black, SeatController.Human))
+            .performClick()
         composeRule.onNodeWithTag(TestTags.seatControllerPill(StoneColor.White, SeatController.Human))
             .performClick()
 

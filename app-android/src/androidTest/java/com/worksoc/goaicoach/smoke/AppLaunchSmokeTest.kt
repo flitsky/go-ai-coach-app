@@ -5,7 +5,6 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
 import com.worksoc.goaicoach.MainActivity
 import com.worksoc.goaicoach.ui.UiLanguage
 import com.worksoc.goaicoach.ui.UiStrings
@@ -41,12 +40,11 @@ class AppLaunchSmokeTest {
 
     // Same rationale as NewGameBoardTapSmokeTest: the instrumented test APK shares
     // process/storage with the app under test, so leftover SharedPreferences would otherwise
-    // make which screen appears first non-deterministic.
+    // make which screen appears first non-deterministic. See [resetToFreshInstallState] for why
+    // deleting the files is not enough on its own.
     @Before
     fun clearPersistedAppState() {
-        val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val prefsDir = context.filesDir.resolveSibling("shared_prefs")
-        prefsDir.listFiles()?.forEach { it.delete() }
+        resetToFreshInstallState()
     }
 
     @Test
