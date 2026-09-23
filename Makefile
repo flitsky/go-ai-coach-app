@@ -66,7 +66,7 @@ export JAVA_HOME
 
 .DEFAULT_GOAL := help
 
-.PHONY: help doctor test dev dev-stub install-dev install-dev-engine reinstall-dev-engine seed-engine launch play-internal-aab bundle-aab verify-admob-keys bump-version prepare-friend-assets engine-level-benchmark engine-device-benchmark engine-search-mode-benchmark engine-search-mode-benchmark-phone release ensure-debug-engine prebuild-engine clean
+.PHONY: help doctor test test-ios dev dev-stub install-dev install-dev-engine reinstall-dev-engine seed-engine launch play-internal-aab bundle-aab verify-admob-keys bump-version prepare-friend-assets engine-level-benchmark engine-device-benchmark engine-search-mode-benchmark engine-search-mode-benchmark-phone release ensure-debug-engine prebuild-engine clean
 
 help:
 	@echo "=========================================================================="
@@ -87,6 +87,7 @@ help:
 	@echo "  make doctor              - Check JDK 17, ANDROID_HOME, and adb target device"
 	@echo "                             (Supports TARGET=emu/phone or auto-resolution)"
 	@echo "  make test                - Run unit tests for shared, engine, and app modules"
+	@echo "  make test-ios            - Compile-only iOS targets check (see 함정 75; NOT part of make test)"
 	@echo ""
 	@echo " [Build & Engine Prebuild]"
 	@echo "  make play-internal-aab   - Build release-signed AAB (debug engine + bundled assets) for Play Console internal testing"
@@ -135,6 +136,22 @@ doctor:
 # `engineMode`가 늘었는데 호출부 둘을 안 고침), 이 명령이 그 트리를 건드리지 않아 아무도 몰랐다.
 test: doctor
 	$(GRADLEW) :shared:check :engine-android:testDebugUnitTest :app-android:assembleDebug :app-android:testDebugUnitTest :app-android:compileDebugAndroidTestKotlin
+
+# ⚠️ 별도 타깃이다 — `test`에 합치지 마라(refactor backlog #11, 함정 75).
+# iOS 타깃은 `shared/build.gradle.kts`의 `enableIosTargets` 게이트 뒤에 숨어 있어(기본 false)
+# 평소 `make test`는 이 코드를 전혀 컴파일하지 않는다. 2026-08-24에 정확히 이 사각지대로
+# commonMain에 iOS에 없는 API가 49개 컴파일 에러로 쌓였는데도 모든 초록불이 켜져 있었다.
+# 그렇다고 `test`에 합치면 안 되는 이유: **iOS는 아무것도 출하하지 않는 타깃**이라, 안드로이드
+# 릴리스가 출하하지 않는 타깃의 컴파일 실패로 막히면 안 된다(그 타깃이 gitignore된 개인
+# 실험이거나, 아직 손대는 사람이 없는 코드일 수도 있다). 그래서 "존재는 확인하되 릴리스를
+# 막지는 않는" 별도 타깃으로 둔다 — 필요할 때 사람이 직접 돌려서 사각지대를 스스로 확인한다.
+# compileKotlinIosSimulatorArm64만 돌리는 이유: 컴파일만으로 충분하다(시뮬레이터 부팅이나
+# Xcode 프로젝트가 필요 없다) — 여기서 잡으려는 것은 "iOS에 없는 API를 commonMain에 썼다"는
+# 사실 자체지, 실제 iOS 런타임 동작이 아니다. 세 iOS 타깃(iosX64/iosArm64/iosSimulatorArm64)
+# 전부를 컴파일할 필요는 없다 — commonMain 코드가 플랫폼별로 갈라지지 않는 한(현재 없음)
+# 셋 다 같은 expect/actual 집합을 보므로 하나만 컴파일해도 API 누락은 동일하게 드러난다.
+test-ios:
+	$(GRADLEW) :shared:compileKotlinIosSimulatorArm64 -PenableIosTargets=true
 
 dev: doctor ensure-debug-engine
 	$(GRADLEW) :app-android:assembleDebug
