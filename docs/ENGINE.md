@@ -64,7 +64,7 @@ fun PlayLevelSetting.aiMoveSearchMode(): EngineSearchMode =
 
 `candidateCount`는 "엔진이 그 개수만큼 깊게 평가하라"는 강제값이 아니라 "앱이 응답 후보를 최대 몇 개까지 파싱/표시/레벨링에 쓸지"의 상한이다. 실제 scored 후보 수는 `maxVisits`/`maxTime`이 얼마나 채워졌는지에 달려 있다. 자세한 운영표(요청 10개 중 실제 1개/2개/3개/4개 이상일 때 레벨링 방식)는 `ENGINE_API_CALL_POLICY.md` → `candidateCount 의미` 섹션을 따른다.
 
-**Top Moves 보드 표시**: `application/analysis/AnalysisSession.kt`의 `LightweightTopMoveCandidateCount = 5`. 2026-06-17 기준 최적수 보드 표시는 최대 5개 후보를 요청하며, `GoBoard.kt`의 `drawCandidateMoves()`가 1순위는 큰 원, 나머지는 작은 원으로 그린다. 이 분석은 명시적 search mode를 넘기지 않으므로 `EngineSessionClient.analyzePosition()`의 기본값인 `GtpStatefulFast`를 사용한다 — 즉 현재 대국 상대 AI가 `빠른 초급`이면 Top Moves도 같은 B16 계열 경량 분석이다.
+**Top Moves 보드 표시**: `application/analysis/AnalysisSession.kt`의 `LightweightTopMoveCandidateCount = 5`. 2026-06-17 기준 최적수 보드 표시는 최대 5개 후보를 요청하며, `GoBoard.kt`의 `drawCandidateMoves()`가 1순위는 큰 원, 나머지는 작은 원으로 그린다. 이 분석은 명시적 search mode를 넘기지 않으므로 `EngineSessionClient.analyzePosition()`의 기본값인 `GtpStatefulFast`를 사용한다. 그리고 `topMovesAnalysisLimitFor()`가 `visits`를 `SearchTimeProfile.B16.visits`(16)로 **고정**하므로, Top Moves는 **상대 AI 레벨과 무관하게 항상 B16** 경량 분석이다(2026-09-23 기준).
 
 ## Visit과 강도의 관계 — 핵심만
 

@@ -70,8 +70,9 @@ JSON 기반 운영의 목표는 다음과 같다.
 
 - `topMoveCandidateCountFor()`는 항상 `LightweightTopMoveCandidateCount = 5`를 반환한다 (2026-06-17 이전에는 `1`이었다).
 - `TopMovesDisplay` limit은 `fastCandidateAnalysis(candidateCount=5)`로 정규화되어 `includePolicy=false`, `refinePolicyMoves=0`, `minVisitsPerCandidate=0`, `minTimeMillis=null`이 된다.
+- 이어서 `topMovesAnalysisLimitFor()`가 `copy(visits = SearchTimeProfile.B16.visits)`로 **visits를 16에 고정한다**(2026-09-23 기준). 즉 Top Moves의 탐색량은 **상대 AI 레벨과 무관하게 항상 B16**이다 — 상대가 `중급`(64)이어도 Top Moves는 16 visits다. 레벨을 따라가는 것은 `timeMillis` 같은 나머지 runtime profile 값뿐이다.
 - `runTopMoveAnalysis()`는 `EngineSessionClient.analyzePosition(state, limit)`를 호출하며, 명시적 search mode를 넘기지 않으므로 기본값인 `EngineSearchMode.GtpStatefulFast`를 사용한다.
-- 따라서 플레이어가 보는 `Top Moves`는 현재 대국 runtime profile의 GTP fast 최상위 후보 최대 5개다. 1순위는 보드 위에 큰 원, 2~5순위는 작은 원으로 표시된다(`GoBoard.kt`의 `drawCandidateMoves()`). 상대 AI가 `빠른 초급`이면 같은 B16 계열 경량 분석에서 나온 후보군이다.
+- 따라서 플레이어가 보는 `Top Moves`는 현재 대국 runtime profile의 GTP fast 최상위 후보 최대 5개다. 1순위는 보드 위에 큰 원, 2~5순위는 작은 원으로 표시된다(`GoBoard.kt`의 `drawCandidateMoves()`). visits가 고정이므로 이는 **상대 AI 레벨과 무관하게** B16 계열 경량 분석이다.
 - ~~`빠른 초급 1~3단계`는 현재 코드상 모두 `MoveSelectionPolicy.BestOnly`다. 단계 이름은 남아 있지만 착수 선택 정책은 동일하다.~~ → **2026-08-18에 더 이상 사실이 아니다.** `빠른 초급`이 5단계로 재정립되면서 1~4단계는 `MoveSelectionPolicy.BucketedTierSelection`(최하수/중급수/최적수 버킷별 착수 비율)을 쓰고, `BestOnly`는 5단계(초고수)에만 남았다. 따라서 단계별로 착수 선택 정책이 **실제로 다르다**. `EngineAnalysisPolicy.kt`가 `BestOnly`일 때만 후보 1개를 요청하고, 나머지 단계는 `candidateCount`(빠른 초급 기준 8)만큼 받는다. 설계 근거는 `FAST_BEGINNER_TIER_DESIGN.md` 11절.
 - 이 구조에서는 `빠른 초급 초고수`(5단계, 옛 3단계에 해당)를 상대로 Top Moves를 그대로 따라도 승리가 보장되지 않는다. 후보 5개 중 어떤 수를 선택해도 같은 수준의 분석이며, 선후/komi/엔진 tree reuse/후보 fill/사용자 착수 타이밍에 따라 사용자가 불리할 수 있다.
 
@@ -317,15 +318,18 @@ KataGo process adapter에서는 이 조건일 때 JSON analysis process를 피�
 
 ## 호출 목적별 예산
 
-| 목적 | 현재 예산 | 사용처 |
-| --- | --- | --- |
-| `AiMoveSelection` | 플레이 레벨 visits/candidate count + Search Time time cap, `policy=false`, `refine=0` | AI 착수 선택 |
-| `HumanMoveReview` | fast best-5, `policy=false`, `refine=0` | 사용자가 둔 수의 사후 평가 |
-| `TopMovesDisplay` | fast best-5, `policy=false`, `refine=0` | 보드 위 후보수 표시 |
-| `ScoreGraph` | 후보 1개 score estimate | Score / Win Rate 그래프 |
-| `Benchmark` | 사용자 설정과 무관한 고정 B16/B32/B64 | 기기별 엔진 성능 측정 |
+⚠️ **아래 다섯이 각각 살아 있는 별도 호출처인 것처럼 읽히면 안 된다**(2026-09-23 실측). `TurnAnalysisPurpose`(`shared/EngineAnalysisPolicy.kt`)는 값이 **넷**이고 `Benchmark`는 아예 이 enum에 없다. 그리고 `turnAnalysisLimitFor()`의 **프로덕션 호출부는 둘뿐**이다.
 
-`Benchmark`는 사용자 Player Setup, Top Moves 토글, 현재 계가 규칙, analysis cache를 절대 참조하지 않는다.
+| 목적 | 현재 예산 | 사용처 | 프로덕션 호출부 |
+| --- | --- | --- | --- |
+| `TopMovesDisplay` | fast best-5, `policy=false`, `refine=0` | 보드 위 후보수 표시 | `application/analysis/AnalysisSession.kt`의 `topMovesAnalysisLimitFor()` |
+| `ScoreGraph` | 후보 1개 score estimate | Score / Win Rate 그래프 | `application/engine/EngineSession.kt` |
+| `AiMoveSelection` | 플레이 레벨 visits/candidate count + 전역 Search Time cap, `policy=false`, `refine=0` | AI 착수 선택 | **없음.** enum 값 정의 외에 참조 0건 |
+| `HumanMoveReview` | fast best-5, `policy=false`, `refine=0` | 사용자가 둔 수의 사후 평가 | **없음.** `PlayLevelSettingTest`에서만 쓰인다 |
+
+AI 착수는 이 함수를 타지 않는다 — `PlayLevelSetting.aiMoveAnalysisLimitWith(searchTimeSettings)`가 별도 경로로 예산을 만든다. 사람 착수 리뷰도 `TopMovesDisplay`와 같은 snapshot을 공유하므로 자기 몫의 호출을 따로 내지 않는다. 즉 위 표는 **개념 분류**이지 호출 횟수표가 아니다.
+
+기기 벤치마크는 `TurnAnalysisPurpose`를 쓰지 않고 고정 B16/B32/B64로 따로 측정한다. 이 경로는 사용자 Player Setup, Top Moves 토글, 현재 계가 규칙, analysis cache를 절대 참조하지 않는다.
 
 ## JSON position analysis cache 정책
 
