@@ -394,7 +394,7 @@ git show <커밋해시>^:docs/archive/<경로>/<파일명>.md > <파일명>.md
 
 **2026-08-17에 제거한 것**: `docs/archive/`(5개 하위 폴더, 55개 파일) 전체, `docs/refactoring/`(8개 파일, 리팩토링 축 종료 확인) 전체. 삭제된 경로를 가리키던 교차 참조(`ENGINE_API_CALL_POLICY.md`, `GO_AI_COACH_ARCHITECTURE_ROADMAP.md`, `docs/work/history/THREAD_HISTORY.md`, `GOOGLE_PLAY_LAUNCH_PLAN.md`, `PREMIUM_MODE.md`, `LOGIN_AND_ACCOUNT_SYSTEM.md`)도 같은 날 함께 정리했다.
 
-**2026-08-18 정정**: 위 목록 중 `refactoring/LAYERED_ARCHITECTURE_REFACTORING_PLAN_260803_1500.md`(2026-09-23에 `work/plans/REMOTE_ENGINE_AND_LAYERING.md`로 개명·이동)는 삭제 판단이 틀렸다 — 원격 엔진/DePIN 로드맵이 아직 진행 중이었다(아래 "리팩토링 전략/진행 로그" 절). git 히스토리에서 복원했다. 이 사례가 남긴 교훈: 삭제 전에는 문서 이름/날짜만 보지 말고, **코드 주석이 그 문서를 아직 참조하는지**(`grep -r "문서파일명" --include="*.kt"`)까지 확인한다.
+**2026-08-18 정정**: 위 목록 중 `refactoring/LAYERED_ARCHITECTURE_REFACTORING_PLAN_260803_1500.md`(2026-09-23에 `work/plans/REMOTE_ENGINE_AND_LAYERING.md`로 개명·이동)는 삭제 판단이 틀렸다 — 원격 엔진/DePIN 로드맵이 아직 진행 중이었다(아래 「리팩토링 로드맵은 어디로 가는가」 절 — 2026-09-23에 옛 제목 "리팩토링 전략/진행 로그"에서 바꿨다). git 히스토리에서 복원했다. 이 사례가 남긴 교훈: 삭제 전에는 문서 이름/날짜만 보지 말고, **코드 주석이 그 문서를 아직 참조하는지**(`grep -r "문서파일명" --include="*.kt"`)까지 확인한다.
 
 ## 리팩토링 로드맵은 어디로 가는가 (`docs/refactoring/`는 없다)
 
