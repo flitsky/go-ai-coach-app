@@ -8,7 +8,7 @@
 
 원래 착수 배경: 사용자가 명시적으로 "당장 착수하기보다는 방향을 결정한 뒤 문서화"를 요청했다 — 이 문서는 그 결정과 근거를 기록한다.
 
-이 문서는 `LAYERED_ARCHITECTURE_REFACTORING_PLAN_260803_1500.md` Stage F(물리적 분산·DePIN)의 전용 킥오프 문서다 — 그 계획서 F-2가 "연산 마켓플레이스는 부정사용 방지·정산 문제를 동반하니 착수 시점에 전용 킥오프 문서를 새로 쓰라"고 미리 정해뒀고, 오늘 사용자가 제시한 설계(가장 빠른 응답자에게 보상 점수 지급)가 정확히 그 지점에 해당한다.
+이 문서는 `REMOTE_ENGINE_AND_LAYERING.md`(2026-09-23에 `work/plans/`로 옮기며 **개명**했다 — 옛 이름은 `LAYERED_ARCHITECTURE_REFACTORING_PLAN_260803_1500.md`) Stage F(물리적 분산·DePIN)의 전용 킥오프 문서다 — 그 계획서 F-2가 "연산 마켓플레이스는 부정사용 방지·정산 문제를 동반하니 착수 시점에 전용 킥오프 문서를 새로 쓰라"고 미리 정해뒀고, 오늘 사용자가 제시한 설계(가장 빠른 응답자에게 보상 점수 지급)가 정확히 그 지점에 해당한다.
 
 ## 1. 오늘 보고된 버그 — 근본 원인
 
@@ -99,7 +99,7 @@
 
 ## 참고 문서
 
-- `LAYERED_ARCHITECTURE_REFACTORING_PLAN_260803_1500.md` — Stage D/E(오늘 이 문서가 이어받는 원격 엔진 배경), Stage F 정의(이 문서가 그 전용 킥오프)
+- `REMOTE_ENGINE_AND_LAYERING.md` — Stage D/E(오늘 이 문서가 이어받는 원격 엔진 배경), Stage F 정의(이 문서가 그 전용 킥오프)
 - `scripts/run-katago-remote-analysis-server.py` — 어제 만든 HTTP 참조 서버. MQ/Firestore 프로토타입에서 KataGo 프로세스 관리 부분을 그대로 재사용한다
 - `scripts/remote-engine-mq-prototype/` — 7절 결과를 낸 실제 파이썬 프로토타입 코드(MQTT/Firestore 세션 토픽, 정합성 체크, 타임아웃+병행 폴백 실험)와 실행 로그(`runs/*.jsonl`)
 - `shared/src/commonMain/kotlin/com/worksoc/goaicoach/shared/RemotePositionAnalysisTransport.kt` — 이미 있는 트랜스포트 추상화 계약(3절)

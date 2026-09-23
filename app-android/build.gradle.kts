@@ -71,8 +71,7 @@ val premiumProductId: String =
 val botCharacterProductId: String =
     localProperties.getProperty("billing.botCharacterProductId") ?: "bot_character_placeholder"
 
-// 개발용 원격 엔진 스파이크(work/roadmap/LAYERED_ARCHITECTURE_REFACTORING_PLAN_260803_1500.md
-// Stage E-3) — local.properties(gitignored)의 debug.remoteEngineUrl 키로 맥북 등에서 띄운
+// 개발용 원격 엔진 스파이크(`REMOTE_ENGINE_AND_LAYERING.md` Stage E-3) — local.properties(gitignored)의 debug.remoteEngineUrl 키로 맥북 등에서 띄운
 // scripts/run-katago-remote-analysis-server.py의 주소(예: http://192.168.0.10:8765/analyze)를
 // 넣으면 debug 빌드가 그 서버로 분석을 위임한다. AdMob 키와 같은 이유로 friend/playInternal/
 // release는 이 값을 절대 물려받지 않고 항상 빈 문자열(비활성)로 고정한다 — 지인 배포/출시

@@ -125,7 +125,7 @@ class HttpRemotePositionAnalysisTransportTest {
 
     /**
      * Contract/regression test against `scripts/run-katago-remote-analysis-server.py`
-     * (the macOS dev-time reference server, `LAYERED_ARCHITECTURE_REFACTORING_PLAN`
+     * (the macOS dev-time reference server, `REMOTE_ENGINE_AND_LAYERING.md`
      * Stage E-3). The response body below is a verbatim capture from that script
      * actually running against local KataGo, answering a max-handicap(5) 13x13
      * position for White's first move — not a hand-written fixture. If the Python

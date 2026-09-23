@@ -1,12 +1,16 @@
-# 레이어드 아키텍처 리팩토링 계획서 — 260803 15h00m
+# 원격 엔진과 계층 정렬 마스터플랜
 
-작성 시각: 2026-08-03 15:00 (KST)
+최초 작성: 2026-08-03 15:00 (KST) · 이후 계속 갱신된다(완료 이력의 정본은 git)
 
 ## 0. 이 문서의 성격
 
-`ARCHITECTURE.md`(원칙 문서)와 `GO_AI_COACH_ARCHITECTURE_ROADMAP.md`(go-ai-coach 매핑 + 알려진 갭)가 2026-07-30에 정립한 7계층(4계층 압축 가능) 모델을, **실제 코드에 단계적으로 반영**하기 위한 착수 계획서다. 이 리포지토리의 "착수 계획서" 관례(`YYMMDD HHhMMm` 타임스탬프, 진행 로그 누적)를 따른다.
+`ARCHITECTURE.md`(원칙 문서)와 `GO_AI_COACH_ARCHITECTURE_ROADMAP.md`(go-ai-coach 매핑 + 알려진 갭)가 2026-07-30에 정립한 7계층(4계층 압축 가능) 모델을, **실제 코드에 단계적으로 반영**하기 위해 세운 계획서다. 원래는 "착수 계획서" 관례(`YYMMDD HHhMMm` 타임스탬프, 진행 로그 누적)를 따라 `work/roadmap/`에 있었고 이름은 `LAYERED_ARCHITECTURE_REFACTORING_PLAN_260803_1500.md`였다 — 2026-09-23에 이 이름으로 **개명**했으므로 옛 이름의 파일은 더 이상 없는 것이 정상이다.
+
+⚠️ **2026-09-23에 `work/plans/`로 옮기고 날짜 없는 이름으로 바꿨다.** `work/roadmap/README.md`의 판별 기준은 *"이 문서에 완결일을 적을 수 있는가"* 인데, 이 문서의 Stage F(DePIN — 피어 탐색·신뢰·정산)는 **종료일을 정할 수 있는 트랙이 아니다.** 착수 여부 자체가 사용자 승인에 걸려 있고, 그 승인 시점이 정해져 있지 않다. 즉 이 문서는 시간축(roadmap) 문서가 아니라 **원격 엔진이라는 기능이 살아 있는 동안 계속 덮어쓰는 기능축 마스터플랜**이다. 옛 이름으로 이 문서를 찾는 참조가 남아 있다면 여기로 온 것이다.
 
 이 문서 하나로 전체 리팩토링이 끝나지 않는다 — 특히 마지막 Stage(물리적 분산, 다른 기기에서 연산)는 그 자체로 별도 킥오프 문서가 필요한 대형 신규 기능이다. 이 문서는 "지금부터 거기까지 가는 순서와, 각 지점에서 무엇을 확인해야 하는가"를 정의하는 상위 로드맵이다.
+
+⚠️ **계층 정렬(Stage A~C)의 현행 정본은 이 문서가 아니다.** 2026-09-23에 실측 기반 진단서 `260923-_ARCHITECTURE_DIAGNOSIS_AND_REFACTORING.md`가 세워지면서, "계층을 어떻게 강제할 것인가"의 처방과 일감은 그쪽(과 `260923-_ACTIVE_BACKLOG.md`)으로 넘어갔다. 이 문서에 남은 살아 있는 축은 **원격 엔진(Stage D~F)** 이다.
 
 ## 1. 배경과 목표
 
@@ -14,8 +18,11 @@
 
 ## 2. 완료 정의 (최종 상태 체크리스트)
 
-- [ ] `LayeringContractTest.kt`가 2026-07-30판 7계층 경계(2/3계층 재편, 4/6계층 신설, 5/7번호 이동)를 기계적으로 강제한다
+> ⚠️ 아래 체크 상태는 **2026-09-23 기준**이다. 낡으면 코드를 열어 다시 판정할 것.
+
+- [ ] `LayeringContractTest.kt`가 2026-07-30판 7계층 경계(2/3계층 재편, 4/6계층 신설, 5/7번호 이동)를 기계적으로 강제한다 — **2026-09-23 재판정: 강제하지 못한다.** 진단서(`260923-_ARCHITECTURE_DIAGNOSIS_AND_REFACTORING.md` §1.2)가 import 규칙 10개 중 4개가 **0개 파일을 검사하며 무조건 통과**하고 있었음을 실측했고, 같은 날 P0에서 되살렸다(커밋 `0c33d32c`). 다만 되살린 뒤에도 강제 수단은 여전히 문자열 스캔이라, "컴파일러가 알아볼 수 있는 형태로 다시 적는다"는 처방 자체는 그 진단서가 이어받았다 — 이 항목의 정본은 이제 그쪽이다.
 - [x] 로컬 구현체(`KataGoProcessEngineAdapter`)와 원격 구현체가 `EngineCoreApi` 전체에 대해 대등한 계약을 만족한다 — `RemoteEngineCoreApiAdapter`(260803, Stage D-1/D-2). 단, 아직 실제 배선은 하지 않음(Stage E)
+  - 🔴 **2026-09-23 발견 — 대등하지 않은 구멍이 하나 있다.** 원격 코덱의 `encodeState`가 **덤(komi)과 접바둑 돌 수를 전송하지 않는다**(`HttpRemotePositionAnalysisTransport.kt`의 `encodeState`, 그리고 같은 코덱을 쓰는 `RemoteEngineCoreApiAdapter`). 오늘은 터지지 않는다 — `MainActivity.kt`가 `BuildConfig.DEBUG`이면서 `local.properties`에 키가 있을 때만 원격을 타기 때문이다. 그러나 **Stage F로 원격/DePIN을 출하하는 순간 원격 엔진은 덤과 접바둑을 모르는 채로 분석한다.** Stage F 착수 전 선결 조건으로 둔다. 상세는 `260923-_ARCHITECTURE_DIAGNOSIS_AND_REFACTORING.md`의 "P0에서 새로 드러난 것".
 - [x] `RemoteEngineSessionClient`가 존재하고, 여러 원격 후보 중 선택·신뢰도 판단을 수행한다 — `selectRemoteEngineCandidate`+`createRemoteEngineSessionClient`(260804, Stage E-1/E-2). 후보 1개 기준의 최소 판단(활성화+엔드포인트 유효성)만 있고, 여러 후보 비교 신뢰도 판단은 실제 후보가 2개 이상 생길 때 확장. **260818: 실제 컴포지션(MainActivity)에 `BuildConfig.DEBUG` 한정으로 배선 완료**(Stage E-3) — 맥북 참조 서버(`scripts/run-katago-remote-analysis-server.py`)를 가리키게 하면 실제로 쓰인다.
 - [x] 4계층(외부 연동) 중 최소 1개(결제 또는 로그인)가 실제 SDK로 연동 완료된다 — 결제(Google Play Billing, premium Step 4)와 로그인(Google/Email, auth Step 2/3) 둘 다 실 SDK 연동 완료. 결제는 260809에 Play Console 상품 등록·라이선스 테스터 설정까지 포함해 실기 e2e(구매+복원) 검증까지 마침(아래 진행 로그 참고)
 - [ ] 6계층(세션/연속성)에 기기 식별자 기반 다중 기기 정책이 존재한다 — 부분 완료: 식별자 인프라(`DeviceIdentity`)는 존재(260803, Stage C-2). 정책 자체는 미착수(연결할 실제 소비자, 즉 계정 기반 교차 기기 상태가 아직 없음 — auth Step 4/premium Step 4 대기)
@@ -29,10 +36,13 @@
 
 ### Stage B — 4계층(External Integration) 서비스 본체 두껍게 하기 (중위험, 이미 진행 중인 트랙)
 - **B-1.** `ui/AndroidAuthClient.kt`/`persistence/PremiumStateStore.kt`에 실패/재시도 판단을 추가 — 지금은 SDK 응답을 그대로 감쌀 뿐, 3계층의 `PositionAnalysisCacheResolver`에 해당하는 신뢰도 판단이 없다.
+  - ⚠️ **2026-09-23 재판정: 절반만 남았다.** `PremiumStateStore` 쪽(시계 되돌림 검증)은 살아 있으나, `AndroidAuthClient` 쪽 재시도는 **코드에 존재하지 않는다** — 아래 5절 260803 B-1 로그의 정정 항목 참고. 로그인 자체가 지금 꺼져 있어(`FeatureFlags.isLoginEnabled = false`, 2026-09-23 확인) 급하지 않지만, 로그인을 다시 켜는 시점에 이 항목은 **미완료로 되살아난다.**
 - **B-2.** `PREMIUM_MODE.md` Step 3(광고)/Step 4(결제), `LOGIN_AND_ACCOUNT_SYSTEM.md` Step 2~3(Google/이메일 로그인) 진행. **각 마스터플랜 문서가 우선 소스**이며, 이 계획서는 "이 작업이 4계층에 속한다"는 배치 확인 역할만 한다 — 내용을 중복 관리하지 않는다.
 
 ### Stage C — 6계층(Session & Continuity) 공식화 (중위험)
-- **C-1.** `LOGIN_AND_ACCOUNT_SYSTEM.md` Step 4(익명→실계정 승격, Firestore 동기화) 진행.
+- **C-1.** ~~`LOGIN_AND_ACCOUNT_SYSTEM.md` Step 4(익명→실계정 승격, Firestore 동기화) 진행.~~
+  - 🔴 **2026-09-23 재정의 — 옛 서술을 그대로 집으면 폐기된 것을 구현하게 된다.** ⓐ **파이어베이스 익명 로그인은 2026-08-05에 영구 폐기됐다**(재설치마다 고아 계정이 쌓이는 구조적 문제, `LOGIN_AND_ACCOUNT_SYSTEM.md`의 "`signInAnonymously()` 제거(2026-08-05)" 절이 원본 근거). 게스트 식별은 파이어베이스와 무관한 **로컬 UUID**(`DeviceIdentityStorePort.loadOrCreate()`)가 맡는다. ⓑ **Firestore 코드는 이 저장소에 한 줄도 없다**(2026-09-23 확인 — `Firestore`라는 낱말이 나오는 곳은 전부 "아직 없다"고 적은 KDoc 주석이다).
+  - **재정의**: 목표는 "익명→실계정 승격"이 아니라 **"게스트(로컬 ID) → 실계정 승격"** 이다. 다만 ⓐ 계정 로그인 자체가 지금 꺼져 있고(`FeatureFlags.isLoginEnabled = false`), ⓑ 계정에 귀속시킬 서버 데이터가 아직 없어서, **이 항목은 지금 집을 수 있는 일감이 아니다.** 착수 조건은 `LOGIN_AND_ACCOUNT_SYSTEM.md` Step 4가 다시 열리는 것이고, 이 계획서는 그 문서를 가리키기만 한다(내용을 중복 관리하지 않는다 — B-2와 같은 원칙).
 - **C-2.** 기기 식별자 기반 다중 기기 정책 설계·구현 — 이전 세션에서 논의만 하고 미착수 상태(구매 아이템 기기 제한 등).
 
 ### Stage D — 2계층 로컬/원격 계약 대등화 (중~고위험, 원격 엔진의 전제조건)
@@ -46,7 +56,7 @@
 
 ### Stage F — 1계층 + 실제 물리 분산("다른 폰에서 연산") (최고위험, 별도 대형 프로젝트)
 - **F-1.** 실행 위치를 나타내는 명시적 값 타입 설계(로컬/지정 서버/피어 기기).
-- **F-2.** 피어 디바이스 탐색·인증·신뢰 프로토콜. **이 항목은 이 계획서의 범위를 벗어나는 별도 설계·보안 검토가 필요한 신규 대형 기능이다.** 특히 연산 에너지를 사고파는 마켓플레이스(포인트 적립/차감)는 부정사용 방지, 서비스 약관, 정산 정확성 문제를 동반한다 — 착수 시점에 **전용 킥오프 문서를 새로 작성**해야 하며, 이 계획서는 "여기까지 오면 별도 문서가 필요하다"는 지점만 표시해 둔다. **260818: 그 지점에 도달했다** — 사용자가 가장 빠른 응답 피어에게 순위별 보상 점수를 주는 설계를 제시해 전용 킥오프 문서 `REMOTE_ENGINE_MQ_TRANSPORT_KICKOFF_PLAN_260818_0825.md`를 신설했다. 아직 결정/설계 단계이며 착수 전이다.
+- **F-2.** 피어 디바이스 탐색·인증·신뢰 프로토콜. **이 항목은 이 계획서의 범위를 벗어나는 별도 설계·보안 검토가 필요한 신규 대형 기능이다.** 특히 연산 에너지를 사고파는 마켓플레이스(포인트 적립/차감)는 부정사용 방지, 서비스 약관, 정산 정확성 문제를 동반한다 — 착수 시점에 **전용 킥오프 문서를 새로 작성**해야 하며, 이 계획서는 "여기까지 오면 별도 문서가 필요하다"는 지점만 표시해 둔다. **260818: 그 지점에 도달했다** — 사용자가 가장 빠른 응답 피어에게 순위별 보상 점수를 주는 설계를 제시해 전용 킥오프 문서 `REMOTE_ENGINE_MQ_TRANSPORT_KICKOFF_PLAN_260818_0825.md`를 신설했다. **2026-09-23 기준 상태: 그 문서의 파이썬 프로토타입(MQTT/Firestore 세션 토픽, 허용오차 기반 정합성 체크, 타임아웃+병행 폴백)은 260829에 완료돼 `main`에 있고(`scripts/remote-engine-mq-prototype/` 8파일 — 실재 확인), 남은 것은 앱 이식뿐이다. 이식은 여전히 별도 승인이 필요하다.**
 - **F-3.** PoC: 정산/포인트 없이, 로컬 네트워크 내 2대 기기로 "다른 기기의 분석 결과가 온다"만 최소 검증.
 
 ## 4. 실행 원칙
@@ -62,7 +72,7 @@
 - 260803 15h00m — 계획서 최초 작성. 아직 착수 항목 없음.
 - 260803 — A-1 완료: `LayeringContractTest.kt` 전수 감사. `계층`/`Layer`/`layer` 및 2026-06-27판 옛 계층 이름(`Engine Runtime/Transport`, `Engine Core API Domain`, `Core Rules Domain`, `Middleware/Cache Domain`, `Game Domain`, `App Service/Session Orchestration`, `Presentation/Game UX`)을 grep했으나 이 파일 어디에도 옛 계층 번호/이름 텍스트가 없음을 확인 — 모든 테스트가 처음부터 패키지/클래스명(`application/auth`, `EngineCoreApi`, `middleware` 등)으로 경계를 표현하고 있어 번호에 결합돼 있지 않았다. 문구 정리 대상 없음(코드 변경 없음). `make test` 통과 확인(BUILD SUCCESSFUL). 단, 로드맵의 실제 갭(2/3계층 로컬-원격 계약 대등화 등)은 테스트 "로직" 자체가 아직 새 경계를 강제하지 않는다는 뜻이며, 이는 Stage A 범위가 아니라 Stage D 이후에서 다룬다.
 - 260803 — A-2 완료: 계층 경계가 헷갈리기 쉬운 대표 파일 5개의 KDoc에 "N계층" 라벨 추가(코드 이동/로직 변경 없음). `application/engine/EngineSessionClient.kt`(3계층 진입점), `application/auth/AuthClientPort.kt`(4계층 α 포트) vs `AuthState.kt`(6계층 상태) — 같은 패키지에서 계층이 갈리는 지점을 서로 참조하도록 명시, `application/premium/PremiumStatePorts.kt`(4계층 α) vs `PremiumState.kt`(6계층)도 동일하게 처리. `make test` 통과 확인(BUILD SUCCESSFUL).
-- 260803 — B-1 완료: `AndroidAuthClient`/`PremiumStateStore`(4계층 Extended API 본체)에 신뢰도 판단 추가. (1) `AndroidAuthClient.signInAnonymously()` — `FirebaseNetworkException`(일시적 네트워크 실패)만 최대 3회 유한 재시도, 자격증명/설정 오류는 즉시 반환. (2) `PremiumState.isClockPlausibleAt(nowMillis)`(6계층 순수 판정, `PositionAnalysisCacheEntry.isExpired`와 같은 패턴) 신설 — `PremiumStateStore.load()`가 이걸로 저장된 AdGrant 시작 시각이 미래(시계 되돌림/손상)인지 검증하고, 신뢰 못 하면 기본 상태로 폴백. `PremiumStateTest`에 판정 단위 테스트 3개 추가. `AndroidAuthClient`는 `FirebaseAuth.getInstance()` 전역 호출 때문에 JVM 단위 테스트 불가 — 기존에도 테스트가 없던 파일이라 이번에도 커버리지 갭으로 남김(로드맵의 androidTest 갭과 동일 성격). `make test` 통과 확인(BUILD SUCCESSFUL).
+- 260803 — B-1 완료: `AndroidAuthClient`/`PremiumStateStore`(4계층 Extended API 본체)에 신뢰도 판단 추가. (1) `AndroidAuthClient.signInAnonymously()` — `FirebaseNetworkException`(일시적 네트워크 실패)만 최대 3회 유한 재시도, 자격증명/설정 오류는 즉시 반환. **🔴 정정(2026-09-23): (1)은 폐기로 소멸했다 — 익명 로그인이 2026-08-05에 영구 폐기되며 `signInAnonymously()`가 통째로 제거됐고, 그 재시도 코드도 함께 사라졌다(`AndroidAuthClient.kt`를 직접 확인). 즉 이 로그가 말하는 재시도는 지금 코드에 없고, 실 로그인 경로(`signInWithGoogle`/`signInWithEmail`/`link*Credential`)의 재시도는 여전히 없다.** (2) `PremiumState.isClockPlausibleAt(nowMillis)`(6계층 순수 판정, `PositionAnalysisCacheEntry.isExpired`와 같은 패턴) 신설 — `PremiumStateStore.load()`가 이걸로 저장된 AdGrant 시작 시각이 미래(시계 되돌림/손상)인지 검증하고, 신뢰 못 하면 기본 상태로 폴백. `PremiumStateTest`에 판정 단위 테스트 3개 추가. `AndroidAuthClient`는 `FirebaseAuth.getInstance()` 전역 호출 때문에 JVM 단위 테스트 불가 — 기존에도 테스트가 없던 파일이라 이번에도 커버리지 갭으로 남김(로드맵의 androidTest 갭과 동일 성격). `make test` 통과 확인(BUILD SUCCESSFUL).
 - 260803 — B-2(premium Step 3/4, auth Step 2/3)는 AdMob 계정/Play Console 상품 등록/Firebase SHA-1 등록 등 사용자만 할 수 있는 외부 콘솔 설정이 선행돼야 해서 보류. 사용자 판단으로 Stage D를 먼저 진행하기로 결정.
 - 260803 — D-1/D-2 완료: `RemoteEngineCoreApiAdapter`(신규, `middleware/RemoteEngineCoreApiAdapter.kt`) — `EngineCoreApi` 13개 메서드 전체를 구현하는 원격 구현체. 설계: 서버에 아직 세션 개념이 없으므로 `HttpRemotePositionAnalysisTransport`와 같은 상태 비저장(stateless) 패턴을 확장 — `initialize`/`configure`/`newGame`/`playMove`/`undoMove`/`clearSearchCache`/`stop`은 네트워크 없이 어댑터 내부에서 `GameState`를 직접 추적(이력 스택으로 undo 지원)하고, `genMove`/`analyze`/`estimateScore`/`deadStones`/`scoreFinal`만 그 시점 전체 국면을 원격으로 전송(`RemoteEngineOperationTransport`/`HttpRemoteEngineOperationTransport`/`RemoteEngineOperationJsonCodec`). 신뢰도 대등화(D-2): `KataGoProcessEngineAdapter`의 commandMutex와 동일한 목적의 Mutex로 호출 직렬화, `withTimeout`+`runInterruptible`로 타임아웃 시 `TimeoutCancellationException`을 로컬과 동일하게 던지고, `forceReset()`은 로컬의 `process.destroy()`와 동등하게 mutex 없이 즉시 현재 HTTP 연결을 강제 `disconnect()`(스레드 인터럽트에 안 걸리는 블로킹 read를 풀어주는 표준 기법, 로컬의 "forceReset은 절대 락을 얻지 않는다" 주석과 같은 이유). 기존 `RemotePositionAnalysisJsonCodec`의 상태/한도 인코딩·후보/상태 디코딩 헬퍼는 `internal`로 넓혀 재사용(동일 국면을 두 번 다르게 직렬화하면 대등성이 깨지므로) — 이 리팩토링으로 기존 `RemotePositionAnalysisGatewayTest`가 깨지지 않는지 확인 완료. `RemoteEngineCoreApiAdapterTest` 신규 10개(상태 전용 호출은 네트워크 미접촉, genMove 이후 이력이 다음 호출에 반영, undo 복원, forceReset 논블로킹 위임, HTTP 비활성/genMove·estimateScore·deadStones·scoreFinal 파싱, 타임아웃 시 강제 disconnect) 전부 통과. 아직 실제 배선(DI/GoCoachApp 연결)은 하지 않음 — 이는 Stage E(RemoteEngineSessionClient, 별도 승인 필요) 영역. `make test` 통과 확인(BUILD SUCCESSFUL, 신규 테스트 10개 포함).
 - 260803 — C-2 완료(범위 축소): `DeviceIdentity` 인프라만 추가(`application/device/DeviceIdentity.kt`, `DeviceIdentityPorts.kt` + `persistence/DeviceIdentityStore.kt`). 착수 전 확인 결과, 다중 기기 "정책" 자체를 지금 연결할 실제 대상이 없음을 확인 — 프리미엄 상태(SharedPreferences)·인증 상태(익명 Firebase UID) 모두 이미 기기 로컬 전용이라 계정 기반 교차 기기 상태가 존재하지 않는다(Firestore 동기화는 auth Step 4, 보류 중). 그래서 정책은 만들지 않고, `AuthState`/`PremiumState`와 같은 패턴(플랫폼 SDK 미의존 순수 모델 + 포트, 실제 생성/영속화는 어댑터)으로 식별자만 먼저 마련 — UUID 생성은 어댑터(`DeviceIdentityStore`)에서만, 포트/모델은 `java.*` 등 플랫폼 import 없이 순수 유지. `LayeringContractTest.authAndPremiumApplicationPackagesStayPlatformFree`를 `authPremiumAndDeviceApplicationPackagesStayPlatformFree`로 확장해 `application/device`도 같은 경계를 강제하도록 함(코드가 이미 그 경계를 만족한 뒤 강화 — Stage A 원칙 준수). `DeviceIdentityTest` 2개(빈 id 거부, 동등성) 추가 — `DeviceIdentityStore` 자체는 `PremiumStateStore`와 동일한 이유로 Context 필요해 JVM 단위 테스트 대상에서 제외(기존 커버리지 갭과 동일 성격). 아직 앱에 배선하지 않음. `make test` 통과 확인(BUILD SUCCESSFUL).
@@ -89,8 +99,14 @@
 
 - 260818 — **E-3 검증 완료.** 계약 테스트 2개 추가(`HttpRemotePositionAnalysisTransportTest`/`RemoteEngineCoreApiAdapterTest`에 각각 1개씩) — 둘 다 참조 서버가 실제로 응답한 JSON을 그대로 캡처해 만든 fixture라 손으로 쓴 것보다 신뢰도가 높다. 이후 에뮬레이터(`emulator-5554`)에 debug APK를 직접 설치해 실제 앱으로 end-to-end 확인: (1) 참조 서버를 맥에서 구동, (2) `local.properties`에 `debug.remoteEngineUrl=http://10.0.2.2:8765/engine` 설정 후 재빌드, (3) 앱에서 AI vs AI 대국을 시작해 13수 이상 정상 진행 확인 — `genMove`/`analyze`(착수 선택)와 `estimateScore`(형세 그래프 "W +0.6"/"흑 23%·백 77%" 표시)가 매 턴 실제로 맥 서버를 왕복하며 동작했고, 크래시/에러 없이 자동 대국이 계속됐다. 신규 설치 시나리오(`pm clear`로 저장된 설정 제거 후 재실행)도 확인해 5절이 다루는 신규 대국 기본값(AI=초보, 덤 6.5, 13x13, 접바둑 5점 — 화점에 접바둑돌 5개가 정확히 배치됨)이 실제 화면에 그대로 나타남을 확인했다(이 부분은 이전 세션의 빠른 초급 5단계 작업 결과이며, 이번 세션은 그게 실기기에서도 정확히 렌더링되는지까지 처음으로 실제 확인한 것). `make test`: `shared` 447/447, `engine-android` 전체, `app-android`는 이 작업과 무관한 기존 실패 1건(`GoCoachApp.kt` 줄수 예산, 전날 커밋에서 이미 초과 상태로 들어옴) 제외 전부 통과.
 
+- 260829 — **Stage F 파이썬 프로토타입이 `main`에 들어왔다(이 계획서 밖에서 진행됨).** `REMOTE_ENGINE_MQ_TRANSPORT_KICKOFF_PLAN_260818_0825.md` 6절의 1~4번(세션 토픽 흉내내기, 정합성 체크, 타임아웃+병행 폴백, 토픽 TTL 정책)이 전부 수행돼 실측 결과가 그 문서 7절에 있다. 코드는 `scripts/remote-engine-mq-prototype/`다. 가장 중요한 결론 하나: 같은 국면이라도 KataGo의 비결정성 때문에 **정합성 비교는 "정확히 같음"이 아니라 허용 오차 기반이어야 한다**(로컬 반복 편차와 로컬-원격 편차가 같은 자릿수였다). ⚠️ 이 작업은 260818에 미병합 브랜치에서 만들어져 260829까지 `main`에서 보이지 않았다 — 그래서 이 계획서의 진행 로그도 그동안 260818에서 멈춰 있었다.
+
+- 260923 — **이 문서를 `work/roadmap/`에서 `work/plans/`로 옮기고 날짜 없는 이름으로 바꿨다**(0절 참고). 같은 날 옛 서술 셋을 정정했다: ⓐ 260803 B-1 로그의 익명 로그인 재시도(폐기로 소멸), ⓑ Stage C-1의 "익명→실계정 승격, Firestore 동기화"(익명은 폐기, Firestore 코드는 저장소에 없음 — 게스트→실계정으로 재정의), ⓒ Stage D의 "대등한 계약"에 남아 있던 구멍(원격 코덱이 덤·접바둑을 전송하지 않는다). 계층 정렬 축의 정본이 `260923-_ARCHITECTURE_DIAGNOSIS_AND_REFACTORING.md`로 넘어간 것도 이때다. **코드 변경 없음**(참조 주석 5곳의 문서 이름 갱신뿐).
+
 ## 6. 관련 문서
 
 - `ARCHITECTURE.md` — 레이어 원칙(앱 비종속)
 - `GO_AI_COACH_ARCHITECTURE_ROADMAP.md` — 계층별 현재 매핑, 알려진 갭
+- `260923-_ARCHITECTURE_DIAGNOSIS_AND_REFACTORING.md` — **계층 정렬 축의 현행 정본**(실측 진단 + 처방 + 함정 A~J). 이 계획서의 Stage A~C를 이어받았다
 - `PREMIUM_MODE.md`, `LOGIN_AND_ACCOUNT_SYSTEM.md` — Stage B/C의 1차 소스 문서
+- `REMOTE_ENGINE_MQ_TRANSPORT_KICKOFF_PLAN_260818_0825.md` — Stage F 전용 킥오프. 파이썬 프로토타입 완료, 앱 이식만 남음
