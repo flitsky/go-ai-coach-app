@@ -157,7 +157,7 @@ Phase 4: 13x13, 19x19 지원. **완료.** `BoardSize.supported()`가 9/13/19를 
 Phase 5: KaTrain에서 영감을 받은 복기 UX. **일부 완료.** Top Moves 표시, 착수 복기 색상, 점수/승률 그래프는 존재한다. 넓은 다중 후보 학습 모드와 SGF 주석은 아직 만들지 않았다.
 
 Phase 6: 선택적 서버 fallback. **개발용 스파이크까지 완료, 제품 기능으로는 미착수.** 2026-08-29 기준 실재하는 것: `RemoteEngineCandidate.kt`(shared, 후보 선택), `RemoteEngineSessionBootstrap.kt`+`MainActivity` 배선(`BuildConfig.DEBUG` 한정), `RemoteEngineCoreApiAdapter.kt`(engine-android). 에뮬레이터↔맥북 참조 서버로 전체 대국 e2e가 성공했다(Stage E-3, 2026-08-18).
-  ⚠️ 남은 한계: 앱 시작 시 원격/로컬을 **한 번만** 고르고 런타임에 실패를 감지해 되돌리지 않는다 — 서버가 꺼져 있으면 매 호출이 타임아웃 뒤 "엔진 응답 지연"으로 드러난다. 그래서 `local.properties`의 `debug.remoteEngineUrl`은 기본 주석 처리 상태다. 이 재설계와 MQ 전송 전환은 `REMOTE_ENGINE_MQ_TRANSPORT_KICKOFF_PLAN_260818_0825.md`가 이어받았다 — **그 파이썬 프로토타입은 미병합 브랜치에 있다**(`HANDOVER.md` 6.1절 참고).
+  ⚠️ 남은 한계: 앱 시작 시 원격/로컬을 **한 번만** 고르고 런타임에 실패를 감지해 되돌리지 않는다 — 서버가 꺼져 있으면 매 호출이 타임아웃 뒤 "엔진 응답 지연"으로 드러난다. 그래서 `local.properties`의 `debug.remoteEngineUrl`은 기본 주석 처리 상태다. 이 재설계와 MQ 전송 전환은 `260818-_REMOTE_ENGINE_MQ_TRANSPORT.md`(2026-09-23에 `REMOTE_ENGINE_MQ_TRANSPORT_KICKOFF_PLAN_260818_0825.md`에서 개명)가 이어받았다 — **그 파이썬 프로토타입은 미병합 브랜치에 있다**(`HANDOVER.md` 6.1절 참고).
 
 ## 11. 열린 리스크
 

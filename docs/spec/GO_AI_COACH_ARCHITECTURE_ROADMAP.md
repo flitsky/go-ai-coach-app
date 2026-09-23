@@ -11,7 +11,7 @@
 
 1. `docs/ARCHITECTURE.md` — **원칙**. 7계층의 정의와 그 이유. 앱 비종속이라 코드 이동과 무관하게 유효하다.
 2. `docs/spec/GO_AI_COACH_ARCHITECTURE_ROADMAP.md`(**이 문서**) — **정본 매핑**. *"지금 무엇이 어디 있는가"* 와 *"물리 분리까지 무엇이 남았는가"*. 코드가 움직이면 여기가 따라 움직인다.
-3. `work/plans/REMOTE_ENGINE_AND_LAYERING.md` — **실행 Stage 로그**. Stage A~E의 착수·완료 기록이 시간 순으로 쌓인다(Stage F는 `work/roadmap/REMOTE_ENGINE_MQ_TRANSPORT_KICKOFF_PLAN_260818_0825.md`로 분리). ⚠️ **2026-09-23에 개명·이동했다** — 옛 이름 `work/roadmap/LAYERED_ARCHITECTURE_REFACTORING_PLAN_260803_1500.md`로 찾으면 없다. 계층 정렬(Stage A~C)의 정본은 아래 4번으로 넘어갔고, 그 문서에 살아 있는 축은 원격 엔진(Stage D~F)이다.
+3. `work/plans/REMOTE_ENGINE_AND_LAYERING.md` — **실행 Stage 로그**. Stage A~E의 착수·완료 기록이 시간 순으로 쌓인다(Stage F는 `work/roadmap/260818-_REMOTE_ENGINE_MQ_TRANSPORT.md`로 분리 — 이 파일 자체도 2026-09-23에 `REMOTE_ENGINE_MQ_TRANSPORT_KICKOFF_PLAN_260818_0825.md`에서 개명됐다). ⚠️ **2026-09-23에 개명·이동했다** — 옛 이름 `work/roadmap/LAYERED_ARCHITECTURE_REFACTORING_PLAN_260803_1500.md`로 찾으면 없다. 계층 정렬(Stage A~C)의 정본은 아래 4번으로 넘어갔고, 그 문서에 살아 있는 축은 원격 엔진(Stage D~F)이다.
 4. `work/roadmap/260923-_ARCHITECTURE_DIAGNOSIS_AND_REFACTORING.md` — **2026-09-23 실측 기록·처방·함정 A~J**. *"그날 재어 보니 이랬다"* 를 남기는 문서라 **본문은 그 시점 그대로 두고 갱신하지 않는다.** 실측 결론만 이 문서로 흡수한다. 함정 A~J는 `docs/spec/PITFALLS.md`에 **67~76번으로 편입**됐고 번호 쪽이 정본이다.
 
 ⚠️ **넷이 서로 다른 폴더에 있다**(`docs/`·`docs/spec/`·`work/plans/`·`work/roadmap/`). 파일명만으로는 못 찾는 경우가 있으니 위 경로 그대로 연다.
@@ -46,7 +46,7 @@
 
 **재편 여부**: 기존 2계층(Engine Core API Domain, 계약 정의만)에 기존 4계층(Middleware/Cache Domain)의 **전송** 절반(원격 게이트웨이/트랜스포트)을 합쳤다. "계약을 정의하는 것"과 "그 계약을 실제로 어떻게 도달시키는가(로컬 stdio냐 원격 HTTP냐)"가 개념적으로 같은 책임이라고 보기 때문이다. **260804 정리**: `EngineCoreApi`의 로컬/원격 구현체를 전부 `engine-android` 모듈로 물리적으로 모았다(그 전엔 원격 구현체가 app-android/middleware에 있었음) — app-android(3~7계층) 작업 시 엔진 내부 구현을 아예 안 봐도 되도록, 그리고 향후 원격/DePIN 확장의 물리적 근간이 되도록. 이 이동을 가능케 하려고 `RemotePositionAnalysisTransport`/`Request`/`Response`(전부 `:shared`-safe 타입만 사용)도 `:shared`로 옮겼다 — app-android(Gateway)와 engine-android(Http 구현체)가 순환 의존 없이 같은 계약을 공유하기 위함.
 
-**핵심 갭(해소됨, 260803 Stage D)**: `KataGoProcessEngineAdapter`(로컬)와 `RemoteEngineCoreApiAdapter`(원격)가 이제 `EngineCoreApi` 전체에 대해 대등한 계약을 만족한다(계약 테스트로 검증). 3계층의 후보 선택/신뢰도 판단(`selectRemoteEngineCandidate`)도 260804 Stage E-1/E-2에서 마련됐다 — 아래 3계층 절 참고. **260818 갱신**: 이 원격 경로는 이제 `MainActivity`에 `BuildConfig.DEBUG` 한정으로 배선돼 있다(Stage E-3) — `local.properties`의 `debug.remoteEngineUrl`을 맥북 참조 서버(`scripts/run-katago-remote-analysis-server.py`)로 가리키면 실제 대국이 그 서버를 왕복한다(에뮬레이터 e2e 검증 완료). 기본값은 꺼짐이며, 앱 시작 시 한 번만 원격/로컬을 고르고 런타임 실패를 감지해 되돌리지 않는 한계가 남아 있다. 그 재설계와 MQ 전송 전환은 `work/roadmap/REMOTE_ENGINE_MQ_TRANSPORT_KICKOFF_PLAN_260818_0825.md`가 이어받았다 — Stage F(실제 물리 분산) 영역이라 앱 이식은 여전히 별도 승인 필요.
+**핵심 갭(해소됨, 260803 Stage D)**: `KataGoProcessEngineAdapter`(로컬)와 `RemoteEngineCoreApiAdapter`(원격)가 이제 `EngineCoreApi` 전체에 대해 대등한 계약을 만족한다(계약 테스트로 검증). 3계층의 후보 선택/신뢰도 판단(`selectRemoteEngineCandidate`)도 260804 Stage E-1/E-2에서 마련됐다 — 아래 3계층 절 참고. **260818 갱신**: 이 원격 경로는 이제 `MainActivity`에 `BuildConfig.DEBUG` 한정으로 배선돼 있다(Stage E-3) — `local.properties`의 `debug.remoteEngineUrl`을 맥북 참조 서버(`scripts/run-katago-remote-analysis-server.py`)로 가리키면 실제 대국이 그 서버를 왕복한다(에뮬레이터 e2e 검증 완료). 기본값은 꺼짐이며, 앱 시작 시 한 번만 원격/로컬을 고르고 런타임 실패를 감지해 되돌리지 않는 한계가 남아 있다. 그 재설계와 MQ 전송 전환은 `work/roadmap/260818-_REMOTE_ENGINE_MQ_TRANSPORT.md`가 이어받았다 — Stage F(실제 물리 분산) 영역이라 앱 이식은 여전히 별도 승인 필요.
 
 ### 3계층 — Extended API (엔진 서비스)
 

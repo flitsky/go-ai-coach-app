@@ -228,7 +228,7 @@ git branch -a --no-merged main
 
 | 브랜치 | 담겨 있던 것 | 처리 |
 | --- | --- | --- |
-| `feature/remote-engine-mq-prototype` | Stage F MQ 전송 파이썬 프로토타입 8파일 973줄 + 아래 프리미엄 픽스(중복) | 프로토타입은 `main`으로 체리픽(`794e194`) — `work/roadmap/REMOTE_ENGINE_MQ_TRANSPORT_KICKOFF_PLAN_260818_0825.md` 7절이 그 실측 결과다 |
+| `feature/remote-engine-mq-prototype` | Stage F MQ 전송 파이썬 프로토타입 8파일 973줄 + 아래 프리미엄 픽스(중복) | 프로토타입은 `main`으로 체리픽(`794e194`) — `work/roadmap/260818-_REMOTE_ENGINE_MQ_TRANSPORT.md`(2026-09-23에 `REMOTE_ENGINE_MQ_TRANSPORT_KICKOFF_PLAN_260818_0825.md`에서 개명) 7절이 그 실측 결과다 |
 | `fix/premium-expiry-toggle-off` | `프리미엄 만료 시 형세보기/추천수 토글 즉시 비활성화` 버그픽스 | **그대로 병합하지 않고 이식**(`abc6f20`) — 아래 참고 |
 
 ⚠️ **프리미엄 픽스는 그대로 넣을 수 없었습니다.** 브랜치는 2026-08-18에 잘렸고 소모품 1회권은 2026-08-24에 들어와서, 서로를 모릅니다. 원본 픽스는 토글값을 `LaunchedEffect` 키에 묶는데 — 1회권은 **정의상 프리미엄이 비활성일 때** 토글을 켭니다. 그대로 적용하면 티켓을 차감하고 켠 표시를 그 즉시 되꺼서 **1회권 기능이 통째로 죽습니다.** 이식본은 1회권이 잡고 있는 기능을 건너뛰도록 고쳤고(`ui/PremiumUiState.kt`의 `PremiumExpiryAutoDisableEffect`), 원본과 무엇이 다른지는 그 KDoc과 커밋 `abc6f20`에 적어 뒀습니다.

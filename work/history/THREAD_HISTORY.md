@@ -22,7 +22,7 @@
 ### 엔진 강도/레벨링/벤치마크 (06월 중순 전후)
 - KataGo 후보수(visits: 16/32/64)별 체감 난이도를 실제 자동 대국 매트릭스(50~150판 단위, `docs/engine/measurements/engine-match/`)로 검증하며 `빠른 초급`/`초급`/`중급`/`고급` `PlayLevelGroup` 체계로 정착시켰다. 색상/손실(`pointLoss`) 표시 기준을 KaTrain 공식과 여러 차례 맞대조해 정정했다.
 - 기기별 실행 시간 편차가 커서 로컬 스크립트(`scripts/run-katago-device-benchmark.py`)와 인앱 최초 실행 벤치마크(진행 팝업 + 결과 팝업, 메뉴에서 재실행 가능)를 만들어 체감 속도와 실측을 분리했다.
-- 핵심 버그 하나: KataGo 프로세스가 살아있는 동안 이전 탐색의 search tree/NN cache를 다음 탐색이 재사용해, AI 대 AI 자동대국에서 약한 레벨(B16)이 직전 강한 레벨(B64)의 탐색 결과를 몰래 물려받아 실력 경계가 오염되는 현상을 발견하고 해결했다(`ENGINE_SEARCH_TREE_REUSE_REVIEW.md`) — 최종 정책은 "AI vs AI는 착수 직전 `clear_cache`, 사람 vs AI는 재사용 유지"다(사람 상대는 이어지는 탐색이 정상적인 엔진 활용이므로).
+- 핵심 버그 하나: KataGo 프로세스가 살아있는 동안 이전 탐색의 search tree/NN cache를 다음 탐색이 재사용해, AI 대 AI 자동대국에서 약한 레벨(B16)이 직전 강한 레벨(B64)의 탐색 결과를 몰래 물려받아 실력 경계가 오염되는 현상을 발견하고 해결했다(원래 근거 문서는 `ENGINE_SEARCH_TREE_REUSE_REVIEW.md`였으나, 그 결론을 `ENGINE_API_CALL_POLICY.md`가 이미 흡수해 담고 있었고 미흡수분(다음 실험 절)까지 옮겨진 뒤 원본은 흡수 후 2026-09-23에 삭제됐다 — 지금은 `ENGINE_API_CALL_POLICY.md`가 살아 있는 근거다) — 최종 정책은 "AI vs AI는 착수 직전 `clear_cache`, 사람 vs AI는 재사용 유지"다(사람 상대는 이어지는 탐색이 정상적인 엔진 활용이므로).
 
 ### 아키텍처 리팩토링 대장정 (06월 중순 ~ 07월, 지금도 이어지는 방법론)
 - `GoCoachApp.kt` 한 파일이 ~2,000줄까지 비대해진 문제를 인식하고 완성도(68% → 82% → 86%...)를 추적하며 장기간 단계별 추출 리팩토링을 진행했다.
