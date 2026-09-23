@@ -3,15 +3,15 @@ package com.worksoc.goaicoach.application.debugreport
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.summary
 import com.worksoc.goaicoach.shared.AnalysisPreset
-import com.worksoc.goaicoach.shared.BoardCoordinate
-import com.worksoc.goaicoach.shared.BoardSize
+import com.worksoc.goaicoach.shared.domain.BoardCoordinate
+import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.EngineProfile
-import com.worksoc.goaicoach.shared.GameState
+import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
-import com.worksoc.goaicoach.shared.StoneColor
-import com.worksoc.goaicoach.shared.describe
+import com.worksoc.goaicoach.shared.domain.StoneColor
+import com.worksoc.goaicoach.shared.domain.describe
 
 /**
  * ⚠️ **[buildStamp]가 이 리포트의 첫 질문에 답한다 — "이거 어느 빌드예요?"**(백로그 #92).

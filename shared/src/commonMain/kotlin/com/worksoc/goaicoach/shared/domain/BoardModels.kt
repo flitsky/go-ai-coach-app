@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.shared
+package com.worksoc.goaicoach.shared.domain
 
 const val DefaultKomi = 6.5
 val KomiOptions = listOf(0.5, 6.5, 7.5)

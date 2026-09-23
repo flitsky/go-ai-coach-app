@@ -5,11 +5,11 @@ import com.worksoc.goaicoach.shared.AnalysisPreset
 import com.worksoc.goaicoach.shared.DifficultyProfile
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.EngineSearchMode
-import com.worksoc.goaicoach.shared.GameState
+import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.policy.MoveAnalysisSnapshot
 import com.worksoc.goaicoach.shared.SearchTimeProfile
 import com.worksoc.goaicoach.shared.policy.TurnAnalysisPurpose
-import com.worksoc.goaicoach.shared.analysisFingerprint
+import com.worksoc.goaicoach.shared.domain.analysisFingerprint
 import com.worksoc.goaicoach.shared.policy.fastCandidateAnalysis
 import com.worksoc.goaicoach.shared.policy.turnAnalysisLimitFor
 

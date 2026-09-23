@@ -7,7 +7,7 @@ import com.worksoc.goaicoach.shared.engine.EngineFallbackPolicy
 import com.worksoc.goaicoach.shared.engine.EngineOperationKind
 import com.worksoc.goaicoach.shared.engine.EngineTimeoutPolicy
 import com.worksoc.goaicoach.shared.engine.engineOperationRequest
-import com.worksoc.goaicoach.shared.GameState
+import com.worksoc.goaicoach.shared.domain.GameState
 
 fun topMoveAnalysisOperationToken(
     targetState: GameState,

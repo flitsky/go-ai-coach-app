@@ -1,6 +1,6 @@
 package com.worksoc.goaicoach.presentation
 
-import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.domain.Ruleset
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test

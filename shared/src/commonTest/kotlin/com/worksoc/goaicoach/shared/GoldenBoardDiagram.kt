@@ -1,5 +1,12 @@
 package com.worksoc.goaicoach.shared
 
+import com.worksoc.goaicoach.shared.domain.BoardCoordinate
+import com.worksoc.goaicoach.shared.domain.BoardSize
+import com.worksoc.goaicoach.shared.domain.DefaultKomi
+import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.domain.Move
+import com.worksoc.goaicoach.shared.domain.Ruleset
+import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.scoring.BoardAreaScorer
 import com.worksoc.goaicoach.shared.scoring.BoardTerritoryScorer
 

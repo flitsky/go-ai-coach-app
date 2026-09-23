@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.shared
+package com.worksoc.goaicoach.shared.domain
 
 data class DeadStoneRemoval(
     val coordinate: BoardCoordinate,

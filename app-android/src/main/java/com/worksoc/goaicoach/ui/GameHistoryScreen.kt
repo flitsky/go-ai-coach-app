@@ -48,7 +48,7 @@ import com.worksoc.goaicoach.persistence.GameHistoryStore
 import com.worksoc.goaicoach.persistence.ReferenceGameHistoryId
 import com.worksoc.goaicoach.persistence.loadReferenceGameReplay
 import com.worksoc.goaicoach.persistence.referenceGameHistoryEntry
-import com.worksoc.goaicoach.shared.GameState
+import com.worksoc.goaicoach.shared.domain.GameState
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale

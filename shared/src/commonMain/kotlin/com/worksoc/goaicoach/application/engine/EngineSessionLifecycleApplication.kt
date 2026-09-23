@@ -8,7 +8,7 @@ import com.worksoc.goaicoach.application.engine.operation.runEngineOperationInSc
 import com.worksoc.goaicoach.application.session.GameSessionEffect
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.EngineStatus
-import com.worksoc.goaicoach.shared.GameState
+import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.engine.EngineFallbackPolicy
 import com.worksoc.goaicoach.shared.engine.EngineOperationKind
 import com.worksoc.goaicoach.shared.engine.EngineOperationRequest

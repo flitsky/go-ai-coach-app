@@ -1,13 +1,13 @@
 package com.worksoc.goaicoach.application.endgame
 
 import com.worksoc.goaicoach.application.time.currentEpochMillis
-import com.worksoc.goaicoach.shared.BoardCoordinate
-import com.worksoc.goaicoach.shared.BoardSize
+import com.worksoc.goaicoach.shared.domain.BoardCoordinate
+import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.CandidateMove
-import com.worksoc.goaicoach.shared.DeadStoneRemoval
-import com.worksoc.goaicoach.shared.GameState
-import com.worksoc.goaicoach.shared.StoneColor
-import com.worksoc.goaicoach.shared.describe
+import com.worksoc.goaicoach.shared.domain.DeadStoneRemoval
+import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.domain.StoneColor
+import com.worksoc.goaicoach.shared.domain.describe
 
 internal fun buildEndgameLog(
     source: String,

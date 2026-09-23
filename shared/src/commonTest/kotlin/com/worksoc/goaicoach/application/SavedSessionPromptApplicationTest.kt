@@ -4,12 +4,12 @@ import com.worksoc.goaicoach.application.savedgame.*
 
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
-import com.worksoc.goaicoach.shared.BoardCoordinate
-import com.worksoc.goaicoach.shared.BoardSize
-import com.worksoc.goaicoach.shared.GameState
-import com.worksoc.goaicoach.shared.Move
+import com.worksoc.goaicoach.shared.domain.BoardCoordinate
+import com.worksoc.goaicoach.shared.domain.BoardSize
+import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.PlayLevelSetting
-import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.domain.StoneColor
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull

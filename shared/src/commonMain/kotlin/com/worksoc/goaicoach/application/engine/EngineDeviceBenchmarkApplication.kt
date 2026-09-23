@@ -15,7 +15,7 @@ import com.worksoc.goaicoach.application.engine.operation.EngineOperationLifecyc
 import com.worksoc.goaicoach.application.engine.operation.runEngineOperationInScope
 import com.worksoc.goaicoach.shared.engine.EngineOperationGate
 import com.worksoc.goaicoach.shared.engine.evaluateEngineBenchmarkGate
-import com.worksoc.goaicoach.shared.GameState
+import com.worksoc.goaicoach.shared.domain.GameState
 import kotlinx.coroutines.delay
 
 internal data class EngineBenchmarkRunRequest(

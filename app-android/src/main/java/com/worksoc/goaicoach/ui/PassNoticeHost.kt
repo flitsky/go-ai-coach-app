@@ -46,8 +46,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.worksoc.goaicoach.presentation.GameScreenState
-import com.worksoc.goaicoach.shared.Move
-import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.domain.Move
+import com.worksoc.goaicoach.shared.domain.StoneColor
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 

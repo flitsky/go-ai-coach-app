@@ -2,12 +2,12 @@ package com.worksoc.goaicoach.engine.android
 
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.AnalysisResult
-import com.worksoc.goaicoach.shared.BoardCoordinate
+import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.EngineStatus
-import com.worksoc.goaicoach.shared.LegalMoveGenerator
-import com.worksoc.goaicoach.shared.Move
-import com.worksoc.goaicoach.shared.allCoordinates
+import com.worksoc.goaicoach.shared.domain.LegalMoveGenerator
+import com.worksoc.goaicoach.shared.domain.Move
+import com.worksoc.goaicoach.shared.domain.allCoordinates
 import org.json.JSONObject
 
 internal class KataGoJsonPositionAnalysisClient(

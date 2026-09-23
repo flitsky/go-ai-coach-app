@@ -2,18 +2,18 @@ package com.worksoc.goaicoach.engine
 
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.AnalysisResult
-import com.worksoc.goaicoach.shared.BoardSize
+import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.DeadStonesResult
 import com.worksoc.goaicoach.shared.EngineCoreApi
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.EngineStatus
 import com.worksoc.goaicoach.shared.FinalScoreResult
-import com.worksoc.goaicoach.shared.GameState
-import com.worksoc.goaicoach.shared.Move
+import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.MoveResult
-import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.ScoreEstimate
-import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.domain.StoneColor
 import kotlinx.coroutines.Deferred
 
 /**

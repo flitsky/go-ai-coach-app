@@ -5,11 +5,11 @@ import com.worksoc.goaicoach.application.session.RuntimePlayLevelSelection
 import com.worksoc.goaicoach.application.session.selectRuntimePlayLevel
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.PlayerSetup
-import com.worksoc.goaicoach.shared.BoardSize
+import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.EngineProfile
-import com.worksoc.goaicoach.shared.GameState
+import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.PlayLevelSetting
-import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 
 data class GameSettings(
@@ -74,7 +74,7 @@ fun buildUserPreferencesSnapshot(
     searchTimeSettings: SearchTimeSettings = SearchTimeSettings(),
     isDirectPlayEnabled: Boolean = true,
     showMoveReview: Boolean = false,
-    komi: Double = com.worksoc.goaicoach.shared.DefaultKomi,
+    komi: Double = com.worksoc.goaicoach.shared.domain.DefaultKomi,
     isPlayHapticEnabled: Boolean = true,
     isPlayEffectEnabled: Boolean = true,
     isBoardMaxSize: Boolean = true,
@@ -109,7 +109,7 @@ fun buildUserPreferencesSnapshot(
     showOwnershipOverlay: Boolean,
     isDirectPlayEnabled: Boolean = true,
     showMoveReview: Boolean = false,
-    komi: Double = com.worksoc.goaicoach.shared.DefaultKomi,
+    komi: Double = com.worksoc.goaicoach.shared.domain.DefaultKomi,
     isPlayHapticEnabled: Boolean = true,
     isPlayEffectEnabled: Boolean = true,
     isBoardMaxSize: Boolean = true,

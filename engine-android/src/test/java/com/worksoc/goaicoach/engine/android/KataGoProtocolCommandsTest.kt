@@ -1,11 +1,11 @@
 package com.worksoc.goaicoach.engine.android
 
 import com.worksoc.goaicoach.shared.AnalysisLimit
-import com.worksoc.goaicoach.shared.BoardCoordinate
-import com.worksoc.goaicoach.shared.BoardSize
-import com.worksoc.goaicoach.shared.Move
-import com.worksoc.goaicoach.shared.Ruleset
-import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.domain.BoardCoordinate
+import com.worksoc.goaicoach.shared.domain.BoardSize
+import com.worksoc.goaicoach.shared.domain.Move
+import com.worksoc.goaicoach.shared.domain.Ruleset
+import com.worksoc.goaicoach.shared.domain.StoneColor
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

@@ -1,8 +1,8 @@
 package com.worksoc.goaicoach.ui
 
 import com.worksoc.goaicoach.application.score.FinalScoreJudgement
-import com.worksoc.goaicoach.shared.Ruleset
-import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.domain.Ruleset
+import com.worksoc.goaicoach.shared.domain.StoneColor
 
 internal fun FinalScoreJudgement.resultText(strings: UiStrings): String {
     val winner = winner

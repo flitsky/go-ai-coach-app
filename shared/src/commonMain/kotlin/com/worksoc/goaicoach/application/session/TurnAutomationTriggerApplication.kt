@@ -2,7 +2,7 @@ package com.worksoc.goaicoach.application.session
 
 import com.worksoc.goaicoach.application.time.currentEpochMillis
 import com.worksoc.goaicoach.application.undo.undoEngineInterventionRemainingDelayMillis
-import com.worksoc.goaicoach.shared.GameState
+import com.worksoc.goaicoach.shared.domain.GameState
 import kotlinx.coroutines.delay
 
 suspend fun runTurnAutomationTriggerEffect(

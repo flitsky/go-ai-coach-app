@@ -2,9 +2,9 @@ package com.worksoc.goaicoach.application.preferences
 
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.PlayerSetup
-import com.worksoc.goaicoach.shared.BoardSize
-import com.worksoc.goaicoach.shared.DefaultKomi
-import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.domain.BoardSize
+import com.worksoc.goaicoach.shared.domain.DefaultKomi
+import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 
 /**

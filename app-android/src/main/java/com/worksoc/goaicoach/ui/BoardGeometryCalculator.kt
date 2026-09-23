@@ -3,8 +3,8 @@ package com.worksoc.goaicoach.ui
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.unit.IntSize
-import com.worksoc.goaicoach.shared.BoardCoordinate
-import com.worksoc.goaicoach.shared.BoardSize
+import com.worksoc.goaicoach.shared.domain.BoardCoordinate
+import com.worksoc.goaicoach.shared.domain.BoardSize
 import kotlin.math.abs
 import kotlin.math.min
 import kotlin.math.roundToInt

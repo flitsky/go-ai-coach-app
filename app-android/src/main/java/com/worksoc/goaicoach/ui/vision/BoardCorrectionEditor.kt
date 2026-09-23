@@ -46,14 +46,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.worksoc.goaicoach.presentation.KaTrainUxOptions
 import com.worksoc.goaicoach.shared.AnalysisResult
-import com.worksoc.goaicoach.shared.BoardCoordinate
-import com.worksoc.goaicoach.shared.BoardSize
-import com.worksoc.goaicoach.shared.DefaultKomi
-import com.worksoc.goaicoach.shared.GameState
-import com.worksoc.goaicoach.shared.KomiOptions
-import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.domain.BoardCoordinate
+import com.worksoc.goaicoach.shared.domain.BoardSize
+import com.worksoc.goaicoach.shared.domain.DefaultKomi
+import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.domain.KomiOptions
+import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.ScoreEstimate
-import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.ui.GoBoard
 
 enum class BoardEditTool {

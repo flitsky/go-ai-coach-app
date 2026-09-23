@@ -1,7 +1,7 @@
 package com.worksoc.goaicoach.ui
 
-import com.worksoc.goaicoach.shared.Move
-import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.domain.Move
+import com.worksoc.goaicoach.shared.domain.StoneColor
 
 internal fun resignCurrentGameIfAllowed(
     isGameEnded: Boolean,

@@ -13,18 +13,18 @@ import com.worksoc.goaicoach.application.score.*
 
 import com.worksoc.goaicoach.application.topmoves.*
 import com.worksoc.goaicoach.shared.AnalysisPreset
-import com.worksoc.goaicoach.shared.BoardCoordinate
-import com.worksoc.goaicoach.shared.BoardSize
+import com.worksoc.goaicoach.shared.domain.BoardCoordinate
+import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.EngineStatus
 import com.worksoc.goaicoach.shared.FinalScoreResult
-import com.worksoc.goaicoach.shared.GameState
-import com.worksoc.goaicoach.shared.Move
+import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.policy.MoveAnalysisSnapshot
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshotSource
-import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.domain.StoneColor
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull

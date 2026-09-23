@@ -9,8 +9,8 @@ import com.worksoc.goaicoach.application.preferences.UserPreferencesStorePort
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.persistence.PlayerSetupJsonCodec.decodePlayerSetup
 import com.worksoc.goaicoach.persistence.PlayerSetupJsonCodec.encodePlayerSetup
-import com.worksoc.goaicoach.shared.BoardSize
-import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.domain.BoardSize
+import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.SearchTimeLimit
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import org.json.JSONObject
@@ -122,7 +122,7 @@ internal object UserPreferencesCodec {
                 playerSetup = decodePlayerSetup(json.optJSONObject("playerSetup")),
                 ruleset = enumOrDefault(json.optString("ruleset"), Ruleset.Japanese),
                 handicapCount = json.optInt("handicapCount", 0),
-                komi = json.optDouble("komi", com.worksoc.goaicoach.shared.DefaultKomi),
+                komi = json.optDouble("komi", com.worksoc.goaicoach.shared.domain.DefaultKomi),
                 topMovesEnabled = json.optBoolean("topMovesEnabled", defaults.topMovesEnabled),
                 showCoordinates = json.optBoolean("showCoordinates", defaults.showCoordinates),
                 showMoveNumbers = json.optBoolean("showMoveNumbers", defaults.showMoveNumbers),

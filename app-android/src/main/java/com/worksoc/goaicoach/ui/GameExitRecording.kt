@@ -5,7 +5,7 @@ import com.worksoc.goaicoach.application.gamehistory.runGameHistoryAppendIfCompl
 import com.worksoc.goaicoach.application.score.FinalScoreJudgement
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.persistence.GameHistoryStore
-import com.worksoc.goaicoach.shared.GameState
+import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 
 /**

@@ -6,6 +6,13 @@ import com.worksoc.goaicoach.shared.content.StudyLessonStep
 import com.worksoc.goaicoach.shared.content.StudyLessonTrack
 import com.worksoc.goaicoach.shared.content.studyLessons
 import com.worksoc.goaicoach.shared.content.studyLessonsFor
+import com.worksoc.goaicoach.shared.domain.BoardCoordinate
+import com.worksoc.goaicoach.shared.domain.BoardRules
+import com.worksoc.goaicoach.shared.domain.BoardSize
+import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.domain.LegalMoveGenerator
+import com.worksoc.goaicoach.shared.domain.StoneColor
+import com.worksoc.goaicoach.shared.domain.allCoordinates
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

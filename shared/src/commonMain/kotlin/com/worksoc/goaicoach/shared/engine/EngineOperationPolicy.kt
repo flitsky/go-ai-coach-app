@@ -1,8 +1,8 @@
 package com.worksoc.goaicoach.shared.engine
 
-import com.worksoc.goaicoach.shared.GameState
-import com.worksoc.goaicoach.shared.Ruleset
-import com.worksoc.goaicoach.shared.analysisFingerprint
+import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.domain.Ruleset
+import com.worksoc.goaicoach.shared.domain.analysisFingerprint
 
 /**
  * 엔진 작업이 **막힌 이유**를 타입으로 부른다.

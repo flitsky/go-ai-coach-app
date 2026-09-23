@@ -14,14 +14,14 @@ import com.worksoc.goaicoach.middleware.optNullableLong
 import com.worksoc.goaicoach.middleware.optNullableString
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.AnalysisResult
-import com.worksoc.goaicoach.shared.BoardCoordinate
+import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.CandidateMoveSource
 import com.worksoc.goaicoach.shared.EngineSearchMode
 import com.worksoc.goaicoach.shared.EngineState
 import com.worksoc.goaicoach.shared.EngineStatus
-import com.worksoc.goaicoach.shared.Move
-import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.domain.Move
+import com.worksoc.goaicoach.shared.domain.StoneColor
 import java.io.File
 import org.json.JSONArray
 import org.json.JSONObject

@@ -4,10 +4,10 @@ import com.worksoc.goaicoach.application.movereview.deriveMoveReviewMarkersFromS
 import com.worksoc.goaicoach.application.score.FinalScoreJudgement
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
-import com.worksoc.goaicoach.shared.GameState
-import com.worksoc.goaicoach.shared.Move
+import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
-import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.domain.StoneColor
 import kotlin.random.Random
 
 /**

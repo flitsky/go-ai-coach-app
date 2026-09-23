@@ -15,10 +15,10 @@ import com.worksoc.goaicoach.application.session.GameSessionEffect
 import com.worksoc.goaicoach.application.session.GameSessionRuntimeState
 import com.worksoc.goaicoach.application.session.TurnTimeMoveUpdate
 import com.worksoc.goaicoach.application.time.currentEpochMillis
-import com.worksoc.goaicoach.shared.GameState
+import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
-import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.engine.EngineOperationRequest
 
 internal data class AutoAiScheduledTurnRunRequest(

@@ -2,18 +2,18 @@ package com.worksoc.goaicoach.engine.android
 
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.AnalysisResult
-import com.worksoc.goaicoach.shared.BoardCoordinate
-import com.worksoc.goaicoach.shared.BoardSize
+import com.worksoc.goaicoach.shared.domain.BoardCoordinate
+import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.CandidateMoveSource
 import com.worksoc.goaicoach.shared.EngineState
 import com.worksoc.goaicoach.shared.EngineStatus
-import com.worksoc.goaicoach.shared.GameState
-import com.worksoc.goaicoach.shared.Move
+import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.RemotePositionAnalysisRequest
 import com.worksoc.goaicoach.shared.RemotePositionAnalysisResponse
 import com.worksoc.goaicoach.shared.RemotePositionAnalysisTransport
-import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.domain.StoneColor
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.IOException

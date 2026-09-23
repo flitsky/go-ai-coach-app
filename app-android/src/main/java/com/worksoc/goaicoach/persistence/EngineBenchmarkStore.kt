@@ -9,7 +9,7 @@ import com.worksoc.goaicoach.application.engine.EngineBenchmarkStorePort
 import com.worksoc.goaicoach.middleware.optNullableDouble
 import com.worksoc.goaicoach.middleware.optNullableInt
 import com.worksoc.goaicoach.middleware.optNullableLong
-import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.domain.Ruleset
 import java.io.File
 import org.json.JSONArray
 import org.json.JSONObject

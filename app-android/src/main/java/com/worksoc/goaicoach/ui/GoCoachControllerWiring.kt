@@ -43,7 +43,7 @@ import com.worksoc.goaicoach.application.undo.UndoController
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.shared.EngineProfile
-import com.worksoc.goaicoach.shared.GameState
+import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.engine.EngineTimeoutPolicy
 import kotlinx.coroutines.CoroutineScope

@@ -3,8 +3,8 @@ package com.worksoc.goaicoach.engine.android
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.AnalysisResult
 import com.worksoc.goaicoach.shared.scoring.BoardScorer
-import com.worksoc.goaicoach.shared.BoardCoordinate
-import com.worksoc.goaicoach.shared.BoardSize
+import com.worksoc.goaicoach.shared.domain.BoardCoordinate
+import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.CandidateMoveSource
 import com.worksoc.goaicoach.shared.DeadStonesResult
@@ -13,15 +13,15 @@ import com.worksoc.goaicoach.shared.EngineMode
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.EngineStatus
 import com.worksoc.goaicoach.shared.FinalScoreResult
-import com.worksoc.goaicoach.shared.GameStateReplayer
-import com.worksoc.goaicoach.shared.Move
+import com.worksoc.goaicoach.shared.domain.GameStateReplayer
+import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.MoveResult
 import com.worksoc.goaicoach.shared.OwnershipEstimate
-import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.ScoreEstimate
-import com.worksoc.goaicoach.shared.StoneColor
-import com.worksoc.goaicoach.shared.allCoordinates
-import com.worksoc.goaicoach.shared.describe
+import com.worksoc.goaicoach.shared.domain.StoneColor
+import com.worksoc.goaicoach.shared.domain.allCoordinates
+import com.worksoc.goaicoach.shared.domain.describe
 
 internal class StubEngineAdapter : EngineCoreApi {
     private var boardSize: BoardSize = BoardSize.Nine

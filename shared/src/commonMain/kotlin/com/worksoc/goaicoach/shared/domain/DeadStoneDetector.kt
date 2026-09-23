@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.shared
+package com.worksoc.goaicoach.shared.domain
 
 /**
  * 양패스로 끝난 판에서 **걷어야 할 사석**을 찾는 로컬 폴백.

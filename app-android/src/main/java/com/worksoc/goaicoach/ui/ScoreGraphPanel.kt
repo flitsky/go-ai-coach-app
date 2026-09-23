@@ -38,7 +38,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
-import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.domain.StoneColor
 import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.roundToInt

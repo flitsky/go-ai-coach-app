@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.shared
+package com.worksoc.goaicoach.shared.domain
 
 object GameStateReplayer {
     fun replay(

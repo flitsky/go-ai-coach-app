@@ -1,21 +1,21 @@
 package com.worksoc.goaicoach.application.endgame
 
 import com.worksoc.goaicoach.shared.AnalysisLimit
-import com.worksoc.goaicoach.shared.BoardCoordinate
+import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.scoring.BoardScorer
 import com.worksoc.goaicoach.shared.CandidateMove
-import com.worksoc.goaicoach.shared.DeadStoneCleaner
-import com.worksoc.goaicoach.shared.DeadStoneCleanupResult
-import com.worksoc.goaicoach.shared.DeadStoneDetector
+import com.worksoc.goaicoach.shared.domain.DeadStoneCleaner
+import com.worksoc.goaicoach.shared.domain.DeadStoneCleanupResult
+import com.worksoc.goaicoach.shared.domain.DeadStoneDetector
 import com.worksoc.goaicoach.shared.DeadStonesResult
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.EngineStatus
 import com.worksoc.goaicoach.shared.policy.EndgameScoreSelector
 import com.worksoc.goaicoach.shared.policy.EndgameScoreSource
 import com.worksoc.goaicoach.shared.FinalScoreResult
-import com.worksoc.goaicoach.shared.GameState
+import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.ScoreEstimate
-import com.worksoc.goaicoach.shared.describe
+import com.worksoc.goaicoach.shared.domain.describe
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.diagnostic.NoopDiagnosticEventLog
 import com.worksoc.goaicoach.application.diagnostic.scoreDisagreementDiagnosticEvent

@@ -11,10 +11,10 @@ import com.worksoc.goaicoach.application.score.FinalScoreDisplayPlan
 import com.worksoc.goaicoach.application.session.GameSessionControllerState
 import com.worksoc.goaicoach.application.session.GameSessionRuntimeState
 import com.worksoc.goaicoach.application.session.TurnTimeMoveUpdate
-import com.worksoc.goaicoach.shared.GameState
+import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 import com.worksoc.goaicoach.shared.SearchTimeSettings
-import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.domain.StoneColor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 

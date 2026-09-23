@@ -2,10 +2,10 @@ package com.worksoc.goaicoach.application.gamehistory
 
 import com.worksoc.goaicoach.application.movereview.MoveReviewMarker
 import com.worksoc.goaicoach.application.movereview.deriveMoveReviewMarkersFromScoreSwing
-import com.worksoc.goaicoach.shared.BoardSize
-import com.worksoc.goaicoach.shared.GameState
-import com.worksoc.goaicoach.shared.Move
-import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.domain.BoardSize
+import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.domain.Move
+import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 import kotlin.math.abs
 

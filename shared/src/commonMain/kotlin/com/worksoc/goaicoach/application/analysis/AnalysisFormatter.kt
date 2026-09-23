@@ -1,11 +1,11 @@
 package com.worksoc.goaicoach.application.analysis
 
 import com.worksoc.goaicoach.shared.AnalysisResult
-import com.worksoc.goaicoach.shared.BoardSize
+import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.FinalScoreResult
 import com.worksoc.goaicoach.shared.ScoreEstimate
-import com.worksoc.goaicoach.shared.StoneColor
-import com.worksoc.goaicoach.shared.describe
+import com.worksoc.goaicoach.shared.domain.StoneColor
+import com.worksoc.goaicoach.shared.domain.describe
 import com.worksoc.goaicoach.shared.policy.pointLossLabel
 import kotlin.math.roundToInt
 

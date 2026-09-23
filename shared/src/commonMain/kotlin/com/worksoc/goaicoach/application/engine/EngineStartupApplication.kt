@@ -1,7 +1,7 @@
 package com.worksoc.goaicoach.application.engine
 
 import com.worksoc.goaicoach.application.engine.EngineStartupResult
-import com.worksoc.goaicoach.shared.GameState
+import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 
 data class EngineStartupDisplayPlan(

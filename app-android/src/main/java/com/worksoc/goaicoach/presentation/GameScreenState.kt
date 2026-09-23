@@ -18,13 +18,13 @@ import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.application.engine.EngineAvailability
 import com.worksoc.goaicoach.application.engine.engineAvailabilityFor
 import com.worksoc.goaicoach.shared.EngineProfile
-import com.worksoc.goaicoach.shared.GameState
+import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.policy.MoveAnalysisSnapshot
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
-import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.domain.StoneColor
 
 internal data class GameScreenState(
     val gameState: GameState,

@@ -13,11 +13,11 @@ import com.worksoc.goaicoach.shared.engine.engineOperationRequest
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.EngineSearchMode
-import com.worksoc.goaicoach.shared.GameState
+import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.policy.aiMoveAnalysisLimitWith
 import com.worksoc.goaicoach.shared.policy.aiMoveSearchMode
-import com.worksoc.goaicoach.shared.analysisFingerprint
+import com.worksoc.goaicoach.shared.domain.analysisFingerprint
 import com.worksoc.goaicoach.shared.policy.forcedJsonPositionAnalysis
 
 internal const val JsonPositionAnalysisCacheOptimizationBatchMaxTargets: Int = 10

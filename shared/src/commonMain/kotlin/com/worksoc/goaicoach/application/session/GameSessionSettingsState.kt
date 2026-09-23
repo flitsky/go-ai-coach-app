@@ -4,7 +4,7 @@ import com.worksoc.goaicoach.application.preferences.InitialUserPreferencesPlan
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
-import com.worksoc.goaicoach.shared.BoardSize
+import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 
 data class GameSessionSettingsState(
@@ -14,7 +14,7 @@ data class GameSessionSettingsState(
     val searchTimeSettings: SearchTimeSettings,
     val topMovesEnabled: Boolean,
     val handicapCount: Int = 0,
-    val komi: Double = com.worksoc.goaicoach.shared.DefaultKomi,
+    val komi: Double = com.worksoc.goaicoach.shared.domain.DefaultKomi,
 ) {
     val matchMode: MatchMode
         get() = playerSetup.matchMode()

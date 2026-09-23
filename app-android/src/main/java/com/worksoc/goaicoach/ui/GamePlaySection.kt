@@ -64,8 +64,8 @@ import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.presentation.GameActionButtonRole
 import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.presentation.GameUiEvent
-import com.worksoc.goaicoach.shared.BoardCoordinate
-import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.domain.BoardCoordinate
+import com.worksoc.goaicoach.shared.domain.StoneColor
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import com.worksoc.goaicoach.application.guide.GuideTarget

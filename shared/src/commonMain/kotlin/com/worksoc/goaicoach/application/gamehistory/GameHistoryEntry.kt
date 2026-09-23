@@ -2,10 +2,10 @@ package com.worksoc.goaicoach.application.gamehistory
 
 import com.worksoc.goaicoach.application.movereview.MoveReviewMarker
 import com.worksoc.goaicoach.match.PlayerSetup
-import com.worksoc.goaicoach.shared.Move
-import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.domain.Move
+import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
-import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.domain.StoneColor
 
 /**
  * 사람 플레이어 기준 결과.

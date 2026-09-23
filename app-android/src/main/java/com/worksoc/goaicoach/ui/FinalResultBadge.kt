@@ -17,9 +17,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.worksoc.goaicoach.application.score.FinalScoreJudgement
-import com.worksoc.goaicoach.shared.GameState
-import com.worksoc.goaicoach.shared.Move
-import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.domain.Move
+import com.worksoc.goaicoach.shared.domain.StoneColor
 
 /**
  * 대국 종료 상태 화면의 **결과 배지**(백로그 #187) — 좌석 카드 둘 **사이**에 겹쳐 뜬다.

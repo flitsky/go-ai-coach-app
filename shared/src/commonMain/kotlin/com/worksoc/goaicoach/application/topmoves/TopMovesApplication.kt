@@ -13,7 +13,7 @@ import com.worksoc.goaicoach.application.session.GameSessionEffect
 import com.worksoc.goaicoach.shared.AnalysisPreset
 import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.EngineProfile
-import com.worksoc.goaicoach.shared.GameState
+import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.policy.MoveAnalysisSnapshot
 
 fun GameSessionAnalysisState.applyTopMoveAnalysisLaunchPlan(

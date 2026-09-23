@@ -15,11 +15,11 @@ import com.worksoc.goaicoach.application.diagnostic.engineOperationTimeoutDiagno
 import com.worksoc.goaicoach.application.diagnostic.engineVisitFillDiagnosticEvent
 import com.worksoc.goaicoach.application.diagnostic.runDiagnosticEventExternalSinkPlan
 import com.worksoc.goaicoach.application.diagnostic.runObservedEngineOperation
-import com.worksoc.goaicoach.shared.BoardCoordinate
-import com.worksoc.goaicoach.shared.BoardSize
-import com.worksoc.goaicoach.shared.GameState
-import com.worksoc.goaicoach.shared.Move
-import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.domain.BoardCoordinate
+import com.worksoc.goaicoach.shared.domain.BoardSize
+import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.domain.Move
+import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.diagnostic.DiagnosticEvent
 import com.worksoc.goaicoach.shared.diagnostic.DiagnosticEventExternalExportDecision
 import com.worksoc.goaicoach.shared.diagnostic.DiagnosticEventExternalExportPayload

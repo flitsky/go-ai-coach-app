@@ -17,10 +17,10 @@ import com.worksoc.goaicoach.application.score.ScoreEstimateFailureDisplayPlan
 import com.worksoc.goaicoach.application.time.currentEpochMillis
 import com.worksoc.goaicoach.application.topmoves.TopMoveAnalysisFailureDisplayPlan
 import com.worksoc.goaicoach.application.undo.UndoLocalStatePlan
-import com.worksoc.goaicoach.shared.BoardSize
-import com.worksoc.goaicoach.shared.GameState
+import com.worksoc.goaicoach.shared.domain.BoardSize
+import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.policy.MoveAnalysisSnapshot
-import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.domain.Ruleset
 
 data class GameSessionCoreState(
     val gameState: GameState,
@@ -136,7 +136,7 @@ data class GameSessionCoreState(
         ruleset: Ruleset,
         boardSize: BoardSize,
         handicapCount: Int,
-        komi: Double = com.worksoc.goaicoach.shared.DefaultKomi,
+        komi: Double = com.worksoc.goaicoach.shared.domain.DefaultKomi,
     ): GameSessionCoreState =
         applyGameSessionResetPlan(
             buildNewLocalGameSessionPlan(

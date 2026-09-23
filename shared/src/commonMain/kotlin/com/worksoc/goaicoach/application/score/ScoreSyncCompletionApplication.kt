@@ -4,7 +4,7 @@ import com.worksoc.goaicoach.shared.engine.EngineOperationApplyPlan
 import com.worksoc.goaicoach.shared.engine.EngineOperationRequest
 import com.worksoc.goaicoach.shared.engine.EngineOperationResultGuard
 import com.worksoc.goaicoach.shared.engine.buildEngineOperationApplyPlan
-import com.worksoc.goaicoach.shared.GameState
+import com.worksoc.goaicoach.shared.domain.GameState
 
 sealed class ScoreSyncCompletionPlan {
     data class ApplySuccess(

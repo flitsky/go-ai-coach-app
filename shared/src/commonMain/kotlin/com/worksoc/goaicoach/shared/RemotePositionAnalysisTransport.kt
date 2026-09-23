@@ -1,5 +1,7 @@
 package com.worksoc.goaicoach.shared
 
+import com.worksoc.goaicoach.shared.domain.GameState
+
 /**
  * 2계층(Middleware / Bridge) — position-analysis 단위 원격 호출 계약.
  *

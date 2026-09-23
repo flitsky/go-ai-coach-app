@@ -41,9 +41,9 @@ import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.session.GameSessionTurnTimeState
 import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.presentation.GameUiEvent
-import com.worksoc.goaicoach.shared.BoardCoordinate
-import com.worksoc.goaicoach.shared.Move
-import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.domain.BoardCoordinate
+import com.worksoc.goaicoach.shared.domain.Move
+import com.worksoc.goaicoach.shared.domain.StoneColor
 import kotlin.math.abs
 
 @Composable

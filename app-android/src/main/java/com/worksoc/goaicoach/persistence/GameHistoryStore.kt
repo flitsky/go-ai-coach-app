@@ -8,10 +8,10 @@ import com.worksoc.goaicoach.application.gamehistory.GameHistoryStorePort
 import com.worksoc.goaicoach.application.gamehistory.GameReplayData
 import com.worksoc.goaicoach.persistence.PlayerSetupJsonCodec.decodePlayerSetup
 import com.worksoc.goaicoach.persistence.PlayerSetupJsonCodec.encodePlayerSetup
-import com.worksoc.goaicoach.shared.BoardSize
-import com.worksoc.goaicoach.shared.DefaultKomi
-import com.worksoc.goaicoach.shared.Ruleset
-import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.domain.BoardSize
+import com.worksoc.goaicoach.shared.domain.DefaultKomi
+import com.worksoc.goaicoach.shared.domain.Ruleset
+import com.worksoc.goaicoach.shared.domain.StoneColor
 import java.io.File
 import org.json.JSONArray
 import org.json.JSONObject

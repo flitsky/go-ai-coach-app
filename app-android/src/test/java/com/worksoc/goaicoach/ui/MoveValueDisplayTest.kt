@@ -2,12 +2,12 @@ package com.worksoc.goaicoach.ui
 
 import com.worksoc.goaicoach.application.analysis.toCandidateText
 import com.worksoc.goaicoach.shared.AnalysisResult
-import com.worksoc.goaicoach.shared.BoardCoordinate
-import com.worksoc.goaicoach.shared.BoardSize
+import com.worksoc.goaicoach.shared.domain.BoardCoordinate
+import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.EngineStatus
-import com.worksoc.goaicoach.shared.Move
-import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.domain.Move
+import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.policy.pointLossLabel
 import com.worksoc.goaicoach.shared.policy.topMoveDeltaScoreLabel
 import org.junit.Assert.assertEquals

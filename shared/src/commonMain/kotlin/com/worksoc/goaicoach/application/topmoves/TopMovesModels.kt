@@ -15,7 +15,7 @@ import com.worksoc.goaicoach.shared.AnalysisPreset
 import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.EngineSearchMode
-import com.worksoc.goaicoach.shared.GameState
+import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.policy.MoveAnalysisSnapshot
 import com.worksoc.goaicoach.match.PlayerSetup
 

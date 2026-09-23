@@ -26,20 +26,20 @@ import com.worksoc.goaicoach.match.SidePlayerSetup
 import com.worksoc.goaicoach.persistence.GameSessionStore
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.AnalysisResult
-import com.worksoc.goaicoach.shared.BoardCoordinate
-import com.worksoc.goaicoach.shared.BoardSize
+import com.worksoc.goaicoach.shared.domain.BoardCoordinate
+import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.engine.EngineIdentity
 import com.worksoc.goaicoach.shared.EngineMode
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.EngineSearchMode
 import com.worksoc.goaicoach.shared.EngineStatus
-import com.worksoc.goaicoach.shared.GameState
-import com.worksoc.goaicoach.shared.Move
+import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.SearchTimeSettings
-import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.ui.GoCoachApp
 import com.worksoc.goaicoach.ui.TestTags
 import com.worksoc.goaicoach.ui.UiLanguage
@@ -140,7 +140,7 @@ private class FakeNeverReadyEngineSessionClient : EngineSessionClient {
     override suspend fun startNewGame(
         profile: EngineProfile,
         boardSize: BoardSize,
-        ruleset: com.worksoc.goaicoach.shared.Ruleset,
+        ruleset: com.worksoc.goaicoach.shared.domain.Ruleset,
         handicapCount: Int,
         komi: Double,
     ): EngineStartupResult = error("not used")

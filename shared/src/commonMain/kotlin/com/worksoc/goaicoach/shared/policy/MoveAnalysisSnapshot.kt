@@ -1,13 +1,13 @@
 package com.worksoc.goaicoach.shared.policy
 
-import com.worksoc.goaicoach.shared.BoardCoordinate
-import com.worksoc.goaicoach.shared.BoardSize
+import com.worksoc.goaicoach.shared.domain.BoardCoordinate
+import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.CandidateMoveSource
-import com.worksoc.goaicoach.shared.GameState
-import com.worksoc.goaicoach.shared.LegalMoveGenerator
-import com.worksoc.goaicoach.shared.Move
-import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.domain.LegalMoveGenerator
+import com.worksoc.goaicoach.shared.domain.Move
+import com.worksoc.goaicoach.shared.domain.StoneColor
 
 data class MoveAnalysisSnapshot(
     val boardSize: BoardSize,

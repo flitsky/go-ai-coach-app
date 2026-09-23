@@ -29,13 +29,13 @@ import com.worksoc.goaicoach.match.MatchReferee
 import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.FinalScoreResult
-import com.worksoc.goaicoach.shared.GameState
-import com.worksoc.goaicoach.shared.Move
+import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.policy.MoveAnalysisSnapshot
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 import com.worksoc.goaicoach.shared.scoring.ScoreTimeline
-import com.worksoc.goaicoach.shared.StoneColor
-import com.worksoc.goaicoach.shared.describe
+import com.worksoc.goaicoach.shared.domain.StoneColor
+import com.worksoc.goaicoach.shared.domain.describe
 
 data class HumanMoveLocalResult(
     val afterMove: GameState,

@@ -48,9 +48,9 @@ import com.worksoc.goaicoach.application.gamehistory.deriveReplayMoveEvaluations
 import com.worksoc.goaicoach.application.gamehistory.deriveScoreSwingHighlights
 import com.worksoc.goaicoach.application.premium.FeatureId
 import com.worksoc.goaicoach.presentation.KaTrainUxOptions
-import com.worksoc.goaicoach.shared.BoardSize
-import com.worksoc.goaicoach.shared.GameState
-import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.domain.BoardSize
+import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.domain.StoneColor
 
 /**
  * 4 Depth: 한 판을 수순대로 되짚는 화면(백로그 #156).
