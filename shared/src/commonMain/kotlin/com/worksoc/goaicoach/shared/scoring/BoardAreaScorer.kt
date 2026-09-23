@@ -6,6 +6,7 @@ import com.worksoc.goaicoach.shared.FinalScoreResult
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.StoneColor
 import com.worksoc.goaicoach.shared.neighbors
+
 object BoardAreaScorer {
     fun score(
         state: GameState,

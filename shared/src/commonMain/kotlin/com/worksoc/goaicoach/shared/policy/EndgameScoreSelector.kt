@@ -1,4 +1,5 @@
 package com.worksoc.goaicoach.shared.policy
+
 import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.DeadStoneCleanupResult
 import com.worksoc.goaicoach.shared.EngineStatus

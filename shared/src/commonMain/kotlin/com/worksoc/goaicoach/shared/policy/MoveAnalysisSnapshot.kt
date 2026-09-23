@@ -8,6 +8,7 @@ import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.LegalMoveGenerator
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.StoneColor
+
 data class MoveAnalysisSnapshot(
     val boardSize: BoardSize,
     val player: StoneColor,
