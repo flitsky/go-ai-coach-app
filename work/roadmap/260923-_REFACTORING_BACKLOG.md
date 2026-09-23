@@ -63,6 +63,10 @@
 - **함정 72 — 공유 작업 트리에서 대량 개명·이동 금지.** 세션 여럿이 트리 하나를 공유하고
   `git checkout` 되돌리기가 금지다. 대량 이동은 **단독 점유**를 선언하고 한다.
   🔴 그리고 **`git add .` / `git commit -a`를 쓰지 마라** — 2026-09-23 정리에서 커밋 3개가 남의 변경을 삼켰다.
+- **함정 80 — `git add <경로>` 뒤의 `git commit -m`도 안전하지 않다.** 🔴 인덱스는 트리 전체가 공유한다 —
+  **`add`와 `commit` 사이에 다른 세션이 스테이징하면 그게 내 커밋에 들어간다.** 실제로 35개 파일이 삼켜졌다.
+  → **`git commit <경로> -m "..."`** 로 커밋하라(경로 지정 커밋은 인덱스의 나머지를 건드리지 않는다).
+  삼켰으면 `git reset --soft HEAD~1`로 커밋만 취소하고 다시 낸다. ⛔ `--hard` 금지.
 - **함정 75 — iOS 컴파일을 릴리스 게이트에 넣지 마라.** iOS는 아무것도 출하하지 않는다.
   안드로이드 릴리스가 출하 안 하는 타깃의 컴파일 실패로 막히면 안 된다 → **별도 타깃**으로.
 - **함정 76 — 죽은 스캔을 되살리면 빨개질 각오를 한다.** `make test`는 **유일한 릴리스 게이트**다.
@@ -148,18 +152,15 @@ Hilt(commonMain 불가)·Koin(이득 0)·전면 MVI(이미 절반 작동)·모�
 | 23 | **`GameHistoryStore`의 komi 기본값을 `DefaultKomi`로** — 폴백은 도달 불가이나 다른 스토어와 어긋나 읽는 사람을 헷갈리게 했다 | `ca41b1a0` |
 | 59·61 | **사석 탐지가 답하는 질문을 KDoc·테스트로 못박음** — 호출부 전수 조사로 **종국에만 불린다**를 확인해 ⓐ(현 동작 유지)로 닫았다. 실행 코드 **0줄 변경**. `singleOrNull()`이 성능 필터일 뿐임도 실측 확인 | `cba287c3` |
 | 28 | **`middleware` split package 해소** — 유일한 역방향이던 1파일을 `application/analysis`로. `:shared` 패키지 사이클 **0** | `2254d324` |
+| 30 | **계약 소스 읽기가 파일 이동 때 안내를 준다** — 경로 22파일→1곳(`RepoPaths`), `readContractSource()`/`…Lines()` 신설. 검수 실측: `GoCoachApp.kt`를 옮기면 **77건 전부 `IllegalStateException`(절대경로+고칠 자리), `FileNotFoundException` 0건.** 🔓 **P3 관문이 열렸다** | `d1f96c6a`·`76be16dc`·`b324b3cb` |
+| 63 | **실행위치 의존 상대경로 흡수** — 지목된 3건 외 **5건을 더 찾아** 총 8파일 + `File("../Makefile")` | `63a0fbed` |
+| 64 | **고아 `middleware` 패키지 해소** — `#28`이 commonMain만 닫았던 것 | `dc316d78` |
+| 62 | **원격 서버가 클라이언트 komi를 읽는다** — `#19`의 정직한 마감. ⚠️ `handicapCount`는 **의도적 미반영**(아래 #65) | `784a1a90` |
+| 18(절반) | **정책 타입 재선언 제거** — sealed 3종 + 어댑터 삭제, 소비자 32파일 import 교체. **로직 변경 0줄**(검수 diff 전수 확인) | `1b961feb` |
 
 ### 진행 중
 
-30. **계약 테스트 경로 방어 — 절반만 닫혔다** (AI 모델: Sonnet, 노력정도: 중간) · 커밋 `d1f96c6a`
-    · ✅ **번 것**: 경로 문자열 22파일 → **1파일**(고칠 자리가 `RepoPaths.kt` 한 곳으로 줄었다) ·
-      절대경로가 되어 **워크트리 미끄러짐은 닫혔다.**
-    · 🔴 **못 번 것**: 검수자가 `GoCoachApp.kt`를 실제로 `git mv` 해 보니 **612건 중 77건이
-      `java.io.FileNotFoundException`으로 터졌고 의미 있는 단언 실패는 0건**이었다.
-      인수 기준이 요구한 정반대다 — **P3 이동은 여전히 원인 파악이 늦는다.**
-    · **해법**: `RepoPaths` 접근자가 `readText()` 전에 존재를 검사해
-      *"이 계약이 보는 파일이 사라졌다 — `RepoPaths.kt`를 갱신하라"* 로 터지게 한다.
-    · ⚠️ **P3(#24~#27) 착수 전에 닫아야 한다.**
+_(없음 — 아래 「예정사항」 첫 항목부터 집는다)_
 
 ### 예정사항
 
@@ -176,22 +177,17 @@ Hilt(commonMain 불가)·Koin(이득 0)·전면 MVI(이미 절반 작동)·모�
       값을 틀리게 바꿔도 **빨개지는 테스트가 0건**이다(#10 음성 대조에서 드러났다).
       페이크 8벌이 909줄 중 40여 줄을 이 셋에 쓰고 있었다.
     · 인터페이스에 남길지, 테스트를 붙일지, 좁힐지 판단한다.
-62. **원격 분석 서버가 보낸 komi를 버린다** (AI 모델: Sonnet, 노력정도: 낮음)
-    · `scripts/run-katago-remote-analysis-server.py`가 `DEFAULT_KOMI = 6.5`를 하드코딩해 쿼리에 넣고,
-      #19가 새로 실어 보낸 `komi`를 **읽지 않는다.** `handicapCount`도 무시하고 `stones`에서 역산한다.
-    · 즉 **#19는 와이어만 닫았다** — "앱이 값을 보내기는 한다"까지이고 *"원격 분석이 실제 덤을 쓴다"* 는 아니다.
-      정직하게 별도 항목으로 세운다.
-    · ⚠️ 이 스크립트는 개발용이고 원격 경로는 `BuildConfig.DEBUG` 게이트 뒤라 **실기 불필요**하다.
+65. **원격 `handicapCount`를 KataGo에 어떻게 실을지 판정** (AI 모델: Opus, 노력정도: 중간)
+    · #62가 komi만 닫고 `handicapCount`는 **의도적으로 미반영**했다. KataGo Analysis 스키마에
+      접바둑 "개수" 필드가 없고, 유일한 접바둑 필드 `whiteHandicapBonus`는 **룰셋의 기본 접바둑 보정을
+      덮어쓰는 스코어링 오버라이드**다. 접바둑 돌 자체는 이미 `initialStones`로 실린다.
+    · 🔴 **그대로 꽂으면 접바둑 보정이 두 번 계산될 수 있다.** 실측 없이는 **현행 미반영이 안전한 선택**이다.
+    · 실측 방법을 먼저 설계하라 — 같은 국면을 `whiteHandicapBonus` 유/무로 분석해 점수 차를 본다.
 
-63. **남은 실행위치 의존 상대경로 3건** (AI 모델: Sonnet, 노력정도: 낮음)
-    · `BundledEngineAssetContractTest`의 `File("../Makefile")`, `AppNameContractTest`·
-      `LocalOnlyDataNoticeContractTest`의 자체 `repoRoot` 재탐색 로직.
-    · #30의 `File("src/main` 패턴 집계에 안 걸렸을 뿐 **같은 부류**다.
-
-64. **`shared/src/commonTest`의 고아 `middleware` 패키지** (AI 모델: Sonnet, 노력정도: 낮음)
-    · `PositionAnalysisCacheResolverTest.kt`가 클래스는 `application.analysis`로 갔는데
-      **여전히 `package com.worksoc.goaicoach.middleware`를 선언**한다. #28이 commonMain만 닫았다.
-    · 옮기면 import 한 줄 되돌리기로 끝난다.
+66. **`positionScopedOperationToken()`이 호출부 0·테스트 0인 public 함수가 됐다** (AI 모델: Sonnet, 노력정도: 낮음)
+    · #18이 그 함수의 **유일한 직접 테스트**를 어댑터 테스트와 함께 지웠다(어댑터 전용이 아니었는데 같이 걸렸다).
+      간접 커버(`evaluateEngineOperationResultGuard` 경유)는 남아 있다.
+    · 쓰지 않을 것이면 지우고, 공개 API로 남길 것이면 **직접 테스트를 복원**하라. 지금은 둘 다 아니다.
 
 #### P2 — 엔진 동시성 (독립 트랙 · 어느 단계와도 병렬)
 
@@ -217,10 +213,12 @@ Hilt(commonMain 불가)·Koin(이득 0)·전면 MVI(이미 절반 작동)·모�
       **로컬은 캡+20초(캡 없으면 120초), 원격은 항상 33초**다.
     · `shared.enginecontract`에 `EngineOperationFailure`(Timeout/Transport/Protocol/EngineRejected).
       재시도는 **Transport에 한해** 2계층 안에서 1회 백오프(**탐색 타임아웃은 재시도 금지**).
-18. **세대 관통 + 정책 타입 중복 제거** (AI 모델: Sonnet, 노력정도: 중간)
-    · `LocalEngineSessionClient` 생성자에 `currentSessionGeneration: () -> Long`. 현재 3계층이 `0L`을 박아 넣어
-      **모든 `position_analysis` operationId가 g0으로 찍혀 실제 세션 로그와 대조 불가**다.
-    · `application/engine/operation`의 sealed class 3종 재선언과 `EngineOperationPolicyAdapter.kt` 삭제(약 170줄, 동작 변경 0).
+18. **세대 관통 (정책 타입 중복 제거는 완료)** (AI 모델: Sonnet, 노력정도: 중간)
+    · `LocalEngineSessionClient` 생성자에 `currentSessionGeneration: () -> Long` 추가.
+      현재 3계층이 `0L`을 박아 넣어 **모든 `position_analysis` operationId가 g0으로 찍혀
+      실제 세션 로그와 대조 불가**다.
+    · ⚠️ 생성자 시그니처가 바뀌어 **`app-android`의 배선까지 번진다.** 파일 충돌면이 넓다.
+
 20. **`syncStaticPosition` 무동작 + 기본 구현 삭제** (AI 모델: Opus, 노력정도: 중간) — **10 뒤에만**
     · 기본 구현이 있어서 원격·스텁이 **둘 다 조용히 빠뜨렸다.** ⚠️ **함정 70**: 픽스처(#10)가 먼저다.
     · 재발을 막는 실체는 삭제가 아니라 **공통 계약 테스트 스위트**(Local/Remote/Stub을 같은 시나리오로)다.
