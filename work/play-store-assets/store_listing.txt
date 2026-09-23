@@ -167,19 +167,14 @@ Go, Baduk, Weiqi, igo, Go AI, Go game, Go review, learn Go, Go lessons, Go coach
    · ⚠️ **"1.0이 됐습니다"를 넣지 않았다** — 사용자가 얻는 것이 아니라 우리 쪽 이정표다.
      ⚠️ **"첫 출시" 계열 문구는 영영 쓰지 말 것**(2026-09-11에 한 번 틀렸다 — 811이 이미 나가 있었다).
 
-──────── Ⓐ 909 이상이 이미 라이브일 때 ────────
-<ko-KR>
-「학습하기」가 열렸습니다. 바둑 규칙 여섯 단원과 기초 행마 다섯 단원을 판 위 그림으로 한 수씩 따라가며 배울 수 있어요.
+──────── 지금 붙여넣을 것 — 한국어 ────────
 
-· 둔 대국을 수순대로 되짚어 보고, 그 자리에서 이어 둘 수 있습니다
-· 기기 백업이 켜져 있으면 앱을 지웠다 다시 깔아도 기록이 돌아옵니다
-· 설정에서 잘 쓰지 않던 항목을 걷어내고 꼭 필요한 것만 남겼습니다
-· 돌을 끌 때 손가락에 덜 가리도록 가늠돌을 더 위로 띄웠습니다
-· 대국이 끝나면 누가 어떻게 이겼는지 화면에 그대로 남습니다
-</ko-KR>
-──────────────────────────────────────────────
+✅ **기준선은 Ⓑ(905)로 확정됐다**(2026-09-24). 근거: **909는 업로드된 적이 없다** —
+   계획서 §0 A-5가 🚫 *"업로드만 남았다"* 로 남아 있다. 프로덕션은 **905 → 1.0.0**으로
+   바로 갔고, 그래서 **구독은 1.0.0과 함께 처음 나간다.** 905 사용자에게 구독 문단을
+   빼면 그 사실을 아무도 못 듣는다.
+⚠️ **다음 버전에는 이 본문을 그대로 두지 말 것** — 1.0.0이 나간 뒤의 기준선은 1.0.0이다.
 
-──────── Ⓑ 905가 그대로 라이브일 때 (구독 문단이 앞에 붙는다) ────────
 <ko-KR>
 프리미엄 구독이 열렸습니다(월 3,900원). 구독하면 모든 상대를 고를 수 있고 AI 코칭을 광고 없이 무제한으로 씁니다. 구독하지 않아도 지금처럼 광고와 출석 1회권으로 전부 이용할 수 있어요.
 
@@ -190,32 +185,25 @@ Go, Baduk, Weiqi, igo, Go AI, Go game, Go review, learn Go, Go lessons, Go coach
 · 설정을 꼭 필요한 것만 남기고 정리했습니다
 · 대국이 끝나면 누가 어떻게 이겼는지 화면에 남습니다
 </ko-KR>
+
+⚠️ 쓰지 않은 쪽(Ⓐ, 909가 이미 나갔다면 썼을 것)은 기록으로만 남긴다 — **붙여넣지 말 것**:
+   *"「학습하기」가 열렸습니다. 바둑 규칙 여섯 단원과 …"* (구독 문단이 없는 261자 판)
+
 ──────────────────────────────────────────────
 
 ⚠️ **아래 영어 블록은 낡았다**(811 기준, 「이름이 바뀌었습니다」 시절). 영어 등록정보를 여는 날
    **다시 쓸 것** — 위 한국어를 옮기면 된다. 지금 등록정보는 한국어 하나뿐이라 넣지 않는다.
 
-──────── 영어 — 한국어와 **같은 기준선**을 고를 것 (2026-09-24 신설) ────────
+──────── 지금 붙여넣을 것 — 영어 (2026-09-24 신설) ────────
 
+✅ **한국어와 같은 Ⓑ 기준선이다.** 두 언어가 다른 범위를 말하면 같은 업데이트를 두 가지로
+   설명하는 셈이 된다.
 ⚠️ **811 시절 본문을 2026-09-24에 통째로 버렸다.** 그 자리에는 *"Renamed to Pocket Go
    Coach"* · 화면 회전 · **돋보기**(#188이 기능째 삭제했다) 이야기가 남아 있었다 —
-   **없는 기능을 말하는 출시 노트**였고, 영어 등재정보를 여는 순간 그것이 나갈 뻔했다.
-⚠️ **위 한국어에서 고른 것과 같은 기준선(Ⓐ/Ⓑ)을 고를 것.** 두 언어가 다른 범위를 말하면
-   같은 업데이트를 두 가지로 설명하는 셈이 된다.
-⚠️ 길이: Ⓐ 466자 · Ⓑ 492자 (한도 500).
+   **없는 기능을 말하는 출시 노트**였고, 영어 등재정보를 여는 순간 그대로 나갈 뻔했다.
+⚠️ 492자(한도 500). 「가늠돌」 줄은 영어 Ⓑ에서 뺐다 — 구독 문단이 앞에 오면 자리가 없고,
+   넷 중 사용자가 체감하는 크기가 가장 작다.
 
-── Ⓐ 909 이상이 이미 라이브일 때 ──
-<en-US>
-Learning is here. Six lessons on the rules of Go and five on basic shape, each played out on the board one move at a time.
-
-· Step back through a finished game, then play on from the move you regret
-· With Google account backup on, most of your records come back after a reinstall or a new phone
-· Settings trimmed to what you actually use
-· The ghost stone sits further above your finger, hiding less of the board
-· When a game ends, who won and how stays on screen
-</en-US>
-
-── Ⓑ 905가 그대로 라이브일 때 (구독 문단이 앞에 붙는다) ──
 <en-US>
 Premium subscription is here (billed monthly) — no ads on the AI coaching features, and every opponent open. All of it stays reachable as before, with a short ad or a check-in pass.
 
@@ -226,7 +214,7 @@ Learning is here too: six lessons on the rules and five on basic shape, played o
 · Settings trimmed down
 · When a game ends, who won and how stays on screen
 </en-US>
-──────────────────────────────────────────────────────────────
+──────────────────────────────────────────────
 
 [스크린샷] (screenshots/ 폴더, 1296x2304, 9:16, PNG)
 ⚠️ 2026-09-06 밤에 번호를 재배열했다(랜딩을 맨 앞으로) — 콘솔 업로드 순서는 파일명 오름차순을
