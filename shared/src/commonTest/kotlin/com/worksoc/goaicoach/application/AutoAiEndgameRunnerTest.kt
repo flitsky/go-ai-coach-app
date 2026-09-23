@@ -16,7 +16,7 @@ import com.worksoc.goaicoach.application.engine.EngineSessionClient
 import com.worksoc.goaicoach.application.engine.EngineStartupResult
 import com.worksoc.goaicoach.application.engine.LocalEngineMoveResult
 import com.worksoc.goaicoach.application.engine.localScoreSnapshot
-import com.worksoc.goaicoach.application.engine.operation.EngineOperationResultGuard
+import com.worksoc.goaicoach.shared.engine.EngineOperationResultGuard
 import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
 import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
 import com.worksoc.goaicoach.application.score.EndgameFailureDisplayPlan

@@ -2,17 +2,17 @@ package com.worksoc.goaicoach.application.humanmove
 
 import com.worksoc.goaicoach.application.time.currentEpochMillis
 import com.worksoc.goaicoach.shared.engine.EngineFallbackPolicy
-import com.worksoc.goaicoach.application.engine.operation.EngineOperationApplyPlan
+import com.worksoc.goaicoach.shared.engine.EngineOperationApplyPlan
 import com.worksoc.goaicoach.shared.engine.EngineOperationKind
 import com.worksoc.goaicoach.shared.engine.EngineOperationRequest
-import com.worksoc.goaicoach.application.engine.operation.EngineOperationResultGuard
+import com.worksoc.goaicoach.shared.engine.EngineOperationResultGuard
 import com.worksoc.goaicoach.application.engine.EngineSessionClient
 import com.worksoc.goaicoach.application.engine.runEngineIo
 import com.worksoc.goaicoach.shared.engine.EngineTimeoutPolicy
 import com.worksoc.goaicoach.application.engine.LocalEngineMoveResult
 import com.worksoc.goaicoach.application.movereview.MoveReviewMarker
 import com.worksoc.goaicoach.application.movereview.MoveReviewResult
-import com.worksoc.goaicoach.application.engine.operation.buildEngineOperationApplyPlan
+import com.worksoc.goaicoach.shared.engine.buildEngineOperationApplyPlan
 import com.worksoc.goaicoach.application.movereview.buildMoveReview
 import com.worksoc.goaicoach.shared.engine.engineOperationRequest
 import com.worksoc.goaicoach.application.engine.localScoreSnapshot

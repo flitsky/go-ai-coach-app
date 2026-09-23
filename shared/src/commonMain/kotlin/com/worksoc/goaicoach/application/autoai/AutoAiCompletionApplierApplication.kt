@@ -1,6 +1,6 @@
 package com.worksoc.goaicoach.application.autoai
 
-import com.worksoc.goaicoach.application.engine.operation.EngineOperationResultGuard
+import com.worksoc.goaicoach.shared.engine.EngineOperationResultGuard
 import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
 import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
 import com.worksoc.goaicoach.application.runtime.runtimeAiTurnFailureLog

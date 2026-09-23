@@ -1,8 +1,8 @@
 package com.worksoc.goaicoach.application.topmoves
 
 import com.worksoc.goaicoach.application.analysis.AnalysisCacheKey
-import com.worksoc.goaicoach.application.engine.operation.EngineOperationResultGuard
-import com.worksoc.goaicoach.application.engine.operation.evaluateEngineOperationResultGuard
+import com.worksoc.goaicoach.shared.engine.EngineOperationResultGuard
+import com.worksoc.goaicoach.shared.engine.evaluateEngineOperationResultGuard
 import com.worksoc.goaicoach.shared.engine.EngineFallbackPolicy
 import com.worksoc.goaicoach.shared.engine.EngineOperationKind
 import com.worksoc.goaicoach.shared.engine.EngineTimeoutPolicy

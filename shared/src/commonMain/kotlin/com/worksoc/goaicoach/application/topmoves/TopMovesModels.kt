@@ -3,7 +3,7 @@ package com.worksoc.goaicoach.application.topmoves
 import com.worksoc.goaicoach.application.analysis.AnalysisCacheKey
 import com.worksoc.goaicoach.application.analysis.CachedAnalysisResult
 import com.worksoc.goaicoach.application.engine.EngineSessionClient
-import com.worksoc.goaicoach.application.engine.operation.EngineOperationResultGuard
+import com.worksoc.goaicoach.shared.engine.EngineOperationResultGuard
 import com.worksoc.goaicoach.application.engine.runEngineIo
 import com.worksoc.goaicoach.application.session.GameSessionAnalysisState
 import com.worksoc.goaicoach.application.session.GameSessionControllerState

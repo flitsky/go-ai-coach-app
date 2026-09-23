@@ -2,7 +2,7 @@ package com.worksoc.goaicoach.application.score
 
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.engine.EngineSessionClient
-import com.worksoc.goaicoach.application.engine.operation.EngineOperationResultGuard
+import com.worksoc.goaicoach.shared.engine.EngineOperationResultGuard
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.GameState

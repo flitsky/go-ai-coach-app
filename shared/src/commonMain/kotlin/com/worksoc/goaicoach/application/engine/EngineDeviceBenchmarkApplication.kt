@@ -11,10 +11,10 @@ import com.worksoc.goaicoach.application.session.GameSessionEffect
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.diagnostic.NoopDiagnosticEventLog
 import com.worksoc.goaicoach.application.diagnostic.runObservedEngineOperation
-import com.worksoc.goaicoach.application.engine.operation.EngineOperationGate
 import com.worksoc.goaicoach.application.engine.operation.EngineOperationLifecycleCallbacks
-import com.worksoc.goaicoach.application.engine.operation.evaluateEngineBenchmarkGate
 import com.worksoc.goaicoach.application.engine.operation.runEngineOperationInScope
+import com.worksoc.goaicoach.shared.engine.EngineOperationGate
+import com.worksoc.goaicoach.shared.engine.evaluateEngineBenchmarkGate
 import com.worksoc.goaicoach.shared.GameState
 import kotlinx.coroutines.delay
 
