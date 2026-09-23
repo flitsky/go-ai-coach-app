@@ -30,9 +30,10 @@ import org.junit.Test
 class BundledEngineAssetContractTest {
 
     private val bootstrap = RepoPaths.appAndroid("engine/EngineBootstrap.kt").readContractSource()
-    // ⚠️ 이 줄은 refactor backlog #30 범위 밖이다(`File("src/main` 패턴이 아니라 세지 않았다) —
-    // 같은 부류의 실행 위치 의존 상대경로이니 뒤따르는 스레드가 RepoPaths.root로 흡수할 것.
-    private val makefile = File("../Makefile").readContractSource()
+    // refactor backlog #63: `File("../Makefile")`는 실행 디렉터리(app-android/)를 기준으로 한
+    // 상대경로였다 — 어디서 Gradle을 띄웠느냐에 따라 다른 트리로 미끄러질 수 있는 같은 부류의
+    // 문제라, `-Drepo.root` 주입을 받는 RepoPaths.root로 흡수한다.
+    private val makefile = RepoPaths.root.resolve("Makefile").readContractSource()
 
     /** 앱이 번들에서 꺼내려고 시도하는 파일 이름들. */
     private fun assetNamesTheAppOpens(): Set<String> =
