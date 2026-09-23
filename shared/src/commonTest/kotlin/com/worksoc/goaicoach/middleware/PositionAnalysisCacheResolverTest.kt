@@ -1,8 +1,13 @@
 package com.worksoc.goaicoach.middleware
 
+// ⚠️ refactor backlog #28(260923): PositionAnalysisCacheResolver가 middleware→application/analysis로
+// 옮겨가며 이 테스트와 같은 패키지가 아니게 됐다 — 그래서 명시 import가 새로 필요하다. 이 테스트
+// 파일 자체는 이 스레드의 담당 파일 밖(shared/src/commonMain이 아니라 commonTest)이라 옮기지 않고
+// 이 한 줄만 고쳤다(LayeringContractTest.kt의 사례와 같은 이유 — 이동의 필연적 결과).
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheEntry
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheKey
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOrigin
+import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheResolver
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheStore
 import com.worksoc.goaicoach.application.analysis.TrustedPositionAnalysisCacheProvider
 import com.worksoc.goaicoach.application.analysis.shouldReplacePositionAnalysisCacheEntry
