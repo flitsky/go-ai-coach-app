@@ -1,6 +1,6 @@
 package com.worksoc.goaicoach.application.engine
 
-import com.worksoc.goaicoach.shared.AnalysisLimit
+import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.SearchTimeLimit

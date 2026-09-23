@@ -13,7 +13,7 @@ import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.SearchTimeSettings
-import com.worksoc.goaicoach.shared.EngineProfile
+import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 
 /**
  * Owns three related settings-change workflows that share no engine I/O

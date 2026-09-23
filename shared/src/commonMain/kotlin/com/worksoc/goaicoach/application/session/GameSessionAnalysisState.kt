@@ -3,7 +3,7 @@ package com.worksoc.goaicoach.application.session
 import com.worksoc.goaicoach.application.analysis.AnalysisCacheKey
 import com.worksoc.goaicoach.application.topmoves.TopMoveAnalysisFailureDisplayPlan
 import com.worksoc.goaicoach.application.topmoves.TopMoveAnalysisUpdate
-import com.worksoc.goaicoach.shared.CandidateMove
+import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.policy.MoveAnalysisSnapshot
 import com.worksoc.goaicoach.shared.domain.StoneColor

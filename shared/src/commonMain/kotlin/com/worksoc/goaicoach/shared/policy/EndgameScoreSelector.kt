@@ -1,11 +1,11 @@
 package com.worksoc.goaicoach.shared.policy
 
-import com.worksoc.goaicoach.shared.CandidateMove
+import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
 import com.worksoc.goaicoach.shared.domain.DeadStoneCleanupResult
-import com.worksoc.goaicoach.shared.EngineStatus
-import com.worksoc.goaicoach.shared.FinalScoreResult
+import com.worksoc.goaicoach.shared.enginecontract.EngineStatus
+import com.worksoc.goaicoach.shared.enginecontract.FinalScoreResult
 import com.worksoc.goaicoach.shared.domain.Move
-import com.worksoc.goaicoach.shared.ScoreEstimate
+import com.worksoc.goaicoach.shared.enginecontract.ScoreEstimate
 import com.worksoc.goaicoach.shared.domain.StoneColor
 import kotlin.math.abs
 import kotlin.math.roundToInt

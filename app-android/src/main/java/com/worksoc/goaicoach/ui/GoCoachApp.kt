@@ -94,7 +94,7 @@ import com.worksoc.goaicoach.application.savedgame.SavedSessionUiState
 import com.worksoc.goaicoach.ui.vision.BoardScanScreen
 import kotlinx.coroutines.CoroutineScope
 import com.worksoc.goaicoach.engine.EngineIdentity
-import com.worksoc.goaicoach.shared.EngineProfile
+import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.engine.EngineTimeoutPolicy

@@ -1,7 +1,7 @@
 package com.worksoc.goaicoach.match
 
 import com.worksoc.goaicoach.shared.scoring.BoardScorer
-import com.worksoc.goaicoach.shared.FinalScoreResult
+import com.worksoc.goaicoach.shared.enginecontract.FinalScoreResult
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.Move
 

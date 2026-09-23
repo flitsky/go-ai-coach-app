@@ -1,5 +1,9 @@
 package com.worksoc.goaicoach.shared
 
+import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
+import com.worksoc.goaicoach.shared.enginecontract.AnalysisPreset
+import com.worksoc.goaicoach.shared.enginecontract.DifficultyProfile
+import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.random.Random

@@ -1,6 +1,6 @@
 package com.worksoc.goaicoach.engine.android
 
-import com.worksoc.goaicoach.shared.AnalysisLimit
+import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.Move

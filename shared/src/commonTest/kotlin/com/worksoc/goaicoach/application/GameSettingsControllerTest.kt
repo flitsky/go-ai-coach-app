@@ -10,7 +10,7 @@ import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.SearchTimeLimit
-import com.worksoc.goaicoach.shared.EngineProfile
+import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -45,7 +45,7 @@ class GameSettingsControllerTest {
                     engineDiagnostic = "ok",
                     playerSetup = PlayerSetup(),
                     gameState = GameState.empty(),
-                    runtimeState = GameSessionRuntimeState(PlayLevelSetting(), EngineProfile(), com.worksoc.goaicoach.shared.AnalysisPreset.Lite),
+                    runtimeState = GameSessionRuntimeState(PlayLevelSetting(), EngineProfile(), com.worksoc.goaicoach.shared.enginecontract.AnalysisPreset.Lite),
                     autoPlayDelaySetting = AutoPlayDelaySetting.Default,
                     searchTimeSettings = SearchTimeSettings(),
                     topMovesEnabled = true,
@@ -113,7 +113,7 @@ class GameSettingsControllerTest {
                     engineDiagnostic = "ok",
                     playerSetup = PlayerSetup(),
                     gameState = GameState.empty(),
-                    runtimeState = GameSessionRuntimeState(PlayLevelSetting(), EngineProfile(), com.worksoc.goaicoach.shared.AnalysisPreset.Lite),
+                    runtimeState = GameSessionRuntimeState(PlayLevelSetting(), EngineProfile(), com.worksoc.goaicoach.shared.enginecontract.AnalysisPreset.Lite),
                     autoPlayDelaySetting = AutoPlayDelaySetting.Default,
                     searchTimeSettings = SearchTimeSettings(),
                     topMovesEnabled = true,
@@ -171,7 +171,7 @@ class GameSettingsControllerTest {
                     engineDiagnostic = "ok",
                     playerSetup = PlayerSetup(),
                     gameState = GameState.empty(),
-                    runtimeState = GameSessionRuntimeState(PlayLevelSetting(), EngineProfile(), com.worksoc.goaicoach.shared.AnalysisPreset.Lite),
+                    runtimeState = GameSessionRuntimeState(PlayLevelSetting(), EngineProfile(), com.worksoc.goaicoach.shared.enginecontract.AnalysisPreset.Lite),
                     autoPlayDelaySetting = AutoPlayDelaySetting.Default,
                     searchTimeSettings = SearchTimeSettings(),
                     topMovesEnabled = true,
@@ -229,7 +229,7 @@ class GameSettingsControllerTest {
                     engineDiagnostic = "ok",
                     playerSetup = PlayerSetup(),
                     gameState = GameState.empty(),
-                    runtimeState = GameSessionRuntimeState(PlayLevelSetting(), EngineProfile(), com.worksoc.goaicoach.shared.AnalysisPreset.Lite),
+                    runtimeState = GameSessionRuntimeState(PlayLevelSetting(), EngineProfile(), com.worksoc.goaicoach.shared.enginecontract.AnalysisPreset.Lite),
                     autoPlayDelaySetting = AutoPlayDelaySetting.Default,
                     searchTimeSettings = SearchTimeSettings(),
                     topMovesEnabled = true,
@@ -399,7 +399,7 @@ class GameSettingsControllerTest {
                 engineDiagnostic = "ok",
                 playerSetup = PlayerSetup(),
                 gameState = GameState.empty(),
-                runtimeState = GameSessionRuntimeState(PlayLevelSetting(), EngineProfile(), com.worksoc.goaicoach.shared.AnalysisPreset.Lite),
+                runtimeState = GameSessionRuntimeState(PlayLevelSetting(), EngineProfile(), com.worksoc.goaicoach.shared.enginecontract.AnalysisPreset.Lite),
                 autoPlayDelaySetting = AutoPlayDelaySetting.Default,
                 searchTimeSettings = SearchTimeSettings(),
                 topMovesEnabled = true,
@@ -443,7 +443,7 @@ private fun defaultTestCoreState(): GameSessionCoreState =
         isGameEnded = false,
         analysisState = GameSessionAnalysisState.empty(GameState.empty()),
         scoreState = GameSessionScoreState.reset("0", emptyList(), ""),
-        runtimeState = GameSessionRuntimeState(PlayLevelSetting(), EngineProfile(), com.worksoc.goaicoach.shared.AnalysisPreset.Lite),
+        runtimeState = GameSessionRuntimeState(PlayLevelSetting(), EngineProfile(), com.worksoc.goaicoach.shared.enginecontract.AnalysisPreset.Lite),
         moveReviewState = GameSessionMoveReviewState.reset("", ""),
         engineMessage = ""
     )

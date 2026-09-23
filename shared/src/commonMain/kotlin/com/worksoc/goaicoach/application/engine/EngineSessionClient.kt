@@ -4,19 +4,19 @@ import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizat
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationResult
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheQuality
 import com.worksoc.goaicoach.application.endgame.AiEndgameResolution
-import com.worksoc.goaicoach.shared.AnalysisLimit
-import com.worksoc.goaicoach.shared.AnalysisResult
+import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
+import com.worksoc.goaicoach.shared.enginecontract.AnalysisResult
 import com.worksoc.goaicoach.shared.domain.BoardSize
-import com.worksoc.goaicoach.shared.CandidateMove
-import com.worksoc.goaicoach.shared.EngineProfile
-import com.worksoc.goaicoach.shared.EngineSearchMode
-import com.worksoc.goaicoach.shared.EngineStatus
+import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
+import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
+import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
+import com.worksoc.goaicoach.shared.enginecontract.EngineStatus
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.SearchTimeSettings
-import com.worksoc.goaicoach.shared.ScoreEstimate
+import com.worksoc.goaicoach.shared.enginecontract.ScoreEstimate
 
 enum class EngineSessionBackend(
     val label: String,
@@ -123,7 +123,7 @@ interface EngineSessionClient {
 
     /**
      * Manual last-resort recovery for a wedged engine (e.g. the engine turn
-     * watchdog fires). Must not suspend or block — see [com.worksoc.goaicoach.shared.EngineCoreApi.forceReset].
+     * watchdog fires). Must not suspend or block — see [com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi.forceReset].
      * Defaults to a no-op since not every backend has a real transport to reset.
      */
     fun forceResetEngine() {}

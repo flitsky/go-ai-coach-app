@@ -1,6 +1,6 @@
 package com.worksoc.goaicoach.shared.scoring
 
-import com.worksoc.goaicoach.shared.FinalScoreResult
+import com.worksoc.goaicoach.shared.enginecontract.FinalScoreResult
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.Ruleset
 

@@ -26,9 +26,9 @@ import com.worksoc.goaicoach.application.score.buildEngineEstimateDisplayPlan
 import com.worksoc.goaicoach.application.score.buildResolvedEndgameDisplayPlan
 import com.worksoc.goaicoach.application.session.GameSessionEffect
 import com.worksoc.goaicoach.match.MatchReferee
-import com.worksoc.goaicoach.shared.CandidateMove
-import com.worksoc.goaicoach.shared.EngineProfile
-import com.worksoc.goaicoach.shared.FinalScoreResult
+import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
+import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
+import com.worksoc.goaicoach.shared.enginecontract.FinalScoreResult
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.policy.MoveAnalysisSnapshot

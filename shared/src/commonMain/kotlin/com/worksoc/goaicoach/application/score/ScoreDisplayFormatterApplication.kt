@@ -3,7 +3,7 @@ package com.worksoc.goaicoach.application.score
 import com.worksoc.goaicoach.application.endgame.AiEndgameResolution
 import com.worksoc.goaicoach.application.analysis.toCandidateText
 import com.worksoc.goaicoach.application.analysis.toDisplayText
-import com.worksoc.goaicoach.shared.FinalScoreResult
+import com.worksoc.goaicoach.shared.enginecontract.FinalScoreResult
 
 data class FinalScoreDisplayText(
     val scoreText: String,

@@ -1,8 +1,8 @@
 package com.worksoc.goaicoach.presentation
 
 import com.worksoc.goaicoach.application.engine.EngineAvailability
-import com.worksoc.goaicoach.shared.EngineMode
-import com.worksoc.goaicoach.shared.EngineProfile
+import com.worksoc.goaicoach.shared.enginecontract.EngineMode
+import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test

@@ -1,6 +1,6 @@
 package com.worksoc.goaicoach.engine
 
-import com.worksoc.goaicoach.shared.EngineMode
+import com.worksoc.goaicoach.shared.enginecontract.EngineMode
 
 /**
  * 부트스트랩이 끝나야 알 수 있는 **엔진의 정체**(백로그 #101 ③단계).

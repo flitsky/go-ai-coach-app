@@ -1,6 +1,6 @@
 package com.worksoc.goaicoach.engine.android
 
-import com.worksoc.goaicoach.shared.EngineCoreApi
+import com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi
 
 /**
  * `engine-android`가 공개하는 유일한 생성 지점 — 이 모듈이 실제로 노출하는 것은

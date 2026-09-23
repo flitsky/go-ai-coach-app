@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.shared
+package com.worksoc.goaicoach.shared.enginecontract
 
 enum class EngineSearchMode(
     val label: String,

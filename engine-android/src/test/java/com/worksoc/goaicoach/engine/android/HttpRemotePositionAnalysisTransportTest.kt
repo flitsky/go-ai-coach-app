@@ -1,13 +1,13 @@
 package com.worksoc.goaicoach.engine.android
 
-import com.worksoc.goaicoach.shared.AnalysisLimit
+import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.BoardSize
-import com.worksoc.goaicoach.shared.EngineSearchMode
-import com.worksoc.goaicoach.shared.EngineState
+import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
+import com.worksoc.goaicoach.shared.enginecontract.EngineState
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.Move
-import com.worksoc.goaicoach.shared.RemotePositionAnalysisRequest
+import com.worksoc.goaicoach.shared.enginecontract.RemotePositionAnalysisRequest
 import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.domain.analysisFingerprint
 import kotlinx.coroutines.runBlocking

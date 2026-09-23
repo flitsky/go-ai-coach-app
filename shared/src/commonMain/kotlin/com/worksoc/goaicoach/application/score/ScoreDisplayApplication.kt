@@ -4,7 +4,7 @@ import com.worksoc.goaicoach.application.endgame.AiEndgameResolution
 import com.worksoc.goaicoach.application.endgame.buildEndgameLog
 import com.worksoc.goaicoach.application.analysis.toDisplayText
 import com.worksoc.goaicoach.shared.domain.DeadStoneCleanupResult
-import com.worksoc.goaicoach.shared.FinalScoreResult
+import com.worksoc.goaicoach.shared.enginecontract.FinalScoreResult
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshotSource

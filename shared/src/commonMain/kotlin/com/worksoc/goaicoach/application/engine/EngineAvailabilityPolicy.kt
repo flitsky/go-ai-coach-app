@@ -1,6 +1,6 @@
 package com.worksoc.goaicoach.application.engine
 
-import com.worksoc.goaicoach.shared.EngineMode
+import com.worksoc.goaicoach.shared.enginecontract.EngineMode
 
 /**
  * 엔진의 세 상태(백로그 「핵심 동작 기조」 1ⓒ, 2026-09-05 사용자 정리).

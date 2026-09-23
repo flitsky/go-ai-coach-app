@@ -31,8 +31,8 @@ import com.worksoc.goaicoach.persistence.DiagnosticEventLog
 import com.worksoc.goaicoach.persistence.JsonPositionAnalysisCacheStore
 import com.worksoc.goaicoach.persistence.UserPreferencesStore
 import com.worksoc.goaicoach.ui.AdsConsentManager
-import com.worksoc.goaicoach.shared.EngineCoreApi
-import com.worksoc.goaicoach.shared.EngineMode
+import com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi
+import com.worksoc.goaicoach.shared.enginecontract.EngineMode
 import com.worksoc.goaicoach.ui.AppFontScaleState
 import com.worksoc.goaicoach.ui.AppSplash
 import com.worksoc.goaicoach.ui.GoCoachApp

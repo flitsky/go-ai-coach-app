@@ -1,5 +1,7 @@
 package com.worksoc.goaicoach.shared
 
+import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
+
 /**
  * Internal search profiles remain useful for engine defaults and benchmarks.
  * They are deliberately not exposed as user-facing time-limit choices.

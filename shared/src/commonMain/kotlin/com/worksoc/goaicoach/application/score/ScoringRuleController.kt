@@ -6,7 +6,7 @@ import com.worksoc.goaicoach.shared.engine.EngineOperationGate
 import com.worksoc.goaicoach.shared.engine.EngineOperationResultGuard
 import com.worksoc.goaicoach.shared.engine.evaluateScoringRuleChangeGate
 import com.worksoc.goaicoach.match.MatchMode
-import com.worksoc.goaicoach.shared.EngineProfile
+import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
