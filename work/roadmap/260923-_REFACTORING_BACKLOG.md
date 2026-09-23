@@ -26,7 +26,7 @@
 **착수 직후 할 것 넷** — 순서가 있다.
 
 1. **아래 「⚠️ 반드시 알아야 할 함정」을 읽는다.** 걸리는 키워드가 있으면 `docs/spec/PITFALLS.md`의
-   해당 번호 전문을 편다. **76건을 다 읽지 않는다.**
+   해당 번호 전문을 편다. **79건을 다 읽지 않는다.**
 2. **진단서에서 그 항목이 속한 절을 읽는다.** 왜 이 일을 하는지, 무엇을 건드리면 안 되는지가 거기 있다.
 3. **선행 항목이 완료인지 확인한다.** 아래 「의존 그래프」 참고. 안 끝났으면 **집지 않는다.**
 4. **끝내기 전 `make test TARGET=emu`가 초록**이어야 한다. 빨간 채로 닫지 않는다.
@@ -51,7 +51,8 @@
   **즉시 `null`**이고, 9개 블롭 스토어 중 8개는 마이그레이션 경로가 없다. 올리는 순간 이어하기·출석 일수·
   보유 캐릭터가 통째로 초기화된다. **필드 추가는 `optDouble`/`optInt` 기본값 흡수로만.**
 - **함정 70 — 공용 인터페이스의 기본 구현을 삭제하려면 픽스처가 먼저다.** `EngineCoreApi`를 구현하는 것은
-  프로덕션 어댑터 3종만이 아니다. 손으로 쓴 페이크가 9파일 1,038줄로 흩어져 있어 **전부 동시에 컴파일 에러**가 난다.
+  프로덕션 어댑터 3종만이 아니다. 손으로 쓴 페이크가 **8파일 909줄**(2026-09-23 실측 — 애초 추정 9파일 1,038줄은 틀렸다)로 흩어져 있었다.
+  ✅ **#10으로 해소** — 이제 `testsupport/FakeEngineSessionClient` 한 곳만 고치면 된다.
 - **함정 71 — 오퍼레이션 `Mutex`를 그냥 넣으면 앱이 언다.** `forceReset`은 락을 안 잡는데(옳다),
   그 결과 **락을 쥔 채 멈춘 호출을 기다리는 동안 다른 전부가 자기 타임아웃까지 대기**한다.
   평범한 `withLock`이 아니라 **타임아웃/세대 기반 취소**가 함께 들어가야 한다.
@@ -62,6 +63,13 @@
   안드로이드 릴리스가 출하 안 하는 타깃의 컴파일 실패로 막히면 안 된다 → **별도 타깃**으로.
 - **함정 76 — 죽은 스캔을 되살리면 빨개질 각오를 한다.** `make test`는 **유일한 릴리스 게이트**다.
   드러난 위반은 **그 스레드가 끝까지 초록으로 만들고 닫는다.**
+- **함정 77 — 공유 트리에서 음성 대조는 `--rerun-tasks` 없이 거짓 판독을 낸다.** 🔴 Gradle이 소스 변경을
+  무시하고 컴파일을 `UP-TO-DATE`로 건너뛰어 **"멀쩡한데 안 깨진다"** 는 정반대 결론이 나온다. #9에서 실제로 두 번 걸렸다.
+  **로그에서 컴파일 태스크가 실제로 돌았는지 눈으로 확인**하거나 격리 워크트리에서 돌려라.
+- **함정 78 — 공유 트리에서 `build/test-results`의 테스트 개수는 믿을 수 없다.** 다른 세션이 필터 걸린
+  테스트를 돌려 덮어쓴다. 개수 대조는 **소스에서** 센다(`git ls-tree`로 두 리비전의 `@Test`를 세는 식).
+- **함정 79 — Lint `abortOnError=true`는 새 *Error* 만 막고 새 *Warning* 은 통과시킨다.**
+  `warningsAsErrors=false`이므로 그렇다. 이 게이트로 얻는 보장은 **"새 Error 0"** 이지 "새 경고 0"이 아니다.
 - **(함정 아님, 환경)** `make test`는 **기기가 둘 이상 붙어 있으면 `doctor`에서 죽는다.**
   `make test TARGET=emu`로 돌릴 것. 증상이 "테스트가 빨갛다"로 보여 멀쩡한 작업을 회귀로 오판하게 한다.
 
@@ -98,9 +106,11 @@ Hilt(commonMain 불가)·Koin(이득 0)·전면 MVI(이미 절반 작동)·모�
 **Gradle 순환 의존으로 빌드가 멈춘다.**
 ⚠️ **P4(도메인 이동)는 9(골든 테스트)가 먼저다.** 테스트 없이 옮기면 **옮긴 것이 맞는지 확인할 방법이 없다.**
 
+⚠️ **번호는 완료 순으로 재사용하지 않는다** — 위 그래프의 범위 표기는 대략치이고, 정확한 선행 관계는 각 항목의 ⚠️ 줄이 정본이다.
+
 ### 병렬 가능한 조합
 
-- **9 · 10 · 13** (commonTest 신규 / testsupport / 빌드 설정) — 파일 겹침 없음
+- ✅ **9 · 10 · 11~13 동시 실행 완료**(2026-09-23) — 파일 겹침 0으로 검증됐다. 같은 성질의 조합은 앞으로도 병렬 가능
 - **P2(14~15 이후 16~21)** 는 어느 단계와도 병렬 — 대상이 engine-android에 갇혀 있다
 - **P3(16~23)** 는 서로 병렬 가능하나 **전부 `LayeringContractTest.kt` 경로를 함께 커밋**해야 하므로 **직렬**
 - **P5(36~47)** 는 병렬 불가 — 같은 파일을 연쇄로 만진다
@@ -123,6 +133,11 @@ Hilt(commonMain 불가)·Koin(이득 0)·전면 MVI(이미 절반 작동)·모�
 | 6 | **`engine-android`의 `:shared` 의존을 `api`로** (= T1-5) — 공개 시그니처에 `:shared` 타입이 등장 | `f9cd8797` |
 | 7 | **`GoCoachApp`의 만들고 버리는 중복 컨트롤러 제거** — 970→954줄. **훅 예산은 42→42, 회수 0**(함정 74) | `b19bdc57` |
 | 8 | **문서 64개를 코드와 전수 대조해 정리** — 오도 32건 정정, 아키텍처 로드맵을 정본 자리로, 함정 A~J를 PITFALLS 67~76으로, 구조 이동 2건, `docs/` 22M→12M | `95f47b21`…`0b54adce` |
+| 9 | **도메인 골든 테스트 23개** — `BoardRules`/`BoardScorer`/두 계가기/`DeadStoneDetector`/`DeadStoneCleaner`. 판을 그림으로 적는 파서 + 표 기반. **음성 대조 8회 전부 빨개짐**을 확인했고, 그 과정에서 **아무것도 안 잡던 테스트 2개를 찾아 고쳤다** | `c3add7af` |
+| 10 | **손으로 8번 복제된 엔진 페이크를 공용 자리 하나로** (`testsupport/`, `+74 −930`). @Test 수 1368→1391로 **유실 0** | `3817756c` |
+| 11 | **`make test-ios` 별도 게이트 신설** — 함정 75대로 `make test`에 합치지 않았다. `System.` 주입으로 실제로 막는 것 확인 | `9b19aaaf` |
+| 12 | **app-android Lint 개통** — baseline 84건(1 error+74 warnings+9 hints), `abortOnError=true`. 새 Error가 실제로 빌드를 막는 것 확인 | `76cbaed9` |
+| 13 | **빌드 힙·병렬화 + `make test-device` 신설** — configuration-cache는 근거와 함께 끄고 남겼다 | `d1b3b56e` |
 
 ### 진행 중
 
@@ -130,32 +145,29 @@ _(없음 — 아래 「예정사항」 첫 항목부터 집는다)_
 
 ### 예정사항
 
-#### P1 — 게이트 (이후 전부가 기댈 안전망)
+#### P1 잔여 — #9·#10이 드러낸 것
 
-9. **도메인 골든 테스트 6종** (AI 모델: Opus, 노력정도: 높음)
-   · `shared/src/commonTest`에 `BoardRules`/`BoardScorer`/`BoardAreaScorer`/`BoardTerritoryScorer`/
-     `DeadStoneDetector`/`DeadStoneCleaner` 표 기반 테스트(좌표 문자열 → 기대 점수). 형식은 `EndgameRegressionTest.kt`에서.
-   · ⚠️ **`BoardTerritoryScorer`는 저장소 어떤 테스트에서도 이름이 등장하지 않는다.**
-   · ⚠️ **24·26·33의 하드 선행조건이다** — 이게 초록이 아니면 도메인을 옮기지 않는다.
-10. **공용 테스트 픽스처 자리 신설** (AI 모델: Opus, 노력정도: 높음)
-    · `shared/src/commonTest/.../testsupport/`에 `open class FakeEngineSessionClient`(19멤버 기본 구현) 하나로 통합.
-      현재 **9파일 1,038줄로 손으로 복제**돼 있다. `FakeDiagnosticEventLog`/`FakeRuntimeEventLog`/`FakePremiumStore`/
-      `FakeSavedGameStore`도 같은 자리로.
-    · ⚠️ 이름이 겹치는 4쌍을 옮기며 **두 구현의 차이를 확인하라** — 차이가 있다면 그 자체가 숨은 가정 불일치다.
-    · ⚠️ **함정 70**: 22의 선행조건이다.
-11. **iOS 컴파일 게이트** (AI 모델: Sonnet, 노력정도: 낮음)
-    · `make test-ios` **별도 타깃** 신설(`:shared:compileKotlinIosSimulatorArm64 -PenableIosTargets=true`).
-    · ⚠️ **함정 75**: `make test`에 합치지 마라. 260824에 정확히 이 사각지대로 49개 에러가 누적됐다.
-12. **app-android Lint 개통** (AI 모델: Sonnet, 노력정도: 중간)
-    · `updateLintBaseline`으로 `lint-baseline.xml` 생성·커밋 → `baseline` + `abortOnError=true` +
-      `warningsAsErrors=false`. `checkDependencies`는 켜지 마라(`:shared`가 이미 자기 lint를 돈다).
-    · **baseline의 뜻**: "지금 있는 것은 통과, 새로 생기는 것만 차단" — 리팩토링 중 회귀를 잡는 정확한 형태.
-13. **빌드 성능 + 계측 테스트 실행 경로** (AI 모델: Sonnet, 노력정도: 중간)
-    · `gradle.properties`: `org.gradle.jvmargs=-Xmx6g …`, `kotlin.daemon.jvmargs=-Xmx4g`, `org.gradle.parallel=true`.
-      ⚠️ **caching/configuration-cache는 켜지 마라** — 후자는 `build.gradle.kts`가 구성 시점에
-      `Properties().load()`로 `local.properties`를 읽어 충돌한다.
-    · `make test-device`(`connectedDebugAndroidTest`) 신설, `make release` 전 필수 단계로. **`make test`에 합치지 마라**(에뮬 필요).
-      먼저 기존 3개를 초록으로 — `AppLaunchSmokeTest.kt`가 지목한 온보딩 전제부터.
+14. **`NewGameBoardTapSmokeTest` 실패 수정** (AI 모델: Sonnet, 노력정도: 중간)
+    · `app-android/src/androidTest`의 `assertIsDisplayed()`에서 *"The component is not displayed!"*.
+      **기존 버그**이고 #13이 `make test-device`를 연 덕에 드러났다. `AppLaunchSmokeTest`가 지목한 **온보딩 전제**부터 볼 것.
+    · ⚠️ 계측 테스트 3개가 초록이 아니면 `make test-device`는 열어 둔 의미가 없다.
+15. **`DeadStoneDetector`가 패 금지를 물려받아 사석을 조용히 놓친다** (AI 모델: Opus, 노력정도: 중간)
+    · 어떤 그룹의 유일한 활로가 `koPoint`이고 `koForbiddenFor`가 그 그룹을 따낼 쪽이면
+      `runCatching { … }.getOrNull() ?: continue`가 **그 그룹을 후보에서 조용히 제외**한다.
+    · 즉 탐지기가 답하는 질문이 *"이 돌이 죽었는가"* 가 아니라 *"지금 당장 따낼 수 있는가"* 다.
+      양패스 종료 시점엔 통과가 패를 지우므로 **오늘 실전에서 닿지 않는다** — 그래서 판단 일감이지 버그 수정이 아니다.
+    · ⚠️ 현 동작이 #9의 골든 표에 박혀 있다. 바꾸려면 그 행을 함께 고쳐야 한다.
+16. **아무도 안 보는 계약 3개 정리** (AI 모델: Sonnet, 노력정도: 낮음) — #20과 함께
+    · `capabilities` / `positionAnalysisCacheStatsText` / `positionAnalysisCacheQualityFor` —
+      값을 틀리게 바꿔도 **빨개지는 테스트가 0건**이다(#10 음성 대조에서 드러났다).
+      페이크 8벌이 909줄 중 40여 줄을 이 셋에 쓰고 있었다.
+    · 인터페이스에 남길지, 테스트를 붙일지, 좁힐지 판단한다.
+17. **오해를 부르는 코드 둘에 KDoc 한 줄** (AI 모델: Sonnet, 노력정도: 낮음)
+    · `DeadStoneDetector`의 `group.liberties.singleOrNull()`은 **정확성 게이트가 아니라 성능 필터**다 —
+      `firstOrNull()`로 바꿔도 동작이 완전히 같다(뒤의 `stones.all { … == null }`이 판정을 전담).
+      읽는 사람은 *"활로가 정확히 하나여야 한다"* 는 규칙이 거기 있다고 믿게 된다.
+    · `app-android/src/test`의 `RecordingSavedGameStore` 잔여 1벌 — `:shared`의 `commonTest`를 볼 수 없어
+      통합 못 했다(test fixtures 설정 없음). 그 사실을 주석으로 남긴다.
 
 #### P2 — 엔진 동시성 (독립 트랙 · 어느 단계와도 병렬)
 
