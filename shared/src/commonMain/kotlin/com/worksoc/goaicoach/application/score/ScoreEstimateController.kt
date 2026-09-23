@@ -6,7 +6,7 @@ import com.worksoc.goaicoach.shared.engine.EngineOperationResultGuard
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.GameState
-import com.worksoc.goaicoach.shared.ScoreSnapshot
+import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 import com.worksoc.goaicoach.shared.engine.EngineOperationRequest
 
 class ScoreEstimateController(

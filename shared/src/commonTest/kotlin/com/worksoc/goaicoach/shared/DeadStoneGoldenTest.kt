@@ -1,6 +1,9 @@
 package com.worksoc.goaicoach.shared
 
 import com.worksoc.goaicoach.match.MatchReferee
+import com.worksoc.goaicoach.shared.scoring.BoardAreaScorer
+import com.worksoc.goaicoach.shared.scoring.BoardScorer
+import com.worksoc.goaicoach.shared.scoring.BoardTerritoryScorer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

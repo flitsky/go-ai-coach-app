@@ -1,5 +1,8 @@
 package com.worksoc.goaicoach.shared
 
+import com.worksoc.goaicoach.shared.scoring.BoardAreaScorer
+import com.worksoc.goaicoach.shared.scoring.BoardTerritoryScorer
+
 /**
  * 골든 테스트가 판을 **눈으로 검증할 수 있게** 기술하기 위한 다이어그램 파서.
  *

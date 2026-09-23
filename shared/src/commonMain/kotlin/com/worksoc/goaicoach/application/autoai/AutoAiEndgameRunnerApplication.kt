@@ -12,7 +12,7 @@ import com.worksoc.goaicoach.application.runtime.runtimeAiTurnEndgameSuccessLog
 import com.worksoc.goaicoach.application.score.EndgameFailureDisplayPlan
 import com.worksoc.goaicoach.application.score.FinalScoreDisplayPlan
 import com.worksoc.goaicoach.shared.GameState
-import com.worksoc.goaicoach.shared.ScoreSnapshot
+import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 
 internal data class AutoAiEndgameRunRequest(
     val endgamePlan: AutoAiTurnEndgamePlan.Resolve,

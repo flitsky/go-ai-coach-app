@@ -15,8 +15,8 @@ import com.worksoc.goaicoach.shared.GameStateReplayer
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.StoneColor
-import com.worksoc.goaicoach.shared.ScoreSnapshot
-import com.worksoc.goaicoach.shared.ScoreSnapshotSource
+import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
+import com.worksoc.goaicoach.shared.scoring.ScoreSnapshotSource
 import org.json.JSONArray
 import org.json.JSONObject
 

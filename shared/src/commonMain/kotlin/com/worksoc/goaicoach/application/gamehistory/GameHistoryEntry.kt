@@ -4,7 +4,7 @@ import com.worksoc.goaicoach.application.movereview.MoveReviewMarker
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.Ruleset
-import com.worksoc.goaicoach.shared.ScoreSnapshot
+import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 import com.worksoc.goaicoach.shared.StoneColor
 
 /**

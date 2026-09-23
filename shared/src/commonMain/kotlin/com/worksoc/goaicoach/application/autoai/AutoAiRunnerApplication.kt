@@ -23,8 +23,8 @@ import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.SearchTimeSettings
-import com.worksoc.goaicoach.shared.ScoreSnapshot
-import com.worksoc.goaicoach.shared.ScoreTimeline
+import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
+import com.worksoc.goaicoach.shared.scoring.ScoreTimeline
 import com.worksoc.goaicoach.shared.aiMoveAnalysisLimitWith
 import com.worksoc.goaicoach.shared.engine.EngineFallbackPolicy
 import com.worksoc.goaicoach.shared.engine.EngineOperationKind

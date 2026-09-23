@@ -15,7 +15,7 @@ import com.worksoc.goaicoach.match.summary
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Ruleset
-import com.worksoc.goaicoach.shared.ScoreSnapshot
+import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.StoneColor
 import com.worksoc.goaicoach.shared.analysisFingerprint

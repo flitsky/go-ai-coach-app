@@ -5,7 +5,7 @@ import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.PlayLevelSetting
-import com.worksoc.goaicoach.shared.ScoreSnapshot
+import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 
 /**
  * 다시보기의 수순 N에서 갈라 나오는 **새 대국**의 시작점(백로그 #172).

@@ -23,7 +23,7 @@ import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.ScoreEstimate
-import com.worksoc.goaicoach.shared.ScoreSnapshotSource
+import com.worksoc.goaicoach.shared.scoring.ScoreSnapshotSource
 import com.worksoc.goaicoach.shared.StoneColor
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

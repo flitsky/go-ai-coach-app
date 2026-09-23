@@ -32,8 +32,8 @@ import com.worksoc.goaicoach.shared.FinalScoreResult
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
-import com.worksoc.goaicoach.shared.ScoreSnapshot
-import com.worksoc.goaicoach.shared.ScoreTimeline
+import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
+import com.worksoc.goaicoach.shared.scoring.ScoreTimeline
 import com.worksoc.goaicoach.shared.StoneColor
 import com.worksoc.goaicoach.shared.describe
 

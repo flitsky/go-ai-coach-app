@@ -8,7 +8,7 @@ import com.worksoc.goaicoach.application.topmoves.SearchTimeTopMovesResetRunRequ
 import com.worksoc.goaicoach.application.topmoves.runSearchTimeTopMovesResetApplication
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.PlayerSetup
-import com.worksoc.goaicoach.shared.BoardScorer
+import com.worksoc.goaicoach.shared.scoring.BoardScorer
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.PlayLevelSetting

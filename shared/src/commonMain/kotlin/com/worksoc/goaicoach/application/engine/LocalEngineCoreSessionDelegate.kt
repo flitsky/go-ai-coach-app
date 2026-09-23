@@ -18,7 +18,7 @@ import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.ScoreEstimate
-import com.worksoc.goaicoach.shared.ScoreTimeline
+import com.worksoc.goaicoach.shared.scoring.ScoreTimeline
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.diagnostic.NoopDiagnosticEventLog
 

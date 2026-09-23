@@ -6,7 +6,7 @@ import com.worksoc.goaicoach.application.score.FinalScoreJudgement
 import com.worksoc.goaicoach.application.score.ScoreEstimateDisplayPlan
 import com.worksoc.goaicoach.application.score.ScoreEstimateFailureDisplayPlan
 import com.worksoc.goaicoach.shared.ScoreEstimate
-import com.worksoc.goaicoach.shared.ScoreSnapshot
+import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 
 data class GameSessionScoreState(
     val scoreText: String,

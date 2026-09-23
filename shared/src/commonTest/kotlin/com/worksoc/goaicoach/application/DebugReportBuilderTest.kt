@@ -19,8 +19,8 @@ import com.worksoc.goaicoach.shared.EngineProfile
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.PlayLevelSetting
-import com.worksoc.goaicoach.shared.ScoreSnapshot
-import com.worksoc.goaicoach.shared.ScoreSnapshotSource
+import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
+import com.worksoc.goaicoach.shared.scoring.ScoreSnapshotSource
 import com.worksoc.goaicoach.shared.StoneColor
 import com.worksoc.goaicoach.shared.SearchTimeLimit
 import com.worksoc.goaicoach.shared.SearchTimeSettings

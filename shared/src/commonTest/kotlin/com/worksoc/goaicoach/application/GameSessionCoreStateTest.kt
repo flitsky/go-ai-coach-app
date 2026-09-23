@@ -33,8 +33,8 @@ import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.ScoreEstimate
-import com.worksoc.goaicoach.shared.ScoreSnapshot
-import com.worksoc.goaicoach.shared.ScoreSnapshotSource
+import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
+import com.worksoc.goaicoach.shared.scoring.ScoreSnapshotSource
 import com.worksoc.goaicoach.shared.StoneColor
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

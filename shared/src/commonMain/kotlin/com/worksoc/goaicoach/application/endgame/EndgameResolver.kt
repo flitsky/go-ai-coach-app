@@ -2,7 +2,7 @@ package com.worksoc.goaicoach.application.endgame
 
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.BoardCoordinate
-import com.worksoc.goaicoach.shared.BoardScorer
+import com.worksoc.goaicoach.shared.scoring.BoardScorer
 import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.DeadStoneCleaner
 import com.worksoc.goaicoach.shared.DeadStoneCleanupResult

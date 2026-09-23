@@ -32,7 +32,7 @@ import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.ScoreEstimate
-import com.worksoc.goaicoach.shared.ScoreSnapshotSource
+import com.worksoc.goaicoach.shared.scoring.ScoreSnapshotSource
 import com.worksoc.goaicoach.shared.StoneColor
 import kotlinx.coroutines.runBlocking
 import kotlin.test.assertEquals

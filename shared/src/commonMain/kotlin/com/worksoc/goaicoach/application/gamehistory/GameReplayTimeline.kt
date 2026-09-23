@@ -6,7 +6,7 @@ import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.Ruleset
-import com.worksoc.goaicoach.shared.ScoreSnapshot
+import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 import kotlin.math.abs
 
 /**

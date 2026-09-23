@@ -4,7 +4,7 @@ import com.worksoc.goaicoach.application.score.FinalScoreJudgement
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.PlayLevelSetting
-import com.worksoc.goaicoach.shared.ScoreSnapshot
+import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 
 data class SavedGameSnapshot(
     val gameState: GameState,

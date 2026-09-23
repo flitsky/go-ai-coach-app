@@ -5,7 +5,7 @@ import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.CandidateMoveSource
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
-import com.worksoc.goaicoach.shared.ScoreSnapshot
+import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 import com.worksoc.goaicoach.shared.StoneColor
 import com.worksoc.goaicoach.shared.pointLossLabel
 

@@ -4,7 +4,7 @@ import com.worksoc.goaicoach.application.movereview.MoveReviewMarker
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.shared.GameState
-import com.worksoc.goaicoach.shared.ScoreSnapshot
+import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 
 data class UndoLastTurnRunRequest(
     val currentState: GameState,

@@ -1,5 +1,11 @@
-package com.worksoc.goaicoach.shared
+package com.worksoc.goaicoach.shared.scoring
 
+import com.worksoc.goaicoach.shared.BoardCoordinate
+import com.worksoc.goaicoach.shared.EngineStatus
+import com.worksoc.goaicoach.shared.FinalScoreResult
+import com.worksoc.goaicoach.shared.GameState
+import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.neighbors
 object BoardAreaScorer {
     fun score(
         state: GameState,

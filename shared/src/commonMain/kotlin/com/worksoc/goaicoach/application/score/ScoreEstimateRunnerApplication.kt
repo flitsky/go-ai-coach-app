@@ -10,7 +10,7 @@ import com.worksoc.goaicoach.application.diagnostic.runObservedEngineOperation
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.shared.EngineProfile
-import com.worksoc.goaicoach.shared.ScoreSnapshot
+import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 
 data class ScoreEstimateEffectLaunchRequest(
     val effect: GameSessionEffect.RunScoreEstimate,

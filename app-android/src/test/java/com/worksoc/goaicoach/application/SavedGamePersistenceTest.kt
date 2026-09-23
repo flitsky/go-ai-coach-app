@@ -3,8 +3,8 @@ package com.worksoc.goaicoach.application
 import com.worksoc.goaicoach.application.savedgame.*
 import com.worksoc.goaicoach.application.score.FinalScoreJudgement
 import com.worksoc.goaicoach.persistence.SavedGameSessionCodec
-import com.worksoc.goaicoach.shared.ScoreSnapshot
-import com.worksoc.goaicoach.shared.ScoreSnapshotSource
+import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
+import com.worksoc.goaicoach.shared.scoring.ScoreSnapshotSource
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.shared.BoardCoordinate
 import com.worksoc.goaicoach.shared.BoardSize

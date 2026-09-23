@@ -10,7 +10,7 @@ import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.SearchTimeSettings
-import com.worksoc.goaicoach.shared.ScoreSnapshot
+import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 import com.worksoc.goaicoach.shared.describe
 
 data class SavedGameRestorePlan(

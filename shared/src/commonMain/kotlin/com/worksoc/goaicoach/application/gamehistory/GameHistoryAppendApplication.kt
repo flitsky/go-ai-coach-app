@@ -6,7 +6,7 @@ import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.Move
-import com.worksoc.goaicoach.shared.ScoreSnapshot
+import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 import com.worksoc.goaicoach.shared.StoneColor
 import kotlin.random.Random
 

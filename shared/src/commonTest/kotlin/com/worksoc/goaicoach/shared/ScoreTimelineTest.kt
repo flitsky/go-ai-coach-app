@@ -1,5 +1,8 @@
 package com.worksoc.goaicoach.shared
 
+import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
+import com.worksoc.goaicoach.shared.scoring.ScoreSnapshotSource
+import com.worksoc.goaicoach.shared.scoring.ScoreTimeline
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
