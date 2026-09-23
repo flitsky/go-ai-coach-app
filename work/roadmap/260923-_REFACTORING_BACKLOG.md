@@ -74,8 +74,10 @@
   테스트를 돌려 덮어쓴다. 개수 대조는 **소스에서** 센다(`git ls-tree`로 두 리비전의 `@Test`를 세는 식).
 - **함정 79 — Lint `abortOnError=true`는 새 *Error* 만 막고 새 *Warning* 은 통과시킨다.**
   `warningsAsErrors=false`이므로 그렇다. 이 게이트로 얻는 보장은 **"새 Error 0"** 이지 "새 경고 0"이 아니다.
-- **(함정 아님, 환경)** `make test`는 **기기가 둘 이상 붙어 있으면 `doctor`에서 죽는다.**
-  `make test TARGET=emu`로 돌릴 것. 증상이 "테스트가 빨갛다"로 보여 멀쩡한 작업을 회귀로 오판하게 한다.
+- **(함정 아님, 환경)** `make test`를 **인자 없이** 치면 기기가 둘 이상일 때 `doctor`에서 죽는다.
+  ✅ **`make test TARGET=emu`를 주면 2대가 붙어 있어도 그대로 통과한다**(2026-09-23 실측).
+  ⚠️ 이 줄이 한때 *"기기가 둘이면 죽는다"* 로만 적혀 있어 **스레드 둘이 게이트 실행 자체를 회피했다** —
+  그래서 실측 결과를 함께 적는다. **회피하지 말고 `TARGET=emu`로 돌려라.**
 
 ---
 
@@ -142,36 +144,54 @@ Hilt(commonMain 불가)·Koin(이득 0)·전면 MVI(이미 절반 작동)·모�
 | 11 | **`make test-ios` 별도 게이트 신설** — 함정 75대로 `make test`에 합치지 않았다. `System.` 주입으로 실제로 막는 것 확인 | `9b19aaaf` |
 | 12 | **app-android Lint 개통** — baseline 84건(1 error+74 warnings+9 hints), `abortOnError=true`. 새 Error가 실제로 빌드를 막는 것 확인 | `76cbaed9` |
 | 13 | **빌드 힙·병렬화 + `make test-device` 신설** — configuration-cache는 근거와 함께 끄고 남겼다 | `d1b3b56e` |
+| 19 | **원격 국면 인코딩에 `komi`·`handicapCount`를 싣는다** — `#1`과 같은 함정이 원격에 남아 있었다. ⚠️ **와이어만 닫혔다** — 서버가 아직 그 값을 버린다(#62) | `7ffccd17` |
+| 23 | **`GameHistoryStore`의 komi 기본값을 `DefaultKomi`로** — 폴백은 도달 불가이나 다른 스토어와 어긋나 읽는 사람을 헷갈리게 했다 | `ca41b1a0` |
+| 59·61 | **사석 탐지가 답하는 질문을 KDoc·테스트로 못박음** — 호출부 전수 조사로 **종국에만 불린다**를 확인해 ⓐ(현 동작 유지)로 닫았다. 실행 코드 **0줄 변경**. `singleOrNull()`이 성능 필터일 뿐임도 실측 확인 | `cba287c3` |
+| 28 | **`middleware` split package 해소** — 유일한 역방향이던 1파일을 `application/analysis`로. `:shared` 패키지 사이클 **0** | `2254d324` |
 
 ### 진행 중
 
-_(없음 — 아래 「예정사항」 첫 항목부터 집는다)_
+30. **계약 테스트 경로 방어 — 절반만 닫혔다** (AI 모델: Sonnet, 노력정도: 중간) · 커밋 `d1f96c6a`
+    · ✅ **번 것**: 경로 문자열 22파일 → **1파일**(고칠 자리가 `RepoPaths.kt` 한 곳으로 줄었다) ·
+      절대경로가 되어 **워크트리 미끄러짐은 닫혔다.**
+    · 🔴 **못 번 것**: 검수자가 `GoCoachApp.kt`를 실제로 `git mv` 해 보니 **612건 중 77건이
+      `java.io.FileNotFoundException`으로 터졌고 의미 있는 단언 실패는 0건**이었다.
+      인수 기준이 요구한 정반대다 — **P3 이동은 여전히 원인 파악이 늦는다.**
+    · **해법**: `RepoPaths` 접근자가 `readText()` 전에 존재를 검사해
+      *"이 계약이 보는 파일이 사라졌다 — `RepoPaths.kt`를 갱신하라"* 로 터지게 한다.
+    · ⚠️ **P3(#24~#27) 착수 전에 닫아야 한다.**
 
 ### 예정사항
 
-#### P1 잔여 — #9·#10이 드러낸 것 (번호는 뒤에 붙이고 **순서로** 우선순위를 표시한다)
+#### 잔여 — 앞선 일감이 드러낸 것 (번호는 뒤에 붙이고 **순서로** 우선순위를 표시한다)
+
+> ⚠️ **#58은 별도 세션이 맡고 있다**(2026-09-23). 중복 착수 금지.
 
 58. **`NewGameBoardTapSmokeTest` 실패 수정** (AI 모델: Sonnet, 노력정도: 중간)
     · `app-android/src/androidTest`의 `assertIsDisplayed()`에서 *"The component is not displayed!"*.
       **기존 버그**이고 #13이 `make test-device`를 연 덕에 드러났다. `AppLaunchSmokeTest`가 지목한 **온보딩 전제**부터 볼 것.
     · ⚠️ 계측 테스트 3개가 초록이 아니면 `make test-device`는 열어 둔 의미가 없다.
-59. **`DeadStoneDetector`가 패 금지를 물려받아 사석을 조용히 놓친다** (AI 모델: Opus, 노력정도: 중간)
-    · 어떤 그룹의 유일한 활로가 `koPoint`이고 `koForbiddenFor`가 그 그룹을 따낼 쪽이면
-      `runCatching { … }.getOrNull() ?: continue`가 **그 그룹을 후보에서 조용히 제외**한다.
-    · 즉 탐지기가 답하는 질문이 *"이 돌이 죽었는가"* 가 아니라 *"지금 당장 따낼 수 있는가"* 다.
-      양패스 종료 시점엔 통과가 패를 지우므로 **오늘 실전에서 닿지 않는다** — 그래서 판단 일감이지 버그 수정이 아니다.
-    · ⚠️ 현 동작이 #9의 골든 표에 박혀 있다. 바꾸려면 그 행을 함께 고쳐야 한다.
 60. **아무도 안 보는 계약 3개 정리** (AI 모델: Sonnet, 노력정도: 낮음) — #20과 함께
     · `capabilities` / `positionAnalysisCacheStatsText` / `positionAnalysisCacheQualityFor` —
       값을 틀리게 바꿔도 **빨개지는 테스트가 0건**이다(#10 음성 대조에서 드러났다).
       페이크 8벌이 909줄 중 40여 줄을 이 셋에 쓰고 있었다.
     · 인터페이스에 남길지, 테스트를 붙일지, 좁힐지 판단한다.
-61. **오해를 부르는 코드 둘에 KDoc 한 줄** (AI 모델: Sonnet, 노력정도: 낮음)
-    · `DeadStoneDetector`의 `group.liberties.singleOrNull()`은 **정확성 게이트가 아니라 성능 필터**다 —
-      `firstOrNull()`로 바꿔도 동작이 완전히 같다(뒤의 `stones.all { … == null }`이 판정을 전담).
-      읽는 사람은 *"활로가 정확히 하나여야 한다"* 는 규칙이 거기 있다고 믿게 된다.
-    · `app-android/src/test`의 `RecordingSavedGameStore` 잔여 1벌 — `:shared`의 `commonTest`를 볼 수 없어
-      통합 못 했다(test fixtures 설정 없음). 그 사실을 주석으로 남긴다.
+62. **원격 분석 서버가 보낸 komi를 버린다** (AI 모델: Sonnet, 노력정도: 낮음)
+    · `scripts/run-katago-remote-analysis-server.py`가 `DEFAULT_KOMI = 6.5`를 하드코딩해 쿼리에 넣고,
+      #19가 새로 실어 보낸 `komi`를 **읽지 않는다.** `handicapCount`도 무시하고 `stones`에서 역산한다.
+    · 즉 **#19는 와이어만 닫았다** — "앱이 값을 보내기는 한다"까지이고 *"원격 분석이 실제 덤을 쓴다"* 는 아니다.
+      정직하게 별도 항목으로 세운다.
+    · ⚠️ 이 스크립트는 개발용이고 원격 경로는 `BuildConfig.DEBUG` 게이트 뒤라 **실기 불필요**하다.
+
+63. **남은 실행위치 의존 상대경로 3건** (AI 모델: Sonnet, 노력정도: 낮음)
+    · `BundledEngineAssetContractTest`의 `File("../Makefile")`, `AppNameContractTest`·
+      `LocalOnlyDataNoticeContractTest`의 자체 `repoRoot` 재탐색 로직.
+    · #30의 `File("src/main` 패턴 집계에 안 걸렸을 뿐 **같은 부류**다.
+
+64. **`shared/src/commonTest`의 고아 `middleware` 패키지** (AI 모델: Sonnet, 노력정도: 낮음)
+    · `PositionAnalysisCacheResolverTest.kt`가 클래스는 `application.analysis`로 갔는데
+      **여전히 `package com.worksoc.goaicoach.middleware`를 선언**한다. #28이 commonMain만 닫았다.
+    · 옮기면 import 한 줄 되돌리기로 끝난다.
 
 #### P2 — 엔진 동시성 (독립 트랙 · 어느 단계와도 병렬)
 
@@ -201,12 +221,6 @@ _(없음 — 아래 「예정사항」 첫 항목부터 집는다)_
     · `LocalEngineSessionClient` 생성자에 `currentSessionGeneration: () -> Long`. 현재 3계층이 `0L`을 박아 넣어
       **모든 `position_analysis` operationId가 g0으로 찍혀 실제 세션 로그와 대조 불가**다.
     · `application/engine/operation`의 sealed class 3종 재선언과 `EngineOperationPolicyAdapter.kt` 삭제(약 170줄, 동작 변경 0).
-19. **원격 코덱이 `komi`·`handicapCount`를 안 보낸다** (AI 모델: Sonnet, 노력정도: 중간)
-    · `HttpRemotePositionAnalysisTransport`의 `encodeState`가 boardSize/ruleset/nextPlayer/포획수/stones/moves만 담는다.
-      `RemoteEngineCoreApiAdapter`도 같은 코덱을 쓴다.
-    · **덤 유실(#1)과 똑같은 함정이 같은 이유로 남아 있다.** 오늘 터지지는 않는다 —
-      `MainActivity`가 `BuildConfig.DEBUG && REMOTE_ENGINE_URL.isNotBlank()`로 막는다.
-      **원격/DePIN이 출하되는 순간 덤과 접바둑을 모르는 채로 분석한다.**
 20. **`syncStaticPosition` 무동작 + 기본 구현 삭제** (AI 모델: Opus, 노력정도: 중간) — **10 뒤에만**
     · 기본 구현이 있어서 원격·스텁이 **둘 다 조용히 빠뜨렸다.** ⚠️ **함정 70**: 픽스처(#10)가 먼저다.
     · 재발을 막는 실체는 삭제가 아니라 **공통 계약 테스트 스위트**(Local/Remote/Stub을 같은 시나리오로)다.
@@ -218,9 +232,6 @@ _(없음 — 아래 「예정사항」 첫 항목부터 집는다)_
     · 판 정체성(boardSize/ruleset/handicapCount/komi)을 값 객체로 묶어 **코덱이 그 하나만 왕복**하게.
       지금은 세 코덱이 각자 손으로 필드를 골라 담아 **같은 종류의 누락이 또 난다.**
     · ⚠️ **기존 4필드를 파생 프로퍼티로 남겨 호출부 변경 0**으로. ⚠️ **함정 69**: 스키마 번호를 올리지 않는 범위에서만.
-23. **`GameHistoryStore`의 komi 기본값 불일치** (AI 모델: Sonnet, 노력정도: 낮음)
-    · `optDouble("komi", 0.0)` ↔ 다른 스토어는 `DefaultKomi`(6.5). komi 키가 없던 세대의 기록이 실재하는지 확인 후 정합.
-
 #### P3 — 이름공간 정렬 (순수 이동, 동작 변경 0)
 
 > ⚠️ **이 단계의 모든 커밋은 diff가 package/import 줄로만 구성된다.** 동작 변경이 한 줄이라도 섞이면
@@ -242,17 +253,8 @@ _(없음 — 아래 「예정사항」 첫 항목부터 집는다)_
       **참조 그래프를 읽을 수조차 없다** — 분할 즉시 의존이 전부 import로 드러나고, **그때 비로소 모듈 승격을
       설계할 근거가 생긴다.**
     · ⚠️ **함정 72**: `ui/` 단독 점유. 진행 중 다른 스레드에 `ui/` 금지를 알린다. 시간 상한을 못박는다.
-28. **`middleware` split package 해소** (AI 모델: Sonnet, 노력정도: 낮음)
-    · `PositionAnalysisCacheResolver`를 `application/analysis`로 흡수 — **1파일, import 1줄, 사이클 −1**.
-      `middleware`→`application` 7 import 대 역방향 1 import로, 이 파일 하나가 `:shared` 내부 유일한 역방향이다.
-    · ⚠️ `app-android`의 `middleware` 게이트웨이 3파일은 **「서 있는 답」이 지키기로 한 것**이다. 지우지 마라.
 29. **`premium`/`auth` 계층 분리** (AI 모델: Sonnet, 노력정도: 중간)
     · `premium.port/`(4계층) · `premium.state/`(6계층) · `premium.app/`(5계층)로. `auth`도 같은 방식.
-30. **계약 테스트 22개를 `RepoPaths`로 흡수** (AI 모델: Sonnet, 노력정도: 중간)
-    · `app-android/src/test`에서 `File("src/main/java/...")` 상대경로로 소스를 읽는 파일이 **22개** 남아 있다.
-      `repo.root` 주입을 안 받아 **워크트리 미끄러짐 위험이 그대로**다.
-    · ⚠️ **24~29의 하드 선행조건이다** — 파일을 옮기면 이들이 단언 실패가 아니라 `FileNotFoundException`으로 터진다.
-    · ⚠️ 그 테스트들은 다른 패키지에 있어 `internal object RepoPaths`를 그대로 못 쓴다. 접근성 조정이 필요하다.
 31. **문서 정본화** (AI 모델: Sonnet, 노력정도: 낮음)
     · P3이 끝난 실제 패키지 구조를 `GO_AI_COACH_ARCHITECTURE_ROADMAP.md`에 반영.
     · ✅ **P3 직후 `ui` 패키지 간 엣지와 SCC를 실측해 기록하라** — 모듈 경계는 **이 측정을 보고** 결정한다.
