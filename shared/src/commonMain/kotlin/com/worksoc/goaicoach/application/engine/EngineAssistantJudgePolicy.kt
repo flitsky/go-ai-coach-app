@@ -1,6 +1,6 @@
 package com.worksoc.goaicoach.application.engine
 
-import com.worksoc.goaicoach.shared.EngineProfile
+import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 
 internal const val AssistantJudgeDeadStonesTimeCapMillis: Long = 2_000L
 internal const val AssistantJudgeFinalScoreTimeCapMillis: Long = 1_000L

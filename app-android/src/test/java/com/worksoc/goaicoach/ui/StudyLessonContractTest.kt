@@ -1,7 +1,7 @@
 package com.worksoc.goaicoach.ui
 
-import com.worksoc.goaicoach.shared.StudyLessonTrack
-import com.worksoc.goaicoach.shared.studyLessons
+import com.worksoc.goaicoach.shared.content.StudyLessonTrack
+import com.worksoc.goaicoach.shared.content.studyLessons
 import com.worksoc.goaicoach.architecture.readContractSource
 import java.io.File
 import org.junit.Assert.assertEquals

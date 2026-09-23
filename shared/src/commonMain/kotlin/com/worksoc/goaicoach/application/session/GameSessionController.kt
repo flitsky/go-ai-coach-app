@@ -13,10 +13,10 @@ import com.worksoc.goaicoach.application.score.ScoreEstimateRequestPlan
 import com.worksoc.goaicoach.application.topmoves.TopMoveAnalysisPlan
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
-import com.worksoc.goaicoach.shared.BoardSize
-import com.worksoc.goaicoach.shared.EngineProfile
-import com.worksoc.goaicoach.shared.GameState
-import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.domain.BoardSize
+import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
+import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.domain.Ruleset
 
 data class GameSessionControllerState(
     val core: GameSessionCoreState,

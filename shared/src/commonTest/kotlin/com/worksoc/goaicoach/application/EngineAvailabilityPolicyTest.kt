@@ -2,7 +2,7 @@ package com.worksoc.goaicoach.application
 
 import com.worksoc.goaicoach.application.engine.EngineAvailability
 import com.worksoc.goaicoach.application.engine.engineAvailabilityFor
-import com.worksoc.goaicoach.shared.EngineMode
+import com.worksoc.goaicoach.shared.enginecontract.EngineMode
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

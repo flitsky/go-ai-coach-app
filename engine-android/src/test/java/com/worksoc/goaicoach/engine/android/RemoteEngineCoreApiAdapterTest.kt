@@ -1,15 +1,15 @@
 package com.worksoc.goaicoach.engine.android
 
-import com.worksoc.goaicoach.shared.AnalysisLimit
-import com.worksoc.goaicoach.shared.BoardCoordinate
-import com.worksoc.goaicoach.shared.BoardSize
-import com.worksoc.goaicoach.shared.EngineProfile
-import com.worksoc.goaicoach.shared.EngineState
-import com.worksoc.goaicoach.shared.EngineStatus
-import com.worksoc.goaicoach.shared.GameState
-import com.worksoc.goaicoach.shared.Move
-import com.worksoc.goaicoach.shared.Ruleset
-import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
+import com.worksoc.goaicoach.shared.domain.BoardCoordinate
+import com.worksoc.goaicoach.shared.domain.BoardSize
+import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
+import com.worksoc.goaicoach.shared.enginecontract.EngineState
+import com.worksoc.goaicoach.shared.enginecontract.EngineStatus
+import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.domain.Move
+import com.worksoc.goaicoach.shared.domain.Ruleset
+import com.worksoc.goaicoach.shared.domain.StoneColor
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
@@ -25,7 +25,7 @@ import java.net.URL
 
 /**
  * 계약 테스트(Stage D-2) — [RemoteEngineCoreApiAdapter]가 [KataGoProcessEngineAdapter]
- * (로컬)와 동일한 [com.worksoc.goaicoach.shared.EngineCoreApi] 계약을 만족하는지 검증한다:
+ * (로컬)와 동일한 [com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi] 계약을 만족하는지 검증한다:
  * 상태만 바꾸는 호출은 네트워크를 타지 않는지, 실제 연산 호출은 그 시점의 전체 국면을 원격으로
  * 보내는지, 타임아웃 시 로컬의 강제 프로세스 재시작과 동등하게 연결을 강제로 끊는지.
  */

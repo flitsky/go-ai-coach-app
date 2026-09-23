@@ -4,15 +4,15 @@ import com.worksoc.goaicoach.application.session.RuntimePlayLevelSelection
 import com.worksoc.goaicoach.application.session.selectRuntimePlayLevel
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
-import com.worksoc.goaicoach.shared.BoardSize
-import com.worksoc.goaicoach.shared.EngineProfile
-import com.worksoc.goaicoach.shared.GameState
-import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
-import com.worksoc.goaicoach.shared.PlayLevelSetting
-import com.worksoc.goaicoach.shared.Ruleset
-import com.worksoc.goaicoach.shared.SearchTimeSettings
-import com.worksoc.goaicoach.shared.ScoreSnapshot
-import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.domain.BoardSize
+import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
+import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.policy.MoveAnalysisSnapshot
+import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
+import com.worksoc.goaicoach.shared.domain.Ruleset
+import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
+import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
+import com.worksoc.goaicoach.shared.domain.StoneColor
 
 data class GameSessionResetPlan(
     val gameState: GameState,
@@ -33,14 +33,14 @@ sealed class StartConfiguredGamePlan {
         val ruleset: Ruleset,
         val boardSize: BoardSize,
         val handicapCount: Int = 0,
-        val komi: Double = com.worksoc.goaicoach.shared.DefaultKomi,
+        val komi: Double = com.worksoc.goaicoach.shared.domain.DefaultKomi,
     ) : StartConfiguredGamePlan()
     data class StartEngineGame(
         val ruleset: Ruleset,
         val boardSize: BoardSize,
         val runtime: RuntimePlayLevelSelection,
         val handicapCount: Int = 0,
-        val komi: Double = com.worksoc.goaicoach.shared.DefaultKomi,
+        val komi: Double = com.worksoc.goaicoach.shared.domain.DefaultKomi,
     ) : StartConfiguredGamePlan()
 }
 
@@ -49,7 +49,7 @@ fun buildNewLocalGameSessionPlan(
     ruleset: Ruleset,
     boardSize: BoardSize,
     handicapCount: Int = 0,
-    komi: Double = com.worksoc.goaicoach.shared.DefaultKomi,
+    komi: Double = com.worksoc.goaicoach.shared.domain.DefaultKomi,
 ): GameSessionResetPlan {
     val state = GameState.withHandicap(boardSize, ruleset, handicapCount, komi = komi)
     return GameSessionResetPlan(
@@ -79,7 +79,7 @@ fun buildStartConfiguredGamePlan(
     defaultPlayLevel: PlayLevelSetting,
     searchTimeSettings: SearchTimeSettings = SearchTimeSettings(),
     handicapCount: Int = 0,
-    komi: Double = com.worksoc.goaicoach.shared.DefaultKomi,
+    komi: Double = com.worksoc.goaicoach.shared.domain.DefaultKomi,
 ): StartConfiguredGamePlan {
     val targetMode = setup.matchMode()
     if (!isEngineReady && targetMode != MatchMode.LocalTwoPlayer) {

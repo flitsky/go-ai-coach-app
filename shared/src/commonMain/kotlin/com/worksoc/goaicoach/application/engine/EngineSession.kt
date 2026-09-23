@@ -2,19 +2,19 @@ package com.worksoc.goaicoach.application.engine
 
 import com.worksoc.goaicoach.application.endgame.AiEndgameResolution
 import com.worksoc.goaicoach.match.TurnOutcome
-import com.worksoc.goaicoach.shared.AnalysisLimit
-import com.worksoc.goaicoach.shared.BoardScorer
-import com.worksoc.goaicoach.shared.EngineCoreApi
-import com.worksoc.goaicoach.shared.EngineProfile
-import com.worksoc.goaicoach.shared.EngineStatus
-import com.worksoc.goaicoach.shared.GameState
-import com.worksoc.goaicoach.shared.PlayLevelSetting
-import com.worksoc.goaicoach.shared.ScoreEstimate
-import com.worksoc.goaicoach.shared.ScoreSnapshot
-import com.worksoc.goaicoach.shared.ScoreSnapshotSource
-import com.worksoc.goaicoach.shared.ScoreTimeline
-import com.worksoc.goaicoach.shared.TurnAnalysisPurpose
-import com.worksoc.goaicoach.shared.turnAnalysisLimitFor
+import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
+import com.worksoc.goaicoach.shared.scoring.BoardScorer
+import com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi
+import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
+import com.worksoc.goaicoach.shared.enginecontract.EngineStatus
+import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
+import com.worksoc.goaicoach.shared.enginecontract.ScoreEstimate
+import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
+import com.worksoc.goaicoach.shared.scoring.ScoreSnapshotSource
+import com.worksoc.goaicoach.shared.scoring.ScoreTimeline
+import com.worksoc.goaicoach.shared.policy.TurnAnalysisPurpose
+import com.worksoc.goaicoach.shared.policy.turnAnalysisLimitFor
 
 data class EngineStartupResult(
     val message: String,

@@ -1,7 +1,7 @@
 package com.worksoc.goaicoach.application.botcharacter
 
-import com.worksoc.goaicoach.shared.PlayLevelGroup
-import com.worksoc.goaicoach.shared.PlayLevelSetting
+import com.worksoc.goaicoach.shared.policy.PlayLevelGroup
+import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 
 /**
  * 봇 캐릭터의 영구 식별자. 저장소(`persistence/BotCollectionStore.kt`)에 그대로 문자열로
@@ -69,7 +69,7 @@ sealed class BotUnlockSource {
  * Phase 1 카탈로그는 전부 특정 티어에 1:1로 묶이므로 실제로는 항상 값이 있다.
  *
  * ⚠️ **사람이 읽는 이름과 소개는 여기 없다**(백로그 #32). 예전에는 `name`·`description`을
- * 한국어 리터럴로 들고 있었는데, `shared`는 [com.worksoc.goaicoach.shared.PlayLevelGroup]처럼
+ * 한국어 리터럴로 들고 있었는데, `shared`는 [com.worksoc.goaicoach.shared.policy.PlayLevelGroup]처럼
  * 언어 개념이 없는 계층이라 그 값이 4개 언어 화면에 그대로 새어 나갔다. 지금은 UI 계층의
  * `ui/UiStringsBotCharacters.kt`가 [id]를 키로 네 언어를 들고 있고, 이 타입은 **식별자와 획득
  * 경로만** 갖는다. 표시용 문구를 다시 이 안에 넣지 말 것.

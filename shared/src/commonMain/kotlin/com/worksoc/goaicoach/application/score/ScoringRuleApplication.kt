@@ -3,11 +3,11 @@ package com.worksoc.goaicoach.application.score
 import com.worksoc.goaicoach.application.engine.localScoreSnapshot
 
 import com.worksoc.goaicoach.match.MatchMode
-import com.worksoc.goaicoach.shared.GameState
-import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
-import com.worksoc.goaicoach.shared.Ruleset
-import com.worksoc.goaicoach.shared.ScoreSnapshot
-import com.worksoc.goaicoach.shared.ScoreTimeline
+import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.policy.MoveAnalysisSnapshot
+import com.worksoc.goaicoach.shared.domain.Ruleset
+import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
+import com.worksoc.goaicoach.shared.scoring.ScoreTimeline
 
 data class ScoringRuleChangePlan(
     val gameState: GameState,

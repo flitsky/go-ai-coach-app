@@ -18,16 +18,16 @@ import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizat
 import com.worksoc.goaicoach.application.savedgame.SavedSessionUiState
 import com.worksoc.goaicoach.application.engine.localScoreSnapshot
 import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
-import com.worksoc.goaicoach.shared.AnalysisPreset
-import com.worksoc.goaicoach.shared.BoardSize
-import com.worksoc.goaicoach.shared.EngineProfile
-import com.worksoc.goaicoach.shared.GameState
-import com.worksoc.goaicoach.shared.Move
-import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
-import com.worksoc.goaicoach.shared.PlayLevelSetting
-import com.worksoc.goaicoach.shared.SearchTimeSettings
-import com.worksoc.goaicoach.shared.SearchTimeLimit
-import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.enginecontract.AnalysisPreset
+import com.worksoc.goaicoach.shared.domain.BoardSize
+import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
+import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.domain.Move
+import com.worksoc.goaicoach.shared.policy.MoveAnalysisSnapshot
+import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
+import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
+import com.worksoc.goaicoach.shared.policy.SearchTimeLimit
+import com.worksoc.goaicoach.shared.domain.StoneColor
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -57,7 +57,7 @@ class GameScreenStateTest {
             .play(
                 Move.Play(
                     StoneColor.Black,
-                    com.worksoc.goaicoach.shared.BoardCoordinate.fromLabel("E5", BoardSize.Nine),
+                    com.worksoc.goaicoach.shared.domain.BoardCoordinate.fromLabel("E5", BoardSize.Nine),
                 ),
             )
         val screenState = buildGameScreenState(
@@ -203,7 +203,7 @@ class GameScreenStateTest {
                 gameState = GameState.empty().play(
                     Move.Play(
                         StoneColor.Black,
-                        com.worksoc.goaicoach.shared.BoardCoordinate.fromLabel("E5", BoardSize.Nine),
+                        com.worksoc.goaicoach.shared.domain.BoardCoordinate.fromLabel("E5", BoardSize.Nine),
                     ),
                 ),
                 showOwnershipOverlay = false,
@@ -257,7 +257,7 @@ class GameScreenStateTest {
                 gameState = GameState.empty().play(
                     Move.Play(
                         StoneColor.Black,
-                        com.worksoc.goaicoach.shared.BoardCoordinate.fromLabel("E5", BoardSize.Nine),
+                        com.worksoc.goaicoach.shared.domain.BoardCoordinate.fromLabel("E5", BoardSize.Nine),
                     ),
                 ),
                 topMovesEnabled = false,

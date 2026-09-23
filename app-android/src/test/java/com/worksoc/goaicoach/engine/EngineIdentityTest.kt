@@ -1,6 +1,6 @@
 package com.worksoc.goaicoach.engine
 
-import com.worksoc.goaicoach.shared.EngineMode
+import com.worksoc.goaicoach.shared.enginecontract.EngineMode
 import kotlinx.coroutines.CompletableDeferred
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

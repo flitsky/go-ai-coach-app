@@ -1,8 +1,8 @@
 package com.worksoc.goaicoach.application.gamehistory
 
 import com.worksoc.goaicoach.match.PlayerSetup
-import com.worksoc.goaicoach.shared.Ruleset
-import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.domain.Ruleset
+import com.worksoc.goaicoach.shared.domain.StoneColor
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue

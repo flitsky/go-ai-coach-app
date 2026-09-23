@@ -1,6 +1,6 @@
 package com.worksoc.goaicoach.application.preferences
 
-import com.worksoc.goaicoach.shared.SearchTimeSettings
+import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
 
 /**
  * **설정 세대**(백로그 #188) — 기본값이 바뀌었을 때 **이미 저장한 사용자에게도** 그것이 미치게 한다.

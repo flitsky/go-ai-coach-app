@@ -1,6 +1,6 @@
 package com.worksoc.goaicoach.engine.android
 
-import com.worksoc.goaicoach.shared.EngineProfile
+import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import java.io.File
 
 data class KataGoProcessConfig(

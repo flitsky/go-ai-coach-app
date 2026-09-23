@@ -10,11 +10,11 @@ import com.worksoc.goaicoach.application.autoai.shouldRequestTopMoveAnalysis
 import com.worksoc.goaicoach.application.session.GameSessionAnalysisState
 import com.worksoc.goaicoach.application.session.GameSessionControllerState
 import com.worksoc.goaicoach.application.session.GameSessionEffect
-import com.worksoc.goaicoach.shared.AnalysisPreset
-import com.worksoc.goaicoach.shared.CandidateMove
-import com.worksoc.goaicoach.shared.EngineProfile
-import com.worksoc.goaicoach.shared.GameState
-import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
+import com.worksoc.goaicoach.shared.enginecontract.AnalysisPreset
+import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
+import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
+import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.policy.MoveAnalysisSnapshot
 
 fun GameSessionAnalysisState.applyTopMoveAnalysisLaunchPlan(
     launchPlan: TopMoveAnalysisLaunchPlan,

@@ -1,8 +1,8 @@
 package com.worksoc.goaicoach.application.botcharacter
 
 import com.worksoc.goaicoach.application.attendance.WeeklyRewardCycleTier
-import com.worksoc.goaicoach.shared.PlayLevelGroup
-import com.worksoc.goaicoach.shared.PlayLevelSetting
+import com.worksoc.goaicoach.shared.policy.PlayLevelGroup
+import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 
 /**
  * 봇 캐릭터 카탈로그 — "어떤 캐릭터가 존재하고 각각이 어느 AI 레벨에 대응하는가"의 단일 출처.

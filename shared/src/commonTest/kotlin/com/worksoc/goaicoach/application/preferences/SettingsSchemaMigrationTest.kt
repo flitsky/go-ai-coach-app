@@ -1,7 +1,7 @@
 package com.worksoc.goaicoach.application.preferences
 
-import com.worksoc.goaicoach.shared.SearchTimeLimit
-import com.worksoc.goaicoach.shared.SearchTimeSettings
+import com.worksoc.goaicoach.shared.policy.SearchTimeLimit
+import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertSame

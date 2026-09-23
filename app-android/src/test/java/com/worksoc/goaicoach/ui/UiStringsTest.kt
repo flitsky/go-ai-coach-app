@@ -1,6 +1,6 @@
 package com.worksoc.goaicoach.ui
 
-import com.worksoc.goaicoach.shared.SearchTimeLimit
+import com.worksoc.goaicoach.shared.policy.SearchTimeLimit
 import java.lang.reflect.Modifier
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

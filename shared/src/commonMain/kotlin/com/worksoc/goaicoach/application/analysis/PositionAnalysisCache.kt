@@ -1,10 +1,10 @@
 package com.worksoc.goaicoach.application.analysis
 
-import com.worksoc.goaicoach.shared.AnalysisLimit
-import com.worksoc.goaicoach.shared.AnalysisResult
-import com.worksoc.goaicoach.shared.EngineSearchMode
-import com.worksoc.goaicoach.shared.GameState
-import com.worksoc.goaicoach.shared.analysisFingerprint
+import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
+import com.worksoc.goaicoach.shared.enginecontract.AnalysisResult
+import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
+import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.domain.analysisFingerprint
 import kotlin.math.roundToInt
 
 const val JsonPositionAnalysisCacheMaxEntries: Int = 20

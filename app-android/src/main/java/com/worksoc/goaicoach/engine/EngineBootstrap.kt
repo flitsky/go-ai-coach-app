@@ -3,8 +3,8 @@ package com.worksoc.goaicoach.engine
 import android.content.Context
 import com.worksoc.goaicoach.engine.android.EngineCoreApiFactory
 import com.worksoc.goaicoach.engine.android.KataGoProcessConfig
-import com.worksoc.goaicoach.shared.EngineCoreApi
-import com.worksoc.goaicoach.shared.EngineMode
+import com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi
+import com.worksoc.goaicoach.shared.enginecontract.EngineMode
 import java.io.File
 import java.io.IOException
 

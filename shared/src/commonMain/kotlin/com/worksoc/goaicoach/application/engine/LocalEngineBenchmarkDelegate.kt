@@ -1,12 +1,12 @@
 package com.worksoc.goaicoach.application.engine
 
-import com.worksoc.goaicoach.shared.BoardCoordinate
-import com.worksoc.goaicoach.shared.CandidateMove
-import com.worksoc.goaicoach.shared.EngineCoreApi
-import com.worksoc.goaicoach.shared.GameState
-import com.worksoc.goaicoach.shared.Move
-import com.worksoc.goaicoach.shared.Ruleset
-import com.worksoc.goaicoach.shared.describe
+import com.worksoc.goaicoach.shared.domain.BoardCoordinate
+import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
+import com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi
+import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.domain.Move
+import com.worksoc.goaicoach.shared.domain.Ruleset
+import com.worksoc.goaicoach.shared.domain.describe
 import kotlin.time.TimeSource
 
 internal class LocalEngineBenchmarkDelegate(

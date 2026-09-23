@@ -5,10 +5,10 @@ package com.worksoc.goaicoach.application.analysis
 // 결과였다 — 그래서 같은 패키지가 됐는데도 `package com.worksoc.goaicoach.middleware`를 계속
 // 선언하는 고아 상태였다. git mv로 옮기고 패키지 선언을 맞추니 위 7개 import는 전부 자기
 // 패키지를 향하던 것이라(#28이 추가한 한 줄 포함) 전부 불필요해져 지운다.
-import com.worksoc.goaicoach.shared.AnalysisLimit
-import com.worksoc.goaicoach.shared.AnalysisResult
-import com.worksoc.goaicoach.shared.EngineSearchMode
-import com.worksoc.goaicoach.shared.EngineStatus
+import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
+import com.worksoc.goaicoach.shared.enginecontract.AnalysisResult
+import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
+import com.worksoc.goaicoach.shared.enginecontract.EngineStatus
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlin.test.Test

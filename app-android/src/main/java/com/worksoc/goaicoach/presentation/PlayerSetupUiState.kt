@@ -3,7 +3,7 @@ package com.worksoc.goaicoach.presentation
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SidePlayerSetup
 import com.worksoc.goaicoach.match.summary
-import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.domain.StoneColor
 
 internal data class PlayerSetupUiState(
     val setup: PlayerSetup,

@@ -1,7 +1,7 @@
 package com.worksoc.goaicoach.ui
 
-import com.worksoc.goaicoach.shared.StudyLessonId
-import com.worksoc.goaicoach.shared.StudyLessonTrack
+import com.worksoc.goaicoach.shared.content.StudyLessonId
+import com.worksoc.goaicoach.shared.content.StudyLessonTrack
 
 /**
  * 갈래별 문구 표를 **합치고 읽는** 곳(백로그 #164·#183). 표 자체는 갈래마다 한 파일에 있다 —

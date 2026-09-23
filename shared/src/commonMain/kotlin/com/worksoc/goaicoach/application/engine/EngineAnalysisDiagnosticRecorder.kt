@@ -2,9 +2,9 @@ package com.worksoc.goaicoach.application.engine
 
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.diagnostic.engineVisitFillDiagnosticEvent
-import com.worksoc.goaicoach.shared.EngineSearchMode
-import com.worksoc.goaicoach.shared.GameState
-import com.worksoc.goaicoach.shared.analysisFingerprint
+import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
+import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.domain.analysisFingerprint
 
 internal class EngineAnalysisDiagnosticRecorder(
     private val diagnosticEventLog: DiagnosticEventLogPort,

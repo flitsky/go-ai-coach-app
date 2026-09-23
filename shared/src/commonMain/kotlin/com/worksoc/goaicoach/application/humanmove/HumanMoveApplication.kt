@@ -26,16 +26,16 @@ import com.worksoc.goaicoach.application.score.buildEngineEstimateDisplayPlan
 import com.worksoc.goaicoach.application.score.buildResolvedEndgameDisplayPlan
 import com.worksoc.goaicoach.application.session.GameSessionEffect
 import com.worksoc.goaicoach.match.MatchReferee
-import com.worksoc.goaicoach.shared.CandidateMove
-import com.worksoc.goaicoach.shared.EngineProfile
-import com.worksoc.goaicoach.shared.FinalScoreResult
-import com.worksoc.goaicoach.shared.GameState
-import com.worksoc.goaicoach.shared.Move
-import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
-import com.worksoc.goaicoach.shared.ScoreSnapshot
-import com.worksoc.goaicoach.shared.ScoreTimeline
-import com.worksoc.goaicoach.shared.StoneColor
-import com.worksoc.goaicoach.shared.describe
+import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
+import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
+import com.worksoc.goaicoach.shared.enginecontract.FinalScoreResult
+import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.domain.Move
+import com.worksoc.goaicoach.shared.policy.MoveAnalysisSnapshot
+import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
+import com.worksoc.goaicoach.shared.scoring.ScoreTimeline
+import com.worksoc.goaicoach.shared.domain.StoneColor
+import com.worksoc.goaicoach.shared.domain.describe
 
 data class HumanMoveLocalResult(
     val afterMove: GameState,

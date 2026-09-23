@@ -1,15 +1,15 @@
 package com.worksoc.goaicoach.engine.android
 
-import com.worksoc.goaicoach.shared.AnalysisLimit
-import com.worksoc.goaicoach.shared.BoardCoordinate
-import com.worksoc.goaicoach.shared.BoardSize
-import com.worksoc.goaicoach.shared.EngineSearchMode
-import com.worksoc.goaicoach.shared.EngineState
-import com.worksoc.goaicoach.shared.GameState
-import com.worksoc.goaicoach.shared.Move
-import com.worksoc.goaicoach.shared.RemotePositionAnalysisRequest
-import com.worksoc.goaicoach.shared.StoneColor
-import com.worksoc.goaicoach.shared.analysisFingerprint
+import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
+import com.worksoc.goaicoach.shared.domain.BoardCoordinate
+import com.worksoc.goaicoach.shared.domain.BoardSize
+import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
+import com.worksoc.goaicoach.shared.enginecontract.EngineState
+import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.domain.Move
+import com.worksoc.goaicoach.shared.enginecontract.RemotePositionAnalysisRequest
+import com.worksoc.goaicoach.shared.domain.StoneColor
+import com.worksoc.goaicoach.shared.domain.analysisFingerprint
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -173,7 +173,7 @@ class HttpRemotePositionAnalysisTransportTest {
         // exact request shape this fixture was actually captured against.
         val handicapState = GameState.withHandicap(
             boardSize = BoardSize.Thirteen,
-            ruleset = com.worksoc.goaicoach.shared.Ruleset.Japanese,
+            ruleset = com.worksoc.goaicoach.shared.domain.Ruleset.Japanese,
             handicapCount = BoardSize.Thirteen.maxHandicapCount,
         )
         val response = transport.analyze(
@@ -228,7 +228,7 @@ class RemotePositionAnalysisJsonCodecStateTest {
     fun encodeStateCarriesHandicapCount() {
         val state = GameState.withHandicap(
             boardSize = BoardSize.Nine,
-            ruleset = com.worksoc.goaicoach.shared.Ruleset.Japanese,
+            ruleset = com.worksoc.goaicoach.shared.domain.Ruleset.Japanese,
             handicapCount = 2,
         )
 

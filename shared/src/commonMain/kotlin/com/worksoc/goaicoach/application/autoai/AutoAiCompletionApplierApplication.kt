@@ -6,7 +6,7 @@ import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
 import com.worksoc.goaicoach.application.runtime.runtimeAiTurnFailureLog
 import com.worksoc.goaicoach.application.runtime.runtimeAiTurnSuccessLog
 import com.worksoc.goaicoach.application.session.TurnTimeMoveUpdate
-import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.domain.StoneColor
 
 internal data class AutoAiTurnCompletionApplyRunRequest(
     val completion: AutoAiTurnCompletionPlan,

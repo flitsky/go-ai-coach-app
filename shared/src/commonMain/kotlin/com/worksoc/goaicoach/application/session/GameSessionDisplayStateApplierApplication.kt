@@ -16,7 +16,7 @@ import com.worksoc.goaicoach.application.topmoves.TopMoveAnalysisFailureDisplayP
 import com.worksoc.goaicoach.shared.engine.EngineOperationResultGuard
 import com.worksoc.goaicoach.application.score.ScoreSyncCompletionApplyPlan
 import com.worksoc.goaicoach.application.undo.UndoLocalStatePlan
-import com.worksoc.goaicoach.shared.GameState
+import com.worksoc.goaicoach.shared.domain.GameState
 
 class GameSessionDisplayStateApplier(
     private val currentCoreState: () -> GameSessionCoreState,

@@ -28,10 +28,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.worksoc.goaicoach.presentation.KaTrainUxOptions
-import com.worksoc.goaicoach.shared.StudyLesson
-import com.worksoc.goaicoach.shared.StudyLessonId
-import com.worksoc.goaicoach.shared.StudyLessonTrack
-import com.worksoc.goaicoach.shared.studyLessonsFor
+import com.worksoc.goaicoach.shared.content.StudyLesson
+import com.worksoc.goaicoach.shared.content.StudyLessonId
+import com.worksoc.goaicoach.shared.content.StudyLessonTrack
+import com.worksoc.goaicoach.shared.content.studyLessonsFor
 
 /**
  * 3 Depth: 한 **갈래**의 단원 목록과, 고른 단원의 도해를 한 장씩 넘기는 화면

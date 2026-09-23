@@ -7,12 +7,12 @@ import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.match.SidePlayerSetup
-import com.worksoc.goaicoach.shared.PlayLevelGroup
-import com.worksoc.goaicoach.shared.PlayLevelSetting
-import com.worksoc.goaicoach.shared.BoardSize
-import com.worksoc.goaicoach.shared.Ruleset
-import com.worksoc.goaicoach.shared.SearchTimeLimit
-import com.worksoc.goaicoach.shared.SearchTimeSettings
+import com.worksoc.goaicoach.shared.policy.PlayLevelGroup
+import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
+import com.worksoc.goaicoach.shared.domain.BoardSize
+import com.worksoc.goaicoach.shared.domain.Ruleset
+import com.worksoc.goaicoach.shared.policy.SearchTimeLimit
+import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -92,7 +92,7 @@ class UserPreferencesCodecTest {
         assertFalse(restored?.showMoveReview ?: true)
         assertEquals(AutoPlayDelaySetting.Default.millis, restored?.autoPlayDelayMillis)
         assertEquals(SearchTimeSettings(), restored?.searchTimeSettings)
-        assertEquals(com.worksoc.goaicoach.shared.DefaultKomi, restored?.komi ?: -1.0, 0.0001)
+        assertEquals(com.worksoc.goaicoach.shared.domain.DefaultKomi, restored?.komi ?: -1.0, 0.0001)
         assertEquals(DefaultAppFontScale, restored?.appFontScale)
     }
 

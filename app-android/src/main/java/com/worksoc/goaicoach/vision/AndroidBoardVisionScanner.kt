@@ -1,7 +1,7 @@
 package com.worksoc.goaicoach.vision
 
 import android.graphics.Bitmap
-import com.worksoc.goaicoach.shared.BoardSize
+import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.vision.BoardCornerPoints
 import com.worksoc.goaicoach.shared.vision.BoardVisionScannerPort
 import com.worksoc.goaicoach.shared.vision.DetectedBoard

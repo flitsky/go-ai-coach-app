@@ -10,7 +10,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.worksoc.goaicoach.application.engine.EngineAvailability
 import com.worksoc.goaicoach.application.engine.engineAvailabilityFor
-import com.worksoc.goaicoach.shared.EngineMode
+import com.worksoc.goaicoach.shared.enginecontract.EngineMode
 
 /**
  * 엔진이 **끝내 뜨지 못했을 때** 알리는 팝업(백로그 #101 ④단계).

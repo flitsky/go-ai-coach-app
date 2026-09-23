@@ -1,7 +1,7 @@
 package com.worksoc.goaicoach.ui
 
 import com.worksoc.goaicoach.match.SeatController
-import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.domain.StoneColor
 
 /**
  * Stable Compose test tags for instrumented UI tests. Kept separate from

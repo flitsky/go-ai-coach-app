@@ -2,8 +2,8 @@ package com.worksoc.goaicoach.application
 
 import com.worksoc.goaicoach.application.session.*
 
-import com.worksoc.goaicoach.shared.GameState
-import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.domain.StoneColor
 import kotlin.test.assertEquals
 import kotlin.test.Test
 

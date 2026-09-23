@@ -1,9 +1,9 @@
 package com.worksoc.goaicoach.application.session
 
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnDisplayPlan
-import com.worksoc.goaicoach.shared.AnalysisPreset
-import com.worksoc.goaicoach.shared.EngineProfile
-import com.worksoc.goaicoach.shared.PlayLevelSetting
+import com.worksoc.goaicoach.shared.enginecontract.AnalysisPreset
+import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
+import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 
 data class GameSessionRuntimeState(
     val playLevel: PlayLevelSetting,

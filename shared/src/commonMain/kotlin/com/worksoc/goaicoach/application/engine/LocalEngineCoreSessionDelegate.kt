@@ -4,21 +4,21 @@ import com.worksoc.goaicoach.application.endgame.AiEndgameResolution
 import com.worksoc.goaicoach.application.endgame.resolveAiEndgame
 import com.worksoc.goaicoach.match.MatchReferee
 import com.worksoc.goaicoach.match.applyAiTurn
-import com.worksoc.goaicoach.shared.AnalysisLimit
-import com.worksoc.goaicoach.shared.AnalysisResult
-import com.worksoc.goaicoach.shared.BoardSize
-import com.worksoc.goaicoach.shared.CandidateMove
-import com.worksoc.goaicoach.shared.EngineCoreApi
-import com.worksoc.goaicoach.shared.EngineProfile
-import com.worksoc.goaicoach.shared.EngineSearchMode
-import com.worksoc.goaicoach.shared.EngineStatus
-import com.worksoc.goaicoach.shared.GameState
-import com.worksoc.goaicoach.shared.Move
-import com.worksoc.goaicoach.shared.PlayLevelSetting
-import com.worksoc.goaicoach.shared.Ruleset
-import com.worksoc.goaicoach.shared.SearchTimeSettings
-import com.worksoc.goaicoach.shared.ScoreEstimate
-import com.worksoc.goaicoach.shared.ScoreTimeline
+import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
+import com.worksoc.goaicoach.shared.enginecontract.AnalysisResult
+import com.worksoc.goaicoach.shared.domain.BoardSize
+import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
+import com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi
+import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
+import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
+import com.worksoc.goaicoach.shared.enginecontract.EngineStatus
+import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.domain.Move
+import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
+import com.worksoc.goaicoach.shared.domain.Ruleset
+import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
+import com.worksoc.goaicoach.shared.enginecontract.ScoreEstimate
+import com.worksoc.goaicoach.shared.scoring.ScoreTimeline
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.diagnostic.NoopDiagnosticEventLog
 
@@ -46,7 +46,7 @@ internal class LocalEngineCoreSessionDelegate(
         boardSize: BoardSize,
         ruleset: Ruleset,
         handicapCount: Int = 0,
-        komi: Double = com.worksoc.goaicoach.shared.DefaultKomi,
+        komi: Double = com.worksoc.goaicoach.shared.domain.DefaultKomi,
     ): EngineStartupResult {
         // A fresh process is intentional here. KataGo's GTP search tree can
         // survive clear_board across repeated games, causing the next game to

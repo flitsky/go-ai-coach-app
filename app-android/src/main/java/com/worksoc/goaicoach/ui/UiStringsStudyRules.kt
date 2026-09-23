@@ -1,6 +1,6 @@
 package com.worksoc.goaicoach.ui
 
-import com.worksoc.goaicoach.shared.StudyLessonId
+import com.worksoc.goaicoach.shared.content.StudyLessonId
 
 /**
  * 「바둑 규칙 배우기」 갈래의 문구 전문(백로그 #164). 구조는 `UiStringsStudyCategories.kt`와

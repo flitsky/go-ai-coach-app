@@ -1,7 +1,7 @@
 package com.worksoc.goaicoach.application.preferences
 
 import com.worksoc.goaicoach.application.session.GameSessionSettingsState
-import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.domain.Ruleset
 
 data class UserPreferencesAutosaveRequest(
     val settingsState: GameSessionSettingsState,

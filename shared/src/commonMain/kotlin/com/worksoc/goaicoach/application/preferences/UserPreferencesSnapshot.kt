@@ -2,10 +2,10 @@ package com.worksoc.goaicoach.application.preferences
 
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.PlayerSetup
-import com.worksoc.goaicoach.shared.BoardSize
-import com.worksoc.goaicoach.shared.DefaultKomi
-import com.worksoc.goaicoach.shared.Ruleset
-import com.worksoc.goaicoach.shared.SearchTimeSettings
+import com.worksoc.goaicoach.shared.domain.BoardSize
+import com.worksoc.goaicoach.shared.domain.DefaultKomi
+import com.worksoc.goaicoach.shared.domain.Ruleset
+import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
 
 /**
  * 착수 이펙트(#145)가 도는 시간 — 커졌다 돌아오는 **왕복 전체**다.

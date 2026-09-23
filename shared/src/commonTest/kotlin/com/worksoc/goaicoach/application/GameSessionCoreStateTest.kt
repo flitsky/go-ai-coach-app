@@ -19,23 +19,23 @@ import com.worksoc.goaicoach.application.score.*
 
 import com.worksoc.goaicoach.application.topmoves.*
 import com.worksoc.goaicoach.match.PlayerSetup
-import com.worksoc.goaicoach.shared.AnalysisPreset
-import com.worksoc.goaicoach.shared.BoardCoordinate
-import com.worksoc.goaicoach.shared.BoardSize
-import com.worksoc.goaicoach.shared.CandidateMove
-import com.worksoc.goaicoach.shared.EngineProfile
-import com.worksoc.goaicoach.shared.EngineStatus
-import com.worksoc.goaicoach.shared.GameState
-import com.worksoc.goaicoach.shared.Move
-import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
-import com.worksoc.goaicoach.shared.PlayLevelGroup
-import com.worksoc.goaicoach.shared.PlayLevelSetting
-import com.worksoc.goaicoach.shared.Ruleset
-import com.worksoc.goaicoach.shared.SearchTimeSettings
-import com.worksoc.goaicoach.shared.ScoreEstimate
-import com.worksoc.goaicoach.shared.ScoreSnapshot
-import com.worksoc.goaicoach.shared.ScoreSnapshotSource
-import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.enginecontract.AnalysisPreset
+import com.worksoc.goaicoach.shared.domain.BoardCoordinate
+import com.worksoc.goaicoach.shared.domain.BoardSize
+import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
+import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
+import com.worksoc.goaicoach.shared.enginecontract.EngineStatus
+import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.domain.Move
+import com.worksoc.goaicoach.shared.policy.MoveAnalysisSnapshot
+import com.worksoc.goaicoach.shared.policy.PlayLevelGroup
+import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
+import com.worksoc.goaicoach.shared.domain.Ruleset
+import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
+import com.worksoc.goaicoach.shared.enginecontract.ScoreEstimate
+import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
+import com.worksoc.goaicoach.shared.scoring.ScoreSnapshotSource
+import com.worksoc.goaicoach.shared.domain.StoneColor
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
@@ -116,7 +116,7 @@ class GameSessionCoreStateTest {
         val playLevel = PlayLevelSetting(group = PlayLevelGroup.Beginner, level = 7)
         val profile = playLevel.toEngineProfile(
             EngineProfile(),
-            SearchTimeSettings(com.worksoc.goaicoach.shared.SearchTimeLimit.WithinThreeSeconds),
+            SearchTimeSettings(com.worksoc.goaicoach.shared.policy.SearchTimeLimit.WithinThreeSeconds),
         )
         val display = AutoAiTurnDisplayPlan(
             playLevel = playLevel,
@@ -342,7 +342,7 @@ class GameSessionCoreStateTest {
     @Test
     fun applySavedGameRestorePlanBumpsBothSessionAndMatchGeneration() {
         val playLevel = PlayLevelSetting(group = PlayLevelGroup.Intermediate, level = 5)
-        val searchTimeSettings = SearchTimeSettings(com.worksoc.goaicoach.shared.SearchTimeLimit.WithinThreeSeconds)
+        val searchTimeSettings = SearchTimeSettings(com.worksoc.goaicoach.shared.policy.SearchTimeLimit.WithinThreeSeconds)
         val profile = playLevel.toEngineProfile(EngineProfile(), searchTimeSettings)
         val restore = SavedGameRestorePlan(
             gameState = GameState.empty(),
@@ -374,7 +374,7 @@ class GameSessionCoreStateTest {
     @Test
     fun applyPlayerSetupChangePlanUpdatesRuntimeAndAnalysisTogether() {
         val playLevel = PlayLevelSetting(group = PlayLevelGroup.Intermediate, level = 5)
-        val searchTimeSettings = SearchTimeSettings(com.worksoc.goaicoach.shared.SearchTimeLimit.WithinThreeSeconds)
+        val searchTimeSettings = SearchTimeSettings(com.worksoc.goaicoach.shared.policy.SearchTimeLimit.WithinThreeSeconds)
         val profile = playLevel.toEngineProfile(EngineProfile(), searchTimeSettings)
         val runtime = RuntimePlayLevelSelection(
             playLevel = playLevel,

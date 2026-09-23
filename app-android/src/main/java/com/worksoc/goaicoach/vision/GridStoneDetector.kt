@@ -1,9 +1,9 @@
 package com.worksoc.goaicoach.vision
 
 import android.graphics.Bitmap
-import com.worksoc.goaicoach.shared.BoardCoordinate
-import com.worksoc.goaicoach.shared.BoardSize
-import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.domain.BoardCoordinate
+import com.worksoc.goaicoach.shared.domain.BoardSize
+import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.vision.DetectedBoard
 import kotlin.math.max
 import kotlin.math.min

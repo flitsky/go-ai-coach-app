@@ -1,8 +1,8 @@
 package com.worksoc.goaicoach.middleware
 
-import com.worksoc.goaicoach.shared.RemotePositionAnalysisRequest
-import com.worksoc.goaicoach.shared.RemotePositionAnalysisTransport
-import com.worksoc.goaicoach.shared.analysisFingerprint
+import com.worksoc.goaicoach.shared.enginecontract.RemotePositionAnalysisRequest
+import com.worksoc.goaicoach.shared.enginecontract.RemotePositionAnalysisTransport
+import com.worksoc.goaicoach.shared.domain.analysisFingerprint
 
 /**
  * Read-only remote analysis spike.

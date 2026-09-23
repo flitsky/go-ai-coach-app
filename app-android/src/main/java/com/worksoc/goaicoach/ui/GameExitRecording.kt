@@ -5,8 +5,8 @@ import com.worksoc.goaicoach.application.gamehistory.runGameHistoryAppendIfCompl
 import com.worksoc.goaicoach.application.score.FinalScoreJudgement
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.persistence.GameHistoryStore
-import com.worksoc.goaicoach.shared.GameState
-import com.worksoc.goaicoach.shared.ScoreSnapshot
+import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 
 /**
  * 홈으로 나가기 **직전에** 끝난 대국을 기록한다(백로그 #96).

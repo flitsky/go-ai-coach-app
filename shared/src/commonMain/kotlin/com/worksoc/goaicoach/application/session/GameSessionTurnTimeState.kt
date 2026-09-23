@@ -1,7 +1,7 @@
 package com.worksoc.goaicoach.application.session
 
-import com.worksoc.goaicoach.shared.GameState
-import com.worksoc.goaicoach.shared.StoneColor
+import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.domain.StoneColor
 
 data class GameSessionTurnTimeState(
     val currentTurnPlayer: StoneColor,

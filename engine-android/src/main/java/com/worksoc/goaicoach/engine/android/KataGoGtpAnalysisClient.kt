@@ -1,13 +1,13 @@
 package com.worksoc.goaicoach.engine.android
 
-import com.worksoc.goaicoach.shared.AnalysisLimit
-import com.worksoc.goaicoach.shared.AnalysisResult
-import com.worksoc.goaicoach.shared.CandidateMove
-import com.worksoc.goaicoach.shared.CandidateMoveSource
-import com.worksoc.goaicoach.shared.EngineStatus
-import com.worksoc.goaicoach.shared.LegalMoveGenerator
-import com.worksoc.goaicoach.shared.Move
-import com.worksoc.goaicoach.shared.allCoordinates
+import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
+import com.worksoc.goaicoach.shared.enginecontract.AnalysisResult
+import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
+import com.worksoc.goaicoach.shared.enginecontract.CandidateMoveSource
+import com.worksoc.goaicoach.shared.enginecontract.EngineStatus
+import com.worksoc.goaicoach.shared.domain.LegalMoveGenerator
+import com.worksoc.goaicoach.shared.domain.Move
+import com.worksoc.goaicoach.shared.domain.allCoordinates
 
 internal class KataGoGtpAnalysisClient(
     private val sendCommand: suspend (command: String, timeoutMillis: Long) -> String,

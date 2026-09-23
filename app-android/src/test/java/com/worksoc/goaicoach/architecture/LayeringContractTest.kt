@@ -15,8 +15,8 @@ class LayeringContractTest {
             sourceRoot.resolve("presentation"),
         )
         val forbiddenImports = listOf(
-            "import com.worksoc.goaicoach.shared.EngineAdapter",
-            "import com.worksoc.goaicoach.shared.EngineCoreApi",
+            "import com.worksoc.goaicoach.shared.enginecontract.EngineAdapter",
+            "import com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi",
             "import com.worksoc.goaicoach.engine.android",
         )
 
@@ -50,7 +50,7 @@ class LayeringContractTest {
             RepoPaths.appAndroid("application"),
         )
         val forbiddenImports = listOf(
-            "import com.worksoc.goaicoach.shared.EngineAdapter",
+            "import com.worksoc.goaicoach.shared.enginecontract.EngineAdapter",
             "import com.worksoc.goaicoach.engine.android",
         )
 
@@ -107,7 +107,7 @@ class LayeringContractTest {
     fun matchPoliciesDoNotImportRawEngineCoreApi() {
         val matchRoot = RepoPaths.matchPath()
         val forbiddenImports = listOf(
-            "import com.worksoc.goaicoach.shared.EngineCoreApi",
+            "import com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi",
         )
 
         val offenders = forbiddenReferenceOffenders(
@@ -156,7 +156,7 @@ class LayeringContractTest {
         val delegateText = codeOnly(benchmarkDelegate.readContractSource())
 
         val offenders = mutableListOf<String>()
-        if ("import com.worksoc.goaicoach.shared.EngineCoreApi" in applicationText) {
+        if ("import com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi" in applicationText) {
             offenders += "${benchmarkApplication.relativeTo(repoRoot).path}: raw EngineCoreApi import"
         }
         if ("fun EngineCoreApi.runStartupEngineBenchmark" in applicationText) {
@@ -1190,7 +1190,7 @@ class LayeringContractTest {
         val candidates = listOf(
             sharedRoot.resolve("diagnostic/DiagnosticEventModel.kt"),
             sharedRoot.resolve("engine/EngineOperationPolicy.kt"),
-            sharedRoot.resolve("MoveValueDisplay.kt"),
+            sharedRoot.resolve("policy/MoveValueDisplay.kt"),
         )
         val forbiddenImports = listOf(
             "import android.",
@@ -1223,7 +1223,7 @@ class LayeringContractTest {
                 writeText(
                     """
                     package sample
-                    import com.worksoc.goaicoach.shared.*
+                    import com.worksoc.goaicoach.shared.enginecontract.*
                     fun build(api: EngineCoreApi) = api
                     """.trimIndent(),
                 )
@@ -1233,7 +1233,7 @@ class LayeringContractTest {
                 writeText(
                     """
                     package sample
-                    fun build(api: com.worksoc.goaicoach.shared.EngineCoreApi) = api
+                    fun build(api: com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi) = api
                     """.trimIndent(),
                 )
             }
@@ -1242,7 +1242,7 @@ class LayeringContractTest {
                 writeText(
                     """
                     package sample
-                    import com.worksoc.goaicoach.shared.EngineCoreApi as Engine
+                    import com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi as Engine
                     fun build(api: Engine) = api
                     """.trimIndent(),
                 )
@@ -1264,7 +1264,7 @@ class LayeringContractTest {
                 writeText(
                     """
                     package sample
-                    fun describe() = "see com.worksoc.goaicoach.shared.EngineCoreApi for details"
+                    fun describe() = "see com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi for details"
                     """.trimIndent(),
                 )
             }
@@ -1273,7 +1273,7 @@ class LayeringContractTest {
                 writeText(
                     """
                     package sample
-                    fun build() = 1 /* com.worksoc.goaicoach.shared.EngineCoreApi */
+                    fun build() = 1 /* com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi */
                     """.trimIndent(),
                 )
             }
@@ -1287,7 +1287,7 @@ class LayeringContractTest {
                     stringMention,
                     blockCommentMention,
                 ),
-                forbiddenImports = listOf("import com.worksoc.goaicoach.shared.EngineCoreApi"),
+                forbiddenImports = listOf("import com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi"),
             )
 
             assertTrue(
@@ -1578,7 +1578,7 @@ class LayeringContractTest {
      * Reports forbidden references in [files].
      *
      * Each [forbiddenImports] entry is written the way an import statement reads
-     * (e.g. `import com.worksoc.goaicoach.shared.EngineCoreApi` for an exact type,
+     * (e.g. `import com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi` for an exact type,
      * or `import android.` for a package prefix). Detection is stronger than a raw
      * `startsWith` on import lines: it also catches the two ways the plain
      * import-string check used to miss a violation —

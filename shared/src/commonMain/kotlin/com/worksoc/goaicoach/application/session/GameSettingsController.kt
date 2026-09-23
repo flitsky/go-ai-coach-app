@@ -8,12 +8,12 @@ import com.worksoc.goaicoach.application.topmoves.SearchTimeTopMovesResetRunRequ
 import com.worksoc.goaicoach.application.topmoves.runSearchTimeTopMovesResetApplication
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.PlayerSetup
-import com.worksoc.goaicoach.shared.BoardScorer
-import com.worksoc.goaicoach.shared.BoardSize
-import com.worksoc.goaicoach.shared.GameState
-import com.worksoc.goaicoach.shared.PlayLevelSetting
-import com.worksoc.goaicoach.shared.SearchTimeSettings
-import com.worksoc.goaicoach.shared.EngineProfile
+import com.worksoc.goaicoach.shared.scoring.BoardScorer
+import com.worksoc.goaicoach.shared.domain.BoardSize
+import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
+import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
+import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 
 /**
  * Owns three related settings-change workflows that share no engine I/O
