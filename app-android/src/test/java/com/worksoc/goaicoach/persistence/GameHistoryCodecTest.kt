@@ -89,6 +89,27 @@ class GameHistoryCodecTest {
         assertEquals(listOf("a", "b", "c"), decoded.map { it.id })
     }
 
+    /**
+     * 백로그 #23 — komi 키가 없는 항목은 `DefaultKomi`(6.5)로 채워야 한다,
+     * `GameSessionStore`/`UserPreferencesStore`와 같은 기본값. `encodeEntry`가 이 파일이
+     * 생긴 첫 커밋부터 계속 komi를 실어 왔으므로 실제 기록에는 도달 불가지만, 폴백 자체가
+     * 다른 스토어와 어긋나면 읽는 사람이 헷갈린다.
+     */
+    @Test
+    fun decodeFallsBackToDefaultKomiWhenTheKeyIsMissing() {
+        val raw = """
+            {"schema":1,"entries":[{"id":"no-komi","playedAtMillis":1000,"boardSize":9,
+            "ruleset":"Chinese","handicapCount":0,
+            "playerSetup":{"black":{"controller":"Human"},"white":{"controller":"Ai"}},
+            "moveCount":10,"humanColor":"Black","winner":"Black","isResign":false,
+            "margin":3.5,"hasReplay":false}]}
+        """.trimIndent()
+
+        val decoded = GameHistoryIndexCodec.decodeAll(raw)
+
+        assertEquals(com.worksoc.goaicoach.shared.DefaultKomi, decoded.single().komi, 0.0001)
+    }
+
     @Test
     fun decodeAllReturnsEmptyListForUnknownSchema() {
         val raw = """{"schema":999,"entries":[]}"""
