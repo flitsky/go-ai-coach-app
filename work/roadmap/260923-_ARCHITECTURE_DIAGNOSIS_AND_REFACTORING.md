@@ -92,11 +92,11 @@
   구멍을 두면 다음 앱에 복제된다
 - **진단서 함정 A~J를 `PITFALLS.md` 67~76번으로 편입**하고 백로그 색인에 61~76 등재
   (본문에 있어도 **색인에 없으면 도달 경로가 0**이다 — 그 문서가 정한 읽는 법이 색인 경유다)
-- **구조 이동 2건**: `LAYERED_ARCHITECTURE_REFACTORING_PLAN_260803_1500.md` → `work/plans/REMOTE_ENGINE_AND_LAYERING.md`
+- **구조 이동 2건**: `LAYERED_ARCHITECTURE_REFACTORING_PLAN_260803_1500.md`은 **개명·이동**돼 더는 없다 → `work/plans/REMOTE_ENGINE_AND_LAYERING.md`
   (Stage F/DePIN은 완결일을 적을 수 없어 기능축이다. **코드 참조 5곳 포함** 정리) ·
   MQ 킥오프를 `260818-_REMOTE_ENGINE_MQ_TRANSPORT.md`로 개명(날짜 접두사가 없어 **정렬=시간순이 깨져 있었다**)
 - **흡수 후 삭제**: `ENGINE_SEARCH_TREE_REUSE_REVIEW.md`(375줄, 「다음 실험」을 `ENGINE_API_CALL_POLICY.md`로) ·
-  `baduk_app_architecture_recommendation.md`(169줄, Spark Plan 근거를 `LOGIN_AND_ACCOUNT_SYSTEM.md`로) ·
+  `baduk_app_architecture_recommendation.md`(169줄, **삭제**됨 — Spark Plan 근거를 `LOGIN_AND_ACCOUNT_SYSTEM.md`로 흡수) ·
   벤치마크 원시 산출물 27개 — **`docs/`가 22M → 12M**
 - `check-doc-links.py`에 **봉인 문서 예외를 좁게** 신설 — 매 실행에 예외 건수를 찍어 조용한 구멍이 되지 않게 했다
 

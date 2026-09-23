@@ -555,8 +555,9 @@ _(없음)_
 | 무엇 | 어디 |
 | --- | --- |
 | 8세대(봉인) — 완료 이력·함정 58~66 전문·해소된 U | `260919-260922_STUDY_CONTENT_AND_1_0_RELEASE.md` |
+| **리팩토링 진행** — 이 트랙의 일감·진척은 전부 저기 있다(번호 체계가 다르다) | `260923-_REFACTORING_BACKLOG.md` — 「진행 중」 → 「예정사항」 순으로 집는다 · 착수 프로토콜과 함정 색인이 그 안에 있다 |
 | **아키텍처 실측과 처방** — 계층 일감은 여기서 나온다 | `260923-_ARCHITECTURE_DIAGNOSIS_AND_REFACTORING.md` — §1 무엇이 실제로 깨져 있나 · §3 목표 아키텍처 · §4 착수 전 함정(→ `PITFALLS.md` 67~76) |
-| **함정 전문 1~66** | `docs/spec/PITFALLS.md` — 번호로 찾아 그 번호만 편다 |
+| **함정 전문 1~76** | `docs/spec/PITFALLS.md` — 번호로 찾아 그 번호만 편다 |
 | 출시·콘솔 절차, 등재문, 체크리스트 | `work/plans/GOOGLE_PLAY_LAUNCH_PLAN.md` · `work/play-store-assets/store_listing.txt` |
 | 화면 구조·기능 명세 | `docs/spec/APP_IA_AND_UI_SPEC.md` |
 | 권한·게이팅 정책 | `docs/spec/FEATURE_ACCESS_PRINCIPLES.md` |
