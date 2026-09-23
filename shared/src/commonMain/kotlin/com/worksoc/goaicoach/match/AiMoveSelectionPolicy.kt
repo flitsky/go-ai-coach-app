@@ -5,14 +5,14 @@ import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
 import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.Move
-import com.worksoc.goaicoach.shared.MoveSelectionPolicy
-import com.worksoc.goaicoach.shared.PlayLevelSetting
-import com.worksoc.goaicoach.shared.SearchTimeSettings
+import com.worksoc.goaicoach.shared.policy.MoveSelectionPolicy
+import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
+import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
 import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.policy.aiMoveAnalysisLimitWith
 import com.worksoc.goaicoach.shared.domain.describe
 import com.worksoc.goaicoach.shared.policy.fastCandidateAnalysis
-import com.worksoc.goaicoach.shared.resolveIndexRange
+import com.worksoc.goaicoach.shared.policy.resolveIndexRange
 import kotlin.random.Random
 
 data class SelectedAiMove(

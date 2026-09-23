@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.shared
+package com.worksoc.goaicoach.shared.policy
 
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
 

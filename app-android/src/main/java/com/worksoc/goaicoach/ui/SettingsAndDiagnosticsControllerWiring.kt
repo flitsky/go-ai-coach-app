@@ -9,7 +9,7 @@ import com.worksoc.goaicoach.application.undo.UndoController
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.shared.domain.BoardSize
-import com.worksoc.goaicoach.shared.SearchTimeSettings
+import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
 
 internal fun wireSettingsController(
     context: GoCoachAppWiringContext,

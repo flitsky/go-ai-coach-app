@@ -96,7 +96,7 @@ import kotlinx.coroutines.CoroutineScope
 import com.worksoc.goaicoach.engine.EngineIdentity
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.domain.GameState
-import com.worksoc.goaicoach.shared.PlayLevelSetting
+import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import com.worksoc.goaicoach.shared.engine.EngineTimeoutPolicy
 import java.io.File
 

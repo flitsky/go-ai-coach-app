@@ -1,6 +1,6 @@
 package com.worksoc.goaicoach.application.safety
 
-import com.worksoc.goaicoach.shared.SearchTimeLimit
+import com.worksoc.goaicoach.shared.policy.SearchTimeLimit
 
 /**
  * 안전 관리(레프리) 도메인 — AI 차례가 비정상적으로 오래 걸리는지 감지하는 순수 판정 로직.

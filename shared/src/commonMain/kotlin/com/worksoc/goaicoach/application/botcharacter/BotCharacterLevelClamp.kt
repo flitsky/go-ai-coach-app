@@ -1,6 +1,6 @@
 package com.worksoc.goaicoach.application.botcharacter
 
-import com.worksoc.goaicoach.shared.PlayLevelSetting
+import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 
 /**
  * 저장된 AI 레벨이 획득하지 않은 캐릭터를 가리켜 낮춰야 한다는 판정 결과(#22).

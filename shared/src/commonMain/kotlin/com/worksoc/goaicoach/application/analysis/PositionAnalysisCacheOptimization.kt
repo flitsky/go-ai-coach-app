@@ -14,7 +14,7 @@ import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
 import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
 import com.worksoc.goaicoach.shared.domain.GameState
-import com.worksoc.goaicoach.shared.SearchTimeSettings
+import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
 import com.worksoc.goaicoach.shared.policy.aiMoveAnalysisLimitWith
 import com.worksoc.goaicoach.shared.policy.aiMoveSearchMode
 import com.worksoc.goaicoach.shared.domain.analysisFingerprint

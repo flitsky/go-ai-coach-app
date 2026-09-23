@@ -7,7 +7,7 @@ import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.policy.MoveAnalysisSnapshot
-import com.worksoc.goaicoach.shared.SearchTimeProfile
+import com.worksoc.goaicoach.shared.policy.SearchTimeProfile
 import com.worksoc.goaicoach.shared.policy.TurnAnalysisPurpose
 import com.worksoc.goaicoach.shared.domain.analysisFingerprint
 import com.worksoc.goaicoach.shared.policy.fastCandidateAnalysis

@@ -4,7 +4,7 @@ import com.worksoc.goaicoach.application.safety.EngineEndgameWatchdogTimeoutMill
 import com.worksoc.goaicoach.application.safety.EngineResponseGraceMillis
 import com.worksoc.goaicoach.application.safety.engineTurnWatchdogTimeoutMillisFor
 import com.worksoc.goaicoach.application.safety.isEngineTurnWatchdogTriggered
-import com.worksoc.goaicoach.shared.SearchTimeLimit
+import com.worksoc.goaicoach.shared.policy.SearchTimeLimit
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

@@ -6,7 +6,7 @@ import com.worksoc.goaicoach.application.time.currentEpochMillis
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
 import com.worksoc.goaicoach.shared.domain.GameState
-import com.worksoc.goaicoach.shared.SearchTimeSettings
+import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
 import com.worksoc.goaicoach.shared.engine.EngineOperationRequest
 
 /**

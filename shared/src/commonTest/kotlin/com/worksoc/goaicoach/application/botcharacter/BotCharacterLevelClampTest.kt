@@ -1,7 +1,7 @@
 package com.worksoc.goaicoach.application.botcharacter
 
-import com.worksoc.goaicoach.shared.PlayLevelGroup
-import com.worksoc.goaicoach.shared.PlayLevelSetting
+import com.worksoc.goaicoach.shared.policy.PlayLevelGroup
+import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
