@@ -157,6 +157,8 @@ Hilt(commonMain 불가)·Koin(이득 0)·전면 MVI(이미 절반 작동)·모�
 | 64 | **고아 `middleware` 패키지 해소** — `#28`이 commonMain만 닫았던 것 | `dc316d78` |
 | 62 | **원격 서버가 클라이언트 komi를 읽는다** — `#19`의 정직한 마감. ⚠️ `handicapCount`는 **의도적 미반영**(아래 #65) | `784a1a90` |
 | 18(절반) | **정책 타입 재선언 제거** — sealed 3종 + 어댑터 삭제, 소비자 32파일 import 교체. **로직 변경 0줄**(검수 diff 전수 확인) | `1b961feb` |
+| 24 | 🔓 **`shared` 루트 22파일을 의미 있는 패키지로 갈랐다** — 루트 **22→0**, commonTest 고아 패키지 **14→0**. `domain` 7·`enginecontract` 3·`policy` 6·`scoring` 4·`content` 1. ⭐ **`shared.domain` 7파일의 import가 전부 합쳐 0줄** — 바둑 규칙이 아무것도 모른다. 이제 **import 한 줄로 계층이 보인다**(#34 Konsist의 전제) | `6e31bb6d`…`2f07cf8b` |
+| 66 | **호출부 0·테스트 0이던 public 함수 처리** | (#24 파도에 동반) |
 
 ### 진행 중
 
@@ -183,11 +185,6 @@ _(없음 — 아래 「예정사항」 첫 항목부터 집는다)_
       덮어쓰는 스코어링 오버라이드**다. 접바둑 돌 자체는 이미 `initialStones`로 실린다.
     · 🔴 **그대로 꽂으면 접바둑 보정이 두 번 계산될 수 있다.** 실측 없이는 **현행 미반영이 안전한 선택**이다.
     · 실측 방법을 먼저 설계하라 — 같은 국면을 `whiteHandicapBonus` 유/무로 분석해 점수 차를 본다.
-
-66. **`positionScopedOperationToken()`이 호출부 0·테스트 0인 public 함수가 됐다** (AI 모델: Sonnet, 노력정도: 낮음)
-    · #18이 그 함수의 **유일한 직접 테스트**를 어댑터 테스트와 함께 지웠다(어댑터 전용이 아니었는데 같이 걸렸다).
-      간접 커버(`evaluateEngineOperationResultGuard` 경유)는 남아 있다.
-    · 쓰지 않을 것이면 지우고, 공개 API로 남길 것이면 **직접 테스트를 복원**하라. 지금은 둘 다 아니다.
 
 #### P2 — 엔진 동시성 (독립 트랙 · 어느 단계와도 병렬)
 
@@ -232,14 +229,16 @@ _(없음 — 아래 「예정사항」 첫 항목부터 집는다)_
     · ⚠️ **기존 4필드를 파생 프로퍼티로 남겨 호출부 변경 0**으로. ⚠️ **함정 69**: 스키마 번호를 올리지 않는 범위에서만.
 #### P3 — 이름공간 정렬 (순수 이동, 동작 변경 0)
 
+> ✅ **#24가 닫혔다(2026-09-24).** `shared` 루트 22→0, `shared.domain`의 import 0줄.
+> 그 과정에서 **처방 §3이 글자 그대로는 성립하지 않는다**는 것이 드러났다 — 계가기 셋이 순수 바둑
+> 규칙인데 반환형 `FinalScoreResult`와 그 첫 필드 `EngineStatus`가 엔진 계약에 있다. 로컬 계가기들이
+> **가짜 `EngineStatus`를 만들어 채우고 있다**(→ #67). 타입을 가르지 않고 `shared.scoring`을 신설해
+> 역방향을 0으로 만들었다 — **P3의 "파일 단위로만 이동" 규칙이 선택을 결정했다.**
+>
 > ⚠️ **이 단계의 모든 커밋은 diff가 package/import 줄로만 구성된다.** 동작 변경이 한 줄이라도 섞이면
 > 컴파일러의 완전성 보증이 사라진다. 검증: `git diff -U0`에서 package/import 이외 변경 **0줄**.
 > ⚠️ **전부 `LayeringContractTest.kt` 경로를 함께 커밋**해야 하므로 **직렬로** 한다(1,829줄 파일 3중 충돌 방지).
 
-24. **`shared` 루트 22파일 분할** (AI 모델: Sonnet, 노력정도: 높음) — **9 뒤에만**
-    · `shared.domain/`(바둑 규칙) · `shared.enginecontract/`(`EngineCoreApi` 등 2계층) · `shared.policy/` · `shared.content/`.
-    · **이유**: 지금 `import com.worksoc.goaicoach.shared.X` 한 줄로는 X가 **엔진 계약인지 바둑 규칙인지 알 수 없어
-      import 기반 규칙으로 검사할 수 없다.** 문자열 스캔이 그 자리를 대신하고 있는 근본 원인이다.
 25. **app-android 어댑터 축출** (AI 모델: Sonnet, 노력정도: 중간)
     · 4계층 SDK 어댑터 6개(`AndroidBillingClient`·`AndroidAuthClient` 등, `androidx.compose` import **0건**)가
       `package com.worksoc.goaicoach.ui`에 있다 → `platform/`으로.
@@ -257,6 +256,15 @@ _(없음 — 아래 「예정사항」 첫 항목부터 집는다)_
     · P3이 끝난 실제 패키지 구조를 `GO_AI_COACH_ARCHITECTURE_ROADMAP.md`에 반영.
     · ✅ **P3 직후 `ui` 패키지 간 엣지와 SCC를 실측해 기록하라** — 모듈 경계는 **이 측정을 보고** 결정한다.
       측정 전에 목표 그래프를 확정하는 것은 *"측정하기 전에 답을 적는 것"* 이다.
+
+67. **`FinalScoreResult.status: EngineStatus`를 걷어낸다** (AI 모델: Opus, 노력정도: 높음)
+    · `FinalScoreResult`는 **도메인 타입인데 엔진 필드 하나를 억지로 달고 있다.** 생산자 5곳 중
+      **셋이 엔진과 무관한 로컬 계가기**이고, 그들이 `"Local area score complete."` 같은
+      **가짜 `EngineStatus`를 만들어 채운다.**
+    · 이것 때문에 계가기 셋이 `shared.domain`에 못 들어가고 `shared.scoring`으로 갔다.
+      걷어내면 `scoring`이 `domain`으로 합쳐질 수 있다.
+    · ⚠️ **동작 변경이다** — `FinalScoreResult`는 `GameSessionStore`가 직접 직렬화하는 **저장 스키마**다(함정 69).
+      필드 제거는 스키마에 닿는다. **실기 검증 필요.**
 
 #### P4 — 사이클 절단 + 계약 좁히기
 
