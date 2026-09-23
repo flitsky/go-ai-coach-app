@@ -127,7 +127,7 @@ JSON 기반 운영의 목표는 다음과 같다.
 
 ## 현재 구현 범위
 
-2026-06-13 현재 모바일 기본 구현은 성능을 우선하되, B16/B32/B64 time cap은 사용자가 `Search Time` 메뉴에서 조정할 수 있다. 또한 `Time cap Off`를 선택하면 `AnalysisLimit.timeMillis=null`로 내려가 응답시간 제한 없이 요청 visits 충족을 우선한다.
+2026-06-13 현재 모바일 기본 구현은 성능을 우선하되, 탐색 시간 상한은 사용자가 `Search Time` 메뉴에서 조정할 수 있다. 2026-09-23 기준 이 메뉴가 주는 것은 visits별 cap이 아니라 **전역 `SearchTimeLimit` 하나**이며, `Off`를 선택하면 `AnalysisLimit.timeMillis=null`로 내려가 응답시간 제한 없이 요청 visits 충족을 우선한다.
 
 - AI 응수: `빠른 초급`은 B16/GTP/best-only로 빠르게 둔다. `초급` 이상은 B32 이상 visits/time과 JSON position analysis를 사용해 후보군을 받고 `MoveSelectionPolicy`로 레벨링한다.
 - 사람 착수 리뷰: 사람 차례가 오면 fast best-5 분석을 백그라운드로 요청한다 (2026-06-17 이전에는 best-1).
@@ -216,12 +216,14 @@ JSON analysis path도 B16/B32/B64 같은 visit 레벨 설정을 그대로 표현
 
 현재 레벨별 기본 visits는 다음과 같다.
 
-| 레벨 그룹 | visits | 기본 time cap | 후보 상한 | 의미 |
+| 레벨 그룹 | visits | 그룹 내부 기본 `timeMillis` | 후보 상한 | 의미 |
 | --- | ---: | ---: | ---: | --- |
-| 빠른 초급 | 16 | B16 Search Time 기본 1000ms | 8 | 폰 실시간 대국 우선 |
-| 초급 | 32 | B32 Search Time 기본 2000ms | 16 | 더 안정적인 초급/학습 후보 |
-| 중급 | 64 | B64 Search Time 기본 3000ms | 20 | 후보 순위 안정성 강화 |
-| 고급 | 160 | 1000ms 현재 기본 | 24 | 추후 time cap 재검토 필요 |
+| 빠른 초급 | 16 | 1000ms | 8 | 폰 실시간 대국 우선 |
+| 초급 | 32 | 2000ms | 16 | 더 안정적인 초급/학습 후보 |
+| 중급 | 64 | 3000ms | 20 | 후보 순위 안정성 강화 |
+| 고급 | 160 | 1000ms | 24 | — |
+
+⚠️ 세 번째 열은 **`shared/PlayLevel.kt`의 `PlayLevelGroup`이 들고 있는 내부 기본값**이지 사용자 선택지가 아니다(2026-09-23 기준). `PlayLevelSetting.analysisLimitWith()`가 `SearchTimeSettings.applyTo()`를 태우면 이 값은 **전역 `SearchTimeLimit` 하나로 통째로 덮인다.** 레벨이 결정하는 것은 visits/후보 상한이고, 시간은 레벨과 무관한 전역 설정이 결정한다.
 
 주의할 점은 `visits=32`가 `candidateCount=16`개 후보를 모두 2 visits씩 본다는 뜻이 아니라는 점이다. 실제 scored 후보 수는 KataGo가 어떤 후보에 visits를 배정했는지에 따라 달라진다.
 
@@ -265,7 +267,7 @@ JSON analysis path도 B16/B32/B64 같은 visit 레벨 설정을 그대로 표현
 ```text
 EngineAdapter.analyze(
     visits = 플레이 레벨 visits,
-    timeMillis = Search Time의 visits별 time cap 또는 Time cap Off일 때 null,
+    timeMillis = 전역 Search Time 값 (Off일 때 null),
     candidateCount = 목적별 후보 수,
     includePolicy = false,
     refinePolicyMoves = 0,
@@ -430,7 +432,7 @@ Origin 계층:
 2. 1~10수가 안정적으로 `complete`가 되면 11수, 12수처럼 점진적으로 확장한다.
 3. 확장 상한은 초반 20수다.
 
-실제 플레이 cache key는 유지하되 실행 limit에서는 `timeMillis=null`을 사용한다. 즉 다음 플레이의 동일 budget key로 cache hit이 나도록 저장하면서, 최적화 실행 자체는 maxVisits를 채우는 쪽을 우선한다. 사용자가 `Search Time > Time cap Off`를 선택한 경우에는 실제 플레이 budget 자체도 `timeMillis=null`이므로, JSON position analysis cache key와 실행 limit이 모두 uncapped 상태가 된다. 이 모드는 응답이 느릴 수 있지만 complete/partial cache를 빠르게 축적하는 데 유리하다.
+실제 플레이 cache key는 유지하되 실행 limit에서는 `timeMillis=null`을 사용한다. 즉 다음 플레이의 동일 budget key로 cache hit이 나도록 저장하면서, 최적화 실행 자체는 maxVisits를 채우는 쪽을 우선한다. 사용자가 `Search Time > Off`를 선택한 경우에는 실제 플레이 budget 자체도 `timeMillis=null`이므로, JSON position analysis cache key와 실행 limit이 모두 uncapped 상태가 된다. 이 모드는 응답이 느릴 수 있지만 complete/partial cache를 빠르게 축적하는 데 유리하다.
 
 이 기능은 UI가 엔진 호출을 직접 조합하지 않는다. 실험 UI는 prompt accept/dismiss만 전달하고, `EngineSessionClient.optimizePositionAnalysisCache()`가 position sync, JSON analysis, cache write 정책을 캡슐화한다. 나중에 엔진이 remote server로 이동해도 같은 middleware API로 대체할 수 있어야 한다.
 
@@ -535,19 +537,17 @@ python3 scripts/run-katago-search-mode-benchmark.py \
 
 ### Benchmark와 실제 대국 속도
 
-현재 startup benchmark는 실제 대국 속도를 그대로 예측하는 기능이 아니다. 기기 진단을 위해 B16/B32/B64를 모두 `timeCapMs=5000`으로 측정한다. 반면 실제 대국은 `Search Time`에서 사용자가 고른 time cap을 사용한다. 기본값은 B16 `1000ms`, B32 `2000ms`, B64 `3000ms`이다.
+현재 startup benchmark는 실제 대국 속도를 그대로 예측하는 기능이 아니다. 기기 진단을 위해 B16/B32/B64를 모두 `timeCapMs=5000`으로 측정한다. 반면 실제 대국은 `Search Time`에서 사용자가 고른 **전역 time cap 하나**를 visits와 무관하게 그대로 사용한다(2026-09-23 기준 기본 10000ms).
 
 따라서 benchmark 평균은 “이 기기가 장시간 진단 호출에서 visits를 얼마나 채우는가”를 보는 보조 지표다. 메뉴의 `추천[...]`에는 이 평균값을 보여주지만, 실제 대국 체감은 사용자가 선택한 `Search Time` 값과 목적별 `TurnAnalysis` 예산을 기준으로 판단한다.
 
-`Search Time`에는 전역 `Time cap On/Off`가 있다. `On`은 아래 선택지를 엔진 `maxTime`/`overrideSettings.maxTime`으로 전달한다. `Off`는 선택지를 보존만 하고 실제 분석 요청에는 `timeMillis=null`을 전달한다. 따라서 Off는 실시간 대국보다 고품질 JSON cache 수집, 검증, 분석 품질 우선 시나리오에 더 적합하다.
+`Search Time`은 **visits별로 나뉘지 않는다.** 2026-09-23 기준 코드(`shared/SearchTimeSettings.kt`)에서 사용자가 고르는 것은 `SearchTimeLimit` **하나뿐**이고, 그 값이 모든 일반 AI 착수와 Top Moves 요청의 `maxTime`/`overrideSettings.maxTime` 상한이 된다. `Off`는 `AnalysisLimit.timeMillis=null`로 내려가 시간 제한 없이 요청 visits 충족을 우선한다 — 실시간 대국보다 고품질 JSON cache 수집, 검증, 분석 품질 우선 시나리오에 적합하다.
 
-`Search Time` 기본 선택지는 다음과 같다.
-
-| 타입 | 기본값 | 선택지 |
+| 설정 | 기본값 | 선택지 |
 | --- | ---: | --- |
-| B16 | 1000ms | 500ms, 1000ms, 1500ms, 2000ms, 2500ms |
-| B32 | 2000ms | 1000ms, 2000ms, 3000ms, 4000ms, 5000ms |
-| B64 | 3000ms | 3000ms, 4500ms, 6000ms, 7500ms, 9000ms |
+| `SearchTimeLimit` (전역 1개) | 10000ms (`WithinTenSeconds`) | `Off`(제한 없음), 1000ms, 3000ms, 5000ms, 10000ms |
+
+⚠️ 기본값은 **2026-09-22에 3초에서 10초로 올렸다**(커밋 `19047906`). 이미 값을 고른 사용자는 저장된 값이 이긴다. 또 `engineTurnWatchdogTimeoutMillisFor`가 이 값에서 계산되므로 기본값을 내리면 「엔진 응답 지연」 팝업도 그만큼 빨리 뜬다.
 
 ## 턴별 일관성 정책
 

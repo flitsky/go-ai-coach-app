@@ -41,12 +41,14 @@ fun PlayLevelSetting.aiMoveSearchMode(): EngineSearchMode =
     if (group == PlayLevelGroup.FastBeginner) GtpStatefulFast else JsonPositionAnalysis
 ```
 
-| 레벨 그룹 | 탐색 모드 | visits | 기본 time cap | 후보 상한 |
+| 레벨 그룹 | 탐색 모드 | visits | 그룹 내부 기본 `timeMillis` | 후보 상한 |
 | --- | --- | ---: | ---: | ---: |
-| 빠른 초급 (1~5단계: 초보/하수/중수/고수/초고수) | `GtpStatefulFast` | 16 | 1000ms (B16) | 8 |
-| 초급 (1~7단계) | `JsonPositionAnalysis` | 32 | 2000ms (B32) | 16 |
-| 중급 (1~5단계) | `JsonPositionAnalysis` | 64 | 3000ms (B64) | 20 |
+| 빠른 초급 (1~5단계: 초보/하수/중수/고수/초고수) | `GtpStatefulFast` | 16 | 1000ms | 8 |
+| 초급 (1~7단계) | `JsonPositionAnalysis` | 32 | 2000ms | 16 |
+| 중급 (1~5단계) | `JsonPositionAnalysis` | 64 | 3000ms | 20 |
 | 고급 (1~5단계) | `JsonPositionAnalysis` | 160 | 1000ms | 24 |
+
+⚠️ **네 번째 열은 사용자가 고르는 값이 아니다**(2026-09-23 기준). `shared/PlayLevel.kt`의 `PlayLevelGroup` enum이 들고 있는 **내부 기본값**이고, `PlayLevelSetting.analysisLimitWith()`가 `SearchTimeSettings.applyTo()`를 태우는 순간 **전역 탐색 시간 하나로 통째로 덮인다.** 즉 실제 대국에서 엔진에 내려가는 `timeMillis`는 레벨과 무관하게 사용자가 고른 **단일 `SearchTimeLimit`** 값이다(자세한 것은 `ENGINE_API_CALL_POLICY.md`의 `Search Time` 절). 이 열은 그 전역 설정을 태우지 않고 `analysisLimit`을 그대로 쓰는 경로에서만 보인다.
 
 `빠른 초급`은 느린 기기에서도 쾌적한 대국 체감을 우선하는 모드이고, `초급` 이상은 후보군 안정성과 레벨링 정확도를 우선하는 모드다.
 
