@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.ui
 
 import com.worksoc.goaicoach.architecture.RepoPaths
+import com.worksoc.goaicoach.architecture.readContractSource
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -21,7 +22,7 @@ import org.junit.Test
 class PlayControlsContractTest {
 
     private fun code(path: String): String =
-        RepoPaths.appAndroid(path).readText()
+        RepoPaths.appAndroid(path).readContractSource()
             .replace(Regex("""/\*.*?\*/""", RegexOption.DOT_MATCHES_ALL), "")
             .lines()
             .filterNot { it.trimStart().startsWith("import ") }

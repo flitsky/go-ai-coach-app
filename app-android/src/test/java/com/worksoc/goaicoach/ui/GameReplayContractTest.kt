@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.ui
 
+import com.worksoc.goaicoach.architecture.readContractSource
 import java.io.File
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -13,7 +14,7 @@ class GameReplayContractTest {
 
     /** 주석·import를 걷어낸 본문만 본다 — 이름이 주석에 남아 그물이 헐거워지는 것을 막는다(함정 10-2). */
     private fun source(path: String): String =
-        File(path).readText()
+        File(path).readContractSource()
             .replace(Regex("""/\*.*?\*/""", RegexOption.DOT_MATCHES_ALL), "")
             .lines()
             .filterNot { it.trimStart().startsWith("import ") }

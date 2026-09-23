@@ -3,6 +3,7 @@ package com.worksoc.goaicoach.ui
 import com.worksoc.goaicoach.application.preferences.AppFontScales
 import com.worksoc.goaicoach.application.preferences.DefaultAppFontScale
 import com.worksoc.goaicoach.application.preferences.sanitizeAppFontScale
+import com.worksoc.goaicoach.architecture.readContractSource
 import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
@@ -93,7 +94,7 @@ class FontScaleSettingChoiceTest {
     }
 
     private fun codeOnly(path: String): String =
-        File(path).readText()
+        File(path).readContractSource()
             .replace(Regex("""/\*.*?\*/""", RegexOption.DOT_MATCHES_ALL), "")
             .lines().joinToString("\n") { it.substringBefore("//") }
 }

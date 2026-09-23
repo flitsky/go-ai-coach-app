@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.ui
 
+import com.worksoc.goaicoach.architecture.readContractSource
 import java.io.File
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -23,7 +24,7 @@ class EngineWaitOverlayContractTest {
     private val board: String = File(
         repoRoot,
         "app-android/src/main/java/com/worksoc/goaicoach/ui/GoBoard.kt",
-    ).readText()
+    ).readContractSource()
 
     /**
      * ⚠️ 이 조건을 지우면 **새 대국을 준비하는 동안 "계가 중"이라고 말한다.**

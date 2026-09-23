@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.ui
 
+import com.worksoc.goaicoach.architecture.readContractSource
 import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -22,11 +23,11 @@ class AppNameContractTest {
         .first { File(it, "settings.gradle.kts").exists() }
 
     private val resourceName = Regex("""<string name="app_name"[^>]*>([^<]+)</string>""")
-        .find(File(repoRoot, "app-android/src/main/res/values/strings.xml").readText())
+        .find(File(repoRoot, "app-android/src/main/res/values/strings.xml").readContractSource())
         ?.groupValues?.get(1)
 
     private val inAppName = Regex("""appTitle = "([^"]+)"""")
-        .find(File(repoRoot, "app-android/src/main/java/com/worksoc/goaicoach/ui/UiStringsKo.kt").readText())
+        .find(File(repoRoot, "app-android/src/main/java/com/worksoc/goaicoach/ui/UiStringsKo.kt").readContractSource())
         ?.groupValues?.get(1)
 
     /**
@@ -113,13 +114,13 @@ class AppNameContractTest {
         val sites = mapOf(
             "런타임 로그 `app=`(RuntimeEventApplication.kt)" to
                 Regex("""const val RuntimeAppName = "([^"]+)"""")
-                    .find(File(shared, "runtime/RuntimeEventApplication.kt").readText())?.groupValues?.get(1),
+                    .find(File(shared, "runtime/RuntimeEventApplication.kt").readContractSource())?.groupValues?.get(1),
             "진단 리포트 제목(DebugReportSections.kt)" to
                 Regex("""appendLine\("([^"]+) debug report"\)""")
-                    .find(File(shared, "debugreport/DebugReportSections.kt").readText())?.groupValues?.get(1),
+                    .find(File(shared, "debugreport/DebugReportSections.kt").readContractSource())?.groupValues?.get(1),
             "클립보드 라벨(DebugReportBuilder.kt)" to
                 Regex("""clipboardLabel = "([^"]+) debug report"""")
-                    .find(File(shared, "debugreport/DebugReportBuilder.kt").readText())?.groupValues?.get(1),
+                    .find(File(shared, "debugreport/DebugReportBuilder.kt").readContractSource())?.groupValues?.get(1),
         )
         sites.forEach { (where, name) ->
             assertTrue("$where 에서 앱 이름을 찾지 못했다 — 이 계약의 전제가 무너졌다.", name != null)
@@ -134,7 +135,7 @@ class AppNameContractTest {
     @Test
     fun noPlaceholderWordingSurvivesInUserFacingNames() {
         val mainActivity = File(repoRoot, "app-android/src/main/java/com/worksoc/goaicoach/MainActivity.kt")
-            .readText()
+            .readContractSource()
             .replace(Regex("""/\*.*?\*/""", RegexOption.DOT_MATCHES_ALL), "")
             .lines().joinToString("\n") { it.substringBefore("//") }
         assertFalse(

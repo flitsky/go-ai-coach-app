@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.ui
 
+import com.worksoc.goaicoach.architecture.readContractSource
 import java.io.File
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -29,7 +30,7 @@ class StoreListingPaymentContractTest {
      * 경계는 `[출시 노트]`다(그 위까지가 등재정보 본문).
      */
     private val listingBody: String = File(repoRoot, "work/play-store-assets/store_listing.txt")
-        .readText()
+        .readContractSource()
         .substringBefore("[출시 노트]")
 
     /**

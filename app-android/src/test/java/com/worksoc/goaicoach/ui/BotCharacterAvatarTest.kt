@@ -3,6 +3,7 @@ package com.worksoc.goaicoach.ui
 import com.worksoc.goaicoach.application.botcharacter.BotCharacterCatalog
 import com.worksoc.goaicoach.application.botcharacter.BotUnlockSource
 import com.worksoc.goaicoach.architecture.RepoPaths
+import com.worksoc.goaicoach.architecture.readContractSource
 import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -98,7 +99,7 @@ class BotCharacterAvatarTest {
      */
     @Test
     fun avatarResolverListsEveryCatalogReference() {
-        val source = RepoPaths.uiFile("BotCharacterAvatar.kt").readText()
+        val source = RepoPaths.uiFile("BotCharacterAvatar.kt").readContractSource()
         val unlisted = BotCharacterCatalog.all.filter { character ->
             !source.contains("\"${character.avatarRef}\" -> R.drawable.${character.avatarRef}")
         }

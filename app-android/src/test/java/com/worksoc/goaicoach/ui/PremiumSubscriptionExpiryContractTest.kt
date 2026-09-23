@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.ui
 
+import com.worksoc.goaicoach.architecture.readContractSource
 import java.io.File
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -21,7 +22,7 @@ class PremiumSubscriptionExpiryContractTest {
     private val premiumUiState = File(
         repoRoot,
         "app-android/src/main/java/com/worksoc/goaicoach/ui/PremiumUiState.kt",
-    ).readText()
+    ).readContractSource()
 
     /**
      * ⚠️ **재시작만이 계기이면 해지한 사용자가 앱을 계속 켜 두는 동안 권한이 산다**(#173 실기).
@@ -61,7 +62,7 @@ class PremiumSubscriptionExpiryContractTest {
         val application = File(
             repoRoot,
             "shared/src/commonMain/kotlin/com/worksoc/goaicoach/application/premium",
-        ).walkTopDown().filter { it.extension == "kt" }.map { it.readText() }.joinToString("\n")
+        ).walkTopDown().filter { it.extension == "kt" }.map { it.readContractSource() }.joinToString("\n")
         assertTrue(
             "`isAuthoritativeNotOwned` 관문이 사라졌다 — 조회 실패 한 번이 유료 구독자를 내리게 " +
                 "된다(#158이 막은 결함, #174가 조회를 잦게 만들어 위험이 커졌다).",

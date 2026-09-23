@@ -111,3 +111,24 @@ internal object RepoPaths {
         error("Could not locate repository root from ${File(".").canonicalPath}")
     }
 }
+
+/**
+ * 계약 테스트가 소스를 **문자열로 읽는 전용 진입점**(refactor backlog #30, 260923).
+ *
+ * ## 왜 날것 `readText()`를 그대로 두면 안 되는가
+ * 이 파일이 없으면(주로 파일이 옮겨져서) 날것 `readText()`는 `java.io.FileNotFoundException`을
+ * 던진다 — 메시지가 **"파일이 없다"** 로만 읽히고, 계약 테스트의 진짜 존재 이유인
+ * **"경계가 깨졌다"** 로는 읽히지 않는다. 검수자가 `ui/GoCoachApp.kt`를 실제로 `git mv` 해서
+ * 확인한 결과, 612건 중 77건이 이 모습으로 죽었고 의미 있는 단언 실패는 0건이었다 — P3의
+ * 다른 파일 이동에서도 원인 파악이 그만큼 늦어진다는 뜻이다.
+ *
+ * 그래서 계약 테스트는 `File.readText()`를 직접 부르지 말고 이 확장 함수를 거친다. 파일이
+ * 있으면 동작은 `readText()`와 완전히 같고, 없으면 **절대경로**와 **고칠 자리**(`RepoPaths.kt`)를
+ * 못박은 메시지로 [IllegalStateException]을 던진다.
+ */
+internal fun File.readContractSource(): String {
+    check(exists()) {
+        "이 계약이 보는 소스가 없다: $absolutePath. 파일이 옮겨졌다면 RepoPaths.kt를 갱신하라."
+    }
+    return readText()
+}

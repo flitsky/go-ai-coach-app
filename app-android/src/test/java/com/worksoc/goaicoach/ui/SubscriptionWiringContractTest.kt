@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.ui
 
+import com.worksoc.goaicoach.architecture.readContractSource
 import java.io.File
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -15,7 +16,7 @@ import org.junit.Test
 class SubscriptionWiringContractTest {
 
     private fun source(path: String): String =
-        File(path).readText()
+        File(path).readContractSource()
             .replace(Regex("""/\*.*?\*/""", RegexOption.DOT_MATCHES_ALL), "")
             .lines()
             .joinToString("\n") { it.substringBefore("//") }

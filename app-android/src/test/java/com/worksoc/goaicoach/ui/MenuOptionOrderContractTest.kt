@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.ui
 
 import com.worksoc.goaicoach.architecture.RepoPaths
+import com.worksoc.goaicoach.architecture.readContractSource
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -17,7 +18,7 @@ import org.junit.Test
 class MenuOptionOrderContractTest {
 
     private val menu: String =
-        RepoPaths.uiFile("KaTrainUxPanels.kt").readText()
+        RepoPaths.uiFile("KaTrainUxPanels.kt").readContractSource()
             .replace(Regex("""/\*.*?\*/""", RegexOption.DOT_MATCHES_ALL), "")
             .lines()
             .filterNot { it.trimStart().startsWith("import ") }

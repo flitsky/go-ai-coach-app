@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.ui
 
 import com.worksoc.goaicoach.architecture.RepoPaths
+import com.worksoc.goaicoach.architecture.readContractSource
 import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -15,7 +16,7 @@ class StudyHubContractTest {
 
     /** 주석·import를 걷어낸 본문만 본다 — 이름이 주석에 남아 그물이 헐거워지는 것을 막는다(함정 10-2). */
     private fun source(file: File): String =
-        file.readText()
+        file.readContractSource()
             .replace(Regex("""/\*.*?\*/""", RegexOption.DOT_MATCHES_ALL), "")
             .lines()
             .filterNot { it.trimStart().startsWith("import ") }
@@ -102,7 +103,7 @@ class StudyHubContractTest {
      */
     @Test
     fun theUiStringsConstructorStaysUnderTheJvmArgumentLimit() {
-        val declaration = RepoPaths.uiFile("UiStrings.kt").readText()
+        val declaration = RepoPaths.uiFile("UiStrings.kt").readContractSource()
             .substringAfter("internal data class UiStrings(")
             .substringBefore("\n) {")
         val fields = Regex("""^\s{4}val\s+\w+:""", RegexOption.MULTILINE).findAll(declaration).count()

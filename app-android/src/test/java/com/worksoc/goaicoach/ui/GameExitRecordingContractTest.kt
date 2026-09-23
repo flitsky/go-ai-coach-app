@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.ui
 
 import com.worksoc.goaicoach.architecture.RepoPaths
+import com.worksoc.goaicoach.architecture.readContractSource
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -13,7 +14,7 @@ import org.junit.Test
  */
 class GameExitRecordingContractTest {
 
-    private val shell = codeOnly(RepoPaths.uiFile("GoCoachApp.kt").readText())
+    private val shell = codeOnly(RepoPaths.uiFile("GoCoachApp.kt").readContractSource())
 
     /**
      * ⚠️ **기록이 `refreshNewGamePreview()`보다 앞서야 한다.**

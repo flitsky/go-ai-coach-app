@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach
 
+import com.worksoc.goaicoach.architecture.readContractSource
 import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -18,7 +19,7 @@ class DeveloperModeResetContractTest {
     private val repoRoot = generateSequence(File(".").canonicalFile) { it.parentFile }
         .first { File(it, "settings.gradle.kts").exists() }
 
-    private fun codeOnly(path: String): String = File(repoRoot, path).readText()
+    private fun codeOnly(path: String): String = File(repoRoot, path).readContractSource()
         .replace(Regex("""/\*.*?\*/""", RegexOption.DOT_MATCHES_ALL), "")
         .lines().joinToString("\n") { it.substringBefore("//") }
 

@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.engine
 
 import com.worksoc.goaicoach.architecture.RepoPaths
+import com.worksoc.goaicoach.architecture.readContractSource
 import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -28,10 +29,10 @@ import org.junit.Test
  */
 class BundledEngineAssetContractTest {
 
-    private val bootstrap = RepoPaths.appAndroid("engine/EngineBootstrap.kt").readText()
+    private val bootstrap = RepoPaths.appAndroid("engine/EngineBootstrap.kt").readContractSource()
     // ⚠️ 이 줄은 refactor backlog #30 범위 밖이다(`File("src/main` 패턴이 아니라 세지 않았다) —
     // 같은 부류의 실행 위치 의존 상대경로이니 뒤따르는 스레드가 RepoPaths.root로 흡수할 것.
-    private val makefile = File("../Makefile").readText()
+    private val makefile = File("../Makefile").readContractSource()
 
     /** 앱이 번들에서 꺼내려고 시도하는 파일 이름들. */
     private fun assetNamesTheAppOpens(): Set<String> =

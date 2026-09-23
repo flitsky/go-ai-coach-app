@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach
 
 import com.worksoc.goaicoach.architecture.RepoPaths
+import com.worksoc.goaicoach.architecture.readContractSource
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -36,7 +37,7 @@ import org.junit.Test
 class StartupOrderContractTest {
 
     private val onCreateBody: String = run {
-        val source = RepoPaths.appAndroid("MainActivity.kt").readText()
+        val source = RepoPaths.appAndroid("MainActivity.kt").readContractSource()
         // 주석은 지운다 — 이 계약은 서술이 아니라 **호출 순서**를 잰다.
         source
             .replace(Regex("""/\*.*?\*/""", RegexOption.DOT_MATCHES_ALL), "")

@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.ui
 
 import com.worksoc.goaicoach.architecture.RepoPaths
+import com.worksoc.goaicoach.architecture.readContractSource
 import com.worksoc.goaicoach.persistence.UserProfileStore
 import java.io.File
 import org.junit.Assert.assertEquals
@@ -17,7 +18,7 @@ import org.junit.Test
 class UserProfileContractTest {
 
     private fun source(file: File): String =
-        file.readText()
+        file.readContractSource()
             .replace(Regex("""/\*.*?\*/""", RegexOption.DOT_MATCHES_ALL), "")
             .lines()
             .filterNot { it.trimStart().startsWith("import ") }

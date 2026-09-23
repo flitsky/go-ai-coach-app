@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.ui
 
+import com.worksoc.goaicoach.architecture.readContractSource
 import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -13,7 +14,7 @@ import org.junit.Test
  */
 class SubscriptionRosterWiringContractTest {
 
-    private fun source(path: String): String = File(path).readText()
+    private fun source(path: String): String = File(path).readContractSource()
 
     private val app = source("src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
     private val bots = source("src/main/java/com/worksoc/goaicoach/ui/BotCharacterUiState.kt")

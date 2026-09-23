@@ -3,6 +3,7 @@ package com.worksoc.goaicoach.ui
 import com.worksoc.goaicoach.application.guide.GuideStep
 import com.worksoc.goaicoach.application.guide.GuideSurface
 import com.worksoc.goaicoach.application.guide.GuideTarget
+import com.worksoc.goaicoach.architecture.readContractSource
 import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -29,7 +30,7 @@ class FirstDolGuideContractTest {
         .first { File(it, "settings.gradle.kts").exists() }
 
     private fun code(path: String): String =
-        File(repoRoot, path).readText()
+        File(repoRoot, path).readContractSource()
             .replace(Regex("""/\*.*?\*/""", RegexOption.DOT_MATCHES_ALL), "")
             .lines()
             .filterNot { it.trimStart().startsWith("import ") }
