@@ -10,6 +10,10 @@
 ⚠️ **이 문서의 번호는 이 문서 안에서만 쓰인다**(1, 2, 3 …). 활성 백로그의 `#NNN`과 **다른 체계**다 —
 커밋 메시지에는 `refactor backlog #N` 형태로 적어 구분한다.
 
+🔴 **번호는 영구불변 ID이고, 우선순위는 「예정사항」의 등장 순서다.** 둘을 섞지 마라 —
+새 일감은 **맨 뒤 번호를 받고 읽는 순서에서만 앞에 놓는다.** 중간에 번호를 끼워 넣으면
+이 문서 안의 상호 참조(`#20 뒤에만`, `#9의 선행조건` 같은 줄)가 전부 다른 것을 가리키게 된다.
+
 ⚠️ **완료 항목은 「한 줄 + 커밋 해시」다.** 구현 결과를 여기 길게 쓰지 않는다 — 정본은 git이다
 (`git log --grep "refactor backlog #N"`). 길게 쓰고 싶으면 그건 **커밋 메시지에 쓸 말**이다.
 
@@ -145,24 +149,24 @@ _(없음 — 아래 「예정사항」 첫 항목부터 집는다)_
 
 ### 예정사항
 
-#### P1 잔여 — #9·#10이 드러낸 것
+#### P1 잔여 — #9·#10이 드러낸 것 (번호는 뒤에 붙이고 **순서로** 우선순위를 표시한다)
 
-14. **`NewGameBoardTapSmokeTest` 실패 수정** (AI 모델: Sonnet, 노력정도: 중간)
+58. **`NewGameBoardTapSmokeTest` 실패 수정** (AI 모델: Sonnet, 노력정도: 중간)
     · `app-android/src/androidTest`의 `assertIsDisplayed()`에서 *"The component is not displayed!"*.
       **기존 버그**이고 #13이 `make test-device`를 연 덕에 드러났다. `AppLaunchSmokeTest`가 지목한 **온보딩 전제**부터 볼 것.
     · ⚠️ 계측 테스트 3개가 초록이 아니면 `make test-device`는 열어 둔 의미가 없다.
-15. **`DeadStoneDetector`가 패 금지를 물려받아 사석을 조용히 놓친다** (AI 모델: Opus, 노력정도: 중간)
+59. **`DeadStoneDetector`가 패 금지를 물려받아 사석을 조용히 놓친다** (AI 모델: Opus, 노력정도: 중간)
     · 어떤 그룹의 유일한 활로가 `koPoint`이고 `koForbiddenFor`가 그 그룹을 따낼 쪽이면
       `runCatching { … }.getOrNull() ?: continue`가 **그 그룹을 후보에서 조용히 제외**한다.
     · 즉 탐지기가 답하는 질문이 *"이 돌이 죽었는가"* 가 아니라 *"지금 당장 따낼 수 있는가"* 다.
       양패스 종료 시점엔 통과가 패를 지우므로 **오늘 실전에서 닿지 않는다** — 그래서 판단 일감이지 버그 수정이 아니다.
     · ⚠️ 현 동작이 #9의 골든 표에 박혀 있다. 바꾸려면 그 행을 함께 고쳐야 한다.
-16. **아무도 안 보는 계약 3개 정리** (AI 모델: Sonnet, 노력정도: 낮음) — #20과 함께
+60. **아무도 안 보는 계약 3개 정리** (AI 모델: Sonnet, 노력정도: 낮음) — #20과 함께
     · `capabilities` / `positionAnalysisCacheStatsText` / `positionAnalysisCacheQualityFor` —
       값을 틀리게 바꿔도 **빨개지는 테스트가 0건**이다(#10 음성 대조에서 드러났다).
       페이크 8벌이 909줄 중 40여 줄을 이 셋에 쓰고 있었다.
     · 인터페이스에 남길지, 테스트를 붙일지, 좁힐지 판단한다.
-17. **오해를 부르는 코드 둘에 KDoc 한 줄** (AI 모델: Sonnet, 노력정도: 낮음)
+61. **오해를 부르는 코드 둘에 KDoc 한 줄** (AI 모델: Sonnet, 노력정도: 낮음)
     · `DeadStoneDetector`의 `group.liberties.singleOrNull()`은 **정확성 게이트가 아니라 성능 필터**다 —
       `firstOrNull()`로 바꿔도 동작이 완전히 같다(뒤의 `stones.all { … == null }`이 판정을 전담).
       읽는 사람은 *"활로가 정확히 하나여야 한다"* 는 규칙이 거기 있다고 믿게 된다.
