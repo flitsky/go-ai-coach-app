@@ -135,7 +135,7 @@ doctor:
 # 2026-08-30부터 6일간 컴파일조차 되지 않는 채로 방치됐고(`GoCoachApp`에 필수 파라미터
 # `engineMode`가 늘었는데 호출부 둘을 안 고침), 이 명령이 그 트리를 건드리지 않아 아무도 몰랐다.
 test: doctor
-	$(GRADLEW) :shared:check :engine-android:testDebugUnitTest :app-android:assembleDebug :app-android:testDebugUnitTest :app-android:compileDebugAndroidTestKotlin
+	$(GRADLEW) :shared:check :engine-android:testDebugUnitTest :app-android:assembleDebug :app-android:testDebugUnitTest :app-android:compileDebugAndroidTestKotlin :app-android:lintDebug
 
 # ⚠️ 별도 타깃이다 — `test`에 합치지 마라(refactor backlog #11, 함정 75).
 # iOS 타깃은 `shared/build.gradle.kts`의 `enableIosTargets` 게이트 뒤에 숨어 있어(기본 false)

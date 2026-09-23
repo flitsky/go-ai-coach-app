@@ -317,6 +317,35 @@ android {
             useLegacyPackaging = true
         }
     }
+
+    // Lint 개통 (refactor backlog #12). 그동안 `app-android`(272파일)는 릴리스 경로에서
+    // `lintVital`(Fatal 등급)만 걸렸다 — 나머지 경고 등급은 아무도 안 보고 있었다.
+    //
+    // ⭐ **baseline의 뜻**: *"지금 있는 것은 통과, 새로 생기는 것만 차단."* `updateLintBaseline`로
+    // 만든 시점의 84건(1 error + 74 warnings + 9 hints)을 전부 눈감아 주고, 그 이후 **새로
+    // 생기는** 이슈만 걸린다 — 기존 부채를 한 번에 다 고치라고 요구하지 않으면서 회귀만 정확히
+    // 잡는 형태라, 리팩토링 중 "그 사이에 뭔가 새로 어긋나지 않았는가"를 확인하기에 맞는
+    // 강도다. baseline 파일의 항목 수(현재 84)가 **줄어야 할 부채 크기**다 — 늘리는 방향(새
+    // 경고를 baseline에 추가)으로 쓰지 않는다.
+    //
+    // ⚠️ **`warningsAsErrors = false`가 뜻하는 실제 범위 — 실기로 확인했다.** `abortOnError`는
+    // **Error 등급**에만 적용된다. baseline에 없는 새 **Warning**(예: `DefaultLocale`)을 일부러
+    // 넣고 `lintDebug`를 돌려 보면 "Lint found 1 warning ... filtered by baseline"이라고만
+    // 찍고 **BUILD SUCCESSFUL로 통과한다** — 새 경고는 이 설정으로 막히지 않는다. 반대로 새
+    // **Error**(`NewApi` 위반)를 넣으면 즉시 `lintDebug`가 실패한다. 즉 이 게이트가 실제로
+    // 잡는 것은 "baseline에 없는 새 Error"뿐이고, 새 Warning은 리뷰어의 눈에만 의존한다 —
+    // `warningsAsErrors = true`로 바꾸면 막히지만, 그러면 84건 부채 중 Warning 등급 다수가
+    // 당장 전부 걸려 이 커밋에서 baseline을 만든 의미(부채는 그대로 두고 회귀만 잡는다)가
+    // 없어진다. 강도를 올릴지는 부채(현재 74 warnings)를 먼저 줄인 뒤 별도로 판단할 것.
+    //
+    // ⚠️ **`checkDependencies`는 켜지 않는다.** `:shared`는 이미 자기 `check`(라이브러리 모듈은
+    // `check`가 `lint`에 물린다)로 스스로 lint를 돈다 — 여기서 의존성까지 내려가며 다시 훑으면
+    // 같은 코드를 두 번 스캔하면서 리포트만 늘어난다.
+    lint {
+        baseline = file("lint-baseline.xml")
+        abortOnError = true
+        warningsAsErrors = false
+    }
 }
 
 kotlin {
