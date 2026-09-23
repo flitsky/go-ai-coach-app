@@ -7,6 +7,10 @@
 > · **현재 화면의 정본은 `APP_IA_AND_UI_SPEC.md`다.** 둘이 어긋나면 그쪽이 옳다.
 > · 이 문서의 값은 *"그때 무엇을 하려 했는가"* 뿐이다 — 그래서 지우지 않고 남겼다.
 > · 봉인(`roadmap/`으로 이동)하거나 삭제할지는 출시 이후 판단으로 미뤄 뒀다.
+>
+> ⚠️ **이 "전부 구현됨" 판정은 지금 `docs/DOCS_INDEX.md`·`docs/HANDOVER.md` 두 색인에만 적혀 있었다**
+> — 색인을 거치지 않고 이 문서를 직접 연 사람은 몰랐다. 2026-09-23에 마일스톤 6개를 각각 코드로
+> 재확인하고 아래 표에 못 박는다(§3 참고).
 
 본 문서는 **go-ai-coach** 프로젝트의 사용자 경험(UX) 고도화를 위한 작업 요약 설명서 및 단계별 개발 플랜입니다. 사용자 중심의 직관적이고 미려한 대국 화면을 구축하고, 13x13 이상의 대형 바둑판에서도 안정적으로 착수할 수 있는 기능을 제공하는 것을 목표로 합니다.
 
@@ -67,14 +71,16 @@ graph TD
 
 ## 3. 마일스톤 및 일정 계획
 
-| 단계 | 작업 내용 | 예상 산출물 | 상태 |
-| --- | --- | --- | --- |
-| **Milestone 1** | 와이어프레임 문서화 및 버전 관리 체계 구축 | `UX_IMPROVEMENT.md` | **진행 중** |
-| **Milestone 2** | UI State 확장 분석 및 Kotlin API 설계 계획 수립 | `ARCHITECTURE.md` 혹은 implementation plan 반영 | 대기 |
-| **Milestone 3** | 바둑판 정사각형 렌더링 개선 (`GoBoard.kt`) | Parent 뷰 크기 기반 스케일링 완료된 Compose 코드 | 대기 |
-| **Milestone 4** | 대국 현황 패널 (3분할) 및 기능 버튼 패널 구현 | `GamePlaySection.kt` 개편 완료 | 대기 |
-| **Milestone 5** | "바로 착수" 옵션 구현 및 가상 착수-확정 흐름 구현 | `GameMenuSection.kt` 및 착수 로직 연동 완료 | 대기 |
-| **Milestone 6** | 종합 빌드 및 리그레션 테스트 | 디버그 빌드, 렌더링 오차 검증 | 대기 |
+> ✅ **2026-09-23 코드 재확인 — 6개 전부 완료.** 아래 "완료 근거"는 그 시점 실측이며, 낡으면 다시 잰다.
+
+| 단계 | 작업 내용 | 완료 근거 (2026-09-23 기준) |
+| --- | --- | --- |
+| **Milestone 1** | 와이어프레임 문서화 및 버전 관리 체계 구축 | ✅ 이 문서 자체 + 부록 A(v1.0.0 와이어프레임, 2026-09-06 통폐합으로 합침) |
+| **Milestone 2** | UI State 확장 분석 및 Kotlin API 설계 계획 수립 | ✅ `isDirectPlayEnabled`(`presentation/KaTrainUxOptions.kt`)·`tentativeMove`(`ui/GoBoard.kt`)가 실제 UI State 필드로 존재 |
+| **Milestone 3** | 바둑판 정사각형 렌더링 개선 (`GoBoard.kt`) | ✅ `GoBoard.kt`가 `BoxWithConstraints`로 `maxWidth`/`maxHeight` 중 작은 쪽을 `boardSide`로 취해 정사각형 렌더링(`BoardFitTest`·`BoardGeometryCalculatorTest`로 회귀 검증) |
+| **Milestone 4** | 대국 현황 패널 (3분할) 및 기능 버튼 패널 구현 | ✅ `GamePlaySection.kt`의 `GameStatusPanel`이 흑/백 사석·시계를 좌우로, 기능 버튼(`eval`/`topMoves`/`resign`/`pass`/`undo`)을 `weight(1f)` 균등 분포로 배치 |
+| **Milestone 5** | "바로 착수" 옵션 구현 및 가상 착수-확정 흐름 구현 | ✅ `KaTrainUxPanels.kt`의 스위치 + `GoBoard.kt`의 `tentativeMove`/고스트 스톤(alpha) 렌더링으로 구현 완료. **다만 2026-09-12(#143)에 사용자 결정으로 UI 노출만 껐다** — 코드는 `FeatureFlags.isPlayConfirmModeEnabled` 뒤에 그대로 있고 지우지 않았다(`FeatureFlags.kt` 참고) |
+| **Milestone 6** | 종합 빌드 및 리그레션 테스트 | ✅ `make test`가 이 저장소의 유일한 릴리스 게이트이고, `BoardFitTest`/`BoardGeometryCalculatorTest`/`GoBoardCoordinateTest`가 다양한 판 크기의 렌더링/좌표 계산을 회귀 검증 |
 
 ---
 
