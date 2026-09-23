@@ -186,6 +186,42 @@ _(없음 — 아래 「예정사항」 첫 항목부터 집는다)_
     · 🔴 **그대로 꽂으면 접바둑 보정이 두 번 계산될 수 있다.** 실측 없이는 **현행 미반영이 안전한 선택**이다.
     · 실측 방법을 먼저 설계하라 — 같은 국면을 `whiteHandicapBonus` 유/무로 분석해 점수 차를 본다.
 
+68. 🔴 **계약 테스트의 FQN 문자열이 실존 심볼을 가리키는지 검증하는 메타 테스트** (AI 모델: Opus, 노력정도: 중간)
+    · `LayeringContractTest`는 `"import com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi"` 같은
+      **FQN을 문자열 리터럴로** 들고 금지한다. 그런데 **그 FQN이 실재하는지 스스로 확인하지 않는다.**
+    · 🔴 **심볼이 옮겨가면 그 규칙은 어떤 파일과도 매치하지 않고, 초록인 채 아무것도 검사하지 않는다.**
+      P0(`0c33d32c`)이 되살린 죽은 가드 넷과 **정확히 같은 병**이고, `#24`에서 다시 밟을 뻔했다.
+      이번엔 사람이 손으로 5개를 확인해 막았다 — **그 방어가 사람에게 달려 있다는 게 결함이다.**
+    · 해법: 가드 FQN 목록을 뽑아 **소스에 그 심볼이 실재하는지** 검사하는 테스트 하나.
+      `require(files.isNotEmpty())`(#4)가 "빈 디렉터리"를 막은 것과 같은 자리의, FQN 축 버전이다.
+    · ⚠️ **P3의 남은 이동(#25·#26·#27) 전에 세우는 것이 낫다** — 그 이동들이 같은 위험을 또 만든다.
+
+69. **`RepoPaths`가 못 모으는 것 둘** (AI 모델: Sonnet, 노력정도: 중간)
+    · ⓐ **패키지 FQN은 여전히 흩어져 있다.** `#24`에서 고쳐야 했던 10곳(가드 5 + 자기검증 픽스처 4 + KDoc 1)이
+      한 곳도 상수로 모여 있지 않았다. **P3가 움직이는 것은 파일이 아니라 패키지인데 보호는 파일 쪽에만 있다.**
+    · ⓑ `app-android/src/test`에 `shared/src/commonMain/.../application/...` **하드코딩 경로 8곳**이 남아 있다
+      (`ReplayRecordingContractTest`·`SubscriptionWiringContractTest`·`PlayEffectContractTest` 등).
+      `#63`이 `File("src/main` 패턴만 잡아 이쪽은 집계 밖이었다.
+
+70. **`shared.engine` vs `shared.enginecontract` — 이름으로 구분이 안 된다** (AI 모델: Sonnet, 노력정도: 낮음)
+    · `#24`의 유일한 낙제점이다. app-android의 실제 import 분포가
+      domain 102 · enginecontract 42 · policy 22 · … 로 이름만 봐도 계층이 읽히는데,
+      **`shared.engine`(`EngineOperationPolicy.kt` 1파일, import 2건)만 예외**다.
+    · `shared.enginepolicy`로 개명하거나 `shared.policy`로 흡수한다.
+      ⚠️ `commonTest`의 `engine/EngineOperationPolicyTest.kt`도 함께 움직인다.
+
+71. **androidTest가 공용 픽스처를 볼 수 없다** (AI 모델: Opus, 노력정도: 중간)
+    · `#10`이 모은 `testsupport/FakeEngineSessionClient`는 `commonTest`에 있어 **androidTest에서 못 본다**
+      (test fixtures 설정이 없다). 그래서 androidTest에 **손 페이크 2벌**이 그대로 남아 있다.
+    · 🔴 **비용의 실물**: `EngineSessionClient` 시그니처가 바뀔 때마다 **그 2벌을 따로 고쳐야 한다.**
+      #20(기본 구현 삭제)이 바로 그 변경이다. 함정 70이 지목한 문제가 androidTest에 남아 있는 것이다.
+    · `#61`이 *"그 사실을 주석으로 남겨라"* 로만 적었는데, **주석거리가 아니라 일감이다**(동료 세션 지적).
+
+72. **import 정렬이 깨졌다** (AI 모델: Sonnet, 노력정도: 낮음)
+    · `#24`의 FQN 치환이 심볼 이름 기준 정렬을 FQN에 그대로 적용해, 옮긴 파일들의 import 블록이
+      알파벳 순서를 잃었다. **lint가 이를 잡지 않아 조용히 퍼진다.**
+    · ktlint `import-ordering` 도입을 검토하거나, 한 번 정렬하고 끝낸다. 어느 쪽인지 판단이 먼저다.
+
 #### P2 — 엔진 동시성 (독립 트랙 · 어느 단계와도 병렬)
 
 14. **프로세스 수명 뮤텍스 + 1계층 실체화** (AI 모델: Opus, 노력정도: 최대)
