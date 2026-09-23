@@ -10,7 +10,7 @@ import com.worksoc.goaicoach.shared.MoveResult
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.StoneColor
-import com.worksoc.goaicoach.shared.aiMoveSearchMode
+import com.worksoc.goaicoach.shared.policy.aiMoveSearchMode
 import com.worksoc.goaicoach.shared.describe
 
 data class TurnOutcome(

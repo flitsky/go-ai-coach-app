@@ -13,8 +13,8 @@ import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshotSource
 import com.worksoc.goaicoach.shared.scoring.ScoreTimeline
-import com.worksoc.goaicoach.shared.TurnAnalysisPurpose
-import com.worksoc.goaicoach.shared.turnAnalysisLimitFor
+import com.worksoc.goaicoach.shared.policy.TurnAnalysisPurpose
+import com.worksoc.goaicoach.shared.policy.turnAnalysisLimitFor
 
 data class EngineStartupResult(
     val message: String,

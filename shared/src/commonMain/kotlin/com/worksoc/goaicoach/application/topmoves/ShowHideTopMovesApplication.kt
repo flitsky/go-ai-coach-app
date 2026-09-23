@@ -7,7 +7,7 @@ import com.worksoc.goaicoach.application.session.GameSessionControllerState
 import com.worksoc.goaicoach.shared.AnalysisPreset
 import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.GameState
-import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
+import com.worksoc.goaicoach.shared.policy.MoveAnalysisSnapshot
 import com.worksoc.goaicoach.match.PlayerSetup
 
 fun planShowTopMoves(

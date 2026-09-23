@@ -6,7 +6,7 @@ import com.worksoc.goaicoach.shared.FinalScoreResult
 import com.worksoc.goaicoach.shared.ScoreEstimate
 import com.worksoc.goaicoach.shared.StoneColor
 import com.worksoc.goaicoach.shared.describe
-import com.worksoc.goaicoach.shared.pointLossLabel
+import com.worksoc.goaicoach.shared.policy.pointLossLabel
 import kotlin.math.roundToInt
 
 fun AnalysisResult.toCandidateText(boardSize: BoardSize): String {

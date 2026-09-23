@@ -1,5 +1,5 @@
-package com.worksoc.goaicoach.shared
-
+package com.worksoc.goaicoach.shared.policy
+import com.worksoc.goaicoach.shared.CandidateMove
 import kotlin.math.abs
 import kotlin.math.roundToInt
 

@@ -13,7 +13,7 @@ import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.AnalysisResult
 import com.worksoc.goaicoach.shared.EngineSearchMode
 import com.worksoc.goaicoach.shared.GameState
-import com.worksoc.goaicoach.shared.forcedJsonPositionAnalysis
+import com.worksoc.goaicoach.shared.policy.forcedJsonPositionAnalysis
 
 internal data class LocalPositionAnalysisCacheContext(
     val state: GameState,

@@ -5,7 +5,7 @@ import com.worksoc.goaicoach.application.topmoves.TopMoveAnalysisFailureDisplayP
 import com.worksoc.goaicoach.application.topmoves.TopMoveAnalysisUpdate
 import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.GameState
-import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
+import com.worksoc.goaicoach.shared.policy.MoveAnalysisSnapshot
 import com.worksoc.goaicoach.shared.StoneColor
 
 data class GameSessionAnalysisState(

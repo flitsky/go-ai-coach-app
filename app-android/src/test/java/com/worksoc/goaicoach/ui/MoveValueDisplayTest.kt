@@ -8,8 +8,8 @@ import com.worksoc.goaicoach.shared.CandidateMove
 import com.worksoc.goaicoach.shared.EngineStatus
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.StoneColor
-import com.worksoc.goaicoach.shared.pointLossLabel
-import com.worksoc.goaicoach.shared.topMoveDeltaScoreLabel
+import com.worksoc.goaicoach.shared.policy.pointLossLabel
+import com.worksoc.goaicoach.shared.policy.topMoveDeltaScoreLabel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

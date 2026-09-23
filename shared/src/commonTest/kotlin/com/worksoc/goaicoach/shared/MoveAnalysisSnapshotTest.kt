@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.shared
 
+import com.worksoc.goaicoach.shared.policy.MoveAnalysisSnapshot
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull

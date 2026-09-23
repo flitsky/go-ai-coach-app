@@ -19,7 +19,7 @@ import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.StoneColor
 import com.worksoc.goaicoach.shared.analysisFingerprint
-import com.worksoc.goaicoach.shared.toOneDecimalLabel
+import com.worksoc.goaicoach.shared.policy.toOneDecimalLabel
 
 /**
  * 런타임 로그의 `app=` 값 — **한국어 런처 이름과 같다.** 리포트 제목(`DebugReportSections.kt`)·

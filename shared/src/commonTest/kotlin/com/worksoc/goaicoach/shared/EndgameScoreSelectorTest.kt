@@ -1,5 +1,7 @@
 package com.worksoc.goaicoach.shared
 
+import com.worksoc.goaicoach.shared.policy.EndgameScoreSelector
+import com.worksoc.goaicoach.shared.policy.EndgameScoreSource
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

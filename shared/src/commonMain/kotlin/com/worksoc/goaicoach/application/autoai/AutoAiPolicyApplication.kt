@@ -10,8 +10,8 @@ import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.PlayLevelSetting
 import com.worksoc.goaicoach.shared.SearchTimeSettings
 import com.worksoc.goaicoach.shared.StoneColor
-import com.worksoc.goaicoach.shared.aiMoveAnalysisLimitWith
-import com.worksoc.goaicoach.shared.aiMoveSearchMode
+import com.worksoc.goaicoach.shared.policy.aiMoveAnalysisLimitWith
+import com.worksoc.goaicoach.shared.policy.aiMoveSearchMode
 
 fun shouldRequestAiTurn(
     isGameEnded: Boolean,

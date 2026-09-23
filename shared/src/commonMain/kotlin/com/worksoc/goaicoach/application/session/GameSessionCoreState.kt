@@ -19,7 +19,7 @@ import com.worksoc.goaicoach.application.topmoves.TopMoveAnalysisFailureDisplayP
 import com.worksoc.goaicoach.application.undo.UndoLocalStatePlan
 import com.worksoc.goaicoach.shared.BoardSize
 import com.worksoc.goaicoach.shared.GameState
-import com.worksoc.goaicoach.shared.MoveAnalysisSnapshot
+import com.worksoc.goaicoach.shared.policy.MoveAnalysisSnapshot
 import com.worksoc.goaicoach.shared.Ruleset
 
 data class GameSessionCoreState(

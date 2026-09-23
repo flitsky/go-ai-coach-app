@@ -1,5 +1,12 @@
-package com.worksoc.goaicoach.shared
+package com.worksoc.goaicoach.shared.policy
 
+import com.worksoc.goaicoach.shared.AnalysisLimit
+import com.worksoc.goaicoach.shared.EngineProfile
+import com.worksoc.goaicoach.shared.EngineSearchMode
+import com.worksoc.goaicoach.shared.MoveSelectionPolicy
+import com.worksoc.goaicoach.shared.PlayLevelGroup
+import com.worksoc.goaicoach.shared.PlayLevelSetting
+import com.worksoc.goaicoach.shared.SearchTimeSettings
 enum class TurnAnalysisPurpose {
     AiMoveSelection,
     HumanMoveReview,

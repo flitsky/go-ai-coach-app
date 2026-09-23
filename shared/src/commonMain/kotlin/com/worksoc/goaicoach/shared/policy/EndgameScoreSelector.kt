@@ -1,5 +1,11 @@
-package com.worksoc.goaicoach.shared
-
+package com.worksoc.goaicoach.shared.policy
+import com.worksoc.goaicoach.shared.CandidateMove
+import com.worksoc.goaicoach.shared.DeadStoneCleanupResult
+import com.worksoc.goaicoach.shared.EngineStatus
+import com.worksoc.goaicoach.shared.FinalScoreResult
+import com.worksoc.goaicoach.shared.Move
+import com.worksoc.goaicoach.shared.ScoreEstimate
+import com.worksoc.goaicoach.shared.StoneColor
 import kotlin.math.abs
 import kotlin.math.roundToInt
 

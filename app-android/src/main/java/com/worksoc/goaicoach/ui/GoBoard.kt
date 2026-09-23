@@ -67,7 +67,7 @@ import com.worksoc.goaicoach.shared.LegalMoveGenerator
 import com.worksoc.goaicoach.shared.Move
 import com.worksoc.goaicoach.shared.OwnershipEstimate
 import com.worksoc.goaicoach.shared.StoneColor
-import com.worksoc.goaicoach.shared.topMoveDeltaScoreLabel
+import com.worksoc.goaicoach.shared.policy.topMoveDeltaScoreLabel
 import kotlin.math.abs
 import kotlinx.coroutines.delay
 

@@ -1190,7 +1190,7 @@ class LayeringContractTest {
         val candidates = listOf(
             sharedRoot.resolve("diagnostic/DiagnosticEventModel.kt"),
             sharedRoot.resolve("engine/EngineOperationPolicy.kt"),
-            sharedRoot.resolve("MoveValueDisplay.kt"),
+            sharedRoot.resolve("policy/MoveValueDisplay.kt"),
         )
         val forbiddenImports = listOf(
             "import android.",
