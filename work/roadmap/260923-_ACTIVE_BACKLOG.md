@@ -108,7 +108,7 @@ export JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home
 ## ⚠️ 함정 색인 — 키워드가 지금 일에 걸릴 때만 전문을 연다
 
 > **전문은 전부 `docs/spec/PITFALLS.md`에 있다**(#194로 한 파일에 모았다, 2026-09-23).
-> 번호로 찾아 **그 번호만** 편다 — 76건을 처음부터 읽지 않는다.
+> 번호로 찾아 **그 번호만** 편다 — 81건을 처음부터 읽지 않는다.
 >
 > ⚠️ **전문과 색인이 어긋나면 색인이 옳다** — 색인은 계속 고쳐 왔고 전문은 각 세대가 쓴 시점에
 > 동결됐다. **전문을 고치지 말 것**: 새로 알게 된 것은 색인에 ⚠️로 적고, 새 함정이면 다음 번호를 딴다.
@@ -172,6 +172,9 @@ export JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home
 - **66** 표식으로 잘라 재는 소스 계약 — `substringAfter`는 표식을 못 찾으면 문자열 전체를 돌려줘, 이름을 바꾼 날 그물이 죽지 않고 **다른 것을 재기 시작한다**(초록인 채 아무것도 안 지킬 수 있다). 자르기 전에 `assertTrue(source.contains(marker))`로 표식 존재부터 단언할 것
 - **68** 계약 테스트의 하드코딩 경로 — `RepoPaths`로 일부 해소(`7841ed37`)했지만 22개 테스트가 아직 상대경로. 워크트리가 여럿이면 실행 위치별로 다른 트리를 검사하거나, 파일을 옮기는 순간 `FileNotFoundException`으로 동시에 터진다(원인이 "경계가 깨졌다"가 아니라 "파일이 없다"로 보인다). 파일 이동 전 22개 흡수가 선행
 - **70** 공용 인터페이스(`EngineCoreApi.syncStaticPosition` 등) 기본 구현 삭제는 순서를 뒤집을 것 — 공통 계약 테스트 스위트(Local/Remote/Stub 셋을 같은 시나리오로)를 **먼저** 만들고 삭제는 그 다음에. 먼저 지우면 흩어진 손 페이크 전부가 동시에 컴파일 에러가 된다
+- **77** 공유 작업 트리의 음성 대조는 `--rerun-tasks` 없이는 거짓 판독 — Gradle이 컴파일을 `UP-TO-DATE`로 건너뛰어 **"멀쩡한데 안 깨진다"** 는 정반대 결론이 나온다. 로그에서 컴파일 태스크가 실제로 돌았는지 눈으로 확인하거나 격리 워크트리에서. 함정 24(초록 ≠ 안전)의 거울상
+- **78** 공유 작업 트리에서 `build/test-results`의 테스트 개수는 믿을 수 없다 — 다른 세션이 필터 걸린 실행으로 덮어쓴다. 개수 대조는 빌드 산출물이 아니라 **소스에서** 셀 것(`git ls-tree`로 두 리비전의 `@Test`를 세는 식)
+- **81** 계기 테스트의 "갓 설치" 초기화 — `shared_prefs` **파일 삭제만으로는 안 된다**(안드로이드가 `SharedPreferences`를 프로세스 단위로 캐시해, 앞 테스트 설정을 그대로 물려받는다). 지우기 **전에** 같은 이름으로 열어 `clear().commit()`(`FreshAppState.resetToFreshInstallState()`). **단독 실행은 초록, 셋을 함께 돌리면 빨강**으로 나타나고 증상이 원인에서 멀다
 
 **빌드·릴리스·콘솔**
 - **4** R8 release — 스모크만으로 끝내지 말 것(대국·출석·1회권). ⚠️ *"release 실행 기록 없음"* 은 낡았다(813·901·902 실기, §0 B-3)
@@ -197,6 +200,7 @@ export JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home
 
 - **75** iOS 컴파일 게이트는 옳지만 `make test`(유일한 릴리스 게이트)에 넣지 말 것 — 아무것도 출하하지 않는 타깃의 컴파일 실패로 안드로이드 릴리스가 막히면 안 된다. 별도 `make test-ios`로 분리, iOS가 실제로 출하하는 날 되돌릴 것
 - **76** 죽은 스캔을 `require`로 되살리는 조치는 실행 즉시 초록이 아니라 위반이 쏟아질 각오를 하고 넣을 것 — 오래 검사되지 않던 구간의 실제 위반이 무더기로 드러날 수 있다. `make test`가 유일한 릴리스 게이트라 드러난 위반은 **같은 스레드가 끝까지 초록으로 만들고 닫아야** 한다(위반 0건은 보장이 아니라 그때의 결과일 뿐)
+- **79** Lint `abortOnError = true`는 새 **Error** 만 막고 새 **Warning** 은 통과시킨다(`warningsAsErrors = false`이므로) — 이 게이트로 얻는 보장은 "새 Error 0"이지 "새 경고 0"이 아니다. `NewApi` 음성 대조는 인라인되는 상수가 아니라 **실제 메서드 호출**로 할 것
 
 **광고·결제**
 - **8** `AndroidBillingClient` 공유 — 상품 종류는 **호출부가 선언**(#136에서 기본값 제거)
@@ -557,7 +561,7 @@ _(없음)_
 | 8세대(봉인) — 완료 이력·함정 58~66 전문·해소된 U | `260919-260922_STUDY_CONTENT_AND_1_0_RELEASE.md` |
 | **리팩토링 진행** — 이 트랙의 일감·진척은 전부 저기 있다(번호 체계가 다르다) | `260923-_REFACTORING_BACKLOG.md` — 「진행 중」 → 「예정사항」 순으로 집는다 · 착수 프로토콜과 함정 색인이 그 안에 있다 |
 | **아키텍처 실측과 처방** — 계층 일감은 여기서 나온다 | `260923-_ARCHITECTURE_DIAGNOSIS_AND_REFACTORING.md` — §1 무엇이 실제로 깨져 있나 · §3 목표 아키텍처 · §4 착수 전 함정(→ `PITFALLS.md` 67~76) |
-| **함정 전문 1~76** | `docs/spec/PITFALLS.md` — 번호로 찾아 그 번호만 편다 |
+| **함정 전문 1~81** | `docs/spec/PITFALLS.md` — 번호로 찾아 그 번호만 편다 |
 | 출시·콘솔 절차, 등재문, 체크리스트 | `work/plans/GOOGLE_PLAY_LAUNCH_PLAN.md` · `work/play-store-assets/store_listing.txt` |
 | 화면 구조·기능 명세 | `docs/spec/APP_IA_AND_UI_SPEC.md` |
 | 권한·게이팅 정책 | `docs/spec/FEATURE_ACCESS_PRINCIPLES.md` |

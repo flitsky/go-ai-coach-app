@@ -30,7 +30,7 @@
 **착수 직후 할 것 넷** — 순서가 있다.
 
 1. **아래 「⚠️ 반드시 알아야 할 함정」을 읽는다.** 걸리는 키워드가 있으면 `docs/spec/PITFALLS.md`의
-   해당 번호 전문을 편다. **79건을 다 읽지 않는다.**
+   해당 번호 전문을 편다. **81건을 다 읽지 않는다.**
 2. **진단서에서 그 항목이 속한 절을 읽는다.** 왜 이 일을 하는지, 무엇을 건드리면 안 되는지가 거기 있다.
 3. **선행 항목이 완료인지 확인한다.** 아래 「의존 그래프」 참고. 안 끝났으면 **집지 않는다.**
 4. **끝내기 전 `make test TARGET=emu`가 초록**이어야 한다. 빨간 채로 닫지 않는다.
@@ -74,6 +74,10 @@
   테스트를 돌려 덮어쓴다. 개수 대조는 **소스에서** 센다(`git ls-tree`로 두 리비전의 `@Test`를 세는 식).
 - **함정 79 — Lint `abortOnError=true`는 새 *Error* 만 막고 새 *Warning* 은 통과시킨다.**
   `warningsAsErrors=false`이므로 그렇다. 이 게이트로 얻는 보장은 **"새 Error 0"** 이지 "새 경고 0"이 아니다.
+- **함정 81 — 계기 테스트에서 `shared_prefs` 파일만 지우는 것은 초기화가 아니다.** 🔴 안드로이드가
+  `SharedPreferences`를 **프로세스 단위로 캐시**해, 같은 프로세스의 다음 테스트가 앞 테스트 설정을
+  그대로 물려받는다. **단독 실행은 초록, `make test-device`로 셋을 함께 돌리면 빨강**이라
+  고친 줄 알고 닫기 쉽다. 지우기 **전에** `clear().commit()`(`FreshAppState.resetToFreshInstallState()`).
 - **(함정 아님, 환경)** `make test`는 **기기가 둘 이상 붙어 있으면 `doctor`에서 죽는다.**
   `make test TARGET=emu`로 돌릴 것. 증상이 "테스트가 빨갛다"로 보여 멀쩡한 작업을 회귀로 오판하게 한다.
 
@@ -367,7 +371,7 @@ _(없음 — 아래 「예정사항」 첫 항목부터 집는다)_
 ## 관련 문서
 
 - `work/roadmap/260923-_ARCHITECTURE_DIAGNOSIS_AND_REFACTORING.md` — **설계 근거·실측·함정 A~J·처방**. 착수 전 해당 절을 읽는다
-- `docs/spec/PITFALLS.md` — 함정 1~76 전문
+- `docs/spec/PITFALLS.md` — 함정 1~81 전문
 - `docs/ARCHITECTURE.md` — 7계층 원칙(앱 비종속)
 - `docs/spec/GO_AI_COACH_ARCHITECTURE_ROADMAP.md` — 계층별 파일 매핑(정본)
 - `work/roadmap/260923-_ACTIVE_BACKLOG.md` — **기능** 일감(이 문서와 번호 체계가 다르다)

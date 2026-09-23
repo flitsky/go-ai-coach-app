@@ -1,8 +1,8 @@
-# 함정 전문 1~79
+# 함정 전문 1~81
 
 > **이 문서는 읽는 문서가 아니라 찾는 문서다.**
 > 활성 백로그(`work/roadmap/260923-_ACTIVE_BACKLOG.md`)의 **함정 색인**에서 지금 하는 일에 걸리는
-> 키워드를 먼저 고르고, **그 번호만** 여기서 편다. 79건을 처음부터 읽지 않는다.
+> 키워드를 먼저 고르고, **그 번호만** 여기서 편다. 81건을 처음부터 읽지 않는다.
 
 **무엇인가** — 이 저장소가 **실제로 한 번씩 밟은 것**들이다. 지어낸 주의사항이 아니라, 대부분
 버그로 한 번 겪고 고친 뒤 *"다음 사람이 또 밟겠다"* 싶어 적어 둔 것이다. 그래서 문장이
@@ -1011,3 +1011,27 @@
       따로 판단할 일이다(지금 baseline은 1 error + 74 warnings + 9 hints다).
     - ⚠️ 덤: lint의 `NewApi`는 **컴파일 시 인라인되는 상수 참조를 일부러 건너뛴다.**
       `PendingIntent.FLAG_MUTABLE`(API 31 상수)로는 음성 대조가 안 걸린다 — **실제 메서드 호출**로 해야 한다.
+
+81. **⚠️ 계기 테스트에서 `shared_prefs`의 파일만 지우는 것은 초기화가 아니다 — 안드로이드는 `SharedPreferences`를 프로세스 단위로 캐시한다** (2026-09-24, refactor backlog #58 실측)
+
+    androidTest APK는 앱과 **프로세스·저장소를 공유**하므로, 스모크 테스트 셋이 전부 `@Before`에서
+    `prefsDir.listFiles()?.forEach { it.delete() }` 한 줄로 *"갓 설치"* 상태를 만들고 있었다.
+    **그 한 줄은 디스크만 지운다.** `ContextImpl`이 이름별로 들고 있는 `SharedPreferencesImpl`은
+    메모리에 그대로 살아 있어서, 같은 프로세스의 **다음 테스트가 앞 테스트의 설정을 물려받는다**
+    (그리고 다음 쓰기에서 파일까지 되살아난다).
+    - #58에서 실제로 걸렸다: 먼저 도는 `AppLaunchSmokeTest`(진짜 `MainActivity`)가 남긴
+      판 크기·좌석·봇 캐릭터를 `NewGameBoardTapSmokeTest`가 물려받아 *"흑은 사람이 기본"* 이라는
+      전제가 깨졌다. **테스트 하나만 돌리면 초록, `make test-device`로 셋을 함께 돌리면 빨강**이다 —
+      그래서 단독 실행으로 고친 줄 알고 닫기 쉽다.
+    - ⚠️ **증상이 원인에서 멀다.** 실패는 마지막 줄 `assertIsDisplayed()`에서 나므로 *"착수가 안
+      된다"* 로 읽히지만, 실제로는 좌석이 AiVsHuman이 되어 로비의 시작 버튼이 잠긴 채
+      **대국 화면에 들어간 적조차 없었다.**
+    - **처방**: 지우기 **전에** 같은 이름으로 열어 `clear().commit()` 한다
+      (`app-android/src/androidTest/java/com/worksoc/goaicoach/smoke/FreshAppState.kt`의
+      `resetToFreshInstallState()`가 그 자리다 — 세 테스트가 공유한다).
+    - 프로세스 전역 `object`도 같은 성질이다. `GuideTargetSpots`처럼 `resetForTest()`가 있는 것은
+      함께 되감되, `SplashVisibility`는 **일부러 되감지 않는다** — 되감으면 터치를 먹는 전면
+      스플래시가 매 테스트 되살아난다(남아 있는 *"이미 재생됨"* 은 오버레이를 없애는 쪽이라 무해하다).
+    - ⚠️ 덤: `assertIsDisplayed()`의 *"The component is not displayed!"* 는 **노드를 못 찾은
+      경우에도** 나온다. 그 문구를 *"떠 있는데 안 보인다"* 로 읽으면 레이아웃을 파게 된다 —
+      실제로 볼 것은 시맨틱 트리 덤프(`printToString()`)이고, 그것이 #58의 원인을 한 번에 보여줬다.
