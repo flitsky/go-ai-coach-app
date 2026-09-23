@@ -44,10 +44,18 @@
 
 개발자가 원격 기기 로그를 볼 때는 ADB `run-as`로 두 파일을 함께 받는다.
 
+⚠️ **패키지명 주의**: `com.worksoc.goaicoach`는 Kotlin `namespace`일 뿐이다. 실제 설치 패키지
+(`applicationId`, `run-as`가 매칭하는 값)는 `com.zenit9hub.ai.baduk`다 — `app-android/build.gradle.kts`의
+`defaultConfig`에서 직접 확인할 것(`Makefile`의 `APP_PACKAGE` 변수도 같은 값을 읽는다).
+
 ```bash
-adb shell run-as com.worksoc.goaicoach cat files/diagnostic_events.jsonl
-adb shell run-as com.worksoc.goaicoach cat files/runtime_events.log
+adb shell run-as com.zenit9hub.ai.baduk cat files/diagnostic_events.jsonl
+adb shell run-as com.zenit9hub.ai.baduk cat files/runtime_events.log
 ```
+
+⚠️ **debug 빌드에서만 동작한다.** `run-as`는 `android:debuggable=true`인 빌드에서만 허용된다 — 업로드용
+번들(`playInternal`/`release`)은 `isDebuggable=false`라 위 명령이 그대로 거부된다(`docs/spec/PITFALLS.md` 함정
+56·57 참고). 실기 로그를 봐야 하면 `make dev`/`make install-dev`로 만든 debug 빌드를 쓸 것.
 
 이벤트 종류 전체 목록, 필드 스키마, 외부 전송(Firebase/Sentry 등) 정책은 `DIAGNOSTIC_EVENT_SCHEMA.md`를 따른다.
 
