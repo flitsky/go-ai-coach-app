@@ -195,15 +195,36 @@ Go, Baduk, Weiqi, igo, Go AI, Go game, Go review, learn Go, Go lessons, Go coach
 ⚠️ **아래 영어 블록은 낡았다**(811 기준, 「이름이 바뀌었습니다」 시절). 영어 등록정보를 여는 날
    **다시 쓸 것** — 위 한국어를 옮기면 된다. 지금 등록정보는 한국어 하나뿐이라 넣지 않는다.
 
-──────── 영어 등록정보를 추가한 뒤 (위 블록에 이어 붙인다) ────────
-<en-US>
-Renamed to Pocket Go Coach. A coach in your pocket - play and review right on your device, with no connection.
+──────── 영어 — 한국어와 **같은 기준선**을 고를 것 (2026-09-24 신설) ────────
 
-· Rotating the screen no longer loses the game you were playing
-· Stones follow your finger even with the magnifier off
-· First-run setup is down to three questions
-· Settings are in one place, and board setup is locked during a game
-· The AI answers immediately by default
+⚠️ **811 시절 본문을 2026-09-24에 통째로 버렸다.** 그 자리에는 *"Renamed to Pocket Go
+   Coach"* · 화면 회전 · **돋보기**(#188이 기능째 삭제했다) 이야기가 남아 있었다 —
+   **없는 기능을 말하는 출시 노트**였고, 영어 등재정보를 여는 순간 그것이 나갈 뻔했다.
+⚠️ **위 한국어에서 고른 것과 같은 기준선(Ⓐ/Ⓑ)을 고를 것.** 두 언어가 다른 범위를 말하면
+   같은 업데이트를 두 가지로 설명하는 셈이 된다.
+⚠️ 길이: Ⓐ 466자 · Ⓑ 492자 (한도 500).
+
+── Ⓐ 909 이상이 이미 라이브일 때 ──
+<en-US>
+Learning is here. Six lessons on the rules of Go and five on basic shape, each played out on the board one move at a time.
+
+· Step back through a finished game, then play on from the move you regret
+· With Google account backup on, most of your records come back after a reinstall or a new phone
+· Settings trimmed to what you actually use
+· The ghost stone sits further above your finger, hiding less of the board
+· When a game ends, who won and how stays on screen
+</en-US>
+
+── Ⓑ 905가 그대로 라이브일 때 (구독 문단이 앞에 붙는다) ──
+<en-US>
+Premium subscription is here (billed monthly) — no ads on the AI coaching features, and every opponent open. All of it stays reachable as before, with a short ad or a check-in pass.
+
+Learning is here too: six lessons on the rules and five on basic shape, played out on the board.
+
+· Step back through a finished game and play on from the move you regret
+· With Google backup on, most records return after a reinstall
+· Settings trimmed down
+· When a game ends, who won and how stays on screen
 </en-US>
 ──────────────────────────────────────────────────────────────
 
