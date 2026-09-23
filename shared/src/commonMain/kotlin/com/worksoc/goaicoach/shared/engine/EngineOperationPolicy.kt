@@ -129,16 +129,6 @@ sealed class EngineOperationApplyPlan {
     data class Discard(val discard: EngineOperationResultGuard.Discard) : EngineOperationApplyPlan()
 }
 
-fun positionScopedOperationToken(
-    kind: String,
-    state: GameState,
-): PositionScopedOperationToken =
-    PositionScopedOperationToken(
-        kind = kind,
-        positionFingerprint = state.analysisFingerprint(),
-        moveCount = state.moves.size,
-    )
-
 fun engineOperationRequest(
     kind: EngineOperationKind,
     state: GameState,
