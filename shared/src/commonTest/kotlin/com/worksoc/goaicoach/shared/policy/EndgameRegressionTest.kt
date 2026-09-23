@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.shared
+package com.worksoc.goaicoach.shared.policy
 
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.BoardSize
@@ -12,8 +12,6 @@ import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
 import com.worksoc.goaicoach.shared.enginecontract.EngineStatus
 import com.worksoc.goaicoach.shared.enginecontract.ScoreEstimate
-import com.worksoc.goaicoach.shared.policy.EndgameScoreSelector
-import com.worksoc.goaicoach.shared.policy.EndgameScoreSource
 import com.worksoc.goaicoach.shared.scoring.BoardAreaScorer
 import com.worksoc.goaicoach.shared.scoring.BoardScorer
 import kotlin.test.Test

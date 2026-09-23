@@ -1,11 +1,5 @@
-package com.worksoc.goaicoach.shared
+package com.worksoc.goaicoach.shared.content
 
-import com.worksoc.goaicoach.shared.content.StudyLesson
-import com.worksoc.goaicoach.shared.content.StudyLessonId
-import com.worksoc.goaicoach.shared.content.StudyLessonStep
-import com.worksoc.goaicoach.shared.content.StudyLessonTrack
-import com.worksoc.goaicoach.shared.content.studyLessons
-import com.worksoc.goaicoach.shared.content.studyLessonsFor
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.BoardRules
 import com.worksoc.goaicoach.shared.domain.BoardSize

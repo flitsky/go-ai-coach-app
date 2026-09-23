@@ -1,15 +1,6 @@
-package com.worksoc.goaicoach.shared
+package com.worksoc.goaicoach.shared.domain
 
 import com.worksoc.goaicoach.match.MatchReferee
-import com.worksoc.goaicoach.shared.domain.BoardCoordinate
-import com.worksoc.goaicoach.shared.domain.BoardSize
-import com.worksoc.goaicoach.shared.domain.DeadStoneCleaner
-import com.worksoc.goaicoach.shared.domain.DeadStoneDetector
-import com.worksoc.goaicoach.shared.domain.DeadStoneRemoval
-import com.worksoc.goaicoach.shared.domain.GameState
-import com.worksoc.goaicoach.shared.domain.Move
-import com.worksoc.goaicoach.shared.domain.Ruleset
-import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.scoring.BoardAreaScorer
 import com.worksoc.goaicoach.shared.scoring.BoardScorer
 import com.worksoc.goaicoach.shared.scoring.BoardTerritoryScorer

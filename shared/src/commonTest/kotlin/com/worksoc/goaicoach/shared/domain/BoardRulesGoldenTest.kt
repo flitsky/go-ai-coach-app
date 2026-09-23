@@ -1,11 +1,5 @@
-package com.worksoc.goaicoach.shared
+package com.worksoc.goaicoach.shared.domain
 
-import com.worksoc.goaicoach.shared.domain.BoardCoordinate
-import com.worksoc.goaicoach.shared.domain.BoardRules
-import com.worksoc.goaicoach.shared.domain.BoardSize
-import com.worksoc.goaicoach.shared.domain.GameState
-import com.worksoc.goaicoach.shared.domain.Move
-import com.worksoc.goaicoach.shared.domain.StoneColor
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith

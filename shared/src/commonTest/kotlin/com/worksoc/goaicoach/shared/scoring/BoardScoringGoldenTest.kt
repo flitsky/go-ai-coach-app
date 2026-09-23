@@ -1,14 +1,17 @@
-package com.worksoc.goaicoach.shared
+package com.worksoc.goaicoach.shared.scoring
 
 import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.DeadStoneCleaner
 import com.worksoc.goaicoach.shared.domain.DeadStoneDetector
+import com.worksoc.goaicoach.shared.domain.EmptyPointOwnership
 import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.domain.GoldenBoard
 import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.domain.StoneColor
-import com.worksoc.goaicoach.shared.scoring.BoardAreaScorer
-import com.worksoc.goaicoach.shared.scoring.BoardScorer
-import com.worksoc.goaicoach.shared.scoring.BoardTerritoryScorer
+import com.worksoc.goaicoach.shared.domain.areaScorerOwnership
+import com.worksoc.goaicoach.shared.domain.goldenBoard
+import com.worksoc.goaicoach.shared.domain.territoryScorerOwnership
+import com.worksoc.goaicoach.shared.domain.toState
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue

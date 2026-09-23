@@ -1,23 +1,9 @@
-package com.worksoc.goaicoach.shared
+package com.worksoc.goaicoach.shared.policy
 
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisPreset
 import com.worksoc.goaicoach.shared.enginecontract.DifficultyProfile
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
-import com.worksoc.goaicoach.shared.policy.CandidateBucket
-import com.worksoc.goaicoach.shared.policy.DefaultSearchTimeLimit
-import com.worksoc.goaicoach.shared.policy.MoveSelectionPolicy
-import com.worksoc.goaicoach.shared.policy.PlayLevelGroup
-import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
-import com.worksoc.goaicoach.shared.policy.SearchTimeLimit
-import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
-import com.worksoc.goaicoach.shared.policy.TurnAnalysisPurpose
-import com.worksoc.goaicoach.shared.policy.aiMoveAnalysisLimitWith
-import com.worksoc.goaicoach.shared.policy.aiMoveSearchMode
-import com.worksoc.goaicoach.shared.policy.candidateBucketRange
-import com.worksoc.goaicoach.shared.policy.resolveIndexRange
-import com.worksoc.goaicoach.shared.policy.targetBucket
-import com.worksoc.goaicoach.shared.policy.turnAnalysisLimitFor
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
