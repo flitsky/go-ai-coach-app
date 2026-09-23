@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.ui
 
-import java.io.File
+import com.worksoc.goaicoach.architecture.RepoPaths
+import com.worksoc.goaicoach.architecture.readContractSource
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -104,7 +105,7 @@ class DiagnosticLogDialogContractTest {
     }
 
     private fun sourceOf(fileName: String): String =
-        File("src/main/java/com/worksoc/goaicoach/ui/$fileName").readText()
+        RepoPaths.uiFile(fileName).readContractSource()
 
     private fun codeOnly(source: String): String = source
         .replace(Regex("""/\*.*?\*/""", RegexOption.DOT_MATCHES_ALL), "")

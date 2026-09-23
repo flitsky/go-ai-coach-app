@@ -1,5 +1,7 @@
 package com.worksoc.goaicoach.ui
 
+import com.worksoc.goaicoach.architecture.RepoPaths
+import com.worksoc.goaicoach.architecture.readContractSource
 import java.io.File
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -20,8 +22,14 @@ import org.junit.Test
  */
 class StoreListingPaymentContractTest {
 
-    private val repoRoot = generateSequence(File(".").canonicalFile) { it.parentFile }
-        .first { File(it, "settings.gradle.kts").exists() }
+    /**
+     * refactor backlog #63: `File(".")` 상향 탐색을 자체로 다시 하지 않는다 — 이 저장소는
+     * 워크트리를 여러 개 두고 세션이 나눠 쓰므로, 실행 디렉터리가 속한 트리로 검사 대상이
+     * 미끄러질 수 있다(`RepoPaths.root`의 KDoc 참고). `RepoPaths.root`는 Gradle이
+     * `-Drepo.root=<rootDir>`로 못박아 주입한 값을 먼저 보고, 없을 때만 이 상향 탐색으로
+     * 폴백한다 — 그 주입을 받지 못하던 이 파일만의 재탐색을 없애고 흡수한다.
+     */
+    private val repoRoot = RepoPaths.root
 
     /**
      * ⚠️ **주석·메모 영역을 뺀 「사용자에게 보이는 부분」만 본다.** 파일 아래쪽 「주의」 절은
@@ -29,7 +37,7 @@ class StoreListingPaymentContractTest {
      * 경계는 `[출시 노트]`다(그 위까지가 등재정보 본문).
      */
     private val listingBody: String = File(repoRoot, "work/play-store-assets/store_listing.txt")
-        .readText()
+        .readContractSource()
         .substringBefore("[출시 노트]")
 
     /**
@@ -105,9 +113,34 @@ class StoreListingPaymentContractTest {
      * 되돌리기 쉽고(문장 하나다), 되돌려도 **아무 테스트도 빨개지지 않던** 자리였다.
      * ⚠️ 검사 대상은 `[출시 노트]` 위의 **본문뿐**이다(위 `listingBody` 주석) — 그 아래 기록은
      * 옛 문장을 일부러 인용한다.
+     *
+     * ## ⚠️ 2026-09-23에 **어근 정규식**을 앞에 세웠다 (#193)
+     * 문구 셋만 보던 그물이 `[이런 분께 추천합니다]`의 *"계정 가입 없이…"* 를 **놓치고 있었다.**
+     * #169가 「세 곳」만 손대고 끝난 뒤 **네 번째 자리가 그대로 살아남았는데도 초록이었다** —
+     * 그물이 그 표현을 몰랐기 때문이다. 아래 문구 목록은 **메시지를 또렷하게 하려고 남겨 둔 것**이고,
+     * 실제로 지키는 것은 그 앞의 정규식이다.
      */
     @Test
     fun theListingNoLongerSellsTheAbsenceOfSignIn() {
+        // ⚠️ **어근으로 넓힌 그물이 본체다**(2026-09-23, #193). 아래 문구 목록만 있던 시절,
+        // `[이런 분께 추천합니다]`의 *"**계정 가입 없이** 부담 없이 바로 시작하고 싶은 분"* 이
+        // **셋 다 비껴가** 살아남았다 — #169가 초록이었던 것은 다 지웠기 때문이 아니라
+        // **그물이 그 표현을 몰라서**였다(함정 24: 초록 ≠ 안전).
+        //
+        // 그래서 「가입/계정/로그인」 **어근**에 「없이」가 따라붙는 문장을 통째로 잡는다.
+        // ⚠️ **목록에 한 줄 더 넣는 것으로 끝내지 말 것** — 다음에 또 다른 표현이 나온다.
+        //   *"가입 절차 없이"*·*"계정 없이"*·*"등록 없이"* 가 전부 이 정규식에 걸린다.
+        // ⚠️ 「인터넷 없이」는 **걸리지 않는다** — 그건 판매해도 되는 말이고, 실제로 판매 중이다.
+        val sellsAbsenceOfAccount = Regex("(로그인|회원가입|계정\\s*가입|가입|계정|등록)[^\\n]{0,8}없")
+        sellsAbsenceOfAccount.find(listingBody)?.let { hit ->
+            val line = listingBody.lines().first { it.contains(hit.value) }
+            throw AssertionError(
+                "등재문이 「계정이 없다는 것」을 판매 문구로 쓴다: \"${hit.value}\"\n  → $line\n" +
+                    "#170이 로그인을 켜는 날 정반대가 된다(백로그 #169·#193). 로그인을 약속하는 " +
+                    "문구는 **켠 뒤에** 넣을 것(함정 51).",
+            )
+        }
+
         listOf("로그인 없이", "로그인·회원가입 없이", "회원가입 없이").forEach { phrase ->
             assertTrue(
                 "등재정보 본문에 \"$phrase\"가 판매 문구로 돌아왔다 — #170이 로그인을 켜는 날 " +

@@ -1,11 +1,10 @@
-package com.worksoc.goaicoach.middleware
+package com.worksoc.goaicoach.application.analysis
 
-import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheEntry
-import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheKey
-import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOrigin
-import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheStore
-import com.worksoc.goaicoach.application.analysis.TrustedPositionAnalysisCacheProvider
-import com.worksoc.goaicoach.application.analysis.shouldReplacePositionAnalysisCacheEntry
+// refactor backlog #64(260923): 이 테스트가 middleware 패키지에 남아 있던 것은 #28이 클래스만
+// application/analysis로 옮기고(commonMain) 이 파일(commonTest)은 자기 담당 밖이라 손대지 않은
+// 결과였다 — 그래서 같은 패키지가 됐는데도 `package com.worksoc.goaicoach.middleware`를 계속
+// 선언하는 고아 상태였다. git mv로 옮기고 패키지 선언을 맞추니 위 7개 import는 전부 자기
+// 패키지를 향하던 것이라(#28이 추가한 한 줄 포함) 전부 불필요해져 지운다.
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.AnalysisResult
 import com.worksoc.goaicoach.shared.EngineSearchMode

@@ -1,5 +1,8 @@
 package com.worksoc.goaicoach.ui
 
+import com.worksoc.goaicoach.architecture.RepoPaths
+import com.worksoc.goaicoach.architecture.readContractSource
+import com.worksoc.goaicoach.architecture.readContractSourceLines
 import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -18,15 +21,21 @@ import org.junit.Test
  */
 class AppNameContractTest {
 
-    private val repoRoot = generateSequence(File(".").canonicalFile) { it.parentFile }
-        .first { File(it, "settings.gradle.kts").exists() }
+    /**
+     * refactor backlog #63: `File(".")` 상향 탐색을 자체로 다시 하지 않는다 — 이 저장소는
+     * 워크트리를 여러 개 두고 세션이 나눠 쓰므로, 실행 디렉터리가 속한 트리로 검사 대상이
+     * 미끄러질 수 있다(`RepoPaths.root`의 KDoc 참고). `RepoPaths.root`는 Gradle이
+     * `-Drepo.root=<rootDir>`로 못박아 주입한 값을 먼저 보고, 없을 때만 이 상향 탐색으로
+     * 폴백한다 — 그 주입을 받지 못하던 이 파일만의 재탐색을 없애고 흡수한다.
+     */
+    private val repoRoot = RepoPaths.root
 
     private val resourceName = Regex("""<string name="app_name"[^>]*>([^<]+)</string>""")
-        .find(File(repoRoot, "app-android/src/main/res/values/strings.xml").readText())
+        .find(File(repoRoot, "app-android/src/main/res/values/strings.xml").readContractSource())
         ?.groupValues?.get(1)
 
     private val inAppName = Regex("""appTitle = "([^"]+)"""")
-        .find(File(repoRoot, "app-android/src/main/java/com/worksoc/goaicoach/ui/UiStringsKo.kt").readText())
+        .find(File(repoRoot, "app-android/src/main/java/com/worksoc/goaicoach/ui/UiStringsKo.kt").readContractSource())
         ?.groupValues?.get(1)
 
     /**
@@ -41,7 +50,7 @@ class AppNameContractTest {
      * 날짜 붙인 폴더/파일을 추가하는 것도 허용). 옛 라운드 폴더를 찾을 땐 git 히스토리를 본다.
      */
     private val storeName = File(repoRoot, "work/play-store-assets/store_listing.txt")
-        .readLines()
+        .readContractSourceLines()
         .let { lines -> lines.getOrNull(lines.indexOfFirst { it.startsWith("[앱 이름]") } + 1)?.trim() }
 
     /**
@@ -113,13 +122,13 @@ class AppNameContractTest {
         val sites = mapOf(
             "런타임 로그 `app=`(RuntimeEventApplication.kt)" to
                 Regex("""const val RuntimeAppName = "([^"]+)"""")
-                    .find(File(shared, "runtime/RuntimeEventApplication.kt").readText())?.groupValues?.get(1),
+                    .find(File(shared, "runtime/RuntimeEventApplication.kt").readContractSource())?.groupValues?.get(1),
             "진단 리포트 제목(DebugReportSections.kt)" to
                 Regex("""appendLine\("([^"]+) debug report"\)""")
-                    .find(File(shared, "debugreport/DebugReportSections.kt").readText())?.groupValues?.get(1),
+                    .find(File(shared, "debugreport/DebugReportSections.kt").readContractSource())?.groupValues?.get(1),
             "클립보드 라벨(DebugReportBuilder.kt)" to
                 Regex("""clipboardLabel = "([^"]+) debug report"""")
-                    .find(File(shared, "debugreport/DebugReportBuilder.kt").readText())?.groupValues?.get(1),
+                    .find(File(shared, "debugreport/DebugReportBuilder.kt").readContractSource())?.groupValues?.get(1),
         )
         sites.forEach { (where, name) ->
             assertTrue("$where 에서 앱 이름을 찾지 못했다 — 이 계약의 전제가 무너졌다.", name != null)
@@ -134,7 +143,7 @@ class AppNameContractTest {
     @Test
     fun noPlaceholderWordingSurvivesInUserFacingNames() {
         val mainActivity = File(repoRoot, "app-android/src/main/java/com/worksoc/goaicoach/MainActivity.kt")
-            .readText()
+            .readContractSource()
             .replace(Regex("""/\*.*?\*/""", RegexOption.DOT_MATCHES_ALL), "")
             .lines().joinToString("\n") { it.substringBefore("//") }
         assertFalse(

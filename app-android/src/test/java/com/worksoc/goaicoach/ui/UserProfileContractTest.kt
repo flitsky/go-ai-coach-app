@@ -1,5 +1,7 @@
 package com.worksoc.goaicoach.ui
 
+import com.worksoc.goaicoach.architecture.RepoPaths
+import com.worksoc.goaicoach.architecture.readContractSource
 import com.worksoc.goaicoach.persistence.UserProfileStore
 import java.io.File
 import org.junit.Assert.assertEquals
@@ -15,15 +17,15 @@ import org.junit.Test
  */
 class UserProfileContractTest {
 
-    private fun source(path: String): String =
-        File(path).readText()
+    private fun source(file: File): String =
+        file.readContractSource()
             .replace(Regex("""/\*.*?\*/""", RegexOption.DOT_MATCHES_ALL), "")
             .lines()
             .filterNot { it.trimStart().startsWith("import ") }
             .joinToString("\n") { it.substringBefore("//") }
 
-    private val store = source("src/main/java/com/worksoc/goaicoach/persistence/UserProfileStore.kt")
-    private val myPage = source("src/main/java/com/worksoc/goaicoach/ui/MyPageScreen.kt")
+    private val store = source(RepoPaths.appAndroid("persistence/UserProfileStore.kt"))
+    private val myPage = source(RepoPaths.uiFile("MyPageScreen.kt"))
 
     /**
      * ⚠️ **`UserPreferencesSnapshot`에 넣으면 조용히 사라진다.** 그 저장소는 저장할 때마다
@@ -62,7 +64,7 @@ class UserProfileContractTest {
     fun theNicknameDialogIsItsOwnFile() {
         assertTrue(
             "`UserNicknameDialog.kt`가 없다 — 팝업을 화면 안에 인라인으로 두면 가이드 그물 밖이다.",
-            File("src/main/java/com/worksoc/goaicoach/ui/UserNicknameDialog.kt").exists(),
+            RepoPaths.uiFile("UserNicknameDialog.kt").exists(),
         )
         assertFalse(
             "마이 페이지가 `AlertDialog`를 직접 그린다 — 팝업은 별도 파일로 낼 것.",

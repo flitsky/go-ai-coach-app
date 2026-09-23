@@ -8,6 +8,7 @@ import com.worksoc.goaicoach.application.runtime.runtimeEngineOperationDiscarded
 import com.worksoc.goaicoach.application.time.currentEpochMillis
 import com.worksoc.goaicoach.shared.GameState
 import com.worksoc.goaicoach.shared.diagnostic.DiagnosticEvent
+import com.worksoc.goaicoach.shared.engine.EngineOperationResultGuard
 
 internal data class EngineOperationDiscardLogPlan(
     val runtimeLog: String,

@@ -2,6 +2,8 @@ package com.worksoc.goaicoach.ui
 
 import com.worksoc.goaicoach.application.botcharacter.BotCharacterCatalog
 import com.worksoc.goaicoach.application.botcharacter.BotUnlockSource
+import com.worksoc.goaicoach.architecture.RepoPaths
+import com.worksoc.goaicoach.architecture.readContractSource
 import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -24,8 +26,8 @@ class BotCharacterAvatarTest {
      * 스케일하므로, 안드로이드가 **디코드 시점에** 밀도로 또 늘리고 줄일 이유가 없다.
      */
     private val drawableDirs = listOf(
-        File("src/main/res/drawable-nodpi"),
-        File("src/main/res/drawable"),
+        RepoPaths.appAndroidMain("res/drawable-nodpi"),
+        RepoPaths.appAndroidMain("res/drawable"),
     )
 
     /** 확장자를 모르는 채로 찾는다 — 벡터에서 래스터로 갈아탄 뒤 확장자가 자산 종류에 따라 다르다. */
@@ -97,7 +99,7 @@ class BotCharacterAvatarTest {
      */
     @Test
     fun avatarResolverListsEveryCatalogReference() {
-        val source = File("src/main/java/com/worksoc/goaicoach/ui/BotCharacterAvatar.kt").readText()
+        val source = RepoPaths.uiFile("BotCharacterAvatar.kt").readContractSource()
         val unlisted = BotCharacterCatalog.all.filter { character ->
             !source.contains("\"${character.avatarRef}\" -> R.drawable.${character.avatarRef}")
         }

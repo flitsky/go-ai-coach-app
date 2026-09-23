@@ -13,7 +13,7 @@ import com.worksoc.goaicoach.application.score.FinalScoreDisplayPlan
 import com.worksoc.goaicoach.application.score.ScoreEstimateDisplayPlan
 import com.worksoc.goaicoach.application.score.ScoreEstimateFailureDisplayPlan
 import com.worksoc.goaicoach.application.topmoves.TopMoveAnalysisFailureDisplayPlan
-import com.worksoc.goaicoach.application.engine.operation.EngineOperationResultGuard
+import com.worksoc.goaicoach.shared.engine.EngineOperationResultGuard
 import com.worksoc.goaicoach.application.score.ScoreSyncCompletionApplyPlan
 import com.worksoc.goaicoach.application.undo.UndoLocalStatePlan
 import com.worksoc.goaicoach.shared.GameState

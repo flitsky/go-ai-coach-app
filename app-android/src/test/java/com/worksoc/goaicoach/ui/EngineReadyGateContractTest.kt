@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.ui
 
-import java.io.File
+import com.worksoc.goaicoach.architecture.RepoPaths
+import com.worksoc.goaicoach.architecture.readContractSource
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -24,7 +25,7 @@ import org.junit.Test
  */
 class EngineReadyGateContractTest {
 
-    private val lobby = File("src/main/java/com/worksoc/goaicoach/ui/GameSetupLobby.kt").readText()
+    private val lobby = RepoPaths.uiFile("GameSetupLobby.kt").readContractSource()
         .replace(Regex("""/\*.*?\*/""", RegexOption.DOT_MATCHES_ALL), "")
         .lines().joinToString("\n") { it.substringBefore("//") }
 

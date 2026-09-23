@@ -45,13 +45,25 @@ Scope cuts (deliberate, documented rather than silently guessed at):
     request/response, so there is no meaningful way to offer GTP's
     stateful search-tree-reuse fast path here.
 
-Known wire-protocol gap found while building this (not this script's bug):
-neither `RemotePositionAnalysisJsonCodec.encodeState()` nor
-`RemoteEngineOperationJsonCodec` sends `komi` at all. This script assumes
-`DefaultKomi` (6.5) for every request, which happens to match the app's
-current default new-game komi (2026-08-18), but would be silently wrong for
-any game played at a different komi. Fix belongs in the Kotlin codec (add a
-`komi` field/parse it here), not here.
+Wire-protocol status (updated 2026-09-23, refactor backlog #62):
+`RemotePositionAnalysisJsonCodec.encodeState()` now puts both `komi` and
+`handicapCount` on the wire as flat fields of `state` (refactor backlog #19,
+commit 7ffccd17) — both `HttpRemotePositionAnalysisTransport` (`/analyze`)
+and `RemoteEngineCoreApiAdapter` (`/engine`) share that codec, so every
+request this script receives carries them now. Before #19, neither field was
+sent, and this script assumed `DEFAULT_KOMI` (6.5) for every request — silent
+and wrong for any game played at a different komi. That gap is closed here:
+`build_katago_query()` reads `state["komi"]`, falling back to `DEFAULT_KOMI`
+only when the field is absent (an old, pre-#19 client).
+
+`handicapCount` is on the wire too, but this script still does not read it —
+see `build_katago_query()`'s body for why (short version: KataGo's JSON
+analysis query has no plain handicap-count field to feed it into; the one
+handicap-specific field, `whiteHandicapBonus`, is a scoring override that
+this script doesn't set today, and setting it from `handicapCount` without
+first confirming it doesn't double up with the ruleset's own default
+handicap-bonus handling could silently double-compensate. Left as a
+follow-up rather than guessed at.)
 
 Usage:
     python3 scripts/run-katago-remote-analysis-server.py --port 8765
@@ -75,7 +87,7 @@ from typing import Any
 DEFAULT_KATAGO = "/opt/homebrew/bin/katago"
 DEFAULT_MODEL = "/opt/homebrew/Cellar/katago/1.16.4/share/katago/kata1-b18c384nbt-s9996604416-d4316597426.bin.gz"
 DEFAULT_CONFIG = "app-android/src/friend/assets/katago/analysis_learning.cfg"
-DEFAULT_KOMI = 6.5  # see module docstring: not carried by the wire protocol yet
+DEFAULT_KOMI = 6.5  # fallback only now (#62) — build_katago_query() prefers state["komi"] when a client sends it
 
 
 class KataGoEngine:
@@ -193,10 +205,23 @@ def build_katago_query(request_body: dict[str, Any]) -> dict[str, Any]:
 
     query: dict[str, Any] = {
         "rules": rules,
-        "komi": DEFAULT_KOMI,
+        # Refactor backlog #62: prefer the client-sent komi (on the wire since #19,
+        # commit 7ffccd17); fall back to DEFAULT_KOMI only for an old client that
+        # never sends the field. See module docstring for the history.
+        "komi": state.get("komi", DEFAULT_KOMI),
         "boardXSize": board_size,
         "boardYSize": board_size,
         "initialPlayer": "B",
+        # `state.get("handicapCount")` is on the wire too (#19) but intentionally not
+        # read here. Handicap stones are already represented positionally, below, via
+        # `infer_initial_stones()` — that's the part of "handicap" KataGo's JSON
+        # analysis query actually has a field for (`initialStones`). The only other
+        # handicap-specific query field, `whiteHandicapBonus` ("0"/"N"/"N-1"), is a
+        # scoring override on top of the ruleset's own default handicap-bonus
+        # computation; setting it from `handicapCount` without first confirming it
+        # doesn't stack with that default risks compensating for handicap stones
+        # twice. Left unread rather than guessed at — see refactor backlog #62
+        # follow-ups.
         "initialStones": infer_initial_stones(state),
         "moves": moves,
         "analyzeTurns": [len(moves)],

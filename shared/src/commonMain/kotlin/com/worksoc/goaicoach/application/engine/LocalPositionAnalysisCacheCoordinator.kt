@@ -3,12 +3,12 @@ package com.worksoc.goaicoach.application.engine
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheEntry
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheKey
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheQuality
+import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheResolver
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheStore
 import com.worksoc.goaicoach.application.analysis.TrustedPositionAnalysisCacheProvider
 import com.worksoc.goaicoach.application.analysis.isStorablePositionAnalysisFor
 import com.worksoc.goaicoach.application.analysis.positionAnalysisCacheKeyFor
 import com.worksoc.goaicoach.application.analysis.withCacheHitSummary
-import com.worksoc.goaicoach.middleware.PositionAnalysisCacheResolver
 import com.worksoc.goaicoach.shared.AnalysisLimit
 import com.worksoc.goaicoach.shared.AnalysisResult
 import com.worksoc.goaicoach.shared.EngineSearchMode

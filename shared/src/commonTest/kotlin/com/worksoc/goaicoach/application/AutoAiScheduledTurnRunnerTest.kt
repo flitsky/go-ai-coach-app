@@ -246,7 +246,7 @@ class AutoAiScheduledTurnRunnerTest {
         resolveEndgame: suspend (com.worksoc.goaicoach.application.autoai.AutoAiTurnEndgamePlan.Resolve) -> Unit = {},
         applyTurnFailureDisplay: (Throwable) -> Unit = {},
         appendEngineOperationDiscardLog: (
-            com.worksoc.goaicoach.application.engine.operation.EngineOperationResultGuard.Discard,
+            com.worksoc.goaicoach.shared.engine.EngineOperationResultGuard.Discard,
         ) -> Unit = {},
         completeRun: () -> Unit = {},
         requestFollowUp: (AutoAiTurnFollowUpRequest) -> Unit = {},

@@ -1,5 +1,7 @@
 package com.worksoc.goaicoach.ui
 
+import com.worksoc.goaicoach.architecture.RepoPaths
+import com.worksoc.goaicoach.architecture.readContractSource
 import java.io.File
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -15,13 +17,19 @@ import org.junit.Test
  */
 class PremiumSubscriptionExpiryContractTest {
 
-    private val repoRoot = generateSequence(File(".").canonicalFile) { it.parentFile }
-        .first { File(it, "settings.gradle.kts").exists() }
+    /**
+     * refactor backlog #63: `File(".")` 상향 탐색을 자체로 다시 하지 않는다 — 이 저장소는
+     * 워크트리를 여러 개 두고 세션이 나눠 쓰므로, 실행 디렉터리가 속한 트리로 검사 대상이
+     * 미끄러질 수 있다(`RepoPaths.root`의 KDoc 참고). `RepoPaths.root`는 Gradle이
+     * `-Drepo.root=<rootDir>`로 못박아 주입한 값을 먼저 보고, 없을 때만 이 상향 탐색으로
+     * 폴백한다 — 그 주입을 받지 못하던 이 파일만의 재탐색을 없애고 흡수한다.
+     */
+    private val repoRoot = RepoPaths.root
 
     private val premiumUiState = File(
         repoRoot,
         "app-android/src/main/java/com/worksoc/goaicoach/ui/PremiumUiState.kt",
-    ).readText()
+    ).readContractSource()
 
     /**
      * ⚠️ **재시작만이 계기이면 해지한 사용자가 앱을 계속 켜 두는 동안 권한이 산다**(#173 실기).
@@ -61,7 +69,7 @@ class PremiumSubscriptionExpiryContractTest {
         val application = File(
             repoRoot,
             "shared/src/commonMain/kotlin/com/worksoc/goaicoach/application/premium",
-        ).walkTopDown().filter { it.extension == "kt" }.map { it.readText() }.joinToString("\n")
+        ).walkTopDown().filter { it.extension == "kt" }.map { it.readContractSource() }.joinToString("\n")
         assertTrue(
             "`isAuthoritativeNotOwned` 관문이 사라졌다 — 조회 실패 한 번이 유료 구독자를 내리게 " +
                 "된다(#158이 막은 결함, #174가 조회를 잦게 만들어 위험이 커졌다).",

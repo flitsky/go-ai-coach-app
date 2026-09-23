@@ -1,7 +1,8 @@
 package com.worksoc.goaicoach.ui
 
 import com.android.billingclient.api.BillingClient
-import java.io.File
+import com.worksoc.goaicoach.architecture.RepoPaths
+import com.worksoc.goaicoach.architecture.readContractSource
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -68,7 +69,7 @@ class AndroidBillingClientTest {
      */
     @Test
     fun theProductTypeIsAConstructorParameterNotAHardcodedConstant() {
-        val source = File("src/main/java/com/worksoc/goaicoach/ui/AndroidBillingClient.kt").readText()
+        val source = RepoPaths.uiFile("AndroidBillingClient.kt").readContractSource()
         assertTrue(
             "생성자에 productType이 없다 — 종류가 다시 클래스 안으로 박혔다",
             source.contains("private val productType: String"),
@@ -92,7 +93,7 @@ class AndroidBillingClientTest {
      */
     @Test
     fun everyBillingCallSiteNamesTheProductTypeItSells() {
-        val glue = File("src/main/java/com/worksoc/goaicoach/ui/PremiumPurchaseGlue.kt").readText()
+        val glue = RepoPaths.uiFile("PremiumPurchaseGlue.kt").readContractSource()
             .replace(Regex("""/\*.*?\*/""", RegexOption.DOT_MATCHES_ALL), "")
             .lines().joinToString("\n") { line -> line.substringBefore("//") }
 
@@ -112,7 +113,7 @@ class AndroidBillingClientTest {
             )
         }
 
-        val adapter = File("src/main/java/com/worksoc/goaicoach/ui/AndroidBillingClient.kt").readText()
+        val adapter = RepoPaths.uiFile("AndroidBillingClient.kt").readContractSource()
         assertTrue(
             "`productType`에 기본값이 되살아났다 — 호출부가 다시 조용히 빠뜨릴 수 있다(#26 ⓕ).",
             !adapter.contains("private val productType: String ="),

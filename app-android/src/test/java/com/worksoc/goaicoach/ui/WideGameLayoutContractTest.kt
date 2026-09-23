@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.ui
 
-import java.io.File
+import com.worksoc.goaicoach.architecture.RepoPaths
+import com.worksoc.goaicoach.architecture.readContractSource
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -18,7 +19,7 @@ import org.junit.Test
 class WideGameLayoutContractTest {
 
     private fun code(name: String): String =
-        File("src/main/java/com/worksoc/goaicoach/ui/$name").readText()
+        RepoPaths.uiFile(name).readContractSource()
             .replace(Regex("""/\*.*?\*/""", RegexOption.DOT_MATCHES_ALL), "")
             .lines()
             .filterNot { it.trimStart().startsWith("import ") }

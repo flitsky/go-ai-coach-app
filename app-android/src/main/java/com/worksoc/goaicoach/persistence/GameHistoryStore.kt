@@ -9,6 +9,7 @@ import com.worksoc.goaicoach.application.gamehistory.GameReplayData
 import com.worksoc.goaicoach.persistence.PlayerSetupJsonCodec.decodePlayerSetup
 import com.worksoc.goaicoach.persistence.PlayerSetupJsonCodec.encodePlayerSetup
 import com.worksoc.goaicoach.shared.BoardSize
+import com.worksoc.goaicoach.shared.DefaultKomi
 import com.worksoc.goaicoach.shared.Ruleset
 import com.worksoc.goaicoach.shared.StoneColor
 import java.io.File
@@ -188,7 +189,12 @@ internal object GameHistoryIndexCodec {
                 playedAtMillis = json.optLong("playedAtMillis", 0L),
                 boardSize = json.optInt("boardSize", 9),
                 ruleset = enumOrDefault(json.optString("ruleset"), Ruleset.Japanese),
-                komi = json.optDouble("komi", 0.0),
+                // ⚠️ 백로그 #23 — 기본값은 [DefaultKomi]다, `GameSessionStore`/`UserPreferencesStore`와
+                // 맞춘다. `encodeEntry`는 이 파일이 생긴 첫 커밋(cc84f13d, backlog #6)부터 계속
+                // `komi`를 실어 왔으므로 이 폴백은 사실 **도달 불가**다 — komi 키가 없는 기록이
+                // 저장된 적이 없다. 그래도 `0.0`으로 두면 "폴백이 실제로 쓰인다면 무슨 값이어야
+                // 하는가"를 읽는 사람이 다른 스토어와 다르게 오해하게 만들어, 정합성을 위해 맞춘다.
+                komi = json.optDouble("komi", DefaultKomi),
                 handicapCount = json.optInt("handicapCount", 0),
                 playerSetup = decodePlayerSetup(json.optJSONObject("playerSetup")),
                 moveCount = json.optInt("moveCount", 0),

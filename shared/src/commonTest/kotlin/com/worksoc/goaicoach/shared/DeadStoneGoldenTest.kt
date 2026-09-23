@@ -1,7 +1,9 @@
 package com.worksoc.goaicoach.shared
 
+import com.worksoc.goaicoach.match.MatchReferee
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /**
@@ -24,6 +26,9 @@ import kotlin.test.assertTrue
  * - 탐지기가 **살아 있는 판의 패 금지를 그대로 물려받는다** — 따낼 자리가 패금지면 그 그룹은
  *   후보에서 빠진다. 양패스 종료 시점에는 통과가 패를 지우므로 실전에서 닿지 않는 경로지만,
  *   코드가 그렇게 동작한다는 사실 자체를 박아 둔다.
+ * - 그리고 **왜 그것이 실전에 닿지 않는가** — 탐지기가 불리는 모든 지점에서 패는 이미 지워져 있다
+ *   ([koIsAlreadyClearedBeforeTheDetectorEverRuns]). 위 행을 "버그를 박아 둔 것"으로 읽지 않게
+ *   하는 것이 이 테스트의 일이다(refactor backlog #59).
  * - 정리기가 **두 색을 한 번에** 걷을 때 사석이 양쪽에 각각 쌓인다.
  * - 정리기가 **덤과 접바둑 수를 보존한다** — #1 「이어하기 덤 유실」과 같은 종류의 누락이
  *   이 경로에서 다시 나지 않게 하는 자리다.
@@ -49,6 +54,62 @@ class DeadStoneGoldenTest {
         }
 
         assertEquals(emptyList<String>(), failures, "사석 탐지 골든 표가 어긋났다:\n" + failures.joinToString("\n"))
+    }
+
+    /**
+     * 탐지기가 물려받는 패 금지가 **실전에 닿지 않는다**는 전제를 못박는다.
+     *
+     * 프로덕션에서 `DeadStoneDetector.capturableDeadStones`를 부르는 곳은 `EndgameResolver` 하나이고,
+     * 그리로 가는 길은 전부 [MatchReferee.shouldResolveEndgame]으로 막혀 있다 — **양패스**이거나
+     * **판이 꽉 찼을 때**다. 양패스면 통과가 `koPoint`를 지우고, 판이 꽉 차면 빈 점이 없어
+     * 활로도 패 자리도 없다. 그래서 위 표의 「따낼 자리가 패금지면 후보에서 빠진다」 행은
+     * **코드의 사실**이지 사용자에게 닿는 결함이 아니다.
+     *
+     * ⚠️ 이 테스트가 빨개지면 그 전제가 깨진 것이다 — 탐지기가 대국 도중에 불리게 됐거나,
+     * 통과가 패를 더 이상 지우지 않거나, 종국 조건이 늘었다는 뜻이다. 그때는 탐지기 KDoc의
+     * 「그런데도 그것을 고치지 않는 이유」부터 다시 읽어라.
+     */
+    @Test
+    fun koIsAlreadyClearedBeforeTheDetectorEverRuns() {
+        val liveKo = singleDeadWhiteStoneBoard().toState(
+            nextPlayer = StoneColor.Black,
+            koPoint = point("E4"),
+            koForbiddenFor = StoneColor.Black,
+        )
+
+        // ⓐ 패가 살아 있는 국면은 애초에 종국 판정에 들어가지 않는다.
+        assertFalse(MatchReferee.shouldResolveEndgame(liveKo))
+
+        // ⓑ 흑·백이 차례로 통과하면 종국 판정에 들어가고, 그 판에는 패가 남아 있지 않다.
+        val afterTwoPasses = liveKo
+            .play(Move.Pass(StoneColor.Black))
+            .play(Move.Pass(StoneColor.White))
+        assertTrue(MatchReferee.shouldResolveEndgame(afterTwoPasses))
+        assertEquals(null, afterTwoPasses.koPoint)
+        assertEquals(null, afterTwoPasses.koForbiddenFor)
+
+        // ⓒ 그래서 패 때문에 빠졌던 그 그룹이 종국 시점에는 제대로 사석으로 나온다.
+        assertEquals(
+            setOf(point("E5")),
+            DeadStoneDetector.capturableDeadStones(afterTwoPasses).toSet(),
+        )
+
+        // ⓓ 나머지 한 갈래인 "판이 꽉 찼을 때"는 빈 점이 없으니 패 자리도 활로도 없다 —
+        //    탐지기는 후보를 하나도 만들지 못한다.
+        val fullBoard = goldenBoard(
+            "X X X X X O O O O",
+            "X X X X X O O O O",
+            "X X X X X O O O O",
+            "X X X X X O O O O",
+            "X X X X X O O O O",
+            "X X X X X O O O O",
+            "X X X X X O O O O",
+            "X X X X X O O O O",
+            "X X X X X O O O O",
+        ).toState()
+        assertTrue(MatchReferee.shouldResolveEndgame(fullBoard))
+        assertEquals(null, fullBoard.koPoint)
+        assertEquals(emptyList<BoardCoordinate>(), DeadStoneDetector.capturableDeadStones(fullBoard))
     }
 
     /**

@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.ui
 
-import java.io.File
+import com.worksoc.goaicoach.architecture.RepoPaths
+import com.worksoc.goaicoach.architecture.readContractSource
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -130,7 +131,7 @@ class BotCharacterAcquiredDialogContractTest {
     }
 
     private fun sourceOf(fileName: String): String =
-        File("src/main/java/com/worksoc/goaicoach/ui/$fileName").readText()
+        RepoPaths.uiFile(fileName).readContractSource()
 
     /** 주석을 걷어낸 코드만 남긴다. 여러 줄 KDoc을 반드시 지워야 한다 — 위 KDoc의 경고 참고. */
     private fun codeOnly(source: String): String = source

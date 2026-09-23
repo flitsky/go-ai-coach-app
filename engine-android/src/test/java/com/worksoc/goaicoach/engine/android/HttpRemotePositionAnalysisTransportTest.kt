@@ -199,6 +199,56 @@ class HttpRemotePositionAnalysisTransportTest {
     }
 }
 
+/**
+ * 백로그 #19 — `encodeState`가 `komi`/`handicapCount`를 실어 보내는지 직접 확인한다.
+ * 이 값이 빠지면 원격 서버는 덤/접바둑을 알 길이 없어 `DefaultKomi`(6.5)·맞바둑을 그냥
+ * 가정한다(`scripts/run-katago-remote-analysis-server.py` 모듈 docstring이 이 gap을
+ * 스스로 문서화해 두고 있었다) — 이어하기 덤 유실(#1)과 같은 함정이 같은 이유로 남는다.
+ */
+class RemotePositionAnalysisJsonCodecStateTest {
+    @Test
+    fun encodeStateCarriesNonDefaultKomi() {
+        val state = GameState.empty(boardSize = BoardSize.Nine, komi = 0.5)
+
+        val encoded = RemotePositionAnalysisJsonCodec.encodeState(state)
+
+        assertEquals(0.5, encoded.getDouble("komi"), 0.0001)
+    }
+
+    @Test
+    fun encodeStateCarriesAnotherNonDefaultKomi() {
+        val state = GameState.empty(boardSize = BoardSize.Nine, komi = 7.5)
+
+        val encoded = RemotePositionAnalysisJsonCodec.encodeState(state)
+
+        assertEquals(7.5, encoded.getDouble("komi"), 0.0001)
+    }
+
+    @Test
+    fun encodeStateCarriesHandicapCount() {
+        val state = GameState.withHandicap(
+            boardSize = BoardSize.Nine,
+            ruleset = com.worksoc.goaicoach.shared.Ruleset.Japanese,
+            handicapCount = 2,
+        )
+
+        val encoded = RemotePositionAnalysisJsonCodec.encodeState(state)
+
+        assertEquals(2, encoded.getInt("handicapCount"))
+        // 접바둑 komi도 왕복해야 한다 — handicapCount만 살아남고 komi가 죽으면 반쪽짜리다.
+        assertEquals(state.komi, encoded.getDouble("komi"), 0.0001)
+    }
+
+    @Test
+    fun encodeStateDefaultsHandicapCountToZeroForANonHandicapGame() {
+        val state = GameState.empty(boardSize = BoardSize.Nine)
+
+        val encoded = RemotePositionAnalysisJsonCodec.encodeState(state)
+
+        assertEquals(0, encoded.getInt("handicapCount"))
+    }
+}
+
 private class FakeHttpURLConnection(
     url: URL,
     private val responseBody: String,

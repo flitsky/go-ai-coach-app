@@ -1,5 +1,7 @@
 package com.worksoc.goaicoach.engine
 
+import com.worksoc.goaicoach.architecture.RepoPaths
+import com.worksoc.goaicoach.architecture.readContractSource
 import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -27,8 +29,11 @@ import org.junit.Test
  */
 class BundledEngineAssetContractTest {
 
-    private val bootstrap = File("src/main/java/com/worksoc/goaicoach/engine/EngineBootstrap.kt").readText()
-    private val makefile = File("../Makefile").readText()
+    private val bootstrap = RepoPaths.appAndroid("engine/EngineBootstrap.kt").readContractSource()
+    // refactor backlog #63: `File("../Makefile")`는 실행 디렉터리(app-android/)를 기준으로 한
+    // 상대경로였다 — 어디서 Gradle을 띄웠느냐에 따라 다른 트리로 미끄러질 수 있는 같은 부류의
+    // 문제라, `-Drepo.root` 주입을 받는 RepoPaths.root로 흡수한다.
+    private val makefile = RepoPaths.root.resolve("Makefile").readContractSource()
 
     /** 앱이 번들에서 꺼내려고 시도하는 파일 이름들. */
     private fun assetNamesTheAppOpens(): Set<String> =
