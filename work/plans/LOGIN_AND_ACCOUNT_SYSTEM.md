@@ -9,15 +9,15 @@
 ## 1. 개요 및 목표
 
 ### 1.1. 배경 및 필요성
-- 기존 장기(Janggi) 앱에서 이미 Firebase Auth + Firestore/Storage + AdMob을 연동해 성공적으로 운영 중인 경험을 이 바둑 앱에도 그대로 재활용합니다 (`baduk_app_architecture_recommendation.md`).
+- 기존 장기(Janggi) 앱에서 이미 Firebase Auth + Firestore/Storage + AdMob을 연동해 성공적으로 운영 중인 경험을 이 바둑 앱에도 그대로 재활용합니다 (2026-07-29 초기 조사 `baduk_app_architecture_recommendation.md`의 결론 — 그 조사 문서는 2026-09-23에 **삭제**했고 살아 있는 사실은 아래 1.1.1절로 옮겼다. 원문은 git 히스토리에 있다).
 - BaaS 5종(Firebase/Supabase/PocketBase/Appwrite/Convex) 비교 검토 결과(`baas_solutions_comparison.md`), 기보(SGF) 저장·보상형 광고·AdMob 시너지 관점에서 **Firebase가 최종 채택**되었습니다.
 - 프리미엄 모드(`PREMIUM_MODE.md`)의 Step 3(광고)/Step 4(구매)가 이 계정 시스템 위에 얹힐 예정이므로, 그 전제가 되는 "로그인/익명 사용자 식별" 기반을 먼저 마련하는 것이 이번 계획의 핵심입니다.
 
 #### 1.1.1. Firebase 프로젝트를 장기 앱과 분리하는 근거 (흡수: 2026-09-23)
 
-⚠️ 아래는 원래 `work/history/baduk_app_architecture_recommendation.md` 2장에만 있던 사실이다.
-그 문서는 채택되지 않은 축(Firestore SGF 스키마·Remote Config A/B·단품 결제)이 대부분이라
-정리 대상이지만, **이 한 가지 사실만은 지금도 살아 있는 결정을 떠받치고 있어** 여기로 옮겨 적는다.
+⚠️ 아래는 원래 `work/history/baduk_app_architecture_recommendation.md` 2장에만 있던 사실이고, 그 문서는 2026-09-23에 **삭제**했다 — 나머지(Firestore SGF 스키마·Remote Config A/B·단품 결제)가
+전부 채택되지 않았거나 뒤집힌 축이었기 때문이다. **이 한 가지 사실만은 지금도 살아 있는 결정을
+떠받치고 있어** 지우기 전에 여기로 옮겨 적었다. 조사 원문은 git 히스토리에 있다.
 
 - **Firebase의 무료 할당량(Spark Plan)은 구글 계정 단위가 아니라 '프로젝트' 단위로 각각 독립 적용된다.**
   같은 구글 계정 아래 프로젝트를 둘 만들면 각각이 온전한 무료 할당량을 따로 받는다.

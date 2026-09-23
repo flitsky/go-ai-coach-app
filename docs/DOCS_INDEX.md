@@ -215,9 +215,8 @@
 | 위치 | 용도 |
 | --- | --- |
 | `work/history/baas_solutions_comparison.md` | Firebase/Supabase/PocketBase/Appwrite/Convex BaaS 비교 조사 — Firebase 채택 근거 원본. 결론은 `LOGIN_AND_ACCOUNT_SYSTEM.md`에 반영됨 |
-| `work/history/baduk_app_architecture_recommendation.md` | 백엔드+AdMob 전략 추천 조사 — 결론은 `PREMIUM_MODE.md`/`LOGIN_AND_ACCOUNT_SYSTEM.md`에 반영됨 |
 
-⚠️ 같은 두 문서가 아래 「프로젝트 히스토리」 절에도 등재돼 있다(그쪽이 성격 설명까지 담은 정본이다).
+⚠️ 이 문서는 아래 「프로젝트 히스토리」 절에도 등재돼 있다(그쪽이 성격 설명까지 담은 정본이다).
 
 ## 작업 방법론 문서
 
@@ -448,8 +447,9 @@ git show <커밋해시>^:docs/archive/<경로>/<파일명>.md > <파일명>.md
 | 위치 | 용도 |
 | --- | --- |
 | `work/history/THREAD_HISTORY.md` | 프로젝트 대화와 작업 히스토리 누적 기록. 계속 append되는 진행 중인 로그이며, archive(=더 이상 유효하지 않음)와는 성격이 다르다 |
-| `work/history/baduk_app_architecture_recommendation.md` | 2026-07-30 이전 초기 조사 — 바둑 앱 아키텍처 후보 비교. 결론은 `ARCHITECTURE.md`/`PRD.md`에 흡수됐다. **요약/딥다이브 체계 밖의 일회성 리서치**라 최상위가 아닌 여기에 둔다(백로그 #58) |
-| `work/history/baas_solutions_comparison.md` | 2026-07-30 이전 초기 조사 — BaaS 후보 비교. 결론은 `LOGIN_AND_ACCOUNT_SYSTEM.md`가 이어받았다. 위와 같은 성격이다 |
+| `work/history/baas_solutions_comparison.md` | 2026-07-30 이전 초기 조사 — BaaS 후보 비교. 결론은 `LOGIN_AND_ACCOUNT_SYSTEM.md`가 이어받았다. **요약/딥다이브 체계 밖의 일회성 리서치**라 최상위가 아닌 여기에 둔다(백로그 #58) |
+
+⚠️ 초기 조사 둘 중 `baduk_app_architecture_recommendation.md`는 2026-09-23에 **삭제**했다 — Firestore SGF 스키마·Remote Config A/B·단품 결제가 전부 채택되지 않았거나 뒤집힌 축이었고, 살아 있던 사실 하나(Spark Plan 무료 할당량은 프로젝트 단위로 독립 적용된다)는 `LOGIN_AND_ACCOUNT_SYSTEM.md` 1.1.1절로 옮겼다. 원문은 git 히스토리에 있다.
 
 **완전히 종료된 마스터플랜 트랙이 여기로 편입될 때(2026-08-24부터)**: `work/history/<YYYY-MM-DD>_<폴더명>/`처럼 ISO 날짜를 접두어로 붙인다 — 예: `work/history/2026-08-24_engagement-growth/`. 이 날짜는 "언제 종료 상태로 편입됐는가"를 뜻하며, 폴더가 저장소 루트에 있을 때부터 파일명에 붙어 있던 `YYMMDD_HHMM` 접미사(예: `260823_1521` = 그 문서가 작성된 시각)와는 다른 축이다 — 헷갈리지 않도록 구분한다. **아직 활성인 마스터플랜 폴더에는 이 규약을 적용하지 않는다** — 계속 갱신되는 폴더에 날짜를 박으면 생성일과 최근 갱신일이 갈라져 금방 낡는다(위 「루트 자산 폴더의 흡수」 참고).
 
