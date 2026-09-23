@@ -1,6 +1,6 @@
 package com.worksoc.goaicoach.ui
 
-import java.io.File
+import com.worksoc.goaicoach.architecture.RepoPaths
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -13,7 +13,7 @@ import org.junit.Test
  */
 class GameExitRecordingContractTest {
 
-    private val shell = codeOnly(File("src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt").readText())
+    private val shell = codeOnly(RepoPaths.uiFile("GoCoachApp.kt").readText())
 
     /**
      * ⚠️ **기록이 `refreshNewGamePreview()`보다 앞서야 한다.**

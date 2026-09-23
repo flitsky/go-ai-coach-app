@@ -1,6 +1,6 @@
 package com.worksoc.goaicoach.ui
 
-import java.io.File
+import com.worksoc.goaicoach.architecture.RepoPaths
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -208,7 +208,7 @@ class FontScaleLayoutContractTest {
     }
 
     private fun sourceOf(fileName: String): String =
-        File("src/main/java/com/worksoc/goaicoach/ui/$fileName").readText()
+        RepoPaths.uiFile(fileName).readText()
 
     /**
      * 주석을 걷어낸 코드만 남긴다.

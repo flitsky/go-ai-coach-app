@@ -14,6 +14,15 @@ import java.io.File
  *
  * 그래서 경로는 여기 한 곳에만 둔다. 파일이 이사하면 **이 파일만 고친다.**
  *
+ * ## 왜 `internal`을 그대로 두는가(refactor backlog #30, 260923)
+ * `ui`/`engine`/최상위(`com.worksoc.goaicoach`) 패키지의 계약 테스트 22개를 여기로 흡수하며
+ * "다른 패키지가 `internal object`를 쓸 수 있는가"를 실측했다. **된다** — Kotlin의 `internal`은
+ * *패키지*가 아니라 *모듈*(여기서는 `:app-android`의 `test` 소스셋 하나, 한 번의
+ * `compileDebugUnitTestKotlin` 호출) 스코프다. `--rerun-tasks`로 전체 재컴파일해
+ * `com.worksoc.goaicoach`/`com.worksoc.goaicoach.ui`/`com.worksoc.goaicoach.engine` 세 패키지의
+ * 호출부가 전부 그대로 컴파일되는 것으로 확인했다. 그래서 패키지 이동도, 가시성을 넓히는 것도
+ * 하지 않는다 — 이미 열려 있었다.
+ *
  * ## 왜 클래스 안이 아니라 별도 파일인가
  * `LayeringContractTest`와 `TestAnnotationContractTest`가 각자 [repoRoot]를 **두 벌로** 선언하고
  * 있었다. 둘 중 하나만 고치면 워크트리 판정이 테스트마다 달라져 더 나쁜 상태가 된다.
@@ -52,6 +61,12 @@ internal object RepoPaths {
 
     /** `ui/` 바로 아래의 파일 하나. */
     fun uiFile(fileName: String): File = appAndroid("ui/$fileName")
+
+    /**
+     * app-android `src/main/` 바로 아래의 한 경로 — `com.worksoc.goaicoach` 패키지 **밖**
+     * (리소스 등). 예: `appAndroidMain("res/drawable")`.
+     */
+    fun appAndroidMain(relativePath: String): File = root.resolve("app-android/src/main/$relativePath")
 
     /**
      * `application/` 아래의 한 경로를 **지금 실재하는 트리에서** 찾는다.

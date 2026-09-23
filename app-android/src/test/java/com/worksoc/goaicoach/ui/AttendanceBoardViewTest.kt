@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.ui
 
 import com.worksoc.goaicoach.application.consumable.ConsumableCatalog
+import com.worksoc.goaicoach.architecture.RepoPaths
 import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -15,8 +16,8 @@ import org.junit.Test
  */
 class AttendanceBoardViewTest {
 
-    private val drawableDir = File("src/main/res/drawable")
-    private val source = File("src/main/java/com/worksoc/goaicoach/ui/AttendanceBoardView.kt").readText()
+    private val drawableDir = RepoPaths.appAndroidMain("res/drawable")
+    private val source = RepoPaths.uiFile("AttendanceBoardView.kt").readText()
 
     /**
      * ⚠️ **이것이 이 파일의 핵심이다.** 소모품 분기는 `else -> null`로 닫혀 있어 **컴파일러가
@@ -42,7 +43,7 @@ class AttendanceBoardViewTest {
             "consumableGlyphRes가 없다 — 표가 다시 갈렸다",
             source.contains("internal fun consumableGlyphRes(item: ConsumableItem)"),
         )
-        val myPage = File("src/main/java/com/worksoc/goaicoach/ui/MyPageScreen.kt").readText()
+        val myPage = RepoPaths.uiFile("MyPageScreen.kt").readText()
         assertTrue("마이 페이지가 공유 표를 쓰지 않는다", myPage.contains("consumableGlyphRes(item)"))
         // 마이 페이지가 자기 대응표를 따로 들고 있으면 안 된다.
         assertTrue(

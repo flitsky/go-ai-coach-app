@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.ui
 
+import com.worksoc.goaicoach.architecture.RepoPaths
 import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -13,16 +14,16 @@ import org.junit.Test
 class StudyHubContractTest {
 
     /** 주석·import를 걷어낸 본문만 본다 — 이름이 주석에 남아 그물이 헐거워지는 것을 막는다(함정 10-2). */
-    private fun source(path: String): String =
-        File(path).readText()
+    private fun source(file: File): String =
+        file.readText()
             .replace(Regex("""/\*.*?\*/""", RegexOption.DOT_MATCHES_ALL), "")
             .lines()
             .filterNot { it.trimStart().startsWith("import ") }
             .joinToString("\n") { it.substringBefore("//") }
 
-    private val hub = source("src/main/java/com/worksoc/goaicoach/ui/StudyScreen.kt")
-    private val videos = source("src/main/java/com/worksoc/goaicoach/ui/StudyVideoListScreen.kt")
-    private val shell = source("src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
+    private val hub = source(RepoPaths.uiFile("StudyScreen.kt"))
+    private val videos = source(RepoPaths.uiFile("StudyVideoListScreen.kt"))
+    private val shell = source(RepoPaths.uiFile("GoCoachApp.kt"))
 
     /**
      * ⚠️ **셸의 상태 훅 예산은 42/42로 여유 0이다**(함정 3). 하위 분류를 `ScreenDestination`으로
@@ -101,7 +102,7 @@ class StudyHubContractTest {
      */
     @Test
     fun theUiStringsConstructorStaysUnderTheJvmArgumentLimit() {
-        val declaration = File("src/main/java/com/worksoc/goaicoach/ui/UiStrings.kt").readText()
+        val declaration = RepoPaths.uiFile("UiStrings.kt").readText()
             .substringAfter("internal data class UiStrings(")
             .substringBefore("\n) {")
         val fields = Regex("""^\s{4}val\s+\w+:""", RegexOption.MULTILINE).findAll(declaration).count()

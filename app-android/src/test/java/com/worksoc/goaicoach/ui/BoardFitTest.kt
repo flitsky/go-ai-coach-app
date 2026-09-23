@@ -1,6 +1,6 @@
 package com.worksoc.goaicoach.ui
 
-import java.io.File
+import com.worksoc.goaicoach.architecture.RepoPaths
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -80,7 +80,7 @@ class BoardFitTest {
      */
     @Test
     fun theViewportIsMeasuredOutsideTheScrollAndTheBoardIsCapped() {
-        fun src(name: String) = File("src/main/java/com/worksoc/goaicoach/ui/$name").readText()
+        fun src(name: String) = RepoPaths.uiFile(name).readText()
             .replace(Regex("""/\*.*?\*/""", RegexOption.DOT_MATCHES_ALL), "")
             .lines().joinToString("\n") { it.substringBefore("//") }
 
