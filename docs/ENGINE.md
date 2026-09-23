@@ -30,9 +30,11 @@
 
 즉 B16에서는 GTP fast가 더 빠르지만, B32/B64로 올라가면 GTP가 오히려 더 느려지고 JSON position analysis가 역전해서 더 빨라진다. 이 결과 때문에 레벨별로 모드를 다르게 매핑한다(아래 표).
 
-## 레벨별 매핑 — 미들웨어가 자동 선택
+## 레벨별 매핑 — 엔진 서비스가 자동 선택
 
-게임 도메인(5계층)에서 AI 캐릭터/레벨을 정할 때, 미들웨어(4계층)가 그 레벨에 맞는 탐색 모드를 자동으로 고른다. 사용자는 모드를 직접 선택하지 않는다.
+게임 도메인(5계층)에서 AI 캐릭터/레벨을 정할 때, 그 레벨에 맞는 탐색 모드가 자동으로 정해져 **엔진 서비스(3계층 Extended API/Service)** 로 내려간다. 사용자는 모드를 직접 선택하지 않는다.
+
+⚠️ 이 자리는 2026-09-23 이전까지 *"미들웨어(4계층)"* 로 적혀 있었는데, 이 문서 「한 줄 결론」이 이미 정정해 둔 것과 정면으로 모순됐다. `ARCHITECTURE.md`의 4계층은 External Integration(외부 SDK 연동)이고, `EngineSessionClient`는 3계층이다. 정책 함수 자체는 `PlayLevelSetting.aiMoveSearchMode()`이며, 이를 호출해 3계층에 넘기는 쪽은 `match/MatchTurnOrchestration.kt`와 `application/autoai/AutoAiPolicyApplication.kt`다.
 
 코드: `shared/EngineAnalysisPolicy.kt`의 `PlayLevelSetting.aiMoveSearchMode()`
 
