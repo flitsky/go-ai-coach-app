@@ -115,6 +115,30 @@ ALLOWED: dict[tuple[str, str], str] = {
         "--out 기본값(실행하면 생성되는 산출물)",
 }
 
+# **봉인 문서 안의 옛 경로**는 깨진 것이 아니다 (2026-09-23 신설).
+#
+# 이 저장소의 로드맵 문서는 `시작일-완결일_이름.md`로 이름 붙고, **완결일 자리가 채워진 것이
+# 봉인된 문서다**(비어 있으면 `260923-_ACTIVE_BACKLOG.md`처럼 진행 중이라는 뜻이다).
+# 봉인 문서는 **그 시점의 기록이라 고치지 않는 것이 규칙**이다 — 그래서 그 안의 경로는
+# 문서가 옮겨지거나 개명될 때마다 죽지만 **아무도 고칠 수 없다.** 2026-09-23 정리에서
+# 개명한 스레드가 "참조하는 곳이 남의 담당"이라 멈추는 교착이 실제로 났고, 그 결과
+# 깨진 참조가 6 → 10건으로 늘었다. 고칠 수 없는 것을 계속 빨갛게 세면 이 검사는 곧 꺼진다.
+#
+# ⚠️ **좁게 적용한다 — 넓히면 이 도구가 무용해진다.**
+#   ① **봉인 문서 안에서 출발하는 참조에만** 적용한다. 살아 있는 문서가 봉인 문서를
+#      잘못 가리키는 것은 그대로 잡는다(고칠 수 있는 쪽이기 때문이다).
+#   ② **경로 표기(`docs/…md`·마크다운 링크)에만** 적용한다. **맨 파일명 표기는 계속 본다** —
+#      이름은 문서를 옮겨도 살아남게 만든 표기라, 봉인 문서 안에서도 이름이 안 풀린다는 것은
+#      "그 문서가 실제로 사라졌다"는 뜻이고 그건 알아야 하는 사실이다(이 파일 맨 위 설명 참고).
+# 예외가 몇 건 먹었는지는 실행할 때마다 찍는다 — 조용한 구멍이 되지 않게.
+SEALED_DOC = re.compile(r"^\d{6}-\d{6}_.+\.md$")
+
+
+def is_sealed(rel: str) -> bool:
+    """`시작일-완결일_이름.md` — 완결일이 채워진 봉인 문서인가."""
+    return bool(SEALED_DOC.match(os.path.basename(rel)))
+
+
 # 문서가 표기 형태 자체를 설명할 때 쓰는 자리표시자 — 실재하는 파일이 아니다.
 PLACEHOLDER = re.compile(r"(FILE\.md|<[^>]+>\.md)")
 
@@ -147,6 +171,7 @@ def walk(root: str):
 def main() -> int:
     root = os.getcwd()
     broken: list[tuple[str, str, str]] = []
+    sealed_skipped = 0
     # 저장소에 실재하는 문서의 이름 → 경로들. 맨 파일명 표기를 이것으로 판정한다.
     by_name: dict[str, list[str]] = {}
     for path in walk(root):
@@ -196,6 +221,11 @@ def main() -> int:
             here = os.path.dirname(os.path.join(root, rel))
             if not (os.path.exists(os.path.join(root, target))
                     or os.path.exists(os.path.join(here, target))):
+                # ⚠️ 봉인 문서 안의 옛 경로 — 봉인 시점엔 유효했고, 그 문서는 고치지 않는다.
+                #    **실재 검사를 통과하지 못한 것만** 센다(멀쩡한 표기까지 세면 건수가 거짓이 된다).
+                if is_sealed(rel):
+                    sealed_skipped += 1
+                    continue
                 row = (rel, kind, target)
                 if row not in broken:
                     broken.append(row)
@@ -235,10 +265,11 @@ def main() -> int:
                 if row not in broken:
                     broken.append(row)
 
+    sealed_note = f" · 봉인 문서 안의 옛 경로 {sealed_skipped}건" if sealed_skipped else ""
     if not broken:
-        print(f"문서 링크 점검 통과 (허용 예외 {len(ALLOWED)}건)")
+        print(f"문서 링크 점검 통과 (허용 예외 {len(ALLOWED)}건{sealed_note})")
         return 0
-    print(f"깨진 참조 {len(broken)}건")
+    print(f"깨진 참조 {len(broken)}건 (허용 예외 {len(ALLOWED)}건{sealed_note})")
     for src, kind, target in sorted(broken):
         print(f"  [{kind}] {src} → {target}")
     return 1
