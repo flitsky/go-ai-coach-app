@@ -66,7 +66,7 @@ export JAVA_HOME
 
 .DEFAULT_GOAL := help
 
-.PHONY: help doctor test test-ios dev dev-stub install-dev install-dev-engine reinstall-dev-engine seed-engine launch play-internal-aab bundle-aab verify-admob-keys bump-version prepare-friend-assets engine-level-benchmark engine-device-benchmark engine-search-mode-benchmark engine-search-mode-benchmark-phone release ensure-debug-engine prebuild-engine clean
+.PHONY: help doctor test test-ios test-device dev dev-stub install-dev install-dev-engine reinstall-dev-engine seed-engine launch play-internal-aab bundle-aab verify-admob-keys bump-version prepare-friend-assets engine-level-benchmark engine-device-benchmark engine-search-mode-benchmark engine-search-mode-benchmark-phone release ensure-debug-engine prebuild-engine clean
 
 help:
 	@echo "=========================================================================="
@@ -88,6 +88,8 @@ help:
 	@echo "                             (Supports TARGET=emu/phone or auto-resolution)"
 	@echo "  make test                - Run unit tests for shared, engine, and app modules"
 	@echo "  make test-ios            - Compile-only iOS targets check (see 함정 75; NOT part of make test)"
+	@echo "  make test-device         - Run instrumented (androidTest) smoke tests on TARGET=emu/phone"
+	@echo "                             (needs a connected device; NOT part of make test, NOT wired into make release)"
 	@echo ""
 	@echo " [Build & Engine Prebuild]"
 	@echo "  make play-internal-aab   - Build release-signed AAB (debug engine + bundled assets) for Play Console internal testing"
@@ -152,6 +154,21 @@ test: doctor
 # 셋 다 같은 expect/actual 집합을 보므로 하나만 컴파일해도 API 누락은 동일하게 드러난다.
 test-ios:
 	$(GRADLEW) :shared:compileKotlinIosSimulatorArm64 -PenableIosTargets=true
+
+# ⚠️ 별도 타깃이다 — `test`에 합치지 마라(refactor backlog #13ⓑ). `make test`가 지키는 "빠른
+# 루프"(에뮬레이터/실기기 없이 몇 초~몇 분 안에 결과)를 계기 테스트가 깨뜨린다 — 에뮬레이터
+# 부팅·앱 설치·Compose idle sync를 기다려야 해서 몇 배는 느리고, 기기가 아예 안 붙어 있으면
+# `doctor`에서부터 막힌다(함정: doctor는 기기 둘 이상이면 Error 1 — TARGET=emu로 하나만
+# 골라라). `app-android/src/androidTest`의 세 스모크 테스트(AppLaunchSmokeTest 등)를 돈다.
+#
+# `make release`/`make bundle-aab`에 자동으로 물리지 않는 이유: 그 타깃들은 지금도 unit
+# test(`test`)를 선행 조건으로 두지 않는다(release/bundle-aab의 의존 그래프 참고 — doctor →
+# verify-admob-keys → bump-version → ensure-debug-engine → prepare-friend-assets뿐이다).
+# 계기 테스트만 새로 강제하면 "unit test는 안 막는데 계기 테스트는 막는다"는 일관성 없는
+# 규칙이 생기고, 무엇보다 릴리스를 만드는 기계에 항상 에뮬레이터/기기가 붙어 있다는 보장이
+# 없다 — 없으면 출하 자체가 막힌다. 사람이 릴리스 전에 직접 돌리는 수동 단계로 남긴다.
+test-device: doctor
+	$(GRADLEW) :app-android:connectedDebugAndroidTest
 
 dev: doctor ensure-debug-engine
 	$(GRADLEW) :app-android:assembleDebug
