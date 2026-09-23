@@ -1,6 +1,6 @@
 package com.worksoc.goaicoach.ui
 
-import com.worksoc.goaicoach.shared.StudyLessonId
+import com.worksoc.goaicoach.shared.content.StudyLessonId
 
 /**
  * 「바둑 기초 행마」 갈래의 문구 전문(백로그 #183). 구조는 `UiStringsStudyRules.kt`와 같다.

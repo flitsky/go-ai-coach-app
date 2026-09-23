@@ -1,5 +1,12 @@
-package com.worksoc.goaicoach.shared
+package com.worksoc.goaicoach.shared.content
 
+import com.worksoc.goaicoach.shared.BoardCoordinate
+import com.worksoc.goaicoach.shared.BoardRules
+import com.worksoc.goaicoach.shared.BoardSize
+import com.worksoc.goaicoach.shared.GameState
+import com.worksoc.goaicoach.shared.Move
+import com.worksoc.goaicoach.shared.Ruleset
+import com.worksoc.goaicoach.shared.StoneColor
 /**
  * 학습 단원이 속한 **갈래**(백로그 #164·#183).
  *

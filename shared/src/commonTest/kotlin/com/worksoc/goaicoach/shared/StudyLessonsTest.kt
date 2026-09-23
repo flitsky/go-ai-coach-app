@@ -1,5 +1,11 @@
 package com.worksoc.goaicoach.shared
 
+import com.worksoc.goaicoach.shared.content.StudyLesson
+import com.worksoc.goaicoach.shared.content.StudyLessonId
+import com.worksoc.goaicoach.shared.content.StudyLessonStep
+import com.worksoc.goaicoach.shared.content.StudyLessonTrack
+import com.worksoc.goaicoach.shared.content.studyLessons
+import com.worksoc.goaicoach.shared.content.studyLessonsFor
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
