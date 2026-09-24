@@ -63,10 +63,8 @@ fun isRewardedTier(tier: Int): Boolean = tier in 1..7 || (tier > 7 && tier % 7 =
  *
  * @return 되감은 새 상태. 이미 "오늘 안 함" 상태였으면 아무것도 하지 않고 `null`.
  */
-fun runAttendanceDevDayRewind(store: AttendanceStorePort): AttendanceState? {
-    val current = store.load()
-    if (current.lastCheckInUtcDay == null) return null
-    val next = current.copy(lastCheckInUtcDay = null)
-    store.save(next)
-    return next
-}
+fun runAttendanceDevDayRewind(store: AttendanceStorePort): AttendanceState? =
+    // IO 스레드의 체크인과 겹칠 수 있어 읽기-쓰기를 한 덩어리로 한다(refactor backlog #21).
+    store.update { current ->
+        if (current.lastCheckInUtcDay == null) null else current.copy(lastCheckInUtcDay = null)
+    }

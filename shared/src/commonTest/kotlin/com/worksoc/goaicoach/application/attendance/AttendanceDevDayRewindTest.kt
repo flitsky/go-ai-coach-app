@@ -17,6 +17,9 @@ private class FakeStore(initial: AttendanceState) : AttendanceStorePort {
     }
 
     override fun load(): AttendanceState = stored
+
+    override fun update(transform: (AttendanceState) -> AttendanceState?): AttendanceState? =
+        transform(stored)?.also(::save)
 }
 
 /**

@@ -31,6 +31,11 @@ private class FakeAttendanceStore(initial: AttendanceState = AttendanceState()) 
     }
 
     override fun load(): AttendanceState = stored
+
+    // 단일 스레드 페이크라 읽기-쓰기 사이에 끼어들 것이 없다 — 원자성은 실제 저장소의 몫이다
+    // (`AttendanceStoreConcurrencyTest`).
+    override fun update(transform: (AttendanceState) -> AttendanceState?): AttendanceState? =
+        transform(stored)?.also(::save)
 }
 
 private class FakeConsumableStore(initial: ConsumableInventory = ConsumableInventory()) : ConsumableStorePort {
@@ -390,6 +395,26 @@ class AttendanceRewardPolicyTest {
 }
 
 class AttendanceRewardGrantTest {
+
+    @Test
+    fun checkInThatLandedAfterTheCallersSnapshotSurvivesTheGrant() {
+        // refactor backlog #21 — Claim은 **먼저 읽은 스냅샷**을 받아 지급한다(`AttendanceRewardClaimDialog`).
+        // 그 뒤 지급 기록을 쓰기 전에 다른 경로(IO 스레드의 foreground 체크인)가 하루를 올렸으면, 스냅샷에
+        // 지급 기록만 얹어 쓰는 순간 **그 체크인이 지워진다.** 지급 기록은 저장소의 **지금** 상태에 얹어야 한다.
+        val stores = RewardStores(
+            initialAttendance = AttendanceState(attendanceCount = 4, lastCheckInUtcDay = 9L, claimedTiers = setOf(1, 2, 3)),
+        )
+        val snapshot = stores.attendance.load()
+        stores.checkInAt(10L * MillisPerUtcDay)
+
+        val result = stores.grant(snapshot)
+
+        val expected = AttendanceState(attendanceCount = 5, lastCheckInUtcDay = 10L, claimedTiers = setOf(1, 2, 3, 4))
+        assertEquals(expected, stores.attendance.stored)
+        assertEquals(expected, result.state)
+        // 지급은 스냅샷 기준 그대로다 — 5일차는 이번 Claim이 보여 준 적 없으니 다음 Claim 몫이다.
+        assertEquals(listOf(4), result.granted.map { it.tier })
+    }
 
     @Test
     fun firstEverCheckInGrantsEvalTicketsAndNoCharacter() {
