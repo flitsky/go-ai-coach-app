@@ -1,8 +1,8 @@
 package com.worksoc.goaicoach.application.engine
 
+import com.worksoc.goaicoach.application.concurrency.launchUiEffect
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
@@ -17,12 +17,6 @@ suspend fun <T> runEngineIo(block: suspend () -> T): T =
     withContext(engineIoDispatcher) {
         block()
     }
-
-fun launchUiEffect(
-    scope: CoroutineScope,
-    block: suspend CoroutineScope.() -> Unit,
-): Job =
-    scope.launch(block = block)
 
 fun launchAutoAiEffect(
     scope: CoroutineScope,

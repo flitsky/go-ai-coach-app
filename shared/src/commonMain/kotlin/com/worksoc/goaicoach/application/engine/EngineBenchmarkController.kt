@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.application.engine
 
+import com.worksoc.goaicoach.application.concurrency.launchUiEffect
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.engine.operation.EngineOperationLifecycleCallbacks
 import com.worksoc.goaicoach.shared.domain.GameState
