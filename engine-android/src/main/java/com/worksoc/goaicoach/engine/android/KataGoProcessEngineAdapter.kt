@@ -448,7 +448,7 @@ internal class KataGoProcessEngineAdapter(
             refineMove = refineMove,
             includePolicyOverride = includePolicyOverride,
             komi = komi,
-            initialStones = initialStones.map { (coord, color) -> color to coord },
+            initialStones = jsonQueryInitialStones(),
             initialPlayer = if (initialStones.isNotEmpty()) {
                 nextPlayer
             } else if (handicapCount > 0) {
@@ -458,6 +458,27 @@ internal class KataGoProcessEngineAdapter(
             },
         )
     }
+
+    /**
+     * JSON 쿼리의 시작판 — GTP 쪽이 `set_free_handicap`으로 놓은 판과 **같은 판**이어야 한다
+     * (refactor backlog #65).
+     *
+     * - [initialStones]가 있으면(정적 국면) 그것이 판 전체다. 접바둑 돌을 보태지 않는다.
+     * - 없고 접바둑이면 [BoardSize.handicapStonePositions]의 흑돌을 싣는다. 예전에는 빈 판이
+     *   나가 KataGo가 흑돌 N개 없는 판을 분석했다(aace70da, 2026-07-16부터). 따낸 접바둑 돌도
+     *   그대로 싣는다 — KataGo가 수순을 다시 두며 스스로 따내고, 접바둑 보정 N은 시작판의
+     *   흑돌 수로 센다. `whiteHandicapBonus`는 싣지 않는다: 룰셋 기본값이 GTP와 같다.
+     *
+     * ⚠️ 이 보충을 `newGame`으로 옮겨 [initialStones]를 채우지 마라. [KataGoAnalysisContext.replayState]가
+     * 그 위에 수순을 **지금 차례**부터 접어 쌓으므로, 홀수 수 뒤에는 첫 수(백)와 시작 차례가 어긋나
+     * 예외가 난다. 접바둑 국면 복원은 `GameStateReplayer`가 `handicapCount`로 이미 한다.
+     */
+    private fun jsonQueryInitialStones(): List<Pair<StoneColor, BoardCoordinate>> =
+        when {
+            initialStones.isNotEmpty() -> initialStones.map { (coord, color) -> color to coord }
+            handicapCount > 0 -> boardSize.handicapStonePositions(handicapCount).map { coord -> StoneColor.Black to coord }
+            else -> emptyList()
+        }
 
     private fun String.toMove(
         player: StoneColor,
