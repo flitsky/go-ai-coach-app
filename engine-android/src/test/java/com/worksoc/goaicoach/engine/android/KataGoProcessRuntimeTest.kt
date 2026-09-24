@@ -77,4 +77,76 @@ class KataGoProcessRuntimeTest {
         assertFalse(overrides.contains("allowResignation=false"))
         assertFalse(overrides.contains("logAllRequests=true"))
     }
+
+    /**
+     * 백로그 #92 — 두 엔진(gtp·analysis) 모두 기동 인자로 `assumeMultipleStartingBlackMovesAreHandicap=false`를
+     * 받는다. KataGo 기본값(true)은 백이 아직 돌을 놓지 않은 동안 이어진 흑 수를 접바둑 돌로 센다.
+     * 백의 `pass`도 그 연속을 끊지 않는다.
+     *
+     * ⚠️ cfg가 아니라 여기에 두는 이유: 앱은 `filesDir/katago/`에 cfg가 이미 있으면 다시 풀지
+     * 않는다(`EngineBootstrap.seedAssetIfMissing`). cfg를 고쳐도 이미 설치한 기기에는 닿지 않는다.
+     */
+    @Test
+    fun gtpCommandTurnsOffHandicapGuessFromLeadingBlackMoves() {
+        val command = plainConfig().buildGtpCommand(EngineProfile())
+
+        assertEquals(
+            listOf(HandicapGuessKey to "false"),
+            command.overrideEntries().filter { (key, _) -> key == HandicapGuessKey },
+        )
+    }
+
+    /** analysis 쪽은 `AnalysisStartupOverrideAllowList`가 호출자 값을 거르므로 따로 확인한다. */
+    @Test
+    fun analysisCommandTurnsOffHandicapGuessFromLeadingBlackMoves() {
+        val command = plainConfig().buildAnalysisCommand(
+            analysisConfigPath = "/analysis_learning.cfg",
+            analysisSearchThreads = 1,
+        )
+
+        assertEquals(
+            listOf(HandicapGuessKey to "false"),
+            command.overrideEntries().filter { (key, _) -> key == HandicapGuessKey },
+        )
+    }
+
+    @Test
+    fun startupOverridesCannotTurnHandicapGuessBackOn() {
+        val config = plainConfig().copy(
+            startupOverrides = mapOf(HandicapGuessKey to "true"),
+        )
+
+        val gtp = config.buildGtpCommand(EngineProfile())
+        val analysis = config.buildAnalysisCommand(
+            analysisConfigPath = "/analysis_learning.cfg",
+            analysisSearchThreads = 1,
+        )
+
+        assertEquals(
+            listOf(HandicapGuessKey to "false"),
+            gtp.overrideEntries().filter { (key, _) -> key == HandicapGuessKey },
+        )
+        assertEquals(
+            listOf(HandicapGuessKey to "false"),
+            analysis.overrideEntries().filter { (key, _) -> key == HandicapGuessKey },
+        )
+    }
+
+    private fun plainConfig() = KataGoProcessConfig(
+        executablePath = "/bin/katago",
+        modelPath = "/model.bin.gz",
+        configPath = "/gtp_learning.cfg",
+    )
+
+    /** `-override-config` 뒤의 값을 순서와 중복을 살려 `key to value`로 푼다. */
+    private fun KataGoProcessCommand.overrideEntries(): List<Pair<String, String>> {
+        val flagIndex = arguments.indexOf("-override-config")
+        return arguments[flagIndex + 1]
+            .split(",")
+            .map { entry -> entry.substringBefore("=") to entry.substringAfter("=") }
+    }
+
+    private companion object {
+        const val HandicapGuessKey = "assumeMultipleStartingBlackMovesAreHandicap"
+    }
 }
