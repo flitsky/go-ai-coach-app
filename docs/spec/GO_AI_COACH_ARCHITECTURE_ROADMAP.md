@@ -87,6 +87,8 @@
 
 포트(α)는 이미 이 계층 원칙대로 배치돼 있으니, 새 SDK 연동 시 파일을 어디 둘지는 이미 정해져 있다. **진짜 남은 갭**은 "Extended API 본체"(실패/재시도/캐시까지 감안한 안정화 서비스)가 아직 얇다는 것이다: `AndroidAuthClient`/`PremiumStateStore`는 SDK 호출을 그대로 감싸는 수준이라, 3계층의 `PositionAnalysisCacheResolver` 같은 신뢰도/재시도 판단이 없다. 착수 시 유의: 로그인 쪽 하드닝은 `isLoginEnabled`가 켜지기 전까지 실기로 검증할 방법이 없다.
 
+**포트가 아는 것 — 2026-09-24 실측(refactor backlog #73)**: `*Port` 인터페이스 **19개** 중 **13개**가 자기가 저장·전달하는 5·6계층 값 타입을 시그니처에 싣고, 동작(유스케이스·컨트롤러·세션·정책 객체) 참조는 **0**이다 — 원칙 문서가 옛 문장 *"5계층 이상을 모른다"* 를 이 실측에 맞춰 규칙으로 고쳤다(`docs/ARCHITECTURE.md` 4계층 "포트가 아는 것"). import로 보이는 것은 5개(`AuthClientPort`·`PremiumStateStorePort`·`DiagnosticEventLogPort`·`DiagnosticEventExternalSinkPort`·`BoardVisionScannerPort`)뿐이고, 나머지 8개는 값과 **같은 패키지**라 import 줄이 없다 — `#29`가 드러낸 "둘"은 보이는 끝이었다. ⚠️ **이 규칙을 보는 가드는 없다.** `LayeringContractTest`의 포트 쪽 가드(`authPremiumAndDeviceApplicationPackagesStayPlatformFree`·`engineOperationApplicationPoliciesStayPortable`)는 아래쪽 절반(플랫폼 API 금지)만 보고, `PackageCycleRatchetTest`는 사이클만 본다. 옛 정의도 검사된 적이 없다 — 검사됐다면 `#29`의 import 두 줄이 빨갰을 것이다. 규칙 밖 하나: `EngineBenchmarkStorePort.hasUsableProfile`(판정 메서드, 프로덕션 호출부 0).
+
 ### 5계층 — Application / Domain
 
 **위치**:
