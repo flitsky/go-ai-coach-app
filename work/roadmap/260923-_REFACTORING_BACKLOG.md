@@ -221,46 +221,6 @@ Hilt(commonMain 불가)·Koin(이득 0)·전면 MVI(이미 절반 작동)·모�
     · → 정의를 실제에 맞게 고친다. *"포트는 자기가 실어 나르는 상태 타입을 안다"* 가 예외가 아니라 **정상**임을
       명문화하는 쪽이 정직해 보인다. ⚠️ 이 문서는 **"새 앱에 복사해 간다"가 목적**이라 구멍을 두면 복제된다.
 
-#### P2 — 엔진 동시성 (독립 트랙 · 어느 단계와도 병렬)
-
-14. **프로세스 수명 뮤텍스 + 1계층 실체화** (AI 모델: Opus, 노력정도: 최대)
-    · `KataGoProcessEngineAdapter`의 `process`/`input`/`output`(+analysis 3종)을 값 객체로 묶고 기동·폐기를
-      전용 `lifecycleMutex` 안으로. `ensureProcessStarted()`를 suspend로(double-checked).
-      타임아웃 재시작은 **자기 세대 == 현재 세대일 때만** destroy(**ABA 방지**).
-    · `KataGoProcessRuntime`을 실제 타입으로: `interface EngineProcessRuntime` + `LocalKataGoProcessRuntime`.
-      어댑터는 핸들의 writer/reader만 쓰고 프로세스를 직접 만들지 않는다.
-    · 실측 근거: `ensureProcessStarted()`가 non-suspend이고 **12개 호출부 전부 뮤텍스 밖**, `@Volatile` 없음.
-15. **오퍼레이션 단위 직렬화** (AI 모델: Opus, 노력정도: 최대) — 14 뒤
-    · `LocalEngineSessionClient`의 공개 suspend 메서드를 Mutex 안에서. 현재 busy 게이트는 check-then-act이고
-      `syncToGameState`는 N+1개 독립 명령이라 다른 오퍼레이션이 끼어든다.
-      TopMoves/ScoreEstimate는 `tryLock`으로 즉시 포기해 기존 deferral 경로로(UX 유지).
-    · 🔴 **함정 71**: 평범한 `withLock` 금지. `forceReset`은 이 락을 **절대 잡지 않는다.**
-17. **타임아웃 예산 단일화 + 공통 실패 타입** (AI 모델: Opus, 노력정도: 높음)
-    · `searchTimeoutMillisFor`를 `:shared`로 올려 로컬/원격이 같은 함수를. 현재 같은 `AnalysisLimit`에
-      **로컬은 캡+20초(캡 없으면 120초), 원격은 항상 33초**다.
-    · `shared.enginecontract`에 `EngineOperationFailure`(Timeout/Transport/Protocol/EngineRejected).
-      재시도는 **Transport에 한해** 2계층 안에서 1회 백오프(**탐색 타임아웃은 재시도 금지**).
-18. **세대 관통 (정책 타입 중복 제거는 완료)** (AI 모델: Sonnet, 노력정도: 중간)
-    · `LocalEngineSessionClient` 생성자에 `currentSessionGeneration: () -> Long` 추가.
-      현재 3계층이 `0L`을 박아 넣어 **모든 `position_analysis` operationId가 g0으로 찍혀
-      실제 세션 로그와 대조 불가**다.
-    · ⚠️ 생성자 시그니처가 바뀌어 **`app-android`의 배선까지 번진다.** 파일 충돌면이 넓다.
-
-22. **`GameSetup` 값 객체 — 덤 유실의 구조적 해법** (AI 모델: Opus, 노력정도: 높음)
-    · 판 정체성(boardSize/ruleset/handicapCount/komi)을 값 객체로 묶어 **코덱이 그 하나만 왕복**하게.
-      지금은 세 코덱이 각자 손으로 필드를 골라 담아 **같은 종류의 누락이 또 난다.**
-    · ⚠️ **기존 4필드를 파생 프로퍼티로 남겨 호출부 변경 0**으로. ⚠️ **함정 69**: 스키마 번호를 올리지 않는 범위에서만.
-74. 🔴 **5계층이 취소를 다시 삼킨다 — `#16`이 절반만 닫혔다** (AI 모델: Opus, 노력정도: 중간)
-    · `#16`이 2계층(`attemptJsonAnalysis`)에서 `CancellationException`을 rethrow하게 만들었는데,
-      **`match/MatchTurnOrchestration.kt`의 `selectAiMoveFromAnalysis`가 `runCatching { … }.getOrNull()`로
-      그것을 다시 삼킨다.** 삼킨 직후 `engineAdapter.genMove(aiPlayer)`를 부른다(직접 확인).
-    · 🔴 즉 **AI 착수 경로에서는 타임아웃이 여전히 예산을 두 번 쓴다.** `#16`의 커밋 본문이
-      *"같은 예산으로 GTP에서 또 태우던 것이 없어졌다"* 고 적은 것은 **그 경로에 대해서는 과장**이다
-      (다른 경로 — TopMoves·형세판단 — 에서는 실제로 닫혔다).
-    · ⚠️ **회귀는 아니다.** 전에는 삼킴이 둘이었고 지금은 하나다. 다만 완결이 아니다.
-    · 🔴 **고치면 실기가 필요하다.** 타임아웃이 위로 올라가면 **AI가 수를 못 두고 멈추거나 UI가
-      에러를 보일 수 있다** — `#16`이 남긴 `needsDevice` 중 가장 큰 위험과 같은 자리다.
-
 79. **G1 루트 매처를 `detectForbiddenReference`로 합친다 — `#77`의 남은 절반** (AI 모델: Sonnet, 노력정도: 낮음)
     · `#77`은 **대문자로 시작하는 이름만** 잡는 정규식을 따로 붙였다. 루트 패키지의 **소문자 top-level 함수**를
       import 없이 inline FQN으로 부르면 G1은 **여전히 초록**이다(검수자가 찾았다).
@@ -318,6 +278,46 @@ Hilt(commonMain 불가)·Koin(이득 0)·전면 MVI(이미 절반 작동)·모�
     · `syncStaticPosition` 뒤 재동기화 없이 `playMove`/`genMove`가 홀수 번이면 `KataGoAnalysisContext.replayState`가
       *"Expected White, got Black"* 으로 던지고, JSON이 GTP로 폴백해도 `fillFromPolicyIfNeeded`가 또 부르므로 `analyze()`가
       강등 없이 예외로 끝난다. `syncToGameState`가 매번 재동기화해서 지금은 안 탄다 — 정적 국면에 수를 두는 기능이 생기는 날의 함정.
+
+#### P2 — 엔진 동시성 (독립 트랙 · 어느 단계와도 병렬)
+
+14. **프로세스 수명 뮤텍스 + 1계층 실체화** (AI 모델: Opus, 노력정도: 최대)
+    · `KataGoProcessEngineAdapter`의 `process`/`input`/`output`(+analysis 3종)을 값 객체로 묶고 기동·폐기를
+      전용 `lifecycleMutex` 안으로. `ensureProcessStarted()`를 suspend로(double-checked).
+      타임아웃 재시작은 **자기 세대 == 현재 세대일 때만** destroy(**ABA 방지**).
+    · `KataGoProcessRuntime`을 실제 타입으로: `interface EngineProcessRuntime` + `LocalKataGoProcessRuntime`.
+      어댑터는 핸들의 writer/reader만 쓰고 프로세스를 직접 만들지 않는다.
+    · 실측 근거: `ensureProcessStarted()`가 non-suspend이고 **12개 호출부 전부 뮤텍스 밖**, `@Volatile` 없음.
+15. **오퍼레이션 단위 직렬화** (AI 모델: Opus, 노력정도: 최대) — 14 뒤
+    · `LocalEngineSessionClient`의 공개 suspend 메서드를 Mutex 안에서. 현재 busy 게이트는 check-then-act이고
+      `syncToGameState`는 N+1개 독립 명령이라 다른 오퍼레이션이 끼어든다.
+      TopMoves/ScoreEstimate는 `tryLock`으로 즉시 포기해 기존 deferral 경로로(UX 유지).
+    · 🔴 **함정 71**: 평범한 `withLock` 금지. `forceReset`은 이 락을 **절대 잡지 않는다.**
+17. **타임아웃 예산 단일화 + 공통 실패 타입** (AI 모델: Opus, 노력정도: 높음)
+    · `searchTimeoutMillisFor`를 `:shared`로 올려 로컬/원격이 같은 함수를. 현재 같은 `AnalysisLimit`에
+      **로컬은 캡+20초(캡 없으면 120초), 원격은 항상 33초**다.
+    · `shared.enginecontract`에 `EngineOperationFailure`(Timeout/Transport/Protocol/EngineRejected).
+      재시도는 **Transport에 한해** 2계층 안에서 1회 백오프(**탐색 타임아웃은 재시도 금지**).
+18. **세대 관통 (정책 타입 중복 제거는 완료)** (AI 모델: Sonnet, 노력정도: 중간)
+    · `LocalEngineSessionClient` 생성자에 `currentSessionGeneration: () -> Long` 추가.
+      현재 3계층이 `0L`을 박아 넣어 **모든 `position_analysis` operationId가 g0으로 찍혀
+      실제 세션 로그와 대조 불가**다.
+    · ⚠️ 생성자 시그니처가 바뀌어 **`app-android`의 배선까지 번진다.** 파일 충돌면이 넓다.
+
+22. **`GameSetup` 값 객체 — 덤 유실의 구조적 해법** (AI 모델: Opus, 노력정도: 높음)
+    · 판 정체성(boardSize/ruleset/handicapCount/komi)을 값 객체로 묶어 **코덱이 그 하나만 왕복**하게.
+      지금은 세 코덱이 각자 손으로 필드를 골라 담아 **같은 종류의 누락이 또 난다.**
+    · ⚠️ **기존 4필드를 파생 프로퍼티로 남겨 호출부 변경 0**으로. ⚠️ **함정 69**: 스키마 번호를 올리지 않는 범위에서만.
+74. 🔴 **5계층이 취소를 다시 삼킨다 — `#16`이 절반만 닫혔다** (AI 모델: Opus, 노력정도: 중간)
+    · `#16`이 2계층(`attemptJsonAnalysis`)에서 `CancellationException`을 rethrow하게 만들었는데,
+      **`match/MatchTurnOrchestration.kt`의 `selectAiMoveFromAnalysis`가 `runCatching { … }.getOrNull()`로
+      그것을 다시 삼킨다.** 삼킨 직후 `engineAdapter.genMove(aiPlayer)`를 부른다(직접 확인).
+    · 🔴 즉 **AI 착수 경로에서는 타임아웃이 여전히 예산을 두 번 쓴다.** `#16`의 커밋 본문이
+      *"같은 예산으로 GTP에서 또 태우던 것이 없어졌다"* 고 적은 것은 **그 경로에 대해서는 과장**이다
+      (다른 경로 — TopMoves·형세판단 — 에서는 실제로 닫혔다).
+    · ⚠️ **회귀는 아니다.** 전에는 삼킴이 둘이었고 지금은 하나다. 다만 완결이 아니다.
+    · 🔴 **고치면 실기가 필요하다.** 타임아웃이 위로 올라가면 **AI가 수를 못 두고 멈추거나 UI가
+      에러를 보일 수 있다** — `#16`이 남긴 `needsDevice` 중 가장 큰 위험과 같은 자리다.
 
 #### P3 — 이름공간 정렬 (순수 이동, 동작 변경 0)
 
