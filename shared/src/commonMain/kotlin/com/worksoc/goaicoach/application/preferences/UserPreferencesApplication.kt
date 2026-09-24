@@ -60,6 +60,16 @@ fun buildInitialUserPreferencesPlan(
     )
 }
 
+fun InitialUserPreferencesPlan.toGameSessionSettingsState(): GameSessionSettingsState =
+    GameSessionSettingsState(
+        boardSize = settings.boardSize,
+        playerSetup = playerSetup,
+        autoPlayDelaySetting = settings.autoPlayDelaySetting,
+        searchTimeSettings = settings.searchTimeSettings.normalized(),
+        topMovesEnabled = settings.topMovesEnabled,
+        handicapCount = settings.handicapCount,
+    )
+
 fun buildUserPreferencesSnapshot(
     playerSetup: PlayerSetup,
     boardSize: BoardSize,

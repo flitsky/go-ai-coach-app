@@ -91,7 +91,6 @@ internal object ContractSymbols {
     const val APPLICATION_ENGINE = "com.worksoc.goaicoach.application.engine"
     const val APPLICATION_ENGINE_OPERATION = "com.worksoc.goaicoach.application.engine.operation"
     const val APPLICATION_HUMANMOVE = "com.worksoc.goaicoach.application.humanmove"
-    const val APPLICATION_PREFERENCES = "com.worksoc.goaicoach.application.preferences"
     const val APPLICATION_RUNTIME = "com.worksoc.goaicoach.application.runtime"
     const val APPLICATION_SAVEDGAME = "com.worksoc.goaicoach.application.savedgame"
     const val APPLICATION_SCORE = "com.worksoc.goaicoach.application.score"
@@ -112,7 +111,6 @@ internal object ContractSymbols {
             APPLICATION_ENGINE,
             APPLICATION_ENGINE_OPERATION,
             APPLICATION_HUMANMOVE,
-            APPLICATION_PREFERENCES,
             APPLICATION_RUNTIME,
             APPLICATION_SAVEDGAME,
             APPLICATION_SCORE,
@@ -136,7 +134,6 @@ internal object ContractSymbols {
         APPLICATION_ENGINE to APPLICATION_SESSION,
         APPLICATION_HUMANMOVE to APPLICATION_RUNTIME,
         APPLICATION_HUMANMOVE to APPLICATION_SESSION,
-        APPLICATION_PREFERENCES to APPLICATION_SESSION,
         APPLICATION_RUNTIME to APPLICATION_SESSION,
         APPLICATION_RUNTIME to APPLICATION_STARTGAME,
         APPLICATION_SAVEDGAME to APPLICATION_SESSION,

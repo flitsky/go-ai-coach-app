@@ -1,6 +1,5 @@
 package com.worksoc.goaicoach.application.session
 
-import com.worksoc.goaicoach.application.preferences.InitialUserPreferencesPlan
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
@@ -56,13 +55,3 @@ data class GameSessionSettingsState(
     fun hideTopMoves(): GameSessionSettingsState =
         copy(topMovesEnabled = false)
 }
-
-fun InitialUserPreferencesPlan.toGameSessionSettingsState(): GameSessionSettingsState =
-    GameSessionSettingsState(
-        boardSize = settings.boardSize,
-        playerSetup = playerSetup,
-        autoPlayDelaySetting = settings.autoPlayDelaySetting,
-        searchTimeSettings = settings.searchTimeSettings.normalized(),
-        topMovesEnabled = settings.topMovesEnabled,
-        handicapCount = settings.handicapCount,
-    )
