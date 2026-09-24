@@ -157,7 +157,7 @@ android {
             // playInternal은 `USE_TEST_ADS=true`이면서도 **실제 테스터에게 배포되는** 빌드다.
             buildConfigField("boolean", "FORCE_EEA_CONSENT_DEBUG", forceEeaConsentDebug.toString())
             buildConfigField("String", "CONSENT_TEST_DEVICE_HASHED_ID", "\"$consentTestDeviceHashedId\"")
-            // ui/AdUnitIds.kt가 이 플래그로 테스트/실제 ID를 고른다 — 디버그 빌드는 local.properties
+            // platform/AdUnitIds.kt가 이 플래그로 테스트/실제 ID를 고른다 — 디버그 빌드는 local.properties
             // 내용과 무관하게 항상 true.
             manifestPlaceholders["admobAppId"] = testAdmobAppId
             buildConfigField("boolean", "USE_TEST_ADS", "true")

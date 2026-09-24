@@ -30,7 +30,7 @@ sealed class ConsumableEffect {
      *
      * 참고: 현재 이 앱에 **강제로 뜨는 광고는 없다.** 배너 컴포저블은 정의만 되어 있고 어느
      * 화면에도 붙어 있지 않으며(`ui/BannerAdView.kt`), 사용자가 보는 유일한 광고는 잠긴 기능을
-     * 풀려고 자발적으로 보는 리워드 광고다(`ui/PremiumPurchaseGlue.kt`). 그래서 이 표가 스킵하는
+     * 풀려고 자발적으로 보는 리워드 광고다(`PremiumPurchaseGlue.kt`). 그래서 이 표가 스킵하는
      * 대상도 그 리워드 광고 하나뿐이다.
      */
     data object PremiumGrant : ConsumableEffect()

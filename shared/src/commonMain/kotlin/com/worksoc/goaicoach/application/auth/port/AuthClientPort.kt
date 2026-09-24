@@ -4,7 +4,7 @@ import com.worksoc.goaicoach.application.auth.state.AuthState
 
 /**
  * 4계층(External Integration) α — 실제 인증 SDK(Firebase Auth 등) 호출을 감싸는 순수 포트.
- * 실제 어댑터는 `ui/AndroidAuthClient.kt`(플랫폼 계층)에 둔다.
+ * 실제 어댑터는 `platform/AndroidAuthClient.kt`(플랫폼 계층)에 둔다.
  *
  * 익명(Anonymous) 로그인 메서드는 없다 — 파이어베이스 Auth의 익명 로그인 활성화는
  * 이 프로젝트에서 켜지 않기로 확정된 상태다(재설치마다 새 익명 계정이 쌓여 허수 유저가
@@ -14,7 +14,7 @@ import com.worksoc.goaicoach.application.auth.state.AuthState
 interface AuthClientPort {
     /**
      * 익명 세션이 없는 상태에서의 신규 Google 로그인. [idToken]은 Credential Manager/
-     * Sign in with Google이 발급한 Google ID 토큰이다(`ui/GoogleCredentialManagerClient.kt`).
+     * Sign in with Google이 발급한 Google ID 토큰이다(`platform/GoogleCredentialManagerClient.kt`).
      */
     suspend fun signInWithGoogle(idToken: String): Result<AuthState>
 
