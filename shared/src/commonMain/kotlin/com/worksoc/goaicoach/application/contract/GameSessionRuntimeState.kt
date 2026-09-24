@@ -1,7 +1,5 @@
-package com.worksoc.goaicoach.application.session
+package com.worksoc.goaicoach.application.contract
 
-import com.worksoc.goaicoach.application.autoai.AutoAiTurnDisplayPlan
-import com.worksoc.goaicoach.application.contract.RuntimePlayLevelSelection
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisPreset
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting

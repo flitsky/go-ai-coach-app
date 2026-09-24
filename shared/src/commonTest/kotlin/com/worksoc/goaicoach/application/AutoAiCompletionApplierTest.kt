@@ -2,7 +2,7 @@ package com.worksoc.goaicoach.application
 
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnCompletionApplyRunRequest
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnCompletionPlan
-import com.worksoc.goaicoach.application.autoai.AutoAiTurnDisplayPlan
+import com.worksoc.goaicoach.application.contract.AutoAiTurnDisplayPlan
 import com.worksoc.goaicoach.application.contract.AutoAiTurnEndgamePlan
 import com.worksoc.goaicoach.application.contract.AutoAiTurnExecutionContext
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnFollowUpPlan
@@ -11,7 +11,7 @@ import com.worksoc.goaicoach.shared.policy.EngineOperationResultGuard
 import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
 import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
 import com.worksoc.goaicoach.application.contract.ScoreEstimateDisplayPlan
-import com.worksoc.goaicoach.application.session.GameSessionRuntimeState
+import com.worksoc.goaicoach.application.contract.GameSessionRuntimeState
 import com.worksoc.goaicoach.application.session.GameSessionTurnTimeState
 import com.worksoc.goaicoach.application.session.TurnTimeMoveUpdate
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting

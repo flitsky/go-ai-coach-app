@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.application.autoai
 
+import com.worksoc.goaicoach.application.contract.AutoAiTurnDisplayPlan
 import com.worksoc.goaicoach.application.endgame.AiEndgameResolution
 import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
 import com.worksoc.goaicoach.application.runtime.contextTransitionAfter

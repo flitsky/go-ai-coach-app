@@ -86,16 +86,10 @@ internal object ContractSymbols {
     // 측정 기준은 커밋 7c928f55의 설계 스레드 실측(scc.py)과 같은 규칙이다([PackageImportGraph]).
     // ⚠️ 여기 적힌 패키지는 [GUARDED]에도 자동으로 올라가 실존 검사를 받는다.
     const val APPLICATION_AUTOAI = "com.worksoc.goaicoach.application.autoai"
-    const val APPLICATION_ENGINE = "com.worksoc.goaicoach.application.engine"
-    const val APPLICATION_ENGINE_OPERATION = "com.worksoc.goaicoach.application.engine.operation"
     const val APPLICATION_HUMANMOVE = "com.worksoc.goaicoach.application.humanmove"
-    const val APPLICATION_RUNTIME = "com.worksoc.goaicoach.application.runtime"
-    const val APPLICATION_SAVEDGAME = "com.worksoc.goaicoach.application.savedgame"
-    const val APPLICATION_SCORE = "com.worksoc.goaicoach.application.score"
     const val APPLICATION_SESSION = "com.worksoc.goaicoach.application.session"
     const val APPLICATION_STARTGAME = "com.worksoc.goaicoach.application.startgame"
     const val APPLICATION_TOPMOVES = "com.worksoc.goaicoach.application.topmoves"
-    const val APPLICATION_UNDO = "com.worksoc.goaicoach.application.undo"
 
     /**
      * 크기 2 이상인 SCC(강한 연결 요소)의 기준선. **구성원이 늘거나 새 SCC가 생기면 실패**,
@@ -104,16 +98,10 @@ internal object ContractSymbols {
     val CYCLE_BASELINE_SCCS: List<Set<String>> = listOf(
         setOf(
             APPLICATION_AUTOAI,
-            APPLICATION_ENGINE,
-            APPLICATION_ENGINE_OPERATION,
             APPLICATION_HUMANMOVE,
-            APPLICATION_RUNTIME,
-            APPLICATION_SAVEDGAME,
-            APPLICATION_SCORE,
             APPLICATION_SESSION,
             APPLICATION_STARTGAME,
             APPLICATION_TOPMOVES,
-            APPLICATION_UNDO,
         ),
     )
 

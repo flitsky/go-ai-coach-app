@@ -6,6 +6,7 @@ import com.worksoc.goaicoach.application.undo.*
 
 import com.worksoc.goaicoach.application.engine.*
 import com.worksoc.goaicoach.application.orchestration.*
+import com.worksoc.goaicoach.application.contract.*
 import com.worksoc.goaicoach.application.session.*
 
 import com.worksoc.goaicoach.application.autoai.*

@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.application.autoai
 
+import com.worksoc.goaicoach.application.contract.AutoAiTurnDisplayPlan
 import com.worksoc.goaicoach.application.contract.AutoAiTurnEndgamePlan
 import com.worksoc.goaicoach.application.endgame.AiEndgameResolution
 import com.worksoc.goaicoach.application.engine.AutoAiTurnResult
@@ -16,7 +17,6 @@ import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.diagnostic.NoopDiagnosticEventLog
 import com.worksoc.goaicoach.application.diagnostic.runObservedEngineOperation
 import com.worksoc.goaicoach.match.MatchReferee
-import com.worksoc.goaicoach.shared.enginecontract.AnalysisPreset
 import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
@@ -32,20 +32,6 @@ import com.worksoc.goaicoach.shared.policy.EngineOperationKind
 import com.worksoc.goaicoach.shared.policy.EngineOperationRequest
 import com.worksoc.goaicoach.shared.policy.EngineTimeoutPolicy
 import com.worksoc.goaicoach.shared.policy.engineOperationRequest
-
-data class AutoAiTurnDisplayPlan(
-    val playLevel: PlayLevelSetting,
-    val profile: EngineProfile,
-    val analysisPreset: AnalysisPreset,
-    val gameState: GameState,
-    val turnEngineMessage: String,
-    val candidateText: String,
-    val lastMoveText: String,
-    val scoreDisplay: ScoreEstimateDisplayPlan,
-    val shouldResolveEndgame: Boolean,
-    val endgamePrePassCandidates: List<CandidateMove>,
-    val nextAnalysisState: GameState?,
-)
 
 sealed class AutoAiTurnFollowUpPlan {
     data object None : AutoAiTurnFollowUpPlan()

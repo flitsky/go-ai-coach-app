@@ -54,7 +54,7 @@ import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
 import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
 import com.worksoc.goaicoach.application.runtime.runtimeAppStartLog
 import com.worksoc.goaicoach.application.runtime.runtimeScoreSnapshotsChangedLog
-import com.worksoc.goaicoach.application.runtime.toRuntimeLogContext
+import com.worksoc.goaicoach.application.session.toRuntimeLogContext
 import com.worksoc.goaicoach.application.gamehistory.runGameHistoryAppendIfCompleted
 import com.worksoc.goaicoach.application.score.FinalScoreDisplayPlan
 import com.worksoc.goaicoach.application.engine.operation.EngineOperationLifecycleController
@@ -89,7 +89,7 @@ import com.worksoc.goaicoach.presentation.dispatchGameUiEvent
 import com.worksoc.goaicoach.presentation.toKaTrainUxOptions
 import com.worksoc.goaicoach.application.session.GameSessionScoreState
 import com.worksoc.goaicoach.application.session.GameSessionMoveReviewState
-import com.worksoc.goaicoach.application.session.GameSessionRuntimeState
+import com.worksoc.goaicoach.application.contract.GameSessionRuntimeState
 import com.worksoc.goaicoach.application.session.GameSessionSettingsState
 import com.worksoc.goaicoach.application.session.GameSessionAnalysisState
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnUiState

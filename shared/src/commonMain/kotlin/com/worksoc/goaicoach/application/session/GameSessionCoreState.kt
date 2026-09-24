@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.application.session
 
+import com.worksoc.goaicoach.application.contract.GameSessionRuntimeState
 import com.worksoc.goaicoach.application.humanmove.HumanEngineSyncFailurePlan
 import com.worksoc.goaicoach.application.humanmove.HumanMoveLocalResult
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkDisplayPlan
@@ -8,7 +9,7 @@ import com.worksoc.goaicoach.application.savedgame.SavedGameRestorePlan
 import com.worksoc.goaicoach.application.score.ScoringRuleChangePlan
 import com.worksoc.goaicoach.application.startgame.GameSessionResetPlan
 import com.worksoc.goaicoach.application.startgame.buildNewLocalGameSessionPlan
-import com.worksoc.goaicoach.application.autoai.AutoAiTurnDisplayPlan
+import com.worksoc.goaicoach.application.contract.AutoAiTurnDisplayPlan
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnFailureDisplayPlan
 import com.worksoc.goaicoach.application.score.EndgameFailureDisplayPlan
 import com.worksoc.goaicoach.application.score.FinalScoreDisplayPlan

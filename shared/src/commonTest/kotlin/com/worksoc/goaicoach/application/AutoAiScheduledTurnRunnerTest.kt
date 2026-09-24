@@ -32,7 +32,7 @@ import com.worksoc.goaicoach.application.session.GameSessionAnalysisState
 import com.worksoc.goaicoach.application.session.GameSessionControllerState
 import com.worksoc.goaicoach.application.session.GameSessionCoreState
 import com.worksoc.goaicoach.application.session.GameSessionMoveReviewState
-import com.worksoc.goaicoach.application.session.GameSessionRuntimeState
+import com.worksoc.goaicoach.application.contract.GameSessionRuntimeState
 import com.worksoc.goaicoach.application.session.GameSessionScoreState
 import com.worksoc.goaicoach.application.session.GameSessionSettingsState
 import com.worksoc.goaicoach.application.session.GameSessionTurnTimeState
@@ -241,7 +241,7 @@ class AutoAiScheduledTurnRunnerTest {
                 .recordMove(player, nowMillis, nextPlayer)
         },
         applyTurnTimeUpdate: (TurnTimeMoveUpdate) -> Unit = {},
-        applyTurnDisplay: (com.worksoc.goaicoach.application.autoai.AutoAiTurnDisplayPlan) -> AutoAiTurnFollowUpPlan =
+        applyTurnDisplay: (com.worksoc.goaicoach.application.contract.AutoAiTurnDisplayPlan) -> AutoAiTurnFollowUpPlan =
             { AutoAiTurnFollowUpPlan.None },
         resolveEndgame: suspend (com.worksoc.goaicoach.application.contract.AutoAiTurnEndgamePlan.Resolve) -> Unit = {},
         applyTurnFailureDisplay: (Throwable) -> Unit = {},

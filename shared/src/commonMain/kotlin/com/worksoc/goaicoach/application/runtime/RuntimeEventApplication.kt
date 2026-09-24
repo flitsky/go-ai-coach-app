@@ -1,7 +1,6 @@
 package com.worksoc.goaicoach.application.runtime
 
-import com.worksoc.goaicoach.application.session.GameSessionControllerState
-import com.worksoc.goaicoach.application.session.GameSessionRuntimeState
+import com.worksoc.goaicoach.application.contract.GameSessionRuntimeState
 import com.worksoc.goaicoach.shared.policy.EngineOperationResultGuard
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.PlayerSetup
@@ -102,34 +101,6 @@ data class RuntimeLogContext(
             "autoDelay=${autoPlayDelaySetting.label}/${autoPlayDelaySetting.millis}ms " +
             "search=${searchTimeSettings.normalized().summaryText()} diagnostic=${engineDiagnostic.runtimeLogSnippet(140)}"
 }
-
-fun GameSessionControllerState.toRuntimeLogContext(
-    engineName: String,
-    engineDiagnostic: String,
-    isEngineReady: Boolean,
-    isEngineBusy: Boolean,
-    analysisCacheStats: String,
-    turnTimeText: String,
-): RuntimeLogContext =
-    RuntimeLogContext(
-        engineName = engineName,
-        engineDiagnostic = engineDiagnostic,
-        playerSetup = playerSetup,
-        gameState = gameState,
-        runtimeState = core.runtimeState,
-        autoPlayDelaySetting = settings.autoPlayDelaySetting,
-        searchTimeSettings = settings.searchTimeSettings,
-        topMovesEnabled = settings.topMovesEnabled,
-        isEngineReady = isEngineReady,
-        isEngineBusy = isEngineBusy,
-        isGameEnded = isGameEnded,
-        isAutoAiTurnPending = isAutoAiTurnPending,
-        shouldShowResumePrompt = shouldShowResumePrompt,
-        analysisCacheStats = analysisCacheStats,
-        moveAnalysisCoverage = core.analysisState.reviewAnalysis.coverageSummary(),
-        scoreText = core.scoreState.scoreText,
-        turnTimeText = turnTimeText,
-    )
 
 fun runtimeAppStartLog(context: RuntimeLogContext): String =
     context.event(

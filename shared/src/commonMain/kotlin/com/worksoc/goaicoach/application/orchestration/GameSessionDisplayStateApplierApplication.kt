@@ -2,7 +2,7 @@ package com.worksoc.goaicoach.application.orchestration
 
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkDisplayPlan
 import com.worksoc.goaicoach.application.engine.EngineStartupDisplayPlan
-import com.worksoc.goaicoach.application.autoai.AutoAiTurnDisplayPlan
+import com.worksoc.goaicoach.application.contract.AutoAiTurnDisplayPlan
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnFailureDisplayPlan
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnFollowUpPlan
 import com.worksoc.goaicoach.application.autoai.buildAutoAiTurnFollowUpPlan
