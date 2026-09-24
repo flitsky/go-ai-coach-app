@@ -38,6 +38,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.presentation.GameUiEvent
 import androidx.compose.material.icons.Icons
@@ -204,7 +205,7 @@ internal fun GameSetupLobby(
                 PremiumModeCard(onClick = { showPremiumUpsellDialog = true })
             }
 
-            // ⚠️ **엔진이 준비되기 전에는 시작할 수 없다**(백로그 #101 0단계).
+            // ⚠️ **AI가 앉은 대국은 엔진이 준비되기 전에 시작할 수 없다**(백로그 #101 0단계).
             // 게이트가 없으면 `runStartConfiguredGame`이 AI 대국을 **조용히 로컬 2인 대국으로
             // 강등**한다(`!isEngineReady && targetMode != LocalTwoPlayer` 분기). 그런데
             // `playerSetup`은 HumanVsAi 그대로라 `canAcceptBoardInput`이 false가 되어,
@@ -212,9 +213,27 @@ internal fun GameSetupLobby(
             // 렌더되지 않아 **아무 설명도 없다.**
             // ⚠️ **지금은 준비 화면이 이 구간을 가려 도달 불가지만**, #101이 그 화면을 없애면
             // 신규 사용자의 첫 세 번의 탭(홈 → 대국 설정 → 시작)이 곧바로 이 경로가 된다.
+            //
+            // ## ⚠️ 사람끼리 두는 대국은 이 게이트에 걸리지 않는다 (2026-09-23)
+            //
+            // 위 사유는 **AI 좌석이 있을 때만** 성립한다 — 강등될 것이 없는
+            // [MatchMode.LocalTwoPlayer]는 `buildStartConfiguredGamePlan`이 *"Local two-player game.
+            // Engine analysis is not connected."* 로 **정상 처리**하고, 두 좌석이 다 사람이라
+            // `canAcceptBoardInput`도 참이다. 죽은 판이 되는 경로가 아예 없다.
+            //
+            // 그런데 잠금이 좌석을 안 보던 탓에, **엔진이 끝내 못 뜨는 기기에서는 사람끼리도
+            // 한 판도 둘 수 없었다** — `EngineUnavailableNoticeDialog`가 바로 그 순간
+            // *"사람끼리 두는 대국은 그대로 쓸 수 있어요"* 라고 띄우는데 **거짓말이었다.**
+            // (2026-09-23 `NewGameBoardTapSmokeTest` 실패가 이 구멍을 드러냈다 — 영원히 준비되지
+            // 않는 가짜 엔진으로 로컬 2인 대국을 시작하려다 버튼이 잠겨 대국 화면에 못 들어갔다.)
+            //
+            // ⚠️ **다시 `enabled = engineReady`로 되돌리지 말 것.** 같은 예외가 형세 버튼에도
+            // 이미 있다(`GameScreenState`의 `canRequestEval`) — 이 화면만 좌석을 안 보고 있었다.
             val engineReady = screenState.engine.isReady
+            val needsEngine = screenState.matchMode != MatchMode.LocalTwoPlayer
+            val canStartMatch = engineReady || !needsEngine
             Button(
-                enabled = engineReady,
+                enabled = canStartMatch,
                 onClick = {
                     onEvent(GameUiEvent.StartConfiguredGame)
                     onStartMatch()
@@ -257,7 +276,9 @@ internal fun GameSetupLobby(
                 }
             }
             // 잠긴 이유를 말한다 — 이유 없이 안 눌리는 버튼은 고장으로 읽힌다.
-            if (!engineReady) {
+            // ⚠️ 조건은 버튼과 **같은 값**이어야 한다 — `!engineReady`로 적으면 사람끼리 두는
+            //   대국에서 **눌리는 버튼 밑에 "잠겼다"는 안내**가 붙는다.
+            if (!canStartMatch) {
                 Text(
                     text = strings.engineNotReadyToStart,
                     fontSize = 12.sp,

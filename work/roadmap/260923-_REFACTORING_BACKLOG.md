@@ -30,7 +30,7 @@
 **착수 직후 할 것 넷** — 순서가 있다.
 
 1. **아래 「⚠️ 반드시 알아야 할 함정」을 읽는다.** 걸리는 키워드가 있으면 `docs/spec/PITFALLS.md`의
-   해당 번호 전문을 편다. **79건을 다 읽지 않는다.**
+   해당 번호 전문을 편다. **81건을 다 읽지 않는다.**
 2. **진단서에서 그 항목이 속한 절을 읽는다.** 왜 이 일을 하는지, 무엇을 건드리면 안 되는지가 거기 있다.
 3. **선행 항목이 완료인지 확인한다.** 아래 「의존 그래프」 참고. 안 끝났으면 **집지 않는다.**
 4. **끝내기 전 `make test TARGET=emu`가 초록**이어야 한다. 빨간 채로 닫지 않는다.
@@ -78,6 +78,10 @@
   테스트를 돌려 덮어쓴다. 개수 대조는 **소스에서** 센다(`git ls-tree`로 두 리비전의 `@Test`를 세는 식).
 - **함정 79 — Lint `abortOnError=true`는 새 *Error* 만 막고 새 *Warning* 은 통과시킨다.**
   `warningsAsErrors=false`이므로 그렇다. 이 게이트로 얻는 보장은 **"새 Error 0"** 이지 "새 경고 0"이 아니다.
+- **함정 81 — 계기 테스트에서 `shared_prefs` 파일만 지우는 것은 초기화가 아니다.** 🔴 안드로이드가
+  `SharedPreferences`를 **프로세스 단위로 캐시**해, 같은 프로세스의 다음 테스트가 앞 테스트 설정을
+  그대로 물려받는다. **단독 실행은 초록, `make test-device`로 셋을 함께 돌리면 빨강**이라
+  고친 줄 알고 닫기 쉽다. 지우기 **전에** `clear().commit()`(`FreshAppState.resetToFreshInstallState()`).
 - **(함정 아님, 환경)** `make test`를 **인자 없이** 치면 기기가 둘 이상일 때 `doctor`에서 죽는다.
   ✅ **`make test TARGET=emu`를 주면 2대가 붙어 있어도 그대로 통과한다**(2026-09-23 실측).
   ⚠️ 이 줄이 한때 *"기기가 둘이면 죽는다"* 로만 적혀 있어 **스레드 둘이 게이트 실행 자체를 회피했다** —
@@ -157,6 +161,7 @@ Hilt(commonMain 불가)·Koin(이득 0)·전면 MVI(이미 절반 작동)·모�
 | 64 | **고아 `middleware` 패키지 해소** — `#28`이 commonMain만 닫았던 것 | `dc316d78` |
 | 62 | **원격 서버가 클라이언트 komi를 읽는다** — `#19`의 정직한 마감. ⚠️ `handicapCount`는 **의도적 미반영**(아래 #65) | `784a1a90` |
 | 18(절반) | **정책 타입 재선언 제거** — sealed 3종 + 어댑터 삭제, 소비자 32파일 import 교체. **로직 변경 0줄**(검수 diff 전수 확인) | `1b961feb` |
+| 58 | **계기 테스트 3개 전부 초록** — 원인은 탭 회귀가 아니라 둘이었다: ⓐ 로비 시작 버튼이 좌석을 안 보고 잠겨 **대국 화면에 들어간 적이 없었다**(엔진 못 뜨는 기기에서 사람끼리도 못 두던 제품 결함 동반 해소), ⓑ `shared_prefs` **파일만** 지우던 초기화가 프로세스 캐시를 못 비워 앞 테스트 설정을 물려받았다. 실기 2회 확인 | `14967120` |
 | 24 | 🔓 **`shared` 루트 22파일을 의미 있는 패키지로 갈랐다** — 루트 **22→0**, commonTest 고아 패키지 **14→0**. `domain` 7·`enginecontract` 3·`policy` 6·`scoring` 4·`content` 1. ⭐ **`shared.domain` 7파일의 import가 전부 합쳐 0줄** — 바둑 규칙이 아무것도 모른다. 이제 **import 한 줄로 계층이 보인다**(#34 Konsist의 전제) | `6e31bb6d`…`2f07cf8b` |
 | 66 | **호출부 0·테스트 0이던 public 함수 처리** | (#24 파도에 동반) |
 
@@ -168,12 +173,6 @@ _(없음 — 아래 「예정사항」 첫 항목부터 집는다)_
 
 #### 잔여 — 앞선 일감이 드러낸 것 (번호는 뒤에 붙이고 **순서로** 우선순위를 표시한다)
 
-> ⚠️ **#58은 별도 세션이 맡고 있다**(2026-09-23). 중복 착수 금지.
-
-58. **`NewGameBoardTapSmokeTest` 실패 수정** (AI 모델: Sonnet, 노력정도: 중간)
-    · `app-android/src/androidTest`의 `assertIsDisplayed()`에서 *"The component is not displayed!"*.
-      **기존 버그**이고 #13이 `make test-device`를 연 덕에 드러났다. `AppLaunchSmokeTest`가 지목한 **온보딩 전제**부터 볼 것.
-    · ⚠️ 계측 테스트 3개가 초록이 아니면 `make test-device`는 열어 둔 의미가 없다.
 60. **아무도 안 보는 계약 3개 정리** (AI 모델: Sonnet, 노력정도: 낮음) — #20과 함께
     · `capabilities` / `positionAnalysisCacheStatsText` / `positionAnalysisCacheQualityFor` —
       값을 틀리게 바꿔도 **빨개지는 테스트가 0건**이다(#10 음성 대조에서 드러났다).
@@ -378,7 +377,7 @@ _(없음 — 아래 「예정사항」 첫 항목부터 집는다)_
 ## 관련 문서
 
 - `work/roadmap/260923-_ARCHITECTURE_DIAGNOSIS_AND_REFACTORING.md` — **설계 근거·실측·함정 A~J·처방**. 착수 전 해당 절을 읽는다
-- `docs/spec/PITFALLS.md` — 함정 1~76 전문
+- `docs/spec/PITFALLS.md` — 함정 1~81 전문
 - `docs/ARCHITECTURE.md` — 7계층 원칙(앱 비종속)
 - `docs/spec/GO_AI_COACH_ARCHITECTURE_ROADMAP.md` — 계층별 파일 매핑(정본)
 - `work/roadmap/260923-_ACTIVE_BACKLOG.md` — **기능** 일감(이 문서와 번호 체계가 다르다)
