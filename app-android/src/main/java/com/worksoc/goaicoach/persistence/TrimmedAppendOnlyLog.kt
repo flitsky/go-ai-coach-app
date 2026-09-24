@@ -2,6 +2,8 @@ package com.worksoc.goaicoach.persistence
 
 import java.io.File
 import java.io.IOException
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.min
 
 /**
@@ -14,7 +16,11 @@ import kotlin.math.min
  * 두 하위 클래스는 관측 포트의 구현이고, 관측 포트의 쓰기는 **부르는 쪽의 흐름을 바꾸면 안 된다.**
  * 예전엔 저장 공간이 차는 등으로 쓰기가 실패하면 `IOException`이 부르는 쪽으로 그대로 올라갔고,
  * 엔진 오퍼레이션의 `markStarted`처럼 기록 **뒤에** 정리가 오는 경로에서는 busy 상태가 굳을 수 있었다.
- * 버린 줄은 조용히 사라지지 않게 세어 두고 [readText] 끝줄에 밝힌다.
+ * 실패는 조용히 사라지지 않게 세어 두고 [readText] 끝줄에 밝힌다. ⚠️ **인스턴스가 아니라 파일(매체) 단위로
+ * 센다** — 진단 로그 화면처럼 같은 파일을 새 인스턴스로 열어 읽는 곳이 있어서, 인스턴스 필드로 세면 쓰는 쪽
+ * 인스턴스만 알고 화면에는 영영 안 뜬다(#73 4차 검수가 재현했다). 세는 범위는 **프로세스 수명**이다 —
+ * 매체가 실패한 상태에서는 그 매체에 남길 수 없다. 센 것은 "기록이 실패한 횟수"다: 줄은 써졌는데 뒤이은
+ * 자르기가 실패한 경우도 한 번으로 센다.
  * 삼키는 것은 매체 실패(`IOException`·`SecurityException`)뿐이다 — 인코딩 버그 같은 프로그래밍
  * 오류는 테스트에서 드러나야 하므로 그대로 올라간다.
  */
@@ -25,7 +31,7 @@ internal abstract class TrimmedAppendOnlyLog(
     private val trimMarker: String,
     private val emptyMessage: String,
 ) {
-    private var droppedLineCount = 0
+    private val mediumKey: String = file.absoluteFile.normalize().path
 
     @Synchronized
     protected fun appendAndTrim(line: String) {
@@ -34,9 +40,9 @@ internal abstract class TrimmedAppendOnlyLog(
             file.appendText("$line\n", Charsets.UTF_8)
             trimIfNeeded()
         } catch (mediumFailure: IOException) {
-            droppedLineCount += 1
+            recordMediumFailure()
         } catch (mediumFailure: SecurityException) {
-            droppedLineCount += 1
+            recordMediumFailure()
         }
     }
 
@@ -47,11 +53,16 @@ internal abstract class TrimmedAppendOnlyLog(
         } else {
             emptyMessage
         }
-        return if (droppedLineCount == 0) {
+        val failures = mediumFailureCounts[mediumKey]?.get() ?: 0
+        return if (failures == 0) {
             body
         } else {
-            body.trimEnd('\n') + "\n" + DroppedLinesNotePrefix + droppedLineCount + "\n"
+            body.trimEnd('\n') + "\n" + DroppedLinesNotePrefix + failures + "\n"
         }
+    }
+
+    private fun recordMediumFailure() {
+        mediumFailureCounts.getOrPut(mediumKey) { AtomicInteger() }.incrementAndGet()
     }
 
     @Synchronized
@@ -59,6 +70,7 @@ internal abstract class TrimmedAppendOnlyLog(
         if (file.isFile) {
             file.delete()
         }
+        mediumFailureCounts.remove(mediumKey)
     }
 
     private fun trimIfNeeded() {
@@ -79,7 +91,10 @@ internal abstract class TrimmedAppendOnlyLog(
         const val DefaultMaxBytes: Int = 1_048_576
         const val DefaultTrimToBytes: Int = 921_600
 
-        /** 매체 실패로 버린 줄이 있을 때 [readText] 끝줄의 머리말. 뒤에 버린 줄 수가 붙는다. */
-        const val DroppedLinesNotePrefix: String = "⚠️ 저장 매체 오류로 기록하지 못한 줄: "
+        /** 매체 실패가 있었을 때 [readText] 끝줄의 머리말. 뒤에 이 실행에서 기록이 실패한 횟수가 붙는다. */
+        const val DroppedLinesNotePrefix: String = "⚠️ 이 실행에서 저장 매체 오류로 기록이 실패한 횟수: "
+
+        /** 파일(매체) 경로 → 이 프로세스에서 기록이 실패한 횟수. 같은 파일을 여는 모든 인스턴스가 함께 본다. */
+        private val mediumFailureCounts = ConcurrentHashMap<String, AtomicInteger>()
     }
 }

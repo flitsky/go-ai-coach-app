@@ -51,6 +51,31 @@ class TrimmedAppendOnlyLogFailureTest {
     }
 
     @Test
+    fun anotherInstanceOnTheSameFileSeesTheFailures() {
+        val file = unwritableLogFile(DiagnosticEventLog.FileName)
+        val writer = DiagnosticEventLog(file, maxBytes = 1024, trimToBytes = 768)
+        writer.append(
+            DiagnosticEvent(severity = DiagnosticSeverity.Warning, code = "test.medium_gone", message = "medium is gone"),
+            nowMillis = 1L,
+        )
+
+        // 진단 로그 화면은 같은 파일을 새 인스턴스로 열어 읽는다 — 거기서도 보여야 한다.
+        val text = DiagnosticEventLog(file).readText()
+
+        assertTrue(text, text.contains("${TrimmedAppendOnlyLog.DroppedLinesNotePrefix}1"))
+    }
+
+    @Test
+    fun clearResetsTheFailureCount() {
+        val log = RuntimeEventLog(unwritableLogFile(RuntimeEventLog.FileName), maxBytes = 1024, trimToBytes = 768)
+        log.append("event_a", nowMillis = 1L)
+
+        log.clear()
+
+        assertTrue(!log.readText().contains(TrimmedAppendOnlyLog.DroppedLinesNotePrefix))
+    }
+
+    @Test
     fun healthyLogReportsNoDroppedLines() {
         val root = createTempDirectory("go-coach-log-ok").toFile().also(roots::add)
         val log = RuntimeEventLog(root.resolve(RuntimeEventLog.FileName), maxBytes = 1024, trimToBytes = 768)
