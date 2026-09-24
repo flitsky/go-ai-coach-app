@@ -2,12 +2,12 @@ package com.worksoc.goaicoach.application.score
 
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.engine.EngineSessionClient
-import com.worksoc.goaicoach.shared.engine.EngineOperationResultGuard
+import com.worksoc.goaicoach.shared.policy.EngineOperationResultGuard
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
-import com.worksoc.goaicoach.shared.engine.EngineOperationRequest
+import com.worksoc.goaicoach.shared.policy.EngineOperationRequest
 
 class ScoreEstimateController(
     private val engineClient: EngineSessionClient,

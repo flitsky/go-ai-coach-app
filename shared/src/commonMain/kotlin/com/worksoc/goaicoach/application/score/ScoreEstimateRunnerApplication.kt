@@ -1,6 +1,6 @@
 package com.worksoc.goaicoach.application.score
 
-import com.worksoc.goaicoach.shared.engine.EngineOperationRequest
+import com.worksoc.goaicoach.shared.policy.EngineOperationRequest
 import com.worksoc.goaicoach.application.engine.EngineSessionClient
 import com.worksoc.goaicoach.application.engine.runEngineIo
 import com.worksoc.goaicoach.application.session.GameSessionEffect

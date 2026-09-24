@@ -8,11 +8,11 @@ import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
 import com.worksoc.goaicoach.application.runtime.runtimeEngineOperationCompletedLog
 import com.worksoc.goaicoach.application.runtime.runtimeEngineOperationStartedLog
 import com.worksoc.goaicoach.shared.domain.GameState
-import com.worksoc.goaicoach.shared.engine.EngineOperationRequest
-import com.worksoc.goaicoach.shared.engine.EngineOperationKind
-import com.worksoc.goaicoach.shared.engine.EngineOperationResultGuard
-import com.worksoc.goaicoach.shared.engine.EngineTimeoutPolicy
-import com.worksoc.goaicoach.shared.engine.EngineFallbackPolicy
+import com.worksoc.goaicoach.shared.policy.EngineOperationRequest
+import com.worksoc.goaicoach.shared.policy.EngineOperationKind
+import com.worksoc.goaicoach.shared.policy.EngineOperationResultGuard
+import com.worksoc.goaicoach.shared.policy.EngineTimeoutPolicy
+import com.worksoc.goaicoach.shared.policy.EngineFallbackPolicy
 import com.worksoc.goaicoach.shared.diagnostic.DiagnosticEvent
 import com.worksoc.goaicoach.shared.diagnostic.DiagnosticSeverity
 import kotlinx.coroutines.CoroutineScope

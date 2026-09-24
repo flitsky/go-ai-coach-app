@@ -7,11 +7,11 @@ import com.worksoc.goaicoach.application.engine.EngineSessionClient
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
-import com.worksoc.goaicoach.shared.engine.EngineFallbackPolicy
-import com.worksoc.goaicoach.shared.engine.EngineOperationKind
-import com.worksoc.goaicoach.shared.engine.EngineOperationRequest
-import com.worksoc.goaicoach.shared.engine.EngineTimeoutPolicy
-import com.worksoc.goaicoach.shared.engine.engineOperationRequest
+import com.worksoc.goaicoach.shared.policy.EngineFallbackPolicy
+import com.worksoc.goaicoach.shared.policy.EngineOperationKind
+import com.worksoc.goaicoach.shared.policy.EngineOperationRequest
+import com.worksoc.goaicoach.shared.policy.EngineTimeoutPolicy
+import com.worksoc.goaicoach.shared.policy.engineOperationRequest
 
 suspend fun EngineSessionClient.runScoringRuleSyncDisplayPlan(
     state: GameState,

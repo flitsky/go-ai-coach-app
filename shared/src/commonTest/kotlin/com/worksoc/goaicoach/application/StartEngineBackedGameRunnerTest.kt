@@ -39,9 +39,9 @@ import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
 import com.worksoc.goaicoach.shared.enginecontract.ScoreEstimate
 import com.worksoc.goaicoach.shared.diagnostic.DiagnosticEvent
-import com.worksoc.goaicoach.shared.engine.EngineFallbackPolicy
-import com.worksoc.goaicoach.shared.engine.EngineOperationKind
-import com.worksoc.goaicoach.shared.engine.EngineOperationRequest
+import com.worksoc.goaicoach.shared.policy.EngineFallbackPolicy
+import com.worksoc.goaicoach.shared.policy.EngineOperationKind
+import com.worksoc.goaicoach.shared.policy.EngineOperationRequest
 import kotlinx.coroutines.runBlocking
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull

@@ -7,7 +7,7 @@ import com.worksoc.goaicoach.application.autoai.AutoAiTurnEndgamePlan
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnExecutionContext
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnFollowUpPlan
 import com.worksoc.goaicoach.application.autoai.applyAutoAiTurnCompletionApplication
-import com.worksoc.goaicoach.shared.engine.EngineOperationResultGuard
+import com.worksoc.goaicoach.shared.policy.EngineOperationResultGuard
 import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
 import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
 import com.worksoc.goaicoach.application.score.ScoreEstimateDisplayPlan

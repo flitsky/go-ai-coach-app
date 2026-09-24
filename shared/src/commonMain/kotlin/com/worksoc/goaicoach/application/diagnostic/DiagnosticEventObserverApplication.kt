@@ -2,7 +2,7 @@ package com.worksoc.goaicoach.application.diagnostic
 
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.time.currentEpochMillis
-import com.worksoc.goaicoach.shared.engine.EngineOperationRequest
+import com.worksoc.goaicoach.shared.policy.EngineOperationRequest
 import com.worksoc.goaicoach.shared.diagnostic.DiagnosticEvent
 import kotlinx.coroutines.TimeoutCancellationException
 

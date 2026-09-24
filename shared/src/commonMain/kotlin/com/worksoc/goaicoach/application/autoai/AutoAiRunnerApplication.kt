@@ -26,11 +26,11 @@ import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 import com.worksoc.goaicoach.shared.scoring.ScoreTimeline
 import com.worksoc.goaicoach.shared.policy.aiMoveAnalysisLimitWith
-import com.worksoc.goaicoach.shared.engine.EngineFallbackPolicy
-import com.worksoc.goaicoach.shared.engine.EngineOperationKind
-import com.worksoc.goaicoach.shared.engine.EngineOperationRequest
-import com.worksoc.goaicoach.shared.engine.EngineTimeoutPolicy
-import com.worksoc.goaicoach.shared.engine.engineOperationRequest
+import com.worksoc.goaicoach.shared.policy.EngineFallbackPolicy
+import com.worksoc.goaicoach.shared.policy.EngineOperationKind
+import com.worksoc.goaicoach.shared.policy.EngineOperationRequest
+import com.worksoc.goaicoach.shared.policy.EngineTimeoutPolicy
+import com.worksoc.goaicoach.shared.policy.engineOperationRequest
 
 data class AutoAiTurnDisplayPlan(
     val playLevel: PlayLevelSetting,

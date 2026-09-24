@@ -1,8 +1,8 @@
 package com.worksoc.goaicoach.application
 
 import com.worksoc.goaicoach.application.engine.operation.*
-import com.worksoc.goaicoach.shared.engine.EngineOperationResultGuard
-import com.worksoc.goaicoach.shared.engine.engineOperationRequest
+import com.worksoc.goaicoach.shared.policy.EngineOperationResultGuard
+import com.worksoc.goaicoach.shared.policy.engineOperationRequest
 
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventExternalSinkResult
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort

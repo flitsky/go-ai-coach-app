@@ -1396,7 +1396,7 @@ class LayeringContractTest {
         val sharedRoot = RepoPaths.shared("shared")
         val candidates = listOf(
             sharedRoot.resolve("diagnostic/DiagnosticEventModel.kt"),
-            sharedRoot.resolve("engine/EngineOperationPolicy.kt"),
+            sharedRoot.resolve("policy/EngineOperationPolicy.kt"),
             sharedRoot.resolve("policy/MoveValueDisplay.kt"),
         )
         val forbiddenImports = listOf(
