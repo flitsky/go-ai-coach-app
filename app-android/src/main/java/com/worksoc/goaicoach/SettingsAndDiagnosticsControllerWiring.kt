@@ -3,7 +3,7 @@ package com.worksoc.goaicoach
 import com.worksoc.goaicoach.application.debugreport.DebugReportController
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkController
 import com.worksoc.goaicoach.application.session.GameSessionAnalysisState
-import com.worksoc.goaicoach.application.session.GameSettingsController
+import com.worksoc.goaicoach.application.orchestration.GameSettingsController
 import com.worksoc.goaicoach.application.contract.RuntimePlayLevelSelection
 import com.worksoc.goaicoach.application.undo.UndoController
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting

@@ -66,7 +66,7 @@ import com.worksoc.goaicoach.application.savedgame.runSavedGamePersistenceApplic
 import com.worksoc.goaicoach.application.savedgame.runSavedSessionPromptApplication
 import com.worksoc.goaicoach.application.session.GameSessionControllerState
 import com.worksoc.goaicoach.application.session.GameSessionCoreState
-import com.worksoc.goaicoach.application.session.GameSessionDisplayStateApplier
+import com.worksoc.goaicoach.application.orchestration.GameSessionDisplayStateApplier
 import com.worksoc.goaicoach.application.session.GameSessionStateHolder
 import com.worksoc.goaicoach.application.session.GameSessionTurnTimeState
 import com.worksoc.goaicoach.application.session.runTurnAutomationTriggerEffect

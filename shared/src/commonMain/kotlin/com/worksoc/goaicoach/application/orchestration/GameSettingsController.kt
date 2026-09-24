@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.application.session
+package com.worksoc.goaicoach.application.orchestration
 
 import com.worksoc.goaicoach.application.contract.RuntimePlayLevelSelection
 import com.worksoc.goaicoach.application.contract.selectRuntimePlayLevel
@@ -6,6 +6,11 @@ import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
 import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
 import com.worksoc.goaicoach.application.runtime.runtimeAutoPlayDelayChangeLog
 import com.worksoc.goaicoach.application.analysis.toDisplayText
+import com.worksoc.goaicoach.application.session.GameSessionAnalysisState
+import com.worksoc.goaicoach.application.session.GameSessionCoreState
+import com.worksoc.goaicoach.application.session.GameSessionSettingsState
+import com.worksoc.goaicoach.application.session.PlayerSetupChangePlan
+import com.worksoc.goaicoach.application.session.buildPlayerSetupChangePlan
 import com.worksoc.goaicoach.application.topmoves.SearchTimeTopMovesResetRunRequest
 import com.worksoc.goaicoach.application.topmoves.runSearchTimeTopMovesResetApplication
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
