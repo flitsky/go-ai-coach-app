@@ -59,6 +59,20 @@ internal const val GameHistoryDirName = "game_history"
  * 부른다(`GoCoachApp.kt`의 `LaunchedEffect`, `GameExitRecording.kt`) — 대국은 세션당 한 번만 끝나고
  * 파일 하나(index.json)는 보통 수 KB~수백 KB라 `fsync` 자체는 수 ms대로 보지만, 이건 추정이다.
  * 기기 스모크로 대국 종료·나가기 직후에 눈에 띄는 끊김이 없는지 확인할 것.
+ *
+ * ## ⚠️ replay를 쓴 뒤 index 쓰기만 실패하면 참조 없는 파일이 남는다 (refactor backlog #87, `#21` 검수가 찾음)
+ * `appendCompletedGame`은 replay 본문을 먼저 쓰고 그 위에 index를 다시 쓰는데, 위의 원자 쓰기 덕분에
+ * *둘 다* 반쪽짜리로 남는 일은 없어졌지만 **replay는 성공하고 index만 실패하는** 조합은 여전히
+ * 가능하다 — 그러면 `replay/<id>.json`은 온전히 있는데 그 id를 아는 index가 없다. 앱 서비스
+ * (`runGameHistoryAppendIfCompleted`)의 멱등성 판정은 `loadAll().lastOrNull()`만 보므로 이 실패를
+ * 모르고, 재시도마다 **새 id**로 또 replay를 쓴다 — 고치지 않으면 재시도가 쌓일수록 고아가 는다.
+ * [loadAll]이 부를 때마다 [sweepOrphanedReplays]로 "지금 index가 아는 replay 파일 이름"만 남기고
+ * 나머지를 지운다. **읽기 쪽에 두고 쓰기 실패 시점에 직접 지우지 않은 이유**는 이 수정이 배포되기
+ * *전*에 이미 쌓인 고아(과거 버전이 남긴 것)까지 한 경로로 청소하기 위해서다 — 실패 시점에만 지우면
+ * 그 재현조차 못 한다. 비용은 `replayDir` 목록 한 번(디렉터리 엔트리 수만큼, `fsync` 아님)뿐이고
+ * `loadAll`은 화면 진입·대국 종료 시점에만 불려(위 참고) 자주 돌지 않는다.
+ * ⚠️ **`appendCompletedGame`이 [loadAll]을 replay 쓰기보다 먼저 부른다** — 순서를 반대로 두면
+ * 방금 쓴 그 판의 replay가 (아직 index에 없으니) 제 손으로 쓰자마자 고아로 오인돼 지워진다.
  */
 internal class GameHistoryStore internal constructor(
     private val root: File,
@@ -79,21 +93,38 @@ internal class GameHistoryStore internal constructor(
         root.mkdirs()
         replayDir.mkdirs()
 
+        // ⚠️ loadAll()을 replay 쓰기보다 먼저 부른다 — sweepOrphanedReplays가 훑는 "index가
+        // 아는 replay 파일" 집합에 이 판의 replay가 아직 없어야, 쓰자마자 고아로 오인해
+        // 지워버리는 사고가 없다(클래스 KDoc, refactor backlog #87).
+        val next = loadAll() + entry
         if (replay != null && !replay.isEmpty) {
             writeAtomically(
                 replayFile(entry.id),
                 GameReplayCodec.encode(replay, BoardSize(entry.boardSize)),
             )
         }
-        val next = loadAll() + entry
         writeIndex(applyRetention(next))
     }
 
     override fun loadAll(): List<GameHistoryEntry> {
         val migrated = migrateLegacyPrefsIfNeeded()
-        if (migrated != null) return migrated
+        if (migrated != null) {
+            sweepOrphanedReplays(migrated)
+            return migrated
+        }
+        if (!indexFile.exists()) {
+            // 색인이 아예 없다 — 무엇이 진짜인지 이미 확실하므로(파일이 없다는 것 자체가 답)
+            // replay가 남아 있다면 전부 고아다.
+            sweepOrphanedReplays(emptyList())
+            return emptyList()
+        }
+        // ⚠️ 여기서 읽기 자체가 실패하면(권한·I/O 오류 등) 청소하지 않는다 — index가 있는데
+        // 못 읽은 것과 "진짜로 비어 있다"는 다르고, 후자로 오인해 쓸어버리면 멀쩡한 replay까지
+        // 잃는다. 위 `!indexFile.exists()` 분기와 달리 이 실패는 "확인된 진실"이 아니다.
         val raw = runCatching { indexFile.readText() }.getOrNull() ?: return emptyList()
-        return GameHistoryIndexCodec.decodeAll(raw)
+        val entries = GameHistoryIndexCodec.decodeAll(raw)
+        sweepOrphanedReplays(entries)
+        return entries
     }
 
     override fun loadReplay(id: String): GameReplayData? {
@@ -126,6 +157,22 @@ internal class GameHistoryStore internal constructor(
 
     private fun replayBytes(id: String): Long =
         runCatching { replayFile(id).length() }.getOrDefault(0L)
+
+    /**
+     * [entries]가 아는 replay 파일 이름만 남기고 `replayDir`의 나머지를 지운다(refactor backlog #87).
+     * 클래스 KDoc의 "언제·왜"를 참고 — 여기는 "어떻게"만 담당한다.
+     *
+     * ⚠️ **`.tmp`는 건드리지 않는다** — [writeAtomically]가 남긴 실패 잔여물은 다음 쓰기가
+     * 스스로 덮어쓰므로(클래스 KDoc) 이 청소의 대상이 아니다. 범위를 늘리지 않는다.
+     */
+    private fun sweepOrphanedReplays(entries: List<GameHistoryEntry>) {
+        val expectedNames = entries.mapTo(HashSet()) { replayFile(it.id).name }
+        val actual = replayDir.listFiles() ?: return
+        for (file in actual) {
+            if (file.name.endsWith(TempSuffix)) continue
+            if (file.name !in expectedNames) runCatching { file.delete() }
+        }
+    }
 
     /** @return 새 index가 실제로 자리를 잡았는가. 실패하면 옛 index가 그대로 남아 있다. */
     private fun writeIndex(entries: List<GameHistoryEntry>): Boolean =

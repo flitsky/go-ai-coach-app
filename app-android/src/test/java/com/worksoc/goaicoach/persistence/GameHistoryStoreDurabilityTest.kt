@@ -31,6 +31,9 @@ import org.junit.Test
  *
  * 쓰기 도중의 죽음은 [openOutput] 자리에 **정해진 바이트만 쓰고 터지는 스트림**을 넣어 흉내 낸다 —
  * 잘린 파일이 남는다는 점에서 프로세스 강제 종료와 같다.
+ *
+ * ⚠️ **replay 고아 청소도 여기서 같이 잰다**(refactor backlog #87) — replay 쓰기는 성공하고
+ * 그 직후 index 쓰기만 실패하는 조합은 [diesOnlyOnTheSecondWrite]로 흉내 낸다.
  */
 class GameHistoryStoreDurabilityTest {
     private val root: File = createTempDirectory("go-coach-game-history").toFile().resolve(GameHistoryDirName)
@@ -59,6 +62,21 @@ class GameHistoryStoreDurabilityTest {
         return { file ->
             callCount += 1
             if (callCount == 1) {
+                DyingOutputStream(FileOutputStream(file)) { total -> total / 2 }
+            } else {
+                FileOutputStream(file)
+            }
+        }
+    }
+
+    /** 두 번째 [openOutput] 호출만 절반까지 쓰고 터진다. `appendCompletedGame`가 loadAll을
+     * 먼저 부르는 지금 순서에서, replay가 있으면 그 replay 쓰기가 첫 호출·index 쓰기가 두 번째
+     * 호출이다 — "replay는 성공했는데 그 직후 index만 실패한다"는 백로그 #87의 재현 조건이다. */
+    private fun diesOnlyOnTheSecondWrite(): (File) -> OutputStream {
+        var callCount = 0
+        return { file ->
+            callCount += 1
+            if (callCount == 2) {
                 DyingOutputStream(FileOutputStream(file)) { total -> total / 2 }
             } else {
                 FileOutputStream(file)
@@ -117,6 +135,60 @@ class GameHistoryStoreDurabilityTest {
         store(diesOnlyOnTheFirstWrite()).appendCompletedGame(entry("2-b"))
 
         assertEquals(listOf("legacy-1", "2-b"), store().loadAll().map { it.id })
+    }
+
+    @Test
+    fun replayOrphanedByAFailedIndexWriteIsGoneAfterTheNextLoad() {
+        // 재현(refactor backlog #21 검수가 찾은 자리) — replay/<id>.json은 성공적으로 쓰였는데
+        // 그 직후 index 쓰기만 실패하면, 그 replay는 어떤 index에도 없는 고아로 남는다.
+        store(diesOnlyOnTheSecondWrite()).appendCompletedGame(entry("1-a", hasReplay = true), Replay)
+
+        assertTrue(
+            "replay 쓰기 자체는 index보다 먼저 성공했어야 한다",
+            root.resolve("replay/1-a.json").exists(),
+        )
+        assertEquals("색인 쓰기가 죽었으니 목록에는 없다", emptyList<String>(), store().loadAll().map { it.id })
+
+        // 고침(refactor backlog #87) — 위 loadAll() 호출 자체가 이미 청소를 겸한다: index가
+        // 모르는 replay 파일은 다음 읽기에서 지워져야 한다(재시도마다 늘어나지 않는다).
+        assertTrue(
+            "index에 없는 replay 파일은 다음 읽기에서 청소돼야 한다",
+            !root.resolve("replay/1-a.json").exists(),
+        )
+    }
+
+    @Test
+    fun retryingAfterAFailedIndexWriteDoesNotAccumulateOrphanReplayFiles() {
+        // 백로그 원문 — "재시도마다 새 id로 다시 써서 늘어난다"를 그대로 흉내 낸다. 세 번
+        // 연달아 실패해도 파일이 하나씩 더 남지 않아야 한다(각 재시도가 부르는 loadAll이
+        // 직전 시도의 고아를 먼저 청소한다).
+        repeat(3) { attempt ->
+            store(diesOnlyOnTheSecondWrite()).appendCompletedGame(entry("$attempt-x", hasReplay = true), Replay)
+        }
+
+        assertEquals(emptyList<String>(), store().loadAll().map { it.id })
+        assertEquals(
+            "실패한 시도들이 남긴 replay가 쌓이지 않아야 한다",
+            emptySet<String>(),
+            root.resolve("replay").list()?.toSet().orEmpty(),
+        )
+    }
+
+    @Test
+    fun preExistingOrphanReplayFromBeforeThisFixIsSweptOnLoad() {
+        // 과거에 이미 쌓인 고아(이 수정이 배포되기 전에 실패해서 남은 파일)도 청소 대상이다 —
+        // 백로그가 ⓑ를 고른 이유(candidate ⓐ는 이 파일을 절대 못 본다).
+        root.mkdirs()
+        indexFile.writeText(GameHistoryIndexCodec.encodeAll(listOf(entry("1-kept"))))
+        val replayDir = root.resolve("replay")
+        replayDir.mkdirs()
+        replayDir.resolve("1-kept.json").writeText("kept-body")
+        replayDir.resolve("9-stray-orphan.json").writeText("nobody-points-here")
+
+        val loaded = store().loadAll().map { it.id }
+
+        assertEquals(listOf("1-kept"), loaded)
+        assertEquals(setOf("1-kept.json"), replayDir.list()!!.toSet())
     }
 
     @Test
