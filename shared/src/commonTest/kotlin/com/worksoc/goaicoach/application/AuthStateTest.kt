@@ -1,8 +1,8 @@
 package com.worksoc.goaicoach.application
 
-import com.worksoc.goaicoach.application.auth.AuthProvider
-import com.worksoc.goaicoach.application.auth.AuthState
-import com.worksoc.goaicoach.application.auth.isPromotableAnonymousSession
+import com.worksoc.goaicoach.application.auth.state.AuthProvider
+import com.worksoc.goaicoach.application.auth.state.AuthState
+import com.worksoc.goaicoach.application.auth.state.isPromotableAnonymousSession
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull

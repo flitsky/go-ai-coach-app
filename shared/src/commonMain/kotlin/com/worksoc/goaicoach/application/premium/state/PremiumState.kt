@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.application.premium
+package com.worksoc.goaicoach.application.premium.state
 
 /**
  * 프리미엄 활성화 소스. [Purchase]는 영구, [AdGrant]는 부여 시점부터 최대

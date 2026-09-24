@@ -46,7 +46,7 @@ import com.worksoc.goaicoach.application.gamehistory.buildGameReplayTimeline
 import com.worksoc.goaicoach.application.gamehistory.canStartBranchedGameAt
 import com.worksoc.goaicoach.application.gamehistory.deriveReplayMoveEvaluations
 import com.worksoc.goaicoach.application.gamehistory.deriveScoreSwingHighlights
-import com.worksoc.goaicoach.application.premium.FeatureId
+import com.worksoc.goaicoach.application.premium.state.FeatureId
 import com.worksoc.goaicoach.presentation.KaTrainUxOptions
 import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.GameState

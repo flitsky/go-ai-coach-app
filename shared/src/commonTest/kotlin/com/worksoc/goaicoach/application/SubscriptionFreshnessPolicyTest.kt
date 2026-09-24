@@ -1,9 +1,9 @@
 package com.worksoc.goaicoach.application
 
-import com.worksoc.goaicoach.application.premium.SubscriptionFreshness
-import com.worksoc.goaicoach.application.premium.SubscriptionFreshnessPolicy
-import com.worksoc.goaicoach.application.premium.SubscriptionFreshnessPolicy.ExpireAfterMillis
-import com.worksoc.goaicoach.application.premium.SubscriptionFreshnessPolicy.RecheckAfterMillis
+import com.worksoc.goaicoach.application.premium.state.SubscriptionFreshness
+import com.worksoc.goaicoach.application.premium.state.SubscriptionFreshnessPolicy
+import com.worksoc.goaicoach.application.premium.state.SubscriptionFreshnessPolicy.ExpireAfterMillis
+import com.worksoc.goaicoach.application.premium.state.SubscriptionFreshnessPolicy.RecheckAfterMillis
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

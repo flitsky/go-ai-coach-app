@@ -2,7 +2,7 @@ package com.worksoc.goaicoach.ui
 
 import com.worksoc.goaicoach.application.consumable.ConsumableCatalog
 import com.worksoc.goaicoach.application.consumable.ConsumableInventory
-import com.worksoc.goaicoach.application.premium.FeatureId
+import com.worksoc.goaicoach.application.premium.state.FeatureId
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull

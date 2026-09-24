@@ -35,21 +35,21 @@ import androidx.compose.ui.window.DialogProperties
 import com.worksoc.goaicoach.application.consumable.ConsumableCatalog
 import com.worksoc.goaicoach.application.consumable.ConsumableSpendDecision
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
-import com.worksoc.goaicoach.application.premium.AdRewardFailureReason
+import com.worksoc.goaicoach.application.premium.port.AdRewardFailureReason
 import com.worksoc.goaicoach.AppForegroundEvents
-import com.worksoc.goaicoach.application.premium.AdRewardOutcome
-import com.worksoc.goaicoach.application.premium.FeatureAccess
-import com.worksoc.goaicoach.application.premium.FeatureAccessPolicy
-import com.worksoc.goaicoach.application.premium.FeatureId
-import com.worksoc.goaicoach.application.premium.PremiumSource
-import com.worksoc.goaicoach.application.premium.PremiumState
-import com.worksoc.goaicoach.application.premium.PremiumStateStorePort
-import com.worksoc.goaicoach.application.premium.PurchaseFailureReason
-import com.worksoc.goaicoach.application.premium.PurchaseOutcome
-import com.worksoc.goaicoach.application.premium.decideStaleSubscriptionDowngrade
-import com.worksoc.goaicoach.application.premium.runPremiumFeatureClaim
-import com.worksoc.goaicoach.application.premium.buildPremiumDeactivatedDiagnosticEvent
-import com.worksoc.goaicoach.application.premium.saveMergingClaimedFeatures
+import com.worksoc.goaicoach.application.premium.port.AdRewardOutcome
+import com.worksoc.goaicoach.application.premium.state.FeatureAccess
+import com.worksoc.goaicoach.application.premium.state.FeatureAccessPolicy
+import com.worksoc.goaicoach.application.premium.state.FeatureId
+import com.worksoc.goaicoach.application.premium.state.PremiumSource
+import com.worksoc.goaicoach.application.premium.state.PremiumState
+import com.worksoc.goaicoach.application.premium.port.PremiumStateStorePort
+import com.worksoc.goaicoach.application.premium.port.PurchaseFailureReason
+import com.worksoc.goaicoach.application.premium.port.PurchaseOutcome
+import com.worksoc.goaicoach.application.premium.state.decideStaleSubscriptionDowngrade
+import com.worksoc.goaicoach.application.premium.app.runPremiumFeatureClaim
+import com.worksoc.goaicoach.application.premium.app.buildPremiumDeactivatedDiagnosticEvent
+import com.worksoc.goaicoach.application.premium.app.saveMergingClaimedFeatures
 import kotlinx.coroutines.launch
 
 /**
@@ -78,7 +78,7 @@ import kotlinx.coroutines.launch
  * 자체적으로 tick을 돌며 계산한다 — `GoCoachApp.kt`는 상태 훅 예산이 빠듯해 여기서는
  * 만료 시각만 그대로 넘겨준다.
  *
- * [resolve]는 기능별 게이팅 판정이다(`application/premium/FeatureAccessPolicy.kt`, 6계층에
+ * [resolve]는 기능별 게이팅 판정이다(`application/premium/state/FeatureAccessPolicy.kt`, 6계층에
  * 위임) — 화면은 더 이상 `isActive`/클레임 여부를 직접 조합해 판정하지 않고, 이 함수 하나가
  * 돌려주는 [FeatureAccess]([FeatureAccess.Allowed]/[FeatureAccess.Locked])만 보고 분기한다.
  * ⚠️ **[claim]을 지금 부르는 UI는 하나도 없다**(백로그 #66, 2026-09-03). 유일한 호출부였던

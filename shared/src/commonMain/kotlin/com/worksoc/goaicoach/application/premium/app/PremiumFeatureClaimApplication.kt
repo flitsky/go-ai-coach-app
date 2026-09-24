@@ -1,4 +1,8 @@
-package com.worksoc.goaicoach.application.premium
+package com.worksoc.goaicoach.application.premium.app
+
+import com.worksoc.goaicoach.application.premium.port.PremiumStateStorePort
+import com.worksoc.goaicoach.application.premium.state.FeatureId
+import com.worksoc.goaicoach.application.premium.state.PremiumState
 
 /**
  * 5계층(App Service) — **UI 트리 없이도 호출 가능한** 기능 클레임 진입점.

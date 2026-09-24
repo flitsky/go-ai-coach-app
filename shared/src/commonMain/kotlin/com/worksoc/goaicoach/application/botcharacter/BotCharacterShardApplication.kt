@@ -1,6 +1,6 @@
 package com.worksoc.goaicoach.application.botcharacter
 
-import com.worksoc.goaicoach.application.premium.AdRewardOutcome
+import com.worksoc.goaicoach.application.premium.port.AdRewardOutcome
 
 /**
  * 광고 1회 시청분의 조각을 적립한 결과(#11).

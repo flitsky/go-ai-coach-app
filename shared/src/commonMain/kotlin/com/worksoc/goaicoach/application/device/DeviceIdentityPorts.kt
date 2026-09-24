@@ -3,7 +3,7 @@ package com.worksoc.goaicoach.application.device
 /**
  * 4계층(External Integration) α — [DeviceIdentity]를 로컬에 생성/저장/복원하는 순수 포트.
  * 실제 어댑터(값 생성 + SharedPreferences 저장)는 `persistence/DeviceIdentityStore.kt`
- * (플랫폼 계층)에 둔다 — [com.worksoc.goaicoach.application.premium.PremiumStateStorePort]와
+ * (플랫폼 계층)에 둔다 — [com.worksoc.goaicoach.application.premium.port.PremiumStateStorePort]와
  * 같은 자리.
  */
 interface DeviceIdentityStorePort {

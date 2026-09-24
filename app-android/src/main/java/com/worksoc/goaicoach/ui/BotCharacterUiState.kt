@@ -49,10 +49,10 @@ import com.worksoc.goaicoach.application.botcharacter.BotCharacter
 import com.worksoc.goaicoach.application.botcharacter.BotShardAdOutcome
 import com.worksoc.goaicoach.application.botcharacter.runBotCharacterShardGrant
 import com.worksoc.goaicoach.application.botcharacter.runBotCharacterUnlock
-import com.worksoc.goaicoach.application.premium.AdRewardFailureReason
-import com.worksoc.goaicoach.application.premium.AdRewardOutcome
-import com.worksoc.goaicoach.application.premium.PurchaseFailureReason
-import com.worksoc.goaicoach.application.premium.PurchaseOutcome
+import com.worksoc.goaicoach.application.premium.port.AdRewardFailureReason
+import com.worksoc.goaicoach.application.premium.port.AdRewardOutcome
+import com.worksoc.goaicoach.application.premium.port.PurchaseFailureReason
+import com.worksoc.goaicoach.application.premium.port.PurchaseOutcome
 import com.worksoc.goaicoach.application.botcharacter.BotCharacterCatalog
 import com.worksoc.goaicoach.application.botcharacter.BotCollectionState
 import com.worksoc.goaicoach.application.botcharacter.BotCollectionStorePort

@@ -1,7 +1,7 @@
 package com.worksoc.goaicoach.application.consumable
 
-import com.worksoc.goaicoach.application.premium.FeatureId
-import com.worksoc.goaicoach.application.premium.PremiumState
+import com.worksoc.goaicoach.application.premium.state.FeatureId
+import com.worksoc.goaicoach.application.premium.state.PremiumState
 
 /**
  * 소모품 종류의 영구 식별자. 저장소(`persistence/ConsumableInventoryStore.kt`)에 JSON 키로 그대로

@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.application.premium
+package com.worksoc.goaicoach.application.premium.state
 
 /**
  * **구독 확인이 얼마나 낡았는가**를 판정한다(백로그 #174, 2026-09-18 사용자 설계).

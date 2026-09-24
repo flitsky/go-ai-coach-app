@@ -5,7 +5,7 @@ package com.worksoc.goaicoach.application.device
  *
  * 계정(로그인 UID)과는 다른 축이다: 계정은 "누구인가"를, 이 값은 "그 계정이 지금 어느
  * 기기에서 쓰이고 있는가"를 나타낸다.
- * [com.worksoc.goaicoach.application.premium.PremiumState]/[com.worksoc.goaicoach.application.auth.AuthState]처럼
+ * [com.worksoc.goaicoach.application.premium.state.PremiumState]/[com.worksoc.goaicoach.application.auth.state.AuthState]처럼
  * 플랫폼 SDK에 의존하지 않는 순수 모델로 설계해, 값을 어떻게 생성/저장할지는
  * [DeviceIdentityStorePort] 뒤로 분리한다.
  *

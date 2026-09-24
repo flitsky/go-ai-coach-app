@@ -1,8 +1,8 @@
 package com.worksoc.goaicoach.application
 
-import com.worksoc.goaicoach.application.premium.FeatureId
-import com.worksoc.goaicoach.application.premium.PremiumSource
-import com.worksoc.goaicoach.application.premium.PremiumState
+import com.worksoc.goaicoach.application.premium.state.FeatureId
+import com.worksoc.goaicoach.application.premium.state.PremiumSource
+import com.worksoc.goaicoach.application.premium.state.PremiumState
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue

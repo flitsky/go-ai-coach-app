@@ -5,17 +5,17 @@ import android.content.Context
 import com.android.billingclient.api.BillingClient
 import com.worksoc.goaicoach.BuildConfig
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
-import com.worksoc.goaicoach.application.premium.AdRewardFailureReason
-import com.worksoc.goaicoach.application.premium.AdRewardOutcome
-import com.worksoc.goaicoach.application.premium.PremiumAdGrantRunRequest
-import com.worksoc.goaicoach.application.premium.PremiumProductInfo
-import com.worksoc.goaicoach.application.premium.PremiumPurchaseRunRequest
-import com.worksoc.goaicoach.application.premium.PremiumState
-import com.worksoc.goaicoach.application.premium.PurchaseFailureReason
-import com.worksoc.goaicoach.application.premium.PurchaseOutcome
-import com.worksoc.goaicoach.application.premium.PurchaseTrigger
-import com.worksoc.goaicoach.application.premium.runPremiumAdGrantApplication
-import com.worksoc.goaicoach.application.premium.runPremiumPurchaseApplication
+import com.worksoc.goaicoach.application.premium.port.AdRewardFailureReason
+import com.worksoc.goaicoach.application.premium.port.AdRewardOutcome
+import com.worksoc.goaicoach.application.premium.app.PremiumAdGrantRunRequest
+import com.worksoc.goaicoach.application.premium.port.PremiumProductInfo
+import com.worksoc.goaicoach.application.premium.app.PremiumPurchaseRunRequest
+import com.worksoc.goaicoach.application.premium.state.PremiumState
+import com.worksoc.goaicoach.application.premium.port.PurchaseFailureReason
+import com.worksoc.goaicoach.application.premium.port.PurchaseOutcome
+import com.worksoc.goaicoach.application.premium.app.PurchaseTrigger
+import com.worksoc.goaicoach.application.premium.app.runPremiumAdGrantApplication
+import com.worksoc.goaicoach.application.premium.app.runPremiumPurchaseApplication
 
 /**
  * `GoCoachApp.kt`는 상태 훅/라인 예산이 빠듯해(state-holder-refactor 메모리 참고) 어댑터 생성 +

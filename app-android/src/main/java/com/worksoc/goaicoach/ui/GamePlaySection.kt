@@ -55,8 +55,8 @@ import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.consumable.ConsumableCatalog
 import com.worksoc.goaicoach.application.consumable.ConsumableSpendDecision
 import com.worksoc.goaicoach.application.movereview.MoveReviewTone
-import com.worksoc.goaicoach.application.premium.FeatureAccess
-import com.worksoc.goaicoach.application.premium.FeatureId
+import com.worksoc.goaicoach.application.premium.state.FeatureAccess
+import com.worksoc.goaicoach.application.premium.state.FeatureId
 import com.worksoc.goaicoach.application.safety.engineTurnWatchdogTimeoutMillisFor
 import com.worksoc.goaicoach.application.safety.isEngineTurnWatchdogTriggered
 import com.worksoc.goaicoach.application.session.GameSessionTurnTimeState
@@ -795,7 +795,7 @@ private fun GameActionButtonHost(
         Toast.makeText(context, text, duration).show()
     }
 
-    // 기능별 판정은 FeatureAccessPolicy(6계층, application/premium/FeatureAccessPolicy.kt)에
+    // 기능별 판정은 FeatureAccessPolicy(6계층, application/premium/state/FeatureAccessPolicy.kt)에
     // 위임한다 — 어느 기능이 무료/광고/구매/클레임 중 무엇으로 풀리는지는 여기서 다시
     // 판단하지 않는다. 잠겨 있을 때는 금색 테두리(PremiumLockedBorder)로 표시하고, 탭하면
     // 실제 동작 대신 업셀(또는 클레임 가능하면 클레임) 팝업을 띄운다. 액션을 뒤로 미루지

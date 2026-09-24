@@ -5,7 +5,7 @@ import com.worksoc.goaicoach.application.botcharacter.BotCharacterCatalog
 import com.worksoc.goaicoach.application.botcharacter.BotCollectionState
 import com.worksoc.goaicoach.application.consumable.ConsumableCatalog
 import com.worksoc.goaicoach.application.consumable.ConsumableItem
-import com.worksoc.goaicoach.application.premium.FeatureId
+import com.worksoc.goaicoach.application.premium.state.FeatureId
 
 /**
  * 출석 보상표(백로그 #55에서 2026-08-31 사용자와 함께 재확정).

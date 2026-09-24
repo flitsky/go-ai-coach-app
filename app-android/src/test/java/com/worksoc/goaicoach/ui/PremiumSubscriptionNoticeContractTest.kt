@@ -1,6 +1,6 @@
 package com.worksoc.goaicoach.ui
 
-import com.worksoc.goaicoach.application.premium.BillingPeriod
+import com.worksoc.goaicoach.application.premium.port.BillingPeriod
 import com.worksoc.goaicoach.architecture.RepoPaths
 import com.worksoc.goaicoach.architecture.readContractSource
 import java.io.File

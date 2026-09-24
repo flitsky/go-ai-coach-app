@@ -1,9 +1,9 @@
 package com.worksoc.goaicoach.application.consumable
 
-import com.worksoc.goaicoach.application.premium.AllowedVia
-import com.worksoc.goaicoach.application.premium.FeatureId
-import com.worksoc.goaicoach.application.premium.PremiumState
-import com.worksoc.goaicoach.application.premium.PremiumStateStorePort
+import com.worksoc.goaicoach.application.premium.state.AllowedVia
+import com.worksoc.goaicoach.application.premium.state.FeatureId
+import com.worksoc.goaicoach.application.premium.state.PremiumState
+import com.worksoc.goaicoach.application.premium.port.PremiumStateStorePort
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs

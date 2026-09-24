@@ -8,9 +8,9 @@ import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.MobileAds
 import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAd
 import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAdLoadCallback
-import com.worksoc.goaicoach.application.premium.AdRewardFailureReason
-import com.worksoc.goaicoach.application.premium.AdRewardOutcome
-import com.worksoc.goaicoach.application.premium.AdRewardPort
+import com.worksoc.goaicoach.application.premium.port.AdRewardFailureReason
+import com.worksoc.goaicoach.application.premium.port.AdRewardOutcome
+import com.worksoc.goaicoach.application.premium.port.AdRewardPort
 import kotlin.coroutines.resume
 import kotlinx.coroutines.suspendCancellableCoroutine
 

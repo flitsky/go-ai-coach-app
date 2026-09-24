@@ -5,8 +5,8 @@ import com.worksoc.goaicoach.application.botcharacter.BotCharacterId
 import com.worksoc.goaicoach.application.botcharacter.BotCollectionState
 import com.worksoc.goaicoach.application.consumable.ConsumableInventory
 import com.worksoc.goaicoach.application.consumable.ConsumableItemId
-import com.worksoc.goaicoach.application.premium.FeatureId
-import com.worksoc.goaicoach.application.premium.PremiumState
+import com.worksoc.goaicoach.application.premium.state.FeatureId
+import com.worksoc.goaicoach.application.premium.state.PremiumState
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

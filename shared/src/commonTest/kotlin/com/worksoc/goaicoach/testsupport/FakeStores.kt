@@ -1,7 +1,7 @@
 package com.worksoc.goaicoach.testsupport
 
-import com.worksoc.goaicoach.application.premium.PremiumState
-import com.worksoc.goaicoach.application.premium.PremiumStateStorePort
+import com.worksoc.goaicoach.application.premium.state.PremiumState
+import com.worksoc.goaicoach.application.premium.port.PremiumStateStorePort
 import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
 import com.worksoc.goaicoach.application.savedgame.SavedGameStorePort
 

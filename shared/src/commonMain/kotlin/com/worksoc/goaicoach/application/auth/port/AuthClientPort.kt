@@ -1,4 +1,6 @@
-package com.worksoc.goaicoach.application.auth
+package com.worksoc.goaicoach.application.auth.port
+
+import com.worksoc.goaicoach.application.auth.state.AuthState
 
 /**
  * 4계층(External Integration) α — 실제 인증 SDK(Firebase Auth 등) 호출을 감싸는 순수 포트.

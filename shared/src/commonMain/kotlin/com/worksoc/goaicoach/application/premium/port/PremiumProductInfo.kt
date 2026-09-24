@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.application.premium
+package com.worksoc.goaicoach.application.premium.port
 
 /**
  * Play가 말해 주는 **구독 상품의 고지 재료**(백로그 #159).

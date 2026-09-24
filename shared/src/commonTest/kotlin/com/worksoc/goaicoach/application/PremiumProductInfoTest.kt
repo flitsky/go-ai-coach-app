@@ -1,7 +1,7 @@
 package com.worksoc.goaicoach.application
 
-import com.worksoc.goaicoach.application.premium.BillingPeriod
-import com.worksoc.goaicoach.application.premium.billingPeriodFromIso8601
+import com.worksoc.goaicoach.application.premium.port.BillingPeriod
+import com.worksoc.goaicoach.application.premium.port.billingPeriodFromIso8601
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

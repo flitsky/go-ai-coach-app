@@ -3,7 +3,7 @@ package com.worksoc.goaicoach.application.consumable
 /**
  * 6계층(Session & Continuity) — 소모품 재고 원장.
  *
- * [com.worksoc.goaicoach.application.premium.PremiumState.claimedFeatures]는 "한 번 켜지면 계속
+ * [com.worksoc.goaicoach.application.premium.state.PremiumState.claimedFeatures]는 "한 번 켜지면 계속
  * 켜져 있는" boolean 원장이라 **쓰면 줄어드는 이 개념을 담을 수 없다**(킥오프 플랜 4.5절) —
  * 3장의 "신규 기능은 서로 다른 Port로 분리한다" 원칙에 따라 별도 타입 + 별도 Port로 뒀다.
  *

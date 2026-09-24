@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.application.premium
+package com.worksoc.goaicoach.application.premium.state
 
 /** [FeatureAccess.Locked]일 때 사용자가 선택할 수 있는 잠금 해제 수단. */
 enum class UnlockOption {

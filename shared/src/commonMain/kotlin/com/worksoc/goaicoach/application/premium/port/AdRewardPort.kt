@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.application.premium
+package com.worksoc.goaicoach.application.premium.port
 
 /**
  * 4계층(External Integration) α — 실제 리워드 광고 SDK(AdMob) 호출을 감싸는 순수 포트.

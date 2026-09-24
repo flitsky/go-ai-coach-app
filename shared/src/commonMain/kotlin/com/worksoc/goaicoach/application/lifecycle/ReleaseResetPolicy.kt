@@ -3,7 +3,7 @@ package com.worksoc.goaicoach.application.lifecycle
 import com.worksoc.goaicoach.application.attendance.AttendanceState
 import com.worksoc.goaicoach.application.botcharacter.BotCollectionState
 import com.worksoc.goaicoach.application.consumable.ConsumableInventory
-import com.worksoc.goaicoach.application.premium.PremiumState
+import com.worksoc.goaicoach.application.premium.state.PremiumState
 
 /**
  * 6계층(Session & Continuity) — **정식 릴리즈 초기화**를 이번 실행에서 해야 하는지 판정한다

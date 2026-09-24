@@ -6,8 +6,8 @@ import com.worksoc.goaicoach.application.botcharacter.runBotCharacterShardGrant
 import com.worksoc.goaicoach.application.botcharacter.runBotCharacterUnlock
 import com.worksoc.goaicoach.application.consumable.ConsumableStorePort
 import com.worksoc.goaicoach.application.consumable.runConsumableGrant
-import com.worksoc.goaicoach.application.premium.PremiumStateStorePort
-import com.worksoc.goaicoach.application.premium.runPremiumFeatureClaim
+import com.worksoc.goaicoach.application.premium.port.PremiumStateStorePort
+import com.worksoc.goaicoach.application.premium.app.runPremiumFeatureClaim
 
 /**
  * [runAttendanceRewardGrant]의 결과. [state]는 지급 사실이 기록된(=저장된) 최신 출석 상태이고,

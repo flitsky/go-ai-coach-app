@@ -47,8 +47,8 @@ import com.worksoc.goaicoach.persistence.GameSessionStore
 import com.worksoc.goaicoach.BuildConfig
 import com.worksoc.goaicoach.wipeToFreshInstall
 import com.worksoc.goaicoach.application.preferences.isBoardSetupLockedDuringGame
-import com.worksoc.goaicoach.application.auth.AuthClientPort
-import com.worksoc.goaicoach.application.auth.AuthProvider
+import com.worksoc.goaicoach.application.auth.port.AuthClientPort
+import com.worksoc.goaicoach.application.auth.state.AuthProvider
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.persistence.DeveloperModeStore
 import com.worksoc.goaicoach.presentation.GameActionButtonRole

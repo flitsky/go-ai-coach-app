@@ -3,7 +3,7 @@ package com.worksoc.goaicoach.application.botcharacter
 /**
  * 6계층(Session & Continuity) — 봇 캐릭터 수집 상태.
  *
- * [com.worksoc.goaicoach.application.premium.PremiumState.claimedFeatures]와 자료구조는 닮았지만
+ * [com.worksoc.goaicoach.application.premium.state.PremiumState.claimedFeatures]와 자료구조는 닮았지만
  * 도메인이 다르다(기능 토글 원장 vs 캐릭터 수집)는 7장 지침에 따라 **별도 타입 + 별도 Port**로
  * 분리했다 — 킥오프 플랜 3장의 "신규 3개 기능은 서로 다른 Port로 분리한다"와도 같은 결론이다.
  *

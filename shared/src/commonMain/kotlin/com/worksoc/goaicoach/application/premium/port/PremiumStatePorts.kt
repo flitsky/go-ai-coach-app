@@ -1,4 +1,6 @@
-package com.worksoc.goaicoach.application.premium
+package com.worksoc.goaicoach.application.premium.port
+
+import com.worksoc.goaicoach.application.premium.state.PremiumState
 
 /**
  * 4계층(External Integration) α — [PremiumState]를 로컬에 저장/복원하는 순수 포트.

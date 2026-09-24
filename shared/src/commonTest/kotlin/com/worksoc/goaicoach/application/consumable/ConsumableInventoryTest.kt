@@ -1,6 +1,6 @@
 package com.worksoc.goaicoach.application.consumable
 
-import com.worksoc.goaicoach.application.premium.FeatureId
+import com.worksoc.goaicoach.application.premium.state.FeatureId
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

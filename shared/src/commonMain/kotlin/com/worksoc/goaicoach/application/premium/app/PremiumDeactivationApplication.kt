@@ -1,5 +1,7 @@
-package com.worksoc.goaicoach.application.premium
+package com.worksoc.goaicoach.application.premium.app
 
+import com.worksoc.goaicoach.application.premium.state.PremiumSource
+import com.worksoc.goaicoach.application.premium.state.PremiumState
 import com.worksoc.goaicoach.shared.diagnostic.DiagnosticEvent
 import com.worksoc.goaicoach.shared.diagnostic.DiagnosticSeverity
 

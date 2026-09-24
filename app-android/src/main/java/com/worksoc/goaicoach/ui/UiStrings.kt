@@ -17,11 +17,11 @@ import com.worksoc.goaicoach.application.botcharacter.BotCharacterCatalog
 import com.worksoc.goaicoach.application.botcharacter.BotUnlockSource
 import com.worksoc.goaicoach.application.consumable.ConsumableItem
 import com.worksoc.goaicoach.application.gamehistory.GameHistoryResult
-import com.worksoc.goaicoach.application.premium.AdRewardFailureReason
-import com.worksoc.goaicoach.application.premium.AllowedVia
-import com.worksoc.goaicoach.application.premium.FeatureAccess
-import com.worksoc.goaicoach.application.premium.PurchaseFailureReason
-import com.worksoc.goaicoach.application.premium.FeatureId
+import com.worksoc.goaicoach.application.premium.port.AdRewardFailureReason
+import com.worksoc.goaicoach.application.premium.state.AllowedVia
+import com.worksoc.goaicoach.application.premium.state.FeatureAccess
+import com.worksoc.goaicoach.application.premium.port.PurchaseFailureReason
+import com.worksoc.goaicoach.application.premium.state.FeatureId
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup

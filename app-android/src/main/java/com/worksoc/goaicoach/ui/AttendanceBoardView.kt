@@ -44,7 +44,7 @@ import com.worksoc.goaicoach.application.botcharacter.BotCharacter
 import com.worksoc.goaicoach.application.botcharacter.BotCollectionState
 import com.worksoc.goaicoach.application.consumable.ConsumableCatalog
 import com.worksoc.goaicoach.application.consumable.ConsumableItem
-import com.worksoc.goaicoach.application.premium.FeatureId
+import com.worksoc.goaicoach.application.premium.state.FeatureId
 
 /**
  * 출석 도장판 그림(#55에서 만들고 #56에서 분리, **#57에서 글자판 → 그림판으로 다시 썼다**).

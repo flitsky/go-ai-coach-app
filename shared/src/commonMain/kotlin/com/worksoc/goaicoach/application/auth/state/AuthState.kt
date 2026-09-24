@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.application.auth
+package com.worksoc.goaicoach.application.auth.state
 
 /** 로그인 수단. 셋 다 실제로 발급된다(Apple은 아직 UI 스텁만 있고 이 enum엔 없음). */
 enum class AuthProvider {

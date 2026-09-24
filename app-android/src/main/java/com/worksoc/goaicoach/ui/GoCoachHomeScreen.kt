@@ -66,7 +66,7 @@ import com.worksoc.goaicoach.persistence.ExperimentalFeaturesStore
 import com.worksoc.goaicoach.application.botcharacter.BotCharacter
 import com.worksoc.goaicoach.application.botcharacter.BotCharacterCatalog
 import com.worksoc.goaicoach.application.guide.GuideSurface
-import com.worksoc.goaicoach.application.premium.FeatureId
+import com.worksoc.goaicoach.application.premium.state.FeatureId
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.presentation.KaTrainUxOptions

@@ -1,7 +1,7 @@
 package com.worksoc.goaicoach.ui
 
 import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException
-import com.worksoc.goaicoach.application.auth.AuthClientPort
+import com.worksoc.goaicoach.application.auth.port.AuthClientPort
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.shared.diagnostic.DiagnosticEvent
 import com.worksoc.goaicoach.shared.diagnostic.DiagnosticSeverity

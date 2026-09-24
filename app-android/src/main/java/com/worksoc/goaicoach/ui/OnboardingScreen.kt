@@ -28,7 +28,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.firebase.auth.FirebaseAuthWeakPasswordException
-import com.worksoc.goaicoach.application.auth.AuthClientPort
+import com.worksoc.goaicoach.application.auth.port.AuthClientPort
 import com.worksoc.goaicoach.application.device.DeviceIdentityStorePort
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import kotlinx.coroutines.launch

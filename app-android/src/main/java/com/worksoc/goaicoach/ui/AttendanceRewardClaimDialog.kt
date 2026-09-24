@@ -15,7 +15,7 @@ import com.worksoc.goaicoach.application.botcharacter.BotCollectionState
 import com.worksoc.goaicoach.application.guide.GuideSurface
 import com.worksoc.goaicoach.application.attendance.grantedAmountOf
 import com.worksoc.goaicoach.application.consumable.ConsumableInventory
-import com.worksoc.goaicoach.application.premium.PremiumState
+import com.worksoc.goaicoach.application.premium.state.PremiumState
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text

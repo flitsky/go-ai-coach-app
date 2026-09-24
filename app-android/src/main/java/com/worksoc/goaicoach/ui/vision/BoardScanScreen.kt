@@ -24,8 +24,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.engine.EngineSessionClient
-import com.worksoc.goaicoach.application.premium.FeatureAccess
-import com.worksoc.goaicoach.application.premium.FeatureId
+import com.worksoc.goaicoach.application.premium.state.FeatureAccess
+import com.worksoc.goaicoach.application.premium.state.FeatureId
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisResult
 import com.worksoc.goaicoach.shared.domain.BoardSize

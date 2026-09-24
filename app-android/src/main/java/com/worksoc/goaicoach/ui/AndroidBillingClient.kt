@@ -12,11 +12,11 @@ import com.android.billingclient.api.Purchase
 import com.android.billingclient.api.PurchasesUpdatedListener
 import com.android.billingclient.api.QueryProductDetailsParams
 import com.android.billingclient.api.QueryPurchasesParams
-import com.worksoc.goaicoach.application.premium.PurchaseFailureReason
-import com.worksoc.goaicoach.application.premium.PurchaseOutcome
-import com.worksoc.goaicoach.application.premium.PremiumProductInfo
-import com.worksoc.goaicoach.application.premium.PurchasePort
-import com.worksoc.goaicoach.application.premium.billingPeriodFromIso8601
+import com.worksoc.goaicoach.application.premium.port.PurchaseFailureReason
+import com.worksoc.goaicoach.application.premium.port.PurchaseOutcome
+import com.worksoc.goaicoach.application.premium.port.PremiumProductInfo
+import com.worksoc.goaicoach.application.premium.port.PurchasePort
+import com.worksoc.goaicoach.application.premium.port.billingPeriodFromIso8601
 import kotlin.coroutines.resume
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -133,7 +133,7 @@ internal class AndroidBillingClient(
                 details.oneTimePurchaseOfferDetails?.let { oneTime ->
                     PremiumProductInfo(
                         formattedPrice = oneTime.formattedPrice,
-                        period = com.worksoc.goaicoach.application.premium.BillingPeriod.Unknown,
+                        period = com.worksoc.goaicoach.application.premium.port.BillingPeriod.Unknown,
                     )
                 }
             }

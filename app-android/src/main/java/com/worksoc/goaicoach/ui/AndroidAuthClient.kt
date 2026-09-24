@@ -6,9 +6,9 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
-import com.worksoc.goaicoach.application.auth.AuthClientPort
-import com.worksoc.goaicoach.application.auth.AuthProvider
-import com.worksoc.goaicoach.application.auth.AuthState
+import com.worksoc.goaicoach.application.auth.port.AuthClientPort
+import com.worksoc.goaicoach.application.auth.state.AuthProvider
+import com.worksoc.goaicoach.application.auth.state.AuthState
 import kotlin.coroutines.resume
 import kotlinx.coroutines.suspendCancellableCoroutine
 

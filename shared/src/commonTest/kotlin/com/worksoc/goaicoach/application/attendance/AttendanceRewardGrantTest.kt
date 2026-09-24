@@ -9,11 +9,11 @@ import com.worksoc.goaicoach.application.consumable.ConsumableCatalog
 import com.worksoc.goaicoach.application.consumable.ConsumableInventory
 import com.worksoc.goaicoach.application.consumable.PremiumOnceMaxStock
 import com.worksoc.goaicoach.application.consumable.ConsumableStorePort
-import com.worksoc.goaicoach.application.premium.FeatureAccess
-import com.worksoc.goaicoach.application.premium.FeatureAccessPolicy
-import com.worksoc.goaicoach.application.premium.FeatureId
-import com.worksoc.goaicoach.application.premium.PremiumState
-import com.worksoc.goaicoach.application.premium.PremiumStateStorePort
+import com.worksoc.goaicoach.application.premium.state.FeatureAccess
+import com.worksoc.goaicoach.application.premium.state.FeatureAccessPolicy
+import com.worksoc.goaicoach.application.premium.state.FeatureId
+import com.worksoc.goaicoach.application.premium.state.PremiumState
+import com.worksoc.goaicoach.application.premium.port.PremiumStateStorePort
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

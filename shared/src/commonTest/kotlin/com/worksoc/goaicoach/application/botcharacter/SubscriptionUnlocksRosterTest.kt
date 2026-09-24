@@ -1,7 +1,7 @@
 package com.worksoc.goaicoach.application.botcharacter
 
-import com.worksoc.goaicoach.application.premium.PremiumSource
-import com.worksoc.goaicoach.application.premium.PremiumState
+import com.worksoc.goaicoach.application.premium.state.PremiumSource
+import com.worksoc.goaicoach.application.premium.state.PremiumState
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

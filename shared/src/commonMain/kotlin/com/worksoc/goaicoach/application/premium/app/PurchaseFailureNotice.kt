@@ -1,4 +1,7 @@
-package com.worksoc.goaicoach.application.premium
+package com.worksoc.goaicoach.application.premium.app
+
+import com.worksoc.goaicoach.application.premium.port.PurchaseFailureReason
+import com.worksoc.goaicoach.application.premium.port.PurchaseOutcome
 
 /**
  * **결제가 끝나지 않았을 때 사용자에게 무엇을 말할 것인가**(백로그 #178).
