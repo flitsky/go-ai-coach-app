@@ -1,6 +1,5 @@
 package com.worksoc.goaicoach.application.botcharacter
 
-import com.worksoc.goaicoach.application.attendance.WeeklyRewardCycleTier
 import com.worksoc.goaicoach.shared.policy.PlayLevelGroup
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 
@@ -131,6 +130,9 @@ object BotCharacterCatalog {
  * 배선은 지우지 않고 그대로 잠들어 있다.
  */
 const val TopCharacterAttendanceTier: Int = 28
+
+/** 7일 주기의 길이. 8일차 이후로는 이 배수 회차에만 보상이 있다. */
+const val WeeklyRewardCycleTier: Int = 7
 
 /** `FastBeginner` 캐릭터 한 종을 만든다. */
 private fun fastBeginnerCharacter(

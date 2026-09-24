@@ -3,6 +3,7 @@ package com.worksoc.goaicoach.application.attendance
 import com.worksoc.goaicoach.application.botcharacter.BotCharacter
 import com.worksoc.goaicoach.application.botcharacter.BotCharacterCatalog
 import com.worksoc.goaicoach.application.botcharacter.BotCollectionState
+import com.worksoc.goaicoach.application.botcharacter.WeeklyRewardCycleTier
 import com.worksoc.goaicoach.application.consumable.ConsumableCatalog
 import com.worksoc.goaicoach.application.consumable.ConsumableItem
 import com.worksoc.goaicoach.application.premium.state.FeatureId
@@ -40,9 +41,6 @@ import com.worksoc.goaicoach.application.premium.state.FeatureId
 
 /** 무르기 무제한이 열리는 회차. ⚠️ 1일차가 아니라 **3일차**다(#55) — 유료임을 겪은 뒤에 준다. */
 const val UndoUnlimitedRewardTier: Int = 3
-
-/** 7일 주기의 길이. 8일차 이후로는 이 배수 회차에만 보상이 있다. */
-const val WeeklyRewardCycleTier: Int = 7
 
 /** 1·2일차 — 형세 보기 / 추천 수 1회권을 각각 이만큼. */
 private const val AnalysisTicketAmount: Int = 30

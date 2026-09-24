@@ -99,8 +99,6 @@ internal object ContractSymbols {
     const val APPLICATION_STARTGAME = "com.worksoc.goaicoach.application.startgame"
     const val APPLICATION_TOPMOVES = "com.worksoc.goaicoach.application.topmoves"
     const val APPLICATION_UNDO = "com.worksoc.goaicoach.application.undo"
-    const val APPLICATION_ATTENDANCE = "com.worksoc.goaicoach.application.attendance"
-    const val APPLICATION_BOTCHARACTER = "com.worksoc.goaicoach.application.botcharacter"
 
     /**
      * 크기 2 이상인 SCC(강한 연결 요소)의 기준선. **구성원이 늘거나 새 SCC가 생기면 실패**,
@@ -123,8 +121,6 @@ internal object ContractSymbols {
             APPLICATION_TOPMOVES,
             APPLICATION_UNDO,
         ),
-        // botcharacter/BotCharacterCatalog.kt → attendance.WeeklyRewardCycleTier 한 건이 되돌아오는 길이다.
-        setOf(APPLICATION_ATTENDANCE, APPLICATION_BOTCHARACTER),
     )
 
     /**
@@ -134,7 +130,6 @@ internal object ContractSymbols {
     val CYCLE_BASELINE_MUTUAL_PAIRS: List<Pair<String, String>> = listOf(
         APPLICATION_ANALYSIS to APPLICATION_ENGINE,
         APPLICATION_ANALYSIS to APPLICATION_SESSION,
-        APPLICATION_ATTENDANCE to APPLICATION_BOTCHARACTER,
         APPLICATION_AUTOAI to APPLICATION_RUNTIME,
         APPLICATION_AUTOAI to APPLICATION_SESSION,
         APPLICATION_DEBUGREPORT to APPLICATION_SESSION,

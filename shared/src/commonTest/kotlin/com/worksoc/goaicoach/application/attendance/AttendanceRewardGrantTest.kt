@@ -5,6 +5,7 @@ import com.worksoc.goaicoach.application.botcharacter.BotCollectionState
 import com.worksoc.goaicoach.application.botcharacter.BotCollectionStorePort
 import com.worksoc.goaicoach.application.botcharacter.BotUnlockSource
 import com.worksoc.goaicoach.application.botcharacter.TopCharacterAttendanceTier
+import com.worksoc.goaicoach.application.botcharacter.WeeklyRewardCycleTier
 import com.worksoc.goaicoach.application.consumable.ConsumableCatalog
 import com.worksoc.goaicoach.application.consumable.ConsumableInventory
 import com.worksoc.goaicoach.application.consumable.PremiumOnceMaxStock
