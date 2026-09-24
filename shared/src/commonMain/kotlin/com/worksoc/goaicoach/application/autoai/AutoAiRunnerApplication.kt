@@ -1,13 +1,14 @@
 package com.worksoc.goaicoach.application.autoai
 
+import com.worksoc.goaicoach.application.contract.AutoAiTurnEndgamePlan
 import com.worksoc.goaicoach.application.endgame.AiEndgameResolution
 import com.worksoc.goaicoach.application.engine.AutoAiTurnResult
 import com.worksoc.goaicoach.application.engine.EngineSessionClient
-import com.worksoc.goaicoach.application.session.GameSessionEffect
+import com.worksoc.goaicoach.application.contract.GameSessionEffect
 import com.worksoc.goaicoach.application.engine.localScoreSnapshot
 import com.worksoc.goaicoach.application.score.EndgameFailureDisplayPlan
 import com.worksoc.goaicoach.application.score.FinalScoreDisplayPlan
-import com.worksoc.goaicoach.application.score.ScoreEstimateDisplayPlan
+import com.worksoc.goaicoach.application.contract.ScoreEstimateDisplayPlan
 import com.worksoc.goaicoach.application.score.buildEndgameFailureDisplayPlan
 import com.worksoc.goaicoach.application.score.buildEngineEstimateDisplayPlan
 import com.worksoc.goaicoach.application.score.buildResolvedEndgameDisplayPlan
@@ -74,18 +75,6 @@ fun AutoAiTurnFollowUpPlan.toAutoAiTurnFollowUpRequest(): AutoAiTurnFollowUpRequ
                 deep = false,
             )
     }
-
-sealed class AutoAiTurnEndgamePlan {
-    data object None : AutoAiTurnEndgamePlan()
-    data class Resolve(
-        val state: GameState,
-        val profile: EngineProfile,
-        val prePassCandidates: List<CandidateMove>,
-        val engineMessagePrefix: String,
-        val successSource: String = "auto-ai-engine-dead-stone-cleanup",
-        val failureSource: String = "auto-ai-engine-final-score-failed",
-    ) : AutoAiTurnEndgamePlan()
-}
 
 fun buildAutoAiTurnEndgamePlan(display: AutoAiTurnDisplayPlan): AutoAiTurnEndgamePlan =
     if (display.shouldResolveEndgame) {

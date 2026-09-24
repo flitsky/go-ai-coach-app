@@ -1,10 +1,12 @@
 package com.worksoc.goaicoach.application.score
 
+import com.worksoc.goaicoach.application.contract.ScoreEstimateDisplayPlan
+import com.worksoc.goaicoach.application.contract.ScoreEstimateRequestPlan
 import com.worksoc.goaicoach.shared.policy.EngineFallbackPolicy
 import com.worksoc.goaicoach.shared.policy.EngineOperationKind
 import com.worksoc.goaicoach.shared.policy.EngineOperationResultGuard
 import com.worksoc.goaicoach.shared.policy.EngineTimeoutPolicy
-import com.worksoc.goaicoach.application.session.GameSessionEffect
+import com.worksoc.goaicoach.application.contract.GameSessionEffect
 import com.worksoc.goaicoach.shared.policy.engineOperationRequest
 import com.worksoc.goaicoach.shared.policy.evaluateEngineOperationResultGuard
 import com.worksoc.goaicoach.application.engine.localScoreSnapshot

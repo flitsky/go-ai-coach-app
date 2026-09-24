@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.application.humanmove
 
+import com.worksoc.goaicoach.application.contract.HumanEngineSyncRunPlan
 import com.worksoc.goaicoach.application.time.currentEpochMillis
 import com.worksoc.goaicoach.shared.policy.EngineFallbackPolicy
 import com.worksoc.goaicoach.shared.policy.EngineOperationApplyPlan
@@ -21,10 +22,10 @@ import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.diagnostic.NoopDiagnosticEventLog
 import com.worksoc.goaicoach.application.diagnostic.runObservedEngineOperation
 import com.worksoc.goaicoach.application.score.FinalScoreDisplayPlan
-import com.worksoc.goaicoach.application.score.ScoreEstimateDisplayPlan
+import com.worksoc.goaicoach.application.contract.ScoreEstimateDisplayPlan
 import com.worksoc.goaicoach.application.score.buildEngineEstimateDisplayPlan
 import com.worksoc.goaicoach.application.score.buildResolvedEndgameDisplayPlan
-import com.worksoc.goaicoach.application.session.GameSessionEffect
+import com.worksoc.goaicoach.application.contract.GameSessionEffect
 import com.worksoc.goaicoach.match.MatchReferee
 import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
@@ -61,13 +62,6 @@ data class HumanEngineSyncFailurePlan(
     val scoreSnapshots: List<ScoreSnapshot>,
     val candidateText: String,
     val engineMessage: String,
-)
-
-data class HumanEngineSyncRunPlan(
-    val afterMove: GameState,
-    val profile: EngineProfile,
-    val move: Move,
-    val previousReviewCandidates: List<CandidateMove>,
 )
 
 data class HumanEngineSyncEffectLaunchRequest(

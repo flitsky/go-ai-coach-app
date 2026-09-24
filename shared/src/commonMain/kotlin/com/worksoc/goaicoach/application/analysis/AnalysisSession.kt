@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.application.analysis
 
+import com.worksoc.goaicoach.application.contract.AnalysisCacheKey
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisPreset
 import com.worksoc.goaicoach.shared.enginecontract.DifficultyProfile
@@ -14,16 +15,6 @@ import com.worksoc.goaicoach.shared.policy.fastCandidateAnalysis
 import com.worksoc.goaicoach.shared.policy.turnAnalysisLimitFor
 
 internal const val LightweightTopMoveCandidateCount = 5
-
-data class AnalysisCacheKey(
-    val positionFingerprint: String,
-    val preset: AnalysisPreset,
-    val limit: AnalysisLimit,
-    val deep: Boolean,
-    // Analysis results from the JSON process and the stateful GTP process are
-    // not interchangeable. Keep their short-lived UI cache entries separate.
-    val searchMode: EngineSearchMode = EngineSearchMode.GtpStatefulFast,
-)
 
 data class CachedAnalysisResult(
     val snapshot: MoveAnalysisSnapshot,

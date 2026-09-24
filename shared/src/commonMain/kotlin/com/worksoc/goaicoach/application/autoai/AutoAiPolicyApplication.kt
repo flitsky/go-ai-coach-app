@@ -1,15 +1,15 @@
 package com.worksoc.goaicoach.application.autoai
 
+import com.worksoc.goaicoach.application.contract.AutoAiTurnExecutionContext
+import com.worksoc.goaicoach.application.contract.AutoAiTurnRunPlan
 import com.worksoc.goaicoach.application.session.GameSessionControllerState
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.PlayerSetup
-import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
 import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
 import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
-import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.policy.aiMoveAnalysisLimitWith
 import com.worksoc.goaicoach.shared.policy.aiMoveSearchMode
 
@@ -194,21 +194,6 @@ fun GameSessionControllerState.toAutoAiTurnScheduleValidationPlan(
         reviewCandidateMoves = core.analysisState.reviewCandidateMoves,
         scheduledDelayMillis = scheduledDelayMillis,
     )
-
-data class AutoAiTurnRunPlan(
-    val delayMillis: Long,
-    val context: AutoAiTurnExecutionContext,
-)
-
-data class AutoAiTurnExecutionContext(
-    val turnState: GameState,
-    val aiPlayer: StoneColor,
-    val playLevel: PlayLevelSetting,
-    val analysisLimit: AnalysisLimit,
-    val searchMode: EngineSearchMode,
-    val isolateSearchCache: Boolean,
-    val previousReviewCandidates: List<CandidateMove>,
-)
 
 fun buildAutoAiTurnExecutionContext(
     gameState: GameState,

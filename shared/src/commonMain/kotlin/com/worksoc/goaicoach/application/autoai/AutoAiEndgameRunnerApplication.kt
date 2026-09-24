@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.application.autoai
 
+import com.worksoc.goaicoach.application.contract.AutoAiTurnEndgamePlan
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.engine.EngineSessionClient
 import com.worksoc.goaicoach.shared.policy.EngineOperationResultGuard

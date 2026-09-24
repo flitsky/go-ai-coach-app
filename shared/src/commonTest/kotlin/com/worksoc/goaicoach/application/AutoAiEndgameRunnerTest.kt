@@ -1,10 +1,10 @@
 package com.worksoc.goaicoach.application
 
-import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationPlan
+import com.worksoc.goaicoach.application.contract.PositionAnalysisCacheOptimizationPlan
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationResult
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheQuality
 import com.worksoc.goaicoach.application.autoai.AutoAiEndgameRunRequest
-import com.worksoc.goaicoach.application.autoai.AutoAiTurnEndgamePlan
+import com.worksoc.goaicoach.application.contract.AutoAiTurnEndgamePlan
 import com.worksoc.goaicoach.application.autoai.runAutoAiEndgameApplication
 import com.worksoc.goaicoach.application.diagnostic.NoopDiagnosticEventLog
 import com.worksoc.goaicoach.application.endgame.AiEndgameResolution

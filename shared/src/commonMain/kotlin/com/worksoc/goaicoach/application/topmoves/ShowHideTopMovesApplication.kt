@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.application.topmoves
 
-import com.worksoc.goaicoach.application.analysis.AnalysisCacheKey
+import com.worksoc.goaicoach.application.contract.TopMoveAnalysisPlan
+import com.worksoc.goaicoach.application.contract.AnalysisCacheKey
 import com.worksoc.goaicoach.application.autoai.shouldRequestTopMoveAnalysis
 import com.worksoc.goaicoach.application.session.GameSessionAnalysisState
 import com.worksoc.goaicoach.application.session.GameSessionControllerState

@@ -4,7 +4,7 @@ import com.worksoc.goaicoach.shared.policy.EngineFallbackPolicy
 import com.worksoc.goaicoach.shared.policy.EngineOperationKind
 import com.worksoc.goaicoach.shared.policy.EngineTimeoutPolicy
 import com.worksoc.goaicoach.application.analysis.NoopPositionAnalysisCacheStore
-import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationPlan
+import com.worksoc.goaicoach.application.contract.PositionAnalysisCacheOptimizationPlan
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationResult
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheQuality
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheStore

@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.application
 
+import com.worksoc.goaicoach.application.contract.*
 import com.worksoc.goaicoach.application.humanmove.*
 
 import com.worksoc.goaicoach.application.undo.*

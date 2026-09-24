@@ -4,6 +4,7 @@ import com.worksoc.goaicoach.application.engine.operation.*
 import com.worksoc.goaicoach.shared.policy.EngineOperationRequest
 import com.worksoc.goaicoach.shared.policy.engineOperationRequest
 
+import com.worksoc.goaicoach.application.contract.*
 import com.worksoc.goaicoach.application.analysis.*
 import com.worksoc.goaicoach.application.endgame.*
 import com.worksoc.goaicoach.application.engine.*

@@ -1,6 +1,6 @@
 package com.worksoc.goaicoach.application
 
-import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationPlan
+import com.worksoc.goaicoach.application.contract.PositionAnalysisCacheOptimizationPlan
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationResult
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheQuality
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort

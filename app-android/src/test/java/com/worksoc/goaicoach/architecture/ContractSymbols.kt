@@ -86,7 +86,6 @@ internal object ContractSymbols {
     // 측정 기준은 커밋 7c928f55의 설계 스레드 실측(scc.py)과 같은 규칙이다([PackageImportGraph]).
     // ⚠️ 여기 적힌 패키지는 [GUARDED]에도 자동으로 올라가 실존 검사를 받는다.
     const val APPLICATION_AUTOAI = "com.worksoc.goaicoach.application.autoai"
-    const val APPLICATION_DEBUGREPORT = "com.worksoc.goaicoach.application.debugreport"
     const val APPLICATION_ENGINE = "com.worksoc.goaicoach.application.engine"
     const val APPLICATION_ENGINE_OPERATION = "com.worksoc.goaicoach.application.engine.operation"
     const val APPLICATION_HUMANMOVE = "com.worksoc.goaicoach.application.humanmove"
@@ -105,7 +104,6 @@ internal object ContractSymbols {
     val CYCLE_BASELINE_SCCS: List<Set<String>> = listOf(
         setOf(
             APPLICATION_AUTOAI,
-            APPLICATION_DEBUGREPORT,
             APPLICATION_ENGINE,
             APPLICATION_ENGINE_OPERATION,
             APPLICATION_HUMANMOVE,
@@ -125,10 +123,7 @@ internal object ContractSymbols {
      */
     val CYCLE_BASELINE_MUTUAL_PAIRS: List<Pair<String, String>> = listOf(
         APPLICATION_AUTOAI to APPLICATION_SESSION,
-        APPLICATION_DEBUGREPORT to APPLICATION_SESSION,
-        APPLICATION_ENGINE to APPLICATION_SESSION,
         APPLICATION_HUMANMOVE to APPLICATION_SESSION,
-        APPLICATION_SCORE to APPLICATION_SESSION,
         APPLICATION_SESSION to APPLICATION_STARTGAME,
         APPLICATION_SESSION to APPLICATION_TOPMOVES,
     )

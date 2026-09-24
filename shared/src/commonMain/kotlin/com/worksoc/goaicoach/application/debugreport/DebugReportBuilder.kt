@@ -1,11 +1,12 @@
 package com.worksoc.goaicoach.application.debugreport
 
+import com.worksoc.goaicoach.application.contract.DebugReportCopyPlan
 import com.worksoc.goaicoach.application.debugreport.ClipboardPort
 import com.worksoc.goaicoach.application.debugreport.DebugReportMirrorPort
 import com.worksoc.goaicoach.application.debugreport.UserNoticePort
 import com.worksoc.goaicoach.application.analysis.toDisplayText
 import com.worksoc.goaicoach.application.session.GameSessionControllerState
-import com.worksoc.goaicoach.application.session.GameSessionEffect
+import com.worksoc.goaicoach.application.contract.GameSessionEffect
 import com.worksoc.goaicoach.application.time.currentEpochMillis
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
@@ -154,15 +155,6 @@ internal fun String.truncateToRecent(maxChars: Int): String {
     val marker = "... [trimmed to recent $maxChars characters for clipboard compatibility] ...\n"
     return marker + substring(length - maxChars)
 }
-
-data class DebugReportCopyPlan(
-    val clipboardLabel: String,
-    val clipboardReport: String,
-    val fileReport: String,
-    val engineMessage: String,
-    val toastMessage: String,
-    val failureToastMessage: String = "Debug report saved to file, but failed to copy to clipboard",
-)
 
 fun buildDebugReportCopyPlan(snapshot: DebugReportSnapshot): DebugReportCopyPlan {
     val fileReport = buildDebugReport(snapshot)

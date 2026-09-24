@@ -1,6 +1,6 @@
 package com.worksoc.goaicoach.application.topmoves
 
-import com.worksoc.goaicoach.application.analysis.AnalysisCacheKey
+import com.worksoc.goaicoach.application.contract.AnalysisCacheKey
 import com.worksoc.goaicoach.application.analysis.CachedAnalysisResult
 import com.worksoc.goaicoach.application.engine.EngineSessionClient
 import com.worksoc.goaicoach.shared.policy.EngineOperationResultGuard

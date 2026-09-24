@@ -1,5 +1,7 @@
 package com.worksoc.goaicoach.application.analysis
 
+import com.worksoc.goaicoach.application.contract.PositionAnalysisCacheOptimizationPlan
+import com.worksoc.goaicoach.application.contract.PositionAnalysisCacheOptimizationTarget
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
 import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
@@ -20,23 +22,6 @@ data class PositionAnalysisCacheOptimizationPrompt(
     val moveCount: Int,
     val targetCount: Int,
 )
-
-data class PositionAnalysisCacheOptimizationTarget(
-    val state: GameState,
-    val moveNumber: Int,
-    val levelLabel: String,
-    val cacheLimit: AnalysisLimit,
-    val executionLimit: AnalysisLimit,
-)
-
-data class PositionAnalysisCacheOptimizationPlan(
-    val gameFingerprint: String,
-    val finalState: GameState,
-    val finalMoveCount: Int,
-    val targets: List<PositionAnalysisCacheOptimizationTarget>,
-) {
-    val isEmpty: Boolean = targets.isEmpty()
-}
 
 data class PositionAnalysisCacheOptimizationResult(
     val requestedTargets: Int,

@@ -3,6 +3,7 @@ package com.worksoc.goaicoach.application
 import com.worksoc.goaicoach.application.engine.*
 import com.worksoc.goaicoach.application.engine.operation.EngineOperationBlockReason
 import com.worksoc.goaicoach.application.engine.operation.EngineOperationLifecycleCallbacks
+import com.worksoc.goaicoach.application.contract.*
 import com.worksoc.goaicoach.application.session.*
 
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit

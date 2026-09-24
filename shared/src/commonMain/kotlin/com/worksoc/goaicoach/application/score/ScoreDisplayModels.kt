@@ -1,21 +1,14 @@
 package com.worksoc.goaicoach.application.score
 
+import com.worksoc.goaicoach.application.contract.ScoreEstimateDisplayPlan
 import com.worksoc.goaicoach.shared.policy.EngineOperationResultGuard
-import com.worksoc.goaicoach.application.session.GameSessionEffect
-import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
+import com.worksoc.goaicoach.application.contract.GameSessionEffect
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.enginecontract.ScoreEstimate
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 import com.worksoc.goaicoach.shared.policy.EngineOperationRequest
 import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.domain.StoneColor
-
-data class ScoreEstimateDisplayPlan(
-    val scoreText: String,
-    val scoreEstimate: ScoreEstimate?,
-    val scoreSnapshots: List<ScoreSnapshot>,
-    val engineMessage: String,
-)
 
 data class ScoreEstimateStateResult(
     val scoreEstimate: ScoreEstimate?,
@@ -67,16 +60,6 @@ data class EndgameFailureDisplayPlan(
     val engineMessage: String,
     val candidateText: String,
 )
-
-sealed class ScoreEstimateRequestPlan {
-    data class ShowMessage(val message: String) : ScoreEstimateRequestPlan()
-    data class ShowLocalEstimate(val display: ScoreEstimateDisplayPlan) : ScoreEstimateRequestPlan()
-    data class RequestEngineEstimate(
-        val state: GameState,
-        val profile: EngineProfile,
-        val syncFirst: Boolean,
-    ) : ScoreEstimateRequestPlan()
-}
 
 data class ScoreEstimateLaunchStateUpdate(
     val engineMessage: String? = null,

@@ -1,6 +1,6 @@
 package com.worksoc.goaicoach.application
 
-import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationPlan
+import com.worksoc.goaicoach.application.contract.PositionAnalysisCacheOptimizationPlan
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationResult
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheQuality
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationUiState
@@ -243,7 +243,7 @@ class AutoAiScheduledTurnRunnerTest {
         applyTurnTimeUpdate: (TurnTimeMoveUpdate) -> Unit = {},
         applyTurnDisplay: (com.worksoc.goaicoach.application.autoai.AutoAiTurnDisplayPlan) -> AutoAiTurnFollowUpPlan =
             { AutoAiTurnFollowUpPlan.None },
-        resolveEndgame: suspend (com.worksoc.goaicoach.application.autoai.AutoAiTurnEndgamePlan.Resolve) -> Unit = {},
+        resolveEndgame: suspend (com.worksoc.goaicoach.application.contract.AutoAiTurnEndgamePlan.Resolve) -> Unit = {},
         applyTurnFailureDisplay: (Throwable) -> Unit = {},
         appendEngineOperationDiscardLog: (
             com.worksoc.goaicoach.shared.policy.EngineOperationResultGuard.Discard,
