@@ -79,6 +79,78 @@ internal object ContractSymbols {
     const val LIVE_SYNC_TO_GAME_STATE =
         "com.worksoc.goaicoach.application.engine.syncToGameState"
 
+    // ── 패키지 사이클 래칫의 기준선(refactor backlog #33) ─────────────────
+    // [PackageCycleRatchetTest]가 `shared/src/commonMain`의 패키지 import 그래프에서 구한 SCC·상호
+    // 참조 쌍을 **아래 두 목록과 정확히 같을 때만** 초록으로 둔다. 나빠지면(구성원·쌍이 늘면)
+    // 빨갛고, 좋아져도(줄면) "기준선을 줄여라"로 빨갛다 — 줄어든 것을 여기서 잠가야 다시 커지지 않는다.
+    // 측정 기준은 커밋 7c928f55의 설계 스레드 실측(scc.py)과 같은 규칙이다([PackageImportGraph]).
+    // ⚠️ 여기 적힌 패키지는 [GUARDED]에도 자동으로 올라가 실존 검사를 받는다.
+    const val APPLICATION_ANALYSIS = "com.worksoc.goaicoach.application.analysis"
+    const val APPLICATION_AUTOAI = "com.worksoc.goaicoach.application.autoai"
+    const val APPLICATION_DEBUGREPORT = "com.worksoc.goaicoach.application.debugreport"
+    const val APPLICATION_ENGINE = "com.worksoc.goaicoach.application.engine"
+    const val APPLICATION_ENGINE_OPERATION = "com.worksoc.goaicoach.application.engine.operation"
+    const val APPLICATION_HUMANMOVE = "com.worksoc.goaicoach.application.humanmove"
+    const val APPLICATION_PREFERENCES = "com.worksoc.goaicoach.application.preferences"
+    const val APPLICATION_RUNTIME = "com.worksoc.goaicoach.application.runtime"
+    const val APPLICATION_SAVEDGAME = "com.worksoc.goaicoach.application.savedgame"
+    const val APPLICATION_SCORE = "com.worksoc.goaicoach.application.score"
+    const val APPLICATION_SESSION = "com.worksoc.goaicoach.application.session"
+    const val APPLICATION_STARTGAME = "com.worksoc.goaicoach.application.startgame"
+    const val APPLICATION_TOPMOVES = "com.worksoc.goaicoach.application.topmoves"
+    const val APPLICATION_UNDO = "com.worksoc.goaicoach.application.undo"
+    const val APPLICATION_ATTENDANCE = "com.worksoc.goaicoach.application.attendance"
+    const val APPLICATION_BOTCHARACTER = "com.worksoc.goaicoach.application.botcharacter"
+
+    /**
+     * 크기 2 이상인 SCC(강한 연결 요소)의 기준선. **구성원이 늘거나 새 SCC가 생기면 실패**,
+     * 줄어들면 이 목록을 줄이라고 실패한다.
+     */
+    val CYCLE_BASELINE_SCCS: List<Set<String>> = listOf(
+        setOf(
+            APPLICATION_ANALYSIS,
+            APPLICATION_AUTOAI,
+            APPLICATION_DEBUGREPORT,
+            APPLICATION_ENGINE,
+            APPLICATION_ENGINE_OPERATION,
+            APPLICATION_HUMANMOVE,
+            APPLICATION_PREFERENCES,
+            APPLICATION_RUNTIME,
+            APPLICATION_SAVEDGAME,
+            APPLICATION_SCORE,
+            APPLICATION_SESSION,
+            APPLICATION_STARTGAME,
+            APPLICATION_TOPMOVES,
+            APPLICATION_UNDO,
+        ),
+        // botcharacter/BotCharacterCatalog.kt → attendance.WeeklyRewardCycleTier 한 건이 되돌아오는 길이다.
+        setOf(APPLICATION_ATTENDANCE, APPLICATION_BOTCHARACTER),
+    )
+
+    /**
+     * 서로 import 하는 패키지 쌍(사이클의 씨앗)의 기준선. 쌍 안의 순서는 무관하다.
+     * 설계 스레드가 적은 건수(A→B/B→A)는 참고용이라 래칫하지 않는다.
+     */
+    val CYCLE_BASELINE_MUTUAL_PAIRS: List<Pair<String, String>> = listOf(
+        APPLICATION_ANALYSIS to APPLICATION_ENGINE,
+        APPLICATION_ANALYSIS to APPLICATION_SESSION,
+        APPLICATION_ATTENDANCE to APPLICATION_BOTCHARACTER,
+        APPLICATION_AUTOAI to APPLICATION_RUNTIME,
+        APPLICATION_AUTOAI to APPLICATION_SESSION,
+        APPLICATION_DEBUGREPORT to APPLICATION_SESSION,
+        APPLICATION_ENGINE to APPLICATION_ENGINE_OPERATION,
+        APPLICATION_ENGINE to APPLICATION_SESSION,
+        APPLICATION_HUMANMOVE to APPLICATION_RUNTIME,
+        APPLICATION_HUMANMOVE to APPLICATION_SESSION,
+        APPLICATION_PREFERENCES to APPLICATION_SESSION,
+        APPLICATION_RUNTIME to APPLICATION_SESSION,
+        APPLICATION_RUNTIME to APPLICATION_STARTGAME,
+        APPLICATION_SAVEDGAME to APPLICATION_SESSION,
+        APPLICATION_SCORE to APPLICATION_SESSION,
+        APPLICATION_SESSION to APPLICATION_STARTGAME,
+        APPLICATION_SESSION to APPLICATION_TOPMOVES,
+    )
+
     /** 가드가 쓰는 `forbiddenImports` 표기(`import <fqn>`)로 감싼다. */
     fun importOf(fqn: String): String = "import $fqn"
 
@@ -178,7 +250,16 @@ internal object ContractSymbols {
             SymbolExpectation.MUST_EXIST,
             "색인 판정기의 양성 표본 — ABSENT_BY_DESIGN 셋의 되살아남 감시가 살아 있음을 보인다(#76)",
         ),
-    )
+    ) + (CYCLE_BASELINE_SCCS.flatten() + CYCLE_BASELINE_MUTUAL_PAIRS.flatMap { it.toList() })
+        .distinct()
+        .map { packageName ->
+            GuardedSymbol(
+                packageName,
+                SymbolKind.PACKAGE,
+                SymbolExpectation.MUST_EXIST,
+                "패키지 사이클 래칫 기준선의 구성원(#33) — 사라졌다면 기준선을 줄여야 한다",
+            )
+        }
 }
 
 /** 가드가 들고 있는 주소 하나. */

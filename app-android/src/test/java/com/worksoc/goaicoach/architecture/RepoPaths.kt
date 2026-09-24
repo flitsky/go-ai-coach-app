@@ -32,7 +32,8 @@ import java.io.File
 internal object RepoPaths {
 
     private const val APP_ANDROID = "app-android/src/main/java/com/worksoc/goaicoach"
-    private const val SHARED_COMMON = "shared/src/commonMain/kotlin/com/worksoc/goaicoach"
+    private const val SHARED_COMMON_SOURCE_SET = "shared/src/commonMain"
+    private const val SHARED_COMMON = "$SHARED_COMMON_SOURCE_SET/kotlin/com/worksoc/goaicoach"
     private const val ENGINE_ANDROID = "engine-android/src/main/java/com/worksoc/goaicoach/engine/android"
 
     /**
@@ -61,7 +62,7 @@ internal object RepoPaths {
         get() {
             val roots = listOf(
                 "app-android/src/main",
-                "shared/src/commonMain",
+                SHARED_COMMON_SOURCE_SET,
                 "shared/src/androidMain",
                 "shared/src/iosMain",
                 "engine-android/src/main",
@@ -71,6 +72,14 @@ internal object RepoPaths {
             }
             return roots
         }
+
+    /**
+     * :shared commonMain의 **코틀린 소스 루트**(`.../commonMain/kotlin`) — [shared]와 달리 패키지
+     * 루트가 아니다. 패키지 사이클 래칫(refactor backlog #33)이 이 아래 `.kt` 전부를 훑어 파일의
+     * `package` 선언으로 노드를 만든다. 사이클은 commonMain 안에서만 생길 수 있다 — app-android는
+     * Gradle상 :shared가 역참조할 수 없고, androidMain·iosMain에는 application 패키지 import가 없다.
+     */
+    val sharedCommonMainKotlin: File get() = root.resolve("$SHARED_COMMON_SOURCE_SET/kotlin")
 
     /** `ui/GoCoachApp.kt`. 이 파일이 옮겨지면 **여기 한 줄**만 고치면 된다. */
     val goCoachApp: File get() = appAndroid("ui/GoCoachApp.kt")
