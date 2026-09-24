@@ -185,6 +185,153 @@ class LayeringContractTest {
         }
     }
 
+    /**
+     * 컨트롤러 배선 목록([RepoPaths.controllerWiringFiles])이 **루트의 실제 배선 파일과 정확히 같다**
+     * (refactor backlog #26).
+     *
+     * `goCoachAppDoesNotOwn…` 가드 일곱 개가 이 목록 하나를 공유한다. 여섯 번째 배선 파일이 생겼는데
+     * 목록에 안 오르면, 그 파일로 옮겨 간 워크플로 본문은 **일곱 가드 모두에서 조용히 빠진다** —
+     * 빨개지는 것이 없으므로 아무도 모른다. 그래서 목록을 디렉터리와 대조한다.
+     *
+     * 그리고 조립 코드가 `ui/`로 **다시 자라지 않는지** 본다. `*Wiring.kt`·`*Glue.kt`가 `ui/` 아래에
+     * 생기면 #26이 되돌려진 것이다.
+     */
+    @Test
+    fun controllerWiringListMatchesTheRootAndCompositionDoesNotRegrowInUi() {
+        val root = RepoPaths.compositionFile("")
+        val onDisk = root.listFiles().orEmpty()
+            .filter { file -> file.isFile && file.name.endsWith("ControllerWiring.kt") }
+            .map { file -> file.name }
+            .toSet()
+        val listed = RepoPaths.controllerWiringFiles.map { file -> file.name }.toSet()
+        assertTrue("루트에서 배선 파일을 하나도 못 찾았다 — 경로가 낡았다: ${root.path}", onDisk.isNotEmpty())
+        assertEquals(
+            "RepoPaths.controllerWiringFiles가 루트의 *ControllerWiring.kt와 다르다 — 빠진 파일은 " +
+                "goCoachAppDoesNotOwn… 가드 일곱 개에서 조용히 빠진다(#26).",
+            onDisk.sorted(),
+            listed.sorted(),
+        )
+
+        val regrown = ktFilesIn(RepoPaths.appAndroid("ui"))
+            .filter { file -> file.name.endsWith("Wiring.kt") || file.name.endsWith("Glue.kt") }
+            .map { file -> file.relativeTo(RepoPaths.root).path }
+        assertEquals(
+            "조립 코드(*Wiring.kt·*Glue.kt)가 ui/에 다시 생겼다 — 루트(com.worksoc.goaicoach)에 둔다(#26).",
+            emptyList<String>(),
+            regrown,
+        )
+    }
+
+    /**
+     * 루트 패키지(조립 전용)의 파일 목록을 **정확히** 못박는다(refactor backlog #26).
+     *
+     * docs/ARCHITECTURE.md는 루트를 "전 계층 참조 허용"인 예외로 두는 대신 **목록을 짧게, 그 길이를
+     * 지표로** 삼으라고 한다. 루트의 파일은 계층 가드가 보지 않으므로, 여기에 규칙이 섞여 들어오면
+     * **영구히 감시 밖**이 된다. 그래서 루트에 파일을 더하려면 이 목록을 고쳐야 한다 — 그 자체가
+     * "의식적인 결정"의 기록이 된다.
+     *
+     * ⚠️ 260924에 6→13이 됐다. 새 로직이 들어온 것이 아니라 `ui/`에 숨어 있던 배선 7개가 제 자리로
+     * 온 것이다(#26). 지표를 읽을 때 그 구분을 볼 것.
+     */
+    @Test
+    fun compositionRootFileSetIsAConsciousDecision() {
+        val root = RepoPaths.compositionFile("")
+        val actual = root.listFiles().orEmpty()
+            .filter { file -> file.isFile && file.extension == "kt" }
+            .map { file -> file.name }
+            .sorted()
+        val expected = listOf(
+            // 매니페스트가 이름으로 부른다 — 옮기지 않는다(런처 바로가기가 컴포넌트 이름을 저장한다).
+            "GoAiCoachApplication.kt",
+            "MainActivity.kt",
+            // 프로세스 이벤트 중계와, 판정을 shared 정책에 위임하는 코디네이터.
+            "AppForegroundEvents.kt",
+            "AttendanceCheckInCoordinator.kt",
+            "DeveloperModeResetCoordinator.kt",
+            "ReleaseResetCoordinator.kt",
+            // #26: ui/에서 옮겨 온 배선.
+            "GameExitRecording.kt",
+            "GameLifecycleControllerWiring.kt",
+            "GoCoachControllerWiring.kt",
+            "PremiumPurchaseGlue.kt",
+            "ScoringControllerWiring.kt",
+            "SettingsAndDiagnosticsControllerWiring.kt",
+            "TurnFlowControllerWiring.kt",
+        ).sorted()
+
+        assertEquals(
+            "루트 패키지(조립 전용)의 파일 목록이 바뀌었다. 조립이라면 여기 목록에 더하고 이유를 적고, " +
+                "규칙(if/when으로 무엇을 판정하는 코드)이라면 shared application으로 보내라 — 루트는 계층 " +
+                "가드가 보지 않는다(docs/ARCHITECTURE.md, #26).",
+            expected,
+            actual,
+        )
+    }
+
+    /**
+     * `ui/`에 SDK 클라이언트가 다시 자라지 않는다(refactor backlog #25의 유지 장치).
+     *
+     * #25는 SDK 어댑터를 `platform/`으로 뺐다 — 그래서 지금 `import ui.X`는 "화면"을 뜻한다.
+     * 이 가드가 없으면 다음 어댑터가 습관대로 `ui/`에 생기고, 그 뜻은 시간이 지나며 거짓이 된다.
+     *
+     * 허용 목록은 **(파일, 금지 접두사) 짝**으로 둔다. 길이가 곧 부채의 지표다(docs/ARCHITECTURE.md의
+     * 원칙) — 누수가 고쳐지면 [staleAllowances]가 목록에서 지우라고 빨개진다.
+     *  - `BannerAdView.kt` × `gms.ads` — Compose `AndroidView`로 광고 뷰를 그린다. 화면이라 정당하다.
+     *  - `AccountDeletionFlow.kt`·`OnboardingScreen.kt`·`SettingsScreen.kt` × `firebase.` — **알려진
+     *    누수.** Firebase 예외 타입(`FirebaseAuthRecentLoginRequiredException` 등)으로 분기한다. 고치려면
+     *    `AndroidAuthClient`가 타입 있는 실패로 매핑해야 하는데 동작 변경이라 순수 이동 밖이다.
+     *
+     * `Toast`·`ClipboardManager`는 금지하지 않는다 — ui 곳곳(DiagnosticLogDialog 등)이 화면 동작으로 쓴다.
+     */
+    @Test
+    fun uiDoesNotRegrowSdkClients() {
+        val forbiddenImports = listOf(
+            "import com.android.billingclient.",
+            "import com.google.android.ump.",
+            "import androidx.credentials.",
+            "import com.google.android.libraries.identity.",
+            "import com.google.android.gms.",
+            "import com.google.firebase.",
+            "import android.os.Vibrator",
+            "import android.os.VibratorManager",
+            "import android.os.VibrationEffect",
+        )
+        val allowances = setOf(
+            "BannerAdView.kt" to "import com.google.android.gms.",
+            "AccountDeletionFlow.kt" to "import com.google.firebase.",
+            "OnboardingScreen.kt" to "import com.google.firebase.",
+            "SettingsScreen.kt" to "import com.google.firebase.",
+        )
+        check(allowances.all { (_, forbidden) -> forbidden in forbiddenImports }) {
+            "허용 목록이 금지 목록에 없는 접두사를 든다 — 허공을 허용하고 있다."
+        }
+
+        val hits = ktFilesIn(RepoPaths.appAndroid("ui")).flatMap { file ->
+            val lines = file.readLines()
+            forbiddenImports.flatMap { forbidden ->
+                detectForbiddenReference(lines, forbidden).map { reason -> Triple(file, forbidden, reason) }
+            }
+        }
+        val offenders = hits
+            .filterNot { (file, forbidden, _) -> (file.name to forbidden) in allowances }
+            .map { (file, _, reason) -> "${file.relativeTo(RepoPaths.root).path}: $reason" }
+            .distinct()
+        val staleAllowances = allowances
+            .filterNot { allowance -> hits.any { (file, forbidden, _) -> (file.name to forbidden) == allowance } }
+
+        assertEquals(
+            "ui/에 SDK 클라이언트 import가 생겼다 — 어댑터는 platform/에 두고 포트나 그 어댑터를 부른다(#25):\n" +
+                offenders.joinToString("\n"),
+            emptyList<String>(),
+            offenders,
+        )
+        assertEquals(
+            "허용 목록의 누수가 고쳐졌다 — 목록에서 지워 길이를 줄여라(길이가 부채의 지표다).",
+            emptyList<Pair<String, String>>(),
+            staleAllowances,
+        )
+    }
+
     /** ⚠️ 260923: `match/`가 :shared로 건너간 뒤 0개 파일을 검사하고 있었다(위 가드와 같은 사망). */
     @Test
     fun matchPoliciesDoNotImportRawEngineCoreApi() {
