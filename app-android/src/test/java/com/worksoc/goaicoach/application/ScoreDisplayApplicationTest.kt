@@ -13,27 +13,22 @@ import com.worksoc.goaicoach.application.session.*
 import com.worksoc.goaicoach.application.autoai.*
 
 import com.worksoc.goaicoach.application.score.*
+import com.worksoc.goaicoach.testsupport.FakeEngineSessionClient
 import com.worksoc.goaicoach.ui.resultText
 import com.worksoc.goaicoach.ui.blackLine
 import com.worksoc.goaicoach.ui.whiteLine
 
 import com.worksoc.goaicoach.match.MatchMode
-import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
-import com.worksoc.goaicoach.shared.enginecontract.AnalysisResult
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.BoardSize
-import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
 import com.worksoc.goaicoach.shared.domain.DeadStoneCleanupResult
 import com.worksoc.goaicoach.shared.policy.EndgameScoreSource
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
-import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
 import com.worksoc.goaicoach.shared.enginecontract.EngineStatus
 import com.worksoc.goaicoach.shared.enginecontract.FinalScoreResult
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.Move
-import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import com.worksoc.goaicoach.shared.domain.Ruleset
-import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
 import com.worksoc.goaicoach.shared.enginecontract.ScoreEstimate
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshotSource
@@ -1123,11 +1118,18 @@ class ScoreDisplayApplicationTest {
     }
 }
 
+/**
+ * 이 테스트가 **실제로 관찰하는 세 멤버만** 구현한다 — 나머지 열둘은 공용 픽스처
+ * ([FakeEngineSessionClient])가 *"스텁 안 한 것은 터진다"* 로 맡는다(리팩토링 백로그 #71).
+ *
+ * ⚠️ 기록용 프로퍼티(`estimatedState` 등)는 **여기 남는다.** 그 이름이 아래 단언에 직접
+ * 등장하므로 공용화 대상이 아니다 — 픽스처 KDoc의 「쓰는 법」이 말하는 그대로다.
+ */
 private class FakeScoreEngineSessionClient(
     private val estimateError: Throwable? = null,
     private val syncError: Throwable? = null,
     private val configuredSyncError: Throwable? = null,
-) : EngineSessionClient {
+) : FakeEngineSessionClient() {
     var estimatedState: GameState? = null
         private set
     var estimatedProfile: EngineProfile? = null
@@ -1140,46 +1142,6 @@ private class FakeScoreEngineSessionClient(
         private set
     var configuredSyncProfile: EngineProfile? = null
         private set
-
-    override val capabilities: EngineSessionCapabilities =
-        EngineSessionCapabilities(supportsDeviceBenchmark = false)
-
-    override fun positionAnalysisCacheStatsText(nowMillis: Long): String =
-        "disabled"
-
-    override fun positionAnalysisCacheQualityFor(
-        state: GameState,
-        limit: AnalysisLimit,
-        searchMode: EngineSearchMode,
-        nowMillis: Long,
-    ): PositionAnalysisCacheQuality? = null
-
-    override suspend fun startSession(
-        profile: EngineProfile,
-        state: GameState,
-    ): EngineStartupResult =
-        error("not used")
-
-    override suspend fun startNewGame(
-        profile: EngineProfile,
-        boardSize: BoardSize,
-        ruleset: Ruleset,
-        handicapCount: Int,
-        komi: Double,
-    ): EngineStartupResult =
-        error("not used")
-
-    override suspend fun analyzePosition(
-        state: GameState,
-        limit: AnalysisLimit,
-        searchMode: EngineSearchMode,
-    ): AnalysisResult =
-        error("not used")
-
-    override suspend fun optimizePositionAnalysisCache(
-        plan: PositionAnalysisCacheOptimizationPlan,
-    ): PositionAnalysisCacheOptimizationResult =
-        error("not used")
 
     override suspend fun syncAndEstimateGraphScore(
         state: GameState,
@@ -1200,24 +1162,6 @@ private class FakeScoreEngineSessionClient(
         return testEstimate()
     }
 
-    override suspend fun runAutoAiTurn(
-        currentState: GameState,
-        playLevel: PlayLevelSetting,
-        currentProfile: EngineProfile,
-        searchTimeSettings: SearchTimeSettings,
-        searchMode: EngineSearchMode,
-        isolateSearchCache: Boolean,
-    ): AutoAiTurnResult =
-        error("not used")
-
-    override suspend fun syncAfterHumanMove(
-        afterMove: GameState,
-        profile: EngineProfile,
-        move: Move,
-        previousReviewCandidates: List<CandidateMove>,
-    ): LocalEngineMoveResult =
-        error("not used")
-
     override suspend fun estimateScoreForState(
         state: GameState,
         profile: EngineProfile,
@@ -1229,23 +1173,6 @@ private class FakeScoreEngineSessionClient(
         estimateError?.let { throw it }
         return testEstimate()
     }
-
-    override suspend fun resolveEndgameForState(
-        state: GameState,
-        profile: EngineProfile,
-        prePassCandidates: List<CandidateMove>,
-    ): AiEndgameResolution =
-        error("not used")
-
-    override suspend fun undoMove(): EngineStatus =
-        error("not used")
-
-    override suspend fun runStartupBenchmark(
-        restoreState: GameState,
-        nowMillis: Long,
-        onProgress: suspend (EngineBenchmarkProgress) -> Unit,
-    ): EngineBenchmarkProfile =
-        error("not used")
 
     private fun testEstimate(): ScoreEstimate =
         ScoreEstimate(
