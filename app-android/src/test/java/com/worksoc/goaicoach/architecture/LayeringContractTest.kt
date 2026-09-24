@@ -158,6 +158,9 @@ class LayeringContractTest {
      * [rootPackageReferenceOffenders]의 자기검증 — 루트 매처가 **허공을 보지 않는지**.
      * 파일에 위반이 없으면 위 가드는 초록이므로, 매처가 고장나 무엇과도 매치하지 않는 상태와 구분되지
      * 않는다. 그래서 등록부 앵커에서 만든 import 줄로 양성·음성을 나란히 확인한다.
+     *
+     * ⚠️ refactor backlog #77 — import 줄뿐 아니라 **inline FQN**(import 없이 `<root>.X`를 코드에서
+     * 직접 쓰는 것)도 같은 방식으로 나란히 확인한다. `Inline.kt`가 그 사각지대의 회귀 방지다.
      */
     @Test
     fun rootPackageMatcherFlagsRootImportsButNotGeneratedSymbols() {
@@ -172,6 +175,16 @@ class LayeringContractTest {
                     "package x\n\n" + GENERATED_ROOT_SYMBOLS.joinToString("\n") { "import $root.$it" } + "\n",
                 )
             }
+            val offendingInline = File(tempDir, "OffendingInline.kt").apply {
+                writeText("package x\n\nval probe = $MAIN_ACTIVITY\n")
+            }
+            val generatedInline = File(tempDir, "GeneratedInline.kt").apply {
+                writeText(
+                    "package x\n\n" +
+                        GENERATED_ROOT_SYMBOLS.joinToString("\n") { symbol -> "val probe_$symbol = $root.$symbol.hashCode()" } +
+                        "\n",
+                )
+            }
 
             val offenders = rootPackageReferenceOffenders(listOf(offending), GENERATED_ROOT_SYMBOLS)
             assertEquals("루트 import(단일 조각·와일드카드)를 둘 다 잡아야 한다: $offenders", 2, offenders.size)
@@ -179,6 +192,18 @@ class LayeringContractTest {
                 "생성 코드(BuildConfig·R)는 루트 import 예외여야 한다",
                 emptyList<String>(),
                 rootPackageReferenceOffenders(listOf(generated), GENERATED_ROOT_SYMBOLS),
+            )
+
+            val inlineOffenders = rootPackageReferenceOffenders(listOf(offendingInline), GENERATED_ROOT_SYMBOLS)
+            assertEquals(
+                "import 없이 쓴 inline FQN(`$MAIN_ACTIVITY`)도 잡아야 한다(#77): $inlineOffenders",
+                1,
+                inlineOffenders.size,
+            )
+            assertEquals(
+                "생성 코드(BuildConfig·R)는 inline FQN으로 써도 예외여야 한다(#77)",
+                emptyList<String>(),
+                rootPackageReferenceOffenders(listOf(generatedInline), GENERATED_ROOT_SYMBOLS),
             )
         } finally {
             tempDir.deleteRecursively()
@@ -1792,15 +1817,38 @@ class LayeringContractTest {
      * [forbiddenReferenceOffenders]의 접두사 모델로는 표현할 수 없다 — 루트 접두사는 **모든**
      * 하위 패키지와 매치한다. 그래서 루트 **바로 아래 한 조각**(`import <root>.X`, `import <root>.*`)만
      * 본다. 루트 이름은 등록부의 [MAIN_ACTIVITY]에서 파생시켜 리터럴을 들지 않는다.
+     *
+     * ⚠️ **import 줄만 보면 사각지대가 생긴다**(refactor backlog #77) — import 없이
+     * `com.worksoc.goaicoach.AppForegroundEvents`처럼 **inline FQN**으로 루트 심볼을 부르면 이
+     * 매처를 그냥 지나간다. [forbiddenReferenceOffenders]/[detectForbiddenReference]는 이미 inline
+     * FQN까지 잡는데, 루트 매처만 import 줄 정규식 하나였다. 그래서 코드 줄(주석·문자열은
+     * [codeLinesOf]/[stripStringsAndTrailingComment]로 걷어낸다)에서도 `<root>.<대문자 시작 이름>`
+     * 패턴을 따로 찾는다 — 대문자 시작만 잡는 이유는 루트 바로 아래 패키지(`ui`·`platform`·`engine`
+     * 등, 전부 소문자 관례)와 구분하기 위해서다. `BuildConfig`/`R`은 여기서도 [allowedSimpleNames]로
+     * 예외 처리해 기존 정당한 접근(`BuildConfig.DEBUG` 등)을 깨지 않는다.
      */
     private fun rootPackageReferenceOffenders(files: List<File>, allowedSimpleNames: Set<String>): List<String> {
         val root = MAIN_ACTIVITY.substringBeforeLast('.')
         val rootImport = Regex("""^import\s+${Regex.escape(root)}\.([A-Za-z_]\w*|\*)(?:\s+as\s+\w+)?\s*$""")
+        val rootInline = Regex("""(?<![\w.])${Regex.escape(root)}\.([A-Z]\w*)(?![\w])""")
         return files.flatMap { file ->
-            file.readLines()
+            val lines = file.readLines()
+
+            val importHits = lines
                 .mapNotNull { line -> rootImport.find(line.trim()) }
                 .filterNot { match -> match.groupValues[1] in allowedSimpleNames }
                 .map { match -> "${file.relativeTo(RepoPaths.root).path}: root-package import -> ${match.value}" }
+
+            val inlineHits = codeLinesOf(lines)
+                .map { line -> stripStringsAndTrailingComment(line) }
+                .flatMap { line -> rootInline.findAll(line).toList() }
+                .filterNot { match -> match.groupValues[1] in allowedSimpleNames }
+                .map { match ->
+                    "${file.relativeTo(RepoPaths.root).path}: root-package inline reference -> ${match.value}"
+                }
+                .distinct()
+
+            importHits + inlineHits
         }
     }
 
