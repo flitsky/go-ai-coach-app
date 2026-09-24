@@ -14,14 +14,20 @@ import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
+import java.io.IOException
 import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * 계약 테스트(Stage D-2) — [RemoteEngineCoreApiAdapter]가 [KataGoProcessEngineAdapter]
@@ -237,9 +243,26 @@ class RemoteEngineCoreApiAdapterTest {
         assertEquals(3.5, scoreFinalResponse.margin ?: 0.0, 0.0001)
     }
 
-    @Test
+    /**
+     * 타임아웃 계약 — **시계가 아니라 호출 기록으로** 단언한다(refactor backlog #75).
+     *
+     * 예전 판본은 두 가지를 벽시계에 기대고 있었고, 그래서 게이트에서 간헐적으로 빨개졌다:
+     * ⓐ 20ms 예산이 **디스패치 전부터** 흘러서, 머신이 붐비면 호출이 스레드 풀 큐에 앉은 채
+     *   타임아웃이 났다 — 연결을 열어 보지도 못했으니 끊을 것도 없어 `disconnected`가 false였다.
+     * ⓑ 가짜 연결이 `Thread.sleep`으로 막혀 있어 **인터럽트만으로도 풀렸다.** 그래서 마지막에
+     *   남는 `disconnect()`가 "바깥에서 강제로 끊었다"의 증거가 아니라 막힌 스레드가 스스로
+     *   빠져나오며 부른 `finally`의 흔적이어도 초록이었다.
+     *
+     * 지금은 예산이 **요청이 실제로 나간 뒤부터** 흐르고(ⓐ), 가짜 연결은 실제 소켓처럼
+     * 인터럽트에 반응하지 않아 **`disconnect()`만이 그 읽기를 푼다**(ⓑ). 단언도 "끊겼는가"가
+     * 아니라 **누가 끊었는가** 다 — 막힌 스레드 자신이 아니라 바깥 스레드여야 한다.
+     *
+     * `timeout`은 그물이다: 프로덕션이 "취소부터 걸고 완료를 기다리는" 옛 구조로 돌아가면
+     * 막힌 읽기가 영원히 안 풀리는데, 그걸 무한 대기가 아니라 **빨강**으로 받기 위한 것이다.
+     */
+    @Test(timeout = 30_000L)
     fun httpTransportAbandonsConnectionOnTimeoutLikeLocalForcedProcessRestart() = runBlocking {
-        val slowConnection = SlowFakeHttpURLConnection(URL("http://example.test/engine"))
+        val wedgedConnection = WedgedFakeHttpURLConnection(URL("http://example.test/engine"))
         val transport = HttpRemoteEngineOperationTransport(
             config = RemoteEngineHttpConfig(
                 endpointUrl = "http://example.test/engine",
@@ -248,7 +271,7 @@ class RemoteEngineCoreApiAdapterTest {
                 readTimeoutMillis = 10,
             ),
             connectionFactory = object : RemotePositionAnalysisHttpConnectionFactory {
-                override fun open(url: URL): HttpURLConnection = slowConnection
+                override fun open(url: URL): HttpURLConnection = wedgedConnection
             },
         )
 
@@ -259,10 +282,23 @@ class RemoteEngineCoreApiAdapterTest {
             // expected — mirrors KataGoProcessEngineAdapter.sendCommand's TimeoutCancellationException.
         }
 
+        val wedgedThread = wedgedConnection.requestIssuingThread
+        assertNotNull(
+            "The timeout budget must be spent on a request that actually went out — if the call never " +
+                "left the dispatcher queue, this test would be measuring thread scheduling, not the contract.",
+            wedgedThread,
+        )
         assertTrue(
             "A timed-out call must forcibly disconnect, just like the local adapter destroys its process " +
                 "on timeout instead of leaving a wedged stream behind.",
-            slowConnection.disconnected,
+            wedgedConnection.disconnected,
+        )
+        assertNotEquals(
+            "The disconnect must come from OUTSIDE the wedged call, the way forceReset()/the timeout path " +
+                "destroys the local process from another thread. A disconnect performed by the wedged " +
+                "thread itself, on its way out, proves nothing — a real socket read never unwinds on its own.",
+            wedgedThread,
+            wedgedConnection.firstDisconnectThread,
         )
     }
 
@@ -414,34 +450,65 @@ private class FakeEngineHttpURLConnection(
     override fun connect() = Unit
 }
 
-/** A connection whose response never arrives in time, to exercise the timeout/abandon path. */
-private class SlowFakeHttpURLConnection(url: URL) : HttpURLConnection(url) {
+/**
+ * 진짜로 **막힌** 연결 — 실제 소켓 읽기처럼 `Thread.interrupt()`로는 풀리지 않고 오직
+ * `disconnect()`만이 이 읽기를 푼다. 그래서 "바깥에서 강제로 끊었다"와 "취소 신호에 반응해
+ * 스스로 빠져나왔다"가 여기서는 **구별된다** — 예전 `Thread.sleep` 판본에서는 구별되지 않았다.
+ */
+private class WedgedFakeHttpURLConnection(url: URL) : HttpURLConnection(url) {
     private val output = ByteArrayOutputStream()
-    var disconnected = false
+    private val released = CountDownLatch(1)
+    private val firstDisconnect = AtomicReference<Thread?>(null)
+
+    /** 요청을 실제로 내보낸 스레드 — 즉 이 아래에서 막히게 될 스레드. */
+    @Volatile
+    var requestIssuingThread: Thread? = null
         private set
+
+    val firstDisconnectThread: Thread?
+        get() = firstDisconnect.get()
+
+    val disconnected: Boolean
+        get() = firstDisconnect.get() != null
 
     override fun setRequestProperty(
         key: String,
         value: String,
     ) = Unit
 
-    override fun getOutputStream(): ByteArrayOutputStream = output
+    override fun getOutputStream(): ByteArrayOutputStream {
+        requestIssuingThread = Thread.currentThread()
+        return output
+    }
 
     override fun getResponseCode(): Int {
-        // Blocks well past any timeout used in tests; a real interrupt (triggered by
-        // disconnect()/coroutine cancellation) is what should unblock this in production —
-        // here we just need the call to still be "in flight" when the timeout fires.
-        Thread.sleep(5_000)
-        return 200
+        // 상한은 "아무도 안 끊으면 영원히 매달린다"를 막는 그물일 뿐, 통과 조건이 아니다:
+        // 상한에 걸려 스스로 풀려나면 첫 disconnect가 이 스레드 자신이 되고, 그러면 테스트는
+        // 초록이 아니라 **빨강**이 된다.
+        val deadlineNanos = System.nanoTime() + TimeUnit.SECONDS.toNanos(WEDGE_CAP_SECONDS)
+        while (!disconnected && System.nanoTime() < deadlineNanos) {
+            try {
+                released.await(25L, TimeUnit.MILLISECONDS)
+            } catch (interrupt: InterruptedException) {
+                // 소켓 읽기는 인터럽트로 풀리지 않는다 — 여기서도 풀리지 않는다.
+                continue
+            }
+        }
+        throw IOException("Wedged response read: only disconnect() releases it.")
     }
 
     override fun getInputStream(): InputStream = ByteArrayInputStream(ByteArray(0))
 
     override fun disconnect() {
-        disconnected = true
+        firstDisconnect.compareAndSet(null, Thread.currentThread())
+        released.countDown()
     }
 
     override fun usingProxy(): Boolean = false
 
     override fun connect() = Unit
+
+    private companion object {
+        const val WEDGE_CAP_SECONDS = 10L
+    }
 }

@@ -20,8 +20,12 @@ import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.enginecontract.ScoreEstimate
 import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.domain.describe
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -300,15 +304,42 @@ internal class HttpRemoteEngineOperationTransport(
         check(config.enabled) { "Remote engine HTTP transport is disabled." }
         require(config.endpointUrl.isNotBlank()) { "endpointUrl must not be blank when remote engine is enabled." }
 
-        return try {
-            withTimeout(config.connectTimeoutMillis.toLong() + config.readTimeoutMillis.toLong()) {
-                runInterruptible(Dispatchers.IO) {
-                    executeBlocking(request)
+        val responseBudgetMillis = config.connectTimeoutMillis.toLong() + config.readTimeoutMillis.toLong()
+        return coroutineScope {
+            val awaitingResponse = CompletableDeferred<Unit>()
+            val call = async(Dispatchers.IO) {
+                try {
+                    runInterruptible { executeBlocking(request) { awaitingResponse.complete(Unit) } }
+                } catch (failure: Throwable) {
+                    // 이미 취소된 뒤 — 즉 타임아웃이 연결을 강제로 끊은 뒤 — 막혔던 읽기가
+                    // 풀리며 나는 예외는 **결과가 아니다.** 그대로 흘리면 이 예외가 호출자에게
+                    // 타임아웃 대신 IO 오류로 보이고, 로컬 어댑터와의 대등성이 깨진다.
+                    coroutineContext.ensureActive()
+                    throw failure
                 }
             }
-        } catch (timeout: TimeoutCancellationException) {
-            abandonInFlightRequest()
-            throw timeout
+            // 호출이 끝났는데 아무도 신호를 안 준 경우(요청을 내보내기도 전에 실패한 경우)에도
+            // 아래 await가 영원히 매달리지 않게 한다.
+            call.invokeOnCompletion { awaitingResponse.complete(Unit) }
+            try {
+                // ⚠️ connect/read 타임아웃 예산은 **요청이 실제로 나간 뒤부터** 잰다.
+                // 이 값들은 "네트워크가 느리다"를 재는 값이지 "Dispatchers.IO가 붐빈다"를 재는
+                // 값이 아니다. 예전에는 withTimeout이 디스패치 전부터 돌아서, 풀이 붐비면
+                // **연결을 열어 보지도 못한 채** 타임아웃이 났다(그러면 아래 강제 폐기도
+                // 끊을 대상이 없어 아무 일도 하지 않는다 — refactor backlog #75).
+                withTimeout(DISPATCH_STARVATION_GUARD_MILLIS) { awaitingResponse.await() }
+                withTimeout(responseBudgetMillis) { call.await() }
+            } catch (timeout: TimeoutCancellationException) {
+                // ⚠️ 여기서 **취소의 완료를 기다리면 안 된다.** 진짜로 막힌 소켓 읽기는
+                // `Thread.interrupt()`에 반응하지 않는다 — 옛 구조
+                // (`withTimeout { runInterruptible { … } }`)는 취소를 걸고 그 완료를 기다렸기
+                // 때문에, 정말 막힌 연결에서는 강제 폐기에 **닿지도 못한 채** 멈춘다.
+                // cancel()은 기다리지 않으니 표시만 먼저 해 두고, 실제로 읽기를 푸는 것은
+                // 그 다음의 강제 폐기다 — 로컬 어댑터의 process.destroy()와 같은 자리다.
+                call.cancel(timeout)
+                abandonInFlightRequest()
+                throw timeout
+            }
         }
     }
 
@@ -316,7 +347,10 @@ internal class HttpRemoteEngineOperationTransport(
         activeConnection?.let { connection -> runCatching { connection.disconnect() } }
     }
 
-    private fun executeBlocking(request: RemoteEngineOperationRequest): RemoteEngineOperationResponse {
+    private fun executeBlocking(
+        request: RemoteEngineOperationRequest,
+        onAwaitingResponse: () -> Unit,
+    ): RemoteEngineOperationResponse {
         val connection = connectionFactory.open(URL(config.endpointUrl))
         activeConnection = connection
         return try {
@@ -332,6 +366,8 @@ internal class HttpRemoteEngineOperationTransport(
                 .toString()
                 .toByteArray(Charsets.UTF_8)
             connection.outputStream.use { output -> output.write(requestBody) }
+            // 요청은 나갔다. 여기서부터가 "응답 대기"이고, 타임아웃 예산은 이 지점부터 흐른다.
+            onAwaitingResponse()
 
             val statusCode = connection.responseCode
             val body = if (statusCode in 200..299) {
@@ -347,6 +383,15 @@ internal class HttpRemoteEngineOperationTransport(
             connection.disconnect()
             activeConnection = null
         }
+    }
+
+    private companion object {
+        /**
+         * 요청이 스레드 풀 큐에 앉아 있는 단계에만 걸리는 **안전장치**다 — connect/read 예산과는
+         * 별개이고, 이 값에 기대 동작하는 정상 경로는 없다. Dispatchers.IO가 영구히 굶어도
+         * `execute`가 영원히 매달리지는 않게 하는 용도라 넉넉하게 잡는다.
+         */
+        const val DISPATCH_STARVATION_GUARD_MILLIS = 60_000L
     }
 }
 
