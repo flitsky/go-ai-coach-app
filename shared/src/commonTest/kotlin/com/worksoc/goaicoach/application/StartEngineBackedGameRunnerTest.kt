@@ -18,7 +18,7 @@ import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
 import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
 import com.worksoc.goaicoach.application.session.GameSessionRuntimeState
 import com.worksoc.goaicoach.application.session.GameSessionScoreState
-import com.worksoc.goaicoach.application.session.RuntimePlayLevelSelection
+import com.worksoc.goaicoach.application.contract.RuntimePlayLevelSelection
 import com.worksoc.goaicoach.application.startgame.StartConfiguredGamePlan
 import com.worksoc.goaicoach.application.startgame.StartEngineBackedGameRunRequest
 import com.worksoc.goaicoach.application.startgame.runStartEngineBackedGameApplication

@@ -3,7 +3,7 @@ package com.worksoc.goaicoach
 import com.worksoc.goaicoach.application.savedgame.SavedGameRestorePlan
 import com.worksoc.goaicoach.application.savedgame.SavedSessionController
 import com.worksoc.goaicoach.application.session.GameSessionTurnTimeState
-import com.worksoc.goaicoach.application.session.RuntimePlayLevelSelection
+import com.worksoc.goaicoach.application.contract.RuntimePlayLevelSelection
 import com.worksoc.goaicoach.application.startgame.GameSessionResetPlan
 import com.worksoc.goaicoach.application.startgame.NewGameController
 import com.worksoc.goaicoach.application.runtime.runtimeGameResetLog

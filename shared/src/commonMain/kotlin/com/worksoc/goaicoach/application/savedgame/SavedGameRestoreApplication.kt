@@ -2,8 +2,8 @@ package com.worksoc.goaicoach.application.savedgame
 
 import com.worksoc.goaicoach.application.engine.localScoreSnapshot
 import com.worksoc.goaicoach.application.score.FinalScoreDisplayPlan
-import com.worksoc.goaicoach.application.session.RuntimePlayLevelSelection
-import com.worksoc.goaicoach.application.session.selectRuntimePlayLevel
+import com.worksoc.goaicoach.application.contract.RuntimePlayLevelSelection
+import com.worksoc.goaicoach.application.contract.selectRuntimePlayLevel
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.domain.GameState

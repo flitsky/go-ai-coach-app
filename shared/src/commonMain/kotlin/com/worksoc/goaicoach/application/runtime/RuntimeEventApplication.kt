@@ -5,7 +5,7 @@ import com.worksoc.goaicoach.application.humanmove.HumanEngineSyncFailurePlan
 import com.worksoc.goaicoach.application.humanmove.HumanMoveLocalResult
 import com.worksoc.goaicoach.application.session.GameSessionControllerState
 import com.worksoc.goaicoach.application.session.GameSessionRuntimeState
-import com.worksoc.goaicoach.application.session.RuntimePlayLevelSelection
+import com.worksoc.goaicoach.application.contract.RuntimePlayLevelSelection
 import com.worksoc.goaicoach.application.session.TurnTimeMoveUpdate
 import com.worksoc.goaicoach.shared.policy.EngineOperationResultGuard
 import com.worksoc.goaicoach.application.startgame.GameSessionResetPlan

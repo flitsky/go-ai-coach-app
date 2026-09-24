@@ -12,7 +12,7 @@ import com.worksoc.goaicoach.application.runtime.runtimeEngineGameStartRequestLo
 import com.worksoc.goaicoach.application.runtime.runtimeEngineGameStartSuccessLog
 import com.worksoc.goaicoach.application.session.GameSessionEffect
 import com.worksoc.goaicoach.application.session.GameSessionScoreState
-import com.worksoc.goaicoach.application.session.RuntimePlayLevelSelection
+import com.worksoc.goaicoach.application.contract.RuntimePlayLevelSelection
 import com.worksoc.goaicoach.application.time.currentEpochMillis
 import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.GameState

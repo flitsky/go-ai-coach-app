@@ -1,7 +1,7 @@
 package com.worksoc.goaicoach.application.startgame
 
-import com.worksoc.goaicoach.application.session.RuntimePlayLevelSelection
-import com.worksoc.goaicoach.application.session.selectRuntimePlayLevel
+import com.worksoc.goaicoach.application.contract.RuntimePlayLevelSelection
+import com.worksoc.goaicoach.application.contract.selectRuntimePlayLevel
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.shared.domain.BoardSize

@@ -1,20 +1,13 @@
 package com.worksoc.goaicoach.application.session
 
+import com.worksoc.goaicoach.application.contract.RuntimePlayLevelSelection
+import com.worksoc.goaicoach.application.contract.selectRuntimePlayLevel
 import com.worksoc.goaicoach.match.PlayerSetup
-import com.worksoc.goaicoach.shared.enginecontract.AnalysisPreset
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.policy.MoveAnalysisSnapshot
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
-import com.worksoc.goaicoach.shared.domain.StoneColor
-
-data class RuntimePlayLevelSelection(
-    val playLevel: PlayLevelSetting,
-    val engineProfile: EngineProfile,
-    val analysisPreset: AnalysisPreset,
-    val searchTimeSettings: SearchTimeSettings,
-)
 
 sealed class PlayerSetupChangePlan {
     data class ShowMessage(val message: String) : PlayerSetupChangePlan()
@@ -24,35 +17,6 @@ sealed class PlayerSetupChangePlan {
         val reviewAnalysis: MoveAnalysisSnapshot,
         val topMoveClearMessage: String,
     ) : PlayerSetupChangePlan()
-}
-
-internal fun selectPrimaryPlayLevel(
-    setup: PlayerSetup,
-    nextPlayer: StoneColor,
-    defaultPlayLevel: PlayLevelSetting,
-): PlayLevelSetting =
-    setup.seatFor(nextPlayer).aiCharacter?.playLevel
-        ?: setup.seats().mapNotNull { seat -> seat.aiCharacter?.playLevel }.firstOrNull()
-        ?: defaultPlayLevel
-
-fun selectRuntimePlayLevel(
-    setup: PlayerSetup,
-    nextPlayer: StoneColor,
-    currentProfile: EngineProfile,
-    defaultPlayLevel: PlayLevelSetting,
-    searchTimeSettings: SearchTimeSettings = SearchTimeSettings(),
-): RuntimePlayLevelSelection {
-    val playLevel = selectPrimaryPlayLevel(
-        setup = setup,
-        nextPlayer = nextPlayer,
-        defaultPlayLevel = defaultPlayLevel,
-    )
-    return RuntimePlayLevelSelection(
-        playLevel = playLevel,
-        engineProfile = playLevel.toEngineProfile(currentProfile, searchTimeSettings),
-        analysisPreset = playLevel.analysisPreset,
-        searchTimeSettings = searchTimeSettings.normalized(),
-    )
 }
 
 fun buildPlayerSetupChangePlan(
