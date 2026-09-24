@@ -166,6 +166,7 @@ Hilt(commonMain 불가)·Koin(이득 0)·전면 MVI(이미 절반 작동)·모�
 | 29 | **`premium`/`auth`의 세 계층을 패키지로 갈랐다** — `premium.{port 4, state 3, app 5}` · `auth.{port 1, state 1}`, 루트 0. `FeatureAccessPolicy`가 **6계층임을 코드로 확정**(`PremiumState`를 파라미터로 받는다). 가드 사보타주로 생존 확인 — `RepoPaths.applicationPath` + `walkTopDown`이 새 하위까지 훑어 **경로 고칠 곳 0** | `dfd64011` |
 | 20 | **`syncStaticPosition` 기본 구현 제거 + 공통 계약 스위트** — 가설에 숫자가 붙었다: `StubEngineAdapter` 0→2건, `RemoteEngineCoreApiAdapter` 0→1건. **둘 다 조용히 빠뜨리고 있었다.** 재발 방지는 삭제가 아니라 `EngineCoreApiStaticPositionContract`(Local/Remote/Stub 동일 시나리오) | `4f5ca419` |
 | 60 | **안 보던 계약 셋 → 좁히지 않고 그물** — ⭐ **관찰의 뜻이 조사 중에 바뀌었다**: `0건`은 *"그 페이크의 기본값을 아무도 안 본다"* 였지 *"계약이 죽었다"* 가 아니었다. 셋 다 프로덕션 소비자가 있다 | `3ee788b4` |
+| 16 | **분석 폴백이 취소를 삼키지 않는다 + 쿼리 id 충돌 불가** — 2계층에서 `CancellationException`(타임아웃 포함)을 rethrow. 폴백 사실이 `engine.analysis.fallback` 진단 이벤트로 남는다(전엔 **완전 무음**). 카운터 → `AtomicLong`, id에 국면이 실린다. ⚠️ **AI 착수 경로는 아직 덜 닫혔다(#74)** | `ec59ea32` |
 | 66 | **호출부 0·테스트 0이던 public 함수 처리** | (#24 파도에 동반) |
 
 ### 진행 중
@@ -252,11 +253,6 @@ _(없음 — 아래 「예정사항」 첫 항목부터 집는다)_
       `syncToGameState`는 N+1개 독립 명령이라 다른 오퍼레이션이 끼어든다.
       TopMoves/ScoreEstimate는 `tryLock`으로 즉시 포기해 기존 deferral 경로로(UX 유지).
     · 🔴 **함정 71**: 평범한 `withLock` 금지. `forceReset`은 이 락을 **절대 잡지 않는다.**
-16. **취소 삼킴 제거 + 쿼리 id 충돌 제거** (AI 모델: Sonnet, 노력정도: 중간)
-    · `analyze()`의 `runCatching`을 `catch (CancellationException) { throw }` + `catch (Exception) { GTP 폴백 }`으로.
-      **타임아웃은 폴백 대상에서 제외**(예산을 다 쓴 상태에서 같은 예산을 또 쓰는 것이 문제의 핵심).
-      폴백을 탄 사실을 진단 이벤트로 한 줄 — 지금은 **완전 무음**이다.
-    · `KataGoJsonAnalysisQueryFactory`의 비원자적 Int 카운터를 충돌 불가 값으로.
 17. **타임아웃 예산 단일화 + 공통 실패 타입** (AI 모델: Opus, 노력정도: 높음)
     · `searchTimeoutMillisFor`를 `:shared`로 올려 로컬/원격이 같은 함수를. 현재 같은 `AnalysisLimit`에
       **로컬은 캡+20초(캡 없으면 120초), 원격은 항상 33초**다.
@@ -276,6 +272,17 @@ _(없음 — 아래 「예정사항」 첫 항목부터 집는다)_
     · 판 정체성(boardSize/ruleset/handicapCount/komi)을 값 객체로 묶어 **코덱이 그 하나만 왕복**하게.
       지금은 세 코덱이 각자 손으로 필드를 골라 담아 **같은 종류의 누락이 또 난다.**
     · ⚠️ **기존 4필드를 파생 프로퍼티로 남겨 호출부 변경 0**으로. ⚠️ **함정 69**: 스키마 번호를 올리지 않는 범위에서만.
+74. 🔴 **5계층이 취소를 다시 삼킨다 — `#16`이 절반만 닫혔다** (AI 모델: Opus, 노력정도: 중간)
+    · `#16`이 2계층(`attemptJsonAnalysis`)에서 `CancellationException`을 rethrow하게 만들었는데,
+      **`match/MatchTurnOrchestration.kt`의 `selectAiMoveFromAnalysis`가 `runCatching { … }.getOrNull()`로
+      그것을 다시 삼킨다.** 삼킨 직후 `engineAdapter.genMove(aiPlayer)`를 부른다(직접 확인).
+    · 🔴 즉 **AI 착수 경로에서는 타임아웃이 여전히 예산을 두 번 쓴다.** `#16`의 커밋 본문이
+      *"같은 예산으로 GTP에서 또 태우던 것이 없어졌다"* 고 적은 것은 **그 경로에 대해서는 과장**이다
+      (다른 경로 — TopMoves·형세판단 — 에서는 실제로 닫혔다).
+    · ⚠️ **회귀는 아니다.** 전에는 삼킴이 둘이었고 지금은 하나다. 다만 완결이 아니다.
+    · 🔴 **고치면 실기가 필요하다.** 타임아웃이 위로 올라가면 **AI가 수를 못 두고 멈추거나 UI가
+      에러를 보일 수 있다** — `#16`이 남긴 `needsDevice` 중 가장 큰 위험과 같은 자리다.
+
 #### P3 — 이름공간 정렬 (순수 이동, 동작 변경 0)
 
 > ✅ **#24가 닫혔다(2026-09-24).** `shared` 루트 22→0, `shared.domain`의 import 0줄.
