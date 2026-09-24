@@ -127,11 +127,18 @@ class HttpRemotePositionAnalysisTransportTest {
      * Contract/regression test against `scripts/run-katago-remote-analysis-server.py`
      * (the macOS dev-time reference server, `REMOTE_ENGINE_AND_LAYERING.md`
      * Stage E-3). The response body below is a verbatim capture from that script
-     * actually running against local KataGo, answering a max-handicap(5) 13x13
-     * position for White's first move — not a hand-written fixture. If the Python
+     * actually running against local KataGo (the app's own model), answering the
+     * exact request this test sends — 13x13, max handicap (5), Japanese, komi 6.5,
+     * White to move, 16 visits. Not a hand-written fixture. If the Python
      * server's JSON shape ever drifts from what this Kotlin codec expects, this
      * test is the tripwire; keep both sides in sync rather than editing this
      * fixture to make it pass.
+     *
+     * Re-captured 2026-09-24 (refactor backlog #65). The previous capture came from a
+     * server that hard-coded `initialPlayer: "B"`: KataGo had analyzed *Black* to move
+     * (`rootInfo.currentPlayer` B), and the server labeled Black's candidates (L8/L6,
+     * about -64.6) as White's. These are White's own candidates (C3 and its symmetric
+     * copies), with KataGo analyzing White to move.
      */
     @Test
     fun httpTransportParsesRealMacReferenceServerResponse() = runBlocking {
@@ -144,21 +151,39 @@ class HttpRemotePositionAnalysisTransportTest {
                     "candidates": [
                       {
                         "player": "White", "type": "play", "engineOrder": 0, "source": "EngineSearch",
-                        "note": "KataGo JSON order 0", "point": "L8", "boardSize": 13,
-                        "winRate": 5.549999999576727e-07, "scoreLead": -64.6193552, "pointLoss": 0.0,
-                        "visits": 5, "policyPrior": 0.0329709835
+                        "note": "KataGo JSON order 0", "point": "C3", "boardSize": 13,
+                        "winRate": 7.073000000024088e-06, "scoreLead": -50.5504244, "pointLoss": 0.0,
+                        "visits": 9, "policyPrior": 0.129473075
                       },
                       {
                         "player": "White", "type": "play", "engineOrder": 1, "source": "EngineSearch",
-                        "note": "KataGo JSON order 1", "point": "L6", "boardSize": 13,
-                        "winRate": 5.549999999576727e-07, "scoreLead": -64.6193552, "pointLoss": 0.0,
-                        "visits": 5, "policyPrior": 0.0329709835
+                        "note": "KataGo JSON order 1", "point": "C11", "boardSize": 13,
+                        "winRate": 7.073000000024088e-06, "scoreLead": -50.5504244, "pointLoss": 0.0,
+                        "visits": 9, "policyPrior": 0.129473075
+                      },
+                      {
+                        "player": "White", "type": "play", "engineOrder": 2, "source": "EngineSearch",
+                        "note": "KataGo JSON order 2", "point": "L3", "boardSize": 13,
+                        "winRate": 7.073000000024088e-06, "scoreLead": -50.5504244, "pointLoss": 0.0,
+                        "visits": 9, "policyPrior": 0.129473075
+                      },
+                      {
+                        "player": "White", "type": "play", "engineOrder": 3, "source": "EngineSearch",
+                        "note": "KataGo JSON order 3", "point": "L11", "boardSize": 13,
+                        "winRate": 7.073000000024088e-06, "scoreLead": -50.5504244, "pointLoss": 0.0,
+                        "visits": 9, "policyPrior": 0.129473075
+                      },
+                      {
+                        "player": "White", "type": "play", "engineOrder": 4, "source": "EngineSearch",
+                        "note": "KataGo JSON order 4", "point": "F7", "boardSize": 13,
+                        "winRate": 5.331999999969028e-06, "scoreLead": -51.2534216, "pointLoss": 0.33506189999999947,
+                        "visits": 4, "policyPrior": 0.0238203648
                       }
                     ],
-                    "summary": "Remote (macOS reference server) analysis in 307ms, 5 candidate(s), rootVisits=17.",
+                    "summary": "Remote (macOS reference server) analysis in 749ms, 5 candidate(s), rootVisits=17.",
                     "rootVisits": 17
                   },
-                  "diagnosticText": "positionFingerprint=test-fp-1"
+                  "diagnosticText": "positionFingerprint=size=13|rules=Japanese|next=White|capturedB=0|capturedW=0|ko=none|koFor=none|stones=D10:B,K10:B,G7:B,D4:B,K4:B,|moves="
                 }
             """.trimIndent(),
         )
@@ -170,7 +195,8 @@ class HttpRemotePositionAnalysisTransportTest {
         )
 
         // 13x13, White to move, max handicap(5) already placed for Black — the
-        // exact request shape this fixture was actually captured against.
+        // exact request this fixture was captured against (the request body this
+        // test sends was dumped and POSTed to the server as-is).
         val handicapState = GameState.withHandicap(
             boardSize = BoardSize.Thirteen,
             ruleset = com.worksoc.goaicoach.shared.domain.Ruleset.Japanese,
@@ -187,15 +213,18 @@ class HttpRemotePositionAnalysisTransportTest {
 
         assertEquals(EngineState.Ready, response.result.status.state)
         assertEquals(17, response.result.rootVisits)
-        assertEquals(2, response.result.candidates.size)
+        assertEquals(5, response.result.candidates.size)
         val best = response.result.candidates.first()
-        assertEquals("L8", (best.move as Move.Play).coordinate.label(BoardSize.Thirteen))
+        assertEquals(StoneColor.White, best.move.player)
+        assertEquals("C3", (best.move as Move.Play).coordinate.label(BoardSize.Thirteen))
         assertEquals(0, best.engineOrder)
-        assertEquals(5, best.visits)
-        // White is massively behind after a max handicap on an empty board —
-        // this is the expected sign/magnitude, not a parsing artifact.
-        assertTrue((best.scoreLead ?: 0.0) < -50.0)
+        assertEquals(9, best.visits)
+        // White is far behind against five handicap stones at komi 6.5 — about -51 for
+        // White at 16 visits. The expected sign and magnitude, not a parsing artifact;
+        // -40 leaves room for search noise if this fixture is ever re-captured.
+        assertTrue((best.scoreLead ?: 0.0) < -40.0)
         assertTrue((best.winRate ?: 1.0) < 0.01)
+        assertEquals(0.335, response.result.candidates.last().pointLoss ?: -1.0, 0.001)
     }
 }
 

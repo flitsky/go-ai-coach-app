@@ -56,14 +56,22 @@ and wrong for any game played at a different komi. That gap is closed here:
 `build_katago_query()` reads `state["komi"]`, falling back to `DEFAULT_KOMI`
 only when the field is absent (an old, pre-#19 client).
 
-`handicapCount` is on the wire too, but this script still does not read it —
-see `build_katago_query()`'s body for why (short version: KataGo's JSON
-analysis query has no plain handicap-count field to feed it into; the one
-handicap-specific field, `whiteHandicapBonus`, is a scoring override that
-this script doesn't set today, and setting it from `handicapCount` without
-first confirming it doesn't double up with the ruleset's own default
-handicap-bonus handling could silently double-compensate. Left as a
-follow-up rather than guessed at.)
+Handicap (refactor backlog #65, settled by measurement 2026-09-24):
+`build_katago_query()` reads `handicapCount` to rebuild the handicap stones
+as `initialStones` (`handicap_stone_positions()`, a port of the Kotlin
+`BoardSize.handicapStonePositions`), and sets `initialPlayer` to the side
+that actually moves first (White in a handicap game). It deliberately does
+NOT send `whiteHandicapBonus`. That field picks a compensation *method*
+("0"/"N"/"N-1"), it is not a number to add; KataGo counts N itself from the
+black stones in `initialStones`. Left unset, the ruleset default applies
+(chinese="N", japanese="0" — the same values `kata-get-rules` reports for
+the app's local GTP engine). Measured with the app's model on 9/13/19,
+H2-H9, both rulesets: raw-NN leads then equal local GTP `kata-raw-nn`
+exactly at every handicap opening; after moves they differ by at most 0.6,
+and all of that is KataGo's default `analysisIgnorePreRootHistory=true`
+(0.00 with it off), not handicap. Forcing "N" changes nothing under chinese
+and adds about +N points for White under japanese; "0" removes N points
+under chinese — so the field stays unset.
 
 Usage:
     python3 scripts/run-katago-remote-analysis-server.py --port 8765
@@ -162,14 +170,46 @@ class KataGoEngine:
             self._process.terminate()
 
 
+GTP_COLUMNS = "ABCDEFGHJKLMNOPQRSTUVWXYZ"
+
+
+def handicap_stone_positions(board_size: int, count: int) -> list[str]:
+    """Port of the Kotlin `BoardSize.handicapStonePositions(count)`
+    (shared/src/commonMain/kotlin/com/worksoc/goaicoach/shared/domain/BoardModels.kt),
+    returning GTP labels in the same order: upper-right, lower-left,
+    lower-right, upper-left, center, then (19x19 only) left, right, bottom,
+    top side star points. Keep the two in sync — this is how the app itself
+    places handicap stones (`GameState.withHandicap`, and `set_free_handicap`
+    on the local GTP engine), so any drift here puts the stones somewhere the
+    phone never had them. Same range checks as the Kotlin `require`s.
+    """
+    if board_size not in (9, 13, 19):
+        raise ValueError(f"Unsupported board size: {board_size}")
+    max_count = 9 if board_size == 19 else 5
+    if not 0 <= count <= max_count:
+        raise ValueError(f"handicapCount {count} is not supported on {board_size}x{board_size}")
+    if count == 0:
+        return []
+    near = 2 if board_size == 9 else 3
+    far = board_size - 1 - near
+    mid = board_size // 2
+    side = [(mid, near), (mid, far), (far, mid), (near, mid)] if board_size == 19 else []
+    ordered = [(near, far), (far, near), (far, far), (near, near), (mid, mid)] + side
+    return [f"{GTP_COLUMNS[column]}{board_size - row}" for row, column in ordered[:count]]
+
+
 def infer_initial_stones(state: dict[str, Any]) -> list[list[str]]:
-    """Recover pre-placed (handicap) stones the wire state carries but the
-    move list doesn't. `GameState.withHandicap()` (Kotlin) puts handicap
-    stones only in `stones`, never in `moves` — so any stone present in the
-    current board that no play-move of that color ever placed must have
-    been there from the start. Good enough for handicap games; would not
-    reconstruct a position built from a custom SGF setup with stranger
-    initial arrangements, but the app has no such feature today.
+    """Recover pre-placed stones of a position that is not a handicap game
+    (`handicapCount` 0 or absent): a static position (board scan), or an old
+    client. Any stone present in the current board that no play-move of that
+    color ever placed must have been there from the start.
+
+    Not used for handicap games any more (refactor backlog #65): a handicap
+    stone White later captured is gone from `stones`, so this inference
+    silently dropped it — KataGo then counted N-1 handicap stones (1 stone
+    counts as 0), changing the chinese handicap compensation and the
+    japanese prisoner count. `build_katago_query()` rebuilds those from
+    `handicapCount` instead.
     """
     moves = state.get("moves", [])
     played_by_color: dict[str, set[str]] = {"Black": set(), "White": set()}
@@ -203,6 +243,28 @@ def build_katago_query(request_body: dict[str, Any]) -> dict[str, Any]:
         # "resign" moves aren't meaningful to replay into an analysis query;
         # a resigned game shouldn't be asking for further analysis anyway.
 
+    # Refactor backlog #65. `initialPlayer` is the side to move at turn 0. It
+    # used to be hard-coded "B", so a handicap opening (no moves yet, White to
+    # move) was analyzed as *Black* to move: White's lead came out 9-17 points
+    # low (raw NN), and the candidates were Black's best points labeled as
+    # White's — which `/engine` genMove then played for White. With moves, the
+    # first move's color is the side to move at turn 0.
+    if moves:
+        initial_player = moves[0][0]
+    else:
+        initial_player = "W" if state.get("nextPlayer") == "White" else "B"
+
+    # Handicap stones. Same split the app uses in `EngineCoreApi.syncToGameState`
+    # (shared/.../application/engine/EngineSession.kt): handicapCount > 0 means
+    # "newGame with the standard handicap points, then replay the moves", so
+    # rebuild exactly those points; handicapCount 0 (or an old client that
+    # doesn't send it) keeps inferring them from the board.
+    handicap_count = state.get("handicapCount", 0)
+    if handicap_count > 0:
+        initial_stones = [["B", point] for point in handicap_stone_positions(board_size, handicap_count)]
+    else:
+        initial_stones = infer_initial_stones(state)
+
     query: dict[str, Any] = {
         "rules": rules,
         # Refactor backlog #62: prefer the client-sent komi (on the wire since #19,
@@ -211,18 +273,15 @@ def build_katago_query(request_body: dict[str, Any]) -> dict[str, Any]:
         "komi": state.get("komi", DEFAULT_KOMI),
         "boardXSize": board_size,
         "boardYSize": board_size,
-        "initialPlayer": "B",
-        # `state.get("handicapCount")` is on the wire too (#19) but intentionally not
-        # read here. Handicap stones are already represented positionally, below, via
-        # `infer_initial_stones()` — that's the part of "handicap" KataGo's JSON
-        # analysis query actually has a field for (`initialStones`). The only other
-        # handicap-specific query field, `whiteHandicapBonus` ("0"/"N"/"N-1"), is a
-        # scoring override on top of the ruleset's own default handicap-bonus
-        # computation; setting it from `handicapCount` without first confirming it
-        # doesn't stack with that default risks compensating for handicap stones
-        # twice. Left unread rather than guessed at — see refactor backlog #62
-        # follow-ups.
-        "initialStones": infer_initial_stones(state),
+        "initialPlayer": initial_player,
+        # No `whiteHandicapBonus`, on purpose (refactor backlog #65, measured against
+        # the app's local GTP engine with the app's own model). It selects how
+        # KataGo compensates the N stones it counts in `initialStones` — it is not a
+        # count to add. The ruleset default (chinese "N", japanese "0") is exactly
+        # what the local GTP engine uses (`kata-get-rules`); forcing "N" is a no-op
+        # under chinese and adds about +N for White under japanese, "0" takes N away
+        # under chinese. See the module docstring.
+        "initialStones": initial_stones,
         "moves": moves,
         "analyzeTurns": [len(moves)],
         "maxVisits": limit["visits"],
