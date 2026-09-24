@@ -54,7 +54,7 @@
   - Google/이메일 로그인 버튼은 배치만 하고, 탭하면 홈 화면 "학습하기" 카드와 동일한 "준비 중" 토스트 패턴을 재사용.
   - Apple 로그인은 UI 자체를 넣지 않음 (완전 후순위).
   - Firebase 콘솔 프로젝트는 장기 앱과 별도 독립 프로젝트로 새로 생성 (Spark Plan 무료 할당량이 프로젝트 단위로 독립 적용되기 때문 — 근거는 위 **1.1.1절**에 옮겨 적었다).
-- **산출물**: `OnboardingScreen.kt`, `application/auth/AuthState.kt`(순수 도메인, iOS 이식 전제), `application/auth/AuthClientPort.kt` + `ui/AndroidAuthClient.kt`(Firebase Auth 실제 호출), `UserPreferencesSnapshot.hasSeenOnboarding` 플래그, Gradle Firebase 의존성 스캐폴딩(google-services.json 없이도 빌드가 깨지지 않도록 조건부 플러그인 적용).
+- **산출물**: `OnboardingScreen.kt`, `application/auth/state/AuthState.kt`(순수 도메인, iOS 이식 전제), `application/auth/port/AuthClientPort.kt` + `platform/AndroidAuthClient.kt`(Firebase Auth 실제 호출), `UserPreferencesSnapshot.hasSeenOnboarding` 플래그, Gradle Firebase 의존성 스캐폴딩(google-services.json 없이도 빌드가 깨지지 않도록 조건부 플러그인 적용).
 - **상태**: ✅ 완료 (2026-07-29) → 2026-08-04 개정, 아래 "Step 1 개정" 참고
 
 ### Step 1 개정 — 온보딩 완료 조건을 로컬 익명 ID로 전환 (2026-08-04)
@@ -122,7 +122,7 @@ Step 1(익명 인증)은 이미 이 배치를 따르고 있다 — `AuthClientPo
 - **콘솔**: Google 로그인 활성화 + SHA-1/SHA-256(디버그) 등록 + `google-services.json` 재다운로드까지 완료(위 3장 체크리스트 4~6번). 익명(Anonymous)은 콘솔 사용자 목록이 무분별하게 늘어난다는 우려로 **의도적으로 계속 보류**(3장 3번 참고) — 이번 Step 2 코드는 이 상태에서도 정상 동작하도록 설계함(아래 참고).
 - **`AuthClientPort`(포트, 플랫폼 비종속)**: `signInWithGoogle(idToken)`(신규 로그인), `linkGoogleCredential(idToken)`(익명 세션 승격), `currentAuthState()`(동기 조회) 3개 메서드 추가. "지금 익명 세션이라 승격 대상인지"는 `AuthState.isPromotableAnonymousSession`이라는 순수 함수로 분리해, 이 판단이 SDK 어댑터 안에 묻히지 않고 유스케이스 판단으로 남게 했다 — 위 "계층 배치 참고" 표가 명시한 기준.
 - **`AndroidAuthClient`(어댑터)**: 위 3개 메서드의 실제 Firebase Auth 구현. `linkGoogleCredential`이 `FirebaseAuthUserCollisionException`(이 Google 계정이 이미 다른 Firebase 사용자에 연결된 경우)을 만나면 그 기존 계정으로 그냥 로그인시키는 폴백을 흡수한다 — Step 4 이전인 지금은 익명 UID에 서버 데이터가 없어 안전한 처리.
-- **`ui/GoogleCredentialManagerClient.kt`(신규 파일)**: Credential Manager/Sign in with Google 호출만 전담 — Firebase Auth 호출과 SDK 실패 유형이 섞이지 않도록 분리(README 표의 "SDK 의존이 무거우면 전용 파일" 기준). `R.string.default_web_client_id`(google-services.json의 웹 OAuth 클라이언트로부터 자동 생성)를 참조한다.
+- **`platform/GoogleCredentialManagerClient.kt`(신규 파일)**: Credential Manager/Sign in with Google 호출만 전담 — Firebase Auth 호출과 SDK 실패 유형이 섞이지 않도록 분리(README 표의 "SDK 의존이 무거우면 전용 파일" 기준). `R.string.default_web_client_id`(google-services.json의 웹 OAuth 클라이언트로부터 자동 생성)를 참조한다.
 - **`ui/GoogleSignInFlow.kt`(신규 파일)**: `OnboardingScreen`/`SettingsScreen`이 공유하는 시도 흐름(토큰 요청 → 승격 여부 판단 → Firebase 호출 → 실패 시 `DiagnosticEventLogPort`로 로그). 실패/취소를 조용히 삼키지 않고 항상 로그 + 토스트로 안내.
 - **UI**: `OnboardingScreen`/`SettingsScreen`의 Google 버튼을 스텁에서 실제 플로우로 교체. `SettingsScreen`은 `authClient.currentAuthState()`로 초기 상태를 읽고, 로그인 성공 시 로컬 상태를 갱신해 문구를 "Google 계정으로 로그인되어 있습니다"로 바꾸고 Google 버튼 자체를 숨긴다(같은 계정으로 다시 시도할 이유를 없앰). 문자열 3개(`googleSignedInToastMessage`/`googleSignInFailedMessage`/`settingsGoogleStatusMessage`)를 4개 언어(ko/en/ja/zh) 모두에 추가.
 - **의존성**: `androidx.credentials:credentials:1.6.0`, `androidx.credentials:credentials-play-services-auth:1.6.0`, `com.google.android.libraries.identity.googleid:googleid:1.2.0`(2026-08 기준 최신 안정 버전).
@@ -148,8 +148,8 @@ Step 1(익명 인증)은 이미 이 배치를 따르고 있다 — `AuthClientPo
 
 ## 4. Step 1 구현 메모 (2026-07-29)
 
-- `PremiumState`(`application/premium/PremiumState.kt`)와 동일한 스타일로 `application/auth/AuthState.kt` 설계 — Android/Compose import 0개, `data class AuthState(isSignedIn, provider, uid)` + `AuthProvider` enum(`Anonymous`/`Google`/`Email`).
-- 실제 SDK 호출은 `AuthClientPort`(포트) + `ui/AndroidAuthClient.kt`(Firebase 구현)로 분리 — `signInAnonymously()`만 구현, Google/이메일 메서드는 그 기능을 실제로 붙일 때 추가(YAGNI).
+- `PremiumState`(`application/premium/state/PremiumState.kt`)와 동일한 스타일로 `application/auth/state/AuthState.kt` 설계 — Android/Compose import 0개, `data class AuthState(isSignedIn, provider, uid)` + `AuthProvider` enum(`Anonymous`/`Google`/`Email`).
+- 실제 SDK 호출은 `AuthClientPort`(포트) + `platform/AndroidAuthClient.kt`(Firebase 구현)로 분리 — `signInAnonymously()`만 구현, Google/이메일 메서드는 그 기능을 실제로 붙일 때 추가(YAGNI).
 - `google-services.json`이 없어도 `make test`/`make dev`가 깨지지 않도록, `app-android/build.gradle.kts`에서 `google-services` 플러그인을 `alias(...) apply false`로 등록만 해두고 `if (file("google-services.json").exists()) { apply(plugin = "com.google.gms.google-services") }`로 조건부 적용.
 - Firebase BOM 34.16.0(2026-07 기준 최신) 기준 `firebase-auth-ktx`가 더 이상 별도 아티팩트로 관리되지 않아(-ktx 확장이 본체에 통합됨), `firebase-auth`를 사용.
 - `hasSeenOnboarding` 플래그는 새 저장소를 만들지 않고 기존 `UserPreferencesSnapshot`/`UserPreferencesStore`(SharedPreferences+JSON) 패턴에 필드 하나로 추가 — 스키마 버전은 올리지 않음(`optBoolean` 기본값으로 안전하게 하위 호환).

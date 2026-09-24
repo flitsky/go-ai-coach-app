@@ -223,7 +223,7 @@ JSON analysis path도 B16/B32/B64 같은 visit 레벨 설정을 그대로 표현
 | 중급 | 64 | 3000ms | 20 | 후보 순위 안정성 강화 |
 | 고급 | 160 | 1000ms | 24 | — |
 
-⚠️ 세 번째 열은 **`shared/PlayLevel.kt`의 `PlayLevelGroup`이 들고 있는 내부 기본값**이지 사용자 선택지가 아니다(2026-09-23 기준). `PlayLevelSetting.analysisLimitWith()`가 `SearchTimeSettings.applyTo()`를 태우면 이 값은 **전역 `SearchTimeLimit` 하나로 통째로 덮인다.** 레벨이 결정하는 것은 visits/후보 상한이고, 시간은 레벨과 무관한 전역 설정이 결정한다.
+⚠️ 세 번째 열은 **`shared/policy/PlayLevel.kt`의 `PlayLevelGroup`이 들고 있는 내부 기본값**이지 사용자 선택지가 아니다(2026-09-23 기준). `PlayLevelSetting.analysisLimitWith()`가 `SearchTimeSettings.applyTo()`를 태우면 이 값은 **전역 `SearchTimeLimit` 하나로 통째로 덮인다.** 레벨이 결정하는 것은 visits/후보 상한이고, 시간은 레벨과 무관한 전역 설정이 결정한다.
 
 주의할 점은 `visits=32`가 `candidateCount=16`개 후보를 모두 2 visits씩 본다는 뜻이 아니라는 점이다. 실제 scored 후보 수는 KataGo가 어떤 후보에 visits를 배정했는지에 따라 달라진다.
 
@@ -317,7 +317,7 @@ KataGo process adapter에서는 이 조건일 때 JSON analysis process를 피�
 
 ## 호출 목적별 예산
 
-⚠️ **아래 다섯이 각각 살아 있는 별도 호출처인 것처럼 읽히면 안 된다**(2026-09-23 실측). `TurnAnalysisPurpose`(`shared/EngineAnalysisPolicy.kt`)는 값이 **넷**이고 `Benchmark`는 아예 이 enum에 없다. 그리고 `turnAnalysisLimitFor()`의 **프로덕션 호출부는 둘뿐**이다.
+⚠️ **아래 다섯이 각각 살아 있는 별도 호출처인 것처럼 읽히면 안 된다**(2026-09-23 실측). `TurnAnalysisPurpose`(`shared/policy/EngineAnalysisPolicy.kt`)는 값이 **넷**이고 `Benchmark`는 아예 이 enum에 없다. 그리고 `turnAnalysisLimitFor()`의 **프로덕션 호출부는 둘뿐**이다.
 
 | 목적 | 현재 예산 | 사용처 | 프로덕션 호출부 |
 | --- | --- | --- | --- |
@@ -544,7 +544,7 @@ python3 scripts/run-katago-search-mode-benchmark.py \
 
 따라서 benchmark 평균은 “이 기기가 장시간 진단 호출에서 visits를 얼마나 채우는가”를 보는 보조 지표다. 메뉴의 `추천[...]`에는 이 평균값을 보여주지만, 실제 대국 체감은 사용자가 선택한 `Search Time` 값과 목적별 `TurnAnalysis` 예산을 기준으로 판단한다.
 
-`Search Time`은 **visits별로 나뉘지 않는다.** 2026-09-23 기준 코드(`shared/SearchTimeSettings.kt`)에서 사용자가 고르는 것은 `SearchTimeLimit` **하나뿐**이고, 그 값이 모든 일반 AI 착수와 Top Moves 요청의 `maxTime`/`overrideSettings.maxTime` 상한이 된다. `Off`는 `AnalysisLimit.timeMillis=null`로 내려가 시간 제한 없이 요청 visits 충족을 우선한다 — 실시간 대국보다 고품질 JSON cache 수집, 검증, 분석 품질 우선 시나리오에 적합하다.
+`Search Time`은 **visits별로 나뉘지 않는다.** 2026-09-23 기준 코드(`shared/policy/SearchTimeSettings.kt`)에서 사용자가 고르는 것은 `SearchTimeLimit` **하나뿐**이고, 그 값이 모든 일반 AI 착수와 Top Moves 요청의 `maxTime`/`overrideSettings.maxTime` 상한이 된다. `Off`는 `AnalysisLimit.timeMillis=null`로 내려가 시간 제한 없이 요청 visits 충족을 우선한다 — 실시간 대국보다 고품질 JSON cache 수집, 검증, 분석 품질 우선 시나리오에 적합하다.
 
 | 설정 | 기본값 | 선택지 |
 | --- | ---: | --- |

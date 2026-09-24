@@ -36,7 +36,7 @@
 | 레이어 | 역할 | 현재 코드 위치 | 7계층 모델 상 위치 |
 | --- | --- | --- | --- |
 | 기능 구현 최상위 집합 레이어 | 엔진 코어~미들웨어까지 고도화된 기능을 일관되게 노출 | `application/*`(topmoves, movereview, score 등), `shared`/`engine-android` | 3계층(엔진 서비스) + 5계층(App Service 오케스트레이션) |
-| 기능 활성화 관리 도메인 | 기능별 무료/프리미엄 여부, 활성화 소스(광고/구매/클레임) 판정 | 상태: `application/premium/PremiumState.kt`(`claimedFeatures: Set<FeatureId>`). 판정: `application/premium/FeatureAccessPolicy.kt` | 상태·판정 둘 다 6계층(세션/연속성) — 판정 함수가 6계층 `PremiumState`를 파라미터로 받으므로 5계층일 수 없다(5계층은 6계층을 몰라야 함). "무엇을 갖고 있는가"와 "그래서 이 기능을 쓸 수 있는가"를 같은 계층 안에서 별도 타입으로 분리한 것이 이번에 명문화된 부분 |
+| 기능 활성화 관리 도메인 | 기능별 무료/프리미엄 여부, 활성화 소스(광고/구매/클레임) 판정 | 상태: `application/premium/state/PremiumState.kt`(`claimedFeatures: Set<FeatureId>`). 판정: `application/premium/state/FeatureAccessPolicy.kt` | 상태·판정 둘 다 6계층(세션/연속성) — 판정 함수가 6계층 `PremiumState`를 파라미터로 받으므로 5계층일 수 없다(5계층은 6계층을 몰라야 함). "무엇을 갖고 있는가"와 "그래서 이 기능을 쓸 수 있는가"를 같은 계층 안에서 별도 타입으로 분리한 것이 이번에 명문화된 부분 |
 | 프레젠테이션 레이어 | UX로 노출, 유저 상태에 따라 업셀/광고/구매/클레임 플로우 전개 | `ui/GamePlaySection.kt`, `ui/KaTrainUxPanels.kt`, `ui/PremiumUiState.kt`, `ui/PremiumUpsellDialog` | 7계층. `GamePlaySection.kt`의 `featureGated(access, action)`·`KaTrainUxPanels.kt`의 `moveReviewAllowed`가 `FeatureAccessPolicy`의 판정 결과만 소비 — 더 이상 `isActive`/클레임 여부를 직접 조합하지 않는다 |
 
 "단일 플래그(`isUndoClaimed`) → 기능별 원장(`claimedFeatures: Set<FeatureId>`)"으로 넓히고, 그 원장을 읽어 기능별로 판정하는 함수(`FeatureAccessPolicy`)를 프레젠테이션 3곳(`GamePlaySection.kt` 2곳, `KaTrainUxPanels.kt` 1곳)에서 걷어내 6계층 하나로 모았습니다. 무르기가 그 첫 실사용 사례이고, 다음에 어떤 기능이든 같은 방식(클레임/광고/구매)으로 정책이 바뀌면 고칠 곳이 `FeatureAccessPolicy`의 분기 하나로 좁혀지는 것이 이 설계의 목적입니다.
@@ -67,7 +67,7 @@
 이미 프로젝트에 Firebase가 붙어 있으므로(Auth 인프라 존재, `baas_solutions_comparison.md`에서 채택 근거 조사 완료) 기술적으로는 어렵지 않습니다. 다만 **아래 장단점의 핵심은 "어떻게 구조화하나"가 아니라 "로그인 정책과 묶여 있다"는 점**입니다.
 
 **장점**
-- 새 BaaS 도입 불필요 — Auth 인프라가 이미 있고, `application/auth/AuthState.kt` 설계 원칙(플랫폼 비종속)을 그대로 따르면 됨.
+- 새 BaaS 도입 불필요 — Auth 인프라가 이미 있고, `application/auth/state/AuthState.kt` 설계 원칙(플랫폼 비종속)을 그대로 따르면 됨.
 - 실계정(Google/이메일) 로그인 사용자에 한해 진짜 서버측 영구 엔타이틀먼트 확보 가능 — 기기 로컬 저장의 "재설치 시 초기화" 한계를 정면으로 해결.
 - 데이터 구조 자체는 단순함 — `users/{uid}/entitlements/{featureId}` 같은 문서 하나면 충분하고, `PREMIUM_MODE.md` Step 4 설계에 이미 이 방향이 언급돼 있음.
 
@@ -125,7 +125,7 @@
 
 ### 2026-08-14 갱신 — 2장 레이어 원칙을 7계층 모델에 정확히 배치, 구현 완료
 - 배경: 정책적 결정(무료/광고/구매/클레임)이 앞으로도 계속 바뀔 것을 전제로, "기능 활성화 관리 도메인"이라는 뭉뚱그린 이름 하나로는 어디에 무엇을 둘지 결정할 때마다 다시 고민하게 된다는 문제 제기가 있었습니다.
-- 결론: 그 도메인을 **상태**(그 유저/기기가 지금 무엇을 갖고 있는가)와 **판정**(그래서 기능 X를 지금 쓸 수 있는가)으로 쪼갭니다. 둘 다 6계층입니다 — 판정 함수가 6계층 `PremiumState`를 파라미터로 받는 이상 5계층일 수 없습니다(설계 초안엔 5계층으로 적었다가 착수 시점에 정정). 상태는 계속 `PremiumState`가 갖되 단일 플래그(`isUndoClaimed`)를 기능별 원장(`claimedFeatures: Set<FeatureId>`)으로 넓혔고, 판정은 새 `application/premium/FeatureAccessPolicy.kt`가 전담해 프레젠테이션 3곳(`ui/GamePlaySection.kt` 2곳, `ui/KaTrainUxPanels.kt` 1곳)에 하드코딩돼 있던 OR 조건들을 대체했습니다. 정책이 바뀔 때 고칠 곳이 이 판정 함수 하나로 좁혀지고, 프레젠테이션·저장소 코드는 손대지 않아도 됩니다.
+- 결론: 그 도메인을 **상태**(그 유저/기기가 지금 무엇을 갖고 있는가)와 **판정**(그래서 기능 X를 지금 쓸 수 있는가)으로 쪼갭니다. 둘 다 6계층입니다 — 판정 함수가 6계층 `PremiumState`를 파라미터로 받는 이상 5계층일 수 없습니다(설계 초안엔 5계층으로 적었다가 착수 시점에 정정). 상태는 계속 `PremiumState`가 갖되 단일 플래그(`isUndoClaimed`)를 기능별 원장(`claimedFeatures: Set<FeatureId>`)으로 넓혔고, 판정은 새 `application/premium/state/FeatureAccessPolicy.kt`가 전담해 프레젠테이션 3곳(`ui/GamePlaySection.kt` 2곳, `ui/KaTrainUxPanels.kt` 1곳)에 하드코딩돼 있던 OR 조건들을 대체했습니다. 정책이 바뀔 때 고칠 곳이 이 판정 함수 하나로 좁혀지고, 프레젠테이션·저장소 코드는 손대지 않아도 됩니다.
 - 정확한 배치 근거와 파일 단위 로드맵은 이 문서가 아니라 `GO_AI_COACH_ARCHITECTURE_ROADMAP.md`의 "6계층 — 기능 엔타이틀먼트 정책 도입" 항목에 있습니다 — 위 2장 표도 이 결정에 맞춰 갱신했습니다.
 
 ### 2026-09-23 갱신 — 아키텍처 진단 감사: 결제 플래그·해제 수단을 코드와 맞춘다

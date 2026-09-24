@@ -90,7 +90,7 @@ kata-raw-nn 0
 
 ## 추가된 테스트
 
-`shared/src/commonTest/kotlin/com/worksoc/goaicoach/shared/EndgameRegressionTest.kt`
+`shared/src/commonTest/kotlin/com/worksoc/goaicoach/shared/policy/EndgameRegressionTest.kt`
 
 - `passAfterWhitePassNeedsEngineDeadListBeforeAreaScoring`
 - `passAfterWhitePassUsesPrePassTopMovesIfDeadListIsMissing`

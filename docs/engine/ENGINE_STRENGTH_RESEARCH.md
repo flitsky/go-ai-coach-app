@@ -791,7 +791,7 @@ numSearchThreads = 1
 | 중급 (1~5단계) | `JsonPositionAnalysis` | 64 | 3000ms (B64) | 20 |
 | 고급 (1~5단계) | `JsonPositionAnalysis` | 160 | 1000ms | 24 |
 
-`PlayLevelGroup`(`shared/PlayLevel.kt:16-55`)의 `visits`/`timeMillis`/`candidateCount` 값이 이 표와 완전히 같다. `아이MoveSearchMode()`(`shared/EngineAnalysisPolicy.kt:46-51`)도 문서에 적힌 `if (group == FastBeginner) GtpStatefulFast else JsonPositionAnalysis` 그대로다. **사용자의 기억 3, 4번은 정확하다** — `빠른 초급`은 GTP stateful fast(빠른 리서치), `초급` 이상은 JSON position analysis이고, `16/32/64` 방문수와 그에 딸린 time cap(사용자가 `Search Time` 메뉴에서 조정 가능한 B16/B32/B64 프리셋)이 실제로 존재한다.
+`PlayLevelGroup`(`shared/policy/PlayLevel.kt:16-55`)의 `visits`/`timeMillis`/`candidateCount` 값이 이 표와 완전히 같다. `아이MoveSearchMode()`(`shared/policy/EngineAnalysisPolicy.kt:46-51`)도 문서에 적힌 `if (group == FastBeginner) GtpStatefulFast else JsonPositionAnalysis` 그대로다. **사용자의 기억 3, 4번은 정확하다** — `빠른 초급`은 GTP stateful fast(빠른 리서치), `초급` 이상은 JSON position analysis이고, `16/32/64` 방문수와 그에 딸린 time cap(사용자가 `Search Time` 메뉴에서 조정 가능한 B16/B32/B64 프리셋)이 실제로 존재한다.
 
 #### 1-2. 문서에 없던 것 두 가지를 코드에서 발견했다
 
@@ -800,7 +800,7 @@ numSearchThreads = 1
 **(a) 빠른 초급 3단계(BestOnly)는 8개가 아니라 1개만 요청한다.**
 
 ```kotlin
-// shared/EngineAnalysisPolicy.kt:53-70
+// shared/policy/EngineAnalysisPolicy.kt:53-70
 EngineSearchMode.GtpStatefulFast -> {
     val count = if (selectionPolicy is MoveSelectionPolicy.BestOnly) 1 else base.candidateCount
     base.fastCandidateAnalysis(candidateCount = count)
@@ -812,7 +812,7 @@ EngineSearchMode.GtpStatefulFast -> {
 **(b) `초급` 이상(JSON 경로)의 AI 착수는 `refinePolicyMoves`/`minVisitsPerCandidate`가 항상 0으로 꺼져 있다.**
 
 ```kotlin
-// shared/EngineAnalysisPolicy.kt:53-70
+// shared/policy/EngineAnalysisPolicy.kt:53-70
 EngineSearchMode.JsonPositionAnalysis ->
     base.copy(
         includePolicy = true,

@@ -24,7 +24,7 @@
 
 ## 1. 더블체크 — 현재 빠른 초급 1~3단계는 정확히 어떻게 동작하는가
 
-질문하신 두 가지 모두 **맞다.** `shared/PlayLevel.kt:72-76`의 `PlayLevelGroup.FastBeginner.selectionPolicy()`:
+질문하신 두 가지 모두 **맞다.** `shared/policy/PlayLevel.kt:72-76`의 `PlayLevelGroup.FastBeginner.selectionPolicy()`:
 
 ```kotlin
 FastBeginner -> when (safeLevel) {
@@ -122,7 +122,7 @@ FastBeginner -> when (safeLevel) {
 
 ## 7. 필요한 새 상태 — 이번 제안의 가장 큰 구조적 변화
 
-지금 `MoveSelectionPolicy`(`shared/PlayLevel.kt:139-195`)의 모든 variant(`BestOnly`, `PercentileRange`, `ExcludeBestPercentileRange`)는 **순수 함수**다 — `candidateIndexRange(count: Int): IntRange?` 하나로 그 턴의 후보 개수만 보고 즉시 답을 낸다. 과거 기록도 없고 상태도 없다.
+지금 `MoveSelectionPolicy`(`shared/policy/PlayLevel.kt:139-195`)의 모든 variant(`BestOnly`, `PercentileRange`, `ExcludeBestPercentileRange`)는 **순수 함수**다 — `candidateIndexRange(count: Int): IntRange?` 하나로 그 턴의 후보 개수만 보고 즉시 답을 낸다. 과거 기록도 없고 상태도 없다.
 
 방식 B(5절)는 구조적으로 다르다 — "지금까지 이 진영이 이번 판에서 최하수/중급수/최적수를 각각 몇 번 뒀는가"라는 **판 전체에 걸친 누적 상태**가 반드시 필요하다. 이건 오늘 이 코드베이스에 없는 종류의 상태라 새로 설계해야 한다.
 
@@ -215,7 +215,7 @@ target(k) = ceil(worstPercent / 100 * k)   # k = 이 진영의 몇 번째 수인
 이건 "지난 수들이 전부 목표대로 성공했다"고 가정하고 5절 공식을 telescoping(망원경식 상쇄)한 것과 수학적으로 동일하다 — 그래서 상태 추적 없이 `k`(=`ownMoveIndex`)만 알면 계산된다. 성질은 5절 worked example과 완전히 같다:
 
 - `worstPercent > 0`인 모든 단계는 **이 진영의 1수째는 항상 최하수를 목표로 한다**(`target(1) = ceil(r) ≥ 1 = target(0) + 1`, 어떤 `r>0`이든 성립).
-- 장기적으로 실제 최하수 비율은 원안 퍼센트에 최대 1회 오차로 수렴한다(`shared/PlayLevelSettingTest.kt`의 `targetBucketConvergesToNominalWorstRatioOverManyMoves`가 500수 시뮬레이션으로 검증).
+- 장기적으로 실제 최하수 비율은 원안 퍼센트에 최대 1회 오차로 수렴한다(`shared/policy/PlayLevelSettingTest.kt`의 `targetBucketConvergesToNominalWorstRatioOverManyMoves`가 500수 시뮬레이션으로 검증).
 - 최하수 목표인데 그 턴 후보가 부족하면(N<3) 중급수→최적수 순으로 폴백한다(5절과 동일).
 
 `PlayLevel.kt`에 `CandidateBucket` enum, `candidateBucketRange()`(2절 분류 규칙의 순수 함수 버전), `BucketedTierSelection.targetBucket()`/`.resolveIndexRange()`(위 공식)로 구현했다. `AiMoveSelectionPolicy.select()`는 `selectionPolicy`가 `BucketedTierSelection`이면 이 경로로, 아니면 기존 `candidateIndexRange()` 경로로 분기한다.
@@ -240,6 +240,6 @@ target(k) = ceil(worstPercent / 100 * k)   # k = 이 진영의 몇 번째 수인
 
 - `ENGINE_STRENGTH_RESEARCH.md` — 오늘 앞서 진행한 후보수 확장 리서치. 이 문서의 2/6절 근거를 그대로 이어받음
 - `ENGINE.md`, `ENGINE_API_CALL_POLICY.md` — 현재 레벨 정책의 canonical 문서. 이 계획이 실제 구현되면 두 문서의 `빠른 초급` 관련 표를 갱신해야 한다
-- `shared/src/commonMain/kotlin/com/worksoc/goaicoach/shared/PlayLevel.kt` — `PlayLevelGroup`/`MoveSelectionPolicy` 정의
-- `shared/src/commonMain/kotlin/com/worksoc/goaicoach/shared/EngineAnalysisPolicy.kt` — 탐색 모드별 요청 조합 로직
+- `shared/src/commonMain/kotlin/com/worksoc/goaicoach/shared/policy/PlayLevel.kt` — `PlayLevelGroup`/`MoveSelectionPolicy` 정의
+- `shared/src/commonMain/kotlin/com/worksoc/goaicoach/shared/policy/EngineAnalysisPolicy.kt` — 탐색 모드별 요청 조합 로직
 - `shared/src/commonMain/kotlin/com/worksoc/goaicoach/match/AiMoveSelectionPolicy.kt` — 실제 후보 선택이 일어나는 지점

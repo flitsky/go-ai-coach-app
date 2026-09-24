@@ -35,7 +35,7 @@
 
 ## 3. 기존 아키텍처 확인 — "와이어링 추상화" 요구는 이미 충족돼 있다
 
-3번 요구(엔진레이어↔앱레이어 통신을 와이어링으로 추상화)는 좋은 소식이 있다 — **이미 그렇게 돼 있다.** `shared/RemotePositionAnalysisTransport.kt`/`RemoteEngineOperationTransport`는 처음부터 "요청을 어떻게 실어 나르는지"를 트랜스포트 인터페이스로 분리해뒀고, 지금 있는 `HttpRemoteEngineOperationTransport`는 그 인터페이스의 구현체 "중 하나"일 뿐이다. MQ로 옮기는 작업은 원칙적으로 **같은 인터페이스의 새 구현체(`MqttRemoteEngineOperationTransport`, `FirestoreRemoteEngineOperationTransport` 등)를 하나 더 만드는 일**이지, 계층 구조 자체를 바꾸는 일이 아니다. `EngineCoreApiFactory`에 선택지를 하나 추가하면 된다.
+3번 요구(엔진레이어↔앱레이어 통신을 와이어링으로 추상화)는 좋은 소식이 있다 — **이미 그렇게 돼 있다.** `shared/enginecontract/RemotePositionAnalysisTransport.kt`/`RemoteEngineOperationTransport`는 처음부터 "요청을 어떻게 실어 나르는지"를 트랜스포트 인터페이스로 분리해뒀고, 지금 있는 `HttpRemoteEngineOperationTransport`는 그 인터페이스의 구현체 "중 하나"일 뿐이다. MQ로 옮기는 작업은 원칙적으로 **같은 인터페이스의 새 구현체(`MqttRemoteEngineOperationTransport`, `FirestoreRemoteEngineOperationTransport` 등)를 하나 더 만드는 일**이지, 계층 구조 자체를 바꾸는 일이 아니다. `EngineCoreApiFactory`에 선택지를 하나 추가하면 된다.
 
 단, 4절의 "여러 응답 정합성 체크"·"타임아웃 시 로컬+원격 병행"은 **지금 인터페이스로는 안 된다** — `RemoteEngineOperationTransport.execute()`는 정확히 응답 1개를 돌려주는 단발 요청-응답 계약이라, "여러 응답을 모아서 비교"하거나 "로컬과 원격을 동시에 돌리다가 먼저 끝나는 쪽을 쓰기"는 새 계약이 필요하다. 이건 여기서 확정하지 않고 5절 실험으로 넘긴다.
 
@@ -104,4 +104,4 @@
 - `REMOTE_ENGINE_AND_LAYERING.md` — Stage D/E(오늘 이 문서가 이어받는 원격 엔진 배경), Stage F 정의(이 문서가 그 전용 킥오프)
 - `scripts/run-katago-remote-analysis-server.py` — 어제 만든 HTTP 참조 서버. MQ/Firestore 프로토타입에서 KataGo 프로세스 관리 부분을 그대로 재사용한다
 - `scripts/remote-engine-mq-prototype/` — 7절 결과를 낸 실제 파이썬 프로토타입 코드(MQTT/Firestore 세션 토픽, 정합성 체크, 타임아웃+병행 폴백 실험)와 실행 로그(`runs/*.jsonl`)
-- `shared/src/commonMain/kotlin/com/worksoc/goaicoach/shared/RemotePositionAnalysisTransport.kt` — 이미 있는 트랜스포트 추상화 계약(3절)
+- `shared/src/commonMain/kotlin/com/worksoc/goaicoach/shared/enginecontract/RemotePositionAnalysisTransport.kt` — 이미 있는 트랜스포트 추상화 계약(3절)

@@ -50,8 +50,8 @@ kata-raw-nn 0: whiteLead 3.046
 
 관련 테스트:
 
-- `shared/src/commonTest/kotlin/com/worksoc/goaicoach/shared/EndgameRegressionTest.kt`
-- `shared/src/commonTest/kotlin/com/worksoc/goaicoach/shared/EndgameScoreSelectorTest.kt`
+- `shared/src/commonTest/kotlin/com/worksoc/goaicoach/shared/policy/EndgameRegressionTest.kt`
+- `shared/src/commonTest/kotlin/com/worksoc/goaicoach/shared/policy/EndgameScoreSelectorTest.kt`
 
 고정한 불변식:
 
