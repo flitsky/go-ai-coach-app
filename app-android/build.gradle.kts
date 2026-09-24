@@ -289,6 +289,13 @@ android {
         //     정규식으로 읽는다** — 개명하면 그 계약이 깨진다.
         //   · 파이썬 벤치마크 스크립트 6곳이 이 경로를 기본값으로 박고 있다.
         //   이름 하나 고치자고 네 표면을 동시에 흔드는 값은 없다. 대신 이 주석이 그 자리를 대신한다.
+        // 모듈 사이 테스트 코드 공유(리팩토링 백로그 #71). 사유와 대안 기각 근거는
+        // `shared/build.gradle.kts`의 같은 배선에 모아 두었다 — 거기가 정본이다.
+        // ⚠️ 이 모듈의 test·androidTest는 `:shared`의 commonTest를 **볼 수 없다.** 그래서
+        //   `EngineSessionClient` 손 페이크가 세 벌로 복제돼 있었고(함정 70), 이 두 줄이 그것을 끝냈다.
+        getByName("test").kotlin.srcDir("../shared/src/commonTestSupport/kotlin")
+        getByName("androidTest").kotlin.srcDir("../shared/src/commonTestSupport/kotlin")
+
         getByName("playInternal") {
             assets.srcDirs("src/friend/assets")
             jniLibs.srcDirs("src/debug/jniLibs")
