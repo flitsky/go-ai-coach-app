@@ -61,10 +61,15 @@ class TestAnnotationContractTest {
     }
 
     /**
-     * 함수 바로 위 줄을 거슬러 올라가며 `@Test`를 찾는다.
+     * 함수 바로 위 줄을 거슬러 올라가며 `@Test`(나 JUnit 생명주기 훅)를 찾는다.
      *
      * ⚠️ 주석·KDoc·빈 줄은 건너뛴다 — 이 저장소는 테스트마다 긴 KDoc을 붙이므로, 바로 윗줄만
      * 보면 **KDoc이 달린 테스트를 전부 위반으로 잡는다.**
+     *
+     * ⚠️ **`@Before`/`@After`도 통과시킨다**(refactor backlog #21) — 이 계약이 막으려는 것은
+     * *"테스트 모양인데 JUnit이 아예 모르는 함수"*(#68이 겪은 사고)다. `@After`로 정리 훅을
+     * 붙인 함수는 JUnit이 매 테스트마다 실제로 부르므로 조용히 죽어 있는 게 아니다 — `@Test`
+     * 없다고 위반으로 잡으면 정당한 정리 훅을 못 쓰게 막는 꼴이라 계약의 목적과 어긋난다.
      */
     private fun precedingAnnotationIsTest(lines: List<String>, functionIndex: Int): Boolean {
         var cursor = functionIndex - 1
@@ -73,10 +78,21 @@ class TestAnnotationContractTest {
             val isCommentOrBlank = trimmed.isEmpty() ||
                 trimmed.startsWith("*") || trimmed.startsWith("/*") || trimmed.startsWith("//")
             if (!isCommentOrBlank) {
-                return trimmed == "@Test" || trimmed == "@org.junit.Test" || trimmed == "@kotlin.test.Test"
+                return trimmed in RecognizedJUnitLifecycleAnnotations
             }
             cursor--
         }
         return false
+    }
+
+    private companion object {
+        /** `@Test`와, 조용히 죽어 있는 게 아니라 JUnit이 실제로 부르는 생명주기 훅들. */
+        val RecognizedJUnitLifecycleAnnotations = setOf(
+            "@Test", "@org.junit.Test", "@kotlin.test.Test",
+            "@Before", "@org.junit.Before",
+            "@After", "@org.junit.After",
+            "@BeforeClass", "@org.junit.BeforeClass",
+            "@AfterClass", "@org.junit.AfterClass",
+        )
     }
 }

@@ -53,6 +53,12 @@ internal const val GameHistoryDirName = "game_history"
  * 실패하면 임시 파일만 지우고 옛 파일은 그대로 둔다. ⚠️ 쓰는 **바이트는 예전과 같다**(코덱 출력의 UTF-8,
  * `File.writeText`와 동일) — 저장 포맷·파일 이름·스키마 번호는 하나도 바뀌지 않았다(함정 69).
  * 남은 `.tmp`는 아무도 읽지 않고, 다음 쓰기가 덮어쓰며, 초기화는 디렉터리째 지운다.
+ *
+ * ⚠️ **`fsync`는 대국 하나당 최대 두 번 돈다** — 리플레이가 있으면 `replay/<id>.json`에 한 번,
+ * `index.json`에 한 번(한 줄 평을 나중에 고치면 `updateNote`가 한 번 더). 둘 다 **메인 스레드**에서
+ * 부른다(`GoCoachApp.kt`의 `LaunchedEffect`, `GameExitRecording.kt`) — 대국은 세션당 한 번만 끝나고
+ * 파일 하나(index.json)는 보통 수 KB~수백 KB라 `fsync` 자체는 수 ms대로 보지만, 이건 추정이다.
+ * 기기 스모크로 대국 종료·나가기 직후에 눈에 띄는 끊김이 없는지 확인할 것.
  */
 internal class GameHistoryStore internal constructor(
     private val root: File,
@@ -84,7 +90,8 @@ internal class GameHistoryStore internal constructor(
     }
 
     override fun loadAll(): List<GameHistoryEntry> {
-        migrateLegacyPrefsIfNeeded()
+        val migrated = migrateLegacyPrefsIfNeeded()
+        if (migrated != null) return migrated
         val raw = runCatching { indexFile.readText() }.getOrNull() ?: return emptyList()
         return GameHistoryIndexCodec.decodeAll(raw)
     }
@@ -147,20 +154,29 @@ internal class GameHistoryStore internal constructor(
     /**
      * 옛 `SharedPreferences` blob을 index 파일로 한 번 옮기고 prefs를 비운다.
      *
-     * ⚠️ **index 파일이 이미 있으면 아무것도 하지 않는다** — 안 그러면 이관이 매번 일어나
-     * 새 기록을 옛 기록으로 덮어쓴다.
+     * ⚠️ **index 파일이 이미 있으면 아무것도 하지 않는다**(`null` 반환 — 이관할 게 없었다는 뜻) —
+     * 안 그러면 이관이 매번 일어나 새 기록을 옛 기록으로 덮어쓴다.
      *
      * ⚠️ **index가 실제로 써졌을 때만 옛 키를 지운다**(refactor backlog #21). 쓰기가 실패했는데 지우면
-     * 이관할 원본까지 사라진다. 실패하면 index가 없는 채로 남으므로 다음 읽기가 다시 이관한다.
+     * 이관할 원본까지 사라진다. 실패해도 여기서 디코드한 옛 기록은 [loadAll]에 그대로 돌려준다(아래
+     * `@return` 참고) — 그래야 **같은 호출 안에서** `appendCompletedGame`처럼 그 뒤를 잇는 다른 쓰기가,
+     * 방금 실패한 이관을 모르는 채로 옛 기록 없이 index를 새로 만들어 버리지 않는다. 그렇게 새로
+     * 만들어지면 `indexFile.exists()`가 참이 되어 이관이 다시는 돌지 않고, 옛 기록은 prefs에 남아
+     * 있어도 영영 안 보이게 된다 — 실패 자체가 아니라 "실패 직후의 성공한 다른 쓰기"가 문제다.
+     *
+     * @return 이관할 옛 기록이 있어서 시도했다면(쓰기 성공 여부와 무관) 그 디코드 결과, 이관할 게
+     *   없었다면(index가 이미 있거나 옛 키가 비어 있다면) `null`.
      */
-    private fun migrateLegacyPrefsIfNeeded() {
-        if (indexFile.exists()) return
+    private fun migrateLegacyPrefsIfNeeded(): List<GameHistoryEntry>? {
+        if (indexFile.exists()) return null
         val prefs = legacyPrefs()
-        val raw = prefs.getString(LegacyEntriesKey, null) ?: return
+        val raw = prefs.getString(LegacyEntriesKey, null) ?: return null
         root.mkdirs()
-        if (writeIndex(GameHistoryIndexCodec.decodeLegacyAll(raw))) {
+        val decoded = GameHistoryIndexCodec.decodeLegacyAll(raw)
+        if (writeIndex(decoded)) {
             prefs.edit().remove(LegacyEntriesKey).apply()
         }
+        return decoded
     }
 
     private companion object {

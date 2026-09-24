@@ -62,9 +62,11 @@ data class AttendanceRewardGrantResult(
  * 사용자에게 유리한 방향이고, 상한 99가 폭주를 막는다.
  *
  * ⚠️ **지급 기록은 [state]가 아니라 저장소의 *지금* 상태에 얹는다**(refactor backlog #21). [state]는
- * 호출부가 먼저 읽은 스냅샷이라(`AttendanceRewardClaimDialog`), 그 뒤 IO 스레드의 foreground 체크인이
- * 하루를 올렸을 수 있다. 스냅샷에 지급 기록을 얹어 통째로 쓰면 **그 체크인이 지워진다.** 무엇을 줄지는
- * 스냅샷으로 정하고(팝업이 보여 준 그대로), 기록만 [AttendanceStorePort.update]로 합쳐 쓴다.
+ * 호출부가 먼저 읽은 스냅샷이라(`AttendanceRewardClaimDialog`의 `onClaim`이 Claim을 누른 시점에
+ * `attendanceStore.load()`로 다시 읽은 값 — 팝업이 뜰 때 화면에 보여 준 스냅샷과는 다른 값일 수
+ * 있다), 그 뒤 IO 스레드의 foreground 체크인이 하루를 올렸을 수 있다. 스냅샷에 지급 기록을 얹어
+ * 통째로 쓰면 **그 체크인이 지워진다.** 무엇을 줄지는 스냅샷으로 정하고, 기록만
+ * [AttendanceStorePort.update]로 합쳐 쓴다.
  *
  * 각 저장소를 UI 없이 다룰 수 있는 진입점(`runPremiumFeatureClaim`/`runConsumableGrant`/
  * `runBotCharacterUnlock`)에만 의존하므로, Compose 트리가 아직 없는 앱 시작 시점

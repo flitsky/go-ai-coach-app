@@ -15,6 +15,7 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.io.OutputStream
 import kotlin.io.path.createTempDirectory
+import org.junit.After
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -36,12 +37,33 @@ class GameHistoryStoreDurabilityTest {
     private val legacyPrefs = InMemorySharedPreferences()
     private val indexFile = root.resolve("index.json")
 
+    /** [DiagnosticEventLogTest]/[RuntimeEventLogTest]와 달리 이 파일은 매번 실제로 쓰기 때문에
+     * 남는 임시 디렉터리가 크다 — 돌릴 때마다 시스템 임시 디렉터리에 찌꺼기가 쌓이지 않게 지운다. */
+    @After
+    fun cleanUpTempDirectory() {
+        root.parentFile?.deleteRecursively()
+    }
+
     private fun store(openOutput: (File) -> OutputStream = ::FileOutputStream) =
         GameHistoryStore(root = root, legacyPrefs = { legacyPrefs }, openOutput = openOutput)
 
     /** 파일마다 [budgetFor]바이트까지만 쓰고 그다음 바이트에서 터진다. */
     private fun dyingOutput(budgetFor: (Int) -> Int): (File) -> OutputStream = { file ->
         DyingOutputStream(FileOutputStream(file), budgetFor)
+    }
+
+    /** 첫 [openOutput] 호출(어느 파일이든)만 절반까지 쓰고 터진다 — 그다음부터는 멀쩡히 쓴다.
+     * "이관 쓰기 하나만 실패하고, 바로 다음 쓰기는 성공한다"는 순서를 흉내 낸다. */
+    private fun diesOnlyOnTheFirstWrite(): (File) -> OutputStream {
+        var callCount = 0
+        return { file ->
+            callCount += 1
+            if (callCount == 1) {
+                DyingOutputStream(FileOutputStream(file)) { total -> total / 2 }
+            } else {
+                FileOutputStream(file)
+            }
+        }
     }
 
     @Test
@@ -79,6 +101,22 @@ class GameHistoryStoreDurabilityTest {
 
         assertEquals(listOf("legacy-1"), store().loadAll().map { it.id })
         assertEquals(null, legacyPrefs.rawString("entries"))
+    }
+
+    @Test
+    fun legacyBlobSurvivesWhenTheWriteRightAfterAFailedMigrationSucceeds() {
+        // 가장자리 경우 — 이관의 index 쓰기가 실패한 바로 그 호출 안에서, **그다음(다른) 쓰기가
+        // 성공**하면 얘기가 달라진다. `appendCompletedGame`은 `loadAll()`(이관 시도 포함)로 목록을
+        // 구한 뒤 그 위에 새 판을 얹어 **따로** 한 번 더 쓴다. 이관 쓰기만 죽고 그 직후의 append
+        // 쓰기가 성공하면, 예전 코드는 `loadAll()`이 빈 목록을 돌려준 상태에서 index를 **새로
+        // 만들어 버린다** — 그 뒤로는 `indexFile.exists()`가 참이 되어 이관이 다시는 돌지 않고,
+        // 옛 기록은 prefs에 남아 있어도 영영 안 보인다. KDoc의 "다음 읽기가 다시 이관한다"가 이
+        // 경로에서는 거짓이다 — 다음 읽기가 이미 (내용 없이) 있는 index를 그냥 읽어 버리기 때문.
+        legacyPrefs.edit().putString("entries", LegacyBlob).apply()
+
+        store(diesOnlyOnTheFirstWrite()).appendCompletedGame(entry("2-b"))
+
+        assertEquals(listOf("legacy-1", "2-b"), store().loadAll().map { it.id })
     }
 
     @Test
