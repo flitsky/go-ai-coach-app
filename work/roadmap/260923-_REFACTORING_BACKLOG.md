@@ -164,6 +164,8 @@ Hilt(commonMain 불가)·Koin(이득 0)·전면 MVI(이미 절반 작동)·모�
 | 58 | **계기 테스트 3개 전부 초록** — 원인은 탭 회귀가 아니라 둘이었다: ⓐ 로비 시작 버튼이 좌석을 안 보고 잠겨 **대국 화면에 들어간 적이 없었다**(엔진 못 뜨는 기기에서 사람끼리도 못 두던 제품 결함 동반 해소), ⓑ `shared_prefs` **파일만** 지우던 초기화가 프로세스 캐시를 못 비워 앞 테스트 설정을 물려받았다. 실기 2회 확인 | `14967120` |
 | 24 | 🔓 **`shared` 루트 22파일을 의미 있는 패키지로 갈랐다** — 루트 **22→0**, commonTest 고아 패키지 **14→0**. `domain` 7·`enginecontract` 3·`policy` 6·`scoring` 4·`content` 1. ⭐ **`shared.domain` 7파일의 import가 전부 합쳐 0줄** — 바둑 규칙이 아무것도 모른다. 이제 **import 한 줄로 계층이 보인다**(#34 Konsist의 전제) | `6e31bb6d`…`2f07cf8b` |
 | 29 | **`premium`/`auth`의 세 계층을 패키지로 갈랐다** — `premium.{port 4, state 3, app 5}` · `auth.{port 1, state 1}`, 루트 0. `FeatureAccessPolicy`가 **6계층임을 코드로 확정**(`PremiumState`를 파라미터로 받는다). 가드 사보타주로 생존 확인 — `RepoPaths.applicationPath` + `walkTopDown`이 새 하위까지 훑어 **경로 고칠 곳 0** | `dfd64011` |
+| 20 | **`syncStaticPosition` 기본 구현 제거 + 공통 계약 스위트** — 가설에 숫자가 붙었다: `StubEngineAdapter` 0→2건, `RemoteEngineCoreApiAdapter` 0→1건. **둘 다 조용히 빠뜨리고 있었다.** 재발 방지는 삭제가 아니라 `EngineCoreApiStaticPositionContract`(Local/Remote/Stub 동일 시나리오) | `4f5ca419` |
+| 60 | **안 보던 계약 셋 → 좁히지 않고 그물** — ⭐ **관찰의 뜻이 조사 중에 바뀌었다**: `0건`은 *"그 페이크의 기본값을 아무도 안 본다"* 였지 *"계약이 죽었다"* 가 아니었다. 셋 다 프로덕션 소비자가 있다 | `3ee788b4` |
 | 66 | **호출부 0·테스트 0이던 public 함수 처리** | (#24 파도에 동반) |
 
 ### 진행 중
@@ -174,11 +176,6 @@ _(없음 — 아래 「예정사항」 첫 항목부터 집는다)_
 
 #### 잔여 — 앞선 일감이 드러낸 것 (번호는 뒤에 붙이고 **순서로** 우선순위를 표시한다)
 
-60. **아무도 안 보는 계약 3개 정리** (AI 모델: Sonnet, 노력정도: 낮음) — #20과 함께
-    · `capabilities` / `positionAnalysisCacheStatsText` / `positionAnalysisCacheQualityFor` —
-      값을 틀리게 바꿔도 **빨개지는 테스트가 0건**이다(#10 음성 대조에서 드러났다).
-      페이크 8벌이 909줄 중 40여 줄을 이 셋에 쓰고 있었다.
-    · 인터페이스에 남길지, 테스트를 붙일지, 좁힐지 판단한다.
 65. **원격 `handicapCount`를 KataGo에 어떻게 실을지 판정** (AI 모델: Opus, 노력정도: 중간)
     · #62가 komi만 닫고 `handicapCount`는 **의도적으로 미반영**했다. KataGo Analysis 스키마에
       접바둑 "개수" 필드가 없고, 유일한 접바둑 필드 `whiteHandicapBonus`는 **룰셋의 기본 접바둑 보정을
@@ -271,9 +268,6 @@ _(없음 — 아래 「예정사항」 첫 항목부터 집는다)_
       실제 세션 로그와 대조 불가**다.
     · ⚠️ 생성자 시그니처가 바뀌어 **`app-android`의 배선까지 번진다.** 파일 충돌면이 넓다.
 
-20. **`syncStaticPosition` 무동작 + 기본 구현 삭제** (AI 모델: Opus, 노력정도: 중간) — **10 뒤에만**
-    · 기본 구현이 있어서 원격·스텁이 **둘 다 조용히 빠뜨렸다.** ⚠️ **함정 70**: 픽스처(#10)가 먼저다.
-    · 재발을 막는 실체는 삭제가 아니라 **공통 계약 테스트 스위트**(Local/Remote/Stub을 같은 시나리오로)다.
 21. **persistence 동시성·내구성** (AI 모델: Opus, 노력정도: 높음)
     · 엔타이틀먼트 스토어의 load-modify-save에 락이 없어 **광고 보상과 출석 클레임이 겹치면 앞선 클레임이 사라진다.**
       `GameHistoryStore`는 대국 1건마다 `index.json` 전체를 비원자적 재작성 → tmp+renameTo.
