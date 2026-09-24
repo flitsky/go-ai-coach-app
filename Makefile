@@ -173,15 +173,15 @@ test-device: doctor
 	$(GRADLEW) :app-android:connectedDebugAndroidTest
 
 # ⚠️ 별도 타깃이다 — `test`에 합치지 마라(refactor backlog #90). `scripts/run-katago-remote-analysis-server.py`는
-# dev-only 스파이크다(모듈 docstring 참고) — debug 빌드에 REMOTE_ENGINE_URL이 있을 때만 쓰이고, 프로덕션
-# 사용자·앱 배포 어느 쪽에도 닿지 않는다. `make test`(릴리스 게이트)는 JDK+Android SDK만 있으면 도는
-# 것이 지금까지의 전제였고(`doctor`가 그 둘만 확인한다), 여기에 python3을 새 필수 의존으로 얹으면 그
-# 전제가 이 스크립트 하나 때문에 깨진다 — 얻는 것(파이썬 스크립트 버그 조기 발견)에 비해 잃는 것(모든
-# 릴리스 빌드 환경에 python3 가용성 요구)이 크다. `engine-android`의 JVM 테스트에서 `subprocess`로
-# python3을 부르는 안도 기각했다 — 그건 이 문제를 `test-ios`/`test-device`처럼 별도 타깃으로 빼는 대신
-# `make test`가 이미 도는 스위트 **안에** 몰래 심는 것이라 같은 문제를 우회로만 옮긴다. 대신 이 스크립트를
-# 고칠 때 사람이 직접 돌리는 수동 게이트로 둔다 — 변경 빈도가 낮고(dev 스파이크), KataGo 바이너리 없이도
-# 0.01초 안에 돈다.
+# dev-only 스파이크다 — debug 빌드에 REMOTE_ENGINE_URL이 있을 때만 쓰이고(`app-android/build.gradle.kts`:
+# debug만 값을 채우고 release·playInternal은 빈 문자열), 프로덕션 사용자·앱 배포 어느 쪽에도 닿지 않는다.
+# `make test`(릴리스 게이트)는 JDK+Android SDK만 있으면 도는 것이 지금까지의 전제였고(`doctor`가 그 둘만
+# 확인한다), 여기에 python3을 새 필수 의존으로 얹으면 그 전제가 이 스크립트 하나 때문에 깨진다 — 얻는
+# 것(파이썬 스크립트 버그 조기 발견)에 비해 잃는 것(모든 릴리스 빌드 환경에 python3 가용성 요구)이 크다.
+# `engine-android`의 JVM 테스트에서 `subprocess`로 python3을 부르는 안도 기각했다 — 그건 이 문제를
+# `test-ios`/`test-device`처럼 별도 타깃으로 빼는 대신 `make test`가 이미 도는 스위트 **안에** 몰래 심는
+# 것이라 같은 문제를 우회로만 옮긴다. 대신 이 스크립트를 고칠 때 사람이 직접 돌리는 수동 게이트로 둔다 —
+# 변경 빈도가 낮고(dev 스파이크), KataGo 바이너리 없이도 0.01초 안에 돈다.
 test-remote-analysis-server:
 	python3 scripts/test_run_katago_remote_analysis_server.py -v
 

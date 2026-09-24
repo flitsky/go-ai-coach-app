@@ -69,17 +69,43 @@ the app's local GTP engine). Measured with the app's model on 9/13/19,
 H2-H9, both rulesets: raw-NN leads then equal local GTP `kata-raw-nn`
 exactly at every handicap opening; after moves they differ by at most 0.6,
 and all of that is KataGo's default `analysisIgnorePreRootHistory=true`
-(0.00 with it off), not handicap. Forcing "N" changes nothing under chinese
-(it's already the default) — but the earlier claim that it "adds about +N
-points for White under japanese" turned out to be loose: across the same
-9/13/19, H2-H9 sweep the shift is **not linear in N**. Two openings at the
-same N=4 gave +1.8 (9x9) vs. +3.5/+3.8 (19x19); across all 18 cases the
-shift ranged +1.8 to +8.5 (refactor backlog #90, re-measured 2026-09-24).
-Forcing "0" under chinese is the same story, not "removes N points" —
-same N=4 gave +0.1 (9x9, i.e. next to no change) vs. -4.2/-4.3 (19x19);
-range -6.6 to +0.1 overall. So the field stays unset either way — not
-because the arithmetic is inconvenient, but because there is no single N
-to add or remove in the first place.
+(0.00 with it off), not handicap.
+
+What forcing the field would do. Source: the #65-A measurement run behind
+commit b8fc9167 (20 rows: 10 positions x 2 rulesets), re-read for refactor
+backlog #90 — nothing was re-measured for #90, and that run's raw output
+was never committed, so this table is its in-repo copy. Forcing the
+ruleset's own default ("N" under chinese, "0" under japanese) is a no-op:
+raw-NN lead unchanged in all 20 rows, searched lead within 0.11. Forcing
+the *other* value moves White's point lead by roughly N, not exactly N.
+Shift in White's lead vs. the field left unset; komi 0.5 unless noted;
+raw = raw NN (maxVisits=1, deterministic), search = searched lead (the
+measurement script's SEARCH_VISITS, default 400):
+
+                                         japanese "N"    chinese "0"
+    position                        N    raw  search     raw  search
+    9x9 opening                     2  +2.27  +2.24   -2.24  -2.17
+    9x9 opening                     4  +1.82  +4.00   +0.14  -3.93
+    9x9 after 4 moves               2  +2.24  +2.17   -1.95  -2.09
+    9x9, W captured G7 (7 moves)    2  +2.19  +2.21   -2.19  -2.07
+    13x13 opening, komi 6.5         5  +5.55  +5.41   -3.67  -4.75
+    19x19 opening                   2  +2.40  +2.61   -2.91  -2.35
+    19x19 opening                   4  +3.79  +3.47   -4.15  -4.85
+    19x19 after 2 moves             4  +3.49  +3.50   -4.26  -4.31
+    19x19 opening                   9  +8.50  +9.36   -5.31  -7.67
+    19x19 after 2 moves, komi 7.5   6  +6.15  +6.30   -6.57  -6.52
+
+By searched lead every row moves in the expected direction by 0.85-1.30
+times N. Raw NN agrees (japanese 0.87-1.20 times N, chinese 0.59-1.45
+times N) except the 9x9 H4 opening, whose raw values (+1.82, and +0.14 —
+the wrong sign) are outliers next to its own searched values (+4.00 /
+-3.93). The field stays unset because, left unset, the remote query uses
+the same compensation the local GTP engine does; forcing the other value
+would move the remote path off the local one by about the amounts above.
+
+`build_katago_query()` is checked without KataGo by
+`make test-remote-analysis-server`
+(`scripts/test_run_katago_remote_analysis_server.py`, refactor backlog #90).
 
 Usage:
     python3 scripts/run-katago-remote-analysis-server.py --port 8765
@@ -286,10 +312,10 @@ def build_katago_query(request_body: dict[str, Any]) -> dict[str, Any]:
         # the app's local GTP engine with the app's own model). It selects how
         # KataGo compensates the N stones it counts in `initialStones` — it is not a
         # count to add. The ruleset default (chinese "N", japanese "0") is exactly
-        # what the local GTP engine uses (`kata-get-rules`); forcing "N" is a no-op
-        # under chinese, and under japanese shifts White by an amount that is NOT
-        # linear in N (refactor backlog #90 re-measured this: same N=4, +1.8 at 9x9
-        # vs. +3.5/+3.8 at 19x19). See the module docstring for the full range.
+        # what the local GTP engine uses (`kata-get-rules`). Forcing the default is a
+        # no-op; forcing the other value moves White's lead by roughly N points
+        # (0.85-1.30 times N by searched lead in the #65-A measurement). The table
+        # is in the module docstring.
         "initialStones": initial_stones,
         "moves": moves,
         "analyzeTurns": [len(moves)],

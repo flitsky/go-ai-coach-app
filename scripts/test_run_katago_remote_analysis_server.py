@@ -17,7 +17,9 @@ Sabotage check (backlog #90's own red/green requirement): reverting
 `build_katago_query()`'s `initial_player` assignment back to the literal
 `"B"` turns `EvenGameStaticPositionTest` red immediately (White-to-move
 static position gets Black's turn instead), without needing a handicap
-game at all.
+game at all. Taking the turn from `nextPlayer` even when there are moves
+turns `CapturedHandicapStoneTest` red (its first move is White's, its
+`nextPlayer` is Black).
 """
 
 from __future__ import annotations
@@ -31,8 +33,7 @@ _HERE = os.path.dirname(os.path.abspath(__file__))
 _SERVER_PATH = os.path.join(_HERE, "run-katago-remote-analysis-server.py")
 
 # The module under test has hyphens in its filename (matches the rest of
-# scripts/), so it can't be `import`ed by name — load it by path instead,
-# the same way scripts/*measure_handicap_bonus.py already does.
+# scripts/), so it can't be `import`ed by name — load it by path instead.
 _spec = importlib.util.spec_from_file_location("run_katago_remote_analysis_server", _SERVER_PATH)
 assert _spec is not None and _spec.loader is not None
 remote_server = importlib.util.module_from_spec(_spec)
@@ -124,39 +125,79 @@ class HandicapOpeningTest(unittest.TestCase):
 class CapturedHandicapStoneTest(unittest.TestCase):
     """따낸 접바둑 돌 국면: 현재 판(stones)에서 사라졌어도 initialStones는 N개 그대로.
 
-    Reproduces the exact scenario the b8fc9167 commit message measured
-    (9x9, 2-stone handicap, White captures the G7 stone): before the fix,
-    `infer_initial_stones()` read the *current* board (`state["stones"]`)
-    to guess the initial stones, so a captured handicap stone vanished from
-    the count (N became N-1). The fix rebuilds handicap stones from
-    `handicapCount` directly and never looks at `stones` for a handicap
-    game, so the captured stone must still be there.
+    The position the #65-A measurement used (commit b8fc9167: "9x9 2점에서
+    G7을 따낸 국면"): 9x9, 2-stone handicap, then W G8, B E3, W F7, B C5,
+    W H7, B D6, W G6 — White's four stones take the G7 handicap stone. The
+    state below is that position in the shape the app's
+    `RemotePositionAnalysisJsonCodec.encodeState()` puts on the wire
+    (engine-android `HttpRemotePositionAnalysisTransport.kt`). Before the
+    fix, `infer_initial_stones()` read the *current* board
+    (`state["stones"]`) to guess the initial stones, so the captured G7
+    vanished from the count (N became N-1). The fix rebuilds handicap
+    stones from `handicapCount` directly and never looks at `stones` for a
+    handicap game, so G7 must still be there.
+
+    It is also the only case here with moves, so it guards the other
+    `initialPlayer` rule: with moves, the side to move at turn 0 is the
+    first move's color (White), not `nextPlayer` (Black).
     """
 
     def test_captured_stone_still_counts_full_handicap(self) -> None:
-        # G7 (one of the two 9x9 H2 points) has since been captured by White
-        # and is gone from the wire's current-board snapshot; only C3 remains.
-        request_body = _request(
-            board_size=9,
-            ruleset="Japanese",
-            handicap_count=2,
-            moves=[{"player": "White", "point": "C3", "type": "play"}],
-            next_player="Black",
-            stones=[{"color": "Black", "point": "C3"}],
-        )
+        request_body = {
+            "state": {
+                "boardSize": 9,
+                "ruleset": "Japanese",
+                "komi": 0.5,
+                "handicapCount": 2,
+                "nextPlayer": "Black",
+                "capturedByBlack": 0,
+                "capturedByWhite": 1,
+                "koPoint": None,
+                "koForbiddenFor": None,
+                # Current board: G7 is gone, only the C3 handicap stone is left.
+                "stones": [
+                    {"point": "G8", "color": "White"},
+                    {"point": "F7", "color": "White"},
+                    {"point": "H7", "color": "White"},
+                    {"point": "D6", "color": "Black"},
+                    {"point": "G6", "color": "White"},
+                    {"point": "C5", "color": "Black"},
+                    {"point": "C3", "color": "Black"},
+                    {"point": "E3", "color": "Black"},
+                ],
+                "moves": [
+                    {"player": "White", "type": "play", "point": "G8"},
+                    {"player": "Black", "type": "play", "point": "E3"},
+                    {"player": "White", "type": "play", "point": "F7"},
+                    {"player": "Black", "type": "play", "point": "C5"},
+                    {"player": "White", "type": "play", "point": "H7"},
+                    {"player": "Black", "type": "play", "point": "D6"},
+                    {"player": "White", "type": "play", "point": "G6"},
+                ],
+            },
+            "limit": {"visits": 1},
+        }
 
         query = build_katago_query(request_body)
 
         self.assertEqual(len(query["initialStones"]), 2, "a captured handicap stone must not drop the count to N-1")
         self.assertEqual(query["initialStones"], [["B", "G7"], ["B", "C3"]])
+        self.assertEqual(
+            query["initialPlayer"], "W",
+            "with moves, initialPlayer is the first move's color, not nextPlayer",
+        )
+        self.assertEqual(
+            query["moves"],
+            [["W", "G8"], ["B", "E3"], ["W", "F7"], ["B", "C5"], ["W", "H7"], ["B", "D6"], ["W", "G6"]],
+        )
 
 
 class EvenGameStaticPositionTest(unittest.TestCase):
     """맞바둑(handicapCount 0 또는 부재)·정적 국면(수 없음)의 차례가 nextPlayer를 따른다.
 
     This is the general-case counterpart of the handicap-opening check
-    above, and the one the task's sabotage line targets directly: reverting
-    `initial_player` to the old hard-coded `"B"` fails
+    above, and the one backlog #90's sabotage check targets directly:
+    reverting `initial_player` to the old hard-coded `"B"` fails
     `test_white_to_move_no_moves` even though there is no handicap involved
     at all.
     """
