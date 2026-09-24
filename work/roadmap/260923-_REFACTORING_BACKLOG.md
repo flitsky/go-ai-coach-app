@@ -188,7 +188,7 @@ Hilt(commonMain 불가)·Koin(이득 0)·전면 MVI(이미 절반 작동)·모�
 
 ### 진행 중
 
-- **작은 정리 1파도** — 워크트리 여섯(#79+#69, #88, #87, #90, #37, #92) + #84 판단. #92는 엔진 설정 변경이라 **실기 확인 뒤 병합**.
+- **작은 정리 1파도** — #87 ✅ main(`ca9e2c98`). 수정·재검수 중: #79(새 루트 매처가 `val`·`const`·애너테이션 선언을 못 봐 **가드 회귀** — 옛 import 정규식 병행), #69(✅ 검수 통과, #79와 같은 파일이라 함께 가져온다), #90(docstring 출처·수치 바로잡기), #88·#37(구현은 커밋됐는데 보고 JSON이 깨져 검수가 못 돌았다 — 재검수), #92(cfg 파일은 기존 설치 기기에 안 닿는다 — `-override-config`로 재작업, 실기 확인 뒤 병합).
 - **#93 접바둑 → 덤 0.5 자동 전환** — 사용자 결정, 워크트리에서 구현·검수 중. 사용자에게 보이는 동작 변경이라 실기 확인 필요.
 
 ### 예정사항
@@ -231,6 +231,11 @@ Hilt(commonMain 불가)·Koin(이득 0)·전면 MVI(이미 절반 작동)·모�
     · 5계층이라는 `premium.app` 5파일 중 4개가 6계층 `premium.state.PremiumState`를 import한다.
       260814의 분류 기준(*"`PremiumState`를 받으면 6계층"* — `FeatureAccessPolicy`를 6계층으로 둔 근거)을 그대로 쓰면 이들도 6계층이다.
       재분류할지 정의를 고칠지 **판단이 먼저**다.
+    · 📐 **판단 결과(2026-09-24, 코드 무변경)**: 5→6 간선 **16줄**, 6→5 **13줄**. 추천은 **(b2) 재분류** — 엔타이틀먼트 클러스터
+      (`premium.app`·`attendance`·`consumable`·`botcharacter`·`lifecycle`·`device`)를 통째로 6계층으로 매핑하고 5계층 규칙(*"6계층을 모른다"*)은 그대로.
+      코드 한 줄 안 바꾸고 사다리가 글자 그대로 참이 되며(5→6 16줄 → 0, 6→5는 원칙이 허용한 방향), 260814 기준이 예외 0으로 서고,
+      KDoc의 "6계층" 표기 12줄과 맞는다. 대안 (a) *"5계층도 6계층의 값은 안다"* 는 규칙을 넓혀 5·6 모듈 분리 여지를 줄인다.
+      `#39`의 "5→6 방향 뒤집기"는 (b2)면 코드 없이 닫힌다. ⏳ **사용자 결정 대기.**
 85. **포트 없는 어댑터 — α/본체 대칭이 깨진 자리** (AI 모델: Sonnet, 노력정도: 중간)
     · 저장 6개(`DeveloperModeStore`·`ExperimentalFeaturesStore`·`GuideProgressStore`·`UiLanguageStore`·`UserProfileStore`·
       `ReleaseResetStore`)와 platform 3개(`GoogleCredentialManagerClient`·`AdsConsentManager`·`PlayHaptics`),
