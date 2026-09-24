@@ -181,7 +181,7 @@ Hilt(commonMain 불가)·Koin(이득 0)·전면 MVI(이미 절반 작동)·모�
 
 ### 진행 중
 
-- **#32 사이클 절단** — 파도 A(①~⑥, Sonnet) 진행 중 → 파도 B(⑦~⑩, Opus). 걸음 하나 = 커밋 하나, 걸음마다 래칫 기준선 축소. ②의 목적지는 `engine.operation`이 아니라 **`application.concurrency`**(이미 있는 잎 패키지, 내부 의존 0)로 정했다.
+- **#32 사이클 절단** — ✅ 파도 A(①~⑥) 끝·푸시(`a96c8457`…`a28d74e0`). **파도 B(⑦~⑩, Opus) 진행 중.** 걸음 하나 = 커밋 하나, 걸음마다 래칫 기준선 축소.
 
 ### 예정사항
 
@@ -335,10 +335,21 @@ Hilt(commonMain 불가)·Koin(이득 0)·전면 MVI(이미 절반 작동)·모�
       (`A`만 보이면 옛 파일이 남았다). ⚠️ **함정 82**: `app-android`의 import가 바뀌는 파일은 `lintDebug`
       전후로 `LintBaselineFixed`·새 Warning 건수를 비교한다(`lint-baseline.xml`에 `shared` 경로는 0건).
     · ⚠️ `commonMain` 패키지가 바뀌므로 걸음마다 `make test-ios`도 돌린다(함정 75).
+    · ✅ **파도 A 실측(2026-09-24)** — 여섯 걸음 모두 순수 이동으로 검수 통과(+/- 줄 짝 대조, 커밋 트리마다 그래프를
+      따로 재어 기준선과 일치, 사보타주로 래칫 작동 확인). **SCC·쌍의 실제 경로**(커밋 메시지 숫자가 아니라 이것이 정본):
+      시작 `14+2 / 17쌍` → ① `14 / 16` → ② `14 / 15` → ③ `13 / 14` → ④ `13 / 13` → ⑤ `12 / 11` → ⑥ `12 / 10`.
+      ⚠️ **커밋 메시지의 쌍 개수는 틀렸다**(②는 한 칸 밀림, ④⑤⑥은 5씩 부풀림). 코드·기준선은 맞고 기록만 틀려,
+      `#70`과 같은 이유로 이력은 다시 쓰지 않았다. `a96c8457` 본문의 간선 방향 설명도 거꾸로다(실제로는 `attendance → botcharacter` 8건).
+    · **계획과 달라진 것**: ② 목적지가 `engine.operation`이 아니라 **`application.concurrency`**(새 파일 `UiEffectLauncher.kt`) —
+      이미 있던 잎 패키지(내부 의존 0)라 더 안전하다. ⑤는 선언을 **셋** 뗐다 — `runPositionAnalysisCacheOptimizationWorkflowResult`까지
+      옮겨야 `analysis`가 `EngineSessionClient` import를 놓는다(새 파일 `PositionAnalysisCacheOptimizationWorkflowResult.kt`).
+      ④의 `contract`는 `shared.*` 말고 **`match.PlayerSetup`도** 본다 — `match`가 `shared.*`만 보므로 결론(SCC 밖)은 그대로다.
+      ⚠️ `make test-ios`는 그룹 끝에만 돌았다(규칙은 걸음마다). HEAD는 초록이고 뒤 커밋이 앞 커밋의 컴파일을 고친 흔적이 없어
+      중간 커밋이 깨졌을 가능성은 낮다. **파도 B는 걸음마다 돌린다.**
     · **걸음** (크기 · 걸음 뒤 SCC · 대상):
       ① **S · 2개짜리 소멸** — `attendance/AttendanceRewardPolicy.kt`의 `const val WeeklyRewardCycleTier` 한 줄을
          `botcharacter`로. `attendance`는 이미 `botcharacter`를 import하므로 반대 방향 간선이 새로 생기지 않는다.
-      ② **S** — `launchUiEffect` 선언을 `engine.operation` 쪽으로 떼어 낸다(파일 분할). 같은 파일의
+      ② **S** ✅ — `launchUiEffect` 선언을 **`application.concurrency`** 로 떼어 낸다(파일 분할. 설계 원안은 `engine.operation`). 같은 파일의
          `launchAutoAiEffect`는 `engine`에 남아 새 위치를 import한다. 빼면 `{engine, engine.operation}`이 남는다.
       ③ **S · 13** — `InitialUserPreferencesPlan.toGameSessionSettingsState()` 확장 함수를 `preferences`로.
          호출부는 `GoCoachSessionFactory.kt` 1개(import만).
