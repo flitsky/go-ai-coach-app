@@ -3,7 +3,7 @@ package com.worksoc.goaicoach
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnController
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnUiState
 import com.worksoc.goaicoach.application.analysis.AnalysisResultCache
-import com.worksoc.goaicoach.application.analysis.PositionCacheOptimizationController
+import com.worksoc.goaicoach.application.cacheoptimization.PositionCacheOptimizationController
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationUiState
 import com.worksoc.goaicoach.application.analysis.UndoAnalysisRestoreCache
 import com.worksoc.goaicoach.application.debugreport.ClipboardPort

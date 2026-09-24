@@ -980,7 +980,7 @@ class LayeringContractTest {
 
     @Test
     fun positionCacheOptimizationControllerDelegatesToApplicationRunner() {
-        val controller = RepoPaths.applicationPath("analysis/PositionCacheOptimizationController.kt")
+        val controller = RepoPaths.applicationPath("cacheoptimization/PositionCacheOptimizationController.kt")
         val text = codeOnly(controller.readContractSource())
         val requiredFragments = listOf(
             "runPositionAnalysisCacheOptimizationApplication(",

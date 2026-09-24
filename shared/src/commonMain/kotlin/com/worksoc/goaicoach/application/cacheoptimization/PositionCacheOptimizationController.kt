@@ -1,5 +1,9 @@
-package com.worksoc.goaicoach.application.analysis
+package com.worksoc.goaicoach.application.cacheoptimization
 
+import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationUiState
+import com.worksoc.goaicoach.application.analysis.PostGamePositionAnalysisCacheOptimizationPromptEnabled
+import com.worksoc.goaicoach.application.analysis.buildPositionAnalysisCacheOptimizationPlan
+import com.worksoc.goaicoach.application.analysis.refreshPositionAnalysisCacheOptimizationPrompt
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.engine.EngineSessionClient
 import com.worksoc.goaicoach.application.time.currentEpochMillis

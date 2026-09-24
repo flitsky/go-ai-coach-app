@@ -85,7 +85,6 @@ internal object ContractSymbols {
     // 빨갛고, 좋아져도(줄면) "기준선을 줄여라"로 빨갛다 — 줄어든 것을 여기서 잠가야 다시 커지지 않는다.
     // 측정 기준은 커밋 7c928f55의 설계 스레드 실측(scc.py)과 같은 규칙이다([PackageImportGraph]).
     // ⚠️ 여기 적힌 패키지는 [GUARDED]에도 자동으로 올라가 실존 검사를 받는다.
-    const val APPLICATION_ANALYSIS = "com.worksoc.goaicoach.application.analysis"
     const val APPLICATION_AUTOAI = "com.worksoc.goaicoach.application.autoai"
     const val APPLICATION_DEBUGREPORT = "com.worksoc.goaicoach.application.debugreport"
     const val APPLICATION_ENGINE = "com.worksoc.goaicoach.application.engine"
@@ -105,7 +104,6 @@ internal object ContractSymbols {
      */
     val CYCLE_BASELINE_SCCS: List<Set<String>> = listOf(
         setOf(
-            APPLICATION_ANALYSIS,
             APPLICATION_AUTOAI,
             APPLICATION_DEBUGREPORT,
             APPLICATION_ENGINE,
@@ -126,8 +124,6 @@ internal object ContractSymbols {
      * 설계 스레드가 적은 건수(A→B/B→A)는 참고용이라 래칫하지 않는다.
      */
     val CYCLE_BASELINE_MUTUAL_PAIRS: List<Pair<String, String>> = listOf(
-        APPLICATION_ANALYSIS to APPLICATION_ENGINE,
-        APPLICATION_ANALYSIS to APPLICATION_SESSION,
         APPLICATION_AUTOAI to APPLICATION_RUNTIME,
         APPLICATION_AUTOAI to APPLICATION_SESSION,
         APPLICATION_DEBUGREPORT to APPLICATION_SESSION,

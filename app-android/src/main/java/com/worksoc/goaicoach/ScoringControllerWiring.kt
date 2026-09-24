@@ -1,6 +1,6 @@
 package com.worksoc.goaicoach
 
-import com.worksoc.goaicoach.application.analysis.PositionCacheOptimizationController
+import com.worksoc.goaicoach.application.cacheoptimization.PositionCacheOptimizationController
 import com.worksoc.goaicoach.application.score.ScoreEstimateController
 import com.worksoc.goaicoach.application.score.ScoringRuleChangePlan
 import com.worksoc.goaicoach.application.score.ScoringRuleController
