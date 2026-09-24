@@ -9,6 +9,7 @@ import com.worksoc.goaicoach.architecture.ContractSymbols.LOCAL_CONFIGURE_SYNC_A
 import com.worksoc.goaicoach.architecture.ContractSymbols.LOCAL_ESTIMATE_SCORE_FOR_STATE
 import com.worksoc.goaicoach.architecture.ContractSymbols.LOCAL_SYNC_AND_ESTIMATE_GRAPH_SCORE
 import com.worksoc.goaicoach.architecture.ContractSymbols.MAIN_ACTIVITY
+import com.worksoc.goaicoach.architecture.ContractSymbols.MIDDLEWARE_PACKAGE
 import com.worksoc.goaicoach.architecture.ContractSymbols.PERSISTENCE_PACKAGE
 import com.worksoc.goaicoach.architecture.ContractSymbols.PLATFORM_PACKAGE
 import com.worksoc.goaicoach.architecture.ContractSymbols.PRESENTATION_PACKAGE
@@ -1450,16 +1451,25 @@ class LayeringContractTest {
         )
     }
 
+    /**
+     * ⚠️ refactor backlog #69 — 이 픽스처는 예전엔 `EngineCoreApi`의 FQN을 **리터럴로 여섯 번**
+     * 되풀이해 적어 두고 있었다. `#24`가 `shared.enginecontract`로 그 패키지를 옮겼을 때 이 여섯
+     * 자리를 전부 손으로 고쳐야 했다(자기검증 픽스처 몫). 그래서 [ContractSymbols.ENGINE_CORE_API]를
+     * 문자열 템플릿으로 끼워 넣는다 — [rootPackageMatcherFlagsRootImportsButNotGeneratedSymbols]가
+     * [MAIN_ACTIVITY]로 이미 하는 것과 같은 패턴이다. 이제 소스에 FQN **리터럴이 하나도 없어**
+     * [ContractSymbols.FIXTURE_FUNCTIONS] 예외 등록도 필요 없다.
+     */
     @Test
     fun detectionCatchesViolationsThatPlainImportStringWouldMiss() {
         val tempDir = java.nio.file.Files.createTempDirectory("layering-contract").toFile()
         try {
+            val enginecontractPackage = ENGINE_CORE_API.substringBeforeLast('.')
             // a) Wildcard import of the package + bare use of the forbidden type.
             val wildcardOffender = File(tempDir, "WildcardOffender.kt").apply {
                 writeText(
                     """
                     package sample
-                    import com.worksoc.goaicoach.shared.enginecontract.*
+                    import $enginecontractPackage.*
                     fun build(api: EngineCoreApi) = api
                     """.trimIndent(),
                 )
@@ -1469,7 +1479,7 @@ class LayeringContractTest {
                 writeText(
                     """
                     package sample
-                    fun build(api: com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi) = api
+                    fun build(api: $ENGINE_CORE_API) = api
                     """.trimIndent(),
                 )
             }
@@ -1478,7 +1488,7 @@ class LayeringContractTest {
                 writeText(
                     """
                     package sample
-                    import com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi as Engine
+                    import $ENGINE_CORE_API as Engine
                     fun build(api: Engine) = api
                     """.trimIndent(),
                 )
@@ -1488,7 +1498,7 @@ class LayeringContractTest {
                 writeText(
                     """
                     package sample
-                    import com.worksoc.goaicoach.middleware.*
+                    import $MIDDLEWARE_PACKAGE*
                     // EngineCoreApi is intentionally not referenced here.
                     fun build() = 1
                     """.trimIndent(),
@@ -1500,7 +1510,7 @@ class LayeringContractTest {
                 writeText(
                     """
                     package sample
-                    fun describe() = "see com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi for details"
+                    fun describe() = "see $ENGINE_CORE_API for details"
                     """.trimIndent(),
                 )
             }
@@ -1509,7 +1519,7 @@ class LayeringContractTest {
                 writeText(
                     """
                     package sample
-                    fun build() = 1 /* com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi */
+                    fun build() = 1 /* $ENGINE_CORE_API */
                     """.trimIndent(),
                 )
             }
@@ -1523,7 +1533,7 @@ class LayeringContractTest {
                     stringMention,
                     blockCommentMention,
                 ),
-                forbiddenImports = listOf("import com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi"),
+                forbiddenImports = listOf(importOf(ENGINE_CORE_API)),
             )
 
             assertTrue(
@@ -1814,8 +1824,10 @@ class LayeringContractTest {
      * Reports forbidden references in [files].
      *
      * Each [forbiddenImports] entry is written the way an import statement reads
-     * (e.g. `import com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi` for an exact type,
-     * or `import android.` for a package prefix). Detection is stronger than a raw
+     * (e.g. `importOf(`[ContractSymbols.ENGINE_CORE_API]`)` for an exact type — refactor
+     * backlog #69 spells the FQN out via the registry, not as prose text, so a symbol move
+     * doesn't leave this KDoc quoting a dead address — or `import android.` for a package
+     * prefix). Detection is stronger than a raw
      * `startsWith` on import lines: it also catches the two ways the plain
      * import-string check used to miss a violation —
      *  - a wildcard import of the type's package plus a bare use of the type name, and

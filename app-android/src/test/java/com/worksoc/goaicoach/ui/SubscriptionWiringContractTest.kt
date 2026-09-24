@@ -80,7 +80,7 @@ class SubscriptionWiringContractTest {
         )
         assertTrue(
             "`PremiumSource.Purchase`가 사라졌다 — 저장된 구독이 업데이트 한 번에 None이 된다(#158).",
-            source("../shared/src/commonMain/kotlin/com/worksoc/goaicoach/application/premium/state/PremiumState.kt")
+            source(RepoPaths.applicationPath("premium/state/PremiumState.kt").path)
                 .contains("Purchase,"),
         )
     }

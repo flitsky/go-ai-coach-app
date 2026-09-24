@@ -66,10 +66,8 @@ class PremiumSubscriptionExpiryContractTest {
      */
     @Test
     fun downgradeStillHappensOnlyThroughTheAuthoritativeNotOwnedGate() {
-        val application = File(
-            repoRoot,
-            "shared/src/commonMain/kotlin/com/worksoc/goaicoach/application/premium",
-        ).walkTopDown().filter { it.extension == "kt" }.map { it.readContractSource() }.joinToString("\n")
+        val application = RepoPaths.applicationPath("premium")
+            .walkTopDown().filter { it.extension == "kt" }.map { it.readContractSource() }.joinToString("\n")
         assertTrue(
             "`isAuthoritativeNotOwned` 관문이 사라졌다 — 조회 실패 한 번이 유료 구독자를 내리게 " +
                 "된다(#158이 막은 결함, #174가 조회를 잦게 만들어 위험이 커졌다).",

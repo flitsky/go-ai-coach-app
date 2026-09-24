@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.ui
 
+import com.worksoc.goaicoach.architecture.RepoPaths
 import com.worksoc.goaicoach.architecture.readContractSource
 import java.io.File
 import org.junit.Assert.assertFalse
@@ -99,7 +100,7 @@ class PlayEffectContractTest {
     @Test
     fun theNewOptionSurvivesAnAutosave() {
         val autosave = code(
-            "../shared/src/commonMain/kotlin/com/worksoc/goaicoach/application/preferences/UserPreferencesAutosaveApplication.kt",
+            RepoPaths.applicationPath("preferences/UserPreferencesAutosaveApplication.kt").path,
         )
         assertTrue(
             "자동저장 요청에 착수 이펙트가 없다 — 설정을 한 번 만지면 사용자가 끈 값이 되살아난다(함정 2번).",
@@ -119,7 +120,7 @@ class PlayEffectContractTest {
     @Test
     fun theDefaultIsOnAndTheMenuCanTurnItOff() {
         val snapshot = code(
-            "../shared/src/commonMain/kotlin/com/worksoc/goaicoach/application/preferences/UserPreferencesSnapshot.kt",
+            RepoPaths.applicationPath("preferences/UserPreferencesSnapshot.kt").path,
         )
         assertTrue(
             "착수 이펙트 기본값이 켜짐이 아니다 — 착수 전 결정은 **켜짐**이다(#145).",

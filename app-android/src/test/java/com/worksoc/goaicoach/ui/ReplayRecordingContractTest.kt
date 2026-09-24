@@ -22,12 +22,9 @@ class ReplayRecordingContractTest {
 
     private val goCoachApp = source("src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
     private val exitRecording = source(RepoPaths.compositionFile("GameExitRecording.kt").path)
-    private val topMoves = source(
-        "../shared/src/commonMain/kotlin/com/worksoc/goaicoach/application/topmoves/TopMovesApplication.kt",
-    )
-    private val gameHistoryAppend = source(
-        "../shared/src/commonMain/kotlin/com/worksoc/goaicoach/application/gamehistory/GameHistoryAppendApplication.kt",
-    )
+    private val topMoves = source(RepoPaths.applicationPath("topmoves/TopMovesApplication.kt").path)
+    private val gameHistoryAppend =
+        source(RepoPaths.applicationPath("gamehistory/GameHistoryAppendApplication.kt").path)
     private val wipe = source("src/main/java/com/worksoc/goaicoach/DeveloperModeResetCoordinator.kt")
 
     /**

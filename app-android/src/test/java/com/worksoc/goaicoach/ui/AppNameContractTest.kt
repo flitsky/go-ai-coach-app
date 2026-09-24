@@ -118,7 +118,7 @@ class AppNameContractTest {
      */
     @Test
     fun theDiagnosticNamesFollowTheKoreanLauncherName() {
-        val shared = File(repoRoot, "shared/src/commonMain/kotlin/com/worksoc/goaicoach/application")
+        val shared = RepoPaths.applicationPath()
         val sites = mapOf(
             "런타임 로그 `app=`(RuntimeEventApplication.kt)" to
                 Regex("""const val RuntimeAppName = "([^"]+)"""")

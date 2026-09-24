@@ -4,8 +4,8 @@ package com.worksoc.goaicoach.architecture
  * 계약 테스트가 **문자열로 들고 있는 심볼 주소(FQN)의 유일한 보관소**(refactor backlog #68).
  *
  * ## 왜 한 곳으로 모으는가
- * [LayeringContractTest]의 가드는 `"import com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi"`
- * 같은 **FQN 문자열**로 위반을 찾는다. 그런데 그 FQN이 **실재하는지 스스로 확인하지 않는다** —
+ * [LayeringContractTest]의 가드는 `importOf(`[ENGINE_CORE_API]`)`처럼 **FQN 문자열**로 위반을
+ * 찾는다. 그런데 그 FQN이 **실재하는지 스스로 확인하지 않는다** —
  * 심볼이 다른 패키지로 이사하면 그 규칙은 어떤 파일과도 매치하지 않고, **초록인 채 아무것도
  * 검사하지 않는다.** 아무것도 빨개지지 않으므로 아무도 모른다.
  *
@@ -22,11 +22,16 @@ package com.worksoc.goaicoach.architecture
  *  - 여기 적힌 주소가 **소스에 실재하는지** 검사하고([SourceSymbolIndex]),
  *  - `architecture/` 아래 **다른 파일에 FQN 리터럴이 새로 생기지 않았는지** 감시한다.
  *
- * ## 픽스처는 여기 없다
- * [LayeringContractTest.detectionCatchesViolationsThatPlainImportStringWouldMiss]는 탐지력을
- * 검증하려고 **일부러 위반 소스를 만든다.** 그 안의 FQN은 실재하지 않아도 정상이므로 등록 대상이
- * 아니고, 대신 [ContractSymbolContractTest]가 함수 이름으로 그 본문을 통째로 제외한다
- * (제외 목록은 [FIXTURE_FUNCTIONS], 그 함수가 실재하는지까지 확인한다).
+ * ## 픽스처는 원칙적으로 여기 없다
+ * [LayeringContractTest]류의 자기검증 픽스처가 탐지력을 검증하려고 **일부러 위반 소스를 만드는
+ * 경우가 있다.** 그 안의 FQN이 실재할 필요가 없는 진짜 가짜 주소라면 등록 대상이 아니고,
+ * [ContractSymbolContractTest]가 함수 이름으로 그 본문을 통째로 제외한다(제외 목록은
+ * [FIXTURE_FUNCTIONS], 그 함수가 실재하는지까지 확인한다). ⚠️ **하지만 실재하는 FQN을 그저
+ * 되풀이해 적어 둔 것뿐이라면 이 예외를 쓰지 말고 상수를 문자열 템플릿으로 참조하라** —
+ * `detectionCatchesViolationsThatPlainImportStringWouldMiss`가 정확히 그 오분류였다
+ * (refactor backlog #69). [ENGINE_CORE_API]는 가짜가 아니라 진짜 주소였고, 리터럴로 여섯 번
+ * 되풀이해 적혀 있어 `#24`의 패키지 이동 때 사람이 손으로 여섯 곳을 고쳐야 했다. 지금은
+ * 문자열 템플릿으로 그 상수를 참조해 [FIXTURE_FUNCTIONS]에서 빠졌다.
  */
 internal object ContractSymbols {
 
@@ -59,6 +64,13 @@ internal object ContractSymbols {
 
     /** UI 상태·표시 모델. platform 어댑터가 이것을 알면 4계층이 1계층을 거슬러 오른다(#25). */
     const val PRESENTATION_PACKAGE = "com.worksoc.goaicoach.presentation."
+
+    /**
+     * 원격 분석 게이트웨이가 사는 곳(refactor backlog #69). [LayeringContractTest]의 자기검증
+     * 픽스처가 "이 패키지와 무관한 wildcard import"의 음성 대조군으로 쓴다 — 예전엔 이 패키지
+     * 이름도 리터럴로 박혀 있었다.
+     */
+    const val MIDDLEWARE_PACKAGE = "com.worksoc.goaicoach.middleware."
 
     // ── 되살아나면 안 되는 최상위 함수 ────────────────────────────────────
     // `application/engine`에 있던 `EngineCoreApi` 확장 헬퍼들. EngineSessionClient의 멤버로
@@ -111,13 +123,19 @@ internal object ContractSymbols {
     fun importOf(fqn: String): String = "import $fqn"
 
     /**
-     * 가짜 FQN을 일부러 쓰는 자기검증 픽스처. [ContractSymbolContractTest]가 이 함수들의 **본문을
-     * 통째로 제외**하고 FQN 리터럴을 센다. 이름이 바뀌면 제외가 조용히 넓어지므로, 그 테스트는
-     * 여기 적힌 함수가 소스에 실재하는지도 함께 못박는다.
+     * 가짜 FQN을 일부러 쓰는 자기검증 픽스처의 이름. [ContractSymbolContractTest]가 이 함수들의
+     * **본문을 통째로 제외**하고 FQN 리터럴을 센다. 이름이 바뀌면 제외가 조용히 넓어지므로, 그
+     * 테스트는 여기 적힌 함수가 소스에 실재하는지도 함께 못박는다.
+     *
+     * ⚠️ refactor backlog #69 — `detectionCatchesViolationsThatPlainImportStringWouldMiss`가 여기
+     * 있었다. 그 픽스처는 실은 **가짜 FQN이 아니라 실재하는 [ENGINE_CORE_API]를 리터럴로 여섯 번
+     * 되풀이해 적어 둔 것**이었다 — `#24`가 그 패키지를 옮겼을 때 이 여섯 자리를 전부 손으로
+     * 고쳐야 했다. 이제 그 픽스처는 리터럴 대신 [ENGINE_CORE_API]를 문자열 템플릿으로 참조하므로
+     * (등록부가 이사를 자동으로 따라간다) 더는 예외가 필요 없어 목록이 비었다. **다음에 정말
+     * 가짜 FQN이 필요한 픽스처가 생기면 그때 여기 채운다** — 목록이 비어 있다고 이 메커니즘
+     * 자체를 지우면 안 된다.
      */
-    val FIXTURE_FUNCTIONS: List<String> = listOf(
-        "detectionCatchesViolationsThatPlainImportStringWouldMiss",
-    )
+    val FIXTURE_FUNCTIONS: List<String> = emptyList()
 
     /** 가드가 실제로 들고 있는 주소 전부와, 각 주소에 기대하는 바. */
     val GUARDED: List<GuardedSymbol> = listOf(
@@ -175,6 +193,12 @@ internal object ContractSymbols {
             SymbolKind.PACKAGE,
             SymbolExpectation.MUST_EXIST,
             "platform 어댑터가 presentation을 모르게 한다(#25)",
+        ),
+        GuardedSymbol(
+            MIDDLEWARE_PACKAGE,
+            SymbolKind.PACKAGE,
+            SymbolExpectation.MUST_EXIST,
+            "자기검증 픽스처의 무관 패키지 음성 대조군(#69)",
         ),
         GuardedSymbol(
             APPLICATION_PACKAGE,
