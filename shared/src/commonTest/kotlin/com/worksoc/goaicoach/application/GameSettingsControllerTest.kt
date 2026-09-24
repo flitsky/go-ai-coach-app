@@ -9,6 +9,8 @@ import com.worksoc.goaicoach.application.session.*
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.shared.domain.BoardSize
+import com.worksoc.goaicoach.shared.domain.DefaultKomi
+import com.worksoc.goaicoach.shared.domain.HandicapKomi
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
@@ -397,6 +399,89 @@ class GameSettingsControllerTest {
     }
 
     /**
+     * **접바둑을 고르면 드롭다운의 덤이 곧바로 0.5가 된다**(refactor backlog #93, 2026-09-24 사용자 결정).
+     * 로비·설정 화면의 드롭다운은 `gameState.komi`(미리보기)를 그리므로, 설정 상태만 바뀌고 미리보기가
+     * 다시 그려지지 않으면 저장은 0.5인데 화면은 6.5로 남는다.
+     */
+    @Test
+    fun choosingAHandicapShowsHandicapKomiImmediately() {
+        val live = LiveSettingsWiring(restartFrom(UserPreferencesSnapshot()))
+        val controller = liveWiredController(live)
+        assertEquals(DefaultKomi, live.displayedKomi)
+
+        controller.changeHandicapCount(3)
+
+        assertEquals(3, live.settings.handicapCount)
+        assertEquals(3, live.core.gameState.handicapCount, "미리보기 판에 접바둑 돌이 안 놓였다")
+        assertEquals(HandicapKomi, live.displayedKomi, "접바둑을 골랐는데 드롭다운의 덤이 0.5가 아니다")
+    }
+
+    /**
+     * **함정 2(자동저장 배선)** — 자동 전환한 0.5가 자동저장을 지나 재시작 뒤에도 남는가.
+     * 자동저장은 스냅샷을 처음부터 다시 만들고, 덤은 `GoCoachApp`이 미리보기의 `gameState.komi`로
+     * 넘긴다. 재시작 뒤 점수만 바꾸면(3→5) 0.5가 그대로여야 하고, 호선으로 돌아오면 6.5다.
+     */
+    @Test
+    fun handicapKomiSurvivesAutosaveAndRestart() {
+        val store = InMemoryPreferencesStore()
+        val first = LiveSettingsWiring(restartFrom(store.load()))
+        liveWiredController(first).changeHandicapCount(3)
+        autosaveLikeTheApp(first, store)
+        assertEquals(HandicapKomi, store.load().komi, "자동저장이 0.5를 적지 않았다")
+
+        val second = LiveSettingsWiring(restartFrom(store.load()))
+        val controller = liveWiredController(second)
+        assertEquals(3, second.settings.handicapCount)
+        assertEquals(HandicapKomi, second.displayedKomi, "재시작 뒤 덤이 0.5가 아니다")
+
+        controller.changeHandicapCount(5)
+        assertEquals(HandicapKomi, second.displayedKomi, "재시작 뒤 점수만 바꿨는데(3→5) 덤이 바뀌었다")
+
+        controller.changeHandicapCount(0)
+        assertEquals(DefaultKomi, second.displayedKomi, "0.5 그대로 호선으로 돌아왔는데 6.5가 아니다")
+        autosaveLikeTheApp(second, store)
+
+        val third = LiveSettingsWiring(restartFrom(store.load()))
+        assertEquals(0, third.settings.handicapCount)
+        assertEquals(DefaultKomi, third.displayedKomi)
+    }
+
+    /** 사용자가 접바둑에서 덤을 7.5로 고쳐 두면, 재시작한 뒤 호선으로 돌아와도 7.5가 남는다. */
+    @Test
+    fun userEditedKomiSurvivesLeavingTheHandicapAfterRestart() {
+        val store = InMemoryPreferencesStore()
+        val first = LiveSettingsWiring(restartFrom(store.load()))
+        val firstController = liveWiredController(first)
+        firstController.changeHandicapCount(3)
+        firstController.changeKomi(7.5)
+        assertEquals(7.5, first.displayedKomi)
+        autosaveLikeTheApp(first, store)
+
+        val second = LiveSettingsWiring(restartFrom(store.load()))
+        liveWiredController(second).changeHandicapCount(0)
+
+        assertEquals(7.5, second.displayedKomi, "사용자가 고친 덤 7.5가 호선으로 돌아오며 사라졌다")
+        autosaveLikeTheApp(second, store)
+        assertEquals(7.5, store.load().komi)
+    }
+
+    /**
+     * **이관 없음**(사용자 결정) — 이미 *"접바둑 + 덤 6.5"* 로 저장된 설정은 그 사용자가 고른 값이다.
+     * 재시작해도, 점수만 바꿔도 6.5로 남는다.
+     */
+    @Test
+    fun savedHandicapWithDefaultKomiIsNotMigrated() {
+        val live = LiveSettingsWiring(
+            restartFrom(UserPreferencesSnapshot(boardSize = BoardSize.Nineteen, handicapCount = 3, komi = DefaultKomi)),
+        )
+        assertEquals(DefaultKomi, live.displayedKomi, "저장된 접바둑 + 6.5가 재시작에서 바뀌었다")
+
+        liveWiredController(live).changeHandicapCount(4)
+
+        assertEquals(DefaultKomi, live.displayedKomi, "저장된 접바둑의 점수만 바꿨는데 덤이 바뀌었다")
+    }
+
+    /**
      * 앱 배선(`SettingsAndDiagnosticsControllerWiring`)과 **같은 모양**으로 설정·코어 상태를 실제로
      * 갈아끼우는 컨트롤러. 위 테스트들처럼 람다가 값을 받아 적기만 하면 *"설정 상태에서 미리보기로"*
      * 흐르는 경로가 보이지 않는다.
@@ -511,4 +596,35 @@ private class LiveSettingsWiring(plan: InitialUserPreferencesPlan) {
     var settings: GameSessionSettingsState = plan.toGameSessionSettingsState()
     var core: GameSessionCoreState = defaultTestCoreState().copy(gameState = plan.gameState, isGameEnded = true)
     val displayedKomi: Double get() = core.gameState.komi
+}
+
+/**
+ * `GoCoachApp`의 자동저장 `LaunchedEffect`와 같은 요청 — 덤은 **미리보기의** `gameState.komi`,
+ * 대국 설정은 설정 상태다. 표시 옵션은 이 테스트와 무관해 스냅샷 기본값을 넘긴다.
+ */
+private fun autosaveLikeTheApp(live: LiveSettingsWiring, store: UserPreferencesStorePort) {
+    val defaults = UserPreferencesSnapshot()
+    runUserPreferencesAutosave(
+        request = UserPreferencesAutosaveRequest(
+            settingsState = live.settings,
+            ruleset = live.core.gameState.ruleset,
+            komi = live.core.gameState.komi,
+            showCoordinates = defaults.showCoordinates,
+            showMoveNumbers = defaults.showMoveNumbers,
+            showLastMoveRing = defaults.showLastMoveRing,
+            showOwnershipOverlay = defaults.showOwnershipOverlay,
+            isDirectPlayEnabled = defaults.isDirectPlayEnabled,
+        ),
+        store = store,
+    )
+}
+
+private class InMemoryPreferencesStore : UserPreferencesStorePort {
+    private var saved: UserPreferencesSnapshot = UserPreferencesSnapshot()
+
+    override fun save(snapshot: UserPreferencesSnapshot) {
+        saved = snapshot
+    }
+
+    override fun load(): UserPreferencesSnapshot = saved
 }

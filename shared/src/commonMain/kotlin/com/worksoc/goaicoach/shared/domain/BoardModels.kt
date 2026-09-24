@@ -1,7 +1,14 @@
 package com.worksoc.goaicoach.shared.domain
 
 const val DefaultKomi = 6.5
-val KomiOptions = listOf(0.5, 6.5, 7.5)
+
+/**
+ * 접바둑 덤 — 접바둑(2점 이상)을 고르면 덤이 이 값으로 바뀐다(refactor backlog #93, 2026-09-24 사용자 결정).
+ * 한국 관습(접바둑 덤 0 또는 0.5)을 따른다. ⚠️ [KomiOptions]에 들어 있어야 드롭다운이 이 값을 보인다.
+ */
+const val HandicapKomi = 0.5
+
+val KomiOptions = listOf(HandicapKomi, DefaultKomi, 7.5)
 
 data class BoardSize(val value: Int) {
     init {

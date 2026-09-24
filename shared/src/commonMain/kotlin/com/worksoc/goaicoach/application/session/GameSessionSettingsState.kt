@@ -28,8 +28,23 @@ data class GameSessionSettingsState(
             handicapCount = handicapCount.coerceAtMost(size.maxHandicapCount),
         )
 
-    fun applyHandicap(count: Int): GameSessionSettingsState =
-        copy(handicapCount = count.coerceIn(0, boardSize.maxHandicapCount))
+    /**
+     * 접바둑을 바꾸면 **덤도 함께** 정한다 — 규칙은 [komiAfterHandicapChange]가 갖는다
+     * (refactor backlog #93). 로비와 설정 화면이 모두 `GameSettingsController.changeHandicapCount`를
+     * 거쳐 여기에 닿으므로 이 한 곳이 두 화면을 함께 덮는다. 이어지는 `refreshNewGamePreview`가
+     * 이 덤으로 미리보기를 다시 그려 드롭다운에 곧바로 보이고, 자동저장은 그 미리보기의 덤을 적는다.
+     */
+    fun applyHandicap(count: Int): GameSessionSettingsState {
+        val nextCount = count.coerceIn(0, boardSize.maxHandicapCount)
+        return copy(
+            handicapCount = nextCount,
+            komi = komiAfterHandicapChange(
+                previousHandicap = handicapCount,
+                newHandicap = nextCount,
+                currentKomi = komi,
+            ),
+        )
+    }
 
     fun applyKomi(nextKomi: Double): GameSessionSettingsState =
         copy(komi = nextKomi)

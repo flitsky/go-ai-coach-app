@@ -157,6 +157,23 @@ class GameUiEventDispatchTest {
         assertEquals(BoardSize.Thirteen, selected)
     }
 
+    /**
+     * 로비(`GameSetupLobby`)와 설정 화면(`SettingsScreen`)의 접바둑 드롭다운은 둘 다 이 이벤트를 낸다 —
+     * 그것이 `GameSettingsController.changeHandicapCount` 한 곳에 닿아야 덤 자동 전환(refactor backlog #93)이
+     * 두 화면을 함께 덮는다.
+     */
+    @Test
+    fun dispatchChangeHandicapCountRoutesToHandler() {
+        var selected = 0
+        val handlers = handlers(
+            changeHandicapCount = { count -> selected = count },
+        )
+
+        dispatchGameUiEvent(GameUiEvent.ChangeHandicapCount(3), handlers)
+
+        assertEquals(3, selected)
+    }
+
     private fun handlers(
         currentPlayer: () -> StoneColor = { StoneColor.Black },
         isTopMovesEnabled: () -> Boolean = { false },
@@ -181,6 +198,7 @@ class GameUiEventDispatchTest {
         changeScoringRule: (Ruleset) -> Unit = {},
         changeKomi: (Double) -> Unit = {},
         changeUxOptions: (KaTrainUxOptions) -> Unit = {},
+        changeHandicapCount: (Int) -> Unit = {},
     ): GameUiEventHandlers =
         buildGameUiEventHandlers(
             currentPlayer = currentPlayer,
@@ -206,7 +224,7 @@ class GameUiEventDispatchTest {
             changeScoringRule = changeScoringRule,
             changeKomi = changeKomi,
             changeUxOptions = changeUxOptions,
-            changeHandicapCount = {},
+            changeHandicapCount = changeHandicapCount,
             reportEngineTurnWatchdogTriggered = { _, _ -> },
             forceResetEngine = {},
         )
