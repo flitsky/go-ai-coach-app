@@ -1,20 +1,13 @@
 package com.worksoc.goaicoach.application.runtime
 
-import com.worksoc.goaicoach.application.humanmove.HumanEngineSyncDisplayPlan
-import com.worksoc.goaicoach.application.humanmove.HumanEngineSyncFailurePlan
-import com.worksoc.goaicoach.application.humanmove.HumanMoveLocalResult
 import com.worksoc.goaicoach.application.session.GameSessionControllerState
 import com.worksoc.goaicoach.application.session.GameSessionRuntimeState
-import com.worksoc.goaicoach.application.contract.RuntimePlayLevelSelection
-import com.worksoc.goaicoach.application.session.TurnTimeMoveUpdate
 import com.worksoc.goaicoach.shared.policy.EngineOperationResultGuard
-import com.worksoc.goaicoach.application.startgame.GameSessionResetPlan
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.summary
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
 import com.worksoc.goaicoach.shared.domain.GameState
-import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
 import com.worksoc.goaicoach.shared.domain.StoneColor
@@ -146,30 +139,6 @@ fun runtimeAppStartLog(context: RuntimeLogContext): String =
         detail = "App process started. Engine bootstrap will run, then saved-session resume check may appear.",
     )
 
-fun runtimeGameResetLog(
-    context: RuntimeLogContext,
-    reset: GameSessionResetPlan,
-): String =
-    context.event(
-        name = "game_reset",
-        phase = "game_setup",
-        transition = contextTransitionAfter(reset.gameState, context),
-        detail = "New local board prepared. message=${reset.engineMessage.runtimeLogSnippet(220)}",
-    )
-
-fun runtimeEngineGameStartRequestLog(
-    context: RuntimeLogContext,
-    ruleset: Ruleset,
-    runtime: RuntimePlayLevelSelection,
-): String =
-    context.event(
-        name = "engine_game_start_request",
-        phase = "engine_game_setup",
-        transition = "start_engine_new_game_then_reset_local_board",
-        detail = "ruleset=$ruleset runtimeLevel=${runtime.playLevel.displayLabel} " +
-            "limit=${runtime.engineProfile.analysisLimit.runtimeLogSummary()}",
-    )
-
 fun runtimeEngineGameStartSuccessLog(
     context: RuntimeLogContext,
     elapsedMs: Long,
@@ -247,57 +216,6 @@ fun runtimeEngineOperationDiscardedLog(
             "current=${context.gameState.runtimeBoardSummary()}",
     )
 
-fun runtimeHumanMoveAcceptedLog(
-    context: RuntimeLogContext,
-    beforeMove: GameState,
-    localMove: HumanMoveLocalResult,
-    turnTimeUpdate: TurnTimeMoveUpdate? = null,
-): String =
-    context.event(
-        name = "human_move_accepted",
-        phase = "human_turn",
-        transition = if (localMove.afterMove.hasConsecutivePasses() || localMove.afterMove.isBoardFull()) {
-            "resolve_endgame_score_or_engine_sync"
-        } else if (context.isEngineReady) {
-            "sync_engine_after_human_move"
-        } else {
-            contextTransitionAfter(localMove.afterMove, context)
-        },
-        detail = "move=${localMove.lastMoveText} before=${beforeMove.runtimeBoardSummary()} " +
-            "after=${localMove.afterMove.runtimeBoardSummary()} review=${localMove.moveReview.text.runtimeLogSnippet(240)} " +
-            "turnTime=${turnTimeUpdate?.runtimeText()?.runtimeLogSnippet(140) ?: "not_recorded"} " +
-            "captured=${localMove.capturedText.runtimeLogSnippet(120)}",
-    )
-
-fun runtimeHumanEngineSyncSuccessLog(
-    context: RuntimeLogContext,
-    sync: HumanEngineSyncDisplayPlan,
-    elapsedMs: Long,
-): String =
-    context.event(
-        name = "human_engine_sync_success",
-        phase = "human_turn",
-        transition = when (sync) {
-            is HumanEngineSyncDisplayPlan.FinalScore -> "game_over_wait_for_new_game_or_undo"
-            is HumanEngineSyncDisplayPlan.ScoreEstimate -> "request_top_moves_for_next_turn"
-            HumanEngineSyncDisplayPlan.NoUpdate -> contextTransitionAfter(context.gameState, context)
-        },
-        detail = "elapsedMs=$elapsedMs result=${sync.runtimeSyncSummary()}",
-    )
-
-fun runtimeHumanEngineSyncFailureLog(
-    context: RuntimeLogContext,
-    failure: HumanEngineSyncFailurePlan,
-    elapsedMs: Long,
-): String =
-    context.event(
-        name = "human_engine_sync_failure",
-        phase = "human_turn",
-        transition = "keep_human_move_show_sync_failure",
-        detail = "elapsedMs=$elapsedMs message=${failure.engineMessage.runtimeLogSnippet(220)} " +
-            "candidateText=${failure.candidateText.runtimeLogSnippet(180)}",
-    )
-
 // 그래프에 찍히는 점수(scoreSnapshots)는 8곳 넘는 서로 다른 코드 경로에서 갱신될 수 있고,
 // 그중 일부는 정상적인 흐름의 진행 이벤트(game_reset, ai_turn_success 등) 로그와는 별개로
 // 조용히 실행된다 — 예: 엔진 부트스트랩 완료(engine_startup) 시점에 매번 스코어를 새로 계산해
@@ -343,17 +261,6 @@ private fun List<ScoreSnapshot>.runtimeLatestScoreLabel(): String {
         else -> "0.0"
     }
 }
-
-private fun HumanEngineSyncDisplayPlan.runtimeSyncSummary(): String =
-    when (this) {
-        is HumanEngineSyncDisplayPlan.FinalScore ->
-            "final_score timings=${display.endgameTimingSummary ?: "none"} " +
-                "score=${display.scoreText.runtimeLogSnippet(160)}"
-        is HumanEngineSyncDisplayPlan.ScoreEstimate ->
-            "score_estimate nextFp=${nextAnalysisState.runtimeShortFingerprint()} score=${display.scoreText.runtimeLogSnippet(160)}"
-        HumanEngineSyncDisplayPlan.NoUpdate ->
-            "no_update"
-    }
 
 internal fun contextTransitionAfter(
     state: GameState,

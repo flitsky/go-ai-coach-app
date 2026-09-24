@@ -6,9 +6,6 @@ import com.worksoc.goaicoach.shared.policy.EngineOperationResultGuard
 import com.worksoc.goaicoach.application.engine.runEngineIo
 import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
 import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
-import com.worksoc.goaicoach.application.runtime.runtimeAiTurnEndgameDetectedLog
-import com.worksoc.goaicoach.application.runtime.runtimeAiTurnEndgameFailureLog
-import com.worksoc.goaicoach.application.runtime.runtimeAiTurnEndgameSuccessLog
 import com.worksoc.goaicoach.application.score.EndgameFailureDisplayPlan
 import com.worksoc.goaicoach.application.score.FinalScoreDisplayPlan
 import com.worksoc.goaicoach.shared.domain.GameState

@@ -6,10 +6,6 @@ import com.worksoc.goaicoach.shared.policy.EngineOperationResultGuard
 import com.worksoc.goaicoach.application.engine.runEngineIo
 import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
 import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
-import com.worksoc.goaicoach.application.runtime.runtimeAiTurnBeginLog
-import com.worksoc.goaicoach.application.runtime.runtimeAiTurnCompleteLog
-import com.worksoc.goaicoach.application.runtime.runtimeAiTurnScheduleCancelledLog
-import com.worksoc.goaicoach.application.runtime.runtimeAiTurnScheduleLog
 import com.worksoc.goaicoach.application.session.GameSessionControllerState
 import com.worksoc.goaicoach.application.session.GameSessionEffect
 import com.worksoc.goaicoach.application.session.GameSessionRuntimeState

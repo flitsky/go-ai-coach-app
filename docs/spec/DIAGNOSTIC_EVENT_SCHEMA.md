@@ -248,7 +248,7 @@ event=ai_turn_begin phase=ai_turn app="바둑 AI" purpose="..." mode=AiVsHuman s
 | `human_engine_sync_success` | human_move | 사람 착수의 엔진 동기화 성공 |
 | `human_engine_sync_failure` | human_move | 사람 착수의 엔진 동기화 실패 |
 
-이 표는 `RuntimeEventApplication.kt`의 함수 목록과 1:1로 대응한다. 새 runtime event를 추가하면 이 표도 같이 갱신한다.
+이 표는 `RuntimeEventApplication.kt`와 기능별 로그 빌더 파일 셋(`application/autoai/RuntimeAiTurnEventApplication.kt`·`application/humanmove/RuntimeHumanMoveEventApplication.kt`·`application/startgame/RuntimeGameStartEventApplication.kt`)의 함수 목록과 1:1로 대응한다. 새 runtime event를 추가하면 이 표도 같이 갱신한다.
 
 ## 확장 예정
 

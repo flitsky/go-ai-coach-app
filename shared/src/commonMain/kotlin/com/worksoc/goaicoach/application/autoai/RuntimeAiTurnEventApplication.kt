@@ -1,7 +1,13 @@
-package com.worksoc.goaicoach.application.runtime
+package com.worksoc.goaicoach.application.autoai
 
-import com.worksoc.goaicoach.application.autoai.AutoAiTurnDisplayPlan
 import com.worksoc.goaicoach.application.endgame.AiEndgameResolution
+import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
+import com.worksoc.goaicoach.application.runtime.contextTransitionAfter
+import com.worksoc.goaicoach.application.runtime.runtimeBoardSummary
+import com.worksoc.goaicoach.application.runtime.runtimeErrorText
+import com.worksoc.goaicoach.application.runtime.runtimeLogSnippet
+import com.worksoc.goaicoach.application.runtime.runtimeLogSummary
+import com.worksoc.goaicoach.application.runtime.runtimeShortFingerprint
 import com.worksoc.goaicoach.application.session.TurnTimeMoveUpdate
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit

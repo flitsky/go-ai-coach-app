@@ -5,9 +5,6 @@ import com.worksoc.goaicoach.application.engine.EngineSessionClient
 import com.worksoc.goaicoach.shared.policy.EngineOperationResultGuard
 import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
 import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
-import com.worksoc.goaicoach.application.runtime.runtimeHumanEngineSyncFailureLog
-import com.worksoc.goaicoach.application.runtime.runtimeHumanEngineSyncSuccessLog
-import com.worksoc.goaicoach.application.runtime.runtimeHumanMoveAcceptedLog
 import com.worksoc.goaicoach.application.score.FinalScoreDisplayPlan
 import com.worksoc.goaicoach.application.score.ScoreEstimateDisplayPlan
 import com.worksoc.goaicoach.application.score.buildLocalFinalScoreDisplayPlan

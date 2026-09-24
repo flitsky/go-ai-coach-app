@@ -6,7 +6,7 @@ import com.worksoc.goaicoach.application.session.GameSessionTurnTimeState
 import com.worksoc.goaicoach.application.contract.RuntimePlayLevelSelection
 import com.worksoc.goaicoach.application.startgame.GameSessionResetPlan
 import com.worksoc.goaicoach.application.startgame.NewGameController
-import com.worksoc.goaicoach.application.runtime.runtimeGameResetLog
+import com.worksoc.goaicoach.application.startgame.runtimeGameResetLog
 import com.worksoc.goaicoach.application.topmoves.TopMovesController
 
 /**

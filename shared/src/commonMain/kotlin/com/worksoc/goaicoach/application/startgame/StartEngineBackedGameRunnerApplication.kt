@@ -8,7 +8,6 @@ import com.worksoc.goaicoach.application.engine.runEngineIo
 import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
 import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
 import com.worksoc.goaicoach.application.runtime.runtimeEngineGameStartFailureLog
-import com.worksoc.goaicoach.application.runtime.runtimeEngineGameStartRequestLog
 import com.worksoc.goaicoach.application.runtime.runtimeEngineGameStartSuccessLog
 import com.worksoc.goaicoach.application.session.GameSessionEffect
 import com.worksoc.goaicoach.application.session.GameSessionScoreState
