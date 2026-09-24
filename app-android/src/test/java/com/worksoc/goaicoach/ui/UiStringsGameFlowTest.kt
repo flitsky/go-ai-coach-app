@@ -18,6 +18,7 @@ class UiStringsGameFlowTest {
         "passNoticeTitle" to ::passNoticeTitleFor,
         "scoreNowPromptTitle" to ::scoreNowPromptTitleFor,
         "scoreNowPromptBody" to ::scoreNowPromptBodyFor,
+        "whiteHandicapBonusTerm" to ::whiteHandicapBonusTermFor,
     )
 
     @Test
@@ -77,6 +78,27 @@ class UiStringsGameFlowTest {
                 "${language.name}에서 종료 팝업과 하단 바 문구가 같아졌다 — 둘은 참이 되는 조건이 다르다(#175).",
                 rematchActionFor(language) != UiStrings.forLanguage(language).newGameAction,
             )
+        }
+    }
+
+    /**
+     * ⚠️ **면적계가 접바둑의 백 줄은 네 언어 모두 보정 항을 밝힌다**(refactor backlog #89).
+     *
+     * 합계에 보정 N이 들어 있어, 항이 빠지면 "돌 + 집 + 덤 = 합계"가 N만큼 안 맞아 보인다.
+     * 보정이 0이면(맞바둑·집계가·옛 저장본) 항을 붙이지 않는다 — 예전 줄이 그대로여야 한다.
+     */
+    @Test
+    fun theAreaScoringWhiteLineNamesTheHandicapBonusOnlyWhenThereIsOne() {
+        UiLanguage.entries.forEach { language ->
+            val strings = UiStrings.forLanguage(language)
+            val term = whiteHandicapBonusTermFor(language)
+
+            val withBonus = strings.scoreTextDetailAreaKomi(komi = 6.5, total = 45.5, handicapBonus = 2.0)
+            assertTrue("${language.name} 백 줄이 보정 항을 밝히지 않는다: $withBonus (#89)", withBonus.contains("+ $term 2 "))
+
+            val withoutBonus = strings.scoreTextDetailAreaKomi(komi = 6.5, total = 43.5)
+            assertTrue("${language.name} 보정 0인데 항이 붙었다: $withoutBonus (#89)", !withoutBonus.contains(term))
+            assertEquals(withoutBonus, strings.scoreTextDetailAreaKomi(komi = 6.5, total = 43.5, handicapBonus = 0.0))
         }
     }
 }

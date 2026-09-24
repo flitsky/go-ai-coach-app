@@ -1219,14 +1219,24 @@ internal data class UiStrings(
         }
     }
 
-    fun scoreTextDetailAreaKomi(komi: Double, total: Double): String {
+    /**
+     * 면적계가 백 줄. [handicapBonus]가 0보다 크면(면적계가 접바둑, refactor backlog #89) 덤 뒤에
+     * "+ 접바둑 보정 N"을 붙인다 — [total]에 그 N이 들어 있으므로 빼면 합이 안 맞아 보인다.
+     * 항 이름은 곁표 [whiteHandicapBonusTermFor]에 있다(생성자 여유 0칸, 함정 61).
+     */
+    fun scoreTextDetailAreaKomi(komi: Double, total: Double, handicapBonus: Double = 0.0): String {
         val kVal = komi.formatScoreNumber()
         val tot = total.formatScoreNumber()
+        val bonus = if (handicapBonus > 0.0) {
+            " + ${whiteHandicapBonusTermFor(language)} ${handicapBonus.formatScoreNumber()}"
+        } else {
+            ""
+        }
         return when (language) {
-            UiLanguage.Korean -> "백: 돌 + 집 + 덤 $kVal = ${tot}집"
-            UiLanguage.English -> "White: Stone + Territory + Komi $kVal = ${tot} points"
-            UiLanguage.Japanese -> "白: 石 + 地合 + コミ $kVal = ${tot}目"
-            UiLanguage.ChineseSimplified -> "白: 子数 + 目数 + 贴目 $kVal = ${tot}目"
+            UiLanguage.Korean -> "백: 돌 + 집 + 덤 $kVal$bonus = ${tot}집"
+            UiLanguage.English -> "White: Stone + Territory + Komi $kVal$bonus = ${tot} points"
+            UiLanguage.Japanese -> "白: 石 + 地合 + コミ $kVal$bonus = ${tot}目"
+            UiLanguage.ChineseSimplified -> "白: 子数 + 目数 + 贴目 $kVal$bonus = ${tot}目"
         }
     }
 

@@ -68,6 +68,20 @@ private val ScoreNowPromptBodies: Map<UiLanguage, String> = mapOf(
     UiLanguage.ChineseSimplified to "对手停一手。选择「是」则己方也停一手，结束对局并点目。选择「否」则继续对局。",
 )
 
+/**
+ * 계가 팝업 백 줄의 **접바둑 보정** 항(refactor backlog #89) — 면적계가 접바둑에서 백이 받는
+ * 접바둑 돌 수(N)만큼의 점수다. [UiStrings.scoreTextDetailAreaKomi]가 "덤 k" 뒤에 붙인다.
+ *
+ * ⚠️ 이 항이 없으면 합계가 "돌 + 집 + 덤"보다 N 크게 찍혀 **계산이 틀린 것처럼** 읽힌다 —
+ * 보정이 있는 판에서는 반드시 보여야 한다(`UiStringsGameFlowTest`가 네 언어를 지킨다).
+ */
+private val WhiteHandicapBonusTerms: Map<UiLanguage, String> = mapOf(
+    UiLanguage.Korean to "접바둑 보정",
+    UiLanguage.English to "Handicap bonus",
+    UiLanguage.Japanese to "置き石補正",
+    UiLanguage.ChineseSimplified to "让子补偿",
+)
+
 internal fun rematchActionFor(language: UiLanguage): String = RematchActions.getValue(language)
 
 internal fun reviewGameActionFor(language: UiLanguage): String = ReviewGameActions.getValue(language)
@@ -81,3 +95,6 @@ internal fun scoreNowPromptTitleFor(language: UiLanguage): String =
 
 internal fun scoreNowPromptBodyFor(language: UiLanguage): String =
     ScoreNowPromptBodies.getValue(language)
+
+internal fun whiteHandicapBonusTermFor(language: UiLanguage): String =
+    WhiteHandicapBonusTerms.getValue(language)

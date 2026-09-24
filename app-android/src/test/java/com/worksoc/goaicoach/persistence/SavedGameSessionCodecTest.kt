@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.persistence
 
 import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
+import com.worksoc.goaicoach.application.score.FinalScoreJudgement
 import com.worksoc.goaicoach.match.HumanGameType
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
@@ -123,6 +124,65 @@ class SavedGameSessionCodecTest {
         assertEquals(DefaultKomi, restored?.gameState?.komi)
     }
 
+    // ------------------------------------------- 종국 판정의 접바둑 보정(refactor backlog #89)
+
+    /** 면적계가 접바둑 판정의 보정 N이 이어하기(종국 팝업 복원)에서 유실되지 않는다. */
+    @Test
+    fun finalScoreJudgementRoundTripKeepsTheWhiteHandicapBonus() {
+        val judgement = chineseHandicapJudgement(whiteHandicapBonus = 2.0)
+
+        val restored = SavedGameSessionCodec.decode(SavedGameSessionCodec.encode(finishedSnapshot(judgement)))
+
+        assertEquals(judgement, restored?.finalScoreJudgement)
+        assertEquals(2.0, restored?.finalScoreJudgement?.whiteHandicapBonus ?: -1.0, 0.0)
+    }
+
+    /**
+     * **옛 저장본 → 새 코드**: 키가 없던 판정은 0으로 읽힌다. 그 판정은 보정 없이 계가됐으므로
+     * 0이어야 백 합계(`whiteAreaWithKomi`)와 맞는다 — 결과 팝업이 없던 보정을 지어내지 않는다.
+     *
+     * 판정은 **기록된 그대로**다(이관하지 않는다, #89) — 같은 국면을 고치기 전 코드가 저장한
+     * 흑 0.5 승(백 합계 43.5)은 흑 0.5 승으로 돌아온다.
+     */
+    @Test
+    fun legacyFinalScoreJudgementWithoutTheBonusKeyReadsAsZeroAndKeepsItsRecordedResult() {
+        val recordedBeforeTheFix = chineseHandicapJudgement(whiteHandicapBonus = 0.0)
+            .copy(winner = StoneColor.Black, margin = 0.5)
+        val encoded = JSONObject(SavedGameSessionCodec.encode(finishedSnapshot(recordedBeforeTheFix)))
+        encoded.getJSONObject("finalScoreJudgement").remove("whiteHandicapBonus")
+
+        val restored = SavedGameSessionCodec.decode(encoded.toString())
+
+        assertEquals(0.0, restored?.finalScoreJudgement?.whiteHandicapBonus ?: -1.0, 0.0)
+        assertEquals(recordedBeforeTheFix, restored?.finalScoreJudgement)
+        assertEquals(43.5, restored?.finalScoreJudgement?.whiteAreaWithKomi ?: -1.0, 0.0)
+    }
+
+    /**
+     * **새 저장본 → 옛 코드**: 필드를 더했을 뿐 **스키마 번호는 그대로**이고(함정 69), 판정 JSON은
+     * 예전 키를 하나도 빼거나 바꾸지 않고 `whiteHandicapBonus` 하나만 **더했다**. 옛 decode는 키를
+     * 이름으로 `optXxx`해 꺼낼 뿐 모르는 키를 보지 않으므로 이 저장본을 그대로 읽는다(보정만 모른 채).
+     * 그 성질 — "모르는 키가 섞여도 판정을 읽는다" — 을 지금의 decode로 함께 고정한다.
+     */
+    @Test
+    fun theBonusKeyIsAPureAdditionThatAnOlderDecoderCanIgnore() {
+        val encoded = JSONObject(SavedGameSessionCodec.encode(finishedSnapshot(chineseHandicapJudgement(whiteHandicapBonus = 2.0))))
+
+        assertEquals(1, encoded.getInt("schema"))
+        val judgementKeys = encoded.getJSONObject("finalScoreJudgement").keys().asSequence().toSet()
+        assertEquals(
+            setOf(
+                "winner", "margin", "ruleset", "isEstimatedDisplay", "removedBlack", "removedWhite",
+                "blackArea", "whiteAreaWithKomi", "capturedByBlack", "capturedByWhite", "komi", "handicapCount",
+            ) + "whiteHandicapBonus",
+            judgementKeys,
+        )
+
+        encoded.getJSONObject("finalScoreJudgement").put("someKeyFromTheFuture", 42)
+        val restored = SavedGameSessionCodec.decode(encoded.toString())
+        assertEquals(chineseHandicapJudgement(whiteHandicapBonus = 2.0), restored?.finalScoreJudgement)
+    }
+
     @Test
     fun invalidJsonReturnsNull() {
         assertNull(SavedGameSessionCodec.decode("{broken"))
@@ -165,4 +225,37 @@ class SavedGameSessionCodecTest {
             ).isResumable,
         )
     }
+
+    /**
+     * #89 재현 국면의 판정 — 흑 44 대 백 37 + 덤 6.5 + 보정 [whiteHandicapBonus], 백 1.5 승.
+     * 보정 0이면 백 합계는 43.5다(승패 필드는 호출부가 필요하면 `copy`로 바꾼다).
+     */
+    private fun chineseHandicapJudgement(whiteHandicapBonus: Double): FinalScoreJudgement =
+        FinalScoreJudgement(
+            winner = StoneColor.White,
+            margin = 1.5,
+            ruleset = Ruleset.Chinese,
+            isEstimatedDisplay = false,
+            removedBlack = 0,
+            removedWhite = 0,
+            blackArea = 44.0,
+            whiteAreaWithKomi = 43.5 + whiteHandicapBonus,
+            capturedByBlack = 0,
+            capturedByWhite = 0,
+            komi = 6.5,
+            handicapCount = 2,
+            whiteHandicapBonus = whiteHandicapBonus,
+        )
+
+    private fun finishedSnapshot(judgement: FinalScoreJudgement): SavedGameSnapshot =
+        SavedGameSnapshot(
+            gameState = GameState.withHandicap(BoardSize.Nine, Ruleset.Chinese, handicapCount = 2, komi = 6.5)
+                .play(Move.Pass(StoneColor.White))
+                .play(Move.Pass(StoneColor.Black)),
+            playerSetup = PlayerSetup(),
+            playLevel = PlayLevelSetting(),
+            topMovesEnabled = false,
+            savedAtMillis = 1L,
+            finalScoreJudgement = judgement,
+        )
 }

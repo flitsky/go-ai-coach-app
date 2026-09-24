@@ -159,7 +159,8 @@ internal class StubEngineAdapter : EngineCoreApi {
         ensureInitialized()
         val score = localScore()
         val blackArea = score.blackArea ?: 0.0
-        val whiteArea = (score.whiteAreaWithKomi ?: 0.0) - (score.komi ?: 0.0)
+        // 합계에서 덤과 접바둑 보정(#89)을 빼야 판 위 백 영역만 남는다.
+        val whiteArea = (score.whiteAreaWithKomi ?: 0.0) - (score.komi ?: 0.0) - score.whiteHandicapBonus
         val whiteLead = (score.whiteAreaWithKomi ?: 0.0) - blackArea
         val boardPoints = boardSize.value * boardSize.value
         val unclear = (boardPoints - blackArea.toInt() - whiteArea.toInt()).coerceAtLeast(0)

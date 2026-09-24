@@ -16,6 +16,8 @@ import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.enginecontract.ScoreEstimate
 import com.worksoc.goaicoach.shared.domain.StoneColor
+import com.worksoc.goaicoach.shared.policy.EndgameScoreSource
+import com.worksoc.goaicoach.shared.scoring.chineseHandicapProbeState
 import kotlinx.coroutines.runBlocking
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -91,11 +93,42 @@ class EndgameResolverTest {
         assertEquals("W+100.5", event.context["engineFinalScore"])
         assertEquals(localRaw, event.context["localScore"])
     }
+
+    /**
+     * ⭐ **#89 재현 국면에서 `score.final_disagreement`가 더는 나지 않는다.**
+     *
+     * 면적계가 접바둑(9x9 2점, 덤 6.5)을 두 번 통과로 끝내면 KataGo `final_score`는 W+1.5인데
+     * (조사 실측, `chinese`의 `whiteHandicapBonus:"N"`), 고치기 전 로컬 계가는 보정 2점을 빠뜨려
+     * B+0.5였다 — 결과는 로컬이 정하므로 **승자가 뒤집혔고**, 이런 판마다 Critical 진단 이벤트가 났다.
+     * 엔진 쪽 가짜 값은 조사가 잰 그대로다(`final_score` W+1.5, raw NN `whiteLead` +2.206).
+     */
+    @Test
+    fun resolveAiEndgameAgreesWithKataGoFinalScoreOnAChineseHandicapGame() = runBlocking {
+        val state = chineseHandicapProbeState(Ruleset.Chinese, komi = 6.5)
+        val log = RecordingDiagnosticEventLog()
+        val engine = FakeEndgameJudgeGateway(finalScoreRaw = "W+1.5", finalScoreMargin = 1.5, estimateWhiteLead = 2.206)
+
+        val resolution = resolveAiEndgame(
+            judgeGateway = engine,
+            originalState = state,
+            estimateLimit = AnalysisLimit(visits = 16, timeMillis = 250, candidateCount = 8),
+            diagnosticEventLog = log,
+        )
+
+        assertEquals("W+1.5", resolution.localFinalScore.rawScore)
+        assertEquals(2.0, resolution.localFinalScore.whiteHandicapBonus)
+        assertEquals(EndgameScoreSource.CleanedLocalArea, resolution.scoreSource)
+        assertEquals("W+1.5", resolution.finalScore.rawScore)
+        assertEquals(StoneColor.White, resolution.finalScore.winner)
+        assertEquals(emptyList(), log.events.map { it.code }, "로컬 계가와 KataGo final_score가 같으면 진단 이벤트가 없어야 한다(#89).")
+    }
 }
 
 private class FakeEndgameJudgeGateway(
     private val deadStones: List<BoardCoordinate> = emptyList(),
     private val finalScoreRaw: String = "B+5.5",
+    private val finalScoreMargin: Double = 5.5,
+    private val estimateWhiteLead: Double = -5.0,
 ) : EndgameJudgeGateway {
     override suspend fun configure(profile: EngineProfile): EngineStatus =
         EngineStatus.ready("configured")
@@ -103,7 +136,7 @@ private class FakeEndgameJudgeGateway(
     override suspend fun estimateScore(limit: AnalysisLimit): ScoreEstimate =
         ScoreEstimate(
             status = EngineStatus.ready("estimated"),
-            whiteScoreLead = -5.0,
+            whiteScoreLead = estimateWhiteLead,
             whiteWinRate = 0.1,
             summary = "fake estimate",
         )
@@ -120,7 +153,7 @@ private class FakeEndgameJudgeGateway(
             status = EngineStatus.ready("final"),
             rawScore = finalScoreRaw,
             winner = if (finalScoreRaw.startsWith("B")) StoneColor.Black else StoneColor.White,
-            margin = 5.5,
+            margin = finalScoreMargin,
             summary = "fake final",
         )
 }

@@ -120,6 +120,7 @@ internal fun goldenPoint(
  * 대신 각자가 공개하는 합에서 자기 항을 빼면 **빈 점 소유 수만** 남는다.
  *
  * - 영역(중국식): `blackArea = 흑 돌 수 + 흑 소유 빈 점`
+ *   (백 쪽 합계에는 접바둑 보정이 들어 있어 그것도 뺀다 — #89)
  * - 집(일본식):   `blackArea = 흑 소유 빈 점 + 흑 사석`
  *
  * 리팩토링 일감 #38(`BoardRegionAnalyzer` 통합)이 기대는 값이 바로 이것이다.
@@ -132,7 +133,9 @@ internal data class EmptyPointOwnership(
 internal fun areaScorerOwnership(state: GameState): EmptyPointOwnership {
     val score = BoardAreaScorer.score(state, komi = 0.0)
     val blackArea = requireNotNull(score.blackArea) { "로컬 영역 계가기가 blackArea를 비워 두면 안 된다." }
-    val whiteArea = requireNotNull(score.whiteAreaWithKomi) { "로컬 영역 계가기가 whiteArea를 비워 두면 안 된다." }
+    // 덤은 0으로 눌렀지만 접바둑 보정(#89)은 합계에 남는다 — 빼야 빈 점 소유 수만 남는다.
+    val whiteArea = requireNotNull(score.whiteAreaWithKomi) { "로컬 영역 계가기가 whiteArea를 비워 두면 안 된다." } -
+        score.whiteHandicapBonus
     return EmptyPointOwnership(
         black = (blackArea - state.stones.count { it.value == StoneColor.Black }).toInt(),
         white = (whiteArea - state.stones.count { it.value == StoneColor.White }).toInt(),

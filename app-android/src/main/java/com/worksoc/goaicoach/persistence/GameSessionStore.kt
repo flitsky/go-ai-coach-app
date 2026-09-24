@@ -143,6 +143,7 @@ internal object SavedGameSessionCodec {
             .put("capturedByWhite", judgement.capturedByWhite)
             .put("komi", judgement.komi ?: JSONObject.NULL)
             .put("handicapCount", judgement.handicapCount)
+            .put("whiteHandicapBonus", judgement.whiteHandicapBonus)
 
     private fun decodeFinalScoreJudgement(json: JSONObject): FinalScoreJudgement =
         FinalScoreJudgement(
@@ -158,6 +159,11 @@ internal object SavedGameSessionCodec {
             capturedByWhite = json.optInt("capturedByWhite", 0),
             komi = if (json.isNull("komi")) null else json.optDouble("komi"),
             handicapCount = json.optInt("handicapCount", 0),
+            // ⚠️ 기본값은 반드시 0이다(#89) — 이 키가 없던 옛 판정은 보정 없이 계가됐으므로 0이어야
+            // 그 판정의 백 합계(whiteAreaWithKomi)와 맞는다. 스키마 번호는 올리지 않는다(함정 69).
+            // 거꾸로 새 저장본을 옛 코드가 읽어도 깨지지 않는다 — 이 decode는 키를 이름으로만 꺼내고
+            // 모르는 키는 보지 않으며, 스키마 번호가 그대로라 등호 검사도 통과한다.
+            whiteHandicapBonus = json.optDouble("whiteHandicapBonus", 0.0),
         )
 
 }

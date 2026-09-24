@@ -46,8 +46,10 @@ internal fun FinalScoreJudgement.whiteLine(strings: UiStrings): String? {
             val territory = area - prisoners - kValue
             strings.scoreTextDetailTerritoryKomi(territory, prisoners, kValue, area)
         }
+        // 면적계가 접바둑이면 합계에 보정 N이 들어 있다(#89) — 줄에도 그 항을 밝힌다.
+        // 옛 저장본은 보정 없이 계가됐고 0으로 읽히므로 예전 줄 그대로다.
         Ruleset.Chinese ->
-            strings.scoreTextDetailAreaKomi(kValue, area)
+            strings.scoreTextDetailAreaKomi(kValue, area, whiteHandicapBonus)
     }
 }
 

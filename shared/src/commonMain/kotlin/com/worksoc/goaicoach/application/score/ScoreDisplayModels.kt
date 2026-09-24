@@ -53,6 +53,15 @@ data class FinalScoreJudgement(
     val capturedByWhite: Int,
     val komi: Double?,
     val handicapCount: Int = 0,
+    /**
+     * [whiteAreaWithKomi]에 들어 있는 면적계가 접바둑 보정(refactor backlog #89) — 결과 대화상자가
+     * 백 줄에 "+ 접바둑 보정 N"으로 밝힌다.
+     *
+     * ⚠️ **기본값 0은 옛 저장본을 위한 것이다.** 이 필드가 생기기 전에 저장된 판정은 보정 없이
+     * 계가됐으므로 0으로 읽혀야 그 판정의 합계와 맞는다(`GameSessionStore`가 `optDouble(…, 0.0)`로
+     * 흡수한다 — 스키마 번호는 그대로다, 함정 69).
+     */
+    val whiteHandicapBonus: Double = 0.0,
 )
 
 data class EndgameFailureDisplayPlan(

@@ -126,21 +126,128 @@ class BoardScoringGoldenTest {
     }
 
     /**
-     * 접바둑에서 **계가기는 접바둑 돌을 보정하지 않는다.**
+     * 접바둑에서 **면적계가는 백에게 접바둑 돌 수(N)만큼 보정하고, 집계가는 보정하지 않는다.**
      *
      * 흑이 미리 놓은 돌은 중국식에서는 그대로 흑 영역으로 세어지고, 일본식에서는 집으로 세어지지
-     * 않는다. `handicapCount`는 계가에 **아무 영향도 주지 않는다** — 보정은 덤 설정이 맡는다.
+     * 않는다. 그래서 보정이 없으면 같은 판이 면적계가에서 N점 더 흑에게 유리하다.
+     *
+     * ## 2026-09-24에 기대값을 뒤집었다(refactor backlog #89)
+     * 이 테스트는 원래 #9가 **그때의 동작을 특성화한** 것이었다 — *"`handicapCount`는 계가에 아무
+     * 영향도 주지 않는다, 보정은 덤 설정이 맡는다"*. 그 전제가 틀렸다:
+     * - 앱은 엔진에 `kata-set-rules chinese`를 보내고 KataGo는 거기서 `whiteHandicapBonus:"N"`을
+     *   쓴다. AI·형세 그래프·추천 수 점수는 N을 품는데 종국 계가만 빼서, 9x9 2점 덤 6.5 국면에서
+     *   KataGo `final_score` W+1.5를 앱은 B+0.5로 보여 **승자가 뒤집혔다**
+     *   ([chineseHandicapGameGivesWhiteTheHandicapBonusLikeKataGoFinalScore]).
+     * - 덤 선택지는 0.5·6.5·7.5뿐이라 사용자가 덤으로 +N을 표현할 길도 없었다.
+     *
+     * 그래서 5점 빈 판은 면적계가도 **B+75.5**로, 집계가와 같아졌다(예전 B+80.5 − 보정 5).
+     * 보정은 판의 돌이 아니라 `handicapCount`를 따른다 — 같은 돌에 `handicapCount = 0`이면 보정이 없다.
      */
     @Test
-    fun handicapStonesAreScoredAsPlainStonesWithNoCompensation() {
+    fun chineseScoringCompensatesWhiteForHandicapStonesAndJapaneseDoesNot() {
         val handicap = GameState.withHandicap(BoardSize.Nine, Ruleset.Chinese, handicapCount = 5, komi = 0.5)
 
-        assertEquals("B+80.5", BoardScorer.score(handicap).rawScore)
-        assertEquals("B+75.5", BoardScorer.score(handicap.copy(ruleset = Ruleset.Japanese)).rawScore)
-        assertEquals(
-            BoardScorer.score(handicap).rawScore,
-            BoardScorer.score(handicap.copy(handicapCount = 0)).rawScore,
+        val chinese = BoardScorer.score(handicap)
+        val japanese = BoardScorer.score(handicap.copy(ruleset = Ruleset.Japanese))
+        assertEquals("B+75.5", chinese.rawScore)
+        assertEquals(81.0, chinese.blackArea)
+        assertEquals(5.5, chinese.whiteAreaWithKomi)
+        assertEquals(5.0, chinese.whiteHandicapBonus)
+        assertEquals("B+75.5", japanese.rawScore)
+        assertEquals(0.0, japanese.whiteHandicapBonus)
+        assertEquals(chinese.rawScore, japanese.rawScore, "5점 빈 판에서 두 계가가 같은 답을 내야 한다(#89).")
+
+        val sameStonesWithoutHandicap = BoardScorer.score(handicap.copy(handicapCount = 0))
+        assertEquals("B+80.5", sameStonesWithoutHandicap.rawScore)
+        assertEquals(0.0, sameStonesWithoutHandicap.whiteHandicapBonus)
+    }
+
+    /** KataGo처럼 접바둑 돌 1개 이하는 보정 0이고, 2개부터 돌 수 그대로다. */
+    @Test
+    fun theHandicapBonusIsZeroUpToOneStoneAndTheStoneCountFromTwo() {
+        assertEquals(0.0, BoardAreaScorer.whiteHandicapBonus(0))
+        assertEquals(0.0, BoardAreaScorer.whiteHandicapBonus(1))
+        assertEquals(2.0, BoardAreaScorer.whiteHandicapBonus(2))
+        assertEquals(9.0, BoardAreaScorer.whiteHandicapBonus(9))
+
+        val oneStoneMarkedAsHandicap = BoardScorer.score(
+            singleStoneBoard().toState(Ruleset.Chinese, komi = 6.5, handicapCount = 1),
         )
+        assertEquals("B+74.5", oneStoneMarkedAsHandicap.rawScore)
+        assertTrue(
+            !oneStoneMarkedAsHandicap.summary.contains("handicap bonus"),
+            "보정이 없으면 요약에도 보정을 적지 않는다: ${oneStoneMarkedAsHandicap.summary}",
+        )
+    }
+
+    /**
+     * ⭐ **#89 재현 국면 — 면적계가 접바둑에서 백은 접바둑 보정 N점을 받는다.**
+     *
+     * 9x9 2점, 백 선, 백·흑 12수씩 둔 뒤 두 번 통과. 벽으로 나뉘어 공배·사석·따낸 돌이 없고
+     * 흑 영역 44(돌 14) · 백 영역 37(돌 12)이다 — 판은 `chineseHandicapProbeBoard`의 그림이다
+     * (`ChineseHandicapProbe.kt`, 종국 판정 테스트도 같은 판을 쓴다).
+     *
+     * 앱은 엔진에 `kata-set-rules chinese`를 보내고, KataGo는 그 룰에서
+     * `whiteHandicapBonus:"N"`을 쓴다(`showboard`가 `Handicap bonus score: 2`를 찍는다).
+     * 같은 명령열(`boardsize 9`/`komi`/`kata-set-rules`/`clear_board`/`set_free_handicap G7 C3`/
+     * 이 수순/`pass`×2)을 앱 모델로 KataGo 1.16.4에 넣어 잰 `final_score`가 기대값이다
+     * (2026-09-24, refactor backlog #89 조사):
+     *
+     * | 룰 · 덤 | KataGo `final_score` | 고치기 전 앱 |
+     * |---|---|---|
+     * | 면적계가 · 6.5 | **W+1.5** | B+0.5 (**승자 반전**) |
+     * | 면적계가 · 0.5 | **B+4.5** | B+6.5 |
+     * | 집계가 · 6.5   | **W+1.5** | W+1.5 |
+     * | 집계가 · 0.5   | **B+4.5** | B+4.5 |
+     *
+     * 집계가는 KataGo japanese의 `whiteHandicapBonus:"0"`과 같아 원래 맞았다. 면적계가만
+     * N(=2)이 빠져 흑의 차가 정확히 N만큼 부풀었다.
+     */
+    @Test
+    fun chineseHandicapGameGivesWhiteTheHandicapBonusLikeKataGoFinalScore() {
+        val expected = mapOf(
+            (Ruleset.Chinese to 6.5) to "W+1.5",
+            (Ruleset.Chinese to 0.5) to "B+4.5",
+            (Ruleset.Japanese to 6.5) to "W+1.5",
+            (Ruleset.Japanese to 0.5) to "B+4.5",
+        )
+
+        val failures = expected.mapNotNull { (key, expectedRawScore) ->
+            val (ruleset, komi) = key
+            val state = chineseHandicapProbeState(ruleset, komi)
+            val actual = BoardScorer.score(state).rawScore
+            if (actual == expectedRawScore) null else "$ruleset · 덤 $komi: $actual (KataGo final_score $expectedRawScore)"
+        }
+
+        assertEquals(emptyList<String>(), failures, "접바둑 계가가 KataGo final_score와 어긋났다(#89):\n" + failures.joinToString("\n"))
+
+        // 면적계가의 백 합계는 영역 37 + 덤 6.5 + 보정 2 이고, 요약 문자열이 보정을 밝힌다.
+        val chinese = BoardScorer.score(chineseHandicapProbeState(Ruleset.Chinese, komi = 6.5))
+        assertEquals(44.0, chinese.blackArea)
+        assertEquals(45.5, chinese.whiteAreaWithKomi)
+        assertEquals(2.0, chinese.whiteHandicapBonus)
+        assertEquals(StoneColor.White, chinese.winner)
+        assertTrue(chinese.summary.contains("handicap bonus 2"), chinese.summary)
+        assertEquals(0.0, BoardScorer.score(chineseHandicapProbeState(Ruleset.Japanese, komi = 6.5)).whiteHandicapBonus)
+    }
+
+    /** 재현 국면의 판·수순이 조사에서 KataGo에 넣은 것과 같은지 — 기대값보다 판이 먼저 맞아야 한다. */
+    @Test
+    fun theChineseHandicapProbePositionIsTheOneMeasuredOnKataGo() {
+        val state = chineseHandicapProbeState(Ruleset.Chinese, komi = 6.5)
+
+        assertEquals(
+            setOf("G7", "C3"),
+            GameState.withHandicap(BoardSize.Nine, Ruleset.Chinese, handicapCount = 2)
+                .stones.keys.map { it.label(BoardSize.Nine) }.toSet(),
+        )
+        assertEquals(chineseHandicapProbeBoard().stones, state.stones)
+        assertEquals(2, state.handicapCount)
+        assertTrue(state.hasConsecutivePasses())
+        assertEquals(0, state.capturedByBlack)
+        assertEquals(0, state.capturedByWhite)
+        assertEquals(emptyList(), DeadStoneDetector.capturableDeadStones(state))
+        assertEquals(44.0, BoardScorer.score(state).blackArea)
     }
 
     /** 전부 채운 판에는 빈 점이 없으므로 집도 영역도 돌 수 그대로다. */

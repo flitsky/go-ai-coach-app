@@ -372,9 +372,26 @@ data class FinalScoreResult(
     val winner: StoneColor? = null,
     val margin: Double? = null,
     val blackArea: Double? = null,
+    /**
+     * 백의 **합계** — 영역(또는 집+사석) + 덤 + [whiteHandicapBonus].
+     *
+     * ⚠️ 이름은 "with komi"지만 면적계가 접바둑에서는 **접바둑 보정까지 들어 있다**(refactor
+     * backlog #89). 백 우세(`whiteAreaWithKomi - blackArea`)를 이 값 하나로 구하는 소비자
+     * (`EndgameScoreSelector`·`ScoreTimeline`)가 보정을 따로 더하지 않아도 되게 하려는 것이다.
+     * 덤 앞의 순수 영역이 필요하면 `whiteAreaWithKomi - komi - whiteHandicapBonus`로 되짚는다.
+     */
     val whiteAreaWithKomi: Double? = null,
     val komi: Double? = null,
     val summary: String,
+    /**
+     * [whiteAreaWithKomi]에 들어 있는 **접바둑 보정**(면적계가에서 백이 받는 N점, refactor backlog #89).
+     *
+     * KataGo `chinese` 룰의 `whiteHandicapBonus:"N"`과 같은 셈이다 — 앱이 엔진에
+     * `kata-set-rules chinese`를 보내므로 로컬 계가도 같은 룰을 따라야 한다. 접바둑이 아니거나
+     * 집계가(KataGo `japanese`는 `"0"`)면 0이다. 엔진이 만든 결과(`final_score` 등)는 보정이
+     * 이미 점수에 녹아 있어 따로 밝히지 않으므로 역시 0이다.
+     */
+    val whiteHandicapBonus: Double = 0.0,
 )
 
 data class DeadStonesResult(

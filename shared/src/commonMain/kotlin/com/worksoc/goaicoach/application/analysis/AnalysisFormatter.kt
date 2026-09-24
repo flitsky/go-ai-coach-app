@@ -59,7 +59,12 @@ fun FinalScoreResult.toDisplayText(): String =
         val whiteAreaWithKomiValue = whiteAreaWithKomi
         val komiValue = komi
         if (blackAreaValue != null && whiteAreaWithKomiValue != null && komiValue != null) {
-            appendLine("Score: Black ${blackAreaValue.formatOneDecimal()} / White+komi ${whiteAreaWithKomiValue.formatOneDecimal()} (komi ${komiValue.formatOneDecimal()})")
+            val handicapBonusText = if (whiteHandicapBonus > 0.0) {
+                ", handicap bonus ${whiteHandicapBonus.formatOneDecimal()}"
+            } else {
+                ""
+            }
+            appendLine("Score: Black ${blackAreaValue.formatOneDecimal()} / White+komi ${whiteAreaWithKomiValue.formatOneDecimal()} (komi ${komiValue.formatOneDecimal()}$handicapBonusText)")
         }
     }.trim()
 
