@@ -22,8 +22,8 @@ import org.junit.Test
  *     들고 오지 않았는가. 등록부를 우회하면 1번이 볼 수 없으므로 이쪽이 등록부를 강제한다.
  *  3. [everyFqnInTheRegistryIsAlsoListedForChecking] — 등록부에 적힌 주소가 검사 목록에도
  *     올라 있는가(상수만 더하고 목록에 안 넣으면 1번이 못 본다).
- *  4. [symbolIndexDistinguishesPresentFromAbsent] — 색인 자체가 무엇이든 "있다"고 답하는
- *     고장난 상태가 아닌가(음성 대조군).
+ *  4. [symbolIndexDistinguishesPresentFromAbsent] — 색인 자체가 무엇이든 "있다"고(음성 대조군),
+ *     또는 무엇이든 "없다"고(양성 대조군, backlog #76) 답하는 고장난 상태가 아닌가.
  */
 class ContractSymbolContractTest {
 
@@ -144,6 +144,13 @@ class ContractSymbolContractTest {
         assertFalse(
             "존재할 수 없는 최상위 함수를 '있다'고 답한다: $absent",
             SourceSymbolIndex.topLevelFunctionExists(absent),
+        )
+        // 양성 대조(backlog #76): 등록된 TOP_LEVEL_FUNCTION 가드는 전부 ABSENT_BY_DESIGN이라
+        // 위의 false만으로는 판정기가 "항상 false"로 고장난 것과 구분되지 않는다.
+        assertTrue(
+            "실재하는 최상위 (확장) 함수를 '없다'고 답한다: ${ContractSymbols.LIVE_SYNC_TO_GAME_STATE} — " +
+                "판정기가 false만 뱉으면 ABSENT_BY_DESIGN 가드의 되살아남 감시가 조용히 죽는다.",
+            SourceSymbolIndex.topLevelFunctionExists(ContractSymbols.LIVE_SYNC_TO_GAME_STATE),
         )
         assertFalse(
             "존재할 수 없는 패키지를 '있다'고 답한다: $absent",

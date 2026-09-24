@@ -53,6 +53,14 @@ internal object ContractSymbols {
     const val LOCAL_ESTIMATE_SCORE_FOR_STATE =
         "com.worksoc.goaicoach.application.engine.estimateScoreForState"
 
+    // ── 색인 판정기의 양성 표본 ──────────────────────────────────────────
+    // 위의 셋은 전부 ABSENT_BY_DESIGN이라, 스위트는 `topLevelFunctionExists`가 **false를 내는 것만**
+    // 본다. 판정기가 false만 뱉도록 고장나면 그 셋의 "되살아남" 감시가 초록인 채 죽는다(backlog #76).
+    // 그래서 **같은 패키지·같은 모양**(suspend 수식어 + `EngineCoreApi` 확장)의 실재 함수를 표본으로
+    // 둔다 — 판정기가 이것을 "있다"고 못 하면 그 셋이 되살아나도 못 알아챈다.
+    const val LIVE_SYNC_TO_GAME_STATE =
+        "com.worksoc.goaicoach.application.engine.syncToGameState"
+
     /** 가드가 쓰는 `forbiddenImports` 표기(`import <fqn>`)로 감싼다. */
     fun importOf(fqn: String): String = "import $fqn"
 
@@ -126,6 +134,12 @@ internal object ContractSymbols {
             SymbolKind.TOP_LEVEL_FUNCTION,
             SymbolExpectation.ABSENT_BY_DESIGN,
             "score 러너는 EngineSessionClient 멤버를 쓴다 — 옛 최상위 확장 헬퍼는 되살리지 않는다",
+        ),
+        GuardedSymbol(
+            LIVE_SYNC_TO_GAME_STATE,
+            SymbolKind.TOP_LEVEL_FUNCTION,
+            SymbolExpectation.MUST_EXIST,
+            "색인 판정기의 양성 표본 — ABSENT_BY_DESIGN 셋의 되살아남 감시가 살아 있음을 보인다(#76)",
         ),
     )
 }
