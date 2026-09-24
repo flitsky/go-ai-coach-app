@@ -406,6 +406,28 @@ _(없음 — 아래 「예정사항」 첫 항목부터 집는다)_
 
 ---
 
+## 서 있는 답 — 다시 제안하지 말 것
+
+> ⚠️ **지우지 않는다.** 답을 지우면 같은 제안이 다시 올라오고, 그때마다 처음부터 논증해야 한다.
+
+- **`EngineCoreApiStaticPositionContract`를 공유 디렉터리로 옮기지 않는다**(2026-09-24, 조율자 제안 → 조율자 철회).
+  제안 근거는 *"옮기면 `app-android`의 `DeferredEngineCoreApi`도 같은 그물에 걸린다"* 였다. **셋 다 틀렸다:**
+  · ⓐ **가시성** — 계약을 만족하는 구현체 둘(`StubEngineAdapter:26`·`RemoteEngineCoreApiAdapter:56`)이
+    **`engine-android`에 `internal`** 이라 `app-android`에서 만들 수 없다. 그리고 그 `internal`은 실수가 아니라
+    **`LayeringContractTest:1077`이 `"internal class StubEngineAdapter"`로 고정한 경계**다.
+  · ⓑ **JVM 전용** — 스위트가 `org.junit` + `runBlocking`인데 `#71`의 `commonTestSupport`는
+    `shared/build.gradle.kts:44`가 `commonTest`로 끌어들여 **iOS까지 컴파일**한다. 넣으면 `:shared`가 깨진다.
+  · ⓒ 🔴 **애초에 대상이 아니다** — `DeferredEngineCoreApi`는 **override 14개가 전부 `api().…` 순수 위임**이다.
+    그 계약은 *"준비될 때까지 미루고 그대로 위임한다"* 이지 *"반상을 추적한다"* 가 아니다.
+    반상 추적 계약을 거기 걸면 **감싼 엔진을 테스트하는 것**이지 래퍼를 테스트하는 게 아니다.
+    `DeferredEngineCoreApiTest`의 위임 확인이 이미 옳은 계약이다.
+  · ⚠️ **그래서 "`internal`을 푼다"도 "참조 엔진을 새로 쓴다"도 하지 않는다** — 둘 다 **틀린 목적을 위해
+    기계를 만드는 일**이다. 전자는 계층 경계를 테스트 편의로 허물고, 후자는 스텁 로직을 복제한다.
+  · ⭐ **이 제안의 출처가 `#20` 파도의 followUp(조율자가 쓴 것)이라 특히 다시 올라오기 쉽다.**
+    관찰(*"스위트가 app-android에 안 닿는다"*)은 맞았고 **원인 추정(배선 부재)이 틀렸다.**
+
+---
+
 ## 사용자 결정 대기
 
 | 항목 | 물어야 할 것 |
