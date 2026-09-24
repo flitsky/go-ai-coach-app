@@ -180,38 +180,21 @@ Hilt(commonMain 불가)·Koin(이득 0)·전면 MVI(이미 절반 작동)·모�
 | 33 | **패키지 사이클 래칫** — `PackageImportGraph` + `PackageCycleRatchetTest`. 지금 기준선을 `ContractSymbols`에 잠갔다: SCC 둘(`application.*` **14** + `{attendance, botcharacter}` **2**), 서로 참조하는 쌍 **17**. **나빠지면 빨강, 좋아졌는데 기준선을 안 줄여도 빨강**(래칫). 사보타주 4종으로 확인. ⚠️ 항목의 원래 기준 *"SCC > 1이면 실패"* 는 **지금 켜면 바로 빨강**이라 래칫으로 바꿨다. `#32`가 끝나 기준선이 비면 원래 뜻이 된다. ⚠️ **타입 추론으로만 생기는 의존은 못 본다(→ #81)** | `fecaa42c` |
 | 80 | **살아 있는 문서의 낡은 소스 경로 74건 정리**(15문서) — 항목이 적은 건 로드맵 8건이었지만, 범위를 살아 있는 문서 전체로 넓히자 12문서 58건, 검수에서 16건이 더 나왔다(`#24`·`#25`·`#26`·`#28`·`#29`·`#70`·`#32⑤`의 흔적). 고친 경로마다 검수가 git 이력(R 커밋)으로 대조했다. 지금 상태를 잘못 말하던 문장 셋(ui의 SDK 어댑터, middleware 형제 패키지, auth·premium 같은 패키지)은 사실에 맞게 다시 썼다 | `b5ef66d7` |
 | 82 | 🔧 **`check-doc-links.py`가 소스 경로도 본다** — 문서의 코드 경로·코드 주석 속 경로·코드 블록 안 경로를 지금 트리와 대조한다. 옮겨서 죽은 경로 **495개 표본이 전부 빨갛다**(79쌍 × 7표기, 검수 실측). 기존 `.md` 검사 출력은 **바이트 단위로 불변**. ⚠️ 면제는 경로 **바로 뒤 괄호**의 삭제·개명 낱말만 — 줄 전체 면제는 문단 속 진짜 죽은 경로 4건을 삼켰다. ⚠️ 남은 사각지대: `shared` 모듈 안에서 **같은 이름 폴더로** 옮기면 못 잡는다(지금 해당 0건, 스크립트 주석에 좁히는 법) | `ebe9210a` |
+| 32 | 🔓 **`commonMain` 패키지 사이클 0** — SCC `14+2`→**0**, 상호 참조 쌍 `17`→**0**. 10걸음 전부 순수 이동, 걸음마다 래칫 기준선을 같은 커밋에서 줄였고, 검수자가 커밋 트리마다 그래프를 따로 재어 확인했다. ⭐ 진단서의 기법 ⓑ(의존 역전)는 **필요 없었다** — 선언 단위 그래프에 패키지를 가로지르는 사이클이 없었다. ⭐ **바이트코드(jdeps)로도 SCC 0**(클래스 873·간선 225). 계획 편차: ② 목적지 `concurrency`, ⑤ 선언 셋, ⑦의 `toRuntimeLogContext`를 ⑨로 미룸(⑦에서 옮기면 새 쌍이 생긴다 — 안 옮기면 끝에 SCC 7이 남는다). 이제 **#33 래칫이 원래 뜻**(사이클 하나라도 생기면 빨강)이 됐다 | `a96c8457`…`69a6d5b9` |
+| 21 | **출석 저장소의 읽기-고치기-쓰기 경합 + 대국 기록의 비원자 쓰기** — ⚠️ **항목의 전제가 반만 맞았다**: 엔타이틀먼트 스토어의 *"광고 보상 × 출석 클레임"* 경합은 **없다**(모든 쓰기가 메인 스레드, load와 save 사이에 suspend 없음 — 검수가 반례 못 찾음). **진짜 경합은 출석 저장소**였다(체크인과 Claim이 서로를 지움). 포트에 `update(transform)`을 두고 스토어가 프로세스 단위 락으로 묶는다. 기록은 tmp → fsync → rename. 재현 테스트 7개가 고치기 전 빨강, 저장 포맷 양방향 호환 실측. 이관 가장자리(이관 쓰기 실패 직후의 append가 옛 기록을 영영 가림)도 함께 막았다. ⚠️ fsync는 대국당 최대 두 번, 메인 스레드 — 기기 스모크 권장 | `fe48dc55`·`d7d94c74`·`e7debdf5` |
+| 65 | **원격 `handicapCount` 판정 + 드러난 결함 둘 수정** — 판정: `whiteHandicapBonus`는 **싣지 않는 현행이 맞다**(KataGo 1.16.4 실측, 검수 독립 재현). 대신 ⓐ 원격 서버가 접바둑 0수째를 **흑 차례로** 분석하고 따낸 접바둑 돌을 잃던 것(원격 AI가 흑의 최선수 자리에 뒀다 — 13x13 픽스처도 그 상태로 캡처돼 있었다, 재캡처), ⓑ 로컬 JSON 쿼리가 접바둑 돌을 통째로 빼던 것(+21~+67점, 2026-07-16부터)을 고쳤다. 둘 다 프로덕션 영향 0이었다(debug 원격·숨긴 레벨). 📐 정합성 허용오차: 접바둑의 동적 PDA로 2~10점, 그리고 **패스가 섞이면 `analysisIgnorePreRootHistory` 때문에 ±2.7점**까지(맞바둑 포함) — 비교는 raw NN·PDA=0·pre-root history 켠 상태로 | `b8fc9167`·`e7c38b41` |
 
 ### 진행 중
 
-- **#32 사이클 절단** — ✅ 파도 A(①~⑥) 끝·푸시(`a96c8457`…`a28d74e0`). **파도 B(⑦~⑩, Opus) 진행 중** — ⑦ `b007e6ea`, ⑧ `0db15a09`. 걸음 하나 = 커밋 하나, 걸음마다 래칫 기준선 축소.
-- **#73 원칙 문서** — 1차 `efb0ab38`(미푸시)가 **검수 반려**: *"4계층은 위 계층의 동작을 모른다"* 가 지금 코드에서 거짓이다(어댑터 여섯 곳이 위 계층의 순수 판정을 부른다), 그리고 *"값 = data class"* 는 클라이언트·람다를 담은 `*RunRequest`를 통과시킨다. 2차 진행 중 — 포트 **시그니처** 규칙(값 = 필드 폐포에 함수·인터페이스·var 없음)과 **어댑터** 규칙(위 계층의 순수 함수는 부를 수 있다)을 가른다.
-- **#21 persistence** — 워크트리 `worktree-wf_dacdf94f-db6-3`(`bb4cd500`·`b28c40a8`)에 끝남, 검수 통과(차단 0). **파도 B 뒤 main으로 가져온다.** 잔여(테스트 임시 디렉터리, 이관 가장자리, KDoc) 정리 중.
-- **#65 접바둑 보정** — 판정 끝(아래 항목). 곁가지로 드러난 결함 둘을 워크트리에서 고치는 중(ⓐ 원격 서버, ⓑ 로컬 JSON). 중국식 접바둑 계가 보정 조사 중(#89).
+- **#73 원칙 문서** — 1차 `efb0ab38`·2차 `cca1e296` 모두 **검수 반려**(규칙 본문은 2차에서 통과, 로드맵 문장 둘이 코드와 어긋남 —
+  3계층 11파일이 로그 포트를 쥔다, 어댑터에만 있는 제품 규칙 하나가 누락). 3차 진행 중 — 관측(로그·진단) 포트를 **쓰기 전용·값 조건의
+  명시적 예외**로 둔다. ⚠️ 1·2차 커밋은 파도 B 커밋 사이에 있어 **3차가 통과해야 함께 푸시**한다.
+- **#89 면적계가 접바둑 보정** — 🔴 **프로덕션에 닿는 결함 확정**(아래 항목). 워크트리에서 수정·검수 중. **사용자에게 보이는 승패가 바뀌는
+  동작 변경이라 main 병합은 사용자 승인 뒤.**
 
 ### 예정사항
 
 #### 잔여 — 앞선 일감이 드러낸 것 (번호는 뒤에 붙이고 **순서로** 우선순위를 표시한다)
-
-65. **원격 `handicapCount`를 KataGo에 어떻게 실을지 판정** (AI 모델: Opus, 노력정도: 중간)
-    · #62가 komi만 닫고 `handicapCount`는 **의도적으로 미반영**했다. KataGo Analysis 스키마에
-      접바둑 "개수" 필드가 없고, 유일한 접바둑 필드 `whiteHandicapBonus`는 **룰셋의 기본 접바둑 보정을
-      덮어쓰는 스코어링 오버라이드**다. 접바둑 돌 자체는 이미 `initialStones`로 실린다.
-    · 🔴 **그대로 꽂으면 접바둑 보정이 두 번 계산될 수 있다.** 실측 없이는 **현행 미반영이 안전한 선택**이다.
-    · 실측 방법을 먼저 설계하라 — 같은 국면을 `whiteHandicapBonus` 유/무로 분석해 점수 차를 본다.
-    · ✅ **판정(2026-09-24, KataGo 1.16.4 + 앱 모델로 실측, 검수가 독립 재현해 소수 둘째 자리까지 일치)**:
-      **`whiteHandicapBonus`는 어떤 값으로도 싣지 않는다 — 현행이 맞다.** 비워 두면 룰셋 기본값(chinese=N, japanese=0)이
-      적용되고 N은 `initialStones`의 흑돌 수에서 자동으로 센다. 로컬 GTP도 같은 기본값이다(`kata-get-rules`로 확인).
-      `"N"`은 chinese에서 변화 0, japanese에서 약 +N점 틀어지고, `"0"`은 chinese에서 N점을 뺀다.
-    · 🔴 **그런데 전제("접바둑 돌은 이미 `initialStones`로 실린다")가 반만 맞았다** — 진짜 어긋남은 다른 곳이었다:
-      ⓐ 원격 서버 `build_katago_query`가 `initialPlayer="B"`로 **고정** → 접바둑 0수째(백 차례)를 흑 차례로 분석한다(raw 9~17점).
-         `/engine genMove`도 이 함수를 써서 **원격 AI(백)가 흑의 최선수 자리에 둔다.** 저장소의 13x13 픽스처도 이 상태로 캡처됐다.
-      ⓑ 원격 `infer_initial_stones`가 **따낸 접바둑 돌을 잃는다**(1~2점).
-      ⓒ **로컬 JSON 경로가 접바둑 돌을 통째로 뺀다**(`newGame`이 `initialStones`를 비운다, +21~+67점 — 빈 판 분석과 같다).
-         2026-07-16 `aace70da`(접바둑 도입)부터다. 숨긴 초급·중급·고급과 캐시 최적화 경로만 탄다(빠른초급은 GTP라 무관).
-      ⚠️ 셋 다 **지금 프로덕션 사용자에겐 영향 0**(원격은 debug + `REMOTE_ENGINE_URL`일 때만, JSON 경로는 숨긴 레벨만).
-    · 📐 **정합성 허용오차 메모**: 셋을 고쳐도 접바둑에서 로컬 GTP 탐색이 **동적 PDA 때문에 백에게 2~10점 더 낙관적**이다.
-      PDA=0으로 끄면 JSON과 0.5점 안에서 맞는다. 로컬↔원격 비교는 raw NN 값이나 PDA=0 기준이어야 한다
-      (원격 엔진 MQ 프로토타입이 얻은 *"정합성은 허용오차 기반이어야 한다"* 는 결론과 같은 방향).
 
 69. **`RepoPaths`가 못 모으는 것 둘** (AI 모델: Sonnet, 노력정도: 중간)
     · ⓐ **패키지 FQN은 여전히 흩어져 있다.** `#24`에서 고쳐야 했던 10곳(가드 5 + 자기검증 픽스처 4 + KDoc 1)이
@@ -263,10 +246,6 @@ Hilt(commonMain 불가)·Koin(이득 0)·전면 MVI(이미 절반 작동)·모�
       실제 세션 로그와 대조 불가**다.
     · ⚠️ 생성자 시그니처가 바뀌어 **`app-android`의 배선까지 번진다.** 파일 충돌면이 넓다.
 
-21. **persistence 동시성·내구성** (AI 모델: Opus, 노력정도: 높음)
-    · 엔타이틀먼트 스토어의 load-modify-save에 락이 없어 **광고 보상과 출석 클레임이 겹치면 앞선 클레임이 사라진다.**
-      `GameHistoryStore`는 대국 1건마다 `index.json` 전체를 비원자적 재작성 → tmp+renameTo.
-    · ⚠️ **함정 69**: 스키마 버전 불변.
 22. **`GameSetup` 값 객체 — 덤 유실의 구조적 해법** (AI 모델: Opus, 노력정도: 높음)
     · 판 정체성(boardSize/ruleset/handicapCount/komi)을 값 객체로 묶어 **코덱이 그 하나만 왕복**하게.
       지금은 세 코덱이 각자 손으로 필드를 골라 담아 **같은 종류의 누락이 또 난다.**
@@ -288,13 +267,15 @@ Hilt(commonMain 불가)·Koin(이득 0)·전면 MVI(이미 절반 작동)·모�
     · 원래 인수 기준 그대로 한다: 루트 매처도 `detectForbiddenReference`를 탄다. `BuildConfig`·`R` 예외는 유지한다.
       **사보타주 기준**: `platform` 파일에서 루트의 top-level 함수를 inline FQN으로 부르면 → 빨강(`--rerun-tasks`, 함정 77).
 
-81. **사이클 래칫이 타입 추론으로만 생기는 의존을 못 본다** (AI 모델: Opus, 노력정도: 중간) — `#32` 끝에 판단
-    · `#33`은 import 줄과 inline FQN만 간선으로 센다. 같은 모듈 안에서는 **import 없이** 반환값을 받아 넘기기만
-      해도 의존이 생긴다. `jdeps`로 바이트코드를 보니 **간선이 5개 더** 있었다.
-    · 반대 경우도 있다: `{attendance, botcharacter}` 사이클은 **소스에만** 있다. `const`가 인라인돼서
-      바이트코드에는 그 간선이 없다.
-    · 🔴 **모듈로 올리기(P6) 전에는 바이트코드 그래프가 기준이다** — Gradle 컴파일 클래스패스가 보는 것이 그쪽이다.
-      최소한 `#32`가 끝난 시점에 `jdeps`로 SCC 0을 **한 번 더** 확인한다. 래칫에 넣을지는 그때 정한다.
+81. **사이클 래칫이 타입 추론으로만 생기는 의존을 못 본다** (AI 모델: Opus, 노력정도: 중간) — **최소분 끝, P6 직전에 한 번 더**
+    · ✅ **`#32` 끝의 jdeps 실측(2026-09-24)**: 바이트코드 기준으로도 **SCC 0, 상호 참조 쌍 0**. 바이트코드에만 있는 간선 **4개**
+      (예전 5개에서 하나 줄었다) — `debugreport → engine`(`benchmark.benchmarkText`), `humanmove → endgame`(`result.endgame`),
+      `endgame → shared.diagnostic`, `startgame → shared.scoring`. 전부 import 없이 속성·반환값을 받아 넘기기만 하는 경우다.
+    · ⚠️ **반대 방향 사각지대도 있다** — typealias(`EngineOperationBlockReason`)와 const 인라인은 **소스에만** 보인다.
+      모듈로 가르면 컴파일러가 선언을 읽어야 하므로 **실제 의존이다**. → **모듈 경계의 정답 그래프는 소스 ∪ 바이트코드.**
+    · 판단: 래칫을 바이트코드로 바꾸지 않는다. P6 이후엔 Gradle이 프로젝트 순환을 스스로 거부해 영구 검사의 수명이 짧다.
+      **`#49` 착수 직전에 합집합 그래프로 한 번 더 잰다** — 그때 `debugreport`·`humanmove`를 떼어내면 `engine`·`endgame`을
+      직접 의존으로 선언하거나 `api`로 노출해야 한다(안 하면 위 두 간선에서 컴파일이 깨진다).
 
 83. **포트 시그니처 가드 신설** (AI 모델: Opus, 노력정도: 높음) — `#73` 2차 뒤
     · `#73`이 정한 규칙(시그니처 타입의 필드 폐포에 함수·인터페이스·var·포트/클라이언트가 없다)을 기계로 검사한다.
@@ -316,9 +297,27 @@ Hilt(commonMain 불가)·Koin(이득 0)·전면 MVI(이미 절반 작동)·모�
       보존 정책이 이 파일들을 모른다.
 88. **`EngineBenchmarkStorePort.hasUsableProfile`** (AI 모델: Sonnet, 노력정도: 낮음)
     · 포트에 달린 판정 메서드, **프로덕션 호출부 0**(구현 1·테스트 페이크 2). 지우거나 판정을 `application.engine`의 순수 함수로 올린다.
-89. **중국식 접바둑에서 앱 계가가 N점 보정을 빠뜨리는가** (AI 모델: Opus, 노력정도: 높음) — 조사 중
-    · `#65` 검수가 찾았다: `BoardAreaScorer`가 `whiteArea + komi`만 쓴다. KataGo(chinese)는 접바둑 돌 N개에 백에게 N점을 더 준다.
-      **프로덕션에서 중국식 + 접바둑이 가능한지, 최종 승패를 누가 정하는지**부터 밝힌다. ⚠️ `FinalScoreResult`는 저장 스키마다(함정 69).
+89. **면적계가(중국식) 접바둑에서 앱 계가가 백의 보정 N점을 빠뜨린다** (AI 모델: Opus, 노력정도: 높음) — 🔴 **결함 확정, 수정 중(워크트리)**
+    · **닿는 조건**: 로비·설정에서 계가=면적계가 + 접바둑 2점 이상(기본값은 집계가·맞바둑이라 **일부러 바꾼 사용자만**), 두 번 패스나 판이 차서 끝난 대국.
+    · **최종 승패는 로컬 계가기가 정한다**(`EndgameResolver`→`BoardScorer`→`BoardAreaScorer`, KataGo `final_score`는 진단용).
+      `BoardAreaScorer`가 `whiteArea + komi`만 쓰는데, 앱은 엔진에 `kata-set-rules chinese`를 주므로 KataGo는 백에게 N점을 더 준다.
+    · **실측**: 9x9 2점·덤 6.5 종국에서 KataGo **W+1.5**, 앱 **B+0.5 — 승패가 뒤집혔다.** 흑의 집 차이는 항상 정확히 N만큼 부풀려지고,
+      흑이 N 미만으로 이긴 판은 승패가 뒤집힌다(백 승이 뒤집히는 경우는 없다). 대국 중 그래프·추천수는 KataGo(보정 포함)라 **끝에서 숫자가 N만큼 튄다**.
+      틀린 결과가 대국 기록에 **영구 저장**되고, 그런 판마다 Critical `score.final_disagreement` 진단 이벤트가 난다.
+    · 집계가(일본식)는 보정 0이 맞고 이미 맞다. 옳은 동작은 **면적계가에서 백 +N**(중국 규칙, 엔진 설정, 두 계가 선택지의 일관성 — 저장소 골든이
+      빈 판 5점에서 면적계가 B+80.5 / 집계가 B+75.5로 정확히 N 차이를 보인다). 이 생략을 정한 제품 결정 기록은 없다.
+    · ⚠️ `#67`의 *"`GameSessionStore`가 `FinalScoreResult`를 직접 직렬화한다"* 는 부정확하다 — 저장되는 것은 `FinalScoreJudgement`와 기록의 승자·차이다.
+    · 🔴 **사용자에게 보이는 결과가 바뀌는 동작 변경** — main 병합은 사용자 승인 뒤, 9x9 면적계가 2점 한 판 실기 확인 권장.
+
+90. **원격 분석 서버의 쿼리 조립을 지키는 자동 검사가 없다** (AI 모델: Sonnet, 노력정도: 낮음) — `#65` 검수
+    · Kotlin 픽스처 테스트는 고정 응답만 파싱하고, `player==White` 단언은 서버가 요청의 `nextPlayer`에서 찍은 라벨만 본다.
+      서버가 `initialPlayer="B"`로 되돌아가도 테스트는 초록이다. KataGo 없이 도는 파이썬 검사 하나 —
+      *접바둑 개막이면 iP=W에 표준 돌 N개*, *따낸 접바둑 돌 국면에서도 N개 그대로*. 덤: docstring의 수치 표현이 느슨하다
+      (보정 이동량은 N에 선형이 아니다 — 실측표로 바꿀 것).
+91. **정적 국면 위에 홀수 수를 두면 `replayState`가 던진다** (AI 모델: Opus, 노력정도: 중간) — `#65` 검수, **지금은 닿지 않음**
+    · `syncStaticPosition` 뒤 재동기화 없이 `playMove`/`genMove`가 홀수 번이면 `KataGoAnalysisContext.replayState`가
+      *"Expected White, got Black"* 으로 던지고, JSON이 GTP로 폴백해도 `fillFromPolicyIfNeeded`가 또 부르므로 `analyze()`가
+      강등 없이 예외로 끝난다. `syncToGameState`가 매번 재동기화해서 지금은 안 탄다 — 정적 국면에 수를 두는 기능이 생기는 날의 함정.
 
 #### P3 — 이름공간 정렬 (순수 이동, 동작 변경 0)
 
@@ -359,68 +358,6 @@ Hilt(commonMain 불가)·Koin(이득 0)·전면 MVI(이미 절반 작동)·모�
 
 #### P4 — 사이클 절단 + 계약 좁히기
 
-32. **사이클 절단 — 순수 이동 10걸음으로 SCC 0** (AI 모델: Opus, 노력정도: 최대) — `#33` 래칫이 받친다
-    · ✅ **설계 완료(2026-09-24).** 선언 단위로 그래프를 그리면 패키지를 가로지르는 사이클이 **0개**다.
-      즉 **선언을 옮기기만 하면** 전부 풀린다. 10걸음 모두 동작 변경 없음, 끝나면 SCC 0.
-    · ⭐ **진단서가 처방한 기법 ⓑ(`LocalEngineCoreSessionDelegate`→`MatchReferee` 의존을 함수 타입 주입으로
-      뒤집기)는 필요 없다** — `match`는 `shared.*`만 본다. ⓐ(공유 타입을 `application.contract`로 내리기)만으로 된다.
-    · 🔴 **모든 걸음이 필요하다** — 어느 하나를 빼도 SCC가 남는다(걸음마다 빼 보고 시뮬레이션했다).
-      **순서 제약**: ⑨는 ④·⑧보다 뒤여야 한다. 먼저 하면 `contract`가 사이클에 끌려들어가 15개가 된다.
-    · 🔴 **걸음마다 `ContractSymbols`의 래칫 기준선을 같은 커밋에서 줄인다** — 안 줄이면 `#33`이 빨강이다(의도한 것).
-    · ⚠️ **함정 83**: `git mv` 뒤 경로 지정 커밋에는 **옛 경로도 넣는다.** `git show --stat`에 `R`이 보여야 한다
-      (`A`만 보이면 옛 파일이 남았다). ⚠️ **함정 82**: `app-android`의 import가 바뀌는 파일은 `lintDebug`
-      전후로 `LintBaselineFixed`·새 Warning 건수를 비교한다(`lint-baseline.xml`에 `shared` 경로는 0건).
-    · ⚠️ `commonMain` 패키지가 바뀌므로 걸음마다 `make test-ios`도 돌린다(함정 75).
-    · ✅ **파도 A 실측(2026-09-24)** — 여섯 걸음 모두 순수 이동으로 검수 통과(+/- 줄 짝 대조, 커밋 트리마다 그래프를
-      따로 재어 기준선과 일치, 사보타주로 래칫 작동 확인). **SCC·쌍의 실제 경로**(커밋 메시지 숫자가 아니라 이것이 정본):
-      시작 `14+2 / 17쌍` → ① `14 / 16` → ② `14 / 15` → ③ `13 / 14` → ④ `13 / 13` → ⑤ `12 / 11` → ⑥ `12 / 10`.
-      ⚠️ **커밋 메시지의 쌍 개수는 틀렸다**(②는 한 칸 밀림, ④⑤⑥은 5씩 부풀림). 코드·기준선은 맞고 기록만 틀려,
-      `#70`과 같은 이유로 이력은 다시 쓰지 않았다. `a96c8457` 본문의 간선 방향 설명도 거꾸로다(실제로는 `attendance → botcharacter` 8건).
-    · **계획과 달라진 것**: ② 목적지가 `engine.operation`이 아니라 **`application.concurrency`**(새 파일 `UiEffectLauncher.kt`) —
-      이미 있던 잎 패키지(내부 의존 0)라 더 안전하다. ⑤는 선언을 **셋** 뗐다 — `runPositionAnalysisCacheOptimizationWorkflowResult`까지
-      옮겨야 `analysis`가 `EngineSessionClient` import를 놓는다(새 파일 `PositionAnalysisCacheOptimizationWorkflowResult.kt`).
-      ④의 `contract`는 `shared.*` 말고 **`match.PlayerSetup`도** 본다 — `match`가 `shared.*`만 보므로 결론(SCC 밖)은 그대로다.
-      ⚠️ `make test-ios`는 그룹 끝에만 돌았다(규칙은 걸음마다). HEAD는 초록이고 뒤 커밋이 앞 커밋의 컴파일을 고친 흔적이 없어
-      중간 커밋이 깨졌을 가능성은 낮다. **파도 B는 걸음마다 돌린다.**
-    · **걸음** (크기 · 걸음 뒤 SCC · 대상):
-      ① **S · 2개짜리 소멸** — `attendance/AttendanceRewardPolicy.kt`의 `const val WeeklyRewardCycleTier` 한 줄을
-         `botcharacter`로. `attendance`는 이미 `botcharacter`를 import하므로 반대 방향 간선이 새로 생기지 않는다.
-      ② **S** ✅ — `launchUiEffect` 선언을 **`application.concurrency`** 로 떼어 낸다(파일 분할. 설계 원안은 `engine.operation`). 같은 파일의
-         `launchAutoAiEffect`는 `engine`에 남아 새 위치를 import한다. 빼면 `{engine, engine.operation}`이 남는다.
-      ③ **S · 13** — `InitialUserPreferencesPlan.toGameSessionSettingsState()` 확장 함수를 `preferences`로.
-         호출부는 `GoCoachSessionFactory.kt` 1개(import만).
-      ④ **S · `application.contract` 신설** — `session/GameSessionApplication.kt`에서 `RuntimePlayLevelSelection`·
-         `selectRuntimePlayLevel`·`internal selectPrimaryPlayLevel`을 뗀다. 셋의 의존은 `shared.*`뿐이다.
-      ⑤ **S · 13 · `application.cacheoptimization` 신설** — `PositionAnalysisCacheOptimizationRunnerApplication.kt`
-         전체, `PositionCacheOptimizationController.kt` 전체, `PositionAnalysisCacheOptimization.kt`에서 뗀
-         `runPositionAnalysisCacheOptimizationEffect`·`…WorkflowResult`. 캐시 모델 타입은 `analysis`에 남아
-         `engine → analysis`(19건)가 정방향이 된다. ⚠️ `LayeringContractTest`가
-         `RepoPaths.applicationPath("analysis/PositionCacheOptimizationController.kt")`로 경로를 박아 뒀다 — 같은 커밋에서.
-      ⑥ **S · `application.orchestration` 신설** — 세션 오케스트레이터 파일 둘(`GameSessionDisplayStateApplierApplication`·
-         `GameSettingsController`)을 통째로. `commonMain` 안에서 이 둘을 부르는 곳은 0, app-android 배선 3개는 import만.
-      ⑦ **M** — `runtime`의 기능별 로그 빌더를 각 기능으로: `RuntimeAiTurnEventApplication.kt` 전체(`runtimeAiTurn*Log` 9개)
-         → `autoai` / `runtimeHumanEngineSync{Failure,Success}Log`·`runtimeHumanMoveAcceptedLog`·private `runtimeSyncSummary`
-         → `humanmove` / `runtimeGameResetLog`·`runtimeEngineGameStartRequestLog` → `startgame` / `toRuntimeLogContext` → `session`.
-         쪼개지는 private 선언은 없다(확인함). `LayeringContractTest:709-779`의 `runtimeAiTurn*Log(` 단언은 호출 조각을
-         보므로 유지될 것으로 **추정**한다 — 걸음에서 확인할 것.
-      ⑧ **L** — `session/GameSessionController.kt`의 `sealed interface GameSessionEffect`(하위 타입이 전부 중첩)와
-         payload 11개를 `contract`로: `autoai.{AutoAiTurnRunPlan, AutoAiTurnExecutionContext, AutoAiTurnEndgamePlan}` ·
-         `humanmove.HumanEngineSyncRunPlan` · `score.{ScoreEstimateRequestPlan, ScoreEstimateDisplayPlan}` ·
-         `topmoves.TopMoveAnalysisPlan` · `debugreport.DebugReportCopyPlan` ·
-         `analysis.{AnalysisCacheKey, PositionAnalysisCacheOptimizationPlan, PositionAnalysisCacheOptimizationTarget}`.
-         옮긴 뒤 `contract`의 의존은 `shared.{domain, enginecontract, policy, scoring}`뿐이다 — **진단서가 말한
-         "의존 없는 contract"가 성립한다.** 소비처 약 41파일(import만, grep 추정).
-      ⑨ **M · 5** — `GameSessionRuntimeState.kt` 전체와 `autoai.AutoAiTurnDisplayPlan`(`AutoAiRunnerApplication.kt`에서
-         분할)을 `contract`로. ⭐ **여기서 `engine`(3계층)이 `session`(5계층)의 사이클에서 빠진다.**
-         (대안인 `RuntimeLogContext.runtimeState`를 `String`으로 좁히기는 순수 이동이 아니고 테스트 생성자 9곳이 바뀐다 — 기각.)
-      ⑩ **L · 0** — `session`을 상태 모델 층으로 확정하고, 상태가 필드로 품은 기능 값 타입 8개를 `session`으로:
-         `autoai.{AutoAiTurnUiState, AutoAiTurnFailureDisplayPlan}` · `humanmove.{HumanEngineSyncFailurePlan, HumanMoveLocalResult}` ·
-         `startgame.{GameSessionResetPlan, buildNewLocalGameSessionPlan}` · `topmoves.{TopMoveAnalysisFailureDisplayPlan,
-         TopMoveAnalysisUpdate}`. 이 가운데 둘은 `contract`로 못 간다(`engine.localScoreSnapshot`·`analysis.CachedAnalysisResult`를 쓴다).
-    · **끝난 모습**(가장 긴 경로 기준 층): `contract` < `analysis`·`runtime` < `engine.operation` < `engine` <
-      `score`·`cacheoptimization` < `savedgame`·`undo` < `session` < `autoai`·`debugreport`·`humanmove`·`preferences`·`startgame`
-      < `topmoves` < `orchestration`. 합계 선언 52개, 파일 21개(통째 이동 6, 분할 15).
-    · 🔴 이게 끝나야 모듈 분리가 가능하다. 끝나면 **`#81`(바이트코드 그래프로 SCC 0 재확인)** 을 바로 한다.
 34. **Konsist 도입** (AI 모델: Opus, 노력정도: 높음) — 24~29 뒤
     · PSI 기반이라 **주석·문자열을 애초에 코드로 보지 않아** 날것 `readText()` 결함이 원천 소멸하고,
       KMP `commonTest`에서 직접 돌아 `:shared` 규칙을 `:shared` 안에 둘 수 있다
@@ -490,6 +427,7 @@ Hilt(commonMain 불가)·Koin(이득 0)·전면 MVI(이미 절반 작동)·모�
       **`dependencies` 블록이 비어 있다는 사실 자체**가 *"도메인은 아무것도 모른다"* 를 증명한다.
     · ⚠️ `MatchReferee`가 `FinalScoreResult`를 import한다 — **`match` 4파일을 파일 단위로 재배정**하지 않으면
       첫 컴파일에서 순환으로 멈춘다.
+    · ⚠️ **착수 직전 `#81`의 합집합(소스 ∪ 바이트코드) 그래프를 다시 잰다** — 바이트코드 전용 간선 4개가 모듈 의존 선언을 요구한다.
 50. **`build-logic` 컨벤션 플러그인** (AI 모델: Sonnet, 노력정도: 중간)
 51. **디자인 시스템 추출** (AI 모델: Opus, 노력정도: 높음)
     · 하드코딩된 색·치수(`dp`, `Color(0xFF…)`)가 흩어져 있다. 토큰으로.
