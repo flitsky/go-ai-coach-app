@@ -78,8 +78,7 @@ class SavedSessionPromptSmokeTest {
     @Before
     fun seedResumableSavedSession() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val prefsDir = context.filesDir.resolveSibling("shared_prefs")
-        prefsDir.listFiles()?.forEach { it.delete() }
+        resetToFreshInstallState()
 
         val gameState = GameState.empty(boardSize = BoardSize.Nine)
             .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))

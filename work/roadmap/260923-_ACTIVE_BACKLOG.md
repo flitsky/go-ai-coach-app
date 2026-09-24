@@ -108,7 +108,7 @@ export JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home
 ## ⚠️ 함정 색인 — 키워드가 지금 일에 걸릴 때만 전문을 연다
 
 > **전문은 전부 `docs/spec/PITFALLS.md`에 있다**(#194로 한 파일에 모았다, 2026-09-23).
-> 번호로 찾아 **그 번호만** 편다 — 80건을 처음부터 읽지 않는다.
+> 번호로 찾아 **그 번호만** 편다 — 81건을 처음부터 읽지 않는다.
 >
 > ⚠️ **전문과 색인이 어긋나면 색인이 옳다** — 색인은 계속 고쳐 왔고 전문은 각 세대가 쓴 시점에
 > 동결됐다. **전문을 고치지 말 것**: 새로 알게 된 것은 색인에 ⚠️로 적고, 새 함정이면 다음 번호를 딴다.
@@ -174,6 +174,7 @@ export JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home
 - **70** 공용 인터페이스(`EngineCoreApi.syncStaticPosition` 등) 기본 구현 삭제는 순서를 뒤집을 것 — 공통 계약 테스트 스위트(Local/Remote/Stub 셋을 같은 시나리오로)를 **먼저** 만들고 삭제는 그 다음에. 먼저 지우면 흩어진 손 페이크 전부가 동시에 컴파일 에러가 된다
 - **77** 공유 트리에서 **음성 대조(고의 파손)는 `--rerun-tasks` 없이 거짓 판독을 낸다** — Gradle이 소스 변경을 무시하고 컴파일을 `UP-TO-DATE`로 건너뛰어 "멀쩡한데 안 깨진다"가 나온다. 함정 24의 거울상(빨개져야 할 것이 안 빨개지는데 그게 안전으로 읽힌다). 로그에서 컴파일이 실제로 돌았는지 눈으로 확인할 것
 - **78** 공유 트리에서 **`build/test-results`의 테스트 개수는 못 믿는다** — 다른 세션이 필터 걸린 테스트를 돌려 덮어쓴다. 개수 대조는 빌드 산출물이 아니라 **소스에서** 센다(`git ls-tree`로 두 리비전의 `@Test`를 세는 식)
+- **81** 계기 테스트의 "갓 설치" 초기화 — `shared_prefs` **파일 삭제만으로는 안 된다**(안드로이드가 `SharedPreferences`를 프로세스 단위로 캐시해, 앞 테스트 설정을 그대로 물려받는다). 지우기 **전에** 같은 이름으로 열어 `clear().commit()`(`FreshAppState.resetToFreshInstallState()`). **단독 실행은 초록, 셋을 함께 돌리면 빨강**으로 나타나고 증상이 원인에서 멀다
 
 **빌드·릴리스·콘솔**
 - **4** R8 release — 스모크만으로 끝내지 말 것(대국·출석·1회권). ⚠️ *"release 실행 기록 없음"* 은 낡았다(813·901·902 실기, §0 B-3)
@@ -535,7 +536,7 @@ _(없음)_
 | 8세대(봉인) — 완료 이력·함정 58~66 전문·해소된 U | `260919-260922_STUDY_CONTENT_AND_1_0_RELEASE.md` |
 | **리팩토링 진행** — 이 트랙의 일감·진척은 전부 저기 있다(번호 체계가 다르다) | `260923-_REFACTORING_BACKLOG.md` — 「진행 중」 → 「예정사항」 순으로 집는다 · 착수 프로토콜과 함정 색인이 그 안에 있다 |
 | **아키텍처 실측과 처방** — 계층 일감은 여기서 나온다 | `260923-_ARCHITECTURE_DIAGNOSIS_AND_REFACTORING.md` — §1 무엇이 실제로 깨져 있나 · §3 목표 아키텍처 · §4 착수 전 함정(→ `PITFALLS.md` 67~76) |
-| **함정 전문 1~80** | `docs/spec/PITFALLS.md` — 번호로 찾아 그 번호만 편다 |
+| **함정 전문 1~81** | `docs/spec/PITFALLS.md` — 번호로 찾아 그 번호만 편다 |
 | 출시·콘솔 절차, 등재문, 체크리스트 | `work/plans/GOOGLE_PLAY_LAUNCH_PLAN.md` · `work/play-store-assets/store_listing.txt` |
 | 화면 구조·기능 명세 | `docs/spec/APP_IA_AND_UI_SPEC.md` |
 | 권한·게이팅 정책 | `docs/spec/FEATURE_ACCESS_PRINCIPLES.md` |
