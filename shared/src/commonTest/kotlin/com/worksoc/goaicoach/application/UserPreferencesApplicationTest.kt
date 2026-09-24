@@ -69,6 +69,24 @@ class UserPreferencesApplicationTest {
         )
     }
 
+    /**
+     * 초기 계획이 만드는 **설정 상태에도** 저장된 덤이 실려야 한다(refactor backlog #93이 찾음).
+     * 화면의 덤(`gameState.komi`)만 저장값을 받고 설정 상태는 기본값 6.5로 비어 있으면, 미리보기를
+     * 다시 그리는 순간(판 크기·접바둑 변경) 덤이 6.5로 돌아간다 — 그 증상은
+     * `GameSettingsControllerTest.boardSizeChangeAfterRestartKeepsTheSavedKomi`가 본다.
+     */
+    @Test
+    fun initialSettingsStateCarriesTheSavedKomi() {
+        val plan = buildInitialUserPreferencesPlan(
+            preferences = UserPreferencesSnapshot(handicapCount = 3, komi = 7.5),
+            defaultPlayLevel = PlayLevelSetting(),
+            currentProfile = EngineProfile(),
+        )
+
+        assertEquals(7.5, plan.gameState.komi)
+        assertEquals(7.5, plan.toGameSessionSettingsState().komi, "설정 상태가 저장된 덤 대신 기본값을 들고 시작했다")
+    }
+
     @Test
     fun buildsSnapshotFromCurrentUiSettings() {
         val setup = PlayerSetup()

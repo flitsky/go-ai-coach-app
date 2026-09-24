@@ -68,6 +68,11 @@ fun InitialUserPreferencesPlan.toGameSessionSettingsState(): GameSessionSettings
         searchTimeSettings = settings.searchTimeSettings.normalized(),
         topMovesEnabled = settings.topMovesEnabled,
         handicapCount = settings.handicapCount,
+        // ⚠️ **덤도 저장값으로 채운다**(refactor backlog #93이 찾음). 빠져 있을 때는 화면의 덤
+        // (`gameState.komi`)만 저장값이고 이쪽은 기본값 6.5였다 — 미리보기를 다시 그리는
+        // `GameSettingsController.refreshNewGamePreview`가 **이쪽**을 읽으므로, 재시작 뒤 판 크기나
+        // 접바둑을 한 번 바꾸면 덤이 소리 없이 6.5로 돌아갔다.
+        komi = gameState.komi,
     )
 
 fun buildUserPreferencesSnapshot(

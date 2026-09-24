@@ -4,6 +4,7 @@ import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
 import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
 import com.worksoc.goaicoach.application.contract.*
 import com.worksoc.goaicoach.application.orchestration.*
+import com.worksoc.goaicoach.application.preferences.*
 import com.worksoc.goaicoach.application.session.*
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.PlayerSetup
@@ -372,6 +373,47 @@ class GameSettingsControllerTest {
     }
 
     /**
+     * **재시작 직후 판 크기를 바꿔도 저장된 덤이 남아야 한다**(refactor backlog #93이 찾음).
+     *
+     * 재시작하면 화면의 덤(`gameState.komi`)은 저장값으로 오르는데, 미리보기를 다시 그릴 때 쓰는
+     * 설정 상태의 덤(`settings.komi`)은 **기본값 6.5로 비어 있었다** — 그래서 덤을 7.5로 두고 앱을
+     * 다시 켠 뒤 판 크기나 접바둑을 한 번 바꾸면 덤이 소리 없이 6.5로 돌아갔다. #93의 자동 전환은
+     * *"접바둑 점수만 바꾸면 덤을 건드리지 않는다"* 를 약속하므로, 이 구멍이 있으면 재시작 뒤에
+     * 그 약속이 깨진다.
+     */
+    @Test
+    fun boardSizeChangeAfterRestartKeepsTheSavedKomi() {
+        val live = LiveSettingsWiring(restartFrom(UserPreferencesSnapshot(boardSize = BoardSize.Thirteen, komi = 7.5)))
+        val controller = liveWiredController(live)
+        assertEquals(7.5, live.displayedKomi, "재시작 직후 화면의 덤이 저장값이 아니다")
+
+        controller.changeBoardSize(BoardSize.Nineteen)
+
+        assertEquals(
+            7.5,
+            live.displayedKomi,
+            "재시작 뒤 판 크기를 바꾸자 덤이 기본값으로 돌아갔다 — 설정 상태가 저장된 덤을 싣지 않았다",
+        )
+    }
+
+    /**
+     * 앱 배선(`SettingsAndDiagnosticsControllerWiring`)과 **같은 모양**으로 설정·코어 상태를 실제로
+     * 갈아끼우는 컨트롤러. 위 테스트들처럼 람다가 값을 받아 적기만 하면 *"설정 상태에서 미리보기로"*
+     * 흐르는 경로가 보이지 않는다.
+     */
+    private fun liveWiredController(live: LiveSettingsWiring): GameSettingsController =
+        boardSettingsTestController(
+            isGameEnded = { live.core.isGameEnded },
+            currentSettingsState = { live.settings },
+            applySettingsBoardSize = { size -> live.settings = live.settings.applyBoardSize(size) },
+            applySettingsHandicapCount = { count -> live.settings = live.settings.applyHandicap(count) },
+            applySettingsKomi = { komi -> live.settings = live.settings.applyKomi(komi) },
+            applyCoreSessionState = { core -> live.core = core },
+            currentGameState = { live.core.gameState },
+            currentCoreSessionState = { live.core },
+        )
+
+    /**
      * Minimal controller wired only for the board-size/handicap/komi tests above — the
      * other constructor params are exercised by the search-time/player-setup tests further
      * up and are irrelevant here (never called by changeBoardSize/changeHandicapCount/changeKomi).
@@ -383,8 +425,10 @@ class GameSettingsControllerTest {
         applySettingsHandicapCount: (Int) -> Unit = {},
         applySettingsKomi: (Double) -> Unit = {},
         applyCoreSessionState: (GameSessionCoreState) -> Unit = {},
+        currentGameState: () -> GameState = { GameState.empty() },
+        currentCoreSessionState: () -> GameSessionCoreState = { defaultTestCoreState() },
     ): GameSettingsController = GameSettingsController(
-        currentGameState = { GameState.empty() },
+        currentGameState = currentGameState,
         currentPlayerSetup = { PlayerSetup() },
         currentEngineProfile = { EngineProfile() },
         currentSearchTimeSettings = { SearchTimeSettings() },
@@ -418,7 +462,7 @@ class GameSettingsControllerTest {
         onEngineMessage = {},
         applyPlayerSetup = {},
         applyCoreSessionState = applyCoreSessionState,
-        currentCoreSessionState = { defaultTestCoreState() },
+        currentCoreSessionState = currentCoreSessionState,
         applyRuntimePlayLevelSelection = {},
         applyAnalysisState = {},
         applySettingsAutoPlayDelay = {},
@@ -449,3 +493,22 @@ private fun defaultTestCoreState(): GameSessionCoreState =
         moveReviewState = GameSessionMoveReviewState.reset("", ""),
         engineMessage = ""
     )
+
+/**
+ * 앱을 켤 때와 같은 경로로 세션을 세운다 — `GoCoachApp`이 `buildInitialUserPreferencesPlan`으로
+ * 초기 계획을 만들고, `buildInitialSessionState`가 그것을 **대국 전 미리보기**(`isGameEnded = true`)로
+ * 올린다.
+ */
+private fun restartFrom(saved: UserPreferencesSnapshot): InitialUserPreferencesPlan =
+    buildInitialUserPreferencesPlan(
+        preferences = saved,
+        defaultPlayLevel = PlayLevelSetting(),
+        currentProfile = EngineProfile(),
+    )
+
+/** 화면이 읽는 두 상태 — 드롭다운의 덤은 `core.gameState.komi`, 접바둑은 `settings.handicapCount`다. */
+private class LiveSettingsWiring(plan: InitialUserPreferencesPlan) {
+    var settings: GameSessionSettingsState = plan.toGameSessionSettingsState()
+    var core: GameSessionCoreState = defaultTestCoreState().copy(gameState = plan.gameState, isGameEnded = true)
+    val displayedKomi: Double get() = core.gameState.komi
+}
