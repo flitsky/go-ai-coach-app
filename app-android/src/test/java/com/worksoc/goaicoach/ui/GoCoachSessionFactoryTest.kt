@@ -41,13 +41,6 @@ class GoCoachSessionFactoryTest {
 private object EmptyBenchmarkStore : EngineBenchmarkStorePort {
     override fun exists(): Boolean = false
 
-    override fun hasUsableProfile(
-        samplesPerVisit: Int,
-        timeCapMs: Long,
-        measurementVersion: Int,
-        visitsTargets: List<Int>,
-    ): Boolean = false
-
     override fun save(profile: EngineBenchmarkProfile) = Unit
 
     override fun load(): EngineBenchmarkProfile? = null

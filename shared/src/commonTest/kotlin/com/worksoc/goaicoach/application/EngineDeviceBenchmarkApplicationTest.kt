@@ -574,14 +574,6 @@ private class RecordingEngineBenchmarkStore : EngineBenchmarkStorePort {
     override fun exists(): Boolean =
         savedProfile != null
 
-    override fun hasUsableProfile(
-        samplesPerVisit: Int,
-        timeCapMs: Long,
-        measurementVersion: Int,
-        visitsTargets: List<Int>,
-    ): Boolean =
-        false
-
     override fun save(profile: EngineBenchmarkProfile) {
         savedProfile = profile
     }

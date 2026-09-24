@@ -3,7 +3,6 @@ package com.worksoc.goaicoach.persistence
 import android.content.Context
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkMetric
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkProfile
-import com.worksoc.goaicoach.application.engine.EngineBenchmarkRuleset
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkSample
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkStorePort
 import com.worksoc.goaicoach.middleware.optNullableDouble
@@ -19,27 +18,6 @@ internal class EngineBenchmarkStore(context: Context) : EngineBenchmarkStorePort
 
     override fun exists(): Boolean =
         file.isFile
-
-    override fun hasUsableProfile(
-        samplesPerVisit: Int,
-        timeCapMs: Long,
-        measurementVersion: Int,
-        visitsTargets: List<Int>,
-    ): Boolean {
-        val profile = load() ?: return false
-        if (
-            profile.samplesPerVisit != samplesPerVisit ||
-            profile.timeCapMs != timeCapMs ||
-            profile.measurementVersion != measurementVersion ||
-            profile.benchmarkRuleset != EngineBenchmarkRuleset
-        ) {
-            return false
-        }
-        val metricByVisits = profile.metrics.associateBy { metric -> metric.visits }
-        return visitsTargets.all { visits ->
-            metricByVisits[visits]?.samples == samplesPerVisit
-        }
-    }
 
     override fun save(profile: EngineBenchmarkProfile) {
         file.writeText(EngineBenchmarkCodec.encode(profile), Charsets.UTF_8)
