@@ -169,6 +169,9 @@ Hilt(commonMain 불가)·Koin(이득 0)·전면 MVI(이미 절반 작동)·모�
 | 16 | **분석 폴백이 취소를 삼키지 않는다 + 쿼리 id 충돌 불가** — 2계층에서 `CancellationException`(타임아웃 포함)을 rethrow. 폴백 사실이 `engine.analysis.fallback` 진단 이벤트로 남는다(전엔 **완전 무음**). 카운터 → `AtomicLong`, id에 국면이 실린다. ⚠️ **AI 착수 경로는 아직 덜 닫혔다(#74)** | `ec59ea32` |
 | 75 | 🔴 **릴리스 게이트 플레이크가 프로덕션 버그 둘을 가리키고 있었다** — ⓐ 타임아웃 예산이 **디스패치 전부터** 흘러 `Dispatchers.IO`가 붐비면 본문이 아예 실행 안 됨(IO 풀 점유로 **5/5 재현**) ⓑ 그 구조는 진짜 막힌 연결에서 강제 폐기에 **닿지도 못함**. 고친 뒤 **32/32**(load avg 157 포함) | `a2d0d7f0` |
 | 68 | **가드의 FQN이 실존 심볼을 가리키는지 기계가 확인한다** — `ContractSymbols`(등록부) + `SourceSymbolIndex` + 메타 테스트 4개. 등록부 **밖에 FQN 리터럴이 새로 생기는 것까지** 막는다. 사보타주: 메타만 빨강, **가드 47개는 전부 초록** | `4de90048` |
+| 76 | **메타 테스트 판정기에 양성 표본** — `topLevelFunctionExists`가 항상 false로 고장나면 이제 빨개진다 | `96e030b0` |
+| 25 | **SDK 어댑터 9개 `ui` → `platform`** + 가드 G1(platform은 Compose·ui·조립을 모른다). 사보타주 5종으로 작동 확인. ⚠️ `lint-baseline.xml`이 **경로 계약**이었다(함정 82) | `1df59e2c`·`242e01e6` |
+| 26 | **`ui`에 숨은 조립 코드 7개 → 루트 패키지**(문서가 정한 조립 전용 자리). `MainActivity`·`GoAiCoachApplication`은 **일부러 안 옮김** — 런처 컴포넌트 이름. 가드 G3·G4·G5 신설. ⭐ **"목록 누락"이라는 조용한 사망을 실측으로 찾아 막았다** | `2dd83ce2`·`d1c3d02c` |
 | 66 | **호출부 0·테스트 0이던 public 함수 처리** | (#24 파도에 동반) |
 | 71 | **모듈 사이 테스트 코드 공유 수단 신설 + 손 페이크 제거**(`−260/+45`) — 백로그가 적은 2벌이 아니라 **3벌**이었다(셋째는 androidTest가 아니라 `src/test`). `commonTestSupport` 한 디렉터리를 세 소스셋이 함께 컴파일한다. ⚠️ `testFixtures`는 **안드로이드 변형만** 내보내 `commonTest`가 빠지므로 기각(근거는 배선 옆). 음성 대조로 세 소비자 전부 빨개짐 확인 | `7dce47e2` |
 
@@ -263,15 +266,23 @@ _(없음 — 아래 「예정사항」 첫 항목부터 집는다)_
     · 🔴 **고치면 실기가 필요하다.** 타임아웃이 위로 올라가면 **AI가 수를 못 두고 멈추거나 UI가
       에러를 보일 수 있다** — `#16`이 남긴 `needsDevice` 중 가장 큰 위험과 같은 자리다.
 
-76. **메타 테스트 자신 안에 같은 종류의 사망이 한 칸 남아 있다** (AI 모델: Sonnet, 노력정도: 낮음)
-    · `SourceSymbolIndex.topLevelFunctionExists`의 **양성 경로가 스위트에서 한 번도 실행되지 않는다** —
-      등록된 `TOP_LEVEL_FUNCTION` 3건이 전부 `ABSENT_BY_DESIGN`이라 항상 false만 확인한다.
-    · 🔴 **그 판정기가 미래에 false만 뱉도록 고장나면 그 세 가드의 "되살아남" 감시가 조용히 죽는다** —
-      `#68`이 막으려던 바로 그 종류의 사망이 **메타 테스트 안에** 남아 있다.
-    · 해법: 실재하는 최상위 함수 하나를 양성 표본으로 등록하거나, 판정기 자체의 양성 단위 테스트를 둔다.
+77. **G1 루트 매처의 inline FQN 사각지대** (AI 모델: Sonnet, 노력정도: 낮음)
+    · `platform` 파일이 import 없이 `com.worksoc.goaicoach.AppForegroundEvents`처럼 **루트 심볼을 inline FQN으로**
+      부르면 G1이 초록이다(검수자 사보타주로 관찰). 같은 G1 안에서도 접두사 금지는 `detectForbiddenReference`가
+      inline FQN까지 잡는데 **루트 매처만 import 줄 정규식에 그친다.**
+    · 루트 매처도 `detectForbiddenReference`를 타게 한다.
+
+78. **옮긴 파일을 옛 경로로 가리키는 주석 정리** (AI 모델: Sonnet, 노력정도: 낮음)
+    · `AuthClientPort.kt` L7·L17, `PurchasePort.kt`, `app-android/build.gradle.kts`, `AndroidManifest.xml` 주석,
+      `ConsumableItem.kt:33`(`ui/PremiumPurchaseGlue.kt`)이 옛 경로를 적고 있다. 동작 영향 0, 읽는 사람을 헷갈리게 한다.
 
 #### P3 — 이름공간 정렬 (순수 이동, 동작 변경 0)
 
+> ✅ **#25·#26도 닫혔다(2026-09-24).** ⚠️ **`#30`이 내건 "고칠 자리가 한 곳"은 성립하지 않았다** —
+> 두 이동에서 **4 + 12 = 16자리**를 고쳤다. `LayeringContractTest`에 같은 파일명 5줄이 **7번 복붙**돼 있었고,
+> 계약 테스트 셋이 `RepoPaths`를 **우회**하고 있었다. 이번에 그 7벌을 `RepoPaths.controllerWiringFiles` 한 곳으로,
+> 우회 셋을 `RepoPaths.compositionFile`로 모았다 — **다음 이동부터는** 한 곳이다. `lint-baseline.xml`만 예외(함정 82).
+>
 > ✅ **#24가 닫혔다(2026-09-24).** `shared` 루트 22→0, `shared.domain`의 import 0줄.
 > 그 과정에서 **처방 §3이 글자 그대로는 성립하지 않는다**는 것이 드러났다 — 계가기 셋이 순수 바둑
 > 규칙인데 반환형 `FinalScoreResult`와 그 첫 필드 `EngineStatus`가 엔진 계약에 있다. 로컬 계가기들이
@@ -282,11 +293,6 @@ _(없음 — 아래 「예정사항」 첫 항목부터 집는다)_
 > 컴파일러의 완전성 보증이 사라진다. 검증: `git diff -U0`에서 package/import 이외 변경 **0줄**.
 > ⚠️ **전부 `LayeringContractTest.kt` 경로를 함께 커밋**해야 하므로 **직렬로** 한다(1,829줄 파일 3중 충돌 방지).
 
-25. **app-android 어댑터 축출** (AI 모델: Sonnet, 노력정도: 중간)
-    · 4계층 SDK 어댑터 6개(`AndroidBillingClient`·`AndroidAuthClient` 등, `androidx.compose` import **0건**)가
-      `package com.worksoc.goaicoach.ui`에 있다 → `platform/`으로.
-26. **조립 코드 축출** (AI 모델: Sonnet, 노력정도: 중간)
-    · `MainActivity`·`GoAiCoachApplication`·`*Coordinator`·`*ControllerWiring`·`PremiumPurchaseGlue` → `composition/`.
 27. **`ui` 패키지 122파일 분할** (AI 모델: Opus, 노력정도: 최대) — **48 뒤에**
     · `shell/`·`play/`·`study/`·`history/`·`monetization/`·`account/`·`designsystem/`.
     · 🔴 **지금 `ui`는 같은 패키지라 파일 간 import가 아예 생기지 않는다**(저장소 전체에서 `ui` import 10줄).

@@ -108,7 +108,7 @@ export JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home
 ## ⚠️ 함정 색인 — 키워드가 지금 일에 걸릴 때만 전문을 연다
 
 > **전문은 전부 `docs/spec/PITFALLS.md`에 있다**(#194로 한 파일에 모았다, 2026-09-23).
-> 번호로 찾아 **그 번호만** 편다 — 81건을 처음부터 읽지 않는다.
+> 번호로 찾아 **그 번호만** 편다 — 82건을 처음부터 읽지 않는다.
 >
 > ⚠️ **전문과 색인이 어긋나면 색인이 옳다** — 색인은 계속 고쳐 왔고 전문은 각 세대가 쓴 시점에
 > 동결됐다. **전문을 고치지 말 것**: 새로 알게 된 것은 색인에 ⚠️로 적고, 새 함정이면 다음 번호를 딴다.
@@ -201,6 +201,7 @@ export JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home
 - **75** iOS 컴파일 게이트는 옳지만 `make test`(유일한 릴리스 게이트)에 넣지 말 것 — 아무것도 출하하지 않는 타깃의 컴파일 실패로 안드로이드 릴리스가 막히면 안 된다. 별도 `make test-ios`로 분리, iOS가 실제로 출하하는 날 되돌릴 것
 - **76** 죽은 스캔을 `require`로 되살리는 조치는 실행 즉시 초록이 아니라 위반이 쏟아질 각오를 하고 넣을 것 — 오래 검사되지 않던 구간의 실제 위반이 무더기로 드러날 수 있다. `make test`가 유일한 릴리스 게이트라 드러난 위반은 **같은 스레드가 끝까지 초록으로 만들고 닫아야** 한다(위반 0건은 보장이 아니라 그때의 결과일 뿐)
 - **79** Lint `abortOnError=true`는 **새 Error만 막고 새 Warning은 통과시킨다**(`warningsAsErrors=false`이므로). 얻는 보장은 "새 Error 0"이지 "새 경고 0"이 아니다. 덤: `NewApi`는 인라인되는 상수 참조를 건너뛰어 음성 대조가 안 걸린다 — 실제 메서드 호출로 해야 한다
+- **82** 파일을 옮기면 `lint-baseline.xml`의 **경로가 낡아** 기준선에 묻어 둔 경고가 **새 Warning으로 되살아난다** — 79 때문에 게이트는 초록. `RepoPaths`·FQN 등록부·이름 전수 grep이 **전부 못 보는** 경로 계약이다. 옮기는 커밋에서 `LintBaselineFixed`·새 Warning 건수를 전후 비교하고, 기준선을 재생성하지 말고 **경로만** 고칠 것
 
 **광고·결제**
 - **8** `AndroidBillingClient` 공유 — 상품 종류는 **호출부가 선언**(#136에서 기본값 제거)
@@ -536,7 +537,7 @@ _(없음)_
 | 8세대(봉인) — 완료 이력·함정 58~66 전문·해소된 U | `260919-260922_STUDY_CONTENT_AND_1_0_RELEASE.md` |
 | **리팩토링 진행** — 이 트랙의 일감·진척은 전부 저기 있다(번호 체계가 다르다) | `260923-_REFACTORING_BACKLOG.md` — 「진행 중」 → 「예정사항」 순으로 집는다 · 착수 프로토콜과 함정 색인이 그 안에 있다 |
 | **아키텍처 실측과 처방** — 계층 일감은 여기서 나온다 | `260923-_ARCHITECTURE_DIAGNOSIS_AND_REFACTORING.md` — §1 무엇이 실제로 깨져 있나 · §3 목표 아키텍처 · §4 착수 전 함정(→ `PITFALLS.md` 67~76) |
-| **함정 전문 1~81** | `docs/spec/PITFALLS.md` — 번호로 찾아 그 번호만 편다 |
+| **함정 전문 1~82** | `docs/spec/PITFALLS.md` — 번호로 찾아 그 번호만 편다 |
 | 출시·콘솔 절차, 등재문, 체크리스트 | `work/plans/GOOGLE_PLAY_LAUNCH_PLAN.md` · `work/play-store-assets/store_listing.txt` |
 | 화면 구조·기능 명세 | `docs/spec/APP_IA_AND_UI_SPEC.md` |
 | 권한·게이팅 정책 | `docs/spec/FEATURE_ACCESS_PRINCIPLES.md` |
