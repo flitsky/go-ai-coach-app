@@ -8,7 +8,10 @@ import com.worksoc.goaicoach.architecture.ContractSymbols.ENGINE_PACKAGE
 import com.worksoc.goaicoach.architecture.ContractSymbols.LOCAL_CONFIGURE_SYNC_AND_ESTIMATE_GRAPH_SCORE
 import com.worksoc.goaicoach.architecture.ContractSymbols.LOCAL_ESTIMATE_SCORE_FOR_STATE
 import com.worksoc.goaicoach.architecture.ContractSymbols.LOCAL_SYNC_AND_ESTIMATE_GRAPH_SCORE
+import com.worksoc.goaicoach.architecture.ContractSymbols.MAIN_ACTIVITY
 import com.worksoc.goaicoach.architecture.ContractSymbols.PERSISTENCE_PACKAGE
+import com.worksoc.goaicoach.architecture.ContractSymbols.PLATFORM_PACKAGE
+import com.worksoc.goaicoach.architecture.ContractSymbols.PRESENTATION_PACKAGE
 import com.worksoc.goaicoach.architecture.ContractSymbols.UI_PACKAGE
 import com.worksoc.goaicoach.architecture.ContractSymbols.importOf
 import java.io.File
@@ -82,7 +85,8 @@ class LayeringContractTest {
         // port/adapter split as the engine layers (EngineCoreApi vs
         // KataGoProcessEngineAdapter): the port interfaces (AuthClientPort,
         // PremiumStateStorePort, DeviceIdentityStorePort) must stay pure Kotlin, while the real
-        // Android/Firebase/SharedPreferences-backed adapters live in ui/ or persistence/.
+        // Android/Firebase/SharedPreferences-backed adapters live in platform/ or persistence/
+        // (refactor backlog #25 moved them out of ui/).
         // ⚠️ 260923: 셋 다 :shared로 건너간 뒤(260816)에도 스캔 경로가 app-android에 남아
         // **0개 파일을 검사하며 무조건 통과**하고 있었다. 실재하는 트리를 가리키게 고친다.
         val checkedDirs = listOf(
@@ -96,6 +100,7 @@ class LayeringContractTest {
             "import java.",
             "import org.json.",
             importOf(UI_PACKAGE),
+            importOf(PLATFORM_PACKAGE),
             importOf(PERSISTENCE_PACKAGE),
             importOf(ENGINE_PACKAGE),
         )
@@ -107,10 +112,77 @@ class LayeringContractTest {
 
         assertTrue(
             "application/auth, application/premium, and application/device must stay platform-free " +
-                "ports; put Android/Firebase-specific adapters in ui/ or persistence/ instead:\n" +
+                "ports; put Android/Firebase-specific adapters in platform/ or persistence/ instead:\n" +
                 offenders.joinToString("\n"),
             offenders.isEmpty(),
         )
+    }
+
+    /**
+     * `platform/`은 4계층 SDK 어댑터(Billing·UMP·AdMob·Firebase Auth·Credential Manager·Vibrator 등)만
+     * 산다(refactor backlog #25). 이 파일들을 `ui/`에서 옮긴 근거가 **"Compose도 ui 심볼도 모른다"** 였으니,
+     * 그 근거를 계약으로 굳힌다 — 가드가 없으면 옮긴 순간 이 패키지는 사각지대가 된다.
+     *
+     *  - Compose·ui·presentation: 어댑터가 화면을 알면 `ui/`에서 꺼낸 의미가 사라진다.
+     *    (Compose `AndroidView`로 광고를 그리는 `BannerAdView`는 그래서 `ui/`에 남았다.)
+     *  - 엔진(런타임 구현체·조립 인접 engine 패키지·EngineCoreApi): SDK 어댑터가 알 이유가 없다.
+     *  - **루트(조립) 패키지**: 어댑터는 조립되는 쪽이지 조립을 부르는 쪽이 아니다. 단, 생성 코드인
+     *    `BuildConfig`·`R`은 루트 패키지에 생기므로 **단순 이름으로만** 예외를 둔다 — FQN으로 등록하면
+     *    소스 색인이 생성 코드를 못 봐 실존 검사가 영원히 빨개진다.
+     *
+     * ⚠️ 스캔 대상이 비면 [ktFilesIn]이 터진다 — `platform/`이 이사하거나 사라지면 여기서 드러난다.
+     */
+    @Test
+    fun platformAdaptersDoNotImportComposeUiOrComposition() {
+        val files = ktFilesIn(RepoPaths.appAndroid("platform"))
+        val forbiddenImports = listOf(
+            "import androidx.compose.",
+            importOf(UI_PACKAGE),
+            importOf(PRESENTATION_PACKAGE),
+            importOf(ENGINE_PACKAGE),
+            importOf(ENGINE_CORE_API),
+            importOf(ENGINE_ADAPTER),
+        )
+
+        val offenders = forbiddenReferenceOffenders(files = files, forbiddenImports = forbiddenImports) +
+            rootPackageReferenceOffenders(files = files, allowedSimpleNames = GENERATED_ROOT_SYMBOLS)
+
+        assertTrue(
+            "platform/ adapters must not know Compose, ui, presentation, the engine, or the composition " +
+                "root — keep them SDK-only (refactor backlog #25):\n" + offenders.joinToString("\n"),
+            offenders.isEmpty(),
+        )
+    }
+
+    /**
+     * [rootPackageReferenceOffenders]의 자기검증 — 루트 매처가 **허공을 보지 않는지**.
+     * 파일에 위반이 없으면 위 가드는 초록이므로, 매처가 고장나 무엇과도 매치하지 않는 상태와 구분되지
+     * 않는다. 그래서 등록부 앵커에서 만든 import 줄로 양성·음성을 나란히 확인한다.
+     */
+    @Test
+    fun rootPackageMatcherFlagsRootImportsButNotGeneratedSymbols() {
+        val tempDir = java.nio.file.Files.createTempDirectory("root-matcher").toFile()
+        try {
+            val root = MAIN_ACTIVITY.substringBeforeLast('.')
+            val offending = File(tempDir, "Offending.kt").apply {
+                writeText("package x\n\nimport $MAIN_ACTIVITY\nimport $root.*\n")
+            }
+            val generated = File(tempDir, "Generated.kt").apply {
+                writeText(
+                    "package x\n\n" + GENERATED_ROOT_SYMBOLS.joinToString("\n") { "import $root.$it" } + "\n",
+                )
+            }
+
+            val offenders = rootPackageReferenceOffenders(listOf(offending), GENERATED_ROOT_SYMBOLS)
+            assertEquals("루트 import(단일 조각·와일드카드)를 둘 다 잡아야 한다: $offenders", 2, offenders.size)
+            assertEquals(
+                "생성 코드(BuildConfig·R)는 루트 import 예외여야 한다",
+                emptyList<String>(),
+                rootPackageReferenceOffenders(listOf(generated), GENERATED_ROOT_SYMBOLS),
+            )
+        } finally {
+            tempDir.deleteRecursively()
+        }
     }
 
     /** ⚠️ 260923: `match/`가 :shared로 건너간 뒤 0개 파일을 검사하고 있었다(위 가드와 같은 사망). */
@@ -991,6 +1063,7 @@ class LayeringContractTest {
             "import org.json.",
             importOf(APPLICATION_PACKAGE),
             importOf(UI_PACKAGE),
+            importOf(PLATFORM_PACKAGE),
             importOf(PERSISTENCE_PACKAGE),
             importOf(ENGINE_PACKAGE),
         )
@@ -1210,6 +1283,7 @@ class LayeringContractTest {
             "import org.json.",
             importOf(APPLICATION_PACKAGE),
             importOf(UI_PACKAGE),
+            importOf(PLATFORM_PACKAGE),
             importOf(PERSISTENCE_PACKAGE),
             importOf(ENGINE_PACKAGE),
         )
@@ -1614,6 +1688,24 @@ class LayeringContractTest {
             }
         }
 
+    /**
+     * 루트 패키지(조립 전용)를 참조하는 import를 찾는다(refactor backlog #25).
+     *
+     * [forbiddenReferenceOffenders]의 접두사 모델로는 표현할 수 없다 — 루트 접두사는 **모든**
+     * 하위 패키지와 매치한다. 그래서 루트 **바로 아래 한 조각**(`import <root>.X`, `import <root>.*`)만
+     * 본다. 루트 이름은 등록부의 [MAIN_ACTIVITY]에서 파생시켜 리터럴을 들지 않는다.
+     */
+    private fun rootPackageReferenceOffenders(files: List<File>, allowedSimpleNames: Set<String>): List<String> {
+        val root = MAIN_ACTIVITY.substringBeforeLast('.')
+        val rootImport = Regex("""^import\s+${Regex.escape(root)}\.([A-Za-z_]\w*|\*)(?:\s+as\s+\w+)?\s*$""")
+        return files.flatMap { file ->
+            file.readLines()
+                .mapNotNull { line -> rootImport.find(line.trim()) }
+                .filterNot { match -> match.groupValues[1] in allowedSimpleNames }
+                .map { match -> "${file.relativeTo(RepoPaths.root).path}: root-package import -> ${match.value}" }
+        }
+    }
+
     private fun detectForbiddenReference(lines: List<String>, forbidden: String): List<String> {
         val path = forbidden.removePrefix("import ").trim()
         val results = mutableListOf<String>()
@@ -1803,4 +1895,12 @@ class LayeringContractTest {
         }
     }
 
+    private companion object {
+        /**
+         * 루트 패키지에 **생성되는** 심볼 — 소스가 없어 [ContractSymbols]에 FQN으로 등록할 수 없고
+         * (실존 검사가 영원히 빨개진다), platform 어댑터가 정당하게 쓴다(`BuildConfig.USE_TEST_ADS`,
+         * `R.string.default_web_client_id`). 그래서 루트 매처의 예외를 **단순 이름으로만** 둔다.
+         */
+        val GENERATED_ROOT_SYMBOLS: Set<String> = setOf("BuildConfig", "R")
+    }
 }

@@ -34,6 +34,14 @@ internal object ContractSymbols {
     const val ENGINE_CORE_API = "com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi"
     const val ENGINE_ADAPTER = "com.worksoc.goaicoach.shared.enginecontract.EngineAdapter"
 
+    /**
+     * 루트 패키지(조립 전용)의 **앵커**(refactor backlog #25). 가드는 루트 패키지 이름을 리터럴로
+     * 들지 않고 이 상수에서 `substringBeforeLast('.')`로 파생한다 — 루트가 이사하거나 이 타입이
+     * 사라지면 매처가 허공을 보는 대신 [ContractSymbolContractTest]가 빨개진다.
+     * ⚠️ `MainActivity`는 매니페스트·런처 바로가기가 컴포넌트 이름으로 부르므로 옮기지 않는다.
+     */
+    const val MAIN_ACTIVITY = "com.worksoc.goaicoach.MainActivity"
+
     // ── 실존해야 하는 패키지(접두사) ──────────────────────────────────────
     /** 엔진 런타임 구현체가 사는 곳. 접미 `.` 없이 쓴다 — 마지막 조각이 소문자라 타입이 아니다. */
     const val ENGINE_ANDROID_RUNTIME_PACKAGE = "com.worksoc.goaicoach.engine.android"
@@ -41,6 +49,16 @@ internal object ContractSymbols {
     const val PERSISTENCE_PACKAGE = "com.worksoc.goaicoach.persistence."
     const val ENGINE_PACKAGE = "com.worksoc.goaicoach.engine."
     const val APPLICATION_PACKAGE = "com.worksoc.goaicoach.application."
+
+    /**
+     * 4계층 SDK 어댑터(Billing·UMP·AdMob·Firebase Auth·Credential Manager·Vibrator 등)가 사는 곳
+     * (refactor backlog #25). 이 접두사를 공유하는 다른 패키지가 없어서 — [ENGINE_PACKAGE]와 달리 —
+     * 실존 검사가 "이 패키지가 비었다/이사했다"를 실제로 잡는다.
+     */
+    const val PLATFORM_PACKAGE = "com.worksoc.goaicoach.platform."
+
+    /** UI 상태·표시 모델. platform 어댑터가 이것을 알면 4계층이 1계층을 거슬러 오른다(#25). */
+    const val PRESENTATION_PACKAGE = "com.worksoc.goaicoach.presentation."
 
     // ── 되살아나면 안 되는 최상위 함수 ────────────────────────────────────
     // `application/engine`에 있던 `EngineCoreApi` 확장 헬퍼들. EngineSessionClient의 멤버로
@@ -88,6 +106,12 @@ internal object ContractSymbols {
             "ui/presentation·application/match 가드가 호환 별칭 참조를 금지한다",
         ),
         GuardedSymbol(
+            MAIN_ACTIVITY,
+            SymbolKind.TYPE,
+            SymbolExpectation.MUST_EXIST,
+            "루트(조립) 패키지 이름의 앵커 — platform 어댑터의 루트 import 금지 매처가 여기서 파생한다(#25)",
+        ),
+        GuardedSymbol(
             ENGINE_ANDROID_RUNTIME_PACKAGE,
             SymbolKind.PACKAGE,
             SymbolExpectation.MUST_EXIST,
@@ -110,6 +134,19 @@ internal object ContractSymbols {
             SymbolKind.PACKAGE,
             SymbolExpectation.MUST_EXIST,
             "포트(auth/premium/device)·게이트웨이 계약·shared 정책 모델의 플랫폼 격리",
+        ),
+        GuardedSymbol(
+            PLATFORM_PACKAGE,
+            SymbolKind.PACKAGE,
+            SymbolExpectation.MUST_EXIST,
+            "platform 어댑터가 Compose·ui·presentation·엔진 런타임을 모르게 한다(#25); " +
+                "게이트웨이 계약·shared 정책 모델이 어댑터를 거슬러 참조하지 못하게 한다",
+        ),
+        GuardedSymbol(
+            PRESENTATION_PACKAGE,
+            SymbolKind.PACKAGE,
+            SymbolExpectation.MUST_EXIST,
+            "platform 어댑터가 presentation을 모르게 한다(#25)",
         ),
         GuardedSymbol(
             APPLICATION_PACKAGE,
