@@ -293,15 +293,8 @@ class LayeringContractTest {
         // 260804: 컨트롤러 배선이 GoCoachControllerWiring.kt 하나에서 도메인별 4개 파일로
         // 분리됐다(Stage C-2) — 이 테스트들의 의도("GoCoachApp이 아니라 배선 계층이 이 로직을
         // 소유한다")는 그대로이므로 5개 파일을 전부 합쳐서 확인한다.
-        val wiringFileNames = listOf(
-            "GoCoachControllerWiring.kt",
-            "TurnFlowControllerWiring.kt",
-            "GameLifecycleControllerWiring.kt",
-            "ScoringControllerWiring.kt",
-            "SettingsAndDiagnosticsControllerWiring.kt",
-        )
-        val wiringText = wiringFileNames.joinToString("\n") { fileName ->
-            codeOnly(RepoPaths.uiFile(fileName).readContractSource())
+        val wiringText = RepoPaths.controllerWiringFiles.joinToString("\n") { file ->
+            codeOnly(file.readContractSource())
         }
         val text = codeOnly(goCoachApp.readContractSource()) + "\n" + wiringText
         val forbiddenFragments = listOf(
@@ -531,15 +524,8 @@ class LayeringContractTest {
         // 260804: 컨트롤러 배선이 GoCoachControllerWiring.kt 하나에서 도메인별 4개 파일로
         // 분리됐다(Stage C-2) — 이 테스트들의 의도("GoCoachApp이 아니라 배선 계층이 이 로직을
         // 소유한다")는 그대로이므로 5개 파일을 전부 합쳐서 확인한다.
-        val wiringFileNames = listOf(
-            "GoCoachControllerWiring.kt",
-            "TurnFlowControllerWiring.kt",
-            "GameLifecycleControllerWiring.kt",
-            "ScoringControllerWiring.kt",
-            "SettingsAndDiagnosticsControllerWiring.kt",
-        )
-        val wiringText = wiringFileNames.joinToString("\n") { fileName ->
-            codeOnly(RepoPaths.uiFile(fileName).readContractSource())
+        val wiringText = RepoPaths.controllerWiringFiles.joinToString("\n") { file ->
+            codeOnly(file.readContractSource())
         }
         val text = codeOnly(goCoachApp.readContractSource()) + "\n" + wiringText
         val forbiddenFragments = listOf(
@@ -573,15 +559,8 @@ class LayeringContractTest {
         // 260804: 컨트롤러 배선이 GoCoachControllerWiring.kt 하나에서 도메인별 4개 파일로
         // 분리됐다(Stage C-2) — 이 테스트들의 의도("GoCoachApp이 아니라 배선 계층이 이 로직을
         // 소유한다")는 그대로이므로 5개 파일을 전부 합쳐서 확인한다.
-        val wiringFileNames = listOf(
-            "GoCoachControllerWiring.kt",
-            "TurnFlowControllerWiring.kt",
-            "GameLifecycleControllerWiring.kt",
-            "ScoringControllerWiring.kt",
-            "SettingsAndDiagnosticsControllerWiring.kt",
-        )
-        val wiringText = wiringFileNames.joinToString("\n") { fileName ->
-            codeOnly(RepoPaths.uiFile(fileName).readContractSource())
+        val wiringText = RepoPaths.controllerWiringFiles.joinToString("\n") { file ->
+            codeOnly(file.readContractSource())
         }
         val text = codeOnly(goCoachApp.readContractSource()) + "\n" + wiringText
         val forbiddenFragments = listOf(
@@ -613,15 +592,8 @@ class LayeringContractTest {
         // 260804: 컨트롤러 배선이 GoCoachControllerWiring.kt 하나에서 도메인별 4개 파일로
         // 분리됐다(Stage C-2) — 이 테스트들의 의도("GoCoachApp이 아니라 배선 계층이 이 로직을
         // 소유한다")는 그대로이므로 5개 파일을 전부 합쳐서 확인한다.
-        val wiringFileNames = listOf(
-            "GoCoachControllerWiring.kt",
-            "TurnFlowControllerWiring.kt",
-            "GameLifecycleControllerWiring.kt",
-            "ScoringControllerWiring.kt",
-            "SettingsAndDiagnosticsControllerWiring.kt",
-        )
-        val wiringText = wiringFileNames.joinToString("\n") { fileName ->
-            codeOnly(RepoPaths.uiFile(fileName).readContractSource())
+        val wiringText = RepoPaths.controllerWiringFiles.joinToString("\n") { file ->
+            codeOnly(file.readContractSource())
         }
         val text = codeOnly(goCoachApp.readContractSource()) + "\n" + wiringText
         val forbiddenFragments = listOf(
@@ -710,15 +682,8 @@ class LayeringContractTest {
         // 260804: 컨트롤러 배선이 GoCoachControllerWiring.kt 하나에서 도메인별 4개 파일로
         // 분리됐다(Stage C-2) — 이 테스트들의 의도("GoCoachApp이 아니라 배선 계층이 이 로직을
         // 소유한다")는 그대로이므로 5개 파일을 전부 합쳐서 확인한다.
-        val wiringFileNames = listOf(
-            "GoCoachControllerWiring.kt",
-            "TurnFlowControllerWiring.kt",
-            "GameLifecycleControllerWiring.kt",
-            "ScoringControllerWiring.kt",
-            "SettingsAndDiagnosticsControllerWiring.kt",
-        )
-        val wiringText = wiringFileNames.joinToString("\n") { fileName ->
-            codeOnly(RepoPaths.uiFile(fileName).readContractSource())
+        val wiringText = RepoPaths.controllerWiringFiles.joinToString("\n") { file ->
+            codeOnly(file.readContractSource())
         }
         val text = codeOnly(goCoachApp.readContractSource()) + "\n" + wiringText
         val forbiddenFragments = listOf(
@@ -765,15 +730,8 @@ class LayeringContractTest {
         // 260804: 컨트롤러 배선이 GoCoachControllerWiring.kt 하나에서 도메인별 4개 파일로
         // 분리됐다(Stage C-2) — 이 테스트들의 의도("GoCoachApp이 아니라 배선 계층이 이 로직을
         // 소유한다")는 그대로이므로 5개 파일을 전부 합쳐서 확인한다.
-        val wiringFileNames = listOf(
-            "GoCoachControllerWiring.kt",
-            "TurnFlowControllerWiring.kt",
-            "GameLifecycleControllerWiring.kt",
-            "ScoringControllerWiring.kt",
-            "SettingsAndDiagnosticsControllerWiring.kt",
-        )
-        val wiringText = wiringFileNames.joinToString("\n") { fileName ->
-            codeOnly(RepoPaths.uiFile(fileName).readContractSource())
+        val wiringText = RepoPaths.controllerWiringFiles.joinToString("\n") { file ->
+            codeOnly(file.readContractSource())
         }
         val text = codeOnly(goCoachApp.readContractSource()) + "\n" + wiringText
         val forbiddenFragments = listOf(
@@ -819,15 +777,8 @@ class LayeringContractTest {
         // 260804: 컨트롤러 배선이 GoCoachControllerWiring.kt 하나에서 도메인별 4개 파일로
         // 분리됐다(Stage C-2) — 이 테스트들의 의도("GoCoachApp이 아니라 배선 계층이 이 로직을
         // 소유한다")는 그대로이므로 5개 파일을 전부 합쳐서 확인한다.
-        val wiringFileNames = listOf(
-            "GoCoachControllerWiring.kt",
-            "TurnFlowControllerWiring.kt",
-            "GameLifecycleControllerWiring.kt",
-            "ScoringControllerWiring.kt",
-            "SettingsAndDiagnosticsControllerWiring.kt",
-        )
-        val wiringText = wiringFileNames.joinToString("\n") { fileName ->
-            codeOnly(RepoPaths.uiFile(fileName).readContractSource())
+        val wiringText = RepoPaths.controllerWiringFiles.joinToString("\n") { file ->
+            codeOnly(file.readContractSource())
         }
         val text = codeOnly(goCoachApp.readContractSource()) + "\n" + wiringText
         val forbiddenFragments = listOf(

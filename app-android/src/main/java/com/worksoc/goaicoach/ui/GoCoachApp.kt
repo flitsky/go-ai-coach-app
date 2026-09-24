@@ -16,6 +16,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.worksoc.goaicoach.GoCoachAppWiringContext
 import com.worksoc.goaicoach.application.premium.state.FeatureAccess
 import com.worksoc.goaicoach.application.botcharacter.isBotCharacterPerkActive
 import com.worksoc.goaicoach.application.botcharacter.matchOpponentCharacter
@@ -37,6 +38,7 @@ import com.worksoc.goaicoach.platform.AndroidAuthClient
 import com.worksoc.goaicoach.platform.AndroidClipboardPort
 import com.worksoc.goaicoach.platform.AndroidUserNoticePort
 import com.worksoc.goaicoach.platform.GoogleCredentialManagerClient
+import com.worksoc.goaicoach.recordFinishedGameOnExit
 import com.worksoc.goaicoach.shared.diagnostic.DiagnosticEvent
 import com.worksoc.goaicoach.shared.diagnostic.DiagnosticSeverity
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkStorePort
@@ -96,6 +98,7 @@ import com.worksoc.goaicoach.application.engine.EngineBenchmarkUiState
 import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
 import com.worksoc.goaicoach.application.savedgame.SavedSessionUiState
 import com.worksoc.goaicoach.ui.vision.BoardScanScreen
+import com.worksoc.goaicoach.wireGoCoachControllers
 import kotlinx.coroutines.CoroutineScope
 import com.worksoc.goaicoach.engine.EngineIdentity
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile

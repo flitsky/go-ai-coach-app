@@ -1,9 +1,8 @@
-package com.worksoc.goaicoach.ui
+package com.worksoc.goaicoach
 
 import android.app.Activity
 import android.content.Context
 import com.android.billingclient.api.BillingClient
-import com.worksoc.goaicoach.BuildConfig
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.premium.port.AdRewardFailureReason
 import com.worksoc.goaicoach.application.premium.port.AdRewardOutcome

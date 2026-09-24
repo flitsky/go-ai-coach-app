@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.ui
+package com.worksoc.goaicoach
 
 import com.worksoc.goaicoach.application.analysis.PositionCacheOptimizationController
 import com.worksoc.goaicoach.application.score.ScoreEstimateController

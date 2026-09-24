@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.ui
+package com.worksoc.goaicoach
 
 import android.content.Context
 import com.worksoc.goaicoach.application.gamehistory.runGameHistoryAppendIfCompleted

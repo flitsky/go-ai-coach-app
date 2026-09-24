@@ -44,6 +44,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.worksoc.goaicoach.BuildConfig
 import com.worksoc.goaicoach.application.premium.port.PremiumProductInfo
 import com.worksoc.goaicoach.application.premium.port.PurchaseOutcome
+import com.worksoc.goaicoach.queryPremiumProductInfo
 import kotlinx.coroutines.launch
 
 /**

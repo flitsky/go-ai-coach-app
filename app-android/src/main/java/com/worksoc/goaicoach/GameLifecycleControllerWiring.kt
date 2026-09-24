@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.ui
+package com.worksoc.goaicoach
 
 import com.worksoc.goaicoach.application.savedgame.SavedGameRestorePlan
 import com.worksoc.goaicoach.application.savedgame.SavedSessionController

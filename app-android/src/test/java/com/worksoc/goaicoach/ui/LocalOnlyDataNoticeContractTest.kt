@@ -163,7 +163,7 @@ class LocalOnlyDataNoticeContractTest {
      */
     @Test
     fun theRestoreLineIsOnlyHonestWhilePremiumIsQueriedAsASubscription() {
-        val glue = source("app-android/src/main/java/com/worksoc/goaicoach/ui/PremiumPurchaseGlue.kt")
+        val glue = RepoPaths.compositionFile("PremiumPurchaseGlue.kt").readContractSource()
         assertTrue(
             "`PremiumProductType`이 `SUBS`가 아니다 — 구독 조회가 조용한 미소유로 끝나고, " +
                 "마이 페이지의 복원 문장이 거짓이 된다(#87의 재판).",

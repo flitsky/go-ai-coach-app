@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.ui
 
+import com.worksoc.goaicoach.architecture.RepoPaths
 import com.worksoc.goaicoach.architecture.readContractSource
 import java.io.File
 import org.junit.Assert.assertTrue
@@ -22,7 +23,7 @@ class SubscriptionWiringContractTest {
             .joinToString("\n") { it.substringBefore("//") }
 
     private val app = source("src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
-    private val glue = source("src/main/java/com/worksoc/goaicoach/ui/PremiumPurchaseGlue.kt")
+    private val glue = source(RepoPaths.compositionFile("PremiumPurchaseGlue.kt").path)
     private val premium = source("src/main/java/com/worksoc/goaicoach/ui/PremiumUiState.kt")
 
     /** 복원 조회가 현재 상태를 모르면 강등이 **통째로 죽는다**. */

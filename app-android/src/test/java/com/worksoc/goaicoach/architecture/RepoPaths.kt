@@ -94,6 +94,28 @@ internal object RepoPaths {
     fun platformFile(fileName: String): File = appAndroid("platform/$fileName")
 
     /**
+     * 루트 패키지(`com.worksoc.goaicoach`, 조립 전용) 바로 아래의 파일 하나. refactor backlog #26이
+     * `ui/`에 숨어 있던 조립 코드(`*ControllerWiring`·`PremiumPurchaseGlue`·`GameExitRecording`)를
+     * 여기로 옮겼다 — `composition/` 하위 패키지를 따로 두지 않은 이유는 루트가 이미 조립 전용으로
+     * 명문화돼 있고(docs/ARCHITECTURE.md), 매니페스트에 묶인 `MainActivity`가 루트를 떠날 수 없어서다.
+     */
+    fun compositionFile(fileName: String): File = appAndroid(fileName)
+
+    /**
+     * 컨트롤러 배선 파일 **전부**. `LayeringContractTest`의 "GoCoachApp이 워크플로 본문을 소유하지
+     * 않는다" 가드 일곱 개가 이 목록을 **한 벌로** 공유한다 — 전에는 같은 다섯 줄이 일곱 번
+     * 복붙돼 있어, 파일이 이사하면 일곱 곳을 고쳐야 했다(#26에서 실제로 그랬다).
+     */
+    val controllerWiringFiles: List<File>
+        get() = listOf(
+            "GoCoachControllerWiring.kt",
+            "TurnFlowControllerWiring.kt",
+            "GameLifecycleControllerWiring.kt",
+            "ScoringControllerWiring.kt",
+            "SettingsAndDiagnosticsControllerWiring.kt",
+        ).map { compositionFile(it) }
+
+    /**
      * app-android `src/main/` 바로 아래의 한 경로 — `com.worksoc.goaicoach` 패키지 **밖**
      * (리소스 등). 예: `appAndroidMain("res/drawable")`.
      */

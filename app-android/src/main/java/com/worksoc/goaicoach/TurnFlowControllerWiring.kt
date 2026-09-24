@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.ui
+package com.worksoc.goaicoach
 
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnController
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnRequestPlan

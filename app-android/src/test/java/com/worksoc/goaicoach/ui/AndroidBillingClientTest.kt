@@ -94,7 +94,7 @@ class AndroidBillingClientTest {
      */
     @Test
     fun everyBillingCallSiteNamesTheProductTypeItSells() {
-        val glue = RepoPaths.uiFile("PremiumPurchaseGlue.kt").readContractSource()
+        val glue = RepoPaths.compositionFile("PremiumPurchaseGlue.kt").readContractSource()
             .replace(Regex("""/\*.*?\*/""", RegexOption.DOT_MATCHES_ALL), "")
             .lines().joinToString("\n") { line -> line.substringBefore("//") }
 

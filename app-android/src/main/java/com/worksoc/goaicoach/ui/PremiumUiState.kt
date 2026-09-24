@@ -27,6 +27,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
+import com.worksoc.goaicoach.performPremiumAdGrant
+import com.worksoc.goaicoach.performPremiumPurchase
+import com.worksoc.goaicoach.performPremiumPurchaseRestore
+import com.worksoc.goaicoach.simulatePremiumAdGrant
 import kotlinx.coroutines.delay
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp

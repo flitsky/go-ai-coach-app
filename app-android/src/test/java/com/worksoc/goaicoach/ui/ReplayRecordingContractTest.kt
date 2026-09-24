@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.ui
 
+import com.worksoc.goaicoach.architecture.RepoPaths
 import com.worksoc.goaicoach.architecture.readContractSource
 import java.io.File
 import org.junit.Assert.assertEquals
@@ -20,7 +21,7 @@ class ReplayRecordingContractTest {
     private fun source(path: String): String = File(path).readContractSource()
 
     private val goCoachApp = source("src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
-    private val exitRecording = source("src/main/java/com/worksoc/goaicoach/ui/GameExitRecording.kt")
+    private val exitRecording = source(RepoPaths.compositionFile("GameExitRecording.kt").path)
     private val topMoves = source(
         "../shared/src/commonMain/kotlin/com/worksoc/goaicoach/application/topmoves/TopMovesApplication.kt",
     )

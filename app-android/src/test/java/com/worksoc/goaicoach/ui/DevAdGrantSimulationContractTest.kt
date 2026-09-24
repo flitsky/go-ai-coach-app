@@ -17,7 +17,7 @@ import org.junit.Test
  */
 class DevAdGrantSimulationContractTest {
 
-    private val glue = codeOnly(sourceOf("PremiumPurchaseGlue.kt"))
+    private val glue = codeOnly(RepoPaths.compositionFile("PremiumPurchaseGlue.kt").readContractSource())
     private val uiState = codeOnly(sourceOf("PremiumUiState.kt"))
     // ⚠️ **개발자 섹션은 이제 별도 파일이다**(백로그 #102). 두 파일을 **셸 → 섹션 순서로**
     // 이어 읽는다 — 그래야 아래 위치 비교(`indexOf`)가 **원래의 문서 순서**를 그대로 뜻한다.
