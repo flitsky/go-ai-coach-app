@@ -87,4 +87,30 @@ internal object SourceSymbolIndex {
         if (!trimmed.contains('.')) return null
         return trimmed.substringBeforeLast('.') to trimmed.substringAfterLast('.')
     }
+
+    private val TYPE_DECLARATION = Regex(
+        """^$MODIFIERS(?:class|interface|object|typealias)\s+([A-Za-z_]\w*)""",
+        RegexOption.MULTILINE,
+    )
+    private val TOP_LEVEL_FUNCTION_DECLARATION = Regex(
+        """^${MODIFIERS}fun\s+(?:<[^>\n]*>\s*)?(?:[\w.<>?, ]+\.)?([A-Za-z_]\w*)\s*\(""",
+        RegexOption.MULTILINE,
+    )
+
+    /**
+     * [packageName] 바로 아래 선언된 **최상위 심볼의 단순 이름 전부**(타입 + 최상위 함수, 확장
+     * 함수 포함) — refactor backlog #79.
+     *
+     * [typeExists]/[topLevelFunctionExists]는 "이 이름이 있는가"만 답한다. 루트 패키지 매처처럼
+     * "이 조각이 **패키지 이름**(`ui`·`platform` 등)이 아니라 **실제로 선언된 심볼**인가"를 가르려면
+     * 후보 하나하나를 추측해 물어볼 수 없다 — 색인이 **무엇이 있는지 목록**을 내놓아야 한다.
+     * 대문자 시작만 심볼로 보는 정규식 추측(옛 루트 매처)은 소문자 최상위 함수를 놓쳤다. 이 함수는
+     * 추측 대신 **실제 선언을 읽어** 답하므로 대소문자와 무관하다.
+     */
+    fun topLevelDeclaredSimpleNames(packageName: String): Set<String> =
+        filesByPackage[packageName].orEmpty().flatMap { file ->
+            val text = file.readText()
+            TYPE_DECLARATION.findAll(text).map { it.groupValues[1] } +
+                TOP_LEVEL_FUNCTION_DECLARATION.findAll(text).map { it.groupValues[1] }
+        }.toSet()
 }

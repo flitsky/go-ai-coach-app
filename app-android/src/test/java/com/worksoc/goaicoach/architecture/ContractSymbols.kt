@@ -79,6 +79,14 @@ internal object ContractSymbols {
     const val LIVE_SYNC_TO_GAME_STATE =
         "com.worksoc.goaicoach.application.engine.syncToGameState"
 
+    /**
+     * 루트(조립) 패키지의 실재하는 **소문자** 최상위 함수 표본(refactor backlog #79). 옛 루트
+     * 매처는 대문자로 시작하는 이름만 정규식으로 잡아, 이런 소문자 top-level 함수를 inline FQN으로
+     * 부르면 놓쳤다. [LayeringContractTest]의 자기검증이 이 주소로 회귀를 막는다.
+     */
+    const val ROOT_LOWERCASE_TOP_LEVEL_FUNCTION_SAMPLE =
+        "com.worksoc.goaicoach.wipeToFreshInstall"
+
     // ── 패키지 사이클 래칫의 기준선(refactor backlog #33) ─────────────────
     // [PackageCycleRatchetTest]가 `shared/src/commonMain`의 패키지 import 그래프에서 구한 SCC·상호
     // 참조 쌍을 **아래 두 목록과 정확히 같을 때만** 초록으로 둔다.
@@ -197,6 +205,12 @@ internal object ContractSymbols {
             SymbolKind.TOP_LEVEL_FUNCTION,
             SymbolExpectation.MUST_EXIST,
             "색인 판정기의 양성 표본 — ABSENT_BY_DESIGN 셋의 되살아남 감시가 살아 있음을 보인다(#76)",
+        ),
+        GuardedSymbol(
+            ROOT_LOWERCASE_TOP_LEVEL_FUNCTION_SAMPLE,
+            SymbolKind.TOP_LEVEL_FUNCTION,
+            SymbolExpectation.MUST_EXIST,
+            "G1 루트 매처의 소문자 top-level 함수 탐지 회귀 방지 표본(#79)",
         ),
     ) + (CYCLE_BASELINE_SCCS.flatten() + CYCLE_BASELINE_MUTUAL_PAIRS.flatMap { it.toList() })
         .distinct()

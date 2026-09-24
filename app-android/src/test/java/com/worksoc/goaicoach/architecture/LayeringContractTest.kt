@@ -12,6 +12,7 @@ import com.worksoc.goaicoach.architecture.ContractSymbols.MAIN_ACTIVITY
 import com.worksoc.goaicoach.architecture.ContractSymbols.PERSISTENCE_PACKAGE
 import com.worksoc.goaicoach.architecture.ContractSymbols.PLATFORM_PACKAGE
 import com.worksoc.goaicoach.architecture.ContractSymbols.PRESENTATION_PACKAGE
+import com.worksoc.goaicoach.architecture.ContractSymbols.ROOT_LOWERCASE_TOP_LEVEL_FUNCTION_SAMPLE
 import com.worksoc.goaicoach.architecture.ContractSymbols.UI_PACKAGE
 import com.worksoc.goaicoach.architecture.ContractSymbols.importOf
 import java.io.File
@@ -161,6 +162,13 @@ class LayeringContractTest {
      *
      * ⚠️ refactor backlog #77 — import 줄뿐 아니라 **inline FQN**(import 없이 `<root>.X`를 코드에서
      * 직접 쓰는 것)도 같은 방식으로 나란히 확인한다. `Inline.kt`가 그 사각지대의 회귀 방지다.
+     *
+     * ⚠️ refactor backlog #79 — #77이 붙인 정규식은 **대문자로 시작하는 이름만** 잡아, 루트의
+     * **소문자 최상위 함수**를 inline FQN으로 부르면 여전히 지나갔다. `LowercaseInline.kt`가 그
+     * 사각지대의 회귀 방지다. 동시에 `SubpackageInline.kt`로 **하위 패키지 참조는 여전히 루트
+     * 매처의 몫이 아님**(각자의 forbidden import가 맡는다)을 함께 못박는다 — 그렇지 않으면
+     * "소문자도 잡는다"는 수정이 "루트 접두사로 시작하는 모든 것을 잡는다"로 과잉 일반화됐는지
+     * 구분할 수 없다.
      */
     @Test
     fun rootPackageMatcherFlagsRootImportsButNotGeneratedSymbols() {
@@ -185,6 +193,12 @@ class LayeringContractTest {
                         "\n",
                 )
             }
+            val lowercaseInline = File(tempDir, "LowercaseInline.kt").apply {
+                writeText("package x\n\nval probe = $ROOT_LOWERCASE_TOP_LEVEL_FUNCTION_SAMPLE\n")
+            }
+            val subpackageInline = File(tempDir, "SubpackageInline.kt").apply {
+                writeText("package x\n\nval probe = ${UI_PACKAGE}SomeScreen\n")
+            }
 
             val offenders = rootPackageReferenceOffenders(listOf(offending), GENERATED_ROOT_SYMBOLS)
             assertEquals("루트 import(단일 조각·와일드카드)를 둘 다 잡아야 한다: $offenders", 2, offenders.size)
@@ -204,6 +218,20 @@ class LayeringContractTest {
                 "생성 코드(BuildConfig·R)는 inline FQN으로 써도 예외여야 한다(#77)",
                 emptyList<String>(),
                 rootPackageReferenceOffenders(listOf(generatedInline), GENERATED_ROOT_SYMBOLS),
+            )
+
+            val lowercaseOffenders = rootPackageReferenceOffenders(listOf(lowercaseInline), GENERATED_ROOT_SYMBOLS)
+            assertEquals(
+                "루트의 소문자 최상위 함수(`$ROOT_LOWERCASE_TOP_LEVEL_FUNCTION_SAMPLE`)도 inline FQN으로 " +
+                    "부르면 잡아야 한다(#79): $lowercaseOffenders",
+                1,
+                lowercaseOffenders.size,
+            )
+            assertEquals(
+                "하위 패키지 참조(`ui` 등)는 루트 매처가 아니라 각자의 forbidden import가 맡는다 — " +
+                    "루트 매처가 과잉 일반화되면 안 된다(#79)",
+                emptyList<String>(),
+                rootPackageReferenceOffenders(listOf(subpackageInline), GENERATED_ROOT_SYMBOLS),
             )
         } finally {
             tempDir.deleteRecursively()
@@ -1812,44 +1840,37 @@ class LayeringContractTest {
         }
 
     /**
-     * 루트 패키지(조립 전용)를 참조하는 import를 찾는다(refactor backlog #25).
+     * 루트 패키지(조립 전용)를 참조하는 import/inline FQN을 찾는다(refactor backlog #25, #77, #79).
      *
-     * [forbiddenReferenceOffenders]의 접두사 모델로는 표현할 수 없다 — 루트 접두사는 **모든**
-     * 하위 패키지와 매치한다. 그래서 루트 **바로 아래 한 조각**(`import <root>.X`, `import <root>.*`)만
-     * 본다. 루트 이름은 등록부의 [MAIN_ACTIVITY]에서 파생시켜 리터럴을 들지 않는다.
+     * [forbiddenReferenceOffenders]의 접두사 모델은 원래 그대로 **못 쓴다** — 루트 접두사(`import
+     * <root>.`)는 모든 하위 패키지(`ui.`·`platform.`·`engine.` 등)와도 매치해 버린다. 그 하위
+     * 패키지들은 각자의 forbidden import가 이미 맡고 있으므로, 여기서 또 잡으면 이중 판정이 된다.
      *
-     * ⚠️ **import 줄만 보면 사각지대가 생긴다**(refactor backlog #77) — import 없이
-     * `com.worksoc.goaicoach.AppForegroundEvents`처럼 **inline FQN**으로 루트 심볼을 부르면 이
-     * 매처를 그냥 지나간다. [forbiddenReferenceOffenders]/[detectForbiddenReference]는 이미 inline
-     * FQN까지 잡는데, 루트 매처만 import 줄 정규식 하나였다. 그래서 코드 줄(주석·문자열은
-     * [codeLinesOf]/[stripStringsAndTrailingComment]로 걷어낸다)에서도 `<root>.<대문자 시작 이름>`
-     * 패턴을 따로 찾는다 — 대문자 시작만 잡는 이유는 루트 바로 아래 패키지(`ui`·`platform`·`engine`
-     * 등, 전부 소문자 관례)와 구분하기 위해서다. `BuildConfig`/`R`은 여기서도 [allowedSimpleNames]로
-     * 예외 처리해 기존 정당한 접근(`BuildConfig.DEBUG` 등)을 깨지 않는다.
+     * 그래서 접두사 하나로 뭉뚱그리는 대신 **루트에 실제로 선언된 최상위 심볼 이름 전부**를
+     * [SourceSymbolIndex.topLevelDeclaredSimpleNames]로 나열하고, 이름 하나하나를 독립된 FQN으로
+     * [forbiddenReferenceOffenders]/[detectForbiddenReference]에 넘긴다 — **루트 매처도
+     * `detectForbiddenReference`를 탄다**(refactor backlog #79의 인수 기준). 이러면
+     *  - import 줄(`import <root>.X`)과 inline FQN(`<root>.X`) 둘 다 [detectForbiddenReference]가
+     *    이미 하는 방식(주석·문자열 제거 포함)으로 잡히고,
+     *  - 하위 패키지 이름(`ui`·`platform` 등)은 애초에 이 목록에 없으므로(루트에 그런 이름의
+     *    선언이 없다) **매치 대상 자체가 아니다** — #77의 "대문자로 시작하는 이름만 잡는" 정규식
+     *    추측이 필요 없어진다. 소문자 최상위 함수(`wipeToFreshInstall` 등)도 선언이 실재하면
+     *    똑같이 잡힌다.
+     *
+     * `import <root>.*`(와일드카드)는 어떤 이름과도 접두사로 안 겹치므로 별도 항목으로 더한다 —
+     * 실사용 여부와 무관하게 그 자체로 위반이다(기존 동작 유지).
+     *
+     * 루트 이름은 등록부의 [MAIN_ACTIVITY]에서 파생시켜 리터럴을 들지 않는다. `BuildConfig`/`R`은
+     * 생성 코드라 애초에 [SourceSymbolIndex]가 못 보므로(소스가 없다) 목록에 나타나지 않지만,
+     * [allowedSimpleNames]로 한 번 더 걸러 그 사실을 코드로 명문화해 둔다.
      */
     private fun rootPackageReferenceOffenders(files: List<File>, allowedSimpleNames: Set<String>): List<String> {
         val root = MAIN_ACTIVITY.substringBeforeLast('.')
-        val rootImport = Regex("""^import\s+${Regex.escape(root)}\.([A-Za-z_]\w*|\*)(?:\s+as\s+\w+)?\s*$""")
-        val rootInline = Regex("""(?<![\w.])${Regex.escape(root)}\.([A-Z]\w*)(?![\w])""")
-        return files.flatMap { file ->
-            val lines = file.readLines()
-
-            val importHits = lines
-                .mapNotNull { line -> rootImport.find(line.trim()) }
-                .filterNot { match -> match.groupValues[1] in allowedSimpleNames }
-                .map { match -> "${file.relativeTo(RepoPaths.root).path}: root-package import -> ${match.value}" }
-
-            val inlineHits = codeLinesOf(lines)
-                .map { line -> stripStringsAndTrailingComment(line) }
-                .flatMap { line -> rootInline.findAll(line).toList() }
-                .filterNot { match -> match.groupValues[1] in allowedSimpleNames }
-                .map { match ->
-                    "${file.relativeTo(RepoPaths.root).path}: root-package inline reference -> ${match.value}"
-                }
-                .distinct()
-
-            importHits + inlineHits
-        }
+        val forbiddenImports = listOf("import $root.*") +
+            (SourceSymbolIndex.topLevelDeclaredSimpleNames(root) - allowedSimpleNames)
+                .sorted()
+                .map { simpleName -> "import $root.$simpleName" }
+        return forbiddenReferenceOffenders(files = files, forbiddenImports = forbiddenImports)
     }
 
     private fun detectForbiddenReference(lines: List<String>, forbidden: String): List<String> {
