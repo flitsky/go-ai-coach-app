@@ -632,6 +632,11 @@ private class RecordingEngineAdapter(
         return EngineStatus.ready("new game")
     }
 
+    override suspend fun syncStaticPosition(state: GameState): EngineStatus {
+        calls += "syncStaticPosition:${state.stones.size}"
+        return EngineStatus.ready("static position synced")
+    }
+
     override suspend fun playMove(move: Move): EngineStatus {
         calls += "play:${move.describe(BoardSize.Nine)}"
         return EngineStatus.ready("played")

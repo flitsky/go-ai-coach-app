@@ -86,6 +86,26 @@ internal class RemoteEngineCoreApiAdapter(
             EngineStatus.ready("Remote engine new ${boardSize.value}x${boardSize.value} ${ruleset.scoringLabel} game")
         }
 
+    /**
+     * 정적 국면도 **네트워크를 타지 않는다** — 이 어댑터의 다른 상태 전용 호출과 같은 규칙이다.
+     * 상태 비저장 서버에는 "지금 판을 이렇게 세팅해 둬라"라고 말할 자리가 없고, 다음 연산
+     * 호출(`genMove`/`analyze`/...)이 어차피 그 시점의 전체 국면을 실어 보낸다.
+     *
+     * ⚠️ 그렇다고 **아무것도 안 해도 된다는 뜻은 아니다.** 예전에는 [EngineCoreApi]의 기본
+     * 구현에 기대 이 호출을 통째로 빠뜨렸고, 그 결과 동기화 직후의 `genMove`가 **빈 판을
+     * 원격으로 보내** 이미 돌이 놓인 자리를 후보로 받아 왔다(refactor backlog #20).
+     */
+    override suspend fun syncStaticPosition(state: GameState): EngineStatus =
+        mutex.withLock {
+            this.state = state
+            // 정적 국면에는 되돌릴 수순이 없다 — 이전 대국의 이력을 남겨 두면 undoMove가
+            // 방금 동기화한 판을 엉뚱한 국면으로 되돌린다.
+            history.clear()
+            EngineStatus.ready(
+                "Remote engine static position synced: ${state.stones.size} stone(s), ${state.nextPlayer.label} to play",
+            )
+        }
+
     override suspend fun playMove(move: Move): EngineStatus =
         mutex.withLock {
             history += state

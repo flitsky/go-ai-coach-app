@@ -13,7 +13,7 @@ import com.worksoc.goaicoach.shared.enginecontract.EngineMode
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.enginecontract.EngineStatus
 import com.worksoc.goaicoach.shared.enginecontract.FinalScoreResult
-import com.worksoc.goaicoach.shared.domain.GameStateReplayer
+import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.enginecontract.MoveResult
 import com.worksoc.goaicoach.shared.enginecontract.OwnershipEstimate
@@ -34,6 +34,10 @@ internal class StubEngineAdapter : EngineCoreApi {
     private var profile: EngineProfile = EngineProfile(mode = EngineMode.Stub, name = "stub")
     private val occupied = linkedSetOf<BoardCoordinate>()
     private val playedMoves = mutableListOf<Move>()
+
+    // newGame() 또는 syncStaticPosition()이 세운 "이 시점의 시작 국면". playedMoves는 그 위에
+    // 쌓인 수다. 정적 국면은 수순이 없으므로 이 base 없이는 재현할 방법이 아예 없다.
+    private var baseState: GameState = GameState.empty()
 
     override suspend fun initialize(profile: EngineProfile): EngineStatus {
         initialized = true
@@ -61,13 +65,31 @@ internal class StubEngineAdapter : EngineCoreApi {
         this.handicapCount = handicapCount
         this.komi = komi
         nextPlayer = if (handicapCount > 0) StoneColor.White else StoneColor.Black
-        occupied.clear()
+        baseState = GameState.withHandicap(boardSize, ruleset, handicapCount, komi)
         playedMoves.clear()
-        if (handicapCount > 0) {
-            val positions = boardSize.handicapStonePositions(handicapCount)
-            occupied += positions
-        }
+        rebuildOccupiedFromHistory()
         return EngineStatus.ready("New ${boardSize.value}x${boardSize.value} ${ruleset.scoringLabel} game")
+    }
+
+    /**
+     * 스텁도 **정적 국면을 진짜로 받아들인다** — 예전에는 [EngineCoreApi]의 기본 구현에 기대
+     * "동기화했다"고 대답만 하고 판은 빈 채로 뒀다(refactor backlog #20). 그 상태로
+     * [genMove]를 부르면 **이미 돌이 놓인 자리를 골라 돌려줬다.**
+     */
+    override suspend fun syncStaticPosition(state: GameState): EngineStatus {
+        ensureInitialized()
+        boardSize = state.boardSize
+        ruleset = state.ruleset
+        handicapCount = state.handicapCount
+        komi = state.komi
+        nextPlayer = state.nextPlayer
+        // 넘어온 국면 자체가 새 시작점이다. 수순은 이미 stones에 반영돼 있으므로 다시 두지 않는다.
+        baseState = state.copy(moves = emptyList())
+        playedMoves.clear()
+        rebuildOccupiedFromHistory()
+        return EngineStatus.ready(
+            "Stub static position synced: ${state.stones.size} stone(s), ${state.nextPlayer.label} to play",
+        )
     }
 
     override suspend fun playMove(move: Move): EngineStatus {
@@ -191,9 +213,7 @@ internal class StubEngineAdapter : EngineCoreApi {
 
     private fun rebuildOccupiedFromHistory() {
         occupied.clear()
-        if (handicapCount > 0) {
-            occupied += boardSize.handicapStonePositions(handicapCount)
-        }
+        occupied += baseState.stones.keys
         for (move in playedMoves) {
             if (move is Move.Play) {
                 occupied += move.coordinate
@@ -201,15 +221,10 @@ internal class StubEngineAdapter : EngineCoreApi {
         }
     }
 
+    // playedMoves를 baseState 위에 쌓아 현재 국면을 만든다 — 정적 국면으로 동기화된 뒤에는
+    // 수순만으로 판을 재현할 수 없기 때문이다(돌은 있는데 수순이 없다).
     private fun localScore(): FinalScoreResult =
-        BoardScorer.score(
-            GameStateReplayer.replay(
-                boardSize = boardSize,
-                ruleset = ruleset,
-                moves = playedMoves,
-                handicapCount = handicapCount,
-            ),
-        )
+        BoardScorer.score(playedMoves.fold(baseState) { state, move -> state.play(move) })
 
     private fun priorityCoordinates(): List<BoardCoordinate> {
         val last = boardSize.value - 1

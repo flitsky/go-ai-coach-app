@@ -50,9 +50,21 @@ interface EngineCoreApi {
     /**
      * Synchronizes a static board position (such as a position detected from a camera or manual setup)
      * where stones are already placed without a historical move sequence.
+     *
+     * ⚠️ **기본 구현을 다시 넣지 마라(refactor backlog #20).** 예전에는 `EngineStatus.ready("Static
+     * position synced: ...")`를 돌려주는 기본 구현이 있었고, 그 탓에 **스텁과 원격 구현체가
+     * 둘 다 이 메서드를 조용히 빠뜨린 채 "동기화했다"라고 대답하고 있었다.** 보드가 빈
+     * 채로 준비됐다고 말하는 것이 아무 응답도 안 하는 것보다 나쁘다 — 호출자가 성공으로 읽는다.
+     *
+     * 새 구현체는 반드시 명시적으로 구현해야 한다. **일부러 아무것도 안 하는 구현체라면 빈
+     * 본문 + "왜 아무것도 안 하는가"를 적은 KDoc으로 밝혀라** — 조용한 누락과 명시적 무동작은 다르다.
+     *
+     * 지켜야 하는 약속은 `engine-android`의
+     * `EngineCoreApiStaticPositionContract`가 구현체별로 같은 시나리오를 돌려 고정한다:
+     * 동기화 뒤에는 그 국면이 엔진의 현재 국면이어야 하며(놓인 돌과 차례가 둘 다 반영된다),
+     * 이후의 착수는 그 위에 쌓인다.
      */
-    suspend fun syncStaticPosition(state: GameState): EngineStatus =
-        EngineStatus.ready("Static position synced: ${state.stones.size} stone(s)")
+    suspend fun syncStaticPosition(state: GameState): EngineStatus
 
     /**
      * Clears engine-side search state without changing the board.

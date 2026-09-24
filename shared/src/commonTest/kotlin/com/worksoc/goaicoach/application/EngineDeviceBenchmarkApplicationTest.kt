@@ -620,6 +620,11 @@ private class RecordingBenchmarkEngineAdapter(
         return EngineStatus.ready("new game")
     }
 
+    override suspend fun syncStaticPosition(state: GameState): EngineStatus {
+        this.state = state
+        return EngineStatus.ready("static position synced")
+    }
+
     override suspend fun playMove(move: Move): EngineStatus {
         state = state.play(move)
         return EngineStatus.ready("played")

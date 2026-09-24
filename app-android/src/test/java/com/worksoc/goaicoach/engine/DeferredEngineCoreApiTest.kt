@@ -8,6 +8,7 @@ import com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.enginecontract.EngineStatus
 import com.worksoc.goaicoach.shared.enginecontract.FinalScoreResult
+import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.enginecontract.MoveResult
 import com.worksoc.goaicoach.shared.domain.Ruleset
@@ -41,6 +42,7 @@ class DeferredEngineCoreApiTest {
         override suspend fun configure(profile: EngineProfile) = EngineStatus.ready("fake")
         override suspend fun newGame(boardSize: BoardSize, ruleset: Ruleset, handicapCount: Int, komi: Double) =
             EngineStatus.ready("fake")
+        override suspend fun syncStaticPosition(state: GameState) = EngineStatus.ready("fake")
         override suspend fun playMove(move: Move) = EngineStatus.ready("fake")
         override suspend fun genMove(player: StoneColor): MoveResult = throw UnsupportedOperationException()
         override suspend fun undoMove() = EngineStatus.ready("fake")
