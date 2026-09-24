@@ -88,29 +88,66 @@ internal object SourceSymbolIndex {
         return trimmed.substringBeforeLast('.') to trimmed.substringAfterLast('.')
     }
 
+    // ── 열거용 선언 문법(refactor backlog #79) ────────────────────────────
+    // [typeExists]/[topLevelFunctionExists]의 [MODIFIERS]보다 넓다. 두 판정기는 그대로 두었다.
+
+    /**
+     * 선언 앞머리 — 소문자 수식어(`internal`·`const`·`suspend`·`data` …)와 **같은 줄의 애너테이션**
+     * (`@Composable`, `@Suppress("x")`, `@OptIn(Foo::class)`)이 섞여 몇 개든 온다. 애너테이션 인자의
+     * 괄호는 두 겹까지 본다. 줄을 넘지 않는다(`[ \t]`) — `@file:` 줄이 다음 줄 선언과 이어 붙지 않는다.
+     */
+    private val DECLARATION_PREFIX =
+        """(?:(?:@[\w.:]+(?:\((?:[^()\n]|\([^()\n]*\))*\))?|[a-z]+)[ \t]+)*"""
+
+    /** 선언의 타입 매개변수 — `<T : Comparable<T>>`처럼 **세 겹까지** 중첩된 꺾쇠를 본다. */
+    private val TYPE_PARAMETERS = """<(?:[^<>\n]|<(?:[^<>\n]|<[^<>\n]*>)*>)*>"""
+
+    /** 확장 선언의 수신 타입(`Foo.`, `List<*>.`, `Map<K, V>?.`). */
+    private val RECEIVER = """(?:[\w.<>?*, ]+\.)?"""
+
     private val TYPE_DECLARATION = Regex(
-        """^$MODIFIERS(?:class|interface|object|typealias)\s+([A-Za-z_]\w*)""",
+        """^$DECLARATION_PREFIX(?:class|interface|object|typealias)[ \t]+([A-Za-z_]\w*)""",
         RegexOption.MULTILINE,
     )
     private val TOP_LEVEL_FUNCTION_DECLARATION = Regex(
-        """^${MODIFIERS}fun\s+(?:<[^>\n]*>\s*)?(?:[\w.<>?, ]+\.)?([A-Za-z_]\w*)\s*\(""",
+        """^${DECLARATION_PREFIX}fun[ \t]+(?:$TYPE_PARAMETERS[ \t]*)?$RECEIVER([A-Za-z_]\w*)[ \t]*\(""",
+        RegexOption.MULTILINE,
+    )
+
+    /** `val`/`var`/`const val`/`lateinit var`, 확장 프로퍼티 포함. 이름 뒤에 `.`·`<`·글자가 오면 아니다. */
+    private val TOP_LEVEL_PROPERTY_DECLARATION = Regex(
+        """^${DECLARATION_PREFIX}(?:val|var)[ \t]+(?:$TYPE_PARAMETERS[ \t]*)?$RECEIVER([A-Za-z_]\w*)(?![\w.<])""",
         RegexOption.MULTILINE,
     )
 
     /**
-     * [packageName] 바로 아래 선언된 **최상위 심볼의 단순 이름 전부**(타입 + 최상위 함수, 확장
-     * 함수 포함) — refactor backlog #79.
+     * [packageName] 바로 아래 선언된 최상위 심볼의 단순 이름 — 읽는 모양은
+     * [topLevelDeclaredSimpleNamesIn]에 적었다(refactor backlog #79).
      *
      * [typeExists]/[topLevelFunctionExists]는 "이 이름이 있는가"만 답한다. 루트 패키지 매처처럼
      * "이 조각이 **패키지 이름**(`ui`·`platform` 등)이 아니라 **실제로 선언된 심볼**인가"를 가르려면
      * 후보 하나하나를 추측해 물어볼 수 없다 — 색인이 **무엇이 있는지 목록**을 내놓아야 한다.
-     * 대문자 시작만 심볼로 보는 정규식 추측(옛 루트 매처)은 소문자 최상위 함수를 놓쳤다. 이 함수는
-     * 추측 대신 **실제 선언을 읽어** 답하므로 대소문자와 무관하다.
      */
     fun topLevelDeclaredSimpleNames(packageName: String): Set<String> =
-        filesByPackage[packageName].orEmpty().flatMap { file ->
-            val text = file.readText()
-            TYPE_DECLARATION.findAll(text).map { it.groupValues[1] } +
-                TOP_LEVEL_FUNCTION_DECLARATION.findAll(text).map { it.groupValues[1] }
-        }.toSet()
+        filesByPackage[packageName].orEmpty().flatMap { file -> topLevelDeclaredSimpleNamesIn(file.readText()) }.toSet()
+
+    /**
+     * 소스 텍스트 하나에서 최상위 선언의 단순 이름을 나열한다. 자기검증이 합성 소스로 직접 부른다.
+     *
+     * **읽는 것**: 칼럼 0에서 시작하는 타입(class/interface/object/typealias, `enum`·`data`·`sealed`·
+     * `fun interface` 포함), 함수(확장 포함), 프로퍼티(`val`/`var`/`const val`, 확장 포함). 앞머리의
+     * 수식어와 **같은 줄 애너테이션**, **중첩 제네릭 경계**(`fun <T : Comparable<T>> f(`)를 건너뛴다.
+     *
+     * **못 읽는 것**(알고 둔다): 들여쓴 최상위 선언, 이름이 키워드와 다른 줄에 있는 선언, 여러 줄에
+     * 걸친 애너테이션의 닫는 줄에 선언이 붙은 경우(`) internal fun f()`), 세 겹을 넘는 꺾쇠·두 겹을
+     * 넘는 애너테이션 괄호, 백틱 이름. 반대로 칼럼 0에서 이 모양을 띤 문자열·주석 줄은 이름으로
+     * 섞일 수 있다(빨강 쪽 오차).
+     *
+     * 이 목록에서 빠진 이름은 [LayeringContractTest]의 루트 매처에서 **inline FQN** 쪽만 못 본다 —
+     * import 쪽은 이 목록 없이 한 조각 정규식으로 잡는다.
+     */
+    fun topLevelDeclaredSimpleNamesIn(source: String): Set<String> =
+        listOf(TYPE_DECLARATION, TOP_LEVEL_FUNCTION_DECLARATION, TOP_LEVEL_PROPERTY_DECLARATION)
+            .flatMap { declaration -> declaration.findAll(source).map { it.groupValues[1] }.toList() }
+            .toSet()
 }

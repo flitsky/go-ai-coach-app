@@ -170,6 +170,11 @@ class LayeringContractTest {
      * 매처의 몫이 아님**(각자의 forbidden import가 맡는다)을 함께 못박는다 — 그렇지 않으면
      * "소문자도 잡는다"는 수정이 "루트 접두사로 시작하는 모든 것을 잡는다"로 과잉 일반화됐는지
      * 구분할 수 없다.
+     *
+     * ⚠️ #79 검수 — 생성 코드 inline 예외는 열거 목록에 `BuildConfig`/`R`을 **일부러 섞어** 넘겨
+     * 확인한다. 실제 색인에는 원래 안 나타나므로, 섞지 않으면 예외를 지워도 이 단언이 초록이다.
+     * `BlockComment.kt`는 `*`로 시작하지 않는 여러 줄 블록 주석 속 언급이 위반이 아님을 못박는다
+     * (`9f81a124`의 구현은 이것을 잡았다).
      */
     @Test
     fun rootPackageMatcherFlagsRootImportsButNotGeneratedSymbols() {
@@ -200,6 +205,9 @@ class LayeringContractTest {
             val subpackageInline = File(tempDir, "SubpackageInline.kt").apply {
                 writeText("package x\n\nval probe = ${UI_PACKAGE}SomeScreen\n")
             }
+            val blockComment = File(tempDir, "BlockComment.kt").apply {
+                writeText("package x\n\n/*\n$MAIN_ACTIVITY is only mentioned here\n*/\nval ok = 1\n")
+            }
 
             val offenders = rootPackageReferenceOffenders(listOf(offending), GENERATED_ROOT_SYMBOLS)
             assertEquals("루트 import(단일 조각·와일드카드)를 둘 다 잡아야 한다: $offenders", 2, offenders.size)
@@ -216,9 +224,13 @@ class LayeringContractTest {
                 inlineOffenders.size,
             )
             assertEquals(
-                "생성 코드(BuildConfig·R)는 inline FQN으로 써도 예외여야 한다(#77)",
+                "생성 코드(BuildConfig·R)는 inline FQN으로 써도 예외여야 한다(#77) — 열거 목록에 섞여 들어와도",
                 emptyList<String>(),
-                rootPackageReferenceOffenders(listOf(generatedInline), GENERATED_ROOT_SYMBOLS),
+                rootPackageReferenceOffenders(
+                    listOf(generatedInline),
+                    GENERATED_ROOT_SYMBOLS,
+                    rootDeclaredNames = SourceSymbolIndex.topLevelDeclaredSimpleNames(root) + GENERATED_ROOT_SYMBOLS,
+                ),
             )
 
             val lowercaseOffenders = rootPackageReferenceOffenders(listOf(lowercaseInline), GENERATED_ROOT_SYMBOLS)
@@ -233,6 +245,117 @@ class LayeringContractTest {
                     "루트 매처가 과잉 일반화되면 안 된다(#79)",
                 emptyList<String>(),
                 rootPackageReferenceOffenders(listOf(subpackageInline), GENERATED_ROOT_SYMBOLS),
+            )
+            assertEquals(
+                "여러 줄 블록 주석 속 루트 FQN 언급은 참조가 아니다(#79 검수)",
+                emptyList<String>(),
+                rootPackageReferenceOffenders(listOf(blockComment), GENERATED_ROOT_SYMBOLS),
+            )
+        } finally {
+            tempDir.deleteRecursively()
+        }
+    }
+
+    /**
+     * [rootPackageReferenceOffenders]의 자기검증 둘째 — **선언 모양**이 가리던 사각지대(refactor
+     * backlog #79 검수).
+     *
+     * #79의 첫 구현(`9f81a124`)은 import와 inline을 모두 [SourceSymbolIndex]가 나열한 이름으로만
+     * 찾았는데, 그 열거는 칼럼 0의 class/interface/object/typealias/fun만 봤다. 그래서 검수가 쓴
+     * 탐침 셋 — `internal val`, `internal const val`, 같은 줄에 `@Suppress`가 붙은 `internal fun` —
+     * 은 platform이 import해도 inline FQN으로 불러도 초록이었다. 옛 매처(import 한 조각 정규식 +
+     * 대문자 inline 정규식)는 그 import 둘과 대문자 inline 하나를 잡았으니 **가드 회귀**였다.
+     *
+     * 합성 루트 소스에 그 셋과 중첩 제네릭 경계 fun을 두고 네 갈래를 따로 못박는다.
+     *  1. 열거기가 그 네 이름과 타입 하나를 **정확히** 나열한다 — 파일 애너테이션·멤버 프로퍼티·
+     *     애너테이션 이름·타입 인자는 섞이지 않는다.
+     *  2. import는 열거와 **무관하게** 잡힌다 — 열거 결과를 비워서 넘겨도 네 줄이 다 잡혀야 한다.
+     *     같은 줄을 두 번 세지도 않는다(열거 결과를 넘겨도 넷).
+     *  3. inline FQN은 열거가 나열한 이름으로 잡힌다(넷 다).
+     *  4. 루트 선언의 멤버를 가리키는 import(`<root>.Type.Member`)는 잡되, 하위 패키지 import는
+     *     루트 매처의 몫이 아니다.
+     */
+    @Test
+    fun rootPackageMatcherCatchesPropertiesAnnotatedAndGenericBoundDeclarations() {
+        val root = MAIN_ACTIVITY.substringBeforeLast('.')
+        val probeNames = setOf("rootProbeValue", "RootProbeConst", "annotatedProbe", "genericBoundProbe")
+        val rootSource = listOf(
+            "@file:Suppress(\"unused\")",
+            "",
+            "package $root",
+            "",
+            "internal val rootProbeValue = 1",
+            "internal const val RootProbeConst = 2",
+            "@Suppress(\"FunctionOnlyReturningConstant\") internal fun annotatedProbe(): Int = 3",
+            "internal fun <T : Comparable<T>> genericBoundProbe(value: T): T = value",
+            "",
+            "internal class RootProbeHolder {",
+            "    val memberProbe = 4",
+            "}",
+        ).joinToString("\n", postfix = "\n")
+
+        val declared = SourceSymbolIndex.topLevelDeclaredSimpleNamesIn(rootSource)
+        assertEquals(
+            "루트 열거기가 최상위 프로퍼티·const·앞머리 애너테이션·중첩 제네릭 경계 선언을 나열해야 한다(#79 검수)",
+            probeNames + "RootProbeHolder",
+            declared,
+        )
+
+        val tempDir = java.nio.file.Files.createTempDirectory("root-matcher-shapes").toFile()
+        try {
+            val importProbe = File(tempDir, "ImportProbe.kt").apply {
+                writeText("package x\n\n" + probeNames.sorted().joinToString("\n") { "import $root.$it" } + "\n")
+            }
+            val inlineProbe = File(tempDir, "InlineProbe.kt").apply {
+                writeText(
+                    "package x\n\n" +
+                        "val a = $root.rootProbeValue\n" +
+                        "val b = $root.RootProbeConst\n" +
+                        "val c = $root.annotatedProbe()\n" +
+                        "val d = $root.genericBoundProbe(1)\n",
+                )
+            }
+            val memberImport = File(tempDir, "MemberImport.kt").apply {
+                writeText("package x\n\nimport $root.RootProbeHolder.Nested\nimport ${UI_PACKAGE}SomeScreen\n")
+            }
+
+            val importWithoutEnumeration =
+                rootPackageReferenceOffenders(listOf(importProbe), GENERATED_ROOT_SYMBOLS, rootDeclaredNames = emptySet())
+            assertEquals(
+                "루트 import는 열거 결과와 무관하게 잡아야 한다 — 열거기가 모르는 선언 모양이 생겨도 " +
+                    "import 쪽은 회귀하지 않는다(#79 검수): $importWithoutEnumeration",
+                probeNames,
+                probeNames.filter { name -> importWithoutEnumeration.any { it.endsWith("$root.$name") } }.toSet(),
+            )
+            assertEquals(
+                "루트 import 한 줄은 한 번만 보고한다: $importWithoutEnumeration",
+                probeNames.size,
+                importWithoutEnumeration.size,
+            )
+            val importWithEnumeration =
+                rootPackageReferenceOffenders(listOf(importProbe), GENERATED_ROOT_SYMBOLS, rootDeclaredNames = declared)
+            assertEquals(
+                "열거 결과를 넘겨도 import 한 줄을 두 번 세면 안 된다: $importWithEnumeration",
+                probeNames.size,
+                importWithEnumeration.size,
+            )
+
+            val inlineOffenders =
+                rootPackageReferenceOffenders(listOf(inlineProbe), GENERATED_ROOT_SYMBOLS, rootDeclaredNames = declared)
+            assertEquals(
+                "루트의 프로퍼티·const·애너테이션 fun·제네릭 경계 fun을 inline FQN으로 불러도 잡아야 한다" +
+                    "(#79 검수): $inlineOffenders",
+                probeNames,
+                probeNames.filter { name -> inlineOffenders.any { it.endsWith("$root.$name") } }.toSet(),
+            )
+            assertEquals("inline 참조 하나는 한 번만 보고한다: $inlineOffenders", probeNames.size, inlineOffenders.size)
+
+            val memberOffenders =
+                rootPackageReferenceOffenders(listOf(memberImport), GENERATED_ROOT_SYMBOLS, rootDeclaredNames = declared)
+            assertEquals(
+                "루트 선언의 멤버 import는 잡고 하위 패키지 import는 두어야 한다: $memberOffenders",
+                listOf("import $root.RootProbeHolder.Nested"),
+                memberOffenders.map { it.substringAfter(" -> ") },
             )
         } finally {
             tempDir.deleteRecursively()
@@ -1852,37 +1975,73 @@ class LayeringContractTest {
         }
 
     /**
-     * 루트 패키지(조립 전용)를 참조하는 import/inline FQN을 찾는다(refactor backlog #25, #77, #79).
+     * 루트 패키지(조립 전용)를 참조하는 import와 inline FQN을 찾는다(refactor backlog #25, #77, #79).
      *
-     * [forbiddenReferenceOffenders]의 접두사 모델은 원래 그대로 **못 쓴다** — 루트 접두사(`import
-     * <root>.`)는 모든 하위 패키지(`ui.`·`platform.`·`engine.` 등)와도 매치해 버린다. 그 하위
-     * 패키지들은 각자의 forbidden import가 이미 맡고 있으므로, 여기서 또 잡으면 이중 판정이 된다.
+     * [forbiddenReferenceOffenders]의 접두사 모델은 그대로 **못 쓴다** — 루트 접두사(`import <root>.`)는
+     * 모든 하위 패키지(`ui.`·`platform.`·`engine.` 등)와도 매치한다. 그 하위 패키지들은 각자의
+     * forbidden import가 맡으므로 여기서 또 잡으면 이중 판정이다. 그래서 두 갈래로 나눈다.
      *
-     * 그래서 접두사 하나로 뭉뚱그리는 대신 **루트에 실제로 선언된 최상위 심볼 이름 전부**를
-     * [SourceSymbolIndex.topLevelDeclaredSimpleNames]로 나열하고, 이름 하나하나를 독립된 FQN으로
-     * [forbiddenReferenceOffenders]/[detectForbiddenReference]에 넘긴다 — **루트 매처도
-     * `detectForbiddenReference`를 탄다**(refactor backlog #79의 인수 기준). 이러면
-     *  - import 줄(`import <root>.X`)과 inline FQN(`<root>.X`) 둘 다 [detectForbiddenReference]가
-     *    이미 하는 방식(주석·문자열 제거 포함)으로 잡히고,
-     *  - 하위 패키지 이름(`ui`·`platform` 등)은 애초에 이 목록에 없으므로(루트에 그런 이름의
-     *    선언이 없다) **매치 대상 자체가 아니다** — #77의 "대문자로 시작하는 이름만 잡는" 정규식
-     *    추측이 필요 없어진다. 소문자 최상위 함수(`wipeToFreshInstall` 등)도 선언이 실재하면
-     *    똑같이 잡힌다.
+     * **import 줄**
+     *  - `import <root>.<한 조각>`(`as` 별칭·와일드카드 `*` 포함, 줄 끝 앵커)은 **이름을 몰라도** 잡는다.
+     *    #25부터 쓰던 정규식 그대로다. 코틀린은 패키지를 import하지 않으니 한 조각 import는 선언일
+     *    수밖에 없고, 줄 끝 앵커라 하위 패키지 import(`<root>.ui.X`)와 겹치지 않는다. 그래서 선언
+     *    모양(프로퍼티·const·애너테이션 붙은 fun 등)과 무관하게 전부 잡는다.
+     *  - `import <root>.<선언>.<멤버>`는 첫 조각이 아래 열거 목록에 있을 때만 잡는다(하위 패키지
+     *    이름이면 두 조각 이상이어도 아니다).
      *
-     * `import <root>.*`(와일드카드)는 어떤 이름과도 접두사로 안 겹치므로 별도 항목으로 더한다 —
-     * 실사용 여부와 무관하게 그 자체로 위반이다(기존 동작 유지).
+     * **inline FQN**(import 없이 코드에서 `<root>.X`를 직접 씀)은 이름을 알아야 하위 패키지와 가를 수
+     * 있다. [SourceSymbolIndex.topLevelDeclaredSimpleNames]가 루트 소스에서 나열한 이름 하나하나를
+     * [detectForbiddenReference]에 넘긴다 — #79의 인수 기준 "루트 매처도 `detectForbiddenReference`를
+     * 탄다". 열거가 읽는 선언 모양과 못 읽는 모양은 [SourceSymbolIndex.topLevelDeclaredSimpleNamesIn]에
+     * 적었고, 못 읽는 모양의 선언은 **inline 쪽에서만** 놓친다. 넘기는 줄은 [codeLinesOf]로 import·
+     * 주석을 걷어낸 코드 줄이다. import는 위에서 이미 봤으니 두 번 세지 않고, 여러 줄 블록 주석 속
+     * 언급도 여기서 걸러진다.
+     *
+     * ⚠️ 이력 — #79의 첫 구현(`9f81a124`)은 import 정규식을 걷어내고 import까지 열거 목록으로만
+     * 찾으면서, 그 목록이 "루트에 실제로 선언된 최상위 심볼 이름 전부"라고 적었다. 사실이 아니었다.
+     * 열거는 칼럼 0의 class/interface/object/typealias/fun만 봐서 최상위 `val`/`const val`, 같은 줄
+     * 애너테이션 선언, 중첩 제네릭 경계 fun을 놓쳤고, 그 결과 옛 매처가 잡던 import를 놓쳤다. 그래서
+     * import 정규식을 되살리고 열거를 넓혔다. [rootPackageMatcherCatchesPropertiesAnnotatedAndGenericBoundDeclarations]가
+     * 그 회귀를 막는다.
+     *
+     * 루트 선언 이름이 하위 패키지 이름과 **같으면**(예: 루트 fun `ui`) inline·멤버 import 쪽이 그
+     * 하위 패키지 참조를 잘못 잡는다 — 빨강 쪽 오차다.
      *
      * 루트 이름은 등록부의 [MAIN_ACTIVITY]에서 파생시켜 리터럴을 들지 않는다. `BuildConfig`/`R`은
-     * 생성 코드라 애초에 [SourceSymbolIndex]가 못 보므로(소스가 없다) 목록에 나타나지 않지만,
-     * [allowedSimpleNames]로 한 번 더 걸러 그 사실을 코드로 명문화해 둔다.
+     * [allowedSimpleNames]로 뺀다. import 정규식은 이름을 가리지 않으므로 이 예외가 실제로 일하고,
+     * inline 쪽에도 같은 예외를 적용한다(생성 코드는 소스 색인에 원래 안 나타난다).
+     * [rootDeclaredNames]는 자기검증이 합성 선언 목록을 넘길 때만 바꾼다.
      */
-    private fun rootPackageReferenceOffenders(files: List<File>, allowedSimpleNames: Set<String>): List<String> {
+    private fun rootPackageReferenceOffenders(
+        files: List<File>,
+        allowedSimpleNames: Set<String>,
+        rootDeclaredNames: Set<String> =
+            SourceSymbolIndex.topLevelDeclaredSimpleNames(MAIN_ACTIVITY.substringBeforeLast('.')),
+    ): List<String> {
         val root = MAIN_ACTIVITY.substringBeforeLast('.')
-        val forbiddenImports = listOf("import $root.*") +
-            (SourceSymbolIndex.topLevelDeclaredSimpleNames(root) - allowedSimpleNames)
-                .sorted()
-                .map { simpleName -> "import $root.$simpleName" }
-        return forbiddenReferenceOffenders(files = files, forbiddenImports = forbiddenImports)
+        val singleSegmentImport = Regex("""^import\s+${Regex.escape(root)}\.([A-Za-z_]\w*|\*)(?:\s+as\s+\w+)?\s*$""")
+        val memberImport = Regex("""^import\s+${Regex.escape(root)}\.([A-Za-z_]\w*)\.""")
+        val declaredNames = rootDeclaredNames - allowedSimpleNames
+        return files.flatMap { file ->
+            val path = file.relativeTo(RepoPaths.root).path
+            val lines = file.readLines()
+
+            val importHits = lines
+                .map { line -> line.trim() }
+                .filter { line ->
+                    val single = singleSegmentImport.find(line)?.groupValues?.get(1)
+                    val owner = memberImport.find(line)?.groupValues?.get(1)
+                    (single != null && single !in allowedSimpleNames) || (owner != null && owner in declaredNames)
+                }
+                .map { line -> "$path: root-package import -> $line" }
+
+            val codeLines = codeLinesOf(lines)
+            val inlineHits = declaredNames.sorted()
+                .flatMap { name -> detectForbiddenReference(codeLines, "import $root.$name") }
+                .map { reason -> "$path: $reason" }
+
+            importHits + inlineHits
+        }
     }
 
     private fun detectForbiddenReference(lines: List<String>, forbidden: String): List<String> {
