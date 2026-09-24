@@ -317,12 +317,32 @@ enum class CandidateMoveSource {
     Unknown,
 }
 
+/**
+ * 분석이 **원래 경로 대신 폴백 경로로 내려갔다는 사실** 한 줄.
+ *
+ * ⚠️ 폴백 자체는 기능이지만, **무음인 폴백은 기능이 아니다**(refactor backlog #16ⓐ).
+ * 예전에는 JSON 분석이 실패하면 `runCatching`이 전부 삼키고 GTP로 조용히 내려갔다 —
+ * 매번 일어나고 있어도 앱에도 로그에도 흔적이 없었다. 그래서 그 사실을 계약에 **데이터로**
+ * 싣는다. 진단 이벤트로 바꾸는 것은 3계층(`EngineAnalysisDiagnosticRecorder`)의 몫이다:
+ * 2계층 엔진 구현체가 진단 로그 포트를 알 필요는 없다.
+ *
+ * ⚠️ **취소/타임아웃은 여기에 담기지 않는다.** 예산을 다 써서 끊긴 요청을 같은 예산으로
+ * 한 번 더 태우는 것이 문제의 핵심이므로, 그 둘은 폴백하지 않고 그대로 던진다.
+ */
+data class AnalysisFallbackRecord(
+    val fromPath: String,
+    val toPath: String,
+    val reason: String,
+)
+
 data class AnalysisResult(
     val status: EngineStatus,
     val candidates: List<CandidateMove>,
     val summary: String,
     val rootVisits: Int? = null,
     val elapsedMillis: Long? = null,
+    /** 이 결과가 폴백 경로에서 나왔다면 그 사실. 정상 경로면 `null`. */
+    val fallback: AnalysisFallbackRecord? = null,
 )
 
 data class OwnershipEstimate(

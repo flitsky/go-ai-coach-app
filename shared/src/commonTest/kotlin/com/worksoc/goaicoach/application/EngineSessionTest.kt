@@ -5,6 +5,7 @@ import com.worksoc.goaicoach.application.autoai.*
 
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.engine.*
+import com.worksoc.goaicoach.shared.enginecontract.AnalysisFallbackRecord
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisResult
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
@@ -390,6 +391,40 @@ class EngineSessionTest {
         assertEquals("32", diagnosticLog.events.single().context["requestedVisits"])
     }
 
+    /**
+     * 2계약이 실은 폴백 사실을 3계층이 **진단 이벤트 한 줄로** 바꾼다(refactor backlog #16ⓐ).
+     *
+     * ⚠️ 이 사건은 지금까지 **완전 무음이었다** — `KataGoProcessEngineAdapter.analyze()`의
+     * `runCatching`이 전부 삼키고 조용히 GTP로 내려갔으므로, 매 수마다 일어나고 있어도
+     * 앱에도 로그에도 흔적이 없었다.
+     */
+    @Test
+    fun adapterSessionClientRecordsAnalysisFallbackReportedByTheEngine() = runBlocking {
+        val engine = RecordingEngineAdapter(
+            analysisFallback = AnalysisFallbackRecord(
+                fromPath = "json-position-analysis",
+                toPath = "gtp-analyze",
+                reason = "IOException: analysis process died",
+            ),
+        )
+        val diagnosticLog = RecordingDiagnosticEventLog()
+        val client = LocalEngineSessionClient(
+            coreApi = engine,
+            diagnosticEventLog = diagnosticLog,
+        )
+
+        client.analyzePosition(
+            state = GameState.empty(),
+            limit = AnalysisLimit(visits = 32, timeMillis = 2_000L, candidateCount = 16),
+            searchMode = EngineSearchMode.JsonPositionAnalysis,
+        )
+
+        val event = diagnosticLog.events.single { it.code == "engine.analysis.fallback" }
+        assertEquals("json-position-analysis", event.context["from"])
+        assertEquals("gtp-analyze", event.context["to"])
+        assertEquals("IOException: analysis process died", event.context["reason"])
+    }
+
     @Test
     fun adapterSessionClientDoesNotRecordVisitFillWarningWhenRootVisitsAreComplete() = runBlocking {
         val engine = RecordingEngineAdapter(analyzedRootVisits = { limit -> limit.visits })
@@ -602,6 +637,7 @@ class EngineSessionTest {
 
 private class RecordingEngineAdapter(
     private val analyzedRootVisits: (AnalysisLimit) -> Int? = { limit -> limit.visits },
+    private val analysisFallback: AnalysisFallbackRecord? = null,
 ) : EngineAdapter {
     val calls = mutableListOf<String>()
     val configuredProfiles = mutableListOf<EngineProfile>()
@@ -673,6 +709,7 @@ private class RecordingEngineAdapter(
             summary = "analyzed",
             rootVisits = analyzedRootVisits(limit),
             elapsedMillis = 10L,
+            fallback = analysisFallback,
         ).also {
             calls += "analyze:${limit.visits}"
         }

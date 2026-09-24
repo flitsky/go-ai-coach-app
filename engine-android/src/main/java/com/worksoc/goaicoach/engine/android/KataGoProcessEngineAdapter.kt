@@ -46,7 +46,6 @@ internal class KataGoProcessEngineAdapter(
     private var analysisProcess: Process? = null
     private var analysisInput: BufferedWriter? = null
     private var analysisOutput: BufferedReader? = null
-    private var analysisQueryCounter: Int = 0
     private val playedMoves = mutableListOf<Move>()
 
     // Serializes access to each process's stdin/stdout so two concurrent engine
@@ -157,20 +156,25 @@ internal class KataGoProcessEngineAdapter(
     override suspend fun analyze(limit: AnalysisLimit): AnalysisResult {
         ensureProcessStarted()
         val effectiveLimit = limit.effectiveAnalysisLimit()
-        if (effectiveLimit.needsJsonAnalysis()) {
-            runCatching {
-                val analysisConfigPath = processConfig.resolveAnalysisConfigPath() ?: return@runCatching null
+        // ⚠️ 폴백 판정은 [attemptJsonAnalysis]가 한다 — 취소/타임아웃을 삼키지 않기 위해서다.
+        // 여기서 runCatching으로 되돌리지 마라(refactor backlog #16ⓐ, 그 함수의 KDoc 참고).
+        val attempt = if (effectiveLimit.needsJsonAnalysis()) {
+            attemptJsonAnalysis {
+                val analysisConfigPath = processConfig.resolveAnalysisConfigPath()
+                    ?: return@attemptJsonAnalysis null
                 ensureAnalysisProcessStarted(analysisConfigPath)
                 jsonPositionAnalysisClient().analyze(effectiveLimit, limit.candidateCount)
-            }.getOrNull()?.let { jsonResult ->
-                return jsonResult
             }
+        } else {
+            JsonAnalysisAttempt<AnalysisResult>(result = null, fallback = null)
         }
+        attempt.result?.let { jsonResult -> return jsonResult }
 
-        return gtpAnalysisClient().analyze(
+        val gtpResult = gtpAnalysisClient().analyze(
             effectiveLimit = effectiveLimit,
             requestedLimit = limit,
         )
+        return attempt.fallback?.let { fallback -> gtpResult.copy(fallback = fallback) } ?: gtpResult
     }
 
     override suspend fun estimateScore(limit: AnalysisLimit): ScoreEstimate {
@@ -431,9 +435,12 @@ internal class KataGoProcessEngineAdapter(
         refineMove: Move.Play? = null,
         includePolicyOverride: Boolean? = null,
     ): JSONObject {
-        analysisQueryCounter += 1
         return KataGoJsonAnalysisQueryFactory.build(
-            id = "go-ai-coach-analysis-$analysisQueryCounter",
+            id = KataGoJsonAnalysisQueryFactory.nextQueryId(
+                boardSize = boardSize,
+                playedMoves = playedMoves,
+                refineMove = refineMove,
+            ),
             boardSize = boardSize,
             ruleset = ruleset,
             playedMoves = playedMoves,

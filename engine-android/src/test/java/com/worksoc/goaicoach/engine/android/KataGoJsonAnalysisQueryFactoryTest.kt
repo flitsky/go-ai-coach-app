@@ -12,6 +12,57 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class KataGoJsonAnalysisQueryFactoryTest {
+    /**
+     * 쿼리 id는 **절대 겹치면 안 된다**(refactor backlog #16ⓑ). 응답을 id로 짝지어 찾기
+     * 때문에, 같은 id 둘은 한쪽의 응답을 다른 쪽이 받아 가는 형태로 조용히 틀린다.
+     * 여기서는 동시성까지 밀어 넣어 확인한다 — 예전의 비원자적 `Int++`가 지던 자리다.
+     */
+    @Test
+    fun queryIdsNeverRepeatEvenWhenGeneratedFromManyThreadsAtOnce() {
+        val threads = 8
+        val perThread = 500
+        val ids = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
+        val start = java.util.concurrent.CountDownLatch(1)
+        val workers = (1..threads).map {
+            Thread {
+                start.await()
+                repeat(perThread) {
+                    ids += KataGoJsonAnalysisQueryFactory.nextQueryId(
+                        boardSize = BoardSize.Nine,
+                        playedMoves = emptyList(),
+                    )
+                }
+            }.also { worker -> worker.start() }
+        }
+        start.countDown()
+        workers.forEach { worker -> worker.join() }
+
+        assertEquals(threads * perThread, ids.size)
+    }
+
+    /** 로그에서 **어느 국면의 쿼리였는지** 읽혀야 한다 — 예전 id는 일련번호뿐이었다. */
+    @Test
+    fun queryIdReadsBackThePositionItWasBuiltFor() {
+        val playedMoves = listOf(
+            Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)),
+            Move.Pass(StoneColor.White),
+        )
+
+        val plain = KataGoJsonAnalysisQueryFactory.nextQueryId(
+            boardSize = BoardSize.Nine,
+            playedMoves = playedMoves,
+        )
+        val refined = KataGoJsonAnalysisQueryFactory.nextQueryId(
+            boardSize = BoardSize.Nine,
+            playedMoves = playedMoves,
+            refineMove = Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("C3", BoardSize.Nine)),
+        )
+
+        assertTrue(plain.endsWith("-9x9-m2"), plain)
+        assertTrue(refined.endsWith("-9x9-m3-rC3"), refined)
+        assertTrue(plain.startsWith("go-ai-coach-analysis-"))
+    }
+
     @Test
     fun buildsPositionAnalysisQueryForCurrentTurn() {
         val query = KataGoJsonAnalysisQueryFactory.build(

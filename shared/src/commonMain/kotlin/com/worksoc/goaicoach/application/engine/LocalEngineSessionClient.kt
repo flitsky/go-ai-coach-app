@@ -171,6 +171,10 @@ class LocalEngineSessionClient(
             rootVisits = result.rootVisits,
             searchMode = searchMode,
         )
+        analysisDiagnostics.recordAnalysisFallback(
+            state = state,
+            fallback = result.fallback,
+        )
         positionAnalysisCache.storeIfEligible(
             context = context,
             result = result,
