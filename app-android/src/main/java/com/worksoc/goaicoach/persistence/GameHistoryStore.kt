@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.persistence
 
 import android.content.Context
+import android.content.SharedPreferences
 import com.worksoc.goaicoach.application.gamehistory.GameHistoryEntry
 import com.worksoc.goaicoach.application.gamehistory.GameHistoryResult
 import com.worksoc.goaicoach.application.gamehistory.GameHistoryRetentionPolicy
@@ -13,6 +14,8 @@ import com.worksoc.goaicoach.shared.domain.DefaultKomi
 import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.domain.StoneColor
 import java.io.File
+import java.io.FileOutputStream
+import java.io.OutputStream
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -40,10 +43,29 @@ internal const val GameHistoryDirName = "game_history"
  * ⚠️ **옛 `SharedPreferences` 기록은 첫 읽기에서 자동 이관된다**([migrateLegacyPrefsIfNeeded]).
  * 이관 후 prefs 키를 지우므로 두 번 일어나지 않는다. 옛 기록에는 리플레이 본문이 없다 —
  * 애초에 저장된 적이 없기 때문이고, 이것이 #151이 *"늦출수록 영구 손실"* 인 이유다.
+ *
+ * ## ⚠️ 파일은 제자리에서 덮어쓰지 않는다 — 옆의 임시 파일에 다 쓴 뒤 이름을 바꾼다 (refactor backlog #21)
+ * 대국이 끝날 때마다 `index.json` **전체**를 다시 쓴다. 제자리 덮어쓰기(`writeText`)는 파일을 먼저 0바이트로
+ * 자르고 채우므로, 그 사이 프로세스가 죽거나 쓰기가 실패하면 깨진 JSON이 남고 코덱은 그것을 **빈 목록**으로
+ * 읽는다. 다음 대국이 그 빈 목록에 한 판을 얹어 쓰는 순간 **그때까지의 기록 전부가 영구히 사라진다.**
+ * [writeAtomically]는 같은 디렉터리의 `<이름>.tmp`에 쓰고 `fsync`한 뒤 `renameTo`로 바꿔 끼운다 —
+ * 같은 파일시스템 안의 rename은 원자적이라, 읽는 쪽은 **옛 파일 전체 아니면 새 파일 전체**만 본다.
+ * 실패하면 임시 파일만 지우고 옛 파일은 그대로 둔다. ⚠️ 쓰는 **바이트는 예전과 같다**(코덱 출력의 UTF-8,
+ * `File.writeText`와 동일) — 저장 포맷·파일 이름·스키마 번호는 하나도 바뀌지 않았다(함정 69).
+ * 남은 `.tmp`는 아무도 읽지 않고, 다음 쓰기가 덮어쓰며, 초기화는 디렉터리째 지운다.
  */
-internal class GameHistoryStore(context: Context) : GameHistoryStorePort {
-    private val appContext = context.applicationContext
-    private val root = File(appContext.filesDir, GameHistoryDirName)
+internal class GameHistoryStore internal constructor(
+    private val root: File,
+    private val legacyPrefs: () -> SharedPreferences,
+    private val openOutput: (File) -> OutputStream = ::FileOutputStream,
+) : GameHistoryStorePort {
+    constructor(context: Context) : this(
+        root = File(context.applicationContext.filesDir, GameHistoryDirName),
+        legacyPrefs = {
+            context.applicationContext.getSharedPreferences(LegacyPrefsName, Context.MODE_PRIVATE)
+        },
+    )
+
     private val indexFile = File(root, IndexFileName)
     private val replayDir = File(root, ReplayDirName)
 
@@ -52,11 +74,10 @@ internal class GameHistoryStore(context: Context) : GameHistoryStorePort {
         replayDir.mkdirs()
 
         if (replay != null && !replay.isEmpty) {
-            runCatching {
-                replayFile(entry.id).writeText(
-                    GameReplayCodec.encode(replay, BoardSize(entry.boardSize)),
-                )
-            }
+            writeAtomically(
+                replayFile(entry.id),
+                GameReplayCodec.encode(replay, BoardSize(entry.boardSize)),
+            )
         }
         val next = loadAll() + entry
         writeIndex(applyRetention(next))
@@ -99,8 +120,28 @@ internal class GameHistoryStore(context: Context) : GameHistoryStorePort {
     private fun replayBytes(id: String): Long =
         runCatching { replayFile(id).length() }.getOrDefault(0L)
 
-    private fun writeIndex(entries: List<GameHistoryEntry>) {
-        runCatching { indexFile.writeText(GameHistoryIndexCodec.encodeAll(entries)) }
+    /** @return 새 index가 실제로 자리를 잡았는가. 실패하면 옛 index가 그대로 남아 있다. */
+    private fun writeIndex(entries: List<GameHistoryEntry>): Boolean =
+        writeAtomically(indexFile, GameHistoryIndexCodec.encodeAll(entries))
+
+    /**
+     * [target]을 [text]로 **통째로** 바꾸거나, 실패하면 **손대지 않는다**(클래스 KDoc 참고).
+     * 예전처럼 실패를 삼키지만(`runCatching`), 삼킨 뒤에도 옛 파일이 멀쩡하다는 점이 다르다.
+     */
+    private fun writeAtomically(target: File, text: String): Boolean {
+        val temp = File(target.parentFile, target.name + TempSuffix)
+        val replaced = runCatching {
+            openOutput(temp).use { output ->
+                output.write(text.toByteArray(Charsets.UTF_8))
+                output.flush()
+                // 이름을 바꾸기 전에 내용을 디스크에 내린다 — 안 그러면 전원이 나갔을 때 이름만 바뀌고
+                // 내용은 비어 있는 파일이 남을 수 있다(`android.util.AtomicFile`도 같은 순서다).
+                (output as? FileOutputStream)?.fd?.sync()
+            }
+            check(temp.renameTo(target)) { "rename ${temp.name} -> ${target.name} failed" }
+        }.isSuccess
+        if (!replaced) runCatching { temp.delete() }
+        return replaced
     }
 
     /**
@@ -108,14 +149,18 @@ internal class GameHistoryStore(context: Context) : GameHistoryStorePort {
      *
      * ⚠️ **index 파일이 이미 있으면 아무것도 하지 않는다** — 안 그러면 이관이 매번 일어나
      * 새 기록을 옛 기록으로 덮어쓴다.
+     *
+     * ⚠️ **index가 실제로 써졌을 때만 옛 키를 지운다**(refactor backlog #21). 쓰기가 실패했는데 지우면
+     * 이관할 원본까지 사라진다. 실패하면 index가 없는 채로 남으므로 다음 읽기가 다시 이관한다.
      */
     private fun migrateLegacyPrefsIfNeeded() {
         if (indexFile.exists()) return
-        val prefs = appContext.getSharedPreferences(LegacyPrefsName, Context.MODE_PRIVATE)
+        val prefs = legacyPrefs()
         val raw = prefs.getString(LegacyEntriesKey, null) ?: return
         root.mkdirs()
-        writeIndex(GameHistoryIndexCodec.decodeLegacyAll(raw))
-        prefs.edit().remove(LegacyEntriesKey).apply()
+        if (writeIndex(GameHistoryIndexCodec.decodeLegacyAll(raw))) {
+            prefs.edit().remove(LegacyEntriesKey).apply()
+        }
     }
 
     private companion object {
@@ -123,6 +168,9 @@ internal class GameHistoryStore(context: Context) : GameHistoryStorePort {
         const val ReplayDirName = "replay"
         const val LegacyPrefsName = "go_ai_coach_game_history"
         const val LegacyEntriesKey = "entries"
+
+        /** [writeAtomically]가 같은 디렉터리에 두는 임시 파일의 꼬리. 읽는 쪽은 이 파일을 보지 않는다. */
+        const val TempSuffix = ".tmp"
 
         /**
          * 한 기록이 index에서 차지하는 대략의 바이트. 상한 판정에만 쓰므로 정확할 필요는 없고,
