@@ -43,9 +43,16 @@ import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
  * 예외는 셋이다 — [capabilities], [positionAnalysisCacheStatsText],
  * [positionAnalysisCacheQualityFor]. 이 셋은 옛 페이크 8개가 **전부 같은 값을 돌려주고 있었다**
  * (`false` / `"disabled"` / `null`). 셋을 일부러 틀린 값으로 바꾸고 `:shared:check`를 돌려 본
- * 결과 **빨개지는 테스트가 하나도 없었다** — 인터페이스가 값을 요구해서 있을 뿐, 어떤 테스트도
- * 관찰하지 않는 자리다. 그래서 여기서만 `error`가 아닌 값을 준다.
+ * 결과 **빨개지는 테스트가 하나도 없었다**. 그래서 여기서만 `error`가 아닌 값을 준다.
  * 다른 값이 필요한 테스트는 [capabilities]처럼 그대로 `override` 하면 된다.
+ *
+ * ⚠️ **그 관찰은 "이 기본값을 아무도 안 본다"는 뜻이지, "계약이 죽었다"는 뜻이 아니다**
+ * (refactor backlog #60에서 전수 조사). 셋 다 프로덕션에 소비자가 있다:
+ * [capabilities]는 기기 벤치마크 게이팅과 진단 로그의 `backendId`,
+ * [positionAnalysisCacheStatsText]는 디버그 리포트,
+ * [positionAnalysisCacheQualityFor]는 대국 후 캐시 최적화 계획이다.
+ * 셋의 판정과 근거는 `EngineSessionClient`의 각 멤버 KDoc에 적혀 있다 —
+ * [capabilities]의 `backend`는 그때 테스트가 붙었다.
  *
  * ## 쓰는 법
  * 테스트가 필요한 멤버만 `override` 하는 `private class`를 테스트 파일에 남긴다. 기록용

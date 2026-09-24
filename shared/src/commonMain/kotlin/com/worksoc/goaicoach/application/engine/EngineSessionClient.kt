@@ -39,10 +39,36 @@ data class EngineSessionCapabilities(
  * details to Compose/app-service orchestration (5계층).
  */
 interface EngineSessionClient {
+    /**
+     * ⚠️ **`backend`는 진단 로그로 새어 나간다.** `runEngineStartup/NewGame/Undo` 경로가
+     * 이 값의 `label`을 [com.worksoc.goaicoach.shared.engine.EngineOperationRequest.backendId]로
+     * 찍고, 그것이 느림/타임아웃 진단 이벤트의 키가 된다. 원격 백엔드가 `local-engine`으로 찍히면
+     * 로그를 읽는 사람이 어느 엔진이 느렸는지 알 수 없다 — `EngineSessionLifecycleApplicationTest`의
+     * `engineStartupOperationCarriesTheBackendIdFromCapabilities`가 그 배선을 고정한다.
+     */
     val capabilities: EngineSessionCapabilities
 
+    /**
+     * 디버그 리포트에 실리는 position-analysis 캐시 통계 한 줄.
+     *
+     * 소비자는 프로덕션에 **하나뿐이다** — app-android의 `SettingsAndDiagnosticsControllerWiring`이
+     * `DebugReportController`에 넘긴다. 이 멤버 자체는 한 줄 위임이고, 문자열을 실제로 조립하는
+     * 쪽은 `PositionAnalysisCacheResolverTest.statsTextCombinesLocalAndTrustedProviders`가 이미
+     * 고정한다. 그래서 refactor backlog #60에서 **현 상태 유지로 판정했다**: 여기에 테스트를 하나
+     * 더 붙여도 위임 한 줄을 지킬 뿐이다.
+     */
     fun positionAnalysisCacheStatsText(nowMillis: Long): String
 
+    /**
+     * 대국 후 캐시 최적화 계획을 세울 때 국면별 캐시 품질을 묻는다.
+     *
+     * ⚠️ **지금 이 경로는 잠들어 있다** — 유일한 소비자인 `PositionCacheOptimizationController`가
+     * 계획을 세우지만, 그 계획을 보여주는 프롬프트는 `PostGamePositionAnalysisCacheOptimizationPromptEnabled
+     * = false` 뒤에 있다. 그래도 **빼지 않는다**: 플래그는 묘비가 아니라 스위치이고, 계획을 세우는
+     * 쪽(`buildPositionAnalysisCacheOptimizationPlan`)의 `qualityFor` 사용은
+     * `PositionAnalysisCacheOptimizationTest`가 자체 람다로 이미 고정하고 있다.
+     * refactor backlog #60 판정: 현 상태 유지.
+     */
     fun positionAnalysisCacheQualityFor(
         state: GameState,
         limit: AnalysisLimit,

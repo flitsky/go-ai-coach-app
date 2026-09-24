@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.application
 
 import com.worksoc.goaicoach.application.engine.operation.*
+import com.worksoc.goaicoach.shared.engine.EngineOperationRequest
 import com.worksoc.goaicoach.shared.engine.engineOperationRequest
 
 import com.worksoc.goaicoach.application.analysis.*
@@ -156,6 +157,23 @@ class EngineSessionLifecycleApplicationTest {
         assertEquals("undo failed", (failure as EngineUndoWorkflowResult.Failure).error.message)
     }
 
+    /**
+     * `capabilities.backend`가 **엔진 오퍼레이션의 `backendId`가 된다**(refactor backlog #60).
+     *
+     * ⚠️ 이 배선에는 **테스트가 하나도 없었다.** 네 군데의 `backendId = capabilities.backend.label`을
+     * 전부 상수로 바꿔 놓고 `:shared:check`와 `:app-android:testDebugUnitTest`를 `--rerun-tasks`로
+     * 돌려도 초록이었다. `backendId`는 진단 이벤트의 키라서, 원격 백엔드가 `local-engine`으로
+     * 찍히면 **로그를 읽는 사람이 어느 엔진이 느렸는지 영영 모른다** — 조용히 틀리는 종류다.
+     * (같은 사고를 `EngineMode` 기본값이 이미 한 번 냈다.)
+     */
+    @Test
+    fun engineStartupOperationCarriesTheBackendIdFromCapabilities() = runBlocking {
+        val backendIds = listOf(EngineSessionBackend.LocalEngine, EngineSessionBackend.RemoteServer)
+            .map { backend -> backendIdOfStartupOperation(backend) }
+
+        assertEquals(listOf("local-engine", "remote-server"), backendIds)
+    }
+
     @Test
     fun scopedEngineOperationHelperCompletesLifecycleOnFailure() = runBlocking {
         val request = engineOperationRequest(
@@ -240,4 +258,43 @@ private class RecordingLifecycleEngineSessionClient(
         undoCalls += 1
         return EngineStatus.ready("undo-$undoCalls")
     }
+}
+
+/**
+ * [runEngineStartupApplication]이 만든 오퍼레이션을 라이프사이클 콜백으로 낚아채 `backendId`만 읽는다.
+ * 이 경로를 고른 이유: 나머지 세 자리(`runEngineStartupEffect`/`runEngineBackedNewGameEffect`/
+ * `runEngineUndoEffect`)는 요청을 함수 안에서만 만들고, 그 값이 밖으로 나오는 길이 **느림/타임아웃
+ * 진단 이벤트뿐**이라 시계에 의존하지 않고는 결정적으로 관찰할 수 없다. 덮은 척하지 않고 적어 둔다.
+ */
+private suspend fun backendIdOfStartupOperation(backend: EngineSessionBackend): String {
+    val started = mutableListOf<EngineOperationRequest>()
+    val client = BackendReportingEngineSessionClient(backend)
+
+    client.runEngineStartupApplication(
+        EngineStartupRunRequest(
+            state = GameState.empty(),
+            profile = EngineProfile(name = "Startup"),
+            sessionGeneration = 7,
+            engineDiagnostic = { "diagnostic" },
+            lifecycleCallbacks = EngineOperationLifecycleCallbacks(
+                onStarted = { request -> started += request },
+            ),
+        ),
+    )
+
+    return started.single().backendId
+}
+
+private class BackendReportingEngineSessionClient(
+    backend: EngineSessionBackend,
+) : FakeEngineSessionClient() {
+    override val capabilities: EngineSessionCapabilities = EngineSessionCapabilities(
+        supportsDeviceBenchmark = false,
+        backend = backend,
+    )
+
+    override suspend fun startSession(
+        profile: EngineProfile,
+        state: GameState,
+    ): EngineStartupResult = EngineStartupResult(message = "startup", scoreSnapshot = null)
 }
