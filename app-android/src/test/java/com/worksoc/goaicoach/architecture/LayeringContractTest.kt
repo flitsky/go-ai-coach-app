@@ -1,5 +1,16 @@
 package com.worksoc.goaicoach.architecture
 
+import com.worksoc.goaicoach.architecture.ContractSymbols.APPLICATION_PACKAGE
+import com.worksoc.goaicoach.architecture.ContractSymbols.ENGINE_ADAPTER
+import com.worksoc.goaicoach.architecture.ContractSymbols.ENGINE_ANDROID_RUNTIME_PACKAGE
+import com.worksoc.goaicoach.architecture.ContractSymbols.ENGINE_CORE_API
+import com.worksoc.goaicoach.architecture.ContractSymbols.ENGINE_PACKAGE
+import com.worksoc.goaicoach.architecture.ContractSymbols.LOCAL_CONFIGURE_SYNC_AND_ESTIMATE_GRAPH_SCORE
+import com.worksoc.goaicoach.architecture.ContractSymbols.LOCAL_ESTIMATE_SCORE_FOR_STATE
+import com.worksoc.goaicoach.architecture.ContractSymbols.LOCAL_SYNC_AND_ESTIMATE_GRAPH_SCORE
+import com.worksoc.goaicoach.architecture.ContractSymbols.PERSISTENCE_PACKAGE
+import com.worksoc.goaicoach.architecture.ContractSymbols.UI_PACKAGE
+import com.worksoc.goaicoach.architecture.ContractSymbols.importOf
 import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -15,9 +26,9 @@ class LayeringContractTest {
             sourceRoot.resolve("presentation"),
         )
         val forbiddenImports = listOf(
-            "import com.worksoc.goaicoach.shared.enginecontract.EngineAdapter",
-            "import com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi",
-            "import com.worksoc.goaicoach.engine.android",
+            importOf(ENGINE_ADAPTER),
+            importOf(ENGINE_CORE_API),
+            importOf(ENGINE_ANDROID_RUNTIME_PACKAGE),
         )
 
         val offenders = forbiddenReferenceOffenders(
@@ -50,8 +61,8 @@ class LayeringContractTest {
             RepoPaths.appAndroid("application"),
         )
         val forbiddenImports = listOf(
-            "import com.worksoc.goaicoach.shared.enginecontract.EngineAdapter",
-            "import com.worksoc.goaicoach.engine.android",
+            importOf(ENGINE_ADAPTER),
+            importOf(ENGINE_ANDROID_RUNTIME_PACKAGE),
         )
 
         val offenders = forbiddenReferenceOffenders(
@@ -84,9 +95,9 @@ class LayeringContractTest {
             "import androidx.",
             "import java.",
             "import org.json.",
-            "import com.worksoc.goaicoach.ui.",
-            "import com.worksoc.goaicoach.persistence.",
-            "import com.worksoc.goaicoach.engine.",
+            importOf(UI_PACKAGE),
+            importOf(PERSISTENCE_PACKAGE),
+            importOf(ENGINE_PACKAGE),
         )
 
         val offenders = forbiddenReferenceOffenders(
@@ -107,7 +118,7 @@ class LayeringContractTest {
     fun matchPoliciesDoNotImportRawEngineCoreApi() {
         val matchRoot = RepoPaths.matchPath()
         val forbiddenImports = listOf(
-            "import com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi",
+            importOf(ENGINE_CORE_API),
         )
 
         val offenders = forbiddenReferenceOffenders(
@@ -156,7 +167,7 @@ class LayeringContractTest {
         val delegateText = codeOnly(benchmarkDelegate.readContractSource())
 
         val offenders = mutableListOf<String>()
-        if ("import com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi" in applicationText) {
+        if (importOf(ENGINE_CORE_API) in applicationText) {
             offenders += "${benchmarkApplication.relativeTo(repoRoot).path}: raw EngineCoreApi import"
         }
         if ("fun EngineCoreApi.runStartupEngineBenchmark" in applicationText) {
@@ -906,9 +917,9 @@ class LayeringContractTest {
         // ⚠️ 260923: `application/score`가 :shared로 건너간 뒤 0개 파일을 검사하고 있었다.
         val scoreRoot = RepoPaths.applicationPath("score")
         val forbiddenImports = listOf(
-            "import com.worksoc.goaicoach.application.engine.syncAndEstimateGraphScore",
-            "import com.worksoc.goaicoach.application.engine.configureSyncAndEstimateGraphScore",
-            "import com.worksoc.goaicoach.application.engine.estimateScoreForState",
+            importOf(LOCAL_SYNC_AND_ESTIMATE_GRAPH_SCORE),
+            importOf(LOCAL_CONFIGURE_SYNC_AND_ESTIMATE_GRAPH_SCORE),
+            importOf(LOCAL_ESTIMATE_SCORE_FOR_STATE),
         )
 
         val offenders = forbiddenReferenceOffenders(
@@ -978,10 +989,10 @@ class LayeringContractTest {
             "import javax.",
             "import java.",
             "import org.json.",
-            "import com.worksoc.goaicoach.application.",
-            "import com.worksoc.goaicoach.ui.",
-            "import com.worksoc.goaicoach.persistence.",
-            "import com.worksoc.goaicoach.engine.",
+            importOf(APPLICATION_PACKAGE),
+            importOf(UI_PACKAGE),
+            importOf(PERSISTENCE_PACKAGE),
+            importOf(ENGINE_PACKAGE),
         )
         val forbiddenTransportFragments = listOf(
             "HttpRemotePositionAnalysisTransport",
@@ -1197,10 +1208,10 @@ class LayeringContractTest {
             "import androidx.",
             "import java.",
             "import org.json.",
-            "import com.worksoc.goaicoach.application.",
-            "import com.worksoc.goaicoach.ui.",
-            "import com.worksoc.goaicoach.persistence.",
-            "import com.worksoc.goaicoach.engine.",
+            importOf(APPLICATION_PACKAGE),
+            importOf(UI_PACKAGE),
+            importOf(PERSISTENCE_PACKAGE),
+            importOf(ENGINE_PACKAGE),
         )
 
         val offenders = forbiddenReferenceOffenders(
@@ -1584,6 +1595,12 @@ class LayeringContractTest {
      * import-string check used to miss a violation —
      *  - a wildcard import of the type's package plus a bare use of the type name, and
      *  - a fully-qualified reference used inline in code with no import at all.
+     *
+     * ⚠️ **이 저장소 심볼의 FQN은 리터럴로 적지 말고 [ContractSymbols]의 상수를 `importOf`로 감싸
+     * 넘긴다**(refactor backlog #68). 문자열로 적으면 심볼이 이사했을 때 그 규칙이 어떤 파일과도
+     * 매치하지 않은 채 **초록으로 남는다** — 그 사망은 아무것도 빨개지지 않아 아무도 모른다.
+     * [ContractSymbolContractTest]가 등록부의 주소가 실재하는지 검사하고, 등록부 밖의 FQN
+     * 리터럴을 막는다. `android.`/`java.` 같은 외부 패키지 접두사는 대상이 아니다.
      */
     private fun forbiddenReferenceOffenders(
         files: List<File>,

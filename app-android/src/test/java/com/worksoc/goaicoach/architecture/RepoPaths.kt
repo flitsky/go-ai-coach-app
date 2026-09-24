@@ -47,6 +47,31 @@ internal object RepoPaths {
      */
     val root: File by lazy { locateRoot() }
 
+    /**
+     * 프로덕션 코틀린 소스가 사는 **소스셋 루트 전부**(refactor backlog #68).
+     *
+     * 위의 헬퍼들이 `com/worksoc/goaicoach` **패키지 루트**를 주는 것과 달리, 여기서는 소스셋
+     * 자체를 준다 — [SourceSymbolIndex]가 파일의 `package` 선언을 읽어 색인하므로 디렉터리
+     * 구조가 패키지와 어긋나도 상관없게 하려는 것이다. 모듈이 늘면 **여기 한 줄**을 더한다.
+     *
+     * ⚠️ 하나도 못 찾으면 색인이 통째로 비어 "심볼이 없다"가 아니라 "아무것도 안 봤다"가 된다.
+     * 그 조용한 사망이 이 백로그 항목이 막으려는 것 자체이므로, 비면 그 자리에서 터뜨린다.
+     */
+    val productionSourceRoots: List<File>
+        get() {
+            val roots = listOf(
+                "app-android/src/main",
+                "shared/src/commonMain",
+                "shared/src/androidMain",
+                "shared/src/iosMain",
+                "engine-android/src/main",
+            ).map { root.resolve(it) }.filter { it.exists() }
+            check(roots.isNotEmpty()) {
+                "프로덕션 소스 루트를 하나도 찾지 못했다 — RepoPaths.productionSourceRoots가 낡았다."
+            }
+            return roots
+        }
+
     /** `ui/GoCoachApp.kt`. 이 파일이 옮겨지면 **여기 한 줄**만 고치면 된다. */
     val goCoachApp: File get() = appAndroid("ui/GoCoachApp.kt")
 
