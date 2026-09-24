@@ -1,5 +1,7 @@
 package com.worksoc.goaicoach.application.humanmove
 
+import com.worksoc.goaicoach.application.session.HumanEngineSyncFailurePlan
+import com.worksoc.goaicoach.application.session.HumanMoveLocalResult
 import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
 import com.worksoc.goaicoach.application.runtime.contextTransitionAfter
 import com.worksoc.goaicoach.application.runtime.runtimeBoardSummary

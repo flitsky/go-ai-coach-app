@@ -14,7 +14,7 @@ import kotlin.math.abs
  *
  * ⚠️ **수순 번호는 곧 [states]의 인덱스다.** 저장된 [ScoreSnapshot.moveNumber]와
  * [MoveReviewMarker.moveNumber]가 둘 다 *"그 수를 둔 **뒤**의 `moves.size`"* 로 기록되므로
- * (`HumanMoveApplication.kt:153`·`EngineSession.kt:49`), `moveNumber == n`은 `states[n]`이다.
+ * (`HumanMoveApplication.kt:137`·`EngineSession.kt:49`), `moveNumber == n`은 `states[n]`이다.
  * 0은 **아직 아무도 두지 않은 시작 국면**이고, 접바둑이면 거기 이미 흑돌이 놓여 있다.
  */
 data class GameReplayTimeline(

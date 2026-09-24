@@ -1,5 +1,7 @@
 package com.worksoc.goaicoach.application.humanmove
 
+import com.worksoc.goaicoach.application.session.HumanEngineSyncFailurePlan
+import com.worksoc.goaicoach.application.session.HumanMoveLocalResult
 import com.worksoc.goaicoach.application.contract.HumanEngineSyncRunPlan
 import com.worksoc.goaicoach.application.time.currentEpochMillis
 import com.worksoc.goaicoach.shared.policy.EngineFallbackPolicy
@@ -12,7 +14,6 @@ import com.worksoc.goaicoach.application.engine.runEngineIo
 import com.worksoc.goaicoach.shared.policy.EngineTimeoutPolicy
 import com.worksoc.goaicoach.application.engine.LocalEngineMoveResult
 import com.worksoc.goaicoach.application.movereview.MoveReviewMarker
-import com.worksoc.goaicoach.application.movereview.MoveReviewResult
 import com.worksoc.goaicoach.shared.policy.buildEngineOperationApplyPlan
 import com.worksoc.goaicoach.application.movereview.buildMoveReview
 import com.worksoc.goaicoach.shared.policy.engineOperationRequest
@@ -29,7 +30,6 @@ import com.worksoc.goaicoach.application.contract.GameSessionEffect
 import com.worksoc.goaicoach.match.MatchReferee
 import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
-import com.worksoc.goaicoach.shared.enginecontract.FinalScoreResult
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.policy.MoveAnalysisSnapshot
@@ -37,16 +37,6 @@ import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 import com.worksoc.goaicoach.shared.scoring.ScoreTimeline
 import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.domain.describe
-
-data class HumanMoveLocalResult(
-    val afterMove: GameState,
-    val moveReview: MoveReviewResult,
-    val moveReviews: List<MoveReviewMarker>,
-    val lastMoveText: String,
-    val capturedText: String,
-    val localScoreSnapshot: ScoreSnapshot,
-    val localFinalScore: FinalScoreResult?,
-)
 
 sealed class HumanEngineSyncDisplayPlan {
     data class FinalScore(val display: FinalScoreDisplayPlan) : HumanEngineSyncDisplayPlan()
@@ -57,12 +47,6 @@ sealed class HumanEngineSyncDisplayPlan {
     ) : HumanEngineSyncDisplayPlan()
     data object NoUpdate : HumanEngineSyncDisplayPlan()
 }
-
-data class HumanEngineSyncFailurePlan(
-    val scoreSnapshots: List<ScoreSnapshot>,
-    val candidateText: String,
-    val engineMessage: String,
-)
 
 data class HumanEngineSyncEffectLaunchRequest(
     val effect: GameSessionEffect.SyncHumanMove,

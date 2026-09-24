@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.application.autoai
 
+import com.worksoc.goaicoach.application.session.AutoAiTurnFailureDisplayPlan
 import com.worksoc.goaicoach.application.contract.AutoAiTurnDisplayPlan
 import com.worksoc.goaicoach.application.contract.AutoAiTurnEndgamePlan
 import com.worksoc.goaicoach.application.endgame.AiEndgameResolution
@@ -85,11 +86,6 @@ sealed class AutoAiTurnEndgameDisplayPlan {
         val display: EndgameFailureDisplayPlan,
     ) : AutoAiTurnEndgameDisplayPlan()
 }
-
-data class AutoAiTurnFailureDisplayPlan(
-    val engineMessage: String,
-    val candidateText: String,
-)
 
 fun buildAutoAiTurnFailureDisplayPlan(error: Throwable): AutoAiTurnFailureDisplayPlan =
     AutoAiTurnFailureDisplayPlan(

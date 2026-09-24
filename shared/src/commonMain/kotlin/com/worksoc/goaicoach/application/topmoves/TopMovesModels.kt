@@ -1,5 +1,7 @@
 package com.worksoc.goaicoach.application.topmoves
 
+import com.worksoc.goaicoach.application.session.TopMoveAnalysisFailureDisplayPlan
+import com.worksoc.goaicoach.application.session.TopMoveAnalysisUpdate
 import com.worksoc.goaicoach.application.contract.TopMoveAnalysisPlan
 import com.worksoc.goaicoach.application.contract.AnalysisCacheKey
 import com.worksoc.goaicoach.application.analysis.CachedAnalysisResult
@@ -56,16 +58,6 @@ class TopMoveAnalysisDeferral {
 data class TopMoveAnalysisOperationToken(
     val operation: EngineOperationRequest,
     val analysisKey: AnalysisCacheKey,
-)
-
-data class TopMoveAnalysisUpdate(
-    val snapshot: MoveAnalysisSnapshot,
-    val reviewCandidateMoves: List<CandidateMove>,
-    val candidateMoves: List<CandidateMove>,
-    val candidateText: String,
-    val engineMessage: String,
-    val cachedResult: CachedAnalysisResult?,
-    val undoRestoreResult: CachedAnalysisResult? = null,
 )
 
 sealed class TopMoveAnalysisCompletionPlan {
@@ -165,13 +157,6 @@ data class TopMoveAnalysisCompletionApplyRunRequest(
     val putAnalysisCache: (AnalysisCacheKey, CachedAnalysisResult) -> Unit,
     val applyFailureDisplay: (TopMoveAnalysisFailureDisplayPlan) -> Unit,
     val appendEngineOperationDiscardLog: (EngineOperationResultGuard.Discard) -> Unit,
-)
-
-data class TopMoveAnalysisFailureDisplayPlan(
-    val targetState: GameState,
-    val engineMessage: String,
-    val clearDisplayedTopMoves: Boolean,
-    val candidateText: String? = null,
 )
 
 sealed class ShowTopMovesPlan {

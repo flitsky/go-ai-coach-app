@@ -9,7 +9,7 @@ import com.worksoc.goaicoach.application.autoai.AutoAiTurnFollowUpPlan
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnFollowUpRequest
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnRequestPlan
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnScheduleValidationPlan
-import com.worksoc.goaicoach.application.autoai.AutoAiTurnUiState
+import com.worksoc.goaicoach.application.session.AutoAiTurnUiState
 import com.worksoc.goaicoach.application.autoai.applyAutoAiTurnRequestPlan
 import com.worksoc.goaicoach.application.autoai.applyAutoAiTurnScheduleValidationPlan
 import com.worksoc.goaicoach.application.autoai.completeAutoAiTurnRun

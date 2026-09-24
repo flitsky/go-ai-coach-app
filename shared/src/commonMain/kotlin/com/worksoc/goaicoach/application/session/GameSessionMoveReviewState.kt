@@ -2,7 +2,6 @@ package com.worksoc.goaicoach.application.session
 
 import com.worksoc.goaicoach.application.movereview.MoveReviewMarker
 import com.worksoc.goaicoach.application.contract.AutoAiTurnDisplayPlan
-import com.worksoc.goaicoach.application.humanmove.HumanMoveLocalResult
 import com.worksoc.goaicoach.application.undo.UndoLocalStatePlan
 
 data class GameSessionMoveReviewState(

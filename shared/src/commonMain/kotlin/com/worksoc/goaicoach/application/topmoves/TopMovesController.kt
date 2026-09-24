@@ -1,5 +1,7 @@
 package com.worksoc.goaicoach.application.topmoves
 
+import com.worksoc.goaicoach.application.session.TopMoveAnalysisFailureDisplayPlan
+import com.worksoc.goaicoach.application.session.TopMoveAnalysisUpdate
 import com.worksoc.goaicoach.application.contract.AnalysisCacheKey
 import com.worksoc.goaicoach.application.analysis.CachedAnalysisResult
 import com.worksoc.goaicoach.application.engine.EngineSessionClient

@@ -1,7 +1,7 @@
 package com.worksoc.goaicoach.application
 
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationUiState
-import com.worksoc.goaicoach.application.autoai.AutoAiTurnUiState
+import com.worksoc.goaicoach.application.session.AutoAiTurnUiState
 import com.worksoc.goaicoach.application.debugreport.ClipboardPort
 import com.worksoc.goaicoach.application.debugreport.DebugReportCopyRunRequest
 import com.worksoc.goaicoach.application.debugreport.DebugReportMirrorPort

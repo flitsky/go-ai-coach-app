@@ -81,40 +81,23 @@ internal object ContractSymbols {
 
     // ── 패키지 사이클 래칫의 기준선(refactor backlog #33) ─────────────────
     // [PackageCycleRatchetTest]가 `shared/src/commonMain`의 패키지 import 그래프에서 구한 SCC·상호
-    // 참조 쌍을 **아래 두 목록과 정확히 같을 때만** 초록으로 둔다. 나빠지면(구성원·쌍이 늘면)
-    // 빨갛고, 좋아져도(줄면) "기준선을 줄여라"로 빨갛다 — 줄어든 것을 여기서 잠가야 다시 커지지 않는다.
+    // 참조 쌍을 **아래 두 목록과 정확히 같을 때만** 초록으로 둔다.
+    // ⭐ **지금은 사이클이 없다 — 두 목록이 비어 있고, SCC나 상호 참조 쌍이 하나라도 생기면 빨갛다.**
+    // `#32`(사이클 절단)의 마지막 걸음 ⑩이 SCC를 0으로 만들었다. 새 사이클을 여기 적어 초록을
+    // 만들지 마라 — 기준선을 늘리는 것이 아니라 의존 방향을 고치는 것이 답이다.
     // 측정 기준은 커밋 7c928f55의 설계 스레드 실측(scc.py)과 같은 규칙이다([PackageImportGraph]).
     // ⚠️ 여기 적힌 패키지는 [GUARDED]에도 자동으로 올라가 실존 검사를 받는다.
-    const val APPLICATION_AUTOAI = "com.worksoc.goaicoach.application.autoai"
-    const val APPLICATION_HUMANMOVE = "com.worksoc.goaicoach.application.humanmove"
-    const val APPLICATION_SESSION = "com.worksoc.goaicoach.application.session"
-    const val APPLICATION_STARTGAME = "com.worksoc.goaicoach.application.startgame"
-    const val APPLICATION_TOPMOVES = "com.worksoc.goaicoach.application.topmoves"
 
     /**
-     * 크기 2 이상인 SCC(강한 연결 요소)의 기준선. **구성원이 늘거나 새 SCC가 생기면 실패**,
-     * 줄어들면 이 목록을 줄이라고 실패한다.
+     * 크기 2 이상인 SCC(강한 연결 요소)의 기준선. **비어 있다** — SCC가 하나라도 생기면 실패한다.
      */
-    val CYCLE_BASELINE_SCCS: List<Set<String>> = listOf(
-        setOf(
-            APPLICATION_AUTOAI,
-            APPLICATION_HUMANMOVE,
-            APPLICATION_SESSION,
-            APPLICATION_STARTGAME,
-            APPLICATION_TOPMOVES,
-        ),
-    )
+    val CYCLE_BASELINE_SCCS: List<Set<String>> = emptyList()
 
     /**
-     * 서로 import 하는 패키지 쌍(사이클의 씨앗)의 기준선. 쌍 안의 순서는 무관하다.
-     * 설계 스레드가 적은 건수(A→B/B→A)는 참고용이라 래칫하지 않는다.
+     * 서로 import 하는 패키지 쌍(사이클의 씨앗)의 기준선. **비어 있다** — 두 패키지가 서로를
+     * import 하는 순간 실패한다. 쌍 안의 순서는 무관하다.
      */
-    val CYCLE_BASELINE_MUTUAL_PAIRS: List<Pair<String, String>> = listOf(
-        APPLICATION_AUTOAI to APPLICATION_SESSION,
-        APPLICATION_HUMANMOVE to APPLICATION_SESSION,
-        APPLICATION_SESSION to APPLICATION_STARTGAME,
-        APPLICATION_SESSION to APPLICATION_TOPMOVES,
-    )
+    val CYCLE_BASELINE_MUTUAL_PAIRS: List<Pair<String, String>> = emptyList()
 
     /** 가드가 쓰는 `forbiddenImports` 표기(`import <fqn>`)로 감싼다. */
     fun importOf(fqn: String): String = "import $fqn"

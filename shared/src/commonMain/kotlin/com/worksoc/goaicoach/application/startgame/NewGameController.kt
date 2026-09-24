@@ -1,5 +1,7 @@
 package com.worksoc.goaicoach.application.startgame
 
+import com.worksoc.goaicoach.application.session.GameSessionResetPlan
+import com.worksoc.goaicoach.application.session.buildNewLocalGameSessionPlan
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.engine.EngineSessionClient
 import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort

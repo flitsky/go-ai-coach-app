@@ -1,5 +1,7 @@
 package com.worksoc.goaicoach.application.humanmove
 
+import com.worksoc.goaicoach.application.session.HumanEngineSyncFailurePlan
+import com.worksoc.goaicoach.application.session.HumanMoveLocalResult
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.engine.EngineSessionClient
 import com.worksoc.goaicoach.shared.policy.EngineOperationResultGuard

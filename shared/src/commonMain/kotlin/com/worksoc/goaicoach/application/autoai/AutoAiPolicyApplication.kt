@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.application.autoai
 
+import com.worksoc.goaicoach.application.session.AutoAiTurnUiState
 import com.worksoc.goaicoach.application.contract.AutoAiTurnExecutionContext
 import com.worksoc.goaicoach.application.contract.AutoAiTurnRunPlan
 import com.worksoc.goaicoach.application.session.GameSessionControllerState
@@ -64,16 +65,6 @@ sealed class AutoAiTurnScheduleValidationPlan {
         val context: AutoAiTurnExecutionContext
             get() = runPlan.context
     }
-}
-
-data class AutoAiTurnUiState(
-    val isPending: Boolean = false,
-) {
-    fun markScheduled(): AutoAiTurnUiState =
-        copy(isPending = true)
-
-    fun clearPending(): AutoAiTurnUiState =
-        copy(isPending = false)
 }
 
 fun AutoAiTurnUiState.applyAutoAiTurnRequestPlan(
