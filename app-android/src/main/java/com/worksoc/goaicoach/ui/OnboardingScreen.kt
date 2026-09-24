@@ -31,6 +31,7 @@ import com.google.firebase.auth.FirebaseAuthWeakPasswordException
 import com.worksoc.goaicoach.application.auth.port.AuthClientPort
 import com.worksoc.goaicoach.application.device.DeviceIdentityStorePort
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
+import com.worksoc.goaicoach.platform.GoogleCredentialManagerClient
 import kotlinx.coroutines.launch
 
 /**

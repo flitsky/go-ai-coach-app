@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.ui
+package com.worksoc.goaicoach.platform
 
 import android.app.Activity
 import com.google.android.gms.ads.AdError

@@ -88,6 +88,12 @@ internal object RepoPaths {
     fun uiFile(fileName: String): File = appAndroid("ui/$fileName")
 
     /**
+     * `platform/` 바로 아래의 파일 하나 — 4계층 SDK 어댑터가 사는 곳(refactor backlog #25에서
+     * `ui/`에서 옮겨 왔다).
+     */
+    fun platformFile(fileName: String): File = appAndroid("platform/$fileName")
+
+    /**
      * app-android `src/main/` 바로 아래의 한 경로 — `com.worksoc.goaicoach` 패키지 **밖**
      * (리소스 등). 예: `appAndroidMain("res/drawable")`.
      */

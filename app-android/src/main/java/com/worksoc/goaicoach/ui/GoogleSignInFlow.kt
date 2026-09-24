@@ -5,6 +5,7 @@ import com.worksoc.goaicoach.application.auth.port.AuthClientPort
 import com.worksoc.goaicoach.application.auth.state.AuthState
 import com.worksoc.goaicoach.application.auth.state.isPromotableAnonymousSession
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
+import com.worksoc.goaicoach.platform.GoogleCredentialManagerClient
 import com.worksoc.goaicoach.shared.diagnostic.DiagnosticEvent
 import com.worksoc.goaicoach.shared.diagnostic.DiagnosticSeverity
 

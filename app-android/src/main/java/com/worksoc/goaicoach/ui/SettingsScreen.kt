@@ -45,6 +45,7 @@ import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException
 import com.google.firebase.auth.FirebaseAuthWeakPasswordException
 import com.worksoc.goaicoach.persistence.GameSessionStore
 import com.worksoc.goaicoach.BuildConfig
+import com.worksoc.goaicoach.platform.GoogleCredentialManagerClient
 import com.worksoc.goaicoach.wipeToFreshInstall
 import com.worksoc.goaicoach.application.preferences.isBoardSetupLockedDuringGame
 import com.worksoc.goaicoach.application.auth.port.AuthClientPort

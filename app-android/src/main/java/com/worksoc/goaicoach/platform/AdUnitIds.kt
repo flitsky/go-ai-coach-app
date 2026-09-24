@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.ui
+package com.worksoc.goaicoach.platform
 
 import com.worksoc.goaicoach.BuildConfig
 

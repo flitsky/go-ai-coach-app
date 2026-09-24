@@ -95,7 +95,7 @@
         errorLine1="            val response = CredentialManager.create(context).getCredential(context, request)"
         errorLine2="                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/worksoc/goaicoach/ui/GoogleCredentialManagerClient.kt"
+            file="src/main/java/com/worksoc/goaicoach/platform/GoogleCredentialManagerClient.kt"
             line="33"
             column="28"/>
     </issue>

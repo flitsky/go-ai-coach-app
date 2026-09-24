@@ -36,6 +36,7 @@ import com.worksoc.goaicoach.application.attendance.runAttendanceDevDayRewind
 import com.worksoc.goaicoach.persistence.AttendanceStore
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.BuildConfig
+import com.worksoc.goaicoach.platform.AdsConsentManager
 import com.worksoc.goaicoach.runReleaseResetAgain
 import com.worksoc.goaicoach.persistence.DeveloperModeStore
 import com.worksoc.goaicoach.persistence.UserPreferencesStore

@@ -9,6 +9,8 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.AdView
+import com.worksoc.goaicoach.platform.AdUnitIds
+import com.worksoc.goaicoach.platform.AdsConsentManager
 
 /**
  * 4계층(External Integration) — 배너 광고. 결정 로직이 없는 순수 표시 컴포저블이라(로드 성공/실패에

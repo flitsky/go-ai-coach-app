@@ -16,6 +16,10 @@ import com.worksoc.goaicoach.application.premium.port.PurchaseOutcome
 import com.worksoc.goaicoach.application.premium.app.PurchaseTrigger
 import com.worksoc.goaicoach.application.premium.app.runPremiumAdGrantApplication
 import com.worksoc.goaicoach.application.premium.app.runPremiumPurchaseApplication
+import com.worksoc.goaicoach.platform.AdUnitIds
+import com.worksoc.goaicoach.platform.AdsConsentManager
+import com.worksoc.goaicoach.platform.AndroidBillingClient
+import com.worksoc.goaicoach.platform.AndroidRewardedInterstitialAdClient
 
 /**
  * `GoCoachApp.kt`는 상태 훅/라인 예산이 빠듯해(state-holder-refactor 메모리 참고) 어댑터 생성 +

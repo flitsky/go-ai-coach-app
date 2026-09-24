@@ -3,6 +3,7 @@ package com.worksoc.goaicoach.ui
 import com.android.billingclient.api.BillingClient
 import com.worksoc.goaicoach.architecture.RepoPaths
 import com.worksoc.goaicoach.architecture.readContractSource
+import com.worksoc.goaicoach.platform.billingOfferToken
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -69,7 +70,7 @@ class AndroidBillingClientTest {
      */
     @Test
     fun theProductTypeIsAConstructorParameterNotAHardcodedConstant() {
-        val source = RepoPaths.uiFile("AndroidBillingClient.kt").readContractSource()
+        val source = RepoPaths.platformFile("AndroidBillingClient.kt").readContractSource()
         assertTrue(
             "생성자에 productType이 없다 — 종류가 다시 클래스 안으로 박혔다",
             source.contains("private val productType: String"),
@@ -113,7 +114,7 @@ class AndroidBillingClientTest {
             )
         }
 
-        val adapter = RepoPaths.uiFile("AndroidBillingClient.kt").readContractSource()
+        val adapter = RepoPaths.platformFile("AndroidBillingClient.kt").readContractSource()
         assertTrue(
             "`productType`에 기본값이 되살아났다 — 호출부가 다시 조용히 빠뜨릴 수 있다(#26 ⓕ).",
             !adapter.contains("private val productType: String ="),

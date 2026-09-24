@@ -58,6 +58,7 @@ import com.worksoc.goaicoach.application.movereview.MoveReviewTone
 import com.worksoc.goaicoach.application.movereview.topMoveDisplayToneFor
 import com.worksoc.goaicoach.application.preferences.PlayEffectMillis
 import com.worksoc.goaicoach.application.preferences.PlayEffectPeakScale
+import com.worksoc.goaicoach.platform.PlayHaptics
 import com.worksoc.goaicoach.presentation.KaTrainUxOptions
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.BoardSize

@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.ui
+package com.worksoc.goaicoach.platform
 
 import android.os.Build
 import com.worksoc.goaicoach.BuildConfig

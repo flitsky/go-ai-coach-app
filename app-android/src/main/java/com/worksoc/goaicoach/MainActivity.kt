@@ -21,6 +21,7 @@ import com.worksoc.goaicoach.application.engine.EngineSessionCapabilities
 import com.worksoc.goaicoach.application.engine.LocalEngineSessionClient
 import com.worksoc.goaicoach.application.engine.RemoteEngineCandidate
 import com.worksoc.goaicoach.engine.DeferredEngineCoreApi
+import com.worksoc.goaicoach.platform.AdsConsentManager
 import com.worksoc.goaicoach.ui.allowsRotation
 import com.worksoc.goaicoach.engine.EngineBootstrap
 import com.worksoc.goaicoach.engine.EngineIdentity
@@ -30,7 +31,6 @@ import com.worksoc.goaicoach.engine.identity
 import com.worksoc.goaicoach.persistence.DiagnosticEventLog
 import com.worksoc.goaicoach.persistence.JsonPositionAnalysisCacheStore
 import com.worksoc.goaicoach.persistence.UserPreferencesStore
-import com.worksoc.goaicoach.ui.AdsConsentManager
 import com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi
 import com.worksoc.goaicoach.shared.enginecontract.EngineMode
 import com.worksoc.goaicoach.ui.AppFontScaleState

@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.ui
+package com.worksoc.goaicoach.platform
 
 import android.content.Context
 import androidx.credentials.CredentialManager

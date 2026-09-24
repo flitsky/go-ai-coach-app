@@ -33,6 +33,10 @@ import com.worksoc.goaicoach.application.debugreport.ClipboardPort
 import com.worksoc.goaicoach.application.debugreport.DebugReportMirrorPort
 import com.worksoc.goaicoach.application.debugreport.UserNoticePort
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
+import com.worksoc.goaicoach.platform.AndroidAuthClient
+import com.worksoc.goaicoach.platform.AndroidClipboardPort
+import com.worksoc.goaicoach.platform.AndroidUserNoticePort
+import com.worksoc.goaicoach.platform.GoogleCredentialManagerClient
 import com.worksoc.goaicoach.shared.diagnostic.DiagnosticEvent
 import com.worksoc.goaicoach.shared.diagnostic.DiagnosticSeverity
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkStorePort

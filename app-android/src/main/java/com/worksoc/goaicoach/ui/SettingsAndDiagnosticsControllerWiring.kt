@@ -8,6 +8,8 @@ import com.worksoc.goaicoach.application.session.RuntimePlayLevelSelection
 import com.worksoc.goaicoach.application.undo.UndoController
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.PlayerSetup
+import com.worksoc.goaicoach.platform.PlayHaptics
+import com.worksoc.goaicoach.platform.debugReportBuildStamp
 import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
 

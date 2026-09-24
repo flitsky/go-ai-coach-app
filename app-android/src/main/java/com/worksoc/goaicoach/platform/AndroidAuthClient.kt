@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.ui
+package com.worksoc.goaicoach.platform
 
 import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.EmailAuthProvider
