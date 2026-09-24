@@ -174,6 +174,10 @@ Hilt(commonMain 불가)·Koin(이득 0)·전면 MVI(이미 절반 작동)·모�
 | 26 | **`ui`에 숨은 조립 코드 7개 → 루트 패키지**(문서가 정한 조립 전용 자리). `MainActivity`·`GoAiCoachApplication`은 **일부러 안 옮김** — 런처 컴포넌트 이름. 가드 G3·G4·G5 신설. ⭐ **"목록 누락"이라는 조용한 사망을 실측으로 찾아 막았다** | `2dd83ce2`·`d1c3d02c` |
 | 66 | **호출부 0·테스트 0이던 public 함수 처리** | (#24 파도에 동반) |
 | 71 | **모듈 사이 테스트 코드 공유 수단 신설 + 손 페이크 제거**(`−260/+45`) — 백로그가 적은 2벌이 아니라 **3벌**이었다(셋째는 androidTest가 아니라 `src/test`). `commonTestSupport` 한 디렉터리를 세 소스셋이 함께 컴파일한다. ⚠️ `testFixtures`는 **안드로이드 변형만** 내보내 `commonTest`가 빠지므로 기각(근거는 배선 옆). 음성 대조로 세 소비자 전부 빨개짐 확인 | `7dce47e2` |
+| 78 | **옮긴 파일을 옛 경로로 가리키던 주석 5파일 정리** — 동작 영향 0. ⚠️ **로드맵 문서를 놓쳤다**: `GO_AI_COACH_ARCHITECTURE_ROADMAP.md`에 없는 파일을 가리키는 경로가 **8건** 더 있었다(→ #80) | `9101dafa` |
+| 77 | **G1 루트 매처가 inline FQN도 잡는다** — `AppForegroundEvents` inline 사보타주로 빨강 확인, `BuildConfig`는 예외 유지. ⚠️ **인수 기준이 바뀌었다**: 항목은 *"루트 매처도 `detectForbiddenReference`를 타게 한다"* 였는데, **대문자로 시작하는 이름만 잡는 정규식**을 따로 붙였다. 그래서 루트의 **소문자 top-level 함수**를 inline FQN으로 부르면 여전히 초록이다(→ #79) | `7c928f55` |
+| 70 | **`shared.engine`을 `shared.policy`로 흡수** — 1파일 + commonTest 1파일, 소비 54파일은 import만. ⚠️ **한 커밋에 다 담기지 않았다**: `3bd2efe6` 트리에는 `EngineOperationPolicy`가 **두 벌** 있다. 경로 지정 커밋이 `git mv`의 옛 경로 삭제를 빠뜨렸고(함정 83), `d0c5bf33`이 그 삭제를 마저 넣었다. 패키지가 달라 컴파일은 된다. 옛 사본은 아무도 안 부르는 복사본일 뿐이라 **이력은 다시 쓰지 않았다** | `3bd2efe6`·`d0c5bf33` |
+| 33 | **패키지 사이클 래칫** — `PackageImportGraph` + `PackageCycleRatchetTest`. 지금 기준선을 `ContractSymbols`에 잠갔다: SCC 둘(`application.*` **14** + `{attendance, botcharacter}` **2**), 서로 참조하는 쌍 **17**. **나빠지면 빨강, 좋아졌는데 기준선을 안 줄여도 빨강**(래칫). 사보타주 4종으로 확인. ⚠️ 항목의 원래 기준 *"SCC > 1이면 실패"* 는 **지금 켜면 바로 빨강**이라 래칫으로 바꿨다. `#32`가 끝나 기준선이 비면 원래 뜻이 된다. ⚠️ **타입 추론으로만 생기는 의존은 못 본다(→ #81)** | `fecaa42c` |
 
 ### 진행 중
 
@@ -196,13 +200,6 @@ _(없음 — 아래 「예정사항」 첫 항목부터 집는다)_
     · ⓑ `app-android/src/test`에 `shared/src/commonMain/.../application/...` **하드코딩 경로 8곳**이 남아 있다
       (`ReplayRecordingContractTest`·`SubscriptionWiringContractTest`·`PlayEffectContractTest` 등).
       `#63`이 `File("src/main` 패턴만 잡아 이쪽은 집계 밖이었다.
-
-70. **`shared.engine` vs `shared.enginecontract` — 이름으로 구분이 안 된다** (AI 모델: Sonnet, 노력정도: 낮음)
-    · `#24`의 유일한 낙제점이다. app-android의 실제 import 분포가
-      domain 102 · enginecontract 42 · policy 22 · … 로 이름만 봐도 계층이 읽히는데,
-      **`shared.engine`(`EngineOperationPolicy.kt` 1파일, import 2건)만 예외**다.
-    · `shared.enginepolicy`로 개명하거나 `shared.policy`로 흡수한다.
-      ⚠️ `commonTest`의 `engine/EngineOperationPolicyTest.kt`도 함께 움직인다.
 
 72. **import 정렬이 깨졌다** (AI 모델: Sonnet, 노력정도: 낮음)
     · `#24`의 FQN 치환이 심볼 이름 기준 정렬을 FQN에 그대로 적용해, 옮긴 파일들의 import 블록이
@@ -266,15 +263,26 @@ _(없음 — 아래 「예정사항」 첫 항목부터 집는다)_
     · 🔴 **고치면 실기가 필요하다.** 타임아웃이 위로 올라가면 **AI가 수를 못 두고 멈추거나 UI가
       에러를 보일 수 있다** — `#16`이 남긴 `needsDevice` 중 가장 큰 위험과 같은 자리다.
 
-77. **G1 루트 매처의 inline FQN 사각지대** (AI 모델: Sonnet, 노력정도: 낮음)
-    · `platform` 파일이 import 없이 `com.worksoc.goaicoach.AppForegroundEvents`처럼 **루트 심볼을 inline FQN으로**
-      부르면 G1이 초록이다(검수자 사보타주로 관찰). 같은 G1 안에서도 접두사 금지는 `detectForbiddenReference`가
-      inline FQN까지 잡는데 **루트 매처만 import 줄 정규식에 그친다.**
-    · 루트 매처도 `detectForbiddenReference`를 타게 한다.
+79. **G1 루트 매처를 `detectForbiddenReference`로 합친다 — `#77`의 남은 절반** (AI 모델: Sonnet, 노력정도: 낮음)
+    · `#77`은 **대문자로 시작하는 이름만** 잡는 정규식을 따로 붙였다. 루트 패키지의 **소문자 top-level 함수**를
+      import 없이 inline FQN으로 부르면 G1은 **여전히 초록**이다(검수자가 찾았다).
+    · 원래 인수 기준 그대로 한다: 루트 매처도 `detectForbiddenReference`를 탄다. `BuildConfig`·`R` 예외는 유지한다.
+      **사보타주 기준**: `platform` 파일에서 루트의 top-level 함수를 inline FQN으로 부르면 → 빨강(`--rerun-tasks`, 함정 77).
 
-78. **옮긴 파일을 옛 경로로 가리키는 주석 정리** (AI 모델: Sonnet, 노력정도: 낮음)
-    · `AuthClientPort.kt` L7·L17, `PurchasePort.kt`, `app-android/build.gradle.kts`, `AndroidManifest.xml` 주석,
-      `ConsumableItem.kt:33`(`ui/PremiumPurchaseGlue.kt`)이 옛 경로를 적고 있다. 동작 영향 0, 읽는 사람을 헷갈리게 한다.
+80. **로드맵 문서가 없는 파일 8개를 가리킨다 — `#78`이 놓친 것** (AI 모델: Sonnet, 노력정도: 낮음)
+    · `docs/spec/GO_AI_COACH_ARCHITECTURE_ROADMAP.md` L73-75(`#25`로 `platform`에 간 어댑터 셋 + `#29`로 갈라진
+      `auth`·`premium` 포트 둘)와 L111-113(`#29`로 `premium/{port,state,app}`·`auth/{port,state}`에 간 셋).
+      L123의 *"`ui/` 패키지에는 SDK 어댑터 6개가 섞여 있다"* 도 `#25` 이후 **사실이 아니다.**
+    · **찾는 법**(다음에도 쓸 것): 문서의 `` `app-android/.../X.kt` ``·`` `shared/.../X.kt` `` 꼴 경로마다 `git ls-files`에서
+      꼬리가 맞는 파일이 있는지 본다. 이름 grep으로는 못 찾는다 — **파일은 있고 경로만 틀렸기** 때문이다.
+
+81. **사이클 래칫이 타입 추론으로만 생기는 의존을 못 본다** (AI 모델: Opus, 노력정도: 중간) — `#32` 끝에 판단
+    · `#33`은 import 줄과 inline FQN만 간선으로 센다. 같은 모듈 안에서는 **import 없이** 반환값을 받아 넘기기만
+      해도 의존이 생긴다. `jdeps`로 바이트코드를 보니 **간선이 5개 더** 있었다.
+    · 반대 경우도 있다: `{attendance, botcharacter}` 사이클은 **소스에만** 있다. `const`가 인라인돼서
+      바이트코드에는 그 간선이 없다.
+    · 🔴 **모듈로 올리기(P6) 전에는 바이트코드 그래프가 기준이다** — Gradle 컴파일 클래스패스가 보는 것이 그쪽이다.
+      최소한 `#32`가 끝난 시점에 `jdeps`로 SCC 0을 **한 번 더** 확인한다. 래칫에 넣을지는 그때 정한다.
 
 #### P3 — 이름공간 정렬 (순수 이동, 동작 변경 0)
 
@@ -315,14 +323,57 @@ _(없음 — 아래 「예정사항」 첫 항목부터 집는다)_
 
 #### P4 — 사이클 절단 + 계약 좁히기
 
-32. **사이클 절단점 신설 + 의존 역전** (AI 모델: Opus, 노력정도: 최대)
-    · `application/contract/` 신설 — `GameSessionEffect`처럼 3↔5가 공유하는 타입을 의존 없는 곳으로 내린다.
-    · `LocalEngineCoreSessionDelegate`가 `MatchReferee`/`applyAiTurn`을 직접 부르는 대신 **3계층이 정의한
-      함수 타입 파라미터로 주입**받게 뒤집는다.
-    · 🔴 **17패키지 SCC**를 끊는 작업이다. 이게 끝나야 모듈 분리가 가능하다.
-33. **사이클 회귀 테스트** (AI 모델: Opus, 노력정도: 높음) — 32 뒤
-    · import 그래프를 읽어 **SCC 크기 > 1이면 실패**하는 테스트 하나.
-      **이 하나가 47개 문자열 테스트보다 강하다.**
+32. **사이클 절단 — 순수 이동 10걸음으로 SCC 0** (AI 모델: Opus, 노력정도: 최대) — `#33` 래칫이 받친다
+    · ✅ **설계 완료(2026-09-24).** 선언 단위로 그래프를 그리면 패키지를 가로지르는 사이클이 **0개**다.
+      즉 **선언을 옮기기만 하면** 전부 풀린다. 10걸음 모두 동작 변경 없음, 끝나면 SCC 0.
+    · ⭐ **진단서가 처방한 기법 ⓑ(`LocalEngineCoreSessionDelegate`→`MatchReferee` 의존을 함수 타입 주입으로
+      뒤집기)는 필요 없다** — `match`는 `shared.*`만 본다. ⓐ(공유 타입을 `application.contract`로 내리기)만으로 된다.
+    · 🔴 **모든 걸음이 필요하다** — 어느 하나를 빼도 SCC가 남는다(걸음마다 빼 보고 시뮬레이션했다).
+      **순서 제약**: ⑨는 ④·⑧보다 뒤여야 한다. 먼저 하면 `contract`가 사이클에 끌려들어가 15개가 된다.
+    · 🔴 **걸음마다 `ContractSymbols`의 래칫 기준선을 같은 커밋에서 줄인다** — 안 줄이면 `#33`이 빨강이다(의도한 것).
+    · ⚠️ **함정 83**: `git mv` 뒤 경로 지정 커밋에는 **옛 경로도 넣는다.** `git show --stat`에 `R`이 보여야 한다
+      (`A`만 보이면 옛 파일이 남았다). ⚠️ **함정 82**: `app-android`의 import가 바뀌는 파일은 `lintDebug`
+      전후로 `LintBaselineFixed`·새 Warning 건수를 비교한다(`lint-baseline.xml`에 `shared` 경로는 0건).
+    · ⚠️ `commonMain` 패키지가 바뀌므로 걸음마다 `make test-ios`도 돌린다(함정 75).
+    · **걸음** (크기 · 걸음 뒤 SCC · 대상):
+      ① **S · 2개짜리 소멸** — `attendance/AttendanceRewardPolicy.kt`의 `const val WeeklyRewardCycleTier` 한 줄을
+         `botcharacter`로. `attendance`는 이미 `botcharacter`를 import하므로 반대 방향 간선이 새로 생기지 않는다.
+      ② **S** — `launchUiEffect` 선언을 `engine.operation` 쪽으로 떼어 낸다(파일 분할). 같은 파일의
+         `launchAutoAiEffect`는 `engine`에 남아 새 위치를 import한다. 빼면 `{engine, engine.operation}`이 남는다.
+      ③ **S · 13** — `InitialUserPreferencesPlan.toGameSessionSettingsState()` 확장 함수를 `preferences`로.
+         호출부는 `GoCoachSessionFactory.kt` 1개(import만).
+      ④ **S · `application.contract` 신설** — `session/GameSessionApplication.kt`에서 `RuntimePlayLevelSelection`·
+         `selectRuntimePlayLevel`·`internal selectPrimaryPlayLevel`을 뗀다. 셋의 의존은 `shared.*`뿐이다.
+      ⑤ **S · 13 · `application.cacheoptimization` 신설** — `PositionAnalysisCacheOptimizationRunnerApplication.kt`
+         전체, `PositionCacheOptimizationController.kt` 전체, `PositionAnalysisCacheOptimization.kt`에서 뗀
+         `runPositionAnalysisCacheOptimizationEffect`·`…WorkflowResult`. 캐시 모델 타입은 `analysis`에 남아
+         `engine → analysis`(19건)가 정방향이 된다. ⚠️ `LayeringContractTest`가
+         `RepoPaths.applicationPath("analysis/PositionCacheOptimizationController.kt")`로 경로를 박아 뒀다 — 같은 커밋에서.
+      ⑥ **S · `application.orchestration` 신설** — 세션 오케스트레이터 파일 둘(`GameSessionDisplayStateApplierApplication`·
+         `GameSettingsController`)을 통째로. `commonMain` 안에서 이 둘을 부르는 곳은 0, app-android 배선 3개는 import만.
+      ⑦ **M** — `runtime`의 기능별 로그 빌더를 각 기능으로: `RuntimeAiTurnEventApplication.kt` 전체(`runtimeAiTurn*Log` 9개)
+         → `autoai` / `runtimeHumanEngineSync{Failure,Success}Log`·`runtimeHumanMoveAcceptedLog`·private `runtimeSyncSummary`
+         → `humanmove` / `runtimeGameResetLog`·`runtimeEngineGameStartRequestLog` → `startgame` / `toRuntimeLogContext` → `session`.
+         쪼개지는 private 선언은 없다(확인함). `LayeringContractTest:709-779`의 `runtimeAiTurn*Log(` 단언은 호출 조각을
+         보므로 유지될 것으로 **추정**한다 — 걸음에서 확인할 것.
+      ⑧ **L** — `session/GameSessionController.kt`의 `sealed interface GameSessionEffect`(하위 타입이 전부 중첩)와
+         payload 11개를 `contract`로: `autoai.{AutoAiTurnRunPlan, AutoAiTurnExecutionContext, AutoAiTurnEndgamePlan}` ·
+         `humanmove.HumanEngineSyncRunPlan` · `score.{ScoreEstimateRequestPlan, ScoreEstimateDisplayPlan}` ·
+         `topmoves.TopMoveAnalysisPlan` · `debugreport.DebugReportCopyPlan` ·
+         `analysis.{AnalysisCacheKey, PositionAnalysisCacheOptimizationPlan, PositionAnalysisCacheOptimizationTarget}`.
+         옮긴 뒤 `contract`의 의존은 `shared.{domain, enginecontract, policy, scoring}`뿐이다 — **진단서가 말한
+         "의존 없는 contract"가 성립한다.** 소비처 약 41파일(import만, grep 추정).
+      ⑨ **M · 5** — `GameSessionRuntimeState.kt` 전체와 `autoai.AutoAiTurnDisplayPlan`(`AutoAiRunnerApplication.kt`에서
+         분할)을 `contract`로. ⭐ **여기서 `engine`(3계층)이 `session`(5계층)의 사이클에서 빠진다.**
+         (대안인 `RuntimeLogContext.runtimeState`를 `String`으로 좁히기는 순수 이동이 아니고 테스트 생성자 9곳이 바뀐다 — 기각.)
+      ⑩ **L · 0** — `session`을 상태 모델 층으로 확정하고, 상태가 필드로 품은 기능 값 타입 8개를 `session`으로:
+         `autoai.{AutoAiTurnUiState, AutoAiTurnFailureDisplayPlan}` · `humanmove.{HumanEngineSyncFailurePlan, HumanMoveLocalResult}` ·
+         `startgame.{GameSessionResetPlan, buildNewLocalGameSessionPlan}` · `topmoves.{TopMoveAnalysisFailureDisplayPlan,
+         TopMoveAnalysisUpdate}`. 이 가운데 둘은 `contract`로 못 간다(`engine.localScoreSnapshot`·`analysis.CachedAnalysisResult`를 쓴다).
+    · **끝난 모습**(가장 긴 경로 기준 층): `contract` < `analysis`·`runtime` < `engine.operation` < `engine` <
+      `score`·`cacheoptimization` < `savedgame`·`undo` < `session` < `autoai`·`debugreport`·`humanmove`·`preferences`·`startgame`
+      < `topmoves` < `orchestration`. 합계 선언 52개, 파일 21개(통째 이동 6, 분할 15).
+    · 🔴 이게 끝나야 모듈 분리가 가능하다. 끝나면 **`#81`(바이트코드 그래프로 SCC 0 재확인)** 을 바로 한다.
 34. **Konsist 도입** (AI 모델: Opus, 노력정도: 높음) — 24~29 뒤
     · PSI 기반이라 **주석·문자열을 애초에 코드로 보지 않아** 날것 `readText()` 결함이 원천 소멸하고,
       KMP `commonTest`에서 직접 돌아 `:shared` 규칙을 `:shared` 안에 둘 수 있다
