@@ -7,39 +7,23 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationPlan
-import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationResult
-import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheQuality
 import com.worksoc.goaicoach.application.diagnostic.NoopDiagnosticEventLog
-import com.worksoc.goaicoach.application.endgame.AiEndgameResolution
-import com.worksoc.goaicoach.application.engine.AutoAiTurnResult
-import com.worksoc.goaicoach.application.engine.EngineBenchmarkProfile
-import com.worksoc.goaicoach.application.engine.EngineBenchmarkProgress
-import com.worksoc.goaicoach.application.engine.EngineSessionCapabilities
-import com.worksoc.goaicoach.application.engine.EngineSessionClient
 import com.worksoc.goaicoach.application.engine.EngineStartupResult
-import com.worksoc.goaicoach.application.engine.LocalEngineMoveResult
 import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.match.SidePlayerSetup
 import com.worksoc.goaicoach.persistence.GameSessionStore
-import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
-import com.worksoc.goaicoach.shared.enginecontract.AnalysisResult
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.BoardSize
-import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
 import com.worksoc.goaicoach.engine.EngineIdentity
 import com.worksoc.goaicoach.shared.enginecontract.EngineMode
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
-import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
-import com.worksoc.goaicoach.shared.enginecontract.EngineStatus
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
-import com.worksoc.goaicoach.shared.enginecontract.ScoreEstimate
-import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
 import com.worksoc.goaicoach.shared.domain.StoneColor
+import com.worksoc.goaicoach.testsupport.FakeEngineSessionClient
 import com.worksoc.goaicoach.ui.GoCoachApp
 import com.worksoc.goaicoach.ui.TestTags
 import com.worksoc.goaicoach.ui.UiLanguage
@@ -120,76 +104,11 @@ class SavedSessionPromptSmokeTest {
     }
 }
 
-private class FakeNeverReadyEngineSessionClient : EngineSessionClient {
-    override val capabilities: EngineSessionCapabilities =
-        EngineSessionCapabilities(supportsDeviceBenchmark = false)
-
-    override fun positionAnalysisCacheStatsText(nowMillis: Long): String = "disabled"
-
-    override fun positionAnalysisCacheQualityFor(
-        state: GameState,
-        limit: AnalysisLimit,
-        searchMode: EngineSearchMode,
-        nowMillis: Long,
-    ): PositionAnalysisCacheQuality? = null
-
+/**
+ * 같은 이유로 **끝내 준비되지 않는** 가짜 엔진 — 사유는 [NewGameBoardTapSmokeTest]의 같은 자리에 있다.
+ * 이어받기 뒤 AI 차례가 절대 잡히지 않아야 이 테스트가 재는 것이 복원된 국면 하나로 고정된다.
+ */
+private class FakeNeverReadyEngineSessionClient : FakeEngineSessionClient() {
     override suspend fun startSession(profile: EngineProfile, state: GameState): EngineStartupResult =
         error("fake engine unavailable in smoke test")
-
-    override suspend fun startNewGame(
-        profile: EngineProfile,
-        boardSize: BoardSize,
-        ruleset: com.worksoc.goaicoach.shared.domain.Ruleset,
-        handicapCount: Int,
-        komi: Double,
-    ): EngineStartupResult = error("not used")
-
-    override suspend fun analyzePosition(
-        state: GameState,
-        limit: AnalysisLimit,
-        searchMode: EngineSearchMode,
-    ): AnalysisResult = error("not used")
-
-    override suspend fun optimizePositionAnalysisCache(
-        plan: PositionAnalysisCacheOptimizationPlan,
-    ): PositionAnalysisCacheOptimizationResult = error("not used")
-
-    override suspend fun syncAndEstimateGraphScore(state: GameState, profile: EngineProfile): ScoreEstimate =
-        error("not used")
-
-    override suspend fun configureSyncAndEstimateGraphScore(state: GameState, profile: EngineProfile): ScoreEstimate =
-        error("not used")
-
-    override suspend fun runAutoAiTurn(
-        currentState: GameState,
-        playLevel: PlayLevelSetting,
-        currentProfile: EngineProfile,
-        searchTimeSettings: SearchTimeSettings,
-        searchMode: EngineSearchMode,
-        isolateSearchCache: Boolean,
-    ): AutoAiTurnResult = error("not used")
-
-    override suspend fun syncAfterHumanMove(
-        afterMove: GameState,
-        profile: EngineProfile,
-        move: Move,
-        previousReviewCandidates: List<CandidateMove>,
-    ): LocalEngineMoveResult = error("not used")
-
-    override suspend fun estimateScoreForState(state: GameState, profile: EngineProfile, syncFirst: Boolean): ScoreEstimate =
-        error("not used")
-
-    override suspend fun resolveEndgameForState(
-        state: GameState,
-        profile: EngineProfile,
-        prePassCandidates: List<CandidateMove>,
-    ): AiEndgameResolution = error("not used")
-
-    override suspend fun undoMove(): EngineStatus = error("not used")
-
-    override suspend fun runStartupBenchmark(
-        restoreState: GameState,
-        nowMillis: Long,
-        onProgress: suspend (EngineBenchmarkProgress) -> Unit,
-    ): EngineBenchmarkProfile = error("not used")
 }
