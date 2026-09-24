@@ -70,8 +70,16 @@ H2-H9, both rulesets: raw-NN leads then equal local GTP `kata-raw-nn`
 exactly at every handicap opening; after moves they differ by at most 0.6,
 and all of that is KataGo's default `analysisIgnorePreRootHistory=true`
 (0.00 with it off), not handicap. Forcing "N" changes nothing under chinese
-and adds about +N points for White under japanese; "0" removes N points
-under chinese — so the field stays unset.
+(it's already the default) — but the earlier claim that it "adds about +N
+points for White under japanese" turned out to be loose: across the same
+9/13/19, H2-H9 sweep the shift is **not linear in N**. Two openings at the
+same N=4 gave +1.8 (9x9) vs. +3.5/+3.8 (19x19); across all 18 cases the
+shift ranged +1.8 to +8.5 (refactor backlog #90, re-measured 2026-09-24).
+Forcing "0" under chinese is the same story, not "removes N points" —
+same N=4 gave +0.1 (9x9, i.e. next to no change) vs. -4.2/-4.3 (19x19);
+range -6.6 to +0.1 overall. So the field stays unset either way — not
+because the arithmetic is inconvenient, but because there is no single N
+to add or remove in the first place.
 
 Usage:
     python3 scripts/run-katago-remote-analysis-server.py --port 8765
@@ -279,8 +287,9 @@ def build_katago_query(request_body: dict[str, Any]) -> dict[str, Any]:
         # KataGo compensates the N stones it counts in `initialStones` — it is not a
         # count to add. The ruleset default (chinese "N", japanese "0") is exactly
         # what the local GTP engine uses (`kata-get-rules`); forcing "N" is a no-op
-        # under chinese and adds about +N for White under japanese, "0" takes N away
-        # under chinese. See the module docstring.
+        # under chinese, and under japanese shifts White by an amount that is NOT
+        # linear in N (refactor backlog #90 re-measured this: same N=4, +1.8 at 9x9
+        # vs. +3.5/+3.8 at 19x19). See the module docstring for the full range.
         "initialStones": initial_stones,
         "moves": moves,
         "analyzeTurns": [len(moves)],

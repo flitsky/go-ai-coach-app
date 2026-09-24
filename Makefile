@@ -66,7 +66,7 @@ export JAVA_HOME
 
 .DEFAULT_GOAL := help
 
-.PHONY: help doctor test test-ios test-device dev dev-stub install-dev install-dev-engine reinstall-dev-engine seed-engine launch play-internal-aab bundle-aab verify-admob-keys bump-version prepare-friend-assets engine-level-benchmark engine-device-benchmark engine-search-mode-benchmark engine-search-mode-benchmark-phone release ensure-debug-engine prebuild-engine clean
+.PHONY: help doctor test test-ios test-device test-remote-analysis-server dev dev-stub install-dev install-dev-engine reinstall-dev-engine seed-engine launch play-internal-aab bundle-aab verify-admob-keys bump-version prepare-friend-assets engine-level-benchmark engine-device-benchmark engine-search-mode-benchmark engine-search-mode-benchmark-phone release ensure-debug-engine prebuild-engine clean
 
 help:
 	@echo "=========================================================================="
@@ -90,6 +90,8 @@ help:
 	@echo "  make test-ios            - Compile-only iOS targets check (see 함정 75; NOT part of make test)"
 	@echo "  make test-device         - Run instrumented (androidTest) smoke tests on TARGET=emu/phone"
 	@echo "                             (needs a connected device; NOT part of make test, NOT wired into make release)"
+	@echo "  make test-remote-analysis-server - Check run-katago-remote-analysis-server.py's query builder"
+	@echo "                             (no KataGo/device needed; NOT part of make test — see Makefile comment)"
 	@echo ""
 	@echo " [Build & Engine Prebuild]"
 	@echo "  make play-internal-aab   - Build release-signed AAB (debug engine + bundled assets) for Play Console internal testing"
@@ -169,6 +171,19 @@ test-ios:
 # 없다 — 없으면 출하 자체가 막힌다. 사람이 릴리스 전에 직접 돌리는 수동 단계로 남긴다.
 test-device: doctor
 	$(GRADLEW) :app-android:connectedDebugAndroidTest
+
+# ⚠️ 별도 타깃이다 — `test`에 합치지 마라(refactor backlog #90). `scripts/run-katago-remote-analysis-server.py`는
+# dev-only 스파이크다(모듈 docstring 참고) — debug 빌드에 REMOTE_ENGINE_URL이 있을 때만 쓰이고, 프로덕션
+# 사용자·앱 배포 어느 쪽에도 닿지 않는다. `make test`(릴리스 게이트)는 JDK+Android SDK만 있으면 도는
+# 것이 지금까지의 전제였고(`doctor`가 그 둘만 확인한다), 여기에 python3을 새 필수 의존으로 얹으면 그
+# 전제가 이 스크립트 하나 때문에 깨진다 — 얻는 것(파이썬 스크립트 버그 조기 발견)에 비해 잃는 것(모든
+# 릴리스 빌드 환경에 python3 가용성 요구)이 크다. `engine-android`의 JVM 테스트에서 `subprocess`로
+# python3을 부르는 안도 기각했다 — 그건 이 문제를 `test-ios`/`test-device`처럼 별도 타깃으로 빼는 대신
+# `make test`가 이미 도는 스위트 **안에** 몰래 심는 것이라 같은 문제를 우회로만 옮긴다. 대신 이 스크립트를
+# 고칠 때 사람이 직접 돌리는 수동 게이트로 둔다 — 변경 빈도가 낮고(dev 스파이크), KataGo 바이너리 없이도
+# 0.01초 안에 돈다.
+test-remote-analysis-server:
+	python3 scripts/test_run_katago_remote_analysis_server.py -v
 
 dev: doctor ensure-debug-engine
 	$(GRADLEW) :app-android:assembleDebug
