@@ -49,6 +49,13 @@ internal object SourceSymbolIndex {
     val knownPackages: Set<String> get() = filesByPackage.keys - ""
 
     /**
+     * [packageName]을 **정확히** 선언한 프로덕션 파일 전부(하위 패키지는 빼고, 모든 소스 루트에서).
+     * 계층 배정 가드(refactor backlog #84)가 "이 계층 패키지의 파일"을 디렉터리가 아니라 `package`
+     * 선언으로 모을 때 쓴다 — :shared 세 소스셋과 app-android에 흩어진 같은 패키지를 한 번에 본다.
+     */
+    fun filesDeclaring(packageName: String): List<File> = filesByPackage[packageName].orEmpty()
+
+    /**
      * [packagePrefix]로 시작하는 패키지가 하나라도 있는가.
      * 접미 `.`은 가드 표기(`import com.example.foo.`)를 그대로 넘겨도 되게 벗겨 낸다.
      */

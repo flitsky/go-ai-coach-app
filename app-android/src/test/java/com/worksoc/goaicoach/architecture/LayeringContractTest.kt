@@ -1595,6 +1595,149 @@ class LayeringContractTest {
     }
 
     /**
+     * **5계층 파일은 6계층 패키지를 모른다**(refactor backlog #84). 원칙 문서의 5계층 경계 원칙
+     * (*"6계층 이상은 모른다"*)을 처음으로 코드에서 본다. 그전까지 계층 배정은 로드맵 문장과 KDoc에만
+     * 있었고, 5↔6 방향을 보는 가드가 없었다. 그 사이 5계층으로 적혀 있던 파일 8개가 6계층을 import
+     * 16줄로 참조하고 있었다(2026-09-25 재분류로 0).
+     *
+     * ## 무엇을 보는가
+     * [ContractSymbols.LAYER_5_PACKAGES]를 **정확히** 선언한 프로덕션 파일 전부를 본다. :shared 세
+     * 소스셋과 app-android의 영구 예외 하나까지 [SourceSymbolIndex.filesDeclaring]이 모은다. 그 파일이
+     * [ContractSymbols.LAYER_6_PACKAGES] 아래를 import하거나 코드 속 inline FQN으로 쓰면 빨갛다.
+     * 판정은 [forbiddenReferenceOffenders]→[detectForbiddenReference]를 그대로 탄다. 와일드카드·별칭·
+     * inline FQN을 잡고, 주석·문자열 속 언급은 잡지 않는다.
+     *
+     * ## 값도 막는 이유
+     * 큰 그림은 위 계층의 값을 아는 것을 **계약과 그 구현체**에만 허용한다. 5계층 유스케이스는 6계층의
+     * 계약이 아니다. 여기가 빨개지면 규칙을 넓히기 전에 먼저 묻는다 — 그 코드는 6계층 상태를 전이·
+     * 저장하는 6계층의 흐름이 아닌가? #84의 16줄은 전부 그랬고, 매핑만 고쳐 코드 이동 없이 0이 됐다.
+     *
+     * ## 못 보는 것(알고 둔다)
+     * 이름 없이 타입 추론으로만 흐르는 6계층 값이다. 예를 들어 4계층 포트(`premium.port`·`auth.port`)가
+     * 돌려준 6계층 값을 import 없이 다른 곳에 넘기면 여기 안 걸린다. 2026-09-25 기준 그 두 포트를 쥐는
+     * 5계층 파일은 0이다.
+     *
+     * ⚠️ 목록이 낡아 파일이 0개가 되면 가드는 초록인 채 아무것도 안 본다(함정 76). [filesDeclaringEach]가
+     * 목록의 패키지마다 파일이 하나 이상인지 `require`로 못박는다.
+     */
+    @Test
+    fun layerFivePackagesDoNotReferenceLayerSixPackages() {
+        val layerFiveFiles = filesDeclaringEach(ContractSymbols.LAYER_5_PACKAGES)
+        // 금지 쪽도 실재해야 한다 — 낡은 6계층 이름은 어떤 import와도 매치하지 않는다.
+        filesDeclaringEach(ContractSymbols.LAYER_6_PACKAGES)
+        require(layerFiveFiles.size > 100) {
+            "5계층 파일을 거의 못 모았다(${layerFiveFiles.size}개) — 색인이나 목록이 낡았다."
+        }
+
+        val offenders = forbiddenReferenceOffenders(
+            files = layerFiveFiles,
+            forbiddenImports = layerSixForbiddenImports(),
+        )
+
+        assertTrue(
+            "5계층 파일이 6계층 패키지를 참조한다 — 5계층은 6계층의 동작도 값도 모른다(원칙 문서 5계층 경계 " +
+                "원칙). 규칙을 넓히기 전에 그 코드가 6계층 상태를 전이·저장하는 흐름인지 먼저 본다. 그렇다면 " +
+                "그 패키지를 ContractSymbols.LAYER_6_PACKAGES로 옮기고 로드맵 5·6계층 절을 함께 고친다" +
+                "(refactor backlog #84):\n" + offenders.joinToString("\n"),
+            offenders.isEmpty(),
+        )
+    }
+
+    /**
+     * [layerFivePackagesDoNotReferenceLayerSixPackages]의 자기검증(함정 24: 초록은 안전이 아니다).
+     * 5계층 파일에 위반이 없으면 그 가드는 초록이라, 금지 목록이 고장나 무엇과도 매치하지 않는 상태와
+     * 구분되지 않는다. 그래서 두 가지를 나란히 본다.
+     *  - 6계층 패키지마다 import 한 줄, inline FQN 하나를 심은 합성 파일이 **전부** 잡히는가.
+     *  - 5계층 패키지 전부를 import하고 6계층은 주석·문자열에서만 언급하는 파일은 **안** 잡히는가
+     *    (6계층 접두사가 5계층 패키지를 삼키지 않는가).
+     * 패키지 이름은 목록에서 가져온다 — 리터럴 FQN을 적지 않는다.
+     */
+    @Test
+    fun layerSixRuleCatchesPlantedReferencesAndSparesLayerFive() {
+        val tempDir = java.nio.file.Files.createTempDirectory("layer-five-six").toFile()
+        try {
+            val planted = ContractSymbols.LAYER_6_PACKAGES.flatMapIndexed { index, layerSix ->
+                listOf(
+                    File(tempDir, "PlantedImport$index.kt").apply {
+                        writeText("package sample\nimport $layerSix.Probe\nfun f(p: Probe) = p\n")
+                    },
+                    File(tempDir, "PlantedInline$index.kt").apply {
+                        writeText("package sample\nfun f(p: $layerSix.Probe) = p\n")
+                    },
+                )
+            }
+            val mentioned = ContractSymbols.LAYER_6_PACKAGES.first()
+            val clean = File(tempDir, "LayerFiveOnly.kt").apply {
+                writeText(
+                    "package sample\n" +
+                        ContractSymbols.LAYER_5_PACKAGES.joinToString("\n") { "import $it.Probe" } +
+                        "\n// $mentioned.Probe is only mentioned in a comment\n" +
+                        "fun f() = \"$mentioned.Probe\"\n",
+                )
+            }
+
+            val offenders = forbiddenReferenceOffenders(
+                files = planted + clean,
+                forbiddenImports = layerSixForbiddenImports(),
+            )
+
+            val missed = planted.map { it.name }.filter { name -> offenders.none { it.contains("$name:") } }
+            assertEquals(
+                "심은 6계층 참조를 놓쳤다 — 금지 목록이 고장났다:\n${offenders.joinToString("\n")}",
+                emptyList<String>(),
+                missed,
+            )
+            assertTrue(
+                "5계층 import나 주석·문자열 속 언급을 6계층 참조로 잡았다 — 접두사가 너무 넓다:\n" +
+                    offenders.joinToString("\n"),
+                offenders.none { it.contains(clean.name) },
+            )
+        } finally {
+            tempDir.deleteRecursively()
+        }
+    }
+
+    /**
+     * **:shared의 모든 패키지가 계층 목록 하나에 정확히 한 번 들어 있는가**(refactor backlog #84).
+     *
+     * 위 가드는 목록에 적힌 패키지만 본다. 새 5계층 패키지가 목록에 안 들어가면 그 패키지는 조용히
+     * 감시 밖에 남는다. 2026-09-23 로드맵이 `persistence/`를 두고 적은 *"매핑에 없는 패키지에는 계층
+     * 규칙이 적용되지 않는다"* 와 같은 사각지대다. 그래서 목록이 현실과 어긋나는 세 경우를 다 막는다.
+     *  - **미배정**: :shared commonMain이나 `application.*`로 선언된 패키지가 세 목록 어디에도 없다.
+     *  - **낡은 항목**: 목록에 있는데 그 패키지를 선언한 프로덕션 파일이 없다(이사했거나 사라졌다).
+     *  - **중복**: 한 패키지가 두 번 적혀 있다(두 목록에, 또는 한 목록에 두 번).
+     * 새 패키지를 만들었으면 로드맵 계층 절에서 자리를 정하고 [ContractSymbols]의 목록에 적는다.
+     */
+    @Test
+    fun everySharedPackageIsAssignedToExactlyOneLayerList() {
+        val assignments = ContractSymbols.LAYER_5_PACKAGES + ContractSymbols.LAYER_6_PACKAGES +
+            ContractSymbols.SHARED_PACKAGES_BELOW_LAYER_5
+        val declared = layerAssignablePackages()
+        val duplicated = assignments.groupingBy { it }.eachCount().filterValues { it > 1 }.keys.sorted()
+        val unassigned = (declared - assignments.toSet()).sorted()
+        val stale = (assignments.toSet() - declared).sorted()
+
+        assertEquals(
+            "같은 패키지가 계층 목록에 두 번 적혀 있다 — 패키지 하나는 계층 하나다(refactor backlog #84).",
+            emptyList<String>(),
+            duplicated,
+        )
+        assertEquals(
+            "계층이 배정되지 않은 패키지가 있다 — 로드맵(docs/spec/GO_AI_COACH_ARCHITECTURE_ROADMAP.md) 계층 " +
+                "절에서 자리를 정하고 ContractSymbols의 LAYER_5_PACKAGES·LAYER_6_PACKAGES·" +
+                "SHARED_PACKAGES_BELOW_LAYER_5 중 하나에 적어라(refactor backlog #84).",
+            emptyList<String>(),
+            unassigned,
+        )
+        assertEquals(
+            "계층 목록에 있는데 선언한 파일이 없는 패키지가 있다 — 이사했거나 사라졌다. 목록과 로드맵을 " +
+                "함께 고쳐라(refactor backlog #84).",
+            emptyList<String>(),
+            stale,
+        )
+    }
+
+    /**
      * ⚠️ refactor backlog #69 — 이 픽스처는 예전엔 `EngineCoreApi`의 FQN을 **리터럴로 여섯 번**
      * 되풀이해 적어 두고 있었다. `#24`가 `shared.enginecontract`로 그 패키지를 옮겼을 때 이 여섯
      * 자리를 전부 손으로 고쳐야 했다(자기검증 픽스처 몫). 그래서 [ContractSymbols.ENGINE_CORE_API]를
@@ -1961,6 +2104,45 @@ class LayeringContractTest {
             "스캔 대상이 비었다 — 경로가 낡았다: ${dirs.joinToString { it.path }}"
         }
         return files
+    }
+
+    /**
+     * 목록의 패키지마다 그 패키지를 **정확히** 선언한 프로덕션 파일을 모은다(refactor backlog #84).
+     * 파일이 0개인 패키지가 하나라도 있으면 그 자리에서 터뜨린다 — [ktFilesIn]의 빈 디렉터리 검사와
+     * 같은 이유다. 목록이 낡아 헛도는 가드는 초록인 채 죽는다(함정 76).
+     */
+    private fun filesDeclaringEach(packages: List<String>): List<File> {
+        require(packages.isNotEmpty()) { "계층 패키지 목록이 비었다 — 가드가 아무것도 안 본다." }
+        return packages.flatMap { packageName ->
+            val files = SourceSymbolIndex.filesDeclaring(packageName)
+            require(files.isNotEmpty()) {
+                "계층 목록의 패키지 `$packageName`을 선언한 프로덕션 파일이 없다 — 이사했거나 사라졌다. " +
+                    "ContractSymbols의 계층 목록을 고쳐라(refactor backlog #84)."
+            }
+            files
+        }
+    }
+
+    /** 6계층 패키지 각각을 접두사 금지(`import <패키지>.`)로 만든다 — 그 패키지의 선언 전부를 막는다. */
+    private fun layerSixForbiddenImports(): List<String> =
+        ContractSymbols.LAYER_6_PACKAGES.map { packageName -> importOf("$packageName.") }
+
+    /**
+     * 계층을 배정받아야 하는 패키지(refactor backlog #84) — :shared commonMain이 선언한 패키지 전부와,
+     * 어느 소스 루트에서든 `application.*`로 선언된 패키지다. androidMain·iosMain은 commonMain의
+     * `expect`와 같은 패키지라 따로 세지 않아도 들어오고, app-android의 `application.diagnostic`(영구
+     * 예외 하나)은 뒤쪽 조건이 잡는다.
+     */
+    private fun layerAssignablePackages(): Set<String> {
+        val commonMain = RepoPaths.sharedCommonMainKotlin
+        val packages = SourceSymbolIndex.knownPackages.filter { packageName ->
+            packageName.startsWith(APPLICATION_PACKAGE) ||
+                SourceSymbolIndex.filesDeclaring(packageName).any { file -> file.startsWith(commonMain) }
+        }.toSet()
+        require(packages.size > 20) {
+            "계층을 배정할 패키지를 거의 못 찾았다(${packages.size}개) — 색인이나 경로가 낡았다."
+        }
+        return packages
     }
 
     /**

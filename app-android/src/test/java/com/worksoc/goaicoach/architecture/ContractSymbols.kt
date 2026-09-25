@@ -119,6 +119,94 @@ internal object ContractSymbols {
      */
     val CYCLE_BASELINE_MUTUAL_PAIRS: List<Pair<String, String>> = emptyList()
 
+    // ── :shared 패키지의 계층 배정(refactor backlog #84) ───────────────────
+    // 계층 배정이 **처음으로 코드에 생긴 자리**다. 그전까지는 로드맵 문장과 KDoc에만 있었다.
+    // 정본 매핑은 docs/spec/GO_AI_COACH_ARCHITECTURE_ROADMAP.md의 5·6계층 절이고, 여기는 그것을
+    // [LayeringContractTest]가 읽을 수 있게 옮긴 것이다. 매핑을 바꾸면 두 곳을 함께 고친다.
+    //  - 전부 **정확한 패키지 이름**이다(접두사가 아니다). 하위 패키지는 따로 적는다.
+    //  - 배정은 **패키지 단위**다. 5·6계층 패키지 안에 선언된 4계층 α 포트(예: `gamehistory`의
+    //    `GameHistoryStorePort`, `attendance`의 `AttendanceStorePort`)는 파일 단위 예외로 보고
+    //    패키지를 따라간다. 6계층 패키지 안의 포트를 5계층이 쥐지 못하는 것은 의도다 — 그 포트가
+    //    싣는 것이 6계층 값이다.
+    //  - 세 목록의 합집합은 :shared가 선언한 패키지 전부와 **정확히 같아야** 한다. 새 패키지가
+    //    어느 목록에도 없거나 목록에 사라진 패키지가 남아 있으면 빨갛다(목록이 낡지 않게).
+    // ⚠️ 여기 적힌 패키지는 [GUARDED]에도 자동으로 올라가 실존 검사를 받는다. ⚠️ 이 목록들은
+    // [GUARDED]보다 **앞에** 선언해야 한다 — `object`의 프로퍼티는 적힌 순서대로 초기화되므로,
+    // 뒤에 두면 [GUARDED]를 만들 때 아직 `null`이다.
+
+    /**
+     * 6계층(Session & Continuity) 패키지. 로그인·과금·보유(출석·소모품·봇 캐릭터)의 상태와, 그
+     * 상태를 전이·저장하는 흐름과 정책이다. 2026-09-25에 `premium.app` 이하 여섯이 5계층에서
+     * 옮겨 왔다 — 코드는 한 줄도 옮기지 않았다(refactor backlog #84, (b2)).
+     */
+    val LAYER_6_PACKAGES: List<String> = listOf(
+        "com.worksoc.goaicoach.application.auth.state",
+        "com.worksoc.goaicoach.application.premium.state",
+        "com.worksoc.goaicoach.application.premium.app",
+        "com.worksoc.goaicoach.application.attendance",
+        "com.worksoc.goaicoach.application.consumable",
+        "com.worksoc.goaicoach.application.botcharacter",
+        "com.worksoc.goaicoach.application.lifecycle",
+        "com.worksoc.goaicoach.application.device",
+    )
+
+    /**
+     * 5계층(Application / Domain) 패키지 — 순수 바둑 규칙, 대국 정책, 세션·대국 흐름. 이 패키지의
+     * 파일은 [LAYER_6_PACKAGES]를 참조하지 않는다([LayeringContractTest]).
+     *
+     * ⚠️ `shared.policy`는 3계층 파일 하나(`EngineOperationPolicy.kt`)를 품은 5계층 패키지다.
+     * 패키지 단위라 그 파일도 5계층 규칙(6계층을 모른다)을 받는데, 3계층도 6계층을 몰라야 하므로
+     * 더 엄격할 뿐 틀리지 않는다.
+     */
+    val LAYER_5_PACKAGES: List<String> = listOf(
+        "com.worksoc.goaicoach.application.autoai",
+        "com.worksoc.goaicoach.application.concurrency",
+        "com.worksoc.goaicoach.application.contract",
+        "com.worksoc.goaicoach.application.debugreport",
+        "com.worksoc.goaicoach.application.diagnostic",
+        "com.worksoc.goaicoach.application.endgame",
+        "com.worksoc.goaicoach.application.gamehistory",
+        "com.worksoc.goaicoach.application.guide",
+        "com.worksoc.goaicoach.application.humanmove",
+        "com.worksoc.goaicoach.application.movereview",
+        "com.worksoc.goaicoach.application.orchestration",
+        "com.worksoc.goaicoach.application.preferences",
+        "com.worksoc.goaicoach.application.prompt",
+        "com.worksoc.goaicoach.application.runtime",
+        "com.worksoc.goaicoach.application.savedgame",
+        "com.worksoc.goaicoach.application.score",
+        "com.worksoc.goaicoach.application.session",
+        "com.worksoc.goaicoach.application.startgame",
+        "com.worksoc.goaicoach.application.time",
+        "com.worksoc.goaicoach.application.topmoves",
+        "com.worksoc.goaicoach.application.undo",
+        "com.worksoc.goaicoach.match",
+        "com.worksoc.goaicoach.shared.content",
+        "com.worksoc.goaicoach.shared.diagnostic",
+        "com.worksoc.goaicoach.shared.domain",
+        "com.worksoc.goaicoach.shared.policy",
+        "com.worksoc.goaicoach.shared.scoring",
+    )
+
+    /**
+     * :shared 안에 있지만 5계층보다 **아래**인 패키지 — 2계층 엔진 계약, 3계층 엔진 서비스,
+     * 4계층 α 포트. 이번 가드의 규칙 대상은 아니고, "모든 :shared 패키지가 배정받았다"를 세려고 둔다.
+     */
+    val SHARED_PACKAGES_BELOW_LAYER_5: List<String> = listOf(
+        // 2계층 — Middleware / Bridge(엔진 원시 계약)
+        "com.worksoc.goaicoach.shared.enginecontract",
+        // 3계층 — Extended API(엔진 서비스)
+        "com.worksoc.goaicoach.application.analysis",
+        "com.worksoc.goaicoach.application.cacheoptimization",
+        "com.worksoc.goaicoach.application.engine",
+        "com.worksoc.goaicoach.application.engine.operation",
+        "com.worksoc.goaicoach.application.safety",
+        // 4계층 α — 순수 포트/모델
+        "com.worksoc.goaicoach.application.auth.port",
+        "com.worksoc.goaicoach.application.premium.port",
+        "com.worksoc.goaicoach.shared.vision",
+    )
+
     /** 가드가 쓰는 `forbiddenImports` 표기(`import <fqn>`)로 감싼다. */
     fun importOf(fqn: String): String = "import $fqn"
 
@@ -244,6 +332,14 @@ internal object ContractSymbols {
                 SymbolKind.PACKAGE,
                 SymbolExpectation.MUST_EXIST,
                 "패키지 사이클 래칫 기준선의 구성원(#33) — 사라졌다면 기준선을 줄여야 한다",
+            )
+        } + (LAYER_5_PACKAGES + LAYER_6_PACKAGES + SHARED_PACKAGES_BELOW_LAYER_5)
+        .map { packageName ->
+            GuardedSymbol(
+                packageName,
+                SymbolKind.PACKAGE,
+                SymbolExpectation.MUST_EXIST,
+                "계층 배정 목록의 구성원(#84) — 5계층↛6계층 가드와 미배정 패키지 검사가 이 목록을 쓴다",
             )
         }
 }
