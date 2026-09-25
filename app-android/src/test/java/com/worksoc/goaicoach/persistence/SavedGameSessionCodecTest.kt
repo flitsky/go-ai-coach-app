@@ -15,6 +15,8 @@ import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.policy.PlayLevelGroup
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
+import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
+import com.worksoc.goaicoach.shared.scoring.ScoreSnapshotSource
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -226,6 +228,69 @@ class SavedGameSessionCodecTest {
         )
     }
 
+    // 아래 셋은 `SavedGamePersistenceTest`에 있던 코덱 왕복 테스트다 — 그 파일이 `:shared`의 commonTest로
+    // 옮겨 갈 때(refactor backlog #97) app-android의 `internal` 코덱을 불러서 따라갈 수 없어 여기로 왔다.
+    @Test
+    fun savedGameSessionCodecSerializesAndDeserializesScoreSnapshots() {
+        val state = playableState()
+        val scoreSnapshots = listOf(
+            ScoreSnapshot(moveNumber = 1, whiteScoreLead = -4.5, whiteWinRate = 0.85, source = ScoreSnapshotSource.EngineEstimate),
+            ScoreSnapshot(moveNumber = 2, whiteScoreLead = -2.1, whiteWinRate = 0.52, source = ScoreSnapshotSource.LocalAreaEstimate)
+        )
+        val snapshot = SavedGameSnapshot(
+            gameState = state,
+            playerSetup = PlayerSetup(),
+            playLevel = PlayLevelSetting(),
+            topMovesEnabled = true,
+            savedAtMillis = 999L,
+            scoreSnapshots = scoreSnapshots
+        )
+        val encoded = SavedGameSessionCodec.encode(snapshot)
+        val decoded = SavedGameSessionCodec.decode(encoded)
+
+        assertTrue(decoded != null)
+        assertEquals(scoreSnapshots.size, decoded!!.scoreSnapshots.size)
+        assertEquals(1, decoded.scoreSnapshots[0].moveNumber)
+        assertEquals(-4.5, decoded.scoreSnapshots[0].whiteScoreLead!!, 0.001)
+        assertEquals(0.85, decoded.scoreSnapshots[0].whiteWinRate!!, 0.001)
+        assertEquals(ScoreSnapshotSource.EngineEstimate, decoded.scoreSnapshots[0].source)
+
+        assertEquals(2, decoded.scoreSnapshots[1].moveNumber)
+        assertEquals(-2.1, decoded.scoreSnapshots[1].whiteScoreLead!!, 0.001)
+        assertEquals(0.52, decoded.scoreSnapshots[1].whiteWinRate!!, 0.001)
+        assertEquals(ScoreSnapshotSource.LocalAreaEstimate, decoded.scoreSnapshots[1].source)
+    }
+
+    @Test
+    fun savedGameSessionCodecSerializesAndDeserializesFinalScoreJudgement() {
+        val judgement = finalScoreJudgement()
+        val snapshot = SavedGameSnapshot(
+            gameState = playableState(),
+            playerSetup = PlayerSetup(),
+            playLevel = PlayLevelSetting(),
+            topMovesEnabled = true,
+            savedAtMillis = 999L,
+            finalScoreJudgement = judgement,
+        )
+        val decoded = SavedGameSessionCodec.decode(SavedGameSessionCodec.encode(snapshot))
+
+        assertEquals(judgement, decoded?.finalScoreJudgement)
+    }
+
+    @Test
+    fun savedGameSessionCodecRoundTripsNullFinalScoreJudgement() {
+        val snapshot = SavedGameSnapshot(
+            gameState = playableState(),
+            playerSetup = PlayerSetup(),
+            playLevel = PlayLevelSetting(),
+            topMovesEnabled = true,
+            savedAtMillis = 999L,
+        )
+        val decoded = SavedGameSessionCodec.decode(SavedGameSessionCodec.encode(snapshot))
+
+        assertNull(decoded?.finalScoreJudgement)
+    }
+
     /**
      * #89 재현 국면의 판정 — 흑 44 대 백 37 + 덤 6.5 + 보정 [whiteHandicapBonus], 백 1.5 승.
      * 보정 0이면 백 합계는 43.5다(승패 필드는 호출부가 필요하면 `copy`로 바꾼다).
@@ -257,5 +322,24 @@ class SavedGameSessionCodecTest {
             topMovesEnabled = false,
             savedAtMillis = 1L,
             finalScoreJudgement = judgement,
+        )
+
+    private fun playableState(): GameState =
+        GameState.empty()
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+
+    private fun finalScoreJudgement(): FinalScoreJudgement =
+        FinalScoreJudgement(
+            winner = StoneColor.Black,
+            margin = 0.5,
+            ruleset = Ruleset.Japanese,
+            isEstimatedDisplay = false,
+            removedBlack = 14,
+            removedWhite = 0,
+            blackArea = 44.0,
+            whiteAreaWithKomi = 43.5,
+            capturedByBlack = 12,
+            capturedByWhite = 8,
+            komi = 6.5,
         )
 }

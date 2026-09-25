@@ -3,7 +3,6 @@ package com.worksoc.goaicoach.application
 import com.worksoc.goaicoach.application.savedgame.*
 import com.worksoc.goaicoach.application.score.FinalScoreJudgement
 import com.worksoc.goaicoach.match.PlayerSetup
-import com.worksoc.goaicoach.persistence.SavedGameSessionCodec
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.GameState
@@ -11,12 +10,9 @@ import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
-import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
-import com.worksoc.goaicoach.shared.scoring.ScoreSnapshotSource
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class SavedGamePersistenceTest {
     @Test
@@ -152,67 +148,6 @@ class SavedGamePersistenceTest {
 
         assertTrue(plan is SavedGamePersistencePlan.Save)
         assertEquals(state, (plan as SavedGamePersistencePlan.Save).snapshot.gameState)
-    }
-
-    @Test
-    fun savedGameSessionCodecSerializesAndDeserializesScoreSnapshots() {
-        val state = playableState()
-        val scoreSnapshots = listOf(
-            ScoreSnapshot(moveNumber = 1, whiteScoreLead = -4.5, whiteWinRate = 0.85, source = ScoreSnapshotSource.EngineEstimate),
-            ScoreSnapshot(moveNumber = 2, whiteScoreLead = -2.1, whiteWinRate = 0.52, source = ScoreSnapshotSource.LocalAreaEstimate)
-        )
-        val snapshot = SavedGameSnapshot(
-            gameState = state,
-            playerSetup = PlayerSetup(),
-            playLevel = PlayLevelSetting(),
-            topMovesEnabled = true,
-            savedAtMillis = 999L,
-            scoreSnapshots = scoreSnapshots
-        )
-        val encoded = SavedGameSessionCodec.encode(snapshot)
-        val decoded = SavedGameSessionCodec.decode(encoded)
-
-        assertTrue(decoded != null)
-        assertEquals(scoreSnapshots.size, decoded!!.scoreSnapshots.size)
-        assertEquals(1, decoded.scoreSnapshots[0].moveNumber)
-        assertEquals(-4.5, decoded.scoreSnapshots[0].whiteScoreLead!!, 0.001)
-        assertEquals(0.85, decoded.scoreSnapshots[0].whiteWinRate!!, 0.001)
-        assertEquals(ScoreSnapshotSource.EngineEstimate, decoded.scoreSnapshots[0].source)
-
-        assertEquals(2, decoded.scoreSnapshots[1].moveNumber)
-        assertEquals(-2.1, decoded.scoreSnapshots[1].whiteScoreLead!!, 0.001)
-        assertEquals(0.52, decoded.scoreSnapshots[1].whiteWinRate!!, 0.001)
-        assertEquals(ScoreSnapshotSource.LocalAreaEstimate, decoded.scoreSnapshots[1].source)
-    }
-
-    @Test
-    fun savedGameSessionCodecSerializesAndDeserializesFinalScoreJudgement() {
-        val judgement = finalScoreJudgement()
-        val snapshot = SavedGameSnapshot(
-            gameState = playableState(),
-            playerSetup = PlayerSetup(),
-            playLevel = PlayLevelSetting(),
-            topMovesEnabled = true,
-            savedAtMillis = 999L,
-            finalScoreJudgement = judgement,
-        )
-        val decoded = SavedGameSessionCodec.decode(SavedGameSessionCodec.encode(snapshot))
-
-        assertEquals(judgement, decoded?.finalScoreJudgement)
-    }
-
-    @Test
-    fun savedGameSessionCodecRoundTripsNullFinalScoreJudgement() {
-        val snapshot = SavedGameSnapshot(
-            gameState = playableState(),
-            playerSetup = PlayerSetup(),
-            playLevel = PlayLevelSetting(),
-            topMovesEnabled = true,
-            savedAtMillis = 999L,
-        )
-        val decoded = SavedGameSessionCodec.decode(SavedGameSessionCodec.encode(snapshot))
-
-        assertNull(decoded?.finalScoreJudgement)
     }
 
     @Test
