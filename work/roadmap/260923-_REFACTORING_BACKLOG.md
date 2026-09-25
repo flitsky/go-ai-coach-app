@@ -204,6 +204,10 @@ Hilt(commonMain 불가)·Koin(이득 0)·전면 MVI(이미 절반 작동)·모�
     · `#24`의 FQN 치환이 심볼 이름 기준 정렬을 FQN에 그대로 적용해, 옮긴 파일들의 import 블록이
       알파벳 순서를 잃었다. **lint가 이를 잡지 않아 조용히 퍼진다.**
     · ktlint `import-ordering` 도입을 검토하거나, 한 번 정렬하고 끝낸다. 어느 쪽인지 판단이 먼저다.
+    · 📐 **조사(2026-09-25)**: 어긋난 파일 **238/556**(android_studio 레이아웃 기준). `#24` 전에도 152개였다 — 대량 이동마다 수십 개씩 는다.
+      커밋의 95%가 IDE를 거치지 않는 AI 편집이라 "한 번 정렬"은 곧 다시 깨진다. 추천: spotless + ktlint를 **import-ordering 규칙 하나만** 켜서
+      모듈별로 게이트에 넣고(루트 `**` 타깃 금지 — `.claude/worktrees`의 .kt 1만여 개를 쓸어 담는다), 대량 정렬은 같은 날 격리 워크트리에서 도구로 한 번.
+      **`#48`·`#27` 전에** 해야 그 두 대량 이동이 처음부터 정렬돼 들어온다. ⏳ 릴리스 게이트 구성이 바뀌므로 **사용자 결정 대기.**
 
 81. **사이클 래칫이 타입 추론으로만 생기는 의존을 못 본다** (AI 모델: Opus, 노력정도: 중간) — **최소분 끝, P6 직전에 한 번 더**
     · ✅ **`#32` 끝의 jdeps 실측(2026-09-24)**: 바이트코드 기준으로도 **SCC 0, 상호 참조 쌍 0**. 바이트코드에만 있는 간선 **4개**
@@ -260,6 +264,26 @@ Hilt(commonMain 불가)·Koin(이득 0)·전면 MVI(이미 절반 작동)·모�
       그 상태에서 대국을 시작하면 *"3점 + 덤 6.5"* 가 시작될 수 있다. 자동저장도 이어하기·분기 대국 중 그 판의 덤을 설정에 적는다.
     · 처방 후보: `startConfiguredGame`·자동저장이 `settings.komi`를 읽게 하거나, `onOpenGameSetup`에서 미리보기를 새로 그린다. 판 크기도 같은 영향.
       ⚠️ 사용자에게 보이는 동작이라 실기 확인 필요. 참고: `#93`이 먼저 고친 **재시작 뒤 덤이 6.5로 돌아가던 결함**(`aee04c67`)과 같은 계보다.
+
+95. **이미 Gradle이 막는 중복 가드 정리** (AI 모델: Sonnet, 노력정도: 낮음) — `#34` 조사가 찾음
+    · `authPremiumAndDeviceApplicationPackagesStayPlatformFree`·`gameSessionStateHolderStaysPlatformFreeForSharedMove` 삭제, shared 디렉터리에 대한
+      `engine.android` 절 삭제, 죽은 `EngineAdapter` 삭제(테스트 페이크 2개는 `EngineCoreApi`를 직접 구현). **지우기 전에 조항마다 위반을 넣어
+      컴파일 에러가 나는지** 확인한다 — *"Gradle이 이미 막는다"* 의 음성 대조(함정 77).
+96. **`internal` 전환 1차 — 참조 0인 app-android 심볼 65개** (AI 모델: Opus, 노력정도: 중간) — `#34` 조사가 찾음
+    · 테스트 이관이 필요 없는 가드 6개(Benchmark·TopMoves·Undo·AutoAiTurnCompletionApply·DebugReportCopy·EngineOperationLifecycle)부터.
+      *"이 파일이 이 함수를 부르지 마라"* 계약은 가시성으로 소멸시키고 가드 조각을 지운다. `exposes internal type` 연쇄를 격리 워크트리에서 잰다.
+97. **`internal` 전환 2차 — shared를 시험하는 app-android 테스트 3파일을 commonTest로** (AI 모델: Opus, 노력정도: 중간) — `#96` 뒤
+    · `ScoreDisplayApplicationTest`·`SavedGamePersistenceTest`·`DiagnosticEventApplicationTest`(2,016줄)를 `shared/src/commonTest`로 옮기고 JUnit → `kotlin.test`.
+      `@Test` 수는 소스에서 대조(함정 78). 뒤이어 남은 26개 심볼을 `internal`로. ⚠️ `EngineOperationKind`·`EngineFallbackPolicy`는 `#49` 때
+      `:core:application`에 있어야 `internal`이 유지된다 — `#49`에 배치 제약으로 적는다.
+98. **`runStartupBenchmark`의 onProgress 콜백 → `Flow<EngineBenchmarkEvent>`** (AI 모델: Opus, 노력정도: 중간) — **실기(에뮬레이터) 확인**, `#35` 선행
+    · `#73`이 찾은 3계층 계약의 유일한 규칙 ⓐ 위반. 바꾸기 **전에** 러너 수준 특성 테스트(진행 순서, Completed 정확히 한 번, 수집 쪽 예외 시 재동기화)를
+      먼저 커밋하고, 같은 테스트가 전후로 초록이어야 한다. 사용자에게 보이는 진행 팝업이라 설정 → 기기 벤치마크 1회 확인.
+99. **프로덕션에서 닿지 않는 undoMove 경로 삭제** (AI 모델: Sonnet, 노력정도: 낮음) — `#35` 조사가 찾음, `#35` 선행
+    · `EngineSessionClient.undoMove`, Local 구현·위임, `runEngineUndoEffect`·`EngineUndoWorkflowResult`, `GameSessionEffect.UndoEngineMoves`, 페이크 override,
+      관련 테스트 2개. `EngineOperationKind.EngineUndo`와 2계층 `EngineCoreApi.undoMove`는 남긴다. 컴파일·grep 0·`@Test` 정확히 −2로 확인.
+100. **원격 GenMove/Analyze 디코드가 판 크기를 페이로드에서 읽고 없으면 9로 가정한다** (AI 모델: Opus, 노력정도: 중간) — `#36` 조사가 찾음, **`#54` 선행**
+    · 지금은 debug 전용이라 닿지 않지만 `#54`(MQ 이식) 때 살아난다. 디코더가 이미 넘겨받은 권위 판 크기로 디코드하고, 페이로드의 값은 교차 검사로만.
 
 #### P2 — 엔진 동시성 (독립 트랙 · 어느 단계와도 병렬)
 
@@ -340,16 +364,21 @@ Hilt(commonMain 불가)·Koin(이득 0)·전면 MVI(이미 절반 작동)·모�
 
 #### P4 — 사이클 절단 + 계약 좁히기
 
-34. **Konsist 도입** (AI 모델: Opus, 노력정도: 높음) — 24~29 뒤
-    · PSI 기반이라 **주석·문자열을 애초에 코드로 보지 않아** 날것 `readText()` 결함이 원천 소멸하고,
-      KMP `commonTest`에서 직접 돌아 `:shared` 규칙을 `:shared` 안에 둘 수 있다
-      (지금은 app-android 테스트가 shared 소스를 넘겨다보는 기이한 구조다).
-    · ⚠️ **착수 게이트**: 모듈 승격 후에도 **남을 규칙이 몇 개인지 먼저 세라.** 대부분이 모듈로 대체될 거면
-      같은 규칙을 grep→Konsist→모듈로 **세 번 쓰게 된다.**
-    · ⚠️ 이관 불가능한 "이 파일이 이 함수를 부르지 마라" 계약 20여 개는 **이관하지 말고 `internal` 가시성으로 소멸**시킨다.
-35. **`EngineSessionClient` 14메서드 분할** (AI 모델: Opus, 노력정도: 높음)
-36. **`BoardPosition` 도입 1단계** (AI 모델: Opus, 노력정도: 높음)
-    · 좌표가 String/Int로 돌아다니는 원시 타입 집착 해소. **순수 추가**로 시작해 호출부 회귀 0.
+35. **`EngineSessionClient` 14메서드 분할** (AI 모델: Opus, 노력정도: 높음) — 설계 끝(2026-09-25), **P5 앞, 단독 파도**
+    · 역할 인터페이스 넷(수명·대국 진행·분석·계가 류)을 선언하고 `EngineSessionClient`는 **멤버 0개의 합성**으로 남긴다 — 조립 루트
+      (`remoteClient ?: LocalEngineSessionClient`, `GoCoachApp` 파라미터, androidTest가 `FakeEngineSessionClient` 서브클래스를 주입)는 넷을 다 가진
+      객체 하나가 필요한데 Kotlin에 교집합 타입이 없다. 이러면 테스트·배선 파일 변경 0. 소비자는 역할 타입으로 좁혀 간다.
+    · `#42`(WiringContext)·`#43`(배선 테스트)보다 **먼저** — 그래야 둘이 처음부터 역할 타입을 쓴다. 컨트롤러 10개를 한꺼번에 건드리므로 병렬 금지.
+    · `capabilities`는 읽는 곳이 기동·벤치마크뿐이라 수명 역할에만 둔다(원격의 backendId 누락은 `#54` 때 다시 본다).
+    · 선행 둘은 따로 뗀다: `#98`(onProgress → Flow, 실기), `#99`(닿지 않는 undoMove 경로 삭제).
+36. **좌표 표기 경계 굳히기 — `BoardCoordinate` 유지** (AI 모델: Opus, 노력정도: 높음) — 2026-09-25 범위 재정의(원래 "`BoardPosition` 도입")
+    · ⚠️ **새 좌표 타입은 필요 없다**(실측) — 메모리 안에서는 엔진 계약·비전·UI·`GameState`가 이미 전부 `BoardCoordinate`로 오가고 원시 좌표를 받는
+      시그니처는 0건이다. 문자열·Int는 세 경계(엔진 와이어, 저장 JSON, 로그 문구)에서만 산다. `BoardPosition`은 결함을 하나도 못 없애는 대량 치환이고,
+      이름도 코드의 "국면" 어휘와 부딪힌다.
+    · **1단계(순수 추가, 동작 0)**: `BoardCoordinate.fromLabelOrNull`·`BoardSize.columnLabels`·`String.toGtpMoveOrNull` 추가(기존 규칙에 위임) +
+      **골든 테스트 6종**(좌표 표기 표·611점 왕복, 국면 지문 바이트, 이어하기 리터럴 JSON, 번들 기보 재생, 캐시 row/column, GTP 토큰) — 입력은 정수 생성자로.
+      저장 포맷은 이행하지 않고 **고정만** 한다(함정 69). 뒤: GTP 파서 3벌 통합, 열 알파벳 통합.
+    · 하지 말 것: 새 점 타입, 꼭짓점 래퍼, 판 크기를 묶은 좌표, 저장 코덱 "정리", 파싱 관대성 "정리" — 뒤 둘은 이어하기·리플레이·캐시를 조용히 잃게 만든다.
 38. **도메인 알고리즘 중복 제거** (AI 모델: Opus, 노력정도: 높음) — 9 뒤
     · `BoardAreaScorer`와 `BoardTerritoryScorer`의 플러드필이 **타입 이름만 다른 바이트 단위 동일 복제**다.
       `BoardRegionAnalyzer`로 통합.
@@ -416,6 +445,12 @@ Hilt(commonMain 불가)·Koin(이득 0)·전면 MVI(이미 절반 작동)·모�
     · ⚠️ **19(원격 코덱 komi)를 먼저 고치지 않으면 덤을 모르는 채로 분석한다.**
 55. **툴체인 업그레이드(AGP 9.0 등)** (AI 모델: Sonnet, 노력정도: 중간)
     · ⚠️ **「서 있는 답」이 이미 답했다**: 착수 전 첫 질문은 *"AGP 9.0이 아직도 필요한가"* 다.
+
+- **Konsist는 들이지 않는다(`#34` 기각, 2026-09-25 — 진단서가 권한 "패키지 → Konsist → 모듈" 3단계의 둘째 단을 실측이 뒤집었다).**
+  ⓐ JVM 전용 아티팩트(0.17.3 `.module`의 `platform.type=jvm`)라 `:shared`의 `commonTest`에서 돌 수 없다 — *"`:shared` 규칙을 `:shared` 안에"* 라는 전제가 성립하지 않는다.
+  ⓑ `assertArchitecture`가 import만 봐서 `#77`·`#79`가 막은 inline FQN 사각지대가 다시 열린다 — *"주석·문자열 결함이 원천 소멸"* 도 반쪽이다.
+  ⓒ 아키텍처 가드 63개 중 모듈 승격(M)·`internal` 전환(I)으로 사라지는 것이 20개, 남는 43개 중 Konsist가 나아지게 하는 것은 **메타 테스트 6개뿐**이다.
+  → *"grep → Konsist → 모듈로 같은 규칙을 세 번 쓰는"* 일을 피하는 가장 짧은 길은 Konsist를 건너뛰는 것이다. 다시 볼 계기: `#27` 뒤 app-android 안 계층 규칙이 크게 늘거나, Konsist가 KMP 변형·Kotlin 2.3 파서로 새 릴리스를 낼 때.
       콘솔이 요구하지 않으면 급하지 않고, 하게 되면 R8이 함께 올라가 **함정 1(enum 상수 이름 = 저장 포맷)이 다시 열린다.**
 56. **숨은 난이도 티어 추적** (AI 모델: Sonnet, 노력정도: 낮음)
     · 초급/중급/고급이 UI에서 숨겨졌지만 코드는 보존돼 있다(대국장 로드맵 예정). 되살릴지 지울지 판단.
