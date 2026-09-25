@@ -22,7 +22,7 @@ import com.worksoc.goaicoach.shared.policy.EngineOperationRequest
 import com.worksoc.goaicoach.shared.policy.EngineTimeoutPolicy
 import com.worksoc.goaicoach.shared.policy.engineOperationRequest
 
-data class StartEngineBackedGameRunRequest(
+internal data class StartEngineBackedGameRunRequest(
     val plan: StartConfiguredGamePlan.StartEngineGame,
     val engineClient: EngineSessionClient,
     val currentState: GameState,
@@ -40,7 +40,7 @@ data class StartEngineBackedGameRunRequest(
     val nowMillis: () -> Long = { currentEpochMillis() },
 )
 
-fun runStartEngineBackedGameApplication(
+internal fun runStartEngineBackedGameApplication(
     request: StartEngineBackedGameRunRequest,
 ) {
     val targetRuleset = request.plan.ruleset

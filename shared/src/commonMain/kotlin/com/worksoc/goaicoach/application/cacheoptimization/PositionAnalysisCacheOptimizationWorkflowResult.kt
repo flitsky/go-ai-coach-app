@@ -8,7 +8,7 @@ import com.worksoc.goaicoach.application.diagnostic.runObservedEngineOperation
 import com.worksoc.goaicoach.application.engine.EngineSessionClient
 import com.worksoc.goaicoach.shared.policy.EngineOperationRequest
 
-sealed class PositionAnalysisCacheOptimizationWorkflowResult {
+internal sealed class PositionAnalysisCacheOptimizationWorkflowResult {
     data class Success(
         val result: PositionAnalysisCacheOptimizationResult,
     ) : PositionAnalysisCacheOptimizationWorkflowResult()
@@ -30,7 +30,7 @@ suspend fun EngineSessionClient.runPositionAnalysisCacheOptimizationEffect(
         optimizePositionAnalysisCache(effect.plan)
     }
 
-suspend fun EngineSessionClient.runPositionAnalysisCacheOptimizationWorkflowResult(
+internal suspend fun EngineSessionClient.runPositionAnalysisCacheOptimizationWorkflowResult(
     effect: GameSessionEffect.RunPositionCacheOptimization,
     operationRequest: EngineOperationRequest,
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,

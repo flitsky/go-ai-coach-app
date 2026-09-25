@@ -28,7 +28,7 @@ data class SavedGameRestorePlan(
     val engineMessage: String,
 )
 
-sealed class SavedGameRestoreRequestPlan {
+internal sealed class SavedGameRestoreRequestPlan {
     data class ShowMessage(val message: String) : SavedGameRestoreRequestPlan()
     data class Restore(
         val restore: SavedGameRestorePlan,
@@ -89,7 +89,7 @@ fun buildEndedGameRestoreDisplayPlan(
     )
 }
 
-fun buildSavedGameRestoreRequestPlan(
+internal fun buildSavedGameRestoreRequestPlan(
     snapshot: SavedGameSnapshot,
     currentProfile: EngineProfile,
     defaultPlayLevel: PlayLevelSetting,

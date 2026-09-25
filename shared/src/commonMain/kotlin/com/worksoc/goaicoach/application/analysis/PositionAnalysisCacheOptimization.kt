@@ -72,7 +72,7 @@ data class PositionAnalysisCacheOptimizationUiState(
         copy(isRunning = false)
 }
 
-fun buildPositionAnalysisCacheOptimizationPlan(
+internal fun buildPositionAnalysisCacheOptimizationPlan(
     finalState: GameState,
     playerSetup: PlayerSetup,
     searchTimeSettings: SearchTimeSettings,
@@ -150,7 +150,7 @@ fun buildPositionAnalysisCacheOptimizationPrompt(
     )
 }
 
-fun refreshPositionAnalysisCacheOptimizationPrompt(
+internal fun refreshPositionAnalysisCacheOptimizationPrompt(
     currentState: PositionAnalysisCacheOptimizationUiState,
     isGameEnded: Boolean,
     isEngineReady: Boolean,

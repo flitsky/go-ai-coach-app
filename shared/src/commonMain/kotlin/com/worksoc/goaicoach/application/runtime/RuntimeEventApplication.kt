@@ -110,7 +110,7 @@ fun runtimeAppStartLog(context: RuntimeLogContext): String =
         detail = "App process started. Engine bootstrap will run, then saved-session resume check may appear.",
     )
 
-fun runtimeEngineGameStartSuccessLog(
+internal fun runtimeEngineGameStartSuccessLog(
     context: RuntimeLogContext,
     elapsedMs: Long,
     message: String,
@@ -122,7 +122,7 @@ fun runtimeEngineGameStartSuccessLog(
         detail = "elapsedMs=$elapsedMs message=${message.runtimeLogSnippet(220)}",
     )
 
-fun runtimeEngineGameStartFailureLog(
+internal fun runtimeEngineGameStartFailureLog(
     context: RuntimeLogContext,
     elapsedMs: Long,
     error: Throwable,

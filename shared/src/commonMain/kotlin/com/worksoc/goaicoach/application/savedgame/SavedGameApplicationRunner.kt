@@ -73,7 +73,7 @@ sealed class SavedGameRestoreRunResult {
     ) : SavedGameRestoreRunResult()
 }
 
-fun runSavedGameRestoreApplication(
+internal fun runSavedGameRestoreApplication(
     request: SavedGameRestoreRunRequest,
 ): SavedGameRestoreRunResult =
     when (

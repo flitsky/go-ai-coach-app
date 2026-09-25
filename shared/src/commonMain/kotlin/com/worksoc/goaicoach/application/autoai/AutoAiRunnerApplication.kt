@@ -88,7 +88,7 @@ fun buildAutoAiTurnFailureDisplayPlan(error: Throwable): AutoAiTurnFailureDispla
         candidateText = "AI turn failed. Current board state was not changed.",
     )
 
-data class AutoAiTurnRunExecutionContext(
+internal data class AutoAiTurnRunExecutionContext(
     val currentProfile: EngineProfile,
     val searchTimeSettings: SearchTimeSettings,
     val previousSnapshots: List<ScoreSnapshot>,
@@ -169,7 +169,7 @@ suspend fun EngineSessionClient.runAutoAiTurnDisplayPlan(
     )
 }
 
-suspend fun EngineSessionClient.runAutoAiTurnEffect(
+internal suspend fun EngineSessionClient.runAutoAiTurnEffect(
     effect: GameSessionEffect.RunAutoAiTurn,
     executionContext: AutoAiTurnRunExecutionContext,
     operationRequest: EngineOperationRequest,
@@ -190,7 +190,7 @@ suspend fun EngineSessionClient.runAutoAiTurnEffect(
     )
 }
 
-suspend fun EngineSessionClient.runAutoAiTurnWorkflowResult(
+internal suspend fun EngineSessionClient.runAutoAiTurnWorkflowResult(
     effect: GameSessionEffect.RunAutoAiTurn,
     executionContext: AutoAiTurnRunExecutionContext,
     operationRequest: EngineOperationRequest,
@@ -247,7 +247,7 @@ suspend fun EngineSessionClient.runAutoAiEndgameDisplayPlan(
         )
     }
 
-suspend fun EngineSessionClient.runAutoAiEndgameEffect(
+internal suspend fun EngineSessionClient.runAutoAiEndgameEffect(
     effect: GameSessionEffect.ResolveAutoAiEndgame,
     previousSnapshots: List<ScoreSnapshot>,
     operationRequest: EngineOperationRequest? = null,

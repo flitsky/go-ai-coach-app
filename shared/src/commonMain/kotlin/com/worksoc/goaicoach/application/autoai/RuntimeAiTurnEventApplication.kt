@@ -50,7 +50,7 @@ internal fun runtimeAiTurnScheduleCancelledLog(
             "resumePrompt=$shouldShowResumePrompt fp=${gameState.runtimeShortFingerprint()}",
     )
 
-fun runtimeAiTurnBeginLog(
+internal fun runtimeAiTurnBeginLog(
     context: RuntimeLogContext,
     turnState: GameState,
     aiPlayer: StoneColor,

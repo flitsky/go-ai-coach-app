@@ -647,12 +647,11 @@ class LayeringContractTest {
     fun goCoachAppDoesNotOwnHumanMoveSyncWorkflowBody() {
         val goCoachApp = RepoPaths.goCoachApp
         val text = codeOnly(goCoachApp.readContractSource())
+        // #96: 요청·완료 플랜·워크플로 조각 4개는 `:shared`에서 `internal`이다. `HumanEngineSyncRunPlan`은
+        // public으로 남는다 — sealed interface `GameSessionEffect`의 중첩 `SyncHumanMove`가 노출하는데,
+        // 인터페이스 안의 중첩 선언에는 `internal`을 붙일 수 없다. `EngineOperationKind`는 #97 몫.
         val forbiddenFragments = listOf(
-            "HumanEngineSyncCompletionRequest(",
-            "HumanEngineSyncEffectLaunchRequest(",
             "HumanEngineSyncRunPlan(",
-            "buildHumanEngineSyncCompletionPlan(",
-            "runHumanEngineSyncWorkflowResult(",
             "EngineOperationKind.HumanMoveSync",
         )
             .filter { fragment -> fragment in text }
@@ -668,9 +667,10 @@ class LayeringContractTest {
     fun goCoachAppDoesNotOwnPostUndoScoreSyncWorkflowBody() {
         val goCoachApp = RepoPaths.goCoachApp
         val text = codeOnly(goCoachApp.readContractSource())
+        // #96: `runPostUndoScoreSyncApplyPlan`은 이미 `internal`이라 지웠다. 남은 둘은 app-android 테스트가
+        // 참조해 테스트 이관(#97) 뒤에 internal로 바꾼다.
         val forbiddenFragments = listOf(
             "PostUndoScoreSyncEffectLaunchRequest(",
-            "runPostUndoScoreSyncApplyPlan(",
             "EngineOperationKind.PostUndoSync",
         )
             .filter { fragment -> fragment in text }
@@ -704,10 +704,11 @@ class LayeringContractTest {
     fun goCoachAppDoesNotOwnRestoredGameSyncWorkflowBody() {
         val goCoachApp = RepoPaths.goCoachApp
         val text = codeOnly(goCoachApp.readContractSource())
+        // #96: `runRestoredGameSyncApplyPlan`은 이미 `internal`이라 지웠다. 나머지는 app-android 테스트가
+        // 참조해 테스트 이관(#97) 뒤의 몫이다.
         val forbiddenFragments = listOf(
             "RestoredGameSyncEffectLaunchRequest(",
             "RestoredGameSyncExecutionContext(",
-            "runRestoredGameSyncApplyPlan(",
             "GameSessionEffect.SyncRestoredGame(",
             "EngineOperationKind.RestoredGameSync",
         )
@@ -724,14 +725,14 @@ class LayeringContractTest {
     fun goCoachAppDoesNotOwnSavedGameWorkflowBody() {
         val goCoachApp = RepoPaths.goCoachApp
         val text = codeOnly(goCoachApp.readContractSource())
+        // #96: 복원 플랜·프롬프트 로드·복원 러너 조각 4개는 `:shared`에서 `internal`이다.
+        // `SavedSessionPromptPlan`은 public으로 남는다 — GoCoachApp이 `applyPrompt = { prompt -> … }`
+        // 람다로 이름 없이 받으므로(타입 추론) 가시성으로는 못 막고, 이름을 쓰지 말라는 텍스트 규칙만 선다.
+        // 나머지 둘은 app-android 테스트가 참조해 #97 몫.
         val forbiddenFragments = listOf(
             "SavedGamePersistenceRequest(",
-            "SavedGameRestoreRequestPlan",
             "SavedSessionPromptPlan",
-            "loadSavedSessionPromptPlan(",
-            "buildSavedGameRestoreRequestPlan(",
             "runSavedGamePersistence(",
-            "runSavedGameRestoreApplication(",
         )
             .filter { fragment -> fragment in text }
         val requiredFragments = listOf(
@@ -768,16 +769,13 @@ class LayeringContractTest {
     fun goCoachAppDoesNotOwnEngineBackedNewGameWorkflowBody() {
         val goCoachApp = RepoPaths.goCoachApp
         val text = codeOnly(goCoachApp.readContractSource())
+        // #96: 워크플로·로그·러너·요청 조각 5개는 `:shared`에서 `internal`이다.
+        // `GameSessionEffect.*`는 sealed interface의 중첩이라 하나씩 `internal`로 만들 수 없다(#97 뒤 타입째 검토).
         val forbiddenFragments = listOf(
             "GameSessionEffect.StartEngineBackedGame(",
-            "runEngineBackedNewGameWorkflowResult(",
             "EngineStartupWorkflowResult.Success",
             "EngineStartupWorkflowResult.Failure",
             "EngineOperationKind.EngineNewGame",
-            "runtimeEngineGameStartSuccessLog(",
-            "runtimeEngineGameStartFailureLog(",
-            "runStartEngineBackedGameApplication(",
-            "StartEngineBackedGameRunRequest(",
         )
             .filter { fragment -> fragment in text }
         val requiredFragments = listOf(
@@ -819,17 +817,10 @@ class LayeringContractTest {
             codeOnly(file.readContractSource())
         }
         val text = codeOnly(goCoachApp.readContractSource()) + "\n" + wiringText
+        // #96: 토큰·실행 문맥·워크플로·완료 플랜·로그·러너 조각 9개는 `:shared`에서 `internal`이다.
+        // `GameSessionEffect.*`는 sealed interface의 중첩이라 하나씩 `internal`로 만들 수 없다(#97 뒤 타입째 검토).
         val forbiddenFragments = listOf(
-            "autoAiTurnOperationToken(",
             "GameSessionEffect.RunAutoAiTurn(",
-            "AutoAiTurnRunExecutionContext(",
-            "runAutoAiTurnWorkflowResult(",
-            "buildAutoAiTurnCompletionPlan(",
-            "runtimeAiTurnBeginLog(",
-            "runtimeAiTurnCompleteLog(",
-            "runtimeAiTurnScheduleCancelledLog(",
-            "runScheduledAutoAiTurnApplication(",
-            "AutoAiScheduledTurnRunRequest(",
         )
             .filter { fragment -> fragment in text }
         val requiredFragments = listOf(
@@ -886,17 +877,10 @@ class LayeringContractTest {
             codeOnly(file.readContractSource())
         }
         val text = codeOnly(goCoachApp.readContractSource()) + "\n" + wiringText
+        // #96: 토큰·효과·완료 플랜·로그·러너 조각 9개는 `:shared`에서 `internal`이다.
+        // `GameSessionEffect.*`는 sealed interface의 중첩이라 하나씩 `internal`로 만들 수 없다(#97 뒤 타입째 검토).
         val forbiddenFragments = listOf(
-            "autoAiEndgameOperationToken(",
             "GameSessionEffect.ResolveAutoAiEndgame(",
-            "runAutoAiEndgameEffect(",
-            "buildAutoAiEndgameCompletionPlan(",
-            "AutoAiEndgameCompletionPlan.",
-            "runtimeAiTurnEndgameDetectedLog(",
-            "runtimeAiTurnEndgameSuccessLog(",
-            "runtimeAiTurnEndgameFailureLog(",
-            "runAutoAiEndgameApplication(",
-            "AutoAiEndgameRunRequest(",
         )
             .filter { fragment -> fragment in text }
         val requiredFragments = listOf(
@@ -1069,17 +1053,14 @@ class LayeringContractTest {
             codeOnly(file.readContractSource())
         }
         val text = codeOnly(goCoachApp.readContractSource()) + "\n" + wiringText
+        // #96: 워크플로·러너·요청·플랜·프롬프트 조각 6개는 `:shared`에서 `internal`이다. 죽은 조각
+        // `position-cache-optimization`도 지웠다(codeOnly가 문자열을 비워 매치될 수 없었다).
+        // `GameSessionEffect.*`는 sealed interface의 중첩이라 하나씩 `internal`로 만들 수 없고(#97 뒤 타입째 검토),
+        // 두 enum 항목은 app-android 테스트가 타입을 참조해 #97 몫이다.
         val forbiddenFragments = listOf(
             "GameSessionEffect.RunPositionCacheOptimization(",
-            "PositionAnalysisCacheOptimizationWorkflowResult.",
-            "runPositionAnalysisCacheOptimizationWorkflowResult(",
             "EngineOperationKind.PositionCacheOptimization",
             "EngineFallbackPolicy.CachedAnalysis",
-            "position-cache-optimization",
-            "runPositionAnalysisCacheOptimizationApplication(",
-            "PositionAnalysisCacheOptimizationRunRequest(",
-            "buildPositionAnalysisCacheOptimizationPlan(",
-            "refreshPositionAnalysisCacheOptimizationPrompt(",
         )
             .filter { fragment -> fragment in text }
         val requiredFragments = listOf(

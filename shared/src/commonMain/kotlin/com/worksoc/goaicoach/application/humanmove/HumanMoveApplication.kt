@@ -48,12 +48,12 @@ sealed class HumanEngineSyncDisplayPlan {
     data object NoUpdate : HumanEngineSyncDisplayPlan()
 }
 
-data class HumanEngineSyncEffectLaunchRequest(
+internal data class HumanEngineSyncEffectLaunchRequest(
     val effect: GameSessionEffect.SyncHumanMove,
     val operation: EngineOperationRequest,
 )
 
-data class HumanEngineSyncCompletionRequest(
+internal data class HumanEngineSyncCompletionRequest(
     val result: HumanEngineSyncWorkflowResult,
     val operation: EngineOperationRequest,
     val currentState: GameState,
@@ -253,7 +253,7 @@ fun buildHumanEngineSyncFailureCompletionPlan(
             HumanEngineSyncCompletionPlan.Discard(applyPlan.discard)
     }
 
-fun buildHumanEngineSyncCompletionPlan(
+internal fun buildHumanEngineSyncCompletionPlan(
     result: HumanEngineSyncWorkflowResult,
     operation: EngineOperationRequest,
     currentState: GameState,
@@ -287,7 +287,7 @@ fun buildHumanEngineSyncCompletionPlan(
             )
     }
 
-fun buildHumanEngineSyncCompletionPlan(
+internal fun buildHumanEngineSyncCompletionPlan(
     request: HumanEngineSyncCompletionRequest,
 ): HumanEngineSyncCompletionPlan =
     buildHumanEngineSyncCompletionPlan(
@@ -353,7 +353,7 @@ suspend fun EngineSessionClient.runHumanEngineSyncEffect(
     }
 }
 
-suspend fun EngineSessionClient.runHumanEngineSyncWorkflowResult(
+internal suspend fun EngineSessionClient.runHumanEngineSyncWorkflowResult(
     effect: GameSessionEffect.SyncHumanMove,
     operationRequest: EngineOperationRequest,
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
@@ -369,7 +369,7 @@ suspend fun EngineSessionClient.runHumanEngineSyncWorkflowResult(
         onFailure = { error -> HumanEngineSyncWorkflowResult.Failure(error) },
     )
 
-suspend fun EngineSessionClient.runHumanEngineSyncWorkflowResult(
+internal suspend fun EngineSessionClient.runHumanEngineSyncWorkflowResult(
     request: HumanEngineSyncEffectLaunchRequest,
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
 ): HumanEngineSyncWorkflowResult =

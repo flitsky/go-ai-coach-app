@@ -16,7 +16,7 @@ data class AutoAiTurnOperationToken(
     val operation: EngineOperationRequest,
 )
 
-fun autoAiTurnOperationToken(
+internal fun autoAiTurnOperationToken(
     runPlan: AutoAiTurnRunPlan,
     sessionGeneration: Long = 0L,
 ): AutoAiTurnOperationToken =
@@ -108,7 +108,7 @@ fun buildAutoAiTurnFailureCompletionPlan(
             AutoAiTurnCompletionPlan.Discard(guard)
     }
 
-fun buildAutoAiTurnCompletionPlan(
+internal fun buildAutoAiTurnCompletionPlan(
     result: AutoAiTurnWorkflowResult,
     token: AutoAiTurnOperationToken,
     currentState: GameState,
@@ -136,7 +136,7 @@ data class AutoAiEndgameOperationToken(
     val operation: EngineOperationRequest,
 )
 
-fun autoAiEndgameOperationToken(
+internal fun autoAiEndgameOperationToken(
     plan: AutoAiTurnEndgamePlan.Resolve,
     sessionGeneration: Long = 0L,
 ): AutoAiEndgameOperationToken =
@@ -164,7 +164,7 @@ fun evaluateAutoAiEndgameResultGuard(
         currentSessionGeneration = currentSessionGeneration,
     )
 
-sealed class AutoAiEndgameCompletionPlan {
+internal sealed class AutoAiEndgameCompletionPlan {
     data class ApplyResolved(
         val display: AutoAiTurnEndgameDisplayPlan.Resolved,
     ) : AutoAiEndgameCompletionPlan()
@@ -178,7 +178,7 @@ sealed class AutoAiEndgameCompletionPlan {
     ) : AutoAiEndgameCompletionPlan()
 }
 
-fun buildAutoAiEndgameCompletionPlan(
+internal fun buildAutoAiEndgameCompletionPlan(
     token: AutoAiEndgameOperationToken,
     currentState: GameState,
     currentSessionGeneration: Long,

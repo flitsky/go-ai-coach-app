@@ -114,7 +114,7 @@ suspend fun EngineSessionClient.runEngineBackedNewGameEffect(
         )
     }
 
-suspend fun EngineSessionClient.runEngineBackedNewGameWorkflowResult(
+internal suspend fun EngineSessionClient.runEngineBackedNewGameWorkflowResult(
     effect: GameSessionEffect.StartEngineBackedGame,
     operationRequest: EngineOperationRequest,
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,

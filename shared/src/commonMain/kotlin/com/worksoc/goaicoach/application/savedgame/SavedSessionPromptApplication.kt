@@ -34,7 +34,7 @@ internal fun buildSavedSessionCheckPlan(
         hasCheckedSavedSession = true,
     )
 
-fun loadSavedSessionPromptPlan(
+internal fun loadSavedSessionPromptPlan(
     store: SavedGameStorePort,
 ): SavedSessionPromptPlan =
     buildSavedSessionCheckPlan(store.load())
