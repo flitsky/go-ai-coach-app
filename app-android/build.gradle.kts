@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.spotless)
     // apply false로 등록만 해두고, 실제 적용은 아래에서 google-services.json 존재 여부에
     // 따라 조건부로 한다 — plugins{} 블록 안에서는 file()을 쓸 수 없어 여기서는 등록만 한다.
     alias(libs.plugins.google.services) apply false
@@ -507,4 +508,14 @@ tasks.withType<Test>().configureEach {
     inputs.dir(rootDir.resolve("app-android/src/main/assets/reference_games"))
         .withPropertyName("bundledReferenceGames")
         .withPathSensitivity(PathSensitivity.RELATIVE)
+}
+
+// import 순서 게이트(refactor backlog #72). 어떤 ktlint 규칙이 도는지는 루트 .editorconfig가 정한다 —
+// 지금은 import-ordering 하나뿐이다. 위반은 `./gradlew spotlessApply`로 고친다(격리 워크트리에서만).
+// ⚠️ target을 모듈의 src 밖(루트 "**" 등)으로 넓히지 말 것 — .claude/worktrees 아래 남의 워크트리 .kt까지 쓸어 담는다.
+spotless {
+    kotlin {
+        target("src/**/*.kt")
+        ktlint(libs.versions.ktlint.get())
+    }
 }

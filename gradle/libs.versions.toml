@@ -17,6 +17,11 @@ lifecycleProcess = "2.8.7"
 kotlinxCoroutines = "1.8.0"
 camerax = "1.4.1"
 guava = "33.3.1-android"
+spotless = "8.4.0"
+# spotless 플러그인이 받아 쓰는 ktlint 엔진 버전(Gradle 의존이 아니라 spotless가 자체 configuration으로 해석한다).
+# 1.8.0 = spotless 8.4.0(spotless-lib 4.5.0)의 기본값. 내장 파서는 kotlin-compiler-embeddable 2.2.21이지만
+# Kotlin 2.3.20 코드 624파일을 파싱 오류 0으로 읽었다(2026-09-25). 올릴 때는 spotlessCheck의 lint 0을 확인한다.
+ktlint = "1.8.0"
 
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
@@ -55,3 +60,4 @@ kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
+spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }

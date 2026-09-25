@@ -1,0 +1,15 @@
+# refactor backlog #72 — spotless + ktlint import 순서 게이트의 규칙 정의.
+# root = true: 이 저장소 밖(상위 디렉터리)의 .editorconfig를 찾아 올라가지 않는다. 세션 워크트리는
+# 메인 트리 안(.claude/worktrees/...)에 있으므로, 이것이 없으면 워크트리가 메인 트리의 설정을 섞어 읽는다.
+root = true
+
+[*.{kt,kts}]
+# android_studio 레이아웃 = 모든 import를 한 블록에 ASCII(대소문자 구분) 순으로. 지금 코드가 사실상 따르는 규약이다.
+ktlint_code_style = android_studio
+ij_kotlin_imports_layout = *
+# ⚠️ ktlint 표준 규칙 전부(~80개)를 끄고 import-ordering 하나만 켠다. `ktlint_standard = disabled`를 빼면
+# 들여쓰기·트레일링 콤마·Compose 함수명 규칙까지 돈다 — 실측(2026-09-25, 624파일): 341파일 ±14,232줄 재작성에
+# 더해 자동 수정이 안 되는 위반(standard:max-line-length 등) 249파일로 spotlessApply 뒤에도 빨갛다.
+# 규칙을 더 켤 때는 여기에 `ktlint_standard_<규칙> = enabled` 한 줄씩 더한다.
+ktlint_standard = disabled
+ktlint_standard_import-ordering = enabled

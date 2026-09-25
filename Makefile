@@ -138,8 +138,11 @@ doctor:
 # 계기 테스트를 돌리려는 게 아니라 **그 소스셋이 썩는 것을 막으려는 것**이다 — 실제로
 # 2026-08-30부터 6일간 컴파일조차 되지 않는 채로 방치됐고(`GoCoachApp`에 필수 파라미터
 # `engineMode`가 늘었는데 호출부 둘을 안 고침), 이 명령이 그 트리를 건드리지 않아 아무도 몰랐다.
+# import 순서 게이트(refactor backlog #72): `:shared:spotlessCheck`는 `:shared:check`가 이미 부른다(spotless 기본
+# enforceCheck) — app-android·engine-android는 `check`를 안 거치므로 여기서 이름으로 부른다. 빨가면 격리
+# 워크트리에서 `./gradlew spotlessApply`(공유 메인 트리에서 돌리면 남의 미커밋 파일 import까지 재배열된다).
 test: doctor
-	$(GRADLEW) :shared:check :engine-android:testDebugUnitTest :app-android:assembleDebug :app-android:testDebugUnitTest :app-android:compileDebugAndroidTestKotlin :app-android:lintDebug
+	$(GRADLEW) :shared:check :app-android:spotlessCheck :engine-android:spotlessCheck :engine-android:testDebugUnitTest :app-android:assembleDebug :app-android:testDebugUnitTest :app-android:compileDebugAndroidTestKotlin :app-android:lintDebug
 
 # ⚠️ 별도 타깃이다 — `test`에 합치지 마라(refactor backlog #11, 함정 75).
 # iOS 타깃은 `shared/build.gradle.kts`의 `enableIosTargets` 게이트 뒤에 숨어 있어(기본 false)
