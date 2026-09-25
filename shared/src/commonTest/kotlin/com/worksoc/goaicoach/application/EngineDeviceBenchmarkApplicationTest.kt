@@ -240,8 +240,8 @@ class EngineDeviceBenchmarkApplicationTest {
             progress.toEngineBenchmarkDisplayPlan().candidateText,
         )
         assertEquals(
-            "Engine benchmark saved to /tmp/benchmark.json.",
-            engineBenchmarkCompletedDisplayPlan(profile, "/tmp/benchmark.json").engineMessage,
+            "Engine benchmark saved.",
+            engineBenchmarkCompletedDisplayPlan(profile).engineMessage,
         )
         assertEquals(
             "Engine benchmark failed: timeout",
@@ -448,6 +448,7 @@ class EngineDeviceBenchmarkApplicationTest {
             EngineBenchmarkRunRequest(
                 engineClient = client,
                 store = store,
+                storedBenchmarkText = { store.savedProfile?.toSummaryText() ?: "no benchmark" },
                 state = GameState.empty(ruleset = Ruleset.Chinese),
                 sessionGeneration = 3L,
                 isEngineReady = true,
@@ -485,6 +486,11 @@ class EngineDeviceBenchmarkApplicationTest {
             listOf("start:startup_benchmark", "done:startup_benchmark"),
             lifecycleEvents,
         )
+        // ⚠️ 저장 **뒤에** 원문을 다시 읽어 디버그 리포트 칸(`benchmarkText`)을 갱신한다 —
+        // 저장 전에 읽으면 리포트가 방금 잰 결과 대신 옛 원문을 보인다.
+        assertEquals(store.savedProfile!!.toSummaryText(), benchmarkUiState.benchmarkText)
+        // 저장 위치(파일 경로)는 어댑터의 매체 관리라 메시지에 싣지 않는다(refactor backlog #86).
+        assertEquals("Engine benchmark saved.", displayPlans.last().engineMessage)
     }
 
     /**
@@ -517,6 +523,7 @@ class EngineDeviceBenchmarkApplicationTest {
                         capabilitiesProvider = { EngineSessionCapabilities(supportsDeviceBenchmark = supported) },
                     ),
                     store = store,
+                    storedBenchmarkText = { "no benchmark" },
                     state = GameState.empty(ruleset = Ruleset.Chinese),
                     sessionGeneration = 1L,
                     isEngineReady = ready,
@@ -583,12 +590,6 @@ private class RecordingEngineBenchmarkStore : EngineBenchmarkStorePort {
 
     override fun load(): EngineBenchmarkProfile? =
         savedProfile
-
-    override fun loadText(): String =
-        savedProfile?.toSummaryText() ?: "no benchmark"
-
-    override fun path(): String =
-        "/tmp/engine-benchmark.json"
 }
 
 private class RecordingBenchmarkEngineAdapter(

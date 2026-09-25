@@ -20,7 +20,6 @@ import com.worksoc.goaicoach.application.humanmove.HumanMoveController
 import com.worksoc.goaicoach.application.preferences.UserPreferencesStorePort
 import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
 import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
-import com.worksoc.goaicoach.application.savedgame.SavedGameStorePort
 import com.worksoc.goaicoach.application.savedgame.SavedSessionController
 import com.worksoc.goaicoach.application.savedgame.SavedSessionUiState
 import com.worksoc.goaicoach.application.score.FinalScoreDisplayPlan
@@ -70,7 +69,6 @@ internal interface GoCoachAppWiringContext {
     val engineClient: EngineSessionClient
     val diagnosticEventLog: DiagnosticEventLogPort
     val runtimeEventLog: RuntimeEventLogPort
-    val sessionStore: SavedGameStorePort
     val preferencesStore: UserPreferencesStorePort
     val benchmarkStore: EngineBenchmarkStorePort
     val debugReportMirror: DebugReportMirrorPort
@@ -82,6 +80,11 @@ internal interface GoCoachAppWiringContext {
     val analysisCache: AnalysisResultCache
     val undoAnalysisRestoreCache: UndoAnalysisRestoreCache
     val deferredTopMoveAnalysis: TopMoveAnalysisDeferral
+
+    // 디버그 리포트에만 싣는 저장 원문(refactor backlog #86). 포트가 아니라 어댑터가 낸다 —
+    // 저장 형식(JSON 원문)은 저장 포트 위로 올라가지 않는다(`docs/ARCHITECTURE.md` ⓐ).
+    fun savedSessionRawJson(): String?
+    fun storedBenchmarkText(): String
 
     // Snapshot
     fun sessionSnapshot(): GameSessionControllerState

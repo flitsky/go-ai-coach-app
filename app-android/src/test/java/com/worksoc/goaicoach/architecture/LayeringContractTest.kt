@@ -631,6 +631,45 @@ class LayeringContractTest {
         )
     }
 
+    /**
+     * 저장 포트 둘이 **저장 형식(직렬화 원문)과 매체(파일 경로)를 돌려주지 않는다**(refactor backlog #86).
+     *
+     * 예전에는 `SavedGameStorePort.readRawJson(): String?`·`EngineBenchmarkStorePort.loadText(): String`·
+     * `path(): String`이 있었다 — 타입으로는 문자열이라 값이지만, 포트를 쥔 흐름 코드가 저장 형식을 읽을
+     * 수 있게 만든다(`docs/ARCHITECTURE.md` 4계층 ⓐ *"타입이 값이어도 저장 형식 자체는 싣지 않는다"*).
+     * 디버그 리포트용 원문은 이제 어댑터의 포트 밖 메서드를 조립 루트가 텍스트 공급자로 꽂는다.
+     *
+     * ⚠️ 이 둘에만 거는 **회귀 고정**이다. 원칙 문서가 적었듯 *"문자열인데 저장 형식인가"* 는 타입으로
+     * 가를 수 없어 일반 규칙은 리뷰가 맡는다 — 이 두 포트에는 문자열을 돌려줄 정당한 메서드가 없어서
+     * 문자열 반환 자체를 막는다. 문자열이 필요한 메서드가 정말 생기면 이 테스트를 고치며 그 이유를 적는다.
+     */
+    @Test
+    fun savedGameAndBenchmarkStorePortsDoNotExposeStorageFormat() {
+        val repoRoot = RepoPaths.root
+        val ports = mapOf(
+            RepoPaths.applicationPath("savedgame/SavedGamePorts.kt") to "interface SavedGameStorePort",
+            RepoPaths.applicationPath("engine/EngineBenchmarkPorts.kt") to "interface EngineBenchmarkStorePort",
+        )
+        val stringMember = Regex("""\b(?:fun\s+\w+\s*\([^)]*\)|va[lr]\s+\w+)\s*:\s*String\b""")
+
+        val offenders = ports.flatMap { (port, declaration) ->
+            val text = codeOnly(port.readContractSource())
+            val path = port.relativeTo(repoRoot).path
+            if (declaration !in text) {
+                listOf("$path: `$declaration` not found — update this contract if the port moved")
+            } else {
+                stringMember.findAll(text).map { match -> "$path: ${match.value}" }.toList()
+            }
+        }
+
+        assertTrue(
+            "Saved-game/benchmark store ports must not return raw stored text or file paths — expose them " +
+                "from the adapter outside the port and plug them in at the assembly root:\n" +
+                offenders.joinToString("\n"),
+            offenders.isEmpty(),
+        )
+    }
+
     @Test
     fun goCoachAppDoesNotOwnTopMovesWorkflowBody() {
         val goCoachApp = RepoPaths.goCoachApp

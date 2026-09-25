@@ -19,6 +19,8 @@ internal fun buildInitialSessionState(
     initialPlan: InitialUserPreferencesPlan,
     engineDiagnostic: String,
     benchmarkStore: EngineBenchmarkStorePort,
+    /** 디버그 리포트용 저장 원문(refactor backlog #86) — 포트가 아니라 어댑터가 낸다. */
+    storedBenchmarkText: String,
 ): GameSessionControllerState = buildGameSessionControllerState(
     gameState = initialPlan.gameState,
     // 앱 시작은 대국 전 설정/미리보기 상태다. 사용자가 "새 게임"을 눌러야
@@ -51,7 +53,7 @@ internal fun buildInitialSessionState(
     ),
     settings = initialPlan.toGameSessionSettingsState(),
     benchmark = EngineBenchmarkUiState.initial(
-        benchmarkText = benchmarkStore.loadText(),
+        benchmarkText = storedBenchmarkText,
         profile = benchmarkStore.load(),
     ),
     savedSession = SavedSessionUiState(),

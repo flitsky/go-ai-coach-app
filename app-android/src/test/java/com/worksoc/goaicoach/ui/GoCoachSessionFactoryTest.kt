@@ -29,12 +29,15 @@ class GoCoachSessionFactoryTest {
             initialPlan = plan,
             engineDiagnostic = "test",
             benchmarkStore = EmptyBenchmarkStore,
+            storedBenchmarkText = "No engine benchmark file recorded.",
         )
 
         assertTrue(state.isGameEnded)
         assertEquals(5, state.settings.handicapCount)
         assertEquals(5, state.gameState.handicapCount)
         assertEquals(5, state.gameState.stones.size)
+        // 디버그 리포트용 원문은 받은 그대로 싣는다 — 포트가 아니라 어댑터가 낸다(refactor backlog #86).
+        assertEquals("No engine benchmark file recorded.", state.benchmark.benchmarkText)
     }
 }
 
@@ -44,8 +47,4 @@ private object EmptyBenchmarkStore : EngineBenchmarkStorePort {
     override fun save(profile: EngineBenchmarkProfile) = Unit
 
     override fun load(): EngineBenchmarkProfile? = null
-
-    override fun loadText(): String = ""
-
-    override fun path(): String = ""
 }

@@ -29,14 +29,17 @@ internal class EngineBenchmarkStore(context: Context) : EngineBenchmarkStorePort
             ?.readText(Charsets.UTF_8)
             ?.let(EngineBenchmarkCodec::decode)
 
-    override fun loadText(): String =
+    /**
+     * 저장된 원문 그대로 — **디버그 리포트의 `EngineBenchmark` 절에만** 싣는다(refactor backlog #86).
+     * ⚠️ **포트 메서드가 아니다.** 원문은 이 어댑터의 저장 형식이라 [EngineBenchmarkStorePort] 위로
+     * 올리지 않고, 조립 루트가 `EngineBenchmarkController`에 텍스트 공급자로 꽂는다. 파일 위치도
+     * 같은 이유로 이 클래스 밖으로 내보내지 않는다(매체 관리).
+     */
+    fun loadText(): String =
         file
             .takeIf { it.isFile }
             ?.readText(Charsets.UTF_8)
             ?: "No engine benchmark file recorded."
-
-    override fun path(): String =
-        file.absolutePath
 
     private companion object {
         const val BenchmarkFileName = "engine_benchmark_profile.json"

@@ -60,7 +60,6 @@ import com.worksoc.goaicoach.application.score.FinalScoreDisplayPlan
 import com.worksoc.goaicoach.application.engine.operation.EngineOperationLifecycleController
 import com.worksoc.goaicoach.application.savedgame.SavedGamePersistenceRunRequest
 import com.worksoc.goaicoach.application.savedgame.buildEndedGameRestoreDisplayPlan
-import com.worksoc.goaicoach.application.savedgame.SavedGameStorePort
 import com.worksoc.goaicoach.application.savedgame.SavedSessionPromptRunRequest
 import com.worksoc.goaicoach.application.savedgame.runSavedGamePersistenceApplication
 import com.worksoc.goaicoach.application.savedgame.runSavedSessionPromptApplication
@@ -179,8 +178,9 @@ private fun GoCoachScreen(
     // (사용자의 명시적 강제 종료와 구분 불가) 활성화 상태가 사라지지 않도록 저장소에서 복원한다.
     val premiumStateStore: PremiumStateStorePort = PremiumStateStore(context)
     var premiumState by remember { mutableStateOf(premiumStateStore.load()) }
-    val sessionStore: SavedGameStorePort = remember(context) { GameSessionStore(context) }
-    val benchmarkStore: EngineBenchmarkStorePort = remember(context) { EngineBenchmarkStore(context) }
+    // 포트가 아니라 어댑터 타입으로 쥔다 — 디버그 리포트용 원문(#86)은 어댑터에만 있다.
+    val sessionStore = remember(context) { GameSessionStore(context) }
+    val benchmarkStore = remember(context) { EngineBenchmarkStore(context) }
     val debugReportMirror: DebugReportMirrorPort = remember(context) { DebugReportMirrorStore(context) }
     val clipboardPort: ClipboardPort = remember(context) { AndroidClipboardPort(context) }
     val userNoticePort: UserNoticePort = remember(context) { AndroidUserNoticePort(context) }
@@ -201,6 +201,7 @@ private fun GoCoachScreen(
                 initialPlan = initialPlan,
                 engineDiagnostic = engineDiagnostic,
                 benchmarkStore = benchmarkStore,
+                storedBenchmarkText = benchmarkStore.loadText(),
             ),
         ).also { holder ->
             // 홀더가 생기는 **바로 이 자리에서** 잇는다(#18) — 홀더가 새로 만들어질 때만 다시 돈다.
@@ -492,7 +493,6 @@ private fun GoCoachScreen(
             override val engineClient: EngineSessionClient = engineClient
             override val diagnosticEventLog: DiagnosticEventLogPort = diagnosticEventLog
             override val runtimeEventLog: RuntimeEventLogPort = runtimeEventLog
-            override val sessionStore: SavedGameStorePort = sessionStore
             override val preferencesStore: UserPreferencesStorePort = preferencesStore
             override val benchmarkStore: EngineBenchmarkStorePort = benchmarkStore
             override val debugReportMirror: DebugReportMirrorPort = debugReportMirror
@@ -504,6 +504,9 @@ private fun GoCoachScreen(
             override val analysisCache: AnalysisResultCache = analysisCache
             override val undoAnalysisRestoreCache: UndoAnalysisRestoreCache = undoAnalysisRestoreCache
             override val deferredTopMoveAnalysis: TopMoveAnalysisDeferral = deferredTopMoveAnalysis
+
+            override fun savedSessionRawJson(): String? = sessionStore.readRawJson()
+            override fun storedBenchmarkText(): String = benchmarkStore.loadText()
 
             override fun sessionSnapshot(): GameSessionControllerState = sessionSnapshot
             override fun gameState(): GameState = gameState

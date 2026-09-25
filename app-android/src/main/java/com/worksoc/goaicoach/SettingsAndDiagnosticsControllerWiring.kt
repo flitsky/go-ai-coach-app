@@ -64,7 +64,7 @@ internal fun wireDebugReportController(context: GoCoachAppWiringContext): DebugR
         turnTimeText = { context.turnTimeState().summaryText() },
         turnTimeDebugText = { nowMillis -> context.turnTimeState().debugText(nowMillis) },
         onEngineMessage = { message -> context.setEngineMessage(message) },
-        currentSavedSessionJson = { context.sessionStore.readRawJson() },
+        currentSavedSessionJson = context::savedSessionRawJson,
     )
 
 internal fun wireBenchmarkController(context: GoCoachAppWiringContext): EngineBenchmarkController =
@@ -72,6 +72,7 @@ internal fun wireBenchmarkController(context: GoCoachAppWiringContext): EngineBe
         scope = context.scope,
         engineClient = context.engineClient,
         store = context.benchmarkStore,
+        storedBenchmarkText = context::storedBenchmarkText,
         diagnosticEventLog = context.diagnosticEventLog,
         lifecycleCallbacks = { context.lifecycleController.callbacks() },
         currentState = { context.gameState() },

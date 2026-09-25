@@ -25,12 +25,16 @@ fun EngineBenchmarkProgress.toEngineBenchmarkDisplayPlan(): EngineBenchmarkDispl
         candidateText = "Engine benchmark running: $progressText, $sampleText.",
     )
 
+/**
+ * ⚠️ 저장 위치(파일 경로)는 싣지 않는다 — 어댑터 상수로 정해지는 매체 관리라 포트 위로 올리지
+ * 않는다(refactor backlog #86). 이 메시지는 앱 어디에서도 렌더되지 않고 디버그 리포트의
+ * `DisplayedTexts` 절(`engineMessage:` 칸)에만 실린다.
+ */
 fun engineBenchmarkCompletedDisplayPlan(
     profile: EngineBenchmarkProfile,
-    storePath: String,
 ): EngineBenchmarkDisplayPlan =
     EngineBenchmarkDisplayPlan(
-        engineMessage = "Engine benchmark saved to $storePath.",
+        engineMessage = "Engine benchmark saved.",
         candidateText = "Engine benchmark complete.\n${profile.toSummaryText()}",
     )
 

@@ -18,6 +18,12 @@ class EngineBenchmarkController(
     private val scope: CoroutineScope,
     private val engineClient: EngineSessionClient,
     private val store: EngineBenchmarkStorePort,
+    /**
+     * 저장된 프로필의 원문 — **디버그 리포트에만** 싣는 텍스트다(refactor backlog #86).
+     * 저장 포트에 두지 않는 이유는 [EngineBenchmarkStorePort] 머리말. 흐름은 이것을 파싱하거나
+     * 분기에 쓰지 않고, 저장 뒤 [EngineBenchmarkUiState.benchmarkText]에 옮기기만 한다.
+     */
+    private val storedBenchmarkText: () -> String,
     private val diagnosticEventLog: DiagnosticEventLogPort,
     private val lifecycleCallbacks: () -> EngineOperationLifecycleCallbacks,
     private val currentState: () -> GameState,
@@ -34,6 +40,7 @@ class EngineBenchmarkController(
             EngineBenchmarkRunRequest(
                 engineClient = engineClient,
                 store = store,
+                storedBenchmarkText = storedBenchmarkText,
                 state = currentState(),
                 sessionGeneration = sessionGeneration(),
                 isEngineReady = isEngineReady(),

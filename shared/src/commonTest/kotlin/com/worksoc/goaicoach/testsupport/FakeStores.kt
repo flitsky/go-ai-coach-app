@@ -57,6 +57,4 @@ class FakeSavedGameStore : SavedGameStorePort {
         snapshot = null
         calls += "clear"
     }
-
-    override fun readRawJson(): String? = null
 }

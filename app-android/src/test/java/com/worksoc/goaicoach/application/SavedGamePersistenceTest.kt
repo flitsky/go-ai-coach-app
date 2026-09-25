@@ -275,8 +275,6 @@ class SavedGamePersistenceTest {
             snapshot = null
             calls += "clear"
         }
-
-        override fun readRawJson(): String? = null
     }
 
     private fun playableState(): GameState =

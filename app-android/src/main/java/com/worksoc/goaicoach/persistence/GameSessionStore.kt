@@ -51,7 +51,15 @@ internal class GameSessionStore(context: Context) : SavedGameStorePort {
         prefs.edit().remove(SessionKey).apply()
     }
 
-    override fun readRawJson(): String? {
+    /**
+     * 저장된 원문 그대로 — **디버그 리포트의 `SavedSessionJson` 절에만** 싣는다(refactor backlog #86).
+     *
+     * ⚠️ **포트 메서드가 아니다.** 원문은 이 어댑터의 저장 형식이라 [SavedGameStorePort] 위로
+     * 올리지 않고, 조립 루트만 이것을 불러 리포트에 불투명한 텍스트로 꽂는다.
+     * ⚠️ **디코딩한 값으로 바꾸지 말 것** — 디코딩은 없는 키를 기본값으로 흡수하고(덤이 빠져도
+     * 6.5로 보였던 2026-09-23 결함), 못 읽는 저장분은 [load]가 지운다. 원문만 그것을 보인다.
+     */
+    fun readRawJson(): String? {
         return prefs.getString(SessionKey, null)
     }
 

@@ -21,6 +21,8 @@ import kotlinx.coroutines.delay
 internal data class EngineBenchmarkRunRequest(
     val engineClient: EngineSessionClient,
     val store: EngineBenchmarkStorePort,
+    /** 디버그 리포트용 저장 원문(refactor backlog #86) — [EngineBenchmarkController]의 같은 이름 참고. */
+    val storedBenchmarkText: () -> String,
     val state: GameState,
     val sessionGeneration: Long,
     val isEngineReady: Boolean,
@@ -100,16 +102,12 @@ internal suspend fun runEngineBenchmarkApplication(request: EngineBenchmarkRunRe
                 request.store.save(profile)
                 request.onBenchmarkUiState(
                     waitingState.completeWithProfile(
-                        benchmarkText = request.store.loadText(),
+                        // 저장 **뒤에** 읽는다 — 앞에서 읽으면 리포트가 옛 원문을 보인다.
+                        benchmarkText = request.storedBenchmarkText(),
                         profile = profile,
                     ),
                 )
-                request.onDisplayPlan(
-                    engineBenchmarkCompletedDisplayPlan(
-                        profile = profile,
-                        storePath = request.store.path(),
-                    ),
-                )
+                request.onDisplayPlan(engineBenchmarkCompletedDisplayPlan(profile = profile))
             }
 
             is StartupBenchmarkWorkflowResult.Failure -> {
