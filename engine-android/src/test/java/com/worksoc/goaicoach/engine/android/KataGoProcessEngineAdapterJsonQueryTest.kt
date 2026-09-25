@@ -32,11 +32,13 @@ import org.junit.Test
  * 빠뜨린 쪽은 어댑터였다.
  *
  * ## 고친 자리가 `newGame`이 아닌 이유
- * [KataGoAnalysisContext.replayState]는 `initialStones`가 있으면 그 위에 수순을 **지금 둘 차례**
- * (`nextPlayer`)부터 접어 쌓는다. `newGame`에서 접바둑 돌을 `initialStones`에 넣으면, 홀수 수가
- * 둬진 뒤에는 첫 수(백)와 시작 차례(흑)가 어긋나 `BoardRules`가 예외를 던진다. 접바둑 돌이 없는
- * 쪽은 `GameStateReplayer`가 `handicapCount`로 이미 제대로 복원한다. 그래서 돌은 **쿼리 끝단에서만**
- * 보충한다. [capturedHandicapStoneStaysInTheQueryAndTheReplayStillHolds]가 7수(홀수) 뒤를 보는 것도
+ * `initialStones`는 "밖에서 받은 정적 국면"의 표지다 — 채워져 있으면 [KataGoAnalysisContext.replayState]와
+ * 쿼리의 `initialPlayer`가 그 판을 정적 국면으로 읽고, 시작 차례로 `syncStaticPosition`이 적어 둔 차례를
+ * 쓴다(refactor backlog #91 — 그 전에는 **지금 둘 차례**를 써서 홀수 수 뒤에 예외가 났다). `newGame`에서
+ * 접바둑 돌을 `initialStones`에 넣으면 그 시작 차례가 접바둑의 백 차례라는 보장이 없어(기본값은 흑),
+ * 첫 수(백)에서 `BoardRules`가 예외를 던진다. 접바둑 국면은 `GameStateReplayer`가 `handicapCount`로
+ * 이미 제대로 복원한다. 그래서 돌은 **쿼리 끝단에서만** 보충한다.
+ * [capturedHandicapStoneStaysInTheQueryAndTheReplayStillHolds]가 7수(홀수) 뒤를 보는 것도
  * 그 대안이 다시 들어오면 빨개지게 하려는 것이다.
  */
 class KataGoProcessEngineAdapterJsonQueryTest {

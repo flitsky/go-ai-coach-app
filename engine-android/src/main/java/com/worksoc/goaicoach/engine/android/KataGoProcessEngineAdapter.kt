@@ -40,6 +40,13 @@ internal class KataGoProcessEngineAdapter(
     private var komi: Double = DefaultKomi
     private var nextPlayer: StoneColor = StoneColor.Black
     private var initialStones: Map<BoardCoordinate, StoneColor> = emptyMap()
+
+    /**
+     * 정적 국면의 **시작 차례** — [initialStones] 위에서 첫 수를 둘 쪽(refactor backlog #91).
+     * [syncStaticPosition]이 받은 국면의 `nextPlayer`를 적고, 그 뒤의 착수·물리기는 건드리지 않는다.
+     * [nextPlayer]는 "지금 둘 차례"라 홀수 수 뒤에는 이것과 다르다. [initialStones]가 비어 있으면 쓰이지 않는다.
+     */
+    private var staticStartPlayer: StoneColor = StoneColor.Black
     private var process: Process? = null
     private var input: BufferedWriter? = null
     private var output: BufferedReader? = null
@@ -101,6 +108,7 @@ internal class KataGoProcessEngineAdapter(
         this.handicapCount = state.handicapCount
         this.komi = state.komi
         this.nextPlayer = state.nextPlayer
+        this.staticStartPlayer = state.nextPlayer
         this.initialStones = state.stones
         this.playedMoves.clear()
         this.playedMoves += state.moves
@@ -408,6 +416,7 @@ internal class KataGoProcessEngineAdapter(
             playedMoves = playedMoves.toList(),
             handicapCount = handicapCount,
             initialStones = initialStones,
+            initialPlayer = startingPlayer(),
         )
 
     private suspend fun applySearchLimit(limit: AnalysisLimit) {
@@ -449,15 +458,25 @@ internal class KataGoProcessEngineAdapter(
             includePolicyOverride = includePolicyOverride,
             komi = komi,
             initialStones = jsonQueryInitialStones(),
-            initialPlayer = if (initialStones.isNotEmpty()) {
-                nextPlayer
-            } else if (handicapCount > 0) {
-                StoneColor.White
-            } else {
-                StoneColor.Black
-            },
+            initialPlayer = startingPlayer(),
         )
     }
+
+    /**
+     * 시작판([jsonQueryInitialStones]) 위에서 **첫 수를 둘** 차례. JSON 쿼리의 `initialPlayer`와
+     * [KataGoAnalysisContext.replayState]가 이 한 곳을 같이 쓴다(refactor backlog #91).
+     *
+     * 정적 국면이면 [staticStartPlayer]다. 예전에는 둘 다 [nextPlayer](지금 차례)를 썼다 — 동기화 직후나
+     * 짝수 수 뒤에는 같은 값이라 드러나지 않았고, 홀수 수 뒤에는 `replayState`가 던져 JSON 분석이 GTP로
+     * 폴백하고 GTP 쪽 보충 후보 계산이 같은 예외로 `analyze()`를 끝냈다. 앱의 `syncToGameState`는 정적
+     * 국면을 수순 없이만 보내고 매번 다시 동기화하므로 그 상태에 닿지 않는다.
+     */
+    private fun startingPlayer(): StoneColor =
+        when {
+            initialStones.isNotEmpty() -> staticStartPlayer
+            handicapCount > 0 -> StoneColor.White
+            else -> StoneColor.Black
+        }
 
     /**
      * JSON 쿼리의 시작판 — GTP 쪽이 `set_free_handicap`으로 놓은 판과 **같은 판**이어야 한다
@@ -469,9 +488,11 @@ internal class KataGoProcessEngineAdapter(
      *   그대로 싣는다 — KataGo가 수순을 다시 두며 스스로 따내고, 접바둑 보정 N은 시작판의
      *   흑돌 수로 센다. `whiteHandicapBonus`는 싣지 않는다: 룰셋 기본값이 GTP와 같다.
      *
-     * ⚠️ 이 보충을 `newGame`으로 옮겨 [initialStones]를 채우지 마라. [KataGoAnalysisContext.replayState]가
-     * 그 위에 수순을 **지금 차례**부터 접어 쌓으므로, 홀수 수 뒤에는 첫 수(백)와 시작 차례가 어긋나
-     * 예외가 난다. 접바둑 국면 복원은 `GameStateReplayer`가 `handicapCount`로 이미 한다.
+     * ⚠️ 이 보충을 `newGame`으로 옮겨 [initialStones]를 채우지 마라. [initialStones]는 "밖에서 받은 정적
+     * 국면"의 표지이기도 하다 — 채워져 있으면 [startingPlayer]가 [staticStartPlayer]를 시작 차례로 내고,
+     * 그 값은 [syncStaticPosition]만 적으므로 접바둑의 백 차례라는 보장이 없다(기본값은 흑). 접바둑 국면
+     * 복원은 `GameStateReplayer`가 `handicapCount`로 이미 한다. (예전 이유였던 *"replayState가 지금 차례부터
+     * 쌓아 홀수 수 뒤에 던진다"* 는 refactor backlog #91이 시작 차례를 따로 적으면서 없어졌다.)
      */
     private fun jsonQueryInitialStones(): List<Pair<StoneColor, BoardCoordinate>> =
         when {

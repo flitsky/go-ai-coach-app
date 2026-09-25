@@ -19,6 +19,7 @@ class KataGoAnalysisContextTest {
             nextPlayer = StoneColor.White,
             playedMoves = emptyList(),
             handicapCount = 2,
+            initialPlayer = StoneColor.White,
         )
 
         val state = context.replayState()
@@ -38,6 +39,7 @@ class KataGoAnalysisContextTest {
                 Move.Play(StoneColor.White, BoardCoordinate.fromLabel("G7", BoardSize.Thirteen)),
             ),
             handicapCount = 2,
+            initialPlayer = StoneColor.White,
         )
 
         val state = context.replayState()
@@ -59,6 +61,7 @@ class KataGoAnalysisContextTest {
             playedMoves = emptyList(),
             handicapCount = 0,
             initialStones = stones,
+            initialPlayer = StoneColor.White,
         )
 
         val state = context.replayState()
@@ -69,6 +72,33 @@ class KataGoAnalysisContextTest {
         assertEquals(StoneColor.White, state.stoneAt(BoardCoordinate.fromLabel("D4", BoardSize.Nine)))
     }
 
+    /**
+     * 정적 국면 위에 한 수(홀수)를 둔 뒤 — 수순은 **시작 차례**([KataGoAnalysisContext.initialPlayer])부터
+     * 쌓인다. 예전에는 지금 차례(`nextPlayer`)부터 쌓아 *"Expected Black, got White"* 로 던졌다(refactor backlog #91).
+     */
+    @Test
+    fun replayStateStacksMovesOnStaticStonesFromTheStartingTurn() {
+        val stones = mapOf(
+            BoardCoordinate.fromLabel("E5", BoardSize.Nine) to StoneColor.Black,
+            BoardCoordinate.fromLabel("D4", BoardSize.Nine) to StoneColor.White,
+        )
+        val context = KataGoAnalysisContext(
+            boardSize = BoardSize.Nine,
+            ruleset = Ruleset.Japanese,
+            nextPlayer = StoneColor.Black,
+            playedMoves = listOf(Move.Play(StoneColor.White, BoardCoordinate.fromLabel("C7", BoardSize.Nine))),
+            handicapCount = 0,
+            initialStones = stones,
+            initialPlayer = StoneColor.White,
+        )
+
+        val state = context.replayState()
+
+        assertEquals(StoneColor.Black, state.nextPlayer)
+        assertEquals(3, state.stones.size)
+        assertEquals(StoneColor.White, state.stoneAt(BoardCoordinate.fromLabel("C7", BoardSize.Nine)))
+    }
+
     @Test
     fun gtpCandidateFallbackUsesWhiteTurnForHandicapOpening() = runBlocking {
         val context = KataGoAnalysisContext(
@@ -77,6 +107,7 @@ class KataGoAnalysisContextTest {
             nextPlayer = StoneColor.White,
             playedMoves = emptyList(),
             handicapCount = 2,
+            initialPlayer = StoneColor.White,
         )
         val client = KataGoGtpAnalysisClient(
             sendCommand = { _, _ -> "" },
