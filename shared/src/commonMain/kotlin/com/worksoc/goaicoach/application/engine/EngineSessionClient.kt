@@ -10,7 +10,6 @@ import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
-import com.worksoc.goaicoach.shared.enginecontract.EngineStatus
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
@@ -40,7 +39,7 @@ data class EngineSessionCapabilities(
  */
 interface EngineSessionClient {
     /**
-     * ⚠️ **`backend`는 진단 로그로 새어 나간다.** `runEngineStartup/NewGame/Undo` 경로가
+     * ⚠️ **`backend`는 진단 로그로 새어 나간다.** `runEngineStartup/NewGame` 경로가
      * 이 값의 `label`을 [com.worksoc.goaicoach.shared.policy.EngineOperationRequest.backendId]로
      * 찍고, 그것이 느림/타임아웃 진단 이벤트의 키가 된다. 원격 백엔드가 `local-engine`으로 찍히면
      * 로그를 읽는 사람이 어느 엔진이 느렸는지 알 수 없다 — `EngineSessionLifecycleApplicationTest`의
@@ -144,8 +143,6 @@ interface EngineSessionClient {
         profile: EngineProfile,
         prePassCandidates: List<CandidateMove>,
     ): AiEndgameResolution
-
-    suspend fun undoMove(): EngineStatus
 
     /**
      * Manual last-resort recovery for a wedged engine (e.g. the engine turn

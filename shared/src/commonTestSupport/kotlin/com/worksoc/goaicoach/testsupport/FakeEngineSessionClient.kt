@@ -17,7 +17,6 @@ import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
-import com.worksoc.goaicoach.shared.enginecontract.EngineStatus
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
@@ -132,8 +131,6 @@ open class FakeEngineSessionClient : EngineSessionClient {
         profile: EngineProfile,
         prePassCandidates: List<CandidateMove>,
     ): AiEndgameResolution = notStubbed("resolveEndgameForState")
-
-    override suspend fun undoMove(): EngineStatus = notStubbed("undoMove")
 
     override suspend fun runStartupBenchmark(
         restoreState: GameState,

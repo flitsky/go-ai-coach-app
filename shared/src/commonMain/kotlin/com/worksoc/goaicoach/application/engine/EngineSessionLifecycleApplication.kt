@@ -7,7 +7,6 @@ import com.worksoc.goaicoach.application.engine.operation.EngineOperationLifecyc
 import com.worksoc.goaicoach.application.engine.operation.runEngineOperationInScope
 import com.worksoc.goaicoach.application.contract.GameSessionEffect
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
-import com.worksoc.goaicoach.shared.enginecontract.EngineStatus
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.policy.EngineFallbackPolicy
 import com.worksoc.goaicoach.shared.policy.EngineOperationKind
@@ -143,48 +142,4 @@ suspend fun EngineSessionClient.runEngineBackedNewGameWorkflowResult(
     }.fold(
         onSuccess = { result -> EngineStartupWorkflowResult.Success(result) },
         onFailure = { error -> EngineStartupWorkflowResult.Failure(error) },
-    )
-
-suspend fun EngineSessionClient.runEngineUndoEffect(
-    effect: GameSessionEffect.UndoEngineMoves,
-    operationRequest: EngineOperationRequest? = null,
-    diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
-): EngineStatus =
-    runObservedEngineOperation(
-        request = operationRequest ?: engineOperationRequest(
-            kind = EngineOperationKind.EngineUndo,
-            state = effect.state,
-            sessionGeneration = 0L,
-            timeoutPolicy = EngineTimeoutPolicy(label = "engine-undo"),
-            fallbackPolicy = EngineFallbackPolicy.LocalEngine,
-            backendId = capabilities.backend.label,
-        ),
-        diagnosticEventLog = diagnosticEventLog,
-    ) {
-        var lastStatus: EngineStatus? = null
-        repeat(effect.undoCount) {
-            lastStatus = undoMove()
-        }
-        requireNotNull(lastStatus) { "undoCount must be positive" }
-    }
-
-sealed class EngineUndoWorkflowResult {
-    data class Success(val status: EngineStatus) : EngineUndoWorkflowResult()
-    data class Failure(val error: Throwable) : EngineUndoWorkflowResult()
-}
-
-suspend fun EngineSessionClient.runEngineUndoWorkflowResult(
-    effect: GameSessionEffect.UndoEngineMoves,
-    operationRequest: EngineOperationRequest? = null,
-    diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
-): EngineUndoWorkflowResult =
-    runCatching {
-        runEngineUndoEffect(
-            effect = effect,
-            operationRequest = operationRequest,
-            diagnosticEventLog = diagnosticEventLog,
-        )
-    }.fold(
-        onSuccess = { status -> EngineUndoWorkflowResult.Success(status) },
-        onFailure = { error -> EngineUndoWorkflowResult.Failure(error) },
     )

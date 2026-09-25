@@ -221,7 +221,6 @@ class GameSessionControllerTest {
             boardSize = BoardSize.Nine,
             ruleset = gameState.ruleset,
         )
-        val undoEffect = GameSessionEffect.UndoEngineMoves(gameState, undoCount = 2)
         val restoredEffect = GameSessionEffect.SyncRestoredGame(gameState)
         val debugReportPlan = DebugReportCopyPlan(
             clipboardLabel = "label",
@@ -242,7 +241,6 @@ class GameSessionControllerTest {
         assertSame(startupProfile, startupEffect.profile)
         assertSame(gameState, newGameEffect.currentState)
         assertSame(newGameProfile, newGameEffect.profile)
-        assertEquals(2, undoEffect.undoCount)
         assertSame(gameState, restoredEffect.gameState)
         assertSame(debugReportPlan, debugReportEffect.plan)
     }

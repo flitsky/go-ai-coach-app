@@ -22,7 +22,6 @@ import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
 import com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
-import com.worksoc.goaicoach.shared.enginecontract.EngineStatus
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
@@ -289,9 +288,6 @@ class LocalEngineSessionClient(
             prePassCandidates = prePassCandidates,
             diagnosticEventLog = diagnosticEventLog,
         )
-
-    override suspend fun undoMove(): EngineStatus =
-        coreSession.undoMove()
 
     override fun forceResetEngine() = coreApi.forceReset()
 

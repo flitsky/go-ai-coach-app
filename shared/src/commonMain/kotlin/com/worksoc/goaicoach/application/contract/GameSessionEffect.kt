@@ -36,15 +36,6 @@ sealed interface GameSessionEffect {
         val ruleset: Ruleset,
     ) : GameSessionEffect
 
-    data class UndoEngineMoves(
-        val state: GameState,
-        val undoCount: Int,
-    ) : GameSessionEffect {
-        init {
-            require(undoCount > 0) { "undoCount must be positive" }
-        }
-    }
-
     data class RunScoreEstimate(
         val request: ScoreEstimateRequestPlan.RequestEngineEstimate,
     ) : GameSessionEffect

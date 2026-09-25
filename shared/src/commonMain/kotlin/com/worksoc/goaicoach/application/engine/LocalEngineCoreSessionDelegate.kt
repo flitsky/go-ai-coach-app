@@ -11,7 +11,6 @@ import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
 import com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
-import com.worksoc.goaicoach.shared.enginecontract.EngineStatus
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
@@ -187,9 +186,6 @@ internal class LocalEngineCoreSessionDelegate(
             diagnosticEventLog = diagnosticEventLog,
         )
     }
-
-    suspend fun undoMove(): EngineStatus =
-        coreApi.undoMove()
 
     suspend fun runStartupBenchmark(
         restoreState: GameState,

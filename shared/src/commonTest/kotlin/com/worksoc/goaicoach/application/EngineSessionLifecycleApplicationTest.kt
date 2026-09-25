@@ -19,7 +19,6 @@ import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
-import com.worksoc.goaicoach.shared.enginecontract.EngineStatus
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
@@ -119,49 +118,10 @@ class EngineSessionLifecycleApplicationTest {
         assertEquals("new game failed", (newGameFailure as EngineStartupWorkflowResult.Failure).error.message)
     }
 
-    @Test
-    fun undoRunnerRepeatsRequestedUndoCountAndReturnsLastStatus() = runBlocking {
-        val client = RecordingLifecycleEngineSessionClient()
-
-        val status = client.runEngineUndoEffect(
-            effect = GameSessionEffect.UndoEngineMoves(
-                state = GameState.empty(),
-                undoCount = 3,
-            ),
-        )
-
-        assertEquals(3, client.undoCalls)
-        assertEquals("undo-3", status.message)
-    }
-
-    @Test
-    fun undoWorkflowResultWrapsSuccessAndFailure() = runBlocking {
-        val success = RecordingLifecycleEngineSessionClient()
-            .runEngineUndoWorkflowResult(
-                effect = GameSessionEffect.UndoEngineMoves(
-                    state = GameState.empty(),
-                    undoCount = 2,
-                ),
-            )
-        val failure = RecordingLifecycleEngineSessionClient(
-            undoError = IllegalStateException("undo failed"),
-        ).runEngineUndoWorkflowResult(
-            effect = GameSessionEffect.UndoEngineMoves(
-                state = GameState.empty(),
-                undoCount = 2,
-            ),
-        )
-
-        assertTrue(success is EngineUndoWorkflowResult.Success)
-        assertEquals("undo-2", (success as EngineUndoWorkflowResult.Success).status.message)
-        assertTrue(failure is EngineUndoWorkflowResult.Failure)
-        assertEquals("undo failed", (failure as EngineUndoWorkflowResult.Failure).error.message)
-    }
-
     /**
      * `capabilities.backend`가 **엔진 오퍼레이션의 `backendId`가 된다**(refactor backlog #60).
      *
-     * ⚠️ 이 배선에는 **테스트가 하나도 없었다.** 네 군데의 `backendId = capabilities.backend.label`을
+     * ⚠️ 이 배선에는 **테스트가 하나도 없었다.** (그때) 네 군데의 `backendId = capabilities.backend.label`을
      * 전부 상수로 바꿔 놓고 `:shared:check`와 `:app-android:testDebugUnitTest`를 `--rerun-tasks`로
      * 돌려도 초록이었다. `backendId`는 진단 이벤트의 키라서, 원격 백엔드가 `local-engine`으로
      * 찍히면 **로그를 읽는 사람이 어느 엔진이 느렸는지 영영 모른다** — 조용히 틀리는 종류다.
@@ -209,7 +169,6 @@ class EngineSessionLifecycleApplicationTest {
 private class RecordingLifecycleEngineSessionClient(
     private val startupError: Throwable? = null,
     private val newGameError: Throwable? = null,
-    private val undoError: Throwable? = null,
 ) : FakeEngineSessionClient() {
     override val capabilities: EngineSessionCapabilities = EngineSessionCapabilities(
         supportsDeviceBenchmark = true,
@@ -219,7 +178,6 @@ private class RecordingLifecycleEngineSessionClient(
     var newGameProfile: EngineProfile? = null
     var newGameBoardSize: BoardSize? = null
     var newGameRuleset: Ruleset? = null
-    var undoCalls: Int = 0
 
     override fun positionAnalysisCacheStatsText(nowMillis: Long): String =
         "entries=0"
@@ -253,18 +211,12 @@ private class RecordingLifecycleEngineSessionClient(
             scoreSnapshot = localScoreSnapshot(GameState.empty(boardSize = boardSize, ruleset = ruleset)),
         )
     }
-
-    override suspend fun undoMove(): EngineStatus {
-        undoError?.let { throw it }
-        undoCalls += 1
-        return EngineStatus.ready("undo-$undoCalls")
-    }
 }
 
 /**
  * [runEngineStartupApplication]이 만든 오퍼레이션을 라이프사이클 콜백으로 낚아채 `backendId`만 읽는다.
- * 이 경로를 고른 이유: 나머지 세 자리(`runEngineStartupEffect`/`runEngineBackedNewGameEffect`/
- * `runEngineUndoEffect`)는 요청을 함수 안에서만 만들고, 그 값이 밖으로 나오는 길이 **느림/타임아웃
+ * 이 경로를 고른 이유: 나머지 두 자리(`runEngineStartupEffect`/`runEngineBackedNewGameEffect`)는
+ * 요청을 함수 안에서만 만들고, 그 값이 밖으로 나오는 길이 **느림/타임아웃
  * 진단 이벤트뿐**이라 시계에 의존하지 않고는 결정적으로 관찰할 수 없다. 덮은 척하지 않고 적어 둔다.
  */
 private suspend fun backendIdOfStartupOperation(backend: EngineSessionBackend): String {
