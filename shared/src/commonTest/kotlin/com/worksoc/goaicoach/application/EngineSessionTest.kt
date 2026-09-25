@@ -6,6 +6,7 @@ import com.worksoc.goaicoach.application.autoai.*
 
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.engine.*
+import com.worksoc.goaicoach.application.time.currentEpochMillis
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisFallbackRecord
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisResult
@@ -478,7 +479,7 @@ class EngineSessionTest {
                 rootVisits = 64,
                 elapsedMillis = 1_000L,
             ),
-            createdAtMillis = System.currentTimeMillis(),
+            createdAtMillis = currentEpochMillis(),
             requestedRootVisits = 32,
             rootVisits = 64,
             origin = PositionAnalysisCacheOrigin.OperatorTrusted,

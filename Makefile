@@ -154,8 +154,11 @@ test: doctor
 # 사실 자체지, 실제 iOS 런타임 동작이 아니다. 세 iOS 타깃(iosX64/iosArm64/iosSimulatorArm64)
 # 전부를 컴파일할 필요는 없다 — commonMain 코드가 플랫폼별로 갈라지지 않는 한(현재 없음)
 # 셋 다 같은 expect/actual 집합을 보므로 하나만 컴파일해도 API 누락은 동일하게 드러난다.
+# ⚠️ 테스트 소스도 컴파일한다(2026-09-25, refactor backlog #101). 본 코드만 컴파일하던 동안 commonTest의
+# `System.currentTimeMillis()` 한 줄(2026-08-16부터)로 iOS 테스트 컴파일이 깨진 채 아무도 몰랐다 —
+# commonTest의 JVM 전용 API도 이 타깃이 잡는다.
 test-ios:
-	$(GRADLEW) :shared:compileKotlinIosSimulatorArm64 -PenableIosTargets=true
+	$(GRADLEW) :shared:compileKotlinIosSimulatorArm64 :shared:compileTestKotlinIosSimulatorArm64 -PenableIosTargets=true
 
 # ⚠️ 별도 타깃이다 — `test`에 합치지 마라(refactor backlog #13ⓑ). `make test`가 지키는 "빠른
 # 루프"(에뮬레이터/실기기 없이 몇 초~몇 분 안에 결과)를 계기 테스트가 깨뜨린다 — 에뮬레이터
