@@ -1,18 +1,18 @@
 package com.worksoc.goaicoach.middleware
 
-import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
-import com.worksoc.goaicoach.shared.enginecontract.AnalysisResult
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.BoardSize
-import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
-import com.worksoc.goaicoach.shared.enginecontract.EngineStatus
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.Move
+import com.worksoc.goaicoach.shared.domain.StoneColor
+import com.worksoc.goaicoach.shared.domain.analysisFingerprint
+import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
+import com.worksoc.goaicoach.shared.enginecontract.AnalysisResult
+import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
+import com.worksoc.goaicoach.shared.enginecontract.EngineStatus
 import com.worksoc.goaicoach.shared.enginecontract.RemotePositionAnalysisRequest
 import com.worksoc.goaicoach.shared.enginecontract.RemotePositionAnalysisResponse
 import com.worksoc.goaicoach.shared.enginecontract.RemotePositionAnalysisTransport
-import com.worksoc.goaicoach.shared.domain.StoneColor
-import com.worksoc.goaicoach.shared.domain.analysisFingerprint
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

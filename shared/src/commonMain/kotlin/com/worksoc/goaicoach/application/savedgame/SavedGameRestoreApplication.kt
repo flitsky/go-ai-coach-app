@@ -1,17 +1,17 @@
 package com.worksoc.goaicoach.application.savedgame
 
-import com.worksoc.goaicoach.application.engine.localScoreSnapshot
-import com.worksoc.goaicoach.application.score.FinalScoreDisplayPlan
 import com.worksoc.goaicoach.application.contract.RuntimePlayLevelSelection
 import com.worksoc.goaicoach.application.contract.selectRuntimePlayLevel
+import com.worksoc.goaicoach.application.engine.localScoreSnapshot
+import com.worksoc.goaicoach.application.score.FinalScoreDisplayPlan
 import com.worksoc.goaicoach.match.PlayerSetup
-import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.domain.describe
+import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.policy.MoveAnalysisSnapshot
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
-import com.worksoc.goaicoach.shared.domain.describe
 
 data class SavedGameRestorePlan(
     val gameState: GameState,

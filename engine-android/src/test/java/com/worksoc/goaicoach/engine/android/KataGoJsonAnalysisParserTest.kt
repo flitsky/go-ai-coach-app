@@ -1,10 +1,10 @@
 package com.worksoc.goaicoach.engine.android
 
-import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
+import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.Move
-import com.worksoc.goaicoach.shared.enginecontract.CandidateMoveSource
 import com.worksoc.goaicoach.shared.domain.StoneColor
+import com.worksoc.goaicoach.shared.enginecontract.CandidateMoveSource
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

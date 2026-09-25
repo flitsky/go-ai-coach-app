@@ -1,15 +1,15 @@
 package com.worksoc.goaicoach.application.preferences
 
-import com.worksoc.goaicoach.application.session.GameSessionSettingsState
 import com.worksoc.goaicoach.application.contract.RuntimePlayLevelSelection
 import com.worksoc.goaicoach.application.contract.selectRuntimePlayLevel
+import com.worksoc.goaicoach.application.session.GameSessionSettingsState
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.shared.domain.BoardSize
-import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.domain.GameState
-import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import com.worksoc.goaicoach.shared.domain.Ruleset
+import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
+import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
 
 data class GameSettings(

@@ -1,16 +1,16 @@
 package com.worksoc.goaicoach.application
 
 import com.worksoc.goaicoach.application.premium.app.PremiumPurchaseRunRequest
-import com.worksoc.goaicoach.application.premium.state.PremiumSource
+import com.worksoc.goaicoach.application.premium.app.PurchaseTrigger
+import com.worksoc.goaicoach.application.premium.app.isAuthoritativeNotOwned
+import com.worksoc.goaicoach.application.premium.app.runPremiumPurchaseApplication
 import com.worksoc.goaicoach.application.premium.port.PurchaseFailureReason
 import com.worksoc.goaicoach.application.premium.port.PurchaseOutcome
-import com.worksoc.goaicoach.application.premium.app.isAuthoritativeNotOwned
-import com.worksoc.goaicoach.application.premium.app.PurchaseTrigger
-import com.worksoc.goaicoach.application.premium.app.runPremiumPurchaseApplication
+import com.worksoc.goaicoach.application.premium.state.PremiumSource
 import com.worksoc.goaicoach.shared.diagnostic.DiagnosticSeverity
+import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
-import kotlin.test.Test
 
 class PremiumPurchaseApplicationTest {
     @Test

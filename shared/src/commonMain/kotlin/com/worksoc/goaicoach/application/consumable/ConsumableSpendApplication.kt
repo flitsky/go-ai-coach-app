@@ -1,10 +1,10 @@
 package com.worksoc.goaicoach.application.consumable
 
+import com.worksoc.goaicoach.application.premium.port.PremiumStateStorePort
 import com.worksoc.goaicoach.application.premium.state.AllowedVia
 import com.worksoc.goaicoach.application.premium.state.FeatureAccess
 import com.worksoc.goaicoach.application.premium.state.FeatureAccessPolicy
 import com.worksoc.goaicoach.application.premium.state.PremiumState
-import com.worksoc.goaicoach.application.premium.port.PremiumStateStorePort
 
 /** [decideConsumableSpend]의 판정 결과. */
 sealed class ConsumableSpendDecision {

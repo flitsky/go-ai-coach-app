@@ -1,9 +1,9 @@
 package com.worksoc.goaicoach.application
 
 import com.worksoc.goaicoach.application.prompt.decidePromptVisibility
+import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
-import kotlin.test.Test
 
 class PromptPriorityApplicationTest {
     @Test

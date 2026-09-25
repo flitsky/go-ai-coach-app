@@ -2,37 +2,37 @@ package com.worksoc.goaicoach.application
 
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnCompletionApplyRunRequest
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnCompletionPlan
+import com.worksoc.goaicoach.application.autoai.AutoAiTurnFollowUpPlan
+import com.worksoc.goaicoach.application.autoai.applyAutoAiTurnCompletionApplication
 import com.worksoc.goaicoach.application.contract.AutoAiTurnDisplayPlan
 import com.worksoc.goaicoach.application.contract.AutoAiTurnEndgamePlan
 import com.worksoc.goaicoach.application.contract.AutoAiTurnExecutionContext
-import com.worksoc.goaicoach.application.autoai.AutoAiTurnFollowUpPlan
-import com.worksoc.goaicoach.application.autoai.applyAutoAiTurnCompletionApplication
-import com.worksoc.goaicoach.shared.policy.EngineOperationResultGuard
+import com.worksoc.goaicoach.application.contract.GameSessionRuntimeState
+import com.worksoc.goaicoach.application.contract.ScoreEstimateDisplayPlan
 import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
 import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
-import com.worksoc.goaicoach.application.contract.ScoreEstimateDisplayPlan
-import com.worksoc.goaicoach.application.contract.GameSessionRuntimeState
 import com.worksoc.goaicoach.application.session.GameSessionTurnTimeState
 import com.worksoc.goaicoach.application.session.TurnTimeMoveUpdate
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.PlayerSetup
-import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
-import com.worksoc.goaicoach.shared.enginecontract.AnalysisPreset
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.BoardSize
-import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
-import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.Move
+import com.worksoc.goaicoach.shared.domain.StoneColor
+import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
+import com.worksoc.goaicoach.shared.enginecontract.AnalysisPreset
+import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
+import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
+import com.worksoc.goaicoach.shared.policy.EngineOperationResultGuard
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
-import com.worksoc.goaicoach.shared.domain.StoneColor
-import kotlinx.coroutines.runBlocking
+import com.worksoc.goaicoach.testsupport.RecordingRuntimeEventLog
+import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
-import kotlin.test.Test
-import com.worksoc.goaicoach.testsupport.RecordingRuntimeEventLog
+import kotlinx.coroutines.runBlocking
 
 class AutoAiCompletionApplierTest {
     @Test

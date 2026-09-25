@@ -1,11 +1,11 @@
 package com.worksoc.goaicoach.application.cacheoptimization
 
-import com.worksoc.goaicoach.application.contract.PositionAnalysisCacheOptimizationPlan
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationUiState
+import com.worksoc.goaicoach.application.contract.GameSessionEffect
+import com.worksoc.goaicoach.application.contract.PositionAnalysisCacheOptimizationPlan
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.engine.EngineSessionClient
 import com.worksoc.goaicoach.application.engine.runEngineIo
-import com.worksoc.goaicoach.application.contract.GameSessionEffect
 import com.worksoc.goaicoach.shared.policy.EngineFallbackPolicy
 import com.worksoc.goaicoach.shared.policy.EngineOperationKind
 import com.worksoc.goaicoach.shared.policy.EngineOperationRequest

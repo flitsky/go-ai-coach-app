@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.engine.android
 
+import java.io.IOException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
@@ -10,7 +11,6 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
-import java.io.IOException
 
 /**
  * `analyze()`의 폴백 판정(refactor backlog #16ⓐ).

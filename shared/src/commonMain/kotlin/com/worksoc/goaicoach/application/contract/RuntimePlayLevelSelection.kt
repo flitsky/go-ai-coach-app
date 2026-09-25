@@ -1,11 +1,11 @@
 package com.worksoc.goaicoach.application.contract
 
 import com.worksoc.goaicoach.match.PlayerSetup
+import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisPreset
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
-import com.worksoc.goaicoach.shared.domain.StoneColor
 
 data class RuntimePlayLevelSelection(
     val playLevel: PlayLevelSetting,

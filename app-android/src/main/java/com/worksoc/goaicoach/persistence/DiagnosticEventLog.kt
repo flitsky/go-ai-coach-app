@@ -1,7 +1,7 @@
 package com.worksoc.goaicoach.persistence
 
-import com.worksoc.goaicoach.shared.diagnostic.DiagnosticEvent
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
+import com.worksoc.goaicoach.shared.diagnostic.DiagnosticEvent
 import java.io.File
 import org.json.JSONObject
 

@@ -2,8 +2,8 @@ package com.worksoc.goaicoach.application.diagnostic
 
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.time.currentEpochMillis
-import com.worksoc.goaicoach.shared.policy.EngineOperationRequest
 import com.worksoc.goaicoach.shared.diagnostic.DiagnosticEvent
+import com.worksoc.goaicoach.shared.policy.EngineOperationRequest
 import kotlinx.coroutines.TimeoutCancellationException
 
 suspend fun <T> runObservedEngineOperation(

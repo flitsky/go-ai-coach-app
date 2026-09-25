@@ -1,8 +1,8 @@
 package com.worksoc.goaicoach.shared.scoring
 
+import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.enginecontract.FinalScoreResult
 import com.worksoc.goaicoach.shared.enginecontract.ScoreEstimate
-import com.worksoc.goaicoach.shared.domain.StoneColor
 
 data class ScoreSnapshot(
     val moveNumber: Int,

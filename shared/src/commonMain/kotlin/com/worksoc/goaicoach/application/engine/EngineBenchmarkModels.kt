@@ -1,11 +1,11 @@
 package com.worksoc.goaicoach.application.engine
 
-import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
+import com.worksoc.goaicoach.application.engine.operation.EngineOperationBlockReason
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.Ruleset
+import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
 import com.worksoc.goaicoach.shared.policy.SearchTimeLimit
 import kotlin.math.ceil
-import com.worksoc.goaicoach.application.engine.operation.EngineOperationBlockReason
 
 data class EngineBenchmarkMetric(
     val visits: Int,

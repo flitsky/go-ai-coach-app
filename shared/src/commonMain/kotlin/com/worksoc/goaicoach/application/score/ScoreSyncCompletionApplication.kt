@@ -1,11 +1,11 @@
 package com.worksoc.goaicoach.application.score
 
 import com.worksoc.goaicoach.application.contract.ScoreEstimateDisplayPlan
+import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.policy.EngineOperationApplyPlan
 import com.worksoc.goaicoach.shared.policy.EngineOperationRequest
 import com.worksoc.goaicoach.shared.policy.EngineOperationResultGuard
 import com.worksoc.goaicoach.shared.policy.buildEngineOperationApplyPlan
-import com.worksoc.goaicoach.shared.domain.GameState
 
 sealed class ScoreSyncCompletionPlan {
     data class ApplySuccess(

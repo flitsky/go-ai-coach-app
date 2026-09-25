@@ -1,29 +1,29 @@
 package com.worksoc.goaicoach.application
 
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationUiState
+import com.worksoc.goaicoach.application.contract.GameSessionRuntimeState
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkUiState
-import com.worksoc.goaicoach.application.session.AutoAiTurnUiState
+import com.worksoc.goaicoach.application.engine.localScoreSnapshot
 import com.worksoc.goaicoach.application.savedgame.SavedSessionUiState
+import com.worksoc.goaicoach.application.session.AutoAiTurnUiState
 import com.worksoc.goaicoach.application.session.GameSessionAnalysisState
 import com.worksoc.goaicoach.application.session.GameSessionControllerState
 import com.worksoc.goaicoach.application.session.GameSessionCoreState
 import com.worksoc.goaicoach.application.session.GameSessionMoveReviewState
-import com.worksoc.goaicoach.application.contract.GameSessionRuntimeState
 import com.worksoc.goaicoach.application.session.GameSessionScoreState
 import com.worksoc.goaicoach.application.session.GameSessionSettingsState
 import com.worksoc.goaicoach.application.session.GameSessionStateHolder
-import com.worksoc.goaicoach.application.engine.localScoreSnapshot
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.PlayerSetup
+import com.worksoc.goaicoach.shared.domain.BoardSize
+import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisPreset
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
-import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
-import com.worksoc.goaicoach.shared.domain.BoardSize
+import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertSame
-import kotlin.test.Test
 
 class GameSessionStateHolderTest {
     @Test

@@ -1,11 +1,11 @@
 package com.worksoc.goaicoach
 
-import com.worksoc.goaicoach.application.autoai.AutoAiTurnController
-import com.worksoc.goaicoach.application.session.AutoAiTurnUiState
 import com.worksoc.goaicoach.application.analysis.AnalysisResultCache
-import com.worksoc.goaicoach.application.cacheoptimization.PositionCacheOptimizationController
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationUiState
 import com.worksoc.goaicoach.application.analysis.UndoAnalysisRestoreCache
+import com.worksoc.goaicoach.application.autoai.AutoAiTurnController
+import com.worksoc.goaicoach.application.cacheoptimization.PositionCacheOptimizationController
+import com.worksoc.goaicoach.application.contract.GameSessionRuntimeState
 import com.worksoc.goaicoach.application.debugreport.ClipboardPort
 import com.worksoc.goaicoach.application.debugreport.DebugReportController
 import com.worksoc.goaicoach.application.debugreport.DebugReportMirrorPort
@@ -17,6 +17,8 @@ import com.worksoc.goaicoach.application.engine.EngineBenchmarkUiState
 import com.worksoc.goaicoach.application.engine.EngineSessionClient
 import com.worksoc.goaicoach.application.engine.operation.EngineOperationLifecycleController
 import com.worksoc.goaicoach.application.humanmove.HumanMoveController
+import com.worksoc.goaicoach.application.orchestration.GameSessionDisplayStateApplier
+import com.worksoc.goaicoach.application.orchestration.GameSettingsController
 import com.worksoc.goaicoach.application.preferences.UserPreferencesStorePort
 import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
 import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
@@ -25,13 +27,11 @@ import com.worksoc.goaicoach.application.savedgame.SavedSessionUiState
 import com.worksoc.goaicoach.application.score.FinalScoreDisplayPlan
 import com.worksoc.goaicoach.application.score.ScoreEstimateController
 import com.worksoc.goaicoach.application.score.ScoringRuleController
-import com.worksoc.goaicoach.application.orchestration.GameSessionDisplayStateApplier
-import com.worksoc.goaicoach.application.orchestration.GameSettingsController
+import com.worksoc.goaicoach.application.session.AutoAiTurnUiState
 import com.worksoc.goaicoach.application.session.GameSessionAnalysisState
 import com.worksoc.goaicoach.application.session.GameSessionControllerState
 import com.worksoc.goaicoach.application.session.GameSessionCoreState
 import com.worksoc.goaicoach.application.session.GameSessionMoveReviewState
-import com.worksoc.goaicoach.application.contract.GameSessionRuntimeState
 import com.worksoc.goaicoach.application.session.GameSessionScoreState
 import com.worksoc.goaicoach.application.session.GameSessionSettingsState
 import com.worksoc.goaicoach.application.session.GameSessionTurnTimeState
@@ -41,10 +41,10 @@ import com.worksoc.goaicoach.application.topmoves.TopMovesController
 import com.worksoc.goaicoach.application.undo.UndoController
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
-import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.domain.GameState
-import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
+import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.policy.EngineTimeoutPolicy
+import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import kotlinx.coroutines.CoroutineScope
 
 internal data class GoCoachControllers(

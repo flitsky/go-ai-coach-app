@@ -1,7 +1,7 @@
 package com.worksoc.goaicoach.ui
 
-import android.widget.Toast
 import android.content.Context
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -16,32 +16,32 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.worksoc.goaicoach.application.consumable.ConsumableCatalog
-import com.worksoc.goaicoach.application.consumable.runConsumableGrant
-import com.worksoc.goaicoach.persistence.ConsumableInventoryStore
+import com.worksoc.goaicoach.BuildConfig
+import com.worksoc.goaicoach.application.attendance.isRewardedTier
+import com.worksoc.goaicoach.application.attendance.runAttendanceDevDayRewind
 import com.worksoc.goaicoach.application.botcharacter.BotCharacterCatalog
 import com.worksoc.goaicoach.application.botcharacter.BotUnlockSource
 import com.worksoc.goaicoach.application.botcharacter.runBotCharacterShardSet
-import com.worksoc.goaicoach.persistence.BotCollectionStore
-import com.worksoc.goaicoach.application.attendance.isRewardedTier
-import com.worksoc.goaicoach.application.attendance.runAttendanceDevDayRewind
-import com.worksoc.goaicoach.persistence.AttendanceStore
+import com.worksoc.goaicoach.application.consumable.ConsumableCatalog
+import com.worksoc.goaicoach.application.consumable.runConsumableGrant
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
-import com.worksoc.goaicoach.BuildConfig
-import com.worksoc.goaicoach.platform.AdsConsentManager
-import com.worksoc.goaicoach.runReleaseResetAgain
+import com.worksoc.goaicoach.persistence.AttendanceStore
+import com.worksoc.goaicoach.persistence.BotCollectionStore
+import com.worksoc.goaicoach.persistence.ConsumableInventoryStore
 import com.worksoc.goaicoach.persistence.DeveloperModeStore
 import com.worksoc.goaicoach.persistence.UserPreferencesStore
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
+import com.worksoc.goaicoach.platform.AdsConsentManager
+import com.worksoc.goaicoach.runReleaseResetAgain
 
 /**
  * 개발자 테스트 섹션(1차·2차) — 백로그 #102에서 `SettingsScreen`에서 떼어냈다.

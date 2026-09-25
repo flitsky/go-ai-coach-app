@@ -1,9 +1,9 @@
 package com.worksoc.goaicoach.engine.android
 
-import org.json.JSONObject
 import java.io.Closeable
 import java.io.File
 import java.nio.file.Files
+import org.json.JSONObject
 
 /**
  * `KataGoProcessEngineAdapter`를 **실제 KataGo 없이** JVM 테스트에서 띄우기 위한 가짜 실행 파일.

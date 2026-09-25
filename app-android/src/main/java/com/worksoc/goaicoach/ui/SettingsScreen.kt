@@ -31,9 +31,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -43,21 +45,19 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException
 import com.google.firebase.auth.FirebaseAuthWeakPasswordException
-import com.worksoc.goaicoach.persistence.GameSessionStore
 import com.worksoc.goaicoach.BuildConfig
-import com.worksoc.goaicoach.platform.GoogleCredentialManagerClient
-import com.worksoc.goaicoach.wipeToFreshInstall
-import com.worksoc.goaicoach.application.preferences.isBoardSetupLockedDuringGame
 import com.worksoc.goaicoach.application.auth.port.AuthClientPort
 import com.worksoc.goaicoach.application.auth.state.AuthProvider
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
+import com.worksoc.goaicoach.application.preferences.isBoardSetupLockedDuringGame
 import com.worksoc.goaicoach.persistence.DeveloperModeStore
+import com.worksoc.goaicoach.persistence.GameSessionStore
+import com.worksoc.goaicoach.platform.GoogleCredentialManagerClient
 import com.worksoc.goaicoach.presentation.GameActionButtonRole
 import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.presentation.GameUiEvent
+import com.worksoc.goaicoach.wipeToFreshInstall
 import kotlinx.coroutines.launch
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 
 // AdMob·Play Billing 등 Play Console 필수 제출 항목(개인정보처리방침 URL)과 동일한 문서를
 // 가리킨다 — Play Console "앱 콘텐츠" 폼에도 이 URL을 별도로 등록해야 한다(코드 배선과

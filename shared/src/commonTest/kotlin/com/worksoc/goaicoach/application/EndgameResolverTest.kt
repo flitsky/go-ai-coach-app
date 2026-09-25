@@ -1,29 +1,28 @@
 package com.worksoc.goaicoach.application
 
 import com.worksoc.goaicoach.application.analysis.*
-import com.worksoc.goaicoach.application.endgame.*
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
-
-import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
+import com.worksoc.goaicoach.application.endgame.*
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.BoardSize
+import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.domain.Move
+import com.worksoc.goaicoach.shared.domain.Ruleset
+import com.worksoc.goaicoach.shared.domain.StoneColor
+import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
 import com.worksoc.goaicoach.shared.enginecontract.DeadStonesResult
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.enginecontract.EngineStatus
 import com.worksoc.goaicoach.shared.enginecontract.FinalScoreResult
-import com.worksoc.goaicoach.shared.domain.GameState
-import com.worksoc.goaicoach.shared.domain.Move
-import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.enginecontract.ScoreEstimate
-import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.policy.EndgameScoreSource
 import com.worksoc.goaicoach.shared.scoring.chineseHandicapProbeState
-import kotlinx.coroutines.runBlocking
+import com.worksoc.goaicoach.testsupport.RecordingDiagnosticEventLog
+import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import kotlin.test.Test
-import com.worksoc.goaicoach.testsupport.RecordingDiagnosticEventLog
+import kotlinx.coroutines.runBlocking
 
 class EndgameResolverTest {
     @Test

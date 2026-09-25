@@ -2,8 +2,8 @@ package com.worksoc.goaicoach.application.preferences
 
 import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.shared.domain.BoardSize
-import com.worksoc.goaicoach.shared.policy.PlayLevelGroup
 import com.worksoc.goaicoach.shared.domain.Ruleset
+import com.worksoc.goaicoach.shared.policy.PlayLevelGroup
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue

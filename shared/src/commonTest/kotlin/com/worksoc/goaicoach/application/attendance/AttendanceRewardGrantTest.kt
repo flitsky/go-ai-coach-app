@@ -8,19 +8,19 @@ import com.worksoc.goaicoach.application.botcharacter.TopCharacterAttendanceTier
 import com.worksoc.goaicoach.application.botcharacter.WeeklyRewardCycleTier
 import com.worksoc.goaicoach.application.consumable.ConsumableCatalog
 import com.worksoc.goaicoach.application.consumable.ConsumableInventory
-import com.worksoc.goaicoach.application.consumable.PremiumOnceMaxStock
 import com.worksoc.goaicoach.application.consumable.ConsumableStorePort
+import com.worksoc.goaicoach.application.consumable.PremiumOnceMaxStock
+import com.worksoc.goaicoach.application.premium.port.PremiumStateStorePort
 import com.worksoc.goaicoach.application.premium.state.FeatureAccess
 import com.worksoc.goaicoach.application.premium.state.FeatureAccessPolicy
 import com.worksoc.goaicoach.application.premium.state.FeatureId
 import com.worksoc.goaicoach.application.premium.state.PremiumState
-import com.worksoc.goaicoach.application.premium.port.PremiumStateStorePort
+import com.worksoc.goaicoach.testsupport.FakePremiumStore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
-import com.worksoc.goaicoach.testsupport.FakePremiumStore
 
 private class FakeAttendanceStore(initial: AttendanceState = AttendanceState()) : AttendanceStorePort {
     var stored: AttendanceState = initial

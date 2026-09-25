@@ -1,31 +1,31 @@
 package com.worksoc.goaicoach.application.humanmove
 
-import com.worksoc.goaicoach.application.session.HumanEngineSyncFailurePlan
-import com.worksoc.goaicoach.application.session.HumanMoveLocalResult
+import com.worksoc.goaicoach.application.contract.ScoreEstimateDisplayPlan
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.engine.EngineSessionClient
-import com.worksoc.goaicoach.shared.policy.EngineOperationResultGuard
 import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
 import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
 import com.worksoc.goaicoach.application.score.FinalScoreDisplayPlan
-import com.worksoc.goaicoach.application.contract.ScoreEstimateDisplayPlan
 import com.worksoc.goaicoach.application.score.buildLocalFinalScoreDisplayPlan
 import com.worksoc.goaicoach.application.session.GameSessionAnalysisState
 import com.worksoc.goaicoach.application.session.GameSessionMoveReviewState
 import com.worksoc.goaicoach.application.session.GameSessionScoreState
+import com.worksoc.goaicoach.application.session.HumanEngineSyncFailurePlan
+import com.worksoc.goaicoach.application.session.HumanMoveLocalResult
 import com.worksoc.goaicoach.application.session.TurnTimeMoveUpdate
 import com.worksoc.goaicoach.application.time.currentEpochMillis
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
-import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.Move
-import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
-import com.worksoc.goaicoach.shared.scoring.ScoreTimeline
 import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.domain.describe
+import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.policy.EngineOperationRequest
+import com.worksoc.goaicoach.shared.policy.EngineOperationResultGuard
 import com.worksoc.goaicoach.shared.policy.EngineTimeoutPolicy
+import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
+import com.worksoc.goaicoach.shared.scoring.ScoreTimeline
 
 class HumanMoveController(
     private val engineClient: EngineSessionClient,

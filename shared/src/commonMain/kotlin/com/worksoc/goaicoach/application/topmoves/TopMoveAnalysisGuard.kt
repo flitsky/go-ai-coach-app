@@ -1,16 +1,16 @@
 package com.worksoc.goaicoach.application.topmoves
 
+import com.worksoc.goaicoach.application.contract.AnalysisCacheKey
+import com.worksoc.goaicoach.application.contract.TopMoveAnalysisPlan
 import com.worksoc.goaicoach.application.session.TopMoveAnalysisFailureDisplayPlan
 import com.worksoc.goaicoach.application.session.TopMoveAnalysisUpdate
-import com.worksoc.goaicoach.application.contract.TopMoveAnalysisPlan
-import com.worksoc.goaicoach.application.contract.AnalysisCacheKey
-import com.worksoc.goaicoach.shared.policy.EngineOperationResultGuard
-import com.worksoc.goaicoach.shared.policy.evaluateEngineOperationResultGuard
+import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.policy.EngineFallbackPolicy
 import com.worksoc.goaicoach.shared.policy.EngineOperationKind
+import com.worksoc.goaicoach.shared.policy.EngineOperationResultGuard
 import com.worksoc.goaicoach.shared.policy.EngineTimeoutPolicy
 import com.worksoc.goaicoach.shared.policy.engineOperationRequest
-import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.policy.evaluateEngineOperationResultGuard
 
 fun topMoveAnalysisOperationToken(
     targetState: GameState,

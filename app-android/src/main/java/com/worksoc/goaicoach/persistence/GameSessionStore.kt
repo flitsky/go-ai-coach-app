@@ -1,13 +1,13 @@
 package com.worksoc.goaicoach.persistence
 
 import android.content.Context
-import com.worksoc.goaicoach.application.savedgame.SavedGameStorePort
 import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
+import com.worksoc.goaicoach.application.savedgame.SavedGameStorePort
 import com.worksoc.goaicoach.application.score.FinalScoreJudgement
-import com.worksoc.goaicoach.persistence.PlayerSetupJsonCodec.decodePlayerSetup
 import com.worksoc.goaicoach.persistence.PlayerSetupJsonCodec.decodePlayLevel
-import com.worksoc.goaicoach.persistence.PlayerSetupJsonCodec.encodePlayerSetup
+import com.worksoc.goaicoach.persistence.PlayerSetupJsonCodec.decodePlayerSetup
 import com.worksoc.goaicoach.persistence.PlayerSetupJsonCodec.encodePlayLevel
+import com.worksoc.goaicoach.persistence.PlayerSetupJsonCodec.encodePlayerSetup
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.DefaultKomi

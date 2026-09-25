@@ -2,9 +2,9 @@ package com.worksoc.goaicoach.application
 
 import com.worksoc.goaicoach.application.engine.RemoteEngineCandidate
 import com.worksoc.goaicoach.application.engine.selectRemoteEngineCandidate
+import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
-import kotlin.test.Test
 
 class RemoteEngineCandidateTest {
     @Test

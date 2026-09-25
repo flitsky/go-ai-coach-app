@@ -1,11 +1,11 @@
 package com.worksoc.goaicoach.persistence
  
 import android.content.SharedPreferences
+import java.lang.reflect.Proxy
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.lang.reflect.Proxy
 
 class ExperimentalFeaturesStoreTest {
 

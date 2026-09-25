@@ -62,12 +62,12 @@ import com.worksoc.goaicoach.platform.PlayHaptics
 import com.worksoc.goaicoach.presentation.KaTrainUxOptions
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.BoardSize
-import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.LegalMoveGenerator
 import com.worksoc.goaicoach.shared.domain.Move
-import com.worksoc.goaicoach.shared.enginecontract.OwnershipEstimate
 import com.worksoc.goaicoach.shared.domain.StoneColor
+import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
+import com.worksoc.goaicoach.shared.enginecontract.OwnershipEstimate
 import com.worksoc.goaicoach.shared.policy.topMoveDeltaScoreLabel
 import kotlin.math.abs
 import kotlinx.coroutines.delay

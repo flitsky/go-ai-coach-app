@@ -1,19 +1,18 @@
 package com.worksoc.goaicoach.application
 
 import com.worksoc.goaicoach.application.startgame.*
-
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.match.SidePlayerSetup
 import com.worksoc.goaicoach.shared.domain.BoardSize
+import com.worksoc.goaicoach.shared.domain.Ruleset
+import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.policy.PlayLevelGroup
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
-import com.worksoc.goaicoach.shared.domain.Ruleset
-import com.worksoc.goaicoach.shared.domain.StoneColor
+import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
-import kotlin.test.Test
 
 class StartGameApplicationTest {
     @Test

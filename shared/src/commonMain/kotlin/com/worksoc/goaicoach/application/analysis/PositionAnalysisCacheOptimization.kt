@@ -3,13 +3,13 @@ package com.worksoc.goaicoach.application.analysis
 import com.worksoc.goaicoach.application.contract.PositionAnalysisCacheOptimizationPlan
 import com.worksoc.goaicoach.application.contract.PositionAnalysisCacheOptimizationTarget
 import com.worksoc.goaicoach.match.PlayerSetup
+import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.domain.analysisFingerprint
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
 import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
-import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
 import com.worksoc.goaicoach.shared.policy.aiMoveAnalysisLimitWith
 import com.worksoc.goaicoach.shared.policy.aiMoveSearchMode
-import com.worksoc.goaicoach.shared.domain.analysisFingerprint
 import com.worksoc.goaicoach.shared.policy.forcedJsonPositionAnalysis
 
 internal const val JsonPositionAnalysisCacheOptimizationBatchMaxTargets: Int = 10

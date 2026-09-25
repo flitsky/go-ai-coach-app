@@ -1,9 +1,14 @@
 package com.worksoc.goaicoach.engine.android
 
-import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
-import com.worksoc.goaicoach.shared.enginecontract.AnalysisResult
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.BoardSize
+import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.domain.Move
+import com.worksoc.goaicoach.shared.domain.Ruleset
+import com.worksoc.goaicoach.shared.domain.StoneColor
+import com.worksoc.goaicoach.shared.domain.describe
+import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
+import com.worksoc.goaicoach.shared.enginecontract.AnalysisResult
 import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
 import com.worksoc.goaicoach.shared.enginecontract.DeadStonesResult
 import com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi
@@ -11,15 +16,13 @@ import com.worksoc.goaicoach.shared.enginecontract.EngineMode
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.enginecontract.EngineStatus
 import com.worksoc.goaicoach.shared.enginecontract.FinalScoreResult
-import com.worksoc.goaicoach.shared.domain.GameState
-import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.enginecontract.MoveResult
 import com.worksoc.goaicoach.shared.enginecontract.OwnershipEstimate
 import com.worksoc.goaicoach.shared.enginecontract.OwnershipPoint
-import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.enginecontract.ScoreEstimate
-import com.worksoc.goaicoach.shared.domain.StoneColor
-import com.worksoc.goaicoach.shared.domain.describe
+import java.io.IOException
+import java.net.HttpURLConnection
+import java.net.URL
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
@@ -32,9 +35,6 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeout
 import org.json.JSONArray
 import org.json.JSONObject
-import java.io.IOException
-import java.net.HttpURLConnection
-import java.net.URL
 
 /**
  * 2계층(Middleware / Bridge) — [EngineCoreApi]의 원격 구현체.

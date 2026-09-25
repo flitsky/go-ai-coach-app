@@ -22,14 +22,14 @@ import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshotSource
 import com.worksoc.goaicoach.testsupport.FakeEngineSessionClient
 import com.worksoc.goaicoach.testsupport.RecordingDiagnosticEventLog
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 
 /**
  * 세 트리거(계가 규칙 변경·무르기 후·복원 대국)의 score sync 흐름을 **공개 진입점으로만** 재는 특성 테스트

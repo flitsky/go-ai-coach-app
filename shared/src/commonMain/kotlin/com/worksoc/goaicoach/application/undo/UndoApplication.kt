@@ -1,17 +1,17 @@
 package com.worksoc.goaicoach.application.undo
 
-import com.worksoc.goaicoach.application.movereview.MoveReviewMarker
 import com.worksoc.goaicoach.application.engine.localScoreSnapshot
+import com.worksoc.goaicoach.application.movereview.MoveReviewMarker
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.shared.domain.GameState
-import com.worksoc.goaicoach.shared.policy.MoveAnalysisSnapshot
-import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
-import com.worksoc.goaicoach.shared.scoring.ScoreTimeline
 import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.domain.describe
 import com.worksoc.goaicoach.shared.domain.replayWithoutLastMoves
+import com.worksoc.goaicoach.shared.policy.MoveAnalysisSnapshot
+import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
+import com.worksoc.goaicoach.shared.scoring.ScoreTimeline
 
 data class UndoLocalStatePlan(
     val gameState: GameState,

@@ -1,11 +1,11 @@
 package com.worksoc.goaicoach.application.orchestration
 
+import com.worksoc.goaicoach.application.analysis.toDisplayText
 import com.worksoc.goaicoach.application.contract.RuntimePlayLevelSelection
 import com.worksoc.goaicoach.application.contract.selectRuntimePlayLevel
 import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
 import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
 import com.worksoc.goaicoach.application.runtime.runtimeAutoPlayDelayChangeLog
-import com.worksoc.goaicoach.application.analysis.toDisplayText
 import com.worksoc.goaicoach.application.session.GameSessionAnalysisState
 import com.worksoc.goaicoach.application.session.GameSessionCoreState
 import com.worksoc.goaicoach.application.session.GameSessionSettingsState
@@ -15,12 +15,12 @@ import com.worksoc.goaicoach.application.topmoves.SearchTimeTopMovesResetRunRequ
 import com.worksoc.goaicoach.application.topmoves.runSearchTimeTopMovesResetApplication
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.PlayerSetup
-import com.worksoc.goaicoach.shared.scoring.BoardScorer
 import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
-import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
+import com.worksoc.goaicoach.shared.scoring.BoardScorer
 
 /**
  * Owns three related settings-change workflows that share no engine I/O

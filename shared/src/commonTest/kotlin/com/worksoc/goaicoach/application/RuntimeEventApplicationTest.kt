@@ -1,50 +1,44 @@
 package com.worksoc.goaicoach.application
 
-import com.worksoc.goaicoach.application.engine.operation.*
-import com.worksoc.goaicoach.shared.policy.EngineOperationResultGuard
-
 import com.worksoc.goaicoach.application.analysis.*
-import com.worksoc.goaicoach.application.humanmove.*
-
-import com.worksoc.goaicoach.application.startgame.*
-
-import com.worksoc.goaicoach.application.savedgame.*
-
-import com.worksoc.goaicoach.application.engine.*
-import com.worksoc.goaicoach.application.contract.*
-import com.worksoc.goaicoach.application.session.*
-import com.worksoc.goaicoach.application.runtime.*
-
 import com.worksoc.goaicoach.application.autoai.*
-
+import com.worksoc.goaicoach.application.contract.*
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
+import com.worksoc.goaicoach.application.engine.*
+import com.worksoc.goaicoach.application.engine.operation.*
+import com.worksoc.goaicoach.application.humanmove.*
+import com.worksoc.goaicoach.application.runtime.*
+import com.worksoc.goaicoach.application.savedgame.*
+import com.worksoc.goaicoach.application.session.*
+import com.worksoc.goaicoach.application.startgame.*
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.match.SidePlayerSetup
-import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
-import com.worksoc.goaicoach.shared.enginecontract.AnalysisPreset
+import com.worksoc.goaicoach.shared.diagnostic.DiagnosticEvent
+import com.worksoc.goaicoach.shared.diagnostic.DiagnosticSeverity
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.BoardSize
-import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.Move
+import com.worksoc.goaicoach.shared.domain.Ruleset
+import com.worksoc.goaicoach.shared.domain.StoneColor
+import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
+import com.worksoc.goaicoach.shared.enginecontract.AnalysisPreset
+import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
+import com.worksoc.goaicoach.shared.policy.EngineOperationResultGuard
 import com.worksoc.goaicoach.shared.policy.MoveAnalysisSnapshot
 import com.worksoc.goaicoach.shared.policy.PlayLevelGroup
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
-import com.worksoc.goaicoach.shared.domain.Ruleset
-import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
-import com.worksoc.goaicoach.shared.scoring.ScoreSnapshotSource
 import com.worksoc.goaicoach.shared.policy.SearchTimeLimit
 import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
-import com.worksoc.goaicoach.shared.domain.StoneColor
-import com.worksoc.goaicoach.shared.diagnostic.DiagnosticEvent
-import com.worksoc.goaicoach.shared.diagnostic.DiagnosticSeverity
+import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
+import com.worksoc.goaicoach.shared.scoring.ScoreSnapshotSource
+import com.worksoc.goaicoach.testsupport.RecordingDiagnosticEventLog
+import com.worksoc.goaicoach.testsupport.RecordingRuntimeEventLog
+import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
-import kotlin.test.Test
-import com.worksoc.goaicoach.testsupport.RecordingRuntimeEventLog
-import com.worksoc.goaicoach.testsupport.RecordingDiagnosticEventLog
 
 class RuntimeEventApplicationTest {
     @Test

@@ -1,25 +1,25 @@
 package com.worksoc.goaicoach.application.topmoves
 
-import com.worksoc.goaicoach.application.session.TopMoveAnalysisFailureDisplayPlan
-import com.worksoc.goaicoach.application.session.TopMoveAnalysisUpdate
-import com.worksoc.goaicoach.application.contract.TopMoveAnalysisPlan
-import com.worksoc.goaicoach.application.contract.AnalysisCacheKey
 import com.worksoc.goaicoach.application.analysis.CachedAnalysisResult
+import com.worksoc.goaicoach.application.contract.AnalysisCacheKey
+import com.worksoc.goaicoach.application.contract.GameSessionEffect
+import com.worksoc.goaicoach.application.contract.TopMoveAnalysisPlan
 import com.worksoc.goaicoach.application.engine.EngineSessionClient
-import com.worksoc.goaicoach.shared.policy.EngineOperationResultGuard
 import com.worksoc.goaicoach.application.engine.runEngineIo
 import com.worksoc.goaicoach.application.session.GameSessionAnalysisState
 import com.worksoc.goaicoach.application.session.GameSessionControllerState
-import com.worksoc.goaicoach.application.contract.GameSessionEffect
 import com.worksoc.goaicoach.application.session.GameSessionSettingsState
-import com.worksoc.goaicoach.shared.policy.EngineOperationRequest
+import com.worksoc.goaicoach.application.session.TopMoveAnalysisFailureDisplayPlan
+import com.worksoc.goaicoach.application.session.TopMoveAnalysisUpdate
+import com.worksoc.goaicoach.match.PlayerSetup
+import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisPreset
 import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
-import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.policy.EngineOperationRequest
+import com.worksoc.goaicoach.shared.policy.EngineOperationResultGuard
 import com.worksoc.goaicoach.shared.policy.MoveAnalysisSnapshot
-import com.worksoc.goaicoach.match.PlayerSetup
 
 // Top Moves is a lightweight, in-session suggestion feature. It must retain
 // the GTP engine tree and avoid the separate JSON analysis process.

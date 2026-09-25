@@ -1,9 +1,9 @@
 package com.worksoc.goaicoach.middleware
 
+import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisResult
 import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
-import com.worksoc.goaicoach.shared.domain.GameState
 
 /**
  * Middleware boundary for read-only position analysis.

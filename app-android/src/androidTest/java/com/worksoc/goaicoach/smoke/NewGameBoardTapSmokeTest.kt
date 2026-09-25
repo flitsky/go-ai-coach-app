@@ -8,13 +8,13 @@ import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.worksoc.goaicoach.application.diagnostic.NoopDiagnosticEventLog
 import com.worksoc.goaicoach.application.engine.EngineStartupResult
-import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.engine.EngineIdentity
 import com.worksoc.goaicoach.engine.SessionGenerationRelay
-import com.worksoc.goaicoach.shared.enginecontract.EngineMode
-import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
+import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.StoneColor
+import com.worksoc.goaicoach.shared.enginecontract.EngineMode
+import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.testsupport.FakeEngineSessionClient
 import com.worksoc.goaicoach.ui.GoCoachApp
 import com.worksoc.goaicoach.ui.TestTags

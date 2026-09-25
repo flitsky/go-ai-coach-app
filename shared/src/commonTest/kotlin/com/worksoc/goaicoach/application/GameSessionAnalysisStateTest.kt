@@ -2,21 +2,20 @@ package com.worksoc.goaicoach.application
 
 import com.worksoc.goaicoach.application.analysis.*
 import com.worksoc.goaicoach.application.session.*
-
 import com.worksoc.goaicoach.application.topmoves.*
-import com.worksoc.goaicoach.shared.enginecontract.AnalysisPreset
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.BoardSize
-import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
-import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.Move
-import com.worksoc.goaicoach.shared.policy.MoveAnalysisSnapshot
 import com.worksoc.goaicoach.shared.domain.StoneColor
+import com.worksoc.goaicoach.shared.enginecontract.AnalysisPreset
+import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
+import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
+import com.worksoc.goaicoach.shared.policy.MoveAnalysisSnapshot
+import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
-import kotlin.test.Test
 
 class GameSessionAnalysisStateTest {
     @Test

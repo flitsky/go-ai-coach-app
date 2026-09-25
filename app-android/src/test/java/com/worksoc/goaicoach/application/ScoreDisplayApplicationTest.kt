@@ -1,40 +1,36 @@
 package com.worksoc.goaicoach.application
 
-import com.worksoc.goaicoach.application.engine.operation.*
-import com.worksoc.goaicoach.shared.policy.EngineOperationResultGuard
-import com.worksoc.goaicoach.shared.policy.engineOperationRequest
-
-import com.worksoc.goaicoach.application.contract.*
 import com.worksoc.goaicoach.application.analysis.*
+import com.worksoc.goaicoach.application.autoai.*
+import com.worksoc.goaicoach.application.contract.*
 import com.worksoc.goaicoach.application.diagnostic.NoopDiagnosticEventLog
 import com.worksoc.goaicoach.application.endgame.*
 import com.worksoc.goaicoach.application.engine.*
-import com.worksoc.goaicoach.application.session.*
-
-import com.worksoc.goaicoach.application.autoai.*
-
+import com.worksoc.goaicoach.application.engine.operation.*
 import com.worksoc.goaicoach.application.score.*
-import com.worksoc.goaicoach.testsupport.FakeEngineSessionClient
-import com.worksoc.goaicoach.ui.resultText
-import com.worksoc.goaicoach.ui.blackLine
-import com.worksoc.goaicoach.ui.whiteLine
-
+import com.worksoc.goaicoach.application.session.*
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.DeadStoneCleanupResult
-import com.worksoc.goaicoach.shared.policy.EndgameScoreSource
-import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
-import com.worksoc.goaicoach.shared.enginecontract.EngineStatus
-import com.worksoc.goaicoach.shared.enginecontract.FinalScoreResult
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.domain.Ruleset
+import com.worksoc.goaicoach.shared.domain.StoneColor
+import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
+import com.worksoc.goaicoach.shared.enginecontract.EngineStatus
+import com.worksoc.goaicoach.shared.enginecontract.FinalScoreResult
 import com.worksoc.goaicoach.shared.enginecontract.ScoreEstimate
+import com.worksoc.goaicoach.shared.policy.EndgameScoreSource
+import com.worksoc.goaicoach.shared.policy.EngineOperationResultGuard
+import com.worksoc.goaicoach.shared.policy.engineOperationRequest
 import com.worksoc.goaicoach.shared.scoring.BoardScorer
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshotSource
-import com.worksoc.goaicoach.shared.domain.StoneColor
+import com.worksoc.goaicoach.testsupport.FakeEngineSessionClient
+import com.worksoc.goaicoach.ui.blackLine
+import com.worksoc.goaicoach.ui.resultText
+import com.worksoc.goaicoach.ui.whiteLine
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull

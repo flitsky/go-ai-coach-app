@@ -2,10 +2,10 @@ package com.worksoc.goaicoach.engine
 
 import com.worksoc.goaicoach.application.engine.EngineSessionBackend
 import com.worksoc.goaicoach.application.engine.RemoteEngineCandidate
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 class RemoteEngineSessionBootstrapTest {

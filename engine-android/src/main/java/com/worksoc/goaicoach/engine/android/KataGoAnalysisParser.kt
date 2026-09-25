@@ -2,15 +2,15 @@ package com.worksoc.goaicoach.engine.android
 
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.BoardSize
+import com.worksoc.goaicoach.shared.domain.Move
+import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
 import com.worksoc.goaicoach.shared.enginecontract.CandidateMoveSource
 import com.worksoc.goaicoach.shared.enginecontract.EngineStatus
 import com.worksoc.goaicoach.shared.enginecontract.FinalScoreResult
-import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.enginecontract.OwnershipEstimate
 import com.worksoc.goaicoach.shared.enginecontract.OwnershipPoint
 import com.worksoc.goaicoach.shared.enginecontract.ScoreEstimate
-import com.worksoc.goaicoach.shared.domain.StoneColor
 import kotlin.math.abs
 
 internal object KataGoAnalysisParser {

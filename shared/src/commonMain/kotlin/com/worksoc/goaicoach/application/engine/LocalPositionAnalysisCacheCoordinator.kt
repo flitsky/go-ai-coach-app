@@ -9,10 +9,10 @@ import com.worksoc.goaicoach.application.analysis.TrustedPositionAnalysisCachePr
 import com.worksoc.goaicoach.application.analysis.isStorablePositionAnalysisFor
 import com.worksoc.goaicoach.application.analysis.positionAnalysisCacheKeyFor
 import com.worksoc.goaicoach.application.analysis.withCacheHitSummary
+import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisResult
 import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
-import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.policy.forcedJsonPositionAnalysis
 
 internal data class LocalPositionAnalysisCacheContext(

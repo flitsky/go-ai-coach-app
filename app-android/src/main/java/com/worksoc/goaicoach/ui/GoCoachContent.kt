@@ -1,8 +1,8 @@
 package com.worksoc.goaicoach.ui
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,8 +16,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.window.DialogProperties
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -29,16 +27,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.worksoc.goaicoach.application.engine.EngineBenchmarkProfile
-import com.worksoc.goaicoach.application.engine.EngineBenchmarkProgress
+import androidx.compose.ui.window.DialogProperties
 import com.worksoc.goaicoach.application.analysis.JsonPositionAnalysisCacheOpeningInitialMoveCount
 import com.worksoc.goaicoach.application.analysis.JsonPositionAnalysisCacheOpeningMaxMoveCount
+import com.worksoc.goaicoach.application.engine.EngineBenchmarkProfile
+import com.worksoc.goaicoach.application.engine.EngineBenchmarkProgress
+import com.worksoc.goaicoach.application.guide.GuideSurface
 import com.worksoc.goaicoach.application.session.GameSessionTurnTimeState
 import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.presentation.GameUiEvent
 import com.worksoc.goaicoach.presentation.shouldCollapseMenuAfterEvent
-import com.worksoc.goaicoach.application.guide.GuideSurface
 
 @Composable
 internal fun GoCoachContent(

@@ -1,9 +1,9 @@
 package com.worksoc.goaicoach.ui
 
-import com.worksoc.goaicoach.application.premium.port.BillingPeriod
 import com.worksoc.goaicoach.application.premium.app.PurchaseFailureNotice
-import com.worksoc.goaicoach.application.premium.port.PurchaseOutcome
 import com.worksoc.goaicoach.application.premium.app.failureNotice
+import com.worksoc.goaicoach.application.premium.port.BillingPeriod
+import com.worksoc.goaicoach.application.premium.port.PurchaseOutcome
 
 /**
  * 구독 고지가 쓰는 문구(백로그 #159). 구조는 `UiStringsAppUpdate.kt`와 같다 — 화면 한 조각이

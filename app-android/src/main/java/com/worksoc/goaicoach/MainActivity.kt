@@ -5,7 +5,6 @@ import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.lifecycle.lifecycleScope
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -15,14 +14,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
+import androidx.lifecycle.lifecycleScope
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.engine.EngineSessionBackend
 import com.worksoc.goaicoach.application.engine.EngineSessionCapabilities
 import com.worksoc.goaicoach.application.engine.LocalEngineSessionClient
 import com.worksoc.goaicoach.application.engine.RemoteEngineCandidate
 import com.worksoc.goaicoach.engine.DeferredEngineCoreApi
-import com.worksoc.goaicoach.platform.AdsConsentManager
-import com.worksoc.goaicoach.ui.allowsRotation
 import com.worksoc.goaicoach.engine.EngineBootstrap
 import com.worksoc.goaicoach.engine.EngineIdentity
 import com.worksoc.goaicoach.engine.SessionGenerationRelay
@@ -32,15 +30,17 @@ import com.worksoc.goaicoach.engine.identity
 import com.worksoc.goaicoach.persistence.DiagnosticEventLog
 import com.worksoc.goaicoach.persistence.JsonPositionAnalysisCacheStore
 import com.worksoc.goaicoach.persistence.UserPreferencesStore
+import com.worksoc.goaicoach.platform.AdsConsentManager
 import com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi
 import com.worksoc.goaicoach.shared.enginecontract.EngineMode
 import com.worksoc.goaicoach.ui.AppFontScaleState
 import com.worksoc.goaicoach.ui.AppSplash
 import com.worksoc.goaicoach.ui.GoCoachApp
+import com.worksoc.goaicoach.ui.allowsRotation
 import java.io.File
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class MainActivity : ComponentActivity() {

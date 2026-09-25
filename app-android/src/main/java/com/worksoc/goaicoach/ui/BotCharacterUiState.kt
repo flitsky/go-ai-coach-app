@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.ui
 
 import android.content.Context
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -10,13 +11,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -33,8 +34,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
-import android.widget.Toast
-import com.worksoc.goaicoach.application.botcharacter.BotUnlockSource
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -46,16 +45,17 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import com.worksoc.goaicoach.application.botcharacter.BotCharacter
+import com.worksoc.goaicoach.application.botcharacter.BotCharacterCatalog
+import com.worksoc.goaicoach.application.botcharacter.BotCollectionState
+import com.worksoc.goaicoach.application.botcharacter.BotCollectionStorePort
 import com.worksoc.goaicoach.application.botcharacter.BotShardAdOutcome
+import com.worksoc.goaicoach.application.botcharacter.BotUnlockSource
 import com.worksoc.goaicoach.application.botcharacter.runBotCharacterShardGrant
 import com.worksoc.goaicoach.application.botcharacter.runBotCharacterUnlock
 import com.worksoc.goaicoach.application.premium.port.AdRewardFailureReason
 import com.worksoc.goaicoach.application.premium.port.AdRewardOutcome
 import com.worksoc.goaicoach.application.premium.port.PurchaseFailureReason
 import com.worksoc.goaicoach.application.premium.port.PurchaseOutcome
-import com.worksoc.goaicoach.application.botcharacter.BotCharacterCatalog
-import com.worksoc.goaicoach.application.botcharacter.BotCollectionState
-import com.worksoc.goaicoach.application.botcharacter.BotCollectionStorePort
 import com.worksoc.goaicoach.performBotCharacterPurchase
 import com.worksoc.goaicoach.performBotCharacterPurchaseRestore
 import com.worksoc.goaicoach.persistence.BotCollectionStore

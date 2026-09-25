@@ -1,7 +1,7 @@
 package com.worksoc.goaicoach.ui
 
-import com.worksoc.goaicoach.application.attendance.AttendanceRewardPolicy
 import com.worksoc.goaicoach.application.attendance.AttendanceReward
+import com.worksoc.goaicoach.application.attendance.AttendanceRewardPolicy
 import com.worksoc.goaicoach.application.botcharacter.BotCharacterCatalog
 import com.worksoc.goaicoach.application.botcharacter.BotUnlockSource
 import org.junit.Assert.assertEquals

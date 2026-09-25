@@ -1,9 +1,5 @@
 package com.worksoc.goaicoach.application
 
-import com.worksoc.goaicoach.application.engine.operation.*
-import com.worksoc.goaicoach.shared.policy.EngineOperationResultGuard
-import com.worksoc.goaicoach.shared.policy.engineOperationRequest
-
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventExternalSinkResult
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.diagnostic.LocalFileDiagnosticEventExternalSink
@@ -15,11 +11,7 @@ import com.worksoc.goaicoach.application.diagnostic.engineOperationTimeoutDiagno
 import com.worksoc.goaicoach.application.diagnostic.engineVisitFillDiagnosticEvent
 import com.worksoc.goaicoach.application.diagnostic.runDiagnosticEventExternalSinkPlan
 import com.worksoc.goaicoach.application.diagnostic.runObservedEngineOperation
-import com.worksoc.goaicoach.shared.domain.BoardCoordinate
-import com.worksoc.goaicoach.shared.domain.BoardSize
-import com.worksoc.goaicoach.shared.domain.GameState
-import com.worksoc.goaicoach.shared.domain.Move
-import com.worksoc.goaicoach.shared.domain.StoneColor
+import com.worksoc.goaicoach.application.engine.operation.*
 import com.worksoc.goaicoach.shared.diagnostic.DiagnosticEvent
 import com.worksoc.goaicoach.shared.diagnostic.DiagnosticEventExternalExportDecision
 import com.worksoc.goaicoach.shared.diagnostic.DiagnosticEventExternalExportPayload
@@ -27,11 +19,18 @@ import com.worksoc.goaicoach.shared.diagnostic.DiagnosticEventExternalSinkPlan
 import com.worksoc.goaicoach.shared.diagnostic.DiagnosticSeverity
 import com.worksoc.goaicoach.shared.diagnostic.buildDiagnosticEventExternalSinkPlan
 import com.worksoc.goaicoach.shared.diagnostic.planDiagnosticEventExternalExport
+import com.worksoc.goaicoach.shared.domain.BoardCoordinate
+import com.worksoc.goaicoach.shared.domain.BoardSize
+import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.domain.Move
+import com.worksoc.goaicoach.shared.domain.StoneColor
+import com.worksoc.goaicoach.shared.policy.EngineOperationResultGuard
+import com.worksoc.goaicoach.shared.policy.engineOperationRequest
+import kotlin.io.path.createTempDirectory
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
-import kotlin.io.path.createTempDirectory
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue

@@ -2,12 +2,12 @@ package com.worksoc.goaicoach.application.engine.operation
 
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.diagnostic.engineOperationDiscardedDiagnosticEvent
-import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
 import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
+import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
 import com.worksoc.goaicoach.application.runtime.runtimeEngineOperationDiscardedLog
 import com.worksoc.goaicoach.application.time.currentEpochMillis
-import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.diagnostic.DiagnosticEvent
+import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.policy.EngineOperationResultGuard
 
 internal data class EngineOperationDiscardLogPlan(

@@ -3,11 +3,11 @@ package com.worksoc.goaicoach
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnController
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnRequestPlan
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnScheduleValidationPlan
-import com.worksoc.goaicoach.application.contract.AutoAiTurnDisplayPlan
 import com.worksoc.goaicoach.application.autoai.applyAutoAiTurnRequestPlan
 import com.worksoc.goaicoach.application.autoai.applyAutoAiTurnScheduleValidationPlan
 import com.worksoc.goaicoach.application.autoai.buildAutoAiTurnFailureDisplayPlan
 import com.worksoc.goaicoach.application.autoai.completeAutoAiTurnRun
+import com.worksoc.goaicoach.application.contract.AutoAiTurnDisplayPlan
 import com.worksoc.goaicoach.application.humanmove.HumanMoveController
 import com.worksoc.goaicoach.application.session.TurnTimeMoveUpdate
 import com.worksoc.goaicoach.application.topmoves.TopMovesController

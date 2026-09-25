@@ -1,12 +1,12 @@
 package com.worksoc.goaicoach.engine.android
 
-import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.DefaultKomi
 import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.domain.StoneColor
+import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
 
 internal object KataGoProtocolCommands {
     fun boardSize(boardSize: BoardSize): String = "boardsize ${boardSize.value}"

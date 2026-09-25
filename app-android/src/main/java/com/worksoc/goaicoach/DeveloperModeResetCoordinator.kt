@@ -1,11 +1,11 @@
 package com.worksoc.goaicoach
 
-import com.worksoc.goaicoach.persistence.GameHistoryDirName
 import android.content.Context
 import android.content.Intent
 import com.worksoc.goaicoach.application.lifecycle.DeveloperModeResetPolicy
 import com.worksoc.goaicoach.persistence.DeveloperModeStore
 import com.worksoc.goaicoach.persistence.DeviceIdentityStore
+import com.worksoc.goaicoach.persistence.GameHistoryDirName
 import java.io.File
 import kotlin.system.exitProcess
 

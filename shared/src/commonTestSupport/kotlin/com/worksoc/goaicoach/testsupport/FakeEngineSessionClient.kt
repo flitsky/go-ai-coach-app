@@ -1,8 +1,8 @@
 package com.worksoc.goaicoach.testsupport
 
-import com.worksoc.goaicoach.application.contract.PositionAnalysisCacheOptimizationPlan
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationResult
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheQuality
+import com.worksoc.goaicoach.application.contract.PositionAnalysisCacheOptimizationPlan
 import com.worksoc.goaicoach.application.endgame.AiEndgameResolution
 import com.worksoc.goaicoach.application.engine.AutoAiTurnResult
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkProfile
@@ -11,17 +11,17 @@ import com.worksoc.goaicoach.application.engine.EngineSessionCapabilities
 import com.worksoc.goaicoach.application.engine.EngineSessionClient
 import com.worksoc.goaicoach.application.engine.EngineStartupResult
 import com.worksoc.goaicoach.application.engine.LocalEngineMoveResult
+import com.worksoc.goaicoach.shared.domain.BoardSize
+import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.domain.Move
+import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisResult
-import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
-import com.worksoc.goaicoach.shared.domain.GameState
-import com.worksoc.goaicoach.shared.domain.Move
-import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
-import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.enginecontract.ScoreEstimate
+import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
 
 /**

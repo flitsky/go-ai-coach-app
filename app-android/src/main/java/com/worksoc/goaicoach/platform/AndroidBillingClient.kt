@@ -12,9 +12,9 @@ import com.android.billingclient.api.Purchase
 import com.android.billingclient.api.PurchasesUpdatedListener
 import com.android.billingclient.api.QueryProductDetailsParams
 import com.android.billingclient.api.QueryPurchasesParams
+import com.worksoc.goaicoach.application.premium.port.PremiumProductInfo
 import com.worksoc.goaicoach.application.premium.port.PurchaseFailureReason
 import com.worksoc.goaicoach.application.premium.port.PurchaseOutcome
-import com.worksoc.goaicoach.application.premium.port.PremiumProductInfo
 import com.worksoc.goaicoach.application.premium.port.PurchasePort
 import com.worksoc.goaicoach.application.premium.port.billingPeriodFromIso8601
 import kotlin.coroutines.resume

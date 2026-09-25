@@ -1,27 +1,27 @@
 package com.worksoc.goaicoach.application
 
-import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
-import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
 import com.worksoc.goaicoach.application.contract.*
 import com.worksoc.goaicoach.application.orchestration.*
 import com.worksoc.goaicoach.application.preferences.*
+import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
+import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
 import com.worksoc.goaicoach.application.session.*
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.DefaultKomi
-import com.worksoc.goaicoach.shared.domain.HandicapKomi
 import com.worksoc.goaicoach.shared.domain.GameState
-import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
-import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
-import com.worksoc.goaicoach.shared.policy.SearchTimeLimit
+import com.worksoc.goaicoach.shared.domain.HandicapKomi
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
+import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
+import com.worksoc.goaicoach.shared.policy.SearchTimeLimit
+import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
+import com.worksoc.goaicoach.testsupport.CannedRuntimeEventLog
+import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import kotlin.test.Test
-import com.worksoc.goaicoach.testsupport.CannedRuntimeEventLog
 
 class GameSettingsControllerTest {
     @Test

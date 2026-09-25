@@ -1,13 +1,13 @@
 package com.worksoc.goaicoach.application.engine
 
 import com.worksoc.goaicoach.match.AiMoveEngineGateway
+import com.worksoc.goaicoach.shared.domain.Move
+import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisResult
 import com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi
 import com.worksoc.goaicoach.shared.enginecontract.EngineStatus
-import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.enginecontract.MoveResult
-import com.worksoc.goaicoach.shared.domain.StoneColor
 
 internal class LocalAiMoveEngineGateway(
     private val coreApi: EngineCoreApi,

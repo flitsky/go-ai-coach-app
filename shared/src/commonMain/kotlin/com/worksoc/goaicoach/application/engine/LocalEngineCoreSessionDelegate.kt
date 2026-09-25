@@ -1,25 +1,25 @@
 package com.worksoc.goaicoach.application.engine
 
+import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
+import com.worksoc.goaicoach.application.diagnostic.NoopDiagnosticEventLog
 import com.worksoc.goaicoach.application.endgame.AiEndgameResolution
 import com.worksoc.goaicoach.application.endgame.resolveAiEndgame
 import com.worksoc.goaicoach.match.MatchReferee
 import com.worksoc.goaicoach.match.applyAiTurn
+import com.worksoc.goaicoach.shared.domain.BoardSize
+import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.domain.Move
+import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisResult
-import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
 import com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
-import com.worksoc.goaicoach.shared.domain.GameState
-import com.worksoc.goaicoach.shared.domain.Move
-import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
-import com.worksoc.goaicoach.shared.domain.Ruleset
-import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
 import com.worksoc.goaicoach.shared.enginecontract.ScoreEstimate
+import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
+import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
 import com.worksoc.goaicoach.shared.scoring.ScoreTimeline
-import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
-import com.worksoc.goaicoach.application.diagnostic.NoopDiagnosticEventLog
 
 internal class LocalEngineCoreSessionDelegate(
     private val coreApi: EngineCoreApi,

@@ -5,9 +5,9 @@ import com.worksoc.goaicoach.application.movereview.MoveReviewTone
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.Move
+import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshotSource
-import com.worksoc.goaicoach.shared.domain.StoneColor
 import org.json.JSONArray
 import org.json.JSONObject
 

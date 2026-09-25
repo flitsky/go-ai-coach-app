@@ -1,7 +1,7 @@
 package com.worksoc.goaicoach.match
 
-import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import com.worksoc.goaicoach.shared.domain.StoneColor
+import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 
 val HumanPlayer = StoneColor.Black
 val AiPlayer = StoneColor.White

@@ -3,11 +3,11 @@ package com.worksoc.goaicoach.application.autoai
 import com.worksoc.goaicoach.application.contract.AutoAiTurnDisplayPlan
 import com.worksoc.goaicoach.application.contract.AutoAiTurnEndgamePlan
 import com.worksoc.goaicoach.application.contract.AutoAiTurnExecutionContext
-import com.worksoc.goaicoach.shared.policy.EngineOperationResultGuard
 import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
 import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
 import com.worksoc.goaicoach.application.session.TurnTimeMoveUpdate
 import com.worksoc.goaicoach.shared.domain.StoneColor
+import com.worksoc.goaicoach.shared.policy.EngineOperationResultGuard
 
 internal data class AutoAiTurnCompletionApplyRunRequest(
     val completion: AutoAiTurnCompletionPlan,

@@ -1,14 +1,14 @@
 package com.worksoc.goaicoach.application
 
+import com.worksoc.goaicoach.application.premium.app.PremiumAdGrantRunRequest
+import com.worksoc.goaicoach.application.premium.app.runPremiumAdGrantApplication
 import com.worksoc.goaicoach.application.premium.port.AdRewardFailureReason
 import com.worksoc.goaicoach.application.premium.port.AdRewardOutcome
-import com.worksoc.goaicoach.application.premium.app.PremiumAdGrantRunRequest
 import com.worksoc.goaicoach.application.premium.state.PremiumSource
-import com.worksoc.goaicoach.application.premium.app.runPremiumAdGrantApplication
 import com.worksoc.goaicoach.shared.diagnostic.DiagnosticSeverity
+import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
-import kotlin.test.Test
 
 class PremiumAdGrantApplicationTest {
     @Test

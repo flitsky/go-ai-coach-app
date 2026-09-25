@@ -1,30 +1,30 @@
 package com.worksoc.goaicoach.presentation
 
-import com.worksoc.goaicoach.application.analysis.translateScoreText
-import com.worksoc.goaicoach.application.engine.operation.EngineActivityIndicator
-import com.worksoc.goaicoach.application.score.FinalScoreJudgement
-import com.worksoc.goaicoach.application.movereview.MoveReviewMarker
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationPrompt
-import com.worksoc.goaicoach.application.prompt.decidePromptVisibility
-import com.worksoc.goaicoach.application.session.GameSessionControllerState
-import com.worksoc.goaicoach.match.AutoPlayDelaySetting
-import com.worksoc.goaicoach.match.MatchSeatSnapshot
-import com.worksoc.goaicoach.match.MatchMode
-import com.worksoc.goaicoach.match.PlayerSetup
-import com.worksoc.goaicoach.match.turnStatusText
-import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
-import com.worksoc.goaicoach.shared.enginecontract.AnalysisPreset
-import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
+import com.worksoc.goaicoach.application.analysis.translateScoreText
 import com.worksoc.goaicoach.application.engine.EngineAvailability
 import com.worksoc.goaicoach.application.engine.engineAvailabilityFor
-import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
+import com.worksoc.goaicoach.application.engine.operation.EngineActivityIndicator
+import com.worksoc.goaicoach.application.movereview.MoveReviewMarker
+import com.worksoc.goaicoach.application.prompt.decidePromptVisibility
+import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
+import com.worksoc.goaicoach.application.score.FinalScoreJudgement
+import com.worksoc.goaicoach.application.session.GameSessionControllerState
+import com.worksoc.goaicoach.match.AutoPlayDelaySetting
+import com.worksoc.goaicoach.match.MatchMode
+import com.worksoc.goaicoach.match.MatchSeatSnapshot
+import com.worksoc.goaicoach.match.PlayerSetup
+import com.worksoc.goaicoach.match.turnStatusText
 import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.domain.StoneColor
+import com.worksoc.goaicoach.shared.enginecontract.AnalysisPreset
+import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
+import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
+import com.worksoc.goaicoach.shared.enginecontract.ScoreEstimate
 import com.worksoc.goaicoach.shared.policy.MoveAnalysisSnapshot
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
-import com.worksoc.goaicoach.shared.enginecontract.ScoreEstimate
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
-import com.worksoc.goaicoach.shared.domain.StoneColor
 
 internal data class GameScreenState(
     val gameState: GameState,

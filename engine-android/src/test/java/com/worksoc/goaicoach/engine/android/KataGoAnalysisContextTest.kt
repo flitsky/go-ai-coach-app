@@ -2,13 +2,13 @@ package com.worksoc.goaicoach.engine.android
 
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.BoardSize
-import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
 import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.domain.StoneColor
-import kotlinx.coroutines.runBlocking
+import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlinx.coroutines.runBlocking
 
 class KataGoAnalysisContextTest {
     @Test

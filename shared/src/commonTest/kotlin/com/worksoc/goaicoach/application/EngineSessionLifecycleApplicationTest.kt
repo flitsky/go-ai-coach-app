@@ -1,36 +1,33 @@
 package com.worksoc.goaicoach.application
 
-import com.worksoc.goaicoach.application.engine.operation.*
-import com.worksoc.goaicoach.shared.policy.EngineOperationRequest
-import com.worksoc.goaicoach.shared.policy.engineOperationRequest
-
-import com.worksoc.goaicoach.application.contract.*
 import com.worksoc.goaicoach.application.analysis.*
+import com.worksoc.goaicoach.application.autoai.*
+import com.worksoc.goaicoach.application.contract.*
+import com.worksoc.goaicoach.application.diagnostic.NoopDiagnosticEventLog
 import com.worksoc.goaicoach.application.endgame.*
 import com.worksoc.goaicoach.application.engine.*
+import com.worksoc.goaicoach.application.engine.operation.*
 import com.worksoc.goaicoach.application.session.*
-
-import com.worksoc.goaicoach.application.autoai.*
-
-import com.worksoc.goaicoach.application.diagnostic.NoopDiagnosticEventLog
+import com.worksoc.goaicoach.shared.domain.BoardSize
+import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.domain.Move
+import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisResult
-import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
-import com.worksoc.goaicoach.shared.domain.GameState
-import com.worksoc.goaicoach.shared.domain.Move
-import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
-import com.worksoc.goaicoach.shared.domain.Ruleset
-import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
 import com.worksoc.goaicoach.shared.enginecontract.ScoreEstimate
-import kotlinx.coroutines.runBlocking
+import com.worksoc.goaicoach.shared.policy.EngineOperationRequest
+import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
+import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
+import com.worksoc.goaicoach.shared.policy.engineOperationRequest
+import com.worksoc.goaicoach.testsupport.FakeEngineSessionClient
+import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
-import kotlin.test.Test
-import com.worksoc.goaicoach.testsupport.FakeEngineSessionClient
+import kotlinx.coroutines.runBlocking
 
 class EngineSessionLifecycleApplicationTest {
     @Test

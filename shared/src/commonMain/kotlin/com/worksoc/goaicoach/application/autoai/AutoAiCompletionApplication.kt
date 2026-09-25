@@ -3,14 +3,14 @@ package com.worksoc.goaicoach.application.autoai
 import com.worksoc.goaicoach.application.contract.AutoAiTurnDisplayPlan
 import com.worksoc.goaicoach.application.contract.AutoAiTurnEndgamePlan
 import com.worksoc.goaicoach.application.contract.AutoAiTurnRunPlan
-import com.worksoc.goaicoach.shared.policy.EngineOperationResultGuard
-import com.worksoc.goaicoach.shared.policy.evaluateEngineOperationResultGuard
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.policy.EngineFallbackPolicy
 import com.worksoc.goaicoach.shared.policy.EngineOperationKind
 import com.worksoc.goaicoach.shared.policy.EngineOperationRequest
+import com.worksoc.goaicoach.shared.policy.EngineOperationResultGuard
 import com.worksoc.goaicoach.shared.policy.EngineTimeoutPolicy
 import com.worksoc.goaicoach.shared.policy.engineOperationRequest
+import com.worksoc.goaicoach.shared.policy.evaluateEngineOperationResultGuard
 
 data class AutoAiTurnOperationToken(
     val operation: EngineOperationRequest,

@@ -8,10 +8,10 @@ import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.engine.EngineSessionClient
 import com.worksoc.goaicoach.application.time.currentEpochMillis
 import com.worksoc.goaicoach.match.PlayerSetup
-import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
 import com.worksoc.goaicoach.shared.domain.GameState
-import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
+import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
 import com.worksoc.goaicoach.shared.policy.EngineOperationRequest
+import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
 
 /**
  * Owns the position-analysis cache optimization UI flow: building the plan,

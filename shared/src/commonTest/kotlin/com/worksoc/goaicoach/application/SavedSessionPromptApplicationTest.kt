@@ -1,20 +1,19 @@
 package com.worksoc.goaicoach.application
 
 import com.worksoc.goaicoach.application.savedgame.*
-
-import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
+import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.Move
-import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import com.worksoc.goaicoach.shared.domain.StoneColor
+import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
+import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import kotlin.test.Test
 
 class SavedSessionPromptApplicationTest {
     @Test

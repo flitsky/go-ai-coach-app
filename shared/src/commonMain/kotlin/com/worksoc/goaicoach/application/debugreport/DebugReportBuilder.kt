@@ -1,21 +1,21 @@
 package com.worksoc.goaicoach.application.debugreport
 
+import com.worksoc.goaicoach.application.analysis.toDisplayText
 import com.worksoc.goaicoach.application.contract.DebugReportCopyPlan
+import com.worksoc.goaicoach.application.contract.GameSessionEffect
 import com.worksoc.goaicoach.application.debugreport.ClipboardPort
 import com.worksoc.goaicoach.application.debugreport.DebugReportMirrorPort
 import com.worksoc.goaicoach.application.debugreport.UserNoticePort
-import com.worksoc.goaicoach.application.analysis.toDisplayText
 import com.worksoc.goaicoach.application.session.GameSessionControllerState
-import com.worksoc.goaicoach.application.contract.GameSessionEffect
 import com.worksoc.goaicoach.application.time.currentEpochMillis
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
-import com.worksoc.goaicoach.shared.enginecontract.AnalysisPreset
-import com.worksoc.goaicoach.shared.scoring.BoardScorer
-import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.enginecontract.AnalysisPreset
+import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
+import com.worksoc.goaicoach.shared.scoring.BoardScorer
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 
 data class DebugReportSnapshot(

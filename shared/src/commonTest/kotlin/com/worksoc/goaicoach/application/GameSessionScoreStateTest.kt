@@ -1,18 +1,16 @@
 package com.worksoc.goaicoach.application
 
 import com.worksoc.goaicoach.application.contract.*
-import com.worksoc.goaicoach.application.session.*
-
 import com.worksoc.goaicoach.application.score.*
-
-import com.worksoc.goaicoach.shared.enginecontract.EngineStatus
+import com.worksoc.goaicoach.application.session.*
 import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.enginecontract.EngineStatus
 import com.worksoc.goaicoach.shared.enginecontract.ScoreEstimate
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshotSource
+import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
-import kotlin.test.Test
 
 class GameSessionScoreStateTest {
     @Test

@@ -1,38 +1,38 @@
 package com.worksoc.goaicoach.application.autoai
 
-import com.worksoc.goaicoach.application.session.AutoAiTurnFailureDisplayPlan
 import com.worksoc.goaicoach.application.contract.AutoAiTurnDisplayPlan
 import com.worksoc.goaicoach.application.contract.AutoAiTurnEndgamePlan
-import com.worksoc.goaicoach.application.endgame.AiEndgameResolution
-import com.worksoc.goaicoach.application.engine.AutoAiTurnResult
-import com.worksoc.goaicoach.application.engine.EngineSessionClient
 import com.worksoc.goaicoach.application.contract.GameSessionEffect
-import com.worksoc.goaicoach.application.engine.localScoreSnapshot
-import com.worksoc.goaicoach.application.score.EndgameFailureDisplayPlan
-import com.worksoc.goaicoach.application.score.FinalScoreDisplayPlan
 import com.worksoc.goaicoach.application.contract.ScoreEstimateDisplayPlan
-import com.worksoc.goaicoach.application.score.buildEndgameFailureDisplayPlan
-import com.worksoc.goaicoach.application.score.buildEngineEstimateDisplayPlan
-import com.worksoc.goaicoach.application.score.buildResolvedEndgameDisplayPlan
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.diagnostic.NoopDiagnosticEventLog
 import com.worksoc.goaicoach.application.diagnostic.runObservedEngineOperation
+import com.worksoc.goaicoach.application.endgame.AiEndgameResolution
+import com.worksoc.goaicoach.application.engine.AutoAiTurnResult
+import com.worksoc.goaicoach.application.engine.EngineSessionClient
+import com.worksoc.goaicoach.application.engine.localScoreSnapshot
+import com.worksoc.goaicoach.application.score.EndgameFailureDisplayPlan
+import com.worksoc.goaicoach.application.score.FinalScoreDisplayPlan
+import com.worksoc.goaicoach.application.score.buildEndgameFailureDisplayPlan
+import com.worksoc.goaicoach.application.score.buildEngineEstimateDisplayPlan
+import com.worksoc.goaicoach.application.score.buildResolvedEndgameDisplayPlan
+import com.worksoc.goaicoach.application.session.AutoAiTurnFailureDisplayPlan
 import com.worksoc.goaicoach.match.MatchReferee
+import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
-import com.worksoc.goaicoach.shared.domain.GameState
-import com.worksoc.goaicoach.shared.domain.Move
-import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
-import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
-import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
-import com.worksoc.goaicoach.shared.scoring.ScoreTimeline
-import com.worksoc.goaicoach.shared.policy.aiMoveAnalysisLimitWith
 import com.worksoc.goaicoach.shared.policy.EngineFallbackPolicy
 import com.worksoc.goaicoach.shared.policy.EngineOperationKind
 import com.worksoc.goaicoach.shared.policy.EngineOperationRequest
 import com.worksoc.goaicoach.shared.policy.EngineTimeoutPolicy
+import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
+import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
+import com.worksoc.goaicoach.shared.policy.aiMoveAnalysisLimitWith
 import com.worksoc.goaicoach.shared.policy.engineOperationRequest
+import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
+import com.worksoc.goaicoach.shared.scoring.ScoreTimeline
 
 sealed class AutoAiTurnFollowUpPlan {
     data object None : AutoAiTurnFollowUpPlan()

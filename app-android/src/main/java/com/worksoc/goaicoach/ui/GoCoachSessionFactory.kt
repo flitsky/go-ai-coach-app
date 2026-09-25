@@ -1,16 +1,16 @@
 package com.worksoc.goaicoach.ui
 
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationUiState
-import com.worksoc.goaicoach.application.session.AutoAiTurnUiState
+import com.worksoc.goaicoach.application.contract.GameSessionRuntimeState
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkStorePort
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkUiState
 import com.worksoc.goaicoach.application.preferences.InitialUserPreferencesPlan
 import com.worksoc.goaicoach.application.preferences.toGameSessionSettingsState
 import com.worksoc.goaicoach.application.savedgame.SavedSessionUiState
+import com.worksoc.goaicoach.application.session.AutoAiTurnUiState
 import com.worksoc.goaicoach.application.session.GameSessionAnalysisState
 import com.worksoc.goaicoach.application.session.GameSessionControllerState
 import com.worksoc.goaicoach.application.session.GameSessionMoveReviewState
-import com.worksoc.goaicoach.application.contract.GameSessionRuntimeState
 import com.worksoc.goaicoach.application.session.GameSessionScoreState
 import com.worksoc.goaicoach.application.session.GameSessionTurnTimeState
 import com.worksoc.goaicoach.application.session.buildGameSessionControllerState

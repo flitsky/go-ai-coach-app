@@ -1,10 +1,10 @@
 package com.worksoc.goaicoach.persistence
 
 import android.content.Context
+import com.worksoc.goaicoach.application.premium.port.PremiumStateStorePort
 import com.worksoc.goaicoach.application.premium.state.FeatureId
 import com.worksoc.goaicoach.application.premium.state.PremiumSource
 import com.worksoc.goaicoach.application.premium.state.PremiumState
-import com.worksoc.goaicoach.application.premium.port.PremiumStateStorePort
 import org.json.JSONArray
 import org.json.JSONObject
 

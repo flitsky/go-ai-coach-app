@@ -1,7 +1,7 @@
 package com.worksoc.goaicoach.presentation
 
-import com.worksoc.goaicoach.application.session.GameSessionControllerState
 import com.worksoc.goaicoach.application.engine.operation.EngineActivityIndicator
+import com.worksoc.goaicoach.application.session.GameSessionControllerState
 
 internal object GoCoachScreenStateAssembler {
     data class Input(

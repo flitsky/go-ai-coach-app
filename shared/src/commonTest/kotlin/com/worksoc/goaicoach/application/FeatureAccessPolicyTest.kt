@@ -4,11 +4,11 @@ import com.worksoc.goaicoach.application.premium.state.AllowedVia
 import com.worksoc.goaicoach.application.premium.state.FeatureAccess
 import com.worksoc.goaicoach.application.premium.state.FeatureAccessPolicy
 import com.worksoc.goaicoach.application.premium.state.FeatureId
-import com.worksoc.goaicoach.application.premium.state.PremiumState
 import com.worksoc.goaicoach.application.premium.state.PremiumSource
+import com.worksoc.goaicoach.application.premium.state.PremiumState
 import com.worksoc.goaicoach.application.premium.state.UnlockOption
-import kotlin.test.assertEquals
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
 class FeatureAccessPolicyTest {
     /**

@@ -1,23 +1,23 @@
 package com.worksoc.goaicoach.application.orchestration
 
-import com.worksoc.goaicoach.application.engine.EngineBenchmarkDisplayPlan
-import com.worksoc.goaicoach.application.engine.EngineStartupDisplayPlan
-import com.worksoc.goaicoach.application.contract.AutoAiTurnDisplayPlan
-import com.worksoc.goaicoach.application.session.AutoAiTurnFailureDisplayPlan
 import com.worksoc.goaicoach.application.autoai.AutoAiTurnFollowUpPlan
 import com.worksoc.goaicoach.application.autoai.buildAutoAiTurnFollowUpPlan
-import com.worksoc.goaicoach.application.session.HumanEngineSyncFailurePlan
-import com.worksoc.goaicoach.application.session.HumanMoveLocalResult
+import com.worksoc.goaicoach.application.contract.AutoAiTurnDisplayPlan
+import com.worksoc.goaicoach.application.contract.ScoreEstimateDisplayPlan
+import com.worksoc.goaicoach.application.engine.EngineBenchmarkDisplayPlan
+import com.worksoc.goaicoach.application.engine.EngineStartupDisplayPlan
 import com.worksoc.goaicoach.application.score.EndgameFailureDisplayPlan
 import com.worksoc.goaicoach.application.score.FinalScoreDisplayPlan
-import com.worksoc.goaicoach.application.contract.ScoreEstimateDisplayPlan
 import com.worksoc.goaicoach.application.score.ScoreEstimateFailureDisplayPlan
-import com.worksoc.goaicoach.application.session.GameSessionCoreState
-import com.worksoc.goaicoach.application.session.TopMoveAnalysisFailureDisplayPlan
-import com.worksoc.goaicoach.shared.policy.EngineOperationResultGuard
 import com.worksoc.goaicoach.application.score.ScoreSyncCompletionApplyPlan
+import com.worksoc.goaicoach.application.session.AutoAiTurnFailureDisplayPlan
+import com.worksoc.goaicoach.application.session.GameSessionCoreState
+import com.worksoc.goaicoach.application.session.HumanEngineSyncFailurePlan
+import com.worksoc.goaicoach.application.session.HumanMoveLocalResult
+import com.worksoc.goaicoach.application.session.TopMoveAnalysisFailureDisplayPlan
 import com.worksoc.goaicoach.application.undo.UndoLocalStatePlan
 import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.policy.EngineOperationResultGuard
 
 class GameSessionDisplayStateApplier(
     private val currentCoreState: () -> GameSessionCoreState,

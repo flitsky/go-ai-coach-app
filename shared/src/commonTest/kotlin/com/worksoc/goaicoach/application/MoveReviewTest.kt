@@ -3,18 +3,18 @@ package com.worksoc.goaicoach.application
 import com.worksoc.goaicoach.application.movereview.*
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.BoardSize
-import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
-import com.worksoc.goaicoach.shared.enginecontract.CandidateMoveSource
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.Move
+import com.worksoc.goaicoach.shared.domain.StoneColor
+import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
+import com.worksoc.goaicoach.shared.enginecontract.CandidateMoveSource
 import com.worksoc.goaicoach.shared.policy.MoveAnalysisSnapshot
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshotSource
-import com.worksoc.goaicoach.shared.domain.StoneColor
+import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import kotlin.test.Test
 
 class MoveReviewTest {
     @Test

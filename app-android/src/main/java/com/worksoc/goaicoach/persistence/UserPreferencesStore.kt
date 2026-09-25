@@ -2,10 +2,10 @@ package com.worksoc.goaicoach.persistence
 
 import android.content.Context
 import com.worksoc.goaicoach.application.preferences.DefaultAppFontScale
-import com.worksoc.goaicoach.application.preferences.sanitizeAppFontScale
 import com.worksoc.goaicoach.application.preferences.UserPreferencesSnapshot
-import com.worksoc.goaicoach.application.preferences.migrateSettingsSchema
 import com.worksoc.goaicoach.application.preferences.UserPreferencesStorePort
+import com.worksoc.goaicoach.application.preferences.migrateSettingsSchema
+import com.worksoc.goaicoach.application.preferences.sanitizeAppFontScale
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.persistence.PlayerSetupJsonCodec.decodePlayerSetup
 import com.worksoc.goaicoach.persistence.PlayerSetupJsonCodec.encodePlayerSetup

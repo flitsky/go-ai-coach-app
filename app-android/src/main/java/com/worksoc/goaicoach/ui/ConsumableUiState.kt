@@ -14,9 +14,9 @@ import com.worksoc.goaicoach.application.consumable.ConsumableItem
 import com.worksoc.goaicoach.application.consumable.ConsumableSpendDecision
 import com.worksoc.goaicoach.application.consumable.ConsumableStorePort
 import com.worksoc.goaicoach.application.consumable.runConsumableSpend
+import com.worksoc.goaicoach.application.premium.port.PremiumStateStorePort
 import com.worksoc.goaicoach.application.premium.state.FeatureId
 import com.worksoc.goaicoach.application.premium.state.PremiumState
-import com.worksoc.goaicoach.application.premium.port.PremiumStateStorePort
 import com.worksoc.goaicoach.persistence.ConsumableInventoryStore
 import com.worksoc.goaicoach.persistence.PremiumStateStore
 

@@ -1,16 +1,16 @@
 package com.worksoc.goaicoach.application.analysis
 
 import com.worksoc.goaicoach.application.contract.AnalysisCacheKey
+import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.domain.analysisFingerprint
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisPreset
 import com.worksoc.goaicoach.shared.enginecontract.DifficultyProfile
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
-import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.policy.MoveAnalysisSnapshot
 import com.worksoc.goaicoach.shared.policy.SearchTimeProfile
 import com.worksoc.goaicoach.shared.policy.TurnAnalysisPurpose
-import com.worksoc.goaicoach.shared.domain.analysisFingerprint
 import com.worksoc.goaicoach.shared.policy.fastCandidateAnalysis
 import com.worksoc.goaicoach.shared.policy.turnAnalysisLimitFor
 

@@ -1,15 +1,15 @@
 package com.worksoc.goaicoach.application.consumable
 
+import com.worksoc.goaicoach.application.premium.port.PremiumStateStorePort
 import com.worksoc.goaicoach.application.premium.state.AllowedVia
 import com.worksoc.goaicoach.application.premium.state.FeatureId
 import com.worksoc.goaicoach.application.premium.state.PremiumState
-import com.worksoc.goaicoach.application.premium.port.PremiumStateStorePort
+import com.worksoc.goaicoach.testsupport.FakePremiumStore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import com.worksoc.goaicoach.testsupport.FakePremiumStore
 
 private const val Now = 1_700_000_000_000L
 

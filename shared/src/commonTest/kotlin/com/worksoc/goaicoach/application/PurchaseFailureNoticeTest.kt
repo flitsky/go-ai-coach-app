@@ -1,9 +1,9 @@
 package com.worksoc.goaicoach.application
 
 import com.worksoc.goaicoach.application.premium.app.PurchaseFailureNotice
+import com.worksoc.goaicoach.application.premium.app.failureNotice
 import com.worksoc.goaicoach.application.premium.port.PurchaseFailureReason
 import com.worksoc.goaicoach.application.premium.port.PurchaseOutcome
-import com.worksoc.goaicoach.application.premium.app.failureNotice
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull

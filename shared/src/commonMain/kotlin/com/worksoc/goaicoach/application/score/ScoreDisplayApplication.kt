@@ -1,16 +1,16 @@
 package com.worksoc.goaicoach.application.score
 
+import com.worksoc.goaicoach.application.analysis.toDisplayText
 import com.worksoc.goaicoach.application.endgame.AiEndgameResolution
 import com.worksoc.goaicoach.application.endgame.buildEndgameLog
-import com.worksoc.goaicoach.application.analysis.toDisplayText
 import com.worksoc.goaicoach.shared.domain.DeadStoneCleanupResult
-import com.worksoc.goaicoach.shared.enginecontract.FinalScoreResult
 import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.domain.StoneColor
+import com.worksoc.goaicoach.shared.domain.describe
+import com.worksoc.goaicoach.shared.enginecontract.FinalScoreResult
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshotSource
 import com.worksoc.goaicoach.shared.scoring.ScoreTimeline
-import com.worksoc.goaicoach.shared.domain.StoneColor
-import com.worksoc.goaicoach.shared.domain.describe
 
 fun FinalScoreStateResult.toFinalScoreDisplayPlan(
     text: FinalScoreDisplayText,

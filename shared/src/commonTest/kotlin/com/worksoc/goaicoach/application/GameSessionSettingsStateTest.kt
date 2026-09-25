@@ -1,21 +1,20 @@
 package com.worksoc.goaicoach.application
 
 import com.worksoc.goaicoach.application.session.*
-
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.match.SidePlayerSetup
-import com.worksoc.goaicoach.shared.policy.SearchTimeLimit
-import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
 import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.DefaultKomi
 import com.worksoc.goaicoach.shared.domain.HandicapKomi
+import com.worksoc.goaicoach.shared.policy.SearchTimeLimit
+import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
+import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
-import kotlin.test.Test
 
 class GameSessionSettingsStateTest {
     @Test

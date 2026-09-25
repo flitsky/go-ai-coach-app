@@ -28,11 +28,11 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.worksoc.goaicoach.application.guide.GuideStep
 import com.worksoc.goaicoach.application.guide.GuideSurface
-import com.worksoc.goaicoach.match.PlayerSetup
-import com.worksoc.goaicoach.presentation.GameUiEvent
-import com.worksoc.goaicoach.presentation.GameActionButtonState
-import com.worksoc.goaicoach.presentation.GameActionButtonRole
 import com.worksoc.goaicoach.application.guide.GuideTarget
+import com.worksoc.goaicoach.match.PlayerSetup
+import com.worksoc.goaicoach.presentation.GameActionButtonRole
+import com.worksoc.goaicoach.presentation.GameActionButtonState
+import com.worksoc.goaicoach.presentation.GameUiEvent
 
 /**
  * **가이드 다시보기**(백로그 #128, 사용자 확정 ⓑ: 진입점은 마이페이지에만).

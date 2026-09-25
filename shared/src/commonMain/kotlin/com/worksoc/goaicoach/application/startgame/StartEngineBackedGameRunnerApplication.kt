@@ -1,5 +1,7 @@
 package com.worksoc.goaicoach.application.startgame
 
+import com.worksoc.goaicoach.application.contract.GameSessionEffect
+import com.worksoc.goaicoach.application.contract.RuntimePlayLevelSelection
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.engine.EngineSessionClient
 import com.worksoc.goaicoach.application.engine.EngineStartupWorkflowResult
@@ -9,9 +11,7 @@ import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
 import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
 import com.worksoc.goaicoach.application.runtime.runtimeEngineGameStartFailureLog
 import com.worksoc.goaicoach.application.runtime.runtimeEngineGameStartSuccessLog
-import com.worksoc.goaicoach.application.contract.GameSessionEffect
 import com.worksoc.goaicoach.application.session.GameSessionScoreState
-import com.worksoc.goaicoach.application.contract.RuntimePlayLevelSelection
 import com.worksoc.goaicoach.application.time.currentEpochMillis
 import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.GameState

@@ -1,9 +1,9 @@
 package com.worksoc.goaicoach.application
 
 import com.worksoc.goaicoach.application.device.DeviceIdentity
+import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
-import kotlin.test.Test
 
 class DeviceIdentityTest {
     @Test

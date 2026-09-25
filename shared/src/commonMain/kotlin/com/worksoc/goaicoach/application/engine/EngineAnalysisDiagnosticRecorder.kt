@@ -4,10 +4,10 @@ import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.diagnostic.engineVisitFillDiagnosticEvent
 import com.worksoc.goaicoach.shared.diagnostic.DiagnosticEvent
 import com.worksoc.goaicoach.shared.diagnostic.DiagnosticSeverity
-import com.worksoc.goaicoach.shared.enginecontract.AnalysisFallbackRecord
-import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.analysisFingerprint
+import com.worksoc.goaicoach.shared.enginecontract.AnalysisFallbackRecord
+import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
 
 internal class EngineAnalysisDiagnosticRecorder(
     private val diagnosticEventLog: DiagnosticEventLogPort,

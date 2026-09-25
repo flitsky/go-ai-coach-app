@@ -1,11 +1,11 @@
 package com.worksoc.goaicoach.application
 
+import com.worksoc.goaicoach.application.premium.app.runPremiumFeatureClaim
+import com.worksoc.goaicoach.application.premium.app.saveMergingClaimedFeatures
+import com.worksoc.goaicoach.application.premium.port.PremiumStateStorePort
 import com.worksoc.goaicoach.application.premium.state.FeatureId
 import com.worksoc.goaicoach.application.premium.state.PremiumSource
 import com.worksoc.goaicoach.application.premium.state.PremiumState
-import com.worksoc.goaicoach.application.premium.port.PremiumStateStorePort
-import com.worksoc.goaicoach.application.premium.app.runPremiumFeatureClaim
-import com.worksoc.goaicoach.application.premium.app.saveMergingClaimedFeatures
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull

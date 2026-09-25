@@ -7,10 +7,10 @@ import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.match.SidePlayerSetup
 import com.worksoc.goaicoach.shared.domain.BoardSize
-import com.worksoc.goaicoach.shared.policy.PlayLevelGroup
-import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.domain.StoneColor
+import com.worksoc.goaicoach.shared.policy.PlayLevelGroup
+import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 
 /**
  * 앱에 번들로 들어가는 **참고 기보** 하나(2026-09-20 사용자 요청) — 최고등급 AI가 그 바로 아래
