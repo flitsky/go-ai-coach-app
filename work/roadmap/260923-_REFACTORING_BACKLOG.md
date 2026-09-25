@@ -185,33 +185,25 @@ Hilt(commonMain 불가)·Koin(이득 0)·전면 MVI(이미 절반 작동)·모�
 | 65 | **원격 `handicapCount` 판정 + 드러난 결함 둘 수정** — 판정: `whiteHandicapBonus`는 **싣지 않는 현행이 맞다**(KataGo 1.16.4 실측, 검수 독립 재현). 대신 ⓐ 원격 서버가 접바둑 0수째를 **흑 차례로** 분석하고 따낸 접바둑 돌을 잃던 것(원격 AI가 흑의 최선수 자리에 뒀다 — 13x13 픽스처도 그 상태로 캡처돼 있었다, 재캡처), ⓑ 로컬 JSON 쿼리가 접바둑 돌을 통째로 빼던 것(+21~+67점, 2026-07-16부터)을 고쳤다. 둘 다 프로덕션 영향 0이었다(debug 원격·숨긴 레벨). 📐 정합성 허용오차: 접바둑의 동적 PDA로 2~10점, 그리고 **패스가 섞이면 `analysisIgnorePreRootHistory` 때문에 ±2.7점**까지(맞바둑 포함) — 비교는 raw NN·PDA=0·pre-root history 켠 상태로 | `b8fc9167`·`e7c38b41` |
 | 89 | 🔴→✅ **면적계가 접바둑에서 앱 계가가 백의 보정 N점을 빠뜨려 승패가 뒤집히던 것** — 프로덕션에 닿는 결함(로비·설정에서 면적계가 + 접바둑 2점 이상). `BoardAreaScorer`가 접바둑 2점 이상이면 백에게 N점을 더한다(KataGo chinese `whiteHandicapBonus="N"`과 같은 셈 — 따낸 접바둑 돌·19줄 9점·1점에서 KataGo `final_score`와 정확히 같음, 검수 실측). 결과 대화상자에 *"+ 접바둑 보정 N"*. `FinalScoreResult`·`FinalScoreJudgement`에 기본값 있는 필드 추가, **SchemaVersion 1 그대로**(옛↔새 양방향 실측). 집계가·맞바둑 경로는 출력이 바이트 단위로 같다. **사용자가 실기로 확인하고 병합을 승인했다**(2026-09-24) | `16bcdbf8` |
 | 73 | **원칙 문서의 포트 경계를 지금 코드에서 참이 되게** — *"4계층은 5계층 이상을 모른다"* 를 **"위 계층의 동작은 모르고, 값과 순수 규칙만 안다"** 로. ⓐ 포트 **시그니처**: 값 = 필드 폐포에 함수·인터페이스·var·포트가 없는 것(포트 19개 + 캐시 계약 1 실측 위반 0). ⓑ **어댑터**: 위 계층의 순수 함수는 부를 수 있고, 동작을 부르거나 규칙을 복제하면 안 된다(위반 4건 기록 — `hasUsableProfile`(#88), 저장 대국 유지 조건, 캐시 필터, 닉네임 12자(#85)). **관측 포트**(로그·진단)는 어느 계층이든 쥘 수 있는 예외 — 조건 넷: 쓰기 전용·값·되읽는 것은 진단 출력뿐·매체 실패를 삼킨다. ⚠️ **다섯 번 반려됐다** — 매번 새로 쓴 문장이 지금 코드와 어긋났다. 넷째 조건은 **코드를 고쳐 참으로 만들었다**: 로그 어댑터가 매체 실패를 던져 엔진 busy가 굳을 수 있었다(`8e677d14`·`8a3ae7a8`). 가드 신설은 #83 | `efb0ab38`…`970b8415` |
+| 87 | **리플레이 고아 파일 청소** — index 쓰기가 실패해도 남던 `replay/<id>.json`을 `loadAll`에서 치운다(과거에 쌓인 것도). 유효한 리플레이를 지우는 경로가 없음을 검수가 반례 탐색으로 확인, 포맷 불변 | `ca9e2c98` |
+| 37 | **합법수 판정이 상태 복사·예외 없이 값으로 끝난다** — `BoardRules.validate`(sealed 거부 사유) 추가, `play()` 시그니처·예외·결과 **불변**. 검수가 국면 45,322개·판정 1,035만 번을 따로 대조해 불일치 0, 속도 **18~35배**(주장보다 크게 재현) | `66d66b38` |
+| 90 | **원격 분석 서버 쿼리 조립을 KataGo 없이 지키는 파이썬 검사** + 별도 Makefile 타깃(릴리스 게이트 밖 — 함정 75 철학). 사보타주(`initialPlayer` 고정 15/16 빨강, 따낸 돌 손실 1 빨강). docstring 수치는 #65-A 실측표로(raw·search 두 열) — 1차의 *"#90에서 재측정"* 은 거짓 출처라 검수가 막았다 | `2dec4bfb`·`66313511` |
+| 88 | **`EngineBenchmarkStorePort.hasUsableProfile` 삭제** — 프로덕션 호출부 0(grep·컴파일러). 유일한 소비자였던 시작 시 자동 벤치마크는 `aac3c70d`에서 이미 사라졌다. 원칙 문서 위반 ①이 해소됐다 | `3f966cc8` |
+| 79·69 | **G1 루트 매처가 소문자 top-level 함수도 잡는다 + 흩어진 FQN·shared 경로를 모았다** — ⚠️ **세 번 고쳤다**: 1차(`607eef01`)는 열거기가 `val`·`const`·애너테이션 선언을 못 봐 import 쪽이 회귀, 2차(`fe82c568`)는 옛 import 정규식을 되살렸지만 inline 쪽이 여전히 약했고, 3차(`a4db0496`)가 옛 대문자 inline 정규식과 **합집합**으로 돌려 옛 매처를 정의상 전부 포함한다. #69: 하드코딩 경로 7곳(백로그의 8은 낡은 수)·픽스처 FQN 리터럴 0 | `607eef01`…`a4db0496` |
 
 ### 진행 중
 
-- **작은 정리 1파도** — #87 ✅ main(`ca9e2c98`). 수정·재검수 중: #79(새 루트 매처가 `val`·`const`·애너테이션 선언을 못 봐 **가드 회귀** — 옛 import 정규식 병행), #69(✅ 검수 통과, #79와 같은 파일이라 함께 가져온다), #90(docstring 출처·수치 바로잡기), #88·#37(구현은 커밋됐는데 보고 JSON이 깨져 검수가 못 돌았다 — 재검수), #92(cfg 파일은 기존 설치 기기에 안 닿는다 — `-override-config`로 재작업, 실기 확인 뒤 병합).
+- **#92 KataGo 접바둑 가정** — `-override-config`로 재작업, 검수 통과(옛 cfg가 있는 설치 기기에서도 기동 인자가 이김 — KataGo 1.16.4 확인). 워크트리 `wf_660f9bcd-c42-6`의 `ed712ce8`. ⏳ **실기 확인 뒤 병합.**
 - **#93 접바둑 → 덤 0.5 자동 전환** — ✅ 검수 통과, main에 들어갔다. ⏳ **실기 확인 대기**(로비·설정 화면 절차 A·B·C). 확인 전엔 릴리스에 싣지 않는다.
 
 ### 예정사항
 
 #### 잔여 — 앞선 일감이 드러낸 것 (번호는 뒤에 붙이고 **순서로** 우선순위를 표시한다)
 
-69. **`RepoPaths`가 못 모으는 것 둘** (AI 모델: Sonnet, 노력정도: 중간)
-    · ⓐ **패키지 FQN은 여전히 흩어져 있다.** `#24`에서 고쳐야 했던 10곳(가드 5 + 자기검증 픽스처 4 + KDoc 1)이
-      한 곳도 상수로 모여 있지 않았다. **P3가 움직이는 것은 파일이 아니라 패키지인데 보호는 파일 쪽에만 있다.**
-    · ⓑ `app-android/src/test`에 `shared/src/commonMain/.../application/...` **하드코딩 경로 8곳**이 남아 있다
-      (`ReplayRecordingContractTest`·`SubscriptionWiringContractTest`·`PlayEffectContractTest` 등).
-      `#63`이 `File("src/main` 패턴만 잡아 이쪽은 집계 밖이었다.
-
 72. **import 정렬이 깨졌다** (AI 모델: Sonnet, 노력정도: 낮음)
     · `#24`의 FQN 치환이 심볼 이름 기준 정렬을 FQN에 그대로 적용해, 옮긴 파일들의 import 블록이
       알파벳 순서를 잃었다. **lint가 이를 잡지 않아 조용히 퍼진다.**
     · ktlint `import-ordering` 도입을 검토하거나, 한 번 정렬하고 끝낸다. 어느 쪽인지 판단이 먼저다.
-
-79. **G1 루트 매처를 `detectForbiddenReference`로 합친다 — `#77`의 남은 절반** (AI 모델: Sonnet, 노력정도: 낮음)
-    · `#77`은 **대문자로 시작하는 이름만** 잡는 정규식을 따로 붙였다. 루트 패키지의 **소문자 top-level 함수**를
-      import 없이 inline FQN으로 부르면 G1은 **여전히 초록**이다(검수자가 찾았다).
-    · 원래 인수 기준 그대로 한다: 루트 매처도 `detectForbiddenReference`를 탄다. `BuildConfig`·`R` 예외는 유지한다.
-      **사보타주 기준**: `platform` 파일에서 루트의 top-level 함수를 inline FQN으로 부르면 → 빨강(`--rerun-tasks`, 함정 77).
 
 81. **사이클 래칫이 타입 추론으로만 생기는 의존을 못 본다** (AI 모델: Opus, 노력정도: 중간) — **최소분 끝, P6 직전에 한 번 더**
     · ✅ **`#32` 끝의 jdeps 실측(2026-09-24)**: 바이트코드 기준으로도 **SCC 0, 상호 참조 쌍 0**. 바이트코드에만 있는 간선 **4개**
@@ -243,16 +235,6 @@ Hilt(commonMain 불가)·Koin(이득 0)·전면 MVI(이미 절반 작동)·모�
     · 전부 포트를 세울 필요는 없다 — 먼저 **어느 것이 shared로 올라갈 로직을 가졌는지** 가른다.
 86. **포트 시그니처가 저장 형식을 드러낸다** (AI 모델: Sonnet, 노력정도: 낮음)
     · `SavedGameStorePort.readRawJson()`, `EngineBenchmarkStorePort.loadText()`·`path()` — 디버그 리포트용이다. 우선순위 낮음.
-87. **리플레이 고아 파일** (AI 모델: Sonnet, 노력정도: 낮음) — `#21` 검수가 찾음, 전부터 있던 구조
-    · replay를 쓴 뒤 index 쓰기가 실패하면 참조 없는 `replay/<id>.json`이 남고, 재시도마다 새 id로 다시 써서 늘어난다.
-      보존 정책이 이 파일들을 모른다.
-88. **`EngineBenchmarkStorePort.hasUsableProfile`** (AI 모델: Sonnet, 노력정도: 낮음)
-    · 포트에 달린 판정 메서드, **프로덕션 호출부 0**(구현 1·테스트 페이크 2). 지우거나 판정을 `application.engine`의 순수 함수로 올린다.
-90. **원격 분석 서버의 쿼리 조립을 지키는 자동 검사가 없다** (AI 모델: Sonnet, 노력정도: 낮음) — `#65` 검수
-    · Kotlin 픽스처 테스트는 고정 응답만 파싱하고, `player==White` 단언은 서버가 요청의 `nextPlayer`에서 찍은 라벨만 본다.
-      서버가 `initialPlayer="B"`로 되돌아가도 테스트는 초록이다. KataGo 없이 도는 파이썬 검사 하나 —
-      *접바둑 개막이면 iP=W에 표준 돌 N개*, *따낸 접바둑 돌 국면에서도 N개 그대로*. 덤: docstring의 수치 표현이 느슨하다
-      (보정 이동량은 N에 선형이 아니다 — 실측표로 바꿀 것).
 91. **정적 국면 위에 홀수 수를 두면 `replayState`가 던진다** (AI 모델: Opus, 노력정도: 중간) — `#65` 검수, **지금은 닿지 않음**
     · `syncStaticPosition` 뒤 재동기화 없이 `playMove`/`genMove`가 홀수 번이면 `KataGoAnalysisContext.replayState`가
       *"Expected White, got Black"* 으로 던지고, JSON이 GTP로 폴백해도 `fillFromPolicyIfNeeded`가 또 부르므로 `analyze()`가
@@ -368,11 +350,6 @@ Hilt(commonMain 불가)·Koin(이득 0)·전면 MVI(이미 절반 작동)·모�
 35. **`EngineSessionClient` 14메서드 분할** (AI 모델: Opus, 노력정도: 높음)
 36. **`BoardPosition` 도입 1단계** (AI 모델: Opus, 노력정도: 높음)
     · 좌표가 String/Int로 돌아다니는 원시 타입 집착 해소. **순수 추가**로 시작해 호출부 회귀 0.
-37. **합법수 판정 비용 제거** (AI 모델: Sonnet, 노력정도: 중간)
-    · `BoardRules.validate(state, move): MoveRejection?`(sealed) **추가**. `play()` 시그니처와 예외는 그대로 둔다 →
-      **호출부 회귀 0으로 이득만.**
-    · 근거: `LegalMoveGenerator`가 `runCatching { state.play(...) }.isSuccess`로 **판 전체를 순회**하고,
-      `GoBoard`가 **드래그 매 프레임** `isLegalPlay`를 부른다.
 38. **도메인 알고리즘 중복 제거** (AI 모델: Opus, 노력정도: 높음) — 9 뒤
     · `BoardAreaScorer`와 `BoardTerritoryScorer`의 플러드필이 **타입 이름만 다른 바이트 단위 동일 복제**다.
       `BoardRegionAnalyzer`로 통합.
