@@ -52,8 +52,8 @@
 필수 context:
 
 - `operation`: `EngineOperationKind.code`.
-- `operationId`: operation 고유 id.
-- `sessionGeneration`: 요청 시점의 match/session generation.
+- `operationId`: operation 고유 id. 기본 형식은 `<operation>:g<sessionGeneration>:m<moveCount>:<positionFingerprint 앞 12자>`(`EngineOperationPolicy.kt`의 `defaultEngineOperationId`).
+- `sessionGeneration`: 요청 시점의 **세션 세대**(`GameSessionRuntimeState.sessionGeneration` — 새 대국·이어하기·무르기 등에서 올라간다). 무르기로는 바뀌지 않는 `matchGeneration`이 아니다. `position_analysis`도 이 값을 싣는다 — 예전에는 3계층이 `0`을 박아 늘 `g0`이었다(refactor backlog #18).
 - `positionFingerprint`: 요청 대상 board fingerprint.
 - `moveCount`: 요청 대상 move count.
 - `backendId`: `local-engine`, `remote-server` 등.
