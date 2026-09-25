@@ -20,7 +20,7 @@ import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisResult
 import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
 import com.worksoc.goaicoach.shared.enginecontract.DeadStonesResult
-import com.worksoc.goaicoach.shared.enginecontract.EngineAdapter
+import com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
 import com.worksoc.goaicoach.shared.enginecontract.EngineStatus
@@ -693,7 +693,7 @@ class EngineSessionTest {
 private class RecordingEngineAdapter(
     private val analyzedRootVisits: (AnalysisLimit) -> Int? = { limit -> limit.visits },
     private val analysisFallback: AnalysisFallbackRecord? = null,
-) : EngineAdapter {
+) : EngineCoreApi {
     val calls = mutableListOf<String>()
     val configuredProfiles = mutableListOf<EngineProfile>()
     var scoreFinalCalls: Int = 0

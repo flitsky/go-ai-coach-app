@@ -37,7 +37,6 @@ internal object ContractSymbols {
 
     // ── 실존해야 하는 타입 ────────────────────────────────────────────────
     const val ENGINE_CORE_API = "com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi"
-    const val ENGINE_ADAPTER = "com.worksoc.goaicoach.shared.enginecontract.EngineAdapter"
 
     /**
      * 루트 패키지(조립 전용)의 **앵커**(refactor backlog #25). 가드는 루트 패키지 이름을 리터럴로
@@ -259,12 +258,6 @@ internal object ContractSymbols {
             "ui/presentation·match·벤치마크 가드가 이 타입의 직접 참조를 금지한다",
         ),
         GuardedSymbol(
-            ENGINE_ADAPTER,
-            SymbolKind.TYPE,
-            SymbolExpectation.MUST_EXIST,
-            "ui/presentation·application/match 가드가 호환 별칭 참조를 금지한다",
-        ),
-        GuardedSymbol(
             MAIN_ACTIVITY,
             SymbolKind.TYPE,
             SymbolExpectation.MUST_EXIST,
@@ -274,7 +267,8 @@ internal object ContractSymbols {
             ENGINE_ANDROID_RUNTIME_PACKAGE,
             SymbolKind.PACKAGE,
             SymbolExpectation.MUST_EXIST,
-            "ui/presentation·application/match가 엔진 런타임 구현체를 직접 쓰는 것을 금지한다",
+            "ui/presentation·app-android에 남은 application 진단 싱크가 엔진 런타임 구현체를 직접 쓰는 것을 " +
+                "금지한다(#95: application/match의 :shared 쪽은 Gradle 의존성 부재로 이미 막혀 가드에서 뺐다)",
         ),
         GuardedSymbol(
             UI_PACKAGE,

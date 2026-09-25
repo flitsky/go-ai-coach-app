@@ -1,7 +1,6 @@
 package com.worksoc.goaicoach.architecture
 
 import com.worksoc.goaicoach.architecture.ContractSymbols.APPLICATION_PACKAGE
-import com.worksoc.goaicoach.architecture.ContractSymbols.ENGINE_ADAPTER
 import com.worksoc.goaicoach.architecture.ContractSymbols.ENGINE_ANDROID_RUNTIME_PACKAGE
 import com.worksoc.goaicoach.architecture.ContractSymbols.ENGINE_CORE_API
 import com.worksoc.goaicoach.architecture.ContractSymbols.ENGINE_PACKAGE
@@ -31,7 +30,6 @@ class LayeringContractTest {
             sourceRoot.resolve("presentation"),
         )
         val forbiddenImports = listOf(
-            importOf(ENGINE_ADAPTER),
             importOf(ENGINE_CORE_API),
             importOf(ENGINE_ANDROID_RUNTIME_PACKAGE),
         )
@@ -54,19 +52,27 @@ class LayeringContractTest {
      * 스캔 대상을 실재하는 트리로 옮긴다 — 본보기는 같은 파일의
      * [engineOperationApplicationPoliciesStayPortable]이다(그 테스트만 함정을 알아챘었다).
      *
-     * app-android에 남은 `application/diagnostic/LocalFileDiagnosticEventExternalSink.kt`도 함께
-     * 본다 — 그 하나는 일부러 플랫폼에 묶인 어댑터지만, 그렇다고 엔진 런타임 구현체를 직접
-     * 참조해도 되는 것은 아니다.
+     * ⚠️ 260925(refactor backlog #95): `application/`·`match/`가 이제 전부 :shared로 건너간 뒤,
+     * 이 가드가 그 둘에 대해서도 검사하던 두 절 중 하나는 **삭제 전 위반을 실제로 넣어 확인**하니
+     * 이미 Gradle이 막고 있었다 — `:shared`는 `:app-android`·`:engine-android`에 대한 Gradle
+     * 의존성 자체가 없어(commonMain은 kotlinx-coroutines-core만 의존), `engine.android` 임포트도
+     * (삭제된) `EngineAdapter` 임포트도 두 경우 다 `Unresolved reference`로 컴파일이 즉시 잡는다
+     * (android 타깃 컴파일로 실측, iOS 게이트를 켤 필요조차 없었다). 그래서 `application/`·`match/`
+     * 스캔은 걷어내고, app-android에 남은 유일한 파일
+     * (`application/diagnostic/LocalFileDiagnosticEventExternalSink.kt`)만 본다 — app-android는
+     * `:engine-android`에 실제로 의존해 그 임포트가 컴파일을 통과하므로 텍스트 검사가 여전히
+     * 필요하다. `match/`는 :shared로 통째로 건너가 app-android에 남은 파일이 없다(비면
+     * [ktFilesIn]이 스스로 터진다). `EngineAdapter`(호환 별칭)는 죽은 코드라 삭제됐고(테스트
+     * 페이크 2개는 [com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi]를 직접 구현) 그
+     * 절은 세 가드(이 파일의 [uiAndPresentationDoNotImportRawEngineCoreApi]·이 테스트·
+     * [platformAdaptersDoNotImportComposeUiOrComposition]) 전부에서 함께 뺐다.
      */
     @Test
-    fun applicationAndMatchDoNotDependOnCompatibilityEngineAdapterOrAndroidRuntime() {
+    fun applicationDiagnosticSinkDoesNotDependOnEngineAndroidRuntime() {
         val checkedDirs = listOf(
-            RepoPaths.applicationPath(),
-            RepoPaths.matchPath(),
             RepoPaths.appAndroid("application"),
         )
         val forbiddenImports = listOf(
-            importOf(ENGINE_ADAPTER),
             importOf(ENGINE_ANDROID_RUNTIME_PACKAGE),
         )
 
@@ -76,7 +82,7 @@ class LayeringContractTest {
         )
 
         assertTrue(
-            "Application/match must depend on EngineCoreApi or middleware ports, not compatibility aliases/runtime implementations:\n${offenders.joinToString("\n")}",
+            "app-android's remaining application-layer file (the diagnostic sink) must not depend on the concrete engine runtime implementation:\n${offenders.joinToString("\n")}",
             offenders.isEmpty(),
         )
     }
@@ -143,7 +149,6 @@ class LayeringContractTest {
             importOf(PRESENTATION_PACKAGE),
             importOf(ENGINE_PACKAGE),
             importOf(ENGINE_CORE_API),
-            importOf(ENGINE_ADAPTER),
         )
 
         val offenders = forbiddenReferenceOffenders(files = files, forbiddenImports = forbiddenImports) +

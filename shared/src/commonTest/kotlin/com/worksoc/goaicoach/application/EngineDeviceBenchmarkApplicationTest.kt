@@ -15,7 +15,7 @@ import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisResult
 import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
 import com.worksoc.goaicoach.shared.enginecontract.DeadStonesResult
-import com.worksoc.goaicoach.shared.enginecontract.EngineAdapter
+import com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.enginecontract.EngineStatus
 import com.worksoc.goaicoach.shared.enginecontract.FinalScoreResult
@@ -607,7 +607,7 @@ private class RecordingEngineBenchmarkStore : EngineBenchmarkStorePort {
 
 private class RecordingBenchmarkEngineAdapter(
     private val analyzeError: Throwable? = null,
-) : EngineAdapter {
+) : EngineCoreApi {
     val analyzeVisits = mutableListOf<Int>()
     val newGameRulesets = mutableListOf<Ruleset>()
     var state = GameState.empty()

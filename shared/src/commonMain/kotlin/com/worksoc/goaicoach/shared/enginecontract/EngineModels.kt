@@ -125,16 +125,6 @@ interface EngineCoreApi {
 }
 
 /**
- * Compatibility name for current local engine implementations.
- *
- * New middleware code should depend on [EngineCoreApi] when it needs raw engine
- * primitives. Existing external code may still use this alias, but concrete
- * local process/JNI/remote implementations should implement [EngineCoreApi]
- * directly.
- */
-interface EngineAdapter : EngineCoreApi
-
-/**
  * ⚠️ **기본값이 [EngineMode.Stub]이면 안 된다.** 예전에는 그랬는데, 실제 백엔드를 채워 넣지
  * 못한 프로필이 디버그 리포트에 `stub/Stub/Beginner`로 찍혀 **"이 빌드는 스텁 엔진이다"라는
  * 오독**을 낳았다(2026-08-30). 진짜 KataGo가 돌고 있는데도 그렇게 보였다.
