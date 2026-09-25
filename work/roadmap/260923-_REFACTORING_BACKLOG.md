@@ -195,10 +195,14 @@ Hilt(commonMain 불가)·Koin(이득 0)·전면 MVI(이미 절반 작동)·모�
 | 38 | **두 계가기의 빈 점 소유 판정을 `BoardRegionAnalyzer` 한 벌로** — 옛 두 복제는 이름 셋 말고 같았다. 단언 테스트(무작위 종국 판 300개에서 두 룰셋의 ownership 동일)를 먼저 심었다. 검수가 판 11,836개·비교 284,064회를 따로 돌려 점수·요약·ownership·접바둑 보정 전부 동일 | `7ef957fe`·`99ae79d3` |
 | 99 | **프로덕션에서 닿지 않던 3계층 undoMove 경로 삭제**(−122줄) — 2026-08-06 `e3cf14e8` 이후 호출부 0. 사용자 무르기(로컬 우선 + 지연 재동기화)는 그대로. `@Test` 정확히 −2 | `8611bba2` |
 | 101 | **iOS 테스트 컴파일이 8월 16일부터 깨져 있었다** — commonTest의 `System.currentTimeMillis()` 한 줄. `make test-ios`가 본 코드만 컴파일해 몰랐고, 그동안 commonTest가 iOS에서 한 번도 안 돌았다(#38 검수가 찾음). 고치고 `test-ios`가 테스트 소스도 컴파일한다 | `506c2cfc` |
+| 18 | **엔진 진단 로그의 세대가 g0 고정이던 것** — `LocalEngineSessionClient`가 `currentSessionGeneration: () -> Long`(기본값 없음 — 잊으면 조용히 g0이던 것이 원래 결함)을 받는다. 클라이언트가 세션 홀더보다 먼저 만들어져 `SessionGenerationRelay`가 사이를 잇고, 홀더를 매번 새로 읽는다(캡처 없음, 함정 A의 remember 키 불변). 사용자에게 보이는 변화는 로그 문구뿐 | `9ec55653`·`3cec8c31` |
+| 39(일부) | **세 score sync 러너의 흐름을 `ScoreSyncFlow` 한 벌로** — 바꾸기 전에 특성 테스트 9개(요청·읽는 순서·엔진 호출·적용 계획·진단·후속 분석 시점)를 먼저 심었고 옛·새 코드 모두 초록, 역방향 사보타주 5개 빨강. *"과금 게이트 판정 단일화"* 는 조사 결과 **이미 단일**이다(6계층 `FeatureAccessPolicy.resolve`가 기능별 유일한 판정). 첫 절은 `#84`로 닫혔다 → **#39 전부 끝** | `23c4c8cd`·`4c16bc71` |
 
 ### 진행 중
 
-- **#72 import 정렬 게이트** — 사용자 승인, 진행 중 파도가 모두 main에 들어간 뒤 단독으로 착수(대량 정렬은 함정 72의 충돌면).
+- **#72 import 정렬 게이트** — 사용자 승인. ✅ **사전 점검 go**(2026-09-25): spotless 8.4.0 + ktlint 1.8.0, 파서 오류 0, 위반 238파일(조사와 파일 집합까지 일치),
+  정렬 diff는 import·빈 줄뿐(멱등), 적용 뒤 게이트 전부 초록, 게이트에 더해지는 시간 1~6초. `.editorconfig`의 `ktlint_standard = disabled` 한 줄이 규모를 좌우한다
+  (빼면 341파일·±14,232줄). 설정 패치는 사전 점검 워크트리 `wf_b7e06054-62d-1`의 `ffb97532`. 진행 중 A줄(#83·#91·#86·#36)이 들어간 뒤 단독 착수.
 - **#92 KataGo 접바둑 가정** — ✅ main에 들어갔다(`d21f701b`, 엔진 기동 인자 `-override-config`로 gtp·analysis 양쪽 — 옛 cfg가 있는 설치 기기에도 적용).
   #93과 함께 **실기 확인 대기열**로(아래). 확인 전엔 릴리스에 싣지 않는다.
 - **#93 접바둑 → 덤 0.5 자동 전환** — ✅ 검수 통과, main에 들어갔다. ⏳ **실기 확인 대기열**(아래). 확인 전엔 릴리스에 싣지 않는다.
@@ -301,6 +305,17 @@ Hilt(commonMain 불가)·Koin(이득 0)·전면 MVI(이미 절반 작동)·모�
     · 가드가 iosMain 파일도 5계층 대상으로 세는데, iosMain만 바뀌면 테스트 태스크가 UP-TO-DATE로 건너뛰어 위반이 다음 실행까지 안 잡힌다
       (`app-android/build.gradle.kts`의 `inputs.files`). 두 소스셋을 입력에 더한다.
 
+104. 🔴 **무르기 직후의 후속 분석 요청이 버려질 수 있다** (AI 모델: Opus, 노력정도: 중간) — `#39` 검수가 찾음, **실기 확인 필요**
+    · `runPostUndoScoreSyncApplication`이 후속 분석(`requestAnalysis(automatic = true)`)을 `UndoController`가 대기 표시를 지우기 **전에** 요청하고,
+      `runTopMoveAnalysisApplication`은 `automatic && pendingPostUndoEngineSync`면 곧바로 돌아간다(TopMovesApplication.kt:160) — 엔진이 쉬고 있으면 요청이 버려진다.
+      2026-06-15 `df35e5e1`("무르기 뒤 동기화를 UI 밖으로") 전에는 대기를 지운 **뒤** 요청했다 — 그 이동이 순서를 뒤집었다.
+    · `GoCoachApp`의 `isEngineBusy`/`moves` 키 `LaunchedEffect`가 다시 요청해 가릴 가능성이 크다(미확인). 무른 직후 추천수·형세가 한 박자 늦게 뜨는지 실기로 먼저 본다.
+      고치면 대기를 먼저 지우거나 `UndoController`에서 요청한다 — 보이는 동작이 바뀌므로 실기 확인.
+105. **5계층 확장 함수 8곳의 `operationRequest ?: … sessionGeneration = 0L` 폴백** (AI 모델: Sonnet, 노력정도: 낮음) — `#18`이 찾음
+    · `AutoAiRunnerApplication`·`PositionAnalysisCacheOptimizationWorkflowResult`·`EngineDeviceBenchmarkApplication`·`EngineSessionLifecycleApplication`(2)·`HumanMoveApplication`·
+      `RestoredGameScoreSyncRunnerApplication`·`ScoreSyncRunnerApplication`. 추적한 프로덕션 경로는 전부 자기 요청을 넘겨 폴백에 안 닿지만, `operationRequest`를
+      non-null로 만들면 폴백 자체가 사라진다 — 잊으면 g0이 되는 같은 결함 모양.
+
 #### P2 — 엔진 동시성 (독립 트랙 · 어느 단계와도 병렬)
 
 14. **프로세스 수명 뮤텍스 + 1계층 실체화** (AI 모델: Opus, 노력정도: 최대)
@@ -320,12 +335,6 @@ Hilt(commonMain 불가)·Koin(이득 0)·전면 MVI(이미 절반 작동)·모�
       **로컬은 캡+20초(캡 없으면 120초), 원격은 항상 33초**다.
     · `shared.enginecontract`에 `EngineOperationFailure`(Timeout/Transport/Protocol/EngineRejected).
       재시도는 **Transport에 한해** 2계층 안에서 1회 백오프(**탐색 타임아웃은 재시도 금지**).
-18. **세대 관통 (정책 타입 중복 제거는 완료)** (AI 모델: Sonnet, 노력정도: 중간)
-    · `LocalEngineSessionClient` 생성자에 `currentSessionGeneration: () -> Long` 추가.
-      현재 3계층이 `0L`을 박아 넣어 **모든 `position_analysis` operationId가 g0으로 찍혀
-      실제 세션 로그와 대조 불가**다.
-    · ⚠️ 생성자 시그니처가 바뀌어 **`app-android`의 배선까지 번진다.** 파일 충돌면이 넓다.
-
 22. **`GameSetup` 값 객체 — 덤 유실의 구조적 해법** (AI 모델: Opus, 노력정도: 높음)
     · 판 정체성(boardSize/ruleset/handicapCount/komi)을 값 객체로 묶어 **코덱이 그 하나만 왕복**하게.
       지금은 세 코덱이 각자 손으로 필드를 골라 담아 **같은 종류의 누락이 또 난다.**
@@ -395,8 +404,6 @@ Hilt(commonMain 불가)·Koin(이득 0)·전면 MVI(이미 절반 작동)·모�
       **골든 테스트 6종**(좌표 표기 표·611점 왕복, 국면 지문 바이트, 이어하기 리터럴 JSON, 번들 기보 재생, 캐시 row/column, GTP 토큰) — 입력은 정수 생성자로.
       저장 포맷은 이행하지 않고 **고정만** 한다(함정 69). 뒤: GTP 파서 3벌 통합, 열 알파벳 통합.
     · 하지 말 것: 새 점 타입, 꼭짓점 래퍼, 판 크기를 묶은 좌표, 저장 코덱 "정리", 파싱 관대성 "정리" — 뒤 둘은 이어하기·리플레이·캐시를 조용히 잃게 만든다.
-39. **5→6 방향 뒤집기 + 과금 게이트 판정 단일화 + `ScoreSyncRunner` 3중복 제거** (AI 모델: Opus, 노력정도: 높음)
-
 #### P5 — 상태 소유자 (가장 위험 · 병렬 불가 · 태스크당 커밋 하나 + 실기 검증)
 
 40. **`ViewModel` 얇은 래퍼** (AI 모델: Opus, 노력정도: 최대)
