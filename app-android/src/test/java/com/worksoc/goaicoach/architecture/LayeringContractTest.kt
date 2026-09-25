@@ -350,6 +350,26 @@ class LayeringContractTest {
             )
             assertEquals("inline 참조 하나는 한 번만 보고한다: $inlineOffenders", probeNames.size, inlineOffenders.size)
 
+            // 열거기가 못 읽는 모양이라도 대문자 이름이면 잡아야 한다 — 옛 매처가 잡던 것(#79 3차 검수).
+            // ⓐ 여러 줄 애너테이션의 닫는 줄에 붙은 선언(열거 목록에 없다), ⓑ `*`로 시작하는 spread 이음 줄
+            // (detectForbiddenReference는 이 줄을 KDoc으로 보고 버린다).
+            val unreadableShapes = File(tempDir, "UnreadableShapes.kt").apply {
+                writeText(
+                    "package x\n\n" +
+                        "val e = $root.ClosingLineObject\n" +
+                        "val f = listOf(\n" +
+                        "    *$root.SpreadArray,\n" +
+                        ")\n",
+                )
+            }
+            val unreadableOffenders =
+                rootPackageReferenceOffenders(listOf(unreadableShapes), GENERATED_ROOT_SYMBOLS, rootDeclaredNames = declared)
+            assertEquals(
+                "열거되지 않은 대문자 루트 심볼의 inline FQN(닫는 줄 애너테이션 선언·spread 줄)도 잡아야 한다: $unreadableOffenders",
+                setOf("ClosingLineObject", "SpreadArray"),
+                setOf("ClosingLineObject", "SpreadArray").filter { name -> unreadableOffenders.any { it.endsWith("$root.$name") } }.toSet(),
+            )
+
             val memberOffenders =
                 rootPackageReferenceOffenders(listOf(memberImport), GENERATED_ROOT_SYMBOLS, rootDeclaredNames = declared)
             assertEquals(
@@ -2036,9 +2056,21 @@ class LayeringContractTest {
                 .map { line -> "$path: root-package import -> $line" }
 
             val codeLines = codeLinesOf(lines)
-            val inlineHits = declaredNames.sorted()
-                .flatMap { name -> detectForbiddenReference(codeLines, "import $root.$name") }
-                .map { reason -> "$path: $reason" }
+            // ⚠️ inline은 **합집합**이다(#79 3차 검수). 열거 이름만 보면 열거기가 못 읽는 선언 모양(여러 줄
+            // 애너테이션의 닫는 줄에 붙은 선언, 들여쓴 최상위 선언 등)과 `*`로 시작하는 이음 줄(spread·곱셈)을
+            // 놓쳐, 이름을 몰라도 대문자 조각이면 잡던 옛 정규식보다 약해진다. 그래서 옛 대문자 정규식을
+            // 그대로 함께 돌린다 — 대문자 이름은 옛 매처를 정의상 전부 포함하고, 소문자 top-level 함수는
+            // 열거 이름으로 새로 잡는다.
+            val uppercaseInline = Regex("""(?<![\w.])${Regex.escape(root)}\.([A-Z]\w*)(?![\w])""")
+            val uppercaseNames = codeLines
+                .map { line -> stripStringsAndTrailingComment(line) }
+                .flatMap { line -> uppercaseInline.findAll(line).map { it.groupValues[1] }.toList() }
+                .filterNot { name -> name in allowedSimpleNames }
+            val enumeratedNames = declaredNames.filter { name ->
+                detectForbiddenReference(codeLines, "import $root.$name").isNotEmpty()
+            }
+            val inlineHits = (enumeratedNames + uppercaseNames).toSortedSet()
+                .map { name -> "$path: fully-qualified reference -> $root.$name" }
 
             importHits + inlineHits
         }
