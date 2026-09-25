@@ -28,7 +28,7 @@ fun shouldRequestAiTurn(
         !shouldShowResumePrompt &&
         playerSetup.seatFor(gameState.nextPlayer).isAi
 
-fun shouldRequestTopMoveAnalysis(
+internal fun shouldRequestTopMoveAnalysis(
     isGameEnded: Boolean,
     isEngineReady: Boolean,
     isEngineBusy: Boolean,

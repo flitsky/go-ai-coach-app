@@ -5,13 +5,13 @@ data class EngineBenchmarkDisplayPlan(
     val candidateText: String,
 )
 
-fun engineBenchmarkWaitingDisplayPlan(): EngineBenchmarkDisplayPlan =
+internal fun engineBenchmarkWaitingDisplayPlan(): EngineBenchmarkDisplayPlan =
     EngineBenchmarkDisplayPlan(
         engineMessage = "엔진 벤치마크 시작 전 안정화 대기 중입니다.",
         candidateText = "Engine benchmark waiting for startup settle delay.",
     )
 
-fun engineBenchmarkRunningDisplayPlan(
+internal fun engineBenchmarkRunningDisplayPlan(
     samplesPerVisit: Int = EngineBenchmarkDefaultSamplesPerVisit,
 ): EngineBenchmarkDisplayPlan =
     EngineBenchmarkDisplayPlan(
@@ -30,7 +30,7 @@ fun EngineBenchmarkProgress.toEngineBenchmarkDisplayPlan(): EngineBenchmarkDispl
  * 않는다(refactor backlog #86). 이 메시지는 앱 어디에서도 렌더되지 않고 디버그 리포트의
  * `DisplayedTexts` 절(`engineMessage:` 칸)에만 실린다.
  */
-fun engineBenchmarkCompletedDisplayPlan(
+internal fun engineBenchmarkCompletedDisplayPlan(
     profile: EngineBenchmarkProfile,
 ): EngineBenchmarkDisplayPlan =
     EngineBenchmarkDisplayPlan(
@@ -38,7 +38,7 @@ fun engineBenchmarkCompletedDisplayPlan(
         candidateText = "Engine benchmark complete.\n${profile.toSummaryText()}",
     )
 
-fun engineBenchmarkFailureDisplayPlan(error: Throwable): EngineBenchmarkDisplayPlan =
+internal fun engineBenchmarkFailureDisplayPlan(error: Throwable): EngineBenchmarkDisplayPlan =
     EngineBenchmarkDisplayPlan(
         engineMessage = "Engine benchmark failed: ${error.message ?: "unknown error"}",
         candidateText = "Engine benchmark failed. The app will continue with built-in defaults.",

@@ -177,7 +177,7 @@ data class DebugReportCopyResult(
     val engineMessage: String,
 )
 
-data class DebugReportCopyActionRequest(
+internal data class DebugReportCopyActionRequest(
     val controllerState: GameSessionControllerState,
     val engineName: String,
     val engineDiagnostic: String,
@@ -196,7 +196,7 @@ data class DebugReportCopyActionRequest(
     val savedSessionJson: String?,
 )
 
-fun runDebugReportCopyAction(
+internal fun runDebugReportCopyAction(
     request: DebugReportCopyActionRequest,
     clipboard: ClipboardPort,
     mirror: DebugReportMirrorPort,

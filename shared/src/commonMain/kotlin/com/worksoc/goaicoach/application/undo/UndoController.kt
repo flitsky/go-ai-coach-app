@@ -123,7 +123,7 @@ class UndoController(
         }
     }
 
-    fun applyLocalUndo(plan: UndoRequestPlan.ApplyLocalUndo) {
+    internal fun applyLocalUndo(plan: UndoRequestPlan.ApplyLocalUndo) {
         runApplyLocalUndoApplication(
             ApplyLocalUndoRunRequest(
                 plan = plan,

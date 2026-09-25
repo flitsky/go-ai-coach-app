@@ -17,7 +17,7 @@ import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.policy.MoveAnalysisSnapshot
 
-fun GameSessionAnalysisState.applyTopMoveAnalysisLaunchPlan(
+internal fun GameSessionAnalysisState.applyTopMoveAnalysisLaunchPlan(
     launchPlan: TopMoveAnalysisLaunchPlan,
 ): TopMoveAnalysisLaunchStateUpdate? =
     when (launchPlan) {
@@ -135,7 +135,7 @@ fun buildTopMoveAnalysisLaunchPlan(
     )
 }
 
-fun GameSessionControllerState.toTopMoveAnalysisLaunchPlan(
+internal fun GameSessionControllerState.toTopMoveAnalysisLaunchPlan(
     targetState: GameState,
     deep: Boolean,
     automatic: Boolean,
@@ -156,7 +156,7 @@ fun GameSessionControllerState.toTopMoveAnalysisLaunchPlan(
         cachedResultFor = cachedResultFor,
     )
 
-fun runTopMoveAnalysisApplication(request: TopMoveAnalysisRunRequest) {
+internal fun runTopMoveAnalysisApplication(request: TopMoveAnalysisRunRequest) {
     if (request.automatic && request.pendingPostUndoEngineSync) {
         return
     }

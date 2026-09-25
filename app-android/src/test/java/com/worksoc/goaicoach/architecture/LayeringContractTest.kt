@@ -575,28 +575,6 @@ class LayeringContractTest {
         )
     }
 
-    @Test
-    fun goCoachAppDoesNotOwnBenchmarkWorkflowBody() {
-        val goCoachApp = RepoPaths.goCoachApp
-        val text = codeOnly(goCoachApp.readContractSource())
-        val forbiddenFragments = listOf(
-            "runStartupBenchmarkWorkflowResult(",
-            "engineBenchmarkWaitingDisplayPlan(",
-            "engineBenchmarkRunningDisplayPlan(",
-            "engineBenchmarkCompletedDisplayPlan(",
-            "engineBenchmarkFailureDisplayPlan(",
-            "EngineBenchmarkStartupSettleDelayMillis",
-            "evaluateEngineBenchmarkGate(",
-        )
-            .filter { fragment -> fragment in text }
-
-        assertTrue(
-            "GoCoachApp should request benchmark execution through runEngineBenchmarkApplication, not own benchmark workflow details:\n" +
-                forbiddenFragments.joinToString("\n"),
-            forbiddenFragments.isEmpty(),
-        )
-    }
-
     /**
      * 저장 포트 둘이 **저장 형식(직렬화 원문)과 매체(파일 경로)를 돌려주지 않는다**(refactor backlog #86).
      *
@@ -646,28 +624,11 @@ class LayeringContractTest {
             codeOnly(file.readContractSource())
         }
         val text = codeOnly(goCoachApp.readContractSource()) + "\n" + wiringText
+        // #96: 러너·플랜·요청 타입 조각 17개는 `:shared`에서 `internal`이 되어 컴파일러가 막는다
+        // (app-android 전체에서 보이지 않는다). 죽은 조각 3개도 지웠다 — 로그 문구 둘은 codeOnly가
+        // 문자열을 비워 매치될 수 없었고, `applyTopMoveAnalysisCompletionApplyPlan`은 저장소에 없었다.
         val forbiddenFragments = listOf(
-            "topMoveAnalysisOperationToken(",
-            "runTopMoveAnalysisEffectApplyPlan(",
-            "TopMoveAnalysisEffectLaunchRequest(",
-            "TopMoveAnalysisExecutionContext(",
-            "applyTopMoveAnalysisCompletionApplyPlan(",
-            "TopMoveAnalysisCompletionApplyPlan.",
-            "toTopMoveAnalysisLaunchPlan(",
-            "applyTopMoveAnalysisLaunchPlan(",
-            "shouldRequestTopMoveAnalysis(",
-            "toShowTopMovesPlan(",
-            "ShowTopMovesPlan.",
             "settingsState = settingsState.hideTopMoves()",
-            "Top Moves hidden. Background move review keeps using fast best-1 analysis.",
-            "clearTopMoveSpots(",
-            "Search time changed. Analysis cache will rebuild with the new time cap.",
-            "runTopMoveAnalysisApplication(",
-            "TopMoveAnalysisRunRequest(",
-            "runShowTopMovesApplication(",
-            "ShowTopMovesRunRequest(",
-            "runHideTopMovesApplication(",
-            "HideTopMovesRunRequest(",
         )
             .filter { fragment -> fragment in text }
         val requiredFragments = listOf(
@@ -716,25 +677,6 @@ class LayeringContractTest {
 
         assertTrue(
             "GoCoachApp should run post-undo score sync through runPostUndoScoreSyncApplication, not own operation/effect details:\n" +
-                forbiddenFragments.joinToString("\n"),
-            forbiddenFragments.isEmpty(),
-        )
-    }
-
-    @Test
-    fun goCoachAppDoesNotOwnUndoWorkflowBody() {
-        val goCoachApp = RepoPaths.goCoachApp
-        val text = codeOnly(goCoachApp.readContractSource())
-        val forbiddenFragments = listOf(
-            "buildUndoRequestPlan(",
-            "buildUndoLocalStatePlan(",
-            "runApplyLocalUndoApplication(",
-            "UndoRequestPlan.ApplyLocalUndo(",
-        )
-            .filter { fragment -> fragment in text }
-
-        assertTrue(
-            "GoCoachApp should run undo through runUndoLastTurnApplication/UndoController.applyLocalUndo, not own undo workflow details:\n" +
                 forbiddenFragments.joinToString("\n"),
             forbiddenFragments.isEmpty(),
         )
@@ -912,12 +854,11 @@ class LayeringContractTest {
             codeOnly(file.readContractSource())
         }
         val text = codeOnly(goCoachApp.readContractSource()) + "\n" + wiringText
+        // #96: 로그·엔드게임 플랜 조각 3개는 `:shared`에서 `internal`이라 컴파일러가 막는다 — 남은 것은
+        // "배선 계층이 완료 적용 함수를 직접 선언하지 않는다"는 모양 규칙이다.
         val forbiddenFragments = listOf(
             "fun applyAutoAiTurnSuccessCompletion(",
             "fun applyAutoAiTurnFailureCompletion(",
-            "runtimeAiTurnSuccessLog(",
-            "runtimeAiTurnFailureLog(",
-            "buildAutoAiTurnEndgamePlan(",
         )
             .filter { fragment -> fragment in text }
         val requiredFragments = listOf(
@@ -1083,13 +1024,11 @@ class LayeringContractTest {
             codeOnly(file.readContractSource())
         }
         val text = codeOnly(goCoachApp.readContractSource()) + "\n" + wiringText
+        // #96: 요청·러너 조각 4개는 `:shared`에서 `internal`이라 컴파일러가 막는다 — 남은 것은
+        // "배선 계층이 로그 파일 원문을 직접 읽지 않는다"는 모양 규칙이다.
         val forbiddenFragments = listOf(
-            "DebugReportCopyActionRequest(",
-            "runDebugReportCopyAction(",
             "runtimeEventLog.readText()",
             "diagnosticEventLog.readText()",
-            "runDebugReportCopyApplication(",
-            "DebugReportCopyRunRequest(",
         )
             .filter { fragment -> fragment in text }
         val requiredFragments = listOf(
@@ -1173,29 +1112,24 @@ class LayeringContractTest {
         )
     }
 
+    /**
+     * #96: 금지 조각 7개(전이·상태·스코프·로그)는 전부 `:shared`에서 `internal`이라 app-android가 부를 수
+     * 없다 — "GoCoachApp이 수명 주기를 소유하지 않는다"는 이제 컴파일러가 지킨다. 남은 것은
+     * "컨트롤러를 만든다"는 필수 조각 하나이고, 행동 기반 배선 테스트(#43)로 넘길 몫이다.
+     */
     @Test
     fun goCoachAppDoesNotOwnEngineOperationLifecycleBody() {
         val goCoachApp = RepoPaths.goCoachApp
         val text = codeOnly(goCoachApp.readContractSource())
-        val forbiddenFragments = listOf(
-            "applyEngineOperationLifecycleTransition(",
-            "EngineOperationLifecycleTransition.",
-            "EngineOperationLifecycleState(",
-            "runEngineOperationInScope(",
-            "recordEngineOperationDiscardLog(",
-            "runtimeEngineOperationStartedLog(",
-            "runtimeEngineOperationCompletedLog(",
-        )
-            .filter { fragment -> fragment in text }
         val requiredFragments = listOf(
             "EngineOperationLifecycleController(",
         )
             .filterNot { fragment -> fragment in text }
 
         assertTrue(
-            "GoCoachApp should delegate engine-operation lifecycle tracking to EngineOperationLifecycleController, not own transition/scope/log details:\n" +
-                "forbidden:\n${forbiddenFragments.joinToString("\n")}\nmissing:\n${requiredFragments.joinToString("\n")}",
-            forbiddenFragments.isEmpty() && requiredFragments.isEmpty(),
+            "GoCoachApp should delegate engine-operation lifecycle tracking to EngineOperationLifecycleController:\n" +
+                "missing:\n${requiredFragments.joinToString("\n")}",
+            requiredFragments.isEmpty(),
         )
     }
 

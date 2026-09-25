@@ -75,7 +75,7 @@ sealed class TopMoveAnalysisCompletionPlan {
     ) : TopMoveAnalysisCompletionPlan()
 }
 
-sealed class TopMoveAnalysisCompletionApplyPlan {
+internal sealed class TopMoveAnalysisCompletionApplyPlan {
     data class ApplySuccess(
         val update: TopMoveAnalysisUpdate,
         val analysisKey: AnalysisCacheKey,
@@ -100,7 +100,7 @@ sealed class TopMoveAnalysisWorkflowResult {
     ) : TopMoveAnalysisWorkflowResult()
 }
 
-data class TopMoveAnalysisExecutionContext(
+internal data class TopMoveAnalysisExecutionContext(
     val targetState: GameState,
     val engineProfile: EngineProfile,
     val analysisPreset: AnalysisPreset,
@@ -108,7 +108,7 @@ data class TopMoveAnalysisExecutionContext(
     val cacheEnabled: Boolean,
 )
 
-data class TopMoveAnalysisEffectLaunchRequest(
+internal data class TopMoveAnalysisEffectLaunchRequest(
     val effect: GameSessionEffect.RunTopMoveAnalysis,
     val context: TopMoveAnalysisExecutionContext,
     val token: TopMoveAnalysisOperationToken,
@@ -119,7 +119,7 @@ data class TopMoveAnalysisEffectLaunchRequest(
     val topMovesEnabled: Boolean,
 )
 
-data class TopMoveAnalysisRunRequest(
+internal data class TopMoveAnalysisRunRequest(
     val engineClient: EngineSessionClient,
     val controllerState: GameSessionControllerState,
     val targetState: GameState,
@@ -150,7 +150,7 @@ data class TopMoveAnalysisRunRequest(
     val appendEngineOperationDiscardLog: (EngineOperationResultGuard.Discard) -> Unit,
 )
 
-data class TopMoveAnalysisCompletionApplyRunRequest(
+internal data class TopMoveAnalysisCompletionApplyRunRequest(
     val applyPlan: TopMoveAnalysisCompletionApplyPlan,
     val applyTopMoveAnalysisUpdate: (TopMoveAnalysisUpdate, AnalysisCacheKey) -> Unit,
     val putUndoRestoreCache: (AnalysisCacheKey, CachedAnalysisResult) -> Unit,
@@ -159,7 +159,7 @@ data class TopMoveAnalysisCompletionApplyRunRequest(
     val appendEngineOperationDiscardLog: (EngineOperationResultGuard.Discard) -> Unit,
 )
 
-sealed class ShowTopMovesPlan {
+internal sealed class ShowTopMovesPlan {
     data class ShowCached(
         val candidateMoves: List<CandidateMove>,
         val engineMessage: String,
@@ -188,7 +188,7 @@ data class ShowTopMovesApplicationPlan(
     val analysisRequest: ShowTopMovesAnalysisRequest? = null,
 )
 
-data class ShowTopMovesRunRequest(
+internal data class ShowTopMovesRunRequest(
     val controllerState: GameSessionControllerState,
     val isGameEnded: Boolean,
     val isEngineReady: Boolean,
@@ -199,7 +199,7 @@ data class ShowTopMovesRunRequest(
     val requestAnalysis: (ShowTopMovesAnalysisRequest) -> Unit,
 )
 
-data class HideTopMovesRunRequest(
+internal data class HideTopMovesRunRequest(
     val controllerState: GameSessionControllerState,
     val applyUpdate: (ShowTopMovesStateUpdate) -> Unit,
 )

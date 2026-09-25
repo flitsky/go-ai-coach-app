@@ -116,7 +116,7 @@ suspend fun EngineSessionClient.runTopMoveAnalysis(
     )
 }
 
-suspend fun EngineSessionClient.runTopMoveAnalysisEffect(
+internal suspend fun EngineSessionClient.runTopMoveAnalysisEffect(
     effect: GameSessionEffect.RunTopMoveAnalysis,
     context: TopMoveAnalysisExecutionContext,
 ): TopMoveAnalysisUpdate =
@@ -130,7 +130,7 @@ suspend fun EngineSessionClient.runTopMoveAnalysisEffect(
         cacheEnabled = context.cacheEnabled,
     )
 
-suspend fun EngineSessionClient.runTopMoveAnalysisWorkflowResult(
+internal suspend fun EngineSessionClient.runTopMoveAnalysisWorkflowResult(
     effect: GameSessionEffect.RunTopMoveAnalysis,
     context: TopMoveAnalysisExecutionContext,
 ): TopMoveAnalysisWorkflowResult =
@@ -144,7 +144,7 @@ suspend fun EngineSessionClient.runTopMoveAnalysisWorkflowResult(
         onFailure = { error -> TopMoveAnalysisWorkflowResult.Failure(error) },
     )
 
-suspend fun EngineSessionClient.runTopMoveAnalysisEffectApplyPlan(
+internal suspend fun EngineSessionClient.runTopMoveAnalysisEffectApplyPlan(
     request: TopMoveAnalysisEffectLaunchRequest,
 ): TopMoveAnalysisCompletionApplyPlan =
     buildTopMoveAnalysisCompletionPlan(

@@ -27,7 +27,7 @@ internal class EngineOperationScope(
     }
 }
 
-suspend fun <T> runEngineOperationInScope(
+internal suspend fun <T> runEngineOperationInScope(
     request: EngineOperationRequest,
     callbacks: EngineOperationLifecycleCallbacks = EngineOperationLifecycleCallbacks(),
     block: suspend () -> T,

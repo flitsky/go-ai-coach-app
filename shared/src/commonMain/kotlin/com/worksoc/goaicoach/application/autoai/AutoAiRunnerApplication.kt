@@ -58,7 +58,7 @@ fun AutoAiTurnFollowUpPlan.toAutoAiTurnFollowUpRequest(): AutoAiTurnFollowUpRequ
             )
     }
 
-fun buildAutoAiTurnEndgamePlan(display: AutoAiTurnDisplayPlan): AutoAiTurnEndgamePlan =
+internal fun buildAutoAiTurnEndgamePlan(display: AutoAiTurnDisplayPlan): AutoAiTurnEndgamePlan =
     if (display.shouldResolveEndgame) {
         AutoAiTurnEndgamePlan.Resolve(
             state = display.gameState,

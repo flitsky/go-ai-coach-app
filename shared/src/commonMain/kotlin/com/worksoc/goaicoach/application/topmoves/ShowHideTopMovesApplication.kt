@@ -11,7 +11,7 @@ import com.worksoc.goaicoach.shared.enginecontract.AnalysisPreset
 import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
 import com.worksoc.goaicoach.shared.policy.MoveAnalysisSnapshot
 
-fun planShowTopMoves(
+internal fun planShowTopMoves(
     reviewAnalysis: MoveAnalysisSnapshot,
     lastAnalysisKey: AnalysisCacheKey?,
     currentPlan: TopMoveAnalysisPlan,
@@ -32,7 +32,7 @@ fun planShowTopMoves(
     )
 }
 
-fun GameSessionControllerState.toShowTopMovesPlan(
+internal fun GameSessionControllerState.toShowTopMovesPlan(
     isEngineBusy: Boolean,
 ): ShowTopMovesPlan =
     planShowTopMoves(
@@ -99,7 +99,7 @@ fun GameSessionControllerState.toShowTopMovesApplicationPlan(
     }
 }
 
-fun runShowTopMovesApplication(request: ShowTopMovesRunRequest) {
+internal fun runShowTopMovesApplication(request: ShowTopMovesRunRequest) {
     val plan = request.controllerState.toShowTopMovesApplicationPlan(
         isGameEnded = request.isGameEnded,
         isEngineReady = request.isEngineReady,
@@ -118,7 +118,7 @@ internal fun GameSessionControllerState.toHideTopMovesStateUpdate(): ShowTopMove
         engineMessage = "Top Moves hidden. Background move review keeps using fast best-1 analysis.",
     )
 
-fun runHideTopMovesApplication(request: HideTopMovesRunRequest) {
+internal fun runHideTopMovesApplication(request: HideTopMovesRunRequest) {
     request.applyUpdate(request.controllerState.toHideTopMovesStateUpdate())
 }
 

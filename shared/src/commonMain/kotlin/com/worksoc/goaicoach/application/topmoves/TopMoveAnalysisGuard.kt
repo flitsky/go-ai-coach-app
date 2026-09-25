@@ -12,7 +12,7 @@ import com.worksoc.goaicoach.shared.policy.EngineTimeoutPolicy
 import com.worksoc.goaicoach.shared.policy.engineOperationRequest
 import com.worksoc.goaicoach.shared.policy.evaluateEngineOperationResultGuard
 
-fun topMoveAnalysisOperationToken(
+internal fun topMoveAnalysisOperationToken(
     targetState: GameState,
     plan: TopMoveAnalysisPlan,
     sessionGeneration: Long = 0L,
@@ -155,7 +155,7 @@ internal fun buildTopMoveAnalysisCompletionPlan(
             )
     }
 
-fun TopMoveAnalysisCompletionPlan.toApplyPlan(): TopMoveAnalysisCompletionApplyPlan =
+internal fun TopMoveAnalysisCompletionPlan.toApplyPlan(): TopMoveAnalysisCompletionApplyPlan =
     when (this) {
         is TopMoveAnalysisCompletionPlan.ApplySuccess ->
             TopMoveAnalysisCompletionApplyPlan.ApplySuccess(

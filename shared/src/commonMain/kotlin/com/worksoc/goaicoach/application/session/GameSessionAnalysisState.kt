@@ -14,7 +14,7 @@ data class GameSessionAnalysisState(
     val lastAnalysisKey: AnalysisCacheKey?,
     val sideAnalysisTexts: Map<StoneColor, String> = emptyMap(),
 ) {
-    fun clearTopMoveSpots(message: String? = null): GameSessionAnalysisState =
+    internal fun clearTopMoveSpots(message: String? = null): GameSessionAnalysisState =
         copy(
             candidateMoves = emptyList(),
             candidateText = message ?: candidateText,

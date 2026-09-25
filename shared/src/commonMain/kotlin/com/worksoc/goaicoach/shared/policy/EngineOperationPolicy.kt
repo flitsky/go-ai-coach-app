@@ -221,7 +221,7 @@ fun buildEngineOperationApplyPlan(
         is EngineOperationResultGuard.Discard -> EngineOperationApplyPlan.Discard(guard)
     }
 
-fun evaluateEngineBenchmarkGate(
+internal fun evaluateEngineBenchmarkGate(
     isEngineReady: Boolean,
     supportsDeviceBenchmark: Boolean,
     isEngineBusy: Boolean,

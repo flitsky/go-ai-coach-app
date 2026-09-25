@@ -6,7 +6,7 @@ import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 
-data class UndoLastTurnRunRequest(
+internal data class UndoLastTurnRunRequest(
     val currentState: GameState,
     val matchMode: MatchMode,
     val isEngineReady: Boolean,
@@ -15,7 +15,7 @@ data class UndoLastTurnRunRequest(
     val runApplyLocalUndo: (UndoRequestPlan.ApplyLocalUndo) -> Unit,
 )
 
-data class ApplyLocalUndoRunRequest(
+internal data class ApplyLocalUndoRunRequest(
     val plan: UndoRequestPlan.ApplyLocalUndo,
     val currentState: GameState,
     val previousMoveReviews: List<MoveReviewMarker>,
@@ -27,7 +27,7 @@ data class ApplyLocalUndoRunRequest(
     val schedulePostUndoSync: (GameState, Long) -> Unit,
 )
 
-fun runUndoLastTurnApplication(request: UndoLastTurnRunRequest) {
+internal fun runUndoLastTurnApplication(request: UndoLastTurnRunRequest) {
     when (
         val plan = buildUndoRequestPlan(
             currentState = request.currentState,
@@ -47,7 +47,7 @@ fun runUndoLastTurnApplication(request: UndoLastTurnRunRequest) {
  * see [UndoRequestPlan.ApplyLocalUndo] for why that's what makes undo safe to
  * trigger at any time.
  */
-fun runApplyLocalUndoApplication(request: ApplyLocalUndoRunRequest) {
+internal fun runApplyLocalUndoApplication(request: ApplyLocalUndoRunRequest) {
     val undo = buildUndoLocalStatePlan(
         currentState = request.currentState,
         undoCount = request.plan.undoCount,

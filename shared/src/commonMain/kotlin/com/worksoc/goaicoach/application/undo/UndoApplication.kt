@@ -37,7 +37,7 @@ sealed class UndoRequestPlan {
      * discard a synchronous engine-undo result the instant the AI's move lands
      * first (see [UndoController.schedulePostUndoSync]).
      */
-    data class ApplyLocalUndo(val undoCount: Int, val syncEngineAfterUndo: Boolean) : UndoRequestPlan()
+    internal data class ApplyLocalUndo(val undoCount: Int, val syncEngineAfterUndo: Boolean) : UndoRequestPlan()
 }
 
 internal const val UndoEngineInterventionDelayMillis = 1_000L
@@ -76,7 +76,7 @@ private fun humanUndoMoveCount(currentState: GameState, humanColor: StoneColor):
     return undoCount.takeIf { it <= size }
 }
 
-fun buildUndoRequestPlan(
+internal fun buildUndoRequestPlan(
     currentState: GameState,
     matchMode: MatchMode,
     isEngineReady: Boolean,
@@ -105,7 +105,7 @@ fun buildUndoRequestPlan(
     return UndoRequestPlan.ApplyLocalUndo(undoCount = undoCount, syncEngineAfterUndo = isEngineReady)
 }
 
-fun buildUndoLocalStatePlan(
+internal fun buildUndoLocalStatePlan(
     currentState: GameState,
     undoCount: Int,
     previousMoveReviews: List<MoveReviewMarker>,

@@ -146,7 +146,7 @@ fun runtimeAutoPlayDelayChangeLog(
         detail = "from=${from.label}/${from.millis}ms to=${to.label}/${to.millis}ms",
     )
 
-fun runtimeEngineOperationStartedLog(
+internal fun runtimeEngineOperationStartedLog(
     context: RuntimeLogContext,
     operationId: String,
     activeOperationCount: Int,
@@ -159,7 +159,7 @@ fun runtimeEngineOperationStartedLog(
             "current=${context.gameState.runtimeBoardSummary()}",
     )
 
-fun runtimeEngineOperationCompletedLog(
+internal fun runtimeEngineOperationCompletedLog(
     context: RuntimeLogContext,
     operationId: String,
     activeOperationCount: Int,
