@@ -9,7 +9,7 @@ import com.worksoc.goaicoach.application.diagnostic.NoopDiagnosticEventLog
 import com.worksoc.goaicoach.application.diagnostic.runObservedEngineOperation
 import com.worksoc.goaicoach.application.endgame.AiEndgameResolution
 import com.worksoc.goaicoach.application.engine.AutoAiTurnResult
-import com.worksoc.goaicoach.application.engine.EngineSessionClient
+import com.worksoc.goaicoach.application.engine.EngineGamePlayClient
 import com.worksoc.goaicoach.application.engine.localScoreSnapshot
 import com.worksoc.goaicoach.application.score.EndgameFailureDisplayPlan
 import com.worksoc.goaicoach.application.score.FinalScoreDisplayPlan
@@ -137,7 +137,7 @@ fun buildAutoAiTurnDisplayPlan(
     )
 }
 
-suspend fun EngineSessionClient.runAutoAiTurnDisplayPlan(
+suspend fun EngineGamePlayClient.runAutoAiTurnDisplayPlan(
     currentState: GameState,
     playLevel: PlayLevelSetting,
     currentProfile: EngineProfile,
@@ -169,7 +169,7 @@ suspend fun EngineSessionClient.runAutoAiTurnDisplayPlan(
     )
 }
 
-internal suspend fun EngineSessionClient.runAutoAiTurnEffect(
+internal suspend fun EngineGamePlayClient.runAutoAiTurnEffect(
     effect: GameSessionEffect.RunAutoAiTurn,
     executionContext: AutoAiTurnRunExecutionContext,
     operationRequest: EngineOperationRequest,
@@ -190,7 +190,7 @@ internal suspend fun EngineSessionClient.runAutoAiTurnEffect(
     )
 }
 
-internal suspend fun EngineSessionClient.runAutoAiTurnWorkflowResult(
+internal suspend fun EngineGamePlayClient.runAutoAiTurnWorkflowResult(
     effect: GameSessionEffect.RunAutoAiTurn,
     executionContext: AutoAiTurnRunExecutionContext,
     operationRequest: EngineOperationRequest,
@@ -208,7 +208,7 @@ internal suspend fun EngineSessionClient.runAutoAiTurnWorkflowResult(
         onFailure = { error -> AutoAiTurnWorkflowResult.Failure(error) },
     )
 
-suspend fun EngineSessionClient.runAutoAiEndgameDisplayPlan(
+suspend fun EngineGamePlayClient.runAutoAiEndgameDisplayPlan(
     plan: AutoAiTurnEndgamePlan.Resolve,
     previousSnapshots: List<ScoreSnapshot>,
     operationRequest: EngineOperationRequest? = null,
@@ -247,7 +247,7 @@ suspend fun EngineSessionClient.runAutoAiEndgameDisplayPlan(
         )
     }
 
-internal suspend fun EngineSessionClient.runAutoAiEndgameEffect(
+internal suspend fun EngineGamePlayClient.runAutoAiEndgameEffect(
     effect: GameSessionEffect.ResolveAutoAiEndgame,
     previousSnapshots: List<ScoreSnapshot>,
     operationRequest: EngineOperationRequest? = null,

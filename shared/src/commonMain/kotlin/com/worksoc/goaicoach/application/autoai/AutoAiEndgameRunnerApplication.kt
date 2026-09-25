@@ -2,7 +2,7 @@ package com.worksoc.goaicoach.application.autoai
 
 import com.worksoc.goaicoach.application.contract.AutoAiTurnEndgamePlan
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
-import com.worksoc.goaicoach.application.engine.EngineSessionClient
+import com.worksoc.goaicoach.application.engine.EngineGamePlayClient
 import com.worksoc.goaicoach.application.engine.runEngineIo
 import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
 import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
@@ -14,7 +14,7 @@ import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 
 internal data class AutoAiEndgameRunRequest(
     val endgamePlan: AutoAiTurnEndgamePlan.Resolve,
-    val engineClient: EngineSessionClient,
+    val engineClient: EngineGamePlayClient,
     val previousSnapshotsProvider: () -> List<ScoreSnapshot>,
     val currentStateProvider: () -> GameState,
     val currentSessionGenerationProvider: () -> Long,

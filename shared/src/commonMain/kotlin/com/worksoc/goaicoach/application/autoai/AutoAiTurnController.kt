@@ -4,7 +4,7 @@ import com.worksoc.goaicoach.application.contract.AutoAiTurnDisplayPlan
 import com.worksoc.goaicoach.application.contract.AutoAiTurnEndgamePlan
 import com.worksoc.goaicoach.application.contract.GameSessionRuntimeState
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
-import com.worksoc.goaicoach.application.engine.EngineSessionClient
+import com.worksoc.goaicoach.application.engine.EngineGamePlayClient
 import com.worksoc.goaicoach.application.engine.launchAutoAiEffect
 import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
 import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
@@ -22,7 +22,7 @@ import kotlinx.coroutines.delay
 
 class AutoAiTurnController(
     private val scope: CoroutineScope,
-    private val engineClient: EngineSessionClient,
+    private val engineClient: EngineGamePlayClient,
     private val diagnosticEventLog: DiagnosticEventLogPort,
     private val runtimeEventLog: RuntimeEventLogPort,
     private val currentControllerState: () -> GameSessionControllerState,

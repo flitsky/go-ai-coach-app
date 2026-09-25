@@ -6,7 +6,7 @@ import com.worksoc.goaicoach.application.contract.AutoAiTurnRunPlan
 import com.worksoc.goaicoach.application.contract.GameSessionEffect
 import com.worksoc.goaicoach.application.contract.GameSessionRuntimeState
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
-import com.worksoc.goaicoach.application.engine.EngineSessionClient
+import com.worksoc.goaicoach.application.engine.EngineGamePlayClient
 import com.worksoc.goaicoach.application.engine.runEngineIo
 import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
 import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
@@ -23,7 +23,7 @@ import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 internal data class AutoAiScheduledTurnRunRequest(
     val schedule: AutoAiTurnRequestPlan.Schedule,
     val controllerStateProvider: () -> GameSessionControllerState,
-    val engineClient: EngineSessionClient,
+    val engineClient: EngineGamePlayClient,
     val runtimeStateProvider: () -> GameSessionRuntimeState,
     val searchTimeSettingsProvider: () -> SearchTimeSettings,
     val scoreSnapshotsProvider: () -> List<ScoreSnapshot>,

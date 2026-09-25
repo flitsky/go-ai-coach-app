@@ -2,7 +2,7 @@ package com.worksoc.goaicoach.application.humanmove
 
 import com.worksoc.goaicoach.application.contract.ScoreEstimateDisplayPlan
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
-import com.worksoc.goaicoach.application.engine.EngineSessionClient
+import com.worksoc.goaicoach.application.engine.EngineGamePlayClient
 import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
 import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
 import com.worksoc.goaicoach.application.score.FinalScoreDisplayPlan
@@ -28,7 +28,7 @@ import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 import com.worksoc.goaicoach.shared.scoring.ScoreTimeline
 
 class HumanMoveController(
-    private val engineClient: EngineSessionClient,
+    private val engineClient: EngineGamePlayClient,
     private val diagnosticEventLog: DiagnosticEventLogPort,
     private val runtimeEventLog: RuntimeEventLogPort,
     private val currentGameState: () -> GameState,

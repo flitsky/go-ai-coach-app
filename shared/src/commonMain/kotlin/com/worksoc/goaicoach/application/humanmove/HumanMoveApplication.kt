@@ -6,7 +6,7 @@ import com.worksoc.goaicoach.application.contract.ScoreEstimateDisplayPlan
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.diagnostic.NoopDiagnosticEventLog
 import com.worksoc.goaicoach.application.diagnostic.runObservedEngineOperation
-import com.worksoc.goaicoach.application.engine.EngineSessionClient
+import com.worksoc.goaicoach.application.engine.EngineGamePlayClient
 import com.worksoc.goaicoach.application.engine.LocalEngineMoveResult
 import com.worksoc.goaicoach.application.engine.localScoreSnapshot
 import com.worksoc.goaicoach.application.engine.runEngineIo
@@ -65,7 +65,7 @@ internal data class HumanEngineSyncCompletionRequest(
 )
 
 data class HumanEngineSyncRunRequest(
-    val engineClient: EngineSessionClient,
+    val engineClient: EngineGamePlayClient,
     val afterMove: GameState,
     val profile: EngineProfile,
     val move: Move,
@@ -334,7 +334,7 @@ fun HumanEngineSyncCompletionPlan.toApplyPlan(): HumanEngineSyncCompletionApplyP
             )
     }
 
-internal suspend fun EngineSessionClient.runHumanEngineSyncEffect(
+internal suspend fun EngineGamePlayClient.runHumanEngineSyncEffect(
     effect: GameSessionEffect.SyncHumanMove,
     operationRequest: EngineOperationRequest,
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
@@ -353,7 +353,7 @@ internal suspend fun EngineSessionClient.runHumanEngineSyncEffect(
     }
 }
 
-internal suspend fun EngineSessionClient.runHumanEngineSyncWorkflowResult(
+internal suspend fun EngineGamePlayClient.runHumanEngineSyncWorkflowResult(
     effect: GameSessionEffect.SyncHumanMove,
     operationRequest: EngineOperationRequest,
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
@@ -369,7 +369,7 @@ internal suspend fun EngineSessionClient.runHumanEngineSyncWorkflowResult(
         onFailure = { error -> HumanEngineSyncWorkflowResult.Failure(error) },
     )
 
-internal suspend fun EngineSessionClient.runHumanEngineSyncWorkflowResult(
+internal suspend fun EngineGamePlayClient.runHumanEngineSyncWorkflowResult(
     request: HumanEngineSyncEffectLaunchRequest,
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
 ): HumanEngineSyncWorkflowResult =
