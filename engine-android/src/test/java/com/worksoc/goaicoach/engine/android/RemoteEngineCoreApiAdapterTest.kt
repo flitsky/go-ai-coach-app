@@ -25,6 +25,7 @@ import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
@@ -397,6 +398,113 @@ class RemoteEngineCoreApiAdapterTest {
             state = GameState.empty(),
             limit = AnalysisLimit(visits = 16),
             player = StoneColor.Black,
+        )
+}
+
+/**
+ * refactor backlog #100 — `genMove`의 수와 `analyze`의 후보수를 **요청 국면의 판 크기**로 읽는다.
+ * [RemoteEngineCoreApiAdapter]가 실제로 부르는 HTTP 전송을 거쳐 단언한다 — 전송이 코덱에
+ * `request.state.boardSize`를 넘기는 배선까지 함께 묶인다.
+ *
+ * 예전에는 `RemoteEngineOperationJsonCodec`이 권위 판 크기를 받아 놓고도 집 추정·사석에만 쓰고,
+ * 수·후보수는 페이로드의 `boardSize`를 읽어 없으면 9로 가정했다. 페이로드의 값은 이제 교차 검사로만
+ * 쓴다 — 없으면 요청 국면의 판, 다르면 디코드 실패. 기대값은 정수 좌표로 적는다(`#36` 골든과 같은 이유).
+ */
+class RemoteEngineOperationBoardSizeDecodeTest {
+    @Test
+    fun thirteenByThirteenGenMoveWithoutPayloadBoardSizeDecodesOnTheRequestedBoard() = runBlocking {
+        val response = executeOn(
+            operation = RemoteEngineOperation.GenMove,
+            boardSize = BoardSize.Thirteen,
+            resultJson = """{"move": {"type": "play", "player": "Black", "point": "D4"}}""",
+        )
+
+        assertEquals(Move.Play(StoneColor.Black, BoardCoordinate(row = 9, column = 3)), response.move)
+    }
+
+    @Test
+    fun nineteenByNineteenGenMoveWithoutPayloadBoardSizeDecodesOnTheRequestedBoard() = runBlocking {
+        val response = executeOn(
+            operation = RemoteEngineOperation.GenMove,
+            boardSize = BoardSize.Nineteen,
+            resultJson = """{"move": {"type": "play", "player": "White", "point": "Q16"}}""",
+        )
+
+        assertEquals(Move.Play(StoneColor.White, BoardCoordinate(row = 3, column = 15)), response.move)
+    }
+
+    @Test
+    fun nineteenByNineteenAnalyzeCandidatesWithoutPayloadBoardSizeDecodeOnTheRequestedBoard() = runBlocking {
+        val response = executeOn(
+            operation = RemoteEngineOperation.Analyze,
+            boardSize = BoardSize.Nineteen,
+            resultJson = """
+                {"candidates": [
+                  {"type": "play", "player": "Black", "point": "D4"},
+                  {"type": "play", "player": "Black", "point": "R3"},
+                  {"type": "pass", "player": "Black"}
+                ]}
+            """,
+        )
+
+        assertEquals(
+            listOf(
+                Move.Play(StoneColor.Black, BoardCoordinate(row = 15, column = 3)),
+                Move.Play(StoneColor.Black, BoardCoordinate(row = 16, column = 16)),
+                Move.Pass(StoneColor.Black),
+            ),
+            response.candidates.map { it.move },
+        )
+    }
+
+    @Test
+    fun genMovePayloadBoardSizeThatDisagreesWithTheRequestedBoardFailsTheDecode() {
+        val failure = assertThrows(IllegalArgumentException::class.java) {
+            runBlocking {
+                executeOn(
+                    operation = RemoteEngineOperation.GenMove,
+                    boardSize = BoardSize.Nineteen,
+                    resultJson = """{"move": {"type": "play", "player": "Black", "point": "D4", "boardSize": 9}}""",
+                )
+            }
+        }
+
+        assertTrue(failure.message.orEmpty(), failure.message.orEmpty().contains("boardSize 9"))
+    }
+
+    @Test
+    fun analyzePayloadBoardSizeThatDisagreesWithTheRequestedBoardFailsTheDecode() {
+        val failure = assertThrows(IllegalArgumentException::class.java) {
+            runBlocking {
+                executeOn(
+                    operation = RemoteEngineOperation.Analyze,
+                    boardSize = BoardSize.Nine,
+                    resultJson = """{"candidates": [{"type": "play", "player": "Black", "point": "C3", "boardSize": 13}]}""",
+                )
+            }
+        }
+
+        assertTrue(failure.message.orEmpty(), failure.message.orEmpty().contains("boardSize 13"))
+    }
+
+    private suspend fun executeOn(
+        operation: RemoteEngineOperation,
+        boardSize: BoardSize,
+        resultJson: String,
+    ): RemoteEngineOperationResponse =
+        HttpRemoteEngineOperationTransport(
+            config = RemoteEngineHttpConfig(endpointUrl = "http://example.test/engine", enabled = true),
+            connectionFactory = object : RemotePositionAnalysisHttpConnectionFactory {
+                override fun open(url: URL): HttpURLConnection =
+                    FakeEngineHttpURLConnection(url = url, responseBody = """{"result": $resultJson}""")
+            },
+        ).execute(
+            RemoteEngineOperationRequest(
+                operation = operation,
+                state = GameState.empty(boardSize = boardSize),
+                limit = AnalysisLimit(visits = 16),
+                player = StoneColor.Black,
+            ),
         )
 }
 

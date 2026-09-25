@@ -19,6 +19,7 @@ import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
@@ -276,6 +277,96 @@ class RemotePositionAnalysisJsonCodecStateTest {
 
         assertEquals(0, encoded.getInt("handicapCount"))
     }
+}
+
+/**
+ * refactor backlog #100 — 후보수 좌표는 **요청한 판**(`request.state.boardSize`)의 크기로 읽는다.
+ *
+ * 예전 디코더는 페이로드의 `boardSize`를 읽고, 없으면 9로 가정했다. 그래서 13x13 요청에
+ * `boardSize` 없이 온 `C3`가 13x13의 (10, 2)가 아니라 9x9의 (6, 2)로 **조용히** 읽혔다.
+ * 지금은 페이로드의 `boardSize`를 교차 검사로만 쓴다 — 없으면 요청한 판, 다르면 디코드 실패.
+ *
+ * 기대값은 정수 좌표로 적는다(`#36` 골든과 같은 이유다). 기대값까지 `fromLabel`로 만들면
+ * 디코더와 같은 판 크기 착오가 입력과 기대값에서 상쇄된다.
+ */
+class RemotePositionAnalysisBoardSizeDecodeTest {
+    @Test
+    fun thirteenByThirteenCandidatesWithoutPayloadBoardSizeDecodeOnTheRequestedBoard() = runBlocking {
+        val response = analyzeOn(
+            boardSize = BoardSize.Thirteen,
+            candidatesJson = """
+                {"type": "play", "player": "Black", "point": "C3"},
+                {"type": "play", "player": "Black", "point": "G7"},
+                {"type": "pass", "player": "Black"}
+            """,
+        )
+
+        assertEquals(
+            listOf(
+                Move.Play(StoneColor.Black, BoardCoordinate(row = 10, column = 2)),
+                Move.Play(StoneColor.Black, BoardCoordinate(row = 6, column = 6)),
+                Move.Pass(StoneColor.Black),
+            ),
+            response.result.candidates.map { it.move },
+        )
+    }
+
+    @Test
+    fun nineteenByNineteenCandidatesWithoutPayloadBoardSizeDecodeOnTheRequestedBoard() = runBlocking {
+        val response = analyzeOn(
+            boardSize = BoardSize.Nineteen,
+            candidatesJson = """
+                {"type": "play", "player": "White", "point": "Q16"},
+                {"type": "play", "player": "White", "point": "D4"},
+                {"type": "play", "player": "White", "point": "K10"}
+            """,
+        )
+
+        assertEquals(
+            listOf(
+                Move.Play(StoneColor.White, BoardCoordinate(row = 3, column = 15)),
+                Move.Play(StoneColor.White, BoardCoordinate(row = 15, column = 3)),
+                Move.Play(StoneColor.White, BoardCoordinate(row = 9, column = 9)),
+            ),
+            response.result.candidates.map { it.move },
+        )
+    }
+
+    @Test
+    fun payloadBoardSizeThatDisagreesWithTheRequestedBoardFailsTheDecode() {
+        // 서버가 다른 판을 분석했다는 뜻이다 — 좌표를 어느 판 크기로 읽어도 틀린 점이 된다.
+        val failure = assertThrows(IllegalArgumentException::class.java) {
+            runBlocking {
+                analyzeOn(
+                    boardSize = BoardSize.Thirteen,
+                    candidatesJson = """{"type": "play", "player": "Black", "point": "C3", "boardSize": 9}""",
+                )
+            }
+        }
+
+        assertTrue(failure.message.orEmpty(), failure.message.orEmpty().contains("boardSize 9"))
+    }
+
+    private suspend fun analyzeOn(
+        boardSize: BoardSize,
+        candidatesJson: String,
+    ) = HttpRemotePositionAnalysisTransport(
+        config = RemotePositionAnalysisHttpConfig(endpointUrl = "http://example.test/analyze", enabled = true),
+        connectionFactory = object : RemotePositionAnalysisHttpConnectionFactory {
+            override fun open(url: URL): HttpURLConnection =
+                FakeHttpURLConnection(
+                    url = url,
+                    responseBody = """{"result": {"candidates": [$candidatesJson]}}""",
+                )
+        },
+    ).analyze(
+        RemotePositionAnalysisRequest(
+            state = GameState.empty(boardSize = boardSize),
+            limit = AnalysisLimit(visits = 16),
+            searchMode = EngineSearchMode.JsonPositionAnalysis,
+            positionFingerprint = "fingerprint",
+        ),
+    )
 }
 
 private class FakeHttpURLConnection(

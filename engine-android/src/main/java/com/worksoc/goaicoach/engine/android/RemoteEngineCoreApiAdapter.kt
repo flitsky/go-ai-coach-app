@@ -403,6 +403,11 @@ internal object RemoteEngineOperationJsonCodec {
             .put("limit", RemotePositionAnalysisJsonCodec.encodeLimit(request.limit))
             .put("state", RemotePositionAnalysisJsonCodec.encodeState(request.state))
 
+    /**
+     * [boardSize]는 요청 국면의 판이다 — 수·후보수·집 추정·사석의 모든 좌표를 이 크기로 읽는다.
+     * 예전에는 집 추정·사석에만 쓰고 `genMove`의 수·`analyze`의 후보수는 페이로드의 `boardSize`를
+     * 읽어 없으면 9로 가정했다(refactor backlog #100, [RemotePositionAnalysisJsonCodec.decodeMove]).
+     */
     fun decodeResponse(
         operation: RemoteEngineOperation,
         boardSize: BoardSize,
@@ -417,13 +422,14 @@ internal object RemoteEngineOperationJsonCodec {
             RemoteEngineOperation.GenMove -> RemoteEngineOperationResponse(
                 status = status,
                 summary = summary,
-                move = result.optJSONObject("move")?.let(RemotePositionAnalysisJsonCodec::decodeMove),
+                move = result.optJSONObject("move")
+                    ?.let { move -> RemotePositionAnalysisJsonCodec.decodeMove(move, boardSize) },
             )
 
             RemoteEngineOperation.Analyze -> RemoteEngineOperationResponse(
                 status = status,
                 summary = summary,
-                candidates = RemotePositionAnalysisJsonCodec.decodeCandidates(result.optJSONArray("candidates")),
+                candidates = RemotePositionAnalysisJsonCodec.decodeCandidates(result.optJSONArray("candidates"), boardSize),
                 rootVisits = result.optNullableInt("rootVisits"),
             )
 

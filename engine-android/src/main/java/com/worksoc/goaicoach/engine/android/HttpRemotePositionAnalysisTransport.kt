@@ -67,7 +67,7 @@ internal class HttpRemotePositionAnalysisTransport(
                 val errorBody = connection.errorStream?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }
                 throw IOException("Remote analysis HTTP $statusCode: ${errorBody.orEmpty()}")
             }
-            RemotePositionAnalysisJsonCodec.decodeResponse(body)
+            RemotePositionAnalysisJsonCodec.decodeResponse(request.state.boardSize, body)
         } finally {
             connection.disconnect()
         }
@@ -97,13 +97,17 @@ internal object RemotePositionAnalysisJsonCodec {
             .put("limit", encodeLimit(request.limit))
             .put("state", encodeState(request.state))
 
-    fun decodeResponse(json: String): RemotePositionAnalysisResponse {
+    /** [boardSize]는 요청에 실어 보낸 국면의 판이다 — 후보수 좌표를 이 크기로 읽는다([decodeMove]). */
+    fun decodeResponse(
+        boardSize: BoardSize,
+        json: String,
+    ): RemotePositionAnalysisResponse {
         val root = JSONObject(json)
         val result = root.optJSONObject("result") ?: root
         return RemotePositionAnalysisResponse(
             result = AnalysisResult(
                 status = decodeStatus(result.optJSONObject("status")),
-                candidates = decodeCandidates(result.optJSONArray("candidates")),
+                candidates = decodeCandidates(result.optJSONArray("candidates"), boardSize),
                 summary = result.optString("summary", "Remote position analysis complete."),
                 rootVisits = result.optNullableInt("rootVisits"),
             ),
@@ -185,14 +189,17 @@ internal object RemotePositionAnalysisJsonCodec {
         )
     }
 
-    internal fun decodeCandidates(candidates: JSONArray?): List<CandidateMove> {
+    internal fun decodeCandidates(
+        candidates: JSONArray?,
+        boardSize: BoardSize,
+    ): List<CandidateMove> {
         if (candidates == null) return emptyList()
         return buildList {
             for (index in 0 until candidates.length()) {
                 val candidate = candidates.getJSONObject(index)
                 add(
                     CandidateMove(
-                        move = decodeMove(candidate),
+                        move = decodeMove(candidate, boardSize),
                         winRate = candidate.optNullableDouble("winRate"),
                         scoreLead = candidate.optNullableDouble("scoreLead"),
                         pointLoss = candidate.optNullableDouble("pointLoss"),
@@ -209,18 +216,43 @@ internal object RemotePositionAnalysisJsonCodec {
         }
     }
 
-    internal fun decodeMove(candidate: JSONObject): Move {
+    /**
+     * [boardSize]는 **권위 판 크기**다 — 요청에 실어 보낸 국면의 판(refactor backlog #100).
+     * 좌표 표기는 판 크기 없이는 뜻이 없다: `C3`는 9x9에서 (6, 2), 13x13에서 (10, 2)다.
+     *
+     * ⚠️ 예전에는 페이로드의 `boardSize`를 읽고, 없으면 9로 가정했다. 13x13·19x19 응답이 그 값을
+     * 빠뜨리면 좌표가 **조용히** 다른 점으로 읽히거나(`C3`) 판 밖이라 실패했다(`Q16`).
+     * 페이로드의 `boardSize`는 이제 교차 검사로만 쓴다 — 없거나 null이면 [boardSize]로 읽고,
+     * 있는데 다르면 디코드를 실패시킨다. 서버가 다른 판을 분석했다는 뜻이라, 어느 크기로 읽어도
+     * 틀린 점이 된다.
+     */
+    internal fun decodeMove(
+        candidate: JSONObject,
+        boardSize: BoardSize,
+    ): Move {
+        requirePayloadBoardSizeAgrees(candidate, boardSize)
         val player = StoneColor.valueOf(candidate.optString("player", StoneColor.Black.name))
         return when (candidate.optString("type", "play")) {
             "pass" -> Move.Pass(player)
             "resign" -> Move.Resign(player)
-            else -> {
-                val boardSize = BoardSize(candidate.optInt("boardSize", BoardSize.Nine.value))
-                Move.Play(
-                    player = player,
-                    coordinate = BoardCoordinate.fromLabel(candidate.getString("point"), boardSize),
-                )
-            }
+            else -> Move.Play(
+                player = player,
+                coordinate = BoardCoordinate.fromLabel(candidate.getString("point"), boardSize),
+            )
         }
     }
+
+    private fun requirePayloadBoardSizeAgrees(
+        move: JSONObject,
+        boardSize: BoardSize,
+    ) {
+        if (move.isNull(PAYLOAD_BOARD_SIZE)) return
+        val payloadBoardSize = move.getInt(PAYLOAD_BOARD_SIZE)
+        require(payloadBoardSize == boardSize.value) {
+            "Remote move payload boardSize $payloadBoardSize disagrees with the requested " +
+                "${boardSize.value}x${boardSize.value} board"
+        }
+    }
+
+    private const val PAYLOAD_BOARD_SIZE = "boardSize"
 }
