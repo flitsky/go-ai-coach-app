@@ -5,6 +5,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.unit.IntSize
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.BoardSize
+import com.worksoc.goaicoach.shared.domain.columnLabels
 import kotlin.math.abs
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -147,10 +148,8 @@ internal fun coordinateFromTap(
     )
 }
 
-internal fun boardColumnLabels(boardSize: BoardSize): List<Char> {
-    val columns = "ABCDEFGHJKLMNOPQRSTUVWXYZ"
-    return columns.take(boardSize.value).toList()
-}
+/** 판에 그리는 열 이름 — 좌표 표기와 같은 한 벌([columnLabels], `I` 없음)에서 받는다(refactor backlog #36). */
+internal fun boardColumnLabels(boardSize: BoardSize): List<Char> = boardSize.columnLabels()
 
 internal fun starPoints(boardSize: BoardSize): List<BoardCoordinate> =
     when (boardSize.value) {

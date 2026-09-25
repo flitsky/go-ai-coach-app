@@ -42,6 +42,14 @@ class BoardGeometryCalculatorTest {
         assertEquals('T', labels19[18]) // ABCDEFGHJKLMNOPQRST
     }
 
+    /** 판에 그리는 열 이름 전부 — 세 판 크기 모두 `I`를 건너뛴다(refactor backlog #36). */
+    @Test
+    fun boardColumnLabelsSpellEveryColumnOfEverySupportedBoard() {
+        assertEquals("ABCDEFGHJ".toList(), boardColumnLabels(BoardSize(9)))
+        assertEquals("ABCDEFGHJKLMN".toList(), boardColumnLabels(BoardSize(13)))
+        assertEquals("ABCDEFGHJKLMNOPQRST".toList(), boardColumnLabels(BoardSize(19)))
+    }
+
     @Test
     fun testBoardTapGeometryCalculations() {
         val geometryWithCoords = boardTapGeometry(

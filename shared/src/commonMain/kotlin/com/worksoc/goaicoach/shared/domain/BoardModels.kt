@@ -118,8 +118,7 @@ data class BoardCoordinate(
 
     fun label(boardSize: BoardSize): String {
         require(isInside(boardSize)) { "Coordinate is outside ${boardSize.value}x${boardSize.value}" }
-        val columns = "ABCDEFGHJKLMNOPQRSTUVWXYZ"
-        return "${columns[column]}${boardSize.value - row}"
+        return "${GTP_COLUMNS[column]}${boardSize.value - row}"
     }
 
     companion object {
@@ -167,8 +166,9 @@ data class BoardCoordinate(
             }
 
         /**
-         * GTP 열 알파벳 — `I`를 건너뛴다(refactor backlog #36). [fromLabel]이 읽는 바로 그 한 벌에
-         * 위임한다(새 리터럴이 아니다). 열 이름이 필요하면 [BoardSize.columnLabels]를 쓴다.
+         * GTP 열 알파벳 — `I`를 건너뛴다(refactor backlog #36). [label]이 쓰고 [fromLabel]이 읽는 바로 그
+         * 한 벌에 위임한다(새 리터럴이 아니다). 열 이름이 필요하면 새 리터럴을 두지 말고 [BoardSize.columnLabels]를
+         * 쓴다 — 판 그림(`boardColumnLabels`)과 진단 리포트의 `[Board]`가 그렇게 받는다.
          *
          * ⚠️ 이 알파벳은 저장 포맷이다 — 이어하기·대국 기록·번들 기보의 좌표 문자열과 분석 캐시 키가
          * 이것으로 쓰였다. 바꾸면 옛 저장분이 다른 점으로 읽히거나 조용히 버려진다.

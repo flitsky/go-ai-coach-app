@@ -3,9 +3,9 @@ package com.worksoc.goaicoach.application.debugreport
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.summary
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
-import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.StoneColor
+import com.worksoc.goaicoach.shared.domain.columnLabels
 import com.worksoc.goaicoach.shared.domain.describe
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisPreset
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
@@ -139,7 +139,7 @@ internal fun StringBuilder.appendNamedTextSection(name: String, text: String, tr
 
 private fun GameState.toBoardText(): String =
     buildString {
-        val columns = boardColumnLabels(boardSize)
+        val columns = boardSize.columnLabels()
         append("   ")
         columns.forEach { column -> append(column).append(' ') }
         appendLine()
@@ -184,9 +184,4 @@ private fun GameState.toMovesText(): String {
     return moves
         .mapIndexed { index, move -> "${index + 1}. ${move.describe(boardSize)}" }
         .joinToString(separator = "\n")
-}
-
-private fun boardColumnLabels(boardSize: BoardSize): List<Char> {
-    val columns = "ABCDEFGHJKLMNOPQRSTUVWXYZ"
-    return columns.take(boardSize.value).toList()
 }

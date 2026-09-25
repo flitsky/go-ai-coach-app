@@ -94,6 +94,33 @@ class DebugReportBuilderTest {
         assertTrue(report.contains("diagnostic event log ok"))
     }
 
+    /**
+     * 진단 리포트 `[Board]`의 열 머리는 GTP 알파벳(`I` 없음)이다 — 판 위아래 두 줄이 같다(refactor backlog #36).
+     * 입력 돌은 정수 좌표로 둔다(`E5` = row 4, column 4).
+     */
+    @Test
+    fun debugReportBoardSectionLabelsColumnsWithTheGtpAlphabet() {
+        val expectedHeaders = mapOf(
+            BoardSize.Nine to "   A B C D E F G H J ",
+            BoardSize.Thirteen to "   A B C D E F G H J K L M N ",
+            BoardSize.Nineteen to "   A B C D E F G H J K L M N O P Q R S T ",
+        )
+        for ((boardSize, header) in expectedHeaders) {
+            val boardLines = buildString { appendBoardSections(GameState.empty(boardSize = boardSize)) }
+                .lines()
+                .dropWhile { it != "[Board]" }
+                .drop(1)
+                .take(boardSize.value + 2)
+
+            assertEquals(header, boardLines.first(), "${boardSize.value}x${boardSize.value} 위 열 머리")
+            assertEquals(header, boardLines.last(), "${boardSize.value}x${boardSize.value} 아래 열 머리")
+        }
+
+        val nine = GameState.empty().copy(stones = mapOf(BoardCoordinate(4, 4) to StoneColor.Black))
+        val nineBoard = buildString { appendBoardSections(nine) }.lines()
+        assertTrue(" 5 . . . . X . . . . 5" in nineBoard, nineBoard.joinToString("\n"))
+    }
+
     @Test
     fun controllerStateBuildsDebugReportSnapshot() {
         val state = GameState.empty()
