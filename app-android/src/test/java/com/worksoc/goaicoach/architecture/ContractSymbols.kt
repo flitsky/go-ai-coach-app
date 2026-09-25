@@ -99,6 +99,28 @@ internal object ContractSymbols {
     const val ROOT_LOWERCASE_TOP_LEVEL_FUNCTION_SAMPLE =
         "com.worksoc.goaicoach.wipeToFreshInstall"
 
+    // ── 포트 시그니처 가드(refactor backlog #83) ──────────────────────────
+    // [PortSignatureContractTest]는 계약을 **이름 패턴**(`*Port`로 끝나는 인터페이스)으로 찾는다. 패턴 밖의
+    // 계약은 여기 등록해야만 가드가 본다 — 등록하지 않으면 그 계약은 초록인 채 아무 검사도 받지 않는다.
+
+    /**
+     * 이름이 `Port`로 끝나지 않는 유일한 계약. 3계층 패키지(`application.analysis`)에 모델과 나란히 선언된
+     * 3계층의 저장 요구이고, 4계층 기기 저장 어댑터가 구현한다(로드맵 4계층 「3·4계층을 건너는 참조」).
+     */
+    const val POSITION_ANALYSIS_CACHE_STORE =
+        "com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheStore"
+
+    /** 이름 패턴 밖에서 명시 등록한 포트 계약 전부. */
+    val PORT_CONTRACTS_OUTSIDE_NAME_PATTERN: List<String> = listOf(POSITION_ANALYSIS_CACHE_STORE)
+
+    /**
+     * 포트 시그니처 가드의 **실제 코드 음성 대조**. 엔진 클라이언트(인터페이스)와 람다 여러 개를 필드로 묶은
+     * 데이터 클래스다 — *"데이터 클래스이니 값"* 이 통과시키던 모양(`#73` 1차 반려의 원인)이라, 가드가 실제
+     * 색인 위에서 이것을 받는 가짜 계약을 빨갛게 보는지로 탐지력을 확인한다.
+     */
+    const val TOP_MOVE_ANALYSIS_RUN_REQUEST =
+        "com.worksoc.goaicoach.application.topmoves.TopMoveAnalysisRunRequest"
+
     // ── 패키지 사이클 래칫의 기준선(refactor backlog #33) ─────────────────
     // [PackageCycleRatchetTest]가 `shared/src/commonMain`의 패키지 import 그래프에서 구한 SCC·상호
     // 참조 쌍을 **아래 두 목록과 정확히 같을 때만** 초록으로 둔다.
@@ -320,6 +342,18 @@ internal object ContractSymbols {
             SymbolKind.TOP_LEVEL_FUNCTION,
             SymbolExpectation.MUST_EXIST,
             "색인 판정기의 양성 표본 — ABSENT_BY_DESIGN 셋의 되살아남 감시가 살아 있음을 보인다(#76)",
+        ),
+        GuardedSymbol(
+            POSITION_ANALYSIS_CACHE_STORE,
+            SymbolKind.TYPE,
+            SymbolExpectation.MUST_EXIST,
+            "포트 시그니처 가드가 이름 패턴(*Port) 밖에서 명시 등록한 계약(#83)",
+        ),
+        GuardedSymbol(
+            TOP_MOVE_ANALYSIS_RUN_REQUEST,
+            SymbolKind.TYPE,
+            SymbolExpectation.MUST_EXIST,
+            "포트 시그니처 가드의 실제 코드 음성 대조 — 클라이언트·람다를 담은 요청 객체(#83)",
         ),
         GuardedSymbol(
             ROOT_LOWERCASE_TOP_LEVEL_FUNCTION_SAMPLE,

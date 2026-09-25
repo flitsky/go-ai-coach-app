@@ -45,6 +45,23 @@ internal object SourceSymbolIndex {
     /** 색인이 실제로 무언가를 읽었는지 — 자기검증용. */
     val indexedFileCount: Int get() = filesByPackage.values.sumOf { it.size }
 
+    /**
+     * 프로덕션 소스 전체의 **타입 선언 색인**(refactor backlog #83) — 이 FQN이 *있는가*를 넘어 *무엇이고
+     * 무엇을 담는가*(선언 종류, 주 생성자·본문 저장 프로퍼티의 타입, 멤버 함수 시그니처)까지 답한다.
+     * 포트 시그니처 가드([PortSignatureContractTest])가 시그니처 타입을 선언까지 풀어 필드 폐포를 걷는 데 쓴다.
+     * 읽는 것과 못 읽는 것은 [TypeDeclarationIndex]에 적었다. 같은 파일 집합([RepoPaths.productionSourceRoots])을
+     * 한 번만 읽는다 — FQN 실존 판정과 선언 색인이 서로 다른 트리를 보는 일이 없다.
+     */
+    val typeDeclarations: TypeDeclarationIndex by lazy {
+        TypeDeclarationIndex.of(
+            filesByPackage.values.flatten().associate { file -> file.relativeTo(RepoPaths.root).path to file.readText() },
+        )
+    }
+
+    /** 소스 텍스트 하나의 타입 선언 — 자기검증이 합성 소스로 직접 부른다(읽는 모양은 [KotlinDeclarationParser]). */
+    fun typeDeclarationsIn(label: String, source: String): List<TypeDeclaration> =
+        KotlinDeclarationParser.parse(label, source)
+
     /** 색인이 본 패키지 전부 — 실패 메시지에 "가까운 이름"을 보여줄 때 쓴다. */
     val knownPackages: Set<String> get() = filesByPackage.keys - ""
 
