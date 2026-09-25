@@ -334,7 +334,7 @@ fun HumanEngineSyncCompletionPlan.toApplyPlan(): HumanEngineSyncCompletionApplyP
             )
     }
 
-suspend fun EngineSessionClient.runHumanEngineSyncEffect(
+internal suspend fun EngineSessionClient.runHumanEngineSyncEffect(
     effect: GameSessionEffect.SyncHumanMove,
     operationRequest: EngineOperationRequest,
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,

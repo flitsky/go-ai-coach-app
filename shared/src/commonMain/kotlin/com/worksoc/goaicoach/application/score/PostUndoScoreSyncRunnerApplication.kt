@@ -11,7 +11,7 @@ import com.worksoc.goaicoach.shared.policy.EngineOperationRequest
 import com.worksoc.goaicoach.shared.policy.EngineTimeoutPolicy
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 
-data class PostUndoScoreSyncEffectLaunchRequest(
+internal data class PostUndoScoreSyncEffectLaunchRequest(
     val state: GameState,
     val profile: EngineProfile,
     val previousSnapshots: List<ScoreSnapshot>,
@@ -42,7 +42,7 @@ data class PostUndoScoreSyncRunRequest(
     val fallbackMessage: String = "Local undo engine sync failed.",
 )
 
-suspend fun EngineSessionClient.runPostUndoScoreSyncCompletionPlan(
+internal suspend fun EngineSessionClient.runPostUndoScoreSyncCompletionPlan(
     request: PostUndoScoreSyncEffectLaunchRequest,
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
 ): ScoreSyncCompletionPlan =

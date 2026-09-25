@@ -19,7 +19,7 @@ import com.worksoc.goaicoach.shared.scoring.BoardScorer
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 import com.worksoc.goaicoach.shared.scoring.ScoreTimeline
 
-fun scoreEstimateOperationToken(
+internal fun scoreEstimateOperationToken(
     request: ScoreEstimateRequestPlan.RequestEngineEstimate,
     sessionGeneration: Long = 0L,
 ): ScoreEstimateOperationToken =
@@ -119,7 +119,7 @@ fun buildScoreEstimateRequestPlan(
         syncFirst = matchMode == MatchMode.LocalTwoPlayer,
     )
 }
-fun ScoreEstimateRequestPlan.toScoreEstimateLaunchStateUpdate(): ScoreEstimateLaunchStateUpdate =
+internal fun ScoreEstimateRequestPlan.toScoreEstimateLaunchStateUpdate(): ScoreEstimateLaunchStateUpdate =
     when (this) {
         is ScoreEstimateRequestPlan.ShowMessage ->
             ScoreEstimateLaunchStateUpdate(engineMessage = message)

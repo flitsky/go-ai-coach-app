@@ -225,7 +225,7 @@ internal fun runDebugReportCopyAction(
     )
 }
 
-fun runDebugReportCopyEffect(
+internal fun runDebugReportCopyEffect(
     effect: GameSessionEffect.CopyDebugReport,
     clipboard: ClipboardPort,
     mirror: DebugReportMirrorPort,

@@ -644,95 +644,15 @@ class LayeringContractTest {
     }
 
     @Test
-    fun goCoachAppDoesNotOwnHumanMoveSyncWorkflowBody() {
-        val goCoachApp = RepoPaths.goCoachApp
-        val text = codeOnly(goCoachApp.readContractSource())
-        // #96: 요청·완료 플랜·워크플로 조각 4개는 `:shared`에서 `internal`이다. `HumanEngineSyncRunPlan`은
-        // public으로 남는다 — sealed interface `GameSessionEffect`의 중첩 `SyncHumanMove`가 노출하는데,
-        // 인터페이스 안의 중첩 선언에는 `internal`을 붙일 수 없다. `EngineOperationKind`는 #97 몫.
-        val forbiddenFragments = listOf(
-            "HumanEngineSyncRunPlan(",
-            "EngineOperationKind.HumanMoveSync",
-        )
-            .filter { fragment -> fragment in text }
-
-        assertTrue(
-            "GoCoachApp should run human move engine sync through runHumanEngineSyncApplication, not own launch/effect/completion details:\n" +
-                forbiddenFragments.joinToString("\n"),
-            forbiddenFragments.isEmpty(),
-        )
-    }
-
-    @Test
-    fun goCoachAppDoesNotOwnPostUndoScoreSyncWorkflowBody() {
-        val goCoachApp = RepoPaths.goCoachApp
-        val text = codeOnly(goCoachApp.readContractSource())
-        // #96: `runPostUndoScoreSyncApplyPlan`은 이미 `internal`이라 지웠다. 남은 둘은 app-android 테스트가
-        // 참조해 테스트 이관(#97) 뒤에 internal로 바꾼다.
-        val forbiddenFragments = listOf(
-            "PostUndoScoreSyncEffectLaunchRequest(",
-            "EngineOperationKind.PostUndoSync",
-        )
-            .filter { fragment -> fragment in text }
-
-        assertTrue(
-            "GoCoachApp should run post-undo score sync through runPostUndoScoreSyncApplication, not own operation/effect details:\n" +
-                forbiddenFragments.joinToString("\n"),
-            forbiddenFragments.isEmpty(),
-        )
-    }
-
-    @Test
-    fun goCoachAppDoesNotOwnScoringRuleSyncWorkflowBody() {
-        val goCoachApp = RepoPaths.goCoachApp
-        val text = codeOnly(goCoachApp.readContractSource())
-        val forbiddenFragments = listOf(
-            "ScoringRuleSyncEffectLaunchRequest(",
-            "runScoringRuleSyncApplyPlan(",
-            "EngineOperationKind.ScoringRuleSync",
-        )
-            .filter { fragment -> fragment in text }
-
-        assertTrue(
-            "GoCoachApp should run scoring-rule score sync through runScoringRuleSyncApplication, not own operation/effect details:\n" +
-                forbiddenFragments.joinToString("\n"),
-            forbiddenFragments.isEmpty(),
-        )
-    }
-
-    @Test
-    fun goCoachAppDoesNotOwnRestoredGameSyncWorkflowBody() {
-        val goCoachApp = RepoPaths.goCoachApp
-        val text = codeOnly(goCoachApp.readContractSource())
-        // #96: `runRestoredGameSyncApplyPlan`은 이미 `internal`이라 지웠다. 나머지는 app-android 테스트가
-        // 참조해 테스트 이관(#97) 뒤의 몫이다.
-        val forbiddenFragments = listOf(
-            "RestoredGameSyncEffectLaunchRequest(",
-            "RestoredGameSyncExecutionContext(",
-            "GameSessionEffect.SyncRestoredGame(",
-            "EngineOperationKind.RestoredGameSync",
-        )
-            .filter { fragment -> fragment in text }
-
-        assertTrue(
-            "GoCoachApp should run restored-game score sync through runRestoredGameSyncApplication, not own operation/effect details:\n" +
-                forbiddenFragments.joinToString("\n"),
-            forbiddenFragments.isEmpty(),
-        )
-    }
-
-    @Test
     fun goCoachAppDoesNotOwnSavedGameWorkflowBody() {
         val goCoachApp = RepoPaths.goCoachApp
         val text = codeOnly(goCoachApp.readContractSource())
         // #96: 복원 플랜·프롬프트 로드·복원 러너 조각 4개는 `:shared`에서 `internal`이다.
+        // #97: `SavedGamePersistenceRequest`·`runSavedGamePersistence`도 `internal`이 되어 지웠다.
         // `SavedSessionPromptPlan`은 public으로 남는다 — GoCoachApp이 `applyPrompt = { prompt -> … }`
         // 람다로 이름 없이 받으므로(타입 추론) 가시성으로는 못 막고, 이름을 쓰지 말라는 텍스트 규칙만 선다.
-        // 나머지 둘은 app-android 테스트가 참조해 #97 몫.
         val forbiddenFragments = listOf(
-            "SavedGamePersistenceRequest(",
             "SavedSessionPromptPlan",
-            "runSavedGamePersistence(",
         )
             .filter { fragment -> fragment in text }
         val requiredFragments = listOf(
@@ -765,19 +685,15 @@ class LayeringContractTest {
         )
     }
 
+    /**
+     * #96·#97: 금지 조각 9개(워크플로·로그·러너·요청·효과·시작 결과·작업 종류)는 전부 `:shared`에서 `internal`이라
+     * app-android가 부를 수 없다 — `GameSessionEffect`와 `EngineStartupWorkflowResult`·`EngineOperationKind`는
+     * #97에서 타입째 `internal`이 됐다. 남은 것은 "컨트롤러에 넘긴다"는 필수 조각 하나다.
+     */
     @Test
     fun goCoachAppDoesNotOwnEngineBackedNewGameWorkflowBody() {
         val goCoachApp = RepoPaths.goCoachApp
         val text = codeOnly(goCoachApp.readContractSource())
-        // #96: 워크플로·로그·러너·요청 조각 5개는 `:shared`에서 `internal`이다.
-        // `GameSessionEffect.*`는 sealed interface의 중첩이라 하나씩 `internal`로 만들 수 없다(#97 뒤 타입째 검토).
-        val forbiddenFragments = listOf(
-            "GameSessionEffect.StartEngineBackedGame(",
-            "EngineStartupWorkflowResult.Success",
-            "EngineStartupWorkflowResult.Failure",
-            "EngineOperationKind.EngineNewGame",
-        )
-            .filter { fragment -> fragment in text }
         val requiredFragments = listOf(
             "newGameController::startConfiguredGame",
         )
@@ -785,8 +701,8 @@ class LayeringContractTest {
 
         assertTrue(
             "GoCoachApp should delegate new-game to NewGameController, not own engine operation/effect/workflow details:\n" +
-                "forbidden:\n${forbiddenFragments.joinToString("\n")}\nmissing:\n${requiredFragments.joinToString("\n")}",
-            forbiddenFragments.isEmpty() && requiredFragments.isEmpty(),
+                "missing:\n${requiredFragments.joinToString("\n")}",
+            requiredFragments.isEmpty(),
         )
     }
 
@@ -807,6 +723,11 @@ class LayeringContractTest {
         )
     }
 
+    /**
+     * #96·#97: 금지 조각 10개(토큰·실행 문맥·워크플로·완료 플랜·로그·러너·효과)는 전부 `:shared`에서 `internal`이다 —
+     * 마지막 `GameSessionEffect.RunAutoAiTurn`은 #97에서 `GameSessionEffect`가 타입째 `internal`이 되며 지웠다.
+     * 남은 것은 "컨트롤러에 넘긴다"는 필수 조각 하나다.
+     */
     @Test
     fun goCoachAppDoesNotOwnScheduledAutoAiTurnWorkflowBody() {
         val goCoachApp = RepoPaths.goCoachApp
@@ -817,12 +738,6 @@ class LayeringContractTest {
             codeOnly(file.readContractSource())
         }
         val text = codeOnly(goCoachApp.readContractSource()) + "\n" + wiringText
-        // #96: 토큰·실행 문맥·워크플로·완료 플랜·로그·러너 조각 9개는 `:shared`에서 `internal`이다.
-        // `GameSessionEffect.*`는 sealed interface의 중첩이라 하나씩 `internal`로 만들 수 없다(#97 뒤 타입째 검토).
-        val forbiddenFragments = listOf(
-            "GameSessionEffect.RunAutoAiTurn(",
-        )
-            .filter { fragment -> fragment in text }
         val requiredFragments = listOf(
             "autoAiTurnController::requestAiTurn",
         )
@@ -830,8 +745,8 @@ class LayeringContractTest {
 
         assertTrue(
             "GoCoachApp should delegate scheduled Auto-AI turns to AutoAiTurnController, not own operation/workflow/completion details:\n" +
-                "forbidden:\n${forbiddenFragments.joinToString("\n")}\nmissing:\n${requiredFragments.joinToString("\n")}",
-            forbiddenFragments.isEmpty() && requiredFragments.isEmpty(),
+                "missing:\n${requiredFragments.joinToString("\n")}",
+            requiredFragments.isEmpty(),
         )
     }
 
@@ -867,6 +782,11 @@ class LayeringContractTest {
         )
     }
 
+    /**
+     * #96·#97: 금지 조각 10개(토큰·효과·완료 플랜·로그·러너)는 전부 `:shared`에서 `internal`이다 —
+     * 마지막 `GameSessionEffect.ResolveAutoAiEndgame`은 #97에서 `GameSessionEffect`가 타입째 `internal`이 되며 지웠다.
+     * 남은 것은 "컨트롤러를 만든다"는 필수 조각 하나다.
+     */
     @Test
     fun goCoachAppDoesNotOwnAutoAiEndgameResolveWorkflowBody() {
         val goCoachApp = RepoPaths.goCoachApp
@@ -877,12 +797,6 @@ class LayeringContractTest {
             codeOnly(file.readContractSource())
         }
         val text = codeOnly(goCoachApp.readContractSource()) + "\n" + wiringText
-        // #96: 토큰·효과·완료 플랜·로그·러너 조각 9개는 `:shared`에서 `internal`이다.
-        // `GameSessionEffect.*`는 sealed interface의 중첩이라 하나씩 `internal`로 만들 수 없다(#97 뒤 타입째 검토).
-        val forbiddenFragments = listOf(
-            "GameSessionEffect.ResolveAutoAiEndgame(",
-        )
-            .filter { fragment -> fragment in text }
         val requiredFragments = listOf(
             "AutoAiTurnController(",
         )
@@ -890,8 +804,8 @@ class LayeringContractTest {
 
         assertTrue(
             "GoCoachApp should resolve Auto-AI pass/pass endgame through AutoAiTurnController, not own token/effect/completion/log details:\n" +
-                "forbidden:\n${forbiddenFragments.joinToString("\n")}\nmissing:\n${requiredFragments.joinToString("\n")}",
-            forbiddenFragments.isEmpty() && requiredFragments.isEmpty(),
+                "missing:\n${requiredFragments.joinToString("\n")}",
+            requiredFragments.isEmpty(),
         )
     }
 
@@ -950,6 +864,10 @@ class LayeringContractTest {
         )
     }
 
+    /**
+     * #97: 금지 조각 7개(토큰·효과 요청·적용 러너·효과·발사 상태·러너·요청)는 전부 `:shared`에서 `internal`이라
+     * app-android가 부를 수 없다. 남은 것은 "컨트롤러를 만든다"는 필수 조각 하나다.
+     */
     @Test
     fun goCoachAppDoesNotOwnScoreEstimateWorkflowBody() {
         val goCoachApp = RepoPaths.goCoachApp
@@ -960,16 +878,6 @@ class LayeringContractTest {
             codeOnly(file.readContractSource())
         }
         val text = codeOnly(goCoachApp.readContractSource()) + "\n" + wiringText
-        val forbiddenFragments = listOf(
-            "scoreEstimateOperationToken(",
-            "ScoreEstimateEffectLaunchRequest(",
-            "runScoreEstimateEffectApplyPlan(",
-            "GameSessionEffect.RunScoreEstimate(",
-            "toScoreEstimateLaunchStateUpdate(",
-            "runScoreEstimateApplication(",
-            "ScoreEstimateRunRequest(",
-        )
-            .filter { fragment -> fragment in text }
         val requiredFragments = listOf(
             "ScoreEstimateController(",
         )
@@ -977,8 +885,8 @@ class LayeringContractTest {
 
         assertTrue(
             "GoCoachApp should delegate score estimate to ScoreEstimateController, not own operation/effect/completion details:\n" +
-                "forbidden:\n${forbiddenFragments.joinToString("\n")}\nmissing:\n${requiredFragments.joinToString("\n")}",
-            forbiddenFragments.isEmpty() && requiredFragments.isEmpty(),
+                "missing:\n${requiredFragments.joinToString("\n")}",
+            requiredFragments.isEmpty(),
         )
     }
 
@@ -1043,6 +951,11 @@ class LayeringContractTest {
         )
     }
 
+    /**
+     * #96·#97: 금지 조각 9개(워크플로·러너·요청·플랜·프롬프트·효과·작업 종류·폴백 정책)는 전부 `:shared`에서
+     * `internal`이다 — 마지막 셋(`GameSessionEffect`·`EngineOperationKind`·`EngineFallbackPolicy`)은 #97에서 타입째
+     * `internal`이 되며 지웠다. 남은 것은 "컨트롤러를 만든다"는 필수 조각 하나다.
+     */
     @Test
     fun goCoachAppDoesNotOwnPositionCacheOptimizationWorkflowBody() {
         val goCoachApp = RepoPaths.goCoachApp
@@ -1053,16 +966,6 @@ class LayeringContractTest {
             codeOnly(file.readContractSource())
         }
         val text = codeOnly(goCoachApp.readContractSource()) + "\n" + wiringText
-        // #96: 워크플로·러너·요청·플랜·프롬프트 조각 6개는 `:shared`에서 `internal`이다. 죽은 조각
-        // `position-cache-optimization`도 지웠다(codeOnly가 문자열을 비워 매치될 수 없었다).
-        // `GameSessionEffect.*`는 sealed interface의 중첩이라 하나씩 `internal`로 만들 수 없고(#97 뒤 타입째 검토),
-        // 두 enum 항목은 app-android 테스트가 타입을 참조해 #97 몫이다.
-        val forbiddenFragments = listOf(
-            "GameSessionEffect.RunPositionCacheOptimization(",
-            "EngineOperationKind.PositionCacheOptimization",
-            "EngineFallbackPolicy.CachedAnalysis",
-        )
-            .filter { fragment -> fragment in text }
         val requiredFragments = listOf(
             "PositionCacheOptimizationController(",
         )
@@ -1070,8 +973,8 @@ class LayeringContractTest {
 
         assertTrue(
             "GoCoachApp should delegate position-cache-optimization to PositionCacheOptimizationController, not own plan/runner/prompt details:\n" +
-                "forbidden:\n${forbiddenFragments.joinToString("\n")}\nmissing:\n${requiredFragments.joinToString("\n")}",
-            forbiddenFragments.isEmpty() && requiredFragments.isEmpty(),
+                "missing:\n${requiredFragments.joinToString("\n")}",
+            requiredFragments.isEmpty(),
         )
     }
 

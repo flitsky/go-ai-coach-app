@@ -14,7 +14,7 @@ import com.worksoc.goaicoach.shared.policy.EngineOperationRequest
 import com.worksoc.goaicoach.shared.policy.EngineTimeoutPolicy
 import com.worksoc.goaicoach.shared.policy.engineOperationRequest
 
-sealed class EngineStartupWorkflowResult {
+internal sealed class EngineStartupWorkflowResult {
     data class Success(val result: EngineStartupResult) : EngineStartupWorkflowResult()
     data class Failure(val error: Throwable) : EngineStartupWorkflowResult()
 }
@@ -66,7 +66,7 @@ suspend fun EngineSessionClient.runEngineStartupApplication(
     }
 }
 
-suspend fun EngineSessionClient.runEngineStartupEffect(
+internal suspend fun EngineSessionClient.runEngineStartupEffect(
     effect: GameSessionEffect.StartEngineSession,
     operationRequest: EngineOperationRequest,
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
@@ -81,7 +81,7 @@ suspend fun EngineSessionClient.runEngineStartupEffect(
         )
     }
 
-suspend fun EngineSessionClient.runEngineStartupWorkflowResult(
+internal suspend fun EngineSessionClient.runEngineStartupWorkflowResult(
     effect: GameSessionEffect.StartEngineSession,
     operationRequest: EngineOperationRequest,
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
@@ -97,7 +97,7 @@ suspend fun EngineSessionClient.runEngineStartupWorkflowResult(
         onFailure = { error -> EngineStartupWorkflowResult.Failure(error) },
     )
 
-suspend fun EngineSessionClient.runEngineBackedNewGameEffect(
+internal suspend fun EngineSessionClient.runEngineBackedNewGameEffect(
     effect: GameSessionEffect.StartEngineBackedGame,
     operationRequest: EngineOperationRequest,
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,

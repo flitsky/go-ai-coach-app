@@ -18,7 +18,7 @@ internal sealed class PositionAnalysisCacheOptimizationWorkflowResult {
     ) : PositionAnalysisCacheOptimizationWorkflowResult()
 }
 
-suspend fun EngineSessionClient.runPositionAnalysisCacheOptimizationEffect(
+internal suspend fun EngineSessionClient.runPositionAnalysisCacheOptimizationEffect(
     effect: GameSessionEffect.RunPositionCacheOptimization,
     operationRequest: EngineOperationRequest,
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,

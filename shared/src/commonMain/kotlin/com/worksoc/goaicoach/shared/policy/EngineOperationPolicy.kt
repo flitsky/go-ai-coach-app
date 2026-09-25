@@ -47,7 +47,12 @@ data class PositionScopedOperationToken(
     val moveCount: Int,
 )
 
-enum class EngineOperationKind(
+/**
+ * ⚠️ `internal`이다(refactor backlog #97). 쓰는 곳은 이 파일과 `application.*`뿐이다. `internal`은 모듈 경계라서
+ * 모듈 승격(#49) 때 이 열거형·[EngineFallbackPolicy]·[EngineOperationRequest]의 `internal` 멤버·`engineOperationRequest`를
+ * `application`과 **다른 모듈**로 보내면 컴파일이 깨진다 — `:core:application`에 둔다.
+ */
+internal enum class EngineOperationKind(
     val code: String,
 ) {
     EngineStartup("engine_startup"),
@@ -77,7 +82,7 @@ data class EngineTimeoutPolicy(
     }
 }
 
-enum class EngineFallbackPolicy(
+internal enum class EngineFallbackPolicy(
     val label: String,
 ) {
     None("none"),
@@ -94,15 +99,22 @@ enum class EngineFallbackPolicy(
  * model: results can be late, fail, or belong to an older match generation.
  * This request object makes those assumptions explicit before we move more
  * operation runners out of UI code.
+ *
+ * ⚠️ **타입은 public, 만들기와 [kind]·[fallbackPolicy]는 `internal`이다**(refactor backlog #97).
+ * app-android가 만드는 public 컨트롤러들이 `launchEngineOperation: (EngineOperationRequest, …) -> Unit`을
+ * 받으므로 타입은 보여야 한다. 하지만 app-android는 이 값을 받아 넘기기만 하고 만들거나 종류를 읽지 않으니,
+ * 두 열거형([EngineOperationKind]·[EngineFallbackPolicy])은 `:shared` 밖으로 새지 않는다.
+ * `@ConsistentCopyVisibility`는 `copy()`도 생성자와 같은 `internal`로 둔다.
  */
-data class EngineOperationRequest(
+@ConsistentCopyVisibility
+data class EngineOperationRequest internal constructor(
     val operationId: String,
-    val kind: EngineOperationKind,
+    internal val kind: EngineOperationKind,
     val sessionGeneration: Long,
     val boardFingerprint: String,
     val moveCount: Int,
     val timeoutPolicy: EngineTimeoutPolicy,
-    val fallbackPolicy: EngineFallbackPolicy,
+    internal val fallbackPolicy: EngineFallbackPolicy,
     val backendId: String,
 ) {
     init {
@@ -129,7 +141,7 @@ sealed class EngineOperationApplyPlan {
     data class Discard(val discard: EngineOperationResultGuard.Discard) : EngineOperationApplyPlan()
 }
 
-fun engineOperationRequest(
+internal fun engineOperationRequest(
     kind: EngineOperationKind,
     state: GameState,
     sessionGeneration: Long,

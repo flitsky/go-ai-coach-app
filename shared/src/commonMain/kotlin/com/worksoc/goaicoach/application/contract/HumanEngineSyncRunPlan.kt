@@ -5,7 +5,7 @@ import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 
-data class HumanEngineSyncRunPlan(
+internal data class HumanEngineSyncRunPlan(
     val afterMove: GameState,
     val profile: EngineProfile,
     val move: Move,

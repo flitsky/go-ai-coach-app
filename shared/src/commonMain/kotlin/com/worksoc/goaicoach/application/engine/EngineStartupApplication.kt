@@ -39,7 +39,7 @@ fun buildEngineStartupFailureDisplayPlan(
         candidateText = "2P test mode is still available.\n$engineDiagnostic",
     )
 
-fun buildEngineStartupDisplayPlan(
+internal fun buildEngineStartupDisplayPlan(
     state: GameState,
     result: EngineStartupWorkflowResult,
     engineDiagnostic: String,

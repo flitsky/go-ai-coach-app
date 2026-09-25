@@ -14,7 +14,7 @@ import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.policy.EngineOperationRequest
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 
-data class ScoreEstimateEffectLaunchRequest(
+internal data class ScoreEstimateEffectLaunchRequest(
     val effect: GameSessionEffect.RunScoreEstimate,
     val previousSnapshots: List<ScoreSnapshot>,
     val token: ScoreEstimateOperationToken,
@@ -22,7 +22,7 @@ data class ScoreEstimateEffectLaunchRequest(
     val currentSessionGeneration: Long,
 )
 
-data class ScoreEstimateRunRequest(
+internal data class ScoreEstimateRunRequest(
     val engineClient: EngineSessionClient,
     val state: GameState,
     val previousSnapshots: List<ScoreSnapshot>,
@@ -64,7 +64,7 @@ suspend fun EngineSessionClient.runScoreEstimateDisplayPlan(
     )
 }
 
-suspend fun EngineSessionClient.runScoreEstimateEffect(
+internal suspend fun EngineSessionClient.runScoreEstimateEffect(
     effect: GameSessionEffect.RunScoreEstimate,
     previousSnapshots: List<ScoreSnapshot>,
     operationRequest: EngineOperationRequest? = null,
@@ -77,7 +77,7 @@ suspend fun EngineSessionClient.runScoreEstimateEffect(
         diagnosticEventLog = diagnosticEventLog,
     )
 
-suspend fun EngineSessionClient.runScoreEstimateWorkflowResult(
+internal suspend fun EngineSessionClient.runScoreEstimateWorkflowResult(
     effect: GameSessionEffect.RunScoreEstimate,
     previousSnapshots: List<ScoreSnapshot>,
     operationRequest: EngineOperationRequest? = null,
@@ -95,7 +95,7 @@ suspend fun EngineSessionClient.runScoreEstimateWorkflowResult(
         onFailure = { error -> ScoreEstimateWorkflowResult.Failure(error) },
     )
 
-suspend fun EngineSessionClient.runScoreEstimateEffectCompletionPlan(
+internal suspend fun EngineSessionClient.runScoreEstimateEffectCompletionPlan(
     request: ScoreEstimateEffectLaunchRequest,
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
 ): ScoreEstimateCompletionPlan =
@@ -111,7 +111,7 @@ suspend fun EngineSessionClient.runScoreEstimateEffectCompletionPlan(
         currentSessionGeneration = request.currentSessionGeneration,
     )
 
-suspend fun EngineSessionClient.runScoreEstimateEffectApplyPlan(
+internal suspend fun EngineSessionClient.runScoreEstimateEffectApplyPlan(
     request: ScoreEstimateEffectLaunchRequest,
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
 ): ScoreEstimateCompletionApplyPlan =
@@ -120,7 +120,7 @@ suspend fun EngineSessionClient.runScoreEstimateEffectApplyPlan(
         diagnosticEventLog = diagnosticEventLog,
     ).toApplyPlan()
 
-fun runScoreEstimateApplication(request: ScoreEstimateRunRequest) {
+internal fun runScoreEstimateApplication(request: ScoreEstimateRunRequest) {
     val requestPlan = buildScoreEstimateRequestPlan(
         state = request.state,
         previousSnapshots = request.previousSnapshots,

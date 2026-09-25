@@ -5,7 +5,7 @@ import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 
-sealed interface GameSessionEffect {
+internal sealed interface GameSessionEffect {
     data class RunTopMoveAnalysis(
         val plan: TopMoveAnalysisPlan,
         val deep: Boolean,

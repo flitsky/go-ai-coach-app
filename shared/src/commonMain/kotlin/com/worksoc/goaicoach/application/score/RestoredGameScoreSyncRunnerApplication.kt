@@ -35,11 +35,11 @@ suspend fun EngineSessionClient.runRestoredGameSyncDisplayPlan(
     )
 }
 
-data class RestoredGameSyncExecutionContext(
+internal data class RestoredGameSyncExecutionContext(
     val profile: EngineProfile,
 )
 
-data class RestoredGameSyncEffectLaunchRequest(
+internal data class RestoredGameSyncEffectLaunchRequest(
     val effect: GameSessionEffect.SyncRestoredGame,
     val context: RestoredGameSyncExecutionContext,
     val operation: EngineOperationRequest,
@@ -68,7 +68,7 @@ data class RestoredGameSyncRunRequest(
     val fallbackMessage: String = "Saved game restored locally, but engine sync failed.",
 )
 
-suspend fun EngineSessionClient.runRestoredGameSyncEffect(
+internal suspend fun EngineSessionClient.runRestoredGameSyncEffect(
     effect: GameSessionEffect.SyncRestoredGame,
     context: RestoredGameSyncExecutionContext,
     operationRequest: EngineOperationRequest,
@@ -83,7 +83,7 @@ suspend fun EngineSessionClient.runRestoredGameSyncEffect(
         diagnosticEventLog = diagnosticEventLog,
     )
 
-suspend fun EngineSessionClient.runRestoredGameSyncCompletionPlan(
+internal suspend fun EngineSessionClient.runRestoredGameSyncCompletionPlan(
     request: RestoredGameSyncEffectLaunchRequest,
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
 ): ScoreSyncCompletionPlan =

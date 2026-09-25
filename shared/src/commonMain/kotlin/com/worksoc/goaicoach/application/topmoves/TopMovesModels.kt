@@ -229,10 +229,16 @@ sealed class TopMoveAnalysisLaunchPlan {
     ) : TopMoveAnalysisLaunchPlan()
 }
 
-data class TopMoveAnalysisLaunchStateUpdate(
+/**
+ * ⚠️ **타입은 public, 만들기와 [effect]는 `internal`이다**(refactor backlog #97). public인 [TopMovesController]가
+ * `applyLaunchUpdate`로 이 값을 app-android에 건네고 배선이 [analysisState]·[engineMessage]를 읽는다.
+ * [effect]는 `internal`인 `GameSessionEffect`라 `:shared` 안에서만 보인다.
+ */
+@ConsistentCopyVisibility
+data class TopMoveAnalysisLaunchStateUpdate internal constructor(
     val analysisState: GameSessionAnalysisState,
     val engineMessage: String? = null,
-    val effect: GameSessionEffect.RunTopMoveAnalysis? = null,
+    internal val effect: GameSessionEffect.RunTopMoveAnalysis? = null,
 )
 
 data class TopMoveAnalysisLaunchRequest(

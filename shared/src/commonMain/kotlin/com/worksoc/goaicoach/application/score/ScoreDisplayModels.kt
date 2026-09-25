@@ -70,7 +70,7 @@ data class EndgameFailureDisplayPlan(
     val candidateText: String,
 )
 
-data class ScoreEstimateLaunchStateUpdate(
+internal data class ScoreEstimateLaunchStateUpdate(
     val engineMessage: String? = null,
     val display: ScoreEstimateDisplayPlan? = null,
     val effect: GameSessionEffect.RunScoreEstimate? = null,
