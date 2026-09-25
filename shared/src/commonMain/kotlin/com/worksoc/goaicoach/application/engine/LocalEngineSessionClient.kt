@@ -40,6 +40,25 @@ private val UnverifiedLocalCapabilities = EngineSessionCapabilities(
 class LocalEngineSessionClient(
     private val coreApi: EngineCoreApi,
     /**
+     * 지금의 **세션 세대**(`GameSessionRuntimeState.sessionGeneration` — 무르기마다 바뀐다)를
+     * 읽는 공급자(refactor backlog #18). 이 클라이언트가 직접 만드는 `position_analysis`
+     * 요청의 세대이고, 진단 로그의 `operationId`(`position_analysis:g<세대>:…`)와
+     * `sessionGeneration` 문맥이 이 값을 싣는다.
+     *
+     * ⚠️ **예전에는 여기서 `0L`을 박았다** — 그래서 모든 `position_analysis` 로그가 `g0`으로 찍혀,
+     * 같은 판의 다른 오퍼레이션(5계층이 제 세대를 넣는 `auto_ai_turn` 등)과 대조할 수 없었다.
+     *
+     * ⚠️ **기본값을 두지 않는다.** 빠뜨리면 조용히 `g0`으로 돌아가는 것이 바로 그 결함이었다.
+     *
+     * ⚠️ **로그에만 쓰인다** — 이 요청은 [runObservedEngineOperation]에만 넘어가고 결과 폐기 판정에는
+     * 쓰이지 않는다(폐기는 5계층이 제 요청에 제 세대를 넣어 따로 한다). 그래서 이 값이 바뀌어도
+     * 사용자에게 보이는 동작은 바뀌지 않는다.
+     *
+     * ⚠️ [capabilitiesProvider]와 같은 조건이다 — **싸고, 막히지 않고, 아무 스레드에서나 안전해야
+     * 한다.** 분석 한 번마다 부른다.
+     */
+    private val currentSessionGeneration: () -> Long,
+    /**
      * ⚠️ **값이 아니라 공급자다**(백로그 #101 ②단계).
      *
      * 예전에는 값이었고, 그래도 됐다 — `MainActivity`가 부트스트랩이 **끝난 뒤에** 이 클라이언트를
@@ -142,7 +161,7 @@ class LocalEngineSessionClient(
         val operationRequest = engineOperationRequest(
             kind = EngineOperationKind.PositionAnalysis,
             state = state,
-            sessionGeneration = 0L,
+            sessionGeneration = currentSessionGeneration(),
             timeoutPolicy = EngineTimeoutPolicy(
                 timeoutMillis = context.effectiveLimit.timeMillis,
                 label = "${searchMode.name}:${context.effectiveLimit.visits}v",

@@ -183,6 +183,7 @@ class EngineSessionTest {
         val engine = RecordingEngineAdapter()
         val client = LocalEngineSessionClient(
             coreApi = engine,
+            currentSessionGeneration = { 0L },
             capabilitiesProvider = {
                 EngineSessionCapabilities(
                     supportsDeviceBenchmark = true,
@@ -217,6 +218,7 @@ class EngineSessionTest {
         var localProcessConfirmed = false
         val client = LocalEngineSessionClient(
             coreApi = RecordingEngineAdapter(),
+            currentSessionGeneration = { 0L },
             capabilitiesProvider = {
                 EngineSessionCapabilities(supportsDeviceBenchmark = localProcessConfirmed)
             },
@@ -238,6 +240,7 @@ class EngineSessionTest {
         var calls = 0
         val client = LocalEngineSessionClient(
             coreApi = RecordingEngineAdapter(),
+            currentSessionGeneration = { 0L },
             capabilitiesProvider = {
                 calls += 1
                 EngineSessionCapabilities(supportsDeviceBenchmark = false)
@@ -253,11 +256,54 @@ class EngineSessionTest {
 
     @Test
     fun capabilitiesDefaultToTheUnverifiedAnswerWhenNoProviderIsGiven() {
-        val client = LocalEngineSessionClient(coreApi = RecordingEngineAdapter())
+        val client = LocalEngineSessionClient(coreApi = RecordingEngineAdapter(), currentSessionGeneration = { 0L })
 
         // "모른다"의 기본값은 **못 한다** 쪽이어야 한다 — 없는 능력을 열어주지 않는다.
         assertEquals(false, client.capabilities.supportsDeviceBenchmark)
         assertEquals(EngineSessionBackend.LocalEngine, client.capabilities.backend)
+    }
+
+    /**
+     * refactor backlog #18: 이 클라이언트가 만드는 `position_analysis` 요청이 **지금의 세션 세대**를
+     * 싣는다. 예전에는 `0L`을 박아 모든 로그가 `g0`이었다 — 무르기로 세대가 넘어가도 그대로였다.
+     */
+    @Test
+    fun positionAnalysisOperationIdFollowsTheCurrentSessionGeneration() = runBlocking {
+        var generation = 3L
+        var generationReads = 0
+        var nowMillis = 0L
+        val diagnosticLog = RecordingDiagnosticEventLog()
+        val client = LocalEngineSessionClient(
+            coreApi = RecordingEngineAdapter(),
+            currentSessionGeneration = {
+                generationReads += 1
+                generation
+            },
+            diagnosticEventLog = diagnosticLog,
+            // 읽을 때마다 1분씩 흐르는 시계 — 분석이 전부 `engine.operation.slow`로 기록돼
+            // 요청의 operationId와 세대가 로그에 드러난다.
+            clock = EngineClock {
+                nowMillis += 60_000L
+                nowMillis
+            },
+        )
+        val state = GameState.empty()
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+        val limit = AnalysisLimit(visits = 32, timeMillis = 2_000L, candidateCount = 16)
+
+        // 만들 때 한 번 읽어 담아 두면 그 값으로 굳는다 — 세대는 분석할 때마다 새로 묻는다.
+        assertEquals(0, generationReads)
+
+        client.analyzePosition(state = state, limit = limit)
+        generation = 4L // 무르기 한 번 — 세션 세대가 넘어간다.
+        client.analyzePosition(state = state, limit = limit)
+
+        val slowEvents = diagnosticLog.events.filter { event -> event.code == "engine.operation.slow" }
+        assertEquals(listOf("position_analysis", "position_analysis"), slowEvents.map { it.context["operation"] })
+        assertEquals(listOf("3", "4"), slowEvents.map { it.context["sessionGeneration"] })
+        val operationIds = slowEvents.map { event -> event.context.getValue("operationId") }
+        assertTrue(operationIds[0].startsWith("position_analysis:g3:m1:"), operationIds[0])
+        assertTrue(operationIds[1].startsWith("position_analysis:g4:m1:"), operationIds[1])
     }
 
     @Test
@@ -266,6 +312,7 @@ class EngineSessionTest {
         val cacheStore = InMemoryPositionAnalysisCacheStore()
         val client = LocalEngineSessionClient(
             coreApi = engine,
+            currentSessionGeneration = { 0L },
             positionAnalysisCacheStore = cacheStore,
         )
         val state = GameState.empty()
@@ -310,6 +357,7 @@ class EngineSessionTest {
         val cacheStore = InMemoryPositionAnalysisCacheStore()
         val client = LocalEngineSessionClient(
             coreApi = engine,
+            currentSessionGeneration = { 0L },
             positionAnalysisCacheStore = cacheStore,
         )
         val state = GameState.empty()
@@ -344,6 +392,7 @@ class EngineSessionTest {
         val cacheStore = InMemoryPositionAnalysisCacheStore()
         val client = LocalEngineSessionClient(
             coreApi = engine,
+            currentSessionGeneration = { 0L },
             positionAnalysisCacheStore = cacheStore,
         )
         val state = GameState.empty()
@@ -376,6 +425,7 @@ class EngineSessionTest {
         val diagnosticLog = RecordingDiagnosticEventLog()
         val client = LocalEngineSessionClient(
             coreApi = engine,
+            currentSessionGeneration = { 0L },
             diagnosticEventLog = diagnosticLog,
         )
         val state = GameState.empty()
@@ -412,6 +462,7 @@ class EngineSessionTest {
         val diagnosticLog = RecordingDiagnosticEventLog()
         val client = LocalEngineSessionClient(
             coreApi = engine,
+            currentSessionGeneration = { 0L },
             diagnosticEventLog = diagnosticLog,
         )
 
@@ -433,6 +484,7 @@ class EngineSessionTest {
         val diagnosticLog = RecordingDiagnosticEventLog()
         val client = LocalEngineSessionClient(
             coreApi = engine,
+            currentSessionGeneration = { 0L },
             diagnosticEventLog = diagnosticLog,
         )
 
@@ -486,6 +538,7 @@ class EngineSessionTest {
         )
         val client = LocalEngineSessionClient(
             coreApi = engine,
+            currentSessionGeneration = { 0L },
             trustedPositionAnalysisCacheProviders = listOf(
                 InMemoryTrustedPositionAnalysisCacheProvider(listOf(trustedEntry)),
             ),
@@ -508,6 +561,7 @@ class EngineSessionTest {
         val cacheStore = InMemoryPositionAnalysisCacheStore()
         val client = LocalEngineSessionClient(
             coreApi = engine,
+            currentSessionGeneration = { 0L },
             positionAnalysisCacheStore = cacheStore,
         )
         val state = GameState.empty()

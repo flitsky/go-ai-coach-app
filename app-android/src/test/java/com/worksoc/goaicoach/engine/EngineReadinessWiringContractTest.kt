@@ -151,4 +151,25 @@ class EngineReadinessWiringContractTest {
             "engineDiagnostic = { engineIdentity().diagnostic }" in goCoachApp,
         )
     }
+
+    @Test
+    fun theEngineClientReadsTheSessionGenerationOfTheLiveSessionHolder() {
+        // refactor backlog #18: 클라이언트(MainActivity)가 세션 홀더(GoCoachApp)보다 먼저 생기므로
+        // 둘은 중계기로만 이어진다. 잇는 줄이 빠지면 **컴파일도 테스트도 초록인 채** 모든
+        // `position_analysis` 로그가 다시 `g0`으로 찍힌다 — 중계기는 잇기 전에 0을 답하기 때문이다.
+        assertTrue(
+            "MainActivity가 로컬 엔진 클라이언트에 중계기를 넘기지 않는다 — 세대가 로그에 실리지 않는다(#18).",
+            "currentSessionGeneration = sessionGenerationRelay::current" in mainActivity,
+        )
+        val holderStart = goCoachApp.indexOf("val sessionHolder = remember {")
+        val holderEnd = goCoachApp.indexOf("var sessionSnapshot by", holderStart)
+        assertTrue("세션 홀더 생성 블록을 찾지 못했다 — 이 계약의 전제가 무너졌다.", holderStart >= 0 && holderEnd > holderStart)
+        // ⚠️ `matchGeneration`이 아니라 `sessionGeneration`이다 — 전자는 무르기로 바뀌지 않는다
+        // (GameSessionRuntimeState의 주석, 로드맵 PremiumState 항목).
+        assertTrue(
+            "GoCoachApp이 홀더를 만들면서 중계기를 그 홀더의 sessionGeneration에 잇지 않는다(#18).",
+            Regex("""sessionGenerationRelay\.bind\s*\{[^}]*\.runtimeState\.sessionGeneration\s*}""")
+                .containsMatchIn(goCoachApp.substring(holderStart, holderEnd)),
+        )
+    }
 }

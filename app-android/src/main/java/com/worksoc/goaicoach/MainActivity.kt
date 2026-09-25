@@ -25,6 +25,7 @@ import com.worksoc.goaicoach.platform.AdsConsentManager
 import com.worksoc.goaicoach.ui.allowsRotation
 import com.worksoc.goaicoach.engine.EngineBootstrap
 import com.worksoc.goaicoach.engine.EngineIdentity
+import com.worksoc.goaicoach.engine.SessionGenerationRelay
 import com.worksoc.goaicoach.engine.createEngineBootstrap
 import com.worksoc.goaicoach.engine.createRemoteEngineSessionClient
 import com.worksoc.goaicoach.engine.identity
@@ -96,6 +97,9 @@ class MainActivity : ComponentActivity() {
                 }
                 // 엔진 호출은 이 `Deferred`가 완성될 때까지 `DeferredEngineCoreApi` 안에서 기다린다.
                 val coreApiDeferred = remember { CompletableDeferred<EngineCoreApi>() }
+                // 세션 세대도 같은 사정이다 — 그 원천(`GameSessionStateHolder`)은 아래 `GoCoachApp`이
+                // 만든다. 클라이언트는 이 중계기를 읽고, `GoCoachApp`이 홀더를 만들면서 잇는다(refactor backlog #18).
+                val sessionGenerationRelay = remember { SessionGenerationRelay() }
                 var engineBootstrap by remember { mutableStateOf<EngineBootstrap?>(null) }
                 LaunchedEffect(Unit) {
                     val ready = withContext(Dispatchers.IO) {
@@ -123,6 +127,7 @@ class MainActivity : ComponentActivity() {
                     if (remoteEngineRequested) {
                         createRemoteEngineSessionClient(
                             candidates = listOf(RemoteEngineCandidate(endpointUrl = remoteEngineUrl, enabled = true)),
+                            currentSessionGeneration = sessionGenerationRelay::current,
                             positionAnalysisCacheStore = positionAnalysisCacheStore,
                             diagnosticEventLog = diagnosticEventLog,
                         )
@@ -138,6 +143,7 @@ class MainActivity : ComponentActivity() {
                     // 고르면 항상 로컬로 폴백한다.
                     remoteClient ?: LocalEngineSessionClient(
                         coreApi = DeferredEngineCoreApi(coreApiDeferred),
+                        currentSessionGeneration = sessionGenerationRelay::current,
                         capabilitiesProvider = {
                             EngineSessionCapabilities(
                                 // 준비 전에는 `null`이라 false다 — 없는 능력을 열어주지 않는다.
@@ -168,6 +174,7 @@ class MainActivity : ComponentActivity() {
                             }
                         },
                         diagnosticEventLog = diagnosticEventLog,
+                        sessionGenerationRelay = sessionGenerationRelay,
                     )
                     AppSplash()
                 }

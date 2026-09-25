@@ -11,7 +11,7 @@ import org.junit.Test
 class RemoteEngineSessionBootstrapTest {
     @Test
     fun noUsableCandidateReturnsNull() {
-        val client = createRemoteEngineSessionClient(candidates = emptyList())
+        val client = createRemoteEngineSessionClient(candidates = emptyList(), currentSessionGeneration = { 0L })
 
         assertNull(client)
     }
@@ -22,6 +22,7 @@ class RemoteEngineSessionBootstrapTest {
             candidates = listOf(
                 RemoteEngineCandidate(endpointUrl = "http://example.test/engine", enabled = true),
             ),
+            currentSessionGeneration = { 0L },
         )
 
         assertNotNull(client)

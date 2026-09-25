@@ -377,7 +377,7 @@ class EngineDeviceBenchmarkApplicationTest {
     @Test
     fun startupBenchmarkEffectRunnerDelegatesToEngineSessionClient() = runBlocking {
         val engine = RecordingBenchmarkEngineAdapter()
-        val client = LocalEngineSessionClient(engine)
+        val client = LocalEngineSessionClient(engine, currentSessionGeneration = { 0L })
         val progressEvents = mutableListOf<EngineBenchmarkProgress>()
         val restoreState = GameState.empty(ruleset = Ruleset.Chinese)
             .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
@@ -402,7 +402,7 @@ class EngineDeviceBenchmarkApplicationTest {
     fun startupBenchmarkWorkflowResultWrapsSuccessAndFailure() = runBlocking {
         val restoreState = GameState.empty(ruleset = Ruleset.Chinese)
 
-        val success = LocalEngineSessionClient(RecordingBenchmarkEngineAdapter())
+        val success = LocalEngineSessionClient(RecordingBenchmarkEngineAdapter(), currentSessionGeneration = { 0L })
             .runStartupBenchmarkWorkflowResult(
                 effect = GameSessionEffect.RunStartupBenchmark,
                 context = StartupBenchmarkExecutionContext(
@@ -412,6 +412,7 @@ class EngineDeviceBenchmarkApplicationTest {
             )
         val failure = LocalEngineSessionClient(
             RecordingBenchmarkEngineAdapter(analyzeError = IllegalStateException("benchmark failed")),
+            currentSessionGeneration = { 0L },
         ).runStartupBenchmarkWorkflowResult(
             effect = GameSessionEffect.RunStartupBenchmark,
             context = StartupBenchmarkExecutionContext(
@@ -431,6 +432,7 @@ class EngineDeviceBenchmarkApplicationTest {
         val engine = RecordingBenchmarkEngineAdapter()
         val client = LocalEngineSessionClient(
             coreApi = engine,
+            currentSessionGeneration = { 0L },
             capabilitiesProvider = { EngineSessionCapabilities(supportsDeviceBenchmark = true) },
         )
         val store = RecordingEngineBenchmarkStore()
@@ -511,6 +513,7 @@ class EngineDeviceBenchmarkApplicationTest {
                 EngineBenchmarkRunRequest(
                     engineClient = LocalEngineSessionClient(
                         coreApi = RecordingBenchmarkEngineAdapter(),
+                        currentSessionGeneration = { 0L },
                         capabilitiesProvider = { EngineSessionCapabilities(supportsDeviceBenchmark = supported) },
                     ),
                     store = store,

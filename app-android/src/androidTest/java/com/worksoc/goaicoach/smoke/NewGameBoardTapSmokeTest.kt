@@ -10,6 +10,7 @@ import com.worksoc.goaicoach.application.diagnostic.NoopDiagnosticEventLog
 import com.worksoc.goaicoach.application.engine.EngineStartupResult
 import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.engine.EngineIdentity
+import com.worksoc.goaicoach.engine.SessionGenerationRelay
 import com.worksoc.goaicoach.shared.enginecontract.EngineMode
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.domain.GameState
@@ -84,6 +85,7 @@ class NewGameBoardTapSmokeTest {
                     EngineIdentity(mode = EngineMode.Stub, name = "Fake Engine", diagnostic = "smoke-test")
                 },
                 diagnosticEventLog = NoopDiagnosticEventLog,
+                sessionGenerationRelay = SessionGenerationRelay(),
             )
         }
 

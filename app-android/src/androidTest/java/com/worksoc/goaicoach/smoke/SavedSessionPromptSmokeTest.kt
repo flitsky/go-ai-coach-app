@@ -17,6 +17,7 @@ import com.worksoc.goaicoach.persistence.GameSessionStore
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.engine.EngineIdentity
+import com.worksoc.goaicoach.engine.SessionGenerationRelay
 import com.worksoc.goaicoach.shared.enginecontract.EngineMode
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.domain.GameState
@@ -90,6 +91,7 @@ class SavedSessionPromptSmokeTest {
                     EngineIdentity(mode = EngineMode.Stub, name = "Fake Engine", diagnostic = "smoke-test")
                 },
                 diagnosticEventLog = NoopDiagnosticEventLog,
+                sessionGenerationRelay = SessionGenerationRelay(),
             )
         }
 

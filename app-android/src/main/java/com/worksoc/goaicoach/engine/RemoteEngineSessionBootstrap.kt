@@ -28,6 +28,8 @@ import com.worksoc.goaicoach.engine.android.RemoteEngineHttpConfig
  */
 internal fun createRemoteEngineSessionClient(
     candidates: List<RemoteEngineCandidate>,
+    /** 지금의 세션 세대를 읽는 공급자 — [LocalEngineSessionClient]에 그대로 넘긴다(refactor backlog #18). */
+    currentSessionGeneration: () -> Long,
     positionAnalysisCacheStore: PositionAnalysisCacheStore = NoopPositionAnalysisCacheStore,
     trustedPositionAnalysisCacheProviders: List<TrustedPositionAnalysisCacheProvider> = emptyList(),
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
@@ -43,6 +45,7 @@ internal fun createRemoteEngineSessionClient(
                 readTimeoutMillis = candidate.readTimeoutMillis,
             ),
         ),
+        currentSessionGeneration = currentSessionGeneration,
         capabilitiesProvider = {
             EngineSessionCapabilities(
                 supportsDeviceBenchmark = false,

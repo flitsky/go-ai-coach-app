@@ -101,6 +101,7 @@ import com.worksoc.goaicoach.ui.vision.BoardScanScreen
 import com.worksoc.goaicoach.wireGoCoachControllers
 import kotlinx.coroutines.CoroutineScope
 import com.worksoc.goaicoach.engine.EngineIdentity
+import com.worksoc.goaicoach.engine.SessionGenerationRelay
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
@@ -118,6 +119,11 @@ internal fun GoCoachApp(
      */
     engineIdentity: () -> EngineIdentity,
     diagnosticEventLog: DiagnosticEventLogPort,
+    /**
+     * [engineClient]가 세션 세대를 읽는 자리(refactor backlog #18). 세대의 원천인 세션 홀더가 이
+     * 함수 안에서 생기므로, 그 자리에서 여기에 잇는다.
+     */
+    sessionGenerationRelay: SessionGenerationRelay,
 ) {
     MaterialTheme(
         colorScheme = AppLightColorScheme,
@@ -127,7 +133,7 @@ internal fun GoCoachApp(
                 // 첫 실행 처리(#140, 예전 #51 랜딩)는 아래 화면보다 **바깥**이라야 한다 — 안쪽에 두면
                 // 그 저장을 자동저장이 곧바로 덮어쓴다(FirstRunGate.kt의 주석 참고).
                 FirstRunGate {
-                    GoCoachScreen(engineClient, engineIdentity, diagnosticEventLog, selectedLanguage, onLanguageChange)
+                    GoCoachScreen(engineClient, engineIdentity, diagnosticEventLog, sessionGenerationRelay, selectedLanguage, onLanguageChange)
                 }
             }
         }
@@ -139,6 +145,7 @@ private fun GoCoachScreen(
     engineClient: EngineSessionClient,
     engineIdentity: () -> EngineIdentity,
     diagnosticEventLog: DiagnosticEventLogPort,
+    sessionGenerationRelay: SessionGenerationRelay,
     selectedLanguage: UiLanguage,
     onLanguageChange: (UiLanguage) -> Unit,
 ) {
@@ -195,7 +202,11 @@ private fun GoCoachScreen(
                 engineDiagnostic = engineDiagnostic,
                 benchmarkStore = benchmarkStore,
             ),
-        )
+        ).also { holder ->
+            // 홀더가 생기는 **바로 이 자리에서** 잇는다(#18) — 홀더가 새로 만들어질 때만 다시 돈다.
+            // 컴포즈 상태가 아니라 홀더를 읽는 것은 엔진 IO 스레드에서도 불리기 때문이다.
+            sessionGenerationRelay.bind { holder.current.core.runtimeState.sessionGeneration }
+        }
     }
     var sessionSnapshot by remember { mutableStateOf(sessionHolder.current) }
 
