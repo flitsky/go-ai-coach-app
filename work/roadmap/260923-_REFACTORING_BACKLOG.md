@@ -192,6 +192,9 @@ Hilt(commonMain 불가)·Koin(이득 0)·전면 MVI(이미 절반 작동)·모�
 | 79·69 | **G1 루트 매처가 소문자 top-level 함수도 잡는다 + 흩어진 FQN·shared 경로를 모았다** — ⚠️ **세 번 고쳤다**: 1차(`607eef01`)는 열거기가 `val`·`const`·애너테이션 선언을 못 봐 import 쪽이 회귀, 2차(`fe82c568`)는 옛 import 정규식을 되살렸지만 inline 쪽이 여전히 약했고, 3차(`a4db0496`)가 옛 대문자 inline 정규식과 **합집합**으로 돌려 옛 매처를 정의상 전부 포함한다. #69: 하드코딩 경로 7곳(백로그의 8은 낡은 수)·픽스처 FQN 리터럴 0 | `607eef01`…`a4db0496` |
 | 84 | **5·6계층 경계를 재분류로 맞췄다(b2, 사용자 결정)** — 엔타이틀먼트 클러스터(`premium.app`·`attendance`·`consumable`·`botcharacter`·`lifecycle`·`device`)를 6계층으로 매핑, 코드 이동 0. 5→6 참조 **16줄 → 0**(137파일 grep), 6→5 13줄은 허용 방향. 가드 `layerFivePackagesDoNotReferenceLayerSixPackages` — :shared의 모든 패키지가 목록 셋 중 하나에 있어야 초록(미배정·낡은 항목·중복·빈 목록 사보타주 전부 빨강). `#39` 첫 절("5→6 방향 뒤집기")은 이것으로 코드 없이 닫혔다 | `b8a245eb`·`a74040a6`·`2ea1ca04` |
 | 85 | **포트 없는 어댑터 분류 + 위반 ④ 해소** — 어댑터 10개를 (A) 로직이 있어 포트가 필요 1 / (B) 순수 넣기·꺼내기 8 / (C) 판단 1로 분류. 닉네임 규칙(12자·trim·빈 값→없음)을 4계층 어댑터에서 6계층 `application.profile.UserNicknamePolicy`로 올렸다 — 이모지·서로게이트 처리까지 전후 동일(검수) | `b47d8006` |
+| 38 | **두 계가기의 빈 점 소유 판정을 `BoardRegionAnalyzer` 한 벌로** — 옛 두 복제는 이름 셋 말고 같았다. 단언 테스트(무작위 종국 판 300개에서 두 룰셋의 ownership 동일)를 먼저 심었다. 검수가 판 11,836개·비교 284,064회를 따로 돌려 점수·요약·ownership·접바둑 보정 전부 동일 | `7ef957fe`·`99ae79d3` |
+| 99 | **프로덕션에서 닿지 않던 3계층 undoMove 경로 삭제**(−122줄) — 2026-08-06 `e3cf14e8` 이후 호출부 0. 사용자 무르기(로컬 우선 + 지연 재동기화)는 그대로. `@Test` 정확히 −2 | `8611bba2` |
+| 101 | **iOS 테스트 컴파일이 8월 16일부터 깨져 있었다** — commonTest의 `System.currentTimeMillis()` 한 줄. `make test-ios`가 본 코드만 컴파일해 몰랐고, 그동안 commonTest가 iOS에서 한 번도 안 돌았다(#38 검수가 찾음). 고치고 `test-ios`가 테스트 소스도 컴파일한다 | `506c2cfc` |
 
 ### 진행 중
 
@@ -288,11 +291,15 @@ Hilt(commonMain 불가)·Koin(이득 0)·전면 MVI(이미 절반 작동)·모�
 98. **`runStartupBenchmark`의 onProgress 콜백 → `Flow<EngineBenchmarkEvent>`** (AI 모델: Opus, 노력정도: 중간) — **실기(에뮬레이터) 확인**, `#35` 선행
     · `#73`이 찾은 3계층 계약의 유일한 규칙 ⓐ 위반. 바꾸기 **전에** 러너 수준 특성 테스트(진행 순서, Completed 정확히 한 번, 수집 쪽 예외 시 재동기화)를
       먼저 커밋하고, 같은 테스트가 전후로 초록이어야 한다. 사용자에게 보이는 진행 팝업이라 설정 → 기기 벤치마크 1회 확인.
-99. **프로덕션에서 닿지 않는 undoMove 경로 삭제** (AI 모델: Sonnet, 노력정도: 낮음) — `#35` 조사가 찾음, `#35` 선행
-    · `EngineSessionClient.undoMove`, Local 구현·위임, `runEngineUndoEffect`·`EngineUndoWorkflowResult`, `GameSessionEffect.UndoEngineMoves`, 페이크 override,
-      관련 테스트 2개. `EngineOperationKind.EngineUndo`와 2계층 `EngineCoreApi.undoMove`는 남긴다. 컴파일·grep 0·`@Test` 정확히 −2로 확인.
 100. **원격 GenMove/Analyze 디코드가 판 크기를 페이로드에서 읽고 없으면 9로 가정한다** (AI 모델: Opus, 노력정도: 중간) — `#36` 조사가 찾음, **`#54` 선행**
     · 지금은 debug 전용이라 닿지 않지만 `#54`(MQ 이식) 때 살아난다. 디코더가 이미 넘겨받은 권위 판 크기로 디코드하고, 페이로드의 값은 교차 검사로만.
+
+102. **계가 분석기의 절대값 골든이 9x9뿐이다** (AI 모델: Sonnet, 노력정도: 낮음) — `#38` 검수가 찾음
+    · 두 계가기가 한 분석기를 쓰게 되자 일치 단언은 *"복제가 다시 갈라지는 것"* 만 잡고, **분석기 자체의 회귀는 못 잡는다**(둘이 함께 움직인다).
+      검수 사보타주: 19x19에서 1점 공배를 흑으로 세게 바꿔도 `:shared` 테스트 745개가 전부 초록. 13x13·19x19 판 몇 개에 ownership·점수 절대값을 박는다.
+103. **`:app-android:testDebugUnitTest`의 입력에 `shared/src/iosMain`·`androidMain`이 없다** (AI 모델: Sonnet, 노력정도: 낮음) — `#84` 검수가 찾음
+    · 가드가 iosMain 파일도 5계층 대상으로 세는데, iosMain만 바뀌면 테스트 태스크가 UP-TO-DATE로 건너뛰어 위반이 다음 실행까지 안 잡힌다
+      (`app-android/build.gradle.kts`의 `inputs.files`). 두 소스셋을 입력에 더한다.
 
 #### P2 — 엔진 동시성 (독립 트랙 · 어느 단계와도 병렬)
 
@@ -388,11 +395,6 @@ Hilt(commonMain 불가)·Koin(이득 0)·전면 MVI(이미 절반 작동)·모�
       **골든 테스트 6종**(좌표 표기 표·611점 왕복, 국면 지문 바이트, 이어하기 리터럴 JSON, 번들 기보 재생, 캐시 row/column, GTP 토큰) — 입력은 정수 생성자로.
       저장 포맷은 이행하지 않고 **고정만** 한다(함정 69). 뒤: GTP 파서 3벌 통합, 열 알파벳 통합.
     · 하지 말 것: 새 점 타입, 꼭짓점 래퍼, 판 크기를 묶은 좌표, 저장 코덱 "정리", 파싱 관대성 "정리" — 뒤 둘은 이어하기·리플레이·캐시를 조용히 잃게 만든다.
-38. **도메인 알고리즘 중복 제거** (AI 모델: Opus, 노력정도: 높음) — 9 뒤
-    · `BoardAreaScorer`와 `BoardTerritoryScorer`의 플러드필이 **타입 이름만 다른 바이트 단위 동일 복제**다.
-      `BoardRegionAnalyzer`로 통합.
-    · ⭐ **통합보다 값진 것은 단언이다** — *"두 룰셋이 같은 판에서 같은 ownership을 낸다"* 를 테스트로 심어
-      **복제가 다시 갈라지는 것을 막는다.**
 39. **5→6 방향 뒤집기 + 과금 게이트 판정 단일화 + `ScoreSyncRunner` 3중복 제거** (AI 모델: Opus, 노력정도: 높음)
 
 #### P5 — 상태 소유자 (가장 위험 · 병렬 불가 · 태스크당 커밋 하나 + 실기 검증)
