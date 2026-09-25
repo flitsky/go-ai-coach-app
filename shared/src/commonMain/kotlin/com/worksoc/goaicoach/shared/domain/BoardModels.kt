@@ -146,6 +146,35 @@ data class BoardCoordinate(
             }
             return coordinate
         }
+
+        /**
+         * [fromLabel]의 실패를 예외 대신 `null`로 돌려준다(refactor backlog #36).
+         *
+         * ⚠️ **규칙을 새로 쓰지 않는다 — [fromLabel]을 감싸기만 한다.** 받아들이는 표기(소문자 `e5`,
+         * 앞자리 0 `E05`, 부호 `E+5`)와 거부하는 표기가 [fromLabel]과 정확히 같아야 한다. 저장된
+         * 이어하기·대국 기록·번들 기보가 [fromLabel]로 읽히므로, 여기서 관대성을 "정리"하면 옛 저장분이
+         * 조용히 사라진다(`GameSessionStore`의 `runCatching`이 `null`을 돌려준다).
+         * [fromLabel]이 실패하는 길은 `require`, 곧 [IllegalArgumentException] 하나뿐이라 그것만 잡는다.
+         */
+        fun fromLabelOrNull(
+            label: String,
+            boardSize: BoardSize,
+        ): BoardCoordinate? =
+            try {
+                fromLabel(label, boardSize)
+            } catch (invalid: IllegalArgumentException) {
+                null
+            }
+
+        /**
+         * GTP 열 알파벳 — `I`를 건너뛴다(refactor backlog #36). [fromLabel]이 읽는 바로 그 한 벌에
+         * 위임한다(새 리터럴이 아니다). 열 이름이 필요하면 [BoardSize.columnLabels]를 쓴다.
+         *
+         * ⚠️ 이 알파벳은 저장 포맷이다 — 이어하기·대국 기록·번들 기보의 좌표 문자열과 분석 캐시 키가
+         * 이것으로 쓰였다. 바꾸면 옛 저장분이 다른 점으로 읽히거나 조용히 버려진다.
+         * `BoardCoordinateNotationGoldenTest`가 글자 그대로 고정한다.
+         */
+        const val ColumnLetters: String = GTP_COLUMNS
     }
 }
 
@@ -157,6 +186,12 @@ fun BoardSize.allCoordinates(): Sequence<BoardCoordinate> =
             }
         }
     }
+
+/**
+ * 이 판의 열 이름 — [BoardCoordinate.ColumnLetters]의 앞 [BoardSize.value]글자(refactor backlog #36).
+ * 9x9는 `A`~`J`, 13x13은 `A`~`N`, 19x19는 `A`~`T`이고 `I`는 없다. [BoardCoordinate.label]의 첫 글자와 같다.
+ */
+fun BoardSize.columnLabels(): List<Char> = BoardCoordinate.ColumnLetters.take(value).toList()
 
 sealed interface Move {
     val player: StoneColor

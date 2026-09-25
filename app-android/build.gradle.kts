@@ -502,4 +502,9 @@ tasks.withType<Test>().configureEach {
     )
         .withPropertyName("architectureContractScannedSources")
         .withPathSensitivity(PathSensitivity.RELATIVE)
+    // 번들 기보 골든(GameReplayCoordinateGoldenTest, refactor backlog #36)이 이 에셋을 **실행 중에** 읽는다.
+    // 단위 테스트 클래스패스에 에셋이 없으므로 선언하지 않으면 에셋만 바뀐 빌드에서 테스트가 UP-TO-DATE로 건너뛰어진다.
+    inputs.dir(rootDir.resolve("app-android/src/main/assets/reference_games"))
+        .withPropertyName("bundledReferenceGames")
+        .withPathSensitivity(PathSensitivity.RELATIVE)
 }

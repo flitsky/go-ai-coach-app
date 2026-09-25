@@ -75,6 +75,24 @@ internal fun Move.toGtpVertex(boardSize: BoardSize): String =
         is Move.Resign -> "resign"
     }
 
+/**
+ * [toGtpVertex]의 역함수 — GTP 수 토큰(`D4`·`pass`·`resign`)을 [Move]로 읽고, 못 읽으면 `null`(refactor backlog #36).
+ *
+ * `pass`/`resign`을 대소문자 없이 먼저 보고, 나머지는 [BoardCoordinate.fromLabelOrNull]에 넘긴다 —
+ * 좌표 규칙을 여기서 새로 쓰지 않는다. `KataGoAnalysisParser`·`KataGoJsonAnalysisParser`의 private
+ * `String.toMove`와 같은 판정이다(셋을 이것으로 합치는 건 다음 단계이고, 예외를 던지는
+ * `KataGoProcessEngineAdapter` 쪽은 그때도 실패 의미를 보존해야 한다).
+ */
+internal fun String.toGtpMoveOrNull(
+    player: StoneColor,
+    boardSize: BoardSize,
+): Move? =
+    when (lowercase()) {
+        "pass" -> Move.Pass(player)
+        "resign" -> Move.Resign(player)
+        else -> BoardCoordinate.fromLabelOrNull(this, boardSize)?.let { coordinate -> Move.Play(player, coordinate) }
+    }
+
 /** Generous ceiling for GTP commands that carry no search-time budget of their own (e.g. play, undo, komi). */
 internal const val DefaultCommandTimeoutMillis: Long = 30_000L
 
