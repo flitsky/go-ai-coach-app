@@ -14,10 +14,10 @@ import com.worksoc.goaicoach.application.guide.GuideStep
  *
  * ## ⚠️ 화면에 적힌 이름을 그대로 부른다
  *
- * ⑤가 설명하는 넷은 앱이 이미 라벨을 갖고 있다 — `strings.eval`(형세 보기),
- * `strings.topMovesAction`(추천 수 보기), `boardModeFull`/`boardModeInset`(최대/여백), 돋보기.
+ * ⑤가 설명하는 둘은 앱이 이미 라벨을 갖고 있다 — `strings.eval`(형세 보기),
+ * `strings.topMovesAction`(추천 수 보기).
  * 가이드가 **다른 낱말로 부르면** 사용자가 화면에서 그것을 찾지 못한다. 그래서 이 표는 기능 이름을
- * 직접 쓰지 않고 **호출부가 넘겨주는 실제 라벨**을 끼워 넣는다(`inGameToolsBodyFor`).
+ * 직접 쓰지 않고 **호출부가 넘겨주는 실제 라벨**을 끼워 넣는다(`inGameEvalBody`·`inGameTopMovesBody`).
  *
  * ## ⚠️ 게이트를 정직하게 말한다 (2026-09-09 사용자 결정 ⓓ)
  *
@@ -72,8 +72,9 @@ private val MatchSetupBody: Map<UiLanguage, String> = mapOf(
  * ⚠️ 라벨은 **호출부가 화면에서 읽어 넘긴다.** 실기에서 처음에 어긋났다 — 설정 화면 라벨
  * (`돋보기 창 크기`)을 인용했는데 판 위 토글은 `착수 돋보기`였다.
  *
- * ⚠️ **게이트를 정직하게 말하는 것은 뒤의 둘뿐이다**(사용자 확정 ⓓ). 돋보기·바둑판 크기는 그냥
- * 켜지므로 조건을 붙이면 없는 문턱을 만드는 셈이 된다 — 형세 보기·추천 수에만 여는 방법을 적는다.
+ * ⚠️ **게이트를 정직하게 말하는 것은 형세 보기·추천 수뿐이다**(사용자 확정 ⓓ). 그냥 켜지는
+ * 돋보기·바둑판 크기에 조건을 붙이면 없는 문턱을 만드는 셈이라 빼 두었는데, 그 둘은 #143·#188이
+ * 지웠다 — 이제는 남은 둘이 곧 게이트를 말하는 둘이다.
  */
 private fun inGameEvalBody(language: UiLanguage, label: String): String = when (language) {
     UiLanguage.Korean -> "«$label»는 지금 누구 집인지 반상에 색으로 보여 줘요. 출석해서 받은 1회권이나 짧은 광고 한 번으로 여실 수 있어요."
@@ -114,7 +115,7 @@ internal fun guideBodyFor(
     GuideStep.AttendanceClaim -> AttendanceClaimBody.getValue(language)
     GuideStep.HomeStartMatch -> HomeStartMatchBody.getValue(language)
     GuideStep.MatchSetup -> MatchSetupBody.getValue(language)
-    // ⑤ 넷은 각자 **자기 버튼의 라벨 하나만** 인용한다. 라벨이 없으면 *"«»를 켜 두면…"* 이라는
+    // ⑤ 둘은 각자 **자기 버튼의 라벨 하나만** 인용한다. 라벨이 없으면 *"«»를 켜 두면…"* 이라는
     // 빈 인용부호가 화면에 나가므로 폴백을 두지 않는다 — 조용한 거짓말보다 시끄러운 실패가 낫다
     // (2026-09-09 감사: 한때 `?: ""`로 조용히 넘어갔다).
     GuideStep.InGameEval -> inGameEvalBody(language, requireLabels(toolLabels).eval)
@@ -144,12 +145,13 @@ private val MyPageGreeting: Map<UiLanguage, String> = mapOf(
 internal fun guideMyPageGreetingFor(language: UiLanguage): String = MyPageGreeting.getValue(language)
 
 /**
- * ⑤가 인용할 **화면에 적힌 그대로의** 라벨 넷.
+ * ⑤가 인용할 **화면에 적힌 그대로의** 라벨 둘.
  *
- * ⚠️ **[boardSubject]는 토글의 현재 라벨이 아니라 "무엇의" 설정인가다**(`boardSizeSubjectFor`).
- * 판 위 토글은 상태에 따라 `바둑판 최대`/`바둑판 여백`으로 **글자가 바뀌므로** 그것을 인용하면
- * 사용자가 여백 상태로 들어온 순간 문구가 화면과 어긋난다 — 실기에서 처음에 그렇게 어긋났다
- * (`돋보기 창 크기`는 설정 화면 라벨이라 판 위 `착수 돋보기`와 다른 이름이었다).
+ * ⚠️ **화면에 지금 적혀 있는 글자를 넘긴다** — 설정 화면의 이름도, 상태에 따라 바뀌는 글자도
+ * 아니다. #143·#188 전에는 여기에 판 크기·돋보기 라벨도 있었고 **둘 다 실기에서 어긋났다**:
+ * 판 위 토글은 상태에 따라 `바둑판 최대`/`바둑판 여백`으로 글자가 바뀌어 여백 상태로 들어온
+ * 사용자에게 문구가 어긋났고, 돋보기는 설정 화면 라벨(`돋보기 창 크기`)을 인용했는데 판 위
+ * 토글은 `착수 돋보기`였다.
  */
 internal data class GuideToolLabels(
     val eval: String,

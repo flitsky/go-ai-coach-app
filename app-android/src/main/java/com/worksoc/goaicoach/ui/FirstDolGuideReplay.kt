@@ -45,7 +45,7 @@ import com.worksoc.goaicoach.presentation.GameUiEvent
  *
  * ## ⚠️ 그림이 아니라 **실물을 조립한다**
  *
- * ③은 홈의 **진짜 `MenuCard`** 를 같은 문구(`strings.startMatch`)로 그리고, ⑤ 넷은 **판 위에 적히는
+ * ③은 홈의 **진짜 `MenuCard`** 를 같은 문구(`strings.startMatch`)로 그리고, ⑤ 둘은 **판 위에 적히는
  * 그 라벨**(`strings.eval`·`strings.topMovesAction`)을 `GuideToolLabels`로 그대로 부른다.
  * 정적 삽화나 캡처를 쓰지 않는 이유는
  * 이 저장소의 이력이다 — 화면이 바뀔 때 그림만 낡아 **다시보기가 거짓을 말하는** 사고를 네 번
@@ -61,7 +61,7 @@ import com.worksoc.goaicoach.presentation.GameUiEvent
  *
  * ## 왜 마법사가 아니라 한 장의 스크롤인가
  *
- * 재생할 단계가 일곱이라(②③④ + ⑤ 넷) 마법사로 만들면 **일곱 번 눌러야** 하고, 정작 다시보기의
+ * 재생할 단계가 다섯이라(②③④ + ⑤ 둘) 마법사로 만들면 **다섯 번 눌러야** 하고, 정작 다시보기의
  * 목적은 *"아까 그거 뭐였지"* 를 **골라 읽는** 것이다. 그래서 화면별로 묶어 한 장에 늘어놓는다.
  */
 @Composable
