@@ -1,7 +1,7 @@
 package com.worksoc.goaicoach.application.savedgame
 
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
-import com.worksoc.goaicoach.application.engine.EngineSessionClient
+import com.worksoc.goaicoach.application.engine.EngineScoringClient
 import com.worksoc.goaicoach.application.score.RestoredGameSyncRunRequest
 import com.worksoc.goaicoach.application.score.ScoreSyncCompletionApplyPlan
 import com.worksoc.goaicoach.application.score.runRestoredGameSyncApplication
@@ -13,7 +13,7 @@ import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
 
 class SavedSessionController(
-    private val engineClient: EngineSessionClient,
+    private val engineClient: EngineScoringClient,
     private val diagnosticEventLog: DiagnosticEventLogPort,
     private val defaultPlayLevel: PlayLevelSetting,
     private val isEngineBusy: () -> Boolean,

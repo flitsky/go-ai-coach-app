@@ -2,7 +2,7 @@ package com.worksoc.goaicoach.application.undo
 
 import com.worksoc.goaicoach.application.concurrency.launchUiEffect
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
-import com.worksoc.goaicoach.application.engine.EngineSessionClient
+import com.worksoc.goaicoach.application.engine.EngineScoringClient
 import com.worksoc.goaicoach.application.movereview.MoveReviewMarker
 import com.worksoc.goaicoach.application.score.PostUndoScoreSyncRunRequest
 import com.worksoc.goaicoach.application.score.ScoreSyncCompletionApplyPlan
@@ -26,7 +26,7 @@ private data class PendingPostUndoEngineSync(
 
 class UndoController(
     private val scope: CoroutineScope,
-    private val engineClient: EngineSessionClient,
+    private val engineClient: EngineScoringClient,
     private val diagnosticEventLog: DiagnosticEventLogPort,
     private val currentGameState: () -> GameState,
     private val currentScoreSnapshots: () -> List<ScoreSnapshot>,

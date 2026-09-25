@@ -6,7 +6,7 @@ import com.worksoc.goaicoach.application.contract.ScoreEstimateRequestPlan
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.diagnostic.NoopDiagnosticEventLog
 import com.worksoc.goaicoach.application.diagnostic.runObservedEngineOperation
-import com.worksoc.goaicoach.application.engine.EngineSessionClient
+import com.worksoc.goaicoach.application.engine.EngineScoringClient
 import com.worksoc.goaicoach.application.engine.runEngineIo
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.shared.domain.GameState
@@ -23,7 +23,7 @@ internal data class ScoreEstimateEffectLaunchRequest(
 )
 
 internal data class ScoreEstimateRunRequest(
-    val engineClient: EngineSessionClient,
+    val engineClient: EngineScoringClient,
     val state: GameState,
     val previousSnapshots: List<ScoreSnapshot>,
     val isEngineReady: Boolean,
@@ -41,7 +41,7 @@ internal data class ScoreEstimateRunRequest(
     val applyCompletion: (ScoreEstimateCompletionApplyPlan) -> Unit,
 )
 
-suspend fun EngineSessionClient.runScoreEstimateDisplayPlan(
+suspend fun EngineScoringClient.runScoreEstimateDisplayPlan(
     request: ScoreEstimateRequestPlan.RequestEngineEstimate,
     previousSnapshots: List<ScoreSnapshot>,
     operationRequest: EngineOperationRequest? = null,
@@ -64,7 +64,7 @@ suspend fun EngineSessionClient.runScoreEstimateDisplayPlan(
     )
 }
 
-internal suspend fun EngineSessionClient.runScoreEstimateEffect(
+internal suspend fun EngineScoringClient.runScoreEstimateEffect(
     effect: GameSessionEffect.RunScoreEstimate,
     previousSnapshots: List<ScoreSnapshot>,
     operationRequest: EngineOperationRequest? = null,
@@ -77,7 +77,7 @@ internal suspend fun EngineSessionClient.runScoreEstimateEffect(
         diagnosticEventLog = diagnosticEventLog,
     )
 
-internal suspend fun EngineSessionClient.runScoreEstimateWorkflowResult(
+internal suspend fun EngineScoringClient.runScoreEstimateWorkflowResult(
     effect: GameSessionEffect.RunScoreEstimate,
     previousSnapshots: List<ScoreSnapshot>,
     operationRequest: EngineOperationRequest? = null,
@@ -95,7 +95,7 @@ internal suspend fun EngineSessionClient.runScoreEstimateWorkflowResult(
         onFailure = { error -> ScoreEstimateWorkflowResult.Failure(error) },
     )
 
-internal suspend fun EngineSessionClient.runScoreEstimateEffectCompletionPlan(
+internal suspend fun EngineScoringClient.runScoreEstimateEffectCompletionPlan(
     request: ScoreEstimateEffectLaunchRequest,
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
 ): ScoreEstimateCompletionPlan =
@@ -111,7 +111,7 @@ internal suspend fun EngineSessionClient.runScoreEstimateEffectCompletionPlan(
         currentSessionGeneration = request.currentSessionGeneration,
     )
 
-internal suspend fun EngineSessionClient.runScoreEstimateEffectApplyPlan(
+internal suspend fun EngineScoringClient.runScoreEstimateEffectApplyPlan(
     request: ScoreEstimateEffectLaunchRequest,
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
 ): ScoreEstimateCompletionApplyPlan =

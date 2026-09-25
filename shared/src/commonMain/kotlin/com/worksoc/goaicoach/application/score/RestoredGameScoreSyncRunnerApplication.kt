@@ -5,7 +5,7 @@ import com.worksoc.goaicoach.application.contract.ScoreEstimateDisplayPlan
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.diagnostic.NoopDiagnosticEventLog
 import com.worksoc.goaicoach.application.diagnostic.runObservedEngineOperation
-import com.worksoc.goaicoach.application.engine.EngineSessionClient
+import com.worksoc.goaicoach.application.engine.EngineScoringClient
 import com.worksoc.goaicoach.application.engine.runEngineIo
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
@@ -14,7 +14,7 @@ import com.worksoc.goaicoach.shared.policy.EngineOperationRequest
 import com.worksoc.goaicoach.shared.policy.EngineTimeoutPolicy
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 
-suspend fun EngineSessionClient.runRestoredGameSyncDisplayPlan(
+suspend fun EngineScoringClient.runRestoredGameSyncDisplayPlan(
     state: GameState,
     profile: EngineProfile,
     operationRequest: EngineOperationRequest,
@@ -51,7 +51,7 @@ internal data class RestoredGameSyncEffectLaunchRequest(
 )
 
 data class RestoredGameSyncRunRequest(
-    val engineClient: EngineSessionClient,
+    val engineClient: EngineScoringClient,
     val state: GameState,
     val profile: EngineProfile,
     val sessionGeneration: Long,
@@ -68,7 +68,7 @@ data class RestoredGameSyncRunRequest(
     val fallbackMessage: String = "Saved game restored locally, but engine sync failed.",
 )
 
-internal suspend fun EngineSessionClient.runRestoredGameSyncEffect(
+internal suspend fun EngineScoringClient.runRestoredGameSyncEffect(
     effect: GameSessionEffect.SyncRestoredGame,
     context: RestoredGameSyncExecutionContext,
     operationRequest: EngineOperationRequest,
@@ -83,7 +83,7 @@ internal suspend fun EngineSessionClient.runRestoredGameSyncEffect(
         diagnosticEventLog = diagnosticEventLog,
     )
 
-internal suspend fun EngineSessionClient.runRestoredGameSyncCompletionPlan(
+internal suspend fun EngineScoringClient.runRestoredGameSyncCompletionPlan(
     request: RestoredGameSyncEffectLaunchRequest,
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
 ): ScoreSyncCompletionPlan =
@@ -103,7 +103,7 @@ internal suspend fun EngineSessionClient.runRestoredGameSyncCompletionPlan(
         )
     }
 
-internal suspend fun EngineSessionClient.runRestoredGameSyncApplyPlan(
+internal suspend fun EngineScoringClient.runRestoredGameSyncApplyPlan(
     request: RestoredGameSyncEffectLaunchRequest,
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
 ): ScoreSyncCompletionApplyPlan =

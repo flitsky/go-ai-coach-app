@@ -2,7 +2,7 @@ package com.worksoc.goaicoach.application.score
 
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.diagnostic.NoopDiagnosticEventLog
-import com.worksoc.goaicoach.application.engine.EngineSessionClient
+import com.worksoc.goaicoach.application.engine.EngineScoringClient
 import com.worksoc.goaicoach.application.engine.runEngineIo
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
@@ -24,7 +24,7 @@ internal data class PostUndoScoreSyncEffectLaunchRequest(
 )
 
 data class PostUndoScoreSyncRunRequest(
-    val engineClient: EngineSessionClient,
+    val engineClient: EngineScoringClient,
     val state: GameState,
     val profile: EngineProfile,
     val previousSnapshots: List<ScoreSnapshot>,
@@ -42,7 +42,7 @@ data class PostUndoScoreSyncRunRequest(
     val fallbackMessage: String = "Local undo engine sync failed.",
 )
 
-internal suspend fun EngineSessionClient.runPostUndoScoreSyncCompletionPlan(
+internal suspend fun EngineScoringClient.runPostUndoScoreSyncCompletionPlan(
     request: PostUndoScoreSyncEffectLaunchRequest,
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
 ): ScoreSyncCompletionPlan =
@@ -63,7 +63,7 @@ internal suspend fun EngineSessionClient.runPostUndoScoreSyncCompletionPlan(
         )
     }
 
-internal suspend fun EngineSessionClient.runPostUndoScoreSyncApplyPlan(
+internal suspend fun EngineScoringClient.runPostUndoScoreSyncApplyPlan(
     request: PostUndoScoreSyncEffectLaunchRequest,
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
 ): ScoreSyncCompletionApplyPlan =

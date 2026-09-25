@@ -2,7 +2,7 @@ package com.worksoc.goaicoach.application.score
 
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.diagnostic.NoopDiagnosticEventLog
-import com.worksoc.goaicoach.application.engine.EngineSessionClient
+import com.worksoc.goaicoach.application.engine.EngineScoringClient
 import com.worksoc.goaicoach.application.engine.runEngineIo
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
@@ -24,7 +24,7 @@ internal data class ScoringRuleSyncEffectLaunchRequest(
 )
 
 data class ScoringRuleSyncRunRequest(
-    val engineClient: EngineSessionClient,
+    val engineClient: EngineScoringClient,
     val state: GameState,
     val profile: EngineProfile,
     val previousSnapshots: List<ScoreSnapshot>,
@@ -42,7 +42,7 @@ data class ScoringRuleSyncRunRequest(
     val fallbackMessage: String = "Scoring rule changed, but engine rule sync failed.",
 )
 
-internal suspend fun EngineSessionClient.runScoringRuleSyncCompletionPlan(
+internal suspend fun EngineScoringClient.runScoringRuleSyncCompletionPlan(
     request: ScoringRuleSyncEffectLaunchRequest,
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
 ): ScoreSyncCompletionPlan =
@@ -63,7 +63,7 @@ internal suspend fun EngineSessionClient.runScoringRuleSyncCompletionPlan(
         )
     }
 
-internal suspend fun EngineSessionClient.runScoringRuleSyncApplyPlan(
+internal suspend fun EngineScoringClient.runScoringRuleSyncApplyPlan(
     request: ScoringRuleSyncEffectLaunchRequest,
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
 ): ScoreSyncCompletionApplyPlan =
