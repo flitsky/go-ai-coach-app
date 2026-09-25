@@ -500,6 +500,10 @@ tasks.withType<Test>().configureEach {
         fileTree(rootDir.resolve("engine-android/src/main/java")),
         // TestAnnotationContractTest가 :shared의 공용 테스트 소스까지 훑는다.
         fileTree(rootDir.resolve("shared/src/commonTest")),
+        // RepoPaths.productionSourceRoots가 androidMain·iosMain도 5계층 대상으로 훑는다
+        // (refactor backlog #103) — 빠지면 이 두 소스셋만 바뀐 빌드가 UP-TO-DATE로 건너뛰어진다.
+        fileTree(rootDir.resolve("shared/src/androidMain")),
+        fileTree(rootDir.resolve("shared/src/iosMain")),
     )
         .withPropertyName("architectureContractScannedSources")
         .withPathSensitivity(PathSensitivity.RELATIVE)
