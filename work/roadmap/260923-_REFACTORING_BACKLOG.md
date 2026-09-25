@@ -200,6 +200,12 @@ Hilt(commonMain 불가)·Koin(이득 0)·전면 MVI(이미 절반 작동)·모�
 | 83 | 🔧 **포트 시그니처가 값만 싣는지 기계로 잰다** — `#73`의 규칙 ⓐ(필드 폐포에 함수·인터페이스·var·포트/클라이언트 없음)를 선언 종류·주 생성자·본문 저장 프로퍼티까지 색인해 걷는다. 기준선: 계약 20개, 폐포 74타입, **위반 0**. 실코드 사보타주·가드 변이 모두 빨강(검수). ⓑ(어댑터가 부르는 것) 가드는 후속 | `0a1cc39c`·`e529a06b` |
 | 86 | **저장 포트 둘에서 원문·경로 읽기 3개를 뺐다** — `SavedGameStorePort.readRawJson`·`EngineBenchmarkStorePort.loadText`·`path`. 소비자는 전부 사람을 위한 디버그 리포트였고 무엇도 파싱·분기하지 않았다 → 어댑터에 남기고 조립 코드가 어댑터 타입으로 쥔다. 리포트의 두 절은 바이트 단위로 같고, 사라진 건 화면에 안 나오는 절대 경로 한 칸뿐. 원칙 문서 ⓐ에 *"타입이 값이어도 저장 형식은 싣지 않는다"* | `0fd52e3e`·`9e86c5e0` |
 | 72 | 🔧 **import 순서를 게이트로 지킨다(사용자 승인)** — spotless 8.4.0 + ktlint 1.8.0, `import-ordering` 규칙 **하나만**(android_studio 레이아웃). C1이 239파일을 정렬(import·빈 줄만 — 스크립트 검증, 멱등), C2가 모듈 셋에 게이트를 걸고 `make test`에 연결, `.git-blame-ignore-revs`에 C1. 음성 대조 빨강 확인. `#48`·`#27` 대량 이동이 이제 처음부터 정렬돼 들어온다. 함정 84 | `c76c21f1`·`b31b16d6` |
+| 102 | **계가 분석기의 절대값 골든을 13x13·19x19에도** — 판 4개(벽+홑점 공배·세키 흔적·패 흔적, 접바둑 5·9점)를 손으로 셀 수 있게 설계, 기대값은 독립 파이썬 flood-fill로 교차 검증(코드 출력 복사 아님). 19x19에만 거는 `#38` 사보타주에 `:shared` 전체 중 이 파일 테스트 둘만 빨강 — 사각지대를 실제로 막는다 | `73c5e462` |
+| 103 | **`:app-android:testDebugUnitTest` 입력에 shared `androidMain`·`iosMain`** — 전엔 iosMain만 바뀌면 가드가 UP-TO-DATE로 건너뛰어 계층 위반이 안 잡혔다(검수가 실제 위반으로 재현) | `941880b8` |
+| 105 | **5계층 확장 함수 16개의 `sessionGeneration = 0L` 폴백을 없앴다** — `operationRequest` 필수. 부모에선 요청을 빠뜨려도 컴파일되고 g0이 됐는데, 이제 컴파일 에러다. 프로덕션은 원래 전부 요청을 넘겨 동작 불변 | `26540e0a` |
+| 100 | **원격 genMove·analyze 디코드가 요청 국면의 판 크기로 좌표를 읽는다** — 페이로드에 판 크기가 없으면 9로 가정하던 잠재 결함(`#54` 선행). 페이로드 값은 교차 검사로만. debug 전용이라 사용자 영향 0 | `e4a89c7e` |
+| 95 | **이미 Gradle·옆 가드가 막던 중복 가드 정리** — 죽은 `EngineAdapter`, 세 가드의 그 절, 컴파일이 막는 절을 **위반을 심어 컴파일 실패를 확인한 뒤** 지웠다. ⚠️ 1차는 플랫폼 import 가드 둘을 *"여전히 필요"* 라며 남겼는데 근거가 틀렸다 — `engineOperationApplicationPoliciesStayPortable`이 같은 네 절을 이미 본다(검수 실측) → 둘도 지웠다 | `9cec016d`·`8619f99a` |
+| 96·97 | 🔓 **`internal` 전환** — 참조 0인 심볼 108개(1차 72 + 2차 36)를 `internal`로, 그 심볼을 *"부르지 마라"* 던 가드 조각을 지웠다(가시성이 대신 막는다 — 모듈 밖 탐침 93+14건 전부 `it is internal`로 컴파일 실패). shared를 시험하던 app-android 테스트 3파일(65개)을 `commonTest`로 옮겼다(iOS 테스트 컴파일 초록) | `71e0725e`·`944bccfc`·`80dd4984`·`585e8065` |
 | 36(1단계) | **좌표 표기를 정수 좌표 기준 골든 6종으로 고정** — 기존 줄 삭제·변경 0(+916). `fromLabelOrNull`·`columnLabels`·`toGtpMoveOrNull`은 기존 규칙에 위임만. 음성 대조 셋(알파벳에 I, 행 원점 뒤집기, pass→Pass)에서 새 골든만 빨강. 번들 기보 끝 국면은 검수가 독립 파이썬 시뮬레이터로 확인. 2단계(원격 디코드)는 `#100` | `7b6bacce` |
 | 91 | **정적 국면 위에 홀수 수를 둔 뒤에도 `replayState`·`initialPlayer`가 맞다** — 지금은 닿지 않던 잠재 결함. 고치기 **전에** `syncToGameState` 경로에서 어댑터가 KataGo에 쓰는 줄을 골든으로 고정했고, 전후가 7개 골든·40판 차분에서 바이트 단위로 같다 | `6598e18f`·`2fafa4c5` |
 | 39(일부) | **세 score sync 러너의 흐름을 `ScoreSyncFlow` 한 벌로** — 바꾸기 전에 특성 테스트 9개(요청·읽는 순서·엔진 호출·적용 계획·진단·후속 분석 시점)를 먼저 심었고 옛·새 코드 모두 초록, 역방향 사보타주 5개 빨강. *"과금 게이트 판정 단일화"* 는 조사 결과 **이미 단일**이다(6계층 `FeatureAccessPolicy.resolve`가 기능별 유일한 판정). 첫 절은 `#84`로 닫혔다 → **#39 전부 끝** | `23c4c8cd`·`4c16bc71` |
@@ -262,41 +268,15 @@ Hilt(commonMain 불가)·Koin(이득 0)·전면 MVI(이미 절반 작동)·모�
     · 처방 후보: `startConfiguredGame`·자동저장이 `settings.komi`를 읽게 하거나, `onOpenGameSetup`에서 미리보기를 새로 그린다. 판 크기도 같은 영향.
       ⚠️ 사용자에게 보이는 동작이라 실기 확인 필요. 참고: `#93`이 먼저 고친 **재시작 뒤 덤이 6.5로 돌아가던 결함**(`aee04c67`)과 같은 계보다.
 
-95. **이미 Gradle이 막는 중복 가드 정리** (AI 모델: Sonnet, 노력정도: 낮음) — `#34` 조사가 찾음
-    · `authPremiumAndDeviceApplicationPackagesStayPlatformFree`·`gameSessionStateHolderStaysPlatformFreeForSharedMove` 삭제, shared 디렉터리에 대한
-      `engine.android` 절 삭제, 죽은 `EngineAdapter` 삭제(테스트 페이크 2개는 `EngineCoreApi`를 직접 구현). **지우기 전에 조항마다 위반을 넣어
-      컴파일 에러가 나는지** 확인한다 — *"Gradle이 이미 막는다"* 의 음성 대조(함정 77).
-96. **`internal` 전환 1차 — 참조 0인 app-android 심볼 65개** (AI 모델: Opus, 노력정도: 중간) — `#34` 조사가 찾음
-    · 테스트 이관이 필요 없는 가드 6개(Benchmark·TopMoves·Undo·AutoAiTurnCompletionApply·DebugReportCopy·EngineOperationLifecycle)부터.
-      *"이 파일이 이 함수를 부르지 마라"* 계약은 가시성으로 소멸시키고 가드 조각을 지운다. `exposes internal type` 연쇄를 격리 워크트리에서 잰다.
-97. **`internal` 전환 2차 — shared를 시험하는 app-android 테스트 3파일을 commonTest로** (AI 모델: Opus, 노력정도: 중간) — `#96` 뒤
-    · `ScoreDisplayApplicationTest`·`SavedGamePersistenceTest`·`DiagnosticEventApplicationTest`(2,016줄)를 `shared/src/commonTest`로 옮기고 JUnit → `kotlin.test`.
-      `@Test` 수는 소스에서 대조(함정 78). 뒤이어 남은 26개 심볼을 `internal`로. ⚠️ `EngineOperationKind`·`EngineFallbackPolicy`는 `#49` 때
-      `:core:application`에 있어야 `internal`이 유지된다 — `#49`에 배치 제약으로 적는다.
 98. **`runStartupBenchmark`의 onProgress 콜백 → `Flow<EngineBenchmarkEvent>`** (AI 모델: Opus, 노력정도: 중간) — **실기(에뮬레이터) 확인**, `#35` 선행
     · `#73`이 찾은 3계층 계약의 유일한 규칙 ⓐ 위반. 바꾸기 **전에** 러너 수준 특성 테스트(진행 순서, Completed 정확히 한 번, 수집 쪽 예외 시 재동기화)를
       먼저 커밋하고, 같은 테스트가 전후로 초록이어야 한다. 사용자에게 보이는 진행 팝업이라 설정 → 기기 벤치마크 1회 확인.
-100. **원격 GenMove/Analyze 디코드가 판 크기를 페이로드에서 읽고 없으면 9로 가정한다** (AI 모델: Opus, 노력정도: 중간) — `#36` 조사가 찾음, **`#54` 선행**
-    · 지금은 debug 전용이라 닿지 않지만 `#54`(MQ 이식) 때 살아난다. 디코더가 이미 넘겨받은 권위 판 크기로 디코드하고, 페이로드의 값은 교차 검사로만.
-
-102. **계가 분석기의 절대값 골든이 9x9뿐이다** (AI 모델: Sonnet, 노력정도: 낮음) — `#38` 검수가 찾음
-    · 두 계가기가 한 분석기를 쓰게 되자 일치 단언은 *"복제가 다시 갈라지는 것"* 만 잡고, **분석기 자체의 회귀는 못 잡는다**(둘이 함께 움직인다).
-      검수 사보타주: 19x19에서 1점 공배를 흑으로 세게 바꿔도 `:shared` 테스트 745개가 전부 초록. 13x13·19x19 판 몇 개에 ownership·점수 절대값을 박는다.
-103. **`:app-android:testDebugUnitTest`의 입력에 `shared/src/iosMain`·`androidMain`이 없다** (AI 모델: Sonnet, 노력정도: 낮음) — `#84` 검수가 찾음
-    · 가드가 iosMain 파일도 5계층 대상으로 세는데, iosMain만 바뀌면 테스트 태스크가 UP-TO-DATE로 건너뛰어 위반이 다음 실행까지 안 잡힌다
-      (`app-android/build.gradle.kts`의 `inputs.files`). 두 소스셋을 입력에 더한다.
-
 104. 🔴 **무르기 직후의 후속 분석 요청이 버려질 수 있다** (AI 모델: Opus, 노력정도: 중간) — `#39` 검수가 찾음, **실기 확인 필요**
     · `runPostUndoScoreSyncApplication`이 후속 분석(`requestAnalysis(automatic = true)`)을 `UndoController`가 대기 표시를 지우기 **전에** 요청하고,
       `runTopMoveAnalysisApplication`은 `automatic && pendingPostUndoEngineSync`면 곧바로 돌아간다(TopMovesApplication.kt:160) — 엔진이 쉬고 있으면 요청이 버려진다.
       2026-06-15 `df35e5e1`("무르기 뒤 동기화를 UI 밖으로") 전에는 대기를 지운 **뒤** 요청했다 — 그 이동이 순서를 뒤집었다.
     · `GoCoachApp`의 `isEngineBusy`/`moves` 키 `LaunchedEffect`가 다시 요청해 가릴 가능성이 크다(미확인). 무른 직후 추천수·형세가 한 박자 늦게 뜨는지 실기로 먼저 본다.
       고치면 대기를 먼저 지우거나 `UndoController`에서 요청한다 — 보이는 동작이 바뀌므로 실기 확인.
-105. **5계층 확장 함수 8곳의 `operationRequest ?: … sessionGeneration = 0L` 폴백** (AI 모델: Sonnet, 노력정도: 낮음) — `#18`이 찾음
-    · `AutoAiRunnerApplication`·`PositionAnalysisCacheOptimizationWorkflowResult`·`EngineDeviceBenchmarkApplication`·`EngineSessionLifecycleApplication`(2)·`HumanMoveApplication`·
-      `RestoredGameScoreSyncRunnerApplication`·`ScoreSyncRunnerApplication`. 추적한 프로덕션 경로는 전부 자기 요청을 넘겨 폴백에 안 닿지만, `operationRequest`를
-      non-null로 만들면 폴백 자체가 사라진다 — 잊으면 g0이 되는 같은 결함 모양.
-
 #### P2 — 엔진 동시성 (독립 트랙 · 어느 단계와도 병렬)
 
 14. **프로세스 수명 뮤텍스 + 1계층 실체화** (AI 모델: Opus, 노력정도: 최대)
