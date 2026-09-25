@@ -196,6 +196,8 @@ Hilt(commonMain 불가)·Koin(이득 0)·전면 MVI(이미 절반 작동)·모�
 | 99 | **프로덕션에서 닿지 않던 3계층 undoMove 경로 삭제**(−122줄) — 2026-08-06 `e3cf14e8` 이후 호출부 0. 사용자 무르기(로컬 우선 + 지연 재동기화)는 그대로. `@Test` 정확히 −2 | `8611bba2` |
 | 101 | **iOS 테스트 컴파일이 8월 16일부터 깨져 있었다** — commonTest의 `System.currentTimeMillis()` 한 줄. `make test-ios`가 본 코드만 컴파일해 몰랐고, 그동안 commonTest가 iOS에서 한 번도 안 돌았다(#38 검수가 찾음). 고치고 `test-ios`가 테스트 소스도 컴파일한다 | `506c2cfc` |
 | 18 | **엔진 진단 로그의 세대가 g0 고정이던 것** — `LocalEngineSessionClient`가 `currentSessionGeneration: () -> Long`(기본값 없음 — 잊으면 조용히 g0이던 것이 원래 결함)을 받는다. 클라이언트가 세션 홀더보다 먼저 만들어져 `SessionGenerationRelay`가 사이를 잇고, 홀더를 매번 새로 읽는다(캡처 없음, 함정 A의 remember 키 불변). 사용자에게 보이는 변화는 로그 문구뿐 | `9ec55653`·`3cec8c31` |
+| 83 | 🔧 **포트 시그니처가 값만 싣는지 기계로 잰다** — `#73`의 규칙 ⓐ(필드 폐포에 함수·인터페이스·var·포트/클라이언트 없음)를 선언 종류·주 생성자·본문 저장 프로퍼티까지 색인해 걷는다. 기준선: 계약 20개, 폐포 74타입, **위반 0**. 실코드 사보타주·가드 변이 모두 빨강(검수). ⓑ(어댑터가 부르는 것) 가드는 후속 | `0a1cc39c`·`e529a06b` |
+| 91 | **정적 국면 위에 홀수 수를 둔 뒤에도 `replayState`·`initialPlayer`가 맞다** — 지금은 닿지 않던 잠재 결함. 고치기 **전에** `syncToGameState` 경로에서 어댑터가 KataGo에 쓰는 줄을 골든으로 고정했고, 전후가 7개 골든·40판 차분에서 바이트 단위로 같다 | `6598e18f`·`2fafa4c5` |
 | 39(일부) | **세 score sync 러너의 흐름을 `ScoreSyncFlow` 한 벌로** — 바꾸기 전에 특성 테스트 9개(요청·읽는 순서·엔진 호출·적용 계획·진단·후속 분석 시점)를 먼저 심었고 옛·새 코드 모두 초록, 역방향 사보타주 5개 빨강. *"과금 게이트 판정 단일화"* 는 조사 결과 **이미 단일**이다(6계층 `FeatureAccessPolicy.resolve`가 기능별 유일한 판정). 첫 절은 `#84`로 닫혔다 → **#39 전부 끝** | `23c4c8cd`·`4c16bc71` |
 
 ### 진행 중
@@ -249,17 +251,8 @@ Hilt(commonMain 불가)·Koin(이득 0)·전면 MVI(이미 절반 작동)·모�
       **`#49` 착수 직전에 합집합 그래프로 한 번 더 잰다** — 그때 `debugreport`·`humanmove`를 떼어내면 `engine`·`endgame`을
       직접 의존으로 선언하거나 `api`로 노출해야 한다(안 하면 위 두 간선에서 컴파일이 깨진다).
 
-83. **포트 시그니처 가드 신설** (AI 모델: Opus, 노력정도: 높음) — `#73` 2차 뒤
-    · `#73`이 정한 규칙(시그니처 타입의 필드 폐포에 함수·인터페이스·var·포트/클라이언트가 없다)을 기계로 검사한다.
-      ⚠️ **import 규칙으로는 못 잰다** — 포트 19개 중 8개가 값과 같은 패키지에 있어 import 줄이 없다.
-      `SourceSymbolIndex`가 선언 종류와 필드 타입까지 색인해야 한다. 자기검증(합성 소스로 위반을 심어 빨강)을 붙인다.
 86. **포트 시그니처가 저장 형식을 드러낸다** (AI 모델: Sonnet, 노력정도: 낮음)
     · `SavedGameStorePort.readRawJson()`, `EngineBenchmarkStorePort.loadText()`·`path()` — 디버그 리포트용이다. 우선순위 낮음.
-91. **정적 국면 위에 홀수 수를 두면 `replayState`가 던진다** (AI 모델: Opus, 노력정도: 중간) — `#65` 검수, **지금은 닿지 않음**
-    · `syncStaticPosition` 뒤 재동기화 없이 `playMove`/`genMove`가 홀수 번이면 `KataGoAnalysisContext.replayState`가
-      *"Expected White, got Black"* 으로 던지고, JSON이 GTP로 폴백해도 `fillFromPolicyIfNeeded`가 또 부르므로 `analyze()`가
-      강등 없이 예외로 끝난다. `syncToGameState`가 매번 재동기화해서 지금은 안 탄다 — 정적 국면에 수를 두는 기능이 생기는 날의 함정.
-
 92. **KataGo가 백의 첫 착점 전 흑돌을 전부 접바둑 돌로 센다** (AI 모델: Sonnet, 노력정도: 낮음) — `#89` 검수가 찾음, 면적계가에서만
     · 앱 cfg(`friend/assets/katago/gtp_learning.cfg`)가 `assumeMultipleStartingBlackMovesAreHandicap`를 안 적어 기본값 true다.
       백이 첫 수 전에 패스하면 KataGo는 그 사이 흑이 둔 돌까지 보정에 넣는다 — 2점에서 백 패스·흑 A9면 KataGo N=3, 앱 2.
