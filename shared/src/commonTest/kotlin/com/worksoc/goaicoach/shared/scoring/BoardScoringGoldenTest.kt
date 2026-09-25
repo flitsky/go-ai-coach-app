@@ -1,17 +1,24 @@
 package com.worksoc.goaicoach.shared.scoring
 
+import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.DeadStoneCleaner
 import com.worksoc.goaicoach.shared.domain.DeadStoneDetector
 import com.worksoc.goaicoach.shared.domain.EmptyPointOwnership
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.GoldenBoard
+import com.worksoc.goaicoach.shared.domain.KomiOptions
+import com.worksoc.goaicoach.shared.domain.LegalMoveGenerator
+import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.domain.StoneColor
+import com.worksoc.goaicoach.shared.domain.allCoordinates
 import com.worksoc.goaicoach.shared.domain.areaScorerOwnership
 import com.worksoc.goaicoach.shared.domain.goldenBoard
+import com.worksoc.goaicoach.shared.domain.neighbors
 import com.worksoc.goaicoach.shared.domain.territoryScorerOwnership
 import com.worksoc.goaicoach.shared.domain.toState
+import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -311,6 +318,48 @@ class BoardScoringGoldenTest {
         assertTrue(emptyPoints > 0, "빈 점이 없는 판으로는 플러드필을 비교할 수 없다.")
     }
 
+    /**
+     * ⭐ **무작위 종국 판 수백 개에서도 두 룰셋이 같은 빈 점 소유를 낸다**(refactor backlog #38).
+     *
+     * 위 두 테스트의 판은 전부 손으로 고른 9x9다. 복제가 갈라지는 길은 손으로 고른 판이 닿지 않는
+     * 곳에 더 많다 — 판 크기를 9로 박은 이웃 계산, 수십 점짜리 큰 영역, 두 색이 다 닿는 공배 덩어리.
+     * 그래서 9·13·19줄에서 무작위 대국을 두고 그 **종국 판**(양쪽이 연달아 통과한 판)마다 두 계가기의
+     * 소유를 대조한다. 대국 하나에서 판 둘을 낸다 — 끝까지 둔 판과, 임의 수순에서 양쪽이 통과해 끝낸 판.
+     * 절반은 접바둑으로 시작해, 면적계가의 접바둑 보정(#89)을 빼고 되짚는 경로도 함께 지난다.
+     *
+     * 판 생성이 망가져 대조가 헛돌지 않도록 **판이 고루 섞였는지**도 단언한다. 하한은 이 시드에서
+     * 실제로 센 값(공배가 있는 판 127 · 양쪽 다 빈 점을 가진 판 222)보다 낮게 잡았다.
+     */
+    @Test
+    fun bothRulesetsAgreeOnOwnershipAcrossHundredsOfRandomFinishedGames() {
+        val boards = randomFinishedBoards(seed = 38_2026_0925L)
+        val owned = boards.map { board ->
+            Triple(board, areaScorerOwnership(board.state), territoryScorerOwnership(board.state))
+        }
+
+        val failures = owned.mapNotNull { (board, fromArea, fromTerritory) ->
+            if (fromArea == fromTerritory) null else "${board.name}: 영역 계가기는 $fromArea, 집 계가기는 $fromTerritory"
+        }
+        assertEquals(
+            emptyList<String>(),
+            failures,
+            "무작위 종국 판 ${boards.size}개 중 ${failures.size}개에서 두 룰셋의 빈 점 소유가 갈라졌다:\n" +
+                failures.take(10).joinToString("\n"),
+        )
+
+        val withDame = owned.count { (board, fromArea, _) ->
+            val emptyPoints = board.state.boardSize.value * board.state.boardSize.value - board.state.stones.size
+            fromArea.black + fromArea.white < emptyPoints
+        }
+        val bothSidesOwn = owned.count { (_, fromArea, _) -> fromArea.black > 0 && fromArea.white > 0 }
+        assertEquals(300, boards.size)
+        assertTrue(boards.all { it.state.hasConsecutivePasses() }, "양쪽이 연달아 통과하지 않은 판이 섞였다.")
+        assertEquals(BoardSize.supported().toSet(), boards.map { it.state.boardSize }.toSet())
+        assertTrue(boards.count { it.state.handicapCount >= 2 } >= 100, "접바둑 판이 너무 적다.")
+        assertTrue(withDame >= 100, "공배가 있는 판이 ${withDame}개뿐이다 — 두 색이 다 닿는 영역을 거의 대조하지 않는다.")
+        assertTrue(bothSidesOwn >= 150, "양쪽 다 빈 점을 가진 판이 ${bothSidesOwn}개뿐이다.")
+    }
+
     // ------------------------------------------------------------------- 표와 판
 
     private data class ScoreCase(
@@ -589,4 +638,75 @@ class BoardScoringGoldenTest {
         capturedByBlack = 3,
         capturedByWhite = 0,
     )
+
+    // ------------------------------------------------------------------- 무작위 종국 판
+
+    private data class FinishedBoard(
+        val name: String,
+        val state: GameState,
+    )
+
+    /**
+     * 무작위 대국 150판(9줄 120 · 13줄 24 · 19줄 6)에서 종국 판 300개를 만든다. 짝수 번째 대국은
+     * 접바둑(2점~그 판의 최대)으로 시작한다. 같은 `seed`면 늘 같은 판이 나온다.
+     */
+    private fun randomFinishedBoards(seed: Long): List<FinishedBoard> {
+        val seeds = Random(seed)
+        val sizes = List(120) { BoardSize.Nine } + List(24) { BoardSize.Thirteen } + List(6) { BoardSize.Nineteen }
+        return sizes.flatMapIndexed { index, boardSize ->
+            val random = Random(seeds.nextLong())
+            val komi = KomiOptions[random.nextInt(KomiOptions.size)]
+            val start = if (index % 2 == 0) {
+                val handicap = random.nextInt(2, boardSize.maxHandicapCount + 1)
+                GameState.withHandicap(boardSize, Ruleset.Chinese, handicapCount = handicap, komi = komi)
+            } else {
+                GameState.empty(boardSize, Ruleset.Chinese, komi = komi)
+            }
+            val positions = playRandomGameToTheEnd(start, random)
+            val cut = positions[random.nextInt(positions.size)]
+            val label = "대국 $index(${boardSize.value}줄, 접바둑 ${start.handicapCount})"
+            listOf(
+                FinishedBoard("$label 끝까지 ${positions.last().moves.size}수", positions.last()),
+                FinishedBoard("$label ${cut.moves.size}수에서 양쪽 통과", cut.passTwice()),
+            )
+        }
+    }
+
+    /**
+     * 매 수 합법하면서 **제 눈(네 방향이 전부 제 돌인 빈 점)을 메우지 않는** 자리 중 하나를 고르고,
+     * 그런 자리가 없으면 통과한다. 양쪽이 연달아 통과하면 끝난다. 거친 국면을 전부 돌려준다.
+     * 무한 반복(삼패 등)을 막으려고 판 넓이의 세 배 수에서 끊고, 끊은 판은 양쪽 통과로 닫는다.
+     *
+     * 빈 점을 무작위 순서로 하나씩 꺼내 처음 통과하는 자리를 둔다 — 그런 자리 전체에서 고르게 뽑는
+     * 것과 분포가 같고, 19줄에서 매 수 361점을 전부 판정하지 않아도 된다.
+     */
+    private fun playRandomGameToTheEnd(
+        start: GameState,
+        random: Random,
+    ): List<GameState> {
+        val positions = mutableListOf(start)
+        var state = start
+        val moveLimit = start.boardSize.value * start.boardSize.value * 3
+        while (!state.hasConsecutivePasses() && state.moves.size < moveLimit) {
+            val player = state.nextPlayer
+            val empties = state.boardSize.allCoordinates().filter { state.stoneAt(it) == null }.toMutableList()
+            var chosen: BoardCoordinate? = null
+            while (chosen == null && empties.isNotEmpty()) {
+                val candidate = empties.removeAt(random.nextInt(empties.size))
+                val fillsOwnEye = candidate.neighbors(state.boardSize).all { state.stoneAt(it) == player }
+                if (!fillsOwnEye && LegalMoveGenerator.isLegalPlay(state, candidate)) {
+                    chosen = candidate
+                }
+            }
+            state = state.play(if (chosen == null) Move.Pass(player) else Move.Play(player, chosen))
+            positions += state
+        }
+        if (!state.hasConsecutivePasses()) {
+            positions += state.passTwice()
+        }
+        return positions
+    }
+
+    private fun GameState.passTwice(): GameState =
+        play(Move.Pass(nextPlayer)).let { it.play(Move.Pass(it.nextPlayer)) }
 }
