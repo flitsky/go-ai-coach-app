@@ -190,6 +190,8 @@ Hilt(commonMain 불가)·Koin(이득 0)·전면 MVI(이미 절반 작동)·모�
 | 90 | **원격 분석 서버 쿼리 조립을 KataGo 없이 지키는 파이썬 검사** + 별도 Makefile 타깃(릴리스 게이트 밖 — 함정 75 철학). 사보타주(`initialPlayer` 고정 15/16 빨강, 따낸 돌 손실 1 빨강). docstring 수치는 #65-A 실측표로(raw·search 두 열) — 1차의 *"#90에서 재측정"* 은 거짓 출처라 검수가 막았다 | `2dec4bfb`·`66313511` |
 | 88 | **`EngineBenchmarkStorePort.hasUsableProfile` 삭제** — 프로덕션 호출부 0(grep·컴파일러). 유일한 소비자였던 시작 시 자동 벤치마크는 `aac3c70d`에서 이미 사라졌다. 원칙 문서 위반 ①이 해소됐다 | `3f966cc8` |
 | 79·69 | **G1 루트 매처가 소문자 top-level 함수도 잡는다 + 흩어진 FQN·shared 경로를 모았다** — ⚠️ **세 번 고쳤다**: 1차(`607eef01`)는 열거기가 `val`·`const`·애너테이션 선언을 못 봐 import 쪽이 회귀, 2차(`fe82c568`)는 옛 import 정규식을 되살렸지만 inline 쪽이 여전히 약했고, 3차(`a4db0496`)가 옛 대문자 inline 정규식과 **합집합**으로 돌려 옛 매처를 정의상 전부 포함한다. #69: 하드코딩 경로 7곳(백로그의 8은 낡은 수)·픽스처 FQN 리터럴 0 | `607eef01`…`a4db0496` |
+| 84 | **5·6계층 경계를 재분류로 맞췄다(b2, 사용자 결정)** — 엔타이틀먼트 클러스터(`premium.app`·`attendance`·`consumable`·`botcharacter`·`lifecycle`·`device`)를 6계층으로 매핑, 코드 이동 0. 5→6 참조 **16줄 → 0**(137파일 grep), 6→5 13줄은 허용 방향. 가드 `layerFivePackagesDoNotReferenceLayerSixPackages` — :shared의 모든 패키지가 목록 셋 중 하나에 있어야 초록(미배정·낡은 항목·중복·빈 목록 사보타주 전부 빨강). `#39` 첫 절("5→6 방향 뒤집기")은 이것으로 코드 없이 닫혔다 | `b8a245eb`·`a74040a6`·`2ea1ca04` |
+| 85 | **포트 없는 어댑터 분류 + 위반 ④ 해소** — 어댑터 10개를 (A) 로직이 있어 포트가 필요 1 / (B) 순수 넣기·꺼내기 8 / (C) 판단 1로 분류. 닉네임 규칙(12자·trim·빈 값→없음)을 4계층 어댑터에서 6계층 `application.profile.UserNicknamePolicy`로 올렸다 — 이모지·서로게이트 처리까지 전후 동일(검수) | `b47d8006` |
 
 ### 진행 중
 
@@ -244,20 +246,6 @@ Hilt(commonMain 불가)·Koin(이득 0)·전면 MVI(이미 절반 작동)·모�
     · `#73`이 정한 규칙(시그니처 타입의 필드 폐포에 함수·인터페이스·var·포트/클라이언트가 없다)을 기계로 검사한다.
       ⚠️ **import 규칙으로는 못 잰다** — 포트 19개 중 8개가 값과 같은 패키지에 있어 import 줄이 없다.
       `SourceSymbolIndex`가 선언 종류와 필드 타입까지 색인해야 한다. 자기검증(합성 소스로 위반을 심어 빨강)을 붙인다.
-84. **5·6계층 경계가 4계층과 같은 모양으로 어긋난다** (AI 모델: Opus, 노력정도: 중간) — `#73`이 범위 밖으로 남김
-    · 5계층이라는 `premium.app` 5파일 중 4개가 6계층 `premium.state.PremiumState`를 import한다.
-      260814의 분류 기준(*"`PremiumState`를 받으면 6계층"* — `FeatureAccessPolicy`를 6계층으로 둔 근거)을 그대로 쓰면 이들도 6계층이다.
-      재분류할지 정의를 고칠지 **판단이 먼저**다.
-    · 📐 **판단 결과(2026-09-24, 코드 무변경)**: 5→6 간선 **16줄**, 6→5 **13줄**. 추천은 **(b2) 재분류** — 엔타이틀먼트 클러스터
-      (`premium.app`·`attendance`·`consumable`·`botcharacter`·`lifecycle`·`device`)를 통째로 6계층으로 매핑하고 5계층 규칙(*"6계층을 모른다"*)은 그대로.
-      코드 한 줄 안 바꾸고 사다리가 글자 그대로 참이 되며(5→6 16줄 → 0, 6→5는 원칙이 허용한 방향), 260814 기준이 예외 0으로 서고,
-      KDoc의 "6계층" 표기 12줄과 맞는다. 대안 (a) *"5계층도 6계층의 값은 안다"* 는 규칙을 넓혀 5·6 모듈 분리 여지를 줄인다.
-      `#39`의 "5→6 방향 뒤집기"는 (b2)면 코드 없이 닫힌다. ✅ **사용자 결정(2026-09-25): (b2)로 진행.** 워크트리에서 문서·KDoc·가드(5계층은 6계층을 import하지 않는다) 작업·검수 중.
-85. **포트 없는 어댑터 — α/본체 대칭이 깨진 자리** (AI 모델: Sonnet, 노력정도: 중간)
-    · 저장 6개(`DeveloperModeStore`·`ExperimentalFeaturesStore`·`GuideProgressStore`·`UiLanguageStore`·`UserProfileStore`·
-      `ReleaseResetStore`)와 platform 3개(`GoogleCredentialManagerClient`·`AdsConsentManager`·`PlayHaptics`),
-      `persistence/ReferenceGameHistory.kt`를 `ui`·조립 코드가 **포트 없이 직접** 부른다. 원칙 문서가 *"가장 빠른 점검"* 으로 든 대칭이다.
-    · 전부 포트를 세울 필요는 없다 — 먼저 **어느 것이 shared로 올라갈 로직을 가졌는지** 가른다.
 86. **포트 시그니처가 저장 형식을 드러낸다** (AI 모델: Sonnet, 노력정도: 낮음)
     · `SavedGameStorePort.readRawJson()`, `EngineBenchmarkStorePort.loadText()`·`path()` — 디버그 리포트용이다. 우선순위 낮음.
 91. **정적 국면 위에 홀수 수를 두면 `replayState`가 던진다** (AI 모델: Opus, 노력정도: 중간) — `#65` 검수, **지금은 닿지 않음**
