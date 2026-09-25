@@ -34,7 +34,7 @@ internal object KataGoJsonAnalysisParser {
         val parsed = buildList {
             for (index in 0 until moveInfos.length()) {
                 val moveInfo = moveInfos.optJSONObject(index) ?: continue
-                val move = moveInfo.optString("move", "").toMove(player, boardSize) ?: continue
+                val move = moveInfo.optString("move", "").toGtpMoveOrNull(player, boardSize) ?: continue
                 val blackScoreLead = moveInfo.optNullableDouble("scoreLead")
                 val blackWinRate = moveInfo.optNullableDouble("winrate")
                 add(
@@ -169,14 +169,4 @@ internal object KataGoJsonAnalysisParser {
 
     private fun JSONObject.optNullableInt(key: String): Int? =
         if (has(key) && !isNull(key)) optInt(key) else null
-
-    private fun String.toMove(
-        player: StoneColor,
-        boardSize: BoardSize,
-    ): Move? =
-        when (lowercase()) {
-            "pass" -> Move.Pass(player)
-            "resign" -> Move.Resign(player)
-            else -> runCatching { Move.Play(player, BoardCoordinate.fromLabel(this, boardSize)) }.getOrNull()
-        }
 }

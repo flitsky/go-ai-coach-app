@@ -106,7 +106,7 @@ internal object KataGoAnalysisParser {
             return null
         }
 
-        val move = tokens[2].toMove(player, boardSize) ?: return null
+        val move = tokens[2].toGtpMoveOrNull(player, boardSize) ?: return null
         val fields = mutableMapOf<String, String>()
         var index = 3
         while (index < tokens.size - 1) {
@@ -247,9 +247,7 @@ internal object KataGoAnalysisParser {
             .flatMap { line -> line.trim().split(whitespace) }
             .map { token -> token.trim() }
             .filter { token -> token.isNotBlank() && token != "=" }
-            .mapNotNull { token ->
-                runCatching { BoardCoordinate.fromLabel(token, boardSize) }.getOrNull()
-            }
+            .mapNotNull { token -> BoardCoordinate.fromLabelOrNull(token, boardSize) }
             .distinct()
             .toList()
 
@@ -302,16 +300,6 @@ internal object KataGoAnalysisParser {
             points = points,
         )
     }
-
-    private fun String.toMove(
-        player: StoneColor,
-        boardSize: BoardSize,
-    ): Move? =
-        when (lowercase()) {
-            "pass" -> Move.Pass(player)
-            "resign" -> Move.Resign(player)
-            else -> runCatching { Move.Play(player, BoardCoordinate.fromLabel(this, boardSize)) }.getOrNull()
-        }
 
     private fun Double.normalizeWinRate(): Double =
         if (this > 1.0) {

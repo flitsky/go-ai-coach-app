@@ -131,7 +131,7 @@ internal class KataGoProcessEngineAdapter(
             command = KataGoProtocolCommands.genMove(player),
             timeoutMillis = searchTimeoutMillisFor(profile.analysisLimit.timeMillis),
         )
-        val move = response.toMove(player, boardSize)
+        val move = response.toGtpMove(player, boardSize)
         playedMoves += move
         if (move is Move.Play || move is Move.Pass) {
             nextPlayer = move.player.opponent
@@ -499,16 +499,6 @@ internal class KataGoProcessEngineAdapter(
             initialStones.isNotEmpty() -> initialStones.map { (coord, color) -> color to coord }
             handicapCount > 0 -> boardSize.handicapStonePositions(handicapCount).map { coord -> StoneColor.Black to coord }
             else -> emptyList()
-        }
-
-    private fun String.toMove(
-        player: StoneColor,
-        boardSize: BoardSize,
-    ): Move =
-        when (lowercase()) {
-            "pass" -> Move.Pass(player)
-            "resign" -> Move.Resign(player)
-            else -> Move.Play(player, BoardCoordinate.fromLabel(this, boardSize))
         }
 
     private fun EngineProfile.describe(): String =

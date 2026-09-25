@@ -163,9 +163,7 @@ private fun GameState.variantForBenchmarkSample(sampleIndex: Int): GameState {
         if (addedMoves >= sampleIndex) {
             break
         }
-        val coordinate = runCatching {
-            BoardCoordinate.fromLabel(label, state.boardSize)
-        }.getOrNull() ?: continue
+        val coordinate = BoardCoordinate.fromLabelOrNull(label, state.boardSize) ?: continue
         val move = Move.Play(state.nextPlayer, coordinate)
         state = runCatching { state.play(move) }
             .getOrNull()

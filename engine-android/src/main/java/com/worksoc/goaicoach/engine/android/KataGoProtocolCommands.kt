@@ -79,18 +79,36 @@ internal fun Move.toGtpVertex(boardSize: BoardSize): String =
  * [toGtpVertex]의 역함수 — GTP 수 토큰(`D4`·`pass`·`resign`)을 [Move]로 읽고, 못 읽으면 `null`(refactor backlog #36).
  *
  * `pass`/`resign`을 대소문자 없이 먼저 보고, 나머지는 [BoardCoordinate.fromLabelOrNull]에 넘긴다 —
- * 좌표 규칙을 여기서 새로 쓰지 않는다. `KataGoAnalysisParser`·`KataGoJsonAnalysisParser`의 private
- * `String.toMove`와 같은 판정이다(셋을 이것으로 합치는 건 다음 단계이고, 예외를 던지는
- * `KataGoProcessEngineAdapter` 쪽은 그때도 실패 의미를 보존해야 한다).
+ * 좌표 규칙을 여기서 새로 쓰지 않는다. 분석 응답(`KataGoAnalysisParser`·`KataGoJsonAnalysisParser`)처럼
+ * 못 읽는 후보 하나만 버리면 되는 자리에서 쓴다. 던지는 짝은 [toGtpMove]다.
  */
 internal fun String.toGtpMoveOrNull(
     player: StoneColor,
     boardSize: BoardSize,
 ): Move? =
+    toGtpPassOrResignOrNull(player)
+        ?: BoardCoordinate.fromLabelOrNull(this, boardSize)?.let { coordinate -> Move.Play(player, coordinate) }
+
+/**
+ * [toGtpMoveOrNull]의 던지는 짝 — 좌표를 못 읽으면 [BoardCoordinate.fromLabel]의 [IllegalArgumentException]을
+ * **그 문구 그대로** 던진다(refactor backlog #36).
+ *
+ * `genmove` 응답처럼 못 읽는 것이 곧 엔진 이상인 자리에서 쓴다. ⚠️ 여기를 `null`·패스로 "관대하게"
+ * 바꾸지 마라 — KataGo가 둔 수를 모른 채 대국이 이어진다(`GtpMoveTokenCallSiteFailureTest`가 고정한다).
+ */
+internal fun String.toGtpMove(
+    player: StoneColor,
+    boardSize: BoardSize,
+): Move =
+    toGtpPassOrResignOrNull(player)
+        ?: Move.Play(player, BoardCoordinate.fromLabel(this, boardSize))
+
+/** 두 읽기가 함께 쓰는 비착수 토큰 판정 — 대소문자를 가리지 않는다. 착수 토큰이면 `null`. */
+private fun String.toGtpPassOrResignOrNull(player: StoneColor): Move? =
     when (lowercase()) {
         "pass" -> Move.Pass(player)
         "resign" -> Move.Resign(player)
-        else -> BoardCoordinate.fromLabelOrNull(this, boardSize)?.let { coordinate -> Move.Play(player, coordinate) }
+        else -> null
     }
 
 /** Generous ceiling for GTP commands that carry no search-time budget of their own (e.g. play, undo, komi). */

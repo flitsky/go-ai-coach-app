@@ -13,7 +13,9 @@ import org.json.JSONObject
  *
  * - `gtp` 모드: 들어온 명령 한 줄을 [gtpCommands]가 읽는 파일에 **그대로** 적는다. `genmove`에는
  *   `= pass`를, 나머지 명령에는 빈 성공 응답(`=`)을 돌려준다 — 어느 국면에서든 늘 합법인
- *   수는 패스뿐이라서다(refactor backlog #91).
+ *   수는 패스뿐이라서다(refactor backlog #91). `genmove`가 돌려줄 토큰은 [create]의 `genMoveReply`로
+ *   바꿀 수 있다 — 어댑터가 KataGo의 착수 응답을 **어떻게 읽는지**(못 읽는 토큰이면 무엇을 던지는지)를
+ *   재는 테스트용이다(refactor backlog #36).
  * - `analysis` 모드: 들어온 JSON 쿼리 한 줄을 [queries]가 읽는 파일에 **그대로** 적고,
  *   같은 `id`로 후보 없는 최소 응답을 돌려준다. `rootInfo.scoreLead`가 없으므로 어댑터는
  *   policy-refine 쿼리를 더 보내지 않는다 — `analyze()` 한 번에 쿼리 한 줄이다.
@@ -61,10 +63,14 @@ internal class FakeKataGoExecutable private constructor(
         private const val QueryLogName = "analysis-queries.jsonl"
         private const val GtpLogName = "gtp-commands.log"
 
-        fun create(): FakeKataGoExecutable {
+        /** @param genMoveReply `genmove`에 `= ` 뒤로 돌려줄 토큰. 작은따옴표·줄바꿈은 셸 스크립트를 깨므로 받지 않는다. */
+        fun create(genMoveReply: String = "pass"): FakeKataGoExecutable {
+            require('\'' !in genMoveReply && '\n' !in genMoveReply) {
+                "genMoveReply must not contain a single quote or a newline: $genMoveReply"
+            }
             val directory = Files.createTempDirectory("fake-katago").toFile()
             File(directory, "katago").apply {
-                writeText(Script)
+                writeText(script(genMoveReply))
                 check(setExecutable(true)) { "Could not mark $path executable" }
             }
             listOf("model.bin.gz", "gtp.cfg", "analysis.cfg").forEach { name ->
@@ -75,7 +81,7 @@ internal class FakeKataGoExecutable private constructor(
 
         private const val D = "$"
 
-        private val Script = """
+        private fun script(genMoveReply: String): String = """
             |#!/bin/sh
             |here=${D}(cd "${D}(dirname "${D}0")" && pwd)
             |case "${D}1" in
@@ -91,7 +97,7 @@ internal class FakeKataGoExecutable private constructor(
             |    while IFS= read -r line; do
             |      printf '%s\n' "${D}line" >> "${D}here/$GtpLogName"
             |      case "${D}line" in
-            |        genmove*) printf '= pass\n\n' ;;
+            |        genmove*) printf '= %s\n\n' '$genMoveReply' ;;
             |        *) printf '=\n\n' ;;
             |      esac
             |      [ "${D}line" = quit ] && exit 0
