@@ -68,18 +68,11 @@ suspend fun EngineSessionClient.runEngineStartupApplication(
 
 suspend fun EngineSessionClient.runEngineStartupEffect(
     effect: GameSessionEffect.StartEngineSession,
-    operationRequest: EngineOperationRequest? = null,
+    operationRequest: EngineOperationRequest,
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
 ): EngineStartupResult =
     runObservedEngineOperation(
-        request = operationRequest ?: engineOperationRequest(
-            kind = EngineOperationKind.EngineStartup,
-            state = effect.state,
-            sessionGeneration = 0L,
-            timeoutPolicy = EngineTimeoutPolicy(label = "engine-startup"),
-            fallbackPolicy = EngineFallbackPolicy.None,
-            backendId = capabilities.backend.label,
-        ),
+        request = operationRequest,
         diagnosticEventLog = diagnosticEventLog,
     ) {
         startSession(
@@ -90,7 +83,7 @@ suspend fun EngineSessionClient.runEngineStartupEffect(
 
 suspend fun EngineSessionClient.runEngineStartupWorkflowResult(
     effect: GameSessionEffect.StartEngineSession,
-    operationRequest: EngineOperationRequest? = null,
+    operationRequest: EngineOperationRequest,
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
 ): EngineStartupWorkflowResult =
     runCatching {
@@ -106,18 +99,11 @@ suspend fun EngineSessionClient.runEngineStartupWorkflowResult(
 
 suspend fun EngineSessionClient.runEngineBackedNewGameEffect(
     effect: GameSessionEffect.StartEngineBackedGame,
-    operationRequest: EngineOperationRequest? = null,
+    operationRequest: EngineOperationRequest,
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
 ): EngineStartupResult =
     runObservedEngineOperation(
-        request = operationRequest ?: engineOperationRequest(
-            kind = EngineOperationKind.EngineNewGame,
-            state = effect.currentState,
-            sessionGeneration = 0L,
-            timeoutPolicy = EngineTimeoutPolicy(label = "engine-new-game"),
-            fallbackPolicy = EngineFallbackPolicy.LocalEngine,
-            backendId = capabilities.backend.label,
-        ),
+        request = operationRequest,
         diagnosticEventLog = diagnosticEventLog,
     ) {
         startNewGame(
@@ -130,7 +116,7 @@ suspend fun EngineSessionClient.runEngineBackedNewGameEffect(
 
 suspend fun EngineSessionClient.runEngineBackedNewGameWorkflowResult(
     effect: GameSessionEffect.StartEngineBackedGame,
-    operationRequest: EngineOperationRequest? = null,
+    operationRequest: EngineOperationRequest,
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
 ): EngineStartupWorkflowResult =
     runCatching {

@@ -19,20 +19,11 @@ suspend fun EngineSessionClient.runScoringRuleSyncDisplayPlan(
     profile: EngineProfile,
     previousSnapshots: List<ScoreSnapshot>,
     engineMessage: String,
-    operationRequest: EngineOperationRequest? = null,
+    operationRequest: EngineOperationRequest,
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
 ): ScoreEstimateDisplayPlan {
     val estimate = runObservedEngineOperation(
-        request = operationRequest ?: engineOperationRequest(
-            kind = EngineOperationKind.ScoringRuleSync,
-            state = state,
-            sessionGeneration = 0L,
-            timeoutPolicy = EngineTimeoutPolicy(
-                timeoutMillis = profile.analysisLimit.timeMillis,
-                label = "${profile.difficulty.label}:${profile.analysisLimit.visits}v",
-            ),
-            fallbackPolicy = EngineFallbackPolicy.LocalRules,
-        ),
+        request = operationRequest,
         diagnosticEventLog = diagnosticEventLog,
     ) {
         syncAndEstimateGraphScore(state, profile)

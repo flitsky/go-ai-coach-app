@@ -32,6 +32,7 @@ import com.worksoc.goaicoach.shared.policy.PlayLevelGroup
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import com.worksoc.goaicoach.shared.policy.SearchTimeLimit
 import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
+import com.worksoc.goaicoach.shared.policy.engineOperationRequest
 import com.worksoc.goaicoach.testsupport.FakeEngineSessionClient
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -259,6 +260,11 @@ class PositionAnalysisCacheOptimizationTest {
 
         val actual = client.runPositionAnalysisCacheOptimizationEffect(
             GameSessionEffect.RunPositionCacheOptimization(plan),
+            operationRequest = engineOperationRequest(
+                kind = EngineOperationKind.PositionCacheOptimization,
+                state = finalState,
+                sessionGeneration = 1L,
+            ),
         )
 
         assertEquals(plan, client.optimizedPlan)
@@ -282,15 +288,22 @@ class PositionAnalysisCacheOptimizationTest {
             summaries = listOf("done"),
         )
 
+        val operationRequest = engineOperationRequest(
+            kind = EngineOperationKind.PositionCacheOptimization,
+            state = finalState,
+            sessionGeneration = 1L,
+        )
         val success = FakeCacheOptimizationEngineSessionClient(expected)
             .runPositionAnalysisCacheOptimizationWorkflowResult(
                 GameSessionEffect.RunPositionCacheOptimization(plan),
+                operationRequest = operationRequest,
             )
         val failure = FakeCacheOptimizationEngineSessionClient(
             result = expected,
             failure = IllegalStateException("optimization failed"),
         ).runPositionAnalysisCacheOptimizationWorkflowResult(
             GameSessionEffect.RunPositionCacheOptimization(plan),
+            operationRequest = operationRequest,
         )
 
         assertTrue(success is PositionAnalysisCacheOptimizationWorkflowResult.Success)

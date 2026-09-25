@@ -38,6 +38,7 @@ import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import com.worksoc.goaicoach.shared.policy.SearchTimeLimit
 import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
 import com.worksoc.goaicoach.shared.policy.aiMoveAnalysisLimitWith
+import com.worksoc.goaicoach.shared.policy.engineOperationRequest
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshotSource
 import com.worksoc.goaicoach.testsupport.FakeEngineSessionClient
 import kotlin.test.Test
@@ -789,6 +790,11 @@ class GameAutomationApplicationTest {
             isolateSearchCache = true,
             previousSnapshots = emptyList(),
             previousReviewCandidates = emptyList(),
+            operationRequest = engineOperationRequest(
+                kind = EngineOperationKind.AutoAiTurn,
+                state = initialState,
+                sessionGeneration = 1L,
+            ),
         )
 
         assertEquals(initialState, client.currentState)
@@ -834,6 +840,11 @@ class GameAutomationApplicationTest {
                 searchTimeSettings = searchTimeSettings,
                 previousSnapshots = emptyList(),
             ),
+            operationRequest = engineOperationRequest(
+                kind = EngineOperationKind.AutoAiTurn,
+                state = initialState,
+                sessionGeneration = 1L,
+            ),
         )
 
         assertEquals(nextState, display.gameState)
@@ -870,11 +881,17 @@ class GameAutomationApplicationTest {
             previousSnapshots = emptyList(),
         )
 
+        val operationRequest = engineOperationRequest(
+            kind = EngineOperationKind.AutoAiTurn,
+            state = initialState,
+            sessionGeneration = 2L,
+        )
         val success = FakeAutoAiEngineSessionClient(
             result = autoAiTurnResult(state = nextState, estimate = null),
         ).runAutoAiTurnWorkflowResult(
             effect = effect,
             executionContext = executionContext,
+            operationRequest = operationRequest,
         )
         val failure = FakeAutoAiEngineSessionClient(
             result = autoAiTurnResult(state = nextState, estimate = null),
@@ -882,6 +899,7 @@ class GameAutomationApplicationTest {
         ).runAutoAiTurnWorkflowResult(
             effect = effect,
             executionContext = executionContext,
+            operationRequest = operationRequest,
         )
         val completion = buildAutoAiTurnCompletionPlan(
             result = success,

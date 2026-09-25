@@ -68,6 +68,11 @@ class EngineSessionLifecycleApplicationTest {
                 boardSize = BoardSize.Nine,
                 ruleset = Ruleset.Chinese,
             ),
+            operationRequest = engineOperationRequest(
+                kind = EngineOperationKind.EngineNewGame,
+                state = currentState,
+                sessionGeneration = 4,
+            ),
         )
 
         assertEquals("new-game", result.message)
@@ -80,6 +85,16 @@ class EngineSessionLifecycleApplicationTest {
     fun startupAndNewGameWorkflowResultsWrapSuccessAndFailure() = runBlocking {
         val state = GameState.empty()
         val profile = EngineProfile(name = "Workflow")
+        val startupOperationRequest = engineOperationRequest(
+            kind = EngineOperationKind.EngineStartup,
+            state = state,
+            sessionGeneration = 5,
+        )
+        val newGameOperationRequest = engineOperationRequest(
+            kind = EngineOperationKind.EngineNewGame,
+            state = state,
+            sessionGeneration = 5,
+        )
 
         val startupSuccess = RecordingLifecycleEngineSessionClient()
             .runEngineStartupWorkflowResult(
@@ -87,6 +102,7 @@ class EngineSessionLifecycleApplicationTest {
                     state = state,
                     profile = profile,
                 ),
+                operationRequest = startupOperationRequest,
             )
         val startupFailure = RecordingLifecycleEngineSessionClient(
             startupError = IllegalStateException("startup failed"),
@@ -95,6 +111,7 @@ class EngineSessionLifecycleApplicationTest {
                 state = state,
                 profile = profile,
             ),
+            operationRequest = startupOperationRequest,
         )
         val newGameFailure = RecordingLifecycleEngineSessionClient(
             newGameError = IllegalStateException("new game failed"),
@@ -105,6 +122,7 @@ class EngineSessionLifecycleApplicationTest {
                 boardSize = BoardSize.Nine,
                 ruleset = Ruleset.Chinese,
             ),
+            operationRequest = newGameOperationRequest,
         )
 
         assertTrue(startupSuccess is EngineStartupWorkflowResult.Success)

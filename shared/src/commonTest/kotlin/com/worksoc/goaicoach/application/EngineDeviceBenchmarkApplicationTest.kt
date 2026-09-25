@@ -21,7 +21,9 @@ import com.worksoc.goaicoach.shared.enginecontract.EngineStatus
 import com.worksoc.goaicoach.shared.enginecontract.FinalScoreResult
 import com.worksoc.goaicoach.shared.enginecontract.MoveResult
 import com.worksoc.goaicoach.shared.enginecontract.ScoreEstimate
+import com.worksoc.goaicoach.shared.policy.EngineOperationKind
 import com.worksoc.goaicoach.shared.policy.SearchTimeLimit
+import com.worksoc.goaicoach.shared.policy.engineOperationRequest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -387,6 +389,11 @@ class EngineDeviceBenchmarkApplicationTest {
                 restoreState = restoreState,
                 nowMillis = 456L,
             ),
+            operationRequest = engineOperationRequest(
+                kind = EngineOperationKind.StartupBenchmark,
+                state = restoreState,
+                sessionGeneration = 1L,
+            ),
             onProgress = { progress -> progressEvents += progress },
         )
 
@@ -400,6 +407,11 @@ class EngineDeviceBenchmarkApplicationTest {
     @Test
     fun startupBenchmarkWorkflowResultWrapsSuccessAndFailure() = runBlocking {
         val restoreState = GameState.empty(ruleset = Ruleset.Chinese)
+        val operationRequest = engineOperationRequest(
+            kind = EngineOperationKind.StartupBenchmark,
+            state = restoreState,
+            sessionGeneration = 1L,
+        )
 
         val success = LocalEngineSessionClient(RecordingBenchmarkEngineAdapter(), currentSessionGeneration = { 0L })
             .runStartupBenchmarkWorkflowResult(
@@ -408,6 +420,7 @@ class EngineDeviceBenchmarkApplicationTest {
                     restoreState = restoreState,
                     nowMillis = 456L,
                 ),
+                operationRequest = operationRequest,
             )
         val failure = LocalEngineSessionClient(
             RecordingBenchmarkEngineAdapter(analyzeError = IllegalStateException("benchmark failed")),
@@ -418,6 +431,7 @@ class EngineDeviceBenchmarkApplicationTest {
                 restoreState = restoreState,
                 nowMillis = 456L,
             ),
+            operationRequest = operationRequest,
         )
 
         assertTrue(success is StartupBenchmarkWorkflowResult.Success)

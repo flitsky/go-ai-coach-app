@@ -6,11 +6,7 @@ import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.diagnostic.NoopDiagnosticEventLog
 import com.worksoc.goaicoach.application.diagnostic.runObservedEngineOperation
 import com.worksoc.goaicoach.application.engine.EngineSessionClient
-import com.worksoc.goaicoach.shared.policy.EngineFallbackPolicy
-import com.worksoc.goaicoach.shared.policy.EngineOperationKind
 import com.worksoc.goaicoach.shared.policy.EngineOperationRequest
-import com.worksoc.goaicoach.shared.policy.EngineTimeoutPolicy
-import com.worksoc.goaicoach.shared.policy.engineOperationRequest
 
 sealed class PositionAnalysisCacheOptimizationWorkflowResult {
     data class Success(
@@ -24,17 +20,11 @@ sealed class PositionAnalysisCacheOptimizationWorkflowResult {
 
 suspend fun EngineSessionClient.runPositionAnalysisCacheOptimizationEffect(
     effect: GameSessionEffect.RunPositionCacheOptimization,
-    operationRequest: EngineOperationRequest? = null,
+    operationRequest: EngineOperationRequest,
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
 ): PositionAnalysisCacheOptimizationResult =
     runObservedEngineOperation(
-        request = operationRequest ?: engineOperationRequest(
-            kind = EngineOperationKind.PositionCacheOptimization,
-            state = effect.plan.finalState,
-            sessionGeneration = 0L,
-            timeoutPolicy = EngineTimeoutPolicy(label = "position-cache-optimization"),
-            fallbackPolicy = EngineFallbackPolicy.CachedAnalysis,
-        ),
+        request = operationRequest,
         diagnosticEventLog = diagnosticEventLog,
     ) {
         optimizePositionAnalysisCache(effect.plan)
@@ -42,7 +32,7 @@ suspend fun EngineSessionClient.runPositionAnalysisCacheOptimizationEffect(
 
 suspend fun EngineSessionClient.runPositionAnalysisCacheOptimizationWorkflowResult(
     effect: GameSessionEffect.RunPositionCacheOptimization,
-    operationRequest: EngineOperationRequest? = null,
+    operationRequest: EngineOperationRequest,
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
 ): PositionAnalysisCacheOptimizationWorkflowResult =
     runCatching {

@@ -782,6 +782,11 @@ class ScoreDisplayApplicationTest {
             profile = EngineProfile(),
             previousSnapshots = previous,
             engineMessage = "rules synced",
+            operationRequest = engineOperationRequest(
+                kind = EngineOperationKind.ScoringRuleSync,
+                state = state,
+                sessionGeneration = 1L,
+            ),
         )
 
         assertEquals(state, client.syncedState)
@@ -982,6 +987,11 @@ class ScoreDisplayApplicationTest {
         val plan = client.runRestoredGameSyncDisplayPlan(
             state = state,
             profile = EngineProfile(),
+            operationRequest = engineOperationRequest(
+                kind = EngineOperationKind.RestoredGameSync,
+                state = state,
+                sessionGeneration = 1L,
+            ),
         )
 
         assertEquals(state, client.configuredSyncState)
@@ -1083,6 +1093,11 @@ class ScoreDisplayApplicationTest {
         val plan = client.runRestoredGameSyncEffect(
             effect = GameSessionEffect.SyncRestoredGame(state),
             context = RestoredGameSyncExecutionContext(profile = profile),
+            operationRequest = engineOperationRequest(
+                kind = EngineOperationKind.RestoredGameSync,
+                state = state,
+                sessionGeneration = 1L,
+            ),
         )
 
         assertEquals(state, client.configuredSyncState)

@@ -23,14 +23,9 @@ import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
-import com.worksoc.goaicoach.shared.policy.EngineFallbackPolicy
-import com.worksoc.goaicoach.shared.policy.EngineOperationKind
 import com.worksoc.goaicoach.shared.policy.EngineOperationRequest
-import com.worksoc.goaicoach.shared.policy.EngineTimeoutPolicy
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
-import com.worksoc.goaicoach.shared.policy.aiMoveAnalysisLimitWith
-import com.worksoc.goaicoach.shared.policy.engineOperationRequest
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 import com.worksoc.goaicoach.shared.scoring.ScoreTimeline
 
@@ -151,21 +146,11 @@ suspend fun EngineSessionClient.runAutoAiTurnDisplayPlan(
     isolateSearchCache: Boolean,
     previousSnapshots: List<ScoreSnapshot>,
     previousReviewCandidates: List<CandidateMove>,
-    operationRequest: EngineOperationRequest? = null,
+    operationRequest: EngineOperationRequest,
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
 ): AutoAiTurnDisplayPlan {
-    val analysisLimit = playLevel.aiMoveAnalysisLimitWith(searchTimeSettings)
     val result = runObservedEngineOperation(
-        request = operationRequest ?: engineOperationRequest(
-            kind = EngineOperationKind.AutoAiTurn,
-            state = currentState,
-            sessionGeneration = 0L,
-            timeoutPolicy = EngineTimeoutPolicy(
-                timeoutMillis = analysisLimit.timeMillis,
-                label = "${searchMode.name}:${analysisLimit.visits}v",
-            ),
-            fallbackPolicy = EngineFallbackPolicy.None,
-        ),
+        request = operationRequest,
         diagnosticEventLog = diagnosticEventLog,
     ) {
         runAutoAiTurn(
@@ -187,7 +172,7 @@ suspend fun EngineSessionClient.runAutoAiTurnDisplayPlan(
 suspend fun EngineSessionClient.runAutoAiTurnEffect(
     effect: GameSessionEffect.RunAutoAiTurn,
     executionContext: AutoAiTurnRunExecutionContext,
-    operationRequest: EngineOperationRequest? = null,
+    operationRequest: EngineOperationRequest,
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
 ): AutoAiTurnDisplayPlan {
     val turnContext = effect.plan.context
@@ -208,7 +193,7 @@ suspend fun EngineSessionClient.runAutoAiTurnEffect(
 suspend fun EngineSessionClient.runAutoAiTurnWorkflowResult(
     effect: GameSessionEffect.RunAutoAiTurn,
     executionContext: AutoAiTurnRunExecutionContext,
-    operationRequest: EngineOperationRequest? = null,
+    operationRequest: EngineOperationRequest,
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
 ): AutoAiTurnWorkflowResult =
     runCatching {

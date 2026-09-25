@@ -120,18 +120,12 @@ internal suspend fun runEngineBenchmarkApplication(request: EngineBenchmarkRunRe
 internal suspend fun EngineSessionClient.runStartupBenchmarkEffect(
     effect: GameSessionEffect.RunStartupBenchmark,
     context: StartupBenchmarkExecutionContext,
-    operationRequest: EngineOperationRequest? = null,
+    operationRequest: EngineOperationRequest,
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
     onProgress: suspend (EngineBenchmarkProgress) -> Unit = {},
 ): EngineBenchmarkProfile {
     return runObservedEngineOperation(
-        request = operationRequest ?: engineOperationRequest(
-            kind = EngineOperationKind.StartupBenchmark,
-            state = context.restoreState,
-            sessionGeneration = 0L,
-            timeoutPolicy = EngineTimeoutPolicy(label = "startup-benchmark"),
-            fallbackPolicy = EngineFallbackPolicy.None,
-        ),
+        request = operationRequest,
         diagnosticEventLog = diagnosticEventLog,
     ) {
         runStartupBenchmark(
@@ -145,7 +139,7 @@ internal suspend fun EngineSessionClient.runStartupBenchmarkEffect(
 internal suspend fun EngineSessionClient.runStartupBenchmarkWorkflowResult(
     effect: GameSessionEffect.RunStartupBenchmark,
     context: StartupBenchmarkExecutionContext,
-    operationRequest: EngineOperationRequest? = null,
+    operationRequest: EngineOperationRequest,
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
     onProgress: suspend (EngineBenchmarkProgress) -> Unit = {},
 ): StartupBenchmarkWorkflowResult =

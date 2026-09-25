@@ -9,31 +9,20 @@ import com.worksoc.goaicoach.application.engine.EngineSessionClient
 import com.worksoc.goaicoach.application.engine.runEngineIo
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
-import com.worksoc.goaicoach.shared.policy.EngineFallbackPolicy
 import com.worksoc.goaicoach.shared.policy.EngineOperationKind
 import com.worksoc.goaicoach.shared.policy.EngineOperationRequest
 import com.worksoc.goaicoach.shared.policy.EngineTimeoutPolicy
-import com.worksoc.goaicoach.shared.policy.engineOperationRequest
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 
 suspend fun EngineSessionClient.runRestoredGameSyncDisplayPlan(
     state: GameState,
     profile: EngineProfile,
-    operationRequest: EngineOperationRequest? = null,
+    operationRequest: EngineOperationRequest,
     scoreSnapshots: List<ScoreSnapshot> = emptyList(),
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
 ): ScoreEstimateDisplayPlan {
     val estimate = runObservedEngineOperation(
-        request = operationRequest ?: engineOperationRequest(
-            kind = EngineOperationKind.RestoredGameSync,
-            state = state,
-            sessionGeneration = 0L,
-            timeoutPolicy = EngineTimeoutPolicy(
-                timeoutMillis = profile.analysisLimit.timeMillis,
-                label = "${profile.difficulty.label}:${profile.analysisLimit.visits}v",
-            ),
-            fallbackPolicy = EngineFallbackPolicy.LocalRules,
-        ),
+        request = operationRequest,
         diagnosticEventLog = diagnosticEventLog,
     ) {
         configureSyncAndEstimateGraphScore(state, profile)
@@ -82,7 +71,7 @@ data class RestoredGameSyncRunRequest(
 suspend fun EngineSessionClient.runRestoredGameSyncEffect(
     effect: GameSessionEffect.SyncRestoredGame,
     context: RestoredGameSyncExecutionContext,
-    operationRequest: EngineOperationRequest? = null,
+    operationRequest: EngineOperationRequest,
     scoreSnapshots: List<ScoreSnapshot> = emptyList(),
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
 ): ScoreEstimateDisplayPlan =

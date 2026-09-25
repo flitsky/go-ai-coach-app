@@ -379,7 +379,14 @@ class HumanMoveApplicationTest {
             previousReviewCandidates = listOf(previousCandidate),
         )
 
-        val actual = client.runHumanEngineSyncEffect(GameSessionEffect.SyncHumanMove(plan))
+        val actual = client.runHumanEngineSyncEffect(
+            GameSessionEffect.SyncHumanMove(plan),
+            operationRequest = engineOperationRequest(
+                kind = EngineOperationKind.HumanMoveSync,
+                state = afterMove,
+                sessionGeneration = 1,
+            ),
+        )
 
         assertEquals(expected, actual)
         assertEquals(afterMove, client.afterMove)
@@ -408,12 +415,23 @@ class HumanMoveApplicationTest {
             ),
         )
 
+        val operation = engineOperationRequest(
+            kind = EngineOperationKind.HumanMoveSync,
+            state = afterMove,
+            sessionGeneration = 1,
+        )
         val success = FakeHumanEngineSessionClient(expected)
-            .runHumanEngineSyncWorkflowResult(GameSessionEffect.SyncHumanMove(plan))
+            .runHumanEngineSyncWorkflowResult(
+                GameSessionEffect.SyncHumanMove(plan),
+                operationRequest = operation,
+            )
         val failure = FakeHumanEngineSessionClient(
             result = expected,
             failure = IllegalStateException("sync failed"),
-        ).runHumanEngineSyncWorkflowResult(GameSessionEffect.SyncHumanMove(plan))
+        ).runHumanEngineSyncWorkflowResult(
+            GameSessionEffect.SyncHumanMove(plan),
+            operationRequest = operation,
+        )
 
         assertTrue(success is HumanEngineSyncWorkflowResult.Success)
         assertEquals(expected, (success as HumanEngineSyncWorkflowResult.Success).result)

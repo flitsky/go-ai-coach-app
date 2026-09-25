@@ -336,21 +336,12 @@ fun HumanEngineSyncCompletionPlan.toApplyPlan(): HumanEngineSyncCompletionApplyP
 
 suspend fun EngineSessionClient.runHumanEngineSyncEffect(
     effect: GameSessionEffect.SyncHumanMove,
-    operationRequest: EngineOperationRequest? = null,
+    operationRequest: EngineOperationRequest,
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
 ): LocalEngineMoveResult {
     val plan = effect.plan
     return runObservedEngineOperation(
-        request = operationRequest ?: engineOperationRequest(
-            kind = EngineOperationKind.HumanMoveSync,
-            state = plan.afterMove,
-            sessionGeneration = 0L,
-            timeoutPolicy = EngineTimeoutPolicy(
-                timeoutMillis = plan.profile.analysisLimit.timeMillis,
-                label = "${plan.profile.difficulty.label}:${plan.profile.analysisLimit.visits}v",
-            ),
-            fallbackPolicy = EngineFallbackPolicy.LocalRules,
-        ),
+        request = operationRequest,
         diagnosticEventLog = diagnosticEventLog,
     ) {
         syncAfterHumanMove(
@@ -364,7 +355,7 @@ suspend fun EngineSessionClient.runHumanEngineSyncEffect(
 
 suspend fun EngineSessionClient.runHumanEngineSyncWorkflowResult(
     effect: GameSessionEffect.SyncHumanMove,
-    operationRequest: EngineOperationRequest? = null,
+    operationRequest: EngineOperationRequest,
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
 ): HumanEngineSyncWorkflowResult =
     runCatching {
