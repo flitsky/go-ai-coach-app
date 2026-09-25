@@ -16,7 +16,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import com.worksoc.goaicoach.persistence.UserProfileStore
+import com.worksoc.goaicoach.application.profile.UserNicknamePolicy
 
 /**
  * 닉네임을 짓는 팝업(백로그 #165).
@@ -51,9 +51,11 @@ internal fun UserNicknameDialog(
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = text,
-                    // ⚠️ **자르는 규칙을 화면이 따로 만들지 않는다** — 저장소와 같은 함수를 쓴다.
-                    // 둘이 다르면 13번째 글자가 보이다가 저장하면 사라지는 모양이 된다.
-                    onValueChange = { next -> text = next.take(UserProfileStore.NicknameMaxLength) },
+                    // ⚠️ **자르는 규칙을 화면이 따로 만들지 않는다** — 저장소가 부르는 것과 같은 규칙
+                    // (`shared`의 `UserNicknamePolicy`, refactor backlog #85)을 쓴다. 둘이 다르면 13번째
+                    // 글자가 보이다가 저장하면 사라지는 모양이 된다. 입력 중에는 걷지 않는다 — 그 이유는
+                    // `UserNicknamePolicy` 머리말에 있다.
+                    onValueChange = { next -> text = UserNicknamePolicy.capInput(next) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(

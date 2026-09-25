@@ -2,7 +2,6 @@ package com.worksoc.goaicoach.ui
 
 import com.worksoc.goaicoach.architecture.RepoPaths
 import com.worksoc.goaicoach.architecture.readContractSource
-import com.worksoc.goaicoach.persistence.UserProfileStore
 import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -26,6 +25,7 @@ class UserProfileContractTest {
 
     private val store = source(RepoPaths.appAndroid("persistence/UserProfileStore.kt"))
     private val myPage = source(RepoPaths.uiFile("MyPageScreen.kt"))
+    private val dialog = source(RepoPaths.uiFile("UserNicknameDialog.kt"))
 
     /**
      * ⚠️ **`UserPreferencesSnapshot`에 넣으면 조용히 사라진다.** 그 저장소는 저장할 때마다
@@ -120,15 +120,38 @@ class UserProfileContractTest {
         )
     }
 
-    /** 자르는 규칙은 하나여야 한다 — 화면이 보여 주는 길이와 저장이 남기는 길이가 다르면 안 된다. */
+    /**
+     * ⚠️ **자르는 규칙은 하나여야 한다 — `shared`의 `UserNicknamePolicy` 한 곳에 있다**(refactor backlog #85).
+     * 화면이 보여 주는 길이와 저장이 남기는 길이가 다르면 안 된다. 규칙 자체의 고정표는
+     * `UserNicknamePolicyTest`(shared)와 `UserProfileStoreTest`(저장값)에 있고, 여기는 **누가 그것을 부르는가**만 본다.
+     *
+     * 12자 상한은 저장 용량이 아니라 *"한 줄에 들어가야 한다"* 는 **제품 규칙**이다. 그것이 어댑터에만
+     * 있으면 화면이 입력 중에 자르려고 어댑터의 상수를 끌어다 쓰게 되고(위가 아래로 내려와 규칙을
+     * 가져가는 모양), 규칙을 어댑터 안에 다시 적으면 한쪽만 바뀌는 날 **화면이 자르는 길이와 저장이
+     * 자르는 길이가 조용히 갈라진다.** 저장소와 팝업은 둘 다 그 규칙을 **부르기만** 한다.
+     */
     @Test
-    fun theNicknameIsTrimmedAndCapped() {
-        assertEquals("가짓", UserProfileStore.sanitizeNickname("  가짓  "))
-        assertEquals(
-            UserProfileStore.NicknameMaxLength,
-            UserProfileStore.sanitizeNickname("가".repeat(40))?.length,
+    fun theNicknameRuleLivesInSharedNotInTheAdapter() {
+        assertTrue(
+            "저장소가 `UserNicknamePolicy.sanitize`를 부르지 않는다 — 저장 규칙이 shared를 거치지 않는다.",
+            store.contains("UserNicknamePolicy.sanitize("),
         )
-        assertEquals("빈 이름은 지우는 것으로 친다.", null, UserProfileStore.sanitizeNickname("   "))
+        assertFalse(
+            "저장소가 닉네임을 스스로 걷거나 자른다 — 규칙이 어댑터에 다시 적혔다(원칙 문서 ⓑ).",
+            store.contains(".take(") || store.contains(".trim("),
+        )
+        assertFalse(
+            "저장소가 닉네임 상한을 스스로 선언한다 — 상한은 shared의 `UserNicknamePolicy.MaxLength`다.",
+            Regex("""const\s+val\s+\w*(Max|Length|Limit)""").containsMatchIn(store),
+        )
+        assertTrue(
+            "팝업이 `UserNicknamePolicy.capInput`으로 자르지 않는다 — 입력 중 상한이 저장 상한과 갈라질 수 있다.",
+            dialog.contains("UserNicknamePolicy.capInput("),
+        )
+        assertFalse(
+            "팝업이 저장소를 알거나 스스로 자른다 — 규칙은 shared에서 가져온다.",
+            dialog.contains("UserProfileStore") || dialog.contains(".take("),
+        )
     }
 
     /**

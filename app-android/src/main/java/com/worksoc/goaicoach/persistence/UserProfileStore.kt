@@ -1,6 +1,8 @@
 package com.worksoc.goaicoach.persistence
 
 import android.content.Context
+import android.content.SharedPreferences
+import com.worksoc.goaicoach.application.profile.UserNicknamePolicy
 
 /**
  * 사용자가 자기 자신에게 붙인 이름(백로그 #165). 앱 어디에도 **사용자 자신을 가리키는
@@ -19,39 +21,38 @@ import android.content.Context
  * ## ⚠️ 정식 릴리즈 초기화(`ReleaseResetCoordinator`)에는 **넣지 않는다**
  * 그것이 지우는 것은 **권한 저장소 넷**이다(함정 6). 닉네임은 권한이 아니라 취향이라, 지우면
  * 사용자가 지은 이름이 업데이트 한 번에 사라진다. **판단해서 뺀 것이지 잊은 것이 아니다.**
+ *
+ * ## ⚠️ 닉네임 규칙은 여기 없다
+ * 몇 글자까지 받고 무엇을 남기는지는 `shared`의 [UserNicknamePolicy]가 정한다 — 이 저장소는 그것을
+ * **부르기만** 한다(refactor backlog #85, 원칙 문서 4계층 "포트가 아는 것" ⓑ). 규칙을 여기 다시 적으면
+ * 입력 팝업이 자르는 길이와 저장이 자르는 길이가 한쪽만 바뀌는 날 조용히 갈라진다.
  */
-internal class UserProfileStore(context: Context) {
-    private val prefs = context.applicationContext.getSharedPreferences(PrefsName, Context.MODE_PRIVATE)
+internal class UserProfileStore internal constructor(
+    private val prefs: SharedPreferences,
+) {
+    constructor(context: Context) : this(
+        context.applicationContext.getSharedPreferences(PrefsName, Context.MODE_PRIVATE),
+    )
 
     /** 저장된 닉네임. 한 번도 지은 적이 없으면 `null`(빈 문자열도 `null`로 접는다). */
     fun nickname(): String? = prefs.getString(NicknameKey, null)?.takeIf { it.isNotBlank() }
 
     /**
-     * 닉네임을 저장한다. 앞뒤 공백을 걷고 [NicknameMaxLength]까지 자른다.
+     * 닉네임을 저장한다. 무엇을 남길지는 [UserNicknamePolicy.sanitize]가 정한다(앞뒤 공백을 걷고
+     * [UserNicknamePolicy.MaxLength]까지 자른다).
      *
-     * ⚠️ **빈 문자열은 지우는 것으로 친다** — 사용자가 다 지우고 확인하면 「이름 없음」으로
+     * ⚠️ **그 결과가 `null`이면 지운다** — 사용자가 다 지우고 확인하면 「이름 없음」으로
      * 되돌아가야 한다. 빈 문자열을 그대로 저장하면 원 안에 아무것도 없는 아바타가 남는다.
      */
     fun saveNickname(raw: String) {
-        val trimmed = sanitizeNickname(raw)
+        val sanitized = UserNicknamePolicy.sanitize(raw)
         prefs.edit().apply {
-            if (trimmed == null) remove(NicknameKey) else putString(NicknameKey, trimmed)
+            if (sanitized == null) remove(NicknameKey) else putString(NicknameKey, sanitized)
         }.apply()
     }
 
-    internal companion object {
-        /**
-         * 닉네임 길이 상한. **글자 수이지 바이트가 아니다** — 한글·한자 한 글자도 1로 센다.
-         * ⚠️ 상한이 있는 이유는 저장 용량이 아니라 **한 줄에 들어가야 하기 때문**이다(함정 21:
-         * CJK는 폭이 두 배다). 늘릴 때는 마이 페이지를 네 언어로 다시 볼 것.
-         */
-        const val NicknameMaxLength = 12
-
-        private const val PrefsName = "go_ai_coach_user_profile"
-        private const val NicknameKey = "nickname"
-
-        /** 저장 전·입력 중에 **같은 규칙**을 쓴다 — 화면이 자르는 길이와 저장이 자르는 길이가 다르면 안 된다. */
-        fun sanitizeNickname(raw: String): String? =
-            raw.trim().take(NicknameMaxLength).takeIf { it.isNotBlank() }
+    private companion object {
+        const val PrefsName = "go_ai_coach_user_profile"
+        const val NicknameKey = "nickname"
     }
 }
