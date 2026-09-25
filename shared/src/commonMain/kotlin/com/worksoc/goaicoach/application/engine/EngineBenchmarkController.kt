@@ -16,7 +16,7 @@ import kotlinx.coroutines.CoroutineScope
  */
 class EngineBenchmarkController(
     private val scope: CoroutineScope,
-    private val engineClient: EngineSessionClient,
+    private val engineClient: EngineLifecycleClient,
     private val store: EngineBenchmarkStorePort,
     /**
      * 저장된 프로필의 원문 — **디버그 리포트에만** 싣는 텍스트다(refactor backlog #86).

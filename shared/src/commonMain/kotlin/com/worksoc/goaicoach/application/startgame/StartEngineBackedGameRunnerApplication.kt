@@ -3,7 +3,7 @@ package com.worksoc.goaicoach.application.startgame
 import com.worksoc.goaicoach.application.contract.GameSessionEffect
 import com.worksoc.goaicoach.application.contract.RuntimePlayLevelSelection
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
-import com.worksoc.goaicoach.application.engine.EngineSessionClient
+import com.worksoc.goaicoach.application.engine.EngineLifecycleClient
 import com.worksoc.goaicoach.application.engine.EngineStartupWorkflowResult
 import com.worksoc.goaicoach.application.engine.runEngineBackedNewGameWorkflowResult
 import com.worksoc.goaicoach.application.engine.runEngineIo
@@ -24,7 +24,7 @@ import com.worksoc.goaicoach.shared.policy.engineOperationRequest
 
 internal data class StartEngineBackedGameRunRequest(
     val plan: StartConfiguredGamePlan.StartEngineGame,
-    val engineClient: EngineSessionClient,
+    val engineClient: EngineLifecycleClient,
     val currentState: GameState,
     val sessionGeneration: Long,
     val runtimeContextProvider: () -> RuntimeLogContext,

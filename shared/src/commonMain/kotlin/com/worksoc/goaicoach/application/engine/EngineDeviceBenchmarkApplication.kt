@@ -18,7 +18,7 @@ import com.worksoc.goaicoach.shared.policy.evaluateEngineBenchmarkGate
 import kotlinx.coroutines.delay
 
 internal data class EngineBenchmarkRunRequest(
-    val engineClient: EngineSessionClient,
+    val engineClient: EngineLifecycleClient,
     val store: EngineBenchmarkStorePort,
     /** 디버그 리포트용 저장 원문(refactor backlog #86) — [EngineBenchmarkController]의 같은 이름 참고. */
     val storedBenchmarkText: () -> String,
@@ -117,7 +117,7 @@ internal suspend fun runEngineBenchmarkApplication(request: EngineBenchmarkRunRe
     }
 }
 
-internal suspend fun EngineSessionClient.runStartupBenchmarkEffect(
+internal suspend fun EngineLifecycleClient.runStartupBenchmarkEffect(
     effect: GameSessionEffect.RunStartupBenchmark,
     context: StartupBenchmarkExecutionContext,
     operationRequest: EngineOperationRequest,
@@ -136,7 +136,7 @@ internal suspend fun EngineSessionClient.runStartupBenchmarkEffect(
     }
 }
 
-internal suspend fun EngineSessionClient.runStartupBenchmarkWorkflowResult(
+internal suspend fun EngineLifecycleClient.runStartupBenchmarkWorkflowResult(
     effect: GameSessionEffect.RunStartupBenchmark,
     context: StartupBenchmarkExecutionContext,
     operationRequest: EngineOperationRequest,

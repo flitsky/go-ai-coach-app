@@ -33,7 +33,7 @@ data class EngineStartupRunRequest(
     val lifecycleCallbacks: EngineOperationLifecycleCallbacks = EngineOperationLifecycleCallbacks(),
 )
 
-suspend fun EngineSessionClient.runEngineStartupApplication(
+suspend fun EngineLifecycleClient.runEngineStartupApplication(
     request: EngineStartupRunRequest,
 ): EngineStartupDisplayPlan {
     val operation = engineOperationRequest(
@@ -66,7 +66,7 @@ suspend fun EngineSessionClient.runEngineStartupApplication(
     }
 }
 
-internal suspend fun EngineSessionClient.runEngineStartupEffect(
+internal suspend fun EngineLifecycleClient.runEngineStartupEffect(
     effect: GameSessionEffect.StartEngineSession,
     operationRequest: EngineOperationRequest,
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
@@ -81,7 +81,7 @@ internal suspend fun EngineSessionClient.runEngineStartupEffect(
         )
     }
 
-internal suspend fun EngineSessionClient.runEngineStartupWorkflowResult(
+internal suspend fun EngineLifecycleClient.runEngineStartupWorkflowResult(
     effect: GameSessionEffect.StartEngineSession,
     operationRequest: EngineOperationRequest,
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
@@ -97,7 +97,7 @@ internal suspend fun EngineSessionClient.runEngineStartupWorkflowResult(
         onFailure = { error -> EngineStartupWorkflowResult.Failure(error) },
     )
 
-internal suspend fun EngineSessionClient.runEngineBackedNewGameEffect(
+internal suspend fun EngineLifecycleClient.runEngineBackedNewGameEffect(
     effect: GameSessionEffect.StartEngineBackedGame,
     operationRequest: EngineOperationRequest,
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
@@ -114,7 +114,7 @@ internal suspend fun EngineSessionClient.runEngineBackedNewGameEffect(
         )
     }
 
-internal suspend fun EngineSessionClient.runEngineBackedNewGameWorkflowResult(
+internal suspend fun EngineLifecycleClient.runEngineBackedNewGameWorkflowResult(
     effect: GameSessionEffect.StartEngineBackedGame,
     operationRequest: EngineOperationRequest,
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,

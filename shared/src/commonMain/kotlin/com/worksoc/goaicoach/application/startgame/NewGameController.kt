@@ -2,7 +2,7 @@ package com.worksoc.goaicoach.application.startgame
 
 import com.worksoc.goaicoach.application.contract.RuntimePlayLevelSelection
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
-import com.worksoc.goaicoach.application.engine.EngineSessionClient
+import com.worksoc.goaicoach.application.engine.EngineLifecycleClient
 import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
 import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
 import com.worksoc.goaicoach.application.session.GameSessionResetPlan
@@ -18,7 +18,7 @@ import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
 
 class NewGameController(
-    private val engineClient: EngineSessionClient,
+    private val engineClient: EngineLifecycleClient,
     private val diagnosticEventLog: DiagnosticEventLogPort,
     private val runtimeEventLog: RuntimeEventLogPort,
     private val defaultPlayLevel: PlayLevelSetting,
