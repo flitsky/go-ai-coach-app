@@ -5,7 +5,7 @@ import com.worksoc.goaicoach.application.premium.state.FeatureId
 import com.worksoc.goaicoach.application.premium.state.PremiumState
 
 /**
- * 5계층(App Service) — **UI 트리 없이도 호출 가능한** 기능 클레임 진입점.
+ * 6계층(Session & Continuity) — **UI 트리 없이도 호출 가능한** 기능 클레임 진입점.
  *
  * 기존에는 클레임을 하는 길이 `ui/PremiumUiState.kt`의 `claim` 람다(=Compose
  * `CompositionLocal`) 하나뿐이라, 앱 최초 실행 직후(아직 Compose 트리가 없을 수 있는 시점)

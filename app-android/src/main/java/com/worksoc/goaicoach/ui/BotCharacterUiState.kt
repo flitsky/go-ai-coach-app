@@ -180,11 +180,11 @@ internal fun buildBotCharacterUiState(context: Context): BotCharacterUiState {
         watchAdForShard = { character ->
             val outcome = showRewardedAdOnce(context)
             // 시청 성공일 때만 적립한다 — 광고를 끝까지 안 봤는데 조각이 쌓이면 안 된다.
-            // 적립 자체는 5계층 순수 함수가 하고(read-modify-write), 여기서는 결과만 반영한다.
+            // 적립 자체는 6계층 순수 함수가 하고(read-modify-write), 여기서는 결과만 반영한다.
             if (outcome !is AdRewardOutcome.RewardEarned) {
                 BotShardAdOutcome(outcome)
             } else {
-                // ⚠️ 5계층이 준 판정을 **그대로 나른다**(#68). 여기서 `직전 + 1 >= 필요 수`로 다시
+                // ⚠️ 6계층이 준 판정을 **그대로 나른다**(#68). 여기서 `직전 + 1 >= 필요 수`로 다시
                 // 세지 않는다 — 그 사이 출석 보상이 조각을 넣었으면 그 셈이 틀린다.
                 val grant = runBotCharacterShardGrant(character, store)
                 grant?.let { collection = it.state }
@@ -532,7 +532,7 @@ internal suspend fun watchAdForShardAndReport(
     // ⚠️ **획득 순간에는 토스트를 띄우지 않는다**(백로그 #69, 2026-09-03 사용자 확정) — 축전
     // 팝업이 같은 사실을 말하므로 둘 다 띄우면 같은 말을 두 번 한다. 토스트는 **조각이 쌓이는
     // 동안**의 진행 안내로만 남는다.
-    // ⚠️ 획득 판정과 진행도 둘 다 **5계층이 준 값**을 쓴다(#68). 예전에는 여기서
+    // ⚠️ 획득 판정과 진행도 둘 다 **6계층이 준 값**을 쓴다(#68). 예전에는 여기서
     // `직전 조각 수 + 1`로 다시 셌고, 그 사본은 출석 보상이 조각을 넣으면 낡았다.
     if (ad is AdRewardOutcome.RewardEarned && result.unlocked) {
         bots.enqueueAcquired(listOf(character))

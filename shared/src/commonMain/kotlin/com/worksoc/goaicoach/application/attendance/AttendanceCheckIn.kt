@@ -22,7 +22,7 @@ sealed class AttendanceCheckInResult {
 }
 
 /**
- * 5계층(App Service) — cold start/foreground 복귀마다 호출하는 순수 체크인 판정 함수.
+ * 6계층(Session & Continuity) — cold start/foreground 복귀마다 호출하는 순수 체크인 판정 함수.
  * 연속 출석 요구가 없다: 며칠을 건너뛰어도 다음 방문에서 그냥 attendanceCount가 1 증가한다
  * (스트릭 리셋 로직 자체가 없음 — `260823-260830_OFFLINE_ENGAGEMENT_FEATURES_KICKOFF_PLAN.md`
  * 4.1절). 같은 UTC 날짜 안에서는 몇 번을 다시 열어도 카운트가 오르지 않는다.
@@ -47,7 +47,7 @@ fun AttendanceState.checkIn(nowEpochMillis: Long): AttendanceCheckInResult {
 fun isRewardedTier(tier: Int): Boolean = tier in 1..7 || (tier > 7 && tier % 7 == 0)
 
 /**
- * 5계층(App Service) — **개발자 테스트용**으로 "오늘 아직 체크인하지 않은" 상태로 되감는다
+ * 6계층(Session & Continuity) — **개발자 테스트용**으로 "오늘 아직 체크인하지 않은" 상태로 되감는다
  * (백로그 #71). 다음 체크인이 하루를 진행시키므로 출석일이 하나 오른다.
  *
  * ## ⚠️ 시계를 앞으로 돌리는 방식은 성립하지 않는다 — 그래서 저장값을 되감는다

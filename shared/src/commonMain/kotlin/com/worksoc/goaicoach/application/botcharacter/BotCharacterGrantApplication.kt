@@ -1,7 +1,7 @@
 package com.worksoc.goaicoach.application.botcharacter
 
 /**
- * 5계층(App Service) — 봇 캐릭터 한 종을 영구 획득 처리한다. 획득 경로(출석 보상 #13, 광고 시청
+ * 6계층(Session & Continuity) — 봇 캐릭터 한 종을 영구 획득 처리한다. 획득 경로(출석 보상 #13, 광고 시청
  * #11)와 무관하게 이 함수 하나를 거치게 해, 수집 기록이 남는 규칙이 두 벌로 갈라지지 않게 한다.
  *
  * `runPremiumFeatureClaim`과 같은 이유로 저장소를 **read-modify-write** 한다 — 메모리에 들고

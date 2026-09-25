@@ -27,7 +27,7 @@ data class AttendanceRewardGrantResult(
      * ⚠️ **[granted]로 구동하면 두 가지가 어긋난다.**
      * 1. **조각 완료 획득이 안 보인다.** [AttendanceReward.BotCharacterShards]는 [granted]에
      *    *"조각 N개"* 로만 남아, 그 조각이 마지막 한 개여서 **캐릭터가 됐다는 사실**이 결과에서
-     *    사라진다. 그 판정은 5계층 안(`BotCharacterShardGrant.unlocked`)에만 있었다.
+     *    사라진다. 그 판정은 적립 함수의 결과(`BotCharacterShardGrant.unlocked`)에만 있었다.
      * 2. **이미 가진 캐릭터를 축하하게 된다**(유령 보상). 아래 `grant`가 고쳐지기 전까지
      *    [AttendanceReward.BotCharacterUnlock]은 이미 보유해도 무조건 알림 대상이었다.
      *
@@ -47,7 +47,7 @@ data class AttendanceRewardGrantResult(
 }
 
 /**
- * 5계층(App Service) — 출석 상태를 보고 **아직 지급하지 않은 보상을 전부** 지급한다.
+ * 6계층(Session & Continuity) — 출석 상태를 보고 **아직 지급하지 않은 보상을 전부** 지급한다.
  * `runAttendanceCheckIn` 직후에 호출하도록 설계됐다(체크인 판정과 보상 지급은 별개 축 —
  * [AttendanceState.claimedTiers] 참고).
  *
@@ -165,7 +165,8 @@ private fun grant(
             val shardGrant = runBotCharacterShardGrant(reward.character, botStore, reward.amount)
             RewardGrantOutcome(
                 announce = shardGrant != null,
-                // 이번 적립이 필요 수를 채웠을 때만 획득이다. 이 판정은 5계층이 이미 갖고 있다.
+                // 이번 적립이 필요 수를 채웠을 때만 획득이다. 이 판정은 적립 함수
+                // (`runBotCharacterShardGrant`)가 이미 갖고 있다.
                 acquired = reward.character.takeIf { shardGrant?.unlocked == true },
             )
         }

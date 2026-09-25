@@ -51,7 +51,7 @@ sealed interface FeatureAccess {
  *
  * 정책이 바뀔 때(무료/광고/구매/클레임 중 어느 조합을 어느 기능에 허용할지) 고칠 곳을 이
  * 함수의 `when` 분기 하나로 좁히는 것이 이 타입의 목적이다 — `GO_AI_COACH_ARCHITECTURE_ROADMAP.md`
- * "5/6계층 — 기능 엔타이틀먼트 정책 도입" 항목 참고.
+ * "6계층 — 기능 엔타이틀먼트 정책 도입" 항목 참고.
  *
  * [UnlockOption.Purchase]는 [com.worksoc.goaicoach.ui.FeatureFlags.isPurchaseEnabled] 여부와
  * 무관하게 항상 반환한다 — 그 플래그는 7계층(ui) 소속이라 6계층이 알면 안 된다. 구매 버튼을

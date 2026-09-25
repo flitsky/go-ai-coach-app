@@ -26,7 +26,7 @@ class DevAdGrantSimulationContractTest {
         codeOnly(sourceOf("SettingsScreen.kt")) + "\n" + codeOnly(sourceOf("DeveloperTestSection.kt"))
 
     /**
-     * 시뮬레이션은 **실제 경로와 같은 5계층 함수**를 지나야 한다 — 다른 것은 광고를 띄우는
+     * 시뮬레이션은 **실제 경로와 같은 6계층 함수**를 지나야 한다 — 다른 것은 광고를 띄우는
      * 한 걸음뿐이어야 한다.
      */
     /**

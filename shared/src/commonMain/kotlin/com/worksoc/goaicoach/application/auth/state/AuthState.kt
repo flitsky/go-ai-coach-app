@@ -10,7 +10,7 @@ enum class AuthProvider {
 /**
  * 6계층(Session & Continuity) — 로그인 상태. 플랫폼(Firebase Auth SDK)에 의존하지 않는
  * 순수 로직으로 설계해, 추후 iOS 쪽 인증 SDK를 추가할 때 이 타입 자체는 재사용할 수 있게 한다.
- * [AuthClientPort]와 같은 패키지에 있지만 계층이 다르다 — 이 타입은 "누구의 세션인가"를
+ * [AuthClientPort]와는 계층이 다르고 패키지도 다르다(`auth.port`) — 이 타입은 "누구의 세션인가"를
  * 나타내는 상태(6계층)이고, [AuthClientPort]는 그 상태를 얻어오는 외부 SDK 포트(4계층)다.
  */
 data class AuthState(

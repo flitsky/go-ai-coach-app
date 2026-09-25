@@ -92,7 +92,7 @@ private fun alreadyAllowedVia(
     }
 
 /**
- * 5계층(App Service) — 소모품 [amount]개를 지급하고 저장한다. 출석 2~4일차 보상 지급(#13)이
+ * 6계층(Session & Continuity) — 소모품 [amount]개를 지급하고 저장한다. 출석 2~4일차 보상 지급(#13)이
  * 이 함수를 부른다. 상한([ConsumableInventory.MaxPerItem]) 처리는 재고 쪽이 담당하므로 여기서는
  * 저장만 책임진다.
  */
@@ -107,7 +107,7 @@ fun runConsumableGrant(
 }
 
 /**
- * 5계층(App Service) — [decideConsumableSpend]의 판정을 저장소에 반영한다. 실제 기능 사용
+ * 6계층(Session & Continuity) — [decideConsumableSpend]의 판정을 저장소에 반영한다. 실제 기능 사용
  * 지점의 배선(#15)이 이 함수를 부른다.
  *
  * 차감이 일어난 경우에만 저장하므로, 프리미엄으로 통과했거나 재고가 없던 호출은 디스크를

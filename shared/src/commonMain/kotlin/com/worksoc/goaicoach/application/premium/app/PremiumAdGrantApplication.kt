@@ -29,7 +29,7 @@ data class PremiumAdGrantRunResult(
 )
 
 /**
- * 6계층(Session & Continuity)/App Service 경계 — 광고 시청 결과([AdRewardOutcome])를 프리미엄
+ * 6계층(Session & Continuity) — 광고 시청 결과([AdRewardOutcome])를 프리미엄
  * 상태 전이 + 진단 로그로 변환하는 순수 함수. [AdRewardOutcome.RewardEarned]일 때만
  * [PremiumState.adGranted]로 전이하고, 그 외에는 상태를 바꾸지 않는다 — "광고 로드 실패/시청
  * 중단 시 일반 모드 유지"는 호출부가 별도로 신경 쓸 필요 없이 이 함수의 반환값(`nextState == null`)

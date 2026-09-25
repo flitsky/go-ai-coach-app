@@ -50,7 +50,7 @@ data class PremiumPurchaseRunResult(
 )
 
 /**
- * 6계층(Session & Continuity)/App Service 경계 — 구매 결과([PurchaseOutcome])를 프리미엄 상태
+ * 6계층(Session & Continuity) — 구매 결과([PurchaseOutcome])를 프리미엄 상태
  * 전이 + 진단 로그로 변환하는 순수 함수. [PurchaseOutcome.Purchased]일 때만
  * [PremiumState.purchased]로 전이하고, 그 외에는 상태를 바꾸지 않는다 — 실패/취소/미소유 시
  * 일반 모드(또는 기존 상태) 유지는 호출부가 별도로 신경 쓸 필요 없이 이 함수의 반환값

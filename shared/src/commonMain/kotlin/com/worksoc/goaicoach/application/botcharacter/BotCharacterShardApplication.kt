@@ -33,7 +33,7 @@ data class BotShardAdOutcome(
 )
 
 /**
- * 5계층(App Service) — 광고 시청 1회를 조각 1개로 적립한다(백로그 #11, 킥오프 플랜 7장).
+ * 6계층(Session & Continuity) — 광고 시청 1회를 조각 1개로 적립한다(백로그 #11, 킥오프 플랜 7장).
  *
  * [runBotCharacterUnlock]과 같은 이유로 저장소를 **read-modify-write** 한다 — 메모리에 들고
  * 있던 상태를 덮어쓰면 그 사이 출석 보상으로 들어온 캐릭터가 조용히 사라진다.
@@ -61,7 +61,7 @@ fun runBotCharacterShardGrant(
 }
 
 /**
- * 5계층(App Service) — **개발자 테스트용**으로 조각 진행도를 특정 값으로 맞춘다(백로그 #70).
+ * 6계층(Session & Continuity) — **개발자 테스트용**으로 조각 진행도를 특정 값으로 맞춘다(백로그 #70).
  *
  * ⚠️ **이 함수가 존재하는 이유는 UI가 `copy(adShards = …)`를 직접 만들지 않게 하려는 것이다.**
  * 조각은 저장 스키마의 일부이고 획득 경계([BotCollectionState.withAdShard])와 한 쌍이라, 화면이
