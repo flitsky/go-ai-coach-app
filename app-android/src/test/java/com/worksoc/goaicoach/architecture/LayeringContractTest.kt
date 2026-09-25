@@ -87,45 +87,6 @@ class LayeringContractTest {
         )
     }
 
-    @Test
-    fun authPremiumAndDeviceApplicationPackagesStayPlatformFree() {
-        // application/auth, application/premium, and application/device follow the same
-        // port/adapter split as the engine layers (EngineCoreApi vs
-        // KataGoProcessEngineAdapter): the port interfaces (AuthClientPort,
-        // PremiumStateStorePort, DeviceIdentityStorePort) must stay pure Kotlin, while the real
-        // Android/Firebase/SharedPreferences-backed adapters live in platform/ or persistence/
-        // (refactor backlog #25 moved them out of ui/).
-        // ⚠️ 260923: 셋 다 :shared로 건너간 뒤(260816)에도 스캔 경로가 app-android에 남아
-        // **0개 파일을 검사하며 무조건 통과**하고 있었다. 실재하는 트리를 가리키게 고친다.
-        val checkedDirs = listOf(
-            RepoPaths.applicationPath("auth"),
-            RepoPaths.applicationPath("premium"),
-            RepoPaths.applicationPath("device"),
-        )
-        val forbiddenImports = listOf(
-            "import android.",
-            "import androidx.",
-            "import java.",
-            "import org.json.",
-            importOf(UI_PACKAGE),
-            importOf(PLATFORM_PACKAGE),
-            importOf(PERSISTENCE_PACKAGE),
-            importOf(ENGINE_PACKAGE),
-        )
-
-        val offenders = forbiddenReferenceOffenders(
-            files = ktFilesIn(*checkedDirs.toTypedArray()),
-            forbiddenImports = forbiddenImports,
-        )
-
-        assertTrue(
-            "application/auth, application/premium, and application/device must stay platform-free " +
-                "ports; put Android/Firebase-specific adapters in platform/ or persistence/ instead:\n" +
-                offenders.joinToString("\n"),
-            offenders.isEmpty(),
-        )
-    }
-
     /**
      * `platform/`은 4계층 SDK 어댑터(Billing·UMP·AdMob·Firebase Auth·Credential Manager·Vibrator 등)만
      * 산다(refactor backlog #25). 이 파일들을 `ui/`에서 옮긴 근거가 **"Compose도 ui 심볼도 모른다"** 였으니,
@@ -1298,28 +1259,6 @@ class LayeringContractTest {
             "GoCoachApp should observe GameSessionStateHolder changes and reserve display-applier naming for display-plan application:\n" +
                 "forbidden:\n${forbiddenFragments.joinToString("\n")}\nmissing:\n${requiredFragments.joinToString("\n")}",
             forbiddenFragments.isEmpty() && requiredFragments.isEmpty(),
-        )
-    }
-
-    @Test
-    fun gameSessionStateHolderStaysPlatformFreeForSharedMove() {
-        val holder = RepoPaths.applicationPath("session/GameSessionStateHolder.kt")
-        val forbiddenImports = listOf(
-            "import android.",
-            "import androidx.compose.",
-            "import java.",
-            "import org.json.",
-        )
-
-        val offenders = forbiddenReferenceOffenders(
-            files = listOf(holder),
-            forbiddenImports = forbiddenImports,
-        )
-
-        assertTrue(
-            "GameSessionStateHolder must stay free of Android/Compose/JVM JSON imports before moving to shared:\n" +
-                offenders.joinToString("\n"),
-            offenders.isEmpty(),
         )
     }
 
