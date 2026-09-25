@@ -197,12 +197,14 @@ Hilt(commonMain 불가)·Koin(이득 0)·전면 MVI(이미 절반 작동)·모�
 | 101 | **iOS 테스트 컴파일이 8월 16일부터 깨져 있었다** — commonTest의 `System.currentTimeMillis()` 한 줄. `make test-ios`가 본 코드만 컴파일해 몰랐고, 그동안 commonTest가 iOS에서 한 번도 안 돌았다(#38 검수가 찾음). 고치고 `test-ios`가 테스트 소스도 컴파일한다 | `506c2cfc` |
 | 18 | **엔진 진단 로그의 세대가 g0 고정이던 것** — `LocalEngineSessionClient`가 `currentSessionGeneration: () -> Long`(기본값 없음 — 잊으면 조용히 g0이던 것이 원래 결함)을 받는다. 클라이언트가 세션 홀더보다 먼저 만들어져 `SessionGenerationRelay`가 사이를 잇고, 홀더를 매번 새로 읽는다(캡처 없음, 함정 A의 remember 키 불변). 사용자에게 보이는 변화는 로그 문구뿐 | `9ec55653`·`3cec8c31` |
 | 83 | 🔧 **포트 시그니처가 값만 싣는지 기계로 잰다** — `#73`의 규칙 ⓐ(필드 폐포에 함수·인터페이스·var·포트/클라이언트 없음)를 선언 종류·주 생성자·본문 저장 프로퍼티까지 색인해 걷는다. 기준선: 계약 20개, 폐포 74타입, **위반 0**. 실코드 사보타주·가드 변이 모두 빨강(검수). ⓑ(어댑터가 부르는 것) 가드는 후속 | `0a1cc39c`·`e529a06b` |
+| 86 | **저장 포트 둘에서 원문·경로 읽기 3개를 뺐다** — `SavedGameStorePort.readRawJson`·`EngineBenchmarkStorePort.loadText`·`path`. 소비자는 전부 사람을 위한 디버그 리포트였고 무엇도 파싱·분기하지 않았다 → 어댑터에 남기고 조립 코드가 어댑터 타입으로 쥔다. 리포트의 두 절은 바이트 단위로 같고, 사라진 건 화면에 안 나오는 절대 경로 한 칸뿐. 원칙 문서 ⓐ에 *"타입이 값이어도 저장 형식은 싣지 않는다"* | `0fd52e3e`·`9e86c5e0` |
+| 36(1단계) | **좌표 표기를 정수 좌표 기준 골든 6종으로 고정** — 기존 줄 삭제·변경 0(+916). `fromLabelOrNull`·`columnLabels`·`toGtpMoveOrNull`은 기존 규칙에 위임만. 음성 대조 셋(알파벳에 I, 행 원점 뒤집기, pass→Pass)에서 새 골든만 빨강. 번들 기보 끝 국면은 검수가 독립 파이썬 시뮬레이터로 확인. 2단계(원격 디코드)는 `#100` | `7b6bacce` |
 | 91 | **정적 국면 위에 홀수 수를 둔 뒤에도 `replayState`·`initialPlayer`가 맞다** — 지금은 닿지 않던 잠재 결함. 고치기 **전에** `syncToGameState` 경로에서 어댑터가 KataGo에 쓰는 줄을 골든으로 고정했고, 전후가 7개 골든·40판 차분에서 바이트 단위로 같다 | `6598e18f`·`2fafa4c5` |
 | 39(일부) | **세 score sync 러너의 흐름을 `ScoreSyncFlow` 한 벌로** — 바꾸기 전에 특성 테스트 9개(요청·읽는 순서·엔진 호출·적용 계획·진단·후속 분석 시점)를 먼저 심었고 옛·새 코드 모두 초록, 역방향 사보타주 5개 빨강. *"과금 게이트 판정 단일화"* 는 조사 결과 **이미 단일**이다(6계층 `FeatureAccessPolicy.resolve`가 기능별 유일한 판정). 첫 절은 `#84`로 닫혔다 → **#39 전부 끝** | `23c4c8cd`·`4c16bc71` |
 
 ### 진행 중
 
-- **#72 import 정렬 게이트** — 사용자 승인. ✅ **사전 점검 go**(2026-09-25): spotless 8.4.0 + ktlint 1.8.0, 파서 오류 0, 위반 238파일(조사와 파일 집합까지 일치),
+- **#72 import 정렬 게이트** — 사용자 승인. **지금 단독 착수**(진행 중 파도 0). ✅ 사전 점검 go(2026-09-25): spotless 8.4.0 + ktlint 1.8.0, 파서 오류 0, 위반 238파일(조사와 파일 집합까지 일치),
   정렬 diff는 import·빈 줄뿐(멱등), 적용 뒤 게이트 전부 초록, 게이트에 더해지는 시간 1~6초. `.editorconfig`의 `ktlint_standard = disabled` 한 줄이 규모를 좌우한다
   (빼면 341파일·±14,232줄). 설정 패치는 사전 점검 워크트리 `wf_b7e06054-62d-1`의 `ffb97532`. 진행 중 A줄(#83·#91·#86·#36)이 들어간 뒤 단독 착수.
 - **#92 KataGo 접바둑 가정** — ✅ main에 들어갔다(`d21f701b`, 엔진 기동 인자 `-override-config`로 gtp·analysis 양쪽 — 옛 cfg가 있는 설치 기기에도 적용).
@@ -251,8 +253,6 @@ Hilt(commonMain 불가)·Koin(이득 0)·전면 MVI(이미 절반 작동)·모�
       **`#49` 착수 직전에 합집합 그래프로 한 번 더 잰다** — 그때 `debugreport`·`humanmove`를 떼어내면 `engine`·`endgame`을
       직접 의존으로 선언하거나 `api`로 노출해야 한다(안 하면 위 두 간선에서 컴파일이 깨진다).
 
-86. **포트 시그니처가 저장 형식을 드러낸다** (AI 모델: Sonnet, 노력정도: 낮음)
-    · `SavedGameStorePort.readRawJson()`, `EngineBenchmarkStorePort.loadText()`·`path()` — 디버그 리포트용이다. 우선순위 낮음.
 92. **KataGo가 백의 첫 착점 전 흑돌을 전부 접바둑 돌로 센다** (AI 모델: Sonnet, 노력정도: 낮음) — `#89` 검수가 찾음, 면적계가에서만
     · 앱 cfg(`friend/assets/katago/gtp_learning.cfg`)가 `assumeMultipleStartingBlackMovesAreHandicap`를 안 적어 기본값 true다.
       백이 첫 수 전에 패스하면 KataGo는 그 사이 흑이 둔 돌까지 보정에 넣는다 — 2점에서 백 패스·흑 A9면 KataGo N=3, 앱 2.
@@ -389,7 +389,7 @@ Hilt(commonMain 불가)·Koin(이득 0)·전면 MVI(이미 절반 작동)·모�
     · `#42`(WiringContext)·`#43`(배선 테스트)보다 **먼저** — 그래야 둘이 처음부터 역할 타입을 쓴다. 컨트롤러 10개를 한꺼번에 건드리므로 병렬 금지.
     · `capabilities`는 읽는 곳이 기동·벤치마크뿐이라 수명 역할에만 둔다(원격의 backendId 누락은 `#54` 때 다시 본다).
     · 선행 둘은 따로 뗀다: `#98`(onProgress → Flow, 실기), `#99`(닿지 않는 undoMove 경로 삭제).
-36. **좌표 표기 경계 굳히기 — `BoardCoordinate` 유지** (AI 모델: Opus, 노력정도: 높음) — 2026-09-25 범위 재정의(원래 "`BoardPosition` 도입")
+36. **좌표 표기 경계 굳히기 — `BoardCoordinate` 유지** (AI 모델: Opus, 노력정도: 높음) — 2026-09-25 범위 재정의(원래 "`BoardPosition` 도입"). ✅ **1단계 끝(`7b6bacce`)** — 남은 것: GTP 파서 3벌 통합, 열 알파벳 통합
     · ⚠️ **새 좌표 타입은 필요 없다**(실측) — 메모리 안에서는 엔진 계약·비전·UI·`GameState`가 이미 전부 `BoardCoordinate`로 오가고 원시 좌표를 받는
       시그니처는 0건이다. 문자열·Int는 세 경계(엔진 와이어, 저장 JSON, 로그 문구)에서만 산다. `BoardPosition`은 결함을 하나도 못 없애는 대량 치환이고,
       이름도 코드의 "국면" 어휘와 부딪힌다.
