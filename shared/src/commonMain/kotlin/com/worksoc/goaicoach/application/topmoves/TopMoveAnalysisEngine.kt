@@ -8,7 +8,7 @@ import com.worksoc.goaicoach.application.analysis.withTopMovesStrengthHeader
 import com.worksoc.goaicoach.application.contract.AnalysisCacheKey
 import com.worksoc.goaicoach.application.contract.GameSessionEffect
 import com.worksoc.goaicoach.application.contract.TopMoveAnalysisPlan
-import com.worksoc.goaicoach.application.engine.EngineSessionClient
+import com.worksoc.goaicoach.application.engine.EngineAnalysisClient
 import com.worksoc.goaicoach.application.session.TopMoveAnalysisUpdate
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisPreset
@@ -89,7 +89,7 @@ fun buildCompletedTopMoveAnalysisUpdate(
     )
 }
 
-suspend fun EngineSessionClient.runTopMoveAnalysis(
+suspend fun EngineAnalysisClient.runTopMoveAnalysis(
     targetState: GameState,
     engineProfile: EngineProfile,
     analysisPreset: AnalysisPreset,
@@ -116,7 +116,7 @@ suspend fun EngineSessionClient.runTopMoveAnalysis(
     )
 }
 
-internal suspend fun EngineSessionClient.runTopMoveAnalysisEffect(
+internal suspend fun EngineAnalysisClient.runTopMoveAnalysisEffect(
     effect: GameSessionEffect.RunTopMoveAnalysis,
     context: TopMoveAnalysisExecutionContext,
 ): TopMoveAnalysisUpdate =
@@ -130,7 +130,7 @@ internal suspend fun EngineSessionClient.runTopMoveAnalysisEffect(
         cacheEnabled = context.cacheEnabled,
     )
 
-internal suspend fun EngineSessionClient.runTopMoveAnalysisWorkflowResult(
+internal suspend fun EngineAnalysisClient.runTopMoveAnalysisWorkflowResult(
     effect: GameSessionEffect.RunTopMoveAnalysis,
     context: TopMoveAnalysisExecutionContext,
 ): TopMoveAnalysisWorkflowResult =
@@ -144,7 +144,7 @@ internal suspend fun EngineSessionClient.runTopMoveAnalysisWorkflowResult(
         onFailure = { error -> TopMoveAnalysisWorkflowResult.Failure(error) },
     )
 
-internal suspend fun EngineSessionClient.runTopMoveAnalysisEffectApplyPlan(
+internal suspend fun EngineAnalysisClient.runTopMoveAnalysisEffectApplyPlan(
     request: TopMoveAnalysisEffectLaunchRequest,
 ): TopMoveAnalysisCompletionApplyPlan =
     buildTopMoveAnalysisCompletionPlan(

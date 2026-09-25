@@ -2,7 +2,7 @@ package com.worksoc.goaicoach.application.topmoves
 
 import com.worksoc.goaicoach.application.analysis.CachedAnalysisResult
 import com.worksoc.goaicoach.application.contract.AnalysisCacheKey
-import com.worksoc.goaicoach.application.engine.EngineSessionClient
+import com.worksoc.goaicoach.application.engine.EngineAnalysisClient
 import com.worksoc.goaicoach.application.session.GameSessionControllerState
 import com.worksoc.goaicoach.application.session.TopMoveAnalysisFailureDisplayPlan
 import com.worksoc.goaicoach.application.session.TopMoveAnalysisUpdate
@@ -12,7 +12,7 @@ import com.worksoc.goaicoach.shared.policy.EngineOperationRequest
 import com.worksoc.goaicoach.shared.policy.EngineOperationResultGuard
 
 class TopMovesController(
-    private val engineClient: EngineSessionClient,
+    private val engineClient: EngineAnalysisClient,
     private val currentControllerState: () -> GameSessionControllerState,
     private val isGameEnded: () -> Boolean,
     private val isEngineReady: () -> Boolean,

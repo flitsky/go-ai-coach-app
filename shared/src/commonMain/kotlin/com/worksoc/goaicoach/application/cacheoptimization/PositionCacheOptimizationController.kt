@@ -5,7 +5,7 @@ import com.worksoc.goaicoach.application.analysis.PostGamePositionAnalysisCacheO
 import com.worksoc.goaicoach.application.analysis.buildPositionAnalysisCacheOptimizationPlan
 import com.worksoc.goaicoach.application.analysis.refreshPositionAnalysisCacheOptimizationPrompt
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
-import com.worksoc.goaicoach.application.engine.EngineSessionClient
+import com.worksoc.goaicoach.application.engine.EngineAnalysisClient
 import com.worksoc.goaicoach.application.time.currentEpochMillis
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.shared.domain.GameState
@@ -20,7 +20,7 @@ import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
  * lives in the caller and is reached through the accessors below.
  */
 class PositionCacheOptimizationController(
-    private val engineClient: EngineSessionClient,
+    private val engineClient: EngineAnalysisClient,
     private val diagnosticEventLog: DiagnosticEventLogPort,
     private val currentGameState: () -> GameState,
     private val currentPlayerSetup: () -> PlayerSetup,

@@ -4,7 +4,7 @@ import com.worksoc.goaicoach.application.analysis.CachedAnalysisResult
 import com.worksoc.goaicoach.application.contract.AnalysisCacheKey
 import com.worksoc.goaicoach.application.contract.GameSessionEffect
 import com.worksoc.goaicoach.application.contract.TopMoveAnalysisPlan
-import com.worksoc.goaicoach.application.engine.EngineSessionClient
+import com.worksoc.goaicoach.application.engine.EngineAnalysisClient
 import com.worksoc.goaicoach.application.engine.runEngineIo
 import com.worksoc.goaicoach.application.session.GameSessionAnalysisState
 import com.worksoc.goaicoach.application.session.GameSessionControllerState
@@ -120,7 +120,7 @@ internal data class TopMoveAnalysisEffectLaunchRequest(
 )
 
 internal data class TopMoveAnalysisRunRequest(
-    val engineClient: EngineSessionClient,
+    val engineClient: EngineAnalysisClient,
     val controllerState: GameSessionControllerState,
     val targetState: GameState,
     val deep: Boolean,

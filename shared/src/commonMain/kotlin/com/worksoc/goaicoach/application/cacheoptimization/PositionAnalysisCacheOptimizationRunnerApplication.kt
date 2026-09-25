@@ -4,7 +4,7 @@ import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizat
 import com.worksoc.goaicoach.application.contract.GameSessionEffect
 import com.worksoc.goaicoach.application.contract.PositionAnalysisCacheOptimizationPlan
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
-import com.worksoc.goaicoach.application.engine.EngineSessionClient
+import com.worksoc.goaicoach.application.engine.EngineAnalysisClient
 import com.worksoc.goaicoach.application.engine.runEngineIo
 import com.worksoc.goaicoach.shared.policy.EngineFallbackPolicy
 import com.worksoc.goaicoach.shared.policy.EngineOperationKind
@@ -17,7 +17,7 @@ internal data class PositionAnalysisCacheOptimizationRunRequest(
     val uiState: PositionAnalysisCacheOptimizationUiState,
     val isEngineBusy: Boolean,
     val sessionGeneration: Long,
-    val engineClient: EngineSessionClient,
+    val engineClient: EngineAnalysisClient,
     val diagnosticEventLog: DiagnosticEventLogPort,
     val currentUiStateProvider: () -> PositionAnalysisCacheOptimizationUiState,
     val applyUiState: (PositionAnalysisCacheOptimizationUiState) -> Unit,
