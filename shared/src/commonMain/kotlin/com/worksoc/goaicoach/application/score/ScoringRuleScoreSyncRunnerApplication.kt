@@ -7,11 +7,9 @@ import com.worksoc.goaicoach.application.engine.runEngineIo
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
-import com.worksoc.goaicoach.shared.policy.EngineFallbackPolicy
 import com.worksoc.goaicoach.shared.policy.EngineOperationKind
 import com.worksoc.goaicoach.shared.policy.EngineOperationRequest
 import com.worksoc.goaicoach.shared.policy.EngineTimeoutPolicy
-import com.worksoc.goaicoach.shared.policy.engineOperationRequest
 
 data class ScoringRuleSyncEffectLaunchRequest(
     val state: GameState,
@@ -75,32 +73,30 @@ suspend fun EngineSessionClient.runScoringRuleSyncApplyPlan(
     ).toApplyPlan()
 
 fun runScoringRuleSyncApplication(request: ScoringRuleSyncRunRequest) {
-    val operation = engineOperationRequest(
+    ScoreSyncFlow(
         kind = EngineOperationKind.ScoringRuleSync,
         state = request.state,
         sessionGeneration = request.sessionGeneration,
         timeoutPolicy = request.timeoutPolicy,
-        fallbackPolicy = EngineFallbackPolicy.LocalRules,
-    )
-    request.runEngineOperation(operation) {
-        val followUpAnalysisState = request.applyCompletion(
-            request.runEngineWork {
-                request.engineClient.runScoringRuleSyncApplyPlan(
-                    request = ScoringRuleSyncEffectLaunchRequest(
-                        state = request.state,
-                        profile = request.profile,
-                        previousSnapshots = request.previousSnapshots,
-                        engineMessage = request.engineMessage,
-                        operation = operation,
-                        currentState = request.currentState(),
-                        currentSessionGeneration = request.currentSessionGeneration(),
-                        followUpAnalysisState = request.state,
-                        fallbackMessage = request.fallbackMessage,
-                    ),
-                    diagnosticEventLog = request.diagnosticEventLog,
-                )
-            },
+        currentState = request.currentState,
+        currentSessionGeneration = request.currentSessionGeneration,
+        runEngineWork = request.runEngineWork,
+        applyCompletion = request.applyCompletion,
+        requestFollowUpAnalysis = request.requestFollowUpAnalysis,
+    ) { operation, currentState, currentSessionGeneration ->
+        request.engineClient.runScoringRuleSyncApplyPlan(
+            request = ScoringRuleSyncEffectLaunchRequest(
+                state = request.state,
+                profile = request.profile,
+                previousSnapshots = request.previousSnapshots,
+                engineMessage = request.engineMessage,
+                operation = operation,
+                currentState = currentState,
+                currentSessionGeneration = currentSessionGeneration,
+                followUpAnalysisState = request.state,
+                fallbackMessage = request.fallbackMessage,
+            ),
+            diagnosticEventLog = request.diagnosticEventLog,
         )
-        followUpAnalysisState?.let(request.requestFollowUpAnalysis)
-    }
+    }.launchFollowingUpInside(request.runEngineOperation)
 }

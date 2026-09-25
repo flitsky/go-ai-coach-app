@@ -7,11 +7,9 @@ import com.worksoc.goaicoach.application.engine.runEngineIo
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
-import com.worksoc.goaicoach.shared.policy.EngineFallbackPolicy
 import com.worksoc.goaicoach.shared.policy.EngineOperationKind
 import com.worksoc.goaicoach.shared.policy.EngineOperationRequest
 import com.worksoc.goaicoach.shared.policy.EngineTimeoutPolicy
-import com.worksoc.goaicoach.shared.policy.engineOperationRequest
 
 data class PostUndoScoreSyncEffectLaunchRequest(
     val state: GameState,
@@ -75,33 +73,30 @@ internal suspend fun EngineSessionClient.runPostUndoScoreSyncApplyPlan(
     ).toApplyPlan()
 
 suspend fun runPostUndoScoreSyncApplication(request: PostUndoScoreSyncRunRequest) {
-    val operation = engineOperationRequest(
+    ScoreSyncFlow(
         kind = EngineOperationKind.PostUndoSync,
         state = request.state,
         sessionGeneration = request.sessionGeneration,
         timeoutPolicy = request.timeoutPolicy,
-        fallbackPolicy = EngineFallbackPolicy.LocalRules,
-    )
-    var followUpAnalysisState: GameState? = null
-    request.runEngineOperation(operation) {
-        followUpAnalysisState = request.applyCompletion(
-            request.runEngineWork {
-                request.engineClient.runPostUndoScoreSyncApplyPlan(
-                    request = PostUndoScoreSyncEffectLaunchRequest(
-                        state = request.state,
-                        profile = request.profile,
-                        previousSnapshots = request.previousSnapshots,
-                        engineMessage = request.engineMessage,
-                        operation = operation,
-                        currentState = request.currentState(),
-                        currentSessionGeneration = request.currentSessionGeneration(),
-                        followUpAnalysisState = request.state,
-                        fallbackMessage = request.fallbackMessage,
-                    ),
-                    diagnosticEventLog = request.diagnosticEventLog,
-                )
-            },
+        currentState = request.currentState,
+        currentSessionGeneration = request.currentSessionGeneration,
+        runEngineWork = request.runEngineWork,
+        applyCompletion = request.applyCompletion,
+        requestFollowUpAnalysis = request.requestFollowUpAnalysis,
+    ) { operation, currentState, currentSessionGeneration ->
+        request.engineClient.runPostUndoScoreSyncApplyPlan(
+            request = PostUndoScoreSyncEffectLaunchRequest(
+                state = request.state,
+                profile = request.profile,
+                previousSnapshots = request.previousSnapshots,
+                engineMessage = request.engineMessage,
+                operation = operation,
+                currentState = currentState,
+                currentSessionGeneration = currentSessionGeneration,
+                followUpAnalysisState = request.state,
+                fallbackMessage = request.fallbackMessage,
+            ),
+            diagnosticEventLog = request.diagnosticEventLog,
         )
-    }
-    followUpAnalysisState?.let(request.requestFollowUpAnalysis)
+    }.runFollowingUpAfter(request.runEngineOperation)
 }

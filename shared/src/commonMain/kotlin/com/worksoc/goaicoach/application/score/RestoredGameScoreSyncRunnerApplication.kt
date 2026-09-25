@@ -124,33 +124,31 @@ internal suspend fun EngineSessionClient.runRestoredGameSyncApplyPlan(
     ).toApplyPlan()
 
 fun runRestoredGameSyncApplication(request: RestoredGameSyncRunRequest) {
-    val operation = engineOperationRequest(
+    ScoreSyncFlow(
         kind = EngineOperationKind.RestoredGameSync,
         state = request.state,
         sessionGeneration = request.sessionGeneration,
         timeoutPolicy = request.timeoutPolicy,
-        fallbackPolicy = EngineFallbackPolicy.LocalRules,
-    )
-    request.runEngineOperation(operation) {
-        val followUpAnalysisState = request.applyCompletion(
-            request.runEngineWork {
-                request.engineClient.runRestoredGameSyncApplyPlan(
-                    request = RestoredGameSyncEffectLaunchRequest(
-                        effect = GameSessionEffect.SyncRestoredGame(request.state),
-                        context = RestoredGameSyncExecutionContext(
-                            profile = request.profile,
-                        ),
-                        operation = operation,
-                        currentState = request.currentState(),
-                        currentSessionGeneration = request.currentSessionGeneration(),
-                        followUpAnalysisState = request.state,
-                        scoreSnapshots = request.scoreSnapshots,
-                        fallbackMessage = request.fallbackMessage,
-                    ),
-                    diagnosticEventLog = request.diagnosticEventLog,
-                )
-            },
+        currentState = request.currentState,
+        currentSessionGeneration = request.currentSessionGeneration,
+        runEngineWork = request.runEngineWork,
+        applyCompletion = request.applyCompletion,
+        requestFollowUpAnalysis = request.requestFollowUpAnalysis,
+    ) { operation, currentState, currentSessionGeneration ->
+        request.engineClient.runRestoredGameSyncApplyPlan(
+            request = RestoredGameSyncEffectLaunchRequest(
+                effect = GameSessionEffect.SyncRestoredGame(request.state),
+                context = RestoredGameSyncExecutionContext(
+                    profile = request.profile,
+                ),
+                operation = operation,
+                currentState = currentState,
+                currentSessionGeneration = currentSessionGeneration,
+                followUpAnalysisState = request.state,
+                scoreSnapshots = request.scoreSnapshots,
+                fallbackMessage = request.fallbackMessage,
+            ),
+            diagnosticEventLog = request.diagnosticEventLog,
         )
-        followUpAnalysisState?.let(request.requestFollowUpAnalysis)
-    }
+    }.launchFollowingUpInside(request.runEngineOperation)
 }
