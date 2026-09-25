@@ -11,7 +11,9 @@ import java.nio.file.Files
  * 어댑터는 [KataGoProcessConfig.executablePath]를 `ProcessBuilder`로 그대로 띄운다. 그래서
  * 그 자리에 POSIX `sh` 스크립트 하나를 놓으면 어댑터 코드는 한 줄도 바꾸지 않고 끝단까지 돈다.
  *
- * - `gtp` 모드: 모든 명령에 빈 성공 응답(`=`)을 돌려준다. 어떤 명령이 갔는지는 보지 않는다.
+ * - `gtp` 모드: 들어온 명령 한 줄을 [gtpCommands]가 읽는 파일에 **그대로** 적는다. `genmove`에는
+ *   `= pass`를, 나머지 명령에는 빈 성공 응답(`=`)을 돌려준다 — 어느 국면에서든 늘 합법인
+ *   수는 패스뿐이라서다(refactor backlog #91).
  * - `analysis` 모드: 들어온 JSON 쿼리 한 줄을 [queries]가 읽는 파일에 **그대로** 적고,
  *   같은 `id`로 후보 없는 최소 응답을 돌려준다. `rootInfo.scoreLead`가 없으므로 어댑터는
  *   policy-refine 쿼리를 더 보내지 않는다 — `analyze()` 한 번에 쿼리 한 줄이다.
@@ -23,6 +25,7 @@ internal class FakeKataGoExecutable private constructor(
     private val directory: File,
 ) : Closeable {
     private val queryLog = File(directory, QueryLogName)
+    private val gtpLog = File(directory, GtpLogName)
 
     val processConfig: KataGoProcessConfig = KataGoProcessConfig(
         executablePath = File(directory, "katago").path,
@@ -42,12 +45,21 @@ internal class FakeKataGoExecutable private constructor(
     fun lastQuery(): JSONObject =
         queries().lastOrNull() ?: error("The fake KataGo analysis process never received a query")
 
+    /** 지금까지 `analysis` 프로세스가 받은 쿼리 줄, 받은 순서대로 — 어댑터가 쓴 바이트 그대로. */
+    fun rawQueryLines(): List<String> =
+        if (queryLog.isFile) queryLog.readLines().filter { it.isNotBlank() } else emptyList()
+
+    /** 지금까지 `gtp` 프로세스가 받은 명령 줄, 받은 순서대로 — 어댑터가 쓴 바이트 그대로. */
+    fun gtpCommands(): List<String> =
+        if (gtpLog.isFile) gtpLog.readLines().filter { it.isNotBlank() } else emptyList()
+
     override fun close() {
         directory.deleteRecursively()
     }
 
     companion object {
         private const val QueryLogName = "analysis-queries.jsonl"
+        private const val GtpLogName = "gtp-commands.log"
 
         fun create(): FakeKataGoExecutable {
             val directory = Files.createTempDirectory("fake-katago").toFile()
@@ -77,7 +89,11 @@ internal class FakeKataGoExecutable private constructor(
             |    ;;
             |  *)
             |    while IFS= read -r line; do
-            |      printf '=\n\n'
+            |      printf '%s\n' "${D}line" >> "${D}here/$GtpLogName"
+            |      case "${D}line" in
+            |        genmove*) printf '= pass\n\n' ;;
+            |        *) printf '=\n\n' ;;
+            |      esac
             |      [ "${D}line" = quit ] && exit 0
             |    done
             |    ;;
