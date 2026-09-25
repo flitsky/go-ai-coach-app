@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.shared.domain
 
 import com.worksoc.goaicoach.shared.scoring.BoardAreaScorer
+import com.worksoc.goaicoach.shared.scoring.BoardRegionAnalyzer
 import com.worksoc.goaicoach.shared.scoring.BoardTerritoryScorer
 
 /**
@@ -114,16 +115,17 @@ internal fun goldenPoint(
 ): BoardCoordinate = BoardCoordinate.fromLabel(label, boardSize)
 
 /**
- * 두 계가기가 **빈 점의 주인을 누구로 보는가**를 공개 API만으로 되짚은 값.
+ * 두 계가기가 **빈 점의 주인을 누구로 보는가**를 공개 결과만으로 되짚은 값.
  *
- * `BoardAreaScorer`/`BoardTerritoryScorer`의 플러드필은 `private`이라 직접 부를 수 없다.
- * 대신 각자가 공개하는 합에서 자기 항을 빼면 **빈 점 소유 수만** 남는다.
+ * 두 계가기는 이 판정을 `BoardRegionAnalyzer`에게 맡긴다(refactor backlog #38). 그래도 여기서는
+ * 분석기를 부르지 않고 각 계가기가 공개하는 합에서 자기 항을 뺀다 — 그러면 **빈 점 소유 수만**
+ * 남고, 어느 계가기가 분석기 대신 제 판정을 다시 들이면 그 차이가 이 값에 드러난다.
  *
  * - 영역(중국식): `blackArea = 흑 돌 수 + 흑 소유 빈 점`
  *   (백 쪽 합계에는 접바둑 보정이 들어 있어 그것도 뺀다 — #89)
  * - 집(일본식):   `blackArea = 흑 소유 빈 점 + 흑 사석`
  *
- * 리팩토링 일감 #38(`BoardRegionAnalyzer` 통합)이 기대는 값이 바로 이것이다.
+ * 분석기를 직접 부른 값은 [regionAnalyzerOwnership]이다.
  */
 internal data class EmptyPointOwnership(
     val black: Int,
@@ -151,3 +153,9 @@ internal fun territoryScorerOwnership(state: GameState): EmptyPointOwnership {
         white = (whiteScore - state.capturedBy(StoneColor.White)).toInt(),
     )
 }
+
+/** `BoardRegionAnalyzer`를 직접 부른 빈 점 소유 수 — 두 계가기에서 되짚은 값이 이것과 같아야 한다. */
+internal fun regionAnalyzerOwnership(state: GameState): EmptyPointOwnership =
+    BoardRegionAnalyzer.ownedEmptyPoints(state).let { owned ->
+        EmptyPointOwnership(black = owned.black, white = owned.white)
+    }

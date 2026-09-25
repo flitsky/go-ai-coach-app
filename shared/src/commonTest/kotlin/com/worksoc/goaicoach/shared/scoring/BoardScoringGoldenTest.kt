@@ -16,6 +16,7 @@ import com.worksoc.goaicoach.shared.domain.allCoordinates
 import com.worksoc.goaicoach.shared.domain.areaScorerOwnership
 import com.worksoc.goaicoach.shared.domain.goldenBoard
 import com.worksoc.goaicoach.shared.domain.neighbors
+import com.worksoc.goaicoach.shared.domain.regionAnalyzerOwnership
 import com.worksoc.goaicoach.shared.domain.territoryScorerOwnership
 import com.worksoc.goaicoach.shared.domain.toState
 import kotlin.random.Random
@@ -26,10 +27,10 @@ import kotlin.test.assertTrue
 /**
  * **계가 세 짝(`BoardScorer`/`BoardAreaScorer`/`BoardTerritoryScorer`)의 골든 테스트.**
  *
- * ## 왜 지금 이것이 필요한가
- * 리팩토링 트랙의 다음 단계가 **도메인 파일을 옮긴다**(#24 `shared` 루트 22파일 분할,
- * #38 플러드필 통합). 옮긴 뒤 "같은 답이 나오는가"를 물으려면 **옮기기 전의 답이 표로 박혀
- * 있어야** 한다. 이 파일이 그 표다.
+ * ## 왜 이것이 필요한가
+ * 리팩토링 트랙이 **도메인 파일을 옮기고**(#24 `shared` 루트 22파일 분할) **두 계가기의 플러드필을
+ * 합쳤다**(#38 `BoardRegionAnalyzer`). 옮기거나 합친 뒤 "같은 답이 나오는가"를 물으려면 **그 전의
+ * 답이 표로 박혀 있어야** 한다. 이 파일이 그 표다.
  *
  * ## `BoardTerritoryScorer`는 여기 오기 전까지 전용 테스트가 없었다
  * 저장소 전체에서 이름이 등장하는 곳은 `BoardScorer`의 분기 한 줄뿐이었다. 일본식 룰로 두는
@@ -267,26 +268,31 @@ class BoardScoringGoldenTest {
         assertEquals(EmptyPointOwnership(black = 0, white = 0), territoryScorerOwnership(state))
     }
 
-    // ------------------------------------------------- 두 플러드필의 소유 판정 일치
+    // ------------------------------------------------- 두 계가기의 소유 판정 일치
 
     /**
-     * ⭐ **#38(`BoardRegionAnalyzer` 통합)이 기대는 안전망.**
+     * ⭐ **두 계가기는 빈 점의 주인을 같게 본다 — `BoardRegionAnalyzer`의 판정 그대로.**
      *
-     * `BoardAreaScorer`와 `BoardTerritoryScorer`의 플러드필은 지금 **타입 이름만 다른 복제**다.
      * 두 계가기가 내는 *점수*는 다를 수 있지만(전자는 돌을, 후자는 사석을 더한다),
-     * **어느 빈 점이 누구 것인가**는 같아야 한다. 통합한 뒤에도 그래야 하고, 통합하지 않더라도
-     * 복제가 다시 갈라지면 여기서 빨개진다.
+     * **어느 빈 점이 누구 것인가**는 같아야 한다. 이 판정은 원래 `BoardAreaScorer`와
+     * `BoardTerritoryScorer`에 **타입 이름만 다른 복제**로 한 벌씩 있었고, #38에서
+     * `BoardRegionAnalyzer` 한 벌로 합쳤다. 누가 다시 한쪽에만 제 판정을 두어 갈라지면 여기서 빨개진다.
      *
-     * 소유 수는 공개 API에서 되짚는다 — 자세한 산식은 `areaScorerOwnership` KDoc에 있다.
+     * 소유 수는 각 계가기의 **공개 결과에서 되짚는다**(자세한 산식은 `areaScorerOwnership` KDoc).
+     * 분석기를 직접 부른 값과 비교하는 것은 그다음이다 — 계가기가 분석기를 쓰는지를 코드가 아니라
+     * 결과로 확인하려는 것이다.
      */
     @Test
     fun bothScorersAgreeOnWhoOwnsEachEmptyPoint() {
         val failures = ownershipCases().mapNotNull { case ->
             val fromArea = areaScorerOwnership(case.state)
             val fromTerritory = territoryScorerOwnership(case.state)
+            val fromAnalyzer = regionAnalyzerOwnership(case.state)
             when {
                 fromArea != fromTerritory ->
-                    "${case.name}: 영역 계가기는 $fromArea, 집 계가기는 $fromTerritory — 복제가 갈라졌다"
+                    "${case.name}: 영역 계가기는 $fromArea, 집 계가기는 $fromTerritory — 두 계가기가 갈라졌다"
+                fromArea != fromAnalyzer ->
+                    "${case.name}: 계가기는 $fromArea, BoardRegionAnalyzer는 $fromAnalyzer"
                 fromArea != case.expected ->
                     "${case.name}: $fromArea (기대 ${case.expected})"
                 else -> null
@@ -297,10 +303,10 @@ class BoardScoringGoldenTest {
     }
 
     /**
-     * 손으로 기대값을 셀 수 없을 만큼 복잡한 판에서도 두 플러드필이 갈라지지 않는지 본다.
+     * 손으로 기대값을 셀 수 없을 만큼 복잡한 판에서도 두 계가기가 갈라지지 않는지 본다.
      *
-     * 절대값 대신 **관계**만 단언한다 — 소유 판정이 서로 같고, 소유한 빈 점의 합이 실제 빈 점 수를
-     * 넘지 않는다(나머지는 공배다).
+     * 절대값 대신 **관계**만 단언한다 — 소유 판정이 서로 같고(분석기와도 같고), 소유한 빈 점의 합이
+     * 실제 빈 점 수를 넘지 않는다(나머지는 공배다).
      */
     @Test
     fun bothScorersAgreeOnACrowdedBoardThatNobodyCanCountByHand() {
@@ -311,6 +317,7 @@ class BoardScoringGoldenTest {
         val fromTerritory = territoryScorerOwnership(state)
 
         assertEquals(fromArea, fromTerritory)
+        assertEquals(regionAnalyzerOwnership(state), fromArea)
         assertTrue(
             fromArea.black + fromArea.white <= emptyPoints,
             "소유한 빈 점 ${fromArea.black + fromArea.white}이 실제 빈 점 $emptyPoints 보다 많다.",
@@ -320,6 +327,7 @@ class BoardScoringGoldenTest {
 
     /**
      * ⭐ **무작위 종국 판 수백 개에서도 두 룰셋이 같은 빈 점 소유를 낸다**(refactor backlog #38).
+     * 그 소유는 `BoardRegionAnalyzer`를 직접 부른 값과도 같아야 한다.
      *
      * 위 두 테스트의 판은 전부 손으로 고른 9x9다. 복제가 갈라지는 길은 손으로 고른 판이 닿지 않는
      * 곳에 더 많다 — 판 크기를 9로 박은 이웃 계산, 수십 점짜리 큰 영역, 두 색이 다 닿는 공배 덩어리.
@@ -338,12 +346,17 @@ class BoardScoringGoldenTest {
         }
 
         val failures = owned.mapNotNull { (board, fromArea, fromTerritory) ->
-            if (fromArea == fromTerritory) null else "${board.name}: 영역 계가기는 $fromArea, 집 계가기는 $fromTerritory"
+            val fromAnalyzer = regionAnalyzerOwnership(board.state)
+            when {
+                fromArea != fromTerritory -> "${board.name}: 영역 계가기는 $fromArea, 집 계가기는 $fromTerritory"
+                fromArea != fromAnalyzer -> "${board.name}: 계가기는 $fromArea, BoardRegionAnalyzer는 $fromAnalyzer"
+                else -> null
+            }
         }
         assertEquals(
             emptyList<String>(),
             failures,
-            "무작위 종국 판 ${boards.size}개 중 ${failures.size}개에서 두 룰셋의 빈 점 소유가 갈라졌다:\n" +
+            "무작위 종국 판 ${boards.size}개 중 ${failures.size}개에서 빈 점 소유가 갈라졌다:\n" +
                 failures.take(10).joinToString("\n"),
         )
 
@@ -609,7 +622,7 @@ class BoardScoringGoldenTest {
         ". . O . . . X . .",
     )
 
-    /** 손으로 셀 수 없는 실전 형태 — 절대값이 아니라 두 플러드필의 **일치**만 본다. */
+    /** 손으로 셀 수 없는 실전 형태 — 절대값이 아니라 두 계가기의 **일치**만 본다. */
     private fun crowdedBoard(): GoldenBoard = goldenBoard(
         "X X O O . O O X X",
         "X . X O O O X X .",
