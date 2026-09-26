@@ -84,6 +84,12 @@ internal object RepoPaths {
     /** `ui/GoCoachApp.kt`. 이 파일이 옮겨지면 **여기 한 줄**만 고치면 된다. */
     val goCoachApp: File get() = appAndroid("ui/GoCoachApp.kt")
 
+    /** 셸 상태 원장(#46). ⚠️ 옮기면 app-android/build.gradle.kts의 architectureBudgets 입력도 옮길 것(#103). */
+    val architectureBudgets: File get() = root.resolve("app-android/architecture-budgets.json")
+
+    /** L17 자기검증이 읽는 모듈 빌드 스크립트. */
+    val appAndroidBuildScript: File get() = root.resolve("app-android/build.gradle.kts")
+
     /** app-android 프로덕션 소스의 `com.worksoc.goaicoach` 패키지 루트(또는 그 아래 경로). */
     fun appAndroid(relativePath: String = ""): File = resolveUnder(APP_ANDROID, relativePath)
 

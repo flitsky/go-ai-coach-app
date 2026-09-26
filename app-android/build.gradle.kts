@@ -512,6 +512,12 @@ tasks.withType<Test>().configureEach {
     inputs.dir(rootDir.resolve("app-android/src/main/assets/reference_games"))
         .withPropertyName("bundledReferenceGames")
         .withPathSensitivity(PathSensitivity.RELATIVE)
+    // 셸 상태 원장(refactor backlog #46)을 테스트가 실행 중에 읽는다 — 스캔 트리 밖의 설정 파일이라
+    // 선언하지 않으면 원장만 고친 빌드가 UP-TO-DATE로 건너뛰어진다(#103의 교훈). optional()을 붙이지 말 것 —
+    // 파일이 없으면 입력 검증에서 터져야 한다.
+    inputs.file(rootDir.resolve("app-android/architecture-budgets.json"))
+        .withPropertyName("architectureBudgets")
+        .withPathSensitivity(PathSensitivity.RELATIVE)
 }
 
 // import 순서 게이트(refactor backlog #72). 어떤 ktlint 규칙이 도는지는 루트 .editorconfig가 정한다 —

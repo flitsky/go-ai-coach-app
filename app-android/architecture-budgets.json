@@ -1,0 +1,94 @@
+{
+  "_readme": "셸 상태 원장(refactor backlog #46). 여기는 '무엇이 있고 왜'만 적는다 — 종류의 뜻·역할별 허용 종류·모양 검사·부채 동결·효과 수·줄 상한은 테스트 코드(architecture/ShellStateLedger.kt)가 정하고, ⚠️ 그것을 넓히는 것(종류·역할·모양·관용구 추가, 효과 수·줄 상한 상향, 새 부채)은 옛 '숫자 상향'이라 사용자 결정이 필요하다 — 맞는 종류가 없으면 정책을 넓히지 말고 그 상태를 쓰는 역할로 옮긴다. sites는 소스의 컴포즈 훅 자리와 양방향으로 같아야 한다. 키는 '소유 함수.바인딩 이름'(효과는 '효과(첫 키)'; 같은 키가 또 나오면 소스 순서대로 #2·#3이라 위에 끼우면 번호가 밀린다). 항목을 더하기 전에 그 상태를 쓰는 역할이 가져야 하지 않는지 먼저 묻는다. since에는 그 변경의 백로그 번호(#NNN)를 적는다 — #46을 베끼지 말고, 카드가 없으면 먼저 만든다. why에는 셸이 그것을 가져야 하는 이유를 적는다. 부채 이름을 바꾸거나 소유 함수를 옮기면 SHELL_DEBT 키를 1:1로 옮겨 적는다(갚은 것이 아니다). codeLineBudget은 import·주석·빈 줄을 뺀 코드 줄이고 ShellStateLedger.GUARDED_SHELLS의 상한을 넘을 수 없다(내리는 것만 JSON 편집).",
+  "schema": 1,
+  "shells": {
+    "mainActivity": {
+      "codeLineBudget": 95,
+      "sites": {
+        "onCreate.preferencesStore": { "kind": "PLATFORM_PORT", "since": "#46", "why": "글꼴 배율을 읽는 설정 저장소 — #45에서 ProvideAppFontScale로 옮겨 간다" },
+        "onCreate.LaunchedEffect(preferencesStore)": { "kind": "STARTUP_EFFECT", "since": "#46", "why": "AppFontScaleState(전역) 적재 1회 — #45에서 사라진다" },
+        "onCreate.positionAnalysisCacheStore": { "kind": "PLATFORM_PORT", "since": "#46", "why": "국면 분석 캐시 저장소" },
+        "onCreate.diagnosticEventLog": { "kind": "PLATFORM_PORT", "since": "#46", "why": "진단 이벤트 로그(파일)" },
+        "onCreate.coreApiDeferred": { "kind": "WIRING", "since": "#46", "why": "준비 전 엔진 호출을 기다리게 하는 Deferred(#101)" },
+        "onCreate.sessionGenerationRelay": { "kind": "WIRING", "since": "#46", "why": "세션 세대 중계기 — GoCoachApp이 홀더를 만들며 잇는다(#18)" },
+        "onCreate.engineBootstrap": { "kind": "BOOTSTRAP", "since": "#46", "why": "엔진 부트스트랩 결과, 준비 전에는 null(#101)" },
+        "onCreate.LaunchedEffect(Unit)": { "kind": "BOOTSTRAP", "since": "#46", "why": "IO에서 부트스트랩 1회 — 엔진을 먼저 풀고 정체를 나중에 알린다" },
+        "onCreate.remoteClient": { "kind": "WIRING", "since": "#46", "why": "디버그 원격 엔진 후보(Stage E-3)" },
+        "onCreate.engineClient": { "kind": "WIRING", "since": "#46", "why": "엔진 세션 클라이언트 — ⚠️ engineBootstrap을 키로 쓰지 않는다(엔진 기동이 다시 돈다)" }
+      }
+    },
+    "goCoachApp": {
+      "codeLineBudget": 777,
+      "sites": {
+        "GoCoachScreen.preferencesStore": { "kind": "PLATFORM_PORT", "since": "#46", "why": "설정 저장소 — 초기 설정 읽기와 오토세이브가 공유" },
+        "GoCoachScreen.initialPreferences": { "kind": "STARTUP_READ", "since": "#46", "why": "설정 스냅샷을 디스크에서 한 번 읽는다" },
+        "GoCoachScreen.currentDestination": { "kind": "NAVIGATION", "since": "#46", "why": "현재 목적지 — 셸의 본업" },
+        "GoCoachScreen.showResignConfirmFromBack": { "kind": "VISIBILITY_GATE", "since": "#46", "why": "뒤로가기와 메뉴 '대국 나가기'가 함께 여는 기권 확인(#175)" },
+        "GoCoachScreen.showResumeDialog": { "kind": "VISIBILITY_GATE", "since": "#46", "why": "이어하기 확인 — 홈 카드에서만 열린다(홈으로 내릴 후보)" },
+        "GoCoachScreen.premiumState": { "kind": "DOMAIN_STATE", "since": "#46", "why": "저장소에서 복원한 구독·광고 권한 사본 — 홀더/ViewModel로(#40·#44)" },
+        "GoCoachScreen.sessionStore": { "kind": "PLATFORM_PORT", "since": "#46", "why": "대국 저장소(디버그 원문 #86 때문에 어댑터 타입으로 쥔다)" },
+        "GoCoachScreen.benchmarkStore": { "kind": "PLATFORM_PORT", "since": "#46", "why": "엔진 벤치마크 저장소" },
+        "GoCoachScreen.debugReportMirror": { "kind": "PLATFORM_PORT", "since": "#46", "why": "디버그 리포트 미러" },
+        "GoCoachScreen.clipboardPort": { "kind": "PLATFORM_PORT", "since": "#46", "why": "클립보드 포트" },
+        "GoCoachScreen.userNoticePort": { "kind": "PLATFORM_PORT", "since": "#46", "why": "사용자 알림 포트" },
+        "GoCoachScreen.runtimeEventLog": { "kind": "PLATFORM_PORT", "since": "#46", "why": "파일 기반 런타임 로그" },
+        "GoCoachScreen.defaultPlayLevel": { "kind": "STARTUP_READ", "since": "#46", "why": "기본 난이도 상수(최상위 val로 빼면 사라진다)" },
+        "GoCoachScreen.initialPlan": { "kind": "STARTUP_READ", "since": "#46", "why": "시작 설정 계획을 한 번 계산" },
+        "GoCoachScreen.sessionHolder": { "kind": "WIRING", "since": "#46", "why": "세션 상태의 유일한 원천 + 세대 중계 결속(#18)" },
+        "GoCoachScreen.sessionSnapshot": { "kind": "HOLDER_MIRROR", "since": "#46", "why": "홀더 상태의 컴포즈 사본 — mutateSession이 동기로 써서 collectAsState가 아니다. wiringContext 키(함정 67)" },
+        "GoCoachScreen.LaunchedEffect(sessionHolder)": { "kind": "HOLDER_MIRROR", "since": "#46", "why": "홀더를 sessionSnapshot으로 수집(위 사본의 짝)" },
+        "GoCoachScreen.isEngineBusy": { "kind": "ENGINE_STATE", "since": "#46", "why": "lifecycleController 콜백이 쓰는 엔진 바쁨 — wiringContext 키(함정 67)" },
+        "GoCoachScreen.isEngineBlockingBusy": { "kind": "ENGINE_STATE", "since": "#46", "why": "엔진 차단 바쁨 — wiringContext 키(함정 67)" },
+        "GoCoachScreen.engineActivityIndicator": { "kind": "ENGINE_STATE", "since": "#46", "why": "엔진 활동 표시 — 같은 콜백이 쓴다" },
+        "GoCoachScreen.engineTurnWaitCompletionSeq": { "kind": "ENGINE_STATE", "since": "#46", "why": "AI 차례 대기 완료 순번 — 같은 콜백이 쓴다" },
+        "GoCoachScreen.isEngineReady": { "kind": "ENGINE_STATE", "since": "#46", "why": "엔진 준비 — 기동 효과가 쓴다, wiringContext 키(함정 67)" },
+        "GoCoachScreen.analysisCache": { "kind": "WIRING", "since": "#46", "why": "분석 결과 캐시 인스턴스(컨트롤러 주입)" },
+        "GoCoachScreen.undoAnalysisRestoreCache": { "kind": "WIRING", "since": "#46", "why": "무르기 분석 복원 캐시 인스턴스" },
+        "GoCoachScreen.uxOptions": { "kind": "PERSISTED_PREFERENCE", "since": "#46", "why": "오토세이브되는 표시 옵션 — 셸이 저장 요청을 조립하는 유일한 지점(#39·#85), wiringContext 키(함정 67)" },
+        "GoCoachScreen.isScoreGraphExpanded": { "kind": "CHILD_UI_STATE", "since": "#46", "why": "대국 화면 전용 토글 — GoCoachContent로 내릴 것(2026-08-17 isDisplayMenuExpanded 선례)" },
+        "GoCoachScreen.hasCompletedEngineStartup": { "kind": "ENGINE_STATE", "since": "#46", "why": "엔진 기동 완료 플래그" },
+        "GoCoachScreen.undoEngineInterventionQuietUntil": { "kind": "WORKFLOW_STATE", "since": "#46", "why": "무르기 뒤 엔진 개입 정숙 시각 — wiringContext 키(함정 67)" },
+        "GoCoachScreen.isPendingUndoSync": { "kind": "WORKFLOW_STATE", "since": "#46", "why": "무르기 재동기화 대기 — wiringContext 키(함정 67)" },
+        "GoCoachScreen.lifecycleController": { "kind": "WIRING", "since": "#46", "why": "엔진 오퍼레이션 수명 컨트롤러" },
+        "GoCoachScreen.displayStateApplier": { "kind": "WIRING", "since": "#46", "why": "표시 계획 적용기" },
+        "GoCoachScreen.LaunchedEffect(Unit)": { "kind": "STARTUP_EFFECT", "since": "#46", "why": "앱 시작 런타임 로그 한 줄" },
+        "GoCoachScreen.LaunchedEffect(engineClient)": { "kind": "WORKFLOW_EFFECT", "since": "#46", "why": "엔진 기동 워크플로 — 엔진 플래그를 쓴다" },
+        "GoCoachScreen.LaunchedEffect(sessionStore)": { "kind": "WORKFLOW_EFFECT", "since": "#46", "why": "저장된 대국 확인·끝난 판 복원·대국 화면 이동" },
+        "GoCoachScreen.LaunchedEffect(preferencesStore)": { "kind": "WORKFLOW_EFFECT", "since": "#46", "why": "설정 오토세이브(함정 2)" },
+        "GoCoachScreen.LaunchedEffect(savedSessionUiState)": { "kind": "WORKFLOW_EFFECT", "since": "#46", "why": "대국 저장 + 히스토리 적재(#6·#151)" },
+        "GoCoachScreen.deferredTopMoveAnalysis": { "kind": "WIRING", "since": "#46", "why": "추천 수 분석 미루기 도우미" },
+        "GoCoachScreen.wiringContext": { "kind": "WIRING", "since": "#46", "why": "컨트롤러 배선 컨텍스트 — ⚠️ remember 키 7개는 WiringContextFreezeContractTest가 지킨다(함정 67). 이 원장은 키를 보지 않는다" },
+        "GoCoachScreen.controllers": { "kind": "WIRING", "since": "#46", "why": "컨트롤러 그래프 — remember(wiringContext)로 재배선(#43)" },
+        "GoCoachScreen.LaunchedEffect(isEngineReady)": { "kind": "WORKFLOW_EFFECT", "since": "#46", "why": "AI 차례·추천 수 자동 트리거" },
+        "GoCoachScreen.LaunchedEffect(isGameEnded)": { "kind": "WORKFLOW_EFFECT", "since": "#46", "why": "캐시 최적화 안내 갱신" }
+      }
+    },
+    "settingsScreen": {
+      "codeLineBudget": 400,
+      "sites": {
+        "SettingsScreen.resumableSavedGame": { "kind": "STARTUP_READ", "since": "#46", "why": "이어할 대국 여부를 한 번 읽어 잠금 판단(#75) — 셸과 별개인 두 번째 GameSessionStore, 읽기만" },
+        "SettingsScreen.developerModeStore": { "kind": "PLATFORM_PORT", "since": "#46", "why": "개발자 모드 저장소" },
+        "SettingsScreen.isDeveloperModeEnabled": { "kind": "VISIBILITY_GATE", "since": "#46", "why": "저장된 1차 개발자 게이트 — 어느 섹션을 그릴지 가른다" },
+        "SettingsScreen.isAdvancedDeveloperModeEnabled": { "kind": "VISIBILITY_GATE", "since": "#46", "why": "세션 한정 2차 게이트(#77) — 개발자 섹션으로 내릴 후보" },
+        "SettingsScreen.showDiagnosticLog": { "kind": "VISIBILITY_GATE", "since": "#46", "why": "진단 로그 팝업 — 개발자 섹션에서만 열린다(내릴 후보)" },
+        "SettingsScreen.versionTapCount": { "kind": "GESTURE_COUNTER", "since": "#46", "why": "10탭 개발자 진입 카운터" },
+        "SettingsScreen.showDeveloperModeOptIn": { "kind": "VISIBILITY_GATE", "since": "#46", "why": "개발자 모드 진입 확인(#99)" },
+        "SettingsScreen.showDeveloperModeOptOut": { "kind": "VISIBILITY_GATE", "since": "#46", "why": "개발자 모드 해제 확인(#99)" },
+        "SettingsScreen.updateStatus": { "kind": "HOSTED_ROLE_STATE", "since": "#46", "why": "rememberAppUpdateStatus()가 AppUpdateUiState.kt에서 소유하는 조회 상태(#53) — 셸은 읽기만" },
+        "SettingsScreen.authState": { "kind": "FOREIGN_ROLE_STATE", "since": "#46", "why": "계정 역할 묶음(1/5) — AccountSettingsSection으로 뗄 빚" },
+        "SettingsScreen.showEmailDialog": { "kind": "FOREIGN_ROLE_STATE", "since": "#46", "why": "계정 역할 묶음(2/5)" },
+        "SettingsScreen.isEmailSubmitting": { "kind": "FOREIGN_ROLE_STATE", "since": "#46", "why": "계정 역할 묶음(3/5) — 요청 진행 중" },
+        "SettingsScreen.showDeleteAccountDialog": { "kind": "FOREIGN_ROLE_STATE", "since": "#46", "why": "계정 역할 묶음(4/5)" },
+        "SettingsScreen.isDeletingAccount": { "kind": "FOREIGN_ROLE_STATE", "since": "#46", "why": "계정 역할 묶음(5/5) — 요청 진행 중" }
+      }
+    },
+    "developerTestSection": {
+      "codeLineBudget": 350,
+      "sites": {
+        "DeveloperTestSection.preferencesStore": { "kind": "PLATFORM_PORT", "since": "#46", "why": "설정 저장소" },
+        "DeveloperTestSection.buildInfoTapCount": { "kind": "GESTURE_COUNTER", "since": "#46", "why": "2차 진입 탭 카운터 — 저장하지 않는다(#84)" },
+        "DeveloperTestSection.attendanceDay": { "kind": "STARTUP_READ", "since": "#46", "why": "신호(lastCheckedInDay)가 비었을 때만 출석 일수를 한 번 읽는 폴백" }
+      }
+    }
+  }
+}

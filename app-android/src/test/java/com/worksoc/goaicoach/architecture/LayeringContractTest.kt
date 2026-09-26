@@ -1808,25 +1808,19 @@ class LayeringContractTest {
         // ⚠️ **원칙은 파일이 아니라 역할에 있다** — *"조립만 하는 셸은 상태를 소유하지 않는다"*.
         //    줄 수는 그 위반의 신호일 뿐이다. 그래서 숫자를 올릴 때는 **무엇을 조립하느라 늘었는지**
         //    를 여기 적는다. 사유 없이 올리는 순간 이 그물은 뜻을 잃는다.
-        val lineBudget = 777
-        val stateHookBudget = 42
-
-        val goCoachApp = RepoPaths.goCoachApp
-        val allLines = goCoachApp.readContractSourceLines()
-        val lines = codeLinesOf(allLines)
-        val stateHookRegex = Regex("\\b(remember|mutableStateOf|LaunchedEffect)\\b")
-        val stateHookCount = lines.count { line -> stateHookRegex.containsMatchIn(line) }
-
-        val offenders = mutableListOf<String>()
-        if (lines.size > lineBudget) {
-            offenders += "GoCoachApp.kt grew to ${lines.size} code lines (budget $lineBudget, " +
-                "imports/comments/blanks excluded; ${allLines.size} raw): " +
-                "hoist wiring into a screen presenter, do not regrow the shell."
-        }
-        if (stateHookCount > stateHookBudget) {
-            offenders += "GoCoachApp.kt holds $stateHookCount Compose state hooks (budget $stateHookBudget): " +
-                "move state ownership out of the composable."
-        }
+        // ── 2026-09-26 (#46): 훅 "개수"를 버리고 "종류 원장"으로 바꿨다(사용자 결정: #46을 #45 앞으로). ──
+        // ⚠️ ① 개수는 틀린 것을 쟀다 — 올바른 코드가 테스트를 깼다. 저장소 넷이 remember 없이 매 재구성 새로 만들어졌고
+        //    (GoCoachApp.kt:163·165·167·179), 컴포즈 상태 8개가 프로세스 전역 object 6개로 이사했고(사유 "훅 예산 절약"),
+        //    한 선언(171~172)이 두 번 세어졌고, rememberSaveable·derivedStateOf·produceState·DisposableEffect는 안 보였고,
+        //    훅을 지우면 여유가 조용히 생겼다.
+        // ⚠️ ② 이제 이 셸의 모든 훅 자리는 architecture-budgets.json에 이름·종류·사유로 적히고 소스와 양방향으로 같아야 한다.
+        //    종류는 ShellStateLedger.Kind(닫힌 목록)이고, 역할마다 가져도 되는 종류가 정해져 있다.
+        // ⚠️ ③ "여유 0"은 이제 부채에 걸린다: 금지 종류는 SHELL_DEBT의 OWED와 정확히 같아야 하고 줄기만 한다(갚으면 PAID —
+        //    어떤 종류로도 못 돌아온다). 효과 수(8)와 줄 상한(777)도 코틀린에 있다.
+        // ⚠️ ④ "숫자 상향 금지"의 새 뜻: 새 부채·새 효과·줄 상한 상향·전역 상태·remember 안 한 저장소는 테스트 코드를
+        //    고쳐야만 늘어난다. 허용 종류 항목은 JSON 한 줄(since·why)로 된다 — #45가 전역 object를 되돌리는 정식 경로다.
+        // ⚠️ 원칙은 그대로다 — "조립만 하는 셸은 상태를 소유하지 않는다". 원장은 그 원칙을 종류로 적은 것이다.
+        val offenders = ShellStateLedger.auditShell("goCoachApp")
 
         assertTrue(
             "GoCoachApp must keep shrinking toward a thin UI shell:\n${offenders.joinToString("\n")}",
@@ -1841,41 +1835,24 @@ class LayeringContractTest {
      * **1003줄로 더 크게** 자라 있었다. 지표가 지키는 것만 지켜지고 나머지는 무방비였다는 뜻이다.
      *
      * ⚠️ **여기 있는 파일들은 "조립하는 쪽"이다.** 원칙은 파일이 아니라 역할에 있다 —
-     * *"조립만 하는 셸은 상태를 소유하지 않는다."* 그래서 조이는 힘은 **훅 수**에 두고
-     * (여유 0), 줄 수는 뒷받침으로 여유를 준다. 숫자를 올릴 때는 **무엇 때문에 늘었는지**를
+     * *"조립만 하는 셸은 상태를 소유하지 않는다."* 그래서 조이는 힘은 **종류 원장**에 두고(부채 OWED와 효과 수는
+     * 여유 0), 줄 수는 뒷받침으로 여유를 준다. 숫자를 올릴 때는 **무엇 때문에 늘었는지**를
      * 반드시 여기 적을 것 — 사유 없이 올리면 이 그물은 뜻을 잃는다.
      */
     @Test
     fun settingsScreenStaysAShellAndTheDeveloperSectionStaysItsOwnRole() {
-        // `SettingsScreen.kt` — 개발자 섹션을 떼어낸 뒤 코드 359줄 / 훅 13.
-        // ⚠️ 훅 **여유 0**이 이 항목의 핵심이다. 개발자 섹션의 상태를 이 화면으로 되돌리려는
-        // 순간 여기서 걸린다 — #102가 막으려는 것이 정확히 그것이다.
+        // `SettingsScreen.kt` — 개발자 섹션을 떼어낸 뒤의 줄 예산과 훅 자리는 이제
+        // architecture-budgets.json의 `settingsScreen`이 정본이다(#46: 훅 개수 13/13 → 종류 원장).
+        // ⚠️ 이 항목의 핵심은 그대로다 — 개발자 섹션의 상태를 이 화면으로 되돌리려면 원장 항목(since·why)을
+        // 새로 적어야 하고(리뷰에 diff로 보인다), SCREEN 역할이 가질 수 없는 종류(WIRING·NAVIGATION·
+        // HOLDER_MIRROR 등)나 새 부채·새 효과는 테스트 코드를 고쳐야만 들어온다. 계정 묶음 5개는 OWED 부채로
+        // 동결돼 줄기만 한다. #102가 막으려는 것이 정확히 그것이다.
         //
-        // `DeveloperTestSection.kt` — 코드 313줄 / 훅 4.
+        // `DeveloperTestSection.kt` — 줄 예산과 훅 자리는 architecture-budgets.json의 `developerTestSection`.
         // ⚠️ 새 개발자 컨트롤은 대부분 저장소를 부르는 버튼이라 훅이 필요 없다. 훅이 필요하다면
         // **정말 이 섹션이 상태를 가져야 하는지** 를 먼저 물을 것.
-        val budgets = listOf(
-            Triple("ui/SettingsScreen.kt", 400, 13),
-            Triple("ui/DeveloperTestSection.kt", 350, 4),
-        )
-        val stateHookRegex = Regex("\\b(remember|mutableStateOf|LaunchedEffect)\\b")
-        val offenders = mutableListOf<String>()
-
-        budgets.forEach { (path, lineBudget, stateHookBudget) ->
-            val file = RepoPaths.appAndroid(path)
-            val allLines = file.readContractSourceLines()
-            val lines = codeLinesOf(allLines)
-            val stateHookCount = lines.count { line -> stateHookRegex.containsMatchIn(line) }
-
-            if (lines.size > lineBudget) {
-                offenders += "$path grew to ${lines.size} code lines (budget $lineBudget, " +
-                    "imports/comments/blanks excluded; ${allLines.size} raw)."
-            }
-            if (stateHookCount > stateHookBudget) {
-                offenders += "$path holds $stateHookCount Compose state hooks (budget " +
-                    "$stateHookBudget): move state ownership to the role that uses it."
-            }
-        }
+        val offenders = ShellStateLedger.auditShell("settingsScreen") +
+            ShellStateLedger.auditShell("developerTestSection")
 
         assertTrue(
             "Settings must stay a shell and the developer section must stay its own role:\n" +
@@ -2217,34 +2194,6 @@ class LayeringContractTest {
                     "diagnostic device id survive the release reset (8.6 scope table)",
                 text.contains(store),
             )
-        }
-    }
-
-    /**
-     * import·주석·빈 줄을 걷어낸 **코드 줄만** 남긴다(2026-09-05).
-     *
-     * ⚠️ **이것이 없으면 예산이 결합과 설명을 복잡도로 오해한다.** `GoCoachApp.kt`는 885줄 중
-     * 126줄이 import였다 — import는 복잡도가 아니라 **결합의 증상**이고, 그것을 예산으로 막으면
-     * 정작 줄여야 할 조립 코드는 그대로 둔 채 import만 줄이는 왜곡이 생긴다.
-     */
-    private fun codeLinesOf(lines: List<String>): List<String> {
-        var inBlockComment = false
-        return lines.filter { raw ->
-            val line = raw.trim()
-            when {
-                inBlockComment -> {
-                    if (line.contains("*/")) inBlockComment = false
-                    false
-                }
-                line.isEmpty() -> false
-                line.startsWith("//") -> false
-                line.startsWith("import ") || line.startsWith("package ") -> false
-                line.startsWith("/*") -> {
-                    if (!line.contains("*/")) inBlockComment = true
-                    false
-                }
-                else -> true
-            }
         }
     }
 
