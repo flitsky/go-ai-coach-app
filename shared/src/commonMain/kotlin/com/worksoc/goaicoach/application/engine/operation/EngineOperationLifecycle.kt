@@ -56,6 +56,13 @@ private val TurnWaitOperationKinds = setOf(
     EngineOperationKind.AutoAiEndgame,
 )
 
+// ⚠️ **무르기 직후 버튼 넷(형세보기·추천 수·기권·통과)이 함께 잠깐 꺼졌다 켜지는 것은 여기서 나온다**
+// (refactor backlog #104). 무르기 뒤 엔진 재동기화([EngineOperationKind.PostUndoSync])가 blocking이라
+// 그동안 착수 버튼(기권·통과 — `MatchPolicy`의 `canAcceptBoardInput`)이 닫히고, 엔진이 busy라 코칭 버튼
+// (형세·추천 수 — `GameScreenState`의 `coachingGateOpen`)도 닫힌다. 사용자 실기(2026-09-26) 판정:
+// **오류가 아니고 직관적이라 고치지 않는다.** 이 깜빡임을 없애고 싶어지면 여기서 시작한다 — 예: 짧은
+// busy에는 버튼을 끄지 않도록 UI에서 늦춰 보여 주기. ⚠️ 코칭 버튼은 *"요청이 받아들여질 때만 눌린다"*
+// 규칙(`coachingGateOpen` KDoc)을 지켜야 한다 — 버튼만 열면 그 틈에 1회권만 나간다.
 internal val EngineOperationKind.isBlocking: Boolean
     get() = when (this) {
         EngineOperationKind.TopMoves,

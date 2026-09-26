@@ -214,6 +214,7 @@ data class PlayerSetup(
             return MatchSeatRuntimeState(
                 assignment = assignment,
                 isCurrentTurn = isCurrentTurn,
+                // 무르기 직후 기권·통과가 잠깐 꺼지는 것은 이 조건이다 — 의도된 동작(#104, `EngineOperationKind.isBlocking` 주석).
                 canAcceptBoardInput = !isEngineBlockingBusy &&
                     isCurrentTurn &&
                     assignment.isHuman &&

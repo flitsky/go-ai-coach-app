@@ -317,6 +317,9 @@ internal fun buildGameActionButtonStates(input: GameScreenStateInput): List<Game
      * 무료로 그려지므로(`GamePlaySection`) 그때 눌러 봐야 표만 닳는다.
      *
      * ⚠️ **수순 0수 조건은 여기 없다 — 형세 쪽으로 옮겼다**([canRequestEval], 2026-09-18).
+     *
+     * 무르기 직후 두 버튼이 잠깐 꺼지는 것도 이 조건이다 — 의도된 동작(refactor backlog #104,
+     * `EngineOperationKind.isBlocking` 위 주석).
      */
     val coachingGateOpen = !input.isGameEnded && !input.isEngineBusy
 
