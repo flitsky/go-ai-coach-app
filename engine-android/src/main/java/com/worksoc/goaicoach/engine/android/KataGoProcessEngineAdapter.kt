@@ -92,7 +92,7 @@ internal class KataGoProcessEngineAdapter(
         initialStones = emptyMap()
         sendCommand(KataGoProtocolCommands.boardSize(boardSize))
         sendCommand(KataGoProtocolCommands.komi(komi))
-        sendCommand(KataGoProtocolCommands.rules(ruleset))
+        KataGoProtocolCommands.ruleCommands(ruleset).forEach { command -> sendCommand(command) }
         sendCommand(KataGoProtocolCommands.clearBoard())
         if (handicapCount > 0) {
             val positions = boardSize.handicapStonePositions(handicapCount)
@@ -486,7 +486,8 @@ internal class KataGoProcessEngineAdapter(
      * - 없고 접바둑이면 [BoardSize.handicapStonePositions]의 흑돌을 싣는다. 예전에는 빈 판이
      *   나가 KataGo가 흑돌 N개 없는 판을 분석했다(aace70da, 2026-07-16부터). 따낸 접바둑 돌도
      *   그대로 싣는다 — KataGo가 수순을 다시 두며 스스로 따내고, 접바둑 보정 N은 시작판의
-     *   흑돌 수로 센다. `whiteHandicapBonus`는 싣지 않는다: 룰셋 기본값이 GTP와 같다.
+     *   흑돌 수로 센다. 보정 방식은 GTP와 같은 `Ruleset.handicapBonusRule`을 읽는다 — 이름 룰 기본값과 다를
+     *   때만 쿼리 팩토리가 최상위 `whiteHandicapBonus`를 싣는다(#106).
      *
      * ⚠️ 이 보충을 `newGame`으로 옮겨 [initialStones]를 채우지 마라. [initialStones]는 "밖에서 받은 정적
      * 국면"의 표지이기도 하다 — 채워져 있으면 [startingPlayer]가 [staticStartPlayer]를 시작 차례로 내고,

@@ -128,6 +128,9 @@ internal object RemotePositionAnalysisJsonCodec {
     internal fun encodeState(state: GameState): JSONObject =
         JSONObject()
             .put("boardSize", state.boardSize.value)
+            // 접바둑 보정 방식(`Ruleset.handicapBonusRule`, #106)은 싣지 않는다 — 서버는 이름 룰의 기본값을 쓰고
+            // (#65 실측), 로컬 엔진처럼 덮어쓰기를 보낼 자리가 와이어에 없다. 모든 룰셋이 그 기본값과 같다는
+            // 전제는 `KataGoNamedRulesTest`가 지킨다. 다른 값을 쓰는 룰셋을 들이려면 와이어부터 넓혀라.
             .put("ruleset", state.ruleset.name)
             // ⚠️ 백로그 #19 — 예전에는 komi/handicapCount가 빠져 있었다. 원격 서버가
             // 이 값 없이는 덤/접바둑을 알 도리가 없어 항상 `DefaultKomi`(6.5)·맞바둑으로

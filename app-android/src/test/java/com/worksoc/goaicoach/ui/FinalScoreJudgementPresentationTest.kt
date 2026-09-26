@@ -87,4 +87,40 @@ class FinalScoreJudgementPresentationTest {
         val legacy = judgement.copy(whiteAreaWithKomi = 6.5, whiteHandicapBonus = 0.0)
         assertEquals("백: 돌 + 집 + 덤 6.5 = 6.5집", legacy.whiteLine(strings))
     }
+
+    /**
+     * 집계가 백 줄도 보정을 따로 떼어 밝힌다(refactor backlog #106 — 보정은 계가 방식이 아니라 룰셋의 값이
+     * 정한다). 지금 집계가 룰셋은 보정 0이라 실제 판정에선 예전 줄 그대로이고, 여기서는 보정이 있는 판정을
+     * 직접 만들어 집(13)이 보정만큼 부풀지 않는지 본다.
+     */
+    @Test
+    fun territoryWhiteLineSeparatesAHandicapBonusFromTheTerritory() {
+        val state = GameState.empty(ruleset = Ruleset.Japanese)
+            .copy(capturedByBlack = 5, capturedByWhite = 2)
+            .play(Move.Pass(StoneColor.Black))
+            .play(Move.Pass(StoneColor.White))
+        val finalScore = FinalScoreResult(
+            status = EngineStatus.ready("W+1.5"),
+            rawScore = "W+1.5",
+            winner = StoneColor.White,
+            margin = 1.5,
+            blackArea = 20.0,
+            whiteAreaWithKomi = 21.5,
+            komi = 6.5,
+            summary = "final",
+        )
+        val plan = buildLocalFinalScoreDisplayPlan(
+            source = "test-final",
+            state = state,
+            finalScore = finalScore,
+            previousSnapshots = emptyList(),
+            detail = "test",
+            engineMessage = "final",
+            candidateText = "ended",
+        )
+        val judgement = plan.judgement ?: error("missing judgement")
+
+        val withBonus = judgement.copy(whiteAreaWithKomi = 23.5, whiteHandicapBonus = 2.0)
+        assertEquals("백: 집 13 + 사석 2 + 덤 6.5 + 접바둑 보정 2 = 23.5집", withBonus.whiteLine(UiStringsKorean))
+    }
 }

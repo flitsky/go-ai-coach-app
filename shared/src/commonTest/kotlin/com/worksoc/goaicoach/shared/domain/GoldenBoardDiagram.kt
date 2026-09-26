@@ -122,8 +122,10 @@ internal fun goldenPoint(
  * 남고, 어느 계가기가 분석기 대신 제 판정을 다시 들이면 그 차이가 이 값에 드러난다.
  *
  * - 영역(중국식): `blackArea = 흑 돌 수 + 흑 소유 빈 점`
- *   (백 쪽 합계에는 접바둑 보정이 들어 있어 그것도 뺀다 — #89)
  * - 집(일본식):   `blackArea = 흑 소유 빈 점 + 흑 사석`
+ *
+ * 백 쪽 합계에는 접바둑 보정이 들어 있을 수 있어 둘 다 그것도 뺀다(#89). 보정은 계가기 종류가 아니라
+ * `state.ruleset`이 정하므로(#106) 면적계가 룰셋 판을 집 계가기에 넣어도 보정이 붙는다.
  *
  * 분석기를 직접 부른 값은 [regionAnalyzerOwnership]이다.
  */
@@ -147,7 +149,8 @@ internal fun areaScorerOwnership(state: GameState): EmptyPointOwnership {
 internal fun territoryScorerOwnership(state: GameState): EmptyPointOwnership {
     val score = BoardTerritoryScorer.score(state, komi = 0.0)
     val blackScore = requireNotNull(score.blackArea) { "로컬 집 계가기가 blackArea를 비워 두면 안 된다." }
-    val whiteScore = requireNotNull(score.whiteAreaWithKomi) { "로컬 집 계가기가 whiteArea를 비워 두면 안 된다." }
+    val whiteScore = requireNotNull(score.whiteAreaWithKomi) { "로컬 집 계가기가 whiteArea를 비워 두면 안 된다." } -
+        score.whiteHandicapBonus
     return EmptyPointOwnership(
         black = (blackScore - state.capturedBy(StoneColor.Black)).toInt(),
         white = (whiteScore - state.capturedBy(StoneColor.White)).toInt(),

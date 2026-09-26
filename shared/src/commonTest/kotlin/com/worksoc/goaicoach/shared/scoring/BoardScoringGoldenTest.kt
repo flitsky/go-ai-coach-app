@@ -170,13 +170,17 @@ class BoardScoringGoldenTest {
         assertEquals(0.0, sameStonesWithoutHandicap.whiteHandicapBonus)
     }
 
-    /** KataGo처럼 접바둑 돌 1개 이하는 보정 0이고, 2개부터 돌 수 그대로다. */
+    /**
+     * KataGo처럼 접바둑 돌 1개 이하는 보정 0이고, 2개부터 돌 수 그대로다. 보정은 면적계가 룰셋의
+     * `handicapBonusRule` 하나가 정한다(refactor backlog #106 — 예전엔 `BoardAreaScorer.whiteHandicapBonus`).
+     */
     @Test
     fun theHandicapBonusIsZeroUpToOneStoneAndTheStoneCountFromTwo() {
-        assertEquals(0.0, BoardAreaScorer.whiteHandicapBonus(0))
-        assertEquals(0.0, BoardAreaScorer.whiteHandicapBonus(1))
-        assertEquals(2.0, BoardAreaScorer.whiteHandicapBonus(2))
-        assertEquals(9.0, BoardAreaScorer.whiteHandicapBonus(9))
+        val areaRule = Ruleset.Chinese.handicapBonusRule
+        assertEquals(0.0, areaRule.whiteHandicapBonus(0))
+        assertEquals(0.0, areaRule.whiteHandicapBonus(1))
+        assertEquals(2.0, areaRule.whiteHandicapBonus(2))
+        assertEquals(9.0, areaRule.whiteHandicapBonus(9))
 
         val oneStoneMarkedAsHandicap = BoardScorer.score(
             singleStoneBoard().toState(Ruleset.Chinese, komi = 6.5, handicapCount = 1),

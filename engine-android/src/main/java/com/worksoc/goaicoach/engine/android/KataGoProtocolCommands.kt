@@ -3,6 +3,7 @@ package com.worksoc.goaicoach.engine.android
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.DefaultKomi
+import com.worksoc.goaicoach.shared.domain.HandicapBonusRule
 import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.domain.StoneColor
@@ -13,7 +14,23 @@ internal object KataGoProtocolCommands {
 
     fun komi(komi: Double = DefaultKomi): String = "komi $komi"
 
-    fun rules(ruleset: Ruleset): String = "kata-set-rules ${ruleset.katagoName}"
+    /**
+     * 대국 시작 때 보내는 룰 명령 — `kata-set-rules <이름>`에, [Ruleset.handicapBonusRule]이 그 이름 룰의
+     * 기본값과 다를 때만 `kata-set-rule whiteHandicapBonus <N|N-1|0>`을 잇는다(refactor backlog #106).
+     * 지금 룰셋은 전부 기본값과 같아 `kata-set-rules <이름>` 한 줄만 나간다(#106 이전과 같은 명령).
+     */
+    fun ruleCommands(ruleset: Ruleset): List<String> = ruleCommands(ruleset.katagoName, ruleset.handicapBonusRule)
+
+    /** [ruleCommands]의 본체 — 테스트가 기본값과 다른 조합(지금 룰셋에는 없다)을 넣어 보려고 따로 둔다. */
+    fun ruleCommands(
+        katagoName: String,
+        handicapBonusRule: HandicapBonusRule,
+    ): List<String> =
+        listOfNotNull(
+            "kata-set-rules $katagoName",
+            KataGoNamedRules.handicapBonusOverride(katagoName, handicapBonusRule)
+                ?.let { override -> "kata-set-rule whiteHandicapBonus ${override.katagoValue}" },
+        )
 
     fun clearBoard(): String = "clear_board"
 

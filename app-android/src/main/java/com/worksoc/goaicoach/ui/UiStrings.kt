@@ -1206,16 +1206,24 @@ internal data class UiStrings(
         }
     }
 
-    fun scoreTextDetailTerritoryKomi(territory: Double, prisoners: Double, komi: Double, total: Double): String {
+    /** 집계가 백 줄. [handicapBonus]는 [scoreTextDetailAreaKomi]와 같다 — 0이면(지금 집계가, #106) 예전 줄 그대로. */
+    fun scoreTextDetailTerritoryKomi(
+        territory: Double,
+        prisoners: Double,
+        komi: Double,
+        total: Double,
+        handicapBonus: Double = 0.0,
+    ): String {
         val tVal = territory.formatScoreNumber()
         val pVal = prisoners.formatScoreNumber()
         val kVal = komi.formatScoreNumber()
         val tot = total.formatScoreNumber()
+        val bonus = handicapBonusTerm(handicapBonus)
         return when (language) {
-            UiLanguage.Korean -> "백: 집 $tVal + 사석 $pVal + 덤 $kVal = ${tot}집"
-            UiLanguage.English -> "White: Territory $tVal + Prisoners $pVal + Komi $kVal = ${tot} points"
-            UiLanguage.Japanese -> "白: 地合 $tVal + アゲハマ $pVal + コミ $kVal = ${tot}目"
-            UiLanguage.ChineseSimplified -> "白: 目数 $tVal + 提子 $pVal + 贴目 $kVal = ${tot}目"
+            UiLanguage.Korean -> "백: 집 $tVal + 사석 $pVal + 덤 $kVal$bonus = ${tot}집"
+            UiLanguage.English -> "White: Territory $tVal + Prisoners $pVal + Komi $kVal$bonus = ${tot} points"
+            UiLanguage.Japanese -> "白: 地合 $tVal + アゲハマ $pVal + コミ $kVal$bonus = ${tot}目"
+            UiLanguage.ChineseSimplified -> "白: 目数 $tVal + 提子 $pVal + 贴目 $kVal$bonus = ${tot}目"
         }
     }
 
@@ -1227,11 +1235,7 @@ internal data class UiStrings(
     fun scoreTextDetailAreaKomi(komi: Double, total: Double, handicapBonus: Double = 0.0): String {
         val kVal = komi.formatScoreNumber()
         val tot = total.formatScoreNumber()
-        val bonus = if (handicapBonus > 0.0) {
-            " + ${whiteHandicapBonusTermFor(language)} ${handicapBonus.formatScoreNumber()}"
-        } else {
-            ""
-        }
+        val bonus = handicapBonusTerm(handicapBonus)
         return when (language) {
             UiLanguage.Korean -> "백: 돌 + 집 + 덤 $kVal$bonus = ${tot}집"
             UiLanguage.English -> "White: Stone + Territory + Komi $kVal$bonus = ${tot} points"
@@ -1239,6 +1243,14 @@ internal data class UiStrings(
             UiLanguage.ChineseSimplified -> "白: 子数 + 目数 + 贴目 $kVal$bonus = ${tot}目"
         }
     }
+
+    /** 백 줄의 " + 접바둑 보정 N" 조각 — 보정이 0이면 빈 문자열. */
+    private fun handicapBonusTerm(handicapBonus: Double): String =
+        if (handicapBonus > 0.0) {
+            " + ${whiteHandicapBonusTermFor(language)} ${handicapBonus.formatScoreNumber()}"
+        } else {
+            ""
+        }
 
     /** 보드 상단 작은 엔진 상태 텍스트("생각 중"/"추천 중"/"최적화 중")용 라벨. */
     fun engineActivityLabel(indicator: EngineActivityIndicator): String =

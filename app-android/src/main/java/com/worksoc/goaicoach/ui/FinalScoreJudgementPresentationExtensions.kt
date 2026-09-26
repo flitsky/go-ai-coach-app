@@ -41,10 +41,11 @@ internal fun FinalScoreJudgement.whiteLine(strings: UiStrings): String? {
     val area = whiteAreaWithKomi ?: return null
     val kValue = komi ?: 0.0
     return when (ruleset) {
+        // 합계에는 룰셋의 접바둑 보정이 들어 있을 수 있다(#106 — 집계가는 지금 0이라 예전 줄 그대로).
         Ruleset.Japanese -> {
             val prisoners = capturedByWhite.toDouble()
-            val territory = area - prisoners - kValue
-            strings.scoreTextDetailTerritoryKomi(territory, prisoners, kValue, area)
+            val territory = area - prisoners - kValue - whiteHandicapBonus
+            strings.scoreTextDetailTerritoryKomi(territory, prisoners, kValue, area, whiteHandicapBonus)
         }
         // 면적계가 접바둑이면 합계에 보정 N이 들어 있다(#89) — 줄에도 그 항을 밝힌다.
         // 옛 저장본은 보정 없이 계가됐고 0으로 읽히므로 예전 줄 그대로다.

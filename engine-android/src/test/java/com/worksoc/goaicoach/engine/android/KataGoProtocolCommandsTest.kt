@@ -15,7 +15,8 @@ class KataGoProtocolCommandsTest {
     fun buildsGtpSessionCommands() {
         assertEquals("boardsize 9", KataGoProtocolCommands.boardSize(BoardSize.Nine))
         assertEquals("komi 6.5", KataGoProtocolCommands.komi())
-        assertEquals("kata-set-rules japanese", KataGoProtocolCommands.rules(Ruleset.Japanese))
+        assertEquals(listOf("kata-set-rules japanese"), KataGoProtocolCommands.ruleCommands(Ruleset.Japanese))
+        assertEquals(listOf("kata-set-rules chinese"), KataGoProtocolCommands.ruleCommands(Ruleset.Chinese))
         assertEquals("clear_board", KataGoProtocolCommands.clearBoard())
     }
 

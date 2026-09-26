@@ -374,12 +374,12 @@ data class FinalScoreResult(
     val komi: Double? = null,
     val summary: String,
     /**
-     * [whiteAreaWithKomi]에 들어 있는 **접바둑 보정**(면적계가에서 백이 받는 N점, refactor backlog #89).
+     * [whiteAreaWithKomi]에 들어 있는 **접바둑 보정** — 접바둑에서 백이 룰셋의 보정 방식대로 받는 점수(refactor backlog #89).
      *
-     * KataGo `chinese` 룰의 `whiteHandicapBonus:"N"`과 같은 셈이다 — 앱이 엔진에
-     * `kata-set-rules chinese`를 보내므로 로컬 계가도 같은 룰을 따라야 한다. 접바둑이 아니거나
-     * 집계가(KataGo `japanese`는 `"0"`)면 0이다. 엔진이 만든 결과(`final_score` 등)는 보정이
-     * 이미 점수에 녹아 있어 따로 밝히지 않으므로 역시 0이다.
+     * 얼마인지는 `Ruleset.handicapBonusRule` 한 곳이 정한다(refactor backlog #106) — 로컬 계가와 엔진
+     * 명령(`kata-set-rules` + 필요할 때 `kata-set-rule whiteHandicapBonus`)이 같은 값을 읽는다. 지금은
+     * 면적계가 N(KataGo `chinese`의 `"N"`), 집계가 0(`japanese`의 `"0"`)이고, 접바둑이 아니면 0이다.
+     * 엔진이 만든 결과(`final_score` 등)는 보정이 이미 점수에 녹아 있어 따로 밝히지 않으므로 역시 0이다.
      */
     val whiteHandicapBonus: Double = 0.0,
 )

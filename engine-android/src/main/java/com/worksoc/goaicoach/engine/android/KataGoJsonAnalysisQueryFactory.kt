@@ -3,6 +3,7 @@ package com.worksoc.goaicoach.engine.android
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.DefaultKomi
+import com.worksoc.goaicoach.shared.domain.HandicapBonusRule
 import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.domain.StoneColor
@@ -46,6 +47,10 @@ internal object KataGoJsonAnalysisQueryFactory {
             "-${boardSize.value}x${boardSize.value}-m$turn$refineTag"
     }
 
+    /**
+     * @param handicapBonusRule 접바둑 보정 방식. 프로덕션은 넘기지 않는다([ruleset]의 값) — 지금 룰셋에 없는
+     *   조합(이름 룰 기본값과 다른 방식)을 테스트가 넣어 보는 자리다(`KataGoNamedRulesTest`).
+     */
     fun build(
         id: String,
         boardSize: BoardSize,
@@ -57,6 +62,7 @@ internal object KataGoJsonAnalysisQueryFactory {
         komi: Double = DefaultKomi,
         initialStones: List<Pair<StoneColor, BoardCoordinate>> = emptyList(),
         initialPlayer: StoneColor = StoneColor.Black,
+        handicapBonusRule: HandicapBonusRule = ruleset.handicapBonusRule,
     ): JSONObject {
         val overrideSettings = JSONObject()
         limit.timeMillis?.let { overrideSettings.put("maxTime", it / 1_000.0) }
@@ -66,7 +72,7 @@ internal object KataGoJsonAnalysisQueryFactory {
             playedMoves + refineMove
         }
 
-        return JSONObject()
+        val query = JSONObject()
             .put("id", id)
             .put("rules", ruleset.katagoName)
             .put("komi", komi)
@@ -82,6 +88,12 @@ internal object KataGoJsonAnalysisQueryFactory {
             .put("includePolicy", includePolicyOverride ?: (refineMove == null && limit.includePolicy))
             .put("overrideSettings", overrideSettings)
             .put("priority", 0)
+        // 접바둑 보정 방식(refactor backlog #106) — 이름 룰의 기본값과 다를 때만 최상위 `whiteHandicapBonus`를
+        // 싣는다. KataGo 분석 엔진이 `rules`보다 우선해 읽는 필드다(Analysis_Engine.md, #65가 실측에 쓴 그 필드).
+        // 지금 룰셋은 전부 기본값과 같아 이 키가 없고 쿼리는 예전과 같은 바이트다.
+        KataGoNamedRules.handicapBonusOverride(ruleset.katagoName, handicapBonusRule)
+            ?.let { override -> query.put("whiteHandicapBonus", override.katagoValue) }
+        return query
     }
 
     private fun List<Pair<StoneColor, BoardCoordinate>>.toJsonInitialStones(boardSize: BoardSize): JSONArray =

@@ -19,7 +19,7 @@ import com.worksoc.goaicoach.shared.domain.HandicapKomi
  * 대국 중에는 대국 설정이 잠겨 있고(`isBoardSetupLockedDuringGame`, `GameMenuSection`),
  * `GameSettingsController.changeHandicapCount`도 대국이 끝났을 때만 받는다.
  *
- * *"접바둑"* 은 **2점 이상**이다 — 면적계가의 접바둑 보정(`BoardAreaScorer`, #89)과 같은 선이다.
+ * *"접바둑"* 은 **2점 이상**이다 — 접바둑 보정(`HandicapBonusRule.whiteHandicapBonus`, #89·#106)과 같은 선이다.
  */
 fun komiAfterHandicapChange(previousHandicap: Int, newHandicap: Int, currentKomi: Double): Double {
     val wasHandicapGame = previousHandicap >= MinHandicapStones

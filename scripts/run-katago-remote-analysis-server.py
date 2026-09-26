@@ -315,7 +315,11 @@ def build_katago_query(request_body: dict[str, Any]) -> dict[str, Any]:
         # what the local GTP engine uses (`kata-get-rules`). Forcing the default is a
         # no-op; forcing the other value moves White's lead by roughly N points
         # (0.85-1.30 times N by searched lead in the #65-A measurement). The table
-        # is in the module docstring.
+        # is in the module docstring. Refactor backlog #106: the app decides the
+        # method in one place, Kotlin `Ruleset.handicapBonusRule`; the local engine
+        # overrides the named default only when they differ. The wire has no field
+        # for it, so engine-android `KataGoNamedRulesTest` keeps every ruleset at
+        # its named default — which is what keeps omitting it here correct.
         "initialStones": initial_stones,
         "moves": moves,
         "analyzeTurns": [len(moves)],

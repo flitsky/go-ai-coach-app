@@ -77,12 +77,50 @@ data class BoardSize(val value: Int) {
     }
 }
 
+/**
+ * 접바둑에서 백이 받는 보정의 **방식** — KataGo `whiteHandicapBonus`와 같은 셋(refactor backlog #106).
+ *
+ * 참고: 중국 N, AGA·영국·프랑스 N−1, 뉴질랜드·Tromp-Taylor·Ing 0, 일본·한국 0(집계가는 돌을 세지 않아
+ * 보정이 필요 없다) — KataGo `cpp/game/rules.cpp`. 어느 룰셋이 어느 방식인지는 [Ruleset.handicapBonusRule]
+ * 한 곳에서만 정한다.
+ */
+enum class HandicapBonusRule {
+    N,
+    NMinusOne,
+    Zero,
+    ;
+
+    /**
+     * 접바둑 돌 [handicapCount]개일 때 백이 받는 점수. 1개 이하는 접바둑이 아니라 방식과 무관하게 0이다
+     * (KataGo도 1 이하를 0으로 센다). 앱 설정은 0 또는 2 이상만 고를 수 있지만 규칙은 여기서 직접 막는다.
+     */
+    fun whiteHandicapBonus(handicapCount: Int): Double =
+        if (handicapCount < 2) {
+            0.0
+        } else {
+            when (this) {
+                N -> handicapCount.toDouble()
+                NMinusOne -> (handicapCount - 1).toDouble()
+                Zero -> 0.0
+            }
+        }
+}
+
+/**
+ * ⚠️ 상수 이름이 저장 형식이다(세이브·설정·원격 요청이 `name`으로 적는다) — 이름을 바꾸지 마라.
+ *
+ * [handicapBonusRule]은 접바둑 보정의 **단일 출처**다(refactor backlog #106). 앱 계가(`BoardAreaScorer`·
+ * `BoardTerritoryScorer`)와 엔진 명령(`kata-set-rules` + 필요할 때 `kata-set-rule whiteHandicapBonus`)이
+ * 둘 다 이 값을 읽는다. 예전에는 앱 계가와 [katagoName]이 암시하는 KataGo 기본값이 따로 정해,
+ * 앱 쪽만 바꾸면 #89(AI·그래프는 N, 최종 승패는 0)가 돌아올 수 있었다.
+ */
 enum class Ruleset(
     val scoringLabel: String,
     val katagoName: String,
+    val handicapBonusRule: HandicapBonusRule,
 ) {
-    Chinese(scoringLabel = "Area", katagoName = "chinese"),
-    Japanese(scoringLabel = "Territory", katagoName = "japanese"),
+    Chinese(scoringLabel = "Area", katagoName = "chinese", handicapBonusRule = HandicapBonusRule.N),
+    Japanese(scoringLabel = "Territory", katagoName = "japanese", handicapBonusRule = HandicapBonusRule.Zero),
     ;
 
     fun toggled(): Ruleset =
