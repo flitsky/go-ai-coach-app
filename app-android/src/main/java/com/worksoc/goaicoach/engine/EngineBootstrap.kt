@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.engine
 
 import android.content.Context
+import com.worksoc.goaicoach.BuildConfig
 import com.worksoc.goaicoach.engine.android.EngineCoreApiFactory
 import com.worksoc.goaicoach.engine.android.KataGoProcessConfig
 import com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi
@@ -84,7 +85,7 @@ fun createEngineBootstrap(
                     "startupPrintMessageToStderr" to "false",
                 ),
             ),
-        ),
+        ).withDebugStallInjector(filesDir),
         mode = EngineMode.LocalProcess,
         displayName = "KataGo",
         diagnostic = buildString {
@@ -100,6 +101,17 @@ fun createEngineBootstrap(
         },
     )
 }
+
+/**
+ * 디버그 빌드에서만 다음 분석 한 번을 일부러 멈출 수 있게 감싼다(refactor backlog #74 실기 확인 —
+ * [DebugEngineStallInjector]). 릴리스 빌드는 그대로 돌려준다 — 파일이 있어도 아무 일도 없다.
+ */
+private fun EngineCoreApi.withDebugStallInjector(filesDir: File): EngineCoreApi =
+    if (BuildConfig.DEBUG) {
+        DebugEngineStallInjector(delegate = this, armFile = File(filesDir, DebugEngineStallInjector.ArmFileName))
+    } else {
+        this
+    }
 
 /**
  * 번들에 실린 에셋을 `filesDir/katago`로 푼다 — **앱 데이터를 지워도 다시 풀리는 것이 요점이다.**
