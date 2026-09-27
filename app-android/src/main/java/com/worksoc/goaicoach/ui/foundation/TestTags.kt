@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.ui
+package com.worksoc.goaicoach.ui.foundation
 
 import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.shared.domain.StoneColor

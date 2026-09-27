@@ -2,6 +2,7 @@ package com.worksoc.goaicoach.ui
 
 import com.worksoc.goaicoach.architecture.RepoPaths
 import com.worksoc.goaicoach.architecture.readContractSource
+import com.worksoc.goaicoach.ui.foundation.FeatureFlags
 import java.io.File
 import org.junit.Assert.assertTrue
 import org.junit.Test

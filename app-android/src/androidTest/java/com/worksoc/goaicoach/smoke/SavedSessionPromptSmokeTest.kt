@@ -26,7 +26,7 @@ import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import com.worksoc.goaicoach.testsupport.FakeEngineSessionClient
 import com.worksoc.goaicoach.ui.GoCoachApp
-import com.worksoc.goaicoach.ui.TestTags
+import com.worksoc.goaicoach.ui.foundation.TestTags
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
 import com.worksoc.goaicoach.ui.l10n.UiStrings
 import org.junit.Before

@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.ui
+package com.worksoc.goaicoach.ui.foundation
 
 import com.worksoc.goaicoach.presentation.KaTrainUxOptions
 

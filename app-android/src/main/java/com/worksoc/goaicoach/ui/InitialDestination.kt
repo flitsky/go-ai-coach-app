@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.ui
 
 import com.worksoc.goaicoach.application.device.DeviceIdentityStorePort
+import com.worksoc.goaicoach.ui.foundation.FeatureFlags
 
 /**
  * 앱 시작 시 첫 화면을 계산한다. [GoCoachApp.kt]가 상태 훅/라인 예산이 빠듯해(state-holder-refactor

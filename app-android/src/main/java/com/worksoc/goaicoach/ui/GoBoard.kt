@@ -70,6 +70,7 @@ import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
 import com.worksoc.goaicoach.shared.enginecontract.OwnershipEstimate
 import com.worksoc.goaicoach.shared.policy.topMoveDeltaScoreLabel
 import com.worksoc.goaicoach.ui.designsystem.GoBoardColors
+import com.worksoc.goaicoach.ui.foundation.TestTags
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import kotlin.math.abs
 import kotlinx.coroutines.delay
