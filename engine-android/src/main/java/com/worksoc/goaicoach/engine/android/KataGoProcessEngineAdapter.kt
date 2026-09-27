@@ -18,10 +18,6 @@ import com.worksoc.goaicoach.shared.enginecontract.EngineStatus
 import com.worksoc.goaicoach.shared.enginecontract.FinalScoreResult
 import com.worksoc.goaicoach.shared.enginecontract.MoveResult
 import com.worksoc.goaicoach.shared.enginecontract.ScoreEstimate
-import java.io.BufferedReader
-import java.io.BufferedWriter
-import java.io.InputStreamReader
-import java.io.OutputStreamWriter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.runInterruptible
@@ -30,9 +26,17 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeout
 import org.json.JSONObject
 
+/**
+ * @param runtime 1계층 — 프로세스를 띄우는 자리(refactor backlog #14). 이 어댑터는 프로세스를 직접 만들지 않는다.
+ * @param deadlineMillis 명령마다 정해진 마감(ms)을 실제로 기다릴 마감으로 옮긴다. 프로덕션은 항등이다 — 마감 값을
+ *   바꾸는 자리가 아니라(그건 #17), 테스트가 30초·120초 마감을 짧게 줄여 시간 초과 경로를 재는 이음새다.
+ */
 internal class KataGoProcessEngineAdapter(
-    private val processConfig: KataGoProcessConfig,
+    private val runtime: EngineProcessRuntime,
+    private val deadlineMillis: (Long) -> Long = { timeoutMillis -> timeoutMillis },
 ) : EngineCoreApi {
+    constructor(processConfig: KataGoProcessConfig) : this(runtime = LocalKataGoProcessRuntime(processConfig))
+
     private var profile: EngineProfile = EngineProfile(mode = EngineMode.LocalProcess)
     private var boardSize: BoardSize = BoardSize.Nine
     private var ruleset: Ruleset = Ruleset.Japanese
@@ -47,12 +51,8 @@ internal class KataGoProcessEngineAdapter(
      * [nextPlayer]는 "지금 둘 차례"라 홀수 수 뒤에는 이것과 다르다. [initialStones]가 비어 있으면 쓰이지 않는다.
      */
     private var staticStartPlayer: StoneColor = StoneColor.Black
-    private var process: Process? = null
-    private var input: BufferedWriter? = null
-    private var output: BufferedReader? = null
-    private var analysisProcess: Process? = null
-    private var analysisInput: BufferedWriter? = null
-    private var analysisOutput: BufferedReader? = null
+    private var gtpPipes: EngineProcessPipes? = null
+    private var analysisPipes: EngineProcessPipes? = null
     private val playedMoves = mutableListOf<Move>()
 
     // Serializes access to each process's stdin/stdout so two concurrent engine
@@ -168,7 +168,7 @@ internal class KataGoProcessEngineAdapter(
         // 여기서 runCatching으로 되돌리지 마라(refactor backlog #16ⓐ, 그 함수의 KDoc 참고).
         val attempt = if (effectiveLimit.needsJsonAnalysis()) {
             attemptJsonAnalysis {
-                val analysisConfigPath = processConfig.resolveAnalysisConfigPath()
+                val analysisConfigPath = runtime.analysisConfigPathOrNull()
                     ?: return@attemptJsonAnalysis null
                 ensureAnalysisProcessStarted(analysisConfigPath)
                 jsonPositionAnalysisClient().analyze(effectiveLimit, limit.candidateCount)
@@ -214,18 +214,14 @@ internal class KataGoProcessEngineAdapter(
 
     override suspend fun stop(): EngineStatus {
         runCatching {
-            if (process != null) {
+            if (gtpPipes != null) {
                 sendCommand(KataGoProtocolCommands.quit())
             }
         }
-        input = null
-        output = null
-        process?.destroy()
-        process = null
-        analysisInput = null
-        analysisOutput = null
-        analysisProcess?.destroy()
-        analysisProcess = null
+        gtpPipes?.destroy()
+        gtpPipes = null
+        analysisPipes?.destroy()
+        analysisPipes = null
         return EngineStatus.stopped("KataGo process stopped")
     }
 
@@ -243,35 +239,17 @@ internal class KataGoProcessEngineAdapter(
     }
 
     private fun ensureProcessStarted() {
-        if (process?.isAlive == true) {
+        if (gtpPipes?.isAlive == true) {
             return
         }
-
-        processConfig.validateGtpFiles()
-        val command = processConfig.buildGtpCommand(profile).commandLine
-
-        process = ProcessBuilder(command)
-            .redirectError(ProcessBuilder.Redirect.INHERIT)
-            .start()
-        input = BufferedWriter(OutputStreamWriter(process!!.outputStream))
-        output = BufferedReader(InputStreamReader(process!!.inputStream))
+        gtpPipes = runtime.startGtp(profile)
     }
 
     private fun ensureAnalysisProcessStarted(analysisConfigPath: String) {
-        if (analysisProcess?.isAlive == true) {
+        if (analysisPipes?.isAlive == true) {
             return
         }
-
-        val command = processConfig.buildAnalysisCommand(
-            analysisConfigPath = analysisConfigPath,
-            analysisSearchThreads = AnalysisSearchThreads,
-        ).commandLine
-
-        analysisProcess = ProcessBuilder(command)
-            .redirectError(ProcessBuilder.Redirect.INHERIT)
-            .start()
-        analysisInput = BufferedWriter(OutputStreamWriter(analysisProcess!!.outputStream))
-        analysisOutput = BufferedReader(InputStreamReader(analysisProcess!!.inputStream))
+        analysisPipes = runtime.startAnalysis(analysisConfigPath)
     }
 
     private suspend fun sendCommand(
@@ -280,7 +258,7 @@ internal class KataGoProcessEngineAdapter(
     ): String =
         commandMutex.withLock {
             try {
-                withTimeout(timeoutMillis) {
+                withTimeout(deadlineMillis(timeoutMillis)) {
                     runInterruptible(Dispatchers.IO) {
                         sendCommandBlocking(command)
                     }
@@ -292,8 +270,9 @@ internal class KataGoProcessEngineAdapter(
         }
 
     private fun sendCommandBlocking(command: String): String {
-        val writer = requireNotNull(input) { "KataGo process input is not initialized" }
-        val reader = requireNotNull(output) { "KataGo process output is not initialized" }
+        val pipes = requireNotNull(gtpPipes) { "KataGo process input is not initialized" }
+        val writer = pipes.writer
+        val reader = pipes.reader
         writer.write(command)
         writer.newLine()
         writer.flush()
@@ -326,7 +305,7 @@ internal class KataGoProcessEngineAdapter(
     ): String =
         analysisQueryMutex.withLock {
             try {
-                withTimeout(timeoutMillis) {
+                withTimeout(deadlineMillis(timeoutMillis)) {
                     runInterruptible(Dispatchers.IO) {
                         sendAnalysisQueryBlocking(query)
                     }
@@ -338,8 +317,9 @@ internal class KataGoProcessEngineAdapter(
         }
 
     private fun sendAnalysisQueryBlocking(query: JSONObject): String {
-        val writer = requireNotNull(analysisInput) { "KataGo analysis process input is not initialized" }
-        val reader = requireNotNull(analysisOutput) { "KataGo analysis process output is not initialized" }
+        val pipes = requireNotNull(analysisPipes) { "KataGo analysis process input is not initialized" }
+        val writer = pipes.writer
+        val reader = pipes.reader
         writer.write(query.toString())
         writer.newLine()
         writer.flush()
@@ -375,17 +355,13 @@ internal class KataGoProcessEngineAdapter(
     // whatever command runs next. Tearing the process down guarantees the next
     // sendCommand() starts from a clean process and streams.
     private fun restartProcessAfterTimeout() {
-        runCatching { process?.destroy() }
-        process = null
-        input = null
-        output = null
+        runCatching { gtpPipes?.destroy() }
+        gtpPipes = null
     }
 
     private fun restartAnalysisProcessAfterTimeout() {
-        runCatching { analysisProcess?.destroy() }
-        analysisProcess = null
-        analysisInput = null
-        analysisOutput = null
+        runCatching { analysisPipes?.destroy() }
+        analysisPipes = null
     }
 
     private fun gtpAnalysisClient(): KataGoGtpAnalysisClient =
@@ -504,8 +480,4 @@ internal class KataGoProcessEngineAdapter(
 
     private fun EngineProfile.describe(): String =
         "${difficulty.label}, visits=${analysisLimit.visits}, time=${analysisLimit.timeMillis ?: "none"}ms"
-
-    private companion object {
-        private const val AnalysisSearchThreads = 4
-    }
 }

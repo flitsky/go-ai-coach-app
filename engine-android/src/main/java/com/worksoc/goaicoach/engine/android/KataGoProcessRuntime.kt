@@ -1,7 +1,11 @@
 package com.worksoc.goaicoach.engine.android
 
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
+import java.io.BufferedReader
+import java.io.BufferedWriter
 import java.io.File
+import java.io.InputStreamReader
+import java.io.OutputStreamWriter
 
 data class KataGoProcessConfig(
     val executablePath: String,
@@ -16,6 +20,93 @@ internal data class KataGoProcessCommand(
     val arguments: List<String>,
 ) {
     val commandLine: List<String> = listOf(executablePath) + arguments
+}
+
+/**
+ * 1계층 — KataGo 프로세스를 **띄우는** 자리(refactor backlog #14). `KataGoProcessEngineAdapter`는
+ * 프로세스를 직접 만들지 않고, 이것이 돌려준 [EngineProcessPipes]의 writer/reader만 쓴다.
+ *
+ * 세 함수 모두 블로킹이지만 짧다 — 파일 검증과 fork/exec뿐이고, 파이프 입출력(모델 적재를 기다리는
+ * 첫 응답 같은 것)은 하지 않는다. 그래서 호출자가 수명 락을 쥔 채 불러도 된다.
+ */
+internal interface EngineProcessRuntime {
+    /** GTP 엔진을 띄운다. 실행 파일·모델·설정 파일이 없으면 [IllegalArgumentException]. */
+    fun startGtp(profile: EngineProfile): EngineProcessPipes
+
+    /** JSON analysis 엔진의 설정 파일 경로. 없으면 `null` — JSON 경로가 구성되지 않은 빌드다(사고가 아니다). */
+    fun analysisConfigPathOrNull(): String?
+
+    /** JSON analysis 엔진을 띄운다. */
+    fun startAnalysis(analysisConfigPath: String): EngineProcessPipes
+}
+
+/**
+ * 띄운 프로세스 하나의 stdin/stdout과 수명 — `process`/`input`/`output` 셋을 한 값으로 묶었다.
+ *
+ * ⚠️ [destroy]·[destroyForcibly]는 **[reader]/[writer]를 닫지 않는다.** `BufferedReader.close()`는 막힌
+ * `readLine()`이 쥔 것과 **같은 락**을 잡으므로, 멈춘 호출을 풀려고 닫으면 닫는 쪽(메인 스레드의
+ * `forceReset`)이 같이 멈춘다. 프로세스를 죽이면 파이프의 쓰는 쪽이 닫혀 막힌 읽기가 EOF로 풀린다 —
+ * 그것만이 푸는 방법이다(파이프 읽기는 `Thread.interrupt()`를 무시한다).
+ */
+internal interface EngineProcessPipes {
+    val writer: BufferedWriter
+    val reader: BufferedReader
+    val isAlive: Boolean
+
+    /** SIGTERM — 정상 종료(`quit` 뒤). */
+    fun destroy()
+
+    /** SIGKILL — 멈춘 프로세스, SIGTERM을 붙잡아 두는 프로세스(SIGSTOP된 것 포함)도 내린다. */
+    fun destroyForcibly()
+}
+
+/** 이 기기에서 `ProcessBuilder`로 띄운다 — 앱에서 KataGo 프로세스를 만드는 **유일한** 코드다. */
+internal class LocalKataGoProcessRuntime(
+    private val config: KataGoProcessConfig,
+    private val analysisSearchThreads: Int = DefaultAnalysisSearchThreads,
+) : EngineProcessRuntime {
+    override fun startGtp(profile: EngineProfile): EngineProcessPipes {
+        config.validateGtpFiles()
+        return spawn(config.buildGtpCommand(profile))
+    }
+
+    override fun analysisConfigPathOrNull(): String? = config.resolveAnalysisConfigPath()
+
+    override fun startAnalysis(analysisConfigPath: String): EngineProcessPipes =
+        spawn(
+            config.buildAnalysisCommand(
+                analysisConfigPath = analysisConfigPath,
+                analysisSearchThreads = analysisSearchThreads,
+            ),
+        )
+
+    private fun spawn(command: KataGoProcessCommand): EngineProcessPipes =
+        LocalProcessPipes(
+            ProcessBuilder(command.commandLine)
+                .redirectError(ProcessBuilder.Redirect.INHERIT)
+                .start(),
+        )
+
+    private companion object {
+        const val DefaultAnalysisSearchThreads = 4
+    }
+}
+
+private class LocalProcessPipes(
+    private val process: Process,
+) : EngineProcessPipes {
+    override val writer: BufferedWriter = BufferedWriter(OutputStreamWriter(process.outputStream))
+    override val reader: BufferedReader = BufferedReader(InputStreamReader(process.inputStream))
+    override val isAlive: Boolean
+        get() = process.isAlive
+
+    override fun destroy() {
+        process.destroy()
+    }
+
+    override fun destroyForcibly() {
+        process.destroyForcibly()
+    }
 }
 
 internal fun KataGoProcessConfig.validateGtpFiles() {
