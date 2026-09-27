@@ -5,7 +5,7 @@ package com.worksoc.goaicoach.application.profile
  *
  * ## 왜 여기인가 (refactor backlog #85)
  * 이 규칙은 처음에 저장 어댑터(`persistence/UserProfileStore.kt`) 안에만 있었고, 입력 팝업
- * (`ui/UserNicknameDialog.kt`)이 입력 중 자르기에 **어댑터의 상수를 끌어다 썼다.** 12자 상한은 저장
+ * (`ui/account/UserNicknameDialog.kt`)이 입력 중 자르기에 **어댑터의 상수를 끌어다 썼다.** 12자 상한은 저장
  * 형식의 사정이 아니라 **제품 규칙**이라(아래 [MaxLength]) 위 계층에 있어야 한다 — 원칙 문서 4계층
  * "포트가 아는 것" ⓑ의 *"위 계층에 있어야 할 규칙을 어댑터 안에 쓰는 것"* 이 그 모양이었다.
  * 이제 저장소(저장 전)와 팝업(입력 중)이 둘 다 이 객체를 **부르기만** 한다. 옮기면서 동작은 바꾸지

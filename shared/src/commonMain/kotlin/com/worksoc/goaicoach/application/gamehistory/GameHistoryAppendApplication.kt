@@ -29,7 +29,7 @@ import kotlin.random.Random
  * 때문에 느려지지 않아야 한다는 게 이 개정의 철학이다.
  *
  * ## 멱등성 — 저장소 자체가 근거다
- * `ui/GoCoachApp.kt`가 "대국 이어하기" 저장과 같은 `LaunchedEffect`에서 호출한다. 그 효과가
+ * `ui/shell/GoCoachApp.kt`가 "대국 이어하기" 저장과 같은 `LaunchedEffect`에서 호출한다. 그 효과가
  * 관련 없는 이유로 여러 번 재실행돼도 중복 기록되지 않도록, 새 `LaunchedEffect`나 Compose
  * 상태를 더하지 않고 **가장 최근 기록과 (수순 개수·승자·기권 여부)를 견줘** 건너뛴다.
  *

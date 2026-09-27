@@ -276,6 +276,9 @@ SOURCE_ALLOWED: dict[tuple[str, str], str] = {
         "ⓓ `staleAppAndroidPaths` — 260804에 engine-android로 옮긴 뒤 app-android에 없어야 함을 단언",
     ("app-android/src/test/java/com/worksoc/goaicoach/ui/UiStringsTest.kt", "UiStringsEn/Ja/Zh.kt"):
         "ⓔ `UiStringsEn.kt`·`UiStringsJa.kt`·`UiStringsZh.kt` 셋을 줄여 쓴 실패 메시지",
+    ("app-android/src/test/java/com/worksoc/goaicoach/architecture/UiPackageCycleRatchetTest.kt", "board/Wrong.kt"):
+        "ⓔ 자기 모순 패키지 배치를 시험하려고 지어낸 픽스처 파일명(디렉터리는 board/인데 "
+        "선언은 play 패키지) — refactor backlog #27 C17, `misplacedFiles` 자체 점검용이라 실재하면 안 됨",
 }
 
 

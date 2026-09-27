@@ -11,7 +11,7 @@ import com.worksoc.goaicoach.shared.policy.SearchTimeLimit
  * 260814: `:shared` 모듈로 이전(GameSessionStateHolder→shared 마이그레이션의 스파이크
  * 대상). 패키지명은 유지했다 — `:shared` 안에서도 `match/`처럼 `application.*` 밖의
  * 패키지가 이미 쓰이고 있어, 모듈 경계와 패키지명은 독립적인 축이라 그대로 둬도 된다.
- * app-android 쪽 호출부(`ui/GamePlaySection.kt`)가 여전히 이 함수를 호출하므로 `internal`을
+ * app-android 쪽 호출부(`ui/play/GamePlaySection.kt`)가 여전히 이 함수를 호출하므로 `internal`을
  * 유지할 수 없다 — Kotlin `internal`은 모듈 스코프라 다른 모듈에서는 안 보인다.
  */
 

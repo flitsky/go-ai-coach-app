@@ -44,7 +44,7 @@ class UiStringsBotCharacterTest {
 
         assertEquals(
             "문구 표에 빠진 항목이 있다 = 화면에 id가 그대로 보인다. " +
-                "`ui/UiStringsBotCharacters.kt`에 채워라:\n" + missing.joinToString("\n") { "  - $it" },
+                "`ui/l10n/UiStringsBotCharacters.kt`에 채워라:\n" + missing.joinToString("\n") { "  - $it" },
             emptyList<String>(),
             missing,
         )

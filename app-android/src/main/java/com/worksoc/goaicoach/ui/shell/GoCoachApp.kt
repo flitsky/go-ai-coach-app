@@ -192,7 +192,7 @@ private fun GoCoachScreen(
     val deviceIdentityStore: DeviceIdentityStorePort = DeviceIdentityStore(context)
     // Credential Manager 호출도 내부 상태가 없는 얇은 래퍼라 authClient와 동일하게 캐시하지 않는다.
     val credentialManagerClient = GoogleCredentialManagerClient()
-    // 첫 화면 판단(로그인 기능 온/오프 포함)은 FeatureFlags.kt의 initialDestination으로
+    // 첫 화면 판단(로그인 기능 온/오프 포함)은 InitialDestination.kt의 initialDestination으로
     // 뺐다 — 별도 훅을 새로 추가하지 않고 이 초기값 계산식만 함수 호출로 바꾼다(이 파일의
     // 상태 훅 예산이 거의 소진돼 있어, 새 컴포즈 상태 훅을 추가하지 않는 쪽을 우선한다).
     var currentDestination by remember {
@@ -786,11 +786,11 @@ private fun GoCoachScreen(
         )
     }
 
-    // 봇 캐릭터 수집 상태 — #8이 배선을 남겨 둔 자리를 #10이 채운다(본체는 ui/BotCharacterUiState.kt).
+    // 봇 캐릭터 수집 상태 — #8이 배선을 남겨 둔 자리를 #10이 채운다(본체는 ui/monetization/BotCharacterUiState.kt).
     // 프리미엄 배선보다 **먼저** 만드는 이유: 구매 특전(#18) 판정에 지금 상대와 컬렉션이 필요하다.
     val botCharacterUiState = buildBotCharacterUiState(context)
     val characterPerkActive = isBotCharacterPerkActive(matchOpponentCharacter(playerSetup), botCharacterUiState.collection)
-    // 프리미엄 배선(활성화 판정·저장·클레임 규칙)의 본체는 ui/PremiumUiState.kt의
+    // 프리미엄 배선(활성화 판정·저장·클레임 규칙)의 본체는 ui/monetization/PremiumUiState.kt의
     // buildPremiumUiState에 있다 — PremiumPurchaseGlue.kt와 같은 이유로 이 셸 밖에 뒀다.
     val premiumUiState = buildPremiumUiState(
         premiumState = premiumState,
@@ -805,10 +805,10 @@ private fun GoCoachScreen(
         premiumState = premiumStateStore.saveMergingClaimedFeatures(nextState)
     }
 
-    // 소모품 재고/단발성 상태 배선의 본체는 ui/ConsumableUiState.kt에 있다(위와 같은 이유).
+    // 소모품 재고/단발성 상태 배선의 본체는 ui/monetization/ConsumableUiState.kt에 있다(위와 같은 이유).
     val consumableUiState = buildConsumableUiState(context) { next -> premiumState = next }
 
-    // 프리미엄 만료/해제 시 형세보기·추천수 토글을 되끄는 효과 — 본체는 ui/PremiumUiState.kt에 있다(위와 같은 이유).
+    // 프리미엄 만료/해제 시 형세보기·추천수 토글을 되끄는 효과 — 본체는 ui/monetization/PremiumUiState.kt에 있다(위와 같은 이유).
     PremiumExpiryAutoDisableEffect(premiumState, topMovesEnabled, uxOptions.showOwnershipOverlay, consumableUiState, diagnosticEventLog, characterPerkActive, controllers.topMovesController::hide) { uxOptions = uxOptions.copy(showOwnershipOverlay = false) }
 
     // 1회권으로 켠 표시는 단발성이라 다음 수가 놓이면 스스로 꺼진다 — 프리미엄 토글과 달리 계속 갱신되지 않는 것이 "1회"의 단위다(4.5절).
@@ -821,7 +821,7 @@ private fun GoCoachScreen(
         LocalBotCharacterUiState provides botCharacterUiState.copy(subscriptionActive = premiumUiState.isPurchased),
     ) {
     // 받아 가지 않은 출석 보상이 있으면 홈 위에 Claim 다이얼로그를 띄운다(킥오프 플랜 5.1절) —
-    // 체크인/지급/상태는 전부 ui/AttendanceRewardClaimDialog.kt가 들고 있다(상태 훅 예산 절약).
+    // 체크인/지급/상태는 전부 ui/monetization/AttendanceRewardClaimDialog.kt가 들고 있다(상태 훅 예산 절약).
     //
     // ⚠️ **이 provider 안에 있어야 한다.** 밖에 두면 `LocalConsumableUiState`가 아직 제공되지
     // 않아 기본값(빈 상태)이 잡히고, 지급 후 재고 표시를 갱신하는 `refresh()`가 **아무 일도 하지

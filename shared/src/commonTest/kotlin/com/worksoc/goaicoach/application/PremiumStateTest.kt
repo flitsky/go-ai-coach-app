@@ -92,7 +92,7 @@ class PremiumStateTest {
 
     @Test
     fun claimedFeaturesSurvivesSourceTransition() {
-        // ui/GoCoachApp.kt의 세 전이 지점(setPurchased/purchasePremium/activateAdGrant)이
+        // ui/shell/GoCoachApp.kt의 세 전이 지점(setPurchased/purchasePremium/activateAdGrant)이
         // 모두 .copy(claimedFeatures = ...)로 이어붙이는 패턴을 그대로 검증한다 — 새 source로
         // 전이해도 클레임 원장이 조용히 사라지면 안 된다.
         val claimed = PremiumState(claimedFeatures = setOf(FeatureId.Undo))

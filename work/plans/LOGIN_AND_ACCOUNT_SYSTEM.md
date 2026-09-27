@@ -42,7 +42,7 @@
 >
 > 그 결과 **"익명 → 실계정 승격"을 전제로 쓴 아래 서술은 전부 성립하지 않는다** — Step 2/3의 `linkWithCredential` 승격 경로, Step 4의 목표 정의, 그리고 `GO_AI_COACH_ARCHITECTURE_ROADMAP.md` 로드맵 7번이 그것이다. 로드맵 7번은 "착수 전에 목표를 다시 정의해야 한다"고 이미 표시해 뒀다(예: "게스트(로컬 ID) → 실계정 승격"). 승격 코드 자체(`AuthProvider.Anonymous`, `isPromotableAnonymousSession`, `linkGoogleCredential`/`linkEmailCredential`)는 무해해서 지우지 않고 남겨 뒀다.
 >
-> ⚠️ 여기에 더해 **로그인 기능 전체가 2026-08-09에 꺼졌다**(`ui/FeatureFlags.kt`의 `isLoginEnabled = false`) — 아래 "결정 번복: 이번 출시에서 로그인 기능 전체를 끄기로 결정" 절 참고.
+> ⚠️ 여기에 더해 **로그인 기능 전체가 2026-08-09에 꺼졌다**(`ui/foundation/FeatureFlags.kt`의 `isLoginEnabled = false`) — 아래 "결정 번복: 이번 출시에서 로그인 기능 전체를 끄기로 결정" 절 참고.
 
 ---
 
@@ -123,7 +123,7 @@ Step 1(익명 인증)은 이미 이 배치를 따르고 있다 — `AuthClientPo
 - **`AuthClientPort`(포트, 플랫폼 비종속)**: `signInWithGoogle(idToken)`(신규 로그인), `linkGoogleCredential(idToken)`(익명 세션 승격), `currentAuthState()`(동기 조회) 3개 메서드 추가. "지금 익명 세션이라 승격 대상인지"는 `AuthState.isPromotableAnonymousSession`이라는 순수 함수로 분리해, 이 판단이 SDK 어댑터 안에 묻히지 않고 유스케이스 판단으로 남게 했다 — 위 "계층 배치 참고" 표가 명시한 기준.
 - **`AndroidAuthClient`(어댑터)**: 위 3개 메서드의 실제 Firebase Auth 구현. `linkGoogleCredential`이 `FirebaseAuthUserCollisionException`(이 Google 계정이 이미 다른 Firebase 사용자에 연결된 경우)을 만나면 그 기존 계정으로 그냥 로그인시키는 폴백을 흡수한다 — Step 4 이전인 지금은 익명 UID에 서버 데이터가 없어 안전한 처리.
 - **`platform/GoogleCredentialManagerClient.kt`(신규 파일)**: Credential Manager/Sign in with Google 호출만 전담 — Firebase Auth 호출과 SDK 실패 유형이 섞이지 않도록 분리(README 표의 "SDK 의존이 무거우면 전용 파일" 기준). `R.string.default_web_client_id`(google-services.json의 웹 OAuth 클라이언트로부터 자동 생성)를 참조한다.
-- **`ui/GoogleSignInFlow.kt`(신규 파일)**: `OnboardingScreen`/`SettingsScreen`이 공유하는 시도 흐름(토큰 요청 → 승격 여부 판단 → Firebase 호출 → 실패 시 `DiagnosticEventLogPort`로 로그). 실패/취소를 조용히 삼키지 않고 항상 로그 + 토스트로 안내.
+- **`ui/account/GoogleSignInFlow.kt`(신규 파일)**: `OnboardingScreen`/`SettingsScreen`이 공유하는 시도 흐름(토큰 요청 → 승격 여부 판단 → Firebase 호출 → 실패 시 `DiagnosticEventLogPort`로 로그). 실패/취소를 조용히 삼키지 않고 항상 로그 + 토스트로 안내.
 - **UI**: `OnboardingScreen`/`SettingsScreen`의 Google 버튼을 스텁에서 실제 플로우로 교체. `SettingsScreen`은 `authClient.currentAuthState()`로 초기 상태를 읽고, 로그인 성공 시 로컬 상태를 갱신해 문구를 "Google 계정으로 로그인되어 있습니다"로 바꾸고 Google 버튼 자체를 숨긴다(같은 계정으로 다시 시도할 이유를 없앰). 문자열 3개(`googleSignedInToastMessage`/`googleSignInFailedMessage`/`settingsGoogleStatusMessage`)를 4개 언어(ko/en/ja/zh) 모두에 추가.
 - **의존성**: `androidx.credentials:credentials:1.6.0`, `androidx.credentials:credentials-play-services-auth:1.6.0`, `com.google.android.libraries.identity.googleid:googleid:1.2.0`(2026-08 기준 최신 안정 버전).
 - **검증**:
@@ -167,7 +167,7 @@ Step 1(익명 인증)은 이미 이 배치를 따르고 있다 — `AuthClientPo
 ### 결정 번복: 이번 출시에서 로그인 기능 전체를 끄기로 결정 (2026-08-09)
 
 - **배경**: 계정 삭제 기능(위 절)을 구현하던 중, 사용자가 "계정 로그인이 꼭 필요한가"라는 질문을 던졌다. 검토 결과: (1) 이 앱의 크로스 디바이스 요구는 사실상 "프리미엄 구매가 재설치 후에도 유지되는 것" 하나뿐이고, 이는 이미 Play Billing만으로 완전히 해결돼 있다(2026-08-09 실기 검증, 로그인 여부와 무관하게 동작) — 1장의 "핵심 논의"에서 애초에 이렇게 설계했던 그대로다. (2) Firestore 동기화(Step 4, 계정에 진짜로 뭔가를 귀속시키는 유일한 기능)는 여전히 미착수라, 지금 Google/이메일 로그인은 상태 문구를 바꾸는 것 외엔 실질 기능이 없다. (3) 반면 계정 생성을 지원한다는 사실 자체가 Google Play Data Safety 공개 항목(이메일/사용자 ID 수집)과 인앱 계정 삭제 의무를 계속 발생시킨다. **실질 기능 0 대비 정책/UX 비용만 있는 상태**라고 결론 내려, 이번 출시에서는 로그인 기능 자체를 끄기로 결정했다.
-- **구현 방식**: 기능을 삭제하지 않고 **컴파일타임 스위치**로 껐다 — `ui/FeatureFlags.kt` 신규, `internal object FeatureFlags { const val isLoginEnabled = false }`. 이 값을 `true`로 되돌리고 다시 빌드하면 온보딩/설정 화면의 기존 로그인 UI가 코드 변경 없이 그대로 되살아난다(로그인 관련 포트/어댑터/글루/UI 코드는 전부 그대로 남겨둠 — 이번 절 이전의 Step 1~3 산출물 전부 유효).
+- **구현 방식**: 기능을 삭제하지 않고 **컴파일타임 스위치**로 껐다 — `ui/foundation/FeatureFlags.kt` 신규, `internal object FeatureFlags { const val isLoginEnabled = false }`. 이 값을 `true`로 되돌리고 다시 빌드하면 온보딩/설정 화면의 기존 로그인 UI가 코드 변경 없이 그대로 되살아난다(로그인 관련 포트/어댑터/글루/UI 코드는 전부 그대로 남겨둠 — 이번 절 이전의 Step 1~3 산출물 전부 유효).
 - **`initialDestination()` 함수 신설**(`FeatureFlags.kt`): 로그인이 꺼져 있으면 온보딩 화면 자체를 건너뛰고 항상 홈으로 직행한다. 이때 온보딩의 "계정 없이 시작하기"가 하던 `DeviceIdentityStorePort.loadOrCreate()`(게스트 ID 생성) 호출을 이 함수 안에서 대신 수행해, 온보딩 화면을 한 번도 안 띄워도 프리미엄 구매 복원 등 게스트 기반 기능이 그대로 동작하게 했다 — `loadOrCreate()`는 이미 있으면 그대로 반환하는 멱등 호출이라 매 실행마다 불러도 안전하다. `GoCoachApp.kt`가 라인/상태 훅 예산이 정확히 꽉 찬 상태(849/849, 47/47)라, 이 판단 로직을 별도 파일로 빼서 `GoCoachApp.kt`는 기존 `remember { mutableStateOf(...) }` 초기값 계산식 한 줄만 함수 호출로 교체했다(순 라인 변화 0).
 - **`SettingsScreen.kt`**: "계정" 섹션(제목/상태 문구/Google·Apple·이메일 버튼/계정 삭제 버튼)을 전부 `if (FeatureFlags.isLoginEnabled)`로 감쌌다 — 로그인 수단이 하나도 없는데 "로그인하면 다른 기기에서도 이어볼 수 있어요" 안내만 남으면 존재하지 않는 기능을 홍보하는 셈이라 통째로 숨긴다.
 - **부수 결정 — Firebase Analytics 의존성 완전 제거**: 로그인을 재검토하며 데이터 수집 전반을 다시 훑어본 결과 `firebase-analytics` SDK가 포함돼 있으나 `logEvent()` 등 실제 호출이 코드 어디에도 없다는 것을 확인했다(grep으로 재확인) — 자동 수집만 계속되는 죽은 의존성이었다. 껐다 켰다 할 로직/UI가 없는 순수 수집 SDK라 플래그로 끄기보다 `app-android/build.gradle.kts`에서 의존성 자체를 제거했다. `PREMIUM_MODE.md` 문서의 Data Safety 관련 향후 참고사항: 이 변경 이후 남는 데이터 수집원은 AdMob(광고 ID)과 Play Billing(구매 내역)뿐이다.

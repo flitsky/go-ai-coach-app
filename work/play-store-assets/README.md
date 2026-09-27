@@ -68,7 +68,7 @@
 
 ## 앱 아이콘 · 그래픽 이미지 (2026-08-11 추가)
 
-저장소에 런처 아이콘 리소스가 없어서(`mipmap`/`ic_launcher` 전무, `AndroidManifest.xml`에도 `android:icon` 미지정) 홈 화면에서 실제로 쓰이는 로고 그래픽을 코드베이스에서 그대로 가져왔다 — `app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachHomeScreen.kt`의 `GoStoneLogoBadge()` (line 297)를 픽셀 단위로 재현(동일 radial gradient 색상 stop, 하이라이트 위치/반경, 겹침 비율 13/51).
+저장소에 런처 아이콘 리소스가 없어서(`mipmap`/`ic_launcher` 전무, `AndroidManifest.xml`에도 `android:icon` 미지정) 홈 화면에서 실제로 쓰이는 로고 그래픽을 코드베이스에서 그대로 가져왔다 — `app-android/src/main/java/com/worksoc/goaicoach/ui/home/GoCoachHomeScreen.kt`의 `GoStoneLogoBadge()` (line 297)를 픽셀 단위로 재현(동일 radial gradient 색상 stop, 하이라이트 위치/반경, 겹침 비율 13/51).
 
 - **`app_icon/app_icon_512x512.png`** — 크림 배경(`#F5F0E6`, 배지와 동일 색) + 흑/백 돌 페어. 알파 없음, 56KB. (정상 업로드 확인됨)
 - **`feature_graphic/feature_graphic_1024x500.png`** — 틸 그라데이션(`#0E8F6B → #0B7358`) 배경에 같은 돌 배지 + "바둑 AI" 타이틀 + 홈 화면 원문 그대로의 태그라인("로컬 AI와 함께하는 바둑 학습") + 무료·로그인 없음·오프라인 AI 분석 강조 문구. PNG로 재생성, 120KB.

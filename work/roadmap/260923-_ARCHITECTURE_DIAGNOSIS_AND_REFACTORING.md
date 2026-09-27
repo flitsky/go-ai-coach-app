@@ -49,7 +49,7 @@
 ### ✅ 덤 수정 실기 검증 완료 — 2026-09-23
 
 사용자가 실기에서 **덤 0.5 → 4수 → 앱 강제 종료 → 재시작 → 이어하기 → 설정에 0.5 유지**를 확인했다.
-이 시나리오는 버그를 **구분한다** — `ui/SettingsScreen.kt`가 그리는 값은 `screenState.gameState.komi`
+이 시나리오는 버그를 **구분한다** — `ui/settings/SettingsScreen.kt`가 그리는 값은 `screenState.gameState.komi`
 (설정 저장분이 아니라 **복원된 대국 상태 자체**)이고, 복원은 `SavedGameRestoreApplication`의
 `buildSavedGameRestorePlan`이 `gameState`를 통째로 교체하므로, 수정 전이었다면 **6.5가 떴어야 한다.**
 접바둑 분기와 옛 저장분 폴백은 `SavedGameSessionCodecTest`의 회귀 3건이 덮는다.
@@ -237,7 +237,7 @@ session·score·match·runtime·endgame이 딸려오고, 그것들이 다시 eng
 
 | 파일 | 변경 | 읽는 법 |
 | --- | ---: | --- |
-| `ui/GoCoachApp.kt` (970줄) | **311회** | 거의 모든 작업이 이 한 파일을 지난다 = 병목이자 최대 충돌면 |
+| `ui/shell/GoCoachApp.kt` (970줄) | **311회** | 거의 모든 작업이 이 한 파일을 지난다 = 병목이자 최대 충돌면 |
 | `ui/UiStrings*.kt` 5종 | **476회** 합산 | 보통 `strings.xml` 한 번이면 끝날 일 |
 | `architecture/LayeringContractTest.kt` | **108회** | 가드레일이 아니라 **사람이 매번 다시 조이는 래칫** |
 

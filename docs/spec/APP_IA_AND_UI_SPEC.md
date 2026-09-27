@@ -2,7 +2,7 @@
 
 본 문서는 **바둑 AI** 앱의 화면 구조(IA), 화면별 UI 컴포넌트, 사용자 상호작용 피드백, 디자인 시스템 규칙을 정리한 통합 명세서입니다.
 
-> **갱신: 2026-08-29** — 1절 IA와 2절 화면 명세를 현재 코드(`ScreenDestination`, `ui/GamePlaySection.kt`) 기준으로 정정했습니다. 이전 판은 화면 3개 + `Analyze` 버튼을 명세했지만 실제 목적지는 7개이고 `Analyze` 버튼은 제거된 상태였습니다. UI/UX 디자이너, 모바일 개발자, 기획자가 앱의 전체 흐름과 세부 UX 사양을 한눈에 파악하고 협업할 수 있도록 구성되었습니다.
+> **갱신: 2026-08-29** — 1절 IA와 2절 화면 명세를 현재 코드(`ScreenDestination`, `ui/play/GamePlaySection.kt`) 기준으로 정정했습니다. 이전 판은 화면 3개 + `Analyze` 버튼을 명세했지만 실제 목적지는 7개이고 `Analyze` 버튼은 제거된 상태였습니다. UI/UX 디자이너, 모바일 개발자, 기획자가 앱의 전체 흐름과 세부 UX 사양을 한눈에 파악하고 협업할 수 있도록 구성되었습니다.
 >
 > **재정정: 2026-09-23(아키텍처 진단 감사)** — 위 7개는 그 뒤 둘이 더 늘어 **9개**다.
 > `MyPage`(백로그 #24, 2026-08-30)와 `BoardScan`(백로그 #179, 2026-09-21)이 추가됐다. 아래 1절의
@@ -15,7 +15,7 @@
 
 앱은 단순하고 직관적인 **3단계 스크린 구조**와 상황별 팝업/다이얼로그로 이루어져 있습니다.
 
-`ScreenDestination`(`ui/GoCoachApp.kt`)이 정의하는 목적지는 2026-09-23 기준 **9개**입니다 — `Onboarding`, `Home`, `Settings`, `Study`, `GameHistory`, `MyPage`, `GameSetup`, `InGame`, `BoardScan`.
+`ScreenDestination`(`ui/shell/GoCoachApp.kt`)이 정의하는 목적지는 2026-09-23 기준 **9개**입니다 — `Onboarding`, `Home`, `Settings`, `Study`, `GameHistory`, `MyPage`, `GameSetup`, `InGame`, `BoardScan`.
 
 ```mermaid
 graph TD
@@ -51,7 +51,7 @@ graph TD
 > 목적지로 올리지 않은 이유는 셸의 **상태 훅 예산이 42/42로 여유 0**이라는 것이다(함정 3).
 > 이 저장소의 **중첩 `BackHandler` 첫 사례**다.
 
-**2026-08-29 기준 이 절이 아직 상세 명세를 갖지 않은 화면**: `Onboarding`, `Settings`, `GameHistory`(참여/리텐션 트랙 백로그 #7로 신설), 그리고 앱 전역에 뜨는 출석 보상 Claim 다이얼로그(백로그 #14, `ui/AttendanceRewardClaimDialog.kt`). 해당 트랙의 스펙은 `260823-260830_OFFLINE_ENGAGEMENT_FEATURES_KICKOFF_PLAN.md`에 있습니다 — 트랙이 끝나면 여기로 흡수합니다.
+**2026-08-29 기준 이 절이 아직 상세 명세를 갖지 않은 화면**: `Onboarding`, `Settings`, `GameHistory`(참여/리텐션 트랙 백로그 #7로 신설), 그리고 앱 전역에 뜨는 출석 보상 Claim 다이얼로그(백로그 #14, `ui/monetization/AttendanceRewardClaimDialog.kt`). 해당 트랙의 스펙은 `260823-260830_OFFLINE_ENGAGEMENT_FEATURES_KICKOFF_PLAN.md`에 있습니다 — 트랙이 끝나면 여기로 흡수합니다.
 
 ⚠️ **2026-09-23 추가**: 위 목록 이후 생긴 두 목적지 중 `MyPage`는 §2.3-2가 상세 명세를 갖췄다.
 `BoardScan`(백로그 #179, 실험실 옵트인 카메라 바둑판 인식)은 아직 이 절에 상세 명세가 없다 —
@@ -105,8 +105,8 @@ graph TD
      - `Resign (기권)`: 대국 포기. "정말 기권하시겠습니까?" 확인 다이얼로그 후 처리.
      - ~~`Analyze (분석)`~~ — **제거됨**(2026-08-17 이전). 별도 분석 다이얼로그는 더 이상 없습니다.
 
-     ⚠️ **위 액션들은 더 이상 전부 무조건 활성이 아닙니다.** `Undo`/`Top Moves`/`Eval`은 프리미엄·클레임·소모품 1회권으로 게이팅되며, 잠긴 상태에서 누르면 업셀 또는 1회권 사용 확인 팝업이 뜹니다(`ui/GamePlaySection.kt`, `ui/ConsumableUiState.kt`). 정책 원본은 `FEATURE_ACCESS_PRINCIPLES.md`와 `GOOGLE_PLAY_LAUNCH_PLAN.md` 2장이며, 이 절은 아직 그 게이팅 상태별 UI를 상세히 명세하지 않았습니다.
-  5. **햄버거 메뉴 다이얼로그** (`ui/GameMenuSection.kt`의 `ExpandedGameMenuSection`, 제목: **`설정`**):
+     ⚠️ **위 액션들은 더 이상 전부 무조건 활성이 아닙니다.** `Undo`/`Top Moves`/`Eval`은 프리미엄·클레임·소모품 1회권으로 게이팅되며, 잠긴 상태에서 누르면 업셀 또는 1회권 사용 확인 팝업이 뜹니다(`ui/play/GamePlaySection.kt`, `ui/monetization/ConsumableUiState.kt`). 정책 원본은 `FEATURE_ACCESS_PRINCIPLES.md`와 `GOOGLE_PLAY_LAUNCH_PLAN.md` 2장이며, 이 절은 아직 그 게이팅 상태별 UI를 상세히 명세하지 않았습니다.
+  5. **햄버거 메뉴 다이얼로그** (`ui/play/GameMenuSection.kt`의 `ExpandedGameMenuSection`, 제목: **`설정`**):
      - `언어`, `Display Options`, `Search Time (탐색 시간)`, 진단 액션(로그 복사 / 엔진 벤치마크)을 실시간 변경·실행.
      - **`Display Options`의 구성과 기본값은 아래가 전부입니다**(백로그 #188, 2026-09-22 사용자가 표로 확정). 2열 격자이며 줄 단위로 읽습니다.
 
@@ -120,7 +120,7 @@ graph TD
 
      - ⚠️ **`지연 착수`·`착수 돋보기`·`돋보기 창 크기`·`돋보기 확대 배율` 넷은 #188이 기능째 삭제했습니다.** 플래그 뒤로 숨긴 것이 아니라 `BoardMagnifier.kt`·`MagnifierSettings.kt`와 그 설정 필드까지 지웠습니다 — 되살리려면 다시 구현해야 합니다. 삭제 사유는 「끌어서 두기가 이미 같은 일을 하는데 확대 창이 그 위를 가렸다」입니다. ⚠️ **끌어서 두기 자체는 남았습니다**(`BoardPlayDrag.kt`) — 손가락 위로 돌을 띄워 그리는 그 동작이며, 돋보기와 한 몸이 아니었습니다.
      - ⚠️ **기본값을 바꿔도 이미 저장한 사용자에게는 안 미칩니다.** 저장된 값이 늘 이기기 때문입니다. #188이 그 구멍을 `settingsSchemaGeneration`으로 메웠습니다 — 읽을 때 세대가 낮으면 **그 세대에서 뜻이 바뀐 필드만** 기본값으로 덮고 세대를 올립니다(`application/preferences/SettingsSchemaMigration.kt`). 전체 초기화가 아니며, 권한 저장소를 지우는 `ReleaseResetCoordinator`와도 다른 축입니다. **기본값 표를 고치는 사람은 세대를 함께 올려야 실제로 반영됩니다.**
-     - ⚠️ **`Player Setup`과 `Game & Board Rules (계가/덤/접바둑)`은 여기에 없습니다.** 2026-07-16 내비게이션 개편에서 대국 설정 로비로 옮겨졌고, 대국 화면 쪽 패널은 `showSettings` 플래그 뒤에 **한 번도 켜지지 않은 채** 남아 있다가 2026-09-05에 삭제됐습니다(백로그 #76). 대국 중에 그 값을 바꾸려면 홈 → `설정` 화면을 씁니다(`ui/SettingsScreen.kt` — 판 크기·접바둑은 종국 전 잠김).
+     - ⚠️ **`Player Setup`과 `Game & Board Rules (계가/덤/접바둑)`은 여기에 없습니다.** 2026-07-16 내비게이션 개편에서 대국 설정 로비로 옮겨졌고, 대국 화면 쪽 패널은 `showSettings` 플래그 뒤에 **한 번도 켜지지 않은 채** 남아 있다가 2026-09-05에 삭제됐습니다(백로그 #76). 대국 중에 그 값을 바꾸려면 홈 → `설정` 화면을 씁니다(`ui/settings/SettingsScreen.kt` — 판 크기·접바둑은 종국 전 잠김).
      - ⚠️ **`Drawer`가 아니라 `AlertDialog`입니다.** 이름이 "슬라이딩 메뉴"였던 것은 개편 전 구조입니다(백로그 #110에서 정정).
 
 ---

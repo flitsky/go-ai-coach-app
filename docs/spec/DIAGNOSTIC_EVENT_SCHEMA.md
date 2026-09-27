@@ -183,7 +183,7 @@
 | --- | --- | --- | --- |
 | 엔진 operation lifecycle | `engine_operation_cancelled` | Info | `application/engine/operation/EngineOperationLifecycleController.kt` |
 | | `engine_operations_evicted` | Info | 〃 |
-| 엔진 턴 워치독(대국 화면) | `engine_turn_watchdog_triggered` | Warning | `ui/GoCoachApp.kt` |
+| 엔진 턴 워치독(대국 화면) | `engine_turn_watchdog_triggered` | Warning | `ui/shell/GoCoachApp.kt` |
 | | `engine_force_reset_requested` | Warning | 〃 |
 | 프리미엄 광고 부여 | `premium_ad_grant_ignored_active_subscription` | Info | `application/premium/app/PremiumAdGrantApplication.kt` |
 | | `premium_ad_grant_activated` | Info | 〃 |
@@ -191,9 +191,9 @@
 | 프리미엄 비활성화 | `premium_deactivated` | Info | `application/premium/app/PremiumDeactivationApplication.kt` |
 | 프리미엄 구매/복원 | `premium_purchase_activated` / `premium_purchase_restored` | Info | `application/premium/app/PremiumPurchaseApplication.kt` |
 | | `premium_subscription_downgraded` / `premium_purchase_restore_not_found` / `premium_purchase_restore_unverified` / `premium_purchase_not_completed` | Info 또는 Warning(동적) | 〃 |
-| 로그인 실패(계정 기능은 `isLoginEnabled=false`로 꺼져 있다) | `google_credential_request_failed` / `google_firebase_sign_in_failed` | Warning | `ui/GoogleSignInFlow.kt` |
-| | `email_firebase_sign_in_failed` | Warning | `ui/EmailSignInFlow.kt` |
-| 계정 삭제 실패 | `account_deletion_recent_login_required` / `account_deletion_failed` | Warning | `ui/AccountDeletionFlow.kt` |
+| 로그인 실패(계정 기능은 `isLoginEnabled=false`로 꺼져 있다) | `google_credential_request_failed` / `google_firebase_sign_in_failed` | Warning | `ui/account/GoogleSignInFlow.kt` |
+| | `email_firebase_sign_in_failed` | Warning | `ui/account/EmailSignInFlow.kt` |
+| 계정 삭제 실패 | `account_deletion_recent_login_required` / `account_deletion_failed` | Warning | `ui/account/AccountDeletionFlow.kt` |
 
 - 이 표는 **누락 보고**이지 스키마 정의가 아니다 — 각 코드의 필수 context 필드까지 이 문서 형식으로
   정리하는 것은 별도 작업으로 남긴다.

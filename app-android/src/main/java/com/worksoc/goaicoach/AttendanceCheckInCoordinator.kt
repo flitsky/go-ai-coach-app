@@ -14,7 +14,7 @@ import kotlinx.coroutines.launch
  *
  * ⚠️ **보상 지급은 여기서 하지 않는다.** 보상이 자동 지급에서 Claim 방식으로 바뀌면서
  * (`260823-260830_OFFLINE_ENGAGEMENT_FEATURES_KICKOFF_PLAN.md` 5.1절, 백로그 #14) 지급 경로는
- * 사용자가 Claim 버튼을 누르는 `ui/AttendanceRewardClaimDialog.kt` 하나뿐이다 — 여기서 미리
+ * 사용자가 Claim 버튼을 누르는 `ui/monetization/AttendanceRewardClaimDialog.kt` 하나뿐이다 — 여기서 미리
  * 지급해 버리면 팝업에 보여줄 것이 남지 않는다. 이 클래스가 계속 필요한 이유는 **앱을 켜기만
  * 하고 팝업을 닫아도 출석 자체는 기록돼야** 하기 때문이다(체크인과 지급은 별개 축 —
  * `AttendanceState.claimedTiers` 참고).

@@ -109,7 +109,7 @@
 
 ### 계층 배치 참고 (`ARCHITECTURE.md`의 7계층 기준, 2026-07-29 정리)
 
-Step 1~2는 이미 구현됐고(`application/premium/state/PremiumState.kt`가 순수 포트, `ui/GoCoachApp.kt`가 App Service 오케스트레이션) 이 원칙 그대로다. Step 3~4를 실제로 구현할 때 새 코드가 어느 계층에 속하는지 미리 정리해, 착수 시점에 위치를 재논의하지 않도록 한다.
+Step 1~2는 이미 구현됐고(`application/premium/state/PremiumState.kt`가 순수 포트, `ui/shell/GoCoachApp.kt`가 App Service 오케스트레이션) 이 원칙 그대로다. Step 3~4를 실제로 구현할 때 새 코드가 어느 계층에 속하는지 미리 정리해, 착수 시점에 위치를 재논의하지 않도록 한다.
 
 | Step | 작업 | 계층 | 근거 |
 | --- | --- | --- | --- |
@@ -124,9 +124,9 @@ Step 1~2는 이미 구현됐고(`application/premium/state/PremiumState.kt`가 �
 
 | 파일 | 관련 내용 |
 | --- | --- |
-| `app-android/.../ui/GameActionButtons.kt` | 분석/형세보기(Eval)/추천수(TopMoves)/무르기(Undo) 버튼 — 일반 모드에서 비활성화 + 탭 시 업셀 팝업 트리거 |
-| `app-android/.../ui/KaTrainUxPanels.kt` | "착수 평가" 토글 — 동일하게 일반 모드에서 비활성화 + 업셀 (2026-07-28에 신설된 토글) |
-| `app-android/.../ui/GoCoachHomeScreen.kt`, `GoCoachApp.kt` | **홈 화면 "대국 하기" 버튼**(`onStartMatchClick`)에 Step 2 팝업 훅 삽입 위치. 기존 "이전 대국 덮어쓰기 경고" 다이얼로그와의 등장 순서 정의 필요 |
+| `app-android/.../ui/designsystem/GameActionButtons.kt` | 분석/형세보기(Eval)/추천수(TopMoves)/무르기(Undo) 버튼 — 일반 모드에서 비활성화 + 탭 시 업셀 팝업 트리거 |
+| `app-android/.../ui/setup/KaTrainUxPanels.kt` | "착수 평가" 토글 — 동일하게 일반 모드에서 비활성화 + 업셀 (2026-07-28에 신설된 토글) |
+| `app-android/.../ui/home/GoCoachHomeScreen.kt`, `GoCoachApp.kt` | **홈 화면 "대국 하기" 버튼**(`onStartMatchClick`)에 Step 2 팝업 훅 삽입 위치. 기존 "이전 대국 덮어쓰기 경고" 다이얼로그와의 등장 순서 정의 필요 |
 | `app-android/.../persistence/UserPreferencesStore.kt` 계열 | `PremiumState`의 영구 구매 소스 영속화 시 참고할 기존 JSON 코덱 패턴 (광고 기반 한시적 소스는 세션/대국 상태로 별도 취급) |
 
 ---
@@ -183,7 +183,7 @@ Step 1~2는 이미 구현됐고(`application/premium/state/PremiumState.kt`가 �
 
 ### 2026-08-04 추가 개정: 프리미엄 카드 디자인 고급화 + 하단 고정 위치로 이동
 - **배경**: 위 개정에서 추가한 프리미엄 카드가 대국 설정 화면의 다른 일반 설정 항목들과 시각적으로 구분되지 않고, 스크롤 중간에 묻혀 눈에 잘 띄지 않는다는 피드백을 받았다.
-- **색상 상수화**: `ui/PremiumTheme.kt` 신규 — `PremiumGold`/`PremiumGoldLight`/`PremiumGoldDeep`/`PremiumGoldGradient`/`PremiumCardShape`/`PremiumLockedBorder`를 정의. 프리미엄 관련 색/보더/그라디언트는 이 파일만 참조하도록 통일(하드코딩 금지).
+- **색상 상수화**: `ui/designsystem/PremiumTheme.kt` 신규 — `PremiumGold`/`PremiumGoldLight`/`PremiumGoldDeep`/`PremiumGoldGradient`/`PremiumCardShape`/`PremiumLockedBorder`를 정의. 프리미엄 관련 색/보더/그라디언트는 이 파일만 참조하도록 통일(하드코딩 금지).
 - **카드 디자인**: 비활성 시 옅은 금색 배경 + 금색 그라디언트 보더, 활성 시 진한 금색 그라디언트 풀 배경으로 전환 — 일반 `MaterialTheme.colorScheme` 톤과 확실히 구분되는 "프리미엄" 정체성을 준다. 👑 이모지 + 굵은 타이틀로 강조.
 - **위치 이동**: 스크롤 영역(보드 프리뷰 아래)이 아니라, 화면 하단 고정 바 — "대국 시작하기" 버튼 바로 위 — 로 옮겼다. 스크롤 여부와 무관하게 항상 보이고, "시작하기 직전 마지막 업셀"이라는 자리를 준다(체크아웃 직전 업셀 패턴과 동일한 의도).
 - **인게임 버튼도 동일 아이덴티티 적용**: `GameActionButtons.kt`의 `ActionButton`/`SingleActionButton`/`ToggleActionButton`에 `premiumLocked: Boolean` 파라미터를 추가해, 잠긴 프리미엄 버튼(분석/형세보기/추천수/무르기)의 테두리를 `PremiumLockedBorder`(금색)로 바꿔 "프리미엄 전용 버튼"이라는 인식을 준다. 기존 흐림(alpha 0.5) 처리는 유지 — 테두리 색이 더해져 "그냥 비활성화"가 아니라 "프리미엄이라 잠겨 있다"는 의미가 더 명확해졌다.
@@ -234,10 +234,10 @@ Step 1~2는 이미 구현됐고(`application/premium/state/PremiumState.kt`가 �
   테스트 제거, "여러 판에 걸쳐 유지된다"는 테스트 추가).
 
 ### Step 3 구현 — AdMob 리워드 광고 실제 연동 (2026-08-05)
-- **배경**: `ui/PremiumUiState.kt`의 `activateAdGrant`가 광고 없이 탭 즉시 `PremiumState.adGranted(...)`를 부여하던 스텁을, 실제 AdMob 리워드 광고 시청 완료 콜백 안에서만 활성화하도록 교체했다. 같은 날 먼저 진행된 Google/이메일 로그인 실연동(`LOGIN_AND_ACCOUNT_SYSTEM.md` Step 2/3)의 포트/어댑터 분리 방식과 작업 흐름을 그대로 따랐다.
+- **배경**: `ui/monetization/PremiumUiState.kt`의 `activateAdGrant`가 광고 없이 탭 즉시 `PremiumState.adGranted(...)`를 부여하던 스텁을, 실제 AdMob 리워드 광고 시청 완료 콜백 안에서만 활성화하도록 교체했다. 같은 날 먼저 진행된 Google/이메일 로그인 실연동(`LOGIN_AND_ACCOUNT_SYSTEM.md` Step 2/3)의 포트/어댑터 분리 방식과 작업 흐름을 그대로 따랐다.
 - **계층 배치(4장 표 그대로 적용)**: `application/premium/port/AdRewardPort.kt`(순수 인터페이스, `AdRewardOutcome`/`AdRewardFailureReason` 포함)가 포트, `ui/AndroidRewardedAdClient.kt`(같은 날 `AndroidRewardedInterstitialAdClient.kt`로 개명 — 아래 "Step 3 후속" 절 참고, 이후 backlog #25로 `platform/AndroidRewardedInterstitialAdClient.kt`가 맡는다)가 실제 Google Mobile Ads SDK 어댑터다. `AuthClientPort`/`AndroidAuthClient`와 완전히 같은 자리 — `LayeringContractTest.authPremiumAndDeviceApplicationPackagesStayPlatformFree`가 `application/premium`에 android/ui/persistence import를 금지하므로, 포트 메서드 시그니처(`suspend fun showRewardedAd(): AdRewardOutcome`)에는 `Activity`를 노출하지 않고 대신 어댑터 생성자가 `Activity`/광고단위 ID를 받는다 — `AndroidAuthClient`가 `FirebaseAuth.getInstance()` 싱글턴을 내부에서 직접 쓰는 것과 같은 이유의 설계.
 - **"시청 완료 → 상태 전이" 판단을 GoCoachApp.kt에 인라인하지 않고 분리**: 4장 표는 이 판단을 App Service 계층(기존 `activateForMatch`류 람다와 동일한 성격)으로 분류했지만, `GoCoachApp.kt`가 이미 라인(856/880)·상태 훅(47/47, 여유 0) 예산을 거의 다 쓴 상태라 그대로 인라인하면 예산을 넘길 위험이 있었다. 그래서 `application/premium/app/PremiumAdGrantApplication.kt`에 순수 함수 `runPremiumAdGrantApplication(...)`으로 추출해(입력: `AdRewardOutcome` + 현재 시각, 출력: 다음 `PremiumState`(또는 상태 유지를 뜻하는 `null`) + 항상 남기는 진단 이벤트), `GoCoachApp.kt`의 `activateAdGrant` 람다는 광고 클라이언트 호출 + 이 함수 호출 + 결과 반영 3줄짜리 얇은 글루로만 남겼다. 최종 856→869줄(예산 880 이내), 상태 훅 47(불변) — 새 `remember`/`mutableStateOf`/`LaunchedEffect`를 추가하지 않았다.
-- **로딩/실패 UX**: `PremiumUpsellDialog`에 `isAdGrantInProgress` 상태를 추가해(`ui/PremiumUiState.kt`, `GoCoachApp.kt`가 아니라 다이얼로그 자신의 `remember`로 소유 — 예산이 빠듯한 쪽을 건드리지 않는 기존 패턴 재사용) 광고 로드~노출~판정이 끝날 때까지 세 버튼을 모두 비활성화하고 광고 버튼 자리에 진행 표시를 보여준다. `DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)`로 이 구간에는 뒤로가기/바깥 탭으로 닫지 못하게 막았다 — 닫히면 코루틴 스코프가 취소되어 이미 화면에 떠 있는 실제 광고의 시청 결과를 영영 못 받기 때문. 실패/중단(`AdRewardOutcome.NotRewarded`) 시에는 일반 모드를 유지한 채 안내 토스트만 띄우고 팝업은 닫지 않아, 바로 재시도하거나 다른 선택지를 고를 수 있다.
+- **로딩/실패 UX**: `PremiumUpsellDialog`에 `isAdGrantInProgress` 상태를 추가해(`ui/monetization/PremiumUiState.kt`, `GoCoachApp.kt`가 아니라 다이얼로그 자신의 `remember`로 소유 — 예산이 빠듯한 쪽을 건드리지 않는 기존 패턴 재사용) 광고 로드~노출~판정이 끝날 때까지 세 버튼을 모두 비활성화하고 광고 버튼 자리에 진행 표시를 보여준다. `DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)`로 이 구간에는 뒤로가기/바깥 탭으로 닫지 못하게 막았다 — 닫히면 코루틴 스코프가 취소되어 이미 화면에 떠 있는 실제 광고의 시청 결과를 영영 못 받기 때문. 실패/중단(`AdRewardOutcome.NotRewarded`) 시에는 일반 모드를 유지한 채 안내 토스트만 띄우고 팝업은 닫지 않아, 바로 재시도하거나 다른 선택지를 고를 수 있다.
 - **광고 단위 ID 관리**: `app-android/build.gradle.kts`가 `local.properties`(gitignored, `sdk.dir`과 같은 파일)의 `admob.appId`/`admob.rewardedAdUnitId` 두 키를 읽어 각각 `manifestPlaceholders["admobAppId"]`(매니페스트의 `com.google.android.gms.ads.APPLICATION_ID` meta-data가 참조)와 `BuildConfig.REWARDED_AD_UNIT_ID`로 연결한다. 두 키가 없으면 Google 공식 테스트 ID(`ca-app-pub-3940256099942544~3347511713` / `.../5224354917`, 커밋해도 무방한 공개 값)로 폴백 — 실제 값은 코드/버전관리에 전혀 들어가지 않는다. **사용자가 나중에 해야 할 일**: [admob.google.com](https://admob.google.com)에서 계정/앱 등록 + 리워드 광고 단위 발급 → `local.properties`에 `admob.appId=...`/`admob.rewardedAdUnitId=...` 두 줄만 추가하면 코드 변경 없이 다음 빌드부터 실제 값이 반영된다(2026-08-05 확인 시점 기준, 사용자는 아직 미등록 상태 — "테스트 ID로 우선 진행"을 명시적으로 선택함).
 - **지연 SDK 초기화**: `MobileAds.initialize(...)`를 앱 기동 시점이 아니라 `AndroidRewardedAdClient.showRewardedAd()`가 처음 호출되는 시점(= 사용자가 실제로 광고 시청을 선택했을 때)에만 호출한다 — 프리미엄 광고 기능을 한 번도 안 쓰는 세션의 콜드 스타트 시간에는 영향이 없도록 하기 위함. 반복 호출은 SDK가 멱등 처리하므로 별도의 "이미 초기화됨" 플래그는 두지 않았다.
 - **의존성**: `com.google.android.gms:play-services-ads:25.4.0`(2026-08 기준 Google 공식 릴리스 노트로 확인한 최신 안정 버전).
@@ -252,13 +252,13 @@ Step 1~2는 이미 구현됐고(`application/premium/state/PremiumState.kt`가 �
 - **정책 확인 (여전히 유효함, 2026-08-05 기준)**: Google 공식 문서(["Understanding account suspensions due to invalid traffic"](https://blog.google/products/admob/understanding-account-suspensions-due-invalid-traffic/), [AdMob 고객센터](https://support.google.com/admob/answer/3342099?hl=en))에 따르면 실제 광고 단위에 인위적인 트래픽(자기 클릭, 개발 중 반복 노출 등)이 쌓이면 계정이 정지되고 그동안의 수익이 광고주에게 환불될 수 있다. Google이 공식으로 권장하는 안전한 테스트 방법은 두 가지: ①실제 계정과 무관한 [Google 공식 테스트 광고 단위](https://developers.google.com/admob/android/test-ads) 사용, ②테스트 기기 등록(`RequestConfiguration`) 후 실제 광고 단위 사용. 이번 작업은 ①번 방식을 "사람이 깜빡할 수 없는" 빌드 타입 안전장치로 자동화했다(테스트 기기 등록은 기기별 등록이 필요해 채택하지 않음 — 아래 참고).
 - **포맷 정정: "보상형(Rewarded)"이 아니라 "보상형 전면(Rewarded Interstitial)"**: 사용자가 콘솔에서 실제로 발급받은 두 번째 광고 단위는 안내 문구("보상형 전면 광고 구현 가이드", `rewarded-interstitial` 링크)상 **Rewarded Interstitial** 포맷이다 — 이전 라운드(Step 3 최초 구현)에서 쓴 순수 **Rewarded**(`RewardedAd`)와는 다른 포맷이며, 광고 단위 ID는 발급 시점에 포맷이 고정되어 서로 바꿔 쓸 수 없다. 두 포맷의 정책상 차이는 "Rewarded는 사용자가 명시적으로 옵트인해야 하고, Rewarded Interstitial은 옵트인 없이도 노출 가능하되 광고 시작 전 보상 고지 화면이 필요하다"는 점인데, 이 앱은 이미 업셀 팝업에서 명시적 옵트인 버튼("광고 시청으로 1시간 활성화")을 거치므로 어느 포맷이든 정책 요건을 충족한다. `ui/AndroidRewardedAdClient.kt`(개명 — 이후 backlog #25로 `platform/AndroidRewardedInterstitialAdClient.kt`가 맡는다)를 `AndroidRewardedInterstitialAdClient`로 이름/구현을 바꿔(`com.google.android.gms.ads.rewarded.RewardedAd` → `com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAd`, API 레퍼런스로 패키지 경로 직접 확인) 실제 발급받은 포맷과 맞췄다 — `AdRewardPort`/`PremiumAdGrantApplication`/`PremiumUiState`/`GoCoachApp.kt` 호출부는 전혀 건드리지 않았다(포트/어댑터 분리 설계가 의도한 대로, SDK 클래스 교체가 어댑터 파일 안에서 끝남).
 - **출시 전 테스트모드 안전장치 (빌드 타입 기반)**: `app-android/build.gradle.kts`의 `buildTypes`에 `USE_TEST_ADS` BuildConfig 플래그를 추가해, **debug/friend는 local.properties 내용과 무관하게 항상 `true`(Google 테스트 App ID/광고단위 강제 사용)**, **release만 local.properties에 실제 값이 모두 있을 때 `false`**로 만들었다. `friend`는 `initWith(getByName("debug"))`에 의존하지 않고 세 필드를 명시적으로 다시 선언한다(AGP `initWith`가 `buildConfigField`/`manifestPlaceholders`를 항상 복사한다는 보장이 약하고, "friend"가 정식 출시 전 지인 배포용 채널이라 이 안전장치가 가장 중요하게 적용돼야 하는 빌드이기도 하기 때문). 실제 판단 로직(테스트/실제 어느 쪽을 쓸지)은 Gradle에 흩어두지 않고 `platform/AdUnitIds.kt` 한 파일에 모아, 코드 리뷰로 한눈에 안전성을 확인할 수 있게 했다. **로컬에서 직접 확인**: `generateDebugBuildConfig`/`generateFriendBuildConfig`/`generateReleaseBuildConfig` + `processXxxMainManifest`를 각각 실행해 생성된 `BuildConfig.java`/병합 매니페스트를 직접 읽어, debug/friend는 `USE_TEST_ADS=true`+Google 테스트 App ID·광고단위, release는 `USE_TEST_ADS=false`+실제 App ID·광고단위(`local.properties`에서 로드)가 정확히 나오는 것을 확인했다 — 에뮬레이터를 만지기 전에 먼저 이 확인부터 마쳐, 테스트 도중 실수로 실제 광고 인벤토리에 노출/요청이 나가는 일을 원천 차단했다.
-- **배너 광고 신규 추가**: `ui/BannerAdView.kt` — Compose가 `AdView`(View 기반)를 직접 지원하지 않아 `AndroidView`로 감싸고, `AdSize.getLargeAnchoredAdaptiveBannerAdSize`(적응형 배너, 구 API `getCurrentOrientationAnchoredAdaptiveBannerAdSize`는 deprecated로 확인되어 신API로 바로 적용)로 화면 너비에 맞춘 배너를 로드한다. `onRelease` 콜백에서 `AdView.destroy()`를 호출해 컴포지션 이탈 시 리소스를 정리한다. **배치**: 홈 화면(`GoCoachHomeScreen.kt`) 맨 아래 — 대국 화면 등 실제 게임 플레이 화면에는 넣지 않았다(오조작 유도/게임 경험 방해 우려, AdMob 정책의 "실수 클릭 유도 배치 금지" 취지와도 맞음). 기존 콘텐츠 Column을 `weight(1f)`로 감싸 배너가 하단에 고정되면서도 기존 24dp 패딩/중앙 정렬은 전혀 건드리지 않았다.
+- **배너 광고 신규 추가**: `ui/monetization/BannerAdView.kt` — Compose가 `AdView`(View 기반)를 직접 지원하지 않아 `AndroidView`로 감싸고, `AdSize.getLargeAnchoredAdaptiveBannerAdSize`(적응형 배너, 구 API `getCurrentOrientationAnchoredAdaptiveBannerAdSize`는 deprecated로 확인되어 신API로 바로 적용)로 화면 너비에 맞춘 배너를 로드한다. `onRelease` 콜백에서 `AdView.destroy()`를 호출해 컴포지션 이탈 시 리소스를 정리한다. **배치**: 홈 화면(`GoCoachHomeScreen.kt`) 맨 아래 — 대국 화면 등 실제 게임 플레이 화면에는 넣지 않았다(오조작 유도/게임 경험 방해 우려, AdMob 정책의 "실수 클릭 유도 배치 금지" 취지와도 맞음). 기존 콘텐츠 Column을 `weight(1f)`로 감싸 배너가 하단에 고정되면서도 기존 24dp 패딩/중앙 정렬은 전혀 건드리지 않았다.
 - **`local.properties`에 실제 값 반영**: 사용자가 채팅으로 직접 전달한 실제 App ID/광고단위 ID 3개를 `admob.appId`/`admob.rewardedInterstitialAdUnitId`/`admob.bannerAdUnitId` 키로 기록했다(gitignored, git에 올라가지 않음) — release 빌드를 만들 때만 실제로 쓰인다.
 - **검증**: `make test` 통과(레이아웃/BuildConfig 변경만 있고 로직 테스트는 이전 라운드 것 그대로 green). 에뮬레이터(`Pixel_7_API_35`) 실측 — 홈 화면 하단에 Google 공식 테스트 배너("Nice job! This is a 320x50 test ad.") 렌더링 확인, 업셀 팝업 → 광고 시청 → Google 테스트 리워드 전면 광고("Flood-It!" 비디오, "Reward in 7 seconds" 카운트다운) 노출 → "Reward granted" → 닫기 → 프리미엄 정상 활성화(60분 카운트다운) + 진단 로그 `premium_ad_grant_activated` 기록까지 재확인, 두 기능 모두 크래시 없음(전체 세션 logcat에 `FATAL EXCEPTION` 0건).
 - **하지 않은 것**: 테스트 기기 ID 등록(`RequestConfiguration.setTestDeviceIds`)은 추가하지 않았다 — 빌드 타입 자체가 이미 "디버그/친구 빌드는 항상 테스트 광고"를 보장해 기기별 등록이 없어도 안전하고, 각 개발자가 자기 기기 광고 ID를 찾아 하드코딩해야 하는 번거로움/누락 위험만 추가되기 때문(YAGNI). 실제 광고 단위의 실물 렌더링을 눈으로 확인하고 싶다면 release 빌드(local.properties 값 사용)를 별도로 만들어 확인하되, 이 경우부터는 절대 광고를 클릭하지 않아야 한다.
 
 ### Step 4 구현 — Google Play Billing 실제 연동 (2026-08-06)
-- **배경**: `ui/PremiumUiState.kt`의 `setPurchased(true)`가 실제 결제 없이 즉시 영구 활성화로 전환하던 스텁(2026-08-04 도입)을, 실제 Google Play Billing 비소모성(non-consumable/"one-time product") 상품 구매로 교체했다. Step 3(AdMob 리워드 광고 실연동)의 포트/어댑터 분리 패턴을 그대로 따랐다.
+- **배경**: `ui/monetization/PremiumUiState.kt`의 `setPurchased(true)`가 실제 결제 없이 즉시 영구 활성화로 전환하던 스텁(2026-08-04 도입)을, 실제 Google Play Billing 비소모성(non-consumable/"one-time product") 상품 구매로 교체했다. Step 3(AdMob 리워드 광고 실연동)의 포트/어댑터 분리 패턴을 그대로 따랐다.
 - **사전 확인**: 착수 시점에 Play Console 비소모성 상품·라이선스 테스터 계정이 모두 미등록 상태였다 — 사용자에게 등록 절차를 안내하고, AdMob 때와 동일하게 "코드는 플레이스홀더로 먼저 완성, 실제 값은 `local.properties`로 나중에 주입" 방식을 사용자 동의하에 선택했다.
 - **계층 배치(4장 표 그대로 적용)**: `application/premium/port/PurchasePort.kt`(순수 인터페이스, `PurchaseOutcome`/`PurchaseFailureReason` 포함)가 포트, `platform/AndroidBillingClient.kt`가 실제 Play Billing SDK 어댑터다 — `AdRewardPort`/`AndroidRewardedInterstitialAdClient`와 완전히 같은 자리. "구매 완료 → 상태 전이" 판단은 `application/premium/app/PremiumPurchaseApplication.kt`의 순수 함수 `runPremiumPurchaseApplication`으로 분리했다(App Service 계층, 기존 `runPremiumAdGrantApplication`과 동일한 성격).
 - **명시적 구매와 앱 시작 복원을 하나의 판정 함수로 공유**: `PurchaseTrigger`(`Explicit`/`Restore`) 값만 다르게 넘겨 상태 전이 로직(`Purchased`면 영구 활성화, 그 외엔 상태 불변) 자체는 완전히 재사용하고, 진단 로그의 `code`/`severity`만 트리거별로 구분했다(예: 복원 조회에서 "소유한 구매 없음"은 대부분의 사용자에게 정상적인 기본 상태라 `Warning`이 아니라 `Info`로 남긴다).
@@ -313,7 +313,7 @@ Step 1~2는 이미 구현됐고(`application/premium/state/PremiumState.kt`가 �
 
 ### 업셀 팝업 버튼 순서/강조 — 현행 유지 확정 (2026-08-09)
 
-- `PremiumUpsellDialog`(`ui/PremiumUiState.kt`)의 현재 순서(광고 시청=강조된 주 버튼 → 결제=보조 버튼 → 아니오)를 사용자에게 재확인한 결과, 의도적인 배치로 그대로 유지하기로 확정했다. 코드 변경 없음.
+- `PremiumUpsellDialog`(`ui/monetization/PremiumUiState.kt`)의 현재 순서(광고 시청=강조된 주 버튼 → 결제=보조 버튼 → 아니오)를 사용자에게 재확인한 결과, 의도적인 배치로 그대로 유지하기로 확정했다. 코드 변경 없음.
 
 ### ✅ 완료 — 프리미엄을 월 구독으로 전환 (2026-08-24 결정 → 2026-09-18 콘솔 작업 착수 → 2026-09-23 기준 #157~#162 전부 완료 커밋 확인)
 

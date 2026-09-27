@@ -76,7 +76,7 @@ graph TD
 | 단계 | 작업 내용 | 완료 근거 (2026-09-23 기준) |
 | --- | --- | --- |
 | **Milestone 1** | 와이어프레임 문서화 및 버전 관리 체계 구축 | ✅ 이 문서 자체 + 부록 A(v1.0.0 와이어프레임, 2026-09-06 통폐합으로 합침) |
-| **Milestone 2** | UI State 확장 분석 및 Kotlin API 설계 계획 수립 | ✅ `isDirectPlayEnabled`(`presentation/KaTrainUxOptions.kt`)·`tentativeMove`(`ui/GoBoard.kt`)가 실제 UI State 필드로 존재 |
+| **Milestone 2** | UI State 확장 분석 및 Kotlin API 설계 계획 수립 | ✅ `isDirectPlayEnabled`(`presentation/KaTrainUxOptions.kt`)·`tentativeMove`(`ui/board/GoBoard.kt`)가 실제 UI State 필드로 존재 |
 | **Milestone 3** | 바둑판 정사각형 렌더링 개선 (`GoBoard.kt`) | ✅ `GoBoard.kt`가 `BoxWithConstraints`로 `maxWidth`/`maxHeight` 중 작은 쪽을 `boardSide`로 취해 정사각형 렌더링(`BoardFitTest`·`BoardGeometryCalculatorTest`로 회귀 검증) |
 | **Milestone 4** | 대국 현황 패널 (3분할) 및 기능 버튼 패널 구현 | ✅ `GamePlaySection.kt`의 `GameStatusPanel`이 흑/백 사석·시계를 좌우로, 기능 버튼(`eval`/`topMoves`/`resign`/`pass`/`undo`)을 `weight(1f)` 균등 분포로 배치 |
 | **Milestone 5** | "바로 착수" 옵션 구현 및 가상 착수-확정 흐름 구현 | ✅ `KaTrainUxPanels.kt`의 스위치 + `GoBoard.kt`의 `tentativeMove`/고스트 스톤(alpha) 렌더링으로 구현 완료. **다만 2026-09-12(#143)에 사용자 결정으로 UI 노출만 껐다** — 코드는 `FeatureFlags.isPlayConfirmModeEnabled` 뒤에 그대로 있고 지우지 않았다(`FeatureFlags.kt` 참고) |

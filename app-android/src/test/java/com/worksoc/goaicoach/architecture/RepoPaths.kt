@@ -232,7 +232,7 @@ internal object RepoPaths {
  * ## 왜 날것 `readText()`를 그대로 두면 안 되는가
  * 이 파일이 없으면(주로 파일이 옮겨져서) 날것 `readText()`는 `java.io.FileNotFoundException`을
  * 던진다 — 메시지가 **"파일이 없다"** 로만 읽히고, 계약 테스트의 진짜 존재 이유인
- * **"경계가 깨졌다"** 로는 읽히지 않는다. 검수자가 `ui/GoCoachApp.kt`를 실제로 `git mv` 해서
+ * **"경계가 깨졌다"** 로는 읽히지 않는다. 검수자가 `ui/shell/GoCoachApp.kt`를 실제로 `git mv` 해서
  * 확인한 결과, 612건 중 77건이 이 모습으로 죽었고 의미 있는 단언 실패는 0건이었다 — P3의
  * 다른 파일 이동에서도 원인 파악이 그만큼 늦어진다는 뜻이다.
  *

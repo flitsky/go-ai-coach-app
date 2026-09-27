@@ -1727,12 +1727,12 @@ class LayeringContractTest {
         // History (2026-08-24): bumped 853->854 for consumable wiring (backlog item 15) —
         // one buildConsumableUiState line, one OneShotAnalysisAutoClear line, and a second
         // CompositionLocal on the existing provider. All state (inventory, one-shot tracking)
-        // and the auto-clear LaunchedEffect live in ui/ConsumableUiState.kt, so the shell only
+        // and the auto-clear LaunchedEffect live in ui/monetization/ConsumableUiState.kt, so the shell only
         // holds wiring. Net across items 14 and 15 is +1 line over the previous 853.
         // No new remember/mutableStateOf/LaunchedEffect — stateHookBudget stays 46.
         //
         // History (2026-08-29): dropped 854->845, stateHookBudget 46->45. The premium
-        // expiry/deactivation LaunchedEffect moved into ui/PremiumUiState.kt as
+        // expiry/deactivation LaunchedEffect moved into ui/monetization/PremiumUiState.kt as
         // PremiumExpiryAutoDisableEffect, leaving a single call line in the shell. It had to
         // grow (it now waits out the ad grant with delay() and re-checks on toggle changes,
         // and must skip toggles a one-shot ticket turned on), so hoisting it was the only way
@@ -1742,7 +1742,7 @@ class LayeringContractTest {
         // History (2026-08-29, backlog #10): bumped 845->851, stateHookBudget 45->46. Wiring the
         // bot collection store for the character picker: one buildBotCharacterUiState line plus a
         // third CompositionLocal, which pushed the provider call onto its own lines. The state and
-        // the picker dialog itself live in ui/BotCharacterUiState.kt, so the shell only holds
+        // the picker dialog itself live in ui/monetization/BotCharacterUiState.kt, so the shell only holds
         // wiring — same split as buildPremiumUiState and buildConsumableUiState.
         // History (2026-08-29, backlog #18): bumped 851->855. The character purchase perk needs the
         // opponent and the collection at buildPremiumUiState, so the bot-collection wiring moved above

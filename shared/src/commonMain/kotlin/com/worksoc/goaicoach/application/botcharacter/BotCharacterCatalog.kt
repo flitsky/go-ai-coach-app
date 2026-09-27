@@ -17,7 +17,7 @@ import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
  * 병기한다(#10 몫). 아바타는 아직 플레이스홀더다([BotCharacter.avatarRef]가 전부 `null`).
  *
  * ⚠️ **그 이름과 설명은 이 파일에 없다**(백로그 #32) — 네 언어 표가 UI 계층의
- * `ui/UiStringsBotCharacters.kt`에 있다. 여기 한국어 리터럴로 두었더니 다른 언어 화면에도 한글이
+ * `ui/l10n/UiStringsBotCharacters.kt`에 있다. 여기 한국어 리터럴로 두었더니 다른 언어 화면에도 한글이
  * 그대로 나갔다. 이 카탈로그는 **id와 획득 경로**만 정한다.
  *
  * ⚠️ [BotCharacterId]와 티어 매핑은 저장 스키마의 일부이므로 건드리지 않는다. 그 id는 위 문구

@@ -118,8 +118,8 @@
 | 도장판 구성(순수) | `shared/.../application/attendance/AttendanceBoard.kt` |
 | 보유 상한 | `shared/.../application/consumable/ConsumableItem.kt` |
 | 캐릭터 해금 회차 | `shared/.../application/botcharacter/BotCharacterCatalog.kt` |
-| 화면(팝업) | `app-android/.../ui/AttendanceRewardClaimDialog.kt` |
-| 화면(도장판 그림) | `app-android/.../ui/AttendanceBoardView.kt` — 보상은 **글자가 아니라 글리프**로 그린다(#57) |
+| 화면(팝업) | `app-android/.../ui/monetization/AttendanceRewardClaimDialog.kt` |
+| 화면(도장판 그림) | `app-android/.../ui/monetization/AttendanceBoardView.kt` — 보상은 **글자가 아니라 글리프**로 그린다(#57) |
 | 보상 글리프 | `app-android/src/main/res/drawable/reward_*.xml` |
 | 상위 원칙 | `FEATURE_ACCESS_PRINCIPLES.md` (무료/유료 경계) |
 | 수익화 맥락 | `PREMIUM_MODE.md` |

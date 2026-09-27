@@ -21,8 +21,8 @@
 >   (#76)에 사라졌다. 지금 대국 화면 햄버거 메뉴는 언어 · `Display Options` · `Search Time` · 진단
 >   (로그 복사 / 엔진 벤치마크) 뿐이다 — 정본은 `APP_IA_AND_UI_SPEC.md` §2.3.
 > - **새 통합 설정 화면이 이 문서에 전혀 없다.** 홈 → `설정`(`ScreenDestination.Settings`,
->   `ui/SettingsScreen.kt`)이 언어 · 글꼴 크기 · 실험실 기능 · `Player Setup` · 계가/덤/판
->   크기/접바둑(`ui/CompactScoringAndBoardSettingsPanel.kt`) · `Display Options` · `Search Time` ·
+>   `ui/settings/SettingsScreen.kt`)이 언어 · 글꼴 크기 · 실험실 기능 · `Player Setup` · 계가/덤/판
+>   크기/접바둑(`ui/setup/CompactScoringAndBoardSettingsPanel.kt`) · `Display Options` · `Search Time` ·
 >   계정 · 개발자 모드를 한 화면에 모은 채 신설돼 있다.
 > - **"Menu 안의 표시 옵션" 절의 3항목은 낡았다** — 아래 그 절의 경고 참고.
 
