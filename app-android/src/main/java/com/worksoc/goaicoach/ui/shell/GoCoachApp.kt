@@ -596,6 +596,7 @@ private fun GoCoachScreen(
     val controllers = remember(wiringContext) { wireGoCoachControllers(wiringContext) }
     cancelUndoSync = controllers.undoController::cancelPendingSync
     exitToHome = {
+        controllers.autoAiTurnController.cancelInFlightTurn() // 나가면 AI 차례는 물음 없이 멈춘다(#74)
         isGameEnded = true
         // ⚠️ 판을 갈아엎기 **전에** 기록한다(#96) — 아래 `refreshNewGamePreview()`가 새 미리보기
         // 판을 적용해 `Move.Resign`을 지운다. 순서를 바꾸면 뒤로가기 기권이 다시 안 남는다.
@@ -663,7 +664,7 @@ private fun GoCoachScreen(
                             message = "User manually requested engine reset after watchdog warning.",
                         ),
                     )
-                    engineClient.forceResetEngine()
+                    controllers.autoAiTurnController.restartEngineForStalledTurn(engineClient::forceResetEngine)
                 },
             ),
         )

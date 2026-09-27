@@ -77,6 +77,9 @@ internal fun wireSavedSessionController(
         currentGameState = { context.gameState() },
         onEngineMessage = { message -> context.setEngineMessage(message) },
         applySavedGameRestorePlan = { restore: SavedGameRestorePlan ->
+            // 이어하기·기록에서 분기 — 앞 판에서 생각하던 AI 차례를 멈춘다(#74). 새 대국은 cancelStaleOperations
+            // (evictAllOperations)가 같은 일을 한다.
+            context.lifecycleController.cancelInFlightAutoAiTurn()
             context.clearUndoEngineInterventionQuietWindow()
             context.undoAnalysisRestoreCache.clear()
             context.setPositionCacheOptimizationState(context.positionCacheOptimizationState().clearPrompt())

@@ -42,6 +42,14 @@ class EngineOperationLifecycleController(
     private val activeJobs = mutableMapOf<String, Job>()
     private val activeJobsLock = sharedLock()
 
+    /**
+     * 지금 도는 AI 차례의 Job(refactor backlog #74). ⚠️ **`AutoAiTurnController`에 두지 않는 이유**: 그 컨트롤러는
+     * `GoCoachApp`의 `remember(wiringContext)`로 세션 스냅샷이 바뀔 때마다 **새로 만들어진다** — 예약하는 순간
+     * pending이 바뀌어 새 인스턴스가 생기므로, 무르기가 닿는 인스턴스는 Job을 모른다. 이 컨트롤러는 키 없는
+     * `remember`라 화면이 사는 동안 하나다.
+     */
+    private var inFlightAutoAiTurnJob: Job? = null
+
     val isEngineBusy: Boolean get() = lifecycleState.isEngineBusy(currentSessionGeneration())
     val isBlockingBusy: Boolean get() = lifecycleState.isBlockingBusy(currentSessionGeneration())
 
@@ -164,15 +172,52 @@ class EngineOperationLifecycleController(
     }
 
     /**
+     * AI 차례의 Job을 맡긴다(refactor backlog #74). 끝나면 스스로 빠진다 — 끝난 뒤의 [cancelInFlightAutoAiTurn]은
+     * 아무것도 하지 않는다. 새 차례가 오면 앞의 것을 덮는다(pending이 둘을 동시에 띄우지 않는다).
+     */
+    fun trackAutoAiTurnJob(job: Job) {
+        activeJobsLock.withLock { inFlightAutoAiTurnJob = job }
+        job.invokeOnCompletion {
+            activeJobsLock.withLock {
+                if (inFlightAutoAiTurnJob === job) inFlightAutoAiTurnJob = null
+            }
+        }
+    }
+
+    /**
+     * 도는 AI 차례를 **취소**한다(refactor backlog #74) — 무르기·나가기·새 대국·이어하기(분기 포함)·「엔진 다시
+     * 시작하기」가 부른다. Android 홈(일시정지)은 부르지 않는다 — 돌아오면 그 수가 그대로 둬져 있어야 한다.
+     *
+     * ⚠️ 취소는 표시만 한다. 막힌 GTP 읽기는 인터럽트에 반응하지 않으므로(설계 F4) Job은 그 명령이 돌아올 때
+     * (보통 탐색 시간 제한 안, 또는 forceReset으로 파이프가 닫힐 때) 끝나고, 정리(busy·예약 해제)는 러너의
+     * `finally`가 그때 한다. 취소된 차례는 수를 두지 않고, genMove·형세 추정도 더 부르지 않는다.
+     */
+    fun cancelInFlightAutoAiTurn() {
+        val job = activeJobsLock.withLock { inFlightAutoAiTurnJob } ?: return
+        if (!job.isActive) return
+        job.cancel()
+        diagnosticEventLog.append(
+            DiagnosticEvent(
+                severity = DiagnosticSeverity.Info,
+                code = "engine_operation_cancelled",
+                message = "Cancelled the in-flight AI turn.",
+            )
+        )
+    }
+
+    /**
      * 새 대국을 시작하기 직전에 호출한다. 이전 세대(예: 방금 기권한 대국)의 엔진 작업이
      * 아직 activeOperations에 남아 있으면, 늦게 끝나는 동안 새 대국의 isEngineBusy를
      * 계속 true로 잡아 AI 턴 예약을 조용히 취소시키는 경쟁 상태가 생긴다([EngineOperationLifecycleState]
      * 주석 참고). [cancelBackgroundOperations]와 달리 kind.isBlocking 여부와 무관하게 추적
      * 중인 작업을 전부 즉시 목록에서 비운다 — launchTracked를 거친 작업은 Job도 취소한다.
-     * AutoAiTurn/AutoAiEndgame처럼 launchTracked 밖에서 도는 작업은 Job을 취소할 수 없지만,
-     * 목록에서는 제거되므로 busy 플래그는 즉시 정상화된다(세대 스코프 필터링이 최종 방어선).
+     * AutoAiTurn은 [trackAutoAiTurnJob]으로 맡긴 Job을 취소한다(refactor backlog #74 — 예전에는 취소할 수 없었다).
+     * AutoAiEndgame은 그 AI 차례 Job 안에서 돌므로 같이 취소된다. 목록에서도 제거되므로 busy 플래그는 즉시
+     * 정상화된다(세대 스코프 필터링이 최종 방어선).
      */
     fun evictAllOperations() {
+        // 목록이 비어 있어도 먼저 취소한다 — AI 대 AI의 착수 지연 중인 차례는 아직 목록에 없다.
+        cancelInFlightAutoAiTurn()
         val staleIds = lifecycleState.activeOperations.keys.toList()
         if (staleIds.isEmpty()) return
         staleIds.forEach { operationId ->

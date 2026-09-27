@@ -66,6 +66,8 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.launch
@@ -331,6 +333,58 @@ class AutoAiScheduledTurnRunnerTest {
         assertEquals(false, autoAiState.isPending)
     }
 
+    /**
+     * T8(러너 쪽, refactor backlog #74) — 러너는 띄운 Job을 **돌려준다**(예전에는 버렸다, 설계 F3). 그리고 본문이
+     * 한 번도 돌기 전에 취소되면(예약 직후 곧바로 무르기) 본문의 `finally`도 없으므로, 예약 표시는 Job의
+     * 완료 콜백이 푼다.
+     */
+    @Test
+    fun aTurnCancelledBeforeItsBodyRunsStillClearsPendingAndTheJobIsReturned() {
+        val state = GameState.empty()
+        val setup = PlayerSetup(
+            black = SidePlayerSetup(controller = SeatController.Ai),
+            white = SidePlayerSetup(controller = SeatController.Human),
+        )
+        var autoAiState = AutoAiTurnUiState()
+        val runtimeState = GameSessionRuntimeState(
+            playLevel = PlayLevelSetting(),
+            engineProfile = EngineProfile(),
+            analysisPreset = AnalysisPreset.Lite,
+            sessionGeneration = 5L,
+        )
+        val scope = CoroutineScope(Job())
+        var launched: Job? = null
+        var started = false
+        var completeRunCount = 0
+
+        val returned = runScheduledAutoAiTurnApplication(
+            baseRequest(
+                schedule = AutoAiTurnRequestPlan.Schedule(delayMillis = 0L),
+                stateProvider = { state },
+                controllerStateProvider = {
+                    controllerState(state = state, setup = setup, runtimeState = runtimeState, autoAiTurnUiState = autoAiState)
+                },
+                client = SuspendingRunnerFakeEngineClient { error("본문은 돌지 않는다") },
+                runtimeState = runtimeState,
+                runtimeLog = RecordingRuntimeEventLog(),
+                applyScheduled = { schedule -> autoAiState = autoAiState.applyAutoAiTurnRequestPlan(schedule) },
+                markStarted = { started = true },
+                completeRun = { completeRunCount += 1; autoAiState = autoAiState.completeAutoAiTurnRun() },
+            ).copy(
+                launchAutoAiEffect = { block ->
+                    scope.launch(start = CoroutineStart.LAZY) { block() }.also { launched = it }
+                },
+            ),
+        )
+        assertEquals(true, autoAiState.isPending)
+        returned.cancel()
+
+        assertTrue(returned === launched, "러너가 띄운 Job을 그대로 돌려줘야 맡겨 둘 수 있다")
+        assertEquals(false, started)
+        assertEquals(1, completeRunCount, "본문 없이 취소된 차례도 pending을 한 번 풀어야 한다")
+        assertEquals(false, autoAiState.isPending)
+    }
+
     private fun baseRequest(
         schedule: AutoAiTurnRequestPlan.Schedule,
         stateProvider: () -> GameState,
@@ -384,7 +438,7 @@ class AutoAiScheduledTurnRunnerTest {
             runtimeEventLog = runtimeLog,
             diagnosticEventLog = NoopDiagnosticEventLog,
             delayMillis = delayMillis,
-            launchAutoAiEffect = { block -> runBlocking { block() } },
+            launchAutoAiEffect = { block -> runBlocking { launch { block() } } },
             applyScheduled = applyScheduled,
             applyCancelled = applyCancelled,
             markEngineOperationStarted = markStarted,

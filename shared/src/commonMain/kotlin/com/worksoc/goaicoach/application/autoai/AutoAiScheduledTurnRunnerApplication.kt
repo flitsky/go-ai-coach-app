@@ -19,6 +19,7 @@ import com.worksoc.goaicoach.shared.policy.EngineOperationRequest
 import com.worksoc.goaicoach.shared.policy.EngineOperationResultGuard
 import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
+import kotlinx.coroutines.Job
 
 internal data class AutoAiScheduledTurnRunRequest(
     val schedule: AutoAiTurnRequestPlan.Schedule,
@@ -35,7 +36,8 @@ internal data class AutoAiScheduledTurnRunRequest(
     val runtimeEventLog: RuntimeEventLogPort,
     val diagnosticEventLog: DiagnosticEventLogPort,
     val delayMillis: suspend (Long) -> Unit,
-    val launchAutoAiEffect: (suspend () -> Unit) -> Unit,
+    /** 띄운 Job을 돌려준다 — 호출부가 그것을 맡겨 두었다가 무르기·나가기 등에서 취소한다(refactor backlog #74). */
+    val launchAutoAiEffect: (suspend () -> Unit) -> Job,
     val applyScheduled: (AutoAiTurnRequestPlan.Schedule) -> Unit,
     val applyCancelled: (AutoAiTurnScheduleValidationPlan) -> Unit,
     val markEngineOperationStarted: (String) -> Unit,
@@ -57,9 +59,10 @@ internal data class AutoAiScheduledTurnRunRequest(
     val nowMillis: () -> Long = { currentEpochMillis() },
 )
 
+/** 예약하고 띄운 AI 차례의 Job을 돌려준다(refactor backlog #74 — 예전에는 버려져 아무도 취소할 수 없었다, 설계 F3). */
 internal fun runScheduledAutoAiTurnApplication(
     request: AutoAiScheduledTurnRunRequest,
-) {
+): Job {
     request.applyScheduled(request.schedule)
     request.runtimeEventLog.append(
         runtimeAiTurnScheduleLog(
@@ -70,7 +73,9 @@ internal fun runScheduledAutoAiTurnApplication(
             isEngineBusy = request.isEngineBusy(),
         ),
     )
-    request.launchAutoAiEffect {
+    var isBodyEntered = false
+    val job = request.launchAutoAiEffect {
+        isBodyEntered = true
         // ⚠️ **정리(busy 해제·예약 해제)는 `finally`에서 한다**(refactor backlog #74, 설계 B-6). 이 블록은 취소될
         // 수 있다 — 무르기·나가기·새 대국·이어하기·「엔진 다시 시작하기」가 Job을 취소한다. 정리를 본문 끝에
         // 두면 취소가 그것을 건너뛰어 busy와 예약 표시(pending)가 영원히 남고, **AI가 다시는 두지 않는다.**
@@ -166,6 +171,12 @@ internal fun runScheduledAutoAiTurnApplication(
         followUpPlan.toAutoAiTurnFollowUpRequest()
             ?.let(request.requestFollowUpAnalysis)
     }
+    // 본문이 한 번도 돌지 못한 채 취소되면(디스패치 전의 취소 — 예약 직후 곧바로 무르기) 위의 `finally`도 없다.
+    // 그때는 예약 표시를 여기서 푼다. 본문에 들어갔다면 정리는 본문의 `finally` 몫이다.
+    job.invokeOnCompletion {
+        if (!isBodyEntered) request.completeAutoAiTurnRun()
+    }
+    return job
 }
 
 private suspend fun runAutoAiTurnEngineCompletion(

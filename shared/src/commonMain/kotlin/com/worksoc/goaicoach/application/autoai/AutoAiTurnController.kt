@@ -18,6 +18,7 @@ import com.worksoc.goaicoach.shared.policy.EngineOperationResultGuard
 import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 
 class AutoAiTurnController(
@@ -50,7 +51,34 @@ class AutoAiTurnController(
     private val markGameEnded: () -> Unit,
     private val applyFinalScoreDisplayPlan: (FinalScoreDisplayPlan) -> Unit,
     private val applyEndgameFailureDisplayPlan: (EndgameFailureDisplayPlan) -> Unit,
+    /**
+     * 띄운 AI 차례의 Job을 **이 컨트롤러보다 오래 사는** 자리에 맡긴다(refactor backlog #74). 이 컨트롤러는
+     * `wiringContext`가 바뀔 때마다 새로 만들어지므로 Job을 필드로 들면 취소할 인스턴스가 그것을 모른다.
+     * 배선은 `EngineOperationLifecycleController::trackAutoAiTurnJob`을 넘긴다.
+     */
+    private val trackInFlightTurn: (Job) -> Unit,
+    /** 맡긴 Job을 취소한다 — 배선은 `EngineOperationLifecycleController::cancelInFlightAutoAiTurn`. */
+    private val cancelTrackedTurn: () -> Unit,
 ) {
+    /**
+     * 도는 AI 차례를 취소한다(refactor backlog #74). 물음 없이 즉시 멈춘다 — 팝업 없음, AI의 돌 없음,
+     * genMove·형세 추정 없음. 정리(busy·예약 해제)는 러너의 `finally`가 한다.
+     */
+    fun cancelInFlightTurn() {
+        cancelTrackedTurn()
+    }
+
+    /**
+     * 「엔진 다시 시작하기」(refactor backlog #74, 설계 C-11). 도는 차례를 먼저 취소한 뒤 엔진을 강제로 내린다 —
+     * 순서가 중요하다. 취소가 먼저여야 파이프가 닫혀 풀린 읽기의 예외가 "진짜 실패"로 읽혀 **맞추지 않은 새
+     * 프로세스에서 genMove**로 떨어지지 않는다(설계 F2). 취소된 Job은 파이프가 닫히며 끝나고, 그 `finally`가
+     * busy를 풀면 트리거 효과가 차례를 다시 요청한다 — 새 차례는 `configure`로 프로세스를 새로 띄우고 판을 맞춘다.
+     */
+    fun restartEngineForStalledTurn(forceResetEngine: () -> Unit) {
+        cancelInFlightTurn()
+        forceResetEngine()
+    }
+
     suspend fun applyEndgamePlan(endgamePlan: AutoAiTurnEndgamePlan.Resolve) {
         runAutoAiEndgameApplication(
             AutoAiEndgameRunRequest(
@@ -79,7 +107,7 @@ class AutoAiTurnController(
         ) {
             AutoAiTurnRequestPlan.Skip -> return
             is AutoAiTurnRequestPlan.Schedule -> {
-                runScheduledAutoAiTurnApplication(
+                val turnJob = runScheduledAutoAiTurnApplication(
                     AutoAiScheduledTurnRunRequest(
                         schedule = request,
                         controllerStateProvider = currentControllerState,
@@ -112,6 +140,7 @@ class AutoAiTurnController(
                         currentSessionGenerationProvider = currentSessionGeneration,
                     ),
                 )
+                trackInFlightTurn(turnJob)
             }
         }
     }

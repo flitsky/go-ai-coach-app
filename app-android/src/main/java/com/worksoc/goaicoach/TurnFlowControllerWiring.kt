@@ -79,6 +79,8 @@ internal fun wireUndoController(
         onPendingSyncChanged = { pending -> context.setPendingUndoSync(pending) },
         runEngineOperation = { operation, block -> context.lifecycleController.runTracked(operation) { block() } },
         applyUndo = { undo ->
+            // AI가 생각하던 차례는 물음 없이 멈춘다 — 무른 판에 뒤늦게 AI 돌이 놓이지 않고 genMove도 없다(#74).
+            context.lifecycleController.cancelInFlightAutoAiTurn()
             context.displayStateApplier.applyUndoLocalStatePlan(undo)
             context.setTurnTimeState(
                 context.turnTimeState().restartCurrentTurn(
@@ -125,6 +127,9 @@ internal fun wireAutoAiTurnController(
         markGameEnded = { context.activateEndgameJudgementReview(); context.setIsGameEnded(true) },
         applyFinalScoreDisplayPlan = context::applyFinalScoreWithJudgement,
         applyEndgameFailureDisplayPlan = context.displayStateApplier::applyEndgameFailureDisplayPlan,
+        // Job은 키 없는 remember인 수명 컨트롤러에 맡긴다 — 이 컨트롤러는 wiringContext마다 새로 만들어진다(#74).
+        trackInFlightTurn = context.lifecycleController::trackAutoAiTurnJob,
+        cancelTrackedTurn = context.lifecycleController::cancelInFlightAutoAiTurn,
     )
 
 internal fun wireHumanMoveController(
