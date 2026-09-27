@@ -3,6 +3,7 @@ package com.worksoc.goaicoach.application
 import com.worksoc.goaicoach.application.concurrency.sharedLock
 import com.worksoc.goaicoach.application.contract.PositionAnalysisCacheOptimizationPlan
 import com.worksoc.goaicoach.application.contract.PositionAnalysisCacheOptimizationTarget
+import com.worksoc.goaicoach.application.engine.EngineOperationBusy
 import com.worksoc.goaicoach.application.engine.LocalEngineSessionClient
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.BoardSize
@@ -163,7 +164,7 @@ class LocalEngineSessionClientSerializationTest {
         withTimeout(RefusalBudgetMillis) { client.analyzePosition(TwoMoves, SmallLimit) }
 
         val failure = assertNotNull(inner, "the re-entrant call must not wait for its own operation").exceptionOrNull()
-        assertTrue(failure is IllegalStateException, "a re-entrant call must fail loudly: $failure")
+        assertTrue(failure is IllegalStateException, "a re-entrant call must fail loudly, not give up with EngineOperationBusy: $failure")
     }
 
     /**
@@ -213,11 +214,11 @@ class LocalEngineSessionClientSerializationTest {
         repeat(50) { yield() }
     }
 
-    /** 기다리지 않고(시간 안에) 끝났고, 취소가 아닌 실패로 끝났다 — 결과를 내지 않았다. */
+    /** 기다리지 않고(시간 안에) [EngineOperationBusy]로 끝났다 — 결과를 내지 않았고, 취소도 아니다. */
     private fun assertGaveUpAtOnce(outcome: Result<Any>?, what: String) {
         assertNotNull(outcome, "$what must give up at once instead of waiting for the running operation")
         val failure = outcome.exceptionOrNull()
-        assertTrue(failure != null && failure !is CancellationException, "$what must give up (not run, not be cancelled): $outcome")
+        assertTrue(failure is EngineOperationBusy && failure !is CancellationException, "$what must give up with EngineOperationBusy: $outcome")
     }
 
     private companion object {

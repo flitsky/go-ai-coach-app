@@ -39,8 +39,9 @@ import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
  * `error("not used")`로 표현하던 계약을 그대로 옮긴 것**이다. 조용히 그럴듯한 기본값을 돌려주면
  * 테스트가 무엇을 부르는지 모르는 채로 초록이 되고, 그때부터 그 테스트는 아무것도 지키지 않는다.
  *
- * 예외는 셋이다 — [capabilities], [positionAnalysisCacheStatsText],
- * [positionAnalysisCacheQualityFor]. 이 셋은 옛 페이크 8개가 **전부 같은 값을 돌려주고 있었다**
+ * 예외는 넷이다 — [capabilities], [positionAnalysisCacheStatsText],
+ * [positionAnalysisCacheQualityFor], 그리고 뒤에 생긴 [isEngineOperationInFlight](`false` — 락이 없는 페이크의
+ * 정직한 답이다, refactor backlog #15). 앞의 셋은 옛 페이크 8개가 **전부 같은 값을 돌려주고 있었다**
  * (`false` / `"disabled"` / `null`). 셋을 일부러 틀린 값으로 바꾸고 `:shared:check`를 돌려 본
  * 결과 **빨개지는 테스트가 하나도 없었다**. 그래서 여기서만 `error`가 아닌 값을 준다.
  * 다른 값이 필요한 테스트는 [capabilities]처럼 그대로 `override` 하면 된다.
@@ -61,6 +62,10 @@ import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
 open class FakeEngineSessionClient : EngineSessionClient {
     override val capabilities: EngineSessionCapabilities =
         EngineSessionCapabilities(supportsDeviceBenchmark = false)
+
+    /** 이 페이크에는 오퍼레이션 락이 없다 — 늘 아무것도 돌고 있지 않다(refactor backlog #15). 필요한 테스트는 `override`한다. */
+    override val isEngineOperationInFlight: Boolean
+        get() = false
 
     override fun positionAnalysisCacheStatsText(nowMillis: Long): String = "disabled"
 

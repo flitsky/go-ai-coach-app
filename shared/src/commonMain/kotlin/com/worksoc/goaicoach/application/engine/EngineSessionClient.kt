@@ -38,7 +38,7 @@ data class EngineSessionCapabilities(
  * details to Compose/app-service orchestration (5계층).
  *
  * ## 멤버가 없다 — 역할 넷의 합성이다 (refactor backlog #35)
- * 멤버 15개는 역할 인터페이스 넷에 **하나씩만** 선언돼 있다 — [EngineLifecycleClient](수명 5)·
+ * 멤버 16개는 역할 인터페이스 넷에 **하나씩만** 선언돼 있다 — [EngineLifecycleClient](수명 6)·
  * [EngineGamePlayClient](대국 진행 3)·[EngineScoringClient](계가 3)·[EngineAnalysisClient](분석 4).
  * 이 타입은 넷을 다 가진 객체 하나가 필요한 **조립 루트**를 위해 남는다 — `MainActivity`의
  * `remoteClient ?: LocalEngineSessionClient(…)`, `GoCoachApp`의 파라미터와 배선 컨텍스트, androidTest가
@@ -61,9 +61,12 @@ data class EngineSessionCapabilities(
  *    ([EngineGamePlayClient.runAutoAiTurn] 안의 분석)과 분석([EngineAnalysisClient.analyzePosition]·
  *    [EngineAnalysisClient.optimizePositionAnalysisCache])이 함께 쓴다. 쪼개면 캐시가 둘이 되어 적중이 떨어진다.
  *  - **엔진 호출의 직렬화·대기 정책은 역할이 아니라 메서드 단위로 정한다** — 같은 역할 안에서도 갈린다.
- *    refactor backlog #15의 설계에서 형세 추정([EngineScoringClient.estimateScoreForState])은 바로 포기하고
- *    재동기화([EngineScoringClient.syncAndEstimateGraphScore])는 기다린다 — 둘 다 계가 역할이다. 수명 역할의
+ *    오퍼레이션 락(refactor backlog #15, `LocalEngineSessionClient`)에서 형세 추정([EngineScoringClient.estimateScoreForState])은
+ *    바로 포기하고([EngineOperationBusy]) 재동기화([EngineScoringClient.syncAndEstimateGraphScore])는 기다린다 — 둘 다 계가
+ *    역할이다. 분석 역할의 [EngineAnalysisClient.analyzePosition]도 포기한다. 수명 역할의
  *    [EngineLifecycleClient.forceResetEngine]은 그 락을 아예 잡지 않는다(함정 71).
+ *  - **구현 안에서 공개 멤버를 다시 부르지 말 것** — 락은 재진입하지 않는다. 한 오퍼레이션 안의 일은 구현의 비공개
+ *    도우미로 한다.
  */
 interface EngineSessionClient :
     EngineLifecycleClient,
@@ -100,6 +103,21 @@ interface EngineLifecycleClient {
      * 둔다.
      */
     val capabilities: EngineSessionCapabilities
+
+    /**
+     * 지금 이 엔진에서 오퍼레이션 하나가 돌고 있는가(refactor backlog #15) — 구현의 오퍼레이션 락을 들여다보는 **눈대중**이다.
+     * 싸고, 서스펜드하지 않고, 아무 스레드에서나 읽을 수 있어야 한다.
+     *
+     * 쓰는 곳은 하나다 — 자동 추천 수가 "어차피 포기할 요청"을 띄우지 않고 곧바로 미루게 한다(`TopMovesController`).
+     * 띄웠다가 포기하면 busy가 켜졌다 꺼지며 `GoCoachApp`의 트리거 효과를 다시 돌려, 락이 풀릴 때까지 요청과 포기가
+     * 되풀이될 수 있다. 5계층의 `isEngineBusy`는 세대로 거른 장부라, 무르기·새 대국 뒤에도 돌고 있는 낡은 작업을 모른다.
+     *
+     * ⚠️ **게이트로 쓰지 말 것** — 읽은 다음 순간 답이 바뀐다. 직렬화는 락 자체가 한다. 특히 AI 차례·무르기·새 대국의
+     * 게이트에 섞지 말 것: 그 게이트가 세대로 거른 `isEngineBusy`를 보는 것은 낡은 작업 때문에 새 대국의 AI 차례 예약이
+     * 조용히 취소되던 것을 막으려는 것이다(`EngineOperationLifecycleState` 주석). 이 값은 세대를 모른다.
+     * 락이 없는 백엔드(테스트 페이크)는 `false`다.
+     */
+    val isEngineOperationInFlight: Boolean
 
     suspend fun startSession(
         profile: EngineProfile,

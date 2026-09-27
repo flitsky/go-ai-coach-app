@@ -75,6 +75,7 @@ class TopMovesApplicationTest {
             isGameEnded = { false },
             isEngineReady = { true },
             isEngineBusy = { false },
+            isEngineOperationInFlight = { false },
             shouldShowResumePrompt = { false },
             currentPlayerSetup = { PlayerSetup() },
             showMoveReviewEnabled = { false },
@@ -111,6 +112,59 @@ class TopMovesApplicationTest {
         assertEquals(listOf(EngineOperationKind.TopMoves, EngineOperationKind.TopMoves), launched)
         assertEquals(1, appliedUpdate?.candidateMoves?.size, "the second run brings the analysis")
         assertNull(failureDisplay)
+    }
+
+    /**
+     * T6b(refactor backlog #15) — 엔진의 오퍼레이션 락이 쥐여 있으면(5계층 장부는 모르는 낡은 작업이라도) 자동 추천 수는
+     * **띄우지 않고** 곧바로 미룬다. 띄웠다가 포기하면 busy가 켜졌다 꺼지며 트리거 효과가 다시 돌아, 락이 풀릴 때까지
+     * 요청과 포기가 되풀이될 수 있다. 락이 풀려야 다시 건다.
+     */
+    @Test
+    fun automaticTopMovesAreDeferredWithoutLaunchingWhileTheEngineOperationLockIsHeld() {
+        val state = GameState.empty()
+        var controllerState = topMoveControllerState(state = state)
+        var operationInFlight = true
+        val launched = mutableListOf<EngineOperationKind>()
+        val controller = TopMovesController(
+            engineClient = FakeTopMoveEngineSessionClient(
+                result = AnalysisResult(status = EngineStatus.ready("analysis complete"), candidates = emptyList(), summary = "raw"),
+            ),
+            currentControllerState = { controllerState },
+            isGameEnded = { false },
+            isEngineReady = { true },
+            isEngineBusy = { false },
+            isEngineOperationInFlight = { operationInFlight },
+            shouldShowResumePrompt = { false },
+            currentPlayerSetup = { PlayerSetup() },
+            showMoveReviewEnabled = { false },
+            pendingPostUndoEngineSync = { false },
+            analysisCacheEnabled = { false },
+            cachedResultFor = { null },
+            currentGameState = { state },
+            currentAnalysisKey = { controllerState.core.analysisState.lastAnalysisKey },
+            currentSessionGeneration = { 0L },
+            launchEngineOperation = { operation, block ->
+                launched += operation.kind
+                runBlocking { block() }
+            },
+            applyLaunchUpdate = { update -> controllerState = controllerState.withCore(controllerState.core.copy(analysisState = update.analysisState)) },
+            applyTopMoveAnalysisUpdate = { _, _ -> },
+            putUndoRestoreCache = { _, _ -> },
+            putAnalysisCache = { _, _ -> },
+            applyFailureDisplay = { failure -> error("not a failure: $failure") },
+            appendEngineOperationDiscardLog = { discard -> error("nothing to discard: $discard") },
+            applyShowTopMovesStateUpdate = { update -> error("not used: $update") },
+            deferredAutomaticAnalysis = TopMoveAnalysisDeferral(),
+        )
+
+        controller.requestAnalysis(state, automatic = true)
+        val resumedWhileHeld = controller.resumeDeferredAnalysisIfIdle()
+
+        assertEquals(emptyList<EngineOperationKind>(), launched, "a request that would only give up must not be launched")
+        assertFalse(resumedWhileHeld, "the deferred request waits until the lock is released")
+        operationInFlight = false
+        assertTrue(controller.resumeDeferredAnalysisIfIdle())
+        assertEquals(listOf(EngineOperationKind.TopMoves), launched)
     }
 
     @Test

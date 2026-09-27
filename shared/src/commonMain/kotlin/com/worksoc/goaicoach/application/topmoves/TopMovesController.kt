@@ -17,6 +17,14 @@ class TopMovesController(
     private val isGameEnded: () -> Boolean,
     private val isEngineReady: () -> Boolean,
     private val isEngineBusy: () -> Boolean,
+    /**
+     * 엔진의 오퍼레이션 락이 지금 쥐여 있는가(`EngineLifecycleClient.isEngineOperationInFlight`, refactor backlog #15).
+     * **자동 요청을 미룰지·미룬 것을 다시 걸지 가르는 데만** 본다 — [isEngineBusy](세대로 거른 장부)가 모르는 낡은 작업이
+     * 엔진을 쥐고 있으면 띄워 봐야 곧바로 포기한다. 띄웠다 포기하면 busy가 켜졌다 꺼지며 트리거 효과가 다시 돌아 요청과
+     * 포기가 되풀이될 수 있다. ⚠️ 손으로 켠 요청·표시 게이트([showForCurrentState])에는 섞지 않는다 — 거기서 "바쁨"은
+     * 토글을 끄고 "사람 차례에만" 문구를 띄운다. 손으로 켠 요청이 포기하면 [deferAfterBusy]가 미룬다.
+     */
+    private val isEngineOperationInFlight: () -> Boolean,
     private val shouldShowResumePrompt: () -> Boolean,
     private val currentPlayerSetup: () -> PlayerSetup,
     private val showMoveReviewEnabled: () -> Boolean,
@@ -37,7 +45,7 @@ class TopMovesController(
     private val deferredAutomaticAnalysis: TopMoveAnalysisDeferral,
 ) {
     fun requestAnalysis(targetState: GameState, automatic: Boolean, deep: Boolean = false) {
-        if (automatic && isEngineBusy()) {
+        if (automatic && (isEngineBusy() || isEngineOperationInFlight())) {
             deferredAutomaticAnalysis.defer(
                 targetState = targetState,
                 deep = deep,
@@ -93,7 +101,7 @@ class TopMovesController(
     }
 
     fun resumeDeferredAnalysisIfIdle(): Boolean {
-        val request = deferredAutomaticAnalysis.takeWhenIdle(isEngineBusy()) ?: return false
+        val request = deferredAutomaticAnalysis.takeWhenIdle(isEngineBusy() || isEngineOperationInFlight()) ?: return false
         requestAnalysis(
             targetState = request.targetState,
             automatic = true,

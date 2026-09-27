@@ -27,6 +27,7 @@ internal fun wireTopMovesController(context: GoCoachAppWiringContext): TopMovesC
         isGameEnded = { context.isGameEnded() },
         isEngineReady = { context.isEngineReady() },
         isEngineBusy = { context.isEngineBusy() },
+        isEngineOperationInFlight = { context.engineClient.isEngineOperationInFlight },
         shouldShowResumePrompt = { context.shouldShowResumePrompt() },
         currentPlayerSetup = { context.playerSetup() },
         showMoveReviewEnabled = { context.showMoveReviewEnabled() },

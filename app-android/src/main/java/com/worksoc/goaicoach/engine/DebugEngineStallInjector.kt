@@ -30,6 +30,11 @@ import kotlinx.coroutines.withTimeout
  *
  * ⚠️ 한 번 건 스위치는 **그 다음 분석** 하나가 먹는다 — 추천 수·착수 평가의 분석도 분석이다. 확인하는 동안은
  * 둘을 끄고, 같은 국면이 분석 캐시에 있으면 엔진까지 가지 않으니 새 국면에서 건다.
+ *
+ * ⚠️ 멈춤은 3계층의 오퍼레이션 락을 **쥔 채**다(refactor backlog #15) — 진짜 멈춘 엔진과 같다. `wedge` 동안 형세·추천 수는
+ * 기다리지 않고 "바쁘다"로 돌아오고, 재동기화·새 대국은 「엔진 다시 시작하기」까지 줄 선다(그 뒤 새 프로세스에서 돈다).
+ * `late`의 기다림은 취소를 무시하므로 무르기를 해도 N밀리초 동안 락을 놓지 않는다 — 진짜 KataGo의 취소된 탐색은
+ * 2계층 배수가 맡아 곧바로 놓는다(`KataGoProcessEngineAdapter.roundTrip`). 무르기 확인에는 `slow`를 쓴다.
  */
 internal class DebugEngineStallInjector(
     private val delegate: EngineCoreApi,
