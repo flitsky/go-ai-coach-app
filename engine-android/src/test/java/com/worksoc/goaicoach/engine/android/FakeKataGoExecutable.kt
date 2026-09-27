@@ -25,10 +25,10 @@ import org.json.JSONObject
  *   셸 내장(`kill`)이라 자식 프로세스를 만들지 않는다 — 자식이 stdout을 물려받아 쥐고 있으면 부모를 죽여도
  *   파이프가 닫히지 않아 재려는 것이 가려진다(`sleep`을 쓰지 않는 이유). 이 모드로 만든 가짜는 [close]가 남은
  *   프로세스를 SIGKILL로 치운다.
- *   ⚠️ 플랫폼 차이(2026-09-28 macOS 실측): Linux(Android)에서는 멈춘 프로세스에 보낸 SIGTERM이 보류되고, 우리
- *   쪽 스트림을 닫아도 막힌 파이프 읽기가 풀리지 않는다. macOS는 둘 다 다르다 — SIGTERM이 멈춘 프로세스를
- *   내리고, `Process.destroy()`가 스트림을 닫으면 막힌 `readLine()`이 `null`로 풀린다. 그래서 이 가짜로는
- *   "SIGTERM으로는 안 풀린다"를 macOS에서 재현할 수 없다 — 그건 [FakeEngineProcessRuntime]이 맡는다.
+ *   ⚠️ 플랫폼 차이: macOS(이 JVM 테스트가 도는 곳, 2026-09-28 실측)에서는 SIGTERM이 멈춘 프로세스를 내리고,
+ *   `Process.destroy()`가 스트림을 닫으면 막힌 `readLine()`이 `null`로 풀린다. 기기의 Linux는 둘 다 아니다(커널
+ *   동작 — 여기서 재지는 않았다): 멈춘 프로세스에 보낸 SIGTERM은 보류되고, 다른 스레드가 fd를 닫아도 막힌 읽기는
+ *   그대로다. 그래서 이 가짜로는 "SIGTERM으로는 안 풀린다"를 재현할 수 없다 — 그건 [FakeEngineProcessRuntime]이 맡는다.
  *
  * ⚠️ 이 가짜가 증명하는 것은 **어댑터가 KataGo에 무엇을 보냈는가**뿐이다. KataGo가 그 쿼리를
  * 어떻게 읽는지(점수, 접바둑 보정)는 여기서 알 수 없다 — 그건 실제 KataGo로 잰 값이다.

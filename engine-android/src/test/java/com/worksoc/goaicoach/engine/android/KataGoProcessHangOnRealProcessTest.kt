@@ -27,7 +27,7 @@ import org.junit.Test
  * 메모리 안 가짜로 잰 것이 실제 `Process`·파이프에서도 그런지 — 시간 초과가 멈춘 프로세스를 실제로 내려
  * 막힌 읽기를 푸는지, `destroyForcibly()`가 멈춘 프로세스를 내리는지 — 를 여기서 본다.
  *
- * ⚠️ 이 JVM 테스트가 도는 macOS는 기기(Linux)와 다르다([FakeKataGoExecutable] KDoc의 실측): SIGTERM이 멈춘
+ * ⚠️ 이 JVM 테스트가 도는 macOS는 기기(Linux)와 다르다([FakeKataGoExecutable] KDoc): SIGTERM이 멈춘
  * 프로세스를 내리고, 스트림을 닫으면 막힌 읽기가 풀린다. 그래서 forceReset 쪽 테스트는 **고치기 전 코드에서도
  * 초록**이다(회귀 그물). 시간 초과 쪽은 고치기 전 코드가 프로세스를 아예 건드리지 않으므로 여기서도 빨갛다.
  */
