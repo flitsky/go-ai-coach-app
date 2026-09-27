@@ -5,6 +5,7 @@ import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.match.SidePlayerSetup
 import com.worksoc.goaicoach.shared.policy.PlayLevelGroup
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
+import com.worksoc.goaicoach.ui.home.currentAiCharacterOrDefault
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
