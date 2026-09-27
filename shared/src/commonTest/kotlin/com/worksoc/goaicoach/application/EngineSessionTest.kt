@@ -177,6 +177,48 @@ class EngineSessionTest {
         )
     }
 
+    /**
+     * T4(refactor backlog #74, 설계 F2) — 분석이 **진짜로 실패**해 `genMove`로 떨어질 때는 먼저 엔진을 다시 맞춘다.
+     * GTP 경로의 실패는 프로세스를 내린 뒤라, 맞추지 않은 `genMove`는 판 크기·덤·수순을 모르는 새 프로세스가
+     * 빈 판의 수를 낸다. 그래서 `analyze`와 `genMove` 사이에 `configure` + `newGame` + 수순 재생이 끼어야 한다.
+     */
+    @Test
+    fun runAutoAiTurnResyncsTheEngineBeforeFallingBackToGenMoveAfterARealAnalysisFailure() = runBlocking {
+        val engine = RecordingEngineAdapter(
+            analysisFailure = IllegalStateException("KataGo process input is not initialized"),
+        )
+        val session = LocalEngineCoreSessionDelegate(engine)
+        val state = GameState.empty()
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+
+        val result = session.runAutoAiTurn(
+            currentState = state,
+            playLevel = PlayLevelSetting(),
+            currentProfile = EngineProfile(),
+            searchTimeSettings = SearchTimeSettings(),
+            searchMode = EngineSearchMode.GtpStatefulFast,
+            isolateSearchCache = false,
+            analysisProvider = { limit -> engine.analyze(limit) },
+        )
+
+        assertEquals(
+            listOf(
+                "configure:16",
+                "newGame:9:japanese",
+                "play:Black E5",
+                "analyze:16",
+                // ↓ 폴백 직전의 재동기화 — 이 셋이 없으면 genMove는 엔진이 기억하는(또는 새 프로세스의 빈) 판에 둔다.
+                "configure:16",
+                "newGame:9:japanese",
+                "play:Black E5",
+                "genMove:White",
+                "estimate:1",
+            ),
+            engine.calls,
+        )
+        assertEquals(Move.Pass(StoneColor.White), result.turnOutcome.gameState.moves.last())
+    }
+
     @Test
     fun adapterSessionClientAnalyzesExplicitPositionAfterSyncingState() = runBlocking {
         val engine = RecordingEngineAdapter()
@@ -693,6 +735,8 @@ class EngineSessionTest {
 private class RecordingEngineAdapter(
     private val analyzedRootVisits: (AnalysisLimit) -> Int? = { limit -> limit.visits },
     private val analysisFallback: AnalysisFallbackRecord? = null,
+    /** 주면 `analyze`가 호출 기록을 남긴 뒤 이것을 던진다(refactor backlog #74 T4). */
+    private val analysisFailure: Throwable? = null,
 ) : EngineCoreApi {
     val calls = mutableListOf<String>()
     val configuredProfiles = mutableListOf<EngineProfile>()
@@ -750,7 +794,15 @@ private class RecordingEngineAdapter(
             calls += "clearSearchCache"
         }
 
-    override suspend fun analyze(limit: AnalysisLimit): AnalysisResult =
+    override suspend fun analyze(limit: AnalysisLimit): AnalysisResult {
+        if (analysisFailure != null) {
+            calls += "analyze:${limit.visits}"
+            throw analysisFailure
+        }
+        return analyzeSuccessfully(limit)
+    }
+
+    private fun analyzeSuccessfully(limit: AnalysisLimit): AnalysisResult =
         AnalysisResult(
             status = EngineStatus.ready("analyzed"),
             candidates = listOf(

@@ -65,7 +65,12 @@ import com.worksoc.goaicoach.testsupport.RecordingRuntimeEventLog
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 
 class AutoAiScheduledTurnRunnerTest {
     @Test
@@ -219,6 +224,113 @@ class AutoAiScheduledTurnRunnerTest {
         assertTrue(runtimeLog.events.any { it.contains("event=ai_turn_schedule_cancelled") })
     }
 
+    /**
+     * T5(refactor backlog #74, 설계 F3 (b)) — 엔진 호출 중에 AI 차례의 Job을 취소해도 **정리는 한다.**
+     *
+     * 예전에는 5계층의 `runCatching`이 취소를 삼킨 뒤 `runEngineIo`(IO 디스패처)에서 돌아오는 순간 즉시 취소가
+     * 다시 던져져 `markEngineOperationCompleted`·`completeAutoAiTurnRun`을 건너뛰었다 — busy와 예약 표시가 영원히
+     * 남아 **AI가 다시는 두지 않는다.** 그래서 이 테스트는 launch를 `runBlocking`의 루프(IO와 다른 디스패처)에서
+     * 돌린다 — 그 복귀 경계를 실제로 건너야 재현된다.
+     */
+    @Test
+    fun cancellingTheLaunchedTurnDuringTheEngineCallStillCompletesTheOperationAndClearsPending() = runBlocking {
+        val state = GameState.empty()
+        val setup = PlayerSetup(
+            black = SidePlayerSetup(controller = SeatController.Ai),
+            white = SidePlayerSetup(controller = SeatController.Human),
+        )
+        var autoAiState = AutoAiTurnUiState()
+        val runtimeState = GameSessionRuntimeState(
+            playLevel = PlayLevelSetting(),
+            engineProfile = EngineProfile(),
+            analysisPreset = AnalysisPreset.Lite,
+            sessionGeneration = 2L,
+        )
+        val engineEntered = CompletableDeferred<Unit>()
+        val startedIds = mutableListOf<String>()
+        val completedIds = mutableListOf<String>()
+        var completeRunCount = 0
+        var failureDisplays = 0
+        var followUps = 0
+        var launched: Job? = null
+
+        runScheduledAutoAiTurnApplication(
+            baseRequest(
+                schedule = AutoAiTurnRequestPlan.Schedule(delayMillis = 0L),
+                stateProvider = { state },
+                controllerStateProvider = {
+                    controllerState(state = state, setup = setup, runtimeState = runtimeState, autoAiTurnUiState = autoAiState)
+                },
+                client = SuspendingRunnerFakeEngineClient { engineEntered.complete(Unit); awaitCancellation() },
+                runtimeState = runtimeState,
+                runtimeLog = RecordingRuntimeEventLog(),
+                applyScheduled = { schedule -> autoAiState = autoAiState.applyAutoAiTurnRequestPlan(schedule) },
+                markStarted = { id -> startedIds += id },
+                markCompleted = { id -> completedIds += id },
+                applyTurnFailureDisplay = { failureDisplays += 1 },
+                completeRun = { completeRunCount += 1; autoAiState = autoAiState.completeAutoAiTurnRun() },
+                requestFollowUp = { followUps += 1 },
+            ).copy(launchAutoAiEffect = { block -> launch { block() }.also { launched = it } }),
+        )
+        engineEntered.await()
+        val job = requireNotNull(launched)
+        job.cancel()
+        job.join()
+
+        assertTrue(job.isCancelled)
+        assertEquals(1, startedIds.size)
+        assertEquals(startedIds, completedIds, "시작한 엔진 작업은 취소돼도 완료로 적어야 busy가 풀린다")
+        assertEquals(1, completeRunCount, "예약 표시(pending)를 풀지 않으면 AI가 다시는 두지 않는다")
+        assertEquals(false, autoAiState.isPending)
+        assertEquals(0, failureDisplays, "사용자가 취소한 차례에 실패 문구를 띄우지 않는다")
+        assertEquals(0, followUps, "취소한 차례는 후속 분석을 걸지 않는다")
+    }
+
+    /**
+     * T6(앞 절반, refactor backlog #74) — 호출자가 살아 있는데 엔진이 **시간 초과**로 끝나면 그것은 실패가 아니다.
+     * 「AI turn failed…」를 띄우지 않고 선택 팝업이 설명한다(설계 C-12). 정리는 여느 때처럼 한다.
+     */
+    @Test
+    fun engineTimeoutWhileTheTurnIsActiveIsNotShownAsAFailure() {
+        val state = GameState.empty()
+        val setup = PlayerSetup(
+            black = SidePlayerSetup(controller = SeatController.Ai),
+            white = SidePlayerSetup(controller = SeatController.Human),
+        )
+        var autoAiState = AutoAiTurnUiState()
+        val runtimeState = GameSessionRuntimeState(
+            playLevel = PlayLevelSetting(),
+            engineProfile = EngineProfile(),
+            analysisPreset = AnalysisPreset.Lite,
+            sessionGeneration = 3L,
+        )
+        val startedIds = mutableListOf<String>()
+        val completedIds = mutableListOf<String>()
+        val failures = mutableListOf<Throwable>()
+
+        runScheduledAutoAiTurnApplication(
+            baseRequest(
+                schedule = AutoAiTurnRequestPlan.Schedule(delayMillis = 0L),
+                stateProvider = { state },
+                controllerStateProvider = {
+                    controllerState(state = state, setup = setup, runtimeState = runtimeState, autoAiTurnUiState = autoAiState)
+                },
+                client = SuspendingRunnerFakeEngineClient { withTimeout(1L) { awaitCancellation() } },
+                runtimeState = runtimeState,
+                runtimeLog = RecordingRuntimeEventLog(),
+                applyScheduled = { schedule -> autoAiState = autoAiState.applyAutoAiTurnRequestPlan(schedule) },
+                markStarted = { id -> startedIds += id },
+                markCompleted = { id -> completedIds += id },
+                applyTurnFailureDisplay = { error -> failures += error },
+                completeRun = { autoAiState = autoAiState.completeAutoAiTurnRun() },
+            ),
+        )
+
+        assertEquals(emptyList<Throwable>(), failures, "시간 초과를 「AI turn failed」로 띄우면 안 된다: $failures")
+        assertEquals(startedIds, completedIds)
+        assertEquals(false, autoAiState.isPending)
+    }
+
     private fun baseRequest(
         schedule: AutoAiTurnRequestPlan.Schedule,
         stateProvider: () -> GameState,
@@ -352,6 +464,20 @@ class AutoAiScheduledTurnRunnerTest {
             moveAnalysisCoverage = "coverage",
             scoreText = "score",
         )
+}
+
+/** 엔진 호출(`runAutoAiTurn`)이 [onRun]을 그대로 돈다 — 멈추거나 시간 초과를 내는 데 쓴다(refactor backlog #74). */
+private class SuspendingRunnerFakeEngineClient(
+    private val onRun: suspend () -> AutoAiTurnResult,
+) : FakeEngineSessionClient() {
+    override suspend fun runAutoAiTurn(
+        currentState: GameState,
+        playLevel: PlayLevelSetting,
+        currentProfile: EngineProfile,
+        searchTimeSettings: SearchTimeSettings,
+        searchMode: EngineSearchMode,
+        isolateSearchCache: Boolean,
+    ): AutoAiTurnResult = onRun()
 }
 
 private class ScheduledRunnerFakeEngineClient(
