@@ -17,6 +17,7 @@ import com.worksoc.goaicoach.application.score.buildEndgameFailureDisplayPlan
 import com.worksoc.goaicoach.application.score.buildEngineEstimateDisplayPlan
 import com.worksoc.goaicoach.application.score.buildResolvedEndgameDisplayPlan
 import com.worksoc.goaicoach.application.session.AutoAiTurnFailureDisplayPlan
+import com.worksoc.goaicoach.match.AiMoveSearchTimedOut
 import com.worksoc.goaicoach.match.MatchReferee
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.Move
@@ -28,6 +29,10 @@ import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 import com.worksoc.goaicoach.shared.scoring.ScoreTimeline
+import kotlin.coroutines.cancellation.CancellationException
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.isActive
 
 sealed class AutoAiTurnFollowUpPlan {
     data object None : AutoAiTurnFollowUpPlan()
@@ -190,23 +195,43 @@ internal suspend fun EngineGamePlayClient.runAutoAiTurnEffect(
     )
 }
 
+/**
+ * AI 차례 하나를 돌려 결과를 셋으로 가른다(refactor backlog #74).
+ * - 성공 → [AutoAiTurnWorkflowResult.Success]
+ * - **시간 초과** — 탐색의 [AiMoveSearchTimedOut], 또는 호출자가 살아 있는데 올라온 `CancellationException`
+ *   (`configure`·`playMove` 같은 다른 엔진 명령의 `withTimeout`) → [AutoAiTurnWorkflowResult.TimedOut].
+ *   실패 문구를 띄우지 않고 선택 팝업이 설명한다.
+ * - 그 밖의 예외 → [AutoAiTurnWorkflowResult.Failure](지금처럼 「AI turn failed…」).
+ *
+ * ⚠️ **진짜 취소는 여기서 삼키지 않고 올린다.** 예전의 `runCatching`은 사용자의 취소까지 `Failure`로 바꿨고,
+ * 그 직후 `runEngineIo`의 복귀 경계에서 즉시 취소가 다시 던져져 호출부의 정리(busy·예약 해제)를 건너뛰었다
+ * (설계 F3 (b)). 정리는 이제 호출부의 `finally`가 한다.
+ */
 internal suspend fun EngineGamePlayClient.runAutoAiTurnWorkflowResult(
     effect: GameSessionEffect.RunAutoAiTurn,
     executionContext: AutoAiTurnRunExecutionContext,
     operationRequest: EngineOperationRequest,
     diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
 ): AutoAiTurnWorkflowResult =
-    runCatching {
-        runAutoAiTurnEffect(
-            effect = effect,
-            executionContext = executionContext,
-            operationRequest = operationRequest,
-            diagnosticEventLog = diagnosticEventLog,
+    try {
+        AutoAiTurnWorkflowResult.Success(
+            runAutoAiTurnEffect(
+                effect = effect,
+                executionContext = executionContext,
+                operationRequest = operationRequest,
+                diagnosticEventLog = diagnosticEventLog,
+            ),
         )
-    }.fold(
-        onSuccess = { display -> AutoAiTurnWorkflowResult.Success(display) },
-        onFailure = { error -> AutoAiTurnWorkflowResult.Failure(error) },
-    )
+    } catch (timeout: AiMoveSearchTimedOut) {
+        AutoAiTurnWorkflowResult.TimedOut(timeout)
+    } catch (cancellation: CancellationException) {
+        if (!currentCoroutineContext().isActive) throw cancellation
+        AutoAiTurnWorkflowResult.TimedOut(cancellation)
+    } catch (failure: Throwable) {
+        // 취소된 뒤 막혔던 읽기가 일반 예외로 풀린 것이면(forceReset → ISE) 결과가 아니다 — 취소로 올린다.
+        currentCoroutineContext().ensureActive()
+        AutoAiTurnWorkflowResult.Failure(failure)
+    }
 
 suspend fun EngineGamePlayClient.runAutoAiEndgameDisplayPlan(
     plan: AutoAiTurnEndgamePlan.Resolve,

@@ -45,35 +45,65 @@ internal class KataGoGtpAnalysisClient(
         )
     }
 
+    /**
+     * ⚠️ **`finally`의 되돌리기가 원래 예외를 가리면 안 된다**(refactor backlog #74, 설계 F1). 탐색이 시간 초과로
+     * 끝나면 `sendCommand`가 프로세스를 내린 뒤(`input = null`) 그 시간 초과를 던진다. 그 직후 되돌리기
+     * (`kata-set-param`)는 내려간 프로세스에 가서 `IllegalArgumentException`을 내는데, 평범한 `finally`에서는
+     * 그것이 시간 초과를 **대신했다** — 5계층은 GTP 경로의 시간 초과를 실패로 보고 같은 예산으로 `genMove`를
+     * 또 태웠다. 그래서 원래 예외가 있으면 되돌리기 실패는 그 예외의 suppressed로만 남긴다. 탐색이 성공한
+     * 뒤의 되돌리기 실패는 지금처럼 그대로 올라간다.
+     */
     private suspend fun analyzeWithGtp(
         effectiveLimit: AnalysisLimit,
         requestedLimit: AnalysisLimit,
-    ): GtpAnalysisResult =
+    ): GtpAnalysisResult {
+        var primary: Throwable? = null
         try {
-            applySearchLimit(effectiveLimit)
-            val context = contextProvider()
-            val startNanos = System.nanoTime()
-            val response = sendCommand(
-                KataGoProtocolCommands.searchAnalyze(context.nextPlayer, effectiveLimit),
-                searchTimeoutMillisFor(effectiveLimit.timeMillis),
-            )
-            val elapsedMs = (System.nanoTime() - startNanos) / 1_000_000
-            val candidates = KataGoAnalysisParser.attachPointLoss(
-                candidates = KataGoAnalysisParser.parseCandidates(
-                    response = response,
-                    player = context.nextPlayer,
-                    boardSize = context.boardSize,
-                    maxCandidates = requestedLimit.candidateCount,
-                ),
-            ).fillFromPolicyIfNeeded(requestedLimit)
-            GtpAnalysisResult(
-                candidates = candidates,
-                rootVisits = KataGoAnalysisParser.parseRootVisitsEstimate(response),
-                elapsedMs = elapsedMs,
-            )
+            return searchWithGtp(effectiveLimit, requestedLimit)
+        } catch (failure: Throwable) {
+            primary = failure
+            throw failure
         } finally {
-            applySearchLimit(restoreSearchLimit())
+            if (primary == null) {
+                applySearchLimit(restoreSearchLimit())
+            } else {
+                try {
+                    applySearchLimit(restoreSearchLimit())
+                } catch (restoreFailure: Throwable) {
+                    // 취소된 Job에서는 되돌리기가 **같은** 취소 예외를 다시 던질 수 있다 — 자기 자신을 suppressed로
+                    // 넣으면 addSuppressed가 IllegalArgumentException을 던져 원래 예외를 또 가린다.
+                    if (restoreFailure !== primary) primary.addSuppressed(restoreFailure)
+                }
+            }
         }
+    }
+
+    private suspend fun searchWithGtp(
+        effectiveLimit: AnalysisLimit,
+        requestedLimit: AnalysisLimit,
+    ): GtpAnalysisResult {
+        applySearchLimit(effectiveLimit)
+        val context = contextProvider()
+        val startNanos = System.nanoTime()
+        val response = sendCommand(
+            KataGoProtocolCommands.searchAnalyze(context.nextPlayer, effectiveLimit),
+            searchTimeoutMillisFor(effectiveLimit.timeMillis),
+        )
+        val elapsedMs = (System.nanoTime() - startNanos) / 1_000_000
+        val candidates = KataGoAnalysisParser.attachPointLoss(
+            candidates = KataGoAnalysisParser.parseCandidates(
+                response = response,
+                player = context.nextPlayer,
+                boardSize = context.boardSize,
+                maxCandidates = requestedLimit.candidateCount,
+            ),
+        ).fillFromPolicyIfNeeded(requestedLimit)
+        return GtpAnalysisResult(
+            candidates = candidates,
+            rootVisits = KataGoAnalysisParser.parseRootVisitsEstimate(response),
+            elapsedMs = elapsedMs,
+        )
+    }
 
     private suspend fun List<CandidateMove>.fillFromPolicyIfNeeded(
         limit: AnalysisLimit,

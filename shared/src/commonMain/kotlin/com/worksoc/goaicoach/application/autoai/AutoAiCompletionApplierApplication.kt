@@ -46,6 +46,20 @@ internal suspend fun applyAutoAiTurnCompletionApplication(
             AutoAiTurnFollowUpPlan.None
         }
 
+        is AutoAiTurnCompletionPlan.ApplyTimedOut -> {
+            // 실패 문구(「AI turn failed…」)를 띄우지 않는다 — 판은 그대로이고, 선택 팝업이 설명한다(설계 C-12).
+            request.runtimeEventLog.append(
+                runtimeAiTurnTimeoutLog(
+                    context = request.runtimeContextProvider(),
+                    turnState = request.turnContext.turnState,
+                    aiPlayer = request.turnContext.aiPlayer,
+                    turnElapsedMs = request.nowMillis() - request.turnStartMillis,
+                    error = completion.error,
+                ),
+            )
+            AutoAiTurnFollowUpPlan.None
+        }
+
         is AutoAiTurnCompletionPlan.Discard -> {
             request.appendEngineOperationDiscardLog(completion.discard)
             AutoAiTurnFollowUpPlan.None

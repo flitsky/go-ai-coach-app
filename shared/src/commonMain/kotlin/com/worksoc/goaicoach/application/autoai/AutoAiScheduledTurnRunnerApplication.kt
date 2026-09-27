@@ -71,77 +71,90 @@ internal fun runScheduledAutoAiTurnApplication(
         ),
     )
     request.launchAutoAiEffect {
-        if (request.schedule.delayMillis > 0L) {
-            request.delayMillis(request.schedule.delayMillis)
-        }
-
-        val turnRunPlan = when (
-            val validation = request.controllerStateProvider().toAutoAiTurnScheduleValidationPlan(
-                isEngineReady = request.isEngineReady(),
-                isEngineBusy = request.isEngineBusy(),
-                scheduledDelayMillis = request.schedule.delayMillis,
-            )
-        ) {
-            AutoAiTurnScheduleValidationPlan.Cancel -> {
-                request.runtimeEventLog.append(
-                    runtimeAiTurnScheduleCancelledLog(
-                        context = request.runtimeContextProvider(),
-                        gameState = request.currentStateProvider(),
-                        isEngineReady = request.isEngineReady(),
-                        isEngineBusy = request.isEngineBusy(),
-                        isGameEnded = request.isGameEnded(),
-                        shouldShowResumePrompt = request.shouldShowResumePrompt(),
-                    ),
-                )
-                request.applyCancelled(validation)
-                return@launchAutoAiEffect
+        // ⚠️ **정리(busy 해제·예약 해제)는 `finally`에서 한다**(refactor backlog #74, 설계 B-6). 이 블록은 취소될
+        // 수 있다 — 무르기·나가기·새 대국·이어하기·「엔진 다시 시작하기」가 Job을 취소한다. 정리를 본문 끝에
+        // 두면 취소가 그것을 건너뛰어 busy와 예약 표시(pending)가 영원히 남고, **AI가 다시는 두지 않는다.**
+        // 취소되면 실패 문구·후속 분석은 없다(그 둘은 `finally` 뒤·완료 적용 안에 있다).
+        var startedOperationId: String? = null
+        var isPendingSettled = false
+        val followUpPlan = try {
+            if (request.schedule.delayMillis > 0L) {
+                request.delayMillis(request.schedule.delayMillis)
             }
 
-            is AutoAiTurnScheduleValidationPlan.Continue -> validation.runPlan
-        }
+            val turnRunPlan = when (
+                val validation = request.controllerStateProvider().toAutoAiTurnScheduleValidationPlan(
+                    isEngineReady = request.isEngineReady(),
+                    isEngineBusy = request.isEngineBusy(),
+                    scheduledDelayMillis = request.schedule.delayMillis,
+                )
+            ) {
+                AutoAiTurnScheduleValidationPlan.Cancel -> {
+                    request.runtimeEventLog.append(
+                        runtimeAiTurnScheduleCancelledLog(
+                            context = request.runtimeContextProvider(),
+                            gameState = request.currentStateProvider(),
+                            isEngineReady = request.isEngineReady(),
+                            isEngineBusy = request.isEngineBusy(),
+                            isGameEnded = request.isGameEnded(),
+                            shouldShowResumePrompt = request.shouldShowResumePrompt(),
+                        ),
+                    )
+                    request.applyCancelled(validation)
+                    isPendingSettled = true
+                    return@launchAutoAiEffect
+                }
 
-        val turnContext = turnRunPlan.context
-        val turnOperationToken = autoAiTurnOperationToken(
-            turnRunPlan,
-            sessionGeneration = request.currentSessionGenerationProvider(),
-        )
-        val turnStartMillis = request.nowMillis()
-        request.runtimeEventLog.append(
-            runtimeAiTurnBeginLog(
-                context = request.runtimeContextProvider(),
-                turnState = turnContext.turnState,
-                aiPlayer = turnContext.aiPlayer,
-                playLevel = turnContext.playLevel,
-                analysisLimit = turnContext.analysisLimit,
-                searchMode = turnContext.searchMode,
-                delayMillis = turnRunPlan.delayMillis,
-                isolateSearchCache = turnContext.isolateSearchCache,
-            ),
-        )
-        request.markEngineOperationStarted(turnOperationToken.operation.operationId)
-        val turnCompletion = runAutoAiTurnEngineCompletion(
-            request = request,
-            turnRunPlan = turnRunPlan,
-            operation = turnOperationToken.operation,
-        )
-        val followUpPlan = applyAutoAiTurnCompletionApplication(
-            AutoAiTurnCompletionApplyRunRequest(
-                completion = turnCompletion,
-                turnContext = turnContext,
-                turnStartMillis = turnStartMillis,
-                runtimeContextProvider = request.runtimeContextProvider,
-                runtimeEventLog = request.runtimeEventLog,
-                nowMillis = request.nowMillis,
-                recordTurnMove = request.recordTurnMove,
-                applyTurnTimeUpdate = request.applyTurnTimeUpdate,
-                applyTurnDisplay = request.applyTurnDisplay,
-                resolveEndgame = request.resolveEndgame,
-                applyTurnFailureDisplay = request.applyTurnFailureDisplay,
-                appendEngineOperationDiscardLog = request.appendEngineOperationDiscardLog,
-            ),
-        )
-        request.markEngineOperationCompleted(turnOperationToken.operation.operationId)
-        request.completeAutoAiTurnRun()
+                is AutoAiTurnScheduleValidationPlan.Continue -> validation.runPlan
+            }
+
+            val turnContext = turnRunPlan.context
+            val turnOperationToken = autoAiTurnOperationToken(
+                turnRunPlan,
+                sessionGeneration = request.currentSessionGenerationProvider(),
+            )
+            val turnStartMillis = request.nowMillis()
+            request.runtimeEventLog.append(
+                runtimeAiTurnBeginLog(
+                    context = request.runtimeContextProvider(),
+                    turnState = turnContext.turnState,
+                    aiPlayer = turnContext.aiPlayer,
+                    playLevel = turnContext.playLevel,
+                    analysisLimit = turnContext.analysisLimit,
+                    searchMode = turnContext.searchMode,
+                    delayMillis = turnRunPlan.delayMillis,
+                    isolateSearchCache = turnContext.isolateSearchCache,
+                ),
+            )
+            request.markEngineOperationStarted(turnOperationToken.operation.operationId)
+            startedOperationId = turnOperationToken.operation.operationId
+            val turnCompletion = runAutoAiTurnEngineCompletion(
+                request = request,
+                turnRunPlan = turnRunPlan,
+                operation = turnOperationToken.operation,
+            )
+            applyAutoAiTurnCompletionApplication(
+                AutoAiTurnCompletionApplyRunRequest(
+                    completion = turnCompletion,
+                    turnContext = turnContext,
+                    turnStartMillis = turnStartMillis,
+                    runtimeContextProvider = request.runtimeContextProvider,
+                    runtimeEventLog = request.runtimeEventLog,
+                    nowMillis = request.nowMillis,
+                    recordTurnMove = request.recordTurnMove,
+                    applyTurnTimeUpdate = request.applyTurnTimeUpdate,
+                    applyTurnDisplay = request.applyTurnDisplay,
+                    resolveEndgame = request.resolveEndgame,
+                    applyTurnFailureDisplay = request.applyTurnFailureDisplay,
+                    appendEngineOperationDiscardLog = request.appendEngineOperationDiscardLog,
+                ),
+            )
+        } finally {
+            startedOperationId?.let(request.markEngineOperationCompleted)
+            if (!isPendingSettled) {
+                request.completeAutoAiTurnRun()
+            }
+        }
         request.runtimeEventLog.append(
             runtimeAiTurnCompleteLog(
                 context = request.runtimeContextProvider(),

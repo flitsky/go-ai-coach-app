@@ -146,6 +146,22 @@ internal fun runtimeAiTurnFailureLog(
             "turnElapsedMs=$turnElapsedMs fp=${turnState.runtimeShortFingerprint()} error=${error.runtimeErrorText(300)}",
     )
 
+/** 탐색이 시간 초과로 끝났다(refactor backlog #74) — 판은 그대로이고 사용자의 선택(팝업)을 기다린다. */
+internal fun runtimeAiTurnTimeoutLog(
+    context: RuntimeLogContext,
+    turnState: GameState,
+    aiPlayer: StoneColor,
+    turnElapsedMs: Long,
+    error: Throwable,
+): String =
+    context.event(
+        name = "ai_turn_timeout",
+        phase = "ai_turn",
+        transition = "keep_current_board_await_choice",
+        detail = "move=${turnState.moves.size + 1} player=${aiPlayer.label} " +
+            "turnElapsedMs=$turnElapsedMs fp=${turnState.runtimeShortFingerprint()} error=${error.runtimeErrorText(300)}",
+    )
+
 internal fun runtimeAiTurnCompleteLog(
     context: RuntimeLogContext,
     gameState: GameState,

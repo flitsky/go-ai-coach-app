@@ -20,6 +20,10 @@ import com.worksoc.goaicoach.shared.enginecontract.ScoreEstimate
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
 import com.worksoc.goaicoach.shared.scoring.ScoreTimeline
+import kotlin.coroutines.cancellation.CancellationException
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.isActive
 
 internal class LocalEngineCoreSessionDelegate(
     private val coreApi: EngineCoreApi,
@@ -109,10 +113,24 @@ internal class LocalEngineCoreSessionDelegate(
             searchMode = searchMode,
             isolateSearchCache = isolateSearchCache,
             analysisProvider = analysisProvider,
+            // 진짜 실패로 genMove에 떨어지기 전에 엔진을 다시 맞춘다(refactor backlog #74, 설계 F2) — 실패한
+            // GTP 요청은 프로세스를 내린 뒤라, 그대로 genMove하면 새 프로세스가 빈 판의 수를 낸다.
+            prepareFallback = {
+                coreApi.configure(turnProfile)
+                coreApi.syncToGameState(currentState)
+            },
         )
-        val estimate = runCatching {
+        // 형세 추정이 실패·시간 초과해도 AI의 수는 막지 않는다(삼킨다). 단 **차례 자체가 취소됐으면** 올린다
+        // — 무르기·나가기로 취소된 차례를 여기서 삼키면 끝난 결과처럼 위로 올라간다(refactor backlog #74).
+        val estimate = try {
             coreApi.estimateScore(scoreGraphAnalysisLimit(turnProfile))
-        }.getOrNull()
+        } catch (cancellation: CancellationException) {
+            if (!currentCoroutineContext().isActive) throw cancellation
+            null
+        } catch (failure: Throwable) {
+            currentCoroutineContext().ensureActive()
+            null
+        }
         return AutoAiTurnResult(
             turnOutcome = outcome,
             scoreEstimate = estimate,

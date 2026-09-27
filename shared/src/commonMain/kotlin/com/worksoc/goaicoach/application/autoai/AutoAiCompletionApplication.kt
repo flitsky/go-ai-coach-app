@@ -53,6 +53,11 @@ sealed class AutoAiTurnCompletionPlan {
         val error: Throwable,
     ) : AutoAiTurnCompletionPlan()
 
+    /** 이번 차례의 탐색이 시간 초과로 끝났다(refactor backlog #74) — 실패 문구 대신 선택 팝업이 설명한다. */
+    data class ApplyTimedOut(
+        val error: Throwable,
+    ) : AutoAiTurnCompletionPlan()
+
     data class Discard(
         val discard: EngineOperationResultGuard.Discard,
     ) : AutoAiTurnCompletionPlan()
@@ -64,6 +69,14 @@ sealed class AutoAiTurnWorkflowResult {
     ) : AutoAiTurnWorkflowResult()
 
     data class Failure(
+        val error: Throwable,
+    ) : AutoAiTurnWorkflowResult()
+
+    /**
+     * 호출자는 살아 있는데 엔진이 제한 안에 답하지 않았다(refactor backlog #74). 사용자의 취소는 이것이
+     * 아니다 — 그것은 결과 없이 `CancellationException`으로 올라간다.
+     */
+    data class TimedOut(
         val error: Throwable,
     ) : AutoAiTurnWorkflowResult()
 }
@@ -130,6 +143,18 @@ internal fun buildAutoAiTurnCompletionPlan(
                 currentSessionGeneration = currentSessionGeneration,
                 error = result.error,
             )
+
+        is AutoAiTurnWorkflowResult.TimedOut ->
+            when (
+                val guard = evaluateAutoAiTurnResultGuard(
+                    token = token,
+                    currentState = currentState,
+                    currentSessionGeneration = currentSessionGeneration,
+                )
+            ) {
+                EngineOperationResultGuard.Apply -> AutoAiTurnCompletionPlan.ApplyTimedOut(result.error)
+                is EngineOperationResultGuard.Discard -> AutoAiTurnCompletionPlan.Discard(guard)
+            }
     }
 
 data class AutoAiEndgameOperationToken(
