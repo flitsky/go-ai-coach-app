@@ -211,6 +211,44 @@ class KataGoProcessLifecycleTest {
     }
 
     /**
+     * 취소된 호출자는 답을 **기다리지 않고 곧바로** 돌아간다 — 답을 마저 받아 스트림을 맞추는 일은 뒤에 남은 배수가
+     * 한다(refactor backlog #15). 호출자는 오퍼레이션 락을 쥔 채이므로, 여기서 탐색이 끝나기를 기다리면 무르기 뒤의
+     * 재동기화가 엔진 전체에서 그만큼 막힌다. 같은 프로세스의 다음 명령은 그 배수가 끝난 뒤에 나가 **제 답**을 읽는다.
+     * 예전: 취소된 호출자가 `NonCancellable` 안에서 답이 올 때까지(마감까지) 붙잡혀 있었다.
+     */
+    @Test
+    fun aCancelledCallerReturnsAtOnceWhileItsReplyIsDrainedAndTheNextCommandWaitsForThatDrain() {
+        deadline = 5_000
+        val release = CountDownLatch(1)
+        runtime.responder = { _, line ->
+            when (line) {
+                "genmove B" -> Reply.WhenReleased(release, "= D4\n\n")
+                "genmove W" -> Reply.Now("= E5\n\n")
+                else -> null
+            }
+        }
+        runBlocking {
+            adapter.initialize(EngineProfile())
+            adapter.newGame(BoardSize.Nine, Ruleset.Japanese, handicapCount = 0, komi = 6.5)
+        }
+
+        val cancelled = call { adapter.genMove(StoneColor.Black) }
+        assertTrue(runtime.gtp(1).awaitReceived("genmove B"))
+        cancelled.cancel()
+        val outcome = cancelled.outcomeWithin(300, "the cancelled genMove (its reply is still held)")
+        val next = call { adapter.genMove(StoneColor.White) }
+        Thread.sleep(100)
+        val nextWaitedForTheDrain = !next.isCompleted
+        release.countDown()
+
+        assertTrue("cancelled: $outcome", outcome.exceptionOrNull() is CancellationException)
+        assertTrue("the next command must not go out before the cancelled reply is drained", nextWaitedForTheDrain)
+        assertEquals("the next command reads its own reply", play(StoneColor.White, "E5"), next.outcomeWithin(2_000, "the next genMove").getOrThrow().move)
+        assertEquals("a cancelled caller does not end the process", emptyList<String>(), runtime.gtp(1).signals)
+        assertEquals("GTP processes started", 1, runtime.processes(Kind.Gtp).size)
+    }
+
+    /**
      * 취소된 호출자가 **진짜로 멈춘** 읽기 위에 있으면 — 답을 기다리는 것도 마감까지다. 마감에 그 프로세스를
      * 내리고 취소로 끝난다(`#74`가 AI 차례를 실제로 취소하게 되면서 생기는 자리 — 설계 R8).
      */
