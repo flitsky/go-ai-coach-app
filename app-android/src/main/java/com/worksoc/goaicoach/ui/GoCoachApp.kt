@@ -120,6 +120,7 @@ import com.worksoc.goaicoach.ui.monetization.buildConsumableUiState
 import com.worksoc.goaicoach.ui.monetization.buildPremiumUiState
 import com.worksoc.goaicoach.ui.setup.GameSetupLobby
 import com.worksoc.goaicoach.ui.splash.SplashVisibility
+import com.worksoc.goaicoach.ui.study.StudyScreen
 import com.worksoc.goaicoach.ui.vision.BoardScanScreen
 import com.worksoc.goaicoach.wireGoCoachControllers
 import java.io.File

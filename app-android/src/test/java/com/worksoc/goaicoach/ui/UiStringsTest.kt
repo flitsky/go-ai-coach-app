@@ -8,6 +8,7 @@ import com.worksoc.goaicoach.ui.l10n.UiStringsEnglish
 import com.worksoc.goaicoach.ui.l10n.UiStringsJapanese
 import com.worksoc.goaicoach.ui.l10n.UiStringsKorean
 import com.worksoc.goaicoach.ui.l10n.rematchActionFor
+import com.worksoc.goaicoach.ui.study.studyVideoEntries
 import java.lang.reflect.Modifier
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

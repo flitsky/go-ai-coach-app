@@ -810,7 +810,7 @@
         errorLine1="                        onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(entry.youtubeUrl))) },"
         errorLine2="                                                                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/worksoc/goaicoach/ui/StudyVideoListScreen.kt"
+            file="src/main/java/com/worksoc/goaicoach/ui/study/StudyVideoListScreen.kt"
             line="128"
             column="86"/>
     </issue>
