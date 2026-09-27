@@ -127,7 +127,7 @@ export JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home
 - **69** 저장 스키마는 필드 추가만, 버전은 불변 — `SchemaVersion`을 한 번이라도 올리면 이어하기·종국 결과·출석 일수·보유 캐릭터 등 진행도가 통째로 초기화된다(JSON 블롭 스토어 9개 중 8개가 마이그레이션 경로 없음, 등호 비교로 버전을 가름). 필드 추가는 `optInt`/`optDouble` 기본값 흡수로만, 스키마 상수를 건드리는 커밋은 승인 대상. 같은 계보: 함정 1·55
 
 **화면·레이아웃·문구**
-- **3** 셸 예산 — 조이는 건 줄 수가 아니라 **상태 훅(여유 0)**. 새 상태는 그 상태를 쓰는 역할의 파일로. 숫자 정본은 `LayeringContractTest`
+- **3** 셸 예산 — 조이는 건 줄 수가 아니라 **상태 훅(여유 0)**. 새 상태는 그 상태를 쓰는 역할의 파일로. 숫자 정본은 `LayeringContractTest` ⚠️ **2026-09-28 #46 — 42/42 훅 개수는 「셸 상태 원장」으로 대체됐다(폐지 아님)**: 정본 `app-android/architecture-budgets.json` + `architecture/ShellStateLedger.kt`. 새 상태는 이름·종류·사유를 원장에 적고, 금지 종류(부채)는 늘 수 없다
 - **7** 다이얼로그 z순서 — 별도 윈도우라 선언 순서로 위아래가 안 정해진다. 명시적으로 게이트
 - **9** 고정 dp 높이 금지 — 글자 상자가 폰트 배율에 잘린다. `heightIn(min)`·`IntrinsicSize`, 캐러셀은 계산, 원 안 글자는 dp로
 - **10·10-2** 문구 그물 사각지대 — 리플렉션 그물은 String 필드만(`fun` 문구는 손 그물). 쓰임 확인은 이름으로 전 저장소 grep(`strings::`·문구가 문구를 부름·data class 4개 언어)
@@ -146,7 +146,7 @@ export JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home
 - **64** `tentativeMove`는 뜻이 「다음은 여기」 하나뿐 — 착수금지·패 자리를 가리키는 범용 마커로 돌려쓰면 판이 "놓을 수 있다"고 반대로 말한다(입문자용 화면이라 더 나쁘다). `GoRuleLessonsTest`가 모든 마커를 적법성으로 되묻는다
 - **65** 글꼴 배율 상한은 2.0이 아니라 **1.3**(둘뿐) — 실기 확인은 설정 화면 「글꼴 크기 → 크게」로(시스템 설정 `font_scale`은 아무 일도 안 한다). 문단 높이는 **영어**에서 먼저 터진다(같은 내용을 더 긴 글자 수로 적음), 세로 공간 배분은 영어·1.3배로 실기 검증할 것
 - **67** `GoCoachApp.kt`의 `wiringContext` `remember` 키 제거는 **하지 말 것** — 설계안 4개 전부가 같은 틀린 근거(*"64개 멤버가 전부 안정적이라 키가 필요 없다"*)로 제안했다. 지역 `val` 5개(`playerSetup`·`matchMode`·`searchTimeSettings`·`topMovesEnabled`·`shouldShowResumePrompt`)와 remember 금지가 명시된 `engineName`·`engineDiagnostic`이 첫 컴포지션 값에 영구히 얼어붙고, 네 안이 공통 제안한 회귀 테스트도 이 버그를 못 잡는다. **다음 스레드가 또 제안할 것이다** — 착수 전 ⓐ 위 8개 값을 람다/지연 읽기로 전환 ⓑ 64개 멤버 전수 감사(0건 확인), 순서를 반드시 지킬 것
-- **74** 「훅 예산을 회수했다」는 실제로 상태 훅이 줄었는지 셀 것 — `GoCoachApp.kt`에서 지역 변수를 지워도 그 변수가 훅을 안 썼다면 줄어드는 건 줄수 예산(`lineBudget`)뿐, 상태 훅 예산(함정 3, 42/42)은 그대로다. 완료 기록에 어느 예산을 회수했는지 정확히 밝힐 것
+- **74** 「훅 예산을 회수했다」는 실제로 상태 훅이 줄었는지 셀 것 — `GoCoachApp.kt`에서 지역 변수를 지워도 그 변수가 훅을 안 썼다면 줄어드는 건 줄수 예산(`lineBudget`)뿐, 상태 훅 예산(함정 3, 42/42)은 그대로다. 완료 기록에 어느 예산을 회수했는지 정확히 밝힐 것 ⚠️ **2026-09-28 #46 — 42/42 훅 개수는 「셸 상태 원장」으로 대체됐다(폐지 아님)**: 정본 `app-android/architecture-budgets.json` + `architecture/ShellStateLedger.kt`. 새 상태는 이름·종류·사유를 원장에 적고, 금지 종류(부채)는 늘 수 없다
 
 **제스처·입력·기기**
 - **17** 스크롤 안 길게 누르기 — 조용히 실패, 트리거는 탭 수·위치로. ⚠️ 전문의 *"`input swipe`는 MOVE를 안 만든다"* 는 2026-09-11 실측과 어긋난다(스와이프가 스크롤에 빼앗겼다 = MOVE가 있었다)
