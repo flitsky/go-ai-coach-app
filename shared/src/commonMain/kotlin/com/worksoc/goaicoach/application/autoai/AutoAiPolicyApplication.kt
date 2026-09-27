@@ -95,8 +95,14 @@ fun buildAutoAiTurnRequestPlan(
     playerSetup: PlayerSetup,
     gameState: GameState,
     autoPlayDelaySetting: AutoPlayDelaySetting,
+    /**
+     * 이 국면의 탐색이 시간 초과로 끝나 사용자의 선택을 기다리는 중이면 건너뛴다(refactor backlog #74).
+     * ⚠️ 이것이 없으면 busy가 풀리는 순간 트리거 효과가 **같은 예산으로 조용히 다시** 탐색한다 — 사용자가 고르기도
+     * 전에. 막는 대신 선택 팝업이 반드시 떠야 한다(`GamePlaySection`의 「엔진 응답 지연」) — 안 뜨면 AI가 멈춘다.
+     */
+    isAwaitingTimeoutChoice: Boolean = false,
 ): AutoAiTurnRequestPlan {
-    if (isAutoAiTurnPending) {
+    if (isAutoAiTurnPending || isAwaitingTimeoutChoice) {
         return AutoAiTurnRequestPlan.Skip
     }
     if (
@@ -130,6 +136,7 @@ fun GameSessionControllerState.toAutoAiTurnRequestPlan(
         playerSetup = playerSetup,
         gameState = gameState,
         autoPlayDelaySetting = settings.autoPlayDelaySetting,
+        isAwaitingTimeoutChoice = isAwaitingAutoAiTurnTimeoutChoice,
     )
 
 internal fun buildAutoAiTurnScheduleValidationPlan(

@@ -37,6 +37,16 @@ data class GameSessionControllerState(
     val isAutoAiTurnPending: Boolean
         get() = autoAiTurn.isPending
 
+    /**
+     * 이 국면의 AI 탐색이 시간 초과로 끝나 사용자의 선택(「한 번 더 기다리기」/「엔진 다시 시작하기」)을 기다리는
+     * 중인가(refactor backlog #74). 세대·수순 길이가 바뀌면 저절로 `false`다.
+     */
+    val isAwaitingAutoAiTurnTimeoutChoice: Boolean
+        get() = autoAiTurn.isAwaitingTimeoutChoice(
+            sessionGeneration = core.runtimeState.sessionGeneration,
+            moveCount = gameState.moves.size,
+        )
+
     fun withCore(next: GameSessionCoreState): GameSessionControllerState =
         copy(core = next)
 

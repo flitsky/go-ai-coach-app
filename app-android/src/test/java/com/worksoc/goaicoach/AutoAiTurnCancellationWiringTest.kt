@@ -1,6 +1,8 @@
 package com.worksoc.goaicoach
 
 import com.worksoc.goaicoach.application.engine.AutoAiTurnResult
+import com.worksoc.goaicoach.application.session.AutoAiTurnTimeout
+import com.worksoc.goaicoach.application.session.AutoAiTurnUiState
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.match.SidePlayerSetup
@@ -84,6 +86,59 @@ class AutoAiTurnCancellationWiringTest {
         assertTrue("무른 판에 AI의 수가 적용되면 안 된다", context.runtimeLog.lines.none { it.contains("event=ai_turn_success") })
     }
 
+    /**
+     * 시간 초과로 끝난 국면(상태 B)은 트리거 효과가 다시 불러도 **조용히 다시 탐색하지 않는다**(설계 C-8). 팝업의
+     * 「한 번 더 기다리기」(`retryTimedOutTurn`)가 표시를 지우고 같은 국면을 다시 요청한다.
+     */
+    @Test
+    fun aTimedOutPositionIsNotRetriedSilentlyButTheWaitChoiceRetriesIt() {
+        val context = timedOutAiToMoveContext()
+
+        wireGoCoachControllers(context).autoAiTurnController.requestAiTurn()
+        assertTrue("시간 초과 표시가 맞는 동안은 예약하지 않는다", context.autoAiTurnWrites.isEmpty())
+        assertEquals(0, context.dispatcher.queuedCount)
+
+        wireGoCoachControllers(context).autoAiTurnController.retryTimedOutTurn()
+
+        assertEquals("표시를 지운 뒤 예약한다", listOf(false, true), context.autoAiTurnWrites.map { it.isPending })
+        assertEquals(null, context.autoAiTurnWrites.last().timedOut)
+        assertEquals("같은 국면을 다시 요청한다", 1, context.dispatcher.queuedCount)
+    }
+
+    /** 「엔진 다시 시작하기」(상태 B) — 엔진을 내리고, 표시를 지우고, 같은 국면을 다시 요청한다. */
+    @Test
+    fun restartAfterATimedOutTurnResetsTheEngineClearsTheMarkAndRequestsTheTurn() {
+        val context = timedOutAiToMoveContext()
+        var resets = 0
+
+        wireGoCoachControllers(context).autoAiTurnController.restartEngineForStalledTurn { resets += 1 }
+
+        assertEquals(1, resets)
+        assertEquals(null, context.autoAiTurnWrites.last().timedOut)
+        assertTrue(context.autoAiTurnWrites.last().isPending)
+        assertEquals(1, context.dispatcher.queuedCount)
+    }
+
+    /**
+     * 「엔진 다시 시작하기」(상태 A — 차례가 아직 돈다) — **취소가 먼저, 엔진 내리기가 나중**이다. 그래야 파이프가
+     * 닫혀 풀린 읽기의 예외가 진짜 실패로 읽혀 맞추지 않은 새 프로세스에서 genMove로 떨어지지 않는다(설계 F2).
+     * 도는 차례가 있으니 여기서 새로 예약하지 않는다(취소된 차례가 끝나 busy가 풀리면 트리거 효과가 맡는다).
+     */
+    @Test
+    fun restartWhileTheTurnRunsCancelsItBeforeResettingTheEngineAndDoesNotScheduleASecondTurn() {
+        val context = FakeGoCoachAppWiringContext(inGameSession(playerSetup = AiBlackHumanWhite))
+        context.engineIsReady = true
+        wireGoCoachControllers(context).autoAiTurnController.requestAiTurn()
+        var cancelledBeforeReset: Boolean? = null
+
+        wireGoCoachControllers(context).autoAiTurnController.restartEngineForStalledTurn {
+            cancelledBeforeReset = context.diagnosticLog.events.any { it.code == "engine_operation_cancelled" }
+        }
+
+        assertEquals(true, cancelledBeforeReset)
+        assertEquals("두 번째 차례를 예약하지 않는다", 1, context.dispatcher.queuedCount)
+    }
+
     @Test
     fun cancelWithNoTurnInFlightDoesNothing() {
         val context = FakeGoCoachAppWiringContext(inGameSession(playerSetup = HumanBlackAiWhite))
@@ -93,6 +148,24 @@ class AutoAiTurnCancellationWiringTest {
 
         assertTrue(context.diagnosticLog.events.isEmpty())
         assertEquals(0, context.dispatcher.queuedCount)
+    }
+
+    /** AI(흑) 차례인 빈 판에서, 이 국면의 탐색이 이미 시간 초과로 끝나 선택을 기다리는 상태(상태 B). */
+    private fun timedOutAiToMoveContext(): FakeGoCoachAppWiringContext {
+        val context = FakeGoCoachAppWiringContext(inGameSession(playerSetup = AiBlackHumanWhite))
+        context.engineIsReady = true
+        context.changeSession { session ->
+            session.withAutoAiTurn(
+                AutoAiTurnUiState(
+                    timedOut = AutoAiTurnTimeout(
+                        sessionGeneration = session.core.runtimeState.sessionGeneration,
+                        moveCount = session.gameState.moves.size,
+                    ),
+                ),
+            )
+        }
+        check(context.holder.current.isAwaitingAutoAiTurnTimeoutChoice)
+        return context
     }
 
     private companion object {

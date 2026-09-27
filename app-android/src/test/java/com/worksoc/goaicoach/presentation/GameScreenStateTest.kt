@@ -342,6 +342,77 @@ class GameScreenStateTest {
         assertEquals("score", input.scoreText)
         assertEquals("review", input.moveReviewText)
         assertTrue(input.uxOptions.showMoveNumbers)
+        assertFalse(input.isAwaitingEngineTimeoutChoice)
+    }
+
+    /**
+     * refactor backlog #74 — 시간 초과 표시가 **지금 국면(세대·수순 길이)** 과 맞을 때만 화면이 선택을 기다린다.
+     * 무르기·새 대국·나가기가 세대를 올리면 저절로 풀린다.
+     */
+    @Test
+    fun awaitingEngineTimeoutChoiceFollowsTheCurrentGenerationAndPosition() {
+        fun screenFor(generation: Long, timedOut: AutoAiTurnTimeout?): GameScreenState {
+            val gameState = GameState.empty()
+            val controller = GameSessionControllerState(
+                core = GameSessionCoreState(
+                    gameState = gameState,
+                    isGameEnded = false,
+                    analysisState = GameSessionAnalysisState.empty(gameState, candidateText = "analysis"),
+                    scoreState = GameSessionScoreState.reset(
+                        scoreText = "score",
+                        scoreSnapshots = listOf(localScoreSnapshot(gameState)),
+                        endgameLog = "endgame",
+                    ),
+                    runtimeState = GameSessionRuntimeState(
+                        playLevel = PlayLevelSetting(),
+                        engineProfile = EngineProfile(name = "Test"),
+                        analysisPreset = AnalysisPreset.Lite,
+                        sessionGeneration = generation,
+                    ),
+                    moveReviewState = GameSessionMoveReviewState.reset(moveReviewText = "review", lastMoveText = "None"),
+                    engineMessage = "engine",
+                ),
+                settings = GameSessionSettingsState(
+                    playerSetup = PlayerSetup(),
+                    autoPlayDelaySetting = AutoPlayDelaySetting.None,
+                    searchTimeSettings = SearchTimeSettings(),
+                    topMovesEnabled = true,
+                    boardSize = BoardSize.Nine,
+                ),
+                benchmark = EngineBenchmarkUiState(benchmarkText = "bench"),
+                savedSession = SavedSessionUiState(),
+                autoAiTurn = AutoAiTurnUiState(timedOut = timedOut),
+                positionCacheOptimization = PositionAnalysisCacheOptimizationUiState(),
+            )
+            return GoCoachScreenStateAssembler.assemble(
+                GoCoachScreenStateAssembler.Input(
+                    controller = controller,
+                    uxOptions = KaTrainUxOptions(),
+                    engineRuntime = GoCoachScreenStateAssembler.EngineRuntime(
+                        name = "KataGo",
+                        diagnostic = "ready",
+                        isReady = true,
+                        isBusy = false,
+                        isBlockingBusy = false,
+                        hasCompletedStartup = true,
+                    ),
+                    displayRuntime = GoCoachScreenStateAssembler.DisplayRuntime(
+                        analysisCacheStats = "entries=0",
+                        isScoreGraphExpanded = false,
+                        turnTimeText = "",
+                    ),
+                ),
+            )
+        }
+        val mark = AutoAiTurnTimeout(sessionGeneration = 7L, moveCount = 0)
+
+        assertTrue(screenFor(generation = 7L, timedOut = mark).isAwaitingEngineTimeoutChoice)
+        assertFalse("세대가 오르면 저절로 풀린다", screenFor(generation = 8L, timedOut = mark).isAwaitingEngineTimeoutChoice)
+        assertFalse(screenFor(generation = 7L, timedOut = null).isAwaitingEngineTimeoutChoice)
+        assertFalse(
+            "수순 길이가 다르면(다른 국면) 기다리지 않는다",
+            screenFor(generation = 7L, timedOut = mark.copy(moveCount = 1)).isAwaitingEngineTimeoutChoice,
+        )
     }
 
     /**

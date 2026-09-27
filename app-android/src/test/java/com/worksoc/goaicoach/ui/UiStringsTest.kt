@@ -43,6 +43,27 @@ class UiStringsTest {
         assertEquals("开始对局", UiStrings.forLanguage(UiLanguage.ChineseSimplified).newGameAction)
     }
 
+    /**
+     * 「엔진 응답 지연」 팝업의 두 버튼은 **사용자가 정한 말**이다(refactor backlog #74, 사용자 결정 2026-09-26).
+     * 예전의 「엔진 초기화」·「닫기(계속 대기)」에서 필드는 그대로 두고 값만 바꿨다 — 시간 초과 뒤에도 같은 팝업이
+     * 뜨고, 그때의 「한 번 더 기다리기」는 닫기가 아니라 **다시 요청**이다. 문구를 되돌리려면 그 결정부터 다시 물을 것.
+     */
+    @Test
+    fun engineStuckDialogChoicesUseTheWordsTheUserChose() {
+        assertEquals("한 번 더 기다리기", UiStringsKorean.engineStuckDialogWaitAction)
+        assertEquals("엔진 다시 시작하기", UiStringsKorean.engineStuckDialogResetAction)
+        assertEquals("Wait a bit longer", UiStringsEnglish.engineStuckDialogWaitAction)
+        assertEquals("Restart engine", UiStringsEnglish.engineStuckDialogResetAction)
+        assertEquals("もう少し待つ", UiStringsJapanese.engineStuckDialogWaitAction)
+        assertEquals("エンジンを再起動", UiStringsJapanese.engineStuckDialogResetAction)
+        assertEquals("再等一会儿", UiStringsChineseSimplified.engineStuckDialogWaitAction)
+        assertEquals("重启引擎", UiStringsChineseSimplified.engineStuckDialogResetAction)
+        UiLanguage.entries.forEach { language ->
+            val message = UiStrings.forLanguage(language).engineStuckDialogMessage
+            assertTrue("$language: 메시지가 초기화를 묻는 옛 질문으로 끝나면 안 된다", !message.contains("?") && !message.contains("？"))
+        }
+    }
+
     @Test
     fun maximumSearchTimeOptionsAreLocalizedInEverySupportedLanguage() {
         UiLanguage.entries.forEach { language ->

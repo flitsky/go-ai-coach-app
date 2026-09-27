@@ -67,6 +67,47 @@ fun engineTurnWatchdogTimeoutMillisFor(
     return baseMillis + EngineResponseGraceMillis
 }
 
+/**
+ * 「엔진 응답 지연」 팝업 하나가 두 순간을 맡는다(refactor backlog #74, 설계 C-8·C-9).
+ * - 상태 A — 와치독 한도를 넘긴 순간([isWatchdogTriggered], 화면 지역 상태). 차례 대기 작업이 끝나면 저절로 닫힌다.
+ * - 상태 B — 탐색이 시간 초과로 **끝난** 뒤 사용자의 선택을 기다리는 동안([isAwaitingTimeoutChoice], 세션 상태).
+ *   그 끝남 자체가 차례 대기 작업의 완료라, 완료로 닫히는 것은 A의 지역 표시뿐이다 — B는 사용자가 고를 때까지 남는다.
+ * 둘 중 하나면 **한 벌만** 뜬다(둘이 겹쳐도 팝업은 하나다).
+ */
+fun isEngineStuckDialogVisible(
+    isWatchdogTriggered: Boolean,
+    isAwaitingTimeoutChoice: Boolean,
+): Boolean = isWatchdogTriggered || isAwaitingTimeoutChoice
+
+/** 「한 번 더 기다리기」가 무엇을 하는가(refactor backlog #74, 설계 C-10). */
+enum class EngineStuckWaitAction {
+    /**
+     * 상태 A — 팝업을 닫고 **도는 요청을 그대로 둔 채** 와치독을 지금부터 다시 건다. 막힌 GTP 탐색은 프로세스를
+     * 죽이지 않고는 다시 요청할 수 없으므로(그것은 「엔진 다시 시작하기」의 몫) 여기서는 기다리기만 한다.
+     */
+    KeepWaitingAndRearm,
+
+    /** 상태 B — 끝난 차례를 같은 국면·같은 예산으로 다시 요청하고 와치독을 다시 건다. */
+    RetryTimedOutTurnAndRearm,
+}
+
+fun engineStuckWaitActionFor(isAwaitingTimeoutChoice: Boolean): EngineStuckWaitAction =
+    if (isAwaitingTimeoutChoice) {
+        EngineStuckWaitAction.RetryTimedOutTurnAndRearm
+    } else {
+        EngineStuckWaitAction.KeepWaitingAndRearm
+    }
+
+/**
+ * 와치독이 경과 시간을 재는 기준 시각(refactor backlog #74). 차례가 시작된 시각이고, 「한 번 더 기다리기」·
+ * 「엔진 다시 시작하기」를 누르면 그 순간으로 **다시 건다** — 그래야 같은 차례에서도 한도만큼 더 지난 뒤 팝업이
+ * 다시 뜬다. 새 차례가 시작되면 그 차례의 시작 시각으로 돌아간다(누른 시각이 더 이르면 차례 시작이 이긴다).
+ */
+fun engineTurnWatchdogBaseMillis(
+    turnStartedAtMillis: Long,
+    rearmedAtMillis: Long?,
+): Long = maxOf(turnStartedAtMillis, rearmedAtMillis ?: turnStartedAtMillis)
+
 /** AI 차례에서 [elapsedSinceTurnStartMillis]가 와치독 한도를 넘겼는지 판정한다. */
 fun isEngineTurnWatchdogTriggered(
     isAiTurn: Boolean,

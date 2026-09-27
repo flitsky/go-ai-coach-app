@@ -666,6 +666,7 @@ private fun GoCoachScreen(
                     )
                     controllers.autoAiTurnController.restartEngineForStalledTurn(engineClient::forceResetEngine)
                 },
+                retryTimedOutAiTurn = controllers.autoAiTurnController::retryTimedOutTurn,
             ),
         )
     }

@@ -56,6 +56,12 @@ internal data class GameScreenState(
     val handicapCount: Int = 0,
     val setupBoardSize: BoardSize,
     val setupKomi: Double,
+    /**
+     * 이 국면의 AI 탐색이 시간 초과로 끝나 사용자의 선택(「한 번 더 기다리기」/「엔진 다시 시작하기」)을 기다리는
+     * 중인가(refactor backlog #74, 설계 C-8 상태 B). `GamePlaySection`의 「엔진 응답 지연」 팝업이 이것으로도 뜬다 —
+     * ⚠️ 이 값이 `true`인 동안 AI 차례의 조용한 재시도가 막혀 있으므로, 팝업이 안 뜨면 AI가 멈춘다.
+     */
+    val isAwaitingEngineTimeoutChoice: Boolean = false,
 ) {
     val nextPlayer: StoneColor
         get() = gameState.nextPlayer
@@ -105,6 +111,7 @@ internal data class GameScreenStateInput(
     val isEngineBlockingBusy: Boolean = false,
     val engineActivityIndicator: EngineActivityIndicator? = null,
     val engineTurnWaitCompletionSeq: Int = 0,
+    val isAwaitingEngineTimeoutChoice: Boolean = false,
 )
 
 internal fun buildGameScreenStateInput(
@@ -170,6 +177,7 @@ internal fun buildGameScreenStateInput(
         isEngineBlockingBusy = isEngineBlockingBusy,
         engineActivityIndicator = engineActivityIndicator,
         engineTurnWaitCompletionSeq = engineTurnWaitCompletionSeq,
+        isAwaitingEngineTimeoutChoice = controller.isAwaitingAutoAiTurnTimeoutChoice,
     )
 
 internal fun buildGameScreenState(input: GameScreenStateInput): GameScreenState {
@@ -237,6 +245,7 @@ internal fun buildGameScreenState(input: GameScreenStateInput): GameScreenState 
         handicapCount = input.handicapCount,
         setupBoardSize = input.setupBoardSize,
         setupKomi = input.setupKomi,
+        isAwaitingEngineTimeoutChoice = input.isAwaitingEngineTimeoutChoice,
     )
 }
 

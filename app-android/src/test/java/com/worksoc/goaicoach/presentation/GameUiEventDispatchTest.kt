@@ -39,6 +39,21 @@ class GameUiEventDispatchTest {
         assertEquals(listOf("show", "hide"), calls)
     }
 
+    /** 「엔진 응답 지연」 팝업의 두 버튼(refactor backlog #74) — 각자 자기 핸들러로만 간다. */
+    @Test
+    fun dispatchEngineStuckChoicesReachTheirOwnHandlers() {
+        val calls = mutableListOf<String>()
+        val handlers = handlers(
+            forceResetEngine = { calls += "restart" },
+            retryTimedOutAiTurn = { calls += "retry" },
+        )
+
+        dispatchGameUiEvent(GameUiEvent.RetryTimedOutAiTurn, handlers)
+        dispatchGameUiEvent(GameUiEvent.ForceResetEngine, handlers)
+
+        assertEquals(listOf("retry", "restart"), calls)
+    }
+
     @Test
     fun dispatchPlayAtAndPassSubmitMoveForCurrentPlayer() {
         val submitted = mutableListOf<Move>()
@@ -199,6 +214,8 @@ class GameUiEventDispatchTest {
         changeKomi: (Double) -> Unit = {},
         changeUxOptions: (KaTrainUxOptions) -> Unit = {},
         changeHandicapCount: (Int) -> Unit = {},
+        forceResetEngine: () -> Unit = {},
+        retryTimedOutAiTurn: () -> Unit = {},
     ): GameUiEventHandlers =
         buildGameUiEventHandlers(
             currentPlayer = currentPlayer,
@@ -226,6 +243,7 @@ class GameUiEventDispatchTest {
             changeUxOptions = changeUxOptions,
             changeHandicapCount = changeHandicapCount,
             reportEngineTurnWatchdogTriggered = { _, _ -> },
-            forceResetEngine = {},
+            forceResetEngine = forceResetEngine,
+            retryTimedOutAiTurn = retryTimedOutAiTurn,
         )
 }

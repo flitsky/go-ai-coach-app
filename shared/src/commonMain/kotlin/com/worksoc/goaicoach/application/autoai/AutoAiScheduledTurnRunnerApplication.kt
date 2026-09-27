@@ -10,6 +10,7 @@ import com.worksoc.goaicoach.application.engine.EngineGamePlayClient
 import com.worksoc.goaicoach.application.engine.runEngineIo
 import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
 import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
+import com.worksoc.goaicoach.application.session.AutoAiTurnTimeout
 import com.worksoc.goaicoach.application.session.GameSessionControllerState
 import com.worksoc.goaicoach.application.session.TurnTimeMoveUpdate
 import com.worksoc.goaicoach.application.time.currentEpochMillis
@@ -51,6 +52,8 @@ internal data class AutoAiScheduledTurnRunRequest(
     val applyTurnDisplay: (AutoAiTurnDisplayPlan) -> AutoAiTurnFollowUpPlan,
     val resolveEndgame: suspend (AutoAiTurnEndgamePlan.Resolve) -> Unit,
     val applyTurnFailureDisplay: (Throwable) -> Unit,
+    /** 이번 차례의 탐색이 시간 초과로 끝났다 — 선택을 기다리며 조용한 재시도를 막는 표시를 남긴다(refactor backlog #74). */
+    val applyTurnTimedOut: (AutoAiTurnTimeout) -> Unit,
     val appendEngineOperationDiscardLog: (EngineOperationResultGuard.Discard) -> Unit,
     val completeAutoAiTurnRun: () -> Unit,
     val requestFollowUpAnalysis: (AutoAiTurnFollowUpRequest) -> Unit,
@@ -151,6 +154,14 @@ internal fun runScheduledAutoAiTurnApplication(
                     applyTurnDisplay = request.applyTurnDisplay,
                     resolveEndgame = request.resolveEndgame,
                     applyTurnFailureDisplay = request.applyTurnFailureDisplay,
+                    markTurnTimedOut = {
+                        request.applyTurnTimedOut(
+                            AutoAiTurnTimeout(
+                                sessionGeneration = turnOperationToken.operation.sessionGeneration,
+                                moveCount = turnContext.turnState.moves.size,
+                            ),
+                        )
+                    },
                     appendEngineOperationDiscardLog = request.appendEngineOperationDiscardLog,
                 ),
             )

@@ -2,7 +2,11 @@ package com.worksoc.goaicoach.application
 
 import com.worksoc.goaicoach.application.safety.EngineEndgameWatchdogTimeoutMillis
 import com.worksoc.goaicoach.application.safety.EngineResponseGraceMillis
+import com.worksoc.goaicoach.application.safety.EngineStuckWaitAction
+import com.worksoc.goaicoach.application.safety.engineStuckWaitActionFor
+import com.worksoc.goaicoach.application.safety.engineTurnWatchdogBaseMillis
 import com.worksoc.goaicoach.application.safety.engineTurnWatchdogTimeoutMillisFor
+import com.worksoc.goaicoach.application.safety.isEngineStuckDialogVisible
 import com.worksoc.goaicoach.application.safety.isEngineTurnWatchdogTriggered
 import com.worksoc.goaicoach.shared.policy.SearchTimeLimit
 import kotlin.test.Test
@@ -125,5 +129,39 @@ class EngineTurnWatchdogTest {
                 searchTimeLimit = SearchTimeLimit.Off,
             ),
         )
+    }
+
+    /** refactor backlog #74 — 팝업은 와치독 순간(A)이나 시간 초과 뒤 선택 대기(B) 중 하나면 뜨고, 겹쳐도 한 벌이다. */
+    @Test
+    fun theEngineStuckDialogShowsForEitherTheWatchdogMomentOrAnAwaitedTimeoutChoice() {
+        assertFalse(isEngineStuckDialogVisible(isWatchdogTriggered = false, isAwaitingTimeoutChoice = false))
+        assertTrue(isEngineStuckDialogVisible(isWatchdogTriggered = true, isAwaitingTimeoutChoice = false))
+        assertTrue(
+            isEngineStuckDialogVisible(isWatchdogTriggered = false, isAwaitingTimeoutChoice = true),
+            "차례 대기의 완료가 와치독 표시를 닫아도, 시간 초과 뒤 선택 대기는 팝업을 남긴다",
+        )
+        assertTrue(isEngineStuckDialogVisible(isWatchdogTriggered = true, isAwaitingTimeoutChoice = true))
+    }
+
+    /**
+     * 「한 번 더 기다리기」 — 탐색이 아직 돌면(A) 기다리기만 하고, 시간 초과로 끝났으면(B) 같은 국면을 다시 요청한다.
+     * A에서 다시 요청하면 막힌 GTP 탐색 뒤에 한 번 더 줄을 서게 된다(설계 C-10).
+     */
+    @Test
+    fun theWaitChoiceKeepsWaitingWhileTheSearchRunsAndRetriesOnlyAfterATimeout() {
+        assertEquals(EngineStuckWaitAction.KeepWaitingAndRearm, engineStuckWaitActionFor(isAwaitingTimeoutChoice = false))
+        assertEquals(EngineStuckWaitAction.RetryTimedOutTurnAndRearm, engineStuckWaitActionFor(isAwaitingTimeoutChoice = true))
+    }
+
+    /** 다시 걸면 그 순간부터 한도만큼 더 지나야 다시 뜬다. 새 차례가 오면 차례 시작이 이긴다. */
+    @Test
+    fun rearmingMovesTheWatchdogBaseForwardUntilTheNextTurnStarts() {
+        assertEquals(1_000L, engineTurnWatchdogBaseMillis(turnStartedAtMillis = 1_000L, rearmedAtMillis = null))
+        assertEquals(25_000L, engineTurnWatchdogBaseMillis(turnStartedAtMillis = 1_000L, rearmedAtMillis = 25_000L))
+        assertEquals(40_000L, engineTurnWatchdogBaseMillis(turnStartedAtMillis = 40_000L, rearmedAtMillis = 25_000L))
+        val threshold = engineTurnWatchdogTimeoutMillisFor(SearchTimeLimit.WithinTenSeconds)
+        val base = engineTurnWatchdogBaseMillis(turnStartedAtMillis = 1_000L, rearmedAtMillis = 25_000L)
+        assertFalse(isEngineTurnWatchdogTriggered(true, (25_000L + threshold - 1L) - base, SearchTimeLimit.WithinTenSeconds))
+        assertTrue(isEngineTurnWatchdogTriggered(true, (25_000L + threshold) - base, SearchTimeLimit.WithinTenSeconds))
     }
 }

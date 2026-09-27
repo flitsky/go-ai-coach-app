@@ -12,6 +12,7 @@ import com.worksoc.goaicoach.application.autoai.applyAutoAiTurnRequestPlan
 import com.worksoc.goaicoach.application.autoai.applyAutoAiTurnScheduleValidationPlan
 import com.worksoc.goaicoach.application.autoai.completeAutoAiTurnRun
 import com.worksoc.goaicoach.application.autoai.runScheduledAutoAiTurnApplication
+import com.worksoc.goaicoach.application.autoai.toAutoAiTurnRequestPlan
 import com.worksoc.goaicoach.application.contract.GameSessionRuntimeState
 import com.worksoc.goaicoach.application.contract.PositionAnalysisCacheOptimizationPlan
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
@@ -29,6 +30,7 @@ import com.worksoc.goaicoach.application.engine.localScoreSnapshot
 import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
 import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
 import com.worksoc.goaicoach.application.savedgame.SavedSessionUiState
+import com.worksoc.goaicoach.application.session.AutoAiTurnTimeout
 import com.worksoc.goaicoach.application.session.AutoAiTurnUiState
 import com.worksoc.goaicoach.application.session.GameSessionAnalysisState
 import com.worksoc.goaicoach.application.session.GameSessionControllerState
@@ -334,6 +336,70 @@ class AutoAiScheduledTurnRunnerTest {
     }
 
     /**
+     * T6(뒤 절반, refactor backlog #74, 설계 C-8) — 시간 초과로 끝난 차례는 **그 국면(세대·수순 길이)에 표시를 남겨**
+     * busy가 풀린 뒤 트리거 효과의 조용한 재시도를 막는다(사용자가 팝업에서 고를 때까지). 세대가 오르면(무르기·
+     * 새 대국·나가기) 표시는 저절로 효력을 잃고 다시 예약된다. 표시를 지우면(「한 번 더 기다리기」) 같은 국면도 다시 예약된다.
+     */
+    @Test
+    fun engineTimeoutMarksThePositionAndBlocksTheSilentRetryUntilTheGenerationMoves() {
+        val state = GameState.empty()
+        val setup = PlayerSetup(
+            black = SidePlayerSetup(controller = SeatController.Ai),
+            white = SidePlayerSetup(controller = SeatController.Human),
+        )
+        var autoAiState = AutoAiTurnUiState()
+        val runtimeState = GameSessionRuntimeState(
+            playLevel = PlayLevelSetting(),
+            engineProfile = EngineProfile(),
+            analysisPreset = AnalysisPreset.Lite,
+            sessionGeneration = 3L,
+        )
+        val runtimeLog = RecordingRuntimeEventLog()
+
+        runScheduledAutoAiTurnApplication(
+            baseRequest(
+                schedule = AutoAiTurnRequestPlan.Schedule(delayMillis = 0L),
+                stateProvider = { state },
+                controllerStateProvider = {
+                    controllerState(state = state, setup = setup, runtimeState = runtimeState, autoAiTurnUiState = autoAiState)
+                },
+                client = SuspendingRunnerFakeEngineClient { withTimeout(1L) { awaitCancellation() } },
+                runtimeState = runtimeState,
+                runtimeLog = runtimeLog,
+                applyScheduled = { schedule -> autoAiState = autoAiState.applyAutoAiTurnRequestPlan(schedule) },
+                applyTurnTimedOut = { timeout -> autoAiState = autoAiState.markTimedOut(timeout) },
+                completeRun = { autoAiState = autoAiState.completeAutoAiTurnRun() },
+            ),
+        )
+
+        assertEquals(AutoAiTurnTimeout(sessionGeneration = 3L, moveCount = 0), autoAiState.timedOut)
+        assertTrue(runtimeLog.events.any { it.contains("event=ai_turn_timeout") })
+        fun requestPlanFor(generation: Long, uiState: AutoAiTurnUiState) =
+            controllerState(
+                state = state,
+                setup = setup,
+                runtimeState = runtimeState.copy(sessionGeneration = generation),
+                autoAiTurnUiState = uiState,
+            ).toAutoAiTurnRequestPlan(isEngineReady = true, isEngineBusy = false)
+
+        assertEquals(
+            AutoAiTurnRequestPlan.Skip,
+            requestPlanFor(3L, autoAiState),
+            "사용자가 고르기 전에 같은 예산으로 조용히 다시 탐색하면 안 된다",
+        )
+        assertEquals(
+            AutoAiTurnRequestPlan.Schedule(delayMillis = 0L),
+            requestPlanFor(4L, autoAiState),
+            "세대가 오르면(무르기·새 대국·나가기) 표시는 저절로 풀린다",
+        )
+        assertEquals(
+            AutoAiTurnRequestPlan.Schedule(delayMillis = 0L),
+            requestPlanFor(3L, autoAiState.clearTimedOut()),
+            "「한 번 더 기다리기」가 표시를 지우면 같은 국면도 다시 예약된다",
+        )
+    }
+
+    /**
      * T8(러너 쪽, refactor backlog #74) — 러너는 띄운 Job을 **돌려준다**(예전에는 버렸다, 설계 F3). 그리고 본문이
      * 한 번도 돌기 전에 취소되면(예약 직후 곧바로 무르기) 본문의 `finally`도 없으므로, 예약 표시는 Job의
      * 완료 콜백이 푼다.
@@ -411,6 +477,7 @@ class AutoAiScheduledTurnRunnerTest {
             { AutoAiTurnFollowUpPlan.None },
         resolveEndgame: suspend (com.worksoc.goaicoach.application.contract.AutoAiTurnEndgamePlan.Resolve) -> Unit = {},
         applyTurnFailureDisplay: (Throwable) -> Unit = {},
+        applyTurnTimedOut: (AutoAiTurnTimeout) -> Unit = {},
         appendEngineOperationDiscardLog: (
             com.worksoc.goaicoach.shared.policy.EngineOperationResultGuard.Discard,
         ) -> Unit = {},
@@ -448,6 +515,7 @@ class AutoAiScheduledTurnRunnerTest {
             applyTurnDisplay = applyTurnDisplay,
             resolveEndgame = resolveEndgame,
             applyTurnFailureDisplay = applyTurnFailureDisplay,
+            applyTurnTimedOut = applyTurnTimedOut,
             appendEngineOperationDiscardLog = appendEngineOperationDiscardLog,
             completeAutoAiTurnRun = completeRun,
             requestFollowUpAnalysis = requestFollowUp,

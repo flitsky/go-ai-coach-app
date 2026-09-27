@@ -58,7 +58,11 @@ import com.worksoc.goaicoach.application.guide.GuideTarget
 import com.worksoc.goaicoach.application.movereview.MoveReviewTone
 import com.worksoc.goaicoach.application.premium.state.FeatureAccess
 import com.worksoc.goaicoach.application.premium.state.FeatureId
+import com.worksoc.goaicoach.application.safety.EngineStuckWaitAction
+import com.worksoc.goaicoach.application.safety.engineStuckWaitActionFor
+import com.worksoc.goaicoach.application.safety.engineTurnWatchdogBaseMillis
 import com.worksoc.goaicoach.application.safety.engineTurnWatchdogTimeoutMillisFor
+import com.worksoc.goaicoach.application.safety.isEngineStuckDialogVisible
 import com.worksoc.goaicoach.application.safety.isEngineTurnWatchdogTriggered
 import com.worksoc.goaicoach.application.session.GameSessionTurnTimeState
 import com.worksoc.goaicoach.match.SeatController
@@ -135,15 +139,23 @@ internal fun GamePlaySection(
     // 와치독 발동 시 뜨는 복구 팝업의 표시 여부. 새 차례가 시작될 때마다(키가 바뀔 때마다)
     // remember가 자동으로 false로 되돌리므로, 다음 차례에는 다시 정상적으로 감지 가능하다.
     var showEngineStuckDialog by remember(turnTimeState.currentTurnStartedAtMillis) { mutableStateOf(false) }
-    LaunchedEffect(turnTimeState.currentTurnStartedAtMillis, turnTimeState.isPaused, screenState.isGameEnded) {
-        // 안전 관리(레프리) 도메인 와치독: 새 차례가 시작될 때마다(이 effect가 재시작될 때마다)
-        // 리셋되므로 별도 remember 없이 이 지역 변수 하나로 "이번 차례에 이미 보고했는지"를 추적한다.
+    // 「한 번 더 기다리기」·「엔진 다시 시작하기」가 와치독을 **다시 거는** 시각(refactor backlog #74, 설계 C-10).
+    // 새 차례면 키가 바뀌어 비워지고, 와치독은 다시 차례 시작부터 잰다. 셸이 아니라 이 화면이 쥔다.
+    var watchdogRearmedAtMillis by remember(turnTimeState.currentTurnStartedAtMillis) { mutableStateOf<Long?>(null) }
+    val watchdogBaseMillis = engineTurnWatchdogBaseMillis(
+        turnStartedAtMillis = turnTimeState.currentTurnStartedAtMillis,
+        rearmedAtMillis = watchdogRearmedAtMillis,
+    )
+    LaunchedEffect(watchdogBaseMillis, turnTimeState.isPaused, screenState.isGameEnded) {
+        // 안전 관리(레프리) 도메인 와치독: 새 차례가 시작될 때마다, 그리고 다시 걸 때마다(이 effect가 재시작될
+        // 때마다) 리셋되므로 별도 remember 없이 이 지역 변수 하나로 "이번에 이미 보고했는지"를 추적한다.
         var watchdogReported = false
         while (!screenState.isGameEnded && !turnTimeState.isPaused) {
             delay(TurnTimerTickIntervalMillis)
             now = System.currentTimeMillis()
             if (!watchdogReported) {
-                val elapsedSinceTurnStartMillis = (now - turnTimeState.currentTurnStartedAtMillis).coerceAtLeast(0L)
+                // 차례 시작(또는 다시 건 시각)부터의 경과 — 시계(착수 시간)는 이것과 무관하게 차례 시작부터 잰다.
+                val elapsedSinceTurnStartMillis = (now - watchdogBaseMillis).coerceAtLeast(0L)
                 val isAiTurn = when (turnTimeState.currentTurnPlayer) {
                     StoneColor.Black -> screenState.playerSetup.black.controller == SeatController.Ai
                     StoneColor.White -> screenState.playerSetup.white.controller == SeatController.Ai
@@ -196,10 +208,23 @@ internal fun GamePlaySection(
         }
     }
 
-    if (showEngineStuckDialog) {
+    // 팝업 하나가 두 순간을 맡는다(refactor backlog #74): 와치독 한도를 넘긴 순간(위의 지역 표시 — 차례 대기가
+    // 끝나면 저절로 닫힌다)과, 탐색이 **시간 초과로 끝나** 사용자의 선택을 기다리는 동안(세션 상태 — 고를 때까지
+    // 남는다. 그동안 AI의 조용한 재시도는 막혀 있다). 둘이 겹쳐도 한 벌만 뜬다.
+    val isAwaitingEngineTimeoutChoice = screenState.isAwaitingEngineTimeoutChoice
+    // 「한 번 더 기다리기」 — 밖을 눌러 닫는 것도 같다(그래야 판이 멈춘 채로 남지 않는다).
+    val onEngineStuckWait = {
+        showEngineStuckDialog = false
+        watchdogRearmedAtMillis = System.currentTimeMillis()
+        when (engineStuckWaitActionFor(isAwaitingEngineTimeoutChoice)) {
+            EngineStuckWaitAction.KeepWaitingAndRearm -> Unit
+            EngineStuckWaitAction.RetryTimedOutTurnAndRearm -> onEvent(GameUiEvent.RetryTimedOutAiTurn)
+        }
+    }
+    if (isEngineStuckDialogVisible(showEngineStuckDialog, isAwaitingEngineTimeoutChoice)) {
         val strings = LocalUiStrings.current
         AlertDialog(
-            onDismissRequest = { showEngineStuckDialog = false },
+            onDismissRequest = onEngineStuckWait,
             title = {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -225,9 +250,11 @@ internal fun GamePlaySection(
                 Text(strings.engineStuckDialogMessage)
             },
             confirmButton = {
+                // 「엔진 다시 시작하기」 — 도는 차례를 취소하고 엔진을 내린다. 새 프로세스에서 판을 맞춘 뒤 AI가 둔다.
                 TextButton(
                     onClick = {
                         showEngineStuckDialog = false
+                        watchdogRearmedAtMillis = System.currentTimeMillis()
                         onEvent(GameUiEvent.ForceResetEngine)
                     },
                 ) {
@@ -235,7 +262,7 @@ internal fun GamePlaySection(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showEngineStuckDialog = false }) {
+                TextButton(onClick = onEngineStuckWait) {
                     Text(strings.engineStuckDialogWaitAction)
                 }
             },

@@ -9,6 +9,7 @@ import com.worksoc.goaicoach.application.autoai.buildAutoAiTurnFailureDisplayPla
 import com.worksoc.goaicoach.application.autoai.completeAutoAiTurnRun
 import com.worksoc.goaicoach.application.contract.AutoAiTurnDisplayPlan
 import com.worksoc.goaicoach.application.humanmove.HumanMoveController
+import com.worksoc.goaicoach.application.session.AutoAiTurnTimeout
 import com.worksoc.goaicoach.application.session.TurnTimeMoveUpdate
 import com.worksoc.goaicoach.application.topmoves.TopMovesController
 import com.worksoc.goaicoach.application.undo.UndoController
@@ -130,6 +131,8 @@ internal fun wireAutoAiTurnController(
         // Job은 키 없는 remember인 수명 컨트롤러에 맡긴다 — 이 컨트롤러는 wiringContext마다 새로 만들어진다(#74).
         trackInFlightTurn = context.lifecycleController::trackAutoAiTurnJob,
         cancelTrackedTurn = context.lifecycleController::cancelInFlightAutoAiTurn,
+        applyAutoAiTurnTimedOut = { timeout: AutoAiTurnTimeout -> context.setAutoAiTurnUiState(context.autoAiTurnUiState().markTimedOut(timeout)) },
+        clearAutoAiTurnTimedOut = { context.setAutoAiTurnUiState(context.autoAiTurnUiState().clearTimedOut()) },
     )
 
 internal fun wireHumanMoveController(

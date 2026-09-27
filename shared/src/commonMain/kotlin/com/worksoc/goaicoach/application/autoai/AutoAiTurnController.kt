@@ -10,6 +10,7 @@ import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
 import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
 import com.worksoc.goaicoach.application.score.EndgameFailureDisplayPlan
 import com.worksoc.goaicoach.application.score.FinalScoreDisplayPlan
+import com.worksoc.goaicoach.application.session.AutoAiTurnTimeout
 import com.worksoc.goaicoach.application.session.GameSessionControllerState
 import com.worksoc.goaicoach.application.session.TurnTimeMoveUpdate
 import com.worksoc.goaicoach.shared.domain.GameState
@@ -59,7 +60,20 @@ class AutoAiTurnController(
     private val trackInFlightTurn: (Job) -> Unit,
     /** 맡긴 Job을 취소한다 — 배선은 `EngineOperationLifecycleController::cancelInFlightAutoAiTurn`. */
     private val cancelTrackedTurn: () -> Unit,
+    /** 탐색이 시간 초과로 끝난 국면을 표시한다 — 표시가 맞는 동안 [requestAiTurn]은 건너뛴다(refactor backlog #74). */
+    private val applyAutoAiTurnTimedOut: (AutoAiTurnTimeout) -> Unit,
+    /** 그 표시를 지운다 — 사용자가 팝업에서 고른 뒤. */
+    private val clearAutoAiTurnTimedOut: () -> Unit,
 ) {
+    /**
+     * 시간 초과 뒤 「한 번 더 기다리기」(refactor backlog #74, 설계 C-10 상태 B). 표시를 지우고 같은 국면을 같은
+     * 예산으로 다시 요청한다. 프로세스가 시간 초과로 내려갔으면 새 차례의 `configure`가 다시 띄운다.
+     */
+    fun retryTimedOutTurn() {
+        clearAutoAiTurnTimedOut()
+        requestAiTurn()
+    }
+
     /**
      * 도는 AI 차례를 취소한다(refactor backlog #74). 물음 없이 즉시 멈춘다 — 팝업 없음, AI의 돌 없음,
      * genMove·형세 추정 없음. 정리(busy·예약 해제)는 러너의 `finally`가 한다.
@@ -73,10 +87,14 @@ class AutoAiTurnController(
      * 순서가 중요하다. 취소가 먼저여야 파이프가 닫혀 풀린 읽기의 예외가 "진짜 실패"로 읽혀 **맞추지 않은 새
      * 프로세스에서 genMove**로 떨어지지 않는다(설계 F2). 취소된 Job은 파이프가 닫히며 끝나고, 그 `finally`가
      * busy를 풀면 트리거 효과가 차례를 다시 요청한다 — 새 차례는 `configure`로 프로세스를 새로 띄우고 판을 맞춘다.
+     * 시간 초과로 이미 끝난 차례(상태 B)라면 도는 Job이 없으므로 표시를 지우고 여기서 바로 다시 요청한다 — 도는
+     * Job이 있으면(상태 A) 그 요청은 pending에 걸려 건너뛰어지고, 위의 트리거 효과가 맡는다.
      */
     fun restartEngineForStalledTurn(forceResetEngine: () -> Unit) {
         cancelInFlightTurn()
         forceResetEngine()
+        clearAutoAiTurnTimedOut()
+        requestAiTurn()
     }
 
     suspend fun applyEndgamePlan(endgamePlan: AutoAiTurnEndgamePlan.Resolve) {
@@ -133,6 +151,7 @@ class AutoAiTurnController(
                         applyTurnDisplay = applyTurnDisplay,
                         resolveEndgame = ::applyEndgamePlan,
                         applyTurnFailureDisplay = applyTurnFailureDisplay,
+                        applyTurnTimedOut = applyAutoAiTurnTimedOut,
                         appendEngineOperationDiscardLog = appendEngineOperationDiscardLog,
                         completeAutoAiTurnRun = completeAutoAiTurnRun,
                         requestFollowUpAnalysis = requestFollowUpAnalysis,

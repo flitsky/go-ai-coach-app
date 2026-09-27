@@ -118,6 +118,30 @@ class AutoAiCompletionApplierTest {
         assertTrue(runtimeLog.events.any { it.contains("event=ai_turn_failure") })
     }
 
+    /** 시간 초과(refactor backlog #74)는 실패 문구 없이 표시를 남기고(조용한 재시도 차단) 로그 한 줄을 남긴다. */
+    @Test
+    fun timeoutMarksTheTurnLogsItAndShowsNoFailureText() {
+        val runtimeLog = RecordingRuntimeEventLog()
+        var appliedFailure: Throwable? = null
+        var marks = 0
+
+        val followUp = runBlocking {
+            applyAutoAiTurnCompletionApplication(
+                baseRequest(
+                    completion = AutoAiTurnCompletionPlan.ApplyTimedOut(IllegalStateException("timed out")),
+                    runtimeLog = runtimeLog,
+                    applyTurnFailureDisplay = { appliedFailure = it },
+                    markTurnTimedOut = { marks += 1 },
+                ),
+            )
+        }
+
+        assertEquals(null, appliedFailure)
+        assertEquals(1, marks)
+        assertEquals(AutoAiTurnFollowUpPlan.None, followUp)
+        assertTrue(runtimeLog.events.any { it.contains("event=ai_turn_timeout") })
+    }
+
     @Test
     fun discardOnlyAppendsDiscardLog() {
         val discard = EngineOperationResultGuard.Discard(reason = "stale")
@@ -144,6 +168,7 @@ class AutoAiCompletionApplierTest {
         applyTurnDisplay: (AutoAiTurnDisplayPlan) -> AutoAiTurnFollowUpPlan = { AutoAiTurnFollowUpPlan.None },
         resolveEndgame: suspend (AutoAiTurnEndgamePlan.Resolve) -> Unit = {},
         applyTurnFailureDisplay: (Throwable) -> Unit = {},
+        markTurnTimedOut: () -> Unit = {},
         appendEngineOperationDiscardLog: (EngineOperationResultGuard.Discard) -> Unit = {},
     ): AutoAiTurnCompletionApplyRunRequest =
         AutoAiTurnCompletionApplyRunRequest(
@@ -169,6 +194,7 @@ class AutoAiCompletionApplierTest {
             applyTurnDisplay = applyTurnDisplay,
             resolveEndgame = resolveEndgame,
             applyTurnFailureDisplay = applyTurnFailureDisplay,
+            markTurnTimedOut = markTurnTimedOut,
             appendEngineOperationDiscardLog = appendEngineOperationDiscardLog,
         )
 

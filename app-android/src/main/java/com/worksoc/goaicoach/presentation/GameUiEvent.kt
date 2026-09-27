@@ -74,6 +74,13 @@ internal sealed interface GameUiEvent {
     ) : GameUiEvent
 
     data object ForceResetEngine : GameUiEvent
+
+    /**
+     * 시간 초과로 끝난 AI 차례 뒤의 「한 번 더 기다리기」(refactor backlog #74, 설계 C-10 상태 B) — 같은 국면을 같은
+     * 예산으로 다시 요청한다. 탐색이 아직 도는 동안(상태 A)의 같은 버튼은 이 이벤트를 내지 않는다(팝업만 닫고
+     * 와치독을 다시 건다 — 막힌 GTP 탐색은 프로세스를 죽이지 않고는 다시 요청할 수 없다).
+     */
+    data object RetryTimedOutAiTurn : GameUiEvent
 }
 
 internal data class GameUiEventHandlers(
@@ -103,6 +110,7 @@ internal data class GameUiEventHandlers(
     val changeHandicapCount: (Int) -> Unit,
     val reportEngineTurnWatchdogTriggered: (elapsedMillis: Long, thresholdMillis: Long) -> Unit,
     val forceResetEngine: () -> Unit,
+    val retryTimedOutAiTurn: () -> Unit,
 )
 
 internal fun buildGameUiEventHandlers(
@@ -132,6 +140,7 @@ internal fun buildGameUiEventHandlers(
     changeHandicapCount: (Int) -> Unit,
     reportEngineTurnWatchdogTriggered: (elapsedMillis: Long, thresholdMillis: Long) -> Unit,
     forceResetEngine: () -> Unit,
+    retryTimedOutAiTurn: () -> Unit,
 ): GameUiEventHandlers =
     GameUiEventHandlers(
         currentPlayer = currentPlayer,
@@ -160,6 +169,7 @@ internal fun buildGameUiEventHandlers(
         changeHandicapCount = changeHandicapCount,
         reportEngineTurnWatchdogTriggered = reportEngineTurnWatchdogTriggered,
         forceResetEngine = forceResetEngine,
+        retryTimedOutAiTurn = retryTimedOutAiTurn,
     )
 
 internal fun dispatchGameUiEvent(
@@ -199,5 +209,6 @@ internal fun dispatchGameUiEvent(
         is GameUiEvent.ReportEngineTurnWatchdogTriggered ->
             handlers.reportEngineTurnWatchdogTriggered(event.elapsedMillis, event.thresholdMillis)
         GameUiEvent.ForceResetEngine -> handlers.forceResetEngine()
+        GameUiEvent.RetryTimedOutAiTurn -> handlers.retryTimedOutAiTurn()
     }
 }
