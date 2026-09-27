@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.ui
+package com.worksoc.goaicoach.ui.history
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
