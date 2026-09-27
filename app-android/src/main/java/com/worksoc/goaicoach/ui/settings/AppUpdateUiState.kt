@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.ui
+package com.worksoc.goaicoach.ui.settings
 
 import android.content.Context
 import android.content.Intent

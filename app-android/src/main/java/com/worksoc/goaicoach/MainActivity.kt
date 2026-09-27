@@ -33,9 +33,9 @@ import com.worksoc.goaicoach.persistence.UserPreferencesStore
 import com.worksoc.goaicoach.platform.AdsConsentManager
 import com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi
 import com.worksoc.goaicoach.shared.enginecontract.EngineMode
-import com.worksoc.goaicoach.ui.AppFontScaleState
 import com.worksoc.goaicoach.ui.GoCoachApp
 import com.worksoc.goaicoach.ui.play.allowsRotation
+import com.worksoc.goaicoach.ui.settings.AppFontScaleState
 import com.worksoc.goaicoach.ui.splash.AppSplash
 import java.io.File
 import kotlinx.coroutines.CompletableDeferred

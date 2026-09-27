@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.ui
+package com.worksoc.goaicoach.ui.settings
 
 import android.content.ClipData
 import android.content.ClipboardManager

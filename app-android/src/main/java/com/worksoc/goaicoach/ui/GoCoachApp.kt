@@ -125,6 +125,7 @@ import com.worksoc.goaicoach.ui.monetization.buildPremiumUiState
 import com.worksoc.goaicoach.ui.play.FinishedGameFlow
 import com.worksoc.goaicoach.ui.play.GoCoachContent
 import com.worksoc.goaicoach.ui.play.resignCurrentGameIfAllowed
+import com.worksoc.goaicoach.ui.settings.SettingsScreen
 import com.worksoc.goaicoach.ui.setup.GameSetupLobby
 import com.worksoc.goaicoach.ui.splash.SplashVisibility
 import com.worksoc.goaicoach.ui.study.StudyScreen
