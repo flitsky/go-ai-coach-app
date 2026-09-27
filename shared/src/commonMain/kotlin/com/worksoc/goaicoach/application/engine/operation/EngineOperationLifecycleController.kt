@@ -172,6 +172,39 @@ class EngineOperationLifecycleController(
     }
 
     /**
+     * **떠난 국면의** 엔진 작업을 취소한다(refactor backlog #15) — 무르기가 판을 되돌린 **직후**(세대가 바뀐 뒤) 부른다.
+     * 대상은 지금 세대가 아닌 추천 수·형세·착수 동기화([StaleWorkKindsCancelledOnUndo])의 Job이다.
+     *
+     * 그 결과는 어차피 버려진다 — 세대가 바뀌어 결과 가드가 버린다. 예전에는 취소하지 않아도 됐다: 무르기 뒤 재동기화가
+     * 그 작업과 **나란히** 돌았으니까(그래서 판이 섞였다). 이제 엔진 오퍼레이션은 한 번에 하나라(`LocalEngineSessionClient`의
+     * 오퍼레이션 락), 취소하지 않으면 재동기화(blocking — 그동안 착수가 막힌다)가 버려질 작업이 끝나기를 기다린다. 취소된
+     * 쪽은 엔진 답을 기다리지 않고 곧바로 락을 놓는다(2계층 배수가 답을 받는다).
+     *
+     * 목록에서는 지우지 않는다 — 이미 세대 필터로 busy에서 빠져 있고, 끝나면 러너의 `finally`가 스스로 지운다.
+     * ⚠️ 그 밖의 종류(이어하기·계가 규칙 재동기화·새 대국·벤치마크·캐시 최적화)는 건드리지 않는다 — 결과 적용 말고도
+     * 끝에 하는 일(준비 상태·진행 표시)이 있어, 취소하면 그 일이 빠진다.
+     */
+    fun cancelStaleGenerationOperations() {
+        val generation = currentSessionGeneration()
+        val targets = lifecycleState.activeOperations.values.filter { request ->
+            request.sessionGeneration != generation && request.kind in StaleWorkKindsCancelledOnUndo
+        }
+        targets.forEach { request ->
+            val job = activeJobsLock.withLock { activeJobs[request.operationId] }
+            if (job != null && job.isActive) {
+                job.cancel()
+                diagnosticEventLog.append(
+                    DiagnosticEvent(
+                        severity = DiagnosticSeverity.Info,
+                        code = "engine_operation_cancelled",
+                        message = "Cancelled stale-generation operation after undo: ${request.operationId}",
+                    )
+                )
+            }
+        }
+    }
+
+    /**
      * AI 차례의 Job을 맡긴다(refactor backlog #74). 끝나면 스스로 빠진다 — 끝난 뒤의 [cancelInFlightAutoAiTurn]은
      * 아무것도 하지 않는다. 새 차례가 오면 앞의 것을 덮는다(pending이 둘을 동시에 띄우지 않는다).
      */
@@ -250,3 +283,13 @@ class EngineOperationLifecycleController(
         )
     }
 }
+
+/**
+ * 무르기가 취소하는 떠난 국면의 작업 종류([EngineOperationLifecycleController.cancelStaleGenerationOperations]) — 결과를
+ * 세대 가드가 버리는 것 말고는 끝에 하는 일이 없는 것만 둔다.
+ */
+private val StaleWorkKindsCancelledOnUndo = setOf(
+    EngineOperationKind.TopMoves,
+    EngineOperationKind.ScoreEstimate,
+    EngineOperationKind.HumanMoveSync,
+)

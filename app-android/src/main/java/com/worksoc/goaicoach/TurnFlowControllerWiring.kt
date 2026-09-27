@@ -84,6 +84,9 @@ internal fun wireUndoController(
             // AI가 생각하던 차례는 물음 없이 멈춘다 — 무른 판에 뒤늦게 AI 돌이 놓이지 않고 genMove도 없다(#74).
             context.lifecycleController.cancelInFlightAutoAiTurn()
             context.displayStateApplier.applyUndoLocalStatePlan(undo)
+            // 판이 되돌아가 세대가 바뀐 **뒤에** 떠난 국면의 추천 수·형세·착수 동기화를 취소한다(#15) — 엔진은 한 번에
+            // 하나라, 두면 무르기 뒤 재동기화가 버려질 그 작업을 기다린다.
+            context.lifecycleController.cancelStaleGenerationOperations()
             context.setTurnTimeState(
                 context.turnTimeState().restartCurrentTurn(
                     state = undo.gameState,
