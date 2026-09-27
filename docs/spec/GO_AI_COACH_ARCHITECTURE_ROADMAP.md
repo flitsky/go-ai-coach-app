@@ -31,7 +31,7 @@
 
 ### 1계층 — Physical Compute
 
-**위치**: `engine-android/src/main/java/com/worksoc/goaicoach/engine/android/KataGoProcessRuntime.kt`(실행 파일/모델 검증, CLI 인수 빌드, 프로세스 시작/종료)
+**위치**: `engine-android/src/main/java/com/worksoc/goaicoach/engine/android/KataGoProcessRuntime.kt`(실행 파일/모델 검증, CLI 인수 빌드, 프로세스 시작/종료 — `interface EngineProcessRuntime` + `LocalKataGoProcessRuntime`, 띄운 프로세스 하나의 파이프·수명은 `EngineProcessPipes`) · `EngineProcessLifecycle.kt`(지금 프로세스 자리 `EngineProcessSlot`과 값 객체 `EngineProcessHandle` — 기동은 수명 락 안, 폐기는 세대 CAS, refactor backlog #14). 2계층 어댑터는 핸들의 writer/reader만 쓰고 프로세스를 직접 만들지 않는다.
 
 **재편 여부**: 기존 1계층은 `engine-android` 패키지 전체(어댑터 포함)였다. 이번 재정의에서는 **"실제 KataGo 바이너리 프로세스를 실행/관리하는 부분"만** 1계층으로 좁히고, 그 바이너리에 GTP/JSON으로 말을 거는 어댑터는 2계층으로 옮겼다 — "어디서 도는가"(1계층)와 "어떻게 그것과 통신하는가"(2계층)를 분리하기 위함.
 
