@@ -26,7 +26,7 @@ class LayeringContractTest {
     fun uiAndPresentationDoNotImportRawEngineCoreApi() {
         val sourceRoot = RepoPaths.appAndroid()
         val checkedDirs = listOf(
-            sourceRoot.resolve("ui"),
+            RepoPaths.uiRoot,
             sourceRoot.resolve("presentation"),
         )
         val forbiddenImports = listOf(
@@ -375,7 +375,7 @@ class LayeringContractTest {
             listed.sorted(),
         )
 
-        val regrown = ktFilesIn(RepoPaths.appAndroid("ui"))
+        val regrown = ktFilesIn(RepoPaths.uiRoot)
             .filter { file -> file.name.endsWith("Wiring.kt") || file.name.endsWith("Glue.kt") }
             .map { file -> file.relativeTo(RepoPaths.root).path }
         assertEquals(
@@ -469,7 +469,7 @@ class LayeringContractTest {
             "허용 목록이 금지 목록에 없는 접두사를 든다 — 허공을 허용하고 있다."
         }
 
-        val hits = ktFilesIn(RepoPaths.appAndroid("ui")).flatMap { file ->
+        val hits = ktFilesIn(RepoPaths.uiRoot).flatMap { file ->
             val lines = file.readLines()
             forbiddenImports.flatMap { forbidden ->
                 detectForbiddenReference(lines, forbidden).map { reason -> Triple(file, forbidden, reason) }

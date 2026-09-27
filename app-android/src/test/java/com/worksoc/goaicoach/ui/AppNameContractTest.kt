@@ -35,7 +35,7 @@ class AppNameContractTest {
         ?.groupValues?.get(1)
 
     private val inAppName = Regex("""appTitle = "([^"]+)"""")
-        .find(File(repoRoot, "app-android/src/main/java/com/worksoc/goaicoach/ui/UiStringsKo.kt").readContractSource())
+        .find(RepoPaths.uiFile("UiStringsKo.kt").readContractSource())
         ?.groupValues?.get(1)
 
     /**

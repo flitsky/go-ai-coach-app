@@ -26,13 +26,15 @@ class DeveloperModeResetContractTest {
      */
     private val repoRoot = RepoPaths.root
 
-    private fun codeOnly(path: String): String = File(repoRoot, path).readContractSource()
+    private fun codeOnly(path: String): String = codeOnly(File(repoRoot, path))
+
+    private fun codeOnly(file: File): String = file.readContractSource()
         .replace(Regex("""/\*.*?\*/""", RegexOption.DOT_MATCHES_ALL), "")
         .lines().joinToString("\n") { it.substringBefore("//") }
 
     private val coordinator = codeOnly("app-android/src/main/java/com/worksoc/goaicoach/DeveloperModeResetCoordinator.kt")
     private val application = codeOnly("app-android/src/main/java/com/worksoc/goaicoach/GoAiCoachApplication.kt")
-    private val settings = codeOnly("app-android/src/main/java/com/worksoc/goaicoach/ui/SettingsScreen.kt")
+    private val settings = codeOnly(RepoPaths.uiFile("SettingsScreen.kt"))
 
     /**
      * ⚠️ **debug 빌드에서는 절대 돌면 안 된다**(2026-09-05 사용자 결정) — 개발자 본인의 실기

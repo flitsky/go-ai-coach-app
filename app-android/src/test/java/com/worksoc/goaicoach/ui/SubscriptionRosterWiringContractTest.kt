@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.ui
 
+import com.worksoc.goaicoach.architecture.RepoPaths
 import com.worksoc.goaicoach.architecture.readContractSource
 import java.io.File
 import org.junit.Assert.assertEquals
@@ -16,9 +17,9 @@ class SubscriptionRosterWiringContractTest {
 
     private fun source(path: String): String = File(path).readContractSource()
 
-    private val app = source("src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
-    private val bots = source("src/main/java/com/worksoc/goaicoach/ui/BotCharacterUiState.kt")
-    private val setup = source("src/main/java/com/worksoc/goaicoach/ui/PlayerSetupPanel.kt")
+    private val app = source(RepoPaths.uiFile("GoCoachApp.kt").path)
+    private val bots = source(RepoPaths.uiFile("BotCharacterUiState.kt").path)
+    private val setup = source(RepoPaths.uiFile("PlayerSetupPanel.kt").path)
     private val store = source("src/main/java/com/worksoc/goaicoach/persistence/BotCollectionStore.kt")
 
     /**

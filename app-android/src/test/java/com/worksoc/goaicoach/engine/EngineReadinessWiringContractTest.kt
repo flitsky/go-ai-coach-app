@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.engine
 
+import com.worksoc.goaicoach.architecture.RepoPaths
 import com.worksoc.goaicoach.architecture.readContractSource
 import java.io.File
 import org.junit.Assert.assertTrue
@@ -19,11 +20,11 @@ class EngineReadinessWiringContractTest {
             .lines().joinToString("\n") { it.substringBefore("//") }
 
     private val mainActivity = codeOnly("src/main/java/com/worksoc/goaicoach/MainActivity.kt")
-    private val goCoachApp = codeOnly("src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
+    private val goCoachApp = codeOnly(RepoPaths.uiFile("GoCoachApp.kt").path)
     private val failureNotice =
-        codeOnly("src/main/java/com/worksoc/goaicoach/ui/EngineUnavailableNoticeDialog.kt")
-    private val badge = codeOnly("src/main/java/com/worksoc/goaicoach/ui/EngineUnavailableBadge.kt")
-    private val gamePlay = codeOnly("src/main/java/com/worksoc/goaicoach/ui/GamePlaySection.kt")
+        codeOnly(RepoPaths.uiFile("EngineUnavailableNoticeDialog.kt").path)
+    private val badge = codeOnly(RepoPaths.uiFile("EngineUnavailableBadge.kt").path)
+    private val gamePlay = codeOnly(RepoPaths.uiFile("GamePlaySection.kt").path)
 
     @Test
     fun nothingBlocksTheFirstFrameWhileTheEngineGetsReady() {

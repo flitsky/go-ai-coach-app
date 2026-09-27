@@ -34,9 +34,9 @@ class PremiumSubscriptionNoticeContractTest {
 
     private fun source(path: String): String = File(repoRoot, path).readContractSource()
 
-    private val noticeFile = "app-android/src/main/java/com/worksoc/goaicoach/ui/PremiumSubscriptionNotice.kt"
-    private val upsellFile = "app-android/src/main/java/com/worksoc/goaicoach/ui/PremiumUiState.kt"
-    private val myPageFile = "app-android/src/main/java/com/worksoc/goaicoach/ui/MyPageScreen.kt"
+    private val noticeFile = RepoPaths.uiFile("PremiumSubscriptionNotice.kt").relativeTo(repoRoot).path
+    private val upsellFile = RepoPaths.uiFile("PremiumUiState.kt").relativeTo(repoRoot).path
+    private val myPageFile = RepoPaths.uiFile("MyPageScreen.kt").relativeTo(repoRoot).path
 
     private val labelGetters: Map<String, (UiLanguage) -> String> = mapOf(
         "premiumSubscriptionActiveLabel" to ::premiumSubscriptionActiveLabelFor,

@@ -20,7 +20,7 @@ class ReplayRecordingContractTest {
 
     private fun source(path: String): String = File(path).readContractSource()
 
-    private val goCoachApp = source("src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
+    private val goCoachApp = source(RepoPaths.uiFile("GoCoachApp.kt").path)
     private val exitRecording = source(RepoPaths.compositionFile("GameExitRecording.kt").path)
     private val topMoves = source(RepoPaths.applicationPath("topmoves/TopMovesApplication.kt").path)
     private val gameHistoryAppend =

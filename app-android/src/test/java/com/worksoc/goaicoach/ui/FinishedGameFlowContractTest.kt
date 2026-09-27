@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.ui
 
+import com.worksoc.goaicoach.architecture.RepoPaths
 import com.worksoc.goaicoach.architecture.readContractSource
 import java.io.File
 import org.junit.Assert.assertEquals
@@ -23,10 +24,10 @@ class FinishedGameFlowContractTest {
             .filterNot { it.trimStart().startsWith("import ") }
             .joinToString("\n") { it.substringBefore("//") }
 
-    private val play = source("src/main/java/com/worksoc/goaicoach/ui/GamePlaySection.kt")
-    private val content = source("src/main/java/com/worksoc/goaicoach/ui/GoCoachContent.kt")
-    private val history = source("src/main/java/com/worksoc/goaicoach/ui/GameHistoryScreen.kt")
-    private val dialog = source("src/main/java/com/worksoc/goaicoach/ui/FinalJudgementDialog.kt")
+    private val play = source(RepoPaths.uiFile("GamePlaySection.kt").path)
+    private val content = source(RepoPaths.uiFile("GoCoachContent.kt").path)
+    private val history = source(RepoPaths.uiFile("GameHistoryScreen.kt").path)
+    private val dialog = source(RepoPaths.uiFile("FinalJudgementDialog.kt").path)
 
     /**
      * ⚠️ **같은 다섯 칸을 세 배치가 그린다**(한 줄 다섯 · 좌우 기둥 · 두 줄) — 그중 좌우 기둥은

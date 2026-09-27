@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.ui
 
+import com.worksoc.goaicoach.architecture.RepoPaths
 import com.worksoc.goaicoach.architecture.readContractSource
 import java.io.File
 import org.junit.Assert.assertEquals
@@ -31,9 +32,9 @@ class PremiumBorderMeaningContractTest {
             .lines()
             .joinToString("\n") { it.substringBefore("//") }
 
-    private val buttons = source("src/main/java/com/worksoc/goaicoach/ui/GameActionButtons.kt")
-    private val play = source("src/main/java/com/worksoc/goaicoach/ui/GamePlaySection.kt")
-    private val theme = source("src/main/java/com/worksoc/goaicoach/ui/PremiumTheme.kt")
+    private val buttons = source(RepoPaths.uiFile("GameActionButtons.kt").path)
+    private val play = source(RepoPaths.uiFile("GamePlaySection.kt").path)
+    private val theme = source(RepoPaths.uiFile("PremiumTheme.kt").path)
 
     /** 규칙은 **한 곳**에 있어야 한다 — 흩어 두면 한 버튼만 옛 규칙으로 돌아가도 안 걸린다. */
     @Test

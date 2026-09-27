@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.ui
 
+import com.worksoc.goaicoach.architecture.RepoPaths
 import com.worksoc.goaicoach.architecture.readContractSource
 import com.worksoc.goaicoach.shared.content.StudyLessonTrack
 import com.worksoc.goaicoach.shared.content.studyLessons
@@ -23,8 +24,8 @@ class StudyLessonContractTest {
             .filterNot { it.trimStart().startsWith("import ") }
             .joinToString("\n") { it.substringBefore("//") }
 
-    private val screen = source("src/main/java/com/worksoc/goaicoach/ui/StudyLessonScreen.kt")
-    private val hub = source("src/main/java/com/worksoc/goaicoach/ui/StudyScreen.kt")
+    private val screen = source(RepoPaths.uiFile("StudyLessonScreen.kt").path)
+    private val hub = source(RepoPaths.uiFile("StudyScreen.kt").path)
 
     /**
      * ⚠️ **빈칸은 조용하다.** 표에 한 언어가 빠지면 폴백이 돌아 화면에 `ko.retake` 같은 키가

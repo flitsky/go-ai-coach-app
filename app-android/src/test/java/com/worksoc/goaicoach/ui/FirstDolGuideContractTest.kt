@@ -36,18 +36,18 @@ class FirstDolGuideContractTest {
      */
     private val repoRoot = RepoPaths.root
 
-    private fun code(path: String): String =
-        File(repoRoot, path).readContractSource()
+    private fun code(path: String): String = code(File(repoRoot, path))
+
+    private fun code(file: File): String =
+        file.readContractSource()
             .replace(Regex("""/\*.*?\*/""", RegexOption.DOT_MATCHES_ALL), "")
             .lines()
             .filterNot { it.trimStart().startsWith("import ") }
             .joinToString("\n") { it.substringBefore("//") }
 
     private val uiSources: Map<String, String> by lazy {
-        File(repoRoot, "app-android/src/main/java/com/worksoc/goaicoach/ui")
-            .listFiles { file -> file.extension == "kt" }
-            .orEmpty()
-            .associate { file -> file.name to code("app-android/src/main/java/com/worksoc/goaicoach/ui/${file.name}") }
+        RepoPaths.uiSourceFiles()
+            .associate { file -> file.name to code(file) }
     }
 
     /**
@@ -62,7 +62,7 @@ class FirstDolGuideContractTest {
      */
     @Test
     fun theShellKnowsNothingAboutTheGuide() {
-        val shell = code("app-android/src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
+        val shell = code(RepoPaths.uiFile("GoCoachApp.kt"))
         listOf("GuideProgressStore", "GuideAnchor", "GuideSurface", "markSeen", "FirstDolGuide")
             .forEach { name ->
                 assertFalse(
@@ -133,7 +133,7 @@ class FirstDolGuideContractTest {
      */
     @Test
     fun theReplayNeverTouchesGuideProgress() {
-        val replay = code("app-android/src/main/java/com/worksoc/goaicoach/ui/FirstDolGuideReplay.kt")
+        val replay = code(RepoPaths.uiFile("FirstDolGuideReplay.kt"))
         listOf("GuideProgressStore", "markSeen", "arm()")
             .forEach { name ->
                 assertFalse(
@@ -164,15 +164,14 @@ class FirstDolGuideContractTest {
      */
     @Test
     fun everyDialogTellsTheGuideItIsCoveringTheScreen() {
-        val dialogFiles = File(repoRoot, "app-android/src/main/java/com/worksoc/goaicoach/ui")
-            .listFiles { file -> file.name.endsWith("Dialog.kt") || file.name.endsWith("Dialogs.kt") }
-            .orEmpty()
+        val dialogFiles = RepoPaths.uiSourceFiles()
+            .filter { file -> file.name.endsWith("Dialog.kt") || file.name.endsWith("Dialogs.kt") }
         assertTrue("`*Dialog.kt` 파일을 하나도 못 찾았다 — 이 그물이 아무것도 보지 않는다.", dialogFiles.size >= 5)
 
         val opensDialog = Regex("""(?<![A-Za-z])(?:AlertDialog|Dialog)\(""")
         val tracks = Regex("""GuideBlockingOverlays\.TrackWhileShown\(\)""")
         dialogFiles.forEach { file ->
-            val source = code("app-android/src/main/java/com/worksoc/goaicoach/ui/${file.name}")
+            val source = code(file)
             assertEquals(
                 "${file.name}: 팝업을 여는 자리 수와 `GuideBlockingOverlays.TrackWhileShown()` 수가 " +
                     "다르다 — 추적하지 않는 팝업이 첫돌이 말풍선을 덮은 채 \"봤음\"으로 소진시킨다(백로그 #128).",

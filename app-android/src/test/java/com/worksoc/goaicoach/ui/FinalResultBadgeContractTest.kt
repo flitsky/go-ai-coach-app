@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.ui
 
+import com.worksoc.goaicoach.architecture.RepoPaths
 import com.worksoc.goaicoach.architecture.readContractSource
 import java.io.File
 import org.junit.Assert.assertEquals
@@ -22,8 +23,8 @@ class FinalResultBadgeContractTest {
             .filterNot { it.trimStart().startsWith("import ") }
             .joinToString("\n") { it.substringBefore("//") }
 
-    private val panel = source("src/main/java/com/worksoc/goaicoach/ui/GameStatusPanel.kt")
-    private val badge = source("src/main/java/com/worksoc/goaicoach/ui/FinalResultBadge.kt")
+    private val panel = source(RepoPaths.uiFile("GameStatusPanel.kt").path)
+    private val badge = source(RepoPaths.uiFile("FinalResultBadge.kt").path)
 
     /**
      * ⚠️ **대국 중에는 절대 뜨면 안 된다** — 좌석 카드 가운데를 가리는데 거기에 시계와 사석이 있다.

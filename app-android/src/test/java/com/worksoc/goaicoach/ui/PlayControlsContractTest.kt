@@ -21,8 +21,8 @@ import org.junit.Test
  */
 class PlayControlsContractTest {
 
-    private fun code(path: String): String =
-        RepoPaths.appAndroid(path).readContractSource()
+    private fun code(name: String): String =
+        RepoPaths.uiFile(name).readContractSource()
             .replace(Regex("""/\*.*?\*/""", RegexOption.DOT_MATCHES_ALL), "")
             .lines()
             .filterNot { it.trimStart().startsWith("import ") }
@@ -30,7 +30,7 @@ class PlayControlsContractTest {
 
     @Test
     fun theConfirmModeIsForcedOffAtExactlyOnePlace() {
-        val flags = code("ui/FeatureFlags.kt")
+        val flags = code("FeatureFlags.kt")
         assertTrue(
             "확인 모드 플래그가 없다(#143).",
             flags.contains("const val isPlayConfirmModeEnabled"),
@@ -40,7 +40,7 @@ class PlayControlsContractTest {
             flags.contains("copy(isDirectPlayEnabled = true)"),
         )
 
-        val shell = code("ui/GoCoachApp.kt")
+        val shell = code("GoCoachApp.kt")
         assertTrue(
             "셸이 저장값을 옮기는 그 자리에서 관문을 통과시키지 않는다 — 읽는 곳마다 분기하면 반드시 하나를 빠뜨린다(#143).",
             shell.contains("toKaTrainUxOptions().withPlayConfirmModeGate()"),
@@ -49,7 +49,7 @@ class PlayControlsContractTest {
 
     @Test
     fun theBoardNoLongerCarriesTheTwoToggles() {
-        val play = code("ui/GamePlaySection.kt")
+        val play = code("GamePlaySection.kt")
         listOf("BoardTopControls(", "BoardTopToggle(").forEach { call ->
             assertFalse(
                 "대국 화면이 아직 `$call`을 그린다 — #143은 그 둘을 메뉴로 옮겼다.",
@@ -57,7 +57,7 @@ class PlayControlsContractTest {
             )
         }
 
-        val menu = code("ui/KaTrainUxPanels.kt")
+        val menu = code("KaTrainUxPanels.kt")
         // ⚠️ **착수 돋보기는 2026-09-22에 기능째 사라졌다**(백로그 #188) — 여기서 "메뉴에 있어야
         // 한다"고 지키던 것을, 이제 **어디에도 없어야 한다**로 뒤집는다. 판에서 뺐는데 끌 방법이
         // 사라지는 것이 #143의 걱정이었는데, 끌 것 자체가 없어졌다.
@@ -75,16 +75,16 @@ class PlayControlsContractTest {
     @Test
     fun whatWasRemovedFromTheUxStillLivesBehindTheFlag() {
         val gate = "FeatureFlags.isPlayConfirmModeEnabled"
-        val status = code("ui/GameStatusPanel.kt")
+        val status = code("GameStatusPanel.kt")
         assertTrue("착수 칸이 플래그 뒤에 있지 않다(#143).", status.contains("if ($gate) PlaySlot("))
         assertTrue("착수 칸 코드 자체가 사라졌다 — 플래그를 켜도 되살아나지 않는다(#143).", status.contains("internal fun PlaySlot("))
         assertTrue("착수 모드 스위치 코드가 사라졌다(#143).", status.contains("private fun PlayModeSwitch("))
 
-        val menu = code("ui/KaTrainUxPanels.kt")
+        val menu = code("KaTrainUxPanels.kt")
         assertTrue("메뉴의 `바로 착수` 스위치가 플래그 뒤에 있지 않다(#143).", menu.contains("if ($gate)"))
         assertTrue("메뉴의 `바로 착수` 스위치 코드가 사라졌다(#143).", menu.contains("strings.directPlay"))
 
-        val shell = code("ui/GoCoachApp.kt")
+        val shell = code("GoCoachApp.kt")
         assertTrue(
             "판 크기별 착수 모드 권장 팝업이 플래그 뒤에 있지 않다 — 없는 기능을 묻는 팝업이 된다(#143).",
             shell.contains("if ($gate)") && shell.contains("DirectPlayRecommendationDialog("),
@@ -93,7 +93,7 @@ class PlayControlsContractTest {
 
     @Test
     fun theSeatCardsSplitTheRowEvenly() {
-        val status = code("ui/GameStatusPanel.kt")
+        val status = code("GameStatusPanel.kt")
         assertFalse(
             "좌석 카드가 아직 가운데 칸에 폭을 떼어 주고 있다(`weight(1.3f)`) — #143이 그 칸을 뺐다.",
             status.contains("Modifier.weight(1.3f)"),

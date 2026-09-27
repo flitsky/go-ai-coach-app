@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.ui
 
+import com.worksoc.goaicoach.architecture.RepoPaths
 import com.worksoc.goaicoach.architecture.readContractSource
 import java.io.File
 import org.junit.Assert.assertEquals
@@ -26,11 +27,11 @@ class AppSplashContractTest {
             .filterNot { it.trimStart().startsWith("import ") }
             .joinToString("\n") { it.substringBefore("//") }
 
-    private val splash = source("src/main/java/com/worksoc/goaicoach/ui/AppSplash.kt")
-    private val avatar = source("src/main/java/com/worksoc/goaicoach/ui/BotCharacterAvatar.kt")
+    private val splash = source(RepoPaths.uiFile("AppSplash.kt").path)
+    private val avatar = source(RepoPaths.uiFile("BotCharacterAvatar.kt").path)
     private val main = source("src/main/java/com/worksoc/goaicoach/MainActivity.kt")
-    private val variants = source("src/main/java/com/worksoc/goaicoach/ui/SplashVariants.kt")
-    private val picker = source("src/main/java/com/worksoc/goaicoach/ui/SplashCandidateRow.kt")
+    private val variants = source(RepoPaths.uiFile("SplashVariants.kt").path)
+    private val picker = source(RepoPaths.uiFile("SplashCandidateRow.kt").path)
 
     /**
      * ⚠️ 캐릭터 그림을 더하면서 [AllBotAvatarRes]를 빠뜨리면 **스플래시만 조용히 옛 5장을 계속
@@ -141,7 +142,7 @@ class AppSplashContractTest {
                 "굳어 출석 팝업이 영영 안 뜬다(#148).",
             splash.contains("DisposableEffect(Unit)") && splash.contains("onDispose { isShowing = false }"),
         )
-        val shell = source("src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
+        val shell = source(RepoPaths.uiFile("GoCoachApp.kt").path)
         assertTrue(
             "셸이 스플래시가 떠 있는 동안 출석 팝업을 미루지 않는다 — 팝업이 스플래시와 겹쳐 뜬다(#148).",
             shell.contains("!SplashVisibility.isShowing"),

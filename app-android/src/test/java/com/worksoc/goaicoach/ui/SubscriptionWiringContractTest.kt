@@ -22,9 +22,9 @@ class SubscriptionWiringContractTest {
             .lines()
             .joinToString("\n") { it.substringBefore("//") }
 
-    private val app = source("src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
+    private val app = source(RepoPaths.uiFile("GoCoachApp.kt").path)
     private val glue = source(RepoPaths.compositionFile("PremiumPurchaseGlue.kt").path)
-    private val premium = source("src/main/java/com/worksoc/goaicoach/ui/PremiumUiState.kt")
+    private val premium = source(RepoPaths.uiFile("PremiumUiState.kt").path)
 
     /** 복원 조회가 현재 상태를 모르면 강등이 **통째로 죽는다**. */
     @Test

@@ -29,7 +29,7 @@ class PlayEffectContractTest {
             .filterNot { it.trimStart().startsWith("import ") }
             .joinToString("\n") { it.substringBefore("//") }
 
-    private val board = code("src/main/java/com/worksoc/goaicoach/ui/GoBoard.kt")
+    private val board = code(RepoPaths.uiFile("GoBoard.kt").path)
 
     @Test
     fun onlyAFreshMoveGetsTheEffect() {
@@ -110,7 +110,7 @@ class PlayEffectContractTest {
             "자동저장 조립부가 착수 이펙트를 넘기지 않는다(함정 2번).",
             autosave.contains("isPlayEffectEnabled = request.isPlayEffectEnabled"),
         )
-        val shell = code("src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt")
+        val shell = code(RepoPaths.uiFile("GoCoachApp.kt").path)
         assertTrue(
             "셸이 자동저장 요청에 착수 이펙트를 싣지 않는다(함정 2번).",
             shell.contains("isPlayEffectEnabled = uxOptions.isPlayEffectEnabled"),
@@ -134,7 +134,7 @@ class PlayEffectContractTest {
             "저장소가 착수 이펙트의 폴백을 인메모리 기본값에서 읽지 않는다 — 키가 없던 기존 사용자에게 꺼진 채로 남는다(#145).",
             store.contains("""json.optBoolean("isPlayEffectEnabled", defaults.isPlayEffectEnabled)"""),
         )
-        val menu = code("src/main/java/com/worksoc/goaicoach/ui/KaTrainUxPanels.kt")
+        val menu = code(RepoPaths.uiFile("KaTrainUxPanels.kt").path)
         assertTrue(
             "메뉴에 착수 이펙트 스위치가 없다 — 기본이 켜짐인데 끌 방법이 없다(#145).",
             menu.contains("options.isPlayEffectEnabled") && menu.contains("strings.playEffect"),

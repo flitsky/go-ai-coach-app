@@ -81,8 +81,11 @@ internal object RepoPaths {
      */
     val sharedCommonMainKotlin: File get() = root.resolve("$SHARED_COMMON_SOURCE_SET/kotlin")
 
-    /** `ui/GoCoachApp.kt`. 이 파일이 옮겨지면 **여기 한 줄**만 고치면 된다. */
-    val goCoachApp: File get() = appAndroid("ui/GoCoachApp.kt")
+    /**
+     * 셸 조립 파일 `GoCoachApp.kt` — `ui/` 아래 어느 하위 패키지에 있든 [uiFile]이 이름으로 찾는다.
+     * 이름이 바뀌면 **여기 한 줄**만 고치면 된다.
+     */
+    val goCoachApp: File get() = uiFile("GoCoachApp.kt")
 
     /** 셸 상태 원장(#46). ⚠️ 옮기면 app-android/build.gradle.kts의 architectureBudgets 입력도 옮길 것(#103). */
     val architectureBudgets: File get() = root.resolve("app-android/architecture-budgets.json")
@@ -99,8 +102,51 @@ internal object RepoPaths {
     /** :engine-android의 `com.worksoc.goaicoach.engine.android` 패키지 루트(또는 그 아래 경로). */
     fun engineAndroid(relativePath: String = ""): File = resolveUnder(ENGINE_ANDROID, relativePath)
 
-    /** `ui/` 바로 아래의 파일 하나. */
-    fun uiFile(fileName: String): File = appAndroid("ui/$fileName")
+    /**
+     * `ui` 패키지 트리의 루트 디렉터리 — 하위 패키지(`ui.l10n`·`ui.shell`·`ui.vision` …)의 디렉터리가
+     * 전부 이 아래에 있다(refactor backlog #27). 디렉터리를 직접 훑는 계약은 이 값과 [uiSourceFiles]를 쓴다.
+     */
+    val uiRoot: File get() = appAndroid("ui")
+
+    /**
+     * [uiRoot] 아래 `.kt` **전부** — 하위 패키지까지 재귀로 훑는다(경로순).
+     *
+     * ⚠️ `listFiles()`(한 층만)로 훑으면 파일이 하위 패키지로 옮겨지는 순간 **조용히 빈 목록**이 되고,
+     * 그 목록을 도는 계약은 아무것도 안 보며 초록이 된다(위 KDoc의 260816 사고와 같은 모양). 그래서
+     * 재귀로 훑고, 하나도 못 찾으면 그 자리에서 터뜨린다.
+     */
+    fun uiSourceFiles(): List<File> {
+        val files = uiRoot.walkTopDown()
+            .filter { it.isFile && it.extension == "kt" }
+            .sortedBy { it.path }
+            .toList()
+        check(files.isNotEmpty()) {
+            "ui 소스를 하나도 못 찾았다: ${uiRoot.absolutePath}. 옮겨졌다면 RepoPaths.kt를 갱신하라."
+        }
+        return files
+    }
+
+    /**
+     * `ui` 트리 안의 파일 하나를 **파일 이름으로** 찾는다 — 어느 하위 패키지에 있든 상관없다
+     * (refactor backlog #27). 파일이 `ui/` 아래에서 하위 패키지로 옮겨져도 호출부는 그대로다.
+     *
+     *  - 이름에 경로(`/`)를 넣지 않는다 — 넣으면 디렉터리 배치에 다시 묶인다.
+     *  - 같은 이름이 둘 이상이면 **어느 쪽인지 모르므로** 그 자리에서 터뜨린다(조용히 한쪽을 고르면
+     *    계약이 엉뚱한 파일을 본다).
+     *  - 없으면 실재하지 않는 `ui/<이름>`을 돌려준다 — [readContractSource]가 "소스가 없다"로 말하고,
+     *    `.exists()`로 부재를 단언하는 계약도 그대로 동작한다.
+     */
+    fun uiFile(fileName: String): File {
+        require('/' !in fileName && '\\' !in fileName) {
+            "uiFile은 파일 이름만 받는다(경로 없이): $fileName"
+        }
+        val matches = uiSourceFiles().filter { it.name == fileName }
+        check(matches.size <= 1) {
+            "ui 트리에 `$fileName`이 ${matches.size}개다 — 이름으로는 어느 파일인지 모른다: " +
+                matches.joinToString { it.relativeTo(uiRoot).path }
+        }
+        return matches.singleOrNull() ?: uiRoot.resolve(fileName)
+    }
 
     /**
      * `platform/` 바로 아래의 파일 하나 — 4계층 SDK 어댑터가 사는 곳(refactor backlog #25에서

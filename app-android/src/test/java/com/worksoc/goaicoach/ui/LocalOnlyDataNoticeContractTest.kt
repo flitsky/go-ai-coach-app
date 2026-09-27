@@ -43,7 +43,9 @@ class LocalOnlyDataNoticeContractTest {
      */
     private val repoRoot = RepoPaths.root
 
-    private fun source(path: String): String = File(repoRoot, path).readContractSource()
+    private fun source(path: String): String = source(File(repoRoot, path))
+
+    private fun source(file: File): String = file.readContractSource()
 
     /**
      * ⚠️ **제외 규칙이 둘 다 있어야 한다 — `minSdk = 26`이다.**
@@ -134,7 +136,7 @@ class LocalOnlyDataNoticeContractTest {
      */
     @Test
     fun allThreePiecesOfTheNoticeAreRenderedTogether() {
-        val myPage = source("app-android/src/main/java/com/worksoc/goaicoach/ui/MyPageScreen.kt")
+        val myPage = source(RepoPaths.uiFile("MyPageScreen.kt"))
         listOf(
             "localOnlyDataNoticeTitle",
             "localOnlyDataNoticeBody",
@@ -170,7 +172,7 @@ class LocalOnlyDataNoticeContractTest {
             glue.contains("BillingClient.ProductType.SUBS"),
         )
 
-        val myPage = source("app-android/src/main/java/com/worksoc/goaicoach/ui/MyPageScreen.kt")
+        val myPage = source(RepoPaths.uiFile("MyPageScreen.kt"))
             .lines()
             .joinToString("\n") { it.substringBefore("//") }
         assertTrue(

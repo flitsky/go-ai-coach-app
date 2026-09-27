@@ -3,6 +3,7 @@ package com.worksoc.goaicoach.ui
 import com.worksoc.goaicoach.application.preferences.AppFontScales
 import com.worksoc.goaicoach.application.preferences.DefaultAppFontScale
 import com.worksoc.goaicoach.application.preferences.sanitizeAppFontScale
+import com.worksoc.goaicoach.architecture.RepoPaths
 import com.worksoc.goaicoach.architecture.readContractSource
 import java.io.File
 import org.junit.Assert.assertEquals
@@ -75,8 +76,8 @@ class FontScaleSettingChoiceTest {
      */
     @Test
     fun theSettingIsReachableWithoutDeveloperMode() {
-        val settings = codeOnly("src/main/java/com/worksoc/goaicoach/ui/SettingsScreen.kt")
-        val developer = codeOnly("src/main/java/com/worksoc/goaicoach/ui/DeveloperTestSection.kt")
+        val settings = codeOnly(RepoPaths.uiFile("SettingsScreen.kt").path)
+        val developer = codeOnly(RepoPaths.uiFile("DeveloperTestSection.kt").path)
 
         val call = settings.indexOf("FontScaleSettingsPanel()")
         val developerGate = settings.indexOf("if (isDeveloperModeEnabled) {")
