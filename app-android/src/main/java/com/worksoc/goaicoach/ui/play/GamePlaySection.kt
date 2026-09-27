@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.ui
+package com.worksoc.goaicoach.ui.play
 
 import android.widget.Toast
 import androidx.compose.animation.core.Animatable

@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.ui
+package com.worksoc.goaicoach.ui.play
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween

@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.ui
+package com.worksoc.goaicoach.ui.play
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement

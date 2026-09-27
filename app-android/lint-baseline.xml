@@ -73,7 +73,7 @@
         errorLine1="    return String.format(&quot;%02d:%02d&quot;, minutes, remainingSeconds)"
         errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/worksoc/goaicoach/ui/GameStatusPanel.kt"
+            file="src/main/java/com/worksoc/goaicoach/ui/play/GameStatusPanel.kt"
             line="365"
             column="12"/>
     </issue>
@@ -194,7 +194,7 @@
         errorLine1="    val targetHeight = if (isExpanded) (configuration.screenWidthDp.dp / 4) else 44.dp"
         errorLine2="                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/worksoc/goaicoach/ui/ScoreGraphPanel.kt"
+            file="src/main/java/com/worksoc/goaicoach/ui/play/ScoreGraphPanel.kt"
             line="142"
             column="41"/>
     </issue>
@@ -333,7 +333,7 @@
         errorLine1="    var now by remember { mutableStateOf(System.currentTimeMillis()) }"
         errorLine2="                          ~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/worksoc/goaicoach/ui/GamePlaySection.kt"
+            file="src/main/java/com/worksoc/goaicoach/ui/play/GamePlaySection.kt"
             line="121"
             column="27"/>
     </issue>

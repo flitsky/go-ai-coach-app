@@ -10,6 +10,9 @@ import com.worksoc.goaicoach.shared.enginecontract.EngineStatus
 import com.worksoc.goaicoach.shared.enginecontract.FinalScoreResult
 import com.worksoc.goaicoach.shared.scoring.BoardScorer
 import com.worksoc.goaicoach.ui.l10n.UiStringsKorean
+import com.worksoc.goaicoach.ui.play.blackLine
+import com.worksoc.goaicoach.ui.play.resultText
+import com.worksoc.goaicoach.ui.play.whiteLine
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test

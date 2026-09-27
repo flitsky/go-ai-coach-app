@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.ui
+package com.worksoc.goaicoach.ui.play
 
 fun formatBuildTime(rawBuildTime: String): String {
     return try {

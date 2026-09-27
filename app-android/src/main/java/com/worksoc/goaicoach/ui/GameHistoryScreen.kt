@@ -57,6 +57,8 @@ import com.worksoc.goaicoach.ui.l10n.gameHistoryNotePlaceholderFor
 import com.worksoc.goaicoach.ui.l10n.gameHistoryReferenceLabelFor
 import com.worksoc.goaicoach.ui.l10n.gameReplayBranchOverwriteMessageFor
 import com.worksoc.goaicoach.ui.l10n.gameReplayRowBadgeFor
+import com.worksoc.goaicoach.ui.play.FinishedGameFlow
+import com.worksoc.goaicoach.ui.play.note
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale

@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.ui
+package com.worksoc.goaicoach.ui.play
 
 import com.worksoc.goaicoach.application.score.FinalScoreJudgement
 import com.worksoc.goaicoach.shared.domain.Ruleset

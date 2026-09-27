@@ -60,6 +60,7 @@ import com.worksoc.goaicoach.ui.foundation.FeatureFlags
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
 import com.worksoc.goaicoach.ui.monetization.AdPrivacyOptionsRow
+import com.worksoc.goaicoach.ui.play.LanguageSettingsPanel
 import com.worksoc.goaicoach.ui.setup.CompactScoringAndBoardSettingsPanel
 import com.worksoc.goaicoach.ui.setup.KaTrainUxMenuPanel
 import com.worksoc.goaicoach.ui.setup.PlayerSetupPanel

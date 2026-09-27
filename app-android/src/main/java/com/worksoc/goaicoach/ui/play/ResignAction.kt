@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.ui
+package com.worksoc.goaicoach.ui.play
 
 import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.domain.StoneColor
