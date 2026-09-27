@@ -27,15 +27,12 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.isActive
-import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
 import org.json.JSONObject
@@ -51,6 +48,8 @@ import org.json.JSONObject
  * - 왕복 하나가 제 마감을 넘기면 **그 호출의** 프로세스를 SIGKILL로 내린다 — 진짜로 막힌 읽기도 마감에 풀린다.
  *   예전 `withTimeout { runInterruptible { readLine() } }`는 늦게라도 오는 답만 끊었다(파이프 읽기는 인터럽트를
  *   무시한다). 호출자가 취소된 것(무르기·나가기)은 프로세스를 내릴 이유가 아니다 — [roundTrip].
+ * - 취소된 호출자는 답을 기다리지 않고 곧바로 돌아간다 — 답은 뒤에 남은 배수가 받아 스트림을 맞추고, 그동안 그
+ *   프로세스의 왕복 락을 쥔다(refactor backlog #15, [roundTrip]). 그래야 호출자가 쥔 오퍼레이션 락이 곧바로 풀린다.
  * - 재시작 뒤의 재동기화는 지금처럼 호출자 몫이다. 이 어댑터는 새 프로세스에 명령을 스스로 더 보내지 않는다.
  *   여러 호출로 된 오퍼레이션(동기화 + 분석)을 한 프로세스에 묶는 것은 이 층이 아니라 #15다.
  *
@@ -309,13 +308,21 @@ internal class KataGoProcessEngineAdapter(
      * | 답이 온다 | 그 값 |
      * | 마감까지 답이 없다(늦은 답·진짜로 멈춤) | 이 핸들을 SIGKILL로 내리고 마감에 [TimeoutCancellationException] — 막힌 읽기를 기다리지 않는다 |
      * | 그사이 프로세스가 끝났다(forceReset·크래시) | EOF → `IllegalStateException`(예전 문구 그대로), 이 핸들은 `Died` |
-     * | 호출자가 취소됐다(무르기·나가기) | 예전처럼 답은 끝까지 받아 스트림을 맞춘 뒤 취소를 올린다 — 단 마감까지만, 넘으면 내린다 |
+     * | 호출자가 취소됐다(무르기·나가기) | **곧바로** 취소를 올린다. 답은 뒤에 남은 배수([drainThenUnlock])가 끝까지 받아 스트림을 맞춘다 — 단 마감까지만, 넘으면 내린다 |
      * | 이 핸들이 이미 내려갔다 | 보내지 않고 곧바로 `IllegalStateException` |
      * | 호출자가 이미 취소돼 있다 | 보내지 않고 취소(예전 `withContext` 입구와 같다) |
      *
      * ⚠️ 시간 초과가 내리는 것은 **이 호출이 잡은 핸들**뿐이다(ABA 방지 — [EngineProcessSlot.retire]). "지금 프로세스"를
      * 내리면, 이 호출이 멈춰 있던 사이 forceReset 뒤에 뜬 새 세대를 죽인다(예전 코드가 그랬다).
      * ⚠️ 호출자 취소로 프로세스를 내리지 말 것 — 무르기를 연타하면 KataGo가 그때마다 다시 뜬다.
+     *
+     * ## 취소된 호출자는 답을 기다리지 않는다(refactor backlog #15)
+     * 예전에는 취소된 호출자가 `NonCancellable` 안에서 답(길면 탐색 하나 전부)을 기다렸다. 호출자는 3계층의 오퍼레이션
+     * 락을 쥔 채이므로, 그렇게 기다리면 무르기 뒤의 재동기화가 **다른 프로세스(GTP)로 갈 일인데도** 그 탐색이 끝날
+     * 때까지 막힌다(JSON 분석 중 무르기). 그래서 답 받기를 [pipeIo]의 배수에 넘기고, 이 핸들의 왕복 락도 그 배수가
+     * 쥐었다가 푼다. 같은 프로세스로 가는 다음 명령은 지금처럼 이 락에 줄 서서 배수가 끝난 뒤에 나간다 — 늦은 답을
+     * 제 답으로 읽지 않는다. forceReset(EOF)도 지금처럼 배수를 끝낸다.
+     * ⚠️ 왕복 락을 `withLock`으로 되돌리지 말 것 — 락을 넘길 수 없어 호출자가 다시 답을 기다리게 된다.
      */
     private suspend fun <T> roundTrip(
         slot: EngineProcessSlot,
@@ -323,8 +330,12 @@ internal class KataGoProcessEngineAdapter(
         label: String,
         timeoutMillis: Long,
         exchange: (BufferedWriter, BufferedReader) -> T,
-    ): T =
-        handle.roundTripMutex.withLock {
+    ): T {
+        // 락은 try 밖에서 잡는다 — 기다리다 취소되면 잡지 않은 채 여기서 끝난다(풀 것이 없다).
+        handle.roundTripMutex.lock()
+        // 이 락을 푸는 쪽은 둘 중 하나다: 여기(평소), 또는 호출자가 취소됐을 때 답을 마저 받는 배수.
+        var unlockHere = true
+        try {
             currentCoroutineContext().ensureActive()
             if (!handle.isUsable) {
                 slot.retire(handle, EngineProcessRetireReason.Died)
@@ -334,18 +345,22 @@ internal class KataGoProcessEngineAdapter(
             val startedAtNanos = System.nanoTime()
             val work = pipeIo.async { exchangeOrRetire(slot, handle, exchange) }
             try {
-                withTimeout(budgetMillis) { work.await() }
+                return withTimeout(budgetMillis) { work.await() }
             } catch (cancellation: CancellationException) {
                 if (cancellation is TimeoutCancellationException && currentCoroutineContext().isActive) {
                     // 이 호출의 마감이다 — 막힌 읽기는 프로세스를 내려야만 풀린다. 그 읽기를 기다리지 않는다.
                     slot.retire(handle, EngineProcessRetireReason.Timeout)
-                } else {
+                } else if (!work.isCompleted) {
                     val elapsedMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAtNanos)
-                    awaitReplyOrRetire(slot, handle, work, remainingMillis = budgetMillis - elapsedMillis)
+                    unlockHere = false
+                    drainThenUnlock(slot, handle, work, remainingMillis = budgetMillis - elapsedMillis)
                 }
                 throw cancellation
             }
+        } finally {
+            if (unlockHere) handle.roundTripMutex.unlock()
         }
+    }
 
     private fun <T> exchangeOrRetire(
         slot: EngineProcessSlot,
@@ -363,21 +378,28 @@ internal class KataGoProcessEngineAdapter(
         }
 
     /**
-     * 호출자가 취소됐다(무르기·나가기). 예전처럼 답은 끝까지 받아 스트림을 맞춘다 — 다음 명령이 이 답을 제 답으로
-     * 읽지 않게. 단 원래 마감까지만: 그때까지 안 오면 진짜로 멈춘 것이니 프로세스를 내려 읽기를 푼다(설계 R8).
-     * 되돌릴 수 없는 정리라 취소와 상관없이 끝까지 한다.
+     * 호출자가 취소됐다(무르기·나가기). 답은 끝까지 받아 스트림을 맞춘다 — 다음 명령이 이 답을 제 답으로 읽지 않게.
+     * 단 원래 마감까지만: 그때까지 안 오면 진짜로 멈춘 것이니 프로세스를 내려 읽기를 푼다(설계 R8). 그다음에
+     * [handle]의 왕복 락을 푼다 — [roundTrip]이 넘겨준 락이다.
+     *
+     * 호출자와 떼어 [pipeIo]에서 돈다(refactor backlog #15) — 호출자는 곧바로 돌아가 오퍼레이션 락을 놓는다. 되돌릴 수
+     * 없는 정리라 호출자의 취소와 상관없이 끝까지 한다(예전의 `NonCancellable`과 같은 뜻). `async`인 이유는 [pipeIo]와
+     * 같다 — 여기서 무엇이 던져져도 앱을 죽이지 않는다. 락은 무슨 일이 있어도 `finally`에서 푼다.
      */
-    private suspend fun awaitReplyOrRetire(
+    private fun drainThenUnlock(
         slot: EngineProcessSlot,
         handle: EngineProcessHandle,
         work: Deferred<*>,
         remainingMillis: Long,
     ) {
-        val replied = work.isCompleted ||
-            withContext(NonCancellable) {
-                withTimeoutOrNull(remainingMillis.coerceAtLeast(1)) { work.join() } != null
+        pipeIo.async {
+            try {
+                val replied = withTimeoutOrNull(remainingMillis.coerceAtLeast(1)) { work.join() } != null
+                if (!replied) slot.retire(handle, EngineProcessRetireReason.Timeout)
+            } finally {
+                handle.roundTripMutex.unlock()
             }
-        if (!replied) slot.retire(handle, EngineProcessRetireReason.Timeout)
+        }
     }
 
     private fun exchangeGtpCommand(

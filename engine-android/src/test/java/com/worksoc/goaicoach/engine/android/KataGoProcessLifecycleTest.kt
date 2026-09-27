@@ -249,8 +249,9 @@ class KataGoProcessLifecycleTest {
     }
 
     /**
-     * 취소된 호출자가 **진짜로 멈춘** 읽기 위에 있으면 — 답을 기다리는 것도 마감까지다. 마감에 그 프로세스를
-     * 내리고 취소로 끝난다(`#74`가 AI 차례를 실제로 취소하게 되면서 생기는 자리 — 설계 R8).
+     * 취소된 호출자가 **진짜로 멈춘** 읽기 위에 있으면 — 호출자는 곧바로 취소로 돌아가고(refactor backlog #15), 뒤에
+     * 남은 배수가 답을 기다리는 것도 마감까지다. 마감에 그 프로세스를 내린다(`#74`가 AI 차례를 실제로 취소하게 되면서
+     * 생기는 자리 — 설계 R8). #15 전에는 호출자가 그 마감까지 붙잡혀 있다가 돌아왔다.
      */
     @Test
     fun aCancelledCallerOnAHungReadIsReleasedAtTheDeadlineByEndingThatProcess() {
@@ -265,11 +266,11 @@ class KataGoProcessLifecycleTest {
         assertTrue(runtime.gtp(1).awaitReceived("genmove B"))
         Thread.sleep(50)
         cancelled.cancel()
-        val outcome = cancelled.outcomeWithin(2_000, "the cancelled genMove on a hung KataGo")
+        val outcome = cancelled.outcomeWithin(150, "the cancelled genMove on a hung KataGo (well before its deadline)")
 
         val failure = outcome.exceptionOrNull()
         assertTrue("cancelled, not timed out: $failure", failure is CancellationException && failure !is TimeoutCancellationException)
-        assertEquals("the hung process is killed at the deadline", listOf("KILL"), runtime.gtp(1).signals)
+        assertTrue("the hung process is killed at the deadline", pollUntil(2_000) { runtime.gtp(1).signals == listOf("KILL") })
         runBlocking { adapter.configure(EngineProfile()) }
         assertEquals("GTP processes started", 2, runtime.processes(Kind.Gtp).size)
     }
