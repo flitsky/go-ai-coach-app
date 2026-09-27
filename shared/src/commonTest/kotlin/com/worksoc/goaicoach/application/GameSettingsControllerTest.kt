@@ -12,6 +12,7 @@ import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.DefaultKomi
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.HandicapKomi
+import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import com.worksoc.goaicoach.shared.policy.SearchTimeLimit
@@ -479,6 +480,32 @@ class GameSettingsControllerTest {
         liveWiredController(live).changeHandicapCount(4)
 
         assertEquals(DefaultKomi, live.displayedKomi, "저장된 접바둑의 점수만 바꿨는데 덤이 바뀌었다")
+    }
+
+    /**
+     * **이어한 판의 덤이 설정으로 저장되지 않는다**(refactor backlog #94). 이어하기·분기 대국은 설정을 두고
+     * 지금 판만 그 판으로 갈아 끼운다. 자동저장이 지금 판의 덤을 적으면, 그 판을 두다 앱이 죽었을 때 설정의
+     * 3점과 **그 판의** 6.5가 함께 저장돼 다음 실행의 설정이 *"3점 + 6.5"* 가 된다 — 그리고 위의 "이관 없음"이
+     * 그것을 사용자가 고른 값으로 존중해 버린다.
+     */
+    @Test
+    fun aResumedGamesKomiIsNotSavedIntoTheSettings() {
+        val store = InMemoryPreferencesStore()
+        store.save(UserPreferencesSnapshot(boardSize = BoardSize.Nineteen, handicapCount = 3, komi = HandicapKomi))
+        val live = LiveSettingsWiring(restartFrom(store.load()))
+        // 이어하기가 하는 일 — 설정은 그대로 두고 지금 판만 9줄 호선 덤 6.5로 갈아 끼운다.
+        live.core = live.core.copy(
+            gameState = GameState.withHandicap(BoardSize.Nine, Ruleset.Japanese, handicapCount = 0, komi = DefaultKomi),
+            isGameEnded = false,
+        )
+
+        autosaveLikeTheApp(live, store)
+
+        val restarted = LiveSettingsWiring(restartFrom(store.load()))
+        assertEquals(BoardSize.Nineteen, restarted.settings.boardSize)
+        assertEquals(3, restarted.settings.handicapCount)
+        assertEquals(HandicapKomi, restarted.settings.komi, "이어한 판의 덤 6.5가 설정으로 저장됐다 — 재시작 뒤 설정이 '3점 + 6.5'다(#94)")
+        assertEquals(HandicapKomi, restarted.displayedKomi, "재시작 뒤 로비·설정 화면에 이어한 판의 덤이 보인다(#94)")
     }
 
     /**

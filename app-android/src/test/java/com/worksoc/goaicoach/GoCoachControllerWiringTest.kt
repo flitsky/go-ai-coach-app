@@ -550,6 +550,30 @@ class GoCoachControllerWiringTest {
     }
 
     /**
+     * 새 대국 — `settingsState()`(덤, refactor backlog #94). 설정의 덤으로 한 번 시작하고, **설정만** 0.5로 바꿔
+     * 다시 시작한다. 지금 판(`gameState`)의 덤은 첫 대국의 6.5 그대로다 — 새 대국이 덤을 지금 판에서 읽으면
+     * 두 번째도 6.5로 시작한다(이어한 판의 덤이 다음 대국에 새던 #94의 모양).
+     */
+    @Test
+    fun newGameSeesKomiChangedAfterWiring() {
+        val context = FakeGoCoachAppWiringContext(inGameSession(playerSetup = TwoHumans))
+        val controllers = wireGoCoachControllers(context)
+
+        controllers.newGameController.startConfiguredGame()
+        assertEquals("첫 대국은 설정의 덤으로 시작한다(첫 호출).", 6.5, context.coreWrites.single().gameState.komi, 0.0)
+
+        context.changeSettings { it.applyKomi(0.5) }
+        controllers.newGameController.startConfiguredGame()
+
+        assertEquals(
+            "배선 뒤 바꾼 설정의 덤을 새 대국이 못 봤다 — 지금 판의 덤(6.5)으로 또 시작했다(#94).",
+            0.5,
+            context.coreWrites.last().gameState.komi,
+            0.0,
+        )
+    }
+
+    /**
      * 이어하기 — `isEngineBusy()`와 복원 람다 안의 `settingsState()`. 이 컨트롤러는 playerSetup을
      * **읽지 않는다**(복원할 설정은 저장본이 가져온다). 바쁠 때 한 번 거절되고, 풀린 뒤에는 그 순간의
      * 설정 위에 저장본을 덮는다 — 13줄 설정에서 한 번(설정의 첫 읽기), 19줄로 바꾼 뒤 한 번. 복원은 매번
@@ -1200,6 +1224,7 @@ class GoCoachControllerWiringTest {
                 "newGameSeesPlayerSetupAndBoardSizeChangedAfterWiring",
                 "newGameSeesSearchTimeChangedAfterWiringAndHandsItsFollowUpToTopMoves",
                 "newGameSeesEngineReadyRaisedAfterWiring",
+                "newGameSeesKomiChangedAfterWiring",
             ),
             "savedSessionController" to listOf(
                 "savedSessionSeesEngineBusyAndSettingsChangedAfterWiring",
