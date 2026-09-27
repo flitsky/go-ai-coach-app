@@ -30,6 +30,7 @@ internal fun wireNewGameController(
         currentSearchTimeSettings = { context.sessionSnapshot().settings.searchTimeSettings },
         currentBoardSize = { context.settingsState().boardSize },
         currentHandicapCount = { context.settingsState().handicapCount },
+        currentKomi = { context.settingsState().komi },
         currentSessionGeneration = { context.runtimeState().sessionGeneration },
         currentScoreState = { context.scoreState() },
         currentRuntimeLogContext = context::currentRuntimeLogContext,

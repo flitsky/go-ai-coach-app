@@ -30,6 +30,7 @@ class NewGameController(
     private val currentSearchTimeSettings: () -> SearchTimeSettings,
     private val currentBoardSize: () -> BoardSize,
     private val currentHandicapCount: () -> Int,
+    private val currentKomi: () -> Double,
     private val currentSessionGeneration: () -> Long,
     private val currentScoreState: () -> GameSessionScoreState,
     private val currentRuntimeLogContext: () -> RuntimeLogContext,
@@ -83,12 +84,15 @@ class NewGameController(
         // 있으면, 그게 늦게 끝나는 동안 새 대국의 isEngineBusy가 계속 true로 잡혀 AI 턴 예약이
         // 조용히 취소되는 경쟁 상태가 생긴다 — 새 대국을 실제로 시작하기 전에 먼저 비운다.
         cancelStaleOperations()
-        val gameState = currentGameState()
+        // 판 크기·접바둑·덤은 **설정 한 곳**에서 읽는다(refactor backlog #94). 지금 판(`gameState`)은
+        // 이어하기·기록 분기·앱 시작 때 되살린 끝난 판이면 로비를 거치지 않은 판이라, 거기서 덤을 읽으면
+        // 「재 대국」·로비 시작이 *"설정의 3점 + 앞 판의 6.5"* 로 시작한다.
+        // ⚠️ 계가 규칙만 아직 지금 판에서 읽는다 — 설정 상태에 그 칸이 없다(#22).
         val targetState = GameState.withHandicap(
             boardSize = currentBoardSize(),
-            ruleset = gameState.ruleset,
+            ruleset = currentGameState().ruleset,
             handicapCount = currentHandicapCount(),
-            komi = gameState.komi,
+            komi = currentKomi(),
         )
         when (
             val plan = buildStartConfiguredGamePlan(

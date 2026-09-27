@@ -192,10 +192,12 @@ internal fun ExpandedGameMenuSection(
             onPlayerSetupChange = { setup -> onEvent(GameUiEvent.ChangePlayerSetup(setup)) },
         )
 
+        // ⚠️ 네 칸 모두 **지금 판**(`gameState`)에서 읽는다(#94) — 접바둑만 설정에서 읽으면 이어한 판의 메뉴에
+        // 설정의 접바둑이 섞여 보인다(설정 3점 + 이어한 호선 판 → "3점").
         CompactScoringAndBoardSettingsPanel(
             ruleset = screenState.gameState.ruleset,
             boardSize = screenState.gameState.boardSize,
-            handicapCount = screenState.handicapCount,
+            handicapCount = screenState.gameState.handicapCount,
             komi = screenState.gameState.komi,
             onRulesetChange = { ruleset -> onEvent(GameUiEvent.ChangeScoringRule(ruleset)) },
             onBoardSizeChange = { size -> onEvent(GameUiEvent.ChangeBoardSize(size)) },

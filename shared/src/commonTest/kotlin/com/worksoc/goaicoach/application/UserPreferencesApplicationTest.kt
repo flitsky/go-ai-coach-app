@@ -174,6 +174,7 @@ class UserPreferencesApplicationTest {
             topMovesEnabled = true,
             boardSize = BoardSize.Nine,
             handicapCount = 3,
+            komi = 0.5,
         )
         val store = RecordingUserPreferencesStore()
 
@@ -181,7 +182,6 @@ class UserPreferencesApplicationTest {
             request = UserPreferencesAutosaveRequest(
                 settingsState = settingsState,
                 ruleset = Ruleset.Japanese,
-                komi = 6.5,
                 showCoordinates = true,
                 showMoveNumbers = false,
                 showLastMoveRing = true,
@@ -195,7 +195,8 @@ class UserPreferencesApplicationTest {
         assertEquals(setup, saved.playerSetup)
         assertEquals(Ruleset.Japanese, saved.ruleset)
         assertEquals(3, saved.handicapCount)
-        assertEquals(6.5, saved.komi, 0.0001)
+        // 덤은 설정 상태에서 온다 — 요청에 따로 싣는 칸이 없다(refactor backlog #94).
+        assertEquals(0.5, saved.komi, 0.0001)
         assertTrue(saved.topMovesEnabled)
         assertEquals(AutoPlayDelaySetting.Short.millis, saved.autoPlayDelayMillis)
         assertEquals(SearchTimeSettings(SearchTimeLimit.WithinOneSecond), saved.searchTimeSettings)
@@ -231,9 +232,9 @@ class UserPreferencesApplicationTest {
                     topMovesEnabled = true,
                     boardSize = BoardSize.Nine,
                     handicapCount = 0,
+                    komi = 7.5,
                 ),
                 ruleset = Ruleset.Chinese,
-                komi = 7.5,
                 // 아래는 전부 UserPreferencesSnapshot 기본값의 **반대**다.
                 // ⚠️ showOwnershipOverlay는 2026-09-20에 기본값이 true→false로 바뀌었다 —
                 // 반대값도 함께 뒤집는다(안 그러면 "저장값 == 기본값"이 우연히 참이 돼 이
@@ -306,7 +307,6 @@ class UserPreferencesApplicationTest {
                     handicapCount = 0,
                 ),
                 ruleset = Ruleset.Japanese,
-                komi = 6.5,
                 showCoordinates = false,
                 showMoveNumbers = false,
                 showLastMoveRing = true,

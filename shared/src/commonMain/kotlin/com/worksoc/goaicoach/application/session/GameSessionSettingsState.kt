@@ -6,6 +6,13 @@ import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
 
+/**
+ * **다음 대국**의 조건. 판 크기·접바둑·덤은 여기가 유일한 출처다(refactor backlog #94) — 로비·설정 화면이
+ * 그리고, 새 대국(`NewGameController.startConfiguredGame`)이 시작하고, 자동저장이 적는다.
+ * **지금 판**의 조건은 `GameState`에 있고, 이어하기·기록 분기·되살린 끝난 판이면 둘이 다르다
+ * ([applySavedGameRestore]는 이쪽의 판 조건을 건드리지 않는다).
+ * ⚠️ 계가 규칙은 아직 칸이 없어 `GameState.ruleset` 하나가 출처다(#22).
+ */
 data class GameSessionSettingsState(
     val boardSize: BoardSize,
     val playerSetup: PlayerSetup,
@@ -31,8 +38,8 @@ data class GameSessionSettingsState(
     /**
      * 접바둑을 바꾸면 **덤도 함께** 정한다 — 규칙은 [komiAfterHandicapChange]가 갖는다
      * (refactor backlog #93). 로비와 설정 화면이 모두 `GameSettingsController.changeHandicapCount`를
-     * 거쳐 여기에 닿으므로 이 한 곳이 두 화면을 함께 덮는다. 이어지는 `refreshNewGamePreview`가
-     * 이 덤으로 미리보기를 다시 그려 드롭다운에 곧바로 보이고, 자동저장은 그 미리보기의 덤을 적는다.
+     * 거쳐 여기에 닿으므로 이 한 곳이 두 화면을 함께 덮는다. 두 화면의 드롭다운·새 대국·자동저장이
+     * 모두 **이 덤**을 읽는다(refactor backlog #94) — 이어지는 `refreshNewGamePreview`는 미리보기 판만 다시 그린다.
      */
     fun applyHandicap(count: Int): GameSessionSettingsState {
         val nextCount = count.coerceIn(0, boardSize.maxHandicapCount)

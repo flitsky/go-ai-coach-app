@@ -401,8 +401,8 @@ class GameSettingsControllerTest {
 
     /**
      * **접바둑을 고르면 드롭다운의 덤이 곧바로 0.5가 된다**(refactor backlog #93, 2026-09-24 사용자 결정).
-     * 로비·설정 화면의 드롭다운은 `gameState.komi`(미리보기)를 그리므로, 설정 상태만 바뀌고 미리보기가
-     * 다시 그려지지 않으면 저장은 0.5인데 화면은 6.5로 남는다.
+     * 로비·설정 화면의 드롭다운은 설정 상태의 덤을 그린다(#94 — 그전에는 미리보기의 `gameState.komi`를 그려,
+     * 미리보기가 다시 그려지지 않으면 저장은 0.5인데 화면은 6.5로 남을 수 있었다). 미리보기 판도 같은 덤이다.
      */
     @Test
     fun choosingAHandicapShowsHandicapKomiImmediately() {
@@ -415,12 +415,14 @@ class GameSettingsControllerTest {
         assertEquals(3, live.settings.handicapCount)
         assertEquals(3, live.core.gameState.handicapCount, "미리보기 판에 접바둑 돌이 안 놓였다")
         assertEquals(HandicapKomi, live.displayedKomi, "접바둑을 골랐는데 드롭다운의 덤이 0.5가 아니다")
+        assertEquals(HandicapKomi, live.core.gameState.komi, "미리보기 판의 덤이 드롭다운과 다르다")
     }
 
     /**
      * **함정 2(자동저장 배선)** — 자동 전환한 0.5가 자동저장을 지나 재시작 뒤에도 남는가.
-     * 자동저장은 스냅샷을 처음부터 다시 만들고, 덤은 `GoCoachApp`이 미리보기의 `gameState.komi`로
-     * 넘긴다. 재시작 뒤 점수만 바꾸면(3→5) 0.5가 그대로여야 하고, 호선으로 돌아오면 6.5다.
+     * 자동저장은 스냅샷을 처음부터 다시 만들고, 덤은 설정 상태에 실려 간다(#94 — 그전에는 `GoCoachApp`이
+     * 지금 판의 `gameState.komi`를 따로 넘겼다). 재시작 뒤 점수만 바꾸면(3→5) 0.5가 그대로여야 하고,
+     * 호선으로 돌아오면 6.5다.
      */
     @Test
     fun handicapKomiSurvivesAutosaveAndRestart() {
@@ -618,16 +620,20 @@ private fun restartFrom(saved: UserPreferencesSnapshot): InitialUserPreferencesP
         currentProfile = EngineProfile(),
     )
 
-/** 화면이 읽는 두 상태 — 드롭다운의 덤은 `core.gameState.komi`, 접바둑은 `settings.handicapCount`다. */
+/**
+ * 설정 상태와 코어 상태(미리보기 판). 로비·설정 화면의 드롭다운은 판 크기·접바둑·덤을 **전부 설정 상태에서**
+ * 그린다(refactor backlog #94 — 그전에는 덤만 `core.gameState.komi`에서 그렸다).
+ */
 private class LiveSettingsWiring(plan: InitialUserPreferencesPlan) {
     var settings: GameSessionSettingsState = plan.toGameSessionSettingsState()
     var core: GameSessionCoreState = defaultTestCoreState().copy(gameState = plan.gameState, isGameEnded = true)
-    val displayedKomi: Double get() = core.gameState.komi
+    val displayedKomi: Double get() = settings.komi
 }
 
 /**
- * `GoCoachApp`의 자동저장 `LaunchedEffect`와 같은 요청 — 덤은 **미리보기의** `gameState.komi`,
- * 대국 설정은 설정 상태다. 표시 옵션은 이 테스트와 무관해 스냅샷 기본값을 넘긴다.
+ * `GoCoachApp`의 자동저장 `LaunchedEffect`와 같은 요청 — 대국 설정(덤 포함, #94)은 설정 상태, 계가 규칙만
+ * 지금 판이다. 요청에 덤 칸이 없어 앱과 이 도우미가 덤의 출처로 갈라질 수 없다. 표시 옵션은 이 테스트와
+ * 무관해 스냅샷 기본값을 넘긴다.
  */
 private fun autosaveLikeTheApp(live: LiveSettingsWiring, store: UserPreferencesStorePort) {
     val defaults = UserPreferencesSnapshot()
@@ -635,7 +641,6 @@ private fun autosaveLikeTheApp(live: LiveSettingsWiring, store: UserPreferencesS
         request = UserPreferencesAutosaveRequest(
             settingsState = live.settings,
             ruleset = live.core.gameState.ruleset,
-            komi = live.core.gameState.komi,
             showCoordinates = defaults.showCoordinates,
             showMoveNumbers = defaults.showMoveNumbers,
             showLastMoveRing = defaults.showLastMoveRing,

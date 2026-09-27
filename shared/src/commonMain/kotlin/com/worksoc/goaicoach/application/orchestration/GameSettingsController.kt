@@ -156,8 +156,8 @@ class GameSettingsController(
      *
      * 로비와 설정 화면의 접바둑 드롭다운이 **둘 다 여기를 지난다.** 덤도 함께 바뀔 수 있다 —
      * `GameSessionSettingsState.applyHandicap`이 `komiAfterHandicapChange`(refactor backlog #93:
-     * 호선 → 접바둑이면 덤 0.5)로 설정 상태의 덤을 정하고, 아래 [refreshNewGamePreview]가 그 덤으로
-     * 미리보기를 다시 그려 드롭다운에 곧바로 보인다.
+     * 호선 → 접바둑이면 덤 0.5)로 설정 상태의 덤을 정하고, 두 화면의 드롭다운은 그 설정 상태를 그대로 그린다
+     * (#94). 아래 [refreshNewGamePreview]는 같은 덤으로 미리보기 판을 다시 그린다.
      */
     fun changeHandicapCount(count: Int) {
         if (!isGameEnded()) return

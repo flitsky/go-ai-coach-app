@@ -44,6 +44,7 @@ import com.worksoc.goaicoach.application.guide.GuideSurface
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.presentation.GameUiEvent
+import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.ui.board.GoBoard
 import com.worksoc.goaicoach.ui.designsystem.PremiumCardShape
 import com.worksoc.goaicoach.ui.designsystem.PremiumGold
@@ -152,11 +153,15 @@ internal fun GameSetupLobby(
             // ⚠️ **레이아웃 선택지는 백로그 #73에서 없앴다** — `GameSetupUxMode`의 Simple 쪽은
             // 개발자 토글로만 닿을 수 있었고 기본값은 처음부터 Compact였다. 분기가 사라졌으니
             // 이 화면에서 저장소를 읽을 일도 없다(그 독립 경로가 함께 없어졌다).
+            // ⚠️ **판 크기·접바둑·덤은 설정 상태에서 읽는다 — `gameState`가 아니다**(refactor backlog #94).
+            // 끝난 판에서 「대국 설정」으로 오면 `gameState`는 **방금 끝난 판**이다. 이어하기·분기 대국이었다면
+            // 그 판의 크기·덤이 설정의 접바둑과 섞여 보였고, 시작하면 로비에 보인 것과 다른 판이 시작됐다.
+            // 계가 규칙만 `gameState`에서 읽는다 — 설정 상태에 칸이 없고, 새 대국도 거기서 읽는다(#22).
             CompactScoringAndBoardSettingsPanel(
                 ruleset = screenState.gameState.ruleset,
-                boardSize = screenState.gameState.boardSize,
+                boardSize = screenState.setupBoardSize,
                 handicapCount = screenState.handicapCount,
-                komi = screenState.gameState.komi,
+                komi = screenState.setupKomi,
                 onRulesetChange = { ruleset -> onEvent(GameUiEvent.ChangeScoringRule(ruleset)) },
                 onBoardSizeChange = { size -> onEvent(GameUiEvent.ChangeBoardSize(size)) },
                 onHandicapCountChange = { count -> onEvent(GameUiEvent.ChangeHandicapCount(count)) },
@@ -166,6 +171,17 @@ internal fun GameSetupLobby(
             // [3] 50% 비율 축소 실시간 바둑판 프리뷰
             // ⚠️ **라벨 텍스트를 의도적으로 없앴다** — 세로 공간을 확보하기 위해서다. 보드판이
             // 그려지는 것 자체로 미리보기임이 드러난다고 판단(2026-09-21 사용자 결정).
+            // ⚠️ 미리보기 판은 위 패널과 **같은 값으로 여기서 만든다**(#94) — `gameState`를 그대로 그리면 끝난 판에서
+            // 왔을 때 그 판의 수순이 보인다. 새 대국과 같은 빌더다(`buildNewLocalGameSessionPlan`).
+            val ruleset = screenState.gameState.ruleset
+            val previewState = remember(ruleset, screenState.setupBoardSize, screenState.handicapCount, screenState.setupKomi) {
+                GameState.withHandicap(
+                    boardSize = screenState.setupBoardSize,
+                    ruleset = ruleset,
+                    handicapCount = screenState.handicapCount,
+                    komi = screenState.setupKomi,
+                )
+            }
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -176,7 +192,7 @@ internal fun GameSetupLobby(
                     horizontalArrangement = Arrangement.Center
                 ) {
                     GoBoard(
-                        gameState = screenState.gameState,
+                        gameState = previewState,
                         candidateMoves = emptyList(), // 프리뷰이므로 탐색 추천수 미표시
                         moveReviews = emptyList(),
                         ownershipEstimate = null,

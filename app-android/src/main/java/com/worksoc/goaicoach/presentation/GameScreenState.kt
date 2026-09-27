@@ -15,6 +15,7 @@ import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.MatchSeatSnapshot
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.turnStatusText
+import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisPreset
@@ -47,7 +48,14 @@ internal data class GameScreenState(
     val isGameEnded: Boolean,
     val endgameLog: String,
     val finalScoreJudgement: FinalScoreJudgement?,
+    /**
+     * **다음 대국**의 접바둑·판 크기·덤 — 셋 다 설정 상태에서 온다(refactor backlog #94). 로비와 설정 화면이
+     * 그린다. **지금 판**의 값은 [gameState]에 있고, 이어하기·분기 대국이면 둘이 다르다 — 한 패널에서 둘을
+     * 섞어 읽으면 어느 판에도 없는 조합이 보인다(`MatchSetupSourceContractTest`).
+     */
     val handicapCount: Int = 0,
+    val setupBoardSize: BoardSize,
+    val setupKomi: Double,
 ) {
     val nextPlayer: StoneColor
         get() = gameState.nextPlayer
@@ -92,6 +100,8 @@ internal data class GameScreenStateInput(
     val endgameLog: String,
     val finalScoreJudgement: FinalScoreJudgement? = null,
     val handicapCount: Int = 0,
+    val setupBoardSize: BoardSize,
+    val setupKomi: Double,
     val isEngineBlockingBusy: Boolean = false,
     val engineActivityIndicator: EngineActivityIndicator? = null,
     val engineTurnWaitCompletionSeq: Int = 0,
@@ -155,6 +165,8 @@ internal fun buildGameScreenStateInput(
         endgameLog = controller.core.scoreState.endgameLog,
         finalScoreJudgement = controller.core.scoreState.finalScoreJudgement,
         handicapCount = controller.settings.handicapCount,
+        setupBoardSize = controller.settings.boardSize,
+        setupKomi = controller.settings.komi,
         isEngineBlockingBusy = isEngineBlockingBusy,
         engineActivityIndicator = engineActivityIndicator,
         engineTurnWaitCompletionSeq = engineTurnWaitCompletionSeq,
@@ -223,6 +235,8 @@ internal fun buildGameScreenState(input: GameScreenStateInput): GameScreenState 
         endgameLog = input.endgameLog,
         finalScoreJudgement = input.finalScoreJudgement,
         handicapCount = input.handicapCount,
+        setupBoardSize = input.setupBoardSize,
+        setupKomi = input.setupKomi,
     )
 }
 

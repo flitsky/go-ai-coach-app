@@ -20,6 +20,7 @@ import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.Move
+import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisPreset
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
@@ -343,6 +344,61 @@ class GameScreenStateTest {
         assertTrue(input.uxOptions.showMoveNumbers)
     }
 
+    /**
+     * **다음 대국의 조건은 설정에서, 지금 판의 조건은 `gameState`에서** 화면 상태까지 그대로 간다(refactor backlog #94).
+     * 이어한 판(13줄·2점·6.5)을 둔 채 설정이 19줄·3점·0.5인 섞인 입력으로, 두 번의 전달(`buildGameScreenStateInput` →
+     * `buildGameScreenState`)에서 한 칸이라도 지금 판 쪽을 집거나 빠뜨리면 빨개진다(#36의 모양).
+     */
+    @Test
+    fun theNextGamesSetupComesFromTheSettingsAndTheLiveGameStaysTheLiveGame() {
+        val resumed = GameState.withHandicap(BoardSize.Thirteen, Ruleset.Japanese, handicapCount = 2, komi = 6.5)
+        val controller = GameSessionControllerState(
+            core = GameSessionCoreState(
+                gameState = resumed,
+                isGameEnded = true,
+                analysisState = GameSessionAnalysisState.empty(resumed),
+                scoreState = GameSessionScoreState.reset(scoreText = "score", scoreSnapshots = emptyList(), endgameLog = "endgame"),
+                runtimeState = GameSessionRuntimeState(PlayLevelSetting(), EngineProfile(), AnalysisPreset.Lite),
+                moveReviewState = GameSessionMoveReviewState.reset(moveReviewText = "review", lastMoveText = "None"),
+                engineMessage = "engine",
+            ),
+            settings = GameSessionSettingsState(
+                playerSetup = PlayerSetup(),
+                autoPlayDelaySetting = AutoPlayDelaySetting.Default,
+                searchTimeSettings = SearchTimeSettings(),
+                topMovesEnabled = false,
+                boardSize = BoardSize.Nineteen,
+                handicapCount = 3,
+                komi = 0.5,
+            ),
+            benchmark = EngineBenchmarkUiState(benchmarkText = "bench"),
+            savedSession = SavedSessionUiState(),
+            autoAiTurn = AutoAiTurnUiState(),
+            positionCacheOptimization = PositionAnalysisCacheOptimizationUiState(),
+        )
+
+        val screenState = buildGameScreenState(
+            buildGameScreenStateInput(
+                controller = controller,
+                uxOptions = KaTrainUxOptions(),
+                engineName = "KataGo",
+                engineDiagnostic = "ready",
+                isEngineReady = true,
+                isEngineBusy = false,
+                isEngineBlockingBusy = false,
+                analysisCacheStats = "entries=0",
+                isScoreGraphExpanded = false,
+                turnTimeText = "",
+                hasCompletedEngineStartup = true,
+            ),
+        )
+
+        assertEquals("로비·설정 화면의 판 크기가 설정이 아니다(#94)", BoardSize.Nineteen, screenState.setupBoardSize)
+        assertEquals("로비·설정 화면의 접바둑이 설정이 아니다", 3, screenState.handicapCount)
+        assertEquals("로비·설정 화면의 덤이 설정이 아니다(#94)", 0.5, screenState.setupKomi, 0.0)
+        assertEquals("대국 화면이 그리는 지금 판이 바뀌었다", resumed, screenState.gameState)
+    }
+
     @Test
     fun goCoachScreenStateAssemblerBuildsScreenStateFromRuntimeSnapshots() {
         val gameState = GameState.empty(nextPlayer = StoneColor.White)
@@ -461,6 +517,8 @@ class GameScreenStateTest {
             hasCompletedEngineStartup = hasCompletedEngineStartup,
             isGameEnded = isGameEnded,
             endgameLog = "No endgame result recorded.",
+            setupBoardSize = gameState.boardSize,
+            setupKomi = gameState.komi,
             isEngineBlockingBusy = isEngineBlockingBusy,
         )
 }

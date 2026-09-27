@@ -71,7 +71,7 @@ import org.junit.Test
  * - undo: `playerSetup`, `matchMode`, `isEngineReady`
  * - autoAi: `sessionSnapshot`(currentControllerState), `isEngineReady`, `currentRuntimeLogContext`(예약 로그 → 취소 로그)
  * - humanMove: `playerSetup`, `isEngineBlockingBusy`, `isEngineReady`, `gameState`(앞 수가 쓴 판 위에 다음 수)
- * - newGame: `playerSetup`, `settingsState`(currentBoardSize), `sessionSnapshot`(currentSearchTimeSettings), `isEngineReady`
+ * - newGame: `playerSetup`, `settingsState`(currentBoardSize·currentKomi), `sessionSnapshot`(currentSearchTimeSettings), `isEngineReady`
  * - savedSession: `isEngineBusy`, `isEngineReady`, `settingsState`(복원 람다)
  * - cacheOpt: `playerSetup`(accept), `gameState`(dismiss)
  * - scoreEstimate: `matchMode`, `isEngineReady`
