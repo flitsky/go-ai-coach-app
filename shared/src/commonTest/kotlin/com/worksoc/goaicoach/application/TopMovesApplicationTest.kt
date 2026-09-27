@@ -41,6 +41,78 @@ import kotlin.test.assertTrue
 import kotlinx.coroutines.runBlocking
 
 class TopMovesApplicationTest {
+    /**
+     * T6(refactor backlog #15) — 추천 수 분석이 엔진이 다른 오퍼레이션을 하고 있어 포기하면([EngineOperationBusy]) 실패로
+     * 보이지 않고 **기존 "잠시 뒤" 흐름으로 미룬다**: 실패 표시가 없고, 실행 때 걸어 둔 분석 키를 풀고(안 풀면 다시 건 자동
+     * 요청이 "같은 키"로 건너뛰어진다), 엔진이 한가해지면 같은 국면을 다시 걸어 이번에는 결과를 싣는다.
+     */
+    @Test
+    fun topMovesThatGiveUpBecauseTheEngineIsBusyAreDeferredAndRunAgainOnceIdle() {
+        val state = GameState.empty()
+        var controllerState = topMoveControllerState(state = state)
+        var engineGivesUp = true
+        val client = object : FakeEngineSessionClient() {
+            override suspend fun analyzePosition(
+                state: GameState,
+                limit: AnalysisLimit,
+                searchMode: EngineSearchMode,
+            ): AnalysisResult {
+                if (engineGivesUp) throw EngineOperationBusy("analyzePosition")
+                return AnalysisResult(
+                    status = EngineStatus.ready("analysis complete"),
+                    candidates = listOf(CandidateMove(move = Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)), pointLoss = 0.0)),
+                    summary = "raw",
+                )
+            }
+        }
+        val launched = mutableListOf<EngineOperationKind>()
+        var failureDisplay: TopMoveAnalysisFailureDisplayPlan? = null
+        var appliedUpdate: TopMoveAnalysisUpdate? = null
+        val deferral = TopMoveAnalysisDeferral()
+        val controller = TopMovesController(
+            engineClient = client,
+            currentControllerState = { controllerState },
+            isGameEnded = { false },
+            isEngineReady = { true },
+            isEngineBusy = { false },
+            shouldShowResumePrompt = { false },
+            currentPlayerSetup = { PlayerSetup() },
+            showMoveReviewEnabled = { false },
+            pendingPostUndoEngineSync = { false },
+            analysisCacheEnabled = { false },
+            cachedResultFor = { null },
+            currentGameState = { state },
+            currentAnalysisKey = { controllerState.core.analysisState.lastAnalysisKey },
+            currentSessionGeneration = { 0L },
+            launchEngineOperation = { operation, block ->
+                launched += operation.kind
+                runBlocking { block() }
+            },
+            applyLaunchUpdate = { update -> controllerState = controllerState.withCore(controllerState.core.copy(analysisState = update.analysisState)) },
+            applyTopMoveAnalysisUpdate = { update, _ -> appliedUpdate = update },
+            putUndoRestoreCache = { _, _ -> },
+            putAnalysisCache = { _, _ -> },
+            applyFailureDisplay = { failureDisplay = it },
+            appendEngineOperationDiscardLog = { discard -> error("the position did not change — nothing to discard: $discard") },
+            applyShowTopMovesStateUpdate = { update -> error("not used: $update") },
+            deferredAutomaticAnalysis = deferral,
+        )
+
+        controller.requestAnalysis(state, automatic = true)
+
+        assertEquals(listOf(EngineOperationKind.TopMoves), launched)
+        assertNull(failureDisplay, "giving up is not a failure — no failure text, the last analysis stays")
+        assertNull(controllerState.core.analysisState.lastAnalysisKey, "the key set at launch must be released")
+        assertNull(appliedUpdate)
+
+        engineGivesUp = false
+        assertTrue(controller.resumeDeferredAnalysisIfIdle(), "the deferred position must be picked up once the engine is idle")
+
+        assertEquals(listOf(EngineOperationKind.TopMoves, EngineOperationKind.TopMoves), launched)
+        assertEquals(1, appliedUpdate?.candidateMoves?.size, "the second run brings the analysis")
+        assertNull(failureDisplay)
+    }
+
     @Test
     fun deferredTopMoveRequestWaitsForEngineIdleAndKeepsLatestPosition() {
         val deferral = TopMoveAnalysisDeferral()
@@ -994,6 +1066,7 @@ class TopMovesApplicationTest {
                 putAnalysisCache = { _, cached -> cachedAnalysis = cached },
                 applyFailureDisplay = { failureDisplay = it },
                 appendEngineOperationDiscardLog = { discardLog = it },
+                deferAfterBusy = { error("an idle engine must not defer the analysis") },
             ),
         )
 
@@ -1060,6 +1133,8 @@ class TopMovesApplicationTest {
         var analysisCache: CachedAnalysisResult? = null
         var appliedFailure: TopMoveAnalysisFailureDisplayPlan? = null
         var appendedDiscard: EngineOperationResultGuard.Discard? = null
+        var deferred: TopMoveAnalysisCompletionApplyPlan.Defer? = null
+        val deferral = TopMoveAnalysisCompletionApplyPlan.Defer(targetState = GameState.empty(), deep = true)
 
         fun apply(plan: TopMoveAnalysisCompletionApplyPlan) {
             applyTopMoveAnalysisCompletionApplication(
@@ -1073,6 +1148,7 @@ class TopMovesApplicationTest {
                     putAnalysisCache = { _, value -> analysisCache = value },
                     applyFailureDisplay = { appliedFailure = it },
                     appendEngineOperationDiscardLog = { appendedDiscard = it },
+                    deferAfterBusy = { deferred = it },
                 ),
             )
         }
@@ -1080,6 +1156,7 @@ class TopMovesApplicationTest {
         apply(TopMoveAnalysisCompletionApplyPlan.ApplySuccess(update, key))
         apply(TopMoveAnalysisCompletionApplyPlan.ApplyFailure(failure))
         apply(TopMoveAnalysisCompletionApplyPlan.Discard(discard))
+        apply(deferral)
 
         assertEquals(update, appliedUpdate)
         assertEquals(key, appliedKey)
@@ -1087,6 +1164,7 @@ class TopMovesApplicationTest {
         assertEquals(cached, analysisCache)
         assertEquals(failure, appliedFailure)
         assertEquals(discard, appendedDiscard)
+        assertEquals(deferral, deferred)
     }
 
     @Test

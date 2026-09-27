@@ -19,5 +19,8 @@ internal fun applyTopMoveAnalysisCompletionApplication(
 
         is TopMoveAnalysisCompletionApplyPlan.Discard ->
             request.appendEngineOperationDiscardLog(applyPlan.discard)
+
+        is TopMoveAnalysisCompletionApplyPlan.Defer ->
+            request.deferAfterBusy(applyPlan)
     }
 }

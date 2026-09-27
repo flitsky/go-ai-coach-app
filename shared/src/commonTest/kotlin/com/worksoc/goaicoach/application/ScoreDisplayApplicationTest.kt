@@ -33,6 +33,45 @@ import kotlin.test.assertTrue
 import kotlinx.coroutines.runBlocking
 
 class ScoreDisplayApplicationTest {
+    /**
+     * T7(refactor backlog #15) — 보낸 형세 추정이 엔진이 다른 오퍼레이션을 하고 있어 포기하면([EngineOperationBusy]),
+     * **요청 때 엔진이 바빴던 것과 같은 문구만** 보인다. 실패 표시(지난 형세 지우기·실패 문구)는 없다 — 사용자에게는
+     * 예전의 "Engine is busy" 흐름과 같다. 형세는 기다리지 않는다(AI가 생각하는 동안 눌러도 곧바로 돌아온다).
+     */
+    @Test
+    fun aScoreEstimateThatGivesUpBecauseTheEngineIsBusyShowsTheBusyMessageNotAFailure() {
+        val state = GameState.empty().play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+        val messages = mutableListOf<String>()
+        var failure: ScoreEstimateFailureDisplayPlan? = null
+        val controller = ScoreEstimateController(
+            engineClient = object : FakeEngineSessionClient() {
+                override suspend fun estimateScoreForState(
+                    state: GameState,
+                    profile: EngineProfile,
+                    syncFirst: Boolean,
+                ): ScoreEstimate = throw EngineOperationBusy("estimateScoreForState")
+            },
+            diagnosticEventLog = NoopDiagnosticEventLog,
+            currentGameState = { state },
+            currentScoreSnapshots = { emptyList() },
+            isEngineReady = { true },
+            isEngineBusy = { false },
+            currentMatchMode = { MatchMode.HumanVsAi },
+            currentEngineProfile = { EngineProfile() },
+            currentSessionGeneration = { 0L },
+            launchEngineOperation = { _, block -> runBlocking { block() } },
+            onEngineMessage = { message -> messages += message },
+            onScoreEstimateDisplayPlan = { display -> error("a busy engine gave no estimate: $display") },
+            onScoreEstimateFailureDisplayPlan = { failure = it },
+            appendDiscardLog = { discard -> error("the position did not change — nothing to discard: $discard") },
+        )
+
+        controller.request()
+
+        assertNull(failure, "giving up is not a failure — the last estimate must stay")
+        assertEquals(listOf("Engine is busy. Estimate after the current response."), messages)
+    }
+
     @Test
     fun scoreEstimateRequestPlanBlocksWhileEngineIsBusy() {
         val plan = buildScoreEstimateRequestPlan(

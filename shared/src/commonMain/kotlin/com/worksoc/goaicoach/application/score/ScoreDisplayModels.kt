@@ -2,6 +2,7 @@ package com.worksoc.goaicoach.application.score
 
 import com.worksoc.goaicoach.application.contract.GameSessionEffect
 import com.worksoc.goaicoach.application.contract.ScoreEstimateDisplayPlan
+import com.worksoc.goaicoach.application.engine.EngineOperationBusy
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.domain.StoneColor
@@ -83,16 +84,29 @@ data class ScoreEstimateOperationToken(
 sealed class ScoreEstimateWorkflowResult {
     data class Success(val display: ScoreEstimateDisplayPlan) : ScoreEstimateWorkflowResult()
     data class Failure(val error: Throwable) : ScoreEstimateWorkflowResult()
+
+    /** 엔진이 다른 오퍼레이션을 하고 있어 기다리지 않고 포기했다(refactor backlog #15) — 실패가 아니다. */
+    data class Busy(val busy: EngineOperationBusy) : ScoreEstimateWorkflowResult()
 }
 
 sealed class ScoreEstimateCompletionPlan {
     data class ApplySuccess(val display: ScoreEstimateDisplayPlan) : ScoreEstimateCompletionPlan()
     data class ApplyFailure(val failure: ScoreEstimateFailureDisplayPlan) : ScoreEstimateCompletionPlan()
     data class Discard(val discard: EngineOperationResultGuard.Discard) : ScoreEstimateCompletionPlan()
+
+    /**
+     * 엔진이 바빠 형세 추정이 포기했다(refactor backlog #15) — 요청 때 엔진이 바빴던 것과 **같은 문구만** 보인다
+     * ([ScoreEstimateBusyMessage]). 실패([ApplyFailure])처럼 지난 형세를 지우지 않는다. 다시 누르면 된다 — 1회권은
+     * 그 수 안에서 이미 치렀으므로 다시 누르는 것은 무료다(`GamePlaySection.featureGated`의 `isPaidForMove`).
+     */
+    data class ShowBusyMessage(val message: String) : ScoreEstimateCompletionPlan()
 }
 
 sealed class ScoreEstimateCompletionApplyPlan {
     data class ApplySuccess(val display: ScoreEstimateDisplayPlan) : ScoreEstimateCompletionApplyPlan()
     data class ApplyFailure(val failure: ScoreEstimateFailureDisplayPlan) : ScoreEstimateCompletionApplyPlan()
     data class Discard(val discard: EngineOperationResultGuard.Discard) : ScoreEstimateCompletionApplyPlan()
+
+    /** [ScoreEstimateCompletionPlan.ShowBusyMessage]와 같다 — 문구만 보인다. */
+    data class ShowBusyMessage(val message: String) : ScoreEstimateCompletionApplyPlan()
 }

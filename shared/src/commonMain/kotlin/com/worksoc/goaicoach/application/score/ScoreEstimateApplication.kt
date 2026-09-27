@@ -19,6 +19,13 @@ import com.worksoc.goaicoach.shared.scoring.BoardScorer
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 import com.worksoc.goaicoach.shared.scoring.ScoreTimeline
 
+/**
+ * 엔진이 바빠 형세를 지금 못 볼 때의 문구. 요청 때 이미 바쁜 것이 보이면([buildScoreEstimateRequestPlan]) 보내기 전에,
+ * 보낸 뒤 엔진이 다른 오퍼레이션을 하고 있어 포기하면([ScoreEstimateCompletionPlan.ShowBusyMessage], refactor backlog #15)
+ * 돌아와서 — 두 길이 **같은 문구**다. 사용자에게는 같은 일이다.
+ */
+internal const val ScoreEstimateBusyMessage = "Engine is busy. Estimate after the current response."
+
 internal fun scoreEstimateOperationToken(
     request: ScoreEstimateRequestPlan.RequestEngineEstimate,
     sessionGeneration: Long = 0L,
@@ -71,6 +78,9 @@ fun buildScoreEstimateCompletionPlan(
                     ScoreEstimateCompletionPlan.ApplyFailure(
                         buildScoreEstimateFailureDisplayPlan(result.error),
                     )
+
+                is ScoreEstimateWorkflowResult.Busy ->
+                    ScoreEstimateCompletionPlan.ShowBusyMessage(ScoreEstimateBusyMessage)
             }
 
         is EngineOperationResultGuard.Discard ->
@@ -86,6 +96,9 @@ fun ScoreEstimateCompletionPlan.toApplyPlan(): ScoreEstimateCompletionApplyPlan 
 
         is ScoreEstimateCompletionPlan.Discard ->
             ScoreEstimateCompletionApplyPlan.Discard(discard)
+
+        is ScoreEstimateCompletionPlan.ShowBusyMessage ->
+            ScoreEstimateCompletionApplyPlan.ShowBusyMessage(message)
     }
 fun buildScoreEstimateRequestPlan(
     state: GameState,
@@ -96,7 +109,7 @@ fun buildScoreEstimateRequestPlan(
     engineProfile: EngineProfile,
 ): ScoreEstimateRequestPlan {
     if (isEngineBusy) {
-        return ScoreEstimateRequestPlan.ShowMessage("Engine is busy. Estimate after the current response.")
+        return ScoreEstimateRequestPlan.ShowMessage(ScoreEstimateBusyMessage)
     }
 
     if (matchMode == MatchMode.LocalTwoPlayer && !isEngineReady) {

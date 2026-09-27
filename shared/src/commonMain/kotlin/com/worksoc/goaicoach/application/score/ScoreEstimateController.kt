@@ -60,6 +60,9 @@ class ScoreEstimateController(
 
             is ScoreEstimateCompletionApplyPlan.Discard ->
                 appendDiscardLog(applyPlan.discard)
+
+            is ScoreEstimateCompletionApplyPlan.ShowBusyMessage ->
+                onEngineMessage(applyPlan.message)
         }
     }
 }

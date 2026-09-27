@@ -6,6 +6,7 @@ import com.worksoc.goaicoach.application.contract.ScoreEstimateRequestPlan
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.diagnostic.NoopDiagnosticEventLog
 import com.worksoc.goaicoach.application.diagnostic.runObservedEngineOperation
+import com.worksoc.goaicoach.application.engine.EngineOperationBusy
 import com.worksoc.goaicoach.application.engine.EngineScoringClient
 import com.worksoc.goaicoach.application.engine.runEngineIo
 import com.worksoc.goaicoach.match.MatchMode
@@ -92,7 +93,10 @@ internal suspend fun EngineScoringClient.runScoreEstimateWorkflowResult(
         )
     }.fold(
         onSuccess = { display -> ScoreEstimateWorkflowResult.Success(display) },
-        onFailure = { error -> ScoreEstimateWorkflowResult.Failure(error) },
+        onFailure = { error ->
+            // 엔진이 다른 오퍼레이션을 하고 있어 포기한 것은 실패가 아니다 — 바쁘다고만 알린다(refactor backlog #15).
+            if (error is EngineOperationBusy) ScoreEstimateWorkflowResult.Busy(error) else ScoreEstimateWorkflowResult.Failure(error)
+        },
     )
 
 internal suspend fun EngineScoringClient.runScoreEstimateEffectCompletionPlan(

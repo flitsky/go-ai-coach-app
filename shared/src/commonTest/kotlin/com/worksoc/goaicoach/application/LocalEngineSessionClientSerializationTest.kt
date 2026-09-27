@@ -291,9 +291,8 @@ private class ParkingCoreApi : EngineCoreApi {
         withTimeout(2_000L) { parked.await() }
     }
 
-    fun release() {
-        released.complete(Unit)
-    }
+    /** 멈춘 명령을 풀어 준다. (반환형을 적는 것은 `TestAnnotationContractTest`의 모양 검사 때문이다 — 인자 없는 `Unit` 함수는 테스트로 읽힌다.) */
+    fun release(): Boolean = released.complete(Unit)
 
     private suspend fun record(command: String) {
         val park = lock.withLock {

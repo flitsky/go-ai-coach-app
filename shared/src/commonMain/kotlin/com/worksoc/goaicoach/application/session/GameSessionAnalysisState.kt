@@ -53,6 +53,14 @@ data class GameSessionAnalysisState(
             lastAnalysisKey = null,
         )
 
+    /**
+     * 엔진이 바빠 포기한 추천 수 분석을 미룰 때(refactor backlog #15) — 실행 때 걸어 둔 [lastAnalysisKey]만 푼다.
+     * 실패([applyTopMoveAnalysisFailureDisplayPlan])와 달리 보이던 후보·지난 분석은 **그대로 둔다** — 사용자에게는 실패가
+     * 아니다. 키를 풀지 않으면 다시 건 자동 요청이 "같은 키"로 건너뛰어져 그 국면의 추천 수가 끝내 안 뜬다.
+     */
+    fun releaseDeferredTopMoveAnalysisKey(): GameSessionAnalysisState =
+        copy(lastAnalysisKey = null)
+
     fun recordSideAnalysisText(
         player: StoneColor,
         text: String,

@@ -5,6 +5,7 @@ import com.worksoc.goaicoach.application.contract.AnalysisCacheKey
 import com.worksoc.goaicoach.application.contract.GameSessionEffect
 import com.worksoc.goaicoach.application.contract.TopMoveAnalysisPlan
 import com.worksoc.goaicoach.application.engine.EngineAnalysisClient
+import com.worksoc.goaicoach.application.engine.EngineOperationBusy
 import com.worksoc.goaicoach.application.engine.runEngineIo
 import com.worksoc.goaicoach.application.session.GameSessionAnalysisState
 import com.worksoc.goaicoach.application.session.GameSessionControllerState
@@ -73,6 +74,17 @@ sealed class TopMoveAnalysisCompletionPlan {
     data class Discard(
         val discard: EngineOperationResultGuard.Discard,
     ) : TopMoveAnalysisCompletionPlan()
+
+    /**
+     * 엔진이 다른 오퍼레이션을 하고 있어 분석이 기다리지 않고 포기했다([EngineOperationBusy],
+     * refactor backlog #15). 실패가 아니다 — 이 국면을 [TopMoveAnalysisDeferral]에 미뤄 엔진이 한가해지면 다시 건다.
+     * 실행 때 걸어 둔 [analysisKey]는 풀어야 한다. 그대로 두면 다시 건 자동 요청이 "같은 키"로 건너뛰어진다.
+     */
+    data class Defer(
+        val targetState: GameState,
+        val deep: Boolean,
+        val analysisKey: AnalysisCacheKey,
+    ) : TopMoveAnalysisCompletionPlan()
 }
 
 internal sealed class TopMoveAnalysisCompletionApplyPlan {
@@ -88,6 +100,12 @@ internal sealed class TopMoveAnalysisCompletionApplyPlan {
     data class Discard(
         val discard: EngineOperationResultGuard.Discard,
     ) : TopMoveAnalysisCompletionApplyPlan()
+
+    /** [TopMoveAnalysisCompletionPlan.Defer]와 같다 — 미루고, 걸어 둔 분석 키를 푼다. */
+    data class Defer(
+        val targetState: GameState,
+        val deep: Boolean,
+    ) : TopMoveAnalysisCompletionApplyPlan()
 }
 
 sealed class TopMoveAnalysisWorkflowResult {
@@ -97,6 +115,11 @@ sealed class TopMoveAnalysisWorkflowResult {
 
     data class Failure(
         val error: Throwable,
+    ) : TopMoveAnalysisWorkflowResult()
+
+    /** 엔진이 다른 오퍼레이션을 하고 있어 기다리지 않고 포기했다(refactor backlog #15) — 실패가 아니다. */
+    data class Busy(
+        val busy: EngineOperationBusy,
     ) : TopMoveAnalysisWorkflowResult()
 }
 
@@ -148,6 +171,8 @@ internal data class TopMoveAnalysisRunRequest(
     val putAnalysisCache: (AnalysisCacheKey, CachedAnalysisResult) -> Unit,
     val applyFailureDisplay: (TopMoveAnalysisFailureDisplayPlan) -> Unit,
     val appendEngineOperationDiscardLog: (EngineOperationResultGuard.Discard) -> Unit,
+    /** 엔진이 바빠 분석이 포기했을 때 — 미루고, 걸어 둔 분석 키를 푼다(refactor backlog #15). */
+    val deferAfterBusy: (TopMoveAnalysisCompletionApplyPlan.Defer) -> Unit,
 )
 
 internal data class TopMoveAnalysisCompletionApplyRunRequest(
@@ -157,6 +182,7 @@ internal data class TopMoveAnalysisCompletionApplyRunRequest(
     val putAnalysisCache: (AnalysisCacheKey, CachedAnalysisResult) -> Unit,
     val applyFailureDisplay: (TopMoveAnalysisFailureDisplayPlan) -> Unit,
     val appendEngineOperationDiscardLog: (EngineOperationResultGuard.Discard) -> Unit,
+    val deferAfterBusy: (TopMoveAnalysisCompletionApplyPlan.Defer) -> Unit,
 )
 
 internal sealed class ShowTopMovesPlan {

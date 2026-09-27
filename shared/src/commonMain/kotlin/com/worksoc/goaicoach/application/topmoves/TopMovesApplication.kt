@@ -234,6 +234,7 @@ internal fun runTopMoveAnalysisApplication(request: TopMoveAnalysisRunRequest) {
                 putAnalysisCache = request.putAnalysisCache,
                 applyFailureDisplay = request.applyFailureDisplay,
                 appendEngineOperationDiscardLog = request.appendEngineOperationDiscardLog,
+                deferAfterBusy = request.deferAfterBusy,
             ),
         )
     }

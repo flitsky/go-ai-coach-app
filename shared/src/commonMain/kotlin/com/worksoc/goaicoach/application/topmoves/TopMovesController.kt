@@ -70,6 +70,24 @@ class TopMovesController(
                 putAnalysisCache = putAnalysisCache,
                 applyFailureDisplay = applyFailureDisplay,
                 appendEngineOperationDiscardLog = appendEngineOperationDiscardLog,
+                deferAfterBusy = ::deferAfterBusy,
+            ),
+        )
+    }
+
+    /**
+     * 엔진이 다른 오퍼레이션을 하고 있어 분석이 기다리지 않고 포기했다(refactor backlog #15). 실패로 보이지 않고, 자동
+     * 요청이 바쁠 때 늘 가던 길([deferredAutomaticAnalysis])로 미룬다 — 엔진이 한가해지면 [resumeDeferredAnalysisIfIdle]이
+     * 다시 건다. 손으로 켠 요청도 같다(다시 걸 때는 자동 요청으로 간다 — 켜 둔 토글이 그 조건을 채운다).
+     */
+    private fun deferAfterBusy(deferral: TopMoveAnalysisCompletionApplyPlan.Defer) {
+        deferredAutomaticAnalysis.defer(
+            targetState = deferral.targetState,
+            deep = deferral.deep,
+        )
+        applyLaunchUpdate(
+            TopMoveAnalysisLaunchStateUpdate(
+                analysisState = currentControllerState().core.analysisState.releaseDeferredTopMoveAnalysisKey(),
             ),
         )
     }

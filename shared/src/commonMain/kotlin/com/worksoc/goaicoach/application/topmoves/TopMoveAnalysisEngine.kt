@@ -9,6 +9,7 @@ import com.worksoc.goaicoach.application.contract.AnalysisCacheKey
 import com.worksoc.goaicoach.application.contract.GameSessionEffect
 import com.worksoc.goaicoach.application.contract.TopMoveAnalysisPlan
 import com.worksoc.goaicoach.application.engine.EngineAnalysisClient
+import com.worksoc.goaicoach.application.engine.EngineOperationBusy
 import com.worksoc.goaicoach.application.session.TopMoveAnalysisUpdate
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisPreset
@@ -141,7 +142,10 @@ internal suspend fun EngineAnalysisClient.runTopMoveAnalysisWorkflowResult(
         )
     }.fold(
         onSuccess = { update -> TopMoveAnalysisWorkflowResult.Success(update) },
-        onFailure = { error -> TopMoveAnalysisWorkflowResult.Failure(error) },
+        onFailure = { error ->
+            // 엔진이 다른 오퍼레이션을 하고 있어 포기한 것은 실패가 아니다 — 미룬다(refactor backlog #15).
+            if (error is EngineOperationBusy) TopMoveAnalysisWorkflowResult.Busy(error) else TopMoveAnalysisWorkflowResult.Failure(error)
+        },
     )
 
 internal suspend fun EngineAnalysisClient.runTopMoveAnalysisEffectApplyPlan(
@@ -158,4 +162,5 @@ internal suspend fun EngineAnalysisClient.runTopMoveAnalysisEffectApplyPlan(
         currentSessionGeneration = request.currentSessionGeneration,
         targetState = request.targetState,
         topMovesEnabled = request.topMovesEnabled,
+        deep = request.effect.deep,
     ).toApplyPlan()

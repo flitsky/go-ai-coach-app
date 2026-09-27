@@ -132,6 +132,7 @@ internal fun buildTopMoveAnalysisCompletionPlan(
     currentSessionGeneration: Long,
     targetState: GameState,
     topMovesEnabled: Boolean,
+    deep: Boolean,
 ): TopMoveAnalysisCompletionPlan =
     when (result) {
         is TopMoveAnalysisWorkflowResult.Success ->
@@ -153,6 +154,48 @@ internal fun buildTopMoveAnalysisCompletionPlan(
                 error = result.error,
                 topMovesEnabled = topMovesEnabled,
             )
+
+        is TopMoveAnalysisWorkflowResult.Busy ->
+            buildTopMoveAnalysisBusyCompletionPlan(
+                token = token,
+                currentState = currentState,
+                currentAnalysisKey = currentAnalysisKey,
+                currentSessionGeneration = currentSessionGeneration,
+                targetState = targetState,
+                deep = deep,
+            )
+    }
+
+/**
+ * 엔진이 바빠 분석이 포기했다(refactor backlog #15). 그사이 국면·세대·분석 키가 그대로면 미룬다 — 실패 문구를 띄우거나
+ * 지난 분석을 지우지 않는다(사용자에게는 예전의 "잠시 뒤" 흐름과 같다). 그사이 바뀌었으면 버린다 — 새 국면에는 제 요청이
+ * 따로 걸린다.
+ */
+internal fun buildTopMoveAnalysisBusyCompletionPlan(
+    token: TopMoveAnalysisOperationToken,
+    currentState: GameState,
+    currentAnalysisKey: AnalysisCacheKey?,
+    currentSessionGeneration: Long,
+    targetState: GameState,
+    deep: Boolean,
+): TopMoveAnalysisCompletionPlan =
+    when (
+        val guard = evaluateTopMoveAnalysisResultGuard(
+            token = token,
+            currentState = currentState,
+            currentAnalysisKey = currentAnalysisKey,
+            currentSessionGeneration = currentSessionGeneration,
+        )
+    ) {
+        EngineOperationResultGuard.Apply ->
+            TopMoveAnalysisCompletionPlan.Defer(
+                targetState = targetState,
+                deep = deep,
+                analysisKey = token.analysisKey,
+            )
+
+        is EngineOperationResultGuard.Discard ->
+            TopMoveAnalysisCompletionPlan.Discard(guard)
     }
 
 internal fun TopMoveAnalysisCompletionPlan.toApplyPlan(): TopMoveAnalysisCompletionApplyPlan =
@@ -168,4 +211,7 @@ internal fun TopMoveAnalysisCompletionPlan.toApplyPlan(): TopMoveAnalysisComplet
 
         is TopMoveAnalysisCompletionPlan.Discard ->
             TopMoveAnalysisCompletionApplyPlan.Discard(discard)
+
+        is TopMoveAnalysisCompletionPlan.Defer ->
+            TopMoveAnalysisCompletionApplyPlan.Defer(targetState = targetState, deep = deep)
     }
