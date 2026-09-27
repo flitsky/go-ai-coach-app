@@ -31,22 +31,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.worksoc.goaicoach.R
 
-/**
- * 유튜브 기초 강좌 한 편 — 썸네일은 네트워크 로딩 없이 앱에 번들된 drawable을 쓴다(사용자
- * 결정, 2026-08-12: 새 이미지 로딩 라이브러리를 추가하지 않고 고정 목록으로 운영 — 영상이
- * 바뀔 때만 코드와 함께 썸네일 이미지도 같이 교체한다).
- */
-internal data class StudyVideoEntry(
-    /**
-     * 소개 문구 표의 키(백로그 #33). URL이 아니라 짧은 이름을 쓰는 이유는, 영상을 교체할 때
-     * **URL과 썸네일만 갈아 끼우고 문구는 그대로 두는** 경우가 흔하기 때문이다 — 주제가 같은
-     * 다른 강의로 바꿀 때 네 언어를 다시 쓰지 않아도 된다.
-     */
-    val id: String,
-    val youtubeUrl: String,
-    val thumbnailRes: Int,
-)
-
 // 2026-08-12 사용자 요청으로 조사: 국내 유튜브에서 "바둑 기초/입문" 검색 시 실제로 걸리는
 // 결과 상위권은 대부분 마술/예능성 콘텐츠라 조회수만으로 고르면 강좌가 아닌 게 뽑힌다 —
 // 그래서 실제 강좌 채널(바둑에듀) 안에서 조회수가 높은 순으로 3편을 골랐다(직접 확인한
