@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.profile.UserNicknamePolicy
+import com.worksoc.goaicoach.ui.guide.GuideBlockingOverlays
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.nicknameDialogHintFor
 import com.worksoc.goaicoach.ui.l10n.nicknameDialogTitleFor

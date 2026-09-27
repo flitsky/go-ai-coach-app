@@ -10,6 +10,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.worksoc.goaicoach.persistence.ReleaseResetStore
+import com.worksoc.goaicoach.ui.guide.GuideBlockingOverlays
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.releaseResetBodyFor
 import com.worksoc.goaicoach.ui.l10n.releaseResetConfirmLabelFor

@@ -37,6 +37,8 @@ import com.worksoc.goaicoach.persistence.AttendanceStore
 import com.worksoc.goaicoach.persistence.BotCollectionStore
 import com.worksoc.goaicoach.persistence.ConsumableInventoryStore
 import com.worksoc.goaicoach.persistence.PremiumStateStore
+import com.worksoc.goaicoach.ui.guide.GuideAnchor
+import com.worksoc.goaicoach.ui.guide.GuideBlockingOverlays
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.attendanceAtStockCapNoticeFor
 import com.worksoc.goaicoach.ui.l10n.attendanceBoardBeyondNoticeFor

@@ -15,6 +15,7 @@ import com.worksoc.goaicoach.application.engine.EngineBenchmarkProfile
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkProgress
 import com.worksoc.goaicoach.application.engine.operation.EngineOperationBlockReason
 import com.worksoc.goaicoach.application.engine.toResultSummary
+import com.worksoc.goaicoach.ui.guide.GuideBlockingOverlays
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiStrings
 

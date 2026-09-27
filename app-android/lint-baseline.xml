@@ -150,7 +150,7 @@
         errorLine1="private fun MaterialThemeSurface(): Color = androidx.compose.material3.MaterialTheme.colorScheme.surface"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/worksoc/goaicoach/ui/FirstDolGuideViews.kt"
+            file="src/main/java/com/worksoc/goaicoach/ui/guide/FirstDolGuideViews.kt"
             line="69"
             column="13"/>
     </issue>
@@ -216,7 +216,7 @@
         errorLine1="    modifier: Modifier = Modifier,"
         errorLine2="    ~~~~~~~~">
         <location
-            file="src/main/java/com/worksoc/goaicoach/ui/FirstDolGuideViews.kt"
+            file="src/main/java/com/worksoc/goaicoach/ui/guide/FirstDolGuideViews.kt"
             line="54"
             column="5"/>
     </issue>

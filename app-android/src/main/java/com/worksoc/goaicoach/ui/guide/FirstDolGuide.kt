@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.ui
+package com.worksoc.goaicoach.ui.guide
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect

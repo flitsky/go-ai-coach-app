@@ -39,6 +39,7 @@ import com.worksoc.goaicoach.persistence.AttendanceStore
 import com.worksoc.goaicoach.persistence.BotCollectionStore
 import com.worksoc.goaicoach.persistence.UserProfileStore
 import com.worksoc.goaicoach.ui.designsystem.ActionButtonShape
+import com.worksoc.goaicoach.ui.guide.GuideLine
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.attendanceBoardBeyondNoticeFor
 import com.worksoc.goaicoach.ui.l10n.attendanceBoardSectionTitleFor

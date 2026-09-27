@@ -11,6 +11,7 @@ import androidx.compose.runtime.setValue
 import com.worksoc.goaicoach.application.engine.EngineAvailability
 import com.worksoc.goaicoach.application.engine.engineAvailabilityFor
 import com.worksoc.goaicoach.shared.enginecontract.EngineMode
+import com.worksoc.goaicoach.ui.guide.GuideBlockingOverlays
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 
 /**

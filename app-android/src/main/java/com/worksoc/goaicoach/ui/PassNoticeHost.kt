@@ -48,6 +48,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.domain.StoneColor
+import com.worksoc.goaicoach.ui.guide.GuideBlockingOverlays
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.passNoticeTitleFor
 import com.worksoc.goaicoach.ui.l10n.scoreNowPromptBodyFor

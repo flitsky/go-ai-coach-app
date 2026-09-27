@@ -82,6 +82,8 @@ import com.worksoc.goaicoach.ui.designsystem.PremiumGoldDeep
 import com.worksoc.goaicoach.ui.designsystem.PremiumGoldGradient
 import com.worksoc.goaicoach.ui.designsystem.botAvatarRes
 import com.worksoc.goaicoach.ui.foundation.FeatureFlags
+import com.worksoc.goaicoach.ui.guide.GuideAnchor
+import com.worksoc.goaicoach.ui.guide.GuideBlockingOverlays
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 
 /**

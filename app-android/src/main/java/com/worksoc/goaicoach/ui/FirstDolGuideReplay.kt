@@ -34,6 +34,7 @@ import com.worksoc.goaicoach.presentation.GameActionButtonRole
 import com.worksoc.goaicoach.presentation.GameActionButtonState
 import com.worksoc.goaicoach.presentation.GameUiEvent
 import com.worksoc.goaicoach.ui.designsystem.ToggleActionButton
+import com.worksoc.goaicoach.ui.guide.FirstDolAvatar
 import com.worksoc.goaicoach.ui.l10n.GuideToolLabels
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.guideBodyFor

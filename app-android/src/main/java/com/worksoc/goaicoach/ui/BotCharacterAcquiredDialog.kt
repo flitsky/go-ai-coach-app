@@ -27,6 +27,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.worksoc.goaicoach.application.botcharacter.BotCharacter
 import com.worksoc.goaicoach.ui.designsystem.BotCharacterAvatar
 import com.worksoc.goaicoach.ui.designsystem.shardRevealOf
+import com.worksoc.goaicoach.ui.guide.GuideBlockingOverlays
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 
 /**

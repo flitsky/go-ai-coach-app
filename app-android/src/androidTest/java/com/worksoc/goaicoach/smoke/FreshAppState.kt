@@ -2,7 +2,7 @@ package com.worksoc.goaicoach.smoke
 
 import android.content.Context
 import androidx.test.platform.app.InstrumentationRegistry
-import com.worksoc.goaicoach.ui.GuideTargetSpots
+import com.worksoc.goaicoach.ui.guide.GuideTargetSpots
 
 /**
  * 이 스모크 테스트들이 기대는 **"갓 설치한 앱"** 상태를 실제로 만든다.
