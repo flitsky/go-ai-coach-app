@@ -32,6 +32,7 @@ import com.worksoc.goaicoach.shared.content.StudyLesson
 import com.worksoc.goaicoach.shared.content.StudyLessonId
 import com.worksoc.goaicoach.shared.content.StudyLessonTrack
 import com.worksoc.goaicoach.shared.content.studyLessonsFor
+import com.worksoc.goaicoach.ui.board.GoBoard
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.StudyCategory
 import com.worksoc.goaicoach.ui.l10n.studyCategoryTitleFor

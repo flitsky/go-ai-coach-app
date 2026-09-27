@@ -67,6 +67,8 @@ import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.presentation.GameUiEvent
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.StoneColor
+import com.worksoc.goaicoach.ui.board.GoBoard
+import com.worksoc.goaicoach.ui.board.candidateToneColor
 import com.worksoc.goaicoach.ui.designsystem.ActionButton
 import com.worksoc.goaicoach.ui.designsystem.SingleActionButton
 import com.worksoc.goaicoach.ui.designsystem.ToggleActionButton

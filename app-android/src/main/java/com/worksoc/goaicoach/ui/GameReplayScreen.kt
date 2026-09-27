@@ -51,6 +51,7 @@ import com.worksoc.goaicoach.presentation.KaTrainUxOptions
 import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.StoneColor
+import com.worksoc.goaicoach.ui.board.GoBoard
 import com.worksoc.goaicoach.ui.designsystem.ActionButton
 import com.worksoc.goaicoach.ui.designsystem.ActionButtonContentPadding
 import com.worksoc.goaicoach.ui.designsystem.ActionButtonMinHeight

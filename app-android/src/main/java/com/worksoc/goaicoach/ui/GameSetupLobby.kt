@@ -44,6 +44,7 @@ import com.worksoc.goaicoach.application.guide.GuideSurface
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.presentation.GameUiEvent
+import com.worksoc.goaicoach.ui.board.GoBoard
 import com.worksoc.goaicoach.ui.designsystem.PremiumCardShape
 import com.worksoc.goaicoach.ui.designsystem.PremiumGold
 import com.worksoc.goaicoach.ui.designsystem.PremiumGoldDeep

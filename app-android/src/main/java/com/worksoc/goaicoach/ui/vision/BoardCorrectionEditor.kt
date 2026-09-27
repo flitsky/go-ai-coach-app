@@ -54,7 +54,7 @@ import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisResult
 import com.worksoc.goaicoach.shared.enginecontract.ScoreEstimate
-import com.worksoc.goaicoach.ui.GoBoard
+import com.worksoc.goaicoach.ui.board.GoBoard
 
 enum class BoardEditTool {
     Toggle, // 탭 시 빈칸 -> 흑 -> 백 -> 빈칸 순환

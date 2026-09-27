@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.ui
+package com.worksoc.goaicoach.ui.board
 
 import android.graphics.Paint
 import android.graphics.Typeface

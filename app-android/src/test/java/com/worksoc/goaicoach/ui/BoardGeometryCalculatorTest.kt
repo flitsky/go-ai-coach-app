@@ -2,6 +2,10 @@ package com.worksoc.goaicoach.ui
 
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.BoardSize
+import com.worksoc.goaicoach.ui.board.boardColumnLabels
+import com.worksoc.goaicoach.ui.board.boardCoordinateFromTap
+import com.worksoc.goaicoach.ui.board.boardTapGeometry
+import com.worksoc.goaicoach.ui.board.starPoints
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull

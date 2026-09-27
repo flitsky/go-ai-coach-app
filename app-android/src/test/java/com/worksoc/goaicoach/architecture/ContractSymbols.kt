@@ -157,10 +157,10 @@ internal object ContractSymbols {
      * 그 커밋이 이 목록과 [UI_CYCLE_BASELINE_MUTUAL_PAIRS]를 **비워야** 한다(안 비우면 "기준선을 줄여라"로 빨갛다).
      * 새 사이클을 여기 적어 초록을 만들지 마라.
      */
-    val UI_CYCLE_BASELINE_SCCS: List<Set<String>> = listOf(setOf(UI_ROOT_PACKAGE, "$UI_ROOT_PACKAGE.vision"))
+    val UI_CYCLE_BASELINE_SCCS: List<Set<String>> = emptyList()
 
     /** ui 트리의 상호 참조 쌍 기준선 — [UI_CYCLE_BASELINE_SCCS]와 같은 쌍 하나, 같은 걸음(C7)에서 비운다. */
-    val UI_CYCLE_BASELINE_MUTUAL_PAIRS: List<Pair<String, String>> = listOf(UI_ROOT_PACKAGE to "$UI_ROOT_PACKAGE.vision")
+    val UI_CYCLE_BASELINE_MUTUAL_PAIRS: List<Pair<String, String>> = emptyList()
 
     /**
      * ui 하위 패키지의 **층 배정**(#27 설계, 2026-09-26) — 목록의 순번이 층(L0~L8)이다. 간선은 반드시

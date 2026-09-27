@@ -1,6 +1,8 @@
 package com.worksoc.goaicoach.ui
 
 import androidx.compose.ui.geometry.Offset
+import com.worksoc.goaicoach.ui.board.PlayDragLiftCells
+import com.worksoc.goaicoach.ui.board.followDrag
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
