@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.ui
+package com.worksoc.goaicoach.ui.splash
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background

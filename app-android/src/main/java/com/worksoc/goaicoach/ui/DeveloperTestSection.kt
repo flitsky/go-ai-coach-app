@@ -48,6 +48,7 @@ import com.worksoc.goaicoach.ui.monetization.AttendanceClaimReplaySignal
 import com.worksoc.goaicoach.ui.monetization.LocalBotCharacterUiState
 import com.worksoc.goaicoach.ui.monetization.LocalConsumableUiState
 import com.worksoc.goaicoach.ui.monetization.LocalPremiumUiState
+import com.worksoc.goaicoach.ui.splash.SplashCandidateRow
 
 /**
  * 개발자 테스트 섹션(1차·2차) — 백로그 #102에서 `SettingsScreen`에서 떼어냈다.

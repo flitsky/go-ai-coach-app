@@ -238,7 +238,7 @@
         errorLine1="    modifier: Modifier = Modifier,"
         errorLine2="    ~~~~~~~~">
         <location
-            file="src/main/java/com/worksoc/goaicoach/ui/SplashVariants.kt"
+            file="src/main/java/com/worksoc/goaicoach/ui/splash/SplashVariants.kt"
             line="164"
             column="5"/>
     </issue>
