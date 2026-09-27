@@ -128,7 +128,7 @@
         errorLine1="internal fun EngineBenchmarkOverlays("
         errorLine2="             ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/worksoc/goaicoach/ui/EngineBenchmarkDialogs.kt"
+            file="src/main/java/com/worksoc/goaicoach/ui/shell/EngineBenchmarkDialogs.kt"
             line="104"
             column="14"/>
     </issue>
@@ -139,7 +139,7 @@
         errorLine1="internal fun EngineUnavailableNoticeDialog(mode: EngineMode): Boolean {"
         errorLine2="             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/worksoc/goaicoach/ui/EngineUnavailableNoticeDialog.kt"
+            file="src/main/java/com/worksoc/goaicoach/ui/shell/EngineUnavailableNoticeDialog.kt"
             line="41"
             column="14"/>
     </issue>
@@ -161,7 +161,7 @@
         errorLine1="internal fun ReleaseResetNoticeDialog(context: Context): Boolean {"
         errorLine2="             ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/worksoc/goaicoach/ui/ReleaseResetNoticeDialog.kt"
+            file="src/main/java/com/worksoc/goaicoach/ui/shell/ReleaseResetNoticeDialog.kt"
             line="35"
             column="14"/>
     </issue>
@@ -249,7 +249,7 @@
         errorLine1="    remember(context) {"
         errorLine2="    ~~~~~~~~">
         <location
-            file="src/main/java/com/worksoc/goaicoach/ui/FirstRunGate.kt"
+            file="src/main/java/com/worksoc/goaicoach/ui/shell/FirstRunGate.kt"
             line="35"
             column="5"/>
     </issue>
@@ -366,7 +366,7 @@
         errorLine1="    var engineTurnWaitCompletionSeq by remember { mutableStateOf(0) }"
         errorLine2="                                                  ~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt"
+            file="src/main/java/com/worksoc/goaicoach/ui/shell/GoCoachApp.kt"
             line="279"
             column="51"/>
     </issue>
@@ -377,7 +377,7 @@
         errorLine1="    var undoEngineInterventionQuietUntil by remember { mutableStateOf(0L) }"
         errorLine2="                                                       ~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/worksoc/goaicoach/ui/GoCoachApp.kt"
+            file="src/main/java/com/worksoc/goaicoach/ui/shell/GoCoachApp.kt"
             line="292"
             column="56"/>
     </issue>

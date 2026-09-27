@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.ui
+package com.worksoc.goaicoach.ui.shell
 
 import android.content.Context
 import androidx.compose.material3.AlertDialog

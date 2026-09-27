@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.ui
+package com.worksoc.goaicoach.ui.shell
 
 import com.worksoc.goaicoach.application.device.DeviceIdentityStorePort
 import com.worksoc.goaicoach.ui.foundation.FeatureFlags

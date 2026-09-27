@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.ui
+package com.worksoc.goaicoach.ui.shell
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer

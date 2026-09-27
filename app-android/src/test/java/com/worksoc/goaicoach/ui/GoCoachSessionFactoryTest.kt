@@ -8,6 +8,7 @@ import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
+import com.worksoc.goaicoach.ui.shell.buildInitialSessionState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test

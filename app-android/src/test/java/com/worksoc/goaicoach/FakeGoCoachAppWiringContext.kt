@@ -53,7 +53,7 @@ import com.worksoc.goaicoach.shared.policy.EngineTimeoutPolicy
 import com.worksoc.goaicoach.shared.policy.MoveAnalysisSnapshot
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import com.worksoc.goaicoach.testsupport.FakeEngineSessionClient
-import com.worksoc.goaicoach.ui.buildInitialSessionState
+import com.worksoc.goaicoach.ui.shell.buildInitialSessionState
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.LinkedBlockingDeque
 import java.util.concurrent.TimeUnit

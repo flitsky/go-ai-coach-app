@@ -16,10 +16,10 @@ import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.enginecontract.EngineMode
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.testsupport.FakeEngineSessionClient
-import com.worksoc.goaicoach.ui.GoCoachApp
 import com.worksoc.goaicoach.ui.foundation.TestTags
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
 import com.worksoc.goaicoach.ui.l10n.UiStrings
+import com.worksoc.goaicoach.ui.shell.GoCoachApp
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test

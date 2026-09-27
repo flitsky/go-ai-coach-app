@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.ui
+package com.worksoc.goaicoach.ui.shell
 
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty

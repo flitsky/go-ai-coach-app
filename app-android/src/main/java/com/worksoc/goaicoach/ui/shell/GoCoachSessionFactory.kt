@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.ui
+package com.worksoc.goaicoach.ui.shell
 
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationUiState
 import com.worksoc.goaicoach.application.contract.GameSessionRuntimeState
