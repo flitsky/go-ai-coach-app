@@ -70,6 +70,7 @@ import com.worksoc.goaicoach.ui.l10n.gameReplayShowMoveNumbersLabelFor
 import com.worksoc.goaicoach.ui.l10n.gameReplayStartPositionFor
 import com.worksoc.goaicoach.ui.l10n.gameReplayTitleFor
 import com.worksoc.goaicoach.ui.l10n.gameReplayTruncatedFor
+import com.worksoc.goaicoach.ui.monetization.SubscriptionAwareBannerAd
 
 /**
  * 4 Depth: 한 판을 수순대로 되짚는 화면(백로그 #156).

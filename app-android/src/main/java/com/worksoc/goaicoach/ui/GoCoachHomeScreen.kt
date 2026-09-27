@@ -85,6 +85,8 @@ import com.worksoc.goaicoach.ui.foundation.FeatureFlags
 import com.worksoc.goaicoach.ui.guide.GuideAnchor
 import com.worksoc.goaicoach.ui.guide.GuideBlockingOverlays
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
+import com.worksoc.goaicoach.ui.monetization.LocalPremiumUiState
+import com.worksoc.goaicoach.ui.monetization.PremiumSubscribeDialog
 
 /**
  * 0 Depth: 홈 화면 (Home Screen)

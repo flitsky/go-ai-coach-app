@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.ui
+package com.worksoc.goaicoach.ui.monetization
 
 import android.content.Context
 import androidx.compose.foundation.layout.Arrangement

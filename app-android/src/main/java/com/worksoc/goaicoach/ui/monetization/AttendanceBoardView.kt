@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.ui
+package com.worksoc.goaicoach.ui.monetization
 
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.BorderStroke

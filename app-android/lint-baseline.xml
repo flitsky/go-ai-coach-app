@@ -172,7 +172,7 @@
         errorLine1="    val adWidthDp = LocalConfiguration.current.screenWidthDp"
         errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/worksoc/goaicoach/ui/BannerAdView.kt"
+            file="src/main/java/com/worksoc/goaicoach/ui/monetization/BannerAdView.kt"
             line="27"
             column="21"/>
     </issue>
@@ -311,7 +311,7 @@
         errorLine1="    var revision by mutableStateOf(0)"
         errorLine2="                    ~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/worksoc/goaicoach/ui/AttendanceRewardClaimDialog.kt"
+            file="src/main/java/com/worksoc/goaicoach/ui/monetization/AttendanceRewardClaimDialog.kt"
             line="100"
             column="21"/>
     </issue>
@@ -755,7 +755,7 @@
         errorLine1="        runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }.isSuccess"
         errorLine2="                                                                       ~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/worksoc/goaicoach/ui/PremiumSubscriptionNotice.kt"
+            file="src/main/java/com/worksoc/goaicoach/ui/monetization/PremiumSubscriptionNotice.kt"
             line="301"
             column="72"/>
     </issue>

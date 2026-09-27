@@ -49,6 +49,10 @@ import com.worksoc.goaicoach.ui.designsystem.BotCharacterAvatar
 import com.worksoc.goaicoach.ui.designsystem.SetupDropdown
 import com.worksoc.goaicoach.ui.foundation.TestTags
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
+import com.worksoc.goaicoach.ui.monetization.BotCharacterPickerDialog
+import com.worksoc.goaicoach.ui.monetization.LocalBotCharacterUiState
+import com.worksoc.goaicoach.ui.monetization.purchaseBotCharacterAndReport
+import com.worksoc.goaicoach.ui.monetization.watchAdForShardAndReport
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 

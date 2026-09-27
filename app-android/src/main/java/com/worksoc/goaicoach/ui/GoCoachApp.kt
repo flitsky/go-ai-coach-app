@@ -108,6 +108,16 @@ import com.worksoc.goaicoach.ui.foundation.withPlayConfirmModeGate
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.ProvideUiLanguage
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
+import com.worksoc.goaicoach.ui.monetization.AttendanceRewardClaimDialog
+import com.worksoc.goaicoach.ui.monetization.LocalBotCharacterUiState
+import com.worksoc.goaicoach.ui.monetization.LocalConsumableUiState
+import com.worksoc.goaicoach.ui.monetization.LocalPremiumUiState
+import com.worksoc.goaicoach.ui.monetization.OneShotAnalysisAutoClear
+import com.worksoc.goaicoach.ui.monetization.PremiumExpiryAutoDisableEffect
+import com.worksoc.goaicoach.ui.monetization.PremiumPurchaseRestoreEffect
+import com.worksoc.goaicoach.ui.monetization.buildBotCharacterUiState
+import com.worksoc.goaicoach.ui.monetization.buildConsumableUiState
+import com.worksoc.goaicoach.ui.monetization.buildPremiumUiState
 import com.worksoc.goaicoach.ui.vision.BoardScanScreen
 import com.worksoc.goaicoach.wireGoCoachControllers
 import java.io.File

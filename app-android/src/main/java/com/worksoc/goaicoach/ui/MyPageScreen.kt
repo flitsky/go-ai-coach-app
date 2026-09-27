@@ -47,6 +47,10 @@ import com.worksoc.goaicoach.ui.l10n.avatarDescriptionFor
 import com.worksoc.goaicoach.ui.l10n.editNicknameDescriptionFor
 import com.worksoc.goaicoach.ui.l10n.guideMyPageGreetingFor
 import com.worksoc.goaicoach.ui.l10n.nicknamePlaceholderFor
+import com.worksoc.goaicoach.ui.monetization.AttendanceStampBoard
+import com.worksoc.goaicoach.ui.monetization.LocalConsumableUiState
+import com.worksoc.goaicoach.ui.monetization.PremiumSubscriptionCard
+import com.worksoc.goaicoach.ui.monetization.consumableGlyphRes
 
 /**
  * 3 Depth: 마이 페이지 — 지금은 **보유한 1회권 재고**만 보여준다(백로그 #24).

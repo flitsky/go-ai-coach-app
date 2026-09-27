@@ -35,6 +35,8 @@ import com.worksoc.goaicoach.ui.designsystem.PremiumGoldDeep
 import com.worksoc.goaicoach.ui.foundation.FeatureFlags
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.boardSizeToggleLabelFor
+import com.worksoc.goaicoach.ui.monetization.LocalPremiumUiState
+import com.worksoc.goaicoach.ui.monetization.PremiumUpsellDialogHost
 
 @Composable
 internal fun KaTrainUxMenuButton(

@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.ui
+package com.worksoc.goaicoach.ui.monetization
 
 import android.app.Activity
 import androidx.compose.foundation.clickable

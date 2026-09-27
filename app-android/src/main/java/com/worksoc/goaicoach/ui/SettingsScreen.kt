@@ -59,6 +59,7 @@ import com.worksoc.goaicoach.presentation.GameUiEvent
 import com.worksoc.goaicoach.ui.foundation.FeatureFlags
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
+import com.worksoc.goaicoach.ui.monetization.AdPrivacyOptionsRow
 import com.worksoc.goaicoach.wipeToFreshInstall
 import kotlinx.coroutines.launch
 
