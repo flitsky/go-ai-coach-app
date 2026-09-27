@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.ui
+package com.worksoc.goaicoach.ui.account
 
 import android.content.Context
 import com.worksoc.goaicoach.application.auth.port.AuthClientPort

@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.ui
+package com.worksoc.goaicoach.ui.account
 
 import android.widget.Toast
 import androidx.compose.foundation.background

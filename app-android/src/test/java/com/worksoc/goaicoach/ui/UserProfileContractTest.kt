@@ -2,6 +2,8 @@ package com.worksoc.goaicoach.ui
 
 import com.worksoc.goaicoach.architecture.RepoPaths
 import com.worksoc.goaicoach.architecture.readContractSource
+import com.worksoc.goaicoach.ui.account.avatarColorOf
+import com.worksoc.goaicoach.ui.account.avatarInitialOf
 import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse

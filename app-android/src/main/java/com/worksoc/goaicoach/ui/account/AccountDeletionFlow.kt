@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.ui
+package com.worksoc.goaicoach.ui.account
 
 import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException
 import com.worksoc.goaicoach.application.auth.port.AuthClientPort

@@ -56,6 +56,12 @@ import com.worksoc.goaicoach.platform.GoogleCredentialManagerClient
 import com.worksoc.goaicoach.presentation.GameActionButtonRole
 import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.presentation.GameUiEvent
+import com.worksoc.goaicoach.ui.account.EmailSignInDialog
+import com.worksoc.goaicoach.ui.account.GoogleBrandBlue
+import com.worksoc.goaicoach.ui.account.SocialLoginButton
+import com.worksoc.goaicoach.ui.account.attemptAccountDeletion
+import com.worksoc.goaicoach.ui.account.attemptEmailSignIn
+import com.worksoc.goaicoach.ui.account.attemptGoogleSignIn
 import com.worksoc.goaicoach.ui.foundation.FeatureFlags
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiLanguage

@@ -102,6 +102,8 @@ import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.policy.EngineTimeoutPolicy
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
+import com.worksoc.goaicoach.ui.account.MyPageScreen
+import com.worksoc.goaicoach.ui.account.OnboardingScreen
 import com.worksoc.goaicoach.ui.designsystem.AppLightColorScheme
 import com.worksoc.goaicoach.ui.foundation.FeatureFlags
 import com.worksoc.goaicoach.ui.foundation.withPlayConfirmModeGate
