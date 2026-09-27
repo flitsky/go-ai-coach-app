@@ -4,6 +4,7 @@ import com.worksoc.goaicoach.application.botcharacter.BotCharacterCatalog
 import com.worksoc.goaicoach.application.botcharacter.BotUnlockSource
 import com.worksoc.goaicoach.architecture.RepoPaths
 import com.worksoc.goaicoach.architecture.readContractSource
+import com.worksoc.goaicoach.ui.designsystem.shardSweepDegrees
 import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

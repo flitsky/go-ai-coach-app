@@ -13,6 +13,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
+import com.worksoc.goaicoach.ui.designsystem.SetupDropdown
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 
 /**

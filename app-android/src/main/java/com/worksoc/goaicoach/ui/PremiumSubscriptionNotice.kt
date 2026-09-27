@@ -45,6 +45,11 @@ import com.worksoc.goaicoach.BuildConfig
 import com.worksoc.goaicoach.application.premium.port.PremiumProductInfo
 import com.worksoc.goaicoach.application.premium.port.PurchaseOutcome
 import com.worksoc.goaicoach.queryPremiumProductInfo
+import com.worksoc.goaicoach.ui.designsystem.PremiumCardShape
+import com.worksoc.goaicoach.ui.designsystem.PremiumGold
+import com.worksoc.goaicoach.ui.designsystem.PremiumGoldDeep
+import com.worksoc.goaicoach.ui.designsystem.PremiumGoldGradient
+import com.worksoc.goaicoach.ui.designsystem.PremiumGoldLight
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
 import com.worksoc.goaicoach.ui.l10n.premiumSubscriptionActiveLabelFor

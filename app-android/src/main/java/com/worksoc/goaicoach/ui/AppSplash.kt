@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.zIndex
+import com.worksoc.goaicoach.ui.designsystem.AppLightColorScheme
 
 /**
  * 4계층(External Integration) — 앱 기동 직후의 브랜드 모먼트(백로그 #125·#126).

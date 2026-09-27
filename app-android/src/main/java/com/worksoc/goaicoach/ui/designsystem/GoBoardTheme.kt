@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.ui
+package com.worksoc.goaicoach.ui.designsystem
 
 import androidx.compose.ui.graphics.Color
 

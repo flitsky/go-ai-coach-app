@@ -44,6 +44,11 @@ import com.worksoc.goaicoach.application.guide.GuideSurface
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.presentation.GameUiEvent
+import com.worksoc.goaicoach.ui.designsystem.PremiumCardShape
+import com.worksoc.goaicoach.ui.designsystem.PremiumGold
+import com.worksoc.goaicoach.ui.designsystem.PremiumGoldDeep
+import com.worksoc.goaicoach.ui.designsystem.PremiumGoldGradient
+import com.worksoc.goaicoach.ui.designsystem.PremiumGoldLight
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import kotlinx.coroutines.delay
 

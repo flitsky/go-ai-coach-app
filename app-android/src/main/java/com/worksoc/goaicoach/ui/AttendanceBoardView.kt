@@ -45,6 +45,8 @@ import com.worksoc.goaicoach.application.botcharacter.BotCollectionState
 import com.worksoc.goaicoach.application.consumable.ConsumableCatalog
 import com.worksoc.goaicoach.application.consumable.ConsumableItem
 import com.worksoc.goaicoach.application.premium.state.FeatureId
+import com.worksoc.goaicoach.ui.designsystem.BotCharacterAvatar
+import com.worksoc.goaicoach.ui.designsystem.shardRevealOf
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiStrings
 import com.worksoc.goaicoach.ui.l10n.attendanceStampedNoticeFor

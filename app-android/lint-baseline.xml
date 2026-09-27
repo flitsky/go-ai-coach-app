@@ -227,7 +227,7 @@
         errorLine1="    modifier: Modifier = Modifier,"
         errorLine2="    ~~~~~~~~">
         <location
-            file="src/main/java/com/worksoc/goaicoach/ui/GameActionButtons.kt"
+            file="src/main/java/com/worksoc/goaicoach/ui/designsystem/GameActionButtons.kt"
             line="74"
             column="5"/>
     </issue>

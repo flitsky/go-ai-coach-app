@@ -31,6 +31,7 @@ import com.worksoc.goaicoach.application.premium.state.FeatureAccess
 import com.worksoc.goaicoach.application.premium.state.FeatureId
 import com.worksoc.goaicoach.platform.PlayHaptics
 import com.worksoc.goaicoach.presentation.KaTrainUxOptions
+import com.worksoc.goaicoach.ui.designsystem.PremiumGoldDeep
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.boardSizeToggleLabelFor
 

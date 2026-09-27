@@ -60,6 +60,9 @@ import com.worksoc.goaicoach.performBotCharacterPurchase
 import com.worksoc.goaicoach.performBotCharacterPurchaseRestore
 import com.worksoc.goaicoach.persistence.BotCollectionStore
 import com.worksoc.goaicoach.showRewardedAdOnce
+import com.worksoc.goaicoach.ui.designsystem.BotCharacterAvatar
+import com.worksoc.goaicoach.ui.designsystem.PremiumGoldDeep
+import com.worksoc.goaicoach.ui.designsystem.shardRevealOf
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiStrings
 import kotlinx.coroutines.launch

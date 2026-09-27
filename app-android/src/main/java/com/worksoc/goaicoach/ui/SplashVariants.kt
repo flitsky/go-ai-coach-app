@@ -17,6 +17,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.worksoc.goaicoach.ui.designsystem.AllBotAvatarRes
+import com.worksoc.goaicoach.ui.designsystem.AppLightColorScheme
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
