@@ -183,7 +183,7 @@
         errorLine1="    val columnGap = (LocalConfiguration.current.screenWidthDp * 0.05f).dp"
         errorLine2="                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/worksoc/goaicoach/ui/KaTrainUxPanels.kt"
+            file="src/main/java/com/worksoc/goaicoach/ui/setup/KaTrainUxPanels.kt"
             line="57"
             column="22"/>
     </issue>
@@ -344,7 +344,7 @@
         errorLine1="    var nowMillis by remember { mutableStateOf(System.currentTimeMillis()) }"
         errorLine2="                                ~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/worksoc/goaicoach/ui/GameSetupLobby.kt"
+            file="src/main/java/com/worksoc/goaicoach/ui/setup/GameSetupLobby.kt"
             line="85"
             column="33"/>
     </issue>

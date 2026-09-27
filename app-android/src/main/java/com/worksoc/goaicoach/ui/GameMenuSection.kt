@@ -35,6 +35,11 @@ import com.worksoc.goaicoach.presentation.GameUiEvent
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
 import com.worksoc.goaicoach.ui.l10n.exitGameActionFor
+import com.worksoc.goaicoach.ui.setup.CompactScoringAndBoardSettingsPanel
+import com.worksoc.goaicoach.ui.setup.KaTrainUxMenuButton
+import com.worksoc.goaicoach.ui.setup.KaTrainUxMenuPanel
+import com.worksoc.goaicoach.ui.setup.PlayerSetupPanel
+import com.worksoc.goaicoach.ui.setup.SearchTimeSettingsPanel
 
 
 
