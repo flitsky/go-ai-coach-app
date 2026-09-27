@@ -11,7 +11,7 @@ import kotlin.test.assertTrue
  *
  * ## 왜 이 테스트가 필요한가
  * `validate`는 `play`처럼 상태를 바꾸거나 예외를 던지지 않고 값으로만 판정한다
- * ([LegalMoveGenerator]가 판 전체를 훑을 때, [GoBoard][com.worksoc.goaicoach.ui.GoBoard]가
+ * ([LegalMoveGenerator]가 판 전체를 훑을 때, [GoBoard][com.worksoc.goaicoach.ui.board.GoBoard]가
  * 끌기 매 프레임 좌표 하나를 물을 때 그 비용을 없애려는 것). 두 판정 경로가 하나라도
  * 어긋나면 화면은 허용하는데 실제 착수는 거부되거나, 그 반대가 된다 — 조용히 드러나는
  * 종류의 버그다.

@@ -32,7 +32,7 @@ import com.worksoc.goaicoach.ui.guide.GuideTargetSpots
  * 코치마크가 **자기 버튼이 자리를 잡기 전에** 떠서, 전면 흡수 층이 **반상 터치를 먹는다**
  * (`GuideCoachMark`의 *"어디를 눌러도 다음으로"*). 그쪽이 이미 `resetForTest()`를 갖고 있다.
  *
- * ⚠️ [com.worksoc.goaicoach.ui.SplashVisibility]는 **일부러 안 건드린다** — 되감으면 테스트마다
+ * ⚠️ [com.worksoc.goaicoach.ui.splash.SplashVisibility]는 **일부러 안 건드린다** — 되감으면 테스트마다
  * 스플래시가 다시 재생되고, 그 1초짜리 전면 오버레이는 **터치를 먹는다**(`SplashPlayer`).
  * 남아 있는 "이미 재생됨"은 오버레이를 **없애는** 쪽이라 이 테스트들에 해롭지 않다.
  */

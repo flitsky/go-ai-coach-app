@@ -15,7 +15,7 @@ import org.junit.runner.RunWith
 
 /**
  * M-04 smoke coverage: real [MainActivity] -> real [com.worksoc.goaicoach.engine.createEngineBootstrap]
- * -> real [com.worksoc.goaicoach.ui.GoCoachApp] composition, end to end. Distinct from
+ * -> real [com.worksoc.goaicoach.ui.shell.GoCoachApp] composition, end to end. Distinct from
  * [NewGameBoardTapSmokeTest], which bypasses MainActivity/engine bootstrap entirely with a fake
  * engine client.
  *

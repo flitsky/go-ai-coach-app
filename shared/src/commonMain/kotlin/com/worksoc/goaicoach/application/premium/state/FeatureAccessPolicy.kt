@@ -53,7 +53,7 @@ sealed interface FeatureAccess {
  * 함수의 `when` 분기 하나로 좁히는 것이 이 타입의 목적이다 — `GO_AI_COACH_ARCHITECTURE_ROADMAP.md`
  * "6계층 — 기능 엔타이틀먼트 정책 도입" 항목 참고.
  *
- * [UnlockOption.Purchase]는 [com.worksoc.goaicoach.ui.FeatureFlags.isPurchaseEnabled] 여부와
+ * [UnlockOption.Purchase]는 [com.worksoc.goaicoach.ui.foundation.FeatureFlags.isPurchaseEnabled] 여부와
  * 무관하게 항상 반환한다 — 그 플래그는 7계층(ui) 소속이라 6계층이 알면 안 된다. 구매 버튼을
  * 실제로 숨길지는 지금처럼 프레젠테이션(`PremiumUpsellDialog`)이 계속 판단한다.
  */
