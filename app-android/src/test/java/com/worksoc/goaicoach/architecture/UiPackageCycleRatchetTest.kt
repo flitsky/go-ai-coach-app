@@ -5,87 +5,52 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * **ui 하위 패키지 래칫**(refactor backlog #27 C1b) — app-android `ui/` 트리를 하위 패키지로 나누는 동안과
- * 그 뒤에, 패키지 사이에 사이클이 생기거나 간선이 층(L0~L8)을 거슬러 오르는 것을 막는다.
+ * **ui 하위 패키지 래칫**(refactor backlog #27 C1b, C17에서 보강) — app-android `ui/` 트리(프로덕션 소스)의
+ * 하위 패키지 16개 사이에 사이클이 생기거나 간선이 층(L0~L8)을 거슬러 오르는 것을 막는다.
  *
- * ## 왜 지금 거는가
+ * ## 왜 거는가
  * 분할 전의 `ui`는 한 패키지라 파일 사이 import가 아예 없었다 — 참조 그래프를 읽을 수조차 없었다.
- * 이동 커밋(C2~C16)이 파일을 옮길 때마다 의존이 import로 드러나는데, 그 import가 **위층을 향하는** 순간
- * 설계(SCC 0, 층 순서)는 첫 커밋부터 무너진다. 컴파일러는 그것을 막지 않는다. 그래서 첫 이동보다 먼저 건다.
+ * 분할로 의존이 전부 import로 드러났고, 그 import가 **위층을 향하는** 순간 설계(SCC 0, 층 순서)가 무너진다.
+ * 컴파일러는 그것을 막지 않는다. 그래서 첫 이동보다 먼저(C1b) 걸었고, 분할이 끝난 C17에서 예외를 걷었다.
  *
- * ## 무엇을 재는가
- *  1. **사이클**: [PackageCycleRatchetTest]와 같은 규칙([PackageImportGraph])·같은 판정기([CycleRatchetVerdict])로
- *     [ContractSymbols.UI_CYCLE_BASELINE_SCCS]·[ContractSymbols.UI_CYCLE_BASELINE_MUTUAL_PAIRS]와 비교한다.
- *     나빠지면 빨갛고, 좋아진 채 기준선이 그대로여도 빨갛다(래칫의 톱니).
+ * ## 무엇을 재는가 — 전부 예외 없이
+ *  1. **사이클 0**: [PackageImportGraph]의 SCC(크기 2 이상)와 상호 참조 쌍이 **하나도 없다**. 기준선은 없다 —
+ *     C17 전까지 있던 `UI_CYCLE_BASELINE_*`는 C7부터 비어 있었고, 지금은 "0"이 설계 자체다.
  *  2. **층**: [ContractSymbols.UI_LAYERS]의 순번이 층이다. 간선 A→B는 층(B) < 층(A)여야 한다 — 같은 층도 금지.
- *     판정은 순수 함수 [UiLayerVerdict]에 있고 [scannerAndVerdictsCatchPlantedUiViolations]가 합성 입력으로
- *     그 판정 자체를 시험한다(함정 24: 초록은 안전이 아니다).
+ *     실재하는 ui 패키지는 전부 배정표에 있어야 하고, 배정표의 패키지는 전부 실재해야 한다.
+ *  3. **맨 아래층(L0)은 ui의 다른 패키지를 모른다** — `#27` 요구 *"l10n은 ui 기능 패키지를 모른다"*를
+ *     2번의 따름정리로 두지 않고 따로 못박는다(층 표가 잘못 고쳐져도 이 문장은 살아 있어야 한다).
+ *  4. **루트 0파일, 선언 = 디렉터리**: [ContractSymbols.UI_ROOT_PACKAGE]에는 파일이 없고, 파일마다
+ *     `package` 선언이 제 디렉터리와 같다. 디렉터리가 층을 속이면(`play/`에 두고 `shell`로 선언) 2번은
+ *     선언을 믿으므로 통과하지만, 사람과 [RepoPaths.uiFile]은 디렉터리를 믿는다.
  *
- * ⚠️ **분할 중의 루트 예외** — [ContractSymbols.UI_ROOT_PACKAGE]에는 아직 안 옮긴 파일이 층을 가리지 않고
- * 섞여 있으므로 루트가 낀 간선은 층 판정에서 뺀다. 루트가 끼는 사이클은 1번(기준선)이 지킨다 — 옮겨 간
- * 패키지가 루트를 다시 import 하면 루트와 상호 참조 쌍이 생겨 빨개진다. 루트가 비는 C16 뒤에 C17이 이 예외를
- * 없애고 "루트 0파일"을 못박는다.
+ * 판정은 순수 함수 [UiLayerVerdict]에 있고 [scannerAndVerdictsCatchPlantedUiViolations]가 합성 입력으로
+ * 그 판정 자체를 시험한다(함정 24: 초록은 안전이 아니다).
+ *
+ * ⚠️ 보는 것은 `src/main`의 `ui/`뿐이다 — 단위 테스트 소스는 제 패키지(`ui` 루트 등)에 있어도 프로덕션 그래프가 아니다.
  */
 class UiPackageCycleRatchetTest {
 
-    /** 기준선보다 **나빠진** SCC — 새 패키지가 사이클에 들어왔거나 SCC 둘이 합쳐졌다. */
+    /** SCC 0 — 사이클도, 그 씨앗인 상호 참조 쌍도 없다. */
     @Test
-    fun noUiPackageJoinsACycleBeyondTheBaseline() {
-        val verdict = CycleRatchetVerdict.forCycles(ContractSymbols.UI_CYCLE_BASELINE_SCCS, graph.cycles)
-
+    fun uiPackageGraphHasNoCycle() {
         assertEquals(
-            "ui 패키지 사이클이 기준선보다 커졌다 — 옮긴 패키지가 위층이나 루트를 import 했다. " +
-                "기준선을 늘리지 말고 의존 방향을 고쳐라(refactor backlog #27).\n" +
-                verdict.worse.joinToString("\n") { "  - ${short(it)}" } + currentCyclesReport(),
-            emptyList<String>(),
-            verdict.worse,
-        )
-    }
-
-    /** 기준선에 없는 **새 상호 참조 쌍** — 사이클의 씨앗이다. */
-    @Test
-    fun noNewMutualImportPairAppearsInUi() {
-        val verdict = CycleRatchetVerdict.forMutualPairs(ContractSymbols.UI_CYCLE_BASELINE_MUTUAL_PAIRS, graph.mutualPairs)
-
-        assertEquals(
-            "ui 안에 기준선에 없던 상호 참조 쌍이 생겼다 — 두 패키지가 서로를 import 한다. 한쪽 방향을 " +
-                "끊어라(refactor backlog #27).\n" + verdict.worse.joinToString("\n") { "  - ${short(it)}" } +
-                currentPairsReport(),
-            emptyList<String>(),
-            verdict.worse,
-        )
-    }
-
-    /**
-     * 기준선보다 **좋아졌는데 기준선이 그대로**인 상태 — 이것이 래칫의 톱니다.
-     *
-     * ⭐ 루트 ↔ `ui.vision` 사이클은 `GoBoard`가 `ui.board`로 옮겨지는 C7에서 끊긴다. 그 커밋에서 여기가
-     * 빨개지는 것이 **정상**이다 — [ContractSymbols]의 두 기준선을 비워 잠가라.
-     */
-    @Test
-    fun uiCycleBaselineIsShrunkWhenRealityImproves() {
-        val cycles = CycleRatchetVerdict.forCycles(ContractSymbols.UI_CYCLE_BASELINE_SCCS, graph.cycles)
-        val pairs = CycleRatchetVerdict.forMutualPairs(ContractSymbols.UI_CYCLE_BASELINE_MUTUAL_PAIRS, graph.mutualPairs)
-        val improvements = cycles.better + pairs.better
-
-        assertEquals(
-            "ui 사이클이 기준선보다 줄었다 — 기준선을 줄여라. ContractSymbols.UI_CYCLE_BASELINE_SCCS / " +
-                "UI_CYCLE_BASELINE_MUTUAL_PAIRS를 아래 현재 값으로 고쳐 줄어든 것을 잠가야 다시 커지지 " +
-                "않는다(refactor backlog #27).\n" + improvements.joinToString("\n") { "  - ${short(it)}" } +
+            "ui 하위 패키지 사이에 사이클이 생겼다 — 설계는 SCC 0이다. 한쪽 방향을 끊어라: 위층의 선언을 " +
+                "아래층으로 내리거나, 아래층이 위층을 부르는 import를 없애라(refactor backlog #27)." +
                 currentCyclesReport() + currentPairsReport(),
-            emptyList<String>(),
-            improvements,
+            emptySet<Set<String>>() to emptySet<Pair<String, String>>(),
+            graph.cycles to graph.mutualPairs,
         )
     }
 
-    /** 간선이 층을 거슬러 오르지 않는다 — 그리고 실재하는 ui 하위 패키지는 전부 층을 배정받았다. */
+    /** 간선이 층을 거슬러 오르지 않는다 — 루트는 0파일이고, 실재하는 ui 하위 패키지는 전부 층을 배정받았다. */
     @Test
     fun uiEdgesOnlyPointToLowerLayers() {
         val violations = UiLayerVerdict.violations(
             packages = graph.packages,
             edges = graph.edgeReferenceCounts.keys,
             layers = ContractSymbols.UI_LAYERS,
-            unsplitRoot = ContractSymbols.UI_ROOT_PACKAGE,
+            root = ContractSymbols.UI_ROOT_PACKAGE,
         )
 
         assertEquals(
@@ -94,6 +59,37 @@ class UiPackageCycleRatchetTest {
                 "(refactor backlog #27).\n" + violations.joinToString("\n") { "  - ${short(it)}" },
             emptyList<String>(),
             violations,
+        )
+    }
+
+    /** 맨 아래층(L0)에서 ui의 다른 패키지로 나가는 간선은 0이다 — `l10n`·`designsystem`·`foundation`은 기능을 모른다. */
+    @Test
+    fun lowestUiLayerKnowsNoOtherUiPackage() {
+        val leaving = UiLayerVerdict.edgesLeavingLowestLayer(graph.edgeReferenceCounts.keys, ContractSymbols.UI_LAYERS)
+
+        assertEquals(
+            "맨 아래층(L0)이 ui의 다른 패키지를 import 한다 — L0은 모든 화면이 쓰는 바닥이라 무엇도 부르면 안 된다. " +
+                "필요한 선언을 L0으로 내려라(refactor backlog #27: l10n은 ui 기능 패키지를 모른다).\n" +
+                leaving.joinToString("\n") { "  - ${short(it)}" },
+            emptyList<String>(),
+            leaving,
+        )
+    }
+
+    /** `ui/` 바로 아래에 파일이 없고, 파일마다 `package` 선언이 제 디렉터리와 같다. */
+    @Test
+    fun uiRootHoldsNoFileAndEveryPackageMatchesItsDirectory() {
+        val misplaced = UiLayerVerdict.misplacedFiles(
+            graph.packageBySource.mapKeys { (label, _) -> label.replace('\\', '/') },
+            ContractSymbols.UI_ROOT_PACKAGE,
+        )
+
+        assertEquals(
+            "ui 파일이 제자리에 있지 않다 — 루트(`ui/` 바로 아래)는 0파일이고, `package` 선언은 디렉터리와 같아야 " +
+                "한다. 층 판정은 선언을, 사람과 RepoPaths.uiFile은 디렉터리를 믿는다(refactor backlog #27).\n" +
+                misplaced.joinToString("\n") { "  - ${short(it)}" },
+            emptyList<String>(),
+            misplaced,
         )
     }
 
@@ -118,7 +114,23 @@ class UiPackageCycleRatchetTest {
     }
 
     /**
-     * 스캔이 **실제로 무언가를 봤는지**. `ui/`가 옮겨져 빈 그래프가 되면 SCC도 간선도 0이 되고, 나빠짐·층
+     * 배정표와 현실이 **정확히 같은 패키지 집합**인가. 표에만 있는 이름은 층 판정이 허공을 보는 것이고,
+     * 현실에만 있는 이름은 층 판정을 비켜 가는 것이다(후자는 [uiEdgesOnlyPointToLowerLayers]도 잡는다).
+     */
+    @Test
+    fun uiLayerMapNamesExactlyTheRealUiPackages() {
+        val mapped = ContractSymbols.UI_LAYERS.flatten().toSet()
+
+        assertEquals(
+            "UI_LAYERS와 실제 ui 패키지가 다르다 — 표에만: ${(mapped - graph.packages).sorted().map(::short)}, " +
+                "현실에만: ${(graph.packages - mapped).sorted().map(::short)}(refactor backlog #27).",
+            mapped,
+            graph.packages,
+        )
+    }
+
+    /**
+     * 스캔이 **실제로 무언가를 봤는지**. `ui/`가 옮겨져 빈 그래프가 되면 SCC도 간선도 0이 되고, 사이클·층
      * 테스트는 무조건 초록이 된다. 풀리지 않는 참조가 생겼다면 패키지 해석 규칙이 소스와 어긋난 것이다.
      */
     @Test
@@ -139,12 +151,12 @@ class UiPackageCycleRatchetTest {
     }
 
     /**
-     * 자기검증 — 스캐너와 두 판정기가 **일부러 만든 위반을 잡는가**. 오늘의 실제 그래프는 루트 예외 때문에
-     * 층 판정이 사실상 아무것도 안 보고 통과한다. 그래서 이 판정기가 "항상 통과"로 고장나 있어도
-     * 알 길이 없다 — 합성 ui 트리로 무는지 확인한다.
+     * 자기검증 — 스캐너와 판정기가 **일부러 만든 위반을 잡는가**. 오늘의 실제 그래프는 위반이 0이라 판정기가
+     * "항상 통과"로 고장나 있어도 알 길이 없다 — 합성 ui 트리로 무는지 확인한다.
      *
      * 패키지 이름은 전부 [ContractSymbols.UI_LAYERS]·[ContractSymbols.UI_ROOT_PACKAGE]에서 꺼낸다 — 리터럴을
      * 적으면 [ContractSymbolContractTest]에 걸리고, **실제 배정표**로 판정해야 표가 판정기에 제대로 물려 있는지도 본다.
+     * 라벨은 `ui/` 기준 상대 경로 모양으로 적는다 — 디렉터리 판정이 그것을 읽는다.
      */
     @Test
     fun scannerAndVerdictsCatchPlantedUiViolations() {
@@ -156,60 +168,68 @@ class UiPackageCycleRatchetTest {
         val play = pkg("play")
         val shell = pkg("shell")
         val stray = "$root.zzstray"
+        fun verdictOf(g: PackageImportGraph) = UiLayerVerdict.violations(g.packages, g.edgeReferenceCounts.keys, ContractSymbols.UI_LAYERS, root)
 
-        // 합법: shell(L8) → play(L5) → board(L3) → l10n(L0). 루트는 아무 쪽이든 참조할 수 있다(분할 중 예외).
+        // 합법: shell(L8) → play(L5) → board(L3) → l10n(L0), 전부 제 디렉터리에, 루트는 비었다.
         val legal = PackageImportGraph.of(
             mapOf(
-                "S.kt" to "package $shell\n\nimport $play.P\n\nclass S\n",
-                "P.kt" to "package $play\n\nimport $board.B\nimport $l10n.Strings\n\nclass P\n",
-                "B.kt" to "package $board\n\nimport $l10n.Strings\n\nclass B\n",
-                "L.kt" to "package $l10n\n\nclass Strings\n",
-                "R.kt" to "package $root\n\nimport $shell.S\nimport $l10n.Strings\n\nclass R\n",
+                "shell/S.kt" to "package $shell\n\nimport $play.P\n\nclass S\n",
+                "play/P.kt" to "package $play\n\nimport $board.B\nimport $l10n.Strings\n\nclass P\n",
+                "board/B.kt" to "package $board\n\nimport $l10n.Strings\n\nclass B\n",
+                "l10n/L.kt" to "package $l10n\n\nclass Strings\n",
             ),
             root,
         )
         assertEquals(emptyList<String>(), legal.unresolvedReferences)
         assertEquals(emptySet<Set<String>>(), legal.cycles)
-        assertEquals(emptyList<String>(), UiLayerVerdict.violations(legal.packages, legal.edgeReferenceCounts.keys, ContractSymbols.UI_LAYERS, root))
+        assertEquals(emptyList<String>(), verdictOf(legal))
+        assertEquals(emptyList<String>(), UiLayerVerdict.edgesLeavingLowestLayer(legal.edgeReferenceCounts.keys, ContractSymbols.UI_LAYERS))
+        assertEquals(emptyList<String>(), UiLayerVerdict.misplacedFiles(legal.packageBySource, root))
 
-        // 위층 간선(l10n L0 → play L5, inline FQN으로도 잡힌다) · 같은 층 간선(l10n → designsystem) · 배정 없는 패키지.
+        // 위층 간선(l10n L0 → play L5, inline FQN으로도 잡힌다) · 같은 층 간선(l10n → designsystem) · 배정 없는 패키지 ·
+        // 루트에 남은 파일 · 디렉터리와 다른 선언(board/에 둔 play 파일).
         val illegal = PackageImportGraph.of(
             mapOf(
-                "L.kt" to "package $l10n\n\nimport $designsystem.Theme\n\nclass Strings { val p = $play.P() }\n",
-                "D.kt" to "package $designsystem\n\nclass Theme\n",
-                "P.kt" to "package $play\n\nclass P\n",
-                "Z.kt" to "package $stray\n\nclass Z\n",
+                "l10n/L.kt" to "package $l10n\n\nimport $designsystem.Theme\n\nclass Strings { val p = $play.P() }\n",
+                "designsystem/D.kt" to "package $designsystem\n\nclass Theme\n",
+                "play/P.kt" to "package $play\n\nclass P\n",
+                "board/Wrong.kt" to "package $play\n\nclass Wrong\n",
+                "zzstray/Z.kt" to "package $stray\n\nclass Z\n",
+                "R.kt" to "package $root\n\nimport $l10n.Strings\n\nclass R\n",
             ),
             root,
         )
-        val layerViolations = UiLayerVerdict.violations(illegal.packages, illegal.edgeReferenceCounts.keys, ContractSymbols.UI_LAYERS, root)
-        assertEquals(3, layerViolations.size)
+        val layerViolations = verdictOf(illegal)
+        assertEquals(layerViolations.joinToString("\n"), 4, layerViolations.size)
         assertTrue(layerViolations.any { "위층" in it && l10n in it && play in it })
         assertTrue(layerViolations.any { "같은 층" in it && l10n in it && designsystem in it })
         assertTrue(layerViolations.any { "배정이 없는" in it && stray in it })
+        assertTrue(layerViolations.any { "루트 패키지에 파일" in it && root in it })
+        assertEquals(
+            listOf("$l10n → $designsystem", "$l10n → $play"),
+            UiLayerVerdict.edgesLeavingLowestLayer(illegal.edgeReferenceCounts.keys, ContractSymbols.UI_LAYERS),
+        )
+        val misplaced = UiLayerVerdict.misplacedFiles(illegal.packageBySource, root)
+        assertEquals(misplaced.joinToString("\n"), 2, misplaced.size)
+        assertTrue(misplaced.any { "루트 디렉터리" in it && "R.kt" in it })
+        assertTrue(misplaced.any { "디렉터리와 다르다" in it && "board/Wrong.kt" in it && "$root.board" in it })
 
-        // 사이클: 옮긴 패키지끼리 서로를(board ↔ play), 또는 옮긴 패키지가 루트를 다시(l10n ↔ 루트) import 하면 기준선 대비 나빠짐이다.
+        // 사이클: 옮긴 패키지끼리 서로를(board ↔ play), 또는 하위 패키지가 루트를 다시(l10n ↔ 루트) import 한다.
         val cyclic = PackageImportGraph.of(
             mapOf(
-                "B.kt" to "package $board\n\nimport $play.P\n\nclass B\n",
-                "P.kt" to "package $play\n\nimport $board.B\n\nclass P\n",
-                "L.kt" to "package $l10n\n\nimport $root.R\n\nclass Strings\n",
+                "board/B.kt" to "package $board\n\nimport $play.P\n\nclass B\n",
+                "play/P.kt" to "package $play\n\nimport $board.B\n\nclass P\n",
+                "l10n/L.kt" to "package $l10n\n\nimport $root.R\n\nclass Strings\n",
                 "R.kt" to "package $root\n\nimport $l10n.Strings\n\nclass R\n",
             ),
             root,
         )
         assertEquals(setOf(setOf(board, play), setOf(l10n, root)), cyclic.cycles)
-        val baseline = ContractSymbols.UI_CYCLE_BASELINE_SCCS
-        assertTrue(CycleRatchetVerdict.forCycles(baseline, cyclic.cycles).worse.isNotEmpty())
-        assertTrue(
-            CycleRatchetVerdict.forMutualPairs(ContractSymbols.UI_CYCLE_BASELINE_MUTUAL_PAIRS, cyclic.mutualPairs)
-                .worse.size == 2,
-        )
-        // 같은 층·위층 판정은 사이클 판정과 따로 문다 — board ↔ play는 위층 간선(board L3 → play L5)으로도 잡힌다.
-        assertTrue(
-            UiLayerVerdict.violations(cyclic.packages, cyclic.edgeReferenceCounts.keys, ContractSymbols.UI_LAYERS, root)
-                .any { "위층" in it && board in it && play in it },
-        )
+        assertEquals(2, cyclic.mutualPairs.size)
+        // 층 판정은 사이클 판정과 따로 문다 — board ↔ play는 위층 간선(board L3 → play L5)으로, 루트는 파일로 잡힌다.
+        val cyclicLayerViolations = verdictOf(cyclic)
+        assertTrue(cyclicLayerViolations.any { "위층" in it && board in it && play in it })
+        assertTrue(cyclicLayerViolations.any { "루트 패키지에 파일" in it })
     }
 
     private fun currentCyclesReport(): String =
@@ -235,26 +255,32 @@ class UiPackageCycleRatchetTest {
 }
 
 /**
- * ui 하위 패키지의 **층 판정** — 그래프 스캔과 떼어 둔 순수 함수다([CycleRatchetVerdict]와 같은 이유: 자기검증이
+ * ui 하위 패키지의 **층·배치 판정** — 그래프 스캔과 떼어 둔 순수 함수다([CycleRatchetVerdict]와 같은 이유: 자기검증이
  * 합성 입력으로 판정 자체를 시험한다).
- *
- *  - [layers]의 순번이 층이다. 간선 A→B는 층(B) < 층(A)일 때만 합법 — 같은 층도 위반이다.
- *  - [unsplitRoot](분할 중인 루트)가 낀 간선은 보지 않는다(루트는 층이 섞인 나머지다).
- *  - [packages] 중 루트가 아닌데 [layers]에 없는 패키지는 위반이다 — 배정이 없으면 층 판정을 비켜 간다.
  */
 internal object UiLayerVerdict {
 
+    /**
+     * 층 위반 전부.
+     *  - [layers]의 순번이 층이다. 간선 A→B는 층(B) < 층(A)일 때만 합법 — 같은 층도 위반이다.
+     *  - [root]에 파일이 있으면(= [packages]에 있으면) 위반이다 — 분할 뒤 루트는 0파일이다(C17, 예외 없음).
+     *  - [packages] 중 루트가 아닌데 [layers]에 없는 패키지는 위반이다 — 배정이 없으면 층 판정을 비켜 간다.
+     *  - 루트·미배정 패키지가 낀 간선은 따로 세지 않는다 — 그 패키지 자체가 이미 위반으로 올라 있다.
+     */
     fun violations(
         packages: Set<String>,
         edges: Collection<Pair<String, String>>,
         layers: List<List<String>>,
-        unsplitRoot: String,
+        root: String,
     ): List<String> {
-        val layerOf: Map<String, Int> = layers.flatMapIndexed { index, layer -> layer.map { it to index } }.toMap()
-        val unassigned = (packages - unsplitRoot).filter { it !in layerOf }.sorted()
+        val layerOf = layerIndex(layers)
+        val rootHoldsFiles = listOfNotNull(
+            "ui 루트 패키지에 파일이 있다: $root — 분할 뒤 루트는 0파일이다. 알맞은 하위 패키지로 옮겨라"
+                .takeIf { root in packages },
+        )
+        val unassigned = (packages - root).filter { it !in layerOf }.sorted()
             .map { "층 배정이 없는 ui 패키지: $it" }
         val misdirected = edges
-            .filter { (from, to) -> from != unsplitRoot && to != unsplitRoot }
             .mapNotNull { (from, to) ->
                 val fromLayer = layerOf[from] ?: return@mapNotNull null
                 val toLayer = layerOf[to] ?: return@mapNotNull null
@@ -265,6 +291,31 @@ internal object UiLayerVerdict {
                 }
             }
             .sorted()
-        return unassigned + misdirected
+        return rootHoldsFiles + unassigned + misdirected
     }
+
+    /** 맨 아래층([layers]의 첫 층)에서 **나가는** 간선 전부(`from → to`, 정렬). 아래가 없으니 전부 위반이다. */
+    fun edgesLeavingLowestLayer(edges: Collection<Pair<String, String>>, layers: List<List<String>>): List<String> {
+        val lowest = layers.first().toSet()
+        return edges.filter { (from, _) -> from in lowest }.map { (from, to) -> "$from → $to" }.sorted()
+    }
+
+    /**
+     * 제자리가 아닌 파일 전부. [packageByPath]의 키는 `ui/` 기준 상대 경로(`/` 구분)다.
+     *  - 디렉터리 없이 루트 바로 아래 있는 파일은 위반이다.
+     *  - 선언한 패키지가 `root + 디렉터리`와 다르면 위반이다.
+     */
+    fun misplacedFiles(packageByPath: Map<String, String>, root: String): List<String> =
+        packageByPath.entries.sortedBy { it.key }.mapNotNull { (path, declared) ->
+            val directory = path.substringBeforeLast('/', missingDelimiterValue = "")
+            val expected = "$root.${directory.replace('/', '.')}"
+            when {
+                directory.isEmpty() -> "ui 루트 디렉터리에 파일이 있다: $path (package $declared)"
+                declared != expected -> "패키지 선언이 디렉터리와 다르다: $path — 선언 $declared, 디렉터리대로면 $expected"
+                else -> null
+            }
+        }
+
+    private fun layerIndex(layers: List<List<String>>): Map<String, Int> =
+        layers.flatMapIndexed { index, layer -> layer.map { it to index } }.toMap()
 }

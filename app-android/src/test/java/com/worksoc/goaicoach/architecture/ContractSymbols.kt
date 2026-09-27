@@ -142,35 +142,24 @@ internal object ContractSymbols {
 
     // ── ui 하위 패키지 래칫(refactor backlog #27) ─────────────────────────
     // [UiPackageCycleRatchetTest]가 app-android `ui/` 트리의 패키지 import 그래프를 [PackageImportGraph]로
-    // 재서 두 가지를 본다 — ① SCC·상호 참조 쌍이 아래 기준선보다 나빠지지 않는가(좋아지면 기준선을
-    // 줄이라고 빨개진다), ② 간선이 [UI_LAYERS]의 층 순서를 거스르지 않는가.
+    // 재서 본다 — ① SCC가 0인가(사이클·상호 참조 쌍이 하나도 없다), ② 간선이 [UI_LAYERS]의 층 순서를
+    // 거스르지 않는가(예외 없음), ③ 루트에 파일이 0개이고 파일마다 패키지 선언이 디렉터리와 같은가.
     // 이름은 전부 [UI_PACKAGE]에서 파생한다 — 리터럴을 새로 적으면 [ContractSymbolContractTest]에 걸린다.
     // ⚠️ 이 블록은 [GUARDED]보다 **앞에** 있어야 한다(`object` 프로퍼티는 적힌 순서대로 초기화된다).
+    //
+    // 분할(C2~C16) 동안 있던 사이클 기준선(`UI_CYCLE_BASELINE_*`)은 C17에서 **지웠다** — 루트 ↔ `ui.vision`
+    // 사이클이 C7에서 끊긴 뒤로 줄곧 비어 있었고, 층 순서가 예외 없이 걸린 지금은 "사이클 0"이 기준선이 아니라
+    // 설계 자체다. 비어 있는 기준선 목록은 "여기 한 줄 적으면 초록"이라는 문을 열어 둘 뿐이다.
 
-    /** ui 패키지 트리의 루트 이름(접미 `.` 없음). 분할(#27 C2~C16)이 끝날 때까지 **아직 안 옮긴 파일**이 사는 곳이다. */
+    /** ui 패키지 트리의 루트 이름(접미 `.` 없음). 분할(#27) 뒤로 **이 패키지에는 파일이 0개다** — 하위 패키지만 있다. */
     val UI_ROOT_PACKAGE: String = UI_PACKAGE.trimEnd('.')
-
-    /**
-     * ui 트리의 SCC 기준선. **지금 하나 있다** — 루트 ↔ `ui.vision`(`GoCoachApp`이 `BoardScanScreen`을,
-     * vision이 루트의 `LocalUiStrings`·`LocalPremiumUiState`·`PremiumUpsellDialogHost`·`GoBoard`를 쓴다).
-     * 분할이 아래층부터 진행되므로 이 사이클은 `GoBoard`가 `ui.board`로 옮겨지는 걸음(C7)에서 끊기고,
-     * 그 커밋이 이 목록과 [UI_CYCLE_BASELINE_MUTUAL_PAIRS]를 **비워야** 한다(안 비우면 "기준선을 줄여라"로 빨갛다).
-     * 새 사이클을 여기 적어 초록을 만들지 마라.
-     */
-    val UI_CYCLE_BASELINE_SCCS: List<Set<String>> = emptyList()
-
-    /** ui 트리의 상호 참조 쌍 기준선 — [UI_CYCLE_BASELINE_SCCS]와 같은 쌍 하나, 같은 걸음(C7)에서 비운다. */
-    val UI_CYCLE_BASELINE_MUTUAL_PAIRS: List<Pair<String, String>> = emptyList()
 
     /**
      * ui 하위 패키지의 **층 배정**(#27 설계, 2026-09-26) — 목록의 순번이 층(L0~L8)이다. 간선은 반드시
      * **더 낮은 층으로만** 간다. 같은 층끼리도 금지다(설계 그래프에서 같은 층 간선은 0이었다).
-     *  - [UI_ROOT_PACKAGE]는 배정이 없다 — 분할 중에는 아직 안 옮긴 나머지라 층이 섞여 있다. 그래서 루트가
-     *    낀 간선은 층 판정에서 빼고, 사이클 쪽(기준선)이 대신 지킨다. 루트가 비는 C16 뒤에 C17이
-     *    "루트 0파일"과 함께 이 예외를 없앤다.
-     *  - 지금은 `ui.vision` 하나만 실재한다. 나머지는 이동 커밋이 하나씩 만든다 — 그래서 [GUARDED]의
-     *    실존 검사에는 **아직 올리지 않는다**(C17에서 올린다). 대신 실재하는 ui 하위 패키지가 여기 없으면
-     *    빨갛다 — 새 패키지가 층 판정을 조용히 비켜 가지 못한다.
+     *  - [UI_ROOT_PACKAGE]는 배정이 없다 — 파일이 하나라도 생기면 그 자체로 위반이다(C17부터, 예외 없음).
+     *  - 여기 적힌 패키지는 전부 실재해야 하고([GUARDED]의 실존 검사), 실재하는 ui 하위 패키지는 전부
+     *    여기 있어야 한다(래칫의 배정표 대조) — 새 패키지가 층 판정을 조용히 비켜 가지 못한다.
      */
     val UI_LAYERS: List<List<String>> = listOf(
         listOf("l10n", "designsystem", "foundation"), // L0
@@ -408,14 +397,13 @@ internal object ContractSymbols {
                 SymbolExpectation.MUST_EXIST,
                 "패키지 사이클 래칫 기준선의 구성원(#33) — 사라졌다면 기준선을 줄여야 한다",
             )
-        } + (UI_CYCLE_BASELINE_SCCS.flatten() + UI_CYCLE_BASELINE_MUTUAL_PAIRS.flatMap { it.toList() })
-        .distinct()
+        } + UI_LAYERS.flatten()
         .map { packageName ->
             GuardedSymbol(
                 packageName,
                 SymbolKind.PACKAGE,
                 SymbolExpectation.MUST_EXIST,
-                "ui 하위 패키지 사이클 래칫 기준선의 구성원(#27) — 사라졌다면 기준선을 줄여야 한다",
+                "ui 층 배정표의 구성원(#27) — 사라졌다면 배정표(UI_LAYERS)를 고쳐야 층 판정이 허공을 보지 않는다",
             )
         } + (LAYER_5_PACKAGES + LAYER_6_PACKAGES + SHARED_PACKAGES_BELOW_LAYER_5)
         .map { packageName ->

@@ -32,6 +32,11 @@ internal class PackageImportGraph private constructor(
     val edgeReferenceCounts: Map<Pair<String, String>, Int>,
     /** [rootPackage] 아래를 가리키는데 알려진 패키지로 풀리지 않은 참조(`파일: FQN`). */
     val unresolvedReferences: List<String>,
+    /**
+     * 소스 라벨마다 그 파일이 **선언한** 패키지([packages]를 만든 바로 그 판독). [scan]이면 라벨은 소스
+     * 루트 기준 상대 경로다 — 디렉터리와 선언이 어긋난 파일을 찾는 가드(refactor backlog #27 C17)가 쓴다.
+     */
+    val packageBySource: Map<String, String>,
 ) {
 
     /** 크기 2 이상인 SCC 전부 — 크기 1(자기 자신뿐)은 사이클이 아니므로 뺀다. */
@@ -145,7 +150,7 @@ internal class PackageImportGraph private constructor(
                     inlineFqn.findAll(line).forEach { record(label, from, it.value, resolve(it.value)) }
                 }
             }
-            return PackageImportGraph(normalized.size, packages, counts, unresolved)
+            return PackageImportGraph(normalized.size, packages, counts, unresolved, packageOf)
         }
 
         /**
