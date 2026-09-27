@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.worksoc.goaicoach.application.botcharacter.BotCharacter
+import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 
 /**
  * 캐릭터를 새로 얻었을 때의 축전 팝업(백로그 #69).

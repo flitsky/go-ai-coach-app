@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.ui
+package com.worksoc.goaicoach.ui.l10n
 
 /**
  * 출석 도장판(백로그 #55)이 새로 쓰는 문구. 구조는 `UiStringsStudyVideos.kt`와 같다 — 화면 하나가

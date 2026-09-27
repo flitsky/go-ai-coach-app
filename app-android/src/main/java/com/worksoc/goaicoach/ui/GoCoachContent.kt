@@ -39,6 +39,9 @@ import com.worksoc.goaicoach.application.session.GameSessionTurnTimeState
 import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.presentation.GameUiEvent
 import com.worksoc.goaicoach.presentation.shouldCollapseMenuAfterEvent
+import com.worksoc.goaicoach.ui.l10n.GuideToolLabels
+import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
+import com.worksoc.goaicoach.ui.l10n.UiLanguage
 
 @Composable
 internal fun GoCoachContent(

@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.ui
+package com.worksoc.goaicoach.ui.l10n
 
 import com.worksoc.goaicoach.application.premium.app.PurchaseFailureNotice
 import com.worksoc.goaicoach.application.premium.app.failureNotice

@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.ui
+package com.worksoc.goaicoach.ui.l10n
 
 /**
  * 학습 허브 하위 분류의 이름·한 줄 소개(백로그 #163, U-16 — 2026-09-20 사용자 결정).

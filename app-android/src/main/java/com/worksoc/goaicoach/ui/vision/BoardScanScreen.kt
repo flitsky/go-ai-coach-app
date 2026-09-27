@@ -39,8 +39,8 @@ import com.worksoc.goaicoach.shared.enginecontract.ScoreEstimate
 import com.worksoc.goaicoach.shared.vision.BoardCornerPoints
 import com.worksoc.goaicoach.shared.vision.DetectedBoard
 import com.worksoc.goaicoach.ui.LocalPremiumUiState
-import com.worksoc.goaicoach.ui.LocalUiStrings
 import com.worksoc.goaicoach.ui.PremiumUpsellDialogHost
+import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.vision.AndroidBoardVisionScanner
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

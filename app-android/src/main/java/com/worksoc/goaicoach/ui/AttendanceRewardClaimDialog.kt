@@ -37,6 +37,9 @@ import com.worksoc.goaicoach.persistence.AttendanceStore
 import com.worksoc.goaicoach.persistence.BotCollectionStore
 import com.worksoc.goaicoach.persistence.ConsumableInventoryStore
 import com.worksoc.goaicoach.persistence.PremiumStateStore
+import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
+import com.worksoc.goaicoach.ui.l10n.attendanceAtStockCapNoticeFor
+import com.worksoc.goaicoach.ui.l10n.attendanceBoardBeyondNoticeFor
 
 /**
  * 출석 체크인을 실행하고, **아직 받아 가지 않은 보상이 있으면** Claim 다이얼로그를 띄운다

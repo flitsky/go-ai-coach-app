@@ -67,6 +67,9 @@ import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.presentation.GameUiEvent
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.StoneColor
+import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
+import com.worksoc.goaicoach.ui.l10n.rematchActionFor
+import com.worksoc.goaicoach.ui.l10n.reviewGameActionFor
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 

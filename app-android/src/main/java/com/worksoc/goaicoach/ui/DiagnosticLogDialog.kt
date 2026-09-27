@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import com.worksoc.goaicoach.persistence.DiagnosticEventLog
+import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import java.io.File
 
 /**

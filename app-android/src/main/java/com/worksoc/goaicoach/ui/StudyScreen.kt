@@ -30,6 +30,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
+import com.worksoc.goaicoach.ui.l10n.StudyCategory
+import com.worksoc.goaicoach.ui.l10n.studyLessonTrackFor
 
 /**
  * 2 Depth: 학습 하기 **허브**(백로그 #163) — 하위 분류를 세우고, 고른 분류의 화면을 연다.

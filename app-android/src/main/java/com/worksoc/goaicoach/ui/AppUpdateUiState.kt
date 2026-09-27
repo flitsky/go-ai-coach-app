@@ -25,6 +25,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
 import com.google.android.play.core.install.model.UpdateAvailability
+import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
+import com.worksoc.goaicoach.ui.l10n.appUpToDateLabelFor
+import com.worksoc.goaicoach.ui.l10n.appUpdateActionLabelFor
+import com.worksoc.goaicoach.ui.l10n.appUpdateAvailableLabelFor
+import com.worksoc.goaicoach.ui.l10n.appUpdateCheckStoreLabelFor
 import kotlin.coroutines.resume
 import kotlinx.coroutines.suspendCancellableCoroutine
 

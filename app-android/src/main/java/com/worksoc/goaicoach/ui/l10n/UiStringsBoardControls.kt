@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.ui
+package com.worksoc.goaicoach.ui.l10n
 
 /**
  * 보드 바로 위 토글이 쓰는 문구(백로그 #39, 2026-08-31 사용자 지시).

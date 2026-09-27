@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.ui
+package com.worksoc.goaicoach.ui.l10n
 
 internal val UiStringsEnglish = UiStringsKorean.copy(
     appTitle = "Go AI Coach",

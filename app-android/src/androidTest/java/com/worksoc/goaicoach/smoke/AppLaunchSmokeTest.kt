@@ -6,8 +6,8 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.worksoc.goaicoach.MainActivity
-import com.worksoc.goaicoach.ui.UiLanguage
-import com.worksoc.goaicoach.ui.UiStrings
+import com.worksoc.goaicoach.ui.l10n.UiLanguage
+import com.worksoc.goaicoach.ui.l10n.UiStrings
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test

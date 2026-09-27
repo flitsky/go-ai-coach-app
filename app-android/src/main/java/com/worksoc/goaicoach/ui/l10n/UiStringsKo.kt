@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.ui
+package com.worksoc.goaicoach.ui.l10n
 
 internal val UiStringsKorean = UiStrings(
     language = UiLanguage.Korean,

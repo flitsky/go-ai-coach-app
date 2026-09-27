@@ -32,6 +32,16 @@ import com.worksoc.goaicoach.shared.content.StudyLesson
 import com.worksoc.goaicoach.shared.content.StudyLessonId
 import com.worksoc.goaicoach.shared.content.StudyLessonTrack
 import com.worksoc.goaicoach.shared.content.studyLessonsFor
+import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
+import com.worksoc.goaicoach.ui.l10n.StudyCategory
+import com.worksoc.goaicoach.ui.l10n.studyCategoryTitleFor
+import com.worksoc.goaicoach.ui.l10n.studyLessonBackToListFor
+import com.worksoc.goaicoach.ui.l10n.studyLessonBodyFor
+import com.worksoc.goaicoach.ui.l10n.studyLessonNextFor
+import com.worksoc.goaicoach.ui.l10n.studyLessonNextLessonFor
+import com.worksoc.goaicoach.ui.l10n.studyLessonPreviousFor
+import com.worksoc.goaicoach.ui.l10n.studyLessonSummaryFor
+import com.worksoc.goaicoach.ui.l10n.studyLessonTitleFor
 
 /**
  * 3 Depth: 한 **갈래**의 단원 목록과, 고른 단원의 도해를 한 장씩 넘기는 화면

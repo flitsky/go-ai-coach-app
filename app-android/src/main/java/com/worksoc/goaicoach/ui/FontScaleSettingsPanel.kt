@@ -18,6 +18,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.preferences.AppFontScales
 import com.worksoc.goaicoach.persistence.UserPreferencesStore
+import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 
 /**
  * 글꼴 크기 설정(백로그 #106) — **개발자 도구에서 정식 설정으로 승격됐다**(2026-09-05 사용자 지시).

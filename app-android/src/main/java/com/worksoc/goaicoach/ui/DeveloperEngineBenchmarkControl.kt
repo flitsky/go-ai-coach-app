@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 
 /**
  * 개발자 테스트 **1차**의 '엔진 성능 측정' 한 줄 — 2026-09-10에 대국 화면 메뉴에서 옮겨 왔다.

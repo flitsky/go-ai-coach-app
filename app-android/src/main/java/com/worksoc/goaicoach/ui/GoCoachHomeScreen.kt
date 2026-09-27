@@ -77,6 +77,7 @@ import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.policy.PlayLevelGroup
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
+import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 
 /**
  * 0 Depth: 홈 화면 (Home Screen)

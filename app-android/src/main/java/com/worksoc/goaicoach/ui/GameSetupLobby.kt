@@ -44,6 +44,7 @@ import com.worksoc.goaicoach.application.guide.GuideSurface
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.presentation.GameUiEvent
+import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import kotlinx.coroutines.delay
 
 /**

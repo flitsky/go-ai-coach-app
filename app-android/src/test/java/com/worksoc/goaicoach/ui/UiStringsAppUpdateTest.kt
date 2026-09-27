@@ -1,5 +1,10 @@
 package com.worksoc.goaicoach.ui
 
+import com.worksoc.goaicoach.ui.l10n.UiLanguage
+import com.worksoc.goaicoach.ui.l10n.appUpToDateLabelFor
+import com.worksoc.goaicoach.ui.l10n.appUpdateActionLabelFor
+import com.worksoc.goaicoach.ui.l10n.appUpdateAvailableLabelFor
+import com.worksoc.goaicoach.ui.l10n.appUpdateCheckStoreLabelFor
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

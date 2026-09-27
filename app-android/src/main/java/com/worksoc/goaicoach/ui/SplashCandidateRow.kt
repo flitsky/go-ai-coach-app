@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 
 /**
  * 개발자 모드 1차의 **시작 화면 후보 재생기**(백로그 #126). `1`~`9`를 누르면 그 후보를

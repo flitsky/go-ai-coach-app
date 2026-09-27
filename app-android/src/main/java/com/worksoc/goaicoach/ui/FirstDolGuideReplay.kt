@@ -33,6 +33,10 @@ import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.presentation.GameActionButtonRole
 import com.worksoc.goaicoach.presentation.GameActionButtonState
 import com.worksoc.goaicoach.presentation.GameUiEvent
+import com.worksoc.goaicoach.ui.l10n.GuideToolLabels
+import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
+import com.worksoc.goaicoach.ui.l10n.guideBodyFor
+import com.worksoc.goaicoach.ui.l10n.guideMyPageGreetingFor
 
 /**
  * **가이드 다시보기**(백로그 #128, 사용자 확정 ⓑ: 진입점은 마이페이지에만).

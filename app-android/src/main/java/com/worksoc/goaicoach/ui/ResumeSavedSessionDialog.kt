@@ -6,6 +6,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
 import com.worksoc.goaicoach.shared.domain.describe
+import com.worksoc.goaicoach.ui.l10n.UiStrings
 
 @Composable
 internal fun ResumeSavedSessionDialog(

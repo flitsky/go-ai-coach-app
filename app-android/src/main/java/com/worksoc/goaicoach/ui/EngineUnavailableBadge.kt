@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.engine.EngineAvailability
+import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 
 /**
  * 대국 화면에 **계속 떠 있는** 엔진 고장 표식(백로그 #105).

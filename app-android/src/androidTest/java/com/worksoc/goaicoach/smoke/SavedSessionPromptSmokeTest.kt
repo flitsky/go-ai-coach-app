@@ -27,8 +27,8 @@ import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import com.worksoc.goaicoach.testsupport.FakeEngineSessionClient
 import com.worksoc.goaicoach.ui.GoCoachApp
 import com.worksoc.goaicoach.ui.TestTags
-import com.worksoc.goaicoach.ui.UiLanguage
-import com.worksoc.goaicoach.ui.UiStrings
+import com.worksoc.goaicoach.ui.l10n.UiLanguage
+import com.worksoc.goaicoach.ui.l10n.UiStrings
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test

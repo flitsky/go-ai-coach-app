@@ -4,6 +4,10 @@ import com.worksoc.goaicoach.application.attendance.AttendanceReward
 import com.worksoc.goaicoach.application.attendance.AttendanceRewardPolicy
 import com.worksoc.goaicoach.application.botcharacter.BotCharacterCatalog
 import com.worksoc.goaicoach.application.botcharacter.BotUnlockSource
+import com.worksoc.goaicoach.ui.l10n.UiLanguage
+import com.worksoc.goaicoach.ui.l10n.UiStrings
+import com.worksoc.goaicoach.ui.l10n.UiStringsEnglish
+import com.worksoc.goaicoach.ui.l10n.UiStringsKorean
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull

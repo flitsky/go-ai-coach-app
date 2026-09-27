@@ -19,6 +19,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.worksoc.goaicoach.restartToFreshInstall
+import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 
 /**
  * 개발자 테스트 2차의 **'앱 최초 실행 상태로 되돌리기'** 한 줄(2026-09-09 사용자 요청).

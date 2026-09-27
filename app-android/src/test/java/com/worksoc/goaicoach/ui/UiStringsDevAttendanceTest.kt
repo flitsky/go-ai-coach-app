@@ -1,6 +1,8 @@
 package com.worksoc.goaicoach.ui
 
 import com.worksoc.goaicoach.application.attendance.isRewardedTier
+import com.worksoc.goaicoach.ui.l10n.UiLanguage
+import com.worksoc.goaicoach.ui.l10n.UiStrings
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue

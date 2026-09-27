@@ -44,6 +44,7 @@ import com.worksoc.goaicoach.presentation.GameUiEvent
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.domain.StoneColor
+import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import kotlin.math.abs
 
 @Composable

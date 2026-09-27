@@ -32,6 +32,7 @@ import com.worksoc.goaicoach.application.auth.port.AuthClientPort
 import com.worksoc.goaicoach.application.device.DeviceIdentityStorePort
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.platform.GoogleCredentialManagerClient
+import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import kotlinx.coroutines.launch
 
 /**

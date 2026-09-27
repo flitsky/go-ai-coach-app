@@ -45,6 +45,11 @@ import com.worksoc.goaicoach.application.botcharacter.BotCollectionState
 import com.worksoc.goaicoach.application.consumable.ConsumableCatalog
 import com.worksoc.goaicoach.application.consumable.ConsumableItem
 import com.worksoc.goaicoach.application.premium.state.FeatureId
+import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
+import com.worksoc.goaicoach.ui.l10n.UiStrings
+import com.worksoc.goaicoach.ui.l10n.attendanceStampedNoticeFor
+import com.worksoc.goaicoach.ui.l10n.attendanceUpcomingNoticeFor
+import com.worksoc.goaicoach.ui.l10n.botCharacterNameFor
 
 /**
  * 출석 도장판 그림(#55에서 만들고 #56에서 분리, **#57에서 글자판 → 그림판으로 다시 썼다**).

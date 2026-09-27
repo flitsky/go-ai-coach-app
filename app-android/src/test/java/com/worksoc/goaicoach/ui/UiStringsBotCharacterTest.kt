@@ -2,6 +2,13 @@ package com.worksoc.goaicoach.ui
 
 import com.worksoc.goaicoach.application.botcharacter.BotCharacterCatalog
 import com.worksoc.goaicoach.application.botcharacter.BotCharacterId
+import com.worksoc.goaicoach.ui.l10n.UiLanguage
+import com.worksoc.goaicoach.ui.l10n.UiStringsChineseSimplified
+import com.worksoc.goaicoach.ui.l10n.UiStringsEnglish
+import com.worksoc.goaicoach.ui.l10n.UiStringsJapanese
+import com.worksoc.goaicoach.ui.l10n.UiStringsKorean
+import com.worksoc.goaicoach.ui.l10n.botCharacterDescriptionFor
+import com.worksoc.goaicoach.ui.l10n.botCharacterNameFor
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

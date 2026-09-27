@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.worksoc.goaicoach.application.botcharacter.BotCharacterCatalog
 import com.worksoc.goaicoach.application.botcharacter.BotCharacterId
+import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 
 /**
  * 첫돌이의 **얼굴과 정체를 한 곳에서** 정한다(백로그 #128).

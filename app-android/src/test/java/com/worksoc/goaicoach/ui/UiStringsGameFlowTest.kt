@@ -1,5 +1,13 @@
 package com.worksoc.goaicoach.ui
 
+import com.worksoc.goaicoach.ui.l10n.UiLanguage
+import com.worksoc.goaicoach.ui.l10n.UiStrings
+import com.worksoc.goaicoach.ui.l10n.exitGameActionFor
+import com.worksoc.goaicoach.ui.l10n.passNoticeTitleFor
+import com.worksoc.goaicoach.ui.l10n.rematchActionFor
+import com.worksoc.goaicoach.ui.l10n.scoreNowPromptBodyFor
+import com.worksoc.goaicoach.ui.l10n.scoreNowPromptTitleFor
+import com.worksoc.goaicoach.ui.l10n.whiteHandicapBonusTermFor
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test

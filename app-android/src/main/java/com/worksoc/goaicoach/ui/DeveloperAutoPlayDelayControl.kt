@@ -13,6 +13,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
+import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 
 /**
  * 개발자 테스트 **1차**의 'AI 착수 지연' 한 줄 — 2026-09-10에 대국 설정에서 이리로 옮겼다(사용자 지시).

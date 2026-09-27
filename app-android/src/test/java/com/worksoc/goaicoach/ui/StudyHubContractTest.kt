@@ -2,6 +2,11 @@ package com.worksoc.goaicoach.ui
 
 import com.worksoc.goaicoach.architecture.RepoPaths
 import com.worksoc.goaicoach.architecture.readContractSource
+import com.worksoc.goaicoach.ui.l10n.StudyCategory
+import com.worksoc.goaicoach.ui.l10n.UiLanguage
+import com.worksoc.goaicoach.ui.l10n.studyCategorySubtitleFor
+import com.worksoc.goaicoach.ui.l10n.studyCategoryTitleFor
+import com.worksoc.goaicoach.ui.l10n.studyComingSoonFor
 import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse

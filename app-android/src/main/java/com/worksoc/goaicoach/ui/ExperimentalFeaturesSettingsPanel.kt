@@ -27,6 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.worksoc.goaicoach.persistence.ExperimentalFeaturesStore
+import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 
 /**
  * 설정 화면의 "🧪 실험실 기능" 패널.

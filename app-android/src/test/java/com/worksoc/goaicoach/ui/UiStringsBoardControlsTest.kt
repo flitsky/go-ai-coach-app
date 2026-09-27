@@ -1,5 +1,8 @@
 package com.worksoc.goaicoach.ui
 
+import com.worksoc.goaicoach.ui.l10n.UiLanguage
+import com.worksoc.goaicoach.ui.l10n.boardSizeSubjectFor
+import com.worksoc.goaicoach.ui.l10n.boardSizeToggleLabelFor
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals

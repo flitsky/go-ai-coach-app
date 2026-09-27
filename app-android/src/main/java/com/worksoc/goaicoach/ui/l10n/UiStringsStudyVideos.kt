@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.ui
+package com.worksoc.goaicoach.ui.l10n
 
 /**
  * 학습 화면 강좌 세 편의 **소개 문구**(백로그 #33). 구조는 `UiStringsBotCharacters.kt`와 같다 —

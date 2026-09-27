@@ -30,6 +30,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.worksoc.goaicoach.R
+import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
+import com.worksoc.goaicoach.ui.l10n.StudyCategory
+import com.worksoc.goaicoach.ui.l10n.StudyVideoEntry
 
 // 2026-08-12 사용자 요청으로 조사: 국내 유튜브에서 "바둑 기초/입문" 검색 시 실제로 걸리는
 // 결과 상위권은 대부분 마술/예능성 콘텐츠라 조회수만으로 고르면 강좌가 아닌 게 뽑힌다 —

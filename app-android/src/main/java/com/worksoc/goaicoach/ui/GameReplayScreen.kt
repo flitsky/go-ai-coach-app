@@ -51,6 +51,21 @@ import com.worksoc.goaicoach.presentation.KaTrainUxOptions
 import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.StoneColor
+import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
+import com.worksoc.goaicoach.ui.l10n.UiLanguage
+import com.worksoc.goaicoach.ui.l10n.UiStrings
+import com.worksoc.goaicoach.ui.l10n.gameReplayBranchBlockedFor
+import com.worksoc.goaicoach.ui.l10n.gameReplayBranchLabelFor
+import com.worksoc.goaicoach.ui.l10n.gameReplayNoScoreDataFor
+import com.worksoc.goaicoach.ui.l10n.gameReplayNoScoreDataForSwingsFor
+import com.worksoc.goaicoach.ui.l10n.gameReplayNoScoreSwingsFor
+import com.worksoc.goaicoach.ui.l10n.gameReplayScoreSwingChipLabelFor
+import com.worksoc.goaicoach.ui.l10n.gameReplayScoreSwingCriterionFor
+import com.worksoc.goaicoach.ui.l10n.gameReplayScoreSwingSectionFor
+import com.worksoc.goaicoach.ui.l10n.gameReplayShowMoveNumbersLabelFor
+import com.worksoc.goaicoach.ui.l10n.gameReplayStartPositionFor
+import com.worksoc.goaicoach.ui.l10n.gameReplayTitleFor
+import com.worksoc.goaicoach.ui.l10n.gameReplayTruncatedFor
 
 /**
  * 4 Depth: 한 판을 수순대로 되짚는 화면(백로그 #156).

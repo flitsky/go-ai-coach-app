@@ -45,6 +45,7 @@ import com.worksoc.goaicoach.shared.policy.PlayLevelGroup
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import com.worksoc.goaicoach.shared.policy.SearchTimeLimit
 import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
+import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 

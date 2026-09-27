@@ -42,6 +42,8 @@ import com.worksoc.goaicoach.persistence.DeveloperModeStore
 import com.worksoc.goaicoach.persistence.UserPreferencesStore
 import com.worksoc.goaicoach.platform.AdsConsentManager
 import com.worksoc.goaicoach.runReleaseResetAgain
+import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
+import com.worksoc.goaicoach.ui.l10n.UiStrings
 
 /**
  * 개발자 테스트 섹션(1차·2차) — 백로그 #102에서 `SettingsScreen`에서 떼어냈다.

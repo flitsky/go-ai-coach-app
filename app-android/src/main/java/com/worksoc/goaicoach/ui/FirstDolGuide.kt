@@ -14,6 +14,9 @@ import com.worksoc.goaicoach.application.guide.GuideStep
 import com.worksoc.goaicoach.application.guide.GuideSurface
 import com.worksoc.goaicoach.application.guide.autoPlayStep
 import com.worksoc.goaicoach.persistence.GuideProgressStore
+import com.worksoc.goaicoach.ui.l10n.GuideToolLabels
+import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
+import com.worksoc.goaicoach.ui.l10n.guideBodyFor
 import kotlinx.coroutines.delay
 
 /**

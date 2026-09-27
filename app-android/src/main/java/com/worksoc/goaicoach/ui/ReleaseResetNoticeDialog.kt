@@ -10,6 +10,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.worksoc.goaicoach.persistence.ReleaseResetStore
+import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
+import com.worksoc.goaicoach.ui.l10n.releaseResetBodyFor
+import com.worksoc.goaicoach.ui.l10n.releaseResetConfirmLabelFor
+import com.worksoc.goaicoach.ui.l10n.releaseResetTitleFor
 
 /**
  * 정식 릴리즈 초기화가 **실제로 무언가를 지웠을 때** 한 번만 뜨는 안내(백로그 #63).

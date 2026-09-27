@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.ui
+package com.worksoc.goaicoach.ui.l10n
 
 /**
  * 정식 릴리즈 초기화 안내가 쓰는 문구(백로그 #63). 구조는 `UiStringsAppUpdate.kt`와 같다 —

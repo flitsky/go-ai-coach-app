@@ -1,6 +1,10 @@
 package com.worksoc.goaicoach.ui
 
 import com.worksoc.goaicoach.application.guide.GuideStep
+import com.worksoc.goaicoach.ui.l10n.GuideToolLabels
+import com.worksoc.goaicoach.ui.l10n.UiLanguage
+import com.worksoc.goaicoach.ui.l10n.guideBodyFor
+import com.worksoc.goaicoach.ui.l10n.guideMyPageGreetingFor
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue

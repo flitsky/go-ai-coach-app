@@ -12,6 +12,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.text.font.FontWeight
 import com.worksoc.goaicoach.shared.domain.BoardSize
+import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 
 @Composable
 internal fun DirectPlayRecommendationDialog(

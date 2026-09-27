@@ -1,5 +1,18 @@
 package com.worksoc.goaicoach.ui
 
+import com.worksoc.goaicoach.ui.l10n.UiLanguage
+import com.worksoc.goaicoach.ui.l10n.premiumStaleSubscriptionBodyFor
+import com.worksoc.goaicoach.ui.l10n.premiumStaleSubscriptionTitleFor
+import com.worksoc.goaicoach.ui.l10n.premiumSubscriptionActiveLabelFor
+import com.worksoc.goaicoach.ui.l10n.premiumSubscriptionActiveTaglineFor
+import com.worksoc.goaicoach.ui.l10n.premiumSubscriptionAutoRenewNoticeFor
+import com.worksoc.goaicoach.ui.l10n.premiumSubscriptionCancelNoticeFor
+import com.worksoc.goaicoach.ui.l10n.premiumSubscriptionInactiveLabelFor
+import com.worksoc.goaicoach.ui.l10n.premiumSubscriptionInactiveTaglineFor
+import com.worksoc.goaicoach.ui.l10n.premiumSubscriptionManageActionFor
+import com.worksoc.goaicoach.ui.l10n.premiumSubscriptionPriceLoadingFor
+import com.worksoc.goaicoach.ui.l10n.premiumSubscriptionPriceUnavailableFor
+import com.worksoc.goaicoach.ui.l10n.premiumSubscriptionSubscribeActionFor
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
