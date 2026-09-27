@@ -52,8 +52,8 @@ import org.junit.Test
  *    [FakeGoCoachAppWiringContext.getterReads]를 정확한 목록으로 단언한다.
  * 3. **첫 사용 시점**(`lazy`·첫 결과를 저장하는 람다·컨트롤러의 지연 초기화 필드) — (b)의 탐침.
  *    (b)의 탐침은 **부른다 → 옛 값의 결과를 단언한다 → 값을 바꾼다 → 같은 인스턴스를 다시 부른다 →
- *    새 값의 결과를 단언한다**의 모양이다([FreshnessProbes]에는 이 탐침과 함께 (c)의 협력자 테스트·특성
- *    테스트 하나도 올라 있다 — 아래 "컨트롤러별 탐침·협력자 테스트 목록"). 첫 호출이 없으면 첫 사용
+ *    새 값의 결과를 단언한다**의 모양이다([FreshnessProbes]에는 이 탐침과 함께 (c)의 협력자 테스트도
+ *    올라 있다 — 아래 "컨트롤러별 탐침·협력자 테스트 목록"). 첫 호출이 없으면 첫 사용
  *    캡처는 바뀐 **뒤의** 값을 붙잡아 초록이 된다(#43 검토에서 12개 중 11개가 그렇게 샜다). 첫 호출의
  *    결과를 단언하는 것은 "컨트롤러가 그 게터를 아예 안 본다"도 가려내려는 것이다.
  *
@@ -78,6 +78,7 @@ import org.junit.Test
  * - scoringRule: `matchMode`, `gameState`, `isEngineReady`
  * - settings: `playerSetup`, `isGameEnded`
  * - debugReport: `sessionSnapshot`(copy()마다의 읽기 횟수·currentControllerState), `androidContext`(copy()마다),
+ *   `engineName`·`engineDiagnostic`(배선 람다·copy()마다의 읽기 횟수, #108),
  *   `isEngineReady`, `isEngineBusy`, `savedSessionRawJson`, `undoAnalysisRestoreCache`(analysisCacheStatsText),
  *   `engineClient.positionAnalysisCacheStatsText`, `turnTimeState`(turnTimeText·turnTimeDebugText)
  * - benchmark: `isEngineReady`, `isEngineBusy`, `benchmarkUiState`
@@ -98,8 +99,6 @@ import org.junit.Test
  *   게터(무르기의 `isEngineReady`·`isEngineBusy`·`gameState`, AI 착수 블록의 검증)도 같은 이유로 못 본다.
  * - 여러 컨트롤러가 **같은** `TopMovesController` 인스턴스를 쓰는지: 그 컨트롤러는 인스턴스 상태가
  *   없고(유예는 컨텍스트가 쥔다) 갈라져도 지금은 무해하다. 상태가 생기면 여기에 단언을 더할 것.
- * - 디버그 리포트의 `engineName`/`engineDiagnostic`은 **알려진 잠복 동결**이다 —
- *   [debugReportEngineNameAndDiagnosticAreTheKnownLatentFreeze]가 지금 모습을 못박는다.
  *
  * ## (a) 배선은 아무것도 읽거나 쓰지 않는다
  * 배선 중 게터 읽기는 [FakeGoCoachAppWiringContext.getterReads]로, 쓰기는
@@ -115,9 +114,8 @@ import org.junit.Test
  *   ([FakeGoCoachAppWiringContext.deferredTopMoveAnalysis])에 도착하는지 본다.
  *
  * ## 컨트롤러별 탐침·협력자 테스트 목록
- * 목록은 [FreshnessProbes]에 있다. (b)의 탐침과 함께 (c)의 협력자 테스트, 특성 테스트 하나
- * ([debugReportEngineNameAndDiagnosticAreTheKnownLatentFreeze])가 올라 있다 — 그 컨트롤러를 실제 배선으로
- * 부르는 테스트의 목록이지, 올린 것이 모두 "부른다 → 바꾼다 → 다시 부른다" 탐침이라는 뜻은 아니다.
+ * 목록은 [FreshnessProbes]에 있다. (b)의 탐침과 함께 (c)의 협력자 테스트가 올라 있다 — 그 컨트롤러를
+ * 실제 배선으로 부르는 테스트의 목록이지, 올린 것이 모두 "부른다 → 바꾼다 → 다시 부른다" 탐침이라는 뜻은 아니다.
  * [everyWiredControllerHasAFreshnessProbeInThisClass]는 [GoCoachControllers]의 필드와 목록의 **이름**이
  * 맞는지, 올린 테스트가 이 클래스에 `@Test`로 있고 꺼져 있지 않은지만 본다 — 그 테스트가 정말 그 컨트롤러를
  * 부르는지는 사람이 읽어 확인한다.
@@ -135,11 +133,11 @@ class GoCoachControllerWiringTest {
         wireGoCoachControllers(context)
 
         assertEquals("배선이 내놓는 컨트롤러는 12개다(#43).", 12, controllerFields().size)
-        // ⚠️ 배선 **도중**의 게터 읽기는 곧 값 붙잡기다. 지금 읽히는 것은 디버그 리포트의 엔진
-        // 이름·진단 둘뿐이고, 그 둘은 알려진 잠복 동결이다 — [debugReportEngineNameAndDiagnosticAreTheKnownLatentFreeze].
+        // ⚠️ 배선 **도중**의 게터 읽기는 곧 값 붙잡기다. 마지막 둘(디버그 리포트의 엔진 이름·진단)도 #108에서
+        // 람다가 됐다 — [debugReportSeesEngineNameAndDiagnosticChangedAfterWiring].
         assertEquals(
             "배선 도중 상태 게터를 읽으면 그 값이 컨트롤러에 얼어붙는다(함정 67). 새로 읽힌 게터가 있다면 람다로 바꿀 것.",
-            listOf("engineName", "engineDiagnostic"),
+            emptyList<String>(),
             context.getterReads,
         )
         // 값을 **바꾸는** 쓰기는 여기서, 같은 값을 다시 쓰는 쓰기(홀더가 흘려보낸다)는 아래 otherSetterCalls가 잡는다.
@@ -1025,47 +1023,43 @@ class GoCoachControllerWiringTest {
     }
 
     /**
-     * ⚠️ **알려진 잠복 동결 — 지금 모습을 못박는다.** `wireDebugReportController`는
-     * `engineName = context.engineName()`·`engineDiagnostic = context.engineDiagnostic()`을 **배선 시점에
-     * 값으로** 넘긴다(`SettingsAndDiagnosticsControllerWiring.kt`). 함정 67이 "얼면 안 된다"고 이름을 든
-     * 바로 그 두 값이고, (a)의 배선 중 읽기 목록에 남아 있는 둘이다.
-     *
-     * 지금 사용자에게 안 보이는 것은 `GoCoachApp`이 `wiringContext`를 새로 만들 때마다 컨트롤러를
-     * 통째로 다시 배선하기 때문이다(`remember(wiringContext) { wireGoCoachControllers(…) }` —
-     * [WiringContextFreezeContractTest]가 그 줄과, 엔진 이름을 새로 만들게 하는 `isEngineReady` 키를 지킨다).
-     * 그 가림막은 **엔진 정체가 준비 완료와 같은 재구성에서 바뀔 때만** 통한다 — 정체는 키가 아니다.
-     *
-     * 이 테스트는 두 모양을 다 받는다. 지금처럼 `String`이면 배선 때 값에 머물러 있음을(=알려진 동결)
-     * 확인하고, `() -> String`으로 고치면 부를 때마다 지금 값을 읽는지 확인한다. 고치는 커밋은 (a)의
-     * 배선 중 읽기 목록을 비우고 이 KDoc을 줄인다.
-     *
-     * 같은 두 값의 **둘째 동결**은 프로덕션에 실제로 있다(#43 재검토, 고치지 않았다 — 프로덕션 0줄).
-     * `GoCoachApp.kt`의 `val lifecycleController = remember { EngineOperationLifecycleController(
-     * currentRuntimeLogContext = { currentRuntimeLogContext() }, …) }`는 키가 없어 **첫 컴포지션의** 지역 함수를
-     * 붙잡는다 — 엔진 작업 생명주기의 런타임 로그가 프로세스 내내 첫 컴포지션의 엔진 이름·진단(엔진 준비
-     * 전이라 대개 `Unresolved`)을 적는다. 진단 로그에만 보이고, 재배선이 가려 주지도 않는다(그 인스턴스는
-     * wiringContext 밖에서 한 번 만들어진다).
-     * [WiringContextFreezeContractTest.theLifecycleControllerRuntimeLogContextIsTheKnownFirstCompositionFreeze]가
-     * 지금 모습을 못박아, 고치면 빨개져 이 문단을 줄이라고 알린다.
+     * 디버그 리포트 — `engineName()`·`engineDiagnostic()`(refactor backlog #108). 둘은 배선 때 값이 아니라 **게터로**
+     * 넘어간다 — 값으로 넘기면 배선 때의 이름(엔진 준비 전이면 대개 `Unresolved`)에 얼고, 그 동결은 `wiringContext`가
+     * `isEngineReady` 키로 새로 만들어질 때만 우연히 가려질 것이다(함정 67). 넘어간 람다를 값을 바꾸기 전과 뒤에 한 번씩
+     * 부르고, `copy()`가 부를 **때마다** 둘을 새로 읽는지(컨트롤러가 첫 값을 쥐지 않는지)를 읽기 횟수로 본다 —
+     * `copy()`는 진동 진단에서 멈추지만 엔진 이름·진단은 그 앞에서 읽는다.
      */
     @Test
-    fun debugReportEngineNameAndDiagnosticAreTheKnownLatentFreeze() {
+    fun debugReportSeesEngineNameAndDiagnosticChangedAfterWiring() {
         val context = FakeGoCoachAppWiringContext()
         val controller = wireGoCoachControllers(context).debugReportController
+        val getters = listOf("engineName" to "engine", "engineDiagnostic" to "diagnostic")
+
+        getters.forEach { (field, prefix) ->
+            val stored = controller.privateField(field)
+            assertTrue(
+                "$field 가 배선 때의 값(${stored?.javaClass?.simpleName})이다 — 디버그 리포트가 첫 엔진 이름·진단에 " +
+                    "얼어붙는다. 게터 람다로 넘길 것(함정 67, #108).",
+                stored is Function0<*>,
+            )
+            assertEquals("$prefix-initial", (stored as Function0<*>).invoke())
+        }
 
         context.currentEngineName = "engine-after"
         context.currentEngineDiagnostic = "diagnostic-after"
 
-        listOf("engineName" to "engine", "engineDiagnostic" to "diagnostic").forEach { (field, prefix) ->
-            when (val stored = controller.privateField(field)) {
-                is Function0<*> -> assertEquals("$field 는 부를 때마다 지금 값을 읽어야 한다(함정 67).", "$prefix-after", stored.invoke())
-                is String -> assertEquals(
-                    "$field 가 문자열인데 배선 때 값이 아니다 — 모양이 바뀌었으면 이 테스트와 (a)의 배선 중 읽기 목록을 함께 고칠 것.",
-                    "$prefix-initial",
-                    stored,
-                )
-                else -> fail("$field 의 모양이 바뀌었다: ${stored?.javaClass}")
-            }
+        getters.forEach { (field, prefix) ->
+            assertEquals("배선 뒤 바뀐 $field 를 디버그 리포트가 못 본다(함정 67, #108).", "$prefix-after", controller.lambdaField(field).invoke())
+        }
+        repeat(2) {
+            val readsBeforeCopy = getters.map { (field, _) -> context.reads(field) }
+            val thrown = runCatching { controller.copy() }.exceptionOrNull()
+            assertTrue("copy()는 진동 진단에서 멈춘다 — 이 탐침의 전제(#43).", thrown is AndroidContextTouched)
+            assertEquals(
+                "copy()가 불릴 때마다 엔진 이름·진단을 새로 읽어야 한다 — 한 번 읽은 값을 쥐면 리포트가 거짓말한다(함정 67, #108).",
+                readsBeforeCopy.map { it + 1 },
+                getters.map { (field, _) -> context.reads(field) },
+            )
         }
     }
 
@@ -1182,7 +1176,7 @@ class GoCoachControllerWiringTest {
     }
 
     private companion object {
-        /** [GoCoachControllers]의 필드 → 그 컨트롤러를 부르는 탐침·협력자 테스트(디버그 리포트는 특성 테스트 하나 포함). */
+        /** [GoCoachControllers]의 필드 → 그 컨트롤러를 부르는 탐침·협력자 테스트. */
         val FreshnessProbes: Map<String, List<String>> = mapOf(
             "topMovesController" to listOf(
                 "topMovesSeesPlayerSetupChangedAfterWiring",
@@ -1229,7 +1223,7 @@ class GoCoachControllerWiringTest {
             "debugReportController" to listOf(
                 "debugReportReadsSessionAndAndroidContextOnEveryCopy",
                 "debugReportLambdasReadTheContextOnEveryCall",
-                "debugReportEngineNameAndDiagnosticAreTheKnownLatentFreeze",
+                "debugReportSeesEngineNameAndDiagnosticChangedAfterWiring",
             ),
             "benchmarkController" to listOf("benchmarkSeesEngineReadyAndBusyChangedAfterWiring", "benchmarkSeesBenchmarkUiStateChangedAfterWiring"),
         )

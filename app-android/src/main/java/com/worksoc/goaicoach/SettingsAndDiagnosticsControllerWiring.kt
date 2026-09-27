@@ -46,8 +46,8 @@ internal fun wireSettingsController(
 
 internal fun wireDebugReportController(context: GoCoachAppWiringContext): DebugReportController =
     DebugReportController(
-        engineName = context.engineName(),
-        engineDiagnostic = context.engineDiagnostic(),
+        engineName = { context.engineName() },
+        engineDiagnostic = { context.engineDiagnostic() },
         hapticDiagnostic = { PlayHaptics(context.androidContext).diagnosticReport() },
         // 빌드·기기 스탬프(#92). 리포트를 뽑는 그 시점에 읽는다 — `DebugReportBuildStamp.kt` 참고.
         buildStamp = { debugReportBuildStamp() },

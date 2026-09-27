@@ -5,8 +5,12 @@ import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
 import com.worksoc.goaicoach.application.session.GameSessionControllerState
 
 class DebugReportController(
-    private val engineName: String,
-    private val engineDiagnostic: String,
+    /**
+     * 엔진 이름·진단(refactor backlog #108). **값이 아니라 게터다** — 리포트를 뽑는 그 시점에 읽는다.
+     * 값으로 받으면 배선 때의 이름(엔진 준비 전이면 대개 `Unresolved`)에 얼어붙는다(함정 67).
+     */
+    private val engineName: () -> String,
+    private val engineDiagnostic: () -> String,
     /**
      * 착수 진동 진단(#36). 플랫폼 API를 타므로 `shared`가 만들 수 없어 **app-android가 람다로
      * 넘긴다.** 매번 호출해 **리포트를 뽑는 그 시점**의 기기 상태를 읽는다.
@@ -39,8 +43,8 @@ class DebugReportController(
         runDebugReportCopyApplication(
             DebugReportCopyRunRequest(
                 controllerState = currentControllerState(),
-                engineName = engineName,
-                engineDiagnostic = engineDiagnostic,
+                engineName = engineName(),
+                engineDiagnostic = engineDiagnostic(),
                 hapticDiagnostic = hapticDiagnostic(),
                 buildStamp = buildStamp(),
                 analysisCacheStatsText = analysisCacheStatsText,

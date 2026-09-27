@@ -56,8 +56,8 @@ import org.junit.Test
  * ## 그 밖에 지키는 것
  * - 조용한 구간 닫기: 멤버 `clearUndoEngineInterventionQuietWindow`가 (지역 함수를 거치든 직접이든)
  *   `cancelUndoSync()`에 닿고, 배선 뒤에 `cancelUndoSync = controllers.undoController::cancelPendingSync`가 있다.
- * - 알려진 동결 둘째: `val lifecycleController = remember { … }`의 로그 문맥 —
- *   [theLifecycleControllerRuntimeLogContextIsTheKnownFirstCompositionFreeze].
+ * - 엔진 작업 수명 컨트롤러의 로그 문맥: 키 없는 `val lifecycleController = remember { … }`가 컴포지션 지역 값을
+ *   붙잡지 않고, 엔진 정체를 부를 때 읽는다(#108) — [theLifecycleControllerRuntimeLogContextReadsTheCurrentEngineIdentity].
  *
  * ⚠️ 이 계약은 **이름을 읽는** 근사다. 문자열 안의 낱말도 읽기로 센다(템플릿 `$x`가 곧 읽기다 — 보수적),
  * 람다 매개변수가 지역 이름을 가리는 경우는 구분하지 않는다. 지역 함수의 식 본문은 줄 끝의 이항 연산자·다음
@@ -76,7 +76,7 @@ class WiringContextFreezeContractTest {
         val keys = source.wiringContextKeys()
         assertEquals(
             "`val wiringContext = remember(…)`의 키가 빠졌다. 익명 컨텍스트 객체의 멤버 일부(FreezeProneMembers — " +
-                "playerSetup·matchMode·engineName…)가 컴포지션 지역 값을 붙잡으므로, 키가 없으면 첫 컴포지션 값에 영구히 " +
+                "playerSetup·matchMode·topMovesEnabled…)가 컴포지션 지역 값을 붙잡으므로, 키가 없으면 첫 컴포지션 값에 영구히 " +
                 "얼어붙는다 — 설정이 안 먹고 디버그 리포트가 거짓말하는데 CI는 전부 초록이다. 이 검사는 파서가 무엇을 " +
                 "찾든 돈다. 키를 지우려면 함정 67(docs/spec/PITFALLS.md #67) 착수 조건을 순서대로 끝낸 뒤 이 테스트의 " +
                 "PinnedWiringContextKeys를 고칠 것: ⓐ 붙잡는 멤버를 람다/지연 읽기로 바꾸고 ⓑ GoCoachAppWiringContext " +
@@ -89,8 +89,7 @@ class WiringContextFreezeContractTest {
     @Test
     fun theControllersAreRewiredWheneverTheWiringContextIsRebuilt() {
         // ⚠️ 키를 지우면 컨트롤러가 첫 컨텍스트 객체를 영원히 쥔다 — wiringContext의 키가 멀쩡해도 소용없다.
-        // 디버그 리포트의 engineName/engineDiagnostic 잠복 동결(GoCoachControllerWiringTest)이 사용자에게
-        // 안 보이는 것도 이 재배선 덕이다. 파서와 무관하게 돈다.
+        // 파서와 무관하게 돈다.
         assertTrue(
             "`val controllers = remember(wiringContext) { wireGoCoachControllers(wiringContext) }`가 아니다 — " +
                 "컨트롤러가 첫 컨텍스트에 얼어붙는다(함정 67, #43).",
@@ -166,27 +165,36 @@ class WiringContextFreezeContractTest {
     }
 
     /**
-     * ⚠️ **알려진 동결 둘째 — 고치지 않고 못박는다**(#43 재검토, 프로덕션 0줄). `val lifecycleController =
-     * remember { EngineOperationLifecycleController(currentRuntimeLogContext = { currentRuntimeLogContext() }, …) }`는
-     * 키가 없어 첫 컴포지션에서 한 번만 돈다. 그 람다가 붙잡는 지역 함수는 **첫 컴포지션의 것**이고, 그 함수가
-     * 읽는 평범한 `val` engineName·engineDiagnostic도 첫 값(엔진 준비 전이면 `Unresolved`)에 머문다 — 엔진 작업
-     * 생명주기의 런타임 로그가 프로세스 내내 그 이름·진단을 적는다. 진단 로그에만 보인다.
-     *
-     * 고치면(지연 읽기 등) 여기가 빨개진다 — 그때 이 테스트와 [KnownFrozenLifecycleLocals]를 지우고
-     * `GoCoachControllerWiringTest`의 디버그 리포트 특성 테스트 KDoc 문단을 줄인다.
+     * 엔진 작업 수명 컨트롤러의 런타임 로그 문맥은 **지금의** 엔진 이름·진단을 적는다(refactor backlog #108).
+     * `val lifecycleController = remember { EngineOperationLifecycleController(currentRuntimeLogContext = {
+     * currentRuntimeLogContext() }, …) }`는 키가 없어 첫 컴포지션에서 한 번만 돌고, 그때의 지역 함수를 쥔다.
+     * ⚠️ 키를 달아 고치면 작업 상태(`lifecycleState`·`activeJobs`)를 쥔 컨트롤러가 새로 만들어진다. 그래서 그 함수가
+     * 엔진 정체를 평범한 val이 아니라 `val latestEngineIdentity by rememberUpdatedState(identity)`에서 **부를 때**
+     * 읽는다. 컴포즈 안의 객체는 JVM 단위 테스트가 만들 수 없어 모양을 잰다 — 블록이 붙잡는 컴포지션 지역 값이
+     * 0개인지(파서가 지역 함수 몸체까지 따라 들어간다), 지연 읽기의 모양이 그대로인지.
      */
     @Test
-    fun theLifecycleControllerRuntimeLogContextIsTheKnownFirstCompositionFreeze() {
+    fun theLifecycleControllerRuntimeLogContextReadsTheCurrentEngineIdentity() {
         val block = source.rememberedBlock("lifecycleController")
         assertEquals(
-            "알려진 동결의 모양이 바뀌었다 — `val lifecycleController = remember { … }`(키 없음)의 블록이 첫 컴포지션 " +
-                "값 $KnownFrozenLifecycleLocals 를 붙잡는 모양이 아니다. 고쳤다면 이 테스트와 KnownFrozenLifecycleLocals를 " +
-                "지우고 GoCoachControllerWiringTest의 디버그 리포트 특성 테스트 KDoc 문단을 줄일 것. ⚠️ remember에 키를 " +
-                "달아 고치면 작업 상태(lifecycleState·activeJobs)를 쥔 컨트롤러가 새로 만들어진다 — 지연 읽기가 낫다. " +
-                "engineName·engineDiagnostic을 키 없는(또는 안정된 값만 키로 받는) remember로 감싸 사라졌다면 고친 게 " +
-                "아니라 동결을 한 칸 앞당긴 것이다(함정 67). 새로 붙잡힌 값이 생긴 것이라면 그것도 같은 동결이다. 지금: $block",
-            RememberedBlock(keys = emptyList(), captured = KnownFrozenLifecycleLocals),
+            "`val lifecycleController = remember { … }`(키 없음)의 블록이 컴포지션 지역 값을 붙잡는다 — 첫 컴포지션 값에 " +
+                "얼어 엔진 작업 생명주기의 런타임 로그가 프로세스 내내 그 값을 적는다(#108, 함정 67). engineName·engineDiagnostic" +
+                "이면 currentRuntimeLogContext()가 다시 평범한 val을 읽는 것이다 — latestEngineIdentity에서 읽을 것. ⚠️ remember에 " +
+                "키를 달아 고치지 말 것 — 작업 상태(lifecycleState·activeJobs)를 쥔 컨트롤러가 새로 만들어진다. 지금: $block",
+            RememberedBlock(keys = emptyList(), captured = emptySet()),
             block?.let { it.copy(captured = it.captured - CapturedByDesign.keys) },
+        )
+        assertTrue(
+            "엔진 정체의 지연 읽기가 `val latestEngineIdentity by rememberUpdatedState(identity)`가 아니다(#108). " +
+                "rememberUpdatedState에는 값(data class)을 넘길 것 — 지역 함수 참조(`::f`)는 새 클로저여도 `==`라 갱신이 " +
+                "걸러진다(함정 46). 평범한 val·키 없는 remember로 바꾸면 첫 값에 언다(함정 67).",
+            source.containsCode(LatestEngineIdentityDeclaration),
+        )
+        val reached = source.reachedCode("currentRuntimeLogContext")
+        assertTrue(
+            "런타임 로그 문맥(지역 함수 currentRuntimeLogContext)이 엔진 이름·진단을 latestEngineIdentity에서 읽지 않는다 — " +
+                "키 없는 lifecycleController가 쥔 첫 컴포지션의 함수가 그 값을 적는다(#108). 닿은 몸체: $reached",
+            reached.any { body -> LatestEngineIdentityReads.all { it.containsMatchIn(body) } },
         )
     }
 
@@ -303,8 +311,9 @@ class WiringContextFreezeContractTest {
          *
          * ⚠️ **여기서 키를 지우는 것이 곧 함정 67의 변경이다.** 지우려면 함정 67(docs/spec/PITFALLS.md #67)
          * 착수 조건 ⓐ~ⓒ를 먼저 끝내야 한다: ⓐ [FreezeProneMembers]의 멤버(평범한 지역 `val`을 그대로 돌려주는
-         * 것 — playerSetup·matchMode·topMovesEnabled·shouldShowResumePrompt·engineName·engineDiagnostic, 지역
-         * 함수로 위임된 currentRuntimeLogContext까지)를 람다/지연 읽기로 바꾸고 ⓑ `GoCoachAppWiringContext`
+         * 것 — playerSetup·matchMode·topMovesEnabled·shouldShowResumePrompt. 지역 함수로 위임된
+         * currentRuntimeLogContext와 engineName·engineDiagnostic은 #108에서 latestEngineIdentity 지연 읽기가 됐다)를
+         * 람다/지연 읽기로 바꾸고 ⓑ `GoCoachAppWiringContext`
          * 멤버를 전수 감사해(함정 67은 64개라 적었고 지금 65개다) 값을 붙잡는 멤버가 0건임을 확인하고
          * ⓒ 그다음에만 키를 지운다. 파서의 목록([FreezeProneMembers])이 비었다는 것만으로는 ⓑ가 아니다 —
          * 파서는 근사이고, 이 목록은 그래서 파서와 떨어져 있다.
@@ -325,10 +334,6 @@ class WiringContextFreezeContractTest {
             "matchMode" to setOf("matchMode"),
             "topMovesEnabled" to setOf("topMovesEnabled"),
             "shouldShowResumePrompt" to setOf("shouldShowResumePrompt"),
-            "engineName" to setOf("engineName"),
-            "engineDiagnostic" to setOf("engineDiagnostic"),
-            // `= currentRuntimeLogContext()` — 지역 함수가 평범한 val 둘을 읽는다(위임 경로, 함정 67 ⓑ).
-            "currentRuntimeLogContext" to setOf("engineName", "engineDiagnostic"),
         )
 
         /** 붙잡힌 지역 값 → 그것을 새로 만들게 하는 remember 키([PinnedWiringContextKeys] 가운데 하나). */
@@ -338,10 +343,6 @@ class WiringContextFreezeContractTest {
             "matchMode" to "sessionSnapshot",
             "topMovesEnabled" to "sessionSnapshot",
             "shouldShowResumePrompt" to "sessionSnapshot",
-            // ⚠️ **우연히만** 덮인다: 엔진 정체는 키가 아니고, 준비 완료(isEngineReady)와 같은 재구성에서
-            // 바뀔 때만 객체가 새로 만들어진다. 함정 67이 "remember로 감싸지 말라"고 이름을 든 두 값이다.
-            "engineName" to "isEngineReady",
-            "engineDiagnostic" to "isEngineReady",
         )
 
         /** 붙잡혀도 되는 지역 값 → 그 이유. 여기 올리려면 "왜 컴포지션 내내 같은가"를 적어야 한다. */
@@ -358,8 +359,14 @@ class WiringContextFreezeContractTest {
 
         val CancelUndoSyncCall = Regex("""\bcancelUndoSync\s*(?:\(\s*\)|\.invoke\(\s*\))""")
 
-        /** 알려진 동결 둘째: lifecycleController의 remember 블록이 첫 컴포지션에 붙잡는 값([CapturedByDesign]을 뺀 것). */
-        val KnownFrozenLifecycleLocals = setOf("engineName", "engineDiagnostic")
+        /** 엔진 정체의 지연 읽기(#108) — 값을 넘기는 `rememberUpdatedState`(함정 46). */
+        val LatestEngineIdentityDeclaration = Regex("""\bval latestEngineIdentity by rememberUpdatedState\(\s*identity\s*\)""")
+
+        /** 런타임 로그 문맥이 엔진 이름·진단을 지연 읽기에서 꺼내는 두 인자(#108). */
+        val LatestEngineIdentityReads = listOf(
+            Regex("""\bengineName = latestEngineIdentity\.name\b"""),
+            Regex("""\bengineDiagnostic = latestEngineIdentity\.diagnostic\b"""),
+        )
 
         /** 파서 자기 시험용 합성 조각. 이름이 곧 기대다: plain* = 붙잡는다, delegated/remembered/stable = 안 붙잡는다. */
         val SyntheticScreen = """

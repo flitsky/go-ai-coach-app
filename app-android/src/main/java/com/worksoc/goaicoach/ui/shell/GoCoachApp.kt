@@ -14,6 +14,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -345,10 +346,16 @@ private fun GoCoachScreen(
         if (FeatureAccessPolicy.resolve(FeatureId.Eval, premiumState, System.currentTimeMillis()) !is FeatureAccess.Allowed) return
         uxOptions = uxOptions.copy(showOwnershipOverlay = true)
     }
+    // ⚠️ 키 없는 `lifecycleController`(아래)는 **첫 컴포지션의** 이 지역 함수를 쥔다 — 엔진 이름·진단을 평범한
+    // val로 읽으면 엔진 수명 로그가 프로세스 내내 첫 값(대개 Unresolved)을 적는다(refactor backlog #108).
+    // 그래서 **부를 때** 이 상태에서 읽는다. 넘기는 것은 값(data class)이다 — 지역 함수 참조는 늘 `==`라
+    // 갱신이 걸러진다(함정 46). `wiringContext`의 `engineName()`·`engineDiagnostic()`(디버그 리포트)도 여기서
+    // 읽는다 — 객체를 만든 때의 값이 아니다. `wiringContext`의 remember 키는 그대로다(함정 67).
+    val latestEngineIdentity by rememberUpdatedState(identity)
     fun currentRuntimeLogContext(): RuntimeLogContext {
         return sessionSnapshot.toRuntimeLogContext(
-            engineName = engineName,
-            engineDiagnostic = engineDiagnostic,
+            engineName = latestEngineIdentity.name,
+            engineDiagnostic = latestEngineIdentity.diagnostic,
             isEngineReady = isEngineReady,
             isEngineBusy = isEngineBusy,
             analysisCacheStats = "${analysisCache.statsText()}, ${undoAnalysisRestoreCache.statsText()}",
@@ -559,8 +566,8 @@ private fun GoCoachScreen(
             override fun topMovesEnabled(): Boolean = topMovesEnabled
             override fun showMoveReviewEnabled(): Boolean = uxOptions.showMoveReview
             override fun currentRuntimeLogContext(): RuntimeLogContext = currentRuntimeLogContext()
-            override fun engineName(): String = engineName
-            override fun engineDiagnostic(): String = engineDiagnostic
+            override fun engineName(): String = latestEngineIdentity.name
+            override fun engineDiagnostic(): String = latestEngineIdentity.diagnostic
 
             override fun setGameState(value: GameState) { gameState = value }
             override fun setEngineMessage(value: String) { engineMessage = value }
