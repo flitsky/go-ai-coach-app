@@ -1,8 +1,10 @@
 package com.worksoc.goaicoach.smoke
 
 import android.content.Context
+import android.os.Process
 import androidx.test.platform.app.InstrumentationRegistry
 import com.worksoc.goaicoach.ui.guide.GuideTargetSpots
+import java.io.File
 
 /**
  * 이 스모크 테스트들이 기대는 **"갓 설치한 앱"** 상태를 실제로 만든다.
@@ -50,3 +52,23 @@ internal fun resetToFreshInstallState() {
 
     GuideTargetSpots.resetForTest()
 }
+
+/**
+ * 이 앱(같은 uid)이 띄운 KataGo 프로세스를 전부 내리고, 사라질 때까지 잠깐 기다린다. 앱은 같은 uid의 프로세스만
+ * `/proc`에서 볼 수 있고 [Process.killProcess]도 같은 uid에만 닿는다 — 남의 프로세스는 건드릴 수 없다.
+ *
+ * 진짜 KataGo를 띄우는 테스트가 앞뒤로 부른다 — 사유(2GB 에뮬레이터의 lowmemorykiller)는 `EngineStallRecoverySmokeTest`의 KDoc.
+ */
+internal fun stopLeftoverKataGoProcesses(): Int {
+    val pids = File("/proc").listFiles().orEmpty().mapNotNull { dir ->
+        val pid = dir.name.toIntOrNull() ?: return@mapNotNull null
+        val commandLine = runCatching { File(dir, "cmdline").readText() }.getOrNull() ?: return@mapNotNull null
+        pid.takeIf { KataGoExecutableName in commandLine }
+    }
+    pids.forEach(Process::killProcess)
+    val deadline = System.currentTimeMillis() + 5_000L
+    while (pids.any { File("/proc/$it").exists() } && System.currentTimeMillis() < deadline) Thread.sleep(100L)
+    return pids.size
+}
+
+private const val KataGoExecutableName = "libkatago.so"

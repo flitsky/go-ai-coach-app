@@ -1,6 +1,5 @@
 package com.worksoc.goaicoach.smoke
 
-import android.os.Process
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
@@ -255,27 +254,10 @@ class EngineStallRecoverySmokeTest {
 
     private fun File.readTextOrEmpty(): String = if (isFile) readText() else ""
 
-    /**
-     * 이 앱(같은 uid)이 띄운 KataGo 프로세스를 전부 내리고, 사라질 때까지 잠깐 기다린다. 앱은 같은 uid의 프로세스만
-     * `/proc`에서 볼 수 있고 [Process.killProcess]도 같은 uid에만 닿는다 — 남의 프로세스는 건드릴 수 없다.
-     */
-    private fun stopLeftoverKataGoProcesses(): Int {
-        val pids = File("/proc").listFiles().orEmpty().mapNotNull { dir ->
-            val pid = dir.name.toIntOrNull() ?: return@mapNotNull null
-            val commandLine = runCatching { File(dir, "cmdline").readText() }.getOrNull() ?: return@mapNotNull null
-            pid.takeIf { KataGoExecutableName in commandLine }
-        }
-        pids.forEach(Process::killProcess)
-        val deadline = System.currentTimeMillis() + 5_000L
-        while (pids.any { File("/proc/$it").exists() } && System.currentTimeMillis() < deadline) Thread.sleep(100L)
-        return pids.size
-    }
-
     private companion object {
         const val StartupTimeoutMillis = 30_000L
         const val EngineTimeoutMillis = 120_000L
         const val PopupTimeoutMillis = 15_000L
         const val RetryIntervalMillis = 1_000L
-        const val KataGoExecutableName = "libkatago.so"
     }
 }
