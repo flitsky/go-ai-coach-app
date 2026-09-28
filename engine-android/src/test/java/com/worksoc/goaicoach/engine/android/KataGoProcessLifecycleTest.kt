@@ -26,6 +26,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
+import org.json.JSONObject
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -300,6 +301,45 @@ class KataGoProcessLifecycleTest {
         assertEquals("the next command reads its own reply", play(StoneColor.White, "E5"), next.outcomeWithin(2_000, "the next genMove").getOrThrow().move)
         assertEquals("a cancelled caller does not end the process", emptyList<String>(), runtime.gtp(1).signals)
         assertEquals("GTP processes started", 1, runtime.processes(Kind.Gtp).size)
+    }
+
+    /**
+     * 취소된 **JSON 분석**은 KataGo analysis 엔진에 `terminate`를 보내 탐색을 멈춘다(refactor backlog #17). 배수는 그
+     * 쿼리의 끝 답(탐색이 잘린 `isDuringSearch=false` — 탐색 전이면 `noResults`)을 받아 스트림을 맞추고 곧바로 끝난다.
+     * 예전: 배수가 탐색이 끝날 때까지(길면 마감까지) analysis 프로세스의 왕복 락을 쥐어, 무르기 뒤의 다음 분석이 그만큼 기다렸다.
+     *
+     * 가짜 analysis 엔진은 진짜처럼 굴린다 — 첫 쿼리는 `terminate`가 올 때까지 답하지 않고, `terminate`에는 받은 것을
+     * 그대로 되돌린 확인(다른 `id`)과 그 쿼리의 `noResults` 끝 답을 낸다.
+     */
+    @Test
+    fun aCancelledJsonAnalysisIsTerminatedSoTheNextAnalysisDoesNotWaitForTheWholeSearch() {
+        deadline = 5_000
+        runtime.responder = { process, line ->
+            val json = if (process.kind == Kind.Analysis) JSONObject(line) else null
+            when {
+                json == null -> null
+                json.optString("action") == "terminate" ->
+                    Reply.Now("$json\n" + """{"id":"${json.getString("terminateId")}","isDuringSearch":false,"turnNumber":0,"noResults":true}""" + "\n")
+                process.received.size == 1 -> Reply.Never
+                else -> null
+            }
+        }
+        runBlocking { adapter.initialize(EngineProfile()) }
+
+        val cancelled = call { adapter.analyze(JsonPathLimit) }
+        assertTrue(pollUntil(2_000) { runtime.processes(Kind.Analysis).firstOrNull()?.received?.isNotEmpty() == true })
+        val cancelledQueryId = JSONObject(runtime.analysis(1).received.first()).getString("id")
+        cancelled.cancel()
+        val outcome = cancelled.outcomeWithin(300, "the cancelled JSON analysis")
+        val next = call { adapter.analyze(JsonPathLimit) }.outcomeWithin(1_500, "the next JSON analysis behind a cancelled one")
+
+        assertTrue("cancelled: $outcome", outcome.exceptionOrNull() is CancellationException)
+        assertEquals("the next analysis reads its own reply", null, next.getOrThrow().fallback)
+        val terminate = runtime.analysis(1).received.map(::JSONObject).single { it.optString("action") == "terminate" }
+        assertEquals("the terminate names the cancelled query", cancelledQueryId, terminate.getString("terminateId"))
+        assertTrue("the terminate carries its own id, not the query's", terminate.getString("id") != cancelledQueryId)
+        assertEquals("a cancelled analysis does not end the process", emptyList<String>(), runtime.analysis(1).signals)
+        assertEquals("analysis processes started", 1, runtime.processes(Kind.Analysis).size)
     }
 
     /**

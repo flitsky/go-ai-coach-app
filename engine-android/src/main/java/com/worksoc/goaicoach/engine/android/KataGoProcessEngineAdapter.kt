@@ -55,6 +55,7 @@ import org.json.JSONObject
  *   첫 명령의 마감을 먹지 않게(refactor backlog #17). SIGKILL·세대 규칙은 같다: 그 예산도 넘기면 그 핸들만 내린다.
  * - 취소된 호출자는 답을 기다리지 않고 곧바로 돌아간다 — 답은 뒤에 남은 배수가 받아 스트림을 맞추고, 그동안 그
  *   프로세스의 왕복 락을 쥔다(refactor backlog #15, [roundTrip]). 그래야 호출자가 쥔 오퍼레이션 락이 곧바로 풀린다.
+ *   JSON 분석이면 배수가 먼저 그 쿼리에 `terminate`를 보내 탐색 끝까지 기다리지 않는다(refactor backlog #17).
  * - 재시작 뒤의 재동기화는 지금처럼 호출자 몫이다. 이 어댑터는 새 프로세스에 명령을 스스로 더 보내지 않는다.
  * - 여러 호출로 된 오퍼레이션(동기화 + 분석)이 **다른 오퍼레이션과 섞이지 않게** 하는 것은 이 층이 아니라 3계층의
  *   오퍼레이션 락이다(refactor backlog #15, `LocalEngineSessionClient`). 이 층의 판 거울(`playedMoves` 등)도 그 락이
@@ -305,7 +306,14 @@ internal class KataGoProcessEngineAdapter(
         query: JSONObject,
         timeoutMillis: Long = DefaultCommandTimeoutMillis,
     ): String =
-        roundTrip(analysisSlot, analysis, label = query.getString("id"), timeoutMillis = timeoutMillis) { writer, reader ->
+        roundTrip(
+            slot = analysisSlot,
+            handle = analysis,
+            label = query.getString("id"),
+            timeoutMillis = timeoutMillis,
+            // 호출자가 취소되면 그 쿼리의 탐색을 멈춘다 — 배수가 탐색 끝까지 기다리지 않게(refactor backlog #17).
+            abandon = { writer -> writer.writeLine(KataGoJsonAnalysisQueryFactory.terminate(query.getString("id")).toString()) },
+        ) { writer, reader ->
             exchangeAnalysisQuery(writer, reader, query)
         }
 
@@ -334,12 +342,16 @@ internal class KataGoProcessEngineAdapter(
      * 쥐었다가 푼다. 같은 프로세스로 가는 다음 명령은 지금처럼 이 락에 줄 서서 배수가 끝난 뒤에 나간다 — 늦은 답을
      * 제 답으로 읽지 않는다. forceReset(EOF)도 지금처럼 배수를 끝낸다.
      * ⚠️ 왕복 락을 `withLock`으로 되돌리지 말 것 — 락을 넘길 수 없어 호출자가 다시 답을 기다리게 된다.
+     *
+     * [abandon]이 있으면 호출자가 취소됐을 때 배수가 먼저 그것을 보낸다 — JSON 분석의 `terminate`(refactor backlog #17).
+     * 그러면 KataGo가 탐색을 멈추고 곧바로 끝 답을 내, 배수가 탐색이 끝날 때까지 왕복 락을 쥐지 않는다.
      */
     private suspend fun <T> roundTrip(
         slot: EngineProcessSlot,
         handle: EngineProcessHandle,
         label: String,
         timeoutMillis: Long,
+        abandon: ((BufferedWriter) -> Unit)? = null,
         exchange: (BufferedWriter, BufferedReader) -> T,
     ): T {
         // 락은 try 밖에서 잡는다 — 기다리다 취소되면 잡지 않은 채 여기서 끝난다(풀 것이 없다).
@@ -366,7 +378,7 @@ internal class KataGoProcessEngineAdapter(
                 } else if (!work.isCompleted) {
                     val elapsedMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAtNanos)
                     unlockHere = false
-                    drainThenUnlock(slot, handle, work, remainingMillis = budgetMillis - elapsedMillis)
+                    drainThenUnlock(slot, handle, work, remainingMillis = budgetMillis - elapsedMillis, abandon = abandon)
                 }
                 throw cancellation
             }
@@ -404,7 +416,11 @@ internal class KataGoProcessEngineAdapter(
         handle: EngineProcessHandle,
         work: Deferred<*>,
         remainingMillis: Long,
+        abandon: ((BufferedWriter) -> Unit)?,
     ) {
+        // 따로 띄운다 — 블로킹 쓰기가 멈춰도(프로세스가 stdin을 안 읽는다) 아래 마감이 그대로 돌아 프로세스를 내리고,
+        // 그러면 그 쓰기도 풀린다. 줄 하나를 한 번에 쓰므로 다음 명령의 줄과 섞이지 않는다([writeLine]).
+        abandon?.let { stop -> pipeIo.async { stop(handle.writer) } }
         pipeIo.async {
             try {
                 val replied = withTimeoutOrNull(remainingMillis.coerceAtLeast(1)) { work.join() } != null
@@ -451,9 +467,7 @@ internal class KataGoProcessEngineAdapter(
         reader: BufferedReader,
         query: JSONObject,
     ): String {
-        writer.write(query.toString())
-        writer.newLine()
-        writer.flush()
+        writer.writeLine(query.toString())
 
         val queryId = query.getString("id")
         while (true) {
@@ -468,6 +482,11 @@ internal class KataGoProcessEngineAdapter(
             }
             require(!response.has("error")) {
                 "KataGo JSON analysis failed for `$queryId`: ${response.optString("error")}"
+            }
+            // `terminate`로 탐색 전에 멈춘 쿼리의 끝 답 — `moveInfos`가 없다(refactor backlog #17). 기다리는 쪽은 이미
+            // 취소된 호출자뿐이라, 스트림을 맞추는 데까지만 쓰인다.
+            if (response.optBoolean("noResults", false)) {
+                return trimmed
             }
             if (response.has("warning") || !response.has("moveInfos")) {
                 continue
@@ -599,3 +618,12 @@ internal class KataGoProcessEngineAdapter(
 
 /** 답을 다 받기 전에 파이프가 끝났다(프로세스가 죽었다). 문구는 예전 `error(...)` 그대로다 — 호출자에게는 `IllegalStateException`. */
 private class EngineStreamEnded(message: String) : IllegalStateException(message)
+
+/**
+ * 줄 하나를 **한 번의 쓰기로** 보낸다 — `write` 한 번은 writer의 락을 통째로 쥐므로, 배수가 따로 보내는 `terminate`와
+ * 다음 명령의 쿼리가 줄 중간에서 섞이지 않는다(refactor backlog #17).
+ */
+private fun BufferedWriter.writeLine(line: String) {
+    write(line + "\n")
+    flush()
+}

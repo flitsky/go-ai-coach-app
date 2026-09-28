@@ -48,6 +48,17 @@ internal object KataGoJsonAnalysisQueryFactory {
     }
 
     /**
+     * [queryId] 쿼리의 탐색을 멈추라는 analysis 엔진의 `terminate` 액션(refactor backlog #17). KataGo는 이것을 그대로
+     * 되돌려 확인하고(그래서 id가 쿼리와 달라야 한다 — 같으면 확인 줄을 그 쿼리의 답으로 읽는다), 멈춘 쿼리에는
+     * `isDuringSearch=false`인 끝 답을 낸다 — 탐색이 잘린 `moveInfos`, 탐색 전이면 `noResults=true`.
+     */
+    fun terminate(queryId: String): JSONObject =
+        JSONObject()
+            .put("id", "$queryId-terminate")
+            .put("action", "terminate")
+            .put("terminateId", queryId)
+
+    /**
      * @param handicapBonusRule 접바둑 보정 방식. 프로덕션은 넘기지 않는다([ruleset]의 값) — 지금 룰셋에 없는
      *   조합(이름 룰 기본값과 다른 방식)을 테스트가 넣어 보는 자리다(`KataGoNamedRulesTest`).
      */
