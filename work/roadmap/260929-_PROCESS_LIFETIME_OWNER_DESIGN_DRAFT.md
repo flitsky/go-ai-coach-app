@@ -140,7 +140,7 @@
   └─ 컴포지션 ─ GoCoachApp/GoCoachScreen   나머지 전부(스코프·수명 컨트롤러·컨트롤러·wiringContext·플래그·캐시·저장소·효과)
 ```
 
-### 2.2 `GoCoachProcessRuntime` — 새 파일 `app-android/src/main/java/com/worksoc/goaicoach/GoCoachProcessRuntime.kt`
+### 2.2 `GoCoachProcessRuntime` — 새 파일 `GoCoachProcessRuntime.kt`(app-android 루트 패키지 `com.worksoc.goaicoach`)
 
 - **무엇을 하나**: `MainActivity.kt` L92–157의 엔진 조립을 **그대로 옮겨 온다**(한 줄씩, 문구와 KDoc 포함). 새 계산은 없다. "소유만 하고 계산하지 않는다"는 조건이 여기서 성립한다.
 - **왜 루트 패키지인가**: 조립 전용 층이고, `ui.shell.RetainedGoCoachSession`을 만든다. `engine/` 패키지에 두면 `engine → ui.shell`, `engine → persistence` 간선이 생긴다. 루트 → `ui.shell` 간선은 이미 있다(`MainActivity` → `GoCoachApp`). `LayeringContractTest.compositionRootFileSetIsAConsciousDecision`의 목록에 한 줄을 더하고 사유를 적는다: "#40·#110 — 프로세스 수명 소유자. 조립만 한다".
@@ -194,7 +194,7 @@ internal class GoCoachProcessRuntime(
 - 부트스트랩 잡은 컴포지션과 무관한 **유일한 잡**이다. 쓰는 것이 런타임의 `Deferred`와 `engineBootstrap`뿐이라 유령 갱신이 없다. 오늘 DKA가 첫 실행 복사 도중에 오면 생기던 **이중 시딩 경합**도 사라진다. 선례: `AttendanceCheckInCoordinator`가 이미 자기 프로세스 스코프를 든다.
 - 부트스트랩 실패 의미는 바꾸지 않는다. 오늘 `LaunchedEffect` 안의 예외는 앱을 죽인다. `SupervisorJob` 아래 `launch`의 예외도 기본 처리기로 앱을 죽인다. 조용히 삼키지 않는다.
 
-### 2.3 `RetainedGoCoachSession` — 새 파일 `app-android/src/main/java/com/worksoc/goaicoach/ui/shell/RetainedGoCoachSession.kt`
+### 2.3 `RetainedGoCoachSession` — 새 파일 `RetainedGoCoachSession.kt`(app-android `ui.shell` 패키지)
 
 ```kotlin
 /**
@@ -486,7 +486,7 @@ LaunchedEffect(isEngineReady, isEngineBusy, …) {                       // 기�
 
 ## 7. 테스트 계획
 
-### 7.1 (a) 인수 시험 — `app-android/src/androidTest/.../smoke/ActivityRecreationSurvivalSmokeTest.kt` (새로)
+### 7.1 (a) 인수 시험 — `ActivityRecreationSurvivalSmokeTest.kt`(androidTest `smoke` 패키지) (새로)
 
 **무엇이 DKA를 진짜로 재현하나**
 
@@ -536,7 +536,7 @@ LaunchedEffect(isEngineReady, isEngineBusy, …) {                       // 기�
 - 7.3의 JVM 시험 "새 세션은 확인을 돌리고, 보존 세션은 안 돌린다"가 거기에 더해진다.
 - 🧪: 배경에서 `adb shell am kill <applicationId>` → 다시 실행 → 홈에 「이어하기」.
 
-### 7.2 (b) #110 — `app-android/src/androidTest/.../smoke/EngineProcessCountSmokeTest.kt` (새로)
+### 7.2 (b) #110 — `EngineProcessCountSmokeTest.kt`(androidTest `smoke` 패키지) (새로)
 
 - **세는 법**
   - `FreshAppState`의 `/proc` 훑기를 `kataGoProcessCensus(): List<KataGoProcess(pid, kind, state)>`로 꺼낸다.
@@ -555,7 +555,7 @@ LaunchedEffect(isEngineReady, isEngineBusy, …) {                       // 기�
 
 ### 7.3 (c) JVM 시험 (`make test`에 들어간다)
 
-- **`GoCoachProcessRuntimeTest`**(`app-android/src/test/.../GoCoachProcessRuntimeTest.kt`). 가짜 부트스트랩 팩토리, `Dispatchers.Unconfined`.
+- **`GoCoachProcessRuntimeTest`**(`GoCoachProcessRuntimeTest.kt`(app-android 단위 테스트)). 가짜 부트스트랩 팩토리, `Dispatchers.Unconfined`.
   - `startEngineBootstrap()`을 N번 불러도 팩토리가 **1번** 불린다.
   - 팩토리가 끝나기 전에는 `engineIdentity()`가 `Unresolved`다. 끝난 뒤에는 `Deferred`가 먼저 완료되고 그다음에 정체가 보인다. 팩토리가 돌려준 가짜 `coreApi`가 `engineClient` 호출에 닿는 순서로 잰다.
   - `engineClient`는 `session`이 몇 번 바뀌어도 **같은 인스턴스**다.
