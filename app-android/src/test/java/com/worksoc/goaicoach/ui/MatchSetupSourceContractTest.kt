@@ -103,6 +103,50 @@ class MatchSetupSourceContractTest {
         )
     }
 
+    /**
+     * **계가 규칙도 같은 규칙을 따른다**(refactor backlog #22, #94가 넘긴 것). 자동저장이 지금 판의 룰을 적으면
+     * 이어하기·분기 대국의 룰이 사용자의 설정이 된다.
+     */
+    @Test
+    fun theAutosaveNeverWritesTheLiveGamesRuleset() {
+        val call = shell.indexOf("runUserPreferencesAutosave(")
+        assertTrue("자동저장 호출을 찾지 못했다 — 이 계약의 전제가 무너졌다.", call >= 0)
+        val effect = shell.substring(
+            shell.lastIndexOf("LaunchedEffect(", call),
+            shell.indexOf("store = preferencesStore", call),
+        )
+        assertFalse(
+            "자동저장이 지금 판의 룰(`gameState.ruleset`)을 읽는다 — 이어하기·분기 대국의 룰이 설정으로 저장된다(#22). " +
+                "룰은 설정 상태(`settingsState.ruleset`)에서 온다.",
+            effect.contains("gameState.ruleset"),
+        )
+    }
+
+    /** 로비와 설정 화면은 **설정의 룰**을 그린다 — 끝난 이어하기 판에서 와도 앞 판의 룰이 보이지 않는다(#22). */
+    @Test
+    fun theLobbyAndTheSettingsScreenShowTheSettingsRuleset() {
+        assertFalse(
+            "로비가 지금 판의 룰을 그린다 — 끝난 이어하기·분기 대국에서 오면 앞 판의 룰이 보인다(#22).",
+            lobby.contains("screenState.gameState.ruleset"),
+        )
+        assertTrue("로비 패널이 설정의 룰을 넘기지 않는다(#22).", lobby.contains("ruleset = screenState.setupRuleset"))
+        assertFalse(
+            "설정 화면이 지금 판의 룰을 그린다 — 새 대국은 설정의 룰로 시작한다(#22).",
+            settings.contains("screenState.gameState.ruleset"),
+        )
+        assertTrue("설정 화면 패널이 설정의 룰을 넘기지 않는다(#22).", settings.contains("ruleset = screenState.setupRuleset"))
+    }
+
+    /** 대국 화면 메뉴는 반대로 **지금 판의 룰**을 그린다(#22) — 이어한 판의 메뉴에 설정의 룰이 보이면 안 된다. */
+    @Test
+    fun theInGameMenuShowsTheLiveGamesRuleset() {
+        assertTrue(
+            "대국 화면 메뉴가 지금 판의 룰을 그리지 않는다(#22).",
+            gameMenu.contains("ruleset = screenState.gameState.ruleset"),
+        )
+        assertFalse("대국 화면 메뉴가 설정의 룰을 그린다 — 지금 판의 조건과 섞인다(#22).", gameMenu.contains("setupRuleset"))
+    }
+
     private fun sourceOf(fileName: String): String = RepoPaths.uiFile(fileName).readContractSource()
 
     /** 주석을 걷어낸 코드만 남긴다. 여러 줄 KDoc을 반드시 지워야 한다. */

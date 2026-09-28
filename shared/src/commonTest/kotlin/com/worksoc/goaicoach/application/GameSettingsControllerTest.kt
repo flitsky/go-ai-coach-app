@@ -511,6 +511,51 @@ class GameSettingsControllerTest {
     }
 
     /**
+     * **계가 규칙도 덤과 같은 갈림이다**(refactor backlog #22, #94가 넘긴 것). 설정은 중국(집계)인데 이어한 판이
+     * 일본이면, 자동저장이 **지금 판의** 룰을 적어 앱이 죽은 뒤 다음 실행의 설정·로비·새 대국이 전부 일본이 된다.
+     */
+    @Test
+    fun aResumedGamesRulesetIsNotSavedIntoTheSettings() {
+        val store = InMemoryPreferencesStore()
+        store.save(UserPreferencesSnapshot(boardSize = BoardSize.Nineteen, ruleset = Ruleset.Chinese))
+        val live = LiveSettingsWiring(restartFrom(store.load()))
+        live.core = live.core.copy(
+            gameState = GameState.withHandicap(BoardSize.Nine, Ruleset.Japanese, handicapCount = 0, komi = DefaultKomi),
+            isGameEnded = false,
+        )
+
+        autosaveLikeTheApp(live, store)
+
+        assertEquals(
+            Ruleset.Chinese,
+            store.load().ruleset,
+            "이어한 판의 룰(일본)이 설정으로 저장됐다 — 재시작 뒤 로비·새 대국이 일본이 된다(#22)",
+        )
+    }
+
+    /**
+     * 이어한 판(일본)을 끝낸 뒤 로비에서 판 크기를 바꾸면 미리보기를 설정으로 다시 그린다 — 그 미리보기의 룰도
+     * 설정(중국)이어야 한다. 미리보기가 룰만 지금 판에서 읽으면 앞 판의 룰이 로비에 보이고 새 대국으로 간다.
+     */
+    @Test
+    fun aResumedGamesRulesetDoesNotLeakIntoTheNewGamePreview() {
+        val live = LiveSettingsWiring(restartFrom(UserPreferencesSnapshot(ruleset = Ruleset.Chinese)))
+        live.core = live.core.copy(
+            gameState = GameState.withHandicap(BoardSize.Nine, Ruleset.Japanese, handicapCount = 0, komi = DefaultKomi),
+            isGameEnded = true,
+        )
+
+        liveWiredController(live).changeBoardSize(BoardSize.Nineteen)
+
+        assertEquals(BoardSize.Nineteen, live.core.gameState.boardSize)
+        assertEquals(
+            Ruleset.Chinese,
+            live.core.gameState.ruleset,
+            "미리보기 판이 이어한 판의 룰(일본)을 그린다 — 설정은 중국이다(#22)",
+        )
+    }
+
+    /**
      * 앱 배선(`SettingsAndDiagnosticsControllerWiring`)과 **같은 모양**으로 설정·코어 상태를 실제로
      * 갈아끼우는 컨트롤러. 위 테스트들처럼 람다가 값을 받아 적기만 하면 *"설정 상태에서 미리보기로"*
      * 흐르는 경로가 보이지 않는다.

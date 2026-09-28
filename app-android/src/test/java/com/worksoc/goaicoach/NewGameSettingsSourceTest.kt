@@ -89,6 +89,73 @@ class NewGameSettingsSourceTest {
         assertEquals("로비에서 고친 덤이 새 대국에 가지 않았다", 7.5, context.coreWrites.last().gameState.komi, 0.0)
     }
 
+    /**
+     * **계가 규칙도 같은 갈림이었다**(refactor backlog #22, #94가 넘긴 것). 설정(저장된 사용자 선택)은 중국(집계)인데
+     * 이어한 판이 일본(집)이면, 그 판을 끝까지 두고 새 대국을 시작할 때 **앞 판의 룰**로 시작했다 — 새 대국이
+     * 룰만 `gameState`에서 읽었기 때문이다. 판 크기·접바둑·덤처럼 설정에서 읽어야 한다.
+     */
+    @Test
+    fun theGameAfterAResumedGameStartsWithTheSettingsRulesetNotTheResumedGames() {
+        val context = FakeGoCoachAppWiringContext(
+            inGameSession(playerSetup = TwoHumans, boardSize = BoardSize.Nineteen, ruleset = Ruleset.Chinese),
+        )
+        val controllers = wireGoCoachControllers(context)
+
+        controllers.savedSessionController.restore(ResumedNineByNineEvenGame)
+        // 전제 — 이어한 판은 **그 판의** 룰로 둔다(지금도 초록).
+        assertEquals(Ruleset.Japanese, context.holder.current.gameState.ruleset)
+
+        context.changeCore { it.copy(isGameEnded = true) }
+        controllers.newGameController.startConfiguredGame()
+
+        assertEquals(
+            "이어한 판의 룰(일본)로 새 대국이 시작됐다 — 설정은 중국이다. 새 대국은 룰을 설정에서 읽어야 한다(#22).",
+            Ruleset.Chinese,
+            context.coreWrites.last().gameState.ruleset,
+        )
+    }
+
+    /**
+     * **지켜야 할 동작** — 로비에서 고른 룰은 그대로 새 대국에 간다. 고치기 전에도 초록이다(로비에서 바꾸면
+     * 미리보기 판의 룰이 바뀌었고 새 대국이 그것을 읽었으므로).
+     */
+    @Test
+    fun theRulesetChosenInTheLobbyStillReachesTheNextGame() {
+        val context = FakeGoCoachAppWiringContext(inGameSession(playerSetup = TwoHumans, ruleset = Ruleset.Japanese))
+        context.changeCore { it.copy(isGameEnded = true) }
+        val controllers = wireGoCoachControllers(context)
+
+        controllers.scoringRuleController.change(Ruleset.Chinese)
+        controllers.newGameController.startConfiguredGame()
+
+        assertEquals("로비에서 고른 룰이 새 대국에 가지 않았다", Ruleset.Chinese, context.coreWrites.last().gameState.ruleset)
+    }
+
+    /**
+     * **지켜야 할 동작** — 끝난 이어하기 판(일본)이 아직 화면에 있는 채로 로비에서 **그 판과 같은** 룰을 골라도
+     * 새 대국에 간다. 룰 변경은 지금 판과 같으면 아무것도 안 하는(NoOp) 게이트를 지나므로, 설정에 적는 일을
+     * 그 게이트 뒤에 두면 설정의 중국이 그대로 남아 사용자가 고른 일본이 무시된다. 고치기 전에는 새 대국이
+     * 지금 판에서 룰을 읽어 우연히 초록이다.
+     */
+    @Test
+    fun theLobbyRulesetReachesTheNextGameEvenWhenTheEndedGameAlreadyHasIt() {
+        val context = FakeGoCoachAppWiringContext(
+            inGameSession(playerSetup = TwoHumans, boardSize = BoardSize.Nineteen, ruleset = Ruleset.Chinese),
+        )
+        val controllers = wireGoCoachControllers(context)
+        controllers.savedSessionController.restore(ResumedNineByNineEvenGame)
+        context.changeCore { it.copy(isGameEnded = true) }
+
+        controllers.scoringRuleController.change(Ruleset.Japanese)
+        controllers.newGameController.startConfiguredGame()
+
+        assertEquals(
+            "로비에서 고른 일본 룰이 새 대국에 가지 않았다 — 끝난 판과 같은 룰이라 설정에 안 적혔다(#22).",
+            Ruleset.Japanese,
+            context.coreWrites.last().gameState.ruleset,
+        )
+    }
+
     private companion object {
         val TwoHumans = PlayerSetup(black = SidePlayerSetup(SeatController.Human), white = SidePlayerSetup(SeatController.Human))
 
