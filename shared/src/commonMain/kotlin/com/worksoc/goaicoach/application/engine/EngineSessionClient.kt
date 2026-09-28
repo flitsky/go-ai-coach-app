@@ -40,8 +40,8 @@ data class EngineSessionCapabilities(
  * ## 멤버가 없다 — 역할 넷의 합성이다 (refactor backlog #35)
  * 멤버 16개는 역할 인터페이스 넷에 **하나씩만** 선언돼 있다 — [EngineLifecycleClient](수명 6)·
  * [EngineGamePlayClient](대국 진행 3)·[EngineScoringClient](계가 3)·[EngineAnalysisClient](분석 4).
- * 이 타입은 넷을 다 가진 객체 하나가 필요한 **조립 루트**를 위해 남는다 — `MainActivity`의
- * `remoteClient ?: LocalEngineSessionClient(…)`, `GoCoachApp`의 파라미터와 배선 컨텍스트, androidTest가
+ * 이 타입은 넷을 다 가진 객체 하나가 필요한 **조립 루트**를 위해 남는다 — `GoCoachProcessRuntime`(refactor backlog #110
+ * 전에는 `MainActivity`)의 `remoteClient ?: LocalEngineSessionClient(…)`, `GoCoachApp`의 파라미터와 배선 컨텍스트, androidTest가
  * `GoCoachApp`에 주입하는 `FakeEngineSessionClient` 서브클래스. Kotlin 선언에는 교집합 타입이 없어서
  * 그 자리는 이 합성으로만 적을 수 있다.
  *

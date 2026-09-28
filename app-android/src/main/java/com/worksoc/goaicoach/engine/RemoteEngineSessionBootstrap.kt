@@ -24,7 +24,8 @@ import com.worksoc.goaicoach.engine.android.RemoteEngineHttpConfig
  * "실제로 그 후보를 EngineCoreApi로 만드는" 배선을 이 파일이 이어붙인다.
  *
  * Stage E-1 범위: 아직 실제 원격 서버가 없어 GoCoachApp/MainActivity의 실제 컴포지션에는
- * 배선하지 않았다 — 이 함수는 독립적으로 빌드/테스트되는 컴포넌트다.
+ * 배선하지 않았다 — 이 함수는 독립적으로 빌드/테스트되는 컴포넌트다. (이후 260818 Stage E-3에서
+ * `BuildConfig.DEBUG` 한정으로 배선됐고, refactor backlog #110부터 부르는 자리는 `GoCoachProcessRuntime`이다.)
  */
 internal fun createRemoteEngineSessionClient(
     candidates: List<RemoteEngineCandidate>,

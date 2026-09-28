@@ -96,9 +96,9 @@ import com.worksoc.goaicoach.ui.l10n.attendanceBoardBeyondNoticeFor
  * `GoCoachApp.kt`는 라인 예산 **880/880**, 상태훅 **46/46**으로 여유가 정확히 0이다(함정 3번).
  * 모듈 내 `object`로 두면 셸에 **한 줄도** 늘지 않는다.
  *
- * ⚠️ **`Activity.recreate()`로 콜드부트를 흉내내지 말 것** — `MainActivity`의
- * `LaunchedEffect(Unit)`이 엔진 부트스트랩을 다시 돌려 "Preparing …"으로 떨어지고 **진행 중
- * 대국이 날아간다.** 이 신호는 그 대신이다.
+ * ⚠️ **`Activity.recreate()`로 콜드부트를 흉내내지 말 것** — **진행 중 대국이 날아간다**(판을
+ * 액티비티보다 오래 두는 일은 보류된 refactor backlog #40). 예전에는 엔진 부트스트랩까지 다시 돌아
+ * "Preparing …"으로 떨어졌지만, #110부터 엔진은 프로세스에 하나라 다시 돌지 않는다. 이 신호는 그 대신이다.
  */
 internal object AttendanceClaimReplaySignal {
     /** 올릴 때마다 팝업 계산이 한 번 더 돈다. 값 자체에는 뜻이 없다 — 변하기만 하면 된다. */
