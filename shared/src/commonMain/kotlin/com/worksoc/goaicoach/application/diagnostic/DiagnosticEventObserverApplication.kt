@@ -9,7 +9,7 @@ import kotlinx.coroutines.TimeoutCancellationException
 suspend fun <T> runObservedEngineOperation(
     request: EngineOperationRequest,
     diagnosticEventLog: DiagnosticEventLogPort,
-    slowThresholdMillis: Long = request.timeoutPolicy.timeoutMillis ?: 5_000L,
+    slowThresholdMillis: Long = request.timeoutPolicy.slowThresholdMillis ?: 5_000L,
     currentTimeMillis: () -> Long = ::currentEpochMillis,
     block: suspend () -> T,
 ): T {

@@ -72,12 +72,20 @@ internal enum class EngineOperationKind(
     RemotePositionAnalysis("remote_position_analysis"),
 }
 
+/**
+ * @param timeoutMillis 진단이 `engine.operation.timeout`에 적는 마감 — 그 오퍼레이션이 **실제로 기다리는** 값이어야 한다
+ *   (탐색이면 `searchTimeoutMillisFor(캡)`, refactor backlog #17).
+ * @param slowThresholdMillis `engine.operation.slow`의 문턱. 없으면 [timeoutMillis]다. 탐색은 캡을 넘기면 느린 것이라
+ *   마감(캡 + 20초)과 따로 캡을 넣는다 — `null`이면 관찰자의 기본 문턱(5초).
+ */
 data class EngineTimeoutPolicy(
     val timeoutMillis: Long? = null,
     val label: String = if (timeoutMillis == null) "uncapped" else "cap:${timeoutMillis}ms",
+    val slowThresholdMillis: Long? = timeoutMillis,
 ) {
     init {
         require(timeoutMillis == null || timeoutMillis > 0) { "timeoutMillis must be positive when set" }
+        require(slowThresholdMillis == null || slowThresholdMillis > 0) { "slowThresholdMillis must be positive when set" }
         require(label.isNotBlank()) { "label must not be blank" }
     }
 }

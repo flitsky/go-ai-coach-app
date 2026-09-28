@@ -32,8 +32,12 @@ import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
 import com.worksoc.goaicoach.testsupport.RecordingDiagnosticEventLog
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 
 class EngineSessionTest {
     @Test
@@ -250,6 +254,35 @@ class EngineSessionTest {
         )
         assertEquals(EngineSessionBackend.LocalEngine, client.capabilities.backend)
         assertEquals(true, client.capabilities.supportsDeviceBenchmark)
+    }
+
+    /**
+     * 시간 초과로 끝난 형세 분석의 진단은 **실제로 기다린 마감**(캡 10초 + 20초)을 적는다 — 캡 자체가 아니다
+     * (refactor backlog #17). 예전에는 `timeoutMillis=10000`이 찍혀, 로그만 보면 10초에 끊긴 것처럼 읽혔다.
+     */
+    @Test
+    fun aTimedOutPositionAnalysisLogsTheDeadlineItActuallyWaitedNotTheSearchCap() = runBlocking {
+        val timeout = runCatching { withTimeout(1) { awaitCancellation() } }.exceptionOrNull()
+        assertTrue(timeout is TimeoutCancellationException)
+        val log = RecordingDiagnosticEventLog()
+        val client = LocalEngineSessionClient(
+            coreApi = RecordingEngineAdapter(analysisFailure = timeout),
+            currentSessionGeneration = { 0L },
+            diagnosticEventLog = log,
+        )
+        val state = GameState.empty()
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+
+        assertFailsWith<TimeoutCancellationException> {
+            client.analyzePosition(
+                state = state,
+                limit = AnalysisLimit(visits = 32, timeMillis = 10_000, candidateCount = 3),
+            )
+        }
+
+        val event = log.events.single { event -> event.code == "engine.operation.timeout" }
+        assertEquals("position_analysis", event.context["operation"])
+        assertEquals("30000", event.context["timeoutMillis"])
     }
 
     @Test

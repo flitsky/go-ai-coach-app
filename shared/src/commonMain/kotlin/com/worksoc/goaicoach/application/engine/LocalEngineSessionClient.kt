@@ -22,6 +22,7 @@ import com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
 import com.worksoc.goaicoach.shared.enginecontract.ScoreEstimate
+import com.worksoc.goaicoach.shared.enginecontract.analysisSearchTimeoutMillis
 import com.worksoc.goaicoach.shared.policy.EngineFallbackPolicy
 import com.worksoc.goaicoach.shared.policy.EngineOperationKind
 import com.worksoc.goaicoach.shared.policy.EngineTimeoutPolicy
@@ -217,9 +218,11 @@ class LocalEngineSessionClient(
             kind = EngineOperationKind.PositionAnalysis,
             state = state,
             sessionGeneration = currentSessionGeneration(),
+            // 진단의 timeoutMillis는 analyze()가 실제로 기다리는 마감이다(캡 + 20초) — 캡이 아니다(refactor backlog #17).
             timeoutPolicy = EngineTimeoutPolicy(
-                timeoutMillis = context.effectiveLimit.timeMillis,
+                timeoutMillis = context.effectiveLimit.analysisSearchTimeoutMillis(),
                 label = "${searchMode.name}:${context.effectiveLimit.visits}v",
+                slowThresholdMillis = context.effectiveLimit.timeMillis,
             ),
             fallbackPolicy = if (searchMode == EngineSearchMode.JsonPositionAnalysis) {
                 EngineFallbackPolicy.CachedAnalysis

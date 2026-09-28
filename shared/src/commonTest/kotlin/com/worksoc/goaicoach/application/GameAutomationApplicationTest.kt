@@ -338,7 +338,11 @@ class GameAutomationApplicationTest {
 
         assertEquals(EngineOperationKind.AutoAiTurn, token.operation.kind)
         assertEquals(EngineFallbackPolicy.None, token.operation.fallbackPolicy)
-        assertEquals(runPlan.context.analysisLimit.timeMillis, token.operation.timeoutPolicy.timeoutMillis)
+        // 진단의 timeoutMillis는 genmove가 실제로 기다리는 마감(캡 + 20초, 캡 없으면 120초)이다 — 캡 자체가 아니다.
+        // 느림 판정의 문턱은 지금처럼 캡이다(refactor backlog #17).
+        val searchCap = runPlan.context.analysisLimit.timeMillis
+        assertEquals(searchCap?.plus(20_000L) ?: 120_000L, token.operation.timeoutPolicy.timeoutMillis)
+        assertEquals(searchCap, token.operation.timeoutPolicy.slowThresholdMillis)
         assertEquals(
             EngineOperationResultGuard.Apply,
             evaluateAutoAiTurnResultGuard(token, state),

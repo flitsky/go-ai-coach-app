@@ -4,6 +4,7 @@ import com.worksoc.goaicoach.application.contract.AutoAiTurnDisplayPlan
 import com.worksoc.goaicoach.application.contract.AutoAiTurnEndgamePlan
 import com.worksoc.goaicoach.application.contract.AutoAiTurnRunPlan
 import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.enginecontract.searchTimeoutMillisFor
 import com.worksoc.goaicoach.shared.policy.EngineFallbackPolicy
 import com.worksoc.goaicoach.shared.policy.EngineOperationKind
 import com.worksoc.goaicoach.shared.policy.EngineOperationRequest
@@ -25,9 +26,12 @@ internal fun autoAiTurnOperationToken(
             kind = EngineOperationKind.AutoAiTurn,
             state = runPlan.context.turnState,
             sessionGeneration = sessionGeneration,
+            // 진단의 timeoutMillis는 genmove가 실제로 기다리는 마감이다(캡 + 20초, 캡 없으면 120초) — 캡을 적으면
+            // 로그만 보고 캡에 끊긴 것으로 읽힌다. 느림 문턱은 지금처럼 캡이다(refactor backlog #17).
             timeoutPolicy = EngineTimeoutPolicy(
-                timeoutMillis = runPlan.context.analysisLimit.timeMillis,
+                timeoutMillis = searchTimeoutMillisFor(runPlan.context.analysisLimit.timeMillis),
                 label = "${runPlan.context.searchMode.name}:${runPlan.context.analysisLimit.visits}v",
+                slowThresholdMillis = runPlan.context.analysisLimit.timeMillis,
             ),
             fallbackPolicy = EngineFallbackPolicy.None,
         ),
