@@ -93,6 +93,28 @@ class EngineTurnWatchdogScreenContractTest {
     }
 
     @Test
+    fun theWatchdogStaysQuietWhileTheTimeoutChoiceIsShowing() {
+        assertTrue(
+            "선택 대기(상태 B)가 `rememberUpdatedState`로 살아 있지 않다 — 효과 안에서 붙잡힌 값은 바뀌지 않는다.",
+            Regex("""val\s+liveAwaitingEngineTimeoutChoice\s*=\s*rememberUpdatedState\(\s*screenState\.isAwaitingEngineTimeoutChoice\s*\)""")
+                .containsMatchIn(screen),
+        )
+        val observe = watchdogEffect.indexOf("watchdogAttempt.observe(")
+        val skip = watchdogEffect.indexOfOrFail(
+            Regex("""if\s*\(\s*liveAwaitingEngineTimeoutChoice\.value\s*\)\s*continue"""),
+            "상태 B에서 와치독이 건너뛰지 않는다 — 도는 작업이 없는데 한 번 더 보고해 진단 로그에 없는 멈춤이 찍힌다(#109 검수).",
+        )
+        val reportedGate = watchdogEffect.indexOfOrFail(
+            Regex("""if\s*\(\s*!\s*watchdogAttempt\.isReported\s*\)"""),
+            "루프가 `watchdogAttempt.isReported`로 이 시도의 보고 여부를 보지 않는다(#109 ⓑ).",
+        )
+        assertTrue(
+            "상태 B 건너뛰기는 `observe` 뒤, 보고 검사 앞에 있어야 한다 — 앞이면 선택이 난 뒤 시도가 갱신되지 않고, 뒤면 한 번 더 보고한다.",
+            skip in (observe + 1) until reportedGate,
+        )
+    }
+
+    @Test
     fun theFirstAttemptStartsFromTheTurnBaseAndTheCurrentCompletionSeq() {
         val loopStart = watchdogEffect.indexOf("while")
         assertTrue("와치독 효과에서 틱 루프(`while`)를 찾지 못했다 — 계약이 보는 자리가 사라졌다.", loopStart >= 0)

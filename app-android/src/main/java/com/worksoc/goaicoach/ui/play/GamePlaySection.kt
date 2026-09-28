@@ -150,6 +150,9 @@ internal fun GamePlaySection(
     )
     // 차례 대기 작업의 완료 순번 — 아래 와치독(시도마다 다시 건다)과 팝업 닫기가 함께 본다.
     val liveEngineTurnWaitCompletionSeq = rememberUpdatedState(screenState.engine.engineTurnWaitCompletionSeq)
+    // 상태 B(시간 초과·반복 실패 뒤 선택을 기다림)에서는 도는 작업이 없다 — 와치독이 다시 걸려 한 번 더 보고하면
+    // 진단 로그에 없는 멈춤이 찍힌다(#109 검수). 선택이 나면 #74의 다시 걸기가 새로 잰다.
+    val liveAwaitingEngineTimeoutChoice = rememberUpdatedState(screenState.isAwaitingEngineTimeoutChoice)
     LaunchedEffect(watchdogBaseMillis, turnTimeState.isPaused, screenState.isGameEnded) {
         // 안전 관리(레프리) 도메인 와치독: 새 차례가 시작될 때마다, 그리고 다시 걸 때마다(이 effect가 재시작될
         // 때마다) 리셋되므로 별도 remember 없이 이 지역 변수 하나로 "이번 시도에서 이미 보고했는지"를 추적한다.
@@ -163,6 +166,7 @@ internal fun GamePlaySection(
             delay(TurnTimerTickIntervalMillis)
             now = System.currentTimeMillis()
             watchdogAttempt = watchdogAttempt.observe(nowMillis = now, completionSeq = liveEngineTurnWaitCompletionSeq.value)
+            if (liveAwaitingEngineTimeoutChoice.value) continue
             if (!watchdogAttempt.isReported) {
                 // 이 시도의 시작(차례 시작, 다시 건 시각, 또는 앞 시도가 끝난 순간)부터의 경과 — 시계(착수 시간)는
                 // 이것과 무관하게 차례 시작부터 잰다.
