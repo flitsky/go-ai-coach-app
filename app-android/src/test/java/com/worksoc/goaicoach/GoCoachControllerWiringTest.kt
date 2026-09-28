@@ -98,7 +98,8 @@ import org.junit.Test
  *   뒤에서만 닿는다. 이 페이크의 `delay`는 멈춘 채로 있으므로 탐침을 두지 않았다. 그 뒤에서 다시 읽는
  *   게터(무르기의 `isEngineReady`·`isEngineBusy`·`gameState`, AI 착수 블록의 검증)도 같은 이유로 못 본다.
  * - 여러 컨트롤러가 **같은** `TopMovesController` 인스턴스를 쓰는지: 그 컨트롤러는 인스턴스 상태가
- *   없고(유예는 컨텍스트가 쥔다) 갈라져도 지금은 무해하다. 상태가 생기면 여기에 단언을 더할 것.
+ *   없고(유예는 컨텍스트가 쥔다) 갈라져도 지금은 무해하다. `var` 필드가 생기면
+ *   [noWiredControllerKeepsMutableInstanceState]가 먼저 막는다(#107) — 그걸 풀어야 한다면 여기에 단언을 더할 것.
  *
  * ## (a) 배선은 아무것도 읽거나 쓰지 않는다
  * 배선 중 게터 읽기는 [FakeGoCoachAppWiringContext.getterReads]로, 쓰기는
@@ -109,6 +110,10 @@ import org.junit.Test
  * [wireGoCoachControllers]의 KDoc이 생성 순서의 이유로 드는 의존 둘을 실제로 돌린다.
  * - 설정 → **공유** 무르기 컨트롤러: 설정을 바꾸면 조용한 구간을 닫으면서 **같은 인스턴스**에 걸린
  *   무르기 재동기화를 취소해야 한다.
+ * - 무르기 → **다시 배선** → 취소(refactor backlog #107): 앱은 무르기 바로 다음 프레임에 컨트롤러를 전부 새로
+ *   만든다([wireAsGoCoachAppDoes]). 그 뒤의 설정 변경·조용한 구간 닫기·두 번째 무르기는 **새** 인스턴스로 가고,
+ *   옛 인스턴스가 예약한 재동기화를 멈춰야 한다 — 대기 중인 재동기화는 컨트롤러가 아니라 한 번만 만든
+ *   [FakeGoCoachAppWiringContext.postUndoSync]에 있다. 무르기 1초 안에 둔 수의 자동 추천 수가 버려지지 않는지도 본다.
  * - 착수·새 대국·이어하기·채점 규칙 → 추천 수 컨트롤러: 엔진 동기화가 끝나면 후속 분석을 넘긴다.
  *   엔진 작업 블록을 끝까지 돌려(`Dispatchers.IO` 한 번 왕복) 후속 분석이 공유 유예 자리
  *   ([FakeGoCoachAppWiringContext.deferredTopMoveAnalysis])에 도착하는지 본다.
@@ -171,6 +176,37 @@ class GoCoachControllerWiringTest {
                 assertFalse("$controller 의 탐침 $probe 이 꺼져 있다 — 돌지 않는 탐침은 아무것도 지키지 않는다(#43).", method.isAnnotationPresent(Ignore::class.java))
             }
         }
+    }
+
+    /**
+     * 컨트롤러 12개 어디에도 **바뀌는 인스턴스 필드**(`var` — 잡·대기 표지·캐시)가 없다(refactor backlog #107).
+     * 앱은 `wiringContext`의 remember 키 7개(함정 67 — 뺄 수 없다)가 바뀔 때마다 컨트롤러를 전부 새로 만든다
+     * ([wireAsGoCoachAppDoes]). 인스턴스 필드에 둔 상태는 그때 버려진 옛 인스턴스에 남고, 새 인스턴스는 그것을 못
+     * 본다 — #107의 무르기 재동기화가 그랬다. 그런 상태는 한 번만 `remember`한 객체에 두고 컨텍스트로 넘긴다:
+     * `PostUndoSyncSlot`(#107)·수명 컨트롤러의 AI 차례 Job(#74)·`TopMoveAnalysisDeferral`.
+     *
+     * ⚠️ 필드가 `final`인지만 본다 — 컨트롤러가 가변 객체(목록·캐시)를 **스스로 만들어** `val`로 들면 못 잡는다.
+     * 지금은 12개 모두 생성자 인자 말고는 필드가 없다(2026-09-29 감사).
+     */
+    @Test
+    fun noWiredControllerKeepsMutableInstanceState() {
+        val controllers = wireGoCoachControllers(FakeGoCoachAppWiringContext())
+
+        val mutableFields = controllerFields().flatMap { field ->
+            generateSequence<Class<*>>(field.get(controllers).javaClass) { it.superclass }
+                .takeWhile { it != Any::class.java }
+                .flatMap { it.declaredFields.asSequence() }
+                .filterNot { Modifier.isStatic(it.modifiers) || Modifier.isFinal(it.modifiers) }
+                .map { "${field.name}.${it.name}" }
+                .toList()
+        }
+
+        assertEquals(
+            "컨트롤러에 바뀌는 인스턴스 필드가 생겼다 — 무르기·설정·착수마다 컨트롤러가 새로 만들어져 그 상태는 옛 " +
+                "인스턴스에 남는다(#107). 한 번만 remember하는 객체로 옮겨 컨텍스트로 넘길 것.",
+            emptyList<String>(),
+            mutableFields,
+        )
     }
 
     // ── (b) 컨트롤러별 탐침: 부르고 → 값을 바꾸고 → 같은 인스턴스를 다시 부른다 ──
@@ -983,8 +1019,12 @@ class GoCoachControllerWiringTest {
     /**
      * 설정 → **공유** 무르기 컨트롤러(배선 KDoc이 든 생성 순서 제약). 엔진이 준비된 무르기는 조용한 구간 뒤의
      * 재동기화를 `controllers.undoController`에 예약한다. 그 뒤 설정을 바꾸면 설정 컨트롤러가 조용한 구간을
-     * 닫으며 **그 인스턴스의** 대기 중 재동기화를 취소해야 한다 — 설정이 다른 `UndoController`에 묶이면
-     * 조용한 구간만 0이 되고 재동기화는 살아남는다.
+     * 닫으며 그 재동기화를 취소해야 한다 — 두 경우를 본다.
+     * - ① **같은 배선**: 설정이 다른 `UndoController`에 묶이면 조용한 구간만 0이 되고 재동기화는 살아남는다(#43).
+     * - ② **무르기 뒤 다시 배선된** 설정 컨트롤러(refactor backlog #107): 앱에서는 무르기 바로 다음 프레임에
+     *   컨트롤러가 전부 새로 만들어지므로([wireAsGoCoachAppDoes]), 무르기 1초 안의 설정 변경은 **새** 설정
+     *   컨트롤러 → **새** 무르기 컨트롤러로 간다. 대기 중인 재동기화가 옛 인스턴스의 필드에 있으면 새 인스턴스가
+     *   그것을 못 본다.
      */
     @Test
     fun settingsCancelsThePostUndoResyncScheduledOnTheSharedUndoController() {
@@ -1010,6 +1050,131 @@ class GoCoachControllerWiringTest {
             "취소된 무르기 재동기화가 여전히 돌아 조용한 구간 delay까지 갔다(#43).",
             emptyList<Long>(),
             context.dispatcher.parkedDelayMillis,
+        )
+
+        // ② 사람이 다시 두고 그때의 컨트롤러로 무른 뒤, 앱처럼 다시 배선된 컨트롤러로 설정을 바꾼다(#107).
+        context.changeCore { it.copy(gameState = it.gameState.play(BlackAtThreeThree)) }
+        context.wireAsGoCoachAppDoes().undoController.undoLastTurn()
+        assertEquals(listOf(true, false, true), context.pendingUndoSyncWrites)
+        val rewired = context.wireAsGoCoachAppDoes() // 무르기가 키를 바꿨다 — 다음 프레임의 새 컨트롤러 12개.
+
+        rewired.settingsController.changeSearchTimeSettings(SearchTimeSettings(SearchTimeLimit.WithinFiveSeconds))
+
+        assertEquals(
+            "무르기 뒤 다시 배선된 설정 컨트롤러가 옛 무르기 컨트롤러가 예약한 재동기화를 못 취소했다 — 대기 중인 " +
+                "재동기화가 컨트롤러 인스턴스에 있어 재생성과 함께 버려진다(#107).",
+            listOf(true, false, true, false),
+            context.pendingUndoSyncWrites,
+        )
+        assertTrue(context.dispatcher.runNext())
+        assertEquals(
+            "다시 배선된 뒤 취소된 무르기 재동기화가 여전히 돌아 조용한 구간 delay까지 갔다(#107).",
+            emptyList<Long>(),
+            context.dispatcher.parkedDelayMillis,
+        )
+    }
+
+    /**
+     * 무르기 → **다시 배선** → 조용한 구간 닫기(refactor backlog #107). 착수·새 대국·이어하기는 컨텍스트의
+     * `clearUndoEngineInterventionQuietWindow()`를 부르고, 그것은 `cancelUndoSync` — **지금** 배선된 무르기
+     * 컨트롤러의 `cancelPendingSync` — 로 간다. 그런데 무르기가 바꾼 `undoEngineInterventionQuietUntil`·
+     * `isPendingUndoSync`가 `wiringContext`의 remember 키라(함정 67) 그 컨트롤러는 **무르기가 예약한 인스턴스가
+     * 아니다.** 대기 중인 재동기화가 인스턴스 필드에 있으면 새 인스턴스의 취소는 빈 필드를 보고 아무것도 안 하고,
+     * `isPendingUndoSync`는 옛 잡이 깰 때까지 true로 남는다.
+     */
+    @Test
+    fun quietWindowClearCancelsTheResyncScheduledBeforeTheControllersWereRewired() {
+        val context = FakeGoCoachAppWiringContext(inGameSession(playerSetup = HumanBlackAiWhite))
+        context.changeCore { it.copy(gameState = it.gameState.play(BlackAtThreeThree)) }
+        context.engineIsReady = true
+
+        context.wireAsGoCoachAppDoes().undoController.undoLastTurn()
+        assertEquals("엔진이 준비된 무르기는 재동기화를 예약한다(#107).", listOf(true), context.pendingUndoSyncWrites)
+        assertTrue("무르기는 조용한 구간을 연다 — wiringContext의 remember 키가 바뀐다(#107).", context.quietUntil > 0L)
+
+        context.wireAsGoCoachAppDoes() // 다음 프레임: 키가 바뀌어 컨트롤러 12개가 새로 만들어졌다.
+        context.clearUndoEngineInterventionQuietWindow() // 무르기 1초 안의 착수·새 대국·이어하기가 부르는 길.
+
+        assertEquals(
+            "무르기 뒤 새로 배선된 무르기 컨트롤러가 옛 인스턴스가 예약한 재동기화를 못 취소했다 — isPendingUndoSync가 " +
+                "옛 잡이 깰 때까지 true로 남아 그동안의 자동 추천 수·착수 평가 요청이 버려진다(#107).",
+            listOf(true, false),
+            context.pendingUndoSyncWrites,
+        )
+        assertFalse(context.undoSyncIsPending)
+        assertTrue(context.dispatcher.runNext())
+        assertEquals(
+            "취소된 무르기 재동기화가 여전히 돌아 조용한 구간 delay까지 갔다(#107).",
+            emptyList<Long>(),
+            context.dispatcher.parkedDelayMillis,
+        )
+    }
+
+    /**
+     * 카드 #107의 보이는 영향 ⓐ를 **앱의 흐름 그대로**: 사람끼리·추천 수 켬 → 두 수 → 무르기 → (다시 배선) →
+     * 무르기 1초 안에 착수 → 착수 동기화가 끝나 후속 분석이 유예 자리에 도착 → 엔진이 한가해져 (또 다시 배선된)
+     * 추천 수 컨트롤러가 `resumeDeferredAnalysisIfIdle()`로 그 분석을 건다(`GoCoachApp`의 트리거 효과).
+     * 무르기 재동기화가 취소되지 않았으면 `isPendingUndoSync`가 true라 자동 분석은 버려지고, 유예 자리는 이미
+     * 비워져 다시 걸리지 않는다 — 새 국면에 추천 수가 안 뜬다.
+     */
+    @Test
+    fun automaticTopMovesAfterAQuickMoveFollowingUndoAreNotDroppedAcrossRewiring() {
+        val context = FakeGoCoachAppWiringContext(inGameSession(playerSetup = TwoHumans), engineClient = SyncingEngineClient())
+        context.changeSettings { it.showTopMoves() }
+        context.changeCore { it.copy(gameState = it.gameState.play(BlackAtThreeThree).play(WhiteAtFourFour)) }
+        context.engineIsReady = true
+
+        context.wireAsGoCoachAppDoes().undoController.undoLastTurn()
+        assertEquals("사람끼리는 한 수를 무른다.", listOf<Move>(BlackAtThreeThree), context.holder.current.gameState.moves)
+        assertEquals(listOf(true), context.pendingUndoSyncWrites)
+
+        context.wireAsGoCoachAppDoes().humanMoveController.submitMove(WhiteAtFourFour)
+        assertEquals("무르기 재동기화 블록과 착수 동기화가 줄에 서 있어야 한다.", 2, context.dispatcher.queuedCount)
+        assertTrue(context.dispatcher.runNext()) // 무르기 재동기화 블록 — 취소됐으면 몸체 없이 끝난다.
+        context.dispatcher.runEngineOperationThroughIo() // 착수 동기화 — 후속 분석은 엔진이 바빠 유예 자리로 간다.
+        assertFalse("착수 동기화가 끝나면 엔진은 한가하다.", context.engineIsBusy)
+
+        assertTrue(
+            "착수 동기화의 후속 분석이 유예 자리에 있어야 한다(#43).",
+            context.wireAsGoCoachAppDoes().topMovesController.resumeDeferredAnalysisIfIdle(),
+        )
+        assertEquals(
+            "무르기 1초 안에 둔 수의 자동 추천 수 분석이 버려졌다 — 옛 무르기 컨트롤러의 재동기화가 취소되지 않아 " +
+                "isPendingUndoSync가 true로 남았다(#107). 지금: ${context.pendingUndoSyncWrites}",
+            1,
+            context.dispatcher.queuedCount,
+        )
+        assertEquals(
+            "걸린 추천 수 분석이 착수한 새 국면(백 4-4 뒤)을 향해야 한다(#107).",
+            context.holder.current.gameState.analysisFingerprint(),
+            context.holder.current.core.analysisState.lastAnalysisKey?.positionFingerprint,
+        )
+    }
+
+    /**
+     * 무르기 → 다시 배선 → **또 무르기**(refactor backlog #107). 두 번째 예약은 첫 예약을 **대체**해야 한다(첫 잡을
+     * 취소한다). 첫 잡이 옛 인스턴스에 남으면 둘 다 돌고, 첫 잡은 깨어나 판이 바뀐 것을 보고 두 번째 재동기화가
+     * 아직 기다리는데도 `isPendingUndoSync`를 false로 내린다.
+     */
+    @Test
+    fun aSecondUndoAfterRewiringReplacesTheFirstResyncInsteadOfRacingIt() {
+        val context = FakeGoCoachAppWiringContext(inGameSession(playerSetup = TwoHumans))
+        context.changeCore { it.copy(gameState = it.gameState.play(BlackAtThreeThree).play(WhiteAtFourFour)) }
+        context.engineIsReady = true
+
+        context.wireAsGoCoachAppDoes().undoController.undoLastTurn()
+        context.wireAsGoCoachAppDoes().undoController.undoLastTurn()
+        assertEquals(emptyList<Move>(), context.holder.current.gameState.moves)
+        assertEquals(listOf(true, true), context.pendingUndoSyncWrites)
+        assertEquals(2, context.dispatcher.queuedCount)
+
+        assertTrue(context.dispatcher.runNext())
+        assertTrue(context.dispatcher.runNext())
+        assertEquals(
+            "두 번째 무르기가 첫 재동기화를 대체하지 못했다 — 옛 무르기 컨트롤러의 잡이 살아남아 둘 다 조용한 구간을 " +
+                "기다린다(#107).",
+            1,
+            context.dispatcher.parkedDelayMillis.size,
         )
     }
 
@@ -1183,6 +1348,17 @@ class GoCoachControllerWiringTest {
         assertEquals("막힘 표시는 지금의 화면 상태 위에 얹는다(함정 67).", "set-after-wiring", context.benchmarkWrites.last().benchmarkText)
     }
 
+    /**
+     * `GoCoachApp`이 `wiringContext`를 새로 만들 때 하는 두 줄을 그대로 한다(refactor backlog #107) —
+     * `val controllers = remember(wiringContext) { wireGoCoachControllers(wiringContext) }`와
+     * `cancelUndoSync = controllers.undoController::cancelPendingSync`. 무르기는 세션 스냅샷·
+     * `undoEngineInterventionQuietUntil`·`isPendingUndoSync`를 바꾸고 그것들이 `wiringContext`의 remember 키라
+     * (함정 67), 앱에서는 무르기 **바로 다음 프레임에** 이것이 한 번 더 돈다. 같은 페이크를 다시 쓰는 것은 앱의 새
+     * 컨텍스트 객체가 한 번만 `remember`한 것들(수명 컨트롤러·캐시·유예 자리…)과 컴포즈 상태를 그대로 물려받는 것과 같다.
+     */
+    private fun FakeGoCoachAppWiringContext.wireAsGoCoachAppDoes(): GoCoachControllers =
+        wireGoCoachControllers(this).also { controllers -> cancelUndoSync = controllers.undoController::cancelPendingSync }
+
     private fun controllerFields() =
         GoCoachControllers::class.java.declaredFields
             .filterNot { Modifier.isStatic(it.modifiers) }
@@ -1254,6 +1430,9 @@ class GoCoachControllerWiringTest {
                 "undoSeesMatchModeChangedAfterWiring",
                 "undoSeesEngineReadyRaisedAfterWiring",
                 "settingsCancelsThePostUndoResyncScheduledOnTheSharedUndoController",
+                "quietWindowClearCancelsTheResyncScheduledBeforeTheControllersWereRewired",
+                "automaticTopMovesAfterAQuickMoveFollowingUndoAreNotDroppedAcrossRewiring",
+                "aSecondUndoAfterRewiringReplacesTheFirstResyncInsteadOfRacingIt",
             ),
             "autoAiTurnController" to listOf("autoAiTurnSeesSessionAndResumePromptChangedAfterWiring", "autoAiTurnSeesEngineReadyRaisedAfterWiring"),
             "humanMoveController" to listOf(

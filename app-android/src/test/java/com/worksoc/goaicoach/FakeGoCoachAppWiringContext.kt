@@ -112,10 +112,16 @@ import kotlinx.coroutines.SupervisorJob
  * `Context`가 없고, 배선은 그것을 람다 안에서만(디버그 리포트의 진동 진단) 읽어야 한다.
  *
  * [clearUndoEngineInterventionQuietWindow]는 앱처럼 [cancelUndoSync]도 부른다. 앱은 배선 **뒤에**
- * `cancelUndoSync = controllers.undoController::cancelPendingSync`로 그것을 묶는다. 지금은 어떤 테스트도
- * 이 페이크의 [cancelUndoSync]를 묶지 않는다(착수·새 대국·이어하기 탐침은 [quietWindowClears]만 센다) —
- * 앱 쪽의 두 줄(지역 함수 안의 `cancelUndoSync()` 호출과 배선 뒤의 묶기)은 `WiringContextFreezeContractTest`가
- * 소스로 지킨다.
+ * `cancelUndoSync = controllers.undoController::cancelPendingSync`로 그것을 묶는다. 그것을 묶는 테스트는
+ * 무르기 뒤 재배선을 흉내 내는 것들뿐이다(`GoCoachControllerWiringTest.wireAsGoCoachAppDoes`, #107) — 착수·새 대국·
+ * 이어하기 탐침은 [quietWindowClears]만 센다. 앱 쪽의 두 줄(지역 함수 안의 `cancelUndoSync()` 호출과 배선 뒤의
+ * 묶기)은 `WiringContextFreezeContractTest`가 소스로 지킨다.
+ *
+ * ## 같은 페이크로 다시 배선하면 앱의 재배선과 같다
+ * 앱은 `wiringContext`의 키가 바뀔 때마다 **새 컨텍스트 객체**와 컨트롤러 12개를 만들지만, 그 객체는 한 번만
+ * `remember`한 것들(수명 컨트롤러·캐시·유예 자리)과 컴포즈 상태를 그대로 넘긴다. 이 페이크의
+ * 멤버는 전부 한 번 만들어지므로, 같은 페이크로 `wireGoCoachControllers`를 다시 부르는 것이 곧 그 재배선이다 —
+ * 컨트롤러 인스턴스에만 있던 상태는 거기서 사라진다(#107).
  */
 internal class FakeGoCoachAppWiringContext(
     initial: GameSessionControllerState = inGameSession(),
