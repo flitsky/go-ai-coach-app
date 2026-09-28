@@ -54,17 +54,37 @@ internal fun resetToFreshInstallState() {
 }
 
 /**
+ * 이 앱(같은 uid)이 띄운 KataGo 프로세스 하나(refactor backlog #110). [kind]는 명령줄의 하위 명령(`gtp`·`analysis`),
+ * [state]는 `/proc/<pid>/stat`의 상태 글자다.
+ */
+internal data class KataGoProcess(val pid: Int, val kind: String, val state: Char)
+
+/**
+ * 이 앱(같은 uid)이 띄운 KataGo 프로세스를 센다. 좀비(`Z` — 이미 죽었고 거둬지기만 기다린다)는 뺀다.
+ *
+ * ⚠️ 셸의 `pidof`나 `ps -A | grep libkatago`로 세지 말 것 — 셸 uid는 **다른 앱의 KataGo까지** 본다(개발 변형과 릴리스
+ * 변형을 함께 깔면 applicationId가 달라 둘 다 뜬다). 앱 uid의 `/proc`는 제 uid의 프로세스만 보이므로 이쪽이 정확하다.
+ */
+internal fun kataGoProcessCensus(): List<KataGoProcess> =
+    File("/proc").listFiles().orEmpty().mapNotNull { dir ->
+        val pid = dir.name.toIntOrNull() ?: return@mapNotNull null
+        val commandLine = runCatching { File(dir, "cmdline").readText() }.getOrNull() ?: return@mapNotNull null
+        if (KataGoExecutableName !in commandLine) return@mapNotNull null
+        // `pid (comm) S …` — comm에 공백·괄호가 들어갈 수 있어 마지막 `) ` 뒤를 읽는다.
+        val state = runCatching { File(dir, "stat").readText().substringAfterLast(") ").first() }.getOrNull()
+            ?: return@mapNotNull null
+        KataGoProcess(pid = pid, kind = commandLine.split('\u0000').getOrElse(1) { "" }, state = state)
+            .takeIf { it.state != 'Z' }
+    }
+
+/**
  * 이 앱(같은 uid)이 띄운 KataGo 프로세스를 전부 내리고, 사라질 때까지 잠깐 기다린다. 앱은 같은 uid의 프로세스만
  * `/proc`에서 볼 수 있고 [Process.killProcess]도 같은 uid에만 닿는다 — 남의 프로세스는 건드릴 수 없다.
  *
  * 진짜 KataGo를 띄우는 테스트가 앞뒤로 부른다 — 사유(2GB 에뮬레이터의 lowmemorykiller)는 `EngineStallRecoverySmokeTest`의 KDoc.
  */
 internal fun stopLeftoverKataGoProcesses(): Int {
-    val pids = File("/proc").listFiles().orEmpty().mapNotNull { dir ->
-        val pid = dir.name.toIntOrNull() ?: return@mapNotNull null
-        val commandLine = runCatching { File(dir, "cmdline").readText() }.getOrNull() ?: return@mapNotNull null
-        pid.takeIf { KataGoExecutableName in commandLine }
-    }
+    val pids = kataGoProcessCensus().map { it.pid }
     pids.forEach(Process::killProcess)
     val deadline = System.currentTimeMillis() + 5_000L
     while (pids.any { File("/proc/$it").exists() } && System.currentTimeMillis() < deadline) Thread.sleep(100L)
