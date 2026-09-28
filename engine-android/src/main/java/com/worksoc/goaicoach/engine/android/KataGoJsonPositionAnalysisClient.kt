@@ -8,6 +8,7 @@ import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisResult
 import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
 import com.worksoc.goaicoach.shared.enginecontract.EngineStatus
+import com.worksoc.goaicoach.shared.enginecontract.searchTimeoutMillisFor
 import org.json.JSONObject
 
 internal class KataGoJsonPositionAnalysisClient(

@@ -7,7 +7,9 @@ import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisResult
 import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
 import com.worksoc.goaicoach.shared.enginecontract.CandidateMoveSource
+import com.worksoc.goaicoach.shared.enginecontract.DefaultCommandTimeoutMillis
 import com.worksoc.goaicoach.shared.enginecontract.EngineStatus
+import com.worksoc.goaicoach.shared.enginecontract.searchTimeoutMillisFor
 
 internal class KataGoGtpAnalysisClient(
     private val sendCommand: suspend (command: String, timeoutMillis: Long) -> String,

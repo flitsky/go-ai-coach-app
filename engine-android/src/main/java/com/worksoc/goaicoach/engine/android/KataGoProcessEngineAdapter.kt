@@ -11,6 +11,7 @@ import com.worksoc.goaicoach.shared.domain.describe
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisResult
 import com.worksoc.goaicoach.shared.enginecontract.DeadStonesResult
+import com.worksoc.goaicoach.shared.enginecontract.DefaultCommandTimeoutMillis
 import com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi
 import com.worksoc.goaicoach.shared.enginecontract.EngineMode
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
@@ -18,6 +19,8 @@ import com.worksoc.goaicoach.shared.enginecontract.EngineStatus
 import com.worksoc.goaicoach.shared.enginecontract.FinalScoreResult
 import com.worksoc.goaicoach.shared.enginecontract.MoveResult
 import com.worksoc.goaicoach.shared.enginecontract.ScoreEstimate
+import com.worksoc.goaicoach.shared.enginecontract.analysisSearchTimeMillis
+import com.worksoc.goaicoach.shared.enginecontract.searchTimeoutMillisFor
 import java.io.BufferedReader
 import java.io.BufferedWriter
 import java.io.IOException
@@ -519,12 +522,9 @@ internal class KataGoProcessEngineAdapter(
 
     private fun AnalysisLimit.effectiveAnalysisLimit(): AnalysisLimit {
         val minimumVisits = (candidateCount * minVisitsPerCandidate).coerceAtLeast(visits)
-        val minimumTimeMillis = minTimeMillis?.let { minimum ->
-            timeMillis?.coerceAtLeast(minimum) ?: minimum
-        } ?: timeMillis
         return copy(
             visits = minimumVisits,
-            timeMillis = minimumTimeMillis,
+            timeMillis = analysisSearchTimeMillis(),
         )
     }
 
