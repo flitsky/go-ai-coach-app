@@ -8,7 +8,7 @@ import org.junit.Test
 /**
  * 색 리터럴은 `ui.designsystem` **안에만** 있다(refactor backlog #51).
  *
- * 2026-09-28까지 `Color(0xFF…)`·`Color.White` 같은 리터럴이 ui 17개 파일에 130곳 흩어져 있었다. 그것을
+ * 2026-09-28까지 `Color(0xFF…)`·`Color.White` 같은 리터럴이 ui 16개 파일에 132곳(「색 없음」 5곳 별도) 흩어져 있었다. 그것을
  * 값 그대로 디자인 시스템(`AppPalette.kt`·`GoBoardPalette.kt`·`GoBoardTheme.kt`·`PremiumTheme.kt`·
  * `AppColorScheme.kt`)으로 옮기고 **기준선을 0으로 박았다.** 새 화면이 색을 쓰려면 먼저
  * `MaterialTheme.colorScheme`의 역할을 찾고, 없으면 디자인 시스템에 이름을 붙여 둔다 — 화면 파일에
