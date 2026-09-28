@@ -176,6 +176,60 @@ class KataGoProcessLifecycleTest {
         assertEquals("GTP processes started", 2, runtime.processes(Kind.Gtp).size)
     }
 
+    // ── 기동 예산: 새 프로세스의 첫 답은 모델 적재를 기다린다(refactor backlog #17) ─────────────
+
+    /**
+     * KataGo는 모델을 다 올린 뒤에야 stdin을 읽는다(에뮬레이터에서 8~33초). 그래서 새 프로세스의 **첫 답**은 명령
+     * 마감에 모델 적재를 더한 만큼 늦다. 예전에는 그것이 첫 명령의 30초 마감 안에 들어 있어, 재시작 뒤의
+     * `configure`가 적재가 끝나기도 전에 시간 초과로 SIGKILL되고 — 다음 재시작도 똑같이 — 되풀이될 수 있었다.
+     *
+     * 첫 답에는 명령 마감 위에 기동 예산이 따로 붙는다: 1세대도, 「엔진 다시 시작하기」 뒤의 2세대도 적재가 명령
+     * 마감보다 길어도 첫 명령이 산다. 첫 답이 온 뒤에는 명령마다의 마감이 그대로다(늦은 답은 여전히 시간 초과·SIGKILL).
+     */
+    @Test
+    fun aFreshProcessesFirstReplyWaitsForTheModelLoadButLaterRepliesKeepTheirOwnDeadline() {
+        val adapter = startupBudgetAdapter()
+        runtime.responder = { process, line ->
+            when {
+                process.received.size == 1 -> Reply.After(ModelLoadMillis, "=\n\n")
+                line.startsWith("kata-raw-nn") -> Reply.After(ModelLoadMillis, "= whiteWin 0.5\n\n")
+                else -> null
+            }
+        }
+
+        call { adapter.initialize(EngineProfile()) }.outcomeWithin(3_000, "initialize on a process still loading its model").getOrThrow()
+        adapter.forceReset()
+        call { adapter.configure(EngineProfile()) }.outcomeWithin(3_000, "configure on the restarted process").getOrThrow()
+
+        assertEquals("GTP processes started", 2, runtime.processes(Kind.Gtp).size)
+        assertEquals("generation 2 is not killed while it loads its model", emptyList<String>(), runtime.gtp(2).signals)
+        assertEquals(InitializeCommands, runtime.gtp(2).received)
+        val late = call { adapter.estimateScore(GtpPathLimit) }.outcomeWithin(3_000, "a late reply on a warm process")
+        assertTimedOut(late)
+        assertEquals("a late reply on a warm process is still killed", listOf("KILL"), runtime.gtp(2).signals)
+    }
+
+    /** 기동 예산에도 끝이 있다 — 끝내 답하지 않는 새 프로세스는 그 예산에 시간 초과로 SIGKILL되고, 다음 호출은 새 세대로 간다. */
+    @Test
+    fun aFreshProcessThatNeverRepliesIsKilledAtTheEndOfItsStartupBudget() {
+        val adapter = startupBudgetAdapter()
+        runtime.responder = { process, _ -> if (process.ordinal == 1) Reply.Never else null }
+
+        val outcome = call { adapter.configure(EngineProfile()) }.outcomeWithin(3_000, "configure on a process that never loads")
+
+        assertTimedOut(outcome)
+        assertEquals("the stuck fresh process is killed", listOf("KILL"), runtime.gtp(1).signals)
+        runBlocking { adapter.configure(EngineProfile()) }
+        assertEquals(InitializeCommands, runtime.gtp(2).received)
+    }
+
+    /** 명령 마감(200ms)이 모델 적재([ModelLoadMillis])보다 짧고, 기동 예산(1.2초)은 그보다 긴 어댑터. */
+    private fun startupBudgetAdapter(): KataGoProcessEngineAdapter =
+        KataGoProcessEngineAdapter(
+            runtime,
+            deadlineMillis = { budget -> if (budget == EngineStartupBudgetMillis) 1_200L else 200L },
+        )
+
     // ── 호출자 취소(무르기·나가기): 프로세스는 살린다 ─────────────────────────────────
 
     /**
@@ -514,6 +568,9 @@ class KataGoProcessLifecycleTest {
     }
 
     private companion object {
+        /** 가짜 모델 적재 — 명령 마감(200ms)보다 길고 기동 예산(1.2초)보다 짧다. */
+        const val ModelLoadMillis = 600L
+
         val JsonPathLimit = AnalysisLimit(
             visits = 16,
             candidateCount = 5,

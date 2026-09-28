@@ -72,6 +72,21 @@ internal class EngineProcessHandle(
     val ageMillis: Long
         get() = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAtNanos)
 
+    /** 한 번이라도 왕복을 끝까지 마쳤다 — 모델 적재가 끝났다(KataGo는 적재 뒤에야 stdin을 읽는다). */
+    @Volatile
+    private var hasReplied = false
+
+    fun markReplied() {
+        hasReplied = true
+    }
+
+    /**
+     * 이 핸들의 다음 왕복이 명령 마감 위에 더 기다릴 몫(refactor backlog #17) — 아직 첫 답이 없으면 기동 예산
+     * [startupBudgetMillis] 중 남은 만큼(프로세스가 뜬 때부터 잰다), 첫 답이 온 뒤에는 0.
+     */
+    fun startupAllowanceMillis(startupBudgetMillis: Long): Long =
+        if (hasReplied) 0L else (startupBudgetMillis - ageMillis).coerceAtLeast(0L)
+
     /**
      * 처음 부른 쪽만 `true`이고 그쪽만 프로세스를 내린다 — 몇 번을 불러도 안전하다.
      *

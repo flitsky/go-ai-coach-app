@@ -48,6 +48,8 @@ import org.json.JSONObject
  * - 왕복 하나가 제 마감을 넘기면 **그 호출의** 프로세스를 SIGKILL로 내린다 — 진짜로 막힌 읽기도 마감에 풀린다.
  *   예전 `withTimeout { runInterruptible { readLine() } }`는 늦게라도 오는 답만 끊었다(파이프 읽기는 인터럽트를
  *   무시한다). 호출자가 취소된 것(무르기·나가기)은 프로세스를 내릴 이유가 아니다 — [roundTrip].
+ * - 새 프로세스의 **첫 답**만은 명령 마감 위에 기동 예산([EngineStartupBudgetMillis])을 더 기다린다 — 모델 적재가
+ *   첫 명령의 마감을 먹지 않게(refactor backlog #17). SIGKILL·세대 규칙은 같다: 그 예산도 넘기면 그 핸들만 내린다.
  * - 취소된 호출자는 답을 기다리지 않고 곧바로 돌아간다 — 답은 뒤에 남은 배수가 받아 스트림을 맞추고, 그동안 그
  *   프로세스의 왕복 락을 쥔다(refactor backlog #15, [roundTrip]). 그래야 호출자가 쥔 오퍼레이션 락이 곧바로 풀린다.
  * - 재시작 뒤의 재동기화는 지금처럼 호출자 몫이다. 이 어댑터는 새 프로세스에 명령을 스스로 더 보내지 않는다.
@@ -58,8 +60,9 @@ import org.json.JSONObject
  *   실패의 종류(판을 잃었는가)를 가르는 일과 함께 #17로 넘겼다.
  *
  * @param runtime 1계층 — 프로세스를 띄우는 자리(refactor backlog #14). 이 어댑터는 프로세스를 직접 만들지 않는다.
- * @param deadlineMillis 명령마다 정해진 마감(ms)을 실제로 기다릴 마감으로 옮긴다. 프로덕션은 항등이다 — 마감 값을
- *   바꾸는 자리가 아니라(그건 #17), 테스트가 30초·120초 마감을 짧게 줄여 시간 초과 경로를 재는 이음새다.
+ * @param deadlineMillis 명령마다 정해진 마감(ms)과 기동 예산([EngineStartupBudgetMillis])을 실제로 기다릴 마감으로
+ *   옮긴다. 프로덕션은 항등이다 — 마감 값을 바꾸는 자리가 아니라, 테스트가 30초·120초 마감과 60초 기동 예산을 짧게
+ *   줄여 시간 초과 경로를 재는 이음새다.
  */
 internal class KataGoProcessEngineAdapter(
     private val runtime: EngineProcessRuntime,
@@ -311,6 +314,7 @@ internal class KataGoProcessEngineAdapter(
      * | --- | --- |
      * | 답이 온다 | 그 값 |
      * | 마감까지 답이 없다(늦은 답·진짜로 멈춤) | 이 핸들을 SIGKILL로 내리고 마감에 [TimeoutCancellationException] — 막힌 읽기를 기다리지 않는다 |
+     * | 새 프로세스의 첫 왕복 | 마감 = 명령 마감 + 기동 예산([EngineStartupBudgetMillis]) 중 남은 몫 — 모델 적재가 명령 마감을 먹지 않게(#17) |
      * | 그사이 프로세스가 끝났다(forceReset·크래시) | EOF → `IllegalStateException`(예전 문구 그대로), 이 핸들은 `Died` |
      * | 호출자가 취소됐다(무르기·나가기) | **곧바로** 취소를 올린다. 답은 뒤에 남은 배수([drainThenUnlock])가 끝까지 받아 스트림을 맞춘다 — 단 마감까지만, 넘으면 내린다 |
      * | 이 핸들이 이미 내려갔다 | 보내지 않고 곧바로 `IllegalStateException` |
@@ -345,7 +349,9 @@ internal class KataGoProcessEngineAdapter(
                 slot.retire(handle, EngineProcessRetireReason.Died)
                 throw IllegalStateException("KataGo $handle was retired (${handle.retireReason}) before `$label`")
             }
-            val budgetMillis = deadlineMillis(timeoutMillis)
+            // 새 프로세스의 첫 답은 모델 적재를 기다린다 — 기동 예산을 명령 마감 위에 따로 얹는다(refactor backlog #17).
+            val budgetMillis = deadlineMillis(timeoutMillis) +
+                handle.startupAllowanceMillis(deadlineMillis(EngineStartupBudgetMillis))
             val startedAtNanos = System.nanoTime()
             val work = pipeIo.async { exchangeOrRetire(slot, handle, exchange) }
             try {
@@ -372,7 +378,7 @@ internal class KataGoProcessEngineAdapter(
         exchange: (BufferedWriter, BufferedReader) -> T,
     ): T =
         try {
-            exchange(handle.writer, handle.reader)
+            exchange(handle.writer, handle.reader).also { handle.markReplied() }
         } catch (ended: EngineStreamEnded) {
             slot.retire(handle, EngineProcessRetireReason.Died)
             throw ended

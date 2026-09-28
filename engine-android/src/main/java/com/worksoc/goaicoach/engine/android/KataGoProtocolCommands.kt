@@ -131,6 +131,13 @@ private fun String.toGtpPassOrResignOrNull(player: StoneColor): Move? =
 /** Generous ceiling for GTP commands that carry no search-time budget of their own (e.g. play, undo, komi). */
 internal const val DefaultCommandTimeoutMillis: Long = 30_000L
 
+/**
+ * 새 프로세스의 **첫 답**에 명령 마감과 따로 더 주는 기동 예산 — 프로세스가 뜬 때부터 잰다(refactor backlog #17).
+ * KataGo는 모델을 다 올린 뒤에야 stdin을 읽는다(에뮬레이터에서 8~33초). 이것이 없으면 적재가 첫 명령의 마감을
+ * 먹어, 재시작 뒤의 `configure`가 적재 중에 시간 초과로 SIGKILL되기를 되풀이할 수 있다.
+ */
+internal const val EngineStartupBudgetMillis: Long = 60_000L
+
 /** Overhead allowance added on top of a configured search-time cap, to absorb KataGo's own bookkeeping beyond its internal cap. */
 private const val SearchTimeoutSlackMillis: Long = 20_000L
 
