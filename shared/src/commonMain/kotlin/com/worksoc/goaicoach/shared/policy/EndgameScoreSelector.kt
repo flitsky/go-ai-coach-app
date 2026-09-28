@@ -133,14 +133,20 @@ object EndgameScoreSelector {
         )
     }
 
-    private fun FinalScoreResult.whiteScoreLead(): Double? =
-        when {
-            whiteAreaWithKomi != null && blackArea != null -> whiteAreaWithKomi - blackArea
-            margin != null && winner == StoneColor.White -> margin
-            margin != null && winner == StoneColor.Black -> -margin
-            margin != null -> 0.0
+    private fun FinalScoreResult.whiteScoreLead(): Double? {
+        // `FinalScoreResult`는 다른 Gradle 모듈(`:core:enginecontract`)의 타입이라 그 프로퍼티는 스마트 캐스트가
+        // 안 된다(refactor backlog #49) — 지역 값으로 한 번 읽어 두고 판정한다. 동작은 예전과 같다.
+        val white = whiteAreaWithKomi
+        val black = blackArea
+        val lead = margin
+        return when {
+            white != null && black != null -> white - black
+            lead != null && winner == StoneColor.White -> lead
+            lead != null && winner == StoneColor.Black -> -lead
+            lead != null -> 0.0
             else -> null
         }
+    }
 
     private fun Double.formatOneDecimal(): String =
         ((this * 10).roundToInt() / 10.0).toString()

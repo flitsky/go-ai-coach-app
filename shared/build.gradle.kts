@@ -25,9 +25,11 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            // 바둑 규칙 커널(`shared.domain`)은 `:core:domain`에 있다(refactor backlog #49). `api`인 이유: 이 모듈의
-            // 공개 시그니처가 도메인 타입을 그대로 쓰므로, 이 모듈을 쓰는 쪽도 그 타입을 봐야 한다.
-            api(project(":core:domain"))
+            // 엔진 계약·계가기(`shared.enginecontract`·`shared.scoring`)는 `:core:enginecontract`에, 바둑 규칙
+            // 커널(`shared.domain`)은 그 아래 `:core:domain`에 있다(refactor backlog #49) — 도메인은 이 `api` 사슬로
+            // 따라온다. `api`인 이유: 이 모듈의 공개 시그니처가 계약·도메인 타입을 그대로 쓰므로, 이 모듈을 쓰는
+            // 쪽도 그 타입을 봐야 한다.
+            api(project(":core:enginecontract"))
             implementation(libs.kotlinx.coroutines.core)
         }
         commonTest.dependencies {

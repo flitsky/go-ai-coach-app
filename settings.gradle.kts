@@ -17,6 +17,7 @@ dependencyResolutionManagement {
 rootProject.name = "go-ai-coach"
 
 include(":core:domain")
+include(":core:enginecontract")
 include(":shared")
 include(":engine-android")
 include(":app-android")

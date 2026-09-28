@@ -43,6 +43,7 @@ internal object RepoPaths {
      */
     private val KMP_COMMON_MAIN_KOTLIN = listOf(
         "core/domain/src/commonMain/kotlin",
+        "core/enginecontract/src/commonMain/kotlin",
         "$SHARED_COMMON_SOURCE_SET/kotlin",
     )
 
@@ -53,6 +54,7 @@ internal object RepoPaths {
     private val KMP_COMMON_TEST = listOf(
         "core/domain/src/commonTest",
         "core/domain/src/commonTestFixtures",
+        "core/enginecontract/src/commonTest",
         "shared/src/commonTest",
     )
 

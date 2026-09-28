@@ -144,7 +144,7 @@ doctor:
 # enforceCheck) — app-android·engine-android는 `check`를 안 거치므로 여기서 이름으로 부른다. 빨가면 격리
 # 워크트리에서 `./gradlew spotlessApply`(공유 메인 트리에서 돌리면 남의 미커밋 파일 import까지 재배열된다).
 test: doctor
-	$(GRADLEW) :core:domain:check :shared:check :app-android:spotlessCheck :engine-android:spotlessCheck :engine-android:testDebugUnitTest :app-android:assembleDebug :app-android:testDebugUnitTest :app-android:compileDebugAndroidTestKotlin :app-android:lintDebug
+	$(GRADLEW) :core:domain:check :core:enginecontract:check :shared:check :app-android:spotlessCheck :engine-android:spotlessCheck :engine-android:testDebugUnitTest :app-android:assembleDebug :app-android:testDebugUnitTest :app-android:compileDebugAndroidTestKotlin :app-android:lintDebug
 
 # ⚠️ 별도 타깃이다 — `test`에 합치지 마라(refactor backlog #11, 함정 75).
 # iOS 타깃은 `shared/build.gradle.kts`의 `enableIosTargets` 게이트 뒤에 숨어 있어(기본 false)
@@ -163,7 +163,7 @@ test: doctor
 # `System.currentTimeMillis()` 한 줄(2026-08-16부터)로 iOS 테스트 컴파일이 깨진 채 아무도 몰랐다 —
 # commonTest의 JVM 전용 API도 이 타깃이 잡는다.
 test-ios:
-	$(GRADLEW) :core:domain:compileKotlinIosSimulatorArm64 :core:domain:compileTestKotlinIosSimulatorArm64 :shared:compileKotlinIosSimulatorArm64 :shared:compileTestKotlinIosSimulatorArm64 -PenableIosTargets=true
+	$(GRADLEW) :core:domain:compileKotlinIosSimulatorArm64 :core:domain:compileTestKotlinIosSimulatorArm64 :core:enginecontract:compileKotlinIosSimulatorArm64 :core:enginecontract:compileTestKotlinIosSimulatorArm64 :shared:compileKotlinIosSimulatorArm64 :shared:compileTestKotlinIosSimulatorArm64 -PenableIosTargets=true
 
 # ⚠️ 별도 타깃이다 — `test`에 합치지 마라(refactor backlog #13ⓑ). `make test`가 지키는 "빠른
 # 루프"(에뮬레이터/실기기 없이 몇 초~몇 분 안에 결과)를 계기 테스트가 깨뜨린다 — 에뮬레이터
